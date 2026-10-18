@@ -31,7 +31,8 @@ return {
 		{ path = "Data/Blessings", omit = LOOKS },
 		{ path = "Data/Bonuses" },
 		{ path = "Data/BossTuning" },
-		{ path = "Data/Bosses", omit = LOOKS },
+		-- S149: `all` and `world` repeat the records of `byId` (the world boss is dumped there too)
+		{ path = "Data/Bosses", omit = { "all", "world", table.unpack(LOOKS) } },
 		{ path = "Data/BuffCategories" },
 		{ path = "Data/Classes", omit = LOOKS },
 		{ path = "Data/Combat" },
@@ -116,6 +117,8 @@ return {
 		{ path = "Data/ScheduledEvents", omit = { "byKey", "sky" } },
 		-- S101: world events (schedule, scale of the commander / champion, contribution threshold, reward, chest)
 		{ path = "Data/WorldEvents" },
+		-- S149: the world boss (UTC schedule, the arena spot, contribution threshold, reward, item rarities)
+		{ path = "Data/WorldBoss" },
 	} :: { ModuleEntry },
 	-- S134d: AutoPotion and AutoGrind (premium services with limits, like FullElixir / Lure)
 	CONFIG_KEYS = {
@@ -222,18 +225,21 @@ return {
 				session = "S87",
 				why = "G10 / T-SK4: 1.4 -> 1.89, geometric mean of what Destroyer exp (2.36) and Arcanist boss (1.52) need",
 			},
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 25: 1.37 -> 1.02 (the curve never falls)" },
 		},
 		["LevelCurves:curves.manaCost.Mage[3][2]"] = {
 			{
 				session = "S87",
 				why = "G10 / T-SK4: 1.9 -> 2.59, geometric mean of Destroyer exp (3.51) and Arcanist boss (1.91)",
 			},
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 30: 1.47 -> 1.04" },
 		},
 		["LevelCurves:curves.manaCost.Mage[4][2]"] = {
 			{
 				session = "S87",
 				why = "G10 / T-SK4: 2.5 -> 3.49, geometric mean of Destroyer exp (6.1) and Arcanist boss (2.0)",
 			},
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 40: 1.82 -> 1.08" },
 		},
 		["LevelCurves:curves.heal[2][2]"] = {
 			{ session = "S87", why = "G10 / T-SK5: 1 -> 2.33, Healer dungeon on Defender 0.272 -> 0.300 at 45" },
@@ -628,6 +634,7 @@ return {
 				session = "S89",
 				why = "B R1: rank 10 295 -> 222; Furia R1 2.89 / 3.12 / 3.35 -> 2.41 / 2.51 / 2.60 (<= 1.15 x L20 2.27)",
 			},
+			{ session = "S146", why = "222 -> 200 (rank 6 knot 196): R1 of Sword and Shield (the Defender) at 45 / 100 in band; Brutal Strike (the two-handed S1) keeps 222" },
 		},
 		["Skills/Warrior:[mightyStrike].breakpoints[10].b.effect.value"] = {
 			{ session = "S89", why = "B R1 / R4: bleed 90 -> 45, 10B gain 0.27 -> 0.18 (band 0.17-0.28)" },
@@ -720,6 +727,7 @@ return {
 				session = "S89",
 				why = "C B: crit 20 -> 24 points; support at 100 4.93 / 4.95 (sword / sabre, band 4.9-5.1)",
 			},
+			{ session = "S146", why = "24 -> 21 points: with the banner on the bar and Fervor 5-15 the support at 100 5.11 > 5.1 with the sabre; now 5.07 / 5.09 (sword / sabre)" },
 		},
 		["Paths/Warrior:[berserker].rows[4].nodes[berserker_executioner].values.executioner[1]"] = {
 			{ session = "S89", why = "B x base: 5 -> 1.5 % (x base 1.33 / 1.42 at 70 / 100 -> 1.31 / 1.35)" },
@@ -1647,6 +1655,7 @@ return {
 				session = "S90",
 				why = "25 -> 14: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
 			},
+			{ session = "S147", why = "+14 -> +6: R4 of 10A 0.34 -> 0.19 with the base 12-14" },
 		},
 		["Skills/Hunter:[snarefield].breakpoints[5].b.values.vuln"] = {
 			{
@@ -1665,12 +1674,14 @@ return {
 				session = "S90",
 				why = "90 -> 30: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "30 -> 12: R3 of the Trapper at 100 2.05 -> 1.996 (<= 2.0) after the stronger Venom Snare poison" },
 		},
 		["Skills/Hunter:[snarefield].values.dmg[2]"] = {
 			{
 				session = "S90",
 				why = "150 -> 38: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "38 -> 14: see dmg[1]" },
 		},
 		["Skills/Hunter:[stormArrow].breakpoints[5].b.values.dmg"] = {
 			{
@@ -1695,6 +1706,7 @@ return {
 				session = "S90",
 				why = "40 -> 19: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
 			},
+			{ session = "S147", why = "19 -> 21: R4 of 10A 0.166 -> 0.18 with the lower dmg (|A - B| <= 0.05)" },
 		},
 		["Skills/Hunter:[venomArrow].breakpoints[10].b.values.poison"] = {
 			{
@@ -1719,12 +1731,14 @@ return {
 				session = "S90",
 				why = "210 -> 152: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
 			},
+			{ session = "S147", why = "152 -> 137 (rank 2 pinned): the Crossbow's damage moves to its poison (R9)" },
 		},
 		["Skills/Hunter:[venomArrow].values.poison[2]"] = {
 			{
 				session = "S90",
 				why = "120 -> 50: C R1: rank > 20 nearly flat (R1 of every Hunter build; rank <= 20 pinned in SkillCurves)",
 			},
+			{ session = "S147", why = "50 -> 57.5 (rank 2 pinned): R9 of the Crossbow, damage over time >= 25 %" },
 		},
 		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = {
 			{
@@ -1755,24 +1769,28 @@ return {
 				session = "S90",
 				why = "130 -> 232: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "232 -> 80: the trap's damage moves to its poison (R9 of the Crossbow, R3 of the Trapper)" },
 		},
 		["Skills/Hunter:[venomSnare].values.dmg[2]"] = {
 			{
 				session = "S90",
 				why = "220 -> 236: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "236 -> 82: see dmg[1]" },
 		},
 		["Skills/Hunter:[venomSnare].values.poison[1]"] = {
 			{
 				session = "S90",
 				why = "60 -> 285: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "285 -> 405: R9 of the Crossbow, damage over time >= 25 % (the Poacher 0.20 -> 0.26 at 70)" },
 		},
 		["Skills/Hunter:[venomSnare].values.poison[2]"] = {
 			{
 				session = "S90",
 				why = "110 -> 290: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
+			{ session = "S147", why = "290 -> 412: see poison[1]" },
 		},
 		["Skills/Hunter:[volley].breakpoints[10].b.values.dmg"] = {
 			{
@@ -1935,6 +1953,7 @@ return {
 				session = "S90",
 				why = "90 -> 119: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
+			{ session = "S147", why = "119 -> 220: T-SK4 of the Destroyer's variants at 100 with the lower curve (the Arcanist never casts it)" },
 		},
 		["Skills/Mage:[cataclysm].values.dmg[1]"] = {
 			{
@@ -2013,6 +2032,7 @@ return {
 				session = "S90",
 				why = "50 -> 12: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
 			},
+			{ session = "S147", why = "12 -> 13: R4 of 10A at 45-100 0.16 -> 0.17 (1-20 unchanged)" },
 		},
 		["Skills/Mage:[firebolt].breakpoints[10].b.values.dmg"] = {
 			{ session = "S142", why = "-104 -> -75 (x0.72 with the ranks: two bolts still 18 % more in total)" },
@@ -2123,6 +2143,7 @@ return {
 				session = "S90",
 				why = "22 -> 4.4: G1 R4: option gain into 0.08-0.17 (5) / 0.17-0.28 (10), |A - B| <= 0.05 (ROZWOJ 0, 2.7)",
 			},
+			{ session = "S147", why = "+4.4 -> +24: R4 of 10B 0.035 -> 0.22 with the base 81-107" },
 		},
 		["Skills/Mage:[meteorStorm].breakpoints[5].a.add.hits"] = {
 			{
@@ -2141,18 +2162,21 @@ return {
 				session = "S90",
 				why = "120 -> 174: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
+			{ session = "S147", why = "174 -> 460: T-SK4 of the Destroyer's fire variant at 100 >= 2.0 with the lower curve and the stronger storm" },
 		},
 		["Skills/Mage:[meteorStorm].values.dmg[1]"] = {
 			{
 				session = "S90",
 				why = "60 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
+			{ session = "S147", why = "24 -> 81 (7 impacts): R9 fire with its burn >= lightning on 3 targets 8 s at 100 (1.22 -> 1.02)" },
 		},
 		["Skills/Mage:[meteorStorm].values.dmg[2]"] = {
 			{
 				session = "S90",
 				why = "80 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
+			{ session = "S147", why = "24 -> 107: see dmg[1]" },
 		},
 		["Skills/Mage:[meteor].breakpoints[10].a.lingering.pct"] = {
 			{
@@ -2456,6 +2480,7 @@ return {
 		},
 		["SkillCurves:knots.mightyStrike.dmg[6]"] = {
 			{ session = "S91", why = "new, 220.4 pinned (rank 6 before S91)" },
+			{ session = "S146", why = "220.4 -> 196 (with rank 10 222 -> 200): R1 of Sword and Shield (the Defender) at 45 / 100 <= 1.15 x its R1 at 20 (2.26 / 2.30 -> 2.19 / 2.24, limit 2.26)" },
 		},
 		["SkillCurves:knots.charge.dmg[5]"] = {
 			{ session = "S91", why = "160 -> 136 (x0.85, R1 Fury at L20)" },
@@ -2471,9 +2496,11 @@ return {
 		},
 		["SkillCurves:knots.holyStrike.dmg[5]"] = {
 			{ session = "S91", why = "new, 226 (x0.88 of 256.7, R1 Inquisitor at L20)" },
+			{ session = "S145", why = "226 -> 190: R1 of the Mace and Flail pool at 20 in the S91 band with Brand of Light from 15 (DESIGN-18 §6.4)" },
 		},
 		["SkillCurves:knots.holyStrike.dmg[6]"] = {
 			{ session = "S91", why = "new, 273.33 pinned (rank 6 before S91)" },
+			{ session = "S145", why = "273.33 -> 240: no jump at 21 after the lower rank 5 (190)" },
 		},
 		["SkillCurves:knots.aimedShot.dmg[5]"] = {
 			{ session = "S91", why = "232.2 -> 196 (x0.845, R1 / T-SK2 Kingslayer at L20)" },
@@ -5651,7 +5678,9 @@ return {
 		["Skills/Hunter:[heartseeker].values.dmg[1]"] = { { session = "S144", why = "220 -> 170 at 40: rank 6 (60) keeps the old rank 1 (knot)" } },
 		["Skills/Hunter:[frostTrap].unlock"] = { { session = "S144", why = "the Trapper's row 1 (10) -> 6: K1 of the Crossbow (the root grows with the rank: no drop at 10)" } },
 		["Skills/Hunter:[camouflage].unlock"] = { { session = "S144", why = "the Trapper's row 7 (48) -> 10: O1 of the Crossbow (no rank-dependent numbers)" } },
-		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = { { session = "S144", why = "10A 38 -> 44: R4 on the Crossbow's Trapper 0.15 -> 0.18 at 100 (band 0.17-0.28)" } },
+		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = { { session = "S144", why = "10A 38 -> 44: R4 on the Crossbow's Trapper 0.15 -> 0.18 at 100 (band 0.17-0.28)" },
+			{ session = "S147", why = "44 -> 135: the echo repeats the trap's hit, a third of what it was (R4 of 10A 0.06 -> 0.18-0.22)" },
+		},
 		["Skills/Hunter:[agility].unlock"] = { { session = "S144", why = "the Scout's row 1 (10) -> 50: P2 of the Bow" } },
 		["Skills/Hunter:[agility].values*"] = { { session = "S144", why = "dodge 2-10 -> 10-12, move 3-15 -> 15-18: rank 1 at 50 keeps the old rank 5 at 46" } },
 		["Skills/Hunter:[falcon].unlock"] = { { session = "S144", why = "the Scout's row 4 (26) -> 33: K2 of the Bow" } },
@@ -5714,6 +5743,308 @@ return {
 		},
 		["Paths/Hunter:[scout].reference[tracker]*"] = {
 			{ session = "S144", why = "the Bow build with a shortbow: the replaced nodes and the rotation of S144" },
+		},
+		-- S145 (DESIGN-18 §6.4): the Cleric's pools Scepter and Staff (light) and Mace and Flail (hammer), the common skills
+		-- (Heal 4, Circle of Light 12, Resurrection 30, Devotion 45), the directions with skill nodes only in rows 4 and 8
+		-- (the Healer: Prayer, Divine Intervention; Fortune: Roll of the Dice, Wheel of Fortune) and the Inquisitor's keystone
+		["Skills/Cleric:[lightRay]*"] = {
+			{ session = "S145", why = "new (S1 of the light pool, 1): a holy projectile on Holy Strike's knots before S145 x0.85 (142-289 %), 25 % of the hit heals the most wounded ally (the caster solo), cost 12, cooldown 3; 5A heal +10 points (utility) / 5B +30, 10A +60 / 10B splash 40 % (area option) in the R4 bands" },
+		},
+		["Skills/Cleric:[blindingLight]*"] = {
+			{ session = "S145", why = "new (K1 of the light pool, 6): a 90-degree cone 60-110 %, the enemies miss their regular attacks for 3 s (misfortune, enemyMiss), cost 25, cooldown 12; 5B +14, 10A cooldown x0.8 in the R4 bands, 5A +1 s and 10B the wider cone (control, geometry)" },
+		},
+		["Skills/Cleric:[grace]*"] = {
+			{ session = "S145", why = "new (P1 of the light pool, 20): heals +7-12 % (what Devotion gave the dungeon Healer before 45: T-SK5 at 20 0.221, the S91 value), heal crits 20-60 % of the crit chance, +10-30 % on a target below LOW_HP_HEAL" },
+		},
+		["Skills/Cleric:[miracle]*"] = {
+			{ session = "S145", why = "new (S3 of the light pool, 40): the biggest single heal (26-32 % of the target's max HP + 13-18 % magic), a 1.2 s prayer, cost 40, cooldown 15; 5A +4 / 10B +8 in the R4 bands on the dungeon Healer, 5B -0.4 s and 10A a second target (utility)" },
+		},
+		["Skills/Cleric:[guidingLight]*"] = {
+			{ session = "S145", why = "new (P2 of the light pool, 50): every heal of a heal skill leaves a ward of 10-20 % of the HP it restored for 6 s, at most FAITH.wardCap % of the target's max HP (Logic/Faith.ward)" },
+		},
+		["Skills/Cleric:[consecrate]*"] = {
+			{ session = "S145", why = "new (A1 of the hammer pool, 3): 4 waves of 34-70 % in a 6-stud circle under the caster, cost 25, cooldown 10; 5B +6, 10B +1 wave in the R4 bands, 5A radius and 10A slow (geometry, control)" },
+		},
+		["Skills/Cleric:[holyChains]*"] = {
+			{ session = "S145", why = "new (K1 of the hammer pool, 6): one target 70-130 % and a 2 s root (bosses and Elite IIs: a 40 % slow, Logic/Snare) like Pinning Shot, cost 25, cooldown 12; 5B +14, 10A cooldown x0.8 in the R4 bands, 5A +0.5 s and 10B vulnerability (control, weakening)" },
+		},
+		["Skills/Cleric:[holyNova]*"] = {
+			{ session = "S145", why = "new (A2 of the hammer pool, 26): an 8-stud burst 120-200 % and a heal of the allies in the circle (3-5 % of their max HP + magic) in one cast, cost 45, cooldown 14; 10A echo 22 % / 10B +44 at 0.22 (R4 band, |A - B| 0), 5A radius and 5B +1 heal point (utility)" },
+		},
+		["Skills/Cleric:[rebuke]*"] = {
+			{ session = "S145", why = "new (K2 of the hammer pool, 33): a 100-degree cone 90-160 %, knockback 8 and the interrupt of an enemy player's channel (never a boss's), cost 30, cooldown 16; 5B +18, 10B cooldown x0.8 in the R4 bands, 5A radius and 10A stun (control)" },
+		},
+		["Skills/Cleric:[zeal]*"] = {
+			{ session = "S145", why = "new (P2 of the hammer pool, 50): every offensive cast of a Mace and Flail skill takes 0.3-0.8 s off the running cooldowns of the pool's other skills (Logic/Faith.zealCut)" },
+		},
+		["Skills/Cleric:[heal].unlock"] = { { session = "S145", why = "3 -> 4: C1 of the Cleric (DESIGN-18 §5 common ladder)" } },
+		["Skills/Cleric:[circleOfLight].unlock"] = {
+			{ session = "S145", why = "14 -> 12: C2 of the Cleric; rank 3 (level 20) keeps the old rank 2 (knot)" },
+		},
+		["Skills/Cleric:[resurrection].unlock"] = { { session = "S145", why = "Fortune's row 1 (10) -> 30: C3 of the Cleric" } },
+		["Skills/Cleric:[resurrection].cooldown[1]"] = { { session = "S145", why = "120 -> 86.67: rank 1 at 30 keeps the old rank 6 at 30" } },
+		["Skills/Cleric:[resurrection].values.hp[1]"] = { { session = "S145", why = "20 -> 42.22: rank 1 at 30 keeps the old rank 6 at 30" } },
+		["Skills/Cleric:[devotion].unlock"] = { { session = "S145", why = "10 -> 45: C4 of the Cleric" } },
+		["Skills/Cleric:[devotion].values.heal[1]"] = {
+			{ session = "S145", why = "5 -> 20: rank 1 at 45 keeps the old rank 4 at 37" },
+			{ session = "S146", why = "20 -> 6 (rank 5 25 -> 9): T-SK5 of the light pool at 95-100 0.37 / 0.38 -> 0.33 / 0.34 (<= 0.35; the dungeon Healer buys Devotion at 95)" },
+		},
+		["Skills/Cleric:[radiance].unlock"] = { { session = "S145", why = "6 -> 3: A1 of the light pool" } },
+		["Skills/Cleric:[radiance].values.dmg[1]"] = {
+			{ session = "S145", why = "130 -> 120 at 3: rank 5 (19) keeps the old rank 4 (18), rank 6 (23) the old rank 5 (22; knots)" },
+		},
+		["Skills/Cleric:[shieldOfFaith].unlock"] = { { session = "S145", why = "18 -> 10: O1 of the light pool" } },
+		["Skills/Cleric:[shieldOfFaith].values.shieldHp[1]"] = { { session = "S145", why = "12 -> 10 at 10: rank 3 (18) keeps the old rank 1 (knot)" } },
+		["Skills/Cleric:[shieldOfFaith].values.shieldMag[1]"] = { { session = "S145", why = "10 -> 8 at 10: rank 3 (18) keeps the old rank 1 (knot)" } },
+		["Skills/Cleric:[renew].unlock"] = { { session = "S145", why = "the Healer's row 1 (10) -> 15: S2 of the light pool" } },
+		["Skills/Cleric:[renew].values*"] = { { session = "S145", why = "healHp 16 -> 16.89, healMag 10 -> 10.56: rank 1 at 15 keeps the old rank 2 at 14" } },
+		["Skills/Cleric:[purify].unlock"] = { { session = "S145", why = "the Inquisitor's row 1 (10) -> 33: K2 of the light pool" } },
+		["Skills/Cleric:[purify].values*"] = { { session = "S145", why = "healHp 8 -> 10.22, healMag 6 -> 8.22: rank 1 at 33 keeps the old rank 6 at 30" } },
+		["Skills/Cleric:[brandOfLight].unlock"] = { { session = "S145", why = "the Inquisitor's row 4 (26) -> 15: S2 of the hammer pool" } },
+		["Skills/Cleric:[brandOfLight].values*"] = {
+			{ session = "S145", why = "dmg 120 -> 30, dot 170 -> 35 at 15: rank 4 (27) keeps the old rank 1 (knots); ranks 1-3 low, R1 of the hammer pool at 20 (2.09) under the S91 cap 2.104" },
+		},
+		["Skills/Cleric:[auraOfEndurance].unlock"] = { { session = "S145", why = "the Inquisitor's row 7 (48) -> 10: O1 of the hammer pool" } },
+		["Skills/Cleric:[auraOfEndurance].values*"] = {
+			{ session = "S145", why = "hp 5-15 -> 4-12: from level 10 (was 48) rank 10 comes at 46, a party aura of the whole pool" },
+		},
+		["Skills/Cleric:[divineWrath].unlock"] = { { session = "S145", why = "30 -> 20: P1 of the hammer pool" } },
+		["Skills/Cleric:[divineWrath].values.bonus[1]"] = { { session = "S145", why = "4 -> 2 at 20: rank 2 (29) keeps the old rank 1 (knot)" } },
+		["Skills/Cleric:[judgement].unlock"] = { { session = "S145", why = "45 -> 40: S3 of the hammer pool" } },
+		["Skills/Cleric:[judgement].values.dmg[1]"] = {
+			{ session = "S145", why = "320 -> 300 at 40: rank 2 (44) keeps the old rank 1 (knot)" },
+			{ session = "S146", why = "300 -> 270 (rank 2 knot 320 -> 290, rank 10 kept): R9 of the hammer pool at 45 <= 0.86 x Furia (0.862 -> 0.855)" },
+		},
+		["Skills/Cleric:[prayer].unlock"] = { { session = "S145", why = "Fortune's row 7 (48) -> the Healer's row 4 (26), DESIGN-18 §6.4" } },
+		["Skills/Cleric:[prayer].values.mana[1]"] = { { session = "S145", why = "25 -> 20: from 26 (was 48) the mana grows with the ranks bought earlier" } },
+		["Skills/Cleric:[divineIntervention].unlock"] = { { session = "S145", why = "the Healer's row 7 (48) -> row 8 (60): the Healer's capstone (DESIGN-18 §7)" } },
+		["Skills/Cleric:[divineIntervention].values.invuln[1]"] = { { session = "S145", why = "2 -> 2.5: rank 1 at 60 near the old rank 4 at 60" } },
+		["Skills/Cleric:[divineIntervention].effects[1].duration[1]"] = { { session = "S145", why = "2 -> 2.5: the invulnerability of values.invuln" } },
+		["Skills/init:FAITH*"] = {
+			{ session = "S145", why = "new (Logic/Faith): Guiding Light's ward 6 s, at most 20 % of the target's max HP; the Wandering Brand's jump radius 8 studs" },
+		},
+		["SkillCurves:knots.lightRay*"] = { { session = "S145", why = "new: Light Ray on Holy Strike's knots before S145 x0.85" } },
+		["SkillCurves:knots.radiance*"] = { { session = "S145", why = "new: Radiance unlocks at 3, ranks 5 / 6 (19 / 23) keep the old ranks 4 / 5 (18 / 22)" } },
+		["SkillCurves:knots.shieldOfFaith*"] = { { session = "S145", why = "new: Shield of Faith unlocks at 10, rank 3 (18) keeps the old rank 1" } },
+		["SkillCurves:knots.circleOfLight*"] = { { session = "S145", why = "new: Circle of Light unlocks at 12, rank 3 (20) keeps the old rank 2 (18)" } },
+		["SkillCurves:knots.brandOfLight*"] = { { session = "S145", why = "new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26)" } },
+		["SkillCurves:knots.divineWrath*"] = { { session = "S145", why = "new: Divine Wrath unlocks at 20, rank 2 (29) keeps the old rank 1 (30)" } },
+		["SkillCurves:knots.judgement*"] = { { session = "S145", why = "new: Judgement unlocks at 40, rank 2 (44) keeps the old rank 1 (45)" } },
+		["SkillPools/Cleric:version"] = { { session = "S145", why = "2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset" } },
+		["Paths/Cleric:[healer].rows[1].nodes[healer_renew]*"] = { { session = "S145", why = "removed: Renew is the light pool's S2" } },
+		["Paths/Cleric:[healer].rows[1].nodes[healer_solace]*"] = { { session = "S145", why = "new: Solace (+2 % healing) takes Renew's one rank (rows and need unchanged)" } },
+		["Paths/Cleric:[healer].rows[4].nodes[healer_sanctuary]*"] = { { session = "S145", why = "removed: Sanctuary is the light pool's A2" } },
+		["Paths/Cleric:[healer].rows[4].nodes[healer_prayer]*"] = { { session = "S145", why = "new: Prayer is the Healer's row 4 skill (was Fortune's row 7)" } },
+		["Paths/Cleric:[healer].rows[7].nodes[healer_divineIntervention]*"] = { { session = "S145", why = "moved to row 8 (the Healer's capstone)" } },
+		["Paths/Cleric:[healer].rows[7].nodes[healer_halo]*"] = { { session = "S145", why = "new: Halo (Circle of Light +2 studs) takes Divine Intervention's one rank" } },
+		["Paths/Cleric:[healer].rows[8].nodes[healer_guardianAngel]*"] = { { session = "S145", why = "removed: Guardian Angel is the light pool's U" } },
+		["Paths/Cleric:[healer].rows[8].nodes[healer_divineIntervention]*"] = { { session = "S145", why = "Divine Intervention moved from row 7 to row 8 (the capstone)" } },
+		["Paths/Cleric:[fortune].rows[1].nodes[fortune_resurrection]*"] = { { session = "S145", why = "removed: Resurrection is the Cleric's common C3" } },
+		["Paths/Cleric:[fortune].rows[1].nodes[fortune_clover]*"] = { { session = "S145", why = "new: Four-Leaf Clover (+0.5 crit points) takes Resurrection's one rank" } },
+		["Paths/Cleric:[fortune].rows[7].nodes[fortune_prayer]*"] = { { session = "S145", why = "removed: Prayer is the Healer's row 4 skill" } },
+		["Paths/Cleric:[fortune].rows[7].nodes[fortune_coin]*"] = { { session = "S145", why = "new: Coin Toss (Roll of the Dice's Wind face +1 attack speed point) takes Prayer's one rank" } },
+		["Paths/Cleric:[inquisitor].rows[1].nodes[inquisitor_purify]*"] = { { session = "S145", why = "removed: Purify is the light pool's K2" } },
+		["Paths/Cleric:[inquisitor].rows[1].nodes[inquisitor_vow]*"] = {
+			{ session = "S145", why = "new: Vow (+1 % holy damage) takes Purify's one rank; not HP: the S32 group of the Cleric at 20 stays >= 0.30" },
+		},
+		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_brandOfLight]*"] = { { session = "S145", why = "removed: Brand of Light is the hammer pool's S2" } },
+		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_conviction]*"] = { { session = "S145", why = "new: Conviction (+0.5 crit points) takes Brand of Light's one rank" } },
+		["Paths/Cleric:[inquisitor].rows[7].nodes[inquisitor_auraOfEndurance]*"] = { { session = "S145", why = "removed: the Aura of Endurance is the hammer pool's O1" } },
+		["Paths/Cleric:[inquisitor].rows[7].nodes[inquisitor_enduring]*"] = { { session = "S145", why = "new: Enduring Faith (the aura +1 % HP) takes the aura's one rank" } },
+		["Paths/Cleric:[inquisitor].rows[8].nodes[inquisitor_hammerOfHeaven]*"] = { { session = "S145", why = "removed: Hammer of Heaven is the hammer pool's U" } },
+		["Paths/Cleric:[inquisitor].rows[8].nodes[inquisitor_wanderingBrand]*"] = {
+			{ session = "S145", why = "new keystone (the Inquisitor's capstone, DESIGN-18 §7): a brand skill's burn lands on the nearest other enemy within 8 studs for 60 % (Logic/Faith.brandShare) and holy damage +5 %, with any weapon" },
+		},
+		["Paths/Cleric:[healer].reference[dungeon]*"] = {
+			{ session = "S145", why = "the light pool build (a scepter): the replaced nodes, Miracle and Light Ray in the rotation, the rank order" },
+		},
+		["Paths/Cleric:[healer].reference[solo]*"] = {
+			{ session = "S145", why = "the light pool build with the holy staff: the replaced nodes, Light Ray and Blinding Light in the rotation, damage ranks first" },
+		},
+		["Paths/Cleric:[fortune].reference[plunder]*"] = {
+			{ session = "S145", why = "the hammer pool build (a mace and a relic): the replaced nodes, Brand of Light, Judgement, Holy Chains and Consecrate in the rotation, the rank order" },
+		},
+		["Paths/Cleric:[inquisitor].reference[solo]*"] = {
+			{ session = "S145", why = "the hammer pool build: the replaced nodes, Heal below 50 % for Purify's self heal, the pool's new skills in the rotation, the rank order" },
+		},
+		["Paths/Cleric:[inquisitor].reference[bulwark]*"] = {
+			{ session = "S145", why = "the hammer pool build with a shield: the same changes as the solo build" },
+		},
+		-- S146 (DESIGN-18 §13): balance 21-100 after the rework, the Warrior and the Cleric (docs/SESJE.md S146)
+		["Skills/Warrior:[fortitude].values.hp[2]"] = {
+			{ session = "S146", why = "20 -> 14: the Guardian's EHP / Furia 1.87 / 2.18 / 2.17 -> 1.68 / 1.78 / 1.78 at 45 / 70 / 100 (1.6-1.8), ehpRed 1.3-1.5" },
+		},
+		["Skills/Warrior:[rage].values.hp[1]"] = {
+			{ session = "S146", why = "new: Rage +maxHp, rank 1 (20) 0 (1-20 unchanged): the two-handed pool's life after Fortitude went to Sword and Shield (S143)" },
+		},
+		["Skills/Warrior:[rage].values.hp[2]"] = {
+			{ session = "S146", why = "new: rank 5 (56) +17 % maxHp: Morvane's biggest blow on the Berserker 1.06 -> 0.98 HP (no support), the Inquisitor's HP / Furia 1.39-1.40 (1.3-1.4), the Guardian's EHP band" },
+		},
+		["Paths/Warrior:[standard].rows[3].nodes[standard_fervor].values.fervor[1]"] = {
+			{ session = "S146", why = "4 -> 5 (rank 3 12 -> 15): the Standard-Bearer's own damage S at 70 >= 0.55 with the banner and the cries on its bar (0.529 -> 0.554)" },
+		},
+		["Paths/Warrior:[standard].rows[3].nodes[standard_fervor].values.fervor[2]"] = {
+			{ session = "S146", why = "12 -> 15: see fervor[1]" },
+		},
+		["Paths/Warrior:[berserker].reference[fury].nodes*"] = {
+			{ session = "S146", why = "the node order: Rending Cuts (row 5) before Amok and the Standard-Bearer's row 1 (Cleave 10A's bleed stacks need its duration: R4 at 45 0 -> 0.26)" },
+		},
+		["Paths/Warrior:[berserker].reference[butcher].nodes*"] = {
+			{ session = "S146", why = "the node order of the fury build (Rending Cuts before Amok)" },
+		},
+		["Skills/Cleric:[devotion].values.heal[2]"] = {
+			{ session = "S146", why = "25 -> 9: see heal[1] (T-SK5 at 95-100)" },
+		},
+		["Skills/Cleric:[grace].values.heal[2]"] = {
+			{ session = "S146", why = "12 -> 10 (rank 1 at 20 kept): T-SK5 of the light pool at 100 0.347 -> 0.343" },
+		},
+		["Skills/Cleric:[divineWrath].values.bonus[2]"] = {
+			{ session = "S146", why = "20 -> 22 (rank 4 at 47 pinned by a knot): R9 of the hammer pool at 70 / 100 0.89 / 0.91 x Furia (0.85-0.91 / 0.87-0.93) with the reference builds' ranks in the bar's order" },
+		},
+		["Skills/Warrior:[cleave].breakpoints[5].b.values.bleed"] = {
+			{ session = "S146", why = "+20 -> +15: R4 of 5B 0.22 -> 0.16 at 45-100 (10A's stacks with Rending Cuts first), 0.12 -> 0.09 at 20 (0.08-0.17); R4_REPORT entry removed" },
+		},
+		["Skills/Cleric:[zeal].values.zeal[1]"] = {
+			{ session = "S146", why = "0.3 -> 0.1 s: the Inquisitor buys Zeal at 100 (ranks in the bar's order); 0.8 s a cast made R9 of the hammer pool 1.08 x Furia (0.87-0.93)" },
+		},
+		["Skills/Cleric:[zeal].values.zeal[2]"] = {
+			{ session = "S146", why = "0.8 -> 0.2 s: see zeal[1] (R9 of the hammer pool at 100 0.91)" },
+		},
+		["SkillCurves:knots.divineWrath.bonus[4]"] = {
+			{ session = "S146", why = "new, 14.67 pinned (rank 4 at 47 before S146) for the rank 5 20 -> 22" },
+		},
+		["SkillCurves:knots.brandOfLight.dmg[8]"] = {
+			{ session = "S146", why = "new: rank 8 (43) 213.3 -> 186, rank 10 kept: R9 of the hammer pool at 45 <= 0.86 x Furia" },
+		},
+		["SkillCurves:knots.brandOfLight.dot[8]"] = {
+			{ session = "S146", why = "new: rank 8 (43) 270 -> 237 with dmg[8]" },
+		},
+		["SkillCurves:knots.judgement.dmg[2]"] = {
+			{ session = "S146", why = "320 -> 290 with the rank 1 300 -> 270 (R9 of the hammer pool at 45)" },
+		},
+		-- S147 (DESIGN-18 §13): balance 21-100 after the rework, the Hunter, the Mage and the bosses (docs/SESJE.md S147)
+		["LevelCurves:curves.manaCost.Mage[5][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 45: 1.89 -> 1.096 (4.80 / 3.47 -> 2.78 / 2.01 Destroyer / Arcanist fire)" },
+		},
+		["LevelCurves:curves.manaCost.Mage[6][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 50: 2.0375 -> 1.3" },
+		},
+		["LevelCurves:curves.manaCost.Mage[7][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 55: 2.25 -> 1.4" },
+		},
+		["LevelCurves:curves.manaCost.Mage[8][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 60: 2.3204 -> 1.55" },
+		},
+		["LevelCurves:curves.manaCost.Mage[9][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 70: 2.59 -> 1.865" },
+		},
+		["LevelCurves:curves.manaCost.Mage[10][2]"] = {
+			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 100: 3.49 -> 2.1 (the Arcanist's variants 2.4 at most)" },
+		},
+		["SkillCurves:knots.deadlyBolt.dmg[8]"] = {
+			{ session = "S147", why = "new: rank 8 (level 68) pinned for the rank 10 260 -> 248" },
+		},
+		["SkillCurves:knots.glacialSpike.dmg[7]"] = {
+			{ session = "S147", why = "new: rank 7 (level 39) pinned for the rank 10 330 -> 360" },
+		},
+		["SkillCurves:knots.heavyBolt.dmg[6]"] = {
+			{ session = "S147", why = "x0.93 (level 21): with the rank 10 302.9 -> 281.7, the Crossbow's damage moves to its poison (R9: damage over time >= 25 % from 45; R7 of the heavy crossbow <= 1.35 at 100)" },
+		},
+		["SkillCurves:knots.immolate.dmg[8]"] = {
+			{ session = "S147", why = "new: rank 8 (level 68) pinned for the rank 10 300 -> 283.3" },
+		},
+		["SkillCurves:knots.lightningLance.dmg[8]"] = {
+			{ session = "S147", why = "new: rank 8 (level 68) pinned for the rank 10 200 -> 280" },
+		},
+		["SkillCurves:knots.shatter.dmg[8]"] = {
+			{ session = "S147", why = "new: rank 8 (level 68) of the x1.15 pair pinned for the rank 10 265 -> 420" },
+		},
+		["SkillCurves:knots.thunderStrike.dmg[7]"] = {
+			{ session = "S147", why = "new: rank 7 (level 39) pinned for the rank 10 400 -> 460" },
+		},
+		["SkillCurves:knots.venomArrow.dmg[2]"] = {
+			{ session = "S147", why = "new: rank 2 (level 19) pinned (1-20 frozen) for the rank 10 152 -> 137" },
+		},
+		["SkillCurves:knots.venomArrow.poison[2]"] = {
+			{ session = "S147", why = "new: rank 2 (level 19) pinned for the poison 50 -> 57.5 at rank 10" },
+		},
+		["Skills/Hunter:[deadlyBolt].values.dmg[2]"] = {
+			{ session = "S147", why = "260 -> 248: R7 of the Marksman with a heavy crossbow at 100 1.356 -> 1.343 (1.15-1.35) after the stronger Toxic Tips" },
+		},
+		["Skills/Hunter:[heavyBolt].values.dmg[2]"] = {
+			{ session = "S147", why = "302.9 -> 281.7 (x0.93 from 21, knot 6): the Crossbow's direct damage moves to its poison (R9 of the Crossbow)" },
+		},
+		["Skills/Hunter:[toxicTips].values.tip[2]"] = {
+			{ session = "S147", why = "20 -> 30 (ranks 2-5 from 29): R9 of the Crossbow, damage over time 0.20-0.24 -> 0.26-0.32 at 45-100" },
+		},
+		["Skills/Mage:[blizzard].breakpoints[10].b.values.dmg"] = {
+			{ session = "S147", why = "+3.5 -> +3.8: R4 of 10B at 100 0.167 -> 0.18" },
+		},
+		["Skills/Mage:[blizzard].cost"] = {
+			{ session = "S147", why = "170 -> 270: T-SK4 of the Destroyer's ice variant at 100 1.64 -> 2.0 with the lower curve" },
+		},
+		["Skills/Mage:[deepFreeze].breakpoints[10].b.values.dmg"] = {
+			{ session = "S147", why = "+30 -> +36: R4 |A - B| of 10 0.068 -> <= 0.05 with the higher base" },
+		},
+		["Skills/Mage:[deepFreeze].breakpoints[5].b.values.dmg"] = {
+			{ session = "S147", why = "+13 -> +15: R4 of 5B 0.077 -> 0.09 with the higher base" },
+		},
+		["Skills/Mage:[deepFreeze].values.dmg[1]"] = {
+			{ session = "S147", why = "70 -> 80 (x1.15): R9 ice / fire on one target 0.85-0.95 at 70 / 100 (0.83 / 0.78 before)" },
+		},
+		["Skills/Mage:[deepFreeze].values.dmg[2]"] = {
+			{ session = "S147", why = "120 -> 138: see dmg[1]" },
+		},
+		["Skills/Mage:[glacialSpike].values.dmg[2]"] = {
+			{ session = "S147", why = "330 -> 360 (rank 7 pinned): R9 ice / fire on one target at 70 0.852 -> 0.862" },
+		},
+		["Skills/Mage:[immolate].values.dmg[2]"] = {
+			{ session = "S147", why = "300 -> 283.3 (rank 8 pinned): R9 lightning / fire on one target at 100 >= 1.10" },
+		},
+		["Skills/Mage:[lightningLance].breakpoints[10].b.values.dmg"] = {
+			{ session = "S147", why = "+50 -> +65: R4 of 10B at 100 0.166 -> 0.21 with the higher base" },
+		},
+		["Skills/Mage:[lightningLance].breakpoints[5].b.values.dmg"] = {
+			{ session = "S147", why = "+22 -> +30: R4 of 5B at 100 0.067 -> 0.087 with the higher base" },
+		},
+		["Skills/Mage:[lightningLance].values.dmg[2]"] = {
+			{ session = "S147", why = "200 -> 280 (rank 8 pinned): R9 lightning / fire on one target at 100 1.05 -> 1.10" },
+		},
+		["Skills/Mage:[meteorStorm].hits"] = {
+			{ session = "S147", why = "6 -> 7: R4 of 5A (+1 impact) 0.174 -> 0.148" },
+		},
+		["Skills/Mage:[shatter].breakpoints[10].b.values.dmg"] = {
+			{ session = "S147", why = "+55 -> +85: R4 of 10B at 100 0.131 -> 0.20 with the higher base" },
+		},
+		["Skills/Mage:[shatter].values.dmg[1]"] = {
+			{ session = "S147", why = "160 -> 184 (x1.15): R9 ice / fire on one target at 70 / 100 >= 0.85" },
+		},
+		["Skills/Mage:[shatter].values.dmg[2]"] = {
+			{ session = "S147", why = "230 -> 420 (rank 8 pinned at the x1.15 value): R9 ice / fire on one target at 100 0.78 -> 0.86" },
+		},
+		["Skills/Mage:[tempest].cost"] = {
+			{ session = "S147", why = "170 -> 360: T-SK4 of the Destroyer's lightning variant at 100 1.55 -> 2.0 with the lower curve" },
+		},
+		["Skills/Mage:[tempest].values.dmg[1]"] = {
+			{ session = "S147", why = "40 -> 29: R9 fire with its burn >= lightning on 3 targets 8 s at 100" },
+		},
+		["Skills/Mage:[tempest].values.dmg[2]"] = {
+			{ session = "S147", why = "48 -> 34: see dmg[1]" },
+		},
+		["Skills/Mage:[thunderStrike].values.dmg[2]"] = {
+			{ session = "S147", why = "400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16)" },
+		},
+		["WorldBoss:*"] = {
+			{
+				session = "S149",
+				why = "new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149)",
+			},
+		},
+		["Bosses:byId.hrimvald*"] = {
+			{
+				session = "S149",
+				why = "new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min",
+			},
 		},
 	} :: { [string]: { Reason } },
 }

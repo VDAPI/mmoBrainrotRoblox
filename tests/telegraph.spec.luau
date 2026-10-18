@@ -22,7 +22,7 @@ local function areas(): { Area }
 			dims = { r = a.radius, ir = a.inner, an = a.angle, l = a.length, w = a.width },
 		})
 	end
-	for _, boss in Bosses.list do
+	for _, boss in Bosses.all do
 		for _, a in boss.attacks do
 			table.insert(out, {
 				label = `{boss.id}.{a.id}`,

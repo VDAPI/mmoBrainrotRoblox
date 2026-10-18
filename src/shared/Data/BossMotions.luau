@@ -93,6 +93,21 @@ local BY_BOSS: { [string]: BossMotion } = {
 		roar = { style = "roar", shake = 0.7, seconds = 1.6 },
 		death = { style = "dragon", light = "#9FDCFF" },
 	}),
+	-- S149: the world boss (generic humanoid styles of Data/MonsterMotions, one per attack, until a real model)
+	hrimvald = boss({
+		attacks = {
+			fistSlam = { style = "punch", impact = "shockwave", shake = 0.4 },
+			boulderToss = { style = "overhead", impact = "meteor", cracks = true, shake = 0.4 },
+			glacierStomp = { style = "stomp", impact = "ringWave", cracks = true, shake = 0.7 },
+			iceSpikes = { style = "erupt", impact = "pillar", shake = 0.5 },
+			avalanche = { style = "wide", impact = "meteor", shake = 0.5 },
+			shatterStone = { style = "jumpSlam", impact = "meteor", cracks = true, shake = 0.8 },
+			frostBrand = { style = "cast", impact = "rune", shake = 0.2 },
+			endlessWinter = { style = "nova", impact = "ringWave", shake = 0.8 },
+		},
+		roar = { style = "roar", shake = 0.8, seconds = 1.6 },
+		death = { style = "knees", light = "#BFE6FF" },
+	}),
 }
 
 return table.freeze({

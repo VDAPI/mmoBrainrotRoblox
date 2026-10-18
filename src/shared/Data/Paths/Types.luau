@@ -58,6 +58,9 @@ export type ReferenceBuild = {
 	-- S137 (DESIGN-18 §13): skill ids in the order the balance model buys their ranks with skill points; nil = the
 	-- rotation, then the pool's passives, then the rest of the pool (tests/SkillModel.rankOrder)
 	ranks: { string }?,
+	-- S146 (DESIGN-18 §4.1, §13): the bar's priority: at a level the model casts only the first 8 (Skills HOTBAR_SLOTS)
+	-- actives of this list the character can cast; nil = the actives of `ranks` (tests/SkillModel.barOf)
+	bar: { string }?,
 }
 export type Role = "damage" | "tank" | "healer" | "support" | "luck"
 export type PathDef = {
@@ -76,7 +79,7 @@ export type PathDef = {
 	-- S67: multipliers on the class weights of Logic/ItemScore (S138: of the leading direction); never on the wiki
 	itemWeights: ItemWeights.ItemWeights?,
 	reference: { ReferenceBuild }, -- model builds; never on the wiki
-	wiki: boolean?, -- false = unpublished on the wiki (ROZWOJ 3.5)
+	wiki: boolean?, -- false = unpublished on the wiki (ROZWOJ 3.5; every direction published since S148)
 }
 export type RowKind = "normal" | "choice" | "capstone" | "upgrade"
 export type RowDef = { level: number, need: number, kind: RowKind, twoPathExtra: boolean? }

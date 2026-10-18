@@ -1648,6 +1648,7 @@ export interface Skill {
   resource?: string;
   role?: string;
   shape: string;
+  short: Name;
   target: string;
   type: string;
   unlock: number;
@@ -1666,7 +1667,6 @@ export interface SkillClassPools {
   class: ClassId;
   defaultPool: string;
   pools: SkillPool[];
-  transitional?: boolean;
 }
 
 export interface SkillLadderRung {
@@ -1690,7 +1690,6 @@ export interface SkillPath {
   role: string;
   rows: SkillPathRow[];
   title?: string; // id in titles.json
-  weapon: SkillPathWeapon;
 }
 
 export interface SkillPathModify {
@@ -1729,34 +1728,6 @@ export interface SkillPathRow {
   row: number;
 }
 
-export interface SkillPathVectorBuild {
-  achievable: boolean;
-  class: ClassId;
-  level: number;
-  nodes: Record<string, number>;
-}
-
-export interface SkillPathVectorResult {
-  node: string;
-  ok: boolean;
-  reason?: string;
-  refund: boolean;
-  refundReason?: string;
-}
-
-export interface SkillPathVectorState {
-  class: ClassId;
-  free: number;
-  level: number;
-  nodes: Record<string, number>;
-  results: SkillPathVectorResult[];
-}
-
-export interface SkillPathVectors {
-  builds: SkillPathVectorBuild[];
-  states: SkillPathVectorState[];
-}
-
 export interface SkillPathWeapon {
   main?: string[];
   offhand?: string[];
@@ -1764,6 +1735,7 @@ export interface SkillPathWeapon {
 
 export interface SkillPool {
   element?: ElementId;
+  glyph: string;
   id: string;
   name: Name;
   skills: string[]; // ids in skills.json
@@ -1802,6 +1774,7 @@ export interface SkillRowRule {
 }
 
 export interface SkillRules {
+  barSlots: number;
   breakpointLevels: number[];
   breakpointsEnabled: boolean;
   capstonesMax: number;
@@ -1817,7 +1790,6 @@ export interface SkillRules {
   rows: SkillRowRule[];
   skillPointsByLevel: number[];
   teamFullPoints: number;
-  vectors: SkillPathVectors;
 }
 
 export interface SkillsFile {
@@ -1935,6 +1907,7 @@ export interface Title {
 export interface TitleReq {
   days?: number;
   kind: string;
+  path?: string;
   tier?: string;
   value?: number;
 }

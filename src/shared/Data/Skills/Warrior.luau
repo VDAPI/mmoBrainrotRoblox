@@ -29,7 +29,8 @@ return Build.class("Warrior", "energy", "phys", {
 		cost = 15,
 		cooldown = 4,
 		range = 8,
-		values = { dmg = { 136, 222 } }, -- S91: rank 1 160 -> 136 (ranks <= 20, Data/SkillCurves)
+		-- S91: rank 1 160 -> 136 (ranks <= 20, Data/SkillCurves); S146: rank 10 222 -> 200 (R1 of the pool)
+		values = { dmg = { 136, 200 } },
 		breakpoints = Build.bp2({ a = { knockback = 6 }, b = { execute = 30 } }, {
 			a = { splash = { radius = 6, pct = 50 } },
 			-- no category (ROZWOJ 7.1); every strike renews it (no bleedStacks)
@@ -196,7 +197,7 @@ return Build.class("Warrior", "energy", "phys", {
 		type = "passive",
 		-- S143: rank 1 at 20 is 6 %, below the old rank 2 at 19 (8 %): with the new block points 8 % puts the Warrior's
 		-- Elite fight at 20 below the S32 band; the block feeds Vindicate (Logic/Block)
-		values = { hp = { 6, 20 }, block = { 1, 3 } },
+		values = { hp = { 6, 14 }, block = { 1, 3 } }, -- S146: rank 5 hp 20 -> 14 (the Guardian's EHP 1.6-1.8 x Fury)
 		passive = { pct = { maxHp = "hp" }, hooks = { block = "block" } },
 		glyph = "❤",
 	},
@@ -287,7 +288,8 @@ return Build.class("Warrior", "energy", "phys", {
 		values = { dmg = { 115, 168 }, bleed = 30 },
 		effects = { { kind = "bleed", duration = 5, value = "bleed" } },
 		breakpoints = Build.bp2(
-			{ a = { add = { angle = 30 } }, b = { values = { bleed = 20 } } },
+			-- S146: 5B bleed +20 -> +15 (R4 0.22 -> 0.16 at 45-100 with 10A's stacks, 0.09 at 20)
+			{ a = { add = { angle = 30 } }, b = { values = { bleed = 15 } } },
 			{ a = { bleedStacks = 3 }, b = { lifesteal = 12 } }
 		),
 		glyph = "🪓",
@@ -487,7 +489,7 @@ return Build.class("Warrior", "energy", "phys", {
 		radius = 30, -- allies, the Standard-Bearer included (node Hetman's Order: +10 -> 40, S75)
 		hitRadius = 10,
 		duration = 10,
-		values = { dmg = { 120, 220 }, crit = { 12, 24 } },
+		values = { dmg = { 120, 220 }, crit = { 12, 21 } }, -- S146: rank 10 crit 24 -> 21 (4 x (1 + B) + S <= 5.1)
 		effects = {
 			-- critChance in points (allyCrit)
 			{
@@ -619,8 +621,10 @@ return Build.class("Warrior", "energy", "phys", {
 		unlock = 20,
 		maxLevel = 5,
 		type = "passive",
-		values = { fury = 6, perStack = { 0.2, 0.5 } },
-		passive = { hooks = { rage = "fury", furyMax = "fury", furyDamage = "perStack" } },
+		-- S146: + maxHp 0-17 % (the two-handed pool's life after Fortitude went to Sword and Shield in S143; rank 1 at 20
+		-- adds nothing, so 1-20 is unchanged)
+		values = { fury = 6, perStack = { 0.2, 0.5 }, hp = { 0, 17 } },
+		passive = { hooks = { rage = "fury", furyMax = "fury", furyDamage = "perStack" }, pct = { maxHp = "hp" } },
 		glyph = "♨",
 	},
 	-- War Stomp: a stamp that stuns the enemies around for 1 s (bosses and Elite II: slower attacks instead).

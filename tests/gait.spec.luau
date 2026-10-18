@@ -485,7 +485,7 @@ T.describe("Gait: attack styles (S117)", function()
 			T.expect(MotionKeys.at(keys, "strikePeak")).toBeNear(ability.windup, 1e-9)
 			T.expect(MotionKeys.at(keys, "hit")).toBeNear(ability.windup, 1e-9)
 		end
-		for _, boss in Bosses.list do
+		for _, boss in Bosses.all do -- S149: the world boss too
 			for _, attack in boss.attacks do
 				check(`{boss.id}.{attack.id}`, attack.windup)
 				local keys = MotionKeys.boss(boss.id, attack.id) :: MotionKeys.Keys

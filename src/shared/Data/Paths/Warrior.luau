@@ -7,7 +7,7 @@
 -- Data/Paths/Cleric (S71). Rank-dependent numbers sit in `values`, passive names the field, in modify.bp a number is
 -- { ref = "<field>" }; numbers of effects and behaviours go through new fields of the skill's values (read by name).
 -- Hooks are the S64 / S72 names (Logic/Fury, CombatService). `reference` and `itemWeights` never reach the wiki;
--- every path is unpublished there (wiki = false, ROZWOJ 3.5).
+-- S148: the directions are published there (DESIGN-18 §14).
 
 local SkillData = require("../Skills")
 local Types = require("./Types")
@@ -229,7 +229,6 @@ local guardian: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local berserker: Types.PathDef = {
@@ -371,7 +370,6 @@ local berserker: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local standard: Types.PathDef = {
@@ -431,8 +429,9 @@ local standard: Types.PathDef = {
 			}),
 		}),
 		row(true, {
+			-- S146: 4-12 -> 5-15 (the Standard-Bearer's own damage S >= 0.55 at 70 with the banner on its bar)
 			node(S, "fervor", "modify", 3, "✹", {
-				values = { fervor = { 4, 12 } },
+				values = { fervor = { 5, 15 } },
 				modify = { skill = "battleCry", bp = { values = { atk = ref("fervor") } } },
 			}),
 			node(S, "formation", "modify", 3, "▤", {
@@ -555,7 +554,6 @@ local standard: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 -- Model builds (ROZWOJ 7.5, 10.3-10.5; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50 points.
@@ -571,11 +569,13 @@ local function build(
 	bp: { [string]: "a" | "b" },
 	rotation: { { [string]: any } },
 	ranks: { string },
-	damageReference: boolean?
+	damageReference: boolean?,
+	bar: { string }?
 ): Types.ReferenceBuild
 	return {
 		id = id,
 		damageReference = damageReference,
+		bar = bar,
 		weapon = { main = main, offhand = offhand },
 		nodes = nodes,
 		bp = bp,
@@ -599,7 +599,7 @@ local GUARDIAN_BP: { [string]: "a" | "b" } = {
 	["shieldSweep:5"] = "b",
 	["shieldSweep:10"] = "b",
 	["shieldBash:5"] = "b",
-	["shieldBash:10"] = "b",
+	["shieldBash:10"] = "a",
 	["vindicate:5"] = "a",
 	["vindicate:10"] = "b",
 }
@@ -619,6 +619,7 @@ local function guardianRotation(intercept: { [string]: any }): { { [string]: any
 		{ skill = "earthquake" },
 	}
 end
+-- S146 (B1): the actives of the bar at 100, then the pool's passives, then the rest; skills open at 20 keep their order
 local GUARDIAN_RANKS = {
 	"mightyStrike",
 	"shieldSweep",
@@ -628,13 +629,30 @@ local GUARDIAN_RANKS = {
 	"crushingBlow",
 	"shieldBash",
 	"earthquake",
-	"lastBastion",
-	"battleCry",
 	"shieldWall",
-	"vindicate",
 	"steelSkin",
 	"riposte",
+	"vindicate",
+	"lastBastion",
+	"battleCry",
 	"warBanner",
+	"charge",
+}
+
+-- S146 (DESIGN-18 §4.1, §13): the 8 slots of the bar in priority (the first ones the character can cast at a level);
+-- Shield Bash's stun before Vindicate's burst (the tank's T-SK1 / T-SK2 guards at 90-100)
+local GUARDIAN_BAR = {
+	"intercept",
+	"taunt",
+	"shieldWall",
+	"crushingBlow",
+	"mightyStrike",
+	"shieldSweep",
+	"earthquake",
+	"shieldBash",
+	"vindicate",
+	"battleCry",
+	"lastBastion",
 	"charge",
 }
 
@@ -662,7 +680,7 @@ guardian.reference = {
 		{ "guardian_fortress", 3 },
 		{ "guardian_veteran", 3 },
 		{ "guardian_lastBastion2", 2 },
-	}, GUARDIAN_BP, guardianRotation({ skill = "intercept", target = "allyInZone" }), GUARDIAN_RANKS),
+	}, GUARDIAN_BP, guardianRotation({ skill = "intercept", target = "allyInZone" }), GUARDIAN_RANKS, nil, GUARDIAN_BAR),
 	build("loner", "sword1h", "shield", guardian.statPlan :: any, {
 		{ "guardian_stalwart", 1 },
 		{ "guardian_frontline", 3 },
@@ -685,7 +703,7 @@ guardian.reference = {
 		{ "guardian_fortress", 3 },
 		{ "guardian_veteran", 3 },
 		{ "guardian_lastBastion2", 2 },
-	}, GUARDIAN_BP, guardianRotation({ skill = "intercept", target = "self" }), GUARDIAN_RANKS),
+	}, GUARDIAN_BP, guardianRotation({ skill = "intercept", target = "self" }), GUARDIAN_RANKS, nil, GUARDIAN_BAR),
 }
 
 -- Berserker -----------------------------------------------------------------------------------------------------
@@ -699,7 +717,7 @@ local BERSERKER_BP: { [string]: "a" | "b" } = {
 	["rend:5"] = "a",
 	["rend:10"] = "a",
 	["titansWrath:5"] = "b",
-	["titansWrath:10"] = "b",
+	["titansWrath:10"] = "a",
 	["carnage:5"] = "a",
 	["carnage:10"] = "a",
 	["bloodlust:5"] = "b",
@@ -727,6 +745,7 @@ local BERSERKER_ROTATION: { { [string]: any } } = {
 	{ skill = "bladeWhirl" },
 	{ skill = "charge" },
 }
+-- S146 (B1): the actives of the bar at 100, then the pool's passives, then the rest; skills open at 20 keep their order
 local BERSERKER_RANKS = {
 	"brutalStrike",
 	"cleave",
@@ -735,14 +754,14 @@ local BERSERKER_RANKS = {
 	"bloodlust",
 	"rage",
 	"bladeWhirl",
-	"battleCry",
 	"execute",
-	"warStomp",
 	"titansWrath",
 	"carnage",
-	"charge",
 	"steelSkin",
 	"unstoppable",
+	"battleCry",
+	"warStomp",
+	"charge",
 	"taunt",
 }
 -- S143: Battle Rhythm before the other directions' rows 1-2 (Fury from Rage at 20 grows with it; the old Cleave node
@@ -754,13 +773,13 @@ local function berserkerNodes(row3: string, row6: string, row9: string): { { any
 		{ "berserker_rhythm", 3 },
 		{ "guardian_stalwart", 1 },
 		{ "guardian_frontline", 3 },
+		{ "berserker_bloodthirst", 3 },
+		{ "berserker_rendingCuts", 3 },
+		{ row3, 3 },
 		{ "standard_pennant", 1 },
 		{ "standard_breath", 3 },
-		{ "berserker_bloodthirst", 3 },
-		{ row3, 3 },
 		{ "berserker_frenzy", 1 },
 		{ "berserker_executioner", 3 },
-		{ "berserker_rendingCuts", 3 },
 		{ "berserker_might", 3 },
 		{ row6, 3 },
 		{ "berserker_reaper", 1 },
@@ -773,6 +792,23 @@ local function berserkerNodes(row3: string, row6: string, row9: string): { { any
 	}
 end
 
+-- S146: the bar (at 100 Bloodlust, Battle Cry, War Stomp and Charge leave it for Execute, Carnage and Titan's Wrath;
+-- the damage reference within 1 % of its whole rotation before S146)
+local BERSERKER_BAR = {
+	"brutalStrike",
+	"rend",
+	"execute",
+	"carnage",
+	"sunder",
+	"bladeWhirl",
+	"titansWrath",
+	"cleave",
+	"bloodlust",
+	"battleCry",
+	"warStomp",
+	"charge",
+}
+
 berserker.reference = {
 	-- the only damage reference in the game: the damage target of every class (ROZWOJ 7.5)
 	build(
@@ -784,7 +820,8 @@ berserker.reference = {
 		BERSERKER_BP,
 		BERSERKER_ROTATION,
 		BERSERKER_RANKS,
-		true
+		true,
+		BERSERKER_BAR
 	),
 	build(
 		"butcher",
@@ -794,7 +831,9 @@ berserker.reference = {
 		berserkerNodes("berserker_ferocity", "berserker_relentless", "berserker_drinker"),
 		BERSERKER_BP,
 		BERSERKER_ROTATION,
-		BERSERKER_RANKS
+		BERSERKER_RANKS,
+		nil,
+		BERSERKER_BAR
 	),
 }
 
@@ -827,21 +866,23 @@ local STANDARD_ROTATION: { { [string]: any } } = {
 	{ skill = "shieldBash" },
 	{ skill = "earthquake" },
 }
+-- S146: the bar's blows first, then the cries and the banner, Intercept and Taunt (not on the Standard-Bearer's bar)
+-- last; every skill open at 20 before Charge reaches its limit there, so 1-20 is unchanged
 local STANDARD_RANKS = {
 	"mightyStrike",
 	"shieldSweep",
 	"crushingBlow",
-	"shieldBash",
 	"fortitude",
-	"intercept",
-	"taunt",
+	"vindicate",
 	"earthquake",
+	"shieldBash",
 	"battleCry",
 	"warBanner",
-	"vindicate",
 	"advanceOrder",
 	"steelSkin",
 	"riposte",
+	"intercept",
+	"taunt",
 	"shieldWall",
 	"charge",
 }
@@ -872,6 +913,20 @@ local function standardNodes(row3: string, row6: string, row9: string): { { any 
 	}
 end
 
+-- S146: the bar (the banner and the cries first, Shield Bash leaves it at 100)
+local STANDARD_BAR = {
+	"warBanner",
+	"battleCry",
+	"advanceOrder",
+	"crushingBlow",
+	"vindicate",
+	"mightyStrike",
+	"shieldSweep",
+	"earthquake",
+	"shieldBash",
+	"charge",
+}
+
 standard.reference = {
 	build(
 		"commander",
@@ -881,7 +936,9 @@ standard.reference = {
 		standardNodes("standard_fervor", "standard_inspire", "standard_glory"),
 		STANDARD_BP,
 		STANDARD_ROTATION,
-		STANDARD_RANKS
+		STANDARD_RANKS,
+		nil,
+		STANDARD_BAR
 	),
 	build(
 		"warden",
@@ -891,7 +948,9 @@ standard.reference = {
 		standardNodes("standard_formation", "standard_rally", "standard_oath"),
 		STANDARD_BP,
 		STANDARD_ROTATION,
-		STANDARD_RANKS
+		STANDARD_RANKS,
+		nil,
+		STANDARD_BAR
 	),
 }
 

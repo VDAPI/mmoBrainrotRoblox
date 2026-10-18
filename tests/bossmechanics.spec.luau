@@ -47,3 +47,50 @@ T.describe("BossMechanics (S134)", function()
 		T.expect(BossMechanics.isAvoidable({ mechanic = "channel" })).toBe(false)
 	end)
 end)
+
+-- S149: a mark brands `count` fighters at once (the world boss: three).
+T.describe("BossMechanics: marks with count (S149)", function()
+	local Rng = require("../src/shared/Logic/Rng")
+
+	local function roller(seed: number): (number, number) -> number
+		local rng = Rng.new(seed)
+		return function(lo: number, hi: number): number
+			return rng:int(lo, hi)
+		end
+	end
+
+	T.it("count defaults to 1; pickMarked picks min(count, fighters) without repeats", function()
+		T.expect(BossMechanics.markCount({ seconds = 5, self = 0.4 })).toBe(1)
+		T.expect(BossMechanics.markCount({ seconds = 5, self = 0.4, count = 3 })).toBe(3)
+		for seed = 1, 50 do
+			for fighters = 1, 12 do
+				local picks = BossMechanics.pickMarked(fighters, 3, roller(seed))
+				T.expect(#picks).toBe(math.min(3, fighters))
+				local seen: { [number]: boolean } = {}
+				for _, i in picks do
+					T.expect(i >= 1 and i <= fighters and not seen[i]).toBe(true)
+					seen[i] = true
+				end
+			end
+		end
+		-- count 1 rolls exactly once (the S134 boss's choice and Random use are unchanged)
+		local calls = 0
+		local picks = BossMechanics.pickMarked(5, 1, function(lo: number, hi: number): number
+			calls += 1
+			T.expect({ lo, hi }).toEqual({ 1, 5 })
+			return 4
+		end)
+		T.expect(picks).toEqual({ 4 })
+		T.expect(calls).toBe(1)
+	end)
+
+	T.it("markTaken: the own circle x self, every other branded circle the whole blow (overlaps add up)", function()
+		local spec = { seconds = 5, self = 0.43, count = 3 }
+		T.expect(BossMechanics.markTaken(true, 0, 10, spec)).toBeNear(4.3, 1e-9)
+		T.expect(BossMechanics.markTaken(false, 1, 10, spec)).toBe(10)
+		T.expect(BossMechanics.markTaken(false, 0, 10, spec)).toBe(0)
+		-- a branded one inside another branded one's circle: its own share and the other's full blow
+		T.expect(BossMechanics.markTaken(true, 1, 10, spec)).toBeNear(14.3, 1e-9)
+		T.expect(BossMechanics.markTaken(true, 2, 10, spec)).toBeNear(24.3, 1e-9)
+	end)
+end)

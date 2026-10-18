@@ -874,7 +874,7 @@ T.describe("Paths: passives and active nodes", function()
 		T.expect(GamePaths.passiveTotals(warrior(19), {})).toEqual({ flat = {}, pct = {}, hooks = {} })
 		local at100 = GamePaths.passiveTotals(warrior(100), {})
 		T.expect(at100.pct.armor).toBe(25)
-		T.expect(at100.pct.maxHp).toBe(20) -- S143: Fortitude rank 5
+		T.expect(at100.pct.maxHp).toBe(14) -- S143: Fortitude rank 5 (S146: 20 -> 14)
 		T.expect(at100.hooks.riposte).toBe(12)
 	end)
 
@@ -1299,28 +1299,30 @@ T.describe("Data: Paths (game)", function()
 		end
 	end)
 
-	-- S138 (DESIGN-18 §7): skill nodes sit in SKILL_ROWS, at most one per row of a direction; asserted only for classes
-	-- whose pools are no longer transitional (the class sessions S140-S145 move them out of rows 1, 7 and 10)
-	T.it("skill nodes in SKILL_ROWS for classes past their transitional pools", function()
+	-- S138 (DESIGN-18 §7): skill nodes sit in SKILL_ROWS, at most one per row of a direction. S145: every class (the
+	-- end of the transitional pools), no exceptions; every skill of a skill node is a direction skill (`path`, no pool)
+	T.it("skill nodes in SKILL_ROWS for every class (S145)", function()
 		local checked = 0
 		for _, classId in Classes.order do
-			if not SkillPools.isTransitional(classId) then
-				for _, path in GamePaths.pathsOf(classId) do
-					for r, row in path.rows do
-						local count = 0
-						for _, n in row.nodes do
-							count += if n.kind == "skill" then 1 else 0
+			for _, path in GamePaths.pathsOf(classId) do
+				for r, row in path.rows do
+					local count = 0
+					for _, n in row.nodes do
+						if n.kind == "skill" then
+							count += 1
+							local def = SkillData.get(n.skill :: string) :: any
+							T.expect({ n.id, def.path, def.pool }).toEqual({ n.id, path.id, nil })
 						end
-						if count > 0 then
-							checked += 1
-							T.expect({ path.id, r, table.find(PathData.SKILL_ROWS, r) ~= nil, count <= 1 })
-								.toEqual({ path.id, r, true, true })
-						end
+					end
+					if count > 0 then
+						checked += 1
+						T.expect({ path.id, r, table.find(PathData.SKILL_ROWS, r) ~= nil, count <= 1 })
+							.toEqual({ path.id, r, true, true })
 					end
 				end
 			end
 		end
-		T.expect(checked >= 0).toBe(true)
+		T.expect(checked > 0).toBe(true)
 	end)
 
 	T.it("texts, rule A, team nodes and reference builds", function()
@@ -1708,7 +1710,7 @@ T.describe("Data: Warrior paths (S75)", function()
 		T.expect(#paths).toBe(3)
 		local nodes, skills = 0, 0
 		for _, main in paths do
-			T.expect(main.wiki).toBe(false)
+			T.expect(main.wiki).toBeNil() -- S148: published on the wiki (DESIGN-18 §14)
 			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, 42 })
 			local total = 42
 			for _, other in paths do
@@ -1811,7 +1813,7 @@ T.describe("Data: Warrior paths (S75)", function()
 
 	T.it("Battle Cry: Fervor, Battle Breath, Commander's Voice and Hold the Line!", function()
 		local d1 = eff("battleCry", "standard", { standard_fervor = 3 }, { ["battleCry:5"] = "b" }, SABER)
-		T.expect(Skills.valueAt(d1, "atk", 10)).toBeNear(31, 1e-9) -- S89: 16 + 3 + 12
+		T.expect(Skills.valueAt(d1, "atk", 10)).toBeNear(34, 1e-9) -- S89: 16 + 3 + 12; S146: Fervor 12 -> 15
 		local d2 = eff("battleCry", "standard", { standard_breath = 3 }, { ["battleCry:10"] = "a" }, SABER)
 		T.expect(Skills.scaled(d2, d2.cooldown, 10)).toBeNear(30, 1e-9)
 		T.expect((Skills.cost(d2, 10, 100, "Warrior"))).toBeNear(10, 1e-9)
@@ -1960,7 +1962,7 @@ T.describe("Data: Hunter paths (S78)", function()
 		local want = { marksman = 42, trapper = 42, scout = 40 }
 		local nodes, skills = 0, 0
 		for _, main in paths do
-			T.expect(main.wiki).toBe(false)
+			T.expect(main.wiki).toBeNil() -- S148: published on the wiki (DESIGN-18 §14)
 			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, want[main.id] })
 			local total = want[main.id]
 			for _, other in paths do
@@ -2167,7 +2169,7 @@ T.describe("Data: Mage paths (S81)", function()
 		local nodes, skills = 0, 0
 		local early = { destroyer = 15, arcanist = 13 }
 		for _, main in paths do
-			T.expect(main.wiki).toBe(false)
+			T.expect(main.wiki).toBeNil() -- S148: published on the wiki (DESIGN-18 §14)
 			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, 50 })
 			local total = 50
 			for _, other in paths do

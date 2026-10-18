@@ -281,6 +281,15 @@ local OWN: { [string]: Own } = {
 	brandOfLight = { hint = "searing hiss small bell", roll = 80 },
 	auraOfEndurance = { hint = "low organ chord", roll = 110 },
 	hammerOfHeaven = { hint = "rising whoosh thunder impact divine", roll = 120, ids = { BASS }, pitch = LOW },
+	-- S145 (DESIGN-18 §6.4): the Cleric pools' new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
+	-- fall back to the kind's default (Logic/SfxRules.skillKey)
+	lightRay = { hint = "short holy beam zap chime", roll = 80 },
+	blindingLight = { hint = "bright flash shimmer high chord", roll = 90 },
+	miracle = { hint = "rising choir long holy swell", roll = 110 },
+	consecrate = { hint = "holy ground hum low bell pulses", roll = 100 },
+	holyChains = { hint = "chains rattle with holy chime", roll = 90 },
+	holyNova = { hint = "holy burst whoosh bright chord", roll = 110 },
+	rebuke = { hint = "forceful holy push whoosh thud", roll = 90 },
 	-- Hunter (S115): a shot plays at the release (the hit's material comes with its damage), an area at its blow.
 	-- roll: shots 80-100, areas 100-120 (S115 B5)
 	aimedShot = { hint = "powerful bow release deep twang", roll = 90, ids = { SNAP }, pitch = { 0.85, 0.87 } },
@@ -485,8 +494,15 @@ local BOSS_HINTS: { [string]: { roar: string, attack: string, death: string, pha
 		death = "dragon death roar long",
 		phase = "deep gong boom impact",
 	},
+	-- S149: the world boss
+	hrimvald = {
+		roar = "giant roar deep huge",
+		attack = "heavy stone impact ice crack",
+		death = "giant death groan fall",
+		phase = "deep war horn boom",
+	},
 }
-for _, boss in Bosses.list do
+for _, boss in Bosses.all do -- S149: the world boss too
 	local hints = BOSS_HINTS[boss.id] or BOSS_HINTS.vaelgrath
 	defs[`boss.{boss.id}.roar`] = d(hints.roar, 0.8, 200, { cooldown = 3, pitch = BOSS_PITCH })
 	defs[`boss.{boss.id}.attack`] = d(hints.attack, 0.8, 200, { pitch = BOSS_PITCH })

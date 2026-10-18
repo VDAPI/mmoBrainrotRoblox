@@ -9,7 +9,7 @@
 -- Data/Paths/Warrior (S75). Rank-dependent numbers sit in `values`, passive names the field, in modify.bp a number is
 -- { ref = "<field>" }. Hooks are the S76 / S77 names (CombatService, Skills/Context, Skills/Companion, Movement.trap);
 -- minimapEliteBonus (S78) is read by PartyService and the minimap. `reference` and `itemWeights` never reach the
--- wiki; every path is unpublished there (wiki = false, ROZWOJ 3.5).
+-- wiki; S148: the directions are published there (DESIGN-18 §14).
 
 local SkillData = require("../Skills")
 local Types = require("./Types")
@@ -56,7 +56,7 @@ local function ref(field: string): any
 	return { ref = field }
 end
 
--- team hook (S57 marker): 1/3 outside the main path
+-- team hook (S57 marker; S138: 1/3 below TEAM_FULL_POINTS in the direction)
 local TEAM_DIP = 1 / 3
 
 local M, T, S = "marksman", "trapper", "scout"
@@ -203,7 +203,6 @@ local marksman: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local trapper: Types.PathDef = {
@@ -366,7 +365,6 @@ local trapper: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local scout: Types.PathDef = {
@@ -406,19 +404,19 @@ local scout: Types.PathDef = {
 			node(S, "eye", "passive", 3, "👁", {
 				values = { eye = { 60, 180 } },
 				passive = { hooks = { minimapEliteBonus = "eye" } },
-				dipScale = TEAM_DIP, -- team hook (S57 marker): 1/3 outside the main path
+				dipScale = TEAM_DIP, -- team hook (S57 marker; S138: 1/3 below TEAM_FULL_POINTS in the direction)
 			}),
 		}),
 		row(false, {
 			node(S, "spotting", "passive", 3, "⌾", {
 				values = { spotting = { 2, 6 } },
 				passive = { hooks = { spotOnHit = "spotting" } },
-				dipScale = TEAM_DIP, -- team hook (S57 marker): 1/3 outside the main path
+				dipScale = TEAM_DIP, -- team hook (S57 marker; S138: 1/3 below TEAM_FULL_POINTS in the direction)
 			}),
 			node(S, "vigilance", "passive", 3, "⚠", {
 				values = { vigilance = { 10, 20 } },
 				passive = { hooks = { vigilanceMove = "vigilance" } },
-				dipScale = TEAM_DIP, -- team hook (S57 marker): 1/3 outside the main path
+				dipScale = TEAM_DIP, -- team hook (S57 marker; S138: 1/3 below TEAM_FULL_POINTS in the direction)
 			}),
 		}),
 		row(true, {
@@ -510,7 +508,6 @@ local scout: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 -- Model builds (ROZWOJ 7.5, 11.3-11.5; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50 points.

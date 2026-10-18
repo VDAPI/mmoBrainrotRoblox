@@ -15,7 +15,7 @@ A character has four attributes: **Strength**, **Dexterity**, **Intellect** and 
 
 ## Points per level
 
-Every level up gives you <Stat path="progression.statPointsPerLevel" /> attribute points to spend in the Backpack window (<Key action="win_inventory" />). Skill ranks grow with your character level by themselves (maximum by level <Stat path="skills.rules.ranks.capLevel" /> at the latest); the Skills window (<Key action="win_skills" />) shows the level of the next rank. Every <Stat path="skills.rules.pathPointsEvery" /> levels you get a class path point to spend in the Skills window on path nodes (stats, skill changes, party auras).
+Every level up gives you <Stat path="progression.statPointsPerLevel" /> attribute points to spend in the Backpack window (<Key action="win_inventory" />). You buy skill ranks with skill points: every weapon pool has <Stat path="skills.rules.skillPointsByLevel.0" /> of them at the first level and one more with every level up, and the rank cap grows with the level; the Skills window (<Key action="win_skills" />) shows from which level the next rank can be bought. Every <Stat path="skills.rules.pathPointsEvery" /> levels you get a talent point to spend in the same window on direction nodes (stats, skill changes, party auras).
 
 ## Formulas
 
@@ -35,4 +35,4 @@ Some stats have an upper limit. Anything above the limit does nothing, so once y
 
 ## Resetting points
 
-You take back spent attribute points with a <Item id="scroll_oblivion" />: the teacher in the city sells it and the price grows with your level. The <Item id="scroll_skillreset" /> changes your class's main path; you can buy it in the premium shop.
+You take back spent attribute points with a <Item id="scroll_oblivion" />: the teacher in the city sells it and the price grows with your level. The <Item id="scroll_skillreset" /> resets the ranks of every weapon pool and the direction nodes at once; the teacher sells it and so does the premium shop.

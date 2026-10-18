@@ -124,13 +124,15 @@ T.describe("Data: Skills", function()
 	T.it("DESIGN control values", function()
 		local mighty = SkillData.get("mightyStrike") :: any
 		T.expect(Skills.valueAt(mighty, "dmg", 1)).toBe(136) -- S91: ranks <= 20 x0.85
-		T.expect(Skills.valueAt(mighty, "dmg", 10)).toBe(222) -- S89 (rank 5 pinned by Data/SkillCurves)
-		T.expect(Skills.valueAt(mighty, "dmg", 5)).toBeNear(187) -- S91 (rank 6 pinned at 220.4)
-		T.expect(Skills.valueAt(mighty, "dmg", 6)).toBeNear(220.4)
+		-- S146: rank 10 222 -> 200, rank 6 220.4 -> 196 (R1 of Sword and Shield); rank 5 pinned by Data/SkillCurves (S91)
+		T.expect(Skills.valueAt(mighty, "dmg", 10)).toBe(200)
+		T.expect(Skills.valueAt(mighty, "dmg", 5)).toBeNear(187)
+		T.expect(Skills.valueAt(mighty, "dmg", 6)).toBeNear(196)
 		local steel = SkillData.get("steelSkin") :: any
 		T.expect(Skills.valueAt(steel, "armor", 5)).toBe(25)
 		local res = SkillData.get("resurrection") :: any
-		T.expect(Skills.scaled(res, res.cooldown, 1)).toBe(120)
+		-- S145: rank 1 at 30 (C3) = the old rank 6 at 30
+		T.expect(Skills.scaled(res, res.cooldown, 1)).toBe(86.67)
 		T.expect(Skills.scaled(res, res.cooldown, 10)).toBe(60)
 	end)
 
@@ -157,17 +159,14 @@ T.describe("S56 ranks from the level and the bar", function()
 		return out
 	end
 
-	T.it("rankFor (base only)", function()
+	T.it("rankAt is the limit of a bought rank (S148: rankFor removed)", function()
 		local bloodlust = SkillData.get("bloodlust") :: any -- S143: unlock 18 -> 10 (the two-handed O1)
-		T.expect(Skills.rankFor("Warrior", 9, bloodlust)).toBe(0)
-		T.expect(Skills.rankFor("Warrior", 10, bloodlust)).toBe(1)
-		T.expect(Skills.rankFor("Warrior", 46, bloodlust)).toBe(10)
-		T.expect(Skills.rankFor("Mage", 54, bloodlust)).toBe(0)
-		local onPath = table.clone(bloodlust)
-		onPath.path = "somePath"
-		T.expect(Skills.rankFor("Warrior", 54, onPath)).toBe(0) -- path skills: Logic/Paths.skillRank
+		T.expect(Skills.rankAt(bloodlust, 9)).toBe(0)
+		T.expect(Skills.rankAt(bloodlust, 10)).toBe(1)
+		T.expect(Skills.rankAt(bloodlust, 46)).toBe(10)
+		T.expect((Skills :: any).rankFor).toBeNil()
 		T.expect(Skills.validSlot(1)).toBe(true)
-		-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool; rankFor is the limit of a bought rank now
+		-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool
 		T.expect(Skills.validSlot(8)).toBe(true)
 		T.expect(Skills.validSlot(9)).toBe(false)
 		T.expect(Skills.validSlot(1.5)).toBe(false)
@@ -258,8 +257,8 @@ T.describe("S56 ranks from the level and the bar", function()
 				skill.class = fixtureClass
 				skill.path = nil
 				skill.unlock = UNLOCKS[i]
-				base += if Skills.rankFor(fixtureClass, 100, skill) > 0 then 1 else 0
-				total += Skills.rankFor(fixtureClass, 20, skill)
+				base += if Skills.rankAt(skill, 100) > 0 then 1 else 0
+				total += Skills.rankAt(skill, 20)
 			end
 			T.expect({ classId, base }).toEqual({ classId, #ids })
 			T.expect({ classId, total }).toEqual({ classId, 19 })
@@ -390,10 +389,11 @@ T.describe("S54 formulas", function()
 	T.it("Mage mana follows the level curve, Cleric and energy stay flat", function()
 		local firebolt = skill("firebolt")
 		T.expect(Skills.cost(firebolt, 1, 20, "Mage")).toBe(12)
-		-- S87 (G10): manaCost.Mage 1.89 / 2.59 / 3.49 at 45 / 70 / 100 (was 1.4 / 1.9 / 2.5)
-		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(1.89 * Skills.cost(firebolt, 1, 20, "Mage"))
-		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(12 * 1.89)
-		T.expect(Skills.cost(firebolt, 1, 100, "Mage")).toBeNear(12 * 3.49)
+		-- S87 (G10): manaCost.Mage 1.89 / 2.59 / 3.49 at 45 / 70 / 100 (was 1.4 / 1.9 / 2.5). S147: 1.096 / 1.865 / 2.1 (T-SK4
+		-- of the element variants)
+		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(1.096 * Skills.cost(firebolt, 1, 20, "Mage"))
+		T.expect(Skills.cost(firebolt, 1, 45, "Mage")).toBeNear(12 * 1.096)
+		T.expect(Skills.cost(firebolt, 1, 100, "Mage")).toBeNear(12 * 2.1)
 		for _, def in SkillData.byId do
 			if def.class == "Mage" and def.type ~= "passive" then
 				for _, rank in { 1, def.maxLevel } do
@@ -1015,8 +1015,10 @@ T.describe("S69 Cleric heals and B options", function()
 		T.expect(Skills.valueAt(aa, "shieldHp", 10)).toBeNear(21)
 		T.expect(behaviourA.secondTarget).toBe(50)
 		T.expect(Skills.scaled(aa, aa.duration, 10)).toBeNear(8)
+		-- S145: unlock 10 (was 18), rank 3 (level 18) keeps the old rank 1 (Data/SkillCurves)
 		local four = Skills.effective(sof, 4, nil, nil, true)
-		T.expect(Skills.valueAt(four, "shieldHp", 4)).toBeNear(12 + 6 * 3 / 9)
+		T.expect(Skills.valueAt(four, "shieldHp", 4)).toBeNear(12 + 6 * 1 / 7)
+		T.expect(Skills.valueAt(sof, "shieldHp", 3)).toBeNear(12)
 	end)
 
 	T.it("healAmount: target HP plus magic part, old data as before", function()
@@ -1063,13 +1065,15 @@ T.describe("S70 new Cleric actives", function()
 	local function skill(id: string): SkillData.SkillDef
 		return SkillData.byId[id]
 	end
+	-- S145 (DESIGN-18 §6.4): Sanctuary and Guardian Angel are the light pool's, Brand of Light and Hammer of Heaven the
+	-- hammer pool's; the dice and the wheel stay Fortune's
 	local PATHS = {
-		sanctuary = "healer",
-		guardianAngel = "healer",
+		sanctuary = "light",
+		guardianAngel = "light",
 		fortuneDice = "fortune",
 		wheelOfFortune = "fortune",
-		brandOfLight = "inquisitor",
-		hammerOfHeaven = "inquisitor",
+		brandOfLight = "hammer",
+		hammerOfHeaven = "hammer",
 	}
 
 	T.it("paths, delivery, ranks and breakpoints A and B per ROZWOJ 9.3–9.5", function()
@@ -1083,7 +1087,7 @@ T.describe("S70 new Cleric actives", function()
 		}
 		for id, path in PATHS do
 			local def = skill(id)
-			T.expect({ id, def.class, def.path, def.maxLevel, def.delivery ~= nil })
+			T.expect({ id, def.class, def.path or def.pool, def.maxLevel, def.delivery ~= nil })
 				.toEqual({ id, "Cleric", path, 10, true })
 			for at, pair in keys[id] do
 				local bp: any = (def.breakpoints :: SkillData.Breakpoints)[at]
@@ -1183,17 +1187,18 @@ T.describe("S71 Cleric base and paths", function()
 	local SCEPTER = { main = "scepter", offhand = "shield" }
 	local RELIC = { main = "mace1h", offhand = "relic" }
 
-	T.it("base 8 on levels 1-45, path skills on their rows, A and B everywhere", function()
-		local unlocks, passives = {}, 0
+	-- S145 (DESIGN-18 §6.4, §7): two pools of 11 and the four common skills (the ladder: tests/skillpools.spec), the
+	-- direction skills only in rows 4 and 8 (26, 60)
+	T.it("pools and directions (S145): direction skills on rows 4 and 8, A and B everywhere", function()
+		local passives = 0
 		local actives = 0
 		for _, def in SkillData.byClass.Cleric do
 			if def.path == nil then
-				table.insert(unlocks, def.unlock)
 				if def.type == "passive" then
 					passives += 1
 				end
 			else
-				T.expect({ def.id, table.find({ 10, 26, 48, 60 }, def.unlock) ~= nil }).toEqual({ def.id, true })
+				T.expect({ def.id, table.find({ 26, 60 }, def.unlock) ~= nil }).toEqual({ def.id, true })
 			end
 			if def.type ~= "passive" then
 				actives += 1
@@ -1203,15 +1208,15 @@ T.describe("S71 Cleric base and paths", function()
 				end
 			end
 		end
-		table.sort(unlocks)
-		T.expect(unlocks).toEqual({ 1, 3, 6, 10, 14, 18, 30, 45 })
-		T.expect(passives <= 2).toBe(true)
-		T.expect(actives).toBe(18)
+		T.expect(passives).toBe(5)
+		T.expect(actives).toBe(25)
 	end)
 
 	T.it("base damage (ROZWOJ 9.2) and the 15.2 defaults", function()
 		-- S91: Holy Strike rank 1 190 -> 167 (ranks <= 20, rank 6 pinned)
-		for id, pair in { holyStrike = { 167, 340 }, radiance = { 130, 240 }, judgement = { 320, 580 } } do
+		-- S145: Radiance from 3 (rank 1 120) and Judgement from 40 (rank 1 300; Data/SkillCurves keeps the old levels)
+		-- S146: Judgement rank 1 300 -> 270 (the hammer pool against Furia at 45)
+		for id, pair in { holyStrike = { 167, 340 }, radiance = { 120, 240 }, judgement = { 270, 580 } } do
 			T.expect({ id, Skills.valueAt(skill(id), "dmg", 1), Skills.valueAt(skill(id), "dmg", 10) })
 				.toEqual({ id, pair[1], pair[2] })
 		end
@@ -1256,7 +1261,7 @@ T.describe("S71 Cleric base and paths", function()
 		T.expect(categories.allyAttack.magAtk ~= nil).toBe(true)
 		T.expect(Skills.valueAt(def, "mresBp", 10)).toBe(10)
 		T.expect(Skills.valueAt(def, "atkBp", 10)).toBe(6)
-		T.expect(Skills.valueAt(def, "hp", 10)).toBe(15)
+		T.expect(Skills.valueAt(def, "hp", 10)).toBe(12) -- S145: { 5, 15 } -> { 4, 12 } (the hammer pool's O1 from 10)
 		T.expect((def.effects :: any)[1].stats.maxHp).toBe("hp")
 	end)
 
@@ -1451,7 +1456,7 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		T.expect(v(d, "reduction")).toBeNear(60)
 
 		d, b = at("cleave", 10, "b", "b")
-		T.expect(v(d, "bleed")).toBeNear(50)
+		T.expect(v(d, "bleed")).toBeNear(45) -- S146: 5B +20 -> +15
 		T.expect(b.lifesteal).toBe(12)
 		T.expect(d.angle).toBe(90)
 		T.expect(b.bleedStacks).toBeNil()
@@ -2134,7 +2139,7 @@ T.describe("S78 Hunter base, B options and nodes", function()
 
 	T.it("base B options: Venom Arrow, Volley, Hunter's Mark, Disengage", function()
 		local venom = eff("venomArrow", "trapper", {}, { ["venomArrow:5"] = "a", ["venomArrow:10"] = "b" }, BOW)
-		T.expect(Skills.valueAt(venom, "poison", 10)).toBeNear(93, 1e-9) -- S144: 50 + 15 (5A) + 28 (10B)
+		T.expect(Skills.valueAt(venom, "poison", 10)).toBeNear(100.5, 1e-9) -- S144: 50 + 15 (5A) + 28 (10B). S147: 57.5 + 15 + 28
 		local volley = eff("volley", "scout", {}, { ["volley:5"] = "b", ["volley:10"] = "b" }, BOW)
 		T.expect(Skills.valueAt(volley, "dmg", 10)).toBeNear(47, 1e-9) -- S144: 34 + 4 (5B) + 9 (10B)
 		local mark = SkillData.get("huntersMark") :: any
@@ -2417,7 +2422,7 @@ T.describe("S81 Mage base, B options and nodes", function()
 		local function v(id: string, field: string, rank: number): number
 			return Skills.valueAt(SkillData.get(id) :: any, field, rank)
 		end
-		T.expect({ v("meteorStorm", "dmg", 1), v("meteorStorm", "dmg", 10) }).toEqual({ 24, 24 })
+		T.expect({ v("meteorStorm", "dmg", 1), v("meteorStorm", "dmg", 10) }).toEqual({ 81, 107 }) -- S147: 24 -> 81-107
 		T.expect({ v("focus", "reserve", 1), v("focus", "reserve", 5) }).toEqual({ 3.1, 15.4 })
 		T.expect((SkillData.get("focus") :: any).passive).toEqual({ pct = { manaReserve = "reserve" } })
 		T.expect((SkillData.get("evocation") :: any).cooldown).toBe(120)
@@ -2540,7 +2545,7 @@ T.describe("S81 Mage base, B options and nodes", function()
 			true
 		)
 		T.expect({ evocation.channelMove, evocation.grantCharges }).toEqual({ 50, 4 })
-		T.expect(Skills.valueAt(b("meteorStorm", 10), "dmg", 10)).toBeNear(28.4, 1e-9)
+		T.expect(Skills.valueAt(b("meteorStorm", 10), "dmg", 10)).toBeNear(131, 1e-9) -- S147: 107 + 24 (10B)
 		T.expect(Skills.cooldown(b("meteorStorm", 5), 10)).toBeNear(44, 1e-9)
 	end)
 end)

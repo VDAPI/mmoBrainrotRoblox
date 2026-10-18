@@ -2726,6 +2726,51 @@ motions.hammerOfHeaven = {
 	trail = { from = 0.3, to = 0.52 },
 }
 
+-- S145 (DESIGN-18 §6.4): the Cleric pools' new skills as variants of the Cleric's S114 motions (the same rule as S140 -
+-- S144); the look apart is their SkillVfx (light, own pieces). A full motion pass comes with W03-W07.
+-- Light Ray: Heal's open palm pushed at the target, the ray leaving it at the release.
+motions.lightRay = {
+	keys = motions.heal.keys,
+	recover = 0.25,
+	release = 0.25,
+}
+-- Blinding Light: Purify's raised hand, the flash at the hit.
+motions.blindingLight = {
+	keys = motions.purify.keys,
+	recover = 0.3,
+	hit = 0.3,
+}
+-- Miracle: Prayer's folded hands held while praying (the loop over the prayer pose, castTime), the heal at the end.
+motions.miracle = {
+	keys = motions.prayer.keys,
+	recover = 0.3,
+	loop = { from = 0.4, to = 0.6 },
+}
+-- Consecrate: Holy Strike's mace brought down to the ground; the waves of light follow it.
+motions.consecrate = {
+	keys = motions.holyStrike.keys,
+	recover = 0.3,
+	hit = 0.25,
+}
+-- Holy Chains: Brand of Light's palm thrust at the target, the chains at the hit.
+motions.holyChains = {
+	keys = motions.brandOfLight.keys,
+	recover = 0.3,
+	hit = 0.25,
+}
+-- Holy Nova: Radiance's weapon raised, the burst at the hit.
+motions.holyNova = {
+	keys = motions.radiance.keys,
+	recover = 0.3,
+	hit = 0.3,
+}
+-- Rebuke: Shield of Faith's hand pushed forward, the light at the hit.
+motions.rebuke = {
+	keys = motions.shieldOfFaith.keys,
+	recover = 0.25,
+	hit = 0.2,
+}
+
 SkillMotions.motions = motions
 
 function SkillMotions.get(skillId: string): Motion?

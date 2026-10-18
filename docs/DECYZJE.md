@@ -5361,3 +5361,228 @@
   Naciągu (Łowczy drużyny z łukiem krótkim na 70.), T2 Trapera na 70 / 100, ścieżki: `marksman.base`, `r5a`,
   `trapper.single` / `aoe` / `r3` / `r5`, `scout.solo`, `r6.scout`. Martwe klucze `kingslayer@longbow+quiver` z S137 i
   S143 usunięte (długi łuk to teraz broń Królobójcy).
+- **S145** Pule Kapłana według drabiny DESIGN-18 §5 / §6.4. Berło i Kostur (`light`, berło i kostur świątynny):
+  Promień Światła S1 1 (nowa), Światłość A1 3 (było 6), Oślepienie K1 6 (nowa), Tarcza Wiary O1 10 (było 18), Odnowa S2
+  15, Łaska P1 20 (nowa), Sanktuarium A2 26, Oczyszczenie K2 33, Cud S3 40 (nowa), Światło Przewodnie P2 50 (nowa), Anioł
+  Stróż U 60. Buzdygan i Kiścień (`hammer`): Święte Uderzenie S1 1, Poświęcona Ziemia A1 3 (nowa), Kajdany Światła K1 6
+  (nowa), Aura Wytrwałości O1 10, Piętno Światła S2 15, Boski Gniew P1 20 (było 30), Święty Wybuch A2 26 (nowa),
+  Upomnienie K2 33 (nowa), Sąd S3 40 (było 45), Gorliwość P2 50 (nowa), Młot Niebios U 60. Wspólne: Leczenie 4 (było 3),
+  Krąg Światła 12 (było 14), Wskrzeszenie 30 (było rząd 1 Fortuny), Pobożność 45 (było 10). `SkillPools/Cleric.version`
+  2 → 3, pula domyślna `hammer` (start `mace1h_1`); tarcza i relikwiarz w drugiej ręce nie zmieniają puli.
+- **S145** Przeniesione umiejętności zachowują liczby na dawnym poziomie (węzły `Data/SkillCurves`: Światłość, Tarcza
+  Wiary, Krąg Światła, Piętno Światła, Boski Gniew, Sąd; ranga 1 po przesunięciu w górę = dawna ranga na nowym poziomie:
+  Wskrzeszenie, Pobożność). Święte Uderzenie ranga 5 226 → 190, ranga 6 273,3 → 240: R1 puli `hammer` na 20. w paśmie
+  S91 z Piętnem Światła od 15. Promień Światła stoi na węzłach Świętego Uderzenia sprzed S145 ×0,85 (ćwierć trafienia leczy).
+- **S145** Łaska poza krytycznym leczeniem i premią poniżej `LOW_HP_HEAL` daje leczenie +7–12%: to, co Pobożność dawała
+  Uzdrowicielowi do 20. przed przeniesieniem na 45 (T-SK5 na 20. 0,221 jak w S91). Oślepienie: `misfortune` w kategorii
+  `enemyMiss`, więc 15% chybień zamiast 30% z tabeli (limit kategorii S61; PvP jak każda kategoria).
+- **S145** Mechaniki w `Logic/Faith` (nowy, stałe `Data/Skills.FAITH`): najbardziej ranny sojusznik (`mostWounded`, też
+  serwerowe `Context.mostWounded`), Promień Światła leczy 25% trafienia najbardziej rannego w `WOUNDED_RADIUS` (solo
+  rzucającego), Światło Przewodnie zostawia tarczę 10–20% przywróconego HP (najwyżej 20% maks. HP celu, 6 s, jeden wpis
+  `guidingLight`, nie przez `ctx.shield`, bo przywrócone HP ma już premie), Gorliwość skraca odnowienia tylko umiejętności
+  puli `hammer` po rzucie ataku tej puli (0,3–0,8 s). Święty Wybuch to `circleSelf` z `healHp` / `healMag`: pierwsza
+  fala leczy sojuszników w kręgu (`ctx.healAmount`). Kajdany Światła: `root` z `bossSlow` (`Logic/Snare`).
+- **S145** Upomnienie: pole `SkillDef.interrupt`; trafiony gracz-wróg traci kanał, celowanie i wiązkę (`Logic/Channel`
+  zdarzenie `"interrupt"`, `services.Interrupt`). Potwory nie kanałują, a kanał bossa (S134) przerywają tylko obrażenia
+  (`Faith.interrupts` = gracz i nie boss; test).
+- **S145** Kierunki: węzły `skill` tylko w rzędach 4 i 8. Uzdrowiciel: Modlitwa w rzędzie 4 (było Fortuny), Boska
+  Interwencja w 8 (było 7). Fortuna: Rzut Kośćmi 4, Koło Fortuny 8, szczęście tylko w węzłach `luck` z relikwiarzem
+  (bez zmian). Inkwizytor bez umiejętności, w rzędzie 8 zwieńczenie `keystone` Wędrujące Piętno (podpalenie Piętna
+  Światła przeskakuje na najbliższego innego wroga w 8 st. z 60% siły, światło +5%). Umiejętności, które poszły do pul,
+  zostawiły węzły tej samej liczby rang: Pocieszenie (leczenie +2%), Aureola (Krąg Światła +2 st.), Czterolistna
+  Koniczyna (+0,5 pkt krytyka), Rzut Monetą (Wiatr kości +1 pkt), Ślub (światło +1%), Przekonanie (+0,5 pkt krytyka),
+  Wytrwała Wiara (Aura Wytrwałości +1% HP). Węzły „Łaska” Uzdrowiciela i „Gorliwość” Inkwizytora nazywają się teraz
+  Miłosierdzie i Zapał (nazwy wzięły umiejętności pul).
+- **S145** Modlitwa 5B rzuca kośćmi Fortuny bez węzła Rzut Kośćmi: `SkillService.prayerDice` bierze rangę z limitu
+  umiejętności na poziomie (`Skills.rankAt`, najmniej 1), więc działa w Uzdrowicielu (sprawdzone, lustro w modelu).
+- **S145** Model: buildy wzorcowe z `ranks` i rotacją obu pul: Uzdrowiciel lochowy berłem z tarczą, samotny
+  Uzdrowiciel kosturem świątynnym, Kapłan Fortuny buzdyganem z relikwiarzem (wsparcie jak piąty atakujący), Inkwizytor
+  buzdyganem. R1 Inkwizytora na 20. 2,09 (pasmo 1,6–2,10), T-SK5 berła na 20. 0,221 (asertowane, `Balance.targetsS145`).
+  Tożsamość (raport `S145.cleric.*`, asertuje S146): `hammer` / Inkwizytor sprzed S145 w jeden cel 1,02–1,06, `light`
+  leczenie na sekundę / Uzdrowiciel sprzed S145 0,97–1,23 (100: 1,23, ponad ±10%).
+- **S145** Fixture 1–20 przepisany (`fixture S145 "pule Kapłana"`): 274 zmienione wpisy w 67 wierszach, wszystkie w
+  kluczach Kapłana albo w wierszach z Kapłanem (T-SK6 Grimroka, drużyny Grimroka, drużyny W + M + Ł + K Elit II jaskiń
+  Łąk); `ALLOWED_1_20_DIFFS` pusta.
+- **S145** `GLOBAL_REPORT_ONLY` S145 (23 klucze 21–100, „przebudowa umiejętności DESIGN-18, wraca w S146/S147”):
+  T-SK3 strażników Szczytów Inkwizytora (80–100), T-SK5 Uzdrowiciela lochowego na 95–100 (E4, G10, Szczyty), Fortuna z
+  buzdyganem leczy mniej od 70., samotny Uzdrowiciel z kosturem na 100., Inkwizytor / Furia na 45.
+- **S145** Koniec stanu przejściowego: pole `transitional` usunięte z danych, `Logic/SkillPools` (`isTransitional`),
+  `PathView` / okna i eksportu pul do wiki (`tools/WikiData/Skills`); test drabiny i `SKILL_ROWS` obowiązują każdą klasę
+  bez wyjątków, test audytu: każda umiejętność ma pulę albo kierunek, aktywna przełomy A / B, `short`, ruch, wygląd,
+  dźwięk i wiersz `skill_timing`, każdy węzeł `modify` wskazuje istniejącą umiejętność.
+- **S146** Pasek w modelu: build wzorcowy Wojownika i Kapłana rzuca tylko 8 aktywnych swojego poziomu
+  (`ReferenceBuild.bar`, priorytet paska; bez niego aktywne z `ranks`; `SkillModel.barOf` / `barRotation`). Podstawy klas
+  (mieszają rotacje wszystkich kierunków) i Łowca z Magiem bez limitu do S147 (`SkillModel.BAR_CLASSES`). Na 20. każdy
+  build ma ≤ 8 aktywnych, więc 1–20 bez zmian.
+- **S146** Paski: Berserker na 100. Brutalny Cios, Rozdarcie, Egzekucja, Rzeź, Rozbicie, Wir Ostrzy, Gniew Tytana,
+  Rozpłatanie (Furia w jeden cel 10 089 wobec 10 040 przed S146, R1 2,60 przy 2,61); Inkwizytor bez Poświęconej Ziemi od
+  60. (Młot Niebios; T-SK3 na 90–100 1,06–1,14 → 0,89–0,94 × areaCap); Uzdrowiciel lochowy wszystkie 8 leczeń. Strażnik:
+  Uderzenie Tarczą (ogłuszenie) przed Odwetem, Uderzenie Tarczą 10A zamiast 10B (przegląd: z Odwetem na 10 R1 Obrońcy
+  na 100 2,37 > 2,26).
+- **S146** R9 Wojownika liczy dwuręczną (Furia) / jednoręczną (Chorąży) jak S143. W jeden cel 1,45–1,69 i na 3 cele
+  0,98–1,12 poza 1,15–1,25: sprzeczne z R1 puli jednoręcznej (atak podstawowy broni jednoręcznej ok. 0,5 dwuręcznej,
+  1,25 wymaga R1 2,9–3,4 przy limicie 2,26–2,35); raport z powodem (`Balance.S146_REPORT`), decyzja właściciela.
+- **S146** R1 puli jednoręcznej asertuje Obrońca (45 / 70 / 100: 2,19 / 2,18 / 2,23 ≤ 2,26): Chorąży liczy w R1 własne
+  okrzyki i sztandar (raport). Dźwignia: Potężne Uderzenie ranga 6 220,4 → 196, ranga 10 222 → 200.
+- **S146** NIE spełniona zasada 5 (bez trybu raportu): T-SK6 berła na 45 / 70 / 100 (2,78 / 8,6 / 14,4) i R1 Inkwizytora
+  (4,4–6,2). T-SK6: tank bossa przyjmuje 1,5–3,5 maks. HP na minutę (model S32), samo Leczenie daje > 1,5, a T-SK6 ×
+  podtrzymanie bez wsparcia ≈ 2,55 (S92); R1: ≤ 2,4 wymaga Inkwizytora ok. 0,35 × Furia (S89 F4). Decyzje właściciela.
+- **S146** Furia (pasywka puli dwuręcznej) daje też +0–17% maks. HP (ranga 1 na 20. zero, 1–20 bez zmian), Niezłomność
+  ranga 5 20 → 14%: Morvane bez wsparcia 1,06 → 0,98 HP Berserkera, EHP Strażnika / Furia 1,68–1,73 (1,6–1,8), HP
+  Inkwizytora / Furia 1,34–1,40 (1,3–1,4). Po kolejności rang z paska (przegląd) 14 zostaje w paśmie.
+- **S146** T-SK5 berła na 95–100 (0,37 / 0,38 → 0,33 / 0,34): Pobożność 20–25 → 6–9% (Uzdrowiciel kupuje ją dopiero na
+  95.), Łaska ranga 5 12 → 10%. Na 45–90 0,26–0,32.
+- **S146** R9 buzdygana (Inkwizytor / Furia 0,80–0,93 z ROZWOJ 9.6): Piętno Światła ranga 8 213 / 270 → 186 / 237,
+  Sąd ranga 1–2 300 / 320 → 270 / 290, Boski Gniew ranga 5 20 → 22 (ranga 4 przypięta), Gorliwość 0,3–0,8 → 0,1–0,2 s
+  (Inkwizytor kupuje ją na 100.; 0,8 s dawało 1,08 Furii): 0,855 / 0,890 / 0,912.
+- **S146** Chorąży: rangi najpierw bloki paska, potem okrzyki i sztandar, Przechwycenie i Prowokacja na końcu (sztandar
+  na pasku od 45.); Zapał (węzeł) 4–12 → 5–15 (S na 70. 0,554 ≥ 0,55), Rozkaz Natarcia kryt 24 → 21 (wsparcie na 100.
+  5,07 / 5,09 ≤ 5,1). Berserker: węzeł Rwących Cięć przed Amokiem (10A Rozpłatania na 45. 0 → 0,26); 5B przez to 0,22
+  na 45–100, więc krwawienie 5B +20 → +15 (0,16–0,17, na 20. 0,09) i bez wpisu `R4_REPORT`.
+- **S146** Gniew Tytana 10B → 10A w buildach Berserkera (T-SK3 na 99–100 1,05 → 0,93–0,96); R7 Łowca / Wojownik
+  drukowany (1,19–1,32 w paśmie), asertuje S147.
+- **S146** `GLOBAL_REPORT_ONLY`: 128 kluczy Wojownika i Kapłana z S137 / S143 / S145 usuniętych, 59 wierszy wróciło do
+  asercji, 81 z powodem S146 (71 strażników T-SK1 / T-SK2 Wojownika, w tym 13 nowych z dynamicznej reguły S93 / S94, 5
+  cech broni dwuręcznej S88, Berserker / podstawa 45–100, Fortuna leczy mniej na 70 / 100, samotny Uzdrowiciel na 100);
+  `S134_REPORT` pusty (Wojownik solo na Vaelgracie 5,05 s ≥ 4,5).
+- **S146** (przegląd) `ReferenceBuild.ranks` Wojownika i Kapłana w kolejności paska na 100: aktywne paska, pasywki puli,
+  reszta; umiejętności otwarte do 20 zachowują kolejność między sobą (1–20 bez zmian). Wcześniej buildy kupowały
+  umiejętności spoza paska (np. Berserker Okrzyk, Żądza Krwi, Tupnięcie na 10 przy Rzezi 2, Fortuna bez Koła Fortuny).
+  Furia na 70 traci Okrzyk z paska (Gniew Tytana 3): R1 2,56 → 2,40; na 100 bez zmian (10 089, R1 2,60).
+- **S146** (przegląd) T-SK2 Strażnika na 90–100 (1,35 × L20) z powodem S146 jak 75–85: na 70 już 1,35, różnica 0,1%
+  (sprzęt) zdejmowała regułę S94; T-SK1 i R1 Obrońcy w limicie.
+- **S147** Pasek w modelu także dla Łowcy i Maga (`SkillModel.BAR_CLASSES` wszystkie klasy): warianty żywiołów Maga mają
+  `ReferenceBuild.bar` (Niszczyciel: U, Kataklizm, Wir, potem czary obszaru; Arkanista: Strumień, Wyładowanie, potem
+  czary w jeden cel, Inwokacja ostatnia), Arkaniści kupują Inwokację po Strumieniu (wcześniej Strumień miał na 100.
+  rangę 2). Łowca: pasek z `ranks` (≤ 8 aktywnych swojej puli w rotacji). Średnie trzech żywiołów bez zmian. 1–20 bez zmian.
+- **S147** Tożsamość żywiołów (R9 Maga, asertowane 20–100): błyskawica / ogień w jeden cel 1,108 / 1,144 / 1,167 /
+  1,115; lód / ogień 0,889 / 0,896 / 0,863 / 0,876; ogień z podpaleniem / błyskawica na 3 cele 8 s 1,21 / 1,20 / 1,05 /
+  1,05; Elita pod kontrolą lodu 0,83–0,99, boss pod Głębokim Chłodem 0,53–0,94; obrażenia przyjmowane lód 0,50–0,90
+  ognia, błyskawica 1,00–1,11 ognia. Dźwignie: Spopielenie ranga 10 300 → 283,3, Roztrzaskanie 160–230 → 184–420,
+  Głęboki Mróz ×1,15, Lodowa Włócznia ranga 10 330 → 360, Lanca Błyskawic ranga 10 200 → 280, Grom ranga 10 400 → 460
+  (rangi ≤ 70 przypięte węzłami tam, gdzie trzeba), Deszcz Meteorów 24 → 81–107 i 7 uderzeń, Nawałnica 40–48 → 29–34.
+- **S147** NIE spełniona zasada 5 (bez trybu raportu): „błyskawica przyjmuje więcej niż ogień” u Arkanisty na 45. (0,991)
+  i obu kierunków na 20. (0,974 / 0,995; 1–20 zamrożone). Bez paraliżu Porażenia ogień i błyskawica przyjmują dokładnie
+  tyle samo (ten sam pancerz i HP), a osłony żywiołów (Żarząca Osłona, Pancerz Burzy) nie są na paskach buildów; liczby
+  tej sesji tego nie zmienią. Dla właściciela: O1 żywiołu na pasku buildów wzorcowych albo Elity w połowie odporne na
+  paraliż. Wiersze w `Balance.S147_REPORT` z powodem.
+- **S147** T-SK4 (ROZWOJ 12.0 / 12.7) mierzy warianty żywiołów (buildy gracza po S142), nie średnią trzech żywiołów z
+  mieszaną rotacją: krzywa `manaCost.Mage` 25 / 30 / 40 / 45 / 50 / 55 / 60 / 70 / 100 = 1,02 / 1,04 / 1,08 / 1,096 / 1,3 /
+  1,4 / 1,55 / 1,865 / 2,1 (była 1,37 … 3,49; rośnie dalej, nigdy nie spada), koszt U i Kataklizmu: Deszcz Meteorów 174 →
+  460, Zamieć 170 → 270, Nawałnica 170 → 360, Kataklizm 119 → 220 (rzuca je tylko Niszczyciel). Warianty: Niszczyciel
+  2,01–2,78, Arkanista 2,01–2,39 na 45 / 70 / 100; wyjątek Niszczyciel lodu na 70. 1,48 (bez rang Zamieci, lód najtańszy;
+  droższy lód podnosi Arkanistę lodu ponad 2,4), raport. Średnie żywiołów (G10, `R.<mapa>.tsk4`, `mage.tsk4` ścieżek)
+  spadają do 1,1–1,8 (3,0–3,2 na 60.): `GLOBAL_REPORT_ONLY` S147.
+- **S147** Tożsamość pul Łowcy (R9, asertowane): łuk / kusza (Strzelec) w jeden cel 0,997 / 1,047 / 0,997 / 0,986, udział
+  obrażeń w czasie kuszy (Traper Kłusownik / Truciciel) 0,285 / 0,264, 0,262 / 0,306, 0,299 / 0,318 na 45 / 70 / 100.
+  Obrażenia kuszy przeszły do trucizny: Trujące Sidła 232–236 / 285–290 → 80–82 / 405–412 (10A echo 44 → 135%),
+  Zatrute Groty 10–20 → 10–30%, Zatruta Strzała obrażenia ranga 10 152 → 137 i trucizna 50 → 57,5 (ranga 2 przypięta),
+  Ciężki Bełt od 21. ×0,93, Bełt Egzekutora ranga 10 260 → 248; Pole Sideł 30–38 → 12–14 (10A +14 → +6, R3 Trapera na
+  100. 1,996 ≤ 2,0).
+- **S147** R7 (asertowane, Strzelec z łukiem / z ciężką kuszą wobec Furii S146): 1,237 / 1,181, 1,265 / 1,269, 1,324 /
+  1,343 na 45 / 70 / 100; Traper `r7Exempt` zostaje (15.4.2: obszar i trucizna). Liczby Wojownika bez zmian.
+- **S147** R1 Łowcy i Maga na 45 / 100 (Łowca 2,8–3,3, Mag 3,2–7,3) tylko raport: właściciel (S90, S91), jak `all.r1`
+  ścieżek. R8 każdej puli Łowcy i Maga w paśmie (0,888 punktów na 100, 10 aktywnych z rangą 10, 0,55–0,61 na 45), R5 typów
+  broni ≤ 0,056 (Mag: różdżka z kulą / z księgą, kostur, kostur runiczny w jednym żywiole; `withWeapon` zachowuje żywioł).
+- **S147** R4 (asertowane): przełomy przestrojone pod nowe bazy (Głęboki Mróz 5B +13 → +15, 10B +30 → +36; Roztrzaskanie
+  10B +55 → +85; Lanca 5B +22 → +30, 10B +50 → +65; Zamieć 10B +3,5 → +3,8; Deszcz Meteorów 10B +4,4 → +24; Ognisty
+  Pocisk 10A 12 → 13%; Zatruta Strzała 10A 19 → 21%). Ognisty Pocisk 5A (przebicie 17%, ranga 5 na 17.) 0,056–0,059:
+  zmiana rusza kotwicę L20 Niszczyciela (1–20 zamrożone), raport `GLOBAL_REPORT_ONLY` S147.
+- **S147** `GLOBAL_REPORT_ONLY`: 390 kluczy S137 / S140–S142 / S144 (Łowca i Mag) usuniętych; żaden wpis z S137–S145 nie
+  zostaje (test w bloku S147). 392 klucze z powodem S147: 248 strażników T-SK1 / T-SK2 / T-SK3 Łowcy i Maga (wzrost
+  względem L20 przez pule, jak Wojownik S146), 87 T-SK4 średnich żywiołów, 14 cech broni S88 na buildach sprzed pul,
+  20 celów względem bazy klasy S85 (Strzelec × baza, Traper / Niszczyciel / Arkanista × baza, R5a), 10 tempa solo
+  Zwiadowcy (pula łuku bez pułapek), 8 Trapera z łukiem, 2 R6 Zwiadowcy (wsparcie, średnia ≈ 0), 3 Ognisty Pocisk 5A.
+- **S147** Bossowie S134 i S91–S94 z nowymi paskami: wszystkie wiersze asertowane bez zmian w danych bossów (3 graczy
+  5,2–6,2 min, 5 graczy 3,7–4,2 min, solo na równym sprzęcie przegrywa, solo z Mitycznym +9 wygrywa; największy cios do
+  uniknięcia 0,75–0,85 HP Maga). `Balance.S134_REPORT` pusty.
+- **S147** (przegląd) T-SK4 wariantów żywiołów asertowane na 45–100 (45 i poziomy wierszy `R.ashen.tsk4` /
+  `R.frostpeak.tsk4`: 50 … 100), nie tylko na 45 / 70 / 100. Zasada 5: 29 z 84 wierszy poza pasmem, w
+  `Balance.S147_REPORT` z powodem: Niszczyciel lodu 1,20–1,82 na 65–95 (bez rang Zamieci); Niszczyciel ognia i
+  błyskawicy 2,87–2,98 na 55–60, Arkanista ognia 1,78–1,999 na 50–65, lodu 1,93–1,97 na 60–69; błyskawica Niszczyciela
+  1,74–1,90 na 80–85, Arkaniści ognia i błyskawicy 1,95 na 85, Arkanista ognia 2,41–2,47 na 90–99, błyskawicy 2,41 na
+  90, Niszczyciel ognia 1,90–1,97 na 90–95. Jedna krzywa `manaCost.Mage` tego nie naprawi: na 50, 55, 60, 90, 95 i 99
+  warianty jednego poziomu rozchodzą się szerzej niż pasmo (skoki kupionych rang), a 80–85 nie wzrosną bez 90–100
+  (krzywa nie spada). Dźwignia dla właściciela: koszty czarów osobno dla żywiołów albo kolejność rang. 25–44 dalej tylko
+  raport (pasmo ROZWOJ 12.7 od 45.).
+- **S147** (przegląd) Cele S140–S142 wycofane, nie „asertuje S147” (wiersze z powodem w `report`): udział podpalenia
+  ≥ 25% (S140, 0,09–0,14), bo tożsamość ognia to wygrana z podpaleniem na 3 celach (`S147.r9.mage.area`); obrażenia
+  przyjmowane lód / ogień ≤ 0,85 (S141, 0,86 / 0,90 na 20.) zastąpione celem lód < ogień; błyskawica / ogień bez
+  podpalenia na 3 celach ≥ 1 (S142, 0,92 / 0,93 na 20 / 45), bo S147 asertuje ogień z podpaleniem ≥ błyskawica.
+- **S147** (przegląd) Teksty przełomów z liczbą w treści (`skill.<id>.bp5/.bp10/.bp5b/.bp10b`, PL i EN) zmieniane
+  razem z danymi: 11 kluczy Łowcy i Maga. Test: żaden wiersz R4 w `GLOBAL_REPORT_ONLY` / `S147_REPORT` poza Ognistym
+  Pociskiem 5A.
+- **S148** Kierunki opublikowane na wiki: `wiki = false` zdjęte we wszystkich `PathDef` (DESIGN-18 §14 i plik sesji
+  pokazują je na stronie klasy); cofnięcie = `wiki = false` w `Data/Paths/<Klasa>`. Tytuł kierunku ma na wiki
+  `req.path` (`TitleReq`, „Kierunek przewodni: …”).
+- **S148** Kod buildu v3: `3<KLASA><poziom>.<PULA>:<rangi>[:<pasek>]….<talenty>.<przełomy>`; odejście od DESIGN-18 §14:
+  segment puli niesie też pasek (link oddaje cały build), talenty kierunków w jednym segmencie (grupy według `order`
+  rozdzielone „-”). Kolejność umiejętności puli = `WikiData/Skills.poolOrder` (drabina szkoły, wspólne, umiejętności
+  kierunków), nigdy `plan` puli. Kod v2 („2MAGE34…”) i v1 („MAGE34-…”) = pusty planer z komunikatem; inny tekst bez
+  „3<KLASA>” = błąd `format` (build zostaje).
+- **S148** Wektory planera przeniesione z `skills.json` `rules.vectors` do `wiki/test-fixtures/planner.json` (`game` =
+  kierunki gry, `skills` = `SkillPoints.canBuy` / `apply` na danych gry, ziarno 8283): z opublikowanymi kierunkami
+  `skills.json` urósłby o 1 MB danych testowych. Wektory dostały `leading` (`Paths.mainOf`) i stan z ulepszeniem bez
+  zwieńczenia (`paths.error.upgrade`).
+- **S148** Planer: obniżenie poziomu nie przycina buildu, tylko ostrzega (pule ponad budżet, rangi ponad limit albo bez
+  węzła, węzły nieosiągalne), jak planer v2; kafelek „zablokowany” tylko bez rangi do kupienia na poziomie albo bez
+  węzła kierunku. Zwrot węzła `skill` w planerze zabiera rangi jego umiejętności we wszystkich pulach i paskach
+  (`Paths.cleanRanks`).
+- **S148** `Skills.rankFor` usunięte (rangi z poziomu skończyły się w S137): limit rangi to `Skills.rankAt`, ranga
+  postaci `Paths.skillRank`; `BalanceTables` i `skills.spec` liczą limit przez `rankAt`.
+- **S148** Budżet JS strony klasy 40 → 44 KB gzip (planer v3 41 KB). `wiki_keys_diff` przed commitem sesji wiki
+  przechodzi z `WIKI_KEYS_ALLOW="skills:*,titles:*,mechanics:*,types.ts"` (nowy kształt `skills.json`, `req.path`,
+  `mechanics.combat.pvp.phoenix` z S140).
+- **S149** Boss świata: Hrimvald, Praojciec Olbrzymów (`hrimvald`, imię wolne wśród NPC i bossów), lodowy olbrzym z
+  mitów Szczytów (quest `giants`, „Długa Zima”). Miejsce: płaskowyż Lodowej Strażnicy (88–100), `(490, 360)`, `r = 70`,
+  wybrane siatką 10 st. (`walkable` w całym kole, `dryAround`, ≥ 120 st. od portali, wejść jaskiń i kryjówek, krawędź
+  drogi 125 st.; test `worldboss.spec`). Wystrój i omijanie miejsca grupami potworów: S149b.
+- **S149** Terminy co 3 h od 02:00 UTC (02, 05 … 23) liczy każdy serwer świata sam z `Util/Clock` (`Logic/WorldBoss`),
+  bez komunikacji między serwerami; id `wbYYYYMMDDHH`. Restart w trakcie = boss od razu z pełnym HP i czasem do
+  `endsAt`; termin zakończony na serwerze (zabity, odszedł) nie wraca. Termin, którego okno walki zahacza o Krwawy
+  Księżyc z ciszą, jest pomijany (dziś żaden).
+- **S149** Jedna nagroda na konto i termin: `account.worldBoss.last` (szablon, `reconcile`, bez migracji, `CURRENT`
+  bez zmian), zapis przed nagrodą bez yieldu po sprawdzeniu. Termin wymuszony (`wbforce<n>`) nie zapisuje `last` i nie
+  jest przez nie blokowany.
+- **S149** Próg nagrody 80 zamiast przykładowego 70 (właściciel): przy bossie L100 postać L70 ginie od każdego
+  zwykłego ciosu, a łup ilvl 80–100 jest dla niej bezużyteczny. Niżej można pomagać bez nagrody (toast „Za niski
+  poziom”). Próg to pole bossa `minLevel` w `Data/Bosses`, `Data/WorldBoss` go nie powtarza (jedno źródło).
+- **S149** Stałe statystyki (zasada S134): `hpMul` 7,8 zamiast startowych ≈ 4 × Vaelgratha (5,4): model daje 10 graczy L99
+  11,6 min (z węzłami 10,2), 20 graczy 5,8 (5,1); `breakPct` Wiecznej Zimy 0,7% zamiast 2% (przy tym HP 2% to 33 s
+  dla 10 graczy): 10 graczy 4,8 s, 5 graczy 9,6 s z limitu 5,5 s.
+- **S149** Odnowienia ataków dłuższe niż w szkicu (pięść 14, głaz 16, tąpnięcie 22, kolce 20, lawina 24, kamień 30,
+  piętno 26, zima 40 s): przy ośmiu atakach faz 2–3 i `globalGap` 2,2 s krótsze odnowienia spychały tempo ataków
+  poniżej 50% (G11).
+- **S149** Pomocnicy bez tarczy (boss na otwartym świecie nigdy nie jest nietykalny): na wejściu w fazę 2 i 3 po 3
+  `frozenKnight` i 3 `iceWolf` L95, bez łupu i EXP (nowe pole potwora `noReward`, `CombatService` nic nie daje), smycz
+  do miejsca bossa.
+- **S149** Smycz bossa świata = `r` miejsca; gdy cel ucieka dalej albo nikogo nie ma, boss wraca na środek **bez
+  leczenia** i dalej da się go bić (`Monster.keepHp`): drużyna na otwartym świecie może się przegrupować.
+- **S149** Piętno z `count` (`Bosses.MarkSpec.count`, `BossMechanics.markCount` / `pickMarked` / `markTaken`,
+  `Boss.startMark`): Hrimvald naznacza trzech naraz, każdy krąg wybucha osobno, kręgi się nakładają. `count = 1` losuje
+  tak samo jak S134 (jedno `NextInteger`).
+- **S149** Jedna reguła udziału dla wydarzeń i bossa świata: `Logic/Contribution` (`Logic/WorldEvents` deleguje, wyniki
+  bez zmian). `WorldEventService` dalej liczy obrażenia z `damageBy`, więc bank bossa świata (sygnały S134f
+  `MonsterDamaged`, `Healed`, `Intercepted`) jest w `WorldBossService`, bez wspólnego pomocnika serwera.
+- **S149** W oknie bossa (`startsAt − 120 s` … `endsAt`) nie startuje Inwazja ani Czempion
+  (`WorldEventService.AddBlocker`). W kole walki (`r + 30`) nie ma PvP, póki boss żyje: reguła
+  `PvpService.AddFightRule`, której werdykt może być własnym kluczem odmowy (`pvp.deny.worldBoss`). Auto Hunt staje w
+  kole (`UseGuards` „worldEvent”).
+- **S149** Łup: jeden przedmiot Heroiczny 72 / Legendarny 24 / Mityczny 4, ilvl z poziomu postaci w [80, 100],
+  `classBias` 0,8, Mityk zawsze dla klasy (`Loot.pickUsable`, jak S87), **niezwiązany** jak łup bossa lochu
+  (`rollBossItem` nie wiąże); Fortuna (S60) nie działa, `bossPity` i `bossRuns` bez zmian. EXP 16 i złoto 24 „zabić”
+  poziomu postaci (walka ≈ 12–14% poziomu 80–99: boss jest o przedmiot).
+- **S149** `Bosses.list` = tylko bossowie lochów (lochy, questy, tablica drużyn, mapa, wiki); nowe `Bosses.world` i
+  `Bosses.all`, `forRegion` bez bossów świata. Wiki (`WikiData/Bosses` na `list`) nie widzi Hrimvalda do S149b;
+  dźwięki, testy wyglądu i ruchów, nazwy ataków i G11 idą po `all`. Księga: `Bosses` z `omit` `all` i `world`.
+- **S149** Licznik walki: rodzaj `"worldboss"` (`Logic/FightStats`); klient pokazuje po walce małą kartę jak po
+  Inwazji (tytuł = nazwa bossa, `finder.kind.worldboss` w zapasie). Odejście bossa = efekt Tąpnięcia Lodowca
+  (`MonsterBlow`), bez nowych zasobów. `/worldboss start` bez `now` = ostrzeżenie 2 min.
+- **S149** Model: drużyna 10–20 = powtórzony `Balance.ORDER` (jeden tank i jeden Kapłan na 5 graczy); pomocnicy bez
+  tarczy giną po kolei, a boss bije dalej (czas aktywny bez obrażeń na bossie). Łup na godzinę: 2 h gry dziennie trafia
+  średnio 1 termin na 3 h (≈ 0,67 walki), Vaelgrath na godzinę wejścia (240 s) i walki 5 graczy L99 × 3 zabicia: 0,15
+  (cel ≤ 0,5); na dzień 2 h gry wobec trzech zabić Vaelgratha 0,75 (tylko raport).
+- **S149** Po przeglądzie: klucz kręgu piętna to `e|a|f` (caster, atak, naznaczony), więc skasowanie jednego piętna
+  z trzech zostawia pozostałe kręgi (bez `f` klient kasuje wszystkie piętna ataku, jak S134). Serwer, który poznaje
+  termin już po `endsAt` (start w czasie `linger`), zamyka go bez ogłoszenia i znacznika. Kilku naznaczonych: osobny
+  klucz `boss.mechanic.mark.others` (liczba mnoga). `/boss spawn` i `/tp boss` odrzucają bossa świata.

@@ -1,7 +1,7 @@
 --!strict
 -- Skill rules (DESIGN §14.1). Pure.
--- S56 (ROZWOJ 2.5): ranks came from the character level (rankAt / rankFor). S137 (DESIGN-18): ranks are bought with
--- skill points per weapon pool (Logic/SkillPoints); rankAt is the limit.
+-- S56 (ROZWOJ 2.5): ranks came from the character level. S137 (DESIGN-18): ranks are bought with skill points per
+-- weapon pool (Logic/SkillPoints); rankAt is the limit (S148: rankFor, the old rank of a base skill, is gone).
 -- S57: which skills a character has, the hotbar and the passive totals live in Logic/Paths (base + paths).
 -- S54 (ROZWOJ 8): the one cost (Skills.cost), heal curve (Skills.healMul) and weapon speed normalisation
 -- (Skills.speedFactor) used by the server, the skill bar, the descriptions and the wiki.
@@ -377,16 +377,8 @@ function Skills.rankAt(skill: SkillDef, level: number): number
 end
 
 -- S56 (ROZWOJ 2.5, 2.6): ranks came from the character level. S137 (DESIGN-18 §3.1): ranks are bought with skill
--- points (Logic/SkillPoints); rankAt / rankFor are the LIMIT of a rank at a level (and the legacy rank of migration 12).
-
--- Rank of a class base skill for a character of `classId` at `level` (0: other class or not unlocked yet).
--- base only; path skills: Logic/Paths (Paths.skillRank is the rank every consumer asks for)
-function Skills.rankFor(classId: string?, level: number, skill: SkillDef): number
-	if skill.class ~= classId or skill.path ~= nil then
-		return 0
-	end
-	return Skills.rankAt(skill, level)
-end
+-- points (Logic/SkillPoints); rankAt is the LIMIT of a rank at a level (and the legacy rank of migration 12). The rank
+-- every consumer asks for is Logic/Paths.skillRank (S148: Skills.rankFor removed).
 
 local function byUnlock(a: SkillDef, b: SkillDef): boolean
 	if a.unlock ~= b.unlock then

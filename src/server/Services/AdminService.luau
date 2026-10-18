@@ -80,6 +80,7 @@ local AdminService = {
 		"TourneyService", -- S130: /tourney (nothing it depends on knows AdminService)
 		"LoginRewardService", -- S100: /login, /loginset, /loginnext
 		"WorldEventService", -- S101: /event
+		"WorldBossService", -- S149: /worldboss (nothing it depends on knows AdminService)
 		"VipService", -- S121: /vip
 		"LureService", -- S122: /lure
 		"AutoGrindService", -- S134d: /autogrind (nothing it depends on knows AdminService)

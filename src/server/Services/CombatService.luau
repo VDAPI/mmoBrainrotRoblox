@@ -878,7 +878,8 @@ local function onMonsterDied(monster: any)
 	local credit = CombatService.ResolveKillCredit(monster)
 	local areaId = monster.model:GetAttribute("AreaId") :: string?
 	local luck: Luck.MonsterLuck? = nil
-	if not monster.isBoss then
+	-- S149: the world boss's helpers (noReward) give neither EXP nor gold
+	if not monster.isBoss and not monster.noReward then
 		-- S60: luck of the credited group (best dropBonus + Fortune, one cap) and the class variety bonus.
 		local members: { Luck.Member } = {}
 		local classes: { string } = {}
@@ -931,7 +932,7 @@ local function onMonsterDied(monster: any)
 		mapId = zone.map,
 		entityId = if monster.entity then monster.entity.id else "",
 		boss = monster.isBoss == true,
-		noLoot = monster.summoned == true,
+		noLoot = monster.summoned == true or monster.noReward == true,
 		areaId = areaId,
 		dropLevel = Loot.dropBaseLevel(monster.stats.level, monster.variant, monster.levelCap),
 		luck = luck,

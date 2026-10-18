@@ -316,6 +316,13 @@ cmd(
 	{ enum("action", { "info", "open", "close", "start", "cancel", "win", "force" }), str("a", true) },
 	{ dangerActions = { "cancel", "force" } }
 )
+-- S149: the world boss (WorldBossService): start [now] = an admin occurrence (wbforce<n>), hp <pct>, phase <n>
+cmd(
+	"world",
+	"worldboss",
+	{ enum("action", { "info", "start", "stop", "hp", "phase" }), str("a", true) },
+	{ dangerActions = { "start", "stop" } }
+)
 -- S131: the next occurrence of every scheduled event (UTC) and what is forced on this server
 cmd("world", "sched", {})
 cmd("world", "bring", { ref("player", "player") })

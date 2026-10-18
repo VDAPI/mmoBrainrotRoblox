@@ -1,8 +1,9 @@
 ---
 // Class page (S41, /pl/klasy/<classId>/, mock-up Mag-*): static hero (portrait: owner's picture or the class glyph;
-// roles, description, four facts, starting stats and gear), the skill planner (S82: ranks from the level, breakpoints
-// A/B, published paths) and "All skills" (content without JS and for search engines; Pagefind takes skills from the
-// records, so the list is ignored there).
+// roles, description, four facts, starting stats and gear), the skill planner (S148: planner v3 with the weapon pools,
+// the ladder tree and the directions), "How a skill grows" and "Directions" (numbers from skills.json rules) and "All
+// skills" by pool (content without JS and for search engines; Pagefind takes skills from the records, so the list is
+// ignored there).
 import Base from "../layouts/Base.astro";
 import Crumbs from "../components/Crumbs.astro";
 import ClassOutfits from "../components/blocks/ClassOutfits.astro";
@@ -15,18 +16,21 @@ import { artFor, artImg } from "../lib/art";
 import {
   armorNames,
   baseName,
+  directionCards,
   getClass,
+  growthFacts,
   hpPerLevel,
   plannerData,
   resourceLine,
   resourceName,
   roleParts,
-  skillRows,
+  skillGroups,
   startingGear,
   statName,
 } from "../lib/classes";
+import { getItem } from "../lib/data";
 import { formatNumber } from "../lib/format";
-import { name, t } from "../lib/i18n";
+import { name, t, type Key } from "../lib/i18n";
 import { sectionHref } from "../lib/sections";
 
 interface Props {
@@ -49,8 +53,13 @@ const startStats = ["str", "dex", "int", "vit"]
   .join(" · ");
 const gear = startingGear(c, lang);
 const itemsHref = sectionHref(lang, "items");
-const rows = skillRows(c, lang);
+const groups = skillGroups(c, lang);
 const planner = plannerData(c, lang);
+const growth = growthFacts();
+const directions = directionCards(c, lang);
+const scroll = getItem("scroll_skillreset");
+const scrollHref = scroll ? sectionHref(lang, "items", "scroll_skillreset") : null;
+const roleLabel = (role: string | null) => (role ? t(lang, `skills.role.${role[0]}` as Key) : "");
 const num = (n: number) => formatNumber(n, lang, Number.isInteger(n) ? 0 : 1);
 const range = (a: number, b: number, unit = "") => (a === b ? `${num(a)}${unit}` : `${num(a)}${unit} → ${num(b)}${unit}`);
 const description = t(lang, "class.description", { name: title, role: name(c.role, lang) });
@@ -107,6 +116,54 @@ const portrait = artImg("portrait", c.id, 300, 88);
       <SkillPlanner client:load data={planner} />
     </section>
 
+    <section class="growth" id="growth" aria-labelledby="growth-title">
+      <SectionTitle id="growth-title">{t(lang, "class.growth")}</SectionTitle>
+      <ul class="growth__list">
+        <li>{t(lang, "class.growth.points", { list: growth.pointsAt.map((p) => t(lang, "class.growth.pointsAt", { n: p.n, level: p.level })).join(", ") })}</li>
+        <li>{t(lang, "class.growth.limit")}</li>
+        <li>{t(lang, "class.growth.pool", { bar: growth.barSlots })}</li>
+        <li>{t(lang, "class.growth.bp", { list: growth.breakpointLevels.join(" / ") })}</li>
+        <li>{t(lang, "class.growth.refund", { n: growth.freeRespecLevel })} {scrollHref ? <a href={scrollHref}>{name(scroll?.name, lang)}</a> : name(scroll?.name, lang)}.</li>
+        <li>{t(lang, "class.growth.talents", { every: growth.pathPointsEvery, max: growth.pathPointsMax })}</li>
+      </ul>
+    </section>
+
+    {directions.length > 0 && (
+      <section class="dirs" id="directions" aria-labelledby="dirs-title">
+        <SectionTitle id="dirs-title">{t(lang, "class.directions")}</SectionTitle>
+        <p class="lead">{t(lang, "class.directionsText")}</p>
+        <ul class="dirs__rules">
+          <li>{t(lang, "class.directions.capstone", { n: growth.capstonesMax })}</li>
+          <li>{t(lang, "class.directions.leading", { n: growth.mainMinPoints })}</li>
+          <li>{t(lang, "class.directions.dip", { rows: growth.dipRows, n: growth.teamFullPoints })}</li>
+        </ul>
+        <div class="dirs__grid">
+          {directions.map((d) => (
+            <article class="dir" id={`dir-${d.id}`}>
+              <h3>{d.name} <small>{d.roleName}</small></h3>
+              <p class="dir__desc">{d.desc}</p>
+              <ol class="dir__rows">
+                {d.rows.map((r) => (
+                  <li class:list={["dir__row", `dir__row--${r.kind}`]}>
+                    <span class="dir__head">{t(lang, "class.directions.row", { n: r.row, level: r.level, need: r.required })}{r.choice && ` · ${t(lang, "class.directions.choice")}`}</span>
+                    <ul>
+                      {r.nodes.map((n) => (
+                        <li id={`n-${n.id}`}>
+                          <b><span aria-hidden="true">{n.glyph}</span> {n.name}</b> <small>{t(lang, `planner.kind.${n.kind}` as Key)} · {n.maxRank}</small>
+                          <p>{n.maxRank > 1 ? <>{t(lang, "class.directions.rank", { first: n.first })}<br />{t(lang, "class.directions.max", { n: n.maxRank, last: n.last })}</> : n.first}</p>
+                          {n.weapon && <p class="dir__weapon">{t(lang, "class.directions.weapon", { w: n.weapon })}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                ))}
+              </ol>
+            </article>
+          ))}
+        </div>
+      </section>
+    )}
+
     <section class="looks" aria-labelledby="class-look">
       <SectionTitle id="class-look">{t(lang, "cos.classlook.title")}</SectionTitle>
       <ClassOutfits cls={c.id} />
@@ -114,50 +171,61 @@ const portrait = artImg("portrait", c.id, 300, 88);
 
     <section class="all" aria-labelledby="all-skills" data-pagefind-ignore>
       <SectionTitle id="all-skills">{t(lang, "class.allSkills")}</SectionTitle>
-      <table class="vw-table skills">
-        <caption class="vw-sr">{t(lang, "class.allSkills")}</caption>
-        <thead>
-          <tr>
-            <th scope="col">{t(lang, "skills.col.skill")}</th>
-            <th scope="col">{t(lang, "skills.col.unlock")}</th>
-            <th scope="col">{t(lang, "skills.col.ranks")}</th>
-            <th scope="col">{t(lang, "skills.col.cost")}</th>
-            <th scope="col">{t(lang, "skills.col.cooldown")}</th>
-            <th scope="col">{t(lang, "skills.col.desc")}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r) => {
-            const s = r.skill;
-            const first = s.ranks[0];
-            const last = s.ranks[s.ranks.length - 1];
-            const resource = s.resource === "mana" || s.resource === "energy" ? s.resource : null;
-            return (
-              <tr id={`s-${s.id}`}>
-                <th scope="row" class="name"><div class="name__in">
-                  <SkillNode glyph={s.glyph} pic={artFor("skill", s.id)} color={r.color} state="available" max={s.maxLevel} active={!s.passiveSkill} label={r.name} size={40} tabindex={-1} aria-hidden="true" />
-                  <span>
-                    <b>{r.name}</b>
-                    <small>{t(lang, s.passiveSkill ? "planner.passive" : "planner.active")}{s.elementNote && ` · ${name(s.elementNote, lang)}`}{r.pathName && ` · ${t(lang, "skills.path", { name: r.pathName })}`}</small>
-                    <a class="plan" href={`#planner`} data-plan={s.id}>{t(lang, "skills.plan")}</a>
-                  </span>
-                </div></th>
-                <td data-label={t(lang, "skills.col.unlock")}>{s.unlock}</td>
-                <td data-label={t(lang, "skills.col.ranks")}>{s.maxLevel} <small>({r.rank5 !== null && r.rank10 !== null ? t(lang, "skills.rank510", { a: r.rank5, b: r.rank10 }) : t(lang, "skills.maxAt", { n: r.maxAt })})</small></td>
-                <td data-label={t(lang, "skills.col.cost")}>{s.passiveSkill || !resource ? t(lang, "skills.none") : t(lang, `planner.cost.${resource}`, { n: range(first.cost, last.cost) })}</td>
-                <td data-label={t(lang, "skills.col.cooldown")}>{s.passiveSkill || last.cooldown === 0 ? t(lang, "skills.none") : range(first.cooldown, last.cooldown, " s")}</td>
-                <td class="descs">
-                  <p><b>{t(lang, "skills.rankN", { n: 1 })}:</b> {name(first.desc, lang)}</p>
-                  <p><b>{t(lang, "skills.rankN", { n: s.maxLevel })}:</b> {name(last.desc, lang)}</p>
-                  {s.breakpoints.length > 0 && s.breakpoints.map((b) => (
-                    <p class="bp"><b>{t(lang, "skills.bp", { n: b.rank, level: b.level })}:</b> A: {name(b.a.text, lang)}{b.b && <> / B: {name(b.b.text, lang)}</>}</p>
-                  ))}
-                </td>
+      <p class="lead">{t(lang, "class.allSkillsText")}</p>
+      {groups.map((g) => (
+        <div class="group" id={`pool-${g.id}`}>
+          <h3 class="group__title"><span aria-hidden="true">{g.glyph}</span> {g.title}</h3>
+          {g.identity && <p class="group__text">{g.identity}{g.weapons && <span> · {g.weapons}</span>}</p>}
+          <table class="vw-table skills">
+            <caption class="vw-sr">{g.title}</caption>
+            <thead>
+              <tr>
+                <th scope="col">{t(lang, "skills.col.skill")}</th>
+                <th scope="col">{t(lang, "skills.col.unlock")}</th>
+                <th scope="col">{t(lang, "skills.col.ranks")}</th>
+                <th scope="col">{t(lang, "skills.col.cost")}</th>
+                <th scope="col">{t(lang, "skills.col.cooldown")}</th>
+                <th scope="col">{t(lang, "skills.col.desc")}</th>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            </thead>
+            <tbody>
+              {g.rows.map((r) => {
+                const s = r.skill;
+                const first = s.ranks[0];
+                const last = s.ranks[s.ranks.length - 1];
+                const resource = s.resource === "mana" || s.resource === "energy" ? s.resource : null;
+                const rankFrom = r.rankFrom.map((x) => t(lang, "skills.rankFrom", { r: x.rank, n: x.level })).join(" · ");
+                return (
+                  <tr id={`s-${s.id}`}>
+                    <th scope="row" class="name"><div class="name__in">
+                      <SkillNode glyph={s.glyph} pic={artFor("skill", s.id)} color={r.color} state="available" max={s.maxLevel} active={!s.passiveSkill} label={r.name} size={40} tabindex={-1} aria-hidden="true" />
+                      <span>
+                        <b>{r.name}</b>
+                        <small>{[roleLabel(r.role), t(lang, s.passiveSkill ? "planner.passive" : "planner.active"), s.elementNote ? name(s.elementNote, lang) : "", r.pathName ? t(lang, "skills.path", { name: r.pathName }) : ""].filter(Boolean).join(" · ")}</small>
+                        <span class="short">{r.short}</span>
+                        <a class="plan" href={`#planner`} data-plan={s.id}>{t(lang, "skills.plan")}</a>
+                      </span>
+                    </div></th>
+                    <td data-label={t(lang, "skills.col.unlock")}>{s.unlock}</td>
+                    <td data-label={t(lang, "skills.col.ranks")}>{s.maxLevel} <small>({rankFrom})</small></td>
+                    <td data-label={t(lang, "skills.col.cost")}>{s.passiveSkill || !resource ? t(lang, "skills.none") : t(lang, `planner.cost.${resource}`, { n: range(first.cost, last.cost) })}</td>
+                    <td data-label={t(lang, "skills.col.cooldown")}>{s.passiveSkill || last.cooldown === 0 ? t(lang, "skills.none") : range(first.cooldown, last.cooldown, " s")}</td>
+                    <td class="descs">
+                      {r.shown.map((n) => (
+                        <p><b>{t(lang, "skills.rankN", { n })}:</b> {name(s.ranks[n - 1].desc, lang)}</p>
+                      ))}
+                      {s.breakpoints.length > 0 && s.breakpoints.map((b) => (
+                        <p class="bp"><b>{t(lang, "skills.bp", { n: b.rank, level: b.level })}:</b> A: {name(b.a.text, lang)}{b.b && <> / B: {name(b.b.text, lang)}</>}</p>
+                      ))}
+                      {r.modifiedBy.length > 0 && <p class="bp">{t(lang, "skills.modifiedBy", { list: r.modifiedBy.map((m) => `${m.node} (${m.path})`).join(", ") })}</p>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ))}
     </section>
   </div>
 </Base>
@@ -188,9 +256,31 @@ const portrait = artImg("portrait", c.id, 300, 88);
   .gear__item { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; color: var(--vw-text); }
   a.gear__item:hover { color: var(--vw-gold-bright); }
   .gear__more { font-weight: 800; }
-  .planner, .all, .looks { scroll-margin-top: 88px; }
-  .looks { margin-top: 56px; }
-  .all { margin-top: 56px; }
+  .planner, .all, .looks, .growth, .dirs { scroll-margin-top: 88px; }
+  .looks, .all, .growth, .dirs { margin-top: 56px; }
+  .lead { max-width: 900px; margin: 0 0 16px; font-size: 17px; line-height: 1.5; color: var(--vw-text-soft); }
+  .growth__list, .dirs__rules { display: flex; flex-direction: column; gap: 8px; max-width: 900px; margin: 0; padding: 0 0 0 20px; font-size: 17px; line-height: 1.5; color: var(--vw-text-soft); }
+  .dirs__rules { margin-bottom: 20px; font-size: 15px; }
+  .dirs__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+  .dir { padding: 16px 18px; background: var(--vw-panel); border: 1px solid var(--vw-border); border-top: 2px solid var(--cls); }
+  .dir h3 { margin: 0 0 6px; font: 800 22px/1.2 var(--vw-font-ui); }
+  .dir h3 small { font-size: 14px; font-weight: 500; color: var(--vw-text-muted); }
+  .dir__desc { margin: 0 0 12px; font-size: 15px; line-height: 1.45; color: var(--vw-text-soft); }
+  .dir__rows { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+  .dir__row { padding-top: 8px; border-top: 1px solid var(--vw-border-subtle); }
+  .dir__row--capstone, .dir__row--upgrade { border-top-color: var(--vw-gold-dark); }
+  .dir__head { font: 800 12px/1.3 var(--vw-font-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--vw-gold); }
+  .dir__row ul { display: flex; flex-direction: column; gap: 6px; margin: 6px 0 0; padding: 0; list-style: none; }
+  .dir__row b { font-size: 15px; }
+  .dir__row small { font-size: 12px; color: var(--vw-text-muted); }
+  .dir__row p { margin: 2px 0 0; font-size: 14px; line-height: 1.4; color: var(--vw-text-soft); }
+  .dir__row p.dir__weapon { color: var(--vw-text-muted); }
+  .group { margin-top: 28px; }
+  .group__title { margin: 0 0 4px; font: 800 24px/1.2 var(--vw-font-ui); }
+  .group__title span { color: var(--cls); }
+  .group__text { margin: 0 0 12px; font-size: 15px; color: var(--vw-text-soft); }
+  .group__text span { color: var(--vw-text-muted); }
+  .skills .name .short { font-size: 14px; line-height: 1.35; color: var(--vw-text-soft); }
   .name__in { display: flex; align-items: center; gap: 14px; }
   .skills .name { width: 260px; vertical-align: top; height: auto; padding: 12px 14px; text-align: left; font: 400 17px/1.3 var(--vw-font-ui); letter-spacing: 0; text-transform: none; white-space: normal; color: var(--vw-text); border-bottom: 1px solid var(--vw-border-subtle); }
   .skills .descs { width: 46%; }

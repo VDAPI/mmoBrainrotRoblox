@@ -21,6 +21,9 @@
 -- circle freezes once per cast for values.freeze s through ctx.freeze (bosses: Deep Chill).
 -- S142 (Logic/Shock): `target` with `delay` (Thunder Strike) lands that many seconds after the cast (the event first, its
 -- `d` = the delay); circleTarget with `finale` (Ball Lightning) knocks back and stuns what its last wave hits.
+-- S145 (Logic/Faith, DESIGN-18 §6.4): `target` of a brand skill with the Inquisitor's Wandering Brand lands the burn on
+-- the nearest other enemy too (brandJump % of it); circleSelf with values.healHp / healMag (Holy Nova) heals the allies
+-- in the circle their own heal of the skill on its first wave (ctx.healAmount, ctx.heal).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -28,6 +31,8 @@ local Burn = require(ReplicatedStorage.Shared.Logic.Burn)
 local Chain = require(ReplicatedStorage.Shared.Logic.Chain)
 local Chill = require(ReplicatedStorage.Shared.Logic.Chill)
 local Context = require(script.Parent.Parent.Context)
+local Faith = require(ReplicatedStorage.Shared.Logic.Faith)
+local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Push = require(script.Parent.Parent.Push)
 local Shock = require(ReplicatedStorage.Shared.Logic.Shock)
 local SkillVfx = require(ReplicatedStorage.Shared.Data.SkillVfx)
@@ -121,6 +126,37 @@ local function detonate(ctx: Ctx, target: any)
 	end
 end
 
+-- S145 Wandering Brand (Logic/Faith.brandShare): the burn of a brand skill's main hit lands on the nearest other enemy
+-- within FAITH.brandRadius for brandJump % of its value (nothing without the keystone or another enemy).
+local function brandJump(ctx: Ctx, target: any)
+	local share = Faith.brandShare(ctx.skill.id, ctx.hook("brandJump"))
+	local Entity = ctx.services.Entity
+	local at = if share > 0 then Entity.Position(target) else nil
+	if not at then
+		return
+	end
+	local best, bestDistance = nil, math.huge
+	for _, other in ctx.enemiesInCircle(at, SkillData.FAITH.brandRadius) do
+		local p = Entity.Position(other)
+		if other ~= target and p then
+			local d = Vector3.new(p.X - at.X, 0, p.Z - at.Z).Magnitude
+			if d < bestDistance then
+				best, bestDistance = other, d
+			end
+		end
+	end
+	if not best then
+		return
+	end
+	ctx.fx({ v = "pierce", path = { target.id, best.id } })
+	local effects: { any } = ctx.skill.effects or {}
+	for _, effect in effects do
+		if effect.kind == "burn" then
+			ctx.applyEffect(best, effect, { scale = share / 100 })
+		end
+	end
+end
+
 Offense.target = function(ctx)
 	local target = ctx.target
 	if not target then
@@ -137,6 +173,7 @@ Offense.target = function(ctx)
 		local result = ctx.damage(target, percent, { primary = true })
 		if result and not result.dodged then
 			ctx.applyEffects(target, "enemy")
+			brandJump(ctx, target)
 			stunSplash(ctx, target)
 			if ctx.skill.values.detonate ~= nil then
 				detonate(ctx, target)
@@ -355,6 +392,11 @@ Offense.circleSelf = function(ctx)
 				local amount = ctx.attack() * ctx.value("dmg") / 100 * ctx.value("heal") / 100 * ctx.healMul()
 				for _, ally in ctx.alliesInCircle(center, radius) do
 					ctx.heal(ally, amount)
+				end
+			elseif ctx.skill.values.healHp ~= nil then
+				-- S145 Holy Nova: every ally in the circle heals its own heal of the skill (target max HP + magic part)
+				for _, ally in ctx.alliesInCircle(center, radius) do
+					ctx.heal(ally, ctx.healAmount(ally, "heal"))
 				end
 			end
 		end

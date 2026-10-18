@@ -155,15 +155,21 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `cdrFor`; trucizna grotów przez `CombatService.ToxicTip`), unieruchomienie, które na bossie spowalnia, przez
   `SkillEffect.bossSlow` i `Logic/Snare`, Martwe Oko w `Logic/DeadEye`; lustra w tabeli `Hunt` w `tests/SkillModel` (plik
   na limicie 200 lokalnych: nowe pomocniki w tabelach), test `tests/crossbow.spec`.
+- **Szkoły Kapłana** (S145): reguły tylko w `Logic/Faith` (`mostWounded`, `rayHeal`, `ward` Światła Przewodniego,
+  `zealCut` / `zealShortens` Gorliwości tylko dla puli `hammer`, `brandShare` Wędrującego Piętna, `interrupts` Upomnienia;
+  stałe `Data/Skills.FAITH`); przerwanie kanału wroga zdarzeniem `"interrupt"` w `Logic/Channel` (`services.Interrupt`,
+  nigdy kanał bossa); lustra w tabeli `Hunt` w `tests/SkillModel`, test `tests/faith.spec`.
 - **Leczenie / tarcza umiejętności** (S69): pola `values.healHp` / `healMag` (`shieldHp` / `shieldMag`), kwota tylko
   przez `Skills.healAmount` (serwer `ctx.healAmount`, podpowiedź `SkillInfo.healLine`); pole leczenia przez `ctx.healZone`.
 - **Losowe wzmocnienie / kanał** (S70): ściany kości to efekty z `face` (los przez `Logic/Roll` i `ctx.rollDice`);
   przerwanie kanału tylko przez `Logic/Channel.stops`; ocalenie od śmierci przez filtr `guardianAngel` (priorytet 90).
 - **Ścieżka / węzeł** (S57): `Data/Paths/<Klasa>` (kształt: `tests/fixtures/paths.luau`), umiejętność z `path` i
-  `unlock` = poziom rzędu, teksty `path.<pathId>.*`, `wiki = false` do wydania, `statPlan` (plan przycisku „Rozdaj jak
+  `unlock` = poziom rzędu, teksty `path.<pathId>.*`, na wiki od S148 (`wiki = false` chowa), `statPlan` (plan przycisku „Rozdaj jak
   zaleca ścieżka”, nigdy na wiki), `paths.spec` sprawdza dane. S138: ścieżki to mieszalne kierunki (bez ścieżki
   głównej i broni ścieżki; wymóg broni tylko `node.weapon`), jedno zwieńczenie na zestaw, kierunek przewodni tylko
-  przez `Paths.mainOf` (tytuł, `statPlan`, `itemWeights`, znak w drużynie). Reguły
+  przez `Paths.mainOf` (tytuł, `statPlan`, `itemWeights`, znak w drużynie). S145: węzeł `skill` tylko w rzędach
+  `PathData.SKILL_ROWS` (4 i 8, najwyżej jeden na rząd, umiejętność z `path`, bez `pool`; test bez wyjątków dla każdej
+  klasy), zwieńczenie bez umiejętności = węzeł `keystone`; build wzorcowy ma `ranks` (kolejność kupna rang). Reguły
   (punkty, rzędy, broń, pasek, pasywki) tylko w `Logic/Paths`; serwer `PathService`. Wzór pełnej klasy: Kapłan (S71,
   `Data/Paths/Cleric`): buildy w kształcie `ReferenceBuild`, opis węzła = placeholdery pól `values` (mnożniki
   `{<pole>Pct}`), każdy hak węzła z odbiorcą w kodzie (test), nowy klucz przełomu w `Data/Skills/Types` i
@@ -196,8 +202,14 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `Skills.resolve` / `ctx.resolve`); tarcze z umiejętności tylko przez `ctx.shield`.
 - **Punkty umiejętności / pula broni** (S137, `docs/DESIGN-18.md`): pule klasy w `Data/SkillPools/<Klasa>` (`pools`
   z `weapon` i `plan`, `defaultPool`, `version`), umiejętność podstawy z `SkillDef.pool` (`"common"` albo id puli) i
-  `role` (kod drabiny); ranga = kupione punkty (`Logic/SkillPoints`, reguła tylko w `Paths.skillRank`), pula z broni
-  `Logic/SkillPools.activePool`. Zmiana pul klasy: podbij `version` (czyszczenie i darmowy reset przy wczytaniu), bez migracji.
+  `role` (kod drabiny); ranga = kupione punkty (`Logic/SkillPoints`, reguła tylko w `Paths.skillRank`, limit poziomu
+  `Skills.rankAt`), pula z broni `Logic/SkillPools.activePool`. Zmiana pul klasy: podbij `version` (czyszczenie i
+  darmowy reset przy wczytaniu), bez migracji. Zmiana reguł `SkillPoints` / `Paths` = to samo w lustrze planera wiki
+  (`wiki/src/lib/skills.ts`, S148; wektory w `wiki/test-fixtures/planner.json`, `npm run data` i `npm test`).
+- **Umiejętność w puli broni** (S145, koniec stanu przejściowego): rola z drabiny (`Data/SkillPools.LADDER` /
+  `COMMON_LADDER`, `unlock` = poziom rungu), `pool` + `role` w `Data/Skills/<Klasa>`, miejsce w `plan` puli (kolejność
+  drabiny, aktywne przed pasywkami), `version` puli + 1; każda pula ma pełną drabinę (`tests/skillpools.spec`, wszystkie
+  klasy), aktywna ma przełomy A / B 5 i 10, `short`, ruch, wygląd, klucz dźwięku i wiersz `skill_timing` (ten sam test).
 - **Okno / kolor UI** (S135, S136): okno w `Data/UiWindows` (`surface = "paper" | "iron"`), ekran poza oknem w
   `UiWindows.SCREENS`; kolory tylko z ról `Theme.Paper` / `Theme.Iron` / `Theme.Brass` (wartości `Data/UiPalette`, para w
   `PAIRS`; `Theme.Colors` nie istnieje), kolor z danych jako tekst przez `Theme.readable`, jako grafika przez
@@ -222,6 +234,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Kryjówka Elity II** (S134i): wpis `lairs` w `Data/Areas/<mapa>` + `ELITE2_SLOTS[kind]` + `lair.<id>.name` (PL, EN);
   ubiór `Logic/WorldGen/Lairs`; po zmianie `python tools/arrivals_apply.py`; testy `tests/lairs.spec`, model
   `Balance.targetsS134i`.
+- **Boss świata** (S149): wpis w `Data/Bosses` z `world = true` + `Data/WorldBoss` (terminy, miejsce, udział, nagroda);
+  serwis `WorldBossService`, udział przez `Logic/Contribution`.
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez
@@ -241,3 +255,6 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   i teksty w `wiki/src/content/bosses` (liczby tylko jako `{NAZWA}`).
 - Nowe pole gry na wiki = `Schema.rec` + wartość w builderze. Liczby tylko z `Logic` i `Data`; nic z `Data/Codes`,
   `AdminCommands`, `DevPreset`, `Products` (wyjątek: `WikiData/Premium.luau`).
+- Planer umiejętności v3 (S148): strona klasy z pulami, kierunkami i kodem `3<KLASA>…` (`docs/WIKI.md` → „Planer v3”);
+  kolejność umiejętności puli w kodzie z `WikiData/Skills.poolOrder` (drabina, nigdy `plan` puli); zmiana kształtu
+  `wiki/src/data` przechodzi `wiki_keys_diff` dopiero po commicie albo z `WIKI_KEYS_ALLOW`.

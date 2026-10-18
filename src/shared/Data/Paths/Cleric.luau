@@ -4,7 +4,13 @@
 -- Node numbers follow B3 (Logic/Paths): rank-dependent numbers sit in `values`, passive / luck name the field, in
 -- modify.bp a number is { ref = "<field>" }. Behaviour numbers (shieldBurst, stunSplash, misfortune) go through the
 -- skill's values (read with ctx.value), the behaviour key keeps only its fixed radius.
--- `reference` and `itemWeights` never reach the wiki; every path is unpublished there (wiki = false, ROZWOJ 3.5).
+-- `reference` and `itemWeights` never reach the wiki; S148: the directions are published there (DESIGN-18 §14).
+-- S145 (DESIGN-18 §6.4, §7): the skill nodes went to the weapon pools (Scepter and Staff, Mace and Flail) and left
+-- nodes of the same ranks (rows and need unchanged); skill nodes only in rows 4 and 8: the Healer has Prayer (row 4,
+-- was Fortune's row 7) and Divine Intervention (the capstone, row 8; Guardian Angel went to the light pool), the Priest
+-- of Fortune Roll of the Dice (row 4) and Wheel of Fortune (row 8) with the luck nodes unchanged (the relic, ROZWOJ
+-- 6), the Inquisitor no skill: its capstone is the keystone Wandering Brand (a brand's burn lands on a second enemy,
+-- Logic/Faith.brandShare). Nodes that strengthen a pool skill work while that skill is in the active pool (S138).
 
 local SkillData = require("../Skills")
 local Types = require("./Types")
@@ -77,7 +83,11 @@ local healer: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(H, "renew"),
+			-- S145: Renew is the light pool's S2; Solace takes its one rank (+2 % healing)
+			node(H, "solace", "passive", 1, "❧", {
+				values = { solace = 2 },
+				passive = { hooks = { healBonus = "solace" } },
+			}),
 			node(H, "blessedHands", "passive", 3, "✙", {
 				values = { blessedHands = { 3, 9 } },
 				passive = { hooks = { healBonus = "blessedHands" } },
@@ -104,7 +114,8 @@ local healer: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(H, "sanctuary"),
+			-- S145: Sanctuary is the light pool's A2; Prayer is the Healer's row 4 skill (was Fortune's row 7)
+			skill(H, "prayer"),
 			node(H, "radiantCircle", "modify", 3, "◌", {
 				values = { radiantCircle = { 1, 3 } },
 				modify = { skill = "circleOfLight", bp = { values = { healHp = ref("radiantCircle") } } },
@@ -137,13 +148,18 @@ local healer: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(H, "divineIntervention"),
+			-- S145: Divine Intervention moved to row 8 (the capstone); Halo takes its one rank (Circle of Light +2 studs)
+			node(H, "halo", "modify", 1, "◎", {
+				values = { halo = 2 },
+				modify = { skill = "circleOfLight", bp = { add = { radius = ref("halo") } } },
+			}),
 			node(H, "salvation", "modify", 3, "☩", {
 				values = { salvation = { 0.92, 0.75 } },
 				modify = { skill = "divineIntervention", bp = { mul = { cooldown = ref("salvation") } } },
 			}),
 		}),
-		row(false, { skill(H, "guardianAngel") }),
+		-- S145: Guardian Angel is the light pool's U; the capstone is Divine Intervention (was row 7)
+		row(false, { skill(H, "divineIntervention") }),
 		row(true, {
 			node(H, "haste", "modify", 3, "⇉", {
 				values = { haste = { 0.9, 0.7 } },
@@ -175,7 +191,6 @@ local healer: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local fortune: Types.PathDef = {
@@ -195,7 +210,11 @@ local fortune: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(F, "resurrection"),
+			-- S145: Resurrection is the Cleric's common C3; Four-Leaf Clover takes its one rank (+0.5 crit points)
+			node(F, "clover", "passive", 1, "☘", {
+				values = { clover = 0.5 },
+				passive = { flat = { critChance = "clover" } },
+			}),
 			node(F, "blessedFate", "luck", 3, "✳", {
 				values = { blessedFate = { 2, 6 } },
 				luck = { bossLegendary = "blessedFate" },
@@ -255,7 +274,11 @@ local fortune: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(F, "prayer"),
+			-- S145: Prayer is the Healer's row 4 skill; Coin Toss takes its one rank (Roll of the Dice's haste +1 point)
+			node(F, "coin", "modify", 1, "◐", {
+				values = { coin = 1 },
+				modify = { skill = "fortuneDice", bp = { values = { haste = ref("coin") } } },
+			}),
 			node(F, "goldVein", "luck", 3, "◉", {
 				weapon = RELIC, -- S138: the Fortune's luck past row 2 needs the relic (on the node, DESIGN-18 §7)
 				values = { goldVein = { 5, 15 }, goldVeinElite = { 7, 20 } },
@@ -298,7 +321,6 @@ local fortune: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local inquisitor: Types.PathDef = {
@@ -326,7 +348,11 @@ local inquisitor: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(I, "purify"),
+			-- S145: Purify is the light pool's K2; Vow takes its one rank (+1 % holy damage; not HP: the S32 group at 20)
+			node(I, "vow", "passive", 1, "✠", {
+				values = { vow = 1 },
+				passive = { hooks = { holyDamage = "vow" } },
+			}),
 			node(I, "zeal", "passive", 3, "✦", {
 				values = { zeal = { 3, 7 } }, -- S91: { 4, 10 } -> { 3, 7 } (Cleric group at 20 with the node >= 30 % HP, S32)
 				passive = { pct = { magAtk = "zeal" } },
@@ -355,7 +381,11 @@ local inquisitor: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(I, "brandOfLight"),
+			-- S145: Brand of Light is the hammer pool's S2; Conviction takes its one rank (+0.5 crit points)
+			node(I, "conviction", "passive", 1, "⚔", {
+				values = { conviction = 0.5 },
+				passive = { flat = { critChance = "conviction" } },
+			}),
 			node(I, "ember", "passive", 3, "✹", {
 				values = { ember = { 2, 6 } },
 				passive = { flat = { critChance = "ember" } },
@@ -385,13 +415,25 @@ local inquisitor: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(I, "auraOfEndurance"),
+			-- S145: the Aura of Endurance is the hammer pool's O1; Enduring Faith takes its one rank (the aura +1 % HP)
+			node(I, "enduring", "modify", 1, "♡", {
+				values = { enduring = 1 },
+				modify = { skill = "auraOfEndurance", bp = { values = { hp = ref("enduring") } } },
+			}),
 			node(I, "faithArmor", "passive", 3, "⛨", {
 				values = { faithArmor = { 5, 15 } },
 				passive = { pct = { armor = "faithArmor", mres = "faithArmor" } },
 			}),
 		}),
-		row(false, { skill(I, "hammerOfHeaven") }),
+		-- S145: Hammer of Heaven is the hammer pool's U; the capstone is the keystone Wandering Brand (DESIGN-18 §7: no
+		-- skill in the Inquisitor's row 8): the burn of a brand skill's main hit lands on the nearest other enemy within
+		-- FAITH.brandRadius for brandJump % (Logic/Faith.brandShare; Types/Offense, the model), holy damage +brandHoly %
+		row(false, {
+			node(I, "wanderingBrand", "keystone", 1, "✺", {
+				values = { brandJump = 60, brandHoly = 5 },
+				passive = { hooks = { brandJump = "brandJump", holyDamage = "brandHoly" } },
+			}),
+		}),
 		row(true, {
 			node(I, "inquisition", "modify", 3, "⚖", {
 				values = { inquisition = { 0.93, 0.8 } },
@@ -423,10 +465,14 @@ local inquisitor: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 -- Model builds (ROZWOJ 7.5, 9.3-9.5; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50 points.
+-- S145 (DESIGN-18 §6.4, §13): one build per pool and leading direction (the Healer with a scepter or the holy staff in
+-- the light pool, the Priest of Fortune and the Inquisitor with a mace in the hammer pool), the moved skill nodes
+-- replaced by the nodes of the same ranks, `ranks` = the order the model buys skill ranks in. A rotation lists the
+-- skills of both pools (a skill of the other pool has no rank and is skipped), so the model measures a build with the
+-- other weapon too.
 local function build(
 	id: string,
 	main: string,
@@ -434,7 +480,9 @@ local function build(
 	stats: { [string]: number },
 	nodes: { { any } },
 	bp: { [string]: "a" | "b" },
-	rotation: { { [string]: any } }
+	rotation: { { [string]: any } },
+	ranks: { string },
+	bar: { string }?
 ): Types.ReferenceBuild
 	return {
 		id = id,
@@ -443,27 +491,29 @@ local function build(
 		bp = bp,
 		stats = stats,
 		rotation = rotation,
+		ranks = ranks,
+		bar = bar,
 	}
 end
 
 local HEALER_NODES: { { any } } = {
-	{ "healer_renew", 1 },
+	{ "healer_solace", 1 },
 	{ "healer_blessedHands", 3 },
-	{ "fortune_resurrection", 1 },
+	{ "fortune_clover", 1 },
 	{ "fortune_blessedFate", 3 },
-	{ "inquisitor_purify", 1 },
+	{ "inquisitor_vow", 1 },
 	{ "inquisitor_zeal", 3 },
 	{ "healer_providence", 3 },
 	{ "healer_faithShield", 3 },
 	{ "healer_quietPrayer", 3 },
-	{ "healer_sanctuary", 1 },
+	{ "healer_prayer", 1 },
 	{ "healer_radiantCircle", 3 },
 	{ "healer_shatter", 3 },
 	{ "healer_grace", 3 },
 	{ "healer_bulwark", 3 },
-	{ "healer_divineIntervention", 1 },
+	{ "healer_halo", 1 },
 	{ "healer_salvation", 3 },
-	{ "healer_guardianAngel", 1 },
+	{ "healer_divineIntervention", 1 },
 	{ "healer_haste", 3 },
 	{ "healer_hope", 3 },
 	{ "healer_endurance", 3 },
@@ -472,12 +522,88 @@ local HEALER_NODES: { { any } } = {
 local HEALER_BP: { [string]: "a" | "b" } = {
 	["heal:10"] = "b",
 	["circleOfLight:10"] = "b",
-	["holyStrike:10"] = "b",
 	["radiance:5"] = "b",
 	["sanctuary:10"] = "b",
 	["divineIntervention:10"] = "b",
 	["resurrection:5"] = "b",
+	["lightRay:5"] = "a",
+	["lightRay:10"] = "a",
+	["blindingLight:5"] = "a",
+	["blindingLight:10"] = "a",
+	["miracle:5"] = "a",
+	["miracle:10"] = "b",
+	["holyStrike:10"] = "b",
 }
+-- S145: the light pool's heals and shields first (Heal maxed for T-SK5, Guardian Angel and the passives of the dungeon
+-- healer), then its damage and utility, the hammer pool's for the other weapon
+local HEALER_RANKS = {
+	"heal",
+	"shieldOfFaith",
+	"renew",
+	"circleOfLight",
+	"grace",
+	"lightRay",
+	"radiance",
+	"sanctuary",
+	"miracle",
+	"guardianAngel",
+	"guidingLight",
+	"devotion",
+	"blindingLight",
+	"purify",
+	"resurrection",
+	"prayer",
+	"divineIntervention",
+	"holyStrike",
+	"brandOfLight",
+	"consecrate",
+	"holyChains",
+	"auraOfEndurance",
+	"divineWrath",
+	"judgement",
+	"holyNova",
+	"zeal",
+	"rebuke",
+	"hammerOfHeaven",
+}
+
+-- S145: the lone Healer with the holy staff buys the light pool's damage first (Light Ray, Radiance, Blinding Light),
+-- then the heals it lives on alone
+local HEALER_SOLO_RANKS = {
+	"lightRay",
+	"heal",
+	"radiance",
+	"blindingLight",
+	"grace",
+	"renew",
+	"shieldOfFaith",
+	"circleOfLight",
+	"miracle",
+	"guidingLight",
+	"devotion",
+	"sanctuary",
+	"purify",
+	"guardianAngel",
+	"resurrection",
+	"prayer",
+	"divineIntervention",
+	"holyStrike",
+	"brandOfLight",
+	"consecrate",
+	"holyChains",
+	"auraOfEndurance",
+	"divineWrath",
+	"judgement",
+	"holyNova",
+	"zeal",
+	"rebuke",
+	"hammerOfHeaven",
+}
+
+-- S146 (DESIGN-18 §4.1, §13): the 8 slots of the bar in priority (the first ones the character can cast at a level)
+local HEALER_BAR =
+	{ "heal", "lightRay", "renew", "shieldOfFaith", "circleOfLight", "sanctuary", "miracle", "guardianAngel" }
+local HEALER_SOLO_BAR = { "lightRay", "radiance", "blindingLight", "heal" }
 
 healer.reference = {
 	build("dungeon", "scepter", "shield", healer.statPlan :: any, HEALER_NODES, HEALER_BP, {
@@ -486,24 +612,74 @@ healer.reference = {
 		{ skill = "renew", target = "tank" },
 		{ skill = "sanctuary", target = "meleeAllies" },
 		{ skill = "circleOfLight", minWounded = 3 },
+		{ skill = "miracle", target = "tank" },
 		{ skill = "heal", target = "mostWounded" },
+		{ skill = "lightRay" },
 		{ skill = "holyStrike" },
-	}),
+	}, HEALER_RANKS, HEALER_BAR),
 	build("solo", "holystaff", nil, healer.statPlan :: any, HEALER_NODES, HEALER_BP, {
 		{ skill = "heal", target = "self", belowHp = 50 },
+		{ skill = "radiance", minEnemies = 2 },
+		{ skill = "blindingLight" },
+		{ skill = "lightRay" },
 		{ skill = "judgement" },
 		{ skill = "holyStrike" },
-		{ skill = "radiance", minEnemies = 2 },
-	}),
+	}, HEALER_SOLO_RANKS, HEALER_SOLO_BAR),
+}
+
+-- S145: the hammer pool's damage first (support as a fifth attacker, DESIGN-18 §6.4), the dice and the wheel of the
+-- direction, the light pool's for the other weapon
+local FORTUNE_RANKS = {
+	"holyStrike",
+	"heal",
+	"consecrate",
+	"brandOfLight",
+	"circleOfLight",
+	"holyChains",
+	"divineWrath",
+	"fortuneDice",
+	"wheelOfFortune",
+	"judgement",
+	"devotion",
+	"zeal",
+	"auraOfEndurance",
+	"resurrection",
+	"holyNova",
+	"hammerOfHeaven",
+	"rebuke",
+	"lightRay",
+	"radiance",
+	"shieldOfFaith",
+	"renew",
+	"blindingLight",
+	"grace",
+	"sanctuary",
+	"purify",
+	"miracle",
+	"guidingLight",
+	"guardianAngel",
+}
+
+local FORTUNE_BAR = {
+	"wheelOfFortune",
+	"fortuneDice",
+	"heal",
+	"circleOfLight",
+	"holyStrike",
+	"brandOfLight",
+	"judgement",
+	"consecrate",
+	"holyChains",
+	"holyNova",
 }
 
 fortune.reference = {
 	build("plunder", "mace1h", "relic", fortune.statPlan :: any, {
-		{ "fortune_resurrection", 1 },
+		{ "fortune_clover", 1 },
 		{ "fortune_blessedFate", 3 },
-		{ "inquisitor_purify", 1 },
+		{ "inquisitor_vow", 1 },
 		{ "inquisitor_zeal", 3 },
-		{ "healer_renew", 1 },
+		{ "healer_solace", 1 },
 		{ "fortune_evilEye", 3 },
 		{ "fortune_smile", 3 },
 		{ "inquisitor_heavyHand", 3 },
@@ -513,7 +689,7 @@ fortune.reference = {
 		{ "fortune_generousLoot", 3 },
 		{ "fortune_grace", 3 },
 		{ "fortune_quickDice", 3 },
-		{ "fortune_prayer", 1 },
+		{ "fortune_coin", 1 },
 		{ "fortune_goldVein", 3 },
 		{ "fortune_wheelOfFortune", 1 },
 		{ "fortune_streak", 3 },
@@ -525,36 +701,45 @@ fortune.reference = {
 		["shieldOfFaith:5"] = "b",
 		["resurrection:5"] = "b",
 		["fortuneDice:10"] = "b",
-		["prayer:5"] = "b",
 		["wheelOfFortune:10"] = "b",
+		["consecrate:5"] = "b",
+		["consecrate:10"] = "b",
+		["holyChains:5"] = "b",
+		["holyChains:10"] = "b",
 	}, {
 		{ skill = "wheelOfFortune", opener = true, elite = true },
 		{ skill = "fortuneDice" },
 		{ skill = "circleOfLight", minWounded = 3 },
 		{ skill = "heal", target = "mostWounded" },
+		{ skill = "brandOfLight" },
+		{ skill = "judgement" },
+		{ skill = "holyChains", elite = true },
+		{ skill = "consecrate", minEnemies = 2 },
 		{ skill = "holyStrike" },
-	}),
+		{ skill = "radiance", minEnemies = 2 },
+		{ skill = "lightRay" },
+	}, FORTUNE_RANKS, FORTUNE_BAR),
 }
 
 local function inquisitorNodes(offhandNode: string): { { any } }
 	return {
-		{ "inquisitor_purify", 1 },
+		{ "inquisitor_vow", 1 },
 		{ "inquisitor_zeal", 3 },
-		{ "healer_renew", 1 },
+		{ "healer_solace", 1 },
 		{ "healer_blessedHands", 3 },
-		{ "fortune_resurrection", 1 },
+		{ "fortune_clover", 1 },
 		{ "fortune_blessedFate", 3 },
 		{ "inquisitor_burningFaith", 3 },
 		{ "inquisitor_heavyHand", 3 },
 		{ offhandNode, 3 },
-		{ "inquisitor_brandOfLight", 1 },
+		{ "inquisitor_conviction", 1 },
 		{ "inquisitor_ember", 3 },
 		{ "inquisitor_finalVerdict", 3 },
 		{ "inquisitor_grit", 3 },
 		{ "inquisitor_holyWrath", 3 },
-		{ "inquisitor_auraOfEndurance", 1 },
+		{ "inquisitor_enduring", 1 },
 		{ "inquisitor_faithArmor", 3 },
-		{ "inquisitor_hammerOfHeaven", 1 },
+		{ "inquisitor_wanderingBrand", 1 },
 		{ "inquisitor_inquisition", 3 },
 		{ "inquisitor_truth", 3 },
 		{ "inquisitor_retribution", 3 },
@@ -565,24 +750,79 @@ local INQUISITOR_BP: { [string]: "a" | "b" } = {
 	["holyStrike:5"] = "b",
 	["judgement:5"] = "b",
 	["judgement:10"] = "b",
-	["radiance:5"] = "b",
-	["radiance:10"] = "b",
 	["hammerOfHeaven:10"] = "b",
 	["heal:5"] = "b",
-	["purify:5"] = "b",
-	["purify:10"] = "b",
 	["auraOfEndurance:10"] = "b",
 	["resurrection:5"] = "b",
+	["consecrate:5"] = "b",
+	["consecrate:10"] = "b",
+	["holyChains:5"] = "b",
+	["holyChains:10"] = "b",
+	["holyNova:10"] = "b",
+	["radiance:5"] = "b",
+	["radiance:10"] = "b",
+	["purify:5"] = "b",
+	["purify:10"] = "b",
 }
+-- S145: the hammer pool's skills (Purify's self heal went to the light pool: Heal below 50 % instead), the light
+-- pool's for the other weapon
 local INQUISITOR_ROTATION: { { [string]: any } } = {
+	{ skill = "heal", target = "self", belowHp = 50 },
 	{ skill = "purify", target = "self", belowHp = 50 },
-	{ skill = "purify", target = "self", debuff = "poison" },
 	{ skill = "auraOfEndurance" },
 	{ skill = "brandOfLight" },
 	{ skill = "judgement" },
+	{ skill = "holyChains", elite = true },
 	{ skill = "holyStrike" },
 	{ skill = "hammerOfHeaven", minEnemies = 3 },
+	{ skill = "holyNova", minEnemies = 2 },
+	{ skill = "rebuke", minEnemies = 2 },
+	{ skill = "consecrate", minEnemies = 2 },
 	{ skill = "radiance", minEnemies = 2 },
+	{ skill = "lightRay" },
+}
+-- S146 (B1): the actives of the bar at 100, then the pool's passives, then the rest; skills open at 20 keep their order
+local INQUISITOR_RANKS = {
+	"holyStrike",
+	"consecrate",
+	"holyChains",
+	"heal",
+	"brandOfLight",
+	"divineWrath",
+	"judgement",
+	"auraOfEndurance",
+	"holyNova",
+	"hammerOfHeaven",
+	"zeal",
+	"devotion",
+	"rebuke",
+	"circleOfLight",
+	"resurrection",
+	"lightRay",
+	"radiance",
+	"purify",
+	"blindingLight",
+	"shieldOfFaith",
+	"renew",
+	"grace",
+	"sanctuary",
+	"miracle",
+	"guidingLight",
+	"guardianAngel",
+}
+
+-- S146: Consecrate leaves the bar for Hammer of Heaven at 60 (the area burst of a boss build within areaCap)
+local INQUISITOR_BAR = {
+	"holyStrike",
+	"heal",
+	"brandOfLight",
+	"judgement",
+	"holyNova",
+	"auraOfEndurance",
+	"holyChains",
+	"hammerOfHeaven",
+	"consecrate",
+	"rebuke",
 }
 
 inquisitor.reference = {
@@ -593,7 +833,9 @@ inquisitor.reference = {
 		inquisitor.statPlan :: any,
 		inquisitorNodes("inquisitor_relic"),
 		INQUISITOR_BP,
-		INQUISITOR_ROTATION
+		INQUISITOR_ROTATION,
+		INQUISITOR_RANKS,
+		INQUISITOR_BAR
 	),
 	build(
 		"bulwark",
@@ -602,7 +844,9 @@ inquisitor.reference = {
 		inquisitor.statPlan :: any,
 		inquisitorNodes("inquisitor_shield"),
 		INQUISITOR_BP,
-		INQUISITOR_ROTATION
+		INQUISITOR_ROTATION,
+		INQUISITOR_RANKS,
+		INQUISITOR_BAR
 	),
 }
 

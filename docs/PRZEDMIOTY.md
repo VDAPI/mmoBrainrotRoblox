@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 33a1953f (`wiki/src/data/meta.json`).
+> Odcisk danych 02edbe1a (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -50,7 +50,10 @@ Legendarny losuje 1 efekt z puli legendarnej swojej klasy, Mityczny 1 legendarny
 | Cleric | Legendarny | Karzące Światło | Leczenie | C1 | common | Leczenie: wrogowie do 6 st. od leczonego dostają 40% ataku magicznego |
 | Cleric | Legendarny | Olśnienie | Światłość | A1 | light | Światłość spowalnia trafionych o 25% na 2 s |
 | Cleric | Legendarny | Niezłomna Wiara | Tarcza Wiary | O1 | light | Tarcza Wiary: tarcza silniejsza o 4% maks. życia celu i trwa 4 s dłużej |
+| Cleric | Legendarny | Trwała Odnowa | Odnowa | S2 | light | Odnowa trwa 3 s dłużej |
+| Cleric | Legendarny | Miłosierdzie | Piętno Światła | S2 | hammer | Piętno Światła: najbardziej ranny sojusznik leczy się o 20% trafienia |
 | Cleric | Mityczny | Rozliczenie | Sąd | S3 | hammer | Sąd: wrogowie do 6 st. od celu dostają 50% |
+| Cleric | Mityczny | Przystań | Sanktuarium | A2 | light | Sanktuarium: strefa trwa 3 s dłużej, promień +2 st. |
 | Cleric | Mityczny | Egida Światła | Krąg Światła | C2 | common | Krąg Światła: nadmiar leczenia staje się tarczą |
 
 Źródła dropu: szansa przedmiotu na zabicie, liczba i najwyższa możliwa rzadkość (sufit).
@@ -1269,7 +1272,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Zwój Łowów | Zwój | 1 | Spisane ścieżki zwierzyny z leża bossa. Użyty dodaje czas Samodzielnych Łowów. Związany. | — | 1 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
-| Zwój Odnowy Umiejętności | Zwój | 1 | Pełny reset rozwoju: zwraca rangi umiejętności wszystkich pul broni i węzły kierunków aktywnego zestawu. Wybrane przełomy zostają. Zużywa się tylko przy resecie od 20. poziomu, gdy nie masz darmowego. | — | 100 |
+| Zwój Odnowy Umiejętności | Zwój | 1 | Pełny reset rozwoju: zwraca rangi umiejętności wszystkich pul broni i węzły kierunków aktywnego zestawu. Wybrane przełomy zostają. Zużywa się tylko przy resecie od 20. poziomu, gdy nie masz darmowego. | 400 | 100 |
 | Zwój Rozwiązania | Zwój | 1 | Odwiązuje jeden przedmiot. | — | 500 |
 | Kamień Lochu | Kamień teleportu | 1 | Teleportuje przed wejście do lochu. | — | 150 |
 | Kamień Lochu: Kuźnia Głębin | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Kuźnia Głębin. | — | 150 |

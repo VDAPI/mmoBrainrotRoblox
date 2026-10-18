@@ -9,6 +9,9 @@
 -- moving away (unless def.channelMove), losing the target, the target out of range, no mana for a tick or another
 -- cast do. Nothing is given back (the cooldown stays).
 -- Leaving the character is not an event: SkillService ends every channel then without asking.
+-- S145 (Rebuke, Logic/Faith.interrupts): event "interrupt" = an enemy player's skill broke the channel; it ends every
+-- kind (an aim gives nothing back). Bosses do not channel here: their channel mechanic breaks only by damage
+-- (Logic/BossMechanics.channelBroken).
 
 local Config = require("../Config")
 
@@ -17,7 +20,17 @@ local Channel = {}
 -- S80: knockback (the caster was knocked back or pulled, Push.Moved), cast (another skill was cast), target (the
 -- beam's target died, vanished or stopped being an enemy), range (the target is out of the beam's reach), noMana (no
 -- mana for the next tick)
-export type Event = "damage" | "move" | "death" | "disabled" | "knockback" | "cast" | "target" | "range" | "noMana"
+export type Event =
+	"damage"
+	| "move"
+	| "death"
+	| "disabled"
+	| "knockback"
+	| "cast"
+	| "target"
+	| "range"
+	| "noMana"
+	| "interrupt"
 
 type Def = { steadfast: boolean?, channelMove: number? }
 
@@ -43,13 +56,13 @@ function Channel.stops(kind: string, event: Event, def: Def?): (boolean, boolean
 		if event == "target" or event == "range" or event == "noMana" then
 			return false, false
 		end
-		return true, false -- "move", "death", "cast"
+		return true, false -- "move", "death", "cast", "interrupt" (S145)
 	end
 	if kind == "castTime" then
 		if event == "move" or event == "disabled" then
 			return true, true
 		end
-		if event == "death" then
+		if event == "death" or event == "interrupt" then
 			return true, false
 		end
 		-- damage never; another cast is refused before (S76); a push is caught by the move check
@@ -62,7 +75,7 @@ function Channel.stops(kind: string, event: Event, def: Def?): (boolean, boolean
 		if event == "move" then
 			return not walks, false
 		end
-		return true, false -- disabled, knockback (with channelMove too), cast, target, range, noMana, death
+		return true, false -- disabled, knockback (with channelMove too), cast, target, range, noMana, death, interrupt
 	end
 	return true, false -- unknown kind: stop, to be safe
 end

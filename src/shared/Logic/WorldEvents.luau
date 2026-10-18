@@ -6,6 +6,7 @@
 -- Points are map-relative (like Data/Spawns); every random choice goes through the given Rng.
 
 local Areas = require("../Data/Areas")
+local Contribution = require("./Contribution")
 local Data = require("../Data/WorldEvents")
 local Exp = require("./Exp")
 local ItemRoll = require("./ItemRoll")
@@ -23,7 +24,7 @@ type Area = Areas.Area
 export type KindId = Data.KindId
 export type KindDef = Data.KindDef
 export type Point = { x: number, z: number }
-export type Contribution = { dmg: number, heal: number, shield: number, intercept: number }
+export type Contribution = Contribution.Contribution -- S149: the shared rule (Logic/Contribution)
 export type Reward = { exp: number, gold: number, chest: boolean }
 
 -- What every client sees (the state branch `worldEvent`, WorldEventService). Times are server times
@@ -444,30 +445,25 @@ end
 
 -- Contribution and reward (B4) ------------------------------------------------------------------------------
 
+-- S149: the contribution rule lives in Logic/Contribution (shared with the world boss); these keep their S101 results.
 function WorldEvents.emptyContribution(): Contribution
-	return { dmg = 0, heal = 0, shield = 0, intercept = 0 }
+	return Contribution.empty()
 end
 
 -- Points of a contribution: damage, healing, shields and intercepted damage count alike (DESIGN-15 §4).
 function WorldEvents.points(c: Contribution): number
-	local s = Data.share
-	return c.dmg + c.heal * s.healMul + c.shield * s.shieldMul + c.intercept * s.interceptMul
+	return Contribution.points(c, Data.share)
 end
 
 -- Points needed for the reward: share.min of all points, or hpEquivalent normal monsters of the event level,
 -- whichever is lower; nobody fought (total 0) = never.
 function WorldEvents.threshold(total: number, level: number): number
-	if total <= 0 then
-		return math.huge
-	end
-	local s = Data.share
-	return math.min(s.min * total, s.hpEquivalent * MonsterStats.baseHp(level))
+	return Contribution.threshold(total, Data.share.hpEquivalent * MonsterStats.baseHp(level), Data.share)
 end
 
 -- Whether a participant gets the event reward: enough points and not more than maxLevelAbove over the event.
 function WorldEvents.eligible(points: number, total: number, eventLevel: number, charLevel: number): boolean
-	return points > 0
-		and points >= WorldEvents.threshold(total, eventLevel)
+	return Contribution.eligible(points, total, Data.share.hpEquivalent * MonsterStats.baseHp(eventLevel), Data.share)
 		and charLevel <= eventLevel + Data.share.maxLevelAbove
 end
 

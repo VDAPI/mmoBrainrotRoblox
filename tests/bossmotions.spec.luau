@@ -11,7 +11,7 @@ local T = require("./Test")
 
 T.describe("BossMotions (S117)", function()
 	T.it("10. every boss and every attack has a motion, no dead entries", function()
-		for _, boss in Bosses.list do
+		for _, boss in Bosses.all do -- S149: the world boss too
 			local def = BossMotions.get(boss.id)
 			T.expect({ boss.id, def ~= nil }).toEqual({ boss.id, true })
 			if not def then
@@ -66,7 +66,7 @@ end)
 -- S134 (bosses 2.0): time to react (a phone too) and complete mechanic data.
 T.describe("Boss big blows and mechanics (S134)", function()
 	T.it("an avoid blow winds up >= 1.8 s, a mechanic >= 3 s (a channel >= 4 s, its windup), data complete", function()
-		for _, boss in Bosses.list do
+		for _, boss in Bosses.all do -- S149: the world boss too
 			for _, attack in boss.attacks do
 				local tag = `{boss.id}.{attack.id}`
 				if attack.avoid then

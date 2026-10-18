@@ -2625,6 +2625,10 @@ export type BossFight = {
 	-- S134: the biggest big blow to dodge (`avoid`) one member of each class would take (x Combat.randomMax) / max HP
 	biggestAvoidable: { [string]: number },
 	mechanics: BossMechanicsReport,
+	-- S149: helpers without a shield (the world boss): seconds the team spends killing them while the boss keeps
+	-- attacking, and the worst member's HP lost to one wave (share of its max HP; the helpers spread over the team)
+	helperSeconds: number,
+	helperWave: number,
 }
 
 -- S92: the helpers of a boss summon as the server spawns them: Boss.spawnSummons -> DungeonService spawnMonster ->
@@ -2712,6 +2716,9 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 	end
 	-- S93: damage of `all` attacks per member over the active phases (per member: a class can be in the team twice)
 	local raidTotal: { number } = {}
+	-- S149: helpers without a shield (all phases) and the worst member's share of one phase's helpers
+	local helperTotal, helperWave = 0, 0
+	local waveLost: { number } = {}
 	for phase = 1, #thresholds - 1 do
 		local share = thresholds[phase] - thresholds[phase + 1]
 		-- shield waves at the phase start (and every `every` s of the phase)
@@ -2744,10 +2751,48 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 				shieldKills += count * waves
 			end
 		end
+		-- S149: helpers without a shield (the world boss): the team kills them one by one (the server's helpers,
+		-- Balance.summonHelpers: no group reduction) while the boss goes on attacking (active time without damage on
+		-- it); every living helper hits a member, spread over the team
+		local helperSeconds = 0
+		local helpers = {}
+		for _, summon in def.summons do
+			if summon.phase == phase and not summon.shield then
+				local helperDef = Monsters.get(summon.monster) :: any
+				for _, member in Balance.summonHelpers(helperDef, summon.level, summon.count) do
+					table.insert(helpers, member)
+				end
+			end
+		end
+		if #helpers > 0 then
+			local lost: { number } = table.create(n, 0)
+			for k, member in helpers do
+				local teamDps = 0
+				for i, p in team do
+					teamDps += memberDps(i, p, member)
+				end
+				local duration = member.maxHp / math.max(1e-6, teamDps)
+				helperSeconds += duration
+				for j = k, #helpers do
+					for i, p in team do
+						lost[i] += Balance.hit(helpers[j], p) * duration / helpers[j].attackInterval / n
+					end
+				end
+			end
+			for i, p in team do
+				taken[i] += lost[i]
+				waveLost[i] = lost[i] / p.values.maxHp
+			end
+		end
+		helperTotal += helperSeconds
+		for i = 1, n do
+			helperWave = math.max(helperWave, waveLost[i] or 0)
+			waveLost[i] = 0
+		end
 		-- Vaelgrath (phase 2): FLIGHT_SECONDS invulnerable from the phase start, overlapping the shield wave; past
 		-- the wave it attacks while nobody can hit it
 		local flightSeconds = if phase == 2 then math.max(0, flight - shieldSeconds) else 0
-		local active = fighting + flightSeconds
+		local active = fighting + flightSeconds + helperSeconds
 		local cad = Balance.bossCadence(def, phase, o.cadence)
 		local haste = (def.haste or {})[phase] or 1
 		local startActive = elapsed + shieldSeconds
@@ -2779,7 +2824,8 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 						share = if splitInside <= 0 or i <= splitInside then 1 else 0
 						lands = 1
 					elseif mechanic == "mark" then
-						share = 1 / n
+						-- S149: `count` members branded at once (BossMechanics.markCount)
+						share = math.min(BossMechanics.markCount(attack.mark :: any), n) / n
 						mul = BossMechanics.markDamage(true, attack.damage, attack.mark :: any)
 						lands = 1
 					elseif mechanic == "channel" then
@@ -2904,6 +2950,8 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 		hazardTick = if hazards then hazards.perTick else {},
 		biggestAvoidable = avoidable,
 		mechanics = mech,
+		helperSeconds = helperTotal,
+		helperWave = helperWave,
 	}
 end
 
@@ -3341,6 +3389,8 @@ Balance.S91 = {
 		{ classId = "Warrior", key = "berserker.fury" },
 		-- S143 (session rule 4): the Warrior with Sword and Shield (the one-handed pool) holds the S91 targets of 20 too
 		{ classId = "Warrior", key = "standard.commander" },
+		-- S145 (session rule 4): the Inquisitor plays the Mace and Flail pool (a mace); the light pool's T-SK5 at 20 is a
+		-- row of Balance.targetsS145
 		{ classId = "Cleric", key = "inquisitor.solo" },
 		-- S144 (session rule 4): the Hunter with a bow (the Bow pool: the Marksman's longbow, the Trapper with a bow) and
 		-- with a crossbow (the Crossbow pool: the Trapper's crossbow, the Marksman with the heavy crossbow)
@@ -3378,6 +3428,11 @@ Balance.S91 = {
 		"heavyBolt",
 		"arrowRain",
 		"piercingArrow",
+		-- S145: unlock 1 / 3, ranks 5 at 17 / 19 (the Cleric's pools: Light Ray and Radiance on the Healer, Consecrate on
+		-- the Inquisitor)
+		"lightRay",
+		"radiance",
+		"consecrate",
 	},
 	-- PATH_TARGETS ids whose row at 20 is a target of the 1-20 table (E9): T-SK3 and the solo pace of support and
 	-- tank paths; every other row at 20 is printed (bands written for 45-100)
@@ -3653,7 +3708,9 @@ Balance.S140 = {
 	fireBuilds = { "destroyer.destroyerFire", "arcanist.arcanistFire" },
 	levels = { 45, 70, 100 },
 	tsk4 = { 2.0, 2.8 }, -- the Mage's T-SK4 band (ROZWOJ 12.7, SkillModel.TSK4_BANDS of destroyerExp)
-	burnShare = 0.25, -- DESIGN-18 §6.1 / S147: the burn's share of the fire builds' damage from 45
+	burnShare = 0.25, -- S140 D2: the burn's share of the fire builds' damage from 45 (dropped by S147, `dropped`)
+	-- S147 (docs/DECYZJE.md): not its target; fire's identity is its burn winning 3 targets 8 s (S147.r9.mage.area)
+	dropped = "S147: cel wycofany (DECYZJE S147), tożsamość ognia to wygrana z podpaleniem na 3 celach (S147.r9.mage.area)",
 	-- DESIGN-18 §6.1 (S147): lightning on one target 1.10-1.20 x fire; fire on 3 targets over 8 s >= lightning
 	lightningSingle = { 1.10, 1.20 },
 	fireArea = 1.0,
@@ -3668,7 +3725,7 @@ Balance.S140 = {
 -- S140 (D): the fire pool's rows (ids "S140.fire.*"). Asserted (balance.spec "Balance S140: fire pool"): R1 of the fire
 -- variants at 20 in the S91 band (session rule 4) and T-SK3 within the build's areaCap at 20 / 45 / 70 / 100 (R3).
 -- Printed (`report` = the session that asserts them): T-SK4 at 45 / 70 / 100 (S147), the identity of fire (S147:
--- three targets over 8 s against lightning, one target against lightning, the burn's share).
+-- three targets over 8 s against lightning, one target against lightning); the burn's share was dropped by S147.
 function Balance.targetsS140(): { TargetRow }
 	local rows: { TargetRow } = {}
 	local S = Balance.S140
@@ -3704,7 +3761,7 @@ function Balance.targetsS140(): { TargetRow }
 				S.burnShare,
 				nil,
 				L,
-				"S147"
+				S.dropped
 			)
 			local om = SkillModel.metrics(other, L)
 			local lightning = if om.byElement then om.byElement.lightning else om
@@ -3745,7 +3802,8 @@ Balance.S141 = {
 	single = { 0.85, 0.95 }, -- ice / fire on one target 60 s (the Arcanist's variants)
 	control = 0.6, -- the Elite slowed or frozen at least this share of the fight
 	deepChill = 0.5, -- the boss under the Mage's Deep Chill at least this share of the boss window
-	taken = 0.85, -- damage taken by the ice variant / the fire variant in the Elite fight
+	taken = 0.85, -- damage taken by the ice variant / the fire variant in the Elite fight (S147: ice < fire, `dropped`)
+	dropped = "S147: próg 0,85 zastąpiony celem lód < ogień (S147.r9.mage.taken.ice, DECYZJE S147)",
 	compare = {
 		["destroyer.destroyerIce"] = "destroyer.destroyerFire",
 		["arcanist.arcanistIce"] = "arcanist.arcanistFire",
@@ -3754,8 +3812,8 @@ Balance.S141 = {
 
 -- S141 (C): the ice pool's rows (ids "S141.ice.*"). Asserted (balance.spec "Balance S141: ice pool"): T-SK3 within the
 -- build's areaCap at 20 / 45 / 70 / 100 (R3). Printed (`report` = the session that asserts them): T-SK4 at 45 / 70 /
--- 100 and the identity of ice (one target against fire, the Elite's slow or freeze, the boss's Deep Chill, the damage
--- taken against fire) at 20 / 45 / 70 / 100.
+-- 100 and the identity of ice (one target against fire, the Elite's slow or freeze, the boss's Deep Chill) at 20 / 45 /
+-- 70 / 100 (S147); the damage taken against fire at most 0.85 was replaced by S147 (ice < fire).
 function Balance.targetsS141(): { TargetRow }
 	local rows: { TargetRow } = {}
 	local S = Balance.S141
@@ -3813,7 +3871,7 @@ function Balance.targetsS141(): { TargetRow }
 				nil,
 				S.taken,
 				L,
-				"S147"
+				S.dropped
 			)
 		end
 	end
@@ -3830,7 +3888,8 @@ Balance.S142 = {
 	levels = { 20, 45, 70, 100 },
 	tsk4 = { 2.0, 2.8 }, -- the Mage's T-SK4 band (as S140 / S141)
 	single = { 1.10, 1.20 }, -- lightning / fire on one target 60 s (the Arcanist's variants)
-	areaLow = 1.0, -- lightning on 3 targets 8 s / fire without its burn: at least this
+	areaLow = 1.0, -- lightning on 3 targets 8 s / fire without its burn: at least this (dropped by S147, `dropped`)
+	dropped = "S147: cel wycofany (DECYZJE S147), S147 asertuje ogień z podpaleniem ≥ błyskawica (S147.r9.mage.area)",
 	areaHigh = 1.0, -- lightning on 3 targets 8 s / fire with its burn: at most this
 	ice = { 0.85, 0.95 }, -- ice / fire on one target 60 s (the Arcanist's variants)
 	-- the builds compared, by direction
@@ -3859,8 +3918,8 @@ end
 -- (balance.spec "Balance S142: lightning pool"): T-SK3 of the lightning variants within the build's areaCap at 20 / 45 /
 -- 70 / 100 (R3). Printed (`report` = the session that asserts them): T-SK4 at 45 / 70 / 100 and the identity of the
 -- elements at 20 / 45 / 70 / 100: lightning / fire on one target, lightning / fire on three targets over 8 s (against fire
--- with and without its burn), ice / fire on one target, damage taken ice < fire < lightning (the Elite fight of
--- SkillModel.chillReport, both directions).
+-- with its burn; without it dropped by S147), ice / fire on one target, damage taken ice < fire < lightning (the Elite
+-- fight of SkillModel.chillReport, both directions).
 function Balance.targetsS142(): { TargetRow }
 	local rows: { TargetRow } = {}
 	local S = Balance.S142
@@ -3928,7 +3987,7 @@ function Balance.targetsS142(): { TargetRow }
 			S.areaLow,
 			nil,
 			L,
-			"S147"
+			S.dropped
 		)
 		add(
 			`S142.mage.area.burn.{L}`,
@@ -4182,6 +4241,873 @@ function Balance.targetsS144(): { TargetRow }
 			nil,
 			L
 		)
+	end
+	return rows
+end
+
+-- S145 (D, DESIGN-18 §6.4): the Cleric's two pools ---------------------------------------------------------------
+
+-- Thresholds of the Cleric's pool identity (DESIGN-18 §6.4, §13; test data, never game numbers). The R1 of the hammer
+-- pool at 20 is in the block "Balance 1-20: S91" (session rule 4); the light pool's T-SK5 at 20 is asserted here, every
+-- other row is printed and asserted by S146.
+Balance.S145 = {
+	levels = { 20, 45, 70, 100 },
+	-- the light pool (the dungeon Healer, a scepter) and the hammer pool (the Inquisitor, a mace)
+	light = "healer.dungeon",
+	hammer = "inquisitor.solo",
+	fortune = "fortune.plunder",
+	-- T-SK5 at 20 (session rule 4): not below the S91 value (0.221, G10 printed since S91) and within the S87 band's top
+	tsk5At20 = { 0.22, 0.35 },
+	-- the reference: the model before S145 (commit S144: the Cleric's builds unchanged since S138), the light pool's heal
+	-- per second on the tank of the level's boss (healerVsBoss) and the hammer pool's damage on one target 60 s; both
+	-- within ±10 % (§6.4, S146)
+	before = {
+		hps = { [20] = 62.01, [45] = 487.53, [70] = 1382.92, [100] = 2642.37 },
+		single = { [20] = 227.17, [45] = 1581.53, [70] = 3948.49, [100] = 8497.83 },
+	},
+	identity = { 0.9, 1.1 },
+	-- R7 (S89): the Cleric's / the Warrior's damage on one target (the hammer pool against the Berserker)
+	warrior = "berserker.fury",
+}
+
+-- S145: the Cleric's identity rows (ids "S145.cleric.*"); balance.spec ("Balance S145: Cleric pools") asserts the T-SK5
+-- row at 20, prints the rest and checks they exist; those rows carry report = "S146" (DESIGN-18 §13).
+function Balance.targetsS145(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S145
+	local SkillModel = (require :: any)("./SkillModel")
+	local function add(
+		id: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		L: number,
+		asserted: boolean?
+	)
+		target(rows, id, "cleric", label, value, low, high, "Cleric", L)
+		if not asserted then
+			rows[#rows].report = "S146"
+		end
+	end
+	local light = SkillModel.build(S.light, "Cleric")
+	local hammer = SkillModel.build(S.hammer, "Cleric")
+	local fortune = SkillModel.build(S.fortune, "Cleric")
+	local warrior = SkillModel.build(S.warrior, "Warrior")
+	for _, L in S.levels do
+		local tsk5 = SkillModel.oneHeal(light, L, SkillModel.defenderTank(L))
+		local band = if L == 20 then S.tsk5At20 else SkillModel.TSK5_BAND
+		add(
+			`S145.cleric.tsk5.{L}`,
+			`T-SK5 berło (Uzdrowiciel lochowy) na Obrońcy L{L}`,
+			tsk5,
+			band[1],
+			band[2],
+			L,
+			L == 20
+		)
+		local vsBoss = SkillModel.healerVsBoss(light, SkillModel.BOSS_AT[L])
+		if L > 20 then
+			add(`S145.cleric.tsk6.{L}`, `T-SK6 berło na {vsBoss.bossId} L{L}`, vsBoss.tsk6, 1.0, 2.0, L)
+		end
+		add(
+			`S145.cleric.light.hps.{L}`,
+			`Berło: leczenie na sekundę / Uzdrowiciel sprzed S145 L{L}`,
+			vsBoss.hps / math.max(1e-9, S.before.hps[L]),
+			S.identity[1],
+			S.identity[2],
+			L
+		)
+		local mh = SkillModel.metrics(hammer, L)
+		add(
+			`S145.cleric.hammer.single.{L}`,
+			`Buzdygan: jeden cel 60 s / Inkwizytor sprzed S145 L{L}`,
+			mh.single60 / math.max(1e-9, S.before.single[L]),
+			S.identity[1],
+			S.identity[2],
+			L
+		)
+		local mw = SkillModel.metrics(warrior, L)
+		add(
+			`S145.cleric.r7.{L}`,
+			`R7 Kapłan z buzdyganem / Wojownik dwuręczny: jeden cel L{L}`,
+			mh.single60 / math.max(1e-9, mw.single60),
+			nil,
+			nil,
+			L
+		)
+		add(
+			`S145.cleric.fortune.{L}`,
+			`Kapłan Fortuny z buzdyganem / Inkwizytor: jeden cel L{L}`,
+			SkillModel.metrics(fortune, L).single60 / math.max(1e-9, mh.single60),
+			nil,
+			nil,
+			L
+		)
+	end
+	return rows
+end
+
+-- S146 (DESIGN-18 §13): balance 21-100 after the rework, the Warrior and the Cleric -------------------------------
+
+-- Thresholds of the S146 rows (DESIGN-18 §6.2, §6.4, §13, ROZWOJ 0; test data, never game numbers).
+Balance.S146 = {
+	levels = { 20, 45, 70, 100 },
+	pools = { { "Warrior", "onehand" }, { "Warrior", "twohand" }, { "Cleric", "light" }, { "Cleric", "hammer" } },
+	-- R8 (§13): 8 actives at rank 10 and every passive of the pool within SkillPoints.pointsAt(100); at most 10 actives
+	-- at rank 10; at 45 the points at most this share of the sum of the pool's rank limits
+	r8 = { bar = 8, maxTen = 10, budget45 = 0.75 },
+	-- R9 Warrior (§6.2): the two-handed / the one-handed pool's damage (one target 60 s, 3 targets 8 s; the damage
+	-- builds of the pools, as S143), the one-handed tank's EHP / the two-handed pool's
+	twohand = "berserker.fury",
+	onehand = "standard.commander",
+	tank = "guardian.defender",
+	damage = { 1.15, 1.25 },
+	ehpLow = 1.4,
+	-- the tank's HP per minute on the level's boss (the S32 model of S92-S94) with the Guardian in front
+	tankPerMinute = 3.5,
+	-- R9 Cleric (§6.4): the light pool's heal per second on the boss's tank in the T-SK6 band (the dungeon Healer,
+	-- T-SK6 = R9 of the light pool), the hammer pool's damage against "Furia" in the Inquisitor's bands (ROZWOJ 9.6)
+	light = "healer.dungeon",
+	hammer = "inquisitor.solo",
+	tsk6 = { 1.0, 2.0 },
+	hammerRatio = {
+		[45] = { 0.80, 0.86 },
+		[70] = { 0.85, 0.91 },
+		[100] = { 0.87, 0.93 },
+	} :: { [number]: { number } },
+	-- R1 (ROZWOJ 0, S89): 1.6 <= R1 <= max(2.0, 1.15 x the build's own R1 at 20), one build per pool (the one-handed
+	-- pool on its tank: the Standard-Bearer's R1 holds its own cries and banner, printed)
+	r1 = {
+		{ pool = "twohand", build = "berserker.fury", classId = "Warrior" },
+		{ pool = "onehand", build = "guardian.defender", classId = "Warrior" },
+		{ pool = "onehand", build = "standard.commander", classId = "Warrior" },
+		{ pool = "hammer", build = "inquisitor.solo", classId = "Cleric" },
+	},
+	r1Band = { 1.6, 2.0 },
+	r1Rel = 1.15,
+	-- R5 (S89 R5 in the shape of pools): every weapon type of the pool within 10 % of the mean of the types, in the
+	-- pool's metric (one target 60 s; the light pool: heal per second on the boss's tank)
+	r5 = {
+		{ pool = "onehand", build = "standard.commander", classId = "Warrior" },
+		{ pool = "twohand", build = "berserker.fury", classId = "Warrior" },
+		{ pool = "light", build = "healer.dungeon", classId = "Cleric" },
+		{ pool = "hammer", build = "inquisitor.solo", classId = "Cleric" },
+	},
+	r5Spread = 0.10,
+	-- R6 (S89 E3, now the build's leading direction): a point of rows 4-11 within 0.6-1.5 x the mean (L100)
+	r6 = {
+		{ build = "berserker.fury", classId = "Warrior" },
+		{ build = "guardian.defender", classId = "Warrior" },
+		{ build = "standard.commander", classId = "Warrior" },
+		{ build = "healer.dungeon", classId = "Cleric" },
+		{ build = "fortune.plunder", classId = "Cleric" },
+		{ build = "inquisitor.solo", classId = "Cleric" },
+	},
+	r6Band = { 0.6, 1.5 },
+	-- T-SK5 (ROZWOJ 0, 7.5): one Heal of the light pool 25-35 % of the tank's HP (the Defender)
+	tsk5 = { 0.25, 0.35 },
+	-- R7 (ROZWOJ 0): the Hunter / the Warrior on one target 1.15-1.35, printed (S147 asserts it with the Hunter)
+	hunter = "marksman.kingslayer",
+	r7 = { 1.15, 1.35 },
+	-- ROZWOJ 7.5: Fortune's 4 x (1 + B) + S (dice and wheel on an ally, own damage / "Furia"), printed: 7.5 gives
+	-- Fortune survival and loot instead
+	fortune = "fortune.plunder",
+	support = { 4.9, 5.1 },
+}
+
+-- S146: rows printed with the reason (id or a prefix ending in `*`; docs/DECYZJE.md S146). Never an R8 or R4 row.
+Balance.S146_REPORT = {
+	-- R9 of the Warrior's damage against R1: the one-handed pool's basic attack is about half the two-handed one's
+	-- (weapon bases, Rarities.twoHandedBonusMul), so 1.25 needs the one-handed pool's R1 at 2.9-3.4 against its limit
+	-- 2.26-2.35; at 45-100 the one-handed area (Earthquake, Shield Sweep, the banner) is as strong as the two-handed one,
+	-- and a stronger Fury area slows the Guardian's solo pace (pace / Fury <= 1.5 at 45); 20 is frozen
+	["S146.r9.warrior.single.*"] = "S146: poza zasięgiem dźwigni S146: R9 1,15–1,25 sprzeczne z R1 puli jednoręcznej (atak podstawowy broni jednoręcznej ok. 0,5 dwuręcznej; Items/Bases, twoHandedBonusMul); 20 zamrożone; dla właściciela",
+	["S146.r9.warrior.area.*"] = "S146: poza zasięgiem dźwigni S146: obszar puli jednoręcznej (Trzęsienie Ziemi, Zamach Tarczą, sztandar) nie mniejszy niż dwuręcznej; mocniejszy obszar Furii psuje tempo Strażnika (≤ 1,5); 20 zamrożone",
+	-- T-SK6 (S92 C4): the boss's tank takes 1.5-3.5 max HP a minute (the S32 model), Heal alone (T-SK5 0.28-0.34 every
+	-- 3 s) gives T-SK6 above 1.5; T-SK6 x the sustain without support is about 2.55 (every boss without support,
+	-- ROZWOJ 7.5); levers: the bosses' damage on the tank (Data/Bosses) or the definition of T-SK6 (the owner, S93 / S94)
+	["S146.r9.light.tsk6.45"] = "S146: poza zasięgiem dźwigni S146: tank bossa przyjmuje 1,5–3,5 maks. HP na minutę, samo Leczenie daje > 1,5; T-SK6 × podtrzymanie bez wsparcia ok. 2,55 (S92); decyzja właściciela (S93, S94)",
+	["S146.r9.light.tsk6.70"] = "S146: poza zasięgiem dźwigni S146: tank Azgora przyjmuje 1,5 maks. HP na minutę (S93: 12,8 przed przebudową); decyzja właściciela",
+	["S146.r9.light.tsk6.100"] = "S146: poza zasięgiem dźwigni S146: tank Vaelgratha przyjmuje ok. 2 maks. HP na minutę (S94: 15,9 przed przebudową); decyzja właściciela",
+	-- R1 of the Inquisitor (S89 F4): 4.4-6.2 at 0.86-0.91 x "Furia"; R1 <= 2.4 needs about 0.35 x "Furia"
+	["S146.r1.hammer.*"] = "właściciel (F4, S89): R1 Inkwizytora 4,4–6,2 przy 0,86–0,91 Furii; R1 ≤ 2,4 wymaga ok. 0,35 Furii (słaby atak podstawowy Kapłana)",
+	-- the Standard-Bearer's R1 holds its own cries and banner (support); the one-handed pool's R1 is the Defender's
+	["S146.r1.onehand.standard.commander.*"] = "S146: R1 Chorążego liczy jego okrzyki i sztandar (wsparcie); R1 puli jednoręcznej asertuje Obrońca",
+	-- R7 with the Hunter (S147), Fortune's support (ROZWOJ 7.5: survival and loot instead)
+	["S146.r7.*"] = "S147: R7 asertuje sesja Łowcy (odniesienie Furii z S146)",
+	["S146.fortune.support.*"] = "ROZWOJ 7.5: Fortuna daje przeżycie i łup zamiast 4 × (1 + B) + S (tylko raport)",
+	-- R6 of the other directions (S89: the Inquisitor and the Healer F4, the Guardian and Fortune E3)
+	["S146.r6.guardian.*"] = "właściciel (E3, S89): rzędy 4–11 Strażnika to obrona i groźba (EHP, nie obrażenia)",
+	["S146.r6.fortune.*"] = "właściciel (E3, S89): rzędy 4–11 Fortuny to szczęście i łup (poza metryką)",
+	["S146.r6.inquisitor.*"] = "właściciel (F4, S89): środkowa część Inkwizytora to przeżycie i odwet (poza metryką)",
+	["S146.r6.healer.*"] = "właściciel (F4, S89): najsłabsza część Uzdrowiciela to ratunek i mana (poza metryką)",
+} :: { [string]: string }
+
+-- S146: the rows of Balance.S146 (ids "S146.*"); balance.spec ("Balance S146: Warrior and Cleric") asserts every row
+-- without `report`.
+function Balance.targetsS146(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S146
+	local SkillModel = (require :: any)("./SkillModel")
+	local SkillPools = require("../src/shared/Logic/SkillPools")
+	local SkillPoints = require("../src/shared/Logic/SkillPoints")
+	local function reasonOf(id: string): string?
+		local hit = Balance.S146_REPORT[id]
+		if hit then
+			return hit
+		end
+		for key, why in Balance.S146_REPORT do
+			if string.sub(key, -1) == "*" and string.sub(id, 1, #key - 1) == string.sub(key, 1, -2) then
+				return why
+			end
+		end
+		return nil
+	end
+	local function add(
+		id: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		classId: string,
+		L: number?
+	)
+		target(rows, id, "s146", label, value, low, high, classId, L)
+		rows[#rows].report = reasonOf(id)
+	end
+	-- R8: the pool's points against its ranks
+	for _, pair in S.pools do
+		local classId, poolId = pair[1], pair[2]
+		do
+			local actives, passiveRanks, cap45 = 0, 0, 0
+			for _, id in SkillPools.members(classId, poolId) do
+				local def = SkillData.get(id) :: any
+				if def.type == "passive" then
+					passiveRanks += def.maxLevel
+				else
+					actives += 1
+				end
+				cap45 += SkillPoints.cap(def, 45)
+			end
+			local points = SkillPoints.pointsAt(100)
+			add(
+				`S146.r8.{poolId}.bar100`,
+				`R8 {poolId}: {S.r8.bar} aktywnych na 10 + pasywki / punkty na 100`,
+				(S.r8.bar * 10 + passiveRanks) / points,
+				nil,
+				1,
+				classId,
+				100
+			)
+			add(
+				`S146.r8.{poolId}.max10`,
+				`R8 {poolId}: najwięcej aktywnych z rangą 10 na 100`,
+				math.min(actives, math.floor(points / 10)),
+				S.r8.bar,
+				S.r8.maxTen,
+				classId,
+				100
+			)
+			add(
+				`S146.r8.{poolId}.budget45`,
+				`R8 {poolId}: punkty na 45 / suma limitów rang puli`,
+				SkillPoints.pointsAt(45) / math.max(1, cap45),
+				nil,
+				S.r8.budget45,
+				classId,
+				45
+			)
+		end
+	end
+	local two = SkillModel.build(S.twohand, "Warrior")
+	local one = SkillModel.build(S.onehand, "Warrior")
+	local tankBuild = SkillModel.build(S.tank, "Warrior")
+	local light = SkillModel.build(S.light, "Cleric")
+	local hammer = SkillModel.build(S.hammer, "Cleric")
+	local hunter = SkillModel.build(S.hunter, "Hunter")
+	local fortune = SkillModel.build(S.fortune, "Cleric")
+	for _, L in S.levels do
+		-- R9 Warrior
+		local m2, m1, mt = SkillModel.metrics(two, L), SkillModel.metrics(one, L), SkillModel.metrics(tankBuild, L)
+		add(
+			`S146.r9.warrior.single.{L}`,
+			`R9 dwuręczna / jednoręczna: jeden cel 60 s L{L}`,
+			m2.single60 / math.max(1e-9, m1.single60),
+			S.damage[1],
+			S.damage[2],
+			"Warrior",
+			L
+		)
+		add(
+			`S146.r9.warrior.area.{L}`,
+			`R9 dwuręczna / jednoręczna: 3 cele 8 s L{L}`,
+			m2.aoe3burst / math.max(1e-9, m1.aoe3burst),
+			S.damage[1],
+			S.damage[2],
+			"Warrior",
+			L
+		)
+		add(
+			`S146.r9.warrior.ehp.{L}`,
+			`R9 EHP jednoręczna (Strażnik) / dwuręczna L{L}`,
+			mt.ehp / math.max(1e-9, m2.ehp),
+			S.ehpLow,
+			nil,
+			"Warrior",
+			L
+		)
+		local bossId = SkillModel.BOSS_AT[L]
+		do
+			local def = Bosses.byId[bossId] :: any
+			local team = Balance.team(5, def.level - 1)
+			team[1] = Balance.player("Warrior", def.level - 1, { nodes = S.tank })
+			add(
+				`S146.warrior.tank.{L}`,
+				`{bossId} (model S32): Strażnik jednoręczny, HP na minutę L{def.level - 1}`,
+				Balance.boss(bossId, team).tankHpPerMinute,
+				nil,
+				S.tankPerMinute,
+				"Warrior",
+				def.level - 1
+			)
+		end
+		-- R9 Cleric: the light pool's T-SK6 (heal per second / the tank's damage), the hammer pool against "Furia"
+		local vsBoss = SkillModel.healerVsBoss(light, bossId)
+		add(
+			`S146.r9.light.tsk6.{L}`,
+			`R9 / T-SK6 berło (Uzdrowiciel lochowy) na {bossId} L{L}`,
+			vsBoss.tsk6,
+			S.tsk6[1],
+			S.tsk6[2],
+			"Cleric",
+			L
+		)
+		local mh = SkillModel.metrics(hammer, L)
+		local band = S.hammerRatio[L]
+		if band then
+			add(
+				`S146.r9.hammer.ratio.{L}`,
+				`R9 buzdygan (Inkwizytor) / Furia: jeden cel 60 s L{L}`,
+				mh.single60 / math.max(1e-9, SkillModel.fury(L).single60),
+				band[1],
+				band[2],
+				"Cleric",
+				L
+			)
+		end
+		if L > 20 then
+			-- T-SK5 of the light pool
+			add(
+				`S146.tsk5.light.{L}`,
+				`T-SK5 berło (Uzdrowiciel lochowy) na Obrońcy L{L}`,
+				SkillModel.oneHeal(light, L, SkillModel.defenderTank(L)),
+				S.tsk5[1],
+				S.tsk5[2],
+				"Cleric",
+				L
+			)
+			-- R1 of a build per pool
+			for _, spec in S.r1 do
+				local build = SkillModel.build(spec.build, spec.classId)
+				-- the S89 / S91 table of R1 at 20 where it has the build (the all.r1 rows), else its own R1 at 20
+				local own = SkillModel.R1_L20[spec.build] or SkillModel.metrics(build, 20).r1
+				add(
+					`S146.r1.{spec.pool}.{spec.build}.{L}`,
+					`R1 {spec.pool} ({spec.build}) L{L}`,
+					SkillModel.metrics(build, L).r1,
+					S.r1Band[1],
+					math.max(S.r1Band[2], S.r1Rel * own),
+					spec.classId,
+					L
+				)
+			end
+			-- R5: the weapon types of the pool
+			for _, spec in S.r5 do
+				local build = SkillModel.build(spec.build, spec.classId)
+				local def = SkillPools.def(spec.classId, spec.pool) :: any
+				local values: { number } = {}
+				local sum = 0
+				for _, weapon in def.weapon.main do
+					local offhand = if Paths.isTwoHanded(weapon) then nil else build.weapon.offhand
+					local b = SkillModel.withWeapon(build, weapon, offhand)
+					local v = if spec.pool == "light"
+						then SkillModel.healerVsBoss(b, bossId).hps
+						else SkillModel.metrics(b, L).single60
+					table.insert(values, v)
+					sum += v
+				end
+				local mean = sum / math.max(1, #values)
+				local worst = 0
+				for _, v in values do
+					worst = math.max(worst, math.abs(v / math.max(1e-12, mean) - 1))
+				end
+				add(
+					`S146.r5.{spec.pool}.{L}`,
+					`R5 {spec.pool} ({spec.build}): najdalszy typ broni od średniej L{L}`,
+					worst,
+					nil,
+					S.r5Spread,
+					spec.classId,
+					L
+				)
+			end
+			-- R7 (S147) and Fortune's support (ROZWOJ 7.5), printed
+			local mh7 = SkillModel.metrics(hunter, L)
+			add(
+				`S146.r7.twohand.{L}`,
+				`R7 Łowca / Wojownik dwuręczny: jeden cel L{L}`,
+				mh7.single60 / math.max(1e-9, m2.single60),
+				S.r7[1],
+				S.r7[2],
+				"Warrior",
+				L
+			)
+			local fb = SkillModel.fortuneBonus(fortune, L)
+			local sOwn = SkillModel.metrics(fortune, L).single60 / math.max(1e-9, SkillModel.fury(L).single60)
+			add(
+				`S146.fortune.support.{L}`,
+				`Fortuna: 4 × (1 + B) + S (kości i koło, B = {string.format("%.3f", fb.dice + fb.wheel)}) L{L}`,
+				4 * (1 + fb.dice + fb.wheel) + sOwn,
+				S.support[1],
+				S.support[2],
+				"Cleric",
+				L
+			)
+		end
+	end
+	-- R6 of the leading direction at 100
+	for _, spec in S.r6 do
+		local parts = SkillModel.r6Parts(SkillModel.build(spec.build, spec.classId))
+		add(
+			`S146.r6.{spec.build}.low`,
+			`R6 {spec.build}: najsłabsza trzecia część / średnia L100`,
+			parts.low,
+			S.r6Band[1],
+			nil,
+			spec.classId,
+			100
+		)
+		add(
+			`S146.r6.{spec.build}.high`,
+			`R6 {spec.build}: najmocniejsza trzecia część / średnia L100`,
+			parts.high,
+			nil,
+			S.r6Band[2],
+			spec.classId,
+			100
+		)
+	end
+	return rows
+end
+
+-- S147 (DESIGN-18 §13): balance 21-100 after the rework, the Hunter, the Mage and the bosses -------------------------
+
+-- Thresholds of the S147 rows (DESIGN-18 §6.1, §6.3, §13, ROZWOJ 0, 11.6, 12.0, 12.7; test data, never game numbers).
+Balance.S147 = {
+	levels = { 20, 45, 70, 100 },
+	pools = {
+		{ "Hunter", "bow" },
+		{ "Hunter", "crossbow" },
+		{ "Mage", "fire" },
+		{ "Mage", "ice" },
+		{ "Mage", "lightning" },
+	},
+	-- R8 (§13) as S146
+	r8 = { bar = 8, maxTen = 10, budget45 = 0.75 },
+	-- R9 Mage (§6.1): the Arcanist's element variants on one target 60 s, the Destroyer's on 3 targets 8 s (fire with
+	-- its burn), the ice variants' control of the Elite and Deep Chill on the boss, damage taken in the Elite fight
+	-- (SkillModel.chillReport) ice < fire < lightning, both directions
+	fire = { destroyer = "destroyer.destroyerFire", arcanist = "arcanist.arcanistFire" },
+	ice = { destroyer = "destroyer.destroyerIce", arcanist = "arcanist.arcanistIce" },
+	lightning = { destroyer = "destroyer.destroyerLightning", arcanist = "arcanist.arcanistLightning" },
+	lightningSingle = { 1.10, 1.20 },
+	iceSingle = { 0.85, 0.95 },
+	fireArea = 1.0, -- fire with its burn / lightning on 3 targets 8 s: at least this
+	control = 0.6,
+	deepChill = 0.5,
+	-- R9 Hunter (§6.3): the Bow / the Crossbow on one target 60 s (the Marksman with a longbow and a heavy crossbow),
+	-- the Crossbow's damage-over-time share from 45 (the Trapper's two builds)
+	bow = "marksman.kingslayer",
+	crossbowWeapon = "heavycrossbow",
+	hunterSingle = { 0.9, 1.1 },
+	dotBuilds = { "trapper.poacher", "trapper.poisoner" },
+	dotShare = 0.25,
+	-- R7 (ROZWOJ 0, 11.6): the Hunter / "Furia" on one target 1.15-1.35 at 45-100, both pools of the Marksman (the
+	-- Trapper is r7Exempt, 15.4.2); the Warrior of S146 is the reference
+	warrior = "berserker.fury",
+	r7 = { 1.15, 1.35 },
+	-- R5 (S89 R5 in the shape of pools): every weapon type of the pool within 10 % of the mean, in the build's metric
+	-- (one target 60 s; the Trapper: 3 targets 8 s); the Mage: wand + orb, wand + tome, staff, runestaff in one element
+	r5 = {
+		{ pool = "bow", build = "marksman.kingslayer", classId = "Hunter", metric = "single60" },
+		{ pool = "crossbow", build = "trapper.poacher", classId = "Hunter", metric = "aoe3burst" },
+		{ pool = "fire", build = "arcanist.arcanistFire", classId = "Mage", metric = "single60" },
+		{ pool = "ice", build = "arcanist.arcanistIce", classId = "Mage", metric = "single60" },
+		{ pool = "lightning", build = "arcanist.arcanistLightning", classId = "Mage", metric = "single60" },
+	},
+	r5Spread = 0.10,
+	-- R1 (ROZWOJ 0, S89): 1.6 <= R1 <= max(2.0, 1.15 x the build's R1 at 20), one build per pool and leading direction
+	r1 = {
+		{ pool = "bow", build = "marksman.kingslayer", classId = "Hunter" },
+		{ pool = "crossbow", build = "trapper.poacher", classId = "Hunter" },
+		{ pool = "fire", build = "destroyer.destroyerFire", classId = "Mage" },
+		{ pool = "fire", build = "arcanist.arcanistFire", classId = "Mage" },
+		{ pool = "ice", build = "destroyer.destroyerIce", classId = "Mage" },
+		{ pool = "ice", build = "arcanist.arcanistIce", classId = "Mage" },
+		{ pool = "lightning", build = "destroyer.destroyerLightning", classId = "Mage" },
+		{ pool = "lightning", build = "arcanist.arcanistLightning", classId = "Mage" },
+	},
+	r1Levels = { 45, 100 },
+	r1Band = { 1.6, 2.0 },
+	r1Rel = 1.15,
+	-- T-SK3 / R3: area on 3 targets / one target (burst 8 s) within the build's areaCap (Destroyer 3.0, the rest 2.0)
+	tsk3Builds = {
+		{ build = "destroyer.destroyerFire", classId = "Mage" },
+		{ build = "destroyer.destroyerIce", classId = "Mage" },
+		{ build = "destroyer.destroyerLightning", classId = "Mage" },
+		{ build = "arcanist.arcanistFire", classId = "Mage" },
+		{ build = "arcanist.arcanistIce", classId = "Mage" },
+		{ build = "arcanist.arcanistLightning", classId = "Mage" },
+		{ build = "trapper.poacher", classId = "Hunter" },
+	},
+	-- T-SK4 (ROZWOJ 12.0 / 12.7): the element variants of each direction from 45 (the Destroyer 2.0-2.8, the Arcanist
+	-- 2.0-2.4); the mean builds of three elements are no longer a player's build (DECYZJE S147)
+	tsk4 = {
+		destroyer = { 2.0, 2.8 },
+		arcanist = { 2.0, 2.4 },
+	},
+	-- the levels of T-SK4: 45 and the levels of the regional rows R.ashen.tsk4 / R.frostpeak.tsk4 (50-100) it replaces
+	tsk4Levels = { 45, 50, 55, 60, 65, 69, 70, 75, 80, 85, 90, 95, 99, 100 },
+}
+
+-- S147: rows printed with the reason (id or a prefix ending in `*`; docs/DECYZJE.md S147). Never an R8, R7 or R4 row,
+-- never an R9 row of the Mage above 20.
+Balance.S147_REPORT = {
+	-- 1-20 frozen (session rule 4): the K1 stun of lightning (Static Shock, 0.8 s on an Elite) at 20 makes the
+	-- lightning variants take 0.97-1.00 x fire; fire and lightning have the same armour and HP, and neither O1 (Ember
+	-- Shield, Storm Armor) is on a bar at 20
+	["S147.r9.mage.taken.lightning.destroyer.20"] = "1–20 zamrożone: paraliż Porażenia na Elicie (0,8 s) na 20. daje błyskawicy 0,97 ognia; ten sam pancerz i HP, bez osłon żywiołów na pasku",
+	["S147.r9.mage.taken.lightning.arcanist.20"] = "1–20 zamrożone: paraliż Porażenia na Elicie (0,8 s) na 20. daje błyskawicy 0,995 ognia; ten sam pancerz i HP, bez osłon żywiołów na pasku",
+	-- session rule 5: at 45 the lightning Arcanist's Static Shock stuns the Elite and the fire Arcanist has no stun yet
+	-- (Combustion without a rank); without the stun both take exactly the same (52.4 per second): the identity needs a
+	-- defensive skill (O1) on the bar or Elites half immune to paralysis, both outside the numbers of this session
+	["S147.r9.mage.taken.lightning.arcanist.45"] = "poza zasięgiem dźwigni S147: bez paraliżu Porażenia błyskawica i ogień przyjmują na 45. tyle samo (ten sam pancerz i HP); 0,991; dla właściciela (osłona żywiołu na pasku albo Elity w połowie odporne na paraliż)",
+	-- T-SK4 of the element variants on the regional levels (session rule 5; docs/DECYZJE.md S147): one manaCost.Mage
+	-- curve for all six variants, whose T-SK4 at one level spreads wider than the band (the steps of the bought ranks);
+	-- the ice Destroyer has no rank of Blizzard yet on 65-95 and its spells are the cheapest (dearer ice spells lift the
+	-- ice Arcanist above 2.4); the curve never falls, so 80-85 cannot rise without 90-100
+	["S147.tsk4.destroyer.destroyerIce.65"] = "poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4",
+	["S147.tsk4.destroyer.destroyerIce.69"] = "poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4",
+	["S147.tsk4.destroyer.destroyerIce.70"] = "poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4",
+	["S147.tsk4.destroyer.destroyerIce.75"] = "poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4",
+	["S147.tsk4.destroyer.destroyerIce.80"] = "poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4",
+	["S147.tsk4.destroyer.destroyerIce.85"] = "poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4",
+	["S147.tsk4.destroyer.destroyerIce.90"] = "poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4",
+	["S147.tsk4.destroyer.destroyerIce.95"] = "poza zasięgiem dźwigni S147: Niszczyciel lodu na 65–95 bez rang Zamieci, czary lodu najtańsze (1,20–1,82); droższy lód podnosi Arkanistę lodu ponad 2,4",
+	["S147.tsk4.destroyer.destroyerFire.55"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.destroyer.destroyerFire.60"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.destroyer.destroyerLightning.55"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.destroyer.destroyerLightning.60"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.arcanist.arcanistFire.50"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.arcanist.arcanistFire.55"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.arcanist.arcanistFire.60"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.arcanist.arcanistFire.65"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.arcanist.arcanistIce.60"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.arcanist.arcanistIce.65"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.arcanist.arcanistIce.69"] = "poza zasięgiem dźwigni S147: na 50–69 ogień i błyskawica Niszczyciela (2,87–2,98) oraz ogień i lód Arkanisty (1,78–1,999) na jednej krzywej manaCost.Mage (skoki rang); wyższa krzywa wypycha Niszczyciela ponad 2,8",
+	["S147.tsk4.destroyer.destroyerFire.90"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	["S147.tsk4.destroyer.destroyerFire.95"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	["S147.tsk4.destroyer.destroyerLightning.80"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	["S147.tsk4.destroyer.destroyerLightning.85"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	["S147.tsk4.arcanist.arcanistFire.85"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	["S147.tsk4.arcanist.arcanistFire.90"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	["S147.tsk4.arcanist.arcanistFire.95"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	["S147.tsk4.arcanist.arcanistFire.99"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	["S147.tsk4.arcanist.arcanistLightning.85"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	["S147.tsk4.arcanist.arcanistLightning.90"] = "poza zasięgiem dźwigni S147: na 80–99 skoki rang na jednej krzywej manaCost.Mage (Arkanista ognia 2,41–2,47 na 90–99 przy Niszczycielu ognia 1,90–1,97 na 90–95); krzywa nie spada, więc 80–85 nie wzrosną bez wzrostu 90–100",
+	-- R1 of the Hunter and the Mage after 20: owner (S90, S91) as all.r1 of the path rows
+	["S147.r1.*"] = "właściciel (S90, S91): R1 Łowcy i Maga na 45–100 to rangi powyżej 20 (pasma S90: Strzelec × baza, R7, pasma 12.7 Maga)",
+} :: { [string]: string }
+
+-- S147: the rows of Balance.S147 (ids "S147.*"); balance.spec ("Balance S147: Hunter, Mage and bosses") asserts every
+-- row without `report`.
+function Balance.targetsS147(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S147
+	local SkillModel = (require :: any)("./SkillModel")
+	local SkillPools = require("../src/shared/Logic/SkillPools")
+	local SkillPoints = require("../src/shared/Logic/SkillPoints")
+	local function reasonOf(id: string): string?
+		local hit = Balance.S147_REPORT[id]
+		if hit then
+			return hit
+		end
+		for key, why in Balance.S147_REPORT do
+			if string.sub(key, -1) == "*" and string.sub(id, 1, #key - 1) == string.sub(key, 1, -2) then
+				return why
+			end
+		end
+		return nil
+	end
+	local function add(
+		id: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		classId: string,
+		L: number?
+	)
+		target(rows, id, "s147", label, value, low, high, classId, L)
+		rows[#rows].report = reasonOf(id)
+	end
+	-- R8: the pool's points against its ranks
+	for _, pair in S.pools do
+		local classId, poolId = pair[1], pair[2]
+		local actives, passiveRanks, cap45 = 0, 0, 0
+		for _, id in SkillPools.members(classId, poolId) do
+			local def = SkillData.get(id) :: any
+			if def.type == "passive" then
+				passiveRanks += def.maxLevel
+			else
+				actives += 1
+			end
+			cap45 += SkillPoints.cap(def, 45)
+		end
+		local points = SkillPoints.pointsAt(100)
+		add(
+			`S147.r8.{poolId}.bar100`,
+			`R8 {poolId}: {S.r8.bar} aktywnych na 10 + pasywki / punkty na 100`,
+			(S.r8.bar * 10 + passiveRanks) / points,
+			nil,
+			1,
+			classId,
+			100
+		)
+		add(
+			`S147.r8.{poolId}.max10`,
+			`R8 {poolId}: najwięcej aktywnych z rangą 10 na 100`,
+			math.min(actives, math.floor(points / 10)),
+			S.r8.bar,
+			S.r8.maxTen,
+			classId,
+			100
+		)
+		add(
+			`S147.r8.{poolId}.budget45`,
+			`R8 {poolId}: punkty na 45 / suma limitów rang puli`,
+			SkillPoints.pointsAt(45) / math.max(1, cap45),
+			nil,
+			S.r8.budget45,
+			classId,
+			45
+		)
+	end
+	local function mage(key: string): any
+		return SkillModel.build(key, "Mage")
+	end
+	local bow = SkillModel.build(S.bow, "Hunter")
+	local crossbow = SkillModel.withWeapon(bow, S.crossbowWeapon, "quiver")
+	local warrior = SkillModel.build(S.warrior, "Warrior")
+	for _, L in S.levels do
+		-- R9 Mage: one target (the Arcanist's variants), 3 targets 8 s (the Destroyer's), control, damage taken
+		local fireA = SkillModel.metrics(mage(S.fire.arcanist), L).single60
+		local iceA = SkillModel.metrics(mage(S.ice.arcanist), L).single60
+		local boltA = SkillModel.metrics(mage(S.lightning.arcanist), L).single60
+		add(
+			`S147.r9.mage.single.lightning.{L}`,
+			`R9 błyskawica / ogień (Arkanista): jeden cel 60 s L{L}`,
+			boltA / math.max(1e-9, fireA),
+			S.lightningSingle[1],
+			S.lightningSingle[2],
+			"Mage",
+			L
+		)
+		add(
+			`S147.r9.mage.single.ice.{L}`,
+			`R9 lód / ogień (Arkanista): jeden cel 60 s L{L}`,
+			iceA / math.max(1e-9, fireA),
+			S.iceSingle[1],
+			S.iceSingle[2],
+			"Mage",
+			L
+		)
+		local fireArea = areaBurst(mage(S.fire.destroyer), L)
+		local boltArea = SkillModel.metrics(mage(S.lightning.destroyer), L).aoe3burst
+		add(
+			`S147.r9.mage.area.{L}`,
+			`R9 ogień z podpaleniem / błyskawica (Niszczyciel): 3 cele 8 s L{L}`,
+			fireArea / math.max(1e-9, boltArea),
+			S.fireArea,
+			nil,
+			"Mage",
+			L
+		)
+		for _, dir in { "destroyer", "arcanist" } do
+			local ice = SkillModel.chillReport(mage(S.ice[dir]), L)
+			local fire = SkillModel.chillReport(mage(S.fire[dir]), L)
+			local storm = SkillModel.chillReport(mage(S.lightning[dir]), L)
+			add(
+				`S147.r9.mage.control.{dir}.{L}`,
+				`R9 lód ({dir}): Elita spowolniona albo zamrożona, udział walki L{L}`,
+				ice.chilled,
+				S.control,
+				nil,
+				"Mage",
+				L
+			)
+			add(
+				`S147.r9.mage.deepChill.{dir}.{L}`,
+				`R9 lód ({dir}): boss pod Głębokim Chłodem, udział okna L{L}`,
+				ice.deepChilled,
+				S.deepChill,
+				nil,
+				"Mage",
+				L
+			)
+			add(
+				`S147.r9.mage.taken.ice.{dir}.{L}`,
+				`R9 obrażenia przyjmowane lód / ogień ({dir}, Elita) L{L}`,
+				ice.taken / math.max(1e-9, fire.taken),
+				nil,
+				1,
+				"Mage",
+				L
+			)
+			add(
+				`S147.r9.mage.taken.lightning.{dir}.{L}`,
+				`R9 obrażenia przyjmowane błyskawica / ogień ({dir}, Elita) L{L}`,
+				storm.taken / math.max(1e-9, fire.taken),
+				1,
+				nil,
+				"Mage",
+				L
+			)
+		end
+		-- R9 Hunter: the Bow / the Crossbow on one target, the Crossbow's damage over time
+		local mb, mc = SkillModel.metrics(bow, L), SkillModel.metrics(crossbow, L)
+		add(
+			`S147.r9.hunter.single.{L}`,
+			`R9 łuk / kusza (Strzelec): jeden cel 60 s L{L}`,
+			mb.single60 / math.max(1e-9, mc.single60),
+			S.hunterSingle[1],
+			S.hunterSingle[2],
+			"Hunter",
+			L
+		)
+		if L > 20 then
+			for _, key in S.dotBuilds do
+				add(
+					`S147.r9.hunter.dot.{key}.{L}`,
+					`R9 kusza: udział obrażeń w czasie {key} L{L}`,
+					SkillModel.metrics(SkillModel.build(key, "Hunter"), L).dotShare,
+					S.dotShare,
+					nil,
+					"Hunter",
+					L
+				)
+			end
+			-- R7: the Hunter / "Furia" on one target, both pools of the Marksman
+			local mw = SkillModel.metrics(warrior, L)
+			add(
+				`S147.r7.bow.{L}`,
+				`R7 Łowca z łukiem (Strzelec) / Wojownik dwuręczny: jeden cel L{L}`,
+				mb.single60 / math.max(1e-9, mw.single60),
+				S.r7[1],
+				S.r7[2],
+				"Hunter",
+				L
+			)
+			add(
+				`S147.r7.crossbow.{L}`,
+				`R7 Łowca z kuszą (Strzelec) / Wojownik dwuręczny: jeden cel L{L}`,
+				mc.single60 / math.max(1e-9, mw.single60),
+				S.r7[1],
+				S.r7[2],
+				"Hunter",
+				L
+			)
+			-- R5: the weapon types of the pool
+			for _, spec in S.r5 do
+				local build = SkillModel.build(spec.build, spec.classId)
+				local def = SkillPools.def(spec.classId, spec.pool) :: any
+				local variants: { { any } } = {}
+				for _, weapon in def.weapon.main do
+					if spec.classId == "Mage" and weapon == "wand" then
+						table.insert(variants, { weapon, "orb" })
+						table.insert(variants, { weapon, "tome" })
+					elseif spec.classId == "Hunter" then
+						table.insert(variants, { weapon, "quiver" })
+					else
+						table.insert(variants, { weapon, nil })
+					end
+				end
+				local values: { number } = {}
+				local sum = 0
+				for _, v in variants do
+					local m = SkillModel.metrics(SkillModel.withWeapon(build, v[1], v[2]), L) :: any
+					table.insert(values, m[spec.metric])
+					sum += m[spec.metric]
+				end
+				local mean = sum / math.max(1, #values)
+				local worst = 0
+				for _, v in values do
+					worst = math.max(worst, math.abs(v / math.max(1e-12, mean) - 1))
+				end
+				add(
+					`S147.r5.{spec.pool}.{L}`,
+					`R5 {spec.pool} ({spec.build}): najdalszy typ broni od średniej L{L}`,
+					worst,
+					nil,
+					S.r5Spread,
+					spec.classId,
+					L
+				)
+			end
+			-- T-SK3 / R3
+			for _, spec in S.tsk3Builds do
+				local build = SkillModel.build(spec.build, spec.classId)
+				local m = SkillModel.metrics(build, L)
+				add(
+					`S147.tsk3.{spec.build}.{L}`,
+					`T-SK3 {spec.build} L{L}`,
+					m.tsk3,
+					nil,
+					build.areaCap or 2.0,
+					spec.classId,
+					L
+				)
+			end
+		end
+	end
+	-- T-SK4 of the Mage's element variants on the levels of the regional rows
+	for _, spec in S.tsk3Builds do
+		if spec.classId == "Mage" then
+			local build = SkillModel.build(spec.build, "Mage")
+			local dir = string.match(spec.build, "^(%a+)%.") :: string
+			local band = S.tsk4[dir]
+			for _, L in S.tsk4Levels do
+				local v = SkillModel.metrics(build, L).tsk4
+				add(`S147.tsk4.{spec.build}.{L}`, `T-SK4 {spec.build} L{L}`, v, band[1], band[2], "Mage", L)
+			end
+		end
+	end
+	-- R1 of a build per pool and leading direction (45, 100)
+	for _, spec in S.r1 do
+		local build = SkillModel.build(spec.build, spec.classId)
+		local own = SkillModel.R1_L20[spec.build] or SkillModel.metrics(build, 20).r1
+		for _, L in S.r1Levels do
+			add(
+				`S147.r1.{spec.pool}.{spec.build}.{L}`,
+				`R1 {spec.pool} ({spec.build}) L{L}`,
+				SkillModel.metrics(build, L).r1,
+				S.r1Band[1],
+				math.max(S.r1Band[2], S.r1Rel * own),
+				spec.classId,
+				L
+			)
+		end
 	end
 	return rows
 end
@@ -5785,10 +6711,8 @@ Balance.S134 = {
 }
 
 -- S134: rows of targetsS134 out of reach of the S134 levers (printed with the reason; docs/DECYZJE.md S134).
-Balance.S134_REPORT = {
-	-- S143 (session rule 5): the Warrior's "solo with overpowered gear" on Vaelgrath plays the two-handed pool now
-	["S134.vaelgrath.channel.solo"] = "przebudowa umiejętności DESIGN-18 (S143, pule Wojownika), wraca w S146/S147",
-} :: { [string]: string }
+-- S146: the S143 entry (the Warrior's solo on Vaelgrath with the two-handed pool) is in band again (5.05 s >= 4.5 s)
+Balance.S134_REPORT = {} :: { [string]: string }
 
 -- S134 (E2): the boss targets in one place (ids "S134.<boss>..."); balance.spec ("Balance: bosses 2.0 (S134)")
 -- asserts every row without `report`.
@@ -5977,6 +6901,212 @@ function Balance.targetsS134(): { TargetRow }
 	return rows
 end
 
+-- S149: the world boss ---------------------------------------------------------------------------------------------
+
+-- Targets of the world boss (docs/sessions S149 F2; test data, never game numbers): built for 10-20 players of the
+-- late game; it never scales with them (more players = shorter), 5 never win, the shared blow kills below 7 in the
+-- circle, the channel needs 10, three brands at once; its Legendaries and Mythics per hour of play stay a side dish
+-- next to Vaelgrath's. Teams of 10-20 repeat Balance.ORDER (one tank and one Cleric on every 5 players).
+Balance.S149 = {
+	boss = "hrimvald",
+	level = 99, -- the parties of the time rows (players of level 99, convention gear)
+	teams = { 5, 10, 15, 20 },
+	ten = { 9, 12 }, -- minutes of 10 players (and at most enrageAfter)
+	twenty = { 5, 7 }, -- minutes of 20 players
+	fiveLevel = 100, -- 5 players of level 100 still lose
+	avoid = { 0.60, 0.90 }, -- the biggest big blow / HP of a Mage L100 (convention gear)
+	avoidTank = 0.70, -- ... of a Warrior L100
+	hit = 0.50, -- the biggest blow that cannot be dodged / HP of a Mage L100
+	split10 = 0.75, -- the shared blow on 10 in the circle / HP of the Mage, at most
+	split7 = 1.0, -- ... on 7 in the circle, at least (kills)
+	markOthers = 0.75, -- a brand's blast on the others in its circle / HP of the Mage, at most
+	markSelf = 0.35, -- ... on the branded one, at most
+	tankPerMinute = 3.5, -- the S32 tank model (Balance.boss), the S94 band of Vaelgrath
+	wave = 1.10, -- HP per member per helper wave of 10 players (the S134 limit)
+	-- F3 (loot per hour): 2 h of play a day hit on average 1 occurrence in 3 h = ~0.67 fights a day; Vaelgrath's hour
+	-- is his entry (cave walk, ready check, countdown: entrySeconds) and fight of 5 players L99 for Config.Boss.dailyRuns
+	-- kills a day
+	playHours = 2,
+	fightsPerDay = 2 / 3,
+	entrySeconds = 240,
+	vaelgrathTeam = 5,
+	lootRatio = 0.5, -- world boss Legendaries + Mythics per hour of play / Vaelgrath's per hour, at most
+	expLevels = { 80, 90, 99 }, -- report: one fight's EXP / the level's EXP
+}
+
+-- S149: rows of targetsS149 out of reach of the S149 levers (printed with the reason; docs/DECYZJE.md S149).
+Balance.S149_REPORT = {} :: { [string]: string }
+
+-- S149: Legendaries + Mythics of one world boss reward for `classId` (Data/WorldBoss.reward.rarity: a Legendary
+-- through Loot.pickItem with classBias, a Mythic always usable, Loot.pickUsable), at item level 100.
+function Balance.worldBossDrops(classId: string): number
+	local Data = (require :: any)("../src/shared/Data/WorldBoss")
+	local weights = Data.reward.rarity :: { [number]: number }
+	local total = 0
+	for _, w in weights do
+		total += w
+	end
+	local legendary = (weights[Rarities.LEGENDARY] or 0) / total
+	local mythic = (weights[Rarities.MYTHIC] or 0) / total
+	-- the usable share over the drop levels of a level 100 character (usableAt of the boss drops, defined below)
+	local low, high = ItemRoll.dropLevelRange(100)
+	local usable = 0
+	for ilvl = low, high do
+		usable += Balance.usableShare(LootTables.bossSlots, ilvl, Data.reward.classBias, classId) / (high - low + 1)
+	end
+	return legendary * usable + mythic
+end
+
+-- S149: Vaelgrath's Legendaries + Mythics for `classId` per hour of entering and fighting him (Balance.bossDrops of a
+-- day's kills, no Fortune) and per day.
+function Balance.vaelgrathPerHour(classId: string): (number, number)
+	local S = Balance.S149
+	local d = Balance.bossDrops(classId, "vaelgrath")
+	local perDay = d.legendary + d.mythic
+	local fight = Balance.bossFight("vaelgrath", Balance.team(S.vaelgrathTeam, S.level)).seconds
+	local hours = Config.Boss.dailyRuns * (S.entrySeconds + fight) / 3600
+	return perDay / hours, perDay
+end
+
+-- S149 (F2): the world boss targets in one place (ids "S149.<boss>..."); balance.spec ("Balance: world boss (S149)")
+-- asserts every row without `report`.
+function Balance.targetsS149(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S149
+	local bossId = S.boss
+	local def = Bosses.byId[bossId] :: any
+	local function add(
+		id: string,
+		group: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		c: string?,
+		lv: number?
+	)
+		target(rows, `S149.{bossId}.{id}`, group, label, value, low, high, c, lv)
+	end
+	local name = "Hrimvald"
+	local L = S.level
+	-- the fight gets shorter with more players (both player variants)
+	for _, nodes in { false, true } do
+		local at = if nodes then "@nodes" else ""
+		local suffix = if nodes then " z węzłami" else ""
+		local seconds: { [number]: number } = {}
+		for _, n in S.teams do
+			local lv = if n == 5 then S.fiveLevel else L
+			seconds[n] = Balance.bossFight(bossId, Balance.team(n, lv, nodes)).seconds
+			local low, high = nil, nil
+			if n == 10 then
+				low, high = S.ten[1], math.min(S.ten[2], def.enrageAfter / 60)
+			elseif n == 20 then
+				low, high = S.twenty[1], S.twenty[2]
+			end
+			add(`team{n}{at}`, "time", `{name}, {n} graczy L{lv}{suffix}: min`, seconds[n] / 60, low, high, nil, lv)
+		end
+		for _, n in { 10, 15 } do
+			local label = `{name}{suffix}: czas {n + 5} graczy / {n} graczy`
+			add(`faster{n + 5}{at}`, "time", label, seconds[n + 5] / seconds[n], nil, 1 - 1e-9, nil, L)
+		end
+	end
+	-- 5 players of level 100 never win: the shared blow kills, the channel stays whole or the time runs out
+	do
+		local five = Balance.bossFight(bossId, Balance.team(5, S.fiveLevel))
+		local mech = five.mechanics
+		local splitKills = false
+		for _, share in mech.split do
+			if share >= S.split7 then
+				splitKills = true
+			end
+		end
+		local loses = splitKills or not mech.channelBroken or five.seconds > def.timeLimit
+		local label = `{name}: 5 graczy L{S.fiveLevel} przegrywa (1 = tak)`
+		add("five.loses", "mechanics", label, if loses then 1 else 0, 1, nil, nil, S.fiveLevel)
+	end
+	-- the blows on a Mage and a Warrior of level 100 in a party of 10
+	local team = Balance.team(10, L)
+	team[1] = Balance.player("Warrior", 100)
+	team[2] = Balance.player("Mage", 100)
+	local f = Balance.bossFight(bossId, team)
+	local avoidLabel = `{name}: największy cios do uniknięcia / HP Maga L100`
+	add("avoid.mage", "blows", avoidLabel, f.biggestAvoidable.Mage or 0, S.avoid[1], S.avoid[2], "Mage", 100)
+	local tankLabel = `{name}: największy cios do uniknięcia / HP Wojownika L100`
+	add("avoid.tank", "blows", tankLabel, f.biggestAvoidable.Warrior or 0, nil, S.avoidTank, "Warrior", 100)
+	local hitLabel = `{name}: największy cios nie do uniknięcia / HP Maga L100`
+	add("hit.mage", "blows", hitLabel, f.biggestHit.Mage or 0, nil, S.hit, "Mage", 100)
+	-- the shared blow on 10 and on 7 in the circle (no report mode: below 7 it kills)
+	local split10 = f.mechanics.split.Mage or 0
+	local split7 = Balance.bossFight(bossId, team, { splitInside = 7 }).mechanics.split.Mage or 0
+	add("split10", "mechanics", `{name}: wspólny cios, 10 w kręgu / HP Maga`, split10, nil, S.split10, "Mage", 100)
+	add("split7", "mechanics", `{name}: wspólny cios, 7 w kręgu / HP Maga`, split7, S.split7, nil, "Mage", 100)
+	-- the channel: 10 players break it in time, 5 do not
+	for _, n in { 10, 5 } do
+		local mech = Balance.bossFight(bossId, Balance.team(n, L)).mechanics
+		local label = `{name}: przerwanie zaklęcia, {n} graczy L{L}: s`
+		if n == 10 then
+			add("channel10", "mechanics", label, mech.channelSeconds, nil, mech.channelLimit, nil, L)
+		else
+			add("channel5", "mechanics", label, mech.channelSeconds, mech.channelLimit + 1e-9, nil, nil, L)
+		end
+	end
+	-- three brands: the others in a circle and the branded one (one blast each, on a Mage L100)
+	do
+		local m = Balance.monster(Balance.bossKind(def), def.level, "boss")
+		local mage = team[2]
+		for _, attack in def.attacks do
+			if attack.mechanic == "mark" and attack.mark then
+				local kind = attack.damageKind or def.damageKind
+				local one = Balance.hit(m, mage, attack.damage, kind, false) * Combat.randomMax / mage.values.maxHp
+				local others = BossMechanics.markTaken(false, 1, one, attack.mark)
+				local own = BossMechanics.markTaken(true, 0, one, attack.mark)
+				local count = BossMechanics.markCount(attack.mark)
+				add(`mark.{attack.id}.count`, "mechanics", `{name}: {attack.id}, naznaczonych naraz`, count, 3, 3)
+				local othersLabel = `{name}: {attack.id}, inni w kręgu / HP Maga`
+				add(`mark.{attack.id}.others`, "mechanics", othersLabel, others, nil, S.markOthers, "Mage", 100)
+				local ownLabel = `{name}: {attack.id}, naznaczony / HP Maga`
+				add(`mark.{attack.id}.self`, "mechanics", ownLabel, own, nil, S.markSelf, "Mage", 100)
+			end
+		end
+	end
+	-- the tank (the S32 model of S94) and the helpers of a party of 10
+	do
+		local tank = Balance.boss(bossId, Balance.team(10, L)).tankHpPerMinute
+		local tankMinute = `{name} (model S32): tank HP na minutę, 10 graczy L{L}`
+		add("tank", "blows", tankMinute, tank, nil, S.tankPerMinute, nil, L)
+		local wave = Balance.bossFight(bossId, Balance.team(10, L)).helperWave
+		add("wave10", "blows", `{name}, pomocnicy fazy, 10 graczy: HP na członka`, wave, nil, S.wave, nil, L)
+	end
+	-- F3: Legendaries + Mythics per hour of play next to Vaelgrath's per hour of entering and fighting him (no
+	-- report mode); the same per day of 2 h of play is printed
+	for _, c in Balance.CLASSES do
+		local drops = Balance.worldBossDrops(c)
+		local mine = drops * S.fightsPerDay / S.playHours
+		local vaelgrath, perDay = Balance.vaelgrathPerHour(c)
+		local label = `{name}: Legendarne i Mityczne / h gry / Vaelgrath na godzinę walki ({c})`
+		add(`loot.{c}`, "loot", label, mine / math.max(1e-12, vaelgrath), nil, S.lootRatio, c, 100)
+		local dayLabel = `{name}: Legendarne i Mityczne na dzień 2 h gry / Vaelgrath na dzień ({c})`
+		add(`loot.day.{c}`, "loot", dayLabel, drops * S.fightsPerDay / math.max(1e-12, perDay), nil, nil, c, 100)
+		rows[#rows].report = "tylko raport: dzień 2 h gry z trzema zabiciami Vaelgratha (cel F3 liczy godzinę)"
+	end
+	-- report: one fight's EXP / the level's EXP
+	do
+		local WorldBoss = (require :: any)("../src/shared/Logic/WorldBoss")
+		for _, lv in S.expLevels do
+			local share = WorldBoss.reward(lv, true).exp / Exp.expToNext(lv)
+			add(`exp.{lv}`, "exp", `{name}: EXP jednej walki / EXP poziomu {lv}`, share, nil, nil, nil, lv)
+			rows[#rows].report = "tylko raport: EXP bossa świata jest poza budżetem questów i tempa (od 80.)"
+		end
+	end
+	for _, row in rows do
+		local why = Balance.S149_REPORT[row.id]
+		if why then
+			row.report = `właściciel: {why}`
+		end
+	end
+	return rows
+end
+
 -- S94 (L3): the cross rows 1-100 no band checked in full (ids "X.<group>..."): the pace step h(L) / h(L - 1) <= 1.3
 -- on 20-99 across the band borders 45 and 70, at least two outdoor hunting grounds on 21-100, the cave Elites of some
 -- region drop every item level 21-100. The sum 1 -> 100 is R.frostpeak.pace.total; the T-SK guards of the control
@@ -6090,8 +7220,8 @@ function Balance.targetsGlobal(): { TargetRow }
 		end
 		add("G6", `{L}: rozrzut czasu 1 na 1 (najwolniejsza / najszybsza)`, hi / lo, nil, 2.2, nil, L)
 	end
-	-- G11: every attack of every phase of the four bosses at least 50 % of its cooldown rate
-	for _, def in Bosses.list do
+	-- G11: every attack of every phase of the four bosses at least 50 % of its cooldown rate (S149: and the world boss)
+	for _, def in Bosses.all do
 		for phase = 1, #def.phases + 1 do
 			local cad = Balance.bossCadence(def, phase)
 			for _, attack in def.attacks do
@@ -6339,391 +7469,39 @@ do
 			end
 		end
 	end
-	-- S137 (DESIGN-18 §0.4, session rule 6): skill ranks are bought with skill points (Data/Progression.skillPoints)
-	-- instead of growing with the level; the rows 21-100 below fail only through the points budget of the
-	-- reference builds (passives and path skills share it with the rotation). docs/SESJE.md S137 lists them;
-	-- S146 / S147 bring them back with the new reference builds. Never a row of 1-20.
-	local reworkWhy = "przebudowa umiejętności DESIGN-18, wraca w S146/S147"
+	-- S146 (DESIGN-18 §13, session rule 5): the Warrior's and the Cleric's rows of S137-S145 that the S146 levers do not
+	-- close (the rest of their entries is asserted again; docs/SESJE.md S146 lists them). Never a row of 1-20.
+	-- The Warrior's guards: T-SK1 / T-SK2 against the build's own L20 grow past the D1 limits since the pools (S143:
+	-- seven skills of the pool at 20, the area skills and the cries from 26-33, the Standard-Bearer's and the Guardian's
+	-- cries and banner in the 8 s burst), as the other classes' guards of S93 / S94; R1 is asserted in the S146 block
+	-- (the Defender at 45 / 100, Fury 45-100)
+	local riseWhy = "poza zasięgiem dźwigni S146: T-SK1 / T-SK2 Wojownika rosną ponad limit D1 względem L20 przez pule "
+		.. "(S143); R1 asertuje blok S146"
 	for _, key in
 		{
-			"R.duskwood.morvane.noSupport.3.hit",
-			"R.duskwood.morvane.noSupport.4.hit",
-			"R.duskwood.morvane.noSupport.5.hit",
-			"R.duskwood.guard.tsk1.Cleric.healer.dungeon.40",
-			"R.duskwood.guard.tsk2.Cleric.healer.dungeon.40",
-			"R.ashen.guard.tsk2.Warrior.berserker.butcher.50",
-			"R.ashen.guard.tsk2.Warrior.berserker.butcher.60",
-			"R.ashen.guard.tsk1.Hunter.base.50",
-			"R.ashen.guard.tsk2.Hunter.base.50",
-			"R.ashen.guard.tsk1.Hunter.base.55",
-			"R.ashen.guard.tsk2.Hunter.base.55",
-			"R.ashen.guard.tsk1.Hunter.base.60",
-			"R.ashen.guard.tsk2.Hunter.base.60",
-			"R.ashen.guard.tsk1.Hunter.base.65",
-			"R.ashen.guard.tsk2.Hunter.base.69",
-			"R.ashen.guard.tsk2.Hunter.base.70",
-			"R.ashen.guard.tsk1.Hunter.marksman.kingslayer.65",
-			"R.ashen.guard.tsk1.Hunter.marksman.kingslayer.70",
-			"R.ashen.guard.tsk1.Hunter.marksman.eliteHunter.60",
-			"R.ashen.guard.tsk1.Hunter.marksman.eliteHunter.65",
-			"R.ashen.guard.tsk1.Hunter.marksman.eliteHunter.70",
-			"R.ashen.guard.tsk3.Hunter.trapper.poisoner.65",
-			"R.ashen.guard.tsk3.Hunter.trapper.poisoner.69",
-			"R.ashen.guard.tsk3.Hunter.trapper.poisoner.70",
-			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.50",
-			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.55",
-			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.60",
-			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.65",
-			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.65",
-			"R.ashen.guard.tsk1.Hunter.scout.tracker.55",
-			"R.ashen.guard.tsk1.Hunter.scout.tracker.60",
-			"R.ashen.guard.tsk1.Hunter.scout.tracker.65",
-			"R.ashen.guard.tsk2.Hunter.scout.tracker.65",
-			"R.frostpeak.guard.tsk2.Warrior.base.75",
-			"R.frostpeak.guard.tsk2.Warrior.base.80",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.75",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.80",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.85",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.90",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.95",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.99",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.100",
-			"R.frostpeak.guard.tsk2.Warrior.berserker.fury.75",
-			"R.frostpeak.guard.tsk2.Warrior.berserker.butcher.75",
-			"R.frostpeak.guard.tsk1.Hunter.marksman.kingslayer.85",
-			"R.frostpeak.guard.tsk2.Hunter.marksman.kingslayer.85",
-			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.85",
-			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.75",
-			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.80",
-			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.85",
-			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.75",
-			"R.frostpeak.guard.tsk3.Hunter.trapper.poisoner.75",
-			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.80",
-			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.85",
-			"R.frostpeak.guard.tsk1.Hunter.scout.partyHunter.75",
-			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.75",
-			"R.frostpeak.guard.tsk1.Hunter.scout.tracker.75",
-			"T1|runThrough · berserker.fury@spear2h · L70",
-			"T1|easyPrey · trapper.poacher@crossbow · L45",
-			"T1|easyPrey · trapper.poacher@crossbow · L70",
-			"T1|savingBlow · healer.dungeon@holystaff · L70",
-			"path.guardian.defender.L70.guardian.ehp",
-			"path.guardian.defender.L100.guardian.ehp",
-			"path.guardian.defender.L100.guardian.ehpRed",
-			"path.marksman.kingslayer.L45.marksman.base",
-			"path.marksman.kingslayer.L70.marksman.base",
-			-- S144: the "@longbow+quiver" rows are gone (the longbow is Królobójca's own weapon since S144)
-			"path.marksman.kingslayer.L45.marksman.r7",
-			"path.trapper.poacher.L45.trapper.single",
-			"path.trapper.poacher.L70.trapper.single",
-			"path.trapper.poacher@bow+quiver.L70.trapper.single",
-			"path.trapper.poacher@bow+quiver.L45.all.r1",
-			"path.trapper.poacher@bow+quiver.L70.all.r1",
-			"path.marksman.kingslayer.L45.r5a.hunter",
-			"path.trapper.poacher.L45.r5a.hunter",
-			"path.inquisitor.solo.L45.inquisitor.hp",
-			"path.inquisitor.solo.L70.inquisitor.hp",
-			"path.inquisitor.solo.L100.inquisitor.hp",
-		}
-	do
-		add(key, "S137", reworkWhy)
-	end
-	-- S140 (DESIGN-18 §0.4, session rule 5): the Mage's fire pool, common skills and directions (the base and the
-	-- direction builds measure the new pool, the fire variants are tuned to the S91 band at 20) and the weapon's fire
-	-- burn 30 -> 15 % (Data/Skills.ADAPTIVE); only Mage rows, docs/SESJE.md S140 lists them. S146 / S147 bring them
-	-- back with the new reference builds. Never a row of 1-20.
-	for _, key in
-		{
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.55",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.60",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.65",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.69",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.70",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.50",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.55",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.60",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.65",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.69",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.70",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.55",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.60",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.65",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.69",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.70",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.50",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.55",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.60",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.65",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.69",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.70",
-			"R.ashen.tsk4.destroyer.destroyerBoss.60",
-			"R.ashen.tsk4.destroyer.destroyerExp.60",
-			"R.duskwood.guard.tsk1.Mage.destroyer.destroyerFire.44",
-			"R.duskwood.guard.tsk2.Mage.destroyer.destroyerFire.40",
-			"R.duskwood.guard.tsk2.Mage.destroyer.destroyerFire.44",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.100",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.75",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.80",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.85",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.90",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.95",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.99",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.100",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.75",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.80",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.85",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.90",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.95",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.99",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.100",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.75",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.80",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.85",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.90",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.95",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.99",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.100",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.75",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.80",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.85",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.90",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.95",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.99",
-			"R.frostpeak.tsk4.destroyer.destroyerExp.100",
-			"R.frostpeak.tsk4.destroyer.destroyerExp.85",
-			"R.frostpeak.tsk4.destroyer.destroyerExp.90",
-			"R.frostpeak.tsk4.destroyer.destroyerExp.95",
-			"R.frostpeak.tsk4.destroyer.destroyerExp.99",
-			"path.destroyer.destroyerExp.L45.destroyer.aoe",
-			"path.destroyer.destroyerExp.L70.destroyer.aoe",
-			"path.destroyer.destroyerBoss.L100.destroyer.single",
-			"path.arcanist.arcanistBoss.L70.arcanist.single",
-			"path.arcanist.arcanistBoss.L100.arcanist.single",
-			"path.arcanist.arcanistBoss.L45.arcanist.vsDestroyer",
-			"path.arcanist.arcanistBoss.L100.arcanist.vsDestroyer",
-			"path.destroyer.destroyerExp.L100.mage.tsk4",
-			"path.destroyer.destroyerExp.L100.r4.meteorStorm.5|a",
-			"G10|T-SK4 Mage destroyer.destroyerExp 60",
-			"G10|T-SK4 Mage destroyer.destroyerExp 85",
-			"G10|T-SK4 Mage destroyer.destroyerExp 90",
-			"G10|T-SK4 Mage destroyer.destroyerExp 95",
-			"G10|T-SK4 Mage destroyer.destroyerExp 100",
-			"T1|elementalMight fire · destroyer.destroyerExp@staff · L45",
-			"T1|elementalMight fire · destroyer.destroyerExp@staff · L70",
-			"T1|elementalMight fire · destroyer.destroyerExp@staff · L100",
-		}
-	do
-		add(key, "S140", reworkWhy)
-	end
-	-- S141 (DESIGN-18 §0.4, session rule 5): the Mage's ice pool (the ice variants grow from their 1-20 R1 in the S91
-	-- band like the fire ones; the mean of the elements of Overload's mana and the ice Spark's share move with the ice
-	-- pool); only Mage rows, docs/SESJE.md S141 lists them. S146 / S147 bring them back. Never a row of 1-20.
-	for _, key in
-		{
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.50",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.55",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.60",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.65",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.69",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.70",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.50",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.55",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.60",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.65",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.69",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.70",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.50",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.55",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.60",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.65",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.69",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.70",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.55",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.60",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.65",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.69",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.70",
-			"R.ashen.tsk4.arcanist.arcanistOverload.50",
-			"R.ashen.tsk4.arcanist.arcanistOverload.55",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.100",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.75",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.80",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.85",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.90",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.95",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.99",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.100",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.75",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.80",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.85",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.90",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.95",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.99",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.100",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.75",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.80",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.85",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.90",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.95",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.99",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.100",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.75",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.80",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.85",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.90",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.95",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.99",
-			"T1|elementalSpark ice · arcanist.arcanistBoss@wand · L100",
-		}
-	do
-		add(key, "S141", reworkWhy)
-	end
-	-- S142 (DESIGN-18 §0.4, session rule 5): the Mage's lightning pool and the end of its transitional state (Fire Bolt fire
-	-- only, no adaptive S1; the lightning variants grow from their 1-20 R1 in the S91 band like the fire and ice ones; the
-	-- mean builds lose the adaptive bolt in the ice and lightning elements, so their T-SK4 and single-target rows move);
-	-- only Mage rows, docs/SESJE.md S142 lists them. S146 / S147 bring them back. Never a row of 1-20. S142 also removed
-	-- the S140 / S141 entries whose rows are in band again.
-	for _, key in
-		{
-			"G10|T-SK4 Mage arcanist.arcanistBoss 45",
-			"G10|T-SK4 Mage arcanist.arcanistBoss 50",
-			"G10|T-SK4 Mage arcanist.arcanistBoss 55",
-			"G10|T-SK4 Mage arcanist.arcanistBoss 95",
-			"G10|T-SK4 Mage destroyer.destroyerExp 45",
-			"G10|T-SK4 Mage destroyer.destroyerExp 50",
-			"G10|T-SK4 Mage destroyer.destroyerExp 55",
-			"G10|T-SK4 Mage destroyer.destroyerExp 70",
-			"G10|T-SK4 Mage destroyer.destroyerExp 75",
-			"G10|T-SK4 Mage destroyer.destroyerExp 80",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.55",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.60",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.65",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.69",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.70",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.50",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.55",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.60",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.65",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.69",
-			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.70",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.55",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.60",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.65",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.69",
-			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.70",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.50",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.55",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.60",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.65",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.69",
-			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.70",
-			"R.ashen.tsk4.arcanist.arcanistBoss.50",
-			"R.ashen.tsk4.arcanist.arcanistBoss.55",
-			"R.ashen.tsk4.arcanist.arcanistOverload.69",
-			"R.ashen.tsk4.arcanist.arcanistOverload.70",
-			"R.ashen.tsk4.destroyer.destroyerBoss.50",
-			"R.ashen.tsk4.destroyer.destroyerBoss.55",
-			"R.ashen.tsk4.destroyer.destroyerExp.50",
-			"R.ashen.tsk4.destroyer.destroyerExp.55",
-			"R.ashen.tsk4.destroyer.destroyerExp.69",
-			"R.ashen.tsk4.destroyer.destroyerExp.70",
-			"R.duskwood.guard.tsk1.Mage.destroyer.destroyerLightning.44",
-			"R.duskwood.tsk4.arcanist.arcanistBoss.25",
-			"R.duskwood.tsk4.arcanist.arcanistBoss.44",
-			"R.duskwood.tsk4.destroyer.destroyerExp.25",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.100",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.75",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.80",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.85",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.90",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.95",
-			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.99",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.75",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.80",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.85",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.90",
-			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.95",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.75",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.80",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.85",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.90",
-			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.95",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.100",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.75",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.80",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.85",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.90",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.95",
-			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.99",
-			"R.frostpeak.tsk4.arcanist.arcanistBoss.95",
-			"R.frostpeak.tsk4.arcanist.arcanistOverload.75",
-			"R.frostpeak.tsk4.arcanist.arcanistOverload.80",
-			"R.frostpeak.tsk4.arcanist.arcanistOverload.85",
-			"R.frostpeak.tsk4.arcanist.arcanistOverload.90",
-			"R.frostpeak.tsk4.arcanist.arcanistOverload.95",
-			"R.frostpeak.tsk4.destroyer.destroyerExp.75",
-			"R.frostpeak.tsk4.destroyer.destroyerExp.80",
-			"T1|elementalMight lightning · destroyer.destroyerExp@staff · L45",
-			"T1|elementalMight lightning · destroyer.destroyerExp@staff · L70",
-			"T1|elementalSpark fire · arcanist.arcanistBoss@wand · L45",
-			"path.arcanist.arcanistBoss.L45.arcanist.single",
-			"path.arcanist.arcanistBoss.L45.mage.tsk4",
-			"path.arcanist.arcanistBoss.L45.r5a.mage",
-			"path.arcanist.arcanistIce.L70.r4.shatter.5||A − B|",
-			"path.arcanist.arcanistOverload.L45.mage.tsk4",
-			"path.arcanist.arcanistOverload.L70.mage.tsk4",
-			"path.destroyer.destroyerBoss.L45.mage.tsk4",
-			"path.destroyer.destroyerExp.L45.mage.tsk4",
-			"path.destroyer.destroyerExp.L45.r5a.mage",
-			"path.destroyer.destroyerExp.L70.mage.tsk4",
-			"path.destroyer.destroyerIce.L100.r4.blizzard.10|b",
-			-- Fire Bolt x0.72 with its burn stack: its pierce and splash (5A / 10A) share less of the hit with its burn
-			"path.arcanist.arcanistBoss.L45.r4.firebolt.5|a",
-			"path.arcanist.arcanistBoss.L70.r4.firebolt.5|a",
-			"path.arcanist.arcanistBoss.L100.r4.firebolt.5|a",
-			"path.arcanist.arcanistBoss.L45.r4.firebolt.10|a",
-			"path.arcanist.arcanistBoss.L70.r4.firebolt.10|a",
-			"path.arcanist.arcanistBoss.L100.r4.firebolt.10|a",
-			"R.duskwood.guard.tsk1.Mage.base.40",
-			"R.duskwood.guard.tsk1.Mage.base.loadout.40",
-			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.50",
-		}
-	do
-		add(key, "S142", reworkWhy)
-	end
-	-- S143 (DESIGN-18 §0.4, session rule 5): the Warrior's two pools (Sword and Shield, Two-Handed), the common skills
-	-- and the directions' new nodes. The guard rows (T-SK1 / T-SK2 against the L20 of the same build) grow because the
-	-- pools reach their area skills at 3 and their S2 at 15 (faster at 20); the Guardian's EHP and the Healer on the
-	-- Defender (G10, T-SK5) follow Fortitude and Shield Bash in the one-handed pool; the Berserker (the damage
-	-- reference) is 5-12 % above S142 at 70-100 with Rage, Sunder and Execute (the Hunter's R7 and the Inquisitor's
-	-- ratio at 70 / 100 against it); the Standard-Bearer's support and r6 lost Battle Cry / War Banner / Crushing Blow
-	-- as nodes (now pool skills). Only rows that hold a Warrior or measure against the Berserker; docs/SESJE.md S143
-	-- lists them. S146 brings them back. Never a row of 1-20.
-	for _, key in
-		{
-			"G10|T-SK5 Cleric healer.dungeon na guardian.defender 50",
 			"R.ashen.guard.tsk1.Warrior.base.55",
 			"R.ashen.guard.tsk1.Warrior.base.60",
 			"R.ashen.guard.tsk1.Warrior.base.65",
-			"R.ashen.guard.tsk1.Warrior.guardian.defender.50",
+			"R.ashen.guard.tsk1.Warrior.base.loadout.50",
 			"R.ashen.guard.tsk1.Warrior.guardian.defender.55",
 			"R.ashen.guard.tsk1.Warrior.guardian.defender.60",
 			"R.ashen.guard.tsk1.Warrior.guardian.defender.65",
 			"R.ashen.guard.tsk1.Warrior.guardian.defender.69",
 			"R.ashen.guard.tsk1.Warrior.guardian.defender.70",
-			"R.ashen.guard.tsk1.Warrior.guardian.loner.65",
 			"R.ashen.guard.tsk1.Warrior.guardian.loner.69",
 			"R.ashen.guard.tsk1.Warrior.guardian.loner.70",
 			"R.ashen.guard.tsk1.Warrior.standard.warden.50",
 			"R.ashen.guard.tsk1.Warrior.standard.warden.55",
+			"R.ashen.guard.tsk1.Warrior.standard.warden.60",
+			"R.ashen.guard.tsk1.Warrior.standard.warden.65",
 			"R.ashen.guard.tsk1.Warrior.standard.warden.69",
 			"R.ashen.guard.tsk2.Warrior.base.55",
 			"R.ashen.guard.tsk2.Warrior.base.60",
 			"R.ashen.guard.tsk2.Warrior.base.65",
-			"R.ashen.guard.tsk2.Warrior.base.loadout.50",
 			"R.ashen.guard.tsk2.Warrior.base.loadout.55",
 			"R.ashen.guard.tsk2.Warrior.base.loadout.60",
 			"R.ashen.guard.tsk2.Warrior.base.loadout.65",
+			"R.ashen.guard.tsk2.Warrior.berserker.butcher.60",
 			"R.ashen.guard.tsk2.Warrior.berserker.butcher.65",
 			"R.ashen.guard.tsk2.Warrior.berserker.butcher.69",
 			"R.ashen.guard.tsk2.Warrior.guardian.defender.60",
@@ -6734,89 +7512,239 @@ do
 			"R.ashen.guard.tsk2.Warrior.guardian.loner.65",
 			"R.ashen.guard.tsk2.Warrior.guardian.loner.69",
 			"R.ashen.guard.tsk2.Warrior.guardian.loner.70",
+			"R.ashen.guard.tsk2.Warrior.standard.commander.50",
 			"R.ashen.guard.tsk2.Warrior.standard.commander.55",
 			"R.ashen.guard.tsk2.Warrior.standard.commander.60",
 			"R.ashen.guard.tsk2.Warrior.standard.commander.65",
+			"R.ashen.guard.tsk2.Warrior.standard.warden.50",
 			"R.ashen.guard.tsk2.Warrior.standard.warden.55",
 			"R.ashen.guard.tsk2.Warrior.standard.warden.60",
 			"R.ashen.guard.tsk2.Warrior.standard.warden.65",
 			"R.ashen.guard.tsk2.Warrior.standard.warden.69",
-			"R.ashen.tsk5.50",
-			"R.duskwood.guard.tsk1.Warrior.berserker.butcher.40",
-			"R.duskwood.guard.tsk1.Warrior.berserker.fury.30",
-			"R.duskwood.guard.tsk1.Warrior.standard.commander.44",
 			"R.frostpeak.guard.tsk1.Warrior.base.75",
 			"R.frostpeak.guard.tsk1.Warrior.base.loadout.75",
-			"R.frostpeak.guard.tsk1.Warrior.guardian.defender.80",
 			"R.frostpeak.guard.tsk1.Warrior.guardian.defender.85",
 			"R.frostpeak.guard.tsk1.Warrior.guardian.loner.75",
 			"R.frostpeak.guard.tsk1.Warrior.guardian.loner.80",
 			"R.frostpeak.guard.tsk1.Warrior.guardian.loner.85",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.100",
+			"R.frostpeak.guard.tsk2.Warrior.base.75",
+			"R.frostpeak.guard.tsk2.Warrior.base.80",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.100",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.75",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.80",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.85",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.90",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.95",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.99",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.75",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.80",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.85",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.90",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.95",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.99",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.100",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.75",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.80",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.85",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.90",
 			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.95",
-			"T1|sundering · berserker.fury@hammer2h · L100",
-			"T1|sundering · berserker.fury@hammer2h · L45",
-			"T1|sundering · berserker.fury@hammer2h · L70",
-			"T2|berserker · L70",
-			"path.berserker.fury.L100.berserker.base",
-			"path.berserker.fury.L45.berserker.base",
-			"path.berserker.fury.L45.r4.cleave.10|a",
-			"path.berserker.fury.L70.berserker.base",
-			"path.guardian.defender.L45.guardian.ehp",
-			"path.guardian.defender.L45.guardian.ehpRed",
-			"path.guardian.defender.L70.guardian.ehpRed",
-			"path.inquisitor.solo.L100.inquisitor.ratio",
-			"path.inquisitor.solo.L70.inquisitor.ratio",
-			"path.marksman.kingslayer.L70.marksman.r7",
-			"path.standard.commander.L100.r6.standard",
-			"path.standard.commander.L100.standard.support",
-			"path.standard.commander@saber1h+shield.L100.standard.support",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.99",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.100",
 		}
 	do
-		add(key, "S143", reworkWhy)
+		add(key, "S146", riseWhy)
 	end
-	-- S144 (DESIGN-18 §0.4, session rule 5): the Hunter's two pools (Bow, Crossbow), the common skills and the directions'
-	-- new nodes and keystones. The guard rows (T-SK1 / T-SK2 / T-SK3 against the L20 of the same build) move because the
-	-- pools reach their area skills at 3, their S2 at 15 and the old path skills earlier or later (Draw a Bead 30, the
-	-- Falcon 33, Heartseeker 40, Storm Arrow 60, the Drive 60); the Marksman with the heavy crossbow lost the nodes of the
-	-- Bow's Aimed Shot / Heartseeker / Storm Arrow (marksman.base, r5a); the Trapper's weapons are two pools now (r5,
-	-- trapper.single / aoe with the bow, T2); the Scout's solo pace and r6 follow the Bow's new ladder. Only Hunter rows;
-	-- docs/SESJE.md S144 lists them. S147 brings them back. Never a row of 1-20.
+	-- the two-handed weapon traits (S88 T1 / T2) on the Berserker's new rotation (the bar of 8, Fury from Rage): 1-3 %
+	-- past the band; the lever is the trait values (Data/ItemTraits, S88)
+	local traitWhy = "poza zasięgiem dźwigni S146: cechy broni dwuręcznej (Data/ItemTraits, S88) na nowej rotacji "
+		.. "Berserkera (pasek 8, Furia z pasywki); dla właściciela"
 	for _, key in
 		{
+			"T1|sundering · berserker.fury@hammer2h · L45",
+			"T1|sundering · berserker.fury@hammer2h · L70",
+			"T1|sundering · berserker.fury@hammer2h · L100",
+			"T1|runThrough · berserker.fury@spear2h · L70",
+			"T2|berserker · L70",
+		}
+	do
+		add(key, "S146", traitWhy)
+	end
+	-- the Berserker against the class base: since S143 the base plays the same two-handed pool (Rage, Execute, Rend,
+	-- Sunder), so the Berserker leads only by its direction's nodes; stronger nodes move "Furia", the damage reference
+	-- of every class (its R1 at 100 2.60 against 2.61)
+	for _, L in { 45, 70, 100 } do
+		add(
+			`path.berserker.fury.L{L}.berserker.base`,
+			"S146",
+			"poza zasięgiem dźwigni S146: podstawa gra tę samą pulę dwuręczną (S143), Berserker prowadzi tylko węzłami; "
+				.. "mocniejsze węzły przesuwają Furię, odniesienie wszystkich klas (R1 na 100 2,60 przy 2,61)"
+		)
+	end
+	-- Fortune plays the Mace and Flail pool (DESIGN-18 §6.4): the light pool's heal passives (Grace, Guiding Light) and
+	-- the Healer's nodes are not his
+	for _, L in { 70, 100 } do
+		add(
+			`path.fortune.plunder.L{L}.fortune.healLess`,
+			"S146",
+			"poza zasięgiem dźwigni S146: Fortuna gra pulę buzdygana, pasywki leczenia berła i węzły Uzdrowiciela nie są jej; dla właściciela"
+		)
+	end
+	-- the lone Healer with the holy staff plays the light pool (three skills with damage: Light Ray, Radiance, Blinding
+	-- Light); a Healer grinds with a mace (the hammer pool), and the 1-20 reference build is frozen
+	add(
+		"path.healer.solo.L100.cleric.solo",
+		"S146",
+		"poza zasięgiem dźwigni S146: kostur to pula berła (3 umiejętności z obrażeniami), solo expi się buzdyganem; build 1-20 zamrożony"
+	)
+	-- S147 (DESIGN-18 §13, session rule 5): the Hunter's and the Mage's rows of S137-S145 that the S147 levers do not
+	-- close (the rest of their entries is asserted again; docs/SESJE.md S147 lists them). Never a row of 1-20 except
+	-- the frozen Fire Bolt 5A.
+	-- The guards: T-SK1 / T-SK2 / T-SK3 against the build's own L20 grow past the D1 limits since the pools (the element
+	-- variants and both Hunter pools tuned at 20 to the S91 band, the pools' S2 at 15, A2 at 26, K2 at 33, S3 at 40, U at
+	-- 60), as the Warrior's of S146; R1 is printed and R9 / T-SK3 asserted in the S147 block
+	local guardWhy = "poza zasięgiem dźwigni S147: T-SK1 / T-SK2 / T-SK3 Łowcy i Maga rosną ponad limit D1 względem L20 "
+		.. "przez pule (S140–S144); R9 i T-SK3 asertuje blok S147"
+	-- T-SK4 of the means of three elements (the S90-S94 Mage builds: a mixed rotation, each element casts only its pool
+	-- since S142, so they cast 4-5 spells): the S147 block asserts T-SK4 of the element variants on 45-100
+	local tsk4Why = "S147: T-SK4 średniej trzech żywiołów (rotacja sprzed pul, po S142 żywioł rzuca tylko swoją pulę) "
+		.. "poniżej pasma po krzywej manaCost.Mage S147; T-SK4 wariantów żywiołów na 45–100 asertuje blok S147 "
+		.. "(wiersze poza zasięgiem z powodem zasady 5 w Balance.S147_REPORT; pasmo ROZWOJ 12.7 od 45.)"
+	-- the weapon traits of S88 measured on the builds before the pools (the means of three elements, the Trapper with a
+	-- bow, the Scout's shortbow); their values live in Data/ItemTraits, outside this session's levers
+	local traitWhy = "poza zasięgiem dźwigni S147: cechy broni (S88) mierzone na buildach sprzed pul (średnia żywiołów, "
+		.. "Traper z łukiem); wartości w Data/ItemTraits, dla właściciela"
+	-- 1-20 frozen: Fire Bolt's 5A (rank 5, level 17) moves the Destroyer's L20 anchor (S91)
+	local frozenWhy =
+		"1–20 zamrożone: przełom 5A Ognistego Pocisku (ranga 5, poziom 17) rusza kotwicę L20 Niszczyciela (S91)"
+	-- the Scout plays the Bow pool, without the Crossbow's traps (Venom Snare, Snare Field) that make the Trapper the
+	-- fastest area build
+	local scoutWhy = "poza zasięgiem dźwigni S147: Zwiadowca gra pulę łuku bez pułapek kuszy, tempo solo względem "
+		.. "Trapera 1,6–2,2; dla właściciela"
+	local r6Why =
+		"właściciel (E3, S89): rzędy 4–11 Zwiadowcy to wsparcie (średnia części bliska 0, iloraz bez znaczenia)"
+	-- the Trapper with a bow: since S144 the Trapper is the Crossbow pool (the bow is the other pool's weapon)
+	local bowWhy = "S147: Traper z łukiem gra pulę łuku (od S144 Traper to pula kuszy); R5 puli asertuje blok S147"
+	-- targets against the class base of S85 (the base plays both pools / three elements in one rotation)
+	local baseWhy = "S147: cel względem bazy klasy sprzed pul (baza gra obie pule albo trzy żywioły w jednej rotacji); "
+		.. "tożsamość pul asertuje blok S147 (R9, R7, R5)"
+	-- S147: guard (248 rows)
+	for _, key in
+		{
+			"R.ashen.guard.tsk1.Hunter.base.50",
+			"R.ashen.guard.tsk1.Hunter.base.55",
+			"R.ashen.guard.tsk1.Hunter.base.60",
+			"R.ashen.guard.tsk1.Hunter.base.65",
 			"R.ashen.guard.tsk1.Hunter.base.69",
 			"R.ashen.guard.tsk1.Hunter.base.70",
 			"R.ashen.guard.tsk1.Hunter.marksman.eliteHunter.55",
+			"R.ashen.guard.tsk1.Hunter.marksman.eliteHunter.70",
+			"R.ashen.guard.tsk1.Hunter.marksman.kingslayer.65",
+			"R.ashen.guard.tsk1.Hunter.marksman.kingslayer.70",
+			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.50",
+			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.55",
+			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.60",
+			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.65",
 			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.69",
 			"R.ashen.guard.tsk1.Hunter.scout.partyHunter.70",
 			"R.ashen.guard.tsk1.Hunter.scout.tracker.50",
+			"R.ashen.guard.tsk1.Hunter.scout.tracker.55",
+			"R.ashen.guard.tsk1.Hunter.scout.tracker.60",
+			"R.ashen.guard.tsk1.Hunter.scout.tracker.65",
 			"R.ashen.guard.tsk1.Hunter.scout.tracker.69",
 			"R.ashen.guard.tsk1.Hunter.scout.tracker.70",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.50",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.55",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.60",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.65",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.69",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistFire.70",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.50",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.55",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.60",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.65",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.69",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistIce.70",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.55",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.60",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.65",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.69",
+			"R.ashen.guard.tsk1.Mage.arcanist.arcanistLightning.70",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.50",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.55",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.60",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.65",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.69",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerFire.70",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.50",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.55",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.60",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.65",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.69",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerIce.70",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.50",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.55",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.60",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.65",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.69",
+			"R.ashen.guard.tsk1.Mage.destroyer.destroyerLightning.70",
+			"R.ashen.guard.tsk2.Hunter.base.50",
+			"R.ashen.guard.tsk2.Hunter.base.55",
+			"R.ashen.guard.tsk2.Hunter.base.60",
+			"R.ashen.guard.tsk2.Hunter.base.69",
+			"R.ashen.guard.tsk2.Hunter.base.70",
 			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.50",
 			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.55",
 			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.60",
+			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.65",
 			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.69",
 			"R.ashen.guard.tsk2.Hunter.scout.partyHunter.70",
 			"R.ashen.guard.tsk2.Hunter.scout.tracker.55",
 			"R.ashen.guard.tsk2.Hunter.scout.tracker.60",
+			"R.ashen.guard.tsk2.Hunter.scout.tracker.65",
 			"R.ashen.guard.tsk2.Hunter.scout.tracker.69",
 			"R.ashen.guard.tsk2.Hunter.scout.tracker.70",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.55",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.60",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.65",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.69",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistFire.70",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.50",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.55",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.60",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.65",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.69",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistIce.70",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.55",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.60",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.65",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.69",
+			"R.ashen.guard.tsk2.Mage.arcanist.arcanistLightning.70",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.50",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.55",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.60",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.65",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.69",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerFire.70",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.55",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.60",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.65",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.69",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerIce.70",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.50",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.55",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.60",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.65",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.69",
+			"R.ashen.guard.tsk2.Mage.destroyer.destroyerLightning.70",
 			"R.ashen.guard.tsk3.Hunter.trapper.poacher.69",
+			"R.ashen.guard.tsk3.Hunter.trapper.poisoner.69",
 			"R.duskwood.guard.tsk1.Hunter.base.35",
 			"R.duskwood.guard.tsk1.Hunter.base.40",
 			"R.duskwood.guard.tsk1.Hunter.marksman.eliteHunter.35",
 			"R.duskwood.guard.tsk1.Hunter.marksman.eliteHunter.40",
 			"R.duskwood.guard.tsk1.Hunter.marksman.kingslayer.35",
 			"R.duskwood.guard.tsk1.Hunter.marksman.kingslayer.40",
+			"R.duskwood.guard.tsk1.Mage.base.loadout.40",
 			"R.duskwood.guard.tsk2.Hunter.base.30",
 			"R.duskwood.guard.tsk2.Hunter.base.35",
 			"R.duskwood.guard.tsk2.Hunter.base.40",
@@ -6825,28 +7753,68 @@ do
 			"R.duskwood.guard.tsk2.Hunter.marksman.eliteHunter.40",
 			"R.duskwood.guard.tsk2.Hunter.marksman.kingslayer.30",
 			"R.duskwood.guard.tsk2.Hunter.marksman.kingslayer.35",
+			"R.duskwood.guard.tsk2.Mage.destroyer.destroyerFire.40",
+			"R.duskwood.guard.tsk2.Mage.destroyer.destroyerFire.44",
 			"R.frostpeak.guard.tsk1.Hunter.base.75",
 			"R.frostpeak.guard.tsk1.Hunter.base.80",
 			"R.frostpeak.guard.tsk1.Hunter.base.85",
 			"R.frostpeak.guard.tsk1.Hunter.base.90",
 			"R.frostpeak.guard.tsk1.Hunter.base.95",
 			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.80",
+			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.85",
 			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.90",
 			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.95",
 			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.99",
 			"R.frostpeak.guard.tsk1.Hunter.marksman.kingslayer.80",
+			"R.frostpeak.guard.tsk1.Hunter.marksman.kingslayer.85",
 			"R.frostpeak.guard.tsk1.Hunter.marksman.kingslayer.90",
 			"R.frostpeak.guard.tsk1.Hunter.marksman.kingslayer.99",
+			"R.frostpeak.guard.tsk1.Hunter.scout.partyHunter.75",
 			"R.frostpeak.guard.tsk1.Hunter.scout.partyHunter.80",
+			"R.frostpeak.guard.tsk1.Hunter.scout.tracker.75",
 			"R.frostpeak.guard.tsk1.Hunter.scout.tracker.80",
 			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.100",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.80",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.85",
 			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.90",
 			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.95",
 			"R.frostpeak.guard.tsk1.Hunter.trapper.poacher.99",
 			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.100",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.80",
+			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.85",
 			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.90",
 			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.95",
 			"R.frostpeak.guard.tsk1.Hunter.trapper.poisoner.99",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.100",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.75",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.80",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.85",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.90",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.95",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistFire.99",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.100",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.75",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.80",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.85",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.90",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.95",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistIce.99",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.100",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.75",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.80",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.85",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.90",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.95",
+			"R.frostpeak.guard.tsk1.Mage.arcanist.arcanistLightning.99",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.75",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.80",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerFire.85",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.75",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.80",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerIce.85",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.75",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.80",
+			"R.frostpeak.guard.tsk1.Mage.destroyer.destroyerLightning.85",
 			"R.frostpeak.guard.tsk2.Hunter.base.75",
 			"R.frostpeak.guard.tsk2.Hunter.base.80",
 			"R.frostpeak.guard.tsk2.Hunter.base.90",
@@ -6856,7 +7824,9 @@ do
 			"R.frostpeak.guard.tsk2.Hunter.marksman.eliteHunter.95",
 			"R.frostpeak.guard.tsk2.Hunter.marksman.eliteHunter.99",
 			"R.frostpeak.guard.tsk2.Hunter.marksman.kingslayer.80",
+			"R.frostpeak.guard.tsk2.Hunter.marksman.kingslayer.85",
 			"R.frostpeak.guard.tsk2.Hunter.marksman.kingslayer.90",
+			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.75",
 			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.80",
 			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.85",
 			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.90",
@@ -6869,40 +7839,241 @@ do
 			"R.frostpeak.guard.tsk2.Hunter.scout.tracker.95",
 			"R.frostpeak.guard.tsk2.Hunter.scout.tracker.99",
 			"R.frostpeak.guard.tsk2.Hunter.trapper.poacher.80",
-			"R.frostpeak.guard.tsk3.Hunter.trapper.poacher.100",
-			"R.frostpeak.guard.tsk3.Hunter.trapper.poacher.99",
+			"R.frostpeak.guard.tsk2.Hunter.trapper.poacher.90",
+			"R.frostpeak.guard.tsk2.Hunter.trapper.poacher.95",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.100",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.75",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.80",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.85",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.90",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.95",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistFire.99",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.100",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.75",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.80",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.85",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.90",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.95",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistIce.99",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.100",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.75",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.80",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.85",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.95",
+			"R.frostpeak.guard.tsk2.Mage.arcanist.arcanistLightning.99",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.100",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.75",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.80",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.85",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.90",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.95",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerFire.99",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.75",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.80",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.85",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.90",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerIce.95",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.100",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.75",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.80",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.85",
+			"R.frostpeak.guard.tsk2.Mage.destroyer.destroyerLightning.99",
+		}
+	do
+		add(key, "S147", guardWhy)
+	end
+	-- S147: tsk4 (87 rows)
+	for _, key in
+		{
+			"G10|T-SK4 Mage arcanist.arcanistBoss 100",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 45",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 50",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 55",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 60",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 65",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 70",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 75",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 80",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 85",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 90",
+			"G10|T-SK4 Mage arcanist.arcanistBoss 95",
+			"G10|T-SK4 Mage destroyer.destroyerExp 100",
+			"G10|T-SK4 Mage destroyer.destroyerExp 45",
+			"G10|T-SK4 Mage destroyer.destroyerExp 50",
+			"G10|T-SK4 Mage destroyer.destroyerExp 55",
+			"G10|T-SK4 Mage destroyer.destroyerExp 60",
+			"G10|T-SK4 Mage destroyer.destroyerExp 70",
+			"G10|T-SK4 Mage destroyer.destroyerExp 75",
+			"G10|T-SK4 Mage destroyer.destroyerExp 80",
+			"G10|T-SK4 Mage destroyer.destroyerExp 85",
+			"G10|T-SK4 Mage destroyer.destroyerExp 90",
+			"G10|T-SK4 Mage destroyer.destroyerExp 95",
+			"R.ashen.tsk4.arcanist.arcanistBoss.50",
+			"R.ashen.tsk4.arcanist.arcanistBoss.55",
+			"R.ashen.tsk4.arcanist.arcanistBoss.60",
+			"R.ashen.tsk4.arcanist.arcanistBoss.65",
+			"R.ashen.tsk4.arcanist.arcanistBoss.69",
+			"R.ashen.tsk4.arcanist.arcanistBoss.70",
+			"R.ashen.tsk4.arcanist.arcanistOverload.50",
+			"R.ashen.tsk4.arcanist.arcanistOverload.55",
+			"R.ashen.tsk4.arcanist.arcanistOverload.60",
+			"R.ashen.tsk4.arcanist.arcanistOverload.65",
+			"R.ashen.tsk4.arcanist.arcanistOverload.69",
+			"R.ashen.tsk4.arcanist.arcanistOverload.70",
+			"R.ashen.tsk4.destroyer.destroyerBoss.60",
+			"R.ashen.tsk4.destroyer.destroyerExp.50",
+			"R.ashen.tsk4.destroyer.destroyerExp.55",
+			"R.ashen.tsk4.destroyer.destroyerExp.60",
+			"R.ashen.tsk4.destroyer.destroyerExp.69",
+			"R.ashen.tsk4.destroyer.destroyerExp.70",
+			"R.duskwood.tsk4.arcanist.arcanistBoss.25",
+			"R.duskwood.tsk4.arcanist.arcanistBoss.30",
+			"R.duskwood.tsk4.arcanist.arcanistBoss.35",
+			"R.duskwood.tsk4.arcanist.arcanistBoss.40",
+			"R.duskwood.tsk4.arcanist.arcanistBoss.44",
+			"R.duskwood.tsk4.destroyer.destroyerExp.25",
+			"R.duskwood.tsk4.destroyer.destroyerExp.30",
+			"R.duskwood.tsk4.destroyer.destroyerExp.35",
+			"R.duskwood.tsk4.destroyer.destroyerExp.40",
+			"R.frostpeak.tsk4.arcanist.arcanistBoss.100",
+			"R.frostpeak.tsk4.arcanist.arcanistBoss.75",
+			"R.frostpeak.tsk4.arcanist.arcanistBoss.80",
+			"R.frostpeak.tsk4.arcanist.arcanistBoss.85",
+			"R.frostpeak.tsk4.arcanist.arcanistBoss.90",
+			"R.frostpeak.tsk4.arcanist.arcanistBoss.95",
+			"R.frostpeak.tsk4.arcanist.arcanistBoss.99",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.100",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.75",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.80",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.85",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.90",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.95",
+			"R.frostpeak.tsk4.arcanist.arcanistOverload.99",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.100",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.80",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.85",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.90",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.95",
+			"R.frostpeak.tsk4.destroyer.destroyerBoss.99",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.100",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.75",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.80",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.85",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.90",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.95",
+			"R.frostpeak.tsk4.destroyer.destroyerExp.99",
+			"path.arcanist.arcanistBoss.L100.mage.tsk4",
+			"path.arcanist.arcanistBoss.L45.mage.tsk4",
+			"path.arcanist.arcanistBoss.L70.mage.tsk4",
+			"path.arcanist.arcanistOverload.L100.mage.tsk4|wariant: Przeciążenie",
+			"path.arcanist.arcanistOverload.L45.mage.tsk4|wariant: Przeciążenie",
+			"path.arcanist.arcanistOverload.L70.mage.tsk4|wariant: Przeciążenie",
+			"path.destroyer.destroyerBoss.L100.mage.tsk4|wariant: Oszczędny Splot",
+			"path.destroyer.destroyerExp.L100.mage.tsk4",
+			"path.destroyer.destroyerExp.L45.mage.tsk4",
+			"path.destroyer.destroyerExp.L70.mage.tsk4",
+		}
+	do
+		add(key, "S147", tsk4Why)
+	end
+	-- S147: trait (14 rows)
+	for _, key in
+		{
 			"T1|easyPrey · trapper.poacher@crossbow · L100",
+			"T1|easyPrey · trapper.poacher@crossbow · L45",
+			"T1|easyPrey · trapper.poacher@crossbow · L70",
+			"T1|elementalMight fire · destroyer.destroyerExp@staff · L100",
+			"T1|elementalMight fire · destroyer.destroyerExp@staff · L45",
+			"T1|elementalMight fire · destroyer.destroyerExp@staff · L70",
+			"T1|elementalMight lightning · destroyer.destroyerExp@staff · L45",
+			"T1|elementalMight lightning · destroyer.destroyerExp@staff · L70",
+			"T1|elementalSpark fire · arcanist.arcanistBoss@wand · L45",
+			"T1|elementalSpark ice · arcanist.arcanistBoss@wand · L100",
+			"T1|elementalSpark lightning · arcanist.arcanistBoss@wand · L100",
 			"T1|fullDraw · scout.partyHunter@shortbow · L70",
 			"T2|trapper · L100",
 			"T2|trapper · L70",
-			"path.marksman.kingslayer.L100.marksman.base",
-			"path.marksman.kingslayer.L100.r5a.hunter",
-			"path.marksman.kingslayer.L70.r5a.hunter",
-			"path.marksman.kingslayer@heavycrossbow+quiver.L100.marksman.base",
-			"path.marksman.kingslayer@heavycrossbow+quiver.L45.marksman.base",
-			"path.marksman.kingslayer@heavycrossbow+quiver.L70.marksman.base",
-			"path.scout.partyHunter.L100.r6.scout",
-			"path.scout.partyHunter.L100.scout.solo",
-			"path.scout.partyHunter.L45.scout.solo",
-			"path.scout.partyHunter.L70.scout.solo",
-			"path.scout.partyHunter@shortbow+quiver.L100.scout.solo",
-			"path.scout.partyHunter@shortbow+quiver.L45.scout.solo",
-			"path.scout.partyHunter@shortbow+quiver.L70.scout.solo",
-			"path.trapper.poacher.L100.r5.trapper",
-			"path.trapper.poacher.L100.r5a.hunter",
-			"path.trapper.poacher.L100.trapper.r3",
-			"path.trapper.poacher.L100.trapper.single",
-			"path.trapper.poacher.L45.r5.trapper",
-			"path.trapper.poacher.L70.r5.trapper",
-			"path.trapper.poacher.L70.r5a.hunter",
+		}
+	do
+		add(key, "S147", traitWhy)
+	end
+	-- S147: frozen (3 rows)
+	for _, key in
+		{
+			"path.arcanist.arcanistBoss.L100.r4.firebolt.5|a",
+			"path.arcanist.arcanistBoss.L45.r4.firebolt.5|a",
+			"path.arcanist.arcanistBoss.L70.r4.firebolt.5|a",
+		}
+	do
+		add(key, "S147", frozenWhy)
+	end
+	-- S147: scout (10 rows)
+	for _, key in
+		{
+			"path.scout.partyHunter.L100.scout.solo|(a) grupa 8 s",
+			"path.scout.partyHunter.L100.scout.solo|(b) 3 potwory, które oddają",
+			"path.scout.partyHunter.L45.scout.solo|(b) 3 potwory, które oddają",
+			"path.scout.partyHunter.L70.scout.solo|(a) grupa 8 s",
+			"path.scout.partyHunter.L70.scout.solo|(b) 3 potwory, które oddają",
+			"path.scout.partyHunter@shortbow+quiver.L100.scout.solo|(a) grupa 8 s",
+			"path.scout.partyHunter@shortbow+quiver.L100.scout.solo|(b) 3 potwory, które oddają",
+			"path.scout.partyHunter@shortbow+quiver.L45.scout.solo|(b) 3 potwory, które oddają",
+			"path.scout.partyHunter@shortbow+quiver.L70.scout.solo|(a) grupa 8 s",
+			"path.scout.partyHunter@shortbow+quiver.L70.scout.solo|(b) 3 potwory, które oddają",
+		}
+	do
+		add(key, "S147", scoutWhy)
+	end
+	-- S147: r6 (2 rows)
+	for _, key in
+		{
+			"path.scout.partyHunter.L100.r6.scout|najmocniejsza trzecia część / średnia",
+			"path.scout.partyHunter.L100.r6.scout|najsłabsza trzecia część / średnia",
+		}
+	do
+		add(key, "S147", r6Why)
+	end
+	-- S147: bow (8 rows)
+	for _, key in
+		{
+			"path.trapper.poacher.L100.r5.trapper|Kusza, Łuk (obszar 3 cele 8 s)",
+			"path.trapper.poacher.L45.r5.trapper|Kusza, Łuk (obszar 3 cele 8 s)",
+			"path.trapper.poacher.L70.r5.trapper|Kusza, Łuk (obszar 3 cele 8 s)",
 			"path.trapper.poacher@bow+quiver.L100.trapper.aoe",
-			"path.trapper.poacher@bow+quiver.L100.trapper.single",
+			"path.trapper.poacher@bow+quiver.L100.trapper.single|bez R7",
 			"path.trapper.poacher@bow+quiver.L45.trapper.aoe",
-			"path.trapper.poacher@bow+quiver.L45.trapper.single",
+			"path.trapper.poacher@bow+quiver.L45.trapper.single|bez R7",
 			"path.trapper.poacher@bow+quiver.L70.trapper.aoe",
 		}
 	do
-		add(key, "S144", reworkWhy)
+		add(key, "S147", bowWhy)
+	end
+	-- S147: base (20 rows)
+	for _, key in
+		{
+			"path.arcanist.arcanistBoss.L100.arcanist.single",
+			"path.arcanist.arcanistBoss.L100.arcanist.vsDestroyer",
+			"path.arcanist.arcanistBoss.L45.arcanist.single",
+			"path.arcanist.arcanistBoss.L45.arcanist.vsDestroyer",
+			"path.arcanist.arcanistBoss.L70.arcanist.single",
+			"path.destroyer.destroyerBoss.L100.destroyer.single",
+			"path.destroyer.destroyerExp.L45.destroyer.aoe",
+			"path.destroyer.destroyerExp.L70.destroyer.aoe",
+			"path.marksman.kingslayer.L100.marksman.base",
+			"path.marksman.kingslayer.L100.r5a.hunter|Strzelec 1 cel / baza",
+			"path.marksman.kingslayer.L45.marksman.base",
+			"path.marksman.kingslayer.L45.r5a.hunter|Strzelec 1 cel / baza",
+			"path.marksman.kingslayer.L70.r5a.hunter|Strzelec 1 cel / baza",
+			"path.marksman.kingslayer@heavycrossbow+quiver.L100.marksman.base",
+			"path.marksman.kingslayer@heavycrossbow+quiver.L45.marksman.base",
+			"path.marksman.kingslayer@heavycrossbow+quiver.L70.marksman.base",
+			"path.trapper.poacher.L100.r5a.hunter|Traper obszar 8 s / baza",
+			"path.trapper.poacher.L45.r5a.hunter|Traper obszar 8 s / baza",
+			"path.trapper.poacher.L70.r5a.hunter|Traper obszar 8 s / baza",
+			"path.trapper.poacher.L70.trapper.single|bez R7",
+		}
+	do
+		add(key, "S147", baseWhy)
 	end
 end
 

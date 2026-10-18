@@ -65,6 +65,8 @@ local Hunt: any = {
 	Crossbow = require("../src/shared/Logic/Crossbow"),
 	DeadEye = require("../src/shared/Logic/DeadEye"),
 	Snare = require("../src/shared/Logic/Snare"),
+	-- S145: the Cleric's schools (one table with the Hunter's rules: the file is at the limit of 200 locals)
+	Faith = require("../src/shared/Logic/Faith"),
 }
 local Burn = require("../src/shared/Logic/Burn")
 local Chill = require("../src/shared/Logic/Chill")
@@ -1159,6 +1161,21 @@ SkillModel.R4_UTILITY = {
 	["huntersMark:10b"] = "osłabienie wroga: wartość w B Zwiadowcy (wiersz scout.support)",
 	["drive:5a"] = "geometria albo czas kontroli",
 	["drive:10b"] = "unieruchomienie (kontrola)",
+	-- S145 (DESIGN-18 §6.4): the Cleric pools' control, geometry, heal-from-damage and weakening options
+	["consecrate:5a"] = "geometria albo czas kontroli",
+	["consecrate:10a"] = "spowolnienie (kontrola)",
+	["holyChains:5a"] = "geometria albo czas kontroli",
+	["holyChains:10b"] = "kontrola albo osłabienie wroga dla drużyny (bez metryki w roli)",
+	["holyNova:5a"] = "geometria albo czas kontroli",
+	["holyNova:5b"] = "leczenie sojuszników z obrażeń (bez metryki w roli 1 cel)",
+	["rebuke:5a"] = "geometria albo czas kontroli",
+	["rebuke:10a"] = "ogłuszenie (kontrola)",
+	["blindingLight:5a"] = "geometria albo czas kontroli",
+	["blindingLight:10b"] = "geometria albo czas kontroli",
+	["lightRay:5a"] = "leczenie sojusznika z obrażeń (bez metryki w roli 1 cel)",
+	["lightRay:10b"] = "obszar przy roli 1 cel (bez metryki)",
+	["miracle:5b"] = "krótsze wezwanie (czas rzutu, bez wartości w leczeniu na odnowieniu)",
+	["miracle:10a"] = "drugi cel (bez metryki na jednym tanku)",
 	-- S144 (DESIGN-18 §6.3): the Hunter pools' control, geometry and defence options
 	["pinningShot:5a"] = "geometria albo czas kontroli",
 	["windstep:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
@@ -1233,7 +1250,6 @@ SkillModel.R4_UTILITY = {
 
 -- S89 (F4): measured options a single number cannot bring into the band (printed; DECYZJE S89, list for the owner).
 SkillModel.R4_REPORT = {
-	["cleave:5b"] = "synergia z 10A (3 stosy krwawienia): 0,12 na 45, 0,25 od 70; jedna liczba nie mieści obu",
 	["renew:5a"] = "dłuższa Odnowa rzucana na odnowieniu traci tyknięcia (odświeżenie bez reszty): -0,29",
 	-- S90 (G1, H4)
 	["falcon:5a"] = "z Królewskim Sokołem (od 60.) ptak zostaje do końca walki, więc +4 s czasu nic nie daje (0 na 100)",
@@ -1300,6 +1316,16 @@ SkillModel.R4_SUPPORT_BUILDS = {
 	heal = "healer.dungeon",
 	circleOfLight = "healer.dungeon",
 	shieldOfFaith = "healer.dungeon",
+	-- S145 (DESIGN-18 §6.4): the light pool on the Healer (heals and shields on the dungeon healer, damage on the solo
+	-- holy staff); the hammer pool stays on "Inkwizytor solo" (R4_CLASS_BUILDS, a mace)
+	renew = "healer.dungeon",
+	sanctuary = "healer.dungeon",
+	purify = "healer.dungeon",
+	miracle = "healer.dungeon",
+	guardianAngel = "healer.dungeon",
+	lightRay = "healer.solo",
+	radiance = "healer.solo",
+	blindingLight = "healer.solo",
 	taunt = "guardian.defender",
 	-- S140 (DESIGN-18 §6.1): the fire pool on the fire variants (area skills on the Destroyer, one target on the
 	-- Arcanist); Rain of Meteors stays on the Destroyer's area build it was tuned on (S94, now a base skill)
@@ -1764,6 +1790,56 @@ function SkillModel.rankOrder(build: Build, pool: string): { string }
 	return out
 end
 
+-- S146 (DESIGN-18 §13, session B1): the classes whose builds cast only the 8 skills of their bar (S147: the Hunter and
+-- the Mage).
+SkillModel.BAR_CLASSES = { Warrior = true, Cleric = true, Hunter = true, Mage = true } :: { [string]: boolean }
+
+-- S146 (DESIGN-18 §4.1, §13): the bar of a model player (SkillModel.player) at its level: the first
+-- SkillData.HOTBAR_SLOTS actives of ReferenceBuild.bar (else rankOrder) the character can cast (a rank, its pool, its
+-- weapon); a set of skill ids, nil without a bar limit (BAR_CLASSES; the class bases and their variants, which mix the
+-- rotations of every direction, have none). A real player swaps the bar as skills open, so the bar of a level holds
+-- the build's best skills of that level.
+function SkillModel.barOf(sp: any): { [string]: boolean }?
+	local build = sp.build
+	if not SkillModel.BAR_CLASSES[build.classId] or build.ref == nil then
+		return nil
+	end
+	if sp.bar then
+		return sp.bar
+	end
+	local ref: any = build.ref
+	local order = if ref and ref.bar then ref.bar else SkillModel.rankOrder(build, sp.character.barPool)
+	local bar: { [string]: boolean } = {}
+	local n = 0
+	for _, id in order do
+		if n >= SkillData.HOTBAR_SLOTS then
+			break
+		end
+		local def = SkillData.get(id)
+		if def and def.type ~= "passive" and not bar[id] and Paths.skillUsable(sp.character, id, sp.weapons) then
+			bar[id] = true
+			n += 1
+		end
+	end
+	sp.bar = bar
+	return bar
+end
+
+-- S146: the build's rotation limited to its bar (SkillModel.barOf); the whole rotation without a bar limit.
+function SkillModel.barRotation(sp: any): { { [string]: any } }
+	local bar = SkillModel.barOf(sp)
+	if not bar then
+		return sp.build.rotation
+	end
+	local out: { { [string]: any } } = {}
+	for _, entry in sp.build.rotation do
+		if bar[entry.skill] then
+			table.insert(out, entry)
+		end
+	end
+	return out
+end
+
 -- S85 (B3): level-up from 1 to L on the ROZWOJ 3.2 save shape: on every new point the first rank of `nodes` that
 -- Paths.canBuy accepts (an entry that cannot be bought yet waits, later ones may pass). S138 (DESIGN-18 §7, §13): no
 -- main path; every direction opens with level and its own points, one capstone per set (a reference build has one).
@@ -2017,6 +2093,10 @@ end
 -- Static unmodelled list of a player (I1 c): hooks the model does not count. S86: the class mechanics and the item
 -- trait hooks joined the modelled list (on the event or, in a fight with monsters that hit back, `retaliate`).
 local HOOKS_MODELLED: { [string]: boolean } = {
+	-- S145 (Logic/Faith): Zeal, Guiding Light, the Inquisitor's Wandering Brand
+	zeal = true,
+	guidingLight = true,
+	brandJump = true,
 	-- S144 (Logic/Crossbow, Logic/DeadEye): Toxic Tips, Quick Reload, the keystones Dead Eye and Master Trapper
 	toxicTips = true,
 	quickReload = true,
@@ -3542,6 +3622,11 @@ local function onHit(ctx: Ctx, tg: any, percent: number, amount: number, o: { [s
 		-- the most wounded ally: the tank in heal mode (no wound model, F2), the caster solo
 		heal(ctx, if state.heal then "tank" else "self", amount * ctx.bp.healWounded / 100)
 	end
+	-- S145 mirrors Skills/Context onHit (Light Ray, Logic/Faith.rayHeal): the main hit heals the most wounded ally
+	if ctx.def.values.rayHeal ~= nil and o.primary then
+		local share = Hunt.Faith.rayHeal(amount, Skills.valueAt(ctx.def, "rayHeal", ctx.rank))
+		heal(ctx, if state.heal then "tank" else "self", share)
+	end
 	local splash = ctx.bp.splash
 	if splash and o.primary then
 		for _, other in alive(state) do
@@ -3909,6 +3994,16 @@ H.target = function(ctx)
 	local amount = damage(ctx, tg, percent, { primary = true })
 	if amount > 0 then
 		applyEffects(ctx, tg, "enemy")
+		-- S145 mirrors Types/Offense brandJump (Wandering Brand): the brand's burn on the next dummy for brandJump %
+		local brand = Hunt.Faith.brandShare(ctx.id, pathHook(state, "brandJump"))
+		local other = if brand > 0 then alive(state)[2] else nil
+		if other and other ~= tg then
+			for _, effect in ctx.def.effects or {} do
+				if effect.kind == "burn" then
+					applyEffect(ctx, other, effect, brand / 100)
+				end
+			end
+		end
 		if ctx.def.values.detonate ~= nil then
 			-- S140 mirrors Types/Offense detonate (Combustion): the caster's burn on the target becomes a blast of
 			-- Burn.detonate % on every dummy (all stand in the radius); a stun from BURN.stunAt stacks (notBoss)
@@ -4059,6 +4154,11 @@ H.circleSelf = function(ctx)
 				* Skills.healMul(state.sp.level)
 			for _, who in allies(state) do
 				heal(ctx, who, amount)
+			end
+		elseif n == 1 and def.values.healHp ~= nil then
+			-- S145 mirrors Types/Offense.circleSelf (Holy Nova): every ally in the circle heals its own heal
+			for _, who in allies(state) do
+				heal(ctx, who, healAmount(ctx, who, "heal"))
 			end
 		end
 		if hasDamage then
@@ -4503,6 +4603,18 @@ local function healOne(ctx: Ctx, who: string, amount: number)
 	local attempted = amount * healFactor(state, who, false)
 	local before = state.healEff
 	giveHeal(state, who, attempted)
+	-- S145 mirrors Types/Support healOne (Guiding Light, Logic/Faith.ward): a ward of the restored HP (the attempted
+	-- amount outside a retaliate fight, F2), counted like a shield
+	local restored = if state.retaliate and who == "self" then state.healEff - before else attempted
+	local ward = Hunt.Faith.ward(restored, pathHook(state, "guidingLight"), maxHpOf(state, who))
+	if ward > 0 then
+		state.healTo[who] = (state.healTo[who] or 0) + ward
+		apply(state, entityOf(state, who), "shield", {
+			duration = SkillData.FAITH.wardDuration,
+			value = ward,
+			skillId = SkillData.FAITH.wardKey,
+		})
+	end
 	if ctx.bp.overhealShield and state.retaliate and who == "self" then
 		local overflow = attempted - (state.healEff - before)
 		if overflow > 1 then
@@ -5154,6 +5266,16 @@ local function finished(ctx: Ctx)
 			end
 		end
 	end
+	-- S145 mirrors SkillService (Zeal, Logic/Faith.zealCut): the running cooldowns of the hammer pool's other skills
+	local cut = if offensive then Hunt.Faith.zealCut(ctx.def.pool, pathHook(state, "zeal")) else 0
+	if cut > 0 then
+		for id, ready in state.cd do
+			local def = SkillData.get(id)
+			if id ~= ctx.id and def and Hunt.Faith.zealShortens(def.pool) and ready > state.t then
+				state.cd[id] = math.max(state.t, ready - cut)
+			end
+		end
+	end
 end
 
 -- mirrors SkillService completeChannel (S70, S80): mana back, Prayer 5B's dice (fortuneDice as the player would cast
@@ -5587,7 +5709,7 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 	state.regen = regen
 	local items: { any } = {}
 	if o.skills ~= false then
-		for _, entry in o.rotation or sp.build.rotation do
+		for _, entry in o.rotation or SkillModel.barRotation(sp) do
 			local item = prepare(state, entry)
 			if not item.off then
 				table.insert(items, item)
@@ -6450,9 +6572,10 @@ local function weaponKey(w: { main: string, offhand: string? }): string
 	return if w.offhand then `{w.main}+{w.offhand}` else w.main
 end
 
--- A build with another weapon (key "<key>@<weapon>"; the weapon of the path measurement, S90 R5).
+-- A build with another weapon (key "<key>@<weapon>"; the weapon of the path measurement, S90 R5). S147: a Mage element
+-- variant keeps its element (R5 inside one element's pool).
 function SkillModel.withWeapon(build: Build, main: string, offhand: string?): Build
-	local w = { main = main, offhand = offhand }
+	local w = { main = main, offhand = offhand, element = (build.weapon :: any).element }
 	if build.weapon.main == main and build.weapon.offhand == offhand then
 		return build
 	end

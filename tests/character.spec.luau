@@ -388,14 +388,17 @@ T.describe("Migration 6 (S56)", function()
 		local data, c = oldSave("Cleric", 100)
 		AccountSchema.migrate(data)
 		T.expect(c.statPoints).toBe(495)
-		-- S71: the Cleric has paths, so the new bar holds only the 6 base actives (path skills come with their nodes)
+		-- S71: the Cleric has paths (path skills come with their nodes). S145: the first 8 actives of the default pool
+		-- (Mace and Flail) in the ladder order
 		T.expect(c.hotbar).toEqual({
 			["1"] = "holyStrike",
-			["2"] = "heal",
-			["3"] = "radiance",
-			["4"] = "circleOfLight",
-			["5"] = "shieldOfFaith",
-			["6"] = "judgement",
+			["2"] = "consecrate",
+			["3"] = "heal",
+			["4"] = "holyChains",
+			["5"] = "auraOfEndurance",
+			["6"] = "circleOfLight",
+			["7"] = "brandOfLight",
+			["8"] = "holyNova",
 		})
 	end)
 

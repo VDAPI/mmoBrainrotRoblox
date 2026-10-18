@@ -178,7 +178,7 @@ local function syncPool(player: Player, fromWeapon: boolean): boolean
 	return true
 end
 
--- After every change of nodes, main path, level or (S137) skill ranks: the rank cleaning (a refunded node takes its
+-- After every change of nodes, level or (S137) skill ranks: the rank cleaning (a refunded node takes its
 -- skill's ranks back), the bar check, passives and hooks, Changed.
 local function afterChange(player: Player)
 	local char = character(player)
