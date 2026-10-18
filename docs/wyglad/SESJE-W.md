@@ -370,3 +370,6 @@ i rama questu zostają), brama Łąk `common_gate_01` (`landmark:meadowsGate`, l
 `cave_landmark_02` (`landmark:caveMushrooms`, każdy olbrzymi grzyb na brzegu), kamienny portal `common_portal_02`
 (portale poza miastem; w mieście zostaje magiczny). Jaskinie i lochy biorą zestaw (`CaveLayout` z `KitAssets.resolver`);
 model ze stałym obrotem obraca się razem z budowlą (`KitAssets`). Nieobejrzane w Studio (Rojo właściciela na `main`).
+
+Las wokół miasta (`TownGen/Outside`, 534 drzewa) jako sloty zestawu `tree:pine` / `tree:oak` / `tree:birch` (miasto):
+wcześniej jedyne drzewa „lizaki” w mieście (zgłoszenie właściciela 2026-10-18).
