@@ -553,6 +553,116 @@ local function fallenTrees(out: { Build })
 	end
 end
 
+-- W14 (laki.md 1.5): three secrets for players who look around, all visual. (1) Behind the tallest wall of the forest
+-- ruin the thorned petal of the Lady carved fresh and free of frost, a snuffed candle under it and boot prints in
+-- the frost leading north. (2) A merchant wagon half sunk in Toad Pond: a wheel, crates and the tarp with the same
+-- merchant's sign as Lucjan's wagon out of the water. (3) A ledge of flat stones behind the waterfall curtain to the
+-- fishing spot, Borys's rod leaning on a rock.
+local MERCHANT = { c = "#3E5A7A", m = "Fabric" }
+local MERCHANT_SIGN = { c = "#C9A45C", m = "SmoothPlastic" }
+
+local function ruinCrest(out: { Build })
+	local s = sites.ruins
+	-- the ruin's tallest wall faces 0.6 rad from +Z (TownGen/Outside ruin): the crest on its outer face
+	local a = 0.6
+	local r = 7
+	local cx, cz = s.x + math.sin(a) * r, s.z + math.cos(a) * r
+	local b = Kit.build("RuinCrest", "ruins", cx, cz, math.deg(a) + 180)
+	local bp = b.bp
+	local fresh = { c = "#B8B2A6", m = "Slate" }
+	local cut = { c = "#3E3A36", m = "Slate" }
+	-- a pale freshly cut disc on the weathered stone, the petal and the thorn cut into it
+	bp:add("cyl", 0.2, 2.6, 2.6, 0, 6.5, -0.2, 0, 90, 0, o(fresh, "detail", { col = false }))
+	bp:rbox(0.9, 1.6, 0.12, 0, 6.6, -0.35, 0, 0, 0, o(cut, "fine", { col = false }))
+	bp:rbox(0.12, 1.3, 0.12, 0.45, 6.1, -0.35, 0, 0, -35, o(cut, "fine", { col = false }))
+	bp:rbox(0.12, 0.5, 0.12, 0.7, 6.9, -0.35, 0, 0, 40, o(cut, "fine", { col = false }))
+	-- snuffed candle at the foot (local -Z is outward, away from the ruin's centre)
+	local fy = Kit.gy(b, 0, -1)
+	bp:add("cyl", 0.6, 0.3, 0.3, 0, fy + 0.3, -1, 0, 0, 90, o({ c = "#E8E0C8", m = "SmoothPlastic" }, "fine"))
+	bp:box(0.05, 0.15, 0.05, 0, fy + 0.66, -1, o({ c = "#1F1B19", m = "SmoothPlastic" }, "fine", { col = false }))
+	-- boot prints in the frost leading away from the wall
+	for i = 1, 7 do
+		local lx, lz = (i % 2) * 0.7 - 0.35, -2.2 - i * 1.6
+		bp:rbox(
+			0.45,
+			0.06,
+			0.9,
+			lx,
+			Kit.gy(b, lx, lz) + 0.03,
+			lz,
+			0,
+			0,
+			0,
+			o({ c = "#E6ECEF", m = "Snow" }, "fine", { col = false })
+		)
+	end
+	table.insert(out, b)
+end
+
+local function sunkenWagon(out: { Build })
+	local x, z = -560, 600
+	local b = Kit.build("SunkenWagon", "wagon", x, z, 35)
+	local bp = b.bp
+	local water = MeadowsTerrain.LAKE_LEVEL - b.at.y -- the pond's surface in the build's frame
+	local planks = Palette.planks[2]
+	-- the bed tipped forward, its back corner out of the water
+	bp:rbox(5, 1.4, 10, 0, water - 1.2, 0, 16, 0, 7, o(planks, "shell", { q = true }))
+	bp:rbox(5, 2.6, 0.3, 0, water - 0.2, 4.7, 16, 0, 7, o(planks, "detail"))
+	-- a wheel standing half out
+	bp:add("cyl", 0.45, 3.4, 3.4, 2.8, water + 0.3, 3, 0, 0, 0, o(Kit.timber, "detail"))
+	bp:add("cyl", 0.6, 0.7, 0.7, 2.9, water + 0.3, 3, 0, 0, 0, o(Kit.iron, "fine"))
+	-- the tarp over the back with the merchant's sign
+	bp:add("ball", 5.4, 2.2, 4.5, 0, water + 0.2, 2.6, 10, 0, 7, o(MERCHANT, "detail", { col = false }))
+	bp:add("cyl", 0.1, 1.3, 1.3, 0, water + 1.2, 2.4, 0, 0, 90, o(MERCHANT_SIGN, "fine", { col = false }))
+	-- crates afloat and stranded
+	for i, c in { { -1.2, -1.5, 15 }, { -3.4, 2, -20 } } do
+		bp:rbox(1.8, 1.8, 1.8, c[1], water - 0.4 + i * 0.1, c[2], 8, c[3], -6, o(Palette.planks[1], "detail"))
+	end
+	table.insert(out, b)
+end
+
+local function fallsLedge(out: { Build })
+	local x, z = 738, 266
+	local b = Kit.build("FallsLedge", "waterfall", x, z, 0)
+	local bp = b.bp
+	local pool = MeadowsTerrain.streamLevel(1, 0)
+	-- from the dry side of the bowl to the foot of the wall behind the curtain
+	local path = { { -7, -3 }, { -3.5, -2.6 }, { 0, -2 }, { 3.4, -1.2 }, { 6.4, -0.6 }, { 8.8, 0 } }
+	local top = 0
+	for i, p in path do
+		local wx, wz = x + p[1], z + p[2]
+		top = math.max(MeadowsTerrain.height(wx, wz), pool) + 0.45 - b.at.y
+		bp:add(
+			"cyl",
+			0.9,
+			2.6 + (i % 2) * 0.5,
+			2.2,
+			p[1],
+			top - 0.45,
+			p[2],
+			0,
+			i * 40,
+			90,
+			o(Kit.mossyStone, "shell", { q = false })
+		)
+	end
+	-- the rock at the end and Borys's rod leaning on it, the line hanging into the pool
+	local ex, ez = path[#path][1], path[#path][2]
+	Kit.rock(bp, ex + 1.4, top - 0.6, ez - 1.6, 2.2, Kit.mossyStone, "detail")
+	bp:beam(ex + 0.6, top, ez + 0.4, ex + 0.9, top + 5.4, ez - 1.2, 0.12, o(Kit.timber, "fine", { col = false }))
+	bp:beam(
+		ex + 0.9,
+		top + 5.4,
+		ez - 1.2,
+		ex - 1.6,
+		pool - b.at.y,
+		ez + 1.6,
+		0.03,
+		o(Kit.rope, "fine", { col = false })
+	)
+	table.insert(out, b)
+end
+
 function Landmarks.all(out: { Build })
 	thickets(out)
 	fallenTrees(out)
@@ -565,6 +675,9 @@ function Landmarks.all(out: { Build })
 	wagon(out)
 	milestones(out)
 	bearDens(out)
+	ruinCrest(out)
+	sunkenWagon(out)
+	fallsLedge(out)
 end
 
 return Landmarks

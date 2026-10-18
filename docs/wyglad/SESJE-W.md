@@ -408,3 +408,12 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Liczby obrażeń: krój Merriweather Heavy (`Theme.Fonts.Numbers`), ciemny zaokrąglony obrys w odcieniu liczby (`UIStroke`) zamiast płaskiego cienia, połysk (jaśniejsza góra) na krytykach i leczeniu, każda liczba wyskakuje (`popAll`), dryfuje w bok (`drift`, seria trafień rozchodzi się wachlarzem) i maleje przy znikaniu (`shrink`); liczby w `Data/DamageNumbers`.
 - Okna: otwarcie na sprężynie (skala 0,93 → 1 i wsunięcie 16 px od dołu, `Theme.Anim.Window*`) w `UI/Components/Window`.
 - Pliki: `Data/DamageNumbers.luau`, `client/Controllers/CombatFxController.luau`, `client/UI/Theme.luau`, `client/UI/Components/Window.luau`.
+
+### W25: potwory, część 1
+
+- Prompty Tripo dla 27 potworów i bossów regionów 1–2 (`docs/wyglad/POTWORY-TRIPO.md`: rig Biped / Quadruped, eksport FBX z animacjami, kolejność).
+- Generator (zapas bez modelu): czworonogi (wilk, ryś, hiena, niedźwiedź, dzik, mamut) mają łopatki i uda w kolorze ciała, smuklejsze golenie i łapy; wilk i ryś szyję i jaśniejszą kryzę na policzkach (`Logic/Anatomy/Plans/Quadrupeds`, pety bez zmian). Fixture `lookdump_wolf.json` odświeżony świadomie.
+
+### W14: Łąki, część 1 (sekrety)
+
+- Wg `laki.md` 1.5: herb płatka z cierniem świeżo wyryty na zewnętrznej ścianie ruin strażnicy, zgaszona świeca i ślady butów w szronie; wóz kupca do połowy w Żabim Oczku (koło, skrzynie, plandeka ze znakiem kupca); kamienna półka pod wodospadem do łowiska z wędką Borysa (`MeadowsGen/Landmarks`: `ruinCrest`, `sunkenWagon`, `fallsLedge`).
