@@ -17,7 +17,13 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local KitAssets = {}
 
 export type Slot = { key: string, p: { number }, s: number, lod: string }
-export type Placement = { template: Model, cframe: CFrame, scale: number, tint: Color3? }
+export type Placement = {
+	template: Model,
+	cframe: CFrame,
+	scale: number,
+	tint: Color3?,
+	paint: { color: Color3, material: Enum.Material }?,
+}
 -- (slot, frame of the Build) -> where the slot's model stands, or nil (keep the pieces)
 export type Resolver = (slot: Slot, base: CFrame) -> Placement?
 
@@ -121,13 +127,32 @@ function KitAssets.resolver(mapId: string): Resolver?
 		local scale = choice.size / native
 		local drop = choice.sink * t.height * scale
 		local tint = choice.variant.tint
+		local paint = choice.variant.paint
+		local material: Enum.Material? = nil
+		if paint then
+			local ok, value = pcall(function()
+				return (Enum.Material :: any)[paint.material]
+			end)
+			material = if ok then value else Enum.Material.Rock
+		end
 		return {
 			template = t.model,
 			cframe = CFrame.new(foot - Vector3.new(0, drop, 0)) * CFrame.Angles(0, math.rad(choice.yaw), 0),
 			scale = scale,
 			tint = if tint then Color3.fromHex(tint) else nil,
+			paint = if paint and material then { color = Color3.fromHex(paint.color), material = material } else nil,
 		}
 	end
+end
+
+-- W12: the prepared model `name` of the kit (pivot at its bottom centre) and its height, or nil when the place has none
+-- (one warning); for horizons and other placements outside the Blueprint slots.
+function KitAssets.model(name: string): (Model?, number)
+	local t = prepare(name)
+	if not t then
+		return nil, 0
+	end
+	return t.model, t.height
 end
 
 -- A placed copy of a placement's model.
@@ -147,6 +172,18 @@ function KitAssets.place(placement: Placement, parent: Instance): Model
 				and (d.Parent.Name:find("Canopy") or d.Parent.Name:find("Leaves"))
 			then
 				d.Color = tint
+			end
+		end
+	end
+	local paint = placement.paint
+	if paint then
+		for _, d in model:GetDescendants() do
+			if d:IsA("MeshPart") then
+				d.TextureID = ""
+				d.Color = paint.color
+				d.Material = paint.material
+			elseif d:IsA("SurfaceAppearance") then
+				d:Destroy()
 			end
 		end
 	end

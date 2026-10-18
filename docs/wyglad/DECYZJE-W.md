@@ -31,3 +31,11 @@
 - **W08** Punkty orientacyjne z Tripo: model w `Assets.Kit` z `PivotOffset` u podstawy (z `PrimaryPart` `PivotTo` bierze pivot części, nie `WorldPivot`).
 - **W12** Punkty orientacyjne miasta przez sloty zestawu (`landmark:*`, stały obrót `turn`), nie osobne wstawianie: bez modelu w miejscu (`/kit off`, inne miejsce) zostaje bryła z generatora.
 - **W12** Kolor słońca miasta z tabeli godzin (`MapLooks.sunByHour`) zamiast jednego `sunColor`; mapy ze stałą godziną bez zmian.
+- **W09** Ciało: darmowe „Base Body - Dawson” Roblox (A1) dla wszystkich, skala 0,9 (wysokość +6%); A2 z Tripo czeka na model. Jedno ciało także w trybie awatara (równe sylwetki); wybór budowy w W10.
+- **W09** Fryzury kreatora z katalogu Roblox ładowane przez serwer do `ReplicatedStorage` (nie przez opis postaci), żeby podglądy na kliencie pokazywały to samo co postać.
+- **W10** Nowe pola wyglądu bez migracji schematu i bez pól w szablonie (reconcile nadpisałby stary kolor włosów): brak pola = zapis sprzed W10, `CharacterLook.normalize` wyprowadza je ze starych id twarzy i fryzury.
+- **W10** Twarze to 8 dynamicznych głów Roblox (id S132 zostały, nazwy zmienione); kolor oczu pominięty, bo oczy są w teksturze głowy (wymagałby własnych głów).
+- **W10** Budowa zmienia szerokość i głębokość (±5%, hitbox też), nie wysokość.
+- **W10** Akcesoria warstwowe w podglądzie ustawione według pomiaru z żywej postaci (`AvatarBuild.LAYERED_AT`), bo ViewportFrame (też z WorldModel) ich nie dopasowuje.
+- **W12** Horyzont z części u klienta (elipsoidy, „namioty” z dwóch klinów, bloki skał) zamiast jednego modelu z Tripo: darmowe, lekkie (ok. 360 części bez kolizji), ten sam generator dla każdej mapy przez `Data/Horizons`; modele zestawu tylko jako punkty orientacyjne.
+- **W13** Z1 (ścieżka pod Wilczymi Wzgórzami) nie weszła: losowanie grup z odrzucaniem przy drodze przenosi grupę Wilczych Wzgórz pod Żabie Oczko, co zmienia bilans zleceń łowieckich (S134k); sesja wyglądu nie rusza balansu.

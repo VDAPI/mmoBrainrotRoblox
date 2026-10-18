@@ -25,12 +25,26 @@ local Definitions: { [string]: Definition } = {
 
 	-- Character selection
 	CheckName = { kind = "function", dir = "c2s", rate = 1, args = { "string" } },
-	-- (slot, classId, name, face?, skin?, hair?), S132 look
+	-- (slot, classId, name, face?, skin?, hair?), S132 look; W10: (..., hairColor?, brows?, beard?, build?, paint?,
+	-- paintColor?)
 	CreateCharacter = {
 		kind = "function",
 		dir = "c2s",
 		rate = 0.5,
-		args = { "integer", "string", "string", "string?", "string?", "string?" },
+		args = {
+			"integer",
+			"string",
+			"string",
+			"string?",
+			"string?",
+			"string?",
+			"string?",
+			"string?",
+			"string?",
+			"string?",
+			"string?",
+			"string?",
+		},
 	},
 	DeleteCharacter = { kind = "function", dir = "c2s", rate = 0.5, args = { "integer", "string" } },
 	PlayCharacter = { kind = "function", dir = "c2s", rate = 0.5, args = { "integer" } },
@@ -293,7 +307,13 @@ local Definitions: { [string]: Definition } = {
 	PremiumRename = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (new character name)
 	CosmeticEquip = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (kind, id | nil)
 	-- (face, skin, hair), S132: free once, then gold at the barber (CosmeticService, Logic/CharacterLook.canChange)
-	SetCharacterLook = { kind = "function", dir = "c2s", rate = 1, args = { "string", "string", "string" } },
+	-- W10: (face, skin, hair, hairColor?, brows?, beard?, build?, paint?, paintColor?): a missing field keeps its value
+	SetCharacterLook = {
+		kind = "function",
+		dir = "c2s",
+		rate = 1,
+		args = { "string", "string", "string", "string?", "string?", "string?", "string?", "string?", "string?" },
+	},
 	PlayEmote = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (emote cosmetic id) S123
 	GuideDone = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
 	BuySubscription = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (subscription key) prompt or simulated, S121

@@ -635,11 +635,15 @@ function Structures.lamps(city: any, ground: Ground): { Build }
 		local y = ground(l.x, l.z)
 		local bp = Blueprint.new(hash(l.x, l.z))
 		local hgt = if l.kind == "rampLantern" then 6 else 9
+		-- W12: the post, the arm and the lantern are one asset kit slot (Data/Kit "prop:lamp": the painted street lamp);
+		-- the light stays
+		bp:beginKit("prop:lamp", 0, 0, 0, hgt / 9, "shell")
 		bp:box(1.2, 0.6, 1.2, 0, 0.3, 0, o(Palette.slate[1], "shell"))
 		bp:add("cyl", hgt, 0.45, 0.45, 0, hgt / 2, 0, 0, 0, 90, o(Palette.metal[1], "shell", { q = false }))
 		bp:box(2, 0.25, 0.25, 0.9, hgt - 0.3, 0, o(Palette.metal[1]))
 		bp:box(0.9, 1.2, 0.9, 1.7, hgt - 1.3, 0, { c = "#FFD08A", m = "Neon", lod = "detail", t = 0.15, tag = "lamp" })
 		bp:box(1.2, 0.3, 1.2, 1.7, hgt - 0.6, 0, o(Palette.metal[1]))
+		bp:endKit()
 		bp:light(1.7, hgt - 1.3, 0, "#FFB860", 16, 0.8, "lamp")
 		table.insert(
 			out,

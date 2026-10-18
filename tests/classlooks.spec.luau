@@ -3,6 +3,7 @@
 -- rules of Logic/CharacterLook (validation, resolve, budget, cost, scales, outfits from the game) and the saved looks
 -- of Logic/Premium.
 
+local BodyLooks = require("../src/shared/Data/BodyLooks")
 local Bosses = require("../src/shared/Data/Bosses")
 local CharacterLook = require("../src/shared/Logic/CharacterLook")
 local ClassLooks = require("../src/shared/Data/ClassLooks")
@@ -103,32 +104,29 @@ T.describe("Class looks: data (S132)", function()
 		T.expect(metal).toBe(true)
 	end)
 
-	T.it("2. the creator: 8 faces, 10 skins, 12 hairstyles with valid parts and names", function()
+	T.it("2. the creator (W10): every choice list, its ids unique, its names in both languages", function()
 		T.expect(#ClassLooks.FACES).toBe(8)
-		T.expect(#ClassLooks.SKINS).toBe(10)
+		T.expect(#ClassLooks.SKINS).toBe(12)
 		T.expect(#ClassLooks.HAIRS).toBe(12)
+		T.expect(#ClassLooks.HAIR_COLORS).toBe(12)
+		T.expect(#ClassLooks.BROWS).toBe(6)
+		T.expect(#ClassLooks.BEARDS).toBe(6)
+		T.expect(#ClassLooks.BUILDS).toBe(3)
+		T.expect(#ClassLooks.PAINTS).toBe(6)
+		T.expect(#ClassLooks.PAINT_COLORS).toBe(6)
 		local seen: { [string]: boolean } = {}
 		local function unique(id: string)
 			T.expect({ id, seen[id] }).toEqual({ id, nil })
 			seen[id] = true
 		end
-		local function isIn(list: { string }, value: string?): boolean
-			return value ~= nil and table.find(list, value) ~= nil
-		end
-		local function catalogOk(n: any): boolean
-			return n == nil or (type(n) == "number" and n >= 0 and n == math.floor(n))
-		end
 		for _, f in ClassLooks.FACES do
 			unique(f.id)
-			T.expect({
-				f.id,
-				isIn(CharacterLook.FACE_PARTS.eyes, f.eyes),
-				isIn(CharacterLook.FACE_PARTS.brows, f.brows),
-				isIn(CharacterLook.FACE_PARTS.mouth, f.mouth),
-				f.mark == nil or isIn(CharacterLook.FACE_PARTS.mark, f.mark),
-				catalogOk(f.catalog),
-			}).toEqual({ f.id, true, true, true, true, true })
-			bothLanguages(`look.face.{f.id}`)
+			local head = BodyLooks.heads[f.id]
+			T.expect({ f.id, head ~= nil and head.head > 0 and head.lashes > 0 }).toEqual({ f.id, true })
+			T.expect({ f.id, f.legacyBeard == nil or ClassLooks.beardById[f.legacyBeard] ~= nil })
+				.toEqual({ f.id, true })
+			T.expect({ f.id, f.legacyPaint == nil or ClassLooks.paintById[f.legacyPaint] ~= nil })
+				.toEqual({ f.id, true })
 		end
 		for _, s in ClassLooks.SKINS do
 			unique(s.id)
@@ -136,21 +134,46 @@ T.describe("Class looks: data (S132)", function()
 		end
 		for _, h in ClassLooks.HAIRS do
 			unique(h.id)
-			T.expect({ h.id, CharacterLook.GARMENTS[`hair_{h.style}`] ~= nil, hex(h.color), catalogOk(h.catalog) })
-				.toEqual({ h.id, true, true, true })
-			bothLanguages(`look.hair.{h.id}`)
+			T.expect({ h.id, CharacterLook.GARMENTS[`hair_{h.style}`] ~= nil }).toEqual({ h.id, true })
 		end
-		local d = ClassLooks.DEFAULT_LOOK
-		T.expect({
-			ClassLooks.faceById[d.face] ~= nil,
-			ClassLooks.skinById[d.skin] ~= nil,
-			ClassLooks.hairById[d.hair] ~= nil,
-		}).toEqual({ true, true, true })
-		for _, key in
-			{ "look.skin.n", "look.row.face", "look.row.skin", "look.row.hair", "look.random", "look.default" }
-		do
+		for _, list in { ClassLooks.HAIR_COLORS, ClassLooks.PAINT_COLORS } do
+			for _, c in list do
+				unique(c.id)
+				T.expect({ c.id, hex(c.color) }).toEqual({ c.id, true })
+			end
+		end
+		for _, b in ClassLooks.BROWS do
+			unique(b.id)
+			T.expect({ b.id, (BodyLooks.brows[b.id] or 0) > 0 }).toEqual({ b.id, true })
+		end
+		for _, b in ClassLooks.BUILDS do
+			unique(b.id)
+			local k = BodyLooks.builds[b.id]
+			local within = k ~= nil and math.abs(k.width - 1) <= 0.05 + 1e-9 and math.abs(k.depth - 1) <= 0.05 + 1e-9
+			T.expect({ b.id, within }).toEqual({ b.id, true })
+		end
+		for _, p in ClassLooks.PAINTS do
+			unique(p.id)
+			T.expect({ p.id, p.id == "paint_none" or BodyLooks.paints[p.id] ~= nil }).toEqual({ p.id, true })
+		end
+		for _, b in ClassLooks.BEARDS do
+			unique(b.id)
+		end
+		-- every choice has a name in both languages (natural skins are numbered)
+		for _, field in CharacterLook.FIELDS do
+			for i, entry in field.list do
+				if not (field.key == "skin" and i <= CharacterLook.NATURAL_SKINS) then
+					bothLanguages(`look.{field.key}.{entry.id}`)
+				end
+			end
+			bothLanguages(`look.row.{field.key}`)
+		end
+		T.expect(CharacterLook.isValid(ClassLooks.DEFAULT_LOOK)).toBe(true)
+		for _, key in { "look.skin.n", "look.random", "look.default", "look.tab.face", "look.tab.hair" } do
 			bothLanguages(key)
 		end
+		bothLanguages("look.tab.body")
+		bothLanguages("look.tab.paint")
 	end)
 
 	T.it("3. every garment is a known procedural with a slot, parts and both names", function()
@@ -220,7 +243,7 @@ end)
 
 T.describe("Class looks: resolve (S132)", function()
 	T.it("5a. the class look: its outfit, the skin on skin parts, the hair unless a hood covers it", function()
-		local look = { face = "face_stern", skin = "skin_7", hair = "hair_long_red" }
+		local look = { face = "face_stern", skin = "skin_7", hair = "hair_long_red" } -- an S132 save
 		local warrior = CharacterLook.resolve(input("Warrior", { look = look }))
 		T.expect(warrior.mode).toBe("class")
 		T.expect(warrior.skin).toBe(ClassLooks.skinById.skin_7.color)
@@ -229,7 +252,11 @@ T.describe("Class looks: resolve (S132)", function()
 		T.expect(warrior.body.UpperTorso).toBe((ClassLooks.get("Warrior") :: any).outfit.colors.main)
 		T.expect(names(warrior).cape).toBe(true)
 		T.expect((warrior.hair :: CharacterLook.HairSpec).style).toBe("long")
-		T.expect((warrior.face :: CharacterLook.FaceSpec).eyes).toBe("narrow")
+		T.expect((warrior.hair :: CharacterLook.HairSpec).color).toBe(ClassLooks.hairColorById.hc_red.color)
+		local face = warrior.face :: CharacterLook.FaceSpec
+		T.expect(face.head).toBe(BodyLooks.heads.face_stern.head)
+		T.expect(face.hair).toBe(ClassLooks.hairColorById.hc_red.color)
+		T.expect(face.beard).toBe("beard_none")
 		local hunter = CharacterLook.resolve(input("Hunter", { look = look }))
 		T.expect(names(hunter).hood).toBe(true)
 		T.expect(hunter.hair).toBeNil()
@@ -286,8 +313,8 @@ T.describe("Class looks: resolve (S132)", function()
 
 	T.it("5f. the catalog key: stable with every id 0, changed by a catalog id; the input is never changed", function()
 		local class = CharacterLook.resolve(input("Warrior"))
-		local avatar = CharacterLook.resolve(input("Warrior", { robloxAvatar = true, outfitId = "outfit_ranger" }))
-		T.expect(class.catalogKey).toBe(avatar.catalogKey)
+		-- W10: the same look on another class (no catalog ids either) gives the same key
+		T.expect(class.catalogKey).toBe(CharacterLook.resolve(input("Cleric")).catalogKey)
 		T.expect(#class.accessories).toBe(0)
 		local spec: any = deepCopy((ClassLooks.get("Warrior") :: any).outfit)
 		spec.garments[1].catalog = 12345
@@ -310,19 +337,22 @@ end)
 T.describe("Class looks: validation, cost, scales (S132)", function()
 	T.it("6. normalize, isValid, changeCost and canChange", function()
 		local d = CharacterLook.normalize(nil)
-		T.expect(d).toEqual({
-			face = ClassLooks.DEFAULT_LOOK.face,
-			skin = ClassLooks.DEFAULT_LOOK.skin,
-			hair = ClassLooks.DEFAULT_LOOK.hair,
-		})
+		T.expect(d).toEqual(table.clone(ClassLooks.DEFAULT_LOOK) :: any)
 		T.expect(d == (ClassLooks.DEFAULT_LOOK :: any)).toBe(false)
+		-- W10: an S132 save keeps its face; its hair id splits into style and colour
 		local mixed = { face = "x", skin = "skin_2", hair = "hair_long_red" }
-		local fixed = CharacterLook.normalize(mixed)
-		T.expect(fixed).toEqual({ face = ClassLooks.DEFAULT_LOOK.face, skin = "skin_2", hair = "hair_long_red" })
+		local fixed = CharacterLook.normalize(mixed) :: any
+		T.expect({ fixed.face, fixed.skin, fixed.hair, fixed.hairColor })
+			.toEqual({ ClassLooks.DEFAULT_LOOK.face, "skin_2", "hair_long", "hc_red" })
 		T.expect(fixed == mixed).toBe(false)
-		T.expect({ CharacterLook.isValid("face_calm", "skin_1", "hair_shaved") }).toEqual({ true, nil })
-		T.expect({ CharacterLook.isValid("face_calm", "skin_11", "hair_shaved") }).toEqual({ false, "look.error.bad" })
-		T.expect({ CharacterLook.isValid(1, "skin_1", "hair_shaved") }).toEqual({ false, "look.error.bad" })
+		local valid = CharacterLook.normalize({ face = "face_calm", skin = "skin_1", hair = "hair_shaved" })
+		T.expect({ CharacterLook.isValid(valid) }).toEqual({ true, nil })
+		local bad = table.clone(valid) :: any
+		bad.skin = "skin_13"
+		T.expect({ CharacterLook.isValid(bad) }).toEqual({ false, "look.error.bad" })
+		T.expect({ CharacterLook.isValid({ face = "face_calm", skin = "skin_1", hair = "hair_shaved" }) })
+			.toEqual({ false, "look.error.bad" })
+		T.expect({ CharacterLook.isValid(1) }).toEqual({ false, "look.error.bad" })
 
 		local cfg = Config.LookChange
 		T.expect({ CharacterLook.changeCost({ lookFree = true, level = 50 }) }).toEqual({ 0, true })
@@ -330,12 +360,15 @@ T.describe("Class looks: validation, cost, scales (S132)", function()
 		T.expect({ CharacterLook.changeCost({ lookFree = false, level = 80 }) })
 			.toEqual({ cfg.goldPerLevel * 80, false })
 
-		local current = { face = "face_calm", skin = "skin_4", hair = "hair_short_dark" }
-		local other = { face = "face_sharp", skin = "skin_4", hair = "hair_short_dark" }
+		local current = { face = "face_calm", skin = "skin_4", hair = "hair_short_dark" } -- an S132 save
+		local other = CharacterLook.normalize({ face = "face_sharp", skin = "skin_4", hair = "hair_short_dark" })
 		local paid = { look = current, lookFree = false, level = 80, gold = cfg.goldPerLevel * 80 }
-		T.expect({ CharacterLook.canChange(paid, { face = "nope", skin = "skin_4", hair = "hair_short_dark" }, true) })
+		local nope = table.clone(other) :: any
+		nope.face = "nope"
+		T.expect({ CharacterLook.canChange(paid, nope, true) })
 			.toEqual({ false, "look.error.bad", cfg.goldPerLevel * 80 })
-		T.expect((select(2, CharacterLook.canChange(paid, current, true)))).toBe("look.error.same")
+		T.expect((select(2, CharacterLook.canChange(paid, CharacterLook.normalize(current), true))))
+			.toBe("look.error.same")
 		T.expect((select(2, CharacterLook.canChange(paid, other, false)))).toBe("look.error.barber")
 		T.expect({ CharacterLook.canChange(paid, other, true) }).toEqual({ true, nil, cfg.goldPerLevel * 80 })
 		local poor = table.clone(paid)
@@ -348,7 +381,11 @@ T.describe("Class looks: validation, cost, scales (S132)", function()
 			(
 				select(
 					2,
-					CharacterLook.canChange({ look = current, lookFree = false, level = 1, gold = 0 }, current, false)
+					CharacterLook.canChange(
+						{ look = current, lookFree = false, level = 1, gold = 0 },
+						CharacterLook.normalize(current),
+						false
+					)
 				)
 			)
 		).toBe("look.error.same")

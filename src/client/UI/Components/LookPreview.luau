@@ -3,9 +3,12 @@
 -- class look: a clone of the server's mannequin (Util/AvatarBuild.previewFigure; the block figure without it) with the
 -- procedural look of Logic/CharacterLook.resolve for the given class, face / skin / hair, outfit, dye and mode.
 -- Catalog pieces show their procedural garment here (a description can only be applied on the server).
+-- W10: dragging (mouse or finger) turns the figure, it turns slowly by itself after a pause; `Focus` = "face" brings the
+-- camera to the head (the creator's Face and Paint tabs); warm key light over a cool fill.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 
 local AvatarBuild = require(ReplicatedStorage.Shared.Util.AvatarBuild)
 local CharacterLook = require(ReplicatedStorage.Shared.Logic.CharacterLook)
@@ -28,9 +31,13 @@ export type Props = {
 	AnchorPoint: UsedAs<Vector2>?,
 	LayoutOrder: number?,
 	Visible: UsedAs<boolean>?,
+	Focus: UsedAs<string?>?, -- W10: "face" = close on the head, else the whole figure
 }
 
 local ORBIT = 11
+local FACE_ORBIT = 3.6 -- W10: the camera close on the head
+local DRAG = 0.012 -- radians per pixel dragged
+local IDLE = 3 -- seconds after a drag before the figure turns by itself
 
 local function LookPreview(scope: Scope, props: Props): Instance
 	local viewport = scope:New("ViewportFrame")({
@@ -41,9 +48,10 @@ local function LookPreview(scope: Scope, props: Props): Instance
 		Size = props.Size or UDim2.fromOffset(330, 370),
 		Visible = props.Visible,
 		BackgroundColor3 = Theme.Iron.Sunken,
-		Ambient = Color3.fromRGB(160, 150, 140),
-		LightColor = Color3.fromRGB(255, 240, 220),
-		LightDirection = Vector3.new(-1, -1, -1),
+		Active = true, -- W10: a drag on the preview turns the figure, not the camera
+		Ambient = Color3.fromRGB(140, 146, 160),
+		LightColor = Color3.fromRGB(255, 226, 190),
+		LightDirection = Vector3.new(-0.8, -0.6, -1),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({ Color = Theme.Iron.Rule }),
@@ -83,16 +91,70 @@ local function LookPreview(scope: Scope, props: Props): Instance
 	redraw()
 	scope:Observer(spec):onChange(redraw)
 
+	-- W10: turn by dragging; after IDLE seconds without a drag the figure turns slowly again
 	local angle = math.pi
+	local dragging: InputObject? = nil
+	local lastX = 0
+	local idle = IDLE
+	local zoom = 0 -- 0 = whole figure, 1 = the face
+	table.insert(
+		scope,
+		viewport.InputBegan:Connect(function(input: InputObject)
+			local t = input.UserInputType
+			if t == Enum.UserInputType.MouseButton1 or t == Enum.UserInputType.Touch then
+				dragging = input
+				lastX = input.Position.X
+				idle = 0
+			end
+		end)
+	)
+	table.insert(
+		scope,
+		UserInputService.InputChanged:Connect(function(input: InputObject)
+			local d = dragging
+			if not d then
+				return
+			end
+			local moved = input.UserInputType == Enum.UserInputType.MouseMovement
+				or (input.UserInputType == Enum.UserInputType.Touch and input == d)
+			if moved then
+				angle -= (input.Position.X - lastX) * DRAG
+				lastX = input.Position.X
+				idle = 0
+			end
+		end)
+	)
+	table.insert(
+		scope,
+		UserInputService.InputEnded:Connect(function(input: InputObject)
+			if input == dragging or input.UserInputType == Enum.UserInputType.MouseButton1 then
+				dragging = nil
+			end
+		end)
+	)
 	table.insert(
 		scope,
 		RunService.RenderStepped:Connect(function(dt: number)
 			if not viewport.Visible then
 				return
 			end
-			angle += dt * 0.6
-			camera.CFrame =
-				CFrame.new(Vector3.new(math.sin(angle) * ORBIT, 1.5, math.cos(angle) * ORBIT), Vector3.new(0, 0.2, 0))
+			if not dragging then
+				idle += dt
+				if idle > IDLE then
+					angle += dt * 0.4
+				end
+			end
+			local want = if Fusion.peek(props.Focus :: any) == "face" then 1 else 0
+			zoom += (want - zoom) * math.min(1, dt * 6)
+			local head = figure:FindFirstChild("Head")
+			local headY = if head and head:IsA("BasePart") then head.Position.Y else 1.6
+			local radius = ORBIT + (FACE_ORBIT - ORBIT) * zoom
+			local targetY = 0.2 + (headY - 0.2) * zoom
+			local eyeY = 1.5 + (headY + 0.15 - 1.5) * zoom
+			camera.CFrame = CFrame.new(
+				Vector3.new(math.sin(angle) * radius, eyeY, math.cos(angle) * radius),
+				Vector3.new(0, targetY, 0)
+			)
 		end)
 	)
 	return viewport

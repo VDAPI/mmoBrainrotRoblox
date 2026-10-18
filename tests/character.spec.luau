@@ -2,6 +2,7 @@
 -- Character creation, account schema and migrations.
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local CharacterFactory = require("../src/shared/Logic/CharacterFactory")
+local CharacterLook = require("../src/shared/Logic/CharacterLook")
 local ClassLooks = require("../src/shared/Data/ClassLooks")
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
@@ -450,21 +451,18 @@ end)
 
 -- S132 (DESIGN-17 §9a): the creator's look and migration 9 (one outfit per class).
 T.describe("Class looks: creation and migration 9 (S132)", function()
-	local DEFAULT = {
-		face = ClassLooks.DEFAULT_LOOK.face,
-		skin = ClassLooks.DEFAULT_LOOK.skin,
-		hair = ClassLooks.DEFAULT_LOOK.hair,
-	}
+	local DEFAULT = table.clone(ClassLooks.DEFAULT_LOOK) :: any
 
 	T.it("a new character keeps the creator's look and has one free change", function()
-		local look = { face = "face_stern", skin = "skin_7", hair = "hair_braid_grey" }
+		local look = { face = "face_stern", skin = "skin_7", hair = "hair_braid_grey" } -- an S132 creator's look
 		local c = CharacterFactory.create("Mage", "Imie", ids(), look)
-		T.expect(c.look).toEqual(look)
+		T.expect(c.look).toEqual(CharacterLook.normalize(look) :: any)
+		T.expect((c.look :: any).hair).toBe("hair_braid")
 		T.expect(c.look == look).toBe(false)
 		T.expect(c.lookFree).toBe(true)
 		T.expect(CharacterFactory.create("Mage", "Imie", ids()).look).toEqual(DEFAULT)
 		local odd = CharacterFactory.create("Hunter", "Imie", ids(), { face = "nope", skin = "skin_2", hair = 5 })
-		T.expect(odd.look).toEqual({ face = DEFAULT.face, skin = "skin_2", hair = DEFAULT.hair })
+		T.expect(odd.look).toEqual(CharacterLook.normalize({ skin = "skin_2" }) :: any)
 	end)
 
 	local function account(cosmetics: any): any
@@ -487,7 +485,8 @@ T.describe("Class looks: creation and migration 9 (S132)", function()
 		end
 		T.expect(data.cosmetics.classOutfits).toEqual(want)
 		T.expect(data.cosmetics.equipped).toEqual({ aura = "aura_gold", dye = "dye_crimson" })
-		T.expect(data.characters["1"].look).toEqual(DEFAULT)
+		-- migration 9 writes the S132 fields; the W10 ones come from CharacterLook.normalize on read
+		T.expect(data.characters["1"].look).toEqual({ face = DEFAULT.face, skin = DEFAULT.skin, hair = DEFAULT.hair })
 		T.expect(data.characters["1"].lookFree).toBe(true)
 		T.expect(data.settings.robloxAvatar).toBe(false)
 		-- idempotent: the migration again changes nothing

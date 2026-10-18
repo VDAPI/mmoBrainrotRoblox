@@ -6,6 +6,7 @@
 -- provider), the windows (creator, wardrobe, look window) and AccountSchema (migration 9). Looks only: nothing here
 -- changes a number of the game.
 
+local BodyLooks = require("../Data/BodyLooks")
 local ClassLooks = require("../Data/ClassLooks")
 local Config = require("../Config")
 local CosmeticRules = require("./CosmeticRules")
@@ -76,14 +77,6 @@ CharacterLook.GARMENTS = table.freeze({
 	hair_shaved = g("head", 1, "hair"),
 } :: { [string]: GarmentDef })
 
--- The parts of the face Util/AvatarBuild draws (Data/ClassLooks.FACES).
-CharacterLook.FACE_PARTS = table.freeze({
-	eyes = table.freeze({ "calm", "narrow", "wide", "tired" }),
-	brows = table.freeze({ "flat", "raised", "stern" }),
-	mouth = table.freeze({ "line", "smile", "frown", "beard" }),
-	mark = table.freeze({ "scar", "freckles" }),
-})
-
 -- Parts of the S122 Cloak of Luring (CosmeticLook.applyLure: the cape and its hem), for the piece budget.
 CharacterLook.LURE_PIECES = 2
 
@@ -92,32 +85,99 @@ local HANDS = { LeftHand = true, RightHand = true }
 
 export type Look = ClassLooks.Look
 
--- A valid look: every field an existing id of Data/ClassLooks, else the default one. Always a new table.
-function CharacterLook.normalize(look: any): Look
-	local d = ClassLooks.DEFAULT_LOOK
-	if type(look) ~= "table" then
-		return { face = d.face, skin = d.skin, hair = d.hair }
+-- W10: the fields of a look, each with the list of its choices (Data/ClassLooks).
+CharacterLook.FIELDS = table.freeze({
+	{ key = "face", list = ClassLooks.FACES },
+	{ key = "skin", list = ClassLooks.SKINS },
+	{ key = "hair", list = ClassLooks.HAIRS },
+	{ key = "hairColor", list = ClassLooks.HAIR_COLORS },
+	{ key = "brows", list = ClassLooks.BROWS },
+	{ key = "beard", list = ClassLooks.BEARDS },
+	{ key = "build", list = ClassLooks.BUILDS },
+	{ key = "paint", list = ClassLooks.PAINTS },
+	{ key = "paintColor", list = ClassLooks.PAINT_COLORS },
+} :: { { key: string, list: { any } } })
+
+local function known(field: { key: string, list: { any } }, value: any): boolean
+	if type(value) ~= "string" then
+		return false
 	end
-	local face = look.face
-	local skin = look.skin
-	local hair = look.hair
-	return {
-		face = if type(face) == "string" and ClassLooks.faceById[face] then face else d.face,
-		skin = if type(skin) == "string" and ClassLooks.skinById[skin] then skin else d.skin,
-		hair = if type(hair) == "string" and ClassLooks.hairById[hair] then hair else d.hair,
-	}
+	for _, entry in field.list do
+		if entry.id == value then
+			return true
+		end
+	end
+	return false
 end
 
--- Whether a look sent by a client is valid (strings naming existing entries).
-function CharacterLook.isValid(face: any, skin: any, hair: any): (boolean, string?)
-	if type(face) ~= "string" or type(skin) ~= "string" or type(hair) ~= "string" then
+-- A valid look: every field an existing id of Data/ClassLooks, else the default one. Always a new table, every field
+-- set. W10: a save from before W10 has an S132 hair id (style and colour, Data/ClassLooks.LEGACY_HAIRS) and no
+-- beard / paint: the beard and the freckles of its face become those choices; nothing else changes.
+function CharacterLook.normalize(look: any): Look
+	local d = ClassLooks.DEFAULT_LOOK :: any
+	local src: any = if type(look) == "table" then look else {}
+	local out: any = {}
+	for _, field in CharacterLook.FIELDS do
+		out[field.key] = if known(field, src[field.key]) then src[field.key] else d[field.key]
+	end
+	local legacy = if type(src.hair) == "string" then ClassLooks.LEGACY_HAIRS[src.hair] else nil
+	if legacy then
+		out.hair = legacy[1]
+		if src.hairColor == nil then
+			out.hairColor = legacy[2]
+		end
+	end
+	local face = ClassLooks.faceById[out.face]
+	if face and src.beard == nil and face.legacyBeard then
+		out.beard = face.legacyBeard
+	end
+	if face and src.paint == nil and face.legacyPaint then
+		out.paint = face.legacyPaint
+	end
+	return out :: Look
+end
+
+-- Whether a look sent by a client is valid: a table whose every field (CharacterLook.FIELDS) names an existing entry.
+function CharacterLook.isValid(look: any): (boolean, string?)
+	if type(look) ~= "table" then
 		return false, "look.error.bad"
 	end
-	if not ClassLooks.faceById[face] or not ClassLooks.skinById[skin] or not ClassLooks.hairById[hair] then
-		return false, "look.error.bad"
+	for _, field in CharacterLook.FIELDS do
+		if not known(field, look[field.key]) then
+			return false, "look.error.bad"
+		end
 	end
 	return true, nil
 end
+
+-- Whether two looks are the same (every field, after normalize).
+function CharacterLook.same(a: any, b: any): boolean
+	local x, y = CharacterLook.normalize(a) :: any, CharacterLook.normalize(b) :: any
+	for _, field in CharacterLook.FIELDS do
+		if x[field.key] ~= y[field.key] then
+			return false
+		end
+	end
+	return true
+end
+
+-- W10: a random valid look (`roll()` in [0, 1), Logic/Rng in the game): a natural skin tone, a painted face one time
+-- in three.
+function CharacterLook.random(roll: () -> number): Look
+	local out: any = {}
+	for _, field in CharacterLook.FIELDS do
+		local list = field.list
+		local count = if field.key == "skin" then CharacterLook.NATURAL_SKINS else #list
+		out[field.key] = list[math.clamp(math.floor(roll() * count) + 1, 1, count)].id
+	end
+	if roll() >= 1 / 3 then
+		out.paint = "paint_none"
+	end
+	return out :: Look
+end
+
+-- The first skins of Data/ClassLooks.SKINS are natural tones (the fantasy ones follow).
+CharacterLook.NATURAL_SKINS = 10
 
 -- Whether `def` is an outfit the class `classId` may wear (a shared one, or one of that class).
 function CharacterLook.allowed(def: Def?, classId: string?): boolean
@@ -192,8 +252,20 @@ export type LookInput = {
 	-- an outfit given directly (tests, tools) instead of `outfitId` / the class's default; used as it is
 	spec: OutfitSpec?,
 }
-export type FaceSpec = { catalog: number, eyes: string, brows: string, mouth: string, mark: string?, hair: string }
-export type HairSpec = { catalog: number, asset: string?, style: string, color: string }
+-- W10: the face of the look: the dynamic head and lashes (Data/BodyLooks.heads), the brows, the facial hair and the
+-- face paint; `hair` = the hair colour (brows and beard take it)
+export type FaceSpec = {
+	id: string,
+	head: number,
+	lashes: number,
+	brows: string,
+	browsId: number,
+	beard: string,
+	paint: string,
+	paintColor: string,
+	hair: string,
+}
+export type HairSpec = { id: string, catalog: number, asset: string?, style: string, color: string }
 export type GarmentSpec = { g: string, color: string, catalog: number, asset: string? }
 export type LookSpec = {
 	mode: "class" | "avatar",
@@ -208,6 +280,7 @@ export type LookSpec = {
 	accessories: { number }, -- non-zero catalog ids (garments, hair, in that order)
 	catalogKey: string, -- stable text of every catalog id: the server re-applies the description only when it changes
 	pieces: number, -- procedural parts drawn (Config.CharacterLook.maxPieces)
+	build: { width: number, depth: number }, -- W10: width and depth of the body (Data/BodyLooks.builds)
 }
 
 local function colorOf(colors: ClassLooks.Colors, role: string, skin: string?, hairColor: string?): string?
@@ -246,25 +319,32 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 		spec = if classLook then classLook.outfit else nil
 	end
 
-	local look = CharacterLook.normalize(input.look)
+	local look = CharacterLook.normalize(input.look) :: any
 	local skinHex: string? = nil
 	local face: FaceSpec? = nil
 	local hairDef: ClassLooks.Hair? = nil
+	local hairHex = ClassLooks.hairColorById[look.hairColor].color :: string
+	local build = BodyLooks.builds[look.build] or BodyLooks.builds.build_medium
 	if not avatar then
 		local skin = ClassLooks.skinById[look.skin]
 		skinHex = skin and skin.color
 		hairDef = ClassLooks.hairById[look.hair]
-		local f = ClassLooks.faceById[look.face]
-		if f then
+		local head = BodyLooks.heads[look.face]
+		if head then
 			face = {
-				catalog = int(f.catalog),
-				eyes = f.eyes,
-				brows = f.brows,
-				mouth = f.mouth,
-				mark = f.mark,
-				hair = if hairDef then hairDef.color else "#2E2620",
+				id = look.face,
+				head = head.head,
+				lashes = head.lashes,
+				brows = look.brows,
+				browsId = BodyLooks.brows[look.brows] or 0,
+				beard = look.beard,
+				paint = look.paint,
+				paintColor = ClassLooks.paintColorById[look.paintColor].color :: string,
+				hair = hairHex,
 			}
 		end
+	else
+		build = BodyLooks.builds.build_medium
 	end
 
 	-- colours of the roles, the dye over main and second (S123 rule, CosmeticRules.dyed)
@@ -323,8 +403,13 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 
 	local hair: HairSpec? = nil
 	if hairDef and not hidesHair then
-		local h: HairSpec =
-			{ catalog = int(hairDef.catalog), asset = hairDef.asset, style = hairDef.style, color = hairDef.color }
+		local h: HairSpec = {
+			id = hairDef.id,
+			catalog = int(hairDef.catalog),
+			asset = hairDef.asset,
+			style = hairDef.style,
+			color = hairHex,
+		}
 		hair = h
 		if h.catalog ~= 0 then
 			table.insert(accessories, h.catalog)
@@ -336,6 +421,8 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 	if input.lure == true then
 		pieces += CharacterLook.LURE_PIECES
 	end
+	-- the head, lashes and brows come from the description too: a change re-applies it
+	local faceKey = if face then `{face.head}.{face.lashes}.{face.browsId}` else "0"
 	local accText = {}
 	for _, id in accessories do
 		table.insert(accText, tostring(id))
@@ -350,8 +437,9 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 		shirt = shirt,
 		pants = pants,
 		accessories = accessories,
-		catalogKey = `f{if face then face.catalog else 0}|s{shirt}|p{pants}|a{table.concat(accText, ",")}`,
+		catalogKey = `f{faceKey}|w{build.width},{build.depth}|s{shirt}|p{pants}|a{table.concat(accText, ",")}`,
 		pieces = pieces,
+		build = { width = build.width, depth = build.depth },
 	}
 end
 
@@ -417,11 +505,10 @@ end
 -- Errors in order: bad id, the same look, a paid change away from the barber, not enough gold.
 function CharacterLook.canChange(character: any, newLook: any, nearBarber: boolean): (boolean, string?, number)
 	local cost, free = CharacterLook.changeCost(character)
-	if type(newLook) ~= "table" or not CharacterLook.isValid(newLook.face, newLook.skin, newLook.hair) then
+	if not CharacterLook.isValid(newLook) then
 		return false, "look.error.bad", cost
 	end
-	local current = CharacterLook.normalize(if type(character) == "table" then character.look else nil)
-	if current.face == newLook.face and current.skin == newLook.skin and current.hair == newLook.hair then
+	if CharacterLook.same(if type(character) == "table" then character.look else nil, newLook) then
 		return false, "look.error.same", cost
 	end
 	if not free and not nearBarber then
