@@ -5630,3 +5630,5 @@
   turnieju); rodzaje wyszukiwarki `worldboss` i `lair` mają swoje etykiety.
 - **S149b** Wiki (strona Hrimvalda, `WikiData/Bosses` z `world`, sekcja „Boss świata”, `WIKI.md`) pominięta: hurtowe
   odświeżenie wiki należy do właściciela (17.10).
+
+- **Właściciel 2026-10-18 (pytania z S137/S146)**: (3.1) obrażenia bossów w tanka zostają, leczenie berła przy bossie (T-SK6) zostaje w raporcie; (3.2) miecz z tarczą zostaje tankiem, R9 dwuręczna / jednoręczna 1,45–1,80 zostaje w raporcie; (3.3) cel tempa solo Uzdrowiciela do poluzowania (bez drugiego buildu z buzdyganem); (6) punkty umiejętności zostają 1 na poziom + 7 na start (S137).
