@@ -193,10 +193,65 @@ local function dens(env: Env.Env, out: { Build })
 	end
 end
 
+-- W16 (bor.md A4): frost on the roots along the way the cult carried the queen's coffin down the gorge: pale rime
+-- that does not melt, on both sides at the foot of the walls (fine, no collision).
+local GORGE = { { -318, 446, 12 }, { -410, 508, 18 }, { -514, 566, 22 }, { -604, 650, 26 }, { -700, 724, 24 } }
+local RIME = { c = "#DCE8F0", m = "Snow" }
+
+local function coffinFrost(env: Env.Env, out: { Build })
+	local ctx = env.ctx
+	local b = Kit.build(ctx, "CoffinFrost", "traces", GORGE[1][1], GORGE[1][2], 0)
+	local bp = b.bp
+	for i = 1, #GORGE - 1 do
+		local p, q = GORGE[i], GORGE[i + 1]
+		local dx, dz = q[1] - p[1], q[2] - p[2]
+		local len = math.sqrt(dx * dx + dz * dz)
+		local ux, uz = dx / len, dz / len
+		local steps = math.floor(len / 28)
+		for k = 0, steps - 1 do
+			local t = (k + 0.5) / steps
+			local half = p[3] + (q[3] - p[3]) * t
+			local side = if (i + k) % 2 == 0 then 1 else -1
+			local wx = p[1] + dx * t - uz * side * half * 0.7
+			local wz = p[2] + dz * t + ux * side * half * 0.7
+			local lx, lz = wx - b.at.x, wz - b.at.z
+			local gy = Kit.gy(ctx, b, lx, lz)
+			bp:rbox(
+				4,
+				0.08,
+				2.6,
+				lx,
+				gy + 0.05,
+				lz,
+				0,
+				math.deg(math.atan2(ux, uz)) + k * 25,
+				0,
+				o(RIME, "fine", { col = false })
+			)
+			for m = 0, 2 do
+				bp:rbox(
+					0.4,
+					1 + m * 0.3,
+					0.4,
+					lx + (m - 1) * 0.9,
+					gy + 0.4,
+					lz + (m % 2) * 0.6,
+					12,
+					m * 50,
+					18,
+					o({ c = "#E8F4FA", m = "Ice" }, "fine", { col = false, t = 0.2 })
+				)
+			end
+		end
+	end
+	table.insert(out, b)
+end
+
 function Hollow.all(env: Env.Env, out: { Build })
 	fallenGiant(env, out)
 	lostCamp(env, out)
 	dens(env, out)
+	coffinFrost(env, out)
 	-- mist lies on the gorge floor
 	Kit.life(env.ctx, "mist", -520, -4.5, 560, 30)
 	Kit.life(env.ctx, "mist", -640, -6, 690, 30)

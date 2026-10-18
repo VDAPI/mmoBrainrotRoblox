@@ -459,3 +459,4 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Kurhan Kultystów: herb rodu Vael na wieku szronowej trumny, monety z cierniem w Norze Ghuli.
 - Krypta Zapomnianych: pęknięty grot z brązu na dnie Studni Dusz, wielka pusta nisza ze skutym imieniem w Krypcie Rodów.
 - Grobowiec Morvane: imię „Morvane z rodu Vael” wyryte w posadzce absydy pod wiekiem.
+- W16: płaty szronu z kryształkami lodu u stóp ścian Niedźwiedziego Jaru wzdłuż drogi trumny (`Hollow.coffinFrost`, `bor.md` A4).
