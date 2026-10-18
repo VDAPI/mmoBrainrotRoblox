@@ -81,8 +81,8 @@ return table.freeze({
 	MAIN_MIN_POINTS = 12,
 	-- from this many ranks in a direction its team nodes of rows 1..DIP_ROWS work in full
 	TEAM_FULL_POINTS = 6,
-	-- the target rows of "skill" nodes (at most one each per direction); tests/paths.spec asserts it only for classes
-	-- whose pools are no longer transitional (Data/SkillPools.<Class>.transitional)
+	-- the target rows of "skill" nodes (at most one each per direction); tests/paths.spec asserts it for every class
+	-- (S145: the end of the transitional pools)
 	SKILL_ROWS = table.freeze({ 4, 8 }),
 	-- ROZWOJ 7.3: party auras from path nodes (PartyAuraService, Logic/Paths.inAura).
 	AURA = table.freeze({

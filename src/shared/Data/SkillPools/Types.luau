@@ -18,8 +18,6 @@ export type ClassPools = {
 	-- bumped by a class session that changes the pools: on load the ranks are cleaned and a free reset is given
 	-- (Logic/SkillPoints.needsRespec), no migration (DESIGN-18 §10)
 	version: number,
-	-- the ladder of DESIGN-18 §5 does not hold yet (S137: the old base split into pools; S140-S145 end it)
-	transitional: boolean?,
 	defaultPool: string, -- no weapon or an unknown one
 	pools: { PoolDef },
 	commonPlan: { string }, -- the common skills of the class in buying order

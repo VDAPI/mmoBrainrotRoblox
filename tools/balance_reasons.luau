@@ -2468,9 +2468,11 @@ return {
 		},
 		["SkillCurves:knots.holyStrike.dmg[5]"] = {
 			{ session = "S91", why = "new, 226 (x0.88 of 256.7, R1 Inquisitor at L20)" },
+			{ session = "S145", why = "226 -> 190: R1 of the Mace and Flail pool at 20 in the S91 band with Brand of Light from 15 (DESIGN-18 §6.4)" },
 		},
 		["SkillCurves:knots.holyStrike.dmg[6]"] = {
 			{ session = "S91", why = "new, 273.33 pinned (rank 6 before S91)" },
+			{ session = "S145", why = "273.33 -> 240: no jump at 21 after the lower rank 5 (190)" },
 		},
 		["SkillCurves:knots.aimedShot.dmg[5]"] = {
 			{ session = "S91", why = "232.2 -> 196 (x0.845, R1 / T-SK2 Kingslayer at L20)" },
@@ -5711,6 +5713,126 @@ return {
 		},
 		["Paths/Hunter:[scout].reference[tracker]*"] = {
 			{ session = "S144", why = "the Bow build with a shortbow: the replaced nodes and the rotation of S144" },
+		},
+		-- S145 (DESIGN-18 §6.4): the Cleric's pools Scepter and Staff (light) and Mace and Flail (hammer), the common skills
+		-- (Heal 4, Circle of Light 12, Resurrection 30, Devotion 45), the directions with skill nodes only in rows 4 and 8
+		-- (the Healer: Prayer, Divine Intervention; Fortune: Roll of the Dice, Wheel of Fortune) and the Inquisitor's keystone
+		["Skills/Cleric:[lightRay]*"] = {
+			{ session = "S145", why = "new (S1 of the light pool, 1): a holy projectile on Holy Strike's knots before S145 x0.85 (142-289 %), 25 % of the hit heals the most wounded ally (the caster solo), cost 12, cooldown 3; 5A heal +10 points (utility) / 5B +30, 10A +60 / 10B splash 40 % (area option) in the R4 bands" },
+		},
+		["Skills/Cleric:[blindingLight]*"] = {
+			{ session = "S145", why = "new (K1 of the light pool, 6): a 90-degree cone 60-110 %, the enemies miss their regular attacks for 3 s (misfortune, enemyMiss), cost 25, cooldown 12; 5B +14, 10A cooldown x0.8 in the R4 bands, 5A +1 s and 10B the wider cone (control, geometry)" },
+		},
+		["Skills/Cleric:[grace]*"] = {
+			{ session = "S145", why = "new (P1 of the light pool, 20): heals +7-12 % (what Devotion gave the dungeon Healer before 45: T-SK5 at 20 0.221, the S91 value), heal crits 20-60 % of the crit chance, +10-30 % on a target below LOW_HP_HEAL" },
+		},
+		["Skills/Cleric:[miracle]*"] = {
+			{ session = "S145", why = "new (S3 of the light pool, 40): the biggest single heal (26-32 % of the target's max HP + 13-18 % magic), a 1.2 s prayer, cost 40, cooldown 15; 5A +4 / 10B +8 in the R4 bands on the dungeon Healer, 5B -0.4 s and 10A a second target (utility)" },
+		},
+		["Skills/Cleric:[guidingLight]*"] = {
+			{ session = "S145", why = "new (P2 of the light pool, 50): every heal of a heal skill leaves a ward of 10-20 % of the HP it restored for 6 s, at most FAITH.wardCap % of the target's max HP (Logic/Faith.ward)" },
+		},
+		["Skills/Cleric:[consecrate]*"] = {
+			{ session = "S145", why = "new (A1 of the hammer pool, 3): 4 waves of 34-70 % in a 6-stud circle under the caster, cost 25, cooldown 10; 5B +6, 10B +1 wave in the R4 bands, 5A radius and 10A slow (geometry, control)" },
+		},
+		["Skills/Cleric:[holyChains]*"] = {
+			{ session = "S145", why = "new (K1 of the hammer pool, 6): one target 70-130 % and a 2 s root (bosses and Elite IIs: a 40 % slow, Logic/Snare) like Pinning Shot, cost 25, cooldown 12; 5B +14, 10A cooldown x0.8 in the R4 bands, 5A +0.5 s and 10B vulnerability (control, weakening)" },
+		},
+		["Skills/Cleric:[holyNova]*"] = {
+			{ session = "S145", why = "new (A2 of the hammer pool, 26): an 8-stud burst 120-200 % and a heal of the allies in the circle (3-5 % of their max HP + magic) in one cast, cost 45, cooldown 14; 10A echo 22 % / 10B +44 at 0.22 (R4 band, |A - B| 0), 5A radius and 5B +1 heal point (utility)" },
+		},
+		["Skills/Cleric:[rebuke]*"] = {
+			{ session = "S145", why = "new (K2 of the hammer pool, 33): a 100-degree cone 90-160 %, knockback 8 and the interrupt of an enemy player's channel (never a boss's), cost 30, cooldown 16; 5B +18, 10B cooldown x0.8 in the R4 bands, 5A radius and 10A stun (control)" },
+		},
+		["Skills/Cleric:[zeal]*"] = {
+			{ session = "S145", why = "new (P2 of the hammer pool, 50): every offensive cast of a Mace and Flail skill takes 0.3-0.8 s off the running cooldowns of the pool's other skills (Logic/Faith.zealCut)" },
+		},
+		["Skills/Cleric:[heal].unlock"] = { { session = "S145", why = "3 -> 4: C1 of the Cleric (DESIGN-18 §5 common ladder)" } },
+		["Skills/Cleric:[circleOfLight].unlock"] = {
+			{ session = "S145", why = "14 -> 12: C2 of the Cleric; rank 3 (level 20) keeps the old rank 2 (knot)" },
+		},
+		["Skills/Cleric:[resurrection].unlock"] = { { session = "S145", why = "Fortune's row 1 (10) -> 30: C3 of the Cleric" } },
+		["Skills/Cleric:[resurrection].cooldown[1]"] = { { session = "S145", why = "120 -> 86.67: rank 1 at 30 keeps the old rank 6 at 30" } },
+		["Skills/Cleric:[resurrection].values.hp[1]"] = { { session = "S145", why = "20 -> 42.22: rank 1 at 30 keeps the old rank 6 at 30" } },
+		["Skills/Cleric:[devotion].unlock"] = { { session = "S145", why = "10 -> 45: C4 of the Cleric" } },
+		["Skills/Cleric:[devotion].values.heal[1]"] = { { session = "S145", why = "5 -> 20: rank 1 at 45 keeps the old rank 4 at 37" } },
+		["Skills/Cleric:[radiance].unlock"] = { { session = "S145", why = "6 -> 3: A1 of the light pool" } },
+		["Skills/Cleric:[radiance].values.dmg[1]"] = {
+			{ session = "S145", why = "130 -> 120 at 3: rank 5 (19) keeps the old rank 4 (18), rank 6 (23) the old rank 5 (22; knots)" },
+		},
+		["Skills/Cleric:[shieldOfFaith].unlock"] = { { session = "S145", why = "18 -> 10: O1 of the light pool" } },
+		["Skills/Cleric:[shieldOfFaith].values.shieldHp[1]"] = { { session = "S145", why = "12 -> 10 at 10: rank 3 (18) keeps the old rank 1 (knot)" } },
+		["Skills/Cleric:[shieldOfFaith].values.shieldMag[1]"] = { { session = "S145", why = "10 -> 8 at 10: rank 3 (18) keeps the old rank 1 (knot)" } },
+		["Skills/Cleric:[renew].unlock"] = { { session = "S145", why = "the Healer's row 1 (10) -> 15: S2 of the light pool" } },
+		["Skills/Cleric:[renew].values*"] = { { session = "S145", why = "healHp 16 -> 16.89, healMag 10 -> 10.56: rank 1 at 15 keeps the old rank 2 at 14" } },
+		["Skills/Cleric:[purify].unlock"] = { { session = "S145", why = "the Inquisitor's row 1 (10) -> 33: K2 of the light pool" } },
+		["Skills/Cleric:[purify].values*"] = { { session = "S145", why = "healHp 8 -> 10.22, healMag 6 -> 8.22: rank 1 at 33 keeps the old rank 6 at 30" } },
+		["Skills/Cleric:[brandOfLight].unlock"] = { { session = "S145", why = "the Inquisitor's row 4 (26) -> 15: S2 of the hammer pool" } },
+		["Skills/Cleric:[brandOfLight].values*"] = {
+			{ session = "S145", why = "dmg 120 -> 30, dot 170 -> 35 at 15: rank 4 (27) keeps the old rank 1 (knots); ranks 1-3 low, R1 of the hammer pool at 20 (2.09) under the S91 cap 2.104" },
+		},
+		["Skills/Cleric:[auraOfEndurance].unlock"] = { { session = "S145", why = "the Inquisitor's row 7 (48) -> 10: O1 of the hammer pool" } },
+		["Skills/Cleric:[auraOfEndurance].values*"] = {
+			{ session = "S145", why = "hp 5-15 -> 4-12: from level 10 (was 48) rank 10 comes at 46, a party aura of the whole pool" },
+		},
+		["Skills/Cleric:[divineWrath].unlock"] = { { session = "S145", why = "30 -> 20: P1 of the hammer pool" } },
+		["Skills/Cleric:[divineWrath].values.bonus[1]"] = { { session = "S145", why = "4 -> 2 at 20: rank 2 (29) keeps the old rank 1 (knot)" } },
+		["Skills/Cleric:[judgement].unlock"] = { { session = "S145", why = "45 -> 40: S3 of the hammer pool" } },
+		["Skills/Cleric:[judgement].values.dmg[1]"] = { { session = "S145", why = "320 -> 300 at 40: rank 2 (44) keeps the old rank 1 (knot)" } },
+		["Skills/Cleric:[prayer].unlock"] = { { session = "S145", why = "Fortune's row 7 (48) -> the Healer's row 4 (26), DESIGN-18 §6.4" } },
+		["Skills/Cleric:[prayer].values.mana[1]"] = { { session = "S145", why = "25 -> 20: from 26 (was 48) the mana grows with the ranks bought earlier" } },
+		["Skills/Cleric:[divineIntervention].unlock"] = { { session = "S145", why = "the Healer's row 7 (48) -> row 8 (60): the Healer's capstone (DESIGN-18 §7)" } },
+		["Skills/Cleric:[divineIntervention].values.invuln[1]"] = { { session = "S145", why = "2 -> 2.5: rank 1 at 60 near the old rank 4 at 60" } },
+		["Skills/Cleric:[divineIntervention].effects[1].duration[1]"] = { { session = "S145", why = "2 -> 2.5: the invulnerability of values.invuln" } },
+		["Skills/init:FAITH*"] = {
+			{ session = "S145", why = "new (Logic/Faith): Guiding Light's ward 6 s, at most 20 % of the target's max HP; the Wandering Brand's jump radius 8 studs" },
+		},
+		["SkillCurves:knots.lightRay*"] = { { session = "S145", why = "new: Light Ray on Holy Strike's knots before S145 x0.85" } },
+		["SkillCurves:knots.radiance*"] = { { session = "S145", why = "new: Radiance unlocks at 3, ranks 5 / 6 (19 / 23) keep the old ranks 4 / 5 (18 / 22)" } },
+		["SkillCurves:knots.shieldOfFaith*"] = { { session = "S145", why = "new: Shield of Faith unlocks at 10, rank 3 (18) keeps the old rank 1" } },
+		["SkillCurves:knots.circleOfLight*"] = { { session = "S145", why = "new: Circle of Light unlocks at 12, rank 3 (20) keeps the old rank 2 (18)" } },
+		["SkillCurves:knots.brandOfLight*"] = { { session = "S145", why = "new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26)" } },
+		["SkillCurves:knots.divineWrath*"] = { { session = "S145", why = "new: Divine Wrath unlocks at 20, rank 2 (29) keeps the old rank 1 (30)" } },
+		["SkillCurves:knots.judgement*"] = { { session = "S145", why = "new: Judgement unlocks at 40, rank 2 (44) keeps the old rank 1 (45)" } },
+		["SkillPools/Cleric:version"] = { { session = "S145", why = "2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset" } },
+		["Paths/Cleric:[healer].rows[1].nodes[healer_renew]*"] = { { session = "S145", why = "removed: Renew is the light pool's S2" } },
+		["Paths/Cleric:[healer].rows[1].nodes[healer_solace]*"] = { { session = "S145", why = "new: Solace (+2 % healing) takes Renew's one rank (rows and need unchanged)" } },
+		["Paths/Cleric:[healer].rows[4].nodes[healer_sanctuary]*"] = { { session = "S145", why = "removed: Sanctuary is the light pool's A2" } },
+		["Paths/Cleric:[healer].rows[4].nodes[healer_prayer]*"] = { { session = "S145", why = "new: Prayer is the Healer's row 4 skill (was Fortune's row 7)" } },
+		["Paths/Cleric:[healer].rows[7].nodes[healer_divineIntervention]*"] = { { session = "S145", why = "moved to row 8 (the Healer's capstone)" } },
+		["Paths/Cleric:[healer].rows[7].nodes[healer_halo]*"] = { { session = "S145", why = "new: Halo (Circle of Light +2 studs) takes Divine Intervention's one rank" } },
+		["Paths/Cleric:[healer].rows[8].nodes[healer_guardianAngel]*"] = { { session = "S145", why = "removed: Guardian Angel is the light pool's U" } },
+		["Paths/Cleric:[healer].rows[8].nodes[healer_divineIntervention]*"] = { { session = "S145", why = "Divine Intervention moved from row 7 to row 8 (the capstone)" } },
+		["Paths/Cleric:[fortune].rows[1].nodes[fortune_resurrection]*"] = { { session = "S145", why = "removed: Resurrection is the Cleric's common C3" } },
+		["Paths/Cleric:[fortune].rows[1].nodes[fortune_clover]*"] = { { session = "S145", why = "new: Four-Leaf Clover (+0.5 crit points) takes Resurrection's one rank" } },
+		["Paths/Cleric:[fortune].rows[7].nodes[fortune_prayer]*"] = { { session = "S145", why = "removed: Prayer is the Healer's row 4 skill" } },
+		["Paths/Cleric:[fortune].rows[7].nodes[fortune_coin]*"] = { { session = "S145", why = "new: Coin Toss (Roll of the Dice's Wind face +1 attack speed point) takes Prayer's one rank" } },
+		["Paths/Cleric:[inquisitor].rows[1].nodes[inquisitor_purify]*"] = { { session = "S145", why = "removed: Purify is the light pool's K2" } },
+		["Paths/Cleric:[inquisitor].rows[1].nodes[inquisitor_vow]*"] = {
+			{ session = "S145", why = "new: Vow (+1 % holy damage) takes Purify's one rank; not HP: the S32 group of the Cleric at 20 stays >= 0.30" },
+		},
+		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_brandOfLight]*"] = { { session = "S145", why = "removed: Brand of Light is the hammer pool's S2" } },
+		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_conviction]*"] = { { session = "S145", why = "new: Conviction (+0.5 crit points) takes Brand of Light's one rank" } },
+		["Paths/Cleric:[inquisitor].rows[7].nodes[inquisitor_auraOfEndurance]*"] = { { session = "S145", why = "removed: the Aura of Endurance is the hammer pool's O1" } },
+		["Paths/Cleric:[inquisitor].rows[7].nodes[inquisitor_enduring]*"] = { { session = "S145", why = "new: Enduring Faith (the aura +1 % HP) takes the aura's one rank" } },
+		["Paths/Cleric:[inquisitor].rows[8].nodes[inquisitor_hammerOfHeaven]*"] = { { session = "S145", why = "removed: Hammer of Heaven is the hammer pool's U" } },
+		["Paths/Cleric:[inquisitor].rows[8].nodes[inquisitor_wanderingBrand]*"] = {
+			{ session = "S145", why = "new keystone (the Inquisitor's capstone, DESIGN-18 §7): a brand skill's burn lands on the nearest other enemy within 8 studs for 60 % (Logic/Faith.brandShare) and holy damage +5 %, with any weapon" },
+		},
+		["Paths/Cleric:[healer].reference[dungeon]*"] = {
+			{ session = "S145", why = "the light pool build (a scepter): the replaced nodes, Miracle and Light Ray in the rotation, the rank order" },
+		},
+		["Paths/Cleric:[healer].reference[solo]*"] = {
+			{ session = "S145", why = "the light pool build with the holy staff: the replaced nodes, Light Ray and Blinding Light in the rotation, damage ranks first" },
+		},
+		["Paths/Cleric:[fortune].reference[plunder]*"] = {
+			{ session = "S145", why = "the hammer pool build (a mace and a relic): the replaced nodes, Brand of Light, Judgement, Holy Chains and Consecrate in the rotation, the rank order" },
+		},
+		["Paths/Cleric:[inquisitor].reference[solo]*"] = {
+			{ session = "S145", why = "the hammer pool build: the replaced nodes, Heal below 50 % for Purify's self heal, the pool's new skills in the rotation, the rank order" },
+		},
+		["Paths/Cleric:[inquisitor].reference[bulwark]*"] = {
+			{ session = "S145", why = "the hammer pool build with a shield: the same changes as the solo build" },
 		},
 	} :: { [string]: { Reason } },
 }

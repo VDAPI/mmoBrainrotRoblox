@@ -3341,6 +3341,8 @@ Balance.S91 = {
 		{ classId = "Warrior", key = "berserker.fury" },
 		-- S143 (session rule 4): the Warrior with Sword and Shield (the one-handed pool) holds the S91 targets of 20 too
 		{ classId = "Warrior", key = "standard.commander" },
+		-- S145 (session rule 4): the Inquisitor plays the Mace and Flail pool (a mace); the light pool's T-SK5 at 20 is a
+		-- row of Balance.targetsS145
 		{ classId = "Cleric", key = "inquisitor.solo" },
 		-- S144 (session rule 4): the Hunter with a bow (the Bow pool: the Marksman's longbow, the Trapper with a bow) and
 		-- with a crossbow (the Crossbow pool: the Trapper's crossbow, the Marksman with the heavy crossbow)
@@ -3378,6 +3380,11 @@ Balance.S91 = {
 		"heavyBolt",
 		"arrowRain",
 		"piercingArrow",
+		-- S145: unlock 1 / 3, ranks 5 at 17 / 19 (the Cleric's pools: Light Ray and Radiance on the Healer, Consecrate on
+		-- the Inquisitor)
+		"lightRay",
+		"radiance",
+		"consecrate",
 	},
 	-- PATH_TARGETS ids whose row at 20 is a target of the 1-20 table (E9): T-SK3 and the solo pace of support and
 	-- tank paths; every other row at 20 is printed (bands written for 45-100)
@@ -4178,6 +4185,109 @@ function Balance.targetsS144(): { TargetRow }
 			`S144.hunter.r7.crossbow.{L}`,
 			`R7 Łowca z kuszą / Wojownik dwuręczny: jeden cel L{L}`,
 			mc.single60 / math.max(1e-9, mw.single60),
+			nil,
+			nil,
+			L
+		)
+	end
+	return rows
+end
+
+-- S145 (D, DESIGN-18 §6.4): the Cleric's two pools ---------------------------------------------------------------
+
+-- Thresholds of the Cleric's pool identity (DESIGN-18 §6.4, §13; test data, never game numbers). The R1 of the hammer
+-- pool at 20 is in the block "Balance 1-20: S91" (session rule 4); the light pool's T-SK5 at 20 is asserted here, every
+-- other row is printed and asserted by S146.
+Balance.S145 = {
+	levels = { 20, 45, 70, 100 },
+	-- the light pool (the dungeon Healer, a scepter) and the hammer pool (the Inquisitor, a mace)
+	light = "healer.dungeon",
+	hammer = "inquisitor.solo",
+	fortune = "fortune.plunder",
+	-- T-SK5 at 20 (session rule 4): not below the S91 value (0.221, G10 printed since S91) and within the S87 band's top
+	tsk5At20 = { 0.22, 0.35 },
+	-- the reference: the model before S145 (commit S144: the Cleric's builds unchanged since S138), the light pool's heal
+	-- per second on the tank of the level's boss (healerVsBoss) and the hammer pool's damage on one target 60 s; both
+	-- within ±10 % (§6.4, S146)
+	before = {
+		hps = { [20] = 62.01, [45] = 487.53, [70] = 1382.92, [100] = 2642.37 },
+		single = { [20] = 227.17, [45] = 1581.53, [70] = 3948.49, [100] = 8497.83 },
+	},
+	identity = { 0.9, 1.1 },
+	-- R7 (S89): the Cleric's / the Warrior's damage on one target (the hammer pool against the Berserker)
+	warrior = "berserker.fury",
+}
+
+-- S145: the Cleric's identity rows (ids "S145.cleric.*"); balance.spec ("Balance S145: Cleric pools") asserts the T-SK5
+-- row at 20, prints the rest and checks they exist; those rows carry report = "S146" (DESIGN-18 §13).
+function Balance.targetsS145(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S145
+	local SkillModel = (require :: any)("./SkillModel")
+	local function add(
+		id: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		L: number,
+		asserted: boolean?
+	)
+		target(rows, id, "cleric", label, value, low, high, "Cleric", L)
+		if not asserted then
+			rows[#rows].report = "S146"
+		end
+	end
+	local light = SkillModel.build(S.light, "Cleric")
+	local hammer = SkillModel.build(S.hammer, "Cleric")
+	local fortune = SkillModel.build(S.fortune, "Cleric")
+	local warrior = SkillModel.build(S.warrior, "Warrior")
+	for _, L in S.levels do
+		local tsk5 = SkillModel.oneHeal(light, L, SkillModel.defenderTank(L))
+		local band = if L == 20 then S.tsk5At20 else SkillModel.TSK5_BAND
+		add(
+			`S145.cleric.tsk5.{L}`,
+			`T-SK5 berło (Uzdrowiciel lochowy) na Obrońcy L{L}`,
+			tsk5,
+			band[1],
+			band[2],
+			L,
+			L == 20
+		)
+		local vsBoss = SkillModel.healerVsBoss(light, SkillModel.BOSS_AT[L])
+		if L > 20 then
+			add(`S145.cleric.tsk6.{L}`, `T-SK6 berło na {vsBoss.bossId} L{L}`, vsBoss.tsk6, 1.0, 2.0, L)
+		end
+		add(
+			`S145.cleric.light.hps.{L}`,
+			`Berło: leczenie na sekundę / Uzdrowiciel sprzed S145 L{L}`,
+			vsBoss.hps / math.max(1e-9, S.before.hps[L]),
+			S.identity[1],
+			S.identity[2],
+			L
+		)
+		local mh = SkillModel.metrics(hammer, L)
+		add(
+			`S145.cleric.hammer.single.{L}`,
+			`Buzdygan: jeden cel 60 s / Inkwizytor sprzed S145 L{L}`,
+			mh.single60 / math.max(1e-9, S.before.single[L]),
+			S.identity[1],
+			S.identity[2],
+			L
+		)
+		local mw = SkillModel.metrics(warrior, L)
+		add(
+			`S145.cleric.r7.{L}`,
+			`R7 Kapłan z buzdyganem / Wojownik dwuręczny: jeden cel L{L}`,
+			mh.single60 / math.max(1e-9, mw.single60),
+			nil,
+			nil,
+			L
+		)
+		add(
+			`S145.cleric.fortune.{L}`,
+			`Kapłan Fortuny z buzdyganem / Inkwizytor: jeden cel L{L}`,
+			SkillModel.metrics(fortune, L).single60 / math.max(1e-9, mh.single60),
 			nil,
 			nil,
 			L
@@ -6903,6 +7013,42 @@ do
 		}
 	do
 		add(key, "S144", reworkWhy)
+	end
+	-- S145 (DESIGN-18 §0.4, session rule 5): the Cleric's two pools (Scepter and Staff, Mace and Flail), the common skills
+	-- and the directions' new nodes and keystone. The Inquisitor's area guards (T-SK3 on the Frozen Peaks) rise with Holy
+	-- Nova (26) and Hammer of Heaven (60) in one pool; T-SK5 of the dungeon Healer from 95 rises with Grace, Miracle and
+	-- Guiding Light (the light pool's passives); the Priest of Fortune with a mace heals less than the Healer from 70
+	-- (the light pool's heal passives are not his); the lone Healer with the holy staff has the light pool's damage only
+	-- (cleric.solo at 100); the Inquisitor / Fury at 45 with Brand of Light and Judgement in one pool. Only Cleric rows;
+	-- docs/SESJE.md S145 lists them. S146 brings them back. Never a row of 1-20.
+	for _, key in
+		{
+			"E4.tsk5|T-SK5 healer.dungeon na guardian.defender · L100",
+			"G10|T-SK5 Cleric healer.dungeon na guardian.defender 95",
+			"G10|T-SK5 Cleric healer.dungeon na guardian.defender 100",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.80",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.85",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.90",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.95",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.99",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.100",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.80",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.85",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.90",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.95",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.99",
+			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.100",
+			"R.frostpeak.tsk5.95",
+			"R.frostpeak.tsk5.99",
+			"R.frostpeak.tsk5.100",
+			"path.fortune.plunder.L100.fortune.healLess",
+			"path.fortune.plunder.L70.fortune.healLess",
+			"path.healer.dungeon.L100.healer.tsk5",
+			"path.healer.solo.L100.cleric.solo",
+			"path.inquisitor.solo.L45.inquisitor.ratio",
+		}
+	do
+		add(key, "S145", reworkWhy)
 	end
 end
 

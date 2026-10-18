@@ -191,7 +191,7 @@ Wspólne klasy (w każdej puli tej klasy): `C1` 4 (ruch / znak klasy), `C2` 12, 
 
 - Na 20. poziomie pula ma 7 aktywnych i 1 pasywkę (S1, A1, C1, K1, O1, C2, S2, P1); limity rang na 20. dają razem 28
   rang przy 27 punktach (S137: `bonus` 7). Od 40. aktywnych jest więcej niż 8 miejsc na pasku (12 + do 2 z kierunków).
-- Test (`tests/skillpools.spec.luau`): każda pula klasy bez `transitional` ma dokładnie jedną umiejętność na każdy kod
+- Test (`tests/skillpools.spec.luau`): każda pula każdej klasy (S145: pole `transitional` usunięte) ma dokładnie jedną umiejętność na każdy kod
   `LADDER` z `unlock` równym poziomowi kodu (pasywki `type = "passive"`, `maxLevel = 5`), wspólne klasy dokładnie po
   jednej na `COMMON_LADDER`; analogiczna rola ma ten sam poziom we wszystkich pulach wszystkich klas.
 - Pole `SkillDef.role` (`"S1"`…`"U"`, `"C1"`…`"C4"`) i `SkillDef.pool`. Umiejętności kierunków: `path` jak dziś, bez
@@ -322,7 +322,7 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | K1 6 | Oślepienie `blindingLight` (nowa; chybienia wrogów 3 s) | Kajdany Światła `holyChains` (nowa; unieruchomienie) |
 | O1 10 | Tarcza Wiary `shieldOfFaith` (istn.) | Aura Wytrwałości `auraOfEndurance` (istn.) |
 | S2 15 | Odnowa `renew` (istn.) | Piętno Światła `brandOfLight` (istn.) |
-| P1 20 | Łaska `grace` (nowa; krytyczne leczenie, premia przy niskim HP) | Boski Gniew `divineWrath` (istn.) |
+| P1 20 | Łaska `grace` (nowa; leczenie +7–12%, krytyczne leczenie, premia przy niskim HP) | Boski Gniew `divineWrath` (istn.) |
 | A2 26 | Sanktuarium `sanctuary` (istn.) | Święty Wybuch `holyNova` (nowa; krąg obrażeń i małe leczenie drużyny) |
 | K2 33 | Oczyszczenie `purify` (istn.) | Upomnienie `rebuke` (nowa; odrzut i przerwanie) |
 | S3 40 | Cud `miracle` (nowa; wielkie leczenie jednego celu) | Sąd `judgement` (istn.) |
@@ -335,6 +335,18 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   Kapłan Fortuny (Rzut Kośćmi `fortuneDice` w 4, Koło Fortuny `wheelOfFortune` w 8; węzły szczęścia zachowują wymóg
   `relic`), Inkwizytor (bez węzłów `skill`).
 - Cel (S146): T-SK5 i T-SK6 dla `light` jak dziś Uzdrowiciel, `hammer` obrażenia jak Inkwizytor (R1, R7).
+- S145 (stan): obie pule według tabeli, wspólne Leczenie 4, Krąg Światła 12, Wskrzeszenie 30, Pobożność 45 (wersja
+  puli 3). Berło i Kostur: Promień Światła leczy najbardziej rannego sojusznika (solo rzucającego) 25% trafienia,
+  Łaska daje też leczenie +7–12% (to, co Pobożność dawała do 45.: T-SK5 na 20. 0,221), Światło Przewodnie zostawia
+  tarczę 10–20% przywróconego HP (najwyżej 20% maks. HP celu). Buzdygan i Kiścień: Kajdany Światła unieruchamiają
+  (bossowie i Elity II: spowolnienie, `Logic/Snare`), Święty Wybuch leczy drużynę w kręgu w tym samym rzucie,
+  Upomnienie przerywa kanał gracza-wroga (nigdy bossa), Gorliwość skraca odnowienia tylko umiejętności puli `hammer`
+  (`Logic/Faith`). Kierunki: Uzdrowiciel Modlitwa (rząd 4, kości 5B bez Rzutu Kośćmi) i Boska Interwencja (8), Fortuna
+  Rzut Kośćmi (4) i Koło Fortuny (8) ze szczęściem tylko w węzłach `luck` (relikwiarz poza rzędami 1–2), Inkwizytor bez
+  umiejętności: zwieńczenie `keystone` Wędrujące Piętno (podpalenie umiejętności piętna przeskakuje na drugiego wroga
+  60%, światło +5%). Koniec stanu przejściowego wszystkich klas (`transitional` usunięte z danych, logiki i okna).
+  Po S145 (raport `S145.cleric.*`): `hammer` / Inkwizytor sprzed S145 w jeden cel 1,02–1,06, `light` leczenie na
+  sekundę / Uzdrowiciel sprzed S145 0,97–1,23 (45: 1,12, 100: 1,23; S146).
 
 ## 7. Kierunki (dawne ścieżki)
 
@@ -351,8 +363,8 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   węzłom: szczęście Fortuny w rzędach 4–10 i Rzeź).
 - **Węzły `skill`:** najwyżej dwa na kierunek, w rzędach 4 i 8 (`Paths.SKILL_ROWS = { 4, 8 }`); dają umiejętność
   klasy, którą można włożyć na pasek każdej puli. Rangi tej umiejętności kupuje się punktami umiejętności **w każdej
-  puli osobno** (jak wspólne). Do czasu sesji klasy dzisiejsze węzły `skill` w innych rzędach zostają (stan
-  przejściowy).
+  puli osobno** (jak wspólne). S145: stan przejściowy skończony, `paths.spec` sprawdza `SKILL_ROWS` dla każdej klasy
+  bez wyjątków; zwieńczenie bez umiejętności to węzeł `keystone`.
 - **Węzły `modify`:** działają, gdy zmieniana umiejętność jest w aktywnej puli albo z kierunku; węzeł, którego
   umiejętność zniknęła z gry, sesja klasy zastępuje innym (test: każdy `modify.skill` istnieje).
 - **Kierunek przewodni** (`Paths.mainOf(character)`, czysta funkcja): kierunek z największą liczbą punktów, co najmniej
@@ -379,7 +391,7 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | Moduł | Zawartość |
 |---|---|
 | `Data/SkillPools/init.luau` (nowy) | `LADDER`, `COMMON_LADDER` (§5), `byClass`, `get(classId)` |
-| `Data/SkillPools/<Klasa>.luau` (nowy) | `{ version, transitional?, defaultPool, pools = { { id, nameKey, glyph, weapon = { main = { typy }, element? }, plan = { skillId } } }, commonPlan }` |
+| `Data/SkillPools/<Klasa>.luau` (nowy) | `{ version, defaultPool, pools = { { id, nameKey, glyph, weapon = { main = { typy }, element? }, plan = { skillId } } }, commonPlan }` |
 | `Data/Skills/Types` | `SkillDef.pool: string?` (`"common"` albo id puli), `SkillDef.role: string?` |
 | `Data/Progression` | `skillPoints = { perLevel }`, `freeRespecLevel`, `rankRefundGold` |
 | `Config.SkillPools` | `swapLock` (s) |

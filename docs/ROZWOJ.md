@@ -793,6 +793,8 @@ czekają na koniec przebudowy, więc nie robią ich wcześniej; jeśli któryś 
 
 ## 9. Kapłan (Mana): Uzdrowiciel, Kapłan Fortuny, Inkwizytor
 
+> Podstawa i umiejętności Kapłana: DESIGN-18 §6.4 (S145).
+
 Id ścieżek: `healer`, `fortune`, `inquisitor`. Dane: `Data/Skills/Cleric.luau`, `Data/Paths/Cleric.luau`.
 
 ### 9.0 W skrócie

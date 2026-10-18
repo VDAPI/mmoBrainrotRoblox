@@ -130,7 +130,8 @@ T.describe("Data: Skills", function()
 		local steel = SkillData.get("steelSkin") :: any
 		T.expect(Skills.valueAt(steel, "armor", 5)).toBe(25)
 		local res = SkillData.get("resurrection") :: any
-		T.expect(Skills.scaled(res, res.cooldown, 1)).toBe(120)
+		-- S145: rank 1 at 30 (C3) = the old rank 6 at 30
+		T.expect(Skills.scaled(res, res.cooldown, 1)).toBe(86.67)
 		T.expect(Skills.scaled(res, res.cooldown, 10)).toBe(60)
 	end)
 
@@ -1015,8 +1016,10 @@ T.describe("S69 Cleric heals and B options", function()
 		T.expect(Skills.valueAt(aa, "shieldHp", 10)).toBeNear(21)
 		T.expect(behaviourA.secondTarget).toBe(50)
 		T.expect(Skills.scaled(aa, aa.duration, 10)).toBeNear(8)
+		-- S145: unlock 10 (was 18), rank 3 (level 18) keeps the old rank 1 (Data/SkillCurves)
 		local four = Skills.effective(sof, 4, nil, nil, true)
-		T.expect(Skills.valueAt(four, "shieldHp", 4)).toBeNear(12 + 6 * 3 / 9)
+		T.expect(Skills.valueAt(four, "shieldHp", 4)).toBeNear(12 + 6 * 1 / 7)
+		T.expect(Skills.valueAt(sof, "shieldHp", 3)).toBeNear(12)
 	end)
 
 	T.it("healAmount: target HP plus magic part, old data as before", function()
@@ -1063,13 +1066,15 @@ T.describe("S70 new Cleric actives", function()
 	local function skill(id: string): SkillData.SkillDef
 		return SkillData.byId[id]
 	end
+	-- S145 (DESIGN-18 §6.4): Sanctuary and Guardian Angel are the light pool's, Brand of Light and Hammer of Heaven the
+	-- hammer pool's; the dice and the wheel stay Fortune's
 	local PATHS = {
-		sanctuary = "healer",
-		guardianAngel = "healer",
+		sanctuary = "light",
+		guardianAngel = "light",
 		fortuneDice = "fortune",
 		wheelOfFortune = "fortune",
-		brandOfLight = "inquisitor",
-		hammerOfHeaven = "inquisitor",
+		brandOfLight = "hammer",
+		hammerOfHeaven = "hammer",
 	}
 
 	T.it("paths, delivery, ranks and breakpoints A and B per ROZWOJ 9.3–9.5", function()
@@ -1083,7 +1088,7 @@ T.describe("S70 new Cleric actives", function()
 		}
 		for id, path in PATHS do
 			local def = skill(id)
-			T.expect({ id, def.class, def.path, def.maxLevel, def.delivery ~= nil })
+			T.expect({ id, def.class, def.path or def.pool, def.maxLevel, def.delivery ~= nil })
 				.toEqual({ id, "Cleric", path, 10, true })
 			for at, pair in keys[id] do
 				local bp: any = (def.breakpoints :: SkillData.Breakpoints)[at]
@@ -1183,17 +1188,18 @@ T.describe("S71 Cleric base and paths", function()
 	local SCEPTER = { main = "scepter", offhand = "shield" }
 	local RELIC = { main = "mace1h", offhand = "relic" }
 
-	T.it("base 8 on levels 1-45, path skills on their rows, A and B everywhere", function()
-		local unlocks, passives = {}, 0
+	-- S145 (DESIGN-18 §6.4, §7): two pools of 11 and the four common skills (the ladder: tests/skillpools.spec), the
+	-- direction skills only in rows 4 and 8 (26, 60)
+	T.it("pools and directions (S145): direction skills on rows 4 and 8, A and B everywhere", function()
+		local passives = 0
 		local actives = 0
 		for _, def in SkillData.byClass.Cleric do
 			if def.path == nil then
-				table.insert(unlocks, def.unlock)
 				if def.type == "passive" then
 					passives += 1
 				end
 			else
-				T.expect({ def.id, table.find({ 10, 26, 48, 60 }, def.unlock) ~= nil }).toEqual({ def.id, true })
+				T.expect({ def.id, table.find({ 26, 60 }, def.unlock) ~= nil }).toEqual({ def.id, true })
 			end
 			if def.type ~= "passive" then
 				actives += 1
@@ -1203,15 +1209,14 @@ T.describe("S71 Cleric base and paths", function()
 				end
 			end
 		end
-		table.sort(unlocks)
-		T.expect(unlocks).toEqual({ 1, 3, 6, 10, 14, 18, 30, 45 })
-		T.expect(passives <= 2).toBe(true)
-		T.expect(actives).toBe(18)
+		T.expect(passives).toBe(5)
+		T.expect(actives).toBe(25)
 	end)
 
 	T.it("base damage (ROZWOJ 9.2) and the 15.2 defaults", function()
 		-- S91: Holy Strike rank 1 190 -> 167 (ranks <= 20, rank 6 pinned)
-		for id, pair in { holyStrike = { 167, 340 }, radiance = { 130, 240 }, judgement = { 320, 580 } } do
+		-- S145: Radiance from 3 (rank 1 120) and Judgement from 40 (rank 1 300; Data/SkillCurves keeps the old levels)
+		for id, pair in { holyStrike = { 167, 340 }, radiance = { 120, 240 }, judgement = { 300, 580 } } do
 			T.expect({ id, Skills.valueAt(skill(id), "dmg", 1), Skills.valueAt(skill(id), "dmg", 10) })
 				.toEqual({ id, pair[1], pair[2] })
 		end
@@ -1256,7 +1261,7 @@ T.describe("S71 Cleric base and paths", function()
 		T.expect(categories.allyAttack.magAtk ~= nil).toBe(true)
 		T.expect(Skills.valueAt(def, "mresBp", 10)).toBe(10)
 		T.expect(Skills.valueAt(def, "atkBp", 10)).toBe(6)
-		T.expect(Skills.valueAt(def, "hp", 10)).toBe(15)
+		T.expect(Skills.valueAt(def, "hp", 10)).toBe(12) -- S145: { 5, 15 } -> { 4, 12 } (the hammer pool's O1 from 10)
 		T.expect((def.effects :: any)[1].stats.maxHp).toBe("hp")
 	end)
 

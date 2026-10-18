@@ -1299,28 +1299,30 @@ T.describe("Data: Paths (game)", function()
 		end
 	end)
 
-	-- S138 (DESIGN-18 §7): skill nodes sit in SKILL_ROWS, at most one per row of a direction; asserted only for classes
-	-- whose pools are no longer transitional (the class sessions S140-S145 move them out of rows 1, 7 and 10)
-	T.it("skill nodes in SKILL_ROWS for classes past their transitional pools", function()
+	-- S138 (DESIGN-18 §7): skill nodes sit in SKILL_ROWS, at most one per row of a direction. S145: every class (the
+	-- end of the transitional pools), no exceptions; every skill of a skill node is a direction skill (`path`, no pool)
+	T.it("skill nodes in SKILL_ROWS for every class (S145)", function()
 		local checked = 0
 		for _, classId in Classes.order do
-			if not SkillPools.isTransitional(classId) then
-				for _, path in GamePaths.pathsOf(classId) do
-					for r, row in path.rows do
-						local count = 0
-						for _, n in row.nodes do
-							count += if n.kind == "skill" then 1 else 0
+			for _, path in GamePaths.pathsOf(classId) do
+				for r, row in path.rows do
+					local count = 0
+					for _, n in row.nodes do
+						if n.kind == "skill" then
+							count += 1
+							local def = SkillData.get(n.skill :: string) :: any
+							T.expect({ n.id, def.path, def.pool }).toEqual({ n.id, path.id, nil })
 						end
-						if count > 0 then
-							checked += 1
-							T.expect({ path.id, r, table.find(PathData.SKILL_ROWS, r) ~= nil, count <= 1 })
-								.toEqual({ path.id, r, true, true })
-						end
+					end
+					if count > 0 then
+						checked += 1
+						T.expect({ path.id, r, table.find(PathData.SKILL_ROWS, r) ~= nil, count <= 1 })
+							.toEqual({ path.id, r, true, true })
 					end
 				end
 			end
 		end
-		T.expect(checked >= 0).toBe(true)
+		T.expect(checked > 0).toBe(true)
 	end)
 
 	T.it("texts, rule A, team nodes and reference builds", function()

@@ -1,7 +1,7 @@
 --!strict
 -- Weapon pools of every class (S137, DESIGN-18 §4, §5, §9): the equipped weapon selects the pool, each pool has its
 -- own skill points, ranks and 8-slot bar. LADDER / COMMON_LADDER = the shared ladder (the same role unlocks at the
--- same level in every pool of every class); a class with `transitional` does not follow it yet (tests/skillpools.spec).
+-- same level in every pool of every class; S145: every class follows it, tests/skillpools.spec).
 -- Rules: Logic/SkillPools, Logic/SkillPoints.
 
 local Cleric = require("@self/Cleric")

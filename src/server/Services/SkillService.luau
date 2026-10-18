@@ -31,6 +31,10 @@
 -- S140 (DESIGN-18 §6.1): Phoenix Heart is a damage filter (FilterPriority.phoenixHeart, before Guardian Angel): a lethal
 -- blow leaves 1 HP once per the passive's rest (hook phoenixRest; Logic/Burn.phoenixSave; the ready time lives on the
 -- server only, never in the save), then invulnerability (phoenixInvuln) and a fire blast around the player.
+-- S145 (Logic/Faith, DESIGN-18 §6.4): Zeal (hook `zeal`) after an offensive cast of a Mace and Flail skill takes its
+-- seconds off the running cooldowns of the pool's other skills; services.Interrupt (Rebuke) ends a player's channel with
+-- Logic/Channel event "interrupt". Prayer's 5B dice need no Roll of the Dice node (prayerDice reads the skill's rank limit
+-- at the level, the Healer has Prayer since S145).
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -44,6 +48,7 @@ local Banner = require(script.Parent.Parent.Skills.Banner)
 local Burn = require(Shared.Logic.Burn)
 local Channel = require(Shared.Logic.Channel)
 local Crossbow = require(Shared.Logic.Crossbow)
+local Faith = require(Shared.Logic.Faith)
 local Combat = require(Shared.Data.Combat)
 local Companion = require(script.Parent.Parent.Skills.Companion)
 local Context = require(script.Parent.Parent.Skills.Context)
@@ -1034,6 +1039,25 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 				publishCooldowns(player)
 			end
 		end
+		-- S145 Zeal (Logic/Faith.zealCut): an offensive cast of a Mace and Flail skill shortens the running cooldowns of
+		-- the pool's other skills
+		local zealCut = if offensive and not rt.noCooldowns
+			then Faith.zealCut(skill.pool, SkillService.PassiveHook(player, "zeal"))
+			else 0
+		if zealCut > 0 then
+			local at = now()
+			local shortened = false
+			for id, ready in rt.cooldowns do
+				local def = SkillData.get(id)
+				if id ~= skillId and def and Faith.zealShortens(def.pool) and ready > at then
+					rt.cooldowns[id] = math.max(at, ready - zealCut)
+					shortened = true
+				end
+			end
+			if shortened then
+				publishCooldowns(player)
+			end
+		end
 	end
 
 	if skill.type == "channel" then
@@ -1241,6 +1265,16 @@ function SkillService.Init(registry)
 		Zone = ZoneService,
 		Fx = sendFx,
 		Beam = startBeam, -- S80
+		-- S145 (Rebuke): an enemy's hit ends `target`'s channel, aim or beam (Logic/Channel "interrupt")
+		Interrupt = function(target: Player): boolean
+			local rt = runtimes[target]
+			local channel = rt and rt.channel
+			if not channel or not (Channel.stops(channel.kind, "interrupt", channel.def)) then
+				return false
+			end
+			closeChannel(target, false, "cast.interrupted", false)
+			return true
+		end,
 		Toast = function(p: Player, key: string, args: { [string]: any }?, kind: string?)
 			Net.Fire(p, "Toast", key, args, kind)
 		end,

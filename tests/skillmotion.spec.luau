@@ -1100,4 +1100,32 @@ describe("Hunter and Mage looks (S115)", function()
 	end)
 end)
 
+-- S145 (DESIGN-18 §6.4): the Cleric pools' new skills: a motion from the Cleric's S114 motions (a variant), a look in
+-- three layers, the breakpoint texts and an own sound key; the passives have neither motion nor look.
+describe("Cleric pools (S145)", function()
+	local Sfx = require("../src/shared/Data/Sfx")
+	local NEW = { "lightRay", "blindingLight", "miracle", "consecrate", "holyChains", "holyNova", "rebuke" }
+
+	it("motion, look, texts and sound of the seven new actives", function()
+		for _, id in NEW do
+			local motion = SkillMotions.get(id)
+			expect({ id, motion ~= nil, SkillVfx[id] ~= nil, Sfx.has(`skill.{id}`) }).toEqual({ id, true, true, true })
+			for _, suffix in { "name", "short", "desc", "bp5", "bp5b", "bp10", "bp10b" } do
+				local key = `skill.{id}.{suffix}`
+				expect({ key, (pl :: any)[key] ~= nil, (en :: any)[key] ~= nil }).toEqual({ key, true, true })
+			end
+		end
+		for _, id in { "grace", "guidingLight", "zeal" } do
+			expect({ id, SkillMotions.get(id), SkillVfx[id] }).toEqual({ id, nil, nil })
+		end
+	end)
+
+	it("Light Ray leaves the hand at its release; Miracle holds the prayer over its cast time", function()
+		local ray: any = assert(SkillMotions.get("lightRay"))
+		expect(ray.release ~= nil).toBe(true)
+		local miracle: any = assert(SkillMotions.get("miracle"))
+		expect(miracle.loop ~= nil).toBe(true)
+	end)
+end)
+
 return nil

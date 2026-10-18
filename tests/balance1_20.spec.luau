@@ -10,7 +10,8 @@
 -- moved; S134i: the Meadows' Elite II hideouts, new rows only; S140: the Mage's fire pool, Mage keys only; S141: the
 -- Mage's ice pool, Mage keys only; S142: the Mage's lightning pool, Mage keys and Grimrok's parties without
 -- support; S143: the Warrior's pools, Warrior keys and the rows holding a Warrior; S144: the Hunter's pools, Hunter keys
--- and the rows holding a Hunter). Full list of the differences: build/balance1_20_diff.txt.
+-- and the rows holding a Hunter; S145: the Cleric's pools, Cleric keys and the rows holding a Cleric). Full list of the
+-- differences: build/balance1_20_diff.txt.
 -- Can be required from a small runner (no process.exit).
 
 local fs = require("@lune/fs")
@@ -75,9 +76,12 @@ T.describe("Balance 1-20 fixture (S83; strict from S91)", function()
 	-- S144: the Hunter's two pools (Bow, Crossbow), the common skills and the directions' nodes: 417 changed rows, all
 	-- in the Hunter's keys or in rows that hold a Hunter (Grimrok's parties, the W + M + Ł + K parties of the Elite IIs of
 	-- the Meadows' caves and hideouts); docs/DECYZJE.md S144
-	T.it("the fixture is the S144 baseline (the Hunter's pools)", function()
+	-- S145: the Cleric's two pools (Scepter and Staff, Mace and Flail), the common skills and the directions' nodes: 274
+	-- changed entries (67 rows), all in the Cleric's keys or in rows that hold a Cleric (T-SK6 of Grimrok, Grimrok's
+	-- parties, the W + M + Ł + K parties of the Elite IIs of the Meadows' caves); docs/DECYZJE.md S145
+	T.it("the fixture is the S145 baseline (the Cleric's pools)", function()
 		local file = BalanceTables.readFixture()
-		T.expect(file and file.meta and file.meta.session).toBe("S144")
+		T.expect(file and file.meta and file.meta.session).toBe("S145")
 	end)
 
 	T.it("every fixture key is still in the 1-20 tables", function()

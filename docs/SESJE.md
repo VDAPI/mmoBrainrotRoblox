@@ -12310,3 +12310,75 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/{crossbow,balance,balance1_20,character,itemeffects,paths,skillmotion,skillpools,skills}.spec.luau`,
   `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`,
   `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S145: Kapłan, pule i kierunki
+
+- **Dwie pule Kapłana** (`Data/Skills/Cleric`, `pool`, `role`; DESIGN-18 §6.4). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Berło i Kostur `light` | Buzdygan i Kiścień `hammer` |
+  |---|---|---|
+  | S1 · 1 | Promień Światła `lightRay` (pocisk) 142 / 289%, 25% trafienia leczy najbardziej rannego (solo siebie), 12 many, 3 s; leczenie +10 / +30; +60 / rozbłysk 40% | Święte Uderzenie (167 / 340%, węzły rang 5–6 190 / 240) |
+  | A1 · 3 | Światłość (było 6; 120 / 240%, węzły rang 5–6) | Poświęcona Ziemia `consecrate` 4 fale 34 / 70% w r 6, 25 many, 10 s; r +2 / +6; spowolnienie 30% / +1 fala |
+  | K1 · 6 | Oślepienie `blindingLight` stożek 60 / 110%, chybienia 15% na 3 s (`enemyMiss`), 25 many, 12 s; +1 s / +14; ×0,8 odnowienia / stożek +60° | Kajdany Światła `holyChains` 70 / 130%, unieruchomienie 2 s (bossowie i Elity II: spowolnienie 40%), 25 many, 12 s; +0,5 s / +14; ×0,8 odnowienia / podatność 8% |
+  | O1 · 10 | Tarcza Wiary (było 18; węzeł rangi 3 = dawna ranga 1) | Aura Wytrwałości (było rząd 7 Inkwizytora) |
+  | S2 · 15 | Odnowa (było rząd 1 Uzdrowiciela) | Piętno Światła (było rząd 4 Inkwizytora; węzeł rangi 4 = dawna ranga 1) |
+  | P1 · 20 | Łaska `grace`: leczenie +7 / 12%, krytyczne leczenie 20 / 60% szansy na krytyk, +10 / 30% poniżej 35% HP | Boski Gniew (było 30; węzeł rangi 2) |
+  | A2 · 26 | Sanktuarium (było rząd 4 Uzdrowiciela) | Święty Wybuch `holyNova` r 8 120 / 200% i leczenie drużyny w kręgu 3 / 5% HP + 3 / 5% magii, 45 many, 14 s; r +2 / leczenie +1; echo 22% / +44 |
+  | K2 · 33 | Oczyszczenie (było rząd 1 Inkwizytora) | Upomnienie `rebuke` stożek 90 / 160%, odrzut 8, przerwanie kanału gracza (nie bossa), 30 many, 16 s; r +2 / +18; ogłuszenie 0,8 s / ×0,8 odnowienia |
+  | S3 · 40 | Cud `miracle` 26 / 32% HP celu + 13 / 18% magii, modlitwa 1,2 s, 40 many, 15 s; +4 / −0,4 s; drugi cel 50% / +8 | Sąd (było 45; węzeł rangi 2) |
+  | P2 · 50 | Światło Przewodnie `guidingLight`: tarcza 10 / 20% przywróconego HP (najwyżej 20% maks. HP, 6 s) | Gorliwość `zeal`: atak puli skraca odnowienia innych umiejętności puli o 0,3 / 0,8 s |
+  | U · 60 | Anioł Stróż (było zwieńczenie Uzdrowiciela) | Młot Niebios (było zwieńczenie Inkwizytora) |
+
+- **Wspólne Kapłana:** Leczenie C1 4 (było 3), Krąg Światła C2 12 (było 14; węzeł rangi 3), Wskrzeszenie C3 30 (było
+  rząd 1 Fortuny; ranga 1 42,2% HP, 86,7 s), Pobożność C4 45 (było 10; ranga 1 = dawna ranga 4). `SkillPools/Cleric`
+  z planami według drabiny, `version` 3.
+- **Kierunki** (węzły `skill` tylko w rzędach 4 i 8): Uzdrowiciel z Modlitwą w 4 i Boską Interwencją w 8, Kapłan Fortuny
+  z Rzutem Kośćmi w 4 i Kołem Fortuny w 8 (szczęście tylko w węzłach `luck` z relikwiarzem), Inkwizytor bez
+  umiejętności, w rzędzie 8 zwieńczenie `keystone` Wędrujące Piętno (podpalenie Piętna Światła na drugim wrogu 60%,
+  światło +5%). Nowe węzły po umiejętnościach, które poszły do pul: Pocieszenie, Aureola, Czterolistna Koniczyna, Rzut
+  Monetą, Ślub, Przekonanie, Wytrwała Wiara; węzły Łaska i Gorliwość kierunków to teraz Miłosierdzie i Zapał. Modlitwa
+  5B rzuca kośćmi bez węzła Rzut Kośćmi (sprawdzone).
+- **Koniec stanu przejściowego:** `transitional` usunięte z `Data/SkillPools/*`, `Logic/SkillPools`, `PathView`,
+  `SkillsWindow/PoolTree` (bez wiersza przejściowego i tekstu `skills.tree.transitional`), `tools/WikiData/Skills`;
+  `skillpools.spec` sprawdza pełną drabinę każdej puli i wspólnych każdej klasy oraz audyt danych, `paths.spec`
+  `SKILL_ROWS` bez wyjątków. `CLAUDE.md`: punkty „Umiejętność w puli broni”, „Szkoły Kapłana” i poprawka „Ścieżka / węzeł”.
+- **Mechaniki:** `Logic/Faith` (nowy: `mostWounded`, `rayHeal`, `ward`, `zealCut`, `zealShortens`, `brandShare`,
+  `interrupts`; `Data/Skills.FAITH`), `Logic/Channel` (zdarzenie `"interrupt"`). Serwer: `Skills/Context` (leczenie
+  Promienia, przerwanie Upomnienia, `mostWounded` przez `Faith`), `Types/Offense` (Wędrujące Piętno, leczenie Świętego
+  Wybuchu), `Types/Support` (tarcza Światła Przewodniego w `healOne`), `SkillService` (Gorliwość, `services.Interrupt`).
+- **Model:** lustra w `tests/SkillModel` (`Hunt.Faith`: Promień, tarcza, Gorliwość, Wędrujące Piętno, leczenie Wybuchu),
+  buildy z `ranks` i rotacją obu pul (Uzdrowiciel lochowy berłem, samotny kosturem świątynnym, Fortuna i Inkwizytor
+  buzdyganem), R4 nowych (`R4_UTILITY` dla kontroli i geometrii).
+- **Wyniki modelu:** R1 Inkwizytora na 20. 2,09 (pasmo 1,6–2,10), T-SK5 berła na 20. 0,221 (asertowane), T-SK6 Grimroka
+  1,79; R4 na 20.: Promień Światła 5B 0,16, Poświęcona Ziemia 5B 0,12, Święte Uderzenie 5B 0,14. Raport `S145.cleric.*`
+  (asertuje S146) na 20 / 45 / 70 / 100: T-SK5 0,22 / 0,28 / 0,29 / 0,38 (pasmo 0,25–0,35), T-SK6 berła 2,8 / 8,7 / 16,0
+  na 45 / 70 / 100 (cel 1–2), berło leczenie na sekundę / Uzdrowiciel sprzed S145 1,02 / 1,12 / 0,97 / 1,23, buzdygan w
+  jeden cel / Inkwizytor sprzed S145 1,02 / 1,03 / 1,06 / 1,03 (cel ±10%), R7 Kapłan z buzdyganem / Wojownik dwuręczny
+  0,59 / 0,87 / 0,83 / 0,88, Fortuna / Inkwizytor 1,13 / 0,97 / 0,96 / 0,98.
+- **1–20:** fixture przepisany (S145 „pule Kapłana”): 274 wpisy w 67 wierszach z Kapłanem; `ALLOWED_1_20_DIFFS` pusta,
+  blok „Balance 1-20: S91” zielony (R4 na 20. z Promieniem Światła, Światłością i Poświęconą Ziemią).
+- **`GLOBAL_REPORT_ONLY` serii (do S146–S147), 515 kluczy:** S137 77 (wiersze 21–100 po rangach z punktów), S140 77
+  (Mag, ogień), S141 54 (Mag, lód), S142 101 (Mag, błyskawica), S143 79 (Wojownik), S144 107 (Łowca), S145 23 (Kapłan:
+  T-SK3 strażników Szczytów Inkwizytora 80–100, T-SK5 Uzdrowiciela lochowego 95–100 w E4 / G10 / Szczytach, Fortuna leczy
+  mniej na 70 / 100, samotny Uzdrowiciel na 100, Inkwizytor / Furia na 45). Starsze wpisy (S88 285, S91 13, S92 5,
+  S103 4, S134g 12) poza serią.
+- **Wygląd, dźwięk, teksty:** ruchy 7 nowych aktywnych jako warianty ruchów Kapłana (Cud z pętlą modlitwy), `SkillVfx` z
+  istniejących składników (złoto światła, zieleń leczenia, białe światło), klucze `skill.<id>` w `Data/Sfx` bez ID
+  (`hint`); teksty PL / EN: nazwy, `short`, `desc`, przełomy, pola `skills.field.rayHeal|healCrit|lowHeal|ward|zeal`,
+  węzły kierunków, opis Uzdrowiciela; `tests/fixtures/skill_timing.luau` (7 wierszy).
+- **Testy:** nowy `tests/faith.spec.luau` (najbardziej ranny, Promień solo i w drużynie, tarcza z leczenia, Gorliwość
+  tylko `hammer`, Wędrujące Piętno, Upomnienie nie przerywa kanału bossa, Kajdany na bossie, Święty Wybuch w jednym
+  rzucie), `skillpools.spec` (dwie pule Kapłana, pełna drabina wszystkich klas, audyt), `paths.spec` (`SKILL_ROWS` bez
+  wyjątków, `modify` istnieją), `skills.spec`, `character.spec` (migracja 6: pasek puli domyślnej), `itemeffects.spec`,
+  `pathview.spec`, `skillmotion.spec` (blok S145), `balance.spec` (blok S145), `balance1_20.spec` (fixture S145).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Faith.luau` (nowy), `src/shared/Logic/{Channel,PathView,SkillPools}.luau`,
+  `src/shared/Data/Skills/{init,Types,Build,Cleric}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/{init,Types,Cleric,Hunter,Mage,Warrior}.luau`, `Data/Paths/{Cleric,init}.luau`,
+  `Data/Localization/{pl,en}.luau`, `src/server/Services/SkillService.luau`,
+  `src/server/Skills/{Context,Types/Offense,Types/Support}.luau`, `src/client/UI/Screens/SkillsWindow/PoolTree.luau`,
+  `tests/{SkillModel,Balance}.luau`,
+  `tests/{faith,balance,balance1_20,character,itemeffects,paths,pathview,skillmotion,skillpools,skills}.spec.luau`,
+  `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`,
+  `tools/WikiData/Skills.luau`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

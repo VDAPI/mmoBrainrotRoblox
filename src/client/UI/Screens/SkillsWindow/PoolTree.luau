@@ -4,8 +4,8 @@
 -- suggests", "Reset"), the role columns signed above the tree (PC: the role names, phone: small icons with the name
 -- on a long press), one row per rung of the shared ladder with its level on the left, a tile in the column of its role
 -- (analogous skills of every pool stand in one column) and threads joining the tiles of a column; the direction
--- skills in a "From directions" row and, while the pool is transitional (no roles yet), its skills in an "Others" row
--- by unlock above the (empty) ladder. A tile (SkillsWindow/Tile): the picture, ranks "4/10" (with "+1" reserved),
+-- skills in a "From directions" row and a skill without a role (none since S145, every pool is on the ladder) in an
+-- "Others" row under the ladder. A tile (SkillsWindow/Tile): the picture, ranks "4/10" (with "+1" reserved),
 -- a padlock with the level, a gold "!" for a breakpoint to choose or the chosen letters, a green "+" while a rank can
 -- be bought, the bar slot. No description on the tree: the PC hover shows the name and the short sentence, a click
 -- selects (details panel), a tap opens the phone sheet; a bought active of the worn pool drags onto the bar.
@@ -264,14 +264,6 @@ function PoolTree.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 				table.insert(extra, row)
 			end
 		end
-		-- a transitional pool: its skills come first (the ladder stays empty until its class session)
-		if view.transitional then
-			note(Text.get(use, "skills.tree.transitional"))
-			for _, row in extra do
-				extraRow(row)
-			end
-		end
-
 		-- The column heads.
 		local heads: { Instance } = {}
 		for i, column in view.columns do
@@ -400,10 +392,8 @@ function PoolTree.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 			[Children] = parts :: any,
 		}))
 
-		if not view.transitional then
-			for _, row in extra do
-				extraRow(row)
-			end
+		for _, row in extra do
+			extraRow(row)
 		end
 		return out
 	end)

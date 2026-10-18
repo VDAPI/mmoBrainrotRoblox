@@ -5361,3 +5361,52 @@
   Naciągu (Łowczy drużyny z łukiem krótkim na 70.), T2 Trapera na 70 / 100, ścieżki: `marksman.base`, `r5a`,
   `trapper.single` / `aoe` / `r3` / `r5`, `scout.solo`, `r6.scout`. Martwe klucze `kingslayer@longbow+quiver` z S137 i
   S143 usunięte (długi łuk to teraz broń Królobójcy).
+- **S145** Pule Kapłana według drabiny DESIGN-18 §5 / §6.4. Berło i Kostur (`light`, berło i kostur świątynny):
+  Promień Światła S1 1 (nowa), Światłość A1 3 (było 6), Oślepienie K1 6 (nowa), Tarcza Wiary O1 10 (było 18), Odnowa S2
+  15, Łaska P1 20 (nowa), Sanktuarium A2 26, Oczyszczenie K2 33, Cud S3 40 (nowa), Światło Przewodnie P2 50 (nowa), Anioł
+  Stróż U 60. Buzdygan i Kiścień (`hammer`): Święte Uderzenie S1 1, Poświęcona Ziemia A1 3 (nowa), Kajdany Światła K1 6
+  (nowa), Aura Wytrwałości O1 10, Piętno Światła S2 15, Boski Gniew P1 20 (było 30), Święty Wybuch A2 26 (nowa),
+  Upomnienie K2 33 (nowa), Sąd S3 40 (było 45), Gorliwość P2 50 (nowa), Młot Niebios U 60. Wspólne: Leczenie 4 (było 3),
+  Krąg Światła 12 (było 14), Wskrzeszenie 30 (było rząd 1 Fortuny), Pobożność 45 (było 10). `SkillPools/Cleric.version`
+  2 → 3, pula domyślna `hammer` (start `mace1h_1`); tarcza i relikwiarz w drugiej ręce nie zmieniają puli.
+- **S145** Przeniesione umiejętności zachowują liczby na dawnym poziomie (węzły `Data/SkillCurves`: Światłość, Tarcza
+  Wiary, Krąg Światła, Piętno Światła, Boski Gniew, Sąd; ranga 1 po przesunięciu w górę = dawna ranga na nowym poziomie:
+  Wskrzeszenie, Pobożność). Święte Uderzenie ranga 5 226 → 190, ranga 6 273,3 → 240: R1 puli `hammer` na 20. w paśmie
+  S91 z Piętnem Światła od 15. Promień Światła stoi na węzłach Świętego Uderzenia sprzed S145 ×0,85 (ćwierć trafienia leczy).
+- **S145** Łaska poza krytycznym leczeniem i premią poniżej `LOW_HP_HEAL` daje leczenie +7–12%: to, co Pobożność dawała
+  Uzdrowicielowi do 20. przed przeniesieniem na 45 (T-SK5 na 20. 0,221 jak w S91). Oślepienie: `misfortune` w kategorii
+  `enemyMiss`, więc 15% chybień zamiast 30% z tabeli (limit kategorii S61; PvP jak każda kategoria).
+- **S145** Mechaniki w `Logic/Faith` (nowy, stałe `Data/Skills.FAITH`): najbardziej ranny sojusznik (`mostWounded`, też
+  serwerowe `Context.mostWounded`), Promień Światła leczy 25% trafienia najbardziej rannego w `WOUNDED_RADIUS` (solo
+  rzucającego), Światło Przewodnie zostawia tarczę 10–20% przywróconego HP (najwyżej 20% maks. HP celu, 6 s, jeden wpis
+  `guidingLight`, nie przez `ctx.shield`, bo przywrócone HP ma już premie), Gorliwość skraca odnowienia tylko umiejętności
+  puli `hammer` po rzucie ataku tej puli (0,3–0,8 s). Święty Wybuch to `circleSelf` z `healHp` / `healMag`: pierwsza
+  fala leczy sojuszników w kręgu (`ctx.healAmount`). Kajdany Światła: `root` z `bossSlow` (`Logic/Snare`).
+- **S145** Upomnienie: pole `SkillDef.interrupt`; trafiony gracz-wróg traci kanał, celowanie i wiązkę (`Logic/Channel`
+  zdarzenie `"interrupt"`, `services.Interrupt`). Potwory nie kanałują, a kanał bossa (S134) przerywają tylko obrażenia
+  (`Faith.interrupts` = gracz i nie boss; test).
+- **S145** Kierunki: węzły `skill` tylko w rzędach 4 i 8. Uzdrowiciel: Modlitwa w rzędzie 4 (było Fortuny), Boska
+  Interwencja w 8 (było 7). Fortuna: Rzut Kośćmi 4, Koło Fortuny 8, szczęście tylko w węzłach `luck` z relikwiarzem
+  (bez zmian). Inkwizytor bez umiejętności, w rzędzie 8 zwieńczenie `keystone` Wędrujące Piętno (podpalenie Piętna
+  Światła przeskakuje na najbliższego innego wroga w 8 st. z 60% siły, światło +5%). Umiejętności, które poszły do pul,
+  zostawiły węzły tej samej liczby rang: Pocieszenie (leczenie +2%), Aureola (Krąg Światła +2 st.), Czterolistna
+  Koniczyna (+0,5 pkt krytyka), Rzut Monetą (Wiatr kości +1 pkt), Ślub (światło +1%), Przekonanie (+0,5 pkt krytyka),
+  Wytrwała Wiara (Aura Wytrwałości +1% HP). Węzły „Łaska” Uzdrowiciela i „Gorliwość” Inkwizytora nazywają się teraz
+  Miłosierdzie i Zapał (nazwy wzięły umiejętności pul).
+- **S145** Modlitwa 5B rzuca kośćmi Fortuny bez węzła Rzut Kośćmi: `SkillService.prayerDice` bierze rangę z limitu
+  umiejętności na poziomie (`Skills.rankAt`, najmniej 1), więc działa w Uzdrowicielu (sprawdzone, lustro w modelu).
+- **S145** Model: buildy wzorcowe z `ranks` i rotacją obu pul: Uzdrowiciel lochowy berłem z tarczą, samotny
+  Uzdrowiciel kosturem świątynnym, Kapłan Fortuny buzdyganem z relikwiarzem (wsparcie jak piąty atakujący), Inkwizytor
+  buzdyganem. R1 Inkwizytora na 20. 2,09 (pasmo 1,6–2,10), T-SK5 berła na 20. 0,221 (asertowane, `Balance.targetsS145`).
+  Tożsamość (raport `S145.cleric.*`, asertuje S146): `hammer` / Inkwizytor sprzed S145 w jeden cel 1,02–1,06, `light`
+  leczenie na sekundę / Uzdrowiciel sprzed S145 0,97–1,23 (100: 1,23, ponad ±10%).
+- **S145** Fixture 1–20 przepisany (`fixture S145 "pule Kapłana"`): 274 zmienione wpisy w 67 wierszach, wszystkie w
+  kluczach Kapłana albo w wierszach z Kapłanem (T-SK6 Grimroka, drużyny Grimroka, drużyny W + M + Ł + K Elit II jaskiń
+  Łąk); `ALLOWED_1_20_DIFFS` pusta.
+- **S145** `GLOBAL_REPORT_ONLY` S145 (23 klucze 21–100, „przebudowa umiejętności DESIGN-18, wraca w S146/S147”):
+  T-SK3 strażników Szczytów Inkwizytora (80–100), T-SK5 Uzdrowiciela lochowego na 95–100 (E4, G10, Szczyty), Fortuna z
+  buzdyganem leczy mniej od 70., samotny Uzdrowiciel z kosturem na 100., Inkwizytor / Furia na 45.
+- **S145** Koniec stanu przejściowego: pole `transitional` usunięte z danych, `Logic/SkillPools` (`isTransitional`),
+  `PathView` / okna i eksportu pul do wiki (`tools/WikiData/Skills`); test drabiny i `SKILL_ROWS` obowiązują każdą klasę
+  bez wyjątków, test audytu: każda umiejętność ma pulę albo kierunek, aktywna przełomy A / B, `short`, ruch, wygląd,
+  dźwięk i wiersz `skill_timing`, każdy węzeł `modify` wskazuje istniejącą umiejętność.

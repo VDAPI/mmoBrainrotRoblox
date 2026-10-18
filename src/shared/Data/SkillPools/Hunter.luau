@@ -10,7 +10,6 @@ local pools: Types.ClassPools = {
 	-- S138: 2 (directions without the main path). S144: 3 (both pools on the ladder, the directions' new nodes: a free
 	-- reset, DESIGN-18 §10)
 	version = 3,
-	transitional = false,
 	defaultPool = "bow", -- the starting bow_1
 	pools = {
 		-- S144: the ladder order (DESIGN-18 §5), actives before passives

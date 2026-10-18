@@ -59,11 +59,6 @@ function SkillPools.version(classId: string): number
 	return if pools then pools.version else 0
 end
 
-function SkillPools.isTransitional(classId: string): boolean
-	local pools = classPools(classId)
-	return pools ~= nil and pools.transitional == true
-end
-
 -- The pool of the class for these weapons (DESIGN-18 §4.1): the first pool whose weapon lists the main-hand type and,
 -- when it names an element, has that element; otherwise defaultPool. Unknown class: nil.
 function SkillPools.poolOf(classId: string, weapons: WeaponTypes?, element: string?): string?

@@ -244,6 +244,37 @@ T.describe("Balance S144: Hunter pools", function()
 	end)
 end)
 
+-- S145 (D, DESIGN-18 §6.4): the Cleric's two pools (Balance.targetsS145; the R1 of the hammer pool at 20 is in the block
+-- "Balance 1-20: S91"): the light pool's T-SK5 at 20 asserted; T-SK5 / T-SK6 at 45-100, the identity of the pools (the
+-- light pool's heal per second and the hammer pool's damage against the Cleric before S145), R7 and Fortune printed,
+-- S146 asserts them.
+T.describe("Balance S145: Cleric pools", function()
+	local rows = B.targetsS145()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					error(`{describeRow(row)} (S145)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S145 targets (printed)", function()
+		printReport("S145", rows, 60)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+			T.expect({ row.id, row.report })
+				.toEqual({ row.id, if row.id == "S145.cleric.tsk5.20" then nil else "S146" })
+		end
+		T.expect(ids["S145.cleric.tsk5.20"]).toBe(true)
+		T.expect(ids["S145.cleric.tsk6.70"]).toBe(true)
+		T.expect(ids["S145.cleric.light.hps.45"]).toBe(true)
+		T.expect(ids["S145.cleric.hammer.single.100"]).toBe(true)
+		T.expect(ids["S145.cleric.r7.70"]).toBe(true)
+	end)
+end)
+
 -- S134 (E2): bosses 2.0 (Balance.targetsS134): no party scaling, 5 players beat a boss faster than 3, the big blows
 -- to dodge in their band, the regular hits survivable, the party mechanics, solo loses on equal gear and wins with a
 -- Mythic set +9; every row without `report` asserted (Balance.S134_REPORT prints the rest with the reason).
@@ -1829,7 +1860,8 @@ T.describe("SkillModel: class mechanics (S86)", function()
 	)
 
 	T.it("B1 shields soak damage before HP; heals restore at most the missing HP (retaliate)", function()
-		local cleric = SkillModel.builds("Cleric")[1]
+		-- S145: Shield of Faith is the light pool's O1, so the dungeon Healer (a scepter) casts it (the base plays the mace)
+		local cleric = SkillModel.byKey("healer.dungeon")
 		local L = 45
 		local m = B.monster(B.GENERIC, L)
 		local plain = SkillModel.fight(SkillModel.player(cleric, L), {

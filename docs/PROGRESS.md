@@ -5,7 +5,15 @@
 
 ## Stan
 
-S01–S115 i S117–S144 gotowe (ostatnia S144: Łowca, pule Łuk (Celny Strzał 1, Deszcz Strzał 3, Przyszpilenie 6, Krok
+S01–S115 i S117–S145 gotowe (ostatnia S145: Kapłan, pule Berło i Kostur (Promień Światła 1, Światłość 3, Oślepienie 6,
+Tarcza Wiary 10, Odnowa 15, Łaska 20, Sanktuarium 26, Oczyszczenie 33, Cud 40, Światło Przewodnie 50, Anioł Stróż 60) i
+Buzdygan i Kiścień (Święte Uderzenie 1, Poświęcona Ziemia 3, Kajdany Światła 6, Aura Wytrwałości 10, Piętno Światła 15,
+Boski Gniew 20, Święty Wybuch 26, Upomnienie 33, Sąd 40, Gorliwość 50, Młot Niebios 60), wspólne Kapłana (Leczenie 4,
+Krąg Światła 12, Wskrzeszenie 30, Pobożność 45), `Logic/Faith` (leczenie Promienia, tarcza z leczenia, Gorliwość,
+przerwanie kanału gracza Upomnieniem, nigdy bossa), kierunki: Uzdrowiciel z Modlitwą i Boską Interwencją, Kapłan
+Fortuny z Rzutem Kośćmi i Kołem Fortuny (szczęście w węzłach z relikwiarzem), Inkwizytor ze zwieńczeniem `keystone`
+Wędrujące Piętno; koniec stanu przejściowego wszystkich klas (`transitional` usunięte, drabina i `SKILL_ROWS` bez
+wyjątków); wcześniej S144: Łowca, pule Łuk (Celny Strzał 1, Deszcz Strzał 3, Przyszpilenie 6, Krok
 Wiatru 10, Podwójny Strzał 15, Sokole Oko 20, Salwa 26, Sokół 33, Strzał w Serce 40, Zwinność 50, Strzała Burzy 60) i
 Kusza (Ciężki Bełt 1, Bełt Przebijający 3, Pułapka Lodowa 6, Kamuflaż 10, Zatruta Strzała 15, Zatrute Groty 20, Trujące
 Sidła 26, Sieć 33, Bełt Egzekutora 40, Szybkie Przeładowanie 50, Pole Sideł 60), wspólne Łowcy (Odskok 4, Znak Łowcy 12,
@@ -336,6 +344,15 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S145:** pule Kapłana bez przeglądu w grze: ruchy 7 nowych aktywnych to warianty ruchów Kapłana (dopracowanie
+  W03–W07; kilka par z tą samą sylwetką, np. Promień Światła / Leczenie, różni je wygląd), wygląd z istniejących
+  składników, dźwięki `skill.lightRay|blindingLight|miracle|consecrate|holyChains|holyNova|rebuke` bez ID (właściciel,
+  `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość pul tylko w raporcie (`S145.cleric.*`)
+  do S146: berło leczenie na sekundę / Uzdrowiciel sprzed S145 1,12 na 45. i 1,23 na 100. (cel ±10%), T-SK5 na 100.
+  0,38 (pasmo 0,25–0,35), T-SK6 berła 2,8–16 (cel 1–2). `GLOBAL_REPORT_ONLY` S145 (23 klucze 21–100) do opróżnienia w
+  S146. Wiki do odświeżenia (właściciel 17.10): dwie pule Kapłana, węzły kierunków, schemat `classPools` bez
+  `transitional`.
+
 - **S144:** pule Łowcy bez przeglądu w grze: ruchy 5 nowych aktywnych to pozy z funkcji `ShotRig` (dopracowanie W03–W07),
   wygląd z istniejących składników, dźwięki `skill.heavyBolt|pinningShot|windstep|netShot|deadlyBolt` bez ID (właściciel,
   `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość pul tylko w raporcie (`S144.hunter.*`) do
@@ -376,11 +393,9 @@ zakończone; testy i decyzje właściciela po nich.
 - **S139:** okno umiejętności 2.0 bez przeglądu w grze (szerokości drzewka puli 484 px na PC i 468 px na telefonie,
   podpisy kolumn ról skalowane w 60 px, tabela rangi w panelu szczegółów, przyciski po dwa w rzędzie, przypięty pasek
   „Zatwierdź” nad arkuszem, napis puli nad paskiem HUD); na telefonie role nie łamią się w dwa rzędy (decyzja w
-  DECYZJE). Wszystkie pule są przejściowe; od S140 pula Ognia i wspólne Maga stoją na drabinie, reszta w „Pozostałe”
-  do S141–S145.
+  DECYZJE). Od S145 wszystkie pule stoją na drabinie (wiersz „Pozostałe” bez stanu przejściowego).
   Wiki do odświeżenia (właściciel 17.10; `short` na wiki w S148).
-- **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` dalej w rzędach przejściowych u Kapłana
-  (`SKILL_ROWS` 4 i 8: Mag od S140, Wojownik od S143, Łowca od S144, Kapłan w S145). Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
+- **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` w `SKILL_ROWS` (4 i 8) u wszystkich klas od S145. Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
   `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
   `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
   `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.

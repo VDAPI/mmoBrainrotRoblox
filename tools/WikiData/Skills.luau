@@ -180,7 +180,6 @@ S.file(
 		-- S138 (DESIGN-18 §4.2, §14): the weapon pools of every class
 		classPools = arr(rec("SkillClassPools", {
 			class = enum("ClassId"),
-			["transitional?"] = "bool",
 			defaultPool = "string",
 			pools = arr(rec("SkillPool", {
 				id = "string",
@@ -922,7 +921,6 @@ function Skills.build(ctx: any): any
 			end
 			table.insert(classPools, {
 				class = classId,
-				transitional = if own.transitional then true else nil,
 				defaultPool = own.defaultPool,
 				pools = pools,
 			})

@@ -333,6 +333,9 @@ export type SkillDef = {
 	weapon: { main: { string }?, offhand: { string }? }?,
 	-- S143 (Logic/Fury): Fury stacks each damaging hit of this skill gives (default 1; Brutal Strike 2), with Rage
 	furyGain: number?,
+	-- S145 (Logic/Faith, Rebuke): a hit of the skill breaks an enemy player's channel, aim or beam (Logic/Channel event
+	-- "interrupt"); monsters' casts and a boss's channel (BossMechanics: only damage breaks it) never
+	interrupt: boolean?,
 	-- filled only by Logic/Skills.effective from breakpoints and node mods (ROZWOJ 2.7)
 	selfEffects: { SkillEffect }?,
 	allyEffects: { SkillEffect }?,

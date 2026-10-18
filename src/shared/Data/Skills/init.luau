@@ -109,6 +109,20 @@ return table.freeze({
 	-- `pool` pool adds one stack of the caster's tip poison (one entry per target, skillId tipKey) worth the toxicTips
 	-- hook % of the attack over tipDuration s, at most tipStacks stacks, at most once per tipGap s per target.
 	CROSSBOW = table.freeze({ pool = "crossbow", tipKey = "toxicTips", tipGap = 1, tipDuration = 6, tipStacks = 5 }),
+	-- S145 (DESIGN-18 §6.4): the Cleric's schools (Logic/Faith). Zeal (hook `zeal`, s) shortens the running cooldowns of
+	-- the `hammer` pool's skills after an offensive cast of one of them; Guiding Light (hook `guidingLight`, %) leaves a
+	-- ward (shield, skillId wardKey) of that share of the HP a heal skill restored, for wardDuration s, at most wardCap
+	-- % of the target's max HP; the Inquisitor's wandering brand (hook `brandJump`, %) lands that share of a brand
+	-- skill's burn on the nearest other enemy within brandRadius studs.
+	FAITH = table.freeze({
+		hammer = "hammer",
+		light = "light",
+		wardKey = "guidingLight",
+		wardDuration = 6,
+		wardCap = 20,
+		brandRadius = 8,
+		brandSkills = table.freeze({ brandOfLight = true } :: { [string]: boolean }),
+	}),
 	-- S65 (STATY 3): Frostbite, +% damage from you on targets your ice slowed or froze, with any ice weapon;
 	-- the fixed hook "frostbite" of a wand (6) or staff (10) replaces it when higher.
 	FROSTBITE = 6,

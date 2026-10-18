@@ -40,6 +40,9 @@
 -- S142 (Logic/Shock, DESIGN-18 §6.1): every hit gets the skill's values.crit and, on lightning spells, Overcharge's crit
 -- (critAdd / critDmgAdd); a sureCrit skill's main hit always crits without spending a guaranteedCrit; Conductor makes a
 -- single-target lightning spell's main hit jump to the nearest other enemy (a secondary hit).
+-- S145 (Logic/Faith, DESIGN-18 §6.4): Light Ray's main hit heals the most wounded ally (values.rayHeal % of the hit,
+-- Context.mostWounded through Faith.mostWounded); a skill with `interrupt` (Rebuke) breaks the channel of an enemy
+-- player it hits (services.Interrupt, Logic/Channel "interrupt"; never a monster or a boss).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -55,6 +58,7 @@ local Combat = require(Shared.Data.Combat)
 local Damage = require(Shared.Logic.Damage)
 local DeadEye = require(Shared.Logic.DeadEye)
 local Elements = require(script.Parent.Elements)
+local Faith = require(Shared.Logic.Faith)
 local Paths = require(Shared.Logic.Paths)
 local Push = require(script.Parent.Push)
 local Rng = require(Shared.Logic.Rng)
@@ -86,6 +90,8 @@ export type Services = {
 	-- S80 (ROZWOJ 12.5): starts the beam channel of `ctx` on `target` (SkillService owns the loop and its ends);
 	-- `tick(n)` deals tick n. (false, errorKey) without mana for one tick.
 	Beam: (ctx: Ctx, target: any, tick: (n: number) -> ()) -> (boolean, string?),
+	-- S145 (Rebuke): breaks the channel, aim or beam of `target` (Logic/Channel event "interrupt"); true when one ended
+	Interrupt: (target: Player) -> boolean,
 }
 
 -- S70: options of ctx.applyEffect: value (and resolved stats) x scale, duration x durationMul.
@@ -236,20 +242,20 @@ function Context.alliesInCircle(player: Player, center: Vector3, radius: number)
 end
 
 -- The ally (the player included) with the lowest HP share below full within `radius`; nil when nobody is wounded.
+-- S145: the choice is Logic/Faith.mostWounded (Light Ray, healWounded, Saving Blow).
 function Context.mostWounded(player: Player, center: Vector3, radius: number, except: Player?): Player?
 	local services = need()
-	local best, bestFraction = nil, 1
+	local allies: { Player }, fractions: { number } = {}, {}
 	for _, ally in Context.alliesInCircle(player, center, radius) do
 		if ally ~= except then
 			local hp = services.Resource.Get(ally)
 			local maxHp = services.Stat.GetValue(ally, "maxHp")
-			local fraction = if maxHp > 0 then hp / maxHp else 1
-			if fraction < bestFraction then
-				best, bestFraction = ally, fraction
-			end
+			table.insert(allies, ally)
+			table.insert(fractions, if maxHp > 0 then hp / maxHp else 1)
 		end
 	end
-	return best
+	local index = Faith.mostWounded(fractions)
+	return if index then allies[index] else nil
 end
 
 -- S71 (ROZWOJ 9.3, 9.4, 14.1): multiplier of a heal (shield = false) or shield `healer` puts on `target`, and whether
@@ -455,6 +461,20 @@ function Context.new(
 			local ally = ctx.wounded(root.Position, SkillData.WOUNDED_RADIUS)
 			if ally then
 				ctx.heal(ally, result.amount * behaviour.healWounded / 100)
+			end
+		end
+		-- S145 (Light Ray): its main hit heals the most wounded ally within WOUNDED_RADIUS (solo: the caster)
+		if skill.values.rayHeal ~= nil and opts.primary then
+			local amount = Faith.rayHeal(result.amount, value("rayHeal"))
+			local ally = if amount > 0 then ctx.wounded(root.Position, SkillData.WOUNDED_RADIUS) else nil
+			if ally then
+				ctx.heal(ally, amount)
+			end
+		end
+		-- S145 (Rebuke): the hit breaks an enemy player's channel, aim or beam (never a monster's cast or a boss's channel)
+		if skill.interrupt and entity.kind == "player" and entity.player then
+			if Faith.interrupts(true, services.StatusEffect.IsBossLike(entity)) then
+				services.Interrupt(entity.player)
 			end
 		end
 		local push = behaviour.knockback or skill.knockback -- S140: Flame Wave's own knockback

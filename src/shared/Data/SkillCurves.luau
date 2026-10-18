@@ -44,7 +44,31 @@ return table.freeze({
 		-- S143: Crushing Blow unlocks at 15 (was the Standard-Bearer's row 7, 48): rank 9 (47) keeps the old rank 1
 		crushingBlow = table.freeze({ dmg = table.freeze({ [9] = 300 }) }),
 		-- S91: the Cleric's Holy Strike, ranks 1-5 x0.88 (rank 1 190 -> 167), rank 6 pinned
-		holyStrike = table.freeze({ dmg = table.freeze({ [5] = 226, [6] = 190 + (340 - 190) * 5 / 9 }) }),
+		-- S145 (DESIGN-18 §6.4, R1 of the hammer pool at 20 in the S91 band with Brand of Light from 15): rank 5 226 -> 190,
+		-- rank 6 273.3 -> 240 (no jump at 21)
+		holyStrike = table.freeze({ dmg = table.freeze({ [5] = 190, [6] = 240 }) }),
+		-- S145 (DESIGN-18 §6.4): Light Ray, the light pool's S1, on Holy Strike's knots before S145 x0.85 (a quarter of it
+		-- heals)
+		lightRay = table.freeze({ dmg = table.freeze({ [5] = 226 * 0.85, [6] = (190 + (340 - 190) * 5 / 9) * 0.85 }) }),
+		-- S145: Radiance unlocks at 3 (was 6): rank 5 (level 19) keeps the old rank 4 (18), rank 6 (23) the old rank 5 (22)
+		radiance = table.freeze({ dmg = table.freeze({ [5] = 130 + 110 * 3 / 9, [6] = 130 + 110 * 4 / 9 }) }),
+		-- S145: Shield of Faith unlocks at 10 (was 18): rank 3 (level 18) keeps the old rank 1
+		shieldOfFaith = table.freeze({
+			shieldHp = table.freeze({ [3] = 12 }),
+			shieldMag = table.freeze({ [3] = 10 }),
+		}),
+		-- S145: Circle of Light unlocks at 12 (was 14): rank 3 (level 20) keeps the old rank 2 (18)
+		circleOfLight = table.freeze({
+			healHp = table.freeze({ [3] = 8 + 4 / 9 }),
+			healMag = table.freeze({ [3] = 6 + 4 / 9 }),
+		}),
+		-- S145: Brand of Light unlocks at 15 (was the Inquisitor's row 4, 26): rank 4 (level 27) keeps the old rank 1, ranks
+		-- 1-3 low (R1 of the hammer pool at 20)
+		brandOfLight = table.freeze({ dmg = table.freeze({ [4] = 120 }), dot = table.freeze({ [4] = 170 }) }),
+		-- S145: Divine Wrath unlocks at 20 (was 30): rank 2 (level 29) keeps the old rank 1
+		divineWrath = table.freeze({ bonus = table.freeze({ [2] = 4 }) }),
+		-- S145: Judgement unlocks at 40 (was 45): rank 2 (level 44) keeps the old rank 1
+		judgement = table.freeze({ dmg = table.freeze({ [2] = 320 }) }),
 		-- S90: the Hunter's base (rank 10 nearly flat above 20, C3). S91: ranks 1-5 x0.845 / x0.73, rank 6 pinned
 		aimedShot = table.freeze({ dmg = table.freeze({ [5] = 196, [6] = AIMED5 + (233 - AIMED5) * 1 / 5 }) }),
 		-- S144 (DESIGN-18 §6.3): Heavy Bolt, the Crossbow's S1, on Aimed Shot's knots x1.3 (its cooldown x1.3)

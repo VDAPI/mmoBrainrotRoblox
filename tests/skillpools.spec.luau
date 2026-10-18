@@ -101,7 +101,8 @@ T.describe("Skill pools: data (S137)", function()
 		end
 	)
 
-	T.it("the shared ladder (DESIGN-18 §5): a class past its transitional pools fills every rung once", function()
+	-- S145: every class fills the ladder (the transitional state ended with the Cleric's pools)
+	T.it("the shared ladder (DESIGN-18 §5): every class fills every rung once", function()
 		T.expect(#PoolData.LADDER).toBe(11)
 		T.expect(#PoolData.COMMON_LADDER).toBe(4)
 		local levels: { [string]: number } = {}
@@ -129,10 +130,8 @@ T.describe("Skill pools: data (S137)", function()
 			C4 = 45,
 		})
 		for _, classId in Classes.order do
-			if SkillPools.isTransitional(classId) then
-				continue -- S137: the old base split into pools; S140-S145 end it
-			end
 			local def = PoolData.get(classId) :: PoolData.ClassPools
+			T.expect({ classId, (def :: any).transitional }).toEqual({ classId, nil })
 			local function check(poolId: string, ladder: { PoolData.Rung })
 				for _, rung in ladder do
 					local found = {}
@@ -211,7 +210,7 @@ T.describe("Skill pools: the Mage's fire pool and common skills (S140)", functio
 		-- S142: Fire Bolt is the fire pool's S1, of fire, not adaptive (it was the common S1 of every element)
 		local bolt = SkillData.get("firebolt") :: any
 		T.expect({ bolt.pool, bolt.adaptive, bolt.role, bolt.element }).toEqual({ "fire", nil, "S1", "fire" })
-		T.expect(SkillPools.isTransitional("Mage")).toBe(false)
+		T.expect((PoolData.get("Mage") :: any).transitional).toBeNil()
 		-- S141: 3 -> 4; S142: 4 -> 5
 		T.expect(PoolData.get("Mage") and (PoolData.get("Mage") :: any).version).toBe(5)
 	end)
@@ -287,7 +286,7 @@ T.describe("Skill pools: the Mage's ice pool (S141)", function()
 			end
 		end
 		T.expect(next(members)).toBe(nil)
-		T.expect(SkillPools.isTransitional("Mage")).toBe(false) -- S142
+		T.expect((PoolData.get("Mage") :: any).transitional).toBeNil() -- S142 (S145: the field is gone)
 	end)
 end)
 
@@ -338,7 +337,7 @@ T.describe("Skill pools: the Mage's three pools on one ladder (S142)", function(
 	}
 
 	T.it("every pool holds exactly one skill of its element per LADDER code, at the code's level", function()
-		T.expect(SkillPools.isTransitional("Mage")).toBe(false)
+		T.expect((PoolData.get("Mage") :: any).transitional).toBeNil()
 		T.expect(SkillPools.ids("Mage")).toEqual({ "fire", "ice", "lightning" })
 		for poolId, want in WANT do
 			for _, rung in PoolData.LADDER do
@@ -456,7 +455,7 @@ T.describe("Skill pools: the Warrior's two pools (S143)", function()
 	}
 
 	T.it("every pool holds exactly one skill per LADDER code at the code's level; C1-C4 common", function()
-		T.expect(SkillPools.isTransitional("Warrior")).toBe(false)
+		T.expect((PoolData.get("Warrior") :: any).transitional).toBeNil()
 		T.expect(SkillPools.ids("Warrior")).toEqual({ "onehand", "twohand" })
 		for poolId, want in WANT do
 			for _, rung in PoolData.LADDER do
@@ -578,7 +577,7 @@ T.describe("Skill pools: the Hunter's two pools (S144)", function()
 	}
 
 	T.it("every pool holds exactly one skill per LADDER code at the code's level; C1-C4 common", function()
-		T.expect(SkillPools.isTransitional("Hunter")).toBe(false)
+		T.expect((PoolData.get("Hunter") :: any).transitional).toBeNil()
 		T.expect(SkillPools.ids("Hunter")).toEqual({ "bow", "crossbow" })
 		for poolId, want in WANT do
 			for _, rung in PoolData.LADDER do
@@ -676,6 +675,238 @@ T.describe("Skill pools: the Hunter's two pools (S144)", function()
 				end
 			end
 			T.expect({ p.id, next(members) }).toEqual({ p.id, nil })
+		end
+	end)
+end)
+
+-- S145 (DESIGN-18 §5, §6.4): the Cleric's two pools on the shared ladder, the common skills on COMMON_LADDER, the end of
+-- the transitional state of every class.
+T.describe("Skill pools: the Cleric's two pools (S145)", function()
+	local WANT: { [string]: { [string]: string } } = {
+		light = {
+			S1 = "lightRay",
+			A1 = "radiance",
+			K1 = "blindingLight",
+			O1 = "shieldOfFaith",
+			S2 = "renew",
+			P1 = "grace",
+			A2 = "sanctuary",
+			K2 = "purify",
+			S3 = "miracle",
+			P2 = "guidingLight",
+			U = "guardianAngel",
+		},
+		hammer = {
+			S1 = "holyStrike",
+			A1 = "consecrate",
+			K1 = "holyChains",
+			O1 = "auraOfEndurance",
+			S2 = "brandOfLight",
+			P1 = "divineWrath",
+			A2 = "holyNova",
+			K2 = "rebuke",
+			S3 = "judgement",
+			P2 = "zeal",
+			U = "hammerOfHeaven",
+		},
+	}
+
+	T.it("every pool holds exactly one skill per LADDER code at the code's level; C1-C4 common", function()
+		T.expect((PoolData.get("Cleric") :: any).transitional).toBeNil()
+		T.expect(SkillPools.ids("Cleric")).toEqual({ "light", "hammer" })
+		for poolId, want in WANT do
+			for _, rung in PoolData.LADDER do
+				local found = {}
+				for _, skill in SkillData.byClass.Cleric do
+					if skill.path == nil and skill.pool == poolId and skill.role == rung.code then
+						table.insert(found, skill.id)
+					end
+				end
+				local expected = want[rung.code]
+				T.expect({ poolId, rung.code, found }).toEqual({ poolId, rung.code, { expected } })
+				local skill = SkillData.get(expected) :: any
+				T.expect({ expected, skill.unlock, skill.type == "passive" }).toEqual({
+					expected,
+					rung.level,
+					rung.passive == true,
+				})
+				if skill.type == "passive" then
+					T.expect({ expected, skill.maxLevel }).toEqual({ expected, 5 })
+				else
+					T.expect({ expected, skill.delivery ~= nil }).toEqual({ expected, true })
+				end
+				for _, other in SkillPools.ids("Cleric") do
+					T.expect({ expected, other, SkillPools.inPool("Cleric", other, expected) })
+						.toEqual({ expected, other, other == poolId })
+				end
+			end
+		end
+		local common = { C1 = "heal", C2 = "circleOfLight", C3 = "resurrection", C4 = "devotion" }
+		for _, rung in PoolData.COMMON_LADDER do
+			local skill = SkillData.get(common[rung.code]) :: any
+			T.expect({ skill.id, skill.pool, skill.role, skill.unlock, skill.path })
+				.toEqual({ skill.id, "common", rung.code, rung.level, nil })
+			for _, poolId in SkillPools.ids("Cleric") do
+				T.expect(SkillPools.inPool("Cleric", poolId, skill.id)).toBe(true)
+			end
+		end
+		-- S145: 2 -> 3 (a free reset)
+		T.expect((PoolData.get("Cleric") :: any).version).toBe(3)
+	end)
+
+	T.it(
+		"every Cleric skill has a pool or a path; the directions keep four skills, none with its own weapon",
+		function()
+			local onPath: { [string]: string } = {}
+			for _, skill in SkillData.byClass.Cleric do
+				T.expect({ skill.id, skill.pool ~= nil or skill.path ~= nil }).toEqual({ skill.id, true })
+				if skill.path == nil then
+					T.expect({ skill.id, skill.role ~= nil }).toEqual({ skill.id, true })
+				else
+					onPath[skill.id] = skill.path
+				end
+				local def: any = skill
+				T.expect({ skill.id, def.weapon }).toEqual({ skill.id, nil })
+			end
+			T.expect(onPath).toEqual({
+				prayer = "healer",
+				divineIntervention = "healer",
+				fortuneDice = "fortune",
+				wheelOfFortune = "fortune",
+			})
+		end
+	)
+
+	T.it(
+		"the weapon picks the pool: scepters and staves the light, maces and flails the hammer, the off hand nothing",
+		function()
+			for _, main in { "scepter", "holystaff" } do
+				for _, off in { "shield", "relic" } do
+					T.expect({ main, off, SkillPools.poolOf("Cleric", { main = main, offhand = off }, nil) })
+						.toEqual({ main, off, "light" })
+				end
+			end
+			for _, main in { "mace1h", "flail1h" } do
+				for _, off in { "shield", "relic" } do
+					T.expect({ main, off, SkillPools.poolOf("Cleric", { main = main, offhand = off }, nil) })
+						.toEqual({ main, off, "hammer" })
+				end
+			end
+			T.expect(SkillPools.poolOf("Cleric", { offhand = "relic" }, nil)).toBe("hammer")
+		end
+	)
+
+	T.it("the plans: every pool's and common skill once, in ladder order, actives before passives", function()
+		local cleric = PoolData.get("Cleric") :: any
+		T.expect(cleric.commonPlan).toEqual({ "heal", "circleOfLight", "resurrection", "devotion" })
+		for _, p in cleric.pools do
+			local members: { [string]: boolean } = {}
+			for _, skill in SkillData.byClass.Cleric do
+				if skill.path == nil and (skill.pool == p.id or skill.pool == "common") then
+					members[skill.id] = true
+				end
+			end
+			local passive = false
+			local lastLevel = 0
+			for _, id in p.plan do
+				T.expect({ p.id, id, members[id] }).toEqual({ p.id, id, true })
+				members[id] = nil
+				local def = SkillData.get(id) :: any
+				if def.type == "passive" then
+					passive = true
+				else
+					T.expect({ p.id, id, passive }).toEqual({ p.id, id, false })
+					T.expect({ p.id, id, def.unlock >= lastLevel }).toEqual({ p.id, id, true })
+					lastLevel = def.unlock
+				end
+			end
+			T.expect({ p.id, next(members) }).toEqual({ p.id, nil })
+		end
+	end)
+end)
+
+-- S145 (DESIGN-18 §5, §13): the end of the transitional state: every class has two (Mage: three) pools of 11 on the
+-- ladder and 4 common skills, every pool skill a role, every active skill A and B at ranks 5 and 10, a short text, a
+-- motion, a look, a sound key and a server timing row; every modify node names an existing skill.
+T.describe("Skill pools: every class on the full ladder (S145)", function()
+	local Sfx = require("../src/shared/Data/Sfx")
+	local Skills = require("../src/shared/Logic/Skills")
+	local SkillMotions = require("../src/shared/Data/SkillMotions")
+	local SkillVfx = require("../src/shared/Data/SkillVfx")
+	local Timing = require("./fixtures/skill_timing")
+	local PathData = require("../src/shared/Data/Paths")
+	local pl = require("../src/shared/Data/Localization/pl")
+	local en = require("../src/shared/Data/Localization/en")
+
+	T.it("the full ladder of every pool and the common skills of every class", function()
+		for _, classId in Classes.order do
+			local def = PoolData.get(classId) :: PoolData.ClassPools
+			T.expect({ classId, (def :: any).transitional }).toEqual({ classId, nil })
+			for _, pool in def.pools do
+				local roles: { [string]: number } = {}
+				for _, skill in SkillData.byClass[classId] do
+					if skill.path == nil and skill.pool == pool.id then
+						roles[skill.role :: string] = (roles[skill.role :: string] or 0) + 1
+					end
+				end
+				for _, rung in PoolData.LADDER do
+					T.expect({ classId, pool.id, rung.code, roles[rung.code] })
+						.toEqual({ classId, pool.id, rung.code, 1 })
+					roles[rung.code] = nil
+				end
+				T.expect({ classId, pool.id, next(roles) }).toEqual({ classId, pool.id, nil })
+			end
+			local common: { [string]: number } = {}
+			for _, skill in SkillData.byClass[classId] do
+				if skill.path == nil and skill.pool == PoolData.COMMON then
+					common[skill.role :: string] = (common[skill.role :: string] or 0) + 1
+				end
+			end
+			for _, rung in PoolData.COMMON_LADDER do
+				T.expect({ classId, rung.code, common[rung.code] }).toEqual({ classId, rung.code, 1 })
+			end
+		end
+	end)
+
+	T.it(
+		"every skill: a pool or a path, a role in a pool; every active: A and B, short, motion, look, sound, timing",
+		function()
+			for _, skill in SkillData.byId do
+				T.expect({ skill.id, skill.pool ~= nil or skill.path ~= nil }).toEqual({ skill.id, true })
+				if skill.path == nil then
+					T.expect({ skill.id, SkillPools.ladderOf(skill) ~= nil }).toEqual({ skill.id, true })
+				end
+				local short = `skill.{skill.id}.short`
+				T.expect({ short, (pl :: any)[short] ~= nil, (en :: any)[short] ~= nil }).toEqual({ short, true, true })
+				if skill.type ~= "passive" then
+					for _, at in Skills.BREAKPOINT_LEVELS do
+						local pair = skill.breakpoints and (skill.breakpoints :: any)[at]
+						T.expect({ skill.id, at, pair ~= nil and pair.a ~= nil, pair ~= nil and pair.b ~= nil })
+							.toEqual({ skill.id, at, true, true })
+					end
+					T.expect({
+						skill.id,
+						SkillMotions.get(skill.id) ~= nil,
+						SkillVfx[skill.id] ~= nil,
+						Sfx.has(`skill.{skill.id}`),
+						Timing.skills[skill.id] ~= nil,
+					}).toEqual({ skill.id, true, true, true, true })
+				end
+			end
+		end
+	)
+
+	T.it("every modify node names an existing skill of its class", function()
+		for _, path in PathData.list do
+			for _, row in path.rows do
+				for _, node in row.nodes do
+					local modify = (node :: any).modify
+					if modify then
+						local skill = SkillData.get(modify.skill)
+						T.expect({ node.id, skill ~= nil and skill.class == path.class }).toEqual({ node.id, true })
+					end
+				end
+			end
 		end
 	end)
 end)
