@@ -31,7 +31,8 @@ return {
 		{ path = "Data/Blessings", omit = LOOKS },
 		{ path = "Data/Bonuses" },
 		{ path = "Data/BossTuning" },
-		{ path = "Data/Bosses", omit = LOOKS },
+		-- S149: `all` and `world` repeat the records of `byId` (the world boss is dumped there too)
+		{ path = "Data/Bosses", omit = { "all", "world", table.unpack(LOOKS) } },
 		{ path = "Data/BuffCategories" },
 		{ path = "Data/Classes", omit = LOOKS },
 		{ path = "Data/Combat" },
@@ -116,6 +117,8 @@ return {
 		{ path = "Data/ScheduledEvents", omit = { "byKey", "sky" } },
 		-- S101: world events (schedule, scale of the commander / champion, contribution threshold, reward, chest)
 		{ path = "Data/WorldEvents" },
+		-- S149: the world boss (UTC schedule, the arena spot, contribution threshold, reward, item rarities)
+		{ path = "Data/WorldBoss" },
 	} :: { ModuleEntry },
 	-- S134d: AutoPotion and AutoGrind (premium services with limits, like FullElixir / Lure)
 	CONFIG_KEYS = {
@@ -6027,6 +6030,18 @@ return {
 		},
 		["Skills/Mage:[thunderStrike].values.dmg[2]"] = {
 			{ session = "S147", why = "400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16)" },
+		},
+		["WorldBoss:*"] = {
+			{
+				session = "S149",
+				why = "new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149)",
+			},
+		},
+		["Bosses:byId.hrimvald*"] = {
+			{
+				session = "S149",
+				why = "new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min",
+			},
 		},
 	} :: { [string]: { Reason } },
 }

@@ -1,6 +1,6 @@
 --!strict
--- Dungeon bosses (DESIGN §16). Grimrok (20) and Morvane (45) are complete; Azgor (70) and Vaelgrath (100)
--- have their data ready for S11, which builds their arenas.
+-- Dungeon bosses (DESIGN §16) and (S149) the world boss (DESIGN §15.6, `world = true`). Grimrok (20) and Morvane (45)
+-- are complete; Azgor (70) and Vaelgrath (100) have their data ready for S11, which builds their arenas.
 --
 -- Attacks are telegraphed areas resolved after `windup`:
 --   shape  circle (radius) | cone (radius, angle) | line (length, width) | ring (radius, inner = safe centre)
@@ -20,7 +20,8 @@ local Families = require("./Families")
 
 -- S134: the numbers of a party mechanic (rules in Logic/BossMechanics).
 export type SplitSpec = { missAll: number }
-export type MarkSpec = { seconds: number, self: number }
+-- S149: `count` = how many fighters are marked at once (without repeats, default 1)
+export type MarkSpec = { seconds: number, self: number, count: number? }
 export type ChannelSpec = { seconds: number, breakPct: number, stagger: number }
 
 export type Attack = {
@@ -86,14 +87,24 @@ export type BossDef = {
 	timeLimit: number, -- seconds
 	-- S24: only the scale and the aura colour; the look itself is Data/MonsterLooks[boss id].
 	look: { size: number, aura: string },
+	-- S149: a world boss (Data/WorldBoss, WorldBossService): no dungeon, `region` names its map; never in `list`,
+	-- `forRegion` or the dungeon rules (`world` / `all` list it)
+	world: boolean?,
+	-- S149: the lowest character level that gets the world boss reward (lower ones may help for nothing)
+	minLevel: number?,
 }
 
 local list: { BossDef } = {}
+local world: { BossDef } = {}
+local all: { BossDef } = {}
 local byId: { [string]: BossDef } = {}
 
+-- S149: dungeon bosses go to `list` (the dungeons, their quests, the party finder, the wiki), world bosses to `world`;
+-- `all` and `byId` hold both.
 local function boss(def: BossDef)
 	byId[def.id] = def
-	table.insert(list, def)
+	table.insert(all, def)
+	table.insert(if def.world then world else list, def)
 end
 
 boss({
@@ -593,13 +604,160 @@ boss({
 	look = { size = 2.8, aura = "#9FE0FF" },
 })
 
+-- S149: the world boss of the late game (Data/WorldBoss, WorldBossService): Hrimvald, the Forefather of Giants, wakes
+-- on the Frost Peaks every 3 h for 10-20 players. No dungeon, no party scaling, no shield (an open-world boss is never
+-- invulnerable); the helpers of phases 2-3 only add pressure. The numbers come from the S149 model
+-- (Balance.targetsS149: 10 players of level 99 in 9-12 min, 20 in 5-7, 5 never win).
+boss({
+	id = "hrimvald",
+	family = "humanoid",
+	nameKey = "boss.hrimvald.name",
+	region = "frostpeak", -- the map (read only: no dungeon)
+	world = true,
+	minLevel = 80,
+	level = 100,
+	hpMul = 7.8,
+	atkMul = 0.38,
+	defMul = 1.4,
+	mresMul = 1.4,
+	speed = 0.8,
+	moveSpeed = 13,
+	attack = "melee",
+	damageKind = "phys",
+	phases = { 0.7, 0.35 },
+	attacks = {
+		-- regular blows (no `avoid`): the fist at the tank, a boulder under a random fighter
+		{
+			id = "fistSlam",
+			shape = "cone",
+			target = "threat",
+			radius = 16,
+			angle = 80,
+			windup = 1.4,
+			damage = 3.5,
+			cooldown = 14,
+			phases = { 1, 2, 3 },
+		},
+		{
+			id = "boulderToss",
+			shape = "circle",
+			target = "random",
+			radius = 6,
+			windup = 1.6,
+			damage = 3.8,
+			cooldown = 16,
+			phases = { 1, 2, 3 },
+			delivery = "ranged",
+		},
+		-- big blows to dodge
+		{
+			id = "glacierStomp",
+			shape = "circle",
+			target = "self",
+			radius = 16,
+			windup = 2.2,
+			damage = 7.3,
+			cooldown = 22,
+			phases = { 1, 2, 3 },
+			element = "ice",
+			avoid = true,
+		},
+		{
+			id = "iceSpikes",
+			shape = "line",
+			target = "random",
+			count = 3,
+			length = 50,
+			width = 7,
+			windup = 2.0,
+			damage = 6.9,
+			cooldown = 20,
+			phases = { 1, 2, 3 },
+			element = "ice",
+			damageKind = "magic",
+			avoid = true,
+		},
+		{
+			id = "avalanche",
+			shape = "circle",
+			target = "random",
+			count = 5,
+			radius = 9,
+			windup = 2.2,
+			damage = 6.7,
+			cooldown = 24,
+			phases = { 2, 3 },
+			element = "ice",
+			damageKind = "magic",
+			avoid = true,
+		},
+		-- the shared blow for 10+ players: ~700 % of a Mage's HP split by everyone in the circle
+		{
+			id = "shatterStone",
+			shape = "circle",
+			target = "random",
+			radius = 10,
+			windup = 3.5,
+			damage = 64,
+			cooldown = 30,
+			phases = { 1, 2, 3 },
+			mechanic = "split",
+			split = { missAll = 0.086 },
+		},
+		-- three brands at once (S149 `count`); the circles may overlap
+		{
+			id = "frostBrand",
+			shape = "circle",
+			target = "random",
+			radius = 10,
+			windup = 1.2,
+			damage = 6.8,
+			cooldown = 26,
+			phases = { 2, 3 },
+			element = "ice",
+			damageKind = "magic",
+			mechanic = "mark",
+			mark = { seconds = 5, self = 0.43, count = 3 },
+		},
+		-- the endless winter (channel): break it with damage or it hits every fighter
+		{
+			id = "endlessWinter",
+			shape = "circle",
+			target = "self",
+			radius = 6,
+			windup = 6,
+			damage = 8.6,
+			cooldown = 40,
+			phases = { 2, 3 },
+			element = "ice",
+			damageKind = "magic",
+			mechanic = "channel",
+			channel = { seconds = 6, breakPct = 0.007, stagger = 4 },
+		},
+	},
+	summons = {
+		-- S149: helpers without a shield (an open-world boss is never invulnerable), no loot and no EXP
+		{ phase = 2, monster = "frozenKnight", level = 95, count = 3 },
+		{ phase = 2, monster = "iceWolf", level = 95, count = 3 },
+		{ phase = 3, monster = "frozenKnight", level = 95, count = 3 },
+		{ phase = 3, monster = "iceWolf", level = 95, count = 3 },
+	},
+	haste = { [3] = 1.2 },
+	enrageAfter = 780,
+	enrageDamage = 1.6,
+	timeLimit = 900, -- S149: then it leaves (WorldBossService)
+	look = { size = 6, aura = "#9FD8FF" },
+})
+
 local byRegion: { [string]: BossDef } = {}
 for _, def in list do
 	byRegion[def.region] = def
 end
 
 return table.freeze({
-	list = list,
+	list = list, -- dungeon bosses (S149: never a world boss)
+	world = world, -- S149: world bosses (Data/WorldBoss)
+	all = all, -- S149: every boss
 	byId = byId,
 	get = function(id: string): BossDef?
 		return byId[id]

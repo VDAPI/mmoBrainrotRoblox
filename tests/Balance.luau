@@ -2625,6 +2625,10 @@ export type BossFight = {
 	-- S134: the biggest big blow to dodge (`avoid`) one member of each class would take (x Combat.randomMax) / max HP
 	biggestAvoidable: { [string]: number },
 	mechanics: BossMechanicsReport,
+	-- S149: helpers without a shield (the world boss): seconds the team spends killing them while the boss keeps
+	-- attacking, and the worst member's HP lost to one wave (share of its max HP; the helpers spread over the team)
+	helperSeconds: number,
+	helperWave: number,
 }
 
 -- S92: the helpers of a boss summon as the server spawns them: Boss.spawnSummons -> DungeonService spawnMonster ->
@@ -2712,6 +2716,9 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 	end
 	-- S93: damage of `all` attacks per member over the active phases (per member: a class can be in the team twice)
 	local raidTotal: { number } = {}
+	-- S149: helpers without a shield (all phases) and the worst member's share of one phase's helpers
+	local helperTotal, helperWave = 0, 0
+	local waveLost: { number } = {}
 	for phase = 1, #thresholds - 1 do
 		local share = thresholds[phase] - thresholds[phase + 1]
 		-- shield waves at the phase start (and every `every` s of the phase)
@@ -2744,10 +2751,48 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 				shieldKills += count * waves
 			end
 		end
+		-- S149: helpers without a shield (the world boss): the team kills them one by one (the server's helpers,
+		-- Balance.summonHelpers: no group reduction) while the boss goes on attacking (active time without damage on
+		-- it); every living helper hits a member, spread over the team
+		local helperSeconds = 0
+		local helpers = {}
+		for _, summon in def.summons do
+			if summon.phase == phase and not summon.shield then
+				local helperDef = Monsters.get(summon.monster) :: any
+				for _, member in Balance.summonHelpers(helperDef, summon.level, summon.count) do
+					table.insert(helpers, member)
+				end
+			end
+		end
+		if #helpers > 0 then
+			local lost: { number } = table.create(n, 0)
+			for k, member in helpers do
+				local teamDps = 0
+				for i, p in team do
+					teamDps += memberDps(i, p, member)
+				end
+				local duration = member.maxHp / math.max(1e-6, teamDps)
+				helperSeconds += duration
+				for j = k, #helpers do
+					for i, p in team do
+						lost[i] += Balance.hit(helpers[j], p) * duration / helpers[j].attackInterval / n
+					end
+				end
+			end
+			for i, p in team do
+				taken[i] += lost[i]
+				waveLost[i] = lost[i] / p.values.maxHp
+			end
+		end
+		helperTotal += helperSeconds
+		for i = 1, n do
+			helperWave = math.max(helperWave, waveLost[i] or 0)
+			waveLost[i] = 0
+		end
 		-- Vaelgrath (phase 2): FLIGHT_SECONDS invulnerable from the phase start, overlapping the shield wave; past
 		-- the wave it attacks while nobody can hit it
 		local flightSeconds = if phase == 2 then math.max(0, flight - shieldSeconds) else 0
-		local active = fighting + flightSeconds
+		local active = fighting + flightSeconds + helperSeconds
 		local cad = Balance.bossCadence(def, phase, o.cadence)
 		local haste = (def.haste or {})[phase] or 1
 		local startActive = elapsed + shieldSeconds
@@ -2779,7 +2824,8 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 						share = if splitInside <= 0 or i <= splitInside then 1 else 0
 						lands = 1
 					elseif mechanic == "mark" then
-						share = 1 / n
+						-- S149: `count` members branded at once (BossMechanics.markCount)
+						share = math.min(BossMechanics.markCount(attack.mark :: any), n) / n
 						mul = BossMechanics.markDamage(true, attack.damage, attack.mark :: any)
 						lands = 1
 					elseif mechanic == "channel" then
@@ -2904,6 +2950,8 @@ function Balance.bossFight(bossId: string, team: { Player }, opts: BossOpts?): B
 		hazardTick = if hazards then hazards.perTick else {},
 		biggestAvoidable = avoidable,
 		mechanics = mech,
+		helperSeconds = helperTotal,
+		helperWave = helperWave,
 	}
 end
 
@@ -6853,6 +6901,212 @@ function Balance.targetsS134(): { TargetRow }
 	return rows
 end
 
+-- S149: the world boss ---------------------------------------------------------------------------------------------
+
+-- Targets of the world boss (docs/sessions S149 F2; test data, never game numbers): built for 10-20 players of the
+-- late game; it never scales with them (more players = shorter), 5 never win, the shared blow kills below 7 in the
+-- circle, the channel needs 10, three brands at once; its Legendaries and Mythics per hour of play stay a side dish
+-- next to Vaelgrath's. Teams of 10-20 repeat Balance.ORDER (one tank and one Cleric on every 5 players).
+Balance.S149 = {
+	boss = "hrimvald",
+	level = 99, -- the parties of the time rows (players of level 99, convention gear)
+	teams = { 5, 10, 15, 20 },
+	ten = { 9, 12 }, -- minutes of 10 players (and at most enrageAfter)
+	twenty = { 5, 7 }, -- minutes of 20 players
+	fiveLevel = 100, -- 5 players of level 100 still lose
+	avoid = { 0.60, 0.90 }, -- the biggest big blow / HP of a Mage L100 (convention gear)
+	avoidTank = 0.70, -- ... of a Warrior L100
+	hit = 0.50, -- the biggest blow that cannot be dodged / HP of a Mage L100
+	split10 = 0.75, -- the shared blow on 10 in the circle / HP of the Mage, at most
+	split7 = 1.0, -- ... on 7 in the circle, at least (kills)
+	markOthers = 0.75, -- a brand's blast on the others in its circle / HP of the Mage, at most
+	markSelf = 0.35, -- ... on the branded one, at most
+	tankPerMinute = 3.5, -- the S32 tank model (Balance.boss), the S94 band of Vaelgrath
+	wave = 1.10, -- HP per member per helper wave of 10 players (the S134 limit)
+	-- F3 (loot per hour): 2 h of play a day hit on average 1 occurrence in 3 h = ~0.67 fights a day; Vaelgrath's hour
+	-- is his entry (cave walk, ready check, countdown: entrySeconds) and fight of 5 players L99 for Config.Boss.dailyRuns
+	-- kills a day
+	playHours = 2,
+	fightsPerDay = 2 / 3,
+	entrySeconds = 240,
+	vaelgrathTeam = 5,
+	lootRatio = 0.5, -- world boss Legendaries + Mythics per hour of play / Vaelgrath's per hour, at most
+	expLevels = { 80, 90, 99 }, -- report: one fight's EXP / the level's EXP
+}
+
+-- S149: rows of targetsS149 out of reach of the S149 levers (printed with the reason; docs/DECYZJE.md S149).
+Balance.S149_REPORT = {} :: { [string]: string }
+
+-- S149: Legendaries + Mythics of one world boss reward for `classId` (Data/WorldBoss.reward.rarity: a Legendary
+-- through Loot.pickItem with classBias, a Mythic always usable, Loot.pickUsable), at item level 100.
+function Balance.worldBossDrops(classId: string): number
+	local Data = (require :: any)("../src/shared/Data/WorldBoss")
+	local weights = Data.reward.rarity :: { [number]: number }
+	local total = 0
+	for _, w in weights do
+		total += w
+	end
+	local legendary = (weights[Rarities.LEGENDARY] or 0) / total
+	local mythic = (weights[Rarities.MYTHIC] or 0) / total
+	-- the usable share over the drop levels of a level 100 character (usableAt of the boss drops, defined below)
+	local low, high = ItemRoll.dropLevelRange(100)
+	local usable = 0
+	for ilvl = low, high do
+		usable += Balance.usableShare(LootTables.bossSlots, ilvl, Data.reward.classBias, classId) / (high - low + 1)
+	end
+	return legendary * usable + mythic
+end
+
+-- S149: Vaelgrath's Legendaries + Mythics for `classId` per hour of entering and fighting him (Balance.bossDrops of a
+-- day's kills, no Fortune) and per day.
+function Balance.vaelgrathPerHour(classId: string): (number, number)
+	local S = Balance.S149
+	local d = Balance.bossDrops(classId, "vaelgrath")
+	local perDay = d.legendary + d.mythic
+	local fight = Balance.bossFight("vaelgrath", Balance.team(S.vaelgrathTeam, S.level)).seconds
+	local hours = Config.Boss.dailyRuns * (S.entrySeconds + fight) / 3600
+	return perDay / hours, perDay
+end
+
+-- S149 (F2): the world boss targets in one place (ids "S149.<boss>..."); balance.spec ("Balance: world boss (S149)")
+-- asserts every row without `report`.
+function Balance.targetsS149(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S149
+	local bossId = S.boss
+	local def = Bosses.byId[bossId] :: any
+	local function add(
+		id: string,
+		group: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		c: string?,
+		lv: number?
+	)
+		target(rows, `S149.{bossId}.{id}`, group, label, value, low, high, c, lv)
+	end
+	local name = "Hrimvald"
+	local L = S.level
+	-- the fight gets shorter with more players (both player variants)
+	for _, nodes in { false, true } do
+		local at = if nodes then "@nodes" else ""
+		local suffix = if nodes then " z węzłami" else ""
+		local seconds: { [number]: number } = {}
+		for _, n in S.teams do
+			local lv = if n == 5 then S.fiveLevel else L
+			seconds[n] = Balance.bossFight(bossId, Balance.team(n, lv, nodes)).seconds
+			local low, high = nil, nil
+			if n == 10 then
+				low, high = S.ten[1], math.min(S.ten[2], def.enrageAfter / 60)
+			elseif n == 20 then
+				low, high = S.twenty[1], S.twenty[2]
+			end
+			add(`team{n}{at}`, "time", `{name}, {n} graczy L{lv}{suffix}: min`, seconds[n] / 60, low, high, nil, lv)
+		end
+		for _, n in { 10, 15 } do
+			local label = `{name}{suffix}: czas {n + 5} graczy / {n} graczy`
+			add(`faster{n + 5}{at}`, "time", label, seconds[n + 5] / seconds[n], nil, 1 - 1e-9, nil, L)
+		end
+	end
+	-- 5 players of level 100 never win: the shared blow kills, the channel stays whole or the time runs out
+	do
+		local five = Balance.bossFight(bossId, Balance.team(5, S.fiveLevel))
+		local mech = five.mechanics
+		local splitKills = false
+		for _, share in mech.split do
+			if share >= S.split7 then
+				splitKills = true
+			end
+		end
+		local loses = splitKills or not mech.channelBroken or five.seconds > def.timeLimit
+		local label = `{name}: 5 graczy L{S.fiveLevel} przegrywa (1 = tak)`
+		add("five.loses", "mechanics", label, if loses then 1 else 0, 1, nil, nil, S.fiveLevel)
+	end
+	-- the blows on a Mage and a Warrior of level 100 in a party of 10
+	local team = Balance.team(10, L)
+	team[1] = Balance.player("Warrior", 100)
+	team[2] = Balance.player("Mage", 100)
+	local f = Balance.bossFight(bossId, team)
+	local avoidLabel = `{name}: największy cios do uniknięcia / HP Maga L100`
+	add("avoid.mage", "blows", avoidLabel, f.biggestAvoidable.Mage or 0, S.avoid[1], S.avoid[2], "Mage", 100)
+	local tankLabel = `{name}: największy cios do uniknięcia / HP Wojownika L100`
+	add("avoid.tank", "blows", tankLabel, f.biggestAvoidable.Warrior or 0, nil, S.avoidTank, "Warrior", 100)
+	local hitLabel = `{name}: największy cios nie do uniknięcia / HP Maga L100`
+	add("hit.mage", "blows", hitLabel, f.biggestHit.Mage or 0, nil, S.hit, "Mage", 100)
+	-- the shared blow on 10 and on 7 in the circle (no report mode: below 7 it kills)
+	local split10 = f.mechanics.split.Mage or 0
+	local split7 = Balance.bossFight(bossId, team, { splitInside = 7 }).mechanics.split.Mage or 0
+	add("split10", "mechanics", `{name}: wspólny cios, 10 w kręgu / HP Maga`, split10, nil, S.split10, "Mage", 100)
+	add("split7", "mechanics", `{name}: wspólny cios, 7 w kręgu / HP Maga`, split7, S.split7, nil, "Mage", 100)
+	-- the channel: 10 players break it in time, 5 do not
+	for _, n in { 10, 5 } do
+		local mech = Balance.bossFight(bossId, Balance.team(n, L)).mechanics
+		local label = `{name}: przerwanie zaklęcia, {n} graczy L{L}: s`
+		if n == 10 then
+			add("channel10", "mechanics", label, mech.channelSeconds, nil, mech.channelLimit, nil, L)
+		else
+			add("channel5", "mechanics", label, mech.channelSeconds, mech.channelLimit + 1e-9, nil, nil, L)
+		end
+	end
+	-- three brands: the others in a circle and the branded one (one blast each, on a Mage L100)
+	do
+		local m = Balance.monster(Balance.bossKind(def), def.level, "boss")
+		local mage = team[2]
+		for _, attack in def.attacks do
+			if attack.mechanic == "mark" and attack.mark then
+				local kind = attack.damageKind or def.damageKind
+				local one = Balance.hit(m, mage, attack.damage, kind, false) * Combat.randomMax / mage.values.maxHp
+				local others = BossMechanics.markTaken(false, 1, one, attack.mark)
+				local own = BossMechanics.markTaken(true, 0, one, attack.mark)
+				local count = BossMechanics.markCount(attack.mark)
+				add(`mark.{attack.id}.count`, "mechanics", `{name}: {attack.id}, naznaczonych naraz`, count, 3, 3)
+				local othersLabel = `{name}: {attack.id}, inni w kręgu / HP Maga`
+				add(`mark.{attack.id}.others`, "mechanics", othersLabel, others, nil, S.markOthers, "Mage", 100)
+				local ownLabel = `{name}: {attack.id}, naznaczony / HP Maga`
+				add(`mark.{attack.id}.self`, "mechanics", ownLabel, own, nil, S.markSelf, "Mage", 100)
+			end
+		end
+	end
+	-- the tank (the S32 model of S94) and the helpers of a party of 10
+	do
+		local tank = Balance.boss(bossId, Balance.team(10, L)).tankHpPerMinute
+		local tankMinute = `{name} (model S32): tank HP na minutę, 10 graczy L{L}`
+		add("tank", "blows", tankMinute, tank, nil, S.tankPerMinute, nil, L)
+		local wave = Balance.bossFight(bossId, Balance.team(10, L)).helperWave
+		add("wave10", "blows", `{name}, pomocnicy fazy, 10 graczy: HP na członka`, wave, nil, S.wave, nil, L)
+	end
+	-- F3: Legendaries + Mythics per hour of play next to Vaelgrath's per hour of entering and fighting him (no
+	-- report mode); the same per day of 2 h of play is printed
+	for _, c in Balance.CLASSES do
+		local drops = Balance.worldBossDrops(c)
+		local mine = drops * S.fightsPerDay / S.playHours
+		local vaelgrath, perDay = Balance.vaelgrathPerHour(c)
+		local label = `{name}: Legendarne i Mityczne / h gry / Vaelgrath na godzinę walki ({c})`
+		add(`loot.{c}`, "loot", label, mine / math.max(1e-12, vaelgrath), nil, S.lootRatio, c, 100)
+		local dayLabel = `{name}: Legendarne i Mityczne na dzień 2 h gry / Vaelgrath na dzień ({c})`
+		add(`loot.day.{c}`, "loot", dayLabel, drops * S.fightsPerDay / math.max(1e-12, perDay), nil, nil, c, 100)
+		rows[#rows].report = "tylko raport: dzień 2 h gry z trzema zabiciami Vaelgratha (cel F3 liczy godzinę)"
+	end
+	-- report: one fight's EXP / the level's EXP
+	do
+		local WorldBoss = (require :: any)("../src/shared/Logic/WorldBoss")
+		for _, lv in S.expLevels do
+			local share = WorldBoss.reward(lv, true).exp / Exp.expToNext(lv)
+			add(`exp.{lv}`, "exp", `{name}: EXP jednej walki / EXP poziomu {lv}`, share, nil, nil, nil, lv)
+			rows[#rows].report = "tylko raport: EXP bossa świata jest poza budżetem questów i tempa (od 80.)"
+		end
+	end
+	for _, row in rows do
+		local why = Balance.S149_REPORT[row.id]
+		if why then
+			row.report = `właściciel: {why}`
+		end
+	end
+	return rows
+end
+
 -- S94 (L3): the cross rows 1-100 no band checked in full (ids "X.<group>..."): the pace step h(L) / h(L - 1) <= 1.3
 -- on 20-99 across the band borders 45 and 70, at least two outdoor hunting grounds on 21-100, the cave Elites of some
 -- region drop every item level 21-100. The sum 1 -> 100 is R.frostpeak.pace.total; the T-SK guards of the control
@@ -6966,8 +7220,8 @@ function Balance.targetsGlobal(): { TargetRow }
 		end
 		add("G6", `{L}: rozrzut czasu 1 na 1 (najwolniejsza / najszybsza)`, hi / lo, nil, 2.2, nil, L)
 	end
-	-- G11: every attack of every phase of the four bosses at least 50 % of its cooldown rate
-	for _, def in Bosses.list do
+	-- G11: every attack of every phase of the four bosses at least 50 % of its cooldown rate (S149: and the world boss)
+	for _, def in Bosses.all do
 		for phase = 1, #def.phases + 1 do
 			local cad = Balance.bossCadence(def, phase)
 			for _, attack in def.attacks do

@@ -5,9 +5,14 @@
 
 ## Stan
 
-S01–S115 i S117–S148 gotowe (ostatnia S148: wiki umiejętności 2.0 i audyt serii S137–S148: hurtowe odświeżenie danych
-wiki S135–S147, kierunki opublikowane, strona klasy z planerem v3 (zakładki pul z drzewkiem według drabiny, `short` na
-kafelku, szczegóły z liczbami na rangach 1 / 5 / 10, przełomami i węzłami, pasek 8 puli, „Kierunki” z jednym
+S01–S115 i S117–S149 gotowe (ostatnia S149: boss świata dla późnej gry, rdzeń: Hrimvald, Praojciec Olbrzymów, co 3 h
+od 02:00 UTC na każdym serwerze świata naraz (zegar, bez komunikacji) na płaskowyżu Lodowej Strażnicy, ogłoszenia 10 i
+2 min przed, walka 10–20 graczy z ciosami S134, wspólnym ciosem, trzema piętnami i zaklęciem do przerwania, odejście po
+15 min, nagroda od 80. poziomu za udział (`Logic/Contribution`, wspólny z S101) raz na konto na termin
+(`account.worldBoss.last`): EXP, złoto, materiały i jeden przedmiot Heroiczny+; gałąź `worldBoss`, blokada Inwazji i
+Czempiona, koło bez PvP, `/worldboss`, model `Balance.targetsS149`; wcześniej S148: wiki umiejętności 2.0 i audyt
+serii S137–S148: hurtowe odświeżenie danych wiki S135–S147, kierunki opublikowane, strona klasy z planerem v3
+(zakładki pul z drzewkiem według drabiny, `short` na kafelku, szczegóły z liczbami na rangach 1 / 5 / 10, przełomami i węzłami, pasek 8 puli, „Kierunki” z jednym
 zwieńczeniem i kierunkiem przewodnim, kod `3<KLASA>…`, stary kod = pusty planer), sekcje „Jak rozwija się umiejętność”,
 „Kierunki” i umiejętności według pul, parzystość TS z `SkillPoints.canBuy` / `apply` i `Paths.canBuy` przez
 `wiki/test-fixtures/planner.json`, `Skills.rankFor` usunięte, dokumentacja serii spójna (ROZWOJ, DESIGN §14, DESIGN-18
@@ -362,6 +367,12 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **Boss świata (S149):** S149b — miejsce na mapie (wystrój płaskowyżu, grupy potworów Lodowej Strażnicy omijają
+  koło), mapa świata, minimapa, panel HUD (`Hud/WorldBossPanel`, wpis w `Data/UiWindows.SCREENS`), podsumowanie walki
+  (karta po walce jak po Inwazji), wiki (strona bossa, `WikiData/Bosses` bez `world`). Dla właściciela: ID dźwięków
+  `boss.hrimvald.roar|attack|death|phase`; ruchy ataków to ogólne style `Data/MonsterMotions` (bez własnych póz). Bez
+  przeglądu w grze (gałąź `worldBoss` nie ma jeszcze widoku).
 
 - **Seria „Umiejętności 2.0” (S137–S148, `docs/DESIGN-18.md`), co zostało w jednym miejscu:**
   - Bez przeglądu w grze: okno umiejętności 2.0 (S139: szerokości drzewka 484 / 468 px, podpisy ról, tabela rangi,

@@ -2,7 +2,7 @@
 
 > Plik generowany: `lune run tools/balance_report.luau` (model `tests/Balance.luau`, tabele
 > `tests/BalanceTables.luau`, moduły gry). Nie edytuj ręcznie.
-> „a → b” = migawka S147 (commit be123989, 2026-10-18) → teraz (`tools/balance_before.json`).
+> „a → b” = migawka S149 (commit 95d88cc4, 2026-10-18) → teraz (`tools/balance_before.json`).
 > Tryby: `lune run tools/balance_report.luau snapshot [S<n>]` (nowa migawka „przed”: tabele i zrzut danych
 > księgi), `lune run tools/balance_report.luau fixture [S<n>]` (fixture 1–20 dla `tests/balance1_20.spec.luau`).
 
@@ -19,7 +19,7 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 | --- | --: | --: | --: | --: |
 | 1–20: cele S32 (S91) | 1003 | 1003 | 1003 | 0 |
 | 1–20: cele S91 | 171 | 164 | 163 | S143 1, S144 1, S90 2, – 4 |
-| 20–100: globalne G1–G13 (S87) | 1904 | 1408 | 1279 | S103 4, S134 12, S88 285, S91 12, S92 5, – 307 |
+| 20–100: globalne G1–G13 (S87) | 1925 | 1429 | 1300 | S103 4, S134 12, S88 285, S91 12, S92 5, – 307 |
 | region meadows (S91) | 412 | 412 | 412 | 0 |
 | region duskwood (S92) | 1062 | 759 | 711 | S134 1, S32 3, S90 20, S92 327 |
 | region ashen (S93) | 1272 | 786 | 902 | S32 3, S90 24, S93 343 |
@@ -184,182 +184,129 @@ Każdy wiersz bez opisu raportu jest asercją `balance.spec` (bloki niżej). Wie
 
 ## Zmiany danych (księga, `tools/balance_reasons.luau`)
 
-| klucz | przed | po | sesja | powód |
-| --- | --: | --: | --: | --: |
-| `LevelCurves:curves.manaCost.Mage[10][2]` | 3,49 | 2,1 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 100: 3.49 -> 2.1 (the Arcanist's variants 2.4 at most) |
-| `LevelCurves:curves.manaCost.Mage[2][2]` | 1,37 | 1,02 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 25: 1.37 -> 1.02 (the curve never falls) |
-| `LevelCurves:curves.manaCost.Mage[3][2]` | 1,47 | 1,04 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 30: 1.47 -> 1.04 |
-| `LevelCurves:curves.manaCost.Mage[4][2]` | 1,82 | 1,08 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 40: 1.82 -> 1.08 |
-| `LevelCurves:curves.manaCost.Mage[5][2]` | 1,89 | 1,096 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 45: 1.89 -> 1.096 (4.80 / 3.47 -> 2.78 / 2.01 Destroyer / Arcanist fire) |
-| `LevelCurves:curves.manaCost.Mage[6][2]` | 2,038 | 1,3 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 50: 2.0375 -> 1.3 |
-| `LevelCurves:curves.manaCost.Mage[7][2]` | 2,25 | 1,4 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 55: 2.25 -> 1.4 |
-| `LevelCurves:curves.manaCost.Mage[8][2]` | 2,32 | 1,55 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 60: 2.3204 -> 1.55 |
-| `LevelCurves:curves.manaCost.Mage[9][2]` | 2,59 | 1,865 | S147 | manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 70: 2.59 -> 1.865 |
-| `SkillCurves:knots.heavyBolt.dmg[6]` | 302,1 | 280,9 | S147 | x0.93 (level 21): with the rank 10 302.9 -> 281.7, the Crossbow's damage moves to its poison (R9: damage over time >= 25 % from 45; R7 of the heavy crossbow <= 1.35 at 100) |
-| `Skills/Hunter:[deadlyBolt].values.dmg[2]` | 260 | 248 | S147 | 260 -> 248: R7 of the Marksman with a heavy crossbow at 100 1.356 -> 1.343 (1.15-1.35) after the stronger Toxic Tips |
-| `Skills/Hunter:[heavyBolt].values.dmg[2]` | 302,9 | 281,7 | S147 | 302.9 -> 281.7 (x0.93 from 21, knot 6): the Crossbow's direct damage moves to its poison (R9 of the Crossbow) |
-| `Skills/Hunter:[snarefield].breakpoints[10].a.values.dmg` | 14 | 6 | S147 | +14 -> +6: R4 of 10A 0.34 -> 0.19 with the base 12-14 |
-| `Skills/Hunter:[snarefield].values.dmg[1]` | 30 | 12 | S147 | 30 -> 12: R3 of the Trapper at 100 2.05 -> 1.996 (<= 2.0) after the stronger Venom Snare poison |
-| `Skills/Hunter:[snarefield].values.dmg[2]` | 38 | 14 | S147 | 38 -> 14: see dmg[1] |
-| `Skills/Hunter:[toxicTips].values.tip[2]` | 20 | 30 | S147 | 20 -> 30 (ranks 2-5 from 29): R9 of the Crossbow, damage over time 0.20-0.24 -> 0.26-0.32 at 45-100 |
-| `Skills/Hunter:[venomArrow].breakpoints[10].a.splash.pct` | 19 | 21 | S147 | 19 -> 21: R4 of 10A 0.166 -> 0.18 with the lower dmg (|A - B| <= 0.05) |
-| `Skills/Hunter:[venomArrow].values.dmg[2]` | 152 | 137 | S147 | 152 -> 137 (rank 2 pinned): the Crossbow's damage moves to its poison (R9) |
-| `Skills/Hunter:[venomArrow].values.poison[2]` | 50 | 57,5 | S147 | 50 -> 57.5 (rank 2 pinned): R9 of the Crossbow, damage over time >= 25 % |
-| `Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct` | 44 | 135 | S147 | 44 -> 135: the echo repeats the trap's hit, a third of what it was (R4 of 10A 0.06 -> 0.18-0.22) |
-| `Skills/Hunter:[venomSnare].values.dmg[1]` | 232 | 80 | S147 | 232 -> 80: the trap's damage moves to its poison (R9 of the Crossbow, R3 of the Trapper) |
-| `Skills/Hunter:[venomSnare].values.dmg[2]` | 236 | 82 | S147 | 236 -> 82: see dmg[1] |
-| `Skills/Hunter:[venomSnare].values.poison[1]` | 285 | 405 | S147 | 285 -> 405: R9 of the Crossbow, damage over time >= 25 % (the Poacher 0.20 -> 0.26 at 70) |
-| `Skills/Hunter:[venomSnare].values.poison[2]` | 290 | 412 | S147 | 290 -> 412: see poison[1] |
-| `Skills/Mage:[blizzard].breakpoints[10].b.values.dmg` | 3,5 | 3,8 | S147 | +3.5 -> +3.8: R4 of 10B at 100 0.167 -> 0.18 |
-| `Skills/Mage:[blizzard].cost` | 170 | 270 | S147 | 170 -> 270: T-SK4 of the Destroyer's ice variant at 100 1.64 -> 2.0 with the lower curve |
-| `Skills/Mage:[cataclysm].cost` | 119 | 220 | S147 | 119 -> 220: T-SK4 of the Destroyer's variants at 100 with the lower curve (the Arcanist never casts it) |
-| `Skills/Mage:[deepFreeze].breakpoints[10].b.values.dmg` | 30 | 36 | S147 | +30 -> +36: R4 |A - B| of 10 0.068 -> <= 0.05 with the higher base |
-| `Skills/Mage:[deepFreeze].breakpoints[5].b.values.dmg` | 13 | 15 | S147 | +13 -> +15: R4 of 5B 0.077 -> 0.09 with the higher base |
-| `Skills/Mage:[deepFreeze].values.dmg[1]` | 70 | 80 | S147 | 70 -> 80 (x1.15): R9 ice / fire on one target 0.85-0.95 at 70 / 100 (0.83 / 0.78 before) |
-| `Skills/Mage:[deepFreeze].values.dmg[2]` | 120 | 138 | S147 | 120 -> 138: see dmg[1] |
-| `Skills/Mage:[firebolt].breakpoints[10].a.splash.pct` | 12 | 13 | S147 | 12 -> 13: R4 of 10A at 45-100 0.16 -> 0.17 (1-20 unchanged) |
-| `Skills/Mage:[glacialSpike].values.dmg[2]` | 330 | 360 | S147 | 330 -> 360 (rank 7 pinned): R9 ice / fire on one target at 70 0.852 -> 0.862 |
-| `Skills/Mage:[immolate].values.dmg[2]` | 300 | 283,3 | S147 | 300 -> 283.3 (rank 8 pinned): R9 lightning / fire on one target at 100 >= 1.10 |
-| `Skills/Mage:[lightningLance].breakpoints[10].b.values.dmg` | 50 | 65 | S147 | +50 -> +65: R4 of 10B at 100 0.166 -> 0.21 with the higher base |
-| `Skills/Mage:[lightningLance].breakpoints[5].b.values.dmg` | 22 | 30 | S147 | +22 -> +30: R4 of 5B at 100 0.067 -> 0.087 with the higher base |
-| `Skills/Mage:[lightningLance].values.dmg[2]` | 200 | 280 | S147 | 200 -> 280 (rank 8 pinned): R9 lightning / fire on one target at 100 1.05 -> 1.10 |
-| `Skills/Mage:[meteorStorm].breakpoints[10].b.values.dmg` | 4,4 | 24 | S147 | +4.4 -> +24: R4 of 10B 0.035 -> 0.22 with the base 81-107 |
-| `Skills/Mage:[meteorStorm].cost` | 174 | 460 | S147 | 174 -> 460: T-SK4 of the Destroyer's fire variant at 100 >= 2.0 with the lower curve and the stronger storm |
-| `Skills/Mage:[meteorStorm].hits` | 6 | 7 | S147 | 6 -> 7: R4 of 5A (+1 impact) 0.174 -> 0.148 |
-| `Skills/Mage:[meteorStorm].values.dmg[1]` | 24 | 81 | S147 | 24 -> 81 (7 impacts): R9 fire with its burn >= lightning on 3 targets 8 s at 100 (1.22 -> 1.02) |
-| `Skills/Mage:[meteorStorm].values.dmg[2]` | 24 | 107 | S147 | 24 -> 107: see dmg[1] |
-| `Skills/Mage:[shatter].breakpoints[10].b.values.dmg` | 55 | 85 | S147 | +55 -> +85: R4 of 10B at 100 0.131 -> 0.20 with the higher base |
-| `Skills/Mage:[shatter].values.dmg[1]` | 160 | 184 | S147 | 160 -> 184 (x1.15): R9 ice / fire on one target at 70 / 100 >= 0.85 |
-| `Skills/Mage:[shatter].values.dmg[2]` | 230 | 420 | S147 | 230 -> 420 (rank 8 pinned at the x1.15 value): R9 ice / fire on one target at 100 0.78 -> 0.86 |
-| `Skills/Mage:[tempest].cost` | 170 | 360 | S147 | 170 -> 360: T-SK4 of the Destroyer's lightning variant at 100 1.55 -> 2.0 with the lower curve |
-| `Skills/Mage:[tempest].values.dmg[1]` | 40 | 29 | S147 | 40 -> 29: R9 fire with its burn >= lightning on 3 targets 8 s at 100 |
-| `Skills/Mage:[tempest].values.dmg[2]` | 48 | 34 | S147 | 48 -> 34: see dmg[1] |
-| `Skills/Mage:[thunderStrike].values.dmg[2]` | 400 | 460 | S147 | 400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16) |
-
 ### Nowe klucze
 
 | klucz | wartość | sesja | powód |
 | --- | --: | --: | --: |
-| `SkillCurves:knots.deadlyBolt.dmg[8]` | 242,2 | S147 | new: rank 8 (level 68) pinned for the rank 10 260 -> 248 |
-| `SkillCurves:knots.glacialSpike.dmg[7]` | 243,3 | S147 | new: rank 7 (level 39) pinned for the rank 10 330 -> 360 |
-| `SkillCurves:knots.immolate.dmg[8]` | 273,3 | S147 | new: rank 8 (level 68) pinned for the rank 10 300 -> 283.3 |
-| `SkillCurves:knots.lightningLance.dmg[8]` | 186,7 | S147 | new: rank 8 (level 68) pinned for the rank 10 200 -> 280 |
-| `SkillCurves:knots.shatter.dmg[8]` | 247 | S147 | new: rank 8 (level 68) of the x1.15 pair pinned for the rank 10 265 -> 420 |
-| `SkillCurves:knots.thunderStrike.dmg[7]` | 300 | S147 | new: rank 7 (level 39) pinned for the rank 10 400 -> 460 |
-| `SkillCurves:knots.venomArrow.dmg[2]` | 123,6 | S147 | new: rank 2 (level 19) pinned (1-20 frozen) for the rank 10 152 -> 137 |
-| `SkillCurves:knots.venomArrow.poison[2]` | 50 | S147 | new: rank 2 (level 19) pinned for the poison 50 -> 57.5 at rank 10 |
-
-### Rangi (liczby pochodne, bez osobnego powodu)
-
-| umiejętność.pole | ranga | pasmo rangi | przed | po |
-| --- | --: | --: | --: | --: |
-| deadlyBolt.dmg | 10 | 71–100 | 260 | 248 |
-| deadlyBolt.dmg | 9 | 71–100 | 251,1 | 245,1 |
-| deepFreeze.dmg | 1 | 21–45 | 70 | 80 |
-| deepFreeze.dmg | 10 | 46–70 | 120 | 138 |
-| deepFreeze.dmg | 2 | 21–45 | 75,56 | 86,44 |
-| deepFreeze.dmg | 3 | 21–45 | 81,11 | 92,89 |
-| deepFreeze.dmg | 4 | 21–45 | 86,67 | 99,33 |
-| deepFreeze.dmg | 5 | 46–70 | 92,22 | 105,8 |
-| deepFreeze.dmg | 6 | 46–70 | 97,78 | 112,2 |
-| deepFreeze.dmg | 7 | 46–70 | 103,3 | 118,7 |
-| deepFreeze.dmg | 8 | 46–70 | 108,9 | 125,1 |
-| deepFreeze.dmg | 9 | 46–70 | 114,4 | 131,6 |
-| glacialSpike.dmg | 10 | 46–70 | 330 | 360 |
-| glacialSpike.dmg | 8 | 21–45 | 272,2 | 282,2 |
-| glacialSpike.dmg | 9 | 46–70 | 301,1 | 321,1 |
-| heavyBolt.dmg | 10 | 21–45 | 302,9 | 281,7 |
-| heavyBolt.dmg | 6 | 21–45 | 302,1 | 280,9 |
-| heavyBolt.dmg | 7 | 21–45 | 302,3 | 281,1 |
-| heavyBolt.dmg | 8 | 21–45 | 302,5 | 281,3 |
-| heavyBolt.dmg | 9 | 21–45 | 302,7 | 281,5 |
-| immolate.dmg | 10 | 71–100 | 300 | 283,3 |
-| immolate.dmg | 9 | 71–100 | 286,7 | 278,3 |
-| lightningLance.dmg | 10 | 71–100 | 200 | 280 |
-| lightningLance.dmg | 9 | 71–100 | 193,3 | 233,3 |
-| meteorStorm.dmg | 1 | 46–70 | 24 | 81 |
-| meteorStorm.dmg | 10 | 71–100 | 24 | 107 |
-| meteorStorm.dmg | 2 | 46–70 | 24 | 83,89 |
-| meteorStorm.dmg | 3 | 46–70 | 24 | 86,78 |
-| meteorStorm.dmg | 4 | 71–100 | 24 | 89,67 |
-| meteorStorm.dmg | 5 | 71–100 | 24 | 92,56 |
-| meteorStorm.dmg | 6 | 71–100 | 24 | 95,44 |
-| meteorStorm.dmg | 7 | 71–100 | 24 | 98,33 |
-| meteorStorm.dmg | 8 | 71–100 | 24 | 101,2 |
-| meteorStorm.dmg | 9 | 71–100 | 24 | 104,1 |
-| shatter.dmg | 1 | 21–45 | 160 | 184 |
-| shatter.dmg | 10 | 71–100 | 230 | 420 |
-| shatter.dmg | 2 | 21–45 | 167,8 | 193 |
-| shatter.dmg | 3 | 46–70 | 175,6 | 202 |
-| shatter.dmg | 4 | 46–70 | 183,3 | 211 |
-| shatter.dmg | 5 | 46–70 | 191,1 | 220 |
-| shatter.dmg | 6 | 46–70 | 198,9 | 229 |
-| shatter.dmg | 7 | 46–70 | 206,7 | 238 |
-| shatter.dmg | 8 | 46–70 | 214,4 | 247 |
-| shatter.dmg | 9 | 71–100 | 222,2 | 333,5 |
-| snarefield.dmg | 1 | 46–70 | 30 | 12 |
-| snarefield.dmg | 10 | 71–100 | 38 | 14 |
-| snarefield.dmg | 2 | 46–70 | 30,89 | 12,22 |
-| snarefield.dmg | 3 | 46–70 | 31,78 | 12,44 |
-| snarefield.dmg | 4 | 71–100 | 32,67 | 12,67 |
-| snarefield.dmg | 5 | 71–100 | 33,56 | 12,89 |
-| snarefield.dmg | 6 | 71–100 | 34,44 | 13,11 |
-| snarefield.dmg | 7 | 71–100 | 35,33 | 13,33 |
-| snarefield.dmg | 8 | 71–100 | 36,22 | 13,56 |
-| snarefield.dmg | 9 | 71–100 | 37,11 | 13,78 |
-| tempest.dmg | 1 | 46–70 | 40 | 29 |
-| tempest.dmg | 10 | 71–100 | 48 | 34 |
-| tempest.dmg | 2 | 46–70 | 40,89 | 29,56 |
-| tempest.dmg | 3 | 46–70 | 41,78 | 30,11 |
-| tempest.dmg | 4 | 71–100 | 42,67 | 30,67 |
-| tempest.dmg | 5 | 71–100 | 43,56 | 31,22 |
-| tempest.dmg | 6 | 71–100 | 44,44 | 31,78 |
-| tempest.dmg | 7 | 71–100 | 45,33 | 32,33 |
-| tempest.dmg | 8 | 71–100 | 46,22 | 32,89 |
-| tempest.dmg | 9 | 71–100 | 47,11 | 33,44 |
-| thunderStrike.dmg | 10 | 46–70 | 400 | 460 |
-| thunderStrike.dmg | 8 | 21–45 | 333,3 | 353,3 |
-| thunderStrike.dmg | 9 | 46–70 | 366,7 | 406,7 |
-| toxicTips.tip | 2 | 21–45 | 12,5 | 15 |
-| toxicTips.tip | 3 | 21–45 | 15 | 20 |
-| toxicTips.tip | 4 | 46–70 | 17,5 | 25 |
-| toxicTips.tip | 5 | 46–70 | 20 | 30 |
-| venomArrow.dmg | 10 | 46–70 | 152 | 137 |
-| venomArrow.dmg | 3 | 21–45 | 127,1 | 125,2 |
-| venomArrow.dmg | 4 | 21–45 | 130,7 | 126,9 |
-| venomArrow.dmg | 5 | 21–45 | 134,2 | 128,6 |
-| venomArrow.dmg | 6 | 21–45 | 137,8 | 130,3 |
-| venomArrow.dmg | 7 | 21–45 | 141,3 | 132 |
-| venomArrow.dmg | 8 | 21–45 | 144,9 | 133,6 |
-| venomArrow.dmg | 9 | 46–70 | 148,4 | 135,3 |
-| venomArrow.poison | 10 | 46–70 | 50 | 57,5 |
-| venomArrow.poison | 3 | 21–45 | 50 | 50,94 |
-| venomArrow.poison | 4 | 21–45 | 50 | 51,88 |
-| venomArrow.poison | 5 | 21–45 | 50 | 52,81 |
-| venomArrow.poison | 6 | 21–45 | 50 | 53,75 |
-| venomArrow.poison | 7 | 21–45 | 50 | 54,69 |
-| venomArrow.poison | 8 | 21–45 | 50 | 55,62 |
-| venomArrow.poison | 9 | 46–70 | 50 | 56,56 |
-| venomSnare.dmg | 1 | 21–45 | 232 | 80 |
-| venomSnare.dmg | 10 | 46–70 | 236 | 82 |
-| venomSnare.dmg | 2 | 21–45 | 232,4 | 80,22 |
-| venomSnare.dmg | 3 | 21–45 | 232,9 | 80,44 |
-| venomSnare.dmg | 4 | 21–45 | 233,3 | 80,67 |
-| venomSnare.dmg | 5 | 21–45 | 233,8 | 80,89 |
-| venomSnare.dmg | 6 | 46–70 | 234,2 | 81,11 |
-| venomSnare.dmg | 7 | 46–70 | 234,7 | 81,33 |
-| venomSnare.dmg | 8 | 46–70 | 235,1 | 81,56 |
-| venomSnare.dmg | 9 | 46–70 | 235,6 | 81,78 |
-| venomSnare.poison | 1 | 21–45 | 285 | 405 |
-| venomSnare.poison | 10 | 46–70 | 290 | 412 |
-| venomSnare.poison | 2 | 21–45 | 285,6 | 405,8 |
-| venomSnare.poison | 3 | 21–45 | 286,1 | 406,6 |
-| venomSnare.poison | 4 | 21–45 | 286,7 | 407,3 |
-| venomSnare.poison | 5 | 21–45 | 287,2 | 408,1 |
-| venomSnare.poison | 6 | 46–70 | 287,8 | 408,9 |
-| venomSnare.poison | 7 | 46–70 | 288,3 | 409,7 |
-| venomSnare.poison | 8 | 46–70 | 288,9 | 410,4 |
-| venomSnare.poison | 9 | 46–70 | 289,4 | 411,2 |
+| `Bosses:byId.hrimvald.atkMul` | 0,38 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].cooldown` | 24 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].count` | 5 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].damage` | 6,7 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].phases[1]` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].phases[2]` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].radius` | 9 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].windup` | 2,2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].cooldown` | 16 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].damage` | 3,8 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].phases[1]` | 1 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].phases[2]` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].phases[3]` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].radius` | 6 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].windup` | 1,6 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].channel.breakPct` | 0,007 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].channel.seconds` | 6 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].channel.stagger` | 4 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].cooldown` | 40 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].damage` | 8,6 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].phases[1]` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].phases[2]` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].radius` | 6 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].windup` | 6 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].angle` | 80 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].cooldown` | 14 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].damage` | 3,5 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].phases[1]` | 1 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].phases[2]` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].phases[3]` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].radius` | 16 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].windup` | 1,4 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].cooldown` | 26 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].damage` | 6,8 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].mark.count` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].mark.seconds` | 5 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].mark.self` | 0,43 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].phases[1]` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].phases[2]` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].radius` | 10 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].windup` | 1,2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].cooldown` | 22 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].damage` | 7,3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].phases[1]` | 1 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].phases[2]` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].phases[3]` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].radius` | 16 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].windup` | 2,2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].cooldown` | 20 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].count` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].damage` | 6,9 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].length` | 50 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].phases[1]` | 1 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].phases[2]` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].phases[3]` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].width` | 7 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].windup` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].cooldown` | 30 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].damage` | 64 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].phases[1]` | 1 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].phases[2]` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].phases[3]` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].radius` | 10 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].split.missAll` | 0,086 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].windup` | 3,5 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.defMul` | 1,4 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.enrageAfter` | 780 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.enrageDamage` | 1,6 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.haste[3]` | 1,2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.hpMul` | 7,8 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.level` | 100 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.minLevel` | 80 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.moveSpeed` | 13 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.mresMul` | 1,4 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.phases[1]` | 0,7 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.phases[2]` | 0,35 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.speed` | 0,8 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[1].count` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[1].level` | 95 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[1].phase` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[2].count` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[2].level` | 95 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[2].phase` | 2 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[3].count` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[3].level` | 95 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[3].phase` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[4].count` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[4].level` | 95 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[4].phase` | 3 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.timeLimit` | 900 | S149 | new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `WorldBoss:fighterReach` | 30 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:publishEvery` | 0,5 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.classBias` | 0,8 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.expKills` | 16 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.failMul` | 0 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.goldKills` | 24 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.materials[essence_crystal].chance` | 1 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.materials[essence_crystal].max` | 4 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.materials[essence_crystal].min` | 2 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.materials[legend_core].chance` | 0,25 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.materials[legend_core].max` | 1 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.materials[legend_core].min` | 1 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.rarity[3]` | 72 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.rarity[4]` | 24 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:reward.rarity[5]` | 4 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:schedule.everyHours` | 3 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:schedule.linger` | 60 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:schedule.minute` | 0 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:schedule.offsetHour` | 2 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:schedule.warn[1]` | 600 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:schedule.warn[2]` | 120 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:share.healMul` | 1 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:share.hpEquivalent` | 3 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:share.interceptMul` | 1 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:share.min` | 0,02 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:share.shieldMul` | 1 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:spots[icewatchPlateau].r` | 70 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:spots[icewatchPlateau].x` | 490 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
+| `WorldBoss:spots[icewatchPlateau].z` | 360 | S149 | new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
 
 ### Księga: pominięte funkcje
 
@@ -370,7 +317,7 @@ AreaProfiles:get, AreaProfiles:ofArea, Areas/Caves:get, Blessings:get, Blessings
 
 Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz: dane gry. Dla każdego klucza: wartość przed S83, po S94 i wszystkie powody z `tools/balance_reasons.luau` (sesja: powód). Rangi (`Rangi:`) to liczby pochodne i ich tu nie ma.
 
-5826 kluczy zmienionych od bazy, 0 bez powodu.
+5916 kluczy zmienionych od bazy, 0 bez powodu.
 
 | klucz | przed S83 | po S94 | sesja | powody (sesja: powód) |
 | --- | --: | --: | --: | --: |
@@ -530,6 +477,96 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | `Bosses:byId.grimrok.hpMul` | 1,4 | 1,2 | S91 | S91: 1.4 -> 1.2: D1 Grimrok in the S83 / S87 model 6.15-6.33 -> 5.33-5.57 min (band 4-6); S32 model 4.36-4.56 min |
 | `Bosses:byId.grimrok.summons[1].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
 | `Bosses:byId.grimrok.summons[2].count` | 10 | 8 | S134 | S134: 10 -> 8 for every party (was 10 + 2 per extra player): a party of 3 loses <= 0.91 HP per member per wave (<= 1.10), a lone player does not survive a wave on equal gear (S134 A2) |
+| `Bosses:byId.hrimvald.atkMul` | – | 0,38 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].cooldown` | – | 24 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].count` | – | 5 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].damage` | – | 6,7 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].phases[1]` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].phases[2]` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].radius` | – | 9 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[avalanche].windup` | – | 2,2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].cooldown` | – | 16 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].damage` | – | 3,8 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].phases[1]` | – | 1 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].phases[2]` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].phases[3]` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].radius` | – | 6 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[boulderToss].windup` | – | 1,6 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].channel.breakPct` | – | 0,007 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].channel.seconds` | – | 6 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].channel.stagger` | – | 4 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].cooldown` | – | 40 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].damage` | – | 8,6 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].phases[1]` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].phases[2]` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].radius` | – | 6 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[endlessWinter].windup` | – | 6 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].angle` | – | 80 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].cooldown` | – | 14 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].damage` | – | 3,5 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].phases[1]` | – | 1 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].phases[2]` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].phases[3]` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].radius` | – | 16 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[fistSlam].windup` | – | 1,4 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].cooldown` | – | 26 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].damage` | – | 6,8 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].mark.count` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].mark.seconds` | – | 5 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].mark.self` | – | 0,43 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].phases[1]` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].phases[2]` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].radius` | – | 10 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[frostBrand].windup` | – | 1,2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].cooldown` | – | 22 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].damage` | – | 7,3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].phases[1]` | – | 1 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].phases[2]` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].phases[3]` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].radius` | – | 16 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[glacierStomp].windup` | – | 2,2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].cooldown` | – | 20 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].count` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].damage` | – | 6,9 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].length` | – | 50 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].phases[1]` | – | 1 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].phases[2]` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].phases[3]` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].width` | – | 7 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[iceSpikes].windup` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].cooldown` | – | 30 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].damage` | – | 64 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].phases[1]` | – | 1 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].phases[2]` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].phases[3]` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].radius` | – | 10 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].split.missAll` | – | 0,086 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.attacks[shatterStone].windup` | – | 3,5 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.defMul` | – | 1,4 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.enrageAfter` | – | 780 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.enrageDamage` | – | 1,6 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.haste[3]` | – | 1,2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.hpMul` | – | 7,8 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.level` | – | 100 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.minLevel` | – | 80 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.moveSpeed` | – | 13 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.mresMul` | – | 1,4 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.phases[1]` | – | 0,7 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.phases[2]` | – | 0,35 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.speed` | – | 0,8 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[1].count` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[1].level` | – | 95 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[1].phase` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[2].count` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[2].level` | – | 95 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[2].phase` | – | 2 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[3].count` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[3].level` | – | 95 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[3].phase` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[4].count` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[4].level` | – | 95 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.summons[4].phase` | – | 3 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
+| `Bosses:byId.hrimvald.timeLimit` | – | 900 | nowy od S149 | S149: new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min |
 | `Bosses:byId.morvane.atkMul` | 1,1 | 0,42 | S92 | S92: 1.1 -> 0.42 (C2): basic hit 28 % -> 11 % of a level 45 Mage (7-12 %), S32 tank 770 -> 338 %/min |
 | `Bosses:byId.morvane.attacks[cryptBrand].cooldown` | – | 22 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
 | `Bosses:byId.morvane.attacks[cryptBrand].damage` | – | 6 | nowy od S134 | S134: new mark mechanic: a random fighter marked for 5 s, then a circle 9 at its position: others 6 = ~70 %, the marked one x0.43 = ~30 %; phases 1-2, cooldown 22 (G11) |
@@ -3668,6 +3705,7 @@ Baza: `tools/balance_base.json` (migawka S83, commit 1eef4ee, 2026-10-12); teraz
 | SkillPools/Mage | 1 | S137: new module (DESIGN-18 §4.2): pool version 1 (fire, ice, lightning; transitional); S142: 4 -> 5 (DESIGN-18 §10): the lightning pool, Fire Bolt fire only, a free reset |
 | SkillPools/Warrior | 1 | S137: new module (DESIGN-18 §4.2): pool version 1 (onehand, twohand; transitional); S143: 2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset |
 | SkillPools/init | 15 | S137: new module (DESIGN-18 §5): the shared ladder, school S1 1, A1 3, K1 6, O1 10, S2 15, P1 20, A2 26, K2 33, S3 40, P2 50, U 60, common C1 4, C2 12, C3 30, C4 45; asserted for classes past their transitional pools (S140-S145) |
+| WorldBoss | 29 | S149: new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149) |
 | WorldEvents | 60 | S101: new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound; S101: new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound; S134c: 480 -> 630: the commander at the latest after 10.5 min of the 15 (the waves need longer); S101: new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound; S134c: new: the gap after each of the commander's casts = Data/BossTuning.globalGap (the bosses 2.0 cadence); S101: new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound; S134c: 720 -> 900: bigger waves need more time; 3 players end in 0.46-0.61 of it (<= 0.8, Balance.invasion), solo on equal gear runs out of time (1.09-1.43); S134c: new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2); S134c: owner answer 4a (about 10 a wave, up to about 25): base 10 + 3 per player, max 25, clusters of 5 (1 player 13, 3 players 19, 5 players 25; S101: 4 + 2, max 16, clusters of 4); S134c: 80 -> 90 with the bigger waves (owner answer 4a); S134c: owner answer 4a (about 10 a wave, up to about 25): base 10 + 3 per player, max 25, clusters of 5 (1 player 13, 3 players 19, 5 players 25; S101: 4 + 2, max 16, clusters of 4); S134c: owner answer 5 (a chance at an Epic = Legendary, the game has no Epic): Unique 60 / Heroic 37 / Legendary 3 (half the boss's base 6 %, an event every hour without a daily limit), never Mythic (S101: 80 / 20); S101: S101 F2: event EXP = 1.9 normal monsters of the event level (8 planned), the largest one-decimal value with one event every 2 h of play <= 3% of every level 1-99 (Balance.worldEventShare; worst L3 Hunter 2.86%, L3 grinds at monsterExpMul 0.5; 1.3-2.2% from 10 up); no quest budget multiplier; S101: new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound; S101: new module: world events (DESIGN-15 §4): one an hour per server (60 +- 10 min, first 15-35 min, 2 min warning), Invasion 12 min (6 waves of 4 + 2 per player, max 16, commander at 8 min) and Wandering Champion 15 min, Elite II scaled by players (commander 0.45-1.4 HP for 1-5+, champion 0.7-2.3), reward threshold min(3% of all points, 3 monster HP), 10 levels above the event without reward, EXP 1.9 kills (F2: one event every 2 h <= 3% of every level 1-99, worst L3 2.86%), gold 12 kills, defeat 50%, chest Unique 80 / Heroic 20 bound; S134c: 12 -> 18 (+50 %) for the harder event; Full income (S109) blocks stay green; S134c: owner answer 4c, no solo discount: one entry hp 1.6 / atk 1.0 for every party (bosses 2.0: a bigger party only has it easier; S101: hp 0.45-1.4, atk 0.85-1 by players); 3 players beat it in 60-80 s of the model, 5 in 33-45 |
 
 ## Własność pasm umiejętności
@@ -8807,7 +8845,7 @@ Faza 3: ×3.9 ataku bossa (magic) co 3 s na każdego poza bezpiecznym miejscem.
 
 ### Cele (70–100)
 
-Globalne (G): 249/249 w paśmie; regionu: 213/213 w paśmie.
+Globalne (G): 270/270 w paśmie; regionu: 213/213 w paśmie.
 
 | cel | wartość | próg | wynik | kto asertuje |
 | --- | --: | --: | --: | --: |
@@ -9059,6 +9097,27 @@ Globalne (G): 249/249 w paśmie; regionu: 213/213 w paśmie.
 | vaelgrath faza 3: avalanche (tempo / odnowienie) | 0,58 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | vaelgrath faza 3: iceComet (tempo / odnowienie) | 0,56 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | vaelgrath faza 3: absoluteZero (tempo / odnowienie) | 0,78 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 1: fistSlam (tempo / odnowienie) | 0,75 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 1: boulderToss (tempo / odnowienie) | 0,85 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 1: glacierStomp (tempo / odnowienie) | 0,88 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 1: iceSpikes (tempo / odnowienie) | 0,80 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 1: shatterStone (tempo / odnowienie) | 0,80 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 2: fistSlam (tempo / odnowienie) | 0,56 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 2: boulderToss (tempo / odnowienie) | 0,61 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 2: glacierStomp (tempo / odnowienie) | 0,62 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 2: iceSpikes (tempo / odnowienie) | 0,57 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 2: avalanche (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 2: shatterStone (tempo / odnowienie) | 0,55 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 2: frostBrand (tempo / odnowienie) | 0,65 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 2: endlessWinter (tempo / odnowienie) | 0,73 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 3: fistSlam (tempo / odnowienie) | 0,56 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 3: boulderToss (tempo / odnowienie) | 0,61 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 3: glacierStomp (tempo / odnowienie) | 0,62 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 3: iceSpikes (tempo / odnowienie) | 0,57 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 3: avalanche (tempo / odnowienie) | 0,64 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 3: shatterStone (tempo / odnowienie) | 0,55 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 3: frostBrand (tempo / odnowienie) | 0,65 | ≥ 0,50 | w paśmie | S87 (asertowane) |
+| hrimvald faza 3: endlessWinter (tempo / odnowienie) | 0,73 | ≥ 0,50 | w paśmie | S87 (asertowane) |
 | 70–100: godzin (cel D4 41 h) | 43,08 | 30,75–51,25 | w paśmie | S87 (asertowane) |
 | frostpeak_grotto yeti 71 Warrior: Elita HP | 0,76 | 0,45–1,10 | w paśmie | S94 (asertowane) |
 | frostpeak_grotto yeti 71 Warrior: spotkanie Elit (q = 0.25) | 1,05 | ≤ 1,10 | w paśmie | S94 (asertowane) |
@@ -12060,6 +12119,70 @@ Model `Balance.invasion`: drużyna bije gromady i Elity osobno (każdy swoją, t
 | frostpeak_tundra L85: solo na równym sprzęcie, czas / limit | 1,42 |
 
 
+## Boss świata (S149)
+
+Model `Balance.bossFight` z Hrimvaldem (`Data/Bosses`, `world = true`): HP i pomocnicy nie zależą od liczby graczy; drużyna 10–20 to powtórzony skład `Balance.ORDER` (jeden tank i jeden Kapłan na 5 graczy), poziom 99 (5 graczy: 100), sprzęt konwencji. Pomocnicy faz 2–3 bez tarczy: drużyna bije ich po kolei, boss atakuje dalej. Wspólny cios dzieli się między wszystkich w kręgu (tu: cała drużyna), zaklęcie przerywa się obrażeniami w `seconds − 0,5` s, piętno trafia trzech naraz. Łup: Legendarne i Mityczne na godzinę gry (2 h dziennie, ok. 0,67 walki dziennie) wobec Vaelgratha na godzinę wejścia (240 s) i walki 5 graczy L99. Asertuje `balance.spec` („Balance: world boss (S149)”).
+
+| graczy | poziom | min | min z węzłami | przerwanie s / limit | wspólny cios na osobę / HP | wynik |
+| --- | --: | --: | --: | --: | --: | --: |
+| 5 | L100 | 22,5 | 19,9 | 9,3 / 5,5 | 1,45 | przegrywa |
+| 10 | L99 | 11,6 | 10,2 | 4,8 / 5,5 | 0,73 | wygrywa |
+| 15 | L99 | 7,7 | 6,8 | 3,2 / 5,5 | 0,49 | wygrywa |
+| 20 | L99 | 5,8 | 5,1 | 2,4 / 5,5 | 0,37 | wygrywa |
+
+
+| klasa | Leg. + Myt. z walki | na godzinę gry | Vaelgrath na godzinę walki | stosunek (cel ≤ 0,5) | dzień 2 h / Vaelgrath ×3 |
+| --- | --: | --: | --: | --: | --: |
+| Wojownik | 0,2554 | 0,08515 | 0,5521 | 0,15 | 0,75 |
+| Łowca | 0,2524 | 0,08414 | 0,5456 | 0,15 | 0,75 |
+| Mag | 0,2514 | 0,08378 | 0,5434 | 0,15 | 0,75 |
+| Kapłan | 0,2572 | 0,08572 | 0,5557 | 0,15 | 0,75 |
+
+
+| cel | wartość | próg | wynik | kto asertuje |
+| --- | --: | --: | --: | --: |
+| Hrimvald, 10 graczy L99: min | 11,55 | 9,00–12,00 | w paśmie | S149 (asertowane) |
+| Hrimvald, 20 graczy L99: min | 5,78 | 5,00–7,00 | w paśmie | S149 (asertowane) |
+| Hrimvald: czas 15 graczy / 10 graczy | 0,67 | ≤ 1,00 | w paśmie | S149 (asertowane) |
+| Hrimvald: czas 20 graczy / 15 graczy | 0,75 | ≤ 1,00 | w paśmie | S149 (asertowane) |
+| Hrimvald, 10 graczy L99 z węzłami: min | 10,18 | 9,00–12,00 | w paśmie | S149 (asertowane) |
+| Hrimvald, 20 graczy L99 z węzłami: min | 5,09 | 5,00–7,00 | w paśmie | S149 (asertowane) |
+| Hrimvald z węzłami: czas 15 graczy / 10 graczy | 0,67 | ≤ 1,00 | w paśmie | S149 (asertowane) |
+| Hrimvald z węzłami: czas 20 graczy / 15 graczy | 0,75 | ≤ 1,00 | w paśmie | S149 (asertowane) |
+| Hrimvald: 5 graczy L100 przegrywa (1 = tak) | 1,00 | ≥ 1,00 | w paśmie | S149 (asertowane) |
+| Hrimvald: największy cios do uniknięcia / HP Maga L100 | 0,73 | 0,60–0,90 | w paśmie | S149 (asertowane) |
+| Hrimvald: największy cios do uniknięcia / HP Wojownika L100 | 0,68 | ≤ 0,70 | w paśmie | S149 (asertowane) |
+| Hrimvald: największy cios nie do uniknięcia / HP Maga L100 | 0,43 | ≤ 0,50 | w paśmie | S149 (asertowane) |
+| Hrimvald: wspólny cios, 10 w kręgu / HP Maga | 0,73 | ≤ 0,75 | w paśmie | S149 (asertowane) |
+| Hrimvald: wspólny cios, 7 w kręgu / HP Maga | 1,05 | ≥ 1,00 | w paśmie | S149 (asertowane) |
+| Hrimvald: przerwanie zaklęcia, 10 graczy L99: s | 4,79 | ≤ 5,50 | w paśmie | S149 (asertowane) |
+| Hrimvald: przerwanie zaklęcia, 5 graczy L99: s | 9,58 | ≥ 5,50 | w paśmie | S149 (asertowane) |
+| Hrimvald: frostBrand, naznaczonych naraz | 3,00 | 3,00–3,00 | w paśmie | S149 (asertowane) |
+| Hrimvald: frostBrand, inni w kręgu / HP Maga | 0,72 | ≤ 0,75 | w paśmie | S149 (asertowane) |
+| Hrimvald: frostBrand, naznaczony / HP Maga | 0,31 | ≤ 0,35 | w paśmie | S149 (asertowane) |
+| Hrimvald (model S32): tank HP na minutę, 10 graczy L99 | 2,24 | ≤ 3,50 | w paśmie | S149 (asertowane) |
+| Hrimvald, pomocnicy fazy, 10 graczy: HP na członka | 0,04 | ≤ 1,10 | w paśmie | S149 (asertowane) |
+| Hrimvald: Legendarne i Mityczne / h gry / Vaelgrath na godzinę walki (Warrior) | 0,15 | ≤ 0,50 | w paśmie | S149 (asertowane) |
+| Hrimvald: Legendarne i Mityczne / h gry / Vaelgrath na godzinę walki (Hunter) | 0,15 | ≤ 0,50 | w paśmie | S149 (asertowane) |
+| Hrimvald: Legendarne i Mityczne / h gry / Vaelgrath na godzinę walki (Mage) | 0,15 | ≤ 0,50 | w paśmie | S149 (asertowane) |
+| Hrimvald: Legendarne i Mityczne / h gry / Vaelgrath na godzinę walki (Cleric) | 0,15 | ≤ 0,50 | w paśmie | S149 (asertowane) |
+
+
+| bez progu | wartość |
+| --- | --: |
+| Hrimvald, 5 graczy L100: min | 22,54 |
+| Hrimvald, 15 graczy L99: min | 7,70 |
+| Hrimvald, 5 graczy L100 z węzłami: min | 19,86 |
+| Hrimvald, 15 graczy L99 z węzłami: min | 6,79 |
+| Hrimvald: Legendarne i Mityczne na dzień 2 h gry / Vaelgrath na dzień (Warrior) | 0,75 |
+| Hrimvald: Legendarne i Mityczne na dzień 2 h gry / Vaelgrath na dzień (Hunter) | 0,75 |
+| Hrimvald: Legendarne i Mityczne na dzień 2 h gry / Vaelgrath na dzień (Mage) | 0,75 |
+| Hrimvald: Legendarne i Mityczne na dzień 2 h gry / Vaelgrath na dzień (Cleric) | 0,75 |
+| Hrimvald: EXP jednej walki / EXP poziomu 80 | 0,14 |
+| Hrimvald: EXP jednej walki / EXP poziomu 90 | 0,13 |
+| Hrimvald: EXP jednej walki / EXP poziomu 99 | 0,12 |
+
+
 ## Elita II: Druzgocący Cios i koniec darmowego uciekania (S134e)
 
 Druzgocący Cios (`Data/MonsterAbilities.crush`) nieuniknięty, bez krytyka, × rampa przewagi (`Logic/MonsterCast.lethalMul`) i `Damage.levelGap`; ułamek HP postaci konwencji o tyle poziomów niżej. Ucieczka: `Balance.elite2Kite` (gracz dystansowy bije `KITE_UPTIME` czasu, rzuty w uciekającego z rampą przewagi, po Doskoku `PIN_SECONDS` zwykłych ciosów, mikstury najwyżej pełne HP na łyk w ich odstępie; przegrywa, gdy strata przez walkę albo między dwiema miksturami przekracza HP). „Przed” = bez zestawu: nic nie sięga uciekającego (strata 0). Asertuje `balance.spec` („Balance: Elite II kit (S134e)”).
@@ -13483,21 +13606,21 @@ DPS na manekinach poziomu L (`SkillModel.metrics`, ekwipunek konwencji z bronią
 | marksman.eliteHunter · longbow + quiver · 70 | 2181 | 7068 | 8781 | 6178 | 10 525 | 6965 | 2,83 | **1,34** | 4,03 | **1,79** | 1,20 | 2,0 |
 | marksman.eliteHunter · longbow + quiver · 100 | 4612 | 17 684 | 23 149 | 14 062 | 23 952 | 15 160 | 3,05 | **1,44** | 5,02 | **2,24** | 1,03 | 2,0 |
 | trapper.poacher · crossbow + quiver · 20 | 165 | 395 | 415 | 359 | 525 | 417 | 2,17 | 1,00 | 2,51 | 1,00 | 1,27 | 2,0 |
-| trapper.poacher · crossbow + quiver · 45 | 624 | 2422 → 2425 | 2524 → 2515 | 1947 → 1950 | 4653 → 4639 | 2939 → 2911 | 3,12 → 3,13 | **1,44** | 4,05 → 4,03 | **1,61 → 1,60** | 1,84 | 2,0 |
-| trapper.poacher · crossbow + quiver · 70 | 1585 | 6239 → 6304 | 7196 → 7128 | 4972 → 5029 | 14 324 → 14 054 | 8608 → 8669 | 3,14 → 3,17 | **1,44 → 1,46** | 4,54 → 4,50 | **1,81 → 1,79** | 1,99 → 1,97 | 2,0 |
-| trapper.poacher · crossbow + quiver · 100 | 3493 | 14 606 → 14 802 | 16 068 → 15 969 | 11 378 → 11 633 | 32 402 → 31 880 | 19 291 → 19 764 | 3,26 → 3,33 | **1,50 → 1,53** | 4,60 → 4,57 | **1,83 → 1,82** | 2,02 → 2,00 | 2,0 |
+| trapper.poacher · crossbow + quiver · 45 | 624 | 2425 | 2515 | 1950 | 4639 | 2911 | 3,13 | **1,44** | 4,03 | **1,60** | 1,84 | 2,0 |
+| trapper.poacher · crossbow + quiver · 70 | 1585 | 6304 | 7128 | 5029 | 14 054 | 8669 | 3,17 | **1,46** | 4,50 | **1,79** | 1,97 | 2,0 |
+| trapper.poacher · crossbow + quiver · 100 | 3493 | 14 802 | 15 969 | 11 633 | 31 880 | 19 764 | 3,33 | **1,53** | 4,57 | **1,82** | 2,00 | 2,0 |
 | trapper.poisoner · crossbow + quiver · 20 | 165 | 395 | 430 | 360 | 550 | 419 | 2,18 | 1,00 | 2,61 | 1,00 | 1,28 | 2,0 |
-| trapper.poisoner · crossbow + quiver · 45 | 624 | 2465 → 2468 | 2809 → 2778 | 2026 → 2027 | 4889 → 4880 | 2799 → 2787 | 3,25 | **1,49** | 4,50 → 4,45 | **1,73 → 1,71** | 1,74 → 1,76 | 2,0 |
-| trapper.poisoner · crossbow + quiver · 70 | 1585 | 6454 → 6531 | 6922 → 6885 | 5337 → 5419 | 13 761 → 13 606 | 7892 → 7926 | 3,37 → 3,42 | **1,54 → 1,57** | 4,37 → 4,34 | **1,68 → 1,67** | 1,99 → 1,98 | 2,0 |
-| trapper.poisoner · crossbow + quiver · 100 | 3493 | 15 661 → 15 795 | 16 927 → 16 781 | 12 302 → 12 520 | 32 382 → 32 314 | 18 899 → 19 306 | 3,52 → 3,58 | **1,61 → 1,64** | 4,85 → 4,80 | **1,86 → 1,84** | 1,91 → 1,93 | 2,0 |
+| trapper.poisoner · crossbow + quiver · 45 | 624 | 2468 | 2778 | 2027 | 4880 | 2787 | 3,25 | **1,49** | 4,45 | **1,71** | 1,76 | 2,0 |
+| trapper.poisoner · crossbow + quiver · 70 | 1585 | 6531 | 6885 | 5419 | 13 606 | 7926 | 3,42 | **1,57** | 4,34 | **1,67** | 1,98 | 2,0 |
+| trapper.poisoner · crossbow + quiver · 100 | 3493 | 15 795 | 16 781 | 12 520 | 32 314 | 19 306 | 3,58 | **1,64** | 4,80 | **1,84** | 1,93 | 2,0 |
 | scout.partyHunter · bow + quiver · 20 | 159 | 338 | 360 | 338 | 545 | 396 | 2,12 | 1,00 | 2,26 | 1,00 | 1,51 | 2,0 |
 | scout.partyHunter · bow + quiver · 45 | 607 | 1689 | 1764 | 1655 | 2820 | 2014 | 2,72 | **1,28** | 2,91 | **1,28** | 1,60 | 2,0 |
 | scout.partyHunter · bow + quiver · 70 | 1327 | 4035 | 4396 | 3965 | 6717 | 4728 | 2,99 | **1,41** | 3,31 | **1,46** | 1,53 | 2,0 |
-| scout.partyHunter · bow + quiver · 100 | 3066 | 10 297 | 10 056 | 10 160 | 16 112 → 14 535 | 10 847 → 11 525 | 3,31 | **1,56** | 3,28 | **1,45** | 1,60 → 1,45 | 2,0 |
+| scout.partyHunter · bow + quiver · 100 | 3066 | 10 297 | 10 056 | 10 160 | 14 535 | 11 525 | 3,31 | **1,56** | 3,28 | **1,45** | 1,45 | 2,0 |
 | scout.tracker · shortbow + quiver · 20 | 155 | 332 | 373 | 333 | 559 | 389 | 2,15 | 1,00 | 2,41 | 1,00 | 1,50 | 2,0 |
 | scout.tracker · shortbow + quiver · 45 | 618 | 1678 | 1820 | 1651 | 2912 | 1995 | 2,67 | **1,24** | 2,95 | 1,22 | 1,60 | 2,0 |
 | scout.tracker · shortbow + quiver · 70 | 1382 | 4040 | 4509 | 3975 | 6924 | 4705 | 2,88 | **1,34** | 3,26 | **1,35** | 1,54 | 2,0 |
-| scout.tracker · shortbow + quiver · 100 | 3145 | 10 690 | 10 538 | 10 690 | 16 884 → 15 233 | 11 428 → 12 426 | 3,40 | **1,58** | 3,35 | **1,39** | 1,60 → 1,45 | 2,0 |
+| scout.tracker · shortbow + quiver · 100 | 3145 | 10 690 | 10 538 | 10 690 | 15 233 | 12 426 | 3,40 | **1,58** | 3,35 | **1,39** | 1,45 | 2,0 |
 
 ### T-SK1–3: Mag
 
@@ -13506,53 +13629,53 @@ DPS na manekinach poziomu L (`SkillModel.metrics`, ekwipunek konwencji z bronią
 | build · broń · poziom | atak podst. | na odnowieniu | wybuch 8 s | 60 s | obszar 3 · 8 s | obszar 3 · 60 s | T-SK1 | T-SK1 / L20 | T-SK2 | T-SK2 / L20 | T-SK3 | areaCap |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | base · staff · 20 | 173 | 435 | 443 | 435 | 614 | 584 | 2,51 | 1,00 | 2,56 | 1,00 | 1,38 | 2,0 |
-| base · staff · 45 | 680 | 2930 → 2959 | 3345 → 3389 | 2893 → 2959 | 5362 → 5413 | 4497 → 4563 | 4,25 → 4,35 | **1,69 → 1,73** | 4,92 → 4,98 | **1,92 → 1,95** | 1,60 | 2,0 |
-| base · staff · 70 | 1548 | 7716 → 7928 | 9578 → 9962 | 7667 → 7899 | 15 826 → 17 082 | 11 939 → 12 340 | 4,95 → 5,10 | **1,97 → 2,03** | 6,19 → 6,43 | **2,42 → 2,51** | 1,65 → 1,71 | 2,0 |
-| base · staff · 100 | 3051 | 17 454 → 18 882 | 21 301 → 23 661 | 17 299 → 18 846 | 37 279 → 43 751 | 28 624 → 31 782 | 5,67 → 6,18 | **2,26 → 2,46** | 6,98 → 7,75 | **2,73 → 3,03** | 1,75 → 1,85 | 2,0 |
+| base · staff · 45 | 680 | 2959 | 3389 | 2959 | 5413 | 4563 | 4,35 | **1,73** | 4,98 | **1,95** | 1,60 | 2,0 |
+| base · staff · 70 | 1548 | 7928 | 9962 | 7899 | 17 082 | 12 340 | 5,10 | **2,03** | 6,43 | **2,51** | 1,71 | 2,0 |
+| base · staff · 100 | 3051 | 18 882 | 23 661 | 18 846 | 43 751 | 31 782 | 6,18 | **2,46** | 7,75 | **3,03** | 1,85 | 2,0 |
 | base.loadout · wand + orb · 20 | 205 | 476 | 481 | 476 | 680 | 646 | 2,32 | 1,00 | 2,35 | 1,00 | 1,41 | 2,0 |
-| base.loadout · wand + orb · 45 | 807 | 3132 → 3162 | 3528 → 3573 | 3110 → 3162 | 5800 → 5855 | 4854 → 4922 | 3,85 → 3,92 | **1,66 → 1,69** | 4,37 → 4,43 | **1,86 → 1,89** | 1,64 | 2,0 |
-| base.loadout · wand + orb · 70 | 1848 | 8231 → 8445 | 10 171 → 10 559 | 8195 → 8466 | 17 151 → 18 469 | 12 923 → 13 309 | 4,43 → 4,58 | **1,91 → 1,97** | 5,50 → 5,71 | **2,34 → 2,43** | 1,69 → 1,75 | 2,0 |
-| base.loadout · wand + orb · 100 | 3671 | 18 769 → 20 242 | 22 812 → 25 313 | 18 700 → 20 204 | 40 629 → 47 540 | 31 058 → 34 410 | 5,09 → 5,50 | **2,20 → 2,37** | 6,21 → 6,89 | **2,65 → 2,94** | 1,78 → 1,88 | 2,0 |
+| base.loadout · wand + orb · 45 | 807 | 3162 | 3573 | 3162 | 5855 | 4922 | 3,92 | **1,69** | 4,43 | **1,89** | 1,64 | 2,0 |
+| base.loadout · wand + orb · 70 | 1848 | 8445 | 10 559 | 8466 | 18 469 | 13 309 | 4,58 | **1,97** | 5,71 | **2,43** | 1,75 | 2,0 |
+| base.loadout · wand + orb · 100 | 3671 | 20 242 | 25 313 | 20 204 | 47 540 | 34 410 | 5,50 | **2,37** | 6,89 | **2,94** | 1,88 | 2,0 |
 | destroyer.destroyerExp · staff · 20 | 173 | 352 | 349 | 352 | 458 | 448 | 2,04 | 1,00 | 2,01 | 1,00 | 1,31 | 3,0 |
-| destroyer.destroyerExp · staff · 45 | 755 | 2294 | 2379 | 2294 | 4338 → 4344 | 3751 → 3757 | 3,04 | **1,49** | 3,15 | **1,57** | 1,82 → 1,83 | 3,0 |
-| destroyer.destroyerExp · staff · 70 | 1691 | 5690 → 5818 | 7043 → 7514 | 5690 → 5735 | 15 269 → 16 796 | 11 264 → 11 494 | 3,37 → 3,39 | **1,65 → 1,67** | 4,17 → 4,44 | **2,07 → 2,21** | 2,17 → 2,24 | 3,0 |
-| destroyer.destroyerExp · staff · 100 | 3327 | 11 540 → 12 008 | 15 104 → 16 816 | 11 540 → 12 008 | 35 589 → 41 237 | 24 587 → 26 198 | 3,47 → 3,61 | **1,70 → 1,77** | 4,54 → 5,05 | **2,25 → 2,51** | 2,36 → 2,45 | 3,0 |
+| destroyer.destroyerExp · staff · 45 | 755 | 2294 | 2379 | 2294 | 4344 | 3757 | 3,04 | **1,49** | 3,15 | **1,57** | 1,83 | 3,0 |
+| destroyer.destroyerExp · staff · 70 | 1691 | 5818 | 7514 | 5735 | 16 796 | 11 494 | 3,39 | **1,67** | 4,44 | **2,21** | 2,24 | 3,0 |
+| destroyer.destroyerExp · staff · 100 | 3327 | 12 008 | 16 816 | 12 008 | 41 237 | 26 198 | 3,61 | **1,77** | 5,05 | **2,51** | 2,45 | 3,0 |
 | destroyer.destroyerBoss · staff · 20 | 173 | 414 | 431 | 414 | 546 | 515 | 2,39 | 1,00 | 2,49 | 1,00 | 1,27 | 3,0 |
-| destroyer.destroyerBoss · staff · 45 | 755 | 3259 → 3273 | 3565 → 3582 | 3259 → 3273 | 5406 → 5425 | 4719 → 4735 | 4,32 → 4,34 | **1,80 → 1,81** | 4,72 → 4,75 | **1,90 → 1,91** | 1,52 → 1,51 | 3,0 |
-| destroyer.destroyerBoss · staff · 70 | 1691 | 8504 → 8729 | 9634 → 10 216 | 8504 → 8702 | 18 046 → 19 774 | 14 554 → 15 126 | 5,03 → 5,15 | **2,10 → 2,15** | 5,70 → 6,04 | **2,29 → 2,43** | 1,87 → 1,94 | 3,0 |
-| destroyer.destroyerBoss · staff · 100 | 3327 | 17 234 → 17 833 | 20 614 → 22 331 | 17 234 → 17 833 | 42 617 → 48 088 | 31 768 → 33 495 | 5,18 → 5,36 | **2,16 → 2,24** | 6,20 → 6,71 | **2,49 → 2,70** | 2,07 → 2,15 | 3,0 |
+| destroyer.destroyerBoss · staff · 45 | 755 | 3273 | 3582 | 3273 | 5425 | 4735 | 4,34 | **1,81** | 4,75 | **1,91** | 1,51 | 3,0 |
+| destroyer.destroyerBoss · staff · 70 | 1691 | 8729 | 10 216 | 8702 | 19 774 | 15 126 | 5,15 | **2,15** | 6,04 | **2,43** | 1,94 | 3,0 |
+| destroyer.destroyerBoss · staff · 100 | 3327 | 17 833 | 22 331 | 17 833 | 48 088 | 33 495 | 5,36 | **2,24** | 6,71 | **2,70** | 2,15 | 3,0 |
 | destroyer.destroyerFire · staff · 20 | 173 | 412 | 411 | 412 | 611 | 599 | 2,38 | 1,00 | 2,37 | 1,00 | 1,49 | 3,0 |
-| destroyer.destroyerFire · staff · 45 | 755 | 3110 | 3022 | 2887 → 3110 | 6976 → 6988 | 5196 → 5945 | 3,83 → 4,12 | **1,61 → 1,73** | 4,01 | **1,69** | 2,31 | 3,0 |
-| destroyer.destroyerFire · staff · 70 | 1691 | 9114 | 9400 | 8320 → 9114 | 21 781 → 21 810 | 15 600 → 18 049 | 4,92 → 5,39 | **2,07 → 2,26** | 5,56 | **2,34** | 2,32 | 3,0 |
-| destroyer.destroyerFire · staff · 100 | 3327 | 20 198 → 13 660 | 25 446 → 24 017 | 17 428 → 13 660 | 56 660 → 64 533 | 32 553 → 35 915 | 5,24 → 4,11 | **2,20 → 1,72** | 7,65 → 7,22 | **3,22 → 3,04** | 2,23 → 2,69 | 3,0 |
+| destroyer.destroyerFire · staff · 45 | 755 | 3110 | 3022 | 3110 | 6988 | 5945 | 4,12 | **1,73** | 4,01 | **1,69** | 2,31 | 3,0 |
+| destroyer.destroyerFire · staff · 70 | 1691 | 9114 | 9400 | 9114 | 21 810 | 18 049 | 5,39 | **2,26** | 5,56 | **2,34** | 2,32 | 3,0 |
+| destroyer.destroyerFire · staff · 100 | 3327 | 13 660 | 24 017 | 13 660 | 64 533 | 35 915 | 4,11 | **1,72** | 7,22 | **3,04** | 2,69 | 3,0 |
 | destroyer.destroyerIce · staff · 20 | 173 | 383 | 399 | 383 | 571 | 538 | 2,21 | 1,00 | 2,31 | 1,00 | 1,43 | 3,0 |
-| destroyer.destroyerIce · staff · 45 | 755 | 2850 → 2872 | 3194 → 3232 | 2850 → 2872 | 5665 → 5706 | 4379 → 4926 | 3,78 → 3,81 | **1,71 → 1,72** | 4,23 → 4,28 | **1,84 → 1,86** | 1,77 | 3,0 |
-| destroyer.destroyerIce · staff · 70 | 1691 | 7927 → 8191 | 8664 → 9056 | 7817 → 8191 | 16 420 → 16 833 | 12 285 → 14 406 | 4,62 → 4,84 | **2,09 → 2,19** | 5,12 → 5,36 | **2,22 → 2,32** | 1,90 → 1,86 | 3,0 |
-| destroyer.destroyerIce · staff · 100 | 3327 | 17 800 → 10 775 | 22 054 → 15 532 | 16 317 → 10 775 | 46 673 → 39 723 | 26 392 → 25 521 | 4,90 → 3,24 | **2,22 → 1,46** | 6,63 → 4,67 | **2,87 → 2,02** | 2,12 → 2,56 | 3,0 |
+| destroyer.destroyerIce · staff · 45 | 755 | 2872 | 3232 | 2872 | 5706 | 4926 | 3,81 | **1,72** | 4,28 | **1,86** | 1,77 | 3,0 |
+| destroyer.destroyerIce · staff · 70 | 1691 | 8191 | 9056 | 8191 | 16 833 | 14 406 | 4,84 | **2,19** | 5,36 | **2,32** | 1,86 | 3,0 |
+| destroyer.destroyerIce · staff · 100 | 3327 | 10 775 | 15 532 | 10 775 | 39 723 | 25 521 | 3,24 | **1,46** | 4,67 | **2,02** | 2,56 | 3,0 |
 | destroyer.destroyerLightning · staff · 20 | 173 | 456 | 434 | 456 | 507 | 534 | 2,63 | 1,00 | 2,51 | 1,00 | 1,17 | 3,0 |
-| destroyer.destroyerLightning · staff · 45 | 755 | 3931 → 3958 | 4387 → 4416 | 3814 → 3958 | 5791 → 5824 | 4938 → 5361 | 5,05 → 5,25 | **1,92 → 1,99** | 5,81 → 5,85 | **2,32 → 2,33** | 1,32 | 3,0 |
-| destroyer.destroyerLightning · staff · 70 | 1691 | 11 370 → 11 556 | 13 129 → 13 329 | 10 616 → 11 556 | 20 636 → 20 866 | 15 882 → 18 795 | 6,28 → 6,83 | **2,38 → 2,60** | 7,76 → 7,88 | **3,10 → 3,14** | 1,57 | 3,0 |
-| destroyer.destroyerLightning · staff · 100 | 3327 | 25 534 → 17 319 | 32 566 → 26 406 | 20 799 → 17 319 | 67 636 → 61 668 | 40 696 → 43 067 | 6,25 → 5,21 | **2,37 → 1,98** | 9,79 → 7,94 | **3,90 → 3,17** | 2,08 → 2,34 | 3,0 |
+| destroyer.destroyerLightning · staff · 45 | 755 | 3958 | 4416 | 3958 | 5824 | 5361 | 5,25 | **1,99** | 5,85 | **2,33** | 1,32 | 3,0 |
+| destroyer.destroyerLightning · staff · 70 | 1691 | 11 556 | 13 329 | 11 556 | 20 866 | 18 795 | 6,83 | **2,60** | 7,88 | **3,14** | 1,57 | 3,0 |
+| destroyer.destroyerLightning · staff · 100 | 3327 | 17 319 | 26 406 | 17 319 | 61 668 | 43 067 | 5,21 | **1,98** | 7,94 | **3,17** | 2,34 | 3,0 |
 | arcanist.arcanistBoss · runestaff · 20 | 213 | 459 | 459 | 459 | 558 | 554 | 2,15 | 1,00 | 2,15 | 1,00 | 1,22 | 2,0 |
-| arcanist.arcanistBoss · runestaff · 45 | 873 | 3143 | 3261 | 3119 → 3143 | 4406 | 3996 → 4030 | 3,57 → 3,60 | **1,66 → 1,67** | 3,73 | **1,73** | 1,35 | 2,0 |
-| arcanist.arcanistBoss · runestaff · 70 | 2004 | 8141 | 9528 | 7894 → 7991 | 12 159 | 10 352 → 10 318 | 3,94 → 3,99 | **1,83 → 1,85** | 4,75 | **2,21** | 1,28 | 2,0 |
-| arcanist.arcanistBoss · runestaff · 100 | 4021 | 19 065 | 24 451 | 17 270 → 18 416 | 29 213 | 22 383 → 23 370 | 4,29 → 4,58 | **2,00 → 2,13** | 6,08 | **2,82** | 1,19 | 2,0 |
+| arcanist.arcanistBoss · runestaff · 45 | 873 | 3143 | 3261 | 3143 | 4406 | 4030 | 3,60 | **1,67** | 3,73 | **1,73** | 1,35 | 2,0 |
+| arcanist.arcanistBoss · runestaff · 70 | 2004 | 8141 | 9528 | 7991 | 12 159 | 10 318 | 3,99 | **1,85** | 4,75 | **2,21** | 1,28 | 2,0 |
+| arcanist.arcanistBoss · runestaff · 100 | 4021 | 19 065 | 24 451 | 18 416 | 29 213 | 23 370 | 4,58 | **2,13** | 6,08 | **2,82** | 1,19 | 2,0 |
 | arcanist.arcanistOverload · runestaff · 20 | 213 | 459 | 459 | 459 | 558 | 554 | 2,15 | 1,00 | 2,15 | 1,00 | 1,22 | 2,0 |
 | arcanist.arcanistOverload · runestaff · 45 | 873 | 3140 | 3258 | 3140 | 4403 | 4027 | 3,60 | **1,67** | 3,73 | **1,73** | 1,35 | 2,0 |
-| arcanist.arcanistOverload · runestaff · 70 | 2004 | 8132 | 9517 | 7824 → 7908 | 12 149 | 10 287 → 10 371 | 3,90 → 3,95 | **1,81 → 1,83** | 4,75 | **2,21** | 1,28 | 2,0 |
-| arcanist.arcanistOverload · runestaff · 100 | 4021 | 19 043 | 24 420 | 16 755 → 17 639 | 29 182 | 21 866 → 22 586 | 4,17 → 4,39 | **1,94 → 2,04** | 6,07 | **2,82** | 1,19 | 2,0 |
+| arcanist.arcanistOverload · runestaff · 70 | 2004 | 8132 | 9517 | 7908 | 12 149 | 10 371 | 3,95 | **1,83** | 4,75 | **2,21** | 1,28 | 2,0 |
+| arcanist.arcanistOverload · runestaff · 100 | 4021 | 19 043 | 24 420 | 17 639 | 29 182 | 22 586 | 4,39 | **2,04** | 6,07 | **2,82** | 1,19 | 2,0 |
 | arcanist.arcanistFire · runestaff · 20 | 213 | 521 | 489 | 519 | 614 | 655 | 2,44 | 1,00 | 2,29 | 1,00 | 1,26 | 2,0 |
-| arcanist.arcanistFire · runestaff · 45 | 873 | 4299 | 4213 | 4180 → 4277 | 5639 | 5234 → 5357 | 4,79 → 4,90 | **1,96 → 2,01** | 4,82 | **2,10** | 1,34 | 2,0 |
-| arcanist.arcanistFire · runestaff · 70 | 2004 | 12 023 | 10 672 | 11 676 → 11 835 | 15 720 | 15 099 → 15 325 | 5,83 → 5,91 | **2,39 → 2,42** | 5,32 | **2,32** | 1,47 | 2,0 |
-| arcanist.arcanistFire · runestaff · 100 | 4021 | 24 529 → 26 894 | 24 352 → 30 303 | 25 209 → 26 497 | 27 871 → 33 821 | 32 971 → 34 467 | 6,27 → 6,59 | **2,57 → 2,70** | 6,06 → 7,54 | **2,64 → 3,29** | 1,14 → 1,12 | 2,0 |
+| arcanist.arcanistFire · runestaff · 45 | 873 | 4299 | 4213 | 4277 | 5639 | 5357 | 4,90 | **2,01** | 4,82 | **2,10** | 1,34 | 2,0 |
+| arcanist.arcanistFire · runestaff · 70 | 2004 | 12 023 | 10 672 | 11 835 | 15 720 | 15 325 | 5,91 | **2,42** | 5,32 | **2,32** | 1,47 | 2,0 |
+| arcanist.arcanistFire · runestaff · 100 | 4021 | 26 894 | 30 303 | 26 497 | 33 821 | 34 467 | 6,59 | **2,70** | 7,54 | **3,29** | 1,12 | 2,0 |
 | arcanist.arcanistIce · runestaff · 20 | 213 | 463 | 453 | 461 | 629 | 606 | 2,16 | 1,00 | 2,13 | 1,00 | 1,39 | 2,0 |
-| arcanist.arcanistIce · runestaff · 45 | 873 | 3781 → 3868 | 3951 → 4077 | 3673 → 3832 | 5262 → 5388 | 4658 → 4845 | 4,21 → 4,39 | **1,94 → 2,03** | 4,52 → 4,67 | **2,13 → 2,19** | 1,33 → 1,32 | 2,0 |
-| arcanist.arcanistIce · runestaff · 70 | 2004 | 9848 → 10 413 | 10 772 → 12 168 | 9586 → 10 218 | 13 784 → 15 813 | 11 832 → 12 866 | 4,78 → 5,10 | **2,21 → 2,35** | 5,37 → 6,07 | **2,53 → 2,85** | 1,28 → 1,30 | 2,0 |
-| arcanist.arcanistIce · runestaff · 100 | 4021 | 21 596 → 25 796 | 25 734 → 36 389 | 20 730 → 23 220 | 27 674 → 38 329 | 26 695 → 26 234 | 5,15 → 5,77 | **2,38 → 2,67** | 6,40 → 9,05 | **3,01 → 4,25** | 1,08 → 1,05 | 2,0 |
+| arcanist.arcanistIce · runestaff · 45 | 873 | 3868 | 4077 | 3832 | 5388 | 4845 | 4,39 | **2,03** | 4,67 | **2,19** | 1,32 | 2,0 |
+| arcanist.arcanistIce · runestaff · 70 | 2004 | 10 413 | 12 168 | 10 218 | 15 813 | 12 866 | 5,10 | **2,35** | 6,07 | **2,85** | 1,30 | 2,0 |
+| arcanist.arcanistIce · runestaff · 100 | 4021 | 25 796 | 36 389 | 23 220 | 38 329 | 26 234 | 5,77 | **2,67** | 9,05 | **4,25** | 1,05 | 2,0 |
 | arcanist.arcanistLightning · runestaff · 20 | 213 | 579 | 541 | 575 | 634 | 678 | 2,70 | 1,00 | 2,54 | 1,00 | 1,17 | 2,0 |
-| arcanist.arcanistLightning · runestaff · 45 | 873 | 4944 → 4974 | 5064 → 5094 | 4778 → 4893 | 6413 → 6443 | 6203 → 6351 | 5,47 → 5,60 | **2,03 → 2,07** | 5,80 → 5,83 | **2,28 → 2,30** | 1,27 → 1,26 | 2,0 |
-| arcanist.arcanistLightning · runestaff · 70 | 2004 | 13 756 → 14 025 | 14 728 → 14 998 | 13 148 → 13 811 | 18 858 → 20 691 | 17 410 → 19 735 | 6,56 → 6,89 | **2,43 → 2,55** | 7,35 → 7,48 | **2,89 → 2,95** | 1,28 → 1,38 | 2,0 |
-| arcanist.arcanistLightning · runestaff · 100 | 4021 | 26 475 → 30 579 | 25 602 → 33 701 | 26 397 → 29 544 | 38 460 → 49 663 | 40 483 → 46 601 | 6,56 → 7,35 | **2,43 → 2,72** | 6,37 → 8,38 | **2,51 → 3,30** | 1,50 → 1,47 | 2,0 |
+| arcanist.arcanistLightning · runestaff · 45 | 873 | 4974 | 5094 | 4893 | 6443 | 6351 | 5,60 | **2,07** | 5,83 | **2,30** | 1,26 | 2,0 |
+| arcanist.arcanistLightning · runestaff · 70 | 2004 | 14 025 | 14 998 | 13 811 | 20 691 | 19 735 | 6,89 | **2,55** | 7,48 | **2,95** | 1,38 | 2,0 |
+| arcanist.arcanistLightning · runestaff · 100 | 4021 | 30 579 | 33 701 | 29 544 | 49 663 | 46 601 | 7,35 | **2,72** | 8,38 | **3,30** | 1,47 | 2,0 |
 
 ### T-SK1–3: Kapłan
 
@@ -13594,75 +13717,75 @@ Rozbicie średniej Maga na żywioł broni (`GearOpts.element`, pula `SkillPools.
 | base · 20 · fire | 451 | 444 | 667 | 2,60 | 2,57 | 1,50 | 3,40 |
 | base · 20 · ice | 377 | 403 | 611 | 2,18 | 2,33 | 1,51 | 2,60 |
 | base · 20 · lightning | 477 | 482 | 565 | 2,75 | 2,79 | 1,17 | 3,37 |
-| base · 45 · fire | 2900 → 2916 | 3181 | 5473 → 5488 | 4,26 → 4,29 | 4,68 | 1,72 → 1,73 | 3,41 → 1,98 |
-| base · 45 · ice | 2509 → 2613 | 3160 → 3268 | 5105 → 5216 | 3,69 → 3,84 | 4,65 → 4,81 | 1,62 → 1,60 | 3,10 → 2,42 |
-| base · 45 · lightning | 3269 → 3347 | 3694 → 3719 | 5507 → 5536 | 4,81 → 4,92 | 5,43 → 5,47 | 1,49 | 3,51 → 2,04 |
-| base · 70 · fire | 7456 → 7700 | 8486 → 9486 | 15 389 → 18 959 | 4,82 → 4,97 | 5,48 → 6,13 | 1,81 → 2,00 | 3,73 → 2,63 |
-| base · 70 · ice | 6911 → 7316 | 8697 → 9100 | 15 109 → 15 555 | 4,46 → 4,73 | 5,62 → 5,88 | 1,74 → 1,71 | 2,82 → 2,26 |
-| base · 70 · lightning | 8634 → 8682 | 11 549 → 11 300 | 16 980 → 16 732 | 5,58 → 5,61 | 7,46 → 7,30 | 1,47 → 1,48 | 3,71 → 3,22 |
-| base · 100 · fire | 17 929 → 18 973 | 19 994 → 24 342 | 38 326 → 52 651 | 5,88 → 6,22 | 6,55 → 7,98 | 1,92 → 2,16 | 2,58 → 1,92 |
-| base · 100 · ice | 14 207 → 16 567 | 17 647 → 20 393 | 30 565 → 33 637 | 4,66 → 5,43 | 5,78 → 6,68 | 1,73 → 1,65 | 2,54 → 2,18 |
-| base · 100 · lightning | 19 760 → 20 998 | 26 262 → 26 247 | 42 947 → 44 965 | 6,48 → 6,88 | 8,61 → 8,60 | 1,64 → 1,71 | 3,44 → 2,47 |
+| base · 45 · fire | 2916 | 3181 | 5488 | 4,29 | 4,68 | 1,73 | 1,98 |
+| base · 45 · ice | 2613 | 3268 | 5216 | 3,84 | 4,81 | 1,60 | 2,42 |
+| base · 45 · lightning | 3347 | 3719 | 5536 | 4,92 | 5,47 | 1,49 | 2,04 |
+| base · 70 · fire | 7700 | 9486 | 18 959 | 4,97 | 6,13 | 2,00 | 2,63 |
+| base · 70 · ice | 7316 | 9100 | 15 555 | 4,73 | 5,88 | 1,71 | 2,26 |
+| base · 70 · lightning | 8682 | 11 300 | 16 732 | 5,61 | 7,30 | 1,48 | 3,22 |
+| base · 100 · fire | 18 973 | 24 342 | 52 651 | 6,22 | 7,98 | 2,16 | 1,92 |
+| base · 100 · ice | 16 567 | 20 393 | 33 637 | 5,43 | 6,68 | 1,65 | 2,18 |
+| base · 100 · lightning | 20 998 | 26 247 | 44 965 | 6,88 | 8,60 | 1,71 | 2,47 |
 | base.loadout · 20 · fire | 513 | 519 | 754 | 2,32 | 2,34 | 1,45 | 3,40 |
 | base.loadout · 20 · ice | 384 | 391 | 634 | 2,06 | 2,09 | 1,62 | 2,60 |
 | base.loadout · 20 · lightning | 530 | 534 | 652 | 2,56 | 2,58 | 1,22 | 3,37 |
-| base.loadout · 45 · fire | 3186 → 3177 | 3463 | 5884 → 5899 | 3,65 → 3,64 | 3,97 | 1,70 | 3,41 → 1,98 |
-| base.loadout · 45 · ice | 2577 → 2659 | 3116 → 3224 | 5455 → 5574 | 3,51 → 3,62 | 4,24 → 4,39 | 1,75 → 1,73 | 4,17 → 2,42 |
-| base.loadout · 45 · lightning | 3568 → 3651 | 4006 → 4033 | 6060 → 6090 | 4,39 → 4,49 | 4,92 → 4,96 | 1,51 | 2,75 → 1,60 |
-| base.loadout · 70 · fire | 8228 → 8465 | 9423 → 10 462 | 16 742 → 20 469 | 4,12 → 4,24 | 4,72 → 5,23 | 1,78 → 1,96 | 2,81 → 2,57 |
-| base.loadout · 70 · ice | 6940 → 7462 | 8628 → 9012 | 16 188 → 16 669 | 4,13 → 4,44 | 5,13 → 5,36 | 1,88 → 1,85 | 3,54 → 2,84 |
-| base.loadout · 70 · lightning | 9417 → 9470 | 12 461 → 12 203 | 18 524 → 18 268 | 5,05 → 5,08 | 6,69 → 6,55 | 1,49 → 1,50 | 3,71 → 3,22 |
-| base.loadout · 100 · fire | 19 807 → 20 823 | 22 245 → 26 845 | 41 881 → 57 062 | 4,99 → 5,24 | 5,60 → 6,76 | 1,88 → 2,13 | 3,27 → 2,55 |
-| base.loadout · 100 · ice | 14 631 → 16 783 | 17 681 → 20 572 | 32 993 → 36 340 | 4,38 → 5,02 | 5,29 → 6,16 | 1,87 → 1,77 | 3,25 → 2,18 |
-| base.loadout · 100 · lightning | 21 663 → 23 006 | 28 509 → 28 520 | 47 013 → 49 219 | 5,85 → 6,22 | 7,70 → 7,71 | 1,65 → 1,73 | 5,00 → 3,60 |
+| base.loadout · 45 · fire | 3177 | 3463 | 5899 | 3,64 | 3,97 | 1,70 | 1,98 |
+| base.loadout · 45 · ice | 2659 | 3224 | 5574 | 3,62 | 4,39 | 1,73 | 2,42 |
+| base.loadout · 45 · lightning | 3651 | 4033 | 6090 | 4,49 | 4,96 | 1,51 | 1,60 |
+| base.loadout · 70 · fire | 8465 | 10 462 | 20 469 | 4,24 | 5,23 | 1,96 | 2,57 |
+| base.loadout · 70 · ice | 7462 | 9012 | 16 669 | 4,44 | 5,36 | 1,85 | 2,84 |
+| base.loadout · 70 · lightning | 9470 | 12 203 | 18 268 | 5,08 | 6,55 | 1,50 | 3,22 |
+| base.loadout · 100 · fire | 20 823 | 26 845 | 57 062 | 5,24 | 6,76 | 2,13 | 2,55 |
+| base.loadout · 100 · ice | 16 783 | 20 572 | 36 340 | 5,02 | 6,16 | 1,77 | 2,18 |
+| base.loadout · 100 · lightning | 23 006 | 28 520 | 49 219 | 6,22 | 7,71 | 1,73 | 3,60 |
 | destroyer.destroyerExp · 20 · fire | 365 | 352 | 489 | 2,11 | 2,03 | 1,39 | 1,90 |
 | destroyer.destroyerExp · 20 · ice | 297 | 305 | 423 | 1,72 | 1,76 | 1,39 | 0,82 |
 | destroyer.destroyerExp · 20 · lightning | 395 | 389 | 462 | 2,28 | 2,25 | 1,19 | 1,90 |
-| destroyer.destroyerExp · 45 · fire | 2334 | 2265 | 4655 → 4674 | 3,09 | 3,00 | 2,06 | 2,78 → 1,61 |
-| destroyer.destroyerExp · 45 · ice | 1685 | 1757 | 3451 | 2,23 | 2,33 | 1,96 | 0,72 → 0,42 |
-| destroyer.destroyerExp · 45 · lightning | 2863 | 3115 | 4908 | 3,79 | 4,13 | 1,58 | 2,44 → 1,41 |
-| destroyer.destroyerExp · 70 · fire | 5805 → 5939 | 6963 → 8376 | 16 555 → 21 136 | 3,43 → 3,51 | 4,12 → 4,95 | 2,38 → 2,52 | 2,11 → 2,40 |
-| destroyer.destroyerExp · 70 · ice | 3955 | 4602 | 10 617 | 2,34 | 2,72 | 2,31 | 0,86 → 0,92 |
-| destroyer.destroyerExp · 70 · lightning | 7310 | 9565 | 18 637 | 4,32 | 5,66 | 1,95 | 2,13 → 1,90 |
-| destroyer.destroyerExp · 100 · fire | 11 840 → 13 244 | 15 186 → 20 322 | 38 420 → 55 364 | 3,56 → 3,98 | 4,56 → 6,11 | 2,53 → 2,72 | 1,87 → 2,21 |
-| destroyer.destroyerExp · 100 · ice | 8061 | 10 092 | 24 976 | 2,42 | 3,03 | 2,47 | 0,77 → 0,69 |
-| destroyer.destroyerExp · 100 · lightning | 14 718 | 20 033 | 43 372 | 4,42 | 6,02 | 2,17 | 1,51 → 1,12 |
+| destroyer.destroyerExp · 45 · fire | 2334 | 2265 | 4674 | 3,09 | 3,00 | 2,06 | 1,61 |
+| destroyer.destroyerExp · 45 · ice | 1685 | 1757 | 3451 | 2,23 | 2,33 | 1,96 | 0,42 |
+| destroyer.destroyerExp · 45 · lightning | 2863 | 3115 | 4908 | 3,79 | 4,13 | 1,58 | 1,41 |
+| destroyer.destroyerExp · 70 · fire | 5939 | 8376 | 21 136 | 3,51 | 4,95 | 2,52 | 2,40 |
+| destroyer.destroyerExp · 70 · ice | 3955 | 4602 | 10 617 | 2,34 | 2,72 | 2,31 | 0,92 |
+| destroyer.destroyerExp · 70 · lightning | 7310 | 9565 | 18 637 | 4,32 | 5,66 | 1,95 | 1,90 |
+| destroyer.destroyerExp · 100 · fire | 13 244 | 20 322 | 55 364 | 3,98 | 6,11 | 2,72 | 2,21 |
+| destroyer.destroyerExp · 100 · ice | 8061 | 10 092 | 24 976 | 2,42 | 3,03 | 2,47 | 0,69 |
+| destroyer.destroyerExp · 100 · lightning | 14 718 | 20 033 | 43 372 | 4,42 | 6,02 | 2,17 | 1,12 |
 | destroyer.destroyerBoss · 20 · fire | 429 | 423 | 605 | 2,48 | 2,44 | 1,43 | 3,48 |
 | destroyer.destroyerBoss · 20 · ice | 358 | 409 | 487 | 2,07 | 2,36 | 1,19 | 2,19 |
 | destroyer.destroyerBoss · 20 · lightning | 456 | 461 | 546 | 2,64 | 2,66 | 1,18 | 3,37 |
-| destroyer.destroyerBoss · 45 · fire | 3638 | 3839 | 6664 | 4,82 | 5,09 | 1,74 | 3,60 → 2,09 |
-| destroyer.destroyerBoss · 45 · ice | 2541 → 2556 | 2867 → 2889 | 3859 → 3884 | 3,37 → 3,39 | 3,80 → 3,83 | 1,35 → 1,34 | 2,14 → 1,24 |
-| destroyer.destroyerBoss · 45 · lightning | 3598 → 3625 | 3988 → 4016 | 5695 → 5728 | 4,77 → 4,80 | 5,28 → 5,32 | 1,43 | 3,53 → 2,04 |
-| destroyer.destroyerBoss · 70 · fire | 9649 → 9954 | 10 439 → 11 832 | 21 862 → 26 577 | 5,71 → 5,89 | 6,17 → 7,00 | 2,09 → 2,25 | 2,13 → 2,61 |
-| destroyer.destroyerBoss · 70 · ice | 6178 → 6280 | 7784 → 7937 | 12 453 → 12 627 | 3,65 → 3,71 | 4,60 → 4,69 | 1,60 → 1,59 | 1,82 → 1,56 |
-| destroyer.destroyerBoss · 70 · lightning | 9685 → 9872 | 10 679 → 10 879 | 19 821 → 20 119 | 5,73 → 5,84 | 6,32 → 6,43 | 1,86 → 1,85 | 2,12 → 1,72 |
-| destroyer.destroyerBoss · 100 · fire | 19 606 → 20 850 | 22 352 → 26 808 | 50 038 → 65 471 | 5,89 → 6,27 | 6,72 → 8,06 | 2,24 → 2,44 | 1,90 → 1,60 |
-| destroyer.destroyerBoss · 100 · ice | 12 442 → 12 629 | 16 674 → 16 975 | 29 512 → 29 855 | 3,74 → 3,80 | 5,01 → 5,10 | 1,77 → 1,76 | 1,66 → 1,19 |
-| destroyer.destroyerBoss · 100 · lightning | 19 653 → 20 020 | 22 818 → 23 212 | 48 299 → 48 936 | 5,91 → 6,02 | 6,86 → 6,98 | 2,12 → 2,11 | 1,54 → 1,04 |
+| destroyer.destroyerBoss · 45 · fire | 3638 | 3839 | 6664 | 4,82 | 5,09 | 1,74 | 2,09 |
+| destroyer.destroyerBoss · 45 · ice | 2556 | 2889 | 3884 | 3,39 | 3,83 | 1,34 | 1,24 |
+| destroyer.destroyerBoss · 45 · lightning | 3625 | 4016 | 5728 | 4,80 | 5,32 | 1,43 | 2,04 |
+| destroyer.destroyerBoss · 70 · fire | 9954 | 11 832 | 26 577 | 5,89 | 7,00 | 2,25 | 2,61 |
+| destroyer.destroyerBoss · 70 · ice | 6280 | 7937 | 12 627 | 3,71 | 4,69 | 1,59 | 1,56 |
+| destroyer.destroyerBoss · 70 · lightning | 9872 | 10 879 | 20 119 | 5,84 | 6,43 | 1,85 | 1,72 |
+| destroyer.destroyerBoss · 100 · fire | 20 850 | 26 808 | 65 471 | 6,27 | 8,06 | 2,44 | 1,60 |
+| destroyer.destroyerBoss · 100 · ice | 12 629 | 16 975 | 29 855 | 3,80 | 5,10 | 1,76 | 1,19 |
+| destroyer.destroyerBoss · 100 · lightning | 20 020 | 23 212 | 48 936 | 6,02 | 6,98 | 2,11 | 1,04 |
 | arcanist.arcanistBoss · 20 · fire | 479 | 469 | 594 | 2,25 | 2,20 | 1,27 | 1,78 |
 | arcanist.arcanistBoss · 20 · ice | 394 | 424 | 503 | 1,85 | 1,99 | 1,19 | 1,18 |
 | arcanist.arcanistBoss · 20 · lightning | 502 | 484 | 577 | 2,36 | 2,27 | 1,19 | 1,64 |
-| arcanist.arcanistBoss · 45 · fire | 3370 → 3415 | 3374 | 4718 | 3,86 → 3,91 | 3,86 | 1,40 | 2,37 → 1,38 |
-| arcanist.arcanistBoss · 45 · ice | 2449 | 2476 | 2959 | 2,80 | 2,84 | 1,19 | 1,32 → 0,77 |
-| arcanist.arcanistBoss · 45 · lightning | 3539 → 3565 | 3932 | 5540 | 4,05 → 4,08 | 4,50 | 1,41 | 2,11 → 1,22 |
-| arcanist.arcanistBoss · 70 · fire | 8300 → 8369 | 9227 | 12 939 | 4,14 → 4,18 | 4,60 | 1,40 | 2,33 → 1,87 |
-| arcanist.arcanistBoss · 70 · ice | 6142 → 6450 | 7972 | 9149 | 3,06 → 3,22 | 3,98 | 1,15 | 1,62 → 1,36 |
-| arcanist.arcanistBoss · 70 · lightning | 9240 → 9155 | 11 384 | 14 390 | 4,61 → 4,57 | 5,68 | 1,26 | 2,12 → 1,71 |
-| arcanist.arcanistBoss · 100 · fire | 17 875 → 18 698 | 24 753 | 31 859 | 4,44 → 4,65 | 6,16 | 1,29 | 2,41 → 1,80 |
-| arcanist.arcanistBoss · 100 · ice | 14 414 → 15 865 | 21 349 | 23 713 | 3,58 → 3,95 | 5,31 | 1,11 | 1,75 → 1,41 |
-| arcanist.arcanistBoss · 100 · lightning | 19 520 → 20 685 | 27 252 | 32 067 | 4,85 → 5,14 | 6,78 | 1,18 | 2,17 → 1,65 |
+| arcanist.arcanistBoss · 45 · fire | 3415 | 3374 | 4718 | 3,91 | 3,86 | 1,40 | 1,38 |
+| arcanist.arcanistBoss · 45 · ice | 2449 | 2476 | 2959 | 2,80 | 2,84 | 1,19 | 0,77 |
+| arcanist.arcanistBoss · 45 · lightning | 3565 | 3932 | 5540 | 4,08 | 4,50 | 1,41 | 1,22 |
+| arcanist.arcanistBoss · 70 · fire | 8369 | 9227 | 12 939 | 4,18 | 4,60 | 1,40 | 1,87 |
+| arcanist.arcanistBoss · 70 · ice | 6450 | 7972 | 9149 | 3,22 | 3,98 | 1,15 | 1,36 |
+| arcanist.arcanistBoss · 70 · lightning | 9155 | 11 384 | 14 390 | 4,57 | 5,68 | 1,26 | 1,71 |
+| arcanist.arcanistBoss · 100 · fire | 18 698 | 24 753 | 31 859 | 4,65 | 6,16 | 1,29 | 1,80 |
+| arcanist.arcanistBoss · 100 · ice | 15 865 | 21 349 | 23 713 | 3,95 | 5,31 | 1,11 | 1,41 |
+| arcanist.arcanistBoss · 100 · lightning | 20 685 | 27 252 | 32 067 | 5,14 | 6,78 | 1,18 | 1,65 |
 | arcanist.arcanistOverload · 20 · fire | 479 | 469 | 593 | 2,25 | 2,20 | 1,27 | 1,95 |
 | arcanist.arcanistOverload · 20 · ice | 394 | 424 | 503 | 1,85 | 1,99 | 1,19 | 1,29 |
 | arcanist.arcanistOverload · 20 · lightning | 502 | 484 | 577 | 2,36 | 2,27 | 1,19 | 1,79 |
-| arcanist.arcanistOverload · 45 · fire | 3412 | 3371 | 4715 | 3,91 | 3,86 | 1,40 | 3,01 → 1,75 |
-| arcanist.arcanistOverload · 45 · ice | 2447 | 2474 | 2957 | 2,80 | 2,83 | 1,20 | 1,68 → 0,97 |
-| arcanist.arcanistOverload · 45 · lightning | 3562 | 3929 | 5537 | 4,08 | 4,50 | 1,41 | 2,68 → 1,55 |
-| arcanist.arcanistOverload · 70 · fire | 8358 | 9218 | 12 929 | 4,17 | 4,60 | 1,40 | 2,96 → 2,38 |
-| arcanist.arcanistOverload · 70 · ice | 5882 → 6136 | 7962 | 9139 | 2,93 → 3,06 | 3,97 | 1,15 | 2,06 → 1,72 |
-| arcanist.arcanistOverload · 70 · lightning | 9231 | 11 373 | 14 378 | 4,61 | 5,67 | 1,26 | 2,69 → 2,17 |
-| arcanist.arcanistOverload · 100 · fire | 17 856 | 24 722 | 31 828 | 4,44 | 6,15 | 1,29 | 3,06 → 2,29 |
-| arcanist.arcanistOverload · 100 · ice | 12 908 → 14 398 | 21 319 | 23 684 | 3,21 → 3,58 | 5,30 | 1,11 | 2,22 → 1,79 |
-| arcanist.arcanistOverload · 100 · lightning | 19 501 → 20 663 | 27 219 | 32 034 | 4,85 → 5,14 | 6,77 | 1,18 | 2,76 → 2,10 |
+| arcanist.arcanistOverload · 45 · fire | 3412 | 3371 | 4715 | 3,91 | 3,86 | 1,40 | 1,75 |
+| arcanist.arcanistOverload · 45 · ice | 2447 | 2474 | 2957 | 2,80 | 2,83 | 1,20 | 0,97 |
+| arcanist.arcanistOverload · 45 · lightning | 3562 | 3929 | 5537 | 4,08 | 4,50 | 1,41 | 1,55 |
+| arcanist.arcanistOverload · 70 · fire | 8358 | 9218 | 12 929 | 4,17 | 4,60 | 1,40 | 2,38 |
+| arcanist.arcanistOverload · 70 · ice | 6136 | 7962 | 9139 | 3,06 | 3,97 | 1,15 | 1,72 |
+| arcanist.arcanistOverload · 70 · lightning | 9231 | 11 373 | 14 378 | 4,61 | 5,67 | 1,26 | 2,17 |
+| arcanist.arcanistOverload · 100 · fire | 17 856 | 24 722 | 31 828 | 4,44 | 6,15 | 1,29 | 2,29 |
+| arcanist.arcanistOverload · 100 · ice | 14 398 | 21 319 | 23 684 | 3,58 | 5,30 | 1,11 | 1,79 |
+| arcanist.arcanistOverload · 100 · lightning | 20 663 | 27 219 | 32 034 | 5,14 | 6,77 | 1,18 | 2,10 |
 
 ### Zasoby: Wojownik
 
@@ -13722,13 +13845,13 @@ Pula i regeneracja z `StatCalc`, koszt `Skills.cost` (mana Maga z krzywą `manaC
 | marksman.eliteHunter · 70 | 170 | 8,0 | 14,6 | 1,82 | 6178 | 7144 | 2,0 | 35 | 0 |
 | marksman.eliteHunter · 100 | 200 | 8,0 | 18,0 | 2,25 | 14 062 | 17 684 | 3,0 | 50 | 0 |
 | trapper.poacher · 20 | 120 | 8,0 | 12,3 | 1,54 | 359 | 395 | 2,0 | 10 | 0 |
-| trapper.poacher · 45 | 145 | 8,0 | 16,9 | 2,12 | 1947 → 1950 | 2417 → 2421 | 4,0 | 22 | 0 |
-| trapper.poacher · 70 | 170 | 8,0 | 17,5 | 2,09 | 4972 → 5029 | 6230 → 6295 | 3,0 | 35 | 0 |
-| trapper.poacher · 100 | 200 | 8,0 | 19,6 | 2,35 | 11 378 → 11 633 | 14 606 → 14 802 | 3,0 | 50 | 0 |
+| trapper.poacher · 45 | 145 | 8,0 | 16,9 | 2,12 | 1950 | 2421 | 4,0 | 22 | 0 |
+| trapper.poacher · 70 | 170 | 8,0 | 17,5 | 2,09 | 5029 | 6295 | 3,0 | 35 | 0 |
+| trapper.poacher · 100 | 200 | 8,0 | 19,6 | 2,35 | 11 633 | 14 802 | 3,0 | 50 | 0 |
 | trapper.poisoner · 20 | 120 | 8,0 | 12,3 | 1,54 | 360 | 395 | 2,0 | 10 | 0 |
-| trapper.poisoner · 45 | 145 | 8,0 | 15,3 | 1,91 | 2026 → 2027 | 2465 → 2468 | 3,0 | 22 | 0 |
-| trapper.poisoner · 70 | 170 | 8,0 | 16,3 | 1,95 | 5337 → 5419 | 6454 → 6531 | 3,0 | 35 | 0 |
-| trapper.poisoner · 100 | 200 | 8,0 | 18,1 | 2,17 | 12 302 → 12 520 | 15 642 → 15 776 | 3,0 | 50 | 0 |
+| trapper.poisoner · 45 | 145 | 8,0 | 15,3 | 1,91 | 2027 | 2468 | 3,0 | 22 | 0 |
+| trapper.poisoner · 70 | 170 | 8,0 | 16,3 | 1,95 | 5419 | 6531 | 3,0 | 35 | 0 |
+| trapper.poisoner · 100 | 200 | 8,0 | 18,1 | 2,17 | 12 520 | 15 776 | 3,0 | 50 | 0 |
 | scout.partyHunter · 20 | 120 | 8,0 | 9,8 | 1,22 | 338 | 338 | 1,0 | 10 | 0 |
 | scout.partyHunter · 45 | 145 | 8,0 | 10,5 | 1,31 | 1655 | 1689 | 1,0 | 22 | 0 |
 | scout.partyHunter · 70 | 170 | 8,0 | 11,0 | 1,38 | 3965 | 4035 | 1,0 | 35 | 0 |
@@ -13745,53 +13868,53 @@ Pula i regeneracja z `StatCalc`, koszt `Skills.cost` (mana Maga z krzywą `manaC
 | build · poziom | pula | regeneracja / s | na odnowieniu / s | T-SK4 | 60 s | 60 s z miksturami | mikstury / min | punkty wydane | punkty wolne |
 | --- | --: | --: | --: | --: | --: | --: | --: | --: | --: |
 | base · 20 | 976 | 4,9 | 15,2 | 3,12 | 435 | 435 | 0,0 | 10 | 0 |
-| base · 45 | 2336 | 10,4 | 47,4 → 27,5 | **3,34 → 2,12** | 2893 → 2959 | 2893 → 2959 | 0,0 | 22 | 0 |
-| base · 70 | 3578 | 16,0 | 79,5 → 69,2 | **3,38 → 2,67** | 7667 → 7899 | 7667 → 7899 | 0,0 | 28 | 7 |
-| base · 100 | 5766 | 22,6 | 108,7 → 78,9 | **2,81 → 2,16** | 17 299 → 18 846 | 17 299 → 18 846 | 0,0 | 28 | 22 |
+| base · 45 | 2336 | 10,4 | 27,5 | **2,12** | 2959 | 2959 | 0,0 | 22 | 0 |
+| base · 70 | 3578 | 16,0 | 69,2 | **2,67** | 7899 | 7899 | 0,0 | 28 | 7 |
+| base · 100 | 5766 | 22,6 | 78,9 | **2,16** | 18 846 | 18 846 | 0,0 | 28 | 22 |
 | base.loadout · 20 | 976 | 4,9 | 15,2 | 3,12 | 476 | 476 | 0,0 | 10 | 0 |
-| base.loadout · 45 | 2336 | 10,4 | 47,4 → 27,5 | **3,32 → 1,93** | 3110 → 3162 | 3110 → 3162 | 0,0 | 22 | 0 |
-| base.loadout · 70 | 3578 | 16,0 | 79,5 → 69,2 | **3,30 → 2,84** | 8195 → 8466 | 8195 → 8466 | 0,0 | 28 | 7 |
-| base.loadout · 100 | 5766 | 22,6 | 108,7 → 78,9 | **3,71 → 2,69** | 18 700 → 20 204 | 18 700 → 20 204 | 0,0 | 28 | 22 |
+| base.loadout · 45 | 2336 | 10,4 | 27,5 | **1,93** | 3162 | 3162 | 0,0 | 22 | 0 |
+| base.loadout · 70 | 3578 | 16,0 | 69,2 | **2,84** | 8466 | 8466 | 0,0 | 28 | 7 |
+| base.loadout · 100 | 5766 | 22,6 | 78,9 | **2,69** | 20 204 | 20 204 | 0,0 | 28 | 22 |
 | destroyer.destroyerExp · 20 | 976 | 4,9 | 7,5 | 1,54 | 352 | 352 | 0,0 | 10 | 0 |
-| destroyer.destroyerExp · 45 | 2150 | 10,4 | 20,7 → 12,0 | **1,98 → 1,15** | 2294 | 2294 | 0,0 | 22 | 0 |
-| destroyer.destroyerExp · 70 | 3490 | 16,0 | 47,8 → 50,3 | **1,71 → 1,79** | 5690 → 5735 | 5690 → 5818 | 0,0 → 0,3 | 35 | 0 |
-| destroyer.destroyerExp · 100 | 5223 | 22,6 | 63,1 → 55,3 | **1,42 → 1,34** | 11 540 → 12 008 | 11 540 → 12 008 | 0,0 | 50 | 0 |
+| destroyer.destroyerExp · 45 | 2150 | 10,4 | 12,0 | **1,15** | 2294 | 2294 | 0,0 | 22 | 0 |
+| destroyer.destroyerExp · 70 | 3490 | 16,0 | 50,3 | **1,79** | 5735 | 5818 | 0,3 | 35 | 0 |
+| destroyer.destroyerExp · 100 | 5223 | 22,6 | 55,3 | **1,34** | 12 008 | 12 008 | 0,0 | 50 | 0 |
 | destroyer.destroyerBoss · 20 | 976 | 4,9 | 14,7 | 3,01 | 414 | 414 | 0,0 | 10 | 0 |
-| destroyer.destroyerBoss · 45 | 2150 | 10,4 | 32,2 → 18,7 | 3,09 → 1,79 | 3259 → 3273 | 3259 → 3273 | 0,0 | 22 | 0 |
-| destroyer.destroyerBoss · 70 | 3490 | 16,0 | 58,1 → 52,6 | 2,05 → 2,00 | 8504 → 8702 | 8504 → 8729 | 0,0 → 0,3 | 35 | 0 |
-| destroyer.destroyerBoss · 100 | 5223 | 22,6 | 76,4 → 57,6 | **1,71 → 1,29** | 17 234 → 17 833 | 17 234 → 17 833 | 0,0 | 50 | 0 |
+| destroyer.destroyerBoss · 45 | 2150 | 10,4 | 18,7 | 1,79 | 3273 | 3273 | 0,0 | 22 | 0 |
+| destroyer.destroyerBoss · 70 | 3490 | 16,0 | 52,6 | 2,00 | 8702 | 8729 | 0,3 | 35 | 0 |
+| destroyer.destroyerBoss · 100 | 5223 | 22,6 | 57,6 | **1,29** | 17 833 | 17 833 | 0,0 | 50 | 0 |
 | destroyer.destroyerFire · 20 | 976 | 4,9 | 16,4 | 3,36 | 412 | 412 | 0,0 | 10 | 0 |
-| destroyer.destroyerFire · 45 | 2086 | 10,4 | 50,0 → 29,0 | 4,80 → 2,78 | 2887 → 3110 | 3110 | 1,0 → 0,0 | 22 | 0 |
-| destroyer.destroyerFire · 70 | 3195 | 16,0 | 79,6 → 57,3 | 3,60 → 2,59 | 8320 → 9114 | 9075 → 9114 | 1,0 → 0,0 | 35 | 0 |
-| destroyer.destroyerFire · 100 | 5223 | 22,6 | 147,4 → 107,2 | 3,61 → 2,11 | 17 428 → 13 660 | 20 198 → 13 660 | 1,0 → 0,0 | 50 | 0 |
+| destroyer.destroyerFire · 45 | 2086 | 10,4 | 29,0 | 2,78 | 3110 | 3110 | 0,0 | 22 | 0 |
+| destroyer.destroyerFire · 70 | 3195 | 16,0 | 57,3 | 2,59 | 9114 | 9114 | 0,0 | 35 | 0 |
+| destroyer.destroyerFire · 100 | 5223 | 22,6 | 107,2 | 2,11 | 13 660 | 13 660 | 0,0 | 50 | 0 |
 | destroyer.destroyerIce · 20 | 976 | 4,9 | 12,7 | 2,60 | 383 | 383 | 0,0 | 10 | 0 |
-| destroyer.destroyerIce · 45 | 2086 | 10,4 | 41,4 → 24,0 | 3,97 → 2,30 | 2850 → 2872 | 2850 → 2872 | 0,0 | 22 | 0 |
-| destroyer.destroyerIce · 70 | 3195 | 16,0 | 69,3 → 49,9 | **2,05 → 1,48** | 7817 → 8191 | 7927 → 8191 | 1,0 → 0,0 | 35 | 0 |
-| destroyer.destroyerIce · 100 | 5223 | 22,6 | 134,7 → 81,0 | 3,34 → 2,01 | 16 317 → 10 775 | 17 800 → 10 775 | 1,0 → 0,0 | 50 | 0 |
+| destroyer.destroyerIce · 45 | 2086 | 10,4 | 24,0 | 2,30 | 2872 | 2872 | 0,0 | 22 | 0 |
+| destroyer.destroyerIce · 70 | 3195 | 16,0 | 49,9 | **1,48** | 8191 | 8191 | 0,0 | 35 | 0 |
+| destroyer.destroyerIce · 100 | 5223 | 22,6 | 81,0 | 2,01 | 10 775 | 10 775 | 0,0 | 50 | 0 |
 | destroyer.destroyerLightning · 20 | 976 | 4,9 | 17,2 | 3,53 | 456 | 456 | 0,0 | 10 | 0 |
-| destroyer.destroyerLightning · 45 | 2086 | 10,4 | 48,9 → 28,4 | 4,69 → 2,72 | 3814 → 3958 | 3931 → 3958 | 1,0 → 0,0 | 22 | 0 |
-| destroyer.destroyerLightning · 70 | 3195 | 16,0 | 80,8 → 58,2 | 2,96 → 2,13 | 10 616 → 11 556 | 11 370 → 11 556 | 1,0 → 0,0 | 35 | 0 |
-| destroyer.destroyerLightning · 100 | 5223 | 22,6 | 148,8 → 99,5 | 2,98 → 2,02 | 20 799 → 17 319 | 25 534 → 17 319 | 1,0 → 0,0 | 50 | 0 |
+| destroyer.destroyerLightning · 45 | 2086 | 10,4 | 28,4 | 2,72 | 3958 | 3958 | 0,0 | 22 | 0 |
+| destroyer.destroyerLightning · 70 | 3195 | 16,0 | 58,2 | 2,13 | 11 556 | 11 556 | 0,0 | 35 | 0 |
+| destroyer.destroyerLightning · 100 | 5223 | 22,6 | 99,5 | 2,02 | 17 319 | 17 319 | 0,0 | 50 | 0 |
 | arcanist.arcanistBoss · 20 | 1263 | 5,6 | 8,7 | 1,54 | 459 | 459 | 0,0 | 10 | 0 |
-| arcanist.arcanistBoss · 45 | 2806 | 12,2 | 23,6 → 13,7 | **1,93 → 1,12** | 3119 → 3143 | 3119 → 3143 | 0,0 | 22 | 0 |
-| arcanist.arcanistBoss · 70 | 4543 | 18,7 | 42,8 → 34,7 | **2,03 → 1,65** | 7894 → 7991 | 7894 → 7991 | 0,0 | 35 | 0 |
-| arcanist.arcanistBoss · 100 | 6775 | 26,6 | 62,9 → 48,2 | **2,11 → 1,62** | 17 270 → 18 416 | 17 270 → 18 416 | 0,0 | 50 | 0 |
+| arcanist.arcanistBoss · 45 | 2806 | 12,2 | 13,7 | **1,12** | 3143 | 3143 | 0,0 | 22 | 0 |
+| arcanist.arcanistBoss · 70 | 4543 | 18,7 | 34,7 | **1,65** | 7991 | 7991 | 0,0 | 35 | 0 |
+| arcanist.arcanistBoss · 100 | 6775 | 26,6 | 48,2 | **1,62** | 18 416 | 18 416 | 0,0 | 50 | 0 |
 | arcanist.arcanistOverload · 20 | 1263 | 5,6 | 9,4 | 1,67 | 459 | 459 | 0,0 | 10 | 0 |
-| arcanist.arcanistOverload · 45 | 2806 | 12,2 | 29,9 → 17,4 | **2,45 → 1,42** | 3140 | 3140 | 0,0 | 22 | 0 |
-| arcanist.arcanistOverload · 70 | 4543 | 18,7 | 54,3 → 44,1 | **2,58 → 2,09** | 7824 → 7908 | 7824 → 7908 | 0,0 | 35 | 0 |
-| arcanist.arcanistOverload · 100 | 6775 | 26,6 | 79,8 → 61,3 | **2,68 → 2,06** | 16 755 → 17 639 | 16 755 → 17 639 | 0,0 | 50 | 0 |
+| arcanist.arcanistOverload · 45 | 2806 | 12,2 | 17,4 | **1,42** | 3140 | 3140 | 0,0 | 22 | 0 |
+| arcanist.arcanistOverload · 70 | 4543 | 18,7 | 44,1 | **2,09** | 7908 | 7908 | 0,0 | 35 | 0 |
+| arcanist.arcanistOverload · 100 | 6775 | 26,6 | 61,3 | **2,06** | 17 639 | 17 639 | 0,0 | 50 | 0 |
 | arcanist.arcanistFire · 20 | 1263 | 5,6 | 13,9 | 2,46 | 519 | 519 | 0,0 | 10 | 0 |
-| arcanist.arcanistFire · 45 | 2730 | 12,2 | 42,3 → 24,5 | 3,47 → 2,01 | 4180 → 4277 | 4180 → 4277 | 0,0 | 22 | 0 |
-| arcanist.arcanistFire · 70 | 4196 | 18,7 | 66,3 → 47,8 | 3,02 → 2,17 | 11 676 → 11 835 | 11 676 → 11 835 | 0,0 | 35 | 0 |
-| arcanist.arcanistFire · 100 | 6775 | 26,6 | 105,6 → 73,8 | 3,42 → 2,39 | 25 209 → 26 497 | 25 209 → 26 497 | 0,0 | 50 | 0 |
+| arcanist.arcanistFire · 45 | 2730 | 12,2 | 24,5 | 2,01 | 4277 | 4277 | 0,0 | 22 | 0 |
+| arcanist.arcanistFire · 70 | 4196 | 18,7 | 47,8 | 2,17 | 11 835 | 11 835 | 0,0 | 35 | 0 |
+| arcanist.arcanistFire · 100 | 6775 | 26,6 | 73,8 | 2,39 | 26 497 | 26 497 | 0,0 | 50 | 0 |
 | arcanist.arcanistIce · 20 | 1263 | 5,6 | 15,1 | 2,68 | 461 | 461 | 0,0 | 10 | 0 |
-| arcanist.arcanistIce · 45 | 2730 | 12,2 | 45,4 → 26,3 | 3,72 → 2,16 | 3673 → 3832 | 3673 → 3832 | 0,0 | 22 | 0 |
-| arcanist.arcanistIce · 70 | 4196 → 4543 | 18,7 | 60,9 → 52,6 | 2,77 → 2,37 | 9586 → 10 218 | 9586 → 10 218 | 0,0 | 35 | 0 |
-| arcanist.arcanistIce · 100 | 6775 | 26,6 | 111,8 → 68,4 | 3,62 → 2,22 | 20 730 → 23 220 | 20 730 → 23 220 | 0,0 | 50 | 0 |
+| arcanist.arcanistIce · 45 | 2730 | 12,2 | 26,3 | 2,16 | 3832 | 3832 | 0,0 | 22 | 0 |
+| arcanist.arcanistIce · 70 | 4543 | 18,7 | 52,6 | 2,37 | 10 218 | 10 218 | 0,0 | 35 | 0 |
+| arcanist.arcanistIce · 100 | 6775 | 26,6 | 68,4 | 2,22 | 23 220 | 23 220 | 0,0 | 50 | 0 |
 | arcanist.arcanistLightning · 20 | 1263 | 5,6 | 17,2 | 3,06 | 575 | 575 | 0,0 | 10 | 0 |
-| arcanist.arcanistLightning · 45 | 2730 | 12,2 | 50,1 → 29,0 | 4,11 → 2,38 | 4778 → 4893 | 4778 → 4893 | 0,0 | 22 | 0 |
-| arcanist.arcanistLightning · 70 | 4196 → 4543 | 18,7 | 68,7 → 49,5 | 3,13 → 2,23 | 13 148 → 13 811 | 13 148 → 13 811 | 0,0 | 35 | 0 |
-| arcanist.arcanistLightning · 100 | 6775 | 26,6 | 103,8 → 73,2 | 3,36 → 2,37 | 26 397 → 29 544 | 26 397 → 29 544 | 0,0 | 50 | 0 |
+| arcanist.arcanistLightning · 45 | 2730 | 12,2 | 29,0 | 2,38 | 4893 | 4893 | 0,0 | 22 | 0 |
+| arcanist.arcanistLightning · 70 | 4543 | 18,7 | 49,5 | 2,23 | 13 811 | 13 811 | 0,0 | 35 | 0 |
+| arcanist.arcanistLightning · 100 | 6775 | 26,6 | 73,2 | 2,37 | 29 544 | 29 544 | 0,0 | 50 | 0 |
 
 ### Zasoby: Kapłan
 
@@ -13879,11 +14002,11 @@ Ile mechanik model jeszcze nie liczy (lista w sekcji „Brak do S86”); pomini�
 | Mage · arcanist.arcanistOverload · 45 | 0 | 0 | 4 |
 | Mage · arcanist.arcanistOverload · 100 | 0 | 0 | 9 |
 | Mage · arcanist.arcanistFire · 45 | 0 | 0 | 1 |
-| Mage · arcanist.arcanistFire · 100 | 0 | 0 | 1 → 2 |
+| Mage · arcanist.arcanistFire · 100 | 0 | 0 | 2 |
 | Mage · arcanist.arcanistIce · 45 | 0 | 0 | 0 |
-| Mage · arcanist.arcanistIce · 100 | 0 | 0 | 0 → 1 |
+| Mage · arcanist.arcanistIce · 100 | 0 | 0 | 1 |
 | Mage · arcanist.arcanistLightning · 45 | 0 | 0 | 0 |
-| Mage · arcanist.arcanistLightning · 100 | 0 | 0 | 1 → 2 |
+| Mage · arcanist.arcanistLightning · 100 | 0 | 0 | 2 |
 | Cleric · base · 45 | 0 | 0 | 0 |
 | Cleric · base · 100 | 0 | 0 | 0 |
 | Cleric · healer.dungeon · 45 | 0 | 0 | 1 |
@@ -14069,33 +14192,33 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Hunter marksman.eliteHunter · 100 · pinningShot | 4% |
 | Hunter marksman.eliteHunter · 100 · heartseeker | 3% |
 | Hunter trapper.poacher · 45 · basic | 38% |
-| Hunter trapper.poacher · 45 · heavyBolt | 21% → 19% |
+| Hunter trapper.poacher · 45 · heavyBolt | 19% |
 | Hunter trapper.poacher · 45 · venomSnare | 16% |
 | Hunter trapper.poacher · 45 · venomArrow | 9% |
 | Hunter trapper.poacher · 45 · toxicTips | 8% |
 | Hunter trapper.poacher · 70 · basic | 38% |
-| Hunter trapper.poacher · 70 · venomSnare | 16% → 15% |
-| Hunter trapper.poacher · 70 · heavyBolt | 16% → 15% |
+| Hunter trapper.poacher · 70 · venomSnare | 15% |
+| Hunter trapper.poacher · 70 · heavyBolt | 15% |
 | Hunter trapper.poacher · 70 · deadlyBolt | 11% |
 | Hunter trapper.poacher · 70 · toxicTips | 10% |
-| Hunter trapper.poacher · 100 · basic | 37% → 36% |
+| Hunter trapper.poacher · 100 · basic | 36% |
 | Hunter trapper.poacher · 100 · venomSnare | 17% |
-| Hunter trapper.poacher · 100 · heavyBolt | 17% → 16% |
+| Hunter trapper.poacher · 100 · heavyBolt | 16% |
 | Hunter trapper.poacher · 100 · toxicTips | 10% |
-| Hunter trapper.poacher · 100 · deadlyBolt | 10% → 9% |
+| Hunter trapper.poacher · 100 · deadlyBolt | 9% |
 | Hunter trapper.poisoner · 45 · basic | 37% |
-| Hunter trapper.poisoner · 45 · heavyBolt | 23% → 21% |
-| Hunter trapper.poisoner · 45 · venomSnare | 16% → 15% |
+| Hunter trapper.poisoner · 45 · heavyBolt | 21% |
+| Hunter trapper.poisoner · 45 · venomSnare | 15% |
 | Hunter trapper.poisoner · 45 · deadlyBolt | 8% |
 | Hunter trapper.poisoner · 45 · venomArrow | 8% |
-| Hunter trapper.poisoner · 70 · basic | 36% → 35% |
-| Hunter trapper.poisoner · 70 · heavyBolt | 19% → 18% |
-| Hunter trapper.poisoner · 70 · venomSnare | 17% → 16% |
+| Hunter trapper.poisoner · 70 · basic | 35% |
+| Hunter trapper.poisoner · 70 · heavyBolt | 18% |
+| Hunter trapper.poisoner · 70 · venomSnare | 16% |
 | Hunter trapper.poisoner · 70 · deadlyBolt | 10% |
 | Hunter trapper.poisoner · 70 · toxicTips | 10% |
-| Hunter trapper.poisoner · 100 · basic | 36% → 35% |
-| Hunter trapper.poisoner · 100 · heavyBolt | 18% → 16% |
-| Hunter trapper.poisoner · 100 · venomSnare | 17% → 16% |
+| Hunter trapper.poisoner · 100 · basic | 35% |
+| Hunter trapper.poisoner · 100 · heavyBolt | 16% |
+| Hunter trapper.poisoner · 100 · venomSnare | 16% |
 | Hunter trapper.poisoner · 100 · toxicTips | 9% |
 | Hunter trapper.poisoner · 100 · venomArrow | 9% |
 | Hunter scout.partyHunter · 45 · basic | 41% |
@@ -14132,19 +14255,19 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Mage base · 45 · iceShard | 10% |
 | Mage base · 45 · firebolt | 8% |
 | Mage base · 45 · glacialSpike | 5% |
-| Mage base · 70 · basic | 21% → 20% |
+| Mage base · 70 · basic | 20% |
 | Mage base · 70 · lightningBolt | 11% |
 | Mage base · 70 · iceShard | 8% |
 | Mage base · 70 · firebolt | 7% |
 | Mage base · 70 · shatter | 6% |
-| Mage base · 100 · basic | 18% → 17% |
+| Mage base · 100 · basic | 17% |
 | Mage base · 100 · lightningBolt | 11% |
-| Mage base · 100 · shatter | 6% → 9% |
-| Mage base · 100 · iceShard | 8% → 7% |
+| Mage base · 100 · shatter | 9% |
+| Mage base · 100 · iceShard | 7% |
 | Mage base · 100 · firebolt | 6% |
 | Mage base.loadout · 45 · basic | 23% |
 | Mage base.loadout · 45 · lightningBolt | 13% |
-| Mage base.loadout · 45 · iceShard | 11% → 10% |
+| Mage base.loadout · 45 · iceShard | 10% |
 | Mage base.loadout · 45 · firebolt | 8% |
 | Mage base.loadout · 45 · shatter | 4% |
 | Mage base.loadout · 70 · basic | 20% |
@@ -14152,10 +14275,10 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Mage base.loadout · 70 · iceShard | 9% |
 | Mage base.loadout · 70 · firebolt | 7% |
 | Mage base.loadout · 70 · shatter | 6% |
-| Mage base.loadout · 100 · basic | 18% → 16% |
+| Mage base.loadout · 100 · basic | 16% |
 | Mage base.loadout · 100 · lightningBolt | 11% |
-| Mage base.loadout · 100 · shatter | 6% → 9% |
-| Mage base.loadout · 100 · iceShard | 9% → 8% |
+| Mage base.loadout · 100 · shatter | 9% |
+| Mage base.loadout · 100 · iceShard | 8% |
 | Mage base.loadout · 100 · firebolt | 6% |
 | Mage destroyer.destroyerExp · 45 · basic | 36% |
 | Mage destroyer.destroyerExp · 45 · lightningBolt | 19% |
@@ -14167,130 +14290,130 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Mage destroyer.destroyerExp · 70 · iceShard | 16% |
 | Mage destroyer.destroyerExp · 70 · firebolt | 11% |
 | Mage destroyer.destroyerExp · 70 · fireball | 6% |
-| Mage destroyer.destroyerExp · 100 · basic | 32% → 31% |
+| Mage destroyer.destroyerExp · 100 · basic | 31% |
 | Mage destroyer.destroyerExp · 100 · lightningBolt | 16% |
 | Mage destroyer.destroyerExp · 100 · iceShard | 16% |
-| Mage destroyer.destroyerExp · 100 · firebolt | 11% → 10% |
+| Mage destroyer.destroyerExp · 100 · firebolt | 10% |
 | Mage destroyer.destroyerExp · 100 · cataclysm | 6% |
 | Mage destroyer.destroyerBoss · 45 · basic | 24% |
 | Mage destroyer.destroyerBoss · 45 · iceShard | 14% |
 | Mage destroyer.destroyerBoss · 45 · lightningBolt | 14% |
 | Mage destroyer.destroyerBoss · 45 · firebolt | 10% |
 | Mage destroyer.destroyerBoss · 45 · burn | 6% |
-| Mage destroyer.destroyerBoss · 70 · basic | 21% → 20% |
+| Mage destroyer.destroyerBoss · 70 · basic | 20% |
 | Mage destroyer.destroyerBoss · 70 · lightningBolt | 13% |
-| Mage destroyer.destroyerBoss · 70 · iceShard | 13% → 12% |
+| Mage destroyer.destroyerBoss · 70 · iceShard | 12% |
 | Mage destroyer.destroyerBoss · 70 · firebolt | 8% |
 | Mage destroyer.destroyerBoss · 70 · burn | 7% |
 | Mage destroyer.destroyerBoss · 100 · basic | 20% |
-| Mage destroyer.destroyerBoss · 100 · lightningBolt | 13% → 12% |
+| Mage destroyer.destroyerBoss · 100 · lightningBolt | 12% |
 | Mage destroyer.destroyerBoss · 100 · iceShard | 12% |
-| Mage destroyer.destroyerBoss · 100 · firebolt | 8% → 7% |
+| Mage destroyer.destroyerBoss · 100 · firebolt | 7% |
 | Mage destroyer.destroyerBoss · 100 · burn | 7% |
-| Mage destroyer.destroyerFire · 45 · firebolt | 27% → 26% |
-| Mage destroyer.destroyerFire · 45 · basic | 25% → 23% |
-| Mage destroyer.destroyerFire · 45 · burn | 13% → 14% |
-| Mage destroyer.destroyerFire · 45 · fireball | 11% → 13% |
-| Mage destroyer.destroyerFire · 45 · pyroblast | 11% → 12% |
-| Mage destroyer.destroyerFire · 70 · firebolt | 23% → 21% |
-| Mage destroyer.destroyerFire · 70 · basic | 19% → 17% |
-| Mage destroyer.destroyerFire · 70 · burn | 14% → 13% |
-| Mage destroyer.destroyerFire · 70 · pyroblast | 10% → 11% |
-| Mage destroyer.destroyerFire · 70 · combustion | 10% → 11% |
-| Mage destroyer.destroyerFire · 100 · basic | 18% → 23% |
+| Mage destroyer.destroyerFire · 45 · firebolt | 26% |
+| Mage destroyer.destroyerFire · 45 · basic | 23% |
+| Mage destroyer.destroyerFire · 45 · burn | 14% |
+| Mage destroyer.destroyerFire · 45 · fireball | 13% |
+| Mage destroyer.destroyerFire · 45 · pyroblast | 12% |
+| Mage destroyer.destroyerFire · 70 · firebolt | 21% |
+| Mage destroyer.destroyerFire · 70 · basic | 17% |
+| Mage destroyer.destroyerFire · 70 · burn | 13% |
+| Mage destroyer.destroyerFire · 70 · pyroblast | 11% |
+| Mage destroyer.destroyerFire · 70 · combustion | 11% |
+| Mage destroyer.destroyerFire · 100 · basic | 23% |
 | Mage destroyer.destroyerFire · 100 · pyroblast | 15% |
-| Mage destroyer.destroyerFire · 100 · burn | 12% → 14% |
+| Mage destroyer.destroyerFire · 100 · burn | 14% |
 | Mage destroyer.destroyerFire · 100 · fireball | 13% |
-| Mage destroyer.destroyerFire · 100 · combustion | 10% → 13% |
+| Mage destroyer.destroyerFire · 100 · combustion | 13% |
 | Mage destroyer.destroyerIce · 45 · iceShard | 37% |
 | Mage destroyer.destroyerIce · 45 · basic | 28% |
-| Mage destroyer.destroyerIce · 45 · glacialSpike | 15% → 16% |
+| Mage destroyer.destroyerIce · 45 · glacialSpike | 16% |
 | Mage destroyer.destroyerIce · 45 · hailstorm | 15% |
 | Mage destroyer.destroyerIce · 45 · frozenOrb | 3% |
 | Mage destroyer.destroyerIce · 70 · iceShard | 29% |
-| Mage destroyer.destroyerIce · 70 · basic | 23% → 22% |
+| Mage destroyer.destroyerIce · 70 · basic | 22% |
 | Mage destroyer.destroyerIce · 70 · glacialSpike | 18% |
-| Mage destroyer.destroyerIce · 70 · shatter | 11% → 12% |
+| Mage destroyer.destroyerIce · 70 · shatter | 12% |
 | Mage destroyer.destroyerIce · 70 · hailstorm | 12% |
-| Mage destroyer.destroyerIce · 100 · basic | 22% → 32% |
-| Mage destroyer.destroyerIce · 100 · glacialSpike | 14% → 31% |
-| Mage destroyer.destroyerIce · 100 · hailstorm | 10% → 17% |
+| Mage destroyer.destroyerIce · 100 · basic | 32% |
+| Mage destroyer.destroyerIce · 100 · glacialSpike | 31% |
+| Mage destroyer.destroyerIce · 100 · hailstorm | 17% |
 | Mage destroyer.destroyerIce · 100 · frozenOrb | 7% |
 | Mage destroyer.destroyerIce · 100 · deepFreeze | 5% |
-| Mage destroyer.destroyerLightning · 45 · lightningBolt | 51% → 49% |
-| Mage destroyer.destroyerLightning · 45 · basic | 20% → 19% |
-| Mage destroyer.destroyerLightning · 45 · thunderStrike | 10% → 12% |
-| Mage destroyer.destroyerLightning · 45 · chainLightning | 8% → 9% |
+| Mage destroyer.destroyerLightning · 45 · lightningBolt | 49% |
+| Mage destroyer.destroyerLightning · 45 · basic | 19% |
+| Mage destroyer.destroyerLightning · 45 · thunderStrike | 12% |
+| Mage destroyer.destroyerLightning · 45 · chainLightning | 9% |
 | Mage destroyer.destroyerLightning · 45 · firewall | 5% |
-| Mage destroyer.destroyerLightning · 70 · lightningBolt | 42% → 39% |
-| Mage destroyer.destroyerLightning · 70 · thunderStrike | 12% → 15% |
-| Mage destroyer.destroyerLightning · 70 · basic | 16% → 15% |
+| Mage destroyer.destroyerLightning · 70 · lightningBolt | 39% |
+| Mage destroyer.destroyerLightning · 70 · thunderStrike | 15% |
+| Mage destroyer.destroyerLightning · 70 · basic | 15% |
 | Mage destroyer.destroyerLightning · 70 · firewall | 10% |
 | Mage destroyer.destroyerLightning · 70 · lightningLance | 7% |
-| Mage destroyer.destroyerLightning · 100 · lightningLance | 8% → 24% |
-| Mage destroyer.destroyerLightning · 100 · thunderStrike | 10% → 19% |
-| Mage destroyer.destroyerLightning · 100 · basic | 16% → 19% |
-| Mage destroyer.destroyerLightning · 100 · firewall | 7% → 13% |
+| Mage destroyer.destroyerLightning · 100 · lightningLance | 24% |
+| Mage destroyer.destroyerLightning · 100 · thunderStrike | 19% |
+| Mage destroyer.destroyerLightning · 100 · basic | 19% |
+| Mage destroyer.destroyerLightning · 100 · firewall | 13% |
 | Mage destroyer.destroyerLightning · 100 · chainLightning | 9% |
 | Mage arcanist.arcanistBoss · 45 · basic | 29% |
 | Mage arcanist.arcanistBoss · 45 · lightningBolt | 18% |
 | Mage arcanist.arcanistBoss · 45 · iceShard | 17% |
 | Mage arcanist.arcanistBoss · 45 · firebolt | 13% |
 | Mage arcanist.arcanistBoss · 45 · arcaneDischarge | 5% |
-| Mage arcanist.arcanistBoss · 70 · basic | 25% → 23% |
-| Mage arcanist.arcanistBoss · 70 · arcaneTorrent | 9% → 16% |
-| Mage arcanist.arcanistBoss · 70 · lightningBolt | 15% → 14% |
-| Mage arcanist.arcanistBoss · 70 · iceShard | 14% → 12% |
-| Mage arcanist.arcanistBoss · 70 · firebolt | 12% → 11% |
-| Mage arcanist.arcanistBoss · 100 · arcaneTorrent | 18% → 29% |
-| Mage arcanist.arcanistBoss · 100 · basic | 22% → 19% |
-| Mage arcanist.arcanistBoss · 100 · lightningBolt | 15% → 12% |
-| Mage arcanist.arcanistBoss · 100 · firebolt | 11% → 9% |
-| Mage arcanist.arcanistBoss · 100 · iceShard | 11% → 9% |
+| Mage arcanist.arcanistBoss · 70 · basic | 23% |
+| Mage arcanist.arcanistBoss · 70 · arcaneTorrent | 16% |
+| Mage arcanist.arcanistBoss · 70 · lightningBolt | 14% |
+| Mage arcanist.arcanistBoss · 70 · iceShard | 12% |
+| Mage arcanist.arcanistBoss · 70 · firebolt | 11% |
+| Mage arcanist.arcanistBoss · 100 · arcaneTorrent | 29% |
+| Mage arcanist.arcanistBoss · 100 · basic | 19% |
+| Mage arcanist.arcanistBoss · 100 · lightningBolt | 12% |
+| Mage arcanist.arcanistBoss · 100 · firebolt | 9% |
+| Mage arcanist.arcanistBoss · 100 · iceShard | 9% |
 | Mage arcanist.arcanistOverload · 45 · basic | 29% |
 | Mage arcanist.arcanistOverload · 45 · lightningBolt | 18% |
 | Mage arcanist.arcanistOverload · 45 · iceShard | 17% |
 | Mage arcanist.arcanistOverload · 45 · firebolt | 13% |
 | Mage arcanist.arcanistOverload · 45 · arcaneDischarge | 5% |
-| Mage arcanist.arcanistOverload · 70 · basic | 26% → 25% |
+| Mage arcanist.arcanistOverload · 70 · basic | 25% |
 | Mage arcanist.arcanistOverload · 70 · lightningBolt | 15% |
-| Mage arcanist.arcanistOverload · 70 · iceShard | 15% → 14% |
+| Mage arcanist.arcanistOverload · 70 · iceShard | 14% |
 | Mage arcanist.arcanistOverload · 70 · firebolt | 12% |
 | Mage arcanist.arcanistOverload · 70 · arcaneTorrent | 9% |
-| Mage arcanist.arcanistOverload · 100 · arcaneTorrent | 13% → 21% |
-| Mage arcanist.arcanistOverload · 100 · basic | 24% → 21% |
-| Mage arcanist.arcanistOverload · 100 · lightningBolt | 15% → 12% |
+| Mage arcanist.arcanistOverload · 100 · arcaneTorrent | 21% |
+| Mage arcanist.arcanistOverload · 100 · basic | 21% |
+| Mage arcanist.arcanistOverload · 100 · lightningBolt | 12% |
 | Mage arcanist.arcanistOverload · 100 · firebolt | 11% |
-| Mage arcanist.arcanistOverload · 100 · iceShard | 14% → 11% |
-| Mage arcanist.arcanistFire · 45 · firebolt | 27% → 28% |
+| Mage arcanist.arcanistOverload · 100 · iceShard | 11% |
+| Mage arcanist.arcanistFire · 45 · firebolt | 28% |
 | Mage arcanist.arcanistFire · 45 · basic | 20% |
 | Mage arcanist.arcanistFire · 45 · burn | 14% |
 | Mage arcanist.arcanistFire · 45 · fireball | 11% |
 | Mage arcanist.arcanistFire · 45 · pyroblast | 11% |
-| Mage arcanist.arcanistFire · 70 · firebolt | 22% → 23% |
+| Mage arcanist.arcanistFire · 70 · firebolt | 23% |
 | Mage arcanist.arcanistFire · 70 · basic | 17% |
 | Mage arcanist.arcanistFire · 70 · pyroblast | 13% |
 | Mage arcanist.arcanistFire · 70 · immolate | 13% |
 | Mage arcanist.arcanistFire · 70 · burn | 11% |
 | Mage arcanist.arcanistFire · 100 · firebolt | 18% |
-| Mage arcanist.arcanistFire · 100 · immolate | 17% → 16% |
-| Mage arcanist.arcanistFire · 100 · basic | 15% → 14% |
-| Mage arcanist.arcanistFire · 100 · pyroblast | 13% → 12% |
+| Mage arcanist.arcanistFire · 100 · immolate | 16% |
+| Mage arcanist.arcanistFire · 100 · basic | 14% |
+| Mage arcanist.arcanistFire · 100 · pyroblast | 12% |
 | Mage arcanist.arcanistFire · 100 · burn | 9% |
-| Mage arcanist.arcanistIce · 45 · iceShard | 29% → 28% |
-| Mage arcanist.arcanistIce · 45 · basic | 25% → 24% |
+| Mage arcanist.arcanistIce · 45 · iceShard | 28% |
+| Mage arcanist.arcanistIce · 45 · basic | 24% |
 | Mage arcanist.arcanistIce · 45 · glacialSpike | 15% |
-| Mage arcanist.arcanistIce · 45 · shatter | 11% → 12% |
+| Mage arcanist.arcanistIce · 45 · shatter | 12% |
 | Mage arcanist.arcanistIce · 45 · hailstorm | 10% |
-| Mage arcanist.arcanistIce · 70 · iceShard | 24% → 23% |
-| Mage arcanist.arcanistIce · 70 · basic | 21% → 20% |
-| Mage arcanist.arcanistIce · 70 · glacialSpike | 21% → 20% |
-| Mage arcanist.arcanistIce · 70 · shatter | 12% → 15% |
-| Mage arcanist.arcanistIce · 70 · hailstorm | 9% → 8% |
-| Mage arcanist.arcanistIce · 100 · shatter | 14% → 22% |
+| Mage arcanist.arcanistIce · 70 · iceShard | 23% |
+| Mage arcanist.arcanistIce · 70 · basic | 20% |
+| Mage arcanist.arcanistIce · 70 · glacialSpike | 20% |
+| Mage arcanist.arcanistIce · 70 · shatter | 15% |
+| Mage arcanist.arcanistIce · 70 · hailstorm | 8% |
+| Mage arcanist.arcanistIce · 100 · shatter | 22% |
 | Mage arcanist.arcanistIce · 100 · iceShard | 20% |
 | Mage arcanist.arcanistIce · 100 · glacialSpike | 18% |
-| Mage arcanist.arcanistIce · 100 · basic | 18% → 17% |
+| Mage arcanist.arcanistIce · 100 · basic | 17% |
 | Mage arcanist.arcanistIce · 100 · arcaneTorrent | 9% |
 | Mage arcanist.arcanistLightning · 45 · lightningBolt | 41% |
 | Mage arcanist.arcanistLightning · 45 · basic | 18% |
@@ -14298,14 +14421,14 @@ Pięć największych udziałów umiejętności (i ataku podstawowego, `basic`) w
 | Mage arcanist.arcanistLightning · 45 · chainLightning | 9% |
 | Mage arcanist.arcanistLightning · 45 · lightningLance | 8% |
 | Mage arcanist.arcanistLightning · 70 · lightningBolt | 36% |
-| Mage arcanist.arcanistLightning · 70 · thunderStrike | 14% → 15% |
+| Mage arcanist.arcanistLightning · 70 · thunderStrike | 15% |
 | Mage arcanist.arcanistLightning · 70 · basic | 15% |
 | Mage arcanist.arcanistLightning · 70 · lightningLance | 10% |
 | Mage arcanist.arcanistLightning · 70 · firewall | 8% |
-| Mage arcanist.arcanistLightning · 100 · lightningBolt | 33% → 31% |
-| Mage arcanist.arcanistLightning · 100 · lightningLance | 11% → 14% |
+| Mage arcanist.arcanistLightning · 100 · lightningBolt | 31% |
+| Mage arcanist.arcanistLightning · 100 · lightningLance | 14% |
 | Mage arcanist.arcanistLightning · 100 · thunderStrike | 13% |
-| Mage arcanist.arcanistLightning · 100 · basic | 14% → 13% |
+| Mage arcanist.arcanistLightning · 100 · basic | 13% |
 | Mage arcanist.arcanistLightning · 100 · arcaneTorrent | 7% |
 | Cleric base · 45 · holyStrike | 43% |
 | Cleric base · 45 · basic | 30% |
@@ -14463,18 +14586,18 @@ L20: baza z bronią `Balance.LOADOUT` wobec diagnozy `3f935c1` (plan balansu D1)
 | ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L45 (węzły) | 0,32 | 0,30 | 6% |
 | ROZWOJ 9.6 T-SK5 Fortuna „Łupieżczy” L45 (węzły) | 0,26 | 0,26 | 2% |
 | ROZWOJ 11.6 obszar / jeden cel baza Łowcy L45 (węzły) | 1,04 | 1,40 | **-26%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (exp) L45 (żywioły) | 3,34 → 2,12 | 1,28 | **161% → 65%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (boss) L45 (żywioły) | 3,34 → 2,12 | 1,38 | **142% → 53%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (exp) L45 (żywioły) | 2,12 | 1,28 | **65%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (boss) L45 (żywioły) | 2,12 | 1,38 | **53%** |
 | ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L70 (węzły) | 0,30 | 0,33 | -9% |
 | ROZWOJ 9.6 T-SK5 Fortuna „Łupieżczy” L70 (węzły) | 0,21 | 0,28 | **-27%** |
 | ROZWOJ 11.6 obszar / jeden cel baza Łowcy L70 (węzły) | 1,10 | 1,40 | **-22%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (exp) L70 (żywioły) | 3,38 → 2,67 | 1,13 | **199% → 136%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (boss) L70 (żywioły) | 3,38 → 2,67 | 1,27 | **166% → 110%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (exp) L70 (żywioły) | 2,67 | 1,13 | **136%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (boss) L70 (żywioły) | 2,67 | 1,27 | **110%** |
 | ROZWOJ 9.6 T-SK5 Uzdrowiciel „Lochowy” L100 (węzły) | 0,38 | 0,38 | -1% |
 | ROZWOJ 9.6 T-SK5 Fortuna „Łupieżczy” L100 (węzły) | 0,25 | 0,30 | **-15%** |
 | ROZWOJ 11.6 obszar / jeden cel baza Łowcy L100 (węzły) | 1,08 | 1,30 | **-17%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (exp) L100 (żywioły) | 2,81 → 2,16 | 1,05 | **167% → 106%** |
-| ROZWOJ 12.7 T-SK4 baza Maga (boss) L100 (żywioły) | 2,81 → 2,16 | 1,18 | **138% → 83%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (exp) L100 (żywioły) | 2,16 | 1,05 | **106%** |
+| ROZWOJ 12.7 T-SK4 baza Maga (boss) L100 (żywioły) | 2,16 | 1,18 | **83%** |
 
 ### Poza modelem (na build, poziom 100)
 
@@ -14786,7 +14909,7 @@ Pozycje `unmodelled` (po S86 tylko nieznane klucze; haki bez wpływu na metryki 
 | T-SK6 Cleric inquisitor.solo grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 | T-SK6 Cleric inquisitor.bulwark grimrok | 0,00 | 1,00–2,00 | **poza** | właściciel |
 
-Tabele S85 liczą się 3,3 s (siatka, leczenie, porównania).
+Tabele S85 liczą się 3,4 s (siatka, leczenie, porównania).
 
 ## Klasy i ścieżki (S86)
 
@@ -14816,9 +14939,9 @@ Wiersze `SkillModel.PATH_TARGETS` (bez R4–R6) na 20 / 45 / 70 / 100; na 20 cel
 | Łowca · 20 | 39 | 47 |
 | Łowca · 45 | 57 | 86 |
 | Łowca · 70 | 75 | 113 |
-| Łowca · 100 | 86 → 88 | 148 |
+| Łowca · 100 | 88 | 148 |
 | Mag · 20 | 9 | 19 |
-| Mag · 45 | 59 → 63 | 92 |
+| Mag · 45 | 63 | 92 |
 | Mag · 70 | 93 | 137 |
 | Mag · 100 | 124 | 179 |
 | Kapłan · 20 | 12 | 20 |
@@ -15124,16 +15247,16 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | marksman.base · marksman.kingslayer · 100 [raport: S147] | **1,24** | 0 | 0 | 1,35 | -8% | 11,6 |
 | marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 20 | **1,01** | 0 | 0 | 1,16 | **-13%** | 0,0 |
 | marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 45 | 1,18 | 1 | 1 | 1,29 | -8% | 0,0 |
-| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 70 | 1,26 → 1,27 | 1 | 1 | 1,38 | -9% → -8% | 0,0 |
+| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 70 | 1,27 | 1 | 1 | 1,38 | -8% | 0,0 |
 | marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 100 | 1,34 | 1 | 1 | 1,35 | -1% | 0,0 |
 | marksman.r7 · marksman.kingslayer · 20 | **1,01** | 0 | 0 | 1,15 | **-13%** | 0,0 |
 | marksman.r7 · marksman.kingslayer · 45 | 1,24 | 1 | 1 | 1,29 | -4% | 0,0 |
 | marksman.r7 · marksman.kingslayer · 70 | 1,26 | 1 | 1 | 1,37 | -8% | 0,0 |
 | marksman.r7 · marksman.kingslayer · 100 | 1,32 | 1 | 1 | 1,34 | -1% | 0,0 |
 | trapper.aoe · trapper.poacher · 20 | **0,91** | 0 | 0 | – | – | 11,6 |
-| trapper.aoe · trapper.poacher · 45 | 1,24 → 1,25 | 1 | 1 | 1,18 | 5% → 6% | 11,6 |
-| trapper.aoe · trapper.poacher · 70 | 1,43 → 1,41 | 1 | 1 | 1,11 | **29% → 27%** | 11,6 |
-| trapper.aoe · trapper.poacher · 100 | 1,18 → 1,16 | 1 | 1 | 1,29 | -8% → -10% | 11,6 |
+| trapper.aoe · trapper.poacher · 45 | 1,25 | 1 | 1 | 1,18 | 6% | 11,6 |
+| trapper.aoe · trapper.poacher · 70 | 1,41 | 1 | 1 | 1,11 | **27%** | 11,6 |
+| trapper.aoe · trapper.poacher · 100 | 1,16 | 1 | 1 | 1,29 | -10% | 11,6 |
 | trapper.aoe · trapper.poacher@bow+quiver · 20 | **0,98** | 0 | 0 | – | – | 11,6 |
 | trapper.aoe · trapper.poacher@bow+quiver · 45 [raport: S147] | **0,92** | 0 | 0 | 1,24 | **-26%** | 11,6 |
 | trapper.aoe · trapper.poacher@bow+quiver · 70 [raport: S147] | **0,83** | 0 | 0 | 1,17 | **-29%** | 11,6 |
@@ -15180,7 +15303,7 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | scout.solo · scout.partyHunter@shortbow+quiver ((b) 3 potwory, które oddają) · 100 [raport: S147] | **1,66** | 0 | 0 | – | – | 1,0 |
 | trapper.r3 · trapper.poacher · 20 | 1,27 | 1 | 0 | – | – | 11,6 |
 | trapper.r3 · trapper.poacher · 45 | 1,84 | 1 | 1 | – | – | 11,6 |
-| trapper.r3 · trapper.poacher · 70 | 1,99 → 1,97 | 1 | 1 | – | – | 11,6 |
+| trapper.r3 · trapper.poacher · 70 | 1,97 | 1 | 1 | – | – | 11,6 |
 | trapper.r3 · trapper.poacher · 100 | 2,00 | 1 | 1 | – | – | 11,6 |
 | trapper.r3 · trapper.poacher@bow+quiver · 20 | 1,32 | 1 | 0 | – | – | 11,6 |
 | trapper.r3 · trapper.poacher@bow+quiver · 45 | 1,39 | 1 | 1 | – | – | 11,6 |
@@ -15195,9 +15318,9 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | all.r1 · marksman.kingslayer · 70 [raport: właściciel (S90, S91)] | **2,94** | 0 | 0 | – | – | 0,0 |
 | all.r1 · marksman.kingslayer · 100 [raport: właściciel (S90, S91)] | **3,09** | 0 | 0 | – | – | 0,0 |
 | all.r1 · trapper.poacher · 20 [raport: właściciel (S90, S91)] | 2,17 | 1 | 0 | – | – | 0,0 |
-| all.r1 · trapper.poacher · 45 [raport: właściciel (S90, S91)] | **3,12 → 3,13** | 0 | 0 | – | – | 0,0 |
-| all.r1 · trapper.poacher · 70 [raport: właściciel (S90, S91)] | **3,14 → 3,17** | 0 | 0 | – | – | 0,0 |
-| all.r1 · trapper.poacher · 100 [raport: właściciel (S90, S91)] | **3,26 → 3,33** | 0 | 0 | – | – | 0,0 |
+| all.r1 · trapper.poacher · 45 [raport: właściciel (S90, S91)] | **3,13** | 0 | 0 | – | – | 0,0 |
+| all.r1 · trapper.poacher · 70 [raport: właściciel (S90, S91)] | **3,17** | 0 | 0 | – | – | 0,0 |
+| all.r1 · trapper.poacher · 100 [raport: właściciel (S90, S91)] | **3,33** | 0 | 0 | – | – | 0,0 |
 | all.r1 · trapper.poacher@bow+quiver · 20 | 2,15 | 1 | 0 | – | – | 0,0 |
 | all.r1 · trapper.poacher@bow+quiver · 45 | 2,53 | 1 | 1 | – | – | 0,0 |
 | all.r1 · trapper.poacher@bow+quiver · 70 | 2,51 | 1 | 1 | – | – | 0,0 |
@@ -15219,17 +15342,17 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | all.tsk3 · marksman.eliteHunter · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,20 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · marksman.eliteHunter · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,03 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · trapper.poisoner · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,28 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · trapper.poisoner · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,74 → 1,76 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · trapper.poisoner · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,99 → 1,98 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · trapper.poisoner · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,91 → 1,93 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · trapper.poisoner · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,76 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · trapper.poisoner · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,98 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · trapper.poisoner · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,93 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.partyHunter · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,51 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.partyHunter · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.partyHunter · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,53 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · scout.partyHunter · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 → 1,45 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · scout.partyHunter · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,45 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.tracker · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,50 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.tracker · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · scout.tracker · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,54 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · scout.tracker · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 → 1,45 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · scout.tracker · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,45 | 1 | 0 | – | – | 0,0 |
 | hunter.dexCaps · marksman.kingslayer (crit ponad limit) · 20 | -45,70 | 1 | 0 | – | – | 8,0 |
 | hunter.dexCaps · marksman.kingslayer (crit ponad limit) · 45 | -22,65 | 1 | 1 | – | – | 8,0 |
 | hunter.dexCaps · marksman.kingslayer (crit ponad limit) · 70 | -18,51 | 1 | 1 | – | – | 8,0 |
@@ -15339,13 +15462,13 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.venomArrow.5 · trapper.poacher (a) · 45 | 0,14 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (a) · 70 | 0,13 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (a) · 100 | 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.venomArrow.5 · trapper.poacher (b) · 45 | 0,11 → 0,10 | 1 | 1 | – | – | 0,0 |
+| r4.venomArrow.5 · trapper.poacher (b) · 45 | 0,10 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (b) · 70 | 0,10 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (b) · 100 | 0,10 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (|A − B|) · 45 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.5 · trapper.poacher (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.venomArrow.10 · trapper.poacher (a) · 70 | 0,19 → 0,18 | 1 | 1 | – | – | 0,0 |
+| r4.venomArrow.10 · trapper.poacher (a) · 70 | 0,18 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.10 · trapper.poacher (a) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.10 · trapper.poacher (b) · 70 | 0,22 | 1 | 1 | – | – | 0,0 |
 | r4.venomArrow.10 · trapper.poacher (b) · 100 | 0,22 | 1 | 1 | – | – | 0,0 |
@@ -15410,19 +15533,19 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.venomSnare.5 · trapper.poacher (b: przyciąganie (kontrola)) · 45 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.venomSnare.5 · trapper.poacher (b: przyciąganie (kontrola)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.venomSnare.5 · trapper.poacher (b: przyciąganie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (a) · 70 | 0,20 → 0,22 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (a) · 70 | 0,22 | 1 | 1 | – | – | 0,0 |
 | r4.venomSnare.10 · trapper.poacher (a) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (b) · 70 | 0,19 → 0,20 | 1 | 1 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (b) · 100 | 0,21 → 0,20 | 1 | 1 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (|A − B|) · 70 | 0,01 → 0,02 | 1 | 1 | – | – | 0,0 |
-| r4.venomSnare.10 · trapper.poacher (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (b) · 70 | 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (b) · 100 | 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (|A − B|) · 70 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.venomSnare.10 · trapper.poacher (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.camouflage.5 · trapper.poacher (a: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.camouflage.5 · trapper.poacher (b: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.camouflage.10 · trapper.poacher (a: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.camouflage.10 · trapper.poacher (b: wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.snarefield.5 · trapper.poacher (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.snarefield.5 · trapper.poacher (b: kontrola albo osłabienie wroga dla drużyny (bez metryki w roli)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.snarefield.10 · trapper.poacher (a) · 100 | 0,25 → 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.snarefield.10 · trapper.poacher (a) · 100 | 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.snarefield.10 · trapper.poacher (b: przyciąganie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.falcon.5 · scout.partyHunter (a: z Królewskim Sokołem (od 60.) ptak zostaje do końca walki, więc +4 s czasu nic nie daje (0 na 100)) · 100 [raport: właściciel (F4)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.falcon.5 · scout.partyHunter (b: spowolnienie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -15458,21 +15581,21 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.pinningShot.10 · marksman.kingslayer (|A − B|) · 45 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.pinningShot.10 · marksman.kingslayer (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.pinningShot.10 · marksman.kingslayer (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (a) · 45 | 0,12 → 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (a) · 70 | 0,12 → 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (a) · 100 | 0,13 → 0,14 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (b) · 45 | 0,13 → 0,14 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (b) · 70 | 0,13 → 0,14 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.5 · trapper.poacher (b) · 100 | 0,13 → 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (a) · 45 | 0,13 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (a) · 70 | 0,13 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (a) · 100 | 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (b) · 45 | 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (b) · 70 | 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.5 · trapper.poacher (b) · 100 | 0,14 | 1 | 1 | – | – | 0,0 |
 | r4.heavyBolt.5 · trapper.poacher (|A − B|) · 45 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.heavyBolt.5 · trapper.poacher (|A − B|) · 70 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.heavyBolt.5 · trapper.poacher (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.heavyBolt.10 · trapper.poacher (a: obszar przy roli 1 cel (bez metryki)) · 45 [raport: użyteczność (R4_UTILITY)] | **0,53** | 0 | 0 | – | – | 0,0 |
 | r4.heavyBolt.10 · trapper.poacher (a: obszar przy roli 1 cel (bez metryki)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,53** | 0 | 0 | – | – | 0,0 |
 | r4.heavyBolt.10 · trapper.poacher (a: obszar przy roli 1 cel (bez metryki)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,53** | 0 | 0 | – | – | 0,0 |
-| r4.heavyBolt.10 · trapper.poacher (b) · 45 | 0,18 → 0,19 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.10 · trapper.poacher (b) · 70 | 0,18 → 0,19 | 1 | 1 | – | – | 0,0 |
-| r4.heavyBolt.10 · trapper.poacher (b) · 100 | 0,18 → 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.10 · trapper.poacher (b) · 45 | 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.10 · trapper.poacher (b) · 70 | 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.heavyBolt.10 · trapper.poacher (b) · 100 | 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.netShot.5 · trapper.poacher (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.netShot.5 · trapper.poacher (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.netShot.5 · trapper.poacher (b) · 70 | 0,09 | 1 | 1 | – | – | 0,0 |
@@ -15486,10 +15609,10 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.deadlyBolt.5 · trapper.poacher (b) · 70 | 0,11 | 1 | 1 | – | – | 0,0 |
 | r4.deadlyBolt.5 · trapper.poacher (b) · 100 | 0,10 | 1 | 1 | – | – | 0,0 |
 | r4.deadlyBolt.5 · trapper.poacher (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.deadlyBolt.5 · trapper.poacher (|A − B|) · 100 | 0,01 → 0,00 | 1 | 1 | – | – | 0,0 |
+| r4.deadlyBolt.5 · trapper.poacher (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.deadlyBolt.10 · trapper.poacher (a) · 100 | 0,21 | 1 | 1 | – | – | 0,0 |
-| r4.deadlyBolt.10 · trapper.poacher (b) · 100 | 0,20 → 0,21 | 1 | 1 | – | – | 0,0 |
-| r4.deadlyBolt.10 · trapper.poacher (|A − B|) · 100 | 0,01 → 0,00 | 1 | 1 | – | – | 0,0 |
+| r4.deadlyBolt.10 · trapper.poacher (b) · 100 | 0,21 | 1 | 1 | – | – | 0,0 |
+| r4.deadlyBolt.10 · trapper.poacher (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r5.marksman · marksman.kingslayer (Łuk Długi, Ciężka Kusza (1 cel 60 s)) · 45 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r5.marksman · marksman.kingslayer (Łuk Długi, Ciężka Kusza (1 cel 60 s)) · 70 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r5.marksman · marksman.kingslayer (Łuk Długi, Ciężka Kusza (1 cel 60 s)) · 100 | 0,01 | 1 | 1 | – | – | 0,0 |
@@ -15504,8 +15627,8 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r5a.hunter · trapper.poacher (Traper obszar 8 s / baza) · 100 [raport: S147] | **0,12** | 0 | 0 | – | – | 0,0 |
 | r6.marksman · marksman.kingslayer (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,24** | 0 | 0 | – | – | 0,0 |
 | r6.marksman · marksman.kingslayer (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,57** | 0 | 0 | – | – | 0,0 |
-| r6.trapper · trapper.poacher (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,26 → 0,22** | 0 | 0 | – | – | 0,0 |
-| r6.trapper · trapper.poacher (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,75 → 1,66** | 0 | 0 | – | – | 0,0 |
+| r6.trapper · trapper.poacher (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,22** | 0 | 0 | – | – | 0,0 |
+| r6.trapper · trapper.poacher (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **1,66** | 0 | 0 | – | – | 0,0 |
 | r6.scout · scout.partyHunter (najsłabsza trzecia część / średnia) · 100 [raport: S147] | **-7713666798,46** | 0 | 0 | – | – | 0,0 |
 | r6.scout · scout.partyHunter (najmocniejsza trzecia część / średnia) · 100 [raport: S147] | **1516770031,87** | 0 | 0 | – | – | 0,0 |
 
@@ -15518,22 +15641,22 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | destroyer.aoe · destroyer.destroyerExp · 20 | **0,77** | 0 | 0 | – | – | 12,7 |
 | destroyer.aoe · destroyer.destroyerExp · 45 [raport: S147] | **0,82** | 0 | 0 | 1,21 | **-32%** | 12,7 |
 | destroyer.aoe · destroyer.destroyerExp · 70 [raport: S147] | **0,93** | 0 | 0 | 1,38 | **-33%** | 12,7 |
-| destroyer.aoe · destroyer.destroyerExp · 100 [raport: F4] | **0,86 → 0,82** | 0 | 0 | 1,46 | **-41% → -44%** | 12,7 |
+| destroyer.aoe · destroyer.destroyerExp · 100 [raport: F4] | **0,82** | 0 | 0 | 1,46 | **-44%** | 12,7 |
 | destroyer.single · destroyer.destroyerBoss · 20 | **0,95** | 0 | 0 | 0,98 | -4% | 12,7 |
-| destroyer.single · destroyer.destroyerBoss · 45 | 1,10 → 1,07 | 1 | 1 | 1,07 | 2% → 0% | 12,7 |
-| destroyer.single · destroyer.destroyerBoss · 70 [raport: F4] | **1,06 → 1,01** | 1 → 0 | 0 | 1,14 | **-7% → -12%** | 12,7 |
+| destroyer.single · destroyer.destroyerBoss · 45 | 1,07 | 1 | 1 | 1,07 | 0% | 12,7 |
+| destroyer.single · destroyer.destroyerBoss · 70 [raport: F4] | **1,01** | 0 | 0 | 1,14 | **-12%** | 12,7 |
 | destroyer.single · destroyer.destroyerBoss · 100 [raport: S147] | **0,85** | 0 | 0 | 1,19 | **-28%** | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (2 wrogów) · 20 [raport: właściciel (H4)] | **1,27** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (2 wrogów) · 45 [raport: właściciel (H4)] | 0,94 | 1 | 0 | – | – | 12,7 |
-| destroyer.clear · destroyer.destroyerExp (2 wrogów) · 70 [raport: właściciel (H4)] | **1,19 → 1,16** | 0 | 0 | – | – | 12,7 |
+| destroyer.clear · destroyer.destroyerExp (2 wrogów) · 70 [raport: właściciel (H4)] | **1,16** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (2 wrogów) · 100 [raport: właściciel (H4)] | **1,14** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (3 wrogów) · 20 [raport: właściciel (H4)] | **1,30** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (3 wrogów) · 45 [raport: właściciel (H4)] | 0,87 | 1 | 0 | – | – | 12,7 |
-| destroyer.clear · destroyer.destroyerExp (3 wrogów) · 70 [raport: właściciel (H4)] | 0,64 → 0,62 | 1 | 0 | – | – | 12,7 |
+| destroyer.clear · destroyer.destroyerExp (3 wrogów) · 70 [raport: właściciel (H4)] | 0,62 | 1 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (3 wrogów) · 100 [raport: właściciel (H4)] | 0,66 | 1 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (4 wrogów) · 20 [raport: właściciel (H4)] | **1,31** | 0 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (4 wrogów) · 45 [raport: właściciel (H4)] | 0,80 | 1 | 0 | – | – | 12,7 |
-| destroyer.clear · destroyer.destroyerExp (4 wrogów) · 70 [raport: właściciel (H4)] | 0,58 → 0,57 | 1 | 0 | – | – | 12,7 |
+| destroyer.clear · destroyer.destroyerExp (4 wrogów) · 70 [raport: właściciel (H4)] | 0,57 | 1 | 0 | – | – | 12,7 |
 | destroyer.clear · destroyer.destroyerExp (4 wrogów) · 100 [raport: właściciel (H4)] | 0,57 | 1 | 0 | – | – | 12,7 |
 | arcanist.single · arcanist.arcanistBoss · 20 | **1,15** | 0 | 0 | 1,02 | **13%** | 12,7 |
 | arcanist.single · arcanist.arcanistBoss · 45 [raport: S147] | **1,01** | 0 | 0 | 1,23 | **-18%** | 12,7 |
@@ -15541,7 +15664,7 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | arcanist.single · arcanist.arcanistBoss · 100 [raport: S147] | **0,89** | 0 | 0 | 1,47 | **-40%** | 12,7 |
 | arcanist.vsDestroyer · arcanist.arcanistBoss · 20 | 1,22 | 1 | 0 | 1,04 | **17%** | 12,7 |
 | arcanist.vsDestroyer · arcanist.arcanistBoss · 45 [raport: S147] | **0,95** | 0 | 0 | 1,15 | **-18%** | 12,7 |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 70 [raport: F4] | **1,12 → 1,07** | 0 | 0 | 1,20 | **-7% → -10%** | 12,7 |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 70 [raport: F4] | **1,07** | 0 | 0 | 1,20 | **-10%** | 12,7 |
 | arcanist.vsDestroyer · arcanist.arcanistBoss · 100 [raport: S147] | **1,03** | 0 | 0 | 1,24 | **-17%** | 12,7 |
 | mage.tsk4 · destroyer.destroyerExp · 20 | **1,54** | 0 | 0 | – | – | 8,0 |
 | mage.tsk4 · destroyer.destroyerExp · 45 [raport: S147] | **1,15** | 0 | 0 | 1,97 | **-42%** | 8,0 |
@@ -15553,20 +15676,20 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | mage.tsk4 · arcanist.arcanistBoss · 100 [raport: S147] | **1,62** | 0 | 0 | 2,40 | **-32%** | 8,0 |
 | mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 20 | **3,01** | 0 | 0 | – | – | 12,0 |
 | mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 45 | 1,79 | 1 | 1 | 1,64 | 9% | 12,0 |
-| mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 70 | 2,05 → 2,00 | 1 | 1 | 2,11 | -3% → -5% | 12,0 |
+| mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 70 | 2,00 | 1 | 1 | 2,11 | -5% | 12,0 |
 | mage.tsk4 · destroyer.destroyerBoss (wariant: Oszczędny Splot) · 100 [raport: S147] | **1,29** | 0 | 0 | 1,82 | **-29%** | 12,0 |
 | mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 20 | **1,67** | 0 | 0 | – | – | 12,0 |
 | mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 45 [raport: S147] | **1,42** | 0 | 0 | 2,62 | **-46%** | 12,0 |
 | mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 70 [raport: S147] | **2,09** | 0 | 0 | 2,75 | **-24%** | 12,0 |
 | mage.tsk4 · arcanist.arcanistOverload (wariant: Przeciążenie) · 100 [raport: S147] | **2,06** | 0 | 0 | 2,79 | **-26%** | 12,0 |
 | mage.tsk3 · destroyer.destroyerExp · 20 | 1,31 | 1 | 0 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerExp · 45 | 1,82 → 1,83 | 1 | 1 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerExp · 70 | 2,17 → 2,24 | 1 | 1 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerExp · 100 | 2,36 → 2,45 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerExp · 45 | 1,83 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerExp · 70 | 2,24 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerExp · 100 | 2,45 | 1 | 1 | – | – | 8,0 |
 | mage.tsk3 · destroyer.destroyerBoss · 20 | 1,27 | 1 | 0 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerBoss · 45 | 1,52 → 1,51 | 1 | 1 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerBoss · 70 | 1,87 → 1,94 | 1 | 1 | – | – | 8,0 |
-| mage.tsk3 · destroyer.destroyerBoss · 100 | 2,07 → 2,15 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerBoss · 45 | 1,51 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerBoss · 70 | 1,94 | 1 | 1 | – | – | 8,0 |
+| mage.tsk3 · destroyer.destroyerBoss · 100 | 2,15 | 1 | 1 | – | – | 8,0 |
 | mage.tsk3 · arcanist.arcanistBoss · 20 | 1,22 | 1 | 0 | – | – | 8,0 |
 | mage.tsk3 · arcanist.arcanistBoss · 45 | 1,35 | 1 | 1 | – | – | 8,0 |
 | mage.tsk3 · arcanist.arcanistBoss · 70 | 1,28 | 1 | 1 | – | – | 8,0 |
@@ -15577,20 +15700,20 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | mage.tsk3 · arcanist.arcanistOverload · 100 | 1,19 | 1 | 1 | – | – | 8,0 |
 | all.r1 · destroyer.destroyerExp · 20 [raport: właściciel (S90, S91)] | 2,04 | 1 | 0 | – | – | 0,0 |
 | all.r1 · destroyer.destroyerExp · 45 [raport: właściciel (S90, S91)] | **3,04** | 0 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerExp · 70 [raport: właściciel (S90, S91)] | **3,37 → 3,39** | 0 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerExp · 100 [raport: właściciel (S90, S91)] | **3,47 → 3,61** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerExp · 70 [raport: właściciel (S90, S91)] | **3,39** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerExp · 100 [raport: właściciel (S90, S91)] | **3,61** | 0 | 0 | – | – | 0,0 |
 | all.r1 · destroyer.destroyerBoss · 20 [raport: właściciel (S90, S91)] | 2,39 | 1 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerBoss · 45 [raport: właściciel (S90, S91)] | **4,32 → 4,34** | 0 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerBoss · 70 [raport: właściciel (S90, S91)] | **5,03 → 5,15** | 0 | 0 | – | – | 0,0 |
-| all.r1 · destroyer.destroyerBoss · 100 [raport: właściciel (S90, S91)] | **5,18 → 5,36** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerBoss · 45 [raport: właściciel (S90, S91)] | **4,34** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerBoss · 70 [raport: właściciel (S90, S91)] | **5,15** | 0 | 0 | – | – | 0,0 |
+| all.r1 · destroyer.destroyerBoss · 100 [raport: właściciel (S90, S91)] | **5,36** | 0 | 0 | – | – | 0,0 |
 | all.r1 · arcanist.arcanistBoss · 20 [raport: właściciel (S90, S91)] | 2,15 | 1 | 0 | – | – | 0,0 |
-| all.r1 · arcanist.arcanistBoss · 45 [raport: właściciel (S90, S91)] | **3,57 → 3,60** | 0 | 0 | – | – | 0,0 |
-| all.r1 · arcanist.arcanistBoss · 70 [raport: właściciel (S90, S91)] | **3,94 → 3,99** | 0 | 0 | – | – | 0,0 |
-| all.r1 · arcanist.arcanistBoss · 100 [raport: właściciel (S90, S91)] | **4,29 → 4,58** | 0 | 0 | – | – | 0,0 |
+| all.r1 · arcanist.arcanistBoss · 45 [raport: właściciel (S90, S91)] | **3,60** | 0 | 0 | – | – | 0,0 |
+| all.r1 · arcanist.arcanistBoss · 70 [raport: właściciel (S90, S91)] | **3,99** | 0 | 0 | – | – | 0,0 |
+| all.r1 · arcanist.arcanistBoss · 100 [raport: właściciel (S90, S91)] | **4,58** | 0 | 0 | – | – | 0,0 |
 | all.tsk3 · base · 20 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,38 | 1 | 0 | – | – | 0,0 |
 | all.tsk3 · base · 45 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,60 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · base · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,65 → 1,71 | 1 | 0 | – | – | 0,0 |
-| all.tsk3 · base · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,75 → 1,85 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · base · 70 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,71 | 1 | 0 | – | – | 0,0 |
+| all.tsk3 · base · 100 [raport: tylko raport: T-SK3 asertują strażniki regionów (R.<map>.guard.tsk3.*)] | 1,85 | 1 | 0 | – | – | 0,0 |
 | r4.firebolt.5 · arcanist.arcanistBoss (a) · 45 [raport: S147] | **0,06** | 0 | 0 | – | – | 0,0 |
 | r4.firebolt.5 · arcanist.arcanistBoss (a) · 70 [raport: S147] | **0,06** | 0 | 0 | – | – | 0,0 |
 | r4.firebolt.5 · arcanist.arcanistBoss (a) · 100 [raport: S147] | **0,06** | 0 | 0 | – | – | 0,0 |
@@ -15606,9 +15729,9 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.firebolt.10 · arcanist.arcanistBoss (b) · 45 | 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.firebolt.10 · arcanist.arcanistBoss (b) · 70 | 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.firebolt.10 · arcanist.arcanistBoss (b) · 100 | 0,19 | 1 | 1 | – | – | 0,0 |
-| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 45 | 0,02 → 0,00 | 1 | 1 | – | – | 0,0 |
-| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 70 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
-| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 45 | 0,00 | 1 | 1 | – | – | 0,0 |
+| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 70 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.firebolt.10 · arcanist.arcanistBoss (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.fireball.5 · arcanist.arcanistBoss (a) · 45 | 0,15 | 1 | 1 | – | – | 0,0 |
 | r4.fireball.5 · arcanist.arcanistBoss (a) · 70 | 0,15 | 1 | 1 | – | – | 0,0 |
 | r4.fireball.5 · arcanist.arcanistBoss (a) · 100 | 0,15 | 1 | 1 | – | – | 0,0 |
@@ -15752,14 +15875,14 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.immolate.5 · arcanist.arcanistFire (|A − B|) · 70 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.immolate.5 · arcanist.arcanistFire (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.immolate.10 · arcanist.arcanistFire (a) · 100 | 0,23 | 1 | 1 | – | – | 0,0 |
-| r4.immolate.10 · arcanist.arcanistFire (b) · 100 | 0,20 → 0,21 | 1 | 1 | – | – | 0,0 |
-| r4.immolate.10 · arcanist.arcanistFire (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.immolate.10 · arcanist.arcanistFire (b) · 100 | 0,21 | 1 | 1 | – | – | 0,0 |
+| r4.immolate.10 · arcanist.arcanistFire (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.meteorStorm.5 · destroyer.destroyerExp (a) · 100 | 0,15 | 1 | 1 | – | – | 0,0 |
 | r4.meteorStorm.5 · destroyer.destroyerExp (b) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
-| r4.meteorStorm.5 · destroyer.destroyerExp (|A − B|) · 100 | 0,01 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.meteorStorm.5 · destroyer.destroyerExp (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.meteorStorm.10 · destroyer.destroyerExp (a) · 100 | 0,21 | 1 | 1 | – | – | 0,0 |
-| r4.meteorStorm.10 · destroyer.destroyerExp (b) · 100 | 0,18 → 0,22 | 1 | 1 | – | – | 0,0 |
-| r4.meteorStorm.10 · destroyer.destroyerExp (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.meteorStorm.10 · destroyer.destroyerExp (b) · 100 | 0,22 | 1 | 1 | – | – | 0,0 |
+| r4.meteorStorm.10 · destroyer.destroyerExp (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.elementalVortex.5 · destroyer.destroyerExp (a: geometria albo czas kontroli) · 45 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.elementalVortex.5 · destroyer.destroyerExp (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.elementalVortex.5 · destroyer.destroyerExp (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -15813,18 +15936,18 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.hailstorm.10 · destroyer.destroyerIce (b) · 70 | 0,24 | 1 | 1 | – | – | 0,0 |
 | r4.hailstorm.10 · destroyer.destroyerIce (b) · 100 | 0,24 | 1 | 1 | – | – | 0,0 |
 | r4.glacialSpike.5 · arcanist.arcanistIce (a) · 45 | 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (a) · 70 | 0,11 → 0,12 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (a) · 70 | 0,12 | 1 | 1 | – | – | 0,0 |
 | r4.glacialSpike.5 · arcanist.arcanistIce (a) · 100 | 0,13 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 45 | 0,17 → 0,16 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 70 | 0,11 → 0,10 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 100 | 0,11 → 0,10 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 45 | 0,04 → 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 70 | 0,00 → 0,02 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 100 | 0,02 → 0,03 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 45 | 0,16 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 70 | 0,10 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (b) · 100 | 0,10 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 45 | 0,03 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 70 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.5 · arcanist.arcanistIce (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.glacialSpike.10 · arcanist.arcanistIce (a: zamrożenie (kontrola)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.glacialSpike.10 · arcanist.arcanistIce (a: zamrożenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.glacialSpike.10 · arcanist.arcanistIce (b) · 70 | 0,20 → 0,19 | 1 | 1 | – | – | 0,0 |
-| r4.glacialSpike.10 · arcanist.arcanistIce (b) · 100 | 0,20 → 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.10 · arcanist.arcanistIce (b) · 70 | 0,19 | 1 | 1 | – | – | 0,0 |
+| r4.glacialSpike.10 · arcanist.arcanistIce (b) · 100 | 0,19 | 1 | 1 | – | – | 0,0 |
 | r4.frozenOrb.5 · destroyer.destroyerIce (a: geometria albo czas kontroli) · 45 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.frozenOrb.5 · destroyer.destroyerIce (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.frozenOrb.5 · destroyer.destroyerIce (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -15841,18 +15964,18 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.deepFreeze.5 · arcanist.arcanistIce (b) · 100 | 0,09 | 1 | 1 | – | – | 0,0 |
 | r4.deepFreeze.10 · arcanist.arcanistIce (a) · 70 | 0,25 | 1 | 1 | – | – | 0,0 |
 | r4.deepFreeze.10 · arcanist.arcanistIce (a) · 100 | 0,25 | 1 | 1 | – | – | 0,0 |
-| r4.deepFreeze.10 · arcanist.arcanistIce (b) · 70 | 0,23 → 0,24 | 1 | 1 | – | – | 0,0 |
-| r4.deepFreeze.10 · arcanist.arcanistIce (b) · 100 | 0,23 → 0,24 | 1 | 1 | – | – | 0,0 |
-| r4.deepFreeze.10 · arcanist.arcanistIce (|A − B|) · 70 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
-| r4.deepFreeze.10 · arcanist.arcanistIce (|A − B|) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
-| r4.shatter.5 · arcanist.arcanistIce (a) · 70 | 0,16 → 0,15 | 1 | 1 | – | – | 0,0 |
+| r4.deepFreeze.10 · arcanist.arcanistIce (b) · 70 | 0,24 | 1 | 1 | – | – | 0,0 |
+| r4.deepFreeze.10 · arcanist.arcanistIce (b) · 100 | 0,24 | 1 | 1 | – | – | 0,0 |
+| r4.deepFreeze.10 · arcanist.arcanistIce (|A − B|) · 70 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.deepFreeze.10 · arcanist.arcanistIce (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.shatter.5 · arcanist.arcanistIce (a) · 70 | 0,15 | 1 | 1 | – | – | 0,0 |
 | r4.shatter.5 · arcanist.arcanistIce (a) · 100 | 0,14 | 1 | 1 | – | – | 0,0 |
-| r4.shatter.5 · arcanist.arcanistIce (b) · 70 | 0,09 → 0,11 | 1 | 1 | – | – | 0,0 |
+| r4.shatter.5 · arcanist.arcanistIce (b) · 70 | 0,11 | 1 | 1 | – | – | 0,0 |
 | r4.shatter.5 · arcanist.arcanistIce (b) · 100 | 0,12 | 1 | 1 | – | – | 0,0 |
 | r4.shatter.5 · arcanist.arcanistIce (|A − B|) · 70 | 0,04 | 1 | 1 | – | – | 0,0 |
 | r4.shatter.5 · arcanist.arcanistIce (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.shatter.10 · arcanist.arcanistIce (a: zamrożenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.shatter.10 · arcanist.arcanistIce (b) · 100 | 0,24 → 0,20 | 1 | 1 | – | – | 0,0 |
+| r4.shatter.10 · arcanist.arcanistIce (b) · 100 | 0,20 | 1 | 1 | – | – | 0,0 |
 | r4.blizzard.5 · destroyer.destroyerIce (a) · 100 | 0,13 | 1 | 1 | – | – | 0,0 |
 | r4.blizzard.5 · destroyer.destroyerIce (b) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
 | r4.blizzard.5 · destroyer.destroyerIce (|A − B|) · 100 | 0,04 | 1 | 1 | – | – | 0,0 |
@@ -15868,13 +15991,13 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.lightningBolt.5 · arcanist.arcanistLightning (|A − B|) · 70 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.5 · arcanist.arcanistLightning (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (a) · 45 | 0,25 | 1 | 1 | – | – | 0,0 |
-| r4.lightningBolt.10 · arcanist.arcanistLightning (a) · 70 | 0,25 → 0,21 | 1 | 1 | – | – | 0,0 |
+| r4.lightningBolt.10 · arcanist.arcanistLightning (a) · 70 | 0,21 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (a) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (b) · 45 | 0,23 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (b) · 70 | 0,23 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (b) · 100 | 0,23 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (|A − B|) · 45 | 0,03 | 1 | 1 | – | – | 0,0 |
-| r4.lightningBolt.10 · arcanist.arcanistLightning (|A − B|) · 70 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.lightningBolt.10 · arcanist.arcanistLightning (|A − B|) · 70 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.lightningBolt.10 · arcanist.arcanistLightning (|A − B|) · 100 | 0,05 | 1 | 1 | – | – | 0,0 |
 | r4.staticShock.5 · arcanist.arcanistLightning (a: paraliż (kontrola)) · 45 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.staticShock.5 · arcanist.arcanistLightning (a: paraliż (kontrola)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
@@ -15892,18 +16015,18 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.staticShock.10 · arcanist.arcanistLightning (|A − B|) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.staticShock.10 · arcanist.arcanistLightning (|A − B|) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r4.thunderStrike.5 · arcanist.arcanistLightning (a) · 45 | 0,14 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (a) · 70 | 0,14 → 0,11 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (a) · 70 | 0,11 | 1 | 1 | – | – | 0,0 |
 | r4.thunderStrike.5 · arcanist.arcanistLightning (a) · 100 | 0,10 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 45 | 0,15 → 0,14 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 70 | 0,10 → 0,09 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 100 | 0,10 → 0,09 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 45 | 0,14 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 70 | 0,09 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (b) · 100 | 0,09 | 1 | 1 | – | – | 0,0 |
 | r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 45 | 0,01 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 70 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 100 | 0,00 → 0,01 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 70 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.5 · arcanist.arcanistLightning (|A − B|) · 100 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r4.thunderStrike.10 · arcanist.arcanistLightning (a: ogłuszenie (kontrola)) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.thunderStrike.10 · arcanist.arcanistLightning (a: ogłuszenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.thunderStrike.10 · arcanist.arcanistLightning (b) · 70 | 0,20 → 0,18 | 1 | 1 | – | – | 0,0 |
-| r4.thunderStrike.10 · arcanist.arcanistLightning (b) · 100 | 0,20 → 0,18 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.10 · arcanist.arcanistLightning (b) · 70 | 0,18 | 1 | 1 | – | – | 0,0 |
+| r4.thunderStrike.10 · arcanist.arcanistLightning (b) · 100 | 0,18 | 1 | 1 | – | – | 0,0 |
 | r4.ballLightning.5 · destroyer.destroyerLightning (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,51** | 0 | 0 | – | – | 0,0 |
 | r4.ballLightning.5 · destroyer.destroyerLightning (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,52** | 0 | 0 | – | – | 0,0 |
 | r4.ballLightning.5 · destroyer.destroyerLightning (b) · 70 | 0,09 | 1 | 1 | – | – | 0,0 |
@@ -15916,16 +16039,16 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r4.ballLightning.10 · destroyer.destroyerLightning (|A − B|) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r4.lightningLance.5 · arcanist.arcanistLightning (a: geometria albo czas kontroli) · 70 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
 | r4.lightningLance.5 · arcanist.arcanistLightning (a: geometria albo czas kontroli) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.lightningLance.5 · arcanist.arcanistLightning (b) · 70 | 0,12 → 0,16 | 1 | 1 | – | – | 0,0 |
+| r4.lightningLance.5 · arcanist.arcanistLightning (b) · 70 | 0,16 | 1 | 1 | – | – | 0,0 |
 | r4.lightningLance.5 · arcanist.arcanistLightning (b) · 100 | 0,09 | 1 | 1 | – | – | 0,0 |
 | r4.lightningLance.10 · arcanist.arcanistLightning (a) · 100 | 0,25 | 1 | 1 | – | – | 0,0 |
-| r4.lightningLance.10 · arcanist.arcanistLightning (b) · 100 | 0,23 → 0,21 | 1 | 1 | – | – | 0,0 |
-| r4.lightningLance.10 · arcanist.arcanistLightning (|A − B|) · 100 | 0,03 → 0,04 | 1 | 1 | – | – | 0,0 |
+| r4.lightningLance.10 · arcanist.arcanistLightning (b) · 100 | 0,21 | 1 | 1 | – | – | 0,0 |
+| r4.lightningLance.10 · arcanist.arcanistLightning (|A − B|) · 100 | 0,04 | 1 | 1 | – | – | 0,0 |
 | r4.tempest.5 · destroyer.destroyerLightning (a) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
 | r4.tempest.5 · destroyer.destroyerLightning (b) · 100 | 0,17 | 1 | 1 | – | – | 0,0 |
 | r4.tempest.5 · destroyer.destroyerLightning (|A − B|) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r4.tempest.10 · destroyer.destroyerLightning (a: ogłuszenie (kontrola)) · 100 [raport: użyteczność (R4_UTILITY)] | **0,00** | 0 | 0 | – | – | 0,0 |
-| r4.tempest.10 · destroyer.destroyerLightning (b) · 100 | 0,18 → 0,25 | 1 | 1 | – | – | 0,0 |
+| r4.tempest.10 · destroyer.destroyerLightning (b) · 100 | 0,25 | 1 | 1 | – | – | 0,0 |
 | r5.destroyer · destroyer.destroyerExp (kostur, różdżka z kulą (obszar 3 cele 60 s)) · 45 | 0,04 | 1 | 1 | – | – | 0,0 |
 | r5.destroyer · destroyer.destroyerExp (kostur, różdżka z kulą (obszar 3 cele 60 s)) · 70 | 0,03 | 1 | 1 | – | – | 0,0 |
 | r5.destroyer · destroyer.destroyerExp (kostur, różdżka z kulą (obszar 3 cele 60 s)) · 100 | 0,03 | 1 | 1 | – | – | 0,0 |
@@ -15933,15 +16056,15 @@ Wartość z pasmem (poza pasmem pogrubiona), 1 = mieści się; asertowany = 1, g
 | r5.arcanist · arcanist.arcanistBoss (kostur runiczny, różdżka z księgą (boss 180 s)) · 70 | 0,01 | 1 | 1 | – | – | 0,0 |
 | r5.arcanist · arcanist.arcanistBoss (kostur runiczny, różdżka z księgą (boss 180 s)) · 100 | 0,00 | 1 | 1 | – | – | 0,0 |
 | r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 45 | 0,07 | 1 | 1 | – | – | 0,0 |
-| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 70 | 0,05 → 0,02 | 1 | 1 | – | – | 0,0 |
-| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
+| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 70 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r5a.mage · destroyer.destroyerExp (Niszczyciel obszar 60 s / baza) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
 | r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 45 | 0,07 | 1 | 1 | – | – | 0,0 |
-| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 70 | 0,05 → 0,02 | 1 | 1 | – | – | 0,0 |
-| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 100 | 0,03 → 0,02 | 1 | 1 | – | – | 0,0 |
-| r6.destroyer · destroyer.destroyerExp (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,42 → 0,43** | 0 | 0 | – | – | 0,0 |
-| r6.destroyer · destroyer.destroyerExp (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,47 → 1,48 | 1 | 0 | – | – | 0,0 |
-| r6.arcanist · arcanist.arcanistBoss (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 0,72 → 0,83 | 1 | 0 | – | – | 0,0 |
-| r6.arcanist · arcanist.arcanistBoss (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,48 → 1,12 | 1 | 0 | – | – | 0,0 |
+| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 70 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r5a.mage · arcanist.arcanistBoss (Arkanista boss 180 s / baza) · 100 | 0,02 | 1 | 1 | – | – | 0,0 |
+| r6.destroyer · destroyer.destroyerExp (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | **0,43** | 0 | 0 | – | – | 0,0 |
+| r6.destroyer · destroyer.destroyerExp (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,48 | 1 | 0 | – | – | 0,0 |
+| r6.arcanist · arcanist.arcanistBoss (najsłabsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 0,83 | 1 | 0 | – | – | 0,0 |
+| r6.arcanist · arcanist.arcanistBoss (najmocniejsza trzecia część / średnia) · 100 [raport: właściciel (F4)] | 1,12 | 1 | 0 | – | – | 0,0 |
 
 ### Cele ścieżek: Kapłan
 
@@ -16231,7 +16354,7 @@ Liczby kontrolne mechanik B (testy w bloku „SkillModel: class mechanics (S86)�
 | B8 Kłusownik L70: pułapki na minutę | 10,0 |
 | B8 Kłusownik L70: kontrola celu | 39% |
 | B9 Łowczy drużyny L70: uderzenia sokoła na minutę | 13,0 |
-| B12 Arkanista L70: średnio Ładunków | 1,70 → 1,80 |
+| B12 Arkanista L70: średnio Ładunków | 1,80 |
 | B12 koszt czaru przy 4 Ładunkach / bez (Skills.chargeCostFactor) | 1,17 |
 | B12 Wyładowanie przy 4 Ładunkach (Skills.dischargeFactor) | 1,16 |
 | B13 kumulowanie: 100 i 100 po 1 s (suma) | 200 |
@@ -16257,21 +16380,21 @@ Założenia S84 (Balance.SITUATIONS) w kolumnach obok: atak podst. 0.5 (Mag 0.4)
 | marksman.kingslayer · 45 | 46% | 46% | 1,9 | 0% | 13% | 1% | 13% | 13% | 97% | 28% | – | – |
 | marksman.kingslayer · 70 | 46% | 46% | 1,9 | 0% | 38% | 0% | 38% | 38% | 97% | 28% | – | – |
 | marksman.kingslayer · 100 | 44% | 43% | 1,8 | 0% | 39% | 5% | 39% | 39% | 97% | 29% | – | – |
-| trapper.poacher · 45 | 38% | 25% → 26% | 2,0 | 0% | 41% | 39% → 38% | 41% | 41% | 97% | 28% | – | – |
-| trapper.poacher · 70 | 38% | 22% | 1,9 | 0% | 39% | 44% → 42% | 39% | 38% | 97% | 28% | – | – |
-| trapper.poacher · 100 | 37% → 36% | 22% → 21% | 1,8 | 0% | 46% | 44% → 43% | 46% | 46% | 97% | 29% | – | – |
+| trapper.poacher · 45 | 38% | 26% | 2,0 | 0% | 41% | 38% | 41% | 41% | 97% | 28% | – | – |
+| trapper.poacher · 70 | 38% | 22% | 1,9 | 0% | 39% | 42% | 39% | 38% | 97% | 28% | – | – |
+| trapper.poacher · 100 | 36% | 21% | 1,8 | 0% | 46% | 43% | 46% | 46% | 97% | 29% | – | – |
 | scout.partyHunter · 45 | 41% | 34% | 1,7 | 0% | 17% | 11% | 17% | 17% | 97% | 28% | – | – |
 | scout.partyHunter · 70 | 39% | 33% | 1,7 | 0% | 41% | 10% | 41% | 41% | 97% | 28% | – | – |
-| scout.partyHunter · 100 | 35% | 32% → 30% | 1,6 | 0% | 46% | 7% → 8% | 46% | 41% | 97% | 29% | – | – |
-| destroyer.destroyerExp · 45 | 36% | 22% | 2,2 | 1% | 99% | 38% | 33% | 33% | 97% | 28% | 97% → 100% | – |
-| destroyer.destroyerExp · 70 | 33% | 17% | 2,0 | 1% | 99% | 48% | 33% | 33% | 97% | 28% | 91% → 95% | – |
-| destroyer.destroyerExp · 100 | 32% → 31% | 15% | 2,0 | 3% | 99% | 51% → 52% | 33% | 33% | 97% | 29% | 92% → 97% | – |
-| destroyer.destroyerBoss · 45 | 24% | 17% | 1,3 | 4% | 99% | 36% | 37% | 33% | 97% | 28% | 85% → 100% | – |
-| destroyer.destroyerBoss · 70 | 21% → 20% | 13% → 12% | 1,2 | 5% | 99% | 44% | 40% | 33% | 97% | 28% | 80% → 84% | – |
-| destroyer.destroyerBoss · 100 | 20% | 12% → 11% | 1,2 | 6% | 99% | 47% → 48% | 40% | 33% | 97% | 29% | 83% → 94% | – |
-| arcanist.arcanistBoss · 45 | 29% | 24% | 1,5 | 0% | 99% | 28% | 33% | 33% | 97% | 28% | 97% → 100% | – |
-| arcanist.arcanistBoss · 70 | 25% → 23% | 20% → 19% | 1,5 → 1,6 | 0% | 89% → 86% | 27% → 26% | 30% → 29% | 30% → 28% | 97% | 28% | 94% → 97% | – |
-| arcanist.arcanistBoss · 100 | 22% → 19% | 18% → 15% | 1,5 → 1,6 | 0% | 84% → 78% | 25% → 24% | 28% → 26% | 28% → 26% | 97% | 29% | 86% → 93% | – |
+| scout.partyHunter · 100 | 35% | 30% | 1,6 | 0% | 46% | 8% | 46% | 41% | 97% | 29% | – | – |
+| destroyer.destroyerExp · 45 | 36% | 22% | 2,2 | 1% | 99% | 38% | 33% | 33% | 97% | 28% | 100% | – |
+| destroyer.destroyerExp · 70 | 33% | 17% | 2,0 | 1% | 99% | 48% | 33% | 33% | 97% | 28% | 95% | – |
+| destroyer.destroyerExp · 100 | 31% | 15% | 2,0 | 3% | 99% | 52% | 33% | 33% | 97% | 29% | 97% | – |
+| destroyer.destroyerBoss · 45 | 24% | 17% | 1,3 | 4% | 99% | 36% | 37% | 33% | 97% | 28% | 100% | – |
+| destroyer.destroyerBoss · 70 | 20% | 12% | 1,2 | 5% | 99% | 44% | 40% | 33% | 97% | 28% | 84% | – |
+| destroyer.destroyerBoss · 100 | 20% | 11% | 1,2 | 6% | 99% | 48% | 40% | 33% | 97% | 29% | 94% | – |
+| arcanist.arcanistBoss · 45 | 29% | 24% | 1,5 | 0% | 99% | 28% | 33% | 33% | 97% | 28% | 100% | – |
+| arcanist.arcanistBoss · 70 | 23% | 19% | 1,6 | 0% | 86% | 26% | 29% | 28% | 97% | 28% | 97% | – |
+| arcanist.arcanistBoss · 100 | 19% | 15% | 1,6 | 0% | 78% | 24% | 26% | 26% | 97% | 29% | 93% | – |
 | inquisitor.solo · 45 | 23% | 16% | 2,0 | 0% | 32% | 30% | 32% | 42% | 97% | 28% | – | – |
 | inquisitor.solo · 70 | 20% | 12% | 2,0 | 0% | 31% | 32% | 31% | 41% | 97% | 29% | – | – |
 | inquisitor.solo · 100 | 17% | 10% | 1,8 | 0% | 32% | 23% | 32% | 42% | 97% | 29% | – | – |
@@ -16304,12 +16427,12 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | toxicBarbs · trapper.poacher@bow+quiver · single · 45 · Zwykły +0 | 13% | 14% | 8% | 5% | **3%** |
 | criticalForce · marksman.kingslayer · single · 45 · Zwykły +0 | 2% | 2% | 5% | 5% | 0% |
 | easyPrey · trapper.poacher · controlled · 45 · Zwykły +0 | 5% | 3% | 3% | 6% | **-3%** |
-| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 45 · Zwykły +0 | 6% | 6% | 6% → 5% | 5% | 1% → 0% |
+| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 45 · Zwykły +0 | 6% | 6% | 5% | 5% | 0% |
 | fullDraw · trapper.poacher@bow+quiver · single · 45 · Zwykły +0 | 7% | 7% | 6% | 5% | 1% |
 | elementalSpark · destroyer.destroyerExp@wand+orb · single · 45 · Zwykły +0 | 8% | 8% | 7% | 5% | **2%** |
 | elementalMight · destroyer.destroyerExp · single · 45 · Zwykły +0 | 5% | 1% | 2% | 7% | **-5%** |
 | runicSeal · arcanist.arcanistBoss · still · 45 · Zwykły +0 | 4% | 5% | 5% | 6% | 0% |
-| learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 45 · Zwykły +0 | 0% | 0% | 1% → 0% | 2% | **-1% → -2%** |
+| learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 45 · Zwykły +0 | 0% | 0% | 0% | 2% | **-2%** |
 | powerLens · destroyer.destroyerExp@wand+orb · single · 45 · Zwykły +0 | 3% | 4% | 4% | 5% | -1% |
 | anointment · healer.dungeon · dungeon · 45 · Zwykły +0 | 0% | 0% | 5% | 5% | 0% |
 | savingBlow · healer.dungeon@holystaff · solo · 45 · Zwykły +0 | 60% | 60% | 0% | 4% | **-4%** |
@@ -16327,8 +16450,8 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | harrying · scout.partyHunter@shortbow+quiver · solo · 45 · Mityczny +9 | 10% | 10% | 10% | 5% | **5%** |
 | toxicBarbs · trapper.poacher@bow+quiver · single · 45 · Mityczny +9 | 21% | 21% | 11% | 5% | **6%** |
 | criticalForce · marksman.kingslayer · single · 45 · Mityczny +9 | 4% | 4% | 9% | 5% | **5%** |
-| easyPrey · trapper.poacher · controlled · 45 · Mityczny +9 | 10% | 6% | 5% → 4% | 6% | **-1% → -2%** |
-| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 45 · Mityczny +9 | 12% | 12% | 12% → 11% | 5% | **7% → 6%** |
+| easyPrey · trapper.poacher · controlled · 45 · Mityczny +9 | 10% | 6% | 4% | 6% | **-2%** |
+| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 45 · Mityczny +9 | 12% | 12% | 11% | 5% | **6%** |
 | fullDraw · trapper.poacher@bow+quiver · single · 45 · Mityczny +9 | 12% | 12% | 11% | 5% | **6%** |
 | elementalSpark · destroyer.destroyerExp@wand+orb · single · 45 · Mityczny +9 | 9% | 9% | 7% | 5% | **3%** |
 | elementalMight · destroyer.destroyerExp · single · 45 · Mityczny +9 | 9% | 2% | 2% | 7% | **-5%** |
@@ -16376,13 +16499,13 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | toxicBarbs · trapper.poacher@bow+quiver · single · 70 · Mityczny +9 | 21% | 21% | 13% | 5% | **8%** |
 | criticalForce · marksman.kingslayer · single · 70 · Mityczny +9 | 4% | 4% | 10% | 5% | **5%** |
 | easyPrey · trapper.poacher · controlled · 70 · Mityczny +9 | 10% | 6% | 5% | 6% | -1% |
-| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 70 · Mityczny +9 | 13% | 13% | 12% → 11% | 5% | **7% → 6%** |
+| bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 70 · Mityczny +9 | 13% | 13% | 11% | 5% | **6%** |
 | fullDraw · trapper.poacher@bow+quiver · single · 70 · Mityczny +9 | 12% | 13% | 10% | 5% | **6%** |
-| elementalSpark · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 9% | 8% | 7% → 6% | 5% | **2%** |
+| elementalSpark · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 9% | 8% | 6% | 5% | **2%** |
 | elementalMight · destroyer.destroyerExp · single · 70 · Mityczny +9 | 9% | 2% | 2% | 7% | **-4%** |
 | runicSeal · arcanist.arcanistBoss · still · 70 · Mityczny +9 | 7% | 10% | 10% | 6% | **4%** |
 | learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 70 · Mityczny +9 | 0% | 0% | 0% | 2% | **-2%** |
-| powerLens · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 6% | 7% | 7% | 5% | **2% → 3%** |
+| powerLens · destroyer.destroyerExp@wand+orb · single · 70 · Mityczny +9 | 6% | 7% | 7% | 5% | **3%** |
 | anointment · healer.dungeon · dungeon · 70 · Mityczny +9 | 0% | 0% | 9% | 5% | **4%** |
 | savingBlow · healer.dungeon@holystaff · solo · 70 · Mityczny +9 | 304% | 304% | 0% | 4% | **-4%** |
 | concussion · inquisitor.solo@flail1h+shield · group · 70 · Mityczny +9 | 6% | 6% | 6% | 5% | **2%** |
@@ -16402,10 +16525,10 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | easyPrey · trapper.poacher · controlled · 100 · Zwykły +0 | 5% | 4% | 3% | 6% | **-3%** |
 | bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 100 · Zwykły +0 | 6% | 6% | 6% | 5% | 1% |
 | fullDraw · trapper.poacher@bow+quiver · single · 100 · Zwykły +0 | 7% | 8% | 6% | 5% | 1% |
-| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Zwykły +0 | 8% | 7% | 6% | 5% | 2% → 1% |
+| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Zwykły +0 | 8% | 7% | 6% | 5% | 1% |
 | elementalMight · destroyer.destroyerExp · single · 100 · Zwykły +0 | 5% | 2% | 2% | 7% | **-5%** |
 | runicSeal · arcanist.arcanistBoss · still · 100 · Zwykły +0 | 4% | 5% | 5% | 6% | 0% |
-| learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 100 · Zwykły +0 | 0% | 0% | 2% → 1% | 2% | 0% → -1% |
+| learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 100 · Zwykły +0 | 0% | 0% | 1% | 2% | -1% |
 | powerLens · destroyer.destroyerExp@wand+orb · single · 100 · Zwykły +0 | 3% | 4% | 4% | 5% | -1% |
 | anointment · healer.dungeon · dungeon · 100 · Zwykły +0 | 0% | 0% | 5% | 5% | 0% |
 | savingBlow · healer.dungeon@holystaff · solo · 100 · Zwykły +0 | 308% | 308% | 0% | 4% | **-4%** |
@@ -16423,14 +16546,14 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | harrying · scout.partyHunter@shortbow+quiver · solo · 100 · Mityczny +9 | 10% | 11% | 11% | 5% | **6%** |
 | toxicBarbs · trapper.poacher@bow+quiver · single · 100 · Mityczny +9 | 21% | 21% | 13% | 5% | **9%** |
 | criticalForce · marksman.kingslayer · single · 100 · Mityczny +9 | 4% | 4% | 11% | 5% | **6%** |
-| easyPrey · trapper.poacher · controlled · 100 · Mityczny +9 | 10% | 7% | 6% → 5% | 6% | 0% → -1% |
+| easyPrey · trapper.poacher · controlled · 100 · Mityczny +9 | 10% | 7% | 5% | 6% | -1% |
 | bodkinBolt · marksman.kingslayer@heavycrossbow+quiver · armored · 100 · Mityczny +9 | 13% | 13% | 12% | 5% | **7%** |
 | fullDraw · trapper.poacher@bow+quiver · single · 100 · Mityczny +9 | 12% | 13% | 12% | 5% | **8%** |
-| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 9% | 8% | 7% → 6% | 5% | **2%** |
+| elementalSpark · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 9% | 8% | 6% | 5% | **2%** |
 | elementalMight · destroyer.destroyerExp · single · 100 · Mityczny +9 | 9% | 3% | 3% | 7% | **-4%** |
 | runicSeal · arcanist.arcanistBoss · still · 100 · Mityczny +9 | 7% | 10% | 10% | 6% | **4%** |
 | learnedFormulae · destroyer.destroyerExp@wand+tome · mana · 100 · Mityczny +9 | 0% | 0% | 0% | 2% | **-2%** |
-| powerLens · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 6% | 7% | 7% | 5% | **2% → 3%** |
+| powerLens · destroyer.destroyerExp@wand+orb · single · 100 · Mityczny +9 | 6% | 7% | 7% | 5% | **3%** |
 | anointment · healer.dungeon · dungeon · 100 · Mityczny +9 | 0% | 0% | 9% | 5% | **4%** |
 | savingBlow · healer.dungeon@holystaff · solo · 100 · Mityczny +9 | 302% | 302% | 0% | 4% | **-4%** |
 | concussion · inquisitor.solo@flail1h+shield · group · 100 · Mityczny +9 | 6% | 6% | 6% | 5% | **2%** |
@@ -16554,22 +16677,22 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Hunter marksman.kingslayer · 90 | **1,42** | **1,89** | 0,53 | 2,17 | 2,61 |
 | Hunter marksman.kingslayer · 95 | **1,42** | **2,05** | 0,58 | 2,17 | 2,61 |
 | Hunter marksman.kingslayer · 100 | **1,42** | **2,10** | 0,58 | 2,17 | 2,61 |
-| Hunter trapper.poacher · 25 | 1,05 → 1,03 | 1,08 → 1,06 | 0,65 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 30 | **1,28 → 1,27** | **1,46 → 1,43** | 0,85 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 35 | **1,31 → 1,29** | **1,39 → 1,38** | 0,92 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 40 | **1,40** | **1,60 → 1,59** | 0,92 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 45 | **1,44** | **1,61 → 1,60** | 0,92 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 50 | **1,42 → 1,44** | **1,65** | 0,93 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 55 | **1,47 → 1,48** | **1,67** | 0,94 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 60 | **1,53 → 1,55** | **1,73** | 0,93 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 65 | **1,59 → 1,61** | **1,95 → 1,94** | 0,99 → 0,98 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 70 | **1,44 → 1,46** | **1,81 → 1,79** | 1,00 → 0,99 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 75 | **1,39 → 1,40** | **1,72 → 1,70** | 0,98 → 0,97 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 80 | **1,49 → 1,51** | **1,82 → 1,80** | 0,98 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 85 | **1,46 → 1,49** | **1,78 → 1,77** | 0,99 → 0,98 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 90 | **1,49 → 1,53** | **1,80 → 1,79** | 1,00 → 0,99 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 95 | **1,49 → 1,53** | **1,80 → 1,79** | 1,00 → 0,99 | 2,17 | 2,51 |
-| Hunter trapper.poacher · 100 | **1,50 → 1,53** | **1,83 → 1,82** | 1,01 → 1,00 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 25 | 1,03 | 1,06 | 0,65 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 30 | **1,27** | **1,43** | 0,85 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 35 | **1,29** | **1,38** | 0,92 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 40 | **1,40** | **1,59** | 0,92 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 45 | **1,44** | **1,60** | 0,92 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 50 | **1,44** | **1,65** | 0,93 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 55 | **1,48** | **1,67** | 0,94 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 60 | **1,55** | **1,73** | 0,93 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 65 | **1,61** | **1,94** | 0,98 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 70 | **1,46** | **1,79** | 0,99 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 75 | **1,40** | **1,70** | 0,97 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 80 | **1,51** | **1,80** | 0,98 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 85 | **1,49** | **1,77** | 0,98 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 90 | **1,53** | **1,79** | 0,99 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 95 | **1,53** | **1,79** | 0,99 | 2,17 | 2,51 |
+| Hunter trapper.poacher · 100 | **1,53** | **1,82** | 1,00 | 2,17 | 2,51 |
 | Hunter scout.partyHunter · 25 | 1,10 | 1,12 | 0,76 | 2,12 | 2,26 |
 | Hunter scout.partyHunter · 30 | 1,10 | 1,11 | 0,78 | 2,12 | 2,26 |
 | Hunter scout.partyHunter · 35 | **1,21** | 1,24 | 0,78 | 2,12 | 2,26 |
@@ -16581,27 +16704,27 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Hunter scout.partyHunter · 65 | **1,38** | **1,36** | 0,78 | 2,12 | 2,26 |
 | Hunter scout.partyHunter · 70 | **1,41** | **1,46** | 0,76 | 2,12 | 2,26 |
 | Hunter scout.partyHunter · 75 | **1,43** | **1,49** | 0,76 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 80 | **1,46** | **1,54** | 0,78 → 0,75 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 85 | **1,46** | **1,54** | 0,77 → 0,75 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 90 | **1,63** | **1,54** | 0,82 → 0,75 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 95 | **1,62** | **1,54** | 0,84 → 0,75 | 2,12 | 2,26 |
-| Hunter scout.partyHunter · 100 | **1,56** | **1,45** | 0,80 → 0,72 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 80 | **1,46** | **1,54** | 0,75 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 85 | **1,46** | **1,54** | 0,75 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 90 | **1,63** | **1,54** | 0,75 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 95 | **1,62** | **1,54** | 0,75 | 2,12 | 2,26 |
+| Hunter scout.partyHunter · 100 | **1,56** | **1,45** | 0,72 | 2,12 | 2,26 |
 | Mage base · 25 | **1,24** | 1,24 | 0,68 | 2,51 | 2,56 |
-| Mage base · 30 | **1,34 → 1,36** | **1,44** | 0,71 | 2,51 | 2,56 |
-| Mage base · 35 | **1,46 → 1,49** | **1,62** | 0,75 | 2,51 | 2,56 |
-| Mage base · 40 | **1,71 → 1,73** | **1,90 → 1,92** | 0,80 | 2,51 | 2,56 |
-| Mage base · 45 | **1,69 → 1,73** | **1,92 → 1,95** | 0,80 | 2,51 | 2,56 |
-| Mage base · 50 | **1,75 → 1,80** | **2,01 → 2,05** | 0,80 | 2,51 | 2,56 |
-| Mage base · 55 | **1,82 → 1,88** | **2,09 → 2,13** | 0,80 | 2,51 | 2,56 |
-| Mage base · 60 | **1,91 → 1,95** | **2,31 → 2,40** | 0,82 → 0,85 | 2,51 | 2,56 |
-| Mage base · 65 | **1,95 → 1,99** | **2,39 → 2,49** | 0,83 → 0,86 | 2,51 | 2,56 |
-| Mage base · 70 | **1,97 → 2,03** | **2,42 → 2,51** | 0,83 → 0,86 | 2,51 | 2,56 |
-| Mage base · 75 | **1,98 → 2,08** | **2,43 → 2,58** | 0,83 → 0,86 | 2,51 | 2,56 |
-| Mage base · 80 | **2,14 → 2,31** | **2,59 → 2,83** | 0,84 → 0,87 | 2,51 | 2,56 |
-| Mage base · 85 | **2,25 → 2,43** | **2,70 → 2,97** | 0,84 → 0,88 | 2,51 | 2,56 |
-| Mage base · 90 | **2,24 → 2,43** | **2,71 → 2,98** | 0,84 → 0,88 | 2,51 | 2,56 |
-| Mage base · 95 | **2,26 → 2,46** | **2,73 → 3,03** | 0,86 → 0,91 | 2,51 | 2,56 |
-| Mage base · 100 | **2,26 → 2,46** | **2,73 → 3,03** | 0,88 → 0,92 | 2,51 | 2,56 |
+| Mage base · 30 | **1,36** | **1,44** | 0,71 | 2,51 | 2,56 |
+| Mage base · 35 | **1,49** | **1,62** | 0,75 | 2,51 | 2,56 |
+| Mage base · 40 | **1,73** | **1,92** | 0,80 | 2,51 | 2,56 |
+| Mage base · 45 | **1,73** | **1,95** | 0,80 | 2,51 | 2,56 |
+| Mage base · 50 | **1,80** | **2,05** | 0,80 | 2,51 | 2,56 |
+| Mage base · 55 | **1,88** | **2,13** | 0,80 | 2,51 | 2,56 |
+| Mage base · 60 | **1,95** | **2,40** | 0,85 | 2,51 | 2,56 |
+| Mage base · 65 | **1,99** | **2,49** | 0,86 | 2,51 | 2,56 |
+| Mage base · 70 | **2,03** | **2,51** | 0,86 | 2,51 | 2,56 |
+| Mage base · 75 | **2,08** | **2,58** | 0,86 | 2,51 | 2,56 |
+| Mage base · 80 | **2,31** | **2,83** | 0,87 | 2,51 | 2,56 |
+| Mage base · 85 | **2,43** | **2,97** | 0,88 | 2,51 | 2,56 |
+| Mage base · 90 | **2,43** | **2,98** | 0,88 | 2,51 | 2,56 |
+| Mage base · 95 | **2,46** | **3,03** | 0,91 | 2,51 | 2,56 |
+| Mage base · 100 | **2,46** | **3,03** | 0,92 | 2,51 | 2,56 |
 | Mage destroyer.destroyerExp · 25 | **1,23** | 1,23 | 0,44 | 2,04 | 2,01 |
 | Mage destroyer.destroyerExp · 30 | **1,41** | **1,46** | 0,46 | 2,04 | 2,01 |
 | Mage destroyer.destroyerExp · 35 | **1,44** | **1,50** | 0,54 | 2,04 | 2,01 |
@@ -16609,47 +16732,47 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | Mage destroyer.destroyerExp · 45 | **1,49** | **1,57** | 0,61 | 2,04 | 2,01 |
 | Mage destroyer.destroyerExp · 50 | **1,53** | **1,62** | 0,63 | 2,04 | 2,01 |
 | Mage destroyer.destroyerExp · 55 | **1,54** | **1,64** | 0,64 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 60 | **1,61 → 1,63** | **1,97 → 2,10** | 0,71 → 0,73 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 65 | **1,65 → 1,67** | **2,07 → 2,20** | 0,71 → 0,74 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 70 | **1,65 → 1,67** | **2,07 → 2,21** | 0,72 → 0,75 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 75 | **1,65 → 1,67** | **2,07 → 2,21** | 0,73 → 0,76 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 80 | **1,66 → 1,69** | **2,08 → 2,25** | 0,75 → 0,78 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 85 | **1,66 → 1,71** | **2,08 → 2,26** | 0,75 → 0,78 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 90 | **1,67 → 1,72** | **2,12 → 2,31** | 0,76 → 0,79 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 95 | **1,70 → 1,77** | **2,24 → 2,49** | 0,78 → 0,81 | 2,04 | 2,01 |
-| Mage destroyer.destroyerExp · 100 | **1,70 → 1,77** | **2,25 → 2,51** | 0,79 → 0,82 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 60 | **1,63** | **2,10** | 0,73 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 65 | **1,67** | **2,20** | 0,74 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 70 | **1,67** | **2,21** | 0,75 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 75 | **1,67** | **2,21** | 0,76 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 80 | **1,69** | **2,25** | 0,78 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 85 | **1,71** | **2,26** | 0,78 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 90 | **1,72** | **2,31** | 0,79 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 95 | **1,77** | **2,49** | 0,81 | 2,04 | 2,01 |
+| Mage destroyer.destroyerExp · 100 | **1,77** | **2,51** | 0,82 | 2,04 | 2,01 |
 | Mage destroyer.destroyerBoss · 25 | **1,23** | 1,22 | 0,42 | 2,39 | 2,49 |
 | Mage destroyer.destroyerBoss · 30 | **1,44** | **1,48** | 0,43 | 2,39 | 2,49 |
 | Mage destroyer.destroyerBoss · 35 | **1,55** | **1,60** | 0,48 | 2,39 | 2,49 |
 | Mage destroyer.destroyerBoss · 40 | **1,74** | **1,81** | 0,49 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 45 | **1,80 → 1,81** | **1,90 → 1,91** | 0,51 → 0,50 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 50 | **1,87 → 1,88** | **1,99 → 2,01** | 0,52 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 55 | **1,96 → 1,98** | **2,08 → 2,11** | 0,52 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 60 | **1,99 → 2,09** | **2,18 → 2,31** | 0,61 → 0,63 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 65 | **2,09 → 2,15** | **2,28 → 2,41** | 0,62 → 0,64 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 70 | **2,10 → 2,15** | **2,29 → 2,43** | 0,62 → 0,65 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 75 | **2,11 → 2,17** | **2,30 → 2,45** | 0,63 → 0,65 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 80 | **2,12 → 2,18** | **2,33 → 2,49** | 0,65 → 0,67 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 85 | **2,12 → 2,18** | **2,33 → 2,49** | 0,65 → 0,67 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 90 | **2,13 → 2,20** | **2,37 → 2,54** | 0,66 → 0,69 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 95 | **2,16 → 2,24** | **2,47 → 2,68** | 0,69 → 0,72 | 2,39 | 2,49 |
-| Mage destroyer.destroyerBoss · 100 | **2,16 → 2,24** | **2,49 → 2,70** | 0,69 → 0,72 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 45 | **1,81** | **1,91** | 0,50 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 50 | **1,88** | **2,01** | 0,52 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 55 | **1,98** | **2,11** | 0,52 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 60 | **2,09** | **2,31** | 0,63 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 65 | **2,15** | **2,41** | 0,64 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 70 | **2,15** | **2,43** | 0,65 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 75 | **2,17** | **2,45** | 0,65 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 80 | **2,18** | **2,49** | 0,67 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 85 | **2,18** | **2,49** | 0,67 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 90 | **2,20** | **2,54** | 0,69 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 95 | **2,24** | **2,68** | 0,72 | 2,39 | 2,49 |
+| Mage destroyer.destroyerBoss · 100 | **2,24** | **2,70** | 0,72 | 2,39 | 2,49 |
 | Mage arcanist.arcanistBoss · 25 | **1,26** | **1,26** | 0,60 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 30 | **1,39 → 1,41** | **1,47** | 0,61 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 35 | **1,43 → 1,45** | **1,51** | 0,61 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 40 | **1,63 → 1,65** | **1,69** | 0,67 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 45 | **1,66 → 1,67** | **1,73** | 0,68 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 50 | **1,70 → 1,71** | **1,78** | 0,69 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 55 | **1,71 → 1,72** | **1,81** | 0,69 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 60 | **1,77 → 1,79** | **2,08** | 0,64 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 65 | **1,82 → 1,85** | **2,17** | 0,64 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 70 | **1,83 → 1,85** | **2,21** | 0,64 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 75 | **1,86 → 1,87** | **2,27** | 0,63 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 80 | **1,91 → 1,93** | **2,43** | 0,63 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 85 | **1,92 → 1,94** | **2,44** | 0,63 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 90 | **1,92 → 1,96** | **2,46** | 0,63 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 95 | **1,99 → 2,08** | **2,75** | 0,62 | 2,15 | 2,15 |
-| Mage arcanist.arcanistBoss · 100 | **2,00 → 2,13** | **2,82** | 0,60 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 30 | **1,41** | **1,47** | 0,61 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 35 | **1,45** | **1,51** | 0,61 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 40 | **1,65** | **1,69** | 0,67 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 45 | **1,67** | **1,73** | 0,68 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 50 | **1,71** | **1,78** | 0,69 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 55 | **1,72** | **1,81** | 0,69 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 60 | **1,79** | **2,08** | 0,64 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 65 | **1,85** | **2,17** | 0,64 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 70 | **1,85** | **2,21** | 0,64 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 75 | **1,87** | **2,27** | 0,63 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 80 | **1,93** | **2,43** | 0,63 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 85 | **1,94** | **2,44** | 0,63 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 90 | **1,96** | **2,46** | 0,63 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 95 | **2,08** | **2,75** | 0,62 | 2,15 | 2,15 |
+| Mage arcanist.arcanistBoss · 100 | **2,13** | **2,82** | 0,60 | 2,15 | 2,15 |
 | Cleric base · 25 | **1,21** | 1,22 | 0,89 | 1,96 | 2,10 |
 | Cleric base · 30 | **1,31** | **1,33** | 0,88 | 1,96 | 2,10 |
 | Cleric base · 35 | **1,45** | **1,50** | 0,84 | 1,96 | 2,10 |
@@ -16797,18 +16920,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 40 | **0,23** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 40 | **0,25** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 40 | **0,23** | 0 |
-| T-SK4 Mage base 45 | **3,34 → 2,12** | 0 |
-| T-SK4 Mage base.loadout 45 | **3,32 → 1,93** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 45 | **1,98 → 1,15** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 45 | 3,09 → 1,79 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 45 | 4,80 → 2,78 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 45 | 3,97 → 2,30 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 45 | 4,69 → 2,72 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 45 | **1,93 → 1,12** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 45 | **2,45 → 1,42** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 45 | 3,47 → 2,01 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 45 | 3,72 → 2,16 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 45 | 4,11 → 2,38 | 0 |
+| T-SK4 Mage base 45 | **2,12** | 0 |
+| T-SK4 Mage base.loadout 45 | **1,93** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 45 | **1,15** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 45 | 1,79 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 45 | 2,78 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 45 | 2,30 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 45 | 2,72 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 45 | **1,12** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 45 | **1,42** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 45 | 2,01 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 45 | 2,16 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 45 | 2,38 | 0 |
 | T-SK5 Cleric base na Warrior 45 | 0,27 | 0 |
 | T-SK5 Cleric base na guardian.defender 45 | **0,24** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 45 | 0,32 | 0 |
@@ -16821,18 +16944,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 45 | **0,23** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 45 | 0,26 | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 45 | **0,23** | 0 |
-| T-SK4 Mage base 50 | **3,55 → 2,26** | 0 |
-| T-SK4 Mage base.loadout 50 | **3,95 → 2,52** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 50 | **1,93 → 1,23** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 50 | 3,01 → 1,92 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 50 | 4,15 → 2,65 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 50 | 3,51 → 2,24 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 50 | 3,88 → 2,48 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 50 | **1,81 → 1,15** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 50 | **2,30 → 1,46** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 50 | **2,79 → 1,78** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 50 | 3,36 → 2,14 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 50 | 3,16 → 2,02 | 0 |
+| T-SK4 Mage base 50 | **2,26** | 0 |
+| T-SK4 Mage base.loadout 50 | **2,52** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 50 | **1,23** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 50 | 1,92 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 50 | 2,65 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 50 | 2,24 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 50 | 2,48 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 50 | **1,15** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 50 | **1,46** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 50 | **1,78** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 50 | 2,14 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 50 | 2,02 | 0 |
 | T-SK5 Cleric base na Warrior 50 | **0,25** | 0 |
 | T-SK5 Cleric base na guardian.defender 50 | **0,23** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 50 | 0,29 | 0 |
@@ -16845,18 +16968,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 50 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 50 | **0,24** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 50 | **0,22** | 0 |
-| T-SK4 Mage base 55 | **3,98 → 2,48** | 0 |
-| T-SK4 Mage base.loadout 55 | **3,98 → 2,48** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 55 | **1,95 → 1,21** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 55 | 3,09 → 1,92 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 55 | 4,71 → 2,93 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 55 | 3,90 → 2,43 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 55 | 4,60 → 2,86 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 55 | **1,82 → 1,13** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 55 | **2,31 → 1,44** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 55 | **3,21 → 2,00** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 55 | 3,38 → 2,10 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 55 | 3,81 → 2,37 | 0 |
+| T-SK4 Mage base 55 | **2,48** | 0 |
+| T-SK4 Mage base.loadout 55 | **2,48** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 55 | **1,21** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 55 | 1,92 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 55 | 2,93 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 55 | 2,43 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 55 | 2,86 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 55 | **1,13** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 55 | **1,44** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 55 | **2,00** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 55 | 2,10 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 55 | 2,37 | 0 |
 | T-SK5 Cleric base na Warrior 55 | **0,23** | 0 |
 | T-SK5 Cleric base na guardian.defender 55 | **0,22** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 55 | 0,27 | 0 |
@@ -16869,18 +16992,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 55 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 55 | **0,23** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 55 | **0,21** | 0 |
-| T-SK4 Mage base 60 | **4,20 → 2,78** | 0 |
-| T-SK4 Mage base.loadout 60 | **3,44 → 3,02** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 60 | **3,12 → 3,04** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 60 | **3,78 → 3,18** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 60 | 4,47 → 2,98 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 60 | 3,70 → 2,47 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 60 | 4,37 → 2,92 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 60 | **2,08 → 1,60** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 60 | **2,64 → 2,03** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 60 | **2,77 → 1,85** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 60 | **2,89 → 1,93** | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 60 | 3,26 → 2,18 | 0 |
+| T-SK4 Mage base 60 | **2,78** | 0 |
+| T-SK4 Mage base.loadout 60 | **3,02** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 60 | **3,04** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 60 | **3,18** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 60 | 2,98 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 60 | 2,47 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 60 | 2,92 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 60 | **1,60** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 60 | **2,03** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 60 | **1,85** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 60 | **1,93** | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 60 | 2,18 | 0 |
 | T-SK5 Cleric base na Warrior 60 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 60 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 60 | 0,30 | 0 |
@@ -16893,18 +17016,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 60 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 60 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 60 | **0,21** | 0 |
-| T-SK4 Mage base 65 | **3,42 → 2,61** | 0 |
-| T-SK4 Mage base.loadout 65 | **3,37 → 2,78** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 65 | 2,04 → 2,06 | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 65 | 2,31 → 2,13 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 65 | 3,48 → 2,42 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 65 | **2,08 → 1,45** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 65 | 2,90 → 2,02 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 65 | **2,06 → 1,63** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 65 | **2,61 → 2,07** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 65 | **2,71 → 1,88** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 65 | **2,83 → 1,96** | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 65 | 3,19 → 2,22 | 0 |
+| T-SK4 Mage base 65 | **2,61** | 0 |
+| T-SK4 Mage base.loadout 65 | **2,78** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 65 | 2,06 | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 65 | 2,13 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 65 | 2,42 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 65 | **1,45** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 65 | 2,02 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 65 | **1,63** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 65 | **2,07** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 65 | **1,88** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 65 | **1,96** | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 65 | 2,22 | 0 |
 | T-SK5 Cleric base na Warrior 65 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 65 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 65 | 0,31 | 0 |
@@ -16917,18 +17040,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 65 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 65 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 65 | **0,21** | 0 |
-| T-SK4 Mage base 70 | **3,38 → 2,67** | 0 |
-| T-SK4 Mage base.loadout 70 | **3,30 → 2,84** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 70 | **1,71 → 1,79** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 70 | 2,05 → 2,00 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 70 | 3,60 → 2,59 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 70 | **2,05 → 1,48** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 70 | 2,96 → 2,13 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 70 | **2,03 → 1,65** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 70 | **2,58 → 2,09** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 70 | 3,02 → 2,17 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 70 | 2,77 → 2,37 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 70 | 3,13 → 2,23 | 0 |
+| T-SK4 Mage base 70 | **2,67** | 0 |
+| T-SK4 Mage base.loadout 70 | **2,84** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 70 | **1,79** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 70 | 2,00 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 70 | 2,59 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 70 | **1,48** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 70 | 2,13 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 70 | **1,65** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 70 | **2,09** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 70 | 2,17 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 70 | 2,37 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 70 | 2,23 | 0 |
 | T-SK5 Cleric base na Warrior 70 | **0,21** | 0 |
 | T-SK5 Cleric base na guardian.defender 70 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 70 | 0,30 | 0 |
@@ -16941,18 +17064,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 70 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 70 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 70 | **0,21** | 0 |
-| T-SK4 Mage base 75 | **3,35 → 2,55** | 0 |
-| T-SK4 Mage base.loadout 75 | **3,26 → 2,72** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 75 | **1,67 → 1,69** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 75 | 1,86 → 1,75 | 0 |
-| T-SK4 Mage destroyer.destroyerFire 75 | 3,56 → 2,48 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 75 | **2,03 → 1,42** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 75 | 2,93 → 2,04 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 75 | **2,03 → 1,62** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 75 | **2,58 → 2,05** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 75 | 2,99 → 2,08 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 75 | 2,75 → 2,25 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 75 | 3,10 → 2,12 | 0 |
+| T-SK4 Mage base 75 | **2,55** | 0 |
+| T-SK4 Mage base.loadout 75 | **2,72** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 75 | **1,69** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 75 | 1,75 | 0 |
+| T-SK4 Mage destroyer.destroyerFire 75 | 2,48 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 75 | **1,42** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 75 | 2,04 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 75 | **1,62** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 75 | **2,05** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 75 | 2,08 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 75 | 2,25 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 75 | 2,12 | 0 |
 | T-SK5 Cleric base na Warrior 75 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 75 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 75 | 0,30 | 0 |
@@ -16965,18 +17088,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 75 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 75 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 75 | **0,21** | 0 |
-| T-SK4 Mage base 80 | **3,36 → 2,67** | 0 |
-| T-SK4 Mage base.loadout 80 | **3,27 → 2,63** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 80 | **1,54 → 1,51** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 80 | **1,83 → 1,55** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 80 | 3,47 → 2,34 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 80 | **1,95 → 1,32** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 80 | **2,82 → 1,90** | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 80 | **2,02 → 1,58** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 80 | **2,56 → 2,00** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 80 | 3,07 → 2,05 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 80 | 2,70 → 2,16 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 80 | 3,04 → 2,03 | 0 |
+| T-SK4 Mage base 80 | **2,67** | 0 |
+| T-SK4 Mage base.loadout 80 | **2,63** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 80 | **1,51** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 80 | **1,55** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 80 | 2,34 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 80 | **1,32** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 80 | **1,90** | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 80 | **1,58** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 80 | **2,00** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 80 | 2,05 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 80 | 2,16 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 80 | 2,03 | 0 |
 | T-SK5 Cleric base na Warrior 80 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 80 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 80 | 0,31 | 0 |
@@ -16989,18 +17112,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 80 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 80 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 80 | **0,21** | 0 |
-| T-SK4 Mage base 85 | **3,07 → 2,53** | 0 |
-| T-SK4 Mage base.loadout 85 | **3,55 → 2,53** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 85 | **1,48 → 1,41** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 85 | **1,76 → 1,44** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 85 | 3,33 → 2,17 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 85 | **1,84 → 1,20** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 85 | **2,67 → 1,74** | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 85 | **2,01 → 1,56** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 85 | **2,56 → 1,98** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 85 | **3,04 → 1,95** | 0 |
-| T-SK4 Mage arcanist.arcanistIce 85 | 3,17 → 2,07 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 85 | **2,98 → 1,95** | 0 |
+| T-SK4 Mage base 85 | **2,53** | 0 |
+| T-SK4 Mage base.loadout 85 | **2,53** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 85 | **1,41** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 85 | **1,44** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 85 | 2,17 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 85 | **1,20** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 85 | **1,74** | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 85 | **1,56** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 85 | **1,98** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 85 | **1,95** | 0 |
+| T-SK4 Mage arcanist.arcanistIce 85 | 2,07 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 85 | **1,95** | 0 |
 | T-SK5 Cleric base na Warrior 85 | **0,22** | 0 |
 | T-SK5 Cleric base na guardian.defender 85 | **0,21** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 85 | 0,32 | 0 |
@@ -17013,18 +17136,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 85 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 85 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 85 | **0,21** | 0 |
-| T-SK4 Mage base 90 | **2,92 → 2,35** | 0 |
-| T-SK4 Mage base.loadout 90 | **3,42 → 2,35** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 90 | **1,46 → 1,34** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 90 | **1,73 → 1,38** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 90 | **2,61 → 1,97** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 90 | **2,89 → 1,82** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 90 | 3,25 → 2,22 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 90 | **2,00 → 1,52** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 90 | **2,54 → 1,94** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 90 | 2,99 → 2,47 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 90 | 3,14 → 2,26 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 90 | 2,96 → 2,41 | 0 |
+| T-SK4 Mage base 90 | **2,35** | 0 |
+| T-SK4 Mage base.loadout 90 | **2,35** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 90 | **1,34** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 90 | **1,38** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 90 | **1,97** | 0 |
+| T-SK4 Mage destroyer.destroyerIce 90 | **1,82** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 90 | 2,22 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 90 | **1,52** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 90 | **1,94** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 90 | 2,47 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 90 | 2,26 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 90 | 2,41 | 0 |
 | T-SK5 Cleric base na Warrior 90 | **0,23** | 0 |
 | T-SK5 Cleric base na guardian.defender 90 | **0,22** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 90 | 0,34 | 0 |
@@ -17037,18 +17160,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 90 | **0,21** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 90 | **0,22** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 90 | **0,21** | 0 |
-| T-SK4 Mage base 95 | **2,84 → 2,25** | 0 |
-| T-SK4 Mage base.loadout 95 | **3,74 → 2,78** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 95 | **1,44 → 1,40** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 95 | **1,72 → 1,33** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 95 | **2,59 → 1,90** | 0 |
-| T-SK4 Mage destroyer.destroyerIce 95 | **2,87 → 1,76** | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 95 | 3,22 → 2,14 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 95 | **1,99 → 1,50** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 95 | **2,53 → 1,90** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 95 | 2,93 → 2,41 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 95 | 3,12 → 2,20 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 95 | 2,93 → 2,35 | 0 |
+| T-SK4 Mage base 95 | **2,25** | 0 |
+| T-SK4 Mage base.loadout 95 | **2,78** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 95 | **1,40** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 95 | **1,33** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 95 | **1,90** | 0 |
+| T-SK4 Mage destroyer.destroyerIce 95 | **1,76** | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 95 | 2,14 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 95 | **1,50** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 95 | **1,90** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 95 | 2,41 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 95 | 2,20 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 95 | 2,35 | 0 |
 | T-SK5 Cleric base na Warrior 95 | **0,24** | 0 |
 | T-SK5 Cleric base na guardian.defender 95 | **0,22** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 95 | **0,36** | 0 |
@@ -17061,18 +17184,18 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | T-SK5 Cleric inquisitor.solo na guardian.defender 95 | **0,23** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na Warrior 95 | **0,24** | 0 |
 | T-SK5 Cleric inquisitor.bulwark na guardian.defender 95 | **0,23** | 0 |
-| T-SK4 Mage base 100 | **2,81 → 2,16** | 0 |
-| T-SK4 Mage base.loadout 100 | **3,71 → 2,69** | 0 |
-| T-SK4 Mage destroyer.destroyerExp 100 | **1,42 → 1,34** | 1 |
-| T-SK4 Mage destroyer.destroyerBoss 100 | **1,71 → 1,29** | 0 |
-| T-SK4 Mage destroyer.destroyerFire 100 | 3,61 → 2,11 | 0 |
-| T-SK4 Mage destroyer.destroyerIce 100 | 3,34 → 2,01 | 0 |
-| T-SK4 Mage destroyer.destroyerLightning 100 | 2,98 → 2,02 | 0 |
-| T-SK4 Mage arcanist.arcanistBoss 100 | **2,11 → 1,62** | 1 |
-| T-SK4 Mage arcanist.arcanistOverload 100 | **2,68 → 2,06** | 0 |
-| T-SK4 Mage arcanist.arcanistFire 100 | 3,42 → 2,39 | 0 |
-| T-SK4 Mage arcanist.arcanistIce 100 | 3,62 → 2,22 | 0 |
-| T-SK4 Mage arcanist.arcanistLightning 100 | 3,36 → 2,37 | 0 |
+| T-SK4 Mage base 100 | **2,16** | 0 |
+| T-SK4 Mage base.loadout 100 | **2,69** | 0 |
+| T-SK4 Mage destroyer.destroyerExp 100 | **1,34** | 1 |
+| T-SK4 Mage destroyer.destroyerBoss 100 | **1,29** | 0 |
+| T-SK4 Mage destroyer.destroyerFire 100 | 2,11 | 0 |
+| T-SK4 Mage destroyer.destroyerIce 100 | 2,01 | 0 |
+| T-SK4 Mage destroyer.destroyerLightning 100 | 2,02 | 0 |
+| T-SK4 Mage arcanist.arcanistBoss 100 | **1,62** | 1 |
+| T-SK4 Mage arcanist.arcanistOverload 100 | **2,06** | 0 |
+| T-SK4 Mage arcanist.arcanistFire 100 | 2,39 | 0 |
+| T-SK4 Mage arcanist.arcanistIce 100 | 2,22 | 0 |
+| T-SK4 Mage arcanist.arcanistLightning 100 | 2,37 | 0 |
 | T-SK5 Cleric base na Warrior 100 | **0,24** | 0 |
 | T-SK5 Cleric base na guardian.defender 100 | **0,22** | 0 |
 | T-SK5 Cleric healer.dungeon na Warrior 100 | **0,38** | 0 |
@@ -17256,12 +17379,12 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | marksman.kingslayer · arrowRain · 10 · b · 45 | 25% | 0 |
 | trapper.poacher · snarefield · 5 · a · 100 | **0%** | 1 |
 | trapper.poacher · snarefield · 5 · b · 100 | **0%** | 0 |
-| trapper.poacher · snarefield · 10 · a · 100 | 25% → 19% | 0 |
+| trapper.poacher · snarefield · 10 · a · 100 | 19% | 0 |
 | trapper.poacher · snarefield · 10 · b · 100 | **0%** | 1 |
 | trapper.poacher · venomSnare · 5 · a · 45 | **0%** | 0 |
 | trapper.poacher · venomSnare · 5 · b · 45 | **0%** | 1 |
-| trapper.poacher · venomSnare · 10 · a · 70 | 20% → 22% | 1 |
-| trapper.poacher · venomSnare · 10 · b · 70 | 19% → 20% | 0 |
+| trapper.poacher · venomSnare · 10 · a · 70 | 22% | 1 |
+| trapper.poacher · venomSnare · 10 · b · 70 | 20% | 0 |
 | trapper.poacher · piercingArrow · 5 · a · 45 | **0%** | 1 |
 | trapper.poacher · piercingArrow · 5 · b · 45 | 9% | 0 |
 | trapper.poacher · piercingArrow · 10 · a · 45 | **0%** | 1 |
@@ -17271,17 +17394,17 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | trapper.poacher · netShot · 10 · a · 70 | **0%** | 0 |
 | trapper.poacher · netShot · 10 · b · 70 | 21% | 1 |
 | trapper.poacher · venomArrow · 5 · a · 45 | 14% | 1 |
-| trapper.poacher · venomArrow · 5 · b · 45 | 11% → 10% | 0 |
-| trapper.poacher · venomArrow · 10 · a · 70 | 19% → 18% | 1 |
+| trapper.poacher · venomArrow · 5 · b · 45 | 10% | 0 |
+| trapper.poacher · venomArrow · 10 · a · 70 | 18% | 1 |
 | trapper.poacher · venomArrow · 10 · b · 70 | 22% | 0 |
 | trapper.poacher · deadlyBolt · 5 · a · 70 | 13% | 1 |
 | trapper.poacher · deadlyBolt · 5 · b · 70 | 11% | 0 |
 | trapper.poacher · deadlyBolt · 10 · a · 100 | 21% | 1 |
-| trapper.poacher · deadlyBolt · 10 · b · 100 | 20% → 21% | 0 |
-| trapper.poacher · heavyBolt · 5 · a · 45 | 12% → 13% | 1 |
-| trapper.poacher · heavyBolt · 5 · b · 45 | 13% → 14% | 0 |
+| trapper.poacher · deadlyBolt · 10 · b · 100 | 21% | 0 |
+| trapper.poacher · heavyBolt · 5 · a · 45 | 13% | 1 |
+| trapper.poacher · heavyBolt · 5 · b · 45 | 14% | 0 |
 | trapper.poacher · heavyBolt · 10 · a · 45 | **53%** | 1 |
-| trapper.poacher · heavyBolt · 10 · b · 45 | 18% → 19% | 0 |
+| trapper.poacher · heavyBolt · 10 · b · 45 | 19% | 0 |
 | destroyer.destroyerExp · elementalVortex · 5 · a · 45 | **0%** | 1 |
 | destroyer.destroyerExp · elementalVortex · 5 · b · 45 | 17% | 0 |
 | destroyer.destroyerExp · elementalVortex · 10 · a · 70 | 22% | 1 |
@@ -17290,10 +17413,10 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | destroyer.destroyerExp · cataclysm · 5 · b · 100 | 16% | 0 |
 | destroyer.destroyerExp · cataclysm · 10 · a · 100 | 18% | 1 |
 | destroyer.destroyerExp · cataclysm · 10 · b · 100 | 19% | 0 |
-| destroyer.destroyerExp · meteorStorm · 5 · a · 100 | 17% → 15% | 1 |
+| destroyer.destroyerExp · meteorStorm · 5 · a · 100 | 15% | 1 |
 | destroyer.destroyerExp · meteorStorm · 5 · b · 100 | 17% | 0 |
 | destroyer.destroyerExp · meteorStorm · 10 · a · 100 | 21% | 0 |
-| destroyer.destroyerExp · meteorStorm · 10 · b · 100 | 18% → 22% | 1 |
+| destroyer.destroyerExp · meteorStorm · 10 · b · 100 | 22% | 1 |
 | destroyer.destroyerExp · meteor · 5 · a · 45 | **0%** | 1 |
 | destroyer.destroyerExp · meteor · 5 · b · 45 | 16% | 0 |
 | destroyer.destroyerExp · meteor · 10 · a · 70 | 20% | 1 |
@@ -17304,7 +17427,7 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | destroyer.destroyerExp · fireball · 10 · b · 45 | 25% | 0 |
 | destroyer.destroyerExp · firebolt · 5 · a · 45 | 11% | 1 |
 | destroyer.destroyerExp · firebolt · 5 · b · 45 | 16% | 0 |
-| destroyer.destroyerExp · firebolt · 10 · a · 45 | 17% → 18% | 1 |
+| destroyer.destroyerExp · firebolt · 10 · a · 45 | 18% | 1 |
 | destroyer.destroyerExp · firebolt · 10 · b · 45 | 19% | 0 |
 | arcanist.arcanistBoss · arcaneDischarge · 5 · a · 45 | 13% | 1 |
 | arcanist.arcanistBoss · arcaneDischarge · 5 · b · 45 | **0%** | 0 |
@@ -17324,7 +17447,7 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | arcanist.arcanistBoss · fireball · 10 · b · 45 | 25% | 1 |
 | arcanist.arcanistBoss · firebolt · 5 · a · 45 | **6%** | 0 |
 | arcanist.arcanistBoss · firebolt · 5 · b · 45 | 16% | 1 |
-| arcanist.arcanistBoss · firebolt · 10 · a · 45 | 17% → 18% | 0 |
+| arcanist.arcanistBoss · firebolt · 10 · a · 45 | 18% | 0 |
 | arcanist.arcanistBoss · firebolt · 10 · b · 45 | 19% | 1 |
 
 ### R5: rozrzut ścieżek i broni
@@ -17335,8 +17458,8 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | --- | --: |
 | a single60 · marksman.kingslayer · longbow+quiver · 45 | 8% |
 | a aoe3burst · trapper.poacher · crossbow+quiver · 45 | **23%** |
-| a aoe3sus · destroyer.destroyerExp · staff · 45 | -3% → -4% |
-| a boss180 · arcanist.arcanistBoss · runestaff · 45 | **16% → 15%** |
+| a aoe3sus · destroyer.destroyerExp · staff · 45 | -4% |
+| a boss180 · arcanist.arcanistBoss · runestaff · 45 | **15%** |
 | b single60 · berserker.fury · sword2h · 45 | 2% |
 | b single60 · berserker.fury · axe2h · 45 | 1% |
 | b single60 · berserker.fury · hammer2h · 45 | 2% |
@@ -17352,9 +17475,9 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | b boss180 · arcanist.arcanistBoss · runestaff · 45 | 4% |
 | b boss180 · arcanist.arcanistBoss · wand · 45 | -4% |
 | a single60 · marksman.kingslayer · longbow+quiver · 70 | 9% |
-| a aoe3burst · trapper.poacher · crossbow+quiver · 70 | **22% → 21%** |
-| a aoe3sus · destroyer.destroyerExp · staff · 70 | 4% → 5% |
-| a boss180 · arcanist.arcanistBoss · runestaff · 70 | **19% → 18%** |
+| a aoe3burst · trapper.poacher · crossbow+quiver · 70 | **21%** |
+| a aoe3sus · destroyer.destroyerExp · staff · 70 | 5% |
+| a boss180 · arcanist.arcanistBoss · runestaff · 70 | **18%** |
 | b single60 · berserker.fury · sword2h · 70 | 1% |
 | b single60 · berserker.fury · axe2h · 70 | 2% |
 | b single60 · berserker.fury · hammer2h · 70 | 0% |
@@ -17363,15 +17486,15 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | b single60 · inquisitor.solo · flail1h+relic · 70 | 2% |
 | b single60 · marksman.kingslayer · longbow+quiver · 70 | 0% |
 | b single60 · marksman.kingslayer · heavycrossbow+quiver · 70 | 0% |
-| b aoe3burst · trapper.poacher · crossbow+quiver · 70 | **27% → 26%** |
-| b aoe3burst · trapper.poacher · bow+quiver · 70 | **-27% → -26%** |
+| b aoe3burst · trapper.poacher · crossbow+quiver · 70 | **26%** |
+| b aoe3burst · trapper.poacher · bow+quiver · 70 | **-26%** |
 | b aoe3sus · destroyer.destroyerExp · staff · 70 | 3% |
 | b aoe3sus · destroyer.destroyerExp · wand · 70 | -3% |
 | b boss180 · arcanist.arcanistBoss · runestaff · 70 | 5% |
 | b boss180 · arcanist.arcanistBoss · wand · 70 | -5% |
-| a single60 · marksman.kingslayer · longbow+quiver · 100 | 8% → 7% |
+| a single60 · marksman.kingslayer · longbow+quiver · 100 | 7% |
 | a aoe3burst · trapper.poacher · crossbow+quiver · 100 | 8% |
-| a aoe3sus · destroyer.destroyerExp · staff · 100 | 5% → 6% |
+| a aoe3sus · destroyer.destroyerExp · staff · 100 | 6% |
 | a boss180 · arcanist.arcanistBoss · runestaff · 100 | **20%** |
 | b single60 · berserker.fury · sword2h · 100 | -2% |
 | b single60 · berserker.fury · axe2h · 100 | 4% |
@@ -17381,8 +17504,8 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | b single60 · inquisitor.solo · flail1h+relic · 100 | 2% |
 | b single60 · marksman.kingslayer · longbow+quiver · 100 | -1% |
 | b single60 · marksman.kingslayer · heavycrossbow+quiver · 100 | 1% |
-| b aoe3burst · trapper.poacher · crossbow+quiver · 100 | **32% → 31%** |
-| b aoe3burst · trapper.poacher · bow+quiver · 100 | **-32% → -31%** |
+| b aoe3burst · trapper.poacher · crossbow+quiver · 100 | **31%** |
+| b aoe3burst · trapper.poacher · bow+quiver · 100 | **-31%** |
 | b aoe3sus · destroyer.destroyerExp · staff · 100 | 4% |
 | b aoe3sus · destroyer.destroyerExp · wand · 100 | -4% |
 | b boss180 · arcanist.arcanistBoss · runestaff · 100 | 5% |
@@ -17429,40 +17552,40 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 | marksman.kingslayer · marksman_grit | 3 | 0% | 0,00 |
 | marksman.kingslayer · marksman_coldBlood | 3 | 0% | 0,00 |
 | marksman.kingslayer · marksman_heartseeker2 | 2 | 0% | 0,22 |
-| trapper.poacher · trapper_bait | 1 | 0% | 0,55 → 0,48 |
-| trapper.poacher · trapper_huntingGround | 3 | 1% | 0,82 → 0,56 |
+| trapper.poacher · trapper_bait | 1 | 0% | 0,48 |
+| trapper.poacher · trapper_huntingGround | 3 | 1% | 0,56 |
 | trapper.poacher · trapper_bitingRain | 3 | 0% | 0,00 |
 | trapper.poacher · trapper_spoils | 3 | 0% | 0,00 |
-| trapper.poacher · trapper_blastTrap | 3 | 1% | 1,46 → 1,39 |
+| trapper.poacher · trapper_blastTrap | 3 | 1% | 1,39 |
 | trapper.poacher · trapper_stalker | 1 | 0% | 0,00 |
 | trapper.poacher · trapper_ambush | 3 | 0% | 0,00 |
-| trapper.poacher · trapper_masterTrapper | 1 | 6% → 8% | 6,77 → 7,65 |
-| trapper.poacher · trapper_denseSnares | 3 | 1% → 0% | 0,61 → 0,19 |
-| trapper.poacher · trapper_basilisk | 3 | 0% → 1% | 0,48 → 0,57 |
+| trapper.poacher · trapper_masterTrapper | 1 | 8% | 7,65 |
+| trapper.poacher · trapper_denseSnares | 3 | 0% | 0,19 |
+| trapper.poacher · trapper_basilisk | 3 | 1% | 0,57 |
 | trapper.poacher · trapper_woodsman | 3 | 0% | 0,00 |
-| trapper.poacher · trapper_snarefield2 | 2 | 1% | 1,32 → 1,15 |
-| destroyer.destroyerExp · destroyer_eye | 3 | 1% | 1,04 → 1,00 |
-| destroyer.destroyerExp · destroyer_might | 3 | 4% | 3,51 → 3,63 |
+| trapper.poacher · trapper_snarefield2 | 2 | 1% | 1,15 |
+| destroyer.destroyerExp · destroyer_eye | 3 | 1% | 1,00 |
+| destroyer.destroyerExp · destroyer_might | 3 | 4% | 3,63 |
 | destroyer.destroyerExp · destroyer_mantle | 3 | 0% | 0,00 |
-| destroyer.destroyerExp · destroyer_echo | 1 | 1% | 0,93 → 0,90 |
-| destroyer.destroyerExp · destroyer_wrath | 3 | 2% → 1% | 1,52 → 1,44 |
-| destroyer.destroyerExp · destroyer_raging | 3 | 1% | 0,93 → 0,90 |
-| destroyer.destroyerExp · destroyer_surge | 1 | 2% | 1,54 → 1,65 |
+| destroyer.destroyerExp · destroyer_echo | 1 | 1% | 0,90 |
+| destroyer.destroyerExp · destroyer_wrath | 3 | 1% | 1,44 |
+| destroyer.destroyerExp · destroyer_raging | 3 | 1% | 0,90 |
+| destroyer.destroyerExp · destroyer_surge | 1 | 2% | 1,65 |
 | destroyer.destroyerExp · destroyer_flow | 3 | 0% | 0,00 |
-| destroyer.destroyerExp · destroyer_cataclysm2 | 2 | 1% | 1,24 → 1,20 |
+| destroyer.destroyerExp · destroyer_cataclysm2 | 2 | 1% | 1,20 |
 | destroyer.destroyerExp · destroyer_grit | 2 | 0% | 0,00 |
 | destroyer.destroyerExp · destroyer_veins | 3 | 0% | 0,28 |
-| arcanist.arcanistBoss · arcanist_fullDischarge | 3 | 0% | 4,51 → 1,71 |
-| arcanist.arcanistBoss · arcanist_might | 3 | 0% | 2,67 → 1,10 |
-| arcanist.arcanistBoss · arcanist_mounting | 3 | 0% | 1,45 → 0,62 |
-| arcanist.arcanistBoss · arcanist_quickening | 1 | 0% | 2,82 → 1,04 |
+| arcanist.arcanistBoss · arcanist_fullDischarge | 3 | 0% | 1,71 |
+| arcanist.arcanistBoss · arcanist_might | 3 | 0% | 1,10 |
+| arcanist.arcanistBoss · arcanist_mounting | 3 | 0% | 0,62 |
+| arcanist.arcanistBoss · arcanist_quickening | 1 | 0% | 1,04 |
 | arcanist.arcanistBoss · arcanist_invocation | 3 | 0% | 0,00 |
-| arcanist.arcanistBoss · arcanist_rending | 3 | 0% | 1,54 → 1,78 |
-| arcanist.arcanistBoss · arcanist_arcaneMind | 3 | 0% | 2,94 → 1,19 |
+| arcanist.arcanistBoss · arcanist_rending | 3 | 0% | 1,78 |
+| arcanist.arcanistBoss · arcanist_arcaneMind | 3 | 0% | 1,19 |
 | arcanist.arcanistBoss · arcanist_archmage | 3 | 0% | 0,00 |
 | arcanist.arcanistBoss · arcanist_masterMind | 3 | 0% | 0,00 |
-| arcanist.arcanistBoss · arcanist_torrent2 | 2 | 0% | -1,05 → 1,64 |
-| arcanist.arcanistBoss · arcanist_reclaim | 3 | 0% → 1% | -2,88 → 2,93 |
+| arcanist.arcanistBoss · arcanist_torrent2 | 2 | 0% | 1,64 |
+| arcanist.arcanistBoss · arcanist_reclaim | 3 | 1% | 2,93 |
 | arcanist.arcanistBoss · arcanist_will | 1 | 0% | 0,00 |
 
 ### Elity i Elity II (E3)
@@ -17520,9 +17643,9 @@ Wartość cechy = M(z) / M(bez) − 1 (definicja S84 / S88): S84 `Balance.traitV
 
 | build · poziom | obszar 8 s | obszar 8 s: koła | 1 cel 60 s | 1 cel 60 s: koła |
 | --- | --: | --: | --: | --: |
-| trapper.poacher · 45 | 4653 → 4639 | 4655 → 4641 | 1947 → 1950 | 1955 → 1961 |
-| trapper.poacher · 70 | 14 324 → 14 054 | 14 324 → 14 054 | 4972 → 5029 | 5021 → 5089 |
-| trapper.poacher · 100 | 32 402 → 31 880 | 32 495 → 31 973 | 11 378 → 11 633 | 11 395 → 11 657 |
+| trapper.poacher · 45 | 4639 | 4641 | 1950 | 1961 |
+| trapper.poacher · 70 | 14 054 | 14 054 | 5029 | 5089 |
+| trapper.poacher · 100 | 31 880 | 31 973 | 11 633 | 11 657 |
 
 ### Wsparcie: B na źródła
 
@@ -17591,21 +17714,21 @@ Chorąży (`SkillModel.standardSupport`): średnie w czasie premii drużynowych 
 
 | build · poziom | zapotrzebowanie / s | regeneracja / s | bierne zwroty / s | T-SK4 | Inwokacja / s | T-SK4 z Inwokacją |
 | --- | --: | --: | --: | --: | --: | --: |
-| base · 45 | 47,4 → 27,5 | 10,4 | 3,74 → 2,54 | **3,34 → 2,12** | 5,9 | 2,36 → 1,46 |
-| base · 70 | 79,5 → 69,2 | 16,0 | 7,55 → 9,97 | **3,38 → 2,67** | 15,2 | 2,05 → 1,68 |
-| base · 100 | 108,7 → 78,9 | 22,6 | 16,09 → 13,86 | **2,81 → 2,16** | 41,0 | 1,36 → 1,02 |
-| destroyer.destroyerExp · 45 | 20,7 → 12,0 | 10,4 | 0,00 | **1,98 → 1,15** | 0,0 | 1,98 → 1,15 |
-| destroyer.destroyerExp · 70 | 47,8 → 50,3 | 16,0 | 12,03 → 12,17 | **1,71 → 1,79** | 0,0 | 1,71 → 1,79 |
-| destroyer.destroyerExp · 100 | 63,1 → 55,3 | 22,6 | 21,70 → 18,59 | **1,42 → 1,34** | 0,0 | 1,42 → 1,34 |
-| destroyer.destroyerBoss · 45 | 32,2 → 18,7 | 10,4 | 0,00 | 3,09 → 1,79 | 0,0 | 3,09 → 1,79 |
-| destroyer.destroyerBoss · 70 | 58,1 → 52,6 | 16,0 | 12,42 → 10,34 | 2,05 → 2,00 | 0,0 | 2,05 → 2,00 |
-| destroyer.destroyerBoss · 100 | 76,4 → 57,6 | 22,6 | 22,17 | **1,71 → 1,29** | 0,0 | 1,71 → 1,29 |
-| arcanist.arcanistBoss · 45 | 23,6 → 13,7 | 12,2 | 0,00 | **1,93 → 1,12** | 7,7 | 1,18 → 0,69 |
-| arcanist.arcanistBoss · 70 | 42,8 → 34,7 | 18,7 | 2,33 | **2,03 → 1,65** | 32,3 | 0,80 → 0,65 |
-| arcanist.arcanistBoss · 100 | 62,9 → 48,2 | 26,6 | 3,16 | **2,11 → 1,62** | 48,2 | 0,81 → 0,62 |
-| arcanist.arcanistOverload · 45 | 29,9 → 17,4 | 12,2 | 0,00 | **2,45 → 1,42** | 7,7 | 1,50 → 0,87 |
-| arcanist.arcanistOverload · 70 | 54,3 → 44,1 | 18,7 | 2,33 | **2,58 → 2,09** | 32,3 | 1,02 → 0,83 |
-| arcanist.arcanistOverload · 100 | 79,8 → 61,3 | 26,6 | 3,16 | **2,68 → 2,06** | 48,2 | 1,02 → 0,79 |
+| base · 45 | 27,5 | 10,4 | 2,54 | **2,12** | 5,9 | 1,46 |
+| base · 70 | 69,2 | 16,0 | 9,97 | **2,67** | 15,2 | 1,68 |
+| base · 100 | 78,9 | 22,6 | 13,86 | **2,16** | 41,0 | 1,02 |
+| destroyer.destroyerExp · 45 | 12,0 | 10,4 | 0,00 | **1,15** | 0,0 | 1,15 |
+| destroyer.destroyerExp · 70 | 50,3 | 16,0 | 12,17 | **1,79** | 0,0 | 1,79 |
+| destroyer.destroyerExp · 100 | 55,3 | 22,6 | 18,59 | **1,34** | 0,0 | 1,34 |
+| destroyer.destroyerBoss · 45 | 18,7 | 10,4 | 0,00 | 1,79 | 0,0 | 1,79 |
+| destroyer.destroyerBoss · 70 | 52,6 | 16,0 | 10,34 | 2,00 | 0,0 | 2,00 |
+| destroyer.destroyerBoss · 100 | 57,6 | 22,6 | 22,17 | **1,29** | 0,0 | 1,29 |
+| arcanist.arcanistBoss · 45 | 13,7 | 12,2 | 0,00 | **1,12** | 7,7 | 0,69 |
+| arcanist.arcanistBoss · 70 | 34,7 | 18,7 | 2,33 | **1,65** | 32,3 | 0,65 |
+| arcanist.arcanistBoss · 100 | 48,2 | 26,6 | 3,16 | **1,62** | 48,2 | 0,62 |
+| arcanist.arcanistOverload · 45 | 17,4 | 12,2 | 0,00 | **1,42** | 7,7 | 0,87 |
+| arcanist.arcanistOverload · 70 | 44,1 | 18,7 | 2,33 | **2,09** | 32,3 | 0,83 |
+| arcanist.arcanistOverload · 100 | 61,3 | 26,6 | 3,16 | **2,06** | 48,2 | 0,79 |
 
 ### Baza na L20 dla S91 (S90)
 
@@ -17652,52 +17775,52 @@ Pozycje „Tylko raport” S90 (kto asertuje w etykiecie): moc √(1 cel 60 s ×
 | moc Strzelca (heavycrossbow) / Furia · 45 [raport: S92–S94] | 0,96 | – |
 | Traper (crossbow) / Furia, 1 cel 60 s · 45 [zwolniony z R7] | 1,05 | – |
 | Traper (bow) / Furia, 1 cel 60 s · 45 [zwolniony z R7] | 1,08 | – |
-| Truciciel / baza, boss 60 s · 45 [raport] | 1,07 → 1,08 | – |
-| Truciciel / baza, boss 180 s · 45 [raport] | 1,03 → 1,06 | – |
+| Truciciel / baza, boss 60 s · 45 [raport] | 1,08 | – |
+| Truciciel / baza, boss 180 s · 45 [raport] | 1,06 | – |
 | EHP Zwiadowcy / bazy · 45 [raport] | 1,29 | 1,20 |
-| Przeciążenie / baza, boss 180 s · 45 [raport] | 1,20 → 1,01 | – |
-| Przeciążenie / Niszczyciel (boss) · 45 [raport] | 1,10 → 0,95 | – |
-| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 45 [raport] | 8,2 → 6,9 | – |
+| Przeciążenie / baza, boss 180 s · 45 [raport] | 1,01 | – |
+| Przeciążenie / Niszczyciel (boss) · 45 [raport] | 0,95 | – |
+| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 45 [raport] | 6,9 | – |
 | czas na potwora z odpoczynkiem: arcanist.arcanistBoss · 45 [raport] | 9,0 | – |
 | czas na potwora z odpoczynkiem: baza · 45 [raport] | 8,5 | – |
 | rozrzut żywiołów destroyer.destroyerExp single60 · 45 [właściciel] | **70%** | – |
 | rozrzut żywiołów destroyer.destroyerExp aoe3sus · 45 [właściciel] | **59%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss single60 · 45 [właściciel] | **44% → 46%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 45 [właściciel] | **74% → 75%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss single60 · 45 [właściciel] | **46%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 45 [właściciel] | **75%** | – |
 | moc Strzelca (longbow) / Furia · 70 [raport: S92–S94] | 1,01 | – |
-| moc Strzelca (heavycrossbow) / Furia · 70 [raport: S92–S94] | **0,94 → 0,95** | – |
-| Traper (crossbow) / Furia, 1 cel 60 s · 70 [zwolniony z R7] | 1,05 → 1,06 | – |
+| moc Strzelca (heavycrossbow) / Furia · 70 [raport: S92–S94] | **0,95** | – |
+| Traper (crossbow) / Furia, 1 cel 60 s · 70 [zwolniony z R7] | 1,06 | – |
 | Traper (bow) / Furia, 1 cel 60 s · 70 [zwolniony z R7] | **0,99** | – |
-| Truciciel / baza, boss 60 s · 70 [raport] | 1,13 → 1,17 | – |
-| Truciciel / baza, boss 180 s · 70 [raport] | 1,12 → 1,17 | – |
+| Truciciel / baza, boss 60 s · 70 [raport] | 1,17 | – |
+| Truciciel / baza, boss 180 s · 70 [raport] | 1,17 | – |
 | EHP Zwiadowcy / bazy · 70 [raport] | 1,36 | 1,20 |
-| Przeciążenie / baza, boss 180 s · 70 [raport] | 1,10 → 0,99 | – |
-| Przeciążenie / Niszczyciel (boss) · 70 [raport] | 1,14 → 1,07 | – |
-| udział Strumienia (z / bez), boss 180 s · 70 [raport] | 1,01 → 1,02 | 1,03 |
-| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 70 [raport] | 9,9 → 8,1 | – |
+| Przeciążenie / baza, boss 180 s · 70 [raport] | 0,99 | – |
+| Przeciążenie / Niszczyciel (boss) · 70 [raport] | 1,07 | – |
+| udział Strumienia (z / bez), boss 180 s · 70 [raport] | 1,02 | 1,03 |
+| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 70 [raport] | 8,1 | – |
 | czas na potwora z odpoczynkiem: arcanist.arcanistBoss · 70 [raport] | 19,6 | – |
-| czas na potwora z odpoczynkiem: baza · 70 [raport] | 10,8 → 8,0 | – |
+| czas na potwora z odpoczynkiem: baza · 70 [raport] | 8,0 | – |
 | rozrzut żywiołów destroyer.destroyerExp single60 · 70 [właściciel] | **85%** | – |
 | rozrzut żywiołów destroyer.destroyerExp aoe3sus · 70 [właściciel] | **86%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss single60 · 70 [właściciel] | **50% → 42%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 70 [właściciel] | **96% → 81%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss single60 · 70 [właściciel] | **42%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 70 [właściciel] | **81%** | – |
 | moc Strzelca (longbow) / Furia · 100 [raport: S92–S94] | 1,07 | – |
 | moc Strzelca (heavycrossbow) / Furia · 100 [raport: S92–S94] | 1,00 | – |
-| Traper (crossbow) / Furia, 1 cel 60 s · 100 [zwolniony z R7] | **1,13 → 1,15** | – |
+| Traper (crossbow) / Furia, 1 cel 60 s · 100 [zwolniony z R7] | **1,15** | – |
 | Traper (bow) / Furia, 1 cel 60 s · 100 [zwolniony z R7] | **0,96** | – |
-| Truciciel / baza, boss 60 s · 100 [raport] | 1,06 → 1,07 | – |
-| Truciciel / baza, boss 180 s · 100 [raport] | 1,05 → 1,06 | – |
+| Truciciel / baza, boss 60 s · 100 [raport] | 1,07 | – |
+| Truciciel / baza, boss 180 s · 100 [raport] | 1,06 | – |
 | EHP Zwiadowcy / bazy · 100 [raport] | 1,37 | 1,20 |
-| Przeciążenie / baza, boss 180 s · 100 [raport] | 0,95 → 0,85 | 1,52 |
-| Przeciążenie / Niszczyciel (boss) · 100 [raport] | 1,12 → 0,99 | 1,28 |
-| udział Strumienia (z / bez), boss 180 s · 100 [raport] | 1,03 → 1,11 | 1,08 |
-| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 100 [raport] | 11,4 → 9,8 | – |
+| Przeciążenie / baza, boss 180 s · 100 [raport] | 0,85 | 1,52 |
+| Przeciążenie / Niszczyciel (boss) · 100 [raport] | 0,99 | 1,28 |
+| udział Strumienia (z / bez), boss 180 s · 100 [raport] | 1,11 | 1,08 |
+| czas na potwora z odpoczynkiem: destroyer.destroyerExp · 100 [raport] | 9,8 | – |
 | czas na potwora z odpoczynkiem: arcanist.arcanistBoss · 100 [raport] | 16,9 | – |
-| czas na potwora z odpoczynkiem: baza · 100 [raport] | 12,9 → 9,7 | – |
+| czas na potwora z odpoczynkiem: baza · 100 [raport] | 9,7 | – |
 | rozrzut żywiołów destroyer.destroyerExp single60 · 100 [właściciel] | **83%** | – |
-| rozrzut żywiołów destroyer.destroyerExp aoe3sus · 100 [właściciel] | **88% → 91%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss single60 · 100 [właściciel] | **35% → 30%** | – |
-| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 100 [właściciel] | **79% → 68%** | – |
+| rozrzut żywiołów destroyer.destroyerExp aoe3sus · 100 [właściciel] | **91%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss single60 · 100 [właściciel] | **30%** | – |
+| rozrzut żywiołów arcanist.arcanistBoss aoe3sus · 100 [właściciel] | **68%** | – |
 
 ### Model a ROZWOJ (D10)
 
@@ -17767,31 +17890,31 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | cleric.solo · fortune.plunder · 70 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,74 | 1,35 | **-45%** |
 | cleric.solo · fortune.plunder · 100 (9.0 mówi 1,35) (walka, w której potwory oddają, i Leczenie między walkami) | 0,81 | 1,11 | **-27%** |
 | marksman.base · marksman.kingslayer@heavycrossbow+quiver · 20 (baza z przełomami Strzelca, cechy broni) | 1,04 | 1,16 | **-11%** |
-| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 45 (baza z przełomami Strzelca, cechy broni) | 1,14 → 1,16 | 1,29 | -12% → -10% |
-| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 70 (baza z przełomami Strzelca, cechy broni) | 1,21 → 1,25 | 1,37 | -12% → -9% |
-| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 100 (baza z przełomami Strzelca, cechy broni) | 1,18 → 1,17 | 1,36 | **-14%** |
+| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 45 (baza z przełomami Strzelca, cechy broni) | 1,16 | 1,29 | -10% |
+| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 70 (baza z przełomami Strzelca, cechy broni) | 1,25 | 1,37 | -9% |
+| marksman.base · marksman.kingslayer@heavycrossbow+quiver · 100 (baza z przełomami Strzelca, cechy broni) | 1,17 | 1,36 | **-14%** |
 | marksman.base · marksman.kingslayer · 20 (baza z przełomami Strzelca, cechy broni) | 1,00 | 1,15 | **-13%** |
 | marksman.base · marksman.kingslayer · 45 (baza z przełomami Strzelca, cechy broni) | 1,22 | 1,29 | -5% |
 | marksman.base · marksman.kingslayer · 70 (baza z przełomami Strzelca, cechy broni) | 1,33 | 1,36 | -2% |
 | marksman.base · marksman.kingslayer · 100 (baza z przełomami Strzelca, cechy broni) | 1,24 | 1,35 | -8% |
 | marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 20 (Furia krok po kroku) | 1,01 | 1,16 | **-13%** |
 | marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 45 (Furia krok po kroku) | 1,18 | 1,29 | -8% |
-| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 70 (Furia krok po kroku) | 1,26 → 1,27 | 1,38 | -9% → -8% |
+| marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 70 (Furia krok po kroku) | 1,27 | 1,38 | -8% |
 | marksman.r7 · marksman.kingslayer@heavycrossbow+quiver · 100 (Furia krok po kroku) | 1,34 | 1,35 | -1% |
 | marksman.r7 · marksman.kingslayer · 20 (Furia krok po kroku) | 1,01 | 1,15 | **-13%** |
 | marksman.r7 · marksman.kingslayer · 45 (Furia krok po kroku) | 1,24 | 1,29 | -4% |
 | marksman.r7 · marksman.kingslayer · 70 (Furia krok po kroku) | 1,26 | 1,37 | -8% |
 | marksman.r7 · marksman.kingslayer · 100 (Furia krok po kroku) | 1,32 | 1,34 | -1% |
-| trapper.aoe · trapper.poacher · 45 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,24 → 1,25 | 1,18 | 5% → 6% |
-| trapper.aoe · trapper.poacher · 70 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,43 → 1,41 | 1,11 | **29% → 27%** |
-| trapper.aoe · trapper.poacher · 100 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,18 → 1,16 | 1,29 | -8% → -10% |
-| trapper.aoe · trapper.poacher@bow+quiver · 45 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,91 → 0,92 | 1,24 | **-26%** |
-| trapper.aoe · trapper.poacher@bow+quiver · 70 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,82 → 0,83 | 1,17 | **-30% → -29%** |
+| trapper.aoe · trapper.poacher · 45 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,25 | 1,18 | 6% |
+| trapper.aoe · trapper.poacher · 70 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,41 | 1,11 | **27%** |
+| trapper.aoe · trapper.poacher · 100 (pułapki z danymi S76 (obrażenia, pierścień)) | 1,16 | 1,29 | -10% |
+| trapper.aoe · trapper.poacher@bow+quiver · 45 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,92 | 1,24 | **-26%** |
+| trapper.aoe · trapper.poacher@bow+quiver · 70 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,83 | 1,17 | **-29%** |
 | trapper.aoe · trapper.poacher@bow+quiver · 100 (pułapki z danymi S76 (obrażenia, pierścień)) | 0,61 | 1,35 | **-55%** |
 | trapper.single · trapper.poacher · 20 (bez R7) (pułapki z obrażeniami na jednym celu) | 0,95 | 0,98 | -3% |
-| trapper.single · trapper.poacher · 45 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,07 → 1,10 | 1,01 | 6% → 9% |
-| trapper.single · trapper.poacher · 70 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,16 → 1,20 | 1,05 | **10% → 14%** |
-| trapper.single · trapper.poacher · 100 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,04 → 1,06 | 1,05 | -1% → 1% |
+| trapper.single · trapper.poacher · 45 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,10 | 1,01 | 9% |
+| trapper.single · trapper.poacher · 70 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,20 | 1,05 | **14%** |
+| trapper.single · trapper.poacher · 100 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,06 | 1,05 | 1% |
 | trapper.single · trapper.poacher@bow+quiver · 20 (bez R7) (pułapki z obrażeniami na jednym celu) | 0,97 | 1,02 | -5% |
 | trapper.single · trapper.poacher@bow+quiver · 45 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,02 | 1,06 | -3% |
 | trapper.single · trapper.poacher@bow+quiver · 70 (bez R7) (pułapki z obrażeniami na jednym celu) | 1,09 | 1,09 | 0% |
@@ -17807,41 +17930,41 @@ Wiersze celów z liczbą z tabeli ROZWOJ (9.6, 10.6, 11.6, 12.7) dla tego samego
 | scout.S · scout.partyHunter · 100 (Królobójca z cechami) | 0,76 | 0,86 | **-12%** |
 | scout.solo · scout.partyHunter · 20 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,03 | 1,03 | 0% |
 | scout.solo · scout.partyHunter · 45 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,37 | 1,23 | **11%** |
-| scout.solo · scout.partyHunter · 70 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,65 → 1,62 | 1,24 | **33% → 31%** |
-| scout.solo · scout.partyHunter · 100 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,58 → 1,68 | 1,33 | **19% → 26%** |
+| scout.solo · scout.partyHunter · 70 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,62 | 1,24 | **31%** |
+| scout.solo · scout.partyHunter · 100 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,68 | 1,33 | **26%** |
 | scout.solo · scout.partyHunter@shortbow+quiver · 20 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,02 | 1,01 | 1% |
 | scout.solo · scout.partyHunter@shortbow+quiver · 45 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,36 | 1,21 | **12%** |
-| scout.solo · scout.partyHunter@shortbow+quiver · 70 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,65 → 1,62 | 1,23 | **34% → 32%** |
-| scout.solo · scout.partyHunter@shortbow+quiver · 100 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,58 → 1,71 | 1,32 | **20% → 29%** |
-| destroyer.aoe · destroyer.destroyerExp · 45 (próg obszaru i Kaskada w modelu) | 0,83 → 0,82 | 1,21 | **-31% → -32%** |
-| destroyer.aoe · destroyer.destroyerExp · 70 (próg obszaru i Kaskada w modelu) | 0,94 → 0,93 | 1,38 | **-32% → -33%** |
-| destroyer.aoe · destroyer.destroyerExp · 100 (próg obszaru i Kaskada w modelu) | 0,86 → 0,82 | 1,46 | **-41% → -44%** |
+| scout.solo · scout.partyHunter@shortbow+quiver · 70 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,62 | 1,23 | **32%** |
+| scout.solo · scout.partyHunter@shortbow+quiver · 100 ((a) grupa 8 s) (Traper z pułapkami w grupie) | 1,71 | 1,32 | **29%** |
+| destroyer.aoe · destroyer.destroyerExp · 45 (próg obszaru i Kaskada w modelu) | 0,82 | 1,21 | **-32%** |
+| destroyer.aoe · destroyer.destroyerExp · 70 (próg obszaru i Kaskada w modelu) | 0,93 | 1,38 | **-33%** |
+| destroyer.aoe · destroyer.destroyerExp · 100 (próg obszaru i Kaskada w modelu) | 0,82 | 1,46 | **-44%** |
 | destroyer.single · destroyer.destroyerBoss · 20 (baza z przełomami buildu) | 0,95 | 0,98 | -4% |
-| destroyer.single · destroyer.destroyerBoss · 45 (baza z przełomami buildu) | 1,10 → 1,07 | 1,07 | 2% → 0% |
-| destroyer.single · destroyer.destroyerBoss · 70 (baza z przełomami buildu) | 1,06 → 1,01 | 1,14 | **-7% → -12%** |
-| destroyer.single · destroyer.destroyerBoss · 100 (baza z przełomami buildu) | 0,84 → 0,85 | 1,19 | **-29% → -28%** |
+| destroyer.single · destroyer.destroyerBoss · 45 (baza z przełomami buildu) | 1,07 | 1,07 | 0% |
+| destroyer.single · destroyer.destroyerBoss · 70 (baza z przełomami buildu) | 1,01 | 1,14 | **-12%** |
+| destroyer.single · destroyer.destroyerBoss · 100 (baza z przełomami buildu) | 0,85 | 1,19 | **-28%** |
 | arcanist.single · arcanist.arcanistBoss · 20 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,15 | 1,02 | **13%** |
-| arcanist.single · arcanist.arcanistBoss · 45 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,18 → 1,01 | 1,23 | **-4% → -18%** |
-| arcanist.single · arcanist.arcanistBoss · 70 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,08 → 1,00 | 1,36 | **-20% → -27%** |
-| arcanist.single · arcanist.arcanistBoss · 100 (Ładunki, Strumień, Wzmocnienie w modelu) | 0,93 → 0,89 | 1,47 | **-37% → -40%** |
+| arcanist.single · arcanist.arcanistBoss · 45 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,01 | 1,23 | **-18%** |
+| arcanist.single · arcanist.arcanistBoss · 70 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,00 | 1,36 | **-27%** |
+| arcanist.single · arcanist.arcanistBoss · 100 (Ładunki, Strumień, Wzmocnienie w modelu) | 0,89 | 1,47 | **-40%** |
 | arcanist.vsDestroyer · arcanist.arcanistBoss · 20 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,22 | 1,04 | **17%** |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 45 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,09 → 0,95 | 1,15 | **-5% → -18%** |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 70 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,12 → 1,07 | 1,20 | **-7% → -10%** |
-| arcanist.vsDestroyer · arcanist.arcanistBoss · 100 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,10 → 1,03 | 1,24 | **-11% → -17%** |
-| mage.tsk4 · destroyer.destroyerExp · 45 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,98 → 1,15 | 1,97 | **1% → -42%** |
-| mage.tsk4 · destroyer.destroyerExp · 70 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,71 → 1,79 | 2,48 | **-31% → -28%** |
-| mage.tsk4 · destroyer.destroyerExp · 100 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,42 → 1,34 | 2,18 | **-35% → -38%** |
-| mage.tsk4 · arcanist.arcanistBoss · 45 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,93 → 1,12 | 2,02 | **-4% → -45%** |
-| mage.tsk4 · arcanist.arcanistBoss · 70 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,03 → 1,65 | 2,32 | **-12% → -29%** |
-| mage.tsk4 · arcanist.arcanistBoss · 100 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,11 → 1,62 | 2,40 | **-12% → -32%** |
-| mage.tsk4 · destroyer.destroyerBoss · 45 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 3,09 → 1,79 | 1,64 | 88% → 9% |
-| mage.tsk4 · destroyer.destroyerBoss · 70 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,05 → 2,00 | 2,11 | -3% → -5% |
-| mage.tsk4 · destroyer.destroyerBoss · 100 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,71 → 1,29 | 1,82 | **-6% → -29%** |
-| mage.tsk4 · arcanist.arcanistOverload · 45 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,45 → 1,42 | 2,62 | **-6% → -46%** |
-| mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,58 → 2,09 | 2,75 | **-6% → -24%** |
-| mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,68 → 2,06 | 2,79 | **-4% → -26%** |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 45 (Ładunki, Strumień, Wzmocnienie w modelu) | 0,95 | 1,15 | **-18%** |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 70 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,07 | 1,20 | **-10%** |
+| arcanist.vsDestroyer · arcanist.arcanistBoss · 100 (Ładunki, Strumień, Wzmocnienie w modelu) | 1,03 | 1,24 | **-17%** |
+| mage.tsk4 · destroyer.destroyerExp · 45 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,15 | 1,97 | **-42%** |
+| mage.tsk4 · destroyer.destroyerExp · 70 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,79 | 2,48 | **-28%** |
+| mage.tsk4 · destroyer.destroyerExp · 100 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,34 | 2,18 | **-38%** |
+| mage.tsk4 · arcanist.arcanistBoss · 45 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,12 | 2,02 | **-45%** |
+| mage.tsk4 · arcanist.arcanistBoss · 70 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,65 | 2,32 | **-29%** |
+| mage.tsk4 · arcanist.arcanistBoss · 100 (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,62 | 2,40 | **-32%** |
+| mage.tsk4 · destroyer.destroyerBoss · 45 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,79 | 1,64 | 9% |
+| mage.tsk4 · destroyer.destroyerBoss · 70 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,00 | 2,11 | -5% |
+| mage.tsk4 · destroyer.destroyerBoss · 100 (wariant: Oszczędny Splot) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,29 | 1,82 | **-29%** |
+| mage.tsk4 · arcanist.arcanistOverload · 45 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 1,42 | 2,62 | **-46%** |
+| mage.tsk4 · arcanist.arcanistOverload · 70 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,09 | 2,75 | **-24%** |
+| mage.tsk4 · arcanist.arcanistOverload · 100 (wariant: Przeciążenie) (koszt z Ładunkami, bierne zwroty, Kaskada z walki z grupą) | 2,06 | 2,79 | **-26%** |
 
-Tabele S86 liczą się 25,8 s.
+Tabele S86 liczą się 26,1 s.
 
 ## Poprawki globalne (S87)
 

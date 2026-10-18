@@ -478,7 +478,7 @@ T.describe("Balance: bosses 2.0 (S134)", function()
 	end)
 	T.it("every boss has at least two big blows to dodge and a party mechanic; Vaelgrath has all three", function()
 		local Bosses = require("../src/shared/Data/Bosses")
-		for _, def in Bosses.list do
+		for _, def in Bosses.all do -- S149: the world boss too
 			local avoid, mechanics = 0, {} :: { [string]: boolean }
 			for _, attack in def.attacks do
 				if attack.avoid then
@@ -498,6 +498,53 @@ T.describe("Balance: bosses 2.0 (S134)", function()
 			end
 		end
 		T.expect({ all.split, all.mark, all.channel }).toEqual({ true, true, true })
+	end)
+end)
+
+-- S149 (F2): the world boss (Balance.targetsS149): 10 players of level 99 in 9-12 min, 20 in 5-7, more players always
+-- shorter, 5 of level 100 lose, the shared blow kills below 7 in the circle, the channel needs 10, three brands, the big
+-- blows in the S134 band, the loot per hour of play at most half of Vaelgrath's; every row without `report` asserted
+-- (Balance.S149_REPORT prints the rest with the reason; none of the rule-9 rows may be there).
+T.describe("Balance: world boss (S149)", function()
+	local rows = B.targetsS149()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local who = if row.classId then `{row.classId} ` else ""
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{who}{at}{describeRow(row)} (S149, docs/sessions S149 F2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S149 targets (printed); the rows without a report mode are never in Balance.S149_REPORT", function()
+		printReport("S149", rows, 20)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+			if row.report then
+				print(`  raport: {row.id} {fmt(row.value)} ({row.report})`)
+			end
+		end
+		local strict = {
+			"S149.hrimvald.faster15",
+			"S149.hrimvald.faster20",
+			"S149.hrimvald.faster15@nodes",
+			"S149.hrimvald.faster20@nodes",
+			"S149.hrimvald.five.loses",
+			"S149.hrimvald.split7",
+			"S149.hrimvald.loot.Warrior",
+			"S149.hrimvald.loot.Hunter",
+			"S149.hrimvald.loot.Mage",
+			"S149.hrimvald.loot.Cleric",
+		}
+		for _, id in strict do
+			T.expect({ id, ids[id] == true, B.S149_REPORT[id] }).toEqual({ id, true, nil })
+		end
+		for key in B.S149_REPORT do
+			T.expect({ key, ids[key] == true }).toEqual({ key, true })
+		end
 	end)
 end)
 

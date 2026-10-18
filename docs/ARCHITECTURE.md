@@ -564,6 +564,14 @@ type CharacterData = {
   S101), okno `UI/Screens/BloodMoonWindow` (`BloodMoonController`, bez klawisza), `WorldController.SetEventTint`
   (czerwone niebo nad otwartymi regionami), wpis menu HUD `bloodmoon`, przycisk w `GameMenu`, ekran śmierci.
 
+### Boss świata (S149)
+
+- `WorldBossService` (tylko `ServerMode.isWorld()`): terminy z zegara UTC (czysty `Logic/WorldBoss`: `occurrenceAt`,
+  `next`, `list`, `blocked`, `canReward`, `reward`, `rollItem`, `publicOf`), boss `Entities/Boss` z dostawcą `Services`
+  otwartego świata, udział z sygnałów przez wspólny `Logic/Contribution` (też S101), gałąź runtime `worldBoss`
+  (`Public` + `mine` albo `{ next }`), zapis `account.worldBoss.last` (jedna nagroda na konto i termin), blokada
+  wydarzeń (`WorldEventService.AddBlocker`), koło bez PvP (`PvpService.AddFightRule`), licznik walki `"worldboss"`.
+
 ### Turniej Czempiona (S130)
 
 - **Dane i logika:** slot `tourney` w `Data/ScheduledEvents` (sobota 19:00 UTC, `warn = {}`), `Data/Arena.TOURNEY`
@@ -726,7 +734,8 @@ sekcja wyglądu w kreatorze, filtr klas i strój klasy w garderobie, wiersz „P
 | `/bloodmoon` | world | <info|start|stop|settle|points> [n] | Krwawy Księżyc na tym serwerze: stan, wymuszenie na n min (osobne tablice `t…`), koniec, rozliczenie teraz, punkty adminowi w regionie (S129) ⚠ start, stop |
 | `/tourney` | world | <info|open|close|start|cancel|win|force> [a] | Turniej Czempiona: stan; open … win = testowy turniej lokalny (S130); force [min] = prawdziwy turniej na wszystkich serwerach za min minut (S131) ⚠ cancel, force |
 | `/rankweek` | world | <info|flush|pay|reset|add> [value] | ranking tygodnia: stan, zapis teraz, wypłata tygodnia (domyślnie poprzedniego, przez blokadę; trwający tydzień tylko w Studio, S131), czyszczenie atrapy, EXP tylko do tygodnia postaci (S125) ⚠ pay, reset |
-| `/sched` | world |  | najbliższe terminy wydarzeń z zegara (UTC) i wymuszone na tym serwerze (S131) |
+| `/sched` | world |  | najbliższe terminy wydarzeń z zegara (UTC) i wymuszone na tym serwerze (S131; S149: też boss świata) |
+| `/worldboss` | world | <info|start|stop|hp|phase> [a] | boss świata na tym serwerze: następny termin i stan, wymuszenie (`start now` od razu, `wbforce<n>`, nie liczy się do prawdziwych terminów), odwołanie bez nagród, HP w %, faza (S149) ⚠ start, stop |
 | `/finder` | world | <list|clear> | S134f: tablica drużyn tego serwera (ogłoszenia albo wyczyszczenie) |
 | `/daytime` | world | <hour> | pora dnia na mapach z cyklem dnia i nocy |
 | `/nodes` | world | <respawn|count> | odnów wszystkie węzły zbieractwa albo policz węzły na tej mapie |

@@ -134,7 +134,7 @@ T.describe("Localization of data tables", function()
 		for id in (Abilities :: any).byId do
 			check(`ability.{id}.name`)
 		end
-		for _, boss in MODULES.Bosses.list do
+		for _, boss in MODULES.Bosses.all do -- S149: the world boss too
 			for _, a in boss.attacks do
 				check(`boss.{boss.id}.attack.{a.id}`)
 			end

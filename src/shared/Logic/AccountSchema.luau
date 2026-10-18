@@ -77,6 +77,8 @@ function AccountSchema.accountTemplate(): AccountData
 		shopLimits = { day = 0, week = 0, daily = {}, weekly = {} },
 		-- S100: login reward streak (Logic/LoginReward): last claimed day 0..7 and its UTC day
 		login = { day = 0, last = 0 },
+		-- S149: the last world boss occurrence rewarded on this account (Logic/WorldBoss); no migration (reconcile)
+		worldBoss = { last = "" },
 		-- S121: VIP state (Logic/Vip): UTC day of the last daily shards, free respawns used on respawnDay,
 		-- last free recall (Clock seconds), months whose VIP cosmetic was given ("YYYYMM" -> true).
 		vip = { shardDay = 0, respawnDay = 0, respawnN = 0, recallAt = 0, months = {} },

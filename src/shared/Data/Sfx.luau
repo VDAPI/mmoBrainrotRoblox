@@ -494,8 +494,15 @@ local BOSS_HINTS: { [string]: { roar: string, attack: string, death: string, pha
 		death = "dragon death roar long",
 		phase = "deep gong boom impact",
 	},
+	-- S149: the world boss
+	hrimvald = {
+		roar = "giant roar deep huge",
+		attack = "heavy stone impact ice crack",
+		death = "giant death groan fall",
+		phase = "deep war horn boom",
+	},
 }
-for _, boss in Bosses.list do
+for _, boss in Bosses.all do -- S149: the world boss too
 	local hints = BOSS_HINTS[boss.id] or BOSS_HINTS.vaelgrath
 	defs[`boss.{boss.id}.roar`] = d(hints.roar, 0.8, 200, { cooldown = 3, pitch = BOSS_PITCH })
 	defs[`boss.{boss.id}.attack`] = d(hints.attack, 0.8, 200, { pitch = BOSS_PITCH })

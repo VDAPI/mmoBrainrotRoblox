@@ -24,6 +24,7 @@ local Town = require(Shared.Data.Town)
 local TownGen = require(Shared.Logic.TownGen)
 local TownPlaces = require(Shared.Logic.TownPlaces)
 local TownTerrain = require(Shared.Logic.TownTerrain)
+local WorldBoss = require(Shared.Logic.WorldBoss)
 
 local Context = require(script.Parent.Context)
 
@@ -46,6 +47,7 @@ local WorldEventService = Context.services.WorldEventService
 local LeaderboardService = Context.services.LeaderboardService
 local BloodMoonService = Context.services.BloodMoonService
 local TourneyService = Context.services.TourneyService
+local WorldBossService = Context.services.WorldBossService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -132,7 +134,8 @@ commands.tp = function(player, args)
 		local def = Bosses.get(args[2])
 		local cave = nil
 		for _, map in Maps.byId do
-			if def and map.dungeonRegion == def.region and map.dungeonEntrance then
+			-- S149: a world boss has no gate (its region is another boss's map)
+			if def and not def.world and map.dungeonRegion == def.region and map.dungeonEntrance then
 				cave = map
 			end
 		end
@@ -861,6 +864,14 @@ commands.sched = function(player, _args)
 			reply(player, "admin.sched.off", { event = `@{def.nameKey}` })
 		end
 	end
+	-- S149: the next world boss occurrences (every server at once, from the UTC clock)
+	for _, occ in WorldBoss.list(now, now + 9 * 3600) do
+		reply(player, "admin.sched.line", {
+			event = `@{WorldBoss.def().nameKey}`,
+			at = `{Schedule.dateKey(occ.startsAt)} {Tourney.clockUtc(occ.startsAt)} UTC`,
+			inMin = math.max(0, math.ceil((occ.startsAt - now) / 60)),
+		})
+	end
 	local moon = BloodMoonService.Forced()
 	if moon then
 		reply(player, "admin.sched.forced", { event = "@bloodmoon.name", id = moon.id })
@@ -869,6 +880,65 @@ commands.sched = function(player, _args)
 	if cup then
 		reply(player, "admin.sched.forced", { event = "@tourney.title", id = cup.id })
 	end
+end
+
+-- S149: /worldboss info | start [now] | stop | hp <pct> | phase <n> (this server only)
+commands.worldboss = function(player, args)
+	local action = args[1] or "info"
+	if action == "info" then
+		local info = WorldBossService.Info()
+		reply(player, "admin.worldboss.next", { id = info.nextId, time = Time.format(info.nextIn) })
+		if info.id then
+			reply(player, "admin.worldboss.info", {
+				id = info.id,
+				state = info.state,
+				hp = if info.hp then `{info.hp}%` else "-",
+				phase = info.phase or "-",
+				time = Time.format(info.timeLeft or 0),
+				n = info.participants,
+			})
+			for _, row in info.top do
+				reply(
+					player,
+					"admin.event.row",
+					{ name = row.name, points = row.points, ok = if row.ok then "✓" else "✗" }
+				)
+			end
+		end
+		return true
+	elseif action == "start" then
+		local ok, result = WorldBossService.Force(args[2] == "now")
+		if not ok then
+			reply(player, result or "admin.worldboss.busy")
+			return false, result
+		end
+		reply(player, "admin.worldboss.started", { id = result })
+		return true
+	elseif action == "stop" then
+		if not WorldBossService.Stop() then
+			reply(player, "admin.worldboss.none")
+			return false, "admin.worldboss.none"
+		end
+		reply(player, "admin.worldboss.stopped")
+		return true
+	elseif action == "hp" or action == "phase" then
+		local n = tonumber(args[2])
+		if not n or n ~= n then
+			reply(player, "admin.usage.worldboss")
+			return false, "admin.usage.worldboss"
+		end
+		local done = if action == "hp"
+			then WorldBossService.SetHp(n)
+			else WorldBossService.SetPhase(math.clamp(math.floor(n), 1, 3))
+		if not done then
+			reply(player, "admin.worldboss.none")
+			return false, "admin.worldboss.none"
+		end
+		reply(player, "admin.worldboss.set", { what = action, n = n })
+		return true
+	end
+	reply(player, "admin.usage.worldboss")
+	return false, "admin.usage.worldboss"
 end
 
 commands.tourney = function(player, args)

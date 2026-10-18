@@ -291,6 +291,24 @@ T.describe("Data: Monsters", function()
 		T.expect(Bosses.byId.vaelgrath.mresMul).toBe(1.4)
 	end)
 
+	T.it("a world boss (S149) has a family and a reward level, a map and no dungeon", function()
+		local Maps = require("../src/shared/Data/Maps")
+		T.expect(#Bosses.world >= 1).toBe(true)
+		T.expect(#Bosses.all).toBe(#Bosses.list + #Bosses.world)
+		for _, def in Bosses.world do
+			T.expect({ def.id, def.world, Families.get(def.family) ~= nil }).toEqual({ def.id, true, true })
+			local minLevel = def.minLevel or 0
+			T.expect({ def.id, minLevel >= 1 and minLevel <= def.level }).toEqual({ def.id, true })
+			T.expect({ def.id, Maps.get(def.region) ~= nil }).toEqual({ def.id, true })
+			T.expect({ def.id, table.find(Bosses.list, def) }).toEqual({ def.id, nil })
+			-- the dungeon of its map keeps its own boss
+			T.expect({ def.id, Bosses.forRegion(def.region) ~= def }).toEqual({ def.id, true })
+		end
+		for _, def in Bosses.list do
+			T.expect({ def.id, def.world == nil and def.minLevel == nil }).toEqual({ def.id, true })
+		end
+	end)
+
 	T.it("abilities are well formed", function()
 		for id, ability in MonsterAbilities.byId do
 			T.expect(ability.id).toBe(id)
@@ -869,7 +887,7 @@ T.describe("Data: kind of blow (S64, STATY 6)", function()
 			local d = ability.delivery
 			T.expect({ id, d == nil or d == "melee" or d == "ranged" }).toEqual({ id, true })
 		end
-		for _, boss in Bosses.list do
+		for _, boss in Bosses.all do -- S149: the world boss too
 			for _, attack in boss.attacks do
 				local d = attack.delivery
 				T.expect({ attack.id, d == nil or d == "melee" or d == "ranged" }).toEqual({ attack.id, true })

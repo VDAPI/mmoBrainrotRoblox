@@ -311,42 +311,62 @@ end
 
 -- S134 mark: a random fighter carries a circle for `mark.seconds` (the telegraph follows the character, `f` in the
 -- "tele" event; no red zone); Step blasts it at the marked one's position then. A big message to the marked one and
--- to the rest; the attribute BossMark marks the character for the clients.
+-- to the rest; the attribute BossMark marks the character for the clients. S149: `mark.count` fighters at once
+-- (Logic/BossMechanics.pickMarked, without repeats), each with its own circle and blast.
 local function startMark(self: Boss, attack: Bosses.Attack, ability: any)
 	local fighters = self.services.fighters()
 	if #fighters == 0 or not attack.mark then
 		return
 	end
-	local player = fighters[self.random:NextInteger(1, #fighters)]
-	local position = self.services.position(player)
-	if not position then
-		return
-	end
 	local markAbility = table.clone(ability)
 	markAbility.windup = attack.mark.seconds
-	local character = player.Character
-	if character then
-		character:SetAttribute("BossMark", attack.id)
+	local marked: { Player } = {}
+	local names: { string } = {}
+	local picks = BossMechanics.pickMarked(
+		#fighters,
+		BossMechanics.markCount(attack.mark),
+		function(lo: number, hi: number): number
+			return self.random:NextInteger(lo, hi)
+		end
+	)
+	for _, index in picks do
+		local player = fighters[index]
+		local position = self.services.position(player)
+		if position then
+			local character = player.Character
+			if character then
+				character:SetAttribute("BossMark", attack.id)
+			end
+			table.insert(
+				self.marks,
+				{ player = player, attack = attack, ability = markAbility, at = os.clock() + attack.mark.seconds }
+			)
+			self.services.telegraph(
+				self.monster,
+				markAbility,
+				areaFor(self, attack, position),
+				{ mechanic = "mark", follow = player, castWindup = attack.windup }
+			)
+			table.insert(marked, player)
+			table.insert(names, self.services.nameOf(player))
+		end
 	end
-	table.insert(
-		self.marks,
-		{ player = player, attack = attack, ability = markAbility, at = os.clock() + attack.mark.seconds }
-	)
-	self.services.telegraph(
-		self.monster,
-		markAbility,
-		areaFor(self, attack, position),
-		{ mechanic = "mark", follow = player, castWindup = attack.windup }
-	)
-	self.services.announceTo({ player }, "boss.mechanic.mark.you", nil)
+	if #marked == 0 then
+		return
+	end
+	self.services.announceTo(marked, "boss.mechanic.mark.you", nil)
 	local others = {}
 	for _, other in fighters do
-		if other ~= player then
+		if not table.find(marked, other) then
 			table.insert(others, other)
 		end
 	end
 	if #others > 0 then
-		self.services.announceTo(others, "boss.mechanic.mark.other", { name = self.services.nameOf(player) })
+		if #names == 1 then
+			self.services.announceTo(others, "boss.mechanic.mark.other", { name = names[1] })
+		else
+			self.services.announceTo(others, "boss.mechanic.mark.others", { names = table.concat(names, ", ") })
+		end
 	end
 end
 

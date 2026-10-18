@@ -105,7 +105,8 @@ function PvpService.IsEnabled(player: Player): boolean
 	return character ~= nil and (character.pvpEnabled or PvpService.InArena(player))
 end
 
--- S126: adds a fight rule (duels, ranked matches); the first rule with a verdict decides.
+-- S126: adds a fight rule (duels, ranked matches); the first rule with a verdict decides. A verdict is "allow", "deny"
+-- (the duel's message) or (S149) a Locale key of its own reason, which denies.
 function PvpService.AddFightRule(rule: (attacker: Player, target: Player) -> string?)
 	table.insert(fightRules, rule)
 end
@@ -199,6 +200,8 @@ function PvpService.CanAttack(attacker: Player, target: Player): (boolean, strin
 			return true, nil
 		elseif verdict == "deny" then
 			return false, "pvp.deny.duel"
+		elseif verdict ~= nil then
+			return false, verdict -- S149: a rule's own deny key (the world boss's PvP-free circle)
 		end
 	end
 	return PvpRules.canAttack(

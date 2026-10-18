@@ -5533,3 +5533,56 @@
 - **S148** Budżet JS strony klasy 40 → 44 KB gzip (planer v3 41 KB). `wiki_keys_diff` przed commitem sesji wiki
   przechodzi z `WIKI_KEYS_ALLOW="skills:*,titles:*,mechanics:*,types.ts"` (nowy kształt `skills.json`, `req.path`,
   `mechanics.combat.pvp.phoenix` z S140).
+- **S149** Boss świata: Hrimvald, Praojciec Olbrzymów (`hrimvald`, imię wolne wśród NPC i bossów), lodowy olbrzym z
+  mitów Szczytów (quest `giants`, „Długa Zima”). Miejsce: płaskowyż Lodowej Strażnicy (88–100), `(490, 360)`, `r = 70`,
+  wybrane siatką 10 st. (`walkable` w całym kole, `dryAround`, ≥ 120 st. od portali, wejść jaskiń i kryjówek, krawędź
+  drogi 125 st.; test `worldboss.spec`). Wystrój i omijanie miejsca grupami potworów: S149b.
+- **S149** Terminy co 3 h od 02:00 UTC (02, 05 … 23) liczy każdy serwer świata sam z `Util/Clock` (`Logic/WorldBoss`),
+  bez komunikacji między serwerami; id `wbYYYYMMDDHH`. Restart w trakcie = boss od razu z pełnym HP i czasem do
+  `endsAt`; termin zakończony na serwerze (zabity, odszedł) nie wraca. Termin, którego okno walki zahacza o Krwawy
+  Księżyc z ciszą, jest pomijany (dziś żaden).
+- **S149** Jedna nagroda na konto i termin: `account.worldBoss.last` (szablon, `reconcile`, bez migracji, `CURRENT`
+  bez zmian), zapis przed nagrodą bez yieldu po sprawdzeniu. Termin wymuszony (`wbforce<n>`) nie zapisuje `last` i nie
+  jest przez nie blokowany.
+- **S149** Próg nagrody 80 zamiast przykładowego 70 (właściciel): przy bossie L100 postać L70 ginie od każdego
+  zwykłego ciosu, a łup ilvl 80–100 jest dla niej bezużyteczny. Niżej można pomagać bez nagrody (toast „Za niski
+  poziom”). Próg to pole bossa `minLevel` w `Data/Bosses`, `Data/WorldBoss` go nie powtarza (jedno źródło).
+- **S149** Stałe statystyki (zasada S134): `hpMul` 7,8 zamiast startowych ≈ 4 × Vaelgratha (5,4): model daje 10 graczy L99
+  11,6 min (z węzłami 10,2), 20 graczy 5,8 (5,1); `breakPct` Wiecznej Zimy 0,7% zamiast 2% (przy tym HP 2% to 33 s
+  dla 10 graczy): 10 graczy 4,8 s, 5 graczy 9,6 s z limitu 5,5 s.
+- **S149** Odnowienia ataków dłuższe niż w szkicu (pięść 14, głaz 16, tąpnięcie 22, kolce 20, lawina 24, kamień 30,
+  piętno 26, zima 40 s): przy ośmiu atakach faz 2–3 i `globalGap` 2,2 s krótsze odnowienia spychały tempo ataków
+  poniżej 50% (G11).
+- **S149** Pomocnicy bez tarczy (boss na otwartym świecie nigdy nie jest nietykalny): na wejściu w fazę 2 i 3 po 3
+  `frozenKnight` i 3 `iceWolf` L95, bez łupu i EXP (nowe pole potwora `noReward`, `CombatService` nic nie daje), smycz
+  do miejsca bossa.
+- **S149** Smycz bossa świata = `r` miejsca; gdy cel ucieka dalej albo nikogo nie ma, boss wraca na środek **bez
+  leczenia** i dalej da się go bić (`Monster.keepHp`): drużyna na otwartym świecie może się przegrupować.
+- **S149** Piętno z `count` (`Bosses.MarkSpec.count`, `BossMechanics.markCount` / `pickMarked` / `markTaken`,
+  `Boss.startMark`): Hrimvald naznacza trzech naraz, każdy krąg wybucha osobno, kręgi się nakładają. `count = 1` losuje
+  tak samo jak S134 (jedno `NextInteger`).
+- **S149** Jedna reguła udziału dla wydarzeń i bossa świata: `Logic/Contribution` (`Logic/WorldEvents` deleguje, wyniki
+  bez zmian). `WorldEventService` dalej liczy obrażenia z `damageBy`, więc bank bossa świata (sygnały S134f
+  `MonsterDamaged`, `Healed`, `Intercepted`) jest w `WorldBossService`, bez wspólnego pomocnika serwera.
+- **S149** W oknie bossa (`startsAt − 120 s` … `endsAt`) nie startuje Inwazja ani Czempion
+  (`WorldEventService.AddBlocker`). W kole walki (`r + 30`) nie ma PvP, póki boss żyje: reguła
+  `PvpService.AddFightRule`, której werdykt może być własnym kluczem odmowy (`pvp.deny.worldBoss`). Auto Hunt staje w
+  kole (`UseGuards` „worldEvent”).
+- **S149** Łup: jeden przedmiot Heroiczny 72 / Legendarny 24 / Mityczny 4, ilvl z poziomu postaci w [80, 100],
+  `classBias` 0,8, Mityk zawsze dla klasy (`Loot.pickUsable`, jak S87), **niezwiązany** jak łup bossa lochu
+  (`rollBossItem` nie wiąże); Fortuna (S60) nie działa, `bossPity` i `bossRuns` bez zmian. EXP 16 i złoto 24 „zabić”
+  poziomu postaci (walka ≈ 12–14% poziomu 80–99: boss jest o przedmiot).
+- **S149** `Bosses.list` = tylko bossowie lochów (lochy, questy, tablica drużyn, mapa, wiki); nowe `Bosses.world` i
+  `Bosses.all`, `forRegion` bez bossów świata. Wiki (`WikiData/Bosses` na `list`) nie widzi Hrimvalda do S149b;
+  dźwięki, testy wyglądu i ruchów, nazwy ataków i G11 idą po `all`. Księga: `Bosses` z `omit` `all` i `world`.
+- **S149** Licznik walki: rodzaj `"worldboss"` (`Logic/FightStats`); klient pokazuje po walce małą kartę jak po
+  Inwazji (tytuł = nazwa bossa, `finder.kind.worldboss` w zapasie). Odejście bossa = efekt Tąpnięcia Lodowca
+  (`MonsterBlow`), bez nowych zasobów. `/worldboss start` bez `now` = ostrzeżenie 2 min.
+- **S149** Model: drużyna 10–20 = powtórzony `Balance.ORDER` (jeden tank i jeden Kapłan na 5 graczy); pomocnicy bez
+  tarczy giną po kolei, a boss bije dalej (czas aktywny bez obrażeń na bossie). Łup na godzinę: 2 h gry dziennie trafia
+  średnio 1 termin na 3 h (≈ 0,67 walki), Vaelgrath na godzinę wejścia (240 s) i walki 5 graczy L99 × 3 zabicia: 0,15
+  (cel ≤ 0,5); na dzień 2 h gry wobec trzech zabić Vaelgratha 0,75 (tylko raport).
+- **S149** Po przeglądzie: klucz kręgu piętna to `e|a|f` (caster, atak, naznaczony), więc skasowanie jednego piętna
+  z trzech zostawia pozostałe kręgi (bez `f` klient kasuje wszystkie piętna ataku, jak S134). Serwer, który poznaje
+  termin już po `endsAt` (start w czasie `linger`), zamyka go bez ogłoszenia i znacznika. Kilku naznaczonych: osobny
+  klucz `boss.mechanic.mark.others` (liczba mnoga). `/boss spawn` i `/tp boss` odrzucają bossa świata.

@@ -443,6 +443,8 @@ export type AccountData = {
 	-- S120: Logic/Premium.ShopLimits
 	shopLimits: { day: number, week: number, daily: { [string]: number }, weekly: { [string]: number } },
 	login: { day: number, last: number }, -- S100: login reward streak (account-wide, UTC days)
+	-- S149: the id of the last world boss occurrence this account was rewarded for (Logic/WorldBoss.canReward)
+	worldBoss: { last: string },
 	vip: VipState, -- S121: VIP benefits (Logic/Vip)
 	outfits: { Outfit }, -- S121: saved looks (Garderoba+), 1..Products.OUTFITS_PLUS without holes
 	-- S122 Cloak of Luring: real-time end (os.time) and the player's switch; active = on and untilTs > now
@@ -530,6 +532,8 @@ export type ClientState = {
 	pvp: PvpState?,
 	-- S101: the running world event (Logic/WorldEvents.Public + `mine = { points, ok }`), WorldEventService
 	worldEvent: { [string]: any }?,
+	-- S149: the world boss (Logic/WorldBoss.Public + `mine`, or `{ next }` outside an occurrence), WorldBossService
+	worldBoss: { [string]: any }?,
 	-- S101b: the quest companion (CompanionService; never saved): whose figure, for which quest, the phase of
 	-- Logic/Companion ("join" | "follow" | "lead" | "wait" | "arrived" | "back")
 	companion: CompanionState?,

@@ -12567,3 +12567,77 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `wiki/src/content/{guides,mechanics}/*`, `wiki/e2e/keyboard.e2e.ts`, `wiki/scripts/budgets.config.mjs`,
   `wiki/src/data/*` (eksport), `wiki/test-fixtures/planner.json`, `docs/PRZEDMIOTY.md`,
   `docs/{ROZWOJ,DESIGN,DESIGN-18,STATY,WIKI,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S149: Boss świata (rdzeń)
+
+- **Boss** (`Data/Bosses.hrimvald`, `world = true`, `minLevel = 80`): Hrimvald, Praojciec Olbrzymów, L100, `humanoid`,
+  `hpMul` 7,8 (stałe, bez skalowania z liczbą graczy), fazy 0,7 / 0,35, przyspieszenie fazy 3 ×1,2, wściekłość po
+  13 min, odejście po 15 min; pomocnicy faz 2–3 bez tarczy (3 `frozenKnight` + 3 `iceWolf` L95, bez łupu i EXP:
+  `Monster.noReward`). Wygląd `MonsterLooks.hrimvald` (dziedziczy `frostGiant`, korona z lodu, futro, naramienniki,
+  `size` 6), ruchy `BossMotions.hrimvald` (osobny styl na atak), dźwięki `boss.hrimvald.*` (bez ID).
+- **Ataki** (procent HP Maga L100 ze sprzętem konwencji, × `randomMax`):
+
+  | atak | kształt / cel | zapowiedź s | mnożnik | odnowienie s | fazy | HP Maga |
+  | --- | --- | --: | --: | --: | --: | --: |
+  | Pięść Praojca `fistSlam` | stożek 16 / 80° w cel zagrożenia | 1,4 | 3,5 | 14 | 1–3 | 40% (tank 28%) |
+  | Rzut Głazem `boulderToss` | krąg 6 pod losowym, dystans | 1,6 | 3,8 | 16 | 1–3 | 43% |
+  | Tąpnięcie Lodowca `glacierStomp` (unik) | krąg 16 wokół siebie | 2,2 | 7,3 | 22 | 1–3 | 83% |
+  | Lodowe Kolce `iceSpikes` (unik) | linia 50 × 7 do 3 losowych | 2,0 | 6,9 mag. | 20 | 1–3 | 73% |
+  | Lawina Praojca `avalanche` (unik) | krąg 9 pod 5 losowymi | 2,2 | 6,7 mag. | 24 | 2–3 | 71% |
+  | Kamień Rozbicia `shatterStone` (wspólny) | krąg 10 pod losowym | 3,5 | 64 | 30 | 1–3 | 724% razem: 10 w kręgu 73%, 7 → 105%, pusty krąg 62% każdemu |
+  | Piętno Mrozu `frostBrand` (piętno ×3) | krąg 10 za 3 naznaczonymi, 5 s | 1,2 | 6,8 mag. | 26 | 2–3 | inni 72%, naznaczony 31% |
+  | Wieczna Zima `endlessWinter` (kanał) | 6 s w miejscu, przerwanie 0,7% maks. HP, ogłuszenie 4 s | 6 | 8,6 mag. | 40 | 2–3 | 90% wszystkim |
+
+- **Terminy** (`Data/WorldBoss`, czysty `Logic/WorldBoss`): co 3 h od 02:00 UTC (02, 05, 08, 11, 14, 17, 20, 23) na
+  każdym serwerze świata naraz z zegara (`Util/Clock`), id `wbYYYYMMDDHH`, ogłoszenia 10 i 2 min przed, start, 15 min
+  walki, znacznik 60 s po końcu; żaden termin nie zahacza o Krwawy Księżyc (wt., czw. 18:50–19:30) ani start turnieju
+  (sob. 19:00); `occurrenceAt`, `next`, `list`, `blocked`, `phase`, `forced`.
+- **Serwis** `WorldBossService` (tylko `ServerMode.isWorld()`): pętla (boss co 0,1 s, harmonogram co 1 s, gałąź co
+  0,5 s przy zmianie), postawienie na `spots[1]` (płaskowyż Lodowej Strażnicy `(490, 360)`, `r` 70) przez
+  `Entities/Boss` z dostawcą `Services` otwartego świata (walczący = żywi gracze w `r + 30` na mapie), smycz `r`,
+  powrót bez leczenia (`Monster.keepHp`), odejście z efektem Tąpnięcia, ogłoszenia `worldboss.warn/spawn/slain/left`,
+  blokada Inwazji i Czempiona (`AddBlocker`), koło bez PvP (`PvpService.AddFightRule`, werdykt z własnym kluczem),
+  Auto Hunt staje w kole, licznik walki `"worldboss"`, analityka `WorldBossReward` / `WorldBossLegendary` / `Mythic`.
+- **Udział i nagroda:** `Logic/Contribution` (wspólny z S101, `Logic/WorldEvents` deleguje), bank z sygnałów
+  `MonsterDamaged` (boss i pomocnicy), `Healed`, `Intercepted` w kole; `WorldBoss.canReward` (`level`, `claimed`,
+  `share`), `account.worldBoss.last` zapisane przed nagrodą (jedna na konto i termin, terminy wymuszone osobno);
+  EXP 16 i złoto 24 „zabić” poziomu postaci, 2–4 Kryształy Esencji, 25% Rdzeń Legendy, jeden przedmiot Heroiczny 72 /
+  Legendarny 24 / Mityczny 4 (ilvl z poziomu w [80, 100], niezwiązany), plecak albo poczta; toasty `worldboss.reward`
+  i `worldboss.noReward.<powód>`. Gałąź `worldBoss`: `WorldBoss.Public` + `mine` (`points`, `pct`, `ok`, `reason`),
+  poza terminem `{ next }`.
+- **Piętno z `count`:** `BossMechanics.markCount` / `pickMarked` / `markTaken`, `Boss.startMark` naznacza kilku naraz
+  (S134 bez zmian przy `count = 1`).
+- **Admin:** `/worldboss info | start [now] | stop | hp <proc> | phase <n>`, `/sched` z trzema najbliższymi terminami.
+- **Model** (`Balance.targetsS149`, blok „Balance: world boss (S149)”, sekcja „Boss świata (S149)” w `docs/BALANS.md`):
+
+  | graczy | min | z węzłami | przerwanie s (limit 5,5) | wspólny cios na osobę | wynik |
+  | --: | --: | --: | --: | --: | --- |
+  | 5 (L100) | 22,5 | 19,9 | 9,3 | 1,45 | przegrywa |
+  | 10 (L99) | 11,6 | 10,2 | 4,8 | 0,73 | wygrywa |
+  | 15 (L99) | 7,7 | 6,8 | 3,2 | 0,49 | wygrywa |
+  | 20 (L99) | 5,8 | 5,1 | 2,4 | 0,37 | wygrywa |
+
+  Wielkie ciosy na Magu 0,73 (Wojownik 0,68), zwykłe 0,43, piętno 0,72 / 0,31, tank (model S32) 2,2 HP/min, pomocnicy
+  0,04 HP na członka; łup: Legendarne i Mityczne na godzinę gry 0,08–0,09 wobec Vaelgratha 0,54–0,56 na godzinę jego
+  wejścia i walki = 0,15 (cel ≤ 0,5); na dzień 2 h gry 0,75 trzech zabić Vaelgratha (raport). Wszystkie wiersze w
+  paśmie, bez trybu raportu poza wierszami „tylko raport”.
+- **Testy:** nowy `worldboss.spec` (terminy, blokada, faza, nagroda i jedna na termin, przedmiot, gałąź publiczna, PvP,
+  miejsce), `bossmechanics.spec` (piętno `count`), `worldevents.spec` (delegacja do `Logic/Contribution` na losowych
+  wkładach), `data.spec` (boss świata), testy ruchów, nazw ataków, wyglądu i G11 po `Bosses.all`.
+- wiki do odświeżenia (właściciel 17.10); strona bossa i eksport: S149b.
+- **Dla właściciela:** (1) PvP przy bossie świata: dziś wyłączone w kole walki (`Data/WorldBoss.pvpSafe`); w Margonem
+  przy tytanach bywa walka o łup, jedna linia danych to zmienia. (2) Próg 80 zamiast 70. (3) Łup na dzień przy 2 h gry to
+  ok. 0,75 Legendarnych i Mitycznych z trzech zabić Vaelgratha (cel F3 liczy godzinę walki Vaelgratha: 0,15); dźwignia:
+  `reward.rarity`. (4) Przedmiot niezwiązany (handel), jak łup bossa lochu.
+- **Po przeglądzie:** piętno na trzech: skasowanie jednego kręgu (śmierć, wyjście) zostawia pozostałe (klucz z `f`,
+  `GroundTelegraph.cancel` z prefiksem), komunikat w liczbie mnogiej; `/worldboss start` ostrzega raz; serwer
+  uruchomiony w czasie `linger` nie ogłasza odejścia bossa; `/boss spawn` i `/tp boss` nie biorą bossa świata;
+  `telegraph`, `motionkeys` i `sfx` spec po `Bosses.all`.
+- **Pliki:** `src/shared/Data/{Bosses,WorldBoss,BossMotions,MonsterLooks,Sfx,AdminCommands}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{WorldBoss,Contribution,WorldEvents,BossMechanics,
+  FightStats,AccountSchema}.luau`, `src/shared/Types.luau`, `src/server/Services/{WorldBossService,AdminService,
+  CombatService,PvpService,DungeonService}.luau`, `src/server/Entities/{Boss,Monster}.luau`,
+  `src/server/Admin/World.luau`, `src/client/Controllers/{MobVizController,CombatFxController}.luau`,
+  `src/client/Vfx/GroundTelegraph.luau`, `tests/{worldboss,bossmechanics,worldevents,bossmotions,data,
+  localization,anatomy,gait,balance,telegraph,motionkeys,sfx}.spec.luau`, `tests/Balance.luau`, `tools/{balance_reasons,balance_report}.luau`,
+  `tools/balance_before.json`, `docs/{BALANS,DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

@@ -2845,6 +2845,85 @@ do
 	add()
 end
 
+-- S149: the world boss (Balance.targetsS149): 5 / 10 / 15 / 20 players (time, the channel, the shared blow on each in
+-- the circle, the outcome), the loot per hour next to Vaelgrath and the asserted rows.
+do
+	add("## Boss świata (S149)")
+	add()
+	add(
+		"Model `Balance.bossFight` z Hrimvaldem (`Data/Bosses`, `world = true`): HP i pomocnicy nie zależą od liczby graczy; drużyna 10–20 to powtórzony skład `Balance.ORDER` (jeden tank i jeden Kapłan na 5 graczy), poziom 99 (5 graczy: 100), sprzęt konwencji. Pomocnicy faz 2–3 bez tarczy: drużyna bije ich po kolei, boss atakuje dalej. Wspólny cios dzieli się między wszystkich w kręgu (tu: cała drużyna), zaklęcie przerywa się obrażeniami w `seconds − 0,5` s, piętno trafia trzech naraz. Łup: Legendarne i Mityczne na godzinę gry (2 h dziennie, ok. 0,67 walki dziennie) wobec Vaelgratha na godzinę wejścia (240 s) i walki 5 graczy L99. Asertuje `balance.spec` („Balance: world boss (S149)”)."
+	)
+	add()
+	local def = Bosses.byId[B.S149.boss] :: any
+	local rows: { { string } } = {}
+	for _, n in B.S149.teams do
+		local lv = if n == 5 then B.S149.fiveLevel else B.S149.level
+		local plain = B.bossFight(def.id, B.team(n, lv))
+		local nodes = B.bossFight(def.id, B.team(n, lv, true))
+		local mech = plain.mechanics
+		local splitWorst = 0
+		for _, share in mech.split do
+			splitWorst = math.max(splitWorst, share)
+		end
+		local wins = splitWorst < B.S149.split7 and mech.channelBroken and plain.seconds <= def.timeLimit
+		table.insert(rows, {
+			tostring(n),
+			`L{lv}`,
+			fmtValue(plain.seconds / 60, "1"),
+			fmtValue(nodes.seconds / 60, "1"),
+			`{fmtValue(mech.channelSeconds, "1")} / {fmtValue(mech.channelLimit, "1")}`,
+			fmtValue(splitWorst, "2"),
+			if wins then "wygrywa" else "przegrywa",
+		})
+	end
+	tableOut({
+		"graczy",
+		"poziom",
+		"min",
+		"min z węzłami",
+		"przerwanie s / limit",
+		"wspólny cios na osobę / HP",
+		"wynik",
+	}, rows)
+	add()
+	local loot: { { string } } = {}
+	for _, c in B.CLASSES do
+		local drops = B.worldBossDrops(c)
+		local mine = drops * B.S149.fightsPerDay / B.S149.playHours
+		local vaelgrath, perDay = B.vaelgrathPerHour(c)
+		table.insert(loot, {
+			BalanceTables.CLASS_PL[c] or c,
+			fmtValue(drops, "g"),
+			fmtValue(mine, "g"),
+			fmtValue(vaelgrath, "g"),
+			fmtValue(mine / math.max(1e-12, vaelgrath), "2"),
+			fmtValue(drops * B.S149.fightsPerDay / math.max(1e-12, perDay), "2"),
+		})
+	end
+	tableOut({
+		"klasa",
+		"Leg. + Myt. z walki",
+		"na godzinę gry",
+		"Vaelgrath na godzinę walki",
+		"stosunek (cel ≤ 0,5)",
+		"dzień 2 h / Vaelgrath ×3",
+	}, loot)
+	add()
+	local banded: { B.TargetRow } = {}
+	local free: { { string } } = {}
+	for _, row in B.targetsS149() do
+		if row.low or row.high then
+			table.insert(banded, row)
+		else
+			table.insert(free, { row.label, fmtValue(row.value, "2") })
+		end
+	end
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(banded, "S149 (asertowane)"))
+	add()
+	tableOut({ "bez progu", "wartość" }, free)
+	add()
+end
+
 -- S134e: the Elite II kit (Balance.targetsS134e): the Crushing Blow by the level gap for a Mage and a Warrior in four
 -- regions, kiting before (no kit: nothing reaches a kiting player) and after, the Heavy Blow of the Elites, the rows.
 do

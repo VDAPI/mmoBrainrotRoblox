@@ -853,6 +853,20 @@ błogosławieństwo, tytuł, ramka, Smocze Odłamki dla zwycięzcy). W trakcie n
 ani przyspieszone odrodzenie; wydarzenia świata (15.4) nie startują. Ogłoszenia 10 min i 1 min przed, panel na HUD, okno
 wyników z menu. Liczby: `Data/ScheduledEvents`, `docs/BALANS.md` → „Krwawy Księżyc (S129)”.
 
+### 15.6 Boss świata (S149)
+
+Dla graczy późnej gry: co 3 godziny według zegara UTC (02:00, 05:00 … 23:00) na każdym serwerze świata naraz (każdy
+liczy terminy sam, bez komunikacji między serwerami; areny i turnieje nigdy) na płaskowyżu Lodowej Strażnicy (Lodowe
+Szczyty) budzi się Hrimvald, Praojciec Olbrzymów. Ogłoszenia 10 i 2 minuty przed i przy pojawieniu się; walka na
+otwartym świecie dla 10–20 graczy z ciosami do unikania, wspólnym ciosem, trzema piętnami naraz i zaklęciem do
+przerwania (zasady §16); boss nie zależy od liczby graczy (więcej graczy = krócej, pięciu nie wygrywa), nie ma tarczy,
+pomocnicy faz 2–3 nie dają łupu ani EXP. Po 15 minutach bez zabicia odchodzi. Nagroda (EXP, złoto, materiały i jeden
+przedmiot Heroiczny, Legendarny albo Mityczny, niezwiązany) dla każdego z poziomem od progu i udziałem jak w
+wydarzeniach świata (obrażenia, leczenie, tarcze, przejęte ciosy), **raz na konto na termin**: przejście na inny
+serwer w trakcie nie daje drugiej nagrody. W oknie bossa nie startuje Inwazja ani Czempion, w kole walki nie ma PvP,
+póki boss żyje; Fortuna nie działa na jego łup. Liczby: `Data/WorldBoss`, `Data/Bosses` (`hrimvald`), `docs/BALANS.md`
+→ „Boss świata (S149)”.
+
 ## 16. Bossy i lochy
 
 - Wejście do lochu w głębi jaskini. Portal pokazuje: wymagany poziom (poziom bossa − 10; quest bossa i zlecenie tygodniowe od poziomu bossa − 5, S134c), stan „Wolny / Zajęty przez grupę X (mm:ss)”. Zwycięzca poniżej poziomu bossa − 5 dostaje pełny łup na poziomie bossa i EXP w takim ułamku swojego poziomu, jaki dostałby gracz na poziomie bossa − 5 (`Exp.bossExpFor`).

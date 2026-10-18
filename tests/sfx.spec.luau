@@ -99,7 +99,7 @@ describe("Sfx data (S111)", function()
 				table.insert(need, `mob.{family}.{suffix}`)
 			end
 		end
-		for _, boss in Bosses.list do
+		for _, boss in Bosses.all do
 			for _, suffix in { "roar", "attack", "death", "phase" } do
 				table.insert(need, `boss.{boss.id}.{suffix}`)
 			end
@@ -129,7 +129,7 @@ describe("Sfx data (S111)", function()
 			expect(Sfx.defs[`mob.{family}.hurt`].cooldown).toBe(0.35)
 			expect(Sfx.defs[`mob.{family}.aggro`].cooldown).toBe(4)
 		end
-		for _, boss in Bosses.list do
+		for _, boss in Bosses.all do
 			expect(Sfx.defs[`boss.{boss.id}.roar`].cooldown).toBe(3)
 		end
 	end)

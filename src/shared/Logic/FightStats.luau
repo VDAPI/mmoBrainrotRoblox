@@ -7,7 +7,7 @@
 
 local FightStats = {}
 
-export type Kind = "boss" | "elite2" | "invasion"
+export type Kind = "boss" | "elite2" | "invasion" | "worldboss" -- S149: the world boss (WorldBossService)
 export type Outcome = "win" | "fail" | "wipe"
 export type Field = "dmg" | "heal" | "shield" | "taken" | "intercept" | "deaths" | "dodged" | "aimed"
 

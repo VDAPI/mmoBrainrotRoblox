@@ -234,6 +234,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Kryjówka Elity II** (S134i): wpis `lairs` w `Data/Areas/<mapa>` + `ELITE2_SLOTS[kind]` + `lair.<id>.name` (PL, EN);
   ubiór `Logic/WorldGen/Lairs`; po zmianie `python tools/arrivals_apply.py`; testy `tests/lairs.spec`, model
   `Balance.targetsS134i`.
+- **Boss świata** (S149): wpis w `Data/Bosses` z `world = true` + `Data/WorldBoss` (terminy, miejsce, udział, nagroda);
+  serwis `WorldBossService`, udział przez `Logic/Contribution`.
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez
