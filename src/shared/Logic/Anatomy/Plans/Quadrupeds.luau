@@ -19,11 +19,44 @@ local function leg(b: B, name: string, x: number, z: number, top: number, thick:
 	})
 end
 
-local function fourLegs(b: B, halfWidth: number, front: number, back: number, top: number, thick: number, tone: string?)
-	leg(b, "LegFL", -halfWidth, front, top, thick, 0, tone)
-	leg(b, "LegFR", halfWidth, front, top, thick, 0.5, tone)
-	leg(b, "LegBL", -halfWidth, back, top, thick, 0.5, tone)
-	leg(b, "LegBR", halfWidth, back, top, thick, 0, tone)
+-- W25: `rich` legs (full-size monsters, not pets) taper: a round shoulder / haunch at the top in the body colour, a
+-- slimmer shin and a paw at the ground, all moving with the leg joint.
+local function fourLegs(
+	b: B,
+	halfWidth: number,
+	front: number,
+	back: number,
+	top: number,
+	thick: number,
+	tone: string?,
+	rich: boolean?
+)
+	local shin = if rich then thick * 0.86 else thick
+	leg(b, "LegFL", -halfWidth, front, top, shin, 0, tone)
+	leg(b, "LegFR", halfWidth, front, top, shin, 0.5, tone)
+	leg(b, "LegBL", -halfWidth, back, top, shin, 0.5, tone)
+	leg(b, "LegBR", halfWidth, back, top, shin, 0, tone)
+	if not rich then
+		return
+	end
+	local function limb(key: string, z: number, bulk: number)
+		b:pair(
+			`Haunch{key}`,
+			"ball",
+			{ thick * 1.45, top * 0.5, thick * bulk },
+			{ halfWidth, top * 0.98, z },
+			{ parent = `Leg{key}*` }
+		)
+		b:pair(
+			`Paw{key}`,
+			"ball",
+			{ thick * 1.25, thick * 0.6, thick * 1.55 },
+			{ halfWidth, thick * 0.22, z - thick * 0.25 },
+			{ tone = "shade", parent = `Leg{key}*` }
+		)
+	end
+	limb("F", front, 1.6)
+	limb("B", back, 2.0)
 end
 
 -- Hare: round body, long ears, puffball tail, light belly, big hind legs (hops).
@@ -159,7 +192,19 @@ function Plans.canine(b: B)
 			joint = { role = "tail", at = { 0, bodyY + 0.25, 1.3 } },
 		})
 	end
-	fourLegs(b, 0.45, -0.85, 1.0, h + 0.1 + frontHigh * 0.15, 0.36 - chibi * 0.06)
+	local rich = chibi == 0
+	fourLegs(b, 0.45, -0.85, 1.0, h + 0.1 + frontHigh * 0.15, 0.36 - chibi * 0.06, nil, rich)
+	if rich then
+		-- W25: a neck bridging chest and head, and a ruff of light fur on the cheeks
+		b:add("Neck", "ball", { 0.8, 0.9, 1.0 }, { 0, headY - 0.35, -1.3 }, { rot = { 35, 0, 0 }, parent = "Body" })
+		b:pair(
+			"Ruff",
+			"wedge",
+			{ 0.2, 0.55, 0.5 },
+			{ headSize * 0.45, headY - 0.2, -1.55 },
+			{ tone = "light", rot = { 0, 160, 15 }, parent = head.name }
+		)
+	end
 	b:socket("Head", { 0, headY + headSize * 0.5, -1.6 }, head.name)
 	b:socket("Back", { 0, bodyY + 0.55, 0.2 }, "Body")
 	b:socket("Tail", { 0, bodyY + 0.3, 1.5 }, "Body")
@@ -187,7 +232,7 @@ function Plans.bear(b: B)
 		{ 0, 2.3, 1.85 },
 		{ parent = "Body", joint = { role = "tail", at = { 0, 2.3, 1.7 } } }
 	)
-	fourLegs(b, 0.7, -1.0, 1.15, 1.5, 0.62)
+	fourLegs(b, 0.7, -1.0, 1.15, 1.5, 0.62, nil, true)
 	b:pair(
 		"Claws",
 		"wedge",
@@ -253,7 +298,7 @@ function Plans.boar(b: B)
 		{ 0, 1.75, 1.7 },
 		{ rot = { 0, 90, 30 }, parent = "Body", joint = { role = "tail", at = { 0, 1.8, 1.5 } } }
 	)
-	fourLegs(b, 0.55, -0.8, 1.0, 1.0, 0.42)
+	fourLegs(b, 0.55, -0.8, 1.0, 1.0, 0.42, nil, true)
 	b:socket("Head", { 0, 2.1, -1.7 }, head.name)
 	b:socket("Back", { 0, 2.4, 0 }, "Body")
 	b:socket("Tail", { 0, 1.7, 1.6 }, "Body")
@@ -398,7 +443,7 @@ function Plans.mammoth(b: B)
 	)
 	b:pair("Ear", "ball", { 0.25, 0.75, 0.65 }, { 0.95, 3.6, -1.75 }, { tone = "shade", parent = head.name })
 	b:eyes(head.name, { 0.55, 3.75, -2.6 }, 0.18, b:get("glowEyes", 0) > 0)
-	fourLegs(b, 0.9, -1.2, 1.35, 2.2, 0.85)
+	fourLegs(b, 0.9, -1.2, 1.35, 2.2, 0.85, nil, true)
 	b:add(
 		"Tail",
 		"cyl",
