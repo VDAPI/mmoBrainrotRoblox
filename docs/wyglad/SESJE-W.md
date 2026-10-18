@@ -417,3 +417,4 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 ### W14: Łąki, część 1 (sekrety)
 
 - Wg `laki.md` 1.5: herb płatka z cierniem świeżo wyryty na zewnętrznej ścianie ruin strażnicy, zgaszona świeca i ślady butów w szronie; wóz kupca do połowy w Żabim Oczku (koło, skrzynie, plandeka ze znakiem kupca); kamienna półka pod wodospadem do łowiska z wędką Borysa (`MeadowsGen/Landmarks`: `ruinCrest`, `sunkenWagon`, `fallsLedge`).
+- Też: żuraw z wysięgnikiem nad wyrobiskiem i blokiem kamienia na linie (północno-wschodni brzeg Starego Wyrobiska, `quarryCrane`), grążele z białymi i różowymi kwiatami przy brzegach Żabiego Oczka (tylko klient, `lilies`).

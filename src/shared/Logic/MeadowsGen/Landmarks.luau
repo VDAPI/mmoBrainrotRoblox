@@ -663,6 +663,96 @@ local function fallsLedge(out: { Build })
 	table.insert(out, b)
 end
 
+-- W14 (laki.md 1.4): the hoist crane on the north-east rim of the Old Quarry, its jib over the pit with a block of
+-- stone on the rope (the mast collides, the rest is detail).
+local function quarryCrane(out: { Build })
+	local q = sites.quarry
+	local a = math.rad(45)
+	local x, z = q.x + math.sin(a) * 122 * 1.1, q.z - math.cos(a) * 96 * 1.1
+	local b = Kit.build("QuarryCrane", "quarry", x, z, 135) -- local -Z toward the pit
+	local bp = b.bp
+	local wood = Kit.timber
+	local H = 11
+	-- the mast on a stone foot, two raking struts behind it
+	bp:box(3, 1, 3, 0, Kit.gy(b, 0, 0) + 0.3, 0, o(Kit.stone, "shell", { q = true }))
+	bp:add("cyl", H, 0.7, 0.7, 0, H / 2 + 0.5, 0, 0, 0, 90, o(wood, "shell", { q = false }))
+	for _, side in { -1, 1 } do
+		bp:beam(side * 2.6, Kit.gy(b, side * 2.6, 3), 3, 0, H * 0.7, 0.2, 0.35, o(wood, "detail", { col = false }))
+	end
+	-- the jib out over the pit and its stay back to the mast top
+	local jx, jy, jz = 0, H * 0.82, -12
+	bp:beam(0, H * 0.55, 0, jx, jy, jz, 0.4, o(wood, "detail", { col = false }))
+	bp:beam(0, H + 0.4, 0, jx, jy, jz, 0.12, o(Kit.rope, "fine", { col = false }))
+	-- the winch drum at the foot of the mast
+	bp:add("cyl", 1.8, 0.9, 0.9, 0, 1.6, 1.1, 0, 0, 0, o(wood, "detail", { col = false }))
+	-- rope, hook and a hanging stone block
+	local by = jy - 6
+	bp:beam(jx, jy, jz, jx, by + 0.9, jz, 0.08, o(Kit.rope, "fine", { col = false }))
+	bp:box(0.3, 0.6, 0.3, jx, by + 0.6, jz, o(Kit.iron, "fine", { col = false }))
+	bp:rbox(2, 1.4, 1.6, jx, by - 0.3, jz, 0, 20, 0, o(Kit.stone, "detail", { col = false }))
+	table.insert(out, b)
+end
+
+-- W14 (laki.md 1.4): lily pads on the shallow edges of Toad Pond's waters, some with a white or pink flower (client
+-- detail only).
+local function lilies(out: { Build })
+	for li = 1, 5 do
+		local lake = Areas.lakes[li]
+		local b = Kit.build(`Lilies_{li}`, "lilies", lake.x, lake.z, 0)
+		b.at.y = MeadowsTerrain.LAKE_LEVEL
+		local bp = b.bp
+		local n = 0
+		local steps = math.floor(lake.r * 1.6)
+		for k = 0, steps - 1 do
+			local ang = k / steps * math.pi * 2 + li
+			local rr = lake.r * (0.45 + bp.rng:float(0, 0.6))
+			local wx, wz = lake.x + math.sin(ang) * rr, lake.z + math.cos(ang) * rr
+			local w = MeadowsTerrain.water(wx, wz)
+			if w and w - MeadowsTerrain.height(wx, wz) < 5.5 and bp.rng:chance(0.5) then
+				n += 1
+				local lx, lz = wx - lake.x, wz - lake.z
+				for c = 1, 3 do
+					local px, pz = lx + bp.rng:float(-1.6, 1.6), lz + bp.rng:float(-1.6, 1.6)
+					local d = bp.rng:float(1.4, 2.4)
+					bp:add(
+						"cyl",
+						0.08,
+						d,
+						d,
+						px,
+						w - b.at.y + 0.05,
+						pz,
+						0,
+						bp.rng:float(0, 180),
+						90,
+						o({ c = if c == 2 then "#5E8A3A" else "#4E7A34", m = "LeafyGrass" }, "fine", { col = false })
+					)
+				end
+				if n % 3 == 0 then
+					bp:add(
+						"ball",
+						0.6,
+						0.45,
+						0.6,
+						lx,
+						w - b.at.y + 0.3,
+						lz,
+						0,
+						0,
+						0,
+						o(
+							{ c = if n % 2 == 0 then "#F2EEE6" else "#E8A6C0", m = "SmoothPlastic" },
+							"fine",
+							{ col = false }
+						)
+					)
+				end
+			end
+		end
+		table.insert(out, b)
+	end
+end
+
 function Landmarks.all(out: { Build })
 	thickets(out)
 	fallenTrees(out)
@@ -678,6 +768,8 @@ function Landmarks.all(out: { Build })
 	ruinCrest(out)
 	sunkenWagon(out)
 	fallsLedge(out)
+	quarryCrane(out)
+	lilies(out)
 end
 
 return Landmarks
