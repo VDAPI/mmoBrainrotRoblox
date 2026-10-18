@@ -5,6 +5,7 @@ local fs = require("@lune/fs")
 
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local AchData = require("../src/shared/Data/Achievements")
+local AchievementView = require("../src/shared/Logic/AchievementView")
 local Achievements = require("../src/shared/Logic/Achievements")
 local Areas = require("../src/shared/Data/Areas")
 local Bosses = require("../src/shared/Data/Bosses")
@@ -483,7 +484,8 @@ end)
 T.describe("Save (S151)", function()
 	T.it("the templates carry ach, old saves get it from reconcile without a migration", function()
 		T.expect(AccountSchema.accountTemplate().ach).toEqual({ c = {}, s = {}, done = {}, paid = {} })
-		T.expect(AccountSchema.characterTemplate().ach).toEqual({ c = {}, s = {}, done = {} })
+		-- S151b: the character branch carries the tracked ids too
+		T.expect(AccountSchema.characterTemplate().ach).toEqual({ c = {}, s = {}, done = {}, track = {} })
 		T.expect(AccountSchema.accountTemplate().settings.achToasts).toBe(true)
 		local old: any = AccountSchema.accountTemplate()
 		old.ach = nil
@@ -493,13 +495,283 @@ T.describe("Save (S151)", function()
 		T.expect(AccountSchema.migrate(old)).toEqual({})
 		T.expect(old.schema).toBe(AccountSchema.CURRENT)
 		T.expect(old.ach).toEqual({ c = {}, s = {}, done = {}, paid = {} })
-		T.expect(old.characters["1"].ach).toEqual({ c = {}, s = {}, done = {} })
+		T.expect(old.characters["1"].ach).toEqual({ c = {}, s = {}, done = {}, track = {} }) -- S151b: track
 		T.expect(old.settings.achToasts).toBe(true)
 		local kept: any = AccountSchema.accountTemplate()
 		kept.ach = { c = { trades = 4 }, s = {}, done = { trade1 = 9 }, paid = {} }
 		AccountSchema.migrate(kept)
 		T.expect(kept.ach.c.trades).toBe(4)
 		T.expect(kept.ach.done.trade1).toBe(9)
+	end)
+end)
+
+-- S151b ------------------------------------------------------------------------------------------------------------------
+
+local function done(st: Achievements.State, id: string, at: number)
+	Achievements.markDone(st, AchData.get(id) :: any, at)
+end
+
+local function ids(rows: { AchievementView.Row }): { string }
+	local out: { string } = {}
+	for _, row in rows do
+		table.insert(out, row.id)
+	end
+	return out
+end
+
+T.describe("Tracking (S151b)", function()
+	T.it("canTrack gives every reason and the limit", function()
+		local _, _, st = fresh()
+		T.expect({ Achievements.canTrack(st, "nope") }).toEqual({ false, "ach.error.unknown" })
+		done(st, "slayer1", 10)
+		T.expect({ Achievements.canTrack(st, "slayer1") }).toEqual({ false, "ach.error.done" })
+		T.expect({ Achievements.canTrack(st, "slayer2") }).toEqual({ true })
+		T.expect(Config.Achievements.trackMax).toBe(3)
+		for _, id in { "slayer2", "elite1", "dodge1" } do
+			T.expect((Achievements.setTracked(st, id, true))).toBe(true)
+		end
+		T.expect(Achievements.tracked(st)).toEqual({ "slayer2", "elite1", "dodge1" })
+		T.expect({ Achievements.canTrack(st, "pvp1") }).toEqual({ false, "ach.error.full" })
+		-- an id already tracked is fine, twice changes nothing
+		T.expect({ Achievements.setTracked(st, "elite1", true) }).toEqual({ true, nil, false })
+		T.expect({ Achievements.setTracked(st, "pvp1", true) }).toEqual({ false, "ach.error.full", false })
+		T.expect({ Achievements.setTracked(st, "elite1", false) }).toEqual({ true, nil, true })
+		T.expect({ Achievements.setTracked(st, "elite1", false) }).toEqual({ true, nil, false })
+		T.expect((Achievements.setTracked(st, "pvp1", true))).toBe(true)
+		T.expect(Achievements.tracked(st)).toEqual({ "slayer2", "dodge1", "pvp1" })
+	end)
+
+	T.it("a secret achievement cannot be tracked before it is done", function()
+		local _, _, st = fresh()
+		local def = AchData.get("mail1") :: any
+		local was = def.secret
+		def.secret = true
+		local ok, err = Achievements.canTrack(st, "mail1")
+		def.secret = was
+		T.expect({ ok, err }).toEqual({ false, "ach.error.secret" })
+	end)
+
+	T.it("done and unknown ids leave the tracker (also an account one done by another character)", function()
+		local account, character, st = fresh()
+		Achievements.setTracked(st, "slayer1", true)
+		Achievements.setTracked(st, "trade1", true)
+		Achievements.setTracked(st, "mail1", true)
+		-- the server stops tracking in grant
+		done(st, "slayer1", 5)
+		T.expect((select(3, Achievements.setTracked(st, "slayer1", false)))).toBe(true)
+		-- trade1 (account) earned elsewhere, a removed id in an old save: gone on the next load
+		account.ach.done.trade1 = 7
+		table.insert(character.ach.track, "removedAchievement")
+		table.insert(character.ach.track, 42)
+		local again = Achievements.state(account, character)
+		T.expect(Achievements.tracked(again)).toEqual({ "mail1" })
+	end)
+
+	T.it("the save repairs the tracked list (strings, no duplicates, at most trackMax)", function()
+		local account, character = fresh()
+		character.ach.track = { "slayer1", "slayer1", "elite1", "dodge1", "pvp1", true }
+		local st = Achievements.state(account, character)
+		T.expect(Achievements.tracked(st)).toEqual({ "slayer1", "elite1", "dodge1" })
+		character.ach.track = "garbage"
+		T.expect(Achievements.tracked(Achievements.state(account, character))).toEqual({})
+	end)
+end)
+
+T.describe("AchievementView (S151b)", function()
+	T.it("summary: points and counts of the account, the character and both, per category", function()
+		local _, _, st = fresh()
+		done(st, "slayer1", 1) -- character, 5
+		done(st, "trade1", 2) -- account, 10
+		local all = AchievementView.summary(st, "all")
+		T.expect(all.points).toBe(15)
+		T.expect(all.done).toBe(2)
+		T.expect(all.total).toBe(#AchData.list)
+		local max = 0
+		for _, def in AchData.list do
+			max += def.points
+		end
+		T.expect(all.pointsMax).toBe(max)
+		T.expect(all.byCat.combat.done).toBe(1)
+		T.expect(all.byCat.social.done).toBe(1)
+		T.expect(all.byCat.combat.total).toBe(#AchData.forCategory("combat"))
+		local acc = AchievementView.summary(st, "account")
+		local chr = AchievementView.summary(st, "character")
+		T.expect({ acc.points, chr.points }).toEqual({ 10, 5 })
+		T.expect(acc.total + chr.total).toBe(all.total)
+		T.expect(acc.pointsMax + chr.pointsMax).toBe(all.pointsMax)
+	end)
+
+	T.it("rows: a series folds to its current step with the done steps and the next one", function()
+		local _, _, st = fresh()
+		local list = ids(AchievementView.rows(st, "combat", "all", "all"))
+		T.expect(table.find(list, "slayer1") ~= nil).toBe(true)
+		T.expect(table.find(list, "slayer2")).toBeNil()
+		Achievements.apply(st, "kills", "add", 1500, nil)
+		done(st, "slayer1", 10)
+		done(st, "slayer2", 20)
+		local folded = false
+		for _, r in AchievementView.rows(st, "combat", "all", "all") do
+			if r.id == "slayer3" then
+				folded = true
+			end
+			T.expect(r.id ~= "slayer1" and r.id ~= "slayer2").toBe(true)
+		end
+		T.expect(folded).toBe(true)
+		local row = AchievementView.detail(st, "slayer3") :: AchievementView.Row
+		T.expect(row.next).toBe("slayer4")
+		T.expect(#row.steps).toBe(5)
+		T.expect({ row.steps[1].done, row.steps[2].done, row.steps[3].done }).toEqual({ true, true, false })
+		T.expect({ row.value, row.goal }).toEqual({ 1500, 10000 })
+		T.expect(row.pct).toBe(0.15)
+		T.expect(row.scope).toBe("character")
+		-- the last step done: the series shows it done, without a next one
+		for _, id in { "slayer3", "slayer4", "slayer5" } do
+			done(st, id, 30)
+		end
+		local last = AchievementView.detail(st, "slayer5") :: AchievementView.Row
+		T.expect({ last.done, last.next }).toEqual({ true, nil })
+		T.expect(table.find(ids(AchievementView.rows(st, "combat", "all", "all")), "slayer5") ~= nil).toBe(true)
+	end)
+
+	T.it("rows: filters, range and order (in progress closest first, then not started, then newest done)", function()
+		local _, _, st = fresh()
+		Achievements.apply(st, "eliteKills", "add", 40, nil) -- elite1 80 %
+		Achievements.apply(st, "dodged", "add", 5, nil) -- dodge1 20 %
+		Achievements.apply(st, "kills", "add", 150, nil)
+		done(st, "slayer1", 100) -- slayer2 15 %
+		done(st, "duel1", 50)
+		done(st, "arena1", 60)
+		local list = ids(AchievementView.rows(st, "combat", "all", "all"))
+		T.expect({ list[1], list[2], list[3] }).toEqual({ "elite1", "dodge1", "slayer2" })
+		-- earned last, newest first: arena1 (60) before duel1 (50); their series go on (duel2, arena2 not started)
+		local earned = ids(AchievementView.rows(st, "combat", "done", "all"))
+		T.expect(earned).toEqual({ "slayer1", "arena1", "duel1" })
+		-- open: nothing done
+		for _, row in AchievementView.rows(st, "combat", "open", "all") do
+			T.expect(row.done).toBe(false)
+		end
+		-- every series of the category once, whatever the filter "all"
+		T.expect(table.find(list, "duel2") ~= nil and table.find(list, "duel1") == nil).toBe(true)
+		-- range: no account achievement in combat
+		T.expect(#AchievementView.rows(st, "combat", "all", "account")).toBe(0)
+		for _, row in AchievementView.rows(st, nil, "all", "account") do
+			T.expect(row.scope).toBe("account")
+		end
+		-- a completed series sits with the earned ones, newest first
+		for _, id in { "elite2", "elite3" } do
+			done(st, id, 200)
+		end
+		done(st, "elite1", 199)
+		local all = ids(AchievementView.rows(st, "combat", "all", "all"))
+		T.expect(all[#all]).toBe("elite3")
+		T.expect((AchievementView.detail(st, "elite3") :: AchievementView.Row).done).toBe(true)
+		-- the tracked flag
+		Achievements.setTracked(st, "dodge1", true)
+		local tracked = AchievementView.detail(st, "dodge1") :: AchievementView.Row
+		T.expect(tracked.tracked).toBe(true)
+		T.expect(ids(AchievementView.trackedRows(st))).toEqual({ "dodge1" })
+	end)
+
+	T.it("rows: a secret one not done is ??? without a description, goal or reward", function()
+		local _, _, st = fresh()
+		local def = AchData.get("fullParty1") :: any
+		local was = def.secret
+		def.secret = true
+		local hidden = AchievementView.detail(st, "fullParty1") :: AchievementView.Row
+		done(st, "fullParty1", 3)
+		local shown = AchievementView.detail(st, "fullParty1") :: AchievementView.Row
+		def.secret = was
+		T.expect(hidden.nameKey).toBe(AchievementView.SECRET_NAME)
+		T.expect(hidden.descKey).toBeNil()
+		T.expect({ hidden.goal, #hidden.reward, hidden.hidden }).toEqual({ 0, 0, true })
+		T.expect(shown.nameKey).toBe("ach.fullParty1.name")
+		T.expect(shown.hidden).toBe(false)
+		T.expect(type((pl :: any)[AchievementView.SECRET_NAME])).toBe("string")
+	end)
+
+	T.it("rewardLines: title, cosmetic, shards, gold and shards already paid on the account", function()
+		local _, _, st = fresh()
+		local title = AchievementView.rewardLines(AchData.get("slayer4") :: any, st)
+		T.expect(title[1].kind).toBe("title")
+		T.expect(title[1].nameKey).toBe((TitleData.get("ach_butcher") :: any).nameKey)
+		local cosmetic = AchievementView.rewardLines(AchData.get("elite3") :: any, st)
+		T.expect({ cosmetic[1].kind, cosmetic[1].id }).toEqual({ "cosmetic", "frame_elitehunter" })
+		local gold = AchievementView.rewardLines(AchData.get("level10") :: any, st)
+		T.expect({ gold[1].kind, gold[1].n }).toEqual({ "gold", 100 })
+		local shards = AchievementView.rewardLines(AchData.get("slayer3") :: any, st)
+		T.expect({ shards[1].kind, shards[1].n }).toEqual({ "shards", 10 })
+		-- another character of the account was paid: this one reads "already received"
+		st.acc.paid = { slayer3 = true }
+		local paid = AchievementView.rewardLines(AchData.get("slayer3") :: any, st)
+		T.expect(paid[1].kind).toBe("shardsPaid")
+		T.expect(paid[1].n).toBeNil()
+		-- S151b: done on this character, but the shards went to another one: still "already received"
+		done(st, "slayer3", 4)
+		local second = AchievementView.rewardLines(AchData.get("slayer3") :: any, st)
+		T.expect(second[1].kind).toBe("shardsPaid")
+		-- paid to this very character: the amount stays
+		st.chr.paidHere = { slayer3 = true }
+		local own = AchievementView.rewardLines(AchData.get("slayer3") :: any, st)
+		T.expect({ own[1].kind, own[1].n }).toEqual({ "shards", 10 })
+		-- an account achievement: paid and done on the account is the amount on every character
+		st.acc.paid.boss_vaelgrath = true
+		done(st, "boss_vaelgrath", 5)
+		local acc = AchievementView.rewardLines(AchData.get("boss_vaelgrath") :: any, st)
+		T.expect({ acc[1].kind, acc[1].n }).toEqual({ "shards", 10 })
+		T.expect(#AchievementView.rewardLines(AchData.get("slayer1") :: any, st)).toBe(0)
+		for _, line in { title[1], cosmetic[1], gold[1], shards[1], paid[1] } do
+			T.expect(type((pl :: any)[line.key])).toBe("string")
+			T.expect(type((en :: any)[line.key])).toBe("string")
+		end
+	end)
+
+	T.it("recent and read: the latest of both branches; read never repairs the save", function()
+		local account, character, st = fresh()
+		done(st, "slayer1", 10)
+		done(st, "trade1", 30)
+		done(st, "mail1", 20)
+		done(st, "elite1", 5)
+		T.expect(AchievementView.recent(st, 3)).toEqual({
+			{ id = "trade1", at = 30 },
+			{ id = "mail1", at = 20 },
+			{ id = "slayer1", at = 10 },
+		})
+		character.ach.track = { "dodge1", "dodge1" }
+		local view = AchievementView.read(account, character)
+		T.expect(Achievements.tracked(view)).toEqual({ "dodge1" })
+		T.expect(character.ach.track).toEqual({ "dodge1", "dodge1" })
+		T.expect(AchievementView.summary(view, "all").done).toBe(4)
+		T.expect(AchievementView.summary(AchievementView.read(nil, nil), "all").done).toBe(0)
+	end)
+
+	T.it("every series is a chain inside one category and one counter", function()
+		for _, def in AchData.list do
+			local chain = AchievementView.chainOf(def)
+			T.expect(table.find(chain, def) ~= nil).toBe(true)
+			for _, step in chain do
+				T.expect({ step.id, step.cat, step.counter }).toEqual({ step.id, def.cat, def.counter })
+			end
+		end
+	end)
+
+	T.it("the window, tracker and profile texts exist in both languages", function()
+		for _, key in
+			{
+				"window.achievements.title",
+				"hud.menu.achievements",
+				"ach.reward.shardsPaid",
+				"ach.error.unknown",
+				"ach.error.done",
+				"ach.error.secret",
+				"ach.error.full",
+				"ach.toast.view",
+				"ach.tracker",
+				"profile.ach.points",
+			}
+		do
+			T.expect({ key, type((pl :: any)[key]) }).toEqual({ key, "string" })
+			T.expect({ key, type((en :: any)[key]) }).toEqual({ key, "string" })
+		end
 	end)
 end)
 

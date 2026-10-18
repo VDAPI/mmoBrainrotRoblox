@@ -789,10 +789,16 @@ local Config = {
 	-- S151 (docs/DESIGN.md §20b): achievements (Data/Achievements, Logic/Achievements). The sum of every Dragon Shard
 	-- reward stays within shardBudget (tests/achievements.spec), a toast stays toastSeconds, after the catch-up of old
 	-- progress at most backfillToastMax single toasts (the most points) follow the summary one. Not balance.
+	-- S151b: at most trackMax achievements in the HUD tracker (trackPhone shown on a phone before it is expanded), the
+	-- open window refreshes its list at most every listRefresh seconds, a profile shows profileRecent latest ones.
 	Achievements = {
 		shardBudget = 500,
 		toastSeconds = 5,
 		backfillToastMax = 3,
+		trackMax = 3,
+		trackPhone = 1,
+		listRefresh = 0.5,
+		profileRecent = 3,
 	},
 	-- Streaming (S20, decision in docs/DECYZJE.md): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,

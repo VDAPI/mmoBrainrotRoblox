@@ -59,6 +59,8 @@ UiWindows.list = table.freeze({
 	fightlog = win("S136", "paper", { "UI/Screens/FightLogWindow.luau" }),
 	friends = win("S136", "paper", { "UI/Screens/FriendsWindow.luau" }),
 	dev = win("S136", "iron", { "UI/Screens/DevWindow" }, "admin overlay on iron at the right edge"),
+	-- S151b
+	achievements = win("S151b", "paper", { "UI/Screens/AchievementsWindow" }),
 } :: { [string]: Entry })
 
 -- S136: screens outside windows (HUD, overlays, full-screen screens, cards) and their surface.

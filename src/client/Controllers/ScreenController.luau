@@ -98,6 +98,8 @@ local MENU: { Hud.MenuEntry } = {
 		tooltipKey = "hud.menu.bloodmoon",
 		visible = BloodMoonView.menuVisible,
 	},
+	-- S151b: achievements (AchievementController registers the window; key win_achievements)
+	{ id = "achievements", icon = "✪", hotkey = "N", tooltipKey = "hud.menu.achievements" },
 	{ id = "wardrobe", icon = "♛", hotkey = nil, tooltipKey = "hud.menu.wardrobe" },
 	{ id = "premium", icon = "◆", hotkey = nil, tooltipKey = "hud.menu.shop" },
 	{ id = "menu", icon = "☰", hotkey = nil, tooltipKey = "hud.menu.menu" },
@@ -184,9 +186,11 @@ local function registerWindows()
 			or entry.id == "rankings"
 			or entry.id == "arena"
 			or entry.id == "bloodmoon"
+			or entry.id == "achievements"
 		then
 			-- Registered by WorldController / PartyController / QuestController / GuildController / PremiumController /
-			-- MountController (S97) / RankingsController (S124) / ArenaController (S126) / BloodMoonController (S129).
+			-- MountController (S97) / RankingsController (S124) / ArenaController (S126) / BloodMoonController (S129) /
+			-- AchievementController (S151b).
 			continue
 		elseif entry.id == "menu" then
 			WindowManager.Register({

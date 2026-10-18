@@ -8,7 +8,10 @@
 -- Save (no migration, AccountSchema templates + reconcile):
 --   account.ach   = { c = { [counter] = n }, s = { [counter] = { [id] = true } }, done = { [achId] = os.time }, paid =
 --                   { [achId] = true } }   (account counters and achievements, shards paid)
---   character.ach = { c, s, done }         (character counters and achievements)
+--   character.ach = { c, s, done, track }  (character counters and achievements; S151b: `track` = the ids followed in
+--                                           the HUD tracker, at most Config.Achievements.trackMax; `paidHere` =
+--                                           { [achId] = true }, the character achievements whose shards this
+--                                           character received, added on the first payment)
 
 local AchData = require("../Data/Achievements")
 local Areas = require("../Data/Areas")
@@ -25,6 +28,8 @@ export type Branch = {
 	s: { [string]: { [string]: boolean } },
 	done: { [string]: number },
 	paid: { [string]: boolean }?,
+	track: { string }?, -- S151b: character branch only
+	paidHere: { [string]: boolean }?, -- S151b: character branch only, the shards this character received
 }
 export type State = { acc: Branch, chr: Branch }
 export type Entry = { counter: string, mode: string, value: number, key: string? }
@@ -130,6 +135,19 @@ local function branchOf(raw: any, withPaid: boolean): Branch
 	return b :: Branch
 end
 
+-- S151b: the tracked ids of a character branch: strings in order, no duplicates, at most trackMax (a clean copy).
+local function trackOf(b: any)
+	local clean: { string } = {}
+	if type(b.track) == "table" then
+		for _, id in ipairs(b.track) do
+			if type(id) == "string" and not table.find(clean, id) and #clean < Config.Achievements.trackMax then
+				table.insert(clean, id)
+			end
+		end
+	end
+	b.track = clean
+end
+
 -- The achievement state of an account and its character. The branches are the save's own tables (repaired in place and
 -- attached when missing), so the server writes into them and replicates the changed paths.
 function Achievements.state(account: any, character: any): State
@@ -138,8 +156,18 @@ function Achievements.state(account: any, character: any): State
 		account.ach = acc
 	end
 	local chr = branchOf(if type(character) == "table" then character.ach else nil, false)
+	trackOf(chr)
 	if type(character) == "table" then
 		character.ach = chr
+	end
+	-- S151b: an id that is unknown or done (an account achievement earned by another character) leaves the tracker
+	local track = chr.track :: { string }
+	for i = #track, 1, -1 do
+		local def = AchData.get(track[i])
+		local branch = if def and Achievements.scopeOf(def.counter) == "account" then acc else chr
+		if not def or branch.done[def.id] ~= nil then
+			table.remove(track, i)
+		end
 	end
 	return { acc = acc, chr = chr }
 end
@@ -285,6 +313,61 @@ function Achievements.apply(st: State, counter: string, mode: string, value: num
 		end
 	end
 	return { newly = if changed then Achievements.pending(st, counter) else {}, changed = changed }
+end
+
+-- Tracking (S151b) -----------------------------------------------------------------------------------------------------
+
+-- The ids the character follows in the HUD tracker (the save's own list).
+function Achievements.tracked(st: State): { string }
+	local list = st.chr.track
+	if list == nil then
+		list = {}
+		st.chr.track = list
+	end
+	return list :: { string }
+end
+
+-- Whether `id` may be added to the tracker: a known achievement, not done, not secret, a free place (an id already
+-- tracked is fine). Error keys ach.error.unknown / .done / .secret / .full.
+function Achievements.canTrack(st: State, id: string): (boolean, string?)
+	local def = AchData.get(id)
+	if not def then
+		return false, "ach.error.unknown"
+	end
+	if Achievements.isDone(st, def) then
+		return false, "ach.error.done"
+	end
+	if def.secret == true then
+		return false, "ach.error.secret"
+	end
+	local list = Achievements.tracked(st)
+	if not table.find(list, id) and #list >= Config.Achievements.trackMax then
+		return false, "ach.error.full"
+	end
+	return true, nil
+end
+
+-- Follows (`on`) or stops following `id`. Returns (ok, errorKey?, changed): stopping an id that is not tracked is ok
+-- and changes nothing.
+function Achievements.setTracked(st: State, id: string, on: boolean): (boolean, string?, boolean)
+	local list = Achievements.tracked(st)
+	local at = table.find(list, id)
+	if not on then
+		if at then
+			table.remove(list, at)
+			return true, nil, true
+		end
+		return true, nil, false
+	end
+	local ok, err = Achievements.canTrack(st, id)
+	if not ok then
+		return false, err, false
+	end
+	if at then
+		return true, nil, false
+	end
+	table.insert(list, id)
+	return true, nil, true
 end
 
 -- Rewards -----------------------------------------------------------------------------------------------------------

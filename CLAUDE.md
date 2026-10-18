@@ -238,7 +238,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   serwis `WorldBossService`, udział przez `Logic/Contribution`.
 - **Osiągnięcie** (S151): wpis w `Data/Achievements` (licznik z `COUNTERS`, `goal`, nagroda) + `ach.<id>.name/.desc` (PL,
   EN); nowe źródło postępu = rodzaj zdarzenia `QuestEvents` + mapowanie w `Logic/Achievements.COUNTER_EVENTS`; odłamki w
-  budżecie `Config.Achievements.shardBudget` (test).
+  budżecie `Config.Achievements.shardBudget` (test). Okno, tracker i profil (S151b) tylko z `Logic/AchievementView`
+  (seria zwinięta do bieżącego stopnia, sekretne „???”), śledzenie przez `Achievements.canTrack` / `setTracked`
+  (`character.ach.track`, remote `AchievementTrack`).
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez

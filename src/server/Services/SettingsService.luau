@@ -116,6 +116,10 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	achToasts = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S151b: the one-time tracking hint of the achievements window was shown (only ever set to true)
+	achHint = function(value)
+		return value == true
+	end,
 	-- S30 ladder: hide below Unique (2) or Heroic (3); Legendary+ is always shown.
 	lootHideBelow = function(value)
 		return type(value) == "number" and value == math.floor(value) and value >= 0 and value <= Rarities.HEROIC

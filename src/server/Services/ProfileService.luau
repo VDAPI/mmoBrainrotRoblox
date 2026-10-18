@@ -3,10 +3,14 @@
 -- level, guild, PvP and duel records and the equipped items (with their rolls, like inspecting in Margonem).
 -- S123: the shown title with the account context (VIP and bought titles) and the portrait frame (cosmetic id); nothing
 -- else of the account (no owned cosmetics, no shards).
+-- S151b: `ach` = { points, done, total, recent = { { id, at } } }: the achievement points and the latest done
+-- achievements of the account and the character (Logic/AchievementView); nothing in progress.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local AchievementView = require(ReplicatedStorage.Shared.Logic.AchievementView)
+local Config = require(ReplicatedStorage.Shared.Config)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Titles = require(ReplicatedStorage.Shared.Logic.Titles)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -31,6 +35,8 @@ local function profile(_viewer: Player, userId: number): (boolean, any)
 	local guild = GuildService.Data(target)
 	local account: Types.AccountData? = DataService.GetData(target)
 	local frame = account and account.cosmetics.equipped.frame
+	local st = AchievementView.read(account, char)
+	local summary = AchievementView.summary(st, "all")
 	return true,
 		{
 			userId = userId,
@@ -49,6 +55,12 @@ local function profile(_viewer: Player, userId: number): (boolean, any)
 				return if args then args.season else nil
 			end)(),
 			frame = if type(frame) == "string" then frame else nil,
+			ach = {
+				points = summary.points,
+				done = summary.done,
+				total = summary.total,
+				recent = AchievementView.recent(st, Config.Achievements.profileRecent),
+			},
 		}
 end
 

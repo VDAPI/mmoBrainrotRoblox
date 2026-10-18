@@ -72,6 +72,7 @@ function AccountSchema.accountTemplate(): AccountData
 			appearOffline = false, -- S150: "Appear offline" (reconcile)
 			friendJoin = "friends", -- S150: who may join my server: friends or nobody (reconcile)
 			achToasts = true, -- S151: achievement toasts (false = one line in the system chat; reconcile)
+			achHint = false, -- S151b: the one-time "star an achievement" hint of the achievements window was shown
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
@@ -197,7 +198,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		-- S96: no migration; reconcile adds owned = {} and riding = false to older characters
 		mounts = { owned = {}, active = nil, riding = false },
 		-- S151: character achievement counters, sets and done achievements (Logic/Achievements); no migration (reconcile)
-		ach = { c = {}, s = {}, done = {} },
+		-- S151b: `track` = the achievements followed in the HUD tracker (reconcile adds it)
+		ach = { c = {}, s = {}, done = {}, track = {} },
 		createdAt = 0,
 		playtime = 0,
 	}

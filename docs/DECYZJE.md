@@ -5726,3 +5726,30 @@
 - **S151** Toasty: jeden naraz, 5 s, u góry ekranu (telefon też, z dala od paska umiejętności); przy wejściu jeden
   zbiorczy i najwyżej 3 pojedyncze (najwięcej punktów). Ustawienie `achToasts` wyłączone = wpis w czacie systemowym.
   Kosmetyk z osiągnięcia bez własnego toastu (`CosmeticService.Grant(..., quiet)`). Bez przycisku „Zobacz” do S151b.
+- **S151b** Okno osiągnięć: seria (`after`) zwinięta do bieżącego stopnia (pierwszy niezdobyty, cała zdobyta = ostatni),
+  w filtrze „Zdobyte” do najwyższego zdobytego; stopnie jako „I✓ II [III] IV” w nazwie wiersza, następny stopień w
+  szczegółach. Kolejność: w trakcie (najbliżej celu), nie zaczęte (kolejność danych), zdobyte (najnowsze). Model widoku
+  tylko w `Logic/AchievementView` (test), okno nie liczy nic samo.
+- **S151b** Sekretne niezdobyte: „???” bez opisu, celu i nagrody (dziś żadne osiągnięcie nie jest sekretne); nie da się
+  ich śledzić.
+- **S151b** Śledzenie: najwyżej `Config.Achievements.trackMax` (3) na postać (`character.ach.track`, szablon +
+  reconcile), także osiągnięcia konta; zdobyte znika samo (`grant`), a zdobyte inną postacią albo usunięte z danych
+  wypada przy wczytaniu (`Achievements.state`). Remote `AchievementTrack` (`rate = 2`). Na telefonie tracker pokazuje 1
+  (`trackPhone`), reszta po „Jeszcze {n}”.
+- **S151b** Lista okna czyta stan najwyżej co `listRefresh` (0,5 s) i przebudowuje wiersze tylko przy zmianie kształtu
+  (kolejność, zdobyte, śledzone); pasek wiersza słucha swojego wpisu. Wiersz trackera słucha tylko swojego licznika.
+- **S151b** Klawisz okna `N` (`win_achievements`; `Y` mają znajomi od S133), pozycja w menu HUD i w menu gry (☰).
+  Ikony kategorii: klucze `hud/ach_<cat>` (`UiArt.achCategory`, w `UiArt.FIXED.hud`), do czasu grafik znaki.
+- **S151b** Profil: `PlayerProfile` dostaje `ach = { points, done, total, recent }` (3 ostatnie zdobyte konta i postaci),
+  bez postępów w trakcie, także dla cudzego profilu; „Wszystkie” tylko we własnym profilu (gdy otwarty na sobie).
+  Gablota (`showcase`) nie zrobiona.
+- **S151b** Podpowiedź „Gwiazdką dodasz…” raz na konto przy pierwszym otwarciu okna: ustawienie `achHint` przez
+  istniejące `SetSetting` (osobnego mechanizmu „hints” nie ma).
+- **S151b** Wiki pominięta (właściciel 17.10: bez odświeżania danych i zmian w `wiki/`): eksporter
+  `tools/WikiData/Achievements.luau`, strona, publikacja tytułów `ach_*` i kosmetyków osiągnięć (`wiki = false` zostaje)
+  idą razem z odświeżeniem wiki; zasada bez kwot odłamków i `retro` z `backfill` obowiązuje wtedy dalej.
+- **S151b** Odłamki osiągnięcia postaci: kwota w oknie tylko na postaci, która je dostała (`character.ach.paidHere`,
+  zapis w `grant`, bez szablonu: ścieżka tworzy się sama); inna postać z tym samym osiągnięciem widzi „już odebrane na
+  tym koncie”. Osiągnięcie konta: kwota, gdy zdobyte. Postać opłacona przed S151b (bez `paidHere`) też widzi „już odebrane”.
+- **S151b** Telefon: „Zobacz” w toaście ma `MinTouch`, wiersz osiągnięcia w trackerze `RowHeight` (PC bez zmian: 32 i 40).
+  „Zobacz” / klik w trackerze na już wybranym osiągnięciu otwiera arkusz ponownie (fokus przez `nil`).

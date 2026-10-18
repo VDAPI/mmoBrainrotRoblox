@@ -5,7 +5,10 @@
 
 ## Stan
 
-S01–S115 i S117–S151 gotowe (ostatnia S151: osiągnięcia, rdzeń: 79 osiągnięć w sześciu kategoriach (walka,
+S01–S115 i S117–S151b gotowe (ostatnia S151b: okno osiągnięć (`N`, menu HUD i gry, „Zobacz” w toaście; kategorie,
+serie zwinięte do bieżącego stopnia, przełącznik konto / postać, filtr, szczegóły z nagrodami; `Logic/AchievementView`),
+śledzenie do 3 osiągnięć w trackerze HUD (`AchievementTrack`, `character.ach.track`), punkty i ostatnie osiągnięcia
+w profilu gracza; wcześniej S151: osiągnięcia, rdzeń: 79 osiągnięć w sześciu kategoriach (walka,
 bossowie, odkrywanie z kryjówkami, rzemiosło, społeczność, droga) na licznikach konta i postaci (`Data/Achievements`,
 `Logic/Achievements`, `AchievementService` ze zdarzeń `QuestEvents` + zabójstwa i poziomy), nagrody: 7 tytułów, 5
 kosmetyków, Smocze Odłamki raz na konto (suma 320 z budżetu 500), złoto za poziom 10; dawne postępy zaliczane przy
@@ -383,10 +386,13 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
-- **Osiągnięcia (S151):** S151b — okno osiągnięć, śledzenie wybranych, karta w profilu, przycisk „Zobacz” w toaście
-  i wiki (osiągnięcia, 7 tytułów i 5 kosmetyków mają dziś `wiki = false`; wiki do odświeżenia, właściciel 17.10). Bez
-  przeglądu w grze (toast na PC i telefonie, wygląd nowych ram, ramek czatu, efektu awansu i aury). Dla właściciela:
-  ID dźwięku `ui.achievement` (dziś cisza).
+- **Osiągnięcia (S151, S151b):** wiki z S151b czeka na odświeżenie wiki (właściciel 17.10): eksporter
+  `tools/WikiData/Achievements.luau` (bez kwot odłamków, `retro` z `backfill`, `secretCount`), strona osiągnięć, link z
+  tytułów i kosmetyków, publikacja 7 tytułów `ach_*` i 5 kosmetyków (dziś `wiki = false`). Gablota w profilu
+  (`showcase`) nie zrobiona. Własny profil otwiera się tylko na sobie (karta drużyny na mapie), osobnego przycisku nie
+  ma. Bez przeglądu w grze (okno osiągnięć na PC i telefonie, sekcja trackera, profil, toast z „Zobacz”, wygląd nowych
+  ram, ramek czatu, efektu awansu i aury). Dla właściciela: ID dźwięku `ui.achievement` (dziś cisza), grafiki
+  `hud/ach_<kategoria>` i `hud/menu_achievements`.
 
 - **Znajomi 2.0 (S150):** bez przeglądu w grze (okno znajomych na PC i telefonie, arkusz „⋯”, popup „Dołącz i wejdź do
   grupy”); teleport na serwer znajomego i zaproszenie między serwerami działają tylko w opublikowanej grze (w Studio

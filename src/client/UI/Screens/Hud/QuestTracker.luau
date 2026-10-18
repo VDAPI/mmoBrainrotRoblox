@@ -6,6 +6,10 @@
 -- "From: Contract board"; nothing while waiting for a level or after the 99th; S134k: up to three active ones and "+N").
 -- S101b: targets follow the saved
 -- answers (QuestText `quests`), and a quest with a companion shows "<NPC> is waiting for you" / "went back".
+-- S151b: the tracked achievements (character.ach.track, at most Config.Achievements.trackMax) under the quests: the
+-- name, "value / goal" and a thin bar; a click opens the achievements window on it. A row listens only to its own
+-- counter; on a phone Config.Achievements.trackPhone of them show until "+N" unfolds the rest. Collapses with the
+-- tracker.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,8 +17,13 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local AchData = require(ReplicatedStorage.Shared.Data.Achievements)
+local AchievementView = require(ReplicatedStorage.Shared.Logic.AchievementView)
+local Achievements = require(ReplicatedStorage.Shared.Logic.Achievements)
 local AreaState = require(script.Parent.Parent.Parent.AreaState)
+local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.Parent.Device)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
@@ -69,7 +78,86 @@ export type Props = {
 	Guide: ((target: QuestTrack.Target) -> ())?,
 	-- S101: pixels the tracker moves down while the world event panel stands above it (QuestController).
 	Offset: Fusion.UsedAs<number>?,
+	-- S151b: a tracked achievement's row opens the achievements window on it.
+	OpenAchievement: ((id: string) -> ())?,
 }
+
+-- S151b: the layout order of the achievement section (after every quest line).
+local ACH_ORDER = 100000
+local ACH_ROW = 40 -- PC; a phone row is Theme.Size.RowHeight (a tap target)
+
+-- S151b: one tracked achievement: the name and "value / goal" over a thin bar; the numbers follow only its counter.
+local function achievementRow(s: Scope, def: any, order: number, height: number, props: Props?): Instance
+	local root = if Achievements.scopeOf(def.counter) == "account" then "account" else "character"
+	local count = State.Value({ root, "ach", "c", def.counter })
+	local set = State.Value({ root, "ach", "s", def.counter })
+	local row = s:Computed(function(use): AchievementView.Row?
+		use(count)
+		use(set)
+		return AchievementView.detail(
+			AchievementView.read(State.Get({ "account" }), State.Get({ "character" })),
+			def.id
+		)
+	end)
+	return s:New("TextButton")({
+		Name = def.id,
+		LayoutOrder = order,
+		Size = UDim2.new(1, 0, 0, height),
+		AutoButtonColor = false,
+		BackgroundTransparency = 1,
+		Text = "",
+		[OnEvent("Activated")] = function()
+			if props and props.OpenAchievement then
+				props.OpenAchievement(def.id)
+			end
+		end,
+		[Children] = {
+			s:New("TextLabel")({
+				Name = "Name",
+				Size = UDim2.new(1, -70, 0, 24),
+				BackgroundTransparency = 1,
+				Text = s:Computed(function(use): string
+					return `✪ {Text.get(use, `ach.{def.id}.name`)}`
+				end),
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Text,
+				TextStrokeTransparency = 0.5,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+			}),
+			s:New("TextLabel")({
+				Name = "Count",
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.fromScale(1, 0),
+				Size = UDim2.fromOffset(70, 24),
+				BackgroundTransparency = 1,
+				Text = s:Computed(function(use): string
+					local r = use(row)
+					return if r then `{math.min(r.value, r.goal)} / {r.goal}` else ""
+				end),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Caption,
+				TextColor3 = Theme.Brass.Bright,
+				TextStrokeTransparency = 0.5,
+				TextXAlignment = Enum.TextXAlignment.Right,
+			}),
+			Bar(s, {
+				Name = "Progress",
+				AnchorPoint = Vector2.new(0, 1),
+				Position = UDim2.new(0, 0, 1, -6),
+				Size = UDim2.new(1, 0, 0, 5),
+				Value = s:Computed(function(use): number
+					local r = use(row)
+					return if r then r.pct else 0
+				end),
+				Max = 1,
+				Color = Theme.Brass.Bright,
+				Surface = "iron",
+			}),
+		},
+	})
+end
 
 local function QuestTracker(scope: Scope, props: Props?): Instance
 	local quests = State.Value({ "character", "quests" })
@@ -435,6 +523,73 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		return list
 	end)
 
+	-- S151b: the tracked achievements under the quests (the list from AchievementView.trackedRows: no unknown, done or
+	-- secret one; rebuilt when the track list changes, a row follows its own counter)
+	local tracked = State.Value({ "character", "ach", "track" })
+	local achOpen = scope:Value(false)
+	local achLines = scope:Computed(function(use, s: Scope): { Instance }
+		local out: { Instance } = {}
+		local list = use(tracked)
+		if use(collapsed) or type(list) ~= "table" then
+			return out
+		end
+		local defs: { any } = {}
+		local st = AchievementView.read(State.Get({ "account" }), State.Get({ "character" }))
+		for _, row in AchievementView.trackedRows(st) do
+			local def = AchData.get(row.id)
+			if def then
+				table.insert(defs, def)
+			end
+		end
+		if #defs == 0 then
+			return out
+		end
+		local shown = #defs
+		local rowHeight = if use(Device.Touch) then Theme.Size.RowHeight else ACH_ROW
+		if use(Device.Touch) and not use(achOpen) then
+			shown = math.min(shown, Config.Achievements.trackPhone)
+		end
+		table.insert(
+			out,
+			s:New("TextLabel")({
+				Name = "AchievementsHeader",
+				LayoutOrder = ACH_ORDER,
+				Size = UDim2.new(1, 0, 0, 26),
+				BackgroundTransparency = 1,
+				Text = Text.get(use, "ach.tracker"),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Heading,
+				TextStrokeTransparency = 0.5,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Bottom,
+			})
+		)
+		for i = 1, shown do
+			table.insert(out, achievementRow(s, defs[i], ACH_ORDER + i, rowHeight, props))
+		end
+		if shown < #defs then
+			table.insert(
+				out,
+				s:New("TextButton")({
+					Name = "AchievementsMore",
+					LayoutOrder = ACH_ORDER + #defs + 1,
+					Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+					BackgroundTransparency = 1,
+					Text = Text.get(use, "ach.tracker.more", { n = #defs - shown }),
+					FontFace = Theme.Fonts.BodyMedium,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Iron.TextMuted,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					[OnEvent("Activated")] = function()
+						achOpen:set(true)
+					end,
+				})
+			)
+		end
+		return out
+	end)
+
 	return scope:New("Frame")({
 		Name = "QuestTracker",
 		AnchorPoint = Vector2.new(1, 0),
@@ -518,6 +673,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 				},
 			}),
 			lines :: any,
+			achLines :: any,
 		},
 	})
 end

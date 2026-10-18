@@ -181,6 +181,8 @@ local Definitions: { [string]: Definition } = {
 	-- S151: an achievement done ({ id, reward = { title?, cosmetic?, shards?, gold? } }) or the catch-up of old progress
 	-- ({ backfill = n }); AchievementController shows the toast (or a system chat line with the setting off)
 	AchievementDone = { kind = "event", dir = "s2c" },
+	-- S151b: follow (true) or stop following (false) an achievement in the HUD tracker: (achId, on) -> (ok, errKey?)
+	AchievementTrack = { kind = "function", dir = "c2s", rate = 2, args = { "string", "boolean" } },
 	-- S134f: the party finder board (PartyFinderService): (kind, target, minLevel, maxLevel, { classId }) -> (ok, errKey?)
 	FinderPost = {
 		kind = "function",

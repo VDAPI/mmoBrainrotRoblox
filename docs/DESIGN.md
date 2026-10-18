@@ -1226,7 +1226,16 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   Liczone od wprowadzenia osiągnięć: zabójstwa, Elity, kryjówki, uniki, kowal, alchemia, zbieractwo, ryby, handel,
   listy, Krwawe Księżyce, Inwazje.
 - **Powiadomienie:** toast u góry ekranu (nazwa, kategoria, punkty, nagroda; jeden naraz); ustawienie „Powiadomienia o
-  osiągnięciach” wyłączone = wpis w czacie systemowym. Okno osiągnięć, śledzenie i wiki: S151b.
+  osiągnięciach” wyłączone = wpis w czacie systemowym; „Zobacz” otwiera okno na tym osiągnięciu (S151b).
+- **Okno osiągnięć** (S151b, klawisz `N`, menu HUD i menu gry): u góry punkty i zdobyte z paskiem, przełącznik
+  Wszystkie / Konto / Ta postać i filtr Wszystkie / W trakcie / Zdobyte; kategorie z ikonami (telefon: przewijane
+  zakładki), lista: seria pokazana jako bieżący stopień ze znaczkami stopni, opis z celem, zakres, punkty, pasek
+  postępu, gwiazdka śledzenia; szczegóły: cała seria z celami, nagrodami i datami, „Śledź”, „Ustaw tytuł”, „Otwórz
+  garderobę” (telefon: arkusz). Sekretne przed zdobyciem jako „???”. Odłamki zapłacone inną postacią: „już odebrane na
+  tym koncie”.
+- **Śledzenie** (S151b): do 3 osiągnięć na postać w trackerze HUD pod questami (nazwa, postęp, pasek; klik otwiera
+  okno; telefon pokazuje 1, reszta po rozwinięciu); zdobyte znika samo. Profil gracza: punkty, zdobyte i 3 ostatnie
+  zdobyte (bez postępów w trakcie).
 
 ## 21. Monetyzacja (bez pay-to-win)
 

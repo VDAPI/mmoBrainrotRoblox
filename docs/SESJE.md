@@ -12862,3 +12862,38 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/UI/Screens/{GameMenu,Wardrobe}.luau`, `src/client/UI/Screens/CharacterWindow/init.luau`,
   `tests/{achievements,titles,premium,balance,data}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S151b: Osiągnięcia (okno, śledzenie, profil, wiki)
+
+- **Model widoku** `src/shared/Logic/AchievementView.luau` (czysty, test): `summary(st, zakres)` (punkty, zdobyte, na
+  kategorię; konto / postać / razem), `rows(st, kat, filtr, zakres)` (serie zwinięte do bieżącego stopnia z `steps` i
+  `next`, sekretne „???”, kolejność w trakcie → nie zaczęte → zdobyte), `detail`, `rewardLines` (tytuł, kosmetyk,
+  odłamki, złoto, „już odebrane na tym koncie”), `trackedRows`, `recent`, `read` (stan bez naprawiania lustra klienta).
+- **Śledzenie:** `Logic/Achievements.canTrack` / `setTracked` / `tracked` (powody `ach.error.unknown|done|secret|full`),
+  zapis `character.ach.track` (szablon, naprawa w `state`, zdobyte i nieznane wypadają), remote `AchievementTrack`
+  (`AchievementService`, zdobyte znika w `grant`), `Config.Achievements.trackMax = 3`, `trackPhone`, `listRefresh`,
+  `profileRecent`.
+- **Nowe okno** `achievements` (pergamin, `Data/UiWindows`, sesja S151b): `UI/Screens/AchievementsWindow/{init,Context,
+  Summary,List,Details}.luau`; klawisz `N` (`win_achievements`), przycisk w menu HUD, pozycja w menu gry, „Zobacz” w
+  toaście, klik w trackerze, „Wszystkie” w profilu (`AchievementController.Open(id?)`). PC: podsumowanie z przełącznikami
+  zakresu i filtra, kolumna kategorii (`ListRow` + `ArtIcon` `hud/ach_<cat>`), lista z paskiem i gwiazdką, panel
+  szczegółów (seria, nagrody, daty, „Śledź” / „Nie śledź”, „Ustaw tytuł”, „Otwórz garderobę”); telefon: kategorie jako
+  przewijane `Tabs`, szczegóły w arkuszu. Podpowiedź gwiazdki raz (`settings.achHint`).
+- **Zmienione ekrany:** `Hud/QuestTracker` (sekcja „Osiągnięcia” pod questami, żelazo), `Hud/AchievementToast`
+  („Zobacz”), `ProfileWindow` (sekcja osiągnięć, przewijana treść; `ProfileService` dodaje `ach`), `GameMenu`.
+- **Testy:** `achievements.spec` (śledzenie: powody, limit, naprawa zapisu, zdobyte i konta z innej postaci;
+  `AchievementView`: podsumowanie, serie, filtry, zakres, kolejność, sekretne, nagrody, `recent`, `read`; szablon z
+  `track`; odłamki tylko na postaci z `paidHere`), `uitheme.spec` (sesja S151b w liście okien), `uiart.spec` (klucze
+  kategorii).
+- **Po przeglądzie:** `character.ach.paidHere` (kwota odłamków tylko na opłaconej postaci), tracker z
+  `AchievementView.trackedRows`, cele dotyku na telefonie (toast „Zobacz” 44, wiersz trackera 48), ponowne otwarcie
+  arkusza przy tym samym fokusie, bez martwego `Context.refresh`.
+- Opublikowanych tytułów i kosmetyków brak: wiki do odświeżenia (właściciel 17.10); eksporter, strona i publikacja w
+  „Niedokończone”.
+- **Pliki:** `src/shared/Logic/AchievementView.luau` (nowy), `src/client/UI/Screens/AchievementsWindow/*` (nowe),
+  `src/shared/{Config,Types}.luau`, `src/shared/Logic/{Achievements,AccountSchema,UiArt}.luau`,
+  `src/shared/Data/{Keybinds,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/shared/Net/Definitions.luau`, `src/server/Services/{AchievementService,ProfileService,SettingsService}.luau`,
+  `src/client/Controllers/{AchievementController,PartyController,QuestController,ScreenController}.luau`,
+  `src/client/UI/Screens/{GameMenu,ProfileWindow}.luau`, `src/client/UI/Screens/Hud/{AchievementToast,QuestTracker}.luau`,
+  `tests/{achievements,uiart,uitheme}.spec.luau`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

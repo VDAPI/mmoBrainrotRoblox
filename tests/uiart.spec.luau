@@ -4,6 +4,7 @@
 -- fallback, painted map frames, and every ArtIcon in the client keeps today's glyph (`Glyph = ...`).
 local fs = require("@lune/fs")
 
+local AchData = require("../src/shared/Data/Achievements")
 local Npcs = require("../src/shared/Data/Npcs")
 local Registry = require("../src/shared/Data/UiArt")
 local Sheets = require("../src/shared/Data/UiArtSheets")
@@ -159,6 +160,11 @@ T.describe("Logic/UiArt keys (S119)", function()
 		T.expect(UiArt.cosmetic("pet_fox")).toBe("kosmetyki/pet_fox")
 		T.expect(UiArt.boss("grimrok")).toBe("bossowie/boss_grimrok")
 		T.expect(UiArt.dungeon("azgor")).toBe("lochy/dungeon_azgor")
+		-- S151b: every achievement category has its fixed hud key (glyph until the picture)
+		T.expect(UiArt.achCategory("combat")).toBe("hud/ach_combat")
+		for _, cat in AchData.CATEGORIES do
+			T.expect({ cat, table.find(UiArt.FIXED.hud, `ach_{cat}`) ~= nil }).toEqual({ cat, true })
+		end
 	end)
 
 	T.it("an NPC's icon is its first service besides talk, else the plain NPC", function()

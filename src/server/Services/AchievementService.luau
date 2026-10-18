@@ -9,6 +9,8 @@
 -- Hot path: a kill arrives for every credited player. One pass of Logic per event without a yield, the branch tables
 -- cached per character, achievements looked up by counter (Data/Achievements.byCounter), and only the changed leaves
 -- written ({ "character", "ach", "c", "kills" } …), so the state diff of a kill stays a few numbers.
+-- S151b: AchievementTrack follows / stops following an achievement in the HUD tracker (Logic/Achievements.canTrack,
+-- character.ach.track); a done achievement leaves the tracker in grant.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -95,6 +97,13 @@ local function grant(player: Player, st: State, def: AchDef): Payload?
 		paid[def.id] = true
 		st.acc.paid = paid
 		PlayerStateService.Set(player, { "account", "ach", "paid", def.id }, true)
+		if root == "character" then
+			-- S151b: the window shows the amount only on the character that received it
+			local here = st.chr.paidHere or {}
+			here[def.id] = true
+			st.chr.paidHere = here
+			PlayerStateService.Set(player, { "character", "ach", "paidHere", def.id }, true)
+		end
 		local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(value: number?)
 			return (value or 0) + r.shards
 		end)
@@ -105,6 +114,11 @@ local function grant(player: Player, st: State, def: AchDef): Payload?
 			return (value or 0) + r.gold
 		end)
 		Analytics.gold(player, r.gold, balance, "achievement")
+	end
+	-- S151b: a done achievement is not followed any more
+	local _, _, untracked = Achievements.setTracked(st, def.id, false)
+	if untracked then
+		PlayerStateService.Set(player, { "character", "ach", "track" }, table.clone(Achievements.tracked(st)))
 	end
 	if r.title then
 		TitleService.Refresh(player)
@@ -319,6 +333,22 @@ function AchievementService.Backfill(player: Player): number
 	return catchUp(player, 0)
 end
 
+-- S151b: (achId, on) -> (ok, errKey?): the tracker list of the character (character.ach.track).
+local function track(player: Player, id: string, on: boolean): (boolean, string?)
+	local st = stateOf(player)
+	if not st then
+		return false, "error.internal"
+	end
+	local ok, err, changed = Achievements.setTracked(st, id, on)
+	if not ok then
+		return false, err
+	end
+	if changed then
+		PlayerStateService.Set(player, { "character", "ach", "track" }, table.clone(Achievements.tracked(st)))
+	end
+	return true, nil
+end
+
 function AchievementService.Init(registry)
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
@@ -329,6 +359,7 @@ function AchievementService.Init(registry)
 end
 
 function AchievementService.Start()
+	Net.Handle("AchievementTrack", track)
 	QuestEvents.Fired:Connect(function(player: Player, kind: string, data: { [string]: any })
 		handle(player, kind, data)
 	end)

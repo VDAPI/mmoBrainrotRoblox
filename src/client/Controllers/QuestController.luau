@@ -251,6 +251,10 @@ function QuestController.Init(registry)
 				labelKey = if npc then npc.nameKey else "quest.tracker",
 			})
 		end,
+		-- S151b: a tracked achievement opens the achievements window on it (from the registry: no Deps cycle)
+		OpenAchievement = function(id: string)
+			registry.Get("AchievementController").Open(id)
+		end,
 	}).Parent =
 		UIController.GetLayer("Screens")
 	Elite2Timer(scope).Parent = UIController.GetLayer("Screens")

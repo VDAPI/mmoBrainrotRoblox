@@ -410,6 +410,7 @@ export type Settings = {
 	appearOffline: boolean, -- S150: no presence entry: friends see "offline", no "is in the game" toast
 	friendJoin: string, -- S150: "friends" | "none": who may join this player's server and invite from another one
 	achToasts: boolean, -- S151: achievement toasts (false: one line in the system chat instead)
+	achHint: boolean, -- S151b: the one-time tracking hint of the achievements window was shown
 }
 
 -- S133: a friend or an ignored player (account.social, key tostring(userId)): the character name at the time, the class
@@ -438,6 +439,8 @@ export type AchBranch = {
 	s: { [string]: { [string]: boolean } },
 	done: { [string]: number },
 	paid: { [string]: boolean }?,
+	track: { string }?, -- S151b: the character's achievements followed in the HUD tracker
+	paidHere: { [string]: boolean }?, -- S151b: the character achievements whose Dragon Shards this character received
 }
 
 export type AccountData = {
