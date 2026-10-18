@@ -30,6 +30,7 @@ local Config = require(Shared.Config)
 local Ignores = require(script.Parent.Parent.Social.Ignores)
 local KeyStore = require(script.Parent.Parent.Market.KeyStore)
 local Log = require(Shared.Util.Log)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local NameRules = require(Shared.Logic.NameRules)
 local Net = require(Shared.Net)
 local Notify = require(script.Parent.Parent.Market.Notify)
@@ -104,6 +105,13 @@ end
 local function writeSocial(player: Player, data: SocialData)
 	if PlayerStateService.HasState(player) then
 		PlayerStateService.Set(player, { "account", "social" }, data)
+		-- S151: the number of friends (achievements count the highest)
+		local friends = 0
+		local list: { [string]: any } = data.friends or {}
+		for _ in list do
+			friends += 1
+		end
+		QuestEvents.fire(player, "social", { friends = friends })
 	end
 end
 

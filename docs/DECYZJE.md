@@ -5680,3 +5680,49 @@
   znajomych w grze na przycisku HUD pominięty: przyciski menu mają tylko znak „!” (`IconButton.Badge`), bez liczb.
 - **S150** `FriendsStatus` (S133) usunięte: okno dostaje gałąź runtime `friends` przez `FriendsWatch` (wzór
   `FinderWatch`), pełne odświeżenie co 30 s, lekkie (blokada, odnowienie) co 2 s, wysyłka tylko przy zmianie.
+- **S151** Osiągnięcia w sześciu kategoriach: pięć właściciela (walka, bossowie, odkrywanie z kryjówkami, rzemiosło,
+  społeczność) i szósta `journey` („Droga”: poziomy, fabuła, poboczne, zlecenia, kosmetyki z gry), bo tytuły poziomu i
+  fabuły już są kamieniami milowymi tej drogi. 79 osiągnięć (szkic mówił ok. 55; serie z tabeli sesji dały więcej).
+- **S151** Każdy licznik ma zakres konta albo postaci (`Data/Achievements.COUNTERS`), zakres osiągnięcia = zakres
+  licznika. Zapis bez migracji (`account.ach`, `character.ach` z szablonu i reconcile, `CURRENT` bez zmian);
+  `Achievements.backfill` przy każdym wejściu postaci (wpisy `max` / `set`, więc dwa razy = raz). Liczniki konta z
+  dawnych postępów biorą wszystkie postacie konta.
+- **S151** Wstecz da się zaliczyć: poziom, fabułę (z nią bossów, których zadanie fabuły albo `boss_<id>` jest
+  oddane; `bossKills` = liczba tych bossów, dolna granica), poboczne, zlecenia (`done + #extra`), PvP i pojedynki
+  (`pvp`), arenę (max z bieżącego i poprzedniego sezonu, dolna granica), mapy i jaskinie (`visitedMaps`), bossa świata
+  (1, gdy `worldBoss.last`), znajomych, gildię, kosmetyki z `obtain` (bez `vipMonth` i `pack`). Od S151 liczą się:
+  zabójstwa, Elity, Elity II, kryjówki, uniki, kowal, alchemia, zbieractwo, ryby, handel, listy, Krwawe Księżyce,
+  Inwazje, pełna drużyna.
+- **S151** Smocze Odłamki: jedna wypłata na konto za osiągnięcie (`account.ach.paid`), budżet
+  `Config.Achievements.shardBudget` = 500 (ok. 5 najmniejszych paczek sklepu, rozłożone na setki godzin gry), dziś
+  rozdane 320, żadna kwota > 50; nic za znajomych, handel i listy (łatwe do nabicia drugim kontem), nic za kosmetyki
+  ze sklepu, VIP i paczek (licznik: `Achievements.earnedInGame` = `obtain` bez `vipMonth` i `pack`, test na
+  `aura_vip_hearth` i `aura_valor`). Wypłata od razu na konto z `Analytics.shards(..., "achievement")`.
+- **S151** Dawne tytuły poziomu, fabuły, pojedynków i PvP (`wanderer` … `legend`, `sentinel`, `dragonbane`,
+  `thornbearer`, `duelist`, `gladiator`, `bloodied`, `warlord`) zostają z dawnymi `req`: zmiana rodzaju zabrałaby je na
+  chwilę przed `backfill`. Osiągnięcia tych liczników dają punkty, odłamki albo nic. Nowe tytuły tylko za osiągnięcia
+  bez tytułu (7, `req.kind = "achievement"`; tytuł osiągnięcia konta przez `Titles.contextOf(...).ach`).
+- **S151** Cele „wszystkie X” liczy `Logic/Achievements.goalOf` z danych (`regions` = mapy pod niebem z miastem,
+  `world` = mapy podróży bez lochów i serwerów areny, `caves` = biome `cave` i `crypt`, `lairs` = `Data/Areas.lairs`,
+  `dungeonBosses` = `Bosses.list`); nowa mapa podnosi cel, zdobyte zostaje zdobyte. Krypty liczą się jako jaskinie.
+- **S151** Zmiany celów wobec szkicu: zlecenia 25 / 99 (jest jedno zlecenie na poziom 1–99, 200 było nieosiągalne),
+  fabuła = końce rozdziałów I–IV i finał (5 stopni z `Main.CHAPTERS`), Krwawy Księżyc jako zbiór id wystąpień (dwie
+  postacie w jednym wystąpieniu liczą się raz), `earnedCosmetics` jako `add` (+1 przy każdym `CosmeticService.Grant`
+  kosmetyku z `obtain`, wstecz `max` z posiadanych). Bez sekretnych osiągnięć: żaden istniejący licznik ich nie niesie.
+- **S151** `Data/Achievements` poza księgą balansu (`NOT_BALANCE` „postęp”): cele to kamienie milowe, nie tempo gry.
+  Złoto tylko za poziom 10 (100), test `balance.spec` „Achievements (S151)” pilnuje ≤ 5% złota pasma 1–20.
+  `Config.Achievements` poza `CONFIG_KEYS`.
+- **S151** Jedna droga zdarzeń: `QuestEvents.fire` w serwisie, który zna fakt; `AchievementService` nikt nie woła
+  (poza adminem). Wyjątki: zabójstwo i poziom przez istniejące sygnały `CombatService.MonsterKilled` (+ pole `lair` w
+  `KillInfo`) i `LevelService.LevelChanged`, bo QuestService słucha ich osobno i kopia w `QuestEvents` liczyłaby
+  questy dwa razy. Mecz areny = istniejące zdarzenie `duel` z `arena = true` (licznik `arenaWins`, nie `duelsWon`).
+  Nowe rodzaje nie pasują do żadnego typu celu questu (test), więc QuestService je pomija.
+- **S151** Gorąca ścieżka (zabójstwo): jeden przebieg `Logic` na zdarzenie bez yieldów, gałęzie w pamięci serwisu,
+  osiągnięcia z indeksu `byCounter`, zapis tylko zmienionych liści (`{ "character", "ach", "c", "kills" }`), żeby diff
+  stanu po zabójstwie był parą liczb, a nie całą gałęzią.
+- **S151** Uniki liczy `FightLogService.End` (wszystkie walki z podsumowaniem: boss, Elita II, Inwazja, boss świata);
+  walka porzucona (`Drop`) nie liczy. Pełna drużyna = 5 zwycięzców obecnych przy bossie lochu. Handel liczy się, gdy
+  coś przeszło z rąk do rąk. Zadanie poboczne liczy się przy pierwszym oddaniu.
+- **S151** Toasty: jeden naraz, 5 s, u góry ekranu (telefon też, z dala od paska umiejętności); przy wejściu jeden
+  zbiorczy i najwyżej 3 pojedyncze (najwięcej punktów). Ustawienie `achToasts` wyłączone = wpis w czacie systemowym.
+  Kosmetyk z osiągnięcia bez własnego toastu (`CosmeticService.Grant(..., quiet)`). Bez przycisku „Zobacz” do S151b.

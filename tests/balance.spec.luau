@@ -3093,3 +3093,30 @@ T.describe("Balance: GLOBAL_REPORT_ONLY keys", function()
 		end
 	end)
 end)
+
+-- S151 (docs/DESIGN.md §20b, F4): achievement gold stays under 5% of the gold of the band it is earned in (only level
+-- achievements up to 20 pay gold, so the 1-20 economy of every class is the band); the Dragon Shard sum within the
+-- budget (the economy side of tests/achievements.spec).
+T.describe("Achievements (S151)", function()
+	local AchData = require("../src/shared/Data/Achievements")
+	local Achievements = require("../src/shared/Logic/Achievements")
+
+	T.it("gold of achievements stays under 5% of the band's gold, shards within the budget", function()
+		local gold = 0
+		for _, def in AchData.list do
+			local g = (def.reward and def.reward.gold) or 0
+			if g > 0 then
+				T.expect({ def.id, def.counter, def.goal <= 20 }).toEqual({ def.id, "level", true })
+				gold += g
+			end
+		end
+		for _, classId in B.CLASSES do
+			local income = 0
+			for _, row in B.economy(classId, 20).rows do
+				income += row.income
+			end
+			T.expect({ classId, gold <= 0.05 * income }).toEqual({ classId, true })
+		end
+		T.expect(Achievements.shardTotal() <= Config.Achievements.shardBudget).toBe(true)
+	end)
+end)

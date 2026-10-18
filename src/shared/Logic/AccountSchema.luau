@@ -71,6 +71,7 @@ function AccountSchema.accountTemplate(): AccountData
 			cameraMode = "free", -- W01: free camera or from above (reconcile)
 			appearOffline = false, -- S150: "Appear offline" (reconcile)
 			friendJoin = "friends", -- S150: who may join my server: friends or nobody (reconcile)
+			achToasts = true, -- S151: achievement toasts (false = one line in the system chat; reconcile)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
@@ -105,6 +106,9 @@ function AccountSchema.accountTemplate(): AccountData
 		-- S133: friends and ignored players (Logic/Social), keys tostring(userId); reconcile adds it, no migration
 		social = { friends = {}, ignored = {} },
 		legendRework = false, -- S134g: migration 10 converted a Legendary / Mythic (one toast, EquipmentService clears it)
+		-- S151: account achievement counters, sets, done achievements and paid shards (Logic/Achievements); no migration
+		-- (reconcile), old progress is counted by Achievements.backfill on every entry
+		ach = { c = {}, s = {}, done = {}, paid = {} },
 	}
 end
 
@@ -192,6 +196,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		mapMarks = {},
 		-- S96: no migration; reconcile adds owned = {} and riding = false to older characters
 		mounts = { owned = {}, active = nil, riding = false },
+		-- S151: character achievement counters, sets and done achievements (Logic/Achievements); no migration (reconcile)
+		ach = { c = {}, s = {}, done = {} },
 		createdAt = 0,
 		playtime = 0,
 	}

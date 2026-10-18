@@ -12728,3 +12728,137 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/server/Arena/Transfer.luau`, `src/server/Admin/Guild.luau`, `src/client/Controllers/SocialController.luau`,
   `src/client/UI/Screens/{FriendsWindow,GameMenu}.luau`, `tests/{friends,social,character,data}.spec.luau`,
   `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S151: Osiągnięcia (rdzeń)
+
+- **Dane** `src/shared/Data/Achievements.luau`: `CATEGORIES` (walka, bossowie, odkrywanie, rzemiosło, społeczność,
+  droga), `COUNTERS` (22 liczniki postaci, 11 konta; `add` / `max` / `set`), 79 osiągnięć (`ach(id, cat, counter, goal,
+  points, { reward, key, all, after })`), `byId`, `byCounter` (posortowane po celu), `forCategory`.
+- **Logika** `src/shared/Logic/Achievements.luau` (czysta): `state` (naprawa śmieci, tabele zapisu), `apply`
+  (add / max / set → osiągnięcia spełnione i niezdobyte), `progress` / `goalOf` (cele „wszystkie” z grup `regions`,
+  `world`, `caves`, `lairs`, `dungeonBosses` liczonych z danych), `reward` (odłamki 0 przy `paid`), `COUNTER_EVENTS` /
+  `entriesFor`, `backfill` (dawne postępy), `applyAll`, `allPending`, `shardTotal`, `typical` / `shardsBy` (model).
+- **Serwis** `AchievementService`: `QuestEvents.Fired`, `CombatService.MonsterKilled` (`kill` z kryjówką),
+  `LevelService.LevelChanged` (`level`), wejście postaci → `backfill` + zbiorczy toast i najwyżej 3 pojedyncze;
+  `grant` (done i `paid` przed czymkolwiek, tytuł → `TitleService.Refresh`, kosmetyk `CosmeticService.Grant(..., quiet)`,
+  odłamki na konto + `Analytics.shards(..., "achievement")`, złoto + `Analytics.gold`), `AchievementDone` do klienta;
+  zapis tylko zmienionych liści. Admin `/ach list | give | reset | counter | backfill [gracz]`.
+- **Zdarzenia `QuestEvents` dopisane w serwisach:** `boss` + `party` (DungeonService), `duel` + `arena` (ArenaService),
+  `worldboss` (WorldBossService, nagrodzony), `bloodmoon` (BloodMoonService, pierwsze punkty wystąpienia), `pvpkill`
+  (PvpService), `craft` / `dismantle` / `reroll` (BlacksmithService), `brew` (AlchemyService, odbiór), `trade`
+  (TradeService, obie strony), `mail` (MailService, list gracza), `visit` (TravelService.MarkVisited, pierwsze wejście),
+  `quest` main / side / contract (QuestService, SideQuestService — pierwsze oddanie, ContractService), `dodge`
+  (FightLogService.End), `social` friends / guild (SocialService, Guild/Runtime), `cosmetic` (CosmeticService.Grant);
+  `KillInfo.lair` (CombatService ← `MonsterService.LairOf`). Nagłówek `QuestEvents.luau` uzupełniony.
+- **Nagrody:** `Data/Titles` rodzaj `achievement` + 7 tytułów `ach_*` (`wiki = false`), `Logic/Titles` (postać:
+  `character.ach.done`, konto: `contextOf(...).ach`), wybór tytułu w oknie postaci z `account.ach.done`;
+  `Data/Cosmetics.Obtain.achievement` + 5 kosmetyków (`frame_elitehunter`, `chatframe_five`, `chatframe_merchant`,
+  `levelup_gatherer`, `aura_ancestorfrost`; cena 0, `wiki = false`), garderoba „Za osiągnięcie: {name}”.
+- **Powiadomienie:** `AchievementController` (kolejka, jedno naraz, dźwięk `ui.achievement` bez ID), ekran
+  `Hud/AchievementToast` (żelazo, mosiężny brzeg, `UiWindows.SCREENS`), ustawienie `achToasts` (SettingsService,
+  GameMenu; wyłączone = wpis w czacie systemowym). Remote `AchievementDone` (s2c).
+- **Zapis:** `account.ach = { c, s, done, paid }`, `character.ach = { c, s, done }`, `settings.achToasts` — szablon i
+  reconcile, `CURRENT` bez zmian.
+- **Budżet odłamków:** suma **320** z 500 (`Config.Achievements.shardBudget`), najwyższa kwota 50 (poziom 100). Po
+  zaliczeniu dawnych postępów typowa postać (`Achievements.typical`: fabuła do swojego poziomu, połowa pobocznych i
+  zleceń, mapy do poziomu) dostaje od razu: L50 — **10**, L75 — 35, L100 — **130** odłamków.
+- **Testy:** nowy `tests/achievements.spec.luau` (dane, budżet, liczenie, raz na konto, zdarzenia → liczniki, każdy
+  rodzaj z serwera policzony albo świadomie pominięty, nowe rodzaje nie są typami celów questów, dawne postępy
+  idempotentne, konto z wielu postaci, schemat bez migracji); `titles.spec` (rodzaj `achievement`, dawne tytuły bez
+  zmian), `premium.spec` (kosmetyk osiągnięcia nie na sprzedaż), `balance.spec` („Achievements (S151)”: złoto ≤ 5%
+  pasma, odłamki w budżecie), `data.spec` (przestrzeń `ach`).
+- wiki do odświeżenia (właściciel 17.10); nowe tytuły i kosmetyki mają `wiki = false`, więc eksport ich nie bierze.
+- **Lista osiągnięć:**
+
+| kat. | id | licznik (zakres) | cel | pkt | nagroda |
+|---|---|---|---|---|---|
+| walka | `slayer1` | `kills` (postać) | 100 | 5 | — |
+| walka | `slayer2` | `kills` (postać) | 1000 | 10 | — |
+| walka | `slayer3` | `kills` (postać) | 10000 | 25 | 10 odł. |
+| walka | `slayer4` | `kills` (postać) | 50000 | 50 | tytuł „Rzeźnik Szczytów” |
+| walka | `slayer5` | `kills` (postać) | 200000 | 50 | 25 odł. |
+| walka | `elite1` | `eliteKills` (postać) | 50 | 5 | — |
+| walka | `elite2` | `eliteKills` (postać) | 500 | 10 | — |
+| walka | `elite3` | `eliteKills` (postać) | 2500 | 25 | kosmetyk „Rama Łowcy Elit” |
+| walka | `elite2_1` | `elite2Kills` (postać) | 10 | 10 | — |
+| walka | `elite2_2` | `elite2Kills` (postać) | 100 | 25 | — |
+| walka | `elite2_3` | `elite2Kills` (postać) | 500 | 50 | 20 odł. |
+| walka | `dodge1` | `dodged` (postać) | 25 | 5 | — |
+| walka | `dodge2` | `dodged` (postać) | 250 | 10 | — |
+| walka | `dodge3` | `dodged` (postać) | 1000 | 25 | tytuł „Nieuchwytny” |
+| walka | `pvp1` | `pvpKills` (postać) | 10 | 10 | — |
+| walka | `pvp2` | `pvpKills` (postać) | 100 | 25 | — |
+| walka | `duel1` | `duelsWon` (postać) | 10 | 5 | — |
+| walka | `duel2` | `duelsWon` (postać) | 50 | 10 | — |
+| walka | `arena1` | `arenaWins` (postać) | 25 | 10 | — |
+| walka | `arena2` | `arenaWins` (postać) | 200 | 25 | — |
+| bossowie | `boss_grimrok` | `bosses` (konto) | grimrok | 10 | — |
+| bossowie | `boss_morvane` | `bosses` (konto) | morvane | 10 | — |
+| bossowie | `boss_azgor` | `bosses` (konto) | azgor | 25 | — |
+| bossowie | `boss_vaelgrath` | `bosses` (konto) | vaelgrath | 25 | 10 odł. |
+| bossowie | `bossAll` | `bosses` (konto) | wszystkie dungeonBosses (4) | 50 | tytuł „Pogromca Czterech” |
+| bossowie | `bossKills1` | `bossKills` (konto) | 10 | 10 | — |
+| bossowie | `bossKills2` | `bossKills` (konto) | 100 | 25 | — |
+| bossowie | `bossKills3` | `bossKills` (konto) | 500 | 50 | 15 odł. |
+| bossowie | `worldBoss1` | `worldBoss` (konto) | 1 | 25 | tytuł „Pogromca Praojca” |
+| bossowie | `worldBoss2` | `worldBoss` (konto) | 10 | 25 | 25 odł. |
+| bossowie | `worldBoss3` | `worldBoss` (konto) | 50 | 50 | kosmetyk „Mróz Praojca” |
+| bossowie | `fullParty1` | `fullParty` (konto) | 10 | 25 | kosmetyk „Ramka czatu Pięciorga” |
+| odkrywanie | `maps1` | `maps` (postać) | wszystkie regions (5) | 10 | — |
+| odkrywanie | `maps2` | `maps` (postać) | wszystkie world (17) | 25 | tytuł „Kartograf” |
+| odkrywanie | `caves1` | `caves` (postać) | wszystkie caves (12) | 25 | 15 odł. |
+| odkrywanie | `lairs1` | `lairs` (postać) | 6 | 25 | — |
+| odkrywanie | `lairs2` | `lairs` (postać) | wszystkie lairs (11) | 50 | tytuł „Tropiciel Kryjówek”, 20 odł. |
+| odkrywanie | `bloodMoon1` | `bloodMoon` (konto) | 1 | 10 | — |
+| odkrywanie | `bloodMoon2` | `bloodMoon` (konto) | 10 | 25 | — |
+| odkrywanie | `invasion1` | `invasions` (konto) | 5 | 10 | — |
+| odkrywanie | `invasion2` | `invasions` (konto) | 50 | 25 | 10 odł. |
+| rzemiosło | `craft1` | `crafted` (postać) | 10 | 5 | — |
+| rzemiosło | `craft2` | `crafted` (postać) | 100 | 10 | — |
+| rzemiosło | `craft3` | `crafted` (postać) | 500 | 25 | 10 odł. |
+| rzemiosło | `upgrade7` | `upgraded7` (postać) | 10 | 25 | — |
+| rzemiosło | `upgrade9` | `upgraded9` (postać) | 1 | 50 | tytuł „Mistrz Kuźni” |
+| rzemiosło | `dismantle1` | `dismantled` (postać) | 100 | 10 | — |
+| rzemiosło | `dismantle2` | `dismantled` (postać) | 1000 | 25 | 10 odł. |
+| rzemiosło | `reroll1` | `rerolled` (postać) | 10 | 10 | — |
+| rzemiosło | `reroll2` | `rerolled` (postać) | 100 | 25 | 10 odł. |
+| rzemiosło | `brew1` | `brewed` (postać) | 50 | 10 | — |
+| rzemiosło | `brew2` | `brewed` (postać) | 500 | 25 | 10 odł. |
+| rzemiosło | `gather1` | `gathered` (postać) | 100 | 5 | — |
+| rzemiosło | `gather2` | `gathered` (postać) | 1000 | 10 | — |
+| rzemiosło | `gather3` | `gathered` (postać) | 5000 | 25 | kosmetyk „Krąg Zbieracza” |
+| rzemiosło | `fish1` | `fish` (postać) | 50 | 10 | — |
+| rzemiosło | `fish2` | `fish` (postać) | 500 | 25 | 10 odł. |
+| społeczność | `friends1` | `friends` (konto) | 1 | 5 | — |
+| społeczność | `friends2` | `friends` (konto) | 10 | 10 | — |
+| społeczność | `guild1` | `guild` (konto) | 1 | 10 | — |
+| społeczność | `trade1` | `trades` (konto) | 10 | 10 | — |
+| społeczność | `trade2` | `trades` (konto) | 100 | 25 | kosmetyk „Ramka czatu Kupca” |
+| społeczność | `mail1` | `mailSent` (konto) | 10 | 10 | — |
+| droga | `level10` | `level` (postać) | 10 | 5 | 100 zł. |
+| droga | `level25` | `level` (postać) | 25 | 10 | — |
+| droga | `level50` | `level` (postać) | 50 | 25 | 10 odł. |
+| droga | `level75` | `level` (postać) | 75 | 25 | 25 odł. |
+| droga | `level100` | `level` (postać) | 100 | 50 | 50 odł. |
+| droga | `story1` | `mainDone` (postać) | 19 | 10 | — |
+| droga | `story2` | `mainDone` (postać) | 36 | 10 | — |
+| droga | `story3` | `mainDone` (postać) | 51 | 25 | — |
+| droga | `story4` | `mainDone` (postać) | 66 | 25 | — |
+| droga | `story5` | `mainDone` (postać) | 70 | 50 | 20 odł. |
+| droga | `side1` | `sideDone` (postać) | 25 | 10 | — |
+| droga | `side2` | `sideDone` (postać) | 100 | 25 | 15 odł. |
+| droga | `contract1` | `contracts` (postać) | 25 | 10 | — |
+| droga | `contract2` | `contracts` (postać) | 99 | 25 | — |
+| droga | `collector1` | `earnedCosmetics` (konto) | 5 | 10 | — |
+| droga | `collector2` | `earnedCosmetics` (konto) | 15 | 25 | — |
+
+- **Pliki:** `src/shared/Data/Achievements.luau` (nowy), `src/shared/Logic/Achievements.luau` (nowy),
+  `src/server/Services/AchievementService.luau` (nowy), `src/client/Controllers/AchievementController.luau` (nowy),
+  `src/client/UI/Screens/Hud/AchievementToast.luau` (nowy), `src/shared/{Config,Types}.luau`,
+  `src/shared/Data/{Titles,Cosmetics,AdminCommands,Sfx,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/shared/Logic/{Titles,AccountSchema}.luau`, `src/shared/Net/Definitions.luau`, `src/server/QuestEvents.luau`,
+  `src/server/Guild/Runtime.luau`, `src/server/Admin/Character.luau`,
+  `src/server/Services/{AdminService,AlchemyService,ArenaService,BlacksmithService,BloodMoonService,CombatService,ContractService,CosmeticService,DungeonService,FightLogService,MailService,PvpService,QuestService,SettingsService,SideQuestService,SocialService,TradeService,TravelService,WorldBossService}.luau`,
+  `src/client/UI/Screens/{GameMenu,Wardrobe}.luau`, `src/client/UI/Screens/CharacterWindow/init.luau`,
+  `tests/{achievements,titles,premium,balance,data}.spec.luau`, `tools/balance_reasons.luau`,
+  `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

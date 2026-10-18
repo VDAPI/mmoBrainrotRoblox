@@ -1201,6 +1201,33 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - Bez premium: nagrody nie da się kupić, przyspieszyć ani odnowić. Admin: `/login`, `/loginset <dzień> [przerwa]`,
   `/loginnext [dni]`.
 
+## 20b. Osiągnięcia (S151)
+
+- **Kategorie** (kolejność okna S151b): Walka, Bossowie, Odkrywanie (z kryjówkami Elit II), Rzemiosło, Społeczność i
+  Droga (poziomy, fabuła, zadania poboczne, zlecenia, kosmetyki zdobyte w grze). Ok. 80 osiągnięć, wiele w seriach
+  (następny stopień tego samego licznika z wyższym celem), punkty 5 / 10 / 25 / 50.
+- **Konto / postać:** każdy licznik należy do konta albo do postaci, osiągnięcie ma zakres swojego licznika. Postać:
+  zabójstwa (zwykłe, Elity, Elity II), uniki zapowiedzianych ciosów, PvP, pojedynki, arena, poziom, fabuła, poboczne,
+  zlecenia, mapy, jaskinie, kryjówki, kowal (wytwarzanie, +7, +9, rozbijanie, przemiana), alchemia, zbieractwo, ryby.
+  Konto: bossowie lochów i świata (różni i razem), boss świata, Krwawe Księżyce, Inwazje, pełna drużyna przy bossie,
+  handel, listy, znajomi, gildia, kosmetyki zdobyte w grze.
+- **Cele „wszystkie X”** (krainy, mapy świata, jaskinie, kryjówki, bossowie lochów) liczą się z danych gry: nowa mapa
+  albo kryjówka podnosi cel, zdobyte zostaje zdobyte.
+- **Nagrody:** tytuł (7 nowych, m.in. „Pogromca Praojca”, „Kartograf”, „Mistrz Kuźni”; tytuł osiągnięcia konta widzi
+  każda postać), kosmetyk (5: rama, dwie ramki czatu, efekt awansu, aura; nigdy na sprzedaż ani w ofercie tygodnia),
+  Smocze Odłamki albo trochę złota (tylko Droga i Rzemiosło, najwyżej 5% złota pasma). Dawne tytuły poziomu, fabuły,
+  pojedynków i PvP zostają z dawnymi warunkami.
+- **Smocze Odłamki uczciwie** (DESIGN-17 §0): małe kwoty, jedna wypłata na konto za osiągnięcie (to samo osiągnięcie
+  drugą postacią nie płaci), suma wszystkich nagród w budżecie `Config.Achievements.shardBudget` (500, test), nic za
+  znajomych, handel, listy i rzeczy kupione za Robux. Na wiki nigdy kwota.
+- **Dawne postępy** zalicza się przy każdym wejściu postaci (bez migracji, idempotentnie): poziom, fabuła i bossowie z
+  ukończonych zadań, poboczne, zlecenia, PvP, pojedynki, arena (bieżący i poprzedni sezon), odwiedzone mapy, boss świata
+  (ostatni termin), znajomi, gildia, kosmetyki zdobyte w grze. Jeden zbiorczy komunikat i najwyżej 3 pojedyncze.
+  Liczone od wprowadzenia osiągnięć: zabójstwa, Elity, kryjówki, uniki, kowal, alchemia, zbieractwo, ryby, handel,
+  listy, Krwawe Księżyce, Inwazje.
+- **Powiadomienie:** toast u góry ekranu (nazwa, kategoria, punkty, nagroda; jeden naraz); ustawienie „Powiadomienia o
+  osiągnięciach” wyłączone = wpis w czacie systemowym. Okno osiągnięć, śledzenie i wiki: S151b.
+
 ## 21. Monetyzacja (bez pay-to-win)
 
 - **Smocza Waluta** (Developer Products: 100 / 550 / 1 200 / 2 600 / 7 000).

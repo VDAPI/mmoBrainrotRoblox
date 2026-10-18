@@ -242,6 +242,7 @@ export type CharacterData = {
 	-- S96: owned mounts (lvl 1..Config.Mount.maxLevel), the chosen one and whether riding now (never survives a
 	-- logout; MountService clears it)
 	mounts: MountState,
+	ach: AchBranch, -- S151: achievement counters, sets and done achievements of the character (Logic/Achievements)
 	createdAt: number,
 	playtime: number,
 	-- S20: last items picked up (newest first, max 50) and Elite II respawn timers.
@@ -408,6 +409,7 @@ export type Settings = {
 	cameraMode: string, -- W01: "free" | "top" (CameraController)
 	appearOffline: boolean, -- S150: no presence entry: friends see "offline", no "is in the game" toast
 	friendJoin: string, -- S150: "friends" | "none": who may join this player's server and invite from another one
+	achToasts: boolean, -- S151: achievement toasts (false: one line in the system chat instead)
 }
 
 -- S133: a friend or an ignored player (account.social, key tostring(userId)): the character name at the time, the class
@@ -428,6 +430,15 @@ export type VipState = {
 -- S121: a saved look: the equipped cosmetic per kind (without "pet") and the pet. S132: `class` = the class it was
 -- saved on (the class outfit is in equipped.outfit; Logic/Premium.applySet).
 export type Outfit = { equipped: { [string]: string }, pet: string?, class: string? }
+
+-- S151: achievements of the account or of a character (Logic/Achievements): counters, sets of distinct ids, done
+-- achievements (id -> os.time) and, on the account, the achievements whose Dragon Shards were paid.
+export type AchBranch = {
+	c: { [string]: number },
+	s: { [string]: { [string]: boolean } },
+	done: { [string]: number },
+	paid: { [string]: boolean }?,
+}
 
 export type AccountData = {
 	schema: number,
@@ -462,6 +473,7 @@ export type AccountData = {
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
 	social: SocialData, -- S133: friends and ignored players (Logic/Social; reconcile adds it, no migration)
 	legendRework: boolean, -- S134g: Legendary / Mythic items got skill effects (migration 10); the toast shows once
+	ach: AchBranch, -- S151: account achievement counters, sets, done achievements and paid shards (Logic/Achievements)
 }
 
 -- Character summary shown on the selection screen.

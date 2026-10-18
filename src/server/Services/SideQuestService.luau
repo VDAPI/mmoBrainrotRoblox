@@ -270,7 +270,11 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 		return false, "inventory.full"
 	end
 	setEntry(player, questId, nil)
+	local first = sideOf(char).done[questId] ~= true
 	PlayerStateService.Set(player, { "character", "quests", "side", "done", questId }, true)
+	if first then
+		QuestEvents.fire(player, "quest", { kind = "side", questId = questId }) -- S151: achievements
+	end
 	LevelService.GiveExp(player, quest.reward.exp, "quest")
 	PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
 		return gold + quest.reward.gold

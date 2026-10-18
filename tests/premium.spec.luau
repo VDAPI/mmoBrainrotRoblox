@@ -342,6 +342,7 @@ T.describe("S97 mount skins and premium mounts", function()
 						or def.obtain.event ~= nil
 						or def.obtain.hunt ~= nil -- S134k: the Huntmaster's shop (Hunter's Marks)
 						or def.obtain.quest ~= nil -- S134k: the title of the last hunting contract
+						or def.obtain.achievement ~= nil -- S151: an achievement reward
 						or def.class ~= nil -- S132: class outfits from a quest or a boss win
 				).toBe(true)
 				T.expect(def.price).toBe(0)
@@ -646,7 +647,8 @@ T.describe("Purchase rule edges (S131)", function()
 		T.expect({ Premium.canBuyPack(key, { packs = { [key] = true } }) }).toEqual({ false, "premium.error.owned" })
 		for _, def in Cosmetics.list do
 			local o = def.obtain :: any
-			if o and (o.vipMonth or o.pack or o.event or o.arena) then
+			-- S151: an achievement reward (obtain.achievement) is never for sale either
+			if o and (o.vipMonth or o.pack or o.event or o.arena or o.achievement) then
 				T.expect({ def.id, (Premium.canBuyCosmetic(def.id, {}, 999999)) }).toEqual({ def.id, false })
 			end
 		end

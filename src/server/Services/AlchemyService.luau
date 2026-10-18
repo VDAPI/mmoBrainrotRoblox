@@ -14,6 +14,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local Clock = require(Shared.Util.Clock)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Net = require(Shared.Net)
 local Npcs = require(Shared.Data.Npcs)
 local Recipes = require(Shared.Data.Recipes)
@@ -126,6 +127,7 @@ local function collect(player: Player, npcId: string): (boolean, string?, number
 	if collected == 0 then
 		return false, "inventory.full"
 	end
+	QuestEvents.fire(player, "brew", { n = collected }) -- S151: collected brews (achievements)
 	return true, nil, collected
 end
 

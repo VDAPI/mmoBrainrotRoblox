@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S150 gotowe (ostatnia S150: znajomi 2.0: przy znajomym serwer (mapa, poziom, znacznik
+S01–S115 i S117–S151 gotowe (ostatnia S151: osiągnięcia, rdzeń: 79 osiągnięć w sześciu kategoriach (walka,
+bossowie, odkrywanie z kryjówkami, rzemiosło, społeczność, droga) na licznikach konta i postaci (`Data/Achievements`,
+`Logic/Achievements`, `AchievementService` ze zdarzeń `QuestEvents` + zabójstwa i poziomy), nagrody: 7 tytułów, 5
+kosmetyków, Smocze Odłamki raz na konto (suma 320 z budżetu 500), złoto za poziom 10; dawne postępy zaliczane przy
+każdym wejściu (bez migracji), toast `Hud/AchievementToast` z ustawieniem `achToasts`, admin `/ach`; wcześniej S150:
+znajomi 2.0: przy znajomym serwer (mapa, poziom, znacznik
 serwera; arena, turniej i serwer prywatny bez „Dołącz”), „Dołącz” na serwer świata znajomego (`FriendService`,
 `Logic/FriendJoin`, blokady `UseBlocks.friendJoin`, `Arena/Transfer.toServer`, odnowienie 60 s), zaproszenie
 do grupy z innego serwera przez jeden temat i dołączenie do grupy po przybyciu, znajomi z Roblox w grze, tryb
@@ -377,6 +382,11 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **Osiągnięcia (S151):** S151b — okno osiągnięć, śledzenie wybranych, karta w profilu, przycisk „Zobacz” w toaście
+  i wiki (osiągnięcia, 7 tytułów i 5 kosmetyków mają dziś `wiki = false`; wiki do odświeżenia, właściciel 17.10). Bez
+  przeglądu w grze (toast na PC i telefonie, wygląd nowych ram, ramek czatu, efektu awansu i aury). Dla właściciela:
+  ID dźwięku `ui.achievement` (dziś cisza).
 
 - **Znajomi 2.0 (S150):** bez przeglądu w grze (okno znajomych na PC i telefonie, arkusz „⋯”, popup „Dołącz i wejdź do
   grupy”); teleport na serwer znajomego i zaproszenie między serwerami działają tylko w opublikowanej grze (w Studio

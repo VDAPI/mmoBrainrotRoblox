@@ -21,6 +21,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local Areas = require(Shared.Data.Areas)
 local Contracts = require(Shared.Logic.Contracts)
 local ItemRoll = require(Shared.Logic.ItemRoll)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Log = require(Shared.Util.Log)
 local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
@@ -265,6 +266,7 @@ local function turnIn(player: Player, npcId: string): (boolean, string?, TurnInR
 	end
 	local after = Contracts.withHandedIn(state, levels, marks)
 	write(player, after)
+	QuestEvents.fire(player, "quest", { kind = "contract", n = #ready }) -- S151: contracts handed in (achievements)
 	if gold > 0 then
 		local balance = PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
 			return current + gold

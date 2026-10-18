@@ -178,6 +178,9 @@ local Definitions: { [string]: Definition } = {
 	-- S149b: the world boss reward card ({ boss, exp?, gold?, items? = { { id, r, up?, n? } }, reason?, level? }): the
 	-- winner's loot, or the reason he got none ("level" | "share" | "claimed"); the client checks every field
 	WorldBossReward = { kind = "event", dir = "s2c" },
+	-- S151: an achievement done ({ id, reward = { title?, cosmetic?, shards?, gold? } }) or the catch-up of old progress
+	-- ({ backfill = n }); AchievementController shows the toast (or a system chat line with the setting off)
+	AchievementDone = { kind = "event", dir = "s2c" },
 	-- S134f: the party finder board (PartyFinderService): (kind, target, minLevel, maxLevel, { classId }) -> (ok, errKey?)
 	FinderPost = {
 		kind = "function",

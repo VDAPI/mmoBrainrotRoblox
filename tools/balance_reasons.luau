@@ -179,6 +179,7 @@ return {
 		["Data/ClassLooks"] = "wygląd", -- S132: class looks, creator choices, catalog hooks (DESIGN-17 §9a)
 		["Data/Emotes"] = "wygląd", -- S123: emote motions (Data/SkillMotions format), aliases, cooldown
 		["Data/Titles"] = "wygląd",
+		["Data/Achievements"] = "postęp", -- S151: achievement milestones and rewards (gold checked in balance.spec)
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
 		["Data/ArenaPit"] = "geometria", -- S127: the arena server map (sand, stands, start points)
 		["Data/Portals"] = "świat",

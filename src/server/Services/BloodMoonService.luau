@@ -28,6 +28,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local Blessings = require(Shared.Data.Blessings)
 local BloodMoon = require(Shared.Logic.BloodMoon)
 local Board = require(script.Parent.Parent.BloodMoon.Board)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
 local ItemRoll = require(Shared.Logic.ItemRoll)
@@ -573,9 +574,13 @@ local function give(player: Player, region: string, points: number): number?
 	if not state or points <= 0 then
 		return nil
 	end
+	local first = state.points <= 0
 	local new = BloodMoon.addPoints(state, region, points, Clock.now())
 	PlayerStateService.Set(player, { "character", "bloodMoon" }, new)
 	dirty[player] = true
+	if first then
+		QuestEvents.fire(player, "bloodmoon", { id = new.id }) -- S151: the first points of this Blood Moon (achievements)
+	end
 	toast(player, "bloodmoon.points", { n = points, total = new.points }, "success")
 	return new.points
 end

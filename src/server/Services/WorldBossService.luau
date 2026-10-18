@@ -28,6 +28,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local Boss = require(script.Parent.Parent.Entities.Boss)
 local Clock = require(Shared.Util.Clock)
 local Contribution = require(Shared.Logic.Contribution)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
@@ -412,6 +413,8 @@ local function rewardAll(f: Fight): (number, number, { [Player]: { any } })
 		if done then
 			rewarded += 1
 			drops[player] = result
+			-- S151: a rewarded world boss fight (achievements)
+			QuestEvents.fire(player, "worldboss", { occId = f.occ.id, bossId = WorldBoss.def().id })
 		else
 			log:error("world boss reward for %s failed: %s", player.Name, tostring(result))
 		end

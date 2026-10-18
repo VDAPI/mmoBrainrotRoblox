@@ -106,6 +106,7 @@ local function craft(player: Player, recipeId: string): (boolean, string?)
 	addGold(player, -recipe.gold)
 	takeMaterials(player, recipe.materials)
 	InventoryService.AddItem(player, item)
+	QuestEvents.fire(player, "craft", { recipeId = recipeId, n = 1 }) -- S151: achievements
 	return true, nil
 end
 
@@ -263,6 +264,7 @@ function BlacksmithService.Reroll(
 	commit()
 	local n = Reroll.state(item).n
 	Analytics.custom(player, "Reroll", item.rarity)
+	QuestEvents.fire(player, "reroll", nil) -- S151: achievements
 	log:info(
 		"%s reroll %s line %d %s -> %s (n=%d, stone=%s)",
 		player.Name,
@@ -308,6 +310,7 @@ local function dismantleIndices(player: Player, indices: { number }): (boolean, 
 	if count == 0 then
 		return false, "shop.error.nothing"
 	end
+	QuestEvents.fire(player, "dismantle", { n = count }) -- S151: achievements
 	local list = {}
 	local overflow = {}
 	for id, n in gained do

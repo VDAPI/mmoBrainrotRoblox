@@ -166,6 +166,14 @@ cmd("character", "luck", {})
 cmd("character", "buildset", { enum("action", { "1", "2", "copy" }) }, { dangerActions = { "copy" } })
 -- S125: timed titles (TitleService.GrantTimed; 0 days takes the title away)
 cmd("character", "timedtitle", { str("id"), int("days", 0, 365, true, "7") })
+-- S151: achievements of the caller or of a named player (the last argument): list, give <id>, reset <id|all>, counter
+-- <counter> <value>, backfill (the catch-up of old progress). Reset never takes paid Dragon Shards back.
+cmd("character", "ach", {
+	enum("action", { "list", "give", "reset", "counter", "backfill" }),
+	str("a", true),
+	str("b", true),
+	str("c", true),
+}, { dangerActions = { "reset" } })
 cmd("combat", "skillpreview", { str("id") })
 cmd("combat", "dummy", { int("level", 1, MAX_LEVEL, true) })
 -- S29: every kind of damage number in turn (look check).

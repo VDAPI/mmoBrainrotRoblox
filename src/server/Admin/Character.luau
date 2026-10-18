@@ -591,4 +591,66 @@ commands.luck = function(player)
 	end)
 end
 
+-- S151: /ach list [player] | give <id> [player] | reset <id|all> [player] | counter <counter> <value> [player] |
+-- backfill [player]: achievements of the caller or of a named player (AchievementService). Reset keeps paid shards.
+commands.ach = function(player, args)
+	local AchievementService = Context.services.AchievementService
+	local action = args[1]
+	-- the player is the argument after the action's own ones
+	local own = if action == "list" or action == "backfill" then 0 elseif action == "counter" then 2 else 1
+	local name = args[2 + own]
+	local target = player
+	if name and name ~= "" then
+		local found = Context.services.AdminService.FindPlayer(name)
+		if not found then
+			reply(player, "admin.player.none")
+			return
+		end
+		target = found
+	end
+	if not PlayerStateService.GetCharacter(target) then
+		reply(player, "admin.player.none")
+		return
+	end
+	if action == "list" then
+		local lines = AchievementService.List(target) or {}
+		local done = 0
+		for _, line in lines do
+			if string.find(line, "✓", 1, true) then
+				done += 1
+			end
+		end
+		for _, line in lines do
+			reply(player, "admin.ach.line", { line = line })
+		end
+		reply(player, "admin.ach.summary", { name = target.Name, done = done, total = #lines })
+	elseif action == "give" then
+		local id = args[2] or ""
+		if AchievementService.Give(target, id) then
+			reply(player, "admin.ach.given", { id = id, name = target.Name })
+		else
+			reply(player, "admin.ach.notGiven", { id = id })
+		end
+	elseif action == "reset" then
+		local n = AchievementService.Reset(target, args[2] or "")
+		if n == nil then
+			reply(player, "admin.ach.notGiven", { id = args[2] or "" })
+		else
+			reply(player, "admin.ach.reset", { n = n, name = target.Name })
+		end
+	elseif action == "counter" then
+		local counter = args[2] or ""
+		local value = tonumber(args[3])
+		if value and AchievementService.SetCounter(target, counter, value) then
+			reply(player, "admin.ach.counter", { counter = counter, value = math.floor(value), name = target.Name })
+		else
+			reply(player, "admin.ach.badCounter", { counter = counter })
+		end
+	elseif action == "backfill" then
+		reply(player, "admin.ach.backfill", { n = AchievementService.Backfill(target), name = target.Name })
+	else
+		reply(player, "admin.usage.ach")
+	end
+end
+
 return commands

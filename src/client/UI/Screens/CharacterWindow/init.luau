@@ -61,6 +61,7 @@ local function TitlePicker(scope: Scope, order: number): Instance
 	local character = State.Value({ "character" })
 	local vip = State.Value({ "vip", "active" }) -- S121: the VIP title
 	local owned = State.Value({ "account", "cosmetics", "owned" }) -- S123: bought titles
+	local achDone = State.Value({ "account", "ach", "done" }) -- S151: account achievement titles
 	-- S125: timed titles need the time (the server clock with the /time offset), refreshed every TIMED_TICK s
 	local clock = scope:Value(Clock.now())
 	local alive = true
@@ -76,7 +77,11 @@ local function TitlePicker(scope: Scope, order: number): Instance
 		end
 	end)
 	local ctx = scope:Computed(function(use): Titles.Context
-		return Titles.contextOf({ cosmetics = { owned = use(owned) } }, use(vip) == true, use(clock))
+		return Titles.contextOf(
+			{ cosmetics = { owned = use(owned) }, ach = { done = use(achDone) } },
+			use(vip) == true,
+			use(clock)
+		)
 	end)
 	local unlocked = scope:Computed(function(use): { string }
 		local c = use(character)

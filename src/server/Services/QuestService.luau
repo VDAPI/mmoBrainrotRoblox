@@ -399,6 +399,7 @@ local function turnIn(player: Player, npcId: string): (boolean, string?)
 	local index = Quests.Main.indexOf[quest.id]
 	PlayerStateService.Set(player, { "character", "quests", "mainDone" }, index)
 	PlayerStateService.Set(player, { "character", "quests", "mainLast" }, quest.id)
+	QuestEvents.fire(player, "quest", { kind = "main", index = index }) -- S151: achievements
 	-- The first story quests are the tutorial: report them as the onboarding funnel.
 	if index <= TUTORIAL_STEPS then
 		Analytics.onboarding(player, index, quest.id)

@@ -66,6 +66,7 @@ export type Obtain = {
 	event: string?,
 	bossWin: string?,
 	hunt: "shop"?, -- S134k: the Huntmaster's shop (Hunter's Marks, Data/HuntShop)
+	achievement: string?, -- S151: the reward of this achievement (Data/Achievements reward.cosmetic)
 }
 
 -- S123 looks of the new kinds (all colours hex).
@@ -483,6 +484,38 @@ add("frame_trophy", "frame", 0, "➶", "#6B5A2E", {
 	frame = { stroke = "#6B5A2E", stroke2 = "#C9A45C", thickness = 4, ornament = "➶" },
 })
 add("title_huntlord", "title", 0, "✎", "#7FA04A", { obtain = { quest = "contract_99" }, title = "huntlord" })
+
+-- S151 (docs/DESIGN.md §20b): achievement rewards, never sold (price 0, obtain.achievement = the achievement id, never in
+-- the offer of the week). Looks from the existing fields only; off the wiki until S151b.
+add("frame_elitehunter", "frame", 0, "✠", "#5A3A2A", {
+	color2 = "#D9A441",
+	obtain = { achievement = "elite3" },
+	wiki = false,
+	frame = { stroke = "#5A3A2A", stroke2 = "#D9A441", thickness = 4, ornament = "✠", glow = true },
+})
+add("chatframe_five", "chatframe", 0, "⁘", "#1E2A3A", {
+	color2 = "#C9D8E8",
+	obtain = { achievement = "fullParty1" },
+	wiki = false,
+	chat = { left = "⁘", right = "⁘", color = "#8FB8E0", bubble = "#1E2A3A", bubbleText = "#C9D8E8" },
+})
+add("chatframe_merchant", "chatframe", 0, "⚖", "#2E2414", {
+	color2 = "#E8D2A0",
+	obtain = { achievement = "trade2" },
+	wiki = false,
+	chat = { left = "⦃", right = "⦄", color = "#D9B26A", bubble = "#2E2414", bubbleText = "#E8D2A0" },
+})
+add("levelup_gatherer", "levelup", 0, "❦", "#8FD18B", {
+	color2 = "#E8D8A0",
+	obtain = { achievement = "gather3" },
+	wiki = false,
+	levelup = { style = "rings", color = "#8FD18B", color2 = "#E8D8A0" },
+})
+add("aura_ancestorfrost", "aura", 0, "❄", "#BFE8FF", {
+	color2 = "#5A8FC9",
+	obtain = { achievement = "worldBoss3" },
+	wiki = false,
+})
 
 -- S132 (DESIGN-17 §9a): class outfits. Each replaces the default outfit of its class (Data/ClassLooks): per class
 -- three for Dragon Shards, one for the end of the story's chapter II and one for defeating Azgor with that class. All

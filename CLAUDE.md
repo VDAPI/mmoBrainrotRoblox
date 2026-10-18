@@ -236,6 +236,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `Balance.targetsS134i`.
 - **Boss świata** (S149): wpis w `Data/Bosses` z `world = true` + `Data/WorldBoss` (terminy, miejsce, udział, nagroda);
   serwis `WorldBossService`, udział przez `Logic/Contribution`.
+- **Osiągnięcie** (S151): wpis w `Data/Achievements` (licznik z `COUNTERS`, `goal`, nagroda) + `ach.<id>.name/.desc` (PL,
+  EN); nowe źródło postępu = rodzaj zdarzenia `QuestEvents` + mapowanie w `Logic/Achievements.COUNTER_EVENTS`; odłamki w
+  budżecie `Config.Achievements.shardBudget` (test).
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez

@@ -18,6 +18,7 @@ local Shared = ReplicatedStorage.Shared
 local Config = require(Shared.Config)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Trade = require(Shared.Logic.Trade)
 local Ignores = require(script.Parent.Parent.Social.Ignores) -- S133
 local UseGuards = require(script.Parent.Parent.UseGuards) -- S150
@@ -349,6 +350,11 @@ local function execute(session: Session): (boolean, string?)
 	)
 	task.spawn(DataService.Save, a)
 	task.spawn(DataService.Save, b)
+	-- S151: a finished trade that moved something counts for both sides (achievements)
+	if #result.movedA + #result.movedB > 0 or offerA.gold + offerB.gold > 0 then
+		QuestEvents.fire(a, "trade", nil)
+		QuestEvents.fire(b, "trade", nil)
+	end
 	return true, nil
 end
 

@@ -737,7 +737,8 @@ local function applyFor(
 		submitBoard(player, char, key, mode, ArenaRules.ratingOf(new, mode))
 	end
 	-- the daily and weekly duel objectives count ranked matches too (DECYZJE S126)
-	QuestEvents.fire(player, "duel", { won = score >= 1 })
+	-- S151: `arena` = a ranked match (achievements count it as an arena win, not a duel)
+	QuestEvents.fire(player, "duel", { won = score >= 1, arena = true })
 	local delta = if info.delta > 0 then `+{info.delta}` else tostring(info.delta)
 	local outcome: "win" | "loss" | "draw" = if score >= 1 then "win" elseif score <= 0 then "loss" else "draw"
 	if spec.origin == "tournament" then

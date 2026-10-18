@@ -174,6 +174,9 @@ local function obtainText(use: Fusion.Use, def: Cosmetics.Def): string
 		return Text.get(use, "wardrobe.obtain.arena", { price = if entry then entry.price else 0 })
 	elseif obtain and obtain.arena == "season" then
 		return Text.get(use, "wardrobe.obtain.arenaSeason")
+	elseif obtain and obtain.achievement then
+		-- S151: the reward of an achievement
+		return Text.get(use, "wardrobe.obtain.achievement", { name = Text.get(use, `ach.{obtain.achievement}.name`) })
 	elseif obtain and obtain.event then
 		-- S129: a reward of a wall-clock event (Data/ScheduledEvents; S130 "tourney")
 		local event = ScheduledEvents.get(obtain.event)

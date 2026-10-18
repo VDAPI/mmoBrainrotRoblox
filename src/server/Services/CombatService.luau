@@ -121,6 +121,7 @@ export type KillInfo = {
 	dropLevel: number?, -- S32: base level for item drops (spawner level without the variant's levels)
 	luck: Luck.MonsterLuck?, -- S60: luck of the credited group (nil for bosses)
 	finisher: Player?, -- S72: the player who dealt the killing blow (Monster.killedBy); credit is unchanged
+	lair: string?, -- S151: the Elite II hideout of the monster's spawner (MonsterService.LairOf; achievements)
 }
 
 type FxEvent = { [string]: any }
@@ -937,6 +938,7 @@ local function onMonsterDied(monster: any)
 		dropLevel = Loot.dropBaseLevel(monster.stats.level, monster.variant, monster.levelCap),
 		luck = luck,
 		finisher = monster.killedBy,
+		lair = MonsterService.LairOf(monster),
 	}
 	CombatService.MonsterKilled:Fire(info, credit, credit[1])
 	-- Clear player targets pointing at the corpse.

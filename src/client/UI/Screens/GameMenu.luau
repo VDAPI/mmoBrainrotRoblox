@@ -632,6 +632,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 			row(scope, 14, "menu.barks", toggle(scope, "barks", true)), -- S101b: NPC comments during quests
 			row(scope, 14, "menu.lowHpWarn", toggle(scope, "lowHpWarn", true)), -- S134f: low health vignette and heartbeat
 			row(scope, 14, "menu.fightCard", toggle(scope, "fightCard", true)), -- S134f: the after-fight card
+			row(scope, 14, "menu.achToasts", toggle(scope, "achToasts", true)), -- S151: achievement toasts
 			-- S133: who may whisper, and the "<name> is in the game" toast
 			row(
 				scope,

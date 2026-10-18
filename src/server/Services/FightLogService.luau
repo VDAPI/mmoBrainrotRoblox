@@ -18,6 +18,7 @@ local Config = require(Shared.Config)
 local FightStats = require(Shared.Logic.FightStats)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rarities = require(Shared.Data.Rarities)
 local Types = require(Shared.Types)
 
@@ -254,6 +255,11 @@ function FightLogService.End(id: number, outcome: FightStats.Outcome, extras: Ex
 	for _, player in entry.players do
 		if player.Parent == nil then
 			continue
+		end
+		-- S151: the telegraphed blows this player dodged in the fight (achievements)
+		local own = fight.stats[player.UserId]
+		if own and own.dodged > 0 then
+			QuestEvents.fire(player, "dodge", { n = own.dodged })
 		end
 		local ids = partyIdsOf(entry, player)
 		if not FightStats.worthSending(fight, ids, CFG.minSeconds) then

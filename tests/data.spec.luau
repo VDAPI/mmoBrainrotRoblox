@@ -54,6 +54,7 @@ local NAMESPACES = {
 	"tourney", -- S130
 	"social", -- S133
 	"friends", -- S150
+	"ach", -- S151: achievements
 	"animlab", -- S110
 	"paths",
 	"title",
