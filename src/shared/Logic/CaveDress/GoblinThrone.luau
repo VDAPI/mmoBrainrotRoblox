@@ -64,11 +64,24 @@ local function throne(env: Env, out: { Build })
 	bp:endKit()
 	for _, s in { -1, 1 } do
 		bp:box(1.2, 1, 0.3, s * 1.2, y + 12.4, -0.4, o(Kit.dark, "fine", { col = false }))
-		Kit.banner(bp, s * 9, y, 3, 12, Kit.red)
+		-- W21 secret (laki.md 5.5): one frost-blue banner among the red, a gift of the lord from the north
+		Kit.banner(bp, s * 9, y, 3, 12, if s > 0 then { c = "#9FC8E0", m = "Fabric" } else Kit.red)
 		bp:box(0.6, 3, 0.6, s * 6, y + 1.4, -4, o(Kit.iron, "detail", { col = false }))
 		Kit.fire(bp, s * 6, y + 3.3, -4, 1.4, Kit.FIRE, "detail")
 	end
 	bp:add("cyl", 0.1, 16, 16, 0, y + 0.06, 6, 0, 0, 90, o({ c = "#5A4A38", m = "Ground" }, "fine", { col = false }))
+	-- W21 secret (laki.md 5.5): the axe rack behind the throne (empty while Grimrok fights), a dwarven rune cut in it
+	bp:box(0.4, 4, 0.4, 2.2, y + 2, -5, o(Kit.oldWood, "detail", { col = false }))
+	bp:box(0.4, 4, 0.4, 4.6, y + 2, -5, o(Kit.oldWood, "detail", { col = false }))
+	bp:box(2.8, 0.4, 0.5, 3.4, y + 3.4, -5, o(Kit.oldWood, "detail", { col = false }))
+	bp:box(0.6, 0.6, 0.08, 3.4, y + 2.4, -5.25, {
+		c = "#6FB8FF",
+		m = "Neon",
+		lod = "fine",
+		col = false,
+		tag = "glow",
+		jitter = 0,
+	})
 	table.insert(out, b)
 end
 

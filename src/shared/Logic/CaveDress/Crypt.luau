@@ -232,6 +232,12 @@ local function soulwell(env: Env, out: { Build })
 		90,
 		{ c = GHOST, m = "Neon", lod = "detail", col = false, t = 0.3, tag = "glow", jitter = 0, fxColor = GHOST }
 	)
+	-- W22 secret (bor.md D5): under the grate on the well's floor a cracked bronze spearhead (a false trail: the
+	-- Thorn's head is in the Forge)
+	local BRONZE = { c = "#9A6A3A", m = "Metal" }
+	bp:rbox(0.25, 0.12, 1.6, 1.2, y + 0.62, -0.6, 0, 30, 0, o(BRONZE, "fine", { col = false }))
+	bp:add("wedge", 0.12, 0.7, 0.9, 1.6, y + 0.62, -1.4, 90, 30, 0, o(BRONZE, "fine", { col = false }))
+	bp:add("wedge", 0.12, 0.5, 0.6, 0.9, y + 0.62, -0.2, -90, 50, 0, o(BRONZE, "fine", { col = false }))
 	bp:light(0, y + 4, 0, GHOST, 30, 1.6, "crystal")
 	Kit.lifeAt(env.ctx, b, "mist", 0, 1, 0, 6)
 	Kit.lifeAt(env.ctx, b, "wisp", 0, 8, 0, 6)
@@ -433,6 +439,52 @@ local function antechamber(env: Env, out: { Build })
 	Kit.life(env.ctx, "mist", Kit.at(env, 270), 0.5, 0, 12)
 end
 
+-- W22 secret (bor.md D5): in the Family Crypt one empty niche larger than the others, its name chiselled off but for
+-- the last letters ("...ne of the house of Vael"); after everything, without clearings.
+local function emptyNiche(env: Env, out: { Build })
+	local r = env.T.rooms[3]
+	for _, deg in { 90, 60, 120, 270 } do
+		local x, z = Kit.wallSpot(env, r, math.rad(deg), 1.5)
+		if x and z then
+			local dx, dz = r.x - x, r.z - z
+			local b = Kit.build(env, "EmptyNiche", "traces", x, z, math.deg(math.atan2(-dx, -dz)))
+			local bp = b.bp
+			local y = Kit.gy(env, b, 0, 0)
+			bp:box(5, 7.4, 1, 0, y + 4.2, 0.4, o(STONE, "detail", { col = false }))
+			bp:box(3.8, 6, 0.6, 0, y + 4.2, -0.05, o(Kit.dark, "detail", { col = false }))
+			-- the name plate, chiselled rough, the last letters left (pale strokes at its right end)
+			bp:box(4.4, 0.9, 0.2, 0, y + 0.8, -0.2, o(PALE, "detail", { col = false }))
+			for k = 0, 5 do
+				bp:rbox(
+					0.35,
+					0.5,
+					0.06,
+					-1.8 + k * 0.45,
+					y + 0.8,
+					-0.32,
+					0,
+					0,
+					k * 37,
+					o(STONE, "fine", { col = false })
+				)
+			end
+			for k = 0, 3 do
+				bp:box(
+					0.1,
+					0.5,
+					0.05,
+					1.1 + k * 0.32,
+					y + 0.8,
+					-0.33,
+					o({ c = "#2E2A28", m = "Slate" }, "fine", { col = false })
+				)
+			end
+			table.insert(out, b)
+			return
+		end
+	end
+end
+
 function Crypt.all(env: Env, out: { Build })
 	gate(env, out)
 	columns(env, out)
@@ -443,6 +495,7 @@ function Crypt.all(env: Env, out: { Build })
 	gallery(env, out)
 	sanctum(env, out)
 	antechamber(env, out)
+	emptyNiche(env, out)
 	Kit.life(env.ctx, "drips", Kit.at(env, -110), 20, 0, 40)
 end
 

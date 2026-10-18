@@ -115,6 +115,26 @@ local function apse(env: Env, out: { Build })
 	bp:box(4, 0.4, 8, 0, y + 3, 0, o(Kit.dark, "fine", { col = false }))
 	bp:rbox(5.4, 0.8, 9.4, 6, Kit.gy(env, b, 6, -2) + 0.6, -2, 0, 24, 12, o(PALE, "detail", { col = false }))
 	bp:rbox(5.4, 0.8, 4, -5, Kit.gy(env, b, -5, 3) + 0.4, 3, 0, -30, 6, o(PALE, "fine", { col = false }))
+	-- W22 secret (bor.md E5): "Morvane of the house of Vael" cut into the apse's floor, half under the fallen lid
+	do
+		local fy = Kit.gy(env, b, 4.5, -6.2) + 0.05
+		bp:rbox(7, 0.06, 1.4, 4.5, fy, -6.2, 0, 24, 0, o(PALE, "fine", { col = false }))
+		for k = 0, 11 do
+			local t = -2.9 + k * 0.5
+			bp:rbox(
+				0.1,
+				0.08,
+				0.7,
+				4.5 + t * math.cos(math.rad(24)),
+				fy + 0.02,
+				-6.2 - t * math.sin(math.rad(24)),
+				0,
+				24 + (k % 3) * 20,
+				0,
+				o({ c = "#2E2A30", m = "Slate" }, "fine", { col = false })
+			)
+		end
+	end
 	-- the statue (behind, north: local +Z at rot 180 = world -Z)
 	local sy = Kit.gy(env, b, 0, 10)
 	bp:box(5, 2, 5, 0, sy + 1, 10, o(STONE, "shell", { q = false }))

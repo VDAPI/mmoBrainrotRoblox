@@ -149,6 +149,47 @@ local function council(env: Env, out: { Build })
 		end
 		tb:box(4, 0.06, 2.6, 0, ty + 2.84, 0, o({ c = "#D8C9A0", m = "Fabric" }, "fine", { col = false }))
 		Kit.candles(tb, -3.6, ty + 2.8, 0.6, 3, WARM)
+		-- W21 secret (laki.md 2.5): an open ledger, a frost seal pressed on the margin (the petal and the thorn)
+		tb:box(2.2, 0.12, 1.6, 3.2, ty + 2.86, 0.2, o({ c = "#3A2A20", m = "Fabric" }, "fine", { col = false }))
+		for _, side in { -1, 1 } do
+			tb:rbox(
+				1,
+				0.06,
+				1.5,
+				3.2 + side * 0.52,
+				ty + 2.98,
+				0.2,
+				0,
+				0,
+				side * -6,
+				o({ c = "#E6DCC0", m = "SmoothPlastic" }, "fine", { col = false })
+			)
+		end
+		tb:add(
+			"cyl",
+			0.06,
+			0.4,
+			0.4,
+			3.9,
+			ty + 3.06,
+			0.6,
+			0,
+			0,
+			90,
+			o({ c = "#BFE0F2", m = "SmoothPlastic" }, "fine", { col = false })
+		)
+		tb:rbox(
+			0.05,
+			0.07,
+			0.36,
+			3.9,
+			ty + 3.1,
+			0.6,
+			0,
+			40,
+			0,
+			o({ c = "#3A4A5A", m = "SmoothPlastic" }, "fine", { col = false })
+		)
 		Kit.barrel(tb, 7, Kit.gy(env, t, 7, 0), 0, 1)
 		Kit.clear(env, tx, tz, 7)
 		table.insert(out, t)

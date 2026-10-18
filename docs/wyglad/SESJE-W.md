@@ -448,3 +448,14 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Zamarznięta Twierdza (3.5): twarz komendanta z brodą i płatkiem zakonu na głowie leżącego posągu w Wyłomie (mapa ze sztyletem w Komnacie Komtura już była).
 - Serce Lodowca (4.5): tarcza zakonu (płatek i cierń) i złamana włócznia przy zbroi w bryle lodu w Skarbcu, świeże ślady bosych stóp w Rozpadlinie i Przedsionku.
 - Leże Vaelgratha (5.5): rycerz zakonu z tarczą i złamaną włócznią wśród poprzedników za lodem we wschodniej ścianie (100 studów od środka, poza kręgiem 50; koksowniki i arena bez zmian).
+
+### W21/W22: jaskinie Łąk i Boru, część 2 (sekrety z planu)
+
+- Kryjówka Przemytników: otwarta księga z pieczęcią mrozu (płatek z cierniem) na stole Sali Narad.
+- Gobliński Kopiec: otwarta skrzynka świecących szronowych amuletów ze znakiem na wieku przy szybie wodza.
+- Jaskinia Mchów: jeden szronowy amulet na kościanym ołtarzu Gniazda Królowej.
+- Komnata Grimroka: pusty stojak na topór z krasnoludzką runą za tronem, jedna szronowobłękitna chorągiew wśród czerwonych.
+- Wilcza Nora: wydrapana, zgaszona runa szronu na księżycowym kamieniu.
+- Kurhan Kultystów: herb rodu Vael na wieku szronowej trumny, monety z cierniem w Norze Ghuli.
+- Krypta Zapomnianych: pęknięty grot z brązu na dnie Studni Dusz, wielka pusta nisza ze skutym imieniem w Krypcie Rodów.
+- Grobowiec Morvane: imię „Morvane z rodu Vael” wyryte w posadzce absydy pod wiekiem.

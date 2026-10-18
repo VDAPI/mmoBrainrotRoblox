@@ -410,6 +410,16 @@ local function queennest(env: Env, out: { Build })
 				{ c = "#E8C25A", m = "Neon", lod = "fine", col = false }
 			)
 		end
+		-- W21 secret (laki.md 4.5): one frost amulet on the altar, a pale blue glint among the green fires
+		ab:rbox(0.08, 0.8, 0.08, 0, ay + 0.5, 0, 0, 0, 30, o(Kit.rope, "fine", { col = false }))
+		ab:add("ball", 0.5, 0.5, 0.18, 0, ay + 0.35, 0.2, 80, 0, 0, {
+			c = "#BFE6FF",
+			m = "Neon",
+			lod = "fine",
+			col = false,
+			tag = "glow",
+			jitter = 0,
+		})
 		Kit.clear(env, ax, az, 8)
 		table.insert(out, alt)
 	end

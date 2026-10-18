@@ -234,6 +234,37 @@ local function shaft(env: Env, out: { Build })
 	local bp = s.bp
 	local y = Kit.gy(env, s, 0, 0)
 	bp:add("cyl", 0.2, 10, 10, 0, y + 0.1, 0, 0, 0, 90, o(Kit.dark, "detail", { col = false }))
+	-- W21 secret (laki.md 3.5): an open box of frost amulets by the shaft, glowing pale blue in the green dusk, the
+	-- petal and the thorn on its lid
+	do
+		local ax, az = 0, 11.5
+		local ay = Kit.gy(env, s, ax, az)
+		bp:box(1.8, 0.8, 1.2, ax, ay + 0.4, az, o(Kit.oldWood, "detail", { col = false }))
+		bp:rbox(1.8, 0.12, 1.2, ax, ay + 1.2, az + 0.75, 70, 0, 0, o(Kit.oldWood, "fine", { col = false }))
+		bp:add(
+			"cyl",
+			0.06,
+			0.6,
+			0.6,
+			ax,
+			ay + 1.25,
+			az + 0.84,
+			0,
+			90,
+			0,
+			o({ c = "#DCE6EE", m = "SmoothPlastic" }, "fine", { col = false })
+		)
+		for k = -1, 1 do
+			bp:add("ball", 0.35, 0.18, 0.35, ax + k * 0.5, ay + 0.85, az - 0.1 + (k % 2) * 0.3, 0, 0, 0, {
+				c = "#BFE6FF",
+				m = "Neon",
+				lod = "fine",
+				col = false,
+				tag = "glow",
+				jitter = 0,
+			})
+		end
+	end
 	bp:add("cyl", 0.1, 11, 11, 0, y + 0.2, 0, 0, 0, 90, {
 		c = "#B87333",
 		m = "Neon",

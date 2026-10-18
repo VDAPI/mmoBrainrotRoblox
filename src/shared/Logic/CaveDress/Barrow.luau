@@ -248,6 +248,26 @@ local function heart(env: Env, out: { Build })
 		jitter = 0,
 	})
 	bp:rbox(2.4, 0.4, 6, 8.2, y + 0.3, -2.4, 0, 28, 4, o({ c = "#4E5864", m = "Slate" }, "detail", { col = false }))
+	-- W22 secret (bor.md C5): the house of Vael's crest on the lid (a thorn through a ring): the coffin carried through
+	-- the ravine
+	bp:push(8.2, y + 0.52, -2.4, 0, 28, 4)
+	for k = 0, 7 do
+		local a = k * math.pi / 4
+		bp:rbox(
+			0.16,
+			0.06,
+			0.62,
+			math.cos(a) * 0.8,
+			0,
+			math.sin(a) * 0.8,
+			0,
+			-math.deg(a),
+			0,
+			o({ c = "#C9D2DA", m = "Metal" }, "fine", { col = false })
+		)
+	end
+	bp:rbox(0.14, 0.06, 2.4, 0, 0.01, 0, 0, 35, 0, o({ c = "#C9D2DA", m = "Metal" }, "fine", { col = false }))
+	bp:pop()
 	bp:light(4.6, y + 3, -1, "#BFE0FF", 10, 0.6, "crystal")
 	-- the horned idol with outstretched arms
 	local iy = Kit.gy(env, b, 0, 9)
@@ -327,6 +347,26 @@ local function ghoulden(env: Env, out: { Build })
 				o({ c = "#5A4A38", m = "Ground" }, "detail", { col = false })
 			)
 			Kit.bones(b.bp, lx, 0, lz, 8, g)
+			if k == 0 then
+				-- W22 secret (bor.md C5): coins with the thorn from the family crypt in the Ruins among the bones (the
+				-- ghouls dug that far)
+				for c = 0, 4 do
+					local cx, cz = lx + math.cos(c * 1.3) * 1.6, lz + math.sin(c * 1.3) * 1.6
+					b.bp:add(
+						"cyl",
+						0.08,
+						0.55,
+						0.55,
+						cx,
+						g(cx, cz) + 0.05,
+						cz,
+						0,
+						0,
+						90 - c * 9,
+						o({ c = "#C9A45C", m = "Metal" }, "fine", { col = false })
+					)
+				end
+			end
 			if k % 2 == 0 then
 				b.bp:box(
 					1.8,

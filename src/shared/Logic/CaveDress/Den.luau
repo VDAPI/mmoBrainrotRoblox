@@ -356,6 +356,36 @@ local function moon(env: Env, out: { Build })
 	)
 	bp:light(0, y + 20, 0, MOON, 40, 1.6, "lamp")
 	Kit.lifeAt(env.ctx, b, "dustBeam", 0, y + 10, 0, 12)
+	-- W22 secret (bor.md B5): a frost rune scratched into the moonstone and snuffed out (the same as on the Moonstone
+	-- in the Wolf Thickets): dark scored lines, no glow
+	for k = 0, 2 do
+		bp:rbox(
+			0.12,
+			0.06,
+			3.4,
+			1.6,
+			y + 0.66,
+			-1.2,
+			0,
+			k * 60,
+			0,
+			o({ c = "#3A4048", m = "Slate" }, "fine", { col = false })
+		)
+	end
+	for _, s in { -1, 1 } do
+		bp:rbox(
+			0.1,
+			0.06,
+			1,
+			1.6 + s * 0.9,
+			y + 0.66,
+			-1.2 - 1.2,
+			0,
+			s * 45,
+			0,
+			o({ c = "#3A4048", m = "Slate" }, "fine", { col = false })
+		)
+	end
 	-- the ring of skulls round the stone like a clock face
 	for k = 0, 11 do
 		local a = k * math.pi / 6
