@@ -431,6 +431,9 @@ export type VipState = {
 -- S152 (docs/DESIGN.md §21b): the season pass of the account (Logic/Season): the season id ("" = none), its points,
 -- the UTC day of `dayKill` (monster points that day), the premium track bought, the claimed tiers of both tracks
 -- (tostring(tier) -> true: a data store cannot hold a sparse array) and the seasons whose unclaimed rewards were mailed.
+-- S153: Logic/Returning.State (seconds of bonus play left, os.time of the last grant, last Data/Changelog id read)
+export type ReturningState = { left: number, at: number, seen: number }
+
 export type SeasonState = {
 	id: string,
 	points: number,
@@ -486,7 +489,8 @@ export type AccountData = {
 	autoGrind: { bank: number, day: number, used: number },
 	packs: { [string]: boolean }, -- S123: starter packs bought (key -> true), once per account
 	grantedPasses: { [string]: boolean }, -- S123: passes granted by a starter pack (MonetizationService.HasPass)
-	stats: { createdAt: number, playtime: number },
+	-- S153: lastSeen = os.time the account was last in the game (Logic/Returning; 0 = before S153, reconcile)
+	stats: { createdAt: number, playtime: number, lastSeen: number },
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
 	social: SocialData, -- S133: friends and ignored players (Logic/Social; reconcile adds it, no migration)
 	legendRework: boolean, -- S134g: Legendary / Mythic items got skill effects (migration 10); the toast shows once
@@ -494,6 +498,8 @@ export type AccountData = {
 	season: SeasonState, -- S152: the season pass (Logic/Season; reconcile adds it, no migration)
 	-- S152: the previous season during its grace days (unclaimed rewards; mailed once after them), nil otherwise
 	seasonPrev: SeasonState?,
+	-- S153: the returning player's bonus and the last "What has changed" entry read (Logic/Returning; reconcile)
+	returning: ReturningState,
 }
 
 -- Character summary shown on the selection screen.

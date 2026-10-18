@@ -2996,6 +2996,39 @@ do
 	add()
 end
 
+-- S153: the returning bonus (Balance.returningBonus, Balance.targetsS153): what one full bonus is worth in EXP and in
+-- levels per class at 10 / 20 / 45 / 70 / 99, outside the pace model.
+do
+	local R = Config.Returning
+	local S = B.S153
+	add("## Premia powrotu (S153)")
+	add()
+	add(
+		`Poza modelem tempa (jak nagroda za logowanie S100): po {R.awayDays} dniach nieobecności, raz na {R.cooldownDays} dni, konto z postacią od {R.minLevel}. poziomu dostaje {fmtValue(R.seconds / 60, "0")} min gry w świecie z +{R.expBonus} pkt \`expBonus\` (dodane do Fortuny). Wartość premii = EXP tego czasu walki z \`Balance.paceAt\` × {R.expBonus}%, w poziomach liczonych od poziomu postaci (\`Logic/Exp\`). Asertuje \`balance.spec\` („Balance: returning bonus (S153)”): premia ≤ 1 h walki na każdym poziomie i ≤ {fmtValue(S.maxLevels, "1")} poziomu (średnia klas) od {S.assertFrom}. poziomu.`
+	)
+	add()
+	local grid: { { string } } = {}
+	for _, L in S.levels do
+		local row = { `L{L}` }
+		local sum = 0
+		for _, c in B.CLASSES do
+			local b = B.returningBonus(c, L)
+			sum += b.levels
+			table.insert(row, `{fmtValue(b.exp, "0")} EXP / {fmtValue(b.levels, "2")}`)
+		end
+		table.insert(row, fmtValue(sum / #B.CLASSES, "2"))
+		table.insert(grid, row)
+	end
+	local heads = { "poziom" }
+	for _, c in B.CLASSES do
+		table.insert(heads, `{c}: EXP / poziomy`)
+	end
+	table.insert(heads, "średnio poziomów")
+	tableOut(heads, grid)
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(B.targetsS153(), "S153 (asertowane)"))
+	add()
+end
+
 -- S134e: the Elite II kit (Balance.targetsS134e): the Crushing Blow by the level gap for a Mage and a Warrior in four
 -- regions, kiting before (no kit: nothing reaches a kiting player) and after, the Heavy Blow of the Elites, the rows.
 do

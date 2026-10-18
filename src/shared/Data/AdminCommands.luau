@@ -174,6 +174,12 @@ cmd("character", "ach", {
 	str("b", true),
 	str("c", true),
 }, { dangerActions = { "reset" } })
+-- S153: the caller's returning bonus and "What has changed" letter: state, the bonus now [seconds], none (and no
+-- cooldown), the check now as after <days> away, the letter from the start
+cmd("character", "returning", {
+	enum("action", { "info", "grant", "clear", "away", "letter" }),
+	int("value", 0, 31536000, true),
+})
 cmd("combat", "skillpreview", { str("id") })
 cmd("combat", "dummy", { int("level", 1, MAX_LEVEL, true) })
 -- S29: every kind of damage number in turn (look check).

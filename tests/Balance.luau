@@ -13679,4 +13679,88 @@ function Balance.targetsS152(): { TargetRow }
 	return rows
 end
 
+-- Returning bonus (S153, docs/DESIGN.md §11) -------------------------------------------------------------------------
+-- Outside the pace model (like the login reward S100: a reward for coming back, not a rate of play; DECYZJE S153): the
+-- rows say what the bonus is worth. Config.Returning gives `seconds` of play in the world with +expBonus points of
+-- expBonus, so its EXP is the grinding EXP of that time (Balance.paceAt) x expBonus / 100, in levels counted from the
+-- level on (Logic/Exp; quests come on top in the game, the model counts the grinding hour).
+
+Balance.S153 = {
+	levels = { 10, 20, 45, 70, 99 },
+	maxLevels = 0.8, -- the mean of the classes from `assertFrom` on
+	assertFrom = 45, -- below it a level takes under an hour of grinding (the rows only report)
+}
+
+-- S153: rows reported with the reason (never asserted); balance.spec checks every key is a real row.
+Balance.S153_REPORT = {
+	["S153.bonus.L10"] = "a level takes under 1 h of grinding here: the bonus (1 h of play by definition) is ~2 levels",
+	["S153.bonus.L20"] = "a level takes under 1 h of grinding here: the bonus (1 h of play by definition) is ~2 levels",
+} :: { [string]: string }
+
+-- The bonus EXP of `classId` at `level` (one full bonus) and what it buys in levels from `level` on.
+function Balance.returningBonus(classId: string, level: number): { exp: number, levels: number }
+	local R = Config.Returning
+	local exp = Balance.paceAt(classId, level).expPerHour * R.seconds / 3600 * R.expBonus / 100
+	local levels, lv, left = 0, level, exp
+	while lv < Config.MaxLevel do
+		local need = Exp.expToNext(lv)
+		if left < need then
+			levels += left / need
+			break
+		end
+		left -= need
+		levels += 1
+		lv += 1
+	end
+	return { exp = exp, levels = levels }
+end
+
+-- S153 (D1): ids "S153.bonus.L<level>" (the mean of the classes, asserted <= S153.maxLevels from assertFrom on),
+-- "S153.bonus.<class>.L<level>" (report) and "S153.hour.L<level>" (the bonus EXP / 1 h of grinding EXP <= 1, always
+-- asserted); balance.spec ("Balance: returning bonus (S153)") asserts every row without `report`.
+function Balance.targetsS153(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S153
+	for _, L in S.levels do
+		local sum = 0
+		-- the bonus EXP over the EXP of 1 h of grinding at the same pace (the same for every class and level)
+		local hour = Config.Returning.seconds / 3600 * Config.Returning.expBonus / 100
+		for _, c in Balance.CLASSES do
+			local b = Balance.returningBonus(c, L)
+			sum += b.levels
+			target(
+				rows,
+				`S153.bonus.{c}.L{L}`,
+				"bonus",
+				`premia powrotu {c}, L{L}: poziomy`,
+				b.levels,
+				nil,
+				S.maxLevels,
+				c,
+				L
+			)
+			rows[#rows].report = "S153: per class (the asserted row is the mean of the classes)"
+		end
+		target(
+			rows,
+			`S153.bonus.L{L}`,
+			"bonus",
+			`premia powrotu, średnia klas, L{L}: poziomy`,
+			sum / #Balance.CLASSES,
+			nil,
+			S.maxLevels,
+			nil,
+			L
+		)
+		target(rows, `S153.hour.L{L}`, "hour", `premia powrotu / EXP 1 h walki, L{L}`, hour, nil, 1, nil, L)
+	end
+	for _, row in rows do
+		local why = Balance.S153_REPORT[row.id]
+		if why then
+			row.report = `S153: {why}`
+		end
+	end
+	return rows
+end
+
 return Balance

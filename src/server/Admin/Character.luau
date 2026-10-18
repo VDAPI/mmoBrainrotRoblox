@@ -653,4 +653,59 @@ commands.ach = function(player, args)
 	end
 end
 
+-- S153: the caller's returning bonus and "What has changed" letter (account.returning, account.stats.lastSeen).
+-- info | grant [seconds] | clear | away <days> (the check now as after `days` away) | letter (the letter again)
+commands.returning = function(player, args)
+	local ReturningService = Context.services.ReturningService
+	local action, value = args[1], tonumber(args[2])
+	if action == "info" then
+		local info = ReturningService.Info(player)
+		if not info then
+			reply(player, "admin.usage.returning")
+			return
+		end
+		local now = Clock.now()
+		reply(player, "admin.returning.info", {
+			left = math.ceil(info.left / 60),
+			bonus = info.bonus,
+			days = if info.lastSeen > 0 then string.format("%.1f", (now - info.lastSeen) / 86400) else "-",
+			since = if info.at > 0 then string.format("%.1f", (now - info.at) / 86400) else "-",
+			seen = info.seen,
+			level = info.maxLevel,
+		})
+	elseif action == "grant" then
+		local seconds = if value and value > 0 then math.floor(value) else nil
+		if ReturningService.Grant(player, seconds) then
+			reply(player, "admin.returning.granted")
+		else
+			reply(player, "admin.usage.returning")
+		end
+	elseif action == "clear" then
+		if ReturningService.Clear(player) then
+			reply(player, "admin.returning.cleared")
+		else
+			reply(player, "admin.usage.returning")
+		end
+	elseif action == "away" then
+		if not value or value < 0 then
+			reply(player, "admin.usage.returning")
+			return
+		end
+		local granted = ReturningService.Away(player, value)
+		if granted == nil then
+			reply(player, "admin.usage.returning")
+		else
+			reply(player, if granted then "admin.returning.granted" else "admin.returning.notGranted")
+		end
+	elseif action == "letter" then
+		if ReturningService.ResetLetter(player) then
+			reply(player, "admin.returning.letter")
+		else
+			reply(player, "admin.usage.returning")
+		end
+	else
+		reply(player, "admin.usage.returning")
+	end
+end
+
 return commands

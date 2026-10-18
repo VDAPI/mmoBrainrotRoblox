@@ -583,6 +583,41 @@ T.describe("Balance: season pass (S152)", function()
 	end)
 end)
 
+-- S153 (D1): the returning bonus (Balance.targetsS153), outside the pace model: worth at most 1 h of grinding EXP at
+-- every level and at most Balance.S153.maxLevels levels (the mean of the classes) from Balance.S153.assertFrom on;
+-- every row without `report` asserted, the hour rows never in Balance.S153_REPORT.
+T.describe("Balance: returning bonus (S153)", function()
+	local rows = B.targetsS153()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S153, docs/sessions S153 D1)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S153 targets (printed); the hour rows and the mean from assertFrom on are never reported", function()
+		printReport("S153", rows, 30)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+		end
+		for _, L in B.S153.levels do
+			local hour = `S153.hour.L{L}`
+			T.expect({ hour, ids[hour] == true, B.S153_REPORT[hour] }).toEqual({ hour, true, nil })
+			if L >= B.S153.assertFrom then
+				local mean = `S153.bonus.L{L}`
+				T.expect({ mean, ids[mean] == true, B.S153_REPORT[mean] }).toEqual({ mean, true, nil })
+			end
+		end
+		for key in B.S153_REPORT do
+			T.expect({ key, ids[key] == true }).toEqual({ key, true })
+		end
+	end)
+end)
+
 -- S134c (E2): the harder Invasion (Balance.targetsS134c, Balance.invasion): 3 players end in time and survive, 5 are
 -- faster than 3 and 3 than 2, solo on equal gear loses or barely makes it, solo with an edge wins, the commander's big
 -- blows in the S134 band; every row without `report` asserted (Balance.S134C_REPORT prints the rest with the reason).

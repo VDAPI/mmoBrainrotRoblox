@@ -800,6 +800,19 @@ local Config = {
 		listRefresh = 0.5,
 		profileRecent = 3,
 	},
+	-- S153 (docs/DESIGN.md §11, Logic/Returning): the returning player's bonus. After at least awayDays without playing
+	-- (account.stats.lastSeen) an account whose highest character has minLevel gets `seconds` of play in the world
+	-- with +expBonus points of the expBonus stat (added to the blessing of Fortune), at most once per cooldownDays; the
+	-- "What has changed" letter shows at most letterMax entries of Data/Changelog. Outside the pace model (like the
+	-- login reward S100); Balance.targetsS153 reports what the hour is worth in levels.
+	Returning = {
+		awayDays = 7,
+		seconds = 3600,
+		expBonus = 100,
+		cooldownDays = 14,
+		minLevel = 10,
+		letterMax = 6,
+	},
 	-- Streaming (S20, decision in docs/DECYZJE.md): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,

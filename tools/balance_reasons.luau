@@ -137,6 +137,7 @@ return {
 		"AutoGrind",
 		"Reroll", -- S134j: bonus reroll at the smith
 		"SkillPools", -- S137: the lock after a weapon pool switch in combat
+		"Returning", -- S153: the returning player's bonus (outside the pace model)
 	},
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
@@ -182,6 +183,7 @@ return {
 		["Data/ClassLooks"] = "wygląd", -- S132: class looks, creator choices, catalog hooks (DESIGN-17 §9a)
 		["Data/Emotes"] = "wygląd", -- S123: emote motions (Data/SkillMotions format), aliases, cooldown
 		["Data/Titles"] = "wygląd",
+		["Data/Changelog"] = "teksty", -- S153: the in-game "What has changed" log (ids, days, text keys)
 		["Data/Achievements"] = "postęp", -- S151: achievement milestones and rewards (gold checked in balance.spec)
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
 		["Data/ArenaPit"] = "geometria", -- S127: the arena server map (sand, stands, start points)
@@ -6060,6 +6062,12 @@ return {
 			{
 				session = "S152",
 				why = "new module: the season pass pace. Points: kill 2, elite 10, elite2 40, boss 150, worldBoss 200, quest 60, side 40, contract 40, daily 80, weekly 250, worldEvent 120, bloodMoon 150, arena 20, achievement 50; 1000 a tier (40 tiers); 400 monster points a UTC day; growing cap 6500 x week of the season; catch-up x1.5 below 0.6 x tiers x elapsed share; 14 grace days. Model (Balance.targetsS152): 1 h a day finishes 40 tiers in week 8, 2-4 h a day in week 7 (the cap), 2 h a day from week 5 35-36 tiers, monster points 27 % at 2 h a day",
+			},
+		},
+		["Config:Returning*"] = {
+			{
+				session = "S153",
+				why = "new: the returning bonus outside the pace model (like the login reward S100): after 7 days away, once per 14 days, an account with a character of level 10+ gets 3600 s of play in the world with +100 expBonus points (added to Fortune), the letter shows at most 6 changelog entries. Model (Balance.targetsS153): the bonus = 1 h of grinding EXP, the mean of the classes 0.5-0.8 of a level at 45 / 70 / 99 (asserted <= 0.8), about 2 levels at 10 / 20 (a level takes under an hour there; report)",
 			},
 		},
 		["Bosses:byId.hrimvald*"] = {

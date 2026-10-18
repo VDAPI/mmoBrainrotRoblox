@@ -210,12 +210,13 @@ describe("Window checklist (S135 G1)", function()
 				end
 			end
 			-- S151b: a window added after the move names its own session (the achievements window; S152b the season
-			-- pass)
+			-- pass; S153 the "What has changed" letter)
 			expect(
 				entry.session == "S135"
 					or entry.session == "S136"
 					or entry.session == "S151b"
 					or entry.session == "S152b"
+					or entry.session == "S153"
 			).toBe(true)
 			expect(entry.surface == "paper" or entry.surface == "iron").toBe(true)
 			if entry.surface == "iron" then

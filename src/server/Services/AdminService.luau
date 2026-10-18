@@ -73,6 +73,7 @@ local AdminService = {
 		"SocialService", -- S133: /social
 		"FriendService", -- S150: /presence, /friends, /friendinvite
 		"AchievementService", -- S151: /ach
+		"ReturningService", -- S153: /returning
 		"AuctionService",
 		"CosmeticService",
 		"StatusEffectService",

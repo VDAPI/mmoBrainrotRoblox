@@ -346,6 +346,10 @@ local Definitions: { [string]: Definition } = {
 	SeasonClaim = { kind = "function", dir = "c2s", rate = 6, args = { "integer", "string", "string?" } },
 	SeasonClaimAll = { kind = "function", dir = "c2s", rate = 1, args = {} },
 
+	-- Returning players (S153, ReturningService; the state is account.returning): the "What has changed" letter was read
+	-- up to this Data/Changelog id (an id of the log above the saved one; anything else is ignored)
+	ChangelogSeen = { kind = "event", dir = "c2s", rate = 0.5, args = { "integer" } }, -- (highest id read)
+
 	-- Leaderboards (S124): (board instance id) -> (true, Logic/Leaderboard.Snapshot) | (false, errorKey)
 	LeaderboardGet = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 

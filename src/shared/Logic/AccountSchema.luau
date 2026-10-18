@@ -102,7 +102,7 @@ function AccountSchema.accountTemplate(): AccountData
 		-- S123: starter packs bought once per account; passes granted by a pack, honoured by HasPass (no migration)
 		packs = {},
 		grantedPasses = {},
-		stats = { createdAt = 0, playtime = 0 },
+		stats = { createdAt = 0, playtime = 0, lastSeen = 0 }, -- S153: lastSeen (Logic/Returning; reconcile, no migration)
 		redeemed = {},
 		-- S133: friends and ignored players (Logic/Social), keys tostring(userId); reconcile adds it, no migration
 		social = { friends = {}, ignored = {} },
@@ -113,6 +113,9 @@ function AccountSchema.accountTemplate(): AccountData
 		-- S152: the season pass (Logic/Season; read through Season.sanitize); no migration (reconcile). seasonPrev (the
 		-- previous season during its grace days) is optional and has no default.
 		season = { id = "", points = 0, day = 0, dayKill = 0, premium = false, free = {}, prem = {}, mailed = {} },
+		-- S153: the returning player's bonus and the last changelog entry read (Logic/Returning; read through
+		-- Returning.sanitize); no migration (reconcile)
+		returning = { left = 0, at = 0, seen = 0 },
 	}
 end
 

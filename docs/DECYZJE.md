@@ -5837,3 +5837,29 @@
   ten sam czas co serwer.
 - **S152b** Wiki pominięta (właściciel 17.10): rekord `season` w `WikiData/Premium` (bez ceny), odsłonięcie kosmetyków
   sezonu, artykuł `przepustka-sezonu` / `season-pass` i wpis aktualizacji czekają na odświeżenie wiki.
+- **S153** Premia powrotu nie jest błogosławieństwem (nie wypiera go): osobne źródło statystyk `returning`
+  (`StatService.RegisterModifierSource`, klucz `source.returning` „Powrót” jak inne źródła, nie `stats.source.*`).
+  „Podwójne” = +100 pkt `expBonus` dodane do reszty: z Fortuną +22 daje +122%, nie ×2,44. Działa na każde źródło EXP
+  (`GiveExp` nie rozróżnia źródeł dla `expBonus`), także w tygodniowym rankingu EXP (S125, bez wyjątku w
+  `ExpGained`): premii nie da się kupić (`returning.spec` pilnuje `Data/Products`), godzina raz na 14 dni rankingu
+  nie przestawia.
+- **S153** Próg 7 dni od `account.stats.lastSeen`, odstęp 14 dni od ostatniego przyznania (`account.returning.at`),
+  `minLevel` 10 = najwyższa postać konta (nowe konta i alty od zera bez premii); premia działa na każdej postaci konta,
+  także 100. poziomu. Przyznanie ustawia czas, nie dodaje. Czas liczy się tylko w świecie: faza `playing`, postać w
+  grze, serwer świata (arena i turniej nie zjadają premii); przerywnik nie zatrzymuje licznika (serwer go nie zna).
+- **S153** Bez przyznania wstecz: konto bez `lastSeen` (pierwsze wczytanie po S153, nowe konto) dostaje tylko znacznik
+  czasu i `seen` = najnowszy wpis dziennika (bez premii i bez listu w dniu wdrożenia, nowy gracz bez historii).
+  `lastSeen` zapisuje wczytanie (po sprawdzeniu), pętla co 5 min i zwolnienie profilu.
+- **S153** List „Co się zmieniło” dla każdego gracza z nowymi wpisami (nie tylko po 7 dniach; wtedy jest krótki), raz:
+  zamknięcie przez gracza (przycisk, X, Esc, inne okno) wysyła `ChangelogSeen`; `CloseAll` przerywnika nie (list
+  wraca po scenie). Czeka na wczytany świat i postać oraz brak okna, modala i przerywnika (po oknie nagrody za
+  logowanie). Z menu gry („Co nowego”, klucz `menu.whatsnew` jak inne przyciski menu, nie
+  `hud.menu.*`) pokazuje ostatnie wpisy niezależnie od `seen`. Dziennik w grze jest osobny od „Aktualizacji” wiki
+  (krótszy, tylko to, co gracz czuje w grze), bez generowania jednego z drugiego.
+- **S153** Model: premia poza tempem (jak S100 i S101), wiersze 1–100 bez zmian. `S153.hour` (premia ≤ EXP 1 h walki)
+  asertowany wszędzie, `S153.bonus` (≤ 0,8 poziomu, średnia klas jak w S152) asertowany od 45. poziomu; na 10. i 20.
+  poziom trwa krócej niż godzinę walki, więc premia to ok. 1,6–1,9 poziomu (raport z powodem). Kapłan na 45. ma 0,82
+  (wiersz klasy w raporcie).
+- **S153** `/returning away <dni>` robi sprawdzenie od razu, jakby ostatnia wizyta była tyle dni temu (prawdziwy
+  `lastSeen` i tak nadpisuje następny zapis); `/returning clear` zeruje też odstęp.
+- **S153** Wiki pominięta (właściciel 17.10): bez `npm run data`; akapit „Premia powrotu” w `doswiadczenie.mdx` czeka.

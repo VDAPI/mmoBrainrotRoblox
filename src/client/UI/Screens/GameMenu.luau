@@ -621,6 +621,21 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 					end
 				end,
 			}),
+			-- S153: the "What has changed" letter again (the latest entries)
+			Button(scope, {
+				LayoutOrder = 2.8,
+				Text = Text.T(scope, "menu.whatsnew"),
+				Variant = "secondary",
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Disabled = extra == nil or extra.OpenWindow == nil,
+				OnClick = function()
+					local open = extra and extra.OpenWindow
+					if open then
+						close()
+						open("whatsnew")
+					end
+				end,
+			}),
 			row(
 				scope,
 				3,

@@ -12991,3 +12991,58 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/server/Services/SeasonService.luau`, `src/shared/Logic/{ShopFunnel,UiArt}.luau`,
   `src/shared/Data/{Keybinds,UiPalette,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
   `tests/{premium,uitheme}.spec.luau`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S153: pomoc dla powracających (podwójny EXP, list zmian)
+
+- **Logika** `src/shared/Logic/Returning.luau` (nowy, czysty): `sanitize`, `check` (7 dni nieobecności, odstęp 14 dni od
+  przyznania, najwyższa postać konta ≥ 10, przyznanie ustawia czas), `tick` (tylko w świecie, nie poniżej 0), `bonus`,
+  `minutes`, `letter` (wpisy nowsze niż `seen`, już wydane, od najnowszego, najwyżej 6), `recent`, `markSeen`,
+  `readUpTo`. Liczby w `Config.Returning` (`awayDays` 7, `seconds` 3600, `expBonus` 100, `cooldownDays` 14, `minLevel`
+  10, `letterMax` 6).
+- **Zapis:** `account.stats.lastSeen` i `account.returning = { left, at, seen }` w szablonie (reconcile, bez migracji),
+  typy w `Types.luau`.
+- **Serwer** `ReturningService` (nowy): przy `PlayerStateService.Ready` sprawdzenie z poprzednim `lastSeen`, potem
+  `lastSeen = now` (konto bez `lastSeen`: tylko znacznik i `seen` = najnowszy wpis); `lastSeen` co 5 min i przy
+  zwolnieniu profilu; źródło statystyk `returning` (+100 `expBonus`, „Powrót” w rozbiciu); odliczanie co 5 s dla postaci
+  w świecie (serwer świata), zapis co 30 s, przy wyjściu postaci i zwolnieniu profilu; toasty `returning.granted` (przy
+  wejściu postaci) i `returning.ended`; remote `ChangelogSeen` (id z dziennika, wyżej niż `seen`). Admin `/returning
+  info | grant [s] | clear | away <dni> | letter`.
+- **Dziennik** `src/shared/Data/Changelog.luau` (nowy, `NOT_BALANCE` „teksty”): 7 wpisów (wygląd interfejsu
+  17.10, Umiejętności 2.0, boss świata Hrimvald, znajomi 2.0, osiągnięcia, przepustka sezonu 18.10 (dni UTC), premia
+  powrotu 19.10), teksty `changelog.<key>.title/.body`.
+- **Klient:** okno `UI/Screens/WhatsNew.luau` (pergamin, `UiWindows.whatsnew`, nagłówek Merriweather, wpisy z datą
+  `SectionLabel`, tytułem i treścią, przewijane, „Do gry”), `ReturningController` (samo otwarcie raz w świecie po
+  przewodniku, ze wczytanym światem, bez okna, modala i przerywnika, 4 s po wejściu; zamknięcie przez gracza =
+  `ChangelogSeen`, zamknięcie przez przerywnik nie; z menu ostatnie wpisy),
+  przycisk „Co nowego” w menu gry, ikona » z minutami i dymkiem na początku rzędu eliksirów (`Hud/BlessingIcon`,
+  `Brass.Bright` na żelazie).
+- **Model** `Balance.returningBonus` / `Balance.targetsS153`, blok „Balance: returning bonus (S153)” w `balance.spec`,
+  sekcja „Premia powrotu (S153)” w `docs/BALANS.md`, księga `Config:Returning*`. Tempo 1–100 bez zmian
+  (`balance1_20.spec` bez nowych wpisów, `quest_budget check` zielony). Jedna premia (godzina walki z `Balance.paceAt`
+  × 100%):
+
+| poziom | Wojownik | Łowca | Mag | Kapłan | średnio | asercja |
+|---|---|---|---|---|---|---|
+| 10 | 1,63 | 1,53 | 1,49 | 1,81 | 1,61 | raport (poziom < 1 h) |
+| 20 | 1,91 | 1,94 | 1,74 | 2,09 | 1,92 | raport (poziom < 1 h) |
+| 45 | 0,77 | 0,79 | 0,70 | 0,82 | 0,77 | ≤ 0,8 |
+| 70 | 0,58 | 0,60 | 0,53 | 0,61 | 0,58 | ≤ 0,8 |
+| 99 | 0,49 | 0,51 | 0,46 | 0,50 | 0,49 | ≤ 0,8 |
+
+  (poziomy; EXP premii = EXP 1 h walki na każdym poziomie, wiersze `S153.hour` asertowane).
+- **Testy:** nowy `tests/returning.spec.luau` (premia, odstęp, `minLevel`, `tick`, `sanitize`, list, `markSeen`,
+  `readUpTo`, dziennik: id rosnące, dni niemalejące, teksty PL i EN, `Products` bez premii), `balance.spec` (S153),
+  `uitheme.spec` (sesja S153).
+- wiki do odświeżenia (właściciel 17.10): akapit „Premia powrotu” w `doswiadczenie.mdx` pominięty.
+- **Dla właściciela:** asercja „≤ 0,8 poziomu” trzyma od 45. poziomu; na 10.–20. godzina podwójnego EXP to ok. 2
+  poziomy (poziom trwa tam krócej niż godzinę). Jeśli to za dużo, dźwignią jest `minLevel` (np. 25) albo krótsza
+  premia na niskich poziomach.
+- **Pliki:** `src/shared/Logic/Returning.luau` (nowy), `src/shared/Data/Changelog.luau` (nowy),
+  `src/server/Services/ReturningService.luau` (nowy), `src/client/Controllers/ReturningController.luau` (nowy),
+  `src/client/UI/Screens/WhatsNew.luau` (nowy), `tests/returning.spec.luau` (nowy), `src/shared/{Config,Types}.luau`,
+  `src/shared/Logic/AccountSchema.luau`, `src/shared/Net/Definitions.luau`,
+  `src/shared/Data/{AdminCommands,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Admin/Character.luau`, `src/server/Services/AdminService.luau`,
+  `src/client/UI/Screens/{GameMenu,Hud/BlessingIcon}.luau`, `tests/{Balance,balance.spec,uitheme.spec}.luau`,
+  `tools/{balance_report,balance_reasons}.luau`, `tools/balance_before.json`,
+  `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.

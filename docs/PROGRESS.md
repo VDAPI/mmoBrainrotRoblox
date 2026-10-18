@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S152b gotowe (ostatnia S152b: okno przepustki sezonu: pergamin pod C, ❖ z kropką pod ✧ na HUD, menu
+S01–S115 i S117–S153 gotowe (ostatnia S153: pomoc dla powracających: po 7+ dniach nieobecności konto z postacią
+od 10. poziomu dostaje raz na 14 dni godzinę gry w świecie z +100 pkt `expBonus` (osobne źródło „Powrót”, nie
+błogosławieństwo, dodane do Fortuny, każde źródło EXP), ikona » z minutami przy portrecie, list „Co się zmieniło” na
+pergaminie raz przy wejściu do świata (wpisy `Data/Changelog` nowsze niż przeczytane, „Co nowego” w menu gry),
+`account.stats.lastSeen` i `account.returning` bez migracji i bez przyznania w dniu wdrożenia, `Logic/Returning`,
+`ReturningService`, remote `ChangelogSeen`, admin `/returning`, wiersze `S153.*` poza tempem; wcześniej S152b: okno przepustki sezonu: pergamin pod C, ❖ z kropką pod ✧ na HUD, menu
 gry, pas stopni na PC i lista na telefonie, „Odbierz wszystko”, zakup z potwierdzeniem jak w sklepie, „Jak zdobywać
 punkty”, karta nad VIP w sklepie ze zdaniem „a VIP”, lejek `season`, `Logic/SeasonView`; wcześniej S152: przepustka
 sezonu, rdzeń: sezon 1 „Sezon Szronu” od 2026-11-02, 8
@@ -393,6 +398,11 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **Premia powrotu i list „Co się zmieniło” (S153):** wiki czeka na odświeżenie wiki (właściciel 17.10): akapit
+  „Premia powrotu” w `doswiadczenie.mdx` (PL, EN) z liczbami `Config.Returning` z eksportu. Odliczanie nie stoi
+  podczas przerywnika (serwer go nie zna; liczy „postać w świecie”). Grafika ikony premii w `UiArt` (dziś znak »).
+  Bez przeglądu w grze (list na PC i telefonie, ikona, toasty, rozbicie `expBonus`).
 
 - **Przepustka sezonu (S152, S152b):** okno, HUD, menu, klawisz C, karta w sklepie i lejek gotowe. Wiki czeka na
   odświeżenie wiki (właściciel 17.10): rekord `season` w `tools/WikiData/Premium.luau` (bez ceny), odsłonięcie

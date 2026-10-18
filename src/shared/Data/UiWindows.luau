@@ -63,6 +63,8 @@ UiWindows.list = table.freeze({
 	achievements = win("S151b", "paper", { "UI/Screens/AchievementsWindow" }),
 	-- S152b
 	season = win("S152b", "paper", { "UI/Screens/SeasonPass.luau" }),
+	-- S153
+	whatsnew = win("S153", "paper", { "UI/Screens/WhatsNew.luau" }),
 } :: { [string]: Entry })
 
 -- S136: screens outside windows (HUD, overlays, full-screen screens, cards) and their surface.

@@ -619,6 +619,13 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
   Wilkołaka, Jad Ropuchy, Krucze Pióro, Ektoplazma, Przeklęta Kość), Epickie (60.) z części Spalonych Pustkowi (S93:
   Odłamek Magmy, Jad Ropuchy, Przeklęta Kość, Gruba Skóra, Krucze Pióro), Unikatowe ze składnika linii.
 - Źródła: drop (Elity, bossy), alchemik, questy dzienne. Ikona z licznikiem w HUD.
+- **Premia powrotu** (S153, `Config.Returning`, `Logic/Returning`, `ReturningService`): gracz, który wraca po co
+  najmniej 7 dniach nieobecności, a konto ma postać od 10. poziomu, dostaje raz na 14 dni godzinę gry w świecie z +100
+  pkt `expBonus` (do każdego źródła EXP, dodane do Fortuny: +22 + 100 = +122%). To nie jest błogosławieństwo (nie
+  wypiera go): osobne źródło statystyk „Powrót”, ikona » z minutami obok eliksirów przy portrecie. Czas liczy się tylko
+  w świecie. Poza modelem tempa (wiersze `S153.*` w `docs/BALANS.md` tylko pokazują wartość). Przy wejściu postaci do
+  świata list „Co się zmieniło” (pergamin, raz) z wpisami `Data/Changelog` nowszymi niż ostatnio przeczytany; ponownie
+  z menu gry („Co nowego”).
 
 ## 12. Zbieractwo
 
