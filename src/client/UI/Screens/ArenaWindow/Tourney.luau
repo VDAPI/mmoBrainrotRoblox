@@ -14,6 +14,7 @@ local RunService = game:GetService("RunService")
 local Arena = require(ReplicatedStorage.Shared.Data.Arena)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local ClockText = require(script.Parent.Parent.Parent.ClockText)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -39,14 +40,9 @@ export type Props = {
 
 local RULES = Arena.TOURNEY
 
-local function clockOf(t: number, utc: boolean): string
-	local d = os.date(if utc then "!*t" else "*t", math.floor(t))
-	return string.format("%02d:%02d", d.hour, d.min)
-end
-
 -- "18:50 UTC (20:50)": the UTC time and the player's own.
 local function both(t: number): string
-	return `{clockOf(t, true)} UTC ({clockOf(t, false)})`
+	return `{ClockText.hhmm(t, true)} UTC ({ClockText.hhmm(t, false)})`
 end
 
 local function label(
@@ -166,7 +162,11 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 			label(
 				s,
 				0,
-				Text.get(use, "tourney.when", { utc = clockOf(startAt, true), ["local"] = clockOf(startAt, false) }),
+				Text.get(
+					use,
+					"tourney.when",
+					{ utc = ClockText.hhmm(startAt, true), ["local"] = ClockText.hhmm(startAt, false) }
+				),
 				Theme.TextSize.Body,
 				Theme.Paper.Heading,
 				Theme.Fonts.BodyBold

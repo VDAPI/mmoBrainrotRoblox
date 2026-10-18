@@ -13,6 +13,8 @@
 -- S134i: the Elite II hideouts of the map as a fixed skull (ICONS.lair) from the data, never from a monster's state.
 -- S101: the world event of this map (its glyph and colour, faded during the warning) while inside the disc (like
 -- the quest star, no edge marker).
+-- S149b: the world boss's barrow as a fixed crown (ICONS.worldBoss) on its map; while the boss wakes, fights or has just
+-- fallen (Logic/WorldBoss.markerOf) a brighter crown, or an arrow on the edge towards it when it is out of the disc.
 -- S119: the owner's silhouettes on the markers and icons (UiArtState.decorate / retarget: pooled labels only change
 -- properties) and the painted map instead of the drawn sketch once its picture is loaded (same frame as the world map).
 
@@ -26,6 +28,7 @@ local AreaState = require(script.Parent.Parent.Parent.AreaState)
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupColors = require(script.Parent.Parent.Parent.GroupColors)
 local IconState = require(script.Parent.Parent.Parent.IconState)
@@ -47,6 +50,7 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -74,6 +78,7 @@ local ICONS: { [string]: { glyph: string, color: string } } = {
 	node = { glyph = "•", color = MAP.node },
 	spawn = { glyph = "", color = MAP.spawn },
 	lair = { glyph = "☠", color = MAP.lair }, -- S134i: an Elite II hideout (a fixed marker, like a cave)
+	worldBoss = { glyph = "♛", color = MAP.worldBoss }, -- S149b: the world boss's barrow (fixed) and the live boss
 }
 
 local PLAYER_ART = UiArt.mapIcon("player")
@@ -145,6 +150,13 @@ local function Minimap(scope: Scope, props: Props): Instance
 	end
 	local eventGlyph = glyph(dynamic, "⚔", MAP.event, Vector2.zero, 20, 6)
 	eventGlyph.Visible = false
+	-- S149b: the live world boss (in the disc) and the arrow towards it (out of the disc)
+	local bossGlyph = glyph(dynamic, ICONS.worldBoss.glyph, ICONS.worldBoss.color, Vector2.zero, 22, 7)
+	bossGlyph.Visible = false
+	UiArtState.decorate(bossGlyph, UiArt.mapIcon("worldboss"), { size = 22 })
+	local bossArrow = glyph(dynamic, "▲", ICONS.worldBoss.color, Vector2.zero, 16, 8)
+	bossArrow.TextStrokeTransparency = 0
+	bossArrow.Visible = false
 	local partyPool: { TextLabel } = {}
 	for i = 1, 4 do
 		partyPool[i] = glyph(dynamic, "●", MAP.party, Vector2.zero, 14, 5)
@@ -321,6 +333,14 @@ local function Minimap(scope: Scope, props: Props): Instance
 				npcMarks[npc.id] = mark
 			end
 		end
+		-- S149b: the world boss's barrow (fixed, faded: the live boss has its own marker)
+		local arena = WorldBoss.spot()
+		if id == WorldBoss.Data.map then
+			local style = ICONS.worldBoss
+			local label = glyph(canvas, style.glyph, style.color, MapSketch.toPixel(sketch, s, arena.x, arena.z), 14, 2)
+			label.TextTransparency = 0.35
+			UiArtState.decorate(label, UiArt.mapIcon("worldboss"), { size = 14 })
+		end
 		applyMarks()
 	end
 
@@ -479,6 +499,28 @@ local function Minimap(scope: Scope, props: Props): Instance
 				eventGlyph.Text = eventDef.glyph
 				eventGlyph.TextColor3 = Theme.tint(eventDef.color)
 				eventGlyph.TextTransparency = if event.phase == "warn" then 0.4 else 0
+			end
+			-- S149b: the world boss while it wakes, fights or has just fallen
+			local boss = WorldBoss.markerOf(State.Get({ "worldBoss" }), Clock.now())
+			local bossPoint = if WorldBoss.markerLive(boss) and boss.map == currentMap then at(boss.x, boss.z) else nil
+			local bossIn = bossPoint ~= nil and (bossPoint - pixel).Magnitude <= EDGE
+			bossGlyph.Visible = bossIn
+			bossArrow.Visible = bossPoint ~= nil and not bossIn
+			if bossPoint then
+				local fade = if boss.state == "active" then 0 elseif boss.state == "warn" then 0.35 else 0.55
+				if bossIn then
+					bossGlyph.Position = UDim2.fromOffset(bossPoint.X, bossPoint.Y)
+					bossGlyph.TextTransparency = fade
+				else
+					local direction = bossPoint - pixel
+					if direction.Magnitude > 0.01 then
+						local unit = direction.Unit
+						local edge = pixel + unit * EDGE
+						bossArrow.Position = UDim2.fromOffset(edge.X, edge.Y)
+						bossArrow.Rotation = math.deg(math.atan2(unit.X, -unit.Y))
+						bossArrow.TextTransparency = fade
+					end
+				end
 			end
 			-- Monsters nearby (S19: normal ones in the colour of their group size, elites gold).
 			-- S78: Elites up to MONSTER_RANGE + the Scout's Eye bonus; beyond the disc they get edge markers.

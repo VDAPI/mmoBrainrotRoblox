@@ -5586,3 +5586,49 @@
   z trzech zostawia pozostałe kręgi (bez `f` klient kasuje wszystkie piętna ataku, jak S134). Serwer, który poznaje
   termin już po `endsAt` (start w czasie `linger`), zamyka go bez ogłoszenia i znacznika. Kilku naznaczonych: osobny
   klucz `boss.mechanic.mark.others` (liczba mnoga). `/boss spawn` i `/tp boss` odrzucają bossa świata.
+- **S149b** Arena bossa świata to miejsce zastrzeżone jak kryjówka: `AreaSpawns.reservedCircles` (kryjówki + koło
+  `r + LAIR_CLEARANCE` = 100 st. wokół `spots[1]`) czytają grupy obszarów, `AreaArrival` i punkty wydarzeń (spawnery
+  obszarów), `AreaSpawns.reservedAt` (to samo koło 100 st.) Samodzielne Łowy; Płaszcz Przynęty bez zmian (w kole nie ma grup, boss i pomocnicy
+  nie są ciągnięci). Żadna grupa ani punkt przybycia się nie przesunęły (miejsce S149 leżało już poza nimi).
+- **S149b** Wystrój „Kurhan Praojca” w osobnym `Logic/WorldGen/WorldBossArena` (nie motyw `Lairs`: r 70, otwarcie od
+  przodu, bez skrzyni): 11 kamieni runicznych i 2 sztandary (shell), szczątki broni olbrzymów, kości, czaszka, 4 zgaszone
+  koksowniki, lodowe płyty (detail), sople i runy (fine). Środek `r − free` (60 st.) bez kolizji i bez niczego wyższego
+  niż płyta 0,3 st. Shell Szczytów 1075 → 1086, `maxParts` 2600 bez zmian, teren bez `flats`.
+- **S149b** Nowe pola `Data/WorldBoss`: `spots[1].nameKey` / `free` (10) i `players` { 10, 20 } (karta, HUD, wiki);
+  wpisy w księdze z S149b, liczby walki i łupu bez zmian.
+- **S149b** Dwie skały w kole (`Rocks_dragontemple_4`, `Rocks_icefort_5`) odpadają (`WorldBossArena.prune`, r + 4),
+  drzewa omijają koło (polana r); żyła adamantytu, która rosła w kurhanie, rośnie gdzie indziej (generator wybiera
+  następne miejsce sam, dalej 50 węzłów; pin F-T4 i liczba Builds w C3 poprawione z komentarzem).
+- **S149b** Nastrój: istniejący `CHOIR_FAINT` jako punkt r 90 nad kurhanem, także poza terminem (pusty kurhan mówi,
+  gdzie boss przyjdzie).
+- **S149b** Znacznik: kurhan zawsze na mapie świata (ikona `worldboss` ♛, `UiPalette.map.worldBoss`) i przygaszony na
+  minimapie; stan bossa z `WorldBoss.markerOf` (ostrzeżenie przygaszone z odliczaniem, walka z pulsującym kręgiem i
+  paskiem HP, `slain` / `left` z przekreśleniem przez `linger`, poza terminem „Następny: HH:MM” w czasie klienta przez
+  `os.date`). Minimapa: strzałka na krawędzi tylko na mapie bossa; lista map: ♛ przy Szczytach, póki znacznik żyje.
+- **S149b** Klucz ikony `mapa/map_worldboss` (małe litery jak nazwy plików grafik; `UiArt.FIXED.map`), bez obrazka:
+  znak ♛.
+- **S149b** Karta mapy z czystej `WorldBoss.cardOf(branch, { level, now })`: stan, „dla 10–20 graczy”, próg (na
+  czerwono poniżej), ciosy `avoid` i mechaniki (`split`, `mark`, `channel`), łup jako rzadkości i materiały bez
+  procentów, „raz na termin na konto” albo „nagroda już odebrana” (`mine.reason == "claimed"`).
+- **S149b** Panel HUD według `WorldBoss.panelOf`: „full” na mapie bossa od ostrzeżenia do końca znacznika, „line” na
+  innej mapie tylko w ostrzeżeniu. Telefon: lewa kolumna pod portretem jak panel wydarzenia (nad paskiem umiejętności
+  stoją przyciski umiejętności), zwijany dotknięciem nagłówka (na telefonie 44 px), stan zwinięcia na sesję.
+- **S149b** Pierwszeństwo przed wydarzeniem: panel bossa stoi nad `WorldEventPanel` (nowy prop `Above`), tracker zjeżdża
+  o oba. Spotkać mogą się tylko w ostrzeżeniu (blokada S149 działa od `startsAt − 120 s`).
+- **S149b** Pasek przerwania zaklęcia wspólny: `UI/Components/ChannelBar` (pasek bossa lochu i panel bossa świata).
+- **S149b** Dźwięki startu i zwycięstwa to `ui.worldboss.spawn` / `ui.worldboss.victory` (2D: `sfx.spec` wymaga
+  prefiksu `ui.` dla kluczy 2D), bez ID; gra je panel przy przejściu `warn → active` i `active → slain`.
+- **S149b** Napis przy wejściu w koło: `WorldBoss.zoneNote` (koło walki żywego bossa, `pvpSafe`) w istniejącym
+  `ZoneBanner` (nazwa kurhanu i „bez PvP, póki boss żyje” na zielono); strefa mapy zostaje żółta.
+- **S149b** Miejsce w udziale: `FightStats.place(points, userId)` z punktów `Logic/Contribution` wszystkich uczestników
+  (remis = lepsze miejsce, bez punktów = ostatni, `pct` do 0,001), `summary.place` tylko dla `worldboss`
+  (`FightLogService.End` z `extras.points`); tabela dalej tylko własna drużyna, bez nazw obcych.
+- **S149b** Karta nagrody przez nowe zdarzenie s2c `WorldBossReward` (zdarzenie `reward` lochu niesie rangi dnia i
+  pity) i ten sam ekran `BossReward` w formie `world`: EXP, złoto i przedmioty (`FightLoot`) albo powód braku nagrody,
+  potem „następny boss świata o HH:MM”. Toasty `worldboss.reward` / `noReward.*` zastąpione kartą.
+- **S149b** Godzina „HH:MM” (czas gracza albo UTC) tylko przez `UI/ClockText.hhmm` (mapa, karta, nagroda, oba panele
+  turnieju); rodzaje wyszukiwarki `worldboss` i `lair` mają swoje etykiety.
+- **S149b** Wiki (strona Hrimvalda, `WikiData/Bosses` z `world`, sekcja „Boss świata”, `WIKI.md`) pominięta: hurtowe
+  odświeżenie wiki należy do właściciela (17.10).
+
+- **Właściciel 2026-10-18 (pytania z S137/S146)**: (3.1) obrażenia bossów w tanka zostają, leczenie berła przy bossie (T-SK6) zostaje w raporcie; (3.2) miecz z tarczą zostaje tankiem, R9 dwuręczna / jednoręczna 1,45–1,80 zostaje w raporcie; (3.3) cel tempa solo Uzdrowiciela do poluzowania (bez drugiego buildu z buzdyganem); (6) punkty umiejętności zostają 1 na poziom + 7 na start (S137).

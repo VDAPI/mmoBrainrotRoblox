@@ -17,6 +17,7 @@ local RunService = game:GetService("RunService")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local ClockText = require(script.Parent.Parent.Parent.ClockText)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local State = require(script.Parent.Parent.Parent.State)
@@ -54,12 +55,6 @@ local TOUCH_EVENT = 150 -- a world event panel above on touch (its largest heigh
 local PARTY_TOP = Theme.Padding.Large + 136 + 70
 local PARTY_ROW = 58 + 6
 local PC_TOP = 400
-
--- "18:50" in the player's own time (os.date: the client's clock zone).
-local function localClock(t: number): string
-	local d = os.date("*t", math.floor(t))
-	return string.format("%02d:%02d", d.hour, d.min)
-end
 
 local function TourneyPanel(scope: Scope, props: Props): Instance
 	local tourney = State.Value({ "tourney" })
@@ -148,7 +143,7 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 		end
 		if k == "signup" then
 			local close = Tourney.times(tonumber(t.startAt) or 0).close
-			return Text.get(use, "tourney.hud.signup", { time = localClock(close) })
+			return Text.get(use, "tourney.hud.signup", { time = ClockText.hhmm(close) })
 		elseif k == "signed" then
 			return Text.get(use, "tourney.hud.signed", { range = Tourney.rangeOf(t.signed.bracket) })
 		elseif k == "invite" then

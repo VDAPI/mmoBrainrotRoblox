@@ -1088,6 +1088,8 @@ local points: { [string]: { Point } } = {
 		{ x = 562, z = 570, radius = 80, sound = FLAG_CREAK },
 		{ x = 690, z = -650, radius = 220, sound = s("wind roaring over a mountain summit loop (very strong)", 0.5) },
 		{ x = 745, z = 0, radius = 100, sound = s("deep glacier cracking loop (groaning ice, low booms)", 0.45) },
+		-- S149b: the Forefather's Barrow (Data/WorldBoss.spots[1]): a faint choir over the wind, also while it stands empty
+		{ x = 490, z = 360, radius = 90, sound = CHOIR_FAINT },
 	},
 }
 

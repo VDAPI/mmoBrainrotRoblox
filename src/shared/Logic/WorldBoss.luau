@@ -310,4 +310,148 @@ function WorldBoss.idleOf(now: number): Idle
 	return { next = WorldBoss.next(now) }
 end
 
+-- The view (S149b): the map marker, the map card, the HUD panel and the safe-zone note, all from the branch the client
+-- holds (`worldBoss`: a Public, an Idle or nil before the first send) -------------------------------------------------
+
+export type MarkerState = "idle" | "warn" | "active" | "slain" | "left"
+-- The marker of the world map and the minimap: always at the spot of the boss's map. `at` = Util/Clock seconds of the
+-- next start (idle, warn) or of the leave (active); `hp` 0..1 while active.
+export type Marker = {
+	state: MarkerState,
+	map: string,
+	x: number,
+	z: number,
+	r: number,
+	at: number?,
+	hp: number?,
+}
+
+local PHASES: { [string]: MarkerState } = { warn = "warn", active = "active", slain = "slain", left = "left" }
+
+local function isPublic(branch: any): boolean
+	return type(branch) == "table" and type(branch.phase) == "string" and PHASES[branch.phase] ~= nil
+end
+
+-- The marker of the branch at `now` (Clock seconds): the occurrence's phase, else "idle" with the next start (the
+-- branch's `next`, else computed from `now` before the first send).
+function WorldBoss.markerOf(branch: any, now: number): Marker
+	local spot = WorldBoss.spot()
+	local marker: Marker = { state = "idle", map = Data.map, x = spot.x, z = spot.z, r = spot.r, at = nil, hp = nil }
+	if isPublic(branch) then
+		marker.state = PHASES[branch.phase]
+		if marker.state == "warn" then
+			marker.at = tonumber(branch.startsAt)
+		elseif marker.state == "active" then
+			marker.at = tonumber(branch.endsAt)
+			marker.hp = math.clamp(tonumber(branch.hp) or 1, 0, 1)
+		end
+		return marker
+	end
+	local nextStart = if type(branch) == "table" and type(branch.next) == "table"
+		then tonumber(branch.next.startsAt)
+		else nil
+	marker.at = nextStart or WorldBoss.next(now).startsAt
+	return marker
+end
+
+-- Whether the marker draws the boss (warning, fight, the linger after it) rather than the quiet barrow.
+function WorldBoss.markerLive(marker: Marker): boolean
+	return marker.state ~= "idle"
+end
+
+export type CardState = "sleeps" | "wakes" | "fights" | "slain" | "left"
+export type CardAttack = { id: string, nameKey: string, kind: string } -- kind "avoid" | <mechanic>
+-- The map card (WorldMap/CreatureCards.worldBoss): the boss, the place, the state with its time, who it is for, the
+-- blows worth knowing and the loot (no percentages: the rarities of the one item and the material ids).
+export type Card = {
+	boss: string,
+	nameKey: string,
+	placeKey: string,
+	map: string,
+	x: number,
+	z: number,
+	level: number,
+	minLevel: number,
+	players: { number },
+	state: CardState,
+	at: number?, -- sleeps / wakes: the start; fights: the leave
+	hp: number?, -- fights: 0..1
+	belowLevel: boolean, -- the viewer is under minLevel
+	claimed: boolean, -- the viewer's account has this occurrence's reward already
+	attacks: { CardAttack },
+	rarities: { number }, -- of the one item, ascending
+	materials: { string },
+}
+
+local CARD_STATES: { [MarkerState]: CardState } =
+	{ idle = "sleeps", warn = "wakes", active = "fights", slain = "slain", left = "left" }
+
+function WorldBoss.cardOf(branch: any, viewer: { level: number, now: number }): Card
+	local def = WorldBoss.def()
+	local spot = WorldBoss.spot()
+	local marker = WorldBoss.markerOf(branch, viewer.now)
+	local attacks: { CardAttack } = {}
+	for _, attack in def.attacks do
+		local kind = if attack.mechanic then attack.mechanic elseif attack.avoid then "avoid" else nil
+		if kind then
+			table.insert(attacks, { id = attack.id, nameKey = `boss.{def.id}.attack.{attack.id}`, kind = kind })
+		end
+	end
+	local rarities: { number } = {}
+	for rarity, weight in Data.reward.rarity :: { [number]: number } do
+		if weight > 0 then
+			table.insert(rarities, rarity)
+		end
+	end
+	table.sort(rarities)
+	local materials: { string } = {}
+	for _, drop in Data.reward.materials do
+		table.insert(materials, drop.id)
+	end
+	local mine = if isPublic(branch) and type(branch.mine) == "table" then branch.mine else nil
+	return {
+		boss = def.id,
+		nameKey = def.nameKey,
+		placeKey = spot.nameKey,
+		map = Data.map,
+		x = spot.x,
+		z = spot.z,
+		level = def.level,
+		minLevel = WorldBoss.minLevel(),
+		players = { Data.players[1], Data.players[2] },
+		state = CARD_STATES[marker.state],
+		at = marker.at,
+		hp = marker.hp,
+		belowLevel = viewer.level < WorldBoss.minLevel(),
+		claimed = mine ~= nil and mine.reason == "claimed",
+		attacks = attacks,
+		rarities = rarities,
+		materials = materials,
+	}
+end
+
+-- How the HUD panel shows the branch for a player on `mapId`: "full" on the boss's map from the warning to the end of
+-- the marker, "line" (one line with Guide) on any other map during the warning, nil otherwise.
+function WorldBoss.panelOf(branch: any, mapId: string?): ("full" | "line")?
+	if not isPublic(branch) then
+		return nil
+	end
+	if mapId == branch.map then
+		return "full"
+	end
+	return if branch.phase == "warn" then "line" else nil
+end
+
+-- S149b (A4): the note of the zone banner at a map-relative point: "worldboss.safeZone" in the fighters' circle of a
+-- living boss when PvP is off there (Data/WorldBoss.pvpSafe, S149 C5), else nil.
+function WorldBoss.zoneNote(branch: any, mapId: string?, x: number, z: number): string?
+	if not isPublic(branch) or branch.phase ~= "active" or mapId ~= Data.map then
+		return nil
+	end
+	if not WorldBoss.pvpSafe(WorldBoss.spot(), x, z, true) then
+		return nil
+	end
+	return "worldboss.safeZone"
+end
+
 return WorldBoss

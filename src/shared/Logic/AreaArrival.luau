@@ -52,8 +52,8 @@ function AreaArrival.valid(
 			return false
 		end
 	end
-	-- S134i: never in an Elite II hideout or its clearance
-	for _, c in AreaSpawns.lairCircles(def) do
+	-- S134i: never in an Elite II hideout or its clearance; S149b: nor in the world boss's arena
+	for _, c in AreaSpawns.reservedCircles(def) do
 		if (x - c.x) ^ 2 + (z - c.z) ^ 2 < c.r * c.r then
 			return false
 		end

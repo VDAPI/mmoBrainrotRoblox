@@ -6,6 +6,9 @@
 -- glyph (a label, not a button) with its time to the start / end under it. S101b: a target with a `place` (the hint
 -- of a dialogue answer) shows the place's name under the star.
 -- S119: player, quest, guide, party and own marks get the owner's silhouettes (UiArtState.decorate) once loaded.
+-- S149b: the world boss over its barrow (Canvas draws the barrow): a brighter crown while it wakes (faded, with the
+-- countdown), a pulsing ring and an HP bar while it fights, a cross for the marker's linger after the kill or the
+-- leave; between the occurrences only the caption "Next: 14:00" (the player's own clock) under the barrow.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,6 +16,8 @@ local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local Canvas = require(script.Parent.Canvas)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local ClockText = require(script.Parent.Parent.Parent.ClockText)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local MapMarks = require(ReplicatedStorage.Shared.Data.MapMarks)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -25,6 +30,7 @@ local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
@@ -106,6 +112,54 @@ function Overlay.new(scope: Scope): Api
 	eventTime.Size = UDim2.fromOffset(60, 16)
 	eventTime.Visible = false
 	local eventClock = 0
+	-- S149b: the world boss over its barrow
+	local bossColor = Theme.tint(UiPalette.map.worldBoss)
+	local bossMarker = label(frame, "♛", bossColor, 24, 12)
+	bossMarker.Visible = false
+	UiArtState.decorate(bossMarker, UiArt.mapIcon("worldboss"), { size = 24 })
+	local bossCross = label(frame, "✕", Theme.Iron.Danger, 22, 13)
+	bossCross.Visible = false
+	local bossCaption = label(frame, "", Theme.Iron.Text, 12, 11)
+	bossCaption.Size = UDim2.fromOffset(140, 16)
+	bossCaption.Visible = false
+	local bossRing = Instance.new("Frame")
+	bossRing.Name = "WorldBossRing"
+	bossRing.AnchorPoint = Vector2.new(0.5, 0.5)
+	bossRing.Size = UDim2.fromOffset(40, 40)
+	bossRing.BackgroundTransparency = 1
+	bossRing.ZIndex = 11
+	bossRing.Visible = false
+	bossRing.Parent = frame
+	local bossRingCorner = Instance.new("UICorner")
+	bossRingCorner.CornerRadius = UDim.new(0.5, 0)
+	bossRingCorner.Parent = bossRing
+	local bossRingStroke = Instance.new("UIStroke")
+	bossRingStroke.Color = bossColor
+	bossRingStroke.Thickness = 2.5
+	bossRingStroke.Parent = bossRing
+	local bossPulse = TweenService:Create(
+		bossRingStroke,
+		TweenInfo.new(0.6, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+		{ Transparency = 0.8, Thickness = 1 }
+	)
+	bossPulse:Play()
+	table.insert(scope, bossPulse)
+	local bossBar = Instance.new("Frame")
+	bossBar.Name = "WorldBossHp"
+	bossBar.AnchorPoint = Vector2.new(0.5, 0.5)
+	bossBar.Size = UDim2.fromOffset(40, 5)
+	bossBar.BackgroundColor3 = Theme.Resource.Track
+	bossBar.BorderSizePixel = 0
+	bossBar.ZIndex = 11
+	bossBar.Visible = false
+	bossBar.Parent = frame
+	local bossFill = Instance.new("Frame")
+	bossFill.BackgroundColor3 = Theme.Resource.Hp
+	bossFill.BorderSizePixel = 0
+	bossFill.Size = UDim2.fromScale(1, 1)
+	bossFill.ZIndex = 12
+	bossFill.Parent = bossBar
+	local bossClock = 0
 	local partyMarkers: { TextButton } = {}
 	local partyIds: { number? } = {}
 	for i = 1, PARTY do
@@ -289,6 +343,45 @@ function Overlay.new(scope: Scope): Api
 					eventClock = clock
 					local t = Workspace:GetServerTimeNow()
 					eventTime.Text = Time.format((if event.phase == "warn" then event.startsAt else event.endsAt) - t)
+				end
+			end
+			-- S149b: the world boss's live state over its barrow
+			local boss = WorldBoss.markerOf(State.Get({ "worldBoss" }), Clock.now())
+			local bossHere = boss.map == cached.mapId
+			local live = bossHere and WorldBoss.markerLive(boss)
+			bossMarker.Visible = live
+			bossCross.Visible = live and (boss.state == "slain" or boss.state == "left")
+			bossRing.Visible = live and boss.state == "active"
+			bossBar.Visible = live and boss.state == "active"
+			bossCaption.Visible = bossHere
+			if bossHere then
+				local p = Canvas.toPixel(cached, boss.x, boss.z)
+				bossMarker.Position = UDim2.fromOffset(p.X, p.Y)
+				bossMarker.TextTransparency = if boss.state == "warn"
+					then 0.4
+					elseif boss.state == "active" then 0
+					else 0.5
+				bossCross.Position = UDim2.fromOffset(p.X, p.Y)
+				bossRing.Position = UDim2.fromOffset(p.X, p.Y)
+				bossBar.Position = UDim2.fromOffset(p.X, p.Y + 16)
+				bossFill.Size = UDim2.fromScale(math.clamp(boss.hp or 1, 0, 1), 1)
+				-- under the barrow's own caption (Canvas, 14 px down)
+				bossCaption.Position = UDim2.fromOffset(p.X, p.Y + if boss.state == "active" then 26 else 28)
+				local clock = os.clock()
+				if clock - bossClock >= 0.5 then
+					bossClock = clock
+					local t = Clock.now()
+					if boss.state == "idle" then
+						bossCaption.Text = Text.now("worldboss.map.next", { time = ClockText.hhmm(boss.at or t) })
+					elseif boss.state == "warn" then
+						bossCaption.Text =
+							Text.now("worldboss.map.soon", { time = Time.format(Time.remaining(boss.at or t, t)) })
+					elseif boss.state == "active" then
+						bossCaption.Text = Time.format(Time.remaining(boss.at or t, t))
+					else
+						bossCaption.Text =
+							Text.now(if boss.state == "slain" then "worldboss.card.slain" else "worldboss.card.left")
+					end
 				end
 			end
 			local guide = Fusion.peek(NavTarget.Target)

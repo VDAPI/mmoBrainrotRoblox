@@ -17,6 +17,8 @@ local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -78,9 +80,22 @@ local function eventGlyph(event: any, mapId: string, areaId: string?): string
 	return if def then ` <font color="{def.color}">{def.glyph}</font>` else ""
 end
 
+-- S149b: the world boss's crown (rich text) on its map's row while it wakes, fights or has just fallen.
+local function bossGlyph(branch: any, mapId: string): string
+	if type(branch) ~= "table" or branch.map ~= mapId then
+		return ""
+	end
+	local marker = WorldBoss.markerOf(branch, 0)
+	if not WorldBoss.markerLive(marker) then
+		return ""
+	end
+	return ` <font color="{UiPalette.map.worldBoss}">♛</font>`
+end
+
 -- Rows of the map list.
 function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 	local worldEvent = State.Value({ "worldEvent" })
+	local worldBoss = State.Value({ "worldBoss" }) -- S149b
 	local rows = {}
 	local order = 0
 	for _, region in REGIONS do
@@ -104,7 +119,7 @@ function Panels.mapList(scope: Scope, props: ListProps): { Instance }
 							local here = if use(props.MapId) == id then " ▲" else ""
 							local levels = if id == "city" then "" else ` · {map.minLevel}–{map.maxLevel}`
 							local indent = if i == 1 then "" else "   "
-							local event = eventGlyph(use(worldEvent), id)
+							local event = eventGlyph(use(worldEvent), id) .. bossGlyph(use(worldBoss), id)
 							return `{indent}<font color="#{zoneHex}">●</font> {Text.get(use, map.nameKey)}{levels}{here}{event}`
 						end),
 						FontFace = if i == 1 then Theme.Fonts.BodyBold else Theme.Fonts.Body,

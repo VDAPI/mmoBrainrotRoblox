@@ -755,7 +755,11 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 			if liveClock >= LIVE_REFRESH then
 				liveClock = 0
 				local top = stack[#stack]
-				if top and (top.kind == "party" or top.kind == "cave" or top.kind == "dungeon") then
+				-- S149b: the world boss card counts down and follows the fight's HP
+				if
+					top
+					and (top.kind == "party" or top.kind == "cave" or top.kind == "dungeon" or top.kind == "worldboss")
+				then
 					renderCard(true)
 				end
 			end

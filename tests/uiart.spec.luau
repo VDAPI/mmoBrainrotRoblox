@@ -148,6 +148,8 @@ T.describe("Logic/UiArt keys (S119)", function()
 		T.expect(UiArt.mapIcon("node", nil)).toBe("mapa/map_vein")
 		T.expect(UiArt.mapIcon("portal")).toBe("mapa/map_portal")
 		T.expect(UiArt.mapIcon("lair")).toBe("mapa/map_lair") -- S134i: Elite II hideouts
+		T.expect(UiArt.mapIcon("worldboss")).toBe("mapa/map_worldboss") -- S149b: the world boss and its barrow
+		T.expect(table.find(UiArt.FIXED.map, "worldboss") ~= nil).toBe(true)
 		T.expect(UiArt.service("shop")).toBe("mapa/service_shop")
 		T.expect(UiArt.mark("flag")).toBe("mapa/mark_flag")
 		T.expect(UiArt.map("meadows")).toBe("mapy/meadows")

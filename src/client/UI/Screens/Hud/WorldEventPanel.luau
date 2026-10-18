@@ -4,7 +4,7 @@
 -- HP), the own contribution (counted for the reward or not) and "Guide" (like ➤ of the quest tracker). PC: the
 -- right column over the quest tracker, which moves down by `Offset` while the panel shows; touch: the left column
 -- under the portrait and the effect icons, below the party frames when in a party (the right column holds the
--- minimap, the tracker and the skill buttons).
+-- minimap, the tracker and the skill buttons). S149b: under the world boss panel when both show (`Above`).
 -- Reads only the narrow branches `worldEvent` and `zone.map`; the clock ticks every 0.5 s like Elite2Timer.
 
 local Players = game:GetService("Players")
@@ -32,6 +32,8 @@ export type Props = {
 	Guide: (target: GuideTarget) -> (),
 	-- Set to the pixels the quest tracker moves down (0 while hidden or on touch).
 	Offset: Fusion.Value<number>?,
+	-- S149b: pixels of the world boss panel above (both devices): this panel stands under it.
+	Above: Fusion.UsedAs<number>?,
 }
 
 local WIDTH_PC = 280
@@ -196,10 +198,11 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 			return if use(touch) then Vector2.new(0, 0) else Vector2.new(1, 0)
 		end),
 		Position = scope:Computed(function(use): UDim2
+			local above = use(props.Above) or 0
 			if use(touch) then
-				return UDim2.fromOffset(Theme.Padding.Large, use(touchTop))
+				return UDim2.fromOffset(Theme.Padding.Large, use(touchTop) + above)
 			end
-			return UDim2.new(1, -Theme.Padding.Large, 0, PC_TOP)
+			return UDim2.new(1, -Theme.Padding.Large, 0, PC_TOP + above)
 		end),
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))

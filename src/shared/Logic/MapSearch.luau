@@ -1,7 +1,8 @@
 --!strict
 -- Search of the world map (S25): NPCs (name, role and the names of their services, e.g. "smith", "shop",
 -- "mail"), maps, monster areas, monster kinds (every variant name), bosses, S134i Elite II hideouts (their name and
--- their Elite II's) and, from the client, gathering nodes.
+-- their Elite II's), S149b the world boss (its name, its barrow and the words "world boss" lead to the barrow) and,
+-- from the client, gathering nodes.
 -- Case and Polish letters do not matter ("laki" finds "Łąki"); a word that starts with the query ranks above a
 -- match inside a word. The index is built once per language with an injected translate function, so the
 -- tests run without Locale. Pure (Lune).
@@ -13,12 +14,13 @@ local Maps = require("../Data/Maps")
 local Monsters = require("../Data/Monsters")
 local Npcs = require("../Data/Npcs")
 local Portals = require("../Data/Portals")
+local WorldBossData = require("../Data/WorldBoss")
 
 local MapSearch = {}
 
 MapSearch.LIMIT = 12
 
-export type Kind = "npc" | "map" | "area" | "monster" | "boss" | "node" | "cave" | "lair"
+export type Kind = "npc" | "map" | "area" | "monster" | "boss" | "node" | "cave" | "lair" | "worldboss"
 
 export type Result = {
 	kind: Kind,
@@ -49,7 +51,7 @@ export type Translate = (key: string) -> string
 
 -- Kind order when two results score the same.
 local KIND_RANK: { [string]: number } =
-	{ npc = 1, map = 2, cave = 3, area = 4, lair = 5, boss = 5, monster = 6, node = 7 }
+	{ npc = 1, map = 2, cave = 3, area = 4, lair = 5, boss = 5, worldboss = 5, monster = 6, node = 7 }
 
 -- Lowercase letters without Polish (and a few other) diacritics.
 local FOLD: { [number]: string } = {
@@ -235,6 +237,24 @@ local function lairEntries(translate: Translate, out: { Entry })
 	end
 end
 
+-- S149b: the world boss: its name, its barrow and "world boss" lead to the barrow (the card says when it wakes).
+local function worldBossEntries(translate: Translate, out: { Entry })
+	local boss = Bosses.get(WorldBossData.boss)
+	local spot = WorldBossData.spots[1]
+	if not boss or not spot then
+		return
+	end
+	table.insert(out, {
+		kind = "worldboss",
+		id = spot.id,
+		map = WorldBossData.map,
+		x = spot.x,
+		z = spot.z,
+		labelKey = boss.nameKey,
+		texts = { translate(boss.nameKey), translate(spot.nameKey), translate("worldboss.name") },
+	})
+end
+
 local function bossEntries(translate: Translate, out: { Entry })
 	for _, boss in Bosses.list do
 		local gate = Portals.get(`dungeon_{boss.region}`)
@@ -261,6 +281,7 @@ function MapSearch.build(translate: Translate, extra: { Entry }?): Index
 	monsterEntries(translate, entries)
 	lairEntries(translate, entries) -- S134i
 	bossEntries(translate, entries)
+	worldBossEntries(translate, entries) -- S149b
 	if extra then
 		for _, entry in extra do
 			table.insert(entries, entry)

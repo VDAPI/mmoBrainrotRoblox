@@ -32,7 +32,8 @@ local CFG = Config.FightLog
 local MAX_AGE = 3600 -- a fight nobody ended is dropped after an hour (safety net)
 
 export type DropItem = FightStats.DropItem
-export type Extras = { drops: { [Player]: { DropItem } }? }
+-- S149b: `points` = the world boss's contribution points of every participant (its place on the summary)
+export type Extras = { drops: { [Player]: { DropItem } }?, points: { [Player]: number }? }
 
 type Entry = {
 	id: number,
@@ -242,6 +243,14 @@ function FightLogService.End(id: number, outcome: FightStats.Outcome, extras: Ex
 	local fight = entry.fight
 	FightStats.finish(fight, os.clock(), outcome)
 	local drops = if extras then extras.drops else nil
+	local points: { [number]: number }? = nil
+	if extras and extras.points then
+		local byId: { [number]: number } = {}
+		for player, value in extras.points do
+			byId[player.UserId] = value
+		end
+		points = byId
+	end
 	for _, player in entry.players do
 		if player.Parent == nil then
 			continue
@@ -250,7 +259,8 @@ function FightLogService.End(id: number, outcome: FightStats.Outcome, extras: Ex
 		if not FightStats.worthSending(fight, ids, CFG.minSeconds) then
 			continue
 		end
-		local summary = FightStats.summary(fight, ids)
+		local standing = if points then { points = points, userId = player.UserId } else nil
+		local summary = FightStats.summary(fight, ids, nil, standing)
 		Net.Fire(player, "FightSummary", {
 			kind = fight.kind,
 			key = fight.key,
@@ -262,6 +272,7 @@ function FightLogService.End(id: number, outcome: FightStats.Outcome, extras: Ex
 			dodged = summary.dodged,
 			aimed = summary.aimed,
 			drop = if drops then dropFor(entry, player, drops) else nil,
+			place = summary.place, -- S149b: a world boss fight's place in the contribution
 		})
 	end
 	forget(entry)

@@ -50,12 +50,20 @@ export type Row = {
 	w: number,
 }
 
+-- S149b: a world boss fight's standing of one player: place `n` of `of` participants by contribution points
+-- (Logic/Contribution, every participant of the fight, never their names) and `pct` = his share of all points (0..1).
+export type Place = { n: number, of: number, pct: number }
+
+-- S149b: whose place a world boss summary carries: points by user id (WorldBossService) and the player.
+export type Standing = { points: { [number]: number }, userId: number }
+
 export type Summary = {
 	time: number, -- seconds
 	outcome: Outcome?,
 	deaths: { { n: string, at: number } },
 	dodged: number,
 	aimed: number,
+	place: Place?, -- S149b: only a "worldboss" fight with a standing
 }
 
 local FIELDS: { Field } = { "dmg", "heal", "shield", "taken", "intercept", "deaths", "dodged", "aimed" }
@@ -176,8 +184,32 @@ function FightStats.rows(
 	return rows
 end
 
--- The header of the party's summary: fight time, deaths in order, dodged / aimed telegraphed blows.
-function FightStats.summary(fight: Fight, partyIds: { number }, now: number?): Summary
+-- S149b: the place of `userId` among everyone with points (ties share the better place: one more than those with more
+-- points); a player without points is last, after all who have some. `pct` rounded to 0.001.
+function FightStats.place(points: { [number]: number }, userId: number): Place
+	local mine = points[userId] or 0
+	if mine ~= mine or mine < 0 then
+		mine = 0
+	end
+	local total, of, above = 0, 0, 0
+	for id, value in points do
+		if value == value and value > 0 then
+			total += value
+			of += 1
+			if id ~= userId and value > mine then
+				above += 1
+			end
+		end
+	end
+	if mine <= 0 then
+		return { n = of + 1, of = of + 1, pct = 0 }
+	end
+	return { n = above + 1, of = of, pct = math.floor(mine / total * 1000 + 0.5) / 1000 }
+end
+
+-- The header of the party's summary: fight time, deaths in order, dodged / aimed telegraphed blows; S149b: a world
+-- boss fight with a `standing` also the player's place in the contribution.
+function FightStats.summary(fight: Fight, partyIds: { number }, now: number?, standing: Standing?): Summary
 	local ended = fight.endedAt or now or fight.startedAt
 	local deaths = {}
 	for _, death in fight.deaths do
@@ -199,6 +231,9 @@ function FightStats.summary(fight: Fight, partyIds: { number }, now: number?): S
 		deaths = deaths,
 		dodged = dodged,
 		aimed = aimed,
+		place = if fight.kind == "worldboss" and standing
+			then FightStats.place(standing.points, standing.userId)
+			else nil,
 	}
 end
 
