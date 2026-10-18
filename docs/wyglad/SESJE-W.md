@@ -353,3 +353,6 @@ pole wariantu `paint`: kolor i materiał terenu zamiast tekstury, `KitAssets.pla
 w osi traktu (980, 0), wysokość 270, z pióropuszem dymu i pomarańczową łuną w kraterze (pole `smoke` punktu
 orientacyjnego, `HorizonController`). Zmiana Szlaku Popiołu (1.9) pominięta (przesuwa grupy potworów). Sprawdzone w
 Studio: liczba skał i ich wygląd (kolor, materiał).
+
+Skały z zestawu także w Borze (szara tekstura nizendo, 79) i na Szczytach (malowany jasny łupek, 107): wpisy `forest` i
+`snow` klucza `rock` w `Data/Kit`.

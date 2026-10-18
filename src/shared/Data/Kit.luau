@@ -168,6 +168,16 @@ Kit.slots = {
 		fit = "width",
 		size = 1.25,
 		grass = ROCKS,
+		-- W15 / W19: the Duskwood keeps the grey-blue rock, Frostpeak takes a pale slate
+		forest = ROCKS,
+		snow = {
+			painted(ROCKS[1], "#8E969E", "Slate"),
+			painted(ROCKS[2], "#727A82", "Slate"),
+			painted(ROCKS[3], "#A2AAB0", "Rock"),
+			painted(ROCKS[4], "#646C74", "Slate"),
+			painted(ROCKS[5], "#8A9298", "Rock"),
+			painted(ROCKS[6], "#7A8288", "Slate"),
+		},
 		desert = {
 			painted(ROCKS[1], "#7A4630", "Sandstone"),
 			painted(ROCKS[2], "#5A3426", "Basalt"),
