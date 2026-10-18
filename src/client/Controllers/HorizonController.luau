@@ -56,6 +56,44 @@ local function part(piece: HorizonGen.Piece, origin: Vector3): BasePart
 	return p
 end
 
+-- W17: a slow plume of dark smoke over the top of a landmark (a volcano) and an orange glow inside its crater.
+local function smoke(landmark: Model, isLow: boolean)
+	local cf, size = landmark:GetBoundingBox()
+	local top = Instance.new("Part")
+	top.Name = "Plume"
+	top.Anchored = true
+	top.CanCollide = false
+	top.CanQuery = false
+	top.CanTouch = false
+	top.Transparency = 1
+	top.Size = Vector3.new(size.X * 0.2, 1, size.Z * 0.2)
+	top.CFrame = CFrame.new(cf.Position + Vector3.new(0, size.Y / 2 - size.Y * 0.04, 0))
+	top.Parent = landmark
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = "rbxasset://textures/particles/smoke_main.dds"
+	e.Color = ColorSequence.new(Color3.fromHex("#3A3230"), Color3.fromHex("#6A605A"))
+	e.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.4),
+		NumberSequenceKeypoint.new(0.7, 0.7),
+		NumberSequenceKeypoint.new(1, 1),
+	})
+	e.Size = NumberSequence.new(size.X * 0.12, size.X * 0.45)
+	e.Lifetime = NumberRange.new(20, 28)
+	e.Speed = NumberRange.new(size.Y * 0.03, size.Y * 0.05)
+	e.SpreadAngle = Vector2.new(8, 8)
+	e.Acceleration = Vector3.new(size.Y * 0.004, 0, 0)
+	e.Rotation = NumberRange.new(0, 360)
+	e.RotSpeed = NumberRange.new(-5, 5)
+	e.LightInfluence = 1
+	e.Rate = if isLow then 0.6 else 1.4
+	e.Parent = top
+	local glow = Instance.new("PointLight")
+	glow.Color = Color3.fromHex("#FF7A30")
+	glow.Range = 60
+	glow.Brightness = 3
+	glow.Parent = top
+end
+
 local function clear()
 	folder:ClearAllChildren()
 	shown = nil
@@ -84,6 +122,9 @@ local function build(mapId: string, isLow: boolean)
 					* CFrame.Angles(0, math.rad(mark.turn or 0), 0)
 			)
 			copy.Parent = model
+			if mark.smoke then
+				smoke(copy, isLow)
+			end
 		end
 	end
 	model.Parent = folder

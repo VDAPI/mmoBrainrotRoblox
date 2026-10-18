@@ -27,6 +27,9 @@ export type Variant = {
 	sink: number?,
 	tint: string?,
 	turn: number?, -- with yaw = false: a fixed turn (degrees) instead of none
+	-- W17: a painted look instead of the model's texture (models without a SurfaceAppearance, e.g. the rocks): the
+	-- texture is dropped and the mesh takes `color` and the terrain `material`
+	paint: { color: string, material: string }?,
 }
 
 export type Entry = {
@@ -89,6 +92,12 @@ local CITY_BROADLEAF = {
 	v("grass_tree_05", 1, 0.7, 0.8, nil, OAK),
 	v("grass_tree_13", 1, 0.7, 0.8, nil, OAK),
 }
+-- W17: the same rocks in rust and basalt for the Ashen Wastes (pustkowia.md 1.8)
+local function painted(variant: Variant, color: string, material: string): Variant
+	local out = table.clone(variant)
+	out.paint = { color = color, material = material }
+	return out
+end
 local ROCKS = {
 	v("common_rock_01", 2, 0.9, 1.15, 0.15),
 	v("common_rock_02", 2, 0.9, 1.15, 0.15),
@@ -155,7 +164,19 @@ Kit.slots = {
 		size = 5.5,
 		grass = { v("grass_tree_14", 1, 0.85, 1.1, nil, OAK), v("grass_tree_12", 1, 0.85, 1.05, nil, PINE) },
 	},
-	["rock"] = { fit = "width", size = 1.25, grass = ROCKS },
+	["rock"] = {
+		fit = "width",
+		size = 1.25,
+		grass = ROCKS,
+		desert = {
+			painted(ROCKS[1], "#7A4630", "Sandstone"),
+			painted(ROCKS[2], "#5A3426", "Basalt"),
+			painted(ROCKS[3], "#8A5A3A", "Sandstone"),
+			painted(ROCKS[4], "#3E302C", "Basalt"),
+			painted(ROCKS[5], "#6E3E2A", "Rock"),
+			painted(ROCKS[6], "#4A3A34", "Basalt"),
+		},
+	},
 	-- W12: the city's gardens, orchards and the cemetery yews (TownGen Parts.tree, a little smaller than in the wild)
 	["tree:apple"] = {
 		fit = "height",

@@ -22,6 +22,7 @@ export type Arc = {
 
 export type Landmark = {
 	model: string, -- Data/Kit model name in ReplicatedStorage.Assets.Kit (none = nothing drawn)
+	smoke: boolean?, -- W17: a plume of smoke and a glow at the top (a volcano)
 	deg: number,
 	dist: number,
 	height: number, -- studs the model is scaled to
@@ -275,7 +276,8 @@ local Horizons: { [string]: Horizon } = {
 			},
 		},
 		landmarks = {
-			{ model = "desert_landmark_01", deg = 95, dist = 1250, height = 360, turn = 0 },
+			-- pustkowia.md 1.2: in the axis of the main road (z = 0) at (980, 0), top at about y 260, smoking
+			{ model = "desert_landmark_01", deg = 90, dist = 980, height = 270, turn = 0, smoke = true },
 		},
 	},
 	-- Frostpeak: a crown of white peaks all round, lower grey ridges toward the Ashen Wastes in the west.

@@ -345,3 +345,11 @@ W02). Pradrzewo czeka na model `forest_landmark_03` (prompt u właściciela). Sp
 
 Sosny Szczytów z zestawu: `tree:snowPine` z wpisem `snow` w `Data/Kit` (iglaste Yasu pod bladą, oszronioną zielenią;
 269 modeli). Martwe zamarznięte drzewa i lodowe kolce zostają z generatora. Sprawdzone w Studio: liczba modeli.
+
+### W17: Pustkowia, część 1
+
+Skały Pustkowi z zestawu (pustkowia.md 1.8): `rock` z wpisem `desert`, kamienie nizendo malowane na rdzę i bazalt (nowe
+pole wariantu `paint`: kolor i materiał terenu zamiast tekstury, `KitAssets.place`); 80 skał. Szczyt Kuźni na horyzoncie
+w osi traktu (980, 0), wysokość 270, z pióropuszem dymu i pomarańczową łuną w kraterze (pole `smoke` punktu
+orientacyjnego, `HorizonController`). Zmiana Szlaku Popiołu (1.9) pominięta (przesuwa grupy potworów). Sprawdzone w
+Studio: liczba skał i ich wygląd (kolor, materiał).
