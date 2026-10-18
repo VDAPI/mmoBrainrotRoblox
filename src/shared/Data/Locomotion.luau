@@ -23,19 +23,26 @@ export type ClipSet = {
 
 local Locomotion = {}
 
--- The clips the game plays.
+-- The clips the game plays: the owner's Mixamo clips (docs/wyglad/KLIPY-RUCH.md), converted to R15 and published
+-- 2026-10-18.
 Locomotion.clips = {
-	idle = "rbxassetid://507766388",
-	idleVariants = { "rbxassetid://507766666" },
-	walk = "rbxassetid://507777826",
-	run = "rbxassetid://507767714",
-	jump = "rbxassetid://507765000",
-	fall = "rbxassetid://507767968",
-	land = "",
-	climb = "rbxassetid://507765644",
-	swim = "rbxassetid://507784897",
-	swimIdle = "rbxassetid://507785072",
+	idle = "rbxassetid://101792382460064", -- Breathing Idle
+	idleVariants = {
+		"rbxassetid://89423908112114", -- Looking Around
+		"rbxassetid://87061023593270", -- Weight Shift
+	},
+	walk = "rbxassetid://98435814442978", -- Walking (in place)
+	run = "rbxassetid://101283575760756", -- Running (in place)
+	jump = "rbxassetid://120601938643467", -- Jumping, the take-off only
+	fall = "rbxassetid://134039131468808", -- Falling Idle
+	land = "rbxassetid://71203138252727", -- Falling To Landing
+	climb = "rbxassetid://97694774293222", -- Climbing Ladder
+	swim = "rbxassetid://127317644570676", -- Swimming
+	swimIdle = "rbxassetid://118483475541123", -- Treading Water
 } :: ClipSet
+
+-- Clips published for a later state: the jog between the walk and the run (KLIPY-RUCH.md, priority 3).
+Locomotion.spare = { jog = "rbxassetid://82480642264616" }
 
 -- The Roblox R15 defaults: what a clip of `clips` falls back to when it does not load.
 Locomotion.fallback = {
@@ -52,12 +59,12 @@ Locomotion.fallback = {
 } :: ClipSet
 
 -- Stride: studs per second the character moves when the clip plays at speed 1.0 (feet do not slide). Measured in
--- Studio (W08, the planted foot's speed against the root): the Roblox walk and run clips both step 6.6 studs/s, so at
--- the base speed 16 the run would need x2.4 and look frantic; `run` stays at 8 (x2.0, a little slide) until the
--- game's own run clip with a longer step comes (docs/wyglad/KLIPY-RUCH.md). A new clip gets its own number.
+-- Studio on the game's body (W09) as the planted foot's speed against the root: the owner's Mixamo walk 6.5, run 16.9
+-- (2026-10-18; the Roblox defaults stepped 6.6 for both, so the run was capped at 8 and slid). A new clip gets its own
+-- number.
 Locomotion.stride = {
-	walk = 6.6,
-	run = 8,
+	walk = 6.5,
+	run = 16.9,
 	climb = 5, -- the default Animate climbs at speed / 5
 	swim = 10,
 }

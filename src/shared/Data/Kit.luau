@@ -218,6 +218,14 @@ Kit.slots = {
 	["prop:lamp"] = { fit = "height", size = 9, default = { v("city_lamp_01", 1, 1, 1) } },
 	["prop:well"] = { fit = "height", size = 7.6, default = { v("common_well_01", 1, 0.95, 1.05) } },
 	["prop:stallFruit"] = { fit = "height", size = 9, city = { fixed("city_stall_01", 0) } },
+	-- 2026-10-18, the owner's Tripo models: the Old Tree of the Duskwood (bor.md A2, crown over the forest), the Meadows
+	-- gate, the wayside shrine, the goblin totem, Grimrok's throne and the Moss Cave's mushrooms (cave maps: default)
+	["landmark:elderTree"] = { fit = "height", size = 80, forest = { fixed("forest_landmark_03", 0) } },
+	["landmark:meadowsGate"] = { fit = "width", size = 21, grass = { fixed("common_gate_01", 0) } },
+	["landmark:shrine"] = { fit = "height", size = 10.5, grass = { fixed("grass_landmark_02", 0) } },
+	["landmark:goblinTotem"] = { fit = "height", size = 21, grass = { fixed("grass_totem_01", 0) } },
+	["landmark:grimrokThrone"] = { fit = "height", size = 14, default = { fixed("dungeon_landmark_01", 0) } },
+	["landmark:caveMushrooms"] = { fit = "height", size = 4, default = { v("cave_landmark_02", 1, 0.9, 1.2) } },
 	-- W13: the burnt post mill on Crow Field; its top over the saddle of the Wolf Hills (rise 9 + 34 >= 41, laki.md Z2)
 	["landmark:mill"] = { fit = "height", size = 34, grass = { fixed("grass_landmark_01", 0) } },
 } :: { [string]: Entry }

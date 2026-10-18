@@ -39,7 +39,8 @@ describe("Asset kit data (W02)", function()
 		for key, entry in Kit.slots do
 			expect(`{key} {generated[key] ~= nil}`).toBe(`{key} true`)
 			expect(`{key} {entry.fit == "height" or entry.fit == "width"}`).toBe(`{key} true`)
-			expect(`{key} {entry.size > 0 and entry.size <= 60}`).toBe(`{key} true`)
+			-- landmarks (W15: the Old Tree, 80) are the tallest models
+			expect(`{key} {entry.size > 0 and entry.size <= 100}`).toBe(`{key} true`)
 		end
 	end)
 

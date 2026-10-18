@@ -61,18 +61,15 @@ local function gate(out: { Build })
 	local b = Kit.build("MeadowsGate", "gate", s.x, s.z, s.rot)
 	local bp = b.bp
 	local half = 9
+	-- W13: the posts, the beam, the roof and the board are one asset kit slot (Data/Kit "landmark:meadowsGate": the
+	-- owner's painted gate); the lanterns and the fence rails stay
+	bp:beginKit("landmark:meadowsGate", 0, Kit.gy(b, 0, 0), 0, 1, "shell")
 	for _, side in { -1, 1 } do
 		local gy = Kit.gy(b, side * half, 0)
 		bp:box(1.6, 11 - gy, 1.6, side * half, gy + (11 - gy) / 2 - 0.5, 0, o(Kit.timber, "shell", { q = true }))
 		bp:box(2.2, 1.2, 2.2, side * half, gy + 0.4, 0, o(Palette.rubble[1], "detail"))
 		-- braces
 		bp:beam(side * half, 8, 0, side * (half - 3), 10.6, 0, 0.5, o(Kit.timber, "detail"))
-		Kit.lantern(bp, side * (half + 1.2), gy, -1.5, nil, 5.5)
-		-- a few rails of fence running off the road
-		for k = 1, 3 do
-			local x1, x2 = side * (half + 1 + (k - 1) * 6), side * (half + 1 + k * 6)
-			Parts.fence(bp, x1, Kit.gy(b, x1, 0), 0, x2, Kit.gy(b, x2, 0), 0, "rail")
-		end
 	end
 	bp:box(2 * half + 3, 1.1, 1.4, 0, 11, 0, o(Kit.timber, "shell"))
 	for _, side in { -1, 1 } do
@@ -81,6 +78,16 @@ local function gate(out: { Build })
 	-- carved board under the beam (the map's name sign stands beside the road, World/Meadows)
 	bp:box(8, 1.8, 0.3, 0, 9.4, -0.75, o(Palette.planks[3], "detail"))
 	bp:box(7, 0.25, 0.1, 0, 9.4, -0.95, o({ c = "#C9A45C", m = "SmoothPlastic" }, "fine"))
+	bp:endKit()
+	for _, side in { -1, 1 } do
+		local gy = Kit.gy(b, side * half, 0)
+		Kit.lantern(bp, side * (half + 1.2), gy, -1.5, nil, 5.5)
+		-- a few rails of fence running off the road
+		for k = 1, 3 do
+			local x1, x2 = side * (half + 1 + (k - 1) * 6), side * (half + 1 + k * 6)
+			Parts.fence(bp, x1, Kit.gy(b, x1, 0), 0, x2, Kit.gy(b, x2, 0), 0, "rail")
+		end
+	end
 	table.insert(out, b)
 	-- the first view from the portal: trees framing the road (the old oak on its knoll stays in sight), bushes
 	local g = Kit.build("EntranceGrove", "trees", -700, 0, 0)
@@ -113,7 +120,9 @@ local function shrine(out: { Build })
 	local bp = b.bp
 	-- the oak stands behind the shrine
 	Nature.tree(bp, "giantOak", 2, Kit.gy(b, 2, 9), 9, 1.55, false)
-	-- shrine: stone plinth, pillar, roofed niche
+	-- shrine: stone plinth, pillar, roofed niche; W13: with its candles and flowers one asset kit slot (Data/Kit
+	-- "landmark:shrine": the owner's painted wayside shrine), the candle light stays
+	bp:beginKit("landmark:shrine", 0, 0, 0, 1, "shell")
 	bp:box(3.2, 1, 3.2, 0, 0.3, 0, o(Palette.rubble[2], "shell", { q = true }))
 	bp:box(1.8, 5, 1.8, 0, 3.2, 0, o(Palette.ashlar[1], "shell", { q = true }))
 	bp:box(2.6, 2.8, 2.2, 0, 7, 0, o(Palette.ashlar[2], "detail"))
@@ -138,6 +147,7 @@ local function shrine(out: { Build })
 			lod = "fine",
 		})
 	end
+	bp:endKit()
 	Parts.bench(bp, 5.5, Kit.gy(b, 5.5, -4), -4, 70, 4)
 	table.insert(out, b)
 	Kit.life("butterflies", s.x, b.at.y + 2, s.z, 18)

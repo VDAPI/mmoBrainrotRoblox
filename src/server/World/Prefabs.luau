@@ -576,8 +576,10 @@ end
 
 -- Portal arch (tag "Portal", attributes PortalId, TargetMap, ArriveX/ArriveZ = arrival point on the
 -- target map, map-relative; defaults to the target map's spawn).
--- W12: the painted portal model (Assets.Kit), its height in studs and turn (degrees) on the arch.
+-- W12: the painted portal models (Assets.Kit): the arcane one in the city, the stone archway everywhere else; their
+-- height in studs and turn (degrees) on the arch.
 local PORTAL_MODEL = "common_portal_01"
+local PORTAL_MODEL_WILD = "common_portal_02"
 local PORTAL_HEIGHT = 18
 local PORTAL_TURN = 0
 
@@ -629,7 +631,7 @@ function Prefabs.portal(
 	-- their collision unseen, the field stays as the travel trigger, fainter inside the model's opening
 	local template: Model?, height = nil, 0
 	if KitAssets.enabled() then
-		template, height = KitAssets.model(PORTAL_MODEL)
+		template, height = KitAssets.model(if ctx.map.id == "city" then PORTAL_MODEL else PORTAL_MODEL_WILD)
 	end
 	if template and height > 0 then
 		local arch = template:Clone()

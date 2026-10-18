@@ -137,7 +137,15 @@ function KitAssets.resolver(mapId: string): Resolver?
 		end
 		return {
 			template = t.model,
-			cframe = CFrame.new(foot - Vector3.new(0, drop, 0)) * CFrame.Angles(0, math.rad(choice.yaw), 0),
+			-- a model with a fixed turn (a landmark: its front matters) turns with its building, a random one only by
+			-- its own yaw
+			cframe = if choice.variant.yaw
+				then CFrame.new(foot - Vector3.new(0, drop, 0)) * CFrame.Angles(0, math.rad(choice.yaw), 0)
+				else CFrame.new(foot - Vector3.new(0, drop, 0)) * base.Rotation * CFrame.Angles(
+					0,
+					math.rad(choice.yaw),
+					0
+				),
 			scale = scale,
 			tint = if tint then Color3.fromHex(tint) else nil,
 			paint = if paint and material then { color = Color3.fromHex(paint.color), material = material } else nil,

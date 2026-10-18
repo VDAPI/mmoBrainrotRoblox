@@ -430,6 +430,10 @@ local function forest(city: any, ground: Ground, out: { Build })
 				local y = ground(px, pz)
 				local sc = rng:float(0.85, 1.35)
 				local r = rng:next()
+				-- W12: every tree of the forest round the city is an asset kit slot (Data/Kit "tree:pine" / "tree:oak" /
+				-- "tree:birch" on the city: the painted trees), the generator's balls stay as the fallback
+				local kind = if r < 0.55 then "pine" elseif r > 0.85 then "birch" else "oak"
+				bp:beginKit(`tree:{kind}`, lx, y, lz, sc * 0.85, "shell")
 				if r < 0.55 then
 					local h = 4 * sc
 					bp:add(
@@ -467,6 +471,7 @@ local function forest(city: any, ground: Ground, out: { Build })
 					local leaf = { c = bp:jitter(if birch then "#7E9A45" else "#3F5F2C", 0.08), m = "LeafyGrass" }
 					bp:add("ball", 9 * sc, 7.5 * sc, 9 * sc, lx, y + h + 2.5 * sc, lz, 0, 0, 0, s(leaf))
 				end
+				bp:endKit()
 			end
 			z += spacing
 		end

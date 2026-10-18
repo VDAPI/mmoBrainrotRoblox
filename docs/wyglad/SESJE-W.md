@@ -359,3 +359,32 @@ Skały z zestawu także w Borze (szara tekstura nizendo, 79) i na Szczytach (mal
 
 Podszyt Boru z zestawu (klient): `under:berryBush`, `under:bramble` i `under:sapling` z wpisem `forest` (krzaki i młode
 drzewka Yasu pod ciemnymi liśćmi). Paprocie i muchomory zostają z generatora.
+
+### Modele właściciela, partia 2 (2026-10-18)
+
+Siedem modeli Tripo w `Assets.Kit` (rozpoznane po proporcjach GLB): Pradrzewo `forest_landmark_03` (slot
+`landmark:elderTree` w `DuskwoodGen/Heart`, wysokość 80; pień, szczelina, gałęzie i korona zastąpione, światło, korzenie
+i rama questu zostają), brama Łąk `common_gate_01` (`landmark:meadowsGate`, latarnie i płoty zostają), kapliczka
+`grass_landmark_02` (`landmark:shrine`), totem goblinów `grass_totem_01` (`landmark:goblinTotem`), tron Grimroka
+`dungeon_landmark_01` (`landmark:grimrokThrone`, sztandary i kosze z ogniem zostają), grzyby Jaskini Mchów
+`cave_landmark_02` (`landmark:caveMushrooms`, każdy olbrzymi grzyb na brzegu), kamienny portal `common_portal_02`
+(portale poza miastem; w mieście zostaje magiczny). Jaskinie i lochy biorą zestaw (`CaveLayout` z `KitAssets.resolver`);
+model ze stałym obrotem obraca się razem z budowlą (`KitAssets`). Nieobejrzane w Studio (Rojo właściciela na `main`).
+
+Las wokół miasta (`TownGen/Outside`, 534 drzewa) jako sloty zestawu `tree:pine` / `tree:oak` / `tree:birch` (miasto):
+wcześniej jedyne drzewa „lizaki” w mieście (zgłoszenie właściciela 2026-10-18).
+
+### W08: klipy ruchu z Mixamo (2026-10-18)
+
+12 klipów właściciela (Breathing Idle, Looking Around, Weight Shift, Walking, Running, Jogging, Jumping przycięty do
+wybicia 0,3–0,85 s, Falling Idle, Falling To Landing, Climbing Ladder, Swimming, Treading Water) przekonwertowane
+`mixamo_to_r15.py` (Python 3.13 + `bpy` 5.2 w `D:\Dev\cache\python313`, bez znacznika `Hit`), włożone do Studio, opublikowane
+przez właściciela; ID w `Data/Locomotion.clips` (trucht w `Locomotion.spare`). Krok zmierzony w Studio na ciele gry:
+chód 6,5, bieg 16,9 st/s (domyślne klipy Roblox: 6,6 i ślizgający się bieg przycięty do 8).
+
+### W27: pogoda, część 1
+
+Przegląd: pyłki, mgła nad wodą, liście, popiół, śnieg, zawieje, zorza i pióropusze były już z S26–S51. Nowe: deszcz
+nad bagnami Boru (motywy `bog`, `witch`, lżejszy w `mist`; smugi `VelocityParallel`) i podmuchy piasku przy ziemi na
+wydmach, w nekropolii i na solnisku Pustkowi (`WorldLifeController`, `RAIN` / `SAND`, na niskiej grafice połowa);
+`/worldfx rain|sand`. Nieobejrzane w Studio.

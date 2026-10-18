@@ -22,6 +22,7 @@ local Areas = require(Shared.Data.Areas)
 local Caves = require(Shared.Data.Areas.Caves)
 local CavePlan = require(Shared.Logic.CavePlan)
 local CaveTerrain = require(Shared.Logic.CaveTerrain)
+local KitAssets = require(Shared.Util.KitAssets)
 local Log = require(Shared.Util.Log)
 local WorldGen = require(Shared.Logic.WorldGen)
 
@@ -57,6 +58,7 @@ function CaveLayout.build(ctx: Build.Context)
 	local folders: { [string]: Folder } = {}
 	local shell, lights, count = 0, 0, 0
 	local gen = WorldGen.get(mapId)
+	local kit = KitAssets.resolver(mapId) -- W21: asset kit models (the throne, the mushrooms)
 	if gen then
 		for _, build in gen.all() do
 			local folder = folders[build.tag]
@@ -67,7 +69,7 @@ function CaveLayout.build(ctx: Build.Context)
 				folders[build.tag] = created
 				folder = created
 			end
-			local result = BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folder :: Folder)
+			local result = BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folder :: Folder, nil, kit)
 			shell += result.parts
 			lights += #build.bp.lights
 			count += 1
