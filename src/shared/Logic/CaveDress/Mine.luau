@@ -544,6 +544,101 @@ local function kennel(env: Env, out: { Build })
 	Kit.life(env.ctx, "drips", r.x, 14, r.z, 18)
 end
 
+-- W23 (pustkowia.md 2.4, 2.5), after everything and without clearings (nothing earlier moves): a stack of crates of
+-- frosted cold iron with the cult's grey frost petal under the shaft (what the Supply List describes), and the
+-- miners' low memorial stone behind the barricade in the Pithead.
+local FROST = { c = "#DCEEFA", m = "Ice" }
+local CULT_GREY = { c = "#9A9AA2", m = "SmoothPlastic" }
+
+local function coldIron(env: Env, out: { Build })
+	local r = env.T.rooms[2]
+	local sx, sz = Kit.at(env, -114), Kit.at(env, -62)
+	local dx, dz = r.x - sx, r.z - sz
+	local len = math.max(1, math.sqrt(dx * dx + dz * dz))
+	for _, d in { 11, 14, 8 } do
+		local x, z = sx + dx / len * d, sz + dz / len * d
+		if Kit.free(env, x, z, 3, false) then
+			local b = Kit.build(env, "ColdIronCrates", "traces", x, z, math.deg(math.atan2(dx, dz)) + 180)
+			local bp = b.bp
+			for k, c in { { -1.2, 0, 0, 2 }, { 1.1, 0, 0.3, 1.8 }, { 0, 1, 0.1, 1.6 } } do
+				local lx, lz, size = c[1], c[3], c[4]
+				local gy = Kit.gy(env, b, lx, lz) + c[2] * 2
+				bp:box(size, size, size, lx, gy + size / 2, lz, o(TIMBER, "detail", { col = false }))
+				bp:box(
+					size + 0.06,
+					size * 0.3,
+					size + 0.06,
+					lx,
+					gy + size,
+					lz,
+					o(FROST, "fine", { col = false, t = 0.25 })
+				)
+				if k <= 2 then
+					bp:add(
+						"cyl",
+						0.08,
+						1,
+						1,
+						lx,
+						gy + size * 0.5,
+						lz - size / 2 - 0.05,
+						0,
+						90,
+						0,
+						o(CULT_GREY, "fine", { col = false })
+					)
+					for t = 0, 2 do
+						bp:rbox(
+							0.08,
+							0.8,
+							0.06,
+							lx,
+							gy + size * 0.5,
+							lz - size / 2 - 0.1,
+							0,
+							0,
+							t * 60,
+							o({ c = "#E8F2FA", m = "SmoothPlastic" }, "fine", { col = false })
+						)
+					end
+				end
+			end
+			Kit.lifeAt(env.ctx, b, "icicleDust", 0, 2, 0, 2)
+			table.insert(out, b)
+			return
+		end
+	end
+end
+
+local function memorial(env: Env, out: { Build })
+	for _, z in { 10, -10, 16, -16 } do
+		local x, wz = Kit.at(env, -162), Kit.at(env, z)
+		if Kit.free(env, x, wz, 1.5, false) then
+			local b = Kit.build(env, "MinersMemorial", "traces", x, wz, if z > 0 then 180 else 0)
+			local bp = b.bp
+			local gy = Kit.gy(env, b, 0, 0)
+			bp:box(2.6, 2.2, 0.8, 0, gy + 1.1, 0, o(STONE, "detail", { col = false }))
+			bp:add("cyl", 0.8, 2.6, 2.6, 0, gy + 2.2, 0, 0, 90, 90, o(STONE, "detail", { col = false }))
+			-- rows of carved names and the last date, a dwarven rune glowing faintly on top
+			for k = 0, 3 do
+				bp:box(
+					1.8 - (k % 2) * 0.4,
+					0.1,
+					0.06,
+					0,
+					gy + 0.6 + k * 0.4,
+					-0.42,
+					o({ c = "#2E2A28", m = "Slate" }, "fine", { col = false })
+				)
+			end
+			glowBox(bp, 0.5, 0.6, 0.06, 0, gy + 2.6, -0.43, RUNE)
+			Kit.candle(bp, 0.9, gy, -0.9, 0.4, "#FFB25A")
+			table.insert(out, b)
+			return
+		end
+	end
+end
+
 function Mine.all(env: Env, out: { Build })
 	rails(env, out)
 	pithead(env, out)
@@ -551,6 +646,8 @@ function Mine.all(env: Env, out: { Build })
 	camp(env, out)
 	chief(env, out)
 	kennel(env, out)
+	coldIron(env, out)
+	memorial(env, out)
 end
 
 return Mine

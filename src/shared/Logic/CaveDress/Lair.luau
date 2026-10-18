@@ -11,8 +11,9 @@
 --   4 the Wyvern Roosts: the great hole in the east wall with a hot beam, ash and smoke; nests of charred branches,
 --     wagon wheels and bones on the unreachable ledges, smaller eggs, fans of soot, basalt pillars scored by claws, a
 --     carpet of bones by the walls, a torn caravan tarp hanging from a ledge,
---   5 the Larder: carcasses of caravan animals with hide, a smashed wagon, slit bales of cloth, scattered jars and
---     coins, a shed wyvern skin on the rocks, the red half-light of the glowing crack,
+--   5 the Larder: skeletons of caravan animals with shreds of hide (W23: no flesh), a smashed wagon with a chest of
+--     Brokk's caravan under its tarp (secret), slit bales of cloth, scattered jars and coins, a shed wyvern skin on
+--     the rocks, the red half-light of the glowing crack,
 --   6 the Queen's Nest ("wow"): the huge nest on the basalt mound ringed with lava, woven of charred trunks, wagon
 --     wheels and bones, five glowing eggs (one with a hatchling's claw sticking out), the great chimney with heat haze
 --     going up and ash coming down, a red glow on the vault, spilled treasure (coins, goblets, a crown), scales. Pure.
@@ -392,22 +393,52 @@ local function larder(env: Env, out: { Build })
 						o({ c = "#8A6A4A", m = "SmoothPlastic" }, "fine", { col = false })
 					)
 				end
-			elseif kind == "carcass" then
-				b.bp:add(
-					"ball",
-					6,
-					2.4,
-					3,
-					0,
-					y + 0.8,
-					0,
-					0,
-					20,
-					0,
-					o({ c = "#6A4A32", m = "Fabric" }, "detail", { col = false })
+				-- W23 secret (pustkowia.md 3.5): under the torn tarp a chest with the dwarven sign of Brokk's caravan,
+				-- the same as in the Dead Oasis: one caravan only got this far
+				b.bp:box(2.4, 1.6, 1.6, -1, y + 2.7, -1.6, o(Kit.wood, "detail", { col = false }))
+				b.bp:box(
+					2.5,
+					0.3,
+					1.7,
+					-1,
+					y + 3.5,
+					-1.6,
+					o({ c = "#4A4A50", m = "CorrodedMetal" }, "fine", { col = false })
 				)
+				b.bp:box(0.7, 0.7, 0.08, -1, y + 2.7, -2.45, o({ c = "#6FB8FF", m = "Neon" }, "fine", { col = false }))
+				b.bp:rbox(
+					4.6,
+					0.12,
+					3.6,
+					0.4,
+					y + 3.9,
+					-1,
+					0,
+					0,
+					16,
+					o({ c = "#B8A880", m = "Fabric" }, "detail", { col = false })
+				)
+			elseif kind == "carcass" then
+				-- W23 (pustkowia.md 3.4): a skeleton of a pack animal with shreds of hide, no flesh
+				b.bp:rbox(6, 0.4, 0.4, 0, y + 1.3, 0, 0, 20, 4, o(Kit.bone, "detail", { col = false }))
 				for t = 0, 4 do
 					b.bp:beam(-2 + t, y + 1.4, 0, -2 + t, y + 0.2, 2.2, 0.2, o(Kit.bone, "fine", { col = false }))
+					b.bp:beam(-2 + t, y + 1.4, 0, -2 + t, y + 0.2, -2.2, 0.2, o(Kit.bone, "fine", { col = false }))
+				end
+				Kit.skull(b.bp, 3.6, y + 0.5, 1.2, 1.6, 70)
+				for t = 0, 1 do
+					b.bp:rbox(
+						1.6,
+						0.08,
+						1.2,
+						-1 + t * 2,
+						y + 1.55,
+						0.3,
+						0,
+						t * 40,
+						12,
+						o({ c = "#6A4A32", m = "Fabric" }, "fine", { col = false })
+					)
 				end
 			elseif kind == "bales" then
 				for t = 0, 2 do
@@ -511,6 +542,69 @@ local function queen(env: Env, out: { Build })
 	Kit.life(env.ctx, "drips", r.x, 18, r.z, 20)
 end
 
+-- W23 (pustkowia.md 3.4): on the ledge by the great hole (the start of the trail north) two cult harnesses with the
+-- grey frost petal and a crate of weapons; after everything, without clearings.
+local function harnessLedge(env: Env, out: { Build })
+	local r = env.T.rooms[4]
+	for _, deg in { 0, 8, -8, 14 } do
+		local a = math.rad(deg)
+		local lx, lz = math.cos(a) * Kit.at(env, 50), math.sin(a) * Kit.at(env, 50)
+		local f = env.T.floor(r.x + lx, r.z + lz)
+		if f then
+			local b = Kit.build(env, "CultHarnesses", "traces", r.x + lx, r.z + lz, 90 - deg)
+			b.at.y = f
+			local bp = b.bp
+			for k = -1, 1, 2 do
+				-- straps over a rock, the breast plate with the sign
+				bp:add("ball", 2.4, 1.6, 2, k * 2.2, 0.2, 0, 0, k * 30, 0, o(Kit.rock, "detail", { col = false }))
+				for t = -1, 1 do
+					bp:rbox(
+						0.35,
+						0.1,
+						3,
+						k * 2.2 + t * 0.5,
+						0.9,
+						0,
+						30,
+						0,
+						0,
+						o({ c = "#5A4A3A", m = "Fabric" }, "fine", { col = false })
+					)
+				end
+				bp:box(
+					1.2,
+					1,
+					0.2,
+					k * 2.2,
+					0.8,
+					-1.2,
+					o({ c = "#3A3A40", m = "CorrodedMetal" }, "fine", { col = false })
+				)
+				bp:add(
+					"cyl",
+					0.08,
+					0.8,
+					0.8,
+					k * 2.2,
+					0.8,
+					-1.32,
+					0,
+					90,
+					0,
+					o({ c = "#9A9AA2", m = "SmoothPlastic" }, "fine", { col = false })
+				)
+			end
+			-- the crate of weapons, lid off, hafts sticking out
+			bp:box(2.6, 1.4, 1.6, 0, 0.7, 2, o(Kit.wood, "detail", { col = false }))
+			for t = 0, 3 do
+				bp:rbox(0.2, 2.6, 0.2, -0.9 + t * 0.6, 1.8, 2, 0, 0, -10 + t * 6, o(Kit.wood, "fine", { col = false }))
+			end
+			table.insert(out, b)
+			return
+		end
+	end
+end
+
 function Lair.all(env: Env, out: { Build })
 	maw(env, out)
 	chimneys(env, out)
@@ -518,6 +612,7 @@ function Lair.all(env: Env, out: { Build })
 	roosts(env, out)
 	larder(env, out)
 	queen(env, out)
+	harnessLedge(env, out)
 end
 
 return Lair
