@@ -683,6 +683,29 @@ local function heart(env: Env, out: { Build })
 	for k = -2, 2 do
 		glowBox(a.bp, 0.8, 0.12, 0.8, k * 1.6, ay + 0.08, 3.6, RUNE)
 	end
+	-- W23 secret (pustkowia.md 4.5): the print of a spearhead pressed into the anvil's face, where the Thorn's head
+	-- lay: only its outline glows blue
+	local top = ay + 4.45
+	for _, side in { -1, 1 } do
+		a.bp:rbox(1.5, 0.05, 0.1, -0.5, top, side * 0.28, 0, side * 16, 0, {
+			c = RUNE,
+			m = "Neon",
+			lod = "fine",
+			col = false,
+			q = false,
+			tag = "glow",
+			jitter = 0,
+		})
+	end
+	a.bp:box(
+		1.4,
+		0.05,
+		0.1,
+		0.9,
+		top,
+		0,
+		{ c = RUNE, m = "Neon", lod = "fine", col = false, q = false, tag = "glow", jitter = 0 }
+	)
 	Kit.clear(env, a.at.x, a.at.z, 4)
 	table.insert(out, a)
 	local w = Kit.build(env, "MetalBowl", "forge", Kit.at(env, 110), Kit.at(env, 60), 0)

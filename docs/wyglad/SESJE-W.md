@@ -439,3 +439,5 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Opuszczona Kopalnia (`pustkowia.md` 2.4–2.5): stos skrzyń oszronionego zimnego żelaza z szarym znakiem kultu przy szybie Hali Wyciągu, krasnoludzki kamień pamięci z imionami i runą za barykadą Nadszybia.
 - Leże Wywerny (3.4–3.5): padlina w Spiżarni tylko jako szkielet ze strzępami skóry, skrzynia ze znakiem karawany Brokka pod plandeką na rozbitym wozie (sekret), dwie uprzęże kultu ze znakiem i skrzynia broni na półce przy wielkim otworze Grzęd.
 - Wszystko dopisane na końcu ubioru jaskini, bez stref wolnych (wcześniejsze rekwizyty i spawny bez zmian).
+- Kuźnia Głębin (4.5): świecący na niebiesko zarys grotu Ciernia odciśnięty w kowadle Pierwszego Kowala (sekret).
+- Palenisko Azgora (5.4–5.5): pęknięte krasnoludzkie łańcuchy z niebieskimi runami zwisające z filarów Gardzieli (zerwane pęta Azgora), kamienna tablica strażnika pieca z runą na zachodniej półce (poza kręgiem 75, bez kolizji).

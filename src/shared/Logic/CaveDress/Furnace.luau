@@ -8,7 +8,9 @@
 --     its threshold into the moat, two colossal bellows and chains at its sides, Azgor's horned sign over it,
 --   * four nozzles shaped like horned heads (NE, NW, E, W) pouring lava into the moat, veins of magma running up the
 --     walls towards the dome, embers falling from glowing cracks in the dome,
---   * the unreachable ledges east and west behind the moat: anvils, kneeling dwarves in chains, Azgor's banners. Pure.
+--   * the unreachable ledges east and west behind the moat: anvils, kneeling dwarves in chains, Azgor's banners,
+--   * W23 (pustkowia.md 5.4, 5.5): burst dwarven chains with blue runes hanging from the Maw (Azgor's broken bonds), and
+--     on the west ledge a dwarven stone tablet with a warning and the last furnace warden's name. Pure.
 
 local Kit = require("./Kit")
 
@@ -27,6 +29,7 @@ local IRON = { c = "#3A3A40", m = "CorrodedMetal" }
 local LEATHER = { c = "#4A2E1E", m = "Fabric" }
 local BANNER = { c = "#5A1410", m = "Fabric" }
 local DWARF = { c = "#5A524C", m = "Slate" }
+local RUNE = "#6FB8FF"
 
 local function at(r: number, deg: number): (number, number)
 	local a = math.rad(deg)
@@ -101,6 +104,26 @@ local function maw(env: Env, out: { Build })
 	for _, s in { -1, 1 } do
 		bp:rbox(1.2, 7, 0.3, s * 4, y + 30, -8.6, 0, 0, s * -28, Kit.lavaOpts(AZGOR, 0, "glow"))
 	end
+	-- the burst chains: three on each pillar, hanging short and ragged, a rune-cut link glowing blue on each
+	for _, s in { -1, 1 } do
+		for t = 0, 2 do
+			local cx, cz = s * (12 + (t - 1) * 1.4), -2.8
+			local len = 5 + t * 2.5
+			for k = 0, math.floor(len / 1.2) do
+				local ly = y + 16 - k * 1.2
+				bp:rbox(0.25, 1.1, 0.7, cx, ly, cz, 0, (k % 2) * 90, 0, o(IRON, "fine", { col = false }))
+			end
+			bp:box(0.4, 0.9, 0.9, cx, y + 16 - len * 0.5, cz - 0.1, {
+				c = RUNE,
+				m = "Neon",
+				lod = "fine",
+				col = false,
+				q = false,
+				tag = "glow",
+				jitter = 0,
+			})
+		end
+	end
 	Kit.lifeAt(env.ctx, b, "embers", 0, 2, -8, 8)
 	Kit.lifeAt(env.ctx, b, "smokeColumn", 0, 20, -10, 4)
 	table.insert(out, b)
@@ -160,6 +183,30 @@ local function ledges(env: Env, out: { Build })
 		end
 		b.bp:box(4, 12, 0.2, 10, y + 8, 2, o(BANNER, "detail", { col = false }))
 		b.bp:box(1.2, 2.4, 0.1, 10, y + 9, 1.85, Kit.lavaOpts(AZGOR, 0, "glow"))
+		if deg == 180 then
+			-- the warden's tablet, facing the arena (local -Z), carved lines and the warden's rune
+			b.bp:box(5, 6, 0.8, -12, y + 3, -1, o(DWARF, "detail", { col = false }))
+			for t = 0, 4 do
+				b.bp:box(
+					3.8 - (t % 2) * 0.6,
+					0.15,
+					0.08,
+					-12,
+					y + 1.4 + t * 0.8,
+					-1.44,
+					o(STONE, "fine", { col = false })
+				)
+			end
+			b.bp:box(0.9, 1.2, 0.08, -12, y + 5.4, -1.45, {
+				c = RUNE,
+				m = "Neon",
+				lod = "fine",
+				col = false,
+				q = false,
+				tag = "glow",
+				jitter = 0,
+			})
+		end
 		table.insert(out, b)
 	end
 end
