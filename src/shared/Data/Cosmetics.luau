@@ -67,6 +67,9 @@ export type Obtain = {
 	bossWin: string?,
 	hunt: "shop"?, -- S134k: the Huntmaster's shop (Hunter's Marks, Data/HuntShop)
 	achievement: string?, -- S151: the reward of this achievement (Data/Achievements reward.cosmetic)
+	-- S152: a reward of this season pass (Data/Seasons rewards; free or premium track), never sold, never in the offer
+	-- of the week, kept for good after the season
+	season: string?,
 }
 
 -- S123 looks of the new kinds (all colours hex).
@@ -514,6 +517,110 @@ add("levelup_gatherer", "levelup", 0, "❦", "#8FD18B", {
 add("aura_ancestorfrost", "aura", 0, "❄", "#BFE8FF", {
 	color2 = "#5A8FC9",
 	obtain = { achievement = "worldBoss3" },
+	wiki = false,
+})
+
+-- S152 (docs/DESIGN.md §21b): the rewards of season pass 1 "Season of Frost" (Data/Seasons), never sold (price 0,
+-- obtain.season, never in the offer of the week), kept for good after the season. Cold blues, silver and navy; looks
+-- from the existing fields only. Off the wiki until S152b.
+-- Free track
+add("emote_s1_breath", "emote", 0, "❄", "#CFE3F2", { obtain = { season = "s1" }, wiki = false, emote = "breath" })
+add("dye_s1_glacier", "dye", 0, "◐", "#9FC8E8", {
+	color2 = "#E8F2FA",
+	obtain = { season = "s1" },
+	wiki = false,
+	dye = { main = "#9FC8E8", second = "#E8F2FA" },
+})
+add("frame_s1_rime", "frame", 0, "❅", "#A8C4DC", {
+	color2 = "#EAF4FC",
+	obtain = { season = "s1" },
+	wiki = false,
+	frame = { stroke = "#A8C4DC", stroke2 = "#EAF4FC", thickness = 4, ornament = "❅" },
+})
+add("levelup_s1_hoarfrost", "levelup", 0, "❄", "#BFE3FF", {
+	color2 = "#F4FAFF",
+	obtain = { season = "s1" },
+	wiki = false,
+	levelup = { style = "frost", color = "#BFE3FF", color2 = "#F4FAFF" },
+})
+add(
+	"title_s1_veteran",
+	"title",
+	0,
+	"✎",
+	"#B8D4EC",
+	{ obtain = { season = "s1" }, wiki = false, title = "s1_veteran" }
+)
+-- Premium track
+add("frame_s1_hoarfrost", "frame", 0, "✧", "#1E2A4A", {
+	color2 = "#C9D8E8",
+	obtain = { season = "s1" },
+	wiki = false,
+	frame = { stroke = "#1E2A4A", stroke2 = "#C9D8E8", thickness = 5, ornament = "✧", glow = true },
+})
+add("emote_s1_brushfrost", "emote", 0, "❅", "#C9D8E8", {
+	obtain = { season = "s1" },
+	wiki = false,
+	emote = "brushfrost",
+})
+add("chatframe_s1_rime", "chatframe", 0, "❆", "#14223A", {
+	color2 = "#D8E8F8",
+	obtain = { season = "s1" },
+	wiki = false,
+	chat = { left = "❆", right = "❆", color = "#A8C8E8", bubble = "#14223A", bubbleText = "#D8E8F8" },
+})
+add("dye_s1_midnight", "dye", 0, "◐", "#1A2440", {
+	color2 = "#B8C4D4",
+	obtain = { season = "s1" },
+	wiki = false,
+	dye = { main = "#1A2440", second = "#B8C4D4" },
+})
+add("trail_s1_snowdrift", "trail", 0, "≋", "#EAF4FF", {
+	color2 = "#8FB8E0",
+	obtain = { season = "s1" },
+	wiki = false,
+})
+add("title_s1_frostwarden", "title", 0, "✎", "#8FC8F0", {
+	obtain = { season = "s1" },
+	wiki = false,
+	title = "s1_frostwarden",
+})
+add("outfit_s1_frostwarden", "outfit", 0, "❄", "#1E2A4A", {
+	color2 = "#C9D8E8",
+	parts = { "pauldrons", "cape", "hood" },
+	obtain = { season = "s1" },
+	wiki = false,
+})
+add("weapon_s1_rime", "weapon", 0, "❅", "#BFE3FF", { color2 = "#EAF6FF", obtain = { season = "s1" }, wiki = false })
+add("mountskin_s1_frost", "mountskin", 0, "❄", "#D8E0E8", {
+	color2 = "#1E2A4A",
+	obtain = { season = "s1" },
+	wiki = false,
+	skin = {
+		colors = { base = "#D8E0E8", accent = "#B8C4D4", detail = "#2A3040", cloth = "#1E2A4A", trim = "#C9D8E8" },
+		parts = { "caparison", "plume" },
+	},
+})
+add("pet_s1_snowfox", "pet", 0, "🦊", "#EEF2F6", {
+	color2 = "#9FB8D0",
+	flies = false,
+	obtain = { season = "s1" },
+	wiki = false,
+	look = {
+		plan = "canine",
+		build = { chibi = 1, snout = 0.9, ears = 1.3, tail = 2.2, mane = 0 },
+		colors = { base = "#EEF2F6", accent = "#C9D8E8", detail = "#2A3040" },
+	},
+})
+add("levelup_s1_aurora", "levelup", 0, "✺", "#8FE0D0", {
+	color2 = "#A8B8FF",
+	obtain = { season = "s1" },
+	wiki = false,
+	levelup = { style = "rings", color = "#8FE0D0", color2 = "#A8B8FF" },
+})
+add("aura_s1_winterheart", "aura", 0, "❄", "#CFE8FF", {
+	color2 = "#4A6FB0",
+	obtain = { season = "s1" },
 	wiki = false,
 })
 

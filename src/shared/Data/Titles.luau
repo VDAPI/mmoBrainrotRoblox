@@ -258,6 +258,20 @@ local list: { TitleDef } = {
 		color = "#FF9F1C",
 		seasonArg = true,
 	},
+	-- S152 (docs/DESIGN.md §21b): season pass 1 titles, cosmetics with obtain.season (the free track's tier 40 and a
+	-- premium tier); off the wiki with their cosmetics until S152b
+	{
+		id = "s1_veteran",
+		nameKey = "title.s1_veteran",
+		req = { kind = "cosmetic", id = "title_s1_veteran" },
+		color = "#B8D4EC",
+	},
+	{
+		id = "s1_frostwarden",
+		nameKey = "title.s1_frostwarden",
+		req = { kind = "cosmetic", id = "title_s1_frostwarden" },
+		color = "#8FC8F0",
+	},
 	-- S151 (docs/DESIGN.md §20b): achievement titles (Data/Achievements reward.title); off the wiki until S151b
 	{
 		id = "ach_butcher",

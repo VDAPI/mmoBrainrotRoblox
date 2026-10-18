@@ -61,6 +61,7 @@ local CharacterService: any
 local ZoneService: any
 local MountService: any
 local CosmeticService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 local Registry: any
 
 local rng = Rng.new()
@@ -274,6 +275,7 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 	PlayerStateService.Set(player, { "character", "quests", "side", "done", questId }, true)
 	if first then
 		QuestEvents.fire(player, "quest", { kind = "side", questId = questId }) -- S151: achievements
+		SeasonService.Add(player, "side") -- S152: the first hand-in only (an admin reset gives nothing again)
 	end
 	LevelService.GiveExp(player, quest.reward.exp, "quest")
 	PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
@@ -502,6 +504,7 @@ function SideQuestService.AnchorPosition(anchorId: string): Vector3?
 end
 
 function SideQuestService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	InventoryService = registry.Get("InventoryService")
 	LevelService = registry.Get("LevelService")

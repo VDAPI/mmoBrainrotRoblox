@@ -18,6 +18,7 @@ local Premium = require(Shared.Logic.Premium)
 local Products = require(Shared.Data.Products)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
+local Seasons = require(Shared.Data.Seasons)
 local Time = require(Shared.Logic.Time)
 local Vip = require(Shared.Logic.Vip)
 local WeeklyOffer = require(Shared.Logic.WeeklyOffer)
@@ -42,6 +43,7 @@ local LureService = Context.services.LureService
 local AutoGrindService = Context.services.AutoGrindService -- S134d: /autogrind
 local PremiumShopService = Context.services.PremiumShopService -- S123: /pack
 local ArenaService = Context.services.ArenaService -- S131: /weekreset tokens
+local SeasonService = Context.services.SeasonService -- S152: /seasonpass
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -672,6 +674,67 @@ commands.loginnext = function(player, args)
 			status = statusText(LoginReward.status(saved, LoginRewardService.Today())),
 		})
 	end)
+end
+
+-- S152: the caller's season pass. info | points <n> | tier <n> | premium on|off | reset | week <n> (Studio only).
+commands.seasonpass = function(player, args)
+	local action, value = args[1], args[2]
+	local n = tonumber(value)
+	if action == "week" then
+		local id = SeasonService.SetWeek(math.floor(n or 0))
+		if id == nil then
+			reply(player, "admin.seasonpass.studio")
+		else
+			reply(player, "admin.seasonpass.week", { week = math.floor(n or 0), season = id })
+		end
+		return
+	end
+	if PlayerStateService.Get(player, { "account" }) == nil then
+		reply(player, "admin.usage.seasonpass")
+		return
+	end
+	if action == "info" then
+		local info = SeasonService.Info(player)
+		if not info then
+			reply(player, "admin.seasonpass.none", { next = SeasonService.NextId() })
+			return
+		end
+		reply(player, "admin.seasonpass.info", {
+			season = info.season,
+			week = info.week,
+			points = info.points,
+			tier = info.tier,
+			premium = tostring(info.premium),
+			cap = info.cap,
+			kill = info.kill,
+			line = info.line,
+			claimable = info.claimable,
+		})
+	elseif action == "points" or action == "tier" then
+		if n == nil or n < 0 then
+			reply(player, "admin.usage.seasonpass")
+			return
+		end
+		local points = if action == "tier" then math.floor(n) * Seasons.TIER_POINTS else math.floor(n)
+		if not SeasonService.SetPoints(player, points) then
+			reply(player, "admin.seasonpass.none", { next = SeasonService.NextId() })
+			return
+		end
+		local info = SeasonService.Info(player)
+		reply(player, "admin.seasonpass.set", { points = info and info.points or 0, tier = info and info.tier or 0 })
+	elseif action == "premium" and (value == "on" or value == "off") then
+		if not SeasonService.SetPremium(player, value == "on") then
+			reply(player, "admin.seasonpass.none", { next = SeasonService.NextId() })
+			return
+		end
+		reply(player, "admin.seasonpass.premium", { on = value })
+	elseif action == "reset" then
+		SeasonService.Reset(player)
+		local info = SeasonService.Info(player)
+		reply(player, "admin.seasonpass.reset", { season = if info then info.season else "-" })
+	else
+		reply(player, "admin.usage.seasonpass")
+	end
 end
 
 return commands

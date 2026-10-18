@@ -548,6 +548,41 @@ T.describe("Balance: world boss (S149)", function()
 	end)
 end)
 
+-- S152 (E2): the season pass pace (Balance.targetsS152): 1 h a day finishes 30-40 tiers, 2 h a day the last tier in
+-- week 5-7, 4 h a day never before week 5 (the growing cap), 2 h a day from week 5 at least 30 tiers (the catch-up),
+-- monsters at most half of the points at 2 h a day; every row without `report` asserted, the cap rows never in
+-- Balance.S152_REPORT (docs/sessions S152 rule 10).
+T.describe("Balance: season pass (S152)", function()
+	local rows = B.targetsS152()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S152, docs/sessions S152 E2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S152 targets (printed); the cap rows are never in Balance.S152_REPORT", function()
+		printReport("S152", rows, 20)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+			if row.report then
+				print(`  raport: {row.id} {fmt(row.value)} ({row.report})`)
+			end
+		end
+		for _, L in B.S152.levels do
+			local id = `S152.cap.L{L}`
+			T.expect({ id, ids[id] == true, B.S152_REPORT[id] }).toEqual({ id, true, nil })
+		end
+		for key in B.S152_REPORT do
+			T.expect({ key, ids[key] == true }).toEqual({ key, true })
+		end
+	end)
+end)
+
 -- S134c (E2): the harder Invasion (Balance.targetsS134c, Balance.invasion): 3 players end in time and survive, 5 are
 -- faster than 3 and 3 than 2, solo on equal gear loses or barely makes it, solo with an edge wins, the commander's big
 -- blows in the S134 band; every row without `report` asserted (Balance.S134C_REPORT prints the rest with the reason).

@@ -428,6 +428,20 @@ export type VipState = {
 	months: { [string]: boolean },
 }
 
+-- S152 (docs/DESIGN.md §21b): the season pass of the account (Logic/Season): the season id ("" = none), its points,
+-- the UTC day of `dayKill` (monster points that day), the premium track bought, the claimed tiers of both tracks
+-- (tostring(tier) -> true: a data store cannot hold a sparse array) and the seasons whose unclaimed rewards were mailed.
+export type SeasonState = {
+	id: string,
+	points: number,
+	day: number,
+	dayKill: number,
+	premium: boolean,
+	free: { [string]: boolean },
+	prem: { [string]: boolean },
+	mailed: { [string]: boolean },
+}
+
 -- S121: a saved look: the equipped cosmetic per kind (without "pet") and the pet. S132: `class` = the class it was
 -- saved on (the class outfit is in equipped.outfit; Logic/Premium.applySet).
 export type Outfit = { equipped: { [string]: string }, pet: string?, class: string? }
@@ -477,6 +491,9 @@ export type AccountData = {
 	social: SocialData, -- S133: friends and ignored players (Logic/Social; reconcile adds it, no migration)
 	legendRework: boolean, -- S134g: Legendary / Mythic items got skill effects (migration 10); the toast shows once
 	ach: AchBranch, -- S151: account achievement counters, sets, done achievements and paid shards (Logic/Achievements)
+	season: SeasonState, -- S152: the season pass (Logic/Season; reconcile adds it, no migration)
+	-- S152: the previous season during its grace days (unclaimed rewards; mailed once after them), nil otherwise
+	seasonPrev: SeasonState?,
 }
 
 -- Character summary shown on the selection screen.

@@ -13484,4 +13484,199 @@ function Balance.targetsS134k(): { TargetRow }
 	return rows
 end
 
+-- S152: the season pass ---------------------------------------------------------------------------------------------
+
+-- Pace of the season pass (docs/sessions S152 E; test data, never game numbers). An hour of play is a model of what a
+-- player does in it (DECYZJE S152): `grind` of it on ordinary monsters of the level's ground (Balance.paceAt, mean of
+-- the classes), `caves` on cave Elites (Balance.elitesPerHour), Elites II, story / side / contract hand-ins below
+-- level 100, world events (one in WORLD_EVENT_HOURS), dungeon boss wins (from the first boss, at most
+-- Config.Boss.dailyRuns a day) and the world boss (one occurrence in 3 h, from its minLevel); a day with at least
+-- `dailyMinHours` of play collects Quests.Daily.PER_DAY daily contracts, a week Quests.Weekly.PER_WEEK weekly ones (+ the
+-- boss contract from the first boss), `bloodMoonPerWeek` Blood Moons and `achievementsPerWeek` achievements. Every
+-- point goes through Logic/Season.add (the daily monster limit, the growing cap, the catch-up), monsters first in a day.
+Balance.S152 = {
+	levels = { 20, 45, 70, 100 },
+	hours = { 1, 2, 3, 4 },
+	starts = { 1, 3, 5 },
+	reportLevel = 70, -- the hours x start table of the report
+	grind = 0.7,
+	caves = 0.1,
+	elite2PerHour = 0.5,
+	quests = { quest = 0.5, side = 0.5, contract = 0.5 }, -- hand-ins per hour below level 100
+	bossPerHour = 0.5,
+	worldBossPerHour = 1 / 3,
+	bloodMoonPerWeek = 1,
+	arenaPerHour = 0,
+	achievementsPerWeek = 3,
+	dailyMinHours = 1,
+	-- targets (E2)
+	casual = { 30, 40 }, -- 1 h a day from week 1: tiers at the end
+	regularWeek = { 5, 7 }, -- 2 h a day from week 1: the week the last tier is reached
+	capWeek = 5, -- 4 h a day: never the last tier before this week (the growing cap; no report mode)
+	late = 30, -- 2 h a day from week 5: tiers at the end, at least (the catch-up)
+	kills = 0.5, -- 2 h a day: the share of monster points (kill, elite, elite2), at most
+}
+
+-- S152: rows of targetsS152 out of reach of the levers of Data/Seasons (printed with the reason; DECYZJE S152).
+Balance.S152_REPORT = {} :: { [string]: string }
+
+export type SeasonPace = {
+	points: { number }, -- the account's points at the end of each week of the season
+	tiers: { number }, -- the tier at the end of each week
+	finishWeek: number?, -- the week the last tier is reached (nil: never)
+	bySource: { [string]: number }, -- points gained per source over the season
+	monsterShare: number, -- kill + elite + elite2 points / all points
+}
+
+local seasonRates: { [number]: { [string]: number } } = {}
+-- Events per hour of play at `level` (kills and cave Elites as the mean of the classes).
+local function seasonHourly(level: number): { [string]: number }
+	local cached = seasonRates[level]
+	if cached then
+		return cached
+	end
+	local S = Balance.S152
+	local kills, elites = 0, 0
+	for _, c in Balance.CLASSES do
+		kills += 3600 / Balance.paceAt(c, level).secondsPerKill
+		elites += (Balance.elitesPerHour(c, level))
+	end
+	kills /= #Balance.CLASSES
+	elites /= #Balance.CLASSES
+	local below100 = level < Config.MaxLevel
+	local hasBoss = QuestLogic.bossContractFor(level) ~= nil
+	local worldBoss = Bosses.world[1] :: any
+	local rates: { [string]: number } = {
+		kill = kills * S.grind,
+		elite = elites * S.caves,
+		elite2 = S.elite2PerHour,
+		quest = if below100 then S.quests.quest else 0,
+		side = if below100 then S.quests.side else 0,
+		contract = if level <= Quests.Contracts.MAX_LEVEL then S.quests.contract else 0,
+		worldEvent = 1 / Balance.WORLD_EVENT_HOURS,
+		boss = if hasBoss then S.bossPerHour else 0,
+		worldBoss = if worldBoss and level >= (worldBoss.minLevel or 0) then S.worldBossPerHour else 0,
+		arena = S.arenaPerHour,
+	}
+	seasonRates[level] = rates
+	return rates
+end
+
+-- The order of a day: monsters first (they come all day), then the rest.
+local SEASON_DAY_ORDER =
+	{ "kill", "elite", "elite2", "daily", "quest", "side", "contract", "worldEvent", "boss", "worldBoss", "arena" }
+local SEASON_WEEK_ORDER = { "weekly", "bloodMoon", "achievement" }
+
+-- A season played `hoursPerDay` every day from the first day of `startWeek` at `level` (season 1 of Data/Seasons).
+function Balance.seasonPace(hoursPerDay: number, startWeek: number, level: number): SeasonPace
+	local S = Balance.S152
+	local Season = (require :: any)("../src/shared/Logic/Season")
+	local Seasons = (require :: any)("../src/shared/Data/Seasons")
+	local def = Seasons.list[1]
+	local rates = seasonHourly(level)
+	local state = Season.fresh(def.id)
+	local acc: { [string]: number } = {}
+	local bySource: { [string]: number } = {}
+	local weekly = Quests.Weekly.PER_WEEK + (if QuestLogic.bossContractFor(level) ~= nil then 1 else 0)
+	local perWeek: { [string]: number } =
+		{ weekly = weekly, bloodMoon = S.bloodMoonPerWeek, achievement = S.achievementsPerWeek }
+	local function give(source: string, amount: number, now: number)
+		acc[source] = (acc[source] or 0) + amount
+		local n = math.floor(acc[source] + 1e-9)
+		if n >= 1 then
+			acc[source] -= n
+			local gained
+			state, gained = Season.add(state, def, source, now, n)
+			bySource[source] = (bySource[source] or 0) + gained
+		end
+	end
+	local points: { number } = {}
+	local tiers: { number } = {}
+	local finishWeek: number? = nil
+	for week = 1, def.weeks do
+		if week >= startWeek then
+			for day = 1, 7 do
+				local now = def.start + ((week - 1) * 7 + day - 1) * 86400 + 12 * 3600
+				for _, source in SEASON_DAY_ORDER do
+					local amount = if source == "daily"
+						then (if hoursPerDay >= S.dailyMinHours then Quests.Daily.PER_DAY else 0)
+						elseif source == "boss" then math.min(Config.Boss.dailyRuns, rates.boss * hoursPerDay)
+						else rates[source] * hoursPerDay
+					if amount > 0 then
+						give(source, amount, now)
+					end
+				end
+				for _, source in SEASON_WEEK_ORDER do
+					give(source, perWeek[source] / 7, now)
+				end
+				if finishWeek == nil and Season.tierOf(state.points, def) >= def.tiers then
+					finishWeek = week
+				end
+			end
+		end
+		table.insert(points, state.points)
+		table.insert(tiers, Season.tierOf(state.points, def))
+	end
+	local monsters = (bySource.kill or 0) + (bySource.elite or 0) + (bySource.elite2 or 0)
+	return {
+		points = points,
+		tiers = tiers,
+		finishWeek = finishWeek,
+		bySource = bySource,
+		monsterShare = monsters / math.max(1, state.points),
+	}
+end
+
+-- S152 (E2): the season pass targets (ids "S152.<row>.L<level>"); balance.spec ("Balance: season pass (S152)") asserts
+-- every row without `report`. Never in report mode: the cap rows.
+function Balance.targetsS152(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S152
+	local Seasons = (require :: any)("../src/shared/Data/Seasons")
+	local weeks = Seasons.list[1].weeks
+	local never = weeks + 1 -- the "week" of a pass never finished
+	for _, L in S.levels do
+		local casual = Balance.seasonPace(1, 1, L)
+		local regular = Balance.seasonPace(2, 1, L)
+		local cap = Balance.seasonPace(4, 1, L)
+		local late = Balance.seasonPace(2, 5, L)
+		local function add(id: string, group: string, label: string, value: number, low: number?, high: number?)
+			target(rows, `S152.{id}.L{L}`, group, label, value, low, high, nil, L)
+		end
+		add(
+			"casual",
+			"pace",
+			`1 h dziennie od tygodnia 1, L{L}: stopień na koniec`,
+			casual.tiers[weeks],
+			S.casual[1],
+			S.casual[2]
+		)
+		add(
+			"regular",
+			"pace",
+			`2 h dziennie od tygodnia 1, L{L}: tydzień ukończenia`,
+			regular.finishWeek or never,
+			S.regularWeek[1],
+			S.regularWeek[2]
+		)
+		add(
+			"cap",
+			"cap",
+			`4 h dziennie od tygodnia 1, L{L}: tydzień ukończenia`,
+			cap.finishWeek or never,
+			S.capWeek,
+			nil
+		)
+		add("late", "catchup", `2 h dziennie od tygodnia 5, L{L}: stopień na koniec`, late.tiers[weeks], S.late, nil)
+		add("kills", "sources", `2 h dziennie, L{L}: udział punktów z potworów`, regular.monsterShare, nil, S.kills)
+	end
+	for _, row in rows do
+		local why = Balance.S152_REPORT[row.id]
+		if why then
+			row.report = `S152: {why}`
+		end
+	end
+	return rows
+end
+
 return Balance

@@ -1256,6 +1256,41 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   aktywacja). Płaszcz Przynęty nie działa też w drabince turnieju. Admin nadaje przepustki i VIP na stałe przez
   `account.grantedPasses` (`/premium`, `/vip grant`).
 
+## 21b. Przepustka sezonu (S152)
+
+- **Sezon** trwa 8 tygodni od poniedziałku 00:00 UTC (sezon 1 „Sezon Szronu” od 2026-11-02) i ma 40 stopni po 1000
+  punktów. Po sezonie przerwa do następnego wpisu w `Data/Seasons` („Następny sezon wkrótce”); nowy sezon = nowe
+  kosmetyki (decyzja właściciela).
+- **Punkty sezonu tylko za zwykłą grę** (konto, wszystkie postacie razem): potwór 2, Elita 10, Elita II 40, boss lochu
+  150, boss świata 200, zadanie fabuły 60, poboczne 40, zlecenie łowieckie 40, zlecenie dzienne 80, tygodniowe (i na
+  bossa) 250, wydarzenie świata 120, Krwawy Księżyc 150, mecz areny 20, osiągnięcie 50. Liczy się też postać na 100.
+  poziomie i zadania bez EXP. Nic kupionego nie daje punktów ani stopni.
+- **Limity:** punkty z potworów (zwykłe i Elity) najwyżej 400 na dzień UTC; limit narastający: do końca tygodnia `w`
+  sezonu konto może mieć najwyżej 6500 × `w` punktów (ponad limit przepadają). Kto nie grał tydzień, ma ten tydzień do
+  nadrobienia później; nikt nie skończy przepustki przed 7. tygodniem.
+- **Nadrabianie:** poniżej linii 60% stopni proporcjonalnie do czasu sezonu każde źródło daje ×1,5 (do linii).
+- **Ścieżki:** darmowa (każdy gracz) z nagrodą co 2 stopnie, premium (kupiona raz na sezon za 800 Smoczych Odłamków,
+  do ostatniej sekundy sezonu) z nagrodą na każdym stopniu; po zakupie odbiera się wstecz wszystkie osiągnięte stopnie
+  premium. Nagrody odbiera się w oknie przez sezon i 14 dni po nim, potem nieodebrane przychodzą pocztą raz.
+- **Co wolno w nagrodach** (`tests/paywall.spec`): kosmetyki (`obtain.season`, nigdy w sprzedaży ani w ofercie
+  tygodnia, zostają na zawsze), związane Kamienie Powrotu i czas Płaszcza Przynęty (jak `lure_1h`). Nigdy EXP, złoto,
+  Smocze Odłamki, materiały, esencja, błogosławieństwa, mikstury ani przedmioty z premiami. Rankingi i arena nie czytają
+  przepustki.
+- **Przepustka a VIP** (dwa niezależne produkty; VIP nie daje przepustki ani szybszych punktów):
+
+| | VIP (S121) | Przepustka sezonu (S152) |
+|---|---|---|
+| Co to jest | subskrypcja Roblox co miesiąc | jednorazowy zakup na jeden sezon (8 tygodni) |
+| Za co | Robux (subskrypcja) | Smocze Odłamki, raz na sezon na konto |
+| Co daje | stałe udogodnienia, dopóki płacisz (odłamki dziennie, darmowy powrót i odrodzenie, kosmetyk miesiąca, aukcja) | nic samo z siebie: odblokowuje drugą ścieżkę nagród do wygrania grą |
+| Zależy od gry | nie | tak (bez punktów nie ma stopni ani nagród) |
+| Po końcu | korzyści gasną z subskrypcją | zdobyte kosmetyki zostają; nowy sezon = nowa przepustka |
+| Ścieżka darmowa | — | każdy gracz, bez płacenia |
+
+- **Tempo (model `Balance.seasonPace`):** 1 h dziennie kończy przepustkę w 8. tygodniu, 2 h dziennie w 7. (limit),
+  start w 5. tygodniu przy 2 h dziennie daje ok. 35 stopni; potwory to ok. 27% punktów.
+- Okno przepustki, kropka na HUD, karta w sklepie i strona wiki: S152b.
+
 ## 22. Kosmetyki i pety
 
 - Pety chodzą (albo latają) za graczem, nie dają bonusów. Wygląd z tego samego generatora co potwory, w wersji „chibi” (duża głowa, duże oczy, krótkie nogi, do 16 części); to, czy pet lata, jest w danych (`flies`: sowa, smoczek, ognik), latające machają skrzydłami. Prawdziwy model można podmienić (`docs/MODELE.md`, `docs/ASSETS.md`). Kosmetyki: strój (S132: podmienia strój klasy, wspólny albo klasowy; w trybie awatara nakłada się na awatar), aura, ślad, efekt broni, wygląd wierzchowca (S97, rodzaj `mountskin`: jeden na konto, działa na każdym wierzchowcu). Garderoba w menu.

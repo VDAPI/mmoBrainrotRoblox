@@ -103,6 +103,7 @@ local AnnounceService: any
 local WorldEventService: any
 local FightLogService: any
 local PvpService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 
 local rng = Rng.new()
 local current: Fight? = nil
@@ -415,6 +416,7 @@ local function rewardAll(f: Fight): (number, number, { [Player]: { any } })
 			drops[player] = result
 			-- S151: a rewarded world boss fight (achievements)
 			QuestEvents.fire(player, "worldboss", { occId = f.occ.id, bossId = WorldBoss.def().id })
+			SeasonService.Add(player, "worldBoss") -- S152: a rewarded fight
 		else
 			log:error("world boss reward for %s failed: %s", player.Name, tostring(result))
 		end
@@ -840,6 +842,7 @@ function WorldBossService.Current(): Fight?
 end
 
 function WorldBossService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	ZoneService = registry.Get("ZoneService")

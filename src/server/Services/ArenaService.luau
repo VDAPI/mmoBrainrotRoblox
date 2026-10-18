@@ -126,6 +126,7 @@ local CosmeticService: any
 local InventoryService: any
 local NpcService: any
 local TitleService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 
 type Queued = { ticket: ArenaRules.Ticket, source: ArenaTypes.PairSource }
 type Offer = {
@@ -739,6 +740,9 @@ local function applyFor(
 	-- the daily and weekly duel objectives count ranked matches too (DECYZJE S126)
 	-- S151: `arena` = a ranked match (achievements count it as an arena win, not a duel)
 	QuestEvents.fire(player, "duel", { won = score >= 1, arena = true })
+	if result.reason ~= "aborted" then
+		SeasonService.Add(player, "arena") -- S152: a played match (win or not), never an aborted one
+	end
 	local delta = if info.delta > 0 then `+{info.delta}` else tostring(info.delta)
 	local outcome: "win" | "loss" | "draw" = if score >= 1 then "win" elseif score <= 0 then "loss" else "draw"
 	if spec.origin == "tournament" then
@@ -1889,6 +1893,7 @@ end
 -- Lifecycle -------------------------------------------------------------------------------------------------------------
 
 function ArenaService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	ResourceService = registry.Get("ResourceService")

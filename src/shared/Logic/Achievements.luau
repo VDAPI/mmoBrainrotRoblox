@@ -20,6 +20,7 @@ local Config = require("../Config")
 local Cosmetics = require("../Data/Cosmetics")
 local Maps = require("../Data/Maps")
 local Quests = require("../Data/Quests")
+local Seasons = require("../Data/Seasons")
 
 type AchDef = AchData.AchDef
 
@@ -434,10 +435,14 @@ local function worldBossId(): string
 end
 
 -- A cosmetic earned in the game (earnedCosmetics): it has an obtain, and that obtain is not a Robux source (the VIP
--- cosmetic of the month, a starter pack).
+-- cosmetic of the month, a starter pack). S152: a season pass cosmetic counts on the free track only (the premium
+-- track is bought).
 function Achievements.earnedInGame(def: Cosmetics.Def?): boolean
 	local obtain = def and def.obtain
-	return obtain ~= nil and obtain.vipMonth == nil and obtain.pack == nil
+	if obtain == nil or obtain.vipMonth ~= nil or obtain.pack ~= nil then
+		return false
+	end
+	return obtain.season == nil or Seasons.trackOf((def :: Cosmetics.Def).id) == "free"
 end
 
 -- QuestEvents kinds (and the kill / level signals, mapped onto "kill" / "level" by the server) -> counter changes.

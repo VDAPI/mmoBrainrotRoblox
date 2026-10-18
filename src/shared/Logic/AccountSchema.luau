@@ -110,6 +110,9 @@ function AccountSchema.accountTemplate(): AccountData
 		-- S151: account achievement counters, sets, done achievements and paid shards (Logic/Achievements); no migration
 		-- (reconcile), old progress is counted by Achievements.backfill on every entry
 		ach = { c = {}, s = {}, done = {}, paid = {} },
+		-- S152: the season pass (Logic/Season; read through Season.sanitize); no migration (reconcile). seasonPrev (the
+		-- previous season during its grace days) is optional and has no default.
+		season = { id = "", points = 0, day = 0, dayKill = 0, premium = false, free = {}, prem = {}, mailed = {} },
 	}
 end
 

@@ -5753,3 +5753,56 @@
   tym koncie”. Osiągnięcie konta: kwota, gdy zdobyte. Postać opłacona przed S151b (bez `paidHere`) też widzi „już odebrane”.
 - **S151b** Telefon: „Zobacz” w toaście ma `MinTouch`, wiersz osiągnięcia w trackerze `RowHeight` (PC bez zmian: 32 i 40).
   „Zobacz” / klik w trackerze na już wybranym osiągnięciu otwiera arkusz ponownie (fokus przez `nil`).
+- **S152** VIP i przepustka sezonu to dwa niezależne produkty: VIP (subskrypcja Roblox, S121) daje stałe udogodnienia,
+  przepustka (raz na sezon za Smocze Odłamki) tylko odblokowuje drugą ścieżkę nagród zdobywanych grą. VIP nie
+  przyspiesza punktów i nie daje premium przepustki; przepustka nie daje odłamków, stopni nie da się kupić.
+- **S152** Przepustka premium za Smocze Odłamki (`Products.seasonPass = { key = "season_pass", price = 800 }`, poza
+  `SHOP`), bez własnego produktu Robux: jeden kanał płatności (paczki odłamków), w Creator Hub nic nowego. 800 ≈ paczka
+  550 + reszta; mieści się w przeglądzie cen S131 (≤ największa paczka), wiersz w `docs/SKLEP-ID.md`.
+- **S152** Punkty jawnymi wywołaniami `SeasonService.Add(player, źródło)` w serwisach, które znają fakt (QuestService:
+  fabuła, dzienne, tygodniowe, zlecenie na bossa = `weekly`; SideQuestService: pierwsze oddanie; ContractService;
+  DungeonService; WorldEventService; WorldBossService; BloodMoonService: opłacony udział; ArenaService: mecz rozegrany,
+  nie przerwany; AchievementService: zdobyte w grze, bez zaliczeń dawnych postępów przy wejściu) i z sygnału
+  `CombatService.MonsterKilled` (zwykły / Elita / Elita II, tylko zaliczeni; bossowie lochu i przyzwani nie), nie z EXP:
+  postać na 100. i zadania bez EXP też liczą. Serwisy biorą `SeasonService` przez `registry.Get` bez `Deps`.
+- **S152** Liczby tylko w `Data/Seasons` (`POINTS`, `TIER_POINTS = 1000` na każdy stopień, `LIMITS`, `CATCHUP`,
+  `GRACE_DAYS`), w księdze balansu bez list sezonów (`omit SEASONS`). Startowe liczby z planu sesji zostały: model mieści
+  wszystkie pasma E2 (1 h dziennie kończy 40 stopni w 8. tygodniu, 2–4 h w 7., start w 5. tygodniu 35–36 stopni,
+  potwory 27% punktów przy 2 h).
+- **S152** Limit narastający (`weekCap × tydzień sezonu`) jest nadrabianiem; mnożnik ×1,5 pod linią nadrabiania liczoną
+  w sposób ciągły (`behind × stopnie × upłynięta część sezonu`, nie skokami tygodni: na starcie sezonu nikt nie jest
+  „w tyle”), dopłata tylko do linii. Limit potworów (zwykłe + Elity, bez Elit II) 400 pkt na dzień UTC, po nadrabianiu.
+  Punkty ponad limit przepadają (toast raz na tydzień na serwerze).
+- **S152** Model tempa: godzina gry = 70% czasu na zwykłych potworach (`Balance.paceAt`), 10% na Elitach jaskiń, 0,5
+  Elity II, po 0,5 oddania fabuły / pobocznego / zlecenia (stała zamiast budżetu questów, poniżej 100. poziomu),
+  wydarzenie co 2 h, 0,5 wygranej z bossem lochu, boss świata co 3 h (od 80.), dzienne zlecenia od 1 h gry, tygodniowe
+  + zlecenie na bossa, 1 Krwawy Księżyc i 3 osiągnięcia na tydzień; potwory pierwsze w dniu (udział potworów to górna
+  granica).
+- **S152** Zakup premium do ostatniej sekundy sezonu; nagrody premium osiągniętych stopni odbiera się wstecz. Odbiór
+  przez cały sezon i 14 dni po nim (`Season.claimUntil`), potem nieodebrane (darmowe i premium, jeśli kupiona) idą
+  pocztą raz (klucz `once` = `season_<id>_<userId>`, `mailed[id]` w stanie konta). Poczta niesie kosmetyki i przedmioty;
+  czas Płaszcza Przynęty trafia od razu na konto (list go nie umie). Przedmioty łączone po id (`Season.pack`), po
+  najwyżej `maxItemsPerParcel` stosów na list; list k > 1 ma klucz `season_<id>_<userId>_<k>`.
+- **S152** `account.seasonPrev` = jeden poprzedni sezon w okresie łaski (pole opcjonalne, bez szablonu). Gdy kończy się
+  kolejny sezon, a starszy jeszcze czeka na pocztę, najpierw idzie poczta starszego, potem przejście (zawsze już po
+  jego okresie łaski).
+- **S152** Mapy odebranych stopni z kluczami tekstowymi (`tostring(tier)`), nie liczbowymi: magazyn danych Roblox i
+  replikacja nie przyjmują tablic z dziurami. `Season.sanitize` przyjmuje też klucze liczbowe.
+- **S152** Odbiór: `SeasonClaim(tier, tor, idSezonu?)` (bez id = trwający, z id = poprzedni w okresie łaski) i
+  `SeasonClaimAll` (oba sezony); najpierw zapis odbioru, potem nagroda. Kosmetyk posiadany = nic, nagroda i tak odebrana.
+  Kamienie Powrotu związane i niesprzedawalne (`bound`, `ns`, łączone po id), nadmiar pocztą (`Season.pack`, listy po
+  limicie poczty). Odbiór wymaga postaci w grze.
+- **S152** Nagrody sezonu 1: ścieżka darmowa co 2 stopnie (5 kosmetyków: emotka, barwnik, ramka, efekt awansu, tytuł
+  „Weteran Sezonu Szronu” na 40.), premium na każdym stopniu (12 kosmetyków, na 40. aura „Serce Zimy”, tytuł „Strażnik
+  Szronu” na 17.); reszta: 3 / 5 Kamieni Powrotu i 1 h Płaszcza na zmianę. Tytuł weterana na darmowej 40. zamiast
+  pary aura + tytuł na premium 40. (nagroda stopnia to jedna rzecz).
+- **S152** Kosmetyki sezonu: `obtain.season`, cena 0, nigdy w ofercie tygodnia ani w sklepie, zostają na zawsze; czy
+  wrócą kiedyś do sprzedaży, zdecyduje właściciel. Do licznika osiągnięć „kosmetyki zdobyte w grze” wchodzi tylko
+  ścieżka darmowa (`Seasons.trackOf`). Na wiki ukryte przez `wiki = false` (jak S151) do S152b; garderoba: „Przepustka
+  sezonu: {sezon}” (`wardrobe.obtain.season`, wzór kluczy `wardrobe.obtain.*`).
+- **S152** Nowy sezon = nowy wpis w `Data/Seasons.SEASONS` z własnymi kosmetykami (decyzja właściciela); sezonu 2 nie
+  ma, po sezonie 1 „Następny sezon wkrótce”.
+- **S152** Admin `/seasonpass` (`info | points | tier | premium on|off | reset | week <n>`), bo `/pass` to test przepustek
+  S23, a `/season` pora roku miasta (S105). `week` przesuwa zegar przepustki tego serwera tylko w Studio.
+- **S152** Wiki pominięta (właściciel 17.10): bez `npm run data`; nowe kosmetyki i tytuły nie wchodzą do eksportu
+  (`wiki = false`).

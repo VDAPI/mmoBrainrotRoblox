@@ -234,6 +234,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Kryjówka Elity II** (S134i): wpis `lairs` w `Data/Areas/<mapa>` + `ELITE2_SLOTS[kind]` + `lair.<id>.name` (PL, EN);
   ubiór `Logic/WorldGen/Lairs`; po zmianie `python tools/arrivals_apply.py`; testy `tests/lairs.spec`, model
   `Balance.targetsS134i`.
+- **Sezon przepustki / źródło punktów** (S152): wpis w `Data/Seasons` (daty UTC, nagrody), źródło przez
+  `SeasonService.Add(player, source)`, nagroda tylko z listy w `paywall.spec` (reguły tylko w `Logic/Season`, test
+  `tests/season.spec`, model `Balance.targetsS152`).
 - **Boss świata** (S149): wpis w `Data/Bosses` z `world = true` + `Data/WorldBoss` (terminy, miejsce, udział, nagroda);
   serwis `WorldBossService`, udział przez `Logic/Contribution`.
 - **Osiągnięcie** (S151): wpis w `Data/Achievements` (licznik z `COUNTERS`, `goal`, nagroda) + `ach.<id>.name/.desc` (PL,

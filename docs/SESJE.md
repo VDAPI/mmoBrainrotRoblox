@@ -12897,3 +12897,63 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/Controllers/{AchievementController,PartyController,QuestController,ScreenController}.luau`,
   `src/client/UI/Screens/{GameMenu,ProfileWindow}.luau`, `src/client/UI/Screens/Hud/{AchievementToast,QuestTracker}.luau`,
   `tests/{achievements,uiart,uitheme}.spec.luau`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S152: przepustka sezonu 1/2 (rdzeń)
+
+- **Dane** `src/shared/Data/Seasons.luau` (nowy): `SEASONS` (sezon 1 „Sezon Szronu” / „Season of Frost”: start
+  2026-11-02 00:00 UTC, 8 tygodni, 40 stopni, nagrody obu ścieżek przez konstruktory `cosmetic` / `item` / `lure`),
+  `POINTS` (14 źródeł), `TIER_POINTS = 1000`, `LIMITS = { killPerDay = 400, weekCap = 6500 }`, `CATCHUP = { mul = 1.5,
+  behind = 0.6 }`, `GRACE_DAYS = 14`, `at` / `next` / `lastEnded` / `get` / `endsAt` / `trackOf`.
+- **Logika** `src/shared/Logic/Season.luau` (czysta): `sanitize`, `fresh`, `roll`, `week`, `ends`, `claimUntil`,
+  `running`, `tierOf`, `progress`, `capAt`, `lineAt`, `add` (nadrabianie do linii → limit potworów → limit narastający;
+  powody `cap`, `killCap`, `noSeason`, `unknown`), `rewardOf`, `canClaim` / `claim` / `claimable` / `unclaimed`,
+  `canBuy` / `buy`, `pack` (przedmioty łączone po id, stosy po `maxStack`, listy po `maxItemsPerParcel`). Stan
+  `account.season` (`Types.SeasonState`, szablon + reconcile, bez migracji), `account.seasonPrev` opcjonalne.
+- **Serwis** `SeasonService` (nowy): `Add(player, source, n?)` (punkty z potworów w pamięci, zapis najwyżej co 1 s i
+  przy zwolnieniu profilu; reszta od razu; toast stopnia i raz na tydzień toast limitu), remote'y `SeasonBuy`
+  (odłamki + `premium` w jednym kroku, `Analytics.shards(..., "season_pass", true)`, `Analytics.custom("SeasonPass",
+  stopień)`), `SeasonClaim(tier, tor, idSezonu?)`, `SeasonClaimAll`; koniec sezonu przy wejściu i co 10 min
+  (`seasonPrev`, po 14 dniach poczta `once` z kosmetykami i Kamieniami, czas Płaszcza od razu na konto); admin
+  `/seasonpass info | points | tier | premium | reset | week` (`week` tylko w Studio).
+- **Źródła punktów:** `CombatService.MonsterKilled` (zwykły / Elita / Elita II zaliczonych graczy), QuestService
+  (fabuła, dzienne, tygodniowe, zlecenie na bossa), SideQuestService (pierwsze oddanie), ContractService (n zleceń),
+  DungeonService (wygrana), WorldEventService (nagroda udziału), WorldBossService (nagrodzona walka), BloodMoonService
+  (opłacony udział), ArenaService (rozegrany mecz), AchievementService (zdobyte w grze, bez zaliczeń wstecz).
+- **Cena:** `Products.seasonPass = { key = "season_pass", price = 800 }` (odłamki, bez produktu Robux), wiersz w
+  `docs/SKLEP-ID.md` (`tests/Pricing` liczy go w przeglądzie cen).
+- **Kosmetyki sezonu 1** (`obtain.season = "s1"`, cena 0, `wiki = false`): darmowe — emotka „Chuchanie w dłonie” (6),
+  barwnik Lodowca (12), Ramka Szadzi (20), Awans Szronu (30), tytuł „Weteran Sezonu Szronu” (40); premium — Rama
+  Mroźnej Nocy (1), emotka „Strzepnięcie szronu” (5), ramka czatu Szadzi (8), barwnik Zimowej Północy (11), Ślad Zawiei
+  (14), tytuł „Strażnik Szronu” (17), Strój Strażnika Szronu (20), Szadź na Ostrzu (23), Szronowy Rumak (27), Śnieżny Lis
+  (31), Awans Zorzy (35), aura „Serce Zimy” (40). Pozostałe stopnie: 3 (darmowa) / 5 (premium) Kamieni Powrotu i 1 h
+  Płaszcza Przynęty na zmianę. Dwie emotki w `Data/Emotes` (`breath`, `brushfrost`), dwa tytuły w `Data/Titles`,
+  garderoba „Przepustka sezonu: {sezon}”; licznik osiągnięć „kosmetyki zdobyte w grze” liczy tylko ścieżkę darmową.
+- **Testy:** nowy `tests/season.spec.luau` (dane, stan, zegar na granicach, limit dzienny z północą UTC, limit
+  narastający 6500 / 19 500, nadrabianie do linii, premium nie zmienia punktów, wszystkie błędy odbioru, odbiór premium
+  wstecz, `claimable`, `unclaimed`, zakup raz, `pack`: pełna premium 40. mieści się w jednym liście); `paywall.spec` 11–13; `premium.spec` (`obtain.season` nie na
+  sprzedaż), `cosmetics2.spec` (10 emotek), `lookdump.spec` (pet ukryty na wiki bez renderu), `balance.spec`
+  („Balance: season pass (S152)”).
+- **Model tempa** (`Balance.seasonPace`, `Balance.targetsS152`, sekcja „Przepustka sezonu (S152)” w `docs/BALANS.md`,
+  księga `Seasons:*`), stopień na koniec / tydzień ukończenia na L70:
+
+| gra | start w tygodniu 1 | start w tygodniu 3 | start w tygodniu 5 |
+|---|---|---|---|
+| 1 h dziennie | 40 / 8. tydz. | 35 / — | 27 / — |
+| 2 h dziennie | 40 / 7. tydz. | 40 / 7. tydz. | 36 / — |
+| 3 h dziennie | 40 / 7. tydz. | 40 / 7. tydz. | 40 / 8. tydz. |
+
+  Przy 2 h dziennie (L70) ok. 7 500 punktów na tydzień przed limitem 6 500: dzienne 22%, potwory 27%, boss lochu 14%,
+  tygodniowe 11%, wydarzenia 11%, zadania 13%. Wszystkie wiersze E2 w paśmie na L20 / 45 / 70 / 100 bez trybu raportu.
+- wiki do odświeżenia (właściciel 17.10)
+- **Dla właściciela:** (1) 1 h dziennie kończy całą przepustkę w 8. tygodniu (pasmo 30–40 to dopuszcza); jeśli ma być
+  trudniej, dźwignią jest `LIMITS.weekCap` albo `TIER_POINTS`. (2) Cena 800 odłamków i to, czy kosmetyki sezonu kiedyś
+  wrócą do sprzedaży.
+- **Pliki:** `src/shared/Data/Seasons.luau` (nowy), `src/shared/Logic/Season.luau` (nowy),
+  `src/server/Services/SeasonService.luau` (nowy), `tests/season.spec.luau` (nowy),
+  `src/shared/{Types}.luau`, `src/shared/Data/{Products,Cosmetics,Titles,Emotes,AdminCommands}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{AccountSchema,Achievements}.luau`,
+  `src/shared/Net/Definitions.luau`, `src/server/Admin/Economy.luau`,
+  `src/server/Services/{AdminService,AchievementService,ArenaService,BloodMoonService,ContractService,DungeonService,QuestService,SideQuestService,WorldBossService,WorldEventService}.luau`,
+  `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium,cosmetics2,lookdump,balance}.spec.luau`,
+  `tests/{Balance,Pricing}.luau`, `tools/{balance_report,balance_reasons,shop_report}.luau`, `tools/balance_before.json`,
+  `docs/{DESIGN,DESIGN-17,DECYZJE,SESJE,PROGRESS,BALANS,SKLEP-ID}.md`, `CLAUDE.md`.

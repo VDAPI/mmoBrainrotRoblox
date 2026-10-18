@@ -339,6 +339,13 @@ local Definitions: { [string]: Definition } = {
 	OutfitSave = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index) saves the current look, S121
 	OutfitWear = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index), S121
 
+	-- Season pass (S152, SeasonService; the state is account.season): the premium track of the running season for
+	-- Dragon Shards; one reward (tier, "free" | "premium", season id: nil = the running one, or the previous one in its
+	-- grace days) -> (ok, errorKey?, { granted = { Reward } }); every reached reward of both seasons -> the same
+	SeasonBuy = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	SeasonClaim = { kind = "function", dir = "c2s", rate = 6, args = { "integer", "string", "string?" } },
+	SeasonClaimAll = { kind = "function", dir = "c2s", rate = 1, args = {} },
+
 	-- Leaderboards (S124): (board instance id) -> (true, Logic/Leaderboard.Snapshot) | (false, errorKey)
 	LeaderboardGet = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 

@@ -119,6 +119,9 @@ return {
 		{ path = "Data/WorldEvents" },
 		-- S149: the world boss (UTC schedule, the arena spot, contribution threshold, reward, item rarities)
 		{ path = "Data/WorldBoss" },
+		-- S152: the season pass pace (points per source, tier size, the daily monster limit, the growing cap, the catch-up,
+		-- grace days); the seasons themselves (dates, tiers, reward lists) and the lookups are not balance
+		{ path = "Data/Seasons", omit = { "SEASONS", "list", "KILL_SOURCES", "WEEK" } },
 	} :: { ModuleEntry },
 	-- S134d: AutoPotion and AutoGrind (premium services with limits, like FullElixir / Lure)
 	CONFIG_KEYS = {
@@ -6052,6 +6055,12 @@ return {
 		},
 		["WorldBoss:players[2]"] = {
 			{ session = "S149b", why = "new field: see players[1]" },
+		},
+		["Seasons:*"] = {
+			{
+				session = "S152",
+				why = "new module: the season pass pace. Points: kill 2, elite 10, elite2 40, boss 150, worldBoss 200, quest 60, side 40, contract 40, daily 80, weekly 250, worldEvent 120, bloodMoon 150, arena 20, achievement 50; 1000 a tier (40 tiers); 400 monster points a UTC day; growing cap 6500 x week of the season; catch-up x1.5 below 0.6 x tiers x elapsed share; 14 grace days. Model (Balance.targetsS152): 1 h a day finishes 40 tiers in week 8, 2-4 h a day in week 7 (the cap), 2 h a day from week 5 35-36 tiers, monster points 27 % at 2 h a day",
+			},
 		},
 		["Bosses:byId.hrimvald*"] = {
 			{

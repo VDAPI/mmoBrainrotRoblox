@@ -2924,6 +2924,78 @@ do
 	add()
 end
 
+-- S152: the season pass pace (Balance.seasonPace, Balance.targetsS152): tiers at the end of the season and the week the
+-- last tier is reached for 1 / 2 / 3 / 4 h a day and a start in week 1 / 3 / 5, the points of 2 h a day by source and
+-- the asserted rows.
+do
+	local S = B.S152
+	local Seasons = require("../src/shared/Data/Seasons")
+	local def = Seasons.list[1]
+	add("## Przepustka sezonu (S152)")
+	add()
+	add(
+		`Model \`Balance.seasonPace\` (\`Data/Seasons\`, sezon 1: {def.weeks} tygodni, {def.tiers} stopni po {Seasons.TIER_POINTS} pkt): godzina gry to {fmtValue(S.grind * 100, "0")}% czasu na zwykłych potworach łowiska (\`Balance.paceAt\`, średnia klas), {fmtValue(S.caves * 100, "0")}% na Elitach jaskiń, {fmtValue(S.elite2PerHour, "1")} Elity II, po {fmtValue(S.quests.quest, "1")} oddania fabuły, pobocznego i zlecenia poniżej 100. poziomu, wydarzenie świata co {B.WORLD_EVENT_HOURS} h, {fmtValue(S.bossPerHour, "1")} wygranej z bossem lochu (od pierwszego bossa) i boss świata co 3 h (od jego poziomu); dzień daje dzienne zlecenia, tydzień tygodniowe (+ zlecenie na bossa), {S.bloodMoonPerWeek} Krwawy Księżyc i {S.achievementsPerWeek} osiągnięcia. Każdy punkt przechodzi przez \`Logic/Season.add\` (limit potworów {Seasons.LIMITS.killPerDay} pkt dziennie, limit narastający {Seasons.LIMITS.weekCap} × tydzień, nadrabianie ×{fmtValue(Seasons.CATCHUP.mul, "1")} pod linią {fmtValue(Seasons.CATCHUP.behind * 100, "0")}% stopni czasu sezonu), potwory pierwsze w dniu. Asertuje \`balance.spec\` („Balance: season pass (S152)”).`
+	)
+	add()
+	add(`### Stopień na koniec / tydzień ukończenia (L{S.reportLevel})`)
+	add()
+	local grid: { { string } } = {}
+	for _, h in S.hours do
+		local row = { `{h} h dziennie` }
+		for _, w in S.starts do
+			local p = B.seasonPace(h, w, S.reportLevel)
+			table.insert(row, `{p.tiers[def.weeks]} / {if p.finishWeek then tostring(p.finishWeek) else "—"}`)
+		end
+		table.insert(grid, row)
+	end
+	local heads = { "gra" }
+	for _, w in S.starts do
+		table.insert(heads, `start w tygodniu {w}`)
+	end
+	tableOut(heads, grid)
+	add("### 2 h dziennie od tygodnia 1: punkty na koniec tygodnia i źródła")
+	add()
+	local weekly: { { string } } = {}
+	for _, L in S.levels do
+		local p = B.seasonPace(2, 1, L)
+		local row = { `L{L}` }
+		for wk = 1, def.weeks do
+			table.insert(row, fmtValue(p.points[wk], "0"))
+		end
+		table.insert(row, fmtValue(p.monsterShare, "%"))
+		table.insert(weekly, row)
+	end
+	local wHeads = { "poziom" }
+	for wk = 1, def.weeks do
+		table.insert(wHeads, `tydz. {wk}`)
+	end
+	table.insert(wHeads, "z potworów")
+	tableOut(wHeads, weekly)
+	local p70 = B.seasonPace(2, 1, S.reportLevel)
+	local sources: { { string } } = {}
+	local keys: { string } = {}
+	for source in Seasons.POINTS do
+		table.insert(keys, source)
+	end
+	table.sort(keys)
+	for _, source in keys do
+		local got = p70.bySource[source] or 0
+		table.insert(sources, {
+			source,
+			tostring(Seasons.POINTS[source]),
+			fmtValue(got, "0"),
+			fmtValue(got / math.max(1, p70.points[def.weeks]), "%"),
+		})
+	end
+	tableOut({ `źródło (2 h dziennie, L{S.reportLevel})`, "pkt", "pkt w sezonie", "udział" }, sources)
+	local banded: { B.TargetRow } = {}
+	for _, row in B.targetsS152() do
+		table.insert(banded, row)
+	end
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(banded, "S152 (asertowane)"))
+	add()
+end
+
 -- S134e: the Elite II kit (Balance.targetsS134e): the Crushing Blow by the level gap for a Mage and a Warrior in four
 -- regions, kiting before (no kit: nothing reaches a kiting player) and after, the Heavy Blow of the Elites, the rows.
 do

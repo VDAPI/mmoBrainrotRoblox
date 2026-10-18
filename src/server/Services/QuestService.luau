@@ -72,6 +72,7 @@ local ZoneService: any
 local SideQuestService: any
 local ContractService: any
 local CosmeticService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 local Registry: any -- S101b: CompanionService during play (it is not in Deps: no cycle with the quest services)
 
 local rng = Rng.new()
@@ -405,6 +406,7 @@ local function turnIn(player: Player, npcId: string): (boolean, string?)
 		Analytics.onboarding(player, index, quest.id)
 	end
 	give(player, quest.reward)
+	SeasonService.Add(player, "quest") -- S152: a story quest handed in
 	-- S132: class outfits of this quest for the character's class (obtain.quest; owned = nothing)
 	CosmeticService.GrantQuestOutfits(player, quest.id, char.class)
 	queueScenes(player, quest.id, "turnIn")
@@ -497,6 +499,7 @@ local function claim(player: Player, index: number): (boolean, string?)
 	end
 	PlayerStateService.Set(player, { "character", "quests", "daily", "list", index, "claimed" } :: { any }, true)
 	give(player, reward)
+	SeasonService.Add(player, "daily") -- S152
 	Net.Fire(player, "QuestCompleted", `daily.{entry.template}.title`)
 	return true, nil
 end
@@ -525,6 +528,7 @@ local function claimWeekly(player: Player, index: number): (boolean, string?)
 	end
 	PlayerStateService.Set(player, { "character", "quests", "weekly", "list", index, "claimed" } :: { any }, true)
 	give(player, reward)
+	SeasonService.Add(player, "weekly") -- S152
 	Net.Fire(player, "QuestCompleted", `weekly.{entry.template}.title`)
 	return true, nil
 end
@@ -553,6 +557,7 @@ local function claimBossContract(player: Player): (boolean, string?)
 	end
 	PlayerStateService.Set(player, { "character", "quests", "weekly", "boss", "claimed" }, true)
 	give(player, reward)
+	SeasonService.Add(player, "weekly") -- S152: the boss contract counts as a weekly contract
 	Net.Fire(player, "QuestCompleted", "quest.bossContract.title")
 	return true, nil
 end
@@ -694,6 +699,7 @@ function QuestService.CompleteWeekly(player: Player): boolean
 end
 
 function QuestService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	InventoryService = registry.Get("InventoryService")

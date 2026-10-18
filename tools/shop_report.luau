@@ -136,6 +136,10 @@ end
 add()
 add("Ceny za Smoczą Walutę (sklep, garderoba) są w grze (`Data/Products.shop`, `Data/Cosmetics`); w Creator Hub nic")
 add("się dla nich nie ustawia.")
+add(
+	`Przepustka sezonu (\`{Products.seasonPass.key}\`, S152) to ścieżka premium kupowana raz na sezon za {num(Products.seasonPass.price)}`
+)
+add("Smoczej Waluty (`Data/Products.seasonPass`): bez własnego produktu Robux, w Creator Hub nic do utworzenia.")
 add()
 add("## 3. Wyłączone do decyzji właściciela")
 add()

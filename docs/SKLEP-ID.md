@@ -46,6 +46,8 @@
 
 Ceny za Smoczą Walutę (sklep, garderoba) są w grze (`Data/Products.shop`, `Data/Cosmetics`); w Creator Hub nic
 się dla nich nie ustawia.
+Przepustka sezonu (`season_pass`, S152) to ścieżka premium kupowana raz na sezon za 800
+Smoczej Waluty (`Data/Products.seasonPass`): bez własnego produktu Robux, w Creator Hub nic do utworzenia.
 
 ## 3. Wyłączone do decyzji właściciela
 
@@ -101,6 +103,7 @@ się dla nich nie ustawia.
 | `hunt_1h` | service | 100 | — | 71,41 | 99 | — |
 | `hunt_5h` | service | 420 | — | 299,94 | 415,80 | — |
 | `hunt_24h` | service | 1 500 | — | 1 071,21 | 1 485 | — |
+| `season_pass` | season | 800 | — | 571,31 | 792 | 1/sezon |
 
 ### Kosmetyki za Smoczą Walutę (przedziały cen wg rodzaju)
 

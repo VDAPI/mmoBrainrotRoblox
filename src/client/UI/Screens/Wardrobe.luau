@@ -52,6 +52,7 @@ local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local PremiumConfirm = require(script.Parent.Parent.PremiumConfirm)
 local Products = require(ReplicatedStorage.Shared.Data.Products)
 local ScheduledEvents = require(ReplicatedStorage.Shared.Data.ScheduledEvents)
+local Seasons = require(ReplicatedStorage.Shared.Data.Seasons)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
@@ -177,6 +178,14 @@ local function obtainText(use: Fusion.Use, def: Cosmetics.Def): string
 	elseif obtain and obtain.achievement then
 		-- S151: the reward of an achievement
 		return Text.get(use, "wardrobe.obtain.achievement", { name = Text.get(use, `ach.{obtain.achievement}.name`) })
+	elseif obtain and obtain.season then
+		-- S152: a reward of a season pass (kept for good)
+		local season = Seasons.get(obtain.season)
+		return Text.get(
+			use,
+			"wardrobe.obtain.season",
+			{ season = if season then Text.get(use, season.nameKey) else obtain.season }
+		)
 	elseif obtain and obtain.event then
 		-- S129: a reward of a wall-clock event (Data/ScheduledEvents; S130 "tourney")
 		local event = ScheduledEvents.get(obtain.event)

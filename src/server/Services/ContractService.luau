@@ -53,6 +53,7 @@ local NpcService: any
 local MailService: any
 local CosmeticService: any
 local CharacterService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 
 local rng = Rng.new()
 
@@ -267,6 +268,7 @@ local function turnIn(player: Player, npcId: string): (boolean, string?, TurnInR
 	local after = Contracts.withHandedIn(state, levels, marks)
 	write(player, after)
 	QuestEvents.fire(player, "quest", { kind = "contract", n = #ready }) -- S151: contracts handed in (achievements)
+	SeasonService.Add(player, "contract", #ready) -- S152
 	if gold > 0 then
 		local balance = PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
 			return current + gold
@@ -412,6 +414,7 @@ function ContractService.Info(player: Player): Info?
 end
 
 function ContractService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	InventoryService = registry.Get("InventoryService")
 	LevelService = registry.Get("LevelService")

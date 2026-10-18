@@ -50,6 +50,7 @@ local TitleService: any
 local CosmeticService: any
 local LevelService: any
 local CombatService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 
 -- Seconds after entering the world before the catch-up toasts (the HUD is up by then).
 local BACKFILL_TOAST_DELAY = 4
@@ -190,8 +191,13 @@ local function handle(player: Player, kind: string, data: { [string]: any }?)
 	if #newly == 0 then
 		return
 	end
-	for _, payload in grantAll(player, st, newly) do
+	local granted = grantAll(player, st, newly)
+	for _, payload in granted do
 		Net.Fire(player, "AchievementDone", payload)
+	end
+	if #granted > 0 then
+		-- S152: an achievement earned in play (never the catch-up of old progress on entering)
+		SeasonService.Add(player, "achievement", #granted)
 	end
 end
 
@@ -350,6 +356,7 @@ local function track(player: Player, id: string, on: boolean): (boolean, string?
 end
 
 function AchievementService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	TitleService = registry.Get("TitleService")

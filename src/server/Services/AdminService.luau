@@ -84,6 +84,7 @@ local AdminService = {
 		"WorldEventService", -- S101: /event
 		"WorldBossService", -- S149: /worldboss (nothing it depends on knows AdminService)
 		"VipService", -- S121: /vip
+		"SeasonService", -- S152: /seasonpass (nothing it depends on knows AdminService)
 		"LureService", -- S122: /lure
 		"AutoGrindService", -- S134d: /autogrind (nothing it depends on knows AdminService)
 		"PremiumShopService", -- S123: /pack

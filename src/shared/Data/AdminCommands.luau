@@ -538,6 +538,15 @@ cmd(
 	{ enum("action", { "on", "off", "status", "reset", "month", "grant", "take" }), str("month", true) },
 	{ dangerActions = { "take" } }
 )
+-- S152: the caller's season pass (account.season): state, points / tier without limits, the premium track without shards,
+-- a clean state, the season clock of this server (week, Studio only). /pass is the S23 pass test, /season the town's
+-- season of S105.
+cmd(
+	"economy",
+	"seasonpass",
+	{ enum("action", { "info", "points", "tier", "premium", "reset", "week" }), str("value", true) },
+	{ dangerActions = { "reset" } }
+)
 -- S131: the caller's weekly counters back to zero: shop limits, Arena Tokens of the week, weekly EXP
 cmd("economy", "weekreset", { enum("what", { "limits", "tokens", "expweek" }) })
 -- S120: the caller's premium shop limit counters (account.shopLimits)

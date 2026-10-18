@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S151b gotowe (ostatnia S151b: okno osiągnięć (`N`, menu HUD i gry, „Zobacz” w toaście; kategorie,
+S01–S115 i S117–S152 gotowe (ostatnia S152: przepustka sezonu, rdzeń: sezon 1 „Sezon Szronu” od 2026-11-02, 8
+tygodni, 40 stopni po 1000 punktów za zwykłą grę (`Data/Seasons`, `Logic/Season`, `SeasonService.Add` w serwisach
+źródeł: potwory, zadania, zlecenia, wydarzenia, bossowie, arena, osiągnięcia), limit potworów 400 dziennie, limit
+narastający 6500 × tydzień z nadrabianiem ×1,5 pod linią, ścieżka darmowa co 2 stopnie i premium na każdym (raz na
+sezon za 800 odłamków, odbiór wstecz), nagrody tylko kosmetyki (17, `obtain.season`), Kamienie Powrotu i czas Płaszcza
+(`paywall.spec` 11–13), 14 dni łaski i poczta `once`, model `Balance.targetsS152`, admin `/seasonpass`; wcześniej S151b: okno osiągnięć (`N`, menu HUD i gry, „Zobacz” w toaście; kategorie,
 serie zwinięte do bieżącego stopnia, przełącznik konto / postać, filtr, szczegóły z nagrodami; `Logic/AchievementView`),
 śledzenie do 3 osiągnięć w trackerze HUD (`AchievementTrack`, `character.ach.track`), punkty i ostatnie osiągnięcia
 w profilu gracza; wcześniej S151: osiągnięcia, rdzeń: 79 osiągnięć w sześciu kategoriach (walka,
@@ -385,6 +390,12 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **Przepustka sezonu (S152):** Niedokończone: S152b — okno przepustki, wiki, lejek (okno z paskiem i obiema
+  ścieżkami, kropka „do odebrania” na HUD, karta w zakładce „Przepustki” sklepu, strona wiki z tabelą „a VIP”, lejek
+  analityki). Do tego czasu przepustkę kupuje się i odbiera tylko remote'ami (`SeasonBuy`, `SeasonClaim`,
+  `SeasonClaimAll`) i `/seasonpass`; kosmetyki sezonu z `wiki = false`. Bez przeglądu w grze (wygląd 17 kosmetyków
+  proceduralnych, dwie emotki, pet i skórka wierzchowca). Dla właściciela: decyzje w `docs/SESJE.md` → S152.
 
 - **Osiągnięcia (S151, S151b):** wiki z S151b czeka na odświeżenie wiki (właściciel 17.10): eksporter
   `tools/WikiData/Achievements.luau` (bez kwot odłamków, `retro` z `backfill`, `secretCount`), strona osiągnięć, link z

@@ -87,6 +87,7 @@ local AnnounceService: any
 local WorldEventService: any
 local LeaderboardService: any
 local GuildService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 
 local rng = Rng.new()
 local occ: Occurrence? = nil -- the running occurrence (scheduled or forced)
@@ -471,6 +472,7 @@ local function settleCharacter(player: Player, state: State, ranks: { [string]: 
 			return false
 		end
 		markPaid(player, char.id, state.id)
+		SeasonService.Add(player, "bloodMoon") -- S152: a rewarded participation (once per character and occurrence)
 		if tier.winner and key ~= nil and rankMap then
 			for region, points in state.regions do
 				local regionRanks = rankMap[region]
@@ -883,6 +885,7 @@ end
 -- Lifecycle ---------------------------------------------------------------------------------------------------------
 
 function BloodMoonService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	Registry = registry
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")

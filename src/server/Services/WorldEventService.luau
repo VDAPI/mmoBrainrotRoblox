@@ -123,6 +123,7 @@ local LootService: any
 local AnnounceService: any
 local WorldService: any
 local FightLogService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 
 local rng = Rng.new()
 local current: Event? = nil
@@ -743,6 +744,7 @@ local function giveReward(player: Player, char: Types.CharacterData, e: Event, s
 		Net.Fire(player, "Toast", "event.rewardNoChest", { exp = shownExp, gold = r.gold }, "success")
 	end
 	QuestEvents.fire(player, "event", { eventId = e.id, kind = e.kind, success = success, map = e.map })
+	SeasonService.Add(player, "worldEvent") -- S152: a rewarded participation
 end
 
 -- Rewards every participant still here with the same character. Returns how many got the reward.
@@ -1074,6 +1076,7 @@ function WorldEventService.Current(): Event?
 end
 
 function WorldEventService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	ZoneService = registry.Get("ZoneService")
