@@ -1710,7 +1710,7 @@ T.describe("Data: Warrior paths (S75)", function()
 		T.expect(#paths).toBe(3)
 		local nodes, skills = 0, 0
 		for _, main in paths do
-			T.expect(main.wiki).toBe(false)
+			T.expect(main.wiki).toBeNil() -- S148: published on the wiki (DESIGN-18 §14)
 			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, 42 })
 			local total = 42
 			for _, other in paths do
@@ -1962,7 +1962,7 @@ T.describe("Data: Hunter paths (S78)", function()
 		local want = { marksman = 42, trapper = 42, scout = 40 }
 		local nodes, skills = 0, 0
 		for _, main in paths do
-			T.expect(main.wiki).toBe(false)
+			T.expect(main.wiki).toBeNil() -- S148: published on the wiki (DESIGN-18 §14)
 			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, want[main.id] })
 			local total = want[main.id]
 			for _, other in paths do
@@ -2169,7 +2169,7 @@ T.describe("Data: Mage paths (S81)", function()
 		local nodes, skills = 0, 0
 		local early = { destroyer = 15, arcanist = 13 }
 		for _, main in paths do
-			T.expect(main.wiki).toBe(false)
+			T.expect(main.wiki).toBeNil() -- S148: published on the wiki (DESIGN-18 §14)
 			T.expect({ main.id, pathRanks(main, 1, #PathData.ROWS) }).toEqual({ main.id, 50 })
 			local total = 50
 			for _, other in paths do

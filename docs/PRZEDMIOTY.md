@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 28847f88 (`wiki/src/data/meta.json`).
+> Odcisk danych 4628e251 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -20,7 +20,7 @@ Legendarny losuje 1 efekt z puli legendarnej swojej klasy, Mityczny 1 legendarny
 | Klasa | Rzadkość | Efekt | Umiejętność | Rola | Pula | Działanie |
 |---|---|---|---|---|---|---|
 | Mage | Legendarny | Wtórny Wybuch | Kula Ognia | A1 | fire | Kula Ognia wybucha drugi raz po 1 s za 30% |
-| Mage | Legendarny | Pocisk Kata | Magiczny Pocisk | S1 | fire | Magiczny Pocisk: pewny krytyk na celach poniżej 25% życia |
+| Mage | Legendarny | Pocisk Kata | Ognisty Pocisk | S1 | fire | Ognisty Pocisk: pewny krytyk na celach poniżej 25% życia |
 | Mage | Legendarny | Lodowe Odpryski | Lodowy Odłamek | S1 | ice | Lodowy Odłamek roztrzaskuje się: wrogowie do 4 st. od celu dostają 25% |
 | Mage | Legendarny | Dodatkowy Łuk | Łańcuch Błyskawic | A1 | lightning | Łańcuch Błyskawic przeskakuje na 1 cel więcej |
 | Mage | Legendarny | Przenikliwy Chłód | Lodowa Nova | K1 | ice | Lodowa Nova: promień +2 st., zamrożenie o 0,5 s dłuższe |
@@ -30,20 +30,30 @@ Legendarny losuje 1 efekt z puli legendarnej swojej klasy, Mityczny 1 legendarny
 | Mage | Mityczny | Lodowy Wir | Lodowa Nova | K1 | ice | Lodowa Nova najpierw przyciąga wrogów z promienia 14 st. |
 | Warrior | Legendarny | Oszałamiający Impet | Szarża | C1 | common | Szarża ogłusza o 0,7 s dłużej |
 | Warrior | Legendarny | Spragnione Ostrze | Potężne Uderzenie | S1 | onehand | Potężne Uderzenie leczy cię o 15% zadanych obrażeń |
+| Warrior | Legendarny | Szeroki Zamach | Rozpłatanie | A1 | twohand | Rozpłatanie odrzuca trafionych o 5 st. |
+| Warrior | Legendarny | Cios Dobijający | Miażdżący Cios | S2 | onehand | Miażdżący Cios: pewny krytyk na celach poniżej 25% życia |
+| Warrior | Legendarny | Podcięcie Ścięgien | Rozdarcie | S2 | twohand | Rozdarcie spowalnia cel o 30% na 3 s |
 | Warrior | Legendarny | Zbiórka | Prowokacja | C2 | common | Prowokacja najpierw przyciąga wrogów z promienia 12 st. |
 | Warrior | Mityczny | Rozłam | Trzęsienie Ziemi | A2 | onehand | Trzęsienie Ziemi: ostatnia fala ogłusza na 1 s |
 | Warrior | Mityczny | Drugi Oddech | Wir Ostrzy | A2 | twohand | Wir Ostrzy leczy cię o 5% maks. HP |
+| Warrior | Mityczny | Zew Murów | Mur Tarcz | U | onehand | Mur Tarcz przyciąga wrogów z promienia 10 st. |
 | Hunter | Legendarny | Rozrywający Grot | Celny Strzał | S1 | bow | Celny Strzał: grot rozrywa się, wrogowie do 4 st. od celu dostają 30% |
 | Hunter | Legendarny | Druga Ulewa | Deszcz Strzał | A1 | bow | Deszcz Strzał: druga fala po 1 s za 30% |
 | Hunter | Legendarny | Roznoszona Trucizna | Zatruta Strzała | S2 | crossbow | Zatruta Strzała: śmierć zatrutego wroga przenosi truciznę na 2 najbliższych |
 | Hunter | Legendarny | Wiatr w Plecy | Odskok | C1 | common | Odskok: szybkość ruchu +25% przez 4 s |
+| Hunter | Legendarny | Szeroki Znak | Znak Łowcy | C2 | common | Znak Łowcy oznacza też wrogów do 6 st. od celu |
+| Hunter | Legendarny | Jadowity Przeszyw | Bełt Przebijający | A1 | crossbow | Bełt Przebijający zatruwa trafionych: 30% ataku w 4 s |
 | Hunter | Mityczny | Druga Salwa | Salwa | A2 | bow | Salwa: druga salwa po 1 s za 35% |
 | Hunter | Mityczny | Szybka Ręka | Podwójny Strzał | S2 | bow | Podwójny Strzał: pierwszy krytyk skraca odnowienie o 30% |
+| Hunter | Mityczny | Lodowe Sidła | Pułapka Lodowa | K1 | crossbow | Pułapka Lodowa wciąga wrogów z promienia 8 st. |
 | Cleric | Legendarny | Święty Głód | Święte Uderzenie | S1 | hammer | Święte Uderzenie leczy cię o 20% zadanych obrażeń |
 | Cleric | Legendarny | Karzące Światło | Leczenie | C1 | common | Leczenie: wrogowie do 6 st. od leczonego dostają 40% ataku magicznego |
 | Cleric | Legendarny | Olśnienie | Światłość | A1 | light | Światłość spowalnia trafionych o 25% na 2 s |
 | Cleric | Legendarny | Niezłomna Wiara | Tarcza Wiary | O1 | light | Tarcza Wiary: tarcza silniejsza o 4% maks. życia celu i trwa 4 s dłużej |
+| Cleric | Legendarny | Trwała Odnowa | Odnowa | S2 | light | Odnowa trwa 3 s dłużej |
+| Cleric | Legendarny | Miłosierdzie | Piętno Światła | S2 | hammer | Piętno Światła: najbardziej ranny sojusznik leczy się o 20% trafienia |
 | Cleric | Mityczny | Rozliczenie | Sąd | S3 | hammer | Sąd: wrogowie do 6 st. od celu dostają 50% |
+| Cleric | Mityczny | Przystań | Sanktuarium | A2 | light | Sanktuarium: strefa trwa 3 s dłużej, promień +2 st. |
 | Cleric | Mityczny | Egida Światła | Krąg Światła | C2 | common | Krąg Światła: nadmiar leczenia staje się tarczą |
 
 Źródła dropu: szansa przedmiotu na zabicie, liczba i najwyższa możliwa rzadkość (sufit).
@@ -1262,7 +1272,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Zwój Łowów | Zwój | 1 | Spisane ścieżki zwierzyny z leża bossa. Użyty dodaje czas Samodzielnych Łowów. Związany. | — | 1 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
-| Zwój Nowej Ścieżki | Zwój | 1 | Pozwala wybrać nową ścieżkę główną. Zużywa się przy zmianie ścieżki, tylko w mieście. | — | 100 |
+| Zwój Odnowy Umiejętności | Zwój | 1 | Pełny reset rozwoju: zwraca rangi umiejętności wszystkich pul broni i węzły kierunków aktywnego zestawu. Wybrane przełomy zostają. Zużywa się tylko przy resecie od 20. poziomu, gdy nie masz darmowego. | 400 | 100 |
 | Zwój Rozwiązania | Zwój | 1 | Odwiązuje jeden przedmiot. | — | 500 |
 | Kamień Lochu | Kamień teleportu | 1 | Teleportuje przed wejście do lochu. | — | 150 |
 | Kamień Lochu: Kuźnia Głębin | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Kuźnia Głębin. | — | 150 |

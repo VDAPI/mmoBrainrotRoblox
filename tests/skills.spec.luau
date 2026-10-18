@@ -159,17 +159,14 @@ T.describe("S56 ranks from the level and the bar", function()
 		return out
 	end
 
-	T.it("rankFor (base only)", function()
+	T.it("rankAt is the limit of a bought rank (S148: rankFor removed)", function()
 		local bloodlust = SkillData.get("bloodlust") :: any -- S143: unlock 18 -> 10 (the two-handed O1)
-		T.expect(Skills.rankFor("Warrior", 9, bloodlust)).toBe(0)
-		T.expect(Skills.rankFor("Warrior", 10, bloodlust)).toBe(1)
-		T.expect(Skills.rankFor("Warrior", 46, bloodlust)).toBe(10)
-		T.expect(Skills.rankFor("Mage", 54, bloodlust)).toBe(0)
-		local onPath = table.clone(bloodlust)
-		onPath.path = "somePath"
-		T.expect(Skills.rankFor("Warrior", 54, onPath)).toBe(0) -- path skills: Logic/Paths.skillRank
+		T.expect(Skills.rankAt(bloodlust, 9)).toBe(0)
+		T.expect(Skills.rankAt(bloodlust, 10)).toBe(1)
+		T.expect(Skills.rankAt(bloodlust, 46)).toBe(10)
+		T.expect((Skills :: any).rankFor).toBeNil()
 		T.expect(Skills.validSlot(1)).toBe(true)
-		-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool; rankFor is the limit of a bought rank now
+		-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool
 		T.expect(Skills.validSlot(8)).toBe(true)
 		T.expect(Skills.validSlot(9)).toBe(false)
 		T.expect(Skills.validSlot(1.5)).toBe(false)
@@ -260,8 +257,8 @@ T.describe("S56 ranks from the level and the bar", function()
 				skill.class = fixtureClass
 				skill.path = nil
 				skill.unlock = UNLOCKS[i]
-				base += if Skills.rankFor(fixtureClass, 100, skill) > 0 then 1 else 0
-				total += Skills.rankFor(fixtureClass, 20, skill)
+				base += if Skills.rankAt(skill, 100) > 0 then 1 else 0
+				total += Skills.rankAt(skill, 20)
 			end
 			T.expect({ classId, base }).toEqual({ classId, #ids })
 			T.expect({ classId, total }).toEqual({ classId, 19 })

@@ -7,7 +7,7 @@
 -- Data/Paths/Cleric (S71). Rank-dependent numbers sit in `values`, passive names the field, in modify.bp a number is
 -- { ref = "<field>" }; numbers of effects and behaviours go through new fields of the skill's values (read by name).
 -- Hooks are the S64 / S72 names (Logic/Fury, CombatService). `reference` and `itemWeights` never reach the wiki;
--- every path is unpublished there (wiki = false, ROZWOJ 3.5).
+-- S148: the directions are published there (DESIGN-18 §14).
 
 local SkillData = require("../Skills")
 local Types = require("./Types")
@@ -229,7 +229,6 @@ local guardian: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local berserker: Types.PathDef = {
@@ -371,7 +370,6 @@ local berserker: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local standard: Types.PathDef = {
@@ -556,7 +554,6 @@ local standard: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 -- Model builds (ROZWOJ 7.5, 10.3-10.5; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50 points.

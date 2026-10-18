@@ -5512,3 +5512,24 @@
 - **S147** (przegląd) Teksty przełomów z liczbą w treści (`skill.<id>.bp5/.bp10/.bp5b/.bp10b`, PL i EN) zmieniane
   razem z danymi: 11 kluczy Łowcy i Maga. Test: żaden wiersz R4 w `GLOBAL_REPORT_ONLY` / `S147_REPORT` poza Ognistym
   Pociskiem 5A.
+- **S148** Kierunki opublikowane na wiki: `wiki = false` zdjęte we wszystkich `PathDef` (DESIGN-18 §14 i plik sesji
+  pokazują je na stronie klasy); cofnięcie = `wiki = false` w `Data/Paths/<Klasa>`. Tytuł kierunku ma na wiki
+  `req.path` (`TitleReq`, „Kierunek przewodni: …”).
+- **S148** Kod buildu v3: `3<KLASA><poziom>.<PULA>:<rangi>[:<pasek>]….<talenty>.<przełomy>`; odejście od DESIGN-18 §14:
+  segment puli niesie też pasek (link oddaje cały build), talenty kierunków w jednym segmencie (grupy według `order`
+  rozdzielone „-”). Kolejność umiejętności puli = `WikiData/Skills.poolOrder` (drabina szkoły, wspólne, umiejętności
+  kierunków), nigdy `plan` puli. Kod v2 („2MAGE34…”) i v1 („MAGE34-…”) = pusty planer z komunikatem; inny tekst bez
+  „3<KLASA>” = błąd `format` (build zostaje).
+- **S148** Wektory planera przeniesione z `skills.json` `rules.vectors` do `wiki/test-fixtures/planner.json` (`game` =
+  kierunki gry, `skills` = `SkillPoints.canBuy` / `apply` na danych gry, ziarno 8283): z opublikowanymi kierunkami
+  `skills.json` urósłby o 1 MB danych testowych. Wektory dostały `leading` (`Paths.mainOf`) i stan z ulepszeniem bez
+  zwieńczenia (`paths.error.upgrade`).
+- **S148** Planer: obniżenie poziomu nie przycina buildu, tylko ostrzega (pule ponad budżet, rangi ponad limit albo bez
+  węzła, węzły nieosiągalne), jak planer v2; kafelek „zablokowany” tylko bez rangi do kupienia na poziomie albo bez
+  węzła kierunku. Zwrot węzła `skill` w planerze zabiera rangi jego umiejętności we wszystkich pulach i paskach
+  (`Paths.cleanRanks`).
+- **S148** `Skills.rankFor` usunięte (rangi z poziomu skończyły się w S137): limit rangi to `Skills.rankAt`, ranga
+  postaci `Paths.skillRank`; `BalanceTables` i `skills.spec` liczą limit przez `rankAt`.
+- **S148** Budżet JS strony klasy 40 → 44 KB gzip (planer v3 41 KB). `wiki_keys_diff` przed commitem sesji wiki
+  przechodzi z `WIKI_KEYS_ALLOW="skills:*,titles:*,mechanics:*,types.ts"` (nowy kształt `skills.json`, `req.path`,
+  `mechanics.combat.pvp.phoenix` z S140).

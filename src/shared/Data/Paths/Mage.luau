@@ -8,7 +8,7 @@
 -- Shape: Data/Paths/Warrior (S75) and Hunter (S78). Hooks are the S79 / S80 names (Skills/Context, SkillService,
 -- Skills/Elements, StatusEffectService, Logic/Skills.cost). Weapons split strictly as in 12.1 (STATY 3). No Mage node
 -- gives a party effect, so none needs dipScale. `reference` and `itemWeights` never reach the wiki; both paths are
--- unpublished there (wiki = false, ROZWOJ 3.5).
+-- published there since S148 (DESIGN-18 §14).
 
 local SkillData = require("../Skills")
 local Types = require("./Types")
@@ -207,7 +207,6 @@ local destroyer: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local arcanist: Types.PathDef = {
@@ -356,7 +355,6 @@ local arcanist: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 -- Model builds (ROZWOJ 7.5, 12.4, 12.5, 12.7; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50

@@ -4,7 +4,7 @@
 -- Node numbers follow B3 (Logic/Paths): rank-dependent numbers sit in `values`, passive / luck name the field, in
 -- modify.bp a number is { ref = "<field>" }. Behaviour numbers (shieldBurst, stunSplash, misfortune) go through the
 -- skill's values (read with ctx.value), the behaviour key keeps only its fixed radius.
--- `reference` and `itemWeights` never reach the wiki; every path is unpublished there (wiki = false, ROZWOJ 3.5).
+-- `reference` and `itemWeights` never reach the wiki; S148: the directions are published there (DESIGN-18 §14).
 -- S145 (DESIGN-18 §6.4, §7): the skill nodes went to the weapon pools (Scepter and Staff, Mace and Flail) and left
 -- nodes of the same ranks (rows and need unchanged); skill nodes only in rows 4 and 8: the Healer has Prayer (row 4,
 -- was Fortune's row 7) and Divine Intervention (the capstone, row 8; Guardian Angel went to the light pool), the Priest
@@ -191,7 +191,6 @@ local healer: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local fortune: Types.PathDef = {
@@ -322,7 +321,6 @@ local fortune: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local inquisitor: Types.PathDef = {
@@ -467,7 +465,6 @@ local inquisitor: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 -- Model builds (ROZWOJ 7.5, 9.3-9.5; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50 points.

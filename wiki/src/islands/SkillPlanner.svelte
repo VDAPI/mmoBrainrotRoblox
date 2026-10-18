@@ -1,34 +1,48 @@
 <script lang="ts">
-  // Skill planner of a class page (S82, ROZWOJ 3.5): level slider and stepper, path points, main path, build code v2,
-  // tabs "Base" + one per published path (or "Paths coming soon"), the details panel with breakpoints A/B. Rules and
-  // view models from src/lib/skills.ts (parity with Logic/Paths is tested); data only from props (one class, one
-  // language). URL: ?b=<code v2>&s=<skill or node id> (replaceState after 200 ms), #s-<id> selects too; an old ?b=
-  // opens an empty planner with a warning. Without ?b: the maximum level, an empty build, the first base skill
-  // selected (also the SSR state).
+  // Skill planner v3 of a class page (S148, DESIGN-18 §14): level slider and stepper, one tab per weapon pool (the
+  // ladder tree with columns of roles, skill points of the pool, the pool's bar of 8) and a "Directions" tab (talent
+  // trees, one capstone per set, the leading direction), the details panel (short text, ranks, numbers at ranks 1 / 5 /
+  // 10, breakpoints A/B, nodes that change the skill), build code v3. Rules and view models from src/lib/skills.ts
+  // (parity with Logic/SkillPoints and Logic/Paths is tested); data only from props (one class, one language).
+  // URL: ?b=<code v3>&s=<skill or node id>&p=<pool id or "directions"> (replaceState after 200 ms), #s-<id> selects
+  // too; a v2 code (or older) opens an empty planner with a warning. Without ?b: the maximum level, an empty build, the
+  // default pool and its first skill (also the SSR state).
   import { onMount, tick } from "svelte";
   import SkillNode from "../components/SkillNode.svelte";
   import {
-    addRank,
-    baseView,
-    canBuy,
-    canRefund,
-    canSetMain,
+    COLUMNS,
+    addNodeRank,
+    addSkillRank,
+    barOf,
+    bought,
+    bpRank,
+    canBuyNode,
+    canBuySkill,
+    canRefundNode,
+    canonical,
     choiceAt,
+    columnOf,
     decodeBuild,
     emptyBuild,
     encodeBuild,
     fill,
-    free,
+    freeIn,
+    leadingOf,
+    nextRankLevel,
+    pathFree,
+    pathPointsAt,
     pathView,
-    pointsAt,
-    pruneChoices,
+    planCtx,
+    poolTree,
     rankAt,
+    rankOf,
     reasonCode,
     setChoice,
-    setMain,
+    skillPointsAt,
+    tileView,
+    toggleBar,
     validate,
     variantKey,
-    type CodeCtx,
     type Option,
     type PlanBuild,
     type PlannerData,
@@ -41,22 +55,24 @@
 
   // Props never change on a page: plain constants keep the code simple.
   // svelte-ignore state_referenced_locally
-  const { skills, paths, rules, labels: L, classId, lang, scroll, classColor } = data;
+  const { skills, pools, paths, rules, labels: L, lang, scroll, classColor, defaultPool } = data;
+  // svelte-ignore state_referenced_locally
+  const ctx = planCtx(data);
   const skillById = new Map(skills.map((s) => [s.id, s]));
   const nodeById = new Map(paths.flatMap((p) => p.rows.flatMap((r) => r.nodes.map((n) => [n.id, { node: n, path: p, row: r.row }] as const))));
-  const base = skills.filter((s) => !s.path);
-  /** Skill node of each path skill (its A/B choices travel with the node in the code). */
   const nodeOfSkill = new Map([...nodeById].filter(([, h]) => h.node.skill).map(([id, h]) => [h.node.skill!, id] as const));
-  const ctx: CodeCtx = { classId, maxLevel: rules.maxLevel, skills, paths };
+  const trees = new Map(pools.map((p) => [p.id, poolTree(ctx, p.id)]));
+  const DIR = "directions";
   const locale = lang === "pl" ? "pl-PL" : "en-US";
   const num = (n: number): string => n.toLocaleString(locale, { maximumFractionDigits: 1 });
   const T = (key: string, args: Record<string, string | number> = {}): string => fill(L[key] ?? key, args);
-  const lastRow = paths[0]?.rows.length ?? 11;
   const markOf = (scale: number): string => (Math.abs(scale - 1 / 3) < 0.01 ? "⅓" : Math.abs(scale - 0.5) < 0.01 ? "½" : `${Math.round(scale * 100)}%`);
+  const firstOf = (poolId: string): string => pools.find((p) => p.id === poolId)?.skills[0] ?? "";
 
   let build = $state<PlanBuild>(emptyBuild(rules.maxLevel));
-  let tab = $state("base");
-  let selected = $state(base[0]?.id ?? "");
+  let tab = $state(defaultPool);
+  let pathTab = $state(paths[0]?.id ?? "");
+  let selected = $state(firstOf(defaultPool));
   let codeText = $state("");
   let codeError = $state<string | null>(null);
   let oldLink = $state(false);
@@ -64,35 +80,24 @@
   let copied = $state(false);
   let dirty = false;
 
+  const pool = $derived(tab === DIR ? null : (pools.find((p) => p.id === tab) ?? null));
+  /** The pool the details work in: the open pool tab, else the last one shown. */
+  let lastPool = $state(defaultPool);
   const code = $derived(encodeBuild(ctx, build));
-  const total = $derived(pointsAt(rules, build.level));
-  const freePts = $derived(free(paths, rules, build));
-  const check = $derived(validate(paths, rules, build));
-  const baseRows = $derived(baseView(base, build));
-  const views = $derived(new Map(paths.map((p) => [p.id, pathView(p, paths, rules, build)])));
-  const mainPath = $derived(paths.find((p) => p.id === build.main) ?? null);
+  const check = $derived(validate(ctx, build));
+  const unreached = $derived(new Set(check.unreached));
+  const views = $derived(new Map(paths.map((p) => [p.id, pathView(ctx, p, build, unreached)])));
+  const leading = $derived(leadingOf(ctx, build.nodes));
   const selNode = $derived(nodeById.get(selected) ?? null);
   const selSkill = $derived(skillById.get(selNode?.node.skill ?? selected) ?? null);
+  const bar = $derived(barOf(ctx, build, lastPool));
 
   $effect(() => {
     if (!editing) codeText = code;
   });
 
-  /** Rank of a skill now: the base from the level; a path skill with its node bought and its row working. */
-  function skillRank(s: PlannerSkill): number {
-    if (!s.path) return rankAt(s, build.level);
-    for (const [id, hit] of nodeById) {
-      if (hit.node.skill !== s.id) continue;
-      if ((build.nodes[id] ?? 0) <= 0) return 0;
-      if (hit.row > rules.dipRows && build.main !== hit.path.id) return 0;
-      const row = hit.path.rows[hit.row - 1];
-      return build.level >= row.level ? rankAt(s, build.level) : 0;
-    }
-    return 0;
-  }
-
   function numbersAt(s: PlannerSkill, rank: number) {
-    const r = s.ranks[rank - 1];
+    const r = s.ranks[Math.max(1, rank) - 1];
     const key = variantKey(build, s, rank);
     return key === "aa" ? r : (r.variants?.[key] ?? r);
   }
@@ -107,10 +112,16 @@
     return parts.join(" · ");
   }
 
+  const roleName = (s: PlannerSkill): string => {
+    const column = columnOf(s.role);
+    return s.path ? T("pathSkill", { path: s.pathName ?? "" }) : column ? L[`col.${column}`] : "";
+  };
+
   const modifiers = (skillId: string): { node: PlannerNode; path: PlannerPath }[] =>
     [...nodeById.values()].filter((h) => h.node.modify?.skill === skillId).map((h) => ({ node: h.node, path: h.path }));
 
   // Edits ------------------------------------------------------------------------------------------------------------
+  let timer: ReturnType<typeof setTimeout> | undefined;
   function touch(): void {
     // Any edit outside the code field makes the field follow the build again (drops a rejected code).
     editing = false;
@@ -120,21 +131,54 @@
     timer = setTimeout(writeUrl, 200);
   }
 
-  function select(id: string): void {
-    selected = id;
-    const hit = nodeById.get(id);
-    if (hit) tab = hit.path.id;
+  function openTab(id: string): void {
+    tab = id;
+    if (id !== DIR) lastPool = id;
     touch();
   }
 
-  function add(id: string): void {
-    select(id);
-    if (canBuy(paths, rules, build, id).ok) build = addRank(build, id, 1);
+  function select(id: string): void {
+    selected = id;
+    const hit = nodeById.get(id);
+    if (hit) {
+      tab = DIR;
+      pathTab = hit.path.id;
+    }
+    touch();
   }
 
-  function remove(id: string): void {
+  /** A tile tapped: select it; on a phone the details sit below the tree, so they scroll into view. */
+  async function reveal(id: string): Promise<void> {
     select(id);
-    if (canRefund(paths, rules, build, id).ok) build = pruneChoices(paths, addRank(build, id, -1));
+    if (!matchMedia("(max-width: 767px)").matches) return;
+    await tick();
+    document.querySelector(".sp-detail")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+
+  function addSkill(id: string): void {
+    if (canBuySkill(ctx, build, lastPool, id).ok) build = addSkillRank(build, lastPool, id, 1);
+    touch();
+  }
+
+  function removeSkill(id: string): void {
+    if (bought(build, lastPool, id) > 0) build = addSkillRank(build, lastPool, id, -1);
+    touch();
+  }
+
+  function flipBar(id: string): void {
+    const next = toggleBar(ctx, build, lastPool, id);
+    if (next) build = next;
+    touch();
+  }
+
+  function addNode(id: string): void {
+    select(id);
+    if (canBuyNode(ctx, build, id).ok) build = addNodeRank(ctx, build, id, 1);
+  }
+
+  function removeNode(id: string): void {
+    select(id);
+    if (canRefundNode(ctx, build, id).ok) build = addNodeRank(ctx, build, id, -1);
   }
 
   function setLevel(value: number): void {
@@ -143,28 +187,16 @@
     touch();
   }
 
-  /** A path skill's A/B can be chosen only with its node bought (the code carries it in the node digit). */
-  const canChoose = (skillId: string): boolean => {
-    const node = nodeOfSkill.get(skillId);
-    return node === undefined || (build.nodes[node] ?? 0) > 0;
-  };
-
   function choose(skillId: string, rank: number, option: Option): void {
-    if (!canChoose(skillId)) return;
+    if (bpRank(ctx, build, skillId) < rank) return;
     build = setChoice(build, skillId, rank, option);
     touch();
   }
 
-  function makeMain(pathId: string | null): void {
-    build = pruneChoices(paths, setMain(paths, rules, build, pathId));
-    touch();
-  }
-
   // URL and code -----------------------------------------------------------------------------------------------------
-  let timer: ReturnType<typeof setTimeout> | undefined;
   function writeUrl(): void {
     if (!dirty || typeof history === "undefined") return;
-    const query = `?b=${encodeURIComponent(code)}&s=${encodeURIComponent(selected)}`;
+    const query = `?b=${encodeURIComponent(code)}&s=${encodeURIComponent(selected)}&p=${encodeURIComponent(tab)}`;
     history.replaceState(history.state, "", `${location.pathname}${query}`);
   }
 
@@ -182,7 +214,7 @@
     }
     codeError = null;
     oldLink = false;
-    build = r.build;
+    build = canonical(ctx, r.build);
     return true;
   }
 
@@ -220,17 +252,29 @@
   }
 
   // Tabs -------------------------------------------------------------------------------------------------------------
-  const tabIds = ["base", ...(paths.length > 0 ? paths.map((p) => p.id) : ["soon"])];
+  const tabIds = [...pools.map((p) => p.id), ...(paths.length > 0 ? [DIR] : [])];
   function onTabKey(e: KeyboardEvent): void {
     const i = tabIds.indexOf(tab);
     const next = { ArrowRight: i + 1, ArrowDown: i + 1, ArrowLeft: i - 1, ArrowUp: i - 1, Home: 0, End: tabIds.length - 1 }[e.key];
     if (next === undefined) return;
     e.preventDefault();
-    tab = tabIds[(next + tabIds.length) % tabIds.length];
+    openTab(tabIds[(next + tabIds.length) % tabIds.length]);
     document.getElementById(`sp-tab-${tab}`)?.focus();
   }
 
-  // Nodes: pointer and keyboard (as in S41) ----------------------------------------------------------------------------
+  function onTileKey(e: KeyboardEvent, id: string): void {
+    if (e.key === "+" || e.key === "=") {
+      e.preventDefault();
+      select(id);
+      addSkill(id);
+    } else if (e.key === "-" || e.key === "Delete" || e.key === "Backspace") {
+      e.preventDefault();
+      select(id);
+      removeSkill(id);
+    }
+  }
+
+  // Direction nodes: pointer and keyboard (as in S41 / S82) --------------------------------------------------------------
   let pointer = "mouse";
   let hold: ReturnType<typeof setTimeout> | undefined;
   let held = false;
@@ -245,7 +289,7 @@
       clearTimeout(hold);
       hold = setTimeout(() => {
         held = true;
-        remove(id);
+        removeNode(id);
         navigator.vibrate?.(20);
       }, 500);
     }
@@ -262,13 +306,13 @@
       return;
     }
     if (pointer === "touch") select(id);
-    else if (e.shiftKey) remove(id);
-    else add(id);
+    else if (e.shiftKey) removeNode(id);
+    else addNode(id);
     pointer = "mouse";
   }
   function onContext(e: Event, id: string): void {
     e.preventDefault();
-    if (pointer !== "touch") remove(id);
+    if (pointer !== "touch") removeNode(id);
   }
   function onNodeKey(e: KeyboardEvent, path: PlannerPath, row: number, index: number): void {
     pointer = "keyboard";
@@ -286,10 +330,10 @@
       }
     } else if (e.key === "+" || e.key === "=" || e.key === "Enter") {
       e.preventDefault();
-      add(id);
+      addNode(id);
     } else if (e.key === "-" || e.key === "Delete" || e.key === "Backspace") {
       e.preventDefault();
-      remove(id);
+      removeNode(id);
     }
   }
 
@@ -303,25 +347,38 @@
     else if (hasB && ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) pick(choiceAt(build, skillId, rank) === "a" ? "b" : "a");
   }
 
+  /** The pool tab a skill belongs to (its own school, else the pool shown last). */
+  const poolFor = (s: PlannerSkill): string => (s.pool && s.pool !== "common" && pools.some((p) => p.id === s.pool) ? s.pool : lastPool);
+
   onMount(() => {
     const params = new URLSearchParams(location.search);
     const b = params.get("b");
     if (b) loadCode(b);
+    const p = params.get("p");
+    if (p && tabIds.includes(p)) {
+      tab = p;
+      if (p !== DIR) lastPool = p;
+    }
     const fromHash = /^#s-(.+)$/.exec(location.hash)?.[1];
     const want = params.get("s") ?? (fromHash ? decodeURIComponent(fromHash) : null);
     if (want && (skillById.has(want) || nodeById.has(want))) {
-      selected = nodeOfSkill.get(want) ?? want;
-      const hit = nodeById.get(selected);
-      if (hit) tab = hit.path.id;
+      selected = want;
+      const hit = nodeById.get(want);
+      if (hit) {
+        tab = DIR;
+        pathTab = hit.path.id;
+      } else if (!p) {
+        tab = lastPool = poolFor(skillById.get(want)!);
+      }
     }
     // "Plan" links of the skill list select the skill without reloading the page.
     const onPlan = (e: MouseEvent): void => {
       const id = (e.target as HTMLElement | null)?.closest<HTMLAnchorElement>("a[data-plan]")?.dataset.plan;
       if (!id || !skillById.has(id)) return;
       e.preventDefault();
-      const s = skillById.get(id)!;
-      select(nodeOfSkill.get(id) ?? id);
-      tab = s.path ?? "base";
+      tab = lastPool = poolFor(skillById.get(id)!);
+      selected = id;
+      touch();
       document.getElementById("planner")?.scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
     };
     document.addEventListener("click", onPlan);
@@ -330,49 +387,103 @@
 
   const optionsOf = (b: string | null): Option[] => (b === null ? ["a"] : ["a", "b"]);
   const stateWord = (state: string): string => L[`state.${state}`] ?? state;
-  const whyBuy = (reason?: string): string => (reason ? L[`why.${reasonCode(reason)}`] : "");
-  const whyRefund = (reason?: string): string => (reason ? L[`whyRefund.${reasonCode(reason)}`] : "");
-  const weaponLine = (p: PlannerPath): string => {
-    const main = p.weapon.main.join(" / ");
-    const off = p.weapon.offhand.join(" / ");
-    return main || off ? [main, off].filter(Boolean).join(" + ") : L.weaponAny;
-  };
-  const mainHint = $derived(T("mainHint", { from: rules.dipRows + 1, to: lastRow }).split("{scroll}"));
+  const whySkill = (reason?: string): string => (reason ? (L[`whySkill.${reasonCode(reason)}`] ?? "") : "");
+  const whyNode = (reason?: string): string => (reason ? (L[`whyNode.${reasonCode(reason)}`] ?? "") : "");
+  const whyRefund = (reason?: string): string => (reason ? (L[`whyRefund.${reasonCode(reason)}`] ?? "") : "");
+  const poolName = (id: string): string => pools.find((p) => p.id === id)?.name ?? id;
 </script>
 
+{#snippet tile(id: string)}
+  {@const s = skillById.get(id)}
+  {#if s && pool}
+    {@const v = tileView(ctx, build, pool.id, s)}
+    <div class="sp-tile" data-skill={s.id} data-col={columnOf(s.role) ?? "D"}>
+      <SkillNode
+        glyph={s.glyph}
+        pic={s.pic}
+        color={s.color}
+        state={v.state}
+        invalid={v.invalid}
+        rank={v.rank}
+        max={v.max}
+        active={!s.passive}
+        capstone={s.role === "U"}
+        selected={selected === s.id}
+        size={56}
+        mark={v.onBar !== null ? String(v.onBar) : null}
+        label={T("aria", { name: s.name, rank: v.rank, max: v.max, state: stateWord(v.state) })}
+        lockText={v.lockLevel !== null ? T("lockedAt", { n: v.lockLevel }) : null}
+        title={`${s.name}: ${s.short}`}
+        onclick={() => reveal(s.id)}
+        onkeydown={(e: KeyboardEvent) => onTileKey(e, s.id)}
+      />
+      <span class="sp-tile__name">{s.name}</span>
+      <span class="sp-tile__short">{s.short}</span>
+      {#if v.bp.length > 0}
+        <span class="sp-tile__bps" aria-hidden="true">
+          {#each v.bp as bp (bp.rank)}<span class="sp-bpmark" class:is-open={bp.reached}>{bp.rank}{bp.choice.toUpperCase()}</span>{/each}
+        </span>
+      {/if}
+    </div>
+  {/if}
+{/snippet}
+
 {#snippet skillDetail(s: PlannerSkill)}
-  {@const rank = skillRank(s)}
+  {@const poolId = lastPool}
+  {@const rank = rankOf(ctx, build, poolId, s.id)}
+  {@const cap = rankAt(s, build.level)}
+  {@const has = bought(build, poolId, s.id)}
+  {@const buy = canBuySkill(ctx, build, poolId, s.id)}
+  {@const onBar = barOf(ctx, build, poolId).includes(s.id)}
+  {@const next = nextRankLevel(s, has)}
+  {@const best = bpRank(ctx, build, s.id)}
   <div class="sp-detail__head">
     <span class="sp-detail__icon" aria-hidden="true">{#if s.pic}<img src={`${s.pic}-64.webp`} srcset={`${s.pic}-64.webp 1x, ${s.pic}-128.webp 2x`} alt="" width="62" height="62" />{:else}<span style={`color: ${s.color}`}>{s.glyph}</span>{/if}</span>
     <div class="sp-detail__title">
       <h3 id="sp-detail-name">{s.name}</h3>
-      <span class="sp-detail__meta">{metaOf(s, rank)}</span>
-      {#if s.pathName}<span class="sp-detail__meta">{T("pathSkill", { path: s.pathName })}</span>{/if}
+      <span class="sp-detail__meta">{[roleName(s), metaOf(s, rank)].filter(Boolean).join(" · ")}</span>
+      <span class="sp-detail__meta">{poolName(poolId)}</span>
     </div>
+  </div>
+  <div class="sp-detail__desc">
+    <span class="sp-label">{L.whatItDoes}</span>
+    <p>{s.short}</p>
   </div>
   {#if s.elementNote}<p class="sp-detail__element">{s.elementNote}</p>{/if}
   <div class="sp-detail__rank">
     <span class="sp-label">{L.rank}</span>
-    <b class:is-partial={rank > 0} class:is-max={rank >= s.maxLevel}>{rank} / {s.maxLevel}</b>
+    <span class="sp-detail__note">{has < s.maxLevel ? (next !== null && next > build.level ? T("nextAt", { n: next }) : T("rankLimit", { n: cap })) : L.rankMax}</span>
+    <b class:is-partial={rank > 0} class:is-max={rank >= s.maxLevel} class:is-over={has > rank}>{has} / {s.maxLevel}</b>
   </div>
+  <div class="sp-detail__actions">
+    <button type="button" class="sp-btn sp-btn--big" aria-disabled={has <= 0} aria-label={L.remove} onclick={() => removeSkill(s.id)}>− <span class="sp-desktop">{L.remove}</span></button>
+    <button type="button" class="sp-btn sp-btn--big sp-btn--gold" aria-disabled={!buy.ok} title={buy.ok ? undefined : whySkill(buy.reason)} aria-label={`${L.add}${buy.ok ? "" : ` (${whySkill(buy.reason)})`}`} onclick={() => addSkill(s.id)}>+ <span class="sp-desktop">{L.add}</span></button>
+  </div>
+  {#if !buy.ok && buy.reason}<p class="sp-detail__why">{whySkill(buy.reason)}</p>{/if}
+  {#if !s.passive}
+    <button type="button" class="sp-btn" aria-disabled={!onBar && (rank <= 0 || bar.length >= rules.barSlots)} onclick={() => flipBar(s.id)}>{onBar ? L.fromBar : rank > 0 && bar.length >= rules.barSlots ? L.barFull : L.toBar}</button>
+  {/if}
   <div class="sp-detail__desc">
     <span class="sp-label">{L.current}</span>
     <p>{rank > 0 ? numbersAt(s, rank).desc : L.notLearned}</p>
   </div>
-  <div class="sp-detail__desc">
-    <span class="sp-label">{L.next}</span>
-    {#if rank < s.maxLevel}
+  {#if rank < s.maxLevel}
+    <div class="sp-detail__desc">
+      <span class="sp-label">{L.next}</span>
       <p class="is-next">{numbersAt(s, rank + 1).desc}</p>
-      <p class="sp-detail__note">{T("nextAt", { n: s.rankLevels[rank] })}</p>
-    {:else}
-      <p>{L.maxed}</p>
-    {/if}
-  </div>
+    </div>
+  {/if}
+  <details class="sp-detail__ranks">
+    <summary class="sp-label">{L.atRanks}</summary>
+    {#each [...new Set([1, 5, 10, s.maxLevel].filter((r) => r <= s.maxLevel))] as r (r)}
+      <p><b>{T("rankN", { n: r })}</b> <small>({T("lockedAt", { n: s.rankLevels[r - 1] })})</small>: {numbersAt(s, r).desc}</p>
+    {/each}
+  </details>
   {#if s.breakpoints.length > 0}
-    {@const open = canChoose(s.id)}
     {#each s.breakpoints as bp (bp.rank)}
       {@const choice = choiceAt(build, s.id, bp.rank)}
-      <div class="sp-bp" class:is-on={build.level >= bp.level}>
+      {@const open = best >= bp.rank}
+      <div class="sp-bp" class:is-on={open}>
         <span class="sp-label" id={`sp-bp-${bp.rank}`}>{T("bp", { n: bp.rank })} · {T("bpFrom", { n: bp.level })}</span>
         <div class="sp-bp__opts" role="radiogroup" aria-labelledby={`sp-bp-${bp.rank}`} aria-disabled={!open} data-bp={bp.rank}>
           {#each optionsOf(bp.b) as o (o)}
@@ -389,9 +500,10 @@
             </div>
           {/each}
         </div>
+        {#if !open}<p class="sp-detail__hint">{T("bpLocked", { n: bp.rank })}</p>{/if}
       </div>
     {/each}
-    <p class="sp-detail__hint">{open ? L.bpHint : L.bpNode}</p>
+    <p class="sp-detail__hint">{L.bpHint}</p>
   {:else if !s.passive}
     <p class="sp-detail__hint">{L.bpNone}</p>
   {/if}
@@ -404,36 +516,51 @@
           <li><button type="button" class="sp-link" onclick={async () => { select(m.node.id); await tick(); focusNode(m.node.id); }}>{m.node.name}</button> · {m.path.name}</li>
         {/each}
       </ul>
-      <p class="sp-detail__hint">{L.modifiedNote}</p>
     </div>
   {/if}
+  {#if s.path && nodeOfSkill.has(s.id)}
+    <p class="sp-detail__hint"><button type="button" class="sp-link" onclick={() => select(nodeOfSkill.get(s.id)!)}>{T("pathSkill", { path: s.pathName ?? "" })}</button></p>
+  {/if}
+  <p class="sp-detail__hint">{L.modifiedNote}</p>
 {/snippet}
 
 {#snippet nodeDetail(hit: { node: PlannerNode; path: PlannerPath; row: number })}
   {@const n = hit.node}
-  {@const view = views.get(hit.path.id)?.rows[hit.row - 1].nodes.find((x) => x.id === n.id)}
+  {@const pv = views.get(hit.path.id)}
+  {@const view = pv?.rows[hit.row - 1].nodes.find((x) => x.id === n.id)}
   {@const rank = build.nodes[n.id] ?? 0}
+  <div class="sp-detail__head">
+    <span class="sp-detail__icon" aria-hidden="true"><span style={`color: ${classColor}`}>{n.glyph}</span></span>
+    <div class="sp-detail__title">
+      <h3 id="sp-detail-name">{n.name}</h3>
+      <span class="sp-detail__meta">{L[`kind.${n.kind}`] ?? n.kind} · {hit.path.name}</span>
+    </div>
+  </div>
+  <div class="sp-detail__rank">
+    <span class="sp-label">{L.rank}</span>
+    <b class:is-partial={rank > 0} class:is-max={rank >= n.maxRank}>{rank} / {n.maxRank}</b>
+  </div>
+  {#if view}
+    <div class="sp-detail__actions">
+      <button type="button" class="sp-btn sp-btn--big" aria-disabled={!view.refund.ok} title={view.refund.ok ? undefined : whyRefund(view.refund.reason)} aria-label={`${L.remove}${view.refund.ok ? "" : ` (${whyRefund(view.refund.reason)})`}`} onclick={() => removeNode(n.id)}>− <span class="sp-desktop">{L.remove}</span></button>
+      <button type="button" class="sp-btn sp-btn--big sp-btn--gold" aria-disabled={!view.buy.ok} title={view.buy.ok ? undefined : whyNode(view.buy.reason)} aria-label={`${L.add}${view.buy.ok ? "" : ` (${whyNode(view.buy.reason)})`}`} onclick={() => addNode(n.id)}>+ <span class="sp-desktop">{L.add}</span></button>
+    </div>
+    {#if !view.buy.ok && view.buy.reason}<p class="sp-detail__why">{whyNode(view.buy.reason)}</p>{/if}
+  {/if}
   {#if n.skill && skillById.has(n.skill)}
-    {@render skillDetail(skillById.get(n.skill)!)}
+    {@const s = skillById.get(n.skill)!}
+    <div class="sp-detail__desc">
+      <span class="sp-label">{L["kind.skill"]}</span>
+      <p><button type="button" class="sp-link" onclick={() => { tab = lastPool; select(s.id); }}>{s.name}</button>: {s.short}</p>
+    </div>
   {:else}
-    <div class="sp-detail__head">
-      <span class="sp-detail__icon" aria-hidden="true"><span style={`color: ${classColor}`}>{n.glyph}</span></span>
-      <div class="sp-detail__title">
-        <h3 id="sp-detail-name">{n.name}</h3>
-        <span class="sp-detail__meta">{L[`kind.${n.kind}`] ?? n.kind} · {hit.path.name}</span>
-      </div>
-    </div>
-    <div class="sp-detail__rank">
-      <span class="sp-label">{L.rank}</span>
-      <b class:is-partial={rank > 0} class:is-max={rank >= n.maxRank}>{rank} / {n.maxRank}</b>
-    </div>
     {#each [rank, rank + 1] as r, i (i)}
       {@const text = r >= 1 && r <= n.maxRank ? n.ranks[r - 1] : null}
       <div class="sp-detail__desc">
         <span class="sp-label">{i === 0 ? L.current : L.next}</span>
         {#if text && view?.dip && text.dipDesc}
           <p class:is-next={i === 1}>{text.dipDesc}</p>
-          <p class="sp-detail__note">{T("dip", { mark: markOf(n.dipScale ?? 1) })} {T("dipMain", { text: text.desc })}</p>
+          <p class="sp-detail__note">{T("dip", { mark: markOf(n.dipScale ?? 1), n: rules.teamFullPoints })} {T("dipFull", { n: rules.teamFullPoints, text: text.desc })}</p>
         {:else if text}
           <p class:is-next={i === 1}>{text.desc}</p>
         {:else}
@@ -443,19 +570,12 @@
     {/each}
     {#if n.modify && skillById.has(n.modify.skill)}
       <p class="sp-detail__element">
-        <button type="button" class="sp-link" onclick={() => select(n.modify!.skill)}>{skillById.get(n.modify.skill)!.name}</button>
+        <button type="button" class="sp-link" onclick={() => { tab = lastPool; select(n.modify!.skill); }}>{skillById.get(n.modify.skill)!.name}</button>
       </p>
     {/if}
   {/if}
   {#if n.weapon}<p class="sp-detail__element">{T("nodeWeapon", { w: n.weapon })}</p>{/if}
-  {#if view}
-    <div class="sp-detail__actions">
-      <button type="button" class="sp-btn sp-btn--big" aria-disabled={!view.refund.ok} title={view.refund.ok ? undefined : whyRefund(view.refund.reason)} aria-label={`${L.remove}${view.refund.ok ? "" : ` (${whyRefund(view.refund.reason)})`}`} onclick={() => remove(n.id)}>− <span class="sp-desktop">{L.remove}</span></button>
-      <button type="button" class="sp-btn sp-btn--big sp-btn--gold" aria-disabled={!view.buy.ok} title={view.buy.ok ? undefined : whyBuy(view.buy.reason)} aria-label={`${L.add}${view.buy.ok ? "" : ` (${whyBuy(view.buy.reason)})`}`} onclick={() => add(n.id)}>+ <span class="sp-desktop">{L.add}</span></button>
-    </div>
-    {#if !view.buy.ok && view.buy.reason}<p class="sp-detail__why">{whyBuy(view.buy.reason)}</p>{/if}
-  {/if}
-  <p class="sp-detail__hint">{L.hint} {#if scroll.href}<a href={scroll.href}>{scroll.name}</a>{:else}{scroll.name}{/if}.</p>
+  <p class="sp-detail__hint">{T("refundHint", { n: rules.freeRespecLevel })} {#if scroll.href}<a href={scroll.href}>{scroll.name}</a>{:else}{scroll.name}{/if}.</p>
 {/snippet}
 
 <div class="sp" style={`--sp-class: ${classColor}`}>
@@ -469,17 +589,32 @@
         <button type="button" aria-label={L.lvlInc} disabled={build.level >= rules.maxLevel} onclick={(e) => setLevel(build.level + (e.shiftKey ? 10 : 1))}>+</button>
       </div>
     </div>
-    <div class="sp-points">
-      <span class="sp-label">{L.points}</span>
-      <span class="sp-points__value" aria-live="polite">
-        <span class="vw-sr">{T("pointsLive", { free: freePts, total })}</span>
-        <span aria-hidden="true"><b class:is-zero={freePts === 0} class:is-over={freePts < 0}>{freePts}</b> / {total}</span>
-      </span>
-    </div>
-    <div class="sp-main-path">
-      <span class="sp-label">{L.main}</span>
-      <b>{mainPath ? mainPath.name : L.mainNone}</b>
-    </div>
+    {#if tab !== DIR}
+      {@const free = freeIn(ctx, build, lastPool)}
+      {@const total = skillPointsAt(rules, build.level)}
+      <div class="sp-points">
+        <span class="sp-label">{L.skillPoints}</span>
+        <span class="sp-points__value" aria-live="polite">
+          <span class="vw-sr">{T("skillPointsLive", { free, total })}</span>
+          <span aria-hidden="true"><b class:is-zero={free === 0} class:is-over={free < 0}>{free}</b> / {total}</span>
+        </span>
+      </div>
+    {/if}
+    {#if paths.length > 0}
+      {@const pfree = pathFree(ctx, build)}
+      {@const ptotal = pathPointsAt(rules, build.level)}
+      <div class="sp-points">
+        <span class="sp-label">{L.talentPoints}</span>
+        <span class="sp-points__value" aria-live="polite">
+          <span class="vw-sr">{T("talentPointsLive", { free: pfree, total: ptotal })}</span>
+          <span aria-hidden="true"><b class:is-zero={pfree === 0} class:is-over={pfree < 0}>{pfree}</b> / {ptotal}</span>
+        </span>
+      </div>
+      <div class="sp-leading">
+        <span class="sp-label">{L.leading}</span>
+        <b>{leading ? (paths.find((p) => p.id === leading)?.name ?? leading) : T("leadingNone", { n: rules.mainMinPoints })}</b>
+      </div>
+    {/if}
     <div class="sp-code">
       <label class="vw-sr" for="sp-code">{L.code}</label>
       <div class="sp-code__field" class:has-error={codeError !== null}>
@@ -502,78 +637,102 @@
     </div>
   </div>
 
-  {#if oldLink || check.over > 0 || check.unreached.length > 0 || !check.mainOk}
+  {#if oldLink || !check.ok}
     <aside class="vw-callout vw-callout--warn sp-warn">
       <span class="vw-callout__icon" aria-hidden="true"></span>
       <div>
         <span class="vw-callout__title">{L.warn}</span>
         {#if oldLink}<p>{L.old}</p>{/if}
-        {#if check.over > 0}<p>{T("over", { n: check.over })}</p>{/if}
+        {#each Object.entries(check.poolsOver) as [id, n] (id)}<p>{T("poolOver", { pool: poolName(id), n })}</p>{/each}
+        {#if check.ranksOver.length > 0}<p>{T("ranksOver", { n: check.ranksOver.length })}</p>{/if}
+        {#if check.nodesOver > 0}<p>{T("nodesOver", { n: check.nodesOver })}</p>{/if}
         {#if check.unreached.length > 0}<p>{T("unreached", { n: check.unreached.length })}</p>{/if}
-        {#if !check.mainOk}<p>{T("mainLow", { n: rules.mainPathLevel })}</p>{/if}
       </div>
     </aside>
   {/if}
 
   <div class="sp-tabs" role="tablist" aria-label={L.tabs} tabindex="-1" onkeydown={onTabKey}>
-    <button type="button" role="tab" id="sp-tab-base" aria-selected={tab === "base"} aria-controls="sp-panel" tabindex={tab === "base" ? 0 : -1} onclick={() => (tab = "base")}>{L.base}</button>
-    {#each paths as p (p.id)}
-      {@const v = views.get(p.id)}
-      <button type="button" role="tab" id={`sp-tab-${p.id}`} data-path={p.id} aria-selected={tab === p.id} aria-controls="sp-panel" tabindex={tab === p.id ? 0 : -1} onclick={() => (tab = p.id)}>
-        {p.name} <small>{p.roleName} · {T("pathPoints", { n: v?.points ?? 0 })}</small>
-        {#if build.main === p.id}<span class="sp-badge">{L.isMain}</span>{/if}
+    {#each pools as p (p.id)}
+      <button type="button" role="tab" id={`sp-tab-${p.id}`} data-pool={p.id} aria-selected={tab === p.id} aria-controls="sp-panel" tabindex={tab === p.id ? 0 : -1} onclick={() => openTab(p.id)}>
+        <span aria-hidden="true">{p.glyph}</span> {p.name} <small>{T("poolFree", { n: freeIn(ctx, build, p.id) })}</small>
       </button>
     {/each}
-    {#if paths.length === 0}
-      <button type="button" role="tab" id="sp-tab-soon" aria-selected={tab === "soon"} aria-controls="sp-panel" tabindex={tab === "soon" ? 0 : -1} onclick={() => (tab = "soon")}>{L.paths}</button>
+    {#if paths.length > 0}
+      <button type="button" role="tab" id={`sp-tab-${DIR}`} aria-selected={tab === DIR} aria-controls="sp-panel" tabindex={tab === DIR ? 0 : -1} onclick={() => openTab(DIR)}>
+        <span aria-hidden="true">✦</span> {L.directions} <small>{T("poolFree", { n: pathFree(ctx, build) })}</small>
+      </button>
     {/if}
   </div>
 
   <div class="sp-main">
     <div class="sp-panel" id="sp-panel" role="tabpanel" aria-labelledby={`sp-tab-${tab}`}>
-      {#if tab === "base"}
-        <ul class="sp-list">
-          {#each baseRows as row (row.id)}
-            {@const s = skillById.get(row.id)!}
-            <li data-skill={s.id}>
-              <button type="button" class="sp-item" aria-pressed={selected === s.id} onclick={() => select(s.id)}>
-                <span class="sp-item__icon" style={`color: ${s.color}`} aria-hidden="true">{#if s.pic}<img src={`${s.pic}-64.webp`} srcset={`${s.pic}-64.webp 1x, ${s.pic}-128.webp 2x`} alt="" width="40" height="40" loading="lazy" />{:else}{s.glyph}{/if}</span>
-                <span class="sp-item__text">
-                  <b>{s.name}</b>
-                  <small>{L.rank} <span class="sp-rank">{row.rank}/{row.max}</span> · {row.next === null ? L.rankMax : T("nextAt", { n: row.next })}</small>
-                </span>
-                <span class="sp-item__bps" aria-hidden="true">
-                  {#each row.bp as bp (bp.rank)}
-                    <span class="sp-bpmark" class:is-open={bp.open}>{bp.rank}{bp.choice.toUpperCase()}</span>
-                  {/each}
-                </span>
-              </button>
-            </li>
+      {#if pool}
+        {@const tree = trees.get(pool.id)!}
+        <header class="sp-path">
+          <p>{pool.identity}</p>
+          <p class="sp-detail__note">{T("weapons", { w: [pool.weapons.join(", "), pool.element].filter(Boolean).join(" · ") })}</p>
+        </header>
+        <div class="sp-tree" role="group" aria-label={pool.name}>
+          <div class="sp-tree__head" aria-hidden="true">
+            <span></span>
+            {#each COLUMNS as c (c)}<span>{L[`col.${c}`]}</span>{/each}
+          </div>
+          {#each tree.rows as row (row.level)}
+            <div class="sp-tree__row" class:is-future={row.level > build.level}>
+              <span class="sp-tree__level">{T("level", { n: row.level })}</span>
+              {#each COLUMNS as c (c)}
+                <div class="sp-tree__cell">{#if row.cells[c]}{@render tile(row.cells[c]!)}{/if}</div>
+              {/each}
+            </div>
           {/each}
-        </ul>
-      {:else if tab === "soon"}
-        <div class="sp-soon">
-          <h3>{L.soon}</h3>
-          <p>{T("soonText", { every: rules.pathPointsEvery, first: rules.firstRowLevel, dip: rules.dipRows, main: rules.mainPathLevel, cap: rules.capstoneLevel })}</p>
+          {#each [{ key: "fromDirections", ids: tree.directions }, { key: "others", ids: tree.others }] as extra (extra.key)}
+            {#if extra.ids.length > 0}
+              <div class="sp-tree__extra">
+                <span class="sp-label">{L[extra.key]}</span>
+                <div class="sp-tree__list">{#each extra.ids as id (id)}{@render tile(id)}{/each}</div>
+              </div>
+            {/if}
+          {/each}
         </div>
-      {:else}
-        {@const p = paths.find((x) => x.id === tab)!}
+        <div class="sp-barline">
+          <span class="sp-label">{T("bar", { n: bar.length, max: rules.barSlots })}</span>
+          <ol class="sp-slots">
+            {#each Array.from({ length: rules.barSlots }, (_, i) => bar[i] ?? null) as id, i (i)}
+              {@const s = id ? skillById.get(id) : null}
+              <li>
+                {#if s}
+                  <button type="button" class="sp-slot" title={T("barRemove", { name: s.name })} aria-label={T("barRemove", { name: s.name })} onclick={() => flipBar(s.id)}>
+                    <small>{i + 1}</small><span style={`color: ${s.color}`} aria-hidden="true">{s.glyph}</span><b>{s.name}</b>
+                  </button>
+                {:else}
+                  <span class="sp-slot is-empty"><small>{i + 1}</small><b>{L.barEmpty}</b></span>
+                {/if}
+              </li>
+            {/each}
+          </ol>
+          <p class="sp-detail__hint">{L.barHint}</p>
+        </div>
+      {:else if tab === DIR}
+        <div class="sp-dirs" role="group" aria-label={L.directions}>
+          {#each paths as p (p.id)}
+            {@const v = views.get(p.id)}
+            <button type="button" class="sp-btn" aria-pressed={pathTab === p.id} onclick={() => (pathTab = p.id)}>
+              {p.name} <small>{p.roleName} · {T("pathPoints", { n: v?.points ?? 0 })}</small>
+              {#if v?.leading}<span class="sp-badge">{L.isLeading}</span>{/if}
+              {#if v?.capstone}<span class="sp-badge">{L.hasCapstone}</span>{/if}
+            </button>
+          {/each}
+        </div>
+        <ul class="sp-rules">
+          <li>{L.capstoneRule}</li>
+          <li>{T("leadingRule", { n: rules.mainMinPoints })}</li>
+          <li>{T("dipRule", { rows: rules.dipRows, n: rules.teamFullPoints })}</li>
+        </ul>
+        {@const p = paths.find((x) => x.id === pathTab) ?? paths[0]}
         {@const v = views.get(p.id)!}
         <header class="sp-path">
           <h3>{p.name} <small>{p.roleName}</small></h3>
           <p>{p.desc}</p>
-          <p class="sp-path__weapon"><span class="sp-label">{L.weapon}</span> {weaponLine(p)}. {T("weaponRows", { from: rules.dipRows + 1, to: lastRow })}</p>
-          <div class="sp-path__main">
-            {#if v.isMain}
-              <span class="sp-badge">{L.main}</span>
-              <button type="button" class="sp-btn sp-btn--small" onclick={() => makeMain(null)}>{L.unsetMain}</button>
-            {:else if canSetMain(rules, build)}
-              <button type="button" class="sp-btn sp-btn--gold" onclick={() => makeMain(p.id)}>{L.setMain}</button>
-            {:else}
-              <span class="sp-detail__note">{T("mainFrom", { n: rules.mainPathLevel })}</span>
-            {/if}
-            <span class="sp-detail__hint">{mainHint[0]}{#if scroll.href}<a href={scroll.href}>{scroll.name}</a>{:else}{scroll.name}{/if}{mainHint[1] ?? ""}</span>
-          </div>
         </header>
         <ol class="sp-rows">
           {#each p.rows as row (row.row)}
@@ -624,10 +783,12 @@
     </div>
 
     <section class="sp-detail" aria-labelledby="sp-detail-name" style={`--sp-accent: ${selSkill?.color ?? classColor}`}>
-      {#if selNode}
+      {#if selNode && tab === DIR}
         {@render nodeDetail(selNode)}
       {:else if selSkill}
         {@render skillDetail(selSkill)}
+      {:else if selNode}
+        {@render nodeDetail(selNode)}
       {/if}
     </section>
   </div>

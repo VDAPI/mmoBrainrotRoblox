@@ -5,7 +5,13 @@
 
 ## Stan
 
-S01–S115 i S117–S147 gotowe (ostatnia S147: balans 21–100 Łowcy i Maga po przebudowie umiejętności: blok
+S01–S115 i S117–S148 gotowe (ostatnia S148: wiki umiejętności 2.0 i audyt serii S137–S148: hurtowe odświeżenie danych
+wiki S135–S147, kierunki opublikowane, strona klasy z planerem v3 (zakładki pul z drzewkiem według drabiny, `short` na
+kafelku, szczegóły z liczbami na rangach 1 / 5 / 10, przełomami i węzłami, pasek 8 puli, „Kierunki” z jednym
+zwieńczeniem i kierunkiem przewodnim, kod `3<KLASA>…`, stary kod = pusty planer), sekcje „Jak rozwija się umiejętność”,
+„Kierunki” i umiejętności według pul, parzystość TS z `SkillPoints.canBuy` / `apply` i `Paths.canBuy` przez
+`wiki/test-fixtures/planner.json`, `Skills.rankFor` usunięte, dokumentacja serii spójna (ROZWOJ, DESIGN §14, DESIGN-18
+§17, CLAUDE.md, WIKI.md); wcześniej S147: balans 21–100 Łowcy i Maga po przebudowie umiejętności: blok
 `Balance.targetsS147` z asertowaną tożsamością żywiołów (błyskawica 1,11–1,17 × ogień w jeden cel, lód 0,86–0,90,
 ogień z podpaleniem ≥ błyskawica na 3 cele, kontrola lodu, lód przyjmuje najmniej) i pul Łowcy (łuk / kusza ±10%,
 obrażenia w czasie kuszy ≥ 25%), R8, R7, R5, T-SK3 i T-SK4 wariantów żywiołów; pasek 8 aktywnych także Łowcy i Maga,
@@ -357,109 +363,64 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
-- **S147:** w trybie raportu z powodem (`Balance.S147_REPORT`, `GLOBAL_REPORT_ONLY` S147; decyzje właściciela w
-  `docs/SESJE.md` → S147): obrażenia przyjmowane błyskawica / ogień u Arkanisty na 45. (0,991) i na 20. (1–20
-  zamrożone) mimo zasady 5 sesji (bez paraliżu oba żywioły przyjmują tyle samo; osłona żywiołu na pasku albo Elity
-  odporne na paraliż); T-SK4 wariantów żywiołów na 50–99 (29 z 84 wierszy: Niszczyciel lodu 1,20–1,82 na 65–95,
-  skoki rang przy jednej krzywej many; koszty czarów osobno dla żywiołów); R1 Łowcy i Maga (właściciel S90 / S91); Ognisty Pocisk
-  5A (1–20 zamrożone); strażnicy T-SK1–3 Łowcy i Maga (248), T-SK4 średnich trzech żywiołów (87), cechy broni S88
-  na buildach sprzed pul (14), cele względem bazy klasy S85 (20), tempo solo Zwiadowcy (10), Traper z łukiem (8), R6
-  Zwiadowcy. Wiki do odświeżenia (właściciel 17.10): nowe liczby Łowcy i Maga, krzywa many.
-- **S146:** w trybie raportu z powodem (`Balance.S146_REPORT`, `GLOBAL_REPORT_ONLY` S146; decyzje właściciela w
-  `docs/SESJE.md` → S146): T-SK6 berła na 45 / 70 / 100 2,8 / 8,6 / 14,4 (cel 1–2; obrażenia bossów w tanka, jak S93 /
-  S94) i R1 Inkwizytora 4,4–6,2 (F4 z S89) mimo zasady 5 sesji; R9 Wojownika dwuręczna / jednoręczna 1,45–1,69 w jeden
-  cel i 0,98–1,12 na 3 cele (cel 1,15–1,25, sprzeczne z R1 puli jednoręcznej); R1 Chorążego (okrzyki i sztandar); R6
-  Strażnika, Uzdrowiciela, Fortuny i Inkwizytora; strażnicy T-SK1 / T-SK2 Wojownika (71 wierszy 50–100), cechy broni
-  dwuręcznej S88 (5), Berserker / podstawa 1,04–1,18 (cel 1,25–1,37), Fortuna leczy mniej na 70 / 100, samotny
-  Uzdrowiciel kosturem na 100.
-  Łowca i Mag zrobione w S147. Wiki do odświeżenia (właściciel 17.10).
-- **S145:** pule Kapłana bez przeglądu w grze: ruchy 7 nowych aktywnych to warianty ruchów Kapłana (dopracowanie
-  W03–W07; kilka par z tą samą sylwetką, np. Promień Światła / Leczenie, różni je wygląd), wygląd z istniejących
-  składników, dźwięki `skill.lightRay|blindingLight|miracle|consecrate|holyChains|holyNova|rebuke` bez ID (właściciel,
-  `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość pul tylko w raporcie (`S145.cleric.*`)
-  (cele w bloku S146). `GLOBAL_REPORT_ONLY` S145 opróżnione w S146. Wiki do odświeżenia (właściciel 17.10): dwie pule
-  Kapłana, węzły kierunków, schemat `classPools` bez `transitional`.
-
-- **S144:** pule Łowcy bez przeglądu w grze: ruchy 5 nowych aktywnych to pozy z funkcji `ShotRig` (dopracowanie W03–W07),
-  wygląd z istniejących składników, dźwięki `skill.heavyBolt|pinningShot|windstep|netShot|deadlyBolt` bez ID (właściciel,
-  `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość pul asertowana w bloku S147
-  (`S144.hunter.*` tylko druk); `GLOBAL_REPORT_ONLY` S144 opróżnione w S147; `tests/SkillModel.luau` na limicie 200 lokalnych
-  zmiennych (nowe lustra w tabelach, jak `Hunt`). Wiki do odświeżenia (właściciel 17.10): dwie pule Łowcy, węzły i
-  zwieńczenia kierunków.
-- **S143:** pule Wojownika bez przeglądu w grze: ruchy 7 nowych aktywnych to pozy z istniejących ruchów Wojownika
-  (dopracowanie W03–W07), wygląd z istniejących składników, dźwięki `skill.shieldSweep|shieldBash|vindicate|brutalStrike|
-  sunder|warStomp|execute` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki).
-  Tożsamość pul w bloku S146 (`S143.warrior.*` tylko druk). `GLOBAL_REPORT_ONLY` S143 opróżnione w S146;
-  `S91.gain.standard.commander` (1,00, rzędy 1–2 Chorążego bez obrażeń na 20.) w `S91_REPORT`. Wiki do odświeżenia
-  (właściciel 17.10): dwie pule Wojownika, nowe węzły kierunków.
-- **S142:** pula Błyskawicy bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z
-  istniejących składników (dopracowanie W03–W07), dźwięki `skill.lightningBolt|staticShock|stormArmor|thunderStrike|
-  ballLightning|lightningLance|tempest` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności bez ikon PNG (znaki).
-  Tożsamość trzech żywiołów i T-SK4 wariantów asertowane w bloku S147 (`S142.mage.*`, `S142.lightning.*` tylko druk;
-  błyskawica na 3 cele / ogień bez podpalenia na 20. i 45. 0,92 nie jest celem S147). `GLOBAL_REPORT_ONLY` S142
-  opróżnione w S147. Wiki do
-  odświeżenia (właściciel 17.10): trzy pule Maga z drabiną, Ognisty Pocisk.
-- **S141:** pula Lodu bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z istniejących
-  składników (dopracowanie W03–W07), dźwięki `skill.hailstorm|iceBarrier|glacialSpike|frozenOrb|deepFreeze|shatter|
-  blizzard` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności bez ikon PNG (znaki). Tożsamość lodu i T-SK4
-  wariantów lodu asertowane w bloku S147 (`S141.ice.*` tylko druk); `GLOBAL_REPORT_ONLY` S141 opróżnione w S147; R4 5B na 20. Lodowego Odłamka (0,18 po S142) i Gradu (0,19) ponad pasmem
-  0,08–0,17 (`Balance.S91_REPORT`, płaski przełom; 1–20 zamrożone, S147 bez zmian). Pula Błyskawicy i S1 Maga (Ognisty Pocisk) zrobione w S142. Wiki
-  do odświeżenia (właściciel 17.10).
-- **S140:** pula Ognia bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z istniejących
-  składników (dopracowanie W03–W07), dźwięki `skill.flameWave|emberShield|pyroblast|combustion|immolate|phoenixHeart`
-  bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość ognia i T-SK4
-  wariantów ognia asertowane w bloku S147 (`S140.fire.*` tylko druk: udział podpalenia 9–14% przy dawnym celu 25% nie
-  jest celem S147); `GLOBAL_REPORT_ONLY` S140 opróżnione w S147. Pula Lodu zrobiona w S141;
-  pula Błyskawicy i S1 Maga w S142 (udział podpalenia po S142 9–14%). Wiki do odświeżenia (właściciel 17.10).
-- **S139:** okno umiejętności 2.0 bez przeglądu w grze (szerokości drzewka puli 484 px na PC i 468 px na telefonie,
-  podpisy kolumn ról skalowane w 60 px, tabela rangi w panelu szczegółów, przyciski po dwa w rzędzie, przypięty pasek
-  „Zatwierdź” nad arkuszem, napis puli nad paskiem HUD); na telefonie role nie łamią się w dwa rzędy (decyzja w
-  DECYZJE). Od S145 wszystkie pule stoją na drabinie (wiersz „Pozostałe” bez stanu przejściowego).
-  Wiki do odświeżenia (właściciel 17.10; `short` na wiki w S148).
-- **S138:** (okno kierunków przebudowane w S139.) Węzły `skill` w `SKILL_ROWS` (4 i 8) u wszystkich klas od S145. Wiki do odświeżenia (właściciel 17.10): `npm run data` (nowe
-  `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
-  `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
-  `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.
-- **S137:** (okno przebudowane w S139.) `GLOBAL_REPORT_ONLY` S137 opróżnione (Wojownik i Kapłan w S146,
-  Łowca w S147). Wiki do odświeżenia (właściciel 17.10):
-  `rules.skillPointsByLevel` / `freeRespecLevel`, planer za „Planer wkrótce”.
+- **Seria „Umiejętności 2.0” (S137–S148, `docs/DESIGN-18.md`), co zostało w jednym miejscu:**
+  - Bez przeglądu w grze: okno umiejętności 2.0 (S139: szerokości drzewka 484 / 468 px, podpisy ról, tabela rangi,
+    przypięte „Zatwierdź”, napis puli nad paskiem HUD); nowe umiejętności pul (S140–S145): ruchy to warianty ruchów klas
+    i pozy `ShotRig` (dopracowanie W03–W07, kilka par z tą samą sylwetką), wygląd z istniejących składników.
+  - Dla właściciela: ID dźwięków nowych umiejętności (`docs/ASSETS.md`): S140 `skill.flameWave|emberShield|pyroblast|
+    combustion|immolate|phoenixHeart`, S141 `skill.hailstorm|iceBarrier|glacialSpike|frozenOrb|deepFreeze|shatter|
+    blizzard`, S142 `skill.lightningBolt|staticShock|stormArmor|thunderStrike|ballLightning|lightningLance|tempest`,
+    S143 `skill.shieldSweep|shieldBash|vindicate|brutalStrike|sunder|warStomp|execute`, S144 `skill.heavyBolt|
+    pinningShot|windstep|netShot|deadlyBolt`, S145 `skill.lightRay|blindingLight|miracle|consecrate|holyChains|holyNova|
+    rebuke`; ikony PNG nowych umiejętności i węzłów (dziś znaki), obrazki na wiki (`npm run art`).
+  - Balans w trybie raportu z powodem (decyzje właściciela w `docs/SESJE.md` → S146, S147): T-SK6 berła na 45 / 70 /
+    100 (2,8 / 8,6 / 14,4, cel 1–2) i R1 Inkwizytora 4,4–6,2 mimo zasady 5 S146; R9 Wojownika dwuręczna / jednoręczna
+    (1,45–1,69 w jeden cel, 0,98–1,12 na 3 cele, cel 1,15–1,25); R1 Chorążego; R6 Strażnika, Uzdrowiciela, Fortuny,
+    Inkwizytora i Zwiadowcy; strażnicy T-SK1 / T-SK2 Wojownika (71 wierszy) i T-SK1–3 Łowcy i Maga (248); cechy broni S88
+    (dwuręczna 5, buildy sprzed pul 14); Berserker / podstawa 1,04–1,18 (cel 1,25–1,37); Fortuna leczy mniej na 70 /
+    100; samotny Uzdrowiciel kosturem na 100; obrażenia przyjmowane błyskawica / ogień u Arkanisty na 45. (0,991) i na
+    20.; T-SK4 wariantów żywiołów na 50–99 (29 z 84 wierszy) i średnich trzech żywiołów (87); R1 Łowcy i Maga
+    (właściciel S90 / S91); Ognisty Pocisk 5A i R4 5B Lodowego Odłamka (0,18) i Gradu (0,19) na 20. (1–20 zamrożone);
+    cele względem bazy klasy S85 (20), tempo solo Zwiadowcy (10), Traper z łukiem (8), `S91.gain.standard.commander`.
+  - Kod: `tests/SkillModel.luau` na limicie 200 lokalnych zmiennych (nowe lustra w tabelach, jak `Hunt`).
+  - Wiki (S148): planer bez przeciągania na pasek i bez „Rozdaj jak zaleca pula”; obrazki umiejętności pul i kierunków
+    i ikony nieodświeżone (`npm run art`, `npm run icons`); Lighthouse strony klasy niezmierzony.
+  - Do decyzji właściciela: zwroty węzłów za złoto jak rangi (DESIGN-18 §3.2, wartość domyślna od S138), publikacja
+    kierunków na wiki (S148 opublikowała; cofnięcie = `wiki = false`).
 
 - **S136:** wygląd „Pergamin i żelazo” bez przeglądu w grze (wszystkie okna S136 i HUD po zmianie `Caption` → `Small`
   i nowych wysokościach: przycięcia w panelach mapy świata, trackerze, panelach wydarzeń, tabliczkach potworów; karty
   postaci z portretem pod pergaminową zasłoną; mosiężna rama minimapy). Listy okien S135 i S136 (poza `character`,
   `menu`, `skills`, `lootlog`) dalej ręcznymi wierszami na rolach pergaminu, bez `ListRow` / `SectionLabel` (zmiana
   układu bez przeglądu w grze). Tabliczki graczy z S135 (płytka 0,45) bez przeglądu. Decyzje właściciela w
-  `docs/SESJE.md` → S135 i S136. Wiki do odświeżenia (właściciel 17.10).
+  `docs/SESJE.md` → S135 i S136.
 
 - **S134k:** zlecenia na rodzaj, wiele aktywnych i sklep Łowczego bez przeglądu w grze (dziennik „Łowieckie” z
   grupami i przyciskami, karta tablicy, tracker do 3 + „+N”, okno `HuntShopWindow` na PC i telefonie, Łowczy przy
   tablicy w mieście wiosną i poza nią). Kosmetyki sklepu (tytuł „Łowca Nagród”, ramka „Trofeum”) i tytuł „Mistrz Łowów”
   proceduralne, bez obrazków; Skrzynie Łowcy bez ikony (znak ▣). Decyzje właściciela w `docs/SESJE.md` → S134k (mała
-  esencja sklepu przy celu ≤ 10%, wielkość retro Znaków). Wiki: tabela sklepu niesprawdzona `npm run check` (vitest
-  i `astro check` zielone poza starym `combat.mdx` „2–3”).
+  esencja sklepu przy celu ≤ 10%, wielkość retro Znaków). Wiki sprawdzona `npm run check` w S148.
 - **S134j:** zakładka „Przemiana” kowala bez przeglądu w grze (układ na PC i telefonie, lista „Może wyjść”, modal z
   ostrzeżeniem o zamknięciu, wynik „stara → nowa”, znak ↻ w opisie). Decyzje właściciela w `docs/SESJE.md` → S134j:
   esencja sam pył (model odrzucił odłamki / kryształy), wartość Kamienia Przemiany przy pyle, tania pierwsza próba
-  (`first.vsUpgrade` w raporcie), +9 zestawu ponad dochód pasma (`sink.income` w raporcie). Wiki: akapit w poradniku
-  ulepszania niesprawdzony `npm run check` (vitest zielony poza starym `combat.mdx` „2–3”).
+  (`first.vsUpgrade` w raporcie), +9 zestawu ponad dochód pasma (`sink.income` w raporcie). Wiki sprawdzona `npm run check` w
+  S148.
 
 - **S134i:** kryjówki bez przeglądu w grze (ubiór czterech motywów, wolny środek dla Doskoku i Druzgocącego Ciosu,
   strażnicy na pierścieniu, czaszka na mapie i minimapie, karta `CreatureCards.lair`). Brak obrazka `mapa/map_lair`
-  (znak ☠ zastępczy; plik do `BRAKI-GRAFIK`). Wiki: sekcja kryjówek na stronie krainy, miejsce „kryjówka” w
-  bestiariuszu i wyszukiwarka mapy (`lair`) niesprawdzone `npm run check` (bez `node_modules`). Łąki mają 2 kryjówki
+  (znak ☠ zastępczy; plik do `BRAKI-GRAFIK`). Wiki sprawdzona `npm run check` w S148. Łąki mają 2 kryjówki
   (trzecia czeka na decyzję właściciela, `docs/SESJE.md` → S134i).
 
 - **S134h:** jaskinie 1,35 × większe i jaśniejsze bez przeglądu w grze (ubiór na rozciągniętym planie: stałe punkty przez
-  `Kit.at`, drobne odsunięcia lokalne bez skali; pochodnia gracza, presety światła, druga Elita II w salach). Wiki: strona
-  jaskini i potwora (łup Elity II) niesprawdzone `npm run check` (bez `node_modules`). Decyzje właściciela w
+  `Kit.at`, drobne odsunięcia lokalne bez skali; pochodnia gracza, presety światła, druga Elita II w salach). Wiki sprawdzona
+  `npm run check` w S148. Decyzje właściciela w
   `docs/SESJE.md` → S134h: `eliteGroups` +1 (nie weszło), quest tygodniowy Elit II `n = 4`, tempo łupu ×1,2. S134i
   dołożyła kryjówki z Elitami II do tych samych testów (`elite2loot.spec`).
 
 - **S134g:** efekty przedmiotów bez przeglądu w grze (Salwa z drugą salwą w `cone`, tarcza z nadmiaru leczenia Kręgu
   Światła, przyciąganie Prowokacji / Muru Tarcz / Lodowej Novy, toast `items.toast.legendRework`); liczby efektów
   startowe. Opis przedmiotu (`ItemTooltip`) w nowym układzie i na żelazie (S135) bez przeglądu na PC i telefonie.
-  Wiki: TS / Svelte strony przedmiotu (pule efektów, efekty nazwanych) niesprawdzone `npm run
-  check` (bez `node_modules`). W raporcie (decyzje właściciela): strzałka „Lepszy przedmiot” z efektem na biżuterii,
+  Wiki sprawdzona `npm run check` w S148. W raporcie (decyzje właściciela): strzałka „Lepszy przedmiot” z efektem na biżuterii,
   12 wierszy G8 broni dwuręcznej Legendarnej / Mitycznej.
 
 - **S134f:** dla właściciela: ID dźwięku `ui.lowHp` (bicie serca; klucz bez ID gra cicho, `/animlab sfx list`). Bez
@@ -634,9 +595,7 @@ zakończone; testy i decyzje właściciela po nich.
   `StatusEffectService`, limit kradzieży życia 15 w `Damage.computeDamage`; model je odwzorowuje (`-- mirrors`).
 - **`FightSim.dps`** bez `eliteDamage` / `bossDamage`, `executioner`, `damagePerEnemy` i Słabego punktu ataku
   podstawowego (lista Dla S87 z S86; model umiejętności je liczy; do osobnej sesji).
-- **Umiejętności i ścieżki**: brak przycisku „Załóż pasującą broń” po przełączeniu zestawu (ROZWOJ 2.8, później);
-  wiki: ścieżki ukryte (`wiki = false`) do decyzji o publikacji, tytuł ścieżki nie jest w nagłówku zakładki planera
-  (pole `title` wchodzi z publikacją). Oko Zwiadowcy widzi tylko Elity wczytane przez streaming (pewnie do 128 st.); pewność
+- **Umiejętności i kierunki**: wiki (S148): tytuł kierunku nie jest w planerze (tylko w tabeli tytułów). Oko Zwiadowcy widzi tylko Elity wczytane przez streaming (pewnie do 128 st.); pewność
   dalej wymagałaby remote'u z pozycjami Elit (decyzja właściciela).
 - **UI**: ikona plecaka w HUD nie świeci po otwarciu klawiszem B; Esc nie zamyka menu przytrzymania. Stan przełączników
   panelu admina tylko lokalny. `/tparea` bez filtra po mapie. Ikony `crow_feather`, `toad_venom` to aliasy; brak ikon

@@ -31,7 +31,8 @@ S137 dopisuje w ROZWOJ §0 odsyłacz „§2.4–2.6, 2.8–2.10, 3–5: zastąpi
 5. **Bez pay-to-win:** punktów umiejętności, rang ani mocy nie da się kupić. Zwój resetu w sklepie premium zostaje, bo
    nie daje mocy (jak `scroll_oblivion`); `tests/paywall.spec.luau` musi go dalej dopuszczać.
 6. **Wiki:** po każdej zmianie `src/shared/Data` `npm run data` w `wiki/` (albo `lune run tools/wikidump.luau`),
-   `--check` czysty. Planer wiki jest schowany za „Planer wkrótce” od S137 do S148 (wzór ROZWOJ 3.5).
+   `--check` czysty. Planer wiki był schowany od S137 do S148 (wzór ROZWOJ 3.5); od 17.10 dane wiki odświeżała hurtem
+   S148 (właściciel), która pokazała planer v3.
 7. **Okno umiejętności a S135–S136** („Pergamin i żelazo”: paleta i tokeny w `UI/Theme`, `Data/UiWindows.luau`, wspólne
    komponenty, okno umiejętności przełączone na pergamin w S135): sesje tej serii budują wyłącznie na tych tokenach i
    komponentach, bez literałów koloru i rozmiaru, i nie robią własnego stylu; zmieniają układ i treść okna.
@@ -515,9 +516,12 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
 - S138: `Schema.rec` dostaje `pool`, `role` przy umiejętności i `pools` klasy (id, nazwa, broń, drabina); `rules` bez
   `mainPathLevel`, z `skillPointsByLevel`, `freeRespecLevel`, `capstonesMax`, `mainMinPoints`.
 - Strona efektów przedmiotów na wiki z danych (`items.json` `effects`, S134g); S148 dopisuje ją do stron klas.
-- S148: strona klasy z zakładkami pul (drzewko według drabiny jak w grze, `short` i pełny opis), kierunki, planer v3
-  (kod `3<KLASA><poziom>.<pula>:<rangi>….<talenty>.<przełomy>`; stary kod v2 otwiera pusty planer z komunikatem),
-  parzystość TS z `SkillPoints.canBuy` i `Paths.canBuy` przez `wiki/test-fixtures/planner.json`.
+- S148 (zrobione): strona klasy z planerem v3 (zakładki pul z drzewkiem według drabiny, `short` na kafelku, szczegóły z
+  liczbami na rangach 1 / 5 / 10, przełomami A/B i węzłami, pasek 8 puli, zakładka „Kierunki”), sekcje „Jak rozwija się
+  umiejętność”, „Kierunki” i „Wszystkie umiejętności” według pul; kod
+  `3<KLASA><poziom>.<PULA>:<rangi>[:<pasek>]….<talenty>.<przełomy>` (format: `docs/WIKI.md` → „Planer v3”; kod v2 i
+  starsze otwierają pusty planer z komunikatem); parzystość TS z `SkillPoints.canBuy` / `apply` i `Paths.canBuy` /
+  `canRefund` / `mainOf` przez `wiki/test-fixtures/planner.json`. Kierunki opublikowane (bez `wiki = false`).
 
 ## 15. Kolejność sesji
 
@@ -547,3 +551,27 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
 6. **Dwa zestawy na pulę zostają** (dzisiejsze `BuildSet` A/B): w każdej puli dwa zapisane rozdania rang, talentów i
    paska, przełączane w mieście (`SwitchBuildSet`, `CopyBuildSet` przechodzą na pule, nie znikają).
 7. Pasek 8 miejsc, każda pula własny budżet punktów, Kapłan Fortuny jako kierunek: wartości domyślne bez sprzeciwu.
+
+Otwarte do decyzji właściciela po serii (S148): zwroty węzłów kierunków za złoto jak rangi (§3.2, wdrożone w S138 jako
+wartość domyślna), publikacja kierunków na wiki (S148 opublikowała je według §14; cofnięcie = `wiki = false` w
+`Data/Paths/<Klasa>`), cele nie spełnione z S146 / S147 (`docs/SESJE.md` → S146, S147: T-SK6 berła, R1 Inkwizytora,
+obrażenia przyjmowane błyskawica / ogień u Arkanisty na 45.).
+
+## 17. Ustalenia S137–S148 (najważniejsze odejścia; pełne brzmienie w `docs/DECYZJE.md`)
+
+- S137: `skillPoints.bonus` 7 w każdej puli (1–20 bez zmian), migracja do schematu 12 z `respecFree`; planer wiki
+  schowany do S148, dane wiki odświeżone hurtem w S148 (właściciel 17.10).
+- S138: `TEAM_FULL_POINTS` 6 zamiast 12 (1–20 bez zmian); cena zwrotu węzła = zwrot jego rangi i zabranych rang
+  umiejętności kierunku; przełom umiejętności kierunku zostaje w `path.bp` bez węzła.
+- S139: okno bierze rezerwację (`PathView.poolView` / `skillDetails` / `planned`); przełom „osiągnięty” z `Paths.bpRank`.
+- S140: podpalenie jako jeden wpis ze stosami (`Logic/Burn`); Mistrz Żywiołów i Tajemny Umysł to węzły, nie umiejętności.
+- S141: bossowie i Elity II nie zamarzają od lodu gracza, dostają Głęboki Chłód (`Logic/Chill`).
+- S142: koniec Magicznego Pocisku adaptacyjnego (`firebolt` = S1 Ognia) i `Skills.elementAllowed` (żywioł broni = pula).
+- S143: Furia tylko z pasywką puli dwuręcznej; `SkillDef.weapon` dla umiejętności z tarczą; bloki Wyroku (`Logic/Block`).
+- S144: unieruchomienie bossa = spowolnienie (`Logic/Snare`); „Szybki Naciąg” nazywa się Szybkie Przeładowanie.
+- S145: koniec stanu przejściowego (`transitional` usunięte); przerwanie kanału gracza Upomnieniem, nigdy bossa.
+- S146 / S147: build wzorcowy rzuca tylko 8 aktywnych z paska (`ReferenceBuild.bar`); cele nie spełnione opisane w
+  SESJE z powodem, `GLOBAL_REPORT_ONLY` bez wpisów S137–S145.
+- S148: kierunki opublikowane na wiki (§14); kod buildu v3 z paskiem puli w segmencie puli (`<PULA>:<rangi>:<pasek>`),
+  talenty kierunków w grupach rozdzielonych „-”; wektory planera (ścieżki gry, punkty umiejętności) w
+  `wiki/test-fixtures/planner.json` zamiast `skills.json`; `Skills.rankFor` usunięte (`rankAt` = limit).

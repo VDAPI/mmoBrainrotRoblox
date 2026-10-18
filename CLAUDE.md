@@ -164,7 +164,7 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Losowe wzmocnienie / kanał** (S70): ściany kości to efekty z `face` (los przez `Logic/Roll` i `ctx.rollDice`);
   przerwanie kanału tylko przez `Logic/Channel.stops`; ocalenie od śmierci przez filtr `guardianAngel` (priorytet 90).
 - **Ścieżka / węzeł** (S57): `Data/Paths/<Klasa>` (kształt: `tests/fixtures/paths.luau`), umiejętność z `path` i
-  `unlock` = poziom rzędu, teksty `path.<pathId>.*`, `wiki = false` do wydania, `statPlan` (plan przycisku „Rozdaj jak
+  `unlock` = poziom rzędu, teksty `path.<pathId>.*`, na wiki od S148 (`wiki = false` chowa), `statPlan` (plan przycisku „Rozdaj jak
   zaleca ścieżka”, nigdy na wiki), `paths.spec` sprawdza dane. S138: ścieżki to mieszalne kierunki (bez ścieżki
   głównej i broni ścieżki; wymóg broni tylko `node.weapon`), jedno zwieńczenie na zestaw, kierunek przewodni tylko
   przez `Paths.mainOf` (tytuł, `statPlan`, `itemWeights`, znak w drużynie). S145: węzeł `skill` tylko w rzędach
@@ -202,8 +202,10 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `Skills.resolve` / `ctx.resolve`); tarcze z umiejętności tylko przez `ctx.shield`.
 - **Punkty umiejętności / pula broni** (S137, `docs/DESIGN-18.md`): pule klasy w `Data/SkillPools/<Klasa>` (`pools`
   z `weapon` i `plan`, `defaultPool`, `version`), umiejętność podstawy z `SkillDef.pool` (`"common"` albo id puli) i
-  `role` (kod drabiny); ranga = kupione punkty (`Logic/SkillPoints`, reguła tylko w `Paths.skillRank`), pula z broni
-  `Logic/SkillPools.activePool`. Zmiana pul klasy: podbij `version` (czyszczenie i darmowy reset przy wczytaniu), bez migracji.
+  `role` (kod drabiny); ranga = kupione punkty (`Logic/SkillPoints`, reguła tylko w `Paths.skillRank`, limit poziomu
+  `Skills.rankAt`), pula z broni `Logic/SkillPools.activePool`. Zmiana pul klasy: podbij `version` (czyszczenie i
+  darmowy reset przy wczytaniu), bez migracji. Zmiana reguł `SkillPoints` / `Paths` = to samo w lustrze planera wiki
+  (`wiki/src/lib/skills.ts`, S148; wektory w `wiki/test-fixtures/planner.json`, `npm run data` i `npm test`).
 - **Umiejętność w puli broni** (S145, koniec stanu przejściowego): rola z drabiny (`Data/SkillPools.LADDER` /
   `COMMON_LADDER`, `unlock` = poziom rungu), `pool` + `role` w `Data/Skills/<Klasa>`, miejsce w `plan` puli (kolejność
   drabiny, aktywne przed pasywkami), `version` puli + 1; każda pula ma pełną drabinę (`tests/skillpools.spec`, wszystkie
@@ -251,3 +253,6 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   i teksty w `wiki/src/content/bosses` (liczby tylko jako `{NAZWA}`).
 - Nowe pole gry na wiki = `Schema.rec` + wartość w builderze. Liczby tylko z `Logic` i `Data`; nic z `Data/Codes`,
   `AdminCommands`, `DevPreset`, `Products` (wyjątek: `WikiData/Premium.luau`).
+- Planer umiejętności v3 (S148): strona klasy z pulami, kierunkami i kodem `3<KLASA>…` (`docs/WIKI.md` → „Planer v3”);
+  kolejność umiejętności puli w kodzie z `WikiData/Skills.poolOrder` (drabina, nigdy `plan` puli); zmiana kształtu
+  `wiki/src/data` przechodzi `wiki_keys_diff` dopiero po commicie albo z `WIKI_KEYS_ALLOW`.

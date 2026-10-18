@@ -18,7 +18,7 @@ Oficjalna wiki gry w folderze `wiki/` tego repozytorium. Ten plik jest źródłe
 - **Wierzchowiec premium (S97)** nie trafia na wiki, dopóki jest wyłączony: `mounts.json` pomija każdy wpis z
   `source = "premium"` (i `wiki = false`) i nie czyta `Data/Products`; włączenie go na wiki to osobna decyzja.
 - Encje oznaczone jako niewydane (`hidden = true` albo `wiki = false` w danych; eksporter dodaje obsługę tych flag tam, gdzie ich jeszcze nie ma) są pomijane razem z linkami do nich.
-- Ścieżki (S57, `Visibility.fromPaths`): ścieżka z `wiki = false` ukrywa swój tytuł (`titleId`), węzły i umiejętności, a umiejętność z `path` bez `PathDef` jest ukryta zawsze. Same id ścieżek nie wchodzą do wspólnego zbioru ukrytych (kolizje z NPC i sklepem `healer`, umiejętnością gildii `fortune`); eksport ścieżek (S82) filtruje po `PathDef.wiki`. Wpis sklepu `needsPaths` (Zwój Nowej Ścieżki) trafia na wiki tylko z klasami, które mają opublikowaną ścieżkę.
+- Ścieżki (S57, `Visibility.fromPaths`): ścieżka z `wiki = false` ukrywa swój tytuł (`titleId`), węzły i umiejętności, a umiejętność z `path` bez `PathDef` jest ukryta zawsze. Same id ścieżek nie wchodzą do wspólnego zbioru ukrytych (kolizje z NPC i sklepem `healer`, umiejętnością gildii `fortune`); eksport ścieżek (S82) filtruje po `PathDef.wiki`. Wpis sklepu `needsPaths` (Zwój Nowej Ścieżki) trafia na wiki tylko z klasami, które mają opublikowaną ścieżkę. S148: wszystkie kierunki (dawne ścieżki) opublikowane (DESIGN-18 §14); `wiki = false` dalej chowa kierunek razem z węzłami, tytułem i umiejętnościami.
 - `tests/wikidump.spec.luau` wywala się, gdy w wyjściu pojawi się którykolwiek kod z `Data/Codes`, id administratora, klucz spoza allowlisty albo klucz `productId`, `passId`, `robux`, `price`, `shards`, `RespawnNowCost`. Od S44 ten sam skan wycieków przechodzi po zbudowanej stronie (`dist/`).
 - **S131: na wiki nie ma żadnej liczby Smoczych Odłamków** (cen, nagród, paczek ani dziennej premii VIP): to pochodne
   cen w Robux, gracz widzi je w grze; nagroda w odłamkach to `currency = true`. Zakazane klucze += `subscriptionId`,
@@ -163,7 +163,7 @@ przełomy umiejętności, `Combat`, `Stats.Formula`) jako `data` (typ `Json`).
 | `recipes.json` | `groups`: RecipeGroup[], `queueSlots`: number, `recipes`: AlchemyRecipe[] | `Data/Recipes` |
 | `search.json` | `entries`: SearchEntry[], `vectors`: NormalizeVector[] | pozostałe pliki + `MapSearch.normalize` (klucz, wektory testowe) |
 | `shops.json` | `shops`: Shop[], `weaponsmithTiers`: number[] | `Data/Shops`; cena `ItemValue.buyPrice` pod kluczem `gold`; NPC z `Data/Npcs`; S95: `classTabs` = sklep sprzedawcy klasy (`shop.class ~= nil`), `weaponsmithTiers` = progi sprzedawców klas |
-| `skills.json` | `rules`: SkillRules, `skills`: Skill[], `paths`: SkillPath[] | `Data/Skills` (bez `vfx`); rangi: `Skills.rankLevel` (`rankLevels`, `ranks[].requiredLevel`); liczby rangi jak `UI/SkillInfo`: `Skills.effective` z wyborami, `Skills.cost` na poziomie rangi, `Skills.cooldown`, `formatDescription` (S82); `ranks[].variants` = te same liczby dla innych wyborów (`"ba"`, `"ab"`, `"bb"`: litera rangi 5 i 10), bez węzłów `modify`; `rules.ranks` (`RANKS`); przełomy `{ rank, level, a: { text, change }, b? }`; `path` = id opublikowanej ścieżki (umiejętności ukrytych ścieżek nie ma); `elementNote`. S82: `paths` tylko z `wiki ~= false` (`Skills.pathEntry`: rzędy z `Paths.rowsFor`, wartości `Paths.nodeValues`, opisy `Paths.nodeArgs`, `dipScale` / `dipDesc` dla węzłów drużynowych rzędów 1–2, broń jako id typów, nigdy `reference`, `itemWeights`, `statPlan`); reguły `pathPointsEvery`, `pathPointsByLevel`, `mainPathLevel`, `rows`, `dipRows`, `dipScale` i `vectors` z `Paths.canBuy` / `canRefund` / `Skills.pathAchievable` (ziarno 8282, tylko opublikowane ścieżki). Plik testowy `wiki/test-fixtures/planner.json` (`{ paths, vectors }` ścieżki testowej z `tests/fixtures/paths.luau`) powstaje razem z danymi i nigdy nie trafia do `wiki/src/data` |
+| `skills.json` | `rules`: SkillRules, `skills`: Skill[], `paths`: SkillPath[], `classPools`: SkillClassPools[] | `Data/Skills` (bez `vfx`); rangi: `Skills.rankLevel` (`rankLevels`, `ranks[].requiredLevel` = od poziomu można kupić rangę r); liczby rangi jak `UI/SkillInfo`: `Skills.effective` z wyborami, `Skills.cost` na poziomie rangi, `Skills.cooldown`, `formatDescription` (S82); `ranks[].variants` = te same liczby dla innych wyborów (`"ba"`, `"ab"`, `"bb"`: litera rangi 5 i 10), bez węzłów `modify`; przełomy `{ rank, level, a: { text, change }, b? }`; S138 `pool` / `role`; S148 `short` (`skill.<id>.short` na randze 1). `paths` = opublikowane kierunki (`Skills.pathEntry`: rzędy z `Paths.rowsFor`, wartości `Paths.nodeValues`, opisy `Paths.nodeArgs`, `dipScale` / `dipDesc` węzłów drużynowych rzędów 1–2, broń węzła jako id typów; S148 bez `weapon` kierunku; nigdy `reference`, `itemWeights`, `statPlan`). `classPools` (S138, S148): pule klasy (`id`, nazwa, `glyph`, typy broni, żywioł, `skills` w kolejności kodu `Skills.poolOrder`: szkoła według `LADDER`, wspólne według `COMMON_LADDER`, umiejętności kierunków według kierunku i rzędu; nigdy `plan` puli), `defaultPool`. `rules`: `maxLevel`, `ranks`, `breakpointsEnabled`, `breakpointLevels`, `pathPointsEvery`, `pathPointsByLevel`, `skillPointsByLevel`, `freeRespecLevel`, `capstonesMax`, `mainMinPoints`, `teamFullPoints`, `ladder`, `barSlots`, `rows`, `dipRows`, `dipScale` (S148: bez `vectors`). Plik testowy `wiki/test-fixtures/planner.json` (`{ paths, vectors, game, skills }`: ścieżki testowe z `tests/fixtures/paths.luau` i ich wektory, `game` = wektory `Paths.canBuy` / `canRefund` / `mainOf` / `pathAchievable` opublikowanych kierunków (ziarno 8282), `skills` = stany `SkillPoints.canBuy` i rezerwacje `SkillPoints.apply` na danych gry (ziarno 8283)) powstaje razem z danymi i nigdy nie trafia do `wiki/src/data` |
 | `stats.json` | `formula`: Json, `groups`: StatGroupInfo[], `primary`: string[], `primaryNames` (S41), `stats`: StatInfo[] | `Data/Stats` |
 | `titles.json` | `titles`: Title[] | `Data/Titles` |
 | `upgrade.json` | `costs`: Record<string, Record<string, UpgradeCost[]>>, `max`: number, `protection`: string, `steps`: UpgradeStep[], `tiers`: number[], `vectors`: UpgradeVector[] | `Upgrade.chance`, `statMultiplier`, `attempt` (`StubRng` fail), `Upgrade.cost` dla progów i rzadkości; od S40 `vectors` = 3 przypadki × 20 000 symulacji `Upgrade.attempt` + `Upgrade.cost` (kontrola kalkulatora) |
@@ -246,8 +246,8 @@ do HTML bez JS, wyspy importują te same pliki). Dane przez `src/lib/data.ts` (`
 | `BossHeader` | `{ boss, lang, players?: 1-5, notes?: { phase, title, html }[], heading?: "h1"\|"h2" }` — S39: chipy graczy 1–5 (zmieniają każdy `[data-by-players]` na stronie), zakładki faz „Faza 1 · 100–70%” z okrzykiem i obrazkiem `-p2`/`-p3`, panele mechanik (ataki z `Telegraph`, przywołania, tarcza, przyspieszenie, wściekłość, `notes`); bez JS wszystkie fazy pod sobą; zachowanie `src/scripts/boss.ts` |
 | Wyspy S40 | `ItemsBrowser` (lista z filtrami i krokomierzem progów), `ItemTooltipLive` + `ItemUpgradeView` (strona przedmiotu; wspólny stan `src/lib/itemState.ts` i `?r=&up=&el=`), `UpgradeCalc` (kalkulator) — dane wyłącznie z propsów i endpointów `/data/items/<id>.json`, `/<lang>/items-index.json` |
 | `Telegraph` (S39) | `{ shape, radius?, inner?, angle?, length?, width?, origin?, size?, label? }` — SVG kształtu ataku (koło, stożek, pas, pierścień z bezpiecznym środkiem), rzucający jako złoty romb; w `/styleguide#telegraph` |
-| `SkillNode.svelte` / `SkillEdge` | S41: Svelte (Astro renderuje bez JS w tabeli „Wszystkie umiejętności”, wyspa planera używa tego samego) `{ glyph?, state, rank?, max, active?, capstone?, selected?, invalid?, label, color?, size?, lockText?, mark?, pic? }` + atrybuty `<button>`; `pic` (WIKI-GRAFIKA) = bazowy adres obrazka umiejętności (`PlannerSkill.pic`) zamiast glifu; `invalid` = czerwony licznik (węzeł nieosiągalny na tym poziomie); `mark` (S82) = znak w rogu, np. „⅓” węzła drużynowego poza ścieżką główną / `{ active? }` |
-| `SkillPlanner.svelte` (S82) | `{ data: PlannerData }` z `plannerData(c, lang)` (`lib/classes.ts`: umiejętności klasy z wariantami rang i przełomami A/B, opublikowane ścieżki z nazwami broni, reguły, etykiety `planner.*`, Zwój Nowej Ścieżki), `client:load`. Suwak i stepnik poziomu, punkty ścieżek, ścieżka główna, kod v2 z „Kopiuj link” i „Resetuj”, zakładki „Podstawa” + ścieżki (albo „Ścieżki wkrótce”), panel szczegółów z wyborem A/B (`role="radiogroup"`, `data-bp`, `data-option`). Reguły w `src/lib/skills.ts` (lustro `Logic/Paths.canBuy` / `canRefund` z tymi samymi kluczami, `achievable`, `validate`, `setMain`, `pathView`, `baseView`, `encodeBuild` / `decodeBuild`). Kod v2: `2<KLASA><poziom>.<główna>.<przełomy>.<ścieżka order 1>.<order 2>…` (segmenty ścieżek pozycyjne według `order`, cyfra węzła `skill` = 1 + bity przełomów jego umiejętności, końcowe zera ucięte). Adres `?b=<kod>&s=<id>`; stary `?b=` (v1) = pusty planer z ostrzeżeniem |
+| `SkillNode.svelte` / `SkillEdge` | S41: Svelte (Astro renderuje bez JS w tabeli „Wszystkie umiejętności”, wyspa planera używa tego samego) `{ glyph?, state, rank?, max, active?, capstone?, selected?, invalid?, label, color?, size?, lockText?, mark?, pic? }` + atrybuty `<button>`; `pic` (WIKI-GRAFIKA) = bazowy adres obrazka umiejętności (`PlannerSkill.pic`) zamiast glifu; `invalid` = czerwony licznik (węzeł nieosiągalny na tym poziomie); `mark` (S82) = znak w rogu, np. „⅓” węzła drużynowego poniżej `teamFullPoints` w kierunku (S148: na kafelku puli numer miejsca na pasku) / `{ active? }` |
+| `SkillPlanner.svelte` (S148, planer v3) | `{ data: PlannerData }` z `plannerData(c, lang)` (`lib/classes.ts`: umiejętności klasy z `short`, wariantami rang i przełomami A/B, pule z tożsamością `class.pool.<id>`, opublikowane kierunki, reguły, etykiety `planner.*`, Zwój Odnowy Umiejętności), `client:load`. Suwak i stepnik poziomu, punkty umiejętności puli i punkty talentów, kierunek przewodni, kod v3 z „Kopiuj link” i „Resetuj”, zakładki pul (drzewko `poolTree`: kolumny ról, wiersze poziomów drabiny, kafelki `SkillNode` z rangą i znakami przełomów, „Z kierunków”, pasek 8 puli) i „Kierunki” (przełącznik kierunków, rzędy z węzłami), panel szczegółów („Co robi”, ranga i limit, „+ / −”, „Na pasek”, teraz / następna ranga, liczby na rangach 1 / 5 / 10, A/B `role="radiogroup"`, węzły `modify`). Reguły w `src/lib/skills.ts` (lustro `SkillPoints.canBuy` / `apply` i `Paths.canBuy` / `canRefund` / `mainOf` z tymi samymi kluczami). Adres `?b=<kod>&s=<id>&p=<pula|directions>`; kod v2 i starsze = pusty planer z ostrzeżeniem |
 | `DataTable` | `{ columns: { key, label, sortable?, align?, mobile?, sort? }[], rows, caption, html? }` |
 | `Chip`, `Pager` | `{ pressed?, disabled?, href?, count? }`, `{ page, pages, hrefFor, lang? }` |
 | `Callout` | `{ kind?: "info"\|"tip"\|"warn"\|"changed"\|"spoiler", title?, date?, lang? }` |
@@ -480,11 +480,20 @@ trafia do commita. Bez klucza oba workflowy przechodzą na zielono z komunikatem
   wyspa `SkillPlanner` z zakładkami; tabela „Wszystkie umiejętności” z A/B i linkiem „Zaplanuj”. Ścieżki wszystkich klas
   ukryte do decyzji właściciela (planer pokazuje „Ścieżki wkrótce”). JS strony klasy 37 KB gzip (budżet 40).
 
+- **S148 (umiejętności 2.0, odświeżenie hurtowe S135–S147):** eksport pul (`classPools` z kolejnością kodu i glifem),
+  `short`, kierunki opublikowane, wektory planera w pliku testowym; planer v3 (pule, pasek 8, kierunki, kod v3), sekcje
+  „Jak rozwija się umiejętność”, „Kierunki” i umiejętności według pul; tytuły kierunków (`req.path`); poradnik „Pierwsze
+  kroki” i „Statystyki” bez ścieżki głównej. JS strony klasy 41 KB gzip (budżet 44), HTML 40–52 KB gzip. Vitest 135,
+  Playwright 138 (26 pominiętych z założenia).
+
 - **WIKI-GRAFIKA (grafiki właściciela):** ikony przedmiotów z obrazków S52 tak jak w grze (460 ikon, 920 plików zamiast 1035 ikon, 2070 plików), plik
   256 px na stronie przedmiotu, `npm run art`: portrety i herby klas, 32 umiejętności, żywioły, gildia, profile łowisk,
   przedmioty zadań, usługi NPC, klawisze okien, VIP (319 obrazków, 5,3 MB). Lista nieużytych w `docs/SESJE.md`.
 
 ### Publikacja ścieżki na wiki (S82)
+
+S148: zrobione dla wszystkich kierunków (bez obrazków umiejętności kierunków: `npm run art` właściciela). Kroki zostają
+jako wzór dla nowego kierunku albo ponownej publikacji po `wiki = false`.
 
 1. W `Data/Paths/<Klasa>` usuń `wiki = false` (albo ustaw `true`) w wybranych `PathDef` i dopisz decyzję do
    `docs/DECYZJE.md`.
@@ -499,6 +508,32 @@ trafia do commita. Bez klucza oba workflowy przechodzą na zielono z komunikatem
    węzłów, broń, „⅓”).
 4. `npm run check` i `htmlKb` stron klas w `.reports/budgets.json`: powyżej `warn.htmlKb` (150 KB) opisy rang i węzłów
    idą do endpointu `src/pages/[lang]/skills/[classId].json.ts` (S82 C7), planer dociąga je po starcie.
+
+### Planer v3 (S148, DESIGN-18 §14)
+
+- Stan buildu jak zapis gry: poziom, `ranks[pula][umiejętność]`, `nodes`, `bp` (`"<id>:5"`, wspólne dla pul zestawu),
+  pasek każdej puli. Reguły tylko w `src/lib/skills.ts`: `canBuySkill` / `applyPlan` (lustro `SkillPoints.canBuy` /
+  `apply`: pula, umiejętność klasy, członek puli, węzeł umiejętności kierunku, limit `rankLevels`, punkty
+  `skillPointsByLevel`), `rankOf` (`Paths.skillRank`), `bpRank`, `canBuyNode` / `canRefundNode` (`Paths.canBuy` /
+  `canRefund`: także `skills.error.capstoneTaken` i `paths.error.upgrade`), `leadingOf` (`Paths.mainOf`), `barOf`
+  (`Paths.validBar`), `achievable` / `validate`. Planer nie ma reguł spoza `rules`.
+- Kod v3: `3<KLASA><poziom>.<PULA>:<rangi>[:<pasek>][.<PULA>:<rangi>[:<pasek>]…].<talenty>.<przełomy>`. Segment puli
+  tylko dla puli z rangą albo paskiem (pule w kolejności danych); `<rangi>` = znak na umiejętność w kolejności
+  `classPools[].pools[].skills` (`0`–`9`, `A` = 10, końcowe zera ucięte); `<pasek>` = miejsca 1…8 jako indeks
+  umiejętności w tej liście w zapisie 36-kowym. `<talenty>` = grupa cyfr na kierunek według `order` (rzędy rosnąco,
+  węzły w kolejności rzędu, cyfra = ranga), grupy rozdzielone „-”, końcowe zera i puste grupy ucięte. `<przełomy>` =
+  znak 0–3 na aktywną umiejętność klasy (pule w kolejności danych, w każdej lista puli, każda umiejętność raz; bit 1 =
+  B na 5, bit 2 = B na 10). Puste końcowe segmenty pomijane („3MAGE34”, „3MAGE34.FIRE:3211”, „3MAGE60.FIRE:A5.21-1.1”).
+  Wielkość liter i spacje bez znaczenia. Dekoder odrzuca z powodem (`empty`, `format`, `class`, `level`, `pool`, `rank`,
+  `bar`, `talent`, `bp`, `length`); kod v2 („2MAGE34…”, S82) i v1 („MAGE34-…”) = `old`: pusty planer z komunikatem „kod
+  sprzed zmian umiejętności”; inny tekst bez „3<KLASA>” = `format` (build zostaje).
+- Parzystość: `skills.test.ts` porównuje każdą decyzję z `wiki/test-fixtures/planner.json` (`vectors` ścieżek testowych,
+  `game` kierunków gry, `skills.states` / `skills.plans` punktów umiejętności) i sprawdza każdy klucz powodu; testy
+  własne: budżet puli, limit poziomu, pasek 8, jedno zwieńczenie, ulepszenie, zwrot węzła umiejętności, kod v3 tam i z
+  powrotem (50 losowych buildów każdej klasy), odrzucenie v2.
+- Strona klasy: planer (`#planner`), „Jak rozwija się umiejętność” (`#growth`, liczby z `rules`), „Kierunki”
+  (`#directions`: rzędy i węzły, ranga 1 i ostatnia), „Wszystkie umiejętności” według pul (`#pool-<id>`, wiersz
+  `#s-<id>`: rola, `short`, rangi 5 / 10 od poziomu, opisy na rangach 1 / 5 / 10, A/B, węzły `modify`).
 
 - **S42 (zadania, mechaniki):** `/pl/zadania/` (32 główne w kolejności gry pogrupowane w odcinki wg krainy, 28 pobocznych
   wg NPC, 8 rodzajów zleceń z chipami poziomu i tabelą nagród), 60 stron zadań (fakty, minimapa celu, cele z linkami,
@@ -772,7 +807,23 @@ trafia do commita. Bez klucza oba workflowy przechodzą na zielono z komunikatem
   Odłamków (§1). Opublikowane tytuły i kosmetyki areny, Krwawego Księżyca, turnieju i VIP; tytuł sezonu areny bez
   `{season}`, tytuły czasowe z liczbą dni (`req.days`).
 
+- **S148** Kierunki opublikowane na wiki (`wiki = false` zdjęte we wszystkich `PathDef`), bo DESIGN-18 §14 i plik
+  sesji pokazują je na stronie klasy; tytuł kierunku z `req.path` („Kierunek przewodni: …”).
+- **S148** Wektory planera (kierunki gry i punkty umiejętności, ok. 1,7 MB) w `wiki/test-fixtures/planner.json`
+  zamiast `skills.rules.vectors` (z opublikowanymi kierunkami `skills.json` urósłby o 1 MB danych testowych).
+- **S148** Kod v3 niesie pasek puli (`:<pasek>` w segmencie puli), żeby link oddawał cały build; talenty kierunków w
+  jednym segmencie, grupy rozdzielone „-”.
+- **S148** Planer: kafelek „zablokowany” tylko bez rangi do kupienia na tym poziomie albo bez węzła kierunku (brak
+  punktów nie gasi obrazka, jak w grze); obniżenie poziomu nie przycina buildu, tylko ostrzega (pule ponad budżet, rangi
+  ponad limit, węzły nieosiągalne), jak planer v2.
+- **S148** Budżet JS strony klasy 40 → 44 KB gzip (planer v3: 41 KB).
+
 ## Niedokończone
+
+- **S148** Obrazki umiejętności nowych pul i kierunków (`npm run art` z folderu Graphics właściciela) i ikony
+  (`npm run icons`) nieodświeżone; kafelki bez obrazka mają glif. Planer bez przeciągania na pasek (wybór przyciskiem
+  „Na pasek”, zdjęcie kliknięciem miejsca) i bez „Rozdaj jak zaleca pula” (`plan` puli nie trafia na wiki). Lighthouse
+  strony klasy nie mierzony po S148.
 
 - **S44** Lighthouse wydajność < 95 na: bestiariusz (81), potwór PL (84), lista przedmiotów (85), przedmiot bossa (89),
   klasa (89), boss (90), przedmiot PL (90), szukaj (91), mechanika (92), ulepszanie (92) — przyczyna i próby w „Decyzje”.
@@ -846,7 +897,9 @@ trafia do commita. Bez klucza oba workflowy przechodzą na zielono z komunikatem
   `docs/PRZEDMIOTY.md`. Test: `tests/wikidump.spec.luau`.
 - **Po każdej sesji zmieniającej `src/shared/Data` (albo Logic używaną przez eksport) uruchom `lune run tools/wikidump.luau`**
   (od S36: `npm run data` w `wiki/`, od S37 robi też mapy SVG `lune run tools/wikimap.luau` → `wiki/public/img/maps/`)
-  i zacommituj zmiany; `--check` mówi, czy dane są aktualne.
+  i zacommituj zmiany; `--check` mówi, czy dane są aktualne. S148: ten sam eksport pisze `wiki/test-fixtures/planner.json`
+  (parzystość planera, `npm test`); zmiana kształtu danych przechodzi `tools/wiki_keys_diff.luau` po commicie albo z
+  `WIKI_KEYS_ALLOW`.
 - Strona (S36+): `cd wiki`, `npm install`, `npm run dev` (podgląd), `npm run build` + `npm run preview` (z wyszukiwarką),
   `npm run check` (typy, lint, testy, build, linki), `npm run data` (eksport danych), `npm run shots` (zrzuty 390/1440),
   `npm run renders` (S38: rendery potworów, bossów i petów + OG; Python, `tools/wiki-renders/README.md`), `npm run renders:test`.

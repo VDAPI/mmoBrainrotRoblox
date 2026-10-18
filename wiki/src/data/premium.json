@@ -16,7 +16,7 @@
   ],
   "shop": [
     {"cat":"scroll","item":"scroll_oblivion","key":"scroll_oblivion","kind":"item","name":{"en":"Scroll of Oblivion","pl":"Zwój Zapomnienia"}},
-    {"cat":"scroll","item":"scroll_skillreset","key":"scroll_skillreset","kind":"item","name":{"en":"Scroll of a New Path","pl":"Zwój Nowej Ścieżki"}},
+    {"cat":"scroll","item":"scroll_skillreset","key":"scroll_skillreset","kind":"item","name":{"en":"Scroll of Skill Renewal","pl":"Zwój Odnowy Umiejętności"}},
     {"cat":"scroll","item":"scroll_unbind","key":"scroll_unbind","kind":"item","name":{"en":"Scroll of Unbinding","pl":"Zwój Rozwiązania"}},
     {"cat":"scroll","dailyLimit":1,"item":"scroll_protection","key":"scroll_protection","kind":"item","name":{"en":"Scroll of Protection","pl":"Zwój Ochrony"}},
     {"cat":"scroll","dailyLimit":1,"item":"reroll_stone","key":"reroll_stone","kind":"item","name":{"en":"Stone of Transmutation","pl":"Kamień Przemiany"}},

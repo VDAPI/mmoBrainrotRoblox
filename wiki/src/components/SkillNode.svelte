@@ -1,7 +1,7 @@
 <script lang="ts">
   // Skill node (.vw-node, contract S36; Svelte so static pages share it). Without `rank` the counter shows the max
   // rank only (the "All skills" table). S82: the planner's path nodes, `mark` = a small sign in the corner (the 1/3
-  // strength of a team node outside the main path).
+  // strength of a team node below the full-strength points of its direction, S148).
   // `label` is the full accessible name ("Fireball, 2 of 10, available"); extra attributes and event handlers
   // (onclick, oncontextmenu, onkeydown, tabindex, data-*) pass through to the button. WIKI-GRAFIKA: `pic` = base URL of
   // the owner's skill picture (src/lib/art.ts artFor, files -64 / -128) drawn instead of the glyph.

@@ -12513,3 +12513,57 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/fixtures/balance_paths.json`, `tools/{balance_reasons,balance_report}.luau`, `tools/balance_before.json`,
   `src/shared/Data/Localization/{pl,en}.luau`,
   `docs/{BALANS,DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S148: Wiki umiejętności 2.0 i audyt serii
+
+- **Odświeżenie hurtowe** (właściciel: S148 = odłożone odświeżenie wiki S135–S147): `lune run tools/wikidump.luau`
+  (bez `npm run icons` / `art` / `renders`), mapy aktualne (`wikimap --check`), `PLANNER_STALE_OK = false`,
+  `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel`.
+- **Eksport** (`tools/WikiData/Skills`): `short` umiejętności (`skill.<id>.short` na randze 1), pule z `glyph` i
+  `skills` w kolejności kodu (`Skills.poolOrder`: szkoła według `LADDER`, wspólne według `COMMON_LADDER`, umiejętności
+  kierunków; nigdy `plan`), `rules.barSlots`, kierunki bez `weapon`; wektory planera w `wiki/test-fixtures/planner.json`
+  (`game` = kierunki gry z `leading`, `skills` = `SkillPoints.canBuy` / `apply` na danych gry, stan z
+  `paths.error.upgrade`), `skills.json` bez `rules.vectors`. Kierunki opublikowane (`wiki = false` zdjęte), tytuł
+  kierunku z `req.path` (`Basics`, `TitleTable`).
+- **Strona klasy:** planer v3 (`SkillPlanner.svelte`): suwak poziomu, punkty umiejętności puli i talentów, kierunek
+  przewodni, zakładki pul z drzewkiem według drabiny (kolumny ról, wiersze poziomów, kafelek z rangą, znakami przełomów
+  i numerem miejsca na pasku, `short` w dymku i pod nazwą na telefonie, „Z kierunków”), pasek 8 puli, zakładka
+  „Kierunki” (przełącznik, zasady: jedno zwieńczenie, przewodni od 12 pkt, ⅓ węzłów drużynowych poniżej 6 pkt),
+  szczegóły (Co robi, ranga i limit, + / −, Na pasek, teraz / następna, liczby na rangach 1 / 5 / 10, A/B od kupionej
+  rangi, węzły `modify`). Sekcje statyczne: „Jak rozwija się umiejętność” (liczby z `rules`), „Kierunki” (rzędy i
+  węzły) i „Wszystkie umiejętności” według pul (rola, `short`, rangi 5 / 10 od poziomu, opisy 1 / 5 / 10, A/B, węzły).
+  Teksty `class.*`, `skills.*`, `planner.*` (PL, EN), tożsamość pul `class.pool.<id>`; poradnik „Pierwsze kroki” i
+  „Statystyki” bez ścieżki głównej; `components.css` (drzewko, kafelki, pasek, telefon: lista z `short`).
+- **Kod v3:** `3<KLASA><poziom>.<PULA>:<rangi>[:<pasek>]….<talenty>.<przełomy>` (format i przykłady w `docs/WIKI.md` →
+  „Planer v3”); błędy `empty`, `class`, `level`, `pool`, `rank`, `bar`, `talent`, `bp`, `length`, kod „2…” = `old`.
+- **Testy:** `skills.test.ts` od nowa (parzystość z trzema zbiorami wektorów i każdym kluczem powodu, budżet puli, limit,
+  pasek 8, zwieńczenie, ulepszenie, zwrot węzła umiejętności, drzewko według drabiny, kod v3 tam i z powrotem, v2 =
+  `old`), e2e planera (`keyboard.e2e.ts`: „+” na kafelku, A/B, węzeł kierunku); `wikidump.spec` (powód
+  `paths.error.upgrade`, pule w kolejności kodu bez `plan`, `short`, wektory punktów umiejętności, brak
+  `rules.vectors`, kierunek bez broni), `paths.spec` (kierunki opublikowane), `skills.spec` (`rankAt` zamiast
+  `rankFor`). `npm run check` zielony (Vitest 135, build 2538 stron, linki, budżety, audyt), Playwright 138 / 164 (26
+  pominiętych z założenia), `scripts/check` zielony z `WIKI_KEYS_ALLOW="skills:*,titles:*,mechanics:*,types.ts"`
+  (nowy kształt danych, przed commitem).
+- **Audyt serii:** ROZWOJ §0 / §3–§5 oznaczone jako zastąpione, linia serii w §16; DESIGN §14 na modelu DESIGN-18 (pule,
+  punkty, kierunki, tabele pul klas), DESIGN poza §14 bez ścieżki głównej i Zwoju Nowej Ścieżki; DESIGN-18 §0.6, §14,
+  otwarte decyzje i §17 „Ustalenia S137–S148”; CLAUDE.md (kierunki na wiki, limit `rankAt`, lustro planera, planer v3);
+  WIKI.md (§1, §5, Komponenty, „Planer v3”, Stan, Decyzje, Niedokończone, Polecenia); STATY bez ścieżki głównej;
+  PROGRESS: braki serii w jednym wpisie. Grep `canChooseMain`, `freeUsed`, `mainPathLevel`, `MAIN_LEVEL`, `rankFor(`,
+  `transitional`, `HOTBAR_SLOTS = 10`, „ścieżka główna” w tekstach gracza: `Skills.rankFor` usunięte; pozostałe
+  trafienia to historia w komentarzach i testach regresji (`paths.spec`: brak `MAIN_LEVEL` / `canChooseMain`, stare
+  `main` / `freeUsed` czyszczone; `skillpools.spec` / `pathview.spec`: brak `transitional`; „transitional ladder” w
+  `skills.spec` = krzywa limitu ROZWOJ 2.6 na fixture), komentarze serwisów i `Data/Paths/Hunter` poprawione.
+- **Poprawki po przeglądzie:** dekoder kodu v3 daje `old` tylko kodom v2 („2MAGE34…”) i v1 („MAGE34-…”), inny tekst =
+  błąd `format` (build zostaje, `planner.err.format`); `statystyki.mdx` / `stats.mdx` bez rang z poziomu (punkty pul,
+  talenty kierunków); DESIGN HUD: pasek 8 slotów puli; fixture planera z widocznością `Visibility.collect` jak
+  `skills.json`; testy limitu rangi (`invalid`) i ulepszenia bez zwieńczenia (`paths.error.upgrade`) bez pustych asercji.
+- **Dla właściciela:** decyzje z DESIGN-18 nadal otwarte: zwroty węzłów za złoto jak rangi (§3.2), publikacja kierunków
+  (zrobiona według §14, cofnięcie `wiki = false`), cele nie spełnione S146 / S147.
+- **Pliki:** `tools/WikiData/{Skills,Basics}.luau`, `src/shared/Data/Paths/{Cleric,Hunter,Mage,Warrior,Types}.luau`,
+  `src/shared/Logic/Skills.luau`, `src/server/Services/{PathService,SkillService,TitleService}.luau`,
+  `tests/{wikidump,paths,skills}.spec.luau`, `tests/BalanceTables.luau`, `wiki/src/lib/{skills,skills.test,classes}.ts`,
+  `wiki/src/islands/SkillPlanner.svelte`, `wiki/src/views/ClassView.astro`, `wiki/src/components/{SkillNode.svelte,
+  blocks/TitleTable.astro}`, `wiki/src/i18n/{pl,en}.ts`, `wiki/src/styles/components.css`,
+  `wiki/src/content/{guides,mechanics}/*`, `wiki/e2e/keyboard.e2e.ts`, `wiki/scripts/budgets.config.mjs`,
+  `wiki/src/data/*` (eksport), `wiki/test-fixtures/planner.json`, `docs/PRZEDMIOTY.md`,
+  `docs/{ROZWOJ,DESIGN,DESIGN-18,STATY,WIKI,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

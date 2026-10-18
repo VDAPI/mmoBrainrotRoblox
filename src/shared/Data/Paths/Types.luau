@@ -79,7 +79,7 @@ export type PathDef = {
 	-- S67: multipliers on the class weights of Logic/ItemScore (S138: of the leading direction); never on the wiki
 	itemWeights: ItemWeights.ItemWeights?,
 	reference: { ReferenceBuild }, -- model builds; never on the wiki
-	wiki: boolean?, -- false = unpublished on the wiki (ROZWOJ 3.5)
+	wiki: boolean?, -- false = unpublished on the wiki (ROZWOJ 3.5; every direction published since S148)
 }
 export type RowKind = "normal" | "choice" | "capstone" | "upgrade"
 export type RowDef = { level: number, need: number, kind: RowKind, twoPathExtra: boolean? }

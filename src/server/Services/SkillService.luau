@@ -333,7 +333,7 @@ function SkillService.SetInfiniteResources(player: Player, enabled: boolean)
 	runtime(player).infiniteResources = enabled
 end
 
--- Passives changed outside a level change (admin S28; S57 PathService: nodes, main path, weapon).
+-- Passives changed outside a level change (admin S28; S57 PathService: nodes, weapon).
 function SkillService.RefreshPassives(player: Player)
 	passivesChanged(player)
 end

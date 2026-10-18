@@ -7,7 +7,9 @@ streszczenie, które odsyła tutaj.
 
 - **S137: §2.4–2.6, 2.8–2.10, 3–5 zastąpione przez `docs/DESIGN-18.md`** (punkty umiejętności, pule broni, kierunki;
   pierwszeństwo: `docs/DECYZJE.md` > DESIGN-18 > ta część ROZWOJ). Reszta (przełomy §2.7, kategorie §7, szczęście §6,
-  wzory §8, klasy §9–12) dalej obowiązuje.
+  wzory §8, klasy §9–12) dalej obowiązuje. Seria S137–S148 zamknięta (stan: DESIGN-18 „Ustalenia S137–S148”):
+  „podstawa” klas z §9.2–12.2 to dziś pule broni (DESIGN-18 §6), „ścieżki” to kierunki bez ścieżki głównej i broni
+  ścieżki (§7), rangi kupuje się punktami (§3), wiki pokazuje pule i kierunki z planerem v3 (S148, `docs/WIKI.md`).
 - To jedyne źródło, według którego sesje przebudowy (fundament, potem Kapłan, potem Wojownik, Łowca i Mag) wdrażają
   nowy rozwój postaci, tak jak sesje wiki pracują według `docs/WIKI.md`, a sesje krain według `docs/SILNIKI.md`.
   Powstał z odpowiedzi właściciela na ankietę (sekcja 1), kodu `origin/main` 1aeb85b i diagnozy balansu.
@@ -358,6 +360,9 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 
 ## 3. Model danych i mapa kodu
 
+> **Zastąpione przez `docs/DESIGN-18.md` §9–§11 i §14 (S137–S148).** Zostaje jako historia S53–S82: punkty z poziomu,
+> ścieżka główna, `rankFor` i kod v2 już nie istnieją.
+
 ### 3.1 Moduły
 
 | Moduł | Zmiana |
@@ -508,6 +513,8 @@ export type ReferenceBuild = {
 
 ## 4. Interfejs
 
+> **Zastąpione przez `docs/DESIGN-18.md` §12 (okno S139).** Historia S59.
+
 - PC: okno umiejętności (K) 920 × 640 (było 780 × 640). Nagłówek: „Zestaw 1 / Zestaw 2”, „Kopiuj”, wolne punkty,
   ścieżka główna. Zakładki: „Podstawa” i jedna na ścieżkę (nazwa, ikona broni, stan: główna, początki, zamknięta).
   Lewa część (ok. 520 px) to lista, prawa (ok. 360 px) szczegóły z podglądem 3D (S28).
@@ -544,6 +551,8 @@ export type ReferenceBuild = {
   sekcje klas i sekcja 14.
 
 ## 5. Migracja zapisu (schemat 5 → 6) i nowe postacie
+
+> **Zastąpione przez `docs/DESIGN-18.md` §10 (schemat 12, S137).** Historia S56.
 
 `AccountSchema.CURRENT = 6`, `MIGRATIONS[6]` (idempotentna, z ochroną typów jak S30), dla każdej postaci:
 - usuwa `skills` i `skillPoints` (rangi i punkty liczą się z poziomu);
@@ -2651,3 +2660,7 @@ oraz dla przechwytu i tarcz pochłaniających; cel Inkwizytora względem Berserk
 obrażeń umiejętności do szybkości broni, także dla trafień umiejętności (`DealOptions.multiplier`) i jako warunek sesji
 Wojownika i Maga; reguła broni dwuręcznej w `Paths.weaponOk`; miara celu many (zapotrzebowanie / regeneracja z
 biernymi zwrotami, bez Inwokacji).
+
+Seria „Umiejętności 2.0” (S137–S148, `docs/DESIGN-18.md`) zastąpiła §2.4–2.6, 2.8–2.10 i 3–5: punkty umiejętności na
+pulę broni, pule z bronią według wspólnej drabiny, kierunki bez ścieżki głównej z jednym zwieńczeniem, pasek 8 na pulę,
+balans 21–100 nowymi buildami (S146, S147), wiki z pulami, kierunkami i planerem v3 (S148).
