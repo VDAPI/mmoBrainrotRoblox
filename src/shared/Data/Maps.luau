@@ -157,7 +157,8 @@ local LIGHT = {
 		outdoorAmbient = "#5C6A5A",
 		fogColor = "#4A544A",
 		fogEnd = 420,
-		atmosphere = { density = 0.4, haze = 2.2, glare = 0.2, color = "#6C746C", decay = "#30363A" },
+		-- W15 (bor.md A7): density 0.4 -> 0.33, the Old Tree's silhouette has to carry 700-900 studs
+		atmosphere = { density = 0.33, haze = 2.2, glare = 0.2, color = "#6C746C", decay = "#30363A" },
 		tint = "#E2EAD8",
 		saturation = -0.08,
 	}),

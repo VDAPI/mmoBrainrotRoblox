@@ -332,3 +332,11 @@ Sprawdzone w Studio: liczby i rozmiary modeli po starcie serwera.
 Maki jako akcent koloru (laki.md 1.7): nowy rodzaj podszytu `poppies` (4–7 kwiatów na łodygach, czerwone główki) w
 temacie łąki, traktu i pól (`UNDER` w `MeadowsGen/Nature`); części klienta +1382 detal i +1403 drobne (z ok. 7257 / 2536),
 serwer bez zmian. Nieobejrzane w Studio.
+
+### W15: Bór, część 1
+
+Drzewa Boru z zestawu (bor.md A8): wpisy `forest` w `Data/Kit` dla `tree:gnarledOak`, `tree:darkPine`, `tree:giantOak`
+(większe niż na Łąkach), `tree:mossWillow`; drzewa Yasu pod ciemnymi liśćmi `#1E2E1A` / `#2C3A22` (707 modeli w Borze).
+`Atmosphere` Boru 0,4 → 0,33 (sylwetki na 700–900 st.). Bez zmian: martwe drzewa (`blackDead`) i podszyt (brak modeli;
+Quaternius wymaga pobrania). Licznik części serwera Boru 3037 przy miękkim limicie 3000 (meshe zestawu; Łąki 3254 od
+W02). Pradrzewo czeka na model `forest_landmark_03` (prompt u właściciela). Sprawdzone w Studio: liczba modeli.

@@ -67,6 +67,21 @@ local CONIFER = {
 	v("grass_tree_11", 2, 0.95, 1.1, nil, PINE),
 	v("grass_tree_12", 2, 0.9, 1.05, nil, PINE),
 }
+-- W15: the Duskwood (bor.md A8): the same Yasu trees under dark leaves
+local DARK = "#1E2E1A"
+local MOSS = "#2C3A22"
+local FOREST_BROADLEAF = {
+	v("grass_tree_01", 3, 0.95, 1.1, nil, DARK),
+	v("grass_tree_02", 3, 0.95, 1.1, nil, MOSS),
+	v("grass_tree_04", 3, 0.95, 1.1, nil, DARK),
+	v("grass_tree_19", 2, 0.9, 1.05, nil, MOSS),
+}
+local FOREST_CONIFER = {
+	v("grass_tree_08", 3, 0.95, 1.15, nil, DARK),
+	v("grass_tree_10", 3, 0.95, 1.15, nil, DARK),
+	v("grass_tree_11", 2, 0.95, 1.1, nil, MOSS),
+	v("grass_tree_12", 2, 0.9, 1.05, nil, DARK),
+}
 -- W12: the city's broadleaf trees (gardens, squares): the Meadows' oaks a size smaller
 local CITY_BROADLEAF = {
 	v("grass_tree_01", 1, 0.7, 0.8, nil, OAK),
@@ -88,11 +103,6 @@ local ROCKS = {
 -- screenshots).
 Kit.slots = {
 	["tree:oak"] = { fit = "height", size = 17, grass = BROADLEAF, city = CITY_BROADLEAF },
-	["tree:giantOak"] = {
-		fit = "height",
-		size = 22,
-		grass = { v("grass_tree_19", 2, 0.95, 1.05, nil, OAK), v("grass_tree_15", 1, 1, 1.1, nil, OAK) },
-	},
 	["tree:birch"] = {
 		fit = "height",
 		size = 19,
@@ -106,6 +116,20 @@ Kit.slots = {
 		city = { v("grass_tree_06", 1, 0.75, 0.85, nil, BIRCH) },
 	},
 	["tree:pine"] = { fit = "height", size = 24, grass = CONIFER, city = CONIFER },
+	-- W15: the Duskwood's species (WorldGen/Flora): gnarled oaks and dark pines, the giant oaks, moss willows by water
+	["tree:gnarledOak"] = { fit = "height", size = 17, forest = FOREST_BROADLEAF },
+	["tree:darkPine"] = { fit = "height", size = 24, forest = FOREST_CONIFER },
+	["tree:giantOak"] = {
+		fit = "height",
+		size = 22,
+		grass = { v("grass_tree_19", 2, 0.95, 1.05, nil, OAK), v("grass_tree_15", 1, 1, 1.1, nil, OAK) },
+		forest = { v("grass_tree_19", 2, 1.1, 1.25, nil, MOSS), v("grass_tree_15", 1, 1.15, 1.3, nil, DARK) },
+	},
+	["tree:mossWillow"] = {
+		fit = "height",
+		size = 13,
+		forest = { v("grass_tree_06", 1, 0.95, 1.05, nil, MOSS), v("grass_tree_03", 1, 0.95, 1.05, nil, MOSS) },
+	},
 	["under:bush"] = {
 		fit = "height",
 		size = 3.2,

@@ -17,6 +17,8 @@ W09: ciało Roblox „Base Body - Dawson” z dynamiczną głową dla wszystkich
 
 W10: kreator postaci (8 twarzy, brwi, zarost, 12 fryzur, 12 kolorów włosów, 12 skór, budowa, malunki), zakładki, podgląd z obrotem i zbliżeniem. Czeka na ocenę.
 
+W15 (część 1): drzewa Boru z zestawu (ciemne liście), rzadsza atmosfera. Czeka na ocenę.
+
 W13 (część 1): wzgórze młyna wyżej, spalony młyn z Tripo z dymem, horyzont Łąk (szczyty, Bór, mury miasta). Czeka na ocenę.
 
 W12 (części 1–2): pierścień horyzontu (Łąki, Bór z Pradrzewem, wulkan Pustkowi, Szczyty); Iglica Ciernia i posąg Pani z Cierniem z Tripo w mieście, drzewa z zestawu, iglica świątyni, okna nocą, kolor słońca z porą dnia. Czeka na ocenę.
@@ -34,6 +36,7 @@ W12 (części 1–2): pierścień horyzontu (Łąki, Bór z Pradrzewem, wulkan P
 - W08: zrzuty i nagrania ruchu, pływanie i atak w biegu nie obejrzane wizualnie (Studio w tle nie renderuje).
 - W09: A2 (ciało z Tripo + Avatar Setup), ładniejsze kształty strojów (C2), blizna i piegi na dynamicznej głowie, przenikanie strojów w ruchu i chwyt broni nie oglądane.
 - W10: kolor oczu (oczy w teksturze dynamicznej głowy), malunki nieobejrzane na twarzy (pozycja na głowie z obliczeń), wygląd fryzur warstwowych w podglądzie przybliżony.
+- W15: Pradrzewo (model `forest_landmark_03` od właściciela), klin widoku z bramy, martwe drzewa i podszyt bez modeli, licznik części 3037/3000.
 - W13: Z1 (nowa ścieżka) próbowana i cofnięta: przelosowuje grupę wilków (−304, −81) aż do (−413, 238), co zmienia zlecenia łowieckie (S134k, `contracts_gen`, `quest_budget`) i daje stromiznę 36° przy brodzie (−32, −420); wymaga sesji z balansem albo stałego miejsca grupy. Też: rekwizyty expowisk, kwiaty i rośliny wodne, kapliczka i bramy; młyn i horyzont nieobejrzane w Studio.
 - W12/W13: horyzonty miasta, Łąk, Boru, Pustkowi i Szczytów nieobejrzane w Studio (kolory, odległości do strojenia w `Data/Horizons`).
 - W08: IK bez obniżania bioder (wymagałoby zmiany fizyki); warianty klasowe ruchu (pomysł).
