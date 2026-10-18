@@ -340,3 +340,8 @@ Drzewa Boru z zestawu (bor.md A8): wpisy `forest` w `Data/Kit` dla `tree:gnarled
 `Atmosphere` Boru 0,4 → 0,33 (sylwetki na 700–900 st.). Bez zmian: martwe drzewa (`blackDead`) i podszyt (brak modeli;
 Quaternius wymaga pobrania). Licznik części serwera Boru 3037 przy miękkim limicie 3000 (meshe zestawu; Łąki 3254 od
 W02). Pradrzewo czeka na model `forest_landmark_03` (prompt u właściciela). Sprawdzone w Studio: liczba modeli.
+
+### W19: Szczyty, część 1
+
+Sosny Szczytów z zestawu: `tree:snowPine` z wpisem `snow` w `Data/Kit` (iglaste Yasu pod bladą, oszronioną zielenią;
+269 modeli). Martwe zamarznięte drzewa i lodowe kolce zostają z generatora. Sprawdzone w Studio: liczba modeli.

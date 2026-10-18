@@ -17,6 +17,8 @@ W09: ciało Roblox „Base Body - Dawson” z dynamiczną głową dla wszystkich
 
 W10: kreator postaci (8 twarzy, brwi, zarost, 12 fryzur, 12 kolorów włosów, 12 skór, budowa, malunki), zakładki, podgląd z obrotem i zbliżeniem. Czeka na ocenę.
 
+W19 (część 1): sosny Szczytów z zestawu (oszroniona zieleń). Czeka na ocenę.
+
 W15 (część 1): drzewa Boru z zestawu (ciemne liście), rzadsza atmosfera. Czeka na ocenę.
 
 W13 (część 1): wzgórze młyna wyżej, spalony młyn z Tripo z dymem, horyzont Łąk (szczyty, Bór, mury miasta). Czeka na ocenę.

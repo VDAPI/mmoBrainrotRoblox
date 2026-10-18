@@ -125,6 +125,17 @@ Kit.slots = {
 		grass = { v("grass_tree_19", 2, 0.95, 1.05, nil, OAK), v("grass_tree_15", 1, 1, 1.1, nil, OAK) },
 		forest = { v("grass_tree_19", 2, 1.1, 1.25, nil, MOSS), v("grass_tree_15", 1, 1.15, 1.3, nil, DARK) },
 	},
+	-- W19: Frostpeak's pines: the Yasu conifers under a pale, frosted green (bor.md-like rule, szczyty.md)
+	["tree:snowPine"] = {
+		fit = "height",
+		size = 20,
+		snow = {
+			v("grass_tree_08", 3, 0.95, 1.15, nil, "#7E9690"),
+			v("grass_tree_10", 3, 0.95, 1.15, nil, "#6F8A82"),
+			v("grass_tree_11", 2, 0.9, 1.1, nil, "#8AA19A"),
+			v("grass_tree_12", 2, 0.9, 1.05, nil, "#7A928B"),
+		},
+	},
 	["tree:mossWillow"] = {
 		fit = "height",
 		size = 13,
