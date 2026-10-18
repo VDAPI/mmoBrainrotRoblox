@@ -20,6 +20,7 @@ local AreaSpawns = require("./AreaSpawns")
 local AreaTypes = require("../Data/Areas/Types")
 local Crags = require("@self/Crags")
 local Dunes = require("@self/Dunes")
+local Details = require("@self/Details")
 local Env = require("@self/Env")
 local Flats = require("@self/Flats")
 local Flora = require("./WorldGen/Flora")
@@ -283,6 +284,8 @@ function AshenGen.all(): { Build }
 	-- S107: props of the side quest anchors, last and without clearings of their own (the frozen Wastes keep every
 	-- earlier Build, tree and node where it was)
 	Quest.all(e, out)
+	-- W18: the map plan's details and secrets, after everything and without clearings (nothing earlier moves)
+	Details.all(e, out)
 	treeCache = trees
 	cache = out
 	return out

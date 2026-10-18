@@ -240,7 +240,8 @@ local function cages(env: Env.Env, out: { Build })
 	table.insert(out, b)
 end
 
--- The Blood Ring: stakes around the sunken arena, posts with chains in the middle, dark stains.
+-- The Blood Ring: stakes around the sunken arena, posts with chains in the middle; W18 (pustkowia.md 1.10.4): red
+-- sand, rust and old bones on the floor, no blood.
 local function bloodPit(env: Env.Env, out: { Build })
 	local ctx = env.ctx
 	local b = Env.atSite(env, "bloodPit", "landmark", 22)
@@ -282,9 +283,11 @@ local function bloodPit(env: Env.Env, out: { Build })
 			0,
 			k * 40,
 			0,
-			o({ c = "#4A1A16", m = "SmoothPlastic" }, "fine")
+			o({ c = if k % 2 == 0 then "#9A5636" else "#7A4A30", m = "Sand" }, "fine")
 		)
 	end
+	Kit.bones(bp, 6, Kit.gy(ctx, b, 6, 4), 4, 5)
+	Kit.bones(bp, -8, Kit.gy(ctx, b, -8, -5), -5, 4)
 	table.insert(out, b)
 end
 

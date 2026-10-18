@@ -1124,6 +1124,8 @@ describe("Ashen Wastes: side quest places (S107)", function()
 					props += 1
 				elseif b.tag == "lair" then
 					continue -- S134i: the Elite II hideouts
+				elseif string.match(b.name, "^Detail_") then
+					continue -- W18: the map plan's details (AshenGen/Details), after the quest props
 				else
 					others += 1
 				end

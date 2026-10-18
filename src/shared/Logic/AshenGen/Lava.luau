@@ -361,6 +361,38 @@ local function colossus(env: Env.Env, out: { Build })
 		gp:box(2.4, 2.2, 2.2, 0, 9.6, -0.4, o(stone, "detail", { col = false }))
 		gp:rbox(1.6, 5, 1.6, -3.4, 6, -1, -40, 0, 10, o(stone, "detail", { col = false }))
 		gp:rbox(1.6, 5, 1.6, 3.4, 5.6, 0.6, 20, 0, -10, o(stone, "detail", { col = false }))
+		-- W18 (pustkowia.md 1.4): the first two wear burst dwarven shackles at the ankles, links strewn about
+		if i <= 2 then
+			for _, leg in { { -1.4, 0.6 }, { 1.4, -0.8 } } do
+				gp:add(
+					"cyl",
+					0.7,
+					2.4,
+					2.4,
+					leg[1],
+					0.9,
+					leg[2],
+					0,
+					0,
+					90,
+					o(Props.ironDark, "detail", { col = false })
+				)
+			end
+			for k = 0, 3 do
+				gp:rbox(
+					0.9,
+					0.25,
+					0.5,
+					2.4 + k * 0.8,
+					0.15,
+					1.4 + (k % 2) * 0.4,
+					0,
+					k * 50,
+					0,
+					o(Props.ironDark, "fine", { col = false })
+				)
+			end
+		end
 		gp:box(1.6, 0.4, 0.2, 0, 9.8, -1.55, {
 			c = Props.EMBER,
 			m = "Neon",
