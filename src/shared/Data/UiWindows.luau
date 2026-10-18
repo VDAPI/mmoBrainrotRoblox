@@ -61,6 +61,8 @@ UiWindows.list = table.freeze({
 	dev = win("S136", "iron", { "UI/Screens/DevWindow" }, "admin overlay on iron at the right edge"),
 	-- S151b
 	achievements = win("S151b", "paper", { "UI/Screens/AchievementsWindow" }),
+	-- S152b
+	season = win("S152b", "paper", { "UI/Screens/SeasonPass.luau" }),
 } :: { [string]: Entry })
 
 -- S136: screens outside windows (HUD, overlays, full-screen screens, cards) and their surface.
@@ -68,6 +70,7 @@ UiWindows.SCREENS = table.freeze({
 	["UI/Screens/Hud"] = "iron",
 	["UI/Screens/Hud/WorldBossPanel.luau"] = "iron", -- S149b: the world boss panel (also under Hud; named for the list)
 	["UI/Screens/Hud/AchievementToast.luau"] = "iron", -- S151: the achievement toast (also under Hud; named for the list)
+	["UI/Screens/Hud/SeasonButton.luau"] = "iron", -- S152b: the season pass button (also under Hud; named for the list)
 	["UI/Screens/PartyFrames.luau"] = "iron",
 	["UI/Screens/Cutscene.luau"] = "iron",
 	["UI/Screens/EmoteWheel.luau"] = "iron",

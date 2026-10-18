@@ -12957,3 +12957,37 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium,cosmetics2,lookdump,balance}.spec.luau`,
   `tests/{Balance,Pricing}.luau`, `tools/{balance_report,balance_reasons,shop_report}.luau`, `tools/balance_before.json`,
   `docs/{DESIGN,DESIGN-17,DECYZJE,SESJE,PROGRESS,BALANS,SKLEP-ID}.md`, `CLAUDE.md`.
+
+### S152b: przepustka sezonu 2/2 (okno, sklep, wiki, lejek)
+
+- **Widok** `src/shared/Logic/SeasonView.luau` (nowy, czysty): tryb `running` / `grace` / `soon` z `account.season` i
+  `seasonPrev` (także przed przetoczeniem stanu przez serwer), stopień, postęp, limit narastający, nadrabianie, limit
+  potworów dziś, czas do końca, termin odbioru, `cell` (empty / locked / noPremium / claimable / claimed), `claimCount`
+  (z poprzednim sezonem w łasce), `claimAllShown`, `shown`, `focusTier`, `canBuy`, lista `SOURCES`. Klient: `UI/SeasonState` (zegar co
+  1 s z przesunięciem Studio, `View`).
+- **Okno** `UI/Screens/SeasonPass.luau` (pergamin, `UiWindows.season`, 1000 × 660, na telefonie pełny ekran):
+  nagłówek (nazwa, „Koniec za”, stopień, pasek `Brass.Bright` na torze, limit tygodnia z plakietkami), zakładki
+  „Nagrody” (PC pas kolumn stopni, telefon lista stopni; komórka: obrazek kosmetyku / przedmiotu / Płaszcza, nazwa,
+  stan, dymek na żelazie) i „Jak zdobywać punkty” (źródła z `Data/Seasons.POINTS`, akapit limitów, „Czym to się różni
+  od VIP?”), „Odbierz wszystko (n)”, „Odblokuj premium”; po sezonie okres łaski z datą, przed sezonem „Następny sezon
+  wkrótce” z datą startu. `SeasonController` (rejestracja, `SeasonClaim` / `SeasonClaimAll`, błędy jako toast, `Open`,
+  `Buy`), modal `UI/SeasonPassBuy` (jeden dla okna i sklepu).
+- **Wejścia:** `Hud/SeasonButton` (❖ pod ✧, „!” i pulsująca rama, dymek ze stopniem i punktami), klawisz C
+  (`win_season`), przycisk w menu gry, klucz grafiki `hud/season` w `UiArt.FIXED.hud`.
+- **Sklep:** karta przepustki nad VIP w „Przepustkach” („Odblokuj ◆ cena”, „Zobacz nagrody”, stan), linia
+  `premium.passVsVip`; `Cards.Ctx.OpenSeason` / `BuySeason` (PremiumController przez rejestr).
+- **Lejek:** `ShopFunnel.FUNNELS.season` + `CLIENT_STEPS.season`; serwer `bought` (SeasonBuy) i `claimed` (pierwszy
+  odbiór premium po zakupie na tym serwerze), klient `open`, `view`, `prompt`.
+- **Poprawka S152:** `/seasonpass week` ustawia atrybut `SeasonClockOffset` (okno liczy czas serwera).
+- **Testy:** nowy `tests/seasonview.spec.luau` (tryby, łaska przed i po przetoczeniu, komórki = `Season.claimable`,
+  badge, „Odbierz wszystko”, focus, zakup, źródła); `premium.spec` (lejek `season`), `uitheme.spec` (sesja S152b), pary w `UiPalette`.
+- wiki do odświeżenia (właściciel 17.10): rekord `season` w `tools/WikiData/Premium.luau`, kosmetyki sezonu na wiki,
+  artykuł i wpis aktualizacji pominięte; `docs/WIKI.md` bez zmian.
+- **Pliki:** `src/shared/Logic/SeasonView.luau` (nowy), `src/client/UI/SeasonState.luau` (nowy),
+  `src/client/UI/SeasonPassBuy.luau` (nowy), `src/client/UI/Screens/SeasonPass.luau` (nowy),
+  `src/client/UI/Screens/Hud/SeasonButton.luau` (nowy), `src/client/Controllers/SeasonController.luau` (nowy),
+  `tests/seasonview.spec.luau` (nowy), `src/client/UI/Screens/Hud/init.luau`, `src/client/UI/Screens/GameMenu.luau`,
+  `src/client/UI/Screens/PremiumShop/{init,Cards,Passes}.luau`, `src/client/Controllers/PremiumController.luau`,
+  `src/server/Services/SeasonService.luau`, `src/shared/Logic/{ShopFunnel,UiArt}.luau`,
+  `src/shared/Data/{Keybinds,UiPalette,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `tests/{premium,uitheme}.spec.luau`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

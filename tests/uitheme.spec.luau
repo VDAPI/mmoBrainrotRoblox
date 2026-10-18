@@ -209,8 +209,14 @@ describe("Window checklist (S135 G1)", function()
 					table.insert(missing, `{id}: {path}`)
 				end
 			end
-			-- S151b: a window added after the move names its own session (the achievements window)
-			expect(entry.session == "S135" or entry.session == "S136" or entry.session == "S151b").toBe(true)
+			-- S151b: a window added after the move names its own session (the achievements window; S152b the season
+			-- pass)
+			expect(
+				entry.session == "S135"
+					or entry.session == "S136"
+					or entry.session == "S151b"
+					or entry.session == "S152b"
+			).toBe(true)
 			expect(entry.surface == "paper" or entry.surface == "iron").toBe(true)
 			if entry.surface == "iron" then
 				expect(#(entry.why or "") > 10).toBe(true)

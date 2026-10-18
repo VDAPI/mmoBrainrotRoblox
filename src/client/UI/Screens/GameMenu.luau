@@ -606,6 +606,21 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 					end
 				end,
 			}),
+			-- S152b: the season pass window (the phone has no C key)
+			Button(scope, {
+				LayoutOrder = 2.7,
+				Text = Text.T(scope, "menu.season"),
+				Variant = "secondary",
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Disabled = extra == nil or extra.OpenWindow == nil,
+				OnClick = function()
+					local open = extra and extra.OpenWindow
+					if open then
+						close()
+						open("season")
+					end
+				end,
+			}),
 			row(
 				scope,
 				3,

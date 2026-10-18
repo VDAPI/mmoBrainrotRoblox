@@ -12,6 +12,9 @@
 -- (and before the profile is released); every other source, a purchase and a claim write at once. The purchase never
 -- adds points (tests/paywall.spec "12."), and nothing here yields between a check and its write.
 -- The client reads account.season (replicated with the account); there is no remote of its own for the state.
+-- S152b: the funnel `season` (Logic/ShopFunnel, src/server/PremiumFunnel): "bought" after SeasonBuy, "claimed" on the
+-- first premium claim after a purchase on this server; the client reports open / view / prompt. The Studio clock
+-- offset (/seasonpass week) is the ReplicatedStorage attribute SeasonClockOffset, so the window counts the same time.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -25,6 +28,7 @@ local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Lure = require(Shared.Logic.Lure)
 local Net = require(Shared.Net)
+local PremiumFunnel = require(script.Parent.Parent.PremiumFunnel)
 local Products = require(Shared.Data.Products)
 local Season = require(Shared.Logic.Season)
 local Seasons = require(Shared.Data.Seasons)
@@ -65,8 +69,11 @@ local pending: { [Player]: SeasonState } = {}
 local capToast: { [Player]: number } = {}
 local settling: { [Player]: boolean } = {}
 local settle: (player: Player) -> ()
--- Studio only (/seasonpass week): seconds added to the season clock of this server.
+-- Studio only (/seasonpass week): seconds added to the season clock of this server (replicated for the window).
 local clockOffset = 0
+local OFFSET_ATTRIBUTE = "SeasonClockOffset"
+-- S152b: bought the premium track on this server and no premium reward claimed since (the funnel's "claimed").
+local boughtHere: { [Player]: boolean } = {}
 
 local KILL_VARIANTS: { [string]: string } = { normal = "kill", elite = "elite", elite2 = "elite2" }
 
@@ -289,6 +296,14 @@ local function store(player: Player, state: SeasonState, isPrev: boolean)
 	end
 end
 
+-- S152b: the funnel's last step, once after a purchase on this server.
+local function premiumClaimed(player: Player)
+	if boughtHere[player] then
+		boughtHere[player] = nil
+		PremiumFunnel.step(player, "season", "claimed")
+	end
+end
+
 -- SeasonClaim (tier, "free" | "premium", seasonId?): one reward; checked, marked claimed, then given.
 local function claim(player: Player, tier: number, track: string, id: string?): (boolean, string?, any)
 	if not PlayerStateService.GetCharacter(player) then
@@ -306,6 +321,9 @@ local function claim(player: Player, tier: number, track: string, id: string?): 
 	store(player, Season.claim(state, tier, track), isPrev)
 	give(player, { reward }, def)
 	DataService.Save(player)
+	if track == "premium" and not isPrev then
+		premiumClaimed(player)
+	end
 	return true, nil, { granted = { reward } }
 end
 
@@ -321,6 +339,7 @@ local function claimAll(player: Player): (boolean, string?, any)
 	end
 	local t = now()
 	local granted: { Reward } = {}
+	local premium = false
 	local ids: { string } = { state.id }
 	if data.seasonPrev then
 		table.insert(ids, Season.sanitize(data.seasonPrev).id)
@@ -333,6 +352,7 @@ local function claimAll(player: Player): (boolean, string?, any)
 			for _, c in Season.claimable(st, def) do
 				if Season.canClaim(changed, def, c.tier, c.track, t) then
 					changed = Season.claim(changed, c.tier, c.track)
+					premium = premium or (c.track == "premium" and not isPrev)
 					local reward = Season.rewardOf(def, c.tier, c.track) :: Reward
 					table.insert(mine, reward)
 					table.insert(granted, reward)
@@ -348,6 +368,9 @@ local function claimAll(player: Player): (boolean, string?, any)
 		return false, "season.error.noReward"
 	end
 	DataService.Save(player)
+	if premium then
+		premiumClaimed(player)
+	end
 	return true, nil, { granted = granted }
 end
 
@@ -375,6 +398,8 @@ local function buy(player: Player): (boolean, string?)
 	write(player, Season.buy(state))
 	Analytics.shards(player, -price, balance, Products.seasonPass.key, true)
 	Analytics.custom(player, "SeasonPass", Season.tierOf(state.points, def))
+	PremiumFunnel.step(player, "season", "bought")
+	boughtHere[player] = true
 	DataService.Save(player)
 	Net.Fire(player, "Toast", "season.toast.bought", { season = `@{def.nameKey}` }, "success")
 	return true, nil
@@ -553,6 +578,7 @@ function SeasonService.SetWeek(week: number): string?
 	end
 	if week <= 0 then
 		clockOffset = 0
+		ReplicatedStorage:SetAttribute(OFFSET_ATTRIBUTE, nil)
 		return "-"
 	end
 	local real = Clock.now()
@@ -562,6 +588,7 @@ function SeasonService.SetWeek(week: number): string?
 	end
 	local w = math.clamp(math.floor(week), 1, def.weeks)
 	clockOffset = def.start + (w - 1) * Seasons.WEEK + 3600 - real
+	ReplicatedStorage:SetAttribute(OFFSET_ATTRIBUTE, clockOffset)
 	for _, player in Players:GetPlayers() do
 		refresh(player)
 	end
@@ -599,6 +626,7 @@ function SeasonService.Start()
 	Players.PlayerRemoving:Connect(function(player: Player)
 		capToast[player] = nil
 		settling[player] = nil
+		boughtHere[player] = nil
 		task.defer(function()
 			pending[player] = nil
 		end)

@@ -236,7 +236,7 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `Balance.targetsS134i`.
 - **Sezon przepustki / źródło punktów** (S152): wpis w `Data/Seasons` (daty UTC, nagrody), źródło przez
   `SeasonService.Add(player, source)`, nagroda tylko z listy w `paywall.spec` (reguły tylko w `Logic/Season`, test
-  `tests/season.spec`, model `Balance.targetsS152`).
+  `tests/season.spec`, model `Balance.targetsS152`); okno, HUD i karta w sklepie (S152b) tylko przez `Logic/SeasonView`.
 - **Boss świata** (S149): wpis w `Data/Bosses` z `world = true` + `Data/WorldBoss` (terminy, miejsce, udział, nagroda);
   serwis `WorldBossService`, udział przez `Logic/Contribution`.
 - **Osiągnięcie** (S151): wpis w `Data/Achievements` (licznik z `COUNTERS`, `goal`, nagroda) + `ach.<id>.name/.desc` (PL,

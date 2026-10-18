@@ -629,6 +629,29 @@ T.describe("Shop funnel (S131)", function()
 		T.expect(ShopFunnel.clientAllowed("vip", "active")).toBe(false)
 		T.expect(ShopFunnel.clientAllowed("other", "open")).toBe(false)
 	end)
+
+	-- S152b: the season pass funnel; the client reports only the window's steps, the purchase and the claim are the
+	-- server's
+	T.it("the season funnel: five steps in order, the client only open, view and prompt (S152b)", function()
+		T.expect(ShopFunnel.FUNNELS.season).toEqual({ "open", "view", "prompt", "bought", "claimed" })
+		local state = ShopFunnel.empty()
+		local got = {}
+		for i, name in ShopFunnel.FUNNELS.season do
+			local step, nextState = ShopFunnel.track(state, "season", name, 2000 + i, TIMEOUT)
+			table.insert(got, step)
+			state = nextState
+		end
+		T.expect(got).toEqual({ 1, 2, 3, 4, 5 })
+		for name, allowed in { open = true, view = true, prompt = true, bought = false, claimed = false } do
+			T.expect({ name, ShopFunnel.clientAllowed("season", name) }).toEqual({ name, allowed })
+		end
+		-- every client step of every funnel is a step of that funnel
+		for funnel, steps in ShopFunnel.CLIENT_STEPS do
+			for name in steps do
+				T.expect({ funnel, name, ShopFunnel.stepOf(funnel, name) ~= nil }).toEqual({ funnel, name, true })
+			end
+		end
+	end)
 end)
 
 -- S131: edges of the one purchase rule (Logic/Premium) not covered above.

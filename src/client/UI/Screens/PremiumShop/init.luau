@@ -38,6 +38,8 @@ export type Props = {
 	OpenWardrobe: (start: { kind: string?, try: string? }?) -> (),
 	Select: ((tab: string) -> ())?,
 	OpenVip: (() -> ())?, -- S121
+	OpenSeason: (() -> ())?, -- S152b
+	BuySeason: (() -> ())?, -- S152b
 }
 
 local HEADER = 52
@@ -154,6 +156,8 @@ function PremiumShop.build(scope: Scope, props: Props): Fusion.Child
 		OpenWardrobe = props.OpenWardrobe,
 		Select = props.Select or PremiumShop.select,
 		OpenVip = props.OpenVip,
+		OpenSeason = props.OpenSeason,
+		BuySeason = props.BuySeason,
 	}
 	-- Depends only on the tab: the cards read their own branches (balance, limits, passes, cosmetics).
 	-- S131: the shop funnel (Logic/ShopFunnel): the window opened, then the first change of tab

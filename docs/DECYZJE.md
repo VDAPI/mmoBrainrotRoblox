@@ -5806,3 +5806,34 @@
   S23, a `/season` pora roku miasta (S105). `week` przesuwa zegar przepustki tego serwera tylko w Studio.
 - **S152** Wiki pominięta (właściciel 17.10): bez `npm run data`; nowe kosmetyki i tytuły nie wchodzą do eksportu
   (`wiki = false`).
+- **S152b** Okno przepustki na pergaminie (`UI/Screens/SeasonPass.luau`, `UiWindows.season`): PC poziomy pas kolumn
+  stopni (stopień, darmowa nad premium, nazwy ścieżek stałe z lewej), telefon pionowa lista stopni z dwiema komórkami;
+  otwiera się na pierwszym stopniu do odebrania. Wszystko z `Logic/SeasonView` (czysty widok nad `Logic/Season`, bez
+  własnych reguł) nad replikowanym `account.season` / `seasonPrev`; zegar `UI/SeasonState` (co 1 s).
+- **S152b** Komórka do odebrania: krawędź `paper.accent` (informacyjna, ≥ 3:1) i pulsujący ozdobny brzeg
+  `Brass.Bright` (na pergaminie ma < 3:1, więc niesie tylko ozdobę); pasek stopnia: `Brass.Bright` na
+  `Resource.track`. Nowe pary w `UiPalette.PAIRS`. Klik zablokowanej komórki premium otwiera zakup.
+- **S152b** „Limit tygodnia: {pkt}/{limit}” = punkty konta / limit narastający `Season.capAt` (limit jest narastający,
+  nie przyrostem tygodnia); plakietki „Nadrabianie ×1,5”, „Limit tygodnia osiągnięty”, „Wszystkie stopnie zdobyte”.
+- **S152b** Przycisk ❖ pod ✧ (nie na prawo: tam rząd Płaszcza i Auto), kropka = „!” `IconButton` + pulsująca rama;
+  widoczny w trwającym sezonie i w okresie łaski tylko z nagrodami do odebrania (przed 2026-11-02 ukryty, okno z menu i
+  klawisza mówi „Następny sezon wkrótce” z datą). Grafika `hud/season` (do tego czasu znak).
+- **S152b** Klawisz C (`win_season`, wolny od FIX 2026-10-14; N zajęła S151b). Okno ma id `season`, nie `seasonpass`:
+  `WindowManager` łączy okno z akcją `win_<id>`.
+- **S152b** Karta przepustki nad kartą VIP w „Przepustkach” (nie kupiona: „Odblokuj ◆ cena” + „Zobacz nagrody”,
+  kupiona ✓ ze stopniem, po sezonie / przed sezonem sam podgląd), pod nimi `premium.passVsVip` (to samo zdanie co
+  `season.vsVip`). Notka „Przepustka zostaje na koncie na zawsze” zeszła pod karty Gamepassów (przepustka sezonu nie
+  zostaje). Jeden modal zakupu `UI/SeasonPassBuy` (okno i karta), opis i saldo z `PremiumConfirm.describe`, bez
+  odłamków przycisk „Doładuj”.
+- **S152b** Lejek `season` (`open`, `view`, `prompt`, `bought`, `claimed`): klient wysyła `open` / `view` tylko, gdy
+  premium można kupić; `view` = pierwsze najechanie / klik komórki premium albo przewinięcie pasa po
+  auto-przewinięciu; `claimed` = pierwszy odbiór premium trwającego sezonu po zakupie na tym serwerze (odbiór z
+  poprzedniego sezonu w łasce się nie liczy).
+- **S152b** „Odbierz wszystko” widać przy > 1 nagrodzie pokazanego sezonu albo przy dowolnej nagrodzie poprzedniego
+  sezonu w łasce (pas nie ma jego komórek; `SeasonView.claimAllShown`). Data łaski w oknie = ostatni dzień odbioru
+  (`claimUntil - 1`). Pas i lista mają jawny `CanvasSize` (auto-przewinięcie przed pierwszym układem).
+- **S152b** Toast `season.tierUp` bez „Otwórz” (`Toast` nie umie akcji); wejście przez ❖, C i menu.
+- **S152b** Poprawka S152: zegar Studio `/seasonpass week` idzie do klienta atrybutem `SeasonClockOffset`, okno liczy
+  ten sam czas co serwer.
+- **S152b** Wiki pominięta (właściciel 17.10): rekord `season` w `WikiData/Premium` (bez ceny), odsłonięcie kosmetyków
+  sezonu, artykuł `przepustka-sezonu` / `season-pass` i wpis aktualizacji czekają na odświeżenie wiki.

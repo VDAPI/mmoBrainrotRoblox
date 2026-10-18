@@ -37,6 +37,8 @@ UiArt.FIXED = table.freeze({
 		"ach_craft",
 		"ach_social",
 		"ach_journey",
+		-- S152b: the season pass button next to the login reward (Hud/SeasonButton; glyph ❖ until the picture)
+		"season",
 	}),
 	map = table.freeze({
 		"portal",

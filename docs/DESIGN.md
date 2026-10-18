@@ -1289,7 +1289,10 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 
 - **Tempo (model `Balance.seasonPace`):** 1 h dziennie kończy przepustkę w 8. tygodniu, 2 h dziennie w 7. (limit),
   start w 5. tygodniu przy 2 h dziennie daje ok. 35 stopni; potwory to ok. 27% punktów.
-- Okno przepustki, kropka na HUD, karta w sklepie i strona wiki: S152b.
+- **Okno (S152b):** pergamin, klawisz C, ❖ pod ✧ na HUD (kropka „!”, gdy jest co odebrać), menu gry; nagłówek z czasem
+  do końca, stopniem, paskiem stopnia i limitem; PC pas kolumn stopni (darmowa nad premium), telefon lista stopni;
+  „Odbierz wszystko”, „Odblokuj premium” (potwierdzenie jak w sklepie), zakładka „Jak zdobywać punkty”; karta w sklepie
+  nad VIP ze zdaniem „a VIP”. Strona wiki czeka na odświeżenie wiki.
 
 ## 22. Kosmetyki i pety
 

@@ -5,7 +5,10 @@
 
 ## Stan
 
-S01–S115 i S117–S152 gotowe (ostatnia S152: przepustka sezonu, rdzeń: sezon 1 „Sezon Szronu” od 2026-11-02, 8
+S01–S115 i S117–S152b gotowe (ostatnia S152b: okno przepustki sezonu: pergamin pod C, ❖ z kropką pod ✧ na HUD, menu
+gry, pas stopni na PC i lista na telefonie, „Odbierz wszystko”, zakup z potwierdzeniem jak w sklepie, „Jak zdobywać
+punkty”, karta nad VIP w sklepie ze zdaniem „a VIP”, lejek `season`, `Logic/SeasonView`; wcześniej S152: przepustka
+sezonu, rdzeń: sezon 1 „Sezon Szronu” od 2026-11-02, 8
 tygodni, 40 stopni po 1000 punktów za zwykłą grę (`Data/Seasons`, `Logic/Season`, `SeasonService.Add` w serwisach
 źródeł: potwory, zadania, zlecenia, wydarzenia, bossowie, arena, osiągnięcia), limit potworów 400 dziennie, limit
 narastający 6500 × tydzień z nadrabianiem ×1,5 pod linią, ścieżka darmowa co 2 stopnie i premium na każdym (raz na
@@ -391,10 +394,11 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
-- **Przepustka sezonu (S152):** Niedokończone: S152b — okno przepustki, wiki, lejek (okno z paskiem i obiema
-  ścieżkami, kropka „do odebrania” na HUD, karta w zakładce „Przepustki” sklepu, strona wiki z tabelą „a VIP”, lejek
-  analityki). Do tego czasu przepustkę kupuje się i odbiera tylko remote'ami (`SeasonBuy`, `SeasonClaim`,
-  `SeasonClaimAll`) i `/seasonpass`; kosmetyki sezonu z `wiki = false`. Bez przeglądu w grze (wygląd 17 kosmetyków
+- **Przepustka sezonu (S152, S152b):** okno, HUD, menu, klawisz C, karta w sklepie i lejek gotowe. Wiki czeka na
+  odświeżenie wiki (właściciel 17.10): rekord `season` w `tools/WikiData/Premium.luau` (bez ceny), odsłonięcie
+  kosmetyków sezonu (dziś `wiki = false`), artykuł `przepustka-sezonu` / `season-pass` z tabelą „a VIP”, linki z
+  `vip.mdx` i `sklep-premium.mdx`, wpis aktualizacji. Toast stopnia bez „Otwórz” (`Toast` nie umie akcji). Grafika
+  `hud/season` (dziś znak ❖). Bez przeglądu w grze (okno na PC i telefonie, przycisk, karta, wygląd 17 kosmetyków
   proceduralnych, dwie emotki, pet i skórka wierzchowca). Dla właściciela: decyzje w `docs/SESJE.md` → S152.
 
 - **Osiągnięcia (S151, S151b):** wiki z S151b czeka na odświeżenie wiki (właściciel 17.10): eksporter
