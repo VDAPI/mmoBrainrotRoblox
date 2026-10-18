@@ -99,6 +99,21 @@ local function council(env: Env, out: { Build })
 	local sb = sky.bp
 	local y = Kit.gy(env, sky, 0, 0)
 	sb:light(0, y + 24, 0, MOON, 40, 1.4, "lamp")
+	-- W21 (laki.md 2.2): the shaft of moonlight itself, a faint glowing column from the hole to the floor
+	sb:add(
+		"cyl",
+		26,
+		9,
+		9,
+		0,
+		y + 13,
+		0,
+		0,
+		0,
+		90,
+		{ c = "#D8E6FF", m = "Neon", lod = "detail", col = false, t = 0.93 }
+	)
+	sb:add("cyl", 26, 5, 5, 0, y + 13, 0, 0, 0, 90, { c = "#EEF4FF", m = "Neon", lod = "detail", col = false, t = 0.9 })
 	for k = 0, 7 do
 		local a = k * math.pi / 4
 		sb:beam(

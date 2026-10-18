@@ -49,6 +49,7 @@ function MeadowsGen.all(): { Build }
 	Quarry.all(out)
 	Water.bridges(out)
 	Water.waterfall(out)
+	Water.caveCurtain(out) -- W21
 	Water.banks(out)
 	for _, b in Nature.rocks() do
 		table.insert(out, b :: any)

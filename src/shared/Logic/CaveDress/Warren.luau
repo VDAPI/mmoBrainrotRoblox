@@ -6,8 +6,8 @@
 --   3 the diggings: a loop of rails with carts, ore heaps, props, kobolds' green lanterns, bellows and picks, the dug
 --     step by the wall, webs in a caved-in side gallery,
 --   4 the chief's shaft ("wow"): in the niche behind the east wall a shaft (a dark disc in a shallow pit with mist and
---     ore glow, a rail of logs), the kobolds' winch tower with a hanging cage of bones and chains, a butcher's block
---     with hooks, a throne of scrap,
+--     ore glow, a rail of logs), the kobolds' winch tower with a hanging cage of bones and chains, a chopping stump
+--     with a cleaver and tools on hooks (W21: no butcher's block), a throne of scrap,
 --   5 the spider pit: webs between pillars, a kobold's cocoon with a pick sticking out, egg sacs, an overturned cart
 --     of ore. Pure.
 
@@ -270,18 +270,26 @@ local function shaft(env: Env, out: { Build })
 	Kit.bones(bp, 0, y + 3, 0, 4)
 	Kit.lifeAt(ctx, s, "mist", 0, 0.5, 0, 6)
 	table.insert(out, s)
-	-- the butcher's block with hooks, the throne of scrap (by the walls, out of the core)
+	-- the chopping stump with a cleaver and tools on hooks (W21, laki.md 3.4), the throne of scrap (by the walls)
 	for k, a in { 300, 60 } do
 		local x, z = Kit.spot(env, r, math.rad(a), 7, 3)
 		if x and z then
-			local b = Kit.build(env, if k == 1 then "ButcherBlock" else "ScrapThrone", "landmark", x, z, a + 90)
+			local b = Kit.build(env, if k == 1 then "ChoppingStump" else "ScrapThrone", "landmark", x, z, a + 90)
 			local by = Kit.gy(env, b, 0, 0)
 			if k == 1 then
 				b.bp:add("cyl", 2, 3, 3, 0, by + 1, 0, 0, 0, 90, o(Kit.oldWood, "shell", { q = false }))
+				-- a cleaver stuck in the stump
+				b.bp:rbox(1.4, 0.12, 0.8, 0.3, by + 2.4, 0, 0, 0, 25, o(Kit.iron, "detail", { col = false }))
+				b.bp:rbox(0.18, 1, 0.18, 0.95, by + 3, 0, 0, 0, 25, o(Kit.oldWood, "fine", { col = false }))
+				-- a rack of hooks with a pick and a shovel
 				b.bp:box(4, 0.3, 0.3, 0, by + 6, -1, o(Kit.iron, "detail", { col = false }))
 				for m = -1, 1 do
 					b.bp:box(0.15, 1.4, 0.15, m * 1.4, by + 5.2, -1, o(Kit.iron, "fine", { col = false }))
 				end
+				b.bp:box(0.2, 2.6, 0.2, -1.4, by + 3.6, -1, o(Kit.oldWood, "detail", { col = false }))
+				b.bp:rbox(1.6, 0.25, 0.25, -1.4, by + 4.8, -1, 0, 0, 8, o(Kit.iron, "detail", { col = false }))
+				b.bp:box(0.2, 2.6, 0.2, 1.4, by + 3.6, -1, o(Kit.oldWood, "detail", { col = false }))
+				b.bp:box(0.8, 1, 0.1, 1.4, by + 2.1, -1, o(Kit.iron, "detail", { col = false }))
 			else
 				b.bp:box(4, 2, 3, 0, by + 1, 0, o({ c = "#6A5A48", m = "CorrodedMetal" }, "shell", { q = false }))
 				b.bp:box(4, 5, 0.8, 0, by + 4, 1.2, o({ c = "#6A5A48", m = "CorrodedMetal" }, "shell", { q = false }))

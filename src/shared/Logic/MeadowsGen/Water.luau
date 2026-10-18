@@ -3,6 +3,7 @@
 -- the merchant road, timber bridges elsewhere), stepping stones at the ford of the forest path, the waterfall into
 -- Bear Ravine (a curtain of falling water with spray and mist on the client) and stones along the brook. Pure.
 
+local Areas = require("../../Data/Areas/meadows")
 local Kit = require("./Kit")
 local MeadowsTerrain = require("../MeadowsTerrain")
 local Palette = require("../TownGen/Palette")
@@ -215,6 +216,40 @@ function Water.waterfall(out: { Build })
 	table.insert(out, b)
 	local wx, wy, wz = Kit.worldOf(b, 0, 0.5, -horiz - 4)
 	Kit.life("mist", wx, wy, wz, 14)
+end
+
+-- W21 (laki.md 4.9): a thin curtain of water from the plateau over the mouth of the Moss Cave, so the way in looks the
+-- same from both sides (the cave's own entrance is behind a curtain of water); no collision, the mouth stays where it is.
+function Water.caveCurtain(out: { Build })
+	local m = { x = 745, z = 330, rot = 90 }
+	for _, mouth in (Areas :: any).caves or {} do
+		if mouth.cave == "meadows_cave" then
+			m = mouth
+		end
+	end
+	local b = Kit.build("CaveCurtain", "waterfall", m.x, m.z, m.rot)
+	local bp = b.bp
+	local gy = Kit.gy(b, 0, 0)
+	for k = -1, 1 do
+		bp:box(
+			3.4 - math.abs(k) * 0.5,
+			16,
+			0.3,
+			k * 3,
+			gy + 8,
+			-math.abs(k) * 0.3,
+			o({ c = "#CFE6F2", m = "Glass" }, "detail", {
+				col = false,
+				q = false,
+				t = 0.5 + math.abs(k) * 0.12,
+				tag = if k == 0 then "waterfall" else nil,
+				jitter = 0,
+			})
+		)
+	end
+	table.insert(out, b)
+	local wx, wy, wz = Kit.worldOf(b, 0, gy + 0.5, 0)
+	Kit.life("mist", wx, wy, wz, 6)
 end
 
 -- Stones and gravel bars along the brook (client detail), and a few logs across the forest brook.

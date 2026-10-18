@@ -388,3 +388,10 @@ Przegląd: pyłki, mgła nad wodą, liście, popiół, śnieg, zawieje, zorza i 
 nad bagnami Boru (motywy `bog`, `witch`, lżejszy w `mist`; smugi `VelocityParallel`) i podmuchy piasku przy ziemi na
 wydmach, w nekropolii i na solnisku Pustkowi (`WorldLifeController`, `RAIN` / `SAND`, na niskiej grafice połowa);
 `/worldfx rain|sand`. Nieobejrzane w Studio.
+
+### W21: jaskinie Łąk, część 1
+
+Kryjówka Przemytników: widoczny snop księżyca w Sali Narad (dwa przezroczyste świecące walce od zapadliska do podłogi,
+`CaveDress/Smugglers`). Gobliński Kopiec: pieniek z wbitym tasakiem i hakami z kilofem i łopatą zamiast bloku rzeźnika
+(`CaveDress/Warren`, build `ChoppingStump`). Łąki: cienka kurtyna wody nad wylotem Jaskini Mchów (`Water.caveCurtain`,
+bez kolizji). Tron Grimroka i grzyby Jaskini Mchów z modeli właściciela (wyżej). Nieobejrzane w Studio.
