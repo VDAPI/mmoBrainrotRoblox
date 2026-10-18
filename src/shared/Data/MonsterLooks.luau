@@ -545,6 +545,23 @@ local LOOKS: { [string]: any } = {
 			[3] = { tint = "#6BC9FF", amount = 0.2, glow = "#FFFFFF" },
 		},
 	},
+	-- S149: the world boss: a frost giant three times the size (Data/Bosses look.size), an ice crown, a fur cape,
+	-- stone pauldrons and ice armour (no new model)
+	hrimvald = {
+		inherit = "frostGiant",
+		build = { height = 1.7, bulk = 1.7, head = 1.05 },
+		colors = { base = "#8FB4D2", accent = "#4A5E70", detail = "#E4F2FF", eye = "#BFF0FF" },
+		materials = { base = "Leather", accent = "Fabric", detail = "Ice" },
+		parts = { "spikeCrown", "frostBeard", "cape", "pauldrons", "iceArmor" },
+		weaponScale = 1.6, -- the frost giant's ice club, bigger
+		glow = "#BFF0FF",
+		glowEyes = true,
+		fx = "frost",
+		phases = {
+			[2] = { tint = "#E4F6FF", amount = 0.1 },
+			[3] = { tint = "#6BC9FF", amount = 0.22, glow = "#FFFFFF" },
+		},
+	},
 }
 
 local MonsterLooks = {}

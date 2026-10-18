@@ -579,7 +579,8 @@ function SkillController.ArcaneCharges(): number
 end
 
 -- For the UI: can the current level / resources / range allow this skill now?
--- (enough resource, in range, weapon fits: S57 the path weapon of a path skill; S142: the Mage's element is the pool)
+-- (enough resource, in range, weapon fits: S57 the path weapon of a path skill, S143 the skill's own weapon; S142: the
+-- Mage's element is the pool)
 function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	local skill = SkillData.get(skillId)
 	if not skill then
@@ -601,7 +602,9 @@ function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 	local current = if skill.resource then State.Get({ "character", skill.resource }) or 0 else math.huge
 	local enoughResource = current >= cost
 	local inRange = skill.target ~= "enemy" or SkillController.TargetDistance() <= (def.range or 10) + 2
-	local pathOk = skill.path == nil or Paths.skillUsable(c, skill.id, Paths.weaponTypesOf(c.equipment))
+	-- S143: a base skill with its own weapon (Shield Bash: a shield) too
+	local pathOk = (skill.path == nil and skill.weapon == nil)
+		or Paths.skillUsable(c, skill.id, Paths.weaponTypesOf(c.equipment))
 	return enoughResource, inRange, pathOk
 end
 

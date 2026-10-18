@@ -995,7 +995,8 @@ end
 -- /boss spawn <id>: starts the boss's dungeon for the player alone, ignoring level and lockout.
 function DungeonService.ForceStart(player: Player, bossId: string): boolean
 	local def = Bosses.get(bossId)
-	if not def or not WorldService.IsBuilt(`dungeon_{def.region}`) then
+	-- S149: a world boss has no dungeon (its region is another boss's map)
+	if not def or def.world or not WorldService.IsBuilt(`dungeon_{def.region}`) then
 		return false
 	end
 	local existing = runs[def.region]

@@ -26,7 +26,7 @@ local function cases(): { Case }
 			region = def.region,
 		})
 	end
-	for _, boss in Bosses.list do
+	for _, boss in Bosses.all do -- S149: the world boss too
 		table.insert(out, { id = boss.id, look = MonsterLooks.get(boss.id), variants = { "boss" } })
 	end
 	return out
@@ -83,7 +83,7 @@ describe("Monster looks: data", function()
 			ids[def.id] = true
 			expect(MonsterLooks.has(def.id)).toBe(true)
 		end
-		for _, boss in Bosses.list do
+		for _, boss in Bosses.all do -- S149: the world boss too
 			ids[boss.id] = true
 			expect(MonsterLooks.has(boss.id)).toBe(true)
 		end

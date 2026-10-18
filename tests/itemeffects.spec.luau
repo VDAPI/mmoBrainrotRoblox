@@ -157,20 +157,11 @@ T.describe("Item effects: data (S134g D1, B2)", function()
 			T.expect({ def.id, string.sub(def.id, 1, #def.skill + 1) }).toEqual({ def.id, def.skill .. "_" })
 		end
 		T.expect(count >= 36).toBe(true)
-		-- S134g: activates with S137 (Data/SkillPools and SkillDef.pool / role). S137: a class still on its transitional
-		-- pools (SkillPools.isTransitional) has the skill common or in the effect's pool and no role yet (the class
-		-- sessions S140-S145 give roles); a finished class matches exactly
+		-- S134g: activates with S137 (Data/SkillPools and SkillDef.pool / role). S145: every class is on the ladder
+		-- (no transitional pools), so every effect's skill has exactly the effect's pool and role
 		for _, def in EffectData.list do
 			local skill = SkillData.get(def.skill) :: any
-			if SkillPools.isTransitional(def.class) then
-				T.expect({ def.id, skill.path ~= nil or skill.pool == "common" or skill.pool == def.pool })
-					.toEqual({ def.id, true })
-				if skill.role ~= nil then
-					T.expect({ def.id, skill.role }).toEqual({ def.id, def.role })
-				end
-			else
-				T.expect({ def.id, skill.pool, skill.role }).toEqual({ def.id, def.pool, def.role })
-			end
+			T.expect({ def.id, skill.pool, skill.role }).toEqual({ def.id, def.pool, def.role })
 		end
 	end)
 
@@ -247,6 +238,21 @@ T.describe("Item effects: data (S134g D1, B2)", function()
 		for _, classId in { "Warrior", "Hunter", "Mage", "Cleric" } do
 			local c = perClass[classId] or { legendary = 0, mythic = 0 }
 			T.expect({ classId, c.legendary >= 6, c.mythic >= 3 }).toEqual({ classId, true, true })
+		end
+	end)
+
+	-- S144: a named weapon's fixed effects work with it in hand (common or the pool its type selects; Mage staves pick
+	-- the pool by element, outside this check)
+	T.it("a named weapon's fixed effects are common or in the pool of its type", function()
+		for _, item in Items.uniques do
+			local fixed: any = item.fx
+			if item.weapon and not item.elemental and fixed and fixed[1] ~= nil then
+				for _, id in fixed do
+					local def = EffectData.get(id) :: any
+					local pool = SkillPools.poolOf(def.class, { main = item.type })
+					T.expect({ item.id, id, def.pool == "common" or def.pool == pool }).toEqual({ item.id, id, true })
+				end
+			end
 		end
 	end)
 

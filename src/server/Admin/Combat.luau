@@ -9,6 +9,7 @@ local ArenaRules = require(Shared.Logic.ArenaRules)
 local BuffCategories = require(Shared.Data.BuffCategories)
 local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
+local Crossbow = require(Shared.Logic.Crossbow)
 local FightSim = require(Shared.Logic.FightSim)
 local LevelCurves = require(Shared.Logic.LevelCurves)
 local Monsters = require(Shared.Data.Monsters)
@@ -555,12 +556,14 @@ local function barSkills(player: Player, character: any): { Skills.DemandEntry }
 	local list: { Skills.DemandEntry } = {}
 	local weapons = Paths.weaponTypesOf(character.equipment)
 	local cdr = Skills.cooldownReduction(CombatService.Hook(player, "cooldownReduction"))
+	local reload = CombatService.Hook(player, "quickReload") -- S144: the Crossbow's skills only
 	for _, skillId in character.hotbar or {} do
 		local base = SkillData.get(skillId)
 		local rank = if base then Paths.skillRank(character, skillId) else 0
 		if base and rank > 0 and base.type ~= "passive" and Paths.skillUsable(character, skillId, weapons) then
 			local skill, behaviour = Paths.effectiveFor(character, skillId, weapons, rank)
-			table.insert(list, { skill = skill, rank = rank, cooldown = Skills.cooldown(skill, rank, cdr, behaviour) })
+			local cooldown = Skills.cooldown(skill, rank, Crossbow.cdrFor(base.pool, cdr, reload), behaviour)
+			table.insert(list, { skill = skill, rank = rank, cooldown = cooldown })
 		end
 	end
 	return list

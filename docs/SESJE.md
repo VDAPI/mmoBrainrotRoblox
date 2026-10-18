@@ -12165,3 +12165,479 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/{SkillModel,Balance,BalanceTables}.luau`, `tests/{shock,balance,balance1_20,paths,pathview,skillpoints,skillpools,
   skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
   balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S143: Wojownik, pule i kierunki
+
+- **Dwie pule Wojownika** (`Data/Skills/Warrior`, `pool`, `role`; DESIGN-18 §6.2). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Miecz i Tarcza `onehand` | Broń Dwuręczna `twohand` |
+  |---|---|---|
+  | S1 · 1 | Potężne Uderzenie (bez zmian) | Brutalny Cios `brutalStrike` 136 / 222% (węzły Potężnego), +2 Furii; egzekucja 30 / +28; rozprysk 50% / +50 |
+  | A1 · 3 | Zamach Tarczą `shieldSweep` (stożek 6 st. / 100°, odrzut 4) 100 / 160%, z tarczą +20%; +40° / +18; ogłuszenie 0,8 s / +36 | Rozpłatanie (było 10; 115 / 168%, węzeł rangi 5 164,4) |
+  | K1 · 6 | Uderzenie Tarczą `shieldBash` 70 / 130%, ogłuszenie 1,5 s (bez bossów), wymaga tarczy; +0,5 s / +14; odnowienie ×0,8 / +32 | Rozbicie `sunder` 60 / 110%, pancerz −10 / −20% 6 s, spowolnienie 30% 3 s; +2 s / +15; −10 pkt pancerza / +34 |
+  | O1 · 10 | Przechwycenie (było rząd 4 Strażnika; 12 / 30%, węzły rang 5–6) | Krwawy Szał (było 18; 13 / 20%, węzły rang 3–4) |
+  | S2 · 15 | Miażdżący Cios (było 48; 220 / 324,4%, węzeł rangi 9 300) | Rozdarcie (było 26; 200 / 280%) |
+  | P1 · 20 | Niezłomność (HP 6 / 20%, blok 1 / 3 pkt; ranga 1 poniżej dawnych 8%, pasmo Elity S32) | Furia `rage`: limit 6 stosów (z Bitewnym Rytmem 8 / 9 / 10), +0,2 / 0,5% obrażeń za stos |
+  | A2 · 26 | Trzęsienie Ziemi (było 30; 147 / 175%) | Wir Ostrzy (było 6; 48 / 52% × 3) |
+  | K2 · 33 | Sztandar Wojenny (było rząd 4 Chorążego; 5,5 / 10%) | Tupnięcie `warStomp` (krąg r 6) 60 / 110%, ogłuszenie 1 s (bez bossów), ataki −20% 4 s (limit kategorii); r +2 / +12; +0,5 s / +26 |
+  | S3 · 40 | Wyrok `vindicate` 200 / 300%, +15% za blok z 6 s (najwyżej 3); +5% za blok / +30; rozprysk 50% / +66 | Egzekucja `execute` 180 / 260%, ×2 poniżej 30% HP, zużywa Furię +4% za stos; egzekucja 30 / +26; kradzież życia 15% / +3% za stos |
+  | P2 · 50 | Kontratak (było 45) | Niepowstrzymany `unstoppable`: przy pełnej Furii odporność na ogłuszenie i odrzut, obrażenia −3 / −9% |
+  | U · 60 | Mur Tarcz (było zwieńczenie Strażnika) | Gniew Tytana (było rząd 7 Berserkera, 48.; 120 / 150%) |
+
+- **Wspólne Wojownika:** Szarża C1 4 (było 3), Prowokacja C2 12 (było 10), Okrzyk Bojowy C3 30 (było rząd 1 Chorążego;
+  ranga 1 14,9%), Stalowa Skóra C4 45 (było 14; ranga 1 20%). `SkillPools/Warrior` z planami według drabiny, `version`
+  3, `transitional = false`.
+- **Kierunki** (węzły `skill` tylko w rzędach 4 i 8): Strażnik z Ostatnim Bastionem w rzędzie 8 (ranga 1 46,7%) i
+  Podwójną Strażą w rzędzie 4 (Przechwycenie osłania drugiego sojusznika), Niezłomnym Bastionem w rzędzie 11 (ulepszenie
+  Ostatniego Bastionu zamiast Muru Tarcz), Berserker z Rzezią w rzędzie 8 (broń
+  dwuręczna), Chorąży z Rozkazem Natarcia w rzędzie 8. Nowe węzły po umiejętnościach, które poszły do pul (ta sama liczba
+  rang): Niezachwiany (+1% HP), Mistrz Uderzenia (+0,5 s ogłuszenia Uderzenia Tarczą), Blizny (+1% HP), Szał (+0,3% za
+  stos Furii), Ostatnie Cięcie (Egzekucja od 35%), Proporzec (+3% pancerza), Herold (Okrzyk +4 s), Musztra (Sztandar
+  ×0,85 odnowienia). Węzły Furii Berserkera działają tylko z pasywką Furia.
+- **Mechaniki:** `Logic/Fury` (`cap` tylko z hakiem `rage`, `hitGain`, `unstoppable`), `Logic/Block` (nowy: `record`,
+  `count`, `vindicateMul`, `hasShield`, `shieldMul`; `Data/Skills.BLOCK` okno 6 s, najwyżej 3), `SkillDef.weapon` i
+  `SkillDef.furyGain` (`Build`, `Types`), `Paths.skillWeaponError` w `skillUsable` i `passiveTotals`, kafelek puli szary
+  bez tarczy (`PathView.PoolTile.weaponOk` / `weaponError`, `PoolTree`, `Details`, `SkillController.Usable`). Serwer:
+  `StatusEffectService` (`FuryMax` przez `Fury.cap`, `AddFury` z `furyGain`, `Unstoppable` przeciw ogłuszeniu),
+  `CombatService` (czasy bloków, `RecentBlocks`, Furia z `furyGain` umiejętności), `Skills/Context` (Wyrok, Zamach z
+  tarczą, bez odrzutu przy Niepowstrzymanym), `Types/Offense` (finał bez odrzutu). Migracja 6 układa pasek z puli broni.
+- **Model:** buildy wzorcowe Strażnika i Chorążego z mieczem i tarczą, Berserkera z toporem dwuręcznym (`ranks`, nowe
+  rotacje, Szarża Berserkera na końcu rang); lustra `Fury.cap`, `furyGain`, oczekiwanych bloków Wyroku i tarczy Zamachu.
+  R1 na 20.: 2,11 (dwuręczna, `berserker.fury`) i 2,04 (jednoręczna, `standard.commander`; nowy wiersz bloku S91),
+  T-SK3 1,21–1,22. R4 nowych aktywnych w pasmach (np. Brutalny Cios 5A / 5B 0,14 / 0,10, 10B 0,20; Rozbicie 10B 0,27;
+  Wyrok 10B 0,20; Uderzenie Tarczą 10A / 10B 0,25 / 0,22). Tożsamość (`S143.warrior.*`, raport do S146) na 20 / 45 /
+  70 / 100: dwuręczna / jednoręczna w jeden cel 1,59 / 1,74 / 1,80 / 1,53, na 3 cele 1,70 / 1,61 / 1,26 / 1,32 (cel
+  1,15–1,25); EHP Strażnika / dwuręczna 1,57 / 1,87 / 2,18 / 2,17 (cel ≥ 1,4); tank na minutę 3,38 / 2,57 / 2,37 / 2,18
+  (≤ 3,5); R7 Łowca / dwuręczny 1,06 / 1,15 / 1,05 / 1,24. Berserker (wzorzec obrażeń) wobec S142: −4% / +12% / +7% na
+  45 / 70 / 100 po obcięciu Furii (0,4–1,2 → 0,2–0,5 za stos), Szału (0,5 → 0,3) i Rozbicia (80–140 → 60–110).
+- **1–20:** fixture przepisany (S143 „pule Wojownika”): 413 zmienionych i 30 nowych wpisów w kluczach Wojownika i w
+  wierszach z Wojownikiem; `ALLOWED_1_20_DIFFS` pusta, blok „Balance 1-20: S91” zielony (z Chorążym jednoręcznym;
+  `S91.gain.standard.commander` 1,00 w raporcie).
+- **`GLOBAL_REPORT_ONLY` S143** (80 kluczy 21–100): strażnicy T-SK1/2 Wojownika w Borze, Pustkowiach i Szczytach (60),
+  `G10` i `R.ashen.tsk5.50` (Uzdrowiciel na Obrońcy 0,247), T1 Rozłupania (młot) na 45–100, T2 Berserkera na 70.,
+  ścieżki: `berserker.base` 45–100, EHP Strażnika na 45 / 70, `standard.support` i `r6.standard` na 100., R4 10A
+  Rozpłatania na 45., `marksman.r7` na 70. i `inquisitor.ratio` na 70 / 100; `S134_REPORT` Vaelgratha (Wojownik solo).
+- **Wygląd, dźwięk, teksty:** ruchy 7 nowych aktywnych jako pozy z istniejących (Zamach i Uderzenie z gardy tarczy,
+  Brutalny Cios, Rozbicie i Egzekucja z oburęcznym zamachem, Tupnięcie), `SkillVfx` w złocie tarczy i czerwieni
+  dwuręcznej z istniejących składników, klucze `skill.<id>` w `Data/Sfx` bez ID (`hint`); teksty PL / EN: nazwy,
+  `short`, `desc`, przełomy, nowe węzły kierunków, `cast.error.needShield`; `tests/fixtures/skill_timing.luau` (7 wierszy).
+- **Testy:** nowy `tests/block.spec.luau` (okno, limit, mnożniki, wymóg tarczy, szary kafelek), `fury.spec` (Furia tylko
+  z Furią, `hitGain`, `unstoppable`, dane), `skillpools.spec` (pełna drabina obu pul i wspólnych), `paths.spec`
+  (`skill` tylko w rzędach 4 i 8), `skills.spec`, `skillpoints.spec`, `character.spec` (migracja 6), `balance.spec`
+  (blok S143), `balance1_20.spec` (fixture S143).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Block.luau` (nowy), `src/shared/Logic/{Fury,Paths,PathView,Skills,AccountSchema}.luau`,
+  `src/shared/Data/Skills/{init,Types,Build,Warrior}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/Warrior.luau`, `Data/Paths/Warrior.luau`, `Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{CombatService,StatusEffectService}.luau`, `src/server/Skills/{Context,Types/Offense}.luau`,
+  `src/client/Controllers/SkillController.luau`, `src/client/UI/Screens/SkillsWindow/{Details,PoolTree}.luau`,
+  `tests/{SkillModel,Balance}.luau`, `tests/{block,fury,balance,balance1_20,character,paths,skillpoints,skillpools,
+  skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
+  balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S144: Łowca, pule i kierunki
+
+- **Dwie pule Łowcy** (`Data/Skills/Hunter`, `pool`, `role`; DESIGN-18 §6.3). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Łuk `bow` | Kusza `crossbow` |
+  |---|---|---|
+  | S1 · 1 | Celny Strzał (bez zmian, 144 / 233%) | Ciężki Bełt `heavyBolt` 187,2 / 302,9% (Celny ×1,3 z węzłami S91, 20 energii, 5,2 s); trucizna 30% / +39; przebicie 60% / +60 |
+  | A1 · 3 | Deszcz Strzał (było 10; 36 / 85% × 4, węzeł rangi 5 53,9) | Bełt Przebijający `piercingArrow` (było rząd 1 Strzelca; 164,4 / 410%, węzeł rangi 5 235,6; 5B krwawienie 40%) |
+  | K1 · 6 | Przyszpilenie `pinningShot` 70 / 130%, unieruchomienie 2 s (bossowie i Elity II: spowolnienie 40%), 20 energii, 12 s; +0,5 s / +14; ×0,8 odnowienia / +32 | Pułapka Lodowa (było rząd 1 Trapera) |
+  | O1 · 10 | Krok Wiatru `windstep`: unik +10 / 20 pkt i ruch +20 / 35% na 4 s (20 energii, 20 s); +2 s / +5 uniku; następny strzał +25% / ×0,75 odnowienia | Kamuflaż (było rząd 7 Trapera) |
+  | S2 · 15 | Podwójny Strzał (było 3; 2 × 77,75 / 114%, węzły rang 2–3) | Zatruta Strzała (było 18; 5A +15 trucizny, 10B +28) |
+  | P1 · 20 | Sokole Oko (było 14; ranga 1 bez zmian) | Zatrute Groty `toxicTips`: stos trucizny grotu 10 / 20% ataku przez 6 s, do 5 stosów, raz na sekundę na cel |
+  | A2 · 26 | Salwa (było 30; 24 / 34% × 7, węzeł rangi 2 25; 5B +4) | Trujące Sidła (było rząd 4 Trapera; 10A echo 44%) |
+  | K2 · 33 | Sokół (było rząd 4 Zwiadowcy; 28,9 / 44%) | Sieć `netShot` (krąg r 5 do 30 st.) 60 / 110%, unieruchomienie 2,5 s (bossowie: spowolnienie 40%), 30 energii, 18 s; r +2 / +12; +0,5 s / +26 |
+  | S3 · 40 | Strzał w Serce (było zwieńczenie Strzelca; 170 / 290%, węzeł rangi 6 220) | Bełt Egzekutora `deadlyBolt` 180 / 260%, +50% od 3 stosów trucizn Łowcy, 25 energii, 10 s; premia +20 / +26; premia +35 / +52 |
+  | P2 · 50 | Zwinność (było rząd 1 Zwiadowcy; unik 10 / 12 pkt, ruch 15 / 18%) | Szybkie Przeładowanie `quickReload`: odnowienia umiejętności kuszy −4 / −12% |
+  | U · 60 | Strzała Burzy (było rząd 7 Strzelca, 48.; 266,7 / 400%) | Pole Sideł (było zwieńczenie Trapera) |
+
+- **Wspólne Łowcy:** Odskok C1 4 (było 6), Znak Łowcy C2 12 (było rząd 7 Zwiadowcy), Namierzenie C3 30 (było rząd 4
+  Strzelca; ranga 1 20,33 / 26,67), Instynkt Drapieżnika C4 45. `SkillPools/Hunter` z planami według drabiny, `version`
+  3, `transitional = false`.
+- **Kierunki** (węzły `skill` tylko w rzędach 4 i 8): Zwiadowca z Nagonką w rzędzie 8 (było 10; ranga 1 90, węzeł rangi
+  6 102) i Królewskim Sokołem w rzędzie 10; Strzelec i Traper bez umiejętności w rzędach 4 i 8, w rzędzie 8 nowe
+  zwieńczenia `keystone`: Martwe Oko (pewny krytyk umiejętności w jeden cel na celu z ≥ 80% życia bez zużycia pewnego
+  krytyku, następny strzał zużywa się, `DealOptions.keepCrit`; +10 pkt obrażeń krytycznych) i Mistrz Sideł (trafienie pułapki daje stos trucizny grotu ≥ 15% bez odstępu, trucizny +10%). Nowe węzły
+  po umiejętnościach, które poszły do pul (ta sama liczba rang): Równe Lotki (+3 pkt obrażeń krytycznych), Cierpliwość
+  (Namierzenie +1 pkt krytyka), Opanowanie (+0,5 pkt krytyka), Myśliwska Skóra (+1% HP), Przynęta (trucizna Trujących
+  Sideł +10), Podchód (+1 pkt uniku), Chyży (+3% ruchu), Sokolnik (Sokół +2 s), Bystry Znak (+0,5 pkt podatności).
+- **Mechaniki:** `Logic/Crossbow` (nowy: `ofPool`, `tipFor`, `tipReady`, `tipStacks`, `tipRecord`, `venomMul`,
+  `cdrFor`; `Data/Skills.CROSSBOW`), `Logic/Snare` (nowy: `kindOn`, `SkillEffect.bossSlow`), `Logic/DeadEye` (nowy:
+  `applies`, `sure`). Serwer: `Skills/Context` (Bełt Egzekutora na stosach, Zatrute Groty i Mistrz Sideł po głównym
+  trafieniu, Martwe Oko jako pewny krytyk, korzeń → spowolnienie na bossie), `CombatService.ToxicTip` (stan `tips` na cel),
+  `StatusEffectService.StacksBy`, `SkillService` (odnowienie z `Crossbow.cdrFor`, `skills.reload`), `Admin/Combat`;
+  klient `Hud/SkillBar`, `UI/SkillInfo`; `Logic/Skills.descriptionArgs` (odnowienie i argumenty grotów);
+  `HOOK_RULES.spot.skills` + Ciężki Bełt.
+- **Model:** lustra w tabeli `Hunt` (`toxicTip`, `poisonStacks`, `aboveShare`; plik doszedł do limitu 200 lokalnych),
+  `dotDealt` / `dotShare` walki, Szybkie Przeładowanie w `prepare`; buildy z `ranks` i rotacją obu pul (Królobójca długim
+  łukiem, Truciciel kuszą), R4 nowych na Kłusowniku i Królobójcy, `R4_UTILITY` (kontrola, obrona Kroku Wiatru, przebicie
+  Ciężkiego Bełtu), Bełt Egzekutora w `R4_ROTATION`.
+- **Wyniki modelu:** R1 na 20. (pasmo 1,6–2,44): Królobójca z łukiem 2,17, z ciężką kuszą 2,22, Kłusownik z kuszą 2,18, z
+  łukiem 2,15; R4 nowych: Ciężki Bełt 5A / 5B 0,12–0,15, 10B 0,18; Przyszpilenie 5B 0,09, 10A / 10B 0,25 / 0,22; Sieć 5B
+  0,09, 10B 0,21; Bełt Egzekutora 5A / 5B 0,11–0,13 / 0,10–0,11, 10A / 10B 0,21 / 0,20. Tożsamość (`S144.hunter.*`,
+  raport do S147) na 20 / 45 / 70 / 100: łuk / kusza (Strzelec) w jeden cel 1,00 / 1,05 / 1,01 / 0,99 (cel ±10%), udział
+  obrażeń w czasie kuszy 0,20–0,25 (cel ≥ 0,25; Kłusownik 0,20–0,23, Truciciel 0,21–0,25), łuk w ruchu 0,27 / 0,57 / 0,98
+  / 1,0, R7 Łowca / Wojownik dwuręczny 1,01 / 1,22 / 1,19 / 1,33 (łuk) i 1,01 / 1,17 / 1,18 / 1,35 (kusza).
+- **1–20:** fixture przepisany (S144 „pule Łowcy”): 417 zmienionych wpisów w kluczach Łowcy i w wierszach z Łowcą;
+  `ALLOWED_1_20_DIFFS` pusta, blok „Balance 1-20: S91” zielony (z Królobójcą z ciężką kuszą; `S91.gain` Strzelca w
+  raporcie jak od S91); w R4 na 20. Ciężki Bełt, Deszcz Strzał i Bełt Przebijający (Podwójny Strzał od 15. już nie).
+- **`GLOBAL_REPORT_ONLY` S144** (107 kluczy 21–100): strażnicy T-SK1/2/3 buildów Łowcy (Bór, Pustkowia, Szczyty), T1
+  Łatwego Celu i Pełnego Naciągu, T2 Trapera na 70 / 100, ścieżki `marksman.base` (też z ciężką kuszą), `r5a.hunter`,
+  `trapper.single` / `aoe` / `r3` / `r5`, `scout.solo`, `r6.scout`; martwe klucze `kingslayer@longbow+quiver` usunięte.
+- **Wygląd, dźwięk, teksty:** ruchy 5 nowych aktywnych z funkcji `ShotRig` (Ciężki Bełt w szerokiej postawie,
+  Przyszpilenie w stopy, Sieć wysokim łukiem, Bełt Egzekutora z klęczek; warianty `crossbowOf`) i odskok Kroku Wiatru,
+  `SkillVfx` z istniejących składników (brąz żelaza, zieleń trucizny, blady wiatr), klucze `skill.<id>` w `Data/Sfx` bez
+  ID (`hint`); teksty PL / EN: nazwy, `short`, `desc`, przełomy, Bełt Przebijający (dawna Strzała Przebijająca), węzły
+  kierunków, pola `skills.field.tip|venomMul|venomStacks|reload`; `tests/fixtures/skill_timing.luau` (5 wierszy i
+  `netShot` w `circleTarget`).
+- **Testy:** nowy `tests/crossbow.spec.luau` (groty i odstęp, Mistrz Sideł, Bełt Egzekutora, Szybkie Przeładowanie tylko
+  dla kuszy, korzeń na bossie, Martwe Oko, lustro modelu), `skillpools.spec` (pełna drabina obu pul i wspólnych, broń
+  wybiera pulę), `paths.spec` (jedna umiejętność w kierunkach, zwieńczenia `keystone`), `skills.spec`, `character.spec`
+  (migracja 6), `skillmotion.spec` (blok S144), `balance.spec` (blok S144), `balance1_20.spec` (fixture S144).
+- **Przegląd:** łuk Morvane dostał Szeroki Znak zamiast Roznoszonej Trucizny (kusza); `itemeffects.spec` pilnuje pul
+  stałych efektów nazwanej broni; opis Zatrutych Grotów bierze odstęp z `CROSSBOW.tipGap`.
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/{Crossbow,Snare,DeadEye}.luau` (nowe), `src/shared/Logic/Skills.luau`,
+  `src/shared/Data/Skills/{init,Types,Hunter}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/Hunter.luau`, `Data/Paths/{Hunter,init}.luau`, `Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{CombatService,StatusEffectService,SkillService}.luau`, `src/server/Skills/Context.luau`,
+  `src/server/Admin/Combat.luau`, `src/client/UI/{SkillInfo,Screens/Hud/SkillBar}.luau`, `tests/{SkillModel,Balance}.luau`,
+  `src/shared/Data/Items/Uniques.luau`,
+  `tests/{crossbow,balance,balance1_20,character,itemeffects,paths,skillmotion,skillpools,skills}.spec.luau`,
+  `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`,
+  `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S145: Kapłan, pule i kierunki
+
+- **Dwie pule Kapłana** (`Data/Skills/Cleric`, `pool`, `role`; DESIGN-18 §6.4). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Berło i Kostur `light` | Buzdygan i Kiścień `hammer` |
+  |---|---|---|
+  | S1 · 1 | Promień Światła `lightRay` (pocisk) 142 / 289%, 25% trafienia leczy najbardziej rannego (solo siebie), 12 many, 3 s; leczenie +10 / +30; +60 / rozbłysk 40% | Święte Uderzenie (167 / 340%, węzły rang 5–6 190 / 240) |
+  | A1 · 3 | Światłość (było 6; 120 / 240%, węzły rang 5–6) | Poświęcona Ziemia `consecrate` 4 fale 34 / 70% w r 6, 25 many, 10 s; r +2 / +6; spowolnienie 30% / +1 fala |
+  | K1 · 6 | Oślepienie `blindingLight` stożek 60 / 110%, chybienia 15% na 3 s (`enemyMiss`), 25 many, 12 s; +1 s / +14; ×0,8 odnowienia / stożek +60° | Kajdany Światła `holyChains` 70 / 130%, unieruchomienie 2 s (bossowie i Elity II: spowolnienie 40%), 25 many, 12 s; +0,5 s / +14; ×0,8 odnowienia / podatność 8% |
+  | O1 · 10 | Tarcza Wiary (było 18; węzeł rangi 3 = dawna ranga 1) | Aura Wytrwałości (było rząd 7 Inkwizytora) |
+  | S2 · 15 | Odnowa (było rząd 1 Uzdrowiciela) | Piętno Światła (było rząd 4 Inkwizytora; węzeł rangi 4 = dawna ranga 1) |
+  | P1 · 20 | Łaska `grace`: leczenie +7 / 12%, krytyczne leczenie 20 / 60% szansy na krytyk, +10 / 30% poniżej 35% HP | Boski Gniew (było 30; węzeł rangi 2) |
+  | A2 · 26 | Sanktuarium (było rząd 4 Uzdrowiciela) | Święty Wybuch `holyNova` r 8 120 / 200% i leczenie drużyny w kręgu 3 / 5% HP + 3 / 5% magii, 45 many, 14 s; r +2 / leczenie +1; echo 22% / +44 |
+  | K2 · 33 | Oczyszczenie (było rząd 1 Inkwizytora) | Upomnienie `rebuke` stożek 90 / 160%, odrzut 8, przerwanie kanału gracza (nie bossa), 30 many, 16 s; r +2 / +18; ogłuszenie 0,8 s / ×0,8 odnowienia |
+  | S3 · 40 | Cud `miracle` 26 / 32% HP celu + 13 / 18% magii, modlitwa 1,2 s, 40 many, 15 s; +4 / −0,4 s; drugi cel 50% / +8 | Sąd (było 45; węzeł rangi 2) |
+  | P2 · 50 | Światło Przewodnie `guidingLight`: tarcza 10 / 20% przywróconego HP (najwyżej 20% maks. HP, 6 s) | Gorliwość `zeal`: atak puli skraca odnowienia innych umiejętności puli o 0,3 / 0,8 s |
+  | U · 60 | Anioł Stróż (było zwieńczenie Uzdrowiciela) | Młot Niebios (było zwieńczenie Inkwizytora) |
+
+- **Wspólne Kapłana:** Leczenie C1 4 (było 3), Krąg Światła C2 12 (było 14; węzeł rangi 3), Wskrzeszenie C3 30 (było
+  rząd 1 Fortuny; ranga 1 42,2% HP, 86,7 s), Pobożność C4 45 (było 10; ranga 1 = dawna ranga 4). `SkillPools/Cleric`
+  z planami według drabiny, `version` 3.
+- **Kierunki** (węzły `skill` tylko w rzędach 4 i 8): Uzdrowiciel z Modlitwą w 4 i Boską Interwencją w 8, Kapłan Fortuny
+  z Rzutem Kośćmi w 4 i Kołem Fortuny w 8 (szczęście tylko w węzłach `luck` z relikwiarzem), Inkwizytor bez
+  umiejętności, w rzędzie 8 zwieńczenie `keystone` Wędrujące Piętno (podpalenie Piętna Światła na drugim wrogu 60%,
+  światło +5%). Nowe węzły po umiejętnościach, które poszły do pul: Pocieszenie, Aureola, Czterolistna Koniczyna, Rzut
+  Monetą, Ślub, Przekonanie, Wytrwała Wiara; węzły Łaska i Gorliwość kierunków to teraz Miłosierdzie i Zapał. Modlitwa
+  5B rzuca kośćmi bez węzła Rzut Kośćmi (sprawdzone).
+- **Koniec stanu przejściowego:** `transitional` usunięte z `Data/SkillPools/*`, `Logic/SkillPools`, `PathView`,
+  `SkillsWindow/PoolTree` (bez wiersza przejściowego i tekstu `skills.tree.transitional`), `tools/WikiData/Skills`;
+  `skillpools.spec` sprawdza pełną drabinę każdej puli i wspólnych każdej klasy oraz audyt danych, `paths.spec`
+  `SKILL_ROWS` bez wyjątków. `CLAUDE.md`: punkty „Umiejętność w puli broni”, „Szkoły Kapłana” i poprawka „Ścieżka / węzeł”.
+- **Mechaniki:** `Logic/Faith` (nowy: `mostWounded`, `rayHeal`, `ward`, `zealCut`, `zealShortens`, `brandShare`,
+  `interrupts`; `Data/Skills.FAITH`), `Logic/Channel` (zdarzenie `"interrupt"`). Serwer: `Skills/Context` (leczenie
+  Promienia, przerwanie Upomnienia, `mostWounded` przez `Faith`), `Types/Offense` (Wędrujące Piętno, leczenie Świętego
+  Wybuchu), `Types/Support` (tarcza Światła Przewodniego w `healOne`), `SkillService` (Gorliwość, `services.Interrupt`).
+- **Model:** lustra w `tests/SkillModel` (`Hunt.Faith`: Promień, tarcza, Gorliwość, Wędrujące Piętno, leczenie Wybuchu),
+  buildy z `ranks` i rotacją obu pul (Uzdrowiciel lochowy berłem, samotny kosturem świątynnym, Fortuna i Inkwizytor
+  buzdyganem), R4 nowych (`R4_UTILITY` dla kontroli i geometrii).
+- **Wyniki modelu:** R1 Inkwizytora na 20. 2,09 (pasmo 1,6–2,10), T-SK5 berła na 20. 0,221 (asertowane), T-SK6 Grimroka
+  1,79; R4 na 20.: Promień Światła 5B 0,16, Poświęcona Ziemia 5B 0,12, Święte Uderzenie 5B 0,14. Raport `S145.cleric.*`
+  (asertuje S146) na 20 / 45 / 70 / 100: T-SK5 0,22 / 0,28 / 0,29 / 0,38 (pasmo 0,25–0,35), T-SK6 berła 2,8 / 8,7 / 16,0
+  na 45 / 70 / 100 (cel 1–2), berło leczenie na sekundę / Uzdrowiciel sprzed S145 1,02 / 1,12 / 0,97 / 1,23, buzdygan w
+  jeden cel / Inkwizytor sprzed S145 1,02 / 1,03 / 1,06 / 1,03 (cel ±10%), R7 Kapłan z buzdyganem / Wojownik dwuręczny
+  0,59 / 0,87 / 0,83 / 0,88, Fortuna / Inkwizytor 1,13 / 0,97 / 0,96 / 0,98.
+- **1–20:** fixture przepisany (S145 „pule Kapłana”): 274 wpisy w 67 wierszach z Kapłanem; `ALLOWED_1_20_DIFFS` pusta,
+  blok „Balance 1-20: S91” zielony (R4 na 20. z Promieniem Światła, Światłością i Poświęconą Ziemią).
+- **`GLOBAL_REPORT_ONLY` serii (do S146–S147), 515 kluczy:** S137 77 (wiersze 21–100 po rangach z punktów), S140 77
+  (Mag, ogień), S141 54 (Mag, lód), S142 101 (Mag, błyskawica), S143 79 (Wojownik), S144 107 (Łowca), S145 23 (Kapłan:
+  T-SK3 strażników Szczytów Inkwizytora 80–100, T-SK5 Uzdrowiciela lochowego 95–100 w E4 / G10 / Szczytach, Fortuna leczy
+  mniej na 70 / 100, samotny Uzdrowiciel na 100, Inkwizytor / Furia na 45). Starsze wpisy (S88 285, S91 13, S92 5,
+  S103 4, S134g 12) poza serią.
+- **Wygląd, dźwięk, teksty:** ruchy 7 nowych aktywnych jako warianty ruchów Kapłana (Cud z pętlą modlitwy), `SkillVfx` z
+  istniejących składników (złoto światła, zieleń leczenia, białe światło), klucze `skill.<id>` w `Data/Sfx` bez ID
+  (`hint`); teksty PL / EN: nazwy, `short`, `desc`, przełomy, pola `skills.field.rayHeal|healCrit|lowHeal|ward|zeal`,
+  węzły kierunków, opis Uzdrowiciela; `tests/fixtures/skill_timing.luau` (7 wierszy).
+- **Testy:** nowy `tests/faith.spec.luau` (najbardziej ranny, Promień solo i w drużynie, tarcza z leczenia, Gorliwość
+  tylko `hammer`, Wędrujące Piętno, Upomnienie nie przerywa kanału bossa, Kajdany na bossie, Święty Wybuch w jednym
+  rzucie), `skillpools.spec` (dwie pule Kapłana, pełna drabina wszystkich klas, audyt), `paths.spec` (`SKILL_ROWS` bez
+  wyjątków, `modify` istnieją), `skills.spec`, `character.spec` (migracja 6: pasek puli domyślnej), `itemeffects.spec`,
+  `pathview.spec`, `skillmotion.spec` (blok S145), `balance.spec` (blok S145), `balance1_20.spec` (fixture S145).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Faith.luau` (nowy), `src/shared/Logic/{Channel,PathView,SkillPools}.luau`,
+  `src/shared/Data/Skills/{init,Types,Build,Cleric}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/{init,Types,Cleric,Hunter,Mage,Warrior}.luau`, `Data/Paths/{Cleric,init}.luau`,
+  `Data/Localization/{pl,en}.luau`, `src/server/Services/SkillService.luau`,
+  `src/server/Skills/{Context,Types/Offense,Types/Support}.luau`, `src/client/UI/Screens/SkillsWindow/PoolTree.luau`,
+  `tests/{SkillModel,Balance}.luau`,
+  `tests/{faith,balance,balance1_20,character,itemeffects,paths,pathview,skillmotion,skillpools,skills}.spec.luau`,
+  `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`,
+  `tools/WikiData/Skills.luau`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S146: Balans po przebudowie, Wojownik i Kapłan
+
+- **Nowe cele** (`Balance.targetsS146`, blok „Balance S146: Warrior and Cleric” w `balance.spec`, sekcja w
+  `docs/BALANS.md`): R8 każdej puli (8 aktywnych na 10 + pasywki / punkty na 100, najwięcej aktywnych z rangą 10, punkty
+  na 45 / suma limitów), R9 (dwuręczna / jednoręczna w jeden cel i na 3 cele, EHP Strażnika / dwuręczna, tank na minutę,
+  T-SK6 berła, buzdygan / Furia w pasmach Inkwizytora), R1 jednego buildu na pulę, R5 typów broni każdej puli, R6
+  kierunku przewodniego (L100), T-SK5 berła; wiersze poza zasięgiem w `Balance.S146_REPORT` z powodem.
+- **Pasek 8 w modelu:** `ReferenceBuild.bar` (`Data/Paths/Types`, listy w `Data/Paths/Warrior` i `Cleric`),
+  `SkillModel.barOf` / `barRotation`, `BAR_CLASSES` (Wojownik, Kapłan; Łowca i Mag w S147, podstawy klas bez limitu);
+  test: najwyżej 8 aktywnych na poziom, rotacja tylko z paska. 1–20 bez zmian (na 20. każdy build ma ≤ 8 aktywnych).
+- **Przed / po** (model, 45 / 70 / 100; „przed” = commit S145):
+
+  | cel | przed | po | pasmo |
+  |---|---|---|---|
+  | R1 Furia (dwuręczna) | 2,22 / 2,56 / 2,59 | 2,25 / 2,40 / 2,60 | 1,6–2,61 |
+  | R1 Obrońca (jednoręczna) | 2,26 / 2,57 / 2,52 | 2,19 / 2,18 / 2,23 | 1,6–2,26 |
+  | R1 Inkwizytor (buzdygan) | 4,47 / 5,32 / 5,91 | 4,35 / 5,37 / 6,18 | 1,6–2,37 (właściciel F4) |
+  | R4 10A Rozpłatania na 45 | 0,00 | 0,26 | 0,17–0,28 |
+  | R4 5B Rozpłatania (20 / 45 / 70 / 100) | 0,12 / 0,11 / 0,25 / 0,25 | 0,09 / 0,17 / 0,16 / 0,16 | 0,08–0,17 |
+  | R5 pul (najdalszy typ broni) | ≤ 0,073 | ≤ 0,074 | ≤ 0,10 |
+  | R9 dwuręczna / jednoręczna, 1 cel | 1,74 / 1,80 / 1,53 | 1,60 / 1,69 / 1,45 | 1,15–1,25 (raport) |
+  | R9 dwuręczna / jednoręczna, 3 cele | 1,61 / 1,26 / 1,32 | 0,98 / 1,12 / 1,09 | 1,15–1,25 (raport) |
+  | R9 EHP Strażnik / dwuręczna | 1,87 / 2,18 / 2,17 | 1,68 / 1,71 / 1,73 | ≥ 1,4 |
+  | R9 buzdygan / Furia | 0,867 / 0,828 / 0,876 | 0,855 / 0,890 / 0,912 | 0,80–0,86 / 0,85–0,91 / 0,87–0,93 |
+  | R9 = T-SK6 berła | 2,80 / 8,73 / 15,97 | 2,78 / 8,62 / 14,40 | 1,0–2,0 (raport, właściciel) |
+  | T-SK5 berła | 0,282 / 0,294 / 0,381 | 0,281 / 0,290 / 0,344 | 0,25–0,35 |
+  | R6 Berserker / Chorąży (L100) | 0,14 / 1,95; −0,89 / 2,12 | 0,64 / 1,36; 0,62 / 1,22 | 0,6–1,5 |
+  | R6 Uzdrowiciel / Inkwizytor | 0,28 / 1,45; −0,08 / 1,64 | 0,27 / 1,51; 0,43 / 1,53 | raport (S89) |
+  | R8 (każda pula) | – | 0,89 punktów na 100, 10 aktywnych, 0,55–0,61 na 45 | ≤ 1 / ≤ 10 / ≤ 0,75 |
+  | tank na minutę (Strażnik) | 2,57 / 2,37 / 2,18 | 2,64 / 2,49 / 2,29 | ≤ 3,5 |
+
+- **Dane:** Potężne Uderzenie ranga 6 / 10 220,4 / 222 → 196 / 200; Niezłomność ranga 5 HP 20 → 14%; Furia (pasywka)
+  +0–17% maks. HP (opis PL / EN); Rozkaz Natarcia kryt 24 → 21; Zapał (węzeł Chorążego) 4–12 → 5–15; Pobożność 20–25 →
+  6–9%; Łaska ranga 5 12 → 10%; Piętno Światła ranga 8 213 / 270 → 186 / 237 (węzeł); Sąd ranga 1–2 300 / 320 → 270 /
+  290; Boski Gniew ranga 5 20 → 22 (ranga 4 przypięta); Gorliwość 0,3–0,8 → 0,1–0,2 s; Rozpłatanie 5B krwawienie +20 →
+  +15 (opis PL / EN), wpis `R4_REPORT` usunięty. Buildy: paski, `ranks` w kolejności paska na 100 (aktywne paska,
+  pasywki puli, reszta; umiejętności otwarte do 20 w starej kolejności, więc 1–20 bez zmian): każdy build Wojownika i
+  Kapłana ma na 100. 8 aktywnych paska na 10 i wszystkie pasywki puli; pasek Strażnika z Uderzeniem Tarczą przed
+  Odwetem i Uderzenie Tarczą 10A; węzły Berserkera (Rwące Cięcia przed Amokiem), Gniew Tytana 10A w buildach
+  Berserkera. Księga: wpisy S146 w `tools/balance_reasons.luau`.
+- **`GLOBAL_REPORT_ONLY`:** usunięte 128 kluczy Wojownika i Kapłana (S137: 26, S143: 79, S145: 23), 58 wierszy wróciło do
+  asercji (m.in. Morvane bez wsparcia, T-SK5 Uzdrowiciela na 50 / 95–100, EHP Strażnika, HP i stosunek Inkwizytora,
+  strażnicy T-SK3 Inkwizytora, wsparcie Chorążego na 100, R6 Chorążego); 81 z powodem S146 (strażnicy T-SK1 / T-SK2
+  Wojownika 71, w tym T-SK2 Strażnika na 90–100, cechy broni dwuręcznej S88 5, Berserker / podstawa 3, Fortuna leczy
+  mniej 2, samotny Uzdrowiciel na 100);
+  `Balance.S134_REPORT` pusty. Hunter i Mag (S137, S140–S144) bez zmian, dla S147.
+- **Fixture ścieżek** przepisany (`--fixture-paths "S146 Wojownik i Kapłan po przebudowie" S146`); `balance1_20.spec`
+  bez różnic; `docs/BALANS.md` wygenerowany (blok i sekcja S146).
+- **Dla właściciela:** (1) T-SK6 berła 1–2 wobec obrażeń bossów w tanka (S92–S94: 2,8 / 8,6 / 14,4; dźwignia: ciosy
+  bossów w tanka albo definicja T-SK6); (2) R9 Wojownika 1,15–1,25 wobec R1 puli jednoręcznej (atak podstawowy broni
+  jednoręcznej ok. połowa dwuręcznej: `Items/Bases`, `twoHandedBonusMul`), dziś 1,45–1,69; (3) samotny Uzdrowiciel
+  kosturem expi 2× wolniej niż Inkwizytor na 100 (pula berła ma 3 umiejętności z obrażeniami): drugi build Uzdrowiciela
+  z buzdyganem od 21. albo luźniejszy cel; (4) strażnicy T-SK1 / T-SK2 Wojownika (71 wierszy): limit D1 liczony od L20
+  przed pulami, propozycja: nowa baza na L45 albo limity jak S93 dla klas z pulami; (5) cechy broni dwuręcznej (S88:
+  Rozbicie, Przebicie, Berserker na 70) 1–3% nad pasmem: wartości w `Data/ItemTraits` −3%; (6) Berserker / podstawa
+  1,04–1,18 wobec 1,25–1,37: podstawa gra tę samą pulę, propozycja: pasmo 1,05–1,20 albo słabsza rotacja podstawy;
+  (7) Fortuna leczy mniej na 70 / 100 (0,31 / 0,32 wobec ≤ 0,21): Fortuna gra pulę buzdygana, propozycja: cel tylko do
+  45. albo pasmo ≤ 0,35; (8) R1 Inkwizytora (4,4–6,2): pasmo R1 ≤ 2,4 dla Kapłana z buzdyganem wymaga ok. 0,35 Furii,
+  propozycja: R1 Kapłana mierzony od jego R1 na 20 (1,15 ×) albo wyjątek F4 na stałe.
+- **Testy:** `balance.spec` (blok S146, test paska, wpisy `GLOBAL_REPORT_ONLY`), `paths.spec` (Zapał 34, Niezłomność 14),
+  `skills.spec` (Potężne Uderzenie, Sąd, Rozpłatanie 10B).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Data/Skills/{Warrior,Cleric}.luau`, `src/shared/Data/Paths/{Types,Warrior,Cleric}.luau`,
+  `src/shared/Data/SkillCurves.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/{SkillModel,Balance}.luau`,
+  `tests/{balance,paths,skills}.spec.luau`, `tests/fixtures/balance_paths.json`, `tools/{balance_reasons,balance_report}.luau`,
+  `tools/balance_before.json`, `docs/{BALANS,DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S147: Balans po przebudowie, Łowca, Mag i bossowie
+
+- **Nowe cele** (`Balance.targetsS147`, blok „Balance S147: Hunter, Mage and bosses” w `balance.spec`, sekcja w
+  `docs/BALANS.md`): R8 pięciu pul Łowcy i Maga, R9 Maga (błyskawica / ogień i lód / ogień w jeden cel, ogień z
+  podpaleniem / błyskawica na 3 cele 8 s, kontrola lodu na Elicie, Głęboki Chłód na bossie, obrażenia przyjmowane lód <
+  ogień < błyskawica, oba kierunki, 20–100), R9 Łowcy (łuk / kusza ±10%, obrażenia w czasie kuszy ≥ 25% od 45.), R7
+  Strzelca z obiema pulami, R5 typów broni każdej puli, T-SK3 wariantów żywiołów i Trapera, T-SK4 wariantów żywiołów na
+  45–100 (poziomy wierszy regionów); R1 i wiersze poza zasięgiem w `Balance.S147_REPORT` z powodem; testy: żaden wpis
+  `GLOBAL_REPORT_ONLY` z S137–S145, żaden wiersz R4 w raporcie poza Ognistym Pociskiem 5A.
+- **Pasek 8** także dla Łowcy i Maga (`SkillModel.BAR_CLASSES`), paski wariantów żywiołów (`ReferenceBuild.bar` w
+  `Data/Paths/Mage`), Inwokacja Arkanistów po Strumieniu Arkanów w `ranks`; `SkillModel.withWeapon` zachowuje żywioł.
+- **Przed / po** (model, 45 / 70 / 100; „przed” = commit S146):
+
+  | cel | przed | po | pasmo |
+  |---|---|---|---|
+  | R9 błyskawica / ogień, 1 cel (Arkanista) | 1,143 / 1,126 / 1,047 | 1,144 / 1,167 / 1,115 | 1,10–1,20 |
+  | R9 lód / ogień, 1 cel (Arkanista) | 0,879 / 0,821 / 0,822 | 0,896 / 0,863 / 0,876 | 0,85–0,95 |
+  | R9 ogień z podpaleniem / błyskawica, 3 cele 8 s | 1,205 / 1,056 / 0,838 | 1,200 / 1,045 / 1,046 | ≥ 1,0 |
+  | R9 przyjmowane lód / ogień (Niszczyciel, Arkanista) | 0,65 / 0,59 / 0,52; 0,85 / 0,71 / 0,70 | 0,65 / 0,55 / 0,50; 0,85 / 0,68 / 0,70 | ≤ 1 |
+  | R9 przyjmowane błyskawica / ogień (N, A) | 1,006 / 1,020 / 1,069; 0,991 / 1,000 / 1,107 | 1,006 / 1,020 / 1,062; 0,991 / 1,000 / 1,107 | ≥ 1 (A na 45 raport) |
+  | R9 łuk / kusza (Strzelec), 1 cel | 1,046 / 1,007 / 0,987 | 1,047 / 0,997 / 0,986 | 0,9–1,1 |
+  | R9 obrażenia w czasie kuszy (Kłusownik / Truciciel) | 0,22 / 0,21; 0,20 / 0,24; 0,23 / 0,25 | 0,29 / 0,26; 0,26 / 0,31; 0,30 / 0,32 | ≥ 0,25 |
+  | R7 łuk / kusza wobec Furii | 1,24 / 1,18; 1,27 / 1,26; 1,32 / 1,34 | 1,24 / 1,18; 1,27 / 1,27; 1,32 / 1,34 | 1,15–1,35 |
+  | T-SK4 Niszczyciel (ogień / lód / błyskawica) | 4,80 / 3,97 / 4,69; 3,60 / 2,05 / 2,96; 3,61 / 3,34 / 2,98 | 2,78 / 2,30 / 2,72; 2,59 / 1,48 / 2,13; 2,11 / 2,01 / 2,02 | 2,0–2,8 (poza pasmem na 55–95: 16 z 42 wierszy, raport) |
+  | T-SK4 Arkanista (ogień / lód / błyskawica) | 3,47 / 3,72 / 4,11; 3,02 / 2,77 / 3,13; 3,42 / 3,62 / 3,36 | 2,01 / 2,16 / 2,38; 2,17 / 2,37 / 2,23; 2,39 / 2,22 / 2,37 | 2,0–2,4 (poza pasmem na 50–99: 13 z 42 wierszy, raport) |
+  | R4 przestrojonych przełomów Maga (ścieżki, 70 / 100) | Głęboki Mróz 5B 0,087, 10B 0,226; Roztrzaskanie 10B 0,239; Lanca 5B 0,118 / 0,088, 10B 0,225; Zamieć 10B 0,167; Deszcz Meteorów 10B 0,183; Ognisty Pocisk 10A 0,168 / 0,160 / 0,160 (45 / 70 / 100) | 0,086; 0,235; 0,202; 0,161 / 0,087, 0,210; 0,181; 0,224; 0,182 / 0,173 / 0,173 | 0,08–0,17 (5) / 0,17–0,28 (10) |
+  | R4 przestrojonych przełomów Łowcy (Kłusownik, 70 / 100) | Zatruta Strzała 10A 0,186 / 0,184; Trujące Sidła 10A 0,200 / 0,175; Pole Sideł 10A – / 0,254 | 0,183 / 0,182; 0,221 / 0,183; – / 0,193 | 0,17–0,28 |
+  | R4 Ognisty Pocisk 5A (Arkanista, 45 / 70 / 100) | 0,059 / 0,056 / 0,056 | bez zmian | 0,08–0,17 (raport: 1–20 zamrożone) |
+  | R3 / T-SK3 Trapera | 1,84 / 1,99 / 2,02 | 1,85 / 1,97 / 2,00 | ≤ 2,0 |
+  | R8 (każda pula) | – | 0,888 punktów na 100, 10 aktywnych, 0,55–0,61 na 45 | ≤ 1 / ≤ 10 / ≤ 0,75 |
+  | R5 pul (najdalszy typ broni) | – | ≤ 0,056 | ≤ 0,10 |
+  | R1 (Łowca, Mag) | 2,8–3,3; 3,8–7,2 | 2,8–3,3; 3,2–7,3 | raport (właściciel S90, S91) |
+  | bossowie S134: 3 / 5 graczy | 5,2–6,2 / 3,7–4,2 min | bez zmian | 5–7,5 / 3–4,5 |
+
+- **Dane:** Mag: krzywa `manaCost.Mage` od 25. niżej (1,02 … 2,1), koszt Deszczu Meteorów 460, Zamieci 270, Nawałnicy
+  360, Kataklizmu 220; Deszcz Meteorów 81–107 i 7 uderzeń (10B +24), Nawałnica 29–34, Spopielenie ranga 10 283,3,
+  Roztrzaskanie 184–420 (10B +85), Głęboki Mróz 80–138 (5B +15, 10B +36), Lodowa Włócznia ranga 10 360, Lanca Błyskawic
+  ranga 10 280 (5B +30, 10B +65), Grom ranga 10 460, Zamieć 10B +3,8, Ognisty Pocisk 10A 13%; węzły `Data/SkillCurves`
+  dla rang ≤ 70. Teksty przełomów (`skill.<id>.bp*`, PL i EN) z nowymi liczbami. Łowca: Trujące Sidła 80–82 / trucizna 405–412 (10A echo 135%), Zatrute Groty 10–30%, Zatruta Strzała
+  120–137 / trucizna 50–57,5 (10A 21%), Ciężki Bełt od 21. ×0,93, Bełt Egzekutora ranga 10 248, Pole Sideł 12–14 (10A
+  +6). Księga: wpisy S147 w `tools/balance_reasons.luau`.
+- **`GLOBAL_REPORT_ONLY`:** usunięte 390 kluczy Łowcy i Maga (S137: 51, S140: 77, S141: 54, S142: 101, S144: 107);
+  zostało 0 wpisów z S137–S145. 392 klucze z powodem S147: 248 strażników T-SK1 / T-SK2 / T-SK3, 87 T-SK4 średnich
+  trzech żywiołów, 14 cech broni (S88) na buildach sprzed pul, 20 celów względem bazy klasy (S85), 10 tempa solo
+  Zwiadowcy, 8 Trapera z łukiem, 2 R6 Zwiadowcy, 3 Ognisty Pocisk 5A (1–20 zamrożone). `Balance.S134_REPORT` pusty.
+- **Fixture ścieżek** przepisany (`--fixture-paths "S147 Łowca i Mag po przebudowie" S147`); `balance1_20.spec` bez
+  różnic; `docs/BALANS.md` wygenerowany (blok i sekcja S147).
+- **Dla właściciela:** (1) „błyskawica przyjmuje więcej niż ogień” u Arkanisty na 45. (0,991) i na 20.: bez paraliżu
+  Porażenia oba żywioły przyjmują tyle samo; propozycja: osłona żywiołu (O1) na pasku buildów wzorcowych albo Elity w
+  połowie odporne na paraliż; (2) T-SK4 wariantów na 50–99 (29 z 84 wierszy poza pasmem: Niszczyciel lodu 1,20–1,82 na
+  65–95 bez Zamieci, skoki rang przy jednej krzywej many): koszty czarów osobno dla żywiołów albo kolejność rang tak, by
+  wydatek many rósł równo, albo pasmo od 1,4 dla lodu; (3) cele S85–S90 względem bazy klasy (Strzelec × baza, Niszczyciel / Arkanista × baza, R5a) i tempo solo
+  Zwiadowcy liczą buildy sprzed pul: propozycja przepisać je na warianty pul (jak blok S147) albo wycofać; (4) R1 Łowcy i
+  Maga (2,8–7,3) dalej tylko raport (S90, S91).
+- **Testy:** `balance.spec` (blok S147, test paska dla wszystkich klas, brak wpisów S137–S145 w `GLOBAL_REPORT_ONLY`,
+  brak wierszy R4 w raporcie poza Ognistym Pociskiem 5A),
+  `skills.spec` (krzywa many, Deszcz Meteorów, trucizna Zatrutej Strzały).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Data/Skills/{Hunter,Mage}.luau`, `src/shared/Data/Paths/Mage.luau`,
+  `src/shared/Data/{SkillCurves,LevelCurves}.luau`, `tests/{SkillModel,Balance}.luau`, `tests/{balance,skills}.spec.luau`,
+  `tests/fixtures/balance_paths.json`, `tools/{balance_reasons,balance_report}.luau`, `tools/balance_before.json`,
+  `src/shared/Data/Localization/{pl,en}.luau`,
+  `docs/{BALANS,DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S148: Wiki umiejętności 2.0 i audyt serii
+
+- **Odświeżenie hurtowe** (właściciel: S148 = odłożone odświeżenie wiki S135–S147): `lune run tools/wikidump.luau`
+  (bez `npm run icons` / `art` / `renders`), mapy aktualne (`wikimap --check`), `PLANNER_STALE_OK = false`,
+  `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel`.
+- **Eksport** (`tools/WikiData/Skills`): `short` umiejętności (`skill.<id>.short` na randze 1), pule z `glyph` i
+  `skills` w kolejności kodu (`Skills.poolOrder`: szkoła według `LADDER`, wspólne według `COMMON_LADDER`, umiejętności
+  kierunków; nigdy `plan`), `rules.barSlots`, kierunki bez `weapon`; wektory planera w `wiki/test-fixtures/planner.json`
+  (`game` = kierunki gry z `leading`, `skills` = `SkillPoints.canBuy` / `apply` na danych gry, stan z
+  `paths.error.upgrade`), `skills.json` bez `rules.vectors`. Kierunki opublikowane (`wiki = false` zdjęte), tytuł
+  kierunku z `req.path` (`Basics`, `TitleTable`).
+- **Strona klasy:** planer v3 (`SkillPlanner.svelte`): suwak poziomu, punkty umiejętności puli i talentów, kierunek
+  przewodni, zakładki pul z drzewkiem według drabiny (kolumny ról, wiersze poziomów, kafelek z rangą, znakami przełomów
+  i numerem miejsca na pasku, `short` w dymku i pod nazwą na telefonie, „Z kierunków”), pasek 8 puli, zakładka
+  „Kierunki” (przełącznik, zasady: jedno zwieńczenie, przewodni od 12 pkt, ⅓ węzłów drużynowych poniżej 6 pkt),
+  szczegóły (Co robi, ranga i limit, + / −, Na pasek, teraz / następna, liczby na rangach 1 / 5 / 10, A/B od kupionej
+  rangi, węzły `modify`). Sekcje statyczne: „Jak rozwija się umiejętność” (liczby z `rules`), „Kierunki” (rzędy i
+  węzły) i „Wszystkie umiejętności” według pul (rola, `short`, rangi 5 / 10 od poziomu, opisy 1 / 5 / 10, A/B, węzły).
+  Teksty `class.*`, `skills.*`, `planner.*` (PL, EN), tożsamość pul `class.pool.<id>`; poradnik „Pierwsze kroki” i
+  „Statystyki” bez ścieżki głównej; `components.css` (drzewko, kafelki, pasek, telefon: lista z `short`).
+- **Kod v3:** `3<KLASA><poziom>.<PULA>:<rangi>[:<pasek>]….<talenty>.<przełomy>` (format i przykłady w `docs/WIKI.md` →
+  „Planer v3”); błędy `empty`, `class`, `level`, `pool`, `rank`, `bar`, `talent`, `bp`, `length`, kod „2…” = `old`.
+- **Testy:** `skills.test.ts` od nowa (parzystość z trzema zbiorami wektorów i każdym kluczem powodu, budżet puli, limit,
+  pasek 8, zwieńczenie, ulepszenie, zwrot węzła umiejętności, drzewko według drabiny, kod v3 tam i z powrotem, v2 =
+  `old`), e2e planera (`keyboard.e2e.ts`: „+” na kafelku, A/B, węzeł kierunku); `wikidump.spec` (powód
+  `paths.error.upgrade`, pule w kolejności kodu bez `plan`, `short`, wektory punktów umiejętności, brak
+  `rules.vectors`, kierunek bez broni), `paths.spec` (kierunki opublikowane), `skills.spec` (`rankAt` zamiast
+  `rankFor`). `npm run check` zielony (Vitest 135, build 2538 stron, linki, budżety, audyt), Playwright 138 / 164 (26
+  pominiętych z założenia), `scripts/check` zielony z `WIKI_KEYS_ALLOW="skills:*,titles:*,mechanics:*,types.ts"`
+  (nowy kształt danych, przed commitem).
+- **Audyt serii:** ROZWOJ §0 / §3–§5 oznaczone jako zastąpione, linia serii w §16; DESIGN §14 na modelu DESIGN-18 (pule,
+  punkty, kierunki, tabele pul klas), DESIGN poza §14 bez ścieżki głównej i Zwoju Nowej Ścieżki; DESIGN-18 §0.6, §14,
+  otwarte decyzje i §17 „Ustalenia S137–S148”; CLAUDE.md (kierunki na wiki, limit `rankAt`, lustro planera, planer v3);
+  WIKI.md (§1, §5, Komponenty, „Planer v3”, Stan, Decyzje, Niedokończone, Polecenia); STATY bez ścieżki głównej;
+  PROGRESS: braki serii w jednym wpisie. Grep `canChooseMain`, `freeUsed`, `mainPathLevel`, `MAIN_LEVEL`, `rankFor(`,
+  `transitional`, `HOTBAR_SLOTS = 10`, „ścieżka główna” w tekstach gracza: `Skills.rankFor` usunięte; pozostałe
+  trafienia to historia w komentarzach i testach regresji (`paths.spec`: brak `MAIN_LEVEL` / `canChooseMain`, stare
+  `main` / `freeUsed` czyszczone; `skillpools.spec` / `pathview.spec`: brak `transitional`; „transitional ladder” w
+  `skills.spec` = krzywa limitu ROZWOJ 2.6 na fixture), komentarze serwisów i `Data/Paths/Hunter` poprawione.
+- **Poprawki po przeglądzie:** dekoder kodu v3 daje `old` tylko kodom v2 („2MAGE34…”) i v1 („MAGE34-…”), inny tekst =
+  błąd `format` (build zostaje, `planner.err.format`); `statystyki.mdx` / `stats.mdx` bez rang z poziomu (punkty pul,
+  talenty kierunków); DESIGN HUD: pasek 8 slotów puli; fixture planera z widocznością `Visibility.collect` jak
+  `skills.json`; testy limitu rangi (`invalid`) i ulepszenia bez zwieńczenia (`paths.error.upgrade`) bez pustych asercji.
+- **Dla właściciela:** decyzje z DESIGN-18 nadal otwarte: zwroty węzłów za złoto jak rangi (§3.2), publikacja kierunków
+  (zrobiona według §14, cofnięcie `wiki = false`), cele nie spełnione S146 / S147.
+- **Pliki:** `tools/WikiData/{Skills,Basics}.luau`, `src/shared/Data/Paths/{Cleric,Hunter,Mage,Warrior,Types}.luau`,
+  `src/shared/Logic/Skills.luau`, `src/server/Services/{PathService,SkillService,TitleService}.luau`,
+  `tests/{wikidump,paths,skills}.spec.luau`, `tests/BalanceTables.luau`, `wiki/src/lib/{skills,skills.test,classes}.ts`,
+  `wiki/src/islands/SkillPlanner.svelte`, `wiki/src/views/ClassView.astro`, `wiki/src/components/{SkillNode.svelte,
+  blocks/TitleTable.astro}`, `wiki/src/i18n/{pl,en}.ts`, `wiki/src/styles/components.css`,
+  `wiki/src/content/{guides,mechanics}/*`, `wiki/e2e/keyboard.e2e.ts`, `wiki/scripts/budgets.config.mjs`,
+  `wiki/src/data/*` (eksport), `wiki/test-fixtures/planner.json`, `docs/PRZEDMIOTY.md`,
+  `docs/{ROZWOJ,DESIGN,DESIGN-18,STATY,WIKI,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S149: Boss świata (rdzeń)
+
+- **Boss** (`Data/Bosses.hrimvald`, `world = true`, `minLevel = 80`): Hrimvald, Praojciec Olbrzymów, L100, `humanoid`,
+  `hpMul` 7,8 (stałe, bez skalowania z liczbą graczy), fazy 0,7 / 0,35, przyspieszenie fazy 3 ×1,2, wściekłość po
+  13 min, odejście po 15 min; pomocnicy faz 2–3 bez tarczy (3 `frozenKnight` + 3 `iceWolf` L95, bez łupu i EXP:
+  `Monster.noReward`). Wygląd `MonsterLooks.hrimvald` (dziedziczy `frostGiant`, korona z lodu, futro, naramienniki,
+  `size` 6), ruchy `BossMotions.hrimvald` (osobny styl na atak), dźwięki `boss.hrimvald.*` (bez ID).
+- **Ataki** (procent HP Maga L100 ze sprzętem konwencji, × `randomMax`):
+
+  | atak | kształt / cel | zapowiedź s | mnożnik | odnowienie s | fazy | HP Maga |
+  | --- | --- | --: | --: | --: | --: | --: |
+  | Pięść Praojca `fistSlam` | stożek 16 / 80° w cel zagrożenia | 1,4 | 3,5 | 14 | 1–3 | 40% (tank 28%) |
+  | Rzut Głazem `boulderToss` | krąg 6 pod losowym, dystans | 1,6 | 3,8 | 16 | 1–3 | 43% |
+  | Tąpnięcie Lodowca `glacierStomp` (unik) | krąg 16 wokół siebie | 2,2 | 7,3 | 22 | 1–3 | 83% |
+  | Lodowe Kolce `iceSpikes` (unik) | linia 50 × 7 do 3 losowych | 2,0 | 6,9 mag. | 20 | 1–3 | 73% |
+  | Lawina Praojca `avalanche` (unik) | krąg 9 pod 5 losowymi | 2,2 | 6,7 mag. | 24 | 2–3 | 71% |
+  | Kamień Rozbicia `shatterStone` (wspólny) | krąg 10 pod losowym | 3,5 | 64 | 30 | 1–3 | 724% razem: 10 w kręgu 73%, 7 → 105%, pusty krąg 62% każdemu |
+  | Piętno Mrozu `frostBrand` (piętno ×3) | krąg 10 za 3 naznaczonymi, 5 s | 1,2 | 6,8 mag. | 26 | 2–3 | inni 72%, naznaczony 31% |
+  | Wieczna Zima `endlessWinter` (kanał) | 6 s w miejscu, przerwanie 0,7% maks. HP, ogłuszenie 4 s | 6 | 8,6 mag. | 40 | 2–3 | 90% wszystkim |
+
+- **Terminy** (`Data/WorldBoss`, czysty `Logic/WorldBoss`): co 3 h od 02:00 UTC (02, 05, 08, 11, 14, 17, 20, 23) na
+  każdym serwerze świata naraz z zegara (`Util/Clock`), id `wbYYYYMMDDHH`, ogłoszenia 10 i 2 min przed, start, 15 min
+  walki, znacznik 60 s po końcu; żaden termin nie zahacza o Krwawy Księżyc (wt., czw. 18:50–19:30) ani start turnieju
+  (sob. 19:00); `occurrenceAt`, `next`, `list`, `blocked`, `phase`, `forced`.
+- **Serwis** `WorldBossService` (tylko `ServerMode.isWorld()`): pętla (boss co 0,1 s, harmonogram co 1 s, gałąź co
+  0,5 s przy zmianie), postawienie na `spots[1]` (płaskowyż Lodowej Strażnicy `(490, 360)`, `r` 70) przez
+  `Entities/Boss` z dostawcą `Services` otwartego świata (walczący = żywi gracze w `r + 30` na mapie), smycz `r`,
+  powrót bez leczenia (`Monster.keepHp`), odejście z efektem Tąpnięcia, ogłoszenia `worldboss.warn/spawn/slain/left`,
+  blokada Inwazji i Czempiona (`AddBlocker`), koło bez PvP (`PvpService.AddFightRule`, werdykt z własnym kluczem),
+  Auto Hunt staje w kole, licznik walki `"worldboss"`, analityka `WorldBossReward` / `WorldBossLegendary` / `Mythic`.
+- **Udział i nagroda:** `Logic/Contribution` (wspólny z S101, `Logic/WorldEvents` deleguje), bank z sygnałów
+  `MonsterDamaged` (boss i pomocnicy), `Healed`, `Intercepted` w kole; `WorldBoss.canReward` (`level`, `claimed`,
+  `share`), `account.worldBoss.last` zapisane przed nagrodą (jedna na konto i termin, terminy wymuszone osobno);
+  EXP 16 i złoto 24 „zabić” poziomu postaci, 2–4 Kryształy Esencji, 25% Rdzeń Legendy, jeden przedmiot Heroiczny 72 /
+  Legendarny 24 / Mityczny 4 (ilvl z poziomu w [80, 100], niezwiązany), plecak albo poczta; toasty `worldboss.reward`
+  i `worldboss.noReward.<powód>`. Gałąź `worldBoss`: `WorldBoss.Public` + `mine` (`points`, `pct`, `ok`, `reason`),
+  poza terminem `{ next }`.
+- **Piętno z `count`:** `BossMechanics.markCount` / `pickMarked` / `markTaken`, `Boss.startMark` naznacza kilku naraz
+  (S134 bez zmian przy `count = 1`).
+- **Admin:** `/worldboss info | start [now] | stop | hp <proc> | phase <n>`, `/sched` z trzema najbliższymi terminami.
+- **Model** (`Balance.targetsS149`, blok „Balance: world boss (S149)”, sekcja „Boss świata (S149)” w `docs/BALANS.md`):
+
+  | graczy | min | z węzłami | przerwanie s (limit 5,5) | wspólny cios na osobę | wynik |
+  | --: | --: | --: | --: | --: | --- |
+  | 5 (L100) | 22,5 | 19,9 | 9,3 | 1,45 | przegrywa |
+  | 10 (L99) | 11,6 | 10,2 | 4,8 | 0,73 | wygrywa |
+  | 15 (L99) | 7,7 | 6,8 | 3,2 | 0,49 | wygrywa |
+  | 20 (L99) | 5,8 | 5,1 | 2,4 | 0,37 | wygrywa |
+
+  Wielkie ciosy na Magu 0,73 (Wojownik 0,68), zwykłe 0,43, piętno 0,72 / 0,31, tank (model S32) 2,2 HP/min, pomocnicy
+  0,04 HP na członka; łup: Legendarne i Mityczne na godzinę gry 0,08–0,09 wobec Vaelgratha 0,54–0,56 na godzinę jego
+  wejścia i walki = 0,15 (cel ≤ 0,5); na dzień 2 h gry 0,75 trzech zabić Vaelgratha (raport). Wszystkie wiersze w
+  paśmie, bez trybu raportu poza wierszami „tylko raport”.
+- **Testy:** nowy `worldboss.spec` (terminy, blokada, faza, nagroda i jedna na termin, przedmiot, gałąź publiczna, PvP,
+  miejsce), `bossmechanics.spec` (piętno `count`), `worldevents.spec` (delegacja do `Logic/Contribution` na losowych
+  wkładach), `data.spec` (boss świata), testy ruchów, nazw ataków, wyglądu i G11 po `Bosses.all`.
+- wiki do odświeżenia (właściciel 17.10); strona bossa i eksport: S149b.
+- **Dla właściciela:** (1) PvP przy bossie świata: dziś wyłączone w kole walki (`Data/WorldBoss.pvpSafe`); w Margonem
+  przy tytanach bywa walka o łup, jedna linia danych to zmienia. (2) Próg 80 zamiast 70. (3) Łup na dzień przy 2 h gry to
+  ok. 0,75 Legendarnych i Mitycznych z trzech zabić Vaelgratha (cel F3 liczy godzinę walki Vaelgratha: 0,15); dźwignia:
+  `reward.rarity`. (4) Przedmiot niezwiązany (handel), jak łup bossa lochu.
+- **Po przeglądzie:** piętno na trzech: skasowanie jednego kręgu (śmierć, wyjście) zostawia pozostałe (klucz z `f`,
+  `GroundTelegraph.cancel` z prefiksem), komunikat w liczbie mnogiej; `/worldboss start` ostrzega raz; serwer
+  uruchomiony w czasie `linger` nie ogłasza odejścia bossa; `/boss spawn` i `/tp boss` nie biorą bossa świata;
+  `telegraph`, `motionkeys` i `sfx` spec po `Bosses.all`.
+- **Pliki:** `src/shared/Data/{Bosses,WorldBoss,BossMotions,MonsterLooks,Sfx,AdminCommands}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{WorldBoss,Contribution,WorldEvents,BossMechanics,
+  FightStats,AccountSchema}.luau`, `src/shared/Types.luau`, `src/server/Services/{WorldBossService,AdminService,
+  CombatService,PvpService,DungeonService}.luau`, `src/server/Entities/{Boss,Monster}.luau`,
+  `src/server/Admin/World.luau`, `src/client/Controllers/{MobVizController,CombatFxController}.luau`,
+  `src/client/Vfx/GroundTelegraph.luau`, `tests/{worldboss,bossmechanics,worldevents,bossmotions,data,
+  localization,anatomy,gait,balance,telegraph,motionkeys,sfx}.spec.luau`, `tests/Balance.luau`, `tools/{balance_reasons,balance_report}.luau`,
+  `tools/balance_before.json`, `docs/{BALANS,DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

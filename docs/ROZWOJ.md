@@ -7,7 +7,9 @@ streszczenie, które odsyła tutaj.
 
 - **S137: §2.4–2.6, 2.8–2.10, 3–5 zastąpione przez `docs/DESIGN-18.md`** (punkty umiejętności, pule broni, kierunki;
   pierwszeństwo: `docs/DECYZJE.md` > DESIGN-18 > ta część ROZWOJ). Reszta (przełomy §2.7, kategorie §7, szczęście §6,
-  wzory §8, klasy §9–12) dalej obowiązuje.
+  wzory §8, klasy §9–12) dalej obowiązuje. Seria S137–S148 zamknięta (stan: DESIGN-18 „Ustalenia S137–S148”):
+  „podstawa” klas z §9.2–12.2 to dziś pule broni (DESIGN-18 §6), „ścieżki” to kierunki bez ścieżki głównej i broni
+  ścieżki (§7), rangi kupuje się punktami (§3), wiki pokazuje pule i kierunki z planerem v3 (S148, `docs/WIKI.md`).
 - To jedyne źródło, według którego sesje przebudowy (fundament, potem Kapłan, potem Wojownik, Łowca i Mag) wdrażają
   nowy rozwój postaci, tak jak sesje wiki pracują według `docs/WIKI.md`, a sesje krain według `docs/SILNIKI.md`.
   Powstał z odpowiedzi właściciela na ankietę (sekcja 1), kodu `origin/main` 1aeb85b i diagnozy balansu.
@@ -358,6 +360,9 @@ Broń każdej ścieżki (uzasadnienie i pokrycie w sekcjach klas):
 
 ## 3. Model danych i mapa kodu
 
+> **Zastąpione przez `docs/DESIGN-18.md` §9–§11 i §14 (S137–S148).** Zostaje jako historia S53–S82: punkty z poziomu,
+> ścieżka główna, `rankFor` i kod v2 już nie istnieją.
+
 ### 3.1 Moduły
 
 | Moduł | Zmiana |
@@ -508,6 +513,8 @@ export type ReferenceBuild = {
 
 ## 4. Interfejs
 
+> **Zastąpione przez `docs/DESIGN-18.md` §12 (okno S139).** Historia S59.
+
 - PC: okno umiejętności (K) 920 × 640 (było 780 × 640). Nagłówek: „Zestaw 1 / Zestaw 2”, „Kopiuj”, wolne punkty,
   ścieżka główna. Zakładki: „Podstawa” i jedna na ścieżkę (nazwa, ikona broni, stan: główna, początki, zamknięta).
   Lewa część (ok. 520 px) to lista, prawa (ok. 360 px) szczegóły z podglądem 3D (S28).
@@ -544,6 +551,8 @@ export type ReferenceBuild = {
   sekcje klas i sekcja 14.
 
 ## 5. Migracja zapisu (schemat 5 → 6) i nowe postacie
+
+> **Zastąpione przez `docs/DESIGN-18.md` §10 (schemat 12, S137).** Historia S56.
 
 `AccountSchema.CURRENT = 6`, `MIGRATIONS[6]` (idempotentna, z ochroną typów jak S30), dla każdej postaci:
 - usuwa `skills` i `skillPoints` (rangi i punkty liczą się z poziomu);
@@ -792,6 +801,8 @@ czekają na koniec przebudowy, więc nie robią ich wcześniej; jeśli któryś 
 - Limit obszaru (R3, T-SK3): 2,0 dla wszystkich buildów; wyjątek do decyzji właściciela: Niszczyciel 3,0 (15.5).
 
 ## 9. Kapłan (Mana): Uzdrowiciel, Kapłan Fortuny, Inkwizytor
+
+> Podstawa i umiejętności Kapłana: DESIGN-18 §6.4 (S145).
 
 Id ścieżek: `healer`, `fortune`, `inquisitor`. Dane: `Data/Skills/Cleric.luau`, `Data/Paths/Cleric.luau`.
 
@@ -1166,6 +1177,8 @@ Pomiar był bez normalizacji broni (8).
 
 ## 10. Wojownik (Energia): Strażnik, Berserker, Chorąży
 
+> Podstawa i umiejętności Wojownika: DESIGN-18 §6.2 (S143).
+
 Id ścieżek: `guardian`, `berserker`, `standard`. Dane: `Data/Skills/Warrior.luau`, `Data/Paths/Warrior.luau`.
 
 ### 10.0 W skrócie
@@ -1293,7 +1306,7 @@ Przeniesione: Niezłomność `fortitude` (rząd 1, pasywka, maks. HP +4 → 20%,
 | 9 · 70 albo | Kara (`guardian_retribution`, passive, hak `interceptThorns`) | 10 / 20 / 30% przejętych obrażeń wraca do potwora, który uderzył |
 | 10 · 80 | Twierdza (`guardian_fortress`, modify `shieldWall` `mul.cooldown`) | ×0,92 / 0,84 / 0,75 (Mur Tarcz co 45 s) |
 | 10 · 80 | Weteran Frontu (`guardian_veteran`, passive pct `armor`, `maxHp`) | +1,5 / 3 / 4,5% (S89, było 4 / 8 / 12) |
-| 11 · 90 | Niewzruszony Mur (`guardian_shieldWall2`, modify `shieldWall`, 2 rangi) | +1 / 2 s, przechwycenie +2,5 / 5 pkt proc. (limit 30%) |
+| 11 · 90 | Niezłomny Bastion (`guardian_lastBastion2`, modify `lastBastion`, 2 rangi; S143, było Niewzruszony Mur) | Ostatni Bastion +1 / 2 s, redukcja +2,5 / 5 pkt proc. |
 
 - Drużyna: przechwyt (bez kategorii, 7.6), Osłona i Bastion Drużyny (`allyGuard`), Tarcza Drużyny (tarcza),
   prowokacja. Początki dla innych: Niezłomność, Pierwsza Linia (obie z każdą bronią), Blok (tylko z tarczą), Osłona w
@@ -1353,7 +1366,7 @@ Przeniesione: Rozpłatanie `cleave` (rząd 1; 140 → 168% (S89, było 250; rang
 |---|---|---|
 | 1 · 10 | Rozpłatanie (`berserker_cleave`, skill) | przeniesiona A |
 | 1 · 10 | Głębokie Rany (`berserker_wounds`, passive, hak `bleedDamage`) | +10 / 20 / 30% wszystkich krwawień Wojownika |
-| 2 · 15 | Bitewny Rytm (`berserker_rhythm`, passive, haki `furyMax`, `furySpeed = 1`) | Furia do 4 / 7 / 10 stosów; każdy stos +1% szybkości ataku |
+| 2 · 15 | Bitewny Rytm (`berserker_rhythm`, passive, haki `furyMax`, `furySpeed = 1`) | z pasywką Furia (6 stosów, S143) limit 8 / 9 / 10; każdy stos +1% szybkości ataku |
 | 2 · 15 | Żądza Krwi (`berserker_bloodthirst`, modify `bloodlust`, nowe `extendOnKill`) | Krwawy Szał +1 s za zabójstwo, najwyżej +2 / 4 / 6 s |
 | 3 · 20 albo | Amok (`berserker_amok`, passive, hak `furySpeed`) | +1 / 1,5 / 2% szybkości za stos (razem do 3%, +30% przy 10) |
 | 3 · 20 albo | Zajadłość (`berserker_ferocity`, passive, hak `furyDamage`) | +0,4 / 0,8 / 1,2% obrażeń za stos (do +12% przy 10) |
@@ -1524,6 +1537,8 @@ Po normalizacji, poziomy 20 / 45 / 70 / 100 (×Berserker):
    nazwać „Obrońcy” (15.3).
 
 ## 11. Łowca (Energia): Strzelec Wyborowy, Traper, Zwiadowca
+
+> Podstawa i umiejętności Łowcy: DESIGN-18 §6.3 (S144).
 
 Id ścieżek: `marksman`, `trapper`, `scout`. Dane: `Data/Skills/Hunter.luau`, `Data/Paths/Hunter.luau`. Wszystkie liczby
 w tej sekcji liczą się z normalizacją obrażeń umiejętności do szybkości broni (8, `Combat.skillSpeedRef = 0.8`); bez
@@ -2645,3 +2660,7 @@ oraz dla przechwytu i tarcz pochłaniających; cel Inkwizytora względem Berserk
 obrażeń umiejętności do szybkości broni, także dla trafień umiejętności (`DealOptions.multiplier`) i jako warunek sesji
 Wojownika i Maga; reguła broni dwuręcznej w `Paths.weaponOk`; miara celu many (zapotrzebowanie / regeneracja z
 biernymi zwrotami, bez Inwokacji).
+
+Seria „Umiejętności 2.0” (S137–S148, `docs/DESIGN-18.md`) zastąpiła §2.4–2.6, 2.8–2.10 i 3–5: punkty umiejętności na
+pulę broni, pule z bronią według wspólnej drabiny, kierunki bez ścieżki głównej z jednym zwieńczeniem, pasek 8 na pulę,
+balans 21–100 nowymi buildami (S146, S147), wiki z pulami, kierunkami i planerem v3 (S148).

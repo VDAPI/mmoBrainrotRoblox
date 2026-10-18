@@ -485,7 +485,7 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   Mityczny) + złoto ilvl × `Upgrade.goldPerIlvl` × 1,8, × min(1 + 0,25 n, 3) za n wcześniejszych prób; Kamień Przemiany
   płaci pył jednej próby. Przemiana nie zmienia ulepszenia ani wartości przedmiotu.
 - `Logic/ItemValue` bez zmian (cena od poziomu, rzadkości i ulepszenia). `Logic/ItemScore` („Lepszy przedmiot”)
-  dostaje wagi dla każdej nowej linii i cechy według klasy i ścieżki głównej; linie sytuacyjne liczą się w połowie.
+  dostaje wagi dla każdej nowej linii i cechy według klasy i kierunku przewodniego (S138); linie sytuacyjne liczą się w połowie.
 
 ## 11. Opis przedmiotu na telefonie
 

@@ -8,7 +8,7 @@
 -- Shape: Data/Paths/Warrior (S75) and Hunter (S78). Hooks are the S79 / S80 names (Skills/Context, SkillService,
 -- Skills/Elements, StatusEffectService, Logic/Skills.cost). Weapons split strictly as in 12.1 (STATY 3). No Mage node
 -- gives a party effect, so none needs dipScale. `reference` and `itemWeights` never reach the wiki; both paths are
--- unpublished there (wiki = false, ROZWOJ 3.5).
+-- published there since S148 (DESIGN-18 §14).
 
 local SkillData = require("../Skills")
 local Types = require("./Types")
@@ -207,7 +207,6 @@ local destroyer: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local arcanist: Types.PathDef = {
@@ -356,7 +355,6 @@ local arcanist: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 -- Model builds (ROZWOJ 7.5, 12.4, 12.5, 12.7; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50
@@ -372,10 +370,12 @@ local function build(
 	rotation: { { [string]: any } },
 	areaCap: number?,
 	element: string?,
-	ranks: { string }?
+	ranks: { string }?,
+	bar: { string }?
 ): Types.ReferenceBuild
 	return {
 		id = id,
+		bar = bar,
 		areaCap = areaCap,
 		weapon = { main = main, element = element },
 		nodes = nodes,
@@ -572,11 +572,11 @@ local FIRE_SINGLE_RANKS = {
 	"arcaneDischarge",
 	"immolate",
 	"combustion",
-	"evocation",
 	"focus",
 	"phoenixHeart",
 	"arcaneTorrent",
 	"meteorStorm",
+	"evocation",
 	"blink",
 	"emberShield",
 	"manaShield",
@@ -611,12 +611,12 @@ local ICE_SINGLE_RANKS = {
 	"arcaneDischarge",
 	"deepFreeze",
 	"shatter",
-	"evocation",
 	"focus",
 	"frozenOrb",
 	"iceBlood",
 	"arcaneTorrent",
 	"blizzard",
+	"evocation",
 	"blink",
 	"iceBarrier",
 	"manaShield",
@@ -651,15 +651,88 @@ local LIGHTNING_SINGLE_RANKS = {
 	"arcaneDischarge",
 	"firewall",
 	"lightningLance",
-	"evocation",
 	"focus",
 	"conductor",
 	"ballLightning",
 	"arcaneTorrent",
 	"tempest",
+	"evocation",
 	"blink",
 	"stormArmor",
 	"manaShield",
+}
+
+-- S147 (DESIGN-18 §4.1, §13): the 8 slots of the bar of the element variants in priority (the first ones the character
+-- can cast at a level); the mean builds of three elements cast at most 8 actives of one pool anyway
+local FIRE_AREA_BAR = {
+	"meteorStorm",
+	"cataclysm",
+	"elementalVortex",
+	"meteor",
+	"flameWave",
+	"combustion",
+	"fireball",
+	"pyroblast",
+	"immolate",
+	"firebolt",
+}
+local FIRE_SINGLE_BAR = {
+	"arcaneTorrent",
+	"arcaneDischarge",
+	"pyroblast",
+	"immolate",
+	"combustion",
+	"meteor",
+	"fireball",
+	"firebolt",
+	"evocation",
+}
+local ICE_AREA_BAR = {
+	"blizzard",
+	"cataclysm",
+	"elementalVortex",
+	"frozenOrb",
+	"hailstorm",
+	"frostNova",
+	"glacialSpike",
+	"deepFreeze",
+	"shatter",
+	"iceShard",
+}
+local ICE_SINGLE_BAR = {
+	"arcaneTorrent",
+	"arcaneDischarge",
+	"deepFreeze",
+	"glacialSpike",
+	"shatter",
+	"frostNova",
+	"iceShard",
+	"frozenOrb",
+	"hailstorm",
+	"evocation",
+}
+local LIGHTNING_AREA_BAR = {
+	"tempest",
+	"cataclysm",
+	"elementalVortex",
+	"firewall",
+	"ballLightning",
+	"chainLightning",
+	"thunderStrike",
+	"lightningLance",
+	"staticShock",
+	"lightningBolt",
+}
+local LIGHTNING_SINGLE_BAR = {
+	"arcaneTorrent",
+	"arcaneDischarge",
+	"thunderStrike",
+	"lightningLance",
+	"staticShock",
+	"firewall",
+	"chainLightning",
+	"lightningBolt",
+	"evocation",
 }
 
 destroyer.reference = {
@@ -739,7 +812,8 @@ destroyer.reference = {
 		},
 		3.0,
 		"fire",
-		FIRE_AREA_RANKS
+		FIRE_AREA_RANKS,
+		FIRE_AREA_BAR
 	),
 	-- S141: the Destroyer with an ice weapon (the ice pool alone): area and slows first, freezes for Shatter
 	build(
@@ -762,7 +836,8 @@ destroyer.reference = {
 		},
 		3.0,
 		"ice",
-		ICE_AREA_RANKS
+		ICE_AREA_RANKS,
+		ICE_AREA_BAR
 	),
 	-- S142: the Destroyer with a lightning weapon (the lightning pool alone): area first, jumps and bolts
 	build(
@@ -785,7 +860,8 @@ destroyer.reference = {
 		},
 		3.0,
 		"lightning",
-		LIGHTNING_AREA_RANKS
+		LIGHTNING_AREA_RANKS,
+		LIGHTNING_AREA_BAR
 	),
 }
 
@@ -868,7 +944,8 @@ arcanist.reference = {
 		},
 		nil,
 		"fire",
-		FIRE_SINGLE_RANKS
+		FIRE_SINGLE_RANKS,
+		FIRE_SINGLE_BAR
 	),
 	-- S141: the Arcanist with an ice weapon: one target, Deep Freeze then Glacial Spike and Shatter on the frozen target
 	build(
@@ -891,7 +968,8 @@ arcanist.reference = {
 		},
 		nil,
 		"ice",
-		ICE_SINGLE_RANKS
+		ICE_SINGLE_RANKS,
+		ICE_SINGLE_BAR
 	),
 	-- S142: the Arcanist with a lightning weapon: one target, Thunder Strike and the sure crit of the Lance
 	build(
@@ -913,7 +991,8 @@ arcanist.reference = {
 		},
 		nil,
 		"lightning",
-		LIGHTNING_SINGLE_RANKS
+		LIGHTNING_SINGLE_RANKS,
+		LIGHTNING_SINGLE_BAR
 	),
 }
 

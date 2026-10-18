@@ -868,7 +868,10 @@ function BalanceTables.tables1_20(): { Table }
 		for _, L in { 10, 15, 20 } do
 			local ranks = 0
 			for _, def in SkillData.byClass[c] do
-				ranks += Skills.rankFor(c, L, def)
+				-- S148: the rank limit of the base skills (ranks are bought since S137; Skills.rankFor is gone)
+				if def.path == nil then
+					ranks += Skills.rankAt(def, L)
+				end
 			end
 			row(`rangi podstawy {c} L{L}`, { { ranks, "i" } }, false)
 		end

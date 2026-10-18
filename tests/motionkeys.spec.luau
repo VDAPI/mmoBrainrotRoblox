@@ -178,7 +178,7 @@ end)
 
 T.describe("MotionKeys: monsters, bosses, clips", function()
 	T.it("every boss attack: hit = strikePeak = windup (S117), end = attackLength", function()
-		for _, boss in Bosses.list do
+		for _, boss in Bosses.all do
 			for _, attack in boss.attacks do
 				local keys = MotionKeys.boss(boss.id, attack.id) :: MotionKeys.Keys
 				checkShape(`{boss.id}.{attack.id}`, keys)

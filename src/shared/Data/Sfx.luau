@@ -253,6 +253,15 @@ local OWN: { [string]: Own } = {
 	warBanner = { hint = "pole planted ground cloth flap", roll = 110, ids = { COLLIDE }, pitch = HEAVY },
 	crushingBlow = { hint = "heavy armor crush impact", roll = 70, ids = { BASS, COLLIDE }, pitch = LOW },
 	advanceOrder = { hint = "war horn blow ground hit", roll = 120 },
+	-- S143 (DESIGN-18 §6.2): the Warrior pools' new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
+	-- fall back to the kind's default (Logic/SfxRules.skillKey)
+	shieldSweep = { hint = "shield edge sweep whoosh thud", roll = 80 },
+	shieldBash = { hint = "shield bash metal clang", roll = 70 },
+	vindicate = { hint = "heavy righteous sword strike ring", roll = 80 },
+	brutalStrike = { hint = "heavy two-handed axe chop", roll = 70 },
+	sunder = { hint = "armor crack metal break", roll = 70 },
+	warStomp = { hint = "heavy stomp ground thud shockwave", roll = 110 },
+	execute = { hint = "brutal finishing chop heavy", roll = 80 },
 	-- Cleric
 	holyStrike = { hint = "holy bell strike chime", roll = 80, ids = { SELECT_02 }, pitch = MID },
 	heal = { hint = "warm healing chord chime", roll = 80, ids = { CUTE_GOODBYE } },
@@ -272,6 +281,15 @@ local OWN: { [string]: Own } = {
 	brandOfLight = { hint = "searing hiss small bell", roll = 80 },
 	auraOfEndurance = { hint = "low organ chord", roll = 110 },
 	hammerOfHeaven = { hint = "rising whoosh thunder impact divine", roll = 120, ids = { BASS }, pitch = LOW },
+	-- S145 (DESIGN-18 §6.4): the Cleric pools' new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
+	-- fall back to the kind's default (Logic/SfxRules.skillKey)
+	lightRay = { hint = "short holy beam zap chime", roll = 80 },
+	blindingLight = { hint = "bright flash shimmer high chord", roll = 90 },
+	miracle = { hint = "rising choir long holy swell", roll = 110 },
+	consecrate = { hint = "holy ground hum low bell pulses", roll = 100 },
+	holyChains = { hint = "chains rattle with holy chime", roll = 90 },
+	holyNova = { hint = "holy burst whoosh bright chord", roll = 110 },
+	rebuke = { hint = "forceful holy push whoosh thud", roll = 90 },
 	-- Hunter (S115): a shot plays at the release (the hit's material comes with its damage), an area at its blow.
 	-- roll: shots 80-100, areas 100-120 (S115 B5)
 	aimedShot = { hint = "powerful bow release deep twang", roll = 90, ids = { SNAP }, pitch = { 0.85, 0.87 } },
@@ -291,6 +309,13 @@ local OWN: { [string]: Own } = {
 	falcon = { hint = "falcon screech bird call", roll = 110, ids = { WHISTLE_LOW }, pitch = { 1, 1.08 } },
 	huntersMark = { hint = "short hunter whistle", roll = 90, ids = { WHISTLE_LOW }, pitch = { 1.13, 1.15 } },
 	drive = { hint = "hunting horn and arrows whistle", roll = 120, ids = { WHOOSH_01, SWOOSH }, pitch = HEAVY },
+	-- S144 (DESIGN-18 §6.3): the Hunter pools' new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
+	-- fall back to the kind's default (Logic/SfxRules.skillKey)
+	heavyBolt = { hint = "heavy crossbow thunk bolt release", roll = 90 },
+	pinningShot = { hint = "bow release arrow thud into ground", roll = 90 },
+	windstep = { hint = "quick wind gust whoosh light steps", roll = 70 },
+	netShot = { hint = "crossbow thunk net whoosh rope slap", roll = 100 },
+	deadlyBolt = { hint = "deadly crossbow release hiss impact", roll = 100 },
 	-- Mage (S115): the element is heard in the hit (hit.<material>); spells by their shape
 	firebolt = { hint = "magic bolt fsst short", roll = 90, ids = { SWEEP }, pitch = { 1.02, 1.1 } },
 	fireball = { hint = "fireball explosion impact", roll = 120, ids = { BASS }, pitch = HEAVY },
@@ -469,8 +494,15 @@ local BOSS_HINTS: { [string]: { roar: string, attack: string, death: string, pha
 		death = "dragon death roar long",
 		phase = "deep gong boom impact",
 	},
+	-- S149: the world boss
+	hrimvald = {
+		roar = "giant roar deep huge",
+		attack = "heavy stone impact ice crack",
+		death = "giant death groan fall",
+		phase = "deep war horn boom",
+	},
 }
-for _, boss in Bosses.list do
+for _, boss in Bosses.all do -- S149: the world boss too
 	local hints = BOSS_HINTS[boss.id] or BOSS_HINTS.vaelgrath
 	defs[`boss.{boss.id}.roar`] = d(hints.roar, 0.8, 200, { cooldown = 3, pitch = BOSS_PITCH })
 	defs[`boss.{boss.id}.attack`] = d(hints.attack, 0.8, 200, { pitch = BOSS_PITCH })

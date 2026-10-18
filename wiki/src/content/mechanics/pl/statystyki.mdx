@@ -15,7 +15,7 @@ Postać ma cztery atrybuty: **Siłę**, **Zręczność**, **Intelekt** i **Wital
 
 ## Punkty za poziom
 
-Za każdy awans dostajesz <Stat path="progression.statPointsPerLevel" /> punktów atrybutów do rozdania w oknie Plecaka (<Key action="win_inventory" />). Rangi umiejętności rosną same z poziomem postaci (maksimum najpóźniej na poziomie <Stat path="skills.rules.ranks.capLevel" />); w oknie Umiejętności (<Key action="win_skills" />) widzisz, od którego poziomu przyjdzie następna ranga. Co <Stat path="skills.rules.pathPointsEvery" /> poziomy dostajesz punkt ścieżki klasy, który wydajesz w oknie Umiejętności na węzły ścieżek (statystyki, zmiany umiejętności, aury drużyny).
+Za każdy awans dostajesz <Stat path="progression.statPointsPerLevel" /> punktów atrybutów do rozdania w oknie Plecaka (<Key action="win_inventory" />). Rangi umiejętności kupujesz punktami umiejętności: każda pula broni ma ich <Stat path="skills.rules.skillPointsByLevel.0" /> na pierwszym poziomie i jeden więcej z każdym awansem, a limit rangi rośnie z poziomem; w oknie Umiejętności (<Key action="win_skills" />) widzisz, od którego poziomu można kupić następną rangę. Co <Stat path="skills.rules.pathPointsEvery" /> poziomy dostajesz punkt talentu, który wydajesz w tym samym oknie na węzły kierunków (statystyki, zmiany umiejętności, aury drużyny).
 
 ## Wzory
 
@@ -35,4 +35,4 @@ Niektóre statystyki mają górną granicę. Nadmiar ponad limit nic nie daje, w
 
 ## Reset punktów
 
-Rozdane punkty atrybutów cofniesz <Item id="scroll_oblivion" />: kupisz go u nauczyciela w mieście, a cena rośnie z poziomem. <Item id="scroll_skillreset" /> zmienia ścieżkę główną klasy; kupisz go w sklepie premium.
+Rozdane punkty atrybutów cofniesz <Item id="scroll_oblivion" />: kupisz go u nauczyciela w mieście, a cena rośnie z poziomem. <Item id="scroll_skillreset" /> resetuje naraz rangi wszystkich pul broni i węzły kierunków; sprzedaje go nauczyciel i sklep premium.

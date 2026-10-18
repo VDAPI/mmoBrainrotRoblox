@@ -1,42 +1,87 @@
-// Skill planner rules (S82): parity with Logic/Paths (vectors computed in Lune), view models and build code v2. The
-// test paths come from wiki/test-fixtures/planner.json (tests/fixtures/paths.luau, never on the wiki); the game data
-// from src/data through load().
+// Skill planner v3 (S148): parity with Logic/SkillPoints and Logic/Paths (vectors computed in Lune, written to
+// wiki/test-fixtures/planner.json: the test paths of tests/fixtures/paths.luau, the published directions of the game and
+// skill-point states and reservations on the game data), view models and build code v3.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import type { SkillPath, SkillPathVectors } from "../data/types";
-import { pathsOf, ruleSkill } from "./classes";
+import type { SkillPath } from "../data/types";
+import { classes as classList, planCtxOf, ruleSkill } from "./classes";
 import { load } from "./data";
 import {
   BUY_ERRORS,
   REFUND_ERRORS,
+  SKILL_ERRORS,
   achievable,
-  canBuy,
-  canRefund,
+  addNodeRank,
+  addSkillRank,
+  applyPlan,
+  barOf,
+  bought,
+  bpOrder,
+  canBuyNode,
+  canBuySkill,
+  canRefundNode,
+  canonical,
   decodeBuild,
+  emptyBuild,
   encodeBuild,
-  free,
+  freeIn,
+  leadingOf,
+  pathFree,
   pathView,
-  pruneChoices,
+  poolTree,
   rankAt,
-  setMain,
+  rankOf,
+  tileView,
+  toggleBar,
   validate,
   variantKey,
-  type CodeCtx,
-  type PathRules,
   type PlanBuild,
-  type RulePath,
-  type RuleSkill,
+  type PlanCtx,
 } from "./skills";
 
+interface PathState {
+  class: string;
+  level: number;
+  nodes: Record<string, number>;
+  free: number;
+  leading?: string;
+  results: { node: string; ok: boolean; reason?: string; refund: boolean; refundReason?: string }[];
+}
+interface PathVectors {
+  states: PathState[];
+  builds: { class: string; level: number; nodes: Record<string, number>; achievable: boolean }[];
+}
+interface PointState {
+  class: string;
+  level: number;
+  pool: string;
+  ranks: Record<string, Record<string, number>>;
+  nodes: Record<string, number>;
+  free: number;
+  results: { skill: string; ok: boolean; reason?: string }[];
+}
+interface PointPlan {
+  class: string;
+  level: number;
+  pool: string;
+  ranks: Record<string, Record<string, number>>;
+  nodes: Record<string, number>;
+  plan: Record<string, number>;
+  ok: boolean;
+  reason?: string;
+}
+interface Fixture {
+  paths: SkillPath[];
+  vectors: PathVectors;
+  game: PathVectors;
+  skills: { states: PointState[]; plans: PointPlan[] };
+}
+
 const file = load("skills");
-const rules: PathRules = {
-  maxLevel: file.rules.maxLevel,
-  pathPointsByLevel: file.rules.pathPointsByLevel,
-  mainPathLevel: file.rules.mainPathLevel,
-  dipRows: file.rules.dipRows,
-};
-const fixture = JSON.parse(readFileSync("test-fixtures/planner.json", "utf8")) as { paths: SkillPath[]; vectors: SkillPathVectors };
-const classes = load("classes").classes.map((c) => c.id);
+const fixture = JSON.parse(readFileSync("test-fixtures/planner.json", "utf8")) as Fixture;
+const classIds = classList().map((c) => c.id);
+const ctxOf = new Map<string, PlanCtx>(classIds.map((id) => [id, planCtxOf(id)]));
+const rules = ctxOf.get(classIds[0])!.rules;
 
 // Deterministic pseudo-random numbers (xorshift).
 function rng(seed: number): (n: number) => number {
@@ -49,24 +94,29 @@ function rng(seed: number): (n: number) => number {
   };
 }
 
-const plan = (level: number, main: string | null = null, nodes: Record<string, number> = {}, bp: PlanBuild["bp"] = {}): PlanBuild => ({
+const plan = (level: number, nodes: Record<string, number> = {}, ranks: PlanBuild["ranks"] = {}, bp: PlanBuild["bp"] = {}, bars: PlanBuild["bars"] = {}): PlanBuild => ({
   level,
-  main,
+  ranks,
   nodes,
   bp,
+  bars,
 });
 
-function parity(paths: RulePath[], vectors: SkillPathVectors): { buy: Set<string>; refund: Set<string>; reached: Set<boolean> } {
+/** canBuy / canRefund / free / leading of every state and achievable of every build; the reasons seen. */
+function pathParity(ctxFor: (classId: string) => PlanCtx, vectors: PathVectors): { buy: Set<string>; refund: Set<string>; reached: Set<boolean>; leading: Set<string> } {
   const buy = new Set<string>();
   const refund = new Set<string>();
+  const leading = new Set<string>();
   for (const state of vectors.states) {
-    const own = paths.filter((p) => p.class === state.class);
-    const build = plan(state.level, state.main ?? null, { ...state.nodes });
-    expect(free(own, rules, build), `free at ${state.level}`).toBe(state.free);
+    const ctx = ctxFor(state.class);
+    const build = plan(state.level, { ...state.nodes });
+    expect(pathFree(ctx, build), `free at ${state.level}`).toBe(state.free);
+    expect(leadingOf(ctx, build.nodes), `leading ${JSON.stringify(state.nodes)}`).toBe(state.leading ?? null);
+    leading.add(state.leading ?? "-");
     for (const r of state.results) {
-      const b = canBuy(own, rules, build, r.node);
-      const f = canRefund(own, rules, build, r.node);
-      const where = `${state.class} lv ${state.level} main ${state.main ?? "-"} ${r.node}`;
+      const b = canBuyNode(ctx, build, r.node);
+      const f = canRefundNode(ctx, build, r.node);
+      const where = `${state.class} lv ${state.level} ${r.node}`;
       expect({ ok: b.ok, reason: b.reason ?? null }, where).toEqual({ ok: r.ok, reason: r.reason ?? null });
       expect({ ok: f.ok, reason: f.reason ?? null }, where).toEqual({ ok: r.refund, reason: r.refundReason ?? null });
       buy.add(r.reason ?? "ok");
@@ -75,144 +125,94 @@ function parity(paths: RulePath[], vectors: SkillPathVectors): { buy: Set<string
   }
   const reached = new Set<boolean>();
   for (const b of vectors.builds) {
-    const own = paths.filter((p) => p.class === b.class);
-    const build = plan(b.level, b.main ?? null, { ...b.nodes });
-    expect(achievable(own, rules, build), `${b.class} lv ${b.level} ${JSON.stringify(b.nodes)}`).toBe(b.achievable);
+    const ctx = ctxFor(b.class);
+    expect(achievable(ctx, plan(b.level, { ...b.nodes })), `${b.class} lv ${b.level} ${JSON.stringify(b.nodes)}`).toBe(b.achievable);
     reached.add(b.achievable);
   }
-  return { buy, refund, reached };
+  return { buy, refund, reached, leading };
 }
 
-describe("planner rules on the test paths (wiki/test-fixtures/planner.json)", () => {
-  const paths: RulePath[] = fixture.paths;
+describe("direction rules on the test paths (wiki/test-fixtures/planner.json)", () => {
+  const paths = fixture.paths;
+  const ctx: PlanCtx = { classId: "Mage", skills: [], pools: [], paths, rules };
   const storm = paths.find((p) => p.id === "fxStorm")!;
-  const rune = paths.find((p) => p.id === "fxRune")!;
 
-  it("canBuy, canRefund, free and achievable match Logic/Paths, with every reason key", () => {
-    const seen = parity(paths, fixture.vectors);
+  it("canBuy, canRefund, free, mainOf and achievable match Logic/Paths, with every reason key", () => {
+    const seen = pathParity((classId) => ({ ...ctx, classId, paths: paths.filter((p) => p.class === classId) }), fixture.vectors);
     expect([...seen.buy].sort()).toEqual([...BUY_ERRORS, "ok"].sort());
     expect([...seen.refund].sort()).toEqual([...REFUND_ERRORS, "ok"].sort());
     expect(seen.reached).toEqual(new Set([true, false]));
+    expect(seen.leading.size).toBeGreaterThan(1);
   });
 
-  it("pathView gives the reasons of closed rows, choice rows and the 1/3 strength", () => {
-    expect(pathView(storm, paths, rules, plan(14)).rows[1].reason).toBe("level");
-    const at40 = plan(40, "fxStorm");
-    expect(pathView(rune, paths, rules, at40).rows[2].reason).toBe("main");
+  it("pathView gives the reasons of closed rows, choice rows and the reduced strength below teamFullPoints", () => {
+    expect(pathView(ctx, storm, plan(14)).rows[1].reason).toBe("level");
     const row1 = Object.fromEntries(storm.rows[0].nodes.map((n) => [n.id, n.maxRank]));
-    const chosen = plan(40, "fxStorm", { ...row1, [storm.rows[2].nodes[0].id]: 1 });
-    const third = pathView(storm, paths, rules, chosen).rows[2];
-    expect(third.open).toBe(true);
-    expect(third.nodes[1].buy).toEqual({ ok: false, reason: "paths.error.choice" });
-    expect(third.nodes[1].state).toBe("locked");
-    expect(third.nodes[0].state).not.toBe("locked");
-    const dipNode = rune.rows.flatMap((r) => r.nodes).find((n) => n.dipScale !== undefined) ?? storm.rows.flatMap((r) => r.nodes).find((n) => n.dipScale !== undefined)!;
-    const owner = dipNode.id.startsWith("fxRune") ? rune : storm;
-    const notMain = plan(40, owner === storm ? "fxRune" : "fxStorm");
-    const view = pathView(owner, paths, rules, notMain).rows.flatMap((r) => r.nodes).find((n) => n.id === dipNode.id)!;
-    expect(view.dip).toBe(true);
-    const asMain = pathView(owner, paths, rules, plan(40, owner.id)).rows.flatMap((r) => r.nodes).find((n) => n.id === dipNode.id)!;
-    expect(asMain.dip).toBe(false);
-  });
-
-  it("an unreachable node is invalid and validate counts points over the level", () => {
-    const build = plan(10, null, { fxStorm_focus: 3, fxStorm_beacon: 1 });
-    const view = pathView(storm, paths, rules, build);
-    expect(view.rows[1].nodes[0].invalid).toBe(true);
-    expect(validate(paths, rules, build).unreached).toEqual(["fxStorm_beacon"]);
-    expect(validate(paths, rules, plan(2, null, { fxStorm_focus: 3 })).over).toBe(2);
-    expect(validate(paths, rules, plan(19, "fxStorm")).mainOk).toBe(false);
-  });
-
-  it("setMain refunds rows above dipRows of the old main path", () => {
-    const nodes: Record<string, number> = { fxStorm_focus: 3, fxStorm_fxSpark: 1, fxStorm_surge: 1, fxRune_r2a: 2 };
-    const moved = setMain(paths, rules, plan(40, "fxStorm", nodes), "fxRune");
-    expect(moved.main).toBe("fxRune");
-    expect(moved.nodes).toEqual({ fxStorm_focus: 3, fxStorm_fxSpark: 1, fxRune_r2a: 2 });
-    expect(setMain(paths, rules, plan(40, "fxStorm", nodes), null).nodes.fxStorm_surge).toBeUndefined();
-  });
-
-  it("pruneChoices drops the A/B of a path skill whose node has no rank, so the code carries the whole build", () => {
-    const bought = plan(40, "fxStorm", { fxStorm_fxSpark: 1 }, { "fxSpark:5": "b", "b1:5": "b" });
-    expect(pruneChoices(paths, bought)).toBe(bought);
-    const refunded = plan(40, "fxStorm", {}, { "fxSpark:5": "b", "b1:5": "b" });
-    expect(pruneChoices(paths, refunded).bp).toEqual({ "b1:5": "b" });
-  });
-
-  const fakeBase: RuleSkill[] = [
-    { id: "b1", order: 1, unlock: 1, maxLevel: 10, passive: false, rankLevels: [], hasB: { 5: true, 10: true } },
-    { id: "b2", order: 2, unlock: 1, maxLevel: 10, passive: false, rankLevels: [], hasB: { 5: true, 10: false } },
-    { id: "b3", order: 3, unlock: 1, maxLevel: 5, passive: true, rankLevels: [], hasB: { 5: false, 10: false } },
-  ];
-  const ctx: CodeCtx = { classId: "Mage", maxLevel: rules.maxLevel, skills: fakeBase, paths };
-
-  it("build code v2 round trips 50 random builds with nodes, a main path and path skill breakpoints", () => {
-    const rand = rng(82);
-    const all = paths.flatMap((p) => p.rows.flatMap((r) => r.nodes));
-    for (let i = 0; i < 50; i++) {
-      const build = plan(1 + rand(rules.maxLevel), [null, "fxStorm", "fxRune"][rand(3)]);
-      for (const n of all) {
-        const rank = rand(n.maxRank + 2) - 1;
-        if (rank > 0) build.nodes[n.id] = Math.min(rank, n.maxRank);
-        if (n.kind === "skill" && n.skill && build.nodes[n.id] && n.skillB?.includes(5) && rand(2)) build.bp[`${n.skill}:5`] = "b";
-      }
-      if (rand(2)) build.bp["b1:5"] = "b";
-      if (rand(2)) build.bp["b1:10"] = "b";
-      if (rand(2)) build.bp["b2:5"] = "b";
-      const code = encodeBuild(ctx, build);
-      expect(decodeBuild(code, ctx), code).toEqual({ ok: true, build });
-      expect(decodeBuild(code.toLowerCase().split("").join(" "), ctx)).toEqual({ ok: true, build });
+    const choiceRow = storm.rows.find((r) => r.choice)!;
+    let nodes: Record<string, number> = { ...row1 };
+    for (const r of storm.rows.slice(1, choiceRow.row - 1)) for (const n of r.nodes) nodes[n.id] = n.maxRank;
+    nodes = { ...nodes, [choiceRow.nodes[0].id]: 1 };
+    const view = pathView(ctx, storm, plan(rules.maxLevel, nodes)).rows[choiceRow.row - 1];
+    expect(view.open).toBe(true);
+    expect(view.nodes[1].buy).toEqual({ ok: false, reason: "paths.error.choice" });
+    const dipNode = paths.flatMap((p) => p.rows.slice(0, rules.dipRows).flatMap((r) => r.nodes)).find((n) => n.dipScale !== undefined);
+    if (dipNode) {
+      const owner = paths.find((p) => p.rows.some((r) => r.nodes.some((n) => n.id === dipNode.id)))!;
+      const low = pathView(ctx, owner, plan(40)).rows.flatMap((r) => r.nodes).find((n) => n.id === dipNode.id)!;
+      expect(low.dip).toBe(true);
     }
   });
 
-  it("encodes the canonical form and decodes missing segments as zeros", () => {
-    expect(encodeBuild(ctx, plan(34))).toBe("2MAGE34.0");
-    expect(encodeBuild(ctx, plan(34, null, {}, { "b1:5": "b" }))).toBe("2MAGE34.0.1");
-    expect(encodeBuild(ctx, plan(34, null, {}, { "b2:5": "b" }))).toBe("2MAGE34.0.01");
-    expect(encodeBuild(ctx, plan(10, null, { fxRune_fxGlyph: 1 }))).toBe("2MAGE10.0...1");
-    expect(decodeBuild("2MAGE34", ctx)).toEqual({ ok: true, build: plan(34) });
-    expect(decodeBuild("2MAGE34.0.10.000.", ctx)).toEqual({ ok: true, build: plan(34, null, {}, { "b1:5": "b" }) });
-    // fxSpark has option B only at rank 5: digit 2 (bought + B at 5) passes, 3 (also B at 10) does not
-    const spark = storm.rows[0].nodes.findIndex((n) => n.skill === "fxSpark");
-    expect(storm.rows[0].nodes[spark].skillB).toEqual([5]);
-    const seg = (d: string): string => "0".repeat(spark) + d;
-    expect(decodeBuild(`2MAGE40.1..${seg("2")}`, ctx)).toEqual({
-      ok: true,
-      build: plan(40, "fxStorm", { fxStorm_fxSpark: 1 }, { "fxSpark:5": "b" }),
-    });
-    expect(decodeBuild(`2MAGE40.1..${seg("3")}`, ctx)).toEqual({ ok: false, error: "bp" });
-    expect(decodeBuild(`2MAGE40.1..${seg("5")}`, ctx)).toEqual({ ok: false, error: "rank" });
-  });
-
-  it("a code with only the order-2 path decodes the same when the planner knows only that path", () => {
-    const build = plan(60, "fxRune", { fxRune_fxGlyph: 1, fxRune_mend: 2, fxRune_r2a: 1 });
-    const code = encodeBuild(ctx, build);
-    expect(code.split(".")[3]).toBe("");
-    const only: CodeCtx = { ...ctx, paths: [rune] };
-    expect(encodeBuild(only, build)).toBe(code);
-    expect(decodeBuild(code, only)).toEqual({ ok: true, build });
-    expect(decodeBuild(code, ctx)).toEqual({ ok: true, build });
-    expect(decodeBuild("2MAGE60.0..1", only)).toEqual({ ok: false, error: "length" });
+  it("an unreachable node is invalid and validate counts talent points over the level", () => {
+    const build = plan(10, { fxStorm_focus: 3, fxStorm_beacon: 1 });
+    expect(pathView(ctx, storm, build).rows[1].nodes[0].invalid).toBe(true);
+    expect(validate(ctx, build).unreached).toEqual(["fxStorm_beacon"]);
+    expect(validate(ctx, plan(2, { fxStorm_focus: 3 })).nodesOver).toBe(2);
   });
 });
 
-describe("planner on the game data", () => {
-  const skillsOf = (classId: string) =>
-    file.skills.filter((s) => s.class === classId).sort((a, b) => a.order - b.order);
+describe("planner v3 on the game data", () => {
+  const ctxFor = (classId: string): PlanCtx => ctxOf.get(classId)!;
 
-  it("rankAt inverts rankLevels", () => {
+  it("matches Logic/Paths on the published directions of the game", () => {
+    const seen = pathParity(ctxFor, fixture.game);
+    expect(seen.buy.has("ok") && seen.buy.has("paths.error.level")).toBe(true);
+    expect(seen.leading.size).toBeGreaterThan(1);
+  });
+
+  it("matches SkillPoints.canBuy and free in every state, with every reason key", () => {
+    const seen = new Set<string>();
+    for (const state of fixture.skills.states) {
+      const ctx = ctxFor(state.class);
+      const build = plan(state.level, { ...state.nodes }, structuredClone(state.ranks));
+      expect(freeIn(ctx, build, state.pool), `${state.class} ${state.pool} lv ${state.level}`).toBe(state.free);
+      for (const r of state.results) {
+        const got = canBuySkill(ctx, build, state.pool, r.skill);
+        expect({ ok: got.ok, reason: got.reason ?? null }, `${state.class} ${state.pool} lv ${state.level} ${r.skill}`).toEqual({ ok: r.ok, reason: r.reason ?? null });
+        seen.add(r.reason ?? "ok");
+      }
+    }
+    expect([...seen].sort()).toEqual([...SKILL_ERRORS, "ok"].sort());
+  });
+
+  it("matches SkillPoints.apply on every reservation", () => {
+    const seen = new Set<string>();
+    for (const p of fixture.skills.plans) {
+      const ctx = ctxFor(p.class);
+      const got = applyPlan(ctx, plan(p.level, { ...p.nodes }, structuredClone(p.ranks)), p.pool, p.plan);
+      expect({ ok: got.ok, reason: got.reason ?? null }, `${p.class} ${p.pool} lv ${p.level} ${JSON.stringify(p.plan)}`).toEqual({ ok: p.ok, reason: p.reason ?? null });
+      seen.add(p.reason ?? "ok");
+    }
+    expect(seen.has("ok") && seen.size > 2).toBe(true);
+  });
+
+  it("rankAt inverts rankLevels and rank variants are where a skill has option B", () => {
     for (const s of file.skills) {
       expect(s.rankLevels.length).toBe(s.maxLevel);
-      s.ranks.forEach((rank, i) => expect(rank.requiredLevel).toBe(s.rankLevels[i]));
       for (let r = 1; r <= s.maxLevel; r++) {
         expect(rankAt(s, s.rankLevels[r - 1])).toBe(r);
         expect(rankAt(s, s.rankLevels[r - 1] - 1)).toBe(r - 1);
       }
-    }
-  });
-
-  it("has rank variants exactly where a skill has option B", () => {
-    for (const s of file.skills) {
       const rule = ruleSkill(s);
       s.ranks.forEach((rank, i) => {
         const r = i + 1;
@@ -221,69 +221,202 @@ describe("planner on the game data", () => {
           .sort();
         expect(Object.keys(rank.variants ?? {}).sort(), `${s.id} ${r}`).toEqual(want);
       });
-      const b = { level: 100, main: null, nodes: {}, bp: { [`${s.id}:5`]: "b" as const } };
+      const b = plan(100, {}, {}, { [`${s.id}:5`]: "b" });
       expect(variantKey(b, s, 4)).toBe("aa");
       expect(variantKey(b, s, 5)).toBe("ba");
     }
   });
 
-  it("build code v2 round trips 50 random builds of every class", () => {
-    const rand = rng(8282);
-    for (const classId of classes) {
-      const skills = skillsOf(classId).map(ruleSkill);
-      const paths = pathsOf(classId);
-      const ctx: CodeCtx = { classId, maxLevel: rules.maxLevel, skills, paths };
-      for (let i = 0; i < 50; i++) {
-        const build = plan(1 + rand(rules.maxLevel), paths.length > 0 && rand(2) ? paths[rand(paths.length)].id : null);
-        for (const s of skills.filter((x) => !x.path && !x.passive)) {
-          if (s.hasB[5] && rand(2)) build.bp[`${s.id}:5`] = "b";
-          if (s.hasB[10] && rand(2)) build.bp[`${s.id}:10`] = "b";
-        }
-        for (const p of paths) {
-          for (const n of p.rows.flatMap((r) => r.nodes)) {
-            const rank = rand(n.maxRank + 1);
-            if (rank > 0) build.nodes[n.id] = rank;
+  it("budget per pool, the rank limit of the level and the bar of 8", () => {
+    for (const classId of classIds) {
+      const ctx = ctxFor(classId);
+      const [first, second] = ctx.pools;
+      const s1 = ctx.skills.find((s) => s.pool === first.id && s.role === "S1")!;
+      // level 1: one rank of S1, never two (the limit), the second pool keeps its own points
+      let build = emptyBuild(1);
+      expect(canBuySkill(ctx, build, first.id, s1.id).ok).toBe(true);
+      build = addSkillRank(build, first.id, s1.id, 1);
+      expect(canBuySkill(ctx, build, first.id, s1.id)).toEqual({ ok: false, reason: "skills.error.limit" });
+      if (second) expect(freeIn(ctx, build, second.id)).toBe(freeIn(ctx, emptyBuild(1), second.id));
+      // a school skill of another pool is not in this pool
+      if (second) {
+        const other = ctx.skills.find((s) => s.pool === second.id)!;
+        expect(canBuySkill(ctx, build, first.id, other.id)).toEqual({ ok: false, reason: "skills.error.pool" });
+      }
+      // spend every point at level 20 in tree order: nothing more to buy, free = 0 or every limit reached
+      let full = emptyBuild(20);
+      for (const id of first.skills) while (canBuySkill(ctx, full, first.id, id).ok) full = addSkillRank(full, first.id, id, 1);
+      expect(first.skills.every((id) => !canBuySkill(ctx, full, first.id, id).ok)).toBe(true);
+      expect(freeIn(ctx, full, first.id)).toBeGreaterThanOrEqual(0);
+      // the bar: actives with a rank, at most barSlots, a full bar refuses
+      let bar = full;
+      for (const id of first.skills) bar = toggleBar(ctx, bar, first.id, id) ?? bar;
+      const kept = barOf(ctx, bar, first.id);
+      expect(kept.length).toBeLessThanOrEqual(ctx.rules.barSlots);
+      expect(kept.every((id) => rankOf(ctx, bar, first.id, id) > 0 && !ctx.skills.find((s) => s.id === id)!.passive)).toBe(true);
+      // a lower level puts ranks over the limit and points over the budget
+      const low = { ...full, level: 9 };
+      const v = validate(ctx, low);
+      expect(v.ok).toBe(false);
+      expect(Object.keys(v.poolsOver)).toContain(first.id);
+      // a base skill bought over the limit of the level is invalid, and S1 (bought first at level 20) is one
+      const base = first.skills.map((id) => ctx.skills.find((s) => s.id === id)!).filter((s) => s.path === undefined);
+      for (const s of base) expect(tileView(ctx, low, first.id, s).invalid, s.id).toBe(bought(low, first.id, s.id) > rankAt(s, 9));
+      expect(tileView(ctx, low, first.id, s1).invalid).toBe(true);
+    }
+  });
+
+  it("one capstone per set, the upgrade only with its capstone, a refunded skill node takes its ranks", () => {
+    for (const classId of classIds) {
+      const ctx = ctxFor(classId);
+      if (ctx.paths.length < 2) continue;
+      const [p1, p2] = ctx.paths;
+      const cap = p1.rows.findIndex((r) => r.kind === "capstone") + 1;
+      // rows below the capstone with exactly its requirement (a choice row: its first node), as the Lune vectors
+      const minimal = (nodes: Record<string, number>, path: (typeof ctx.paths)[number]): void => {
+        let left = path.rows[cap - 1].required;
+        for (const row of path.rows.slice(0, cap - 1)) {
+          for (const n of row.choice ? row.nodes.slice(0, 1) : row.nodes) {
+            const add = Math.min(n.maxRank, left);
+            if (add > 0) nodes[n.id] = add;
+            left -= add;
           }
         }
-        expect(decodeBuild(encodeBuild(ctx, build), ctx)).toEqual({ ok: true, build });
+      };
+      const nodes: Record<string, number> = {};
+      minimal(nodes, p1);
+      minimal(nodes, p2);
+      const build = plan(rules.maxLevel, nodes);
+      const cap1 = p1.rows[cap - 1].nodes[0].id;
+      const cap2 = p2.rows[cap - 1].nodes[0].id;
+      expect(canBuyNode(ctx, build, cap1)).toEqual({ ok: true });
+      const one = addNodeRank(ctx, build, cap1, 1);
+      expect(canBuyNode(ctx, one, cap2)).toEqual({ ok: false, reason: "skills.error.capstoneTaken" });
+      const up1 = p1.rows.find((r) => r.kind === "upgrade")?.nodes[0].id;
+      const up2 = p2.rows.find((r) => r.kind === "upgrade")?.nodes[0].id;
+      if (up2) expect(canBuyNode(ctx, one, up2).reason).not.toBe(undefined);
+      if (up1) expect(canBuyNode(ctx, build, up1).ok).toBe(false);
+      // the upgrade row open (level, requirement) without its capstone: refused for the upgrade rule
+      if (up2) {
+        const below: Record<string, number> = {};
+        for (const row of p2.rows) {
+          if (row.kind === "capstone" || row.kind === "upgrade") continue;
+          for (const n of row.choice ? row.nodes.slice(0, 1) : row.nodes) below[n.id] = n.maxRank;
+        }
+        expect(canBuyNode(ctx, plan(rules.maxLevel, below), up2)).toEqual({ ok: false, reason: "paths.error.upgrade" });
+      }
+      // a skill node: buy its skill in a pool, refund the node, the ranks go
+      const skillNode = p1.rows.flatMap((r) => r.nodes).find((n) => n.kind === "skill" && n.skill);
+      if (skillNode?.skill) {
+        const pool = ctx.pools[0].id;
+        let b = plan(rules.maxLevel, { ...nodes, [skillNode.id]: 1 });
+        expect(canBuySkill(ctx, b, pool, skillNode.skill).ok).toBe(true);
+        b = addSkillRank(b, pool, skillNode.skill, 1);
+        expect(rankOf(ctx, b, pool, skillNode.skill)).toBe(1);
+        expect(addNodeRank(ctx, b, skillNode.id, -1).ranks[pool][skillNode.skill]).toBeUndefined();
+        const without = { ...nodes };
+        delete without[skillNode.id];
+        expect(canBuySkill(ctx, plan(rules.maxLevel, without), pool, skillNode.skill)).toEqual({ ok: false, reason: "skills.error.locked" });
       }
     }
   });
 
-  it("decodes every error without throwing, and the example Mage build at level 34", () => {
-    const skills = skillsOf("Mage").map(ruleSkill);
-    const ctx: CodeCtx = { classId: "Mage", maxLevel: rules.maxLevel, skills, paths: pathsOf("Mage") };
-    const err = (code: unknown) => decodeBuild(code, ctx);
-    expect(err("MAGE34-a035030-0000000")).toEqual({ ok: false, error: "old" });
-    expect(err("")).toEqual({ ok: false, error: "empty" });
-    expect(err(undefined)).toEqual({ ok: false, error: "empty" });
-    expect(err("2MAGE34.x")).toEqual({ ok: false, error: "main" });
-    expect(err("2MAGE34.0.9")).toEqual({ ok: false, error: "bp" });
-    expect(err("2MAGE34X")).toEqual({ ok: false, error: "level" });
-    expect(err("2HUNTER34.0")).toEqual({ ok: false, error: "class" });
-    expect(err("2MAGE0.0")).toEqual({ ok: false, error: "level" });
-    expect(err(`2MAGE${rules.maxLevel + 1}.0`)).toEqual({ ok: false, error: "level" });
-    expect(err("2MAGE34.9")).toEqual({ ok: false, error: "main" });
-    expect(err(`2MAGE34.0.${"0".repeat(skills.filter((s) => !s.path && !s.passive).length + 1)}`)).toEqual({ ok: false, error: "length" });
-    // a non-empty segment beyond the largest published path order
-    const top = Math.max(0, ...ctx.paths.map((p) => p.order));
-    expect(err(`2MAGE34.0.0${".".repeat(top)}.1`)).toEqual({ ok: false, error: "length" });
-    // a made-up skill without B at rank 10 (after S81 every active of the game has both)
-    const noB10: CodeCtx = {
-      ...ctx,
-      skills: [{ id: "x", order: 1, unlock: 1, maxLevel: 10, passive: false, rankLevels: [], hasB: { 5: true, 10: false } }],
-    };
-    expect(decodeBuild("2MAGE34.0.2", noB10)).toEqual({ ok: false, error: "bp" });
-    expect(decodeBuild("2MAGE34.0.1", noB10).ok).toBe(true);
-    // the screenshots' example: B at rank 5 of the first Mage active
-    const first = skills.filter((s) => !s.path && !s.passive)[0];
-    expect(first.hasB[5]).toBe(true);
-    expect(encodeBuild(ctx, plan(34, null, {}, { [`${first.id}:5`]: "b" }))).toBe("2MAGE34.0.1");
-    expect(decodeBuild("2MAGE34.0.1", ctx)).toEqual({ ok: true, build: plan(34, null, {}, { [`${first.id}:5`]: "b" }) });
+  it("the pool tree puts every school skill on its ladder row and column", () => {
+    const ladder = new Map(file.rules.ladder.map((r) => [r.code, r.level]));
+    for (const classId of classIds) {
+      const ctx = ctxFor(classId);
+      for (const pool of ctx.pools) {
+        const tree = poolTree(ctx, pool.id);
+        expect(tree.others).toEqual([]);
+        for (const row of tree.rows) {
+          for (const id of Object.values(row.cells)) {
+            const s = ctx.skills.find((x) => x.id === id)!;
+            expect(ladder.get(s.role!), `${id}`).toBe(row.level);
+          }
+        }
+        const placed = tree.rows.flatMap((r) => Object.values(r.cells)).length + tree.directions.length;
+        expect(placed).toBe(pool.skills.length);
+      }
+    }
   });
 
-  it.skipIf(file.rules.vectors.states.length === 0)("matches the game vectors of the published paths", () => {
-    const seen = parity(file.paths, file.rules.vectors);
-    expect(seen.buy.size).toBeGreaterThan(1);
+  it("build code v3 round trips 50 random builds of every class", () => {
+    const rand = rng(8282);
+    for (const classId of classIds) {
+      const ctx = ctxFor(classId);
+      const actives = bpOrder(ctx);
+      for (let i = 0; i < 50; i++) {
+        const build = emptyBuild(1 + rand(rules.maxLevel));
+        for (const pool of ctx.pools) {
+          if (rand(3) === 0) continue;
+          const own: Record<string, number> = {};
+          for (const id of pool.skills) {
+            const s = ctx.skills.find((x) => x.id === id)!;
+            const r = rand(s.maxLevel + 1);
+            if (r > 0) own[id] = r;
+          }
+          if (Object.keys(own).length > 0) build.ranks[pool.id] = own;
+          const bar = pool.skills.filter((id) => !ctx.skills.find((x) => x.id === id)!.passive && rand(2) === 0).slice(0, rules.barSlots);
+          if (bar.length > 0) build.bars[pool.id] = bar;
+        }
+        for (const p of ctx.paths) for (const n of p.rows.flatMap((r) => r.nodes)) if (rand(2)) build.nodes[n.id] = 1 + rand(n.maxRank);
+        for (const s of actives) {
+          if (s.hasB[5] && rand(2)) build.bp[`${s.id}:5`] = "b";
+          if (s.hasB[10] && rand(2)) build.bp[`${s.id}:10`] = "b";
+        }
+        const code = encodeBuild(ctx, build);
+        expect(decodeBuild(code, ctx), code).toEqual({ ok: true, build });
+        expect(decodeBuild(code.toLowerCase().split("").join(" "), ctx)).toEqual({ ok: true, build });
+        expect(canonical(ctx, build)).toEqual(build);
+      }
+    }
+  });
+
+  it("encodes the canonical form, rejects broken codes with a reason and opens a v2 code as old", () => {
+    const ctx = ctxFor("Mage");
+    const fire = ctx.pools.find((p) => p.id === "fire")!;
+    const firstFire = fire.skills[0];
+    expect(encodeBuild(ctx, emptyBuild(34))).toBe("3MAGE34");
+    expect(encodeBuild(ctx, plan(34, {}, { fire: { [firstFire]: 3 } }))).toBe("3MAGE34.FIRE:3");
+    expect(encodeBuild(ctx, plan(60, {}, { fire: { [firstFire]: 10 } }, {}, { fire: [firstFire] }))).toBe("3MAGE60.FIRE:A:0");
+    const p1 = ctx.paths.find((p) => p.order === 1)!;
+    const first = p1.rows[0].nodes[0];
+    expect(first.maxRank).toBeGreaterThanOrEqual(2);
+    expect(encodeBuild(ctx, plan(20, { [first.id]: 2 }))).toBe("3MAGE20.2");
+    const s0 = bpOrder(ctx)[0];
+    expect(s0.hasB[5]).toBe(true);
+    expect(encodeBuild(ctx, plan(34, {}, {}, { [`${s0.id}:5`]: "b" }))).toBe("3MAGE34..1");
+    expect(decodeBuild("3MAGE34..1", ctx)).toEqual({ ok: true, build: plan(34, {}, {}, { [`${s0.id}:5`]: "b" }) });
+    expect(decodeBuild("3MAGE60.FIRE:A5.21-1.1", ctx).ok).toBe(true); // the docs/WIKI.md example
+    const err = (code: unknown) => decodeBuild(code, ctx);
+    expect(err("2MAGE34.0.1")).toEqual({ ok: false, error: "old" });
+    expect(err("MAGE34-a035030-0000000")).toEqual({ ok: false, error: "old" });
+    for (const text of ["hello", "3", "334", "X3MAGE34", "2", "MAGE34"]) expect(err(text), text).toEqual({ ok: false, error: "format" });
+    expect(err("")).toEqual({ ok: false, error: "empty" });
+    expect(err(undefined)).toEqual({ ok: false, error: "empty" });
+    expect(err("3HUNTER34")).toEqual({ ok: false, error: "class" });
+    expect(err("3MAGE0")).toEqual({ ok: false, error: "level" });
+    expect(err(`3MAGE${rules.maxLevel + 1}`)).toEqual({ ok: false, error: "level" });
+    expect(err("3MAGE34X")).toEqual({ ok: false, error: "level" });
+    expect(err("3MAGE34.NOPE:1")).toEqual({ ok: false, error: "pool" });
+    expect(err("3MAGE34.FIRE:1.FIRE:1")).toEqual({ ok: false, error: "pool" });
+    expect(err("3MAGE34.FIRE:B")).toEqual({ ok: false, error: "rank" });
+    expect(err(`3MAGE34.FIRE:${"1".repeat(fire.skills.length + 1)}`)).toEqual({ ok: false, error: "length" });
+    expect(err("3MAGE34.FIRE:1:00")).toEqual({ ok: false, error: "bar" });
+    expect(err(`3MAGE34.FIRE:1:${"012345678"}`)).toEqual({ ok: false, error: "bar" });
+    expect(err("3MAGE34.9")).toEqual({ ok: false, error: "talent" });
+    expect(err(`3MAGE34.${"-".repeat(ctx.paths.length)}1`)).toEqual({ ok: false, error: "length" });
+    expect(err("3MAGE34..9")).toEqual({ ok: false, error: "bp" });
+    expect(err("3MAGE34.1.1.1")).toEqual({ ok: false, error: "length" });
+  });
+
+  it("every class has pools, a ladder tree and directions to plan", () => {
+    for (const classId of classIds) {
+      const ctx = ctxFor(classId);
+      expect(ctx.pools.length).toBeGreaterThan(0);
+      expect(ctx.paths.length).toBeGreaterThan(0);
+      expect(ctx.rules.barSlots).toBe(8);
+      expect(pathView(ctx, ctx.paths[0], emptyBuild(rules.maxLevel)).rows.length).toBe(ctx.paths[0].rows.length);
+    }
   });
 });

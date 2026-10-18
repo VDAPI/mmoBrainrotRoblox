@@ -643,6 +643,132 @@ motions.titansWrath = {
 	variants = { variant({ hits = 4, keys = leaps({ 0, 35, -35, 0 }), trail = { from = 0.2, to = 1.65 } }) },
 }
 
+-- S143 (DESIGN-18 §6.2): the Warrior pools' new skills from the poses above (the same rule as S140-S142); the look
+-- apart is their SkillVfx. A full motion pass comes with W03-W07.
+-- Shield Sweep: from the guard the shield arm sweeps from right to left across the cone; the shield's face crosses the
+-- middle at the hit (0.24).
+motions.shieldSweep = {
+	keys = {
+		k(0.14, merge(GUARD, { lShoulder = { 82, 70, -14 }, lElbow = { 40, 0, 0 }, waist = { -6, 32, 0 } }), "out"),
+		k(
+			0.24,
+			merge(lunge(0.5), {
+				lShoulder = { 88, 0, -10 },
+				lElbow = { 18, 0, 0 },
+				rShoulder = { 22, 0, 30 },
+				rElbow = { 65, 0, 0 },
+				waist = { -4, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.36,
+			merge(lunge(0.6), {
+				lShoulder = { 80, -70, -10 },
+				lElbow = { 14, 0, 0 },
+				rShoulder = { 22, 0, 30 },
+				rElbow = { 65, 0, 0 },
+				waist = { -6, -34, 0 },
+			}),
+			"out"
+		),
+	},
+	recover = 0.3,
+	hit = 0.24,
+}
+-- Shield Bash: the guard, then the shield driven straight into the target's face with a short lunge (hit 0.22).
+local BASH_OUT: Pose = merge(lunge(0.8), {
+	lShoulder = { 96, 0, -4 },
+	lElbow = { 4, 0, 0 },
+	rShoulder = { 20, 0, 30 },
+	rElbow = { 65, 0, 0 },
+	waist = { -12, -16, 0 },
+	root = { -6, -12, 0, -0.2 },
+})
+motions.shieldBash = {
+	keys = { k(0.12, GUARD, "out"), k(0.22, BASH_OUT, "in"), k(0.42, merge(GUARD, { waist = { -8, 0, 0 } })) },
+	recover = 0.3,
+	hit = 0.22,
+}
+-- Vindicate: Mighty Strike's diagonal cut with the shield held up in the guard (the left arm stays on the shield).
+local SHIELD_UP: Pose = { lShoulder = { 85, 10, -20 }, lElbow = { 70, 0, 0 } }
+motions.vindicate = {
+	keys = {
+		k(0.22, merge(MIGHTY_WINDUP, SHIELD_UP), "out"),
+		k(0.3, merge(MIGHTY_CUT, SHIELD_UP), "in"),
+		k(0.4, merge(MIGHTY_LOW, SHIELD_UP), "out"),
+		k(0.46, merge(MIGHTY_BOUNCE, SHIELD_UP)),
+	},
+	recover = 0.3,
+	hit = 0.3,
+	trail = { from = 0.2, to = 0.4 },
+}
+-- Brutal Strike: Mighty Strike's two-handed variant (both hands on the hilt, a longer wind-up).
+motions.brutalStrike = {
+	keys = {
+		k(0.25, twoHanded(MIGHTY_WINDUP, { 158, 0, 34 }, 70), "out"),
+		k(0.3, twoHanded(MIGHTY_CUT, { 88, 0, 14 }, 30), "in"),
+		k(0.4, twoHanded(MIGHTY_LOW, { 26, 0, -14 }, 12), "out"),
+		k(0.46, twoHanded(MIGHTY_BOUNCE, { 32, 0, -8 }, 14)),
+	},
+	recover = 0.3,
+	hit = 0.3,
+	trail = { from = 0.24, to = 0.4 },
+}
+-- Sunder: the weapon over the head turned to the right, a heavy slanting blow down across the target's armour (0.32).
+motions.sunder = {
+	keys = {
+		k(0.2, merge(STAND, OVERHEAD, { waist = { 10, 26, 0 } }), "out"),
+		k(0.32, merge(lunge(0.9), SLAMMED, { waist = { -20, -26, 0 }, root = { -8, -20, 0, -0.4 } }), "in"),
+		k(0.46, merge(lunge(0.9), SLAMMED, { waist = { -16, -20, 0 } })),
+	},
+	recover = 0.3,
+	hit = 0.32,
+	trail = { from = 0.18, to = 0.36 },
+}
+-- War Stomp: the right knee pulled up with the arms out, the foot stamped down in a crouch (the ground shakes at 0.3).
+motions.warStomp = {
+	keys = {
+		k(
+			0.15,
+			merge(STAND, {
+				rHip = { 62, 0, 0 },
+				rKnee = { 72 },
+				waist = { 8, 0, 0 },
+				rShoulder = { 40, 0, 45 },
+				lShoulder = { 40, 0, -45 },
+			}),
+			"out"
+		),
+		k(
+			0.3,
+			merge(crouch(0.6), {
+				rHip = { 12, 0, 0 },
+				rKnee = { 22 },
+				rShoulder = { 20, 0, 55 },
+				lShoulder = { 20, 0, -55 },
+				waist = { -14, 0, 0 },
+			}),
+			"in"
+		),
+		k(0.6, merge(crouch(0.5), { rShoulder = { 18, 0, 50 }, lShoulder = { 18, 0, -50 }, waist = { -10, 0, 0 } })),
+	},
+	recover = 0.35,
+	hit = 0.3,
+	lock = true,
+}
+-- Execute: the two-handed weapon raised high behind the head, a deep lunge and a chop straight down (0.4).
+motions.execute = {
+	keys = {
+		k(0.28, merge(STAND, OVERHEAD, { waist = { 20, 0, 0 }, root = { 6, 0, 0, 0.2 } }), "out"),
+		k(0.4, merge(lunge(1.2), SLAMMED, { waist = { -36, 0, 0 }, root = { -16, 0, 0, -0.7 } }), "in"),
+		k(0.56, merge(lunge(1.1), SLAMMED, { waist = { -30, 0, 0 } })),
+	},
+	recover = 0.35,
+	hit = 0.4,
+	trail = { from = 0.26, to = 0.42 },
+}
+
 -- Hunter -----------------------------------------------------------------------------------------------------
 
 -- S115 (DESIGN-16 §6): every shot is built by one function from a shooting rig, so a crossbow plays the same shot with
@@ -1243,6 +1369,135 @@ motions.drive = {
 	release = 0.38,
 	hit = 0.38,
 	variants = { crossbowOf(driveKeys) },
+}
+
+-- S144 (DESIGN-18 §6.3): the Hunter pools' new skills from the shooting rigs (S115: one function per shot, the crossbow
+-- variant through crossbowOf; the Crossbow's skills always play it, the Bow's with a crossbow only in AnimLab); the look
+-- apart is their SkillVfx. A full motion pass comes with W03-W07.
+-- Heavy Bolt (the Crossbow's S1): a braced stance with the left foot forward, a slow full draw (0.36) and a heavy
+-- release with the shoulders kicked back (0.42, the server's release).
+local BRACED: Pose = {
+	root = { 0, 0, 0, -0.2 },
+	rHip = { -8, 0, 6 },
+	lHip = { 18, 0, -6 },
+	rKnee = { 12 },
+	lKnee = { 18 },
+}
+local function heavyBoltKeys(rig: ShotRig): { Key }
+	return {
+		k(0.18, merge(rig.aim, BRACED, body(rig, 4, 0)), "out"),
+		k(0.36, merge(rig.full, BRACED, body(rig, 0, 0)), "inOut"),
+		k(0.42, merge(rig.loose, BRACED, body(rig, 12, 0), { root = { -6, 0, 0, -0.25 } }), "out"),
+		k(0.54, merge(rig.after, BRACED, body(rig, 8, 0)), "out"),
+	}
+end
+motions.heavyBolt = {
+	keys = heavyBoltKeys(BOW),
+	recover = 0.3,
+	release = 0.42,
+	lock = true,
+	variants = { crossbowOf(heavyBoltKeys) },
+}
+
+-- Pinning Shot (the Bow's K1): a short step forward with the weapon aimed down at the target's feet, a quick draw and
+-- the release at 0.28.
+local function pinningShotKeys(rig: ShotRig): { Key }
+	local step: Pose = lunge(0.4)
+	return {
+		k(0.16, merge(lifted(rig.aim, -18), step, body(rig, -6, 6)), "out"),
+		k(0.24, merge(lifted(rig.full, -20), step, body(rig, -8, 6)), "inOut"),
+		k(0.28, merge(lifted(rig.loose, -20), step, body(rig, -4, 6)), "out"),
+		k(0.38, merge(lifted(rig.after, -16), step, body(rig, -2, 6)), "out"),
+	}
+end
+motions.pinningShot = {
+	keys = pinningShotKeys(BOW),
+	recover = 0.25,
+	release = 0.28,
+	variants = { crossbowOf(pinningShotKeys) },
+}
+
+-- Wind Step (the Bow's O1): a light skip to the left with the legs crossing, the weapon held low (the buff at 0.15),
+-- landing crouched and turned toward the enemy (0.32).
+motions.windstep = {
+	keys = {
+		k(
+			0.15,
+			merge(air(0.8, 0.6), {
+				root = { 0, 18, -10, 0.8 },
+				rShoulder = { 30, 0, 40 },
+				rElbow = { 20, 0, 0 },
+				lShoulder = { 45, 20, -15 },
+				lElbow = { 10, 0, 0 },
+				lWrist = { -60, 0, 0 },
+				waist = { -6, 14, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.32,
+			merge(crouch(0.4), {
+				root = { 0, 28, 6, -0.36 },
+				rShoulder = { 25, 0, 35 },
+				rElbow = { 30, 0, 0 },
+				lShoulder = { 60, 22, -10 },
+				lElbow = { 5, 0, 0 },
+				lWrist = { -60, 0, 0 },
+				waist = { 0, -20, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.45,
+			merge(STAND, {
+				rShoulder = { 20, 0, 25 },
+				rElbow = { 25, 0, 0 },
+				lShoulder = { 55, 20, -10 },
+				lElbow = { 5, 0, 0 },
+				lWrist = { -60, 0, 0 },
+				waist = { 0, -12, 0 },
+			})
+		),
+	},
+	recover = 0.25,
+	hit = 0.15,
+	land = 0.32,
+}
+
+-- Net Shot (the Crossbow's K2): the weapon raised for a high arc of the net (the release and the landing at 0.3, the
+-- body leaning back a little; lower than Arrow Rain's shot at the sky).
+local function netShotKeys(rig: ShotRig): { Key }
+	return {
+		k(0.18, merge(STAND, lifted(rig.aim, 35), body(rig, 10, 10)), "out"),
+		k(0.27, merge(STAND, lifted(rig.full, 38), body(rig, 12, 10)), "inOut"),
+		k(0.3, merge(STAND, lifted(rig.loose, 40), body(rig, 16, 10)), "out"),
+		k(0.42, merge(STAND, lifted(rig.after, 34), body(rig, 12, 10)), "out"),
+	}
+end
+motions.netShot = {
+	keys = netShotKeys(BOW),
+	recover = 0.3,
+	release = 0.3,
+	hit = 0.3,
+	variants = { crossbowOf(netShotKeys) },
+}
+
+-- Executioner's Bolt (the Crossbow's S3): kneeling, a deliberate aim with the elbow trembling (0.44), the release at
+-- 0.5 with a hard recoil.
+local function deadlyBoltKeys(rig: ShotRig): { Key }
+	return {
+		k(0.25, merge(KNEEL, rig.aim, body(rig, -2, 6)), "out"),
+		k(0.44, merge(KNEEL, tremble(rig.full, 2), body(rig, -4, 4)), "inOut"),
+		k(0.5, merge(KNEEL, rig.loose, body(rig, 10, 4), { root = { -8, 0, 0, -1.3 } }), "out"),
+		k(0.62, merge(KNEEL, rig.after, body(rig, 6, 4)), "out"),
+	}
+end
+motions.deadlyBolt = {
+	keys = deadlyBoltKeys(BOW),
+	recover = 0.35,
+	release = 0.5,
+	lock = true,
+	variants = { crossbowOf(deadlyBoltKeys) },
 }
 
 -- Mage ---------------------------------------------------------------------------------------------------------
@@ -2469,6 +2724,51 @@ motions.hammerOfHeaven = {
 	land = 0.5,
 	lock = true,
 	trail = { from = 0.3, to = 0.52 },
+}
+
+-- S145 (DESIGN-18 §6.4): the Cleric pools' new skills as variants of the Cleric's S114 motions (the same rule as S140 -
+-- S144); the look apart is their SkillVfx (light, own pieces). A full motion pass comes with W03-W07.
+-- Light Ray: Heal's open palm pushed at the target, the ray leaving it at the release.
+motions.lightRay = {
+	keys = motions.heal.keys,
+	recover = 0.25,
+	release = 0.25,
+}
+-- Blinding Light: Purify's raised hand, the flash at the hit.
+motions.blindingLight = {
+	keys = motions.purify.keys,
+	recover = 0.3,
+	hit = 0.3,
+}
+-- Miracle: Prayer's folded hands held while praying (the loop over the prayer pose, castTime), the heal at the end.
+motions.miracle = {
+	keys = motions.prayer.keys,
+	recover = 0.3,
+	loop = { from = 0.4, to = 0.6 },
+}
+-- Consecrate: Holy Strike's mace brought down to the ground; the waves of light follow it.
+motions.consecrate = {
+	keys = motions.holyStrike.keys,
+	recover = 0.3,
+	hit = 0.25,
+}
+-- Holy Chains: Brand of Light's palm thrust at the target, the chains at the hit.
+motions.holyChains = {
+	keys = motions.brandOfLight.keys,
+	recover = 0.3,
+	hit = 0.25,
+}
+-- Holy Nova: Radiance's weapon raised, the burst at the hit.
+motions.holyNova = {
+	keys = motions.radiance.keys,
+	recover = 0.3,
+	hit = 0.3,
+}
+-- Rebuke: Shield of Faith's hand pushed forward, the light at the hit.
+motions.rebuke = {
+	keys = motions.shieldOfFaith.keys,
+	recover = 0.25,
+	hit = 0.2,
 }
 
 SkillMotions.motions = motions

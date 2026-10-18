@@ -23,7 +23,6 @@ local pools: Types.ClassPools = {
 	-- nodes: a free reset, DESIGN-18 §10). S141: 4 (the ice pool). S142: 5 (the lightning pool, Fire Bolt in the fire
 	-- pool only)
 	version = 5,
-	transitional = false,
 	defaultPool = "fire", -- Data/Elements.DEFAULT, the starting wand
 	pools = {
 		-- S140: the ladder order (DESIGN-18 §5), actives before passives

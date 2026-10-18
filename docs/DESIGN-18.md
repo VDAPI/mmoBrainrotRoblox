@@ -31,7 +31,8 @@ S137 dopisuje w ROZWOJ §0 odsyłacz „§2.4–2.6, 2.8–2.10, 3–5: zastąpi
 5. **Bez pay-to-win:** punktów umiejętności, rang ani mocy nie da się kupić. Zwój resetu w sklepie premium zostaje, bo
    nie daje mocy (jak `scroll_oblivion`); `tests/paywall.spec.luau` musi go dalej dopuszczać.
 6. **Wiki:** po każdej zmianie `src/shared/Data` `npm run data` w `wiki/` (albo `lune run tools/wikidump.luau`),
-   `--check` czysty. Planer wiki jest schowany za „Planer wkrótce” od S137 do S148 (wzór ROZWOJ 3.5).
+   `--check` czysty. Planer wiki był schowany od S137 do S148 (wzór ROZWOJ 3.5); od 17.10 dane wiki odświeżała hurtem
+   S148 (właściciel), która pokazała planer v3.
 7. **Okno umiejętności a S135–S136** („Pergamin i żelazo”: paleta i tokeny w `UI/Theme`, `Data/UiWindows.luau`, wspólne
    komponenty, okno umiejętności przełączone na pergamin w S135): sesje tej serii budują wyłącznie na tych tokenach i
    komponentach, bez literałów koloru i rozmiaru, i nie robią własnego stylu; zmieniają układ i treść okna.
@@ -191,7 +192,7 @@ Wspólne klasy (w każdej puli tej klasy): `C1` 4 (ruch / znak klasy), `C2` 12, 
 
 - Na 20. poziomie pula ma 7 aktywnych i 1 pasywkę (S1, A1, C1, K1, O1, C2, S2, P1); limity rang na 20. dają razem 28
   rang przy 27 punktach (S137: `bonus` 7). Od 40. aktywnych jest więcej niż 8 miejsc na pasku (12 + do 2 z kierunków).
-- Test (`tests/skillpools.spec.luau`): każda pula klasy bez `transitional` ma dokładnie jedną umiejętność na każdy kod
+- Test (`tests/skillpools.spec.luau`): każda pula każdej klasy (S145: pole `transitional` usunięte) ma dokładnie jedną umiejętność na każdy kod
   `LADDER` z `unlock` równym poziomowi kodu (pasywki `type = "passive"`, `maxLevel = 5`), wspólne klasy dokładnie po
   jednej na `COMMON_LADDER`; analogiczna rola ma ten sam poziom we wszystkich pulach wszystkich klas.
 - Pole `SkillDef.role` (`"S1"`…`"U"`, `"C1"`…`"C4"`) i `SkillDef.pool`. Umiejętności kierunków: `path` jak dziś, bez
@@ -248,6 +249,11 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   (żywioł broni = pula, `cast.error.wrongPool`).
 - Tożsamość w liczbach (cel S147, §13): błyskawica w jeden cel 1,10–1,20 × ogień, lód 0,85–0,95 × ogień z czasem
   spowolnienia lub zamrożenia celu ≥ 60%, ogień na 3 cele przez 8 s (z podpaleniem) ≥ błyskawica.
+- S147 (stan, asertowane w `Balance.targetsS147` na 20–100): błyskawica / ogień w jeden cel 1,11–1,17, lód / ogień
+  0,86–0,90, ogień z podpaleniem / błyskawica na 3 cele 8 s 1,05–1,21, Elita pod kontrolą lodu ≥ 0,83, boss pod
+  Głębokim Chłodem ≥ 0,53, przyjmowane lód 0,50–0,90 ognia, błyskawica ≥ ogień (Arkanista na 45. i oba na 20. 0,97–0,99:
+  paraliż Porażenia, raport z powodem); T-SK4 wariantów żywiołów 2,0–2,8 / 2,0–2,4 przez krzywą `manaCost.Mage`
+  (DECYZJE S147).
 - Nowe zachowania (słownik `Data/Skills/Types`, `Logic/Skills.effective`, `server/Skills/*`): stosy podpalenia
   (`burnStacks`), detonacja podpaleń (`detonate`), licznik chłodu do zamrożenia (`chillToFreeze`), premia na
   zamrożonych / podpalonych (`vsFrozen`, `vsBurning`), kończenie zamrożenia (`shatter`), przeskok czaru
@@ -274,6 +280,15 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 - Kierunki: Strażnik (tank; węzeł `skill` Ostatni Bastion `lastBastion`), Berserker (obrażenia; Rzeź `carnage` w
   rzędzie 8, z `weapon` dwuręcznej), Chorąży (wsparcie; Rozkaz Natarcia `advanceOrder` w rzędzie 8).
 - Cel (S146): `twohand` obrażenia 1,15–1,25 × `onehand`, `onehand` EHP ≥ 1,4 × `twohand`.
+- S143 (stan): obie pule według tabeli, wspólne Szarża 4, Prowokacja 12, Okrzyk Bojowy 30, Stalowa Skóra 45
+  (`transitional = false`, wersja puli 3). Furia istnieje tylko z pasywką `rage` (`Logic/Fury.cap`: 6 stosów, węzły
+  Berserkera podnoszą limit do 10, +0,2–0,5% za stos), Brutalny Cios +2 stosy (`SkillDef.furyGain`), Niepowstrzymany
+  przy pełnej Furii bez ogłuszenia i odrzutu. Tarcza: `SkillDef.weapon` (Uderzenie Tarczą), Zamach Tarczą +20% z tarczą,
+  Wyrok +15% za blok z 6 s, najwyżej 3 (`Logic/Block`). Kierunki: Ostatni Bastion, Rzeź i Rozkaz Natarcia w rzędzie 8,
+  w rzędzie 4 Strażnika Podwójna Straż (Przechwycenie na dwóch sojuszników). Po S143 dwuręczna / jednoręczna
+  (Chorąży) 1,5–1,8 w jeden cel (raport `S143.warrior.*`).
+- S146 (stan): EHP Strażnika / dwuręczna 1,68–1,78 (asertowane); dwuręczna / jednoręczna (Chorąży) w jeden cel
+  1,45–1,80 i na 3 cele 0,98–1,10 w raporcie (sprzeczne z R1 puli jednoręcznej, decyzja właściciela, DECYZJE S146).
 
 ### 6.3 Łowca (wspólne: `C1` Odskok `disengage`, `C2` Znak Łowcy `huntersMark`, `C3` Namierzenie `drawBead`, `C4` Instynkt Drapieżnika `predatorInstinct`; wszystkie istn.)
 
@@ -288,7 +303,7 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | A2 26 | Salwa `volley` (istn.) | Trujące Sidła `venomSnare` (istn.) |
 | K2 33 | Sokół `falcon` (istn.) | Sieć `netShot` (nowa; unieruchomienie w kręgu) |
 | S3 40 | Strzał w Serce `heartseeker` (istn.) | Bełt Egzekutora `deadlyBolt` (nowa; finiszer na zatrutych) |
-| P2 50 | Zwinność `agility` (istn.) | Szybki Naciąg `quickReload` (nowa; krótsze odnowienia bełtów) |
+| P2 50 | Zwinność `agility` (istn.) | Szybkie Przeładowanie `quickReload` (nowa; krótsze odnowienia bełtów; S144: nazwa, bo „Naciąg” to cecha broni) |
 | U 60 | Strzała Burzy `stormArrow` (istn.) | Pole Sideł `snarefield` (istn.) |
 
 - Efekty przedmiotów klasy (S134g, `Data/ItemEffects`): Celny Strzał, Deszcz Strzał, Zatruta Strzała, Odskok, Znak
@@ -296,6 +311,18 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 - Kierunki: Strzelec Wyborowy, Traper, Zwiadowca (węzeł `skill` Nagonka `drive` w rzędzie 8).
 - Cel (S147): obie pule ±10% obrażeń w jeden cel (R5 w nowej postaci), łuk z ruchem w walce, kusza z większym udziałem
   obrażeń w czasie.
+- S144 (stan): obie pule według tabeli, wspólne Odskok 4, Znak Łowcy 12, Namierzenie 30, Instynkt Drapieżnika 45
+  (`transitional = false`, wersja puli 3). Kusza: Zatrute Groty (`toxicTips`, stos trucizny grotu przy głównym trafieniu
+  umiejętności kuszy, najwyżej 5 stosów, raz na sekundę na cel), Bełt Egzekutora ×1,5 od 3 stosów trucizn Łowcy,
+  Szybkie Przeładowanie tylko dla umiejętności kuszy (`Logic/Crossbow`); Przyszpilenie i Sieć unieruchamiają, a bossów i
+  Elity II spowalniają (`SkillEffect.bossSlow`, `Logic/Snare`). Kierunki: w rzędzie 8 Zwiadowcy Nagonka (Królewski Sokół
+  w rzędzie 10), u Strzelca i Trapera zwieńczenia `keystone` bez umiejętności: Martwe Oko (pewny krytyk umiejętności w
+  jeden cel na celu z ≥ 80% życia, `Logic/DeadEye`) i Mistrz Sideł (każde trafienie pułapki daje stos trucizny grotu bez
+  odstępu); rzędy 4 bez umiejętności. Po S144 łuk / kusza (Strzelec) w jeden cel 0,99–1,05, udział obrażeń w czasie
+  kuszy 0,20–0,25 (raport `S144.hunter.*`).
+- S147 (stan, asertowane): łuk / kusza (Strzelec) w jeden cel 0,99–1,05, udział obrażeń w czasie kuszy 0,26–0,32 od
+  45. (trucizna Trujących Sideł, Zatrutych Grotów i Zatrutej Strzały kosztem bezpośrednich obrażeń), R7 łuk / kusza
+  1,18–1,34.
 
 ### 6.4 Kapłan (wspólne: `C1` Leczenie `heal`, `C2` Krąg Światła `circleOfLight`, `C3` Wskrzeszenie `resurrection`, `C4` Pobożność `devotion`; wszystkie istn.)
 
@@ -306,7 +333,7 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | K1 6 | Oślepienie `blindingLight` (nowa; chybienia wrogów 3 s) | Kajdany Światła `holyChains` (nowa; unieruchomienie) |
 | O1 10 | Tarcza Wiary `shieldOfFaith` (istn.) | Aura Wytrwałości `auraOfEndurance` (istn.) |
 | S2 15 | Odnowa `renew` (istn.) | Piętno Światła `brandOfLight` (istn.) |
-| P1 20 | Łaska `grace` (nowa; krytyczne leczenie, premia przy niskim HP) | Boski Gniew `divineWrath` (istn.) |
+| P1 20 | Łaska `grace` (nowa; leczenie +7–12%, krytyczne leczenie, premia przy niskim HP) | Boski Gniew `divineWrath` (istn.) |
 | A2 26 | Sanktuarium `sanctuary` (istn.) | Święty Wybuch `holyNova` (nowa; krąg obrażeń i małe leczenie drużyny) |
 | K2 33 | Oczyszczenie `purify` (istn.) | Upomnienie `rebuke` (nowa; odrzut i przerwanie) |
 | S3 40 | Cud `miracle` (nowa; wielkie leczenie jednego celu) | Sąd `judgement` (istn.) |
@@ -319,6 +346,20 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   Kapłan Fortuny (Rzut Kośćmi `fortuneDice` w 4, Koło Fortuny `wheelOfFortune` w 8; węzły szczęścia zachowują wymóg
   `relic`), Inkwizytor (bez węzłów `skill`).
 - Cel (S146): T-SK5 i T-SK6 dla `light` jak dziś Uzdrowiciel, `hammer` obrażenia jak Inkwizytor (R1, R7).
+- S145 (stan): obie pule według tabeli, wspólne Leczenie 4, Krąg Światła 12, Wskrzeszenie 30, Pobożność 45 (wersja
+  puli 3). Berło i Kostur: Promień Światła leczy najbardziej rannego sojusznika (solo rzucającego) 25% trafienia,
+  Łaska daje też leczenie +7–12% (to, co Pobożność dawała do 45.: T-SK5 na 20. 0,221), Światło Przewodnie zostawia
+  tarczę 10–20% przywróconego HP (najwyżej 20% maks. HP celu). Buzdygan i Kiścień: Kajdany Światła unieruchamiają
+  (bossowie i Elity II: spowolnienie, `Logic/Snare`), Święty Wybuch leczy drużynę w kręgu w tym samym rzucie,
+  Upomnienie przerywa kanał gracza-wroga (nigdy bossa), Gorliwość skraca odnowienia tylko umiejętności puli `hammer`
+  (`Logic/Faith`). Kierunki: Uzdrowiciel Modlitwa (rząd 4, kości 5B bez Rzutu Kośćmi) i Boska Interwencja (8), Fortuna
+  Rzut Kośćmi (4) i Koło Fortuny (8) ze szczęściem tylko w węzłach `luck` (relikwiarz poza rzędami 1–2), Inkwizytor bez
+  umiejętności: zwieńczenie `keystone` Wędrujące Piętno (podpalenie umiejętności piętna przeskakuje na drugiego wroga
+  60%, światło +5%). Koniec stanu przejściowego wszystkich klas (`transitional` usunięte z danych, logiki i okna).
+  Po S145 (raport `S145.cleric.*`): `hammer` / Inkwizytor sprzed S145 w jeden cel 1,02–1,06, `light` leczenie na
+  sekundę / Uzdrowiciel sprzed S145 0,97–1,23 (45: 1,12, 100: 1,23; S146).
+- S146 (stan): T-SK5 berła 0,28–0,34 i buzdygan / Furia 0,855–0,902 (pasma Inkwizytora) asertowane; T-SK6 berła na 45 /
+  70 / 100 2,8 / 8,6 / 14,4 w raporcie (obrażenia bossów w tanka, decyzja właściciela, DECYZJE S146).
 
 ## 7. Kierunki (dawne ścieżki)
 
@@ -335,8 +376,8 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   węzłom: szczęście Fortuny w rzędach 4–10 i Rzeź).
 - **Węzły `skill`:** najwyżej dwa na kierunek, w rzędach 4 i 8 (`Paths.SKILL_ROWS = { 4, 8 }`); dają umiejętność
   klasy, którą można włożyć na pasek każdej puli. Rangi tej umiejętności kupuje się punktami umiejętności **w każdej
-  puli osobno** (jak wspólne). Do czasu sesji klasy dzisiejsze węzły `skill` w innych rzędach zostają (stan
-  przejściowy).
+  puli osobno** (jak wspólne). S145: stan przejściowy skończony, `paths.spec` sprawdza `SKILL_ROWS` dla każdej klasy
+  bez wyjątków; zwieńczenie bez umiejętności to węzeł `keystone`.
 - **Węzły `modify`:** działają, gdy zmieniana umiejętność jest w aktywnej puli albo z kierunku; węzeł, którego
   umiejętność zniknęła z gry, sesja klasy zastępuje innym (test: każdy `modify.skill` istnieje).
 - **Kierunek przewodni** (`Paths.mainOf(character)`, czysta funkcja): kierunek z największą liczbą punktów, co najmniej
@@ -363,7 +404,7 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | Moduł | Zawartość |
 |---|---|
 | `Data/SkillPools/init.luau` (nowy) | `LADDER`, `COMMON_LADDER` (§5), `byClass`, `get(classId)` |
-| `Data/SkillPools/<Klasa>.luau` (nowy) | `{ version, transitional?, defaultPool, pools = { { id, nameKey, glyph, weapon = { main = { typy }, element? }, plan = { skillId } } }, commonPlan }` |
+| `Data/SkillPools/<Klasa>.luau` (nowy) | `{ version, defaultPool, pools = { { id, nameKey, glyph, weapon = { main = { typy }, element? }, plan = { skillId } } }, commonPlan }` |
 | `Data/Skills/Types` | `SkillDef.pool: string?` (`"common"` albo id puli), `SkillDef.role: string?` |
 | `Data/Progression` | `skillPoints = { perLevel }`, `freeRespecLevel`, `rankRefundGold` |
 | `Config.SkillPools` | `swapLock` (s) |
@@ -458,6 +499,10 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
   - R1–R7, T-SK1–6, G10, cele bossów S134 (część gracza) wracają z nowymi buildami wzorcowymi (jeden na pulę i
     kierunek przewodni, jak dziś jeden na ścieżkę).
   - Wpisy `GLOBAL_REPORT_ONLY` z sesji S137–S145 znikają.
+  - S146: build wzorcowy rzuca tylko 8 aktywnych swojego poziomu (`ReferenceBuild.bar`, `SkillModel.barOf`; Wojownik i
+    Kapłan, Łowca i Mag w S147); blok `Balance.targetsS146` (R8, R9, R1, R5, R6, T-SK5) Wojownika i Kapłana.
+  - S147: pasek także Łowcy i Maga (warianty żywiołów z `ReferenceBuild.bar`); blok `Balance.targetsS147` (R8, R9
+    Maga i Łowcy, R7, R5, T-SK3, T-SK4); `GLOBAL_REPORT_ONLY` bez wpisów S137–S145 (pozostałe z powodem S147).
 - Efekty przedmiotów w modelu tylko przez `score` w `Data/ItemEffects` (`ItemScore`); S146–S147 przeliczają `score` z
   nowymi umiejętnościami (wiersze `S134g.*` w `balance.spec`).
 - **Fixtures:** `tests/fixtures/balance_paths.json` (`--fixture-paths`) i `balance_1_20.json` przepisane świadomie z
@@ -471,9 +516,12 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
 - S138: `Schema.rec` dostaje `pool`, `role` przy umiejętności i `pools` klasy (id, nazwa, broń, drabina); `rules` bez
   `mainPathLevel`, z `skillPointsByLevel`, `freeRespecLevel`, `capstonesMax`, `mainMinPoints`.
 - Strona efektów przedmiotów na wiki z danych (`items.json` `effects`, S134g); S148 dopisuje ją do stron klas.
-- S148: strona klasy z zakładkami pul (drzewko według drabiny jak w grze, `short` i pełny opis), kierunki, planer v3
-  (kod `3<KLASA><poziom>.<pula>:<rangi>….<talenty>.<przełomy>`; stary kod v2 otwiera pusty planer z komunikatem),
-  parzystość TS z `SkillPoints.canBuy` i `Paths.canBuy` przez `wiki/test-fixtures/planner.json`.
+- S148 (zrobione): strona klasy z planerem v3 (zakładki pul z drzewkiem według drabiny, `short` na kafelku, szczegóły z
+  liczbami na rangach 1 / 5 / 10, przełomami A/B i węzłami, pasek 8 puli, zakładka „Kierunki”), sekcje „Jak rozwija się
+  umiejętność”, „Kierunki” i „Wszystkie umiejętności” według pul; kod
+  `3<KLASA><poziom>.<PULA>:<rangi>[:<pasek>]….<talenty>.<przełomy>` (format: `docs/WIKI.md` → „Planer v3”; kod v2 i
+  starsze otwierają pusty planer z komunikatem); parzystość TS z `SkillPoints.canBuy` / `apply` i `Paths.canBuy` /
+  `canRefund` / `mainOf` przez `wiki/test-fixtures/planner.json`. Kierunki opublikowane (bez `wiki = false`).
 
 ## 15. Kolejność sesji
 
@@ -503,3 +551,27 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
 6. **Dwa zestawy na pulę zostają** (dzisiejsze `BuildSet` A/B): w każdej puli dwa zapisane rozdania rang, talentów i
    paska, przełączane w mieście (`SwitchBuildSet`, `CopyBuildSet` przechodzą na pule, nie znikają).
 7. Pasek 8 miejsc, każda pula własny budżet punktów, Kapłan Fortuny jako kierunek: wartości domyślne bez sprzeciwu.
+
+Otwarte do decyzji właściciela po serii (S148): zwroty węzłów kierunków za złoto jak rangi (§3.2, wdrożone w S138 jako
+wartość domyślna), publikacja kierunków na wiki (S148 opublikowała je według §14; cofnięcie = `wiki = false` w
+`Data/Paths/<Klasa>`), cele nie spełnione z S146 / S147 (`docs/SESJE.md` → S146, S147: T-SK6 berła, R1 Inkwizytora,
+obrażenia przyjmowane błyskawica / ogień u Arkanisty na 45.).
+
+## 17. Ustalenia S137–S148 (najważniejsze odejścia; pełne brzmienie w `docs/DECYZJE.md`)
+
+- S137: `skillPoints.bonus` 7 w każdej puli (1–20 bez zmian), migracja do schematu 12 z `respecFree`; planer wiki
+  schowany do S148, dane wiki odświeżone hurtem w S148 (właściciel 17.10).
+- S138: `TEAM_FULL_POINTS` 6 zamiast 12 (1–20 bez zmian); cena zwrotu węzła = zwrot jego rangi i zabranych rang
+  umiejętności kierunku; przełom umiejętności kierunku zostaje w `path.bp` bez węzła.
+- S139: okno bierze rezerwację (`PathView.poolView` / `skillDetails` / `planned`); przełom „osiągnięty” z `Paths.bpRank`.
+- S140: podpalenie jako jeden wpis ze stosami (`Logic/Burn`); Mistrz Żywiołów i Tajemny Umysł to węzły, nie umiejętności.
+- S141: bossowie i Elity II nie zamarzają od lodu gracza, dostają Głęboki Chłód (`Logic/Chill`).
+- S142: koniec Magicznego Pocisku adaptacyjnego (`firebolt` = S1 Ognia) i `Skills.elementAllowed` (żywioł broni = pula).
+- S143: Furia tylko z pasywką puli dwuręcznej; `SkillDef.weapon` dla umiejętności z tarczą; bloki Wyroku (`Logic/Block`).
+- S144: unieruchomienie bossa = spowolnienie (`Logic/Snare`); „Szybki Naciąg” nazywa się Szybkie Przeładowanie.
+- S145: koniec stanu przejściowego (`transitional` usunięte); przerwanie kanału gracza Upomnieniem, nigdy bossa.
+- S146 / S147: build wzorcowy rzuca tylko 8 aktywnych z paska (`ReferenceBuild.bar`); cele nie spełnione opisane w
+  SESJE z powodem, `GLOBAL_REPORT_ONLY` bez wpisów S137–S145.
+- S148: kierunki opublikowane na wiki (§14); kod buildu v3 z paskiem puli w segmencie puli (`<PULA>:<rangi>:<pasek>`),
+  talenty kierunków w grupach rozdzielonych „-”; wektory planera (ścieżki gry, punkty umiejętności) w
+  `wiki/test-fixtures/planner.json` zamiast `skills.json`; `Skills.rankFor` usunięte (`rankAt` = limit).

@@ -273,7 +273,7 @@ Wszyscy mają HP, Manę i Energię (paski w HUD), ale skille klasy kosztują gł
 - Start (poz. 1): baza klasy, np. Wojownik SIŁ 10, ZRĘ 5, INT 3, WIT 8; Łowca 5/10/3/8; Mag 3/5/10/8; Kapłan 4/4/9/9.
 - **5 punktów na poziom** do ręcznego rozdania (Margonem). Przycisk „+” przy każdej stat, przytrzymanie dodaje szybciej, przycisk „Zatwierdź” wysyła wszystko naraz.
 - Reset statystyk: **Zwój Zapomnienia** (kupowany za złoto u nauczyciela w mieście, cena rośnie z poziomem: `500 × poziom` złota) lub za Smoczą Walutę.
-- Przycisk „Rozdaj jak zaleca ścieżka” rozdaje wolne punkty według planu ścieżki głównej albo klasy (ROZWOJ 2.11); statystyki należą do zestawu buildu (ROZWOJ 2.9), Zwój Zapomnienia resetuje aktywny zestaw.
+- Przycisk „Rozdaj jak zaleca ścieżka” rozdaje wolne punkty według planu kierunku przewodniego albo klasy (ROZWOJ 2.11, S138); statystyki należą do zestawu buildu (ROZWOJ 2.9), Zwój Zapomnienia resetuje aktywny zestaw.
 
 ### 4.4 Statystyki pochodne (formuły startowe)
 
@@ -503,12 +503,12 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
   - Kapłan: buława, berło, **cep 1H**, **kostur święty 2H**.
 - **Każda broń maga ma żywioł**: Ogień, Lód albo Błyskawice. W dropie żywioł losowany przy tworzeniu przedmiotu, w sklepie i u kowala wybierany (osobna pozycja na każdy żywioł). Żywioł widać w nazwie („Stalowa Różdżka Ognia”), w kolorze ikony i jako linia tooltipa „Żywioł: Ogień”.
 - Atak podstawowy maga zadaje obrażenia żywiołu broni.
-- **Umiejętności żywiołowe maga wymagają broni z tym samym żywiołem** (jak w Margonem). Bez niej umiejętność jest wyszarzona na pasku i w oknie umiejętności, a tooltip mówi „Wymaga broni: Lód”. Umiejętności bez żywiołu i dwie umiejętności „adaptacyjne” (§14.4) działają z każdą bronią maga.
+- **Żywioł broni maga wybiera jego pulę umiejętności** (S137–S142, DESIGN-18 §4): z bronią lodu na pasku i w oknie są czary Lodu i wspólne Maga, z bronią ognia Ognia, z bronią błyskawic Błyskawicy (§14.4). Czary innej puli nie da się rzucić.
 - Startowa broń maga: Różdżka Ognia.
 
 ### 5.9 Wygoda łupu (dodatek po testach S17)
 
-- **„Lepszy przedmiot!”**: gdy podniesiony przedmiot jest lepszy od założonego (`Logic/ItemScore`: wagi klasy i ścieżki głównej z `Data/ItemWeights`, linie sytuacyjne w połowie, S67) i gracz może go założyć, pojawia się mała karta z porównaniem i przyciskiem „Załóż” (znika po 8 s; wyłączalne w opcjach).
+- **„Lepszy przedmiot!”**: gdy podniesiony przedmiot jest lepszy od założonego (`Logic/ItemScore`: wagi klasy i kierunku przewodniego z `Data/ItemWeights`, linie sytuacyjne w połowie, S67) i gracz może go założyć, pojawia się mała karta z porównaniem i przyciskiem „Załóż” (znika po 8 s; wyłączalne w opcjach).
 - **Filtr łupu** (opcje): automatyczne podnoszenie od wybranej rzadkości (dla gamepassa Auto-łup) i ukrywanie worków ze zwykłymi przedmiotami poniżej wybranej rzadkości (materiały i złoto zawsze widoczne).
 - **Dziennik łupu**: ostatnie 50 zdobytych przedmiotów z czasem i źródłem (potwór, mapa), dostępny z plecaka.
 - **Szybka sprzedaż**: u każdego kupca przycisk „Sprzedaj zwykłe” i „Sprzedaj zwykłe i unikaty”, pomija przedmioty założone, związane, zablokowane i przedmioty bossów.
@@ -633,106 +633,88 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
 - **Kamień Powrotu**: teleport do miasta (kanałowanie 5 s, przerywane obrażeniami). Tani u kupca.
 - **Kamień Mapy (X)**: teleport na wybraną mapę (do jej punktu odrodzenia).
 - **Kamień Lochu (X)**: teleport przed wejście do konkretnego lochu bossa.
-- **Zwój Zapomnienia** (reset statów), **Zwój Nowej Ścieżki** (zmiana ścieżki głównej), **Zwój Rozwiązania**, **Zwój Ochrony**.
+- **Zwój Zapomnienia** (reset statów), **Zwój Odnowy Umiejętności** (pełny reset rang pul i węzłów kierunków, S138), **Zwój Rozwiązania**, **Zwój Ochrony**.
 
 ## 14. Umiejętności
 
-Od 2026-10-09 rozwój postaci opisuje `docs/ROZWOJ.md` (kontrakt przebudowy: zasady, dane, liczby, kolejność sesji). Ta
-sekcja to krótkie streszczenie. Przy każdej różnicy wygrywa `docs/ROZWOJ.md`, a nad nim `docs/DECYZJE.md`. Liczby w
-`docs/ROZWOJ.md` to wartości startowe, które stroją sesje balansu 20–100.
+Od S137 rozwój umiejętności opisuje `docs/DESIGN-18.md` („Umiejętności 2.0”, S137–S148), a klasy, przełomy, drużynę i
+szczęście dalej `docs/ROZWOJ.md` (§2.7, §6–§12). Ta sekcja to krótkie streszczenie; przy różnicy wygrywa DESIGN-18, a nad
+nim `docs/DECYZJE.md`. Liczby stroją sesje balansu (S146, S147).
 
 ### 14.1 Zasady
 
-- **Podstawa i ścieżki.** Klasa ma podstawę z 8 umiejętności (odblokowanie na poziomach 1, 3, 6, 10, 14, 18, 30, 45,
-  bez punktów) i 3 ścieżki rozwoju (Mag 2 większe; dane mieszczą trzecią). Ścieżka ma 11 rzędów na poziomach 10–90 z
-  przeniesionymi i nowymi umiejętnościami oraz węzłami (ROZWOJ §2).
-- **Rangi rosną same.** Aktywne umiejętności mają rangi 1–10, pasywne 1–5; ranga przychodzi z poziomem postaci
-  (`Logic/Skills.rankLevel`), maksimum najpóźniej na 95. poziomie. Punktów umiejętności już nie ma. Brak poziomów
-  mistrzowskich.
-- **Punkty ścieżek.** 1 punkt na każdym parzystym poziomie (50 na 100.), tylko na węzły ścieżek (rangi 1–3). Pokrycie
-  ok. 81% wszystkich rang, więc build to wybór. Tempo punktów czeka na zgodę właściciela (ROZWOJ §15.1).
-- **Ścieżka główna.** Rzędy 1–2 (poziomy 10 i 15) są otwarte we wszystkich ścieżkach, rzędy 3–11 tylko w ścieżce
-  głównej, którą gracz wybiera od 20. poziomu. Rzędy 3, 6 i 9 to wybór 1 z 2, rząd 8 (60.) to zwieńczenie, rząd 11
-  (90.) jego ulepszenie. Efekty drużynowe z rzędów 1–2 działają poza ścieżką główną w 1/3 siły.
-- **Broń ścieżki.** Rzędy 3–11 ścieżki głównej działają tylko z bronią tej ścieżki (tabela w ROZWOJ §2.8). Podstawa i
-  rzędy 1–2 każdej ścieżki działają z każdą bronią klasy. Wymóg żywiołu broni dla czarów Maga (§5.8) zostaje.
-- **Przełomy (S28, od 2026-10-09 wybór A albo B).** Każda aktywna umiejętność na randze 5 i 10 zmienia działanie, nie
-  tylko liczby. A to dzisiejszy przełom, B nowy; bez wyboru działa A. Siła: przełom 5 ok. +10–15%, przełom 10 ok.
-  +20–25% wartości umiejętności w jej roli. Pierwszy wybór poza walką, zmiana za darmo w mieście albo przy wejściu do
-  lochu bossa. Przełącznik `Config.Skills.breakpoints` zostaje do pomiarów.
-- **Dwa zestawy.** Zestaw pamięta ścieżkę główną, węzły, przełomy, pasek i statystyki (nie ekwipunek). Przełączanie w
-  mieście albo przy wejściu do lochu, poza walką. Pierwszy wybór ścieżki głównej w zestawie jest darmowy, każda
-  następna zmiana zużywa Zwój Nowej Ścieżki (dzisiejszy `scroll_skillreset`). Zwrot węzłów jest darmowy w mieście albo przy wejściu do lochu.
-- **Pasek.** 10 miejsc (klawisze 1–0), przeciąganie na PC i przycisk „Na pasek” w oknie umiejętności. Telefon: 5
-  okrągłych przycisków w łuku wokół przycisku ataku z przełączaniem strony (2 × 5). Nowo odblokowana umiejętność sama
-  trafia na wolne miejsce.
+- **Pule broni.** Założona broń wybiera pulę klasy (Mag: żywioł broni; Wojownik: jednoręczna albo dwuręczna; Łowca:
+  łuk albo kusza; Kapłan: berło i kostur albo buzdygan i kiścień). Pula = 11 umiejętności szkoły na wspólnej drabinie
+  (jeden cel 1 / 15 / 40, obszar 3 / 26, kontrola 6 / 33, obrona 10, pasywki 20 / 50, zwieńczenie 60) + 4 wspólne
+  klasy (4, 12, 30, 45). Na pasku (8 miejsc, osobny w każdej puli) są tylko umiejętności aktywnej puli.
+- **Punkty umiejętności.** Każda pula ma własne punkty: 1 na poziom + 7 na start (27 na 20., 107 na 100.). Punkt kupuje
+  rangę wybranej umiejętności (aktywne 1–10, pasywki 1–5); limit rangi rośnie z poziomem postaci. Do 20. poziomu zwrot
+  rang jest darmowy, potem za złoto w mieście albo przy bramie lochu; pełny reset Zwojem Odnowy Umiejętności.
+- **Kierunki** (dawne ścieżki): drzewa talentów do mieszania, 11 rzędów na poziomach 10–90, punkt talentu co 2
+  poziomy (50 na 100.). Rząd otwiera poziom i punkty w niższych rzędach tego kierunku; jedno zwieńczenie (rząd 8) na
+  zestaw, ulepszenie (rząd 11) tylko przy nim. Węzły `skill` w rzędach 4 i 8 dają umiejętność do każdej puli. Kierunek
+  z największą liczbą punktów (od 12) jest przewodni: tytuł, plan statystyk, wagi przedmiotów, znak w drużynie. Efekty
+  drużynowe rzędów 1–2 w pełni od 6 punktów w kierunku. Broni kierunku nie ma; wymóg broni mają pojedyncze węzły.
+- **Przełomy (wybór A albo B).** Ranga 5 i 10 aktywnej umiejętności zmienia działanie; wybór jest wspólny dla pul
+  zestawu, otwiera go kupiona ranga. Siła: przełom 5 ok. +10–15%, przełom 10 ok. +20–25%.
+- **Dwa zestawy.** Zestaw pamięta rangi pul, paski, węzły, przełomy i statystyki (nie ekwipunek); przełączanie w mieście
+  albo przy wejściu do lochu, poza walką.
 - **Działanie umiejętności.** Koszt zasobu, odnowienie, globalne odnowienie 0,5 s, zasięg. Typy: pojedynczy cel, stożek,
   okrąg wokół siebie, okrąg w punkcie celu, pocisk, linia, szarża, teleport, wzmocnienie, osłabienie, leczenie, leczenie w
   czasie, tarcza, kanał, pułapka, wskrzeszenie, pasywka. Wartości to pary `{ranga 1, ranga 10}` liczone liniowo;
-  przełomy i węzły ścieżek składa `Logic/Skills.effective`, więc serwer, opis i wiki pokazują to samo.
+  przełomy i węzły składa `Logic/Skills.effective`, więc serwer, opis i wiki pokazują to samo.
 - **Animacje i efekty (S28) zostają.** Każda aktywna umiejętność ma własną animację całego ciała i własny efekt.
   Obrażenia lądują w chwili trafienia w animacji (najwyżej 0,6 s po rzuceniu); hitstop, odrzut przy części umiejętności,
   wstrząs kamery przy dużych (opcja „Wstrząsy kamery”), złoty błysk krytyka. Przytrzymanie klawisza pokazuje obszar,
-  na telefonie przeciągnięcie przycisku; jedna umiejętność może czekać w kolejce 0,4 s przed końcem odnowienia. Nowe
-  umiejętności ścieżek dostają ruchy i efekty według sekcji 14 w ROZWOJ.
+  na telefonie przeciągnięcie przycisku; jedna umiejętność może czekać w kolejce 0,4 s przed końcem odnowienia.
 - **Drużyna i szczęście.** Wzmocnienia i osłabienia mają kategorie: w kategorii liczy się najsilniejsze, kategorie się
   sumują, redukcja obrażeń łączy się mnożnikowo z limitem 75% (ROZWOJ §7). Szczęście drużyny daje Kapłan Fortuny
   (ROZWOJ §6). Premia za różne klasy w drużynie: +5% doświadczenia za każdą inną klasę, najwyżej +15%.
-- **Przejście.** Zapis w schemacie 6 daje każdej postaci darmowy reset umiejętności, statystyk i paska (ROZWOJ §5).
-  Klasa, której sesja jeszcze nie przeszła, ma wszystkie 14 dzisiejszych umiejętności jako podstawę (ROZWOJ §2.6).
+- **Przejście.** Zapis w schemacie 12 przeliczył dawne rangi na punkty w pulach i dał darmowy pełny reset; zmiana pul
+  klasy daje go znowu (wersja puli, DESIGN-18 §10).
 
 ### 14.2 Wojownik (Energia)
 
-Podstawa: Potężne Uderzenie 1, Szarża 3, Wir Ostrzy 6, Prowokacja 10, Stalowa Skóra 14 (pasywna), Krwawy Szał 18,
-Trzęsienie Ziemi 30, Kontratak 45 (pasywna).
+| Pula | Szkoła (S1 … U) |
+|---|---|
+| Miecz i Tarcza | Potężne Uderzenie, Zamach Tarczą, Uderzenie Tarczą, Przechwycenie, Miażdżący Cios, Niezłomność, Trzęsienie Ziemi, Sztandar Wojenny, Wyrok, Kontratak, Mur Tarcz |
+| Broń Dwuręczna | Brutalny Cios, Rozpłatanie, Rozbicie, Krwawy Szał, Rozdarcie, Furia, Wir Ostrzy, Tupnięcie, Egzekucja, Niepowstrzymany, Gniew Tytana |
 
-| Ścieżka | Rola i broń | Zwieńczenie (60.) |
-|---|---|---|
-| Strażnik | tank; broń jednoręczna z tarczą | Mur Tarcz |
-| Berserker | obrażenia wręcz, Furia; broń dwuręczna | Rzeź |
-| Chorąży | wsparcie bojowe; szabla albo miecz | Rozkaz Natarcia |
-
-Szczegóły, węzły i cele: ROZWOJ §10.
+Wspólne: Szarża, Prowokacja, Okrzyk Bojowy, Stalowa Skóra. Kierunki: Strażnik (Ostatni Bastion), Berserker (Rzeź),
+Chorąży (Rozkaz Natarcia). Szczegóły: DESIGN-18 §6.2, ROZWOJ §10.
 
 ### 14.3 Łowca (Energia)
 
-Podstawa: Celny Strzał 1, Podwójny Strzał 3, Odskok 6, Deszcz Strzał 10, Sokole Oko 14 (pasywna), Zatruta Strzała 18,
-Salwa 30, Instynkt Drapieżnika 45 (pasywna).
+| Pula | Szkoła (S1 … U) |
+|---|---|
+| Łuk | Celny Strzał, Deszcz Strzał, Przyszpilenie, Krok Wiatru, Podwójny Strzał, Sokole Oko, Salwa, Sokół, Strzał w Serce, Zwinność, Strzała Burzy |
+| Kusza | Ciężki Bełt, Bełt Przebijający, Pułapka Lodowa, Kamuflaż, Zatruta Strzała, Zatrute Groty, Trujące Sidła, Sieć, Bełt Egzekutora, Szybkie Przeładowanie, Pole Sideł |
 
-| Ścieżka | Rola i broń | Zwieńczenie (60.) |
-|---|---|---|
-| Strzelec Wyborowy | jeden cel; Łuk Długi albo Ciężka Kusza | Strzał w Serce |
-| Traper | obszar, trucizna, pułapki; Kusza albo Łuk | Pole Sideł |
-| Zwiadowca | wsparcie bojowe, sokół, znaki; Łuk Krótki albo Łuk | Królewski Sokół |
-
-Kołczan pasuje do każdej ścieżki. Szczegóły: ROZWOJ §11.
+Wspólne: Odskok, Znak Łowcy, Namierzenie, Instynkt Drapieżnika. Kierunki: Strzelec Wyborowy (Martwe Oko), Traper
+(Mistrz Sideł), Zwiadowca (Nagonka). Szczegóły: DESIGN-18 §6.3, ROZWOJ §11.
 
 ### 14.4 Mag (Mana)
 
-Podstawa: Magiczny Pocisk 1, Kula Ognia 3, Lodowy Odłamek 6, Łańcuch Błyskawic 10, Błysk 14, Lodowa Nova 18, Meteor 30,
-Burza Piorunów 45. Każdy żywioł zachowuje w podstawie swoje dwa czary.
+| Pula (żywioł broni) | Szkoła (S1 … U) |
+|---|---|
+| Ogień | Ognisty Pocisk, Kula Ognia, Fala Płomieni, Żarząca Osłona, Pożoga, Żar, Meteor, Zapłon, Spopielenie, Serce Feniksa, Deszcz Meteorów |
+| Lód | Lodowy Odłamek, Grad, Lodowa Nova, Lodowa Bariera, Lodowa Włócznia, Uścisk Zimy, Lodowa Kula, Głęboki Mróz, Roztrzaskanie, Lodowa Krew, Zamieć |
+| Błyskawica | Piorun, Łańcuch Błyskawic, Porażenie, Pancerz Burzy, Grom, Przeładowanie, Burza Piorunów, Kulisty Piorun, Lanca Błyskawic, Przewodnik, Nawałnica |
 
-| Ścieżka | Rola i broń | Zwieńczenie (60.) |
-|---|---|---|
-| Niszczyciel | obszar; kostur albo różdżka z kulą | Kataklizm |
-| Arkanista | jeden cel, Ładunki Arkanów; kostur runiczny albo różdżka z księgą | Strumień Arkanów |
-
-Umiejętności adaptacyjne (Magiczny Pocisk w podstawie, Gniew Żywiołów w rzędzie 7 Niszczyciela) biorą żywioł broni i
-działają z każdą bronią Maga (§5.8). Właściciel wybrał 2 ścieżki; dane mieszczą trzecią (ROZWOJ §12.6). Szczegóły: ROZWOJ §12.
+Wspólne: Błysk, Tarcza Many, Inwokacja, Skupienie. Kierunki: Niszczyciel (Kataklizm), Arkanista (Strumień Arkanów).
+Tożsamość: ogień podpala, lód spowalnia i zamraża, błyskawica ma największe obrażenia. Szczegóły: DESIGN-18 §6.1,
+ROZWOJ §12.
 
 ### 14.5 Kapłan (Mana)
 
-Podstawa: Święte Uderzenie 1, Leczenie 3, Światłość 6, Pobożność 10 (pasywna), Krąg Światła 14, Tarcza Wiary 18,
-Boski Gniew 30 (pasywna), Sąd 45.
+| Pula | Szkoła (S1 … U) |
+|---|---|
+| Berło i Kostur | Promień Światła, Światłość, Oślepienie, Tarcza Wiary, Odnowa, Łaska, Sanktuarium, Oczyszczenie, Cud, Światło Przewodnie, Anioł Stróż |
+| Buzdygan i Kiścień | Święte Uderzenie, Poświęcona Ziemia, Kajdany Światła, Aura Wytrwałości, Piętno Światła, Boski Gniew, Święty Wybuch, Upomnienie, Sąd, Gorliwość, Młot Niebios |
 
-| Ścieżka | Rola i broń | Zwieńczenie (60.) |
-|---|---|---|
-| Uzdrowiciel | leczenie; berło albo kostur kapłański | Anioł Stróż |
-| Kapłan Fortuny | szczęście drużyny; relikwia w drugiej ręce | Koło Fortuny |
-| Inkwizytor | obrażenia; buława albo korbacz | Młot Niebios |
-
-Leczenie i tarcze liczą się od maks. HP celu plus część ataku magicznego. Leczenie i wzmocnienia Kapłana działają
-tylko na niego i członków jego drużyny. Szczegóły: ROZWOJ §9.
+Wspólne: Leczenie, Krąg Światła, Wskrzeszenie, Pobożność. Kierunki: Uzdrowiciel (Boska Interwencja), Kapłan Fortuny
+(Koło Fortuny), Inkwizytor (Wędrujące Piętno). Leczenie i tarcze liczą się od maks. HP celu plus część ataku
+magicznego; leczenie i wzmocnienia działają tylko na Kapłana i jego drużynę. Szczegóły: DESIGN-18 §6.4, ROZWOJ §9.
 
 ## 15. Potwory
 
@@ -870,6 +852,20 @@ jego jaskiniach) trafiają do rankingu regionu wspólnego dla wszystkich serwer�
 błogosławieństwo, tytuł, ramka, Smocze Odłamki dla zwycięzcy). W trakcie nie działają Eliksir Pełni, Płaszcz Przynęty
 ani przyspieszone odrodzenie; wydarzenia świata (15.4) nie startują. Ogłoszenia 10 min i 1 min przed, panel na HUD, okno
 wyników z menu. Liczby: `Data/ScheduledEvents`, `docs/BALANS.md` → „Krwawy Księżyc (S129)”.
+
+### 15.6 Boss świata (S149)
+
+Dla graczy późnej gry: co 3 godziny według zegara UTC (02:00, 05:00 … 23:00) na każdym serwerze świata naraz (każdy
+liczy terminy sam, bez komunikacji między serwerami; areny i turnieje nigdy) na płaskowyżu Lodowej Strażnicy (Lodowe
+Szczyty) budzi się Hrimvald, Praojciec Olbrzymów. Ogłoszenia 10 i 2 minuty przed i przy pojawieniu się; walka na
+otwartym świecie dla 10–20 graczy z ciosami do unikania, wspólnym ciosem, trzema piętnami naraz i zaklęciem do
+przerwania (zasady §16); boss nie zależy od liczby graczy (więcej graczy = krócej, pięciu nie wygrywa), nie ma tarczy,
+pomocnicy faz 2–3 nie dają łupu ani EXP. Po 15 minutach bez zabicia odchodzi. Nagroda (EXP, złoto, materiały i jeden
+przedmiot Heroiczny, Legendarny albo Mityczny, niezwiązany) dla każdego z poziomem od progu i udziałem jak w
+wydarzeniach świata (obrażenia, leczenie, tarcze, przejęte ciosy), **raz na konto na termin**: przejście na inny
+serwer w trakcie nie daje drugiej nagrody. W oknie bossa nie startuje Inwazja ani Czempion, w kole walki nie ma PvP,
+póki boss żyje; Fortuna nie działa na jego łup. Liczby: `Data/WorldBoss`, `Data/Bosses` (`hrimvald`), `docs/BALANS.md`
+→ „Boss świata (S149)”.
 
 ## 16. Bossy i lochy
 
@@ -1186,7 +1182,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 ## 21. Monetyzacja (bez pay-to-win)
 
 - **Smocza Waluta** (Developer Products: 100 / 550 / 1 200 / 2 600 / 7 000).
-- Za Smoczą Walutę: kosmetyki (stroje, aury, efekty broni), pety (tylko wygląd), natychmiastowe odrodzenie, Zwój Zapomnienia, Zwój Nowej Ścieżki (zmiana ścieżki głównej), Zwój Rozwiązania, Zwój Ochrony (limit 1 dziennie, żeby nie był pay-to-win; S120), zmiana nazwy postaci.
+- Za Smoczą Walutę: kosmetyki (stroje, aury, efekty broni), pety (tylko wygląd), natychmiastowe odrodzenie, Zwój Zapomnienia, Zwój Odnowy Umiejętności (pełny reset umiejętności, S138), Zwój Rozwiązania, Zwój Ochrony (limit 1 dziennie, żeby nie był pay-to-win; S120), zmiana nazwy postaci.
 - **Gamepassy**: Auto-łup, Skarbiec (+60 depozytu), Szybki Powrót (−50% czasu odrodzenia), od S121 Kieszenie Kupca (+10 miejsc w każdym plecaku, także bez plecaka: 20 → 30; utrata przepustki zostawia przedmioty w nadmiarze, którego nie da się uzupełniać), Miejsce na postać 4 i 5, Garderoba+ (5 zapisanych zestawów wyglądu zamiast 1). Dawna przepustka VIP to „VIP na zawsze”, wyłączona (`enabled = false`) do decyzji właściciela.
 - **VIP od S121 to subskrypcja Roblox** (Experience Subscriptions, `docs/DESIGN-17.md` §2): 15 Smoczej Waluty raz na dzień UTC, tytuł VIP, złota gwiazdka w czacie i złote imię, +1 kolejka u alchemika, +5 ogłoszeń na aukcji i opłata od sprzedaży 2,5% zamiast 5% (zapisana w ogłoszeniu przy wystawieniu), darmowy powrót do miasta co 10 min (kanał Kamienia Powrotu bez kamienia), jedno darmowe natychmiastowe odrodzenie dziennie, kosmetyk miesiąca na zawsze. Bez EXP, złota, łupów i statystyk. Okno VIP z menu gry i z zakładki „Przepustki” sklepu.
 - Brak sprzedaży EXP, statystyk, przedmiotów z bonusami.
@@ -1307,8 +1303,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   korona i plakietka VIP, pasek HP przy ranach, na lekkiej płytce żelaza z mosiężnym brzegiem; zawsze na wierzchu,
   widoczne do `Config.Nameplate.maxDistance` (150 st.), dalej niż `detailDistance` (60 st.) sama nazwa. Wróg (PvP)
   na czerwono z ⚔, własna nazwa i VIP mosiądzem. Klik / dotknięcie nicku innego gracza otwiera menu gracza (S133).
-- **HUD** (płytki żelaza, S136): lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim 10 slotów umiejętności + 3 mikstury. Prawy górny: minimapa w mosiężnej ramie z pierścieniem w kolorze strefy i nazwą mapy na plakietce, przyciski menu (Postać C, Plecak B, Umiejętności K, Mapa M, Questy L, Gildia G, Grupa P, Opcje Esc). Prawy dolny: przełącznik PvP. Lewy dolny: czat. Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
-- **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×700; B i C otwierają to samo okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na dotyku ekwipunek + zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (podstawa klasy i zakładki ścieżek, ROZWOJ §4; S59: 920 × 640, zakładki Podstawa i ścieżek, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
+- **HUD** (płytki żelaza, S136): lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim pasek 8 slotów umiejętności aktywnej puli broni (DESIGN-18 §4.1, S137) + 3 mikstury. Prawy górny: minimapa w mosiężnej ramie z pierścieniem w kolorze strefy i nazwą mapy na plakietce, przyciski menu (Postać C, Plecak B, Umiejętności K, Mapa M, Questy L, Gildia G, Grupa P, Opcje Esc). Prawy dolny: przełącznik PvP. Lewy dolny: czat. Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
+- **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×700; B i C otwierają to samo okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na dotyku ekwipunek + zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (S139, DESIGN-18 §12: zakładki pul broni i „Kierunki”, drzewko według wspólnej drabiny, szczegóły po kliknięciu, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Ikony przedmiotów (S118): obrazek właściciela (PNG), gdy jego atlas jest wgrany i wczytany, inaczej ikona rysowana kodem, a bez niej symbol; przedmioty questowe z obrazkiem w dzienniku questów (§5.3b).
 - Tooltip przedmiotu (S134g, owner 2026-10-15): nazwa w kolorze rzadkości; „Rodzaj · Kategoria z chwytem · Poziom N · Klasy”
   pogrubione (niespełniona część na czerwono); rzadkość i ulepszenie małym; główna wartość (obrażenia, szybkość i DPS albo

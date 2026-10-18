@@ -110,6 +110,9 @@ export type SkillEffect = {
 	hpPct: ValueRef?,
 	-- S141: every new application on a running entry adds a stack up to this many (value x stacks; a growing slow)
 	maxStacks: number?,
+	-- S144 (Logic/Snare): a root on a boss or an Elite II (StatusEffectService.IsBossLike) is a slow of this value %
+	-- (category enemySlow) for the same time instead (Pinning Shot, Net Shot)
+	bossSlow: ValueRef?,
 }
 
 -- Breakpoint (S28, ROZWOJ 2.7): what changes when the skill reaches rank 5 / 10 — numbers (`add` to radius, angle,
@@ -324,6 +327,15 @@ export type SkillDef = {
 	-- S142 (Ball Lightning): the last wave of circleTarget knocks the enemies it hits back `knockback` studs (bosses
 	-- immune, players half) and stuns them for `stun` s (notBoss)
 	finale: { knockback: number, stun: number }?,
+	-- S143 (DESIGN-18 §4.2, §6.2): the weapons the skill needs besides its pool (Shield Bash: { offhand = { "shield" } });
+	-- the rule of node.weapon (Logic/Paths.skillUsable, "cast.error.needShield" / "cast.error.pathWeapon"); a passive
+	-- with one works only while it fits
+	weapon: { main: { string }?, offhand: { string }? }?,
+	-- S143 (Logic/Fury): Fury stacks each damaging hit of this skill gives (default 1; Brutal Strike 2), with Rage
+	furyGain: number?,
+	-- S145 (Logic/Faith, Rebuke): a hit of the skill breaks an enemy player's channel, aim or beam (Logic/Channel event
+	-- "interrupt"); monsters' casts and a boss's channel (BossMechanics: only damage breaks it) never
+	interrupt: boolean?,
 	-- filled only by Logic/Skills.effective from breakpoints and node mods (ROZWOJ 2.7)
 	selfEffects: { SkillEffect }?,
 	allyEffects: { SkillEffect }?,

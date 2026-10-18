@@ -1,10 +1,13 @@
 --!strict
 -- Warrior paths (docs/ROZWOJ.md 10.1, 10.3-10.5; S75): Guardian, Berserker, Standard-Bearer. Numbers are the ROZWOJ 10
--- starting values ({ rank 1, rank max }, linear); the balance sessions tune them. Shape: tests/fixtures/paths.luau and
+-- starting values ({ rank 1, rank max }, linear); the balance sessions tune them. S143 (DESIGN-18 §6.2, §7): skill nodes
+-- only in rows 4 and 8 (Last Bastion, Carnage and Order to Advance: the capstones of row 8); the skills that went
+-- to the weapon pools left nodes of the same ranks (Stalwart, Shield Bash Mastery, Twin Guard, Scars, Frenzy, Reaper,
+-- Pennant, Herald, Drill). The Berserker's Fury nodes raise Rage's Fury (the two-handed P1): without Rage no Fury. Shape: tests/fixtures/paths.luau and
 -- Data/Paths/Cleric (S71). Rank-dependent numbers sit in `values`, passive names the field, in modify.bp a number is
 -- { ref = "<field>" }; numbers of effects and behaviours go through new fields of the skill's values (read by name).
 -- Hooks are the S64 / S72 names (Logic/Fury, CombatService). `reference` and `itemWeights` never reach the wiki;
--- every path is unpublished there (wiki = false, ROZWOJ 3.5).
+-- S148: the directions are published there (DESIGN-18 §14).
 
 local SkillData = require("../Skills")
 local Types = require("./Types")
@@ -77,7 +80,11 @@ local guardian: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(G, "fortitude"),
+			-- S143: Fortitude is the one-handed P1; Stalwart takes its one rank
+			node(G, "stalwart", "passive", 1, "✚", {
+				values = { stalwart = 1 },
+				passive = { pct = { maxHp = "stalwart" } },
+			}),
 			node(G, "frontline", "passive", 3, "⚑", {
 				values = { frontline = { 1.5, 3.5 } },
 				passive = { hooks = { guardPerEnemy = "frontline" } },
@@ -111,7 +118,12 @@ local guardian: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(G, "intercept"),
+			-- S143: Intercept is the one-handed O1; Twin Guard takes its one rank: Intercept also covers the second most
+			-- wounded ally (secondTarget, free of the 10A choice)
+			node(G, "twinGuard", "modify", 1, "⇉", {
+				values = { twinGuard = 100 },
+				modify = { skill = "intercept", bp = { secondTarget = ref("twinGuard") } },
+			}),
 			node(G, "sacrifice", "modify", 3, "✠", {
 				values = { sacrificeTime = { 0.5, 1.5 }, sacrifice = { 5, 15 } },
 				modify = {
@@ -158,7 +170,11 @@ local guardian: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(G, "lastBastion"),
+			-- S143: Last Bastion moved to the capstone (row 8); Shield Bash Mastery takes its one rank (the stun 0.5 s longer)
+			node(G, "bashMastery", "modify", 1, "⬟", {
+				values = { bashStun = 0.5 },
+				modify = { skill = "shieldBash", bp = { add = { effectDuration = ref("bashStun") } } },
+			}),
 			node(G, "bastionCover", "modify", 3, "⛫", {
 				values = { bastionCover = { 10, 30 } },
 				modify = {
@@ -176,7 +192,8 @@ local guardian: Types.PathDef = {
 				},
 			}),
 		}),
-		row(false, { skill(G, "shieldWall") }),
+		-- S143: Shield Wall is the one-handed U; Last Bastion is the Guardian's capstone (DESIGN-18 §7: rows 4 and 8)
+		row(false, { skill(G, "lastBastion") }),
 		row(true, {
 			node(G, "martyr", "passive", 3, "✝", {
 				values = { martyr = { 10, 30 } },
@@ -198,17 +215,20 @@ local guardian: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			node(G, "shieldWall2", "modify", 2, "▦", {
-				values = { wallTime = { 1, 2 }, wallShare = { 2.5, 5 } },
+			-- S143: the capstone's upgrade follows the capstone (Shield Wall moved to the one-handed pool)
+			node(G, "lastBastion2", "modify", 2, "▦", {
+				values = { bastionTime = { 1, 2 }, bastionHold = { 2.5, 5 } },
 				modify = {
-					skill = "shieldWall",
-					bp = { add = { effectDuration = ref("wallTime") }, values = { share = ref("wallShare") } },
+					skill = "lastBastion",
+					bp = {
+						add = { effectDuration = ref("bastionTime") },
+						values = { reduction = ref("bastionHold") },
+					},
 				},
 			}),
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local berserker: Types.PathDef = {
@@ -235,15 +255,20 @@ local berserker: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(B, "cleave"),
+			-- S143: Cleave is the two-handed A1; Scars take its one rank
+			node(B, "scars", "passive", 1, "≡", {
+				values = { scars = 1 },
+				passive = { pct = { maxHp = "scars" } },
+			}),
 			node(B, "wounds", "passive", 3, "♦", {
 				values = { wounds = { 10, 30 } },
 				passive = { hooks = { bleedDamage = "wounds" } },
 			}),
 		}),
 		row(false, {
+			-- S143: the cap above Rage's 6 stacks: 8 / 9 / 10 (HOOK_RULES.fury.maxStacks)
 			node(B, "rhythm", "passive", 3, "♫", {
-				values = { rhythmMax = { 4, 10 }, rhythmSpeed = 1 },
+				values = { rhythmMax = { 2, 4 }, rhythmSpeed = 1 },
 				passive = { hooks = { furyMax = "rhythmMax", furySpeed = "rhythmSpeed" } },
 			}),
 			node(B, "bloodthirst", "modify", 3, "⚱", {
@@ -268,7 +293,11 @@ local berserker: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(B, "rend"),
+			-- S143: Rend is the two-handed S2; Frenzy takes its one rank (more damage per Fury stack, only with Rage)
+			node(B, "frenzy", "passive", 1, "✹", {
+				values = { frenzy = 0.3 },
+				passive = { hooks = { furyDamage = "frenzy" } },
+			}),
 			node(B, "executioner", "passive", 3, "⚰", {
 				values = { executioner = { 1.5, 4.5 } },
 				passive = { hooks = { executioner = "executioner" } },
@@ -295,7 +324,11 @@ local berserker: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(B, "titansWrath"),
+			-- S143: Titan's Wrath is the two-handed U; Reaper takes its one rank (Execute's threshold 30 -> 35 %)
+			node(B, "reaper", "modify", 1, "⚚", {
+				values = { reaper = 35 },
+				modify = { skill = "execute", bp = { finisher = { hp = ref("reaper") } } },
+			}),
 			node(B, "thunder", "modify", 3, "☇", {
 				values = { thunder = { 0.93, 0.8 } },
 				modify = { skill = "titansWrath", bp = { mul = { cooldown = ref("thunder") } } },
@@ -337,7 +370,6 @@ local berserker: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local standard: Types.PathDef = {
@@ -363,7 +395,11 @@ local standard: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(S, "battleCry"),
+			-- S143: Battle Cry is the Warrior's common C3; Pennant takes its one rank
+			node(S, "pennant", "passive", 1, "⚑", {
+				values = { pennant = 3 },
+				passive = { pct = { armor = "pennant" } },
+			}),
 			node(S, "breath", "modify", 3, "☁", {
 				values = { breath = { 0.8, 0.4 } },
 				modify = { skill = "battleCry", bp = { mul = { cost = ref("breath") } } },
@@ -393,8 +429,9 @@ local standard: Types.PathDef = {
 			}),
 		}),
 		row(true, {
+			-- S146: 4-12 -> 5-15 (the Standard-Bearer's own damage S >= 0.55 at 70 with the banner on its bar)
 			node(S, "fervor", "modify", 3, "✹", {
-				values = { fervor = { 4, 12 } },
+				values = { fervor = { 5, 15 } },
 				modify = { skill = "battleCry", bp = { values = { atk = ref("fervor") } } },
 			}),
 			node(S, "formation", "modify", 3, "▤", {
@@ -416,7 +453,11 @@ local standard: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(S, "warBanner"),
+			-- S143: War Banner is the one-handed K2; Herald takes its one rank (Battle Cry 4 s longer)
+			node(S, "herald", "modify", 1, "♪", {
+				values = { herald = 4 },
+				modify = { skill = "battleCry", bp = { add = { effectDuration = ref("herald") } } },
+			}),
 			node(S, "colours", "modify", 3, "⚐", {
 				values = { colours = { 1, 3 } },
 				modify = { skill = "warBanner", bp = { add = { duration = ref("colours") } } },
@@ -459,7 +500,11 @@ local standard: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(S, "crushingBlow"),
+			-- S143: Crushing Blow is the one-handed S2; Drill takes its one rank (War Banner's cooldown x0.85)
+			node(S, "drill", "modify", 1, "⚒", {
+				values = { drill = 0.85 },
+				modify = { skill = "warBanner", bp = { mul = { cooldown = ref("drill") } } },
+			}),
 			node(S, "sunder", "modify", 3, "⛏", {
 				values = { sunder = { 2, 6 } },
 				modify = { skill = "crushingBlow", bp = { add = { armorBreakDuration = ref("sunder") } } },
@@ -509,10 +554,12 @@ local standard: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 -- Model builds (ROZWOJ 7.5, 10.3-10.5; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50 points.
+-- S143 (DESIGN-18 §6.2, §13): one build per pool and leading direction (Guardian and Standard-Bearer with Sword and
+-- Shield, Berserker with Two-Handed), the moved skill nodes replaced by the nodes of the same ranks, `ranks` = the order
+-- the model buys skill ranks in (the rotation's core first, the school passive at its unlock, utility last).
 local function build(
 	id: string,
 	main: string,
@@ -521,16 +568,20 @@ local function build(
 	nodes: { { any } },
 	bp: { [string]: "a" | "b" },
 	rotation: { { [string]: any } },
-	damageReference: boolean?
+	ranks: { string },
+	damageReference: boolean?,
+	bar: { string }?
 ): Types.ReferenceBuild
 	return {
 		id = id,
 		damageReference = damageReference,
+		bar = bar,
 		weapon = { main = main, offhand = offhand },
 		nodes = nodes,
 		bp = bp,
 		stats = stats,
 		rotation = rotation,
+		ranks = ranks,
 	}
 end
 
@@ -545,74 +596,120 @@ local GUARDIAN_BP: { [string]: "a" | "b" } = {
 	["lastBastion:10"] = "b",
 	["taunt:5"] = "b",
 	["taunt:10"] = "b",
+	["shieldSweep:5"] = "b",
+	["shieldSweep:10"] = "b",
+	["shieldBash:5"] = "b",
+	["shieldBash:10"] = "a",
+	["vindicate:5"] = "a",
+	["vindicate:10"] = "b",
 }
+-- S143: the Sword and Shield rotation (Shield Sweep and Shield Bash for Blade Whirl and Cleave, Crushing Blow and
+-- Vindicate from the pool)
 local function guardianRotation(intercept: { [string]: any }): { { [string]: any } }
 	return {
 		intercept,
 		{ skill = "taunt" },
 		{ skill = "shieldWall" },
 		{ skill = "battleCry" },
+		{ skill = "crushingBlow" },
+		{ skill = "vindicate" },
 		{ skill = "mightyStrike" },
-		{ skill = "bladeWhirl" },
-		{ skill = "cleave" },
+		{ skill = "shieldSweep" },
+		{ skill = "shieldBash" },
 		{ skill = "earthquake" },
 	}
 end
+-- S146 (B1): the actives of the bar at 100, then the pool's passives, then the rest; skills open at 20 keep their order
+local GUARDIAN_RANKS = {
+	"mightyStrike",
+	"shieldSweep",
+	"intercept",
+	"taunt",
+	"fortitude",
+	"crushingBlow",
+	"shieldBash",
+	"earthquake",
+	"shieldWall",
+	"steelSkin",
+	"riposte",
+	"vindicate",
+	"lastBastion",
+	"battleCry",
+	"warBanner",
+	"charge",
+}
+
+-- S146 (DESIGN-18 §4.1, §13): the 8 slots of the bar in priority (the first ones the character can cast at a level);
+-- Shield Bash's stun before Vindicate's burst (the tank's T-SK1 / T-SK2 guards at 90-100)
+local GUARDIAN_BAR = {
+	"intercept",
+	"taunt",
+	"shieldWall",
+	"crushingBlow",
+	"mightyStrike",
+	"shieldSweep",
+	"earthquake",
+	"shieldBash",
+	"vindicate",
+	"battleCry",
+	"lastBastion",
+	"charge",
+}
 
 guardian.reference = {
 	build("defender", "sword1h", "shield", guardian.statPlan :: any, {
-		{ "guardian_fortitude", 1 },
+		{ "guardian_stalwart", 1 },
 		{ "guardian_frontline", 3 },
-		{ "berserker_cleave", 1 },
+		{ "berserker_scars", 1 },
 		{ "berserker_wounds", 1 },
-		{ "standard_battleCry", 1 },
+		{ "standard_pennant", 1 },
 		{ "standard_breath", 3 },
 		{ "guardian_block", 3 },
 		{ "guardian_cover", 3 },
 		{ "berserker_rhythm", 2 },
 		{ "guardian_vow", 3 },
-		{ "guardian_intercept", 1 },
+		{ "guardian_twinGuard", 1 },
 		{ "guardian_sacrifice", 3 },
 		{ "guardian_menace", 3 },
 		{ "guardian_shieldMastery", 3 },
 		{ "guardian_aegis", 3 },
-		{ "guardian_lastBastion", 1 },
+		{ "guardian_bashMastery", 1 },
 		{ "guardian_bastionCover", 3 },
-		{ "guardian_shieldWall", 1 },
+		{ "guardian_lastBastion", 1 },
 		{ "guardian_martyr", 3 },
 		{ "guardian_fortress", 3 },
 		{ "guardian_veteran", 3 },
-		{ "guardian_shieldWall2", 2 },
-	}, GUARDIAN_BP, guardianRotation({ skill = "intercept", target = "allyInZone" })),
+		{ "guardian_lastBastion2", 2 },
+	}, GUARDIAN_BP, guardianRotation({ skill = "intercept", target = "allyInZone" }), GUARDIAN_RANKS, nil, GUARDIAN_BAR),
 	build("loner", "sword1h", "shield", guardian.statPlan :: any, {
-		{ "guardian_fortitude", 1 },
+		{ "guardian_stalwart", 1 },
 		{ "guardian_frontline", 3 },
-		{ "berserker_cleave", 1 },
+		{ "berserker_scars", 1 },
 		{ "berserker_wounds", 3 },
-		{ "standard_battleCry", 1 },
+		{ "standard_pennant", 1 },
 		{ "standard_breath", 3 },
 		{ "guardian_block", 3 },
 		{ "berserker_rhythm", 3 },
 		{ "berserker_bloodthirst", 3 },
 		{ "guardian_retaliation", 3 },
-		{ "guardian_intercept", 1 },
+		{ "guardian_twinGuard", 1 },
 		{ "guardian_sacrifice", 3 },
 		{ "guardian_menace", 3 },
 		{ "guardian_shieldMastery", 3 },
 		{ "guardian_grit", 3 },
+		{ "guardian_bashMastery", 1 },
 		{ "guardian_lastBastion", 1 },
-		{ "guardian_shieldWall", 1 },
 		{ "guardian_retribution", 3 },
 		{ "guardian_fortress", 3 },
 		{ "guardian_veteran", 3 },
-		{ "guardian_shieldWall2", 2 },
-	}, GUARDIAN_BP, guardianRotation({ skill = "intercept", target = "self" })),
+		{ "guardian_lastBastion2", 2 },
+	}, GUARDIAN_BP, guardianRotation({ skill = "intercept", target = "self" }), GUARDIAN_RANKS, nil, GUARDIAN_BAR),
 }
 
 -- Berserker -----------------------------------------------------------------------------------------------------
 local BERSERKER_BP: { [string]: "a" | "b" } = {
-	["mightyStrike:5"] = "b",
-	["mightyStrike:10"] = "b",
+	["brutalStrike:5"] = "b",
+	["brutalStrike:10"] = "b",
 	["bladeWhirl:5"] = "b",
 	["bladeWhirl:10"] = "a",
 	["cleave:5"] = "a",
@@ -620,41 +717,72 @@ local BERSERKER_BP: { [string]: "a" | "b" } = {
 	["rend:5"] = "a",
 	["rend:10"] = "a",
 	["titansWrath:5"] = "b",
-	["titansWrath:10"] = "b",
+	["titansWrath:10"] = "a",
 	["carnage:5"] = "a",
 	["carnage:10"] = "a",
 	["bloodlust:5"] = "b",
 	["bloodlust:10"] = "b",
+	["sunder:5"] = "b",
+	["sunder:10"] = "b",
+	["warStomp:5"] = "b",
+	["warStomp:10"] = "b",
+	["execute:5"] = "b",
+	["execute:10"] = "b",
 }
+-- S143: the Two-Handed rotation (Brutal Strike for Mighty Strike, Sunder, War Stomp and Execute from the pool, no
+-- Earthquake); minFury holds only with Fury (Rage, from 20; tests/SkillModel)
 local BERSERKER_ROTATION: { { [string]: any } } = {
 	{ skill = "carnage", minFury = 10 },
 	{ skill = "battleCry" },
 	{ skill = "bloodlust" },
+	{ skill = "sunder" },
 	{ skill = "rend", minFury = 8 },
+	{ skill = "execute", minFury = 8 },
 	{ skill = "titansWrath", minEnemies = 3 },
-	{ skill = "mightyStrike" },
+	{ skill = "warStomp", minEnemies = 2 },
+	{ skill = "brutalStrike" },
 	{ skill = "cleave" },
 	{ skill = "bladeWhirl" },
-	{ skill = "earthquake" },
 	{ skill = "charge" },
 }
+-- S146 (B1): the actives of the bar at 100, then the pool's passives, then the rest; skills open at 20 keep their order
+local BERSERKER_RANKS = {
+	"brutalStrike",
+	"cleave",
+	"rend",
+	"sunder",
+	"bloodlust",
+	"rage",
+	"bladeWhirl",
+	"execute",
+	"titansWrath",
+	"carnage",
+	"steelSkin",
+	"unstoppable",
+	"battleCry",
+	"warStomp",
+	"charge",
+	"taunt",
+}
+-- S143: Battle Rhythm before the other directions' rows 1-2 (Fury from Rage at 20 grows with it; the old Cleave node
+-- gave the damage of rows 1-2 at 20)
 local function berserkerNodes(row3: string, row6: string, row9: string): { { any } }
 	return {
-		{ "berserker_cleave", 1 },
+		{ "berserker_scars", 1 },
 		{ "berserker_wounds", 3 },
-		{ "guardian_fortitude", 1 },
-		{ "guardian_frontline", 3 },
-		{ "standard_battleCry", 1 },
-		{ "standard_breath", 3 },
 		{ "berserker_rhythm", 3 },
+		{ "guardian_stalwart", 1 },
+		{ "guardian_frontline", 3 },
 		{ "berserker_bloodthirst", 3 },
-		{ row3, 3 },
-		{ "berserker_rend", 1 },
-		{ "berserker_executioner", 3 },
 		{ "berserker_rendingCuts", 3 },
+		{ row3, 3 },
+		{ "standard_pennant", 1 },
+		{ "standard_breath", 3 },
+		{ "berserker_frenzy", 1 },
+		{ "berserker_executioner", 3 },
 		{ "berserker_might", 3 },
 		{ row6, 3 },
-		{ "berserker_titansWrath", 1 },
+		{ "berserker_reaper", 1 },
 		{ "berserker_thunder", 3 },
 		{ "berserker_carnage", 1 },
 		{ row9, 3 },
@@ -663,6 +791,23 @@ local function berserkerNodes(row3: string, row6: string, row9: string): { { any
 		{ "berserker_carnage2", 2 },
 	}
 end
+
+-- S146: the bar (at 100 Bloodlust, Battle Cry, War Stomp and Charge leave it for Execute, Carnage and Titan's Wrath;
+-- the damage reference within 1 % of its whole rotation before S146)
+local BERSERKER_BAR = {
+	"brutalStrike",
+	"rend",
+	"execute",
+	"carnage",
+	"sunder",
+	"bladeWhirl",
+	"titansWrath",
+	"cleave",
+	"bloodlust",
+	"battleCry",
+	"warStomp",
+	"charge",
+}
 
 berserker.reference = {
 	-- the only damage reference in the game: the damage target of every class (ROZWOJ 7.5)
@@ -674,7 +819,9 @@ berserker.reference = {
 		berserkerNodes("berserker_amok", "berserker_bloodfury", "berserker_giantSlayer"),
 		BERSERKER_BP,
 		BERSERKER_ROTATION,
-		true
+		BERSERKER_RANKS,
+		true,
+		BERSERKER_BAR
 	),
 	build(
 		"butcher",
@@ -683,7 +830,10 @@ berserker.reference = {
 		berserker.statPlan :: any,
 		berserkerNodes("berserker_ferocity", "berserker_relentless", "berserker_drinker"),
 		BERSERKER_BP,
-		BERSERKER_ROTATION
+		BERSERKER_ROTATION,
+		BERSERKER_RANKS,
+		nil,
+		BERSERKER_BAR
 	),
 }
 
@@ -697,34 +847,63 @@ local STANDARD_BP: { [string]: "a" | "b" } = {
 	["crushingBlow:10"] = "b",
 	["advanceOrder:5"] = "a",
 	["advanceOrder:10"] = "a",
+	["shieldSweep:5"] = "b",
+	["shieldSweep:10"] = "b",
+	["shieldBash:5"] = "b",
+	["shieldBash:10"] = "b",
+	["vindicate:5"] = "b",
+	["vindicate:10"] = "b",
 }
+-- S143: the Sword and Shield rotation of the Standard-Bearer (the banner first, then the cries and the pool's blows)
 local STANDARD_ROTATION: { { [string]: any } } = {
 	{ skill = "warBanner", opener = true },
 	{ skill = "battleCry" },
 	{ skill = "advanceOrder" },
 	{ skill = "crushingBlow" },
+	{ skill = "vindicate" },
 	{ skill = "mightyStrike" },
-	{ skill = "cleave" },
-	{ skill = "bladeWhirl" },
+	{ skill = "shieldSweep" },
+	{ skill = "shieldBash" },
+	{ skill = "earthquake" },
+}
+-- S146: the bar's blows first, then the cries and the banner, Intercept and Taunt (not on the Standard-Bearer's bar)
+-- last; every skill open at 20 before Charge reaches its limit there, so 1-20 is unchanged
+local STANDARD_RANKS = {
+	"mightyStrike",
+	"shieldSweep",
+	"crushingBlow",
+	"fortitude",
+	"vindicate",
+	"earthquake",
+	"shieldBash",
+	"battleCry",
+	"warBanner",
+	"advanceOrder",
+	"steelSkin",
+	"riposte",
+	"intercept",
+	"taunt",
+	"shieldWall",
+	"charge",
 }
 local function standardNodes(row3: string, row6: string, row9: string): { { any } }
 	return {
-		{ "standard_battleCry", 1 },
+		{ "standard_pennant", 1 },
 		{ "standard_breath", 3 },
-		{ "guardian_fortitude", 1 },
+		{ "guardian_stalwart", 1 },
 		{ "guardian_frontline", 3 },
-		{ "berserker_cleave", 1 },
+		{ "berserker_scars", 1 },
 		{ "berserker_wounds", 1 },
 		{ "standard_command", 3 },
 		{ "standard_march", 3 },
 		{ "berserker_rhythm", 2 },
 		{ row3, 3 },
-		{ "standard_warBanner", 1 },
+		{ "standard_herald", 1 },
 		{ "standard_colours", 3 },
 		{ "standard_grit", 3 },
 		{ "standard_wide", 3 },
 		{ row6, 3 },
-		{ "standard_crushingBlow", 1 },
+		{ "standard_drill", 1 },
 		{ "standard_sunder", 3 },
 		{ "standard_advanceOrder", 1 },
 		{ row9, 3 },
@@ -734,6 +913,20 @@ local function standardNodes(row3: string, row6: string, row9: string): { { any 
 	}
 end
 
+-- S146: the bar (the banner and the cries first, Shield Bash leaves it at 100)
+local STANDARD_BAR = {
+	"warBanner",
+	"battleCry",
+	"advanceOrder",
+	"crushingBlow",
+	"vindicate",
+	"mightyStrike",
+	"shieldSweep",
+	"earthquake",
+	"shieldBash",
+	"charge",
+}
+
 standard.reference = {
 	build(
 		"commander",
@@ -742,7 +935,10 @@ standard.reference = {
 		standard.statPlan :: any,
 		standardNodes("standard_fervor", "standard_inspire", "standard_glory"),
 		STANDARD_BP,
-		STANDARD_ROTATION
+		STANDARD_ROTATION,
+		STANDARD_RANKS,
+		nil,
+		STANDARD_BAR
 	),
 	build(
 		"warden",
@@ -751,7 +947,10 @@ standard.reference = {
 		standard.statPlan :: any,
 		standardNodes("standard_formation", "standard_rally", "standard_oath"),
 		STANDARD_BP,
-		STANDARD_ROTATION
+		STANDARD_ROTATION,
+		STANDARD_RANKS,
+		nil,
+		STANDARD_BAR
 	),
 }
 

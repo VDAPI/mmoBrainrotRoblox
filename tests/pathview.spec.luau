@@ -306,7 +306,7 @@ T.describe("PathView pool tree (S139)", function()
 	-- the fire pool's S1): every ladder row holds one skill, nothing in Others
 	T.it("the Mage's full pools: one skill on every ladder row, nothing in Others", function()
 		local view = PathView.poolView(mage(10, { firebolt = 2 }), "fire") :: any
-		T.expect(view.transitional).toBe(false)
+		T.expect(view.transitional).toBeNil() -- S145: no class is transitional, the field is gone
 		T.expect(view.active).toBe(true)
 		local ladder, filled = 0, 0
 		for _, row in view.rows do

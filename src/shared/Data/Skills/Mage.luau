@@ -41,7 +41,7 @@ return Build.class("Mage", "mana", "magic", {
 		breakpoints = Build.bp2(
 			{ a = { pierce = 17 }, b = { mul = { cooldown = 0.88 } } }, -- S91: 5A pierce 40 -> 17 (R4)
 			-- 10B: two bolts at 109 % each (18 % more in total; S142: -104 -> -75 with the x0.72)
-			{ a = { splash = { radius = 4, pct = 12 } }, b = { add = { hits = 1 }, values = { dmg = -75 } } }
+			{ a = { splash = { radius = 4, pct = 13 } }, b = { add = { hits = 1 }, values = { dmg = -75 } } } -- S147: 10A 12 -> 13 (R4)
 		),
 		glyph = "✦",
 		vfx = "arcaneBolt",
@@ -334,7 +334,7 @@ return Build.class("Mage", "mana", "magic", {
 		range = 38,
 		element = "fire",
 		finisher = { hp = 30, mul = 1.5 },
-		values = { dmg = { 180, 300 }, vsBurning = { 10, 16 } },
+		values = { dmg = { 180, 283.3 }, vsBurning = { 10, 16 } }, -- S147: rank 10 300 -> 283.3 (rank 8 pinned, Data/SkillCurves)
 		breakpoints = Build.bp2(
 			{ a = { splash = { radius = 5, pct = 8 } }, b = { values = { vsBurning = 5 } } },
 			{ a = { execute = 50 }, b = { values = { dmg = 60 } } }
@@ -364,20 +364,20 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
-		cost = 174,
+		cost = 460, -- S147: 174 -> 460 (T-SK4 of the Destroyer at 100)
 		cooldown = 50,
 		range = 38,
 		radius = 16,
-		hits = 6,
+		hits = 7, -- S147: 6 -> 7 (5A +1 impact within R4)
 		interval = 0.4,
 		delay = 0.8,
 		element = "fire",
 		burnStacks = 1,
-		values = { dmg = { 24, 24 } }, -- S81 (ROZWOJ 12.4, 15.5.4): row 7 of the Destroyer
+		values = { dmg = { 81, 107 } }, -- S81 (ROZWOJ 12.4, 15.5.4): row 7 of the Destroyer. S147: 24 -> 81-107 (7 impacts) (fire with its burn wins 3 targets 8 s against lightning)
 		breakpoints = Build.bp2(
 			{ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.88 } } },
 			-- S94 (H4): 10A -5 studs (was +4: a wider storm spread the impacts, R4 -0.04; -5 gives 0.21 at 84-100)
-			{ a = { add = { radius = -5 } }, b = { values = { dmg = 4.4 } } }
+			{ a = { add = { radius = -5 } }, b = { values = { dmg = 24 } } } -- S147: 10B 4.4 -> 24 (R4)
 		),
 		glyph = "✺",
 	},
@@ -413,7 +413,7 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
-		cost = 119,
+		cost = 220, -- S147: 119 -> 220 (T-SK4 of the Destroyer at 100)
 		cooldown = 30,
 		range = 38,
 		radius = 12,
@@ -589,7 +589,7 @@ return Build.class("Mage", "mana", "magic", {
 		range = 38,
 		castTime = 0.8,
 		element = "ice",
-		values = { dmg = { 70, 330 }, vsFrozen = 50, vsDeepChill = 25 },
+		values = { dmg = { 70, 360 }, vsFrozen = 50, vsDeepChill = 25 }, -- S147: rank 10 330 -> 360 (rank 7 pinned, ice 0.85-0.95 x fire)
 		breakpoints = Build.bp2(
 			{ a = { splash = { radius = 5, pct = 9 } }, b = { values = { dmg = 45 } } },
 			{ a = { effect = { kind = "freeze", duration = 1.5 } }, b = { values = { dmg = 75 } } }
@@ -649,14 +649,14 @@ return Build.class("Mage", "mana", "magic", {
 		cooldown = 20,
 		range = 38,
 		element = "ice",
-		values = { dmg = { 70, 120 }, attackSlow = 30 },
+		values = { dmg = { 80, 138 }, attackSlow = 30 }, -- S147: x1.15 (ice 0.85-0.95 x fire)
 		effects = {
 			{ kind = "freeze", duration = 3 },
 			{ kind = "attackSlow", duration = 4, value = "attackSlow", category = "enemyAttackSlow" },
 		},
 		breakpoints = Build.bp2(
-			{ a = { add = { effectDuration = 1 } }, b = { values = { dmg = 13 } } },
-			{ a = { mul = { cooldown = 0.85 } }, b = { values = { dmg = 30 } } }
+			{ a = { add = { effectDuration = 1 } }, b = { values = { dmg = 15 } } }, -- S147: 5B 13 -> 15 (R4)
+			{ a = { mul = { cooldown = 0.85 } }, b = { values = { dmg = 36 } } } -- S147: 10B 30 -> 36 (R4)
 		),
 		glyph = "✻",
 	},
@@ -674,10 +674,10 @@ return Build.class("Mage", "mana", "magic", {
 		cooldown = 9,
 		range = 38,
 		element = "ice",
-		values = { dmg = { 160, 230 }, shatter = 100, shatterDeep = 60 },
+		values = { dmg = { 184, 420 }, shatter = 100, shatterDeep = 60 }, -- S147: 160-230 -> 184-420 (ice 0.85-0.95 x fire; rank 8 pinned)
 		breakpoints = Build.bp2(
 			{ a = { splash = { radius = 5, pct = 12 } }, b = { values = { shatter = 30 } } },
-			{ a = { effect = { kind = "freeze", duration = 1 } }, b = { values = { dmg = 55 } } }
+			{ a = { effect = { kind = "freeze", duration = 1 } }, b = { values = { dmg = 85 } } } -- S147: 10B 55 -> 85 (R4)
 		),
 		glyph = "✶",
 	},
@@ -703,7 +703,7 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
-		cost = 170,
+		cost = 270, -- S147: 170 -> 270 (T-SK4 of the Destroyer at 100)
 		cooldown = 50,
 		range = 38,
 		radius = 12,
@@ -716,7 +716,7 @@ return Build.class("Mage", "mana", "magic", {
 		effects = { { kind = "slow", duration = 2, value = "slow", category = "enemySlow", maxStacks = 8 } },
 		breakpoints = Build.bp2(
 			{ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.88 } } },
-			{ a = { add = { radius = 3 } }, b = { values = { dmg = 3.5 } } }
+			{ a = { add = { radius = 3 } }, b = { values = { dmg = 3.8 } } } -- S147: 10B 3.5 -> 3.8 (R4)
 		),
 		glyph = "🌬",
 	},
@@ -803,7 +803,7 @@ return Build.class("Mage", "mana", "magic", {
 		range = 38,
 		delay = 0.5,
 		element = "lightning",
-		values = { dmg = { 100, 400 } },
+		values = { dmg = { 100, 460 } }, -- S147: rank 10 400 -> 460 (rank 7 pinned, lightning 1.10-1.20 x fire)
 		breakpoints = Build.bp2(
 			{ a = { splash = { radius = 5, pct = 7 } }, b = { values = { dmg = 50 } } },
 			{ a = { effect = { kind = "stun", duration = 1, notBoss = true } }, b = { values = { dmg = 90 } } }
@@ -863,10 +863,10 @@ return Build.class("Mage", "mana", "magic", {
 		element = "lightning",
 		sureCrit = true,
 		finisher = { hp = 30, mul = 1.5 },
-		values = { dmg = { 140, 200 } },
+		values = { dmg = { 140, 280 } }, -- S147: rank 10 200 -> 280 (rank 8 pinned, lightning 1.10-1.20 x fire at 100)
 		breakpoints = Build.bp2(
-			{ a = { add = { width = 2 } }, b = { values = { dmg = 22 } } },
-			{ a = { mul = { cooldown = 0.8 } }, b = { values = { dmg = 50 } } }
+			{ a = { add = { width = 2 } }, b = { values = { dmg = 30 } } }, -- S147: 5B 22 -> 30 (R4)
+			{ a = { mul = { cooldown = 0.8 } }, b = { values = { dmg = 65 } } } -- S147: 10B 50 -> 65 (R4)
 		),
 		glyph = "➶",
 	},
@@ -891,7 +891,7 @@ return Build.class("Mage", "mana", "magic", {
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
-		cost = 170,
+		cost = 360, -- S147: 170 -> 360 (T-SK4 of the Destroyer at 100)
 		cooldown = 50,
 		range = 38,
 		radius = 12,
@@ -899,7 +899,7 @@ return Build.class("Mage", "mana", "magic", {
 		interval = 0.35,
 		randomTarget = true,
 		element = "lightning",
-		values = { dmg = { 40, 48 } },
+		values = { dmg = { 29, 34 } }, -- S147: 40-48 -> 29-34 (fire with its burn wins 3 targets 8 s)
 		breakpoints = Build.bp2(
 			{ a = { add = { hits = 2 } }, b = { mul = { cooldown = 0.88 } } },
 			{ a = { effect = { kind = "stun", duration = 0.5, notBoss = true } }, b = { values = { dmg = 8.5 } } }

@@ -81,8 +81,8 @@ return table.freeze({
 	MAIN_MIN_POINTS = 12,
 	-- from this many ranks in a direction its team nodes of rows 1..DIP_ROWS work in full
 	TEAM_FULL_POINTS = 6,
-	-- the target rows of "skill" nodes (at most one each per direction); tests/paths.spec asserts it only for classes
-	-- whose pools are no longer transitional (Data/SkillPools.<Class>.transitional)
+	-- the target rows of "skill" nodes (at most one each per direction); tests/paths.spec asserts it for every class
+	-- (S145: the end of the transitional pools)
 	SKILL_ROWS = table.freeze({ 4, 8 }),
 	-- ROZWOJ 7.3: party auras from path nodes (PartyAuraService, Logic/Paths.inAura).
 	AURA = table.freeze({
@@ -122,8 +122,9 @@ return table.freeze({
 		-- Vigilance / Warning: a red zone of a monster within monsterRange of the Scout gives the party within
 		-- partyRange the bonus for the windup + extra seconds, each kind at most once per cooldown seconds.
 		vigilance = table.freeze({ monsterRange = 30, partyRange = 40, extra = 0.5, cooldown = 8 }),
-		-- Spotting: seconds of the vulnerability and the skills (besides basic attacks) whose hits spot.
-		spot = table.freeze({ duration = 5, skills = table.freeze({ aimedShot = true }) }),
+		-- Spotting: seconds of the vulnerability and the skills (besides basic attacks) whose hits spot. S144: the S1 of
+		-- both pools (Aimed Shot of the Bow, Heavy Bolt of the Crossbow)
+		spot = table.freeze({ duration = 5, skills = table.freeze({ aimedShot = true, heavyBolt = true }) }),
 		weakSpotPerStack = 1, -- % damage per Weak Spot stack on the selected target
 		-- Royal Falcon: dive % damage, stun seconds (not bosses, never players), seconds it stays after the fight,
 		-- dive points per falconBond second, the shortest strike interval.

@@ -10,12 +10,18 @@
 --   Skills.cost on the effective def, Skills.cooldown with its behaviour) for A/A plus `variants` for every other
 --   choice pair ("ba", "ab", "bb": first letter = rank 5, second = rank 10). Modify nodes are never folded in.
 -- * `paths`: only paths with PathDef.wiki ~= false (ctx.hiddenPaths), built by the pure Skills.pathEntry.
--- * `rules`: the path rules (pathPointsEvery, pathPointsByLevel, rows, dipRows, dipScale) and the planner vectors of
---   Logic/Paths.canBuy / canRefund for published paths (Skills.pathVectors, seed 8282).
+-- * `rules`: the path rules (pathPointsEvery, pathPointsByLevel, rows, dipRows, dipScale); the planner vectors of
+--   Logic/Paths.canBuy / canRefund for published paths (Skills.pathVectors, seed 8282) moved to the test file in S148.
 -- S138 (DESIGN-18 §7, §14): no main path (no mainPathLevel, no `main` in the vectors); rules add capstonesMax,
 --   mainMinPoints, teamFullPoints, skillPointsByLevel, freeRespecLevel and the shared ladder of the weapon pools;
 --   every skill has `pool` / `role` (Data/Skills, empty when none) and `classPools` lists the pools of every class
---   (id, name, weapon types, element, members). The planner stays hidden until S148.
+--   (id, name, weapon types, element, members).
+-- S148 (DESIGN-18 §14, planner v3): every skill has its `short` text (skill.<id>.short at rank 1); a pool has a glyph
+--   and `skills` in the build-code order (school by LADDER, common by COMMON_LADDER, then the path skills of the
+--   published directions by order and rows; never the pool's `plan`, the "spend as the pool suggests" order); paths
+--   lose `weapon` (it no longer blocks, DESIGN-18 §7); rules add barSlots; path vector states carry `leading`
+--   (Paths.mainOf). The planner test file adds `skills` = vectors of Logic/SkillPoints.canBuy / apply on the game data
+--   (published directions only) and `game` = the path vectors of the published directions.
 -- * wiki/test-fixtures/planner.json (Skills.plannerFixture): the same records for the test paths of
 --   tests/fixtures/paths.luau, so the TypeScript rules are checked before any path is published. Never in
 --   wiki/src/data.
@@ -37,6 +43,7 @@ local SkillData = require("../../src/shared/Data/Skills")
 local SkillPoolLogic = require("../../src/shared/Logic/SkillPools")
 local SkillLogic = require("../../src/shared/Logic/Skills")
 local Titles = require("../../src/shared/Data/Titles")
+local Visibility = require("./Visibility")
 
 local S = Schema
 local arr, map, rec, enum = S.arr, S.map, S.rec, S.enum
@@ -86,7 +93,6 @@ local SkillPath = rec("SkillPath", {
 	name = "name",
 	desc = "name",
 	["title?"] = "ref:titles",
-	weapon = SkillPathWeapon,
 	rows = arr(SkillPathRow),
 })
 local SkillPathVectorState = rec("SkillPathVectorState", {
@@ -94,6 +100,7 @@ local SkillPathVectorState = rec("SkillPathVectorState", {
 	level = "int",
 	nodes = map("int"),
 	free = "int",
+	["leading?"] = "string", -- S148: Paths.mainOf (the leading direction)
 	results = arr(rec("SkillPathVectorResult", {
 		node = "string",
 		ok = "bool",
@@ -113,7 +120,35 @@ local SkillPathVectors = rec("SkillPathVectors", {
 	builds = arr(SkillPathVectorBuild),
 })
 
-Skills.PlannerFixture = rec("SkillPlannerFixture", { paths = arr(SkillPath), vectors = SkillPathVectors })
+-- S148: Logic/SkillPoints.canBuy for every skill of the class in one pool of a state, and apply of a reservation.
+local SkillPointVectors = rec("SkillPointVectors", {
+	states = arr(rec("SkillPointState", {
+		class = enum("ClassId"),
+		level = "int",
+		pool = "string",
+		ranks = map(map("int")),
+		nodes = map("int"),
+		free = "int",
+		results = arr(rec("SkillPointResult", { skill = "string", ok = "bool", ["reason?"] = "string" })),
+	})),
+	plans = arr(rec("SkillPointPlan", {
+		class = enum("ClassId"),
+		level = "int",
+		pool = "string",
+		ranks = map(map("int")),
+		nodes = map("int"),
+		plan = map("int"),
+		ok = "bool",
+		["reason?"] = "string",
+	})),
+})
+
+Skills.PlannerFixture = rec("SkillPlannerFixture", {
+	paths = arr(SkillPath),
+	vectors = SkillPathVectors,
+	game = SkillPathVectors, -- S148: the published directions of the game (was skills.json rules.vectors)
+	skills = SkillPointVectors,
+})
 
 S.file(
 	"skills",
@@ -123,6 +158,7 @@ S.file(
 			class = enum("ClassId"),
 			order = "int",
 			name = "name",
+			short = "name", -- S148: skill.<id>.short at rank 1 (one sentence, DESIGN-18 §12)
 			["path?"] = "string", -- S82: id of a published path (base skills have none)
 			["pool?"] = "string", -- S138: DESIGN-18 §4.2 pool id or "common" (Data/Skills `pool`)
 			["role?"] = "string", -- S138: DESIGN-18 §5 role (filled by the class sessions S140-S145)
@@ -180,14 +216,14 @@ S.file(
 		-- S138 (DESIGN-18 §4.2, §14): the weapon pools of every class
 		classPools = arr(rec("SkillClassPools", {
 			class = enum("ClassId"),
-			["transitional?"] = "bool",
 			defaultPool = "string",
 			pools = arr(rec("SkillPool", {
 				id = "string",
 				name = "name",
+				glyph = "string",
 				weapons = arr("string"),
 				["element?"] = enum("ElementId"),
-				skills = arr("ref:skills"),
+				skills = arr("ref:skills"), -- S148: the build-code order (Skills.poolOrder)
 			})),
 		})),
 		rules = rec("SkillRules", {
@@ -207,6 +243,7 @@ S.file(
 			ladder = arr(
 				rec("SkillLadderRung", { code = "string", level = "int", common = "bool", ["passive?"] = "bool" })
 			),
+			barSlots = "int", -- S148: Data/Skills.HOTBAR_SLOTS (one bar per pool)
 			rows = arr(rec("SkillRowRule", {
 				row = "int",
 				level = "int",
@@ -217,7 +254,6 @@ S.file(
 			})),
 			dipRows = "int",
 			dipScale = "number",
-			vectors = SkillPathVectors,
 		}),
 	})
 )
@@ -347,6 +383,7 @@ local function skillEntry(skill: any): any
 		class = skill.class,
 		order = skill.order,
 		name = Names.of(skill.nameKey),
+		short = Names.of(`skill.{skill.id}.short`, SkillLogic.descriptionArgs(skill, 1, nil)),
 		path = skill.path,
 		pool = skill.pool,
 		role = skill.role,
@@ -474,7 +511,6 @@ function Skills.pathEntry(
 		role = path.role,
 		name = text(path.nameKey),
 		desc = text(path.descKey),
-		weapon = weaponOf(path.weapon),
 		rows = rows,
 	}
 end
@@ -651,6 +687,7 @@ function Skills.pathVectors(api: any, paths: { any }, seed: number): any
 				level = level,
 				nodes = copyNodes(nodes),
 				free = api.free(c),
+				leading = api.mainOf(c),
 				results = results,
 			})
 		end
@@ -719,6 +756,18 @@ function Skills.pathVectors(api: any, paths: { any }, seed: number): any
 				end
 				two[p1.rows[cap].nodes[1].id] = 1
 				addState(maxLevel, two)
+			end
+			-- S148: the upgrade row reached on points without the capstone ("paths.error.upgrade")
+			local upgrade = rowIndexOfKind(api, classId, "upgrade")
+			if upgrade then
+				local bare = {}
+				local left = info[upgrade].need
+				for r = 1, upgrade - 1 do
+					if r ~= cap then
+						left = fillRow(bare, p1, r, left)
+					end
+				end
+				addState(maxLevel, bare)
 			end
 		end
 		-- a whole direction at the top level
@@ -822,12 +871,252 @@ local function sortedPaths(paths: { any }): { any }
 	return out
 end
 
+-- Pools (S148) ------------------------------------------------------------------------------------------------------
+
+-- The skill of the class in `pool` ("common" for the common ones) with the ladder role `code`, nil without one.
+local function skillOfRole(classId: string, pool: string, code: string): any
+	for _, skill in SkillData.byClass[classId] or {} do
+		if skill.path == nil and skill.pool == pool and skill.role == code then
+			return skill
+		end
+	end
+	return nil
+end
+
+-- The build-code order of a pool (DESIGN-18 §14): the school by LADDER, the common skills by COMMON_LADDER, any other
+-- base member (none since S145) in data order, then the skills of `paths` (published directions of the class) by
+-- direction order, rows and nodes. `visible(id)` leaves hidden skills out. Never the pool's `plan`.
+function Skills.poolOrder(classId: string, poolId: string, paths: { any }, visible: (id: string) -> boolean): { string }
+	local out: { string } = {}
+	local seen: { [string]: boolean } = {}
+	local function add(id: string)
+		if not seen[id] and visible(id) and SkillPoolLogic.inPool(classId, poolId, id) then
+			seen[id] = true
+			table.insert(out, id)
+		end
+	end
+	for _, rung in PoolData.LADDER do
+		local skill = skillOfRole(classId, poolId, rung.code)
+		if skill then
+			add(skill.id)
+		end
+	end
+	for _, rung in PoolData.COMMON_LADDER do
+		local skill = skillOfRole(classId, PoolData.COMMON, rung.code)
+		if skill then
+			add(skill.id)
+		end
+	end
+	for _, skill in SkillData.byClass[classId] or {} do
+		if skill.path == nil then
+			add(skill.id)
+		end
+	end
+	for _, path in pathsOfClass(paths, classId) do
+		for _, row in path.rows do
+			for _, node in row.nodes do
+				if node.kind == "skill" and node.skill then
+					add(node.skill)
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- Published PathDefs (wiki ~= false, not in `hiddenPaths`) in class and path order.
+local function publishedPaths(hiddenPaths: { [string]: boolean }?): { any }
+	local out = {}
+	for _, def in sortedPaths(PathData.list) do
+		if def.wiki ~= false and not (hiddenPaths and hiddenPaths[def.id]) then
+			table.insert(out, def)
+		end
+	end
+	return out
+end
+
+-- Skill visibility of the planner fixture, the rule of Skills.build: not in `hidden` (Visibility.collect) and a path
+-- skill only with a published direction.
+local function visibleWith(paths: { any }, hidden: { [string]: boolean }): (id: string) -> boolean
+	local published: { [string]: boolean } = {}
+	for _, def in paths do
+		published[def.id] = true
+	end
+	return function(id: string): boolean
+		local skill = SkillData.get(id) :: any
+		return skill ~= nil and not hidden[id] and (skill.path == nil or published[skill.path] == true)
+	end
+end
+
+local function copyRanks(ranks: { [string]: { [string]: number } }): any
+	local out = Json.object({})
+	for poolId, own in ranks do
+		local copy = Json.object({})
+		for id, n in own do
+			if n > 0 then
+				copy[id] = n
+			end
+		end
+		out[poolId] = copy
+	end
+	return out
+end
+
+-- S148 (rule 5 of the session): Logic/SkillPoints.canBuy for every skill of the class (and "<class>_missing") in one
+-- pool of a state, and SkillPoints.apply of random reservations, on the game data with the published directions
+-- `paths`. States: edges (level 1, the 20th level spent, a level lowered under bought ranks, a direction skill at its
+-- row level and one below) and random walks (nodes through Paths.canBuy, ranks through SkillPoints.canBuy).
+function Skills.skillVectors(paths: { any }, seed: number, hidden: { [string]: boolean }): any
+	local SkillPoints = require("../../src/shared/Logic/SkillPoints") :: any
+	local rng = Rng.new(seed)
+	local visible = visibleWith(paths, hidden)
+	local states = {}
+	local plans = {}
+	local maxLevel = Config.MaxLevel
+	for _, classId in Classes.order do
+		local own = PoolData.get(classId)
+		if own then
+			local probe: { string } = {}
+			for _, skill in SkillData.byClass[classId] or {} do
+				if visible(skill.id) then
+					table.insert(probe, skill.id)
+				end
+			end
+			table.sort(probe)
+			table.insert(probe, `{classId}_missing`)
+			local classPaths = pathsOfClass(paths, classId)
+			local nodeIds = nodeList(classPaths)
+			local poolIds = {}
+			for _, def in own.pools do
+				table.insert(poolIds, def.id)
+			end
+
+			local function make(level: number, nodes: { [string]: number }): any
+				local c = character(classId, level, copyNodes(nodes))
+				c.ranks = {}
+				return c
+			end
+			local function addState(c: any, poolId: string)
+				local results = {}
+				for _, id in probe do
+					local ok, reason = SkillPoints.canBuy(c, poolId, id)
+					table.insert(results, { skill = id, ok = ok, reason = reason })
+				end
+				table.insert(states, {
+					class = classId,
+					level = c.level,
+					pool = poolId,
+					ranks = copyRanks(c.ranks),
+					nodes = copyNodes(c.path.nodes),
+					free = SkillPoints.free(c, poolId),
+					results = results,
+				})
+			end
+			local function buy(c: any, poolId: string, id: string): boolean
+				if SkillPoints.canBuy(c, poolId, id) then
+					c.ranks[poolId] = c.ranks[poolId] or {}
+					c.ranks[poolId][id] = (c.ranks[poolId][id] or 0) + 1
+					return true
+				end
+				return false
+			end
+			local function walkNodes(c: any)
+				if #nodeIds == 0 then
+					return
+				end
+				for _ = 1, rng:int(0, PathLogic.pointsAt(c.level) * 2) do
+					local id = rng:pick(nodeIds)
+					if PathLogic.canBuy(c, id) then
+						c.path.nodes[id] = rankIn(c.path.nodes, id) + 1
+					end
+				end
+			end
+			local function walkRanks(c: any, poolId: string)
+				local members = Skills.poolOrder(classId, poolId, paths, visible)
+				for _ = 1, rng:int(0, SkillPoints.pointsAt(c.level) * 2) do
+					buy(c, poolId, rng:pick(members))
+				end
+			end
+
+			-- edges
+			addState(make(1, {}), poolIds[1])
+			local spent = make(20, {})
+			for _, id in Skills.poolOrder(classId, poolIds[1], paths, visible) do
+				while buy(spent, poolIds[1], id) do
+				end
+			end
+			addState(spent, poolIds[1])
+			if poolIds[2] then
+				addState(spent, poolIds[2])
+			end
+			local lowered = table.clone(spent)
+			lowered.level = 9
+			addState(lowered, poolIds[1])
+			-- a direction skill: its node bought (rows below filled) at the row level and one level below
+			for _, path in classPaths do
+				for r, row in path.rows do
+					for _, node in row.nodes do
+						if node.kind == "skill" and node.skill and visible(node.skill) then
+							local level = PathData.ROWS[r].level
+							local c = make(maxLevel, {})
+							greedy(PathLogic, c, path, r - 1)
+							c.path.nodes[node.id] = 1
+							c.level = level
+							buy(c, poolIds[#poolIds], node.skill)
+							addState(c, poolIds[#poolIds])
+							local before = table.clone(c)
+							before.level = level - 1
+							addState(before, poolIds[#poolIds])
+						end
+					end
+				end
+			end
+			-- random walks, each with a reservation of 1..3 entries
+			for _ = 1, Skills.RANDOM_STATES do
+				local level = rng:int(1, maxLevel)
+				local c = make(level, {})
+				walkNodes(c)
+				for _, poolId in poolIds do
+					if rng:chance(0.7) then
+						walkRanks(c, poolId)
+					end
+				end
+				if rng:chance(0.25) then
+					c.level = math.max(1, level - rng:int(1, 15))
+				end
+				local poolId = rng:pick(poolIds)
+				addState(c, poolId)
+				local plan = Json.object({})
+				for _ = 1, rng:int(1, 3) do
+					plan[rng:pick(probe)] = rng:int(1, 3)
+				end
+				local ok, reason = SkillPoints.apply(c, poolId, plan)
+				table.insert(plans, {
+					class = classId,
+					level = c.level,
+					pool = poolId,
+					ranks = copyRanks(c.ranks),
+					nodes = copyNodes(c.path.nodes),
+					plan = plan,
+					ok = ok,
+					reason = reason,
+				})
+			end
+		end
+	end
+	return { states = states, plans = plans }
+end
+
 -- wiki/test-fixtures/planner.json: the test paths of tests/fixtures/paths.luau (never on the wiki) through the same
--- pathEntry and pathVectors, texts as their keys (no Names).
+-- pathEntry and pathVectors, texts as their keys (no Names); S148: `skills` = Skills.skillVectors on the game data with
+-- the published directions and `game` = the path vectors of the published directions (S82 kept them in skills.json
+-- rules.vectors; with every direction published they are 1 MB of test data, so they moved here). Not in wiki/src/data.
 function Skills.plannerFixture(): any
 	local Fixture = require("../../tests/fixtures/paths") :: any
 	local api = PathLogic.withSource(Fixture.source)
 	local defs = sortedPaths(Fixture.paths)
+	-- the same published directions and hidden skills as Skills.build (ctx.hiddenPaths, ctx.hidden)
+	local published = publishedPaths(Visibility.collectPaths())
 	local list = {}
 	for _, def in defs do
 		table.insert(
@@ -839,7 +1128,12 @@ function Skills.plannerFixture(): any
 			end)
 		)
 	end
-	return { paths = list, vectors = Skills.pathVectors(api, defs, Skills.VECTOR_SEED) }
+	return {
+		paths = list,
+		vectors = Skills.pathVectors(api, defs, Skills.VECTOR_SEED),
+		game = Skills.pathVectors(PathLogic, published, Skills.VECTOR_SEED),
+		skills = Skills.skillVectors(published, Skills.VECTOR_SEED + 1, Visibility.collect()),
+	}
 end
 
 -- Rules -------------------------------------------------------------------------------------------------------------
@@ -866,12 +1160,9 @@ function Skills.build(ctx: any): any
 			table.insert(list, skillEntry(skill))
 		end
 	end
-	local hiddenPaths: { [string]: boolean } = ctx.hiddenPaths or {}
-	local published = {}
-	for _, def in sortedPaths(PathData.list) do
-		if def.wiki ~= false and not hiddenPaths[def.id] then
-			table.insert(published, def)
-		end
+	local published = publishedPaths(ctx.hiddenPaths or {})
+	local function visible(id: string): boolean
+		return not ctx.hidden[id] and SkillData.get(id) ~= nil
 	end
 	local paths = {}
 	for _, def in published do
@@ -906,23 +1197,17 @@ function Skills.build(ctx: any): any
 		if own then
 			local pools = {}
 			for _, def in own.pools do
-				local skills = {}
-				for _, id in SkillPoolLogic.members(classId, def.id) do
-					if not ctx.hidden[id] and SkillData.get(id) then
-						table.insert(skills, id)
-					end
-				end
 				table.insert(pools, {
 					id = def.id,
 					name = Names.of(def.nameKey),
+					glyph = def.glyph,
 					weapons = Clean.clean(def.weapon.main),
 					element = def.weapon.element,
-					skills = skills,
+					skills = Skills.poolOrder(classId, def.id, published, visible),
 				})
 			end
 			table.insert(classPools, {
 				class = classId,
-				transitional = if own.transitional then true else nil,
 				defaultPool = own.defaultPool,
 				pools = pools,
 			})
@@ -945,10 +1230,10 @@ function Skills.build(ctx: any): any
 			skillPointsByLevel = skillPointsByLevel,
 			freeRespecLevel = Progression.freeRespecLevel,
 			ladder = ladder,
+			barSlots = SkillData.HOTBAR_SLOTS,
 			rows = rowRules(),
 			dipRows = PathData.DIP_ROWS,
 			dipScale = PathData.DIP_SCALE,
-			vectors = Skills.pathVectors(PathLogic, published, Skills.VECTOR_SEED),
 		},
 	}
 end

@@ -1,5 +1,5 @@
 // Keyboard (S44): skip link, Ctrl+K palette (focus trap, Esc, focus back), bestiary filter with Space, item preview
-// on focus, skill planner keys (S82: level slider, option B, path nodes), map zoom names and arrows, upgrade
+// on focus, skill planner keys (S148: tile ranks, option B, direction nodes), map zoom names and arrows, upgrade
 // calculator levels.
 import { expect, test } from "@playwright/test";
 
@@ -47,35 +47,26 @@ test("items: a row is reachable with Tab and its focus shows the tooltip preview
   await expect(page.locator("aside.preview .vw-tooltip")).toBeVisible();
 });
 
-test("skill planner: the level slider moves the ranks and Space picks option B", async ({ page }) => {
+test("skill planner: + on a tile buys a rank of the pool and Space picks option B once rank 5 is bought", async ({ page }) => {
   await page.goto("/pl/klasy/Mage/");
-  const slider = page.locator("#sp-slider");
-  const rank = page.locator("[data-skill] .sp-rank").first();
-  await slider.focus();
-  await page.keyboard.press("Home");
+  const tile = page.locator(".sp-tile .vw-node").first();
+  const rank = tile.locator(".vw-node__rank");
+  await tile.focus();
+  await page.keyboard.press("+");
   await expect(rank).toHaveText(/^1\//);
-  await page.keyboard.press("End");
-  await expect(rank).toHaveText("10/10");
-  // the first base skill is selected by default; the first Mage active has option B at rank 5
+  for (let i = 0; i < 4; i++) await page.keyboard.press("+");
+  await expect(rank).toHaveText(/^5\//);
+  // the first fire skill is selected; it has option B at rank 5
   const optionB = page.locator('[data-bp="5"] [data-option="b"]');
   await optionB.focus();
   await page.keyboard.press("Space");
   await expect(optionB).toHaveAttribute("aria-checked", "true");
-  await expect(page).toHaveURL(/[?&]b=2MAGE/);
+  await expect(page).toHaveURL(/[?&]b=3MAGE/);
 });
 
-test("skill planner: a path node takes Enter and Delete, or the paths tab says they come later", async ({ page }) => {
+test("skill planner: a direction node takes Enter and Delete", async ({ page }) => {
   await page.goto("/pl/klasy/Mage/");
-  const pathTab = page.locator("[role=tab][data-path]").first();
-  if ((await pathTab.count()) === 0) {
-    const tabs = page.locator(".sp-tabs [role=tab]");
-    await tabs.first().focus();
-    await page.keyboard.press("End");
-    await expect(page.locator(".sp-soon")).toContainText("Ścieżki wkrótce");
-    return;
-  }
-  await pathTab.click();
-  await page.locator(".sp-path__main .sp-btn--gold").click();
+  await page.locator("#sp-tab-directions").click();
   const node = page.locator(".sp-node .vw-node:not([data-state='locked'])").first();
   const rank = node.locator(".vw-node__rank");
   await node.focus();

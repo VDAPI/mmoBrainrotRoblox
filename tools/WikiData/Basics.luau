@@ -292,8 +292,15 @@ S.file(
 			id = "string",
 			name = "name",
 			color = "color",
-			-- S131: `value` for counted conditions, `tier` for an arena season tier, `days` for a timed title
-			req = rec("TitleReq", { kind = "string", ["value?"] = "int", ["tier?"] = "string", ["days?"] = "int" }),
+			-- S131: `value` for counted conditions, `tier` for an arena season tier, `days` for a timed title; S148:
+			-- `path` for a direction title (kind "mainPath": the leading direction, Paths.mainOf)
+			req = rec("TitleReq", {
+				kind = "string",
+				["value?"] = "int",
+				["tier?"] = "string",
+				["days?"] = "int",
+				["path?"] = "string",
+			}),
 		})),
 	})
 )
@@ -953,6 +960,7 @@ function Basics.titles(ctx: any): any
 				value = if type(r.value) == "number" then r.value else nil,
 				tier = if type(r.tier) == "string" then r.tier else nil,
 				days = if r.kind == "timed" then days[t.id] else nil,
+				path = if r.kind == "mainPath" and type(r.path) == "string" then r.path else nil,
 			}
 			-- an arena season title carries the season in game ("{season}"): the wiki shows its plain name (S128)
 			local name = if (t :: any).seasonArg then Names.of(`{t.nameKey}.plain`) else Names.of(t.nameKey)

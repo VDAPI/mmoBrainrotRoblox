@@ -61,7 +61,7 @@ local function setTitle(player: Player, id: string?): (boolean, string?)
 		return false, "error.internal"
 	end
 	if id == nil or id == Titles.NONE then
-		-- nil in the save means "never chose" (the main path title shows), so hiding stores NONE
+		-- nil in the save means "never chose" (the leading direction's title shows), so hiding stores NONE
 		PlayerStateService.Set(player, { "character", "title" }, Titles.NONE)
 		TitleService.Refresh(player)
 		return true

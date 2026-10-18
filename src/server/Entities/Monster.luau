@@ -127,8 +127,12 @@ export type Monster = typeof(setmetatable(
 		-- Centre of the monster's group (S19): wander and leash around it instead of the own spawn point.
 		home: Vector3?,
 		isBoss: boolean?,
+		-- S149: a world boss walks home at its current HP and stays hittable (the party may regroup in the open)
+		keepHp: boolean?,
 		-- Boss helpers (2026-10-10): no items and no gold when they die.
 		summoned: boolean?,
+		-- S149: the world boss's helpers: no EXP either (CombatService gives nothing)
+		noReward: boolean?,
 		-- S32: highest level of the monster's spawner (drops never get a higher item level).
 		levelCap: number?,
 		-- S22 leash: last hit by a player, last time the monster moved (or attacked) while chasing and where.
@@ -242,7 +246,9 @@ function Monster.new(
 		leashRange = nil,
 		home = nil,
 		isBoss = nil,
+		keepHp = nil,
 		summoned = nil,
+		noReward = nil,
 		levelCap = nil,
 		lastHit = 0,
 		movedAt = 0,
@@ -403,8 +409,8 @@ function Monster.StartReturn(self: Monster)
 	self.state = "return"
 	setTarget(self, nil)
 	table.clear(self.threat)
-	if self.isBoss then
-		-- Bosses (arena leash 400) keep the old return: full HP and invulnerable on the way.
+	if self.isBoss and not self.keepHp then
+		-- Bosses (arena leash 400) keep the old return: full HP and invulnerable on the way (S149: not a world boss).
 		self.invulnerable = true
 		table.clear(self.damageBy)
 		setHp(self, self.stats.maxHp)

@@ -469,6 +469,12 @@ function Details.lines(
 				if not usable and err then
 					line(Text.get(use, err), Theme.Paper.Danger)
 				end
+			elseif skill.weapon then
+				-- S143: the skill's own weapon (Shield Bash: "requires a shield"), bought or not
+				local err = Paths.skillWeaponError(skill, weapons)
+				if err then
+					line(Text.get(use, err), Theme.Paper.Danger)
+				end
 			end
 		end
 		-- "Breakpoints" (the cards have their own section label)

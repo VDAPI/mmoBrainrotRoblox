@@ -602,10 +602,14 @@ function GroundTelegraph.start(spec: Spec)
 end
 
 -- S134: removes the telegraphs with `key` that have not blown yet, without their `onBlow` (a cancelled boss mark).
-function GroundTelegraph.cancel(key: string)
+-- S149: `prefix` also takes the keys that continue `key` with "|" (every mark of a caster and attack).
+function GroundTelegraph.cancel(key: string, prefix: boolean?)
+	local head = key .. "|"
 	for i = #active, 1, -1 do
 		local a = active[i]
-		if a.spec.key == key and not a.blown then
+		local own = a.spec.key
+		local match = own == key or (prefix == true and own ~= nil and string.sub(own, 1, #head) == head)
+		if match and not a.blown then
 			pcall(finish, a)
 			table.remove(active, i)
 		end

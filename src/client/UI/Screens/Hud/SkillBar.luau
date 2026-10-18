@@ -10,6 +10,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
+local Crossbow = require(ReplicatedStorage.Shared.Logic.Crossbow)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
@@ -97,11 +98,14 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 			end
 			local state = use(cooldowns)
 			local cdr = if type(state) == "table" and type(state.cdr) == "number" then state.cdr else 0
+			-- S144: Quick Reload on the Crossbow's skills (Logic/Crossbow.cdrFor, as SkillService)
+			local reload = if type(state) == "table" and type(state.reload) == "number" then state.reload else 0
 			local c = charOf(use)
 			local rank = math.max(1, Paths.skillRank(c, s.id))
 			local def, behaviour = Paths.effectiveFor(c, s.id, Paths.weaponTypesOf(c.equipment), rank)
 			-- S64: as the server counts it
-			local total = math.max(SkillData.GCD, Skills.cooldown(def, rank, cdr, behaviour))
+			local total =
+				math.max(SkillData.GCD, Skills.cooldown(def, rank, Crossbow.cdrFor(s.pool, cdr, reload), behaviour))
 			return math.clamp(left / total, 0, 1)
 		end)
 		-- S28: a short flash when a real cooldown (not just the global one) ends.

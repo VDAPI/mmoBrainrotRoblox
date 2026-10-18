@@ -31,6 +31,10 @@
 -- S140 (DESIGN-18 §6.1): Phoenix Heart is a damage filter (FilterPriority.phoenixHeart, before Guardian Angel): a lethal
 -- blow leaves 1 HP once per the passive's rest (hook phoenixRest; Logic/Burn.phoenixSave; the ready time lives on the
 -- server only, never in the save), then invulnerability (phoenixInvuln) and a fire blast around the player.
+-- S145 (Logic/Faith, DESIGN-18 §6.4): Zeal (hook `zeal`) after an offensive cast of a Mace and Flail skill takes its
+-- seconds off the running cooldowns of the pool's other skills; services.Interrupt (Rebuke) ends a player's channel with
+-- Logic/Channel event "interrupt". Prayer's 5B dice need no Roll of the Dice node (prayerDice reads the skill's rank limit
+-- at the level, the Healer has Prayer since S145).
 -- Cooldowns replicate as state branch `skills` = { cd = { [skillId] = readyAt }, gcd = readyAt, channel? }
 -- (server time), so the client draws the cooldown sweep.
 
@@ -43,6 +47,8 @@ local Shared = ReplicatedStorage.Shared
 local Banner = require(script.Parent.Parent.Skills.Banner)
 local Burn = require(Shared.Logic.Burn)
 local Channel = require(Shared.Logic.Channel)
+local Crossbow = require(Shared.Logic.Crossbow)
+local Faith = require(Shared.Logic.Faith)
 local Combat = require(Shared.Data.Combat)
 local Companion = require(script.Parent.Parent.Skills.Companion)
 local Context = require(script.Parent.Parent.Skills.Context)
@@ -145,6 +151,8 @@ type Runtime = {
 	noCooldowns: boolean,
 	infiniteResources: boolean,
 	cdr: number, -- S64: % item cooldown reduction (Skills.cooldownReduction), published as { "skills", "cdr" }
+	-- S144 (Logic/Crossbow): Quick Reload's % for the Crossbow's skills only, published as { "skills", "reload" }
+	reload: number,
 	-- S73 extendOnKill per skillId: seconds per kill, the cap and the seconds added since the cast
 	extend: { [string]: { seconds: number, max: number, added: number } },
 	-- S80 review: empowered uses taken by casts whose hit has not landed yet (a hit delay longer than the GCD)
@@ -173,6 +181,7 @@ local function runtime(player: Player): Runtime
 			noCooldowns = false,
 			infiniteResources = false,
 			cdr = 0,
+			reload = 0,
 			extend = {},
 			empowerPending = 0,
 		}
@@ -182,15 +191,19 @@ local function runtime(player: Player): Runtime
 end
 
 -- S64 (STATY 2C): item cooldown reduction (leg_cooldown, myth_cooldown) for casts, the skill bar and descriptions.
+-- S144: Quick Reload's hook beside it (the Crossbow's skills only, Logic/Crossbow.cdrFor).
 local function refreshCdr(player: Player)
 	local rt = runtime(player)
 	local cdr = Skills.cooldownReduction(CombatService.Hook(player, "cooldownReduction"))
-	if cdr == rt.cdr then
+	local reload = CombatService.Hook(player, "quickReload")
+	if cdr == rt.cdr and reload == rt.reload then
 		return
 	end
 	rt.cdr = cdr
+	rt.reload = reload
 	if PlayerStateService.HasState(player) and PlayerStateService.Get(player, { "skills" }) ~= nil then
 		PlayerStateService.Set(player, { "skills", "cdr" }, cdr)
+		PlayerStateService.Set(player, { "skills", "reload" }, reload)
 	end
 end
 
@@ -312,7 +325,7 @@ function SkillService.SetNoCooldowns(player: Player, enabled: boolean)
 	if enabled then
 		table.clear(rt.cooldowns)
 		rt.gcd = 0
-		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr })
+		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr, reload = rt.reload })
 	end
 end
 
@@ -320,7 +333,7 @@ function SkillService.SetInfiniteResources(player: Player, enabled: boolean)
 	runtime(player).infiniteResources = enabled
 end
 
--- Passives changed outside a level change (admin S28; S57 PathService: nodes, main path, weapon).
+-- Passives changed outside a level change (admin S28; S57 PathService: nodes, weapon).
 function SkillService.RefreshPassives(player: Player)
 	passivesChanged(player)
 end
@@ -952,7 +965,8 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	ctx.castMul = castMul
 	if not rt.noCooldowns then
 		rt.gcd = t + SkillData.GCD
-		local cooldown = Skills.cooldown(skill, rank, rt.cdr, behaviour)
+		-- S144 (Logic/Crossbow): Quick Reload on the Crossbow's skills only
+		local cooldown = Skills.cooldown(skill, rank, Crossbow.cdrFor(skill.pool, rt.cdr, rt.reload), behaviour)
 		rt.cooldowns[skillId] = t + cooldown
 		ctx.cooldown = cooldown -- S76: critCdr shortens this
 		publishCooldowns(player)
@@ -1018,6 +1032,25 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 				local ready = rt.cooldowns[id]
 				if ready and ready > at then
 					rt.cooldowns[id] = math.max(at, ready - zeal)
+					shortened = true
+				end
+			end
+			if shortened then
+				publishCooldowns(player)
+			end
+		end
+		-- S145 Zeal (Logic/Faith.zealCut): an offensive cast of a Mace and Flail skill shortens the running cooldowns of
+		-- the pool's other skills
+		local zealCut = if offensive and not rt.noCooldowns
+			then Faith.zealCut(skill.pool, SkillService.PassiveHook(player, "zeal"))
+			else 0
+		if zealCut > 0 then
+			local at = now()
+			local shortened = false
+			for id, ready in rt.cooldowns do
+				local def = SkillData.get(id)
+				if id ~= skillId and def and Faith.zealShortens(def.pool) and ready > at then
+					rt.cooldowns[id] = math.max(at, ready - zealCut)
 					shortened = true
 				end
 			end
@@ -1232,6 +1265,16 @@ function SkillService.Init(registry)
 		Zone = ZoneService,
 		Fx = sendFx,
 		Beam = startBeam, -- S80
+		-- S145 (Rebuke): an enemy's hit ends `target`'s channel, aim or beam (Logic/Channel "interrupt")
+		Interrupt = function(target: Player): boolean
+			local rt = runtimes[target]
+			local channel = rt and rt.channel
+			if not channel or not (Channel.stops(channel.kind, "interrupt", channel.def)) then
+				return false
+			end
+			closeChannel(target, false, "cast.interrupted", false)
+			return true
+		end,
 		Toast = function(p: Player, key: string, args: { [string]: any }?, kind: string?)
 			Net.Fire(p, "Toast", key, args, kind)
 		end,
@@ -1362,7 +1405,8 @@ function SkillService.Start()
 		table.clear(rt.extend)
 		rt.gcd = 0
 		rt.cdr = Skills.cooldownReduction(CombatService.Hook(player, "cooldownReduction"))
-		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr })
+		rt.reload = CombatService.Hook(player, "quickReload")
+		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr, reload = rt.reload })
 	end)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		hookCache[player] = nil

@@ -1263,10 +1263,11 @@ local function markUnglow(model: Model)
 	end
 end
 
--- The key of a mark's telegraph (its caster and attack; the server's "teleCancel" names the same pair).
+-- The key of a mark's telegraph (its caster, attack and marked entity; the server's "teleCancel" names the same
+-- three). S149: with the marked entity in the key, one cancelled mark of a multi-mark attack leaves the others.
 local function markKey(event: { [string]: any }): string?
 	if type(event.e) == "string" and type(event.a) == "string" then
-		return `{event.e}|{event.a}`
+		return if type(event.f) == "string" then `{event.e}|{event.a}|{event.f}` else `{event.e}|{event.a}`
 	end
 	return nil
 end
@@ -1411,7 +1412,8 @@ end
 local function cancelMark(event: { [string]: any })
 	local key = markKey(event)
 	if key then
-		GroundTelegraph.cancel(key)
+		-- without the marked entity (gone already) every mark of this caster and attack goes, as before S149
+		GroundTelegraph.cancel(key, type(event.f) ~= "string")
 	end
 	local follow = findModel(if type(event.f) == "string" then event.f else nil)
 	if follow then

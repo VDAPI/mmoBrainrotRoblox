@@ -26,17 +26,20 @@ local Data: LevelCurvesData = {
 		-- S92 (G2): knots 25 / 30 / 40 keep T-SK4 of destroyerExp and arcanistBoss at 2.0-2.4 on 25-40 (45 unchanged).
 		-- S93 (G2): knot 55 (2.18 -> 2.25) lifts arcanistOverload to 2.6 there; knots 50 / 60 hold today's values, so
 		-- 45-50 and 60-100 stay as they were.
+		-- S147 (DESIGN-18 §13, T-SK4 of the element variants): the pools cast every spell of their bar, so the curve is
+		-- lowered from 25 (the means of three elements of S90-S94 are no longer a player's build); 45 / 70 / 100 put the
+		-- Arcanist's element variants in 2.0-2.4 and the Destroyer's near 2.0-2.8; the curve still never falls
 		["manaCost.Mage"] = {
 			{ 20, 1 },
-			{ 25, 1.37 },
-			{ 30, 1.47 },
-			{ 40, 1.82 },
-			{ 45, 1.89 },
-			{ 50, 2.0375 },
-			{ 55, 2.25 },
-			{ 60, 2.3204 },
-			{ 70, 2.59 },
-			{ 100, 3.49 },
+			{ 25, 1.02 },
+			{ 30, 1.04 },
+			{ 40, 1.08 },
+			{ 45, 1.096 },
+			{ 50, 1.3 },
+			{ 55, 1.4 },
+			{ 60, 1.55 },
+			{ 70, 1.865 },
+			{ 100, 2.1 },
 		},
 		-- Potion interval = Config.PotionCooldown x this (owner answer 28): 1.5 s to 20, 6 s at 45, ~10 s from 70.
 		potionCooldown = { { 20, 1 }, { 45, 4 }, { 70, 6.67 }, { 100, 6.67 } },

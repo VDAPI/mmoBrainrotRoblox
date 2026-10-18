@@ -18,11 +18,15 @@
 -- S74 (ROZWOJ 10.3, 10.5, 14.2): shout works around the caster: allies within radius (the caster too; never an
 -- intercept on the caster), enemies within hitRadius (damage only with values.dmg), cleanse and pull breakpoints.
 -- S77 (ROZWOJ 11.5): companion is the Falcon (Skills/Companion); Hunter's Mark sends a Royal Falcon diving.
+-- S145 (Guiding Light, Logic/Faith.ward): every heal of healOne (Heal, Miracle, Purify, Circle of Light, their second
+-- and chain targets) leaves a ward of the guidingLight hook % of the HP it restored (one entry per bearer, skillId
+-- FAITH.wardKey, refreshed; not through ctx.shield: the restored HP already carries the heal bonuses).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Companion = require(script.Parent.Parent.Companion)
 local Context = require(script.Parent.Parent.Context)
+local Faith = require(ReplicatedStorage.Shared.Logic.Faith)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
@@ -183,6 +187,16 @@ local function healOne(ctx: Ctx, player: Player, entity: any, amount: number)
 		ctx.services.StatusEffect.Cleanse(entity)
 	end
 	local healed, attempted = ctx.heal(player, amount)
+	-- S145 Guiding Light: a ward of the restored HP (Logic/Faith.ward, capped by the bearer's max HP)
+	local ward = Faith.ward(healed, ctx.hook("guidingLight"), ctx.services.Stat.GetValue(player, "maxHp"))
+	if ward > 0 then
+		ctx.services.StatusEffect.Apply(entity, "shield", {
+			duration = SkillData.FAITH.wardDuration,
+			value = ward,
+			source = ctx.player,
+			skillId = SkillData.FAITH.wardKey,
+		})
+	end
 	if ctx.bp.overhealShield then
 		-- S61: from the amount after the PvP scale, so the cut part never turns into a shield.
 		local overflow = attempted - healed

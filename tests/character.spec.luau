@@ -371,12 +371,15 @@ T.describe("Migration 6 (S56)", function()
 		AccountSchema.migrate(data)
 		T.expect(c.stats).toEqual(start)
 		T.expect(c.statPoints).toBe(95)
+		-- S144: the actives of the default pool (the Bow) unlocked by 20
 		T.expect(c.hotbar).toEqual({
 			["1"] = "aimedShot",
-			["2"] = "doubleShot",
+			["2"] = "arrowRain",
 			["3"] = "disengage",
-			["4"] = "arrowRain",
-			["5"] = "venomArrow",
+			["4"] = "pinningShot",
+			["5"] = "windstep",
+			["6"] = "huntersMark",
+			["7"] = "doubleShot",
 		})
 	end)
 
@@ -384,14 +387,17 @@ T.describe("Migration 6 (S56)", function()
 		local data, c = oldSave("Cleric", 100)
 		AccountSchema.migrate(data)
 		T.expect(c.statPoints).toBe(495)
-		-- S71: the Cleric has paths, so the new bar holds only the 6 base actives (path skills come with their nodes)
+		-- S71: the Cleric has paths (path skills come with their nodes). S145: the first 8 actives of the default pool
+		-- (Mace and Flail) in the ladder order
 		T.expect(c.hotbar).toEqual({
 			["1"] = "holyStrike",
-			["2"] = "heal",
-			["3"] = "radiance",
-			["4"] = "circleOfLight",
-			["5"] = "shieldOfFaith",
-			["6"] = "judgement",
+			["2"] = "consecrate",
+			["3"] = "heal",
+			["4"] = "holyChains",
+			["5"] = "auraOfEndurance",
+			["6"] = "circleOfLight",
+			["7"] = "brandOfLight",
+			["8"] = "holyNova",
 		})
 	end)
 
@@ -406,11 +412,14 @@ T.describe("Migration 6 (S56)", function()
 		migration({ characters = { ["1"] = noClass } }, newId)
 		T.expect(noClass.stats).toEqual((Classes.get("Warrior") :: any).startStats)
 		T.expect(noClass.statPoints).toBe(55)
+		-- S143: the actives of the default pool (Sword and Shield) unlocked by 12
 		T.expect(noClass.hotbar).toEqual({
 			["1"] = "mightyStrike",
-			["2"] = "charge",
-			["3"] = "bladeWhirl",
-			["4"] = "taunt",
+			["2"] = "shieldSweep",
+			["3"] = "charge",
+			["4"] = "shieldBash",
+			["5"] = "intercept",
+			["6"] = "taunt",
 		})
 		-- unknown class: stats kept, empty bar, new fields
 		local bard: any = { class = "Bard", level = 30, stats = { str = 9, dex = 9, int = 9, vit = 9 }, statPoints = 7 }

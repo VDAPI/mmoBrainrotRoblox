@@ -90,7 +90,7 @@ export type Reserve = { [string]: number } -- skillId -> ranks reserved in one p
 export type BpMark = { at: number, mark: "none" | "pending" | "a" | "b" }
 export type PoolTile = {
 	skillId: string,
-	role: string?, -- the ladder code (nil while the pool is transitional)
+	role: string?, -- the ladder code (S145: every pool skill has one; nil for a direction skill)
 	column: string?, -- PathView.COLUMNS
 	passive: boolean,
 	path: string?, -- a direction skill: its direction
@@ -109,6 +109,10 @@ export type PoolTile = {
 	bp: { BpMark },
 	onBar: string?, -- the slot on the pool's bar
 	active: boolean, -- the pool of the equipped weapon
+	-- S143: the skill's own weapon fits the equipment (SkillDef.weapon, Shield Bash's shield; true without one) and the
+	-- reason when it does not (Paths.skillWeaponError: "cast.error.needShield")
+	weaponOk: boolean,
+	weaponError: string?,
 }
 export type PoolRowKind = "ladder" | "paths" | "other"
 export type PoolRow = {
@@ -121,7 +125,6 @@ export type PoolRow = {
 export type PoolView = {
 	poolId: string,
 	active: boolean,
-	transitional: boolean,
 	columns: { string },
 	rows: { PoolRow },
 	points: number, -- SkillPoints.pointsAt(level)
@@ -247,8 +250,8 @@ local function fieldOrder(a: string, b: string): boolean
 end
 
 -- The pool tree's rows (S139, DESIGN-18 §5): one row per rung of both ladders by level, a skill in the row of its role
--- (`role` of the ladder), the direction skills in one "paths" row, the skills without a role (a transitional pool) in
--- one "other" row by unlock (data order on a tie). Pure; poolView fills the tiles.
+-- (`role` of the ladder), the direction skills in one "paths" row, the skills without a role (none since S145, every
+-- pool is on the ladder) in one "other" row by unlock (data order on a tie). Pure; poolView fills the tiles.
 local function layout(base: { SkillData.SkillDef }, directions: { SkillData.SkillDef }): { LayoutRow }
 	local rows: { LayoutRow } = {}
 	local byCode: { [string]: LayoutRow } = {}
@@ -589,6 +592,7 @@ local function build(api: Paths.Api)
 		local cap = Skills.rankAt(skill, character.level)
 		local buyable, buyReason = SkillPoints.canBuy(plannedChar, poolId, skill.id, 1)
 		local role = if skill.role and SkillPools.ladderOf(skill) then skill.role else nil
+		local weaponError = api.skillWeaponError(skill, api.weaponTypesOf(character.equipment))
 		return {
 			skillId = skill.id,
 			role = role,
@@ -610,6 +614,8 @@ local function build(api: Paths.Api)
 			bp = bpMarks(skill, api.bpRank(plannedChar, skill.id), choicesOf(character)),
 			onBar = slotOf(SkillPoints.barOf(character, poolId), skill.id),
 			active = active,
+			weaponOk = weaponError == nil,
+			weaponError = weaponError,
 		}
 	end
 
@@ -668,7 +674,6 @@ local function build(api: Paths.Api)
 		return {
 			poolId = poolId,
 			active = active,
-			transitional = SkillPools.isTransitional(character.class),
 			columns = table.clone(COLUMNS),
 			rows = rows,
 			points = SkillPoints.pointsAt(character.level),

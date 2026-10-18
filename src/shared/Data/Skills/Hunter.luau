@@ -1,5 +1,11 @@
 --!strict
--- Hunter (docs/ROZWOJ.md 11): base 8 and the skills of the marksman, trapper and scout paths. Energy.
+-- Hunter (docs/ROZWOJ.md 11): the class's skills. Energy. Values are { rank 1, rank 10 } (passives: rank 5).
+-- S144 (docs/DESIGN-18.md §6.3): two weapon pools on the shared ladder, Bow (`bow`: quick shots, crits, movement, the
+-- falcon) and Crossbow (`crossbow`: heavy bolts, traps, poison, piercing), and the Hunter's common skills (Disengage C1
+-- 4, Hunter's Mark C2 12, Draw a Bead C3 30, Predator's Instinct C4 45); the old path skills moved into the pools, the
+-- directions keep one skill: the Drive (the Scout's capstone, row 8). The new skills follow the old ones (the `order`
+-- of the old ones stays). Crossbow school rules: Logic/Crossbow (Toxic Tips, Executioner's Bolt, Quick Reload); a root
+-- that turns into a slow on bosses: Logic/Snare (SkillEffect.bossSlow).
 
 local Build = require("./Build")
 local Types = require("./Types")
@@ -9,12 +15,21 @@ local SNAREFIELD_EFFECTS: { Types.SkillEffect } = {
 	{ kind = "vulnerability", duration = 6, value = "vuln", category = "enemyWeak" },
 	{ kind = "root", duration = { 1.5, 2.5 }, notBoss = true },
 }
+-- S144: Wind Step's two own effects (dodge, movement); one statBuff key, so they merge (EffectStack.merge)
+local WINDSTEP_EFFECTS: { Types.SkillEffect } = {
+	{ kind = "statBuff", duration = 4, stats = { dodge = "dodge" }, target = "self", category = "own" },
+	{ kind = "statBuff", duration = 4, stats = { moveSpeed = "move" }, target = "self", category = "own" },
+}
+-- S144 (Logic/Snare): a root, on bosses and Elite IIs a slow of values.slow % for the same time
+local PIN_EFFECTS: { Types.SkillEffect } = { { kind = "root", duration = 2, bossSlow = "slow" } }
+local NET_EFFECTS: { Types.SkillEffect } = { { kind = "root", duration = 2.5, bossSlow = "slow" } }
 
 return Build.class("Hunter", "energy", "phys", {
-	-- Base (ROZWOJ 11.2): eight skills, two passives.
+	-- The old base (ROZWOJ 11.2) ----------------------------------------------------------------------------------
 	{
 		id = "aimedShot",
-		pool = "common", -- S137 (DESIGN-18 §4.2)
+		pool = "bow", -- S144: S1 of the Bow (DESIGN-18 §6.3)
+		role = "S1",
 		unlock = 1,
 		maxLevel = 10,
 		type = "projectile",
@@ -32,8 +47,9 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "doubleShot",
-		pool = "common",
-		unlock = 3,
+		pool = "bow", -- S144: S2 of the Bow (was 3)
+		role = "S2",
+		unlock = 15,
 		maxLevel = 10,
 		type = "projectile",
 		delivery = "ranged",
@@ -42,7 +58,8 @@ return Build.class("Hunter", "energy", "phys", {
 		range = 38,
 		hits = 2,
 		interval = 0.15,
-		values = { dmg = { 62, 114 } }, -- S91: rank 1 85 -> 62 (ranks <= 20, Data/SkillCurves)
+		-- S144: rank 1 at 15 = the old rank 4 at 15, rank 2 (19) the old rank 5, rank 3 (23) the old rank 6 (knots)
+		values = { dmg = { 77.75, 114 } },
 		breakpoints = Build.bp2(
 			{ a = { add = { hits = 1 } }, b = { mul = { cooldown = 0.87 } } },
 			{ -- S91: 5B 0.7 -> 0.87 (R4)
@@ -56,7 +73,8 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "disengage",
 		pool = "common",
-		unlock = 6,
+		role = "C1",
+		unlock = 4, -- S144: 6 -> 4 (C1)
 		maxLevel = 10,
 		type = "blink",
 		delivery = "ranged",
@@ -87,8 +105,9 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "arrowRain",
-		pool = "common",
-		unlock = 10,
+		pool = "bow", -- S144: A1 of the Bow (was 10)
+		role = "A1",
+		unlock = 3,
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
@@ -98,7 +117,8 @@ return Build.class("Hunter", "energy", "phys", {
 		radius = 9,
 		hits = 4,
 		interval = 0.5,
-		values = { dmg = { 45, 85 } },
+		-- S144: rank 5 (level 19) keeps the old rank 3 (level 18, Data/SkillCurves), rank 3 (11) about the old rank 1 at 10
+		values = { dmg = { 36, 85 } },
 		breakpoints = Build.bp2({ a = { add = { radius = 3 } }, b = { values = { dmg = 8 } } }, {
 			a = { effect = { kind = "slow", duration = 2, value = 30, category = "enemySlow" } },
 			b = { add = { hits = 1 } },
@@ -107,8 +127,9 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "hawkEye",
-		pool = "common",
-		unlock = 14,
+		pool = "bow", -- S144: P1 of the Bow (was 14; rank 1 at 20 = the old rank 1)
+		role = "P1",
+		unlock = 20,
 		maxLevel = 5,
 		type = "passive",
 		values = { crit = { 2, 4 }, critDmg = { 10, 16 } },
@@ -117,8 +138,9 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "venomArrow",
-		pool = "common",
-		unlock = 18,
+		pool = "crossbow", -- S144: S2 of the Crossbow (was 18)
+		role = "S2",
+		unlock = 15,
 		maxLevel = 10,
 		type = "projectile",
 		delivery = "ranged",
@@ -126,19 +148,21 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 8,
 		range = 38,
 		element = "poison",
-		values = { dmg = { 120, 152 }, poison = { 50, 50 } },
+		values = { dmg = { 120, 137 }, poison = { 50, 57.5 } }, -- S147: ranks 3-10 dmg x0.9, poison up to 57.5 (rank 2 pinned; the Crossbow's damage over time >= 25 %)
 		effects = { { kind = "poison", duration = 6, value = "poison" } },
+		-- S144: 5A 21 -> 15 and 10B 60 -> 28 (R4 on the Crossbow's Trapper, whose nodes stack and strengthen the poison)
 		breakpoints = Build.bp2(
-			{ a = { values = { poison = 21 } }, b = { values = { dmg = 28 } } },
-			{ a = { splash = { radius = 5, pct = 19 } }, b = { values = { poison = 60 } } }
+			{ a = { values = { poison = 15 } }, b = { values = { dmg = 28 } } },
+			{ a = { splash = { radius = 5, pct = 21 } }, b = { values = { poison = 28 } } } -- S147: 10A 19 -> 21 (R4)
 		),
 		glyph = "☠",
 		vfx = "arrow",
 	},
 	{
 		id = "volley",
-		pool = "common",
-		unlock = 30,
+		pool = "bow", -- S144: A2 of the Bow (was 30)
+		role = "A2",
+		unlock = 26,
 		maxLevel = 10,
 		type = "cone",
 		delivery = "ranged",
@@ -147,9 +171,9 @@ return Build.class("Hunter", "energy", "phys", {
 		radius = 25,
 		angle = 60,
 		hits = 7,
-		values = { dmg = { 25, 34 } },
+		values = { dmg = { 24, 34 } }, -- S144: rank 2 (level 30) keeps the old rank 1 (Data/SkillCurves)
 		breakpoints = Build.bp2(
-			{ a = { add = { hits = 1 } }, b = { values = { dmg = 5 } } },
+			{ a = { add = { hits = 1 } }, b = { values = { dmg = 4 } } }, -- S144: 5B 5 -> 4 (R4 from 26)
 			{ a = { add = { angle = 30 } }, b = { values = { dmg = 9 } } }
 		),
 		glyph = "⇶",
@@ -157,6 +181,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "predatorInstinct",
 		pool = "common",
+		role = "C4",
 		unlock = 45,
 		maxLevel = 5,
 		type = "passive",
@@ -164,13 +189,13 @@ return Build.class("Hunter", "energy", "phys", {
 		passive = { flat = { atkSpeed = "speed" } },
 		glyph = "🐾",
 	},
-	-- Marksman (ROZWOJ 11.3): rows 1, 4, 7, 8. Draw a Bead: only the caster's hits on the target crit more
-	-- (effect `sighted`). Heartseeker (capstone): aimed for castTime (S76), double damage below 20% HP (finisher,
-	-- x1.5 on players).
+	-- The old Marksman skills (ROZWOJ 11.3). Draw a Bead: only the caster's hits on the target crit more (effect
+	-- `sighted`). Heartseeker: aimed for castTime (S76), double damage below 20% HP (finisher, x1.5 on players).
 	{
 		id = "piercingArrow",
-		path = "marksman",
-		unlock = 10,
+		pool = "crossbow", -- S144: A1 of the Crossbow (was the Marksman's row 1): "Piercing Bolt" in the texts
+		role = "A1",
+		unlock = 3,
 		maxLevel = 10,
 		type = "line",
 		delivery = "ranged",
@@ -178,25 +203,27 @@ return Build.class("Hunter", "energy", "phys", {
 		cooldown = 12,
 		length = 35,
 		width = 4,
-		values = { dmg = { 200, 410 } },
+		-- S144: rank 5 (level 19) keeps the old rank 3 (level 18, Data/SkillCurves), rank 3 (11) the old rank 1 at 10
+		values = { dmg = { 164.4, 410 } },
 		breakpoints = Build.bp2({
 			a = { add = { width = 2 } },
-			-- no category, like every DoT (ROZWOJ 7.1, 7.2)
-			b = { effect = { kind = "bleed", duration = 6, value = 50 } },
+			-- no category, like every DoT (ROZWOJ 7.1, 7.2); S144: 50 -> 40 (R4 at 20: rank 5 at 19)
+			b = { effect = { kind = "bleed", duration = 6, value = 40 } },
 		}, { a = { knockback = 6 }, b = { mul = { cooldown = 0.8 } } }),
 		glyph = "➸",
 	},
 	{
 		id = "drawBead",
-		path = "marksman",
-		unlock = 26,
+		pool = "common", -- S144: C3 of the Hunter (was the Marksman's row 4)
+		role = "C3",
+		unlock = 30,
 		maxLevel = 10,
 		type = "debuff",
 		delivery = "ranged",
 		cost = 15,
 		cooldown = 25,
 		range = 40,
-		values = { crit = { 20, 23 }, critDmg = { 26.5, 28 } },
+		values = { crit = { 20.33, 23 }, critDmg = { 26.67, 28 } }, -- S144: rank 1 at 30 = the old rank 2 at 30
 		effects = { { kind = "sighted", duration = 10, stats = { critChance = "crit", critDmg = "critDmg" } } },
 		breakpoints = Build.bp2({ a = { add = { effectDuration = 2 } }, b = { values = { critDmg = 15 } } }, {
 			a = { mul = { cooldown = 0.8 } },
@@ -206,8 +233,9 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "stormArrow",
-		path = "marksman",
-		unlock = 48,
+		pool = "bow", -- S144: U of the Bow (was the Marksman's row 7, 48)
+		role = "U",
+		unlock = 60,
 		maxLevel = 10,
 		type = "projectile",
 		delivery = "ranged",
@@ -216,7 +244,7 @@ return Build.class("Hunter", "energy", "phys", {
 		range = 38,
 		radius = 8,
 		element = "lightning",
-		values = { dmg = { 200, 400 }, splash = 75 },
+		values = { dmg = { 266.7, 400 }, splash = 75 }, -- S144: rank 1 at 60 = the old rank 4 at 60
 		breakpoints = Build.bp2(
 			{ a = { add = { radius = 4 } }, b = { values = { dmg = 37 } } },
 			{ a = { effect = { kind = "stun", duration = 1 } }, b = { mul = { cooldown = 0.8 } } }
@@ -226,8 +254,9 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "heartseeker",
-		path = "marksman",
-		unlock = 60,
+		pool = "bow", -- S144: S3 of the Bow (was the Marksman's capstone, 60)
+		role = "S3",
+		unlock = 40,
 		maxLevel = 10,
 		type = "projectile",
 		delivery = "ranged",
@@ -236,19 +265,20 @@ return Build.class("Hunter", "energy", "phys", {
 		range = 40,
 		castTime = 1.5,
 		finisher = { hp = 20, mul = 2 },
-		values = { dmg = { 220, 290 } },
+		values = { dmg = { 170, 290 } }, -- S144: rank 6 (level 60) keeps the old rank 1 (Data/SkillCurves)
 		breakpoints = Build.bp2(
 			{ a = { values = { dmg = 37 } }, b = { pierce = 11 } },
 			{ a = { mul = { cooldown = 0.8 } }, b = { splash = { radius = 6, pct = 18 } } }
 		),
 		glyph = "➹",
 	},
-	-- Trapper (ROZWOJ 11.4): rows 1, 4, 7, 8. Venom Snare: a trap thrown to a point, damage + poison + slow.
-	-- Snarefield (capstone): five snares in a ring around the point (S76 ringRadius).
+	-- The old Trapper skills (ROZWOJ 11.4). Venom Snare: a trap thrown to a point, damage + poison + slow. Snarefield:
+	-- five snares in a ring around the point (S76 ringRadius).
 	{
 		id = "frostTrap",
-		path = "trapper",
-		unlock = 10,
+		pool = "crossbow", -- S144: K1 of the Crossbow (was the Trapper's row 1)
+		role = "K1",
+		unlock = 6,
 		maxLevel = 10,
 		type = "trap",
 		delivery = "ranged",
@@ -269,7 +299,8 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "venomSnare",
-		path = "trapper",
+		pool = "crossbow", -- S144: A2 of the Crossbow (was the Trapper's row 4)
+		role = "A2",
 		unlock = 26,
 		maxLevel = 10,
 		type = "trap",
@@ -281,21 +312,22 @@ return Build.class("Hunter", "energy", "phys", {
 		radius = 6,
 		duration = 20,
 		element = "poison",
-		values = { dmg = { 232, 236 }, poison = { 285, 290 }, slow = 30 },
+		values = { dmg = { 80, 82 }, poison = { 405, 412 }, slow = 30 }, -- S147: dmg 232-236 -> 80-82, poison x1.42 (the Crossbow's damage over time >= 25 %)
 		effects = {
 			{ kind = "poison", duration = 6, value = "poison" },
 			{ kind = "slow", duration = 3, value = "slow", category = "enemySlow" },
 		},
 		breakpoints = Build.bp2(
 			{ a = { add = { radius = 2 } }, b = { pull = 8 } },
-			{ a = { echo = { delay = 1, pct = 38 } }, b = { values = { poison = 98 } } }
+			{ a = { echo = { delay = 1, pct = 135 } }, b = { values = { poison = 98 } } } -- S144: 10A 38 -> 44 (R4). S147: 44 -> 135 (the hit is a third of what it was)
 		),
 		glyph = "☣",
 	},
 	{
 		id = "camouflage",
-		path = "trapper",
-		unlock = 48,
+		pool = "crossbow", -- S144: O1 of the Crossbow (was the Trapper's row 7)
+		role = "O1",
+		unlock = 10,
 		maxLevel = 10,
 		type = "buff",
 		delivery = "ranged",
@@ -325,7 +357,8 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "snarefield",
-		path = "trapper",
+		pool = "crossbow", -- S144: U of the Crossbow (was the Trapper's capstone)
+		role = "U",
 		unlock = 60,
 		maxLevel = 10,
 		type = "trap",
@@ -338,31 +371,33 @@ return Build.class("Hunter", "energy", "phys", {
 		ringRadius = 8,
 		hits = 5,
 		duration = 15,
-		values = { dmg = { 30, 38 }, vuln = { 5, 8 }, root = { 1.5, 2.5 } },
+		values = { dmg = { 12, 14 }, vuln = { 5, 8 }, root = { 1.5, 2.5 } }, -- S147: dmg 30-38 -> 12-14 (R3 of the Trapper <= 2.0 at 100)
 		effects = SNAREFIELD_EFFECTS,
 		breakpoints = Build.bp2(
 			{ a = { add = { radius = 1 } }, b = { values = { vuln = 1 } } }, -- 5B: at most the Mark with 10B (ROZWOJ 11.4)
-			{ a = { values = { dmg = 14 } }, b = { pull = 6 } }
+			{ a = { values = { dmg = 6 } }, b = { pull = 6 } } -- S147: 10A 14 -> 6 (R4 with dmg 12-14)
 		),
 		glyph = "⁂",
 	},
-	-- Scout (ROZWOJ 11.5): rows 1, 4, 7, 10. Falcon: a companion (Skills/Companion), first strike after `delay`, then
-	-- every `interval`; `range` = reach of the hunter's target, `radius` = reach of the fallback target. The Drive:
-	-- pulls to the point (S76 pull), then one wave with slow and vulnerability.
+	-- The old Scout skills (ROZWOJ 11.5). Falcon: a companion (Skills/Companion), first strike after `delay`, then every
+	-- `interval`; `range` = reach of the hunter's target, `radius` = reach of the fallback target. The Drive (the
+	-- Scout's capstone, row 8): pulls to the point (S76 pull), then one wave with slow and vulnerability.
 	{
 		id = "agility",
-		path = "scout",
-		unlock = 10,
+		pool = "bow", -- S144: P2 of the Bow (was the Scout's row 1)
+		role = "P2",
+		unlock = 50,
 		maxLevel = 5,
 		type = "passive",
-		values = { dodge = { 2, 10 }, move = { 3, 15 } },
+		values = { dodge = { 10, 12 }, move = { 15, 18 } }, -- S144: rank 1 at 50 = the old rank 5 at 46
 		passive = { flat = { dodge = "dodge", moveSpeed = "move" } },
 		glyph = "🍃",
 	},
 	{
 		id = "falcon",
-		path = "scout",
-		unlock = 26,
+		pool = "bow", -- S144: K2 of the Bow (was the Scout's row 4, 26)
+		role = "K2",
+		unlock = 33,
 		maxLevel = 10,
 		type = "companion",
 		delivery = "ranged",
@@ -373,7 +408,7 @@ return Build.class("Hunter", "energy", "phys", {
 		delay = 1,
 		range = 40,
 		radius = 30,
-		values = { dmg = { 27, 44 } },
+		values = { dmg = { 28.9, 44 } }, -- S144: rank 1 at 33 = the old rank 2 at 30
 		breakpoints = Build.bp2({
 			a = { add = { duration = 4 } },
 			b = { effect = { kind = "slow", duration = 2, value = 15, category = "enemySlow" } },
@@ -382,8 +417,9 @@ return Build.class("Hunter", "energy", "phys", {
 	},
 	{
 		id = "huntersMark",
-		path = "scout",
-		unlock = 48,
+		pool = "common", -- S144: C2 of the Hunter (was the Scout's row 7)
+		role = "C2",
+		unlock = 12,
 		maxLevel = 10,
 		type = "debuff",
 		delivery = "ranged",
@@ -401,7 +437,7 @@ return Build.class("Hunter", "energy", "phys", {
 	{
 		id = "drive",
 		path = "scout",
-		unlock = 80,
+		unlock = 60, -- the Scout's capstone, row 8 (S144: was row 10, 80)
 		maxLevel = 10,
 		type = "circleTarget",
 		delivery = "ranged",
@@ -410,7 +446,8 @@ return Build.class("Hunter", "energy", "phys", {
 		range = 30,
 		radius = 12,
 		pull = 10,
-		values = { dmg = { 102, 108 }, slow = 30, vuln = 6 },
+		-- S144: rank 6 (level 79) keeps the old rank 1 at 80 (Data/SkillCurves)
+		values = { dmg = { 90, 108 }, slow = 30, vuln = 6 },
 		effects = {
 			{ kind = "slow", duration = 3, value = "slow", category = "enemySlow" },
 			{ kind = "vulnerability", duration = 8, value = "vuln", category = "enemyWeak" },
@@ -420,5 +457,135 @@ return Build.class("Hunter", "energy", "phys", {
 			{ a = { values = { dmg = 20 } }, b = { effect = { kind = "root", duration = 1, notBoss = true } } }
 		),
 		glyph = "⇲",
+	},
+	-- S144 (DESIGN-18 §6.3): the new skills of the Bow -------------------------------------------------------------
+	{
+		id = "pinningShot",
+		pool = "bow", -- K1 of the Bow
+		role = "K1",
+		unlock = 6,
+		maxLevel = 10,
+		type = "projectile",
+		delivery = "ranged",
+		cost = 20,
+		cooldown = 12,
+		range = 38,
+		values = { dmg = { 70, 130 }, slow = 40 },
+		effects = PIN_EFFECTS,
+		breakpoints = Build.bp2(
+			{ a = { add = { effectDuration = 0.5 } }, b = { values = { dmg = 14 } } },
+			{ a = { mul = { cooldown = 0.8 } }, b = { values = { dmg = 32 } } }
+		),
+		glyph = "⇥",
+	},
+	{
+		id = "windstep",
+		pool = "bow", -- O1 of the Bow
+		role = "O1",
+		unlock = 10,
+		maxLevel = 10,
+		type = "buff",
+		delivery = "ranged",
+		cost = 20,
+		cooldown = 20,
+		duration = 4,
+		-- dodge and moveSpeed are percentage points: flat, not pct
+		values = { dodge = { 10, 20 }, move = { 20, 35 } },
+		effects = WINDSTEP_EFFECTS,
+		breakpoints = Build.bp2({ a = { add = { effectDuration = 2 } }, b = { values = { dodge = 5 } } }, {
+			a = {
+				selfEffect = {
+					kind = "nextShot",
+					duration = 6,
+					value = "windShot",
+					target = "self",
+					category = "own",
+				},
+				values = { windShot = 25 },
+			},
+			b = { mul = { cooldown = 0.75 } },
+		}),
+		glyph = "🌬",
+	},
+	-- S144 (DESIGN-18 §6.3): the new skills of the Crossbow --------------------------------------------------------
+	{
+		id = "heavyBolt",
+		pool = "crossbow", -- S1 of the Crossbow: Aimed Shot x1.3, slower (cooldown x1.3)
+		role = "S1",
+		unlock = 1,
+		maxLevel = 10,
+		type = "projectile",
+		delivery = "ranged",
+		cost = 20,
+		cooldown = 5.2,
+		range = 38,
+		values = { dmg = { 187.2, 281.7 } }, -- Aimed Shot's numbers and S91 knots x1.3 (Data/SkillCurves). S147: ranks 6-10 x0.93 (the Crossbow's damage moves to its poison)
+		breakpoints = Build.bp2({
+			-- no category, like every DoT (ROZWOJ 7.1); % of the attack over 6 s
+			a = { effect = { kind = "poison", duration = 6, value = 30 } },
+			b = { values = { dmg = 39 } },
+		}, { a = { pierce = 60 }, b = { values = { dmg = 60 } } }),
+		glyph = "➼",
+	},
+	{
+		id = "toxicTips",
+		pool = "crossbow", -- P1 of the Crossbow (Logic/Crossbow, Data/Skills.CROSSBOW)
+		role = "P1",
+		unlock = 20,
+		maxLevel = 5,
+		type = "passive",
+		values = { tip = { 10, 30 } }, -- S147: rank 5 20 -> 30 (ranks 2-5 from level 29). % of the attack over CROSSBOW.tipDuration per stack
+		passive = { hooks = { toxicTips = "tip" } },
+		glyph = "⚗",
+	},
+	{
+		id = "netShot",
+		pool = "crossbow", -- K2 of the Crossbow
+		role = "K2",
+		unlock = 33,
+		maxLevel = 10,
+		type = "circleTarget",
+		delivery = "ranged",
+		cost = 30,
+		cooldown = 18,
+		range = 30,
+		radius = 5,
+		values = { dmg = { 60, 110 }, slow = 40 },
+		effects = NET_EFFECTS,
+		breakpoints = Build.bp2(
+			{ a = { add = { radius = 2 } }, b = { values = { dmg = 12 } } },
+			{ a = { add = { effectDuration = 0.5 } }, b = { values = { dmg = 26 } } }
+		),
+		glyph = "⌗",
+	},
+	{
+		id = "deadlyBolt",
+		pool = "crossbow", -- S3 of the Crossbow: the finisher on the poisoned (Logic/Crossbow.venomMul)
+		role = "S3",
+		unlock = 40,
+		maxLevel = 10,
+		type = "projectile",
+		delivery = "ranged",
+		cost = 25,
+		cooldown = 10,
+		range = 38,
+		-- venomMul % more on a target with at least venomStacks stacks of the caster's poisons
+		values = { dmg = { 180, 248 }, venomMul = 50, venomStacks = 3 }, -- S147: rank 10 260 -> 248 (rank 8 pinned; R7 of the Marksman with a heavy crossbow <= 1.35 at 100)
+		breakpoints = Build.bp2(
+			{ a = { values = { venomMul = 20 } }, b = { values = { dmg = 26 } } },
+			{ a = { values = { venomMul = 35 } }, b = { values = { dmg = 52 } } }
+		),
+		glyph = "✠",
+	},
+	{
+		id = "quickReload",
+		pool = "crossbow", -- P2 of the Crossbow: cooldowns of the Crossbow's skills only (Logic/Crossbow.cdrFor)
+		role = "P2",
+		unlock = 50,
+		maxLevel = 5,
+		type = "passive",
+		values = { reload = { 4, 12 } },
+		passive = { hooks = { quickReload = "reload" } },
+		glyph = "⟲",
 	},
 })

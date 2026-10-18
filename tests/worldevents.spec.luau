@@ -283,6 +283,32 @@ T.describe("WorldEvents: contribution", function()
 		T.expect(WorldEvents.eligible(healer, 100000, 30, 30)).toBe(true)
 		T.expect(WorldEvents.eligible(need - 1, 100000, 30, 30)).toBe(false)
 	end)
+
+	-- S149: the rule moved to Logic/Contribution (shared with the world boss); the event's results stay the same
+	T.it(
+		"delegates to Logic/Contribution: the same points, threshold and eligibility for random contributions",
+		function()
+			local Contribution = require("../src/shared/Logic/Contribution")
+			local rng = Rng.new(149)
+			for _ = 1, 200 do
+				local c = {
+					dmg = rng:float(0, 50000),
+					heal = rng:float(0, 20000),
+					shield = rng:float(0, 10000),
+					intercept = rng:float(0, 5000),
+				}
+				T.expect(WorldEvents.points(c)).toBe(Contribution.points(c, Data.share))
+				local level = rng:int(1, 100)
+				local total = rng:float(0, 1e6)
+				local hpEq = Data.share.hpEquivalent * MonsterStats.baseHp(level)
+				T.expect(WorldEvents.threshold(total, level)).toBe(Contribution.threshold(total, hpEq, Data.share))
+				local points = WorldEvents.points(c)
+				T.expect(WorldEvents.eligible(points, total, level, level))
+					.toBe(Contribution.eligible(points, total, hpEq, Data.share))
+			end
+			T.expect(WorldEvents.emptyContribution()).toEqual(Contribution.empty())
+		end
+	)
 end)
 
 T.describe("WorldEvents: reward", function()

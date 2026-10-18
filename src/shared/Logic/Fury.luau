@@ -1,7 +1,7 @@
 --!strict
--- Fury of the Berserker (ROZWOJ 10.4): pure stack rules. The server keeps one State per player
--- (StatusEffectService) and passes Data/Paths HOOK_RULES.fury as the rules; times are os.clock() seconds. Every function
--- returns a new table and never changes its input.
+-- Fury of the Warrior (ROZWOJ 10.4; S143: Rage of the two-handed pool, DESIGN-18 §6.2): pure stack rules. The server
+-- keeps one State per player (StatusEffectService) and passes Data/Paths HOOK_RULES.fury as the rules; times are
+-- os.clock() seconds. Every function returns a new table and never changes its input.
 
 local Fury = {}
 
@@ -61,6 +61,27 @@ end
 -- Spends every stack (furyConsume, S73): the new state and how many were spent.
 function Fury.consume(state: State): (State, number)
 	return { stacks = 0, base = 0, quietSince = state.quietSince, lastGain = state.lastGain }, state.stacks
+end
+
+-- S143 (DESIGN-18 §6.2): the Fury cap of a character. Fury exists only with Rage (the two-handed school's passive, hook
+-- `rage` > 0); then the furyMax hook (Rage and the Berserker's nodes), at most maxStacks. Without Rage: 0 (no Fury, so
+-- the Fury nodes and furyConsume do nothing).
+function Fury.cap(furyMax: number, rage: number, maxStacks: number): number
+	if rage <= 0 then
+		return 0
+	end
+	return math.clamp(math.floor(furyMax), 0, maxStacks)
+end
+
+-- S143: the stacks one damaging hit gives: the skill's furyGain (Brutal Strike 2; default 1) or Carnage's gain while it
+-- lasts, whichever is larger.
+function Fury.hitGain(skillGain: number?, carnage: boolean, carnageGain: number): number
+	return math.max(skillGain or 1, if carnage then carnageGain else 1)
+end
+
+-- S143 (Unstoppable): the hook works only at full Fury (stacks == the cap, the cap above 0).
+function Fury.unstoppable(hook: number, stacks: number, max: number): boolean
+	return hook > 0 and max > 0 and stacks >= max
 end
 
 -- Sets the stacks (furyRestore, S75), clamped to 0..max; the decay clock restarts at `now`.

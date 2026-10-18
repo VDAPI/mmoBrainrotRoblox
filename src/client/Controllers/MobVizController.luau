@@ -76,12 +76,12 @@ local function items(target: string, variant: string): { Item }
 			end
 		end
 		if target == "all" then
-			for _, def in Bosses.list do
+			for _, def in Bosses.all do -- S149: the world boss too
 				boss(def)
 			end
 		end
 	elseif target == "bosses" then
-		for _, def in Bosses.list do
+		for _, def in Bosses.all do -- S149: the world boss too
 			boss(def)
 		end
 	elseif target == "pets" then

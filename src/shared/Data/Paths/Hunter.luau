@@ -1,10 +1,15 @@
 --!strict
 -- Hunter paths (docs/ROZWOJ.md 11): marksman (single target), trapper (area, traps, poison), scout (party support: marks, falcon, Elite scouting).
--- Numbers are the ROZWOJ 11 starting values ({ rank 1, rank max }, linear); the balance sessions tune them. Shape:
+-- Numbers are the ROZWOJ 11 starting values ({ rank 1, rank max }, linear); the balance sessions tune them. S144
+-- (DESIGN-18 §6.3, §7): the skill nodes went to the weapon pools (Bow, Crossbow) and left nodes of the same ranks
+-- (rows and need unchanged); skill nodes only in rows 4 and 8: the Scout's capstone is the Drive (row 8; the Royal
+-- Falcon keystone moved to row 10), the Marksman's and the Trapper's capstones are keystones that change a rule (Dead
+-- Eye: Logic/DeadEye; Master Trapper: Logic/Crossbow.tipFor) and their rows 4 hold no skill. Nodes that strengthen the
+-- falcon, the traps or the aim work while that skill is in the active pool (S138). Shape:
 -- Data/Paths/Warrior (S75). Rank-dependent numbers sit in `values`, passive names the field, in modify.bp a number is
 -- { ref = "<field>" }. Hooks are the S76 / S77 names (CombatService, Skills/Context, Skills/Companion, Movement.trap);
 -- minimapEliteBonus (S78) is read by PartyService and the minimap. `reference` and `itemWeights` never reach the
--- wiki; every path is unpublished there (wiki = false, ROZWOJ 3.5).
+-- wiki; S148: the directions are published there (DESIGN-18 §14).
 
 local SkillData = require("../Skills")
 local Types = require("./Types")
@@ -51,7 +56,7 @@ local function ref(field: string): any
 	return { ref = field }
 end
 
--- team hook (S57 marker): 1/3 outside the main path
+-- team hook (S57 marker; S138: 1/3 below TEAM_FULL_POINTS in the direction)
 local TEAM_DIP = 1 / 3
 
 local M, T, S = "marksman", "trapper", "scout"
@@ -88,7 +93,11 @@ local marksman: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(M, "piercingArrow"),
+			-- S144: Piercing Arrow is the Crossbow's A1; True Fletching takes its one rank
+			node(M, "fletching", "passive", 1, "➵", {
+				values = { fletching = 3 },
+				passive = { flat = { critDmg = "fletching" } },
+			}),
 			node(M, "steadyHand", "passive", 3, "✋", {
 				values = { steadyHand = { 1, 3 } },
 				passive = { flat = { critChance = "steadyHand" } },
@@ -115,7 +124,11 @@ local marksman: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(M, "drawBead"),
+			-- S144: Draw a Bead is the Hunter's common C3; Patience takes its one rank (Draw a Bead +1 crit point)
+			node(M, "patience", "modify", 1, "⊚", {
+				values = { patience = 1 },
+				modify = { skill = "drawBead", bp = { values = { crit = ref("patience") } } },
+			}),
 			node(M, "heldBreath", "modify", 3, "◌", {
 				values = { heldBreath = { 0.25, 0.75 } },
 				modify = { skill = "drawBead", bp = { add = { effectDuration = ref("heldBreath") } } },
@@ -142,13 +155,25 @@ local marksman: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(M, "stormArrow"),
+			-- S144: Storm Arrow is the Bow's U; Poise takes its one rank
+			node(M, "poise", "passive", 1, "⚖", {
+				values = { poise = 0.5 },
+				passive = { flat = { critChance = "poise" } },
+			}),
 			node(M, "tempest", "modify", 3, "☈", {
 				values = { tempest = { 0.92, 0.78 } },
 				modify = { skill = "stormArrow", bp = { mul = { cooldown = ref("tempest") } } },
 			}),
 		}),
-		row(false, { skill(M, "heartseeker") }),
+		-- S144: Heartseeker is the Bow's S3; the capstone is the keystone Dead Eye (DESIGN-18 §7: no skill in row 8 of the
+		-- Marksman): the main hits of one-target skills on a target at deadEye % health or more always crit, with any
+		-- weapon (Logic/DeadEye; Skills/Context, the model)
+		row(false, {
+			node(M, "deadEye", "keystone", 1, "◉", {
+				values = { deadEye = 80, deadEyeDmg = 10 },
+				passive = { flat = { critDmg = "deadEyeDmg" }, hooks = { deadEye = "deadEye" } },
+			}),
+		}),
 		row(true, {
 			node(M, "deadlyTip", "modify", 3, "➴", {
 				values = { deadlyTip = { 25, 36 } },
@@ -178,7 +203,6 @@ local marksman: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local trapper: Types.PathDef = {
@@ -210,7 +234,11 @@ local trapper: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(T, "frostTrap"),
+			-- S144: Frost Trap is the Crossbow's K1; Hunter's Leathers take its one rank
+			node(T, "leathers", "passive", 1, "▤", {
+				values = { leathers = 1 },
+				passive = { pct = { maxHp = "leathers" } },
+			}),
 			node(T, "venom", "passive", 3, "☠", {
 				values = { venom = { 10, 30 } },
 				passive = { hooks = { poisonDamage = "venom" } },
@@ -240,7 +268,11 @@ local trapper: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(T, "venomSnare"),
+			-- S144: Venom Snare is the Crossbow's A2; Bait takes its one rank (Venom Snare's poison +10 points)
+			node(T, "bait", "modify", 1, "⚘", {
+				values = { bait = 10 },
+				modify = { skill = "venomSnare", bp = { values = { poison = ref("bait") } } },
+			}),
 			node(T, "huntingGround", "passive", 3, "⛺", {
 				values = { huntingGround = { 2, 5 } },
 				passive = { hooks = { areaSkillDamage = "huntingGround" } },
@@ -280,13 +312,25 @@ local trapper: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(T, "camouflage"),
+			-- S144: Camouflage is the Crossbow's O1; Stalker takes its one rank
+			node(T, "stalker", "passive", 1, "◗", {
+				values = { stalker = 1 },
+				passive = { flat = { dodge = "stalker" } },
+			}),
 			node(T, "ambush", "modify", 3, "◐", {
 				values = { ambush = { 0.9, 0.7 } },
 				modify = { skill = "camouflage", bp = { mul = { cooldown = ref("ambush") } } },
 			}),
 		}),
-		row(false, { skill(T, "snarefield") }),
+		-- S144: Snarefield is the Crossbow's U; the capstone is the keystone Master Trapper (DESIGN-18 §7: no skill in row
+		-- 8 of the Trapper): every hit of a trap adds a stack of the tip poison worth at least masterTip % without the
+		-- tip's gap (Logic/Crossbow.tipFor; Toxic Tips not needed), and every poison of the Hunter is stronger
+		row(false, {
+			node(T, "masterTrapper", "keystone", 1, "⛓", {
+				values = { masterTip = 15, masterVenom = 10 },
+				passive = { hooks = { masterTrapper = "masterTip", poisonDamage = "masterVenom" } },
+			}),
+		}),
 		row(true, {
 			node(T, "denseSnares", "modify", 3, "⁜", {
 				values = { denseSnares = { 1, 3 } },
@@ -321,7 +365,6 @@ local trapper: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 local scout: Types.PathDef = {
@@ -353,23 +396,27 @@ local scout: Types.PathDef = {
 	},
 	rows = {
 		row(false, {
-			skill(S, "agility"),
+			-- S144: Agility is the Bow's P2; Fleet Foot takes its one rank
+			node(S, "fleet", "passive", 1, "⇢", {
+				values = { fleet = 3 },
+				passive = { flat = { moveSpeed = "fleet" } },
+			}),
 			node(S, "eye", "passive", 3, "👁", {
 				values = { eye = { 60, 180 } },
 				passive = { hooks = { minimapEliteBonus = "eye" } },
-				dipScale = TEAM_DIP, -- team hook (S57 marker): 1/3 outside the main path
+				dipScale = TEAM_DIP, -- team hook (S57 marker; S138: 1/3 below TEAM_FULL_POINTS in the direction)
 			}),
 		}),
 		row(false, {
 			node(S, "spotting", "passive", 3, "⌾", {
 				values = { spotting = { 2, 6 } },
 				passive = { hooks = { spotOnHit = "spotting" } },
-				dipScale = TEAM_DIP, -- team hook (S57 marker): 1/3 outside the main path
+				dipScale = TEAM_DIP, -- team hook (S57 marker; S138: 1/3 below TEAM_FULL_POINTS in the direction)
 			}),
 			node(S, "vigilance", "passive", 3, "⚠", {
 				values = { vigilance = { 10, 20 } },
 				passive = { hooks = { vigilanceMove = "vigilance" } },
-				dipScale = TEAM_DIP, -- team hook (S57 marker): 1/3 outside the main path
+				dipScale = TEAM_DIP, -- team hook (S57 marker; S138: 1/3 below TEAM_FULL_POINTS in the direction)
 			}),
 		}),
 		row(true, {
@@ -383,7 +430,11 @@ local scout: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(S, "falcon"),
+			-- S144: the Falcon is the Bow's K2; Falconer takes its one rank (the Falcon stays 2 s longer)
+			node(S, "falconer", "modify", 1, "⌒", {
+				values = { falconer = 2 },
+				modify = { skill = "falcon", bp = { add = { duration = ref("falconer") } } },
+			}),
 			node(S, "talons", "modify", 3, "⋎", {
 				values = { talons = { 10, 29 } },
 				modify = { skill = "falcon", bp = { values = { dmg = ref("talons") } } },
@@ -411,19 +462,18 @@ local scout: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(S, "huntersMark"),
+			-- S144: Hunter's Mark is the Hunter's common C2; Keen Mark takes its one rank (+0.5 vulnerability points)
+			node(S, "keenMark", "modify", 1, "⌖", {
+				values = { keenMark = 0.5 },
+				modify = { skill = "huntersMark", bp = { values = { vuln = ref("keenMark") } } },
+			}),
 			node(S, "trail", "modify", 3, "⇢", {
 				values = { trail = { 10, 20 } },
 				modify = { skill = "huntersMark", bp = { markJump = ref("trail") } },
 			}),
 		}),
-		-- the first keystone of the game: the rule lives in Skills/Companion (S77), the numbers in HOOK_RULES.royalFalcon
-		row(false, {
-			node(S, "royalFalcon", "keystone", 1, "♔", {
-				values = { on = { 1, 1 } },
-				passive = { hooks = { royalFalcon = "on" } },
-			}),
-		}),
+		-- S144: the Drive is the Scout's capstone (row 8, DESIGN-18 §7); the Royal Falcon keystone moved to row 10
+		row(false, { skill(S, "drive") }),
 		row(true, {
 			node(S, "quickMark", "modify", 3, "⌛", {
 				values = { quickMark = { 0.91, 0.74 } },
@@ -435,7 +485,12 @@ local scout: Types.PathDef = {
 			}),
 		}),
 		row(false, {
-			skill(S, "drive"),
+			-- the first keystone of the game: the rule lives in Skills/Companion (S77), the numbers in
+			-- HOOK_RULES.royalFalcon. S144: row 10 (was the capstone of row 8; the Drive took row 8)
+			node(S, "royalFalcon", "keystone", 1, "♔", {
+				values = { on = { 1, 1 } },
+				passive = { hooks = { royalFalcon = "on" } },
+			}),
 			node(S, "beater", "modify", 3, "⚑", {
 				values = { beater = { 1.8, 5.5 } },
 				-- one kind each (S75 add.<kind>Duration): the 10B root stays 1 s
@@ -453,11 +508,14 @@ local scout: Types.PathDef = {
 		}),
 	},
 	reference = {},
-	wiki = false,
 }
 
 -- Model builds (ROZWOJ 7.5, 11.3-11.5; shape in Data/Paths/Types): each spends exactly pointsAt(100) = 50 points.
 -- r7Exempt (Trapper, 15.4.2) and notInZone are read by the balance model, never by the game.
+-- S144 (DESIGN-18 §6.3, §13): one build per pool and leading direction (the Marksman with a longbow and the Scout with a
+-- shortbow in the Bow pool, the Trapper with a crossbow in the Crossbow pool), the moved skill nodes replaced by the
+-- nodes of the same ranks, `ranks` = the order the model buys skill ranks in. A rotation lists the skills of both pools
+-- (a skill of the other pool has no rank and is skipped), so the model measures a build with the other weapon too (S90).
 local function build(
 	id: string,
 	main: string,
@@ -465,6 +523,7 @@ local function build(
 	nodes: { { any } },
 	bp: { [string]: "a" | "b" },
 	rotation: { { [string]: any } },
+	ranks: { string },
 	r7Exempt: boolean?
 ): Types.ReferenceBuild
 	return {
@@ -475,30 +534,31 @@ local function build(
 		bp = bp,
 		stats = stats,
 		rotation = rotation,
+		ranks = ranks,
 	}
 end
 
 -- Marksman ------------------------------------------------------------------------------------------------------
 local function marksmanNodes(row3: string, row6: string, row9: string): { { any } }
 	return {
-		{ "marksman_piercingArrow", 1 },
+		{ "marksman_fletching", 1 },
 		{ "marksman_steadyHand", 3 },
-		{ "scout_agility", 1 },
+		{ "scout_fleet", 1 },
 		{ "scout_eye", 1 },
-		{ "trapper_frostTrap", 1 },
+		{ "trapper_leathers", 1 },
 		{ "trapper_venom", 2 },
 		{ "marksman_rhythm", 3 },
 		{ "marksman_precision", 3 },
 		{ "scout_spotting", 3 },
 		{ row3, 3 },
-		{ "marksman_drawBead", 1 },
+		{ "marksman_patience", 1 },
 		{ "marksman_heldBreath", 3 },
 		{ "marksman_longShot", 3 },
 		{ "marksman_keenSight", 3 },
 		{ row6, 3 },
-		{ "marksman_stormArrow", 1 },
+		{ "marksman_poise", 1 },
 		{ "marksman_tempest", 3 },
-		{ "marksman_heartseeker", 1 },
+		{ "marksman_deadEye", 1 },
 		{ row9, 3 },
 		{ "marksman_grit", 3 },
 		{ "marksman_coldBlood", 3 },
@@ -506,10 +566,41 @@ local function marksmanNodes(row3: string, row6: string, row9: string): { { any 
 	}
 end
 
+-- S144: the one target skills of both pools first (Bow: Aimed Shot, Heartseeker, Storm Arrow; Crossbow: Heavy Bolt,
+-- the Executioner's Bolt on the poison stacks, Venom Arrow); Pinning Shot as a filler
+local MARKSMAN_RANKS = {
+	"aimedShot",
+	"heavyBolt",
+	"doubleShot",
+	"venomArrow",
+	"hawkEye",
+	"toxicTips",
+	"arrowRain",
+	"piercingArrow",
+	"pinningShot",
+	"frostTrap",
+	"drawBead",
+	"heartseeker",
+	"deadlyBolt",
+	"stormArrow",
+	"snarefield",
+	"predatorInstinct",
+	"agility",
+	"quickReload",
+	"volley",
+	"venomSnare",
+	"huntersMark",
+	"falcon",
+	"netShot",
+	"disengage",
+	"windstep",
+	"camouflage",
+}
+
 marksman.reference = {
 	build(
 		"kingslayer",
-		"heavycrossbow", -- the balance model also runs it with the path's other weapon (S90)
+		"longbow", -- S144: the Bow (was the heavy crossbow); the balance model also runs it with the heavy crossbow
 		marksman.statPlan :: any,
 		marksmanNodes("marksman_slayer", "marksman_coupDeGrace", "marksman_deadlyTip"),
 		{
@@ -518,18 +609,28 @@ marksman.reference = {
 			["drawBead:10"] = "b",
 			["stormArrow:5"] = "b",
 			["stormArrow:10"] = "b",
+			["heavyBolt:5"] = "b",
+			["heavyBolt:10"] = "b",
+			["deadlyBolt:5"] = "b",
+			["deadlyBolt:10"] = "b",
+			["pinningShot:5"] = "b",
+			["pinningShot:10"] = "b",
 		},
 		{
 			{ skill = "drawBead" },
 			{ skill = "heartseeker", notInZone = true },
 			{ skill = "stormArrow" },
+			{ skill = "deadlyBolt" },
 			{ skill = "aimedShot" },
+			{ skill = "heavyBolt" },
 			{ skill = "venomArrow" },
 			{ skill = "piercingArrow" },
 			{ skill = "doubleShot" },
+			{ skill = "pinningShot" },
 			{ skill = "volley" },
 			{ skill = "arrowRain" },
-		}
+		},
+		MARKSMAN_RANKS
 	),
 	build(
 		"eliteHunter",
@@ -543,6 +644,12 @@ marksman.reference = {
 			["stormArrow:10"] = "b",
 			["heartseeker:5"] = "b",
 			["heartseeker:10"] = "b",
+			["heavyBolt:5"] = "a",
+			["heavyBolt:10"] = "a",
+			["deadlyBolt:5"] = "b",
+			["deadlyBolt:10"] = "b",
+			["pinningShot:5"] = "b",
+			["pinningShot:10"] = "b",
 		},
 		{
 			{ skill = "drawBead" },
@@ -550,11 +657,15 @@ marksman.reference = {
 			{ skill = "stormArrow" },
 			{ skill = "volley", minEnemies = 3 },
 			{ skill = "arrowRain", minEnemies = 3 },
+			{ skill = "piercingArrow", minEnemies = 3 },
+			{ skill = "deadlyBolt" },
 			{ skill = "aimedShot" },
+			{ skill = "heavyBolt" },
 			{ skill = "venomArrow" },
-			{ skill = "piercingArrow" },
 			{ skill = "doubleShot" },
-		}
+			{ skill = "pinningShot" },
+		},
+		MARKSMAN_RANKS
 	),
 }
 
@@ -562,29 +673,60 @@ marksman.reference = {
 -- The 8 ranks outside the path (ROZWOJ gives none): rows 1 of the Marksman and the Scout, as in the 11.6 measurement.
 local function trapperNodes(row3: string, row6: string, row9: string): { { any } }
 	return {
-		{ "trapper_frostTrap", 1 },
+		{ "trapper_leathers", 1 },
 		{ "trapper_venom", 3 },
-		{ "marksman_piercingArrow", 1 },
+		{ "marksman_fletching", 1 },
 		{ "marksman_steadyHand", 3 },
-		{ "scout_agility", 1 },
+		{ "scout_fleet", 1 },
 		{ "scout_eye", 3 },
 		{ "trapper_virulence", 3 },
 		{ "trapper_thrift", 3 },
 		{ row3, 3 },
-		{ "trapper_venomSnare", 1 },
+		{ "trapper_bait", 1 },
 		{ "trapper_huntingGround", 3 },
 		{ "trapper_bitingRain", 3 },
 		{ "trapper_spoils", 3 },
 		{ row6, 3 },
-		{ "trapper_camouflage", 1 },
+		{ "trapper_stalker", 1 },
 		{ "trapper_ambush", 3 },
-		{ "trapper_snarefield", 1 },
+		{ "trapper_masterTrapper", 1 },
 		{ row9, 3 },
 		{ "trapper_basilisk", 3 },
 		{ "trapper_woodsman", 3 },
 		{ "trapper_snarefield2", 2 },
 	}
 end
+
+-- S144: the Crossbow's area, traps and poison first (Piercing Bolt, Venom Arrow and Toxic Tips feed the Executioner's
+-- Bolt), then the Bow's for the other weapon
+local TRAPPER_RANKS = {
+	"heavyBolt",
+	"piercingArrow",
+	"venomArrow",
+	"toxicTips",
+	"frostTrap",
+	"aimedShot",
+	"arrowRain",
+	"doubleShot",
+	"hawkEye",
+	"venomSnare",
+	"volley",
+	"netShot",
+	"deadlyBolt",
+	"snarefield",
+	"predatorInstinct",
+	"quickReload",
+	"agility",
+	"pinningShot",
+	"camouflage",
+	"drawBead",
+	"huntersMark",
+	"heartseeker",
+	"stormArrow",
+	"falcon",
+	"disengage",
+	"windstep",
+}
 
 trapper.reference = {
 	build(
@@ -598,23 +740,33 @@ trapper.reference = {
 			["venomSnare:5"] = "b",
 			["snarefield:10"] = "b",
 			["arrowRain:10"] = "b",
+			["heavyBolt:5"] = "a",
+			["heavyBolt:10"] = "a",
+			["netShot:5"] = "b",
+			["netShot:10"] = "b",
+			["deadlyBolt:5"] = "a",
+			["deadlyBolt:10"] = "a",
 		},
 		{
 			{ skill = "snarefield", opener = true },
 			{ skill = "venomSnare" },
 			{ skill = "arrowRain" },
 			{ skill = "volley" },
-			{ skill = "venomArrow" },
-			{ skill = "frostTrap" },
-			{ skill = "aimedShot" },
 			{ skill = "piercingArrow" },
+			{ skill = "netShot" },
+			{ skill = "venomArrow" },
+			{ skill = "deadlyBolt" },
+			{ skill = "frostTrap" },
+			{ skill = "heavyBolt" },
+			{ skill = "aimedShot" },
 			{ skill = "doubleShot" },
 		},
+		TRAPPER_RANKS,
 		true
 	),
 	build(
 		"poisoner",
-		"bow",
+		"crossbow", -- S144: the Crossbow (was the bow: the traps and the poison are the Crossbow's school)
 		trapper.statPlan :: any,
 		trapperNodes("trapper_toxicologist", "trapper_blastTrap", "trapper_numbingVenom"),
 		{
@@ -625,18 +777,28 @@ trapper.reference = {
 			["snarefield:10"] = "b",
 			["arrowRain:10"] = "b",
 			["venomArrow:10"] = "b",
+			["heavyBolt:5"] = "a",
+			["heavyBolt:10"] = "b",
+			["netShot:5"] = "b",
+			["netShot:10"] = "b",
+			["deadlyBolt:5"] = "b",
+			["deadlyBolt:10"] = "a",
 		},
 		{
 			{ skill = "venomSnare" },
 			{ skill = "venomArrow" },
+			{ skill = "deadlyBolt" },
 			{ skill = "snarefield" },
 			{ skill = "frostTrap" },
+			{ skill = "heavyBolt" },
 			{ skill = "aimedShot" },
 			{ skill = "piercingArrow" },
 			{ skill = "doubleShot" },
 			{ skill = "arrowRain" },
+			{ skill = "netShot", minEnemies = 3 },
 			{ skill = "volley", minEnemies = 3 },
 		},
+		TRAPPER_RANKS,
 		true
 	),
 }
@@ -644,40 +806,73 @@ trapper.reference = {
 -- Scout ---------------------------------------------------------------------------------------------------------
 local function scoutNodes(row3: string, row6: string, row9: string): { { any } }
 	return {
-		{ "scout_agility", 1 },
+		{ "scout_fleet", 1 },
 		{ "scout_eye", 3 },
-		{ "marksman_piercingArrow", 1 },
+		{ "marksman_fletching", 1 },
 		{ "marksman_steadyHand", 3 },
 		{ "scout_spotting", 3 },
 		{ "scout_vigilance", 3 },
 		{ "marksman_rhythm", 3 },
 		{ "marksman_precision", 3 },
 		{ row3, 3 },
-		{ "scout_falcon", 1 },
+		{ "scout_falconer", 1 },
 		{ "scout_talons", 3 },
 		{ "scout_bond", 3 },
 		{ "scout_hardy", 3 },
 		{ row6, 3 },
-		{ "scout_huntersMark", 1 },
+		{ "scout_keenMark", 1 },
 		{ "scout_trail", 3 },
-		{ "scout_royalFalcon", 1 },
-		{ row9, 3 },
 		{ "scout_drive", 1 },
+		{ row9, 3 },
+		{ "scout_royalFalcon", 1 },
 		{ "scout_beater", 3 },
 		{ "scout_royalFalcon2", 2 },
 	}
 end
 
+-- S144: the Bow's falcon and marks first (Hunter's Mark from 12, the Falcon from 33)
 local SCOUT_ROTATION: { { [string]: any } } = {
 	{ skill = "huntersMark" },
 	{ skill = "falcon", opener = true },
 	{ skill = "drive", minEnemies = 3 },
 	{ skill = "aimedShot" },
+	{ skill = "heavyBolt" },
 	{ skill = "venomArrow" },
 	{ skill = "doubleShot" },
+	{ skill = "deadlyBolt" },
 	{ skill = "piercingArrow" },
+	{ skill = "pinningShot" },
 	{ skill = "arrowRain", minEnemies = 3 },
 	{ skill = "volley", minEnemies = 3 },
+}
+local SCOUT_RANKS = {
+	"aimedShot",
+	"heavyBolt",
+	"huntersMark",
+	"doubleShot",
+	"venomArrow",
+	"hawkEye",
+	"toxicTips",
+	"arrowRain",
+	"piercingArrow",
+	"disengage",
+	"pinningShot",
+	"windstep",
+	"falcon",
+	"drive",
+	"volley",
+	"deadlyBolt",
+	"predatorInstinct",
+	"agility",
+	"quickReload",
+	"drawBead",
+	"heartseeker",
+	"stormArrow",
+	"frostTrap",
+	"venomSnare",
+	"netShot",
+	"snarefield",
+	"camouflage",
 }
 
 scout.reference = {
@@ -692,8 +887,13 @@ scout.reference = {
 			["drive:5"] = "b",
 			["disengage:5"] = "b",
 			["disengage:10"] = "b",
+			["pinningShot:5"] = "b",
+			["pinningShot:10"] = "b",
+			["windstep:5"] = "b",
+			["windstep:10"] = "b",
 		},
-		SCOUT_ROTATION
+		SCOUT_ROTATION,
+		SCOUT_RANKS
 	),
 	build(
 		"tracker",
@@ -706,8 +906,13 @@ scout.reference = {
 			["drive:5"] = "b",
 			["disengage:5"] = "b",
 			["disengage:10"] = "b",
+			["pinningShot:5"] = "b",
+			["pinningShot:10"] = "b",
+			["windstep:5"] = "b",
+			["windstep:10"] = "b",
 		},
-		SCOUT_ROTATION
+		SCOUT_ROTATION,
+		SCOUT_RANKS
 	),
 }
 

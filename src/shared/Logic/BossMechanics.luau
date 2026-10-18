@@ -6,14 +6,16 @@
 --   split    the blow lands on the area; everyone inside shares it (damage / inside each); nobody inside = every
 --            fighter takes `missAll` of the full damage
 --   mark     a random fighter is marked for `seconds`; then a circle around the marked one's position at that moment:
---            the others inside take `damage`, the marked one `damage x self` (walk away from the party)
+--            the others inside take `damage`, the marked one `damage x self` (walk away from the party). S149: `count`
+--            fighters at once (without repeats, default 1); each circle blasts on its own, so a marked one standing in
+--            another marked one's circle takes its own `self` share and the other's full blow
 --   channel  the boss stands and channels for `seconds`; the fighters break it by dealing `breakPct` of its max HP
 --            in that time (it is staggered for `stagger` s), otherwise the spell hits every fighter
 
 local BossMechanics = {}
 
 export type SplitSpec = { missAll: number }
-export type MarkSpec = { seconds: number, self: number }
+export type MarkSpec = { seconds: number, self: number, count: number? }
 export type ChannelSpec = { seconds: number, breakPct: number, stagger: number }
 export type Mechanic = "split" | "mark" | "channel"
 
@@ -39,6 +41,32 @@ end
 -- the whole `damage`.
 function BossMechanics.markDamage(isMarked: boolean, damage: number, spec: MarkSpec): number
 	return if isMarked then damage * spec.self else damage
+end
+
+-- S149: how many fighters one mark brands at once (default 1).
+function BossMechanics.markCount(spec: MarkSpec): number
+	return math.max(1, math.floor(spec.count or 1))
+end
+
+-- S149: indexes of the branded fighters among `fighters` (min(count, fighters) of them, without repeats, in the order
+-- picked); `roll(lo, hi)` is the caller's random integer (the server's Random, a test's Rng).
+function BossMechanics.pickMarked(fighters: number, count: number, roll: (lo: number, hi: number) -> number): { number }
+	local pool: { number } = {}
+	for i = 1, fighters do
+		table.insert(pool, i)
+	end
+	local out: { number } = {}
+	for _ = 1, math.min(math.max(1, count), fighters) do
+		table.insert(out, table.remove(pool, roll(1, #pool)) :: number)
+	end
+	return out
+end
+
+-- S149: the damage multiplier one player takes from the blasts of one mark cast: `selfMarked` = the player is branded
+-- (its own circle: damage x self), `othersInside` = how many other branded players' circles hold it (full damage each).
+function BossMechanics.markTaken(selfMarked: boolean, othersInside: number, damage: number, spec: MarkSpec): number
+	local own = if selfMarked then BossMechanics.markDamage(true, damage, spec) else 0
+	return own + math.max(0, othersInside) * BossMechanics.markDamage(false, damage, spec)
 end
 
 -- Share of the boss's max HP the fighters took off since the channel began (healing the boss counts against it).
