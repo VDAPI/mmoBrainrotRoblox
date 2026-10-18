@@ -31,6 +31,7 @@ local Workspace = game:GetService("Workspace")
 
 local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
+local MapLooks = require(ReplicatedStorage.Shared.Data.MapLooks)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local State = require(script.Parent.Parent.UI.State)
 
@@ -46,7 +47,7 @@ local FLAG_SWING = math.rad(6)
 local SPIN_RADIUS = 400
 local SPIN_SPEED = { wheel = math.rad(20), sail = math.rad(25) }
 local NIGHT_PER_FRAME = 150
-local WINDOW_GLOW = Color3.fromHex("#FFC46E")
+local WINDOW_GLOW = Color3.fromHex(MapLooks.windows.color) -- W12: a warm amber, not the yellow neon
 local LAMP_DAY = Color3.fromHex("#5A4E3A")
 
 type Original = { color: Color3, material: Enum.Material }
@@ -488,7 +489,7 @@ local function setNightLook(part: BasePart, kind: string, night: boolean)
 		return
 	end
 	local p = part.Position
-	if night and DayCycle.windowLit(p.X, p.Y, p.Z) then
+	if night and DayCycle.windowLit(p.X, p.Y, p.Z, MapLooks.windows.share) then
 		part.Color = WINDOW_GLOW
 		part.Material = Enum.Material.Neon
 	else

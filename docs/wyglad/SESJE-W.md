@@ -153,3 +153,209 @@ importu: `docs/wyglad/ZASOBY.md`.
 **Dla właściciela:** modele zestawu i materiały są **w miejscu** (`ReplicatedStorage.Assets.Kit`, `MaterialService`),
 nie w repo: zapisz miejsce (Ctrl+S), żeby przetrwały zamknięcie Studio. Gdyby zginęły, `tools/studio/import_kit.luau`
 w Command Bar odtwarza modele.
+
+### W11
+
+Plan wszystkich map, bez kodu i bez Studio (chmura, 2026-10-17). `docs/wyglad/MAPY.md` (spis, świat jako całość, horyzont każdej mapy, wspólny język wizualny, kolejność W12–W24, 5 pytań do właściciela) i pięć plików `docs/wyglad/mapy/{miasto,laki,bor,pustkowia,szczyty}.md`: 22 miejsca, na każde historia, punkty orientacyjne z budżetem, szkic z góry w studach (z dumpów generatora), expowiska z rekwizytami, sekrety, ujęcia do zrzutów, światło i pogoda, zasoby, zmiany układu, ryzyka, kryteria odbioru.
+
+- Zmiany układu: 13, wszystkie na mapach otwartych (miasto 3, arena 2, każdy region 2); jaskinie i komnaty bossów bez zmian.
+- Bez krwi: plany zastępują dzisiejsze „zaschnięte plamy” na ołtarzu kultu (`DuskwoodGen/Cult`), padlinę w Wilczej Norze, ciała w Kurhanie, kokony „ze stopami goblinów” i blok rzeźnika w Kopcu.
+- Doprecyzowanie: „płasko, promień 74 od (0, −10)” to kontrakt komnat bossów (`DungeonArena`), nie mapy `arena_pit` (MAPY.md §2).
+- Uwaga dla W12: `docs/miasto/MIASTO.md` podaje, że punkt startu w mieście patrzy na zachód; w kodzie patrzy na wschód, w ścianę hali targowej (`mapy/miasto.md`, Z1).
+
+### W08 (2026-10-17, komputer właściciela, Studio MCP)
+
+**Co weszło.** Własny `StarterCharacterScripts.Animate` (`src/character/Animate.client.luau`), więc Roblox nie wstawia
+już swojego domyślnego: stanie z wariantami (co 8–15 s, nie w walce), chód i bieg przenikane wagami po prędkości (bez
+skoku pozy), skok (wybicie przez `air.fallAfter`, potem upadek), lądowanie tylko po wysokim upadku, wspinanie, pływanie
+i unoszenie się, na wierzchowcu `idle` pod nogami z `RiderPose`. Dane `Data/Locomotion`, wybór `Logic/LocomotionPick`
+(test `tests/locomotion.spec.luau`). IK stóp na zboczach: `FootIkController` (własna postać + 3 najbliższe, bez `low`).
+Klipy: do czasu Mixamo grają domyślne klipy Roblox R15, teraz sterowane własną logiką (`fallback` zostaje na nich).
+
+**Sprawdzone w Studio:** `Animate` z repo zastępuje domyślny (w postaci jest tylko `LocalScript:Animate`); bieg przy
+16 st/s: `run` waga 1, prędkość ×2,0; wybicie → upadek → stanie po skoku; wariant bezczynności gra; IK: na zboczu lewa
+stopa waga 1, prawa 0 (podnosi tylko stopę nad wyższą ziemią).
+
+**Stride (pomiar w Studio, prędkość podpartej stopy względem korzenia):** domyślne `walk` i `run` Roblox obie 6,6 st/s
+(krótki krok), więc bieg przy 16 st/s potrzebowałby ×2,4: `run` = 8 (×2,0, lekki poślizg) do czasu własnego klipu biegu.
+
+**Koszt IK (PC, 4 s):** high z IK 2,64 ms CPU, medium z IK 3,47 ms, low bez IK 3,14 ms: różnica poniżej szumu
+pomiaru (2 `IKControl` na postać).
+
+**Nie sprawdzone wizualnie:** nagrania i zrzuty (Studio w tle renderuje 15 kl./s, zrzuty puste), pływanie (płytka woda
+przy Polanie), atak w biegu (mechanizm bez zmian: pozy po Animatorze, klipy ataków `Action` > `Movement`).
+
+**Animation Graphs:** dostępne w Studio (`AnimationGraphDefinition`), ale nie użyte (`DECYZJE-W`).
+
+**Dla właściciela:** pobrać klipy z `Graphics\animacje\KLIPY-RUCH.md` (5 z pierwszeństwem 1, ok. 10 min) do
+`Graphics\animacje\gracz\fbx\ruch\` i napisać „przekonwertuj ruch”.
+
+**Pliki:** `src/character/Animate.client.luau`, `src/client/Controllers/FootIkController.luau`,
+`src/shared/Data/Locomotion.luau`, `src/shared/Logic/LocomotionPick.luau` (nowe), `default.project.json`,
+`src/client/Controllers/AnimationController.luau` (znacznik `VaelthornActionAt`), `tests/locomotion.spec.luau`,
+`tools/balance_reasons.luau`, `docs/ANIMACJE.md` §14, `docs/wyglad/KLIPY-RUCH.md`, `docs/wyglad/*`.
+
+**Poza W08 (ta sama rozmowa):** pięć punktów orientacyjnych z Tripo (Iglica Ciernia, posąg Pani z Cierniem, spalony młyn,
+Stare Drzewo, Szczyt Kuźni) zaimportowane do `ReplicatedStorage.Assets.Kit` (`city_landmark_01`, `city_statue_01`,
+`grass_landmark_01`, `forest_landmark_01`, `desert_landmark_01`), 4,3–9,4 tys. trójkątów, skala gry, podstawa na
+ziemi; na mapy wchodzą w W12, W13, W15, W17.
+
+### W12: Miasto (Vaelthorn), pierwsza część
+
+**Zrobione (wg `docs/wyglad/mapy/miasto.md`):** Iglica Ciernia (Tripo `city_landmark_01`) zamiast trzonu wieży maga
+(slot `landmark:mageTower`, cokół, drzwi i kryształy u stóp zostają), posąg Pani z Cierniem (`city_statue_01`) zamiast
+rycerza na fontannie (`landmark:fountainStatue`), drzewa miasta z zestawu (sloty `tree:<rodzaj>` w `Parts.tree`, nowe
+`tree:apple`, `tree:yew`), iglica świątyni wyższa (50) ze złotym grotem i światłem widocznym z daleka, start gracza
+obrócony na plac (`spawn.facing = 20`), okna nocą: 35% świeci bursztynem `#F0A050` zamiast 60% żółtego neonu
+(`MapLooks.windows`), kolor słońca zmienia się z porą dnia (`MapLooks.sunByHour`: świt pomarańcz, dzień krem, wieczór
+głęboki złoty). `Kit` dostał `turn` (stały obrót modelu bez losowania).
+
+**Nie zrobione:** pierścień horyzontu Z3 (wzgórza Łąk, sosny Boru, wulkan, szczyty), zostaje na kolejną część W12.
+
+**Pliki:** `Data/Kit`, `Data/MapLooks`, `Data/Town/city`, `Logic/KitPick`, `Logic/TownGen/{ClassHalls,Props,Parts,Specials}`,
+`server/World/Layouts/city`, `client/Controllers/{TownFxController,WorldController}`, `tests/kit.spec`.
+
+### W09: Ciało postaci
+
+**Wybór (A):** A1, darmowe ciało Roblox „Base Body - Dawson” (pakiet 991): ludzkie proporcje, dynamiczna głowa z własną
+twarzą, brwi i rzęsy jako akcesoria warstwowe. Porównane w Studio z Harper i Jordan (ta sama wysokość 5,9–6,2 przy
+skali 1) i ze standardowym R15 (5,46): wybrane jako najbardziej neutralne pod poważne fantasy. Skala wysokości 0,9:
+postać 5,77 (+6% wobec dawnej), `HumanoidRootPart` 2 × 1,8 × 1. A2 (ciało z Tripo + Avatar Setup) niezrobione.
+
+**W grze (B):** `Data/BodyLooks` (części, brwi, rzęsy, skale, fryzury), `AvatarBuild.description` zakłada ciało w obu
+trybach (klasa i awatar: równe sylwetki), naklejka twarzy wyłączona na dynamicznej głowie; kolor skóry z `ClassLooks`
+działa na częściach siatki. Manekin podglądów: części ustawiane według stawów przed zakotwiczeniem (poza Workspace
+`AnimationConstraint` się nie liczy, głowa wisiała 7 studów nad tułowiem).
+
+**Włosy i twarz:** 7 stylów kreatora → darmowe fryzury Roblox (`BodyLooks.hairs`, serwer ładuje je do
+`ReplicatedStorage.VaelthornHairs`), kolor przez `SurfaceAppearance.Color` (jasna tekstura) albo czarna tekstura dla
+ciemnych kolorów i sam kolor dla jasnych (`Logic/HairTint`); „ogolona” = goła głowa. Na dynamicznej głowie bez oczu,
+brwi i ust z części; broda z dwóch kawałków od `FaceFrontAttachment`.
+
+**Stroje (C):** części z `GARMENTS` liczą się od rozmiarów części ciała, więc pasują do węższego tułowia same; bez
+nowych kształtów (C2) w tej sesji.
+
+**Sprawdzone w Studio:** żywa postać (głowa MeshPart, brwi, rzęsy, fryzura na głowie, 6 części stroju), manekin
+5,77 × 2,64. Nie oglądane (Studio w tle nie renderuje): przenikanie strojów w biegu i ataku, chwyt broni.
+
+**Pliki:** `src/shared/Data/BodyLooks.luau`, `src/shared/Logic/HairTint.luau`, `tests/bodylooks.spec.luau` (nowe),
+`src/shared/Util/AvatarBuild.luau`, `src/server/Services/CosmeticService.luau`, `tools/balance_reasons.luau`,
+`docs/ASSETS.md`, `docs/WYGLAD-KLAS.md`, `docs/wyglad/*`.
+
+### W10: Kreator postaci
+
+**Wybory (A):** twarz 8 (dynamiczne głowy z darmowych pakietów Roblox „Base Body”, każda z własnymi rzęsami; id
+twarzy z S132 zostały), brwi 6, zarost 6 (z części, od `FaceFrontAttachment`), fryzura 12 (11 darmowych fryzur Roblox i
+łysa), kolor włosów 12 (włosy, brwi, broda), skóra 12 (10 naturalnych, popielata, oliwkowoszara), budowa 3 (szerokość i
+głębokość ±5%, wysokość bez zmian), malunek 6 (piegi, pasy wojenne, runa, wzór plemienny, popiół; naklejka na twarzy
+`art/paint`), kolor malunku 6. Każdy wybór ma nazwę PL i EN. Kolor oczu niezrobiony (oczy są w teksturze dynamicznej
+głowy).
+
+**Zapis:** te same pola `look` plus `hairColor`, `brows`, `beard`, `build`, `paint`, `paintColor`; bez migracji schematu:
+`CharacterLook.normalize` uzupełnia brakujące pola, stary id fryzury (S132: styl + kolor) rozbija na fryzurę i kolor
+(`ClassLooks.LEGACY_HAIRS`), stare twarze „z brodą” i „piegowata” dostają pełną brodę i piegi. Walidacja wszystkich pól
+`CharacterLook.isValid(look)`, koszt zmiany bez zmian. Remote'y `CreateCharacter` / `SetCharacterLook` z 6 polami
+opcjonalnymi.
+
+**Ekran (B):** `LookPicker` z zakładkami Twarz / Włosy / Ciało / Malunki (strzałki dla list, kafelki dla kolorów,
+Losuj = `CharacterLook.random`, Domyślny), podgląd `LookPreview` większy, obrót przeciąganiem (mysz i palec), sam obraca
+się po 3 s, zbliżenie na twarz w zakładkach Twarz i Malunki, ciepłe światło nad chłodnym tłem; kreator: wybory po lewej,
+podgląd po prawej. To samo w oknie zmiany wyglądu.
+
+**Gra (C):** serwer zakłada głowę, brwi, rzęsy i budowę przez opis postaci, fryzurę i brodę przez `AvatarBuild`, malunek
+naklejką; podgląd na kliencie podmienia głowę (skala jak stara), brwi i rzęsy z `ReplicatedStorage.VaelthornLookParts`
+(serwer ładuje 33 części przy starcie). Akcesoria warstwowe w podglądzie: miejsce i skala zmierzone na żywej postaci
+(ViewportFrame i WorldModel ich nie dopasowują).
+
+**Sprawdzone w Studio:** 33 części się ładują, podgląd (głowa, fryzura, brwi, rzęsy, broda, malunek, budowa, powrót do
+domyślnego), żywa postać po `SetCharacterLook` (głowa, kolor skóry, fryzura w kolorze, runa, broda, szerokość 1,05).
+
+**Pliki:** `Data/ClassLooks`, `Data/BodyLooks`, `Logic/CharacterLook`, `Util/AvatarBuild`, `UI/Components/LookPicker`,
+`UI/Components/LookPreview`, `UI/Screens/CharacterSelect/Creator`, `UI/Screens/LookWindow`, `Net/Definitions`,
+`CharacterService`, `CosmeticService`, `Admin/Character`, `Localization/pl|en`, `tools/paint/make_paints.py`,
+`art/paint/*`, `tools/classlooks_slots.luau`, testy `classlooks`, `bodylooks`, `character`, `wikidump`; dane wiki
+przegenerowane (wpadły też zaległe zmiany S137–S143 z main).
+
+### W12: Miasto, część 2 (horyzont)
+
+**Zrobione:** pierścień horyzontu Z3 (`docs/wyglad/mapy/miasto.md`): dane `Data/Horizons` (łuki kompasu: rodzaj,
+odległość, wysokość, dwa odcienie; punkty orientacyjne z zestawu), czysty generator `Logic/HorizonGen` (deterministyczny,
+`Logic/Rng` z id mapy), klient `HorizonController` (części tylko u klienta, bez kolizji, zapytań i cieni; przebudowa
+przy zmianie mapy i poziomu grafiki, na „niskiej” rzadziej). Miasto: wschód złote pagórki Łąk, północ dwa rzędy
+ciemnych sosen Boru z koroną Pradrzewa (`forest_landmark_01`, 150 st.), zachód czerwone skały z piargami i wulkan
+Pustkowi (`desert_landmark_01`, 300 st.), południe szare szczyty ze śnieżnymi czapami; pod spodem pas ziemi 440–1000 st.
+w kolorze łuku. 359 części + 2 modele. `KitAssets.model` (model zestawu poza slotami).
+
+**Sprawdzone w Studio:** pierścień buduje się po wejściu do miasta (części, oba modele w zadanej skali). Wygląd z
+murów nieobejrzany.
+
+**Pliki:** `src/shared/Data/Horizons.luau`, `src/shared/Logic/HorizonGen.luau`,
+`src/client/Controllers/HorizonController.luau`, `tests/horizon.spec.luau` (nowe), `src/shared/Util/KitAssets.luau`,
+`tools/balance_reasons.luau`.
+
+### W13: Łąki, część 1
+
+**Zrobione (wg `docs/wyglad/mapy/laki.md`):** Z2: wzniesienie młyna na Kruczym Polu `h` 3,5 → 9, `rx/rz` 44/40 → 60/55;
+spalony młyn jako slot zestawu `landmark:mill` (Tripo `grass_landmark_01`, wysokość 34; filary, kozioł, korpus, dach
+i skrzydła z generatora zastąpione, zwęglone belki, popiół i znaczniki dymu zostały), cienki jasny słup dymu z tlącego
+się korpusu (nowy rodzaj życia `smokePlume`, widoczny z daleka); horyzont Łąk w `Data/Horizons` (północ ośnieżone
+szczyty graniczne, północny wschód ciemna ściana Boru, zachód za bramą mury Vaelthornu z wieżami, południe złote
+pagórki, wschód za górami mapy szara skała; 315 części), nowy rodzaj łuku `walls`.
+
+**Nie zrobione:** Z1 (nowa ścieżka pod Wilczymi Wzgórzami: przelosowuje grupy, osobna część), rekwizyty expowisk z
+tabeli 1.4, kwiaty i rośliny wodne (Quaternius wymaga pobrania), kapliczka i bramy z Tripo. Młyn i horyzont
+nieobejrzane w Studio (Studio zamknięte w trakcie sesji).
+
+**Pliki:** `Data/Terrain/meadows`, `Data/Kit`, `Data/Horizons`, `Logic/MeadowsGen/Landmarks`, `Logic/HorizonGen`,
+`client/Controllers/WorldLifeController`.
+
+### W12/W13 dodatek: horyzonty regionów
+
+`Data/Horizons` dla Boru (ciemne zalesione wzgórza, na wschodzie czerwone urwiska w stronę Pustkowi, na zachodzie
+jaśniejsze pagórki w stronę Łąk; 495 części), Pustkowi (zachód ściana Boru, północny wschód białe szczyty, wschód
+Szczyt Kuźni = model `desert_landmark_01` za granicą mapy (wybór W11), południe wydmy; 364 części) i Szczytów (korona
+białych szczytów, na zachodzie niższe szare grzbiety; 254 części). Nieobejrzane w Studio. W Borze gęsta atmosfera
+(0,4, zamglenie 2,2) przygasza horyzont z założenia.
+
+### W12 dodatek: modele właściciela (2026-10-18)
+
+Pięć modeli z Tripo w `Assets.Kit` (rozpoznane po proporcjach GLB): latarnia `city_lamp_01` (slot `prop:lamp` w
+`Structures.lamps`, 60 sztuk w mieście, światło zostaje), studnia `common_well_01` (slot `prop:well` w `Props.well`:
+miasto, farmy Łąk, wsie; 9 sztuk), stragan z owocami `city_stall_01` (slot `prop:stallFruit`, tylko stragan piekarza),
+portal `common_portal_01` (`Prefabs.portal`: model na łuku, kolumny i nadproże niewidoczne z kolizją, pole teleportu
+słabsze; 21 portali), zamek `city_castle_01` (punkt orientacyjny horyzontu Łąk za murami). Model `bandit` z Workspace
+(Tripo, 100 st., stał na środku miasta w pliku miejsca) przeniesiony do `ReplicatedStorage.Assets.Imports`.
+Sprawdzone w Studio: liczby i rozmiary modeli po starcie serwera.
+
+### W13: Łąki, część 2 (maki)
+
+Maki jako akcent koloru (laki.md 1.7): nowy rodzaj podszytu `poppies` (4–7 kwiatów na łodygach, czerwone główki) w
+temacie łąki, traktu i pól (`UNDER` w `MeadowsGen/Nature`); części klienta +1382 detal i +1403 drobne (z ok. 7257 / 2536),
+serwer bez zmian. Nieobejrzane w Studio.
+
+### W15: Bór, część 1
+
+Drzewa Boru z zestawu (bor.md A8): wpisy `forest` w `Data/Kit` dla `tree:gnarledOak`, `tree:darkPine`, `tree:giantOak`
+(większe niż na Łąkach), `tree:mossWillow`; drzewa Yasu pod ciemnymi liśćmi `#1E2E1A` / `#2C3A22` (707 modeli w Borze).
+`Atmosphere` Boru 0,4 → 0,33 (sylwetki na 700–900 st.). Bez zmian: martwe drzewa (`blackDead`) i podszyt (brak modeli;
+Quaternius wymaga pobrania). Licznik części serwera Boru 3037 przy miękkim limicie 3000 (meshe zestawu; Łąki 3254 od
+W02). Pradrzewo czeka na model `forest_landmark_03` (prompt u właściciela). Sprawdzone w Studio: liczba modeli.
+
+### W19: Szczyty, część 1
+
+Sosny Szczytów z zestawu: `tree:snowPine` z wpisem `snow` w `Data/Kit` (iglaste Yasu pod bladą, oszronioną zielenią;
+269 modeli). Martwe zamarznięte drzewa i lodowe kolce zostają z generatora. Sprawdzone w Studio: liczba modeli.
+
+### W17: Pustkowia, część 1
+
+Skały Pustkowi z zestawu (pustkowia.md 1.8): `rock` z wpisem `desert`, kamienie nizendo malowane na rdzę i bazalt (nowe
+pole wariantu `paint`: kolor i materiał terenu zamiast tekstury, `KitAssets.place`); 80 skał. Szczyt Kuźni na horyzoncie
+w osi traktu (980, 0), wysokość 270, z pióropuszem dymu i pomarańczową łuną w kraterze (pole `smoke` punktu
+orientacyjnego, `HorizonController`). Zmiana Szlaku Popiołu (1.9) pominięta (przesuwa grupy potworów). Sprawdzone w
+Studio: liczba skał i ich wygląd (kolor, materiał).
+
+Skały z zestawu także w Borze (szara tekstura nizendo, 79) i na Szczytach (malowany jasny łupek, 107): wpisy `forest` i
+`snow` klucza `rock` w `Data/Kit`.
+
+Podszyt Boru z zestawu (klient): `under:berryBush`, `under:bramble` i `under:sapling` z wpisem `forest` (krzaki i młode
+drzewka Yasu pod ciemnymi liśćmi). Paprocie i muchomory zostają z generatora.

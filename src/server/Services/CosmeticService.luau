@@ -24,6 +24,7 @@
 -- the world when the save proves them. The mannequin of the client previews (ReplicatedStorage.VaelthornMannequin).
 
 local Players = game:GetService("Players")
+local InsertService = game:GetService("InsertService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
@@ -31,6 +32,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
 local AvatarBuild = require(Shared.Util.AvatarBuild)
+local BodyLooks = require(Shared.Data.BodyLooks)
 local CharacterLook = require(Shared.Logic.CharacterLook)
 local ClassLooks = require(Shared.Data.ClassLooks)
 local CosmeticLook = require(Shared.Util.CosmeticLook)
@@ -592,16 +594,24 @@ end
 
 -- S132: the look change (SetCharacterLook): free once from anywhere, then gold next to the barber. The gold, the free
 -- flag and the look are written in one step without a yield.
-local function setLook(player: Player, face: string, skin: string, hair: string): (boolean, string?)
+local function setLook(player: Player, face: string, skin: string, hair: string, ...: string?): (boolean, string?)
 	local char = PlayerStateService.GetCharacter(player)
 	if not char then
 		return false, "error.wrongPhase"
 	end
-	local valid, bad = CharacterLook.isValid(face, skin, hair)
+	-- W10: the fields after hair in CharacterLook.FIELDS order; a missing one keeps the character's value
+	local current = CharacterLook.normalize(char.look) :: any
+	local look: any = { face = face, skin = skin, hair = hair }
+	local rest = { ... }
+	for i = 4, #CharacterLook.FIELDS do
+		local key = CharacterLook.FIELDS[i].key
+		local value = rest[i - 3]
+		look[key] = if value ~= nil then value else current[key]
+	end
+	local valid, bad = CharacterLook.isValid(look)
 	if not valid then
 		return false, bad
 	end
-	local look = { face = face, skin = skin, hair = hair }
 	local near = NpcService.NearService(player, "look") ~= nil
 	local ok, err, cost = CharacterLook.canChange(char, look, near)
 	if not ok then
@@ -628,10 +638,10 @@ end
 -- S132 (admin /charlook): the look without a cost and without touching the free change. False for a bad look or no
 -- character.
 function CosmeticService.AdminSetLook(player: Player, look: ClassLooks.Look): boolean
-	if not PlayerStateService.GetCharacter(player) or not CharacterLook.isValid(look.face, look.skin, look.hair) then
+	if not PlayerStateService.GetCharacter(player) or not CharacterLook.isValid(look) then
 		return false
 	end
-	PlayerStateService.Set(player, { "character", "look" }, { face = look.face, skin = look.skin, hair = look.hair })
+	PlayerStateService.Set(player, { "character", "look" }, table.clone(look))
 	CosmeticService.RefreshAppearance(player)
 	return true
 end
@@ -643,6 +653,47 @@ function CosmeticService.SetRobloxAvatar(player: Player, on: boolean)
 		avatars[player] = nil -- refused before: ask Roblox again
 	end
 	CosmeticService.RefreshAppearance(player)
+end
+
+-- W09, W10: the look parts of Data/BodyLooks into ReplicatedStorage (BodyLooks.PARTS_FOLDER): hairstyles, brows,
+-- lashes and heads, which AvatarBuild puts on characters (hair) and previews (all). A part that does not load keeps the
+-- fallback (procedural hair, the mannequin's head and brows).
+local function loadLookParts()
+	local folder = Instance.new("Folder")
+	folder.Name = BodyLooks.PARTS_FOLDER
+	local jobs: { { name: string, id: number, class: string } } = {}
+	for hairId, def in BodyLooks.hairs do
+		table.insert(jobs, { name = `hair_{hairId}`, id = def.id, class = "Accessory" })
+	end
+	for browsId, id in BodyLooks.brows do
+		table.insert(jobs, { name = `brows_{browsId}`, id = id, class = "Accessory" })
+	end
+	for faceId, def in BodyLooks.heads do
+		table.insert(jobs, { name = `lashes_{faceId}`, id = def.lashes, class = "Accessory" })
+		table.insert(jobs, { name = `head_{faceId}`, id = def.head, class = "MeshPart" })
+	end
+	for _, job in jobs do
+		local ok, loaded = pcall(function()
+			return InsertService:LoadAsset(job.id)
+		end)
+		local item = if ok and loaded then loaded:FindFirstChildWhichIsA(job.class, true) else nil
+		if item then
+			LookBuild.stripScripts(item)
+			for _, extra in item:GetDescendants() do
+				if extra:IsA("Camera") then
+					extra:Destroy()
+				end
+			end
+			item.Name = job.name
+			item.Parent = folder
+		else
+			log:warn("look part %s (%d) did not load", job.name, job.id)
+		end
+		if ok and loaded then
+			loaded:Destroy()
+		end
+	end
+	folder.Parent = ReplicatedStorage
 end
 
 -- S132: the standard figure of the client previews (creator, wardrobe, look window).
@@ -657,6 +708,42 @@ local function buildMannequin()
 	end
 	local mannequin = model :: Model
 	LookBuild.stripScripts(mannequin)
+	-- W09: outside the Workspace no joint is solved (the dynamic head and the brows stayed where they loaded): every
+	-- part goes where its joint (Motor6D / weld, or the AnimationConstraint of the body) puts it, from the root
+	-- outwards, before the figure is anchored
+	local root = mannequin:FindFirstChild("HumanoidRootPart")
+	if root and root:IsA("BasePart") then
+		type Link = { p0: Instance?, p1: Instance?, c0: CFrame, c1: CFrame }
+		local links: { Link } = {}
+		for _, item in mannequin:GetDescendants() do
+			if item:IsA("JointInstance") and item.Part0 and item.Part1 then
+				table.insert(
+					links,
+					{ p0 = item.Part0 :: Instance?, p1 = item.Part1 :: Instance?, c0 = item.C0, c1 = item.C1 }
+				)
+			elseif item:IsA("AnimationConstraint") and item.Attachment0 and item.Attachment1 then
+				local a0, a1 = item.Attachment0 :: Attachment, item.Attachment1 :: Attachment
+				table.insert(links, { p0 = a0.Parent, p1 = a1.Parent, c0 = a0.CFrame, c1 = a1.CFrame })
+			end
+		end
+		local placed: { [Instance]: boolean } = { [root] = true }
+		local moved = true
+		while moved do
+			moved = false
+			for _, link in links do
+				local p0, p1, c0, c1 = link.p0, link.p1, link.c0, link.c1
+				if p0 and p1 and p0:IsA("BasePart") and p1:IsA("BasePart") then
+					if placed[p0] and not placed[p1] then
+						p1.CFrame = p0.CFrame * c0 * c1:Inverse()
+						placed[p1], moved = true, true
+					elseif placed[p1] and not placed[p0] then
+						p0.CFrame = p1.CFrame * c1 * c0:Inverse()
+						placed[p0], moved = true, true
+					end
+				end
+			end
+		end
+	end
 	mannequin.Name = AvatarBuild.MANNEQUIN
 	mannequin.Archivable = true
 	for _, item in mannequin:GetDescendants() do
@@ -727,6 +814,7 @@ function CosmeticService.Start()
 			task.spawn(avatarOf, player)
 		end
 	end)
+	task.spawn(loadLookParts)
 	task.spawn(buildMannequin)
 	Players.PlayerRemoving:Connect(function(player)
 		removePet(player)

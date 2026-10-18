@@ -310,7 +310,10 @@ commands.charlook = function(player, args)
 		if args[1] == "reset" then
 			look = CharacterLook.normalize(nil)
 		else
-			look = { face = args[1] or "", skin = args[2] or "", hair = args[3] or "" }
+			-- W10: face, skin and hair given; the other fields keep the character's value
+			local char: any = PlayerStateService.GetCharacter(player)
+			look = CharacterLook.normalize(char and char.look)
+			look.face, look.skin, look.hair = args[1] or "", args[2] or "", args[3] or ""
 			for _, id in { look.face, look.skin, look.hair } do
 				if not (ClassLooks.faceById[id] or ClassLooks.skinById[id] or ClassLooks.hairById[id]) then
 					reply(player, "admin.charlook.bad", { id = id })

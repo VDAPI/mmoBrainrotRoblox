@@ -9,6 +9,24 @@ W01 (Studio): liczby map i jaskini Mchów nastrojone na zrzutach, niebo Boru i P
 
 W02: zestaw zasobów (`Data/Kit`, `Assets.Kit`, `/kit`), darmowe drzewa, krzaki i skały na Łąkach, malowana skała gór Łąk, lista zakupów i zasady importu. Ocena właściciela: W02: OK (2026-10-17).
 
+W11: plan wszystkich map (`docs/wyglad/MAPY.md`, `docs/wyglad/mapy/*.md`), ocena właściciela: W11: OK (2026-10-17, rekomendacje 1–5, mapy wolno przebudować całe); następna W08.
+
+W08: własny `Animate` (lokomocja z `Data/Locomotion`, przenikanie chód/bieg, skok, upadek, lądowanie, wspinanie, pływanie, warianty bezczynności), IK stóp; klipy jeszcze domyślne Roblox. Czeka na ocenę właściciela.
+
+W09: ciało Roblox „Base Body - Dawson” z dynamiczną głową dla wszystkich, fryzury z katalogu w kolorze kreatora, broda na nowej głowie. Czeka na ocenę.
+
+W10: kreator postaci (8 twarzy, brwi, zarost, 12 fryzur, 12 kolorów włosów, 12 skór, budowa, malunki), zakładki, podgląd z obrotem i zbliżeniem. Czeka na ocenę.
+
+W17 (część 1): skały Pustkowi w rdzy i bazalcie, dymiący Szczyt Kuźni w osi traktu. Czeka na ocenę.
+
+W19 (część 1): sosny Szczytów z zestawu (oszroniona zieleń). Czeka na ocenę.
+
+W15 (część 1): drzewa Boru z zestawu (ciemne liście), rzadsza atmosfera. Czeka na ocenę.
+
+W13 (część 1): wzgórze młyna wyżej, spalony młyn z Tripo z dymem, horyzont Łąk (szczyty, Bór, mury miasta). Czeka na ocenę.
+
+W12 (części 1–2): pierścień horyzontu (Łąki, Bór z Pradrzewem, wulkan Pustkowi, Szczyty); Iglica Ciernia i posąg Pani z Cierniem z Tripo w mieście, drzewa z zestawu, iglica świątyni, okna nocą, kolor słońca z porą dnia. Czeka na ocenę.
+
 ## Niedokończone
 
 - W01: malowane niebo na 4 pory (`docs/wyglad/ZAKUPY.md`); Łąki, miasto i Szczyty na niebie miejsca.
@@ -18,3 +36,11 @@ W02: zestaw zasobów (`Data/Kit`, `Assets.Kit`, `/kit`), darmowe drzewa, krzaki 
 - W02: zestaw ma warianty tylko dla Łąk (`grass`); Bór, Pustkowia, Szczyty, miasto na klockach do czasu zakupów albo darmowych paczek (Quaternius) w sesjach map.
 - W02: modele zestawu i materiały żyją w miejscu (`Assets.Kit`, `MaterialService`): właściciel zapisuje miejsce.
 - W02: drzewa wypełnienia i krzaki na kliencie przy niskiej jakości bez osobnego przycięcia (koszt +0,3 ms na PC); sprawdzić na telefonie (W29).
+- W08: klipy Mixamo (`KLIPY-RUCH.md`) do pobrania przez właściciela; potem konwersja, pomiar `stride`, ID w `Locomotion.clips`.
+- W08: zrzuty i nagrania ruchu, pływanie i atak w biegu nie obejrzane wizualnie (Studio w tle nie renderuje).
+- W09: A2 (ciało z Tripo + Avatar Setup), ładniejsze kształty strojów (C2), blizna i piegi na dynamicznej głowie, przenikanie strojów w ruchu i chwyt broni nie oglądane.
+- W10: kolor oczu (oczy w teksturze dynamicznej głowy), malunki nieobejrzane na twarzy (pozycja na głowie z obliczeń), wygląd fryzur warstwowych w podglądzie przybliżony.
+- W15: Pradrzewo (model `forest_landmark_03` od właściciela), klin widoku z bramy, martwe drzewa i podszyt bez modeli, licznik części 3037/3000.
+- W13: Z1 (nowa ścieżka) próbowana i cofnięta: przelosowuje grupę wilków (−304, −81) aż do (−413, 238), co zmienia zlecenia łowieckie (S134k, `contracts_gen`, `quest_budget`) i daje stromiznę 36° przy brodzie (−32, −420); wymaga sesji z balansem albo stałego miejsca grupy. Też: rekwizyty expowisk, kwiaty i rośliny wodne, kapliczka i bramy; młyn i horyzont nieobejrzane w Studio.
+- W12/W13: horyzonty miasta, Łąk, Boru, Pustkowi i Szczytów nieobejrzane w Studio (kolory, odległości do strojenia w `Data/Horizons`).
+- W08: IK bez obniżania bioder (wymagałoby zmiany fizyki); warianty klasowe ruchu (pomysł).

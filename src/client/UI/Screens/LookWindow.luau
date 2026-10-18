@@ -71,6 +71,7 @@ local function LookWindow(scope: Scope): Instance
 	local busy = scope:Value(false)
 
 	local choice = scope:Value(CharacterLook.normalize(Fusion.peek(look)))
+	local tab = scope:Value("face") -- W10: the picker's tab, the preview follows it
 	scope:Observer(look):onChange(function()
 		choice:set(CharacterLook.normalize(Fusion.peek(look)))
 	end)
@@ -108,10 +109,21 @@ local function LookWindow(scope: Scope): Instance
 		if not Fusion.peek(check).ok or Fusion.peek(busy) then
 			return
 		end
-		local picked = Fusion.peek(choice)
+		local picked = CharacterLook.normalize(Fusion.peek(choice)) :: any
 		busy:set(true)
 		task.spawn(function()
-			local ok, err = Net.Invoke("SetCharacterLook", picked.face, picked.skin, picked.hair)
+			local ok, err = Net.Invoke(
+				"SetCharacterLook",
+				picked.face,
+				picked.skin,
+				picked.hair,
+				picked.hairColor,
+				picked.brows,
+				picked.beard,
+				picked.build,
+				picked.paint,
+				picked.paintColor
+			)
 			busy:set(false)
 			if ok then
 				Sounds.play("levelUp")
@@ -137,7 +149,7 @@ local function LookWindow(scope: Scope): Instance
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				Padding = UDim.new(0, Theme.Padding.Medium),
 			}),
-			LookPicker(scope, { Look = choice, LayoutOrder = 1 }), -- S135: still the legacy dark look
+			LookPicker(scope, { Look = choice, Tab = tab, LayoutOrder = 1 }), -- S135: still the legacy dark look
 			scope:New("Frame")({
 				Name = "Cost",
 				LayoutOrder = 2,
@@ -245,6 +257,10 @@ local function LookWindow(scope: Scope): Instance
 				Dye = dye,
 				-- always the class look: the picked face, skin and hair show even while the avatar is on (look.avatarOn)
 				Avatar = false,
+				Focus = scope:Computed(function(use): string?
+					local t = use(tab)
+					return if t == "face" or t == "paint" then "face" else nil
+				end),
 			}),
 			right,
 		},

@@ -93,6 +93,6 @@
     "uniq/unique_vaelgrath_fang": {"layers":[{"s":2,"x":256,"y":384}]},
     "uniq/unique_vaelgrath_scale": {"layers":[{"s":2,"x":384,"y":384}]}
   },
-  "sheets": ["art/icons/items_1.png","art/icons/items_2.png","art/icons/items_3.png","art/icons/items_4.png","art/icons/items_5.png","art/icons/items_6.png","art/icons/items_7.png","art/icons/items_8.png"],
+  "sheets": ["art/icons/items_1.png","art/icons/items_2.png","art/icons/items_3.png","art/icons/items_4.png","art/icons/items_5.png","art/icons/items_6.png","art/icons/items_7.png","art/icons/items_8.png","art/icons/items_9.png","art/icons/items_10.png","art/icons/items_11.png","art/icons/items_12.png","art/icons/items_13.png","art/icons/items_14.png","art/icons/items_15.png","art/icons/items_16.png","art/icons/items_17.png","art/icons/items_18.png"],
   "tierTint": {"1":"#B5ACA1","10":"#C5CCD3","100":"#D8574A","15":"#9AA3AD","20":"#D3DBE4","25":"#8FA6C4","30":"#F7F9FF","35":"#E6C77C","40":"#8FB7D9","45":"#A8E6F0","5":"#D29A5E","50":"#B8E0A0","55":"#7D7590","60":"#9B86C9","65":"#F0C850","70":"#FF9A5A","75":"#C8D0FF","80":"#A9C0C9","85":"#C9B48A","90":"#FFF2C0","95":"#D6B8FF"}
 }

@@ -6,6 +6,9 @@ local Kit = require("../src/shared/Data/Kit")
 local KitPick = require("../src/shared/Logic/KitPick")
 local Maps = require("../src/shared/Data/Maps")
 local Test = require("./Test")
+local Town = require("../src/shared/Data/Town")
+local TownGen = require("../src/shared/Logic/TownGen")
+local TownTerrain = require("../src/shared/Logic/TownTerrain")
 local WorldGen = require("../src/shared/Logic/WorldGen")
 
 local describe, it, expect = Test.describe, Test.it, Test.expect
@@ -15,8 +18,13 @@ for _, map in Maps.byId do
 	FOLDERS[map.biome] = true
 end
 
--- Every slot key the generators draw (W02 inventory), collected once.
+-- Every slot key the generators draw (W02 inventory; W12 the city), collected once.
 local generated: { [string]: number } = {}
+for _, b in TownGen.all(Town.city, TownTerrain.heightAt) do
+	for _, slot in (b.bp :: any).kits do
+		generated[slot.key] = (generated[slot.key] or 0) + 1
+	end
+end
 for _, mapId in WorldGen.maps() do
 	local gen = assert(WorldGen.get(mapId))
 	for _, b in gen.all() do

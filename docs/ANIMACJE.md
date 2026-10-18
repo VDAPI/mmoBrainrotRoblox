@@ -617,3 +617,27 @@ Ponad `maxActive` i dla `simple`: tylko brzegi i czoło; niska jakość: `segmen
 **AnimLab:** `mob <rodzaj> attack2` gra umiejętność Elity II z telegrafem, `mob <rodzaj> spawn` wyjście z ziemi,
 `boss <id> <atak>` pozę ataku z telegrafem (skok z łukiem), `boss <id> roar` i `boss <id> death`, `floor <grass|snow|cave>`
 podłogę (czytelność telegrafu). `freeze` zatrzymuje pozę i telegraf razem (oba na `Vfx/Clock`).
+
+## 14. Lokomocja (W08)
+
+Postać gracza ma własny `StarterCharacterScripts.Animate` (`src/character/Animate.client.luau`), więc Roblox nie wstawia
+swojego. Dane: `src/shared/Data/Locomotion.luau`, wybór: `src/shared/Logic/LocomotionPick.luau` (test
+`tests/locomotion.spec.luau`).
+
+**Co gra kiedy.** Stan `Humanoid` → `LocomotionPick.clip`: stoi = `idle` (co 8–15 s wariant z `idleVariants`, nigdy w
+ciągu `combatQuiet` s od ataku, umiejętności albo obrażeń), idzie = `walk` i `run` przenikane wagami po prędkości
+(`blend.walkUntil` → `blend.runFrom`), skok = `jump`, po `air.fallAfter` s albo przy spadaniu = `fall`, lądowanie po
+upadku z co najmniej `air.landHeight` studów = `land` (jeśli jest), wspinanie = `climb`, woda = `swim` / `swimIdle`, na
+wierzchowcu = `idle` (nogi z `RiderPose` na wierzchu), śmierć = nic. Priorytety: `idle` i warianty `Idle`, reszta
+`Movement`; ataki, umiejętności i emotki (`AnimationController`, `Motor6D.Transform` po Animatorze) zawsze wygrywają.
+Ślady klipów grają na Animatorze własnej postaci, więc inni gracze widzą je tak jak dawny domyślny `Animate`.
+
+**Podmiana klipu.** Lista do pobrania: `docs/wyglad/KLIPY-RUCH.md`; konwersja i publikacja jak w §6 (pętle z
+`--loop`, bez `Hit`), ID do `Locomotion.clips`. `fallback` zostaje na klipach Roblox: klip, który się nie wczyta, po
+4 s wraca do nich (jedno ostrzeżenie `[Animate]`). Po wpisaniu klipu zmierz `stride` (studia na sekundę przy prędkości
+klipu 1,0): w Play idź po prostej i dobierz liczbę tak, żeby stopy nie ślizgały się po ziemi, osobno dla `walk` i `run`.
+
+**IK stóp.** `FootIkController`: `IKControl` na każdej nodze własnej postaci i `footIk.others` najbliższych graczy, tylko
+na poziomach `footIk.levels` (bez `low`), gdy postać stoi albo idzie (do `footIk.maxSpeed`), nie w powietrzu i nie na
+wierzchowcu. Podnosi stopę, pod którą ziemia jest wyżej niż podłoga postaci (najwyżej `footIk.maxDrop`); biodra zostają
+(bez zmian `HipHeight` i fizyki).

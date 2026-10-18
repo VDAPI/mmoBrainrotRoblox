@@ -1190,6 +1190,7 @@ function AnimationController.Attack(
 ): (AttackPose.Timing, boolean)
 	local motion = AttackPose.motionFor(weaponType)
 	local now = os.clock()
+	model:SetAttribute("VaelthornActionAt", now) -- W08: Animate keeps the idle variants off in combat (local only)
 	local count = AttackPose.stepCount(motion, weaponType)
 	local chosen = step or AttackPose.nextStep(combos[model], motion, now, count)
 	combos[model] = { motion = motion, step = chosen, at = now }
@@ -1254,6 +1255,7 @@ function AnimationController.Skill(
 	if not base then
 		return nil
 	end
+	model:SetAttribute("VaelthornActionAt", os.clock()) -- W08
 	local motion = base
 	if base.variants then
 		local weapon = model:FindFirstChild("VaelthornWeapon")

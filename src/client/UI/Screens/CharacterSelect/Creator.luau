@@ -4,11 +4,14 @@
 -- S132 (DESIGN-17 §9a): the "Appearance" section under the classes: the preview of the picked class's outfit with the
 -- picked face, skin and hair (UI/Components/LookPreview) next to the picker (UI/Components/LookPicker; one under the
 -- other on a phone); CreateCharacter sends the look.
+-- W10: the picker's tabs on the left (Face, Hair, Body, Paint), a larger preview on the right that turns with a drag and
+-- comes close to the face on the Face and Paint tabs; CreateCharacter sends every field of the look.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
+local CharacterLook = require(ReplicatedStorage.Shared.Logic.CharacterLook)
 local ClassLooks = require(ReplicatedStorage.Shared.Data.ClassLooks)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -179,8 +182,8 @@ local function Creator(scope: Scope, props: Props): Instance
 	local busy = scope:Value(false)
 	local checkToken = 0
 	-- S132: face, skin and hair of the new character
-	local d = ClassLooks.DEFAULT_LOOK
-	local look = scope:Value({ face = d.face, skin = d.skin, hair = d.hair } :: ClassLooks.Look)
+	local look = scope:Value(CharacterLook.normalize(ClassLooks.DEFAULT_LOOK))
+	local tab = scope:Value("face")
 
 	local localValid = scope:Computed(function(use): boolean
 		return (NameRules.validate(use(name)))
@@ -228,7 +231,7 @@ local function Creator(scope: Scope, props: Props): Instance
 		local text = Fusion.peek(name)
 		busy:set(true)
 		task.spawn(function()
-			local picked = Fusion.peek(look)
+			local picked = CharacterLook.normalize(Fusion.peek(look)) :: any
 			local ok, err = Net.Invoke(
 				"CreateCharacter",
 				props.Slot,
@@ -236,7 +239,13 @@ local function Creator(scope: Scope, props: Props): Instance
 				text,
 				picked.face,
 				picked.skin,
-				picked.hair
+				picked.hair,
+				picked.hairColor,
+				picked.brows,
+				picked.beard,
+				picked.build,
+				picked.paint,
+				picked.paintColor
 			)
 			busy:set(false)
 			if ok then
@@ -334,10 +343,10 @@ local function Creator(scope: Scope, props: Props): Instance
 					}),
 					scope:New("Frame")({
 						Name = "PreviewColumn",
-						LayoutOrder = 1,
+						LayoutOrder = 2,
 						BackgroundTransparency = 1,
 						Size = scope:Computed(function(use): UDim2
-							return if use(Device.Touch) then UDim2.fromOffset(240, 0) else UDim2.fromOffset(300, 0)
+							return if use(Device.Touch) then UDim2.fromOffset(280, 0) else UDim2.fromOffset(380, 0)
 						end),
 						AutomaticSize = Enum.AutomaticSize.Y,
 						[Children] = {
@@ -350,11 +359,15 @@ local function Creator(scope: Scope, props: Props): Instance
 								LayoutOrder = 1,
 								Size = scope:Computed(function(use): UDim2
 									return if use(Device.Touch)
-										then UDim2.fromOffset(240, 280)
-										else UDim2.fromOffset(300, 340)
+										then UDim2.fromOffset(280, 360)
+										else UDim2.fromOffset(380, 500)
 								end),
 								ClassId = selected,
 								Look = look,
+								Focus = scope:Computed(function(use): string?
+									local t = use(tab)
+									return if t == "face" or t == "paint" then "face" else nil
+								end),
 							}),
 							scope:New("TextLabel")({
 								Name = "LookHint",
@@ -371,9 +384,12 @@ local function Creator(scope: Scope, props: Props): Instance
 						},
 					}),
 					LookPicker(scope, {
-						LayoutOrder = 2,
+						LayoutOrder = 1,
 						Look = look,
-						Size = UDim2.fromOffset(460, 0),
+						Tab = tab,
+						Size = scope:Computed(function(use): UDim2
+							return if use(Device.Touch) then UDim2.fromOffset(340, 0) else UDim2.fromOffset(500, 0)
+						end),
 					}),
 				},
 			}),

@@ -36,13 +36,30 @@ export type ClassLook = {
 	-- yet (DECYZJE S132); the slots match Logic/CharacterLook.SLOTS.
 	layers: Layers,
 }
-export type Face = { id: string, catalog: number?, eyes: string, brows: string, mouth: string, mark: string? }
+-- W10: a face is a dynamic head of Data/BodyLooks (its own eyes, nose and mouth, its lashes); `beard` / `paint` = what the
+-- face of the same id meant before W10 (a save without those fields gets them)
+export type Face = { id: string, catalog: number?, legacyBeard: string?, legacyPaint: string? }
 export type Skin = { id: string, color: string }
-export type Hair = { id: string, catalog: number?, asset: string?, style: string, color: string }
+-- W10: a hairstyle (the colour is its own choice, HAIR_COLORS); `style` = the procedural hairstyle drawn when the Roblox
+-- one (Data/BodyLooks.hairs) is missing
+export type Hair = { id: string, catalog: number?, asset: string?, style: string }
+export type Choice = { id: string, color: string? }
 -- An owner's model: ReplicatedStorage.Assets.ClassLooks.<model>. An Accessory is put on with Humanoid:AddAccessory
 -- (server), a Model / MeshPart is welded to the part `attach` (default UpperTorso), moved by `offset` studs and scaled.
 export type Asset = { model: string, attach: string?, offset: { number }?, scale: number? }
-export type Look = { face: string, skin: string, hair: string }
+-- W10: hairColor, brows, beard, build, paint, paintColor are missing in a save from before W10 (CharacterLook.normalize
+-- fills them, from the old face and hair ids where those meant them)
+export type Look = {
+	face: string,
+	skin: string,
+	hair: string,
+	hairColor: string?,
+	brows: string?,
+	beard: string?,
+	build: string?,
+	paint: string?,
+	paintColor: string?,
+}
 
 local function garment(g: string, role: string?): Garment
 	return { g = g, catalog = 0, role = role }
@@ -146,22 +163,24 @@ local classes: { [string]: ClassLook } = {
 	}, ROBE_BODY),
 }
 
-local function face(id: string, eyes: string, brows: string, mouth: string, mark: string?): Face
-	return { id = id, catalog = 0, eyes = eyes, brows = brows, mouth = mouth, mark = mark }
+local function face(id: string, legacyBeard: string?, legacyPaint: string?): Face
+	return { id = id, catalog = 0, legacyBeard = legacyBeard, legacyPaint = legacyPaint }
 end
 
+-- W10: eight faces = eight dynamic heads (Data/BodyLooks.heads); the ids are those of the S132 faces, so a saved face
+-- stays a face (the beard and the freckles of two old faces became their own choices).
 local FACES: { Face } = {
-	face("face_calm", "calm", "flat", "line"),
-	face("face_stern", "narrow", "stern", "line"),
-	face("face_young", "wide", "raised", "smile"),
-	face("face_weary", "tired", "flat", "frown"),
-	face("face_scarred", "narrow", "stern", "line", "scar"),
-	face("face_bearded", "calm", "flat", "beard"),
-	face("face_freckled", "wide", "flat", "smile", "freckles"),
-	face("face_sharp", "narrow", "raised", "frown"),
+	face("face_calm"),
+	face("face_stern"),
+	face("face_young"),
+	face("face_weary"),
+	face("face_scarred"),
+	face("face_bearded", "beard_full"),
+	face("face_freckled", nil, "paint_freckles"),
+	face("face_sharp"),
 }
 
--- Light to dark.
+-- Light to dark, then two fantasy tones (W10: ashen, olive grey).
 local SKINS: { Skin } = {
 	{ id = "skin_1", color = "#F6DCC6" },
 	{ id = "skin_2", color = "#EFCDAF" },
@@ -173,28 +192,114 @@ local SKINS: { Skin } = {
 	{ id = "skin_8", color = "#6E442C" },
 	{ id = "skin_9", color = "#553323" },
 	{ id = "skin_10", color = "#3E2519" },
+	{ id = "skin_ash", color = "#A9A7A2" },
+	{ id = "skin_olive", color = "#8E9478" },
 }
 
-local function hair(id: string, style: string, color: string): Hair
-	return { id = id, catalog = 0, style = style, color = color }
+local function hair(id: string, style: string): Hair
+	return { id = id, catalog = 0, style = style }
 end
 
--- `style` names the procedural garment hair_<style> (Logic/CharacterLook.GARMENTS); "shaved" is a thin shadow over the
--- scalp in the hair colour.
+-- W10: twelve hairstyles (short, long, tied, bald); the Roblox hair of each in Data/BodyLooks.hairs.
 local HAIRS: { Hair } = {
-	hair("hair_short_dark", "short", "#2E2620"),
-	hair("hair_short_light", "short", "#C9A86A"),
-	hair("hair_long_dark", "long", "#1E1A18"),
-	hair("hair_long_red", "long", "#8A3A1E"),
-	hair("hair_ponytail_brown", "ponytail", "#5A3A24"),
-	hair("hair_ponytail_blond", "ponytail", "#D8BC7A"),
-	hair("hair_braid_dark", "braid", "#2A2420"),
-	hair("hair_braid_grey", "braid", "#9A9690"),
-	hair("hair_topknot_black", "topknot", "#141210"),
-	hair("hair_curly_brown", "curly", "#4A3020"),
-	hair("hair_swept_white", "swept", "#E8E4DA"),
-	hair("hair_shaved", "shaved", "#3A302A"),
+	hair("hair_short", "short"),
+	hair("hair_fringe", "short"),
+	hair("hair_curly", "curly"),
+	hair("hair_swept", "swept"),
+	hair("hair_slicked", "swept"),
+	hair("hair_bangs", "short"),
+	hair("hair_charmer", "short"),
+	hair("hair_long", "long"),
+	hair("hair_straight", "long"),
+	hair("hair_ponytail", "ponytail"),
+	hair("hair_braid", "braid"),
+	hair("hair_shaved", "shaved"),
 }
+
+-- W10: the hair colour (hair, brows, beard).
+local HAIR_COLORS: { Choice } = {
+	{ id = "hc_black", color = "#141210" },
+	{ id = "hc_dark", color = "#2E2620" },
+	{ id = "hc_brown", color = "#4A3020" },
+	{ id = "hc_chestnut", color = "#5A3A24" },
+	{ id = "hc_auburn", color = "#6E2E18" },
+	{ id = "hc_red", color = "#8A3A1E" },
+	{ id = "hc_copper", color = "#A55A2A" },
+	{ id = "hc_darkblond", color = "#8C6A3A" },
+	{ id = "hc_blond", color = "#C9A86A" },
+	{ id = "hc_paleblond", color = "#D8BC7A" },
+	{ id = "hc_grey", color = "#9A9690" },
+	{ id = "hc_white", color = "#E8E4DA" },
+}
+
+-- W10: brows (the brows of six dynamic heads, Data/BodyLooks.brows), in the hair colour.
+local BROWS: { Choice } = {
+	{ id = "brows_1" },
+	{ id = "brows_2" },
+	{ id = "brows_3" },
+	{ id = "brows_4" },
+	{ id = "brows_5" },
+	{ id = "brows_6" },
+}
+
+-- W10: facial hair, drawn from parts in the hair colour (Util/AvatarBuild BEARDS).
+local BEARDS: { Choice } = {
+	{ id = "beard_none" },
+	{ id = "beard_moustache" },
+	{ id = "beard_goatee" },
+	{ id = "beard_short" },
+	{ id = "beard_full" },
+	{ id = "beard_long" },
+}
+
+-- W10: build: width and depth of the body (the height and the hitbox stay; Data/BodyLooks.builds, at most 5%).
+local BUILDS: { Choice } = {
+	{ id = "build_slim" },
+	{ id = "build_medium" },
+	{ id = "build_strong" },
+}
+
+-- W10: face paint (Data/BodyLooks.paints: a decal on the face), no blood or wounds.
+local PAINTS: { Choice } = {
+	{ id = "paint_none" },
+	{ id = "paint_freckles" },
+	{ id = "paint_stripes" },
+	{ id = "paint_rune" },
+	{ id = "paint_tribal" },
+	{ id = "paint_ash" },
+}
+
+local PAINT_COLORS: { Choice } = {
+	{ id = "pc_ochre", color = "#C08A3A" },
+	{ id = "pc_white", color = "#E6E0D2" },
+	{ id = "pc_woad", color = "#3A5E9A" },
+	{ id = "pc_soot", color = "#1E1C1A" },
+	{ id = "pc_rust", color = "#8A4A2A" },
+	{ id = "pc_moss", color = "#4E6A34" },
+}
+
+-- S132 hair ids (style and colour in one) -> W10 hairstyle and hair colour.
+local LEGACY_HAIRS: { [string]: { string } } = {
+	hair_short_dark = { "hair_short", "hc_dark" },
+	hair_short_light = { "hair_short", "hc_blond" },
+	hair_long_dark = { "hair_long", "hc_black" },
+	hair_long_red = { "hair_long", "hc_red" },
+	hair_ponytail_brown = { "hair_ponytail", "hc_chestnut" },
+	hair_ponytail_blond = { "hair_ponytail", "hc_paleblond" },
+	hair_braid_dark = { "hair_braid", "hc_dark" },
+	hair_braid_grey = { "hair_braid", "hc_grey" },
+	hair_topknot_black = { "hair_slicked", "hc_black" },
+	hair_curly_brown = { "hair_curly", "hc_brown" },
+	hair_swept_white = { "hair_swept", "hc_white" },
+}
+
+local function index(list: { any }): { [string]: any }
+	local out = {}
+	for _, entry in list do
+		out[entry.id] = entry
+	end
+	return out
+end
 
 local faceById: { [string]: Face } = {}
 for _, f in FACES do
@@ -213,7 +318,17 @@ end
 --   warrior_cape = { model = "warrior_cape", attach = "UpperTorso" },
 local assets: { [string]: Asset } = {}
 
-local DEFAULT_LOOK: Look = table.freeze({ face = "face_calm", skin = "skin_4", hair = "hair_short_dark" })
+local DEFAULT_LOOK: Look = table.freeze({
+	face = "face_calm",
+	skin = "skin_4",
+	hair = "hair_short",
+	hairColor = "hc_dark",
+	brows = "brows_1",
+	beard = "beard_none",
+	build = "build_medium",
+	paint = "paint_none",
+	paintColor = "pc_ochre",
+})
 
 return table.freeze({
 	classes = classes,
@@ -223,6 +338,19 @@ return table.freeze({
 	faceById = faceById,
 	skinById = skinById,
 	hairById = hairById,
+	HAIR_COLORS = HAIR_COLORS,
+	BROWS = BROWS,
+	BEARDS = BEARDS,
+	BUILDS = BUILDS,
+	PAINTS = PAINTS,
+	PAINT_COLORS = PAINT_COLORS,
+	hairColorById = index(HAIR_COLORS),
+	browsById = index(BROWS),
+	beardById = index(BEARDS),
+	buildById = index(BUILDS),
+	paintById = index(PAINTS),
+	paintColorById = index(PAINT_COLORS),
+	LEGACY_HAIRS = LEGACY_HAIRS,
 	DEFAULT_LOOK = DEFAULT_LOOK,
 	BODY_ROLES = BODY_ROLES,
 	assets = assets,

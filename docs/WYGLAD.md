@@ -109,6 +109,11 @@ Szczegóły, koszty na telefonie i źródła: `docs/wyglad/research.md`. W skró
 - **Studio MCP** (wbudowany): sesje W robią zrzuty `screen_capture` i oglądają wynik same, w zakresie wyjątku `docs/DESIGN-16.md` §0.1.
 - **W01:** wygląd każdej mapy (godzina, słońce, bloom, promienie, chmury, głębia ostrości, niebo) w `src/shared/Data/MapLooks.luau`, poziomy grafiki w `Config.Graphics`, kamera „z góry” w `Config.Camera` / `CameraController`. Dziennik i decyzje fazy: `docs/wyglad/SESJE-W.md`, `docs/wyglad/DECYZJE-W.md`, stan `docs/wyglad/STAN-W.md`.
 - **W02:** zestaw w `Data/Kit` + `ReplicatedStorage.Assets.Kit` (gniazda generatorów, `/kit`), zasady importu `docs/wyglad/ZASOBY.md`, zakupy `docs/wyglad/ZAKUPY.md`.
+- **W11:** plan map `docs/wyglad/MAPY.md` (spis, horyzont, kolejność W12–W24) i `docs/wyglad/mapy/*.md` (miejsce po miejscu).
+- **W08:** lokomocja `Data/Locomotion` + własny `Animate` (`src/character/Animate.client.luau`), IK stóp `FootIkController`, lista klipów `docs/wyglad/KLIPY-RUCH.md`.
+- **W09:** ciało postaci `Data/BodyLooks` (darmowe ciało Roblox z dynamiczną głową, fryzury z katalogu, `Logic/HairTint`).
+- **W10:** kreator: wybory w `Data/ClassLooks` (głowy, brwi, fryzury, malunki w `Data/BodyLooks`), `CharacterLook.FIELDS` / `normalize` / `random`, zakładki `LookPicker`, obrót i zbliżenie `LookPreview`.
+- **W12:** punkty orientacyjne miasta jako sloty `landmark:*` w `Data/Kit` (stały obrót `turn`), okna nocą `MapLooks.windows`, słońce z porą dnia `MapLooks.sunByHour`; horyzont mapy `Data/Horizons` + `Logic/HorizonGen` + `HorizonController`.
 - **Świat dalej budowany z kodu i danych** (`src/server/World`, Rojo, git): zmieniamy klocki na modele z zestawu W02 i malowane materiały, ale nie przechodzimy na ręcznie zapisywany plik miejsca, bo wtedy znika historia zmian i sesje nie mogą pracować bez Studio.
 
 ## 6. Ocena właściciela (bramki)
@@ -125,6 +130,7 @@ Sesje W idą po kolei i **każda czeka na ocenę poprzedniej**. Po sesji Wxx wł
 - Plan (ten plik): OK (2026-10-17)
 - W01: OK (2026-10-17)
 - W02: OK (2026-10-17; „nie dużo się zmieniło”: zestaw na razie tylko na Łąkach, większa zmiana przy sesjach map)
+- W11: OK (2026-10-17): pytania 1–5 z `docs/wyglad/MAPY.md` §4 tak (wszystkie rekomendacje). Właściciel: „ogólnie mapy możesz całe przebudować, żeby były dokontentowane, pytania jestem otwarty”.
 
 ## 7. Plan fazy wyglądu (po S155, czyli po mechanice)
 

@@ -18,6 +18,7 @@ local TownTerrainWriter = require(script.Parent.Parent.TownTerrainWriter)
 
 local Shared = ReplicatedStorage.Shared
 local BlueprintBuild = require(Shared.Util.BlueprintBuild)
+local KitAssets = require(Shared.Util.KitAssets)
 local Log = require(Shared.Util.Log)
 local Town = require(Shared.Data.Town)
 local TownGen = require(Shared.Logic.TownGen)
@@ -99,8 +100,10 @@ return function(ctx: Build.Context)
 	end
 	local builds = TownGen.all(city, TownTerrain.heightAt)
 	local parts = 0
+	local kit = KitAssets.resolver(ctx.map.id) -- W12: asset kit models (trees, the mage tower)
 	for _, build in builds do
-		local result = BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folderFor(build.tag or "misc"))
+		local result =
+			BlueprintBuild.build(build :: any, ctx.origin, { shell = true }, folderFor(build.tag or "misc"), nil, kit)
 		parts += result.parts
 		if build.tag == "gate" then
 			gatePortal(ctx, build, result)

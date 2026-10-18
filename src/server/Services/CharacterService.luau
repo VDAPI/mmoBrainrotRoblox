@@ -349,13 +349,14 @@ local function checkName(player: Player, name: string): (boolean, string?)
 	return NameService.IsAvailable(name, nil)
 end
 
--- S132: `look` = { face, skin, hair } of the creator (unknown ids fall back to the default ones in the factory).
+-- S132: `look` = the creator's look (W10: every field of ClassLooks.Look; unknown ids fall back to the default ones in
+-- the factory).
 local function createCharacter(
 	player: Player,
 	slot: number,
 	classId: string,
 	name: string,
-	look: { face: string?, skin: string?, hair: string? }?
+	look: { [string]: string? }?
 ): (boolean, string?)
 	if PlayerStateService.GetPhase(player) ~= "select" then
 		return false, "error.wrongPhase"
@@ -571,13 +572,30 @@ function CharacterService.Start()
 			name: string,
 			face: string?,
 			skin: string?,
-			hair: string?
+			hair: string?,
+			hairColor: string?,
+			brows: string?,
+			beard: string?,
+			build: string?,
+			paint: string?,
+			paintColor: string?
 		)
 			if not ServerMode.isWorld() then
 				return false, "arena.net.error.notHere" -- S127: the arena server picks the character itself
 			end
+			local look = {
+				face = face,
+				skin = skin,
+				hair = hair,
+				hairColor = hairColor,
+				brows = brows,
+				beard = beard,
+				build = build,
+				paint = paint,
+				paintColor = paintColor,
+			}
 			return withLock(player, function()
-				return createCharacter(player, slot, classId, name, { face = face, skin = skin, hair = hair })
+				return createCharacter(player, slot, classId, name, look)
 			end)
 		end
 	)
