@@ -5,7 +5,8 @@
 --   2. the queen's relief on the upper terrace's retaining wall north of the stairs: a woman with a spear over a
 --      sleeping dragon, the same scene as the Vael manor's window in the Duskwood,
 --   3. bare human footprints on the Bone Trail between the brood's tracks, up to the Rite Circle,
---   4. by the Harpy Tarn's ice hole: the angler's sled overturned and a small fire (warmth = safety). Pure.
+--   4. by the Harpy Tarn's ice hole: the angler's sled overturned and a small fire (warmth = safety);
+-- and from the 1.4 table: the pilgrims' armour thrown down by the Buried Camp. Pure.
 
 local Env = require("./Env")
 local Kit = require("../WorldGen/Kit")
@@ -96,11 +97,28 @@ local function anglerCamp(env: Env.Env, out: { Build })
 	table.insert(out, b)
 end
 
+-- 1.4: the pilgrims' armour thrown down outside the Buried Camp (546, 50, r 22), half under the snow (the north side,
+-- away from the road).
+local function pilgrimArmour(env: Env.Env, out: { Build })
+	local b = Kit.build(env.ctx, "Detail_PilgrimArmour", "traces", 546, 78, 0)
+	local bp = b.bp
+	for k, p in { { -8, 0 }, { 0, 2 }, { 9, -1 } } do
+		local lx, lz = p[1], p[2]
+		local gy = Kit.gy(env.ctx, b, lx, lz)
+		bp:rbox(1.8, 0.9, 1.4, lx, gy + 0.3, lz, 70, k * 50, 0, o(Props.iron, "detail", { col = false }))
+		bp:add("ball", 1, 0.9, 1.1, lx + 1.4, gy + 0.3, lz + 0.6, 0, k * 30, 30, o(Props.iron, "fine", { col = false }))
+		bp:rbox(1.6, 0.1, 1.2, lx - 0.4, gy + 0.08, lz - 0.9, 0, k * 40, 0, o(Props.cultBlue, "fine", { col = false }))
+		Props.snowCap(bp, lx, gy + 0.6, lz, 2.4, 1.8, "fine")
+	end
+	table.insert(out, b)
+end
+
 function Details.all(env: Env.Env, out: { Build })
 	cairn(env, out)
 	queenRelief(out)
 	barefoot(env, out)
 	anglerCamp(env, out)
+	pilgrimArmour(env, out)
 end
 
 return Details
