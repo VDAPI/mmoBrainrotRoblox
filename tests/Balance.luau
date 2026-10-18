@@ -4296,6 +4296,359 @@ function Balance.targetsS145(): { TargetRow }
 	return rows
 end
 
+-- S146 (DESIGN-18 §13): balance 21-100 after the rework, the Warrior and the Cleric -------------------------------
+
+-- Thresholds of the S146 rows (DESIGN-18 §6.2, §6.4, §13, ROZWOJ 0; test data, never game numbers).
+Balance.S146 = {
+	levels = { 20, 45, 70, 100 },
+	pools = { { "Warrior", "onehand" }, { "Warrior", "twohand" }, { "Cleric", "light" }, { "Cleric", "hammer" } },
+	-- R8 (§13): 8 actives at rank 10 and every passive of the pool within SkillPoints.pointsAt(100); at most 10 actives
+	-- at rank 10; at 45 the points at most this share of the sum of the pool's rank limits
+	r8 = { bar = 8, maxTen = 10, budget45 = 0.75 },
+	-- R9 Warrior (§6.2): the two-handed / the one-handed pool's damage (one target 60 s, 3 targets 8 s; the damage
+	-- builds of the pools, as S143), the one-handed tank's EHP / the two-handed pool's
+	twohand = "berserker.fury",
+	onehand = "standard.commander",
+	tank = "guardian.defender",
+	damage = { 1.15, 1.25 },
+	ehpLow = 1.4,
+	-- the tank's HP per minute on the level's boss (the S32 model of S92-S94) with the Guardian in front
+	tankPerMinute = 3.5,
+	-- R9 Cleric (§6.4): the light pool's heal per second on the boss's tank in the T-SK6 band (the dungeon Healer,
+	-- T-SK6 = R9 of the light pool), the hammer pool's damage against "Furia" in the Inquisitor's bands (ROZWOJ 9.6)
+	light = "healer.dungeon",
+	hammer = "inquisitor.solo",
+	tsk6 = { 1.0, 2.0 },
+	hammerRatio = {
+		[45] = { 0.80, 0.86 },
+		[70] = { 0.85, 0.91 },
+		[100] = { 0.87, 0.93 },
+	} :: { [number]: { number } },
+	-- R1 (ROZWOJ 0, S89): 1.6 <= R1 <= max(2.0, 1.15 x the build's own R1 at 20), one build per pool (the one-handed
+	-- pool on its tank: the Standard-Bearer's R1 holds its own cries and banner, printed)
+	r1 = {
+		{ pool = "twohand", build = "berserker.fury", classId = "Warrior" },
+		{ pool = "onehand", build = "guardian.defender", classId = "Warrior" },
+		{ pool = "onehand", build = "standard.commander", classId = "Warrior" },
+		{ pool = "hammer", build = "inquisitor.solo", classId = "Cleric" },
+	},
+	r1Band = { 1.6, 2.0 },
+	r1Rel = 1.15,
+	-- R5 (S89 R5 in the shape of pools): every weapon type of the pool within 10 % of the mean of the types, in the
+	-- pool's metric (one target 60 s; the light pool: heal per second on the boss's tank)
+	r5 = {
+		{ pool = "onehand", build = "standard.commander", classId = "Warrior" },
+		{ pool = "twohand", build = "berserker.fury", classId = "Warrior" },
+		{ pool = "light", build = "healer.dungeon", classId = "Cleric" },
+		{ pool = "hammer", build = "inquisitor.solo", classId = "Cleric" },
+	},
+	r5Spread = 0.10,
+	-- R6 (S89 E3, now the build's leading direction): a point of rows 4-11 within 0.6-1.5 x the mean (L100)
+	r6 = {
+		{ build = "berserker.fury", classId = "Warrior" },
+		{ build = "guardian.defender", classId = "Warrior" },
+		{ build = "standard.commander", classId = "Warrior" },
+		{ build = "healer.dungeon", classId = "Cleric" },
+		{ build = "fortune.plunder", classId = "Cleric" },
+		{ build = "inquisitor.solo", classId = "Cleric" },
+	},
+	r6Band = { 0.6, 1.5 },
+	-- T-SK5 (ROZWOJ 0, 7.5): one Heal of the light pool 25-35 % of the tank's HP (the Defender)
+	tsk5 = { 0.25, 0.35 },
+	-- R7 (ROZWOJ 0): the Hunter / the Warrior on one target 1.15-1.35, printed (S147 asserts it with the Hunter)
+	hunter = "marksman.kingslayer",
+	r7 = { 1.15, 1.35 },
+	-- ROZWOJ 7.5: Fortune's 4 x (1 + B) + S (dice and wheel on an ally, own damage / "Furia"), printed: 7.5 gives
+	-- Fortune survival and loot instead
+	fortune = "fortune.plunder",
+	support = { 4.9, 5.1 },
+}
+
+-- S146: rows printed with the reason (id or a prefix ending in `*`; docs/DECYZJE.md S146). Never an R8 or R4 row.
+Balance.S146_REPORT = {
+	-- R9 of the Warrior's damage against R1: the one-handed pool's basic attack is about half the two-handed one's
+	-- (weapon bases, Rarities.twoHandedBonusMul), so 1.25 needs the one-handed pool's R1 at 2.9-3.4 against its limit
+	-- 2.26-2.35; at 45-100 the one-handed area (Earthquake, Shield Sweep, the banner) is as strong as the two-handed one,
+	-- and a stronger Fury area slows the Guardian's solo pace (pace / Fury <= 1.5 at 45); 20 is frozen
+	["S146.r9.warrior.single.*"] = "S146: poza zasięgiem dźwigni S146: R9 1,15–1,25 sprzeczne z R1 puli jednoręcznej (atak podstawowy broni jednoręcznej ok. 0,5 dwuręcznej; Items/Bases, twoHandedBonusMul); 20 zamrożone; dla właściciela",
+	["S146.r9.warrior.area.*"] = "S146: poza zasięgiem dźwigni S146: obszar puli jednoręcznej (Trzęsienie Ziemi, Zamach Tarczą, sztandar) nie mniejszy niż dwuręcznej; mocniejszy obszar Furii psuje tempo Strażnika (≤ 1,5); 20 zamrożone",
+	-- T-SK6 (S92 C4): the boss's tank takes 1.5-3.5 max HP a minute (the S32 model), Heal alone (T-SK5 0.28-0.34 every
+	-- 3 s) gives T-SK6 above 1.5; T-SK6 x the sustain without support is about 2.55 (every boss without support,
+	-- ROZWOJ 7.5); levers: the bosses' damage on the tank (Data/Bosses) or the definition of T-SK6 (the owner, S93 / S94)
+	["S146.r9.light.tsk6.45"] = "S146: poza zasięgiem dźwigni S146: tank bossa przyjmuje 1,5–3,5 maks. HP na minutę, samo Leczenie daje > 1,5; T-SK6 × podtrzymanie bez wsparcia ok. 2,55 (S92); decyzja właściciela (S93, S94)",
+	["S146.r9.light.tsk6.70"] = "S146: poza zasięgiem dźwigni S146: tank Azgora przyjmuje 1,5 maks. HP na minutę (S93: 12,8 przed przebudową); decyzja właściciela",
+	["S146.r9.light.tsk6.100"] = "S146: poza zasięgiem dźwigni S146: tank Vaelgratha przyjmuje ok. 2 maks. HP na minutę (S94: 15,9 przed przebudową); decyzja właściciela",
+	-- R1 of the Inquisitor (S89 F4): 4.4-6.2 at 0.86-0.91 x "Furia"; R1 <= 2.4 needs about 0.35 x "Furia"
+	["S146.r1.hammer.*"] = "właściciel (F4, S89): R1 Inkwizytora 4,4–6,2 przy 0,86–0,91 Furii; R1 ≤ 2,4 wymaga ok. 0,35 Furii (słaby atak podstawowy Kapłana)",
+	-- the Standard-Bearer's R1 holds its own cries and banner (support); the one-handed pool's R1 is the Defender's
+	["S146.r1.onehand.standard.commander.*"] = "S146: R1 Chorążego liczy jego okrzyki i sztandar (wsparcie); R1 puli jednoręcznej asertuje Obrońca",
+	-- R7 with the Hunter (S147), Fortune's support (ROZWOJ 7.5: survival and loot instead)
+	["S146.r7.*"] = "S147: R7 asertuje sesja Łowcy (odniesienie Furii z S146)",
+	["S146.fortune.support.*"] = "ROZWOJ 7.5: Fortuna daje przeżycie i łup zamiast 4 × (1 + B) + S (tylko raport)",
+	-- R6 of the other directions (S89: the Inquisitor and the Healer F4, the Guardian and Fortune E3)
+	["S146.r6.guardian.*"] = "właściciel (E3, S89): rzędy 4–11 Strażnika to obrona i groźba (EHP, nie obrażenia)",
+	["S146.r6.fortune.*"] = "właściciel (E3, S89): rzędy 4–11 Fortuny to szczęście i łup (poza metryką)",
+	["S146.r6.inquisitor.*"] = "właściciel (F4, S89): środkowa część Inkwizytora to przeżycie i odwet (poza metryką)",
+	["S146.r6.healer.*"] = "właściciel (F4, S89): najsłabsza część Uzdrowiciela to ratunek i mana (poza metryką)",
+} :: { [string]: string }
+
+-- S146: the rows of Balance.S146 (ids "S146.*"); balance.spec ("Balance S146: Warrior and Cleric") asserts every row
+-- without `report`.
+function Balance.targetsS146(): { TargetRow }
+	local rows: { TargetRow } = {}
+	local S = Balance.S146
+	local SkillModel = (require :: any)("./SkillModel")
+	local SkillPools = require("../src/shared/Logic/SkillPools")
+	local SkillPoints = require("../src/shared/Logic/SkillPoints")
+	local function reasonOf(id: string): string?
+		local hit = Balance.S146_REPORT[id]
+		if hit then
+			return hit
+		end
+		for key, why in Balance.S146_REPORT do
+			if string.sub(key, -1) == "*" and string.sub(id, 1, #key - 1) == string.sub(key, 1, -2) then
+				return why
+			end
+		end
+		return nil
+	end
+	local function add(
+		id: string,
+		label: string,
+		value: number,
+		low: number?,
+		high: number?,
+		classId: string,
+		L: number?
+	)
+		target(rows, id, "s146", label, value, low, high, classId, L)
+		rows[#rows].report = reasonOf(id)
+	end
+	-- R8: the pool's points against its ranks
+	for _, pair in S.pools do
+		local classId, poolId = pair[1], pair[2]
+		do
+			local actives, passiveRanks, cap45 = 0, 0, 0
+			for _, id in SkillPools.members(classId, poolId) do
+				local def = SkillData.get(id) :: any
+				if def.type == "passive" then
+					passiveRanks += def.maxLevel
+				else
+					actives += 1
+				end
+				cap45 += SkillPoints.cap(def, 45)
+			end
+			local points = SkillPoints.pointsAt(100)
+			add(
+				`S146.r8.{poolId}.bar100`,
+				`R8 {poolId}: {S.r8.bar} aktywnych na 10 + pasywki / punkty na 100`,
+				(S.r8.bar * 10 + passiveRanks) / points,
+				nil,
+				1,
+				classId,
+				100
+			)
+			add(
+				`S146.r8.{poolId}.max10`,
+				`R8 {poolId}: najwięcej aktywnych z rangą 10 na 100`,
+				math.min(actives, math.floor(points / 10)),
+				S.r8.bar,
+				S.r8.maxTen,
+				classId,
+				100
+			)
+			add(
+				`S146.r8.{poolId}.budget45`,
+				`R8 {poolId}: punkty na 45 / suma limitów rang puli`,
+				SkillPoints.pointsAt(45) / math.max(1, cap45),
+				nil,
+				S.r8.budget45,
+				classId,
+				45
+			)
+		end
+	end
+	local two = SkillModel.build(S.twohand, "Warrior")
+	local one = SkillModel.build(S.onehand, "Warrior")
+	local tankBuild = SkillModel.build(S.tank, "Warrior")
+	local light = SkillModel.build(S.light, "Cleric")
+	local hammer = SkillModel.build(S.hammer, "Cleric")
+	local hunter = SkillModel.build(S.hunter, "Hunter")
+	local fortune = SkillModel.build(S.fortune, "Cleric")
+	for _, L in S.levels do
+		-- R9 Warrior
+		local m2, m1, mt = SkillModel.metrics(two, L), SkillModel.metrics(one, L), SkillModel.metrics(tankBuild, L)
+		add(
+			`S146.r9.warrior.single.{L}`,
+			`R9 dwuręczna / jednoręczna: jeden cel 60 s L{L}`,
+			m2.single60 / math.max(1e-9, m1.single60),
+			S.damage[1],
+			S.damage[2],
+			"Warrior",
+			L
+		)
+		add(
+			`S146.r9.warrior.area.{L}`,
+			`R9 dwuręczna / jednoręczna: 3 cele 8 s L{L}`,
+			m2.aoe3burst / math.max(1e-9, m1.aoe3burst),
+			S.damage[1],
+			S.damage[2],
+			"Warrior",
+			L
+		)
+		add(
+			`S146.r9.warrior.ehp.{L}`,
+			`R9 EHP jednoręczna (Strażnik) / dwuręczna L{L}`,
+			mt.ehp / math.max(1e-9, m2.ehp),
+			S.ehpLow,
+			nil,
+			"Warrior",
+			L
+		)
+		local bossId = SkillModel.BOSS_AT[L]
+		do
+			local def = Bosses.byId[bossId] :: any
+			local team = Balance.team(5, def.level - 1)
+			team[1] = Balance.player("Warrior", def.level - 1, { nodes = S.tank })
+			add(
+				`S146.warrior.tank.{L}`,
+				`{bossId} (model S32): Strażnik jednoręczny, HP na minutę L{def.level - 1}`,
+				Balance.boss(bossId, team).tankHpPerMinute,
+				nil,
+				S.tankPerMinute,
+				"Warrior",
+				def.level - 1
+			)
+		end
+		-- R9 Cleric: the light pool's T-SK6 (heal per second / the tank's damage), the hammer pool against "Furia"
+		local vsBoss = SkillModel.healerVsBoss(light, bossId)
+		add(
+			`S146.r9.light.tsk6.{L}`,
+			`R9 / T-SK6 berło (Uzdrowiciel lochowy) na {bossId} L{L}`,
+			vsBoss.tsk6,
+			S.tsk6[1],
+			S.tsk6[2],
+			"Cleric",
+			L
+		)
+		local mh = SkillModel.metrics(hammer, L)
+		local band = S.hammerRatio[L]
+		if band then
+			add(
+				`S146.r9.hammer.ratio.{L}`,
+				`R9 buzdygan (Inkwizytor) / Furia: jeden cel 60 s L{L}`,
+				mh.single60 / math.max(1e-9, SkillModel.fury(L).single60),
+				band[1],
+				band[2],
+				"Cleric",
+				L
+			)
+		end
+		if L > 20 then
+			-- T-SK5 of the light pool
+			add(
+				`S146.tsk5.light.{L}`,
+				`T-SK5 berło (Uzdrowiciel lochowy) na Obrońcy L{L}`,
+				SkillModel.oneHeal(light, L, SkillModel.defenderTank(L)),
+				S.tsk5[1],
+				S.tsk5[2],
+				"Cleric",
+				L
+			)
+			-- R1 of a build per pool
+			for _, spec in S.r1 do
+				local build = SkillModel.build(spec.build, spec.classId)
+				-- the S89 / S91 table of R1 at 20 where it has the build (the all.r1 rows), else its own R1 at 20
+				local own = SkillModel.R1_L20[spec.build] or SkillModel.metrics(build, 20).r1
+				add(
+					`S146.r1.{spec.pool}.{spec.build}.{L}`,
+					`R1 {spec.pool} ({spec.build}) L{L}`,
+					SkillModel.metrics(build, L).r1,
+					S.r1Band[1],
+					math.max(S.r1Band[2], S.r1Rel * own),
+					spec.classId,
+					L
+				)
+			end
+			-- R5: the weapon types of the pool
+			for _, spec in S.r5 do
+				local build = SkillModel.build(spec.build, spec.classId)
+				local def = SkillPools.def(spec.classId, spec.pool) :: any
+				local values: { number } = {}
+				local sum = 0
+				for _, weapon in def.weapon.main do
+					local offhand = if Paths.isTwoHanded(weapon) then nil else build.weapon.offhand
+					local b = SkillModel.withWeapon(build, weapon, offhand)
+					local v = if spec.pool == "light"
+						then SkillModel.healerVsBoss(b, bossId).hps
+						else SkillModel.metrics(b, L).single60
+					table.insert(values, v)
+					sum += v
+				end
+				local mean = sum / math.max(1, #values)
+				local worst = 0
+				for _, v in values do
+					worst = math.max(worst, math.abs(v / math.max(1e-12, mean) - 1))
+				end
+				add(
+					`S146.r5.{spec.pool}.{L}`,
+					`R5 {spec.pool} ({spec.build}): najdalszy typ broni od średniej L{L}`,
+					worst,
+					nil,
+					S.r5Spread,
+					spec.classId,
+					L
+				)
+			end
+			-- R7 (S147) and Fortune's support (ROZWOJ 7.5), printed
+			local mh7 = SkillModel.metrics(hunter, L)
+			add(
+				`S146.r7.twohand.{L}`,
+				`R7 Łowca / Wojownik dwuręczny: jeden cel L{L}`,
+				mh7.single60 / math.max(1e-9, m2.single60),
+				S.r7[1],
+				S.r7[2],
+				"Warrior",
+				L
+			)
+			local fb = SkillModel.fortuneBonus(fortune, L)
+			local sOwn = SkillModel.metrics(fortune, L).single60 / math.max(1e-9, SkillModel.fury(L).single60)
+			add(
+				`S146.fortune.support.{L}`,
+				`Fortuna: 4 × (1 + B) + S (kości i koło, B = {string.format("%.3f", fb.dice + fb.wheel)}) L{L}`,
+				4 * (1 + fb.dice + fb.wheel) + sOwn,
+				S.support[1],
+				S.support[2],
+				"Cleric",
+				L
+			)
+		end
+	end
+	-- R6 of the leading direction at 100
+	for _, spec in S.r6 do
+		local parts = SkillModel.r6Parts(SkillModel.build(spec.build, spec.classId))
+		add(
+			`S146.r6.{spec.build}.low`,
+			`R6 {spec.build}: najsłabsza trzecia część / średnia L100`,
+			parts.low,
+			S.r6Band[1],
+			nil,
+			spec.classId,
+			100
+		)
+		add(
+			`S146.r6.{spec.build}.high`,
+			`R6 {spec.build}: najmocniejsza trzecia część / średnia L100`,
+			parts.high,
+			nil,
+			S.r6Band[2],
+			spec.classId,
+			100
+		)
+	end
+	return rows
+end
+
 -- S92: the Dark Forest 20-45 and Morvane (balance plan, renumbered S54 draft) ------------------------------------
 
 local Crafting = require("../src/shared/Data/Crafting")
@@ -5895,10 +6248,8 @@ Balance.S134 = {
 }
 
 -- S134: rows of targetsS134 out of reach of the S134 levers (printed with the reason; docs/DECYZJE.md S134).
-Balance.S134_REPORT = {
-	-- S143 (session rule 5): the Warrior's "solo with overpowered gear" on Vaelgrath plays the two-handed pool now
-	["S134.vaelgrath.channel.solo"] = "przebudowa umiejętności DESIGN-18 (S143, pule Wojownika), wraca w S146/S147",
-} :: { [string]: string }
+-- S146: the S143 entry (the Warrior's solo on Vaelgrath with the two-handed pool) is in band again (5.05 s >= 4.5 s)
+Balance.S134_REPORT = {} :: { [string]: string }
 
 -- S134 (E2): the boss targets in one place (ids "S134.<boss>..."); balance.spec ("Balance: bosses 2.0 (S134)")
 -- asserts every row without `report`.
@@ -6456,13 +6807,6 @@ do
 	local reworkWhy = "przebudowa umiejętności DESIGN-18, wraca w S146/S147"
 	for _, key in
 		{
-			"R.duskwood.morvane.noSupport.3.hit",
-			"R.duskwood.morvane.noSupport.4.hit",
-			"R.duskwood.morvane.noSupport.5.hit",
-			"R.duskwood.guard.tsk1.Cleric.healer.dungeon.40",
-			"R.duskwood.guard.tsk2.Cleric.healer.dungeon.40",
-			"R.ashen.guard.tsk2.Warrior.berserker.butcher.50",
-			"R.ashen.guard.tsk2.Warrior.berserker.butcher.60",
 			"R.ashen.guard.tsk1.Hunter.base.50",
 			"R.ashen.guard.tsk2.Hunter.base.50",
 			"R.ashen.guard.tsk1.Hunter.base.55",
@@ -6489,17 +6833,6 @@ do
 			"R.ashen.guard.tsk1.Hunter.scout.tracker.60",
 			"R.ashen.guard.tsk1.Hunter.scout.tracker.65",
 			"R.ashen.guard.tsk2.Hunter.scout.tracker.65",
-			"R.frostpeak.guard.tsk2.Warrior.base.75",
-			"R.frostpeak.guard.tsk2.Warrior.base.80",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.75",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.80",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.85",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.90",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.95",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.99",
-			"R.frostpeak.guard.tsk2.Warrior.base.loadout.100",
-			"R.frostpeak.guard.tsk2.Warrior.berserker.fury.75",
-			"R.frostpeak.guard.tsk2.Warrior.berserker.butcher.75",
 			"R.frostpeak.guard.tsk1.Hunter.marksman.kingslayer.85",
 			"R.frostpeak.guard.tsk2.Hunter.marksman.kingslayer.85",
 			"R.frostpeak.guard.tsk1.Hunter.marksman.eliteHunter.85",
@@ -6513,13 +6846,8 @@ do
 			"R.frostpeak.guard.tsk1.Hunter.scout.partyHunter.75",
 			"R.frostpeak.guard.tsk2.Hunter.scout.partyHunter.75",
 			"R.frostpeak.guard.tsk1.Hunter.scout.tracker.75",
-			"T1|runThrough · berserker.fury@spear2h · L70",
 			"T1|easyPrey · trapper.poacher@crossbow · L45",
 			"T1|easyPrey · trapper.poacher@crossbow · L70",
-			"T1|savingBlow · healer.dungeon@holystaff · L70",
-			"path.guardian.defender.L70.guardian.ehp",
-			"path.guardian.defender.L100.guardian.ehp",
-			"path.guardian.defender.L100.guardian.ehpRed",
 			"path.marksman.kingslayer.L45.marksman.base",
 			"path.marksman.kingslayer.L70.marksman.base",
 			-- S144: the "@longbow+quiver" rows are gone (the longbow is Królobójca's own weapon since S144)
@@ -6531,9 +6859,6 @@ do
 			"path.trapper.poacher@bow+quiver.L70.all.r1",
 			"path.marksman.kingslayer.L45.r5a.hunter",
 			"path.trapper.poacher.L45.r5a.hunter",
-			"path.inquisitor.solo.L45.inquisitor.hp",
-			"path.inquisitor.solo.L70.inquisitor.hp",
-			"path.inquisitor.solo.L100.inquisitor.hp",
 		}
 	do
 		add(key, "S137", reworkWhy)
@@ -6801,99 +7126,6 @@ do
 	do
 		add(key, "S142", reworkWhy)
 	end
-	-- S143 (DESIGN-18 §0.4, session rule 5): the Warrior's two pools (Sword and Shield, Two-Handed), the common skills
-	-- and the directions' new nodes. The guard rows (T-SK1 / T-SK2 against the L20 of the same build) grow because the
-	-- pools reach their area skills at 3 and their S2 at 15 (faster at 20); the Guardian's EHP and the Healer on the
-	-- Defender (G10, T-SK5) follow Fortitude and Shield Bash in the one-handed pool; the Berserker (the damage
-	-- reference) is 5-12 % above S142 at 70-100 with Rage, Sunder and Execute (the Hunter's R7 and the Inquisitor's
-	-- ratio at 70 / 100 against it); the Standard-Bearer's support and r6 lost Battle Cry / War Banner / Crushing Blow
-	-- as nodes (now pool skills). Only rows that hold a Warrior or measure against the Berserker; docs/SESJE.md S143
-	-- lists them. S146 brings them back. Never a row of 1-20.
-	for _, key in
-		{
-			"G10|T-SK5 Cleric healer.dungeon na guardian.defender 50",
-			"R.ashen.guard.tsk1.Warrior.base.55",
-			"R.ashen.guard.tsk1.Warrior.base.60",
-			"R.ashen.guard.tsk1.Warrior.base.65",
-			"R.ashen.guard.tsk1.Warrior.guardian.defender.50",
-			"R.ashen.guard.tsk1.Warrior.guardian.defender.55",
-			"R.ashen.guard.tsk1.Warrior.guardian.defender.60",
-			"R.ashen.guard.tsk1.Warrior.guardian.defender.65",
-			"R.ashen.guard.tsk1.Warrior.guardian.defender.69",
-			"R.ashen.guard.tsk1.Warrior.guardian.defender.70",
-			"R.ashen.guard.tsk1.Warrior.guardian.loner.65",
-			"R.ashen.guard.tsk1.Warrior.guardian.loner.69",
-			"R.ashen.guard.tsk1.Warrior.guardian.loner.70",
-			"R.ashen.guard.tsk1.Warrior.standard.warden.50",
-			"R.ashen.guard.tsk1.Warrior.standard.warden.55",
-			"R.ashen.guard.tsk1.Warrior.standard.warden.69",
-			"R.ashen.guard.tsk2.Warrior.base.55",
-			"R.ashen.guard.tsk2.Warrior.base.60",
-			"R.ashen.guard.tsk2.Warrior.base.65",
-			"R.ashen.guard.tsk2.Warrior.base.loadout.50",
-			"R.ashen.guard.tsk2.Warrior.base.loadout.55",
-			"R.ashen.guard.tsk2.Warrior.base.loadout.60",
-			"R.ashen.guard.tsk2.Warrior.base.loadout.65",
-			"R.ashen.guard.tsk2.Warrior.berserker.butcher.65",
-			"R.ashen.guard.tsk2.Warrior.berserker.butcher.69",
-			"R.ashen.guard.tsk2.Warrior.guardian.defender.60",
-			"R.ashen.guard.tsk2.Warrior.guardian.defender.65",
-			"R.ashen.guard.tsk2.Warrior.guardian.defender.69",
-			"R.ashen.guard.tsk2.Warrior.guardian.defender.70",
-			"R.ashen.guard.tsk2.Warrior.guardian.loner.60",
-			"R.ashen.guard.tsk2.Warrior.guardian.loner.65",
-			"R.ashen.guard.tsk2.Warrior.guardian.loner.69",
-			"R.ashen.guard.tsk2.Warrior.guardian.loner.70",
-			"R.ashen.guard.tsk2.Warrior.standard.commander.55",
-			"R.ashen.guard.tsk2.Warrior.standard.commander.60",
-			"R.ashen.guard.tsk2.Warrior.standard.commander.65",
-			"R.ashen.guard.tsk2.Warrior.standard.warden.55",
-			"R.ashen.guard.tsk2.Warrior.standard.warden.60",
-			"R.ashen.guard.tsk2.Warrior.standard.warden.65",
-			"R.ashen.guard.tsk2.Warrior.standard.warden.69",
-			"R.ashen.tsk5.50",
-			"R.duskwood.guard.tsk1.Warrior.berserker.butcher.40",
-			"R.duskwood.guard.tsk1.Warrior.berserker.fury.30",
-			"R.duskwood.guard.tsk1.Warrior.standard.commander.44",
-			"R.frostpeak.guard.tsk1.Warrior.base.75",
-			"R.frostpeak.guard.tsk1.Warrior.base.loadout.75",
-			"R.frostpeak.guard.tsk1.Warrior.guardian.defender.80",
-			"R.frostpeak.guard.tsk1.Warrior.guardian.defender.85",
-			"R.frostpeak.guard.tsk1.Warrior.guardian.loner.75",
-			"R.frostpeak.guard.tsk1.Warrior.guardian.loner.80",
-			"R.frostpeak.guard.tsk1.Warrior.guardian.loner.85",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.100",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.75",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.80",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.85",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.90",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.95",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.99",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.75",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.80",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.85",
-			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.95",
-			"T1|sundering · berserker.fury@hammer2h · L100",
-			"T1|sundering · berserker.fury@hammer2h · L45",
-			"T1|sundering · berserker.fury@hammer2h · L70",
-			"T2|berserker · L70",
-			"path.berserker.fury.L100.berserker.base",
-			"path.berserker.fury.L45.berserker.base",
-			"path.berserker.fury.L45.r4.cleave.10|a",
-			"path.berserker.fury.L70.berserker.base",
-			"path.guardian.defender.L45.guardian.ehp",
-			"path.guardian.defender.L45.guardian.ehpRed",
-			"path.guardian.defender.L70.guardian.ehpRed",
-			"path.inquisitor.solo.L100.inquisitor.ratio",
-			"path.inquisitor.solo.L70.inquisitor.ratio",
-			"path.marksman.kingslayer.L70.marksman.r7",
-			"path.standard.commander.L100.r6.standard",
-			"path.standard.commander.L100.standard.support",
-			"path.standard.commander@saber1h+shield.L100.standard.support",
-		}
-	do
-		add(key, "S143", reworkWhy)
-	end
 	-- S144 (DESIGN-18 §0.4, session rule 5): the Hunter's two pools (Bow, Crossbow), the common skills and the directions'
 	-- new nodes and keystones. The guard rows (T-SK1 / T-SK2 / T-SK3 against the L20 of the same build) move because the
 	-- pools reach their area skills at 3, their S2 at 15 and the old path skills earlier or later (Draw a Bead 30, the
@@ -7014,42 +7246,133 @@ do
 	do
 		add(key, "S144", reworkWhy)
 	end
-	-- S145 (DESIGN-18 §0.4, session rule 5): the Cleric's two pools (Scepter and Staff, Mace and Flail), the common skills
-	-- and the directions' new nodes and keystone. The Inquisitor's area guards (T-SK3 on the Frozen Peaks) rise with Holy
-	-- Nova (26) and Hammer of Heaven (60) in one pool; T-SK5 of the dungeon Healer from 95 rises with Grace, Miracle and
-	-- Guiding Light (the light pool's passives); the Priest of Fortune with a mace heals less than the Healer from 70
-	-- (the light pool's heal passives are not his); the lone Healer with the holy staff has the light pool's damage only
-	-- (cleric.solo at 100); the Inquisitor / Fury at 45 with Brand of Light and Judgement in one pool. Only Cleric rows;
-	-- docs/SESJE.md S145 lists them. S146 brings them back. Never a row of 1-20.
+	-- S146 (DESIGN-18 §13, session rule 5): the Warrior's and the Cleric's rows of S137-S145 that the S146 levers do not
+	-- close (the rest of their entries is asserted again; docs/SESJE.md S146 lists them). Never a row of 1-20.
+	-- The Warrior's guards: T-SK1 / T-SK2 against the build's own L20 grow past the D1 limits since the pools (S143:
+	-- seven skills of the pool at 20, the area skills and the cries from 26-33, the Standard-Bearer's and the Guardian's
+	-- cries and banner in the 8 s burst), as the other classes' guards of S93 / S94; R1 is asserted in the S146 block
+	-- (the Defender at 45 / 100, Fury 45-100)
+	local riseWhy = "poza zasięgiem dźwigni S146: T-SK1 / T-SK2 Wojownika rosną ponad limit D1 względem L20 przez pule "
+		.. "(S143); R1 asertuje blok S146"
 	for _, key in
 		{
-			"E4.tsk5|T-SK5 healer.dungeon na guardian.defender · L100",
-			"G10|T-SK5 Cleric healer.dungeon na guardian.defender 95",
-			"G10|T-SK5 Cleric healer.dungeon na guardian.defender 100",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.80",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.85",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.90",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.95",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.99",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.bulwark.100",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.80",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.85",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.90",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.95",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.99",
-			"R.frostpeak.guard.tsk3.Cleric.inquisitor.solo.100",
-			"R.frostpeak.tsk5.95",
-			"R.frostpeak.tsk5.99",
-			"R.frostpeak.tsk5.100",
-			"path.fortune.plunder.L100.fortune.healLess",
-			"path.fortune.plunder.L70.fortune.healLess",
-			"path.healer.dungeon.L100.healer.tsk5",
-			"path.healer.solo.L100.cleric.solo",
-			"path.inquisitor.solo.L45.inquisitor.ratio",
+			"R.ashen.guard.tsk1.Warrior.base.55",
+			"R.ashen.guard.tsk1.Warrior.base.60",
+			"R.ashen.guard.tsk1.Warrior.base.65",
+			"R.ashen.guard.tsk1.Warrior.base.loadout.50",
+			"R.ashen.guard.tsk1.Warrior.guardian.defender.55",
+			"R.ashen.guard.tsk1.Warrior.guardian.defender.60",
+			"R.ashen.guard.tsk1.Warrior.guardian.defender.65",
+			"R.ashen.guard.tsk1.Warrior.guardian.defender.69",
+			"R.ashen.guard.tsk1.Warrior.guardian.defender.70",
+			"R.ashen.guard.tsk1.Warrior.guardian.loner.69",
+			"R.ashen.guard.tsk1.Warrior.guardian.loner.70",
+			"R.ashen.guard.tsk1.Warrior.standard.warden.50",
+			"R.ashen.guard.tsk1.Warrior.standard.warden.55",
+			"R.ashen.guard.tsk1.Warrior.standard.warden.60",
+			"R.ashen.guard.tsk1.Warrior.standard.warden.65",
+			"R.ashen.guard.tsk1.Warrior.standard.warden.69",
+			"R.ashen.guard.tsk2.Warrior.base.55",
+			"R.ashen.guard.tsk2.Warrior.base.60",
+			"R.ashen.guard.tsk2.Warrior.base.65",
+			"R.ashen.guard.tsk2.Warrior.base.loadout.55",
+			"R.ashen.guard.tsk2.Warrior.base.loadout.60",
+			"R.ashen.guard.tsk2.Warrior.base.loadout.65",
+			"R.ashen.guard.tsk2.Warrior.berserker.butcher.60",
+			"R.ashen.guard.tsk2.Warrior.berserker.butcher.65",
+			"R.ashen.guard.tsk2.Warrior.berserker.butcher.69",
+			"R.ashen.guard.tsk2.Warrior.guardian.defender.60",
+			"R.ashen.guard.tsk2.Warrior.guardian.defender.65",
+			"R.ashen.guard.tsk2.Warrior.guardian.defender.69",
+			"R.ashen.guard.tsk2.Warrior.guardian.defender.70",
+			"R.ashen.guard.tsk2.Warrior.guardian.loner.60",
+			"R.ashen.guard.tsk2.Warrior.guardian.loner.65",
+			"R.ashen.guard.tsk2.Warrior.guardian.loner.69",
+			"R.ashen.guard.tsk2.Warrior.guardian.loner.70",
+			"R.ashen.guard.tsk2.Warrior.standard.commander.50",
+			"R.ashen.guard.tsk2.Warrior.standard.commander.55",
+			"R.ashen.guard.tsk2.Warrior.standard.commander.60",
+			"R.ashen.guard.tsk2.Warrior.standard.commander.65",
+			"R.ashen.guard.tsk2.Warrior.standard.warden.50",
+			"R.ashen.guard.tsk2.Warrior.standard.warden.55",
+			"R.ashen.guard.tsk2.Warrior.standard.warden.60",
+			"R.ashen.guard.tsk2.Warrior.standard.warden.65",
+			"R.ashen.guard.tsk2.Warrior.standard.warden.69",
+			"R.frostpeak.guard.tsk1.Warrior.base.75",
+			"R.frostpeak.guard.tsk1.Warrior.base.loadout.75",
+			"R.frostpeak.guard.tsk1.Warrior.guardian.defender.85",
+			"R.frostpeak.guard.tsk1.Warrior.guardian.loner.75",
+			"R.frostpeak.guard.tsk1.Warrior.guardian.loner.80",
+			"R.frostpeak.guard.tsk1.Warrior.guardian.loner.85",
+			"R.frostpeak.guard.tsk2.Warrior.base.75",
+			"R.frostpeak.guard.tsk2.Warrior.base.80",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.100",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.75",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.80",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.85",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.90",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.95",
+			"R.frostpeak.guard.tsk2.Warrior.base.loadout.99",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.75",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.80",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.85",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.90",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.95",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.99",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.defender.100",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.75",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.80",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.85",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.90",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.95",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.99",
+			"R.frostpeak.guard.tsk2.Warrior.guardian.loner.100",
 		}
 	do
-		add(key, "S145", reworkWhy)
+		add(key, "S146", riseWhy)
 	end
+	-- the two-handed weapon traits (S88 T1 / T2) on the Berserker's new rotation (the bar of 8, Fury from Rage): 1-3 %
+	-- past the band; the lever is the trait values (Data/ItemTraits, S88)
+	local traitWhy = "poza zasięgiem dźwigni S146: cechy broni dwuręcznej (Data/ItemTraits, S88) na nowej rotacji "
+		.. "Berserkera (pasek 8, Furia z pasywki); dla właściciela"
+	for _, key in
+		{
+			"T1|sundering · berserker.fury@hammer2h · L45",
+			"T1|sundering · berserker.fury@hammer2h · L70",
+			"T1|sundering · berserker.fury@hammer2h · L100",
+			"T1|runThrough · berserker.fury@spear2h · L70",
+			"T2|berserker · L70",
+		}
+	do
+		add(key, "S146", traitWhy)
+	end
+	-- the Berserker against the class base: since S143 the base plays the same two-handed pool (Rage, Execute, Rend,
+	-- Sunder), so the Berserker leads only by its direction's nodes; stronger nodes move "Furia", the damage reference
+	-- of every class (its R1 at 100 2.60 against 2.61)
+	for _, L in { 45, 70, 100 } do
+		add(
+			`path.berserker.fury.L{L}.berserker.base`,
+			"S146",
+			"poza zasięgiem dźwigni S146: podstawa gra tę samą pulę dwuręczną (S143), Berserker prowadzi tylko węzłami; "
+				.. "mocniejsze węzły przesuwają Furię, odniesienie wszystkich klas (R1 na 100 2,60 przy 2,61)"
+		)
+	end
+	-- Fortune plays the Mace and Flail pool (DESIGN-18 §6.4): the light pool's heal passives (Grace, Guiding Light) and
+	-- the Healer's nodes are not his
+	for _, L in { 70, 100 } do
+		add(
+			`path.fortune.plunder.L{L}.fortune.healLess`,
+			"S146",
+			"poza zasięgiem dźwigni S146: Fortuna gra pulę buzdygana, pasywki leczenia berła i węzły Uzdrowiciela nie są jej; dla właściciela"
+		)
+	end
+	-- the lone Healer with the holy staff plays the light pool (three skills with damage: Light Ray, Radiance, Blinding
+	-- Light); a Healer grinds with a mace (the hammer pool), and the 1-20 reference build is frozen
+	add(
+		"path.healer.solo.L100.cleric.solo",
+		"S146",
+		"poza zasięgiem dźwigni S146: kostur to pula berła (3 umiejętności z obrażeniami), solo expi się buzdyganem; build 1-20 zamrożony"
+	)
 end
 
 -- Whether a GLOBAL_REPORT_ONLY key matches `row` (an id, `id|label` or a prefix of it ending in `*`).

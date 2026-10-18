@@ -275,6 +275,87 @@ T.describe("Balance S145: Cleric pools", function()
 	end)
 end)
 
+-- S146 (DESIGN-18 §13): balance 21-100 after the rework, the Warrior and the Cleric (Balance.targetsS146): R8 of every
+-- pool, R9 (the Warrior's EHP, the Guardian's tank minute, the light pool's T-SK6 at 20, the hammer pool against
+-- "Furia"), T-SK5 of the light pool, R1 of a build per pool, R5 of every pool, R6 of the Berserker asserted; the rows
+-- of Balance.S146_REPORT printed with the reason. The model's bar (SkillModel.barOf): at most 8 actives a level.
+T.describe("Balance S146: Warrior and Cleric", function()
+	local SkillModel = (require :: any)("./SkillModel")
+	local rows = B.targetsS146()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					error(`{describeRow(row)} (S146)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S146 targets (printed), never an R8 row in the report", function()
+		printReport("S146", rows, 60)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+			if string.sub(row.id, 1, 8) == "S146.r8." then
+				T.expect({ row.id, row.report }).toEqual({ row.id, nil })
+			end
+		end
+		for _, pool in { "onehand", "twohand", "light", "hammer" } do
+			T.expect(ids[`S146.r8.{pool}.bar100`]).toBe(true)
+			T.expect(ids[`S146.r5.{pool}.70`]).toBe(true)
+		end
+		T.expect(ids["S146.r9.warrior.ehp.45"]).toBe(true)
+		T.expect(ids["S146.r9.light.tsk6.100"]).toBe(true)
+		T.expect(ids["S146.r9.hammer.ratio.70"]).toBe(true)
+		T.expect(ids["S146.tsk5.light.100"]).toBe(true)
+		T.expect(ids["S146.r1.twohand.berserker.fury.100"]).toBe(true)
+		T.expect(ids["S146.r6.berserker.fury.low"]).toBe(true)
+		-- every report key names a row
+		for key in B.S146_REPORT do
+			local found = false
+			for _, row in rows do
+				if
+					row.id == key
+					or (string.sub(key, -1) == "*" and string.sub(row.id, 1, #key - 1) == string.sub(key, 1, -2))
+				then
+					found = true
+					break
+				end
+			end
+			T.expect({ key, found }).toEqual({ key, true })
+		end
+	end)
+	T.it("the bar: every Warrior and Cleric reference build casts at most 8 actives at each metric level", function()
+		local SkillData = require("../src/shared/Data/Skills")
+		for _, classId in { "Warrior", "Cleric" } do
+			T.expect(SkillModel.BAR_CLASSES[classId]).toBe(true)
+			for _, build in SkillModel.builds(classId) do
+				if build.ref == nil then
+					continue
+				end
+				for _, L in SkillModel.METRIC_LEVELS do
+					local sp = SkillModel.player(build, L)
+					local bar = SkillModel.barOf(sp) :: { [string]: boolean }
+					local n = 0
+					for id in bar do
+						n += 1
+						T.expect({ build.key, L, id, (SkillData.get(id) :: any).type ~= "passive" })
+							.toEqual({ build.key, L, id, true })
+					end
+					T.expect({ build.key, L, n <= SkillData.HOTBAR_SLOTS }).toEqual({ build.key, L, true })
+					for _, entry in SkillModel.barRotation(sp) do
+						T.expect({ build.key, L, entry.skill, bar[entry.skill] == true })
+							.toEqual({ build.key, L, entry.skill, true })
+					end
+				end
+			end
+		end
+		-- the Hunter and the Mage keep their whole rotation until S147
+		T.expect(SkillModel.BAR_CLASSES.Hunter).toBe(nil)
+		T.expect(SkillModel.BAR_CLASSES.Mage).toBe(nil)
+	end)
+end)
+
 -- S134 (E2): bosses 2.0 (Balance.targetsS134): no party scaling, 5 players beat a boss faster than 3, the big blows
 -- to dodge in their band, the regular hits survivable, the party mechanics, solo loses on equal gear and wins with a
 -- Mythic set +9; every row without `report` asserted (Balance.S134_REPORT prints the rest with the reason).

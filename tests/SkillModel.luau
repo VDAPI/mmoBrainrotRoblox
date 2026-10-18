@@ -1250,7 +1250,6 @@ SkillModel.R4_UTILITY = {
 
 -- S89 (F4): measured options a single number cannot bring into the band (printed; DECYZJE S89, list for the owner).
 SkillModel.R4_REPORT = {
-	["cleave:5b"] = "synergia z 10A (3 stosy krwawienia): 0,12 na 45, 0,25 od 70; jedna liczba nie mieści obu",
 	["renew:5a"] = "dłuższa Odnowa rzucana na odnowieniu traci tyknięcia (odświeżenie bez reszty): -0,29",
 	-- S90 (G1, H4)
 	["falcon:5a"] = "z Królewskim Sokołem (od 60.) ptak zostaje do końca walki, więc +4 s czasu nic nie daje (0 na 100)",
@@ -1787,6 +1786,56 @@ function SkillModel.rankOrder(build: Build, pool: string): { string }
 	end
 	for _, id in members do
 		push(id)
+	end
+	return out
+end
+
+-- S146 (DESIGN-18 §13, session B1): the classes whose builds cast only the 8 skills of their bar (S147: the Hunter and
+-- the Mage).
+SkillModel.BAR_CLASSES = { Warrior = true, Cleric = true } :: { [string]: boolean }
+
+-- S146 (DESIGN-18 §4.1, §13): the bar of a model player (SkillModel.player) at its level: the first
+-- SkillData.HOTBAR_SLOTS actives of ReferenceBuild.bar (else rankOrder) the character can cast (a rank, its pool, its
+-- weapon); a set of skill ids, nil without a bar limit (BAR_CLASSES; the class bases and their variants, which mix the
+-- rotations of every direction, have none). A real player swaps the bar as skills open, so the bar of a level holds
+-- the build's best skills of that level.
+function SkillModel.barOf(sp: any): { [string]: boolean }?
+	local build = sp.build
+	if not SkillModel.BAR_CLASSES[build.classId] or build.ref == nil then
+		return nil
+	end
+	if sp.bar then
+		return sp.bar
+	end
+	local ref: any = build.ref
+	local order = if ref and ref.bar then ref.bar else SkillModel.rankOrder(build, sp.character.barPool)
+	local bar: { [string]: boolean } = {}
+	local n = 0
+	for _, id in order do
+		if n >= SkillData.HOTBAR_SLOTS then
+			break
+		end
+		local def = SkillData.get(id)
+		if def and def.type ~= "passive" and not bar[id] and Paths.skillUsable(sp.character, id, sp.weapons) then
+			bar[id] = true
+			n += 1
+		end
+	end
+	sp.bar = bar
+	return bar
+end
+
+-- S146: the build's rotation limited to its bar (SkillModel.barOf); the whole rotation without a bar limit.
+function SkillModel.barRotation(sp: any): { { [string]: any } }
+	local bar = SkillModel.barOf(sp)
+	if not bar then
+		return sp.build.rotation
+	end
+	local out: { { [string]: any } } = {}
+	for _, entry in sp.build.rotation do
+		if bar[entry.skill] then
+			table.insert(out, entry)
+		end
 	end
 	return out
 end
@@ -5660,7 +5709,7 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 	state.regen = regen
 	local items: { any } = {}
 	if o.skills ~= false then
-		for _, entry in o.rotation or sp.build.rotation do
+		for _, entry in o.rotation or SkillModel.barRotation(sp) do
 			local item = prepare(state, entry)
 			if not item.off then
 				table.insert(items, item)

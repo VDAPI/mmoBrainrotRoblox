@@ -113,7 +113,8 @@ return Build.class("Cleric", "mana", "magic", {
 		unlock = 45, -- S145: 10 -> 45 (C4)
 		maxLevel = 5,
 		type = "passive",
-		values = { heal = { 20, 25 } }, -- S145: rank 1 at 45 = the old rank 4 at 37
+		-- S145: rank 1 at 45 = the old rank 4 at 37; S146: 20-25 -> 6-9 (T-SK5 of the light pool at 95-100 <= 0.35)
+		values = { heal = { 6, 9 } },
 		passive = { hooks = { healBonus = "heal" } },
 		glyph = "🙏",
 	},
@@ -169,7 +170,7 @@ return Build.class("Cleric", "mana", "magic", {
 		unlock = 20,
 		maxLevel = 5,
 		type = "passive",
-		values = { bonus = { 2, 20 } },
+		values = { bonus = { 2, 22 } }, -- S146: rank 5 20 -> 22 (rank 4 pinned, Data/SkillCurves)
 		passive = { hooks = { holyDamage = "bonus", holyStrikeHeal = "bonus" } },
 		glyph = "⚜",
 	},
@@ -185,7 +186,7 @@ return Build.class("Cleric", "mana", "magic", {
 		cooldown = 15,
 		range = 14,
 		holy = true,
-		values = { dmg = { 300, 580 } },
+		values = { dmg = { 270, 580 } }, -- S146: rank 1 300 -> 270, rank 2 320 -> 290 (Data/SkillCurves)
 		effects = { { kind = "stun", duration = 1 } },
 		breakpoints = Build.bp2({ a = { lifesteal = 30 }, b = { stunNear = { radius = 6, duration = 0.8 } } }, {
 			a = { effect = { kind = "vulnerability", duration = 6, value = 10, category = "enemyWeak" } },
@@ -543,7 +544,8 @@ return Build.class("Cleric", "mana", "magic", {
 		maxLevel = 5,
 		type = "passive",
 		-- `heal`: what Devotion gave the dungeon Healer before 45 (T-SK5 at 20-44, S145)
-		values = { heal = { 7, 12 }, healCrit = { 20, 60 }, lowHeal = { 10, 30 } },
+		-- S146: rank 5 heal 12 -> 10 (T-SK5 at 95-100 <= 0.35; rank 1 at 20 kept)
+		values = { heal = { 7, 10 }, healCrit = { 20, 60 }, lowHeal = { 10, 30 } },
 		passive = { hooks = { healBonus = "heal", healCrit = "healCrit", lowHpHealBonus = "lowHeal" } },
 		glyph = "❀",
 	},
@@ -677,7 +679,8 @@ return Build.class("Cleric", "mana", "magic", {
 		unlock = 50,
 		maxLevel = 5,
 		type = "passive",
-		values = { zeal = { 0.3, 0.8 } },
+		-- S146: 0.3-0.8 -> 0.1-0.2 (R9 of the hammer pool at 100 <= 0.93 x "Furia" once the Inquisitor buys Zeal)
+		values = { zeal = { 0.1, 0.2 } },
 		passive = { hooks = { zeal = "zeal" } },
 		glyph = "⇈",
 	},

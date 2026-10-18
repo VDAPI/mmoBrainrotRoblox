@@ -124,9 +124,10 @@ T.describe("Data: Skills", function()
 	T.it("DESIGN control values", function()
 		local mighty = SkillData.get("mightyStrike") :: any
 		T.expect(Skills.valueAt(mighty, "dmg", 1)).toBe(136) -- S91: ranks <= 20 x0.85
-		T.expect(Skills.valueAt(mighty, "dmg", 10)).toBe(222) -- S89 (rank 5 pinned by Data/SkillCurves)
-		T.expect(Skills.valueAt(mighty, "dmg", 5)).toBeNear(187) -- S91 (rank 6 pinned at 220.4)
-		T.expect(Skills.valueAt(mighty, "dmg", 6)).toBeNear(220.4)
+		-- S146: rank 10 222 -> 200, rank 6 220.4 -> 196 (R1 of Sword and Shield); rank 5 pinned by Data/SkillCurves (S91)
+		T.expect(Skills.valueAt(mighty, "dmg", 10)).toBe(200)
+		T.expect(Skills.valueAt(mighty, "dmg", 5)).toBeNear(187)
+		T.expect(Skills.valueAt(mighty, "dmg", 6)).toBeNear(196)
 		local steel = SkillData.get("steelSkin") :: any
 		T.expect(Skills.valueAt(steel, "armor", 5)).toBe(25)
 		local res = SkillData.get("resurrection") :: any
@@ -1216,7 +1217,8 @@ T.describe("S71 Cleric base and paths", function()
 	T.it("base damage (ROZWOJ 9.2) and the 15.2 defaults", function()
 		-- S91: Holy Strike rank 1 190 -> 167 (ranks <= 20, rank 6 pinned)
 		-- S145: Radiance from 3 (rank 1 120) and Judgement from 40 (rank 1 300; Data/SkillCurves keeps the old levels)
-		for id, pair in { holyStrike = { 167, 340 }, radiance = { 120, 240 }, judgement = { 300, 580 } } do
+		-- S146: Judgement rank 1 300 -> 270 (the hammer pool against Furia at 45)
+		for id, pair in { holyStrike = { 167, 340 }, radiance = { 120, 240 }, judgement = { 270, 580 } } do
 			T.expect({ id, Skills.valueAt(skill(id), "dmg", 1), Skills.valueAt(skill(id), "dmg", 10) })
 				.toEqual({ id, pair[1], pair[2] })
 		end
@@ -1456,7 +1458,7 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		T.expect(v(d, "reduction")).toBeNear(60)
 
 		d, b = at("cleave", 10, "b", "b")
-		T.expect(v(d, "bleed")).toBeNear(50)
+		T.expect(v(d, "bleed")).toBeNear(45) -- S146: 5B +20 -> +15
 		T.expect(b.lifesteal).toBe(12)
 		T.expect(d.angle).toBe(90)
 		T.expect(b.bleedStacks).toBeNil()

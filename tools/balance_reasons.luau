@@ -625,6 +625,7 @@ return {
 				session = "S89",
 				why = "B R1: rank 10 295 -> 222; Furia R1 2.89 / 3.12 / 3.35 -> 2.41 / 2.51 / 2.60 (<= 1.15 x L20 2.27)",
 			},
+			{ session = "S146", why = "222 -> 200 (rank 6 knot 196): R1 of Sword and Shield (the Defender) at 45 / 100 in band; Brutal Strike (the two-handed S1) keeps 222" },
 		},
 		["Skills/Warrior:[mightyStrike].breakpoints[10].b.effect.value"] = {
 			{ session = "S89", why = "B R1 / R4: bleed 90 -> 45, 10B gain 0.27 -> 0.18 (band 0.17-0.28)" },
@@ -717,6 +718,7 @@ return {
 				session = "S89",
 				why = "C B: crit 20 -> 24 points; support at 100 4.93 / 4.95 (sword / sabre, band 4.9-5.1)",
 			},
+			{ session = "S146", why = "24 -> 21 points: with the banner on the bar and Fervor 5-15 the support at 100 5.11 > 5.1 with the sabre; now 5.07 / 5.09 (sword / sabre)" },
 		},
 		["Paths/Warrior:[berserker].rows[4].nodes[berserker_executioner].values.executioner[1]"] = {
 			{ session = "S89", why = "B x base: 5 -> 1.5 % (x base 1.33 / 1.42 at 70 / 100 -> 1.31 / 1.35)" },
@@ -2453,6 +2455,7 @@ return {
 		},
 		["SkillCurves:knots.mightyStrike.dmg[6]"] = {
 			{ session = "S91", why = "new, 220.4 pinned (rank 6 before S91)" },
+			{ session = "S146", why = "220.4 -> 196 (with rank 10 222 -> 200): R1 of Sword and Shield (the Defender) at 45 / 100 <= 1.15 x its R1 at 20 (2.26 / 2.30 -> 2.19 / 2.24, limit 2.26)" },
 		},
 		["SkillCurves:knots.charge.dmg[5]"] = {
 			{ session = "S91", why = "160 -> 136 (x0.85, R1 Fury at L20)" },
@@ -5755,7 +5758,10 @@ return {
 		["Skills/Cleric:[resurrection].cooldown[1]"] = { { session = "S145", why = "120 -> 86.67: rank 1 at 30 keeps the old rank 6 at 30" } },
 		["Skills/Cleric:[resurrection].values.hp[1]"] = { { session = "S145", why = "20 -> 42.22: rank 1 at 30 keeps the old rank 6 at 30" } },
 		["Skills/Cleric:[devotion].unlock"] = { { session = "S145", why = "10 -> 45: C4 of the Cleric" } },
-		["Skills/Cleric:[devotion].values.heal[1]"] = { { session = "S145", why = "5 -> 20: rank 1 at 45 keeps the old rank 4 at 37" } },
+		["Skills/Cleric:[devotion].values.heal[1]"] = {
+			{ session = "S145", why = "5 -> 20: rank 1 at 45 keeps the old rank 4 at 37" },
+			{ session = "S146", why = "20 -> 6 (rank 5 25 -> 9): T-SK5 of the light pool at 95-100 0.37 / 0.38 -> 0.33 / 0.34 (<= 0.35; the dungeon Healer buys Devotion at 95)" },
+		},
 		["Skills/Cleric:[radiance].unlock"] = { { session = "S145", why = "6 -> 3: A1 of the light pool" } },
 		["Skills/Cleric:[radiance].values.dmg[1]"] = {
 			{ session = "S145", why = "130 -> 120 at 3: rank 5 (19) keeps the old rank 4 (18), rank 6 (23) the old rank 5 (22; knots)" },
@@ -5778,7 +5784,10 @@ return {
 		["Skills/Cleric:[divineWrath].unlock"] = { { session = "S145", why = "30 -> 20: P1 of the hammer pool" } },
 		["Skills/Cleric:[divineWrath].values.bonus[1]"] = { { session = "S145", why = "4 -> 2 at 20: rank 2 (29) keeps the old rank 1 (knot)" } },
 		["Skills/Cleric:[judgement].unlock"] = { { session = "S145", why = "45 -> 40: S3 of the hammer pool" } },
-		["Skills/Cleric:[judgement].values.dmg[1]"] = { { session = "S145", why = "320 -> 300 at 40: rank 2 (44) keeps the old rank 1 (knot)" } },
+		["Skills/Cleric:[judgement].values.dmg[1]"] = {
+			{ session = "S145", why = "320 -> 300 at 40: rank 2 (44) keeps the old rank 1 (knot)" },
+			{ session = "S146", why = "300 -> 270 (rank 2 knot 320 -> 290, rank 10 kept): R9 of the hammer pool at 45 <= 0.86 x Furia (0.862 -> 0.855)" },
+		},
 		["Skills/Cleric:[prayer].unlock"] = { { session = "S145", why = "Fortune's row 7 (48) -> the Healer's row 4 (26), DESIGN-18 §6.4" } },
 		["Skills/Cleric:[prayer].values.mana[1]"] = { { session = "S145", why = "25 -> 20: from 26 (was 48) the mana grows with the ranks bought earlier" } },
 		["Skills/Cleric:[divineIntervention].unlock"] = { { session = "S145", why = "the Healer's row 7 (48) -> row 8 (60): the Healer's capstone (DESIGN-18 §7)" } },
@@ -5833,6 +5842,58 @@ return {
 		},
 		["Paths/Cleric:[inquisitor].reference[bulwark]*"] = {
 			{ session = "S145", why = "the hammer pool build with a shield: the same changes as the solo build" },
+		},
+		-- S146 (DESIGN-18 §13): balance 21-100 after the rework, the Warrior and the Cleric (docs/SESJE.md S146)
+		["Skills/Warrior:[fortitude].values.hp[2]"] = {
+			{ session = "S146", why = "20 -> 14: the Guardian's EHP / Furia 1.87 / 2.18 / 2.17 -> 1.68 / 1.78 / 1.78 at 45 / 70 / 100 (1.6-1.8), ehpRed 1.3-1.5" },
+		},
+		["Skills/Warrior:[rage].values.hp[1]"] = {
+			{ session = "S146", why = "new: Rage +maxHp, rank 1 (20) 0 (1-20 unchanged): the two-handed pool's life after Fortitude went to Sword and Shield (S143)" },
+		},
+		["Skills/Warrior:[rage].values.hp[2]"] = {
+			{ session = "S146", why = "new: rank 5 (56) +17 % maxHp: Morvane's biggest blow on the Berserker 1.06 -> 0.98 HP (no support), the Inquisitor's HP / Furia 1.39-1.40 (1.3-1.4), the Guardian's EHP band" },
+		},
+		["Paths/Warrior:[standard].rows[3].nodes[standard_fervor].values.fervor[1]"] = {
+			{ session = "S146", why = "4 -> 5 (rank 3 12 -> 15): the Standard-Bearer's own damage S at 70 >= 0.55 with the banner and the cries on its bar (0.529 -> 0.554)" },
+		},
+		["Paths/Warrior:[standard].rows[3].nodes[standard_fervor].values.fervor[2]"] = {
+			{ session = "S146", why = "12 -> 15: see fervor[1]" },
+		},
+		["Paths/Warrior:[berserker].reference[fury].nodes*"] = {
+			{ session = "S146", why = "the node order: Rending Cuts (row 5) before Amok and the Standard-Bearer's row 1 (Cleave 10A's bleed stacks need its duration: R4 at 45 0 -> 0.26)" },
+		},
+		["Paths/Warrior:[berserker].reference[butcher].nodes*"] = {
+			{ session = "S146", why = "the node order of the fury build (Rending Cuts before Amok)" },
+		},
+		["Skills/Cleric:[devotion].values.heal[2]"] = {
+			{ session = "S146", why = "25 -> 9: see heal[1] (T-SK5 at 95-100)" },
+		},
+		["Skills/Cleric:[grace].values.heal[2]"] = {
+			{ session = "S146", why = "12 -> 10 (rank 1 at 20 kept): T-SK5 of the light pool at 100 0.347 -> 0.343" },
+		},
+		["Skills/Cleric:[divineWrath].values.bonus[2]"] = {
+			{ session = "S146", why = "20 -> 22 (rank 4 at 47 pinned by a knot): R9 of the hammer pool at 70 / 100 0.89 / 0.91 x Furia (0.85-0.91 / 0.87-0.93) with the reference builds' ranks in the bar's order" },
+		},
+		["Skills/Warrior:[cleave].breakpoints[5].b.values.bleed"] = {
+			{ session = "S146", why = "+20 -> +15: R4 of 5B 0.22 -> 0.16 at 45-100 (10A's stacks with Rending Cuts first), 0.12 -> 0.09 at 20 (0.08-0.17); R4_REPORT entry removed" },
+		},
+		["Skills/Cleric:[zeal].values.zeal[1]"] = {
+			{ session = "S146", why = "0.3 -> 0.1 s: the Inquisitor buys Zeal at 100 (ranks in the bar's order); 0.8 s a cast made R9 of the hammer pool 1.08 x Furia (0.87-0.93)" },
+		},
+		["Skills/Cleric:[zeal].values.zeal[2]"] = {
+			{ session = "S146", why = "0.8 -> 0.2 s: see zeal[1] (R9 of the hammer pool at 100 0.91)" },
+		},
+		["SkillCurves:knots.divineWrath.bonus[4]"] = {
+			{ session = "S146", why = "new, 14.67 pinned (rank 4 at 47 before S146) for the rank 5 20 -> 22" },
+		},
+		["SkillCurves:knots.brandOfLight.dmg[8]"] = {
+			{ session = "S146", why = "new: rank 8 (43) 213.3 -> 186, rank 10 kept: R9 of the hammer pool at 45 <= 0.86 x Furia" },
+		},
+		["SkillCurves:knots.brandOfLight.dot[8]"] = {
+			{ session = "S146", why = "new: rank 8 (43) 270 -> 237 with dmg[8]" },
+		},
+		["SkillCurves:knots.judgement.dmg[2]"] = {
+			{ session = "S146", why = "320 -> 290 with the rank 1 300 -> 270 (R9 of the hammer pool at 45)" },
 		},
 	} :: { [string]: { Reason } },
 }

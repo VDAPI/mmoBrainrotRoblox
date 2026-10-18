@@ -316,6 +316,8 @@ do
 	end
 	block("1–100: wiersze przekrojowe (S94)", B.targetsCross())
 	block("20–100: cechy, linie, obrona (S88)", SkillModel.targetsS88())
+	-- S146: the Warrior's and the Cleric's targets after the rework of DESIGN-18 (R8, R9, R1, R5, R6, T-SK5, T-SK6)
+	block("20–100: umiejętności 2.0, Wojownik i Kapłan (S146)", B.targetsS146())
 	local paths: { any } = {}
 	for _, r in SkillModel.evaluateTargets() do
 		if r.asserted then
@@ -4574,6 +4576,19 @@ do
 	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(banded, "S134 (asertowane)"))
 	add()
 	tableOut({ "walka bez pasma (2 i 4 graczy)", "min" }, free)
+end
+
+-- S146 (DESIGN-18 §13): the Warrior and the Cleric after the rework (Balance.targetsS146): every row with its band and
+-- who asserts it (rows of Balance.S146_REPORT carry the reason).
+do
+	add("## Umiejętności 2.0: Wojownik i Kapłan po przebudowie (S146)")
+	add()
+	add(
+		"R8 (punkty puli na 45 i 100), R9 (tożsamość pul: dwuręczna / jednoręczna, EHP Strażnika, T-SK6 berła, buzdygan / Furia), R1 jednego buildu na pulę, R5 (typy broni puli), R6 (kierunek przewodni, L100), T-SK5 berła. Pasek: 8 aktywnych (`ReferenceBuild.bar`, `SkillModel.barOf`). Asertuje `balance.spec` („Balance S146: Warrior and Cleric”)."
+	)
+	add()
+	tableOut({ "cel", "wartość", "próg", "wynik", "kto asertuje" }, targetRows(B.targetsS146(), "S146 (asertowane)"))
+	add()
 end
 
 -- Formulas ------------------------------------------------------------------------------------------------------

@@ -5,7 +5,14 @@
 
 ## Stan
 
-S01–S115 i S117–S145 gotowe (ostatnia S145: Kapłan, pule Berło i Kostur (Promień Światła 1, Światłość 3, Oślepienie 6,
+S01–S115 i S117–S146 gotowe (ostatnia S146: balans 21–100 Wojownika i Kapłana po przebudowie umiejętności: blok
+`Balance.targetsS146` z asertowanymi R8 każdej puli, R9 (EHP Strażnika, buzdygan / Furia), T-SK6 berła tylko na 20, R1
+puli dwuręcznej (Furia) i jednoręcznej (Obrońca; R1 buzdygana i Chorążego tylko raport), R5 typów broni puli, R6
+Berserkera i Chorążego, T-SK5 berła; pasek 8 aktywnych w modelu (`ReferenceBuild.bar`) i rangi buildów w kolejności
+paska; Potężne Uderzenie, Niezłomność, Pobożność, Łaska, Piętno Światła, Sąd, Boski Gniew, Gorliwość i Rozpłatanie 5B
+przestrojone, Furia z HP, wpisy
+`GLOBAL_REPORT_ONLY` Wojownika i Kapłana z S137–S145 zamknięte albo przepisane na S146; wcześniej S145: Kapłan, pule
+Berło i Kostur (Promień Światła 1, Światłość 3, Oślepienie 6,
 Tarcza Wiary 10, Odnowa 15, Łaska 20, Sanktuarium 26, Oczyszczenie 33, Cud 40, Światło Przewodnie 50, Anioł Stróż 60) i
 Buzdygan i Kiścień (Święte Uderzenie 1, Poświęcona Ziemia 3, Kajdany Światła 6, Aura Wytrwałości 10, Piętno Światła 15,
 Boski Gniew 20, Święty Wybuch 26, Upomnienie 33, Sąd 40, Gorliwość 50, Młot Niebios 60), wspólne Kapłana (Leczenie 4,
@@ -344,14 +351,21 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
+- **S146:** w trybie raportu z powodem (`Balance.S146_REPORT`, `GLOBAL_REPORT_ONLY` S146; decyzje właściciela w
+  `docs/SESJE.md` → S146): T-SK6 berła na 45 / 70 / 100 2,8 / 8,6 / 14,4 (cel 1–2; obrażenia bossów w tanka, jak S93 /
+  S94) i R1 Inkwizytora 4,4–6,2 (F4 z S89) mimo zasady 5 sesji; R9 Wojownika dwuręczna / jednoręczna 1,45–1,69 w jeden
+  cel i 0,98–1,12 na 3 cele (cel 1,15–1,25, sprzeczne z R1 puli jednoręcznej); R1 Chorążego (okrzyki i sztandar); R6
+  Strażnika, Uzdrowiciela, Fortuny i Inkwizytora; strażnicy T-SK1 / T-SK2 Wojownika (71 wierszy 50–100), cechy broni
+  dwuręcznej S88 (5), Berserker / podstawa 1,04–1,18 (cel 1,25–1,37), Fortuna leczy mniej na 70 / 100, samotny
+  Uzdrowiciel kosturem na 100.
+  Łowca i Mag (pasek w modelu, R1–R9, `GLOBAL_REPORT_ONLY` S137 i S140–S144) w S147. Wiki do odświeżenia (właściciel
+  17.10).
 - **S145:** pule Kapłana bez przeglądu w grze: ruchy 7 nowych aktywnych to warianty ruchów Kapłana (dopracowanie
   W03–W07; kilka par z tą samą sylwetką, np. Promień Światła / Leczenie, różni je wygląd), wygląd z istniejących
   składników, dźwięki `skill.lightRay|blindingLight|miracle|consecrate|holyChains|holyNova|rebuke` bez ID (właściciel,
   `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki). Tożsamość pul tylko w raporcie (`S145.cleric.*`)
-  do S146: berło leczenie na sekundę / Uzdrowiciel sprzed S145 1,12 na 45. i 1,23 na 100. (cel ±10%), T-SK5 na 100.
-  0,38 (pasmo 0,25–0,35), T-SK6 berła 2,8–16 (cel 1–2). `GLOBAL_REPORT_ONLY` S145 (23 klucze 21–100) do opróżnienia w
-  S146. Wiki do odświeżenia (właściciel 17.10): dwie pule Kapłana, węzły kierunków, schemat `classPools` bez
-  `transitional`.
+  (cele w bloku S146). `GLOBAL_REPORT_ONLY` S145 opróżnione w S146. Wiki do odświeżenia (właściciel 17.10): dwie pule
+  Kapłana, węzły kierunków, schemat `classPools` bez `transitional`.
 
 - **S144:** pule Łowcy bez przeglądu w grze: ruchy 5 nowych aktywnych to pozy z funkcji `ShotRig` (dopracowanie W03–W07),
   wygląd z istniejących składników, dźwięki `skill.heavyBolt|pinningShot|windstep|netShot|deadlyBolt` bez ID (właściciel,
@@ -363,11 +377,9 @@ zakończone; testy i decyzje właściciela po nich.
 - **S143:** pule Wojownika bez przeglądu w grze: ruchy 7 nowych aktywnych to pozy z istniejących ruchów Wojownika
   (dopracowanie W03–W07), wygląd z istniejących składników, dźwięki `skill.shieldSweep|shieldBash|vindicate|brutalStrike|
   sunder|warStomp|execute` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności i węzły bez ikon PNG (znaki).
-  Tożsamość pul tylko w raporcie (`S143.warrior.*`) do S146: dwuręczna / jednoręczna (Chorąży) w jeden cel 1,53–1,80,
-  na 3 cele 1,26–1,70 (cel 1,15–1,25; pula tarczy za słaba w obrażeniach); Berserker (wzorzec obrażeń) +12% / +7% wobec
-  S142 na 70 / 100. `GLOBAL_REPORT_ONLY` S143 (80 kluczy 21–100) do opróżnienia w S146; `S91.gain.standard.commander`
-  (1,00, rzędy 1–2 Chorążego bez obrażeń na 20.) w `S91_REPORT`. Wiki do odświeżenia (właściciel 17.10): dwie pule
-  Wojownika, nowe węzły kierunków.
+  Tożsamość pul w bloku S146 (`S143.warrior.*` tylko druk). `GLOBAL_REPORT_ONLY` S143 opróżnione w S146;
+  `S91.gain.standard.commander` (1,00, rzędy 1–2 Chorążego bez obrażeń na 20.) w `S91_REPORT`. Wiki do odświeżenia
+  (właściciel 17.10): dwie pule Wojownika, nowe węzły kierunków.
 - **S142:** pula Błyskawicy bez przeglądu w grze: ruchy nowych umiejętności to warianty ruchów Maga, wygląd z
   istniejących składników (dopracowanie W03–W07), dźwięki `skill.lightningBolt|staticShock|stormArmor|thunderStrike|
   ballLightning|lightningLance|tempest` bez ID (właściciel, `docs/ASSETS.md`), nowe umiejętności bez ikon PNG (znaki).
@@ -399,7 +411,8 @@ zakończone; testy i decyzje właściciela po nich.
   `skills.json` `pool` / `role` / `classPools` / `rules`, `types.ts`, `wiki/test-fixtures/planner.json`), potem
   `wiki/src/lib/skills.ts` bez `canSetMain` / `main` / `mainPathLevel` (planer schowany do S148) i
   `PLANNER_STALE_OK = false` w `tests/wikidump.spec.luau`.
-- **S137:** (okno przebudowane w S139.) `GLOBAL_REPORT_ONLY` S137 (80 wierszy 21–100) do opróżnienia w S146/S147. Wiki do odświeżenia (właściciel 17.10):
+- **S137:** (okno przebudowane w S139.) `GLOBAL_REPORT_ONLY` S137: wiersze Wojownika i Kapłana zamknięte w S146,
+  Łowcy (51) do S147. Wiki do odświeżenia (właściciel 17.10):
   `rules.skillPointsByLevel` / `freeRespecLevel`, planer za „Planer wkrótce”.
 
 - **S136:** wygląd „Pergamin i żelazo” bez przeglądu w grze (wszystkie okna S136 i HUD po zmianie `Caption` → `Small`

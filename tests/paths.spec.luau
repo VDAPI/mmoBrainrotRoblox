@@ -874,7 +874,7 @@ T.describe("Paths: passives and active nodes", function()
 		T.expect(GamePaths.passiveTotals(warrior(19), {})).toEqual({ flat = {}, pct = {}, hooks = {} })
 		local at100 = GamePaths.passiveTotals(warrior(100), {})
 		T.expect(at100.pct.armor).toBe(25)
-		T.expect(at100.pct.maxHp).toBe(20) -- S143: Fortitude rank 5
+		T.expect(at100.pct.maxHp).toBe(14) -- S143: Fortitude rank 5 (S146: 20 -> 14)
 		T.expect(at100.hooks.riposte).toBe(12)
 	end)
 
@@ -1813,7 +1813,7 @@ T.describe("Data: Warrior paths (S75)", function()
 
 	T.it("Battle Cry: Fervor, Battle Breath, Commander's Voice and Hold the Line!", function()
 		local d1 = eff("battleCry", "standard", { standard_fervor = 3 }, { ["battleCry:5"] = "b" }, SABER)
-		T.expect(Skills.valueAt(d1, "atk", 10)).toBeNear(31, 1e-9) -- S89: 16 + 3 + 12
+		T.expect(Skills.valueAt(d1, "atk", 10)).toBeNear(34, 1e-9) -- S89: 16 + 3 + 12; S146: Fervor 12 -> 15
 		local d2 = eff("battleCry", "standard", { standard_breath = 3 }, { ["battleCry:10"] = "a" }, SABER)
 		T.expect(Skills.scaled(d2, d2.cooldown, 10)).toBeNear(30, 1e-9)
 		T.expect((Skills.cost(d2, 10, 100, "Warrior"))).toBeNear(10, 1e-9)

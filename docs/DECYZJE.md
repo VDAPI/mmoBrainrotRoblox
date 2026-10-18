@@ -5410,3 +5410,44 @@
   `PathView` / okna i eksportu pul do wiki (`tools/WikiData/Skills`); test drabiny i `SKILL_ROWS` obowiązują każdą klasę
   bez wyjątków, test audytu: każda umiejętność ma pulę albo kierunek, aktywna przełomy A / B, `short`, ruch, wygląd,
   dźwięk i wiersz `skill_timing`, każdy węzeł `modify` wskazuje istniejącą umiejętność.
+- **S146** Pasek w modelu: build wzorcowy Wojownika i Kapłana rzuca tylko 8 aktywnych swojego poziomu
+  (`ReferenceBuild.bar`, priorytet paska; bez niego aktywne z `ranks`; `SkillModel.barOf` / `barRotation`). Podstawy klas
+  (mieszają rotacje wszystkich kierunków) i Łowca z Magiem bez limitu do S147 (`SkillModel.BAR_CLASSES`). Na 20. każdy
+  build ma ≤ 8 aktywnych, więc 1–20 bez zmian.
+- **S146** Paski: Berserker na 100. Brutalny Cios, Rozdarcie, Egzekucja, Rzeź, Rozbicie, Wir Ostrzy, Gniew Tytana,
+  Rozpłatanie (Furia w jeden cel 10 089 wobec 10 040 przed S146, R1 2,60 przy 2,61); Inkwizytor bez Poświęconej Ziemi od
+  60. (Młot Niebios; T-SK3 na 90–100 1,06–1,14 → 0,89–0,94 × areaCap); Uzdrowiciel lochowy wszystkie 8 leczeń. Strażnik:
+  Uderzenie Tarczą (ogłuszenie) przed Odwetem, Uderzenie Tarczą 10A zamiast 10B (przegląd: z Odwetem na 10 R1 Obrońcy
+  na 100 2,37 > 2,26).
+- **S146** R9 Wojownika liczy dwuręczną (Furia) / jednoręczną (Chorąży) jak S143. W jeden cel 1,45–1,69 i na 3 cele
+  0,98–1,12 poza 1,15–1,25: sprzeczne z R1 puli jednoręcznej (atak podstawowy broni jednoręcznej ok. 0,5 dwuręcznej,
+  1,25 wymaga R1 2,9–3,4 przy limicie 2,26–2,35); raport z powodem (`Balance.S146_REPORT`), decyzja właściciela.
+- **S146** R1 puli jednoręcznej asertuje Obrońca (45 / 70 / 100: 2,19 / 2,18 / 2,23 ≤ 2,26): Chorąży liczy w R1 własne
+  okrzyki i sztandar (raport). Dźwignia: Potężne Uderzenie ranga 6 220,4 → 196, ranga 10 222 → 200.
+- **S146** NIE spełniona zasada 5 (bez trybu raportu): T-SK6 berła na 45 / 70 / 100 (2,78 / 8,6 / 14,4) i R1 Inkwizytora
+  (4,4–6,2). T-SK6: tank bossa przyjmuje 1,5–3,5 maks. HP na minutę (model S32), samo Leczenie daje > 1,5, a T-SK6 ×
+  podtrzymanie bez wsparcia ≈ 2,55 (S92); R1: ≤ 2,4 wymaga Inkwizytora ok. 0,35 × Furia (S89 F4). Decyzje właściciela.
+- **S146** Furia (pasywka puli dwuręcznej) daje też +0–17% maks. HP (ranga 1 na 20. zero, 1–20 bez zmian), Niezłomność
+  ranga 5 20 → 14%: Morvane bez wsparcia 1,06 → 0,98 HP Berserkera, EHP Strażnika / Furia 1,68–1,73 (1,6–1,8), HP
+  Inkwizytora / Furia 1,34–1,40 (1,3–1,4). Po kolejności rang z paska (przegląd) 14 zostaje w paśmie.
+- **S146** T-SK5 berła na 95–100 (0,37 / 0,38 → 0,33 / 0,34): Pobożność 20–25 → 6–9% (Uzdrowiciel kupuje ją dopiero na
+  95.), Łaska ranga 5 12 → 10%. Na 45–90 0,26–0,32.
+- **S146** R9 buzdygana (Inkwizytor / Furia 0,80–0,93 z ROZWOJ 9.6): Piętno Światła ranga 8 213 / 270 → 186 / 237,
+  Sąd ranga 1–2 300 / 320 → 270 / 290, Boski Gniew ranga 5 20 → 22 (ranga 4 przypięta), Gorliwość 0,3–0,8 → 0,1–0,2 s
+  (Inkwizytor kupuje ją na 100.; 0,8 s dawało 1,08 Furii): 0,855 / 0,890 / 0,912.
+- **S146** Chorąży: rangi najpierw bloki paska, potem okrzyki i sztandar, Przechwycenie i Prowokacja na końcu (sztandar
+  na pasku od 45.); Zapał (węzeł) 4–12 → 5–15 (S na 70. 0,554 ≥ 0,55), Rozkaz Natarcia kryt 24 → 21 (wsparcie na 100.
+  5,07 / 5,09 ≤ 5,1). Berserker: węzeł Rwących Cięć przed Amokiem (10A Rozpłatania na 45. 0 → 0,26); 5B przez to 0,22
+  na 45–100, więc krwawienie 5B +20 → +15 (0,16–0,17, na 20. 0,09) i bez wpisu `R4_REPORT`.
+- **S146** Gniew Tytana 10B → 10A w buildach Berserkera (T-SK3 na 99–100 1,05 → 0,93–0,96); R7 Łowca / Wojownik
+  drukowany (1,19–1,32 w paśmie), asertuje S147.
+- **S146** `GLOBAL_REPORT_ONLY`: 128 kluczy Wojownika i Kapłana z S137 / S143 / S145 usuniętych, 59 wierszy wróciło do
+  asercji, 81 z powodem S146 (71 strażników T-SK1 / T-SK2 Wojownika, w tym 13 nowych z dynamicznej reguły S93 / S94, 5
+  cech broni dwuręcznej S88, Berserker / podstawa 45–100, Fortuna leczy mniej na 70 / 100, samotny Uzdrowiciel na 100);
+  `S134_REPORT` pusty (Wojownik solo na Vaelgracie 5,05 s ≥ 4,5).
+- **S146** (przegląd) `ReferenceBuild.ranks` Wojownika i Kapłana w kolejności paska na 100: aktywne paska, pasywki puli,
+  reszta; umiejętności otwarte do 20 zachowują kolejność między sobą (1–20 bez zmian). Wcześniej buildy kupowały
+  umiejętności spoza paska (np. Berserker Okrzyk, Żądza Krwi, Tupnięcie na 10 przy Rzezi 2, Fortuna bez Koła Fortuny).
+  Furia na 70 traci Okrzyk z paska (Gniew Tytana 3): R1 2,56 → 2,40; na 100 bez zmian (10 089, R1 2,60).
+- **S146** (przegląd) T-SK2 Strażnika na 90–100 (1,35 × L20) z powodem S146 jak 75–85: na 70 już 1,35, różnica 0,1%
+  (sprzęt) zdejmowała regułę S94; T-SK1 i R1 Obrońcy w limicie.

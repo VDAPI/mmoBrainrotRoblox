@@ -484,7 +484,8 @@ local function build(
 	nodes: { { any } },
 	bp: { [string]: "a" | "b" },
 	rotation: { { [string]: any } },
-	ranks: { string }
+	ranks: { string },
+	bar: { string }?
 ): Types.ReferenceBuild
 	return {
 		id = id,
@@ -494,6 +495,7 @@ local function build(
 		stats = stats,
 		rotation = rotation,
 		ranks = ranks,
+		bar = bar,
 	}
 end
 
@@ -601,6 +603,11 @@ local HEALER_SOLO_RANKS = {
 	"hammerOfHeaven",
 }
 
+-- S146 (DESIGN-18 §4.1, §13): the 8 slots of the bar in priority (the first ones the character can cast at a level)
+local HEALER_BAR =
+	{ "heal", "lightRay", "renew", "shieldOfFaith", "circleOfLight", "sanctuary", "miracle", "guardianAngel" }
+local HEALER_SOLO_BAR = { "lightRay", "radiance", "blindingLight", "heal" }
+
 healer.reference = {
 	build("dungeon", "scepter", "shield", healer.statPlan :: any, HEALER_NODES, HEALER_BP, {
 		{ skill = "guardianAngel", beforeRedZone = true },
@@ -612,7 +619,7 @@ healer.reference = {
 		{ skill = "heal", target = "mostWounded" },
 		{ skill = "lightRay" },
 		{ skill = "holyStrike" },
-	}, HEALER_RANKS),
+	}, HEALER_RANKS, HEALER_BAR),
 	build("solo", "holystaff", nil, healer.statPlan :: any, HEALER_NODES, HEALER_BP, {
 		{ skill = "heal", target = "self", belowHp = 50 },
 		{ skill = "radiance", minEnemies = 2 },
@@ -620,7 +627,7 @@ healer.reference = {
 		{ skill = "lightRay" },
 		{ skill = "judgement" },
 		{ skill = "holyStrike" },
-	}, HEALER_SOLO_RANKS),
+	}, HEALER_SOLO_RANKS, HEALER_SOLO_BAR),
 }
 
 -- S145: the hammer pool's damage first (support as a fifth attacker, DESIGN-18 §6.4), the dice and the wheel of the
@@ -633,14 +640,14 @@ local FORTUNE_RANKS = {
 	"circleOfLight",
 	"holyChains",
 	"divineWrath",
-	"auraOfEndurance",
 	"fortuneDice",
-	"resurrection",
-	"holyNova",
+	"wheelOfFortune",
 	"judgement",
 	"devotion",
 	"zeal",
-	"wheelOfFortune",
+	"auraOfEndurance",
+	"resurrection",
+	"holyNova",
 	"hammerOfHeaven",
 	"rebuke",
 	"lightRay",
@@ -654,6 +661,19 @@ local FORTUNE_RANKS = {
 	"miracle",
 	"guidingLight",
 	"guardianAngel",
+}
+
+local FORTUNE_BAR = {
+	"wheelOfFortune",
+	"fortuneDice",
+	"heal",
+	"circleOfLight",
+	"holyStrike",
+	"brandOfLight",
+	"judgement",
+	"consecrate",
+	"holyChains",
+	"holyNova",
 }
 
 fortune.reference = {
@@ -701,7 +721,7 @@ fortune.reference = {
 		{ skill = "holyStrike" },
 		{ skill = "radiance", minEnemies = 2 },
 		{ skill = "lightRay" },
-	}, FORTUNE_RANKS),
+	}, FORTUNE_RANKS, FORTUNE_BAR),
 }
 
 local function inquisitorNodes(offhandNode: string): { { any } }
@@ -764,6 +784,7 @@ local INQUISITOR_ROTATION: { { [string]: any } } = {
 	{ skill = "radiance", minEnemies = 2 },
 	{ skill = "lightRay" },
 }
+-- S146 (B1): the actives of the bar at 100, then the pool's passives, then the rest; skills open at 20 keep their order
 local INQUISITOR_RANKS = {
 	"holyStrike",
 	"consecrate",
@@ -774,11 +795,11 @@ local INQUISITOR_RANKS = {
 	"judgement",
 	"auraOfEndurance",
 	"holyNova",
-	"rebuke",
 	"hammerOfHeaven",
-	"circleOfLight",
 	"zeal",
 	"devotion",
+	"rebuke",
+	"circleOfLight",
 	"resurrection",
 	"lightRay",
 	"radiance",
@@ -793,6 +814,20 @@ local INQUISITOR_RANKS = {
 	"guardianAngel",
 }
 
+-- S146: Consecrate leaves the bar for Hammer of Heaven at 60 (the area burst of a boss build within areaCap)
+local INQUISITOR_BAR = {
+	"holyStrike",
+	"heal",
+	"brandOfLight",
+	"judgement",
+	"holyNova",
+	"auraOfEndurance",
+	"holyChains",
+	"hammerOfHeaven",
+	"consecrate",
+	"rebuke",
+}
+
 inquisitor.reference = {
 	build(
 		"solo",
@@ -802,7 +837,8 @@ inquisitor.reference = {
 		inquisitorNodes("inquisitor_relic"),
 		INQUISITOR_BP,
 		INQUISITOR_ROTATION,
-		INQUISITOR_RANKS
+		INQUISITOR_RANKS,
+		INQUISITOR_BAR
 	),
 	build(
 		"bulwark",
@@ -812,7 +848,8 @@ inquisitor.reference = {
 		inquisitorNodes("inquisitor_shield"),
 		INQUISITOR_BP,
 		INQUISITOR_ROTATION,
-		INQUISITOR_RANKS
+		INQUISITOR_RANKS,
+		INQUISITOR_BAR
 	),
 }
 

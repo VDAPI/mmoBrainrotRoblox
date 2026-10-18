@@ -12382,3 +12382,70 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/{faith,balance,balance1_20,character,itemeffects,paths,pathview,skillmotion,skillpools,skills}.spec.luau`,
   `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`,
   `tools/WikiData/Skills.luau`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S146: Balans po przebudowie, Wojownik i Kapłan
+
+- **Nowe cele** (`Balance.targetsS146`, blok „Balance S146: Warrior and Cleric” w `balance.spec`, sekcja w
+  `docs/BALANS.md`): R8 każdej puli (8 aktywnych na 10 + pasywki / punkty na 100, najwięcej aktywnych z rangą 10, punkty
+  na 45 / suma limitów), R9 (dwuręczna / jednoręczna w jeden cel i na 3 cele, EHP Strażnika / dwuręczna, tank na minutę,
+  T-SK6 berła, buzdygan / Furia w pasmach Inkwizytora), R1 jednego buildu na pulę, R5 typów broni każdej puli, R6
+  kierunku przewodniego (L100), T-SK5 berła; wiersze poza zasięgiem w `Balance.S146_REPORT` z powodem.
+- **Pasek 8 w modelu:** `ReferenceBuild.bar` (`Data/Paths/Types`, listy w `Data/Paths/Warrior` i `Cleric`),
+  `SkillModel.barOf` / `barRotation`, `BAR_CLASSES` (Wojownik, Kapłan; Łowca i Mag w S147, podstawy klas bez limitu);
+  test: najwyżej 8 aktywnych na poziom, rotacja tylko z paska. 1–20 bez zmian (na 20. każdy build ma ≤ 8 aktywnych).
+- **Przed / po** (model, 45 / 70 / 100; „przed” = commit S145):
+
+  | cel | przed | po | pasmo |
+  |---|---|---|---|
+  | R1 Furia (dwuręczna) | 2,22 / 2,56 / 2,59 | 2,25 / 2,40 / 2,60 | 1,6–2,61 |
+  | R1 Obrońca (jednoręczna) | 2,26 / 2,57 / 2,52 | 2,19 / 2,18 / 2,23 | 1,6–2,26 |
+  | R1 Inkwizytor (buzdygan) | 4,47 / 5,32 / 5,91 | 4,35 / 5,37 / 6,18 | 1,6–2,37 (właściciel F4) |
+  | R4 10A Rozpłatania na 45 | 0,00 | 0,26 | 0,17–0,28 |
+  | R4 5B Rozpłatania (20 / 45 / 70 / 100) | 0,12 / 0,11 / 0,25 / 0,25 | 0,09 / 0,17 / 0,16 / 0,16 | 0,08–0,17 |
+  | R5 pul (najdalszy typ broni) | ≤ 0,073 | ≤ 0,074 | ≤ 0,10 |
+  | R9 dwuręczna / jednoręczna, 1 cel | 1,74 / 1,80 / 1,53 | 1,60 / 1,69 / 1,45 | 1,15–1,25 (raport) |
+  | R9 dwuręczna / jednoręczna, 3 cele | 1,61 / 1,26 / 1,32 | 0,98 / 1,12 / 1,09 | 1,15–1,25 (raport) |
+  | R9 EHP Strażnik / dwuręczna | 1,87 / 2,18 / 2,17 | 1,68 / 1,71 / 1,73 | ≥ 1,4 |
+  | R9 buzdygan / Furia | 0,867 / 0,828 / 0,876 | 0,855 / 0,890 / 0,912 | 0,80–0,86 / 0,85–0,91 / 0,87–0,93 |
+  | R9 = T-SK6 berła | 2,80 / 8,73 / 15,97 | 2,78 / 8,62 / 14,40 | 1,0–2,0 (raport, właściciel) |
+  | T-SK5 berła | 0,282 / 0,294 / 0,381 | 0,281 / 0,290 / 0,344 | 0,25–0,35 |
+  | R6 Berserker / Chorąży (L100) | 0,14 / 1,95; −0,89 / 2,12 | 0,64 / 1,36; 0,62 / 1,22 | 0,6–1,5 |
+  | R6 Uzdrowiciel / Inkwizytor | 0,28 / 1,45; −0,08 / 1,64 | 0,27 / 1,51; 0,43 / 1,53 | raport (S89) |
+  | R8 (każda pula) | – | 0,89 punktów na 100, 10 aktywnych, 0,55–0,61 na 45 | ≤ 1 / ≤ 10 / ≤ 0,75 |
+  | tank na minutę (Strażnik) | 2,57 / 2,37 / 2,18 | 2,64 / 2,49 / 2,29 | ≤ 3,5 |
+
+- **Dane:** Potężne Uderzenie ranga 6 / 10 220,4 / 222 → 196 / 200; Niezłomność ranga 5 HP 20 → 14%; Furia (pasywka)
+  +0–17% maks. HP (opis PL / EN); Rozkaz Natarcia kryt 24 → 21; Zapał (węzeł Chorążego) 4–12 → 5–15; Pobożność 20–25 →
+  6–9%; Łaska ranga 5 12 → 10%; Piętno Światła ranga 8 213 / 270 → 186 / 237 (węzeł); Sąd ranga 1–2 300 / 320 → 270 /
+  290; Boski Gniew ranga 5 20 → 22 (ranga 4 przypięta); Gorliwość 0,3–0,8 → 0,1–0,2 s; Rozpłatanie 5B krwawienie +20 →
+  +15 (opis PL / EN), wpis `R4_REPORT` usunięty. Buildy: paski, `ranks` w kolejności paska na 100 (aktywne paska,
+  pasywki puli, reszta; umiejętności otwarte do 20 w starej kolejności, więc 1–20 bez zmian): każdy build Wojownika i
+  Kapłana ma na 100. 8 aktywnych paska na 10 i wszystkie pasywki puli; pasek Strażnika z Uderzeniem Tarczą przed
+  Odwetem i Uderzenie Tarczą 10A; węzły Berserkera (Rwące Cięcia przed Amokiem), Gniew Tytana 10A w buildach
+  Berserkera. Księga: wpisy S146 w `tools/balance_reasons.luau`.
+- **`GLOBAL_REPORT_ONLY`:** usunięte 128 kluczy Wojownika i Kapłana (S137: 26, S143: 79, S145: 23), 58 wierszy wróciło do
+  asercji (m.in. Morvane bez wsparcia, T-SK5 Uzdrowiciela na 50 / 95–100, EHP Strażnika, HP i stosunek Inkwizytora,
+  strażnicy T-SK3 Inkwizytora, wsparcie Chorążego na 100, R6 Chorążego); 81 z powodem S146 (strażnicy T-SK1 / T-SK2
+  Wojownika 71, w tym T-SK2 Strażnika na 90–100, cechy broni dwuręcznej S88 5, Berserker / podstawa 3, Fortuna leczy
+  mniej 2, samotny Uzdrowiciel na 100);
+  `Balance.S134_REPORT` pusty. Hunter i Mag (S137, S140–S144) bez zmian, dla S147.
+- **Fixture ścieżek** przepisany (`--fixture-paths "S146 Wojownik i Kapłan po przebudowie" S146`); `balance1_20.spec`
+  bez różnic; `docs/BALANS.md` wygenerowany (blok i sekcja S146).
+- **Dla właściciela:** (1) T-SK6 berła 1–2 wobec obrażeń bossów w tanka (S92–S94: 2,8 / 8,6 / 14,4; dźwignia: ciosy
+  bossów w tanka albo definicja T-SK6); (2) R9 Wojownika 1,15–1,25 wobec R1 puli jednoręcznej (atak podstawowy broni
+  jednoręcznej ok. połowa dwuręcznej: `Items/Bases`, `twoHandedBonusMul`), dziś 1,45–1,69; (3) samotny Uzdrowiciel
+  kosturem expi 2× wolniej niż Inkwizytor na 100 (pula berła ma 3 umiejętności z obrażeniami): drugi build Uzdrowiciela
+  z buzdyganem od 21. albo luźniejszy cel; (4) strażnicy T-SK1 / T-SK2 Wojownika (71 wierszy): limit D1 liczony od L20
+  przed pulami, propozycja: nowa baza na L45 albo limity jak S93 dla klas z pulami; (5) cechy broni dwuręcznej (S88:
+  Rozbicie, Przebicie, Berserker na 70) 1–3% nad pasmem: wartości w `Data/ItemTraits` −3%; (6) Berserker / podstawa
+  1,04–1,18 wobec 1,25–1,37: podstawa gra tę samą pulę, propozycja: pasmo 1,05–1,20 albo słabsza rotacja podstawy;
+  (7) Fortuna leczy mniej na 70 / 100 (0,31 / 0,32 wobec ≤ 0,21): Fortuna gra pulę buzdygana, propozycja: cel tylko do
+  45. albo pasmo ≤ 0,35; (8) R1 Inkwizytora (4,4–6,2): pasmo R1 ≤ 2,4 dla Kapłana z buzdyganem wymaga ok. 0,35 Furii,
+  propozycja: R1 Kapłana mierzony od jego R1 na 20 (1,15 ×) albo wyjątek F4 na stałe.
+- **Testy:** `balance.spec` (blok S146, test paska, wpisy `GLOBAL_REPORT_ONLY`), `paths.spec` (Zapał 34, Niezłomność 14),
+  `skills.spec` (Potężne Uderzenie, Sąd, Rozpłatanie 10B).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Data/Skills/{Warrior,Cleric}.luau`, `src/shared/Data/Paths/{Types,Warrior,Cleric}.luau`,
+  `src/shared/Data/SkillCurves.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/{SkillModel,Balance}.luau`,
+  `tests/{balance,paths,skills}.spec.luau`, `tests/fixtures/balance_paths.json`, `tools/{balance_reasons,balance_report}.luau`,
+  `tools/balance_before.json`, `docs/{BALANS,DESIGN-18,DECYZJE,SESJE,PROGRESS}.md`.

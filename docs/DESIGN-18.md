@@ -281,6 +281,8 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   Wyrok +15% za blok z 6 s, najwyżej 3 (`Logic/Block`). Kierunki: Ostatni Bastion, Rzeź i Rozkaz Natarcia w rzędzie 8,
   w rzędzie 4 Strażnika Podwójna Straż (Przechwycenie na dwóch sojuszników). Po S143 dwuręczna / jednoręczna
   (Chorąży) 1,5–1,8 w jeden cel (raport `S143.warrior.*`).
+- S146 (stan): EHP Strażnika / dwuręczna 1,68–1,78 (asertowane); dwuręczna / jednoręczna (Chorąży) w jeden cel
+  1,45–1,80 i na 3 cele 0,98–1,10 w raporcie (sprzeczne z R1 puli jednoręcznej, decyzja właściciela, DECYZJE S146).
 
 ### 6.3 Łowca (wspólne: `C1` Odskok `disengage`, `C2` Znak Łowcy `huntersMark`, `C3` Namierzenie `drawBead`, `C4` Instynkt Drapieżnika `predatorInstinct`; wszystkie istn.)
 
@@ -347,6 +349,8 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
   60%, światło +5%). Koniec stanu przejściowego wszystkich klas (`transitional` usunięte z danych, logiki i okna).
   Po S145 (raport `S145.cleric.*`): `hammer` / Inkwizytor sprzed S145 w jeden cel 1,02–1,06, `light` leczenie na
   sekundę / Uzdrowiciel sprzed S145 0,97–1,23 (45: 1,12, 100: 1,23; S146).
+- S146 (stan): T-SK5 berła 0,28–0,34 i buzdygan / Furia 0,855–0,902 (pasma Inkwizytora) asertowane; T-SK6 berła na 45 /
+  70 / 100 2,8 / 8,6 / 14,4 w raporcie (obrażenia bossów w tanka, decyzja właściciela, DECYZJE S146).
 
 ## 7. Kierunki (dawne ścieżki)
 
@@ -486,6 +490,8 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
   - R1–R7, T-SK1–6, G10, cele bossów S134 (część gracza) wracają z nowymi buildami wzorcowymi (jeden na pulę i
     kierunek przewodni, jak dziś jeden na ścieżkę).
   - Wpisy `GLOBAL_REPORT_ONLY` z sesji S137–S145 znikają.
+  - S146: build wzorcowy rzuca tylko 8 aktywnych swojego poziomu (`ReferenceBuild.bar`, `SkillModel.barOf`; Wojownik i
+    Kapłan, Łowca i Mag w S147); blok `Balance.targetsS146` (R8, R9, R1, R5, R6, T-SK5) Wojownika i Kapłana.
 - Efekty przedmiotów w modelu tylko przez `score` w `Data/ItemEffects` (`ItemScore`); S146–S147 przeliczają `score` z
   nowymi umiejętnościami (wiersze `S134g.*` w `balance.spec`).
 - **Fixtures:** `tests/fixtures/balance_paths.json` (`--fixture-paths`) i `balance_1_20.json` przepisane świadomie z

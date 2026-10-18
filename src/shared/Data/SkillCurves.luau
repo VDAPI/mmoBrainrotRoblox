@@ -22,7 +22,8 @@ local CHAIN3 = 130 + 100 * 2 / 9
 return table.freeze({
 	knots = table.freeze({
 		-- S91: ranks 1-5 x0.85 (rank 1 160 -> 136), rank 6 pinned (220 + 2 / 5 before S91)
-		mightyStrike = table.freeze({ dmg = table.freeze({ [5] = 187, [6] = 220 + (222 - 220) * 1 / 5 }) }),
+		-- S146 (R1 of the Sword and Shield pool at 45 / 100 <= 1.15 x its R1 at 20): rank 6 220.4 -> 196, rank 10 222 -> 200
+		mightyStrike = table.freeze({ dmg = table.freeze({ [5] = 187, [6] = 196 }) }),
 		-- S91: ranks 1-5 x0.85 (rank 1 120 -> 102), rank 6 pinned (S143: unlock 3 -> 4, rank 5 at 20)
 		charge = table.freeze({ dmg = table.freeze({ [5] = 136, [6] = 160 + (165 - 160) * 1 / 5 }) }),
 		-- S143 (DESIGN-18 §6.2): Blade Whirl unlocks at 26 (rank 1 = the old rank 6), its S91 knots are gone; Cleave
@@ -64,11 +65,17 @@ return table.freeze({
 		}),
 		-- S145: Brand of Light unlocks at 15 (was the Inquisitor's row 4, 26): rank 4 (level 27) keeps the old rank 1, ranks
 		-- 1-3 low (R1 of the hammer pool at 20)
-		brandOfLight = table.freeze({ dmg = table.freeze({ [4] = 120 }), dot = table.freeze({ [4] = 170 }) }),
+		-- S146 (R9 of the hammer pool at 45 <= 0.86 x "Furia"): rank 8 (level 43) 213.3 / 270 -> 186 / 237, rank 10 kept
+		brandOfLight = table.freeze({
+			dmg = table.freeze({ [4] = 120, [8] = 186 }),
+			dot = table.freeze({ [4] = 170, [8] = 237 }),
+		}),
 		-- S145: Divine Wrath unlocks at 20 (was 30): rank 2 (level 29) keeps the old rank 1
-		divineWrath = table.freeze({ bonus = table.freeze({ [2] = 4 }) }),
+		-- S146 (R9 of the hammer pool at 70 / 100 in 0.85-0.91 / 0.87-0.93 x "Furia"): rank 4 (level 47) pinned, rank 5 (56) 20 -> 22
+		divineWrath = table.freeze({ bonus = table.freeze({ [2] = 4, [4] = 4 + 16 * 2 / 3 }) }),
 		-- S145: Judgement unlocks at 40 (was 45): rank 2 (level 44) keeps the old rank 1
-		judgement = table.freeze({ dmg = table.freeze({ [2] = 320 }) }),
+		-- S146 (R9 of the hammer pool at 45 <= 0.86 x "Furia"): rank 1 300 -> 270, rank 2 320 -> 290, rank 10 kept
+		judgement = table.freeze({ dmg = table.freeze({ [2] = 290 }) }),
 		-- S90: the Hunter's base (rank 10 nearly flat above 20, C3). S91: ranks 1-5 x0.845 / x0.73, rank 6 pinned
 		aimedShot = table.freeze({ dmg = table.freeze({ [5] = 196, [6] = AIMED5 + (233 - AIMED5) * 1 / 5 }) }),
 		-- S144 (DESIGN-18 §6.3): Heavy Bolt, the Crossbow's S1, on Aimed Shot's knots x1.3 (its cooldown x1.3)
