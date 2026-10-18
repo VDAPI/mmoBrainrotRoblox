@@ -48,6 +48,8 @@ export type Spec = {
 	freezeWave: number?, -- S141 (Blizzard)
 	sureCrit: boolean?, -- S142 (Lightning Lance)
 	finale: { knockback: number, stun: number }?, -- S142 (Ball Lightning)
+	weapon: { main: { string }?, offhand: { string }? }?, -- S143 (Shield Bash)
+	furyGain: number?, -- S143 (Brutal Strike)
 	passive: { flat: { [string]: string }?, pct: { [string]: string }?, hooks: { [string]: string }? }?,
 	breakpoints: Types.Breakpoints?,
 	glyph: string,
@@ -149,6 +151,8 @@ function Build.class(
 			freezeWave = spec.freezeWave,
 			sureCrit = spec.sureCrit,
 			finale = spec.finale,
+			weapon = spec.weapon,
+			furyGain = spec.furyGain,
 			values = spec.values or {},
 			effects = spec.effects,
 			passive = spec.passive,

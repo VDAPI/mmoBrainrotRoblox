@@ -158,10 +158,10 @@ T.describe("S56 ranks from the level and the bar", function()
 	end
 
 	T.it("rankFor (base only)", function()
-		local bloodlust = SkillData.get("bloodlust") :: any
-		T.expect(Skills.rankFor("Warrior", 17, bloodlust)).toBe(0)
-		T.expect(Skills.rankFor("Warrior", 18, bloodlust)).toBe(1)
-		T.expect(Skills.rankFor("Warrior", 54, bloodlust)).toBe(10)
+		local bloodlust = SkillData.get("bloodlust") :: any -- S143: unlock 18 -> 10 (the two-handed O1)
+		T.expect(Skills.rankFor("Warrior", 9, bloodlust)).toBe(0)
+		T.expect(Skills.rankFor("Warrior", 10, bloodlust)).toBe(1)
+		T.expect(Skills.rankFor("Warrior", 46, bloodlust)).toBe(10)
 		T.expect(Skills.rankFor("Mage", 54, bloodlust)).toBe(0)
 		local onPath = table.clone(bloodlust)
 		onPath.path = "somePath"
@@ -297,19 +297,38 @@ T.describe("S56 ranks from the level and the bar", function()
 				T.expect(id ~= "prayer" and id ~= "divineIntervention").toBe(true)
 			end
 		end
-		T.expect(Skills.startHotbar("Warrior", 1)).toEqual({ ["1"] = "mightyStrike" })
-		T.expect(Skills.startHotbar("Hunter", 20)).toEqual({
+		-- S143: every Warrior pool has its own S1 (Mighty Strike, Brutal Strike)
+		T.expect(Skills.startHotbar("Warrior", 1, "onehand")).toEqual({ ["1"] = "mightyStrike" })
+		T.expect(Skills.startHotbar("Warrior", 1, "twohand")).toEqual({ ["1"] = "brutalStrike" })
+		-- S144: the Hunter's pools on the ladder (DESIGN-18 §6.3)
+		T.expect(Skills.startHotbar("Hunter", 1, "bow")).toEqual({ ["1"] = "aimedShot" })
+		T.expect(Skills.startHotbar("Hunter", 1, "crossbow")).toEqual({ ["1"] = "heavyBolt" })
+		T.expect(Skills.startHotbar("Hunter", 20, "bow")).toEqual({
 			["1"] = "aimedShot",
-			["2"] = "doubleShot",
+			["2"] = "arrowRain",
 			["3"] = "disengage",
-			["4"] = "arrowRain",
-			["5"] = "venomArrow",
+			["4"] = "pinningShot",
+			["5"] = "windstep",
+			["6"] = "huntersMark",
+			["7"] = "doubleShot",
+		})
+		T.expect(Skills.startHotbar("Hunter", 20, "crossbow")).toEqual({
+			["1"] = "heavyBolt",
+			["2"] = "piercingArrow",
+			["3"] = "disengage",
+			["4"] = "frostTrap",
+			["5"] = "camouflage",
+			["6"] = "huntersMark",
+			["7"] = "venomArrow",
 		})
 	end)
 
 	T.it("newlyUnlocked", function()
-		T.expect(ids(Skills.newlyUnlocked("Warrior", 2, 6))).toEqual({ "charge", "bladeWhirl" })
-		T.expect(ids(Skills.newlyUnlocked("Warrior", 13, 14))).toEqual({ "steelSkin" })
+		-- S143: the Warrior's pools on the ladder (DESIGN-18 §6.2)
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 2, 6, "onehand")))
+			.toEqual({ "shieldSweep", "charge", "shieldBash" })
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 2, 6, "twohand"))).toEqual({ "cleave", "charge", "sunder" })
+		T.expect(ids(Skills.newlyUnlocked("Warrior", 44, 45, "twohand"))).toEqual({ "steelSkin" })
 		T.expect(ids(Skills.newlyUnlocked("Warrior", 6, 6))).toEqual({})
 	end)
 
@@ -507,7 +526,7 @@ T.describe("S55 ranks (ROZWOJ 2.5)", function()
 		for r = 1, 10 do
 			table.insert(cleaveLevels, Skills.rankLevel(skill("bloodlust"), r))
 		end
-		T.expect(cleaveLevels).toEqual({ 18, 22, 26, 30, 34, 38, 42, 46, 50, 54 })
+		T.expect(cleaveLevels).toEqual({ 10, 14, 18, 22, 26, 30, 34, 38, 42, 46 }) -- S143: Bloodlust from 10
 		T.expect(Skills.rankLevel(skill("mightyStrike"), 2)).toBe(5)
 		-- S81: row 7 of the Mage paths (ROZWOJ 12.4 / 12.5). S140: Rain of Meteors at 60 (span 35), Evocation at 30
 		T.expect({ Skills.rankLevel(skill("meteorStorm"), 5), Skills.rankLevel(skill("meteorStorm"), 10) }).toEqual({
@@ -545,9 +564,9 @@ T.describe("S55 ranks (ROZWOJ 2.5)", function()
 			T.expect(Skills.rankAt(def, 100)).toBe(def.maxLevel)
 		end
 		local cleave = skill("bloodlust")
-		T.expect(Skills.rankAt(cleave, 17)).toBe(0)
-		T.expect(Skills.rankAt(cleave, 33)).toBe(4)
-		T.expect(Skills.rankAt(cleave, 34)).toBe(5)
+		T.expect(Skills.rankAt(cleave, 9)).toBe(0)
+		T.expect(Skills.rankAt(cleave, 33)).toBe(6)
+		T.expect(Skills.rankAt(cleave, 34)).toBe(7)
 	end)
 end)
 
@@ -594,7 +613,8 @@ local function legacyEffective(skill: SkillData.SkillDef, level: number): (any, 
 			end
 		end
 		for field, amount in bp.values or none do
-			def.values[field] = Skills.scaled(skill, skill.values[field], level) + amount
+			-- S144: the value at the rank with the field's knots (Data/SkillCurves), like Skills.effective (Heartseeker 5A)
+			def.values[field] = Skills.valueAt(skill, field, level) + amount
 		end
 		for key, v in bp :: any do
 			if key ~= "add" and key ~= "mul" and key ~= "values" then
@@ -840,7 +860,8 @@ T.describe("S55 breakpoints and composition (ROZWOJ 2.7)", function()
 	-- Neutral only while no skill has two changes of the same field: when a class session adds such an A, it replaces
 	-- this case with a direct test (ROZWOJ 2.7).
 	-- S70: Roll of the Dice has values on both A (5A and 10A add to the faces); "S70 new Cleric actives" tests it.
-	local TWO_CHANGES = { fortuneDice = true }
+	-- S144: the Executioner's Bolt adds venomMul on 5A and 10A (50 + 20 + 35); tests/crossbow.spec tests it.
+	local TWO_CHANGES = { fortuneDice = true, deadlyBolt = true }
 	T.it("neutral on today's data", function()
 		for id, def in SkillData.byId do
 			if TWO_CHANGES[id] then
@@ -1436,7 +1457,7 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		T.expect(b.bleedStacks).toBeNil()
 
 		d, b = at("crushingBlow", 10, "b", "b")
-		T.expect(v(d, "dmg")).toBeNear(568) -- S89: 520 + 48
+		T.expect(v(d, "dmg")).toBeNear(372.4) -- S143: 324.4 + 48 (S89: 520 + 48)
 		T.expect(cd(d)).toBeNear(12.8)
 		d, b = at("crushingBlow", 10, "a", "a")
 		local kinds: { [string]: number } = {}
@@ -1466,7 +1487,8 @@ T.describe("S73 Warrior B options and breakpoint kinds", function()
 		d = at("battleCry", 10, "a", "b")
 		T.expect(#d.selfEffects).toBe(2)
 		d = at("battleCry", 5, "b")
-		T.expect(Skills.valueAt(d, "atk", 5)).toBeNear(14 + 2 * 2 / 7 + 3) -- S89: knot 14 at rank 3, 16 at 10
+		-- S143: 14.9 at rank 1 (level 30), 16 at 10 (S89: knot 14 at rank 3)
+		T.expect(Skills.valueAt(d, "atk", 5)).toBeNear(14.9 + 1.1 * 4 / 9 + 3)
 	end)
 
 	T.it("new kinds compose without nodes", function()
@@ -1666,14 +1688,17 @@ T.describe("Warrior S74", function()
 	local GamePaths = require("../src/shared/Logic/Paths")
 	local PartyBuffRules = require("./PartyBuffRules")
 
+	-- S143: Intercept, Shield Wall and War Banner are in the one-handed pool, Rend in the two-handed one; Carnage and
+	-- Order to Advance stay the directions' skills (id -> path or pool)
 	local NEW: { [string]: string } = {
-		intercept = "guardian",
-		shieldWall = "guardian",
-		rend = "berserker",
+		intercept = "onehand",
+		shieldWall = "onehand",
+		rend = "twohand",
 		carnage = "berserker",
-		warBanner = "standard",
+		warBanner = "onehand",
 		advanceOrder = "standard",
 	}
+	local ON_PATH: { [string]: string } = { carnage = "berserker", advanceOrder = "standard", lastBastion = "guardian" }
 	local function skill(id: string): SkillData.SkillDef
 		return SkillData.get(id) :: SkillData.SkillDef
 	end
@@ -1717,10 +1742,9 @@ T.describe("Warrior S74", function()
 			Skills.shape(skill("advanceOrder")),
 			Skills.shape(skill("warBanner")),
 		}).toEqual({ "target", "self", "self", "circle" })
-		for id, path in NEW do
+		for id, where in NEW do
 			local def = skill(id)
-			T.expect({ id, def.class, def.path, def.delivery, def.unlock == 26 or def.unlock == 60 })
-				.toEqual({ id, "Warrior", path, "melee", true })
+			T.expect({ id, def.class, def.path or def.pool, def.delivery }).toEqual({ id, "Warrior", where, "melee" })
 			local bps: any = def.breakpoints
 			for _, rank in { 5, 10 } do
 				T.expect({ id, rank, bps[rank].a ~= nil, bps[rank].b ~= nil }).toEqual({ id, rank, true, true })
@@ -1772,7 +1796,7 @@ T.describe("Warrior S74", function()
 	T.it("unreachable without their skill node", function()
 		local hotbar: { [string]: string } = {}
 		local i = 0
-		for id in NEW do
+		for id in ON_PATH do
 			i += 1
 			hotbar[tostring(i)] = id
 		end
@@ -1785,11 +1809,11 @@ T.describe("Warrior S74", function()
 			ranks = RankFill.auto("Warrior", 100), -- S137: the old automatic ranks as bought ranks
 		}
 		local available = GamePaths.availableSkills(char)
-		for id in NEW do
+		for id in ON_PATH do
 			T.expect({ id, table.find(available, id) == nil, GamePaths.skillRank(char, id) }).toEqual({ id, true, 0 })
 		end
 		T.expect(GamePaths.validHotbar(char)).toEqual({})
-		for id in NEW do
+		for id in ON_PATH do
 			local def = SkillData.get(id) :: any
 			char.path = { nodes = { [`{def.path}_{id}`] = 1 }, bp = {} }
 			T.expect({ id, table.find(GamePaths.availableSkills(char), id) ~= nil }).toEqual({ id, true })
@@ -1797,9 +1821,10 @@ T.describe("Warrior S74", function()
 	end)
 end)
 
--- S75: the Warrior's base 8 and path skills (ROZWOJ 10.2-10.5).
+-- S75: the Warrior's base 8 and path skills (ROZWOJ 10.2-10.5). S143 (DESIGN-18 §6.2): two pools on the ladder and
+-- three direction skills.
 T.describe("S75 Warrior base and path skills", function()
-	T.it("base 8 at 1, 3, 6, 10, 14, 18, 30, 45; 12 path skills at their row level", function()
+	T.it("S143: 26 pool skills at their ladder level, 3 direction skills at their row level", function()
 		local base, onPath = {}, {}
 		local actives = 0
 		for _, def in SkillData.byClass.Warrior do
@@ -1819,29 +1844,38 @@ T.describe("S75 Warrior base and path skills", function()
 		end
 		T.expect(base).toEqual({
 			"mightyStrike:1",
-			"charge:3",
-			"bladeWhirl:6",
-			"taunt:10",
-			"steelSkin:14",
-			"bloodlust:18",
-			"earthquake:30",
-			"riposte:45",
+			"charge:4",
+			"bladeWhirl:26",
+			"taunt:12",
+			"steelSkin:45",
+			"bloodlust:10",
+			"earthquake:26",
+			"riposte:50",
+			"fortitude:20",
+			"intercept:10",
+			"shieldWall:60",
+			"cleave:3",
+			"rend:15",
+			"titansWrath:60",
+			"battleCry:30",
+			"warBanner:33",
+			"crushingBlow:15",
+			"shieldSweep:3",
+			"shieldBash:6",
+			"vindicate:40",
+			"brutalStrike:1",
+			"sunder:6",
+			"rage:20",
+			"warStomp:33",
+			"execute:40",
+			"unstoppable:50",
 		})
 		T.expect(onPath).toEqual({
-			fortitude = "guardian:10",
-			intercept = "guardian:26",
-			lastBastion = "guardian:48",
-			shieldWall = "guardian:60",
-			cleave = "berserker:10",
-			rend = "berserker:26",
-			titansWrath = "berserker:48",
+			lastBastion = "guardian:60",
 			carnage = "berserker:60",
-			battleCry = "standard:10",
-			warBanner = "standard:26",
-			crushingBlow = "standard:48",
 			advanceOrder = "standard:60",
 		})
-		T.expect(actives).toBe(17)
+		T.expect(actives).toBe(24)
 	end)
 
 	T.it("Battle Cry works on the Warrior only (team copy comes from the Commander's Voice node)", function()
@@ -1932,19 +1966,20 @@ end)
 
 T.describe("Hunter S77", function()
 	local GamePaths = require("../src/shared/Logic/Paths")
+	-- S144 (DESIGN-18 §6.3): five went to the pools, the Drive is the Scout's capstone (row 8)
 	local NEW = {
-		drawBead = { path = "marksman", unlock = 26 },
-		heartseeker = { path = "marksman", unlock = 60 },
-		venomSnare = { path = "trapper", unlock = 26 },
-		snarefield = { path = "trapper", unlock = 60 },
-		falcon = { path = "scout", unlock = 26 },
-		drive = { path = "scout", unlock = 80 },
+		drawBead = { path = "common", unlock = 30 },
+		heartseeker = { path = "bow", unlock = 40 },
+		venomSnare = { path = "crossbow", unlock = 26 },
+		snarefield = { path = "crossbow", unlock = 60 },
+		falcon = { path = "bow", unlock = 33 },
+		drive = { path = "scout", unlock = 60 },
 	}
 
-	T.it("six path skills: path, delivery, unlock, A and B on 5 and 10", function()
+	T.it("the six S77 skills: path or pool, delivery, unlock, A and B on 5 and 10", function()
 		for id, want in NEW do
 			local skill = SkillData.get(id) :: any
-			T.expect({ id, skill.class, skill.path, skill.unlock, skill.delivery }).toEqual({
+			T.expect({ id, skill.class, skill.path or skill.pool, skill.unlock, skill.delivery }).toEqual({
 				id,
 				"Hunter",
 				want.path,
@@ -1969,30 +2004,23 @@ T.describe("Hunter S77", function()
 		T.expect((SkillData.get("snarefield") :: any).target).toBe("point")
 	end)
 
-	-- S78: their paths have a PathDef; the skills need their node (and the main path above row 2).
-	T.it("reachable with their skill node from S78", function()
-		local hotbar: { [string]: string } = {}
-		local slot = 0
-		for id in NEW do
-			slot += 1
-			hotbar[tostring(slot)] = id
-		end
-		local hunter: any = { class = "Hunter", level = 100, path = nil, hotbar = hotbar, equipment = {} }
+	-- S78: their paths have a PathDef; the skills need their node (and the main path above row 2). S144: only the Drive is
+	-- a direction skill; the others come with their pool (the Falcon and Heartseeker with a bow).
+	T.it("reachable with their skill node from S78 (S144: the Drive), the rest in their pool", function()
+		local hunter: any = { class = "Hunter", level = 100, path = nil, hotbar = { ["1"] = "drive" }, equipment = {} }
 		hunter.ranks = RankFill.auto("Hunter", 100) -- S137
 		local available = GamePaths.availableSkills(hunter)
-		for id in NEW do
-			T.expect({ id, table.find(available, id) }).toEqual({ id, nil })
-			T.expect({ id, GamePaths.skillRank(hunter, id) }).toEqual({ id, 0 })
-		end
+		T.expect(table.find(available, "drive")).toBeNil()
+		T.expect(GamePaths.skillRank(hunter, "drive")).toBe(0)
 		T.expect((GamePaths.validHotbar(hunter))).toEqual({})
-		hunter.path = { nodes = { scout_falcon = 1, scout_drive = 1 }, bp = {} }
+		-- without a weapon the Bow (the default pool): its Falcon and Heartseeker, the common Draw a Bead
+		for _, id in { "falcon", "heartseeker", "drawBead" } do
+			T.expect({ id, table.find(available, id) ~= nil }).toEqual({ id, true })
+		end
+		T.expect(table.find(available, "venomSnare")).toBeNil()
+		hunter.path = { nodes = { scout_fleet = 1, scout_eye = 3, scout_drive = 1 }, bp = {} }
 		local withNodes = GamePaths.availableSkills(hunter)
-		T.expect(table.find(withNodes, "falcon") ~= nil).toBe(true)
 		T.expect(table.find(withNodes, "drive") ~= nil).toBe(true)
-		T.expect(table.find(withNodes, "drawBead")).toBeNil()
-		-- S138: a row-4 skill with its node in any direction mix
-		hunter.path.nodes.marksman_steadyHand = 3
-		T.expect(GamePaths.skillRank(hunter, "falcon") > 0).toBe(true)
 	end)
 end)
 
@@ -2000,7 +2028,7 @@ end)
 T.describe("S78 Hunter base, B options and nodes", function()
 	local GamePaths = require("../src/shared/Logic/Paths")
 
-	T.it("base 8 at 1, 3, 6, 10, 14, 18, 30, 45; 12 path skills at their row level; B on every active", function()
+	T.it("S144: 26 pool skills at their ladder level, the Drive at row 8; B on every active", function()
 		local base, onPath = {}, {}
 		local actives, passives = 0, 0
 		for _, def in SkillData.byClass.Hunter do
@@ -2021,30 +2049,35 @@ T.describe("S78 Hunter base, B options and nodes", function()
 		end
 		T.expect(base).toEqual({
 			"aimedShot:1",
-			"doubleShot:3",
-			"disengage:6",
-			"arrowRain:10",
-			"hawkEye:14",
-			"venomArrow:18",
-			"volley:30",
+			"doubleShot:15",
+			"disengage:4",
+			"arrowRain:3",
+			"hawkEye:20",
+			"venomArrow:15",
+			"volley:26",
 			"predatorInstinct:45",
+			"piercingArrow:3",
+			"drawBead:30",
+			"stormArrow:60",
+			"heartseeker:40",
+			"frostTrap:6",
+			"venomSnare:26",
+			"camouflage:10",
+			"snarefield:60",
+			"agility:50",
+			"falcon:33",
+			"huntersMark:12",
+			"pinningShot:6",
+			"windstep:10",
+			"heavyBolt:1",
+			"toxicTips:20",
+			"netShot:33",
+			"deadlyBolt:40",
+			"quickReload:50",
 		})
-		T.expect(passives).toBe(2)
-		T.expect(onPath).toEqual({
-			piercingArrow = "marksman:10",
-			drawBead = "marksman:26",
-			stormArrow = "marksman:48",
-			heartseeker = "marksman:60",
-			frostTrap = "trapper:10",
-			venomSnare = "trapper:26",
-			camouflage = "trapper:48",
-			snarefield = "trapper:60",
-			agility = "scout:10",
-			falcon = "scout:26",
-			huntersMark = "scout:48",
-			drive = "scout:80",
-		})
-		T.expect(actives).toBe(17)
+		T.expect(passives).toBe(5)
+		T.expect(onPath).toEqual({ drive = "scout:60" })
+		T.expect(actives).toBe(22)
 	end)
 
 	local function hunter(_main: string, nodes: { [string]: number }, bp: { [string]: string }): any
@@ -2101,9 +2134,9 @@ T.describe("S78 Hunter base, B options and nodes", function()
 
 	T.it("base B options: Venom Arrow, Volley, Hunter's Mark, Disengage", function()
 		local venom = eff("venomArrow", "trapper", {}, { ["venomArrow:5"] = "a", ["venomArrow:10"] = "b" }, BOW)
-		T.expect(Skills.valueAt(venom, "poison", 10)).toBeNear(131, 1e-9)
+		T.expect(Skills.valueAt(venom, "poison", 10)).toBeNear(93, 1e-9) -- S144: 50 + 15 (5A) + 28 (10B)
 		local volley = eff("volley", "scout", {}, { ["volley:5"] = "b", ["volley:10"] = "b" }, BOW)
-		T.expect(Skills.valueAt(volley, "dmg", 10)).toBeNear(48, 1e-9)
+		T.expect(Skills.valueAt(volley, "dmg", 10)).toBeNear(47, 1e-9) -- S144: 34 + 4 (5B) + 9 (10B)
 		local mark = SkillData.get("huntersMark") :: any
 		T.expect(Skills.valueAt(mark, "vuln", 10)).toBeNear(8, 1e-9)
 		local mark10 = eff("huntersMark", "scout", {}, { ["huntersMark:10"] = "b" }, BOW)

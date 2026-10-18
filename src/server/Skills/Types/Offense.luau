@@ -164,7 +164,11 @@ local function finale(ctx: Ctx, list: { any }, from: Vector3)
 		return
 	end
 	for _, entity in list do
-		if spec.knockback > 0 then
+		-- S143: an Unstoppable player (full Fury) is not pushed
+		local steady = entity.kind == "player"
+			and entity.player
+			and ctx.services.StatusEffect.Unstoppable(entity.player)
+		if spec.knockback > 0 and not steady then
 			Push.knockback(entity, from, spec.knockback)
 		end
 		if spec.stun > 0 then

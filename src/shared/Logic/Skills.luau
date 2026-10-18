@@ -14,6 +14,7 @@ local BuffCategories = require("../Data/BuffCategories")
 local Chill = require("./Chill")
 local Combat = require("../Data/Combat")
 local Config = require("../Config")
+local Crossbow = require("./Crossbow")
 local LevelCurves = require("./LevelCurves")
 local Locale = require("../Util/Locale")
 local PathsData = require("../Data/Paths")
@@ -932,7 +933,9 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	end
 	local cost = Skills.cost(skill, rank, L, base.class, if opts and opts.hooks then { hooks = opts.hooks } else nil)
 	args.cost = round(cost)
-	args.cooldown = round(Skills.cooldown(skill, rank, opts and opts.cdr, behaviour))
+	-- S144 (Logic/Crossbow): Quick Reload shortens the Crossbow's skills only
+	local cdr = Crossbow.cdrFor(base.pool, opts and opts.cdr, hookValue(opts and opts.hooks, "quickReload"))
+	args.cooldown = round(Skills.cooldown(skill, rank, cdr, behaviour))
 	if skill.duration then
 		args.duration = round(Skills.scaled(skill, skill.duration, rank))
 	end
@@ -1037,6 +1040,20 @@ function Skills.descriptionArgs(base: SkillDef, rank: number, opts: DescOpts?): 
 	end
 	if hooks and hooks.conduct then
 		args.conductRadius = SkillData.SHOCK.conductRadius
+	end
+	-- S143 (Logic/Fury, Logic/Block): only for skills that have them
+	if skill.furyGain then
+		args.furyGain = round(skill.furyGain)
+	end
+	if skill.values.perBlock ~= nil then
+		args.blockWindow = SkillData.BLOCK.window
+		args.blockMax = SkillData.BLOCK.max
+	end
+	-- S144 (Logic/Crossbow): only for skills that have them
+	if hooks and hooks.toxicTips then
+		args.tipStacks = SkillData.CROSSBOW.tipStacks
+		args.tipDuration = SkillData.CROSSBOW.tipDuration
+		args.tipGap = SkillData.CROSSBOW.tipGap
 	end
 	return args
 end

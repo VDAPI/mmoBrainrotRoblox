@@ -42,6 +42,8 @@ local AutoGrind = require(Shared.Logic.AutoGrind)
 local Bonuses = require(Shared.Data.Bonuses)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
+local Block = require(Shared.Logic.Block)
+local Crossbow = require(Shared.Logic.Crossbow)
 local Burn = require(Shared.Logic.Burn)
 local Chill = require(Shared.Logic.Chill)
 local Shock = require(Shared.Logic.Shock)
@@ -170,6 +172,10 @@ type Attacker = {
 	weakStacks: number?,
 	-- S77 Vigilance / Warning: os.clock() of this Scout's last trigger of each kind (move, guard)
 	vigilance: { [string]: number }?,
+	-- S143 (Logic/Block): os.clock() of the blocks inside Data/Skills.BLOCK.window (Vindicate)
+	blocks: { number }?,
+	-- S144 (Logic/Crossbow): os.clock() of the last Toxic Tips stack per target entity id (Data/Skills.CROSSBOW.tipGap)
+	tips: { [any]: number }?,
 }
 
 local REJECT_INTERVAL = 2
@@ -401,6 +407,41 @@ local function hook(player: Player, id: string): number
 end
 
 CombatService.Hook = hook
+
+-- S143 (Logic/Block): the player's blocks of the last Data/Skills.BLOCK.window seconds, at most BLOCK.max (Vindicate).
+function CombatService.RecentBlocks(player: Player): number
+	local state = attackers[player]
+	local blocks = SkillData.BLOCK
+	return Block.count(if state then state.blocks else nil, os.clock(), blocks.window, blocks.max)
+end
+
+-- S144 (Logic/Crossbow, DESIGN-18 §6.3): Toxic Tips. A main hit of a Crossbow skill adds one stack of the player's tip
+-- poison on the target (one entry, skillId CROSSBOW.tipKey) worth `pct` % of `attack` over CROSSBOW.tipDuration s per
+-- stack (+ the poison DotBonus), at most tipStacks stacks and at most once per tipGap s per target (`gapless`: a trap of
+-- the Trapper's keystone Master Trapper, Crossbow.tipFor); through ApplyPoison (poisonSlow). PvP x0.6 comes once in
+-- StatusEffectService.Apply.
+function CombatService.ToxicTip(player: Player, entity: any, pct: number, attack: number, gapless: boolean?): boolean
+	if pct <= 0 or not entity then
+		return false
+	end
+	local rules = SkillData.CROSSBOW
+	local state = attackerState(player)
+	local t = os.clock()
+	local tips = state.tips or {}
+	if not gapless and not Crossbow.tipReady(tips[entity.id], t, rules.tipGap) then
+		return false
+	end
+	state.tips = Crossbow.tipRecord(tips, entity.id, t, rules.tipGap)
+	local tick = math.max(1, attack * pct / 100 / rules.tipDuration)
+		* (1 + CombatService.DotBonus(player, "poison") / 100)
+	return CombatService.ApplyPoison(player, entity, {
+		duration = rules.tipDuration,
+		value = pct,
+		tickAmount = tick,
+		maxStacks = rules.tipStacks,
+		skillId = rules.tipKey,
+	})
+end
 
 -- Hook values from providers only: path nodes and class passives (SkillService.PassiveHook) and the admin /hook,
 -- without items. The block's energy (ROZWOJ 10.3) comes with block nodes, not with a shield's Parry.
@@ -930,6 +971,7 @@ export type DealOptions = {
 	-- extra multiplier: skill passives (elementalist, divine wrath) x weapon speed normalisation (S54, Skills.speedFactor)
 	multiplier: number?,
 	consumeShot: boolean?, -- default true: consumes "nextShot" / "guaranteedCrit"
+	keepCrit: boolean?, -- S144: a sure crit of its own (Dead Eye) leaves "guaranteedCrit" (nextShot is still consumed)
 	skill: string?, -- S28: skill id shown with the damage number (bigger numbers, the name on the first hit)
 	noProc: boolean?, -- S63: no on-hit effects: second hits, counters, splashes, arcs, pierce, pulses
 	basic: boolean?, -- S63: basic attack: full on-hit chance; S62 basicDmg; S65 rhythm
@@ -1114,6 +1156,9 @@ end
 -- S64 (STATY 3): every block heals blockHeal % max HP (Parry trait, grown with rarity); half vs players. No heal
 -- source, like lifesteal and killHeal: no PvP HealScale, not in the fight summary.
 local function onBlock(player: Player, entity: any?, pvp: boolean)
+	-- S143 (Logic/Block): Vindicate counts the blocks of the last BLOCK.window seconds
+	local state = attackerState(player)
+	state.blocks = Block.record(state.blocks or {}, os.clock(), SkillData.BLOCK.window)
 	-- ROZWOJ 10.3: Block returns energy; only with block from path nodes (Parry alone gives none)
 	if CombatService.NodeHook(player, "block") > 0 then
 		ResourceService.Add(player, "energy", HOOK_RULES.blockEnergy)
@@ -1181,7 +1226,7 @@ function CombatService.DealDamage(
 	local extra = if options and options.multiplier then options.multiplier else 1
 	-- One-shot buffs from the Hunter tree.
 	if selfEntity and not (options and options.consumeShot == false) then
-		if StatusEffectService.Has(selfEntity, "guaranteedCrit") then
+		if not (options and options.keepCrit) and StatusEffectService.Has(selfEntity, "guaranteedCrit") then
 			params.forceCrit = true
 			StatusEffectService.Remove(selfEntity, "guaranteedCrit")
 		end
@@ -1355,7 +1400,9 @@ function CombatService.DealDamage(
 	-- S72 (ROZWOJ 10.4): every hit that dealt damage feeds Fury (ticks, thorns and Retribution never come here).
 	-- A hit absorbed in full by shields still counts; one stopped by invulnerability does not.
 	if not result.dodged and result.amount > 0 and not pvpImmune then
-		StatusEffectService.AddFury(player)
+		-- S143: the skill's furyGain (Brutal Strike) on its own hits
+		local skillDef = if skillId then SkillData.get(skillId) else nil
+		StatusEffectService.AddFury(player, if skillDef then skillDef.furyGain else nil)
 	end
 	if not result.dodged and result.amount > 0 and not (options and options.noProc) then
 		local alive = if targetEntity.kind == "monster"

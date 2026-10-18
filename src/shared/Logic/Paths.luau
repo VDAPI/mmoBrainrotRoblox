@@ -200,6 +200,19 @@ local function weaponOk(req: WeaponReq?, weapons: WeaponTypes): boolean
 	return weapons.offhand ~= nil and table.find(req.offhand, weapons.offhand) ~= nil
 end
 
+-- S143 (DESIGN-18 §4.2): the weapons of SkillDef.weapon, the rule of node.weapon (Shield Bash needs a shield: a
+-- one-handed weapon without one stays in the Sword and Shield pool, the skill is grey). nil = it fits.
+local function skillWeaponError(skill: SkillDef, weapons: WeaponTypes): string?
+	local req = skill.weapon
+	if req == nil or weaponOk(req, weapons) then
+		return nil
+	end
+	if req.offhand and table.find(req.offhand, "shield") then
+		return "cast.error.needShield"
+	end
+	return "cast.error.pathWeapon"
+end
+
 local function typeOfItem(item: any): string?
 	if type(item) ~= "table" or type(item.id) ~= "string" then
 		return nil
@@ -891,9 +904,9 @@ local function buildApi(source: Source)
 		return out
 	end
 
-	-- A base skill of the active pool (S137: "cast.error.wrongPool" for a skill of another pool), rank > 0 and, for a path
-	-- skill, the node's own weapon (every row; S138: a direction has no weapon). S142: the Mage's element is its pool
-	-- (no element check of its own).
+	-- A base skill of the active pool (S137: "cast.error.wrongPool" for a skill of another pool), rank > 0, the skill's
+	-- own weapon (S143: SkillDef.weapon, Shield Bash's shield) and, for a path skill, the node's own weapon (every row;
+	-- S138: a direction has no weapon). S142: the Mage's element is its pool (no element check of its own).
 	local function skillUsable(character: Char, skillId: string, weapons: WeaponTypes): (boolean, string?)
 		local def = source.skill(skillId)
 		if def and def.class == character.class and def.path == nil then
@@ -906,6 +919,10 @@ local function buildApi(source: Source)
 			return false, "cast.error.notLearned"
 		end
 		local skill = source.skill(skillId) :: SkillDef
+		local weaponErr = skillWeaponError(skill, weapons)
+		if weaponErr then
+			return false, weaponErr
+		end
 		if skill.path == nil then
 			return true, nil
 		end
@@ -1051,8 +1068,8 @@ local function buildApi(source: Source)
 		local totals: Skills.PassiveTotals = { flat = {}, pct = {}, hooks = {} }
 		for _, skill in source.classSkills(character.class) do
 			if skill.passive then
-				-- a path skill's passive needs the skill usable (node.weapon)
-				if skill.path == nil or skillUsable(character, skill.id, weapons) then
+				-- a path skill's passive needs the skill usable (node.weapon); S143: so does a passive with its own weapon
+				if (skill.path == nil and skill.weapon == nil) or skillUsable(character, skill.id, weapons) then
 					Skills.addPassive(totals, skill, skillRank(character, skill.id))
 				end
 			end
@@ -1545,6 +1562,7 @@ local function buildApi(source: Source)
 		canChooseBreakpoint = canChooseBreakpoint,
 		clampToLevel = clampToLevel,
 		weaponOk = weaponOk,
+		skillWeaponError = skillWeaponError,
 		weaponTypesOf = weaponTypesOf,
 		canEdit = canEdit,
 		emptySet = emptySet,

@@ -274,6 +274,13 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 - Kierunki: Strażnik (tank; węzeł `skill` Ostatni Bastion `lastBastion`), Berserker (obrażenia; Rzeź `carnage` w
   rzędzie 8, z `weapon` dwuręcznej), Chorąży (wsparcie; Rozkaz Natarcia `advanceOrder` w rzędzie 8).
 - Cel (S146): `twohand` obrażenia 1,15–1,25 × `onehand`, `onehand` EHP ≥ 1,4 × `twohand`.
+- S143 (stan): obie pule według tabeli, wspólne Szarża 4, Prowokacja 12, Okrzyk Bojowy 30, Stalowa Skóra 45
+  (`transitional = false`, wersja puli 3). Furia istnieje tylko z pasywką `rage` (`Logic/Fury.cap`: 6 stosów, węzły
+  Berserkera podnoszą limit do 10, +0,2–0,5% za stos), Brutalny Cios +2 stosy (`SkillDef.furyGain`), Niepowstrzymany
+  przy pełnej Furii bez ogłuszenia i odrzutu. Tarcza: `SkillDef.weapon` (Uderzenie Tarczą), Zamach Tarczą +20% z tarczą,
+  Wyrok +15% za blok z 6 s, najwyżej 3 (`Logic/Block`). Kierunki: Ostatni Bastion, Rzeź i Rozkaz Natarcia w rzędzie 8,
+  w rzędzie 4 Strażnika Podwójna Straż (Przechwycenie na dwóch sojuszników). Po S143 dwuręczna / jednoręczna
+  (Chorąży) 1,5–1,8 w jeden cel (raport `S143.warrior.*`).
 
 ### 6.3 Łowca (wspólne: `C1` Odskok `disengage`, `C2` Znak Łowcy `huntersMark`, `C3` Namierzenie `drawBead`, `C4` Instynkt Drapieżnika `predatorInstinct`; wszystkie istn.)
 
@@ -288,7 +295,7 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 | A2 26 | Salwa `volley` (istn.) | Trujące Sidła `venomSnare` (istn.) |
 | K2 33 | Sokół `falcon` (istn.) | Sieć `netShot` (nowa; unieruchomienie w kręgu) |
 | S3 40 | Strzał w Serce `heartseeker` (istn.) | Bełt Egzekutora `deadlyBolt` (nowa; finiszer na zatrutych) |
-| P2 50 | Zwinność `agility` (istn.) | Szybki Naciąg `quickReload` (nowa; krótsze odnowienia bełtów) |
+| P2 50 | Zwinność `agility` (istn.) | Szybkie Przeładowanie `quickReload` (nowa; krótsze odnowienia bełtów; S144: nazwa, bo „Naciąg” to cecha broni) |
 | U 60 | Strzała Burzy `stormArrow` (istn.) | Pole Sideł `snarefield` (istn.) |
 
 - Efekty przedmiotów klasy (S134g, `Data/ItemEffects`): Celny Strzał, Deszcz Strzał, Zatruta Strzała, Odskok, Znak
@@ -296,6 +303,15 @@ nie mieszczą się w puli, idą do węzłów `skill` kierunków (§7) albo z gry
 - Kierunki: Strzelec Wyborowy, Traper, Zwiadowca (węzeł `skill` Nagonka `drive` w rzędzie 8).
 - Cel (S147): obie pule ±10% obrażeń w jeden cel (R5 w nowej postaci), łuk z ruchem w walce, kusza z większym udziałem
   obrażeń w czasie.
+- S144 (stan): obie pule według tabeli, wspólne Odskok 4, Znak Łowcy 12, Namierzenie 30, Instynkt Drapieżnika 45
+  (`transitional = false`, wersja puli 3). Kusza: Zatrute Groty (`toxicTips`, stos trucizny grotu przy głównym trafieniu
+  umiejętności kuszy, najwyżej 5 stosów, raz na sekundę na cel), Bełt Egzekutora ×1,5 od 3 stosów trucizn Łowcy,
+  Szybkie Przeładowanie tylko dla umiejętności kuszy (`Logic/Crossbow`); Przyszpilenie i Sieć unieruchamiają, a bossów i
+  Elity II spowalniają (`SkillEffect.bossSlow`, `Logic/Snare`). Kierunki: w rzędzie 8 Zwiadowcy Nagonka (Królewski Sokół
+  w rzędzie 10), u Strzelca i Trapera zwieńczenia `keystone` bez umiejętności: Martwe Oko (pewny krytyk umiejętności w
+  jeden cel na celu z ≥ 80% życia, `Logic/DeadEye`) i Mistrz Sideł (każde trafienie pułapki daje stos trucizny grotu bez
+  odstępu); rzędy 4 bez umiejętności. Po S144 łuk / kusza (Strzelec) w jeden cel 0,99–1,05, udział obrażeń w czasie
+  kuszy 0,20–0,25 (raport `S144.hunter.*`).
 
 ### 6.4 Kapłan (wspólne: `C1` Leczenie `heal`, `C2` Krąg Światła `circleOfLight`, `C3` Wskrzeszenie `resurrection`, `C4` Pobożność `devotion`; wszystkie istn.)
 

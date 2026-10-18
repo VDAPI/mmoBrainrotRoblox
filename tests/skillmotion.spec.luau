@@ -875,6 +875,49 @@ describe("Skill looks of every class (S114 Warrior and Cleric, S115 Hunter and M
 	end)
 end)
 
+-- S144 (DESIGN-18 §6.3): the Hunter pools' new skills: a motion from the shooting rigs with its crossbow variant, a look
+-- in three layers, the breakpoint texts and an own sound key; the shots release at the server's time with both rigs.
+describe("Hunter pools (S144)", function()
+	local Sfx = require("../src/shared/Data/Sfx")
+	local NEW = { "heavyBolt", "pinningShot", "windstep", "netShot", "deadlyBolt" }
+	local RELEASES: { [string]: number } = { heavyBolt = 0.42, pinningShot = 0.28, netShot = 0.3, deadlyBolt = 0.5 }
+
+	it("motion, look, texts and sound of the five new actives", function()
+		for _, id in NEW do
+			local motion = SkillMotions.get(id)
+			expect({ id, motion ~= nil, SkillVfx[id] ~= nil, Sfx.has(`skill.{id}`) }).toEqual({ id, true, true, true })
+			for _, suffix in { "name", "short", "desc", "bp5", "bp5b", "bp10", "bp10b" } do
+				local key = `skill.{id}.{suffix}`
+				expect({ key, (pl :: any)[key] ~= nil, (en :: any)[key] ~= nil }).toEqual({ key, true, true })
+			end
+		end
+		for _, id in { "toxicTips", "quickReload" } do
+			expect({ id, SkillMotions.get(id), SkillVfx[id] }).toEqual({ id, nil, nil })
+		end
+	end)
+
+	it("the shots: a crossbow variant and a key at the server's release with both rigs", function()
+		for id, t in RELEASES do
+			local motion = assert(SkillMotions.get(id))
+			expect({ id, motion.release }).toEqual({ id, t })
+			local crossbow = SkillPose.pick(motion, { weapon = "crossbow" })
+			expect({ id, crossbow ~= motion }).toEqual({ id, true })
+			for _, m in { motion, crossbow } do
+				local near = false
+				for _, key in m.keys do
+					if math.abs(key.t - t) <= 0.03 then
+						near = true
+					end
+				end
+				expect({ id, near }).toEqual({ id, true })
+			end
+		end
+		-- Wind Step: a skip with a landing, no shot
+		local step: any = assert(SkillMotions.get("windstep"))
+		expect({ step.release, step.land ~= nil, step.hit ~= nil }).toEqual({ nil, true, true })
+	end)
+end)
+
 describe("Hunter and Mage looks (S115)", function()
 	local Sfx = require("../src/shared/Data/Sfx")
 	local Timing = require("./fixtures/skill_timing")

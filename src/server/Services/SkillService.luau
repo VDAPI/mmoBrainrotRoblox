@@ -43,6 +43,7 @@ local Shared = ReplicatedStorage.Shared
 local Banner = require(script.Parent.Parent.Skills.Banner)
 local Burn = require(Shared.Logic.Burn)
 local Channel = require(Shared.Logic.Channel)
+local Crossbow = require(Shared.Logic.Crossbow)
 local Combat = require(Shared.Data.Combat)
 local Companion = require(script.Parent.Parent.Skills.Companion)
 local Context = require(script.Parent.Parent.Skills.Context)
@@ -145,6 +146,8 @@ type Runtime = {
 	noCooldowns: boolean,
 	infiniteResources: boolean,
 	cdr: number, -- S64: % item cooldown reduction (Skills.cooldownReduction), published as { "skills", "cdr" }
+	-- S144 (Logic/Crossbow): Quick Reload's % for the Crossbow's skills only, published as { "skills", "reload" }
+	reload: number,
 	-- S73 extendOnKill per skillId: seconds per kill, the cap and the seconds added since the cast
 	extend: { [string]: { seconds: number, max: number, added: number } },
 	-- S80 review: empowered uses taken by casts whose hit has not landed yet (a hit delay longer than the GCD)
@@ -173,6 +176,7 @@ local function runtime(player: Player): Runtime
 			noCooldowns = false,
 			infiniteResources = false,
 			cdr = 0,
+			reload = 0,
 			extend = {},
 			empowerPending = 0,
 		}
@@ -182,15 +186,19 @@ local function runtime(player: Player): Runtime
 end
 
 -- S64 (STATY 2C): item cooldown reduction (leg_cooldown, myth_cooldown) for casts, the skill bar and descriptions.
+-- S144: Quick Reload's hook beside it (the Crossbow's skills only, Logic/Crossbow.cdrFor).
 local function refreshCdr(player: Player)
 	local rt = runtime(player)
 	local cdr = Skills.cooldownReduction(CombatService.Hook(player, "cooldownReduction"))
-	if cdr == rt.cdr then
+	local reload = CombatService.Hook(player, "quickReload")
+	if cdr == rt.cdr and reload == rt.reload then
 		return
 	end
 	rt.cdr = cdr
+	rt.reload = reload
 	if PlayerStateService.HasState(player) and PlayerStateService.Get(player, { "skills" }) ~= nil then
 		PlayerStateService.Set(player, { "skills", "cdr" }, cdr)
+		PlayerStateService.Set(player, { "skills", "reload" }, reload)
 	end
 end
 
@@ -312,7 +320,7 @@ function SkillService.SetNoCooldowns(player: Player, enabled: boolean)
 	if enabled then
 		table.clear(rt.cooldowns)
 		rt.gcd = 0
-		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr })
+		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr, reload = rt.reload })
 	end
 end
 
@@ -952,7 +960,8 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 	ctx.castMul = castMul
 	if not rt.noCooldowns then
 		rt.gcd = t + SkillData.GCD
-		local cooldown = Skills.cooldown(skill, rank, rt.cdr, behaviour)
+		-- S144 (Logic/Crossbow): Quick Reload on the Crossbow's skills only
+		local cooldown = Skills.cooldown(skill, rank, Crossbow.cdrFor(skill.pool, rt.cdr, rt.reload), behaviour)
 		rt.cooldowns[skillId] = t + cooldown
 		ctx.cooldown = cooldown -- S76: critCdr shortens this
 		publishCooldowns(player)
@@ -1362,7 +1371,8 @@ function SkillService.Start()
 		table.clear(rt.extend)
 		rt.gcd = 0
 		rt.cdr = Skills.cooldownReduction(CombatService.Hook(player, "cooldownReduction"))
-		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr })
+		rt.reload = CombatService.Hook(player, "quickReload")
+		PlayerStateService.Set(player, { "skills" }, { cd = {}, gcd = 0, cdr = rt.cdr, reload = rt.reload })
 	end)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		hookCache[player] = nil

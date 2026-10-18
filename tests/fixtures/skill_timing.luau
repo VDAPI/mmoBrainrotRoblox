@@ -749,6 +749,114 @@ local skills: { [string]: Timing } = {
 		loopTo = false,
 		lock = false,
 	},
+	brutalStrike = { -- S143
+		hitDelay = 0.3,
+		hit = 0.3,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	execute = { -- S143
+		hitDelay = 0.4,
+		hit = 0.4,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	shieldBash = { -- S143
+		hitDelay = 0.22,
+		hit = 0.22,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	shieldSweep = { -- S143
+		hitDelay = 0.24,
+		hit = 0.24,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	sunder = { -- S143
+		hitDelay = 0.32,
+		hit = 0.32,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	vindicate = { -- S143
+		hitDelay = 0.3,
+		hit = 0.3,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	warStomp = { -- S143
+		hitDelay = 0.3,
+		hit = 0.3,
+		release = false,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = true,
+	},
+	deadlyBolt = { -- S144
+		hitDelay = 0.5,
+		hit = false,
+		release = 0.5,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = true,
+	},
+	heavyBolt = { -- S144
+		hitDelay = 0.42,
+		hit = false,
+		release = 0.42,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = true,
+	},
+	netShot = { -- S144
+		hitDelay = 0.3,
+		hit = 0.3,
+		release = 0.3,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	pinningShot = { -- S144
+		hitDelay = 0.28,
+		hit = false,
+		release = 0.28,
+		land = false,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
+	windstep = { -- S144
+		hitDelay = 0.15,
+		hit = 0.15,
+		release = false,
+		land = 0.32,
+		loopFrom = false,
+		loopTo = false,
+		lock = false,
+	},
 }
 
 local circleTarget: { [string]: CircleTarget } = {
@@ -765,6 +873,7 @@ local circleTarget: { [string]: CircleTarget } = {
 	blizzard = { projectile = false, waves = true }, -- S141
 	ballLightning = { projectile = false, waves = true }, -- S142
 	tempest = { projectile = false, waves = false }, -- S142
+	netShot = { projectile = false, waves = false }, -- S144
 }
 
 return { skills = skills, circleTarget = circleTarget }

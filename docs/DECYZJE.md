@@ -5243,3 +5243,121 @@
   strażnicy T-SK1/2 wariantów błyskawicy, T-SK4 średnich buildów (G10, regiony, ścieżki), T1 Mocy i Iskry żywiołu, R4
   5A / 10A Ognistego Pocisku `arcanistBoss` na 45–100 (przebicie i rozprysk dzielą mniej z podpaleniem), T-SK1 podstawy
   Maga na 40. i `arcanistFire` na 50.; wpisy S140 / S141, które znowu przechodzą, usunięte.
+- **S143** Pule Wojownika według drabiny DESIGN-18 §5 / §6.2. Miecz i Tarcza (`onehand`): Potężne Uderzenie S1 1,
+  Zamach Tarczą A1 3 (nowa), Uderzenie Tarczą K1 6 (nowa), Przechwycenie O1 10 (było rzędem 4 Strażnika), Miażdżący
+  Cios S2 15 (było rzędem 7 Chorążego, 48.), Niezłomność P1 20, Trzęsienie Ziemi A2 26 (było 30), Sztandar Wojenny K2 33,
+  Wyrok S3 40 (nowa), Kontratak P2 50, Mur Tarcz U 60. Broń Dwuręczna (`twohand`): Brutalny Cios S1 1, Rozpłatanie A1 3
+  (było 10), Rozbicie K1 6, Krwawy Szał O1 10 (było 18), Rozdarcie S2 15 (było 26), Furia P1 20, Wir Ostrzy A2 26 (było
+  6), Tupnięcie K2 33, Egzekucja S3 40, Niepowstrzymany P2 50, Gniew Tytana U 60 (było 48). Wspólne: Szarża 4, Prowokacja
+  12, Okrzyk Bojowy 30, Stalowa Skóra 45. Nowe na końcu listy `Data/Skills/Warrior`; `SkillPools/Warrior.version` 2 → 3,
+  `transitional = false`.
+- **S143** Przeniesione umiejętności zachowują liczby na dawnym poziomie odblokowania (ranga na tym poziomie = dawna
+  ranga 1, węzły `Data/SkillCurves`: Krwawy Szał, Trzęsienie Ziemi, Przechwycenie, Miażdżący Cios; Rozpłatanie: węzeł z
+  rangi 3 na 5). Wyjątki: Miażdżący Cios 300–520 → 220–324,4 (S2 od 15. poniżej Rozdarcia), Rozdarcie ranga 1 280 → 200
+  (od 15., pasmo R1 S91 na 20.), Niezłomność ranga 1 na 20. 6% HP zamiast dawnych 8% (z nowym blokiem 1–3 pkt 8%
+  spychało walkę Wojownika z Elitą na 20. poniżej pasma S32: 0,54 < 0,55).
+- **S143** Furia tylko z pasywką Furia (`rage`, P1 puli dwuręcznej): `Fury.cap(furyMax, rage, maxStacks)` = 0 bez haka
+  `rage`, więc węzły Furii Berserkera (Bitewny Rytm, Amok, Zajadłość, Szał, …) i `furyConsume` (Rozdarcie, Egzekucja, Rzeź) bez
+  niej nic nie robią; sama Furia trzyma 6 stosów, Bitewny Rytm podnosi limit do 8 / 9 / 10 (`rhythmMax` 4–10 → 2–4,
+  inaczej każda ranga dawała od razu 10; `HOOK_RULES.fury` bez zmian). Każdy
+  stos +0,2–0,5% obrażeń (`furyDamage`; 0,4–1,2 dawało Berserkerowi, wzorcowi obrażeń wszystkich klas, +22% wobec S142
+  na 70.). Brutalny Cios daje 2 stosy na trafienie (`SkillDef.furyGain`, `Fury.hitGain`: większe z umiejętności i Rzezi).
+- **S143** Niepowstrzymany: przy pełnej Furii (`stacks == cap > 0`, `Fury.unstoppable`) gracz odporny na ogłuszenie
+  (`StatusEffectService.Apply`) i odrzut (`Context`, finał Kulistego Pioruna), plus 3–9% mniej obrażeń przez istniejący
+  hak `furyGuard`.
+- **S143** Tarcza: `SkillDef.weapon` (Uderzenie Tarczą: `{ offhand = { "shield" } }`) sprawdzane w jednym miejscu,
+  `Paths.skillUsable` (`Paths.skillWeaponError`: `cast.error.needShield`, inaczej `cast.error.pathWeapon`); bez tarczy
+  broń jednoręczna dalej wybiera Miecz i Tarczę, a kafelek jest szary (czerwony, gdy ranga kupiona). Pasywka z własną
+  bronią działa tylko, gdy broń pasuje. Zamach Tarczą bez wymogu, z tarczą +20% (`Block.shieldMul`).
+- **S143** Wyrok (`Logic/Block`, `Data/Skills.BLOCK` okno 6 s, najwyżej 3): serwer zapisuje czas każdego bloku
+  (`onBlock`, także Parowanie tarczy) i liczy bloki z okna (`CombatService.RecentBlocks`); +15% za blok tylko w głównym
+  trafieniu. Niezłomność dostaje 1–3 pkt bloku (szkoła tarczy), Blok Strażnika zostaje z tarczą.
+- **S143** Egzekucja: `finisher` ×2 poniżej 30% HP (węzeł Ostatnie Cięcie: 35%) i `furyConsume` +4% za stos (mniej niż
+  Rozdarcie, 6%). Rozbicie: `armorBreak` 10–20% (`enemyArmor`, najsilniejsze w kategorii) i spowolnienie 30% 3 s,
+  obrażenia 60–110% (80–140 dawało za dużo Berserkerowi). Tupnięcie: ogłuszenie 1 s z `notBoss` i 20% wolniejsze ataki
+  4 s (`enemyAttackSlow`, także bossowie; 20 = limit kategorii w `Data/BuffCategories`, 30 i tak było ścinane).
+- **S143** Kierunki: węzły `skill` tylko w rzędach 4 i 8. Strażnik: Ostatni Bastion w rzędzie 8 (zwieńczenie), w rzędzie
+  4 Podwójna Straż (Przechwycenie osłania też drugiego sojusznika, `secondTarget`, bez wyboru 10A); ulepszenie
+  zwieńczenia w rzędzie 11 to Niezłomny Bastion (`guardian_lastBastion2`, Ostatni Bastion +1 / 2 s i +2,5 / 5 pkt
+  redukcji; zastępuje Niewzruszony Mur, bo Mur Tarcz jest w puli jednoręcznej). Berserker: Rzeź
+  w rzędzie 8 z bronią dwuręczną, Chorąży: Rozkaz Natarcia w rzędzie 8. Umiejętności, które poszły do pul, zostawiły węzły
+  tej samej liczby rang (Niezachwiany, Podwójna Straż, Mistrz Uderzenia, Blizny, Szał, Ostatnie Cięcie, Proporzec,
+  Herold, Musztra), więc rzędy i `need` bez zmian.
+- **S143** Migracja 6 (S56) układa pasek z umiejętności puli noszonej broni (bez broni: pula domyślna), nie z obu pul
+  naraz; `character.spec` z nowymi oczekiwaniami (Wojownik 12.: pula Miecz i Tarcza).
+- **S143** Efekty przedmiotów Wojownika (`Data/ItemEffects`) bez zmian: S134g przypiął je już do ról i pul DESIGN-18
+  §6.2 (Szarża C1, Potężne Uderzenie S1 `onehand`, Rozpłatanie A1 i Rozdarcie S2 `twohand`, Miażdżący Cios S2,
+  Trzęsienie Ziemi A2, Mur Tarcz U `onehand`, Wir Ostrzy A2 `twohand`, Prowokacja C2); nowych efektów brak.
+- **S143** Model: buildy wzorcowe `guardian.defender` / `guardian.loner` i `standard.commander` / `standard.warden` z
+  bronią jednoręczną i tarczą, `berserker.fury` (wzorzec obrażeń) / `berserker.butcher` z dwuręczną, wszystkie z `ranks`;
+  Szarża Berserkera na końcu kolejności rang (inaczej ranga 10 na 70. zamiast Okrzyku). Lustra w `tests/SkillModel`
+  (`Fury.cap`, `furyGain`, bloki Wyroku jako oczekiwana liczba bloków z ciosów manekina, tarcza Zamachu). Na 20. R1
+  2,11 (dwuręczna) i 2,04 (jednoręczna) w paśmie S91; `S91.gain.standard.commander` 1,00 tylko raport (rzędy 1–2
+  Chorążego nie mają na 20. obrażeń: Okrzyk od 30.).
+- **S143** Tożsamość (raport `S143.warrior.*`, asertuje S146): dwuręczna / jednoręczna (Chorąży) w jeden cel 1,59 /
+  1,74 / 1,80 / 1,53 na 20 / 45 / 70 / 100, na 3 cele 1,70 / 1,61 / 1,26 / 1,32 (cel 1,15–1,25: jednoręczna jest za
+  słaba, dźwignią są obrażenia puli tarczy, nie Berserker); EHP Strażnika / dwuręczna 1,57–2,18 (cel ≥ 1,4); tank na
+  minutę 2,2–3,4 (≤ 3,5). Berserker na 45 / 70 / 100: −4% / +12% / +7% wobec S142.
+- **S143** Fixture 1–20 przepisany (`fixture S143 "pule Wojownika"`): 413 zmienionych i 30 nowych wpisów, wszystkie w
+  kluczach Wojownika albo w wierszach z Wojownikiem (drużyny Grimroka, trójka W + M + K Elit II jaskiń i kryjówek Łąk,
+  Uzdrowiciel na Obrońcy); `ALLOWED_1_20_DIFFS` pusta.
+- **S143** `GLOBAL_REPORT_ONLY` S143 (80 kluczy 21–100, „przebudowa umiejętności DESIGN-18, wraca w S146/S147”):
+  strażnicy T-SK1/2 buildów Wojownika (60), G10 / T-SK5 Uzdrowiciela na Obrońcy na 50., T1 Rozłupania z młotem i T2
+  Berserkera na 70., ścieżki: `berserker.base`, EHP Strażnika na 45 / 70, wsparcie i r6 Chorążego na 100., R4 10A
+  Rozpłatania na 45., R7 Łowcy na 70. i stosunek Inkwizytora na 70 / 100 (mierzone do Berserkera).
+- **S144** Pule Łowcy według drabiny DESIGN-18 §5 / §6.3. Łuk (`bow`): Celny Strzał S1 1, Deszcz Strzał A1 3 (było 10),
+  Przyszpilenie K1 6 (nowa), Krok Wiatru O1 10 (nowa), Podwójny Strzał S2 15 (było 3), Sokole Oko P1 20 (było 14), Salwa
+  A2 26 (było 30), Sokół K2 33 (było rzędem 4 Zwiadowcy), Strzał w Serce S3 40 (było zwieńczeniem Strzelca), Zwinność P2
+  50 (było rzędem 1 Zwiadowcy), Strzała Burzy U 60 (było rzędem 7 Strzelca). Kusza (`crossbow`): Ciężki Bełt S1 1
+  (nowa), Bełt Przebijający A1 3 (`piercingArrow`, było rzędem 1 Strzelca), Pułapka Lodowa K1 6, Kamuflaż O1 10,
+  Zatruta Strzała S2 15 (było 18), Zatrute Groty P1 20 (nowa), Trujące Sidła A2 26, Sieć K2 33 (nowa), Bełt Egzekutora
+  S3 40 (nowa), Szybkie Przeładowanie P2 50 (nowa), Pole Sideł U 60. Wspólne: Odskok 4, Znak Łowcy 12, Namierzenie 30,
+  Instynkt Drapieżnika 45. Nowe na końcu listy `Data/Skills/Hunter`; `SkillPools/Hunter.version` 2 → 3,
+  `transitional = false`; pula tylko z broni głównej (kołczan bez znaczenia).
+- **S144** Przeniesione umiejętności zachowują liczby na dawnym poziomie (węzły `Data/SkillCurves`: Deszcz Strzał, Bełt
+  Przebijający i Podwójny Strzał na randze z poziomu 19 / 23, Salwa, Strzał w Serce, Nagonka; ranga 1 po przesunięciu
+  w górę = dawna ranga na nowym poziomie: Namierzenie, Sokół, Strzała Burzy, Zwinność). Ciężki Bełt to Celny Strzał ×1,3
+  (też węzły S91) z odnowieniem ×1,3 (5,2 s): te same obrażenia na odnowienie, wolniej.
+- **S144** „Szybki Naciąg” z tabeli DESIGN-18 nazywa się Szybkie Przeładowanie (słowo „Naciąg” ma cecha broni Pełny
+  Naciąg; `data.spec` zabrania wspólnych słów). Działa jak `cooldownReduction`, ale tylko dla umiejętności puli kuszy
+  (`Crossbow.cdrFor`, wspólny limit `Combat.cdrCap` z przedmiotami); serwer publikuje go jako `skills.reload`.
+- **S144** Zatrute Groty: główne trafienie (bez rozprysku, przebicia i strefy) umiejętności puli kuszy dokłada stos
+  jednego wpisu trucizny grotu (`skillId` `toxicTips`, 10–20% ataku przez 6 s na stos, najwyżej 5) przez
+  `CombatService.ToxicTip` / `ApplyPoison`, najwyżej raz na sekundę na cel (`Data/Skills.CROSSBOW`). Bełt Egzekutora:
+  ×(1 + `venomMul`) od 3 stosów wszystkich trucizn Łowcy na celu (`StatusEffectService.StacksBy`), na graczu najwyżej
+  `Combat.pvp.finisher`; przełomy 5A / 10A podnoszą premię (+20 / +35), bo próg 2 stosów w rotacji nic nie dawał.
+- **S144** Przyszpilenie i Sieć: `root` z polem `SkillEffect.bossSlow`; na bossie i Elicie II (`IsBossLike`) to
+  spowolnienie `values.slow` % (`enemySlow`) na ten sam czas (`Logic/Snare`), gracz dostaje unieruchomienie z regułą PvP
+  każdej kontroli (`Config.PvpCcMultiplier`). Krok Wiatru: dwa efekty `statBuff` `own` (unik, ruch) jednego klucza.
+- **S144** Kierunki: węzły `skill` tylko w rzędach 4 i 8. Zwiadowca: Nagonka w rzędzie 8 (zwieńczenie), Królewski Sokół
+  (`keystone`) w rzędzie 10 na jej dawnym miejscu, Sokół Władcy w rzędzie 11 bez zmian. Strzelec i Traper: rzędy 4 bez
+  umiejętności, w rzędzie 8 nowe zwieńczenia `keystone` zmieniające zasadę (test kształtu: zwieńczenie to `skill` albo
+  `keystone`): Martwe Oko (`deadEye` 80: główne trafienie umiejętności typu `target` / `projectile` w cel z ≥ 80% życia
+  zawsze krytyczne bez zużycia pewnego krytyku, ale z premią następnego strzału, `DealOptions.keepCrit`,
+  `Logic/DeadEye`; +10 pkt obrażeń krytycznych) i Mistrz Sideł
+  (`masterTrapper` 15: każde trafienie pułapki daje stos trucizny grotu co najmniej 15%, bez odstępu, także bez
+  Zatrutych Grotów; trucizny +10%). Rzędy 9 i 11 Strzelca i Trapera dalej zmieniają Strzał w Serce / Pole Sideł (działają
+  z pulą tej umiejętności). Umiejętności, które poszły do pul, zostawiły węzły tej samej liczby rang (Równe Lotki,
+  Cierpliwość, Opanowanie, Myśliwska Skóra, Przynęta, Podchód, Chyży, Sokolnik, Bystry Znak), więc rzędy i `need` bez zmian.
+- **S144** Oznaczenie Zwiadowcy (`HOOK_RULES.spot.skills`) działa też z Ciężkiego Bełtu (S1 kuszy jak Celny Strzał łuku).
+- **S144** Efekty przedmiotów Łowcy (`Data/ItemEffects`) bez zmian: S134g przypiął je do ról i pul DESIGN-18 §6.3; nowych
+  efektów brak. Łuk Morvane: Szeroki Znak (`huntersMark_spread`, wspólna, ten sam `dmg(3)`) zamiast Roznoszonej Trucizny
+  (Zatruta Strzała jest teraz w kuszy); test: stałe efekty nazwanej broni wspólne albo z puli jej typu.
+- **S144** Model: buildy wzorcowe z `ranks` i rotacją umiejętności obu pul (umiejętność innej puli nie ma rangi i jest
+  pomijana), więc ten sam build mierzy się z drugą bronią. Królobójca gra długim łukiem (było ciężką kuszą; blok S91
+  mierzy go też z ciężką kuszą), Truciciel kuszą (było łukiem: pułapki i trucizna są szkołą kuszy), Kłusownik kuszą (S91
+  też z łukiem), Łowca Elit długim łukiem, Zwiadowcy łukiem i łukiem krótkim. Lustra w `tests/SkillModel` (tabela `Hunt`:
+  limit 200 lokalnych zmiennych pliku; `DEX_CAPS` jako pole `SkillModel`). R4 nowych na Kłusowniku (kusza) i Królobójcy
+  (łuk), Bełt Egzekutora w rotacji (`R4_ROTATION`); przełomy w R4: Zatruta Strzała 5A 21 → 15, 10B 60 → 28, Salwa 5B
+  5 → 4, Trujące Sidła 10A 38 → 44, Bełt Przebijający 5B krwawienie 50 → 40 (ranga 5 już na 19.).
+- **S144** Tożsamość (raport `S144.hunter.*`, asertuje S147): łuk / kusza (Strzelec) w jeden cel 1,00 / 1,05 / 1,01 /
+  0,99 na 20 / 45 / 70 / 100 (cel ±10%), udział obrażeń w czasie kuszy 0,20–0,25 (cel ≥ 0,25), łuk w ruchu (Krok Wiatru
+  i Odskok na odnowieniu) 0,27 → 1,0, R7 Łowca / Wojownik dwuręczny 1,0–1,35 dla obu pul.
+- **S144** Fixture 1–20 przepisany (`fixture S144 "pule Łowcy"`): 417 zmienionych wpisów, wszystkie w kluczach Łowcy albo
+  w wierszach z Łowcą (drużyny Grimroka, drużyny W + M + Ł + K Elit II jaskiń i kryjówek Łąk); `ALLOWED_1_20_DIFFS`
+  pusta. Grupa Łowcy z łukiem na 10–20 o 18–34% niżej (Bełt Przebijający poszedł do kuszy), R1 w paśmie.
+- **S144** `GLOBAL_REPORT_ONLY` S144 (107 kluczy 21–100, „przebudowa umiejętności DESIGN-18, wraca w S146/S147”):
+  strażnicy T-SK1/2/3 buildów Łowcy w Borze, Pustkowiach i Szczytach, T1 Łatwego Celu (Kłusownik na 100.) i Pełnego
+  Naciągu (Łowczy drużyny z łukiem krótkim na 70.), T2 Trapera na 70 / 100, ścieżki: `marksman.base`, `r5a`,
+  `trapper.single` / `aoe` / `r3` / `r5`, `scout.solo`, `r6.scout`. Martwe klucze `kingslayer@longbow+quiver` z S137 i
+  S143 usunięte (długi łuk to teraz broń Królobójcy).

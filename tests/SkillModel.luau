@@ -59,6 +59,13 @@
 local B = require("./Balance")
 local Bases = require("../src/shared/Data/Items/Bases")
 local Bonuses = require("../src/shared/Data/Bonuses")
+local Block = require("../src/shared/Logic/Block")
+-- S144: the Hunter pools' rules and the model's helpers for them in one table (Lua's 200 locals of the chunk)
+local Hunt: any = {
+	Crossbow = require("../src/shared/Logic/Crossbow"),
+	DeadEye = require("../src/shared/Logic/DeadEye"),
+	Snare = require("../src/shared/Logic/Snare"),
+}
 local Burn = require("../src/shared/Logic/Burn")
 local Chill = require("../src/shared/Logic/Chill")
 local Shock = require("../src/shared/Logic/Shock")
@@ -991,11 +998,24 @@ SkillModel.R4_ROTATION = {
 	immolate = true,
 	glacialSpike = true,
 	shatter = true,
+	deadlyBolt = true, -- S144: the poison stacks come from the rotation's other skills (Logic/Crossbow.venomMul)
 } :: { [string]: boolean }
 
 -- S89 (E1): breakpoint options with a rank level above 20 printed without an assertion: control, movement and geometry
 -- (free utility, ROZWOJ 2.7) and options without a value in the role SkillModel.optionGain measures (S86).
 SkillModel.R4_UTILITY = {
+	-- S143 (DESIGN-18 §6.2): the Warrior pools' control, geometry, blocks and sustain options
+	["shieldSweep:5a"] = "geometria albo czas kontroli",
+	["shieldSweep:10a"] = "ogłuszenie (kontrola)",
+	["shieldBash:5a"] = "geometria albo czas kontroli",
+	["vindicate:5a"] = "bloki (manekiny nie biją)",
+	["vindicate:10a"] = "obszar przy roli 1 cel (bez metryki)",
+	["brutalStrike:10a"] = "obszar przy roli 1 cel (bez metryki)",
+	["sunder:5a"] = "geometria albo czas kontroli",
+	["sunder:10a"] = "osłabienie wroga dla drużyny (enemyArmor: najsilniejsze w kategorii, cecha Rozłupania)",
+	["warStomp:5a"] = "geometria albo czas kontroli",
+	["warStomp:10a"] = "ogłuszenie (kontrola)",
+	["execute:10a"] = "kradzież życia (podtrzymanie, bez metryki w roli)",
 	["mightyStrike:10a"] = "obszar przy roli 1 cel (bez metryki)",
 	["charge:10a"] = "ogłuszenie (kontrola)",
 	["charge:10b"] = "obszar przy roli 1 cel (bez metryki)",
@@ -1139,6 +1159,15 @@ SkillModel.R4_UTILITY = {
 	["huntersMark:10b"] = "osłabienie wroga: wartość w B Zwiadowcy (wiersz scout.support)",
 	["drive:5a"] = "geometria albo czas kontroli",
 	["drive:10b"] = "unieruchomienie (kontrola)",
+	-- S144 (DESIGN-18 §6.3): the Hunter pools' control, geometry and defence options
+	["pinningShot:5a"] = "geometria albo czas kontroli",
+	["windstep:5a"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["windstep:5b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["windstep:10a"] = "obrażenia następnego strzału: Krok Wiatru poza rotacją buildów (jak Odskok 10A)",
+	["windstep:10b"] = "wzmocnienie, obrona albo wskrzeszenie (optionGain bez roli, S86)",
+	["netShot:5a"] = "geometria albo czas kontroli",
+	["netShot:10a"] = "unieruchomienie (kontrola)",
+	["heavyBolt:10a"] = "obszar przy roli 1 cel (bez metryki)",
 	["iceShard:5a"] = "zamrożenie (kontrola)",
 	["chainLightning:5a"] = "dodatkowe skoki: wartość dopiero przy więcej niż 3 wrogach (pomiar na 3 manekinach)",
 	["fireball:10a"] = "3 małe kule spadają 7 st. od środka, a manekiny stoją w środku (geometria, 0 w modelu)",
@@ -1244,6 +1273,30 @@ SkillModel.R4_CLASS_BUILDS = {
 	Mage = "arcanist.arcanistBoss",
 } :: { [string]: string }
 SkillModel.R4_SUPPORT_BUILDS = {
+	-- S144 (DESIGN-18 §6.3): the Crossbow pool on the Trapper's crossbow (Kłusownik), the Bow's falcon and the Hunter's
+	-- Mark on the Scout; the Bow's other skills stay on "Królobójca" (R4_CLASS_BUILDS, a longbow)
+	heavyBolt = "trapper.poacher",
+	piercingArrow = "trapper.poacher",
+	frostTrap = "trapper.poacher",
+	camouflage = "trapper.poacher",
+	venomArrow = "trapper.poacher",
+	venomSnare = "trapper.poacher",
+	netShot = "trapper.poacher",
+	deadlyBolt = "trapper.poacher",
+	snarefield = "trapper.poacher",
+	falcon = "scout.partyHunter",
+	huntersMark = "scout.partyHunter",
+	-- S143 (DESIGN-18 §6.2): the one-handed pool on the Sword and Shield builds (the Standard-Bearer deals the damage,
+	-- the Guardian guards); the two-handed pool stays on "Furia" (R4_CLASS_BUILDS)
+	mightyStrike = "standard.commander",
+	shieldSweep = "standard.commander",
+	shieldBash = "standard.commander",
+	crushingBlow = "standard.commander",
+	earthquake = "standard.commander",
+	vindicate = "standard.commander",
+	warBanner = "standard.commander",
+	intercept = "guardian.defender",
+	shieldWall = "guardian.defender",
 	heal = "healer.dungeon",
 	circleOfLight = "healer.dungeon",
 	shieldOfFaith = "healer.dungeon",
@@ -1964,6 +2017,13 @@ end
 -- Static unmodelled list of a player (I1 c): hooks the model does not count. S86: the class mechanics and the item
 -- trait hooks joined the modelled list (on the event or, in a fight with monsters that hit back, `retaliate`).
 local HOOKS_MODELLED: { [string]: boolean } = {
+	-- S144 (Logic/Crossbow, Logic/DeadEye): Toxic Tips, Quick Reload, the keystones Dead Eye and Master Trapper
+	toxicTips = true,
+	quickReload = true,
+	deadEye = true,
+	masterTrapper = true,
+	-- S143 (Logic/Fury): Rage gates Fury (furyMax); Unstoppable's immunity: the dummies never stun or push the player
+	rage = true,
 	-- S142 (Logic/Shock): Overcharge, Conductor
 	overchargeCrit = true,
 	overchargeDmg = true,
@@ -2065,6 +2125,7 @@ local HOOKS_MODELLED: { [string]: boolean } = {
 -- Hooks that change no metric (threat, movement, minimap, kills of a dying group's spread, radius of areas every dummy
 -- stands in, the mana shield's price): docs/SESJE.md S86 names the reason of each.
 local HOOKS_NONE: { [string]: boolean } = {
+	unstoppable = true, -- S143: no monster stuns or pushes the player in the model
 	threat = true,
 	manaShieldCost = true,
 	areaRadius = true,
@@ -2144,6 +2205,7 @@ export type FightResult = {
 	sealLit: number, -- share of the time the Runic Seal glows (standing still, C3)
 	basicDealt: number, -- damage of basic attacks (with their second hits and draws)
 	elementDealt: number, -- damage of the weapon-element effects (burn ticks, arcs; C3 elementShare)
+	dotDealt: number, -- S144: damage of every poison, bleed and burn tick (the Crossbow's identity, DESIGN-18 §6.3)
 	areaDealt: number, -- damage of area skill hits (Traits.isAreaSkill, zone ticks included; C3 areaShare)
 	offensiveCasts: number, -- offensive casts and traps (C3 skillInterval)
 	died: boolean, -- retaliate: the player fell
@@ -2436,18 +2498,21 @@ end
 local FURY = PathData.HOOK_RULES.fury
 local CARNAGE = PathData.HOOK_RULES.carnage
 
--- mirrors StatusEffectService.FuryMax: the furyMax hook, at most HOOK_RULES.fury.maxStacks; 0 = no Fury
+-- mirrors StatusEffectService.FuryMax: the furyMax hook, at most HOOK_RULES.fury.maxStacks, only with Rage (S143,
+-- Logic/Fury.cap); 0 = no Fury
 local function furyMax(state: any): number
-	return math.clamp(math.floor(hook(state, "furyMax")), 0, FURY.maxStacks)
+	return Fury.cap(hook(state, "furyMax"), hook(state, "rage"), FURY.maxStacks)
 end
 
--- mirrors StatusEffectService.AddFury: one hit that dealt damage; Carnage adds HOOK_RULES.carnage.furyGain
-local function addFury(state: any)
+-- mirrors StatusEffectService.AddFury: one hit that dealt damage; Carnage adds HOOK_RULES.carnage.furyGain, S143 the
+-- skill's furyGain (Brutal Strike; Logic/Fury.hitGain)
+local function addFury(state: any, skillId: string?)
 	local max = furyMax(state)
 	if max <= 0 then
 		return
 	end
-	local amount = if has(state, state.self, "carnage") then CARNAGE.furyGain else 1
+	local def = if skillId then SkillData.get(skillId) else nil
+	local amount = Fury.hitGain(if def then def.furyGain else nil, has(state, state.self, "carnage"), CARNAGE.furyGain)
 	state.fury = Fury.gain(state.fury, state.t, max, amount, FURY)
 end
 
@@ -2471,6 +2536,20 @@ local function stepFury(state: any)
 end
 SkillModel.furyMax = furyMax
 
+-- S143 mirrors CombatService.RecentBlocks (Logic/Block.count): the expected blocks of the last BLOCK.window seconds,
+-- at most BLOCK.max (an expected value: the sum of the blows' block chances, capped)
+local function recentBlocks(state: any): number
+	local rules = SkillData.BLOCK
+	local n = 0
+	for _, b in state.blocks or {} do
+		if state.t - b.t < rules.window and b.t <= state.t + EPS then
+			n += b.n
+		end
+	end
+	return math.min(n, rules.max)
+end
+SkillModel.recentBlocks = recentBlocks
+
 -- S86 (B5 test): Fury under hits at `hits` (s) over `seconds` through the model's addFury / stepFury, with furyMax =
 -- `max`; Carnage on [carnage[1], carnage[2]). Returns the stacks at each whole second (index = second + 1).
 function SkillModel.furySim(hits: { number }, seconds: number, max: number, carnage: { number }?): { number }
@@ -2481,7 +2560,7 @@ function SkillModel.furySim(hits: { number }, seconds: number, max: number, carn
 		furyStatAt = -math.huge,
 		selfDirty = false,
 		self = { effects = {} },
-		p = { hooks = { furyMax = max } },
+		p = { hooks = { furyMax = max, rage = 1 } }, -- S143: Fury needs Rage (Logic/Fury.cap)
 		sp = { hooksAll = {} },
 	}
 	local out: { number } = {}
@@ -2573,6 +2652,9 @@ local function tickEntity(state: any, entity: any)
 				state.dealt += e.tickAmount
 				local bucket = e.skillId or "dot"
 				state.by[bucket] = (state.by[bucket] or 0) + e.tickAmount
+				if e.kind == "poison" or e.kind == "bleed" or e.kind == "burn" then
+					state.dotDealt = (state.dotDealt or 0) + e.tickAmount -- S144 (states of the unit tests have none)
+				end
 				if e.element == "weapon" then
 					state.elementDealt += e.tickAmount
 				end
@@ -2594,6 +2676,25 @@ local function belowShare(tg: any, pct: number): number
 		return math.clamp(pct / 100, 0, 1)
 	end
 	return if tg.hp / tg.maxHp * 100 < pct then 1 else 0
+end
+
+-- S144: the share of hits on a target at `pct` % health or more (Dead Eye; a dummy as belowShare)
+function Hunt.aboveShare(tg: any, pct: number): number
+	if tg.dummy and A.executeShare == "linear" then
+		return math.clamp(1 - pct / 100, 0, 1)
+	end
+	return if tg.hp / tg.maxHp * 100 >= pct then 1 else 0
+end
+
+-- S144 mirrors StatusEffectService.StacksBy: the stacks of every running poison of the player on the target
+function Hunt.poisonStacks(state: any, tg: any): number
+	local n = 0
+	for _, e in tg.effects do
+		if e.kind == "poison" and e.expiresAt > state.t + EPS then
+			n += e.stacks or 1
+		end
+	end
+	return n
 end
 
 -- mirrors CombatService.offensiveMultiplier (S85 C3, S86): eliteDamage / bossDamage by variant, vs_<family>,
@@ -2813,6 +2914,25 @@ local function applyPoison(state: any, tg: any, o: any): boolean
 	return applied
 end
 
+-- S144 mirrors CombatService.ToxicTip (Logic/Crossbow): one more stack of the player's tip poison (one entry per target,
+-- skillId CROSSBOW.tipKey), at most once per tipGap s per target unless `gapless` (Master Trapper's traps)
+function Hunt.toxicTip(state: any, tg: any, pct: number, attack: number, gapless: boolean)
+	local rules = SkillData.CROSSBOW
+	local tips = state.tips or {}
+	if not gapless and not Hunt.Crossbow.tipReady(tips[tg], state.t, rules.tipGap) then
+		return
+	end
+	state.tips = Hunt.Crossbow.tipRecord(tips, tg, state.t, rules.tipGap)
+	state.toxicTips = (state.toxicTips or 0) + 1
+	applyPoison(state, tg, {
+		duration = rules.tipDuration,
+		value = pct,
+		tickAmount = math.max(1, attack * pct / 100 / rules.tipDuration) * (1 + dotBonus(state, "poison") / 100),
+		maxStacks = rules.tipStacks,
+		skillId = rules.tipKey,
+	})
+end
+
 -- mirrors CombatService.applyTraitEffect (S63-S65): bleed / poison (Traits.chance, Traits.dotTick, accumulate,
 -- maxStacks, attackSlow), armour break (every hit; area share), weaken, harass (slow + attack slow), shock (stun,
 -- gap, not bosses, the monster's next attack delayed). Rolls as a rate (proc).
@@ -2990,6 +3110,7 @@ export type HitOpts = {
 	extra: number?, -- DealOptions.multiplier
 	basic: boolean?,
 	consumeShot: boolean?,
+	keepCrit: boolean?, -- S144: DealOptions.keepCrit (Dead Eye leaves guaranteedCrit, nextShot is still taken)
 	forceShare: number?, -- share of hits with forceCrit (execute)
 	noProc: boolean?,
 	bucket: string?,
@@ -3019,7 +3140,7 @@ dealDamage = function(state: any, tg: any, o: HitOpts): number
 	local extra = o.extra or 1
 	local force = o.forceShare or 0
 	if o.consumeShot ~= false then
-		if takeOne(state, "guaranteedCrit") then
+		if not o.keepCrit and takeOne(state, "guaranteedCrit") then
 			force = 1
 		end
 		local shot = takeOne(state, "nextShot")
@@ -3089,7 +3210,7 @@ dealDamage = function(state: any, tg: any, o: HitOpts): number
 			if o.basic or (o.skill and PathData.HOOK_RULES.spot.skills[o.skill]) then
 				spot(state, tg)
 			end
-			addFury(state)
+			addFury(state, o.skill)
 			if not o.noProc then
 				if tg.hp > 0 or tg.dummy then
 					applyOnHit(state, tg, amount, o)
@@ -3315,6 +3436,17 @@ local function applyEffect(ctx: Ctx, entity: any, effect: any, scale: number?, d
 		duration = SkillData.CHILL.deepDuration
 		skillKey = Chill.DEEP_KEY
 	end
+	-- S144 mirrors Context.applyEffect (Logic/Snare): a root with bossSlow on a boss or an Elite II is a slow
+	local category = effect.category
+	if effect.bossSlow ~= nil then
+		local slow = Skills.resolve(ctx.def, effect.bossSlow, ctx.rank)
+		local landed = Hunt.Snare.kindOn(kind, bossLike(entity), slow)
+		if landed ~= kind then
+			kind = landed
+			value = slow * s
+			category = Hunt.Snare.SLOW_CATEGORY
+		end
+	end
 	local tickAmount: number? = nil
 	if kind == "bleed" or kind == "poison" or kind == "burn" then
 		tickAmount = math.max(1, attackOf(ctx) * value / 100 / math.max(1, duration))
@@ -3364,7 +3496,7 @@ local function applyEffect(ctx: Ctx, entity: any, effect: any, scale: number?, d
 			elseif kind == "poison" then ctx.bp.poisonStacks
 			else effect.maxStacks, -- S141: a growing slow
 		skillId = skillKey,
-		category = effect.category,
+		category = category,
 		notBoss = effect.notBoss,
 		area = Traits.isAreaSkill(ctx.def.type), -- the ticks of an area skill count in areaDealt (C3 areaShare)
 	}
@@ -3509,6 +3641,23 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 	end
 	-- S141 mirrors Context.damage (Logic/Chill): Glacial Spike and Shatter on their main hits
 	local main = not (o.plain or o.secondary or o.lingering)
+	-- S143 mirrors Context.damage (Logic/Block): Vindicate's blocks of the window (the expected blocks of the fight's
+	-- monster blows, state.blocks), Shield Sweep with a shield
+	if main and def.values.perBlock ~= nil then
+		multiplier *= Block.vindicateMul(recentBlocks(state), Skills.valueAt(def, "perBlock", ctx.rank))
+	end
+	if def.values.shieldDmg ~= nil and not o.lingering then
+		local shielded = Block.hasShield(state.sp.weapons and state.sp.weapons.offhand)
+		multiplier *= Block.shieldMul(shielded, Skills.valueAt(def, "shieldDmg", ctx.rank))
+	end
+	-- S144 mirrors Context.damage (Logic/Crossbow): the Executioner's Bolt on the player's poison stacks
+	if main and def.values.venomMul ~= nil then
+		multiplier *= Hunt.Crossbow.venomMul(
+			Hunt.poisonStacks(state, tg),
+			Skills.valueAt(def, "venomStacks", ctx.rank),
+			Skills.valueAt(def, "venomMul", ctx.rank)
+		)
+	end
 	local spend: string? = nil
 	if ctx.element == "ice" and main and (def.values.vsFrozen ~= nil or def.values.shatter ~= nil) then
 		local frozen = has(state, tg, "freeze")
@@ -3547,12 +3696,22 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 		force = 1
 		consume = false
 	end
+	-- S144 mirrors Context.damage (Logic/DeadEye): the Marksman's keystone, a sure crit on a healthy target (the share of
+	-- such hits, apart from execute's wounded share; a whole share spends no guaranteedCrit, still takes nextShot)
+	local keepCrit = false
+	local deadEye = pathHook(state, "deadEye")
+	if deadEye > 0 and Hunt.DeadEye.sure(deadEye, def.type, main, 100) then
+		local share = Hunt.aboveShare(tg, deadEye)
+		force = math.min(1, force + share)
+		keepCrit = share >= 1
+	end
 	local before = tg.hp
 	local amount = dealDamage(state, tg, {
 		magic = ctx.magic,
 		percent = pct,
 		extra = multiplier,
 		consumeShot = consume,
+		keepCrit = keepCrit,
 		critAdd = if critAdd > 0 then critAdd else nil,
 		critDmgAdd = if critDmgAdd > 0 then critDmgAdd else nil,
 		forceShare = force,
@@ -3609,6 +3768,12 @@ damage = function(ctx: Ctx, tg: any, percent: number, options: { [string]: any }
 	end
 	if ctx.element == "ice" and main and amount > 0 then
 		chillHit(ctx, tg)
+	end
+	-- S144 mirrors Context.damage (Logic/Crossbow): Toxic Tips on the Crossbow's main hits, Master Trapper's traps
+	local tip, gapless =
+		Hunt.Crossbow.tipFor(def.pool, def.type, pathHook(state, "toxicTips"), pathHook(state, "masterTrapper"))
+	if tip > 0 and main and amount > 0 then
+		Hunt.toxicTip(state, tg, tip, attackOf(ctx), gapless)
 	end
 	-- S142 mirrors Context.damage Conductor: a single-target lightning spell's main hit jumps into the other dummy (all
 	-- stand within SHOCK.conductRadius: dummySpread) as a secondary hit
@@ -4839,7 +5004,8 @@ local function condition(state: any, entry: { [string]: any }): boolean | string
 		elseif key == "beforeRedZone" then
 			return false -- no boss schedule in the fight (Guardian Angel; DECYZJE S86)
 		elseif key == "minFury" then
-			if state.fury.stacks < value then
+			-- S143: capped at the Fury cap (without Rage, e.g. below 20, the entry holds: Data/Paths/Types)
+			if state.fury.stacks < math.min(value, furyMax(state)) then
 				return false
 			end
 		elseif key == "minCharges" then
@@ -4889,7 +5055,10 @@ local function prepare(state: any, entry: { [string]: any }): any
 	end
 	out.rank, out.def, out.bp = rank, def, bp
 	local p = state.p
-	out.cooldown = Skills.cooldown(def, rank, Skills.cooldownReduction(p.hooks.cooldownReduction or 0), bp)
+	-- S144 mirrors SkillService.cast (Logic/Crossbow.cdrFor): Quick Reload on the Crossbow's skills only
+	local cdr =
+		Hunt.Crossbow.cdrFor(base.pool, Skills.cooldownReduction(p.hooks.cooldownReduction or 0), p.hooks.quickReload)
+	out.cooldown = Skills.cooldown(def, rank, cdr, bp)
 	if def.type == "resurrect" then
 		out.never = "bez martwego sojusznika"
 	elseif def.type ~= "channel" and not SkillModel.HANDLERS[def.type] then
@@ -5167,6 +5336,8 @@ local function monsterHit(state: any, tg: any, mul: number?, kind: string?, canD
 			amount *= (1 - d1 - m1 - b1) / math.max(1e-9, 1 - d0 - b0)
 		end
 		if b1 > 0 then
+			-- S143 mirrors CombatService onBlock (Logic/Block.record): the blow's expected block for Vindicate
+			table.insert(state.blocks, { t = state.t, n = b1 })
 			if pathHook(state, "block") > 0 and state.resource == "energy" then
 				local energy = b1 * PathData.HOOK_RULES.blockEnergy
 				state.gainReturn(energy)
@@ -5356,6 +5527,7 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 		sealLit = false,
 		basicDealt = 0,
 		elementDealt = 0,
+		dotDealt = 0,
 		areaDealt = 0,
 		offensiveCasts = 0,
 		aims = 0,
@@ -5367,6 +5539,7 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 		kills = 0,
 		potionsHp = 0,
 		blockEnergy = 0,
+		blocks = {}, -- S143: { t, n } of the expected blocks (Vindicate, Logic/Block)
 		falcon = nil,
 		falconToken = 0,
 		falconStrikes = 0,
@@ -5628,6 +5801,7 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 		sealLit = sealTime / seconds,
 		basicDealt = state.basicDealt,
 		elementDealt = state.elementDealt,
+		dotDealt = state.dotDealt,
 		areaDealt = state.areaDealt,
 		offensiveCasts = state.offensiveCasts,
 		died = died,
@@ -5696,6 +5870,7 @@ export type Metrics = {
 	basicShareGroup: number, -- the same on 3 targets
 	skillInterval: number, -- C3: s between offensive casts (traps too), 1 target 60 s
 	elementShare: number, -- C3: weapon-element damage share (burns, arcs, zones)
+	dotShare: number, -- S144: damage share of the poison, bleed and burn ticks, 1 target 60 s
 	areaShare: number, -- C3: area skill hits / all damage on 3 targets
 	controlled: number, -- C3: share of the time the target is controlled (B8), 1 target
 	controlledBoss: number, -- the same on a boss (notBoss effects do not land)
@@ -5869,6 +6044,7 @@ local function rawMetrics(build: Build, L: number, element: string?): Metrics
 		basicShareGroup = aoeSus.basicDealt / math.max(1e-9, aoeSus.dealt),
 		skillInterval = A.sustainedSeconds / math.max(1, sustained.offensiveCasts),
 		elementShare = sustained.elementDealt / math.max(1e-9, sustained.dealt),
+		dotShare = sustained.dotDealt / math.max(1e-9, sustained.dealt),
 		areaShare = aoeSus.areaDealt / math.max(1e-9, aoeSus.dealt),
 		controlled = sustained.controlled,
 		controlledBoss = onBoss.controlled,
@@ -5907,6 +6083,7 @@ local NUMERIC = {
 	"basicShareGroup",
 	"skillInterval",
 	"elementShare",
+	"dotShare",
 	"areaShare",
 	"controlled",
 	"controlledBoss",
@@ -8382,7 +8559,8 @@ export type DexCaps = {
 	dodgeCap: number,
 }
 local dexCache: { [string]: DexCaps } = {}
-local DEX_CAPS = { "critChance", "atkSpeed", "dodge" }
+-- S144: a field, not a local (Lua's 200 locals of the chunk)
+SkillModel.DEX_CAPS = { "critChance", "atkSpeed", "dodge" }
 
 function SkillModel.dexCaps(build: Build, L: number): DexCaps
 	local key = `{build.classId}|{build.key}|{L}`
@@ -8391,7 +8569,7 @@ function SkillModel.dexCaps(build: Build, L: number): DexCaps
 	end
 	local sp = SkillModel.player(build, L)
 	local caps: { [string]: number } = {}
-	for _, id in DEX_CAPS do
+	for _, id in SkillModel.DEX_CAPS do
 		local def = Stats.get(id) :: any
 		caps[id] = def.cap
 	end
@@ -8401,7 +8579,7 @@ function SkillModel.dexCaps(build: Build, L: number): DexCaps
 		table.insert(sources, { key = "source.effects", flat = flat, pct = pct })
 	end
 	local ok, raw = pcall(function()
-		for _, id in DEX_CAPS do
+		for _, id in SkillModel.DEX_CAPS do
 			(Stats.get(id) :: any).cap = nil
 		end
 		return B.playerFromItems(
@@ -8412,7 +8590,7 @@ function SkillModel.dexCaps(build: Build, L: number): DexCaps
 			{ stats = sp.stats, sources = sources, hooks = sp.passives.hooks }
 		)
 	end)
-	for _, id in DEX_CAPS do
+	for _, id in SkillModel.DEX_CAPS do
 		(Stats.get(id) :: any).cap = caps[id]
 	end
 	assert(ok, raw)

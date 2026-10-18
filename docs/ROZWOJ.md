@@ -1166,6 +1166,8 @@ Pomiar był bez normalizacji broni (8).
 
 ## 10. Wojownik (Energia): Strażnik, Berserker, Chorąży
 
+> Podstawa i umiejętności Wojownika: DESIGN-18 §6.2 (S143).
+
 Id ścieżek: `guardian`, `berserker`, `standard`. Dane: `Data/Skills/Warrior.luau`, `Data/Paths/Warrior.luau`.
 
 ### 10.0 W skrócie
@@ -1293,7 +1295,7 @@ Przeniesione: Niezłomność `fortitude` (rząd 1, pasywka, maks. HP +4 → 20%,
 | 9 · 70 albo | Kara (`guardian_retribution`, passive, hak `interceptThorns`) | 10 / 20 / 30% przejętych obrażeń wraca do potwora, który uderzył |
 | 10 · 80 | Twierdza (`guardian_fortress`, modify `shieldWall` `mul.cooldown`) | ×0,92 / 0,84 / 0,75 (Mur Tarcz co 45 s) |
 | 10 · 80 | Weteran Frontu (`guardian_veteran`, passive pct `armor`, `maxHp`) | +1,5 / 3 / 4,5% (S89, było 4 / 8 / 12) |
-| 11 · 90 | Niewzruszony Mur (`guardian_shieldWall2`, modify `shieldWall`, 2 rangi) | +1 / 2 s, przechwycenie +2,5 / 5 pkt proc. (limit 30%) |
+| 11 · 90 | Niezłomny Bastion (`guardian_lastBastion2`, modify `lastBastion`, 2 rangi; S143, było Niewzruszony Mur) | Ostatni Bastion +1 / 2 s, redukcja +2,5 / 5 pkt proc. |
 
 - Drużyna: przechwyt (bez kategorii, 7.6), Osłona i Bastion Drużyny (`allyGuard`), Tarcza Drużyny (tarcza),
   prowokacja. Początki dla innych: Niezłomność, Pierwsza Linia (obie z każdą bronią), Blok (tylko z tarczą), Osłona w
@@ -1353,7 +1355,7 @@ Przeniesione: Rozpłatanie `cleave` (rząd 1; 140 → 168% (S89, było 250; rang
 |---|---|---|
 | 1 · 10 | Rozpłatanie (`berserker_cleave`, skill) | przeniesiona A |
 | 1 · 10 | Głębokie Rany (`berserker_wounds`, passive, hak `bleedDamage`) | +10 / 20 / 30% wszystkich krwawień Wojownika |
-| 2 · 15 | Bitewny Rytm (`berserker_rhythm`, passive, haki `furyMax`, `furySpeed = 1`) | Furia do 4 / 7 / 10 stosów; każdy stos +1% szybkości ataku |
+| 2 · 15 | Bitewny Rytm (`berserker_rhythm`, passive, haki `furyMax`, `furySpeed = 1`) | z pasywką Furia (6 stosów, S143) limit 8 / 9 / 10; każdy stos +1% szybkości ataku |
 | 2 · 15 | Żądza Krwi (`berserker_bloodthirst`, modify `bloodlust`, nowe `extendOnKill`) | Krwawy Szał +1 s za zabójstwo, najwyżej +2 / 4 / 6 s |
 | 3 · 20 albo | Amok (`berserker_amok`, passive, hak `furySpeed`) | +1 / 1,5 / 2% szybkości za stos (razem do 3%, +30% przy 10) |
 | 3 · 20 albo | Zajadłość (`berserker_ferocity`, passive, hak `furyDamage`) | +0,4 / 0,8 / 1,2% obrażeń za stos (do +12% przy 10) |
@@ -1524,6 +1526,8 @@ Po normalizacji, poziomy 20 / 45 / 70 / 100 (×Berserker):
    nazwać „Obrońcy” (15.3).
 
 ## 11. Łowca (Energia): Strzelec Wyborowy, Traper, Zwiadowca
+
+> Podstawa i umiejętności Łowcy: DESIGN-18 §6.3 (S144).
 
 Id ścieżek: `marksman`, `trapper`, `scout`. Dane: `Data/Skills/Hunter.luau`, `Data/Paths/Hunter.luau`. Wszystkie liczby
 w tej sekcji liczą się z normalizacją obrażeń umiejętności do szybkości broni (8, `Combat.skillSpeedRef = 0.8`); bez

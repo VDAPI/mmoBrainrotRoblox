@@ -9,7 +9,8 @@
 -- 1-20 baseline after the quest series S95-S109, DESIGN-15 §0.4; last S134: bosses 2.0, only the Grimrok sections
 -- moved; S134i: the Meadows' Elite II hideouts, new rows only; S140: the Mage's fire pool, Mage keys only; S141: the
 -- Mage's ice pool, Mage keys only; S142: the Mage's lightning pool, Mage keys and Grimrok's parties without
--- support). Full list of the differences: build/balance1_20_diff.txt.
+-- support; S143: the Warrior's pools, Warrior keys and the rows holding a Warrior; S144: the Hunter's pools, Hunter keys
+-- and the rows holding a Hunter). Full list of the differences: build/balance1_20_diff.txt.
 -- Can be required from a small runner (no process.exit).
 
 local fs = require("@lune/fs")
@@ -68,9 +69,15 @@ T.describe("Balance 1-20 fixture (S83; strict from S91)", function()
 	-- S141: the new baseline in the Mage's keys only (the ice pool: 105 changed, 44 new rows of the ice variants)
 	-- S142: the lightning pool and the end of the transitional Mage (173 changed, 44 new rows of the lightning variants;
 	-- 6 of the changed are Grimrok's parties without support, which hold two Mage builds); docs/DECYZJE.md S142
-	T.it("the fixture is the S142 baseline (the Mage's lightning pool)", function()
+	-- S143: the Warrior's two pools (Sword and Shield, Two-Handed), the common skills and the directions' nodes: 413
+	-- changed and 30 new rows, all in the Warrior's keys or in rows that hold a Warrior (Grimrok's parties, the S32
+	-- melee trio of the Elite II caves and hideouts, the Healer on the Defender); docs/DECYZJE.md S143
+	-- S144: the Hunter's two pools (Bow, Crossbow), the common skills and the directions' nodes: 417 changed rows, all
+	-- in the Hunter's keys or in rows that hold a Hunter (Grimrok's parties, the W + M + Ł + K parties of the Elite IIs of
+	-- the Meadows' caves and hideouts); docs/DECYZJE.md S144
+	T.it("the fixture is the S144 baseline (the Hunter's pools)", function()
 		local file = BalanceTables.readFixture()
-		T.expect(file and file.meta and file.meta.session).toBe("S142")
+		T.expect(file and file.meta and file.meta.session).toBe("S144")
 	end)
 
 	T.it("every fixture key is still in the 1-20 tables", function()

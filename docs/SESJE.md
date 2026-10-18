@@ -12165,3 +12165,148 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `tests/{SkillModel,Balance,BalanceTables}.luau`, `tests/{shock,balance,balance1_20,paths,pathview,skillpoints,skillpools,
   skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
   balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S143: Wojownik, pule i kierunki
+
+- **Dwie pule Wojownika** (`Data/Skills/Warrior`, `pool`, `role`; DESIGN-18 §6.2). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Miecz i Tarcza `onehand` | Broń Dwuręczna `twohand` |
+  |---|---|---|
+  | S1 · 1 | Potężne Uderzenie (bez zmian) | Brutalny Cios `brutalStrike` 136 / 222% (węzły Potężnego), +2 Furii; egzekucja 30 / +28; rozprysk 50% / +50 |
+  | A1 · 3 | Zamach Tarczą `shieldSweep` (stożek 6 st. / 100°, odrzut 4) 100 / 160%, z tarczą +20%; +40° / +18; ogłuszenie 0,8 s / +36 | Rozpłatanie (było 10; 115 / 168%, węzeł rangi 5 164,4) |
+  | K1 · 6 | Uderzenie Tarczą `shieldBash` 70 / 130%, ogłuszenie 1,5 s (bez bossów), wymaga tarczy; +0,5 s / +14; odnowienie ×0,8 / +32 | Rozbicie `sunder` 60 / 110%, pancerz −10 / −20% 6 s, spowolnienie 30% 3 s; +2 s / +15; −10 pkt pancerza / +34 |
+  | O1 · 10 | Przechwycenie (było rząd 4 Strażnika; 12 / 30%, węzły rang 5–6) | Krwawy Szał (było 18; 13 / 20%, węzły rang 3–4) |
+  | S2 · 15 | Miażdżący Cios (było 48; 220 / 324,4%, węzeł rangi 9 300) | Rozdarcie (było 26; 200 / 280%) |
+  | P1 · 20 | Niezłomność (HP 6 / 20%, blok 1 / 3 pkt; ranga 1 poniżej dawnych 8%, pasmo Elity S32) | Furia `rage`: limit 6 stosów (z Bitewnym Rytmem 8 / 9 / 10), +0,2 / 0,5% obrażeń za stos |
+  | A2 · 26 | Trzęsienie Ziemi (było 30; 147 / 175%) | Wir Ostrzy (było 6; 48 / 52% × 3) |
+  | K2 · 33 | Sztandar Wojenny (było rząd 4 Chorążego; 5,5 / 10%) | Tupnięcie `warStomp` (krąg r 6) 60 / 110%, ogłuszenie 1 s (bez bossów), ataki −20% 4 s (limit kategorii); r +2 / +12; +0,5 s / +26 |
+  | S3 · 40 | Wyrok `vindicate` 200 / 300%, +15% za blok z 6 s (najwyżej 3); +5% za blok / +30; rozprysk 50% / +66 | Egzekucja `execute` 180 / 260%, ×2 poniżej 30% HP, zużywa Furię +4% za stos; egzekucja 30 / +26; kradzież życia 15% / +3% za stos |
+  | P2 · 50 | Kontratak (było 45) | Niepowstrzymany `unstoppable`: przy pełnej Furii odporność na ogłuszenie i odrzut, obrażenia −3 / −9% |
+  | U · 60 | Mur Tarcz (było zwieńczenie Strażnika) | Gniew Tytana (było rząd 7 Berserkera, 48.; 120 / 150%) |
+
+- **Wspólne Wojownika:** Szarża C1 4 (było 3), Prowokacja C2 12 (było 10), Okrzyk Bojowy C3 30 (było rząd 1 Chorążego;
+  ranga 1 14,9%), Stalowa Skóra C4 45 (było 14; ranga 1 20%). `SkillPools/Warrior` z planami według drabiny, `version`
+  3, `transitional = false`.
+- **Kierunki** (węzły `skill` tylko w rzędach 4 i 8): Strażnik z Ostatnim Bastionem w rzędzie 8 (ranga 1 46,7%) i
+  Podwójną Strażą w rzędzie 4 (Przechwycenie osłania drugiego sojusznika), Niezłomnym Bastionem w rzędzie 11 (ulepszenie
+  Ostatniego Bastionu zamiast Muru Tarcz), Berserker z Rzezią w rzędzie 8 (broń
+  dwuręczna), Chorąży z Rozkazem Natarcia w rzędzie 8. Nowe węzły po umiejętnościach, które poszły do pul (ta sama liczba
+  rang): Niezachwiany (+1% HP), Mistrz Uderzenia (+0,5 s ogłuszenia Uderzenia Tarczą), Blizny (+1% HP), Szał (+0,3% za
+  stos Furii), Ostatnie Cięcie (Egzekucja od 35%), Proporzec (+3% pancerza), Herold (Okrzyk +4 s), Musztra (Sztandar
+  ×0,85 odnowienia). Węzły Furii Berserkera działają tylko z pasywką Furia.
+- **Mechaniki:** `Logic/Fury` (`cap` tylko z hakiem `rage`, `hitGain`, `unstoppable`), `Logic/Block` (nowy: `record`,
+  `count`, `vindicateMul`, `hasShield`, `shieldMul`; `Data/Skills.BLOCK` okno 6 s, najwyżej 3), `SkillDef.weapon` i
+  `SkillDef.furyGain` (`Build`, `Types`), `Paths.skillWeaponError` w `skillUsable` i `passiveTotals`, kafelek puli szary
+  bez tarczy (`PathView.PoolTile.weaponOk` / `weaponError`, `PoolTree`, `Details`, `SkillController.Usable`). Serwer:
+  `StatusEffectService` (`FuryMax` przez `Fury.cap`, `AddFury` z `furyGain`, `Unstoppable` przeciw ogłuszeniu),
+  `CombatService` (czasy bloków, `RecentBlocks`, Furia z `furyGain` umiejętności), `Skills/Context` (Wyrok, Zamach z
+  tarczą, bez odrzutu przy Niepowstrzymanym), `Types/Offense` (finał bez odrzutu). Migracja 6 układa pasek z puli broni.
+- **Model:** buildy wzorcowe Strażnika i Chorążego z mieczem i tarczą, Berserkera z toporem dwuręcznym (`ranks`, nowe
+  rotacje, Szarża Berserkera na końcu rang); lustra `Fury.cap`, `furyGain`, oczekiwanych bloków Wyroku i tarczy Zamachu.
+  R1 na 20.: 2,11 (dwuręczna, `berserker.fury`) i 2,04 (jednoręczna, `standard.commander`; nowy wiersz bloku S91),
+  T-SK3 1,21–1,22. R4 nowych aktywnych w pasmach (np. Brutalny Cios 5A / 5B 0,14 / 0,10, 10B 0,20; Rozbicie 10B 0,27;
+  Wyrok 10B 0,20; Uderzenie Tarczą 10A / 10B 0,25 / 0,22). Tożsamość (`S143.warrior.*`, raport do S146) na 20 / 45 /
+  70 / 100: dwuręczna / jednoręczna w jeden cel 1,59 / 1,74 / 1,80 / 1,53, na 3 cele 1,70 / 1,61 / 1,26 / 1,32 (cel
+  1,15–1,25); EHP Strażnika / dwuręczna 1,57 / 1,87 / 2,18 / 2,17 (cel ≥ 1,4); tank na minutę 3,38 / 2,57 / 2,37 / 2,18
+  (≤ 3,5); R7 Łowca / dwuręczny 1,06 / 1,15 / 1,05 / 1,24. Berserker (wzorzec obrażeń) wobec S142: −4% / +12% / +7% na
+  45 / 70 / 100 po obcięciu Furii (0,4–1,2 → 0,2–0,5 za stos), Szału (0,5 → 0,3) i Rozbicia (80–140 → 60–110).
+- **1–20:** fixture przepisany (S143 „pule Wojownika”): 413 zmienionych i 30 nowych wpisów w kluczach Wojownika i w
+  wierszach z Wojownikiem; `ALLOWED_1_20_DIFFS` pusta, blok „Balance 1-20: S91” zielony (z Chorążym jednoręcznym;
+  `S91.gain.standard.commander` 1,00 w raporcie).
+- **`GLOBAL_REPORT_ONLY` S143** (80 kluczy 21–100): strażnicy T-SK1/2 Wojownika w Borze, Pustkowiach i Szczytach (60),
+  `G10` i `R.ashen.tsk5.50` (Uzdrowiciel na Obrońcy 0,247), T1 Rozłupania (młot) na 45–100, T2 Berserkera na 70.,
+  ścieżki: `berserker.base` 45–100, EHP Strażnika na 45 / 70, `standard.support` i `r6.standard` na 100., R4 10A
+  Rozpłatania na 45., `marksman.r7` na 70. i `inquisitor.ratio` na 70 / 100; `S134_REPORT` Vaelgratha (Wojownik solo).
+- **Wygląd, dźwięk, teksty:** ruchy 7 nowych aktywnych jako pozy z istniejących (Zamach i Uderzenie z gardy tarczy,
+  Brutalny Cios, Rozbicie i Egzekucja z oburęcznym zamachem, Tupnięcie), `SkillVfx` w złocie tarczy i czerwieni
+  dwuręcznej z istniejących składników, klucze `skill.<id>` w `Data/Sfx` bez ID (`hint`); teksty PL / EN: nazwy,
+  `short`, `desc`, przełomy, nowe węzły kierunków, `cast.error.needShield`; `tests/fixtures/skill_timing.luau` (7 wierszy).
+- **Testy:** nowy `tests/block.spec.luau` (okno, limit, mnożniki, wymóg tarczy, szary kafelek), `fury.spec` (Furia tylko
+  z Furią, `hitGain`, `unstoppable`, dane), `skillpools.spec` (pełna drabina obu pul i wspólnych), `paths.spec`
+  (`skill` tylko w rzędach 4 i 8), `skills.spec`, `skillpoints.spec`, `character.spec` (migracja 6), `balance.spec`
+  (blok S143), `balance1_20.spec` (fixture S143).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/Block.luau` (nowy), `src/shared/Logic/{Fury,Paths,PathView,Skills,AccountSchema}.luau`,
+  `src/shared/Data/Skills/{init,Types,Build,Warrior}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/Warrior.luau`, `Data/Paths/Warrior.luau`, `Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{CombatService,StatusEffectService}.luau`, `src/server/Skills/{Context,Types/Offense}.luau`,
+  `src/client/Controllers/SkillController.luau`, `src/client/UI/Screens/SkillsWindow/{Details,PoolTree}.luau`,
+  `tests/{SkillModel,Balance}.luau`, `tests/{block,fury,balance,balance1_20,character,paths,skillpoints,skillpools,
+  skills}.spec.luau`, `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,
+  balance_before.json}`, `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`.
+
+### S144: Łowca, pule i kierunki
+
+- **Dwie pule Łowcy** (`Data/Skills/Hunter`, `pool`, `role`; DESIGN-18 §6.3). Liczby: ranga 1 / 10 (pasywki 1 / 5),
+  przełomy 5A / 5B, 10A / 10B:
+
+  | Kod · poz. | Łuk `bow` | Kusza `crossbow` |
+  |---|---|---|
+  | S1 · 1 | Celny Strzał (bez zmian, 144 / 233%) | Ciężki Bełt `heavyBolt` 187,2 / 302,9% (Celny ×1,3 z węzłami S91, 20 energii, 5,2 s); trucizna 30% / +39; przebicie 60% / +60 |
+  | A1 · 3 | Deszcz Strzał (było 10; 36 / 85% × 4, węzeł rangi 5 53,9) | Bełt Przebijający `piercingArrow` (było rząd 1 Strzelca; 164,4 / 410%, węzeł rangi 5 235,6; 5B krwawienie 40%) |
+  | K1 · 6 | Przyszpilenie `pinningShot` 70 / 130%, unieruchomienie 2 s (bossowie i Elity II: spowolnienie 40%), 20 energii, 12 s; +0,5 s / +14; ×0,8 odnowienia / +32 | Pułapka Lodowa (było rząd 1 Trapera) |
+  | O1 · 10 | Krok Wiatru `windstep`: unik +10 / 20 pkt i ruch +20 / 35% na 4 s (20 energii, 20 s); +2 s / +5 uniku; następny strzał +25% / ×0,75 odnowienia | Kamuflaż (było rząd 7 Trapera) |
+  | S2 · 15 | Podwójny Strzał (było 3; 2 × 77,75 / 114%, węzły rang 2–3) | Zatruta Strzała (było 18; 5A +15 trucizny, 10B +28) |
+  | P1 · 20 | Sokole Oko (było 14; ranga 1 bez zmian) | Zatrute Groty `toxicTips`: stos trucizny grotu 10 / 20% ataku przez 6 s, do 5 stosów, raz na sekundę na cel |
+  | A2 · 26 | Salwa (było 30; 24 / 34% × 7, węzeł rangi 2 25; 5B +4) | Trujące Sidła (było rząd 4 Trapera; 10A echo 44%) |
+  | K2 · 33 | Sokół (było rząd 4 Zwiadowcy; 28,9 / 44%) | Sieć `netShot` (krąg r 5 do 30 st.) 60 / 110%, unieruchomienie 2,5 s (bossowie: spowolnienie 40%), 30 energii, 18 s; r +2 / +12; +0,5 s / +26 |
+  | S3 · 40 | Strzał w Serce (było zwieńczenie Strzelca; 170 / 290%, węzeł rangi 6 220) | Bełt Egzekutora `deadlyBolt` 180 / 260%, +50% od 3 stosów trucizn Łowcy, 25 energii, 10 s; premia +20 / +26; premia +35 / +52 |
+  | P2 · 50 | Zwinność (było rząd 1 Zwiadowcy; unik 10 / 12 pkt, ruch 15 / 18%) | Szybkie Przeładowanie `quickReload`: odnowienia umiejętności kuszy −4 / −12% |
+  | U · 60 | Strzała Burzy (było rząd 7 Strzelca, 48.; 266,7 / 400%) | Pole Sideł (było zwieńczenie Trapera) |
+
+- **Wspólne Łowcy:** Odskok C1 4 (było 6), Znak Łowcy C2 12 (było rząd 7 Zwiadowcy), Namierzenie C3 30 (było rząd 4
+  Strzelca; ranga 1 20,33 / 26,67), Instynkt Drapieżnika C4 45. `SkillPools/Hunter` z planami według drabiny, `version`
+  3, `transitional = false`.
+- **Kierunki** (węzły `skill` tylko w rzędach 4 i 8): Zwiadowca z Nagonką w rzędzie 8 (było 10; ranga 1 90, węzeł rangi
+  6 102) i Królewskim Sokołem w rzędzie 10; Strzelec i Traper bez umiejętności w rzędach 4 i 8, w rzędzie 8 nowe
+  zwieńczenia `keystone`: Martwe Oko (pewny krytyk umiejętności w jeden cel na celu z ≥ 80% życia bez zużycia pewnego
+  krytyku, następny strzał zużywa się, `DealOptions.keepCrit`; +10 pkt obrażeń krytycznych) i Mistrz Sideł (trafienie pułapki daje stos trucizny grotu ≥ 15% bez odstępu, trucizny +10%). Nowe węzły
+  po umiejętnościach, które poszły do pul (ta sama liczba rang): Równe Lotki (+3 pkt obrażeń krytycznych), Cierpliwość
+  (Namierzenie +1 pkt krytyka), Opanowanie (+0,5 pkt krytyka), Myśliwska Skóra (+1% HP), Przynęta (trucizna Trujących
+  Sideł +10), Podchód (+1 pkt uniku), Chyży (+3% ruchu), Sokolnik (Sokół +2 s), Bystry Znak (+0,5 pkt podatności).
+- **Mechaniki:** `Logic/Crossbow` (nowy: `ofPool`, `tipFor`, `tipReady`, `tipStacks`, `tipRecord`, `venomMul`,
+  `cdrFor`; `Data/Skills.CROSSBOW`), `Logic/Snare` (nowy: `kindOn`, `SkillEffect.bossSlow`), `Logic/DeadEye` (nowy:
+  `applies`, `sure`). Serwer: `Skills/Context` (Bełt Egzekutora na stosach, Zatrute Groty i Mistrz Sideł po głównym
+  trafieniu, Martwe Oko jako pewny krytyk, korzeń → spowolnienie na bossie), `CombatService.ToxicTip` (stan `tips` na cel),
+  `StatusEffectService.StacksBy`, `SkillService` (odnowienie z `Crossbow.cdrFor`, `skills.reload`), `Admin/Combat`;
+  klient `Hud/SkillBar`, `UI/SkillInfo`; `Logic/Skills.descriptionArgs` (odnowienie i argumenty grotów);
+  `HOOK_RULES.spot.skills` + Ciężki Bełt.
+- **Model:** lustra w tabeli `Hunt` (`toxicTip`, `poisonStacks`, `aboveShare`; plik doszedł do limitu 200 lokalnych),
+  `dotDealt` / `dotShare` walki, Szybkie Przeładowanie w `prepare`; buildy z `ranks` i rotacją obu pul (Królobójca długim
+  łukiem, Truciciel kuszą), R4 nowych na Kłusowniku i Królobójcy, `R4_UTILITY` (kontrola, obrona Kroku Wiatru, przebicie
+  Ciężkiego Bełtu), Bełt Egzekutora w `R4_ROTATION`.
+- **Wyniki modelu:** R1 na 20. (pasmo 1,6–2,44): Królobójca z łukiem 2,17, z ciężką kuszą 2,22, Kłusownik z kuszą 2,18, z
+  łukiem 2,15; R4 nowych: Ciężki Bełt 5A / 5B 0,12–0,15, 10B 0,18; Przyszpilenie 5B 0,09, 10A / 10B 0,25 / 0,22; Sieć 5B
+  0,09, 10B 0,21; Bełt Egzekutora 5A / 5B 0,11–0,13 / 0,10–0,11, 10A / 10B 0,21 / 0,20. Tożsamość (`S144.hunter.*`,
+  raport do S147) na 20 / 45 / 70 / 100: łuk / kusza (Strzelec) w jeden cel 1,00 / 1,05 / 1,01 / 0,99 (cel ±10%), udział
+  obrażeń w czasie kuszy 0,20–0,25 (cel ≥ 0,25; Kłusownik 0,20–0,23, Truciciel 0,21–0,25), łuk w ruchu 0,27 / 0,57 / 0,98
+  / 1,0, R7 Łowca / Wojownik dwuręczny 1,01 / 1,22 / 1,19 / 1,33 (łuk) i 1,01 / 1,17 / 1,18 / 1,35 (kusza).
+- **1–20:** fixture przepisany (S144 „pule Łowcy”): 417 zmienionych wpisów w kluczach Łowcy i w wierszach z Łowcą;
+  `ALLOWED_1_20_DIFFS` pusta, blok „Balance 1-20: S91” zielony (z Królobójcą z ciężką kuszą; `S91.gain` Strzelca w
+  raporcie jak od S91); w R4 na 20. Ciężki Bełt, Deszcz Strzał i Bełt Przebijający (Podwójny Strzał od 15. już nie).
+- **`GLOBAL_REPORT_ONLY` S144** (107 kluczy 21–100): strażnicy T-SK1/2/3 buildów Łowcy (Bór, Pustkowia, Szczyty), T1
+  Łatwego Celu i Pełnego Naciągu, T2 Trapera na 70 / 100, ścieżki `marksman.base` (też z ciężką kuszą), `r5a.hunter`,
+  `trapper.single` / `aoe` / `r3` / `r5`, `scout.solo`, `r6.scout`; martwe klucze `kingslayer@longbow+quiver` usunięte.
+- **Wygląd, dźwięk, teksty:** ruchy 5 nowych aktywnych z funkcji `ShotRig` (Ciężki Bełt w szerokiej postawie,
+  Przyszpilenie w stopy, Sieć wysokim łukiem, Bełt Egzekutora z klęczek; warianty `crossbowOf`) i odskok Kroku Wiatru,
+  `SkillVfx` z istniejących składników (brąz żelaza, zieleń trucizny, blady wiatr), klucze `skill.<id>` w `Data/Sfx` bez
+  ID (`hint`); teksty PL / EN: nazwy, `short`, `desc`, przełomy, Bełt Przebijający (dawna Strzała Przebijająca), węzły
+  kierunków, pola `skills.field.tip|venomMul|venomStacks|reload`; `tests/fixtures/skill_timing.luau` (5 wierszy i
+  `netShot` w `circleTarget`).
+- **Testy:** nowy `tests/crossbow.spec.luau` (groty i odstęp, Mistrz Sideł, Bełt Egzekutora, Szybkie Przeładowanie tylko
+  dla kuszy, korzeń na bossie, Martwe Oko, lustro modelu), `skillpools.spec` (pełna drabina obu pul i wspólnych, broń
+  wybiera pulę), `paths.spec` (jedna umiejętność w kierunkach, zwieńczenia `keystone`), `skills.spec`, `character.spec`
+  (migracja 6), `skillmotion.spec` (blok S144), `balance.spec` (blok S144), `balance1_20.spec` (fixture S144).
+- **Przegląd:** łuk Morvane dostał Szeroki Znak zamiast Roznoszonej Trucizny (kusza); `itemeffects.spec` pilnuje pul
+  stałych efektów nazwanej broni; opis Zatrutych Grotów bierze odstęp z `CROSSBOW.tipGap`.
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Logic/{Crossbow,Snare,DeadEye}.luau` (nowe), `src/shared/Logic/Skills.luau`,
+  `src/shared/Data/Skills/{init,Types,Hunter}.luau`, `Data/{SkillCurves,SkillMotions,SkillVfx,Sfx}.luau`,
+  `Data/SkillPools/Hunter.luau`, `Data/Paths/{Hunter,init}.luau`, `Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{CombatService,StatusEffectService,SkillService}.luau`, `src/server/Skills/Context.luau`,
+  `src/server/Admin/Combat.luau`, `src/client/UI/{SkillInfo,Screens/Hud/SkillBar}.luau`, `tests/{SkillModel,Balance}.luau`,
+  `src/shared/Data/Items/Uniques.luau`,
+  `tests/{crossbow,balance,balance1_20,character,itemeffects,paths,skillmotion,skillpools,skills}.spec.luau`,
+  `tests/fixtures/{balance_1_20.json,skill_timing.luau}`, `tools/{balance_reasons.luau,balance_before.json}`,
+  `docs/{DESIGN-18,ROZWOJ,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.

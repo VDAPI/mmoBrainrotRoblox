@@ -111,6 +111,9 @@ function PoolTree.tile(
 		Glyph = skill.glyph,
 		Round = passive,
 		Lit = tile.rank > 0,
+		-- S143: grey without the skill's own weapon (Shield Bash without a shield), red when bought
+		Dim = not tile.weaponOk,
+		Broken = tile.rank > 0 and not tile.weaponOk,
 		Accent = accent,
 		Selected = s:Computed(function(use2): boolean
 			local sel = use2(ctx.selected)
@@ -121,7 +124,9 @@ function PoolTree.tile(
 		Slot = if passive then nil else tile.onBar,
 		Lock = if tile.locked then `🔒{tile.unlock}` else nil,
 		Caption = caption(tile),
-		Tooltip = `{name}\n{SkillInfo.short(use, skill, tile.rank)}`,
+		Tooltip = if tile.weaponError
+			then `{name}\n{SkillInfo.short(use, skill, tile.rank)}\n{Text.get(use, tile.weaponError)}`
+			else `{name}\n{SkillInfo.short(use, skill, tile.rank)}`,
 		Touch = touch,
 		OnClick = function()
 			ctx.selected:set({ kind = "skill", id = skill.id })
