@@ -1,4 +1,4 @@
-# Potwory z Tripo (W25: regiony 1–2)
+# Potwory z Tripo (W25: regiony 1–2, W26: regiony 3–4 i bossowie)
 
 Model potwora zastępuje generator z części (`Data/MonsterLooks` → pole `asset`, `docs/ASSETS.md` → „Dodanie modelu
 potwora”). Bez modelu gra dalej rysuje potwora z części, więc modele mogą przychodzić po jednym.
@@ -58,5 +58,49 @@ potwora”). Bez modelu gra dalej rysuje potwora z części, więc modele mogą 
 | `grimrok` | Grimrok | Biped | goblin warlord, big for a goblin, scrap iron armour and a bear-skull helmet, fur cloak, giant cleaver, war paint (no blood) |
 | `morvane` | Morvane | Biped | undead queen, tall and gaunt, tattered dark violet royal gown, thorn crown of black iron, pale glowing eyes, long thin hands |
 
+## Region 3: Spalone Pustkowia
+
+| id | Nazwa | Rig | Prompt (EN) |
+|---|---|---|---|
+| `salamander` | Salamandra | Quadruped | fire salamander, red-orange scales with glowing amber cracks, flat head, long tail with a flame-like tip |
+| `ashOrc` | Ork Popiołu | Biped | ash orc warrior, grey skin, rust-red war paint, scrap iron armour, bone trophies, two-handed axe |
+| `fireGolem` | Ognisty Golem | Biped | fire golem of black basalt blocks held together by glowing orange magma veins, heavy fists, small head |
+| `desertScorpion` | Skorpion Pustyni | static | giant desert scorpion, sandy gold carapace with dark red tips, raised stinger, big pincers |
+| `wyvern` | Wywerna | static | rust-red wyvern, bat-like wings that are also its front legs, long neck, spiked tail, amber belly |
+| `renegadeDwarf` | Krasnolud Renegat | Biped | renegade dwarf miner, braided beard, soot-stained leather and steel plates, goggles on the helmet, two-handed warhammer |
+| `flameSmith` | Kowal Płomieni | Biped | fire forge smith, broad shoulders, leather apron with burn marks, glowing ember eyes, huge smith hammer |
+| `wasteHyena` | Hiena Pustkowi | Quadruped | wasteland hyena, sandy fur with dark spots, sloped back, high shoulders, bristly mane |
+| `ashVulture` | Sęp Popiołu | static | ash vulture, dark grey-brown feathers, bald pinkish head and neck, ruffled collar, hunched |
+| `fireImp` | Ognisty Chochlik | Biped | small fire imp, red skin, orange flame hair, little horns, pointed ears, mischievous grin, small wings |
+| `basilisk` | Bazyliszek | Quadruped | basilisk lizard, olive green scales, golden crest on the head, six short legs, glowing yellow eyes |
+| `desertMummy` | Mumia Pustyni | Biped | desert mummy, sand-coloured wrappings, golden collar and bracers, glowing turquoise eyes, no gore |
+
+`magmaGolem` (Golem Magmowy) bierze model `fireGolem` w innej barwie.
+
+## Region 4: Lodowe Szczyty
+
+| id | Nazwa | Rig | Prompt (EN) |
+|---|---|---|---|
+| `yeti` | Yeti | Biped | yeti, thick white shaggy fur, blue-grey face, hands and feet, long arms, hunched powerful build |
+| `frostGiant` | Mroźny Olbrzym | Biped | frost giant, pale blue skin, braided white beard with ice, fur and iron armour, ice-covered club |
+| `iceElemental` | Lodowy Żywiołak | static | ice elemental, floating body of jagged pale blue ice crystals, glowing core, no legs |
+| `dragonspawn` | Smoczy Pomiot | Biped | dragonspawn warrior, humanoid dragon, dark blue scales, gold-trimmed armour, small horns, two-handed spear |
+| `crystalGuardian` | Kryształowy Strażnik | Biped | crystal guardian golem, body of pale cyan crystal shards, glowing white core in the chest |
+| `youngFrostDragon` | Młody Smok Lodu | Quadruped | young frost dragon, pale icy blue scales, dark blue wing membranes, frost crest, four legs and wings |
+| `peakHarpy` | Harpia Szczytów | static | mountain harpy, grey-blue feathered wings instead of arms, bird talons, wild pale hair, yellow eyes |
+| `iceMammoth` | Mamut Lodowy | Quadruped | woolly mammoth, long brown fur with frost, huge curved pale tusks, small ears |
+| `frozenKnight` | Zamarznięty Rycerz | Biped | frozen knight, pale blue plate armour of an ancient order covered in ice, dark blue tabard, glowing eyes in the visor, frost sword |
+| `frostWyrm` | Wyrm Szronu | static | frost wyrm, long serpentine dragon without legs, icy blue scales, white spines, frost breath |
+
+`iceWolf` bierze model `wolf`, `snowLeopard` model `lynx` (barwa regionu).
+
+## Bossowie regionów 3–4 i boss świata
+
+| id | Nazwa | Rig | Prompt (EN) |
+|---|---|---|---|
+| `azgor` | Azgor, Pan Płomieni | Biped | lord of flames, giant golem of black obsidian and molten lava, crown of fire, flaming greatsword, glowing chest core |
+| `vaelgrath` | Vaelgrath, Smok Mrozu | Quadruped | ancient frost dragon, huge, pale icy scales, dark blue wings, crown of ice horns, frost glowing in the throat |
+| `hrimvald` | Hrimvald, Praojciec Olbrzymów | Biped | ancient frost giant king, enormous, long white beard braided with ice, crown of ice, rune-carved armour, glowing pale eyes |
+
 Kolejność, gdy mało czasu: `wolf`, `boar`, `goblinScout`, `bandit`, `brownBear`, `werewolf`, `skeletonGuard`,
-`grimrok` (najczęściej widziane).
+`grimrok` (najczęściej widziane), potem bossowie (`morvane`, `azgor`, `vaelgrath`, `hrimvald`).
