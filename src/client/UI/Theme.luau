@@ -181,6 +181,8 @@ Theme.Fonts = {
 	Body = Font.fromEnum(Enum.Font.BuilderSans),
 	BodyBold = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Bold),
 	BodyMedium = Font.new("rbxasset://fonts/families/BuilderSans.json", Enum.FontWeight.Medium),
+	-- W28: floating combat numbers (the display serif, heavy)
+	Numbers = DISPLAY,
 }
 
 -- Sizes are in pixels at the base resolution; UIScale adapts them to the screen.
@@ -236,6 +238,11 @@ Theme.Anim = {
 	Normal = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 	Slow = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 	BarSpeed = 18, -- Spring speed for resource bars
+	-- W28: a window opens from this scale and this many pixels lower, on a slightly bouncy spring
+	WindowFrom = 0.93,
+	WindowRise = 16,
+	WindowSpeed = 28,
+	WindowDamping = 0.72,
 }
 
 -- Base resolution for UIScale (see UI/Scale).

@@ -35,6 +35,19 @@ local DamageNumbers = {
 	skillBonus = 6,
 	-- Billboards kept in the pool.
 	poolSize = 48,
+	-- W28: every number pops in from this scale (crits use their style's bigger pop).
+	popAll = 1.22,
+	-- W28: studs a number drifts sideways (random side) while it rises, so a stream of hits fans out.
+	drift = 0.9,
+	-- W28: scale a number shrinks to while it fades.
+	shrink = 0.72,
+	-- W28: outline thickness in pixels (crits get `strokeCrit`) and how dark the outline is (0 = the text colour,
+	-- 1 = black).
+	stroke = 2,
+	strokeCrit = 3,
+	strokeDark = 0.82,
+	-- W28: crits and heals get a vertical sheen: the top of the glyphs this much lighter (toward white).
+	sheen = 0.5,
 
 	styles = {
 		mine = { size = 28, mergeable = true },

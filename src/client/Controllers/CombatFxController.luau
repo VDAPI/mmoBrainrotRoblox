@@ -211,12 +211,21 @@ local function newBillboard(): BillboardGui
 	label.Position = UDim2.fromScale(0.5, 0.5)
 	label.BackgroundTransparency = 1
 	label.Size = UDim2.fromScale(1, 1)
-	label.FontFace = Theme.Fonts.BodyBold
+	label.FontFace = Theme.Fonts.Numbers
 	label.TextScaled = false
-	label.TextStrokeTransparency = 0.3
+	label.TextStrokeTransparency = 1
 	label.Parent = gui
 	local scale = Instance.new("UIScale")
 	scale.Parent = label
+	-- W28: a rounded dark outline in the number's own hue instead of the flat text stroke, and a sheen gradient
+	local stroke = Instance.new("UIStroke")
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Contextual
+	stroke.LineJoinMode = Enum.LineJoinMode.Round
+	stroke.Parent = label
+	local sheen = Instance.new("UIGradient")
+	sheen.Rotation = 90
+	sheen.Enabled = false
+	sheen.Parent = label
 	gui.Parent = numbersContainer()
 	return gui
 end
@@ -238,6 +247,7 @@ type Live = {
 	gui: BillboardGui,
 	label: TextLabel,
 	scale: UIScale,
+	stroke: UIStroke,
 	anchor: Attachment,
 	tweens: { Tween },
 	done: boolean,
@@ -251,6 +261,8 @@ type TextOptions = {
 	dim: number?, -- starting transparency
 	pop: number?, -- starting scale (crits)
 	twitch: boolean?,
+	sheen: boolean?, -- W28: light top on the glyphs (crits, heals)
+	heavy: boolean?, -- W28: thicker outline (crits)
 }
 
 local stack = DamageText.newStack()
@@ -305,43 +317,76 @@ local function floatText(at: Vector3, text: string, color: Color3, size: number,
 	local gui = takeBillboard()
 	local label = gui:FindFirstChild("Label") :: TextLabel
 	local scale = label:FindFirstChildOfClass("UIScale") :: UIScale
+	local stroke = label:FindFirstChildOfClass("UIStroke") :: UIStroke
+	local sheen = label:FindFirstChildOfClass("UIGradient") :: UIGradient
 	local anchor = Instance.new("Attachment")
 	anchor.WorldPosition = at + Vector3.new((math.random() - 0.5) * 0.8, 0, (math.random() - 0.5) * 0.8)
 	anchor.Parent = Workspace.Terrain
 	local base = o.base or 0
 	local dim = o.dim or 0
 	local lifetime = DamageNumbers.lifetime
+	local side = if math.random() < 0.5 then -1 else 1
 	gui.Adornee = anchor
 	gui.StudsOffsetWorldSpace = Vector3.new(0, base, 0)
+	gui.StudsOffset = Vector3.zero
 	label.Text = text
 	label.TextColor3 = color
 	label.TextSize = size
 	label.TextTransparency = dim
-	label.TextStrokeTransparency = 0.3 + dim * 0.5
 	label.Position = UDim2.fromScale(0.5, 0.5)
-	scale.Scale = o.pop or 1
+	stroke.Color = color:Lerp(Color3.new(0, 0, 0), DamageNumbers.strokeDark)
+	stroke.Thickness = if o.heavy then DamageNumbers.strokeCrit else DamageNumbers.stroke
+	stroke.Transparency = dim
+	-- the gradient multiplies the text colour: white text, the gradient carries the hue
+	sheen.Enabled = o.sheen == true
+	if o.sheen then
+		label.TextColor3 = Color3.new(1, 1, 1)
+		sheen.Color = ColorSequence.new(color:Lerp(Color3.new(1, 1, 1), DamageNumbers.sheen), color)
+	end
+	scale.Scale = o.pop or DamageNumbers.popAll
 	gui.Enabled = true
-	local entry: Live = { gui = gui, label = label, scale = scale, anchor = anchor, tweens = {}, done = false }
+	local entry: Live =
+		{ gui = gui, label = label, scale = scale, stroke = stroke, anchor = anchor, tweens = {}, done = false }
 	play(
 		entry,
 		gui,
 		TweenInfo.new(lifetime, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 		{ StudsOffsetWorldSpace = Vector3.new(0, base + (o.rise or DamageNumbers.rise), 0) }
 	)
+	-- W28: a sideways drift in screen space, so fast hits fan out instead of piling into one column
 	play(
 		entry,
-		label,
-		TweenInfo.new(lifetime * 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, lifetime * 0.5),
-		{ TextTransparency = 1, TextStrokeTransparency = 1 }
+		gui,
+		TweenInfo.new(lifetime, Enum.EasingStyle.Sine, Enum.EasingDirection.Out),
+		{ StudsOffset = Vector3.new(side * DamageNumbers.drift, 0, 0) }
 	)
-	if o.pop and o.pop ~= 1 then
-		play(
-			entry,
-			scale,
-			TweenInfo.new(DamageNumbers.popSeconds, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
-			{ Scale = 1 }
-		)
-	end
+	local fade = TweenInfo.new(lifetime * 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, lifetime * 0.5)
+	play(entry, label, fade, { TextTransparency = 1 })
+	play(entry, stroke, fade, { Transparency = 1 })
+	-- pop in (Back: overshoots a little), then shrink while fading
+	play(
+		entry,
+		scale,
+		TweenInfo.new(DamageNumbers.popSeconds, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{ Scale = 1 }
+	)
+	task.delay(DamageNumbers.popSeconds, function()
+		if not entry.done then
+			play(
+				entry,
+				scale,
+				TweenInfo.new(
+					lifetime * 0.5,
+					Enum.EasingStyle.Quad,
+					Enum.EasingDirection.In,
+					0,
+					false,
+					lifetime * 0.5 - DamageNumbers.popSeconds
+				),
+				{ Scale = DamageNumbers.shrink }
+			)
+		end
+	end)
 	if o.twitch then
 		twitch(entry)
 	end
@@ -396,6 +441,8 @@ local function showNumber(model: Model, targetId: string, result: DamageText.Res
 		dim = style.dim,
 		pop = style.pop,
 		twitch = result.crit,
+		sheen = result.crit or result.style == "heal",
+		heavy = result.crit,
 	})
 	entry.stackId = placement.id
 	entry.target = targetId

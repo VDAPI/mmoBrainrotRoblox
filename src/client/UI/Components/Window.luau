@@ -44,6 +44,12 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 	-- Offset from the screen centre, in virtual pixels (desktop only).
 	local offset = scope:Value(props.Offset or Vector2.zero)
 	local closeHovered = scope:Value(false)
+	-- W28: the opening motion (scale up and rise into place); the targets flip after the first frame
+	local opening = scope:Value(0)
+	local motion = scope:Spring(opening, Theme.Anim.WindowSpeed, Theme.Anim.WindowDamping)
+	task.defer(function()
+		opening:set(1)
+	end)
 	local dragging = false
 	local dragStart = Vector2.zero
 	local offsetStart = Vector2.zero
@@ -85,11 +91,12 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		Name = props.Name or "Window",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = scope:Computed(function(use): UDim2
+			local rise = (1 - use(motion)) * Theme.Anim.WindowRise
 			if use(fullscreen) then
-				return UDim2.fromScale(0.5, 0.5)
+				return UDim2.new(0.5, 0, 0.5, rise)
 			end
 			local o: Vector2 = use(offset)
-			return UDim2.new(0.5, o.X, 0.5, o.Y)
+			return UDim2.new(0.5, o.X, 0.5, o.Y + rise)
 		end),
 		Size = scope:Computed(function(use): UDim2
 			if use(fullscreen) then
@@ -114,6 +121,11 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		end,
 
 		[Children] = {
+			scope:New("UIScale")({
+				Scale = scope:Computed(function(use): number
+					return Theme.Anim.WindowFrom + (1 - Theme.Anim.WindowFrom) * use(motion)
+				end),
+			}),
 			scope:New("UICorner")({
 				CornerRadius = scope:Computed(function(use): UDim
 					return if use(fullscreen) then UDim.new(0, 0) else corner

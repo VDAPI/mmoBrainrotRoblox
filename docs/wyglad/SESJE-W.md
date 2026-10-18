@@ -402,3 +402,9 @@ Wilcza Nora: szkielet konia z resztkami uprzęży zamiast brązowej padliny (`Ca
 pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołtarza fioletowe zamiast ciemnoczerwonego
 (`CaveDress/Barrow`). Grobowiec Morvane: posąg królowej trzyma złamane drzewce włóczni (Cierń Vaela) zamiast kosy
 (`CaveDress/Tomb`). Nieobejrzane w Studio.
+
+### W28: interfejs, część 1
+
+- Liczby obrażeń: krój Merriweather Heavy (`Theme.Fonts.Numbers`), ciemny zaokrąglony obrys w odcieniu liczby (`UIStroke`) zamiast płaskiego cienia, połysk (jaśniejsza góra) na krytykach i leczeniu, każda liczba wyskakuje (`popAll`), dryfuje w bok (`drift`, seria trafień rozchodzi się wachlarzem) i maleje przy znikaniu (`shrink`); liczby w `Data/DamageNumbers`.
+- Okna: otwarcie na sprężynie (skala 0,93 → 1 i wsunięcie 16 px od dołu, `Theme.Anim.Window*`) w `UI/Components/Window`.
+- Pliki: `Data/DamageNumbers.luau`, `client/Controllers/CombatFxController.luau`, `client/UI/Theme.luau`, `client/UI/Components/Window.luau`.
