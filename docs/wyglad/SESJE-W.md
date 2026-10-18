@@ -326,3 +326,9 @@ portal `common_portal_01` (`Prefabs.portal`: model na łuku, kolumny i nadproże
 słabsze; 21 portali), zamek `city_castle_01` (punkt orientacyjny horyzontu Łąk za murami). Model `bandit` z Workspace
 (Tripo, 100 st., stał na środku miasta w pliku miejsca) przeniesiony do `ReplicatedStorage.Assets.Imports`.
 Sprawdzone w Studio: liczby i rozmiary modeli po starcie serwera.
+
+### W13: Łąki, część 2 (maki)
+
+Maki jako akcent koloru (laki.md 1.7): nowy rodzaj podszytu `poppies` (4–7 kwiatów na łodygach, czerwone główki) w
+temacie łąki, traktu i pól (`UNDER` w `MeadowsGen/Nature`); części klienta +1382 detal i +1403 drobne (z ok. 7257 / 2536),
+serwer bez zmian. Nieobejrzane w Studio.

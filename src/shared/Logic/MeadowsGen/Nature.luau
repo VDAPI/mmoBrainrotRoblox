@@ -261,6 +261,40 @@ function Nature.undergrowth(bp: Kit.BP, kind: string, x: number, y: number, z: n
 			0,
 			o({ c = "#35503E", m = "LeafyGrass" }, "detail", { col = false })
 		)
+	elseif kind == "poppies" then
+		-- W13: a clump of poppies: thin stems, red heads with a dark eye, a few buds
+		for _ = 1, rng:int(4, 7) do
+			local a, d = rng:float(0, math.pi * 2), rng:float(0, 2.4)
+			local px, pz = x + math.cos(a) * d, z + math.sin(a) * d
+			local h = rng:float(1, 1.7)
+			bp:add(
+				"cyl",
+				h,
+				0.12,
+				0.12,
+				px,
+				y + h / 2,
+				pz,
+				0,
+				0,
+				90,
+				o({ c = "#5C7A34", m = "Grass" }, "fine", { col = false })
+			)
+			local red = if rng:chance(0.8) then "#C8281E" else "#E0502A"
+			bp:add(
+				"ball",
+				0.6,
+				0.35,
+				0.6,
+				px,
+				y + h + 0.1,
+				pz,
+				0,
+				0,
+				0,
+				o({ c = red, m = "SmoothPlastic" }, "detail", { col = false, jitter = 0.06 })
+			)
+		end
 	elseif kind == "reedbed" then
 		for _ = 1, 5 do
 			local px, pz = x + rng:float(-2, 2), z + rng:float(-2, 2)
@@ -342,12 +376,13 @@ local RULES: { [string]: Rule } = {
 local UNDER: { [string]: { n: number, kinds: { [string]: number } } } = {
 	forest = { n = 26, kinds = { sapling = 5, bush = 5 } },
 	ravine = { n = 12, kinds = { juniper = 3, bush = 2, sapling = 2 } },
-	meadow = { n = 6, kinds = { bush = 4, sapling = 1 } },
+	-- W13 (laki.md 1.7): red poppies are the accent of the Meadows: along the road, on the Rabbit Fields, by the fields
+	meadow = { n = 9, kinds = { bush = 4, sapling = 1, poppies = 3 } },
 	hills = { n = 12, kinds = { juniper = 6, bush = 1 } },
 	wet = { n = 8, kinds = { bush = 2, reedbed = 3 } },
 	marsh = { n = 10, kinds = { reedbed = 5, bush = 1 } },
-	field = { n = 3, kinds = { bush = 1 } },
-	road = { n = 7, kinds = { bush = 4, sapling = 1 } },
+	field = { n = 5, kinds = { bush = 1, poppies = 2 } },
+	road = { n = 11, kinds = { bush = 4, sapling = 1, poppies = 4 } },
 	quarry = { n = 4, kinds = { bush = 2, juniper = 1 } },
 	goblin = { n = 8, kinds = { juniper = 2, bush = 2, sapling = 1 } },
 }
