@@ -356,3 +356,6 @@ Studio: liczba skał i ich wygląd (kolor, materiał).
 
 Skały z zestawu także w Borze (szara tekstura nizendo, 79) i na Szczytach (malowany jasny łupek, 107): wpisy `forest` i
 `snow` klucza `rock` w `Data/Kit`.
+
+Podszyt Boru z zestawu (klient): `under:berryBush`, `under:bramble` i `under:sapling` z wpisem `forest` (krzaki i młode
+drzewka Yasu pod ciemnymi liśćmi). Paprocie i muchomory zostają z generatora.

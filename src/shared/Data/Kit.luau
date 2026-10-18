@@ -163,6 +163,18 @@ Kit.slots = {
 		fit = "height",
 		size = 5.5,
 		grass = { v("grass_tree_14", 1, 0.85, 1.1, nil, OAK), v("grass_tree_12", 1, 0.85, 1.05, nil, PINE) },
+		forest = { v("grass_tree_14", 1, 0.85, 1.1, nil, DARK), v("grass_tree_12", 1, 0.85, 1.05, nil, DARK) },
+	},
+	-- W15: the Duskwood's berry bushes and brambles: the Yasu bushes under dark leaves
+	["under:berryBush"] = {
+		fit = "height",
+		size = 3.2,
+		forest = { v("grass_bush_01", 1, 0.85, 1.15, nil, MOSS), v("grass_bush_02", 1, 0.85, 1.15, nil, DARK) },
+	},
+	["under:bramble"] = {
+		fit = "height",
+		size = 3,
+		forest = { v("grass_bush_03", 1, 0.8, 1.1, nil, DARK), v("grass_bush_02", 1, 0.8, 1.1, nil, MOSS) },
 	},
 	["rock"] = {
 		fit = "width",
