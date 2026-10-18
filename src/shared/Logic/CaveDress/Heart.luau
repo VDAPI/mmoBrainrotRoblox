@@ -340,6 +340,60 @@ local function hoard(env: Env, out: { Build })
 			h.bp:box(2.4, 1.6, 1.6, 4, y + 0.8, 2, o({ c = "#5A4632", m = "Wood" }, "detail", { col = false }))
 			h.bp:box(3, 4, 2.4, -4, y + 2, 1, o(ICEGLASS, "detail", { col = false, t = 0.35 })) -- armour in a block of ice
 			h.bp:box(1.4, 2.4, 0.8, -4, y + 2, 1, o(SILVER, "fine", { col = false }))
+			if k == 1 then
+				-- W24 secret (szczyty.md 4.5): the last warden who went down after the dragon: the order's shield
+				-- (petal and thorn) and a broken spear in the same block of ice
+				h.bp:add(
+					"cyl",
+					0.15,
+					1.6,
+					1.6,
+					-4,
+					y + 2,
+					-0.1,
+					0,
+					90,
+					0,
+					o({ c = "#2F3A4A", m = "Fabric" }, "fine", { col = false })
+				)
+				h.bp:add(
+					"cyl",
+					0.17,
+					0.7,
+					0.7,
+					-4,
+					y + 2.1,
+					-0.15,
+					0,
+					90,
+					0,
+					o({ c = "#DCE6EE", m = "SmoothPlastic" }, "fine", { col = false })
+				)
+				h.bp:rbox(
+					0.1,
+					1.1,
+					0.1,
+					-3.8,
+					y + 2,
+					-0.2,
+					0,
+					0,
+					40,
+					o({ c = "#3A3A40", m = "Metal" }, "fine", { col = false })
+				)
+				h.bp:rbox(
+					0.2,
+					3,
+					0.2,
+					-2.9,
+					y + 2.2,
+					1,
+					0,
+					0,
+					-12,
+					o({ c = "#5A4632", m = "Wood" }, "fine", { col = false })
+				)
+			end
 			h.bp:light(0, y + 3, 0, "#FFD27A", 18, 0.9, "lamp")
 			Kit.clear(env, x, z, 6)
 			table.insert(out, h)
@@ -557,6 +611,39 @@ local function antechamber(env: Env, out: { Build })
 	Kit.life(env.ctx, "drips", Kit.at(env, 230), 24, 0, 20)
 end
 
+-- W24 secret (szczyty.md 4.5): fresh bare footprints (Ilvar came down after the scene on the Stairs), seen only on the
+-- Crevasse's snow and the Antechamber's frost; after everything, without clearings.
+local function barefoot(env: Env, out: { Build })
+	for k, pair in { { 1, 2 }, { 8, 7 } } do
+		local r, other = env.T.rooms[pair[1]], env.T.rooms[pair[2]]
+		local dx, dz = other.x - r.x, other.z - r.z
+		local len = math.max(1, math.sqrt(dx * dx + dz * dz))
+		local ux, uz = dx / len, dz / len
+		local b = Kit.build(env, `BarefootSteps_{k}`, "traces", r.x, r.z, 0)
+		local yaw = math.deg(math.atan2(-ux, -uz))
+		for i = 0, 9 do
+			local d = i * 3 + 4
+			local side = if i % 2 == 0 then 0.35 else -0.35
+			local lx, lz = ux * d - uz * side, uz * d + ux * side
+			if env.T.floor(r.x + lx, r.z + lz) then
+				b.bp:rbox(
+					0.45,
+					0.05,
+					1,
+					lx,
+					Kit.gy(env, b, lx, lz) + 0.04,
+					lz,
+					0,
+					yaw,
+					0,
+					o({ c = "#9AAAB6", m = "Snow" }, "fine", { col = false })
+				)
+			end
+		end
+		table.insert(out, b)
+	end
+end
+
 function Heart.all(env: Env, out: { Build })
 	crevasse(env, out)
 	crystalHall(env, out)
@@ -566,6 +653,7 @@ function Heart.all(env: Env, out: { Build })
 	hoard(env, out)
 	ribcage(env, out)
 	antechamber(env, out)
+	barefoot(env, out)
 end
 
 return Heart

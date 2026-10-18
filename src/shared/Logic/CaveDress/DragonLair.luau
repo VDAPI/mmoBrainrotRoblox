@@ -131,13 +131,69 @@ local function hoard(env: Env, out: { Build })
 		h.bp:light(0, y + 3, 0, "#FFD27A", 16, 0.8, "lamp")
 		table.insert(out, h)
 		-- the predecessors frozen behind the ice in the east and west walls
-		Grotto.window(
+		local pw = Grotto.window(
 			env,
 			out,
 			{ x = sx * 100, z = CZ, w = 14, h = 12, yaw = if sx > 0 then 270 else 90 },
 			`Predecessors_{k}`,
 			"fallen"
 		)
+		if sx > 0 then
+			-- W24 secret (szczyty.md 5.5): among them the order's knight, the petal and the thorn on his shield, his
+			-- spear broken where the Thorn is broken on the Duskwood's window (behind the ice, 100 studs out: outside
+			-- the arena's 50-stud circle)
+			local py = Kit.gy(env, pw, 0, 0)
+			pw.bp:add(
+				"cyl",
+				0.15,
+				2,
+				2,
+				0.6,
+				py + 4.6,
+				-1.7,
+				0,
+				90,
+				0,
+				o({ c = "#2F3A4A", m = "Fabric" }, "fine", { col = false })
+			)
+			pw.bp:add(
+				"cyl",
+				0.17,
+				0.9,
+				0.9,
+				0.6,
+				py + 4.7,
+				-1.78,
+				0,
+				90,
+				0,
+				o({ c = "#DCE6EE", m = "SmoothPlastic" }, "fine", { col = false })
+			)
+			pw.bp:rbox(
+				0.25,
+				4.4,
+				0.25,
+				-0.9,
+				py + 6.8,
+				-1.5,
+				0,
+				0,
+				14,
+				o({ c = "#3A3028", m = "Wood" }, "fine", { col = false })
+			)
+			pw.bp:rbox(
+				0.25,
+				1.6,
+				0.25,
+				-2.2,
+				py + 2.4,
+				-1.5,
+				0,
+				0,
+				70,
+				o({ c = "#3A3028", m = "Wood" }, "fine", { col = false })
+			)
+		end
 	end
 end
 

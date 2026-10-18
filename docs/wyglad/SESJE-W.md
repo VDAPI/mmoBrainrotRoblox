@@ -441,3 +441,10 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Wszystko dopisane na końcu ubioru jaskini, bez stref wolnych (wcześniejsze rekwizyty i spawny bez zmian).
 - Kuźnia Głębin (4.5): świecący na niebiesko zarys grotu Ciernia odciśnięty w kowadle Pierwszego Kowala (sekret).
 - Palenisko Azgora (5.4–5.5): pęknięte krasnoludzkie łańcuchy z niebieskimi runami zwisające z filarów Gardzieli (zerwane pęta Azgora), kamienna tablica strażnika pieca z runą na zachodniej półce (poza kręgiem 75, bez kolizji).
+
+### W24: jaskinie Szczytów, część 1 (sekrety)
+
+- Lodowa Grota (`szczyty.md` 2.5): trzej zamarznięci traperzy z latarnią obok cielęcia mamuta w lodowym oknie Leża Króla (`Grotto.window` zwraca teraz swój Build).
+- Zamarznięta Twierdza (3.5): twarz komendanta z brodą i płatkiem zakonu na głowie leżącego posągu w Wyłomie (mapa ze sztyletem w Komnacie Komtura już była).
+- Serce Lodowca (4.5): tarcza zakonu (płatek i cierń) i złamana włócznia przy zbroi w bryle lodu w Skarbcu, świeże ślady bosych stóp w Rozpadlinie i Przedsionku.
+- Leże Vaelgratha (5.5): rycerz zakonu z tarczą i złamaną włócznią wśród poprzedników za lodem we wschodniej ścianie (100 studów od środka, poza kręgiem 50; koksowniki i arena bez zmian).

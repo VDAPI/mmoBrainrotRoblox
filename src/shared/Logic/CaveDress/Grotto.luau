@@ -109,7 +109,7 @@ function Grotto.window(
 	w: { x: number, z: number, w: number, h: number, yaw: number },
 	name: string,
 	shape: string
-)
+): Build
 	local b = Kit.build(env, name, "glow", w.x, w.z, w.yaw)
 	local bp = b.bp
 	local y = Kit.gy(env, b, 0, 0)
@@ -178,6 +178,7 @@ function Grotto.window(
 	)
 	bp:light(0, y + 2 + w.h / 2, -3, GLOW, 24, 1.1, "crystal")
 	table.insert(out, b)
+	return b
 end
 
 local function mouth(env: Env, out: { Build })
@@ -394,7 +395,17 @@ local function kingden(env: Env, out: { Build })
 	-- the ice window with the frozen mammoth calf
 	for _, w in env.T.windows() do
 		if (w.x - r.x) ^ 2 + (w.z - r.z) ^ 2 < (r.r + 20) ^ 2 then
-			Grotto.window(env, out, w, "MammothWindow", "mammoth")
+			local mw = Grotto.window(env, out, w, "MammothWindow", "mammoth")
+			-- W24 secret (szczyty.md 2.5): the three trappers frozen beside the calf, their lantern at their feet (the
+			-- grottoTrappers scene, here without the quest)
+			local my = Kit.gy(env, mw, 0, 0)
+			local dark = { c = "#1E2630", m = "SmoothPlastic" }
+			for t = 0, 2 do
+				local tx = -w.w * 0.42 + t * 1.5
+				mw.bp:box(1.1, 3, 0.8, tx, my + 3.5, -1.15, o(dark, "detail", { col = false }))
+				mw.bp:add("ball", 0.8, 0.8, 0.8, tx, my + 5.4, -1.15, 0, 0, 0, o(dark, "fine", { col = false }))
+			end
+			glowBox(mw.bp, 0.5, 0.6, 0.5, -w.w * 0.42 + 1.5, my + 2.3, -1.3, "#FFB25A", 0.1)
 		end
 	end
 	-- the larder, heaps of bones, the bed of furs

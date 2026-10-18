@@ -173,6 +173,22 @@ local function breach(env: Env, out: { Build })
 		local y = Kit.gy(env, s, 0, 0)
 		s.bp:rbox(4, 3.6, 14, 0, y + 1.8, 0, 0, 0, 90, o(STONE, "shell", { q = false }))
 		s.bp:box(4, 4, 4, 0, y + 2, 10, o(STONE, "detail", { col = false }))
+		-- W24 secret (szczyty.md 3.5): the commander's face on the fallen head, bearded, the order's petal on the brow
+		s.bp:add("ball", 0.8, 2.2, 2.6, 2.1, y + 1, 10, 0, 0, 0, o(STONE, "detail", { col = false }))
+		s.bp:box(0.3, 0.4, 2.8, 2.1, y + 2.6, 10, o(STONE, "fine", { col = false }))
+		s.bp:add(
+			"cyl",
+			0.12,
+			1,
+			1,
+			2.05,
+			y + 3.3,
+			10,
+			0,
+			0,
+			0,
+			o({ c = "#DCE6EE", m = "Slate" }, "fine", { col = false })
+		)
 		for m = 0, 4 do
 			s.bp:beam(-6 + m * 1.6, y, 6, -6 + m * 1.6, y + 7, 9, 0.6, o(Kit.bone, "detail", { col = false }))
 		end
