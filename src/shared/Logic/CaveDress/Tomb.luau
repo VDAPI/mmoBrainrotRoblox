@@ -6,7 +6,8 @@
 --   * baskets of ghost flame between the sarcophagi, a chandelier of chains and candles over the middle (no
 --     collision),
 --   * the queen's apse in the north: the broken empty sarcophagus of Morvane on its dais with the lid on the floor,
---     the statue of the young queen in her crown of thorns with her hands on the scythe, two banners,
+--     the statue of the young queen in her crown of thorns holding the broken shaft of a spear (W22: Vael's Thorn,
+--     bor.md E2; no scythe), two banners,
 --   * the unreachable gallery (+14): statues of mourners, the queen's torn banners, mist spilling over the edge. Pure.
 
 local Kit = require("./Kit")
@@ -122,8 +123,10 @@ local function apse(env: Env, out: { Build })
 	for k = -2, 2 do
 		bp:rbox(0.3, 1.6, 0.3, k * 0.6, sy + 15.2, 10, 0, 0, k * 10, o(SILVER, "fine", { col = false }))
 	end
-	bp:rbox(0.4, 14, 0.4, 1.6, sy + 7, 8.6, 0, 0, -6, o(Kit.iron, "detail", { col = false }))
-	bp:rbox(4, 0.6, 0.3, 3, sy + 13.6, 8.6, 0, 0, -6, o(Kit.iron, "fine", { col = false }))
+	-- the broken spear shaft in her hands (wood, a splintered end, a ring of silver below the break)
+	bp:rbox(0.45, 9, 0.45, 1.6, sy + 6.2, 8.6, 0, 0, -6, o(Kit.oldWood, "detail", { col = false }))
+	bp:rbox(0.55, 0.3, 0.55, 1.95, sy + 9.6, 8.6, 0, 0, -6, o(SILVER, "fine", { col = false }))
+	bp:rbox(0.25, 1, 0.25, 2.1, sy + 11.1, 8.6, 0, 0, 14, o(Kit.oldWood, "fine", { col = false }))
 	for _, s in { -1, 1 } do
 		Kit.banner(bp, s * 9, Kit.gy(env, b, s * 9, 6), 6, 14, ROYAL)
 	end

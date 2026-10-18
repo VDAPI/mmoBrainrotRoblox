@@ -395,3 +395,10 @@ Kryjówka Przemytników: widoczny snop księżyca w Sali Narad (dwa przezroczyst
 `CaveDress/Smugglers`). Gobliński Kopiec: pieniek z wbitym tasakiem i hakami z kilofem i łopatą zamiast bloku rzeźnika
 (`CaveDress/Warren`, build `ChoppingStump`). Łąki: cienka kurtyna wody nad wylotem Jaskini Mchów (`Water.caveCurtain`,
 bez kolizji). Tron Grimroka i grzyby Jaskini Mchów z modeli właściciela (wyżej). Nieobejrzane w Studio.
+
+### W22: jaskinie Boru, część 1
+
+Wilcza Nora: szkielet konia z resztkami uprzęży zamiast brązowej padliny (`CaveDress/Den`). Kurhan Kultystów: pusta trumna
+pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołtarza fioletowe zamiast ciemnoczerwonego
+(`CaveDress/Barrow`). Grobowiec Morvane: posąg królowej trzyma złamane drzewce włóczni (Cierń Vaela) zamiast kosy
+(`CaveDress/Tomb`). Nieobejrzane w Studio.

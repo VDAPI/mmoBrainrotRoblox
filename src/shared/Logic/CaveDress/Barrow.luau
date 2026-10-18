@@ -234,7 +234,21 @@ local function heart(env: Env, out: { Build })
 	local bp = b.bp
 	local y = Kit.gy(env, b, 0, 0)
 	bp:box(6, 3, 3.4, 0, y + 1.5, 0, o(STONE, "shell", { q = false }))
-	bp:box(6.4, 0.3, 3.8, 0, y + 3.1, 0, o({ c = "#5A1A1A", m = "SmoothPlastic" }, "fine", { col = false }))
+	-- W22: a dark violet altar cloth (a dark red one read like a stain, bor.md: no blood)
+	bp:box(6.4, 0.3, 3.8, 0, y + 3.1, 0, o({ c = "#3A2A4A", m = "Fabric" }, "fine", { col = false }))
+	-- W22 (bor.md C2): the empty coffin leaning on the altar under frost that does not melt, its lid on the floor: here
+	-- the queen rose (scene `barrow`)
+	bp:rbox(2.4, 6, 1.2, 4.6, y + 2.8, 0.6, 14, 0, -10, o({ c = "#4E5864", m = "Slate" }, "detail", { col = false }))
+	bp:rbox(2.5, 6.1, 0.25, 4.6, y + 2.8, 0, 14, 0, -10, {
+		c = "#D2E4EE",
+		m = "Ice",
+		lod = "detail",
+		col = false,
+		t = 0.25,
+		jitter = 0,
+	})
+	bp:rbox(2.4, 0.4, 6, 8.2, y + 0.3, -2.4, 0, 28, 4, o({ c = "#4E5864", m = "Slate" }, "detail", { col = false }))
+	bp:light(4.6, y + 3, -1, "#BFE0FF", 10, 0.6, "crystal")
 	-- the horned idol with outstretched arms
 	local iy = Kit.gy(env, b, 0, 9)
 	bp:box(5, 14, 3, 0, iy + 7, 9, o(STONE, "shell", { q = false }))

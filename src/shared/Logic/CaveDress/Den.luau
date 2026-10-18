@@ -2,7 +2,7 @@
 -- Wolfden Hollow (24-31) dressing (S49): an earthen den under the roots of a giant dead oak.
 --   1 the Threshold under the Roots: the exit in an arch of thick roots, the hunters' last bivouac (a cold fire, a
 --     bedroll torn to shreds, a broken crossbow, a pack with spilled bolts, a lantern still smouldering), claw marks,
---   2 the Feeding Pit (ghouls): feeding pits with bones by the walls, carcasses of a deer and a horse with a torn
+--   2 the Feeding Pit (ghouls): feeding pits with bones by the walls, skeletons of a deer and a horse with a torn
 --     harness, ghoul burrows low in the walls, root trunks like pillars, a claw sign over the way east,
 --   3 the Great Den (bears): bark round the oak's taproot, beds of branches and moss, a fallen giant trunk along the
 --     south wall, the wild hive in the roots under the vault dripping amber honey (glow), clawed walls,
@@ -163,7 +163,7 @@ end
 
 local function feeding(env: Env, out: { Build })
 	local r = env.T.rooms[2]
-	-- bones in the feeding pits, carcasses, burrows, the claw sign
+	-- bones in the feeding pits, skeletons, burrows, the claw sign
 	local b = Kit.build(env, "FeedingPit", "traces", r.x, r.z, 0)
 	local bp = b.bp
 	local g = ground(env, b)
@@ -172,24 +172,13 @@ local function feeding(env: Env, out: { Build })
 		Kit.bones(bp, lx, 0, lz, 7, g)
 		Kit.glowCap(bp, lx + 2, g(lx + 2, lz + 2), lz + 2, 0.4, GHOUL, false, "fine")
 	end
-	-- the horse carcass with its torn harness
+	-- the bleached skeleton of a horse with its torn harness (W22, bor.md B4: bones only, no carcass)
 	local cx, cz = Kit.spot(env, r, math.rad(200), 8, 3, false)
 	if cx and cz then
 		local lx, lz = cx - r.x, cz - r.z
 		local y = g(lx, lz)
-		bp:add(
-			"ball",
-			6,
-			2.4,
-			3,
-			lx,
-			y + 0.8,
-			lz,
-			0,
-			30,
-			0,
-			o({ c = "#5A3A2A", m = "SmoothPlastic" }, "detail", { col = false })
-		)
+		bp:beam(lx - 3, y + 1.3, lz, lx + 3, y + 1.1, lz + 0.4, 0.35, o(Kit.bone, "detail", { col = false }))
+		bp:add("ball", 1.6, 1, 1, lx + 3.8, y + 0.6, lz + 0.6, 0, 30, 0, o(Kit.bone, "detail", { col = false }))
 		for k = 0, 4 do
 			bp:beam(lx - 2 + k, y + 1.2, lz, lx - 2 + k, y + 0.2, lz + 2.4, 0.2, o(Kit.bone, "fine", { col = false }))
 		end
