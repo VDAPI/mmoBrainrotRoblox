@@ -213,6 +213,10 @@ local function stiltVillage(env: Env.Env, out: { Build })
 			0.4
 		)
 	end
+	-- W16 (bor.md A5.4): Ragna's old bone chimes under the eaves of the main hut, the same as on the coven's tree
+	for k = -1, 1 do
+		Props.charm(bp, k * 1.6, 9.2, -4, true)
+	end
 	Kit.lifeAt(ctx, b, "fireflies", 0, 2, 0, 24)
 	table.insert(out, b)
 end

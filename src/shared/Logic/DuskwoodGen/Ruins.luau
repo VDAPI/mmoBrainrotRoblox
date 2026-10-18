@@ -213,6 +213,43 @@ local function manor(env: Env.Env, out: { Build })
 			)
 		end
 	end
+	-- W16 (bor.md A5.2): the house crest (a thorn through a ring) on the hanging wing, half grown over with ivy
+	do
+		local gx = 8
+		local gy = Kit.gy(ctx, b, gx, -45)
+		bp:push(gx - 4.2, gy + 3.8, -46.2, 0, 20, 0)
+		for k = 0, 7 do
+			local a = k * math.pi / 4
+			bp:rbox(
+				0.18,
+				0.8,
+				0.18,
+				math.cos(a) * 1,
+				math.sin(a) * 1,
+				-0.15,
+				0,
+				0,
+				math.deg(a),
+				o(Kit.iron, "fine", { col = false })
+			)
+		end
+		bp:rbox(0.2, 2.8, 0.2, 0, 0, -0.2, 0, 0, 40, o(Kit.iron, "fine", { col = false }))
+		for k = 0, 4 do
+			bp:rbox(
+				0.9,
+				0.6,
+				0.12,
+				-0.9 + (k % 2) * 0.5,
+				-1.2 + k * 0.55,
+				-0.3,
+				0,
+				0,
+				k * 35,
+				o(Kit.moss, "fine", { col = false })
+			)
+		end
+		bp:pop()
+	end
 	Kit.rect(ctx, "ruins", b.at.x, b.at.z - 4, 40, 26, b.at.rot)
 	Kit.circle(ctx, "plaza", b.at.x, b.at.z + 30, 14)
 	Kit.lifeAt(ctx, b, "wisp", 0, 4, 6, 12)

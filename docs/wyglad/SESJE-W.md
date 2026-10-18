@@ -418,3 +418,8 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 
 - Wg `laki.md` 1.5: herb płatka z cierniem świeżo wyryty na zewnętrznej ścianie ruin strażnicy, zgaszona świeca i ślady butów w szronie; wóz kupca do połowy w Żabim Oczku (koło, skrzynie, plandeka ze znakiem kupca); kamienna półka pod wodospadem do łowiska z wędką Borysa (`MeadowsGen/Landmarks`: `ruinCrest`, `sunkenWagon`, `fallsLedge`).
 - Też: żuraw z wysięgnikiem nad wyrobiskiem i blokiem kamienia na linie (północno-wschodni brzeg Starego Wyrobiska, `quarryCrane`), grążele z białymi i różowymi kwiatami przy brzegach Żabiego Oczka (tylko klient, `lilies`).
+
+### W16: Bór, część 1 (sekrety, bez krwi)
+
+- Ołtarz kręgu kultu: czarny wosk spływający z krawędzi i popiół zamiast zaschniętej krwi (`bor.md` A4, zasada 3).
+- Sekrety A5: zatarta płaskorzeźba królowej z włócznią nad Bramą Krypty (`Cliffs`), herb rodu Vael (cierń przez krąg) z bluszczem na zwisającym skrzydle bramy dworu (`Ruins`), kościane dzwonki Ragny pod okapem głównej chaty wsi na palach (`Swamp`).

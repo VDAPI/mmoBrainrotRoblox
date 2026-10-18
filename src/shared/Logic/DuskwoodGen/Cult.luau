@@ -2,7 +2,7 @@
 -- Cultist Village (29–37, more gold) and the Cultists' Barrow (S45).
 --   * a clearing in a palisade of black stakes with violet rags, the gate with a bell towards the road,
 --   * the ritual circle (the landmark): runestones whose runes glow at night, the altar with violet fire, a dagger
---     and dried blood, bowls of coins,
+--     and black wax with ash (W16: no blood), bowls of coins,
 --   * the cult hall (a long house with a steep black roof, banners with an eye, candles by the door), huts with
 --     pointed roofs, and the lure: the tithe, crates and sacks of coins piled before the hall,
 --   * serpents: the fenced serpent pond, skins on drying racks, eggs in reed nests, a carved serpent totem,
@@ -241,13 +241,25 @@ local function ritualCircle(env: Env.Env, out: { Build })
 		end
 		bp:pop()
 	end
-	-- the altar with violet fire, a dagger, dried blood and coin bowls
+	-- the altar with violet fire, a dagger, black wax run down from the candles and ash (W16, bor.md A4: no blood), coin
+	-- bowls
 	local ay = Kit.gy(ctx, b, 0, 0)
 	bp:box(5, 2.6, 3, 0, ay + 1, 0, o({ c = "#3A3640", m = "Slate" }, "shell", { q = true }))
 	Kit.fire(bp, 0, ay + 2.6, 0.3, 1.6, Kit.VIOLET, "detail")
 	bp:rbox(0.25, 0.1, 1.8, 1.6, ay + 2.35, -0.9, 0, 30, 0, o({ c = "#B8B8C0", m = "Metal" }, "fine"))
-	bp:box(2, 0.05, 1.4, -1.2, ay + 2.32, -0.6, o({ c = "#3A0E10", m = "SmoothPlastic" }, "fine"))
-	bp:add("ball", 3.4, 0.08, 2.6, 2.6, ay + 0.06, -3.4, 0, 0, 0, o({ c = "#3A0E10", m = "SmoothPlastic" }, "fine"))
+	bp:box(2, 0.05, 1.4, -1.2, ay + 2.32, -0.6, o({ c = "#141218", m = "SmoothPlastic" }, "fine"))
+	for k = 0, 2 do
+		bp:box(
+			0.3,
+			0.9 + k * 0.4,
+			0.08,
+			-2 + k * 0.6,
+			ay + 2.1 - k * 0.2,
+			-1.52,
+			o({ c = "#141218", m = "SmoothPlastic" }, "fine")
+		)
+	end
+	bp:add("ball", 3.4, 0.08, 2.6, 2.6, ay + 0.06, -3.4, 0, 0, 0, o({ c = "#5A5650", m = "Slate" }, "fine"))
 	for _, side in { -1, 1 } do
 		bp:add(
 			"cyl",

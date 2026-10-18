@@ -110,6 +110,17 @@ local function cryptGate(env: Env.Env, out: { Build })
 		-- wing walls framing the courtyard
 		bp:rbox(4, 20, 18, side * 30, y0 + 9, -14, 0, side * 24, side * 3, o(RED_DARK, "shell", { q = true }))
 	end
+	-- W16 (bor.md A5.1): a worn relief of the queen with the spear over the gateway, the same motif as the chapel's
+	-- window; weathered lighter stone proud of the facade
+	local worn = { c = "#8A5E4E", m = "Slate" }
+	bp:box(9, 11, 0.6, 0, y0 + 31, -17.3, o(RED_DARK, "detail", { col = false }))
+	bp:rbox(3.2, 6.4, 0.5, 0, y0 + 29.6, -17.7, 0, 0, 0, o(worn, "detail", { col = false }))
+	bp:add("ball", 1.6, 1.8, 0.6, 0, y0 + 33.9, -17.7, 0, 0, 0, o(worn, "detail", { col = false }))
+	for k = -1, 1 do
+		bp:box(0.3, 0.7 + math.abs(k) * 0.3, 0.3, k * 0.5, y0 + 35.1, -17.8, o(worn, "fine", { col = false }))
+	end
+	bp:rbox(0.35, 10, 0.35, 1.6, y0 + 31, -17.9, 0, 0, -14, o(worn, "fine", { col = false }))
+	bp:rbox(0.9, 1.2, 0.3, 2.85, y0 + 35.8, -17.9, 0, 0, -14, o(worn, "fine", { col = false }))
 	-- the overhang above the gate, bats under it
 	bp:rbox(30, 3, 14, 0, y0 + 39, -16, 6, 0, 0, o(RED_DARK, "shell", { q = false }))
 	for k = -2, 2 do
