@@ -5632,3 +5632,5 @@
   odświeżenie wiki należy do właściciela (17.10).
 
 - **Właściciel 2026-10-18 (pytania z S137/S146)**: (3.1) obrażenia bossów w tanka zostają, leczenie berła przy bossie (T-SK6) zostaje w raporcie; (3.2) miecz z tarczą zostaje tankiem, R9 dwuręczna / jednoręczna 1,45–1,80 zostaje w raporcie; (3.3) cel tempa solo Uzdrowiciela do poluzowania (bez drugiego buildu z buzdyganem); (6) punkty umiejętności zostają 1 na poziom + 7 na start (S137).
+
+- **FIX 2026-10-18 (portale bez „E” w opublikowanej grze)**: tag `Portal` dociera do klienta przed częściami łuku albo atrybutami, a `decoratePortal` wtedy wychodził i nigdy nie wracał. Teraz portal bez części lub atrybutów czeka na pierwszą część (`DescendantAdded`) albo atrybut i dekoruje się ponownie (`retryPortal`).

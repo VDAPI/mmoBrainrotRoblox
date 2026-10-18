@@ -521,7 +521,42 @@ local function onPortal(portalId: string, targetId: string)
 	})
 end
 
-local function decoratePortal(instance: Instance)
+local decoratePortal: (instance: Instance) -> ()
+
+-- Owner report 2026-10-18 (published game, no "Travel [E]"): the "Portal" tag can replicate before the arch's parts
+-- or attributes, so a portal without them yet is retried once its first part or attribute arrives.
+local function retryPortal(model: Model)
+	if model:GetAttribute("VaelthornPortalWait") then
+		return
+	end
+	model:SetAttribute("VaelthornPortalWait", true)
+	local connections: { RBXScriptConnection } = {}
+	local function again()
+		for _, connection in connections do
+			connection:Disconnect()
+		end
+		model:SetAttribute("VaelthornPortalWait", nil)
+		task.defer(decoratePortal, model)
+	end
+	table.insert(
+		connections,
+		model.DescendantAdded:Connect(function(child: Instance)
+			if child:IsA("BasePart") then
+				again()
+			end
+		end)
+	)
+	table.insert(
+		connections,
+		model.AttributeChanged:Connect(function(name: string)
+			if name == "PortalId" or name == "TargetMap" then
+				again()
+			end
+		end)
+	)
+end
+
+decoratePortal = function(instance: Instance)
 	if not instance:IsA("Model") then
 		return
 	end
@@ -529,12 +564,13 @@ local function decoratePortal(instance: Instance)
 	local portalId = model:GetAttribute("PortalId")
 	local targetId = model:GetAttribute("TargetMap")
 	local anchor = model.PrimaryPart or model:FindFirstChildWhichIsA("BasePart")
-	if
-		type(portalId) ~= "string"
-		or type(targetId) ~= "string"
-		or not anchor
-		or anchor:FindFirstChild("VaelthornPortal")
-	then
+	if type(portalId) ~= "string" or type(targetId) ~= "string" or not anchor then
+		if model.Parent then
+			retryPortal(model)
+		end
+		return
+	end
+	if anchor:FindFirstChild("VaelthornPortal") then
 		return
 	end
 	local target = Maps.get(targetId)
