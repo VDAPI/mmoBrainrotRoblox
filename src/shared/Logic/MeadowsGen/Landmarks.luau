@@ -489,7 +489,82 @@ local function bearDens(out: { Build })
 				o(Kit.bone, "fine")
 			)
 		end
+		if i == 2 then
+			-- W14 (laki.md 1.4): the goblins drove the bears out: their crude spears left stuck in the abandoned den
+			for k = -1, 1, 2 do
+				local sx, sz = k * 2.2, -5
+				local sy = Kit.gy(b, sx, sz)
+				bp:rbox(0.25, 6, 0.25, sx, sy + 2.6, sz, -14, 0, k * 10, o(Kit.timber, "detail", { col = false }))
+				bp:add(
+					"wedge",
+					0.15,
+					0.9,
+					0.5,
+					sx + k * 0.55,
+					sy + 5.6,
+					sz - 0.75,
+					-14,
+					0,
+					k * 10,
+					o(Kit.iron, "fine", { col = false })
+				)
+				bp:box(
+					0.5,
+					0.9,
+					0.06,
+					sx,
+					sy + 4.4,
+					sz - 0.35,
+					o({ c = "#6E9A3A", m = "Fabric" }, "fine", { col = false, tag = "flag" })
+				)
+			end
+		end
 		table.insert(out, b)
+	end
+end
+
+-- W14 (laki.md 1.4): the shepherd's things on the Rabbit Fields where the wolves came down: an overturned basket of
+-- apples and sheep bells lost in the grass (fine, no collision, no clearings).
+local function pastureTraces(out: { Build })
+	local b = Kit.build("PastureBasket", "field", -600, 180, 40)
+	local bp = b.bp
+	local gy = Kit.gy(b, 0, 0)
+	bp:rbox(1.6, 1.2, 1.6, 0, gy + 0.6, 0, 0, 0, 80, o(Kit.straw, "detail", { col = false }))
+	for k = 1, 5 do
+		local lx, lz = 1 + k * 0.5, -0.4 + (k % 2) * 0.7
+		bp:add(
+			"ball",
+			0.45,
+			0.45,
+			0.45,
+			lx,
+			Kit.gy(b, lx, lz) + 0.22,
+			lz,
+			0,
+			0,
+			0,
+			o({ c = "#A8322A", m = "SmoothPlastic" }, "fine", { col = false })
+		)
+	end
+	table.insert(out, b)
+	for i, p in { { -640, -150 }, { -700, -220 } } do
+		local c = Kit.build(`SheepBell_{i}`, "field", p[1], p[2], i * 70)
+		local cy = Kit.gy(c, 0, 0)
+		c.bp:add(
+			"cyl",
+			0.5,
+			0.45,
+			0.45,
+			0,
+			cy + 0.2,
+			0,
+			0,
+			0,
+			20,
+			o({ c = "#B8923A", m = "Metal" }, "fine", { col = false })
+		)
+		c.bp:rbox(1.4, 0.08, 0.15, 0.7, cy + 0.05, 0.2, 0, 20, 0, o(Kit.hide, "fine", { col = false }))
+		table.insert(out, c)
 	end
 end
 
@@ -765,6 +840,7 @@ function Landmarks.all(out: { Build })
 	wagon(out)
 	milestones(out)
 	bearDens(out)
+	pastureTraces(out)
 	ruinCrest(out)
 	sunkenWagon(out)
 	fallsLedge(out)

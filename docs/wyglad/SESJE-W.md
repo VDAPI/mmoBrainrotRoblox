@@ -461,3 +461,4 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Grobowiec Morvane: imię „Morvane z rodu Vael” wyryte w posadzce absydy pod wiekiem.
 - W16: płaty szronu z kryształkami lodu u stóp ścian Niedźwiedziego Jaru wzdłuż drogi trumny (`Hollow.coffinFrost`, `bor.md` A4).
 - W20: porzucone zbroje pielgrzymów z granatowymi strzępami pod śniegiem na północ od Zasypanego Obozu (`Details.pilgrimArmour`, tabela 1.4).
+- W14: przewrócony kosz z jabłkami i zgubione dzwonki owiec na Polanie Królików (`pastureTraces`), goblińskie włócznie z zieloną szmatą w porzuconej gawrze (`bearDens`, druga gawra).
