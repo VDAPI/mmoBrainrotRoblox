@@ -53,8 +53,8 @@
   },
   {
    "path": "tylko_2d/efekty/effect_bleed.png",
-   "sha256": "0fae9f062d3ad0a21af9554060439f99af2723a5a7c2c3d1e7eb87e8f0950276",
-   "why": "realistyczne krople krwi"
+   "sha256": "c123591bbf5c057fdaf877b85c0b21e346a55d2e36995f58c2a5eab63ab7807e",
+   "why": "druga wersja (2026-10-18): trzy czerwone krople krwi przy sztylecie"
   },
   {
    "path": "tylko_2d/efekty/effect_vulnerability.png",

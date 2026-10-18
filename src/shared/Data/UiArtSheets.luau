@@ -6,12 +6,15 @@
 
 local SHEETS: { [string]: string } = {
 	["bossowie__boss_azgor.jpg"] = "rbxassetid://100153793287241",
+	["bossowie__boss_grimrok.jpg"] = "rbxassetid://138736369141057",
 	["bossowie__boss_morvane.jpg"] = "rbxassetid://92273319961219",
 	["bossowie__boss_vaelgrath.jpg"] = "rbxassetid://83143604621579",
 	["klasy__portrait_cleric.jpg"] = "rbxassetid://135065757764109",
 	["klasy__portrait_hunter.jpg"] = "rbxassetid://118313261387277",
 	["klasy__portrait_mage.jpg"] = "rbxassetid://78971674861142",
+	["klasy__portrait_warrior.jpg"] = "rbxassetid://96120305489469",
 	["lochy__dungeon_azgor.jpg"] = "rbxassetid://134673841190467",
+	["lochy__dungeon_grimrok.jpg"] = "rbxassetid://86999168750043",
 	["lochy__dungeon_morvane.jpg"] = "rbxassetid://77918825474039",
 	["lochy__dungeon_vaelgrath.jpg"] = "rbxassetid://105603693494876",
 	["mapy__ashen.jpg"] = "rbxassetid://138057196678984",
@@ -22,6 +25,7 @@ local SHEETS: { [string]: string } = {
 	["mapy__duskwood.jpg"] = "rbxassetid://122392318697050",
 	["mapy__duskwood_barrow.jpg"] = "rbxassetid://97790830030950",
 	["mapy__duskwood_cave.jpg"] = "rbxassetid://128461891170932",
+	["mapy__duskwood_den.jpg"] = "rbxassetid://113289933282249",
 	["mapy__frostpeak.jpg"] = "rbxassetid://127769049573683",
 	["mapy__frostpeak_cave.jpg"] = "rbxassetid://84849908769927",
 	["mapy__frostpeak_grotto.jpg"] = "rbxassetid://104952424767862",
@@ -31,13 +35,13 @@ local SHEETS: { [string]: string } = {
 	["mapy__meadows_cave.jpg"] = "rbxassetid://121931935229021",
 	["mapy__meadows_hideout.jpg"] = "rbxassetid://87753835054247",
 	["mapy__world.jpg"] = "rbxassetid://133422293801927",
-	["ui_emblems_01.png"] = "rbxassetid://136603127325634",
+	["ui_emblems_01.png"] = "rbxassetid://130908894497711",
 	["ui_hud_01.png"] = "rbxassetid://137020428772073",
 	["ui_map_01.png"] = "rbxassetid://128368350205709",
 	["ui_shop_01.png"] = "rbxassetid://106308221751331",
 	["ui_skills_01.png"] = "rbxassetid://92037923766416",
 	["ui_skills_02.png"] = "rbxassetid://115263029666505",
-	["ui_status_01.png"] = "rbxassetid://97149632090877",
+	["ui_status_01.png"] = "rbxassetid://93997057987425",
 }
 
 return table.freeze(SHEETS)

@@ -90,6 +90,12 @@
    "i": 9,
    "src": "tylko_2d/efekty/effect_manaShield.png"
   },
+  "efekty/effect_misfortune": {
+   "atlas": "status",
+   "h": "2785a3de3a64",
+   "i": 41,
+   "src": "tylko_2d/efekty/effect_misfortune.png"
+  },
   "efekty/effect_nextShot": {
    "atlas": "status",
    "h": "439749bc7221",
@@ -126,6 +132,12 @@
    "i": 39,
    "src": "tylko_2d/efekty/effect_sighted.png"
   },
+  "efekty/effect_slow": {
+   "atlas": "status",
+   "h": "03eb38777684",
+   "i": 42,
+   "src": "tylko_2d/efekty/effect_slow.png"
+  },
   "efekty/effect_statBuff": {
    "atlas": "status",
    "h": "f69adc9dc902",
@@ -143,6 +155,12 @@
    "h": "2265c1b45c35",
    "i": 19,
    "src": "tylko_2d/efekty/effect_taunt.png"
+  },
+  "efekty/effect_vulnerability": {
+   "atlas": "status",
+   "h": "00abfde7296a",
+   "i": 43,
+   "src": "tylko_2d/efekty/effect_vulnerability.png"
   },
   "efekty/effect_weaken": {
    "atlas": "status",
@@ -371,6 +389,12 @@
    "h": "60774bbe2a0b",
    "i": 2,
    "src": "tylko_2d/klasy/class_mage.png"
+  },
+  "klasy/class_warrior": {
+   "atlas": "emblems",
+   "h": "714af2ce8173",
+   "i": 25,
+   "src": "tylko_2d/klasy/class_warrior.png"
   },
   "kosmetyki/aura_ember": {
    "atlas": "shop",
@@ -1364,19 +1388,19 @@
    "z0": -800
   },
   "ashen_cave": {
-   "size": 640,
-   "x0": -320,
-   "z0": -320
+   "size": 864,
+   "x0": -432,
+   "z0": -432
   },
   "ashen_lair": {
-   "size": 480,
-   "x0": -240,
-   "z0": -240
+   "size": 648,
+   "x0": -324,
+   "z0": -324
   },
   "ashen_mine": {
-   "size": 480,
-   "x0": -240,
-   "z0": -240
+   "size": 648,
+   "x0": -324,
+   "z0": -324
   },
   "city": {
    "size": 800,
@@ -1389,14 +1413,19 @@
    "z0": -800
   },
   "duskwood_barrow": {
-   "size": 480,
-   "x0": -240,
-   "z0": -240
+   "size": 648,
+   "x0": -324,
+   "z0": -324
   },
   "duskwood_cave": {
-   "size": 640,
-   "x0": -320,
-   "z0": -320
+   "size": 864,
+   "x0": -432,
+   "z0": -432
+  },
+  "duskwood_den": {
+   "size": 648,
+   "x0": -324,
+   "z0": -324
   },
   "frostpeak": {
    "size": 1600,
@@ -1404,19 +1433,19 @@
    "z0": -800
   },
   "frostpeak_cave": {
-   "size": 640,
-   "x0": -320,
-   "z0": -320
+   "size": 864,
+   "x0": -432,
+   "z0": -432
   },
   "frostpeak_grotto": {
-   "size": 480,
-   "x0": -240,
-   "z0": -240
+   "size": 648,
+   "x0": -324,
+   "z0": -324
   },
   "frostpeak_hold": {
-   "size": 480,
-   "x0": -240,
-   "z0": -240
+   "size": 648,
+   "x0": -324,
+   "z0": -324
   },
   "meadows": {
    "size": 1600,
@@ -1424,29 +1453,29 @@
    "z0": -800
   },
   "meadows_burrow": {
-   "size": 480,
-   "x0": -240,
-   "z0": -240
+   "size": 648,
+   "x0": -324,
+   "z0": -324
   },
   "meadows_cave": {
-   "size": 640,
-   "x0": -320,
-   "z0": -320
+   "size": 864,
+   "x0": -432,
+   "z0": -432
   },
   "meadows_hideout": {
-   "size": 480,
-   "x0": -240,
-   "z0": -240
+   "size": 648,
+   "x0": -324,
+   "z0": -324
   }
  },
  "sheets": {
-  "ui_emblems_01.png": "b31785e6038c",
+  "ui_emblems_01.png": "a32800a517b3",
   "ui_hud_01.png": "c66de2676c82",
   "ui_map_01.png": "aef364aeb499",
   "ui_shop_01.png": "d198e19d314e",
   "ui_skills_01.png": "093ffdd90d5b",
   "ui_skills_02.png": "b9819f918682",
-  "ui_status_01.png": "3eea950c5778"
+  "ui_status_01.png": "ca6dd7e53a93"
  },
  "singles": {
   "bossowie/boss_azgor": {
@@ -1454,6 +1483,13 @@
    "h": 512,
    "hash": "64b3c3819d20",
    "src": "tylko_2d/bossowie/boss_azgor.png",
+   "w": 512
+  },
+  "bossowie/boss_grimrok": {
+   "file": "bossowie__boss_grimrok.jpg",
+   "h": 512,
+   "hash": "b9abea6b4135",
+   "src": "tylko_2d/bossowie/boss_grimrok.png",
    "w": 512
   },
   "bossowie/boss_morvane": {
@@ -1491,11 +1527,25 @@
    "src": "tylko_2d/klasy/portrait_mage.png",
    "w": 512
   },
+  "klasy/portrait_warrior": {
+   "file": "klasy__portrait_warrior.jpg",
+   "h": 768,
+   "hash": "a26e3c74dcc7",
+   "src": "tylko_2d/klasy/portrait_warrior.png",
+   "w": 512
+  },
   "lochy/dungeon_azgor": {
    "file": "lochy__dungeon_azgor.jpg",
    "h": 512,
    "hash": "d2148b847efe",
    "src": "tylko_2d/lochy/dungeon_azgor.png",
+   "w": 1024
+  },
+  "lochy/dungeon_grimrok": {
+   "file": "lochy__dungeon_grimrok.jpg",
+   "h": 512,
+   "hash": "c93e59162a9d",
+   "src": "tylko_2d/lochy/dungeon_grimrok.png",
    "w": 1024
   },
   "lochy/dungeon_morvane": {
@@ -1566,6 +1616,13 @@
    "h": 1024,
    "hash": "34dae85849c3",
    "src": "tylko_2d/mapy/duskwood_cave.png",
+   "w": 1024
+  },
+  "mapy/duskwood_den": {
+   "file": "mapy__duskwood_den.jpg",
+   "h": 1024,
+   "hash": "d424c4cbd898",
+   "src": "tylko_2d/mapy/duskwood_den.png",
    "w": 1024
   },
   "mapy/frostpeak": {
