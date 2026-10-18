@@ -429,3 +429,7 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Krwawy Krąg: czerwony piasek, rdza i kości zamiast ciemnoczerwonych plam (`pustkowia.md` 1.10.4).
 - Nowy moduł `AshenGen/Details` (po wszystkim, bez stref wolnych, nazwy `Detail_*`, test S107 je pomija): przewrócony krasnoludzki drogowskaz z runami przy Bramie, skrzynie z szarym znakiem kultu i stojak oszronionych toporów przy kuźni orków, zimny topór z parą na zrzutowisku padliny (sekret 3), sznur z praniem spalony w połowie przy alei kominów i dziecięcy wózek na placu, ślady Ilvara w popiele od świątyni (sekret 2), złote maski i monety w piasku przy sarkofagach, uprząż kultu przy łuku skalnym, kamienne zwierzęta zwrócone w stronę jamy bazyliszka, głaz z krasnoludzką różą wiatrów na Gniazdowej Mesie (sekret 1). Pęknięte kajdany na nogach dwóch zastygłych golemów (`Lava`).
 - Studnie Orrena już stoją jako rekwizyty questu (S107), bez zmian.
+
+### W20: Szczyty, część 1 (sekrety)
+
+- Nowy moduł `FrostpeakGen/Details` (po drzewach, bez stref wolnych, nazwy `Detail_*`, test S108 je pomija), sekrety `szczyty.md` 1.5: kopiec zakonu z tarczą (płatek i cierń) na Ostrodze Bramy (95, −190), płaskorzeźba królowej z włócznią nad śpiącym smokiem na zachodnim licu ściany górnego tarasu na północ od schodów (641, −34), ślady bosych stóp na Szlaku Kości do Kręgu Obrzędu, przewrócone sanki wędkarza z ogniskiem i wędką na brzegu przy przeręblu Harpiego Stawu.

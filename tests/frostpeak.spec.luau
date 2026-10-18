@@ -1305,6 +1305,8 @@ describe("Frost Peaks: side quest places (S108)", function()
 				local key = string.match(b.name, "^SideCamp_(.+)$")
 				if key then
 					camps[key] = b
+				elseif string.match(b.name, "^Detail_") then
+					continue -- W20: the map plan's secrets (FrostpeakGen/Details), after everything
 				elseif b.tag ~= "lair" and b.tag ~= "worldBossArena" then -- S134i: the Elite II hideouts; S149b the barrow
 					others += 1
 				end

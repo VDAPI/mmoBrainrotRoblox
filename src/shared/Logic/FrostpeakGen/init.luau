@@ -19,6 +19,7 @@
 
 local AreaSpawns = require("./AreaSpawns")
 local AreaTypes = require("../Data/Areas/Types")
+local Details = require("@self/Details")
 local Env = require("@self/Env")
 local Flora = require("./WorldGen/Flora")
 local Fortress = require("@self/Fortress")
@@ -329,6 +330,8 @@ function FrostpeakGen.all(): { Build }
 	for _, b in tiles do
 		table.insert(out, b :: any)
 	end
+	-- W20: the map plan's secrets, after the trees and without clearings (nothing earlier moves)
+	Details.all(e, out)
 	treeCache = trees
 	cache = out
 	return out
