@@ -175,6 +175,9 @@ local Definitions: { [string]: Definition } = {
 	-- S134f: after a boss / Elite II / Invasion fight, the party's table (FightLogService) { kind, key, nameKey,
 	-- outcome, time, rows, deaths, dodged, aimed, drop? }
 	FightSummary = { kind = "event", dir = "s2c" },
+	-- S149b: the world boss reward card ({ boss, exp?, gold?, items? = { { id, r, up?, n? } }, reason?, level? }): the
+	-- winner's loot, or the reason he got none ("level" | "share" | "claimed"); the client checks every field
+	WorldBossReward = { kind = "event", dir = "s2c" },
 	-- S134f: the party finder board (PartyFinderService): (kind, target, minLevel, maxLevel, { classId }) -> (ok, errKey?)
 	FinderPost = {
 		kind = "function",

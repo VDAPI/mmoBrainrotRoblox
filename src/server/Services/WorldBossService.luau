@@ -14,7 +14,8 @@
 -- Champion starts (WorldEventService.AddBlocker) and nobody fights PvP in the circle while the boss lives
 -- (PvpService.AddFightRule). Every player sees the state branch `worldBoss` (Logic/WorldBoss.Public + `mine`, or
 -- `{ next }`), sent at most every publishEvery seconds and only on a change. The after-fight meter is
--- FightLogService ("worldboss").
+-- FightLogService ("worldboss", S149b: with each player's place in the contribution); S149b: every winner gets the
+-- reward card (`WorldBossReward`: EXP, gold and the items, or the reason without a reward).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -329,7 +330,6 @@ local function giveReward(player: Player, char: Types.CharacterData): { any }
 	Net.Fire(player, "CombatFx", { { k = "reward", exp = shownExp, gold = r.gold } })
 	local items: { Types.ItemInstance } = {}
 	local drop = WorldBoss.rollItem(char.level, char.class, rng)
-	local itemArg = "-"
 	if drop then
 		local rolled = ItemRoll.rollItem(
 			drop.defId,
@@ -344,7 +344,6 @@ local function giveReward(player: Player, char: Types.CharacterData): { any }
 			rolled.bound = true
 		end
 		table.insert(items, rolled)
-		itemArg = `#item:{rolled.id}:{rolled.up}`
 		if drop.rarity >= Rarities.LEGENDARY then
 			Analytics.custom(player, if drop.rarity >= Rarities.MYTHIC then "WorldBossMythic" else "WorldBossLegendary")
 		end
@@ -366,18 +365,13 @@ local function giveReward(player: Player, char: Types.CharacterData): { any }
 			task.spawn(mailItems, player, char.id, items)
 		end
 	end
-	Net.Fire(
-		player,
-		"Toast",
-		"worldboss.reward",
-		{ exp = shownExp, gold = r.gold, item = itemArg, boss = bossArg() },
-		"success"
-	)
 	Analytics.custom(player, "WorldBossReward", char.level)
 	local listed = {}
 	for _, item in items do
 		table.insert(listed, { id = item.id, r = item.rarity, up = item.up, n = item.n })
 	end
+	-- S149b: the reward card (BossReward in its world boss form) instead of the S149 toast
+	Net.Fire(player, "WorldBossReward", { boss = WorldBoss.def().id, exp = shownExp, gold = r.gold, items = listed })
 	return listed
 end
 
@@ -402,7 +396,12 @@ local function rewardAll(f: Fight): (number, number, { [Player]: { any } })
 		local account = PlayerStateService.Get(player, { "account" })
 		local ok, reason = WorldBoss.canReward(account, char.level, points, total, f.occ.id)
 		if not ok then
-			Net.Fire(player, "Toast", `worldboss.noReward.{reason}`, { level = WorldBoss.minLevel() }, "info")
+			-- S149b: the card with the reason instead of the loot (level / share / claimed)
+			Net.Fire(
+				player,
+				"WorldBossReward",
+				{ boss = WorldBoss.def().id, reason = reason, level = WorldBoss.minLevel() }
+			)
 			continue
 		end
 		-- one reward per account and real occurrence: the id is written at once, before anything can yield
@@ -543,7 +542,9 @@ local function win(f: Fight)
 	local seconds = if f.spawnedAt then now() - f.spawnedAt else 0
 	AnnounceService.Server("worldboss.slain", { boss = bossArg(), time = Time.format(seconds), players = participants })
 	if f.fightId then
-		FightLogService.End(f.fightId, "win", { drops = drops })
+		-- S149b: the contribution points give every summary its place (FightStats.place)
+		local per = contributions(f)
+		FightLogService.End(f.fightId, "win", { drops = drops, points = per })
 		f.fightId = nil
 	end
 	log:info("%s slain in %d s, %d participant(s), %d rewarded", f.occ.id, math.floor(seconds), participants, rewarded)
@@ -584,7 +585,8 @@ local function leave(f: Fight, silent: boolean?)
 		if silent then
 			FightLogService.Drop(f.fightId)
 		else
-			FightLogService.End(f.fightId, "fail")
+			local per = contributions(f)
+			FightLogService.End(f.fightId, "fail", { points = per })
 		end
 		f.fightId = nil
 	end

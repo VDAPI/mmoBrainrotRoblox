@@ -218,14 +218,14 @@ end
 -- The hunting ground at a world point of map `mapId`: a named area of a region map (Data/Areas, its rect), or a whole
 -- cave (the cave is one ground: its spawners carry the cave id as area). Returns (area id, map-relative rect, name
 -- key) or nil off every ground (roads, the city, dungeons; S134i: and inside an Elite II hideout, whose guards are never
--- the hunt's).
+-- the hunt's; S149b: and in the world boss's arena).
 function AutoGrind.groundAt(mapId: string, x: number, z: number): (string?, { number }?, string?)
 	local map = Maps.get(mapId)
 	if not map then
 		return nil, nil, nil
 	end
 	local rx, rz = x - map.offset.x, z - map.offset.z
-	if AreaSpawns.lairAt(Areas.byMap[mapId], rx, rz) then
+	if AreaSpawns.reservedAt(Areas.byMap[mapId], rx, rz) then -- S149b: also the world boss's arena
 		return nil, nil, nil
 	end
 	local area = Areas.areaAt(mapId, rx, rz)

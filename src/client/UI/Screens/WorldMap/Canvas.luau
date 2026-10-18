@@ -11,6 +11,7 @@
 -- a painted picture (Logic/UiArt.map, frame from the wiki SVG viewBox) shows it instead of the sketch's terrain once
 -- loaded (the sketch is not drawn when the picture is already there; otherwise it hides when the picture arrives).
 -- S134i: Elite II hideouts as an orange skull (smaller than the dungeon's) with the name and levels, from the data only.
+-- S149b: the world boss's barrow as an icy crown with its name (WorldMap/Overlay adds the boss's live state).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -32,6 +33,7 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 
 local Canvas = {}
 
@@ -41,7 +43,7 @@ Canvas.DETAIL_ZOOM = 2 -- nodes and NPC names from this zoom index
 Canvas.HIT = 36 -- icon hit area in pixels at every zoom (UI scale 1)
 local CROWD = 22 -- icons closer than this at zoom 1 overlap
 
-export type IconKind = "npc" | "portal" | "cave" | "dungeon" | "node" | "lair"
+export type IconKind = "npc" | "portal" | "cave" | "dungeon" | "node" | "lair" | "worldboss"
 
 export type Icon = {
 	kind: IconKind,
@@ -85,12 +87,15 @@ export type Cached = {
 	sketchLayer: Frame?, -- S119: the drawn terrain (nil when the painted map replaced it at build time)
 }
 
-local PRIORITY: { [IconKind]: number } = { portal = 40, cave = 40, dungeon = 30, lair = 30, npc = 20, node = 10 }
+local PRIORITY: { [IconKind]: number } =
+	{ portal = 40, cave = 40, worldboss = 35, dungeon = 30, lair = 30, npc = 20, node = 10 }
 -- S134i: an Elite II hideout's skull: orange, smaller than the dungeon's red one
 -- S136: the drawing keeps its colours (Data/UiPalette.map)
 local MAP = UiPalette.map
 local LAIR_COLOR = Theme.tint(MAP.lair)
 local LAIR_CAPTION = Theme.tint(MAP.lairCaption)
+local WORLD_BOSS = Theme.tint(MAP.worldBoss) -- S149b
+local WORLD_BOSS_CAPTION = Theme.tint(MAP.worldBossCaption)
 local NODE_COLORS: { [string]: string } = { vein = MAP.vein, bush = MAP.bush, fishing = MAP.fishing }
 
 local cache: { [string]: Cached } = {}
@@ -279,6 +284,28 @@ local function lairIcons(cached: Cached, layers: { [string]: Frame })
 			icon(cached, layers.icons, "lair", lair.id, lair.x, lair.z, "☠", LAIR_COLOR, 16, UiArt.mapIcon("lair"))
 		caption(cached, entry, lair.nameKey, ` {lair.lv[1]}–{lair.lv[2]}`, LAIR_CAPTION, 11, 14)
 	end
+end
+
+-- S149b: the world boss's barrow on its map (a crown with the place's name, from the data); the live state (warning,
+-- fight, the time of the next one) is drawn over it by WorldMap/Overlay.
+local function worldBossIcon(cached: Cached, layers: { [string]: Frame })
+	if cached.mapId ~= WorldBoss.Data.map then
+		return
+	end
+	local spot = WorldBoss.spot()
+	local entry = icon(
+		cached,
+		layers.icons,
+		"worldboss",
+		spot.id,
+		spot.x,
+		spot.z,
+		"♛",
+		WORLD_BOSS,
+		16,
+		UiArt.mapIcon("worldboss")
+	)
+	caption(cached, entry, spot.nameKey, nil, WORLD_BOSS_CAPTION, 11, 14)
 end
 
 local function npcIcons(cached: Cached, layers: { [string]: Frame })
@@ -638,6 +665,7 @@ function Canvas.get(mapId: string): Cached?
 	areaFrames(cached, layers)
 	portalIcons(cached, layers)
 	lairIcons(cached, layers) -- S134i
+	worldBossIcon(cached, layers) -- S149b
 	npcIcons(cached, layers)
 	nodeIcons(cached, layers)
 	Canvas.declutter(cached)

@@ -13,7 +13,8 @@
 --     plumes), Mouths (Ice Grotto, Frozen Hold, Glacier Heart),
 --   * wooden bridges over the frozen Ice Brook (Logic/WorldGen/Structures), snow poles along the trails, rocks, the
 --     camps of the side arc NPCs (SideCamps, S108) and the trees last (Logic/WorldGen/Flora: snowy spruces,
---     frost-killed trees, ice spikes; none above ~y 62 but the spikes).
+--     frost-killed trees, ice spikes; none above ~y 62 but the spikes); S134i the Elite II hideouts and S149b the
+--     world boss's barrow (Logic/WorldGen/WorldBossArena) before the trees.
 -- Also: gathering node placements by theme (`nodes`), life points (`life`), map sketch shapes (`sketch`).
 
 local AreaSpawns = require("./AreaSpawns")
@@ -38,6 +39,7 @@ local Temple = require("@self/Temple")
 local TerrainLayers = require("./TerrainLayers")
 local Tundra = require("@self/Tundra")
 local Valley = require("@self/Valley")
+local WorldBossArena = require("./WorldGen/WorldBossArena")
 local Wyrm = require("@self/Wyrm")
 
 local o = Kit.o
@@ -294,6 +296,17 @@ function FrostpeakGen.all(): { Build }
 	for _, b in Lairs.all(e.ctx, e.areas) do
 		table.insert(out, b :: any)
 	end
+	-- S149b: the world boss's barrow on the Icewatch plateau, like a hideout: the rocks inside go, the trees keep out
+	WorldBossArena.prune("frostpeak", out, 4, function(b: Build): boolean
+		return b.tag ~= "rocks"
+	end)
+	local arenaSpot = WorldBossArena.spotOn("frostpeak")
+	if arenaSpot then
+		Env.clear(e, arenaSpot.x, arenaSpot.z, arenaSpot.r)
+	end
+	for _, b in WorldBossArena.all(e.ctx, "frostpeak") do
+		table.insert(out, b :: any)
+	end
 	local tiles, trees = Flora.forest({
 		ctx = e.ctx,
 		ground = e.T :: any,
@@ -532,6 +545,10 @@ function FrostpeakGen.nodes(): { NodePlacement }
 	for _, node in Lairs.nodes(e.areas, out) do
 		table.insert(out, node)
 	end
+	-- S149b: no gathering node in the world boss's barrow (the fight needs the ground)
+	WorldBossArena.prune("frostpeak", out, 6, function(n: NodePlacement): boolean
+		return string.sub(n.kind, 1, 8) == "fishing_"
+	end)
 	nodeCache = out
 	return out
 end

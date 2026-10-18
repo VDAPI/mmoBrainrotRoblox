@@ -6040,6 +6040,18 @@ return {
 				why = "new module: the world boss every 3 h from 02:00 UTC (warnings 600 / 120 s, marker 60 s), the Icewatch spot (490, 360, r 70; fighters r + 30), threshold 2 % of all points or 3 normal monsters' HP of level 100, reward 16 kills of EXP and 24 of gold of the character's level (one fight ~12-14 % of a level at 80-99), 2-4 essence crystals and a 25 % Legend Core, one item Heroic 72 / Legendary 24 / Mythic 4 with class bias 0.8: Legendaries and Mythics per hour of play 0.15 x Vaelgrath's per hour of fighting him (Balance.targetsS149)",
 			},
 		},
+		["WorldBoss:spots[icewatchPlateau].free"] = {
+			{
+				session = "S149b",
+				why = "new field: the middle of the arena (r - 10 studs) holds no prop of the barrow (room for the blows and brands)",
+			},
+		},
+		["WorldBoss:players[1]"] = {
+			{ session = "S149b", why = "new field: the party size of the S149 model (10-20 players) on the map card and the wiki" },
+		},
+		["WorldBoss:players[2]"] = {
+			{ session = "S149b", why = "new field: see players[1]" },
+		},
 		["Bosses:byId.hrimvald*"] = {
 			{
 				session = "S149",

@@ -13,6 +13,8 @@
 --     farthest from it (at least ELITE2_SEPARATION apart), each of its fixed kind with its own respawn;
 --   * S134i: Elite II hideouts of the region maps (Data/Areas lairs, `AreaSpawns.lair`): the Elite II in the middle,
 --     2-3 guard groups of 1-3 on a ring around it; the area groups keep LAIR_CLEARANCE studs off every hideout.
+--   * S149b: the world boss's arena (Data/WorldBoss spots on its map) is a reserved place like a hideout
+--     (`reservedCircles` / `reservedAt`): no area group, arrival point, event point or Auto Hunt ground in it.
 
 local AreaProfiles = require("../Data/AreaProfiles")
 local AreaTypes = require("../Data/Areas/Types")
@@ -23,6 +25,7 @@ local MapTerrain = require("./MapTerrain")
 local Monsters = require("../Data/Monsters")
 local Rng = require("./Rng")
 local SpawnTypes = require("../Data/Spawns/Types")
+local WorldBossData = require("../Data/WorldBoss")
 
 type Spawner = SpawnTypes.Spawner
 
@@ -177,7 +180,7 @@ function AreaSpawns.region(def: AreaTypes.MapAreas, size: { x: number, z: number
 	for _, entrance in def.caves do
 		table.insert(caves, { x = entrance.x, z = entrance.z, r = AreaSpawns.CAVE_CLEARANCE })
 	end
-	local lairs = AreaSpawns.lairCircles(def)
+	local lairs = AreaSpawns.reservedCircles(def) -- S149b: hideouts and the world boss's arena
 	for _, area in def.areas do
 		local rng = Rng.new(seedOf(area.id))
 		local profile = AreaProfiles.get(area.profile)
@@ -246,6 +249,36 @@ function AreaSpawns.lairCircles(def: AreaTypes.MapAreas): { AreaTypes.Circle }
 		table.insert(out, { x = lair.x, z = lair.z, r = lair.r + AreaSpawns.LAIR_CLEARANCE })
 	end
 	return out
+end
+
+-- S149b: the reserved places of a map: its hideouts (lairCircles) and the world boss's arena when the boss wakes on
+-- this map (the spot's radius plus LAIR_CLEARANCE). The one list the area groups, the arrivals (Logic/AreaArrival),
+-- the events' points (they are area spawner points) and Auto Hunt (reservedAt) keep out of.
+function AreaSpawns.reservedCircles(def: AreaTypes.MapAreas): { AreaTypes.Circle }
+	local out = AreaSpawns.lairCircles(def)
+	if def.map == WorldBossData.map then
+		for _, spot in WorldBossData.spots do
+			table.insert(out, { x = spot.x, z = spot.z, r = spot.r + AreaSpawns.LAIR_CLEARANCE })
+		end
+	end
+	return out
+end
+
+-- S149b: whether a map-relative point lies in a reserved place of the map (a hideout's own circle, or the world boss's
+-- arena as in reservedCircles: the spot's radius plus LAIR_CLEARANCE; both grown by `extra` studs).
+function AreaSpawns.reservedAt(def: AreaTypes.MapAreas?, x: number, z: number, extra: number?): boolean
+	if AreaSpawns.lairAt(def, x, z, extra) then
+		return true
+	end
+	if def and def.map == WorldBossData.map then
+		for _, spot in WorldBossData.spots do
+			local r = spot.r + AreaSpawns.LAIR_CLEARANCE + (extra or 0)
+			if (x - spot.x) ^ 2 + (z - spot.z) ^ 2 < r * r then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 -- S134i: whether a map-relative point lies in a hideout of the map (its circle grown by `extra` studs).

@@ -182,7 +182,8 @@
     {"id":"grimrok","kind":"boss","map":"meadows_cave","texts":["Grimrok, Goblin Warchief","Grimrok's Chamber"],"x":367.2,"z":0},
     {"id":"morvane","kind":"boss","map":"duskwood_cave","texts":["Morvane, Queen of the Crypts","Morvane's Tomb"],"x":380.7,"z":0},
     {"id":"azgor","kind":"boss","map":"ashen_cave","texts":["Azgor, Lord of Flames","Azgor's Furnace"],"x":380.7,"z":0},
-    {"id":"vaelgrath","kind":"boss","map":"frostpeak_cave","texts":["Vaelgrath, the Frost Dragon","Vaelgrath's Lair"],"x":383.4,"z":0}
+    {"id":"vaelgrath","kind":"boss","map":"frostpeak_cave","texts":["Vaelgrath, the Frost Dragon","Vaelgrath's Lair"],"x":383.4,"z":0},
+    {"id":"icewatchPlateau","kind":"worldboss","map":"frostpeak","texts":["Hrimvald, Forefather of Giants","The Forefather's Barrow","World boss"],"x":490,"z":360}
   ],
   "limit": 12,
   "pl": [
@@ -368,7 +369,8 @@
     {"id":"grimrok","kind":"boss","map":"meadows_cave","texts":["Grimrok, Wódz Goblinów","Komnata Grimroka"],"x":367.2,"z":0},
     {"id":"morvane","kind":"boss","map":"duskwood_cave","texts":["Morvane, Królowa Krypt","Grobowiec Morvane"],"x":380.7,"z":0},
     {"id":"azgor","kind":"boss","map":"ashen_cave","texts":["Azgor, Pan Płomieni","Palenisko Azgora"],"x":380.7,"z":0},
-    {"id":"vaelgrath","kind":"boss","map":"frostpeak_cave","texts":["Vaelgrath, Smok Mrozu","Leże Vaelgratha"],"x":383.4,"z":0}
+    {"id":"vaelgrath","kind":"boss","map":"frostpeak_cave","texts":["Vaelgrath, Smok Mrozu","Leże Vaelgratha"],"x":383.4,"z":0},
+    {"id":"icewatchPlateau","kind":"worldboss","map":"frostpeak","texts":["Hrimvald, Praojciec Olbrzymów","Kurhan Praojca","Boss świata"],"x":490,"z":360}
   ],
   "vectors": [
     {"lang":"pl","query":"laki","results":["map:meadows"]},

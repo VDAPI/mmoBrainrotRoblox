@@ -23,6 +23,7 @@ local BloodMoonPanel = require(script.Parent.Parent.UI.Screens.Hud.BloodMoonPane
 local TourneyPanel = require(script.Parent.Parent.UI.Screens.Hud.TourneyPanel)
 local Elite2Timer = require(script.Parent.Parent.UI.Screens.Hud.Elite2Timer)
 local QuestTracker = require(script.Parent.Parent.UI.Screens.Hud.QuestTracker)
+local WorldBossPanel = require(script.Parent.Parent.UI.Screens.Hud.WorldBossPanel)
 local WorldEventPanel = require(script.Parent.Parent.UI.Screens.Hud.WorldEventPanel)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
@@ -225,8 +226,12 @@ function QuestController.Init(registry)
 	local moonOffset = scope:Value(0)
 	-- S130: the tournament panel stands under them (a world event may run during the signups)
 	local tourneyOffset = scope:Value(0)
+	-- S149b: the world boss panel stands over the world event panel (the boss comes first; they meet only during the
+	-- boss's warning): the event panel moves down by its height, the tracker by both
+	local bossOffset = scope:Value(0)
+	local bossHeight = scope:Value(0)
 	local aboveTourney = scope:Computed(function(use): number
-		return math.max(use(eventOffset), use(moonOffset))
+		return use(bossOffset) + math.max(use(eventOffset), use(moonOffset))
 	end)
 	local trackerOffset = scope:Computed(function(use): number
 		return use(aboveTourney) + use(tourneyOffset)
@@ -249,8 +254,20 @@ function QuestController.Init(registry)
 	}).Parent =
 		UIController.GetLayer("Screens")
 	Elite2Timer(scope).Parent = UIController.GetLayer("Screens")
+	WorldBossPanel(scope, {
+		Offset = bossOffset,
+		Height = bossHeight,
+		Guide = function(target)
+			Nav.Guide({ map = target.map, x = target.x, z = target.z, labelKey = target.labelKey })
+		end,
+		Sfx = function(key: string): boolean
+			return SfxController.Ui(key)
+		end,
+	}).Parent =
+		UIController.GetLayer("Screens")
 	WorldEventPanel(scope, {
 		Offset = eventOffset,
+		Above = bossHeight,
 		Guide = function(target)
 			Nav.Guide({ map = target.map, x = target.x, z = target.z, labelKey = target.labelKey })
 		end,

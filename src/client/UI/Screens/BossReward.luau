@@ -9,6 +9,9 @@
 -- S97: a new mount / mount skin from the personal boss roll (lines above the fight summary).
 -- S134f: the fight meter (Components/FightTable: numbers and %, taken, deaths, dodges; phones see fewer columns), the
 -- header line (fight time, deaths, dodged blows), "Party loot" (Components/FightLoot) and "Details" (the fight log).
+-- S149b: the world boss form (`world`): EXP, gold and the own items (FightLoot) or the reason without a reward (level,
+-- share, claimed), the next world boss in the player's own time instead of today's runs and the next kill's chances;
+-- the fight table stays on the small after-fight card (FightCard, with the place in the contribution).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +20,7 @@ local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local ClockText = require(script.Parent.Parent.ClockText)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local FightLoot = require(script.Parent.Parent.Components.FightLoot)
 local FightTable = require(script.Parent.Parent.Components.FightTable)
@@ -30,6 +34,7 @@ local Scale = require(script.Parent.Parent.Scale)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
 
@@ -59,6 +64,9 @@ export type Reward = {
 	drop: FightView.DropView?, -- S134f: own items and the party's from Legendary up
 	mount: string?, -- S97: a new mount from the personal roll (Data/Mounts id)
 	mountSkin: string?, -- S97: a new mount skin (Data/Cosmetics id)
+	world: boolean?, -- S149b: the world boss form
+	reason: string?, -- S149b: no reward ("level" | "share" | "claimed")
+	minLevel: number?, -- S149b: the reward level (the "level" reason's text)
 }
 
 export type Props = {
@@ -254,6 +262,101 @@ local function BossReward(scope: Scope, props: Props): Instance
 		)
 	end
 
+	local dungeonLines: { Instance } = {}
+	if not reward.world then
+		dungeonLines = {
+			label(
+				2,
+				Text.T(
+					scope,
+					"combat.reward",
+					{ exp = Format.number(reward.exp or 0), gold = Format.number(reward.gold or 0) }
+				),
+				Theme.Paper.Text,
+				Theme.TextSize.Body,
+				Theme.Fonts.BodyBold
+			),
+			label(3, Text.T(scope, resultKey), resultColor, Theme.TextSize.Body, Theme.Fonts.BodyBold),
+			label(
+				4,
+				Text.T(scope, "worldmap.card.runsToday", {
+					n = reward.runs or 0,
+					limit = reward.dailyRuns or 0,
+					time = Time.format(BossScaling.untilReset(Clock.now())),
+				}),
+				if (reward.runs or 0) >= (reward.dailyRuns or 1) then Theme.Paper.Warning else Theme.Paper.Success,
+				Theme.TextSize.Small,
+				Theme.Fonts.BodyMedium
+			),
+			label(
+				5,
+				Text.T(scope, "dungeon.reward.next", { leg = percent(reward.leg), myth = percent(reward.myth) }),
+				legendary.color,
+				Theme.TextSize.Small,
+				Theme.Fonts.BodyBold
+			),
+		}
+	end
+	-- S149b: the world boss: the reward or the reason, then the next occurrence
+	local worldLines: { Instance } = {}
+	if reward.world then
+		if reward.reason then
+			table.insert(
+				worldLines,
+				label(
+					2,
+					Text.T(scope, "worldboss.rewardCard.none"),
+					Theme.Paper.Danger,
+					Theme.TextSize.Body,
+					Theme.Fonts.BodyBold
+				)
+			)
+			table.insert(
+				worldLines,
+				label(
+					3,
+					Text.T(scope, `worldboss.noReward.{reward.reason}`, { level = reward.minLevel or 0 }),
+					Theme.Paper.Text,
+					Theme.TextSize.Small,
+					Theme.Fonts.BodyMedium
+				)
+			)
+		else
+			table.insert(
+				worldLines,
+				label(
+					2,
+					Text.T(
+						scope,
+						"combat.reward",
+						{ exp = Format.number(reward.exp or 0), gold = Format.number(reward.gold or 0) }
+					),
+					Theme.Paper.Text,
+					Theme.TextSize.Body,
+					Theme.Fonts.BodyBold
+				)
+			)
+			if reward.gotLeg or reward.gotMyth then
+				table.insert(
+					worldLines,
+					label(3, Text.T(scope, resultKey), resultColor, Theme.TextSize.Body, Theme.Fonts.BodyBold)
+				)
+			end
+		end
+		table.insert(
+			worldLines,
+			label(
+				4,
+				Text.T(scope, "worldboss.rewardCard.next", {
+					time = ClockText.hhmm(WorldBoss.next(Clock.now()).startsAt),
+				}),
+				Theme.Paper.TextMuted,
+				Theme.TextSize.Small,
+				Theme.Fonts.BodyMedium
+			)
+		)
+	end
+
 	return scope:New("Frame")({
 		Name = "BossReward",
 		AnchorPoint = if compact then Vector2.new(0.5, 0.5) else Vector2.new(0.5, 0),
@@ -294,36 +397,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 				Theme.TextSize.Large + 2,
 				Theme.Fonts.Display
 			),
-			label(
-				2,
-				Text.T(
-					scope,
-					"combat.reward",
-					{ exp = Format.number(reward.exp or 0), gold = Format.number(reward.gold or 0) }
-				),
-				Theme.Paper.Text,
-				Theme.TextSize.Body,
-				Theme.Fonts.BodyBold
-			),
-			label(3, Text.T(scope, resultKey), resultColor, Theme.TextSize.Body, Theme.Fonts.BodyBold),
-			label(
-				4,
-				Text.T(scope, "worldmap.card.runsToday", {
-					n = reward.runs or 0,
-					limit = reward.dailyRuns or 0,
-					time = Time.format(BossScaling.untilReset(Clock.now())),
-				}),
-				if (reward.runs or 0) >= (reward.dailyRuns or 1) then Theme.Paper.Warning else Theme.Paper.Success,
-				Theme.TextSize.Small,
-				Theme.Fonts.BodyMedium
-			),
-			label(
-				5,
-				Text.T(scope, "dungeon.reward.next", { leg = percent(reward.leg), myth = percent(reward.myth) }),
-				legendary.color,
-				Theme.TextSize.Small,
-				Theme.Fonts.BodyBold
-			),
+			(if reward.world then worldLines else dungeonLines) :: any,
 			extras :: any,
 			scope:New("Frame")({
 				Name = "Buttons",
