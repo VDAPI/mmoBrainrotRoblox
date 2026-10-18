@@ -38,6 +38,9 @@ local function elderTree(env: Env.Env, out: { Build })
 	local b = Env.atSite(env, "elderTree", "elderTree", 30)
 	local bp = b.bp
 	local H = 46
+	-- W15: the split trunk, the glowing crack, the dead branches and the crown are one asset kit slot (Data/Kit
+	-- "landmark:elderTree": the owner's painted Old Tree); the light, the root arms and the quest frame stay
+	bp:beginKit("landmark:elderTree", 0, 0, 0, 1, "shell")
 	-- two halves of the split trunk, leaning apart
 	for _, side in { -1, 1 } do
 		bp:add("cyl", H, 11.5, 11.5, side * 4.8, H / 2 - 2, 0, 0, 0, 90 + side * 3.5, o(BARK, "shell", { q = true }))
@@ -109,6 +112,7 @@ local function elderTree(env: Env.Env, out: { Build })
 		0,
 		o({ c = "#4A4A2A", m = "LeafyGrass" }, "detail", { col = false })
 	)
+	bp:endKit()
 	-- root arms along the terrain's root ridges
 	for i, a in { 20, 95, 160, 230, 300 } do
 		local r = math.rad(a)

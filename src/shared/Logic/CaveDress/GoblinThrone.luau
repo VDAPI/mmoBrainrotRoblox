@@ -51,7 +51,9 @@ local function throne(env: Env, out: { Build })
 			Kit.skull(bp, m * 1.4, Kit.gy(env, b, m * 1.4, 10 - k * 1.4) + 0.1, 10 - k * 1.4, 1.1, m * 20)
 		end
 	end
-	-- the throne of scrap and bone under a giant bear skull
+	-- the throne of scrap and bone under a giant bear skull; W21: one asset kit slot (Data/Kit "landmark:grimrokThrone":
+	-- the owner's painted throne), the banners and the fire baskets stay
+	bp:beginKit("landmark:grimrokThrone", 0, y, 0, 1, "shell")
 	bp:box(6, 3, 5, 0, y + 1.5, 0, o({ c = "#5A4E44", m = "CorrodedMetal" }, "shell", { q = false }))
 	bp:box(6, 9, 1.4, 0, y + 6, 2.2, o({ c = "#5A4E44", m = "CorrodedMetal" }, "shell", { q = false }))
 	for _, s in { -1, 1 } do
@@ -59,6 +61,7 @@ local function throne(env: Env, out: { Build })
 		bp:beam(s * 2, y + 10, 2, s * 4.6, y + 13, 2.6, 0.6, o(Kit.bone, "detail", { col = false }))
 	end
 	bp:add("ball", 5, 4, 6, 0, y + 12, 2.4, 0, 0, 0, o(Kit.oldBone, "detail", { col = false }))
+	bp:endKit()
 	for _, s in { -1, 1 } do
 		bp:box(1.2, 1, 0.3, s * 1.2, y + 12.4, -0.4, o(Kit.dark, "fine", { col = false }))
 		Kit.banner(bp, s * 9, y, 3, 12, Kit.red)

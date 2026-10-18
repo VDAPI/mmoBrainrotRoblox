@@ -359,3 +359,14 @@ Skały z zestawu także w Borze (szara tekstura nizendo, 79) i na Szczytach (mal
 
 Podszyt Boru z zestawu (klient): `under:berryBush`, `under:bramble` i `under:sapling` z wpisem `forest` (krzaki i młode
 drzewka Yasu pod ciemnymi liśćmi). Paprocie i muchomory zostają z generatora.
+
+### Modele właściciela, partia 2 (2026-10-18)
+
+Siedem modeli Tripo w `Assets.Kit` (rozpoznane po proporcjach GLB): Pradrzewo `forest_landmark_03` (slot
+`landmark:elderTree` w `DuskwoodGen/Heart`, wysokość 80; pień, szczelina, gałęzie i korona zastąpione, światło, korzenie
+i rama questu zostają), brama Łąk `common_gate_01` (`landmark:meadowsGate`, latarnie i płoty zostają), kapliczka
+`grass_landmark_02` (`landmark:shrine`), totem goblinów `grass_totem_01` (`landmark:goblinTotem`), tron Grimroka
+`dungeon_landmark_01` (`landmark:grimrokThrone`, sztandary i kosze z ogniem zostają), grzyby Jaskini Mchów
+`cave_landmark_02` (`landmark:caveMushrooms`, każdy olbrzymi grzyb na brzegu), kamienny portal `common_portal_02`
+(portale poza miastem; w mieście zostaje magiczny). Jaskinie i lochy biorą zestaw (`CaveLayout` z `KitAssets.resolver`);
+model ze stałym obrotem obraca się razem z budowlą (`KitAssets`). Nieobejrzane w Studio (Rojo właściciela na `main`).

@@ -165,7 +165,11 @@ local function grotto(env: Env, out: { Build })
 		local x, z = cx + math.cos(a) * shore, cz + math.sin(a) * shore
 		if Kit.free(env, x, z, 2, false) then
 			local lx, lz = x - cx, z - cz
-			Kit.glowCap(lake.bp, lx, Kit.gy(env, lake, lx, lz), lz, 1.8 + (k % 2) * 0.8, Kit.MOSS, k % 2 == 0, "shell")
+			-- W21: each giant cap is an asset kit slot (Data/Kit "landmark:caveMushrooms": the owner's mushroom cluster)
+			local gy, size = Kit.gy(env, lake, lx, lz), 1.8 + (k % 2) * 0.8
+			lake.bp:beginKit("landmark:caveMushrooms", lx, gy, lz, size, "shell")
+			Kit.glowCap(lake.bp, lx, gy, lz, size, Kit.MOSS, k % 2 == 0, "shell")
+			lake.bp:endKit()
 		end
 	end
 	-- the waterfall from the crack over the east shore: a column of falling water and a light from above

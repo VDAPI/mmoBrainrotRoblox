@@ -297,6 +297,8 @@ local function goblins(out: { Build })
 	end
 	-- the totem: stacked carved blocks with faces, wings and horns, rags, a skull on top
 	local ty = gy(0, 0)
+	-- W13: the whole totem is one asset kit slot (Data/Kit "landmark:goblinTotem": the owner's painted totem)
+	bp:beginKit("landmark:goblinTotem", 0, ty, 0, 1, "shell")
 	bp:add("cyl", 18, 2.4, 2.4, 0, ty + 8.5, 0, 0, 0, 90, o({ c = "#5A4632", m = "Wood" }, "shell", { q = true }))
 	local paints = { "#7A2A22", "#3E6A2A", "#C8A040" }
 	for k = 0, 3 do
@@ -326,6 +328,7 @@ local function goblins(out: { Build })
 			o({ c = paints[k + 1], m = "Fabric" }, "fine", { tag = "flag" })
 		)
 	end
+	bp:endKit()
 	-- drums, cauldrons on fires, bone piles, hide racks, rag banners
 	for _, p in { { 9, 8 }, { -9, 10 }, { 12, -10 } } do
 		local dx, dz = p[1], p[2]
