@@ -8,6 +8,7 @@ local CollectionService = game:GetService("CollectionService")
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Portals = require(game:GetService("ReplicatedStorage").Shared.Data.Portals)
 local Build = require(script.Parent.Build)
+local KitAssets = require(game:GetService("ReplicatedStorage").Shared.Util.KitAssets)
 
 local Prefabs = {}
 
@@ -575,6 +576,11 @@ end
 
 -- Portal arch (tag "Portal", attributes PortalId, TargetMap, ArriveX/ArriveZ = arrival point on the
 -- target map, map-relative; defaults to the target map's spawn).
+-- W12: the painted portal model (Assets.Kit), its height in studs and turn (degrees) on the arch.
+local PORTAL_MODEL = "common_portal_01"
+local PORTAL_HEIGHT = 18
+local PORTAL_TURN = 0
+
 function Prefabs.portal(
 	ctx: Context,
 	id: string,
@@ -619,6 +625,25 @@ function Prefabs.portal(
 	})
 	field.CanQuery = true
 	light(field, "#8A6CFF", 20, 1.2)
+	-- W12: the owner's painted portal (Assets.Kit common_portal_01) over the stone arch: the pillars and the lintel keep
+	-- their collision unseen, the field stays as the travel trigger, fainter inside the model's opening
+	local template: Model?, height = nil, 0
+	if KitAssets.enabled() then
+		template, height = KitAssets.model(PORTAL_MODEL)
+	end
+	if template and height > 0 then
+		local arch = template:Clone()
+		arch.Name = "PortalModel"
+		arch:ScaleTo(PORTAL_HEIGHT / height)
+		arch:PivotTo(base * CFrame.Angles(0, math.rad(PORTAL_TURN), 0))
+		arch.Parent = model
+		for _, item in model:GetChildren() do
+			if item:IsA("BasePart") and (item.Name == "Pillar" or item.Name == "Lintel") then
+				item.Transparency = 1
+			end
+		end
+		field.Transparency = 0.6
+	end
 	Prefabs.makePortal(ctx, model, field, id, target, x, z, arrive)
 	return model
 end

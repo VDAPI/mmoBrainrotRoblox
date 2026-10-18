@@ -161,7 +161,10 @@ local Horizons: { [string]: Horizon } = {
 				step = 7,
 			},
 		},
-		landmarks = {},
+		-- W12: the castle of Vaelthorn behind the walls (the owner's Tripo model)
+		landmarks = {
+			{ model = "city_castle_01", deg = 277, dist = 1060, height = 110, turn = 90 },
+		},
 	},
 	-- Duskwood (MAPY.md): dark wooded hills all round under the grey sky, east the red cliffs toward the Ashen Wastes,
 	-- west the lighter hills toward the Meadows; the Old Tree stands inside the map (W15).

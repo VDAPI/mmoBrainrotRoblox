@@ -316,3 +316,13 @@ jaśniejsze pagórki w stronę Łąk; 495 części), Pustkowi (zachód ściana B
 Szczyt Kuźni = model `desert_landmark_01` za granicą mapy (wybór W11), południe wydmy; 364 części) i Szczytów (korona
 białych szczytów, na zachodzie niższe szare grzbiety; 254 części). Nieobejrzane w Studio. W Borze gęsta atmosfera
 (0,4, zamglenie 2,2) przygasza horyzont z założenia.
+
+### W12 dodatek: modele właściciela (2026-10-18)
+
+Pięć modeli z Tripo w `Assets.Kit` (rozpoznane po proporcjach GLB): latarnia `city_lamp_01` (slot `prop:lamp` w
+`Structures.lamps`, 60 sztuk w mieście, światło zostaje), studnia `common_well_01` (slot `prop:well` w `Props.well`:
+miasto, farmy Łąk, wsie; 9 sztuk), stragan z owocami `city_stall_01` (slot `prop:stallFruit`, tylko stragan piekarza),
+portal `common_portal_01` (`Prefabs.portal`: model na łuku, kolumny i nadproże niewidoczne z kolizją, pole teleportu
+słabsze; 21 portali), zamek `city_castle_01` (punkt orientacyjny horyzontu Łąk za murami). Model `bandit` z Workspace
+(Tripo, 100 st., stał na środku miasta w pliku miejsca) przeniesiony do `ReplicatedStorage.Assets.Imports`.
+Sprawdzone w Studio: liczby i rozmiary modeli po starcie serwera.
