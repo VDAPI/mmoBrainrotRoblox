@@ -3,7 +3,7 @@
 -- the top of the screen (state `boss`: name, phase, HP, time left, enrage / shield / stagger, S134: the bar of a channel
 -- to break under it) and big centred
 -- messages of the fight (BossAnnounce: countdown, phases, victory, wipe); the post-fight reward card with the
--- grind progress (S30, ShowReward from the CombatFx "reward" event). S103 (FABULA §2.3): when Morvane enters her last
+-- grind progress (S30, ShowReward from the CombatFx "reward" event; S149b: also the world boss's `WorldBossReward`). S103 (FABULA §2.3): when Morvane enters her last
 -- phase and the player is on the story quest `morvane`, the same message speaks her true name a moment later (text
 -- only: the fight does not change).
 
@@ -14,9 +14,12 @@ local Workspace = game:GetService("Workspace")
 
 local BossReward = require(script.Parent.Parent.UI.Screens.BossReward)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
+local ChannelBar = require(script.Parent.Parent.UI.Components.ChannelBar)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local DungeonWindow = require(script.Parent.Parent.UI.Screens.DungeonWindow)
+local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local ReadyCheckScreen = require(script.Parent.Parent.UI.Screens.ReadyCheck)
+local FightView = require(script.Parent.Parent.UI.FightView)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -62,10 +65,6 @@ local function bossBar(): Instance
 	local channel = scope:Computed(function(use): any
 		local b = use(boss)
 		return if type(b) == "table" and type(b.channel) == "table" then b.channel else nil
-	end)
-	local channelRatio = scope:Computed(function(use): number
-		local c = use(channel)
-		return if c then math.clamp((tonumber(c.done) or 0) / math.max(1e-9, tonumber(c.need) or 1), 0, 1) else 0
 	end)
 	return scope:New("Frame")({
 		Name = "BossBar",
@@ -135,43 +134,13 @@ local function bossBar(): Instance
 					}),
 				},
 			}),
-			-- S134: the channel bar (purple fill = damage dealt of the damage that breaks it, the time left)
-			scope:New("Frame")({
-				Name = "ChannelBar",
+			-- S134: the channel bar (purple fill = damage dealt of the damage that breaks it, the time left);
+			-- S149b: the shared component (also on the world boss panel)
+			ChannelBar(scope, {
+				Channel = channel,
+				Now = now,
 				Position = UDim2.fromOffset(110, 86),
 				Size = UDim2.new(1, -220, 0, 22),
-				BackgroundColor3 = Theme.Iron.Sunken,
-				Visible = scope:Computed(function(use): boolean
-					return use(channel) ~= nil
-				end),
-				[Children] = {
-					scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
-					scope:New("UIStroke")({ Color = Theme.Iron.Link, Thickness = 1.5 }),
-					scope:New("Frame")({
-						Size = scope:Computed(function(use): UDim2
-							return UDim2.fromScale(use(channelRatio), 1)
-						end),
-						BackgroundColor3 = Theme.Iron.Accent,
-						[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
-					}),
-					scope:New("TextLabel")({
-						Size = UDim2.fromScale(1, 1),
-						BackgroundTransparency = 1,
-						Text = scope:Computed(function(use): string
-							local c = use(channel)
-							if not c then
-								return ""
-							end
-							local left = Time.remaining(tonumber(c.endsAt) or 0, use(now))
-							return Text.get(use, "boss.mechanic.channel.bar", { time = string.format("%.1f", left) })
-						end),
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Iron.Text,
-						TextStrokeTransparency = 0.3,
-						ZIndex = 2,
-					}),
-				},
 			}),
 			-- The fight lasts at most Bosses.timeLimit; the time left turns yellow under 3 min and red under 1 min.
 			scope:New("TextLabel")({
@@ -386,6 +355,35 @@ function DungeonController.Start()
 	end
 	CollectionService:GetInstanceAddedSignal("DungeonEntrance"):Connect(function(instance)
 		task.defer(decorate, instance)
+	end)
+	-- S149b: the world boss reward card (WorldBossService): the loot of a winner or the reason he got none
+	Net.On("WorldBossReward", function(raw: any)
+		if type(raw) ~= "table" or type(raw.boss) ~= "string" or not Bosses.get(raw.boss) then
+			return
+		end
+		local reason = if raw.reason == "level"
+				or raw.reason == "share"
+				or raw.reason == "claimed"
+			then raw.reason :: string
+			else nil
+		local items = if reason then nil else FightView.drop({ mine = raw.items })
+		local best = 0
+		if items then
+			for _, item in items.mine do
+				best = math.max(best, item.r)
+			end
+		end
+		DungeonController.ShowReward({
+			boss = raw.boss,
+			world = true,
+			reason = reason,
+			minLevel = tonumber(raw.level),
+			exp = tonumber(raw.exp),
+			gold = tonumber(raw.gold),
+			gotLeg = best == Rarities.LEGENDARY,
+			gotMyth = best >= Rarities.MYTHIC,
+			drop = items,
+		})
 	end)
 	Net.On("BossAnnounce", function(key: string, args: { [string]: any }?)
 		Sounds.play("levelUp")

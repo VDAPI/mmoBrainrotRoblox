@@ -867,6 +867,20 @@ serwer w trakcie nie daje drugiej nagrody. W oknie bossa nie startuje Inwazja an
 póki boss żyje; Fortuna nie działa na jego łup. Liczby: `Data/WorldBoss`, `Data/Bosses` (`hrimvald`), `docs/BALANS.md`
 → „Boss świata (S149)”.
 
+**Widok (S149b).** Boss staje w Kurhanie Praojca: krąg kamieni runicznych ze sztandarami klanu olbrzymów, zamarznięte
+szczątki olbrzymich broni, zgaszone koksowniki i lodowa posadzka z wolnym środkiem; grupy potworów, punkty przybycia,
+wydarzenia i Samodzielne Łowy omijają koło jak kryjówkę. Mapa świata i minimapa pokazują kurhan zawsze, a bossa od
+ostrzeżenia (przygaszona korona z odliczaniem) przez walkę (pulsujący krąg i pasek HP; na minimapie strzałka na
+krawędzi, gdy poza zasięgiem) do minuty po końcu (przekreślenie); poza terminem pod kurhanem „Następny: 14:00” w czasie
+gracza. Karta na mapie: stan („śpi”, „budzi się za”, „walczy: HP”, „pokonany”), dla 10–20 graczy, próg nagrody (na
+czerwono, gdy gracz jest niżej), ciosy do unikania i mechaniki, łup bez procentów, „raz na termin na konto” albo
+„nagroda już odebrana”, „Prowadź” z każdej mapy; wyszukiwarka zna bossa, kurhan i „boss świata”. Panel HUD na
+żelazie: na Szczytach od ostrzeżenia do końca znacznika (HP, faza, czas do odejścia, pasek przerwania zaklęcia, własny
+udział, „Nagroda: tak” albo powód), na innych mapach tylko w ostrzeżeniu jedna linia z „Prowadź”; stoi nad panelem
+wydarzenia świata. Wejście w koło żywego bossa pokazuje napis „bez PvP”. Po zabiciu karta nagrody (EXP, złoto,
+przedmioty albo powód braku nagrody, następny termin) i mała karta walki z miejscem w udziale („Miejsce 3 z 14”, bez
+nazw obcych) i tabelą własnej drużyny.
+
 ## 16. Bossy i lochy
 
 - Wejście do lochu w głębi jaskini. Portal pokazuje: wymagany poziom (poziom bossa − 10; quest bossa i zlecenie tygodniowe od poziomu bossa − 5, S134c), stan „Wolny / Zajęty przez grupę X (mm:ss)”. Zwycięzca poniżej poziomu bossa − 5 dostaje pełny łup na poziomie bossa i EXP w takim ułamku swojego poziomu, jaki dostałby gracz na poziomie bossa − 5 (`Exp.bossExpFor`).

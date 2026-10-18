@@ -64,6 +64,7 @@ UiWindows.list = table.freeze({
 -- S136: screens outside windows (HUD, overlays, full-screen screens, cards) and their surface.
 UiWindows.SCREENS = table.freeze({
 	["UI/Screens/Hud"] = "iron",
+	["UI/Screens/Hud/WorldBossPanel.luau"] = "iron", -- S149b: the world boss panel (also under Hud; named for the list)
 	["UI/Screens/PartyFrames.luau"] = "iron",
 	["UI/Screens/Cutscene.luau"] = "iron",
 	["UI/Screens/EmoteWheel.luau"] = "iron",

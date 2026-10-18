@@ -26,6 +26,8 @@ local T = assert(RegionTerrain.get("frostpeak"), "frostpeak terrain")
 local SHAPE = Shapes.byMap.frostpeak
 local DATA = Areas.byMap.frostpeak
 local Lairs = require("../src/shared/Logic/WorldGen/Lairs")
+local WorldBossArena = require("../src/shared/Logic/WorldGen/WorldBossArena") -- S149b
+local WorldBossData = require("../src/shared/Data/WorldBoss")
 local SITES = assert(DATA.sites, "frostpeak sites")
 local MAP = assert(Maps.get("frostpeak"))
 local MAX_SLOPE = math.tan(math.rad(15))
@@ -1007,7 +1009,8 @@ describe("Frost Peaks: story places (S105)", function()
 
 	it("F-T4: the monster groups and the gathering nodes of S47 are unchanged (57 groups, 50 nodes)", function()
 		-- before S105 (build/s105_before.json): 57 groups, 50 nodes; the sums of their coordinates
-		local NODE_SUM_X, NODE_SUM_Z, GROUP_SUM_X, GROUP_SUM_Z = -4923, 738, 2719, 169
+		-- S149b: the one adamantite vein that grew in the world boss's barrow grows outside it now (-4923, 738 before)
+		local NODE_SUM_X, NODE_SUM_Z, GROUP_SUM_X, GROUP_SUM_Z = -4773, 814, 2719, 169
 		local groups = AreaSpawns.region(DATA, MAP.size)
 		expect(#groups).toBe(57)
 		-- S134i: without the Elite II hideouts' own nodes (every other node unchanged)
@@ -1302,7 +1305,7 @@ describe("Frost Peaks: side quest places (S108)", function()
 				local key = string.match(b.name, "^SideCamp_(.+)$")
 				if key then
 					camps[key] = b
-				elseif b.tag ~= "lair" then -- S134i: the Elite II hideouts
+				elseif b.tag ~= "lair" and b.tag ~= "worldBossArena" then -- S134i: the Elite II hideouts; S149b the barrow
 					others += 1
 				end
 				if b.tag == "rocks" then
@@ -1310,7 +1313,8 @@ describe("Frost Peaks: side quest places (S108)", function()
 				end
 			end
 			-- the Builds before S108 (build/s108_before.json: 365, names, places and parts unchanged)
-			expect(others).toBe(365)
+			-- S149b: two rocks stood in the world boss's barrow (Rocks_dragontemple_4, Rocks_icefort_5): 365 before
+			expect(others).toBe(363)
 			expect(#SideCamps.keys()).toBe(7)
 			for _, key in SideCamps.keys() do
 				expect(S108_SPOTS[key] ~= nil).toBe(true)
@@ -1377,5 +1381,70 @@ describe("Frost Peaks: side quest places (S108)", function()
 		local ledge = sideRoutes().side_fp_ledge
 		local goal = ledge[#ledge]
 		expect(dist(goal.x, goal.z, SITES.leopardLedge.x, SITES.leopardLedge.z) <= 14).toBe(true)
+	end)
+end)
+
+describe("Frost Peaks: the world boss's barrow (S149b)", function()
+	local spot = WorldBossData.spots[1]
+
+	it("stands on the spot: rune stones and banners on the rim, the middle free of collision and tall props", function()
+		local arena: any = nil
+		for _, b in FrostpeakGen.all() do
+			if b.tag == WorldBossArena.TAG then
+				expect(arena).toBe(nil)
+				arena = b
+			end
+		end
+		assert(arena, "no world boss arena")
+		expect({ arena.at.x, arena.at.z }).toEqual({ spot.x, spot.z })
+		local free = spot.r - spot.free
+		local shell = 0
+		for _, piece in arena.bp.pieces do
+			local x, z = piece.p[1], piece.p[3]
+			local d = math.sqrt(x * x + z * z)
+			if piece.lod == "shell" then
+				shell += 1
+			end
+			if piece.col or piece.lod == "shell" then
+				-- the footprint's half diagonal inside the rim
+				local half = math.sqrt(piece.size[1] ^ 2 + piece.size[3] ^ 2) / 2
+				if d - half < free then
+					error(`a solid piece {d - half} studs from the centre (free {free})`)
+				end
+			elseif d < free then
+				-- the floor slabs and runes only: flat at the ground (0.3 high or a lying disc)
+				local flat = piece.size[2] <= 0.35 or (piece.s == "cyl" and piece.size[1] <= 0.35)
+				if not flat then
+					error(`a tall prop {d} studs from the centre`)
+				end
+			end
+		end
+		expect(shell >= WorldBossArena.STONES + 2).toBe(true)
+	end)
+
+	it("keeps rocks, gathering nodes and trees out of the circle", function()
+		for _, b in FrostpeakGen.all() do
+			if b.tag == "rocks" and (b.at.x - spot.x) ^ 2 + (b.at.z - spot.z) ^ 2 < (spot.r + 4) ^ 2 then
+				error(`{b.name} in the world boss's arena`)
+			end
+		end
+		for _, n in FrostpeakGen.nodes() do
+			if (n.x - spot.x) ^ 2 + (n.z - spot.z) ^ 2 < (spot.r + 6) ^ 2 then
+				error(`node {n.kind} in the world boss's arena`)
+			end
+		end
+		for _, t in FrostpeakGen.trees() do
+			if (t.x - spot.x) ^ 2 + (t.z - spot.z) ^ 2 < spot.r ^ 2 then
+				error(`tree in the world boss's arena`)
+			end
+		end
+		-- the faint choir over the barrow (Data/Ambience)
+		local found = false
+		for _, p in Ambience.points.frostpeak do
+			if p.x == spot.x and p.z == spot.z then
+				found = true
+			end
+		end
+		expect(found).toBe(true)
 	end)
 end)

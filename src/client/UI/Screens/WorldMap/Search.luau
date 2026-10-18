@@ -33,6 +33,7 @@ local KIND_ICONS: { [string]: string } = {
 	boss = "☠",
 	node = "●",
 	lair = "☠", -- S134i
+	worldboss = "♛", -- S149b
 }
 
 -- S119: map silhouettes of the result kinds (none for whole maps).
@@ -43,6 +44,7 @@ local KIND_ART: { [string]: string } = {
 	monster = UiArt.mapIcon("monster"),
 	boss = UiArt.mapIcon("boss"),
 	lair = UiArt.mapIcon("lair"), -- S134i
+	worldboss = UiArt.mapIcon("worldboss"), -- S149b
 }
 
 -- Gathering results take the silhouette of their category (as Cards.node), never the vein for all.

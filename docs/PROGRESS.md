@@ -5,7 +5,12 @@
 
 ## Stan
 
-S01–S115 i S117–S149 gotowe (ostatnia S149: boss świata dla późnej gry, rdzeń: Hrimvald, Praojciec Olbrzymów, co 3 h
+S01–S115 i S117–S149b gotowe (ostatnia S149b: boss świata na mapie: Kurhan Praojca na płaskowyżu Lodowej Strażnicy
+jako miejsce zastrzeżone jak kryjówka (`AreaSpawns.reservedCircles`, wystrój `Logic/WorldGen/WorldBossArena`), kurhan
+i stan bossa na mapie świata i minimapie (`WorldBoss.markerOf`), karta z „Prowadź” (`WorldBoss.cardOf`), wyszukiwarka,
+panel HUD `Hud/WorldBossPanel` (HP, faza, czas, przerwanie, udział, nagroda; nad panelem wydarzenia), napis „bez PvP”
+w kole, karta walki z miejscem w udziale (`FightStats.place`) i karta nagrody (`WorldBossReward`); wcześniej S149: boss
+świata dla późnej gry, rdzeń: Hrimvald, Praojciec Olbrzymów, co 3 h
 od 02:00 UTC na każdym serwerze świata naraz (zegar, bez komunikacji) na płaskowyżu Lodowej Strażnicy, ogłoszenia 10 i
 2 min przed, walka 10–20 graczy z ciosami S134, wspólnym ciosem, trzema piętnami i zaklęciem do przerwania, odejście po
 15 min, nagroda od 80. poziomu za udział (`Logic/Contribution`, wspólny z S101) raz na konto na termin
@@ -368,11 +373,11 @@ zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
 
-- **Boss świata (S149):** S149b — miejsce na mapie (wystrój płaskowyżu, grupy potworów Lodowej Strażnicy omijają
-  koło), mapa świata, minimapa, panel HUD (`Hud/WorldBossPanel`, wpis w `Data/UiWindows.SCREENS`), podsumowanie walki
-  (karta po walce jak po Inwazji), wiki (strona bossa, `WikiData/Bosses` bez `world`). Dla właściciela: ID dźwięków
-  `boss.hrimvald.roar|attack|death|phase`; ruchy ataków to ogólne style `Data/MonsterMotions` (bez własnych póz). Bez
-  przeglądu w grze (gałąź `worldBoss` nie ma jeszcze widoku).
+- **Boss świata (S149, S149b):** bez przeglądu w grze (Kurhan Praojca i jego wolny środek, panel HUD na PC i telefonie,
+  znacznik i karta na mapie, karta nagrody w formie `world`, napis „bez PvP”). Wiki do odświeżenia (właściciel 17.10):
+  strona Hrimvalda, `WikiData/Bosses` z `world`, sekcja „Boss świata”, `docs/WIKI.md`. Dla właściciela: ID dźwięków
+  `boss.hrimvald.roar|attack|death|phase` i `ui.worldboss.spawn|victory`, obrazek `mapa/map_worldboss` (dziś ♛); ruchy
+  ataków to ogólne style `Data/MonsterMotions` (bez własnych póz).
 
 - **Seria „Umiejętności 2.0” (S137–S148, `docs/DESIGN-18.md`), co zostało w jednym miejscu:**
   - Bez przeglądu w grze: okno umiejętności 2.0 (S139: szerokości drzewka 484 / 468 px, podpisy ról, tabela rangi,

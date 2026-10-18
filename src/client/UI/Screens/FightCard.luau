@@ -2,7 +2,8 @@
 -- After-fight card (S134f, DESIGN §17): after an Elite II or an Invasion, bottom right above the skill bar, for
 -- Config.FightLog.cardSeconds: the target and the outcome, the header line (time, deaths, dodged blows), the first
 -- three rows of the party's table plus the own row, "Details" (the fight log window) and a close button. Off with the
--- setting `fightCard` (the window and the boss reward card stay). Mounted by FightLogController.
+-- setting `fightCard` (the window and the boss reward card stay). Mounted by FightLogController. S149b: after a world
+-- boss also the player's place in the contribution ("Place 3 of 14 · share 9.5 %", no stranger named).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -117,15 +118,27 @@ local function FightCard(scope: Scope, props: Props): Instance
 				Theme.Fonts.BodyMedium,
 				Theme.TextSize.Small
 			),
+			-- S149b: the place in the world boss's contribution
+			(if summary.place
+				then label(
+					4,
+					scope:Computed(function(use): string
+						return FightView.placeLine(use, summary.place :: FightView.Place)
+					end),
+					Theme.Brass.Bright,
+					Theme.Fonts.BodyBold,
+					Theme.TextSize.Small
+				)
+				else nil) :: any,
 			FightTable(scope, {
 				Rows = shortRows(summary.rows),
 				Compact = true,
-				LayoutOrder = 4,
+				LayoutOrder = 5,
 				RowHeight = 22,
 				Surface = "iron",
 			}),
 			scope:New("Frame")({
-				LayoutOrder = 5,
+				LayoutOrder = 6,
 				Size = UDim2.new(1, 0, 0, 44),
 				BackgroundTransparency = 1,
 				[Children] = {

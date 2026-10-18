@@ -2,8 +2,8 @@
 -- Contents of the world map cards (S25, DESIGN §23) as DetailCard specs: NPC (3D figure, role, greeting,
 -- services, the shop's first items for the player's level, quests at this NPC, distance or route), portal
 -- (target map, its levels and zone, the recommended area there), monster area (kinds as rows -> monster
--- sub-card), gathering node / fishing spot, party member and own mark; monsters, caves, dungeons and (S134i) Elite II
--- hideouts live in
+-- sub-card), gathering node / fishing spot, party member and own mark; monsters, caves, dungeons, (S134i) Elite II
+-- hideouts and (S149b) the world boss live in
 -- WorldMap/CreatureCards, shared helpers in WorldMap/CardKit. Actions: Guide, Walk (same map), Centre,
 -- Show map, Profile, Remove.
 
@@ -16,6 +16,8 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local CardKit = require(script.Parent.CardKit)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local ClockText = require(script.Parent.Parent.Parent.ClockText)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local CreatureCards = require(script.Parent.CreatureCards)
@@ -46,9 +48,11 @@ local Shops = require(ReplicatedStorage.Shared.Data.Shops)
 local Spawns = require(ReplicatedStorage.Shared.Data.Spawns)
 local State = require(script.Parent.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Types = require(ReplicatedStorage.Shared.Types)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 
 type Spec = DetailCard.Spec
 type Section = DetailCard.Section
@@ -688,6 +692,8 @@ function Cards.build(ctx: Context, kind: string, id: string, extra: any?): Spec?
 		return CreatureCards.dungeon(ctx, id)
 	elseif kind == "lair" then
 		return CreatureCards.lair(ctx, id) -- S134i
+	elseif kind == "worldboss" then
+		return CreatureCards.worldBoss(ctx) -- S149b
 	elseif kind == "boss" then
 		local boss = Bosses.get(id)
 		return if boss then CreatureCards.dungeon(ctx, boss.region) else nil
@@ -726,6 +732,17 @@ function Cards.hint(kind: string, id: string, level: number, extra: any?): (stri
 			return T(lair.nameKey),
 				`{lair.lv[1]}–{lair.lv[2]} · {if def then T(def.nameKeys.elite2) else lair.elite2}`
 		end
+	elseif kind == "worldboss" then
+		-- S149b: the boss and its barrow, the next start in the player's own time or the fight's HP
+		local card = WorldBoss.cardOf(State.Get({ "worldBoss" }), { level = level, now = Clock.now() })
+		local stateText = if card.state == "fights"
+			then T("worldboss.map.hp", { pct = math.floor((card.hp or 1) * 100 + 0.5) })
+			elseif card.state == "wakes" then T("worldboss.map.soon", {
+				time = Time.format(Time.remaining(card.at or 0, Clock.now())),
+			})
+			elseif card.state == "sleeps" then T("worldboss.map.next", { time = ClockText.hhmm(card.at or 0) })
+			else T(if card.state == "slain" then "worldboss.card.slain" else "worldboss.card.left")
+		return T(card.nameKey), `{T(card.placeKey)} · {stateText}`
 	elseif kind == "dungeon" then
 		local boss = Bosses.forRegion(id)
 		if boss then

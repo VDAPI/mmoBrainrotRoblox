@@ -12641,3 +12641,42 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/Vfx/GroundTelegraph.luau`, `tests/{worldboss,bossmechanics,worldevents,bossmotions,data,
   localization,anatomy,gait,balance,telegraph,motionkeys,sfx}.spec.luau`, `tests/Balance.luau`, `tools/{balance_reasons,balance_report}.luau`,
   `tools/balance_before.json`, `docs/{BALANS,DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S149b: Boss świata (widok, mapa, HUD, wiki)
+
+- **Arena:** Kurhan Praojca na płaskowyżu Lodowej Strażnicy (`Data/WorldBoss.spots[1]`, `nameKey`, `free` 10),
+  wystrój `Logic/WorldGen/WorldBossArena` w `FrostpeakGen` po kryjówkach (11 kamieni runicznych, 2 sztandary, szczątki
+  broni olbrzymów, kości, zgaszone koksowniki, lodowe płyty, sople i runy; środek 60 st. wolny). Budżet: shell 1075 →
+  1086 (`maxParts` 2600 bez zmian), teren bez zmian. Punkt nastroju `CHOIR_FAINT` nad kurhanem.
+- **Miejsce zastrzeżone:** `AreaSpawns.reservedCircles` / `reservedAt` (kryjówki + arena) w grupach obszarów,
+  `AreaArrival` i `AutoGrind`; `arrivals_apply.py` bez zmian, **żadnemu obszarowi nie zmieniły się grupy**. Z kurhanu
+  zniknęły dwie skały (`Rocks_dragontemple_4`, `Rocks_icefort_5`), żyła adamantytu rośnie poza nim.
+- **Mapa świata i minimapa:** kurhan jako ikona ♛ (`UiArt.mapIcon("worldboss")`, `UiPalette.map.worldBoss`), stan bossa
+  z `WorldBoss.markerOf` (`WorldMap/Overlay`: odliczanie, pulsujący krąg, pasek HP, przekreślenie, „Następny: HH:MM”;
+  `Hud/Minimap`: korona albo strzałka na krawędzi), ♛ przy Szczytach na liście map, karta
+  `CreatureCards.worldBoss` z `WorldBoss.cardOf` („Prowadź” z każdej mapy), podpowiedź `Cards.hint`, wyszukiwarka
+  (`MapSearch`, rodzaj `worldboss`; etykiety rodzajów `worldboss` i `lair`). Godzina przez wspólny `UI/ClockText`.
+- **Nowy ekran:** `UI/Screens/Hud/WorldBossPanel.luau` (`UiWindows.SCREENS` = `iron`), montowany w `QuestController` nad
+  panelem wydarzenia; `WorldBoss.panelOf`, wspólny `UI/Components/ChannelBar` (też pasek bossa lochu), dźwięki
+  `ui.worldboss.spawn|victory` (bez ID). Napis „bez PvP” w `ZoneBanner` przez `WorldBoss.zoneNote`.
+- **Po walce:** `FightStats.place` (`summary.place` dla `worldboss`, `FightLogService.End` z punktami), `FightCard` z
+  „Miejsce N z M · udział P%”, karta nagrody `BossReward` w formie `world` przez nowe zdarzenie `WorldBossReward`
+  (łup albo powód: poziom, udział, odebrana).
+- **Testy:** `worldboss.spec` (znacznik, karta, panel, `zoneNote`, miejsce zastrzeżone, wyszukiwarka), `fightstats.spec`
+  (miejsce, remisy, bez punktów), `uiart.spec` (klucz `worldboss`), `frostpeak.spec` (kurhan: wolny środek, bez skał,
+  węzłów i drzew; F-T4 i C3 poprawione z komentarzem S149b).
+- wiki do odświeżenia (właściciel 17.10)
+- **Pliki:** `src/shared/Data/{WorldBoss,Ambience,Sfx,UiPalette,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/shared/Logic/{WorldBoss,AreaSpawns,AreaArrival,AutoGrind,FightStats,MapSearch,UiArt}.luau`,
+  `src/shared/Logic/FrostpeakGen/init.luau`, `src/shared/Logic/WorldGen/WorldBossArena.luau`,
+  `src/shared/Net/Definitions.luau`, `src/server/Services/{WorldBossService,FightLogService}.luau`,
+  `src/client/Controllers/{DungeonController,QuestController}.luau`, `src/client/UI/FightView.luau`,
+  `src/client/UI/{Components/ChannelBar,ClockText}.luau`, `src/client/UI/Screens/{BossReward,FightCard}.luau`,
+  `src/client/UI/Screens/Hud/{WorldBossPanel,WorldEventPanel,Minimap,ZoneBanner,TourneyPanel}.luau`,
+  `src/client/UI/Screens/ArenaWindow/Tourney.luau`,
+  `src/client/UI/Screens/WorldMap/{Canvas,Overlay,Cards,CreatureCards,Panels,Search,init}.luau`,
+  `tests/{worldboss,fightstats,uiart,frostpeak}.spec.luau`, `tools/balance_reasons.luau`,
+  `docs/{DESIGN,SILNIKI,DECYZJE,SESJE,PROGRESS}.md`.
+- **Dla właściciela:** ID dźwięków `ui.worldboss.spawn|victory` (i z S149 `boss.hrimvald.*`), obrazek
+  `mapa/map_worldboss` (dziś ♛). Decyzja: panel na telefonie stoi w lewej kolumnie jak panel wydarzenia, a nie nad
+  paskiem umiejętności (tam są przyciski); jedna linia w `Hud/WorldBossPanel`, jeśli wolisz inaczej.

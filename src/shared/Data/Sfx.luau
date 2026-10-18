@@ -17,7 +17,8 @@
 -- the falcon's strike),
 -- mob.<family>.<attack|hurt|death|aggro>, boss.<bossId>.<roar|attack|death|phase>, telegraph.warn,
 -- boss.mechanic.<mark|split|channel> (S134),
--- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error|lowHp>. S112-S117 call sounds by these keys.
+-- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error|lowHp>, S149b ui.worldboss.<spawn|victory>.
+-- S112-S117 call sounds by these keys.
 
 local Bosses = require("./Bosses")
 local Families = require("./Families")
@@ -173,6 +174,10 @@ local defs: { [string]: Def } = {
 	-- S134f: the low health heartbeat (Hud/LowHpVignette); no checked Roblox heartbeat yet, silent until the owner
 	-- picks one (docs/ASSETS.md). Cooldown shorter than Config.LowHp.beatFast.
 	["ui.lowHp"] = d("heartbeat low health thump", 0.6, 0, { ui = true, pitch = FLAT, cooldown = 0.5 }),
+	-- S149b: the world boss wakes / falls (Hud/WorldBossPanel, 2D for everyone who sees the panel); silent until the
+	-- owner picks ids (docs/ASSETS.md)
+	["ui.worldboss.spawn"] = d("deep war horn blast distant giant awakening", 0.7, 0, { ui = true, pitch = FLAT }),
+	["ui.worldboss.victory"] = d("epic victory fanfare choir short", 0.7, 0, { ui = true, pitch = FLAT }),
 }
 
 -- Own skill keys of the sample (hints by what the skill does).

@@ -2,6 +2,7 @@
 -- S149: the world boss (Data/WorldBoss, Logic/WorldBoss, Logic/Contribution): the UTC schedule (02..23 every 3 h,
 -- ids wbYYYYMMDDHH, warnings, linger), the block by the Blood Moon, the phase, the reward rule (level, share, one per
 -- account and occurrence, admin occurrences apart), the reward and its item, the public branch and the arena spot.
+-- S149b: the view (map marker, map card, HUD panel, safe-zone note), the arena as a reserved place, the search.
 
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Areas = require("../src/shared/Data/Areas")
@@ -10,6 +11,7 @@ local Contribution = require("../src/shared/Logic/Contribution")
 local Data = require("../src/shared/Data/WorldBoss")
 local Items = require("../src/shared/Data/Items")
 local LootRules = require("../src/shared/Data/LootRules")
+local MapSearch = require("../src/shared/Logic/MapSearch")
 local MapTerrain = require("../src/shared/Logic/MapTerrain")
 local Maps = require("../src/shared/Data/Maps")
 local MonsterStats = require("../src/shared/Logic/MonsterStats")
@@ -366,6 +368,175 @@ T.describe("World boss: the boss (S149)", function()
 			end
 		end
 		T.expect(brands).toBe(3)
+	end)
+end)
+
+T.describe("World boss: the view (S149b)", function()
+	local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[5]
+	local function public(phase: string, hp: number?, mine: any?): any
+		local p: any = WorldBoss.publicOf(occ, { phase = phase :: any, hp = hp or 1, bossPhase = 1 })
+		p.mine = mine
+		return p
+	end
+
+	T.it("markerOf: the barrow with the next start between occurrences, the phase and its time during one", function()
+		local spot = WorldBoss.spot()
+		local idle = WorldBoss.markerOf(WorldBoss.idleOf(occ.startsAt - 5000), occ.startsAt - 5000)
+		T.expect({ idle.state, idle.map, idle.x, idle.z, idle.at }).toEqual({
+			"idle",
+			Data.map,
+			spot.x,
+			spot.z,
+			occ.startsAt,
+		})
+		T.expect(WorldBoss.markerLive(idle)).toBe(false)
+		-- before the first send: the next start from the clock
+		T.expect(WorldBoss.markerOf(nil, occ.startsAt - 5000).at).toBe(occ.startsAt)
+		local warn = WorldBoss.markerOf(public("warn"), occ.startsAt - 60)
+		T.expect({ warn.state, warn.at }).toEqual({ "warn", occ.startsAt })
+		T.expect(WorldBoss.markerLive(warn)).toBe(true)
+		local active = WorldBoss.markerOf(public("active", 0.63), occ.startsAt + 60)
+		T.expect({ active.state, active.at, active.hp }).toEqual({ "active", occ.endsAt, 0.63 })
+		for _, phase in { "slain", "left" } do
+			local m = WorldBoss.markerOf(public(phase), occ.endsAt)
+			T.expect({ m.state, m.at == nil, WorldBoss.markerLive(m) }).toEqual({ phase, true, true })
+		end
+	end)
+
+	T.it("cardOf: asleep / wakes / fights / slain / gone, the reward level, claimed, blows and loot", function()
+		local states: { { any } } = {
+			{ WorldBoss.idleOf(occ.startsAt - 5000), "sleeps", occ.startsAt },
+			{ public("warn"), "wakes", occ.startsAt },
+			{ public("active", 0.5), "fights", occ.endsAt },
+			{ public("slain"), "slain", -1 },
+			{ public("left"), "left", -1 },
+		}
+		for _, case in states do
+			local card = WorldBoss.cardOf(case[1], { level = 90, now = occ.startsAt - 5000 })
+			T.expect({ card.state, card.at or -1 }).toEqual({ case[2], case[3] })
+		end
+		local card = WorldBoss.cardOf(public("active", 0.5), { level = 90, now = occ.startsAt })
+		T.expect(card.hp).toBe(0.5)
+		T.expect({ card.boss, card.map, card.level, card.minLevel }).toEqual({ Data.boss, Data.map, 100, 80 })
+		T.expect(card.placeKey).toBe(WorldBoss.spot().nameKey)
+		T.expect(card.players).toEqual({ 10, 20 })
+		T.expect(card.belowLevel).toBe(false)
+		T.expect(card.claimed).toBe(false)
+		T.expect(WorldBoss.cardOf(public("active"), { level = 79, now = 0 }).belowLevel).toBe(true)
+		T.expect(WorldBoss.cardOf(public("active"), { level = 80, now = 0 }).belowLevel).toBe(false)
+		local claimed = public("active", 1, WorldBoss.mineOf(10, 100, false, "claimed"))
+		T.expect(WorldBoss.cardOf(claimed, { level = 90, now = 0 }).claimed).toBe(true)
+		local share = public("active", 1, WorldBoss.mineOf(1, 100, false, "share"))
+		T.expect(WorldBoss.cardOf(share, { level = 90, now = 0 }).claimed).toBe(false)
+		-- the blows to know: the dodges and the three mechanics, never the plain blows
+		local kinds: { [string]: string } = {}
+		for _, attack in card.attacks do
+			kinds[attack.id] = attack.kind
+			T.expect({ attack.nameKey, pl[attack.nameKey] ~= nil, en[attack.nameKey] ~= nil }).toEqual({
+				attack.nameKey,
+				true,
+				true,
+			})
+			local kindKey = `worldboss.card.kind.{attack.kind}`
+			T.expect({ kindKey, pl[kindKey] ~= nil, en[kindKey] ~= nil }).toEqual({ kindKey, true, true })
+		end
+		T.expect(kinds).toEqual({
+			glacierStomp = "avoid",
+			iceSpikes = "avoid",
+			avalanche = "avoid",
+			shatterStone = "split",
+			frostBrand = "mark",
+			endlessWinter = "channel",
+		})
+		T.expect(card.rarities).toEqual({ Rarities.HEROIC, Rarities.LEGENDARY, Rarities.MYTHIC })
+		T.expect(card.materials).toEqual({ "essence_crystal", "legend_core" })
+	end)
+
+	T.it("panelOf: full on the boss's map, one line elsewhere only during the warning", function()
+		T.expect(WorldBoss.panelOf(nil, Data.map)).toBeNil()
+		T.expect(WorldBoss.panelOf(WorldBoss.idleOf(occ.startsAt - 5000), Data.map)).toBeNil()
+		for _, phase in { "warn", "active", "slain", "left" } do
+			T.expect(WorldBoss.panelOf(public(phase), Data.map)).toBe("full")
+		end
+		T.expect(WorldBoss.panelOf(public("warn"), "meadows")).toBe("line")
+		T.expect(WorldBoss.panelOf(public("warn"), nil)).toBe("line")
+		T.expect(WorldBoss.panelOf(public("active"), "meadows")).toBeNil()
+		T.expect(WorldBoss.panelOf(public("slain"), "city")).toBeNil()
+	end)
+
+	T.it("zoneNote: the safe circle of a living boss on its map only", function()
+		local spot = WorldBoss.spot()
+		local edge = spot.r + Data.fighterReach
+		T.expect(WorldBoss.zoneNote(public("active"), Data.map, spot.x, spot.z)).toBe("worldboss.safeZone")
+		T.expect(WorldBoss.zoneNote(public("active"), Data.map, spot.x + edge, spot.z)).toBe("worldboss.safeZone")
+		T.expect(WorldBoss.zoneNote(public("active"), Data.map, spot.x + edge + 1, spot.z)).toBeNil()
+		T.expect(WorldBoss.zoneNote(public("active"), "meadows", spot.x, spot.z)).toBeNil()
+		for _, phase in { "warn", "slain", "left" } do
+			T.expect(WorldBoss.zoneNote(public(phase), Data.map, spot.x, spot.z)).toBeNil()
+		end
+		T.expect(WorldBoss.zoneNote(WorldBoss.idleOf(0), Data.map, spot.x, spot.z)).toBeNil()
+		T.expect(pl["worldboss.safeZone"] ~= nil and en["worldboss.safeZone"] ~= nil).toBe(true)
+		T.expect(pl[spot.nameKey] ~= nil and en[spot.nameKey] ~= nil).toBe(true)
+	end)
+end)
+
+T.describe("World boss: the arena is a reserved place (S149b)", function()
+	T.it("the area groups, the arrival points and Auto Hunt keep out of r + LAIR_CLEARANCE", function()
+		local spot = WorldBoss.spot()
+		local def = Areas.byMap[Data.map]
+		local reach = spot.r + AreaSpawns.LAIR_CLEARANCE
+		local circles = AreaSpawns.reservedCircles(def)
+		T.expect(#circles).toBe(#AreaSpawns.lairCircles(def) + 1)
+		local found = false
+		for _, c in circles do
+			if c.x == spot.x and c.z == spot.z then
+				found = true
+				T.expect(c.r).toBe(reach)
+			end
+		end
+		T.expect(found).toBe(true)
+		-- other maps: only their hideouts
+		for _, mapId in { "meadows", "duskwood", "ashen" } do
+			local other = Areas.byMap[mapId]
+			T.expect(#AreaSpawns.reservedCircles(other)).toBe(#AreaSpawns.lairCircles(other))
+			T.expect(AreaSpawns.reservedAt(other, spot.x, spot.z)).toBe(AreaSpawns.lairAt(other, spot.x, spot.z) ~= nil)
+		end
+		local map = assert(Maps.get(Data.map), Data.map)
+		for _, s in AreaSpawns.region(def, { x = map.size.x, z = map.size.z }) do
+			if dist(s.position.x, s.position.z, spot.x, spot.z) < reach then
+				error(`group {s.id} stands in the world boss's arena`)
+			end
+		end
+		for _, area in def.areas do
+			local arrive = (area :: any).arrive
+			if arrive then
+				T.expect({ area.id, dist(arrive.x, arrive.z, spot.x, spot.z) >= reach }).toEqual({ area.id, true })
+			end
+		end
+		T.expect(AreaSpawns.reservedAt(def, spot.x, spot.z)).toBe(true)
+		T.expect(AreaSpawns.reservedAt(def, spot.x + spot.r + 1, spot.z)).toBe(true)
+		T.expect(AreaSpawns.reservedAt(def, spot.x + reach - 1, spot.z)).toBe(true)
+		T.expect(AreaSpawns.reservedAt(def, spot.x + reach + 1, spot.z)).toBe(false)
+	end)
+
+	T.it("the map search leads to the barrow by the boss, the place and the words 'world boss'", function()
+		local index = MapSearch.build(function(key: string): string
+			return pl[key] or key
+		end)
+		for _, query in { "Hrimvald", "kurhan", "boss swiata" } do
+			local found = false
+			for _, result in MapSearch.search(index, query) do
+				if result.kind == "worldboss" then
+					found = true
+					T.expect({ result.map, result.x, result.z }).toEqual({
+						Data.map,
+						WorldBoss.spot().x,
+						WorldBoss.spot().z,
+					})
+				end
+			end
+			T.expect({ query, found }).toEqual({ query, true })
+		end
 	end)
 end)
 

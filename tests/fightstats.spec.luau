@@ -1,5 +1,5 @@
 --!strict
--- S134f: the after-fight meter (Logic/FightStats).
+-- S134f: the after-fight meter (Logic/FightStats). S149b: the place in a world boss fight.
 local Config = require("../src/shared/Config")
 local FightStats = require("../src/shared/Logic/FightStats")
 local T = require("./Test")
@@ -126,5 +126,38 @@ T.describe("FightStats.dropView", function()
 		T.expect(view.party[1].n).toBe("Olek")
 		T.expect(view.party[2].id).toBe("d")
 		T.expect(view.more).toBe(2)
+	end)
+end)
+
+T.describe("FightStats.place (S149b)", function()
+	T.it("ranks by contribution points among everyone, ties share the better place, no points is last", function()
+		local points = { [1] = 500, [2] = 300, [3] = 300, [4] = 900, [5] = 0 }
+		T.expect(FightStats.place(points, 4)).toEqual({ n = 1, of = 4, pct = 0.45 })
+		T.expect(FightStats.place(points, 1)).toEqual({ n = 2, of = 4, pct = 0.25 })
+		T.expect(FightStats.place(points, 2)).toEqual({ n = 3, of = 4, pct = 0.15 })
+		T.expect(FightStats.place(points, 3)).toEqual({ n = 3, of = 4, pct = 0.15 })
+		-- without points: after everyone with some (5 has a zero line, 9 none)
+		T.expect(FightStats.place(points, 5)).toEqual({ n = 5, of = 5, pct = 0 })
+		T.expect(FightStats.place(points, 9)).toEqual({ n = 5, of = 5, pct = 0 })
+		T.expect(FightStats.place({}, 1)).toEqual({ n = 1, of = 1, pct = 0 })
+		T.expect(FightStats.place({ [1] = 0 / 0, [2] = 10 }, 2)).toEqual({ n = 1, of = 1, pct = 1 })
+	end)
+
+	T.it("a world boss summary carries the place, every other kind none; rows stay the party's", function()
+		local fight = FightStats.new("worldboss", "wb1", 100)
+		FightStats.add(fight, 1, "dmg", 600)
+		FightStats.add(fight, 2, "dmg", 200)
+		FightStats.add(fight, 3, "dmg", 5000) -- a stranger at the same boss
+		local points = { [1] = 600, [2] = 200, [3] = 5000 }
+		local summary = FightStats.summary(fight, { 1, 2 }, 160, { points = points, userId = 2 })
+		T.expect(summary.place).toEqual({ n = 3, of = 3, pct = 0.034 })
+		T.expect(FightStats.summary(fight, { 1, 2 }, 160).place).toBeNil()
+		local rows = FightStats.rows(fight, { 1, 2 }, NAMES, CLASSES)
+		T.expect(#rows).toBe(2)
+		for _, row in rows do
+			T.expect(row.n ~= "Obcy").toBe(true)
+		end
+		local other = sample()
+		T.expect(FightStats.summary(other, { 1, 2 }, 160, { points = points, userId = 1 }).place).toBeNil()
 	end)
 end)

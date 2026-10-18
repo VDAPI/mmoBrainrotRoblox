@@ -63,6 +63,10 @@
   końcu `nodes()`. Mapa świata, minimapa, karta (`CreatureCards.lair`) i wyszukiwarka czytają dane same. Po wstawieniu
   sprawdź `lune run tools/arrivals.luau` (zmiany punktów przybycia: `arrivals_apply.py`), model łupu pasm
   (`Balance.targetsS134i`) i wiersze Elity II (`S32.elite2`, `R.<mapa>.elite2`).
+- **Arena bossa świata** (S149b): miejsce = `Data/WorldBoss.spots` (`x`, `z`, `r`, `free`, `nameKey`), jak kryjówka:
+  `AreaSpawns.reservedCircles` / `reservedAt` (grupy, przybycia, wydarzenia, Samodzielne Łowy omijają `r +
+  LAIR_CLEARANCE`), ubiór `Logic/WorldGen/WorldBossArena` (środek `r − free` bez przeszkód, `prune` skał i węzłów) w
+  generatorze mapy po kryjówkach; potem `python tools/arrivals_apply.py`, `tests/frostpeak.spec` (budżet, wolny środek).
 
 ## S45: API silnika krain (dla S46–S48)
 

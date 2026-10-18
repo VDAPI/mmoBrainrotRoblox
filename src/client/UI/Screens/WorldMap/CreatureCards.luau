@@ -6,6 +6,7 @@
 -- dungeon with the boss in 3D, the required level, today's runs ("Dziś: 1/3") with the time to the UTC reset, the
 -- current personal Legendary / Mythic chances (growing with the pity counters), the party rule and the boss's named
 -- mythic items (item tooltips). S134i: an Elite II hideout (its Elite II with its loot and abilities, guards, nodes).
+-- S149b: the world boss (its barrow, its state now, who it is for, the blows to know, the loot without percentages).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -15,6 +16,7 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local ClockText = require(script.Parent.Parent.Parent.ClockText)
 local Config = require(ReplicatedStorage.Shared.Config)
 local DetailCard = require(script.Parent.DetailCard)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
@@ -39,6 +41,7 @@ local CardKit = require(script.Parent.CardKit)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 
 type Spec = DetailCard.Spec
 type Section = DetailCard.Section
@@ -52,6 +55,7 @@ local mapName, bandColor, whereLine, moveActions =
 	CardKit.mapName, CardKit.bandColor, CardKit.whereLine, CardKit.moveActions
 local kindRow, rarityWord = CardKit.kindRow, CardKit.rarityWord
 local LAIR_COLOR = Theme.readable(UiPalette.map.lair, "paper", 3) -- S134i: the hideout's skull (WorldMap/Canvas)
+local WORLD_BOSS_COLOR = Theme.readable(UiPalette.map.worldBoss, "paper", 3) -- S149b: the boss's crown
 
 -- S134h: "Loot: Helmet, Gloves" of an Elite II kind (its own slot groups, Data/LootTables.ELITE2_SLOTS); nil for a kind
 -- outside the table (the Elite IIs of events drop every group).
@@ -462,6 +466,118 @@ function CreatureCards.lair(ctx: Context, lairId: string): Spec?
 		accent = LAIR_COLOR,
 		back = ctx.back,
 		preview = { kind = "monster", id = lair.elite2, variant = "elite2", glyph = "♛" },
+		sections = sections,
+		actions = actions,
+	}
+end
+
+-- S149b: one line of a card (a typed constructor: luau-lsp rejects mixed literals in a union).
+local function ln(text: string, color: Color3, bold: boolean?): DetailCard.Line
+	return { text = text, color = color, bold = bold }
+end
+
+-- S149b: the world boss (Logic/WorldBoss.cardOf on the state branch `worldBoss`): the barrow and the way there, the
+-- state now ("asleep, next at 14:00", "wakes in 7:42", "fighting: HP 63 %", "slain"), how often it wakes, who it is
+-- for (10-20 players, the reward level in red when the player is below it), the blows to know (dodges and the shared,
+-- brand and channel mechanics) and the loot without percentages (the rarities of the one item, the materials, once per
+-- occurrence per account; "already claimed" for this occurrence). Guide leads to the barrow from any map.
+function CreatureCards.worldBoss(ctx: Context): Spec?
+	local now = Clock.now()
+	local card = WorldBoss.cardOf(State.Get({ "worldBoss" }), { level = ctx.level, now = now })
+	local data = WorldBoss.Data
+	local stateLine: DetailCard.Line
+	if card.state == "sleeps" then
+		stateLine = ln(T("worldboss.card.sleeps", { time = ClockText.hhmm(card.at or now) }), Theme.Paper.Text, true)
+	elseif card.state == "wakes" then
+		stateLine = ln(
+			T("worldboss.card.wakes", { time = Time.format(Time.remaining(card.at or now, now)) }),
+			Theme.Paper.Warning,
+			true
+		)
+	elseif card.state == "fights" then
+		stateLine = ln(
+			T("worldboss.card.fights", {
+				pct = math.floor((card.hp or 1) * 100 + 0.5),
+				time = Time.format(Time.remaining(card.at or now, now)),
+			}),
+			Theme.Paper.Danger,
+			true
+		)
+	else
+		stateLine = ln(
+			T(if card.state == "slain" then "worldboss.card.slain" else "worldboss.card.left"),
+			Theme.Paper.TextMuted,
+			true
+		)
+	end
+	local who: { DetailCard.Line } = {
+		ln(T("worldboss.card.players", { min = card.players[1], max = card.players[2] }), Theme.Paper.Text),
+		if card.belowLevel
+			then ln(T("worldboss.card.below", { level = card.minLevel }), Theme.Paper.Danger, true)
+			else ln(T("worldboss.card.minLevel", { level = card.minLevel }), Theme.Paper.Text),
+	}
+	local blows: { DetailCard.Line } = {}
+	for _, attack in card.attacks do
+		table.insert(
+			blows,
+			ln(`• {T(attack.nameKey)} — {T(`worldboss.card.kind.{attack.kind}`)}`, Theme.Paper.Text)
+		)
+	end
+	local rarityNames: { string } = {}
+	for _, rarity in card.rarities do
+		table.insert(rarityNames, T(Rarities.get(rarity).nameKey))
+	end
+	local materialNames: { string } = {}
+	for _, id in card.materials do
+		local item = Items.get(id)
+		table.insert(materialNames, if item and item.nameKey then T(item.nameKey) else id)
+	end
+	local loot: { DetailCard.Line } = {
+		ln(T("worldboss.card.item", { rarities = table.concat(rarityNames, ", ") }), Theme.Paper.Text),
+		ln(T("worldboss.card.materials", { list = table.concat(materialNames, ", ") }), Theme.Paper.Text),
+		if card.claimed
+			then ln(T("worldboss.card.claimed"), Theme.Paper.Warning, true)
+			else ln(T("worldboss.card.once"), Theme.Paper.TextMuted),
+	}
+	local sections: { Section } = {
+		{
+			lines = {
+				ln(T(card.placeKey), Theme.Paper.Heading, true),
+				whereLine(ctx, card.map, card.x, card.z),
+				stateLine,
+				ln(T("worldboss.card.every", { hours = data.schedule.everyHours }), Theme.Paper.TextMuted),
+			},
+		},
+		{ lines = who },
+		{ title = T("worldboss.card.mechanics"), lines = blows },
+		{ title = T("worldboss.card.loot"), lines = loot },
+	}
+	local actions = moveActions(ctx, {
+		map = card.map,
+		x = card.x,
+		z = card.z,
+		kind = "worldboss",
+		id = WorldBoss.spot().id,
+		labelKey = card.placeKey,
+	})
+	if ctx.here ~= card.map then
+		table.insert(actions, {
+			text = T("worldmap.action.showMap"),
+			onClick = function()
+				ctx.showMap(card.map)
+			end,
+		})
+	end
+	return {
+		icon = "♛",
+		iconColor = WORLD_BOSS_COLOR,
+		art = UiArt.mapIcon("worldboss"),
+		title = T(card.nameKey),
+		subtitle = T("worldboss.card.subtitle", { level = card.level, map = mapName(card.map) }),
+		subtitleColor = Theme.Paper.Text,
+		accent = WORLD_BOSS_COLOR,
+		back = ctx.back,
+		preview = { kind = "boss", id = card.boss, glyph = "♛", color = WORLD_BOSS_COLOR },
 		sections = sections,
 		actions = actions,
 	}

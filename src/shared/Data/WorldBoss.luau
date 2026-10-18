@@ -7,7 +7,9 @@
 -- Balance numbers: tools/balance_reasons.luau (BALANCE_MODULES), the targets in tests/balance.spec.luau ("Balance: world
 -- boss (S149)", tests/Balance.targetsS149). Rarity keys are numbers (Rarities.HEROIC / LEGENDARY / MYTHIC).
 
-export type Spot = { id: string, x: number, z: number, r: number } -- map-relative centre, r = arena and leash radius
+-- map-relative centre, r = arena and leash radius; S149b: nameKey = the place on the maps and the cards, free = the
+-- middle (r - free studs) without any prop (the blows and the brands need room, Logic/WorldGen/WorldBossArena)
+export type Spot = { id: string, nameKey: string, x: number, z: number, r: number, free: number }
 export type Share = {
 	min: number, -- share of all points ...
 	hpEquivalent: number, -- ... or this many normal monsters' HP of the boss level, whichever is lower
@@ -30,10 +32,21 @@ return table.freeze({
 		linger = 60, -- seconds the marker stays after the kill or the leave
 	}),
 	-- S149: the arena on the Icewatch plateau (area 88-100): dry, gentle ground in the whole circle, >= 120 studs from
-	-- portals, cave mouths, hideouts and road edges (tests/worldboss.spec); S149b dresses it and keeps groups out
+	-- portals, cave mouths, hideouts and road edges (tests/worldboss.spec); S149b dresses it as the Forefather's Barrow
+	-- (Logic/WorldGen/WorldBossArena) and keeps the area groups, arrivals, events and Auto Hunt out of r +
+	-- AreaSpawns.LAIR_CLEARANCE (AreaSpawns.reservedCircles, like a hideout)
 	spots = table.freeze({
-		table.freeze({ id = "icewatchPlateau", x = 490, z = 360, r = 70 }),
+		table.freeze({
+			id = "icewatchPlateau",
+			nameKey = "worldboss.spot.icewatchPlateau",
+			x = 490,
+			z = 360,
+			r = 70,
+			free = 10,
+		}),
 	}),
+	-- S149b: the party size the fight is made for (the map card, the HUD, the wiki; the S149 model's 10-20 players)
+	players = table.freeze({ 10, 20 }),
 	fighterReach = 30, -- fighters: alive players within r + this of the centre (also the PvP-free circle)
 	share = table.freeze({
 		min = 0.02,
