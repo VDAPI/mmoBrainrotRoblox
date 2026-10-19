@@ -20,6 +20,7 @@ local Rng = require("../src/shared/Logic/Rng")
 local Shops = require("../src/shared/Data/Shops")
 local T = require("./Test")
 local Trade = require("../src/shared/Logic/Trade")
+local Transmog = require("../src/shared/Logic/Transmog")
 local UseBlocks = require("../src/shared/Logic/UseBlocks")
 local fs = require("@lune/fs")
 
@@ -1944,6 +1945,61 @@ T.describe("Paywall S152: season pass", function()
 			biggest = math.max(biggest, p.shards)
 		end
 		T.expect(pass.price <= biggest).toBe(true)
+	end)
+end)
+
+T.describe("Paywall S154: transmog", function()
+	T.it("14. transmog is looks only and never sold (S154)", function()
+		-- the rules never read the shop or premium state
+		local source = fs.readFile("src/shared/Logic/Transmog.luau")
+		for _, needle in { "Data/Products", "Logic/Premium", '"./Premium"', "Products", "dragonShards" } do
+			T.expect({ needle, string.find(source, needle, 1, true) }).toEqual({ needle })
+		end
+		-- the cost is gold and essence only (no shards, no Robux, no premium item)
+		local function noMoney(t: any, path: string)
+			for key, value in t do
+				local lower = string.lower(tostring(key))
+				for _, word in { "shard", "robux", "premium", "product" } do
+					T.expect({ path, lower, string.find(lower, word, 1, true) }).toEqual({ path, lower })
+				end
+				if type(value) == "table" then
+					noMoney(value, `{path}.{key}`)
+				end
+			end
+		end
+		noMoney(Config.Transmog, "Config.Transmog")
+		for _, essence in Config.Transmog.essence :: { [string]: { id: string, n: number } } do
+			local def = Items.get(essence.id)
+			T.expect({ essence.id, def ~= nil and def.category == "material" }).toEqual({ essence.id, true })
+		end
+		-- nothing in the Dragon Shop is a look of an item (looks for shards: the owner's later decision, Data/Cosmetics)
+		for _, list in { Products.shop, Products.passes, Products.starterPacks, Products.mounts, Products.shardPacks } do
+			for _, e in list :: { any } do
+				for _, field in { "key", "kind", "itemId" } do
+					local value = string.lower(tostring(e[field] or ""))
+					T.expect({ e.key, field, string.find(value, "transmog", 1, true) }).toEqual({ e.key, field })
+				end
+			end
+		end
+		-- a look never changes a power field (the list shared with tests/transmog.spec)
+		local item: any = {
+			uid = "u",
+			id = "sword1h_45",
+			rarity = 4,
+			ilvl = 45,
+			bonuses = { { stat = "str", v = 5 } },
+			up = 5,
+			bound = true,
+			n = 1,
+			fx = { "x" },
+			rv = 2,
+			rr = { i = 1, n = 1 },
+		}
+		local after = Transmog.apply(item, "sword1h_1")
+		for _, field in Transmog.KEEP do
+			T.expect({ field, after[field] }).toEqual({ field, item[field] })
+		end
+		T.expect(ItemRoll.itemStats(after)).toEqual(ItemRoll.itemStats(item))
 	end)
 end)
 

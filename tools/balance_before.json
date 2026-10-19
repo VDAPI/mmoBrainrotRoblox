@@ -1284,6 +1284,12 @@
     "Config:Reroll.goldMul": 1.8,
     "Config:Reroll.growth": 0.25,
     "Config:Reroll.growthCap": 3,
+    "Config:Returning.awayDays": 7,
+    "Config:Returning.cooldownDays": 14,
+    "Config:Returning.expBonus": 100,
+    "Config:Returning.letterMax": 6,
+    "Config:Returning.minLevel": 10,
+    "Config:Returning.seconds": 3600,
     "Config:SkillPools.swapLock": 2,
     "Config:Upgrade.goldExponent": 1.6,
     "Config:Upgrade.goldHigh": 20,
@@ -15218,9 +15224,9 @@
     "WorldEvents:share.shieldMul": 1
   },
   "meta": {
-    "commit": "5dadc0ae",
-    "date": "2026-10-18",
-    "session": "S153"
+    "commit": "6fedd7d9",
+    "date": "2026-10-19",
+    "session": "S154"
   },
   "tables": {
     "1 na 1 z potworem na poziomie gracza|10|Kapłan HP": 0.1156774216132393,

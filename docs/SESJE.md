@@ -13046,3 +13046,54 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/UI/Screens/{GameMenu,Hud/BlessingIcon}.luau`, `tests/{Balance,balance.spec,uitheme.spec}.luau`,
   `tools/{balance_report,balance_reasons}.luau`, `tools/balance_before.json`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### S154: transmogryfikacja broni i drugiej ręki
+
+- **Logika** `src/shared/Logic/Transmog.luau` (nowy, czysty): `SLOTS` (typy z wyglądem w `WeaponLooks`: 24, broń i druga
+  ręka), `supports`, `lookOf` (model bossa = id przedmiotu, model progu `ArtTiers`, bez modelu `<typ>`), `lookType`,
+  `lookDef`, `isBoss`, `catalogue` / `looksOf` / `count`, `unlocks`, `current`, `canApply` (błędy `transmog.error.type`,
+  `.locked`, `.mismatch`, `.same`; `""` = zdjęcie), `cost`, `apply` (zmienia tylko `tm`), `displayDef`, `sanitize`,
+  `KEEP` (pola, których transmog nie rusza), `MARK` ↺. Liczby w `Config.Transmog` (`goldMul` 1,5, esencja według
+  rzadkości), księga `Config:Transmog*`.
+- **Zapis:** `ItemInstance.tm` i `account.transmog = { looks, scanned }` w szablonie (reconcile, bez migracji).
+- **Serwer:** `TransmogService` (nowy): odblokowanie przy `InventoryService.Changed`, `EquipmentService.Changed` i wejściu
+  postaci (jedno sprawdzenie na klatkę), toasty `transmog.unlocked` / `.unlockedBoss` (♛) / `.unlockedMore`, skan
+  jednorazowy przy wczytaniu profilu (plecaki, ekwipunek, depozyt wszystkich postaci). `BlacksmithService.Transmog` +
+  remote `TransmogApply` (wzór `Reroll`: blokada handlu, odległość, `locate`, uid, `canApply`, koszt, zapłata i zapis bez
+  yieldów, przebudowa broni w dłoni, `Analytics` `Transmog` / `TransmogBoss` z rzadkością). `EquipmentService` rysuje
+  `Transmog.displayDef` (kolor rzadkości i poświata z przedmiotu). Admin `/transmog <slot|indeks> <wygląd|clear>
+  [pay|free]`, `/transmoglooks [list|all|clear]`.
+- **Klient:** zakładka „Wygląd” u kowala (`BlacksmithWindow/Transmog.luau`, piąta, pasek zakładek przewijany): lista
+  przedmiotów wspólnym `Picker`, upuszczenie na kowadło (`smith:transmog`, `NpcController.SetTransmogTarget`), gablota na
+  żelazie z „Własnym wyglądem” na początku, ♛ dla wyglądów z bossa, 🔒 i przygaszenie dla brakujących, ramka
+  `Brass.Bright` na obecnym, obracany podgląd modelu (`Util/WeaponBuild` na niewidocznej dłoni w `ViewportFrame`, kolor
+  rzadkości przedmiotu), koszt „masz / trzeba”, „Nałóż wygląd” z potwierdzeniem, darmowe „Przywróć własny”. `ItemSlot`:
+  ikona wyglądu i ↺ na plakietce. `TooltipModel`: linia `tooltip.transmog` po poziomie przedmiotu. Garderoba: zakładka
+  „Wyglądy broni” (`UI/Screens/WardrobeTransmog.luau`: licznik całości, „{typ}: n/wszystkie” z ikonami, wyglądy z bossów
+  ze źródłem, „Prowadź do kowala”).
+- **Koszt** (złoto + esencja; zdjęcie 0):
+
+| rzadkość | L 20 | L 45 | L 70 | L 100 |
+|---|---|---|---|---|
+| Zwykły | 120 | 608 | 1470 | 3000 |
+| Unikat | 120 + 2 pyłu | 608 + 2 pyłu | 1470 + 2 pyłu | 3000 + 2 pyłu |
+| Heroiczny | 120 + 1 odłamek | 608 + 1 odłamek | 1470 + 1 odłamek | 3000 + 1 odłamek |
+| Legendarny | 120 + 1 kryształ | 608 + 1 kryształ | 1470 + 1 kryształ | 3000 + 1 kryształ |
+| Mityczny | 120 + 1 kryształ | 608 + 1 kryształ | 1470 + 1 kryształ | 3000 + 1 kryształ |
+
+- **Kolekcja:** 121 wyglądów: 120 bazowych (24 typy × modele progów 1 / 5 / 10 / 15 / 20) i 1 z bossa (Rozłupywacz
+  Grimroka); każdy nowy model bossa w `WeaponLooks.assets` dochodzi sam.
+- **Testy:** nowy `tests/transmog.spec.luau` (typy, klucze, katalog, `unlocks`, `canApply`, `apply`, `displayDef`, ikona
+  wyglądu, koszt, `sanitize`, ta sama moc: `itemStats`, `ItemScore`, `StatCalc`, pula broni), `paywall.spec` 14,
+  `tooltip.spec` (linia „Wygląd”, kolejność ról bez zmian), `uitheme.spec` (oświetlenie podglądu), para palety
+  `brass.bright on iron.{raised,selected,sunken}`. `balance1_20.spec` bez nowych wpisów.
+- wiki do odświeżenia (właściciel 17.10): rekord `Transmog` i akapit „Wygląd przedmiotu” pominięte.
+- **Pliki:** `src/shared/Logic/Transmog.luau` (nowy), `src/server/Services/TransmogService.luau` (nowy),
+  `src/client/UI/Screens/BlacksmithWindow/Transmog.luau` (nowy), `src/client/UI/Screens/WardrobeTransmog.luau` (nowy),
+  `tests/transmog.spec.luau` (nowy), `src/shared/{Config,Types}.luau`, `src/shared/Logic/{AccountSchema,TooltipModel}.luau`,
+  `src/shared/Net/Definitions.luau`, `src/shared/Data/{AdminCommands,UiPalette,UiWindows}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/server/Services/{BlacksmithService,EquipmentService,AdminService}.luau`,
+  `src/server/Admin/Items.luau`, `src/client/Controllers/{ItemController,NpcController,PremiumController}.luau`,
+  `src/client/UI/Components/ItemSlot.luau`, `src/client/UI/Screens/{Wardrobe,BlacksmithWindow/init}.luau`,
+  `tests/{paywall,tooltip,uitheme}.spec.luau`, `tools/balance_reasons.luau`, `tools/balance_before.json`,
+  `docs/{DESIGN,STATY,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.

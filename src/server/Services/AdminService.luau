@@ -92,7 +92,8 @@ local AdminService = {
 		"LeaderboardService", -- S124: /lb; S125: /rankweek, /rankguild
 		"TitleService", -- S125: /timedtitle
 		"ArenaService", -- S126: /arena
-		"BlacksmithService", -- S134j: /reroll, /rerollstate (nothing it depends on knows AdminService)
+		"BlacksmithService", -- S134j: /reroll, /rerollstate; S154: /transmog (nothing it depends on knows AdminService)
+		"TransmogService", -- S154: /transmoglooks (nothing it depends on knows AdminService)
 	},
 }
 

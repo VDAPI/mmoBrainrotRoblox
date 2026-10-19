@@ -813,6 +813,19 @@ local Config = {
 		minLevel = 10,
 		letterMax = 6,
 	},
+	-- S154 (docs/DESIGN.md §6b, Logic/Transmog): putting a look from the account's collection on a weapon or an off-hand
+	-- at the smith. Gold ilvl x Upgrade.goldPerIlvl(ilvl) x goldMul (the upgrade gold curve), rounded; essence by the
+	-- rarity of the item that gets the look (Common none). Taking a look off is free; a boss look costs the same.
+	-- Outside the pace model (a look, never power).
+	Transmog = {
+		goldMul = 1.5,
+		essence = {
+			unique = { id = "essence_dust", n = 2 },
+			heroic = { id = "essence_shard", n = 1 },
+			legendary = { id = "essence_crystal", n = 1 },
+			mythic = { id = "essence_crystal", n = 1 },
+		},
+	},
 	-- Streaming (S20, decision in docs/DECYZJE.md): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,
 	StreamingMinRadius = 128,

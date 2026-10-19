@@ -392,6 +392,8 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 ```
 - S134j: pole `rr = { i, n }` (przemiana premii, §6a): `i` = indeks jedynej linii `bonuses`, którą wolno przemieniać
   (ustawia go pierwsza przemiana), `n` = liczba przemian (koszt). Bez migracji; odczyt tylko `Logic/Reroll.state`.
+- S154: pole `tm` = klucz nałożonego wyglądu (§6b; brak = własny wygląd). Tylko wygląd, bez migracji; odczyt
+  `Logic/Transmog.current` / `displayDef`.
 - `ilvl` = poziom bazowy dropu − 0…2 (losowo, min 1; S32, `Data/LootRules`), nigdy wyżej niż poziom potwora, więc
   drop z potwora na poziomie gracza zawsze da się założyć (wcześniej ±2: 40% za wysoko). Poziom bazowy Elit i Elit II
   to poziom spawnera bez ich dodatkowych poziomów, przycięty do maksimum przedziału jaskini (nic z regionu 1 nie ma
@@ -542,6 +544,30 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
   1,8 (krzywa złota ulepszania), każda kolejna próba na tym samym przedmiocie +25% (najwyżej ×3). Licznik i linia
   idą z przedmiotem (handel, poczta, aukcje); przemiana nie zmienia wiązania, blokada sprzedaży jej nie blokuje.
 - **Kamień Przemiany** (sklep Smoczej Waluty, 1 dziennie, związany z kontem): płaci pył jednej próby, złoto zawsze.
+
+## 6b. Wygląd przedmiotu (transmog, kowal, S154)
+
+- Zakładka „Wygląd” w oknie kowala (`BlacksmithWindow/Transmog`, `Logic/Transmog`, remote `TransmogApply`): wygląd
+  jednego przedmiotu nakładany na inny **tego samego typu** (miecz na miecz, tarcza na tarczę). Tylko typy rysowane w
+  dłoni (broń i druga ręka z wyglądem w `Data/WeaponLooks`); zbroja i biżuteria dojdą z warstwami zbroi (S132), bez
+  zmiany kształtu danych.
+- **Klucz wyglądu** (`Transmog.lookOf`): przedmiot z własnym modelem (przedmioty bossów) = jego id, inaczej model progu
+  z `Logic/ArtTiers` (`<typ>_<próg>`), bez modelu jeden wygląd z brył na typ. Dziś: 24 typy, 120 wyglądów progów i 1
+  wygląd z bossa (Rozłupywacz Grimroka); kolejne modele bossów dochodzą same.
+- **Kolekcja konta** (`account.transmog.looks`): wygląd odblokowuje się, gdy przedmiot z nim trafia do plecaka albo
+  ekwipunku którejkolwiek postaci (łup, poczta, handel, aukcja, nagrody, kowal, depozyt); raz na konto skan plecaków,
+  ekwipunku i depozytu wszystkich postaci. Wygląd zostaje po sprzedaży i rozbiciu. Rzadkie wyglądy z bossów tylko przez
+  posiadanie przedmiotu z bossa.
+- **Koszt** (`Config.Transmog`): złoto ilvl × `k(ilvl)` × 1,5 (krzywa złota ulepszania) + esencja według rzadkości
+  przedmiotu, który dostaje wygląd (Unikat 2 pyłu, Heroiczny 1 odłamek, Legendarny i Mityczny 1 kryształ, Zwykły bez).
+  Zdjęcie wyglądu („Przywróć własny”) darmowe; wygląd z bossa bez dopłaty.
+- **Tylko wygląd:** statystyki, typ, rzadkość, poziom, linie, cecha, efekty, żywioł, wiązanie i pula umiejętności
+  broni zostają. W dłoni rysuje się wygląd z kolorem rzadkości i poświatą przedmiotu; w plecaku ikona wyglądu ze
+  znakiem ↺; opis mówi „Wygląd: …” pod poziomem przedmiotu, nazwa zostaje. Kosmetyki `weapon` działają na każdym
+  wyglądzie. Nałożony wygląd wędruje z przedmiotem; kupujący nie dostaje go do kolekcji (kolekcja liczy własny wygląd
+  przedmiotu), może zdjąć go za darmo.
+- Garderoba: zakładka „Wyglądy broni” (przegląd kolekcji według typów, wyglądy z bossów osobno, „Prowadź do kowala”).
+- Premium tylko kosmetyczne: wyglądów nie ma w sklepie Smoczej Waluty (`paywall.spec` 14).
 
 ## 7. Rozbijanie (kowal)
 

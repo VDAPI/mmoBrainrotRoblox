@@ -30,6 +30,7 @@ local Reroll = require(Shared.Logic.Reroll)
 local Rng = require(Shared.Logic.Rng)
 local Shops = require(Shared.Data.Shops)
 local TooltipModel = require(Shared.Logic.TooltipModel)
+local Transmog = require(Shared.Logic.Transmog)
 local UiArt = require(Shared.Logic.UiArt)
 local UiArtKeys = require(Shared.Logic.UiArtKeys)
 local WeaponLooks = require(Shared.Data.WeaponLooks)
@@ -47,6 +48,7 @@ local EquipmentService = Context.services.EquipmentService
 local LootService = Context.services.LootService
 local StatService = Context.services.StatService
 local BlacksmithService = Context.services.BlacksmithService
+local TransmogService = Context.services.TransmogService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
 
@@ -832,6 +834,63 @@ commands.rerollstate = function(player, args)
 			stone = if ok then costText(Reroll.costWithStone(item)) else "-",
 		})
 	end)
+end
+
+-- S154: /transmog <slot|index> <look|clear> [pay|free]
+commands.transmog = function(player, args)
+	local where, look = args[1], args[2]
+	if not where or not look then
+		reply(player, "admin.usage.transmog")
+		return
+	end
+	withCharacter(player, function()
+		local item, location, key = itemAt(player, where)
+		if not item then
+			reply(player, "admin.up.none")
+			return
+		end
+		local target = if look == "clear" then "" else look
+		local ok, err = BlacksmithService.Transmog(
+			player,
+			location,
+			key,
+			target,
+			item.uid,
+			{ anywhere = true, free = args[3] == "free" }
+		)
+		if not ok then
+			reply(player, err or "error.internal")
+			return
+		end
+		reply(player, "admin.transmog.ok", { item = item.id, look = if target == "" then "-" else target })
+	end)
+end
+
+-- S154: /transmoglooks [list|all|clear]
+commands.transmoglooks = function(player, args)
+	local mode = args[1] or "list"
+	if mode == "all" or mode == "clear" then
+		local n = TransmogService.AdminSet(player, mode)
+		reply(player, "admin.transmoglooks.set", { n = n })
+		return
+	end
+	local looks = Transmog.sanitize(PlayerStateService.Get(player, { "account", "transmog" })).looks
+	local parts: { string } = {}
+	local bossOwned, bossAll = 0, 0
+	for _, entry in Transmog.catalogue() do
+		local n, all = Transmog.count(entry.type, looks)
+		table.insert(parts, `{entry.type} {n}/{all}`)
+		for _, key in entry.boss do
+			bossAll += 1
+			if looks[key] then
+				bossOwned += 1
+			end
+		end
+	end
+	reply(player, "admin.transmoglooks.list", {
+		list = table.concat(parts, ", "),
+		boss = `{bossOwned}/{bossAll}`,
+	})
 end
 
 local function round1(v: number): number

@@ -3,7 +3,8 @@
 -- equipped items, optional Scroll of Protection), dismantling into essences. Each operation checks the NPC
 -- distance, the costs and changes data in one step. +7 and higher is announced on the server; +9 on a
 -- legendary also across servers. S134j: bonus reroll (Logic/Reroll, docs/DESIGN.md §6a): one regular line, locked
--- after the first reroll, essence or a Stone of Transmutation + gold, each attempt on the item dearer.
+-- after the first reroll, essence or a Stone of Transmutation + gold, each attempt on the item dearer. S154: item looks
+-- (Logic/Transmog, §6b): a look from the account's collection on a weapon or an off-hand for gold and essence.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -21,6 +22,7 @@ local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rarities = require(Shared.Data.Rarities)
 local Reroll = require(Shared.Logic.Reroll)
 local Rng = require(Shared.Logic.Rng)
+local Transmog = require(Shared.Logic.Transmog)
 local Types = require(Shared.Types)
 local Upgrade = require(Shared.Logic.Upgrade)
 
@@ -289,6 +291,83 @@ local function reroll(
 	return BlacksmithService.Reroll(player, location, key, index, expected, useStone)
 end
 
+-- Item looks (S154) ----------------------------------------------------------------------------------------------
+
+export type TransmogOpts = {
+	anywhere: boolean?, -- admin: no distance check
+	free: boolean?, -- admin: no cost
+}
+
+-- Puts the look `look` from the account's collection on a held item (backpack or equipped), or takes the worn look
+-- off with "" (free). `expected` is the item's uid the client saw: another item in that place refuses before anything
+-- is paid. Only `tm` changes (Logic/Transmog); pay and write without yields in between; an equipped item is drawn
+-- again at once.
+function BlacksmithService.Transmog(
+	player: Player,
+	location: string,
+	key: string,
+	look: string,
+	expected: string,
+	opts: TransmogOpts?
+): (boolean, string?, any)
+	local o: TransmogOpts = opts or {}
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	if not o.anywhere and not nearSmith(player) then
+		return false, "npc.error.tooFar"
+	end
+	local item, commit = locate(player, location, key)
+	if not item then
+		return false, "error.badRequest"
+	end
+	if item.uid ~= expected then
+		return false, "transmog.error.changed"
+	end
+	local looks = Transmog.sanitize(PlayerStateService.Get(player, { "account", "transmog" })).looks
+	local ok, err = Transmog.canApply(item, look, looks)
+	if not ok then
+		return false, err
+	end
+	local removing = look == ""
+	local cost = if removing or o.free then { gold = 0, materials = {} } else Transmog.cost(item)
+	if char.gold < cost.gold then
+		return false, "shop.error.gold"
+	end
+	if not hasMaterials(player, cost.materials) then
+		return false, "smith.missing"
+	end
+	-- Pay and write — no yields in between.
+	if cost.gold > 0 then
+		addGold(player, -cost.gold)
+	end
+	takeMaterials(player, cost.materials)
+	item.tm = Transmog.apply(item, look).tm
+	commit()
+	if location == "eq" then
+		EquipmentService.RefreshHeld(player)
+	end
+	if not removing then
+		Analytics.custom(player, if Transmog.isBoss(look) then "TransmogBoss" else "Transmog", item.rarity)
+	end
+	log:info("%s transmog %s -> %s (gold %d)", player.Name, item.id, if removing then "own" else look, cost.gold)
+	return true, nil, { look = look }
+end
+
+local function transmog(
+	player: Player,
+	location: string,
+	key: string,
+	look: string,
+	expected: string
+): (boolean, string?, any)
+	return BlacksmithService.Transmog(player, location, key, look, expected)
+end
+
 -- Dismantling -------------------------------------------------------------------------------------------------
 
 local function dismantleIndices(player: Player, indices: { number }): (boolean, string?, any)
@@ -397,6 +476,7 @@ function BlacksmithService.Start()
 	Net.Handle("Dismantle", dismantle)
 	Net.Handle("DismantleAll", dismantleAll)
 	Net.Handle("RerollBonus", reroll)
+	Net.Handle("TransmogApply", transmog) -- S154
 end
 
 return BlacksmithService

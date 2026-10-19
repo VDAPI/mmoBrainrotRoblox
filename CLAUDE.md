@@ -239,6 +239,9 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
   `tests/season.spec`, model `Balance.targetsS152`); okno, HUD i karta w sklepie (S152b) tylko przez `Logic/SeasonView`.
 - **Wpis „Co się zmieniło”** (S153): `Data/Changelog` (id rosnące, dzień UTC) + `changelog.<id>.title/.body` (PL, EN;
   `<id>` = pole `key` wpisu); list pokazuje wpisy nowsze niż `account.returning.seen` (`Logic/Returning.letter`).
+- **Wygląd przedmiotu (transmog)** (S154): klucz wyglądu z `Transmog.lookOf(def)` (model progu z `ArtTiers` albo własny
+  model bossa), wygląd dla typu tylko z wpisem w `WeaponLooks`; nowy wygląd z bossa = model w `WeaponLooks.assets` pod id
+  przedmiotu.
 - **Boss świata** (S149): wpis w `Data/Bosses` z `world = true` + `Data/WorldBoss` (terminy, miejsce, udział, nagroda);
   serwis `WorldBossService`, udział przez `Logic/Contribution`.
 - **Osiągnięcie** (S151): wpis w `Data/Achievements` (licznik z `COUNTERS`, `goal`, nagroda) + `ach.<id>.name/.desc` (PL,

@@ -39,6 +39,9 @@ export type ItemInstance = {
 	-- S134k: bought for Hunter's Marks (the Huntmaster's shop): merchants pay nothing for it (ItemValue.canSell), it
 	-- stacks only with the same (Inventory.canMerge)
 	ns: boolean?,
+	-- S154: the look worn (Logic/Transmog key; absent = the item's own look). Only the look: read through
+	-- Transmog.current / displayDef, never by stats, requirements or the weapon pool
+	tm: string?,
 }
 
 export type Stats = { str: number, dex: number, int: number, vit: number }
@@ -500,6 +503,8 @@ export type AccountData = {
 	seasonPrev: SeasonState?,
 	-- S153: the returning player's bonus and the last "What has changed" entry read (Logic/Returning; reconcile)
 	returning: ReturningState,
+	-- S154: the collection of item looks (Logic/Transmog; read through Transmog.sanitize; reconcile, no migration)
+	transmog: { looks: { [string]: boolean }, scanned: boolean },
 }
 
 -- Character summary shown on the selection screen.

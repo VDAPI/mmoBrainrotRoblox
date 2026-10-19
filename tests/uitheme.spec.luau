@@ -44,6 +44,10 @@ local ALLOWED: { [string]: { Allowed } } = {
 		{ pattern = "Ambient = Color3.fromRGB", why = "3D viewport lighting of the wardrobe preview" },
 		{ pattern = "LightColor = Color3.fromRGB", why = "3D viewport lighting of the wardrobe preview" },
 	},
+	["UI/Screens/BlacksmithWindow/Transmog.luau"] = {
+		{ pattern = "Ambient = Color3.fromRGB", why = "3D viewport lighting of the transmog look preview (S154)" },
+		{ pattern = "LightColor = Color3.fromRGB", why = "3D viewport lighting of the transmog look preview (S154)" },
+	},
 	["UI/Screens/WorldMap/Preview.luau"] = {
 		{ pattern = "Ambient = Color3.fromRGB", why = "3D viewport lighting of the creature preview on a map card" },
 		{ pattern = "LightColor = Color3.fromRGB", why = "3D viewport lighting of the creature preview on a map card" },

@@ -116,6 +116,9 @@ function AccountSchema.accountTemplate(): AccountData
 		-- S153: the returning player's bonus and the last changelog entry read (Logic/Returning; read through
 		-- Returning.sanitize); no migration (reconcile)
 		returning = { left = 0, at = 0, seen = 0 },
+		-- S154: the collection of item looks (Logic/Transmog; read through Transmog.sanitize); no migration
+		-- (reconcile). `scanned` false = the one-time scan of every character's items is still due (TransmogService)
+		transmog = { looks = {}, scanned = false },
 	}
 end
 

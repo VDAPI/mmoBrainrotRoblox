@@ -5863,3 +5863,32 @@
 - **S153** `/returning away <dni>` robi sprawdzenie od razu, jakby ostatnia wizyta była tyle dni temu (prawdziwy
   `lastSeen` i tak nadpisuje następny zapis); `/returning clear` zeruje też odstęp.
 - **S153** Wiki pominięta (właściciel 17.10): bez `npm run data`; akapit „Premia powrotu” w `doswiadczenie.mdx` czeka.
+- **S154** Transmog tylko dla typów z wyglądem w `Data/WeaponLooks` (broń i druga ręka): zbroja i biżuteria nie są
+  dziś rysowane na postaci (strój klasy S132). `Transmog.SLOTS` liczy się z danych, więc zbroja dojdzie razem z
+  warstwami zbroi (`ClassLooks.layers`) bez zmiany zapisu.
+- **S154** Klucz wyglądu: własny model przedmiotu (boss) = id przedmiotu, inaczej model progu z `ArtTiers`
+  (`<typ>_<próg>`), bez żadnego modelu jeden klucz `<typ>` (bryły są takie same na każdym progu, więc kolekcja nie ma
+  identycznych pozycji). Przedmiot bossa bez własnego modelu ma wygląd progu, nie rzadki wygląd (dziś 1 wygląd z
+  bossa: Rozłupywacz Grimroka; każdy nowy model bossa w `WeaponLooks.assets` dochodzi sam).
+- **S154** Odblokowanie przy wejściu przedmiotu do plecaka lub ekwipunku: `TransmogService` słucha
+  `InventoryService.Changed`, `EquipmentService.Changed` i wejścia postaci (jedno sprawdzenie na klatkę), bo przez
+  plecak przechodzi łup, poczta, handel, aukcja, nagrody, kowal i depozyt. Skan jednorazowy (`scanned`) plecaków,
+  ekwipunku i depozytu wszystkich postaci konta bez toastów; poczta i aukcje bez skanu. Kolekcja kontowa, zostaje po
+  sprzedaży i rozbiciu; zapis tylko nowych kluczy, odczyt przez `Transmog.sanitize` (nieznane klucze zostają w zapisie,
+  ale nie liczą się). Toast pojedynczo do 3 wyglądów, reszta jedną linią; wygląd z bossa osobnym toastem ♛.
+- **S154** Koszt `Config.Transmog` według rzadkości przedmiotu, który dostaje wygląd (pył 2 / odłamek 1 / kryształ 1 /
+  kryształ 1, Zwykły bez esencji) + złoto na krzywej ulepszania × 1,5. Klucze esencji jak w `Config.Reroll` (nazwy
+  rzadkości, nie indeksy). Zdjęcie darmowe; wygląd z bossa bez dopłaty (rzadkość wyglądu to nagroda za bossa, nie
+  podatek). Nałożenie wyglądu, który przedmiot już ma (własny albo obecny), jest odrzucane (`transmog.error.same`).
+- **S154** Kolor `"rarity"`, poświata Heroiczny+ i klejnot żywiołu na ikonie zawsze z przedmiotu, nie z wyglądu; typ ten
+  sam, więc chwyt, `WeaponType` i animacje S113 / S115 bez zmian. `/weaponpreview` bez zmian.
+- **S154** `tm` wędruje z przedmiotem (handel, poczta, aukcja, depozyt); kupujący dostaje do kolekcji tylko własny
+  wygląd przedmiotu (`lookOf(def)`), nie nałożony, i może zdjąć go za darmo.
+- **S154** Ikona w slocie = ikona wyglądu ze znakiem ↺ na plakietce (prawy dolny róg: sprzęt nie ma tam licznika
+  stosu; na broni maga nad klejnotem żywiołu, żeby go nie zasłaniać); nazwa, opis, porównanie i duszek przeciągania mówią, czym przedmiot jest naprawdę.
+- **S154** Kolekcja u kowala w „gablocie” na żelazie (`Iron.Sunken`, kafelki `Iron.Raised`), bo ramka `Brass.Bright`
+  obecnego wyglądu na pergaminie nie ma kontrastu 3:1; para `brass.bright on iron.{raised,selected,sunken}` w `PAIRS`.
+  Zablokowany wygląd można kliknąć i obejrzeć w podglądzie (przycisk nieaktywny, podpowiedź skąd go wziąć).
+- **S154** Premium tylko kosmetyczne: istniejące kosmetyki `weapon` (cząsteczki) działają na każdym wyglądzie; nowych
+  produktów nie ma, wyglądy za odłamki to decyzja właściciela później (przez `Data/Cosmetics` i `paywall.spec`).
+- **S154** Wiki pominięta (właściciel 17.10): bez rekordu `Transmog` w `tools/WikiData` i bez `npm run data`.

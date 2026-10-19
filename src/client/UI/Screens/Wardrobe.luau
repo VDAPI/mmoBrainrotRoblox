@@ -24,6 +24,8 @@
 -- filter on another class) shows on the mannequin with the character's face, skin and hair. Over the preview of the
 -- look group: "Change appearance" (the look window; "free" while the free change is left) and the mode line (class
 -- look or the Roblox avatar). A saved look says which class it was saved on.
+-- S154: the "Weapon looks" tab (a group without kinds, UI/Screens/WardrobeTransmog): the collection of item looks to
+-- look through and the way to the blacksmith, who puts them on (weapon effects stay on their own tab).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -65,6 +67,7 @@ local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WardrobeTransmog = require(script.Parent.WardrobeTransmog)
 local WardrobeStart = require(script.Parent.Parent.WardrobeStart)
 local WeeklyClock = require(script.Parent.Parent.WeeklyClock)
 local WeeklyOffer = require(ReplicatedStorage.Shared.Logic.WeeklyOffer)
@@ -81,6 +84,7 @@ export type Props = {
 	PreviewEmote: ((emoteId: string) -> ())?,
 	PreviewLevelUp: ((cosmeticId: string) -> ())?,
 	OpenLook: (() -> ())?, -- S132: the look window (PremiumController.OpenLook)
+	GuideToSmith: (() -> ())?, -- S154: the weapon looks tab leads to the blacksmith (NpcController.GuideToNpc)
 }
 
 local PREVIEW = 330
@@ -95,6 +99,8 @@ local BALANCE_Y = 100
 -- S132: the class filter of the outfit list (under the balance) and the pseudo-id of the class's default outfit
 local FILTER_HEIGHT = 50
 local CLASS_DEFAULT = "$class"
+-- S154: the pseudo-group of the weapon looks tab (not a Data/Cosmetics group)
+local TRANSMOG = "transmog"
 
 local function invoke(name: string, ...: any)
 	local args = table.pack(...)
@@ -918,6 +924,11 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 	for _, g in Cosmetics.groups do
 		table.insert(groupTabs, { id = g.id, label = Text.T(scope, `wardrobe.group.{g.id}`) })
 	end
+	-- S154: the collection of item looks (WardrobeTransmog), a group of its own without kinds
+	table.insert(groupTabs, { id = TRANSMOG, label = Text.T(scope, "wardrobe.tab.transmog") })
+	local notTransmog = scope:Computed(function(use): boolean
+		return use(group) ~= TRANSMOG
+	end)
 	scope:Observer(group):onChange(function()
 		local g = Fusion.peek(group)
 		if groupOf(Fusion.peek(kind)) ~= g then
@@ -930,6 +941,9 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 	end)
 	local kindTabs = scope:Computed(function(use, s: Scope): Instance
 		local g = use(group)
+		if g == TRANSMOG then
+			return s:New("Frame")({ Name = "NoKinds", Size = UDim2.new(), BackgroundTransparency = 1 })
+		end
 		local tabs = {}
 		for _, entry in Cosmetics.groups do
 			if entry.id == g then
@@ -1152,7 +1166,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 			Size = UDim2.fromOffset(PREVIEW, 56),
 			BackgroundTransparency = 1,
 			Visible = scope:Computed(function(use): boolean
-				return use(kind) ~= "mountskin"
+				return use(kind) ~= "mountskin" and use(group) ~= TRANSMOG
 			end),
 			-- S123: the marks and gestures are seen by others (one more line)
 			Text = scope:Computed(function(use): string
@@ -1192,6 +1206,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					Position = UDim2.fromOffset(0, BALANCE_Y + 4),
 					Size = UDim2.new(1, -(TOP_UP_WIDTH + 10), 0, 28),
 					BackgroundTransparency = 1,
+					Visible = notTransmog,
 					Text = scope:Computed(function(use): string
 						return `◆ {Format.number(use(shards) or 0)}`
 					end),
@@ -1210,7 +1225,9 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					Variant = "primary",
 					TextSize = Theme.TextSize.Small,
 					Text = Text.T(scope, "premium.topUp"),
-					Visible = openShop ~= nil,
+					Visible = scope:Computed(function(use): boolean
+						return openShop ~= nil and use(notTransmog)
+					end),
 					OnClick = function()
 						if openShop then
 							openShop()
@@ -1226,7 +1243,7 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					Size = UDim2.new(1, 0, 0, FILTER_HEIGHT - 6),
 					BackgroundTransparency = 1,
 					Visible = scope:Computed(function(use): boolean
-						return use(kind) == "outfit"
+						return use(kind) == "outfit" and use(notTransmog)
 					end),
 					[Children] = Tabs(scope, {
 						Selected = filter,
@@ -1249,11 +1266,21 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
 					ScrollBarThickness = 6,
+					Visible = notTransmog,
 					[Children] = {
 						scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
 						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
 						rows :: any,
 					},
+				}),
+				-- S154: the weapon looks (the collection of item looks) under the group tabs
+				WardrobeTransmog(scope, {
+					Visible = scope:Computed(function(use): boolean
+						return not use(notTransmog)
+					end),
+					Position = UDim2.fromOffset(0, KIND_TABS_Y),
+					Size = UDim2.new(1, 0, 1, -KIND_TABS_Y),
+					GuideToSmith = props and props.GuideToSmith,
 				}),
 			},
 		}),

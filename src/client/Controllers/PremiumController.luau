@@ -101,6 +101,11 @@ function PremiumController.Init(registry)
 				-- S123: local previews (only this client sees them)
 				PreviewEmote = EmoteController.Preview,
 				OpenLook = PremiumController.OpenLook, -- S132
+				-- S154: the weapon looks tab leads to the blacksmith (NpcController looked up when used)
+				GuideToSmith = function()
+					WindowManager.Close("wardrobe")
+					Registry.Get("NpcController").GuideToNpc("blacksmith")
+				end,
 				PreviewLevelUp = function(cosmeticId: string)
 					local model = Players.LocalPlayer.Character
 					if model then

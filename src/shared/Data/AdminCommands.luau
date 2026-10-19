@@ -273,6 +273,11 @@ cmd("items", "itemscore", {})
 -- smith ("pay"), with a Stone of Transmutation ("stone") or nothing ("free"); /rerollstate shows `rr` and the next cost.
 cmd("items", "reroll", { str("where"), int("line", 1, 9), enum("mode", { "pay", "stone", "free" }, true, "pay") })
 cmd("items", "rerollstate", { str("where") })
+-- S154: item looks: puts a look of the collection on an equipped (slot) or backpack (index) item without the smith's
+-- distance ("clear" takes it off; "free" without the cost); /transmoglooks unlocks every look, empties the collection
+-- or lists the counts per type.
+cmd("items", "transmog", { str("where"), str("look"), enum("mode", { "pay", "free" }, true, "pay") })
+cmd("items", "transmoglooks", { enum("mode", { "list", "all", "clear" }, true, "list") })
 
 -- World
 cmd("world", "tp", { str("target"), str("a", true), str("b", true) })

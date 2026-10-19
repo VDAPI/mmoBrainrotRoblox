@@ -138,6 +138,7 @@ return {
 		"Reroll", -- S134j: bonus reroll at the smith
 		"SkillPools", -- S137: the lock after a weapon pool switch in combat
 		"Returning", -- S153: the returning player's bonus (outside the pace model)
+		"Transmog", -- S154: item looks at the smith (gold and essence; outside the pace model)
 	},
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
@@ -6074,6 +6075,12 @@ return {
 			{
 				session = "S149",
 				why = "new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min",
+			},
+		},
+		["Config:Transmog*"] = {
+			{
+				session = "S154",
+				why = "new: item looks at the smith outside the pace model (a look, never power): gold ilvl x goldPerIlvl(ilvl) x 1.5 (the upgrade gold curve: 120 / 608 / 1470 / 3000 at L20 / 45 / 70 / 100, half of +1 on the weapon and below one reroll x1.8), essence by the rarity of the item that gets the look: Unique 2 dust, Heroic 1 shard, Legendary and Mythic 1 crystal, Common none (a sink small next to the band's dismantling); taking a look off is free, a boss look costs the same",
 			},
 		},
 	} :: { [string]: { Reason } },

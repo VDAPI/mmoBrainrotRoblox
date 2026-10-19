@@ -5,7 +5,13 @@
 
 ## Stan
 
-S01–S115 i S117–S153 gotowe (ostatnia S153: pomoc dla powracających: po 7+ dniach nieobecności konto z postacią
+S01–S115 i S117–S154 gotowe (ostatnia S154: transmogryfikacja: u kowala zakładka „Wygląd” nakłada na broń lub drugą
+rękę wygląd tego samego typu z kolekcji konta (`Logic/Transmog`, remote `TransmogApply`, pole `tm` tylko wygląd),
+kolekcja `account.transmog` rośnie przy wejściu przedmiotu do plecaka lub ekwipunku i jednorazowym skanie konta
+(`TransmogService`), 120 wyglądów progów i 1 rzadki wygląd z bossa, koszt `Config.Transmog` (złoto na krzywej ulepszania
+× 1,5 + esencja według rzadkości, zdjęcie darmowe), w dłoni wygląd z kolorem rzadkości przedmiotu, ikona wyglądu ze
+znakiem ↺, „Wygląd: …” w opisie, zakładka „Wyglądy broni” w garderobie, admin `/transmog`, `/transmoglooks`,
+`paywall.spec` 14; wcześniej S153: pomoc dla powracających: po 7+ dniach nieobecności konto z postacią
 od 10. poziomu dostaje raz na 14 dni godzinę gry w świecie z +100 pkt `expBonus` (osobne źródło „Powrót”, nie
 błogosławieństwo, dodane do Fortuny, każde źródło EXP), ikona » z minutami przy portrecie, list „Co się zmieniło” na
 pergaminie raz przy wejściu do świata (wpisy `Data/Changelog` nowsze niż przeczytane, „Co nowego” w menu gry),
@@ -398,6 +404,13 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **Transmogryfikacja (S154):** wiki czeka na odświeżenie wiki (właściciel 17.10): rekord `Transmog` w
+  `tools/WikiData` (koszt z `Config.Transmog` dla L 20 / 45 / 70 / 100 według rzadkości, liczba wyglądów na typ i z
+  bossów, bez listy modeli niewydanych przedmiotów) i akapit „Wygląd przedmiotu” w artykule kowala / `kosmetyki.mdx`
+  (PL, EN). Zakładka garderoby to przegląd ikon bez podglądu 3D (podgląd jest u kowala). Zbroja i biżuteria dopiero z
+  warstwami zbroi (`ClassLooks.layers`). Duszek przeciągania pokazuje ikonę przedmiotu, nie wyglądu. Bez przeglądu w
+  grze (zakładka u kowala na PC i telefonie, podgląd modelu w `ViewportFrame`, ↺ w slocie, toasty, broń w dłoni u innych).
 
 - **Premia powrotu i list „Co się zmieniło” (S153):** wiki czeka na odświeżenie wiki (właściciel 17.10): akapit
   „Premia powrotu” w `doswiadczenie.mdx` (PL, EN) z liczbami `Config.Returning` z eksportu. Odliczanie nie stoi
