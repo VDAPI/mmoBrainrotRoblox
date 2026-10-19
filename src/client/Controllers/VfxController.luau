@@ -220,6 +220,15 @@ local function releaseLock()
 	end
 end
 
+-- W03: whether a skill's look burns (its element is fire): fire spells get flames on the hands and the projectile.
+local function fiery(skill: SkillData.SkillDef, entry: SkillVfx.Entry?, element: any): boolean
+	if not entry or entry.color ~= "element" then
+		return false
+	end
+	local el = if type(element) == "string" then element else skill.element
+	return el == "fire"
+end
+
 local function colorOf(skill: SkillData.SkillDef, entry: SkillVfx.Entry?, element: any): Color3
 	local kind = if entry then entry.color else "class"
 	if kind == "element" then
@@ -455,7 +464,14 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 		if entry.glow then
 			-- S115: an aimed cast glows for its aim (`ct`, shorter with Heartseeker's sniper node)
 			local aim = tonumber(data.ct)
-			Library.glow(caster, entry.glow.hand, color, if aim then aim + 0.05 else entry.glow.dur, simple)
+			Library.glow(
+				caster,
+				entry.glow.hand,
+				color,
+				if aim then aim + 0.05 else entry.glow.dur,
+				simple,
+				fiery(skill, entry, data.el)
+			)
 		end
 		if entry.toss then
 			tossSnares(data, skill, entry, motion, caster, color, simple)
@@ -481,6 +497,7 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 					speed = 140,
 					simple = simple,
 					trail = if entry.tex then entry.tex.projectile else nil,
+					flame = fiery(skill, entry, data.el),
 				})
 			end)
 		end
@@ -685,6 +702,10 @@ local function piece(
 	elseif name == "smokePuff" then
 		if at then
 			Library.smokePuff(at, scale, color, { simple = simple, key = tex })
+		end
+	elseif name == "fireBlast" then
+		if at then
+			Library.fireBlast(at, scale, color, { simple = simple })
 		end
 	elseif name == "magicCircle" then
 		local where = at or (if caster then centre(caster) else nil)

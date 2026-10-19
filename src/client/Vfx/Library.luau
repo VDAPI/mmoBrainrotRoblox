@@ -689,6 +689,7 @@ export type ProjectileOpts = {
 	time: number?,
 	arc: number?,
 	stick: number?,
+	flame: boolean?, -- W03: a fire projectile sheds flames (the "fire" texture) behind its core
 }
 
 -- Flies from `from` to the target model (homing on its centre) or a point; calls onArrive at the end.
@@ -744,6 +745,30 @@ function Library.projectile(
 			end
 			e.Parent = p
 			Clock.track(e)
+			-- W03: a fire orb trails tongues of flame, white-hot at the core, deep red as they die
+			if o.flame then
+				local f = Instance.new("ParticleEmitter")
+				f.Color = ColorSequence.new({
+					ColorSequenceKeypoint.new(0, color:Lerp(Color3.new(1, 1, 1), 0.55)),
+					ColorSequenceKeypoint.new(0.4, color),
+					ColorSequenceKeypoint.new(1, color:Lerp(Color3.new(0.2, 0, 0), 0.6)),
+				})
+				f.LightEmission = 1
+				f.Rate = 60
+				f.Lifetime = NumberRange.new(0.22, 0.4)
+				f.Speed = NumberRange.new(0.5, 1.5)
+				f.SpreadAngle = Vector2.new(180, 180)
+				f.Rotation = NumberRange.new(0, 360)
+				f.RotSpeed = NumberRange.new(-180, 180)
+				f.Size = NumberSequence.new({ kp(0, 1.3 * size), kp(0.5, 1.0 * size), kp(1, 0.1) })
+				f.Transparency = NumberSequence.new({ kp(0, 0.05), kp(0.6, 0.35), kp(1, 1) })
+				if Textures.particle(f, "fire") then
+					f.Parent = p
+					Clock.track(f)
+				else
+					f:Destroy()
+				end
+			end
 		end
 	end
 	local elapsed = 0
@@ -1535,6 +1560,71 @@ function Library.smokePuff(at: Vector3, size: number, color: Color3, opts: FxOpt
 	})
 end
 
+-- W03: the body of a fire spell's blow: a ball of flame bursting outwards (white-hot heart, orange, dying deep red),
+-- dark smoke rolling up after it and embers thrown out in arcs. Without the fire texture a plain burst.
+function Library.fireBlast(at: Vector3, size: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local fire = textured("fire", CFrame.new(at + Vector3.new(0, 0.6 * size, 0)))
+	if not fire then
+		Library.burst(at, size * 2, color, 0.4, o.simple)
+		return
+	end
+	burstFrom(fire, "fire", color:Lerp(Color3.new(1, 1, 1), 0.45), 16, {
+		simple = o.simple,
+		to = color:Lerp(Color3.new(0.25, 0, 0), 0.55),
+		spread = 180,
+		speedMin = 3 * size,
+		speedMax = 9 * size,
+		drag = 6,
+		accel = Vector3.new(0, 6, 0),
+		lifeMin = 0.35,
+		lifeMax = 0.6,
+		rotation = NumberRange.new(0, 360),
+		rotSpeed = NumberRange.new(-90, 90),
+		sizeSeq = NumberSequence.new({ kp(0, 1.2 * size), kp(0.35, 3.2 * size), kp(1, 0.8 * size) }),
+		transparency = NumberSequence.new({ kp(0, 0), kp(0.55, 0.2), kp(1, 1) }),
+		area = Vector3.one * size,
+		emission = 1,
+	})
+	local smoke = textured("smoke", CFrame.new(at + Vector3.new(0, 1.2 * size, 0)))
+	if smoke then
+		burstFrom(smoke, "smoke", Color3.fromHex("#2E2826"), 6, {
+			simple = o.simple,
+			to = Color3.fromHex("#6A625C"),
+			spread = 70,
+			speedMin = 2,
+			speedMax = 5,
+			accel = Vector3.new(0, 4, 0),
+			drag = 1,
+			lifeMin = 1,
+			lifeMax = 1.6,
+			rotation = NumberRange.new(0, 360),
+			rotSpeed = NumberRange.new(-40, 40),
+			sizeSeq = NumberSequence.new({ kp(0, 1.4 * size), kp(1, 4.2 * size) }),
+			transparency = NumberSequence.new({ kp(0, 1), kp(0.15, 0.35), kp(1, 1) }),
+			area = Vector3.one * size,
+			emission = 0,
+		})
+	end
+	local embers = textured("spark", CFrame.new(at + Vector3.new(0, 0.5, 0)))
+	if embers then
+		burstFrom(embers, "spark", color:Lerp(Color3.new(1, 1, 1), 0.3), 18, {
+			simple = o.simple,
+			to = color,
+			spread = 75,
+			speedMin = 14,
+			speedMax = 28,
+			accel = Vector3.new(0, -35, 0),
+			drag = 1.5,
+			lifeMin = 0.4,
+			lifeMax = 0.9,
+			orient = "parallel",
+			sizeSeq = NumberSequence.new({ kp(0, 0.22), kp(1, 0.06) }),
+			transparency = NumberSequence.new({ kp(0, 0), kp(0.8, 0.2), kp(1, 1) }),
+		})
+	end
+end
+
 -- Dust puff at the feet (landings, slams). S112: with the smoke texture a smoke puff in the dust colour and a burst of
 -- the dust texture.
 function Library.dust(at: Vector3, size: number, low: boolean?)
@@ -1610,7 +1700,8 @@ function Library.glow(
 	hand: "r" | "l" | "both" | "weapon",
 	color: Color3,
 	seconds: number,
-	simple: boolean?
+	simple: boolean?,
+	flame: boolean? -- W03: fire spells lick flames over the hand
 )
 	local names: { string } = if hand == "weapon"
 		then { "VaelthornWeapon" }
@@ -1620,7 +1711,9 @@ function Library.glow(
 	for _, name in names do
 		local part = model:FindFirstChild(name, true)
 		if part and part:IsA("BasePart") then
-			local orb = Pool.part("Ball", color, Vector3.one * 0.8, Enum.Material.Neon, 0.3)
+			-- W03: a small white-hot core instead of a big flat disc of colour; the colour lives in the particles
+			local orb =
+				Pool.part("Ball", color:Lerp(Color3.new(1, 1, 1), 0.45), Vector3.one * 0.45, Enum.Material.Neon, 0.15)
 			orb.Anchored = false
 			orb.Massless = true
 			orb.CFrame = part.CFrame
@@ -1639,12 +1732,51 @@ function Library.glow(
 				e.Size = NumberSequence.new(0.35, 0)
 				e.Transparency = NumberSequence.new(0.2, 1)
 				if Textures.particle(e, "glow") then -- S112
-					e.Size = NumberSequence.new(0.7, 0)
+					e.Size = NumberSequence.new(if flame then 0.45 else 0.7, 0)
 				end
 				e.Parent = orb
 				Clock.track(e)
+				-- W03: motes drawn in from all round towards the hand while the spell gathers
+				local motes = Instance.new("ParticleEmitter")
+				motes.Shape = Enum.ParticleEmitterShape.Sphere
+				motes.ShapeInOut = Enum.ParticleEmitterShapeInOut.Inward
+				motes.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface
+				motes.Color = ColorSequence.new(color:Lerp(Color3.new(1, 1, 1), 0.3), color)
+				motes.LightEmission = 1
+				motes.Rate = 36
+				motes.Lifetime = NumberRange.new(0.25, 0.35)
+				motes.Speed = NumberRange.new(5, 7)
+				motes.Size = NumberSequence.new({ kp(0, 0.05), kp(0.5, 0.22), kp(1, 0.05) })
+				motes.Transparency = NumberSequence.new({ kp(0, 1), kp(0.3, 0.1), kp(1, 0.4) })
+				Textures.particle(motes, "spark")
+				motes.Orientation = Enum.ParticleOrientation.VelocityParallel
+				motes.Parent = orb
+				Clock.track(motes)
+				if flame then
+					local f = Instance.new("ParticleEmitter")
+					f.Color = ColorSequence.new({
+						ColorSequenceKeypoint.new(0, color:Lerp(Color3.new(1, 1, 1), 0.25)),
+						ColorSequenceKeypoint.new(0.5, color),
+						ColorSequenceKeypoint.new(1, color:Lerp(Color3.new(0.2, 0, 0), 0.6)),
+					})
+					f.LightEmission = 1
+					f.Rate = 22
+					f.Lifetime = NumberRange.new(0.25, 0.4)
+					f.Speed = NumberRange.new(0.5, 1.2)
+					f.Acceleration = Vector3.new(0, 5, 0)
+					f.Rotation = NumberRange.new(0, 360)
+					f.RotSpeed = NumberRange.new(-120, 120)
+					f.Size = NumberSequence.new({ kp(0, 0.3), kp(0.4, 0.5), kp(1, 0.05) })
+					f.Transparency = NumberSequence.new({ kp(0, 0.25), kp(0.7, 0.5), kp(1, 1) })
+					if Textures.particle(f, "fire") then
+						f.Parent = orb
+						Clock.track(f)
+					else
+						f:Destroy()
+					end
+				end
 			end
-			tween(orb, seconds, { Size = Vector3.one * 1.6 })
+			tween(orb, seconds, { Size = Vector3.one * 0.9 })
 			detachLater(orb, seconds)
 		end
 	end

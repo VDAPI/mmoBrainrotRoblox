@@ -77,6 +77,8 @@ for _, name in
 		-- S115
 		"snare",
 		"stormCloud",
+		-- W03
+		"fireBlast",
 	}
 do
 	VFX_PIECES[name] = true

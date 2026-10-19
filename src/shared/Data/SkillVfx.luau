@@ -552,7 +552,8 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "both", dur = 0.4 },
 		projectile = "orb",
 		launch = "both",
-		impact = { "impactFlash", "ringWave", "groundDecal", "smokePuff", "sparks" },
+		-- W03: the ball of flame (fireBlast) is the body of the blow, the smoke and the embers its trail
+		impact = { "impactFlash", "fireBlast", "ringWave", "groundDecal", "sparks" },
 		landsAfter = true, -- the orb flies the event's `d` (Offense.circleTarget, CIRCLE_PROJECTILE_SPEED)
 		telegraph = "circle",
 		flash = 4,
