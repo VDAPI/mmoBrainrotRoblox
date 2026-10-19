@@ -73,6 +73,7 @@ UiWindows.SCREENS = table.freeze({
 	["UI/Screens/Hud/WorldBossPanel.luau"] = "iron", -- S149b: the world boss panel (also under Hud; named for the list)
 	["UI/Screens/Hud/AchievementToast.luau"] = "iron", -- S151: the achievement toast (also under Hud; named for the list)
 	["UI/Screens/Hud/SeasonButton.luau"] = "iron", -- S152b: the season pass button (also under Hud; named for the list)
+	["UI/Screens/Hud/TutorialHint.luau"] = "iron", -- S155: the tutorial hint (also under Hud; named for the list)
 	["UI/Screens/PartyFrames.luau"] = "iron",
 	["UI/Screens/Cutscene.luau"] = "iron",
 	["UI/Screens/EmoteWheel.luau"] = "iron",

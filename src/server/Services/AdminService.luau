@@ -54,6 +54,7 @@ local AdminService = {
 		"PathService",
 		"PartyService",
 		"PartyFinderService", -- S134f: /finder
+		"TutorialService", -- S155: /tutorial
 		"PartyAuraService",
 		"NpcService",
 		"AlchemyService",

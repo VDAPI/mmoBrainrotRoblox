@@ -338,7 +338,10 @@ local Definitions: { [string]: Definition } = {
 		args = { "string", "string", "string", "string?", "string?", "string?", "string?", "string?", "string?" },
 	},
 	PlayEmote = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (emote cosmetic id) S123
-	GuideDone = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
+	-- S155: the hands-on tutorial (TutorialService): a client step (Tutorial.clientAllowed: move, backpack; the server
+	-- sees the rest itself) and skipping the rest (the S14 GuideDone is gone)
+	TutorialEvent = { kind = "event", dir = "c2s", rate = 2, args = { "string" } }, -- client steps only (Tutorial.clientAllowed)
+	TutorialSkip = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
 	BuySubscription = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (subscription key) prompt or simulated, S121
 	VipRecall = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free return to the city (VIP), S121
 	PremiumFunnel = { kind = "event", dir = "c2s", rate = 2, args = { "string", "string" } }, -- (funnel, step) S131: shop/VIP window funnel steps from the client

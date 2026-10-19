@@ -23,6 +23,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local Clock = require(Shared.Util.Clock)
 local Cutscenes = require(Shared.Logic.Cutscenes)
@@ -39,12 +40,10 @@ local Rng = require(Shared.Logic.Rng)
 local SideQuests = require(Shared.Logic.SideQuests)
 local Skills = require(Shared.Logic.Skills)
 local Time = require(Shared.Logic.Time)
+local Tutorial = require(Shared.Logic.Tutorial)
 local Types = require(Shared.Types)
 
 local log = Log.new("QuestService")
-
--- The first story quests form the tutorial (Data/Quests/Main); reported as the onboarding funnel.
-local TUTORIAL_STEPS = 10
 
 local QuestService = {
 	Name = "QuestService",
@@ -60,6 +59,8 @@ local QuestService = {
 		"ContractService", -- S99: hunting contracts (ContractService.Handle)
 		"CosmeticService", -- S97: Reward.cosmetic (the Dragonslayer's mount skin of the quest vaelgrath)
 	},
+	-- S155: (player, questId) after a story quest was accepted; TutorialService (the "quest" step)
+	MainAccepted = Signal.new(),
 }
 
 local PlayerStateService: any
@@ -371,6 +372,7 @@ local function accept(player: Player, npcId: string): (boolean, string?)
 	handle(player, "talk", { npc = npcId })
 	catchUp(player)
 	refreshCompanion(player)
+	QuestService.MainAccepted:Fire(player, quest.id)
 	return true, nil
 end
 
@@ -401,9 +403,11 @@ local function turnIn(player: Player, npcId: string): (boolean, string?)
 	PlayerStateService.Set(player, { "character", "quests", "mainDone" }, index)
 	PlayerStateService.Set(player, { "character", "quests", "mainLast" }, quest.id)
 	QuestEvents.fire(player, "quest", { kind = "main", index = index }) -- S151: achievements
-	-- The first story quests are the tutorial: report them as the onboarding funnel.
-	if index <= TUTORIAL_STEPS then
-		Analytics.onboarding(player, index, quest.id)
+	-- The first story quests are in the onboarding funnel after the hands-on tutorial (S155: numbers only from
+	-- Logic/Tutorial.funnelStep)
+	local funnelStep = Tutorial.funnelStep("quest", quest.id)
+	if funnelStep then
+		Analytics.onboarding(player, funnelStep, quest.id)
 	end
 	give(player, quest.reward)
 	SeasonService.Add(player, "quest") -- S152: a story quest handed in

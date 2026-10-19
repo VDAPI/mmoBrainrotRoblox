@@ -5892,3 +5892,41 @@
 - **S154** Premium tylko kosmetyczne: istniejące kosmetyki `weapon` (cząsteczki) działają na każdym wyglądzie; nowych
   produktów nie ma, wyglądy za odłamki to decyzja właściciela później (przez `Data/Cosmetics` i `paywall.spec`).
 - **S154** Wiki pominięta (właściciel 17.10): bez rekordu `Transmog` w `tools/WikiData` i bez `npm run data`.
+- **S155** Samouczek z działaniem zastępuje dymki S14 (jeden przewodnik): `GuideController`, remote `GuideDone`, handler w
+  `SettingsService` i teksty `guide.*` usunięte; `character.guideDone` zostaje w zapisie jako historia (nic go nie czyta).
+- **S155** Kroki `Logic/Tutorial.STEPS`: `move` (klient, 8 st. przejścia sterowanego graczem), `quest` (przyjęcie zadania fabuły,
+  `QuestService.MainAccepted`), `backpack` (klient, okno `inventory` / `character`), `potion` (`PotionService.Drank`),
+  `attack` (nowy `CombatService.BasicHit`), `skill` (nowy `SkillService.Casted`: udany `CastSkill`, bez warunku celu).
+- **S155** Zdarzenie późniejszego kroku liczy się z góry (`pending`), wcześniejszego jest pomijane; po `skill` `done`, a
+  klient pokazuje „Gotowe” 6 s albo do dotknięcia, tylko gdy widział przejście na żywo.
+- **S155** Klient zgłasza tylko `move` i `backpack` (`Tutorial.clientAllowed`, `TutorialEvent` 2/s, ponowienie po 3 s);
+  `TutorialService` dostaje resztę z sygnałów (nikt od niego nie zależy poza `AdminService`, bez cykli).
+- **S155** Przy wejściu postaci krok `quest` zaliczony, gdy zadanie fabuły jest już wzięte albo oddane (awaria, `/tutorial reset`).
+- **S155** Kotwice z prawdziwych elementów HUD (`UI/HudAnchors`, po nazwie, tylko widoczne); joystick telefonu = lewa
+  dolna strefa ekranu; pozycja co 0,2 s (rozmiar, obrót); na telefonie na lewo od łuku ataku i umiejętności.
+- **S155** Wskazówka na żelazie w warstwie HUD, ramki `Active = false` (klik łapią tylko jej przyciski); obwódka pulsuje
+  przez `Heartbeat` jak `SeasonButton` (UI, nie efekt świata: reguła `Vfx/Clock` S110 jej nie dotyczy).
+- **S155** Wskazówka czeka na okna `npc`, `questnpc`, `login`, `whatsnew`, modal, przerywnik i śmierć, a także na
+  nagrodę za logowanie i list S153, dopóki czekają na samoczynne otwarcie (`Pending` obu kontrolerów); te dwa przestały
+  czekać na przewodnik, więc przy pierwszym wejściu idą przed wskazówką.
+- **S155** Ruch nie jest w `Data/Keybinds` (klawisze zarezerwowane), więc tekst PC kroku `move` ma stałe „W A S D”; inne
+  kroki biorą klawisze z mapy gracza (`Tutorial.keyArgs`), na telefonie słowa przycisków (test).
+- **S155** Strzałka zostaje przy fabule: krok `quest` raz na sesję `GuideToNpc("captain")` tylko bez wziętego i oddanego
+  zadania fabuły; krok `attack` w mieście mówi „Idź za strzałką zadania na Łąki” i podświetla tracker.
+- **S155** Jeden lejek onboardingu: samouczek 1–6, zadania fabuły 1–10 jako 7–16 (w S14 były 1–10), `level5` jako 17;
+  numery tylko z `Tutorial.funnelStep` (`TUTORIAL_STEPS` usunięte). Pominięcie: `Analytics.custom("TutorialSkip", krok)`.
+- **S155** Nagroda na 5. poziomie (`Data/Tutorial.REWARD`): tytuł „Pierwsze Kroki” (`obtain.tutorial`, cena 0), 3 Kamienie
+  Powrotu i 10 Małych Mikstur Życia związane, bez EXP i złota; także po pominięciu (za poziom, nie za klikanie).
+- **S155** Nagroda: znacznik `reward` przed wydaniem, pełny plecak → poczta `once = tutorial_<id postaci>`, nieudana
+  poczta cofa znacznik; sprawdzenie przy awansie i wejściu. Tytuł jest kontowy; listę w toaście składa klient.
+- **S155** Krok `potion`: nowa postać stoi w mieście z pełnym HP, więc gdy to bieżący krok, zwykła mikstura pije się
+  mimo pełnego zasobu (`PotionService.AddFullDrink`, `Tutorial.wantsPotion`; zalicza też cel `potion` zadania `healer`).
+  Odnowienie bez zmian; poza tym krokiem „Nie potrzebujesz tego teraz” jak dotąd.
+- **S155** Krok `move` liczy tylko drogę, gdy gracz steruje (`Humanoid.MoveDirection`), bez skoków ponad
+  `Data/Tutorial.MAX_STEP` na próbkę i przy zakotwiczonym korzeniu (`Tutorial.walk`): ustawienie postaci po wejściu
+  (pivot z domyślnego spawnu) i teleporty się nie liczą.
+- **S155** Nieudana poczta nagrody cofa znacznik na postaci, która go dostała (zmiana postaci w trakcie poczty: wpis do
+  jej zapisanej tabeli), nigdy na postaci aktywnej po powrocie z wywołania.
+- **S155** Postacie sprzed S155: szablon `tutorial` z `done = true, reward = true` (reconcile), bez samouczka i nagrody.
+- **S155** Osiągnięcia S151 nie mają „ukończ samouczek” („Pierwsze Kroki” to `level10`): nic nie podpięte.
+- **S155** Wiki pominięta (właściciel 17.10): tytuł i kosmetyk bez `wiki = false`, wejdą przy hurtowym odświeżeniu.

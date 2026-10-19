@@ -106,6 +106,8 @@ local CombatService = {
 	-- inside the area when it was announced, `hit` took the blow (dodged = aimed - hit). Moving marks and channels
 	-- (no ground area at the announcement) do not fire.
 	TelegraphResolved = Signal.new(),
+	-- S155: (player, monster entity) after a player's basic attack hit a monster (not dodged); TutorialService
+	BasicHit = Signal.new(),
 }
 
 export type KillInfo = {
@@ -1754,6 +1756,9 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 		if result and not result.dodged and result.amount > 0 then
 			runThrough(player, target, params, delivery)
 			spark(player, target, params, result, delivery)
+		end
+		if result and not result.dodged and target.kind == "monster" then
+			CombatService.BasicHit:Fire(player, target)
 		end
 	end)
 end

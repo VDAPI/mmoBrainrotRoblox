@@ -5,7 +5,7 @@
 
 ## Stan
 
-S01–S115 i S117–S154 gotowe (ostatnia S154: transmogryfikacja: u kowala zakładka „Wygląd” nakłada na broń lub drugą
+S01–S115 i S117–S155 gotowe (ostatnia S155: samouczek z działaniem zamiast dymków S14: sześć kroków kończonych czynnością (ruch, przyjęcie zadania u kapitana, plecak, mikstura, atak podstawowy na potworze, umiejętność; `Logic/Tutorial`, `TutorialService`, `TutorialController`), wskazówka na żelazie przy prawdziwym elemencie HUD (PC: klawisze gracza, telefon: przyciski i strefa joysticka), „Pomiń samouczek” z potwierdzeniem, nagroda na 5. poziomie (tytuł „Pierwsze Kroki”, 3 Kamienie Powrotu i 10 Małych Mikstur Życia związane, bez EXP i złota, także po pominięciu), jeden lejek onboardingu (samouczek 1–6, fabuła 7–16, `level5` 17), `character.tutorial` bez migracji, admin `/tutorial`; wcześniej S154: transmogryfikacja: u kowala zakładka „Wygląd” nakłada na broń lub drugą
 rękę wygląd tego samego typu z kolekcji konta (`Logic/Transmog`, remote `TransmogApply`, pole `tm` tylko wygląd),
 kolekcja `account.transmog` rośnie przy wejściu przedmiotu do plecaka lub ekwipunku i jednorazowym skanie konta
 (`TransmogService`), 120 wyglądów progów i 1 rzadki wygląd z bossa, koszt `Config.Transmog` (złoto na krzywej ulepszania
@@ -404,6 +404,12 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **Samouczek z działaniem (S155):** wiki czeka na odświeżenie (właściciel 17.10): akapit o samouczku i nagrodzie na 5.
+  poziomie w poradniku dla nowych (liczby z `Data/Tutorial` przez eksporter), tytuł „Pierwsze Kroki” w danych wiki.
+  Pozycje wskazówki liczone z ramek HUD bez przeglądu w grze (PC i telefon w pionie i poziomie, strefa joysticka,
+  łuk przycisków umiejętności, kolejność z oknem nagrody za logowanie). Krok `skill` liczy każde udane rzucenie z paska,
+  także bez celu.
 
 - **Transmogryfikacja (S154):** wiki czeka na odświeżenie wiki (właściciel 17.10): rekord `Transmog` w
   `tools/WikiData` (koszt z `Config.Transmog` dla L 20 / 45 / 70 / 100 według rzadkości, liczba wyglądów na typ i z

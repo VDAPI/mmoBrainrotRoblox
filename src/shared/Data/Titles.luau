@@ -322,6 +322,13 @@ local list: { TitleDef } = {
 		color = "#E8C25A",
 		wiki = false,
 	},
+	-- S155: the tutorial reward at level 5 (Data/Tutorial.REWARD.title, a cosmetic with obtain.tutorial)
+	{
+		id = "firststeps",
+		nameKey = "title.firststeps",
+		req = { kind = "cosmetic", id = "title_firststeps" },
+		color = "#C9B48A",
+	},
 }
 
 -- S59: character.title when the player hid the title; nil = never chose, the main path title shows

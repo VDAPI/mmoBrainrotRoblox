@@ -122,6 +122,9 @@ return {
 		-- S152: the season pass pace (points per source, tier size, the daily monster limit, the growing cap, the catch-up,
 		-- grace days); the seasons themselves (dates, tiers, reward lists) and the lookups are not balance
 		{ path = "Data/Seasons", omit = { "SEASONS", "list", "KILL_SOURCES", "WEEK" } },
+		-- S155: the tutorial reward at level 5 (bound comfort items, no EXP, no gold); MOVE_STUDS / DONE_SECONDS are hint
+		-- timings, not balance
+		{ path = "Data/Tutorial", pick = { "REWARD", "REWARD_LEVEL" } },
 	} :: { ModuleEntry },
 	-- S134d: AutoPotion and AutoGrind (premium services with limits, like FullElixir / Lure)
 	CONFIG_KEYS = {
@@ -6081,6 +6084,12 @@ return {
 			{
 				session = "S154",
 				why = "new: item looks at the smith outside the pace model (a look, never power): gold ilvl x goldPerIlvl(ilvl) x 1.5 (the upgrade gold curve: 120 / 608 / 1470 / 3000 at L20 / 45 / 70 / 100, half of +1 on the weapon and below one reroll x1.8), essence by the rarity of the item that gets the look: Unique 2 dust, Heroic 1 shard, Legendary and Mythic 1 crystal, Common none (a sink small next to the band's dismantling); taking a look off is free, a boss look costs the same",
+			},
+		},
+		["Tutorial:*"] = {
+			{
+				session = "S155",
+				why = "new module: the tutorial reward at level 5 for every character made from S155 on (skipped or not): the title First Steps, 3 Stones of Return and 10 Small Health Potions, all bound; no EXP and no gold, so the pace of levels 1-20 is unchanged (balance1_20 without new entries). The stones are worth about one trip each, the potions one start pack (the arrival quest gives 5, Items.startingPotions 10): comfort, not power",
 			},
 		},
 	} :: { [string]: { Reason } },

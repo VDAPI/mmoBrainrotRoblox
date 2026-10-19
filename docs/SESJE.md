@@ -13097,3 +13097,56 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/UI/Components/ItemSlot.luau`, `src/client/UI/Screens/{Wardrobe,BlacksmithWindow/init}.luau`,
   `tests/{paywall,tooltip,uitheme}.spec.luau`, `tools/balance_reasons.luau`, `tools/balance_before.json`,
   `docs/{DESIGN,STATY,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### S155: lepsze pierwsze minuty (samouczek z działaniem)
+
+- **Zastany stan:** `GuideController` (S14: 9 dymków `guide.*` na sztywnych pozycjach 1920×1080, „Dalej” / „Pomiń”,
+  remote `GuideDone` → `character.guideDone`), `QuestService.TUTORIAL_STEPS = 10` (oddanie zadań fabuły 1–10 =
+  `Analytics.onboarding`), cele zadań `potion` / `loot` / `stats` / `learn` / `equip` / `upgrade` / `reach`,
+  `LoginRewardController` i `ReturningController` czekały na `guideDone`; osiągnięcia S151 bez „ukończ samouczek”
+  (nic nie podpięte).
+- **Kroki** (`Logic/Tutorial.STEPS`, każdy kończy czynność):
+
+| # | krok | kto widzi | kończy się | PC | telefon | kotwica |
+|---|---|---|---|---|---|---|
+| 1 | `move` | klient | 8 st. przejścia sterowanego (`Tutorial.walk`) | W A S D, kamera prawym | palec po lewej części ekranu | joystick (telefon) |
+| 2 | `quest` | serwer | przyjęcie zadania fabuły (`arrival`) | rozmowa ({interact}) | dotknij kapitana | tracker + strzałka do kapitana |
+| 3 | `backpack` | klient | okno plecaka otwarte | {key} (B) | przycisk torby | przycisk plecaka |
+| 4 | `potion` | serwer | `PotionService.Drank` (w tym kroku także przy pełnym HP) | {key} (Z) albo klik w plecaku | dotknij mikstury | pasek mikstur |
+| 5 | `attack` | serwer | atak podstawowy trafił potwora | {target} (Tab) albo klik | potwór + przycisk ataku | przycisk ataku; w mieście tracker i „Idź za strzałką zadania na Łąki” |
+| 6 | `skill` | serwer | udane rzucenie z paska | {key} (1) | okrągły przycisk obok ataku | pierwszy slot paska |
+| 7 | `done` | — | „Gotowe. Zadania poprowadzą Cię dalej.” 6 s albo dotknięcie | | | |
+
+  Kroki późniejsze liczą się z góry (`pending`), wcześniejsze są pomijane. Pomijanie w każdej chwili („Pomiń samouczek”
+  → „Na pewno?” + „Pomiń”).
+- **Lejek onboardingu** (`Tutorial.FUNNEL`, `LogOnboardingFunnelStepEvent`): 1 `move`, 2 `quest`, 3 `backpack`,
+  4 `potion`, 5 `attack`, 6 `skill`, 7–16 zadania fabuły `arrival`, `healer`, `smith`, `portal`, `firstHunt`, `gearUp`,
+  `wolves`, `wolfFangs`, `boars`, `herbs`, 17 `level5`; pominięcie `custom` `TutorialSkip` z numerem kroku.
+- **Nagroda na 5. poziomie** (`Data/Tutorial`, księga `Tutorial:*`): tytuł „Pierwsze Kroki” (`title_firststeps`,
+  `obtain.tutorial`, `Titles.firststeps`), 3 Kamienie Powrotu i 10 Małych Mikstur Życia związane; bez EXP i złota, także
+  po pominięciu; pełny plecak → poczta (`once`). Postacie sprzed S155 nic nie dostają.
+- **Serwer:** `TutorialService` (nowy: `Event`, `Skip`, `TryReward`, admin `Info` / `Reset` / `SetStep` / `Finish`),
+  remote'y `TutorialEvent` (tylko `move` / `backpack`) i `TutorialSkip`, sygnały `QuestService.MainAccepted`,
+  `CombatService.BasicHit`, `SkillService.Casted`; `QuestService` bierze numer lejka z `Tutorial.funnelStep`. Admin
+  `/tutorial info | reset | step <id> | done`.
+- **Klient:** `TutorialController` (nowy, zamiast `GuideController`), `UI/Screens/Hud/TutorialHint.luau` (na żelazie,
+  `UiWindows.SCREENS`), `UI/HudAnchors.luau` (kotwice z elementów HUD i pulsująca obwódka), toast nagrody, garderoba
+  „Nagroda samouczka”.
+- **Testy:** nowy `tests/tutorial.spec.luau` (kolejność, `advance`, `skip`, `clientAllowed`, teksty PC / telefon PL i EN,
+  `keyArgs` z mapą gracza, `FUNNEL`, `rewardDue`, nagroda bez EXP i złota, tytuł poza sprzedażą, opcje `/tutorial`),
+  `paywall.spec` 15, `premium.spec` (`obtain.tutorial`). `balance1_20.spec` bez nowych wpisów, `quest_budget check`
+  zielony, raport księgi bez „BRAK POWODU”.
+- **Poprawki po przeglądzie:** krok `potion` do zrobienia w mieście (mikstura przy pełnym HP w tym kroku,
+  `PotionService.AddFullDrink`); `move` nie liczy się z ustawienia postaci po wejściu (`Tutorial.walk`, `MAX_STEP`);
+  wskazówka czeka też na oczekujące okno nagrody za logowanie i list (`Pending`); nieudana poczta nagrody cofa
+  znacznik na właściwej postaci. Testy `walk` / `moved` / `wantsPotion`. Pliki: `PotionService.luau`, `Data/Tutorial`.
+- wiki do odświeżenia (właściciel 17.10): akapit o samouczku i nagrodzie w poradniku dla nowych pominięty.
+- **Pliki:** `src/shared/Data/Tutorial.luau`, `src/shared/Logic/Tutorial.luau`, `src/server/Services/TutorialService.luau`,
+  `src/client/Controllers/TutorialController.luau`, `src/client/UI/HudAnchors.luau`,
+  `src/client/UI/Screens/Hud/TutorialHint.luau`, `tests/tutorial.spec.luau` (nowe), `GuideController.luau` (usunięty),
+  `src/shared/Types.luau`, `src/shared/Logic/{AccountSchema,CharacterFactory}.luau`, `src/shared/Net/Definitions.luau`,
+  `src/shared/Data/{AdminCommands,Cosmetics,Titles,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{QuestService,CombatService,SkillService,SettingsService,AdminService,PotionService}.luau`,
+  `src/server/Admin/Character.luau`, `src/client/Controllers/{LoginRewardController,ReturningController}.luau`,
+  `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
+  `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.

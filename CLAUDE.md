@@ -242,6 +242,8 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Wygląd przedmiotu (transmog)** (S154): klucz wyglądu z `Transmog.lookOf(def)` (model progu z `ArtTiers` albo własny
   model bossa), wygląd dla typu tylko z wpisem w `WeaponLooks`; nowy wygląd z bossa = model w `WeaponLooks.assets` pod id
   przedmiotu.
+- **Krok samouczka / lejek onboardingu** (S155): krok w `Logic/Tutorial.STEPS` (warunek `server` albo `client` z białej
+  listy) + `tutorial.<id>.pc/.touch` (PL, EN); numer kroku lejka tylko z `Tutorial.FUNNEL`.
 - **Boss świata** (S149): wpis w `Data/Bosses` z `world = true` + `Data/WorldBoss` (terminy, miejsce, udział, nagroda);
   serwis `WorldBossService`, udział przez `Logic/Contribution`.
 - **Osiągnięcie** (S151): wpis w `Data/Achievements` (licznik z `COUNTERS`, `goal`, nagroda) + `ach.<id>.name/.desc` (PL,

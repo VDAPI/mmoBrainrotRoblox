@@ -44,6 +44,8 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local Signal = require(ReplicatedStorage.Packages.Signal)
+
 local Banner = require(script.Parent.Parent.Skills.Banner)
 local Burn = require(Shared.Logic.Burn)
 local Channel = require(Shared.Logic.Channel)
@@ -85,6 +87,8 @@ local SkillService = {
 		"LevelService",
 		"MountService", -- S96: a skill interrupts mounting and dismounts
 	},
+	-- S155: (player, skillId) after a skill cast from the bar (the CastSkill remote) succeeded; TutorialService
+	Casted = Signal.new(),
 }
 
 local FX_RADIUS = 120
@@ -1358,7 +1362,13 @@ function SkillService.Start()
 	Net.Handle("PutOnBar", function(player: Player, skillId: string, slot: number?): (boolean, string?)
 		return SkillService.PutOnBar(player, skillId, slot)
 	end)
-	Net.Handle("CastSkill", cast)
+	Net.Handle("CastSkill", function(player: Player, skillId: string, targetId: string?, aim: any): (boolean, string?)
+		local ok, err = cast(player, skillId, targetId, aim)
+		if ok then
+			SkillService.Casted:Fire(player, skillId)
+		end
+		return ok, err
+	end)
 	-- S56: the one-time "character progression has changed" notice was seen.
 	Net.On("AckRework", function(player: Player)
 		if character(player) then

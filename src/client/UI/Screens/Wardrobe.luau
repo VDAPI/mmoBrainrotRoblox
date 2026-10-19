@@ -62,6 +62,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
+local TutorialData = require(ReplicatedStorage.Shared.Data.Tutorial)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
@@ -184,6 +185,9 @@ local function obtainText(use: Fusion.Use, def: Cosmetics.Def): string
 	elseif obtain and obtain.achievement then
 		-- S151: the reward of an achievement
 		return Text.get(use, "wardrobe.obtain.achievement", { name = Text.get(use, `ach.{obtain.achievement}.name`) })
+	elseif obtain and obtain.tutorial then
+		-- S155: the tutorial reward of a new character at level 5
+		return Text.get(use, "wardrobe.obtain.tutorial", { level = TutorialData.REWARD_LEVEL })
 	elseif obtain and obtain.season then
 		-- S152: a reward of a season pass (kept for good)
 		local season = Seasons.get(obtain.season)

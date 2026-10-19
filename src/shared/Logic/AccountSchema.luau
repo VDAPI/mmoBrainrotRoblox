@@ -192,7 +192,10 @@ function AccountSchema.characterTemplate(): CharacterData
 		-- S130: the Champion's Tournament (Logic/Tourney); no migration, reconcile adds it to older characters
 		tourney = { played = 0, won = 0, best = 0 },
 		auctions = {},
-		guideDone = true, -- existing characters skip the guide; CharacterFactory sets false for new ones
+		guideDone = true, -- S14; S155: legacy, read by nothing (no migration)
+		-- S155: the hands-on tutorial (Logic/Tutorial); reconcile gives older characters a finished one with the reward
+		-- taken, CharacterFactory starts new ones at step 1 (Tutorial.newState)
+		tutorial = { step = 1, done = true, skipped = false, reward = true },
 		playerMenuHint = false, -- S133: the one-time "Actions" hint (reconcile: old characters see it once too)
 		mailSent = { day = 0, n = 0 }, -- S133: letters to players today (Logic/Social.countSent)
 		pvpEnabled = false,

@@ -1170,6 +1170,14 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   NPC fabuły w krainach (Radomir, duch Oswina, Jorund, Ragna; Brokk, Ghasha, Kaspar; Sigrun, duch Halgrima), kotwice z
   rekwizytami i efektami, pora roku w mieście z postępu fabuły. Postęp zapisany jako ostatni oddany quest
   (`quests.mainLast`), więc nowe questy wstawia się w dowolne miejsce. Przyjęcie od poziomu questa − 2.
+- **Samouczek (S155)**: nowa postać dostaje krótki samouczek z działaniem równolegle z pierwszymi zadaniami fabuły (te
+  bez zmian): ruch, rozmowa z kapitanem i przyjęcie pierwszego zadania, otwarcie plecaka, mikstura (w tym kroku pije się
+  ją także przy pełnym HP), atak potwora (w
+  mieście „idź za strzałką zadania na Łąki”), umiejętność, na końcu „Gotowe” na 6 s. Każdy krok kończy czynność, nie
+  „Dalej”; zrobione wcześniej kroki liczą się z góry. Jedna wskazówka na żelazie przy prawdziwym elemencie HUD (PC:
+  klawisze gracza, telefon: przyciski), do pominięcia w każdej chwili („Pomiń samouczek” → „Na pewno?”). Na 5. poziomie
+  każda nowa postać (także po pominięciu) dostaje tytuł „Pierwsze Kroki”, 3 Kamienie Powrotu i 10 Małych Mikstur Życia,
+  związane, bez EXP i złota (`Data/Tutorial`). Lejek onboardingu: kroki samouczka, zadania fabuły 1–10, 5. poziom.
 - **Zlecenia łowieckie (S99)**: jedno na każdy poziom 1–99 (`Data/Quests/Contracts`, generowane z łowisk): ubij n
   potworów na łowisku otwartej krainy pasującym do poziomu (n 10 → 30 na 1–20, 30 → 60 na 20–99, rotacja łowisk).
   Nagroda 12% EXP poziomu (od 4. poziomu; 1–3 tylko złoto, S109) i złoto 20 + 4·L, co 10. zlecenie błogosławieństwo

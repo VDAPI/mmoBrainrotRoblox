@@ -1,7 +1,7 @@
 --!strict
 -- Help for returning players, client side (S153, docs/DESIGN.md §11): the "What has changed" window ("whatsnew"). It
 -- opens on its own once when the character is in the world and Logic/Returning.letter finds entries newer than
--- account.returning.seen: on a world server, after the new character guide, with no cutscene, modal or window open
+-- account.returning.seen: on a world server (S155: no S14 guide to wait for any more), with no cutscene, modal or window open
 -- (so after the login reward window; it waits until the player closes it) and with the world loaded (as
 -- CutsceneController's idle), ENTER_DELAY s after entering. The player closing it (the button, the X, Esc, another
 -- window) sends ChangelogSeen (the newest id shown); a cutscene's CloseAll does not, so the letter comes back after
@@ -54,9 +54,6 @@ local function wanted(): boolean
 	if State.Get({ "session", "phase" }) ~= "playing" or not ServerModeView.isWorld() then
 		return false
 	end
-	if State.Get({ "character", "guideDone" }) == false then
-		return false
-	end
 	return #letterNow() > 0
 end
 
@@ -105,6 +102,11 @@ local function markRead(entries: { Changelog.Entry })
 	end
 end
 
+-- S155: whether the window waits to open on its own (the tutorial hint waits for it).
+function ReturningController.Pending(): boolean
+	return pending
+end
+
 function ReturningController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	CutsceneController = registry.Get("CutsceneController")
@@ -132,7 +134,6 @@ end
 
 function ReturningController.Start()
 	scope:Observer(State.Value({ "session", "phase" })):onBind(check)
-	scope:Observer(State.Value({ "character", "guideDone" })):onBind(check)
 	scope:Observer(State.Value({ "account", "returning" })):onBind(function()
 		local raw = State.Get({ "account", "returning" })
 		if raw ~= nil then

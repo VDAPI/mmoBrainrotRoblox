@@ -2003,4 +2003,32 @@ T.describe("Paywall S154: transmog", function()
 	end)
 end)
 
+-- S155 (docs/DESIGN.md §20 "Samouczek"): the tutorial reward at level 5. Items it may give, by id -> why (bound, no EXP,
+-- no gold); a new item here is the owner's decision.
+local ALLOWED_TUTORIAL_ITEMS: { [string]: string } = {
+	stone_return = "travel: teleport to the city, bound",
+	potion_hp_1 = "the starting potion of the arrival quest, bound",
+}
+
+T.describe("Paywall S155: the tutorial reward", function()
+	T.it("15. the tutorial title is never sold and the items are bound comfort (S155)", function()
+		local TutorialData = require("../src/shared/Data/Tutorial")
+		local def = Cosmetics.get(TutorialData.REWARD.title) :: any
+		T.expect(def ~= nil).toBe(true)
+		T.expect(def.price).toBe(0)
+		T.expect(def.weekly == true).toBe(false)
+		fieldsWithin(def.obtain :: any, { tutorial = true }, `cosmetics.{def.id}.obtain`)
+		T.expect({ Premium.canBuyCosmetic(def.id, {}, 999999) }).toEqual({ false, "premium.error.notForSale" })
+		for _, entry in TutorialData.REWARD.items do
+			T.expect({ entry.id, ALLOWED_TUTORIAL_ITEMS[entry.id] ~= nil }).toEqual({ entry.id, true })
+		end
+		-- nothing in the Dragon Shop sells the title
+		for _, list in { Products.shop, Products.passes, Products.starterPacks, Products.mounts, Products.shardPacks } do
+			for _, e in list :: { any } do
+				T.expect({ e.key, e.itemId == def.id or e.key == def.id }).toEqual({ e.key, false })
+			end
+		end
+	end)
+end)
+
 return nil

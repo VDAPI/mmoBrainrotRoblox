@@ -19,6 +19,7 @@ local LuckData = require(Shared.Data.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
 local Time = require(Shared.Logic.Time)
 local TitleData = require(Shared.Data.Titles)
+local Tutorial = require(Shared.Logic.Tutorial)
 local UseBlocks = require(Shared.Logic.UseBlocks)
 
 local UseGuards = require(script.Parent.Parent.UseGuards)
@@ -706,6 +707,50 @@ commands.returning = function(player, args)
 	else
 		reply(player, "admin.usage.returning")
 	end
+end
+
+-- S155: the caller's hands-on tutorial (character.tutorial, Logic/Tutorial).
+-- info | reset (step 1, the reward waits again) | step <id> | done
+commands.tutorial = function(player, args)
+	local TutorialService = Context.services.TutorialService
+	local action = args[1]
+	withCharacter(player, function()
+		if action == "info" then
+			local state = TutorialService.Info(player)
+			if not state then
+				reply(player, "admin.usage.tutorial")
+				return
+			end
+			local pending = {}
+			for id in state.pending or {} do
+				table.insert(pending, id)
+			end
+			table.sort(pending)
+			local current = Tutorial.STEPS[state.step]
+			reply(player, "admin.tutorial.info", {
+				step = state.step,
+				id = if current then current.id else "-",
+				done = tostring(state.done),
+				skipped = tostring(state.skipped),
+				reward = tostring(state.reward),
+				pending = if #pending > 0 then table.concat(pending, ", ") else "-",
+			})
+		elseif action == "reset" then
+			TutorialService.Reset(player)
+			reply(player, "admin.tutorial.reset")
+		elseif action == "step" then
+			if TutorialService.SetStep(player, args[2] or "") then
+				reply(player, "admin.tutorial.step", { id = args[2] })
+			else
+				reply(player, "admin.usage.tutorial")
+			end
+		elseif action == "done" then
+			TutorialService.Finish(player)
+			reply(player, "admin.tutorial.done")
+		else
+			reply(player, "admin.usage.tutorial")
+		end
+	end)
 end
 
 return commands

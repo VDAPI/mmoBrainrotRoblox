@@ -70,6 +70,7 @@ export type Obtain = {
 	-- S152: a reward of this season pass (Data/Seasons rewards; free or premium track), never sold, never in the offer
 	-- of the week, kept for good after the season
 	season: string?,
+	tutorial: boolean?, -- S155: the tutorial reward at level 5 (Data/Tutorial.REWARD.title), never sold
 }
 
 -- S123 looks of the new kinds (all colours hex).
@@ -623,6 +624,10 @@ add("aura_s1_winterheart", "aura", 0, "❄", "#CFE8FF", {
 	obtain = { season = "s1" },
 	wiki = false,
 })
+
+-- S155 (docs/DESIGN.md §20 "Samouczek"): the title of the tutorial reward at level 5 (Data/Tutorial.REWARD), never sold
+-- (price 0, obtain.tutorial, never in the offer of the week); on the wiki with the next bulk data refresh.
+add("title_firststeps", "title", 0, "✎", "#C9B48A", { obtain = { tutorial = true }, title = "firststeps" })
 
 -- S132 (DESIGN-17 §9a): class outfits. Each replaces the default outfit of its class (Data/ClassLooks): per class
 -- three for Dragon Shards, one for the end of the story's chapter II and one for defeating Azgor with that class. All

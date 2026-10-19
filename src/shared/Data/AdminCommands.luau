@@ -180,6 +180,12 @@ cmd("character", "returning", {
 	enum("action", { "info", "grant", "clear", "away", "letter" }),
 	int("value", 0, 31536000, true),
 })
+-- S155: the caller's hands-on tutorial (character.tutorial): state, back to step 1 with the reward waiting, jump to a
+-- step, finish it
+cmd("character", "tutorial", {
+	enum("action", { "info", "reset", "step", "done" }),
+	enum("step", { "move", "quest", "backpack", "potion", "attack", "skill", "done" }, true),
+})
 cmd("combat", "skillpreview", { str("id") })
 cmd("combat", "dummy", { int("level", 1, MAX_LEVEL, true) })
 -- S29: every kind of damage number in turn (look check).

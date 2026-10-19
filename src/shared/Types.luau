@@ -89,6 +89,16 @@ export type MountState = { owned: { [string]: { lvl: number } }, active: string?
 -- S125: the character's weekly EXP (Logic/Leaderboard.addWeekly).
 export type ExpWeek = { week: number, exp: number, b: number }
 
+-- S155: the hands-on tutorial (Logic/Tutorial): the current step (1-based), finished, skipped, the level reward taken,
+-- and the later steps already done (counted when their turn comes).
+export type TutorialState = {
+	step: number,
+	done: boolean,
+	skipped: boolean,
+	reward: boolean,
+	pending: { [string]: boolean }?,
+}
+
 -- S129: the character's Blood Moon (Logic/BloodMoon): the occurrence id ("" = none), points, kills per victim key
 -- ("<userId>_<slot>"), points per region, the time of the last point (ranking tie-break) and whether it was settled.
 export type BloodMoonState = {
@@ -229,7 +239,10 @@ export type CharacterData = {
 	-- S130: the Champion's Tournament (no migration, reconcile)
 	tourney: TourneyState,
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
-	guideDone: boolean, -- S14: the HUD guide was shown (or skipped)
+	guideDone: boolean, -- S14: the HUD guide was shown (or skipped). S155: legacy, read by nothing
+	-- S155: the hands-on tutorial (Logic/Tutorial.State: step, done, skipped, reward, pending?); characters made before
+	-- S155 have done = true and reward = true (AccountSchema), CharacterFactory starts new ones at step 1
+	tutorial: TutorialState,
 	playerMenuHint: boolean, -- S133: the one-time "Actions" hint after selecting another player was shown
 	mailSent: { day: number, n: number }, -- S133: letters to players sent on UTC day `day` (Logic/Social)
 	title: string?, -- S16 chosen title id; S59: nil = never chose (the main path title shows), Data/Titles.NONE = hidden

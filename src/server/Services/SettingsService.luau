@@ -162,13 +162,6 @@ function SettingsService.Start()
 		PlayerStateService.Set(player, { "account", "settings", name }, value)
 	end)
 
-	-- The HUD guide of a new character was finished or skipped.
-	Net.On("GuideDone", function(player: Player)
-		if PlayerStateService.GetCharacter(player) then
-			PlayerStateService.Set(player, { "character", "guideDone" }, true)
-		end
-	end)
-
 	-- S17: rebinding. action "*" restores every default; key nil restores one. Keys in use swap.
 	Net.Handle("SetKeybind", function(player: Player, action: string, key: string?): (boolean, string?)
 		if not PlayerStateService.HasState(player) then
