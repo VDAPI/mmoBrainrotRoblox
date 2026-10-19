@@ -5930,3 +5930,5 @@
 - **S155** Postacie sprzed S155: szablon `tutorial` z `done = true, reward = true` (reconcile), bez samouczka i nagrody.
 - **S155** Osiągnięcia S151 nie mają „ukończ samouczek” („Pierwsze Kroki” to `level10`): nic nie podpięte.
 - **S155** Wiki pominięta (właściciel 17.10): tytuł i kosmetyk bez `wiki = false`, wejdą przy hurtowym odświeżeniu.
+
+- **Właściciel 2026-10-19 (pytania S149–S153)**: PvP przy bossie świata zostaje wyłączone; nagroda za bossa świata od 70. poziomu (`Bosses.hrimvald.minLevel` 80 → 70, Lodowe Szczyty od 70); kierunki klas zostają na wiki; przepustka zostaje (800 odłamków, 1 h dziennie kończy całość); premia za powrót zostaje od postaci 10. poziomu.

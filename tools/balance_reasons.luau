@@ -6074,6 +6074,12 @@ return {
 				why = "new: the returning bonus outside the pace model (like the login reward S100): after 7 days away, once per 14 days, an account with a character of level 10+ gets 3600 s of play in the world with +100 expBonus points (added to Fortune), the letter shows at most 6 changelog entries. Model (Balance.targetsS153): the bonus = 1 h of grinding EXP, the mean of the classes 0.5-0.8 of a level at 45 / 70 / 99 (asserted <= 0.8), about 2 levels at 10 / 20 (a level takes under an hour there; report)",
 			},
 		},
+		["Bosses:byId.hrimvald.minLevel"] = {
+			{
+				session = "S154",
+				why = "owner 2026-10-18: world boss reward from level 70 (was 80; frostpeak opens at 70)",
+			},
+		},
 		["Bosses:byId.hrimvald*"] = {
 			{
 				session = "S149",
