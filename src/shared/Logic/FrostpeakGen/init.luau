@@ -32,6 +32,7 @@ local Mouths = require("@self/Mouths")
 local Pass = require("@self/Pass")
 local Props = require("@self/Props")
 local Rng = require("./Rng")
+local Scenery = require("@self/Scenery")
 local Shapes = require("../Data/Terrain")
 local SideCamps = require("@self/SideCamps")
 local Slopes = require("@self/Slopes")
@@ -332,6 +333,8 @@ function FrostpeakGen.all(): { Build }
 	end
 	-- W20: the map plan's secrets, after the trees and without clearings (nothing earlier moves)
 	Details.all(e, out)
+	-- W19-20: the plan's warmth at the respawn points, the saddle's cairn and the pilgrims' trail, the same way
+	Scenery.all(e, out)
 	treeCache = trees
 	cache = out
 	return out

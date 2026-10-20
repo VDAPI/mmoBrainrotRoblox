@@ -364,7 +364,9 @@ local shape: Types.Shape = {
 		{ rect = { -800, 440, -200, 800 }, blend = 80, dir = 80, strength = 0.5, gust = 0.9 }, -- gusts in the spires
 		{ rect = { -200, -240, 330, 240 }, blend = 80, dir = 90, strength = 0.75, gust = 0.4 }, -- funnel of the pass
 		{ rect = { -60, 400, 420, 800 }, blend = 80, dir = 100, strength = 0.45, gust = 0.3 },
-		{ rect = { 0, -800, 480, -330 }, blend = 80, dir = 95, strength = 0.8, gust = 0.5 }, -- the open tundra
+		-- the open tundra; W19-20 (szczyty.md 1.7 d): stronger gusts drive the ground drifts harder (gust only moves the
+		-- client's weather, never the terrain or the nodes)
+		{ rect = { 0, -800, 480, -330 }, blend = 80, dir = 95, strength = 0.8, gust = 0.8 },
 		{ rect = { 400, -300, 800, 330 }, blend = 80, dir = 100, strength = 0.45, gust = 0.3 },
 		{ rect = { 440, 340, 800, 800 }, blend = 80, dir = 100, strength = 0.5, gust = 0.4 },
 		{ rect = { 500, -800, 800, -330 }, blend = 80, dir = 110, strength = 1, gust = 0.7 }, -- the horn's blizzard

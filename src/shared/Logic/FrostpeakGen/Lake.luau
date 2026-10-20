@@ -57,6 +57,9 @@ local function falls(env: Env.Env, out: { Build })
 	local bp = b.bp
 	local rng = bp.rng
 	local foot = Kit.gy(ctx, b, 0, 8)
+	-- W19-20 (szczyty.md 1.2): the cascade is a kit slot (Data/Kit "landmark:frozenFalls", the Tripo model); the pool,
+	-- the ice blocks and the dark water at its foot stay
+	bp:beginKit("landmark:frozenFalls", 0, foot, -10, 1, "shell")
 	for k = -6, 6 do
 		local lx = k * 1.9 + rng:float(-0.4, 0.4)
 		local lz = -10
@@ -82,6 +85,7 @@ local function falls(env: Env.Env, out: { Build })
 		)
 		Props.icicles(bp, lx, foot + h * rng:float(0.5, 0.9), lz + 1.6, 2, 3, 4)
 	end
+	bp:endKit()
 	-- cracked ice and dark water at the foot, a pile of ice blocks
 	for _ = 1, 8 do
 		local lx, lz = rng:float(-10, 10), rng:float(-6, 8)

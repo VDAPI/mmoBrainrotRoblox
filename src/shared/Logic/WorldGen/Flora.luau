@@ -458,6 +458,7 @@ end
 local SNOW: Kit.Swatch = { c = "#EEF3F7", m = "Snow" }
 local FROST: Kit.Swatch = { c = "#C9D6DE", m = "Snow" }
 local ICE: Kit.Swatch = { c = "#BFE6F7", m = "Ice" }
+local SPIKE: Kit.Swatch = { c = "#A8D8F0", m = "Ice" } -- W19-20 (szczyty.md 1.8): the Frost Peaks' ice spikes
 
 -- Snowy spruce: a straight trunk, dark green tiers narrowing to the top, each under a white cap of snow. The shell
 -- is the trunk and one tall crown lump; tiers, caps and icicles come on the client.
@@ -571,8 +572,9 @@ Flora.species.iceSpike = function(bp, x, y, z, s, big, _ctx)
 		local tilt = if i == 1 then rng:float(-6, 6) else rng:float(12, 26)
 		bp:push(x + math.cos(a) * d, y - 0.6, z + math.sin(a) * d, 0, math.deg(-a), tilt)
 		local lod: Blueprint.Lod = if i == 1 and big then "shell" else "detail"
-		bp:add("wedge", w, h, w, 0, h / 2, -w / 4, 0, 0, 0, o(ICE, lod, { col = i == 1 and big, q = false, t = 0.15 }))
-		bp:add("wedge", w, h, w, 0, h / 2, w / 4, 0, 180, 0, o(ICE, "detail", { col = false, q = false, t = 0.15 }))
+		local shard = o(SPIKE, lod, { col = i == 1 and big, q = false, t = 0.15 })
+		bp:add("wedge", w, h, w, 0, h / 2, -w / 4, 0, 0, 0, shard)
+		bp:add("wedge", w, h, w, 0, h / 2, w / 4, 0, 180, 0, o(SPIKE, "detail", { col = false, q = false, t = 0.15 }))
 		bp:pop()
 	end
 	bp:add("ball", 5 * s, 1.4 * s, 5 * s, x, y, z, 0, 0, 0, o(SNOW, "detail", { col = false }))

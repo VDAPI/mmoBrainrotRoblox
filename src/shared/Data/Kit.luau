@@ -228,6 +228,13 @@ Kit.slots = {
 	["landmark:caveMushrooms"] = { fit = "height", size = 4, default = { v("cave_landmark_02", 1, 0.9, 1.2) } },
 	-- W13: the burnt post mill on Crow Field; its top over the saddle of the Wolf Hills (rise 9 + 34 >= 41, laki.md Z2)
 	["landmark:mill"] = { fit = "height", size = 34, grass = { fixed("grass_landmark_01", 0) } },
+	-- W19-20 (szczyty.md 1.2, 1.8): the Frost Peaks' Tripo landmarks to come (the generator's pieces until the models
+	-- are in Assets.Kit.snow): the intact colossus of the Giants' Gate, the Frozen Falls, the Ice Watch's corner towers
+	-- and the Harpy Queen's nest
+	["landmark:giantColossus"] = { fit = "height", size = 24.5, snow = { fixed("snow_landmark_04", 0) } },
+	["landmark:frozenFalls"] = { fit = "height", size = 39, snow = { fixed("snow_landmark_01", 0) } },
+	["landmark:watchTower"] = { fit = "height", size = 34, snow = { fixed("snow_landmark_02", 0) } },
+	["landmark:harpyNest"] = { fit = "width", size = 14, snow = { fixed("snow_nest_01", 0) } },
 } :: { [string]: Entry }
 
 return Kit

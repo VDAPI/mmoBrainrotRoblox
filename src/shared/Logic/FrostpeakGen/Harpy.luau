@@ -64,7 +64,10 @@ local function queen(env: Env.Env, out: { Build })
 	local top = env.T.height(spire.x, spire.z)
 	local b = Kit.buildAt("harpyQueen", "landmark", spire.x, top, spire.z, s.rot)
 	local bp = b.bp
+	-- W19-20 (szczyty.md 1.2): the great nest is a kit slot (Data/Kit "landmark:harpyNest", the Tripo model)
+	bp:beginKit("landmark:harpyNest", 0, -0.6, 0, 1.6, "shell")
 	nest(bp, 0, -0.6, 0, 1.6, true)
+	bp:endKit()
 	-- guano streaks down the walls
 	for k = 0, 3 do
 		local a = k * 1.6

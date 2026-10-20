@@ -68,6 +68,8 @@ local function walls(env: Env.Env, out: { Build })
 	for i, c in { { -1, -1 }, { 1, -1 }, { 1, 1 }, { -1, 1 } } do
 		local b = Kit.buildAt(`IceWatchTower_{i}`, "wall", cx + c[1] * HALF, base, cz + c[2] * HALF, 0)
 		local bp = b.bp
+		-- W19-20 (szczyty.md 1.2): each tower is a kit slot (Data/Kit "landmark:watchTower", the Tripo model)
+		bp:beginKit("landmark:watchTower", 0, -2, 0, 1, "shell")
 		bp:add(
 			"cyl",
 			WALL_H + 8,
@@ -89,6 +91,7 @@ local function walls(env: Env.Env, out: { Build })
 			loophole(bp, math.cos(a) * 5.6, WALL_H + 2, math.sin(a) * 5.6, math.deg(-a) + 90)
 		end
 		Props.banner(bp, 0, WALL_H + 12, 0, 6, Props.orderDark, Props.orderPale, true)
+		bp:endKit()
 		table.insert(out, b)
 	end
 	Env.clear(env, cx, cz, HALF + 14)

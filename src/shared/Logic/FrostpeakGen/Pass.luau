@@ -26,7 +26,16 @@ local function gate(env: Env.Env, out: { Build })
 		local x, z = s.x, s.z + lz
 		Env.clear(env, x, z, 22)
 		local b = Kit.build(ctx, if i == 1 then "giantsGate" else "GiantsGateSouth", "landmark", x, z, 90)
-		Props.giantStatue(b.bp, 0, Kit.gy(ctx, b, -6, 0) - 1.5, 0, 1.8, 0, i == 2)
+		local foot = Kit.gy(ctx, b, -6, 0) - 1.5
+		-- W19-20 (szczyty.md 1.2): the intact colossus is a kit slot (Data/Kit "landmark:giantColossus", the Tripo
+		-- model); the headless one keeps the generator's statue
+		if i == 1 then
+			b.bp:beginKit("landmark:giantColossus", 0, foot, 0, 1.8, "shell")
+		end
+		Props.giantStatue(b.bp, 0, foot, 0, 1.8, 0, i == 2)
+		if i == 1 then
+			b.bp:endKit()
+		end
 		table.insert(out, b)
 	end
 	-- the fallen head by the road

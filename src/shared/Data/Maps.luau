@@ -200,7 +200,9 @@ local LIGHT = {
 		tint = "#D0E2FF",
 		saturation = -0.08,
 	}),
-	-- W01 (Studio): a crisp cold morning: blue ambient for blue shadows on the snow, thin haze (it was white milk)
+	-- W01 (Studio): a crisp cold morning: blue ambient for blue shadows on the snow, thin haze (it was white milk);
+	-- W19-20 (szczyty.md 1.7 b): thinner still (density 0.34 -> 0.30, haze 1 -> 0.8) so the glacier and the horn read
+	-- from the far end of the main road
 	frostpeak = lighting({
 		clockTime = 11,
 		brightness = 2.3,
@@ -208,7 +210,7 @@ local LIGHT = {
 		outdoorAmbient = "#8296B8",
 		fogColor = "#D2E4F4",
 		fogEnd = 600,
-		atmosphere = { density = 0.34, haze = 1, glare = 0.6, color = "#D2E4F4", decay = "#6C8AAA" },
+		atmosphere = { density = 0.3, haze = 0.8, glare = 0.6, color = "#D2E4F4", decay = "#6C8AAA" },
 		tint = "#E6F0FF",
 		saturation = 0.02,
 	}),
