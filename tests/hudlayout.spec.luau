@@ -1,0 +1,38 @@
+--!strict
+-- S156: the player's HUD layout (Logic/HudLayout): what a client may save and where a moved element lands.
+
+local HudLayout = require("../src/shared/Logic/HudLayout")
+local T = require("./Test")
+
+T.describe("HUD layout (S156)", function()
+	T.it("accepts known elements with fractions and sizes in range", function()
+		T.expect(HudLayout.valid({})).toBe(true)
+		T.expect(HudLayout.valid({ questTracker = { x = 0.5, y = 0.2 } })).toBe(true)
+		T.expect(HudLayout.valid({ questTracker = { x = 0.5, y = 0.2, w = 300, h = 400 } })).toBe(true)
+	end)
+	T.it("refuses unknown elements, fields and values out of range", function()
+		T.expect(HudLayout.valid({ minimap = { x = 0, y = 0 } })).toBe(false)
+		T.expect(HudLayout.valid({ questTracker = { x = 1.5, y = 0 } })).toBe(false)
+		T.expect(HudLayout.valid({ questTracker = { x = 0 / 0, y = 0 } })).toBe(false)
+		T.expect(HudLayout.valid({ questTracker = { x = 0, y = 0, w = 10, h = 400 } })).toBe(false)
+		T.expect(HudLayout.valid({ questTracker = { x = 0, y = 0, w = 300 } })).toBe(false)
+		T.expect(HudLayout.valid({ questTracker = { x = 0, y = 0, z = 1 } })).toBe(false)
+		T.expect(HudLayout.valid("x")).toBe(false)
+	end)
+	T.it("keeps a dragged element on the screen", function()
+		local x, y = HudLayout.place({ x = 1, y = 1 }, 300, 1000, 800)
+		T.expect(x).toBe(1000 - HudLayout.KEEP)
+		T.expect(y).toBe(800 - HudLayout.KEEP)
+		x, y = HudLayout.place({ x = 0, y = 0 }, 300, 1000, 800)
+		T.expect(x).toBe(0)
+		T.expect(y).toBe(0)
+	end)
+	T.it("saves fractions and whole sizes, and replaces one element", function()
+		local e = HudLayout.entryAt(250, 200, 1000, 800, 300.4, 420.6)
+		T.expect(e).toEqual({ x = 0.25, y = 0.25, w = 300, h = 421 })
+		T.expect(HudLayout.valid(HudLayout.with({ junk = 1 }, "questTracker", e))).toBe(true)
+		T.expect(HudLayout.with({ questTracker = e }, "questTracker", nil)).toEqual({})
+	end)
+end)
+
+return nil

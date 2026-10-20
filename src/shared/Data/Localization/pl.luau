@@ -84,6 +84,7 @@ return {
 
 	-- Errors (server answers carry these keys)
 	["error.badRequest"] = "Nieprawidłowe żądanie.",
+	["combat.levelLock"] = "Masz o {gap}+ poziomów za dużo na tego przeciwnika: zostaw go graczom jego poziomu.",
 	["error.busy"] = "Poczekaj, poprzednia akcja jeszcze trwa.",
 	["error.confirmMismatch"] = "Wpisana nazwa się nie zgadza.",
 	["error.internal"] = "Coś poszło nie tak. Spróbuj ponownie.",
@@ -2569,6 +2570,7 @@ return {
 	["quest.obj.talkClassVendor"] = "Porozmawiaj ze sprzedawcą swojej klasy",
 	["town.sign.donzon"] = "Zbrojmistrz Zakonu",
 	["town.sign.loza"] = "Loża Łowców",
+	["town.sign.arena"] = "Arena", -- W28: the Ristalle gate signs
 	["town.sign.wieza"] = "Wieża Magów",
 	["shop.requiresLevel"] = "Wymaga poziomu {level}",
 	-- FIX 2026-10-14: groups of the Buy grid (Logic/ShopGroups) and the buy bar hint
@@ -8272,6 +8274,18 @@ return {
 	["arena.hof.bracket"] = "Poziomy {min}–{max}",
 	["leaderboard.board.arena3"] = "Arena: rating 3 na 3",
 	["leaderboard.tab.arena3"] = "Arena 3 na 3",
+	["menu.hudLayout"] = "Układ HUD (zadania przesuniesz za ⠿, rozmiar zmienisz za ◢)",
+	["menu.hudLayout.reset"] = "Przywróć",
+	["leaderboard.tab.playtime"] = "Czas w grze",
+	["leaderboard.board.playtime"] = "Czas w grze",
+	["leaderboard.podium.level"] = "Poziom {level}",
+	["leaderboard.podium.rating"] = "Rating {rating}",
+	["leaderboard.podium.exp"] = "{exp} EXP",
+	["leaderboard.col.time"] = "Czas",
+	["leaderboard.time.m"] = "{m} min",
+	["leaderboard.time.hm"] = "{h} godz. {m} min",
+	["leaderboard.time.you"] = "Twoje miejsce: {rank} · w świecie {time}",
+	["leaderboard.time.outside"] = "Spędziłeś w świecie {time} · poza czołówką",
 	["title.arena_bronze"] = "Gladiator Brązu {season}",
 	["title.arena_silver"] = "Gladiator Srebra {season}",
 	["title.arena_gold"] = "Gladiator Złota {season}",
