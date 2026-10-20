@@ -16,6 +16,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
 local GuidePointer = require(ReplicatedStorage.Shared.Logic.GuidePointer)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local MapSketch = require(script.Parent.Parent.UI.MapSketch)
@@ -346,7 +347,9 @@ local function render()
 
 	-- the chevrons on the ground
 	local phase = (now * SCROLL) % 1
-	local spots = GuidePointer.chevrons(distance, FIRST, SPACING, CHEVRONS, phase)
+	-- W29: fewer chevrons (and ground rays) at a low graphics level
+	local count = math.min(CHEVRONS, GraphicsLevel.get(State.Get({ "account", "settings", "quality" })).chevrons)
+	local spots = GuidePointer.chevrons(distance, FIRST, SPACING, count, phase)
 	for i, pair in chevronParts do
 		local along = spots[i]
 		if along then

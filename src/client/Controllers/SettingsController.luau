@@ -12,7 +12,7 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local AutoQuality = require(ReplicatedStorage.Shared.Logic.AutoQuality)
-local Config = require(ReplicatedStorage.Shared.Config)
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
@@ -43,13 +43,15 @@ end
 
 -- Particle rate factor of the graphics level (W01: low 1/3 as in S14, medium in between, high 1).
 local function particleFactor(): number
-	local quality = State.Get({ "account", "settings", "quality" })
-	local levels = (Config.Graphics.levels :: any) :: { [string]: { particles: number } }
-	local level = if type(quality) == "string" then levels[quality] else nil
-	return if level then level.particles else 1
+	return GraphicsLevel.get(State.Get({ "account", "settings", "quality" })).particles
 end
 
 local function adjust(emitter: ParticleEmitter)
+	-- W29: the ambient controllers (WorldLife, MeadowsLife, FrostWeather) scale their own emitters; scaling them
+	-- here too cut them twice
+	if emitter:GetAttribute("OwnRate") == true then
+		return
+	end
 	local base = emitter:GetAttribute("VaelthornOriginalRate")
 	if type(base) ~= "number" then
 		base = emitter.Rate

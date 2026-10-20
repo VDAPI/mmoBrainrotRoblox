@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -91,9 +92,10 @@ local function CastBar(scope: Scope): Instance
 
 	return scope:New("Frame")({
 		Name = "CastBar",
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -100),
-		Size = UDim2.fromOffset(360, 26),
+		-- W29: under the target frame on a phone in landscape (Logic/PhoneHud)
+		AnchorPoint = PhoneLayout.Anchor(scope, "castBar", Vector2.new(0.5, 1)),
+		Position = PhoneLayout.Position(scope, "castBar", UDim2.new(0.5, 0, 1, -100)),
+		Size = PhoneLayout.Size(scope, "castBar", UDim2.fromOffset(360, 26)),
 		BackgroundColor3 = Theme.Resource.Track,
 		Visible = scope:Computed(function(use): boolean
 			local c = use(channel)

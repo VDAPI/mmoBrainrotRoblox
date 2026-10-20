@@ -88,6 +88,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 		npcs = scope:Value(true),
 		icons = scope:Value(true),
 		quest = scope:Value(true),
+		labels = scope:Value(false), -- owner 2026-10-21: names off, symbols only
 	}
 
 	-- Chips hold chip keys; the canvas wants the set of services they match.
@@ -187,6 +188,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 			icons = Fusion.peek(toggles.icons),
 			npcs = Fusion.peek(toggles.npcs),
 			nodes = Fusion.peek(toggles.nodes),
+			labels = Fusion.peek(toggles.labels),
 		})
 		overlay.setZoom(zoom())
 	end

@@ -2,7 +2,8 @@
 -- Loot bags in the world (DESIGN §5.5), visible only to their owner: a small bag glowing in the colour of the
 -- best item inside with its name above it. Pick up with F (prompt), E, or a click. Legendary drops add an
 -- orange pillar of light, a sound and a screen flash, mythic ones a taller red pillar with embers and a red
--- flash (S30); picking one up opens the reveal window.
+-- flash (S30); picking one up opens the reveal window. S155b: the first valuable drop of a new character (the bag's
+-- `first`, TutorialService) gets the same pillar in its rarity's colour, a toast and the reveal with its own title.
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
@@ -47,6 +48,7 @@ local SfxController: any
 local folder: Folder
 local bags: { [string]: BagView } = {}
 local busy: { [string]: boolean } = {}
+local firstUids: { [string]: boolean } = {} -- S155b: items of a first-drop bag (the reveal on pickup)
 
 local PILLAR_HEIGHT = 60
 
@@ -271,6 +273,15 @@ local function spawnBag(data: { [string]: any })
 			shine = item
 		end
 	end
+	-- S155b: the first valuable drop shines like a legendary one, in its own colour
+	local first = data.first == true and best ~= nil
+	if first and best then
+		for _, item in items do
+			firstUids[item.uid] = true
+		end
+		shine = shine or best
+		Toast.push(Text.now("loot.firstDrop"), "success", 6)
+	end
 	if not (shine or data.legendary) then
 		-- S111: a new bag (Heroic or better: the rare sound)
 		SfxController.Ui(if best and best.rarity >= Rarities.HEROIC then "ui.loot.rare" else "ui.loot")
@@ -295,16 +306,20 @@ local function removeBag(id: string)
 	if view then
 		bags[id] = nil
 		view.model:Destroy()
+		for _, item in view.items do
+			firstUids[item.uid] = nil -- picked (LootPicked came first) or expired
+		end
 	end
 end
 
-local function openReveal(item: ItemInstance)
+local function openReveal(item: ItemInstance, titleKey: string?)
 	local scope = UIController.Scope:innerScope()
 	local function close()
 		Fusion.doCleanup(scope)
 	end
 	LegendReveal(scope, {
 		Item = item,
+		TitleKey = titleKey,
 		OnEquip = function()
 			for key, owned in State.Get({ "character", "inventory" }) or {} do
 				if owned.uid == item.uid then
@@ -333,15 +348,22 @@ local function onPicked(items: { ItemInstance })
 			)
 		end
 	end
-	-- Reveal the best legendary / mythic equipment piece of the pickup.
+	-- Reveal the best legendary / mythic equipment piece of the pickup (S155b: or the first valuable drop).
 	local reveal: ItemInstance? = nil
+	local firstPick: ItemInstance? = nil
 	for _, item in items do
 		if revealable(item) and (reveal == nil or item.rarity > reveal.rarity) then
 			reveal = item
 		end
+		if firstUids[item.uid] then
+			firstUids[item.uid] = nil
+			firstPick = item
+		end
 	end
 	if reveal then
 		openReveal(reveal)
+	elseif firstPick then
+		openReveal(firstPick, "reveal.titleFirst")
 	end
 end
 

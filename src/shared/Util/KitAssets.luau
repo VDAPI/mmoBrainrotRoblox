@@ -27,6 +27,7 @@ export type Placement = {
 	-- 2026-10-20: stretched by `stretch` along `axis` (world) after the scale: a wall piece's length, a house's front
 	stretch: number?,
 	axis: Vector3?,
+	extent: number, -- W29: the template's larger side (height or width) before scaling
 }
 -- (slot, frame of the Build) -> where the slot's model stands, or nil (keep the pieces)
 export type Resolver = (slot: Slot, base: CFrame) -> Placement?
@@ -167,6 +168,7 @@ function KitAssets.resolver(mapId: string): Resolver?
 			persistent = string.sub(slot.key, 1, 9) == "landmark:" and choice.size >= Config.Kit.persistentSize,
 			stretch = stretch,
 			axis = if stretch then base.XVector else nil,
+			extent = math.max(t.height, t.width),
 		}
 	end
 end
@@ -247,6 +249,14 @@ function KitAssets.place(placement: Placement, parent: Instance): Model
 	end
 	if placement.persistent then
 		model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	end
+	-- W29: small props (bushes, undergrowth, pebbles) cast no shadow
+	if placement.extent * placement.scale < Config.Kit.shadowMin then
+		for _, d in model:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CastShadow = false
+			end
+		end
 	end
 	model.Parent = parent
 	return model

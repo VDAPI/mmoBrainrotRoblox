@@ -7,6 +7,8 @@
 -- character waits for this window instead (TutorialController). Once per "<UTC day>:<last>" in this client session:
 -- closing the window keeps it closed today (also after a character switch), /loginset and /loginnext (a new `last`)
 -- open it again. Midnight UTC during play only lights the badge.
+-- S155b: not while the character's tutorial runs (a new player's first sight is the "move" hint, not a window); the
+-- badge on the HUD button still lights, and the window opens on its own once the tutorial is finished or skipped.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -18,6 +20,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
 local State = require(script.Parent.Parent.UI.State)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local Tutorial = require(ReplicatedStorage.Shared.Logic.Tutorial)
 
 local LoginRewardController = {
 	Name = "LoginRewardController",
@@ -64,6 +67,10 @@ local function wanted(): boolean
 	end
 	if not ServerModeView.isWorld() then
 		return false -- S127: no window popping up on an arena server (the reward waits for the world)
+	end
+	local tutorial = State.Get({ "character", "tutorial" })
+	if tutorial ~= nil and Tutorial.current(Tutorial.sanitize(tutorial)) ~= nil then
+		return false -- S155b: the tutorial comes first
 	end
 	-- A fresh UTC day (Status follows `today`, refreshed only every DAY_CHECK)
 	local raw = State.Get({ "account", "login" })
@@ -127,6 +134,7 @@ end
 function LoginRewardController.Start()
 	scope:Observer(State.Value({ "session", "phase" })):onBind(check)
 	scope:Observer(login):onBind(check)
+	scope:Observer(State.Value({ "character", "tutorial" })):onChange(check) -- S155b: finished or skipped
 	task.spawn(function()
 		while true do
 			task.wait(DAY_CHECK)
