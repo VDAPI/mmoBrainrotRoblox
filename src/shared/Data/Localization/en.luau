@@ -2570,6 +2570,7 @@ return {
 	["quest.obj.talkClassVendor"] = "Talk to your class vendor",
 	["town.sign.donzon"] = "Order Armoury",
 	["town.sign.loza"] = "Hunters' Lodge",
+	["town.sign.arena"] = "Arena", -- W28: the Ristalle gate signs
 	["town.sign.wieza"] = "Mages' Tower",
 	["shop.requiresLevel"] = "Requires level {level}",
 	-- FIX 2026-10-14: groups of the Buy grid (Logic/ShopGroups) and the buy bar hint
