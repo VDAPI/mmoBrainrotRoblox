@@ -103,13 +103,16 @@ end
 -- (nil when nothing matched), the number of parts and the parts with a behaviour tag, grouped by tag.
 -- W02: with a `kit` resolver (Util/KitAssets.resolver), every kit slot of the Blueprint that has a model gets that
 -- model on the slot's level instead of its pieces; the slot's colliding shell pieces stay as invisible collision.
+-- W29: `drop(slot, foot)` (foot = the slot's world position) true leaves a kit slot out entirely (its model and its
+-- pieces): the client thins its filler trees and undergrowth at a low graphics level (Logic/GraphicsLevel.keepSlot).
 function BlueprintBuild.build(
 	build: Build,
 	origin: Vector3,
 	lods: Lods,
 	parent: Instance,
 	pacer: Pacer?,
-	kit: KitAssets.Resolver?
+	kit: KitAssets.Resolver?,
+	drop: ((slot: any, foot: Vector3) -> boolean)?
 ): Result
 	local result: Result = { model = nil, parts = 0, tagged = {} }
 	local bp = build.bp
@@ -118,8 +121,20 @@ function BlueprintBuild.build(
 	-- W02: the slots that get a kit model (index -> placement)
 	local placed: { [number]: KitAssets.Placement } = {}
 	local slots = bp.kits
+	-- W29: the slots left out at this graphics level
+	local dropped: { [number]: boolean } = {}
+	if drop and slots then
+		for i, slot in slots do
+			if slot.lod ~= "shell" and drop(slot, base * Vector3.new(slot.p[1], slot.p[2], slot.p[3])) then
+				dropped[i] = true
+			end
+		end
+	end
 	if kit and slots then
 		for i, slot in slots do
+			if dropped[i] then
+				continue
+			end
 			local placement = kit(slot, base)
 			if placement then
 				placed[i] = placement
@@ -136,6 +151,9 @@ function BlueprintBuild.build(
 	end
 	for _, piece in bp.pieces do
 		if not (lods :: any)[piece.lod] then
+			continue
+		end
+		if piece.k ~= nil and dropped[piece.k] then
 			continue
 		end
 		local hidden = piece.k ~= nil and placed[piece.k] ~= nil
@@ -214,11 +232,11 @@ function BlueprintBuild.build(
 		point.Brightness = light.brightness
 		point.Shadows = false
 		point.Parent = holder
-		if light.tag then
-			holder:SetAttribute("Fx", light.tag)
-			holder:SetAttribute("Build", build.name)
-			CollectionService:AddTag(holder, BlueprintBuild.FX_TAG)
-		end
+		-- W29: every light holder is tagged (an untagged light is "light"), so the light budgets
+		-- (RegionLightController) see all of them
+		holder:SetAttribute("Fx", light.tag or "light")
+		holder:SetAttribute("Build", build.name)
+		CollectionService:AddTag(holder, BlueprintBuild.FX_TAG)
 		holder.Parent = ensureModel()
 	end
 	if model then

@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -73,6 +74,7 @@ local weather: Weather? = nil
 
 local function emitter(holder: BasePart, name: string, props: { [string]: any }): ParticleEmitter
 	local e = Instance.new("ParticleEmitter")
+	e:SetAttribute("OwnRate", true) -- W29: rate scaled here, not by SettingsController
 	e.Name = name
 	e.Shape = Enum.ParticleEmitterShape.Box
 	e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
@@ -188,7 +190,7 @@ local function updateWeather(at: Vector3, theme: string, night: boolean, clock: 
 	}
 	-- half with low world detail; a third with low effects quality (as SettingsController does for every emitter)
 	local factor = (if lowDetail() then 0.5 else 1)
-		* (if State.Get({ "account", "settings", "quality" }) == "low" then 1 / 3 else 1)
+		* GraphicsLevel.get(State.Get({ "account", "settings", "quality" })).particles
 	for name, e in w.emitters do
 		local on = (want :: any)[name] == true
 		e.Rate = w.base[name] * factor
