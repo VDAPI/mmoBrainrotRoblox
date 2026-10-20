@@ -25,6 +25,9 @@ właściciel (`docs/GRAFIKA.md` 6).
 
 - `assets/Monsters/<nazwa>.rbxm` → `ReplicatedStorage.Assets.Monsters.<nazwa>` (Rojo, `default.project.json`).
 - `assets/Pets/<petId>.rbxm` → `ReplicatedStorage.Assets.Pets.<petId>` (statyczny model peta, zastępuje generator bez wpisu w danych).
+- `assets/Npcs/<npcId>.rbxm` → `ReplicatedStorage.Assets.Npcs.<npcId>` (W30: model NPC z Tripo, bez wpisu w danych;
+  `NpcService` dopasowuje go do wysokości figury, przyspawa i chowa figurę R15; atrybuty modelu `Scale` 0,5–2 i `Yaw`
+  w stopniach; `guard` służy obu strażnikom; prompty `wyglad/TRIPO-NPC.md`).
 - `assets/Kit/<folder>.rbxm` (albo zapis miejsca) → `ReplicatedStorage.Assets.Kit.<folder>` (W02: modele zestawu,
   `Data/Kit`, sekcja „Zestaw (W02)”).
 - `assets/Weapons/<paczka>.rbxm` → `ReplicatedStorage.Assets.Weapons.<paczka>` (folder MeshPartów broni nazwanych jak
