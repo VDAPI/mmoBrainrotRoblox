@@ -69,7 +69,13 @@ local clock = rootScope:Value(Clock.now())
 local blinkOn = rootScope:Value(true)
 
 -- S135: one plate per character model; `far` is updated by the shared distance check.
-type Plate = { scope: Scope, head: Fusion.Value<Instance?>, far: Fusion.Value<number?>, isLocal: boolean }
+type Plate = {
+	scope: Scope,
+	head: Fusion.Value<Instance?>,
+	far: Fusion.Value<number?>,
+	isLocal: boolean,
+	model: Model,
+}
 local plates: { [Model]: Plate } = {}
 
 local function attributeValue(scope: Scope, model: Model, name: string): Fusion.Value<any>
@@ -96,7 +102,7 @@ local function build(model: Model, owner: Player?)
 	local isLocal = owner == Players.LocalPlayer
 	local head = scope:Value(model:FindFirstChild("Head") :: Instance?)
 	local far = scope:Value(nil :: number?)
-	plates[model] = { scope = scope, head = head, far = far, isLocal = isLocal }
+	plates[model] = { scope = scope, head = head, far = far, isLocal = isLocal, model = model }
 	-- Only a destroyed model ends the plate: a model streamed out (parent nil) keeps it and shows it again on return.
 	table.insert(
 		scope,
@@ -268,13 +274,7 @@ local function build(model: Model, owner: Player?)
 				BackgroundColor3 = Theme.Iron.Surface,
 				BackgroundTransparency = CFG.plateTransparency,
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIStroke")({
-						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Thickness = Theme.Stroke.Thin,
-						Color = Theme.Brass.Line,
-						Transparency = 0.3,
-					}),
+					-- owner 2026-10-20: no plate and no frame any more, only the title and the name (outlined text)
 					scope:New("UIPadding")({
 						PaddingLeft = UDim.new(0, Theme.Padding.Small),
 						PaddingRight = UDim.new(0, Theme.Padding.Small),
@@ -308,8 +308,8 @@ local function build(model: Model, owner: Player?)
 							local hex = use(view).titleHex
 							return if hex then Theme.readable(hex, "iron") else Theme.Iron.Text
 						end),
-						TextStrokeColor3 = Theme.Iron.Surface,
-						TextStrokeTransparency = 0.2,
+						TextStrokeColor3 = Theme.Iron.Sunken,
+						TextStrokeTransparency = 0,
 					}),
 					-- Name row (S18): PvP dot first, then the name.
 					scope:New("Frame")({
@@ -356,8 +356,8 @@ local function build(model: Model, owner: Player?)
 								TextColor3 = scope:Computed(function(use): Color3
 									return NAME_COLORS[use(view).nameRole] or Theme.Iron.Text
 								end),
-								TextStrokeColor3 = Theme.Iron.Surface,
-								TextStrokeTransparency = 0.2,
+								TextStrokeColor3 = Theme.Iron.Sunken,
+								TextStrokeTransparency = 0,
 								[OnEvent("Activated")] = function(input: InputObject)
 									openMenu(input)
 								end,
@@ -385,8 +385,8 @@ local function build(model: Model, owner: Player?)
 								TextTransparency = scope:Computed(function(use): number
 									return if use(blessingEnding) and not use(blinkOn) then 0.85 else 0
 								end),
-								TextStrokeColor3 = Theme.Iron.Surface,
-								TextStrokeTransparency = 0.2,
+								TextStrokeColor3 = Theme.Iron.Sunken,
+								TextStrokeTransparency = 0,
 							}),
 							-- S119: the VIP crown silhouette before the badge once loaded.
 							ArtIcon.Image(scope, {
@@ -435,15 +435,15 @@ local function build(model: Model, owner: Player?)
 						BackgroundTransparency = 1,
 						Size = UDim2.fromOffset(0, CFG.levelSize + 4),
 						AutomaticSize = Enum.AutomaticSize.X,
-						Visible = scope:Computed(function(use): boolean
-							return use(view).showLevel
-						end),
+						-- owner 2026-10-20: only the title and the name above the head (the level and class are in the
+						-- player menu and the target frame)
+						Visible = false,
 						Text = Text.T(scope, "nameplate.levelClass", { level = level, class = className }),
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = CFG.levelSize,
 						TextColor3 = Theme.Iron.Text,
-						TextStrokeColor3 = Theme.Iron.Surface,
-						TextStrokeTransparency = 0.2,
+						TextStrokeColor3 = Theme.Iron.Sunken,
+						TextStrokeTransparency = 0,
 					}),
 					scope:New("Frame")({
 						Name = "HpBar",
@@ -527,6 +527,15 @@ local function checkDistances()
 	end
 	local eye = camera.CFrame.Position
 	for _, plate in plates do
+		-- owner 2026-10-20: your own name went missing after a teleport: a Head replaced while the old one stayed in the
+		-- Value (an applied look swaps the head) is found again here, for every plate
+		local current = Fusion.peek(plate.head)
+		if not current or current.Parent ~= plate.model then
+			local fresh = plate.model:FindFirstChild("Head")
+			if fresh and fresh ~= current then
+				plate.head:set(fresh)
+			end
+		end
 		if plate.isLocal then
 			continue
 		end
