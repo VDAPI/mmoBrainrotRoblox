@@ -115,7 +115,9 @@ describe("Monster looks: data", function()
 			local asset = entry.asset
 			if asset then
 				expect(type(asset.model)).toBe("string")
-				expect(asset.rig == "animator" or asset.rig == "gait" or asset.rig == "static").toBe(true)
+				expect(asset.rig == "animator" or asset.rig == "gait" or asset.rig == "static" or asset.rig == "bones").toBe(
+					true
+				)
 				expect(#asset.rootSize).toBe(3)
 				expect(asset.hipHeight >= 0 and asset.height > 0).toBe(true)
 				for slot, anim in asset.anims or {} do

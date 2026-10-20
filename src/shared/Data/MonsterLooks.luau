@@ -3,11 +3,13 @@
 -- accessories, weapons, glow and particles for the procedural generator (Logic/Anatomy), and an optional real
 -- model (`asset`, docs/ASSETS.md) that replaces it. Data only. `inherit` copies another entry and overrides
 -- the fields given here; an inheriting entry without its own colours takes the parent's colours tinted with
--- its region (REGIONS).
+-- its region (REGIONS). W26: the imported models of Data/MonsterAssets become `asset` here (model = the key).
+
+local MonsterAssets = require("./MonsterAssets")
 
 export type AssetLook = {
 	model: string, -- Model name in ReplicatedStorage.Assets.Monsters
-	rig: "animator" | "gait" | "static",
+	rig: "animator" | "gait" | "static" | "bones", -- W26 "bones": Data/MonsterClips played by client/Anim/BoneClips
 	rootSize: { number }, -- hitbox at LookScale 1 (x, y, z)
 	hipHeight: number,
 	height: number, -- top of the model above the ground, for name plates
@@ -563,6 +565,22 @@ local LOOKS: { [string]: any } = {
 		},
 	},
 }
+
+-- W26: imported models (tinted like the regional variants that inherit them)
+for id, entry in MonsterAssets do
+	local look = LOOKS[id]
+	if look then
+		look.asset = {
+			model = id,
+			rig = entry.rig,
+			rootSize = entry.rootSize,
+			hipHeight = entry.hipHeight,
+			height = entry.height,
+			walkSpeed = entry.walkSpeed,
+			tint = true,
+		}
+	end
+end
 
 local MonsterLooks = {}
 
