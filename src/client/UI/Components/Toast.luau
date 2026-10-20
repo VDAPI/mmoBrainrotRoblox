@@ -12,7 +12,8 @@ local Children = Fusion.Children
 
 export type Kind = "info" | "success" | "warning" | "error"
 
-type Entry = { id: number, text: string, kind: Kind, duration: number }
+-- W28: `leave` is set by the toast's own view: it starts the fade-out before the entry leaves the list
+type Entry = { id: number, text: string, kind: Kind, duration: number, leave: (() -> ())? }
 
 local Toast = {}
 
@@ -54,8 +55,15 @@ local function pump()
 	table.insert(newList, entry)
 	visible:set(newList)
 	task.delay(entry.duration, function()
-		remove(entry.id)
-		pump()
+		-- W28: fade and shrink out first, then free the place in the stack
+		local leave = entry.leave
+		if leave then
+			leave()
+		end
+		task.delay(if leave then Theme.Anim.ToastOutTime else 0, function()
+			remove(entry.id)
+			pump()
+		end)
 	end)
 	pump()
 end
@@ -91,11 +99,21 @@ function Toast.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			}),
 			scope:ForValues(visible, function(_, innerScope: Fusion.Scope<typeof(Fusion)>, entry: Entry)
+				-- W28: in: fade and grow from ToastFrom on the window spring; out: fade and shrink back on a short tween
 				local transparency = innerScope:Value(1)
-				local animated = innerScope:Tween(transparency, Theme.Anim.Normal)
+				local info = innerScope:Value(Theme.Anim.Normal)
+				local animated = innerScope:Tween(transparency, info)
+				local grow = innerScope:Value(Theme.Anim.ToastFrom)
+				local size = innerScope:Spring(grow, Theme.Anim.WindowSpeed, Theme.Anim.WindowDamping)
 				task.defer(function()
 					transparency:set(0)
+					grow:set(1)
 				end)
+				entry.leave = function()
+					info:set(Theme.Anim.ToastOut)
+					transparency:set(1)
+					grow:set(Theme.Anim.ToastFrom)
+				end
 				return innerScope:New("Frame")({
 					Name = `Toast{entry.id}`,
 					LayoutOrder = entry.id,
@@ -106,6 +124,7 @@ function Toast.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 						return 0.08 + use(animated) * 0.92
 					end),
 					[Children] = {
+						innerScope:New("UIScale")({ Scale = size }),
 						innerScope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						innerScope:New("UIStroke")({
 							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
