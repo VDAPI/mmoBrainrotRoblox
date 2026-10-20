@@ -6826,7 +6826,7 @@ Globalne (G): 169/169 w paśmie; regionu: 207/207 w paśmie.
 
 ### S92: Mroczny Bór i Morvane (start S92 → teraz)
 
-Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danych. Cele: `docs/sessions/S92.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`TUNED.duskwood`, `Balance.targetsS92`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S92).
+Start = stan po S91 (`10f94d2`), zmierzony tym samym modelem przed zmianą danych. Cele: `docs/archiwum/sesje/S92.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`TUNED.duskwood`, `Balance.targetsS92`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S92).
 
 | liczba | start S92 | teraz | cel |
 | --- | --: | --: | --: |
@@ -8022,7 +8022,7 @@ Globalne (G): 169/169 w paśmie; regionu: 205/205 w paśmie.
 
 ### S93: Spalone Pustkowia i Azgor (start S93 → teraz)
 
-Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danych. Cele: `docs/sessions/S93.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`TUNED.ashen`, `Balance.targetsS93`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S93).
+Start = stan po S92 (`15def98`), zmierzony tym samym modelem przed zmianą danych. Cele: `docs/archiwum/sesje/S93.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`TUNED.ashen`, `Balance.targetsS93`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S93).
 
 | liczba | start S93 | teraz | cel |
 | --- | --: | --: | --: |
@@ -9237,7 +9237,7 @@ Globalne (G): 270/270 w paśmie; regionu: 213/213 w paśmie.
 
 ### S94: Lodowe Szczyty i Vaelgrath (start S94 → teraz)
 
-Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danych (start tempa przed poprawką okna ostatniego zadania głównego, DECYZJE S94). Cele: `docs/sessions/S94.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`Balance.targetsS94`, bez bramki `TUNED`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S94).
+Start = stan po S93 (`ef4fb39`), zmierzony tym samym modelem przed zmianą danych (start tempa przed poprawką okna ostatniego zadania głównego, DECYZJE S94). Cele: `docs/archiwum/sesje/S94.md` → „Cele tej sesji”; wiersze asertuje blok regionów `balance.spec` (`Balance.targetsS94`, bez bramki `TUNED`), wiersze z opisem w kolumnie „kto asertuje” są w raporcie (powody: `docs/DECYZJE.md` → S94).
 
 | liczba | start S94 | teraz | cel |
 | --- | --: | --: | --: |

@@ -1,6 +1,6 @@
 # DESIGN-17: sklep premium, VIP, rankingi, arena i wydarzenia PvP (S120–S132)
 
-Kontrakt dla sesji S120–S132. Właściciel (ProjektG, 2026-10-13) przyjął rekomendacje z `PROPOZYCJA.md` (VIP bez EXP, rankingi przez wspólne tabele Roblox, arena z kolejką globalną i fallbackiem, eventy zsynchronizowane zegarem UTC) i dopisał przedmioty do sklepu: peleryna przyciągająca potwory, +10 miejsc w każdym plecaku, mikstura pełnego leczenia (z ograniczeniami z `KATALOG.md`, zaakceptowane „na razie git”). Sesje idą **po S119** w kolejce DALEJ. Kod w chwili pisania: `3a1ee36` (S87); S88–S119 są w planie (`docs/sessions/S88..S119.md`), więc nazwy i linie mogą się przesunąć. **Wygrywa kod.**
+Kontrakt dla sesji S120–S132. Właściciel (ProjektG, 2026-10-13) przyjął rekomendacje z `PROPOZYCJA.md` (VIP bez EXP, rankingi przez wspólne tabele Roblox, arena z kolejką globalną i fallbackiem, eventy zsynchronizowane zegarem UTC) i dopisał przedmioty do sklepu: peleryna przyciągająca potwory, +10 miejsc w każdym plecaku, mikstura pełnego leczenia (z ograniczeniami z `KATALOG.md`, zaakceptowane „na razie git”). Sesje idą **po S119** w kolejce DALEJ. Kod w chwili pisania: `3a1ee36` (S87); S88–S119 są w planie (`docs/archiwum/sesje/S88..S119.md`), więc nazwy i linie mogą się przesunąć. **Wygrywa kod.**
 
 Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `docs/DECYZJE.md` i poprawka tego pliku w tym samym commicie.
 

@@ -2238,7 +2238,7 @@ Mana (zapotrzebowanie / dochód; w nawiasie z Inwokacją na każdym odnowieniu):
 
 Każda sesja ma 2–3 h, kończy się zielonym `scripts/check.sh` (StyLua, Selene, ścisłe luau-lsp na `src`, testy Lune, w
 tym `tests/wikidump.spec`). Kolejność według punktu 34: fundament, potem Kapłan, potem Wojownik, Łowca i Mag.
-Podział na sesje jest w `docs/sessions/S53.md`–`S94.md` i ma pierwszeństwo przed krokami niżej (np. wzory z kroku 6
+Podział na sesje jest w `docs/archiwum/sesje/S53.md`–`S94.md` i ma pierwszeństwo przed krokami niżej (np. wzory z kroku 6
 idą jako S54, zaraz po kroku 1, a cechy przedmiotów S62–S68 przed sesjami klas).
 
 Fundament:

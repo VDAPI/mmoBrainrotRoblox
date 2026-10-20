@@ -148,7 +148,7 @@ def _key_for(folder, base, ids, tiers):
 
 
 def mapping(src, ids):
-    """Mapping of the Graphics folder (rules of docs/sessions/S118.md B3 on the S52 layout)."""
+    """Mapping of the Graphics folder (rules of docs/archiwum/sesje/S118.md B3 on the S52 layout)."""
     res = Mapping()
     tiers = set(import_png.TIER_LIST)
     items = ids["items"]

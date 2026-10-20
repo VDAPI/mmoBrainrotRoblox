@@ -1808,7 +1808,7 @@ end
 
 local ItemTraits = require("../src/shared/Data/ItemTraits")
 
--- S86 (G): builds "do celów" of docs/sessions/S86.md (the guards, situations and the model / ROZWOJ table read them).
+-- S86 (G): builds "do celów" of docs/archiwum/sesje/S86.md (the guards, situations and the model / ROZWOJ table read them).
 BalanceTables.TARGET_BUILDS = {
 	Warrior = { "berserker.fury", "guardian.defender", "guardian.loner", "standard.commander" },
 	Hunter = { "marksman.kingslayer", "trapper.poacher", "scout.partyHunter" },
@@ -2341,7 +2341,7 @@ function BalanceTables.tablesPaths(): { Table }
 		end
 	end
 
-	-- S90 (I1): report-only rows of docs/sessions/S90.md "Tylko raport"
+	-- S90 (I1): report-only rows of docs/archiwum/sesje/S90.md "Tylko raport"
 	section(
 		"Łowca i Mag: tylko raport (S90)",
 		{ "wiersz · poziom", "wartość", "projekt / pasmo" },

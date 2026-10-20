@@ -2596,7 +2596,7 @@ return {
 		["SkillCurves:knots.chainLightning.dmg[4]"] = {
 			{ session = "S91", why = "new, 153.83 pinned (rank 4 before S91)" },
 		},
-		-- S92: the Dark Forest 20-45 and Morvane (docs/sessions/S92.md, docs/SESJE.md S92; the R.duskwood.* rows of
+		-- S92: the Dark Forest 20-45 and Morvane (docs/archiwum/sesje/S92.md, docs/SESJE.md S92; the R.duskwood.* rows of
 		-- tests/Balance.luau targetsS92 and targetsRegion)
 		["Bosses:byId.morvane.hpMul"] = {
 			{
@@ -2802,7 +2802,7 @@ return {
 		["Recipes:byId.blessing_fortune_3.ingredients*"] = {
 			{ session = "S92", why = "Rare blessing with a Dark Forest part (J2, LINE_INGREDIENT_RARE)" },
 		},
-		-- S93: the Scorched Wastes 45-70 and Azgor (docs/sessions/S93.md, docs/SESJE.md S93; the R.ashen.* rows of
+		-- S93: the Scorched Wastes 45-70 and Azgor (docs/archiwum/sesje/S93.md, docs/SESJE.md S93; the R.ashen.* rows of
 		-- tests/Balance.luau targetsS93 and targetsRegion)
 		["Bosses:byId.azgor.hpMul"] = {
 			{
@@ -2977,7 +2977,7 @@ return {
 		["Recipes:byId.blessing_fortune_4.ingredients*"] = {
 			{ session = "S93", why = "Epic blessing with a region part (J2, LINE_INGREDIENT_EPIC: crow_feather)" },
 		},
-		-- S94: the Frost Peaks 70-100, Vaelgrath and the endgame (docs/sessions/S94.md; docs/SESJE.md S94)
+		-- S94: the Frost Peaks 70-100, Vaelgrath and the endgame (docs/archiwum/sesje/S94.md; docs/SESJE.md S94)
 		["Bosses:byId.vaelgrath.atkMul"] = {
 			{
 				session = "S94",
