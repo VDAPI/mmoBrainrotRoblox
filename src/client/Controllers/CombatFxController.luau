@@ -823,10 +823,25 @@ local function charge(weapon: BasePart?, color: Color3, seconds: number)
 	if not at or lowQuality() then
 		return
 	end
-	local spark = effectPart("Charge", Vector3.one * 0.2, color, Enum.PartType.Ball)
+	-- W03: a small core that brightens and a soft glow sprite round it (the colour lives in the glow)
+	local spark = effectPart("Charge", Vector3.one * 0.15, color:Lerp(Color3.new(1, 1, 1), 0.2), Enum.PartType.Ball)
 	spark.CFrame = CFrame.new(at)
 	spark.Transparency = 0.3
-	Clock.tween(spark, TweenInfo.new(seconds), { Size = Vector3.one * 0.9, Transparency = 0.1 })
+	local glow = Instance.new("ParticleEmitter")
+	glow.Color = ColorSequence.new(color)
+	glow.LightEmission = 1
+	glow.Rate = 30
+	glow.Lifetime = NumberRange.new(0.12, 0.2)
+	glow.Speed = NumberRange.new(0)
+	glow.Size = NumberSequence.new(0.9, 0.2)
+	glow.Transparency = NumberSequence.new(0.4, 1)
+	if Textures.particle(glow, "glow") then
+		glow.Parent = spark
+		Clock.track(glow)
+	else
+		glow:Destroy()
+	end
+	Clock.tween(spark, TweenInfo.new(seconds), { Size = Vector3.one * 0.5, Transparency = 0.1 })
 	destroyLater(spark, seconds)
 end
 
