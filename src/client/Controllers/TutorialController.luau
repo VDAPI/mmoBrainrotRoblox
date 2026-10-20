@@ -8,23 +8,30 @@
 -- steering (Tutorial.walk: the spawn pivot and teleports never count), "backpack" when the backpack window opens; the
 -- server counts the rest itself. The hint hides while a modal, a cutscene (the HUD layer is hidden), death or a dialog
 -- window (NPC, quest, login reward, "What has changed") is up or the login reward / the letter still waits to open on
--- its own (their Pending), so on the first entry the login reward and the letter come first. The "quest" step guides the arrow
--- to the captain once (NavController.GuideToNpc) while no story quest is taken; the "attack" step in the city points
--- at the quest tracker (the story's arrow leads to the Meadows; the tutorial never takes the arrow over). When the
+-- its own (their Pending), so on the first entry the login reward and the letter come first. The "quest" step guides the path
+-- to the captain once (NavController.GuideToNpc) while no story quest is taken. W28: while the hint shows, every step
+-- with a world target (Logic/Tutorial.guide) drives the golden world guide (GuidePointerController: an arrow over the
+-- head, chevrons on the ground, a diamond over the target, an arrow at the screen's edge): the captain, in the city the
+-- story quest's way to the Meadows, there the player's target or the nearest monster. The texts saying "follow the
+-- golden arrow" mean that guide (the owner saw no arrow before: the only one was the tracker's small glyph). When the
 -- server finishes the tutorial the closing hint stays Data/Tutorial.DONE_SECONDS (a touch closes it), and when the
 -- level reward arrives a toast lists it.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Config = require(ReplicatedStorage.Shared.Config)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudAnchors = require(script.Parent.Parent.UI.HudAnchors)
+local GuidePointer = require(script.Parent.GuidePointerController)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local QuestTrack = require(script.Parent.Parent.UI.QuestTrack)
 local Scale = require(script.Parent.Parent.UI.Scale)
 local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
 local State = require(script.Parent.Parent.UI.State)
@@ -43,6 +50,8 @@ local TutorialController = {
 		"CutsceneController",
 		"LoginRewardController",
 		"ReturningController",
+		"GuidePointerController",
+		"TargetController",
 	},
 }
 
@@ -52,6 +61,8 @@ local NavController: any
 local CutsceneController: any
 local LoginRewardController: any
 local ReturningController: any
+local GuidePointerController: any
+local TargetController: any
 
 local TICK = 0.2 -- seconds between two placements of the hint
 local RESEND = 3 -- seconds before a client step is reported again (the state did not count it yet)
@@ -88,7 +99,9 @@ local sentAt: { [string]: number } = {} -- client step -> os.clock() of the last
 local lastAt: Vector3? = nil -- the root's position at the last sample
 local lastModel: Model? = nil
 local walked = 0 -- studs the player walked steering (Tutorial.walk)
-local guided = false -- the arrow went to the captain once this session
+local guided = false -- the path went to the captain once this session
+local hunted: Model? = nil -- the monster the world guide points at in the "attack" step (kept while alive and near)
+local HUNT_RANGE = 220 -- studs within which the "attack" step points at a monster
 
 local function counted(state: Tutorial.State, id: string): boolean
 	local index = Tutorial.indexOf[id]
@@ -268,10 +281,79 @@ local function sameArrow(a: TutorialHint.Arrow?, b: TutorialHint.Arrow?): boolea
 end
 
 local function hide()
+	GuidePointerController.Set("tutorial", nil)
 	visible:set(false)
 	if Fusion.peek(outline) ~= nil then
 		outline:set(nil)
 	end
+end
+
+local function alive(model: Model?): boolean
+	return model ~= nil and model.Parent ~= nil and model:GetAttribute("Dead") ~= true
+end
+
+-- The monster the "attack" step points at: the player's own target, else the one already shown while alive and
+-- near, else the nearest living monster within HUNT_RANGE.
+local function huntTarget(): Model?
+	local character = Players.LocalPlayer.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return nil
+	end
+	local picked = Fusion.peek(TargetController.Target)
+	if typeof(picked) == "Instance" and picked:IsA("Model") and picked:GetAttribute("MonsterId") ~= nil then
+		if alive(picked) then
+			return picked
+		end
+	end
+	local function near(model: Model): number
+		return (model:GetPivot().Position - root.Position).Magnitude
+	end
+	local kept = hunted
+	if kept and alive(kept) and near(kept) <= HUNT_RANGE then
+		return kept
+	end
+	local best: Model? = nil
+	local bestDistance = HUNT_RANGE
+	local monsters = Workspace:FindFirstChild("Monsters")
+	if monsters then
+		for _, child in monsters:GetChildren() do
+			if child:IsA("Model") and child:GetAttribute("MonsterId") ~= nil and alive(child) then
+				local d = near(child)
+				if d < bestDistance then
+					best, bestDistance = child, d
+				end
+			end
+		end
+	end
+	hunted = best
+	return best
+end
+
+-- The world guide of a step (Logic/Tutorial.guide) as a GuidePointer spec, nil = none.
+local function guideSpec(step: Tutorial.Step, away: boolean): GuidePointer.Spec?
+	local quests = State.Get({ "character", "quests" })
+	local mainTaken = type(quests) == "table" and quests.main ~= nil
+	local guide = Tutorial.guide(step, away, mainTaken)
+	if not guide then
+		return nil
+	end
+	if guide.kind == "npc" and guide.id then
+		local def = Npcs.get(guide.id)
+		return if def then { map = def.map, npc = def.id } else nil
+	end
+	if guide.kind == "monster" then
+		local model = huntTarget()
+		if model then
+			return { model = model }
+		end
+	end
+	local target = Fusion.peek(QuestTrack.Target)
+	if target then
+		return { map = target.map, x = target.x, z = target.z, npc = target.npc }
+	end
+	-- no quest target: the first hunting ground of the Meadows (the travel step's own guide)
+	return if away then { map = "meadows", x = -672, z = 0 } else nil
 end
 
 local function tick()
@@ -337,6 +419,7 @@ local function tick()
 	if not sameRect(Fusion.peek(outline), rect) then
 		outline:set(rect)
 	end
+	GuidePointerController.Set("tutorial", if finale then nil else guideSpec(step, away))
 	visible:set(true)
 end
 
@@ -347,6 +430,8 @@ function TutorialController.Init(registry)
 	CutsceneController = registry.Get("CutsceneController")
 	LoginRewardController = registry.Get("LoginRewardController")
 	ReturningController = registry.Get("ReturningController")
+	GuidePointerController = registry.Get("GuidePointerController")
+	TargetController = registry.Get("TargetController")
 	root = UIController.GetLayer("Screens")
 	hint = TutorialHint(scope, {
 		View = view,

@@ -20,7 +20,8 @@ local Tutorial = {}
 export type Kind = "server" | "client"
 -- `keys`: placeholder in the PC text -> Data/Keybinds action (the player's own key goes in, Tutorial.keyArgs).
 -- `anchor`: the HUD element the hint points at (UI/HudAnchors); nil = no element (the hint stands in its default place).
--- `travel`: the step waits for a hunting ground; away from one the hint says "follow the quest arrow" (`.travel` text).
+-- `travel`: the step waits for a hunting ground; away from one the hint says "follow the golden arrow" (`.travel`
+-- text; the arrow is the world guide, Tutorial.guide).
 export type Step = {
 	id: string,
 	kind: Kind,
@@ -220,12 +221,37 @@ function Tutorial.text(s: Step, touch: boolean, away: boolean?): string
 	return `{s.textKey}.{if touch then "touch" else "pc"}`
 end
 
--- The anchor of a step now: the quest tracker while a travel step waits for a hunting ground.
+-- The anchor of a step now: none while a travel step waits for a hunting ground (W28: the hint stands in its default
+-- place and the golden guide arrow, UI/GuidePointer, leads the way; it used to point at the tracker's tiny arrow).
 function Tutorial.anchorOf(s: Step, away: boolean?): string?
 	if away and s.travel then
-		return "questTracker"
+		return nil
 	end
 	return s.anchor
+end
+
+-- W28: what the world guide (golden arrow, ground chevrons, marker over the target, screen-edge arrow:
+-- Controllers/GuidePointerController) points at during a step. "npc": that NPC (Data/Npcs id); "quest": the tracked
+-- quest's target (QuestTrack.Target, through the portals of the route); "monster": the player's target or the nearest
+-- living monster (the quest's target when none is near). Steps done in the HUD (move, backpack, potion, skill, done)
+-- have no world target.
+export type Guide = { kind: "npc" | "quest" | "monster", id: string? }
+
+-- The NPC who gives the first story quest (the "quest" step).
+Tutorial.CAPTAIN = "captain"
+
+-- The guide of step `s` (nil = none). `away`: a travel step waiting for a hunting ground (the starting map);
+-- `mainTaken`: a story quest is taken (the captain's step then follows the quest instead).
+function Tutorial.guide(s: Step?, away: boolean?, mainTaken: boolean?): Guide?
+	if not s then
+		return nil
+	end
+	if s.id == "quest" then
+		return if mainTaken then { kind = "quest" } else { kind = "npc", id = Tutorial.CAPTAIN }
+	elseif s.id == "attack" then
+		return if away then { kind = "quest" } else { kind = "monster" }
+	end
+	return nil
 end
 
 -- The key labels of a step's PC text from the player's bindings (account.settings.keys).

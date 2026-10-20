@@ -13150,3 +13150,29 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/server/Admin/Character.luau`, `src/client/Controllers/{LoginRewardController,ReturningController}.luau`,
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### W28: strzałka samouczka (GuidePointer)
+- **Zgłoszenie właściciela:** „w samouczku pisze idź za strzałką a nie ma żadnej strzałki”.
+- **Przyczyna:** w świecie nie było żadnej strzałki. Tekst `tutorial.attack.travel` mówił o „strzałce zadania”, a jedyną
+  strzałką był mały znak „⬆” (28 px) w nagłówku tropiciela zadań, w foncie Builder Sans bez tego znaku (pusty albo
+  kwadrat), do tego niewidoczny po zwinięciu tropiciela. Krok `quest` raz włączał ścieżkę `NavController` do kapitana,
+  ale to tylko płaskie złote kwadraciki 1,1 st. przy ziemi, łatwe do przeoczenia i chowane w terenie.
+- **Teraz:** `GuidePointerController` (nowy, klient): złota strzałka unosząca się nad głową i obracająca do celu,
+  płynące szewrony na ziemi od gracza do celu, migający romb z odległością („42 m”) nad celem (zawsze na wierzchu,
+  widać go przez ściany) i strzałka przy krawędzi ekranu, gdy cel jest poza kadrem (za kamerą: na dole). Wszystko
+  liczone co klatkę od aktualnej postaci (bez załączników na postaci), więc przeżywa śmierć, teleport i zmianę mapy;
+  cel na innej mapie prowadzi do portalu na trasie (`MapRoute.nextExit`), NPC poza strumieniowaniem z `Data/Npcs`.
+  Znika po dojściu (`GuidePointer.REACH`) i razem ze wskazówką samouczka (okna, przerywniki, śmierć).
+- **Cele kroków (`Tutorial.guide`):** `quest` kapitan (po przyjęciu zadania: cel zadania), `attack` w mieście cel
+  zadania fabuły (droga na Łąki), na łowisku wybrany cel albo najbliższy żywy potwór (bez potwora: cel zadania);
+  kroki HUD (ruch, plecak, mikstura, umiejętność) bez celu w świecie. Wskazówka kroku podróży stoi w swoim miejscu
+  (`anchorOf` bez tropiciela).
+- **Teksty:** „Idź za złotą strzałką na Łąki…”, krok kapitana też mówi o złotej strzałce (PL i EN), `guide.distance`.
+- **Wspólna logika:** `Logic/GuidePointer` (kąt względem kamery, strzałka przy krawędzi, szewrony, zasięg); strzałka w
+  tropicielu zadań liczy kąt tą samą funkcją i rysuje „▲” (znak, który ma font).
+- **Testy:** nowy `tests/guidepointer.spec.luau`, `tests/tutorial.spec.luau` (cele kroków, każdy tekst ze strzałką ma
+  cel w świecie, `anchorOf`).
+- **Pliki:** `src/shared/Logic/GuidePointer.luau`, `src/client/Controllers/GuidePointerController.luau`,
+  `tests/guidepointer.spec.luau` (nowe), `src/shared/Logic/Tutorial.luau`,
+  `src/client/Controllers/TutorialController.luau`, `src/client/UI/Screens/Hud/QuestTracker.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `tests/tutorial.spec.luau`, `docs/SESJE.md`.

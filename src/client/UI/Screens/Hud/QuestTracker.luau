@@ -26,6 +26,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GuidePointer = require(ReplicatedStorage.Shared.Logic.GuidePointer)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -179,18 +180,17 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 				arrow:set(nil)
 				return
 			end
-			local to = Vector3.new(point.X - root.Position.X, 0, point.Z - root.Position.Z)
-			if to.Magnitude < 8 then
+			-- W28: the same maths as the world guide (Logic/GuidePointer)
+			local dx, dz = point.X - root.Position.X, point.Z - root.Position.Z
+			if GuidePointer.reached(GuidePointer.flat(0, 0, dx, dz), 8) then
 				arrow:set(nil)
 				return
 			end
 			local look = camera.CFrame.LookVector
-			local forward = Vector3.new(look.X, 0, look.Z)
-			if forward.Magnitude < 0.01 then
-				return
+			local angle = GuidePointer.bearing(dx, dz, look.X, look.Z)
+			if angle then
+				arrow:set(angle)
 			end
-			local angle = math.atan2(to.X, -to.Z) - math.atan2(forward.X, -forward.Z)
-			arrow:set(math.deg(angle))
 		end)
 	)
 
@@ -659,7 +659,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						Position = UDim2.fromScale(1, 0.5),
 						Size = UDim2.fromOffset(28, 28),
 						BackgroundTransparency = 1,
-						Text = "⬆",
+						Text = "▲", -- W28: the glyph the tutorial hint draws too ("⬆" is not in Builder Sans)
 						TextScaled = true,
 						FontFace = Theme.Fonts.BodyBold,
 						TextColor3 = Theme.Brass.Bright,
