@@ -12,6 +12,9 @@
 -- loaded (the sketch is not drawn when the picture is already there; otherwise it hides when the picture arrives).
 -- S134i: Elite II hideouts as an orange skull (smaller than the dungeon's) with the name and levels, from the data only.
 -- S149b: the world boss's barrow as an icy crown with its name (WorldMap/Overlay adds the boss's live state).
+-- Owner 2026-10-21 ("the labels overlap; leave the clickable symbols and show more on a click, make them more
+-- visible"): every icon sits on a dark round badge ringed in its colour; captions and area names show only with the
+-- "Labels" switch (off by default) or while the pointer is over the icon or area; the card opens on a click as before.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -58,6 +61,7 @@ export type Icon = {
 	color: Color3,
 	base: number, -- importance without quest marks
 	priority: number,
+	hover: boolean?, -- owner 2026-10-21: the pointer is over it (its caption shows)
 	crowded: boolean,
 	target: string?, -- portals: map they lead to
 	hidden: boolean?, -- S104: an NPC the character does not see yet (NpcMarkState.Hidden)
@@ -85,6 +89,8 @@ export type Cached = {
 	captions: { TextLabel },
 	painted: ImageLabel?, -- S119
 	sketchLayer: Frame?, -- S119: the drawn terrain (nil when the painted map replaced it at build time)
+	labels: boolean, -- owner 2026-10-21: the "Labels" switch
+	detail: boolean, -- the zoom shows NPC names
 }
 
 local PRIORITY: { [IconKind]: number } =
@@ -162,6 +168,24 @@ local function icon(
 	button.Text = ""
 	button.ZIndex = parent.ZIndex + 1
 	button.Parent = parent
+	-- owner 2026-10-21: a dark badge ringed in the icon's colour, so a symbol reads on any ground
+	local badge = Instance.new("Frame")
+	badge.Name = "Badge"
+	badge.AnchorPoint = Vector2.new(0.5, 0.5)
+	badge.Position = UDim2.fromScale(0.5, 0.5)
+	badge.Size = UDim2.fromOffset(size + 10, size + 10)
+	badge.BackgroundColor3 = Theme.Iron.Sunken
+	badge.BackgroundTransparency = 0.15
+	badge.ZIndex = parent.ZIndex + 1
+	badge.Active = false
+	local round = Instance.new("UICorner")
+	round.CornerRadius = UDim.new(1, 0)
+	round.Parent = badge
+	local ring = Instance.new("UIStroke")
+	ring.Color = color
+	ring.Thickness = 2
+	ring.Parent = badge
+	badge.Parent = button
 	local label = text(button, glyph, color, size, parent.ZIndex + 2)
 	label.Size = UDim2.fromOffset(size + 8, size + 6)
 	if art then
@@ -184,6 +208,15 @@ local function icon(
 		target = nil,
 	}
 	table.insert(cached.icons, entry)
+	-- the caption shows while the pointer is over the icon (Canvas.showCaption)
+	button.MouseEnter:Connect(function()
+		entry.hover = true
+		Canvas.showCaption(cached, entry)
+	end)
+	button.MouseLeave:Connect(function()
+		entry.hover = false
+		Canvas.showCaption(cached, entry)
+	end)
 	return entry
 end
 
@@ -420,6 +453,13 @@ local function areaFrames(cached: Cached, layers: { [string]: Frame })
 		name.RichText = true -- S33: the profile icon in its colour
 		local levels = line(2, 17, Theme.Fonts.Display)
 		pill.Parent = f
+		f.MouseEnter:Connect(function()
+			name.Visible = true
+		end)
+		f.MouseLeave:Connect(function()
+			name.Visible = cached.labels
+		end)
+		name.Visible = false
 		local star = Instance.new("ImageLabel")
 		star.Name = "Recommended"
 		star.AnchorPoint = Vector2.new(1, 0)
@@ -505,7 +545,20 @@ function Canvas.applyFilter(cached: Cached, services: { [string]: boolean }?)
 	end
 end
 
-export type Toggles = { areas: boolean, icons: boolean, npcs: boolean, nodes: boolean }
+export type Toggles = { areas: boolean, icons: boolean, npcs: boolean, nodes: boolean, labels: boolean? }
+
+-- Owner 2026-10-21: whether an icon's caption shows: the "Labels" switch (NPC names only from the detail zoom) or the
+-- pointer over it.
+function Canvas.showCaption(cached: Cached, entry: Icon)
+	local caption = entry.caption
+	if not caption then
+		return
+	end
+	local labels = cached.labels and (entry.kind ~= "npc" or cached.detail)
+	caption.Visible = labels or entry.hover == true
+	-- a hovered caption draws over its neighbours
+	caption.ZIndex = if entry.hover then entry.button.ZIndex + 6 else entry.button.ZIndex + 1
+end
 
 -- Layer switches, crowding at the smallest zoom and hit areas that keep their size at every zoom.
 function Canvas.applyZoom(cached: Cached, zoomIndex: number, toggles: Toggles)
@@ -515,13 +568,16 @@ function Canvas.applyZoom(cached: Cached, zoomIndex: number, toggles: Toggles)
 	cached.layers.icons.Visible = toggles.icons
 	cached.layers.npcs.Visible = toggles.npcs
 	cached.layers.nodes.Visible = toggles.nodes and detail
+	cached.labels = toggles.labels == true
+	cached.detail = detail
+	for _, area in cached.areas do
+		area.name.Visible = cached.labels
+	end
 	local hit = Canvas.HIT / zoom
 	for _, entry in cached.icons do
 		entry.button.Size = UDim2.fromOffset(hit, hit)
 		entry.button.Visible = not (zoomIndex == 1 and entry.crowded) and not entry.hidden
-		if entry.kind == "npc" and entry.caption then
-			entry.caption.Visible = detail
-		end
+		Canvas.showCaption(cached, entry)
 	end
 end
 
@@ -660,6 +716,8 @@ function Canvas.get(mapId: string): Cached?
 		captions = {},
 		painted = painted,
 		sketchLayer = sketchLayer,
+		labels = false,
+		detail = false,
 	}
 	paint(cached)
 	areaFrames(cached, layers)
