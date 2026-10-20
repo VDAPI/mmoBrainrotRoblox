@@ -13150,3 +13150,20 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/server/Admin/Character.luau`, `src/client/Controllers/{LoginRewardController,ReturningController}.luau`,
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### W26: warianty potworów na modelach bazy (iceWolf, snowLeopard, blackBear)
+- `Data/MonsterAssetVariants` (nowy): wariant bierze model Tripo bazy (`from`) i własny kolor (`tint`, mnożnik tekstury):
+  `iceWolf` = `wolf` w lodowym błękicie (`#C4DCF6`), `snowLeopard` = `lynx` w chłodnej biało-szarej (`#D2D6DE`, cętki
+  zostają ciemne), `blackBear` = `brownBear` prawie czarny brąz (`#463C36`). `Data/MonsterAssets` kopiuje wariantowi wpis
+  bazy (hitbox, klipy, `visual`) z polami `from` i `tint`, tylko gdy baza ma wpis: `brownBear` nie ma modelu, więc
+  `blackBear` zostaje przy generatorze bez błędu, a wejdzie sam, gdy model się pojawi. Bez łańcuchów (baza nie jest wariantem).
+- `Data/MonsterLooks`: `asset.model` = baza, `color` = barwa wariantu, bez odcienia regionu; `MonsterLooks.assetModel(id)`.
+  Wcześniej iceWolf i snowLeopard dziedziczyły model bazy przez `inherit`, ale tylko z odcieniem regionu przez
+  `BasePart.Color`, który na teksturze Tripo nic nie zmienia.
+- `MonsterViewController`: przemalowanie `SurfaceAppearance.Color` (jak kolor włosów); teksturowany MeshPart bez
+  SurfaceAppearance dostaje ją z tą samą teksturą, gdy silnik pozwala (inaczej zostaje bez zmian); części bez tekstury
+  mnożą `Color`. Brak modelu bazy w grze: wariant cicho wraca do generatora. Skala wariantu jego własna (`size`, elity
+  na tym samym modelu, jak dotąd); klipy i role kości ze wspólnego szkieletu bazy.
+- Nieobejrzane w Studio.
+- **Pliki:** `src/shared/Data/{MonsterAssetVariants,MonsterAssets,MonsterLooks}.luau`,
+  `src/client/Controllers/MonsterViewController.luau`, `tests/monsterassets.spec.luau` (nowy), `docs/SESJE.md`.
