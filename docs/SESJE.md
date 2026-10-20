@@ -3,7 +3,6 @@
 > Dla każdej sesji: co zrobiono, najważniejsze pliki (bez instrukcji testu od fazy gameplayu). Nowe sesje i poprawki dopisuj na końcu.
 > Stan i niedokończone: `docs/PROGRESS.md`; decyzje: `docs/DECYZJE.md`; API silników: `docs/SILNIKI.md`.
 
-
 ### S01: Fundament, dane, wybór postaci
 
 **Zrobione**
@@ -13151,6 +13150,32 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
 
+### W28: tabliczka nad głową gracza (znikanie, wygląd, klik)
+
+- **Zgłoszenie właściciela:** nick nad własną głową czasem znika (także po teleportach na inne mapy); tabliczka zbyt
+  widoczna, duża, z ramką; ma zostać sam nick i tytuł, klikalne.
+- **Przyczyna znikania:** BillboardGui trzymał się części `Head` znalezionej przy budowie i zmieniał ją tylko przy
+  `ChildAdded` z nazwą `Head`. Głowa wymieniona (ApplyDescription wyglądu klasy, streaming, podmiana modelu) bez takiego
+  zdarzenia zostawiała Adornee na martwej części i napis znikał na stałe. Do tego zapasowe dołączanie po nazwie modelu
+  w `Workspace.ChildAdded` mogło zabrać tabliczkę żywej postaci drugiemu modelowi o tej samej nazwie, a `byPlayer`
+  zostawał na zniszczonym modelu. Nic potem tabliczki nie odbudowywało.
+- **Naprawa (`NameplateController`):** kotwica (Head, a bez niej HumanoidRootPart wyżej o `rootLift`) sprawdzana co
+  `checkEvery` i przy każdym `ChildAdded` / `ChildRemoved`; co `sweepEvery` (oraz zaraz po CharacterAdded i przy
+  `MapTransition`) każdy gracz z postacią dostaje żywą tabliczkę: brak tabliczki, zniszczony BillboardGui albo
+  zgubiony folder w PlayerGui są budowane od nowa. Model o tej samej nazwie nie zabiera tabliczki żywej postaci,
+  `drop` czyści `byPlayer`. Dotyczy też własnej postaci.
+- **Na bazie poprawki właściciela 837de9c8** (bez tła i ramki, rozmiary 19 / 14, pełny ciemny obrys, szukanie Head
+  w sprawdzaniu odległości): zostawione, rozszerzone jak niżej.
+- **Wygląd:** bez tła, ramki, linii poziomu i klasy, plakietki VIP i kropki PvP. Nick (ciemny obrys, kolor:
+  czerwony przy PvP, złoty własny i VIP, biały pozostali), tag gildii małą czcionką przed nickiem, tytuł mniejszy nad
+  nickiem, ✶ błogosławieństwa za nickiem, cienki pasek HP tylko u rannych innych graczy. Mniejsze rozmiary
+  (`Config.Nameplate`), `UIScale` z odległości kamery (`Nameplate.scale`: 1 do 18 studów, nigdy większe, do 0,7 na 110).
+- **Klik:** nick innego gracza (lewy, prawy przycisk, dotknięcie) otwiera istniejące menu gracza S133
+  (`PartyController.OpenMenu`: profil, drużyna, handel, szept itd.); przycisk ma szerokość samego tekstu, więc nie
+  zasłania potworów. Własny nick nie łapie kliknięć (nie blokuje obrotu kamery na telefonie).
+- **Testy:** `tests/nameplate.spec.luau` (widok bez poziomu i VIP, brak własnego paska HP, `Nameplate.scale`).
+- **Pliki:** `src/client/Controllers/NameplateController.luau`, `src/shared/Logic/Nameplate.luau`,
+  `src/shared/Config.luau`, `tests/nameplate.spec.luau`, `docs/{SESJE,DECYZJE}.md`.
 ### W28: Ristalle (arena PvP w mieście) jako kamienne koloseum
 
 Zgłoszenie właściciela: arena wyglądała jak rozsypany piasek, trawa wrastała w podłogę. Miejsce bez zmian: środek (190, -160),
@@ -13195,6 +13220,51 @@ Prośba właściciela: „Żeby ramki itemów uni itp. były grubsze i bardziej 
 - **Pliki:** `src/shared/Logic/RarityFrame.luau`, `src/client/UI/Components/RarityFrame.luau`,
   `tests/rarityframe.spec.luau` (nowe), `src/client/UI/Components/{ItemSlot,ItemTooltip}.luau`,
   `src/client/Controllers/LootController.luau`, `docs/SESJE.md`.
+
+### W28: zielone bańki na Łąkach (zgłoszenie właściciela 2026-10-20)
+
+- **Co to było:** gładkie zielone elipsoidy z klocków generatora. Jałowce (`under:juniper`, ok. 440 na Łąkach) nie
+  miały modelu w zestawie, więc zawsze stały jako dwie gładkie kule do 6 studów (Wilcze Wzgórza, wąwóz, goblini);
+  krzak, sadzonka, brzoza i wierzba bez modelu (zapas, gdy model zestawu nie wczyta się) były jedną kulą. Do tego
+  `DecorController`: szablony z `Shape = Ball` i nierównym rozmiarem (mech, kamyki, błoto, grzyby, wełna) Roblox
+  wyrównuje do kuli, więc płaskie poduszki mchu stały jak okrągłe zielone kulki.
+- **Poprawki:** `Data/Kit` wpis `under:juniper` (małe iglaki Yasu `grass_tree_12` / `11`, zieleń sosny). Zapasowe
+  klocki w `MeadowsGen/Nature`: krzak jako kępa 6 brył w czterech zieleniach (ciemna podstawa, jaśniejszy wierzch),
+  czasem jagody albo drobne kwiaty; jałowiec jako stożek 4 pięter, czubek, boczny pęd i granatowe jagody; sadzonka z
+  koroną z trzech brył; dąb 3, brzoza 2 i wierzba 3 dodatkowe bryły korony. `DecorController`: kula o nierównym
+  rozmiarze to Block z `SpecialMesh` Sphere (jak `BlueprintBuild`). `KitAssets.place`: przyciemnia też samą siatkę
+  liści, więc korona bez wczytanej tekstury ma kolor odcienia, a nie jasną plamę.
+- **Testy:** `tests/meadows.spec.luau` „Meadows foliage (W28)”: żadnej samotnej zielonej kuli od 2,5 studa (każdy
+  liściasty rekwizyt to co najmniej 3 bryły) i model zestawu dla każdego slotu drzewa / podszytu z liśćmi na Łąkach.
+- **Pliki:** `src/shared/Logic/MeadowsGen/Nature.luau`, `src/shared/Data/Kit.luau`, `src/shared/Util/KitAssets.luau`,
+  `src/client/Controllers/DecorController.luau`, `tests/meadows.spec.luau`, `docs/SESJE.md`.
+- Bez przeglądu w Studio (brak MCP); modele `grass_tree_11` / `12` są już w miejscu (paczka Yasu).
+
+
+### W28: szybkie klikanie bez „Nieprawidłowe żądanie”
+- **Przyczyna:** `Net.Handle` odpowiadał `error.badRequest` także na pełny kubełek limitu (remote'y z `rate` 0.5–2,
+  np. `SetPvp`, `AutoGrind`, `LureToggle`, `MailRefresh`, `ArenaSpectate`, pozwalają na 2–4 wywołania naraz). Do tego
+  drugie kliknięcie w tę samą akcję szło do serwera, gdy pierwsze już zmieniło slot (`UseItem`, `DestroyItem`,
+  `ToggleLock`, `MoveItem`, `EquipItem` na pustym slocie, `UnequipItem` już zdjętego, `SwapRings` bez pierścieni).
+- **Serwer:** limit odpowiada `error.rateLimited` (`RequestGuard.rejectCode`), `error.badRequest` tylko przy złych
+  argumentach (log z nazwą remote'a i skrótem argumentów); każde `error.badRequest` zwrócone przez handler też trafia
+  do logu z nazwą remote'a. Pusty slot po poprzednim kliknięciu: nowy cichy klucz `error.stale`; `UnequipItem`
+  pustego slotu i `SwapRings` bez pierścieni zwracają ok, `LureToggle` z tym samym stanem ok bez drugiego toastu.
+  `UnequipItem` z nieznaną nazwą slotu dalej `error.badRequest`.
+- **Klient:** na bazie poprawki 7fed5891 (powtórka po `error.rateLimited`, końcowe nile w `ArgCheck`) `Net.Invoke`
+  dodatkowo przez `Logic/RequestGuard`: to samo wywołanie (remote + argumenty) w locie czeka na
+  pierwsze i dostaje jego wynik, powtórzone w 0,25 s dostaje ostatni wynik (bez drugiego wywołania), przełącznik
+  (`Definitions.toggle`) w 0,2 s z innymi argumentami odpowiada `error.tooFast`; `Definitions.repeatable` (rzucanie,
+  zakupy po jednym, ulepszanie, rozdawanie punktów) wysyła powtórzenie od razu po odpowiedzi. `Toast.push` pomija
+  ciche klucze (`RequestGuard.SILENT`: `error.tooFast`, `error.rateLimited`, `error.stale`), przyciski HUD (Wabik,
+  Auto-polowanie, Auto-mikstury) i `ItemController` nie grają wtedy dźwięku błędu.
+- **Testy:** nowy `tests/requestguard.spec.luau` (kody odrzucenia, ciche klucze w PL i EN, klucze wywołań, werdykty
+  join / reuse / drop / send, flagi w `Definitions`).
+- **Pliki:** `src/shared/Logic/RequestGuard.luau` (nowy), `src/shared/Net/{init,Definitions}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/client/UI/Components/Toast.luau`,
+  `src/client/Controllers/ItemController.luau`, `src/client/UI/Screens/Hud/{LureButton,AutoGrindButton,AutoPotionButton}.luau`,
+  `src/server/Services/{InventoryService,EquipmentService,DepositService,LureService}.luau`,
+  `tests/requestguard.spec.luau`, `docs/{SESJE,DECYZJE}.md`.
 
 ### S134d: Inwazja jako strefa (gorące łowisko)
 
