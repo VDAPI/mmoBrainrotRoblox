@@ -13191,4 +13191,4 @@ piasek 80 x 80 (strefa `zone.arena`), trybuny 14, wyjście (190, -88), punkty st
   na tym samym modelu, jak dotąd); klipy i role kości ze wspólnego szkieletu bazy.
 - Nieobejrzane w Studio.
 - **Pliki:** `src/shared/Data/{MonsterAssetVariants,MonsterAssets,MonsterLooks}.luau`,
-  `src/client/Controllers/MonsterViewController.luau`, `tests/monsterassets.spec.luau` (nowy), `docs/SESJE.md`.
+  `src/client/Controllers/MonsterViewController.luau`, `tests/monsterassets.spec.luau` (nowy), `tools/balance_reasons.luau`, `docs/SESJE.md`.
