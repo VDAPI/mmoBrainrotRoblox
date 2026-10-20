@@ -639,7 +639,24 @@ local function takeProjectile(kind: string, color: Color3?): BasePart
 			bolt.Material = Enum.Material.Metal
 			part = bolt
 		else
-			local orb = effectPart("MagicBolt", Vector3.new(0.8, 0.8, 0.8), WORLD_MAGIC, Enum.PartType.Ball)
+			-- W03: a small hot core; the colour is in the glow sprite and the textured streak (a big neon ball read as a
+			-- flat blob under the bloom)
+			local orb = effectPart("MagicBolt", Vector3.new(0.45, 0.45, 0.45), WORLD_MAGIC, Enum.PartType.Ball)
+			local glow = Instance.new("ParticleEmitter")
+			glow.Name = "Glow"
+			glow.LightEmission = 1
+			glow.Rate = 40
+			glow.Lifetime = NumberRange.new(0.12, 0.2)
+			glow.Speed = NumberRange.new(0)
+			glow.Size = NumberSequence.new(1.1, 0.2)
+			glow.Transparency = NumberSequence.new(0.35, 1)
+			glow.LockedToPart = true
+			if Textures.particle(glow, "glow") then
+				glow.Parent = orb
+				Clock.track(glow)
+			else
+				glow:Destroy()
+			end
 			local light = Instance.new("PointLight")
 			light.Range = 8
 			light.Parent = orb
@@ -654,9 +671,11 @@ local function takeProjectile(kind: string, color: Color3?): BasePart
 			local trail = Instance.new("Trail")
 			trail.Attachment0 = a0
 			trail.Attachment1 = a1
-			trail.Lifetime = 0.18
+			trail.Lifetime = 0.22
 			trail.LightEmission = 1
-			trail.Transparency = NumberSequence.new(0.2, 1)
+			trail.Transparency = NumberSequence.new(0.15, 1)
+			trail.WidthScale = NumberSequence.new(1, 0)
+			Textures.trail(trail, "trailSoft")
 			trail.Parent = orb
 			Clock.track(trail)
 			part = orb
@@ -665,7 +684,12 @@ local function takeProjectile(kind: string, color: Color3?): BasePart
 	local p = part :: BasePart
 	if kind == "magic" then
 		local c = color or WORLD_MAGIC
-		p.Color = c
+		p.Color = c:Lerp(Color3.new(1, 1, 1), 0.2)
+		local glow = p:FindFirstChild("Glow")
+		if glow and glow:IsA("ParticleEmitter") then
+			glow.Color = ColorSequence.new(c)
+			glow.Enabled = not lowQuality()
+		end
 		local light = p:FindFirstChildOfClass("PointLight")
 		if light then
 			light.Color = c
@@ -763,11 +787,11 @@ local function stepFlights()
 				end)
 			else
 				if kind == "magic" and not lowQuality() then
-					local burst = effectPart("Burst", Vector3.one * 0.6, part.Color, Enum.PartType.Ball)
-					burst.CFrame = part.CFrame
-					burst.Transparency = 0.2
-					Clock.tween(burst, TweenInfo.new(0.18), { Size = Vector3.one * 2.4, Transparency = 1 })
-					destroyLater(burst, 0.2)
+					-- W03: a short textured flash and a few sparks instead of a growing neon ball
+					local trail = part:FindFirstChildOfClass("Trail")
+					local tint = if trail then trail.Color.Keypoints[1].Value else part.Color
+					Library.impactFlash(part.Position, 1.4, tint)
+					Library.sparks(part.Position, tint, { count = 5, life = { 0.12, 0.25 } })
 				end
 				giveBack(kind, part)
 			end
