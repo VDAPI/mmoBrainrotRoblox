@@ -549,3 +549,11 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Wygląd latarni zostaje z równoległej poprawki na `main` (słup 13 st., światło zasięg 26, bez cieni, tylko nocą, tylko w promieniu detalu); `Structures.lamps` bierze teraz obrót ramienia z danych (`rot`), a gdy go brak, dalej celuje w najbliższą ulicę.
 - Noc w mieście odrobinę jaśniejsza w cieniu między latarniami (`LIGHT.cityNight` otoczenie `#424C6A`, na zewnątrz `#606C8E`).
 - Części: shell miasta ok. 5690 (limit testu 6500). Nowy test w `town.spec`: dane równe wynikowi generatora, brak ciemnych przerw na ulicach, latarnie na wolnym gruncie, z dala od areny, NPC i drzwi. Bez podglądu w Studio.
+
+### Przegląd w Studio i poprawki właściciela (2026-10-21, noc)
+- Potwory z Tripo: niedźwiedź, Vaelgrath, młody smok mrozu, wyrm szronu, ghul (klipy Mixamo z Blendera, `Data/MonsterClips/ghoul`), upiór; obejrzane w `/mobviz`.
+- Rekwizyty Tripo: kamień kultu ×9, kaplica Vael, Pradrzewo, Brama z Żeber, czaszka, lodospad, wieże Strażnicy, kolos, gniazdo harpii, płaczki w Krypcie (nowe sloty `landmark:*` w generatorach); obejrzane w grze, obrócone Brama i lodospad.
+- Postacie: stroje dopasowane do ciała (`AvatarBuild.shell`, `blob`, `skirt`), buty, kolory Łowcy i Maga; obejrzane na 4 klasach.
+- Walka: ładowanie, iskry obszaru, salwy i efekty uderzeń bossów (AnimLab Morvane, Hrimvald), ciosy zwykłych potworów.
+- Mapa świata bez nachodzących napisów (przełącznik „Napisy”, podpis po najechaniu), symbole na krążkach.
+- Wysoka trawa to dekoracja terenu Roblox (`Terrain.Decoration`, nieskryptowalne): właściciel wyłącza w Studio.
