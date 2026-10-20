@@ -13175,6 +13175,25 @@ piasek 80 x 80 (strefa `zone.arena`), trybuny 14, wyjście (190, -88), punkty st
   `src/client/Controllers/DecorController.luau`, `src/server/World/Prefabs.luau`,
   `src/server/World/Layouts/{city,arena_pit}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
   `tests/towngen.spec.luau`, `docs/SESJE.md`. Bez przeglądu w Studio.
+### W28: grubsze i wyraźniejsze ramki rzadkości przedmiotów
+Prośba właściciela: „Żeby ramki itemów uni itp. były grubsze i bardziej widoczne”.
+- **Jedno miejsce:** nowy `UI/Components/RarityFrame.luau` rysuje ramkę każdej komórki przedmiotu (`ItemSlot`, więc
+  plecak, ekwipunek, depozyt, sklep, łup, handel, poczta, kowal), ramkę dymka przedmiotu i tabliczkę łupu na ziemi.
+- **Wygląd:** pełny kolor rzadkości (bez ciemniejszego wariantu na pergaminie), pasek wewnątrz komórki (obrys `Inner`,
+  nie nachodzi na sąsiednie komórki), grubość z `frame.thickness` (podniesionej przez właściciela 20.10, e30f5107)
+  przy 64 px, skalowana z rozmiarem komórki (0,65 do 1,3; telefon 40 px dalej czytelny), ciemna linia 1 px na krawędzi na pergaminie (żółty Unikatowy widoczny),
+  delikatne podświetlenie tła kolorem rzadkości od dołu (od Unikatowego), wewnętrzna poświata (od Heroicznego),
+  romby w narożnikach (od Unikatowego). Ikona nietknięta: pasek i poświata mieszczą się w marginesie ikony (11%).
+- **Ruch:** Legendarny ma przesuwający się błysk na ramce, Mityczny powoli pulsującą poświatę. Jedno połączenie
+  `RenderStepped` (tylko gdy taka ramka istnieje), ~30 Hz, pomija ramki niewidoczne (ukryte okno, wyłączony ScreenGui).
+  Stary obracający się gradient i poświata na zewnątrz komórki usunięte.
+- **Dymek:** obramowanie 3 px od Unikatowego, gradient dla Legendarnego i Mitycznego. **Łup na ziemi:** nazwa na
+  ciemnej tabliczce z obwódką w kolorze najlepszego przedmiotu (2,5 px od Unikatowego).
+- **Testy:** nowy `tests/rarityframe.spec.luau` (grubość rośnie z rzadkością, skala, minimum, poświata w marginesie
+  ikony, romby i tło od Unikatowego). Brak przeglądu w Studio.
+- **Pliki:** `src/shared/Logic/RarityFrame.luau`, `src/client/UI/Components/RarityFrame.luau`,
+  `tests/rarityframe.spec.luau` (nowe), `src/client/UI/Components/{ItemSlot,ItemTooltip}.luau`,
+  `src/client/Controllers/LootController.luau`, `docs/SESJE.md`.
 
 ### W28: zielone bańki na Łąkach (zgłoszenie właściciela 2026-10-20)
 
