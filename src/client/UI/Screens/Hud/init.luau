@@ -19,6 +19,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LoginButton = require(script.LoginButton)
+local LowHp = require(ReplicatedStorage.Shared.Logic.LowHp)
 local LowHpVignette = require(script.LowHpVignette) -- S134f
 local LureButton = require(script.LureButton)
 local AutoGrindButton = require(script.AutoGrindButton) -- S134d
@@ -107,8 +108,30 @@ local function number(scope: Scope, path: { string }): Fusion.Computed<number>
 	end)
 end
 
+-- W28: the HP bar breathes on low health, on and off with the red vignette (Logic/LowHp, the same hysteresis and
+-- the same setting `lowHpWarn`)
+local function lowHpPulse(
+	scope: Scope,
+	hp: Fusion.Computed<number>,
+	maxHp: Fusion.Computed<number>
+): Fusion.Computed<boolean>
+	local on = scope:Value(false)
+	local function update()
+		on:set((LowHp.state(Fusion.peek(hp), Fusion.peek(maxHp), Fusion.peek(on), Config.LowHp)))
+	end
+	update()
+	scope:Observer(hp):onChange(update)
+	scope:Observer(maxHp):onChange(update)
+	local enabled = State.Value({ "account", "settings", "lowHpWarn" })
+	return scope:Computed(function(use): boolean
+		return use(on) and use(enabled) ~= false
+	end)
+end
+
 local function portrait(scope: Scope): Instance
 	local name = State.Value({ "character", "name" })
+	local hp = number(scope, { "character", "hp" })
+	local maxHp = number(scope, { "derived", "values", "maxHp" })
 	local level = number(scope, { "character", "level" })
 	local classId = State.Value({ "character", "class" })
 	local class = scope:Computed(function(use): Classes.ClassDef?
@@ -227,11 +250,13 @@ local function portrait(scope: Scope): Instance
 					Bar(scope, {
 						Name = "Hp",
 						LayoutOrder = 1,
-						Value = number(scope, { "character", "hp" }),
-						Max = number(scope, { "derived", "values", "maxHp" }),
+						Value = hp,
+						Max = maxHp,
 						Color = Theme.Resource.Hp,
 						Label = Text.T(scope, "hud.hp"),
 						ShowNumbers = true,
+						Ghost = true, -- W28
+						Pulse = lowHpPulse(scope, hp, maxHp),
 					}),
 					Bar(scope, {
 						Name = "Mana",
