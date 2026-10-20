@@ -190,7 +190,8 @@ local function cloneAsset(lookId: string, look: MonsterLooks.Look?, scale: numbe
 		model:Destroy()
 		return nil
 	end
-	local factor = scale * (asset.scale or 1)
+	-- W26: `visual` grows the drawn model only (its pivot stands at the feet, so it still stands on the ground)
+	local factor = scale * (asset.scale or 1) * (asset.visual or 1)
 	if math.abs(factor - 1) > 1e-3 then
 		model:ScaleTo(model:GetScale() * factor)
 	end
@@ -326,7 +327,11 @@ local function track(model: Instance)
 	if look and look.asset then
 		local asset = look.asset
 		local k = s * (asset.scale or 1)
-		body = { rootHalf = asset.rootSize[2] * k / 2, hipHeight = asset.hipHeight * k, height = asset.height * k }
+		body = {
+			rootHalf = asset.rootSize[2] * k / 2,
+			hipHeight = asset.hipHeight * k,
+			height = asset.height * k * (asset.visual or 1),
+		}
 		assetName = asset.model
 	elseif look then
 		local rig = rigFor(lookId, look, v, s)

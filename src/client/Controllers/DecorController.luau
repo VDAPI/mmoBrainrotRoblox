@@ -134,12 +134,13 @@ local T: { [string]: Template } = {
 		lift = 0.1,
 		tilt = true,
 	},
-	tuft = { size = Vector3.new(0.5, 1.1, 0.5), color = rgb("#5C8A3A"), material = Enum.Material.Grass, lift = 0.4 },
+	-- owner 2026-10-20: the grass hid the small monsters (tufts 1.1 / 1.2 -> 0.7 / 0.8 tall)
+	tuft = { size = Vector3.new(0.5, 0.7, 0.5), color = rgb("#5C8A3A"), material = Enum.Material.Grass, lift = 0.25 },
 	tuftDark = {
-		size = Vector3.new(0.5, 1.2, 0.5),
+		size = Vector3.new(0.5, 0.8, 0.5),
 		color = rgb("#34502A"),
 		material = Enum.Material.Grass,
-		lift = 0.45,
+		lift = 0.3,
 	},
 	tuftDry = { size = Vector3.new(0.5, 0.9, 0.5), color = rgb("#B8A060"), material = Enum.Material.Grass, lift = 0.35 },
 	flowerY = {
@@ -242,10 +243,10 @@ local T: { [string]: Template } = {
 		lift = 0.45,
 	},
 	tallGrass = {
-		size = Vector3.new(0.6, 2.2, 0.6),
+		size = Vector3.new(0.6, 1.3, 0.6), -- owner 2026-10-20: 2.2 -> 1.3 (hid the monsters)
 		color = rgb("#6E9A44"),
 		material = Enum.Material.Grass,
-		lift = 0.9,
+		lift = 0.5,
 		tilt = true,
 	},
 	lily = {
@@ -489,7 +490,7 @@ local THEMES: { [string]: { count: number, mix: { { string | number } } } } = {
 		count = 44,
 		mix = {
 			{ "tuft", 8 },
-			{ "tallGrass", 5 },
+			{ "tallGrass", 2 },
 			{ "flowerY", 4 },
 			{ "flowerP", 4 },
 			{ "flowerB", 3 },

@@ -15,6 +15,7 @@ export type AssetLook = {
 	height: number, -- top of the model above the ground, for name plates
 	scale: number?, -- extra ScaleTo factor
 	walkSpeed: number?, -- speed the walk clip was authored for
+	visual: number?, -- W26: the drawn model's size over the hitbox (Data/MonsterAssets; looks only)
 	tint: boolean?, -- apply the region tint
 	anims: { [string]: string }?, -- idle, walk, run, attack1, attack2, cast, hit, death, spawn -> "rbxassetid://..."
 }
@@ -577,6 +578,7 @@ for id, entry in MonsterAssets do
 			hipHeight = entry.hipHeight,
 			height = entry.height,
 			walkSpeed = entry.walkSpeed,
+			visual = entry.visual,
 			tint = true,
 		}
 	end

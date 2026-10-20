@@ -11,6 +11,7 @@ export type Entry = {
 	hipHeight: number,
 	height: number,
 	walkSpeed: number,
+	visual: number?, -- filled below: the drawn model's size over the hitbox (looks only)
 }
 
 local MonsterAssets: { [string]: Entry } = {
@@ -80,5 +81,15 @@ local MonsterAssets: { [string]: Entry } = {
 	lynx = { rig = "static", rootSize = { 1.56, 1.34, 2.91 }, hipHeight = 1.06, height = 3.61, walkSpeed = 5.4 },
 	rabbit = { rig = "static", rootSize = { 1.50, 1.34, 1.94 }, hipHeight = 0.28, height = 2.96, walkSpeed = 4.4 },
 }
+
+-- Owner 2026-10-20: the models looked too small next to the players. Only the drawn model grows (the hitbox, the hip
+-- height and the fight stay the generator's): x1.3, small creatures up to a drawn height of VISUAL_MIN studs (at most
+-- x2.2).
+local VISUAL = 1.3
+local VISUAL_MIN = 3.4
+local VISUAL_MAX = 2.2
+for _, entry in MonsterAssets do
+	entry.visual = math.clamp(VISUAL_MIN / entry.height, VISUAL, VISUAL_MAX)
+end
 
 return MonsterAssets

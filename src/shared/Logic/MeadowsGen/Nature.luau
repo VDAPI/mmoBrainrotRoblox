@@ -266,7 +266,7 @@ function Nature.undergrowth(bp: Kit.BP, kind: string, x: number, y: number, z: n
 		for _ = 1, rng:int(4, 7) do
 			local a, d = rng:float(0, math.pi * 2), rng:float(0, 2.4)
 			local px, pz = x + math.cos(a) * d, z + math.sin(a) * d
-			local h = rng:float(1, 1.7)
+			local h = rng:float(0.7, 1.1) -- owner 2026-10-20: lower (1..1.7 hid the monsters)
 			bp:add(
 				"cyl",
 				h,
@@ -302,7 +302,7 @@ function Nature.undergrowth(bp: Kit.BP, kind: string, x: number, y: number, z: n
 		for _ = 1, rng:int(5, 8) do
 			local a, d = rng:float(0, math.pi * 2), rng:float(0, 2.8)
 			local px, pz = x + math.cos(a) * d, z + math.sin(a) * d
-			local h = rng:float(0.7, 1.3)
+			local h = rng:float(0.5, 0.9)
 			bp:add(
 				"cyl",
 				h,
