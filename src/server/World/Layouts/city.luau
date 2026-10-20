@@ -114,6 +114,8 @@ return function(ctx: Build.Context)
 		elseif build.tag == "tourneyFame" then
 			-- S130: the Champions of Vaelthorn (TourneyService / TourneyFameController)
 			fameHall(result, "tourneyFameBoard", "tourneyFamePlinth", "TourneyFame")
+		elseif build.tag == "special" then
+			Prefabs.signBoards(result.tagged.arenaSign, "town.sign.arena") -- W28: the Ristalle's gate signs
 		end
 	end
 	ctx.parts += parts

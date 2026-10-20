@@ -40,6 +40,8 @@ local AreaProfiles = require(Shared.Data.AreaProfiles)
 local AttackPose = require(Shared.Logic.AttackPose)
 local AutoGrind = require(Shared.Logic.AutoGrind)
 local Bonuses = require(Shared.Data.Bonuses)
+local Bosses = require(Shared.Data.Bosses)
+local Config = require(Shared.Config)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
 local Block = require(Shared.Logic.Block)
@@ -63,6 +65,7 @@ local MonsterCast = require(Shared.Logic.MonsterCast)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local QuestBudget = require(Shared.Logic.QuestBudget)
 local Net = require(Shared.Net)
+local LevelLock = require(Shared.Logic.LevelLock)
 local Loot = require(Shared.Logic.Loot)
 local Luck = require(Shared.Logic.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
@@ -164,6 +167,7 @@ type Attacker = {
 	nextAttack: number,
 	damageOverride: number?,
 	rejectedAt: number, -- last AttackRejected sent (rate limit)
+	lockToast: number?, -- owner 2026-10-20: last level lock toast (os.clock)
 	outOfRangeSince: number?, -- standing still out of range since (for the "too far" message)
 	shockAt: { [string]: number }, -- S63: last Concussion stun (os.clock) per target entity id
 	resourceAt: number?, -- S63: last resourceOnHit refund (os.clock)
@@ -1273,6 +1277,24 @@ function CombatService.DealDamage(
 	if targetEntity.kind == "monster" then
 		local monster = targetEntity.monster
 		if not monster or not monster:IsAlive() then
+			return nil
+		end
+		-- owner 2026-10-20: an out-levelled Elite / Elite II / dungeon boss takes nothing from this character
+		local bossDef = Bosses.get(monster.def.id)
+		if
+			LevelLock.blocked(
+				attacker.level,
+				monster.stats.level,
+				monster.variant,
+				bossDef ~= nil and bossDef.world == true
+			)
+		then
+			local state = attackerState(player)
+			local now = os.clock()
+			if now - (state.lockToast or 0) > 4 then
+				state.lockToast = now
+				Net.Fire(player, "Toast", "combat.levelLock", { gap = Config.LevelLock.gap }, "error")
+			end
 			return nil
 		end
 		local defender = MonsterStats.asDefender(monster.stats)

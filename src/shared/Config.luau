@@ -357,6 +357,9 @@ local Config = {
 	-- speed buffs and sprint do not apply, slows do (S63 speed factor). Mounting takes mountTime seconds standing
 	-- still (mountTimeFast from mount level fastFromLevel); moving more than moveLimit studs, taking damage or using
 	-- a skill interrupts it. Levels are raised in S97.
+	-- Owner 2026-10-20 (Logic/LevelLock): a character this many levels or more above an Elite, an Elite II or a dungeon
+	-- boss cannot hurt it (the world boss and ordinary monsters never locked).
+	LevelLock = { gap = 10 },
 	Mount = {
 		minLevel = 20,
 		baseMul = 2.0, -- owner: 1.6 -> 2.0 and 2.0 -> 2.6 (a horse felt barely faster than the sprint, x1.35)
