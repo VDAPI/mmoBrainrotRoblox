@@ -27,6 +27,8 @@ local AutoGrindButton = require(script.AutoGrindButton) -- S134d
 local AutoPotionButton = require(script.AutoPotionButton) -- S134d
 local LoginReward = require(ReplicatedStorage.Shared.Logic.LoginReward)
 local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local PotionBar = require(script.PotionBar)
 local PvpDot = require(script.Parent.Parent.Components.PvpDot)
 local PvpState = require(script.Parent.Parent.PvpState)
@@ -142,12 +144,14 @@ local function portrait(scope: Scope): Instance
 
 	return scope:New("Frame")({
 		Name = "Portrait",
-		Position = UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large),
+		-- W29: scaled down in the corner on a phone in landscape (Logic/PhoneHud)
+		Position = PhoneLayout.Position(scope, "portrait", UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large)),
 		Size = UDim2.fromOffset(400, 136),
 		-- S136: an iron HUD tile with a 1 px brass edge
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
 		[Children] = {
+			PhoneLayout.UIScale(scope, "portrait"),
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
@@ -284,7 +288,9 @@ local function portrait(scope: Scope): Instance
 	})
 end
 
-local function menu(scope: Scope, props: Props): Instance
+-- The menu's buttons (one set in the menu over the minimap, W29: another in the phone drawer; `after` runs after a
+-- click: the drawer closes).
+local function menuButtons(scope: Scope, props: Props, after: (() -> ())?): { Instance }
 	local buttons = {}
 	for index, entry in props.Menu do
 		table.insert(
@@ -306,16 +312,24 @@ local function menu(scope: Scope, props: Props): Instance
 				Visible = if entry.visible then scope:Computed(entry.visible) else nil,
 				OnClick = function()
 					props.OpenWindow(entry.id)
+					if after then
+						after()
+					end
 				end,
 			})
 		)
 	end
+	return buttons
+end
 
+local function menu(scope: Scope, props: Props): Instance
+	local buttons = menuButtons(scope, props)
 	local MENU_PER_ROW = 7
 	return scope:New("Frame")({
 		Name = "Menu",
 		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, -Theme.Padding.Large, 0, Theme.Padding.Large),
+		-- W29: on a phone in landscape only the scaled minimap and the guide bar (the buttons are in the drawer)
+		Position = PhoneLayout.Position(scope, "minimap", UDim2.new(1, -Theme.Padding.Large, 0, Theme.Padding.Large)),
 		Size = UDim2.fromOffset(0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		BackgroundTransparency = 1,
@@ -330,6 +344,7 @@ local function menu(scope: Scope, props: Props): Instance
 			scope:New("Frame")({
 				Name = "Buttons",
 				LayoutOrder = 1,
+				Visible = PhoneLayout.Pick(scope, false, true),
 				Size = UDim2.fromOffset(
 					MENU_PER_ROW * (Theme.Size.IconButton + Theme.Padding.Small) - Theme.Padding.Small,
 					Theme.Size.IconButton
@@ -355,13 +370,32 @@ local function menu(scope: Scope, props: Props): Instance
 end
 
 local function actionBar(scope: Scope, props: Props): Instance
-	local slots: { Instance } = SkillBar(scope, {
-		Cast = props.CastSlot,
-		Clear = props.ClearSlot,
-		Usable = props.SkillUsable,
-		Color = props.SkillColor,
-		SlotSize = SLOT_SIZE,
-	})
+	-- W29: on a phone in landscape the skill arc (MobileSkills) holds the same slots: only the potions stay
+	local onBar = PhoneLayout.Pick(scope, false, true)
+	local slots: { Instance } = {
+		scope:New("Frame")({
+			Name = "Skills",
+			LayoutOrder = 1,
+			Size = UDim2.fromOffset(0, SLOT_SIZE),
+			AutomaticSize = Enum.AutomaticSize.X,
+			BackgroundTransparency = 1,
+			Visible = onBar,
+			[Children] = {
+				scope:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 6),
+				}),
+				SkillBar(scope, {
+					Cast = props.CastSlot,
+					Clear = props.ClearSlot,
+					Usable = props.SkillUsable,
+					Color = props.SkillColor,
+					SlotSize = SLOT_SIZE,
+				}) :: any,
+			},
+		}),
+	}
 	table.insert(
 		slots,
 		scope:New("Frame")({
@@ -369,6 +403,7 @@ local function actionBar(scope: Scope, props: Props): Instance
 			LayoutOrder = SKILL_SLOTS + 1,
 			Size = UDim2.fromOffset(Theme.Padding.Large, SLOT_SIZE),
 			BackgroundTransparency = 1,
+			Visible = onBar,
 		})
 	)
 	table.insert(
@@ -410,8 +445,8 @@ local function actionBar(scope: Scope, props: Props): Instance
 
 	return scope:New("Frame")({
 		Name = "ActionBar",
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -(14 + Theme.Padding.Medium)),
+		AnchorPoint = PhoneLayout.Anchor(scope, "potions", Vector2.new(0.5, 1)),
+		Position = PhoneLayout.Position(scope, "potions", UDim2.new(0.5, 0, 1, -(14 + Theme.Padding.Medium))),
 		Size = UDim2.fromOffset(0, SLOT_SIZE),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
@@ -463,6 +498,100 @@ local function expBar(scope: Scope): Instance
 	return bar
 end
 
+-- W29: the menu on a phone in landscape: a button left of the minimap opens the menu's buttons (and the login reward
+-- and the season pass, which have no room on the HUD there) as a drawer under it.
+local DRAWER_PER_ROW = 5
+local POOL = PhoneHud.PLACES.pool -- W29: the weapon pool label on a phone in landscape
+
+local function drawer(scope: Scope, props: Props): { Instance }
+	local open = scope:Value(false)
+	local compact = PhoneLayout.Compact
+	scope:Observer(compact):onChange(function()
+		if not Fusion.peek(compact) then
+			open:set(false)
+		end
+	end)
+	local function close()
+		open:set(false)
+	end
+	local cells: { Instance } = menuButtons(scope, props, close)
+	table.insert(
+		cells,
+		LoginButton(scope, {
+			Status = props.LoginStatus,
+			Badge = props.LoginBadge,
+			Open = function()
+				close()
+				props.OpenLogin()
+			end,
+			Position = UDim2.new(),
+		})
+	)
+	table.insert(
+		cells,
+		SeasonButton(scope, {
+			Open = function()
+				close()
+				props.OpenWindow("season")
+			end,
+			Position = UDim2.new(),
+		})
+	)
+	local cell = Theme.Size.IconButton
+	local toggle = PhoneHud.PLACES.menuToggle
+	local xs, xo, ys, yo, ax, ay = PhoneHud.udim(toggle)
+	return {
+		IconButton(scope, {
+			Name = "MenuToggle",
+			Icon = "☰",
+			Tooltip = Text.T(scope, "hud.menuDrawer"),
+			Position = UDim2.new(xs, xo, ys, yo),
+			AnchorPoint = Vector2.new(ax, ay),
+			Size = UDim2.fromOffset(toggle.w, toggle.h),
+			Active = open,
+			Badge = scope:Computed(function(use): boolean
+				return use(props.LoginBadge) == true
+			end),
+			Visible = compact,
+			OnClick = function()
+				open:set(not Fusion.peek(open))
+			end,
+		}),
+		scope:New("Frame")({
+			Name = "MenuDrawer",
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(xs, xo, ys, yo + toggle.h + Theme.Padding.Small),
+			Size = UDim2.fromOffset(DRAWER_PER_ROW * (cell + Theme.Padding.Small) + Theme.Padding.Small, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundColor3 = Theme.Iron.Surface,
+			BackgroundTransparency = Theme.HudAlpha,
+			ZIndex = 5,
+			Visible = scope:Computed(function(use): boolean
+				return use(compact) and use(open)
+			end),
+			[Children] = {
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
+				scope:New("UIPadding")({
+					PaddingTop = UDim.new(0, Theme.Padding.Small),
+					PaddingBottom = UDim.new(0, Theme.Padding.Small),
+					PaddingLeft = UDim.new(0, Theme.Padding.Small),
+					PaddingRight = UDim.new(0, Theme.Padding.Small),
+				}),
+				scope:New("UIGridLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					FillDirectionMaxCells = DRAWER_PER_ROW,
+					HorizontalAlignment = Enum.HorizontalAlignment.Right,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					CellSize = UDim2.fromOffset(cell, cell),
+					CellPadding = UDim2.fromOffset(Theme.Padding.Small, Theme.Padding.Small),
+				}),
+				cells :: any,
+			},
+		}),
+	}
+end
+
 local function Hud(scope: Scope, props: Props): Instance
 	local localPlayer = game:GetService("Players").LocalPlayer
 	local myModel = scope:Value(localPlayer.Character)
@@ -479,39 +608,71 @@ local function Hud(scope: Scope, props: Props): Instance
 		[Children] = {
 			LowHpVignette(scope), -- S134f: under every other HUD element
 			portrait(scope),
-			BlessingIcon(scope, UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 4)),
-			-- S100: right of the portrait, aligned to its bottom (the elixirs end at ~90, the effect icons start at 164)
-			LoginButton(scope, {
-				Status = props.LoginStatus,
-				Badge = props.LoginBadge,
-				Open = props.OpenLogin,
-				Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 - 44),
-			}),
-			-- S152b: the season pass under the login button (the effect icons end at x 268, the cloak row at y 140)
-			SeasonButton(scope, {
-				Open = function()
-					props.OpenWindow("season")
-				end,
-				Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 + 8),
+			BlessingIcon(
+				scope,
+				PhoneLayout.Position(
+					scope,
+					"blessing",
+					UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 4)
+				)
+			),
+			-- W29: on a phone in landscape the login reward and the season pass are in the menu drawer
+			scope:New("Frame")({
+				Name = "HudExtras",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundTransparency = 1,
+				Visible = PhoneLayout.Pick(scope, false, true),
+				[Children] = {
+					-- S100: right of the portrait, aligned to its bottom (the elixirs end at ~90, the effect icons start at 164)
+					LoginButton(scope, {
+						Status = props.LoginStatus,
+						Badge = props.LoginBadge,
+						Open = props.OpenLogin,
+						Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 - 44),
+					}),
+					-- S152b: the season pass under the login button (the effect icons end at x 268, the cloak row at y 140)
+					SeasonButton(scope, {
+						Open = function()
+							props.OpenWindow("season")
+						end,
+						Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 + 8),
+					}),
+				},
 			}),
 			-- S122: the Cloak of Luring right of the login button, below the elixirs (only while it has time)
 			LureButton(
 				scope,
-				UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8, Theme.Padding.Large + 136 - 64)
+				PhoneLayout.Position(
+					scope,
+					"lure",
+					UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8, Theme.Padding.Large + 136 - 64)
+				)
 			),
 			-- S134d: Auto Hunt and Auto Potions right of the cloak (each only while the account has it)
 			AutoGrindButton(
 				scope,
-				UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8 + 56, Theme.Padding.Large + 136 - 64)
+				PhoneLayout.Position(
+					scope,
+					"autoGrind",
+					UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8 + 56, Theme.Padding.Large + 136 - 64)
+				)
 			),
 			AutoPotionButton(
 				scope,
-				UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8 + 112, Theme.Padding.Large + 136 - 64)
+				PhoneLayout.Position(
+					scope,
+					"autoPotion",
+					UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8 + 112, Theme.Padding.Large + 136 - 64)
+				)
 			),
 			CastBar(scope),
 			EffectIcons(scope, {
 				Model = myModel,
-				Position = UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large + 136 + 6),
+				Position = PhoneLayout.Position(
+					scope,
+					"effects",
+					UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large + 136 + 6)
+				),
 			}),
 			MobileSkills(scope, {
 				Cast = props.CastSlot,
@@ -522,9 +683,17 @@ local function Hud(scope: Scope, props: Props): Instance
 				AimEnd = props.AimEnd,
 			}),
 			menu(scope, props),
+			drawer(scope, props) :: any,
 			actionBar(scope, props),
 			-- S139: the weapon pool's name over the bar for a moment after a weapon change
-			PoolLabel(scope, UDim2.new(0.5, 0, 1, -(14 + Theme.Padding.Medium + SLOT_SIZE + Theme.Padding.Small))),
+			PoolLabel(
+				scope,
+				PhoneLayout.Pick(
+					scope,
+					UDim2.fromOffset(POOL.x + POOL.w / 2, POOL.y + POOL.h),
+					UDim2.new(0.5, 0, 1, -(14 + Theme.Padding.Medium + SLOT_SIZE + Theme.Padding.Small))
+				)
+			),
 			expBar(scope),
 			TargetFrame(scope, { Target = props.Target, OnPlayerMenu = props.OnPlayerMenu }),
 			ZoneBanner(scope),

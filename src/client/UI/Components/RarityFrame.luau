@@ -10,14 +10,16 @@
 --   RarityFrame.panelStroke(scope, rarity)     a panel border (tooltip) in the rarity colour, thicker from Unique
 -- Motion: Legendary frames get a light sweeping along the band (shimmer), Mythic a slow pulsing inner glow. One
 -- RenderStepped connection (only while such a frame exists) drives them at ~30 Hz and skips frames that are not
--- shown (hidden window, disabled ScreenGui).
+-- shown (hidden window, disabled ScreenGui). W29: at a low graphics level the frames stay still.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Geometry = require(ReplicatedStorage.Shared.Logic.RarityFrame)
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local State = require(script.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Theme)
 
 local Children = Fusion.Children
@@ -89,9 +91,14 @@ local function step(dt: number)
 	if recheck then
 		sinceVisibility = 0
 	end
+	-- W29: a low graphics level keeps the frames still (the light out of the band, the glow at rest)
+	local still = not GraphicsLevel.get(State.Get({ "account", "settings", "quality" })).motion
+	if still and not recheck then
+		return
+	end
 	local now = os.clock()
-	local offset = shimmerOffset(now)
-	local glow = pulseTransparency(now)
+	local offset = if still then Vector2.new(-SHIMMER_REACH, 0) else shimmerOffset(now)
+	local glow = if still then PULSE_LOW else pulseTransparency(now)
 	for _, anim in anims do
 		if recheck then
 			anim.shown = isShown(anim.target)

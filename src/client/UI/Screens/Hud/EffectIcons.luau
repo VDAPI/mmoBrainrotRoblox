@@ -25,7 +25,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	Model: Fusion.UsedAs<Model?>,
-	Position: UDim2?,
+	Position: Fusion.UsedAs<UDim2>?,
 	AnchorPoint: Vector2?,
 	Size: number?,
 }

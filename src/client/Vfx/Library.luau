@@ -2718,7 +2718,149 @@ function Library.falcon(caster: Model, color: Color3, simple: boolean): Falcon?
 	return falcon
 end
 
+-- Owner 2026-10-21 ("boss and monster attacks plain and static: projectiles, particles, a blow that says wow") ------
+
+-- The gathering of a blow on the caster for its windup: glowing motes drawn in from a sphere round it and a light
+-- swelling to the blow. `size` ~ the caster's size (1 a man, 2-3 a boss).
+function Library.charge(model: Model, color: Color3, seconds: number, size: number, simple: boolean?)
+	local holder = Pool.part("Block", color, Vector3.one * (3.5 * size), Enum.Material.Neon, 1)
+	if not attach(model, holder) then
+		return
+	end
+	-- an imported model has its root at the feet: the gathering sits on the middle of the body
+	local ok, box = pcall(function()
+		return (model:GetBoundingBox())
+	end)
+	local weld = holder:FindFirstChildOfClass("WeldConstraint")
+	if ok and typeof(box) == "CFrame" and weld then
+		weld.Enabled = false
+		holder.CFrame = CFrame.new(box.Position)
+		weld.Enabled = true
+	end
+	if not simple then
+		local e = Instance.new("ParticleEmitter")
+		e.Shape = Enum.ParticleEmitterShape.Sphere
+		e.ShapeInOut = Enum.ParticleEmitterShapeInOut.Inward
+		e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Surface
+		e.Color = ColorSequence.new(color:Lerp(Color3.new(1, 1, 1), 0.4), color)
+		e.LightEmission = 1
+		e.Rate = 40 + 14 * size
+		e.Lifetime = NumberRange.new(0.3, 0.5)
+		e.Speed = NumberRange.new(4 * size, 6 * size)
+		e.Size = NumberSequence.new({ kp(0, 0.12 * size), kp(0.6, 0.4 * size), kp(1, 0) })
+		e.Transparency = NumberSequence.new({ kp(0, 1), kp(0.25, 0.05), kp(1, 0.5) })
+		Textures.particle(e, "glow")
+		e.Parent = holder
+		Clock.track(e)
+		Clock.after(math.max(0, seconds - 0.1), function()
+			e.Enabled = false
+		end)
+	end
+	local l = light(holder, color, 5 * size, 0.2)
+	Clock.tween(
+		l,
+		TweenInfo.new(math.max(0.1, seconds), Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+		{ Brightness = 3, Range = 10 * size }
+	)
+	detachLater(holder, seconds)
+end
+
+-- Embers or motes rising from the whole danger area while it fills (the area is alive, not a flat circle).
+function Library.dangerMotes(at: Vector3, radius: number, color: Color3, seconds: number, simple: boolean?)
+	if simple or radius <= 0 then
+		return
+	end
+	local base = ground(at)
+	local side = math.max(1, radius * 1.5)
+	local holder = Pool.part("Block", color, Vector3.new(side, 0.2, side), Enum.Material.Neon, 1)
+	holder.CFrame = CFrame.new(base + Vector3.new(0, 0.25, 0))
+	local e = Instance.new("ParticleEmitter")
+	e.Shape = Enum.ParticleEmitterShape.Box
+	e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
+	e.EmissionDirection = Enum.NormalId.Top
+	e.Color = ColorSequence.new(color:Lerp(Color3.new(1, 1, 1), 0.25), color)
+	e.LightEmission = 0.9
+	e.Rate = math.clamp(radius * radius * 0.8, 14, 80)
+	e.Lifetime = NumberRange.new(0.5, 0.9)
+	e.Speed = NumberRange.new(1.5, 4)
+	e.Acceleration = Vector3.new(0, 5, 0)
+	e.SpreadAngle = Vector2.new(12, 12)
+	e.Size = NumberSequence.new({ kp(0, 0.5), kp(1, 0) })
+	e.Transparency = NumberSequence.new({ kp(0, 0.1), kp(1, 1) })
+	Textures.particle(e, "glow")
+	e.Parent = holder
+	Clock.track(e)
+	Clock.after(math.max(0, seconds), function()
+		e.Enabled = false
+	end)
+	Pool.later(holder, seconds + 1)
+end
+
+-- A volley from the caster to points spread over the area, every shot landing in the last `flight` seconds before
+-- the blow (the last one exactly at it): orbs for a spell, rocks for a physical blow. `onLand` runs per shot.
+function Library.volley(
+	from: Vector3,
+	at: Vector3,
+	radius: number,
+	count: number,
+	windup: number,
+	color: Color3,
+	shape: Shape,
+	simple: boolean?,
+	onLand: ((point: Vector3) -> ())?
+)
+	local n = if simple then math.min(2, count) else count
+	local flight = math.min(0.55, windup)
+	local spread = math.min(0.45, windup - flight)
+	for i = 1, n do
+		-- a golden-angle spiral over the area: even cover, no randomness
+		local a = i * 2.39996
+		local d = radius * 0.75 * math.sqrt(i / n)
+		local point = at + Vector3.new(math.cos(a) * d, 0, math.sin(a) * d)
+		local launch = windup - flight - spread * (1 - (i - 1) / math.max(1, n - 1))
+		Clock.after(math.max(0, launch), function()
+			Library.projectile(from, ground(point) + Vector3.new(0, 0.4, 0), shape, color, {
+				simple = simple,
+				time = flight,
+				arc = 6 + radius * 0.4,
+				size = if shape == "rock" then 2 else 1.8,
+				flame = shape == "orb",
+				onArrive = function(p: Vector3)
+					Library.impactFlash(p, 2.2, color, { simple = simple })
+					if onLand then
+						onLand(p)
+					end
+				end,
+			})
+		end)
+	end
+end
+
 -- Helpers for the controller
 Library.flat = flat
+
+-- Shared building blocks for the piece modules next to this one (Vfx/Wk*, Vfx/Lm*): the same pooled holders, budgets,
+-- clock and fallbacks as the pieces above, so a new piece never builds its own emitter or light.
+Library.kit = {
+	burstFrom = burstFrom,
+	textured = textured,
+	flashLight = flashLight,
+	animate = animate,
+	setupBeam = setupBeam,
+	attachments = attachments,
+	surfaceAt = surfaceAt,
+	ringSurface = ringSurface,
+	particleCount = particleCount,
+	lowQuality = lowQuality,
+	kp = kp,
+	tween = tween,
+	fadeBeam = fadeBeam,
+	facingFrame = facingFrame,
+	ground = ground,
+	centre = centre,
+	flat = flat,
+	SURFACE_LIFT = SURFACE_LIFT,
+	DUST_COLOR = DUST_COLOR,
+}
 
 return Library

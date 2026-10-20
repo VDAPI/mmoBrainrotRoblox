@@ -11,9 +11,14 @@
 -- The onboarding funnel (one per game in Roblox: LogOnboardingFunnelStepEvent): the action steps 1-6, then the first
 -- ten story quests as 7-16, then level 5 as 17; funnelStep is the only source of these numbers.
 
+local Elements = require("../Data/Elements")
+local ItemRoll = require("./ItemRoll")
+local Items = require("../Data/Items")
 local Keybinds = require("./Keybinds")
 local Quests = require("../Data/Quests")
+local Rng = require("./Rng")
 local TutorialData = require("../Data/Tutorial")
+local Types = require("../Types")
 
 local Tutorial = {}
 
@@ -35,6 +40,7 @@ export type State = {
 	done: boolean,
 	skipped: boolean,
 	reward: boolean,
+	drop: boolean, -- S155b: the first valuable drop was given (Data/Tutorial.FIRST_DROP)
 	pending: { [string]: boolean }?, -- later steps already done (counted when their turn comes)
 }
 export type FunnelKind = "tutorial" | "quest" | "level"
@@ -104,14 +110,15 @@ end
 
 -- A new character's state (CharacterFactory).
 function Tutorial.newState(): State
-	return { step = 1, done = false, skipped = false, reward = false }
+	return { step = 1, done = false, skipped = false, reward = false, drop = false }
 end
 
 -- A clean copy of a saved state (bad or missing fields: a finished tutorial with the reward taken, like the
--- characters made before S155).
+-- characters made before S155). S155b: a save without `drop` gets the first drop only while its level reward still
+-- waits (a character of S155 below level 5); every older one counts as given.
 function Tutorial.sanitize(raw: any): State
 	if type(raw) ~= "table" then
-		return { step = 1, done = true, skipped = false, reward = true }
+		return { step = 1, done = true, skipped = false, reward = true, drop = true }
 	end
 	local n = tonumber(raw.step) or 1
 	local state: State = {
@@ -119,6 +126,7 @@ function Tutorial.sanitize(raw: any): State
 		done = raw.done == true,
 		skipped = raw.skipped == true,
 		reward = raw.reward ~= false,
+		drop = if raw.drop == nil then raw.reward ~= false else raw.drop == true,
 	}
 	if type(raw.pending) == "table" then
 		local pending: { [string]: boolean } = {}
@@ -136,7 +144,8 @@ function Tutorial.sanitize(raw: any): State
 end
 
 local function copy(state: State): State
-	local out: State = { step = state.step, done = state.done, skipped = state.skipped, reward = state.reward }
+	local out: State =
+		{ step = state.step, done = state.done, skipped = state.skipped, reward = state.reward, drop = state.drop }
 	if state.pending then
 		out.pending = table.clone(state.pending)
 	end
@@ -267,6 +276,69 @@ end
 -- reward is for reaching the level, not for clicking through.
 function Tutorial.rewardDue(state: State, level: number): boolean
 	return level >= TutorialData.REWARD_LEVEL and not state.reward
+end
+
+-- S155b: whether the first valuable drop is still due (Data/Tutorial.FIRST_DROP; skipping does not matter).
+function Tutorial.firstDropDue(state: State): boolean
+	return not state.drop
+end
+
+-- S155b: the first valuable drop (Data/Tutorial.FIRST_DROP) for a character of `classId` at `level` wielding
+-- `weapon`: the same weapon definition (a named boss item or none: the class's starting weapon) at FIRST_DROP.rarity,
+-- with the wielded weapon's element (a Mage keeps the school of the skill pool), bound (no mule farming with fresh
+-- characters). nil when the class has no weapon.
+function Tutorial.firstDrop(
+	classId: string,
+	level: number,
+	weapon: Types.ItemInstance?,
+	rng: Rng.Rng,
+	uid: string
+): Types.ItemInstance?
+	local defId: string? = nil
+	local wielded = weapon and Items.get(weapon.id)
+	if weapon and wielded and wielded.slot == "weapon" and wielded.fixedBonuses == nil then
+		defId = weapon.id
+	else
+		local gear: { string } = Items.startingGear[classId] or {}
+		for _, id in gear do
+			local def = Items.get(id)
+			if def and def.slot == "weapon" then
+				defId = id
+				break
+			end
+		end
+	end
+	local def = defId and Items.get(defId)
+	if not defId or not def then
+		return nil
+	end
+	local item = ItemRoll.rollItem(defId, math.max(1, level), TutorialData.FIRST_DROP.rarity, rng, uid, classId)
+	if def.elemental then
+		item.el = if weapon and weapon.el then weapon.el else Elements.DEFAULT
+	end
+	item.bound = true
+	return item
+end
+
+-- S155b: the state with the first drop given.
+function Tutorial.withDrop(state: State): State
+	local out = copy(state)
+	out.drop = true
+	return out
+end
+
+-- S155b: whether the account already knows the game: another character (slot summaries, Logic/CharacterFactory)
+-- reached Data/Tutorial.REWARD_LEVEL. The hint then offers "I know the game, skip" more plainly.
+function Tutorial.veteran(slots: any): boolean
+	if type(slots) ~= "table" then
+		return false
+	end
+	for _, summary in slots do
+		if type(summary) == "table" and (tonumber(summary.level) or 0) >= TutorialData.REWARD_LEVEL then
+			return true
+		end
+	end
+	return false
 end
 
 -- Whether the potion step is the current one: then an ordinary potion is drunk even at full (a new character stands in

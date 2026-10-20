@@ -16,6 +16,8 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -101,6 +103,9 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 				end
 			end
 		end
+		if use(PhoneLayout.Compact) then
+			return PhoneHud.stackTop(others) -- W29: the phone stack (Logic/PhoneHud)
+		end
 		return if others > 0 then PARTY_TOP + others * PARTY_ROW else TOUCH_TOP
 	end)
 	local height = scope:Computed(function(use): number
@@ -114,7 +119,8 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 	if props.Offset then
 		local offset = props.Offset
 		local shown = scope:Computed(function(use): number
-			if use(current) == nil or use(touch) then
+			-- W29: on a phone in landscape the tracker stacks under the panel as on PC
+			if use(current) == nil or (use(touch) and not use(PhoneLayout.Compact)) then
 				return 0
 			end
 			return use(height) + 8

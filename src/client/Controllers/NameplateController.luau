@@ -30,9 +30,11 @@ local BlessingMark = require(ReplicatedStorage.Shared.Logic.BlessingMark)
 local Blessings = require(ReplicatedStorage.Shared.Data.Blessings)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Nameplate = require(ReplicatedStorage.Shared.Logic.Nameplate)
 local Net = require(ReplicatedStorage.Shared.Net)
+local State = require(script.Parent.Parent.UI.State)
 
 local TitleText = require(script.Parent.Parent.UI.TitleText)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
@@ -594,7 +596,10 @@ function NameplateController.Start()
 			sweepTimer = 0
 			sweep()
 		end
-		if checkTimer >= CFG.checkEvery then
+		-- W29: a low graphics level checks the plates' distances half as often
+		local every =
+			math.max(CFG.checkEvery, GraphicsLevel.get(State.Get({ "account", "settings", "quality" })).plateEvery)
+		if checkTimer >= every then
 			checkTimer = 0
 			checkPlates()
 		end

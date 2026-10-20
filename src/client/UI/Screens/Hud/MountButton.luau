@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -101,9 +102,9 @@ end
 function MountButton.Touch(scope: Scope, props: Props): Instance
 	local button = scope:New("TextButton")({
 		Name = "MountButton",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 132, 1, -260),
-		Size = UDim2.fromOffset(TOUCH_SIZE, TOUCH_SIZE),
+		AnchorPoint = PhoneLayout.Anchor(scope, "mount", Vector2.new(0, 1)), -- W29: Logic/PhoneHud
+		Position = PhoneLayout.Position(scope, "mount", UDim2.new(0, 132, 1, -260)),
+		Size = PhoneLayout.Size(scope, "mount", UDim2.fromOffset(TOUCH_SIZE, TOUCH_SIZE)),
 		Visible = scope:Computed(function(use): boolean
 			return use(props.Has) == true and use(Device.Touch) == true
 		end),
