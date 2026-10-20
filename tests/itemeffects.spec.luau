@@ -509,4 +509,57 @@ T.describe("Item effects: migration (S134g C2)", function()
 	end)
 end)
 
+-- Owner 2026-10-20: a weapon rolls (and keeps) only effects of its own skill pool and of the class's common skills.
+T.describe("Item effects follow the weapon (owner 2026-10-20)", function()
+	T.it("every generated weapon of every tier rolls only its pool's effects", function()
+		for _, def in Items.byId do
+			if def.category ~= "equipment" or def.slot ~= "weapon" or def.fixedBonuses ~= nil then
+				continue
+			end
+			for _, classId in def.classes or {} do
+				local own = ItemEffects.weaponPool(classId, def.type)
+				if own == nil then
+					continue
+				end
+				for seed = 1, 6 do
+					for _, id in ItemEffects.roll(def.id, Rarities.MYTHIC, Rng.new(seed), classId, nil) do
+						local fx = assert(EffectData.byId[id], id)
+						if not def.elemental then
+							T.expect({ def.id, id, fx.pool == own or fx.pool == "common" })
+								.toEqual({ def.id, id, true })
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("a bow's crossbow effect is redrawn from the bow's pool on load", function()
+		local bow = Items.get("bow_1") :: any
+		local own = assert(ItemEffects.weaponPool("Hunter", bow.type))
+		local wrong: string? = nil
+		for _, fx in EffectData.list do
+			if
+				fx.class == "Hunter"
+				and fx.tier == "mythic"
+				and fx.pool ~= own
+				and fx.pool ~= "common"
+				and fx.replacedBy == nil
+			then
+				wrong = fx.id
+				break
+			end
+		end
+		if wrong == nil then
+			return
+		end
+		local item: any = { id = "bow_1", uid = "u-bow", rarity = Rarities.MYTHIC, bonuses = {}, fx = { wrong } }
+		ItemEffects.migrateItem(item, bow, "Hunter")
+		for _, id in item.fx or {} do
+			local fx = EffectData.byId[id]
+			T.expect({ id, fx.pool == own or fx.pool == "common" }).toEqual({ id, true })
+		end
+	end)
+end)
+
 return nil

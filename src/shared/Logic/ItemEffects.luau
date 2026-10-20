@@ -14,6 +14,7 @@ local Elements = require("../Data/Elements")
 local Items = require("../Data/Items")
 local Locale = require("../Util/Locale")
 local Rarities = require("../Data/Rarities")
+local SkillPoolData = require("../Data/SkillPools")
 local Rng = require("./Rng")
 local SkillTypes = require("../Data/Skills/Types")
 local Types = require("../Types")
@@ -55,21 +56,43 @@ function ItemEffects.resolve(id: any): ItemEffectDef?
 	return def
 end
 
+-- The skill pool of the class a weapon type belongs to (Data/SkillPools: the pool whose main hand lists it and names no
+-- element), nil for an off-hand, armour, jewellery or a type no pool lists.
+function ItemEffects.weaponPool(classId: string, weaponType: string?): string?
+	if weaponType == nil then
+		return nil
+	end
+	local pools: any = SkillPoolData.get(classId)
+	if not pools then
+		return nil
+	end
+	for _, pool in pools.pools do
+		local req = pool.weapon
+		if req and req.main and table.find(req.main, weaponType) and req.element == nil then
+			return pool.id
+		end
+	end
+	return nil
+end
+
 -- Effects a new item can roll: class and tier, not retired. A Mage weapon with an element prefers its element's pool
--- and the class's common skills (falls back to every effect of the class when that leaves none). Data order.
-function ItemEffects.pool(classId: string, tier: Tier, element: string?): { ItemEffectDef }
+-- and the class's common skills (falls back to every effect of the class when that leaves none). Owner 2026-10-20: any
+-- other weapon only rolls effects of its own pool (a bow never a crossbow's) and of the class's common skills
+-- (`weaponType` = the item's base type). Data order.
+function ItemEffects.pool(classId: string, tier: Tier, element: string?, weaponType: string?): { ItemEffectDef }
 	local all: { ItemEffectDef } = {}
 	for _, def in EffectData.list do
 		if def.class == classId and def.tier == tier and def.replacedBy == nil then
 			table.insert(all, def)
 		end
 	end
-	if element == nil then
+	local own = element or ItemEffects.weaponPool(classId, weaponType)
+	if own == nil then
 		return all
 	end
 	local preferred: { ItemEffectDef } = {}
 	for _, def in all do
-		if def.pool == element or def.pool == "common" then
+		if def.pool == own or def.pool == "common" then
 			table.insert(preferred, def)
 		end
 	end
@@ -108,13 +131,14 @@ local function draw(
 	tier: Tier,
 	count: number,
 	rng: Rng.Rng,
-	element: string?
+	element: string?,
+	weaponType: string?
 )
 	if count <= 0 then
 		return
 	end
 	local candidates: { string } = {}
-	for _, def in ItemEffects.pool(classId, tier, element) do
+	for _, def in ItemEffects.pool(classId, tier, element, weaponType) do
 		if not taken[def.id] then
 			table.insert(candidates, def.id)
 		end
@@ -138,8 +162,9 @@ function ItemEffects.roll(defId: string, rarity: number, rng: Rng.Rng, forClass:
 	end
 	local classId = classFor(def, forClass, rng)
 	local taken: { [string]: boolean } = {}
-	draw(out, taken, classId, "legendary", rarityDef.legendaryEffects, rng, element)
-	draw(out, taken, classId, "mythic", rarityDef.mythicEffects, rng, element)
+	local weaponType = if def.slot == "weapon" then def.type else nil
+	draw(out, taken, classId, "legendary", rarityDef.legendaryEffects, rng, element, weaponType)
+	draw(out, taken, classId, "mythic", rarityDef.mythicEffects, rng, element, weaponType)
 	return out
 end
 
@@ -352,6 +377,7 @@ function ItemEffects.migrateItem(item: any, itemDef: ItemDef?, classHint: string
 	local ids: { string } = {}
 	local taken: { [string]: boolean } = {}
 	local have: { [string]: number } = { legendary = 0, mythic = 0 }
+	local weaponType = if def.slot == "weapon" then def.type else nil
 	local raw = item.fx
 	if raw ~= nil and type(raw) ~= "table" then
 		changed = true
@@ -363,6 +389,11 @@ function ItemEffects.migrateItem(item: any, itemDef: ItemDef?, classHint: string
 		end
 		for _, id in ipairs(raw) do
 			local fxDef = ItemEffects.resolve(id)
+			-- owner 2026-10-20: a weapon keeps only effects of its own pool (a bow lost its crossbow effects; redrawn)
+			local own = if fxDef and weaponType then ItemEffects.weaponPool(fxDef.class, weaponType) else nil
+			if own and fxDef and fxDef.pool ~= own and fxDef.pool ~= "common" then
+				fxDef = nil
+			end
 			if fxDef and not taken[id] then
 				taken[id] = true
 				taken[fxDef.id] = true
@@ -380,8 +411,8 @@ function ItemEffects.migrateItem(item: any, itemDef: ItemDef?, classHint: string
 		local rng = Rng.new(Rng.seedOf(if type(item.uid) == "string" then item.uid else item.id))
 		local classId = classFor(def, classHint, rng)
 		local element = elementOf(item, def)
-		draw(ids, taken, classId, "legendary", needLegendary, rng, element)
-		draw(ids, taken, classId, "mythic", needMythic, rng, element)
+		draw(ids, taken, classId, "legendary", needLegendary, rng, element, weaponType)
+		draw(ids, taken, classId, "mythic", needMythic, rng, element, weaponType)
 		changed = true
 	end
 	if changed then

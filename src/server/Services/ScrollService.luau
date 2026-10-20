@@ -38,6 +38,9 @@ local function useScroll(player: Player, index: number, item: Types.ItemInstance
 	elseif target == "transmute" then
 		-- S134j: the Stone of Transmutation is taken by the blacksmith (Reroll tab), never used up here
 		return false, "item.reroll_stone.useHint"
+	elseif target == "transmuteAll" then
+		-- S156: the Scroll of Transformation too
+		return false, "item.transmute_scroll.useHint"
 	elseif target == "unbind" then
 		-- The client opens the item picker and calls UnbindItem.
 		return false, "scroll.unbind.pick"

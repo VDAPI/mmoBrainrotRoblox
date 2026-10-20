@@ -20,6 +20,7 @@
     {"cat":"scroll","item":"scroll_unbind","key":"scroll_unbind","kind":"item","name":{"en":"Scroll of Unbinding","pl":"Zwój Rozwiązania"}},
     {"cat":"scroll","dailyLimit":1,"item":"scroll_protection","key":"scroll_protection","kind":"item","name":{"en":"Scroll of Protection","pl":"Zwój Ochrony"}},
     {"cat":"scroll","dailyLimit":1,"item":"reroll_stone","key":"reroll_stone","kind":"item","name":{"en":"Stone of Transmutation","pl":"Kamień Przemiany"}},
+    {"cat":"scroll","dailyLimit":1,"item":"transmute_scroll","key":"transmute_scroll","kind":"item","name":{"en":"Scroll of Transformation","pl":"Zwój Przemiany"}},
     {"cat":"service","desc":{"en":"A new unique name for the active character.","pl":"Nowe, unikalne imię aktywnej postaci."},"key":"rename","kind":"rename","name":{"en":"Rename character","pl":"Zmiana imienia"}},
     {"cat":"backpack","item":"backpack_premium_100","key":"backpack_premium_100","kind":"item","name":{"en":"Wanderer's Backpack (100)","pl":"Plecak Wędrowca (100)"}},
     {"cat":"backpack","item":"backpack_premium_150","key":"backpack_premium_150","kind":"item","name":{"en":"Caravan Backpack (150)","pl":"Plecak Kupca Karawan (150)"}},

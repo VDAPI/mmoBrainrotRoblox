@@ -264,6 +264,63 @@ local function Reroll_(scope: Scope, props: Props): Instance
 		})
 	end
 
+	-- S156: the Scroll of Transformation rerolls every regular line at once (BlacksmithService.RerollAll)
+	local scrolls = scope:Computed(function(use): number
+		return Picker.count(use(inventory), Reroll.SCROLL)
+	end)
+	local allCost = scope:Computed(function(use): Reroll.Cost?
+		local i = use(item)
+		if not i or not use(ready) then
+			return nil
+		end
+		return Reroll.costAll(i)
+	end)
+	local allResult = scope:Value(nil :: string?)
+	local function doRerollAll()
+		local target = Fusion.peek(props.Target)
+		local current = Fusion.peek(item)
+		if not target or not current or Fusion.peek(phase) == "forging" then
+			return
+		end
+		phase:set("forging")
+		result:set(nil)
+		allResult:set(nil)
+		Picker.sparks(anvil, TENSION)
+		local startedAt = os.clock()
+		task.spawn(function()
+			local ok, err, data = Net.Invoke("RerollAll", target.location, target.key, Reroll.signature(current))
+			local wait = TENSION - (os.clock() - startedAt)
+			if wait > 0 then
+				task.wait(wait)
+			end
+			if not ok then
+				phase:set("idle")
+				Sounds.play("error")
+				Toast.push(Text.now(err or "error.internal"), "error")
+				return
+			end
+			Sounds.play("levelUp")
+			allResult:set(Text.now("smith.reroll.all.result", { n = #(data.changes or {}) }))
+			phase:set("idle")
+		end)
+	end
+	local function confirmAll()
+		local c = Fusion.peek(allCost)
+		if not c or Fusion.peek(phase) == "forging" or Fusion.peek(scrolls) < 1 then
+			return
+		end
+		props.ShowModal({
+			Title = Text.now("smith.reroll.all.title"),
+			Message = Text.now("smith.reroll.all.confirm", { gold = Format.number(c.gold) }),
+			ConfirmText = Text.now("smith.reroll.button"),
+			CancelText = Text.now("common.cancel"),
+			OnConfirm = function(): (boolean, string?)
+				doRerollAll()
+				return true, nil
+			end,
+		})
+	end
+
 	local candidates = Picker.list(scope, {
 		Prefix = "rr",
 		Target = props.Target,
@@ -639,6 +696,32 @@ local function Reroll_(scope: Scope, props: Props): Instance
 					return if why and why ~= "smith.reroll.pickLine" then Text.get(use, why) else ""
 				end),
 				Theme.Paper.Danger
+			),
+			-- S156: every bonus at once with a Scroll of Transformation (the hint when the player has none)
+			Button(scope, {
+				LayoutOrder = 13,
+				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
+				Variant = "secondary",
+				Text = scope:Computed(function(use): string
+					return Text.get(use, "smith.reroll.all.button", { count = use(scrolls) })
+				end),
+				Disabled = scope:Computed(function(use): boolean
+					local c = use(allCost)
+					return c == nil or use(scrolls) < 1 or (use(gold) or 0) < c.gold or use(phase) == "forging"
+				end),
+				OnClick = confirmAll,
+			}),
+			label(
+				scope,
+				14,
+				scope:Computed(function(use): string
+					local done = use(allResult)
+					if done then
+						return done
+					end
+					return if use(scrolls) < 1 and use(item) ~= nil then Text.get(use, "smith.reroll.all.hint") else ""
+				end),
+				Theme.Paper.TextMuted
 			),
 			-- Result: old (struck through) → new, with the new line's quality
 			scope:New("Frame")({

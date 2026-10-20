@@ -72,5 +72,9 @@ return table.freeze({
 		failMul = 0, -- the boss left: nothing
 	}),
 	pvpSafe = true, -- no PvP in the fighters' circle while the boss lives
+	-- S156 (owner 2026-10-20): the barrow is a cave hollow (cliff walls round the ring, Logic/WorldGen/WorldBossArena) entered
+	-- through a vestibule in front of the opening (local -Z): its circle (centre r + d from the spot's centre, radius r)
+	-- is always free of PvP, boss or no boss
+	antechamber = table.freeze({ d = 20, r = 16 }),
 	publishEvery = 0.5, -- seconds between two state sends at most (only on a change)
 })

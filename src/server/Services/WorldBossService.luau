@@ -871,14 +871,12 @@ function WorldBossService.Start()
 	WorldEventService.AddBlocker(blocks, "worldboss.name")
 	-- no PvP in the circle while the boss lives (either side inside)
 	PvpService.AddFightRule(function(attacker: Player, target: Player): string?
-		local f = current
-		if not bossAlive(f) then
-			return nil
-		end
+		-- S156: the vestibule is free of PvP at every hour, the circle while the boss lives
+		local alive = bossAlive(current)
 		local spot = WorldBoss.spot()
 		for _, player in { attacker, target } do
 			local x, z = relative(player)
-			if x and z and WorldBoss.pvpSafe(spot, x, z, true) then
+			if x and z and WorldBoss.pvpSafe(spot, x, z, alive) then
 				return "pvp.deny.worldBoss"
 			end
 		end

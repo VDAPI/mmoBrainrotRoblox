@@ -632,7 +632,16 @@ function AccountSchema.migrate(data: any, newId: (() -> string)?): { number }
 			-- S102: every load recounts the story from mainLast / the active quest, so inserted story quests need no
 			-- migration (Logic/StoryProgress)
 			StoryProgress.apply(character.quests)
+			-- owner 2026-10-20: a weapon carries only skill effects of its own pool (a bow had a crossbow effect); every
+			-- load brings the Legendary / Mythic items to the rule (Logic/ItemEffects.migrateItem, idempotent), so no
+			-- schema step
+			local classId = if type(character.class) == "string" then character.class else nil
+			legendItems(character.equipment, classId)
+			legendItems(character.inventory, classId)
 		end
+	end
+	if type(data.deposit) == "table" then
+		legendItems(data.deposit.items, nil)
 	end
 	return applied
 end
