@@ -89,6 +89,7 @@ local lastAt: Vector3? = nil -- the root's position at the last sample
 local lastModel: Model? = nil
 local walked = 0 -- studs the player walked steering (Tutorial.walk)
 local guided = false -- the arrow went to the captain once this session
+local travelGuided: string? = nil -- owner 2026-10-20: the travel step this session already guided to the Meadows
 
 local function counted(state: Tutorial.State, id: string): boolean
 	local index = Tutorial.indexOf[id]
@@ -305,6 +306,12 @@ local function tick()
 
 	local touch = Fusion.peek(Device.Touch) == true
 	local away = step.travel == true and Fusion.peek(zoneMap) == Config.StartingMap
+	-- owner 2026-10-20: the hint says "follow the quest arrow" and there was none without a tracked quest: the travel
+	-- step guides to the first hunting ground of the Meadows itself (once per step)
+	if away and travelGuided ~= step.id then
+		travelGuided = step.id
+		NavController.Guide({ map = "meadows", x = -672, z = 0, labelKey = "area.meadows_rabbitfields" })
+	end
 	local binds = State.Get({ "account", "settings", "keys" })
 	local args = if touch then {} else Tutorial.keyArgs(step, if type(binds) == "table" then binds else nil)
 	local index = Tutorial.indexOf[step.id]
