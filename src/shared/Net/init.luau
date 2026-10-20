@@ -9,7 +9,7 @@
 -- runs. Rejected calls are dropped (events) or answer (false, "error.rateLimited"/"error.badRequest"); W28: a full
 -- rate limit bucket is "error.rateLimited" (silent on the client), "error.badRequest" only for arguments that fail
 -- Definitions.args, and every "error.badRequest" (Net's own or a handler's) is logged with the remote's name.
--- W28: Net.Invoke merges a repeated identical call and throttles toggles (Logic/RequestGuard), so a fast double click
+-- A rate-limited Net.Invoke waits and asks again (RATE_RETRIES). W28: Net.Invoke merges a repeated identical call and throttles toggles (Logic/RequestGuard), so a fast double click
 -- never reaches the server twice. There is never a server -> client RemoteFunction.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -30,6 +30,8 @@ local Net = {}
 
 local folder: Folder? = nil
 local limiters: { [string]: RateLimit.RateLimit } = {}
+local RATE_RETRIES = 2
+local RATE_RETRY_WAIT = 0.35 -- seconds before the first retry (the second waits twice as long)
 local suspicion: { [number]: number } = {}
 local badAnswers: { [number]: number } = {}
 local guard = RequestGuard.new()
@@ -239,12 +241,22 @@ function Net.Invoke(name: string, ...: any): ...any
 		end
 		return false, RequestGuard.TOO_FAST
 	end
-	local called = table.pack(pcall(remote.InvokeServer, remote, ...))
-	local results = if called[1]
-		then table.pack(table.unpack(called, 2, called.n))
-		else table.pack(false, "error.network")
-	if not called[1] then
-		log:warn("%s invoke failed: %s", name, tostring(called[2]))
+	-- owner 2026-10-20: a click faster than the remote's rate waits a moment and asks again (twice at most) instead of
+	-- showing an error
+	local results = table.pack(false, RequestGuard.RATE_LIMITED)
+	for attempt = 1, RATE_RETRIES + 1 do
+		local called = table.pack(pcall(remote.InvokeServer, remote, ...))
+		if not called[1] then
+			log:warn("%s invoke failed: %s", name, tostring(called[2]))
+			results = table.pack(false, "error.network")
+			break
+		end
+		results = table.pack(table.unpack(called, 2, called.n))
+		if results[1] == false and results[2] == RequestGuard.RATE_LIMITED and attempt <= RATE_RETRIES then
+			task.wait(RATE_RETRY_WAIT * attempt)
+		else
+			break
+		end
 	end
 	guard:finish(key, results, os.clock())
 	return table.unpack(results, 1, results.n)

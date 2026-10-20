@@ -213,6 +213,22 @@ local function stall(st: any, ground: Ground): Build
 	if fruit then
 		bp:endKit()
 	end
+	-- owner 2026-10-20: livelier stalls: a valance in the stall colour with a scalloped edge along the front, bunting of
+	-- the stall's and two festive colours under it, a painted sign board over the counter and a flag on the right post
+	local festive = { st.color, "#F2E2B0", "#C8402E", "#2F6FB0", "#E0A030" }
+	bp:box(9.8, 0.9, 0.2, 0, 7.4, -2.95, { c = st.color, m = "Fabric", lod = "detail" })
+	for i = 0, 5 do
+		local x = -4.1 + i * 1.64
+		bp:add("wedge", 0.12, 0.7, 1.2, x, 6.65, -2.95, 0, 90, 180, {
+			c = festive[i % #festive + 1],
+			m = "Fabric",
+			lod = "detail",
+		})
+	end
+	bp:box(4.2, 1.4, 0.2, 0, 5.2, -2.7, { c = "#6B4A2E", m = "Wood", lod = "detail" })
+	bp:box(3.6, 0.9, 0.22, 0, 5.2, -2.72, { c = st.color, m = "SmoothPlastic", lod = "detail" })
+	bp:box(0.25, 2.2, 0.25, 4.6, 8.8, 7.4, o(timber, "detail"))
+	bp:rbox(0.08, 1.2, 1.8, 4.6, 9.3, 6.5, 0, 0, 0, { c = st.color, m = "Fabric", lod = "detail", tag = "flag" })
 	-- hanging lantern
 	bp:box(0.8, 1, 0.8, 0, 6.3, -2.4, { c = "#FFD08A", m = "Neon", lod = "detail", t = 0.2, tag = "lamp" })
 	bp:light(0, 6.3, -2.4, "#FFB860", 12, 0.6, "lamp")

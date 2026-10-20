@@ -13161,7 +13161,8 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   do logu z nazwą remote'a. Pusty slot po poprzednim kliknięciu: nowy cichy klucz `error.stale`; `UnequipItem`
   pustego slotu i `SwapRings` bez pierścieni zwracają ok, `LureToggle` z tym samym stanem ok bez drugiego toastu.
   `UnequipItem` z nieznaną nazwą slotu dalej `error.badRequest`.
-- **Klient:** `Net.Invoke` przez `Logic/RequestGuard`: to samo wywołanie (remote + argumenty) w locie czeka na
+- **Klient:** na bazie poprawki 7fed5891 (powtórka po `error.rateLimited`, końcowe nile w `ArgCheck`) `Net.Invoke`
+  dodatkowo przez `Logic/RequestGuard`: to samo wywołanie (remote + argumenty) w locie czeka na
   pierwsze i dostaje jego wynik, powtórzone w 0,25 s dostaje ostatni wynik (bez drugiego wywołania), przełącznik
   (`Definitions.toggle`) w 0,2 s z innymi argumentami odpowiada `error.tooFast`; `Definitions.repeatable` (rzucanie,
   zakupy po jednym, ulepszanie, rozdawanie punktów) wysyła powtórzenie od razu po odpowiedzi. `Toast.push` pomija

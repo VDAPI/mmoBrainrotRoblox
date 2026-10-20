@@ -23,7 +23,7 @@ T.describe("RequestGuard.rejectCode", function()
 	end)
 
 	T.it("clicking a rate 1 toggle 3 times at once: the third is rateLimited and silent", function()
-		local limiter = RateLimit.new(assert(Definitions.SetPvp.rate, "SetPvp has a rate"))
+		local limiter = RateLimit.new((assert(Definitions.SetPvp.rate, "SetPvp has a rate")))
 		local codes = {}
 		for _ = 1, 3 do
 			table.insert(codes, RequestGuard.rejectCode(limiter:take("1", 0), true) or "ok")
@@ -70,7 +70,8 @@ T.describe("RequestGuard.key", function()
 	end)
 
 	T.it("gives up (nil) on deep tables and odd values", function()
-		T.expect(RequestGuard.key("X", { { { { 1 } } } }, 1)).toBe(nil)
+		T.expect(RequestGuard.key("X", { { { { 1 } } } }, 1) ~= nil).toBe(true)
+		T.expect(RequestGuard.key("X", { { { { { 1 } } } } }, 1)).toBe(nil)
 		T.expect(RequestGuard.key("X", { print }, 1)).toBe(nil)
 	end)
 end)
