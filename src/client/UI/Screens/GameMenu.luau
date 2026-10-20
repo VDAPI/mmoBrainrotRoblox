@@ -667,6 +667,22 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 			),
 			row(scope, 9, "menu.damageNumbers", damageNumbers(scope)),
 			row(scope, 10, "menu.minimapRotate", toggle(scope, "minimapRotate", false)),
+			-- S156: the moved and sized HUD elements back to their places
+			row(
+				scope,
+				10,
+				"menu.hudLayout",
+				Button(scope, {
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.fromScale(1, 0),
+					Size = UDim2.fromOffset(150, 44),
+					Variant = "secondary",
+					Text = Text.T(scope, "menu.hudLayout.reset"),
+					OnClick = function()
+						Net.Send("SetSetting", "hud", {})
+					end,
+				})
+			),
 			row(scope, 11, "menu.quickCast", toggle(scope, "quickCast", false)),
 			row(scope, 12, "menu.bindConfirm", toggle(scope, "bindConfirm", true)),
 			row(scope, 13, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
