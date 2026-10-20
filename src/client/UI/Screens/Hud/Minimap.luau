@@ -51,6 +51,7 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WanderingMerchant = require(ReplicatedStorage.Shared.Logic.WanderingMerchant)
 local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
@@ -191,6 +192,12 @@ local function Minimap(scope: Scope, props: Props): Instance
 	local bossArrow = glyph(dynamic, "▲", ICONS.worldBoss.color, Vector2.zero, 16, 8)
 	bossArrow.TextStrokeTransparency = 0
 	bossArrow.Visible = false
+	-- S159w: the wandering merchant's caravan while a visit runs on this map (an arrow on the edge when it is off the disc)
+	local merchantGlyph = glyph(dynamic, "⚖", WanderingMerchant.Data.look.canvas, Vector2.zero, 18, 7)
+	merchantGlyph.Visible = false
+	local merchantArrow = glyph(dynamic, "▲", WanderingMerchant.Data.look.canvas, Vector2.zero, 14, 8)
+	merchantArrow.TextStrokeTransparency = 0
+	merchantArrow.Visible = false
 	local partyPool: { TextLabel } = {}
 	for i = 1, 4 do
 		partyPool[i] = glyph(dynamic, "●", MAP.party, Vector2.zero, 14, 5)
@@ -571,6 +578,25 @@ local function Minimap(scope: Scope, props: Props): Instance
 						bossArrow.Position = UDim2.fromOffset(edge.X, edge.Y)
 						bossArrow.Rotation = math.deg(math.atan2(unit.X, -unit.Y))
 						bossArrow.TextTransparency = fade
+					end
+				end
+			end
+			-- S159w: the wandering merchant
+			local visit = WanderingMerchant.current(Clock.now())
+			local merchantPoint = if visit and visit.spot.map == currentMap then at(visit.spot.x, visit.spot.z) else nil
+			local merchantIn = merchantPoint ~= nil and (merchantPoint - pixel).Magnitude <= EDGE
+			merchantGlyph.Visible = merchantIn
+			merchantArrow.Visible = merchantPoint ~= nil and not merchantIn
+			if merchantPoint then
+				if merchantIn then
+					merchantGlyph.Position = UDim2.fromOffset(merchantPoint.X, merchantPoint.Y)
+				else
+					local direction = merchantPoint - pixel
+					if direction.Magnitude > 0.01 then
+						local unit = direction.Unit
+						local edge = pixel + unit * EDGE
+						merchantArrow.Position = UDim2.fromOffset(edge.X, edge.Y)
+						merchantArrow.Rotation = math.deg(math.atan2(unit.X, -unit.Y))
 					end
 				end
 			end

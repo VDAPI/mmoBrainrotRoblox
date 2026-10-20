@@ -9,6 +9,7 @@
 -- S149b: the world boss over its barrow (Canvas draws the barrow): a brighter crown while it wakes (faded, with the
 -- countdown), a pulsing ring and an HP bar while it fights, a cross for the marker's linger after the kill or the
 -- leave; between the occurrences only the caption "Next: 14:00" (the player's own clock) under the barrow.
+-- S159w: the wandering merchant's caravan (⚖) on its spot with the time he stays, faded with "in 4:12" before he comes.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -30,6 +31,7 @@ local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WanderingMerchant = require(ReplicatedStorage.Shared.Logic.WanderingMerchant)
 local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
@@ -175,6 +177,14 @@ function Overlay.new(scope: Scope): Api
 	bossFill.ZIndex = 12
 	bossFill.Parent = bossBar
 	local bossClock = 0
+	-- S159w: the wandering merchant's caravan (bright while he trades, faded in the last 10 min before he comes) and
+	-- his time under it
+	local merchantMarker = label(frame, "⚖", Theme.tint(WanderingMerchant.Data.look.canvas), 20, 11)
+	merchantMarker.Visible = false
+	local merchantCaption = label(frame, "", Theme.Iron.Text, 12, 11)
+	merchantCaption.Size = UDim2.fromOffset(160, 16)
+	merchantCaption.Visible = false
+	local merchantClock = 0
 	local partyMarkers: { TextButton } = {}
 	local partyIds: { number? } = {}
 	for i = 1, PARTY do
@@ -409,6 +419,30 @@ function Overlay.new(scope: Scope): Api
 						bossCaption.Text =
 							Text.now(if boss.state == "slain" then "worldboss.card.slain" else "worldboss.card.left")
 					end
+				end
+			end
+			-- S159w: the wandering merchant (Logic/WanderingMerchant: the same visit on every server and client)
+			local now = Clock.now()
+			local visit = WanderingMerchant.shown(now)
+			local soon = WanderingMerchant.Data.schedule.warn[1]
+			local trading = now >= visit.startsAt
+			local merchantHere = visit.spot.map == cached.mapId and (trading or visit.startsAt - now <= soon)
+			merchantMarker.Visible = merchantHere
+			merchantCaption.Visible = merchantHere
+			if merchantHere then
+				local p = Canvas.toPixel(cached, visit.spot.x, visit.spot.z)
+				merchantMarker.Position = UDim2.fromOffset(p.X, p.Y)
+				merchantMarker.TextTransparency = if trading then 0 else 0.4
+				merchantCaption.Position = UDim2.fromOffset(p.X, p.Y + 16)
+				local clock = os.clock()
+				if clock - merchantClock >= 0.5 then
+					merchantClock = clock
+					merchantCaption.Text = if trading
+						then Text.now("wanderer.map.here", { time = Time.format(math.max(0, visit.endsAt - now)) })
+						else Text.now(
+							"wanderer.map.soon",
+							{ time = Time.format(math.max(0, visit.startsAt - now)) }
+						)
 				end
 			end
 			local guide = Fusion.peek(NavTarget.Target)

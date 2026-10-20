@@ -13538,3 +13538,21 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
   `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
   `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.
+### S159w: wędrowny kupiec (właściciel 2026-10-20)
+- **Co jest:** Radosław z karawaną co 3 h na 45 min (01:30 UTC + k × 3 h) w miejscu losowanym na wizytę (5 placów
+  miasta, 3 obozy przy odrodzeniu w każdym regionie), ogłoszenia w czacie, ⚖ na mapie świata i minimapie, okno
+  „Karawana Radosława” (ekwipunek, materiały, barwnik, zapasy) z limitem na wizytę. Szczegóły i liczby: DESIGN §8b.
+- **Technika:** wizyta i towar z zegara i numeru wizyty (`Logic/WanderingMerchant`), więc mapa i okno nie potrzebują
+  remote; serwer (`WanderingMerchantService`) stawia postać przez nowe `NpcService.PlaceAt` / `Remove`, buduje wóz i muła,
+  ogłasza i obsługuje `WanderingMerchantBuy(key, amount)`. Licznik zakupów w `character.wanderer` (opcjonalne pole, bez
+  migracji). Model `Assets.Npcs.wanderer_caravan` (Tripo) zastąpi wóz proceduralny, `Assets.Npcs.wanderer` postać.
+- **Testy:** `wanderingmerchant.spec` (harmonogram, ogłoszenia, punkty na otwartym terenie / w kołach bez potworów,
+  rozkład map, towar, rzadkości, ceny, limity, barwniki), `premium.spec` (barwniki karawany nie na sprzedaż za łuski).
+- **Pliki:** `src/shared/Data/{WanderingMerchant,Npcs,Cosmetics,Localization/pl,Localization/en}.luau`,
+  `src/shared/Logic/WanderingMerchant.luau`, `src/shared/{Types,Net/Definitions}.luau`,
+  `src/server/Services/{WanderingMerchantService,NpcService}.luau`, `src/client/Controllers/NpcController.luau`,
+  `src/client/UI/Screens/{WanderingMerchantWindow,Wardrobe,Hud/Minimap,WorldMap/Overlay}.luau`,
+  `tests/{wanderingmerchant,premium}.spec.luau`, `tools/balance_reasons.luau`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS}.md`.
+- **Dla właściciela:** domyślne wartości do potwierdzenia: co 3 h / 45 min, miasto 1/3 wizyt, ceny sprzętu (360 / 1080 ×
+  poziom złota, Legendarny 400 Znaków), barwnik 12 000 złota, limity 1 na sprzęt. Bez przeglądu w Studio (wóz stoi na
+  ziemi pod środkiem, na pochyłości może lekko wisieć).
