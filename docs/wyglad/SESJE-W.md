@@ -1,5 +1,17 @@
 # Dziennik sesji fazy wyglądu (W01–W29)
 
+### W28: interfejs, część 2
+
+- Zamykanie okien: okno nie znika od razu, tylko wraca tą samą drogą co przy otwarciu (krótko, 0,12 s: maleje do 0,93 i opada o 16 px), w tym czasie nie przyjmuje kliknięć; przestawienie plecaka obok nowego okna usługi dalej bez animacji. Wspólny ruch otwarcia i zamknięcia w nowym `UI/Motion` (`progress`, `scale`, `rise`).
+- Okna dialogowe (`Modal`, np. potwierdzenie zakupu, usunięcie postaci): otwierają się i zamykają jak okna, przyciemnienie tła wchodzi i schodzi razem z nimi; następne pytanie z kolejki pojawia się po zniknięciu poprzedniego.
+- Wyskakujące karty bez okna (nagroda za bossa, gotowość drużyny, oferta areny, menu gracza): wskakują na tej samej sprężynie przy każdym pokazaniu (`Motion.popWhen`).
+- Przyciski: `Button` i `IconButton` (kafelki menu HUD) lekko się wciskają przy przytrzymaniu, kafelek HUD ciemnieje przy wciśnięciu. Sloty umiejętności, mikstur, wierzchowca, emotek oraz przyciski polowania, auto mikstur i płaszcza: jasny welon przy najechaniu myszą (na dotyku bez welonu) i wciśnięcie; okrągłe przyciski dotykowe (atak, bieg, wierzchowiec, emotki) tylko wciśnięcie (`Motion.feedback`).
+- Pasek HP gracza: przy utracie zdrowia zostaje blady mosiężny „ślad” straconego HP, trzyma się 0,35 s (kolejne ciosy się sumują) i spływa do nowej wartości; leczenie chowa ślad od razu (`Bar`, pole `Ghost`). Przy niskim HP pasek „oddycha” jasnym welonem, włącza się i gaśnie razem z czerwoną winietą (ta sama histereza `Logic/LowHp` i to samo ustawienie `lowHpWarn`; pole `Pulse`).
+- Powiadomienia (toasty): wchodzą z przezroczystości i lekko rosną na sprężynie okna, przy końcu gasną i maleją (0,25 s) zamiast znikać. Ogłoszenie legendarnego łupu już wjeżdżało i wyjeżdżało, bez zmian.
+- HUD: grubości obrysów i zaokrąglenia z tokenów `Theme` (drużyny areny, ikona i odznaka błogosławieństwa, minimapa), pasek postępu wydarzenia świata z mosiężnym obrysem jak paski zasobów.
+- Nowe czasy w `Theme.Anim` (`WindowClose`, `PressScale*`, `BarGhost*`, `BarPulse`, `ToastOut*`). Bez zmian rozgrywki, danych i efektów czarów.
+- Pliki: `client/UI/Motion.luau` (nowy), `client/UI/Theme.luau`, `client/UI/Components/{Window,Modal,Button,IconButton,Bar,Toast}.luau`, `client/Controllers/WindowManager.luau`, `client/UI/Screens/{BossReward,ReadyCheck,ArenaOffer,PlayerMenu}.luau`, `client/UI/Screens/Hud/{init,SkillBar,PotionBar,MountButton,EmoteButton,AutoGrindButton,AutoPotionButton,LureButton,SprintButton,AttackButton,ArenaTeams,BlessingIcon,BlessingBadge,Minimap,WorldEventPanel}.luau`.
+
 ### W01 (kod, 2026-10-17, wątek „Wzorzec wyglądu gry”, chmura bez Studio)
 
 **Co zrobiono**

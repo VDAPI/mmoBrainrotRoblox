@@ -33,7 +33,7 @@ W21–W24 (sekrety jaskiń z planów): wszystkie punkty „Sekrety” i „doda�
 
 W25 / W26: prompty Tripo dla wszystkich potworów i bossów (`docs/wyglad/POTWORY-TRIPO.md`); generator czworonogów z udami, goleniami i łapami. Modele czekają na właściciela.
 
-W28 (część 1): liczby obrażeń (obrys, połysk, wyskok, dryf), okna na sprężynie. Czeka na ocenę.
+W28 (części 1–2): liczby obrażeń (obrys, połysk, wyskok, dryf); okna i okna dialogowe otwierają się na sprężynie i zamykają tą samą drogą, wyskakujące karty wskakują; przyciski HUD z welonem przy najechaniu i wciśnięciem; pasek HP ze śladem straconego zdrowia i oddechem przy niskim HP; toasty wchodzą i gasną; obrysy HUD z tokenów. Nieobejrzane w Studio. Czeka na ocenę.
 
 ## Niedokończone
 
