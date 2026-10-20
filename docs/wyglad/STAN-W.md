@@ -35,6 +35,8 @@ W25 / W26: 47 modeli Tripo w grze (`Data/MonsterAssets`, modele w miejscu w `Ass
 
 W28 (części 1–2): liczby obrażeń (obrys, połysk, wyskok, dryf); okna i okna dialogowe otwierają się na sprężynie i zamykają tą samą drogą, wyskakujące karty wskakują; przyciski HUD z welonem przy najechaniu i wciśnięciem; pasek HP ze śladem straconego zdrowia i oddechem przy niskim HP; toasty wchodzą i gasną; obrysy HUD z tokenów. Nieobejrzane w Studio. Czeka na ocenę.
 
+W13–W20 (części 2, kod, nieobejrzane): rekwizyty, postoje, roślinność i sekrety z planów czterech map (`MeadowsGen/Dressing`, `DuskwoodGen/Dress`, `AshenGen/Finish`, `FrostpeakGen/Scenery`). W03–W07: styl pilota na wszystkich klasach (8 nowych tekstur, `rockBurst`, `warCry`, `holyBurst`, `leafBurst`, swoosh). W27: 194 z 215 pętli otoczenia z ProSoundEffects (nieodsłuchane).
+
 ## Niedokończone
 
 - W01: malowane niebo na 4 pory (`docs/wyglad/ZAKUPY.md`); Łąki, miasto i Szczyty na niebie miejsca.
@@ -46,7 +48,9 @@ W28 (części 1–2): liczby obrażeń (obrys, połysk, wyskok, dryf); okna i ok
 - W08: zrzuty i nagrania ruchu, pływanie i atak w biegu nie obejrzane wizualnie (Studio w tle nie renderuje).
 - W09: A2 (ciało z Tripo + Avatar Setup), ładniejsze kształty strojów (C2), blizna i piegi na dynamicznej głowie, przenikanie strojów w ruchu i chwyt broni nie oglądane.
 - W10: kolor oczu (oczy w teksturze dynamicznej głowy), malunki nieobejrzane na twarzy (pozycja na głowie z obliczeń), wygląd fryzur warstwowych w podglądzie przybliżony.
-- W15: Pradrzewo (model `forest_landmark_03` od właściciela), klin widoku z bramy, martwe drzewa i podszyt bez modeli, licznik części 3037/3000.
+- W15: Pradrzewo (model `forest_landmark_03`), płaczki, kamień kultu, ruiny kaplicy (modele Tripo); czerwony piaskowiec Urwisk (materiał w Studio).
+- W17/W19: modele Tripo Bramy z Żeber, Skamieniałej Wywerny, kolosa, lodospadu, strażnic i gniazda harpii; rampa Z2 Szczytów i Szlak Popiołu (ruszają grupy).
+- W03–W07, W13–W20, W27: nic nieobejrzane w Studio (podgląd przy następnym wolnym Studio).
 - W13: Z1 (nowa ścieżka) próbowana i cofnięta: przelosowuje grupę wilków (−304, −81) aż do (−413, 238), co zmienia zlecenia łowieckie (S134k, `contracts_gen`, `quest_budget`) i daje stromiznę 36° przy brodzie (−32, −420); wymaga sesji z balansem albo stałego miejsca grupy. Też: rekwizyty expowisk, kwiaty i rośliny wodne, kapliczka i bramy; młyn i horyzont nieobejrzane w Studio.
 - W12/W13: horyzonty miasta, Łąk, Boru, Pustkowi i Szczytów nieobejrzane w Studio (kolory, odległości do strojenia w `Data/Horizons`).
 - W08: IK bez obniżania bioder (wymagałoby zmiany fizyki); warianty klasowe ruchu (pomysł).
