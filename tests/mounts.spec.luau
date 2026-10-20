@@ -164,8 +164,8 @@ describe("Mounts: config", function()
 	it("matches the DESIGN-15 contract", function()
 		local M = Config.Mount
 		expect(M.minLevel).toBe(20)
-		expect(M.baseMul).toBe(1.6)
-		expect(M.maxMul).toBe(2.0)
+		expect(M.baseMul).toBe(2.0)
+		expect(M.maxMul).toBe(2.6)
 		expect(M.maxLevel).toBe(10)
 		expect(M.mountTime).toBe(1.5)
 		expect(M.mountTimeFast).toBe(1.0)
@@ -175,13 +175,13 @@ describe("Mounts: config", function()
 end)
 
 describe("Mounts: speed", function()
-	it("rises linearly from x1.6 to x2.0 and never above", function()
-		expect(Mounts.speedMul(1)).toBeNear(1.6, 1e-9)
-		expect(Mounts.speedMul(10)).toBeNear(2.0, 1e-9)
-		expect(Mounts.speedMul(5)).toBeNear(1.7778, 1e-4)
-		expect(Mounts.speedMul(nil)).toBeNear(1.6, 1e-9)
-		expect(Mounts.speedMul(0)).toBeNear(1.6, 1e-9)
-		expect(Mounts.speedMul(14)).toBeNear(2.0, 1e-9)
+	it("rises linearly from x2.0 to x2.6 and never above", function()
+		expect(Mounts.speedMul(1)).toBeNear(2.0, 1e-9)
+		expect(Mounts.speedMul(10)).toBeNear(2.6, 1e-9)
+		expect(Mounts.speedMul(5)).toBeNear(2.2667, 1e-4)
+		expect(Mounts.speedMul(nil)).toBeNear(2.0, 1e-9)
+		expect(Mounts.speedMul(0)).toBeNear(2.0, 1e-9)
+		expect(Mounts.speedMul(14)).toBeNear(2.6, 1e-9)
 		for lvl = 2, 10 do
 			expect(Mounts.speedMul(lvl) > Mounts.speedMul(lvl - 1)).toBe(true)
 		end
@@ -204,12 +204,12 @@ describe("Mounts: speed", function()
 				factor = factor or 1,
 			})
 		end
-		expect(ride(1, 0, 1, 20.8, true)).toBeNear(25.6, 1e-9)
-		expect(ride(1, 30)).toBeNear(33.28, 1e-9)
-		expect(ride(1, 45)).toBeNear(33.28, 1e-9)
-		expect(ride(10, 0)).toBeNear(32, 1e-9)
-		expect(ride(10, 30)).toBeNear(41.6, 1e-9)
-		expect(ride(1, 0, 0.5)).toBeNear(12.8, 1e-9)
+		expect(ride(1, 0, 1, 20.8, true)).toBeNear(32, 1e-9)
+		expect(ride(1, 30)).toBeNear(41.6, 1e-9)
+		expect(ride(1, 45)).toBeNear(41.6, 1e-9)
+		expect(ride(10, 0)).toBeNear(41.6, 1e-9)
+		expect(ride(10, 30)).toBeNear(54.08, 1e-9)
+		expect(ride(1, 0, 0.5)).toBeNear(16, 1e-9)
 		expect(ride(1, 0, 0)).toBe(0)
 		for _, g in { 0, 10, 20, 30 } do
 			local walk = 16 * (1 + g / 100)
@@ -454,13 +454,13 @@ describe("S97 upgrade curve", function()
 		end
 		-- DESIGN-15 §2: gear moveSpeed counts in the saddle, sprint does not, slows do
 		local base: Mounts.SpeedInput = { riding = true, lvl = 1, walk = 16, gearMove = 30, sprint = false, factor = 1 }
-		expect(Mounts.walkSpeed(base)).toBeNear(33.28, 1e-9)
+		expect(Mounts.walkSpeed(base)).toBeNear(41.6, 1e-9)
 		local sprinting = table.clone(base)
 		sprinting.sprint = true
-		expect(Mounts.walkSpeed(sprinting)).toBeNear(33.28, 1e-9)
+		expect(Mounts.walkSpeed(sprinting)).toBeNear(41.6, 1e-9)
 		local slowed = table.clone(base)
 		slowed.factor = 0.5
-		expect(Mounts.walkSpeed(slowed)).toBeNear(16.64, 1e-9)
+		expect(Mounts.walkSpeed(slowed)).toBeNear(20.8, 1e-9)
 	end)
 end)
 

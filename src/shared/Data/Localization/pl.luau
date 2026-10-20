@@ -2471,6 +2471,8 @@ return {
 	["keys.skill.6"] = "Umiejętność 6",
 	["keys.skill.7"] = "Umiejętność 7",
 	["keys.skill.8"] = "Umiejętność 8",
+	["keys.skill.9"] = "Umiejętność 9",
+	["keys.skill.10"] = "Umiejętność 10",
 	["keys.potion.hp"] = "Mikstura HP",
 	["keys.potion.mana"] = "Mikstura many",
 	["keys.potion.energy"] = "Mikstura energii",

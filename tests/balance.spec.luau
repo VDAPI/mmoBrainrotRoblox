@@ -342,7 +342,7 @@ T.describe("Balance S146: Warrior and Cleric", function()
 						T.expect({ build.key, L, id, (SkillData.get(id) :: any).type ~= "passive" })
 							.toEqual({ build.key, L, id, true })
 					end
-					T.expect({ build.key, L, n <= SkillData.HOTBAR_SLOTS }).toEqual({ build.key, L, true })
+					T.expect({ build.key, L, n <= SkillData.MODEL_BAR }).toEqual({ build.key, L, true })
 					for _, entry in SkillModel.barRotation(sp) do
 						T.expect({ build.key, L, entry.skill, bar[entry.skill] == true })
 							.toEqual({ build.key, L, entry.skill, true })

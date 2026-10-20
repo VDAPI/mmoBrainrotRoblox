@@ -166,9 +166,9 @@ T.describe("S56 ranks from the level and the bar", function()
 		T.expect(Skills.rankAt(bloodlust, 46)).toBe(10)
 		T.expect((Skills :: any).rankFor).toBeNil()
 		T.expect(Skills.validSlot(1)).toBe(true)
-		-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool
-		T.expect(Skills.validSlot(8)).toBe(true)
-		T.expect(Skills.validSlot(9)).toBe(false)
+		-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool; S156: 10 again
+		T.expect(Skills.validSlot(10)).toBe(true)
+		T.expect(Skills.validSlot(11)).toBe(false)
 		T.expect(Skills.validSlot(1.5)).toBe(false)
 	end)
 

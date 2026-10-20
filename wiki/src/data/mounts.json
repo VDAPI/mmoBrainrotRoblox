@@ -1,16 +1,16 @@
 {
-  "config": {"baseMul":1.6,"fastFromLevel":5,"maxLevel":10,"maxMul":2,"minLevel":20,"mountTime":1.5,"mountTimeFast":1},
+  "config": {"baseMul":2,"fastFromLevel":5,"maxLevel":10,"maxMul":2.6,"minLevel":20,"mountTime":1.5,"mountTimeFast":1},
   "levels": [
-    {"level":1,"mountTime":1.5,"speedMul":1.6},
-    {"charLevel":20,"gold":1500,"level":2,"materials":[{"id":"goblin_ear","n":15},{"id":"thick_hide","n":10}],"mountTime":1.5,"speedMul":1.6444},
-    {"charLevel":25,"gold":2000,"level":3,"materials":[{"id":"werewolf_claw","n":12}],"mountTime":1.5,"speedMul":1.6889},
-    {"charLevel":30,"gold":2500,"level":4,"materials":[{"id":"werewolf_claw","n":20},{"id":"ectoplasm","n":10}],"mountTime":1.5,"speedMul":1.7333},
-    {"charLevel":40,"gold":6000,"level":5,"materials":[{"id":"ectoplasm","n":20}],"mountTime":1,"speedMul":1.7778},
-    {"charLevel":50,"gold":8500,"level":6,"materials":[{"id":"salamander_scale","n":15}],"mountTime":1,"speedMul":1.8222},
-    {"charLevel":60,"gold":12500,"level":7,"materials":[{"id":"salamander_scale","n":15},{"id":"magma_shard","n":15}],"mountTime":1,"speedMul":1.8667},
-    {"charLevel":70,"gold":22000,"level":8,"materials":[{"id":"magma_shard","n":20},{"id":"yeti_fur","n":10}],"mountTime":1,"speedMul":1.9111},
-    {"charLevel":80,"gold":25500,"level":9,"materials":[{"id":"yeti_fur","n":25}],"mountTime":1,"speedMul":1.9556},
-    {"charLevel":90,"gold":32000,"level":10,"materials":[{"id":"yeti_fur","n":20},{"id":"frost_scale","n":15}],"mountTime":1,"speedMul":2}
+    {"level":1,"mountTime":1.5,"speedMul":2},
+    {"charLevel":20,"gold":1500,"level":2,"materials":[{"id":"goblin_ear","n":15},{"id":"thick_hide","n":10}],"mountTime":1.5,"speedMul":2.0667},
+    {"charLevel":25,"gold":2000,"level":3,"materials":[{"id":"werewolf_claw","n":12}],"mountTime":1.5,"speedMul":2.1333},
+    {"charLevel":30,"gold":2500,"level":4,"materials":[{"id":"werewolf_claw","n":20},{"id":"ectoplasm","n":10}],"mountTime":1.5,"speedMul":2.2},
+    {"charLevel":40,"gold":6000,"level":5,"materials":[{"id":"ectoplasm","n":20}],"mountTime":1,"speedMul":2.2667},
+    {"charLevel":50,"gold":8500,"level":6,"materials":[{"id":"salamander_scale","n":15}],"mountTime":1,"speedMul":2.3333},
+    {"charLevel":60,"gold":12500,"level":7,"materials":[{"id":"salamander_scale","n":15},{"id":"magma_shard","n":15}],"mountTime":1,"speedMul":2.4},
+    {"charLevel":70,"gold":22000,"level":8,"materials":[{"id":"magma_shard","n":20},{"id":"yeti_fur","n":10}],"mountTime":1,"speedMul":2.4667},
+    {"charLevel":80,"gold":25500,"level":9,"materials":[{"id":"yeti_fur","n":25}],"mountTime":1,"speedMul":2.5333},
+    {"charLevel":90,"gold":32000,"level":10,"materials":[{"id":"yeti_fur","n":20},{"id":"frost_scale","n":15}],"mountTime":1,"speedMul":2.6}
   ],
   "mounts": [
     {"color":"#6B4A2B","color2":"#2A1D14","desc":{"en":"A calm bay horse from Radosz's stable. It dislikes marshes, but it will not leave you on the road.","pl":"Spokojny gniady koń ze stajni Radosza. Nie lubi bagien, ale nie zostawi cię na trakcie."},"id":"mount_horse","name":{"en":"Bay Horse","pl":"Gniady koń"},"source":"quest","startLevel":1},

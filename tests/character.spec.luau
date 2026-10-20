@@ -401,6 +401,8 @@ T.describe("Migration 6 (S56)", function()
 			["6"] = "circleOfLight",
 			["7"] = "brandOfLight",
 			["8"] = "holyNova",
+			["9"] = "resurrection", -- S156: 10 slots again
+			["10"] = "rebuke",
 		})
 	end)
 

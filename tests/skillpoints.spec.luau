@@ -398,7 +398,7 @@ T.describe("Skill points: legacy ranks, cleaning, bars (S137)", function()
 		-- a template barPool (""): the hotbar becomes the pool's bar
 		local fresh = char("Mage", 40, { ranks = c.ranks, barPool = "", hotbar = { ["2"] = "firebolt" } })
 		T.expect((SkillPoints.switchPool(fresh, "fire") :: any).hotbar).toEqual({ ["2"] = "firebolt" })
-		T.expect(SkillData.HOTBAR_SLOTS).toBe(8)
+		T.expect(SkillData.HOTBAR_SLOTS).toBe(10)
 	end)
 
 	T.it("the rank rule in Paths: a skill of another pool is refused with wrongPool, the bar keeps its pool", function()

@@ -41,7 +41,7 @@ local SkillController = {
 local TargetController: any
 local player = Players.LocalPlayer
 
--- Hotbar slot of a key press (rebindable, S17: actions skill_1 .. skill_8 since S137).
+-- Hotbar slot of a key press (rebindable, S17: actions skill_1 .. skill_10).
 local function slotFor(keyCode: Enum.KeyCode): number?
 	local action = Keybinds.actionFor(keyCode)
 	local slot = if action then string.match(action, "^skill_(%d+)$") else nil

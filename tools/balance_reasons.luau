@@ -3223,6 +3223,10 @@ return {
 				session = "S96",
 				why = "new table: a mount from level 20, walk speed x1.6 -> x2.0 over mount levels 1-10 (DESIGN-15 §2), mounting 1.5 s (1.0 s from mount level 5), 2.5 studs of movement break it",
 			},
+			{
+				session = "S156",
+				why = "owner: horses too slow next to the sprint (x1.35): riding speed x1.6 -> x2.0 at mount level 1, x2.0 -> x2.6 at level 10",
+			},
 		},
 		["Mounts:*"] = {
 			{
@@ -5221,6 +5225,16 @@ return {
 			{
 				session = "S137",
 				why = "10 -> 8 (DESIGN-18 §4.1, owner 2026-10-15): 8 slots per weapon pool, keys 1-8; migration 12 keeps the old bar's first 8 slots",
+			},
+			{
+				session = "S156",
+				why = "8 -> 10 (owner 2026-10-20: the pools have more actives than 8): keys 1-9 and 0, bars keep their slots",
+			},
+		},
+		["Skills/init:MODEL_BAR"] = {
+			{
+				session = "S156",
+				why = "new: the balance model keeps casting the first 8 actives of a build (S146-S147 tuning) with 10 bar slots",
 			},
 		},
 		["Config:SkillPools.swapLock"] = {

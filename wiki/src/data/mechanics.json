@@ -32,6 +32,8 @@
     {"group":"combat","id":"skill_6","key":"6","name":{"en":"Skill 6","pl":"Umiejętność 6"}},
     {"group":"combat","id":"skill_7","key":"7","name":{"en":"Skill 7","pl":"Umiejętność 7"}},
     {"group":"combat","id":"skill_8","key":"8","name":{"en":"Skill 8","pl":"Umiejętność 8"}},
+    {"group":"combat","id":"skill_9","key":"9","name":{"en":"Skill 9","pl":"Umiejętność 9"}},
+    {"group":"combat","id":"skill_10","key":"0","name":{"en":"Skill 10","pl":"Umiejętność 10"}},
     {"group":"combat","id":"potion_hp","key":"Z","name":{"en":"HP potion","pl":"Mikstura HP"}},
     {"group":"combat","id":"potion_mana","key":"X","name":{"en":"Mana potion","pl":"Mikstura many"}},
     {"group":"combat","id":"potion_energy","key":"V","name":{"en":"Energy potion","pl":"Mikstura energii"}},

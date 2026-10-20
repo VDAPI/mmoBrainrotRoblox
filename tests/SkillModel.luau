@@ -1812,7 +1812,7 @@ function SkillModel.barOf(sp: any): { [string]: boolean }?
 	local bar: { [string]: boolean } = {}
 	local n = 0
 	for _, id in order do
-		if n >= SkillData.HOTBAR_SLOTS then
+		if n >= SkillData.MODEL_BAR then
 			break
 		end
 		local def = SkillData.get(id)

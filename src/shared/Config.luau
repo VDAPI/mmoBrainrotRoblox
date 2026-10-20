@@ -353,8 +353,8 @@ local Config = {
 	-- a skill interrupts it. Levels are raised in S97.
 	Mount = {
 		minLevel = 20,
-		baseMul = 1.6,
-		maxMul = 2.0,
+		baseMul = 2.0, -- owner: 1.6 -> 2.0 and 2.0 -> 2.6 (a horse felt barely faster than the sprint, x1.35)
+		maxMul = 2.6,
 		maxLevel = 10,
 		mountTime = 1.5,
 		mountTimeFast = 1.0,

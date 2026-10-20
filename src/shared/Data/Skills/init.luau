@@ -37,7 +37,10 @@ return table.freeze({
 	get = function(id: string): SkillDef?
 		return byId[id]
 	end,
-	HOTBAR_SLOTS = 8, -- S137 (DESIGN-18 §4.1): 8 slots per weapon pool, keys 1-8 (was 10)
+	HOTBAR_SLOTS = 10, -- S137: 8 slots per weapon pool (was 10); S156 (owner 2026-10-20): 10 again, keys 1-9 and 0
+	-- S156: the balance model (tests/SkillModel) still casts the first 8 actives of a build's bar priority, as tuned in
+	-- S146-S147; the two extra slots are room for situational skills, not a longer rotation
+	MODEL_BAR = 8,
 	-- S55 (ROZWOJ 2.5): the rank curve. S137 (DESIGN-18 §3.1): it is the LIMIT of a bought rank, no longer the rank:
 	-- rank r of a skill unlocked at U may be bought from U + round((r - 1) * span / (maxLevel - 1)),
 	-- span = min(9 * step, capLevel - U): every skill may be maxed by capLevel.

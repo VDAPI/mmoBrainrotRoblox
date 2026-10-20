@@ -38,8 +38,10 @@ local actions: { Action } = {
 	{ id = "skill_5", default = "Five", labelKey = "keys.skill.5", group = "combat" },
 	{ id = "skill_6", default = "Six", labelKey = "keys.skill.6", group = "combat" },
 	{ id = "skill_7", default = "Seven", labelKey = "keys.skill.7", group = "combat" },
-	-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool; 9 and 0 are free keys now
+	-- S137 (DESIGN-18 §4.1): 8 slots per weapon pool; owner 2026-10-20: 10 again (9 and 0)
 	{ id = "skill_8", default = "Eight", labelKey = "keys.skill.8", group = "combat" },
+	{ id = "skill_9", default = "Nine", labelKey = "keys.skill.9", group = "combat" },
+	{ id = "skill_10", default = "Zero", labelKey = "keys.skill.10", group = "combat" },
 	{ id = "potion_hp", default = "Z", labelKey = "keys.potion.hp", group = "combat" },
 	{ id = "potion_mana", default = "X", labelKey = "keys.potion.mana", group = "combat" },
 	{ id = "potion_energy", default = "V", labelKey = "keys.potion.energy", group = "combat" },

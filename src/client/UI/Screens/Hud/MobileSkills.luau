@@ -1,6 +1,6 @@
 --!strict
 -- Touch skill buttons (DESIGN §14.1, §23): five round buttons in an arc around the attack button, a page
--- switch for slots 6–8 (S137: 8 slots, the second page shows three buttons) and a "target" button (nearest enemy).
+-- switch for slots 6–10 (S137: 8 slots; S156: 10 again, two full pages) and a "target" button (nearest enemy).
 -- Hidden on PC.
 -- S28: dragging a button aims an area skill (the preview follows the finger, release casts there, coming back onto
 -- the button cancels); a tap casts as before.
