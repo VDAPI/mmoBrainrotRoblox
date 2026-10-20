@@ -36,6 +36,7 @@ local ALL: { [string]: any } = { -- the modules are plain tables (their slot tab
 	forestWraith = require("@self/forestWraith"),
 	frostGiant = require("@self/frostGiant"),
 	frozenKnight = require("@self/frozenKnight"),
+	ghoul = require("@self/ghoul"),
 	goblinScout = require("@self/goblinScout"),
 	goblinShaman = require("@self/goblinShaman"),
 	grimrok = require("@self/grimrok"),
