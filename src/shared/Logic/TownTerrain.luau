@@ -224,8 +224,18 @@ local ROADS = lines(city.outside.roads, function()
 end)
 local CEMETERY: { Shape } = { { box = boxOf(city.cemetery, 0), poly = city.cemetery, half = 0, value = "Grass" } }
 
+-- W28: the Ristalle's square (sand + stands) plus `margin` studs around it. The colosseum stands on its own stone
+-- foundation there (Logic/TownGen/Specials arena); the ground around it is paved, so no grass, tufts or flowers grow
+-- through its floor or against its walls (DecorController skips the whole square with ARENA_MARGIN).
+TownTerrain.ARENA_MARGIN = 4 -- the nearest gardens start 4.8 studs off the stands
+function TownTerrain.inArena(x: number, z: number, margin: number?): boolean
+	local a = city.arena
+	local r = a.half + a.stands + (margin or 0)
+	return math.abs(x - a.x) <= r and math.abs(z - a.z) <= r
+end
+
 -- Surface material at (x, z) for ground height `h` and slope `slope` (rise per stud; 0 when unknown).
--- First match wins: river bed, arena sand, squares, ramps, streets, river banks, steep ground (rock), gardens,
+-- First match wins: river bed, arena sand (W28: its forecourt paved), squares, ramps, streets, river banks, steep ground (rock), gardens,
 -- cemetery, then the base: grass with leafy patches inside the walls; moat, roads, fields and forest outside.
 function TownTerrain.materialAt(x: number, z: number, h: number, slope: number): string
 	local river = T.river
@@ -235,6 +245,9 @@ function TownTerrain.materialAt(x: number, z: number, h: number, slope: number):
 	local arena = city.arena
 	if math.abs(x - arena.x) <= arena.half and math.abs(z - arena.z) <= arena.half then
 		return "Sand"
+	end
+	if TownTerrain.inArena(x, z, TownTerrain.ARENA_MARGIN) then
+		return "Pavement" -- W28: the colosseum's forecourt (no grass against its walls)
 	end
 	local inside = TownGeom.inPoly(city.wall, x, z)
 	if inside then

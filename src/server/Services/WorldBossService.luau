@@ -80,6 +80,8 @@ type Fight = {
 	helpers: { [any]: boolean },
 	bank: { [Player]: Contribution.Contribution },
 	chars: { [Player]: string }, -- the character that earned the first point (the reward goes only to it)
+	-- owner 2026-10-20: who earned points, for a reward by mail when they are gone at the kill
+	who: { [Player]: { userId: number, charId: string, level: number, class: string } },
 	fightId: number?,
 	spawnedAt: number?, -- Clock time
 	endedAt: number?, -- Clock time of the kill or the leave
@@ -200,6 +202,7 @@ local function bankAdd(f: Fight, player: Player, field: "dmg" | "heal" | "shield
 		local char: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 		if char then
 			f.chars[player] = char.id
+			f.who[player] = { userId = player.UserId, charId = char.id, level = char.level, class = char.class }
 		end
 	end
 end
@@ -317,6 +320,42 @@ local function mailItems(player: Player, charId: string, items: { Types.ItemInst
 	end
 end
 
+-- Owner 2026-10-20: the reward of a fighter who is gone at the kill, by mail to the character that fought (the item,
+-- the materials and the gold; EXP needs the character in the game).
+local function mailAbsent(who: { userId: number, charId: string, level: number, class: string })
+	local items: { Types.ItemInstance } = {}
+	local drop = WorldBoss.rollItem(who.level, who.class, rng)
+	if drop then
+		local rolled = ItemRoll.rollItem(
+			drop.defId,
+			drop.ilvl,
+			drop.rarity,
+			rng,
+			HttpService:GenerateGUID(false),
+			drop.forClass,
+			{ family = WorldBoss.def().family :: string? }
+		)
+		if Data.reward.bound then
+			rolled.bound = true
+		end
+		table.insert(items, rolled)
+	end
+	for _, m in WorldBoss.rollMaterials(rng) do
+		table.insert(items, ItemRoll.makeStack(m.id, m.n, HttpService:GenerateGUID(false)))
+	end
+	local r = WorldBoss.reward(who.level, true)
+	local sent, err = MailService.Send(who.userId, {
+		from = "system",
+		subjectKey = "mail.subject.worldBoss",
+		items = items,
+		gold = r.gold,
+		charId = who.charId,
+	})
+	if not sent then
+		log:warn("world boss reward of absent %d not mailed: %s", who.userId, tostring(err))
+	end
+end
+
 -- EXP, gold, materials and the item of one winner; returns the items for the fight summary.
 local function giveReward(player: Player, char: Types.CharacterData): { any }
 	local r = WorldBoss.reward(char.level, true)
@@ -388,11 +427,20 @@ local function rewardAll(f: Fight): (number, number, { [Player]: { any } })
 			continue
 		end
 		participants += 1
-		if player.Parent == nil or not playing(player) then
-			continue
-		end
-		local char: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+		local char: Types.CharacterData? = if player.Parent ~= nil and playing(player)
+			then PlayerStateService.GetCharacter(player)
+			else nil
 		if not char or f.chars[player] ~= char.id then
+			-- owner 2026-10-20: gone (left, another character) but fought: the item, the materials and the gold by mail
+			local who = f.who[player]
+			if
+				who
+				and who.level >= WorldBoss.minLevel()
+				and WorldBoss.canReward(nil, who.level, points, total, f.occ.id)
+			then
+				task.spawn(mailAbsent, who)
+				rewarded += 1
+			end
 			continue
 		end
 		local account = PlayerStateService.Get(player, { "account" })
@@ -440,6 +488,7 @@ local function newFight(occ: Occurrence, forced: boolean): Fight
 		helpers = {},
 		bank = {},
 		chars = {},
+		who = {},
 		fightId = nil,
 		spawnedAt = nil,
 		endedAt = nil,
