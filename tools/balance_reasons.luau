@@ -40,6 +40,9 @@ return {
 		{ path = "Data/Crafting", pick = { "materials" } },
 		{ path = "Data/Families", omit = LOOKS },
 		{ path = "Data/GuildSkills", omit = LOOKS },
+		-- S159g: guild levels, guild EXP per activity, weekly goals and their rewards, vault and rank defaults; goalById
+		-- repeats GOALS
+		{ path = "Data/GuildProgress", omit = { "goalById", "GROUPS" } },
 		-- S134k: the Huntmaster's shop (prices in Hunter's Marks, weekly limits); byKey repeats ENTRIES
 		{ path = "Data/HuntShop", omit = { "byKey", "GROUPS" } },
 		{ path = "Data/ItemTraits", omit = LOOKS },
@@ -190,6 +193,7 @@ return {
 		["Data/ClassLooks"] = "wygląd", -- S132: class looks, creator choices, catalog hooks (DESIGN-17 §9a)
 		["Data/Emotes"] = "wygląd", -- S123: emote motions (Data/SkillMotions format), aliases, cooldown
 		["Data/Titles"] = "wygląd",
+		["Data/GuildBanners"] = "wygląd", -- S159g: guild banner emblems and colours
 		["Data/Changelog"] = "teksty", -- S153: the in-game "What has changed" log (ids, days, text keys)
 		["Data/Achievements"] = "postęp", -- S151: achievement milestones and rewards (gold checked in balance.spec)
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
@@ -344,6 +348,12 @@ return {
 		},
 		["Items/Consumables:[potion_energy_5].level"] = {
 			{ session = "S87", why = "D3: Mighty potion from 70 (was 1)" },
+		},
+		["GuildProgress:*"] = {
+			{
+				session = "S159g",
+				why = "new module: guild levels from members' play, weekly guild goals (guild EXP, treasury gold, 5 shards per goal), vault slots and default rank rights (owner: develop guilds)",
+			},
 		},
 		["BossTuning:*"] = {
 			{

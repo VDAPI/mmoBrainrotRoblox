@@ -42,6 +42,7 @@ local Arena = require(Shared.Data.Arena)
 local ArenaRules = require(Shared.Logic.ArenaRules)
 local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
+local Guild = require(Shared.Logic.Guild)
 local Leaderboard = require(Shared.Logic.Leaderboard)
 local Leaderboards = require(Shared.Data.Leaderboards)
 local Log = require(Shared.Util.Log)
@@ -623,7 +624,13 @@ function LeaderboardService.SubmitGuild(data: any)
 		return
 	end
 	local score = Leaderboard.encodeGuild(Leaderboard.guildScore(data.members), tonumber(data.createdAt) or 0)
-	LeaderboardService.Submit("guild", key, score, { n = data.name, g = data.tag, l = highest, m = count, t = now })
+	-- S159g: `v` = the guild level (shown on the board; not part of the score)
+	LeaderboardService.Submit(
+		"guild",
+		key,
+		score,
+		{ n = data.name, g = data.tag, l = highest, m = count, t = now, v = Guild.level(data) }
+	)
 end
 
 -- Public API ----------------------------------------------------------------------------------------------------------

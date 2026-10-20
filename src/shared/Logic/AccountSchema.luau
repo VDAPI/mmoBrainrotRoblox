@@ -177,6 +177,7 @@ function AccountSchema.characterTemplate(): CharacterData
 			scenes = {}, -- S102: story cutscenes (false = queued, true = watched); mainLast has no default (nil)
 		},
 		guildId = nil,
+		guildWork = { day = 0, today = 0, week = 0, claimed = {} }, -- S159g: Logic/GuildProgress (no migration, reconcile)
 		-- S132 (DESIGN-17 §9a): the creator's face, skin and hair; every character (old ones through reconcile, new ones
 		-- from CharacterFactory) has one free look change
 		look = {

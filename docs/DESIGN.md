@@ -1034,6 +1034,25 @@ nazw obcych) i tabelą własnej drużyny.
   - Szczęście: +1% szansy na drop / poziom
 - Czat gildii (między serwerami), lista członków z online/offline i serwerem, tag nad głową.
 - Dane gildii w osobnym DataStore (`UpdateAsync`), zmiany rozsyłane przez MessagingService.
+- **Rozwój gildii (S159g)**, liczby w `Data/GuildProgress`, reguły w `Logic/Guild`, `Logic/GuildBank`, `Logic/GuildProgress`:
+  - **Poziom gildii 1–20** z EXP gildii, które członkowie zdobywają grą: potwór 1 (najwyżej 10 poziomów niżej od postaci),
+    Elita 4, Elita II 10, boss lochu 25, boss świata 40, zadanie 10, zlecenie 4, wydarzenie świata 12, zbieranie / ryba /
+    ulepszenie / mikstura 1, kucie 2; jedna postać daje najwyżej 400 EXP gildii na dzień UTC. Próg poziomu n → n+1:
+    1500 × n^1,5 (zaokrąglone do 100). Serwer zbiera EXP członków i zapisuje rekord gildii co ~60–90 s.
+  - Poziom gildii otwiera poziomy umiejętności gildii (poziom umiejętności 1/2/3/4/5 od poziomu gildii 1/2/4/7/10;
+    kupione wcześniej zostają), miejsca w skarbcu przedmiotów (10 + 2 na poziom) i godła / barwy sztandaru.
+  - **Cele tygodnia**: trzy wspólne cele (walka, przygoda, rzemiosło) losowane z ziarna gildii i tygodnia, cele rosną z
+    liczbą członków. Wykonany cel: +1200 EXP gildii i 3000 + 1500 × poziom gildii złota do skarbca; każdy członek z co
+    najmniej 60 EXP gildii w tym tygodniu odbiera 5 Smoczych Odłamków za cel (najwyżej 15 na tydzień). Wszystkie trzy:
+    **Zryw gildii** +3% EXP i +3% złota dla członków do końca następnego tygodnia.
+  - **Skarbiec**: wpłata złota (każdy), wypłata złota i branie przedmiotów według uprawnień i dziennych limitów rangi,
+    odkładanie przedmiotów (bez związanych), skarbiec przedmiotów dostępny wszędzie poza walką. **Kronika**: ostatnie 50
+    zdarzeń (wpłaty, wypłaty, przedmioty, rangi, ulepszenia, cele, poziomy).
+  - **Rangi**: Przywódca, Oficer, Weteran, Członek. Przywódca ustawia uprawnienia niższych rang (zapraszanie, wyrzucanie,
+    zmiana rang niższych, ulepszanie, wiadomość dnia, wypłata złota, branie i odkładanie przedmiotów) i dzienne limity
+    (domyślnie oficer 50 000 złota i 10 przedmiotów, weteran 3 przedmioty, członek tylko odkłada).
+  - **Sztandar**: godło i barwa (więcej z poziomem gildii) przed tagiem nad głową i w czacie gildii.
+  - Ranking gildii dalej liczy sumę 10 najwyższych poziomów członków; kolumna „Poz.” pokazuje poziom gildii.
 
 ## 19a. Rankingi (S124, `docs/DESIGN-17.md` §5)
 

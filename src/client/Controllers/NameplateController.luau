@@ -175,6 +175,8 @@ local function build(model: Model, owner: Player)
 
 	local charName = attributeValue(scope, model, "CharName")
 	local guildTag = attributeValue(scope, model, "GuildTag")
+	local guildEmblem = attributeValue(scope, model, "GuildEmblem") -- S159g: the guild banner
+	local guildColor = attributeValue(scope, model, "GuildColor")
 	local vip = scope:Value(owner:GetAttribute("Vip"))
 	table.insert(
 		scope,
@@ -369,7 +371,14 @@ local function build(model: Model, owner: Player)
 									local v = use(view)
 									local name = use(charName) or ""
 									if v.guildTag then
-										return `<font size="{CFG.tagSize}" color="{TAG_HEX}">[{v.guildTag}]</font> {name}`
+										-- S159g: the banner's emblem and colour (readable on the HUD), brass before
+										local hex = use(guildColor)
+										local glyph = use(guildEmblem)
+										local tagHex = if type(hex) == "string"
+											then Theme.readableHex(hex, "hud")
+											else TAG_HEX
+										local emblem = if type(glyph) == "string" then glyph else ""
+										return `<font size="{CFG.tagSize}" color="{tagHex}">[{emblem}{v.guildTag}]</font> {name}`
 									end
 									return name
 								end),

@@ -225,6 +225,9 @@ export type CharacterData = {
 		said: { [string]: string },
 	},
 	guildId: string?,
+	-- S159g: guild EXP earned on the UTC day `day` (`today`, capped by Data/GuildProgress.Rules.dailyCap) and the weekly
+	-- goal rewards taken in week `week` (goal id -> true). Logic/GuildProgress; no migration, reconcile
+	guildWork: { day: number, today: number, week: number, claimed: { [string]: boolean } },
 	-- S132 (DESIGN-17 §9a): face, skin and hair of the creator (Data/ClassLooks ids) and the one free look change
 	look: { face: string, skin: string, hair: string },
 	lookFree: boolean,

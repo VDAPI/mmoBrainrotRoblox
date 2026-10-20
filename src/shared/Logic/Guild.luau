@@ -3,11 +3,16 @@
 -- rank permissions, name/tag shape, member limit, skill bonuses and every mutation of the stored guild
 -- record. Mutations change `guild` in place and return (ok, errorKey?); on failure nothing is changed.
 -- Member keys are "<userId>:<characterId>" (one guild per character, not per account).
+-- S159g: four ranks (veteran between officer and member), rights of the ranks below the leader editable by the leader
+-- (`perms`, defaults in Data/GuildProgress.RANK_DEFAULTS), the guild level from `exp` (gates skill levels), the guild
+-- log, the banner. The vault lives in Logic/GuildBank, guild EXP and weekly goals in Logic/GuildProgress.
 
+local GuildProgressData = require("../Data/GuildProgress")
+local GuildBanners = require("../Data/GuildBanners")
 local GuildSkills = require("../Data/GuildSkills")
 local NameRules = require("./NameRules")
 
-export type Rank = "leader" | "officer" | "member"
+export type Rank = "leader" | "officer" | "veteran" | "member"
 
 export type Action =
 	"invite"
@@ -19,6 +24,9 @@ export type Action =
 	| "transfer"
 	| "disband"
 	| "deposit"
+	| "withdrawGold" -- S159g: gold out of the treasury (daily limit per rank)
+	| "takeItem" -- S159g: items out of the vault (daily limit per rank)
+	| "putItem" -- S159g: items into the vault
 
 export type Member = {
 	userId: number,
@@ -29,9 +37,23 @@ export type Member = {
 	rank: Rank,
 	joinedAt: number,
 	contributed: number,
+	-- S159g: what the member took from the bank today (UTC day `d`): gold and items, for the daily limits
+	day: { d: number, gold: number, items: number }?,
 }
 
 export type Settings = { guildPvpProtection: boolean }
+
+-- S159g: one line of the guild log (newest last). k = kind ("deposit" | "withdraw" | "put" | "take" | "upgrade" |
+-- "goal" | "level" | "join" | "leave" | "kick" | "rank"), n = member name, a = amount / level, i = item id, r = rarity,
+-- x = extra text (skill / goal id / rank).
+export type LogEntry = { t: number, k: string, n: string?, a: number?, i: string?, r: number?, x: string? }
+
+-- S159g: rights and daily limits of one rank below the leader (overrides of Data/GuildProgress.RANK_DEFAULTS).
+export type RankRules = { perms: { [string]: boolean }?, gold: number?, items: number? }
+
+-- S159g: the weekly goals (Logic/GuildProgress).
+export type Goal = { id: string, target: number, n: number, done: boolean }
+export type Week = { w: number, goals: { Goal }, contrib: { [string]: number } }
 
 export type GuildData = {
 	id: string,
@@ -46,35 +68,85 @@ export type GuildData = {
 	settings: Settings,
 	version: number,
 	disbanded: boolean?, -- tombstone left for offline members
+	-- S159g (all optional: records from before read as level 1, an empty vault and default rights)
+	exp: number?, -- guild EXP in total (Guild.levelOf)
+	vault: { [string]: any }?, -- slot ("1".."N") -> ItemInstance
+	log: { LogEntry }?,
+	perms: { [string]: RankRules }?, -- rank -> overrides
+	banner: { e: string, c: string }?, -- Data/GuildBanners emblem and colour ids
+	week: Week?,
+	rally: { from: number, to: number }?, -- weeks with the bonus of all weekly goals done
 }
 
 local Rules = GuildSkills.Rules
 
 local Guild = {}
 
-Guild.RANKS = { "leader", "officer", "member" } :: { Rank }
+Guild.RANKS = { "leader", "officer", "veteran", "member" } :: { Rank }
 
-local PERMISSIONS: { [Rank]: { [Action]: boolean } } = {
-	leader = {
-		invite = true,
-		kick = true,
-		upgrade = true,
-		motd = true,
-		promote = true,
-		settings = true,
-		transfer = true,
-		disband = true,
-		deposit = true,
-	},
-	officer = { invite = true, kick = true, upgrade = true, motd = true, deposit = true },
-	member = { deposit = true },
-}
+-- S159g: ranks whose rights the leader edits, and the rights that can be edited (the rest is the leader's only).
+Guild.EDITABLE_RANKS = { "officer", "veteran", "member" } :: { Rank }
+Guild.EDITABLE = {
+	"invite",
+	"kick",
+	"promote",
+	"upgrade",
+	"motd",
+	"withdrawGold",
+	"takeItem",
+	"putItem",
+} :: { Action }
 
-local RANK_POWER: { [string]: number } = { leader = 3, officer = 2, member = 1 }
+local EDITABLE_SET: { [string]: boolean } = {}
+for _, action in Guild.EDITABLE do
+	EDITABLE_SET[action] = true
+end
 
-function Guild.can(rank: string?, action: Action): boolean
-	local set = rank and PERMISSIONS[rank :: Rank]
-	return set ~= nil and set[action] == true
+local RANK_POWER: { [string]: number } = { leader = 4, officer = 3, veteran = 2, member = 1 }
+
+local function overrides(guild: any?, rank: string): RankRules?
+	local perms = type(guild) == "table" and guild.perms
+	local rules = type(perms) == "table" and perms[rank]
+	return if type(rules) == "table" then rules else nil
+end
+
+-- Whether `rank` may do `action`. `guild` (record or the client's guild state, both carry `perms`) applies the
+-- leader's changes to the rights of the lower ranks; without it the defaults count.
+function Guild.can(rank: string?, action: Action, guild: any?): boolean
+	if rank == nil or RANK_POWER[rank] == nil then
+		return false
+	end
+	if rank == "leader" or action == "deposit" then
+		return true
+	end
+	if not EDITABLE_SET[action] then
+		return false
+	end
+	local own = overrides(guild, rank)
+	local value = own and own.perms and own.perms[action]
+	if type(value) == "boolean" then
+		return value
+	end
+	local defaults = (GuildProgressData.RANK_DEFAULTS :: any)[rank]
+	return defaults ~= nil and defaults.perms[action] == true
+end
+
+-- S159g: the daily bank limit of a rank: "gold" (gold out of the treasury) or "items" (items out of the vault).
+-- The leader has none (math.huge).
+function Guild.limit(guild: any?, rank: string?, kind: "gold" | "items"): number
+	if rank == "leader" then
+		return math.huge
+	end
+	if rank == nil or RANK_POWER[rank] == nil then
+		return 0
+	end
+	local own = overrides(guild, rank)
+	local value = own and own[kind]
+	if type(value) == "number" then
+		return value
+	end
+	local defaults = (GuildProgressData.RANK_DEFAULTS :: any)[rank]
+	return if defaults then defaults[kind] else 0
 end
 
 function Guild.outranks(a: string, b: string): boolean
@@ -133,6 +205,55 @@ end
 
 function Guild.tagKey(tag: string): string
 	return "t:" .. string.upper(tag)
+end
+
+-- Level (S159g) -----------------------------------------------------------------------------------
+
+-- (level, EXP into the level, EXP of the level or nil at the top) of a guild EXP total.
+function Guild.levelOf(exp: number?): (number, number, number?)
+	local left = math.max(0, math.floor(tonumber(exp) or 0))
+	local level = 1
+	while level < GuildProgressData.MAX_LEVEL do
+		local need = GuildProgressData.LEVEL_EXP[level]
+		if left < need then
+			return level, left, need
+		end
+		left -= need
+		level += 1
+	end
+	return level, left, nil
+end
+
+function Guild.level(guild: any?): number
+	return (Guild.levelOf(if type(guild) == "table" then guild.exp else 0))
+end
+
+-- The guild level that opens skill level `n` (1 for unknown levels).
+function Guild.skillUnlock(n: number): number
+	return GuildProgressData.SKILL_UNLOCK[n] or 1
+end
+
+-- Log (S159g) -------------------------------------------------------------------------------------
+
+-- Appends a line to the guild log (oldest dropped past Data/GuildProgress.Rules.logMax).
+function Guild.addLog(guild: GuildData, entry: LogEntry)
+	local log = guild.log or {}
+	guild.log = log
+	table.insert(log, entry)
+	while #log > GuildProgressData.Rules.logMax do
+		table.remove(log, 1)
+	end
+end
+
+-- Banner (S159g) ----------------------------------------------------------------------------------
+
+-- The banner of a guild (defaults for records from before S159g): emblem and colour ids.
+function Guild.banner(guild: any?): (string, string)
+	local banner = type(guild) == "table" and guild.banner
+	if type(banner) == "table" and GuildBanners.isEmblem(banner.e) and GuildBanners.isColour(banner.c) then
+		return banner.e, banner.c
+	end
+	return GuildBanners.DEFAULT_EMBLEM, GuildBanners.DEFAULT_COLOUR
 end
 
 -- Skills ------------------------------------------------------------------------------------------
@@ -223,6 +344,11 @@ function Guild.create(info: NewGuild): GuildData
 		createdAt = info.now,
 		settings = { guildPvpProtection = true },
 		version = 1,
+		exp = 0,
+		vault = {},
+		log = {},
+		perms = {},
+		banner = { e = GuildBanners.DEFAULT_EMBLEM, c = GuildBanners.DEFAULT_COLOUR },
 	}
 end
 
@@ -244,6 +370,7 @@ function Guild.join(guild: GuildData?, member: Member, now: number): (boolean, s
 	entry.joinedAt = now
 	entry.contributed = 0
 	g.members[key] = entry
+	Guild.addLog(g, { t = now, k = "join", n = entry.name })
 	bump(g)
 	return true, nil
 end
@@ -261,6 +388,7 @@ function Guild.leave(guild: GuildData?, key: string): (boolean, string?)
 	if g.leaderCharId == key then
 		return false, if Guild.memberCount(g) > 1 then "guild.error.leaderLeave" else "guild.error.leaderAlone"
 	end
+	Guild.addLog(g, { t = os.time(), k = "leave", n = g.members[key].name })
 	g.members[key] = nil
 	bump(g)
 	return true, nil
@@ -273,7 +401,7 @@ function Guild.kick(guild: GuildData?, actorKey: string, targetKey: string): (bo
 	end
 	local g = guild :: GuildData
 	local actor, target = rankOf(g, actorKey), rankOf(g, targetKey)
-	if not actor or not Guild.can(actor, "kick") then
+	if not actor or not Guild.can(actor, "kick", g) then
 		return false, "guild.error.permission"
 	end
 	if not target or actorKey == targetKey then
@@ -282,32 +410,39 @@ function Guild.kick(guild: GuildData?, actorKey: string, targetKey: string): (bo
 	if not Guild.outranks(actor, target) then
 		return false, "guild.error.rank"
 	end
+	Guild.addLog(g, { t = os.time(), k = "kick", n = g.members[targetKey].name })
 	g.members[targetKey] = nil
 	bump(g)
 	return true, nil
 end
 
--- Promote/demote between officer and member (leader only).
+-- Sets the rank of a member to officer, veteran or member. The actor needs "promote" (the leader always has it;
+-- S159g: an officer when the leader allows it) and must outrank both the member's rank and the new one.
 function Guild.setRank(guild: GuildData?, actorKey: string, targetKey: string, rank: string): (boolean, string?)
 	local ok, err = alive(guild)
 	if not ok then
 		return false, err
 	end
 	local g = guild :: GuildData
-	if not Guild.can(rankOf(g, actorKey), "promote") then
+	local actor = rankOf(g, actorKey)
+	if not actor or not Guild.can(actor, "promote", g) then
 		return false, "guild.error.permission"
 	end
 	local target = g.members[targetKey]
 	if not target or targetKey == actorKey then
 		return false, "guild.error.notMember"
 	end
-	if rank ~= "officer" and rank ~= "member" then
+	if rank ~= "officer" and rank ~= "veteran" and rank ~= "member" then
 		return false, "error.badRequest"
+	end
+	if not Guild.outranks(actor, target.rank) or not Guild.outranks(actor, rank) then
+		return false, "guild.error.rank"
 	end
 	if target.rank == rank then
 		return false, "guild.error.sameRank"
 	end
 	target.rank = rank :: Rank
+	Guild.addLog(g, { t = os.time(), k = "rank", n = target.name, x = rank })
 	bump(g)
 	return true, nil
 end
@@ -385,6 +520,7 @@ function Guild.disband(guild: GuildData?, actorKey: string): (boolean, string?)
 	g.disbanded = true
 	g.members = {}
 	g.treasury = 0
+	g.vault = {}
 	bump(g)
 	return true, nil
 end
@@ -404,6 +540,7 @@ function Guild.deposit(guild: GuildData?, key: string, amount: number): (boolean
 	end
 	g.treasury += amount
 	member.contributed = (member.contributed or 0) + amount
+	Guild.addLog(g, { t = os.time(), k = "deposit", n = member.name, a = amount })
 	bump(g)
 	return true, nil
 end
@@ -414,7 +551,7 @@ function Guild.upgrade(guild: GuildData?, actorKey: string, skillId: string): (b
 		return false, err
 	end
 	local g = guild :: GuildData
-	if not Guild.can(rankOf(g, actorKey), "upgrade") then
+	if not Guild.can(rankOf(g, actorKey), "upgrade", g) then
 		return false, "guild.error.permission"
 	end
 	if not GuildSkills.get(skillId) then
@@ -425,11 +562,16 @@ function Guild.upgrade(guild: GuildData?, actorKey: string, skillId: string): (b
 	if not cost then
 		return false, "guild.error.maxLevel"
 	end
+	if Guild.level(g) < Guild.skillUnlock(level + 1) then
+		return false, "guild.error.guildLevel" -- S159g
+	end
 	if g.treasury < cost then
 		return false, "guild.error.treasury"
 	end
 	g.treasury -= cost
 	g.skills[skillId] = level + 1
+	local actor = g.members[actorKey]
+	Guild.addLog(g, { t = os.time(), k = "upgrade", n = actor and actor.name, a = level + 1, x = skillId })
 	bump(g)
 	return true, nil
 end
@@ -440,7 +582,7 @@ function Guild.setMotd(guild: GuildData?, actorKey: string, text: string): (bool
 		return false, err
 	end
 	local g = guild :: GuildData
-	if not Guild.can(rankOf(g, actorKey), "motd") then
+	if not Guild.can(rankOf(g, actorKey), "motd", g) then
 		return false, "guild.error.permission"
 	end
 	local length = utf8.len(text)
@@ -465,6 +607,93 @@ function Guild.setSetting(guild: GuildData?, actorKey: string, name: string, val
 		return false, "error.badRequest"
 	end
 	g.settings.guildPvpProtection = value
+	bump(g)
+	return true, nil
+end
+
+-- S159g: the leader changes one right of a lower rank (Guild.EDITABLE).
+function Guild.setPerm(
+	guild: GuildData?,
+	actorKey: string,
+	rank: string,
+	action: string,
+	value: any
+): (boolean, string?)
+	local ok, err = alive(guild)
+	if not ok then
+		return false, err
+	end
+	local g = guild :: GuildData
+	if rankOf(g, actorKey) ~= "leader" then
+		return false, "guild.error.permission"
+	end
+	if not table.find(Guild.EDITABLE_RANKS, rank :: any) or not EDITABLE_SET[action] or type(value) ~= "boolean" then
+		return false, "error.badRequest"
+	end
+	local perms = g.perms or {}
+	g.perms = perms
+	local rules = perms[rank] or {}
+	perms[rank] = rules
+	local set = rules.perms or {}
+	rules.perms = set
+	set[action] = value
+	bump(g)
+	return true, nil
+end
+
+-- S159g: the leader sets the daily limit of a lower rank ("gold" or "items", whole numbers within the Rules caps).
+function Guild.setLimit(
+	guild: GuildData?,
+	actorKey: string,
+	rank: string,
+	kind: string,
+	value: number
+): (boolean, string?)
+	local ok, err = alive(guild)
+	if not ok then
+		return false, err
+	end
+	local g = guild :: GuildData
+	if rankOf(g, actorKey) ~= "leader" then
+		return false, "guild.error.permission"
+	end
+	local cap = if kind == "gold"
+		then GuildProgressData.Rules.goldLimitMax
+		elseif kind == "items" then GuildProgressData.Rules.itemLimitMax
+		else nil
+	if not table.find(Guild.EDITABLE_RANKS, rank :: any) or not cap then
+		return false, "error.badRequest"
+	end
+	if value ~= math.floor(value) or value < 0 or value > cap then
+		return false, "guild.error.amount"
+	end
+	local perms = g.perms or {}
+	g.perms = perms
+	local rules = perms[rank] or {}
+	perms[rank] = rules;
+	(rules :: any)[kind] = value
+	bump(g)
+	return true, nil
+end
+
+-- S159g: the leader picks the banner; emblems and colours open with the guild level (Data/GuildBanners).
+function Guild.setBanner(guild: GuildData?, actorKey: string, emblem: string, colour: string): (boolean, string?)
+	local ok, err = alive(guild)
+	if not ok then
+		return false, err
+	end
+	local g = guild :: GuildData
+	if not Guild.can(rankOf(g, actorKey), "settings", g) then
+		return false, "guild.error.permission"
+	end
+	if not GuildBanners.isEmblem(emblem) or not GuildBanners.isColour(colour) then
+		return false, "error.badRequest"
+	end
+	local level = Guild.level(g)
+	if GuildBanners.emblem(emblem).level > level or GuildBanners.colour(colour).level > level then
+		return false, "guild.error.guildLevel"
+	end
+	g.banner = { e = emblem, c = colour }
 	bump(g)
 	return true, nil
 end

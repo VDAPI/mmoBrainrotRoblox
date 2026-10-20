@@ -10,6 +10,10 @@ local Shared = ReplicatedStorage.Shared
 
 local Bus = require(script.Parent.Bus)
 local Guild = require(Shared.Logic.Guild)
+local GuildBank = require(Shared.Logic.GuildBank)
+local GuildBanners = require(Shared.Data.GuildBanners)
+local GuildProgress = require(Shared.Logic.GuildProgress)
+local Time = require(Shared.Logic.Time)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Store = require(script.Parent.Store)
@@ -67,6 +71,10 @@ function Runtime.applyTag(player: Player)
 	end
 	local entry = guildOf[player] and cache[guildOf[player]]
 	model:SetAttribute("GuildTag", if entry then entry.data.tag else nil)
+	-- S159g: the banner before the tag (NameplateController)
+	local emblem, colour = Guild.banner(if entry then entry.data else nil)
+	model:SetAttribute("GuildEmblem", if entry then GuildBanners.emblem(emblem).glyph else nil)
+	model:SetAttribute("GuildColor", if entry then GuildBanners.colour(colour).hex else nil)
 end
 
 -- Text channel ------------------------------------------------------------------------------------
@@ -116,6 +124,13 @@ end
 local function stateFor(entry: Cache, player: Player): any
 	local data = entry.data
 	local myKey = entry.online[player]
+	local now = os.time()
+	local week = Time.weekNumber(now)
+	-- S159g: the goals of this week (computed for display while no server wrote the new week yet)
+	local current = data.week
+	local thisWeek = if type(current) == "table" and current.w == week
+		then current
+		else { w = week, goals = GuildProgress.goalsFor(data.id, week, Guild.memberCount(data)), contrib = {} }
 	local members = {}
 	for _, key in Guild.sortedKeys(data) do
 		local member = data.members[key]
@@ -135,11 +150,15 @@ local function stateFor(entry: Cache, player: Player): any
 			rank = member.rank,
 			contributed = member.contributed or 0,
 			joinedAt = member.joinedAt,
+			week = thisWeek.contrib[key] or 0, -- S159g: guild EXP earned this week
 			online = here or job ~= nil,
 			server = if here then "here" elseif job then string.sub(job, 1, 8) else nil,
 		})
 	end
 	local me = myKey and data.members[myKey]
+	local level, into, need = Guild.levelOf(data.exp)
+	local emblem, colour = Guild.banner(data)
+	local goldLeft, itemsLeft = GuildBank.left(data, me, Time.dayNumber(now))
 	return {
 		id = data.id,
 		name = data.name,
@@ -154,6 +173,19 @@ local function stateFor(entry: Cache, player: Player): any
 		myRank = if me then me.rank else "member",
 		limit = Guild.memberLimit(data.skills),
 		members = members,
+		-- S159g
+		level = level,
+		levelInto = into,
+		levelNeed = need,
+		vault = data.vault or {},
+		vaultSize = GuildBank.vaultSize(data),
+		log = data.log or {},
+		perms = data.perms or {},
+		banner = { e = emblem, c = colour },
+		week = { w = week, goals = thisWeek.goals, mine = if myKey then thisWeek.contrib[myKey] or 0 else 0 },
+		rally = if GuildProgress.rallyActive(data, week) then (data.rally :: any).to else nil,
+		goldLeft = if goldLeft == math.huge then -1 else goldLeft, -- -1 = no limit (leader)
+		itemsLeft = if itemsLeft == math.huge then -1 else itemsLeft,
 	}
 end
 
@@ -282,8 +314,13 @@ function Runtime.attach(player: Player, data: GuildData)
 	Runtime.setData(data.id, entry.data)
 end
 
--- One UpdateAsync with a Logic/Guild mutation; then cache + notice to the other servers.
-function Runtime.mutate(guildId: string, fn: (guild: GuildData?) -> (boolean, string?)): (boolean, string?, GuildData?)
+-- One UpdateAsync with a Logic/Guild mutation; then cache + notice to the other servers. S159g: `quiet` skips the
+-- notice (the guild EXP writes: other servers see them at their next read, Config.GuildCacheRefresh).
+function Runtime.mutate(
+	guildId: string,
+	fn: (guild: GuildData?) -> (boolean, string?),
+	quiet: boolean?
+): (boolean, string?, GuildData?)
 	local ok, data, err = Store.update(guildId, function(current: any?)
 		local changed, reason = fn(current)
 		if not changed then
@@ -295,7 +332,9 @@ function Runtime.mutate(guildId: string, fn: (guild: GuildData?) -> (boolean, st
 		return false, err, nil
 	end
 	Runtime.setData(guildId, data)
-	Bus.publish(guildId, { op = "changed", v = data.version })
+	if not quiet then
+		Bus.publish(guildId, { op = "changed", v = data.version })
+	end
 	return true, nil, data
 end
 

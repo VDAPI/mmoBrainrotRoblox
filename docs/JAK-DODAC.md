@@ -214,6 +214,10 @@
   budżecie `Config.Achievements.shardBudget` (test). Okno, tracker i profil (S151b) tylko z `Logic/AchievementView`
   (seria zwinięta do bieżącego stopnia, sekretne „???”), śledzenie przez `Achievements.canTrack` / `setTracked`
   (`character.ach.track`, remote `AchievementTrack`).
+- **Cel tygodnia gildii / źródło EXP gildii** (S159g): cel = wpis w `Data/GuildProgress.GOALS` (grupa z `GROUPS`,
+  `counts` z aktywności, `perMember` / `min` / `step`) + `guild.goal.<id>.name/.desc` (PL, EN); nowe źródło = punkty w
+  `POINTS` + mapowanie zdarzenia w `Logic/GuildProgress.activity` + `guild.source.<id>`; test `tests/guildprogress.spec`.
+  Nowe uprawnienie rangi: `Guild.EDITABLE` + domyślne w `RANK_DEFAULTS` + `guild.right.<akcja>`.
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez

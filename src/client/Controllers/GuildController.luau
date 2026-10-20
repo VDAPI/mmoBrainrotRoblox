@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GuildBanners = require(ReplicatedStorage.Shared.Data.GuildBanners)
 local GuildFound = require(script.Parent.Parent.UI.Screens.GuildFound)
 local GuildWindow = require(script.Parent.Parent.UI.Screens.GuildWindow)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -45,7 +46,9 @@ end
 
 local function tagPrefix(): string
 	local tag = State.Get({ "guild", "tag" })
-	return if type(tag) == "string" then `[{tag}] ` else ""
+	local banner = State.Get({ "guild", "banner" })
+	local emblem = if type(banner) == "table" then GuildBanners.emblem(banner.e).glyph else "" -- S159g
+	return if type(tag) == "string" then `[{emblem}{tag}] ` else ""
 end
 
 -- Shows a line in the guild channel (falls back to the system channel while it does not exist yet).
@@ -88,7 +91,7 @@ function GuildController.Init(registry)
 	WindowManager.Register({
 		id = "guild",
 		titleKey = "window.guild.title",
-		size = Vector2.new(880, 660),
+		size = Vector2.new(940, 700),
 		hotkey = Enum.KeyCode.G,
 		build = function(s)
 			return GuildWindow(s, { ShowModal = WindowManager.ShowModal, Tab = tab })

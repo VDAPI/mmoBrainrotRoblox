@@ -211,6 +211,8 @@ local function headerCells(use: Use, format: string, touch: boolean): { Cell }
 		return {
 			{ text = Text.get(use, "leaderboard.col.rank"), width = if touch then 44 else 56, color = muted },
 			{ text = Text.get(use, "leaderboard.col.guild"), color = muted },
+			-- S159g: the guild level (not part of the score)
+			{ text = Text.get(use, "leaderboard.col.guildLevel"), width = if touch then 56 else 90, color = muted },
 			{ text = Text.get(use, "leaderboard.col.members"), width = if touch then 90 else 120, color = muted },
 			{ text = Text.get(use, "leaderboard.col.score"), width = if touch then 80 else 120, color = muted },
 		}
@@ -281,6 +283,7 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 		return {
 			{ text = tostring(row.r), width = if touch then 44 else 56, color = color, bold = top, medal = medal },
 			{ text = tag .. nameText, color = color, bold = top, rich = true },
+			{ text = if row.v then tostring(row.v) else "", width = if touch then 56 else 90 },
 			{ text = if row.m then Format.number(row.m) else "", width = if touch then 90 else 120 },
 			{ text = Format.number(row.s), width = if touch then 80 else 120, bold = top },
 		}

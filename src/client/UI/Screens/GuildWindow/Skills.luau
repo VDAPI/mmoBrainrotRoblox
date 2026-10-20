@@ -1,6 +1,7 @@
 --!strict
 -- Guild window, "Skills" tab: the treasury and five cards (DESIGN §19) with level x/5, the current and next
--- effect, the treasury cost and "Upgrade" (officers and the leader).
+-- effect, the treasury cost and "Upgrade" (officers and the leader). S159g: the next level may wait for a guild level
+-- (Data/GuildProgress.SKILL_UNLOCK), shown instead of the cost.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -30,10 +31,20 @@ local function card(scope: Scope, def: GuildSkills.SkillDef, order: number, guil
 	local cost = scope:Computed(function(use): number?
 		return Guild.upgradeCost(def.id, use(level))
 	end)
+	-- S159g: the guild level the next skill level waits for (nil when open or at max)
+	local locked = scope:Computed(function(use): number?
+		local g = use(guild)
+		local need = Guild.skillUnlock(use(level) + 1)
+		return if type(g) == "table" and use(cost) ~= nil and (g.level or 1) < need then need else nil
+	end)
 	local canUpgrade = scope:Computed(function(use): boolean
 		local g = use(guild)
 		local c = use(cost)
-		return type(g) == "table" and c ~= nil and Guild.can(g.myRank, "upgrade") and g.treasury >= c
+		return type(g) == "table"
+			and c ~= nil
+			and use(locked) == nil
+			and Guild.can(g.myRank, "upgrade", g)
+			and g.treasury >= c
 	end)
 	return scope:New("Frame")({
 		LayoutOrder = order,
@@ -113,6 +124,10 @@ local function card(scope: Scope, def: GuildSkills.SkillDef, order: number, guil
 				Size = UDim2.fromOffset(180, 24),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
+					local need = use(locked)
+					if need then
+						return Text.get(use, "guild.skill.locked", { level = need })
+					end
 					local c = use(cost)
 					return if c then `◉ {Format.number(c)}` else Text.get(use, "guild.skill.max")
 				end),
@@ -169,7 +184,7 @@ local function Skills(scope: Scope): Instance
 				Text = scope:Computed(function(use): string
 					local g = use(guild)
 					local treasury = if type(g) == "table" then g.treasury else 0
-					local key = if type(g) == "table" and Guild.can(g.myRank, "upgrade")
+					local key = if type(g) == "table" and Guild.can(g.myRank, "upgrade", g)
 						then "guild.skill.treasury"
 						else "guild.skill.treasuryNoRight"
 					return Text.get(use, key, { gold = Format.number(treasury) })

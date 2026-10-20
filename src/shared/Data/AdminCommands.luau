@@ -604,7 +604,7 @@ cmd("economy", "tradetest", {}, { studioOnly = true })
 cmd(
 	"guild",
 	"guild",
-	{ enum("action", { "info", "treasury", "skills", "bots", "disband" }), str("value", true) },
+	{ enum("action", { "info", "treasury", "skills", "bots", "exp", "goals", "disband" }), str("value", true) },
 	{ dangerActions = { "disband" } }
 )
 -- S125: the guild board entry of the player's guild (score, place; push = write now)
