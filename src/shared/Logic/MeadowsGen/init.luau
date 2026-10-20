@@ -7,6 +7,8 @@
 --   * Landmarks: burnt mill and withered fields, forest ruin, stone circle, wolf and bear dens, wallow, wagon wreck,
 --     milestones,
 --   * Camps: bandits and goblins, Quarry: the Old Quarry, Water: bridges, the ford, the waterfall, brook stones,
+--   * Dressing (W13-W14): the frosted tower stump, the fallen lintel, the upper falls, the hunting grounds' props and
+--     the road's rests,
 --   * Nature: rock outcrops and tree tiles (trees last: they keep clear of everything above).
 -- Also: gathering node placements by theme (`nodes`), the life points the client animates (`life`) and the big
 -- trees (`trees`, for the map's forest patches).
@@ -15,6 +17,7 @@ local Areas = require("../Data/Areas/meadows")
 local AreaTypes = require("../Data/Areas/Types")
 local AreaSpawns = require("./AreaSpawns")
 local Camps = require("@self/Camps")
+local Dressing = require("@self/Dressing")
 local Homes = require("@self/Homes")
 local Kit = require("@self/Kit")
 local Lairs = require("./WorldGen/Lairs")
@@ -42,6 +45,7 @@ function MeadowsGen.all(): { Build }
 	end
 	table.clear(Kit.lifePoints)
 	table.clear(Kit.sketch)
+	table.clear(Kit.keepClear)
 	local out: { Build } = {}
 	Homes.all(out)
 	Landmarks.all(out)
@@ -51,6 +55,7 @@ function MeadowsGen.all(): { Build }
 	Water.waterfall(out)
 	Water.caveCurtain(out) -- W21
 	Water.banks(out)
+	Dressing.all(out) -- W13-W14 part 2: the hunting grounds' props and the landmarks' details
 	for _, b in Nature.rocks() do
 		table.insert(out, b :: any)
 	end

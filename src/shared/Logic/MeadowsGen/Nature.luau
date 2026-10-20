@@ -295,6 +295,82 @@ function Nature.undergrowth(bp: Kit.BP, kind: string, x: number, y: number, z: n
 				o({ c = red, m = "SmoothPlastic" }, "detail", { col = false, jitter = 0.06 })
 			)
 		end
+	elseif kind == "wildflowers" then
+		-- W13-W14 (laki.md 1.8): field flowers among the poppies: buttercups, cornflowers and daisies in one patch
+		local heads = { "#E8C83A", "#4A6AC8", "#F2EEE6" }
+		local head = heads[rng:int(1, 3)]
+		for _ = 1, rng:int(5, 8) do
+			local a, d = rng:float(0, math.pi * 2), rng:float(0, 2.8)
+			local px, pz = x + math.cos(a) * d, z + math.sin(a) * d
+			local h = rng:float(0.7, 1.3)
+			bp:add(
+				"cyl",
+				h,
+				0.1,
+				0.1,
+				px,
+				y + h / 2,
+				pz,
+				0,
+				0,
+				90,
+				o({ c = "#5C7A34", m = "Grass" }, "fine", { col = false })
+			)
+			bp:add(
+				"ball",
+				0.45,
+				0.25,
+				0.45,
+				px,
+				y + h + 0.05,
+				pz,
+				0,
+				0,
+				0,
+				o({ c = if rng:chance(0.75) then head else heads[rng:int(1, 3)], m = "SmoothPlastic" }, "detail", {
+					col = false,
+					jitter = 0.05,
+				})
+			)
+		end
+	elseif kind == "mushrooms" then
+		-- W13-W14 (laki.md 1.8): a ring of brown and pale mushrooms in the forest litter
+		for i = 1, rng:int(3, 5) do
+			local a = i * 1.3 + rng:float(0, 0.6)
+			local px, pz = x + math.cos(a) * 1.2, z + math.sin(a) * 1.2
+			local h = rng:float(0.4, 0.8)
+			bp:add(
+				"cyl",
+				h,
+				0.25,
+				0.25,
+				px,
+				y + h / 2,
+				pz,
+				0,
+				0,
+				90,
+				o({ c = "#D8CCB0", m = "SmoothPlastic" }, "fine", { col = false })
+			)
+			bp:add(
+				"ball",
+				0.9,
+				0.4,
+				0.9,
+				px,
+				y + h + 0.05,
+				pz,
+				0,
+				0,
+				0,
+				o({ c = if i % 3 == 0 then "#E6DCC4" else "#8A5A34", m = "SmoothPlastic" }, "detail", { col = false })
+			)
+		end
+	elseif kind == "stump" then
+		-- W13-W14 (laki.md 1.8): an old stump with moss on its cut
+		local s = rng:float(0.8, 1.3)
+		bp:add("cyl", 1.3 * s, 2.2 * s, 2.2 * s, x, y + 0.5 * s, z, 0, 0, 90, o(Kit.bark, "detail", { col = false }))
+		bp:add("cyl", 0.12, 2 * s, 2 * s, x, y + 1.16 * s, z, 0, 0, 90, o(Kit.moss, "fine", { col = false }))
 	elseif kind == "reedbed" then
 		for _ = 1, 5 do
 			local px, pz = x + rng:float(-2, 2), z + rng:float(-2, 2)
@@ -374,15 +450,16 @@ local RULES: { [string]: Rule } = {
 
 -- Undergrowth per theme: count per 128-stud tile and kinds.
 local UNDER: { [string]: { n: number, kinds: { [string]: number } } } = {
-	forest = { n = 26, kinds = { sapling = 5, bush = 5 } },
+	-- W13-W14: stumps and mushrooms in the Old Forest, field flowers on the glades and the hills (same counts per tile)
+	forest = { n = 26, kinds = { sapling = 5, bush = 5, stump = 1, mushrooms = 1 } },
 	ravine = { n = 12, kinds = { juniper = 3, bush = 2, sapling = 2 } },
 	-- W13 (laki.md 1.7): red poppies are the accent of the Meadows: along the road, on the Rabbit Fields, by the fields
-	meadow = { n = 9, kinds = { bush = 4, sapling = 1, poppies = 3 } },
-	hills = { n = 12, kinds = { juniper = 6, bush = 1 } },
+	meadow = { n = 9, kinds = { bush = 4, sapling = 1, poppies = 3, wildflowers = 2 } },
+	hills = { n = 12, kinds = { juniper = 6, bush = 1, wildflowers = 1 } },
 	wet = { n = 8, kinds = { bush = 2, reedbed = 3 } },
 	marsh = { n = 10, kinds = { reedbed = 5, bush = 1 } },
 	field = { n = 5, kinds = { bush = 1, poppies = 2 } },
-	road = { n = 11, kinds = { bush = 4, sapling = 1, poppies = 4 } },
+	road = { n = 11, kinds = { bush = 4, sapling = 1, poppies = 4, wildflowers = 2 } },
 	quarry = { n = 4, kinds = { bush = 2, juniper = 1 } },
 	goblin = { n = 8, kinds = { juniper = 2, bush = 2, sapling = 1 } },
 }
@@ -406,9 +483,16 @@ local TILE = 128
 
 type Clear = { x: number, z: number, r: number }
 
--- Places a tree may not stand: buildings, NPCs, quest objects, crossings, cave mouths, portals, monster groups.
-local function clearings(): { Clear }
+-- Places a tree may not stand: buildings, NPCs, quest objects, crossings, cave mouths, portals, monster groups;
+-- with `kept` also the spots the later dressing asked to keep (Kit.keepClear, W13-W14: the forest only, so the rocks
+-- and the generators that ask isClear stay where they were).
+local function clearings(kept: boolean?): { Clear }
 	local list: { Clear } = {}
+	if kept then
+		for _, c in Kit.keepClear do
+			table.insert(list, { x = c.x, z = c.z, r = c.r })
+		end
+	end
 	for _, c in Areas.avoid do
 		table.insert(list, { x = c.x, z = c.z, r = c.r })
 	end
@@ -481,7 +565,7 @@ export type TreeInfo = { x: number, z: number, kind: string }
 
 -- Every tree tile (Builds tagged "trees") and the list of big trees (for the map's forest patches).
 function Nature.forest(): ({ Kit.Build }, { TreeInfo })
-	local avoid = clearings()
+	local avoid = clearings(true)
 	-- S134i: no tree in an Elite II hideout
 	for _, lair in (Areas.lairs or {}) :: { AreaTypes.Lair } do
 		table.insert(avoid, { x = lair.x, z = lair.z, r = lair.r })

@@ -160,6 +160,9 @@ function Kit.life(kind: string, x: number, y: number, z: number, r: number?)
 	table.insert(Kit.lifePoints, { kind = kind, x = x, y = y, z = z, r = r })
 end
 
+-- W13-W14: spots the dressing (Dressing) asks the trees to keep off (read by Nature.forest).
+Kit.keepClear = {} :: { { x: number, z: number, r: number } }
+
 -- Map sketch shapes (minimap and world map) in the format of World/Build: rect / circle / line with a style kind.
 Kit.sketch = {} :: { { [string]: any } }
 

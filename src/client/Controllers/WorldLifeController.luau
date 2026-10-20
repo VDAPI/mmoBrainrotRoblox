@@ -62,7 +62,8 @@ local FrostWeatherController: any
 local LIFE_RADIUS = 160
 local FLEE_RADIUS = 16
 local RETURN_AFTER = 45
--- Maps with their own life controller.
+-- Maps with their own life controller (animals, weather): only their emitter points run here (W13-W14: the Meadows'
+-- mill smoke plume, the waterfall's mist and spray, the low mist on Toad Pond).
 local SKIP: { [string]: boolean } = { meadows = true }
 -- Forest themes where dead leaves fall around the player.
 local LEAFY: { [string]: boolean } = { thicket = true, hollow = true, ruins = true, rot = true, forest = true }
@@ -1383,7 +1384,7 @@ local function enter(mapId: string)
 	local gen = WorldGen.get(mapId)
 	points = if gen then gen.life() else {}
 	local map = Maps.get(mapId)
-	if map then
+	if map and not SKIP[mapId] then
 		spawnAnimals(Vector3.new(map.offset.x, map.offset.y, map.offset.z))
 	end
 end
@@ -1397,7 +1398,7 @@ end
 local function tick(dt: number)
 	local mapId = State.Get({ "character", "location", "map" })
 	local playing = State.Get({ "session", "phase" }) == "playing"
-	if type(mapId) ~= "string" or not playing or SKIP[mapId] or not WorldGen.get(mapId) then
+	if type(mapId) ~= "string" or not playing or not WorldGen.get(mapId) then
 		if activeMap then
 			leave()
 		end
@@ -1414,6 +1415,9 @@ local function tick(dt: number)
 	local origin = Vector3.new(map.offset.x, map.offset.y, map.offset.z)
 	local t = timeNow()
 	updateEmitters(origin, at, t)
+	if SKIP[mapId] then
+		return
+	end
 	local region = RegionTerrain.get(mapId)
 	local mx, mz = at.X - origin.X, at.Z - origin.Z
 	local theme = if region then region.themeAt(mx, mz) else ""
