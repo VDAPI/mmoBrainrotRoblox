@@ -700,6 +700,10 @@ local function loadLookParts()
 		end
 	end
 	folder.Parent = ReplicatedStorage
+	-- owner 2026-10-21: a character that spawned before the hairstyles loaded wore the block hair; dress everybody again
+	for _, player in Players:GetPlayers() do
+		task.spawn(pcall, CosmeticService.RefreshAppearance, player)
+	end
 end
 
 -- S132: the standard figure of the client previews (creator, wardrobe, look window).
