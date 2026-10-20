@@ -39,6 +39,7 @@ local MapMarks = require(ReplicatedStorage.Shared.Data.MapMarks)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
+local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
@@ -82,6 +83,24 @@ local ICONS: { [string]: { glyph: string, color: string } } = {
 }
 
 local PLAYER_ART = UiArt.mapIcon("player")
+
+-- W28: the colour of a monster's dot: its family (Data/Families), so a glance tells beasts from undead from people;
+-- unknown kinds keep the old group-size colour.
+local FAMILY_COLORS: { [string]: Color3 } = {
+	animal = Theme.tint(MAP.famAnimal),
+	humanoid = Theme.tint(MAP.famHumanoid),
+	undead = Theme.tint(MAP.famUndead),
+	beast = Theme.tint(MAP.famBeast),
+	elemental = Theme.tint(MAP.famElemental),
+	dragon = Theme.tint(MAP.famDragon),
+}
+local DOT_OUTLINE = Theme.tint(MAP.dotOutline)
+local function familyColor(model: Instance): Color3?
+	local id = model:GetAttribute("MonsterId")
+	local def = if type(id) == "string" then Monsters.get(id) else nil
+	local family = def and (def :: any).family
+	return if type(family) == "string" then FAMILY_COLORS[family] else nil
+end
 
 local function glyph(parent: Instance, text: string, color: string, position: Vector2, size: number, z: number?)
 	local label = Instance.new("TextLabel")
@@ -182,6 +201,13 @@ local function Minimap(scope: Scope, props: Props): Instance
 		local corner = Instance.new("UICorner")
 		corner.CornerRadius = UDim.new(0.5, 0)
 		corner.Parent = dot
+		-- W28: a dark rim so the dot reads on light and dark ground alike
+		local rim = Instance.new("UIStroke")
+		rim.Name = "Rim"
+		rim.Color = DOT_OUTLINE
+		rim.Thickness = 1.5
+		rim.Transparency = 0.15
+		rim.Parent = dot
 		dot.Parent = dynamic
 		dotPool[i] = dot
 	end
@@ -558,13 +584,19 @@ local function Minimap(scope: Scope, props: Props): Instance
 								})
 							else
 								usedDots += 1
-								local size = if variant == "elite2" then 12 elseif variant == "elite" then 9 else 6
+								-- W28: bigger dots (were 6 / 9 / 12) in the family's colour, elites ringed in gold
+								local size = if variant == "elite2" then 16 elseif variant == "elite" then 12 else 9
 								local dot = dotPool[usedDots]
 								dot.Position = UDim2.fromOffset(p.X, p.Y)
 								dot.Size = UDim2.fromOffset(size, size)
-								dot.BackgroundColor3 = if variant == "normal" or variant == nil
-									then GroupColors.of(model:GetAttribute("GroupSize") :: number?)
-									else Theme.Iron.Selected
+								dot.BackgroundColor3 = familyColor(model)
+									or GroupColors.of(model:GetAttribute("GroupSize") :: number?)
+								local rim = dot:FindFirstChild("Rim") :: UIStroke?
+								if rim then
+									local elite = variant == "elite" or variant == "elite2"
+									rim.Color = if elite then Theme.Iron.Selected else DOT_OUTLINE
+									rim.Thickness = if variant == "elite2" then 3 elseif elite then 2.5 else 1.5
+								end
 								dot.Visible = true
 							end
 						end

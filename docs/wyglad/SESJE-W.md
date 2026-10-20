@@ -491,3 +491,8 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Ogień: `fireBlast` w Ognistym Pocisku (mały), Pyroblaście (z wypaleniem ziemi zamiast dymu), Spaleniu (zamiast `burst`) i Meteorze (zamiast dymu); płomienie na dłoniach i za pociskiem dla każdego czaru ognia (z W03). Lód: `frostBlast` w Lodowym Odłamku, Lodowym Kolcu, Lodowej Kuli (z rdzeniem `impactFlash`) i Strzaskaniu (zamiast `burst`). Nieoglądane w Studio.
 - Błyskawica: nowy składnik `arcBurst` (dwa krótkie łuki z punktu trafienia do ziemi i biało-gorące iskry; 2 promienie, w limicie `perCast.beams` = 3) w Błyskawicy, Kuli Piorunów (z rdzeniem), Lancy Piorunów i Uderzeniu Gromu. Nieoglądane w Studio.
 - W03 atak różdżką / kosturem (`CombatFxController`): pocisk magii jako mały rdzeń (0,45 zamiast 0,8) z poświatą z tekstury `glow` i smugą `trailSoft` zwężającą się do zera; trafienie: błysk `impactFlash` i kilka iskier zamiast rosnącej neonowej kuli. Nieoglądane w Studio.
+
+### W28: mapa czytelniejsza (prośba właściciela)
+
+- Minimapa: kropki potworów większe (9 / 12 / 16 px zamiast 6 / 9 / 12), w kolorze rodziny (`Data/Families`: zwierzę, humanoid, nieumarły, bestia, żywiołak, smok; `UiPalette.map.fam*`), z ciemnym obrysem; elity w złotej obwódce.
+- Mapa świata: ikony większe o ok. 1/3 (jaskinie, lochy, portale, boss świata, kryjówki Elity II, NPC, złoża).

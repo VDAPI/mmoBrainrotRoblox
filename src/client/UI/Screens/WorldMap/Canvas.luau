@@ -224,7 +224,7 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.z,
 				"⛰",
 				Theme.Zone.Red,
-				20,
+				26, -- W28: bigger map icons (was 20)
 				UiArt.mapIcon("cave")
 			)
 			entry.target = portal.target
@@ -248,7 +248,7 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.z,
 				"☠",
 				Theme.tint(MAP.dungeonMark),
-				20,
+				28, -- W28 (was 20)
 				UiArt.mapIcon("dungeon")
 			)
 			entry.target = portal.target
@@ -266,7 +266,7 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.z,
 				"◎",
 				Theme.tint(MAP.portal),
-				18,
+				24, -- W28 (was 18)
 				UiArt.mapIcon("portal")
 			)
 			entry.target = portal.target
@@ -281,7 +281,7 @@ local function lairIcons(cached: Cached, layers: { [string]: Frame })
 	local data = Areas.byMap[cached.mapId]
 	for _, lair in (if data then data.lairs or {} else {}) :: { Areas.Lair } do
 		local entry =
-			icon(cached, layers.icons, "lair", lair.id, lair.x, lair.z, "☠", LAIR_COLOR, 16, UiArt.mapIcon("lair"))
+			icon(cached, layers.icons, "lair", lair.id, lair.x, lair.z, "☠", LAIR_COLOR, 22, UiArt.mapIcon("lair"))
 		caption(cached, entry, lair.nameKey, ` {lair.lv[1]}–{lair.lv[2]}`, LAIR_CAPTION, 11, 14)
 	end
 end
@@ -302,7 +302,7 @@ local function worldBossIcon(cached: Cached, layers: { [string]: Frame })
 		spot.z,
 		"♛",
 		WORLD_BOSS,
-		16,
+		24, -- W28 (was 16)
 		UiArt.mapIcon("worldboss")
 	)
 	caption(cached, entry, spot.nameKey, nil, WORLD_BOSS_CAPTION, 11, 14)
@@ -320,7 +320,7 @@ local function npcIcons(cached: Cached, layers: { [string]: Frame })
 				npc.position.z,
 				npc.icon,
 				Theme.Iron.Text,
-				15,
+				20, -- W28 (was 15)
 				UiArt.serviceOfNpc(npc)
 			)
 			caption(cached, entry, npc.nameKey, nil, Theme.Iron.Text, 10, 13)
@@ -350,7 +350,7 @@ local function nodeIcons(cached: Cached, layers: { [string]: Frame })
 				item.z,
 				"●",
 				color,
-				7,
+				11, -- W28 (was 7)
 				UiArt.mapIcon("node", family)
 			)
 			UiArtState.fade(entry.glyph, 0, 0.6)

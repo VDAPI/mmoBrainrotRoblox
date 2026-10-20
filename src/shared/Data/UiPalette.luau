@@ -244,6 +244,14 @@ UiPalette.map = {
 	npc = "#F2E8C9",
 	label = "#FFFFFF",
 	elite2 = "#C77BFF", -- the Elite II return timer line on the creature card
+	-- W28: monster dots on the minimap by family (Data/Families): one clear hue each, readable on the painted maps
+	famAnimal = "#F0C35A",
+	famHumanoid = "#FF6A4A",
+	famUndead = "#B98CFF",
+	famBeast = "#FF9A3C",
+	famElemental = "#4FD8F0",
+	famDragon = "#5CE6A0",
+	dotOutline = "#140E0A",
 }
 
 -- Neutral values: `plain` is an untinted image (ImageColor3 white), `shade` the black of overlays and text strokes.
