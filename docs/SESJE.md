@@ -13150,3 +13150,30 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/server/Admin/Character.luau`, `src/client/Controllers/{LoginRewardController,ReturningController}.luau`,
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### W28: tabliczka nad głową gracza (znikanie, wygląd, klik)
+
+- **Zgłoszenie właściciela:** nick nad własną głową czasem znika (także po teleportach na inne mapy); tabliczka zbyt
+  widoczna, duża, z ramką; ma zostać sam nick i tytuł, klikalne.
+- **Przyczyna znikania:** BillboardGui trzymał się części `Head` znalezionej przy budowie i zmieniał ją tylko przy
+  `ChildAdded` z nazwą `Head`. Głowa wymieniona (ApplyDescription wyglądu klasy, streaming, podmiana modelu) bez takiego
+  zdarzenia zostawiała Adornee na martwej części i napis znikał na stałe. Do tego zapasowe dołączanie po nazwie modelu
+  w `Workspace.ChildAdded` mogło zabrać tabliczkę żywej postaci drugiemu modelowi o tej samej nazwie, a `byPlayer`
+  zostawał na zniszczonym modelu. Nic potem tabliczki nie odbudowywało.
+- **Naprawa (`NameplateController`):** kotwica (Head, a bez niej HumanoidRootPart wyżej o `rootLift`) sprawdzana co
+  `checkEvery` i przy każdym `ChildAdded` / `ChildRemoved`; co `sweepEvery` (oraz zaraz po CharacterAdded i przy
+  `MapTransition`) każdy gracz z postacią dostaje żywą tabliczkę: brak tabliczki, zniszczony BillboardGui albo
+  zgubiony folder w PlayerGui są budowane od nowa. Model o tej samej nazwie nie zabiera tabliczki żywej postaci,
+  `drop` czyści `byPlayer`. Dotyczy też własnej postaci.
+- **Na bazie poprawki właściciela 837de9c8** (bez tła i ramki, rozmiary 19 / 14, pełny ciemny obrys, szukanie Head
+  w sprawdzaniu odległości): zostawione, rozszerzone jak niżej.
+- **Wygląd:** bez tła, ramki, linii poziomu i klasy, plakietki VIP i kropki PvP. Nick (ciemny obrys, kolor:
+  czerwony przy PvP, złoty własny i VIP, biały pozostali), tag gildii małą czcionką przed nickiem, tytuł mniejszy nad
+  nickiem, ✶ błogosławieństwa za nickiem, cienki pasek HP tylko u rannych innych graczy. Mniejsze rozmiary
+  (`Config.Nameplate`), `UIScale` z odległości kamery (`Nameplate.scale`: 1 do 18 studów, nigdy większe, do 0,7 na 110).
+- **Klik:** nick innego gracza (lewy, prawy przycisk, dotknięcie) otwiera istniejące menu gracza S133
+  (`PartyController.OpenMenu`: profil, drużyna, handel, szept itd.); przycisk ma szerokość samego tekstu, więc nie
+  zasłania potworów. Własny nick nie łapie kliknięć (nie blokuje obrotu kamery na telefonie).
+- **Testy:** `tests/nameplate.spec.luau` (widok bez poziomu i VIP, brak własnego paska HP, `Nameplate.scale`).
+- **Pliki:** `src/client/Controllers/NameplateController.luau`, `src/shared/Logic/Nameplate.luau`,
+  `src/shared/Config.luau`, `tests/nameplate.spec.luau`, `docs/{SESJE,DECYZJE}.md`.

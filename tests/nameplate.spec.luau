@@ -1,6 +1,7 @@
 --!strict
 -- S135: what a player's nameplate shows (Logic/Nameplate): name colour roles by priority, the title only with a
--- definition, the guild tag, the HP bar while hurt, and only the name beyond the detail distance.
+-- definition, the guild tag, the HP bar while hurt, and only the name beyond the detail distance. W28: the size factor
+-- by camera distance (Nameplate.scale).
 
 local Config = require("../src/shared/Config")
 local Nameplate = require("../src/shared/Logic/Nameplate")
@@ -28,8 +29,6 @@ describe("Nameplate view (S135)", function()
 	it("an enemy wins over VIP and your own plate", function()
 		local v = Nameplate.view(input({ hostile = true, vip = true }))
 		expect(v.nameRole).toBe("hostile")
-		expect(v.swords).toBe(true)
-		expect(v.showVip).toBe(true)
 		expect(Nameplate.view(input({ hostile = true, isLocal = true })).nameRole).toBe("hostile")
 	end)
 
@@ -37,7 +36,6 @@ describe("Nameplate view (S135)", function()
 		expect(Nameplate.view(input({ isLocal = true, vip = true })).nameRole).toBe("own")
 		expect(Nameplate.view(input({ vip = true })).nameRole).toBe("vip")
 		expect(Nameplate.view(input({})).nameRole).toBe("text")
-		expect(Nameplate.view(input({})).swords).toBe(false)
 	end)
 
 	it("shows a title only with its definition", function()
@@ -52,18 +50,16 @@ describe("Nameplate view (S135)", function()
 		expect(Nameplate.view(input({ guildTag = "" })).guildTag).toBeNil()
 	end)
 
-	it("only the name beyond the detail distance; your own plate always in full", function()
+	it("only the name beyond the detail distance; your own title always, never your own HP bar (W28)", function()
 		local far = Config.Nameplate.detailDistance + 1
 		local v = Nameplate.view(input({ distance = far, titleHex = "#E8C25A", hurt = true, guildTag = "VLT" }))
 		expect(v.showTitle).toBe(false)
-		expect(v.showLevel).toBe(false)
 		expect(v.showHp).toBe(false)
 		expect(v.guildTag).toBe("VLT")
-		local own = Nameplate.view(input({ isLocal = true, distance = far, hurt = true }))
-		expect(own.showLevel).toBe(true)
-		expect(own.showHp).toBe(true)
+		local own = Nameplate.view(input({ isLocal = true, distance = far, hurt = true, titleHex = "#E8C25A" }))
+		expect(own.showTitle).toBe(true)
+		expect(own.showHp).toBe(false)
 		local near = Nameplate.view(input({ distance = Config.Nameplate.detailDistance, hurt = true }))
-		expect(near.showLevel).toBe(true)
 		expect(near.showHp).toBe(true)
 	end)
 
@@ -121,5 +117,42 @@ describe("Monster and NPC plates (S136)", function()
 		expect(Nameplate.npc({ icon = nil, companion = true, mine = true }).showTag).toBe(true)
 		expect(Nameplate.npc({ icon = nil, companion = true, mine = false }).showTag).toBe(false)
 		expect(Nameplate.npc({ icon = "⚒", companion = true, mine = true }).showIcon).toBe(false)
+	end)
+end)
+
+describe("Nameplate scale (W28)", function()
+	local cfg = { scaleNear = 20, scaleFar = 120, scaleMin = 0.7, scaleStep = 0.05 }
+
+	it("never grows past 1 up close; 1 for an unknown distance", function()
+		expect(Nameplate.scale(0, cfg)).toBe(1)
+		expect(Nameplate.scale(20, cfg)).toBe(1)
+		expect(Nameplate.scale(nil, cfg)).toBe(1)
+	end)
+
+	it("shrinks with distance down to the minimum", function()
+		local mid = Nameplate.scale(70, cfg)
+		expect(mid < 1).toBe(true)
+		expect(mid > 0.7).toBe(true)
+		expect(math.abs(mid - 0.85) < 1e-6).toBe(true)
+		expect(math.abs(Nameplate.scale(120, cfg) - 0.7) < 1e-6).toBe(true)
+		expect(math.abs(Nameplate.scale(5000, cfg) - 0.7) < 1e-6).toBe(true)
+	end)
+
+	it("is monotonic and moves in steps", function()
+		local last = 2
+		for d = 0, 200, 3 do
+			local s = Nameplate.scale(d, cfg)
+			expect(s <= last).toBe(true)
+			local steps = s / cfg.scaleStep
+			expect(math.abs(steps - math.floor(steps + 0.5)) < 1e-6).toBe(true)
+			last = s
+		end
+	end)
+
+	it("the game config is sane", function()
+		local c = Config.Nameplate
+		expect(c.scaleMin > 0 and c.scaleMin < 1).toBe(true)
+		expect(c.scaleFar > c.scaleNear).toBe(true)
+		expect(math.abs(Nameplate.scale(c.maxDistance) - c.scaleMin) < 1e-6).toBe(true)
 	end)
 end)
