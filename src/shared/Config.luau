@@ -746,6 +746,9 @@ local Config = {
 	Kit = {
 		enabled = true,
 		skipMaps = {} :: { [string]: boolean },
+		-- W29 (W01 D2): a landmark slot ("landmark:*") at least this many studs tall or wide streams to every player
+		-- (ModelStreamingMode Persistent), so it stays on the skyline past the streaming radius (512 studs)
+		persistentSize = 30,
 	},
 	-- S134j (docs/DESIGN.md §6a, Logic/Reroll): bonus reroll at the smith. Essence of one attempt by rarity, gold
 	-- ilvl x Upgrade.goldPerIlvl(ilvl) x goldMul (the upgrade gold curve), each earlier attempt on the item adds `growth`

@@ -470,3 +470,4 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 ### W03: pilot walki, część 1 (WIP)
 
 - Ładowanie czaru: mały rozgrzany rdzeń zamiast dużego płaskiego dysku, drobinki ściągane do dłoni (każdy żywioł), płomień nad dłonią przy ogniu; lot: języki ognia za kulą ognia (`ProjectileOpts.flame`); trafienie Kuli Ognia: nowy składnik `fireBlast` (kula płomieni, ciemny dym, żar), warstwa `body` w `tests/SkillLooks`. Ognistość z żywiołu (`VfxController.fiery`). Ładowanie obejrzane w Studio (pomniejszone po zrzucie), lot i wybuch czekają na podgląd.
+- W29: duże punkty orientacyjne zestawu (`landmark:*`, ≥ `Config.Kit.persistentSize` = 30 st.) z `ModelStreamingMode = Persistent` (`KitAssets` pole `persistent`), żeby zostawały na horyzoncie za promieniem strumieniowania.

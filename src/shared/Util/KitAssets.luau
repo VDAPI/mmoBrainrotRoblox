@@ -23,6 +23,7 @@ export type Placement = {
 	scale: number,
 	tint: Color3?,
 	paint: { color: Color3, material: Enum.Material }?,
+	persistent: boolean?, -- W29: a big landmark kept streamed to every player (Config.Kit.persistentSize)
 }
 -- (slot, frame of the Build) -> where the slot's model stands, or nil (keep the pieces)
 export type Resolver = (slot: Slot, base: CFrame) -> Placement?
@@ -149,6 +150,7 @@ function KitAssets.resolver(mapId: string): Resolver?
 			scale = scale,
 			tint = if tint then Color3.fromHex(tint) else nil,
 			paint = if paint and material then { color = Color3.fromHex(paint.color), material = material } else nil,
+			persistent = string.sub(slot.key, 1, 9) == "landmark:" and choice.size >= Config.Kit.persistentSize,
 		}
 	end
 end
@@ -194,6 +196,9 @@ function KitAssets.place(placement: Placement, parent: Instance): Model
 				d:Destroy()
 			end
 		end
+	end
+	if placement.persistent then
+		model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	end
 	model.Parent = parent
 	return model
