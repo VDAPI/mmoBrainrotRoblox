@@ -18,6 +18,9 @@ export type Env = {
 	sites: { [string]: AreaTypes.Site },
 	areas: AreaTypes.MapAreas,
 	clearings: { Clear },
+	-- W15-16: footprints of the decoration pass (DuskwoodGen/Dress): the trees keep off them, the gathering nodes
+	-- and the earlier modules do not read them
+	decor: { Clear },
 }
 
 function Env.new(): Env
@@ -28,6 +31,7 @@ function Env.new(): Env
 		sites = assert(Areas.sites, "duskwood sites"),
 		areas = Areas,
 		clearings = {},
+		decor = {},
 	}
 end
 
@@ -41,6 +45,22 @@ function Env.isClear(env: Env, x: number, z: number, extra: number): boolean
 	for _, c in env.clearings do
 		local r = c.r + extra
 		if math.abs(x - c.x) < r and math.abs(z - c.z) < r and (x - c.x) ^ 2 + (z - c.z) ^ 2 < r * r then
+			return false
+		end
+	end
+	return true
+end
+
+-- W15-16: marks a decoration footprint (trees only keep off it).
+function Env.decorate(env: Env, x: number, z: number, r: number)
+	table.insert(env.decor, { x = x, z = z, r = r })
+end
+
+-- Whether a point is free of every decoration footprint (grown by `extra`).
+function Env.decorClear(env: Env, x: number, z: number, extra: number): boolean
+	for _, c in env.decor do
+		local r = c.r + extra
+		if r > 0 and (x - c.x) ^ 2 + (z - c.z) ^ 2 < r * r then
 			return false
 		end
 	end

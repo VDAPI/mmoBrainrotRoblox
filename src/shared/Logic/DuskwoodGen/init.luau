@@ -19,6 +19,7 @@ local AreaTypes = require("../Data/Areas/Types")
 local Cliffs = require("@self/Cliffs")
 local Crossroads = require("@self/Crossroads")
 local Cult = require("@self/Cult")
+local Dress = require("@self/Dress")
 local Env = require("@self/Env")
 local Flora = require("./WorldGen/Flora")
 local Heart = require("@self/Heart")
@@ -26,6 +27,7 @@ local Hollow = require("@self/Hollow")
 local Kit = require("./WorldGen/Kit")
 local Lairs = require("./WorldGen/Lairs")
 local Maps = require("../Data/Maps")
+local _Nature = require("@self/Nature") -- W15: registers the Duskwood's dead trees and undergrowth into Flora
 local Quest = require("@self/Quest")
 local Rng = require("./Rng")
 local Ruins = require("@self/Ruins")
@@ -229,6 +231,7 @@ function DuskwoodGen.all(): { Build }
 	table.clear(e.ctx.life)
 	table.clear(e.ctx.sketch)
 	table.clear(e.clearings)
+	table.clear(e.decor)
 	terrainSketch(e)
 	dataClearings(e)
 	local out: { Build } = {}
@@ -257,6 +260,7 @@ function DuskwoodGen.all(): { Build }
 	for _, b in Lairs.all(e.ctx, e.areas) do
 		table.insert(out, b :: any)
 	end
+	Dress.all(e, out) -- W15-16 part 2: warning amulets, lily pads, ground mist
 	local tiles, trees = Flora.forest({
 		ctx = e.ctx,
 		ground = e.T,
@@ -265,12 +269,15 @@ function DuskwoodGen.all(): { Build }
 		seed = 4504,
 		half = 800,
 		clear = function(x: number, z: number, extra: number): boolean
-			return Env.isClear(e, x, z, extra)
+			return Env.isClear(e, x, z, extra) and Env.decorClear(e, x, z, extra)
 		end,
+		waterKinds = { mossWillow = 55, duskDead = 45 }, -- W15: the Duskwood's dead trees (DuskwoodGen/Nature)
+		keep = Dress.keeper(e), -- W15 (bor.md A9): the view corridors from the gate and the shrine
 	})
 	for _, b in tiles do
 		table.insert(out, b :: any)
 	end
+	Dress.shafts(e, out, trees) -- W15 (bor.md A10.4): light through the gaps of the Heart's crowns
 	treeCache = trees
 	cache = out
 	return out

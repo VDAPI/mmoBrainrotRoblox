@@ -805,6 +805,8 @@ export type Options = {
 	clear: (x: number, z: number, extra: number) -> boolean,
 	-- S47: species by streams and marshes (default willows and black dead trees)
 	waterKinds: { [string]: number }?,
+	-- W15: false drops a tree of `kind` the placement chose at (x, z) (`big`: a server tree; view corridors)
+	keep: ((x: number, z: number, kind: string, big: boolean) -> boolean)?,
 }
 
 local function treeGround(g: Ground, half: number, x: number, z: number, maxSlope: number): boolean
@@ -875,14 +877,17 @@ function Flora.forest(opts: Options): ({ Kit.Build }, { TreeInfo })
 					weights = opts.waterKinds or { mossWillow = 55, blackDead = 45 }
 				end
 				local kind = r:weighted(weights)
-				local fn = Flora.species[kind] or Flora.species.gnarledOak
-				local s = 0.85 + scaleRoll * 0.4
-				if kind == "giantOak" then
-					s = 1.2 + scaleRoll * 0.3
+				local keep = opts.keep
+				if not keep or keep(px, pz, kind, true) then
+					local fn = Flora.species[kind] or Flora.species.gnarledOak
+					local s = 0.85 + scaleRoll * 0.4
+					if kind == "giantOak" then
+						s = 1.2 + scaleRoll * 0.3
+					end
+					local tile = tileFor(px, pz)
+					fn(tile.bp, px - tile.at.x, g.height(px, pz), pz - tile.at.z, s, true, opts.ctx)
+					table.insert(trees, { x = px, z = pz, kind = kind })
 				end
-				local tile = tileFor(px, pz)
-				fn(tile.bp, px - tile.at.x, g.height(px, pz), pz - tile.at.z, s, true, opts.ctx)
-				table.insert(trees, { x = px, z = pz, kind = kind })
 			end
 			z += step
 		end
@@ -900,7 +905,12 @@ function Flora.forest(opts: Options): ({ Kit.Build }, { TreeInfo })
 				local kinds = local_.fillerKinds or local_.kinds
 				local kind = rng:weighted(kinds)
 				local s = rng:float(0.7, 1.05)
-				if opts.clear(px, pz, -2) and treeGround(g, half, px, pz, 0.7) then
+				local keep = opts.keep
+				if
+					opts.clear(px, pz, -2)
+					and treeGround(g, half, px, pz, 0.7)
+					and (not keep or keep(px, pz, kind, false))
+				then
 					local tile = tileFor(px, pz)
 					local fn = Flora.species[kind] or Flora.species.gnarledOak
 					fn(tile.bp, px - tile.at.x, g.height(px, pz), pz - tile.at.z, s, false, opts.ctx)
