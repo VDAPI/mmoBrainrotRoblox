@@ -188,6 +188,12 @@
   Zwój Ochrony / Kamień Przemiany: `dailyLimit = 1` i własny test w `paywall.spec`), potem
   `lune run tools/shop_report.luau` (świeży `docs/SKLEP-ID.md`, `--check` w `premium.spec`). Wiki tylko przez
   `tools/WikiData/Premium.luau`, nigdy cena, id ani kwota Smoczej Waluty. Lejek: `src/server/PremiumFunnel` (`Logic/ShopFunnel`).
+  W28: wywołanie z okna przez `Logic/ShopPayload` (bez nilów na końcu; `tests/shoppayload.spec` sprawdza każdy wpis
+  katalogu z `Net/Definitions`); klucz produktu Robux dopisz też w `ShopPayload.productIdOf`.
+- **Test zakupów w Studio** (W28): w Studio Play produkty, przepustki i VIP z id `0` / `""` kupują się jako zakup
+  symulowany bez Robux (`MonetizationService.simulated`, tylko `RunService:IsStudio()`), przyznanie od razu, przepustki
+  do końca sesji. Smocza Waluta: przycisk „+1000 ◆ (Studio)” w nagłówku Smoczego Sklepu (tylko w Studio, przez
+  `AdminRun shards`) albo `/shards <ile>`. Instrukcja id dla Creator Hub: `docs/SKLEP-ID.md` (sekcje 1 i 1a).
 - **Kryjówka Elity II** (S134i): wpis `lairs` w `Data/Areas/<mapa>` + `ELITE2_SLOTS[kind]` + `lair.<id>.name` (PL, EN);
   ubiór `Logic/WorldGen/Lairs`; po zmianie `python tools/arrivals_apply.py`; testy `tests/lairs.spec`, model
   `Balance.targetsS134i`.

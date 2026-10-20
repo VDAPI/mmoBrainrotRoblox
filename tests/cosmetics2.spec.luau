@@ -362,7 +362,6 @@ T.describe("Cosmetics 2: Premium rules and starter packs (S123)", function()
 				other[entry.key] = true
 			end
 		end
-		other[Products.respawn.key] = true
 		for _, pack in packs do
 			local w = want[pack.key]
 			T.expect({ pack.key, w ~= nil }).toEqual({ pack.key, true })

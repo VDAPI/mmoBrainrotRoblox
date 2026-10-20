@@ -413,26 +413,18 @@ local function respawnNow(player: Player): (boolean, string?)
 	end
 	local account: Types.AccountData? = PlayerStateService.Get(player, { "account" })
 	if not account or account.dragonShards < Config.RespawnNowCost then
-		return false, "error.notEnoughShards"
+		return false, "death.error.noShards" -- W28: the death screen offers "Top up" next to it
 	end
-	PlayerStateService.Set(player, { "account", "dragonShards" }, account.dragonShards - Config.RespawnNowCost)
-	Analytics.shards(player, -Config.RespawnNowCost, account.dragonShards - Config.RespawnNowCost, "respawn")
+	-- W28: checked and paid in one step (no yield between), the only respawn skip for a price
+	local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(shards: number)
+		return shards - Config.RespawnNowCost
+	end)
+	Analytics.shards(player, -Config.RespawnNowCost, total, "respawn")
 	openChoice(player, state)
 	return true, nil
 end
 
--- Developer Product "instant respawn" (Robux): only granted while the player is dead (opens the choice now;
--- bought after the countdown it still counts, so the purchase is never retried forever).
-local function respawnProduct(player: Player): boolean
-	local state = pending[player]
-	if not state then
-		return false
-	end
-	openChoice(player, state)
-	return true
-end
-
--- S121: the VIP free instant respawn (VipService): opens the choice like the "respawn" product, refusing like
+-- S121: the VIP free instant respawn (VipService): opens the choice like RespawnNow, refusing like
 -- RespawnNow (not dead, countdown already over). S129: refused for a Blood Moon death before VipService spends the day's
 -- respawn.
 function DeathService.SkipCountdown(player: Player): (boolean, string?)
@@ -459,7 +451,6 @@ function DeathService.Init(registry)
 	WorldService = registry.Get("WorldService")
 	MonetizationService = registry.Get("MonetizationService")
 	StatusEffectService = registry.Get("StatusEffectService")
-	MonetizationService.RegisterProduct("respawn", respawnProduct)
 end
 
 function DeathService.Start()

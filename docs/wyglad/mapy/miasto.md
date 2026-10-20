@@ -20,7 +20,7 @@
 **Dane dziś:** mapa 800 × 800 st., mur (14 wierzchołków, ok. ±305 st.), fosa, 4 bramy-portale (wschód → Łąki,
 północ → Bór, zachód → Pustkowia, południe → Szczyty), cała mapa zielona, piasek Ristalle żółty. Teren tarasowy: rynek
 y 4, górne miasto y 12 (mur oporowy), wzgórze zamkowe y 20 (klif), północny wschód i Ristalle y 6, rzeka y −1,5.
-176 działek, 16 budowli specjalnych, 6 straganów, 153 ogrody, 60 latarni, za murami pola, 4 zagrody, wiatrak, ruina
+176 działek, 16 budowli specjalnych, 6 straganów, 153 ogrody, 217 latarni (W28, było 60), za murami pola, 4 zagrody, wiatrak, ruina
 i pas lasu od 340 st. Serwer stawia ok. 5,3 tys. części „shell” (`maxParts` 7000), klient detal do ok. 28,5 tys.
 **Jedyna mapa z cyklem dnia i nocy** (decyzja właściciela; `dayNight = true`, doba 2400 s, noc 25%) i z porami roku
 zależnymi od fabuły (`CitySeason`: lato, śnieg po Vaelgrathu, wiosna po finale). Potworów brak.

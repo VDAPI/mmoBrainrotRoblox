@@ -33,8 +33,12 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local Cosmetics = {}
 
-local BUTTONS_WIDTH = 290
-local OFFER_CARD_HEIGHT = 214
+local BUTTONS_WIDTH = 262
+-- W28: the offer card stacks tile, name, kind, price and two buttons: 8 + 52 + 22 + 18 + 22 + 44 + 44 + 8 + 5 gaps
+local OFFER_PAD = 8
+local OFFER_GAP = 4
+local OFFER_TILE = 52
+local OFFER_CARD_HEIGHT = OFFER_PAD * 2 + OFFER_TILE + 22 + 18 + 22 + Theme.Size.MinTouch * 2 + OFFER_GAP * 5
 
 local function ownedOf(value: any): { [string]: boolean }
 	return if type(value) == "table" then value else {}
@@ -121,7 +125,7 @@ local function row(
 			}),
 			Button(scope, {
 				LayoutOrder = 1,
-				Size = UDim2.fromOffset(120, Theme.Size.MinTouch),
+				Size = UDim2.fromOffset(110, Theme.Size.MinTouch),
 				Variant = "secondary",
 				TextSize = Theme.TextSize.Small,
 				Text = Text.T(scope, "premium.tryOn"),
@@ -131,7 +135,7 @@ local function row(
 			}),
 			Button(scope, {
 				LayoutOrder = 2,
-				Size = UDim2.fromOffset(150, Theme.Size.MinTouch),
+				Size = UDim2.fromOffset(134, Theme.Size.MinTouch),
 				Variant = "primary",
 				TextSize = Theme.TextSize.Small,
 				Text = `◆ {Format.number(price)}`,
@@ -186,36 +190,112 @@ local function offerCard(
 	shards: Fusion.Value<any>
 ): Instance
 	local discounted = price < def.price
+	-- W28: the parts stack in a list (the price line used to sit under the "Try on" button)
+	local function line(order: number, height: number, props: { [string]: any }): Instance
+		local base: { [string]: any } = {
+			LayoutOrder = order,
+			Size = UDim2.new(1, 0, 0, height),
+			BackgroundTransparency = 1,
+			FontFace = Theme.Fonts.Body,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Paper.TextMuted,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+		}
+		for key, value in props do
+			base[key] = value
+		end
+		return scope:New("TextLabel")(base :: any)
+	end
 	return scope:New("Frame")({
 		LayoutOrder = order,
 		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.2,
 		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Color = if discounted then Theme.Brass.Frame else Theme.Paper.Rule,
 				Thickness = if discounted then Theme.Stroke.Normal else Theme.Stroke.Thin,
 			}),
-			scope:New("TextLabel")({
-				Name = "Tile",
-				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 8),
-				Size = UDim2.fromOffset(52, 52),
-				BackgroundColor3 = Theme.tint(def.color),
-				Text = def.icon,
-				TextScaled = true,
-				FontFace = Theme.Fonts.BodyBold,
-				TextColor3 = Theme.Plain,
-				TextStrokeTransparency = 0.4,
-				[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
+			scope:New("Frame")({
+				Name = "Body",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundTransparency = 1,
+				[Children] = {
+					scope:New("UIPadding")({
+						PaddingTop = UDim.new(0, OFFER_PAD),
+						PaddingBottom = UDim.new(0, OFFER_PAD),
+						PaddingLeft = UDim.new(0, OFFER_PAD),
+						PaddingRight = UDim.new(0, OFFER_PAD),
+					}),
+					scope:New("UIListLayout")({
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						HorizontalAlignment = Enum.HorizontalAlignment.Center,
+						Padding = UDim.new(0, OFFER_GAP),
+					}),
+					scope:New("TextLabel")({
+						Name = "Tile",
+						LayoutOrder = 1,
+						Size = UDim2.fromOffset(OFFER_TILE, OFFER_TILE),
+						BackgroundColor3 = Theme.tint(def.color),
+						Text = def.icon,
+						TextScaled = true,
+						FontFace = Theme.Fonts.BodyBold,
+						TextColor3 = Theme.Plain,
+						TextStrokeTransparency = 0.4,
+						[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
+					}),
+					line(2, 22, {
+						Text = Text.T(scope, def.nameKey),
+						FontFace = Theme.Fonts.BodyBold,
+						TextColor3 = Theme.Paper.Text,
+					}),
+					line(3, 18, {
+						Text = scope:Computed(function(use): string
+							return kindText(use, def)
+						end),
+					}),
+					line(4, 22, {
+						RichText = true,
+						Text = if isOwned then Text.T(scope, "premium.owned") else priceText(def, price),
+						FontFace = Theme.Fonts.BodyBold,
+						TextColor3 = if isOwned then Theme.Paper.Success else Theme.Paper.Link,
+					}),
+					Button(scope, {
+						LayoutOrder = 5,
+						Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+						Variant = "secondary",
+						TextSize = Theme.TextSize.Small,
+						Text = Text.T(scope, "premium.tryOn"),
+						OnClick = function()
+							ctx.OpenWardrobe({ kind = def.kind :: string, try = def.id })
+						end,
+					}),
+					Button(scope, {
+						LayoutOrder = 6,
+						Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+						Variant = "primary",
+						TextSize = Theme.TextSize.Small,
+						Text = if isOwned then Text.T(scope, "premium.owned") else `◆ {Format.number(price)}`,
+						Disabled = scope:Computed(function(use): boolean
+							return isOwned or (use(shards) or 0) < price
+						end),
+						OnClick = function()
+							if not isOwned then
+								PremiumConfirm.ask(spec(def, price, Fusion.peek(shards) or 0))
+							end
+						end,
+					}),
+				},
 			}),
-			-- "−30%" on the discounted one
+			-- "−30%" on the discounted one (outside the list: a corner tag)
 			scope:New("TextLabel")({
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -6, 0, 6),
-				Size = UDim2.fromOffset(56, 22),
+				Size = UDim2.fromOffset(0, 22),
+				AutomaticSize = Enum.AutomaticSize.X,
 				Visible = discounted,
+				ZIndex = 2,
 				BackgroundColor3 = Theme.Paper.Accent,
 				Text = Text.T(scope, "premium.weekly.discount", {
 					pct = math.floor(CosmeticData.weekly.discount * 100 + 0.5),
@@ -223,66 +303,10 @@ local function offerCard(
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = Theme.Paper.AccentText,
-				[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }) },
-			}),
-			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(6, 64),
-				Size = UDim2.new(1, -12, 0, 24),
-				BackgroundTransparency = 1,
-				Text = Text.T(scope, def.nameKey),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.Text,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
-			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(6, 88),
-				Size = UDim2.new(1, -12, 0, 20),
-				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					return kindText(use, def)
-				end),
-				FontFace = Theme.Fonts.Body,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.TextMuted,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
-			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(6, 108),
-				Size = UDim2.new(1, -12, 0, 22),
-				BackgroundTransparency = 1,
-				RichText = true,
-				Text = if isOwned then Text.T(scope, "premium.owned") else priceText(def, price),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = if isOwned then Theme.Paper.Success else Theme.Paper.Link,
-			}),
-			Button(scope, {
-				AnchorPoint = Vector2.new(0.5, 1),
-				Position = UDim2.new(0.5, 0, 1, -8 - Theme.Size.MinTouch - 6),
-				Size = UDim2.new(1, -16, 0, Theme.Size.MinTouch),
-				Variant = "secondary",
-				TextSize = Theme.TextSize.Small,
-				Text = Text.T(scope, "premium.tryOn"),
-				OnClick = function()
-					ctx.OpenWardrobe({ kind = def.kind :: string, try = def.id })
-				end,
-			}),
-			Button(scope, {
-				AnchorPoint = Vector2.new(0.5, 1),
-				Position = UDim2.new(0.5, 0, 1, -8),
-				Size = UDim2.new(1, -16, 0, Theme.Size.MinTouch),
-				Variant = "primary",
-				TextSize = Theme.TextSize.Small,
-				Text = if isOwned then Text.T(scope, "premium.owned") else `◆ {Format.number(price)}`,
-				Disabled = scope:Computed(function(use): boolean
-					return isOwned or (use(shards) or 0) < price
-				end),
-				OnClick = function()
-					if not isOwned then
-						PremiumConfirm.ask(spec(def, price, Fusion.peek(shards) or 0))
-					end
-				end,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 6), PaddingRight = UDim.new(0, 6) }),
+				},
 			}),
 		},
 	})
