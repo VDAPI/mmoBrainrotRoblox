@@ -2836,6 +2836,7 @@ return {
 	["worldmap.layer.npcs"] = "NPCs",
 	["worldmap.layer.nodes"] = "Nodes",
 	["worldmap.layer.quest"] = "Quest",
+	["worldmap.layer.labels"] = "Labels",
 	["worldmap.center"] = "Centre on me",
 	["worldmap.yourLevel"] = "Your level: {level}",
 	["worldmap.band.grey"] = "easy, little experience",

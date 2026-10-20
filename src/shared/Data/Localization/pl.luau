@@ -2834,6 +2834,7 @@ return {
 	["worldmap.layer.npcs"] = "NPC",
 	["worldmap.layer.nodes"] = "Węzły",
 	["worldmap.layer.quest"] = "Quest",
+	["worldmap.layer.labels"] = "Napisy",
 	["worldmap.center"] = "Wyśrodkuj na mnie",
 	["worldmap.yourLevel"] = "Twój poziom: {level}",
 	["worldmap.band.grey"] = "łatwe, mało doświadczenia",
