@@ -805,6 +805,47 @@ local function projectile(attacker: Model, target: Model, style: string)
 	launch(if style == "arrow" then "arrow" else "magic", from, target, nil, nil)
 end
 
+-- Owner 2026-10-21 ("monster attacks are plain"): a monster's basic blow is a bold slash in front of it with sparks
+-- and dust at the target; a shot is a glowing orb (or an arrow) with a trail and a flash where it lands.
+local MONSTER_SLASH = Color3.fromHex("#FFE2B0")
+local MONSTER_MAGIC = Color3.fromHex("#C77BFF")
+
+local function monsterMelee(attacker: Model, target: Model)
+	local from = centre(attacker)
+	local to = centre(target)
+	local direction = Vector3.new(to.X - from.X, 0, to.Z - from.Z)
+	if direction.Magnitude < 0.1 then
+		return
+	end
+	local simple = lowQuality()
+	local reach = math.clamp(direction.Magnitude * 0.6, 2.5, 6)
+	local frame = CFrame.lookAt(from, from + direction) * CFrame.new(0, 0.4, 0)
+	Library.slash(frame, reach, 70, -70, MONSTER_SLASH, if math.random() < 0.5 then 25 else -25, simple)
+	Clock.after(0.1, function()
+		local hit = centre(target)
+		Library.sparks(hit, MONSTER_SLASH, { simple = simple, dir = -direction.Unit, count = 8 })
+		Library.impactFlash(hit, 1.6, MONSTER_SLASH, { simple = simple })
+	end)
+end
+
+local function monsterShot(attacker: Model, target: Model, style: string)
+	if style == "arrow" then
+		projectile(attacker, target, style)
+		return
+	end
+	local simple = lowQuality()
+	local from = centre(attacker) + Vector3.new(0, 1, 0)
+	Library.projectile(from, target, "orb", MONSTER_MAGIC, {
+		simple = simple,
+		size = 1.2,
+		flame = true,
+		onArrive = function(point: Vector3)
+			Library.impactFlash(point, 2.2, MONSTER_MAGIC, { simple = simple })
+			Library.sparks(point, MONSTER_MAGIC, { simple = simple, count = 8 })
+		end,
+	})
+end
+
 -- Weapon helpers (S22) ------------------------------------------------------------------------------------
 
 local function weaponOf(model: Model): BasePart?
@@ -1761,9 +1802,9 @@ local function handle(event: { [string]: any })
 			if attacker:GetAttribute("MonsterId") ~= nil then
 				AnimationController.MonsterAttack(attacker, nil, true)
 				if event.st == "melee" then
-					swing(attacker, target)
+					monsterMelee(attacker, target)
 				else
-					projectile(attacker, target, event.st)
+					monsterShot(attacker, target, event.st)
 				end
 				-- S111: the family's attack sound at once (a basic monster attack lands with the event)
 				local info = SfxController.Mob(attacker)
