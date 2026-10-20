@@ -3,13 +3,19 @@
 -- ids wbYYYYMMDDHH, warnings, linger), the block by the Blood Moon, the phase, the reward rule (level, share, one per
 -- account and occurrence, admin occurrences apart), the reward and its item, the public branch and the arena spot.
 -- S149b: the view (map marker, map card, HUD panel, safe-zone note), the arena as a reserved place, the search.
+-- S149c: 10:00 and 22:00 Polish time all year (Europe/Warsaw, EU summer time), the HUD line through the fight, the
+-- contribution factor,
+-- the named items with their pity, the rarity table and the parcel part of an absent winner.
 
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Areas = require("../src/shared/Data/Areas")
 local Bosses = require("../src/shared/Data/Bosses")
 local Contribution = require("../src/shared/Logic/Contribution")
 local Data = require("../src/shared/Data/WorldBoss")
+local ItemRoll = require("../src/shared/Logic/ItemRoll")
+local ItemScore = require("../src/shared/Logic/ItemScore")
 local Items = require("../src/shared/Data/Items")
+local Mail = require("../src/shared/Logic/Mail")
 local LootRules = require("../src/shared/Data/LootRules")
 local MapSearch = require("../src/shared/Logic/MapSearch")
 local MapTerrain = require("../src/shared/Logic/MapTerrain")
@@ -108,34 +114,61 @@ T.describe("World boss: data (S149)", function()
 	end)
 end)
 
-T.describe("World boss: schedule (S149)", function()
-	T.it("starts at 08 and 20 UTC every day with ids wbYYYYMMDDHH, the same on every server", function()
-		local day0 = Time.dayNumber(tuesday())
-		for day = day0, day0 + 13 do
+T.describe("World boss: schedule (S149, S149c)", function()
+	T.it("starts at 10:00 and 22:00 Polish time (S149c): 08 / 20 UTC in summer, 09 / 21 UTC in winter", function()
+		T.expect(WorldBoss.timesText()).toBe("10:00, 22:00")
+		-- the EU switches: 2026-03-29 and 2026-10-25 at 01:00 UTC, 2027-03-28 and 2027-10-31
+		local function at(y: number, m: number, d: number, h: number): number
+			return Time.fromCivil(y, m, d) * DAY + h * 3600
+		end
+		T.expect(WorldBoss.utcOffset(at(2026, 3, 29, 0) + 3599)).toBe(1)
+		T.expect(WorldBoss.utcOffset(at(2026, 3, 29, 1))).toBe(2)
+		T.expect(WorldBoss.utcOffset(at(2026, 10, 25, 0) + 3599)).toBe(2)
+		T.expect(WorldBoss.utcOffset(at(2026, 10, 25, 1))).toBe(1)
+		T.expect(WorldBoss.utcOffset(at(2027, 3, 28, 1))).toBe(2)
+		T.expect(WorldBoss.utcOffset(at(2027, 10, 31, 1))).toBe(1)
+		T.expect(WorldBoss.utcOffset(at(2026, 1, 15, 12))).toBe(1)
+		T.expect(WorldBoss.utcOffset(at(2026, 7, 15, 12))).toBe(2)
+		for _, case in
+			{
+				{ 2026, 10, 24, 8, 20 }, -- the last summer day
+				{ 2026, 10, 25, 9, 21 }, -- the switch day: both after 01:00 UTC
+				{ 2026, 10, 26, 9, 21 }, -- the first winter Monday
+				{ 2026, 12, 24, 9, 21 },
+				{ 2027, 3, 27, 9, 21 },
+				{ 2027, 3, 28, 8, 20 },
+				{ 2027, 7, 1, 8, 20 },
+			}
+		do
+			local day = Time.fromCivil(case[1], case[2], case[3])
 			local starts = WorldBoss.startsOn(day)
-			-- owner 2026-10-20: twice a day (S149: every 3 h from 02)
-			T.expect(#starts).toBe(2)
-			for i, start in starts do
-				T.expect(start).toBe(day * DAY + (8 + 12 * (i - 1)) * 3600)
-			end
+			T.expect({ case, starts }).toEqual({ case, { day * DAY + case[4] * 3600, day * DAY + case[5] * 3600 } })
 			local list = WorldBoss.list(day * DAY, (day + 1) * DAY)
 			T.expect(#list).toBe(2)
 			for i, occ in list do
-				T.expect(occ.id).toBe(`wb{Schedule.dateKey(occ.startsAt)}{string.format("%02d", 8 + 12 * (i - 1))}`)
+				local hour = case[3 + i]
+				T.expect(occ.id).toBe(`wb{Schedule.dateKey(occ.startsAt)}{string.format("%02d", hour)}`)
 				T.expect(occ.endsAt - occ.startsAt).toBe(WorldBoss.def().timeLimit)
-				-- the next one starts long after this one's marker is gone
-				if list[i + 1] then
-					T.expect(occ.endsAt + Data.schedule.linger < list[i + 1].startsAt - Data.schedule.warn[1])
-						.toBe(true)
-				end
 			end
+			-- the next one starts long after this one's marker is gone
+			T.expect(list[1].endsAt + Data.schedule.linger < list[2].startsAt - Data.schedule.warn[1]).toBe(true)
+		end
+		-- every day of two years: two starts, ids unique
+		local seen: { [string]: boolean } = {}
+		local d0 = Time.fromCivil(2026, 1, 1)
+		for _, occ in WorldBoss.list(d0 * DAY, (d0 + 730) * DAY) do
+			T.expect(seen[occ.id]).toBeNil()
+			seen[occ.id] = true
+			-- always 10:00 or 22:00 on the Polish clock
+			local localHour = ((occ.startsAt + WorldBoss.utcOffset(occ.startsAt) * 3600) % DAY) / 3600
+			T.expect({ occ.id, localHour == 10 or localHour == 22 }).toEqual({ occ.id, true })
 		end
 		local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[1]
 		T.expect(occ.id).toBe(`wb{Schedule.dateKey(tuesday())}08`)
 	end)
 
 	T.it("an occurrence runs from the 10 min warning to the end of the marker; next and phase", function()
-		local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[1] -- 08:00
+		local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[1] -- 10:00 Polish time
 		local s = Data.schedule
 		T.expect(s.warn).toEqual({ 600, 120 })
 		T.expect((WorldBoss.occurrenceAt(occ.startsAt - 600) :: any).id).toBe(occ.id)
@@ -144,7 +177,7 @@ T.describe("World boss: schedule (S149)", function()
 		T.expect(WorldBoss.occurrenceAt(occ.endsAt + s.linger + 1)).toBeNil()
 		T.expect(WorldBoss.next(occ.startsAt - 1)).toEqual({ id = occ.id, startsAt = occ.startsAt })
 		T.expect(WorldBoss.next(occ.startsAt).startsAt).toBe(occ.startsAt + 12 * 3600)
-		-- 20:00 -> 08:00 the next day
+		-- 22:00 -> 10:00 the next day
 		local late = WorldBoss.list(tuesday(), tuesday() + DAY)[2]
 		T.expect(WorldBoss.next(late.startsAt).startsAt).toBe(tuesday() + DAY + 8 * 3600)
 		T.expect(WorldBoss.phase(occ, occ.startsAt - 1)).toBe("warn")
@@ -153,31 +186,33 @@ T.describe("World boss: schedule (S149)", function()
 		T.expect(WorldBoss.phase(occ, occ.endsAt)).toBe("gone")
 	end)
 
-	T.it(
-		"never meets the Blood Moon (with its quiet time) nor the tournament start; a 19:00 Tuesday one is blocked",
-		function()
-			local from = tuesday()
-			for day = Time.dayNumber(from), Time.dayNumber(from) + 27 do
+	T.it("never meets the Blood Moon (with its quiet time) nor the tournament start, summer and winter", function()
+		local blocked = 0
+		for _, from in { tuesday(), Time.fromCivil(2026, 11, 2) * DAY, Time.fromCivil(2027, 3, 1) * DAY } do
+			for day = Time.dayNumber(from), Time.dayNumber(from) + 41 do
 				for _, start in WorldBoss.startsOn(day) do
 					local occ = { id = "x", startsAt = start, endsAt = start + WorldBoss.def().timeLimit }
-					T.expect({ start, WorldBoss.blocked(occ) }).toEqual({ start, nil })
-					-- the tournament (Saturday 19:00) does not block world events: checked by hand
+					-- the whole window, warnings to the leave, is clear of the Blood Moon and its quiet time
+					local early = { id = "x", startsAt = start - Data.schedule.warn[1], endsAt = occ.endsAt }
+					T.expect({ start, WorldBoss.blocked(occ), WorldBoss.blocked(early) }).toEqual({ start, nil, nil })
+					if WorldBoss.blocked(occ) then
+						blocked += 1
+					end
+					-- the tournament (Saturday 19:00 UTC) does not block world events: its start is never inside
 					local weekday = Schedule.weekday(start)
 					local cup = day * DAY + 19 * 3600
 					if weekday == 6 then
-						T.expect(occ.endsAt <= cup or occ.startsAt >= cup + 3600).toBe(true)
+						T.expect(occ.endsAt <= cup or start - Data.schedule.warn[1] > cup).toBe(true)
 					end
 				end
 			end
-			local moon = from + 19 * 3600
-			T.expect(WorldBoss.blocked({ id = "x", startsAt = moon, endsAt = moon + 900 })).toBe("bloodmoon.name")
-			-- the 17:00 one ends before the quiet time (18:50), the 20:00 one starts after the moon (19:30)
-			T.expect(WorldBoss.blocked({ id = "x", startsAt = moon - 2 * 3600, endsAt = moon - 2 * 3600 + 900 }))
-				.toBeNil()
-			T.expect(WorldBoss.blocked({ id = "x", startsAt = moon + 3600, endsAt = moon + 3600 + 900 })).toBeNil()
-			T.expect(WorldBoss.blocked({ id = "x", startsAt = moon - 900, endsAt = moon })).toBe("bloodmoon.name")
 		end
-	)
+		T.expect(blocked).toBe(0)
+		local moon = tuesday() + 19 * 3600
+		T.expect(WorldBoss.blocked({ id = "x", startsAt = moon, endsAt = moon + 900 })).toBe("bloodmoon.name")
+		T.expect(WorldBoss.blocked({ id = "x", startsAt = moon + 3600, endsAt = moon + 3600 + 900 })).toBeNil()
+		T.expect(WorldBoss.blocked({ id = "x", startsAt = moon - 900, endsAt = moon })).toBe("bloodmoon.name")
+	end)
 
 	T.it("an admin occurrence has its own id and never counts as a real one", function()
 		local occ = WorldBoss.forced(3, 1000)
@@ -457,7 +492,7 @@ T.describe("World boss: the view (S149b)", function()
 		T.expect(card.materials).toEqual({ "essence_crystal", "legend_core" })
 	end)
 
-	T.it("panelOf: full on the boss's map, one line elsewhere only during the warning", function()
+	T.it("panelOf: full on the boss's map, one line elsewhere during the warning and the fight", function()
 		T.expect(WorldBoss.panelOf(nil, Data.map)).toBeNil()
 		T.expect(WorldBoss.panelOf(WorldBoss.idleOf(occ.startsAt - 5000), Data.map)).toBeNil()
 		for _, phase in { "warn", "active", "slain", "left" } do
@@ -465,8 +500,28 @@ T.describe("World boss: the view (S149b)", function()
 		end
 		T.expect(WorldBoss.panelOf(public("warn"), "meadows")).toBe("line")
 		T.expect(WorldBoss.panelOf(public("warn"), nil)).toBe("line")
-		T.expect(WorldBoss.panelOf(public("active"), "meadows")).toBeNil()
+		-- S149c: the line stays through the fight (the owner: it vanished too fast)
+		T.expect(WorldBoss.panelOf(public("active"), "meadows")).toBe("line")
+		T.expect(WorldBoss.panelOf(public("left"), "meadows")).toBeNil()
 		T.expect(WorldBoss.panelOf(public("slain"), "city")).toBeNil()
+	end)
+
+	T.it("lineOf: the countdown to the start, then the time left of the fight (S149c)", function()
+		T.expect({ WorldBoss.lineOf(public("warn"), occ.startsAt - 125) }).toEqual({ "hud.worldboss.line", 125 })
+		T.expect({ WorldBoss.lineOf(public("active"), occ.startsAt + 60) }).toEqual({
+			"hud.worldboss.lineActive",
+			occ.endsAt - occ.startsAt - 60,
+		})
+		T.expect({ WorldBoss.lineOf(public("slain"), occ.endsAt) }).toEqual({})
+		T.expect({ WorldBoss.lineOf(WorldBoss.idleOf(0), 0) }).toEqual({})
+		for _, key in { "hud.worldboss.line", "hud.worldboss.lineActive" } do
+			for _, lang in { pl, en } do
+				local text = assert(lang[key], key)
+				for _, arg in { "{boss}", "{time}", "{place}" } do
+					T.expect({ key, string.find(text, arg, 1, true) ~= nil }).toEqual({ key, true })
+				end
+			end
+		end
 	end)
 
 	T.it("zoneNote: the safe circle of a living boss on its map only", function()
@@ -542,6 +597,217 @@ T.describe("World boss: the arena is a reserved place (S149b)", function()
 			end
 			T.expect({ query, found }).toEqual({ query, true })
 		end
+	end)
+end)
+
+T.describe("World boss: contribution factor, named items and pity (S149c)", function()
+	T.it("the factor: 0.5 for a token share, 1 for an even one, 2 at most", function()
+		T.expect(WorldBoss.factor(100, 1000, 10)).toBeNear(1, 1e-9)
+		T.expect(WorldBoss.factor(0, 1000, 10)).toBeNear(0.5, 1e-9)
+		T.expect(WorldBoss.factor(10, 1000, 10)).toBeNear(0.55, 1e-9)
+		T.expect(WorldBoss.factor(200, 1000, 10)).toBeNear(1.5, 1e-9)
+		T.expect(WorldBoss.factor(300, 1000, 10)).toBeNear(2, 1e-9)
+		T.expect(WorldBoss.factor(900, 1000, 10)).toBeNear(2, 1e-9)
+		T.expect(WorldBoss.factor(0, 0, 0)).toBe(1)
+	end)
+
+	T.it("the rarity table is Heroic 60 / Legendary 34 / Mythic 6, the Legendary and Mythic weights times f", function()
+		T.expect(Data.reward.rarity).toEqual({ [3] = 60, [4] = 34, [5] = 6 })
+		T.expect(WorldBoss.rarityWeights(1)).toEqual({ [3] = 60, [4] = 34, [5] = 6 })
+		T.expect(WorldBoss.rarityWeights(2)).toEqual({ [3] = 60, [4] = 68, [5] = 12 })
+		T.expect(WorldBoss.rarityWeights(0.5)).toEqual({ [3] = 60, [4] = 17, [5] = 3 })
+		-- a bigger factor gives more Mythics over many rolls
+		local function mythics(f: number): number
+			local n = 0
+			for seed = 1, 3000 do
+				local drop = WorldBoss.rollItem(100, "Warrior", Rng.new(seed), f)
+				if drop and drop.rarity == Rarities.MYTHIC then
+					n += 1
+				end
+			end
+			return n
+		end
+		T.expect(mythics(2) > mythics(1) * 1.25).toBe(true) -- 12 / 140 next to 6 / 100
+		T.expect(mythics(0.5) < mythics(1)).toBe(true)
+	end)
+
+	T.it("named chance: 4 % x f, +1 % per fight without one, certain after 30", function()
+		local n = Data.reward.named
+		T.expect({ n.chance, n.step, n.pityAt }).toEqual({ 0.04, 0.01, 30 })
+		T.expect(WorldBoss.namedChance(1, 0)).toBeNear(0.04, 1e-9)
+		T.expect(WorldBoss.namedChance(2, 0)).toBeNear(0.08, 1e-9)
+		T.expect(WorldBoss.namedChance(0.5, 10)).toBeNear(0.12, 1e-9)
+		T.expect(WorldBoss.namedChance(1, 29)).toBeNear(0.33, 1e-9)
+		T.expect(WorldBoss.namedChance(0.5, 30)).toBe(1)
+		-- the roll: a hit resets the count, a miss adds one; never 31 fights in a row without one
+		local rng = Rng.new(7)
+		local dry, longest, hits = 0, 0, 0
+		for _ = 1, 3000 do
+			local id, nextDry = WorldBoss.rollNamed("Mage", 0.5, dry, rng)
+			if id then
+				T.expect(table.find(WorldBoss.namedOf("Mage"), id) ~= nil).toBe(true)
+				T.expect(nextDry).toBe(0)
+				hits += 1
+			else
+				T.expect(nextDry).toBe(dry + 1)
+			end
+			dry = nextDry
+			longest = math.max(longest, dry)
+		end
+		T.expect(longest <= n.pityAt).toBe(true)
+		T.expect(hits > 0).toBe(true)
+		-- rare: about one in 13 fights of an even share
+		local even, fights = 0, 0
+		dry = 0
+		local r = Rng.new(11)
+		for _ = 1, 20000 do
+			local id, nextDry = WorldBoss.rollNamed("Hunter", 1, dry, r)
+			fights += 1
+			even += if id then 1 else 0
+			dry = nextDry
+		end
+		T.expect(even / fights > 1 / 18 and even / fights < 1 / 9).toBe(true)
+		T.expect({ WorldBoss.rollNamed("Nobody", 1, 3, Rng.new(1)) }).toEqual({ nil, 3 })
+	end)
+
+	T.it("eight named items, two per class: Mythic, bound, the class wears them, localized", function()
+		local all: { [string]: boolean } = {}
+		for _, classId in { "Warrior", "Hunter", "Mage", "Cleric" } do
+			local list = WorldBoss.namedOf(classId)
+			T.expect(#list).toBe(2)
+			local weapon = 0
+			for _, id in list do
+				local def = Items.get(id) :: any
+				T.expect({ id, def ~= nil }).toEqual({ id, true })
+				all[id] = true
+				T.expect({ id, def.rarity, def.bossId, def.bindOnPickup, def.level })
+					.toEqual({ id, Rarities.MYTHIC, Data.boss, true, 100 })
+				T.expect({ id, table.find(def.classes, classId) ~= nil }).toEqual({ id, true })
+				T.expect({
+					id,
+					pl[def.nameKey] ~= nil,
+					en[def.nameKey] ~= nil,
+					pl[def.descKey] ~= nil,
+					en[def.descKey] ~= nil,
+				}).toEqual({ id, true, true, true, true })
+				if def.slot == "weapon" then
+					weapon += 1
+				end
+			end
+			T.expect({ classId, weapon }).toEqual({ classId, 1 })
+		end
+		local n = 0
+		for _, def in Items.uniques do
+			if def.bossId == Data.boss then
+				n += 1
+				T.expect({ def.id, all[def.id] }).toEqual({ def.id, true })
+			end
+		end
+		T.expect(n).toBe(8)
+		-- the Mage staff is an ice weapon (its fixed effects are ice ones)
+		local staff = Items.get("unique_hrimvald_staff") :: any
+		T.expect({ staff.elemental, Data.reward.named.element }).toEqual({ true, "ice" })
+	end)
+
+	-- the owner: rare and better than the dungeon bosses' named items
+	T.it("named items: about 15 % above a rolled Mythic of the base, above the dungeon bosses' named ones", function()
+		local mythic = Rarities.get(Rarities.MYTHIC).baseMul
+		local function baseOf(def: any): any
+			for _, other in Items.byId do
+				local o: any = other
+				if o.type == def.type and o.level == def.level and o.fixedBonuses == nil then
+					return o
+				end
+			end
+			return nil
+		end
+		for classId, list in Data.reward.named.byClass do
+			for _, id in list do
+				local def = Items.get(id) :: any
+				local base = assert(baseOf(def), id)
+				-- base stats: 1.13-1.17 x a rolled Mythic's (Rarities baseMul), above the dungeon named items' 1.26
+				local rolled: any =
+					ItemRoll.itemStats(ItemRoll.rollItem(base.id, 100, Rarities.MYTHIC, Rng.new(1), "r"))
+				local mine: any = ItemRoll.itemStats(ItemRoll.rollItem(id, 100, Rarities.MYTHIC, Rng.new(1), "n"))
+				local rows: { { any } } = {}
+				for stat, v in rolled.base do
+					table.insert(rows, { stat, v, mine.base[stat] or 0 })
+				end
+				if rolled.weapon then
+					table.insert(rows, { "dmg", rolled.weapon.dmg, mine.weapon.dmg })
+					table.insert(rows, { "mdmg", rolled.weapon.mdmg, mine.weapon.mdmg })
+				end
+				T.expect({ id, #rows > 0 }).toEqual({ id, true })
+				for _, p in rows do
+					if p[2] >= 20 then
+						local ratio = p[3] / p[2]
+						T.expect({ id, p[1], ratio >= 1.12 and ratio <= 1.18 }).toEqual({ id, p[1], true })
+					end
+				end
+				T.expect(1.40 / mythic > 1.26 / mythic * 1.1).toBe(true)
+				-- the whole item (ItemScore): >= 1.15 x the mean rolled Mythic of its base for the class
+				local named = ItemRoll.rollItem(id, 100, Rarities.MYTHIC, Rng.new(1), "n")
+				if def.elemental then
+					named.el = Data.reward.named.element
+				end
+				local score = ItemScore.score(named, classId)
+				local sum = 0
+				for seed = 1, 40 do
+					local item = ItemRoll.rollItem(base.id, 100, Rarities.MYTHIC, Rng.new(seed), "r", classId)
+					if def.elemental then
+						item.el = Data.reward.named.element
+					end
+					sum += ItemScore.score(item, classId)
+				end
+				T.expect({ id, classId, score >= 1.15 * sum / 40 }).toEqual({ id, classId, true })
+				-- above every dungeon boss named item of the same slot the class wears
+				for _, other in Items.uniques do
+					local o: any = other
+					if
+						o.bossId ~= Data.boss
+						and o.slot == def.slot
+						and table.find(o.classes or { classId }, classId)
+					then
+						local theirs =
+							ItemScore.score(ItemRoll.rollItem(o.id, o.level, Rarities.MYTHIC, Rng.new(1), "d"), classId)
+						T.expect({ id, o.id, score > theirs }).toEqual({ id, o.id, true })
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("an absent winner's parcel part: pending for its character until applied", function()
+		local box = Mail.newBox()
+		local function parcel(id: string, charId: string, part: any?): any
+			return {
+				id = id,
+				from = "system",
+				subjectKey = "mail.subject.worldBossAbsent",
+				args = { pct = "12.5", f = "1.12" },
+				gold = 10,
+				items = {},
+				createdAt = 0,
+				expiresAt = 1e12,
+				charId = charId,
+				worldBoss = part,
+			}
+		end
+		box.parcels.a = parcel("a", "c1", { occ = "wb2026101308", exp = 500, named = false })
+		box.parcels.b = parcel("b", "c2", { occ = "wb2026101308", exp = 400, named = true })
+		box.parcels.c = parcel("c", "c1", nil)
+		box.parcels.d = parcel("d", "c1", { occ = "wb2026101220", exp = 300, named = true, applied = true })
+		local pending = Mail.pendingWorldBoss(box, "c1")
+		T.expect(pending).toEqual({ a = box.parcels.a.worldBoss })
+		T.expect(Mail.pendingWorldBoss(box, "c3")).toEqual({})
+		for _, key in { "mail.subject.worldBossAbsent", "mail.subject.worldBossShare", "worldboss.rewardCard.share" } do
+			for _, lang in { pl, en } do
+				local text = lang[key]
+				T.expect({ key, text ~= nil and string.find(text, "{pct}", 1, true) ~= nil }).toEqual({ key, true })
+				T.expect({ key, string.find(text, "{f}", 1, true) ~= nil }).toEqual({ key, true })
+			end
+		end
+		T.expect({ pl["worldboss.pending"] ~= nil, en["worldboss.pending"] ~= nil }).toEqual({ true, true })
 	end)
 end)
 

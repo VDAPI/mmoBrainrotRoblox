@@ -1,8 +1,8 @@
 --!strict
 -- The world boss (S149, DESIGN §15.6): pure rules WorldBossService (and S149b's HUD, map and wiki) run. Every server
--- computes the same occurrences from the UTC clock (Util/Clock.now passed in, never os.time): a start every
--- `everyHours` h from `offsetHour`:`minute` of each UTC day, id "wbYYYYMMDDHH" (the same on every server, the key of
--- the one reward per account), warnings `warn` s before, the boss leaves `timeLimit` s after the start, the marker
+-- computes the same occurrences from the UTC clock (Util/Clock.now passed in, never os.time): S149c a start at each
+-- local `times` of the day in the `tz` zone (Europe/Warsaw with the EU summer time), id "wbYYYYMMDDHH" of the UTC
+-- start (the same on every server, the key of the one reward per account), warnings `warn` s before, the boss leaves `timeLimit` s after the start, the marker
 -- lingers `linger` s. An occurrence whose fight window meets a wall-clock event that blocks world events (the Blood
 -- Moon with its quiet time, Logic/Schedule.blocking) is skipped. The reward: Logic/Contribution with
 -- Data/WorldBoss.share, level >= the boss's minLevel, once per account and occurrence (account.worldBoss.last).
@@ -94,16 +94,44 @@ local function occurrenceOf(startsAt: number): Occurrence
 	}
 end
 
--- Every start of UTC day `day` (Logic/Time.dayNumber), ascending.
+-- S149c: the last Sunday of `month` of `year` as a UTC day number (Logic/Time.fromCivil; ISO weekday 7 = Sunday).
+local function lastSunday(year: number, month: number): number
+	local day = Time.fromCivil(year, month, 31)
+	while Schedule.weekday(day * DAY) ~= 7 do
+		day -= 1
+	end
+	return day
+end
+
+-- S149c: the hours the schedule's zone is ahead of UTC at `t` (EU rule: summer time from the last Sunday of March
+-- 01:00 UTC to the last Sunday of October 01:00 UTC).
+function WorldBoss.utcOffset(t: number): number
+	local tz = Data.schedule.tz
+	local year = Time.civil(t)
+	local from = lastSunday(year, 3) * DAY + 3600
+	local to = lastSunday(year, 10) * DAY + 3600
+	return if t >= from and t < to then tz.dst else tz.std
+end
+
+-- Every start on local day `day` (the zone's calendar day with the UTC day number `day`), ascending, in UTC seconds.
 function WorldBoss.startsOn(day: number): { number }
-	local s = Data.schedule
 	local out: { number } = {}
-	local hour = s.offsetHour
-	while hour < 24 do
-		table.insert(out, day * DAY + hour * 3600 + s.minute * 60)
-		hour += s.everyHours
+	for _, hm in Data.schedule.times do
+		local naive = day * DAY + hm[1] * 3600 + hm[2] * 60
+		-- the offset near that instant (no start falls near the 01:00 UTC switch)
+		local start = naive - WorldBoss.utcOffset(naive - Data.schedule.tz.std * 3600) * 3600
+		table.insert(out, start)
 	end
 	return out
+end
+
+-- S149c: the local start times as text ("10:00, 22:00"), the map card and the wiki.
+function WorldBoss.timesText(): string
+	local parts: { string } = {}
+	for _, hm in Data.schedule.times do
+		table.insert(parts, string.format("%02d:%02d", hm[1], hm[2]))
+	end
+	return table.concat(parts, ", ")
 end
 
 -- The name key of the wall-clock event that blocks `occ` (its fight window meets the quiet window of an event with
@@ -120,7 +148,7 @@ end
 -- Every occurrence starting in [from, to), blocked ones left out, ascending (/sched, tests).
 function WorldBoss.list(from: number, to: number): { Occurrence }
 	local out: { Occurrence } = {}
-	for day = Time.dayNumber(from), Time.dayNumber(to) do
+	for day = Time.dayNumber(from) - 1, Time.dayNumber(to) + 1 do
 		for _, start in WorldBoss.startsOn(day) do
 			if start >= from and start < to then
 				local occ = occurrenceOf(start)
@@ -228,13 +256,61 @@ function WorldBoss.itemLevel(charLevel: number, rng: Rng.Rng): number
 	return ItemRoll.dropLevel(math.clamp(charLevel, WorldBoss.minLevel(), WorldBoss.def().level), rng)
 end
 
--- The one item: the drop level, then the rarity (reward.rarity), then the base (a boss slot: Loot.pickItem with
--- classBias; a Mythic always one the class can wear, Loot.pickUsable, as at the dungeon bosses). nil when no item
--- exists for the level.
-function WorldBoss.rollItem(charLevel: number, classId: string?, rng: Rng.Rng): Loot.ItemDrop?
+-- S149c: the contribution factor of a winner: s = points / (total / fighters), f = clamp(lo + slope x s, lo, hi)
+-- (reward.factor: 0.5 .. 2, 1 for an even share). `fighters` = the participants with points; nothing counted = 1.
+function WorldBoss.factor(points: number, total: number, fighters: number): number
+	local k = Data.reward.factor
+	if total <= 0 or fighters <= 0 then
+		return 1
+	end
+	local s = math.max(0, points) / (total / fighters)
+	return math.clamp(k.lo + k.slope * s, k.lo, k.hi)
+end
+
+-- S149c: the item's rarity weights for factor `f`: the Legendary and Mythic weights times f.
+function WorldBoss.rarityWeights(f: number?): { [number]: number }
+	local mul = f or 1
+	local out: { [number]: number } = {}
+	for rarity, w in Data.reward.rarity :: { [number]: number } do
+		out[rarity] = if rarity >= Rarities.LEGENDARY then w * mul else w
+	end
+	return out
+end
+
+-- S149c: the chance of a named item for factor `f` after `dry` rewarded fights without one: chance x f + step x dry,
+-- certain from pityAt dry fights on.
+function WorldBoss.namedChance(f: number, dry: number): number
+	local n = Data.reward.named
+	if dry >= n.pityAt then
+		return 1
+	end
+	return math.clamp(n.chance * f + n.step * math.max(0, dry), 0, 1)
+end
+
+-- S149c: the named items a class may get (reward.named.byClass; {} for an unknown class).
+function WorldBoss.namedOf(classId: string?): { string }
+	return (classId and Data.reward.named.byClass[classId]) or {}
+end
+
+-- S149c: the named item roll: (item id or nil, the new dry count). Uses the rng twice at most.
+function WorldBoss.rollNamed(classId: string?, f: number, dry: number, rng: Rng.Rng): (string?, number)
+	local list = WorldBoss.namedOf(classId)
+	if #list == 0 then
+		return nil, dry
+	end
+	if rng:next() < WorldBoss.namedChance(f, dry) then
+		return rng:pick(list), 0
+	end
+	return nil, dry + 1
+end
+
+-- The one item: the drop level, then the rarity (reward.rarity, S149c: Legendary and Mythic times the factor `f`),
+-- then the base (a boss slot: Loot.pickItem with classBias; a Mythic always one the class can wear, Loot.pickUsable,
+-- as at the dungeon bosses). nil when no item exists for the level.
+function WorldBoss.rollItem(charLevel: number, classId: string?, rng: Rng.Rng, f: number?): Loot.ItemDrop?
 	local r = Data.reward
 	local ilvl = WorldBoss.itemLevel(charLevel, rng)
-	local rarity = rng:weighted(r.rarity :: { [number]: number })
+	local rarity = rng:weighted(WorldBoss.rarityWeights(f))
 	local defId = if rarity == Rarities.MYTHIC
 		then Loot.pickUsable(LootTables.bossSlots, ilvl, classId, rng)
 		else Loot.pickItem(LootTables.bossSlots, ilvl, r.classBias, classId, rng)
@@ -442,7 +518,8 @@ function WorldBoss.cardOf(branch: any, viewer: { level: number, now: number }): 
 end
 
 -- How the HUD panel shows the branch for a player on `mapId`: "full" on the boss's map from the warning to the end of
--- the marker, "line" (one line with Guide) on any other map during the warning, nil otherwise.
+-- the marker, "line" (one line: the countdown, then "fights, mm:ss left", with the barrow's name; a tap opens the map at
+-- it) on any other map from the first warning to the end of the fight (S149c: the fight too), nil otherwise.
 function WorldBoss.panelOf(branch: any, mapId: string?): ("full" | "line")?
 	if not isPublic(branch) then
 		return nil
@@ -450,7 +527,21 @@ function WorldBoss.panelOf(branch: any, mapId: string?): ("full" | "line")?
 	if mapId == branch.map then
 		return "full"
 	end
-	return if branch.phase == "warn" then "line" else nil
+	return if branch.phase == "warn" or branch.phase == "active" then "line" else nil
+end
+
+-- S149c: the text key and the seconds of the compact HUD line: before the start the countdown, during the fight the
+-- time left; nil after it.
+function WorldBoss.lineOf(branch: any, now: number): (string?, number?)
+	if not isPublic(branch) then
+		return nil, nil
+	end
+	if branch.phase == "warn" then
+		return "hud.worldboss.line", math.max(0, (tonumber(branch.startsAt) or now) - now)
+	elseif branch.phase == "active" then
+		return "hud.worldboss.lineActive", math.max(0, (tonumber(branch.endsAt) or now) - now)
+	end
+	return nil, nil
 end
 
 -- S149b (A4): the note of the zone banner at a map-relative point: "worldboss.safeZone" in the fighters' circle of a

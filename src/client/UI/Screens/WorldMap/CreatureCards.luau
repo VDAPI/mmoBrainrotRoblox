@@ -545,7 +545,7 @@ function CreatureCards.worldBoss(ctx: Context): Spec?
 				ln(T(card.placeKey), Theme.Paper.Heading, true),
 				whereLine(ctx, card.map, card.x, card.z),
 				stateLine,
-				ln(T("worldboss.card.every", { hours = data.schedule.everyHours }), Theme.Paper.TextMuted),
+				ln(T("worldboss.card.every", { times = WorldBoss.timesText() }), Theme.Paper.TextMuted),
 			},
 		},
 		{ lines = who },

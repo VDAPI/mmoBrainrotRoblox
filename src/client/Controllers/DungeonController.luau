@@ -383,6 +383,8 @@ function DungeonController.Start()
 			gotLeg = best == Rarities.LEGENDARY,
 			gotMyth = best >= Rarities.MYTHIC,
 			drop = items,
+			share = tonumber(raw.share), -- S149c
+			factor = tonumber(raw.f),
 		})
 	end)
 	Net.On("BossAnnounce", function(key: string, args: { [string]: any }?)

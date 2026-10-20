@@ -16,6 +16,7 @@ local QuestBoard = require(script.Parent.Parent.UI.Screens.QuestBoard)
 local QuestDialog = require(script.Parent.Parent.UI.Screens.QuestDialog)
 local QuestJournal = require(script.Parent.Parent.UI.Screens.QuestJournal)
 local QuestText = require(script.Parent.Parent.UI.QuestText)
+local NavTarget = require(script.Parent.Parent.UI.NavTarget)
 local QuestTrack = require(script.Parent.Parent.UI.QuestTrack)
 local NpcQuests = require(script.Parent.Parent.UI.NpcQuests)
 local NpcMarkState = require(script.Parent.Parent.UI.NpcMarkState)
@@ -32,6 +33,7 @@ local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
+local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 
 local QuestController = {
 	Name = "QuestController",
@@ -266,6 +268,18 @@ function QuestController.Init(registry)
 		end,
 		Sfx = function(key: string): boolean
 			return SfxController.Ui(key)
+		end,
+		-- S149c: the compact line opens the world map at the barrow (its card)
+		OpenMap = function()
+			local spot = WorldBoss.spot()
+			NavTarget.MapFocus:set({
+				map = WorldBoss.Data.map,
+				x = spot.x,
+				z = spot.z,
+				zoom = 3,
+				card = { kind = "worldboss", id = spot.id },
+			})
+			WindowManager.Open("map")
 		end,
 	}).Parent =
 		UIController.GetLayer("Screens")
