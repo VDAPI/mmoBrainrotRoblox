@@ -63,6 +63,7 @@ function AccountSchema.accountTemplate(): AccountData
 			keys = {},
 			devPins = {},
 			mapCloseOnWalk = true,
+			mapHide = {}, -- owner 2026-10-20: hidden world map symbol categories (Logic/MapMarkers; reconcile)
 			barks = true, -- S101b: NPC comments during quests (reconcile adds it to old accounts)
 			robloxAvatar = false, -- S132: "Show my Roblox avatar" (reconcile adds it to old accounts)
 			whispers = "all", -- S133: whispers from everyone or only friends and guild mates (reconcile)
