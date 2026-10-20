@@ -47,6 +47,12 @@
 
 ## Niedokończone (kod)
 
+- **Zgłoszenia właściciela 2026-10-20 (do zrobienia, w tej kolejności):** (1) HUD: pasek menu (plecak itd.) zasłania
+  pasek HP bossa; (2) mapa świata: limit przesuwania / oddalania; (3) bonus przedmiotu zawsze pasuje do typu broni
+  (mityczny łuk miał bonus do kuszy); (4) Zwój Przemiany: przelosowanie wszystkich statystyk przedmiotu (droższy, też
+  za Smoczą Walutę); (5) boss świata: jaskinia z przedsionkiem bez PvP, ogłoszenie pojawienia się dłużej na ekranie;
+  (6) miasto: ładniejsze kolorowe chatki i stragany, NPC przed straganami (nie pod nimi).
+
 - **Samouczek z działaniem (S155):** wiki czeka na odświeżenie (właściciel 17.10): akapit o samouczku i nagrodzie na 5.
   poziomie w poradniku dla nowych (liczby z `Data/Tutorial` przez eksporter), tytuł „Pierwsze Kroki” w danych wiki.
   Pozycje wskazówki liczone z ramek HUD bez przeglądu w grze (PC i telefon w pionie i poziomie, strefa joysticka,

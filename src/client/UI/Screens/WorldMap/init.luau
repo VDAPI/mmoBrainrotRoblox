@@ -451,7 +451,16 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 			return current
 		end,
 		Pan = function(delta: Vector2)
-			center:set(Fusion.peek(center) - delta)
+			-- owner 2026-10-20: the map does not slide away for ever: the view's middle stays over the drawn map
+			local want = Fusion.peek(center) - delta
+			local canvas = current and current.canvas
+			if canvas then
+				want = Vector2.new(
+					math.clamp(want.X, 0, canvas.Size.X.Offset),
+					math.clamp(want.Y, 0, canvas.Size.Y.Offset)
+				)
+			end
+			center:set(want)
 		end,
 		Zoom = function(delta: number)
 			zoomIndex:set(math.clamp(Fusion.peek(zoomIndex) + delta, 1, #ZOOMS))

@@ -595,7 +595,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		AnchorPoint = Vector2.new(1, 0),
 		Position = scope:Computed(function(use): UDim2
 			local offset = if props and props.Offset then use(props.Offset) else 0
-			return UDim2.new(1, -Theme.Padding.Large, 0, 400 + offset)
+			-- owner 2026-10-20: the menu has two rows (Hud Menu), so the tracker starts one button row lower
+			return UDim2.new(1, -Theme.Padding.Large, 0, 400 + Theme.Size.IconButton + Theme.Padding.Small + offset)
 		end),
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,

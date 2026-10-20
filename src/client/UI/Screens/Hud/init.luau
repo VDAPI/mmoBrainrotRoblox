@@ -310,6 +310,7 @@ local function menu(scope: Scope, props: Props): Instance
 		)
 	end
 
+	local MENU_PER_ROW = 7
 	return scope:New("Frame")({
 		Name = "Menu",
 		AnchorPoint = Vector2.new(1, 0),
@@ -323,17 +324,25 @@ local function menu(scope: Scope, props: Props): Instance
 				HorizontalAlignment = Enum.HorizontalAlignment.Right,
 				Padding = UDim.new(0, Theme.Padding.Small),
 			}),
+			-- owner 2026-10-20: one long row reached the middle of the screen and covered the target's / boss's health
+			-- bar: two rows of MENU_PER_ROW buttons right-aligned over the minimap instead
 			scope:New("Frame")({
 				Name = "Buttons",
 				LayoutOrder = 1,
-				Size = UDim2.fromOffset(0, Theme.Size.IconButton),
-				AutomaticSize = Enum.AutomaticSize.X,
+				Size = UDim2.fromOffset(
+					MENU_PER_ROW * (Theme.Size.IconButton + Theme.Padding.Small) - Theme.Padding.Small,
+					Theme.Size.IconButton
+				),
+				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
 				[Children] = {
-					scope:New("UIListLayout")({
+					scope:New("UIGridLayout")({
 						FillDirection = Enum.FillDirection.Horizontal,
+						FillDirectionMaxCells = MENU_PER_ROW,
+						HorizontalAlignment = Enum.HorizontalAlignment.Right,
 						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, Theme.Padding.Small),
+						CellSize = UDim2.fromOffset(Theme.Size.IconButton, Theme.Size.IconButton),
+						CellPadding = UDim2.fromOffset(Theme.Padding.Small, Theme.Padding.Small),
 					}),
 					buttons :: any,
 				},
