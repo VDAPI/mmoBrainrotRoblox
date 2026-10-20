@@ -13538,3 +13538,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
   `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
   `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.
+### walka-wk: walka Wojownika i Kapłana „wow” (właściciel 2026-10-20)
+- **Efekty:** `src/client/Vfx/WkFx.luau` (21 składników `wk*`: uderzenia w ziemię z kolcami i odłamkami, pęknięcia,
+  szarża z pyłem i liniami pędu, tarcza mocy, pierścienie uderzeń, krytyk, wir, okrzyk, nowa, słup światła, aureola
+  leczenia, pióra, łańcuchy, miecz i młot z nieba, pętle wzmocnień i uświęconej ziemi); `Library.kit` wystawia pomocniki
+  puli (wspólne z sesją Łowcy i Maga); hak w `VfxController.piece`. Wszystkie 49 aktywnych umiejętności obu klas ma
+  nowy zestaw w `Data/SkillVfx` w budżecie `Config.Vfx.perCast`.
+- **Ataki podstawowe:** krytyk `WkFx.crit` + hitstop (`HitFx.crit.hitstop`), odłamki ciężkiej głowicy, pierścień
+  broni świętej (`CombatFxController`).
+- **Ruchy:** własne ruchy siedmiu umiejętności pul Kapłana (S145), zapowiedź i wybrzmienie w 10 słabych ruchach;
+  powtórzone sylwetki w klasach 13 → 3. Czasy serwera bez zmian (`skill_timing`).
+- **Dźwięki:** 26 cichych kluczy obu klas dostało pliki S111 we własnej wysokości (`Data/Sfx`).
+- **Testy:** `tests/wkfx.spec.luau`, `tests/SkillLooks` (warstwy i koszty `wk*`), `skillmotion.spec` (znane składniki).
