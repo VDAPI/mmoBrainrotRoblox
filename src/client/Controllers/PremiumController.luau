@@ -6,6 +6,7 @@
 -- S123: the wardrobe previews emotes and level-up effects on the own character in the world (EmoteController,
 -- EffectsController; nobody else sees them).
 -- S132 (DESIGN-17 §9a): the look window ("look": face, skin, hair; the wardrobe's button and the barber open it).
+-- S152b: the Passes tab's season pass card opens the season pass window and its purchase dialog (SeasonController).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -26,6 +27,7 @@ local PremiumController = {
 	Deps = { "WindowManager", "EmoteController", "EffectsController" },
 }
 
+local Registry: any
 local WindowManager: any
 local EmoteController: any
 local EffectsController: any
@@ -62,6 +64,7 @@ function PremiumController.OpenVip()
 end
 
 function PremiumController.Init(registry)
+	Registry = registry
 	WindowManager = registry.Get("WindowManager")
 	EmoteController = registry.Get("EmoteController")
 	EffectsController = registry.Get("EffectsController")
@@ -76,6 +79,13 @@ function PremiumController.Init(registry)
 				OpenWardrobe = PremiumController.OpenWardrobe,
 				Select = PremiumShop.select,
 				OpenVip = PremiumController.OpenVip,
+				-- S152b: the season pass card (SeasonController depends on this controller: looked up when used)
+				OpenSeason = function()
+					Registry.Get("SeasonController").Open()
+				end,
+				BuySeason = function()
+					Registry.Get("SeasonController").Buy()
+				end,
 			})
 		end,
 	})
@@ -91,6 +101,11 @@ function PremiumController.Init(registry)
 				-- S123: local previews (only this client sees them)
 				PreviewEmote = EmoteController.Preview,
 				OpenLook = PremiumController.OpenLook, -- S132
+				-- S154: the weapon looks tab leads to the blacksmith (NpcController looked up when used)
+				GuideToSmith = function()
+					WindowManager.Close("wardrobe")
+					Registry.Get("NpcController").GuideToNpc("blacksmith")
+				end,
 				PreviewLevelUp = function(cosmeticId: string)
 					local model = Players.LocalPlayer.Character
 					if model then

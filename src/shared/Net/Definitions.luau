@@ -141,6 +141,13 @@ local Definitions: { [string]: Definition } = {
 		rate = 2,
 		args = { "string", "string", "integer", "string", "boolean" },
 	},
+	-- S154: ("inv"|"eq", key, look key or "" to remove, expected item uid) -> (ok, err, { look })
+	TransmogApply = {
+		kind = "function",
+		dir = "c2s",
+		rate = 2,
+		args = { "string", "string", "string", "string" },
+	},
 
 	-- Alchemy, blessings, gathering, fishing, stones (S07)
 	StartRecipe = { kind = "function", dir = "c2s", rate = 3, args = { "string", "string" } }, -- (npcId, recipeId)
@@ -178,6 +185,11 @@ local Definitions: { [string]: Definition } = {
 	-- S149b: the world boss reward card ({ boss, exp?, gold?, items? = { { id, r, up?, n? } }, reason?, level? }): the
 	-- winner's loot, or the reason he got none ("level" | "share" | "claimed"); the client checks every field
 	WorldBossReward = { kind = "event", dir = "s2c" },
+	-- S151: an achievement done ({ id, reward = { title?, cosmetic?, shards?, gold? } }) or the catch-up of old progress
+	-- ({ backfill = n }); AchievementController shows the toast (or a system chat line with the setting off)
+	AchievementDone = { kind = "event", dir = "s2c" },
+	-- S151b: follow (true) or stop following (false) an achievement in the HUD tracker: (achId, on) -> (ok, errKey?)
+	AchievementTrack = { kind = "function", dir = "c2s", rate = 2, args = { "string", "boolean" } },
 	-- S134f: the party finder board (PartyFinderService): (kind, target, minLevel, maxLevel, { classId }) -> (ok, errKey?)
 	FinderPost = {
 		kind = "function",
@@ -281,7 +293,6 @@ local Definitions: { [string]: Definition } = {
 	FriendInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
 	FriendRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
 	FriendRemove = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId)
-	FriendsStatus = { kind = "function", dir = "c2s", rate = 0.2, args = {} }, -- -> (ok, err, { [userId]: status })
 	IgnoreAdd = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId)
 	IgnoreName = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (character name)
 	IgnoreRemove = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId)
@@ -289,6 +300,15 @@ local Definitions: { [string]: Definition } = {
 	WhisperReady = { kind = "event", dir = "s2c" }, -- (channel name, character name, text to send) after "/w"
 	WhisperFailed = { kind = "event", dir = "s2c" }, -- (error key, name) after "/w"
 	SocialHintSeen = { kind = "event", dir = "c2s", rate = 0.5, args = {} }, -- the one-time player menu hint
+	-- S150: friends 2.0 (FriendService). The window gets the runtime branch `friends` while it is open (FriendsWatch);
+	-- (friend userId) -> (ok, errKey?) for a join and a party invitation to another server
+	FriendJoin = { kind = "function", dir = "c2s", rate = 0.2, args = { "integer" } },
+	FriendPartyInvite = { kind = "function", dir = "c2s", rate = 0.2, args = { "integer" } },
+	FriendPartyInvited = { kind = "event", dir = "s2c" }, -- (fromName, level, classId, seconds)
+	FriendPartyRespond = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
+	FriendsWatch = { kind = "event", dir = "c2s", rate = 2, args = { "boolean" } },
+	-- user ids of Roblox friends the client sees in this game (Player:GetFriendsOnlineAsync), checked by the server
+	FriendsRobloxHint = { kind = "event", dir = "c2s", rate = 0.1, args = { "table" } },
 	AuctionSearch = { kind = "function", dir = "c2s", rate = 2, args = { "table", "integer", "boolean" } }, -- (filter, page, descending)
 	AuctionDetails = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (listing id) -> full item
 	AuctionList = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer", "integer" } }, -- (inv index, price, hours)
@@ -318,13 +338,27 @@ local Definitions: { [string]: Definition } = {
 		args = { "string", "string", "string", "string?", "string?", "string?", "string?", "string?", "string?" },
 	},
 	PlayEmote = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (emote cosmetic id) S123
-	GuideDone = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
+	-- S155: the hands-on tutorial (TutorialService): a client step (Tutorial.clientAllowed: move, backpack; the server
+	-- sees the rest itself) and skipping the rest (the S14 GuideDone is gone)
+	TutorialEvent = { kind = "event", dir = "c2s", rate = 2, args = { "string" } }, -- client steps only (Tutorial.clientAllowed)
+	TutorialSkip = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
 	BuySubscription = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (subscription key) prompt or simulated, S121
 	VipRecall = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free return to the city (VIP), S121
 	PremiumFunnel = { kind = "event", dir = "c2s", rate = 2, args = { "string", "string" } }, -- (funnel, step) S131: shop/VIP window funnel steps from the client
 	VipRespawn = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free instant respawn once a day (VIP), S121
 	OutfitSave = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index) saves the current look, S121
 	OutfitWear = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index), S121
+
+	-- Season pass (S152, SeasonService; the state is account.season): the premium track of the running season for
+	-- Dragon Shards; one reward (tier, "free" | "premium", season id: nil = the running one, or the previous one in its
+	-- grace days) -> (ok, errorKey?, { granted = { Reward } }); every reached reward of both seasons -> the same
+	SeasonBuy = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	SeasonClaim = { kind = "function", dir = "c2s", rate = 6, args = { "integer", "string", "string?" } },
+	SeasonClaimAll = { kind = "function", dir = "c2s", rate = 1, args = {} },
+
+	-- Returning players (S153, ReturningService; the state is account.returning): the "What has changed" letter was read
+	-- up to this Data/Changelog id (an id of the log above the saved one; anything else is ignored)
+	ChangelogSeen = { kind = "event", dir = "c2s", rate = 0.5, args = { "integer" } }, -- (highest id read)
 
 	-- Leaderboards (S124): (board instance id) -> (true, Logic/Leaderboard.Snapshot) | (false, errorKey)
 	LeaderboardGet = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },

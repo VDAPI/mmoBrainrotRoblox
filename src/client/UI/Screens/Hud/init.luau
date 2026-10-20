@@ -42,6 +42,7 @@ local EmoteButton = require(script.EmoteButton)
 local MobileSkills = require(script.MobileSkills)
 local PoolLabel = require(script.PoolLabel)
 local PvpToggle = require(script.PvpToggle)
+local SeasonButton = require(script.SeasonButton) -- S152b
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -475,6 +476,13 @@ local function Hud(scope: Scope, props: Props): Instance
 				Badge = props.LoginBadge,
 				Open = props.OpenLogin,
 				Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 - 44),
+			}),
+			-- S152b: the season pass under the login button (the effect icons end at x 268, the cloak row at y 140)
+			SeasonButton(scope, {
+				Open = function()
+					props.OpenWindow("season")
+				end,
+				Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 + 8),
 			}),
 			-- S122: the Cloak of Luring right of the login button, below the elixirs (only while it has time)
 			LureButton(

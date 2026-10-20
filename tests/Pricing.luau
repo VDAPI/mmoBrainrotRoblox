@@ -91,6 +91,18 @@ function Pricing.shopTable(): { ShopRow }
 			limit = limit,
 		})
 	end
+	-- S152: the premium track of the season pass (Products.seasonPass), once per season
+	local pass = Products.seasonPass
+	local r = Pricing.robuxOf(pass.price)
+	table.insert(out, {
+		key = pass.key,
+		cat = "season",
+		so = pass.price,
+		perUnit = nil,
+		robuxCheap = r.cheapest,
+		robuxDear = r.dearest,
+		limit = "1/sezon",
+	})
 	return out
 end
 
@@ -162,6 +174,7 @@ function Pricing.allShardPrices(): { { key: string, so: number } }
 	for _, e in Products.shop do
 		table.insert(out, { key = e.key, so = e.price })
 	end
+	table.insert(out, { key = Products.seasonPass.key, so = Products.seasonPass.price }) -- S152
 	for _, def in Cosmetics.list do
 		if def.price > 0 then
 			table.insert(out, { key = def.id, so = def.price })

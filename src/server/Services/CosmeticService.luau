@@ -34,6 +34,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local AvatarBuild = require(Shared.Util.AvatarBuild)
 local BodyLooks = require(Shared.Data.BodyLooks)
 local CharacterLook = require(Shared.Logic.CharacterLook)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local ClassLooks = require(Shared.Data.ClassLooks)
 local CosmeticLook = require(Shared.Util.CosmeticLook)
 local Cosmetics = require(Shared.Data.Cosmetics)
@@ -402,7 +403,9 @@ end
 
 -- Gives one cosmetic to the account (boss drops, quest rewards). False for an unknown or already owned id.
 -- S121: `toastKey` replaces cosmetic.got (the VIP cosmetic of the month says so); args { name }.
-function CosmeticService.Grant(player: Player, id: string, toastKey: string?): boolean
+-- S151: `quiet` = no toast (an achievement's toast names the cosmetic); every grant fires QuestEvents "cosmetic" (the
+-- achievements count the cosmetics earned in the game).
+function CosmeticService.Grant(player: Player, id: string, toastKey: string?, quiet: boolean?): boolean
 	local def = Cosmetics.get(id)
 	local data = account(player)
 	if not def or not data then
@@ -414,9 +417,12 @@ function CosmeticService.Grant(player: Player, id: string, toastKey: string?): b
 		return false
 	end
 	PlayerStateService.Set(player, { "account", branch, "owned", id }, true)
-	Net.Fire(player, "Toast", toastKey or "cosmetic.got", { name = `@{def.nameKey}` }, "success")
+	if quiet ~= true then
+		Net.Fire(player, "Toast", toastKey or "cosmetic.got", { name = `@{def.nameKey}` }, "success")
+	end
 	DataService.Save(player)
 	CosmeticService.OwnedChanged(player, id)
+	QuestEvents.fire(player, "cosmetic", { id = id })
 	return true
 end
 

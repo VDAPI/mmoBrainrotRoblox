@@ -373,6 +373,7 @@ end
 
 function ResourceService.Start()
 	UseGuards.register("dead", ResourceService.IsDead, "ResourceService") -- S122 Logic/UseBlocks
+	UseGuards.register("combat", ResourceService.InCombat, "ResourceService") -- S150 Logic/UseBlocks (friendJoin)
 	CharacterService.SetSwitchGuard(switchGuard)
 	CharacterService.CharacterEntered:Connect(onEntered)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)

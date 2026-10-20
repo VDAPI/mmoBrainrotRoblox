@@ -392,6 +392,8 @@ Przedmioty **z kowala** mają rzadkość Zwykły i stałe statystyki dopasowane 
 ```
 - S134j: pole `rr = { i, n }` (przemiana premii, §6a): `i` = indeks jedynej linii `bonuses`, którą wolno przemieniać
   (ustawia go pierwsza przemiana), `n` = liczba przemian (koszt). Bez migracji; odczyt tylko `Logic/Reroll.state`.
+- S154: pole `tm` = klucz nałożonego wyglądu (§6b; brak = własny wygląd). Tylko wygląd, bez migracji; odczyt
+  `Logic/Transmog.current` / `displayDef`.
 - `ilvl` = poziom bazowy dropu − 0…2 (losowo, min 1; S32, `Data/LootRules`), nigdy wyżej niż poziom potwora, więc
   drop z potwora na poziomie gracza zawsze da się założyć (wcześniej ±2: 40% za wysoko). Poziom bazowy Elit i Elit II
   to poziom spawnera bez ich dodatkowych poziomów, przycięty do maksimum przedziału jaskini (nic z regionu 1 nie ma
@@ -543,6 +545,30 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
   idą z przedmiotem (handel, poczta, aukcje); przemiana nie zmienia wiązania, blokada sprzedaży jej nie blokuje.
 - **Kamień Przemiany** (sklep Smoczej Waluty, 1 dziennie, związany z kontem): płaci pył jednej próby, złoto zawsze.
 
+## 6b. Wygląd przedmiotu (transmog, kowal, S154)
+
+- Zakładka „Wygląd” w oknie kowala (`BlacksmithWindow/Transmog`, `Logic/Transmog`, remote `TransmogApply`): wygląd
+  jednego przedmiotu nakładany na inny **tego samego typu** (miecz na miecz, tarcza na tarczę). Tylko typy rysowane w
+  dłoni (broń i druga ręka z wyglądem w `Data/WeaponLooks`); zbroja i biżuteria dojdą z warstwami zbroi (S132), bez
+  zmiany kształtu danych.
+- **Klucz wyglądu** (`Transmog.lookOf`): przedmiot z własnym modelem (przedmioty bossów) = jego id, inaczej model progu
+  z `Logic/ArtTiers` (`<typ>_<próg>`), bez modelu jeden wygląd z brył na typ. Dziś: 24 typy, 120 wyglądów progów i 1
+  wygląd z bossa (Rozłupywacz Grimroka); kolejne modele bossów dochodzą same.
+- **Kolekcja konta** (`account.transmog.looks`): wygląd odblokowuje się, gdy przedmiot z nim trafia do plecaka albo
+  ekwipunku którejkolwiek postaci (łup, poczta, handel, aukcja, nagrody, kowal, depozyt); raz na konto skan plecaków,
+  ekwipunku i depozytu wszystkich postaci. Wygląd zostaje po sprzedaży i rozbiciu. Rzadkie wyglądy z bossów tylko przez
+  posiadanie przedmiotu z bossa.
+- **Koszt** (`Config.Transmog`): złoto ilvl × `k(ilvl)` × 1,5 (krzywa złota ulepszania) + esencja według rzadkości
+  przedmiotu, który dostaje wygląd (Unikat 2 pyłu, Heroiczny 1 odłamek, Legendarny i Mityczny 1 kryształ, Zwykły bez).
+  Zdjęcie wyglądu („Przywróć własny”) darmowe; wygląd z bossa bez dopłaty.
+- **Tylko wygląd:** statystyki, typ, rzadkość, poziom, linie, cecha, efekty, żywioł, wiązanie i pula umiejętności
+  broni zostają. W dłoni rysuje się wygląd z kolorem rzadkości i poświatą przedmiotu; w plecaku ikona wyglądu ze
+  znakiem ↺; opis mówi „Wygląd: …” pod poziomem przedmiotu, nazwa zostaje. Kosmetyki `weapon` działają na każdym
+  wyglądzie. Nałożony wygląd wędruje z przedmiotem; kupujący nie dostaje go do kolekcji (kolekcja liczy własny wygląd
+  przedmiotu), może zdjąć go za darmo.
+- Garderoba: zakładka „Wyglądy broni” (przegląd kolekcji według typów, wyglądy z bossów osobno, „Prowadź do kowala”).
+- Premium tylko kosmetyczne: wyglądów nie ma w sklepie Smoczej Waluty (`paywall.spec` 14).
+
 ## 7. Rozbijanie (kowal)
 
 - Przedmiot (niezwiązany lub związany) → materiały (S30): Zwykły: 1–2 Pył; Unikatowy: 2–4 Pył + 25% Odłamek; Heroiczny: 1–3 Odłamki + 20% Kryształ; Legendarny: 1–2 Kryształy + 1 Rdzeń Legendy; Mityczny: 2–3 Kryształy + 2 Rdzenie Legendy. Ulepszenie +N zwraca dodatkowo część materiałów.
@@ -619,6 +645,13 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
   Wilkołaka, Jad Ropuchy, Krucze Pióro, Ektoplazma, Przeklęta Kość), Epickie (60.) z części Spalonych Pustkowi (S93:
   Odłamek Magmy, Jad Ropuchy, Przeklęta Kość, Gruba Skóra, Krucze Pióro), Unikatowe ze składnika linii.
 - Źródła: drop (Elity, bossy), alchemik, questy dzienne. Ikona z licznikiem w HUD.
+- **Premia powrotu** (S153, `Config.Returning`, `Logic/Returning`, `ReturningService`): gracz, który wraca po co
+  najmniej 7 dniach nieobecności, a konto ma postać od 10. poziomu, dostaje raz na 14 dni godzinę gry w świecie z +100
+  pkt `expBonus` (do każdego źródła EXP, dodane do Fortuny: +22 + 100 = +122%). To nie jest błogosławieństwo (nie
+  wypiera go): osobne źródło statystyk „Powrót”, ikona » z minutami obok eliksirów przy portrecie. Czas liczy się tylko
+  w świecie. Poza modelem tempa (wiersze `S153.*` w `docs/BALANS.md` tylko pokazują wartość). Przy wejściu postaci do
+  świata list „Co się zmieniło” (pergamin, raz) z wpisami `Data/Changelog` nowszymi niż ostatnio przeczytany; ponownie
+  z menu gry („Co nowego”).
 
 ## 12. Zbieractwo
 
@@ -952,6 +985,14 @@ nazw obcych) i tabelą własnej drużyny.
   Elicie II nie są pokazani. W trakcie walki nic się nie pokazuje. Po Elicie II i Inwazji mała karta (wyłączana w
   ustawieniach), okno „Ostatnie walki” trzyma 5 ostatnich walk sesji. Elita II, która wróciła na miejsce bez wybicia
   drużyny, nie daje podsumowania.
+- **Znajomi** (S133 lista, S150 „Znajomi 2.0”, `Logic/Presence`, `Logic/FriendJoin`, `FriendService`): przy znajomym widać,
+  gdzie jest: na tym serwerze z mapą, na innym serwerze świata z mapą, poziomem i znacznikiem serwera („Serwer K7QF”;
+  znajomi na tym samym obcym serwerze stoją obok siebie), na serwerze prywatnym, na arenie, na turnieju albo poza grą.
+  „Dołącz” przenosi na serwer znajomego (tylko publiczny serwer świata, z serwera świata, nie w walce, pojedynku,
+  lochu, handlu, turnieju, Krwawym Księżycu ani przy bossie świata; 60 s odnowienia; grupa zostaje; postać staje w
+  swoim zapisanym miejscu). „Zaproś do grupy” na tym serwerze to zwykłe zaproszenie, z innego serwera — okno „Dołącz i
+  wejdź do grupy” u znajomego (60 s). Sekcja „Znajomi z Roblox w grze” (nazwa postaci, „Dołącz”, „Dodaj do znajomych”).
+  Prywatność: „Niewidoczny” (dla wszystkich poza grą, bez powiadomień) i „Kto może do mnie dołączyć: znajomi / nikt”.
 
 ## 18. Handel i ekonomia
 
@@ -1129,6 +1170,14 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   NPC fabuły w krainach (Radomir, duch Oswina, Jorund, Ragna; Brokk, Ghasha, Kaspar; Sigrun, duch Halgrima), kotwice z
   rekwizytami i efektami, pora roku w mieście z postępu fabuły. Postęp zapisany jako ostatni oddany quest
   (`quests.mainLast`), więc nowe questy wstawia się w dowolne miejsce. Przyjęcie od poziomu questa − 2.
+- **Samouczek (S155)**: nowa postać dostaje krótki samouczek z działaniem równolegle z pierwszymi zadaniami fabuły (te
+  bez zmian): ruch, rozmowa z kapitanem i przyjęcie pierwszego zadania, otwarcie plecaka, mikstura (w tym kroku pije się
+  ją także przy pełnym HP), atak potwora (w
+  mieście „idź za strzałką zadania na Łąki”), umiejętność, na końcu „Gotowe” na 6 s. Każdy krok kończy czynność, nie
+  „Dalej”; zrobione wcześniej kroki liczą się z góry. Jedna wskazówka na żelazie przy prawdziwym elemencie HUD (PC:
+  klawisze gracza, telefon: przyciski), do pominięcia w każdej chwili („Pomiń samouczek” → „Na pewno?”). Na 5. poziomie
+  każda nowa postać (także po pominięciu) dostaje tytuł „Pierwsze Kroki”, 3 Kamienie Powrotu i 10 Małych Mikstur Życia,
+  związane, bez EXP i złota (`Data/Tutorial`). Lejek onboardingu: kroki samouczka, zadania fabuły 1–10, 5. poziom.
 - **Zlecenia łowieckie (S99)**: jedno na każdy poziom 1–99 (`Data/Quests/Contracts`, generowane z łowisk): ubij n
   potworów na łowisku otwartej krainy pasującym do poziomu (n 10 → 30 na 1–20, 30 → 60 na 20–99, rotacja łowisk).
   Nagroda 12% EXP poziomu (od 4. poziomu; 1–3 tylko złoto, S109) i złoto 20 + 4·L, co 10. zlecenie błogosławieństwo
@@ -1193,6 +1242,42 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - Bez premium: nagrody nie da się kupić, przyspieszyć ani odnowić. Admin: `/login`, `/loginset <dzień> [przerwa]`,
   `/loginnext [dni]`.
 
+## 20b. Osiągnięcia (S151)
+
+- **Kategorie** (kolejność okna S151b): Walka, Bossowie, Odkrywanie (z kryjówkami Elit II), Rzemiosło, Społeczność i
+  Droga (poziomy, fabuła, zadania poboczne, zlecenia, kosmetyki zdobyte w grze). Ok. 80 osiągnięć, wiele w seriach
+  (następny stopień tego samego licznika z wyższym celem), punkty 5 / 10 / 25 / 50.
+- **Konto / postać:** każdy licznik należy do konta albo do postaci, osiągnięcie ma zakres swojego licznika. Postać:
+  zabójstwa (zwykłe, Elity, Elity II), uniki zapowiedzianych ciosów, PvP, pojedynki, arena, poziom, fabuła, poboczne,
+  zlecenia, mapy, jaskinie, kryjówki, kowal (wytwarzanie, +7, +9, rozbijanie, przemiana), alchemia, zbieractwo, ryby.
+  Konto: bossowie lochów i świata (różni i razem), boss świata, Krwawe Księżyce, Inwazje, pełna drużyna przy bossie,
+  handel, listy, znajomi, gildia, kosmetyki zdobyte w grze.
+- **Cele „wszystkie X”** (krainy, mapy świata, jaskinie, kryjówki, bossowie lochów) liczą się z danych gry: nowa mapa
+  albo kryjówka podnosi cel, zdobyte zostaje zdobyte.
+- **Nagrody:** tytuł (7 nowych, m.in. „Pogromca Praojca”, „Kartograf”, „Mistrz Kuźni”; tytuł osiągnięcia konta widzi
+  każda postać), kosmetyk (5: rama, dwie ramki czatu, efekt awansu, aura; nigdy na sprzedaż ani w ofercie tygodnia),
+  Smocze Odłamki albo trochę złota (tylko Droga i Rzemiosło, najwyżej 5% złota pasma). Dawne tytuły poziomu, fabuły,
+  pojedynków i PvP zostają z dawnymi warunkami.
+- **Smocze Odłamki uczciwie** (DESIGN-17 §0): małe kwoty, jedna wypłata na konto za osiągnięcie (to samo osiągnięcie
+  drugą postacią nie płaci), suma wszystkich nagród w budżecie `Config.Achievements.shardBudget` (500, test), nic za
+  znajomych, handel, listy i rzeczy kupione za Robux. Na wiki nigdy kwota.
+- **Dawne postępy** zalicza się przy każdym wejściu postaci (bez migracji, idempotentnie): poziom, fabuła i bossowie z
+  ukończonych zadań, poboczne, zlecenia, PvP, pojedynki, arena (bieżący i poprzedni sezon), odwiedzone mapy, boss świata
+  (ostatni termin), znajomi, gildia, kosmetyki zdobyte w grze. Jeden zbiorczy komunikat i najwyżej 3 pojedyncze.
+  Liczone od wprowadzenia osiągnięć: zabójstwa, Elity, kryjówki, uniki, kowal, alchemia, zbieractwo, ryby, handel,
+  listy, Krwawe Księżyce, Inwazje.
+- **Powiadomienie:** toast u góry ekranu (nazwa, kategoria, punkty, nagroda; jeden naraz); ustawienie „Powiadomienia o
+  osiągnięciach” wyłączone = wpis w czacie systemowym; „Zobacz” otwiera okno na tym osiągnięciu (S151b).
+- **Okno osiągnięć** (S151b, klawisz `N`, menu HUD i menu gry): u góry punkty i zdobyte z paskiem, przełącznik
+  Wszystkie / Konto / Ta postać i filtr Wszystkie / W trakcie / Zdobyte; kategorie z ikonami (telefon: przewijane
+  zakładki), lista: seria pokazana jako bieżący stopień ze znaczkami stopni, opis z celem, zakres, punkty, pasek
+  postępu, gwiazdka śledzenia; szczegóły: cała seria z celami, nagrodami i datami, „Śledź”, „Ustaw tytuł”, „Otwórz
+  garderobę” (telefon: arkusz). Sekretne przed zdobyciem jako „???”. Odłamki zapłacone inną postacią: „już odebrane na
+  tym koncie”.
+- **Śledzenie** (S151b): do 3 osiągnięć na postać w trackerze HUD pod questami (nazwa, postęp, pasek; klik otwiera
+  okno; telefon pokazuje 1, reszta po rozwinięciu); zdobyte znika samo. Profil gracza: punkty, zdobyte i 3 ostatnie
+  zdobyte (bez postępów w trakcie).
+
 ## 21. Monetyzacja (bez pay-to-win)
 
 - **Smocza Waluta** (Developer Products: 100 / 550 / 1 200 / 2 600 / 7 000).
@@ -1211,6 +1296,44 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   Waluty. Lejki analityki: sklep (otwarcie, zakładka, wybór, okno zakupu, przyznanie) i VIP (okno, okno zakupu,
   aktywacja). Płaszcz Przynęty nie działa też w drabince turnieju. Admin nadaje przepustki i VIP na stałe przez
   `account.grantedPasses` (`/premium`, `/vip grant`).
+
+## 21b. Przepustka sezonu (S152)
+
+- **Sezon** trwa 8 tygodni od poniedziałku 00:00 UTC (sezon 1 „Sezon Szronu” od 2026-11-02) i ma 40 stopni po 1000
+  punktów. Po sezonie przerwa do następnego wpisu w `Data/Seasons` („Następny sezon wkrótce”); nowy sezon = nowe
+  kosmetyki (decyzja właściciela).
+- **Punkty sezonu tylko za zwykłą grę** (konto, wszystkie postacie razem): potwór 2, Elita 10, Elita II 40, boss lochu
+  150, boss świata 200, zadanie fabuły 60, poboczne 40, zlecenie łowieckie 40, zlecenie dzienne 80, tygodniowe (i na
+  bossa) 250, wydarzenie świata 120, Krwawy Księżyc 150, mecz areny 20, osiągnięcie 50. Liczy się też postać na 100.
+  poziomie i zadania bez EXP. Nic kupionego nie daje punktów ani stopni.
+- **Limity:** punkty z potworów (zwykłe i Elity) najwyżej 400 na dzień UTC; limit narastający: do końca tygodnia `w`
+  sezonu konto może mieć najwyżej 6500 × `w` punktów (ponad limit przepadają). Kto nie grał tydzień, ma ten tydzień do
+  nadrobienia później; nikt nie skończy przepustki przed 7. tygodniem.
+- **Nadrabianie:** poniżej linii 60% stopni proporcjonalnie do czasu sezonu każde źródło daje ×1,5 (do linii).
+- **Ścieżki:** darmowa (każdy gracz) z nagrodą co 2 stopnie, premium (kupiona raz na sezon za 800 Smoczych Odłamków,
+  do ostatniej sekundy sezonu) z nagrodą na każdym stopniu; po zakupie odbiera się wstecz wszystkie osiągnięte stopnie
+  premium. Nagrody odbiera się w oknie przez sezon i 14 dni po nim, potem nieodebrane przychodzą pocztą raz.
+- **Co wolno w nagrodach** (`tests/paywall.spec`): kosmetyki (`obtain.season`, nigdy w sprzedaży ani w ofercie
+  tygodnia, zostają na zawsze), związane Kamienie Powrotu i czas Płaszcza Przynęty (jak `lure_1h`). Nigdy EXP, złoto,
+  Smocze Odłamki, materiały, esencja, błogosławieństwa, mikstury ani przedmioty z premiami. Rankingi i arena nie czytają
+  przepustki.
+- **Przepustka a VIP** (dwa niezależne produkty; VIP nie daje przepustki ani szybszych punktów):
+
+| | VIP (S121) | Przepustka sezonu (S152) |
+|---|---|---|
+| Co to jest | subskrypcja Roblox co miesiąc | jednorazowy zakup na jeden sezon (8 tygodni) |
+| Za co | Robux (subskrypcja) | Smocze Odłamki, raz na sezon na konto |
+| Co daje | stałe udogodnienia, dopóki płacisz (odłamki dziennie, darmowy powrót i odrodzenie, kosmetyk miesiąca, aukcja) | nic samo z siebie: odblokowuje drugą ścieżkę nagród do wygrania grą |
+| Zależy od gry | nie | tak (bez punktów nie ma stopni ani nagród) |
+| Po końcu | korzyści gasną z subskrypcją | zdobyte kosmetyki zostają; nowy sezon = nowa przepustka |
+| Ścieżka darmowa | — | każdy gracz, bez płacenia |
+
+- **Tempo (model `Balance.seasonPace`):** 1 h dziennie kończy przepustkę w 8. tygodniu, 2 h dziennie w 7. (limit),
+  start w 5. tygodniu przy 2 h dziennie daje ok. 35 stopni; potwory to ok. 27% punktów.
+- **Okno (S152b):** pergamin, klawisz C, ❖ pod ✧ na HUD (kropka „!”, gdy jest co odebrać), menu gry; nagłówek z czasem
+  do końca, stopniem, paskiem stopnia i limitem; PC pas kolumn stopni (darmowa nad premium), telefon lista stopni;
+  „Odbierz wszystko”, „Odblokuj premium” (potwierdzenie jak w sklepie), zakładka „Jak zdobywać punkty”; karta w sklepie
+  nad VIP ze zdaniem „a VIP”. Strona wiki czeka na odświeżenie wiki.
 
 ## 22. Kosmetyki i pety
 

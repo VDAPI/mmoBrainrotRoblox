@@ -164,6 +164,12 @@ local STARTER_PACKS: { StarterPack } = {
 	},
 }
 
+-- S152 (docs/DESIGN.md §21b): the premium track of the running season pass, bought once per season and account for
+-- Dragon Shards (no Robux product of its own: shards are bought in packs). It gives nothing by itself: the rewards of
+-- the premium track are won with season points (Logic/Season); never stats, EXP, gold, shards or tiers.
+export type SeasonPass = { key: string, price: number }
+local SEASON_PASS: SeasonPass = { key = "season_pass", price = 800 }
+
 local packByKey: { [string]: ShardPack } = {}
 for _, pack in SHARD_PACKS do
 	packByKey[pack.key] = pack
@@ -206,6 +212,7 @@ return table.freeze({
 	shopCats = SHOP_CATS,
 	mounts = MOUNTS,
 	starterPacks = STARTER_PACKS, -- S123
+	seasonPass = SEASON_PASS, -- S152
 	getPack = function(key: string): ShardPack?
 		return packByKey[key]
 	end,

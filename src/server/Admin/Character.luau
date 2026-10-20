@@ -19,6 +19,7 @@ local LuckData = require(Shared.Data.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
 local Time = require(Shared.Logic.Time)
 local TitleData = require(Shared.Data.Titles)
+local Tutorial = require(Shared.Logic.Tutorial)
 local UseBlocks = require(Shared.Logic.UseBlocks)
 
 local UseGuards = require(script.Parent.Parent.UseGuards)
@@ -588,6 +589,167 @@ commands.luck = function(player)
 			end
 		end
 		reply(player, "admin.luck.variety", { pct = PartyBonus.variety(classes), classes = count })
+	end)
+end
+
+-- S151: /ach list [player] | give <id> [player] | reset <id|all> [player] | counter <counter> <value> [player] |
+-- backfill [player]: achievements of the caller or of a named player (AchievementService). Reset keeps paid shards.
+commands.ach = function(player, args)
+	local AchievementService = Context.services.AchievementService
+	local action = args[1]
+	-- the player is the argument after the action's own ones
+	local own = if action == "list" or action == "backfill" then 0 elseif action == "counter" then 2 else 1
+	local name = args[2 + own]
+	local target = player
+	if name and name ~= "" then
+		local found = Context.services.AdminService.FindPlayer(name)
+		if not found then
+			reply(player, "admin.player.none")
+			return
+		end
+		target = found
+	end
+	if not PlayerStateService.GetCharacter(target) then
+		reply(player, "admin.player.none")
+		return
+	end
+	if action == "list" then
+		local lines = AchievementService.List(target) or {}
+		local done = 0
+		for _, line in lines do
+			if string.find(line, "✓", 1, true) then
+				done += 1
+			end
+		end
+		for _, line in lines do
+			reply(player, "admin.ach.line", { line = line })
+		end
+		reply(player, "admin.ach.summary", { name = target.Name, done = done, total = #lines })
+	elseif action == "give" then
+		local id = args[2] or ""
+		if AchievementService.Give(target, id) then
+			reply(player, "admin.ach.given", { id = id, name = target.Name })
+		else
+			reply(player, "admin.ach.notGiven", { id = id })
+		end
+	elseif action == "reset" then
+		local n = AchievementService.Reset(target, args[2] or "")
+		if n == nil then
+			reply(player, "admin.ach.notGiven", { id = args[2] or "" })
+		else
+			reply(player, "admin.ach.reset", { n = n, name = target.Name })
+		end
+	elseif action == "counter" then
+		local counter = args[2] or ""
+		local value = tonumber(args[3])
+		if value and AchievementService.SetCounter(target, counter, value) then
+			reply(player, "admin.ach.counter", { counter = counter, value = math.floor(value), name = target.Name })
+		else
+			reply(player, "admin.ach.badCounter", { counter = counter })
+		end
+	elseif action == "backfill" then
+		reply(player, "admin.ach.backfill", { n = AchievementService.Backfill(target), name = target.Name })
+	else
+		reply(player, "admin.usage.ach")
+	end
+end
+
+-- S153: the caller's returning bonus and "What has changed" letter (account.returning, account.stats.lastSeen).
+-- info | grant [seconds] | clear | away <days> (the check now as after `days` away) | letter (the letter again)
+commands.returning = function(player, args)
+	local ReturningService = Context.services.ReturningService
+	local action, value = args[1], tonumber(args[2])
+	if action == "info" then
+		local info = ReturningService.Info(player)
+		if not info then
+			reply(player, "admin.usage.returning")
+			return
+		end
+		local now = Clock.now()
+		reply(player, "admin.returning.info", {
+			left = math.ceil(info.left / 60),
+			bonus = info.bonus,
+			days = if info.lastSeen > 0 then string.format("%.1f", (now - info.lastSeen) / 86400) else "-",
+			since = if info.at > 0 then string.format("%.1f", (now - info.at) / 86400) else "-",
+			seen = info.seen,
+			level = info.maxLevel,
+		})
+	elseif action == "grant" then
+		local seconds = if value and value > 0 then math.floor(value) else nil
+		if ReturningService.Grant(player, seconds) then
+			reply(player, "admin.returning.granted")
+		else
+			reply(player, "admin.usage.returning")
+		end
+	elseif action == "clear" then
+		if ReturningService.Clear(player) then
+			reply(player, "admin.returning.cleared")
+		else
+			reply(player, "admin.usage.returning")
+		end
+	elseif action == "away" then
+		if not value or value < 0 then
+			reply(player, "admin.usage.returning")
+			return
+		end
+		local granted = ReturningService.Away(player, value)
+		if granted == nil then
+			reply(player, "admin.usage.returning")
+		else
+			reply(player, if granted then "admin.returning.granted" else "admin.returning.notGranted")
+		end
+	elseif action == "letter" then
+		if ReturningService.ResetLetter(player) then
+			reply(player, "admin.returning.letter")
+		else
+			reply(player, "admin.usage.returning")
+		end
+	else
+		reply(player, "admin.usage.returning")
+	end
+end
+
+-- S155: the caller's hands-on tutorial (character.tutorial, Logic/Tutorial).
+-- info | reset (step 1, the reward waits again) | step <id> | done
+commands.tutorial = function(player, args)
+	local TutorialService = Context.services.TutorialService
+	local action = args[1]
+	withCharacter(player, function()
+		if action == "info" then
+			local state = TutorialService.Info(player)
+			if not state then
+				reply(player, "admin.usage.tutorial")
+				return
+			end
+			local pending = {}
+			for id in state.pending or {} do
+				table.insert(pending, id)
+			end
+			table.sort(pending)
+			local current = Tutorial.STEPS[state.step]
+			reply(player, "admin.tutorial.info", {
+				step = state.step,
+				id = if current then current.id else "-",
+				done = tostring(state.done),
+				skipped = tostring(state.skipped),
+				reward = tostring(state.reward),
+				pending = if #pending > 0 then table.concat(pending, ", ") else "-",
+			})
+		elseif action == "reset" then
+			TutorialService.Reset(player)
+			reply(player, "admin.tutorial.reset")
+		elseif action == "step" then
+			if TutorialService.SetStep(player, args[2] or "") then
+				reply(player, "admin.tutorial.step", { id = args[2] })
+			else
+				reply(player, "admin.usage.tutorial")
+			end
+		elseif action == "done" then
+			TutorialService.Finish(player)
+			reply(player, "admin.tutorial.done")
+		else
+			reply(player, "admin.usage.tutorial")
+		end
 	end)
 end
 

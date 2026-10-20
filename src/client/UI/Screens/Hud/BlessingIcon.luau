@@ -1,6 +1,8 @@
 --!strict
 -- Resistance elixirs (DESIGN §10) next to the portrait: icon with the time left (real time, Util/Clock) and a
 -- tooltip with the stat. The active blessing sits next to the character name since S29 (Hud/BlessingBadge).
+-- S153: the returning bonus first in the row (»: minutes of play left from account.returning, counted down by the
+-- server only in the world, so the caption is whole minutes, not a clock).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -8,10 +10,12 @@ local RunService = game:GetService("RunService")
 local BlessingBadge = require(script.Parent.BlessingBadge)
 local Blessings = require(ReplicatedStorage.Shared.Data.Blessings)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.Parent.Parent.IconState)
 local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
+local Returning = require(ReplicatedStorage.Shared.Logic.Returning)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -31,7 +35,8 @@ local function icon(
 	color: Color3,
 	left: Fusion.UsedAs<number>,
 	tooltip: Fusion.UsedAs<string>,
-	itemId: string?
+	itemId: string?,
+	caption: Fusion.UsedAs<string>?
 ): Instance
 	-- S35: the item's picture (elixir bottle) while the atlases are loaded, otherwise the glyph.
 	local def = if itemId then Items.get(itemId) else nil
@@ -72,7 +77,7 @@ local function icon(
 				Position = UDim2.fromOffset(-8, SIZE),
 				Size = UDim2.fromOffset(SIZE + 16, 16),
 				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
+				Text = caption or scope:Computed(function(use): string
 					return Time.format(use(left))
 				end),
 				FontFace = Theme.Fonts.BodyBold,
@@ -98,6 +103,30 @@ local function BlessingIcon(scope: Scope, position: UDim2): Instance
 				accumulator = 0
 				now:set(Clock.now())
 			end
+		end)
+	)
+
+	-- S153: the returning bonus (seconds of play left; the server writes them every 30 s)
+	local returning = State.Value({ "account", "returning" })
+	local bonusLeft = scope:Computed(function(use): number
+		local raw = use(returning)
+		return if raw == nil then 0 else Returning.sanitize(raw).left
+	end)
+	local bonusMinutes = scope:Computed(function(use): number
+		return math.ceil(use(bonusLeft) / 60)
+	end)
+	local bonus = icon(
+		scope,
+		0,
+		"»",
+		Theme.Brass.Bright,
+		bonusLeft,
+		scope:Computed(function(use): string
+			return Text.get(use, "returning.tooltip", { pct = Config.Returning.expBonus, min = use(bonusMinutes) })
+		end),
+		nil,
+		scope:Computed(function(use): string
+			return Text.get(use, "returning.minutes", { min = use(bonusMinutes) })
 		end)
 	)
 
@@ -141,6 +170,7 @@ local function BlessingIcon(scope: Scope, position: UDim2): Instance
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				Padding = UDim.new(0, 8),
 			}),
+			bonus,
 			icons :: any,
 		},
 	})

@@ -17,7 +17,8 @@
 -- the falcon's strike),
 -- mob.<family>.<attack|hurt|death|aggro>, boss.<bossId>.<roar|attack|death|phase>, telegraph.warn,
 -- boss.mechanic.<mark|split|channel> (S134),
--- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error|lowHp>, S149b ui.worldboss.<spawn|victory>.
+-- ui.<loot|loot.rare|loot.legendary|levelup|quest|coin|click|error|lowHp>, S149b ui.worldboss.<spawn|victory>,
+-- S151 ui.achievement.
 -- S112-S117 call sounds by these keys.
 
 local Bosses = require("./Bosses")
@@ -178,6 +179,8 @@ local defs: { [string]: Def } = {
 	-- owner picks ids (docs/ASSETS.md)
 	["ui.worldboss.spawn"] = d("deep war horn blast distant giant awakening", 0.7, 0, { ui = true, pitch = FLAT }),
 	["ui.worldboss.victory"] = d("epic victory fanfare choir short", 0.7, 0, { ui = true, pitch = FLAT }),
+	-- S151: an achievement done (Hud/AchievementToast); silent until the owner picks an id (docs/ASSETS.md)
+	["ui.achievement"] = d("achievement unlocked bright chime short", 0.6, 0, { ui = true, pitch = FLAT }),
 }
 
 -- Own skill keys of the sample (hints by what the skill does).

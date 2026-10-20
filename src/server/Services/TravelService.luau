@@ -19,6 +19,7 @@ local AreaAdvice = require(Shared.Logic.AreaAdvice)
 local Areas = require(Shared.Data.Areas)
 local Config = require(Shared.Config)
 local Items = require(Shared.Data.Items)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Maps = require(Shared.Data.Maps)
 local Mounts = require(Shared.Logic.Mounts)
 local Net = require(Shared.Net)
@@ -212,6 +213,7 @@ function TravelService.MarkVisited(player: Player, mapId: string)
 	local char = PlayerStateService.GetCharacter(player)
 	if char and not (char.visitedMaps or {})[mapId] then
 		PlayerStateService.Set(player, { "character", "visitedMaps", mapId }, true)
+		QuestEvents.fire(player, "visit", { mapId = mapId }) -- S151: the first visit (achievements)
 	end
 end
 

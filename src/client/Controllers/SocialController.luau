@@ -4,12 +4,17 @@
 -- (right side, map-local, 5 s per line).
 -- S133: friend requests (the same popup), whispers by character name (the private channel of the pair, opened by the
 -- server, becomes the chat target), letters ("write to"), friends and ignored players (confirmations, the friends
--- window with statuses read every Config.Social.statusRefresh while it is open).
+-- window).
+-- S150: the friends window sends FriendsWatch while it is open (the server publishes the runtime branch `friends`) and
+-- every Config.Friends.hintEvery the user ids of Roblox friends this client sees in this game
+-- (Player:GetFriendsOnlineAsync, client only); "Join" (FriendJoin), party invitations to another server
+-- (FriendPartyInvite) and their popup ("Join and enter the party", FriendPartyRespond).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
 
+local ActionMenu = require(script.Parent.Parent.UI.Components.ActionMenu)
 local Button = require(script.Parent.Parent.UI.Components.Button)
 local Config = require(ReplicatedStorage.Shared.Config)
 local FriendsWindow = require(script.Parent.Parent.UI.Screens.FriendsWindow)
@@ -38,11 +43,12 @@ local FEED_MAX = 5
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
 
-type InviteKind = "duel" | "trade" | "guild" | "friend"
+type InviteKind = "duel" | "trade" | "guild" | "friend" | "friendParty"
 type Invite = { kind: InviteKind, from: string, left: number, guild: string? }
 local invite = scope:Value(nil :: Invite?)
 local feed = scope:Value({} :: { { text: string, at: number } })
-local friendStatus = scope:Value({} :: { [string]: any }) -- S133: FriendsStatus while the friends window is open
+local sheetScope: Fusion.Scope<typeof(Fusion)>? = nil -- S150: the "..." action sheet of a friend row
+local UIController: any
 
 local function invoke(name: string, ...: any): boolean
 	local ok, err = Net.Invoke(name, ...)
@@ -227,6 +233,89 @@ function SocialController.InviteParty(userId: number, name: string)
 	end)
 end
 
+-- S150 ------------------------------------------------------------------------------------------------------------
+
+-- Moves to the friend's server (the server checks everything; a teleport ends this client).
+function SocialController.Join(userId: number)
+	task.spawn(invoke, "FriendJoin", userId)
+end
+
+-- Invite to party: the S133 invitation on this server, an invitation through the topic on another one.
+function SocialController.InviteFriendParty(userId: number, name: string, here: boolean)
+	if here then
+		SocialController.InviteParty(userId, name)
+		return
+	end
+	task.spawn(function()
+		if invoke("FriendPartyInvite", userId) then
+			Toast.push(Text.now("friends.party.sent", { name = name }), "success")
+		end
+	end)
+end
+
+local function closeSheet()
+	local s = sheetScope
+	sheetScope = nil
+	if s then
+		s:doCleanup()
+	end
+end
+
+-- The "..." action sheet of a friend row: the enabled entries as buttons.
+function SocialController.Sheet(title: string, entries: { any }, run: (id: string) -> ())
+	closeSheet()
+	local options: { ActionMenu.Option } = {}
+	for _, entry in entries do
+		table.insert(options, {
+			label = Text.now(entry.labelKey),
+			variant = if entry.id == "remove" or entry.id == "ignore" then "danger" else "secondary",
+			run = function()
+				run(entry.id)
+			end,
+		})
+	end
+	if #options == 0 then
+		return
+	end
+	local s = scope:innerScope()
+	sheetScope = s
+	ActionMenu(s, {
+		Title = title,
+		Options = options,
+		CancelText = Text.now("common.cancel"),
+		Close = closeSheet,
+	}).Parent =
+		UIController.GetLayer("Modals")
+end
+
+-- The user ids of Roblox friends in this game (client API with a 30 s cache), at most Config.Friends.robloxHint.
+local function robloxFriendsHere(): { number }
+	local player: any = Players.LocalPlayer
+	local ok, list = pcall(function()
+		return player:GetFriendsOnlineAsync(Config.Friends.robloxMax)
+	end)
+	if not ok then
+		ok, list = pcall(function()
+			return player:GetFriendsOnline(Config.Friends.robloxMax)
+		end)
+	end
+	local out: { number } = {}
+	if not ok or type(list) ~= "table" then
+		return out
+	end
+	for _, friend in list do
+		if
+			type(friend) == "table"
+			and friend.PlaceId == game.PlaceId
+			and type(friend.VisitorId) == "number"
+			and #out < Config.Friends.robloxHint
+		then
+			table.insert(out, friend.VisitorId)
+		end
+	end
+	return out
+end
+
 local function respond(accept: boolean)
 	local current = Fusion.peek(invite)
 	invite:set(nil)
@@ -235,6 +324,7 @@ local function respond(accept: boolean)
 			then "DuelRespond"
 			elseif current.kind == "guild" then "GuildRespond"
 			elseif current.kind == "friend" then "FriendRespond"
+			elseif current.kind == "friendParty" then "FriendPartyRespond"
 			else "TradeRespond"
 		task.spawn(invoke, remote, accept)
 	end
@@ -288,6 +378,7 @@ local function invitePopup(): Instance
 						then "duel.invited"
 						elseif i.kind == "guild" then "guild.invited"
 						elseif i.kind == "friend" then "social.friendInvited"
+						elseif i.kind == "friendParty" then "friends.party.invited"
 						else "trade.invited"
 					return Text.get(use, key, { name = i.from, seconds = i.left, guild = i.guild or "" })
 				end),
@@ -300,7 +391,13 @@ local function invitePopup(): Instance
 				Position = UDim2.new(0, 16, 1, -62),
 				Size = UDim2.new(0.5, -24, 0, 50),
 				Variant = "primary",
-				Text = Text.T(scope, "party.accept"),
+				Text = scope:Computed(function(use): string
+					local i = use(invite)
+					return Text.get(
+						use,
+						if i and i.kind == "friendParty" then "friends.party.accept" else "party.accept"
+					)
+				end),
 				OnClick = function()
 					respond(true)
 				end,
@@ -310,7 +407,13 @@ local function invitePopup(): Instance
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.new(1, -16, 1, -62),
 				Size = UDim2.new(0.5, -24, 0, 50),
-				Text = Text.T(scope, "party.decline"),
+				Text = scope:Computed(function(use): string
+					local i = use(invite)
+					return Text.get(
+						use,
+						if i and i.kind == "friendParty" then "friends.party.decline" else "party.decline"
+					)
+				end),
 				OnClick = function()
 					respond(false)
 				end,
@@ -363,7 +466,7 @@ end
 
 function SocialController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
-	local UIController = registry.Get("UIController")
+	UIController = registry.Get("UIController")
 	WindowManager.Register({
 		id = "trade",
 		titleKey = "window.trade.title",
@@ -378,14 +481,20 @@ function SocialController.Init(registry)
 		hotkey = Enum.KeyCode.Y, -- a fallback: WindowManager follows the win_friends action
 		build = function(s)
 			return FriendsWindow(s, {
-				Status = friendStatus,
 				Actions = {
+					Join = SocialController.Join,
+					Party = SocialController.InviteFriendParty,
 					Whisper = SocialController.Whisper,
 					Mail = SocialController.ComposeTo,
-					Party = SocialController.InviteParty,
 					Remove = SocialController.RemoveFriend,
+					Ignore = SocialController.Ignore,
+					AddFriend = SocialController.AddFriend,
 					Unignore = SocialController.Unignore,
 					IgnoreName = SocialController.IgnoreByName,
+					Sheet = SocialController.Sheet,
+					Setting = function(name: string, value: any)
+						Net.Send("SetSetting", name, value)
+					end,
 				},
 			})
 		end,
@@ -419,22 +528,27 @@ function SocialController.Start()
 	Net.On("WhisperFailed", function(err: string, name: string)
 		failed(err, name)
 	end)
-	-- The friends window reads the statuses when it opens and every Config.Social.statusRefresh while open.
+	-- S150: party invitations from another server
+	Net.On("FriendPartyInvited", function(from: string, _level: number, _class: string, seconds: number)
+		showInvite("friendParty", from, seconds)
+	end)
+	-- S150: the server publishes `friends` while the window is open; the client adds the Roblox friends it sees here.
 	local friendsOpen = WindowManager.IsOpen("friends")
+	scope:Observer(friendsOpen):onChange(function()
+		local open = Fusion.peek(friendsOpen)
+		Net.Send("FriendsWatch", open)
+		if not open then
+			closeSheet()
+		end
+	end)
 	task.spawn(function()
 		local last = -math.huge
-		local wasOpen = false
 		while true do
-			task.wait(0.5)
-			local open = Fusion.peek(friendsOpen)
-			if open and (not wasOpen or os.clock() - last >= Config.Social.statusRefresh) then
+			task.wait(1)
+			if Fusion.peek(friendsOpen) and os.clock() - last >= Config.Friends.hintEvery then
 				last = os.clock()
-				local ok, _, result = Net.Invoke("FriendsStatus")
-				if ok and type(result) == "table" then
-					friendStatus:set(result)
-				end
+				Net.Send("FriendsRobloxHint", robloxFriendsHere())
 			end
-			wasOpen = open
 		end
 	end)
 	Net.On("KillFeed", function(killer: string, victim: string)

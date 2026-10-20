@@ -16,6 +16,7 @@ local parseAmount = Context.parseAmount
 local GuildService = Context.services.GuildService
 local LeaderboardService = Context.services.LeaderboardService
 local SocialService = Context.services.SocialService -- S133
+local FriendService = Context.services.FriendService -- S150
 local AdminService = Context.services.AdminService
 
 local commands: { [string]: (player: Player, args: { string }) -> ...any } = {}
@@ -30,6 +31,46 @@ commands.social = function(player, args)
 	local friends, ignored = SocialService.Describe(target)
 	reply(player, "admin.social.list", { name = target.Name, friends = friends, ignored = ignored })
 	return true
+end
+
+-- S150: /presence <player | userId>: the raw presence entry, its status from this server and its age.
+commands.presence = function(player, args)
+	local who = args[1] or ""
+	local target = AdminService.FindPlayer(who)
+	local userId = if target then target.UserId else tonumber(who)
+	if not userId then
+		reply(player, "admin.player.none")
+		return false, "admin.player.none"
+	end
+	local status, line = FriendService.Describe(userId)
+	reply(player, "admin.presence.line", { id = userId, status = status, entry = line or "-" })
+	return true
+end
+
+-- S150: /friends budget: read tokens, reads in the last minute, cache hits, refused reads, mode and watchers.
+commands.friends = function(player, _args)
+	local stats, mode, watching = FriendService.Budget()
+	reply(player, "admin.friends.budget", {
+		tokens = stats.tokens,
+		reads = stats.reads,
+		hits = stats.hits,
+		denied = stats.denied,
+		mode = mode,
+		watching = watching,
+	})
+	return true
+end
+
+-- S150: /friendinvite <player>: a party invitation from the caller to the player through the topic.
+commands.friendinvite = function(player, args)
+	local target = AdminService.FindPlayer(args[1] or "")
+	if not target then
+		reply(player, "admin.player.none")
+		return false, "admin.player.none"
+	end
+	local ok = FriendService.TestInvite(player, target)
+	reply(player, if ok then "admin.friendinvite.sent" else "admin.friendinvite.failed", { name = target.Name })
+	return ok
 end
 
 -- S125: the guild board entry of the player's guild.

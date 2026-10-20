@@ -11,6 +11,7 @@ local Shared = ReplicatedStorage.Shared
 local Bus = require(script.Parent.Bus)
 local Guild = require(Shared.Logic.Guild)
 local Net = require(Shared.Net)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Store = require(script.Parent.Store)
 local Types = require(Shared.Types)
 
@@ -53,6 +54,9 @@ end
 function Runtime.setGuildId(player: Player, id: string?)
 	if PlayerStateService.HasState(player) and Runtime.character(player) then
 		PlayerStateService.Set(player, { "character", "guildId" }, id)
+		if id ~= nil then
+			QuestEvents.fire(player, "social", { guild = true }) -- S151: in a guild (achievements)
+		end
 	end
 end
 

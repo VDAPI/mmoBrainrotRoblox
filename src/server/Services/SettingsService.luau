@@ -102,12 +102,27 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	friendAlerts = function(value)
 		return type(value) == "boolean"
 	end,
+	-- S150: appear offline; who may join my server (FriendService reads both when it writes the presence entry).
+	appearOffline = function(value)
+		return type(value) == "boolean"
+	end,
+	friendJoin = function(value)
+		return value == "friends" or value == "none"
+	end,
 	-- S134f: the low health warning and the after-fight card.
 	lowHpWarn = function(value)
 		return type(value) == "boolean"
 	end,
 	fightCard = function(value)
 		return type(value) == "boolean"
+	end,
+	-- S151: achievement toasts (off: one line in the system chat)
+	achToasts = function(value)
+		return type(value) == "boolean"
+	end,
+	-- S151b: the one-time tracking hint of the achievements window was shown (only ever set to true)
+	achHint = function(value)
+		return value == true
 	end,
 	-- S30 ladder: hide below Unique (2) or Heroic (3); Legendary+ is always shown.
 	lootHideBelow = function(value)
@@ -160,13 +175,6 @@ function SettingsService.Start()
 			PlayerStateService.Set(player, { "account", "settings", "qualityPicked" }, true)
 		end
 		PlayerStateService.Set(player, { "account", "settings", name }, value)
-	end)
-
-	-- The HUD guide of a new character was finished or skipped.
-	Net.On("GuideDone", function(player: Player)
-		if PlayerStateService.GetCharacter(player) then
-			PlayerStateService.Set(player, { "character", "guideDone" }, true)
-		end
 	end)
 
 	-- S17: rebinding. action "*" restores every default; key nil restores one. Keys in use swap.

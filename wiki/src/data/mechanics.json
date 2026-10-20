@@ -21,6 +21,8 @@
     {"group":"windows","id":"win_rankings","key":"R","name":{"en":"Rankings","pl":"Rankingi"}},
     {"group":"windows","id":"win_arena","key":"U","name":{"en":"Arena","pl":"Arena"}},
     {"group":"windows","id":"win_friends","key":"Y","name":{"en":"Friends","pl":"Znajomi"}},
+    {"group":"windows","id":"win_achievements","key":"N","name":{"en":"Achievements","pl":"Osiągnięcia"}},
+    {"group":"windows","id":"win_season","key":"C","name":{"en":"Season pass","pl":"Przepustka sezonu"}},
     {"group":"windows","id":"item_details","key":"Alt","name":{"en":"Item details","pl":"Szczegóły opisu przedmiotu"}},
     {"group":"combat","id":"skill_1","key":"1","name":{"en":"Skill 1","pl":"Umiejętność 1"}},
     {"group":"combat","id":"skill_2","key":"2","name":{"en":"Skill 2","pl":"Umiejętność 2"}},

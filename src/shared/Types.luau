@@ -39,6 +39,9 @@ export type ItemInstance = {
 	-- S134k: bought for Hunter's Marks (the Huntmaster's shop): merchants pay nothing for it (ItemValue.canSell), it
 	-- stacks only with the same (Inventory.canMerge)
 	ns: boolean?,
+	-- S154: the look worn (Logic/Transmog key; absent = the item's own look). Only the look: read through
+	-- Transmog.current / displayDef, never by stats, requirements or the weapon pool
+	tm: string?,
 }
 
 export type Stats = { str: number, dex: number, int: number, vit: number }
@@ -85,6 +88,16 @@ export type MountState = { owned: { [string]: { lvl: number } }, active: string?
 
 -- S125: the character's weekly EXP (Logic/Leaderboard.addWeekly).
 export type ExpWeek = { week: number, exp: number, b: number }
+
+-- S155: the hands-on tutorial (Logic/Tutorial): the current step (1-based), finished, skipped, the level reward taken,
+-- and the later steps already done (counted when their turn comes).
+export type TutorialState = {
+	step: number,
+	done: boolean,
+	skipped: boolean,
+	reward: boolean,
+	pending: { [string]: boolean }?,
+}
 
 -- S129: the character's Blood Moon (Logic/BloodMoon): the occurrence id ("" = none), points, kills per victim key
 -- ("<userId>_<slot>"), points per region, the time of the last point (ranking tie-break) and whether it was settled.
@@ -226,7 +239,10 @@ export type CharacterData = {
 	-- S130: the Champion's Tournament (no migration, reconcile)
 	tourney: TourneyState,
 	auctions: { [string]: boolean }, -- S13: ids of this character's auction listings
-	guideDone: boolean, -- S14: the HUD guide was shown (or skipped)
+	guideDone: boolean, -- S14: the HUD guide was shown (or skipped). S155: legacy, read by nothing
+	-- S155: the hands-on tutorial (Logic/Tutorial.State: step, done, skipped, reward, pending?); characters made before
+	-- S155 have done = true and reward = true (AccountSchema), CharacterFactory starts new ones at step 1
+	tutorial: TutorialState,
 	playerMenuHint: boolean, -- S133: the one-time "Actions" hint after selecting another player was shown
 	mailSent: { day: number, n: number }, -- S133: letters to players sent on UTC day `day` (Logic/Social)
 	title: string?, -- S16 chosen title id; S59: nil = never chose (the main path title shows), Data/Titles.NONE = hidden
@@ -242,6 +258,7 @@ export type CharacterData = {
 	-- S96: owned mounts (lvl 1..Config.Mount.maxLevel), the chosen one and whether riding now (never survives a
 	-- logout; MountService clears it)
 	mounts: MountState,
+	ach: AchBranch, -- S151: achievement counters, sets and done achievements of the character (Logic/Achievements)
 	createdAt: number,
 	playtime: number,
 	-- S20: last items picked up (newest first, max 50) and Elite II respawn timers.
@@ -406,6 +423,10 @@ export type Settings = {
 	lowHpWarn: boolean, -- S134f: low health vignette and heartbeat (Hud/LowHpVignette)
 	fightCard: boolean, -- S134f: the after-fight card (FightCard; the fight log window stays)
 	cameraMode: string, -- W01: "free" | "top" (CameraController)
+	appearOffline: boolean, -- S150: no presence entry: friends see "offline", no "is in the game" toast
+	friendJoin: string, -- S150: "friends" | "none": who may join this player's server and invite from another one
+	achToasts: boolean, -- S151: achievement toasts (false: one line in the system chat instead)
+	achHint: boolean, -- S151b: the one-time tracking hint of the achievements window was shown
 }
 
 -- S133: a friend or an ignored player (account.social, key tostring(userId)): the character name at the time, the class
@@ -423,9 +444,37 @@ export type VipState = {
 	months: { [string]: boolean },
 }
 
+-- S152 (docs/DESIGN.md §21b): the season pass of the account (Logic/Season): the season id ("" = none), its points,
+-- the UTC day of `dayKill` (monster points that day), the premium track bought, the claimed tiers of both tracks
+-- (tostring(tier) -> true: a data store cannot hold a sparse array) and the seasons whose unclaimed rewards were mailed.
+-- S153: Logic/Returning.State (seconds of bonus play left, os.time of the last grant, last Data/Changelog id read)
+export type ReturningState = { left: number, at: number, seen: number }
+
+export type SeasonState = {
+	id: string,
+	points: number,
+	day: number,
+	dayKill: number,
+	premium: boolean,
+	free: { [string]: boolean },
+	prem: { [string]: boolean },
+	mailed: { [string]: boolean },
+}
+
 -- S121: a saved look: the equipped cosmetic per kind (without "pet") and the pet. S132: `class` = the class it was
 -- saved on (the class outfit is in equipped.outfit; Logic/Premium.applySet).
 export type Outfit = { equipped: { [string]: string }, pet: string?, class: string? }
+
+-- S151: achievements of the account or of a character (Logic/Achievements): counters, sets of distinct ids, done
+-- achievements (id -> os.time) and, on the account, the achievements whose Dragon Shards were paid.
+export type AchBranch = {
+	c: { [string]: number },
+	s: { [string]: { [string]: boolean } },
+	done: { [string]: number },
+	paid: { [string]: boolean }?,
+	track: { string }?, -- S151b: the character's achievements followed in the HUD tracker
+	paidHere: { [string]: boolean }?, -- S151b: the character achievements whose Dragon Shards this character received
+}
 
 export type AccountData = {
 	schema: number,
@@ -456,10 +505,19 @@ export type AccountData = {
 	autoGrind: { bank: number, day: number, used: number },
 	packs: { [string]: boolean }, -- S123: starter packs bought (key -> true), once per account
 	grantedPasses: { [string]: boolean }, -- S123: passes granted by a starter pack (MonetizationService.HasPass)
-	stats: { createdAt: number, playtime: number },
+	-- S153: lastSeen = os.time the account was last in the game (Logic/Returning; 0 = before S153, reconcile)
+	stats: { createdAt: number, playtime: number, lastSeen: number },
 	redeemed: { [string]: number }, -- S17: reward code -> os.time() of redemption
 	social: SocialData, -- S133: friends and ignored players (Logic/Social; reconcile adds it, no migration)
 	legendRework: boolean, -- S134g: Legendary / Mythic items got skill effects (migration 10); the toast shows once
+	ach: AchBranch, -- S151: account achievement counters, sets, done achievements and paid shards (Logic/Achievements)
+	season: SeasonState, -- S152: the season pass (Logic/Season; reconcile adds it, no migration)
+	-- S152: the previous season during its grace days (unclaimed rewards; mailed once after them), nil otherwise
+	seasonPrev: SeasonState?,
+	-- S153: the returning player's bonus and the last "What has changed" entry read (Logic/Returning; reconcile)
+	returning: ReturningState,
+	-- S154: the collection of item looks (Logic/Transmog; read through Transmog.sanitize; reconcile, no migration)
+	transmog: { looks: { [string]: boolean }, scanned: boolean },
 }
 
 -- Character summary shown on the selection screen.

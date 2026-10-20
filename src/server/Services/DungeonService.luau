@@ -111,6 +111,7 @@ local CosmeticService: any
 local FightLogService: any
 local Registry: any
 local PathService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 
 -- Lazy: PathService depends on this service (NearAnyEntrance), so a Deps entry here would be a cycle. Never call
 -- during Init.
@@ -330,7 +331,9 @@ local function reward(run: Run, position: Vector3): { [Player]: { any } }
 			-- would (Exp.bossExpFor); the helpers of the shield waves are ordinary kills (CombatService)
 			local exp = math.floor(Exp.bossExpFor(char.level, def.level, expShares[i]) + 0.5)
 			LevelService.GiveExp(player, exp, "boss")
-			QuestEvents.fire(player, "boss", { bossId = def.id })
+			-- S151: `party` = the winners present (achievements: a won fight in a full party)
+			QuestEvents.fire(player, "boss", { bossId = def.id, party = n })
+			SeasonService.Add(player, "boss") -- S152: a won boss fight (Config.Boss.dailyRuns applies)
 			local gold = math.floor(shares[i] * (1 + StatService.GetValue(player, "goldBonus") / 100) + 0.5)
 			local balance = PlayerStateService.Update(player, { "character", "gold" }, function(current: number)
 				return current + gold
@@ -1040,6 +1043,7 @@ function DungeonService.ForcePhase(player: Player, phase: number): boolean
 end
 
 function DungeonService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	PartyService = registry.Get("PartyService")
 	TravelService = registry.Get("TravelService")

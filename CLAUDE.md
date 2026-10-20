@@ -234,12 +234,28 @@ przedmiotów czyta STATY); odstępstwa idą do `docs/DECYZJE.md`, a kontrakt pop
 - **Kryjówka Elity II** (S134i): wpis `lairs` w `Data/Areas/<mapa>` + `ELITE2_SLOTS[kind]` + `lair.<id>.name` (PL, EN);
   ubiór `Logic/WorldGen/Lairs`; po zmianie `python tools/arrivals_apply.py`; testy `tests/lairs.spec`, model
   `Balance.targetsS134i`.
+- **Sezon przepustki / źródło punktów** (S152): wpis w `Data/Seasons` (daty UTC, nagrody), źródło przez
+  `SeasonService.Add(player, source)`, nagroda tylko z listy w `paywall.spec` (reguły tylko w `Logic/Season`, test
+  `tests/season.spec`, model `Balance.targetsS152`); okno, HUD i karta w sklepie (S152b) tylko przez `Logic/SeasonView`.
+- **Wpis „Co się zmieniło”** (S153): `Data/Changelog` (id rosnące, dzień UTC) + `changelog.<id>.title/.body` (PL, EN;
+  `<id>` = pole `key` wpisu); list pokazuje wpisy nowsze niż `account.returning.seen` (`Logic/Returning.letter`).
+- **Wygląd przedmiotu (transmog)** (S154): klucz wyglądu z `Transmog.lookOf(def)` (model progu z `ArtTiers` albo własny
+  model bossa), wygląd dla typu tylko z wpisem w `WeaponLooks`; nowy wygląd z bossa = model w `WeaponLooks.assets` pod id
+  przedmiotu.
+- **Krok samouczka / lejek onboardingu** (S155): krok w `Logic/Tutorial.STEPS` (warunek `server` albo `client` z białej
+  listy) + `tutorial.<id>.pc/.touch` (PL, EN); numer kroku lejka tylko z `Tutorial.FUNNEL`.
 - **Boss świata** (S149): wpis w `Data/Bosses` z `world = true` + `Data/WorldBoss` (terminy, miejsce, udział, nagroda);
   serwis `WorldBossService`, udział przez `Logic/Contribution`.
+- **Osiągnięcie** (S151): wpis w `Data/Achievements` (licznik z `COUNTERS`, `goal`, nagroda) + `ach.<id>.name/.desc` (PL,
+  EN); nowe źródło postępu = rodzaj zdarzenia `QuestEvents` + mapowanie w `Logic/Achievements.COUNTER_EVENTS`; odłamki w
+  budżecie `Config.Achievements.shardBudget` (test). Okno, tracker i profil (S151b) tylko z `Logic/AchievementView`
+  (seria zwinięta do bieżącego stopnia, sekretne „???”), śledzenie przez `Achievements.canTrack` / `setTracked`
+  (`character.ach.track`, remote `AchievementTrack`).
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez
-  `AnnounceService.Global` (kolejka). Wymuszenie wydarzeń: `/bloodmoon start`, `/tourney force`, terminy `/sched`.
+  `AnnounceService.Global` (kolejka). Wymuszenie wydarzeń: `/bloodmoon start`, `/tourney force`, terminy `/sched`;
+  obecność gracza: `FriendService`/`Friends/Presence` (jeden zapis na gracza, budżet odczytów `Config.Friends`).
 
 ## Typy Fusion
 - luau-lsp nie lubi mieszanych tablic w `[Children]`: tablice instancji, `if ... else nil`, `ForValues`

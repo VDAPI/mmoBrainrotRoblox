@@ -2,10 +2,11 @@
 -- Login reward (S100, docs/DESIGN-15.md §5), client side: the "login" window, the streak status for the HUD button
 -- (Status, Badge) and the window that opens on its own once a day. The server decides the day and the contents
 -- (ClaimLoginReward); the client only shows account.login and the UTC day of the shared clock (Util/Clock).
--- Opening on its own: in the world, a reward waiting, after the new character guide, with no modal and no window
--- open (it waits until the player closes it), 2 s after entering (the map loads). Once per "<UTC day>:<last>" in
--- this client session: closing the window keeps it closed today (also after a character switch), /loginset and
--- /loginnext (a new `last`) open it again. Midnight UTC during play only lights the badge.
+-- Opening on its own: in the world, a reward waiting, with no modal and no window open (it waits until the player
+-- closes it), 2 s after entering (the map loads); S155: no longer after the S14 guide, the tutorial hint of a new
+-- character waits for this window instead (TutorialController). Once per "<UTC day>:<last>" in this client session:
+-- closing the window keeps it closed today (also after a character switch), /loginset and /loginnext (a new `last`)
+-- open it again. Midnight UTC during play only lights the badge.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -64,9 +65,6 @@ local function wanted(): boolean
 	if not ServerModeView.isWorld() then
 		return false -- S127: no window popping up on an arena server (the reward waits for the world)
 	end
-	if State.Get({ "character", "guideDone" }) == false then
-		return false -- the new character guide first; GuideDone re-checks
-	end
 	-- A fresh UTC day (Status follows `today`, refreshed only every DAY_CHECK)
 	local raw = State.Get({ "account", "login" })
 	if raw == nil then
@@ -103,6 +101,11 @@ function LoginRewardController.Open()
 	WindowManager.Open("login")
 end
 
+-- S155: whether the window waits to open on its own (the tutorial hint waits for it).
+function LoginRewardController.Pending(): boolean
+	return pending
+end
+
 function LoginRewardController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	WindowManager.Register({
@@ -123,7 +126,6 @@ end
 
 function LoginRewardController.Start()
 	scope:Observer(State.Value({ "session", "phase" })):onBind(check)
-	scope:Observer(State.Value({ "character", "guideDone" })):onBind(check)
 	scope:Observer(login):onBind(check)
 	task.spawn(function()
 		while true do

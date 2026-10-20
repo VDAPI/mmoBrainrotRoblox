@@ -28,6 +28,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local Blessings = require(Shared.Data.Blessings)
 local BloodMoon = require(Shared.Logic.BloodMoon)
 local Board = require(script.Parent.Parent.BloodMoon.Board)
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
 local ItemRoll = require(Shared.Logic.ItemRoll)
@@ -86,6 +87,7 @@ local AnnounceService: any
 local WorldEventService: any
 local LeaderboardService: any
 local GuildService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 
 local rng = Rng.new()
 local occ: Occurrence? = nil -- the running occurrence (scheduled or forced)
@@ -470,6 +472,7 @@ local function settleCharacter(player: Player, state: State, ranks: { [string]: 
 			return false
 		end
 		markPaid(player, char.id, state.id)
+		SeasonService.Add(player, "bloodMoon") -- S152: a rewarded participation (once per character and occurrence)
 		if tier.winner and key ~= nil and rankMap then
 			for region, points in state.regions do
 				local regionRanks = rankMap[region]
@@ -573,9 +576,13 @@ local function give(player: Player, region: string, points: number): number?
 	if not state or points <= 0 then
 		return nil
 	end
+	local first = state.points <= 0
 	local new = BloodMoon.addPoints(state, region, points, Clock.now())
 	PlayerStateService.Set(player, { "character", "bloodMoon" }, new)
 	dirty[player] = true
+	if first then
+		QuestEvents.fire(player, "bloodmoon", { id = new.id }) -- S151: the first points of this Blood Moon (achievements)
+	end
 	toast(player, "bloodmoon.points", { n = points, total = new.points }, "success")
 	return new.points
 end
@@ -878,6 +885,7 @@ end
 -- Lifecycle ---------------------------------------------------------------------------------------------------------
 
 function BloodMoonService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	Registry = registry
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")

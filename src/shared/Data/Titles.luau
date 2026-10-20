@@ -25,6 +25,9 @@ export type Requirement =
 	-- S128: earned once in any finished arena season at this tier; character.arena.titles[tier] = season id
 	-- (Logic/Titles)
 	| { kind: "arenaSeason", tier: string }
+	-- S151: the achievement `id` is done (Data/Achievements; a character achievement in character.ach.done, an account one
+	-- in the context's `ach`, so every character of the account shows an account achievement's title)
+	| { kind: "achievement", id: string }
 
 export type TitleDef = {
 	id: string,
@@ -254,6 +257,77 @@ local list: { TitleDef } = {
 		req = { kind = "arenaSeason", tier = "master" },
 		color = "#FF9F1C",
 		seasonArg = true,
+	},
+	-- S152 (docs/DESIGN.md §21b): season pass 1 titles, cosmetics with obtain.season (the free track's tier 40 and a
+	-- premium tier); off the wiki with their cosmetics until S152b
+	{
+		id = "s1_veteran",
+		nameKey = "title.s1_veteran",
+		req = { kind = "cosmetic", id = "title_s1_veteran" },
+		color = "#B8D4EC",
+	},
+	{
+		id = "s1_frostwarden",
+		nameKey = "title.s1_frostwarden",
+		req = { kind = "cosmetic", id = "title_s1_frostwarden" },
+		color = "#8FC8F0",
+	},
+	-- S151 (docs/DESIGN.md §20b): achievement titles (Data/Achievements reward.title); off the wiki until S151b
+	{
+		id = "ach_butcher",
+		nameKey = "title.ach_butcher",
+		req = { kind = "achievement", id = "slayer4" },
+		color = "#C8463A",
+		wiki = false,
+	},
+	{
+		id = "ach_elusive",
+		nameKey = "title.ach_elusive",
+		req = { kind = "achievement", id = "dodge3" },
+		color = "#7EC4E0",
+		wiki = false,
+	},
+	{
+		id = "ach_fourslayer",
+		nameKey = "title.ach_fourslayer",
+		req = { kind = "achievement", id = "bossAll" },
+		color = "#FF9F1C",
+		wiki = false,
+	},
+	{
+		id = "ach_ancestorbane",
+		nameKey = "title.ach_ancestorbane",
+		req = { kind = "achievement", id = "worldBoss1" },
+		color = "#8FD8FF",
+		wiki = false,
+	},
+	{
+		id = "ach_cartographer",
+		nameKey = "title.ach_cartographer",
+		req = { kind = "achievement", id = "maps2" },
+		color = "#E8D9A8",
+		wiki = false,
+	},
+	{
+		id = "ach_lairtracker",
+		nameKey = "title.ach_lairtracker",
+		req = { kind = "achievement", id = "lairs2" },
+		color = "#7FA650",
+		wiki = false,
+	},
+	{
+		id = "ach_forgemaster",
+		nameKey = "title.ach_forgemaster",
+		req = { kind = "achievement", id = "upgrade9" },
+		color = "#E8C25A",
+		wiki = false,
+	},
+	-- S155: the tutorial reward at level 5 (Data/Tutorial.REWARD.title, a cosmetic with obtain.tutorial)
+	{
+		id = "firststeps",
+		nameKey = "title.firststeps",
+		req = { kind = "cosmetic", id = "title_firststeps" },
+		color = "#C9B48A",
 	},
 }
 

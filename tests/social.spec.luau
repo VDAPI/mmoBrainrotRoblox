@@ -2,8 +2,10 @@
 -- S133: player menu, friends and ignored players, whisper rules, presence and letters between players (Logic/Social).
 
 local Config = require("../src/shared/Config")
+local FriendJoin = require("../src/shared/Logic/FriendJoin")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local Mail = require("../src/shared/Logic/Mail")
+local Presence = require("../src/shared/Logic/Presence")
 local Rng = require("../src/shared/Logic/Rng")
 local Social = require("../src/shared/Logic/Social")
 local T = require("./Test")
@@ -182,12 +184,113 @@ T.describe("Social: friends and ignored", function()
 		T.expect(Social.channelName(10, 20)).toBe(Social.channelName(20, 10))
 	end)
 
-	T.it("presence: here, online, offline by the entry's age", function()
-		local p = { j = "job-a", t = 1000 }
-		T.expect(Social.presenceStatus(p, 1050, "job-a", 120)).toBe("here")
-		T.expect(Social.presenceStatus(p, 1050, "job-b", 120)).toBe("online")
-		T.expect(Social.presenceStatus(p, 1121, "job-b", 120)).toBe("offline")
-		T.expect(Social.presenceStatus(nil, 1050, "job-b", 120)).toBe("offline")
+	-- S150: presence statuses moved to Logic/Presence (tests/friends.spec); "online" became world / private / arena /
+	-- tournament
+	T.it("presence: here, another world server, offline by the entry's age", function()
+		local p = Presence.record({ j = "job-a", m = "world", t = 1000, pj = "friends" })
+		T.expect(Presence.statusOf(p, "job-a", 1050, 120)).toBe("here")
+		T.expect(Presence.statusOf(p, "job-b", 1050, 120)).toBe("world")
+		T.expect(Presence.statusOf(p, "job-b", 1121, 120)).toBe("offline")
+		T.expect(Presence.statusOf(nil, "job-b", 1050, 120)).toBe("offline")
+	end)
+end)
+
+-- S150: the row of a friend in the friends window (Join, Invite to party, Whisper, Write a letter; "..." Remove,
+-- Ignore) for a friend here and on another server.
+T.describe("Social.friendRowEntries", function()
+	local function view(extra: { [string]: any }?): FriendJoin.View
+		local base: any = {
+			friend = true,
+			ignored = false,
+			status = "world",
+			pj = "friends",
+			hereMode = "world",
+		}
+		for k, v in extra or {} do
+			base[k] = v
+		end
+		return base
+	end
+	local function rowFind(row: Social.FriendRow, id: string): Social.MenuEntry
+		for _, e in row.primary do
+			if e.id == id then
+				return e
+			end
+		end
+		for _, e in row.more do
+			if e.id == id then
+				return e
+			end
+		end
+		error(`no entry {id}`)
+	end
+
+	T.it("a friend on another world server: Join and the party invitation work, whisper does not", function()
+		local row = Social.friendRowEntries({ view = view(), now = 100 })
+		T.expect(ids(row.primary)).toEqual({ "join", "party", "whisper", "mail" })
+		T.expect(ids(row.more)).toEqual({ "remove", "ignore" })
+		T.expect(rowFind(row, "join").enabled).toBe(true)
+		T.expect(rowFind(row, "party")).toEqual({ id = "party", labelKey = "friends.party.invite", enabled = true })
+		T.expect(rowFind(row, "whisper").reasonKey).toBe("friends.reason.notHere")
+		T.expect(rowFind(row, "mail").enabled).toBe(true)
+	end)
+
+	T.it("a friend here: whisper and the local invitation, Join greyed (same server)", function()
+		local row = Social.friendRowEntries({ view = view({ status = "here" }), now = 100 })
+		T.expect(rowFind(row, "join").reasonKey).toBe("friends.join.sameServer")
+		T.expect(rowFind(row, "party").enabled).toBe(true)
+		T.expect(rowFind(row, "whisper").enabled).toBe(true)
+		local inParty = Social.friendRowEntries({ view = view({ status = "here" }), now = 100, inMyParty = true })
+		T.expect(rowFind(inParty, "party").reasonKey).toBe("social.reason.inMyParty")
+	end)
+
+	T.it("greyed out with a reason: arena, private server, closed server, a block, not the leader", function()
+		local arena = Social.friendRowEntries({ view = view({ status = "arena" }), now = 100 })
+		T.expect(rowFind(arena, "join").reasonKey).toBe("friends.join.arena")
+		T.expect(rowFind(arena, "party").reasonKey).toBe("friends.join.arena")
+		local private = Social.friendRowEntries({ view = view({ status = "private" }), now = 100 })
+		T.expect(rowFind(private, "join").reasonKey).toBe("friends.join.private")
+		T.expect(rowFind(private, "party").enabled).toBe(true)
+		local closed = Social.friendRowEntries({ view = view({ pj = "none" }), now = 100 })
+		T.expect(rowFind(closed, "join").reasonKey).toBe("friends.join.closed")
+		T.expect(rowFind(closed, "party").reasonKey).toBe("friends.join.closed")
+		local blocked = Social.friendRowEntries({ view = view({ block = "combat" }), now = 100 })
+		T.expect(rowFind(blocked, "join").reasonKey).toBe("friends.block.combat")
+		T.expect(rowFind(blocked, "party").enabled).toBe(true)
+		local follower = Social.friendRowEntries({ view = view(), now = 100, notPartyLeader = true })
+		T.expect(rowFind(follower, "party").reasonKey).toBe("social.reason.notLeader")
+		local hidden = Social.friendRowEntries({ view = view({ selfHidden = true }), now = 100 })
+		T.expect(rowFind(hidden, "party").reasonKey).toBe("friends.party.invisible")
+		T.expect(rowFind(hidden, "join").enabled).toBe(true)
+		local offline = Social.friendRowEntries({ view = view({ status = "offline" }), now = 100 })
+		T.expect(rowFind(offline, "join").reasonKey).toBe("friends.join.offline")
+		T.expect(rowFind(offline, "mail").enabled).toBe(true)
+	end)
+
+	T.it("every label and reason of the row exists in both languages", function()
+		local keys = {}
+		local views = {}
+		for _, status in { "here", "world", "private", "arena", "tournament", "offline", "unknown" } do
+			table.insert(views, view({ status = status }))
+		end
+		for _, own in { { selfPrivate = true }, { selfHidden = true }, { selfPj = "none" } } do
+			table.insert(views, view(own))
+		end
+		for _, v in views do
+			local row = Social.friendRowEntries({ view = v, now = 100 })
+			for _, list in { row.primary, row.more } do
+				for _, e in list do
+					table.insert(keys, e.labelKey)
+					if e.reasonKey then
+						table.insert(keys, e.reasonKey)
+					end
+				end
+			end
+		end
+		for _, key in keys do
+			T.expect({ key = key, pl = pl[key] ~= nil, en = en[key] ~= nil })
+				.toEqual({ key = key, pl = true, en = true })
+		end
 	end)
 end)
 

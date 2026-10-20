@@ -5,7 +5,39 @@
 
 ## Stan
 
-S01–S115 i S117–S149b gotowe (ostatnia S149b: boss świata na mapie: Kurhan Praojca na płaskowyżu Lodowej Strażnicy
+S01–S115 i S117–S155 gotowe (ostatnia S155: samouczek z działaniem zamiast dymków S14: sześć kroków kończonych czynnością (ruch, przyjęcie zadania u kapitana, plecak, mikstura, atak podstawowy na potworze, umiejętność; `Logic/Tutorial`, `TutorialService`, `TutorialController`), wskazówka na żelazie przy prawdziwym elemencie HUD (PC: klawisze gracza, telefon: przyciski i strefa joysticka), „Pomiń samouczek” z potwierdzeniem, nagroda na 5. poziomie (tytuł „Pierwsze Kroki”, 3 Kamienie Powrotu i 10 Małych Mikstur Życia związane, bez EXP i złota, także po pominięciu), jeden lejek onboardingu (samouczek 1–6, fabuła 7–16, `level5` 17), `character.tutorial` bez migracji, admin `/tutorial`; wcześniej S154: transmogryfikacja: u kowala zakładka „Wygląd” nakłada na broń lub drugą
+rękę wygląd tego samego typu z kolekcji konta (`Logic/Transmog`, remote `TransmogApply`, pole `tm` tylko wygląd),
+kolekcja `account.transmog` rośnie przy wejściu przedmiotu do plecaka lub ekwipunku i jednorazowym skanie konta
+(`TransmogService`), 120 wyglądów progów i 1 rzadki wygląd z bossa, koszt `Config.Transmog` (złoto na krzywej ulepszania
+× 1,5 + esencja według rzadkości, zdjęcie darmowe), w dłoni wygląd z kolorem rzadkości przedmiotu, ikona wyglądu ze
+znakiem ↺, „Wygląd: …” w opisie, zakładka „Wyglądy broni” w garderobie, admin `/transmog`, `/transmoglooks`,
+`paywall.spec` 14; wcześniej S153: pomoc dla powracających: po 7+ dniach nieobecności konto z postacią
+od 10. poziomu dostaje raz na 14 dni godzinę gry w świecie z +100 pkt `expBonus` (osobne źródło „Powrót”, nie
+błogosławieństwo, dodane do Fortuny, każde źródło EXP), ikona » z minutami przy portrecie, list „Co się zmieniło” na
+pergaminie raz przy wejściu do świata (wpisy `Data/Changelog` nowsze niż przeczytane, „Co nowego” w menu gry),
+`account.stats.lastSeen` i `account.returning` bez migracji i bez przyznania w dniu wdrożenia, `Logic/Returning`,
+`ReturningService`, remote `ChangelogSeen`, admin `/returning`, wiersze `S153.*` poza tempem; wcześniej S152b: okno przepustki sezonu: pergamin pod C, ❖ z kropką pod ✧ na HUD, menu
+gry, pas stopni na PC i lista na telefonie, „Odbierz wszystko”, zakup z potwierdzeniem jak w sklepie, „Jak zdobywać
+punkty”, karta nad VIP w sklepie ze zdaniem „a VIP”, lejek `season`, `Logic/SeasonView`; wcześniej S152: przepustka
+sezonu, rdzeń: sezon 1 „Sezon Szronu” od 2026-11-02, 8
+tygodni, 40 stopni po 1000 punktów za zwykłą grę (`Data/Seasons`, `Logic/Season`, `SeasonService.Add` w serwisach
+źródeł: potwory, zadania, zlecenia, wydarzenia, bossowie, arena, osiągnięcia), limit potworów 400 dziennie, limit
+narastający 6500 × tydzień z nadrabianiem ×1,5 pod linią, ścieżka darmowa co 2 stopnie i premium na każdym (raz na
+sezon za 800 odłamków, odbiór wstecz), nagrody tylko kosmetyki (17, `obtain.season`), Kamienie Powrotu i czas Płaszcza
+(`paywall.spec` 11–13), 14 dni łaski i poczta `once`, model `Balance.targetsS152`, admin `/seasonpass`; wcześniej S151b: okno osiągnięć (`N`, menu HUD i gry, „Zobacz” w toaście; kategorie,
+serie zwinięte do bieżącego stopnia, przełącznik konto / postać, filtr, szczegóły z nagrodami; `Logic/AchievementView`),
+śledzenie do 3 osiągnięć w trackerze HUD (`AchievementTrack`, `character.ach.track`), punkty i ostatnie osiągnięcia
+w profilu gracza; wcześniej S151: osiągnięcia, rdzeń: 79 osiągnięć w sześciu kategoriach (walka,
+bossowie, odkrywanie z kryjówkami, rzemiosło, społeczność, droga) na licznikach konta i postaci (`Data/Achievements`,
+`Logic/Achievements`, `AchievementService` ze zdarzeń `QuestEvents` + zabójstwa i poziomy), nagrody: 7 tytułów, 5
+kosmetyków, Smocze Odłamki raz na konto (suma 320 z budżetu 500), złoto za poziom 10; dawne postępy zaliczane przy
+każdym wejściu (bez migracji), toast `Hud/AchievementToast` z ustawieniem `achToasts`, admin `/ach`; wcześniej S150:
+znajomi 2.0: przy znajomym serwer (mapa, poziom, znacznik
+serwera; arena, turniej i serwer prywatny bez „Dołącz”), „Dołącz” na serwer świata znajomego (`FriendService`,
+`Logic/FriendJoin`, blokady `UseBlocks.friendJoin`, `Arena/Transfer.toServer`, odnowienie 60 s), zaproszenie
+do grupy z innego serwera przez jeden temat i dołączenie do grupy po przybyciu, znajomi z Roblox w grze, tryb
+„niewidoczny” i „kto może dołączyć”, obecność jednym wpisem na konto (`Logic/Presence`, `Friends/Presence`,
+budżet 300 odczytów / min na serwer); wcześniej S149b: boss świata na mapie: Kurhan Praojca na płaskowyżu Lodowej Strażnicy
 jako miejsce zastrzeżone jak kryjówka (`AreaSpawns.reservedCircles`, wystrój `Logic/WorldGen/WorldBossArena`), kurhan
 i stan bossa na mapie świata i minimapie (`WorldBoss.markerOf`), karta z „Prowadź” (`WorldBoss.cardOf`), wyszukiwarka,
 panel HUD `Hud/WorldBossPanel` (HP, faza, czas, przerwanie, udział, nagroda; nad panelem wydarzenia), napis „bez PvP”
@@ -372,6 +404,43 @@ Faza teraz: **gameplay**; przebudowa rozwoju postaci S53–S94 (`docs/ROZWOJ.md`
 zakończone; testy i decyzje właściciela po nich.
 
 ## Niedokończone (kod)
+
+- **Samouczek z działaniem (S155):** wiki czeka na odświeżenie (właściciel 17.10): akapit o samouczku i nagrodzie na 5.
+  poziomie w poradniku dla nowych (liczby z `Data/Tutorial` przez eksporter), tytuł „Pierwsze Kroki” w danych wiki.
+  Pozycje wskazówki liczone z ramek HUD bez przeglądu w grze (PC i telefon w pionie i poziomie, strefa joysticka,
+  łuk przycisków umiejętności, kolejność z oknem nagrody za logowanie). Krok `skill` liczy każde udane rzucenie z paska,
+  także bez celu.
+
+- **Transmogryfikacja (S154):** wiki czeka na odświeżenie wiki (właściciel 17.10): rekord `Transmog` w
+  `tools/WikiData` (koszt z `Config.Transmog` dla L 20 / 45 / 70 / 100 według rzadkości, liczba wyglądów na typ i z
+  bossów, bez listy modeli niewydanych przedmiotów) i akapit „Wygląd przedmiotu” w artykule kowala / `kosmetyki.mdx`
+  (PL, EN). Zakładka garderoby to przegląd ikon bez podglądu 3D (podgląd jest u kowala). Zbroja i biżuteria dopiero z
+  warstwami zbroi (`ClassLooks.layers`). Duszek przeciągania pokazuje ikonę przedmiotu, nie wyglądu. Bez przeglądu w
+  grze (zakładka u kowala na PC i telefonie, podgląd modelu w `ViewportFrame`, ↺ w slocie, toasty, broń w dłoni u innych).
+
+- **Premia powrotu i list „Co się zmieniło” (S153):** wiki czeka na odświeżenie wiki (właściciel 17.10): akapit
+  „Premia powrotu” w `doswiadczenie.mdx` (PL, EN) z liczbami `Config.Returning` z eksportu. Odliczanie nie stoi
+  podczas przerywnika (serwer go nie zna; liczy „postać w świecie”). Grafika ikony premii w `UiArt` (dziś znak »).
+  Bez przeglądu w grze (list na PC i telefonie, ikona, toasty, rozbicie `expBonus`).
+
+- **Przepustka sezonu (S152, S152b):** okno, HUD, menu, klawisz C, karta w sklepie i lejek gotowe. Wiki czeka na
+  odświeżenie wiki (właściciel 17.10): rekord `season` w `tools/WikiData/Premium.luau` (bez ceny), odsłonięcie
+  kosmetyków sezonu (dziś `wiki = false`), artykuł `przepustka-sezonu` / `season-pass` z tabelą „a VIP”, linki z
+  `vip.mdx` i `sklep-premium.mdx`, wpis aktualizacji. Toast stopnia bez „Otwórz” (`Toast` nie umie akcji). Grafika
+  `hud/season` (dziś znak ❖). Bez przeglądu w grze (okno na PC i telefonie, przycisk, karta, wygląd 17 kosmetyków
+  proceduralnych, dwie emotki, pet i skórka wierzchowca). Dla właściciela: decyzje w `docs/SESJE.md` → S152.
+
+- **Osiągnięcia (S151, S151b):** wiki z S151b czeka na odświeżenie wiki (właściciel 17.10): eksporter
+  `tools/WikiData/Achievements.luau` (bez kwot odłamków, `retro` z `backfill`, `secretCount`), strona osiągnięć, link z
+  tytułów i kosmetyków, publikacja 7 tytułów `ach_*` i 5 kosmetyków (dziś `wiki = false`). Gablota w profilu
+  (`showcase`) nie zrobiona. Własny profil otwiera się tylko na sobie (karta drużyny na mapie), osobnego przycisku nie
+  ma. Bez przeglądu w grze (okno osiągnięć na PC i telefonie, sekcja trackera, profil, toast z „Zobacz”, wygląd nowych
+  ram, ramek czatu, efektu awansu i aury). Dla właściciela: ID dźwięku `ui.achievement` (dziś cisza), grafiki
+  `hud/ach_<kategoria>` i `hud/menu_achievements`.
+
+- **Znajomi 2.0 (S150):** bez przeglądu w grze (okno znajomych na PC i telefonie, arkusz „⋯”, popup „Dołącz i wejdź do
+  grupy”); teleport na serwer znajomego i zaproszenie między serwerami działają tylko w opublikowanej grze (w Studio
+  toast i atrapa „tylko ten serwer”).
 
 - **Boss świata (S149, S149b):** bez przeglądu w grze (Kurhan Praojca i jego wolny środek, panel HUD na PC i telefonie,
   znacznik i karta na mapie, karta nagrody w formie `world`, napis „bez PvP”). Wiki do odświeżenia (właściciel 17.10):

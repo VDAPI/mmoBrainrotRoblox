@@ -54,6 +54,7 @@ local AdminService = {
 		"PathService",
 		"PartyService",
 		"PartyFinderService", -- S134f: /finder
+		"TutorialService", -- S155: /tutorial
 		"PartyAuraService",
 		"NpcService",
 		"AlchemyService",
@@ -71,6 +72,9 @@ local AdminService = {
 		"GuildService",
 		"MailService",
 		"SocialService", -- S133: /social
+		"FriendService", -- S150: /presence, /friends, /friendinvite
+		"AchievementService", -- S151: /ach
+		"ReturningService", -- S153: /returning
 		"AuctionService",
 		"CosmeticService",
 		"StatusEffectService",
@@ -82,13 +86,15 @@ local AdminService = {
 		"WorldEventService", -- S101: /event
 		"WorldBossService", -- S149: /worldboss (nothing it depends on knows AdminService)
 		"VipService", -- S121: /vip
+		"SeasonService", -- S152: /seasonpass (nothing it depends on knows AdminService)
 		"LureService", -- S122: /lure
 		"AutoGrindService", -- S134d: /autogrind (nothing it depends on knows AdminService)
 		"PremiumShopService", -- S123: /pack
 		"LeaderboardService", -- S124: /lb; S125: /rankweek, /rankguild
 		"TitleService", -- S125: /timedtitle
 		"ArenaService", -- S126: /arena
-		"BlacksmithService", -- S134j: /reroll, /rerollstate (nothing it depends on knows AdminService)
+		"BlacksmithService", -- S134j: /reroll, /rerollstate; S154: /transmog (nothing it depends on knows AdminService)
+		"TransmogService", -- S154: /transmoglooks (nothing it depends on knows AdminService)
 	},
 }
 

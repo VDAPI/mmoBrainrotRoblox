@@ -61,6 +61,8 @@ NpcController.Nav = nil :: any
 NpcController.UpgradeTarget = scope:Value(nil :: any)
 -- S134j: target of the forge's Transmute tab, set by dropping an item on its anvil.
 NpcController.RerollTarget = scope:Value(nil :: any)
+-- S154: target of the forge's Appearance tab (transmog), set by dropping an item on its anvil.
+NpcController.TransmogTarget = scope:Value(nil :: any)
 NpcController.SmithTab = scope:Value("craft")
 
 local WindowManager: any
@@ -221,6 +223,12 @@ end
 function NpcController.SetRerollTarget(location: string, key: string)
 	NpcController.RerollTarget:set({ location = location, key = key })
 	NpcController.SmithTab:set("reroll")
+end
+
+-- S154: the Appearance tab with an item (drop on its anvil).
+function NpcController.SetTransmogTarget(location: string, key: string)
+	NpcController.TransmogTarget:set({ location = location, key = key })
+	NpcController.SmithTab:set("transmog")
 end
 
 function NpcController.OpenUnbind()
@@ -400,6 +408,7 @@ local function registerWindows()
 			return BlacksmithWindow(s, {
 				UpgradeTarget = NpcController.UpgradeTarget,
 				RerollTarget = NpcController.RerollTarget,
+				TransmogTarget = NpcController.TransmogTarget,
 				ShowModal = WindowManager.ShowModal,
 				Tab = NpcController.SmithTab,
 			})

@@ -61,6 +61,7 @@ local SkillData = require("../Data/Skills")
 local StatGroups = require("./StatGroups")
 local Stats = require("../Data/Stats")
 local Traits = require("./Traits")
+local Transmog = require("./Transmog")
 local Types = require("../Types")
 local Upgrade = require("./Upgrade")
 
@@ -919,6 +920,17 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 		local rerolls = Reroll.state(item).n
 		if rerolls > 0 then
 			b.add("rerollCount", Locale.T("tooltip.reroll.count", { n = rerolls }, lang), "muted", { size = "small" })
+		end
+		-- S154: the worn look (Logic/Transmog); the name and every line above stay the item's own
+		local look = Transmog.current(item)
+		local lookDef = if look then Transmog.lookDef(look) else nil
+		if lookDef then
+			b.add(
+				"transmog",
+				Locale.T("tooltip.transmog", { name = ItemName.get(lang, lookDef.id) }, lang),
+				"muted",
+				{ size = "small" }
+			)
 		end
 	end
 

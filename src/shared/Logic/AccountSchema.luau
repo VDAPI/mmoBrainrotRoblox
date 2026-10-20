@@ -70,6 +70,10 @@ function AccountSchema.accountTemplate(): AccountData
 			lowHpWarn = true, -- S134f: red vignette and heartbeat below 25 % HP (reconcile)
 			fightCard = true, -- S134f: the small after-fight card for Elite II and Invasion (reconcile)
 			cameraMode = "free", -- W01: free camera or from above (reconcile)
+			appearOffline = false, -- S150: "Appear offline" (reconcile)
+			friendJoin = "friends", -- S150: who may join my server: friends or nobody (reconcile)
+			achToasts = true, -- S151: achievement toasts (false = one line in the system chat; reconcile)
+			achHint = false, -- S151b: the one-time "star an achievement" hint of the achievements window was shown
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
@@ -99,11 +103,23 @@ function AccountSchema.accountTemplate(): AccountData
 		-- S123: starter packs bought once per account; passes granted by a pack, honoured by HasPass (no migration)
 		packs = {},
 		grantedPasses = {},
-		stats = { createdAt = 0, playtime = 0 },
+		stats = { createdAt = 0, playtime = 0, lastSeen = 0 }, -- S153: lastSeen (Logic/Returning; reconcile, no migration)
 		redeemed = {},
 		-- S133: friends and ignored players (Logic/Social), keys tostring(userId); reconcile adds it, no migration
 		social = { friends = {}, ignored = {} },
 		legendRework = false, -- S134g: migration 10 converted a Legendary / Mythic (one toast, EquipmentService clears it)
+		-- S151: account achievement counters, sets, done achievements and paid shards (Logic/Achievements); no migration
+		-- (reconcile), old progress is counted by Achievements.backfill on every entry
+		ach = { c = {}, s = {}, done = {}, paid = {} },
+		-- S152: the season pass (Logic/Season; read through Season.sanitize); no migration (reconcile). seasonPrev (the
+		-- previous season during its grace days) is optional and has no default.
+		season = { id = "", points = 0, day = 0, dayKill = 0, premium = false, free = {}, prem = {}, mailed = {} },
+		-- S153: the returning player's bonus and the last changelog entry read (Logic/Returning; read through
+		-- Returning.sanitize); no migration (reconcile)
+		returning = { left = 0, at = 0, seen = 0 },
+		-- S154: the collection of item looks (Logic/Transmog; read through Transmog.sanitize); no migration
+		-- (reconcile). `scanned` false = the one-time scan of every character's items is still due (TransmogService)
+		transmog = { looks = {}, scanned = false },
 	}
 end
 
@@ -177,7 +193,10 @@ function AccountSchema.characterTemplate(): CharacterData
 		-- S130: the Champion's Tournament (Logic/Tourney); no migration, reconcile adds it to older characters
 		tourney = { played = 0, won = 0, best = 0 },
 		auctions = {},
-		guideDone = true, -- existing characters skip the guide; CharacterFactory sets false for new ones
+		guideDone = true, -- S14; S155: legacy, read by nothing (no migration)
+		-- S155: the hands-on tutorial (Logic/Tutorial); reconcile gives older characters a finished one with the reward
+		-- taken, CharacterFactory starts new ones at step 1 (Tutorial.newState)
+		tutorial = { step = 1, done = true, skipped = false, reward = true },
 		playerMenuHint = false, -- S133: the one-time "Actions" hint (reconcile: old characters see it once too)
 		mailSent = { day = 0, n = 0 }, -- S133: letters to players today (Logic/Social.countSent)
 		pvpEnabled = false,
@@ -191,6 +210,9 @@ function AccountSchema.characterTemplate(): CharacterData
 		mapMarks = {},
 		-- S96: no migration; reconcile adds owned = {} and riding = false to older characters
 		mounts = { owned = {}, active = nil, riding = false },
+		-- S151: character achievement counters, sets and done achievements (Logic/Achievements); no migration (reconcile)
+		-- S151b: `track` = the achievements followed in the HUD tracker (reconcile adds it)
+		ach = { c = {}, s = {}, done = {}, track = {} },
 		createdAt = 0,
 		playtime = 0,
 	}
