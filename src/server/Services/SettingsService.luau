@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 local Keybinds = require(Shared.Logic.Keybinds)
+local HudLayout = require(Shared.Logic.HudLayout)
 local Locale = require(Shared.Util.Locale)
 local Net = require(Shared.Net)
 local Rarities = require(Shared.Data.Rarities)
@@ -123,6 +124,10 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	-- S151b: the one-time tracking hint of the achievements window was shown (only ever set to true)
 	achHint = function(value)
 		return value == true
+	end,
+	-- S156: the HUD layout (moved and sized elements; {} = the built-in places)
+	hud = function(value)
+		return HudLayout.valid(value)
 	end,
 	-- S30 ladder: hide below Unique (2) or Heroic (3); Legendary+ is always shown.
 	lootHideBelow = function(value)

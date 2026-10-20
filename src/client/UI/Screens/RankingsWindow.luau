@@ -332,6 +332,122 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 	return cells
 end
 
+-- S156: the score of a row as one short text (the podium cards).
+local function scoreText(use: Use, row: Leaderboard.Row, format: string): string
+	if format == "time" then
+		return playtime(use, row.s)
+	elseif format == "level" then
+		return Text.get(use, "leaderboard.podium.level", { level = row.l or row.s })
+	elseif format == "rating" then
+		return Text.get(use, "leaderboard.podium.rating", { rating = Format.number(row.s) })
+	elseif format == "int" then
+		return Text.get(use, "leaderboard.podium.exp", { exp = Format.number(row.s) })
+	end
+	return Format.number(row.s)
+end
+
+-- S156 (owner 2026-10-20: "make the rankings nicer"): the first three as a podium above the table, the winner in the
+-- middle and highest, each card on iron with its medal colour.
+local PODIUM = { 2, 1, 3 }
+local PODIUM_HEIGHT = { 0.82, 1, 0.7 }
+local function podium(scope: Scope, use: Use, rows: { Leaderboard.Row }, format: string, touch: boolean): Instance
+	local height = if touch then 104 else 118
+	local cards: { any } = {
+		scope:New("UIListLayout")({
+			FillDirection = Enum.FillDirection.Horizontal,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			VerticalAlignment = Enum.VerticalAlignment.Bottom,
+			SortOrder = Enum.SortOrder.LayoutOrder,
+			Padding = UDim.new(0, 10),
+		}),
+	}
+	for slot, rank in PODIUM do
+		local row = rows[rank]
+		if not row then
+			continue
+		end
+		local medal = medalColor(rank) or Theme.Iron.Text
+		local name = if row.n == "" then Text.get(use, "leaderboard.unknown") else row.n
+		if format == "guild" and row.g then
+			name = `[{row.g}] {name}`
+		end
+		local class = if row.c and string.sub(row.c, 1, 1) == "@" then Text.get(use, string.sub(row.c, 2)) else ""
+		table.insert(
+			cards,
+			scope:New("Frame")({
+				LayoutOrder = slot,
+				Size = UDim2.new(0.3, 0, PODIUM_HEIGHT[slot], -4),
+				BackgroundColor3 = if row.mine then Theme.Iron.Selected else Theme.Iron.Raised,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+					scope:New("UIStroke")({
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = medal,
+						Thickness = if rank == 1 then Theme.Stroke.Thick else Theme.Stroke.Normal,
+					}),
+					scope:New("UIPadding")({
+						PaddingLeft = UDim.new(0, 6),
+						PaddingRight = UDim.new(0, 6),
+						PaddingTop = UDim.new(0, 4),
+						PaddingBottom = UDim.new(0, 4),
+					}),
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Vertical,
+						HorizontalAlignment = Enum.HorizontalAlignment.Center,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+					}),
+					scope:New("TextLabel")({
+						LayoutOrder = 1,
+						Size = UDim2.new(1, 0, 0, if rank == 1 then 34 else 28),
+						BackgroundTransparency = 1,
+						Text = tostring(rank),
+						FontFace = Theme.Fonts.Display,
+						TextSize = if rank == 1 then Theme.TextSize.Title else Theme.TextSize.Large,
+						TextColor3 = medal,
+					}),
+					scope:New("TextLabel")({
+						LayoutOrder = 2,
+						Size = UDim2.new(1, 0, 0, 24),
+						BackgroundTransparency = 1,
+						Text = name,
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = if touch then Theme.TextSize.Small else Theme.TextSize.Body,
+						TextColor3 = Theme.Iron.Text,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+					}),
+					scope:New("TextLabel")({
+						LayoutOrder = 3,
+						Size = UDim2.new(1, 0, 0, 20),
+						BackgroundTransparency = 1,
+						Text = if class ~= "" and not touch
+							then `{class}  ·  {scoreText(use, row, format)}`
+							else scoreText(use, row, format),
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Caption,
+						TextColor3 = Theme.Iron.TextMuted,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+					}),
+				},
+			})
+		)
+	end
+	return scope:New("Frame")({
+		Name = "Podium",
+		LayoutOrder = 0,
+		Size = UDim2.new(1, 0, 0, height + 8),
+		BackgroundTransparency = 1,
+		[Children] = {
+			scope:New("UIPadding")({ PaddingBottom = UDim.new(0, 8) }),
+			scope:New("Frame")({
+				Size = UDim2.fromScale(1, 1),
+				BackgroundTransparency = 1,
+				[Children] = cards,
+			}),
+		},
+	})
+end
+
 local function freeCells(use: Use, rank: number, touch: boolean): { Cell }
 	local muted = Theme.Paper.TextMuted
 	return {
@@ -619,6 +735,9 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 				)
 			)
 			return items
+		end
+		if format ~= "date" and #snap.rows > 0 then
+			table.insert(items, podium(s, use, snap.rows, format, isTouch))
 		end
 		for i, row in snap.rows do
 			local background = if row.mine then Theme.Paper.Hover elseif i % 2 == 0 then Theme.Paper.Raised else nil
