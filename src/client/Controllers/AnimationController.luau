@@ -94,6 +94,7 @@ type Clips = {
 	animator: Animator?,
 	tracks: { [string]: AnimationTrack },
 	mixer: BoneClips.Mixer?, -- W26: rig "bones" (the tracks are BoneClips tracks)
+	attackAt: number?, -- W26: the attack start the bone clip attack was started for
 	playing: AnimationTrack?,
 	slot: string?,
 	walkSpeed: number?,
@@ -441,16 +442,35 @@ local function pickAnimated()
 	end
 end
 
+local BONE_ATTACKS: { [string]: boolean } = { attack1 = true, attack2 = true, cast = true }
+
 local function stepClips(s: MonsterState, clips: Clips, now: number, speed: number)
 	local raise, strike = Gait.attack(now - s.attackStart, s.attackWindup)
 	local available: { [string]: boolean } = {}
 	for slot in clips.tracks do
 		available[slot] = true
 	end
+	local attacking = raise > 0 or strike > 0
+	local attackSlot = s.attackSlot
+	local restart = false
+	local mixer = clips.mixer
+	if mixer then
+		-- W26: a bone clip attack plays to its end (a blow is not cut by the recovery) and a hit does not cut it; a
+		-- new attack restarts it, its blow fitted to the server's hit (BoneClips.Track.lead)
+		if attacking and clips.attackAt ~= s.attackStart then
+			clips.attackAt = s.attackStart
+			restart = true
+		elseif not attacking and clips.slot and BONE_ATTACKS[clips.slot] and clips.playing then
+			if BoneClips.running(clips.playing :: any) and s.deadAt == nil then
+				attacking = true
+				attackSlot = clips.slot :: string
+			end
+		end
+	end
 	local pick = LookAnim.pick({
 		dead = s.deadAt ~= nil,
-		hit = now - s.hitAt < HIT_SECONDS,
-		attack = if raise > 0 or strike > 0 then s.attackSlot :: any else nil,
+		hit = now - s.hitAt < HIT_SECONDS and not (mixer ~= nil and attacking),
+		attack = if attacking then attackSlot :: any else nil,
 		speed = speed,
 		spawning = now - s.spawnedAt < SPAWN_SECONDS,
 		walkSpeed = clips.walkSpeed,
@@ -459,11 +479,14 @@ local function stepClips(s: MonsterState, clips: Clips, now: number, speed: numb
 		return
 	end
 	local clip = clips.tracks[pick.slot]
-	if clips.slot ~= pick.slot or not clips.playing then
-		if clips.playing then
+	if clips.slot ~= pick.slot or not clips.playing or (restart and BONE_ATTACKS[pick.slot]) then
+		if clips.playing and clips.playing ~= clip then
 			clips.playing:Stop(pick.fade)
 		end
 		clip.Looped = pick.looped
+		if mixer and BONE_ATTACKS[pick.slot] then
+			(clip :: any).lead = s.attackStart + s.attackWindup - now
+		end
 		clip:Play(pick.fade)
 		clips.playing = clip
 		clips.slot = pick.slot

@@ -23,6 +23,15 @@ T.describe("BoneClip", function()
 			T.expect({ id, buffer.len(d.buf) }).toEqual({ id, d.stride * clip.frames })
 			T.expect({ id, clip.frames > last }).toEqual({ id, true })
 			T.expect({ id, clip.bones[1] }).toEqual({ id, "Hips" })
+			-- W26: the clip's own slots (weapon attacks, spells, the hit) lie inside its frames, blows inside the slot
+			for name, slot in MonsterClips.slotsFor(id) do
+				T.expect({ id, name, slot.from >= 0 and slot.to < clip.frames and slot.from < slot.to })
+					.toEqual({ id, name, true })
+				if slot.hit then
+					T.expect({ id, name, slot.hit >= 0 and slot.hit <= (slot.to - slot.from) / MonsterClips.FPS + 0.1 })
+						.toEqual({ id, name, true })
+				end
+			end
 			for frame = 0, clip.frames - 1, 7 do
 				for bone = 1, #clip.bones do
 					local x, y, z, w = BoneClip.rotation(d, frame, bone)

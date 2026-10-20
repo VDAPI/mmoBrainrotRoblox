@@ -24,6 +24,8 @@ export type Track = {
 	weight: number,
 	target: number,
 	fadeRate: number,
+	fit: number, -- W26: the playback factor that lands the blow (`slot.hit`) at the server's hit
+	lead: number?, -- W26: seconds from Play to the server's hit (set by the caller before Play)
 	mixer: Mixer,
 }
 
@@ -67,6 +69,18 @@ local function play(self: Track, fade: number?)
 	end
 	table.insert(mixer.playing, self)
 	self.time = 0
+	self.fit = 1
+	-- W26: a clip with a blow starts late enough (or plays slower) for the blow to land at the server's hit
+	local hit, lead = self.slot.hit, self.lead
+	if hit and lead then
+		local reach = math.max(0.05, lead) * self.slot.rate
+		if hit > reach then
+			self.time = hit - reach
+		else
+			self.fit = math.max(0.4, hit / reach)
+		end
+	end
+	self.lead = nil
 	self.target = 1
 	self.fadeRate = fadeRate(fade)
 end
@@ -108,7 +122,7 @@ function BoneClips.new(model: Model, id: string): Mixer?
 		playing = {},
 		tracks = {},
 	}
-	for name, slot in MonsterClips.SLOTS do
+	for name, slot in MonsterClips.slotsFor(id) do
 		local track: Track = {
 			Looped = false,
 			Play = play,
@@ -120,6 +134,8 @@ function BoneClips.new(model: Model, id: string): Mixer?
 			weight = 0,
 			target = 0,
 			fadeRate = math.huge,
+			fit = 1,
+			lead = nil,
 			mixer = mixer,
 		}
 		mixer.tracks[name] = track
@@ -145,12 +161,18 @@ local function pose(mixer: Mixer, track: Track, bone: number): CFrame
 	return a:Lerp(b, alpha)
 end
 
+-- Whether a track is still in its clip (a looped one always is).
+function BoneClips.running(track: Track): boolean
+	local slot = track.slot
+	return track.Looped or track.time < BoneClip.length(slot.from, slot.to, MonsterClips.FPS)
+end
+
 -- Advances the tracks by `dt` seconds and writes the bones.
 function BoneClips.step(mixer: Mixer, dt: number)
 	local playing = mixer.playing
 	for i = #playing, 1, -1 do
 		local track = playing[i]
-		track.time += dt * track.speed * track.slot.rate
+		track.time += dt * track.speed * track.slot.rate * track.fit
 		local step = dt * track.fadeRate
 		if track.weight < track.target then
 			track.weight = math.min(track.target, track.weight + step)

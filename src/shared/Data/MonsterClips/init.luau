@@ -5,8 +5,8 @@
 -- with w >= 0, times 32767), then the Hips offset (x, y, z, times 100, in the model's import units: multiply by the
 -- model's scale). Decoding: Logic/BoneClip. All models share one clip layout (SLOTS: first and last frame, rate).
 
-export type Clip = { bones: { string }, frames: number, data: string }
-export type Slot = { from: number, to: number, rate: number }
+export type Slot = { from: number, to: number, rate: number, hit: number? } -- hit: seconds to the blow (rate 1)
+export type Clip = { bones: { string }, frames: number, data: string, base: number?, slots: { [string]: Slot }? }
 
 local MonsterClips = {}
 
@@ -22,7 +22,7 @@ local SLOTS: { [string]: Slot } = {
 
 MonsterClips.SLOTS = SLOTS
 
-local ALL: { [string]: Clip } = {
+local ALL: { [string]: any } = { -- the modules are plain tables (their slot tables differ in keys)
 	ashOrc = require("@self/ashOrc"),
 	azgor = require("@self/azgor"),
 	bandit = require("@self/bandit"),
@@ -54,6 +54,19 @@ local ALL: { [string]: Clip } = {
 
 function MonsterClips.get(id: string): Clip?
 	return ALL[id]
+end
+
+-- W26 (owner's Mixamo clips): the shared slots with the clip's own (weapon attacks, the spell, the hit reaction)
+-- laid over them.
+function MonsterClips.slotsFor(id: string): { [string]: Slot }
+	local out: { [string]: Slot } = table.clone(SLOTS)
+	local clip = ALL[id]
+	if clip and clip.slots then
+		for name, slot in clip.slots do
+			out[name] = slot
+		end
+	end
+	return out
 end
 
 function MonsterClips.ids(): { string }
