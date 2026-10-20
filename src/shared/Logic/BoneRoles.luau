@@ -2,9 +2,9 @@
 -- W26: roles of the bones of an imported rig without clips (Tripo auto-rigs of animals, dragons, birds), found from
 -- the rest skeleton alone, so client/Anim/BoneGait can walk, flap and wag them with Logic/Gait's motion. Positions are
 -- in the model's frame (feet at y = 0, front towards -Z).
---   leg  : the chain to a leaf near the ground; its top bone (the first one away from the centre line) swings, the
+--   leg  : the chain to a leaf in the lower half; its top bone (below the last branch above the foot) swings, the
 --          next one bends; front (z < middle) or hind, left (x < 0) or right
---   wing : the chain to a leaf far out to the side and high; its first bone off the centre line flaps
+--   wing : the chain to a leaf far out to the side and high; its top bone flaps (tails, heads, twist bones never)
 --   tail : bones named *Tail*: the first one wags, the rest follow
 --   head : the first bone named *Head*: nods and looks round
 --   spine: the first bone named *Spine*: bends with the step
@@ -21,63 +21,92 @@ export type Role = {
 	depth: number, -- position along a tail (0 = root)
 }
 
-local GROUND = 0.15 -- leaf height (share of the model height) that counts as a foot
-local CENTRE = 0.12 -- |x| (share of the model's width) still on the centre line
-local WING_OUT = 0.3 -- a wing tip is this far out (share of the width) ...
+local GROUND = 0.5 -- a leaf below this (share of the model height) ends a leg
+local WING_OUT = 0.3 -- a wing tip is this far out from the root bone (share of the width) ...
 local WING_UP = 0.35 -- ... and this high (share of the height)
+local TOES = 0.25 -- branches below this (share of the height) belong to a foot
+local DROP = 0.15 -- a leg falls at least this much (share of the height) from its top to its foot
 
-function BoneRoles.classify(bones: { BoneIn }, height: number, width: number, depthMid: number): { Role }
+local function named(name: string, part: string): boolean
+	return string.find(string.lower(name), part, 1, true) ~= nil
+end
+
+function BoneRoles.classify(bones: { BoneIn }, height: number, width: number, _depthMid: number?): { Role }
 	local children: { [number]: number } = {}
-	for _, b in bones do
+	local rootX = 0
+	for i, b in bones do
 		if b.parent then
 			children[b.parent] = (children[b.parent] or 0) + 1
+		elseif i == 1 or rootX == 0 then
+			rootX = b.pos[1]
 		end
 	end
 	local taken: { [number]: boolean } = {}
 	local out: { Role } = {}
-	local function offCentre(i: number): boolean
-		return math.abs(bones[i].pos[1]) > CENTRE * width
-	end
-	-- the first bone of the chain from the root to `leaf` that leaves the centre line, and the one after it
+	-- walking up from `leaf`: the bone below the last branch (a parent with more children, or the root) and the one
+	-- after it; nil when the chain runs through a tail or a head
 	local function chainTop(leaf: number): (number?, number?)
-		local chain: { number } = {}
-		local cur: number? = leaf
-		while cur do
-			table.insert(chain, 1, cur)
-			cur = bones[cur].parent
-		end
-		for k, i in chain do
-			if offCentre(i) then
-				return i, chain[k + 1]
+		local cur = leaf
+		local below: number? = nil
+		while true do
+			local n = bones[cur].name
+			if named(n, "tail") or named(n, "head") or named(n, "twist") or named(n, "share") then
+				return nil, nil
 			end
+			local parent = bones[cur].parent
+			if parent == nil then
+				return nil, nil
+			end
+			-- a branch low down is a foot (toes, claws): the leg goes on above it
+			local branch = (children[parent] or 0) > 1 and bones[parent].pos[2] > TOES * height
+			if branch or bones[parent].parent == nil then
+				return cur, below
+			end
+			below = cur
+			cur = parent
 		end
-		return nil, nil
 	end
 	local legs: { { top: number, knee: number?, x: number, z: number } } = {}
 	for i, b in bones do
-		if children[i] then
+		if children[i] or b.parent == nil then
 			continue
 		end
 		local y = b.pos[2]
+		local out_ = math.abs(b.pos[1] - rootX)
 		if y < GROUND * height then
-			local top, knee = chainTop(i)
-			if top and not taken[top] then
+			local top, below = chainTop(i)
+			-- the knee: the bone after the top in the chain (the one whose parent is the top)
+			local knee: number? = nil
+			if top then
+				local cur: number? = i
+				while cur and bones[cur].parent ~= top do
+					cur = bones[cur].parent
+				end
+				knee = if cur and cur ~= i then cur else below
+			end
+			if top and not taken[top] and bones[top].pos[2] - y > DROP * height then
 				taken[top] = true
 				table.insert(legs, { top = top, knee = knee, x = bones[top].pos[1], z = bones[top].pos[3] })
 			end
-		elseif math.abs(b.pos[1]) > WING_OUT * width and y > WING_UP * height then
+		elseif out_ > WING_OUT * width and y > WING_UP * height then
 			local top = chainTop(i)
 			if top and not taken[top] then
 				taken[top] = true
-				local side = if bones[top].pos[1] < 0 then -1 else 1
+				local side = if bones[i].pos[1] < rootX then -1 else 1
 				table.insert(out, { bone = top, role = "wing", side = side, front = 0, phase = 0, depth = 0 })
 			end
 		end
 	end
+	-- sides and ends from the legs themselves (a leaning body or an off-centre root does not split them wrongly)
+	local midX, midZ = 0, 0
+	for _, leg in legs do
+		midX += leg.x / #legs
+		midZ += leg.z / #legs
+	end
 	local quadruped = #legs >= 4
 	for _, leg in legs do
-		local side = if leg.x < 0 then -1 else 1
-		local front = if leg.z < depthMid then 1 else -1
+		local side = if leg.x < midX then -1 else 1
+		local front = if leg.z < midZ then 1 else -1
 		-- a trot: front-left with hind-right; two legs alternate
 		local phase = if quadruped
 			then (if front == 1 then 0 else 0.5) + (if side < 0 then 0 else 0.5)
