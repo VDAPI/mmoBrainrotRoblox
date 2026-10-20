@@ -601,7 +601,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 			TextSize = Theme.TextSize.Large,
 			TextColor3 = Theme.Iron.Text,
 			[Children] = {
-				scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 				scope:New("UIStroke")({ Color = Theme.Brass.Line, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
 			},
 			[OnEvent("Activated")] = function()
@@ -626,7 +626,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 					return MapSketch.background(if map then map.biome else "grass")
 				end),
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 					holder,
 					-- S25: click / tap = the world map, centred on the player.
 					scope:New("TextButton")({
@@ -679,7 +679,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 				Size = UDim2.fromOffset(SIZE + 6, SIZE + 6),
 				BackgroundTransparency = 1,
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 					scope:New("UIStroke")({ Thickness = Theme.Size.FrameOuter, Color = Theme.Brass.Frame }),
 				},
 			}),
@@ -691,9 +691,9 @@ local function Minimap(scope: Scope, props: Props): Instance
 				Size = UDim2.fromOffset(SIZE, SIZE),
 				BackgroundTransparency = 1,
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 					scope:New("UIStroke")({
-						Thickness = 3,
+						Thickness = Theme.Stroke.Thick,
 						Color = scope:Computed(function(use): Color3
 							local z = use(zone)
 							return if type(z) == "table"
