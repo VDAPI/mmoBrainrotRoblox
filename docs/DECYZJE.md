@@ -5932,3 +5932,8 @@
 - **S155** Wiki pominięta (właściciel 17.10): tytuł i kosmetyk bez `wiki = false`, wejdą przy hurtowym odświeżeniu.
 
 - **Właściciel 2026-10-19 (pytania S149–S153)**: PvP przy bossie świata zostaje wyłączone; nagroda za bossa świata od 70. poziomu (`Bosses.hrimvald.minLevel` 80 → 70, Lodowe Szczyty od 70); kierunki klas zostają na wiki; przepustka zostaje (800 odłamków, 1 h dziennie kończy całość); premia za powrót zostaje od postaci 10. poziomu.
+
+- **S156** (właściciel 2026-10-20) Konie szybsze: jazda ×1,6 → ×2,0 na 1. poziomie wierzchowca, ×2,0 → ×2,6 na 10. (sprint ×1,35 był prawie tak szybki).
+- **S156** (właściciel 2026-10-20) 10 slotów umiejętności (klawisze 1–9 i 0) zamiast 8 z S137; paski zostają, model balansu dalej rzuca pierwsze 8 (`Skills.MODEL_BAR`), dwa sloty to miejsce na umiejętności sytuacyjne.
+- **S156** Koperta poczty przy minimapie (okrągły przycisk z licznikiem w wolnym rogu nad lupą) zamiast pływającej nad środkiem górnej krawędzi.
+- **S156** Od 2026-10-20 praca idzie na `main` (gałąź `wyglad` scalona, sesja DALEJ nieaktualna).

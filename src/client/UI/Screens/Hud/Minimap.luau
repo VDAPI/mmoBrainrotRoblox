@@ -622,6 +622,60 @@ local function Minimap(scope: Scope, props: Props): Instance
 		end)
 	)
 
+	local mailCount = scope:Computed(function(use): number
+		local mail = use(State.Value({ "mail" }))
+		return if type(mail) == "table" then mail.count or 0 else 0
+	end)
+	local function mailButton(): Instance
+		local art = UiArt.hud("mail")
+		local artShown = ArtIcon.Shown(scope, art)
+		return scope:New("TextButton")({
+			Name = "MailEnvelope",
+			Position = UDim2.fromOffset(0, 0),
+			Size = UDim2.fromOffset(Theme.Size.MinTouch, Theme.Size.MinTouch),
+			BackgroundColor3 = Theme.Iron.Surface,
+			BackgroundTransparency = Theme.HudAlpha,
+			Visible = scope:Computed(function(use): boolean
+				return use(mailCount) > 0
+			end),
+			Text = scope:Computed(function(use): string
+				return if use(artShown) then "" else "✉"
+			end),
+			FontFace = Theme.Fonts.BodyBold,
+			TextSize = Theme.TextSize.Large,
+			TextColor3 = Theme.Brass.Bright,
+			[OnEvent("Activated")] = function()
+				props.ShowWindow("mail")
+			end,
+			[Children] = {
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+				scope:New("UIStroke")({ Color = Theme.Brass.Line, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
+				ArtIcon.Image(scope, {
+					Key = art,
+					Tint = Theme.Brass.Bright,
+					Size = UDim2.fromOffset(28, 28),
+					Position = UDim2.fromScale(0.5, 0.5),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+				}),
+				scope:New("TextLabel")({
+					Name = "Count",
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.new(1, -4, 0, 4),
+					Size = UDim2.fromOffset(22, 22),
+					BackgroundColor3 = Theme.Iron.Danger,
+					Text = scope:Computed(function(use): string
+						local n = use(mailCount)
+						return if n > 9 then "9+" else tostring(n)
+					end),
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Iron.Text,
+					[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }) },
+				}),
+			},
+		})
+	end
+
 	local function zoomButton(text: string, delta: number, order: number): Instance
 		return scope:New("TextButton")({
 			LayoutOrder = order,
@@ -735,6 +789,9 @@ local function Minimap(scope: Scope, props: Props): Instance
 					}),
 				},
 			}),
+			-- S156 (owner: the envelope floated in the middle of the top edge): unread parcels as a round button in the
+			-- free corner left of the disc, above the zoom buttons
+			mailButton(),
 			scope:New("Frame")({
 				Name = "Zoom",
 				AnchorPoint = Vector2.new(0, 0),
