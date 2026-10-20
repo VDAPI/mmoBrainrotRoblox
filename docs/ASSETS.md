@@ -17,6 +17,7 @@ właściciel (`docs/GRAFIKA.md` 6).
 | `assets/Weapons/*.glb` (121 modeli broni, progi 1–20 i `unique_grimrok_cleaver`) | własne, Tripo AI, konto Pro (właściciel, folder Graphics) | własne (Tripo Pro: prywatne, komercyjne) | 2026-10-12 | — | 2,6–4,1 tys. trójkątów, tekstury w pliku; `.glb` tylko lokalnie (gitignore), w repo dane `WeaponLooks.assets` |
 | `art/icons/src/**`, `art/icons/items_4..8.png` (287 ikon: 269 przedmiotów, 18 przedmiotów questowych) | własne, ChatGPT / Codex (właściciel, folder Graphics) | własne (warunki OpenAI) | 2026-10-12, S118 2026-10-14 | — | kopie 128 px (`tools/icons/import_graphics.py`), oryginały 1024 px poza repo |
 | `Data/Sfx` (dźwięki) | Creator Store, twórca Roblox | warunki Creator Store | S111, 2026-10-14 | — | lista w „Dźwięki (S111)” |
+| `Data/Ambience` (pętle otoczenia) | Creator Store, twórcy ProSoundEffects i APMOfficial | warunki Creator Store | W27, 2026-10-20 | — | lista w „Dźwięk otoczenia (W27)” |
 | `art/vfx/*.png` (25 tekstur efektów) | własne, wygenerowane (`tools/vfx/make_textures.py`) | własne | S112, 2026-10-14 | — | przebudowa i wgranie: `docs/ANIMACJE.md` → „Tekstury efektów” |
 | `art/ui/**` (232 grafiki interfejsu: 6 atlasów, 30 obrazów JPEG), `wiki/public/img/og/{base,default-art}.png` | własne, ChatGPT / Codex (właściciel, folder Graphics, `BRAKI-GRAFIK*.md`) | własne (warunki OpenAI) | S119, 2026-10-14 | — | `tools/icons/import_ui.py` (128 px, JPEG 90), oryginały poza repo |
 
@@ -73,7 +74,8 @@ Tylko Creator Store z twórcą **Roblox** (pole `creatorName`), znalezione przez
 Play: `IsLoaded = true`, `TimeLength > 0` (`/animlab sfx try <id>`, potem `/animlab sfx <klucz> <n>` dla każdego
 wariantu). Dźwięków nie odsłuchano (sesja nie słyszy): wybór po nazwie, opisie (`\sounds\*.wav` to klasyczne dźwięki
 klienta Roblox) i długości. Podmiana: ID w `src/shared/Data/Sfx.luau` (`ids` klucza) + wiersz tutaj; dźwięk spoza
-twórcy Roblox (np. biblioteka `ProSoundEffects` / `APMOfficial` dostępna w Creator Store) tylko z decyzji właściciela.
+twórcy Roblox (np. biblioteka `ProSoundEffects` / `APMOfficial` dostępna w Creator Store) tylko z decyzji właściciela;
+pętle otoczenia (`Data/Ambience`) mają taką decyzję: „Dźwięk otoczenia (W27)”.
 Puste klucze: `/animlab sfx list`.
 
 | Klucz | ID | Nazwa w Creator Store | Twórca | Długość (s) | Licencja | Data | Uwagi |
@@ -149,6 +151,232 @@ listą S111); klucze biorą pliki z tabel wyżej w innej wysokości (w Play `/an
 | `skill.blink`, `skill.fireball.cast`, `skill.meteor.cast`, `skill.meteorStorm.cast`, `skill.cataclysm.cast` | `rbxassetid://15675012262` | Roblox_UI_Whoosh_04 | Roblox | 0,35 | Creator Store, twórca Roblox | 2026-10-14 | S115, wezwanie czaru nisko |
 | `skill.evocation`, `skill.manaShield` | `rbxassetid://10128760939`, `rbxassetid://10066968815` | RBLX UI Select 01 / 02 (SFX) | Roblox | 0,58 / 0,49 | Creator Store, twórca Roblox | 2026-10-14 | S115, nisko |
 | `skill.chainLightning` | `rbxassetid://12221990` | electronicpingshort.wav | Roblox | 0,46 | Creator Store, twórca Roblox | 2026-10-14 | S115, wyładowanie zastępcze |
+
+## Dźwięk otoczenia (W27)
+
+Decyzja właściciela (2026-10-20): pętle otoczenia (`src/shared/Data/Ambience.luau`, tabela `IDS`) pochodzą z biblioteki
+**ProSoundEffects** w Creator Store, a gdy tam nic nie pasuje, z **APMOfficial**. Wyszukane przez MCP Studio `search_asset`
+(Audio, `creator_store`, od 20 s, krótkie od 15 s), wybrane po opisie i długości, **nieodsłuchane** i niewstawiane do
+Studio. Podmiana: ID w `IDS` (jeden wpis zmienia wszystkie klucze z tym dźwiękiem) + wiersz tutaj. Puste ID = pętla nie gra.
+Licencja: warunki Creator Store, data 2026-10-20.
+
+| Klucz / hint | ID | Nazwa w Creator Store | Twórca | Długość (s) | Uwagi |
+|---|---|---|---|---|---|
+| `BIRDS` | `rbxassetid://9112831284` | Morning Birds 1 (SFX) | ProSoundEffects | 36,0 | Loop, Birds - Land |
+| `WIND_GRASS` | `rbxassetid://9112777807` | Farmland Presence 1 (SFX) | ProSoundEffects | 36,0 | Loop; wiatr w winorośli, bardzo daleki ruch uliczny (sprawdzić) |
+| `NIGHT_CRICKETS` | `rbxassetid://9112765304` | Crickets Night 1 (SFX) | ProSoundEffects | 56,0 | Loop |
+| `OWL` | `rbxassetid://9112835631` | Night Ambience 1 (SFX) | ProSoundEffects | 36,0 | Loop; świerszcz, sowy, rzadki przejazd auta (sprawdzić) |
+| `WIND_HILLS` | `rbxassetid://9113286969` | Barstow Wind Light Blustery Low Howl 2 (SFX) | ProSoundEffects | 37,0 | Winds; jedyny ogólny wiatr w bibliotece |
+| `WOLF_HOWL` | `rbxassetid://9120051839` | Timber Wolves Distant Small Pack 1 (SFX) | ProSoundEffects | 32,5 | daleko |
+| `FROGS` | `rbxassetid://9125615469` | Kenyan Frogs Cu Deep Throaty Croaking Insect (SFX) | ProSoundEffects | 53,8 |  |
+| `MARSH_NIGHT` | `rbxassetid://9113996155` | Creek Night Water Flowing Softly 1 (SFX) | ProSoundEffects | 41,9 | woda, świerszcze, żaby |
+| `FOREST_DAY` | `rbxassetid://9112781689` | Forest Ambience 2 (SFX) | ProSoundEffects | 56,7 | Loop; wiatr w drzewach, dzięcioł |
+| `FOREST_NIGHT` | `rbxassetid://9112764891` | Crickets Night 3 (SFX) | ProSoundEffects | 63,5 | Loop, gęste (las, bagno) |
+| `CROWS` | `rbxassetid://9112751072` | British Storm Crows 3 (SFX) | ProSoundEffects | 60,3 | Loop; wrony, wiatr, w tle fale (sprawdzić) |
+| `FIRE_DISTANT` | `rbxassetid://9112780193` | Fireplace Constant Burning Flame 1 (SFX) | ProSoundEffects | 36,0 | Loop |
+| `ROAD_DAY` | `rbxassetid://9112779493` | Field Birds Tweeting 2 (SFX) | ProSoundEffects | 66,1 | Loop; ptaki, cykady (bez wozu) |
+| `QUARRY` | `rbxassetid://9118581493` | Rock Chiseling 2 (SFX) | ProSoundEffects | 41,9 |  |
+| `CAVE_WIND` | `rbxassetid://9119643864` | Storm Drain Presence 1 (SFX) | ProSoundEffects | 36,0 | szum rury, „wind-like” |
+| `GOBLIN_CAMP` | — | — | — | — | puste: brak gwaru obozu bez współczesnej mowy |
+| `DRUMS_NIGHT` | `rbxassetid://1836484912` | Kodo Dragon 60 | APMOfficial | ~60 (z nazwy) | muzyka: bębny taiko, bez opisu, sprawdzić |
+| `RAVINE` | `rbxassetid://9112832297` | Mountain Birds 2 (SFX) | ProSoundEffects | 40,2 | Loop; ptaki, ciężkie powietrze |
+| `STREAM` | `rbxassetid://9119646672` | Stream Flow 2 (SFX) | ProSoundEffects | 86,3 |  |
+| `OLD_TREES` | `rbxassetid://9112781510` | Forest Ambience 1 (SFX) | ProSoundEffects | 36,0 | Loop; wiatr w drzewach |
+| `DARK_FOREST_NIGHT` | `rbxassetid://9112835631` | Night Ambience 1 (SFX) | ProSoundEffects | 36,0 | Loop; świerszcz, sowy, rzadki przejazd auta (sprawdzić) |
+| `WEREWOLF_HOWL` | `rbxassetid://9120051995` | Timber Wolves Large Pack Sustained Howling 2 (SFX) | ProSoundEffects | 62,0 | wataha |
+| `HOLLOW_DRIP` | `rbxassetid://9120540076` | Water Drips Leaf Small Cu Single Drops 2 (SFX) | ProSoundEffects | 23,8 | pojedyncze krople, bez echa |
+| `WHISPERS` | `rbxassetid://9114244841` | Electric Forest Airy Washy Shrieky 3 (SFX) | ProSoundEffects | 99,5 | Ghosts; „shrieky”, sprawdzić ostrość |
+| `CHAPEL_BELL` | `rbxassetid://9113804573` | Church Bell Tolling 2 (SFX) | ProSoundEffects | 25,7 |  |
+| `ROT` | `rbxassetid://1842379744` | The Laboratory (a) | APMOfficial | 31 | bulgotanie cieczy |
+| `SPORES` | `rbxassetid://9114244667` | Electric Forest Airy Washy Shrieky 2 (SFX) | ProSoundEffects | 46,5 | Ghosts |
+| `CULT_CHANT` | — | — | — | — | puste: brak śpiewu rytualnego (tylko muzyka z wokalem) |
+| `CULT_DAY` | — | — | — | — | puste: jw. (odległe głosy) |
+| `MIST_WIND` | `rbxassetid://9114625552` | Gods Wind Spooky Eerie 3 (SFX) | ProSoundEffects | 68,1 | niesamowity wiatr |
+| `GALLOWS` | `rbxassetid://9120832471` | Wood Creaks 4 (SFX) | ProSoundEffects | 52,5 | skrzypienie belek |
+| `SWAMP_DAY` | `rbxassetid://9114894515` | Jungle Insects 2 (SFX) | ProSoundEffects | 51,6 | owady, lekki wiatr |
+| `SWAMP_NIGHT` | `rbxassetid://9113996155` | Creek Night Water Flowing Softly 1 (SFX) | ProSoundEffects | 41,9 | woda, świerszcze, żaby |
+| `TROLL_GRUNTS` | `rbxassetid://9116964934` | Monster Vocal 2 (SFX) | ProSoundEffects | 32,0 | głęboki pomruk |
+| `WITCH_MARSH` | `rbxassetid://1842379744` | The Laboratory (a) | APMOfficial | 31 | bulgotanie cieczy |
+| `CLIFF_WIND` | `rbxassetid://9113286969` | Barstow Wind Light Blustery Low Howl 2 (SFX) | ProSoundEffects | 37,0 | Winds; jedyny ogólny wiatr w bibliotece |
+| `BAT_COLONY` | — | — | — | — | puste: brak nietoperzy |
+| `ASH_WIND` | `rbxassetid://9114057128` | Desert Wind Whistley Light Gusts 2 (SFX) | ProSoundEffects | 92,0 | Winds |
+| `EARTH_RUMBLE` | `rbxassetid://9112795463` | Hollow Rumble 1 (SFX) | ProSoundEffects | 106,3 | Loop; ciemny dron |
+| `EMBERS_CRACKLE` | `rbxassetid://9112780193` | Fireplace Constant Burning Flame 1 (SFX) | ProSoundEffects | 36,0 | Loop |
+| `HYENAS` | `rbxassetid://9113954299` | Coyotes Distant Barking Echo Cackling 2 (SFX) | ProSoundEffects | 23,8 | kojoty zamiast hien (hien brak) |
+| `HOT_WIND_PALMS` | `rbxassetid://9114057104` | Desert Wind Whistley Light Gusts 1 (SFX) | ProSoundEffects | 37,4 | Winds |
+| `VULTURES` | — | — | — | — | puste: brak sępów i ptaków drapieżnych |
+| `DESERT_INSECTS` | `rbxassetid://9112765142` | Crickets Night 2 (SFX) | ProSoundEffects | 53,5 | Loop |
+| `ORC_CAMP` | — | — | — | — | puste: jw. |
+| `FORGE_HAMMERS` | `rbxassetid://9113132431` | Anvil Hit Sharp Metallic Clanks Bouncing 1 (SFX) | ProSoundEffects | 35,2 |  |
+| `WAR_DRUMS` | `rbxassetid://1836484912` | Kodo Dragon 60 | APMOfficial | ~60 (z nazwy) | muzyka: bębny taiko, bez opisu, sprawdzić |
+| `CAMPFIRE` | `rbxassetid://9112906854` | Wind Whipped Fire 2 (SFX) | ProSoundEffects | 46,9 | Loop; duży ogień w porywach |
+| `LAVA_BUBBLING` | `rbxassetid://9112822943` | Lava Fire Deep Rumbling 2 (SFX) | ProSoundEffects | 42,0 | Loop |
+| `SMOULDER` | `rbxassetid://9112780193` | Fireplace Constant Burning Flame 1 (SFX) | ProSoundEffects | 36,0 | Loop |
+| `RUINS_WIND` | `rbxassetid://9114625552` | Gods Wind Spooky Eerie 3 (SFX) | ProSoundEffects | 68,1 | niesamowity wiatr |
+| `BEAM_CREAK` | `rbxassetid://9120832471` | Wood Creaks 4 (SFX) | ProSoundEffects | 52,5 | skrzypienie belek |
+| `IMP_GIGGLES` | — | — | — | — | puste: brak (tylko krzyki i śmiech ludzi) |
+| `DESERT_WIND` | `rbxassetid://9114057128` | Desert Wind Whistley Light Gusts 2 (SFX) | ProSoundEffects | 92,0 | Winds |
+| `SAND_HISS` | `rbxassetid://9114057104` | Desert Wind Whistley Light Gusts 1 (SFX) | ProSoundEffects | 37,4 | Winds |
+| `DESERT_NIGHT_WIND` | `rbxassetid://9114057104` | Desert Wind Whistley Light Gusts 1 (SFX) | ProSoundEffects | 37,4 | Winds |
+| `CRAG_WIND` | `rbxassetid://9114057128` | Desert Wind Whistley Light Gusts 2 (SFX) | ProSoundEffects | 92,0 | Winds |
+| `WYVERN_SCREECH` | `rbxassetid://9113987614` | Creature Vocal Giant Crab Monster Roars 2 (SFX) | ProSoundEffects | 27,4 | ryki potwora |
+| `DUSTY_WIND` | `rbxassetid://9114057128` | Desert Wind Whistley Light Gusts 2 (SFX) | ProSoundEffects | 92,0 | Winds |
+| `WINGS` | `rbxassetid://9113716666` | Cape Flap Parachute Movement 2 (SFX) | ProSoundEffects | 16,3 | łopot płótna zamiast skrzydeł |
+| `FALLING_STONES` | `rbxassetid://9114034817` | Debris Rain 2 (SFX) | ProSoundEffects | 28,0 | osuwający się żwir |
+| `STILL_HEAT` | `rbxassetid://9119392328` | Space Presence 1 (SFX) | ProSoundEffects | 46,0 | pusty, wietrzny pogłos |
+| `DRONE_LOW` | `rbxassetid://9112795463` | Hollow Rumble 1 (SFX) | ProSoundEffects | 106,3 | Loop; ciemny dron |
+| `WHISPERS_TOMB` | `rbxassetid://9114244841` | Electric Forest Airy Washy Shrieky 3 (SFX) | ProSoundEffects | 99,5 | Ghosts; „shrieky”, sprawdzić ostrość |
+| `SPRUCE_WIND` | `rbxassetid://9113287001` | Barstow Wind Light Blustery Low Howl 3 (SFX) | ProSoundEffects | 27,1 | Winds |
+| `SNOW_CREAK` | — | — | — | — | puste: tylko krótkie kroki w śniegu (15 s) |
+| `WOLVES_NIGHT` | `rbxassetid://9120051995` | Timber Wolves Large Pack Sustained Howling 2 (SFX) | ProSoundEffects | 62,0 | wataha |
+| `FROST_CRACK` | `rbxassetid://9120822603` | Wood Crack Pressurized Creaking Crackling 4 (SFX) | ProSoundEffects | 39,8 | trzaski drewna zamiast lodu (lodu brak) |
+| `MOUNTAIN_WIND` | `rbxassetid://9113286969` | Barstow Wind Light Blustery Low Howl 2 (SFX) | ProSoundEffects | 37,0 | Winds; jedyny ogólny wiatr w bibliotece |
+| `AVALANCHE_FAR` | `rbxassetid://9112823552` | Lava Rumble 1 (SFX) | ProSoundEffects | 46,0 | Loop; osuwisko, skały |
+| `HOWLING_WIND` | `rbxassetid://9113287001` | Barstow Wind Light Blustery Low Howl 3 (SFX) | ProSoundEffects | 27,1 | Winds |
+| `YETI_ROARS` | `rbxassetid://9113987614` | Creature Vocal Giant Crab Monster Roars 2 (SFX) | ProSoundEffects | 27,4 | ryki potwora |
+| `SPIRE_WIND` | `rbxassetid://9114057128` | Desert Wind Whistley Light Gusts 2 (SFX) | ProSoundEffects | 92,0 | Winds |
+| `HARPY_SHRIEKS` | — | — | — | — | puste: jw. |
+| `GUSTS_NIGHT` | `rbxassetid://9113287001` | Barstow Wind Light Blustery Low Howl 3 (SFX) | ProSoundEffects | 27,1 | Winds |
+| `PASS_WIND` | `rbxassetid://9113286969` | Barstow Wind Light Blustery Low Howl 2 (SFX) | ProSoundEffects | 37,0 | Winds; jedyny ogólny wiatr w bibliotece |
+| `GIANT_HORNS` | — | — | — | — | puste: brak rogów (tylko klaksony i syreny) |
+| `BIG_FIRE` | `rbxassetid://9112906854` | Wind Whipped Fire 2 (SFX) | ProSoundEffects | 46,9 | Loop; duży ogień w porywach |
+| `ICE_SINGING` | — | — | — | — | puste: brak śpiewającego lodu |
+| `LIGHT_WIND` | `rbxassetid://9113287001` | Barstow Wind Light Blustery Low Howl 3 (SFX) | ProSoundEffects | 27,1 | Winds |
+| `ICE_BOOMS` | `rbxassetid://9120822603` | Wood Crack Pressurized Creaking Crackling 4 (SFX) | ProSoundEffects | 39,8 | trzaski drewna zamiast lodu (lodu brak) |
+| `TUNDRA_WIND` | `rbxassetid://9113286969` | Barstow Wind Light Blustery Low Howl 2 (SFX) | ProSoundEffects | 37,0 | Winds; jedyny ogólny wiatr w bibliotece |
+| `MAMMOTH_CALLS` | `rbxassetid://9114296808` | Elephant Group 16 (SFX) | ProSoundEffects | 24,6 | słonie, sprawdzić |
+| `WOLVES_FAR` | `rbxassetid://9120051839` | Timber Wolves Distant Small Pack 1 (SFX) | ProSoundEffects | 32,5 | daleko |
+| `COLUMN_WIND` | `rbxassetid://9114625552` | Gods Wind Spooky Eerie 3 (SFX) | ProSoundEffects | 68,1 | niesamowity wiatr |
+| `ICE_CHIMES` | `rbxassetid://9120750072` | Wind Chimes 2 (SFX) | ProSoundEffects | 31,1 | delikatne |
+| `LOW_GROWL` | `rbxassetid://9112863325` | Rumble Breath Growl 2 (SFX) | ProSoundEffects | 58,9 | Loop; chrapliwy oddech |
+| `CRYSTAL_HUM` | `rbxassetid://9113948307` | Cosmic Longing Melodic Howling 2 (SFX) | ProSoundEffects | 39,8 | tonalne dzwonienie |
+| `BATTLEMENT_WIND` | `rbxassetid://9113286969` | Barstow Wind Light Blustery Low Howl 2 (SFX) | ProSoundEffects | 37,0 | Winds; jedyny ogólny wiatr w bibliotece |
+| `FLAG_CREAK` | `rbxassetid://9120832471` | Wood Creaks 4 (SFX) | ProSoundEffects | 52,5 | skrzypienie belek |
+| `DARK_DRONE` | `rbxassetid://9112795583` | Hollow Rumble 3 (SFX) | ProSoundEffects | 122,5 | Loop; ciemny dron |
+| `DISTANT_HORN` | — | — | — | — | puste: jw. |
+| `BLIZZARD` | `rbxassetid://9113286969` | Barstow Wind Light Blustery Low Howl 2 (SFX) | ProSoundEffects | 37,0 | Winds; jedyny ogólny wiatr w bibliotece |
+| `WYRM_ROAR` | `rbxassetid://9113987614` | Creature Vocal Giant Crab Monster Roars 2 (SFX) | ProSoundEffects | 27,4 | ryki potwora |
+| `DRIP_ECHO` | `rbxassetid://9120540076` | Water Drips Leaf Small Cu Single Drops 2 (SFX) | ProSoundEffects | 23,8 | pojedyncze krople, bez echa |
+| `WATERFALL_BEHIND` | `rbxassetid://9120552550` | Waterfall Steady Stream 1 (SFX) | ProSoundEffects | 27,0 | daleki |
+| `UNDERGROUND_FALL` | `rbxassetid://9120549564` | Waterfall Background Water Roar 1 (SFX) | ProSoundEffects | 56,0 |  |
+| `LAKE_LAP` | `rbxassetid://9120570701` | Water Lap Active 1 (SFX) | ProSoundEffects | 31,5 | „inside cave” |
+| `SPIDER_CLICKS` | `rbxassetid://1839838823` | Bugs | APMOfficial | 83 | ruch owadów |
+| `SHAMAN_CHANT` | — | — | — | — | puste: jw. |
+| `TRIBAL_DRUMS` | `rbxassetid://1836484912` | Kodo Dragon 60 | APMOfficial | ~60 (z nazwy) | muzyka: bębny taiko, bez opisu, sprawdzić |
+| `BEAR_SNORE` | `rbxassetid://9112863325` | Rumble Breath Growl 2 (SFX) | ProSoundEffects | 58,9 | Loop; chrapliwy oddech |
+| `BOAT_CREAK` | `rbxassetid://9120832471` | Wood Creaks 4 (SFX) | ProSoundEffects | 52,5 | skrzypienie belek |
+| `STREAM_FLOW` | `rbxassetid://9119646672` | Stream Flow 2 (SFX) | ProSoundEffects | 86,3 |  |
+| `CROWS_SHAFT` | `rbxassetid://9112751072` | British Storm Crows 3 (SFX) | ProSoundEffects | 60,3 | Loop; wrony, wiatr, w tle fale (sprawdzić) |
+| `SINKHOLE_WIND` | `rbxassetid://9113287001` | Barstow Wind Light Blustery Low Howl 3 (SFX) | ProSoundEffects | 27,1 | Winds |
+| `GOBLIN_CHATTER` | — | — | — | — | puste: jw. |
+| `PICKAXES` | `rbxassetid://9118581497` | Rock Chiseling 1 (SFX) | ProSoundEffects | 48,6 |  |
+| `MINECART` | `rbxassetid://9112892531` | Wagon Slow 1 (SFX) | ProSoundEffects | 27,0 | Loop |
+| `WINCH_CREAK` | `rbxassetid://9120832471` | Wood Creaks 4 (SFX) | ProSoundEffects | 52,5 | skrzypienie belek |
+| `ARENA_DRUMS` | `rbxassetid://1836484912` | Kodo Dragon 60 | APMOfficial | ~60 (z nazwy) | muzyka: bębny taiko, bez opisu, sprawdzić |
+| `FIRE_CRACKLE` | `rbxassetid://9112780462` | Fireplace Constant Burning Flame 4 (SFX) | ProSoundEffects | 42,8 | Loop |
+| `BOAR_GRUNTS` | `rbxassetid://9113239420` | Baby Pigs Drinking 4 (SFX) | ProSoundEffects | 25,0 | świnki zamiast dzików |
+| `EARTH_CAVE` | `rbxassetid://9119643864` | Storm Drain Presence 1 (SFX) | ProSoundEffects | 36,0 | szum rury, „wind-like” |
+| `GNAWING` | `rbxassetid://9113987366` | Creatures Munch Army Of Crablike Insects 6 (SFX) | ProSoundEffects | 26,3 | chrupanie |
+| `BEAR_BREATH` | `rbxassetid://9112863325` | Rumble Breath Growl 2 (SFX) | ProSoundEffects | 58,9 | Loop; chrapliwy oddech |
+| `WOLF_ECHO` | `rbxassetid://9120051839` | Timber Wolves Distant Small Pack 1 (SFX) | ProSoundEffects | 32,5 | daleko |
+| `LANTERN_CREAK` | `rbxassetid://9112892695` | Wagon Slow 2 (SFX) | ProSoundEffects | 27,6 | Loop; pobrzękiwanie metalu |
+| `BEES` | `rbxassetid://9112881890` | Sylph 1 (SFX) | ProSoundEffects | 36,0 | Loop; rój pszczół |
+| `TOMB_DRONE` | `rbxassetid://9112795463` | Hollow Rumble 1 (SFX) | ProSoundEffects | 106,3 | Loop; ciemny dron |
+| `CULT_VOICES` | — | — | — | — | puste: jw. |
+| `DIGGING` | `rbxassetid://9120634046` | Wet Dirt Digging 3 (SFX) | ProSoundEffects | 27,8 | łopata |
+| `DRIP_TOMB` | `rbxassetid://9120540076` | Water Drips Leaf Small Cu Single Drops 2 (SFX) | ProSoundEffects | 23,8 | pojedyncze krople, bez echa |
+| `MAGIC_FIRE` | `rbxassetid://9112780561` | Fire Whoosh 1 (SFX) | ProSoundEffects | 49,0 | Loop; huczący płomień |
+| `SNAKE_HISS` | `rbxassetid://9118064108` | Rattlesnake Hisses Long Short 6 (SFX) | ProSoundEffects | 60,3 |  |
+| `CRYPT_DRONE` | `rbxassetid://9112795583` | Hollow Rumble 3 (SFX) | ProSoundEffects | 122,5 | Loop; ciemny dron |
+| `GHOST_RISE` | `rbxassetid://9114625552` | Gods Wind Spooky Eerie 3 (SFX) | ProSoundEffects | 68,1 | niesamowity wiatr |
+| `BONES_CHAINS` | `rbxassetid://9112892695` | Wagon Slow 2 (SFX) | ProSoundEffects | 27,6 | Loop; pobrzękiwanie metalu |
+| `GHOST_WAIL` | `rbxassetid://9114244841` | Electric Forest Airy Washy Shrieky 3 (SFX) | ProSoundEffects | 99,5 | Ghosts; „shrieky”, sprawdzić ostrość |
+| `NECRO_HUM` | `rbxassetid://9114353261` | Evil Drone Deep Unsetting Rumbly Keening 1 (SFX) | ProSoundEffects | 36,0 | Ghosts |
+| `CHOIR_HUM` | `rbxassetid://1837435799` | Gathering | APMOfficial | 72 | muzyka: chór a cappella (Requiem) |
+| `ROYAL_DRONE` | `rbxassetid://1837435799` | Gathering | APMOfficial | 72 | muzyka: chór a cappella (Requiem) |
+| `SHAFT_WIND` | `rbxassetid://9112775414` | Eerie Ambience 2 (SFX) | ProSoundEffects | 63,7 | Loop; dudnienie w rurze |
+| `TIMBER_CREAK` | `rbxassetid://9120832471` | Wood Creaks 4 (SFX) | ProSoundEffects | 52,5 | skrzypienie belek |
+| `CAGE_CHAIN` | `rbxassetid://9112892695` | Wagon Slow 2 (SFX) | ProSoundEffects | 27,6 | Loop; pobrzękiwanie metalu |
+| `GRAVEL` | `rbxassetid://9114034817` | Debris Rain 2 (SFX) | ProSoundEffects | 28,0 | osuwający się żwir |
+| `WAR_DRUM` | `rbxassetid://1836484912` | Kodo Dragon 60 | APMOfficial | ~60 (z nazwy) | muzyka: bębny taiko, bez opisu, sprawdzić |
+| `HYENA` | `rbxassetid://9113954299` | Coyotes Distant Barking Echo Cackling 2 (SFX) | ProSoundEffects | 23,8 | kojoty zamiast hien (hien brak) |
+| `VULTURE` | — | — | — | — | puste: jw. |
+| `MAGMA_HISS` | `rbxassetid://9112840906` | Organic Swirling Tone 2 (SFX) | ProSoundEffects | 60,4 | Loop; gęste mieszanie, syk |
+| `VOLCANO_RUMBLE` | `rbxassetid://9112795463` | Hollow Rumble 1 (SFX) | ProSoundEffects | 106,3 | Loop; ciemny dron |
+| `LAVA_BUBBLE` | `rbxassetid://9112822943` | Lava Fire Deep Rumbling 2 (SFX) | ProSoundEffects | 42,0 | Loop |
+| `WIND_HOLE` | `rbxassetid://9114057104` | Desert Wind Whistley Light Gusts 1 (SFX) | ProSoundEffects | 37,4 | Winds |
+| `WYVERN_WINGS` | `rbxassetid://9113716666` | Cape Flap Parachute Movement 2 (SFX) | ProSoundEffects | 16,3 | łopot płótna zamiast skrzydeł |
+| `IMP_GIGGLE` | — | — | — | — | puste: jw. |
+| `SAND_POUR` | `rbxassetid://9114034817` | Debris Rain 2 (SFX) | ProSoundEffects | 28,0 | osuwający się żwir |
+| `SCORPION` | `rbxassetid://1839838823` | Bugs | APMOfficial | 83 | ruch owadów |
+| `EGG_THROB` | `rbxassetid://9043365842` | HEARTBEAT 02 96BPM | APMOfficial | 60 | 96 BPM zamiast ~25 |
+| `ANVILS` | `rbxassetid://9113132431` | Anvil Hit Sharp Metallic Clanks Bouncing 1 (SFX) | ProSoundEffects | 35,2 |  |
+| `BELLOWS` | `rbxassetid://9120494643` | Washy Breathing 2 (SFX) | ProSoundEffects | 33,1 | zwolniony oddech |
+| `FORGE_ROAR` | `rbxassetid://9112906854` | Wind Whipped Fire 2 (SFX) | ProSoundEffects | 46,9 | Loop; duży ogień w porywach |
+| `LAVA_RIVER` | `rbxassetid://9112840906` | Organic Swirling Tone 2 (SFX) | ProSoundEffects | 60,4 | Loop; gęste mieszanie, syk |
+| `QUENCH` | `rbxassetid://9120500629` | Water Boil 1 (SFX) | ProSoundEffects | 20,1 | wrzenie z sykiem |
+| `POUR_METAL` | `rbxassetid://9112822943` | Lava Fire Deep Rumbling 2 (SFX) | ProSoundEffects | 42,0 | Loop |
+| `CHAINS` | `rbxassetid://9112892695` | Wagon Slow 2 (SFX) | ProSoundEffects | 27,6 | Loop; pobrzękiwanie metalu |
+| `GRINDSTONE` | — | — | — | — | puste: tylko szlifierka elektryczna |
+| `DWARF_SONG` | — | — | — | — | puste: jw. |
+| `GOLEM_GRIND` | `rbxassetid://9125440972` | Cinder Block Slide On Stone Plate Hollow Cou (SFX) | ProSoundEffects | 40,5 | tarcie kamienia |
+| `HEART_THUMP` | `rbxassetid://9043365842` | HEARTBEAT 02 96BPM | APMOfficial | 60 | 96 BPM zamiast ~25 |
+| `FURNACE_DEEP` | `rbxassetid://9112906854` | Wind Whipped Fire 2 (SFX) | ProSoundEffects | 46,9 | Loop; duży ogień w porywach |
+| `LAVAFALL` | `rbxassetid://9112822943` | Lava Fire Deep Rumbling 2 (SFX) | ProSoundEffects | 42,0 | Loop |
+| `ICE_CAVE` | `rbxassetid://9119392328` | Space Presence 1 (SFX) | ProSoundEffects | 46,0 | pusty, wietrzny pogłos |
+| `ICE_CRACK` | `rbxassetid://9120822603` | Wood Crack Pressurized Creaking Crackling 4 (SFX) | ProSoundEffects | 39,8 | trzaski drewna zamiast lodu (lodu brak) |
+| `SHAFT_HOWL` | `rbxassetid://9112775414` | Eerie Ambience 2 (SFX) | ProSoundEffects | 63,7 | Loop; dudnienie w rurze |
+| `BEAST_BREATH` | `rbxassetid://9112863325` | Rumble Breath Growl 2 (SFX) | ProSoundEffects | 58,9 | Loop; chrapliwy oddech |
+| `WOLF_PACK` | `rbxassetid://9120788412` | Wolf Growl 4 (SFX) | ProSoundEffects | 30,6 | warczenie z bliska |
+| `UNDER_ICE` | `rbxassetid://9120570701` | Water Lap Active 1 (SFX) | ProSoundEffects | 31,5 | „inside cave” |
+| `RAPTOR` | — | — | — | — | puste: jw. |
+| `LANTERN_SWAY` | `rbxassetid://9112892695` | Wagon Slow 2 (SFX) | ProSoundEffects | 27,6 | Loop; pobrzękiwanie metalu |
+| `FROZEN_CASTLE` | `rbxassetid://9119392328` | Space Presence 1 (SFX) | ProSoundEffects | 46,0 | pusty, wietrzny pogłos |
+| `GLACIER_GROAN` | `rbxassetid://9120822603` | Wood Crack Pressurized Creaking Crackling 4 (SFX) | ProSoundEffects | 39,8 | trzaski drewna zamiast lodu (lodu brak) |
+| `CHOIR_FAINT` | `rbxassetid://1837435799` | Gathering | APMOfficial | 72 | muzyka: chór a cappella (Requiem) |
+| `ARMOR_CHAINS` | `rbxassetid://9117651569` | Plate Armor Movement 4 (SFX) | ProSoundEffects | 16,0 |  |
+| `ICE_WHISPER` | `rbxassetid://9114244667` | Electric Forest Airy Washy Shrieky 2 (SFX) | ProSoundEffects | 46,5 | Ghosts |
+| `GLACIER_DEEP` | `rbxassetid://9112795583` | Hollow Rumble 3 (SFX) | ProSoundEffects | 122,5 | Loop; ciemny dron |
+| `HEARTBEAT` | `rbxassetid://9043365842` | HEARTBEAT 02 96BPM | APMOfficial | 60 | 96 BPM zamiast ~25 |
+| `CRYSTAL_CHIME` | `rbxassetid://9120750072` | Wind Chimes 2 (SFX) | ProSoundEffects | 31,1 | delikatne |
+| `ICE_ORGAN` | `rbxassetid://9113948307` | Cosmic Longing Melodic Howling 2 (SFX) | ProSoundEffects | 39,8 | tonalne dzwonienie |
+| `ICE_SLITHER` | `rbxassetid://9114862037` | Ice Cube Movement 2 (SFX) | ProSoundEffects | 26,0 |  |
+| `DRAGON_BREATH` | `rbxassetid://9112863325` | Rumble Breath Growl 2 (SFX) | ProSoundEffects | 58,9 | Loop; chrapliwy oddech |
+| `COINS` | `rbxassetid://9116165357` | Key Dings Taps 4 (SFX) | ProSoundEffects | 25,5 | brzęk metalu zamiast monet |
+| `DRAGON_ROAR` | `rbxassetid://9113987614` | Creature Vocal Giant Crab Monster Roars 2 (SFX) | ProSoundEffects | 27,4 | ryki potwora |
+| `LAIR_WIND` | `rbxassetid://9112863325` | Rumble Breath Growl 2 (SFX) | ProSoundEffects | 58,9 | Loop; chrapliwy oddech |
+| `BRAZIER` | `rbxassetid://9112780462` | Fireplace Constant Burning Flame 4 (SFX) | ProSoundEffects | 42,8 | Loop |
+| `HIGH_WIND` | `rbxassetid://9113286969` | Barstow Wind Light Blustery Low Howl 2 (SFX) | ProSoundEffects | 37,0 | Winds; jedyny ogólny wiatr w bibliotece |
+| distant thunder rumble | `rbxassetid://9120018695` | Thunder Distant Rumble 2 (SFX) | ProSoundEffects | 135,7 | z lekkim deszczem |
+| waterfall | `rbxassetid://9116496316` | Medium Size Waterfall 1 (SFX) | ProSoundEffects | 56,0 |  |
+| fire embers crackling | `rbxassetid://9112780193` | Fireplace Constant Burning Flame 1 (SFX) | ProSoundEffects | 36,0 | Loop |
+| campfire crackle | `rbxassetid://9112780462` | Fireplace Constant Burning Flame 4 (SFX) | ProSoundEffects | 42,8 | Loop |
+| tribal drums | `rbxassetid://1836484912` | Kodo Dragon 60 | APMOfficial | ~60 (z nazwy) | muzyka: bębny taiko, bez opisu, sprawdzić |
+| farm animals | `rbxassetid://9112824481` | Livestock Chickens 102 (SFX) | ProSoundEffects | 39,4 | Loop |
+| bees buzzing | `rbxassetid://9112881890` | Sylph 1 (SFX) | ProSoundEffects | 36,0 | Loop; rój pszczół |
+| lake shore water lapping | `rbxassetid://9120572579` | Water Lap Small Waves 2 (SFX) | ProSoundEffects | 41,1 |  |
+| small waterfall | `rbxassetid://9120552418` | Waterfall Small 1 (SFX) | ProSoundEffects | 27,0 |  |
+| magic fire | `rbxassetid://9112780561` | Fire Whoosh 1 (SFX) | ProSoundEffects | 49,0 | Loop; huczący płomień |
+| big cauldron bubbling | `rbxassetid://1842379744` | The Laboratory (a) | APMOfficial | 31 | bulgotanie cieczy |
+| bubbling cauldron | `rbxassetid://1842379744` | The Laboratory (a) | APMOfficial | 31 | bulgotanie cieczy |
+| wooden and bone wind chimes | `rbxassetid://9120750073` | Wind Chimes 3 (SFX) | ProSoundEffects | 41,0 | szkło i ceramika, nie drewno |
+| crypt wind howl | `rbxassetid://9114625552` | Gods Wind Spooky Eerie 3 (SFX) | ProSoundEffects | 68,1 | niesamowity wiatr |
+| lava flowing | `rbxassetid://9112840906` | Organic Swirling Tone 2 (SFX) | ProSoundEffects | 60,4 | Loop; gęste mieszanie, syk |
+| volcanic vent roar | `rbxassetid://9112823552` | Lava Rumble 1 (SFX) | ProSoundEffects | 46,0 | Loop; osuwisko, skały |
+| lava fall | `rbxassetid://9112822943` | Lava Fire Deep Rumbling 2 (SFX) | ProSoundEffects | 42,0 | Loop |
+| bubbling hot spring | `rbxassetid://9113602975` | Bubble Glugs Large Well Pool Jacuzzi 4 (SFX) | ProSoundEffects | 31,2 |  |
+| dwarven forge deep | `rbxassetid://9113132431` | Anvil Hit Sharp Metallic Clanks Bouncing 1 (SFX) | ProSoundEffects | 35,2 |  |
+| wind through a hole in a cave roof | `rbxassetid://9113287001` | Barstow Wind Light Blustery Low Howl 3 (SFX) | ProSoundEffects | 27,1 | Winds |
+| chains creaking | `rbxassetid://9112892695` | Wagon Slow 2 (SFX) | ProSoundEffects | 27,6 | Loop; pobrzękiwanie metalu |
+| water flowing under ice | `rbxassetid://9119646672` | Stream Flow 2 (SFX) | ProSoundEffects | 86,3 |  |
+| old lantern creaking in the wind | `rbxassetid://9112892695` | Wagon Slow 2 (SFX) | ProSoundEffects | 27,6 | Loop; pobrzękiwanie metalu |
+| ice cracking and creaking | `rbxassetid://9120822603` | Wood Crack Pressurized Creaking Crackling 4 (SFX) | ProSoundEffects | 39,8 | trzaski drewna zamiast lodu (lodu brak) |
+| water splashing in an ice hole | `rbxassetid://9120570701` | Water Lap Active 1 (SFX) | ProSoundEffects | 31,5 | „inside cave” |
+| brazier fire | `rbxassetid://9112780462` | Fireplace Constant Burning Flame 4 (SFX) | ProSoundEffects | 42,8 | Loop |
+| wind roaring over a mountain summit | `rbxassetid://9113286969` | Barstow Wind Light Blustery Low Howl 2 (SFX) | ProSoundEffects | 37,0 | Winds; jedyny ogólny wiatr w bibliotece |
+| deep glacier cracking | `rbxassetid://9120822603` | Wood Crack Pressurized Creaking Crackling 4 (SFX) | ProSoundEffects | 39,8 | trzaski drewna zamiast lodu (lodu brak) |
+| soft winter wind in town | `rbxassetid://9113287001` | Barstow Wind Light Blustery Low Howl 3 (SFX) | ProSoundEffects | 27,1 | Winds |
+| town spring celebration | — | — | — | — | puste: brak (tylko współczesne parady z klaksonami) |
 
 ## Wierzchowce (S96)
 

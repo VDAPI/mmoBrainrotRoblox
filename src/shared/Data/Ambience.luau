@@ -9,9 +9,9 @@
 --   tint       colour grading tint the scene leans to, by tintMix  density     added to Atmosphere.Density
 --   saturation added to the colour grading saturation
 --
--- Sound: loops by day and by night, at most 3 at a time, crossfaded, volume from the "Ambience" option. Sound ids
--- are NOT filled in (no guessing): every entry says what to look for in the Creator Store (`hint`); entries with an
--- empty id are skipped. `points` are positional loops (waterfall, fires, drums) heard within `radius` studs.
+-- Sound: loops by day and by night, at most 3 at a time, crossfaded, volume from the "Ambience" option. Every entry
+-- says what it should sound like (`hint`); the id comes from `IDS` (W27), entries with an empty id are skipped.
+-- `points` are positional loops (waterfall, fires, drums) heard within `radius` studs.
 
 export type Sound = { id: string, volume: number, hint: string }
 
@@ -37,30 +37,117 @@ export type Point = {
 	y: number?, -- S48: height (map-relative); default the floor + 6 (caves on the engine) or 6
 }
 
-local function s(hint: string, volume: number?): Sound
-	return { id = "", volume = volume or 0.5, hint = hint }
+-- W27 (owner decision 2026-10-20): loops from the ProSoundEffects library in the Creator Store (APMOfficial when
+-- PSE has nothing fitting); chosen by description and length, not listened to. List: docs/ASSETS.md (W27).
+local IDS = {
+	ANVIL = "rbxassetid://9113132431",
+	ARMOR = "rbxassetid://9117651569",
+	BARSTOW = "rbxassetid://9113286969",
+	BARSTOW_B = "rbxassetid://9113287001",
+	BEES = "rbxassetid://9112881890",
+	BELL = "rbxassetid://9113804573",
+	BIRDS = "rbxassetid://9112831284",
+	BOIL = "rbxassetid://9120500629",
+	BREATHING = "rbxassetid://9120494643",
+	BREATH_GROWL = "rbxassetid://9112863325",
+	BUGS = "rbxassetid://1839838823",
+	CAPE = "rbxassetid://9113716666",
+	CAVE_LAP = "rbxassetid://9120570701",
+	CHIMES_GLASS = "rbxassetid://9120750073",
+	CHIMES_TUNED = "rbxassetid://9120750072",
+	CHISEL = "rbxassetid://9118581497",
+	CHISEL_B = "rbxassetid://9118581493",
+	CHOIR = "rbxassetid://1837435799",
+	CINDER = "rbxassetid://9125440972",
+	COSMIC = "rbxassetid://9113948307",
+	COYOTES = "rbxassetid://9113954299",
+	CRAB_MUNCH = "rbxassetid://9113987366",
+	CRAB_ROAR = "rbxassetid://9113987614",
+	CREEK_NIGHT = "rbxassetid://9113996155",
+	CRICKETS = "rbxassetid://9112765304",
+	CRICKETS_DESERT = "rbxassetid://9112765142",
+	CRICKETS_FOREST = "rbxassetid://9112764891",
+	CROWS = "rbxassetid://9112751072",
+	DEBRIS = "rbxassetid://9114034817",
+	DESERT_WIND = "rbxassetid://9114057128",
+	DESERT_WIND_B = "rbxassetid://9114057104",
+	DIG = "rbxassetid://9120634046",
+	DRIPS = "rbxassetid://9120540076",
+	EERIE_PIPE = "rbxassetid://9112775414",
+	ELEPHANT = "rbxassetid://9114296808",
+	EVIL_DRONE = "rbxassetid://9114353261",
+	FARM = "rbxassetid://9112824481",
+	FARMLAND = "rbxassetid://9112777807",
+	FIELD_BIRDS = "rbxassetid://9112779493",
+	FIRE = "rbxassetid://9112780462",
+	FIRE_B = "rbxassetid://9112780193",
+	FIRE_BIG = "rbxassetid://9112906854",
+	FIRE_WHOOSH = "rbxassetid://9112780561",
+	FOREST_AMB1 = "rbxassetid://9112781510",
+	FOREST_AMB2 = "rbxassetid://9112781689",
+	FROGS = "rbxassetid://9125615469",
+	GHOST_FOREST = "rbxassetid://9114244841",
+	GHOST_FOREST_B = "rbxassetid://9114244667",
+	GODS_WIND = "rbxassetid://9114625552",
+	HEARTBEAT = "rbxassetid://9043365842",
+	HOLLOW = "rbxassetid://9112795463",
+	HOLLOW_B = "rbxassetid://9112795583",
+	ICE_CUBE = "rbxassetid://9114862037",
+	JACUZZI = "rbxassetid://9113602975",
+	JUNGLE_INSECTS = "rbxassetid://9114894515",
+	KEYS = "rbxassetid://9116165357",
+	KODO = "rbxassetid://1836484912",
+	LAB_BUBBLE = "rbxassetid://1842379744",
+	LAKE_LAP = "rbxassetid://9120572579",
+	LAVA_FIRE = "rbxassetid://9112822943",
+	LAVA_RUMBLE = "rbxassetid://9112823552",
+	MONSTER_GEL = "rbxassetid://9116964934",
+	MOUNTAIN_BIRDS = "rbxassetid://9112832297",
+	NIGHT_OWLS = "rbxassetid://9112835631",
+	ORGANIC = "rbxassetid://9112840906",
+	PIGS = "rbxassetid://9113239420",
+	SNAKE = "rbxassetid://9118064108",
+	SPACE_PRES = "rbxassetid://9119392328",
+	STORM_DRAIN = "rbxassetid://9119643864",
+	STREAM = "rbxassetid://9119646672",
+	THUNDER = "rbxassetid://9120018695",
+	TIMBERS = "rbxassetid://9120832471",
+	WAGON = "rbxassetid://9112892531",
+	WAGON_METAL = "rbxassetid://9112892695",
+	WATERFALL_DIST = "rbxassetid://9120552550",
+	WATERFALL_MED = "rbxassetid://9116496316",
+	WATERFALL_ROAR = "rbxassetid://9120549564",
+	WATERFALL_SMALL = "rbxassetid://9120552418",
+	WOLF_GROWL = "rbxassetid://9120788412",
+	WOLVES_DISTANT = "rbxassetid://9120051839",
+	WOLVES_LARGE = "rbxassetid://9120051995",
+	WOOD_CRACK = "rbxassetid://9120822603",
+}
+
+local function s(hint: string, volume: number?, id: string?): Sound
+	return { id = id or "", volume = volume or 0.5, hint = hint }
 end
 
 -- Shared loops (one Sound each; the same id in two areas keeps playing across the border).
-local BIRDS = s("birds meadow loop (songbirds, daytime, countryside)", 0.45)
-local WIND_GRASS = s("wind in grass loop (soft, steady)", 0.35)
-local NIGHT_CRICKETS = s("crickets night loop (field, gentle)", 0.4)
-local OWL = s("owl hooting night forest loop (sparse)", 0.3)
-local WIND_HILLS = s("wind on hills loop (gusts, open terrain)", 0.4)
-local WOLF_HOWL = s("wolf howl distant night loop (several howls, long gaps)", 0.35)
-local FROGS = s("frogs croaking swamp loop (toads, marsh)", 0.5)
-local MARSH_NIGHT = s("swamp night loop (frogs, insects, water)", 0.45)
-local FOREST_DAY = s("forest ambience day loop (birds, leaves rustling, woodpecker)", 0.45)
-local FOREST_NIGHT = s("forest night loop (owls, insects, branches)", 0.4)
-local CROWS = s("crows cawing loop (several crows, field)", 0.45)
-local FIRE_DISTANT = s("distant campfire crackle loop", 0.2)
-local ROAD_DAY = s("countryside road ambience loop (birds, distant cart, wind)", 0.35)
-local QUARRY = s("quarry ambience loop (dripping, distant pickaxe, gravel)", 0.35)
-local CAVE_WIND = s("cave wind low drone loop", 0.25)
+local BIRDS = s("birds meadow loop (songbirds, daytime, countryside)", 0.45, IDS.BIRDS)
+local WIND_GRASS = s("wind in grass loop (soft, steady)", 0.35, IDS.FARMLAND)
+local NIGHT_CRICKETS = s("crickets night loop (field, gentle)", 0.4, IDS.CRICKETS)
+local OWL = s("owl hooting night forest loop (sparse)", 0.3, IDS.NIGHT_OWLS)
+local WIND_HILLS = s("wind on hills loop (gusts, open terrain)", 0.4, IDS.BARSTOW)
+local WOLF_HOWL = s("wolf howl distant night loop (several howls, long gaps)", 0.35, IDS.WOLVES_DISTANT)
+local FROGS = s("frogs croaking swamp loop (toads, marsh)", 0.5, IDS.FROGS)
+local MARSH_NIGHT = s("swamp night loop (frogs, insects, water)", 0.45, IDS.CREEK_NIGHT)
+local FOREST_DAY = s("forest ambience day loop (birds, leaves rustling, woodpecker)", 0.45, IDS.FOREST_AMB2)
+local FOREST_NIGHT = s("forest night loop (owls, insects, branches)", 0.4, IDS.CRICKETS_FOREST)
+local CROWS = s("crows cawing loop (several crows, field)", 0.45, IDS.CROWS)
+local FIRE_DISTANT = s("distant campfire crackle loop", 0.2, IDS.FIRE_B)
+local ROAD_DAY = s("countryside road ambience loop (birds, distant cart, wind)", 0.35, IDS.FIELD_BIRDS)
+local QUARRY = s("quarry ambience loop (dripping, distant pickaxe, gravel)", 0.35, IDS.CHISEL_B)
+local CAVE_WIND = s("cave wind low drone loop", 0.25, IDS.STORM_DRAIN)
 local GOBLIN_CAMP = s("goblin camp ambience loop (chatter, grunts, fire)", 0.4)
-local DRUMS_NIGHT = s("tribal drums distant night loop (slow)", 0.35)
-local RAVINE = s("mountain ravine ambience loop (wind, distant water, birds of prey)", 0.4)
-local STREAM = s("stream water flowing loop (small brook)", 0.35)
+local DRUMS_NIGHT = s("tribal drums distant night loop (slow)", 0.35, IDS.KODO)
+local RAVINE = s("mountain ravine ambience loop (wind, distant water, birds of prey)", 0.4, IDS.MOUNTAIN_BIRDS)
+local STREAM = s("stream water flowing loop (small brook)", 0.35, IDS.STREAM)
 
 local areas: { [string]: Mood } = {
 	-- bright sunny glade
@@ -157,23 +244,23 @@ local areas: { [string]: Mood } = {
 }
 
 -- Duskwood (S45) -------------------------------------------------------------------------------------------------
-local OLD_TREES = s("old forest wind loop (wind in big old trees, creaking branches)", 0.45)
-local DARK_FOREST_NIGHT = s("dark forest night loop (owls, distant creaks, no birdsong)", 0.4)
-local WEREWOLF_HOWL = s("werewolf howl distant night loop (deep, beastly howls, long gaps)", 0.35)
-local HOLLOW_DRIP = s("damp forest gorge loop (dripping, cold wind, distant water)", 0.35)
-local WHISPERS = s("ghostly whispers loop (faint, eerie, ruins)", 0.3)
-local CHAPEL_BELL = s("single distant church bell toll loop (long gaps, eerie)", 0.3)
-local ROT = s("rotting wood groans and bubbling mud loop (creepy forest)", 0.35)
-local SPORES = s("eerie forest drone loop (low hum, magical, unsettling)", 0.25)
+local OLD_TREES = s("old forest wind loop (wind in big old trees, creaking branches)", 0.45, IDS.FOREST_AMB1)
+local DARK_FOREST_NIGHT = s("dark forest night loop (owls, distant creaks, no birdsong)", 0.4, IDS.NIGHT_OWLS)
+local WEREWOLF_HOWL = s("werewolf howl distant night loop (deep, beastly howls, long gaps)", 0.35, IDS.WOLVES_LARGE)
+local HOLLOW_DRIP = s("damp forest gorge loop (dripping, cold wind, distant water)", 0.35, IDS.DRIPS)
+local WHISPERS = s("ghostly whispers loop (faint, eerie, ruins)", 0.3, IDS.GHOST_FOREST)
+local CHAPEL_BELL = s("single distant church bell toll loop (long gaps, eerie)", 0.3, IDS.BELL)
+local ROT = s("rotting wood groans and bubbling mud loop (creepy forest)", 0.35, IDS.LAB_BUBBLE)
+local SPORES = s("eerie forest drone loop (low hum, magical, unsettling)", 0.25, IDS.GHOST_FOREST_B)
 local CULT_CHANT = s("cult chanting night loop (low voices, ritual)", 0.35)
 local CULT_DAY = s("forest clearing camp loop (wind, distant voices, fire)", 0.3)
-local MIST_WIND = s("misty moor wind loop (soft, hollow, eerie)", 0.4)
-local GALLOWS = s("rope creaking loop (gallows, slow sway)", 0.3)
-local SWAMP_DAY = s("swamp ambience day loop (bubbles, insects, frogs)", 0.45)
-local SWAMP_NIGHT = s("swamp night loop (frogs croaking, bubbling, insects)", 0.45)
-local TROLL_GRUNTS = s("troll grunts distant loop (deep growls, camp)", 0.3)
-local WITCH_MARSH = s("witch marsh loop (bubbling cauldron, wooden chimes, crows)", 0.35)
-local CLIFF_WIND = s("cliff wind loop (strong gusts, high rocks)", 0.45)
+local MIST_WIND = s("misty moor wind loop (soft, hollow, eerie)", 0.4, IDS.GODS_WIND)
+local GALLOWS = s("rope creaking loop (gallows, slow sway)", 0.3, IDS.TIMBERS)
+local SWAMP_DAY = s("swamp ambience day loop (bubbles, insects, frogs)", 0.45, IDS.JUNGLE_INSECTS)
+local SWAMP_NIGHT = s("swamp night loop (frogs croaking, bubbling, insects)", 0.45, IDS.CREEK_NIGHT)
+local TROLL_GRUNTS = s("troll grunts distant loop (deep growls, camp)", 0.3, IDS.MONSTER_GEL)
+local WITCH_MARSH = s("witch marsh loop (bubbling cauldron, wooden chimes, crows)", 0.35, IDS.LAB_BUBBLE)
+local CLIFF_WIND = s("cliff wind loop (strong gusts, high rocks)", 0.45, IDS.BARSTOW)
 local BAT_COLONY = s("bat colony squeaks loop (cave, many bats)", 0.3)
 
 local DUSKWOOD_AREAS: { [string]: Mood } = {
@@ -277,33 +364,33 @@ for id, mood in DUSKWOOD_AREAS do
 end
 
 -- Ashen Wastes (S46) ---------------------------------------------------------------------------------------------
-local ASH_WIND = s("desert wind with ash loop (dry gusts, fine grit hissing)", 0.4)
-local EARTH_RUMBLE = s("distant earth rumble loop (deep, slow, volcanic)", 0.25)
-local EMBERS_CRACKLE = s("embers crackling loop (hot coals, small pops)", 0.35)
-local HYENAS = s("hyena laughter distant night loop (cackles, long gaps)", 0.3)
-local HOT_WIND_PALMS = s("hot wind in dry palm leaves loop (rustling, dry)", 0.4)
+local ASH_WIND = s("desert wind with ash loop (dry gusts, fine grit hissing)", 0.4, IDS.DESERT_WIND)
+local EARTH_RUMBLE = s("distant earth rumble loop (deep, slow, volcanic)", 0.25, IDS.HOLLOW)
+local EMBERS_CRACKLE = s("embers crackling loop (hot coals, small pops)", 0.35, IDS.FIRE_B)
+local HYENAS = s("hyena laughter distant night loop (cackles, long gaps)", 0.3, IDS.COYOTES)
+local HOT_WIND_PALMS = s("hot wind in dry palm leaves loop (rustling, dry)", 0.4, IDS.DESERT_WIND_B)
 local VULTURES = s("vultures calling loop (distant screeches, wings)", 0.3)
-local DESERT_INSECTS = s("desert night insects loop (crickets, dry, sparse)", 0.35)
+local DESERT_INSECTS = s("desert night insects loop (crickets, dry, sparse)", 0.35, IDS.CRICKETS_DESERT)
 local ORC_CAMP = s("orc war camp ambience loop (grunts, chatter, distant fire)", 0.4)
-local FORGE_HAMMERS = s("blacksmith hammering loop (anvil, slow, distant)", 0.35)
-local WAR_DRUMS = s("war drums loop (deep, slow, tribal)", 0.4)
-local CAMPFIRE = s("large bonfire crackle loop", 0.35)
-local LAVA_BUBBLING = s("lava bubbling loop (thick, slow, hissing)", 0.45)
-local SMOULDER = s("smouldering ruins loop (crackling embers, settling debris)", 0.35)
-local RUINS_WIND = s("wind through ruins loop (hollow, whistling gaps)", 0.35)
-local BEAM_CREAK = s("old wooden beam creaking loop (slow, occasional)", 0.25)
+local FORGE_HAMMERS = s("blacksmith hammering loop (anvil, slow, distant)", 0.35, IDS.ANVIL)
+local WAR_DRUMS = s("war drums loop (deep, slow, tribal)", 0.4, IDS.KODO)
+local CAMPFIRE = s("large bonfire crackle loop", 0.35, IDS.FIRE_BIG)
+local LAVA_BUBBLING = s("lava bubbling loop (thick, slow, hissing)", 0.45, IDS.LAVA_FIRE)
+local SMOULDER = s("smouldering ruins loop (crackling embers, settling debris)", 0.35, IDS.FIRE_B)
+local RUINS_WIND = s("wind through ruins loop (hollow, whistling gaps)", 0.35, IDS.GODS_WIND)
+local BEAM_CREAK = s("old wooden beam creaking loop (slow, occasional)", 0.25, IDS.TIMBERS)
 local IMP_GIGGLES = s("small creature giggles loop (impish, distant, eerie)", 0.25)
-local DESERT_WIND = s("desert wind loop (open dunes, steady)", 0.4)
-local SAND_HISS = s("blowing sand loop (fine hiss over dunes)", 0.3)
-local DESERT_NIGHT_WIND = s("cold desert night wind loop (soft, empty)", 0.35)
-local CRAG_WIND = s("wind whistling through rocks loop (canyon, high pitch)", 0.4)
-local WYVERN_SCREECH = s("distant dragon screech loop (rare, echoing)", 0.25)
-local DUSTY_WIND = s("dusty wind and silence loop (empty road, faint gusts)", 0.35)
-local WINGS = s("large wings flapping distant loop (rare)", 0.25)
-local FALLING_STONES = s("small rocks trickling loop (scree, occasional)", 0.25)
-local STILL_HEAT = s("still hot air drone loop (very quiet, low)", 0.25)
-local DRONE_LOW = s("ancient tomb low drone loop (dark, sustained)", 0.3)
-local WHISPERS_TOMB = s("ghostly whispers loop (faint, ancient, tomb)", 0.25)
+local DESERT_WIND = s("desert wind loop (open dunes, steady)", 0.4, IDS.DESERT_WIND)
+local SAND_HISS = s("blowing sand loop (fine hiss over dunes)", 0.3, IDS.DESERT_WIND_B)
+local DESERT_NIGHT_WIND = s("cold desert night wind loop (soft, empty)", 0.35, IDS.DESERT_WIND_B)
+local CRAG_WIND = s("wind whistling through rocks loop (canyon, high pitch)", 0.4, IDS.DESERT_WIND)
+local WYVERN_SCREECH = s("distant dragon screech loop (rare, echoing)", 0.25, IDS.CRAB_ROAR)
+local DUSTY_WIND = s("dusty wind and silence loop (empty road, faint gusts)", 0.35, IDS.DESERT_WIND)
+local WINGS = s("large wings flapping distant loop (rare)", 0.25, IDS.CAPE)
+local FALLING_STONES = s("small rocks trickling loop (scree, occasional)", 0.25, IDS.DEBRIS)
+local STILL_HEAT = s("still hot air drone loop (very quiet, low)", 0.25, IDS.SPACE_PRES)
+local DRONE_LOW = s("ancient tomb low drone loop (dark, sustained)", 0.3, IDS.HOLLOW)
+local WHISPERS_TOMB = s("ghostly whispers loop (faint, ancient, tomb)", 0.25, IDS.GHOST_FOREST)
 
 local ASHEN_AREAS: { [string]: Mood } = {
 	-- ashen grey, slightly drained
@@ -388,36 +475,37 @@ for id, mood in ASHEN_AREAS do
 end
 
 -- S47 Frost Peaks (sounds to find; one Sound per loop shared between areas)
-local SPRUCE_WIND = s("wind in snowy spruce forest loop (soft gusts, creaking trunks, snow falling off branches)", 0.4)
+local SPRUCE_WIND =
+	s("wind in snowy spruce forest loop (soft gusts, creaking trunks, snow falling off branches)", 0.4, IDS.BARSTOW_B)
 local SNOW_CREAK = s("snow crunching and creaking loop (cold, quiet, distant footsteps)", 0.25)
-local WOLVES_NIGHT = s("wolves howling winter night loop (pack, distant, long gaps)", 0.35)
-local FROST_CRACK = s("trees cracking from frost loop (sharp distant cracks, winter night)", 0.25)
-local MOUNTAIN_WIND = s("high mountain wind loop (strong, steady, cold)", 0.45)
-local AVALANCHE_FAR = s("distant avalanche rumble loop (long gaps)", 0.25)
-local HOWLING_WIND = s("howling wind night loop (blizzard, mountains)", 0.45)
-local YETI_ROARS = s("distant beast roars loop (big ape, mountains, long gaps)", 0.3)
-local SPIRE_WIND = s("wind whistling through rocks loop (high pitched, gusty)", 0.4)
+local WOLVES_NIGHT = s("wolves howling winter night loop (pack, distant, long gaps)", 0.35, IDS.WOLVES_LARGE)
+local FROST_CRACK = s("trees cracking from frost loop (sharp distant cracks, winter night)", 0.25, IDS.WOOD_CRACK)
+local MOUNTAIN_WIND = s("high mountain wind loop (strong, steady, cold)", 0.45, IDS.BARSTOW)
+local AVALANCHE_FAR = s("distant avalanche rumble loop (long gaps)", 0.25, IDS.LAVA_RUMBLE)
+local HOWLING_WIND = s("howling wind night loop (blizzard, mountains)", 0.45, IDS.BARSTOW_B)
+local YETI_ROARS = s("distant beast roars loop (big ape, mountains, long gaps)", 0.3, IDS.CRAB_ROAR)
+local SPIRE_WIND = s("wind whistling through rocks loop (high pitched, gusty)", 0.4, IDS.DESERT_WIND)
 local HARPY_SHRIEKS = s("distant bird of prey shrieks loop (harpy, eerie, echo)", 0.3)
-local GUSTS_NIGHT = s("gusty night wind loop (strong gusts, mountains)", 0.4)
-local PASS_WIND = s("strong wind through a mountain pass loop (roaring, funnelled)", 0.5)
+local GUSTS_NIGHT = s("gusty night wind loop (strong gusts, mountains)", 0.4, IDS.BARSTOW_B)
+local PASS_WIND = s("strong wind through a mountain pass loop (roaring, funnelled)", 0.5, IDS.BARSTOW)
 local GIANT_HORNS = s("distant war horn loop (deep, long, echoing in mountains)", 0.3)
-local BIG_FIRE = s("large bonfire crackling loop (big logs, roaring)", 0.35)
+local BIG_FIRE = s("large bonfire crackling loop (big logs, roaring)", 0.35, IDS.FIRE_BIG)
 local ICE_SINGING = s("frozen lake ice cracking and singing loop (pings, booms, eerie)", 0.4)
-local LIGHT_WIND = s("light cold wind loop (calm, open space)", 0.3)
-local ICE_BOOMS = s("deep ice booming loop (frozen lake at night, low thuds)", 0.35)
-local TUNDRA_WIND = s("tundra wind loop (steady, open, cold)", 0.45)
-local MAMMOTH_CALLS = s("distant elephant trumpeting loop (mammoth, long gaps, echo)", 0.3)
-local WOLVES_FAR = s("far wolves howling loop (very distant, faint)", 0.25)
-local COLUMN_WIND = s("wind between stone columns loop (hollow, ruins)", 0.4)
-local ICE_CHIMES = s("ice wind chimes loop (crystal, delicate, magical)", 0.3)
-local LOW_GROWL = s("low draconic rumble loop (deep, slow, distant)", 0.3)
-local CRYSTAL_HUM = s("magical crystal hum loop (soft, shimmering)", 0.3)
-local BATTLEMENT_WIND = s("wind on castle battlements loop (cold, stone, flags)", 0.4)
-local FLAG_CREAK = s("frozen flags creaking loop (stiff fabric, ropes, cold)", 0.25)
-local DARK_DRONE = s("dark cold ambient drone loop (low, ominous)", 0.3)
+local LIGHT_WIND = s("light cold wind loop (calm, open space)", 0.3, IDS.BARSTOW_B)
+local ICE_BOOMS = s("deep ice booming loop (frozen lake at night, low thuds)", 0.35, IDS.WOOD_CRACK)
+local TUNDRA_WIND = s("tundra wind loop (steady, open, cold)", 0.45, IDS.BARSTOW)
+local MAMMOTH_CALLS = s("distant elephant trumpeting loop (mammoth, long gaps, echo)", 0.3, IDS.ELEPHANT)
+local WOLVES_FAR = s("far wolves howling loop (very distant, faint)", 0.25, IDS.WOLVES_DISTANT)
+local COLUMN_WIND = s("wind between stone columns loop (hollow, ruins)", 0.4, IDS.GODS_WIND)
+local ICE_CHIMES = s("ice wind chimes loop (crystal, delicate, magical)", 0.3, IDS.CHIMES_TUNED)
+local LOW_GROWL = s("low draconic rumble loop (deep, slow, distant)", 0.3, IDS.BREATH_GROWL)
+local CRYSTAL_HUM = s("magical crystal hum loop (soft, shimmering)", 0.3, IDS.COSMIC)
+local BATTLEMENT_WIND = s("wind on castle battlements loop (cold, stone, flags)", 0.4, IDS.BARSTOW)
+local FLAG_CREAK = s("frozen flags creaking loop (stiff fabric, ropes, cold)", 0.25, IDS.TIMBERS)
+local DARK_DRONE = s("dark cold ambient drone loop (low, ominous)", 0.3, IDS.HOLLOW_B)
 local DISTANT_HORN = s("single distant horn call loop (long gaps, lonely)", 0.25)
-local BLIZZARD = s("high altitude blizzard loop (roaring wind, snow hiss)", 0.5)
-local WYRM_ROAR = s("distant dragon roar loop (deep, echoing, long gaps)", 0.3)
+local BLIZZARD = s("high altitude blizzard loop (roaring wind, snow hiss)", 0.5, IDS.BARSTOW)
+local WYRM_ROAR = s("distant dragon roar loop (deep, echoing, long gaps)", 0.3, IDS.CRAB_ROAR)
 
 local FROST_AREAS: { [string]: Mood } = {
 	-- slightly warm tint in the sun, a little haze
@@ -494,103 +582,104 @@ end
 
 -- S48 caves on the engine (sounds to find): loops per room of Data/CaveShapes (index = the room's index in
 -- Logic/CaveTerrain: the plan's rooms, then the extra rooms); caves have no night, the "day" loops play.
-local DRIP_ECHO = s("cave dripping water with echo loop (slow drops, deep cave)", 0.35)
-local WATERFALL_BEHIND = s("waterfall heard from behind a rock wall loop (muffled roar)", 0.4)
-local UNDERGROUND_FALL = s("underground waterfall loop (cave, echo, splashing into a lake)", 0.45)
-local LAKE_LAP = s("underground lake lapping loop (soft, cave echo)", 0.3)
-local SPIDER_CLICKS = s("giant spiders hissing and clicking loop (creepy, sparse)", 0.35)
+local DRIP_ECHO = s("cave dripping water with echo loop (slow drops, deep cave)", 0.35, IDS.DRIPS)
+local WATERFALL_BEHIND = s("waterfall heard from behind a rock wall loop (muffled roar)", 0.4, IDS.WATERFALL_DIST)
+local UNDERGROUND_FALL = s("underground waterfall loop (cave, echo, splashing into a lake)", 0.45, IDS.WATERFALL_ROAR)
+local LAKE_LAP = s("underground lake lapping loop (soft, cave echo)", 0.3, IDS.CAVE_LAP)
+local SPIDER_CLICKS = s("giant spiders hissing and clicking loop (creepy, sparse)", 0.35, IDS.BUGS)
 local SHAMAN_CHANT = s("goblin shamans chanting loop (low, tribal, cave echo)", 0.35)
-local TRIBAL_DRUMS = s("tribal war drums loop (slow, deep, cave)", 0.35)
-local BEAR_SNORE = s("bear snoring in a den loop (deep, slow breathing)", 0.3)
-local BOAT_CREAK = s("wooden boat and ropes creaking loop (moored, gentle)", 0.3)
-local STREAM_FLOW = s("underground stream flowing loop (dark water, cave)", 0.35)
-local CROWS_SHAFT = s("crows cawing in a cave shaft loop (echo, sparse)", 0.3)
-local SINKHOLE_WIND = s("wind through a sinkhole loop (soft whistle, night)", 0.3)
+local TRIBAL_DRUMS = s("tribal war drums loop (slow, deep, cave)", 0.35, IDS.KODO)
+local BEAR_SNORE = s("bear snoring in a den loop (deep, slow breathing)", 0.3, IDS.BREATH_GROWL)
+local BOAT_CREAK = s("wooden boat and ropes creaking loop (moored, gentle)", 0.3, IDS.TIMBERS)
+local STREAM_FLOW = s("underground stream flowing loop (dark water, cave)", 0.35, IDS.STREAM)
+local CROWS_SHAFT = s("crows cawing in a cave shaft loop (echo, sparse)", 0.3, IDS.CROWS)
+local SINKHOLE_WIND = s("wind through a sinkhole loop (soft whistle, night)", 0.3, IDS.BARSTOW_B)
 local GOBLIN_CHATTER = s("goblin camp chatter loop (muffled voices, clatter)", 0.35)
-local PICKAXES = s("pickaxes striking rock loop (distant mining, echo)", 0.35)
-local MINECART = s("mine cart rolling on rails loop (rumble, squeak)", 0.3)
-local WINCH_CREAK = s("wooden winch and chain creaking loop (mine shaft)", 0.3)
-local ARENA_DRUMS = s("war drums and roaring crowd loop (goblin arena)", 0.4)
-local FIRE_CRACKLE = s("fire crackling loop (torches and braziers)", 0.3)
-local BOAR_GRUNTS = s("boars grunting in a pen loop (snorts, shuffling)", 0.3)
+local PICKAXES = s("pickaxes striking rock loop (distant mining, echo)", 0.35, IDS.CHISEL)
+local MINECART = s("mine cart rolling on rails loop (rumble, squeak)", 0.3, IDS.WAGON)
+local WINCH_CREAK = s("wooden winch and chain creaking loop (mine shaft)", 0.3, IDS.TIMBERS)
+local ARENA_DRUMS = s("war drums and roaring crowd loop (goblin arena)", 0.4, IDS.KODO)
+local FIRE_CRACKLE = s("fire crackling loop (torches and braziers)", 0.3, IDS.FIRE)
+local BOAR_GRUNTS = s("boars grunting in a pen loop (snorts, shuffling)", 0.3, IDS.PIGS)
 
 -- S49 Duskwood's caves
-local EARTH_CAVE = s("underground earth cave ambience loop (low wind, distant drips)", 0.35)
-local GNAWING = s("bones crunching and gnawing loop (flies buzzing, wet)", 0.3)
-local BEAR_BREATH = s("large animal breathing loop (low growl, sleeping bear)", 0.3)
-local WOLF_ECHO = s("distant wolf howl echoing in a cave loop (long gaps)", 0.3)
-local LANTERN_CREAK = s("old lantern creaking loop (metal, slow)", 0.25)
-local BEES = s("bees buzzing in a hive loop (muffled, inside wood)", 0.3)
-local TOMB_DRONE = s("ancient tomb ambience loop (low drone, stone dust)", 0.35)
+local EARTH_CAVE = s("underground earth cave ambience loop (low wind, distant drips)", 0.35, IDS.STORM_DRAIN)
+local GNAWING = s("bones crunching and gnawing loop (flies buzzing, wet)", 0.3, IDS.CRAB_MUNCH)
+local BEAR_BREATH = s("large animal breathing loop (low growl, sleeping bear)", 0.3, IDS.BREATH_GROWL)
+local WOLF_ECHO = s("distant wolf howl echoing in a cave loop (long gaps)", 0.3, IDS.WOLVES_DISTANT)
+local LANTERN_CREAK = s("old lantern creaking loop (metal, slow)", 0.25, IDS.WAGON_METAL)
+local BEES = s("bees buzzing in a hive loop (muffled, inside wood)", 0.3, IDS.BEES)
+local TOMB_DRONE = s("ancient tomb ambience loop (low drone, stone dust)", 0.35, IDS.HOLLOW)
 local CULT_VOICES = s("cult chanting loop (deep male voices, ritual)", 0.35)
-local DIGGING = s("scratching and digging in earth loop (claws, muffled)", 0.3)
-local DRIP_TOMB = s("dripping water in a stone crypt loop (echo)", 0.3)
-local MAGIC_FIRE = s("magic fire roar loop (low, eerie)", 0.35)
-local SNAKE_HISS = s("snake hissing loop (rare, close)", 0.2)
-local CRYPT_DRONE = s("crypt ambience loop (deep drone, distant whispers)", 0.35)
-local GHOST_RISE = s("ghostly wind whoosh rising loop (well, eerie)", 0.35)
-local BONES_CHAINS = s("bones rattling and chains creaking loop (ossuary)", 0.3)
-local GHOST_WAIL = s("ghost whispers and faint wailing loop", 0.3)
-local NECRO_HUM = s("necromantic hum loop (low, bubbling, magical)", 0.3)
-local CHOIR_HUM = s("low choir hum loop (dark, sacred)", 0.3)
-local ROYAL_DRONE = s("royal tomb low choir drone loop", 0.35)
+local DIGGING = s("scratching and digging in earth loop (claws, muffled)", 0.3, IDS.DIG)
+local DRIP_TOMB = s("dripping water in a stone crypt loop (echo)", 0.3, IDS.DRIPS)
+local MAGIC_FIRE = s("magic fire roar loop (low, eerie)", 0.35, IDS.FIRE_WHOOSH)
+local SNAKE_HISS = s("snake hissing loop (rare, close)", 0.2, IDS.SNAKE)
+local CRYPT_DRONE = s("crypt ambience loop (deep drone, distant whispers)", 0.35, IDS.HOLLOW_B)
+local GHOST_RISE = s("ghostly wind whoosh rising loop (well, eerie)", 0.35, IDS.GODS_WIND)
+local BONES_CHAINS = s("bones rattling and chains creaking loop (ossuary)", 0.3, IDS.WAGON_METAL)
+local GHOST_WAIL = s("ghost whispers and faint wailing loop", 0.3, IDS.GHOST_FOREST)
+local NECRO_HUM = s("necromantic hum loop (low, bubbling, magical)", 0.3, IDS.EVIL_DRONE)
+local CHOIR_HUM = s("low choir hum loop (dark, sacred)", 0.3, IDS.CHOIR)
+local ROYAL_DRONE = s("royal tomb low choir drone loop", 0.35, IDS.CHOIR)
 
 -- S50 the Ashen Wastes' caves
-local SHAFT_WIND = s("wind howling down a mine shaft loop (hollow, low)", 0.3)
-local TIMBER_CREAK = s("old mine timbers creaking loop (wood, slow)", 0.25)
-local CAGE_CHAIN = s("hanging cage swinging on a chain loop (metal creak)", 0.25)
-local GRAVEL = s("gravel trickling down loop (small stones, cave)", 0.2)
-local WAR_DRUM = s("slow tribal war drum loop (distant, echo)", 0.3)
-local HYENA = s("hyena laughing echo loop (cave, distant)", 0.25)
+local SHAFT_WIND = s("wind howling down a mine shaft loop (hollow, low)", 0.3, IDS.EERIE_PIPE)
+local TIMBER_CREAK = s("old mine timbers creaking loop (wood, slow)", 0.25, IDS.TIMBERS)
+local CAGE_CHAIN = s("hanging cage swinging on a chain loop (metal creak)", 0.25, IDS.WAGON_METAL)
+local GRAVEL = s("gravel trickling down loop (small stones, cave)", 0.2, IDS.DEBRIS)
+local WAR_DRUM = s("slow tribal war drum loop (distant, echo)", 0.3, IDS.KODO)
+local HYENA = s("hyena laughing echo loop (cave, distant)", 0.25, IDS.COYOTES)
 local VULTURE = s("vulture screech loop (rare, high in a shaft)", 0.2)
-local MAGMA_HISS = s("magma hissing and steam venting loop", 0.3)
-local VOLCANO_RUMBLE = s("deep volcano rumble loop (low, distant)", 0.35)
-local LAVA_BUBBLE = s("lava bubbling loop (thick, slow)", 0.3)
-local WIND_HOLE = s("wind over an opening loop (hot, dry, gusty)", 0.25)
-local WYVERN_WINGS = s("distant wyvern screech and wing flaps loop (rare)", 0.25)
+local MAGMA_HISS = s("magma hissing and steam venting loop", 0.3, IDS.ORGANIC)
+local VOLCANO_RUMBLE = s("deep volcano rumble loop (low, distant)", 0.35, IDS.HOLLOW)
+local LAVA_BUBBLE = s("lava bubbling loop (thick, slow)", 0.3, IDS.LAVA_FIRE)
+local WIND_HOLE = s("wind over an opening loop (hot, dry, gusty)", 0.25, IDS.DESERT_WIND_B)
+local WYVERN_WINGS = s("distant wyvern screech and wing flaps loop (rare)", 0.25, IDS.CAPE)
 local IMP_GIGGLE = s("small imps giggling loop (mischievous, echo)", 0.2)
-local SAND_POUR = s("sand pouring down loop (steady hiss)", 0.3)
-local SCORPION = s("scorpion clicking loop (chitin, close)", 0.2)
-local EGG_THROB = s("low pulsing throb loop (deep, organic, slow)", 0.3)
-local ANVILS = s("blacksmith hammers on anvils loop (several, offset, echo)", 0.35)
-local BELLOWS = s("forge bellows breathing loop (slow, leather)", 0.25)
-local FORGE_ROAR = s("furnace roar loop (deep fire)", 0.35)
-local LAVA_RIVER = s("lava river flowing loop (low rumble, crackle)", 0.35)
-local QUENCH = s("hot metal quenching steam hiss loop", 0.25)
-local POUR_METAL = s("molten metal pouring and sizzling loop", 0.3)
-local CHAINS = s("heavy chains clinking loop (slow)", 0.25)
+local SAND_POUR = s("sand pouring down loop (steady hiss)", 0.3, IDS.DEBRIS)
+local SCORPION = s("scorpion clicking loop (chitin, close)", 0.2, IDS.BUGS)
+local EGG_THROB = s("low pulsing throb loop (deep, organic, slow)", 0.3, IDS.HEARTBEAT)
+local ANVILS = s("blacksmith hammers on anvils loop (several, offset, echo)", 0.35, IDS.ANVIL)
+local BELLOWS = s("forge bellows breathing loop (slow, leather)", 0.25, IDS.BREATHING)
+local FORGE_ROAR = s("furnace roar loop (deep fire)", 0.35, IDS.FIRE_BIG)
+local LAVA_RIVER = s("lava river flowing loop (low rumble, crackle)", 0.35, IDS.ORGANIC)
+local QUENCH = s("hot metal quenching steam hiss loop", 0.25, IDS.BOIL)
+local POUR_METAL = s("molten metal pouring and sizzling loop", 0.3, IDS.LAVA_FIRE)
+local CHAINS = s("heavy chains clinking loop (slow)", 0.25, IDS.WAGON_METAL)
 local GRINDSTONE = s("grindstone sharpening blade loop", 0.25)
 local DWARF_SONG = s("low dwarven work song loop (male voices, distant)", 0.25)
-local GOLEM_GRIND = s("stone grinding loop (golem, heavy, slow)", 0.25)
-local HEART_THUMP = s("deep heartbeat thump loop (huge, magma)", 0.35)
-local FURNACE_DEEP = s("giant furnace roar loop (huge, deep)", 0.4)
-local LAVAFALL = s("lava fall pouring loop (heavy, crackling)", 0.35)
+local GOLEM_GRIND = s("stone grinding loop (golem, heavy, slow)", 0.25, IDS.CINDER)
+local HEART_THUMP = s("deep heartbeat thump loop (huge, magma)", 0.35, IDS.HEARTBEAT)
+local FURNACE_DEEP = s("giant furnace roar loop (huge, deep)", 0.4, IDS.FIRE_BIG)
+local LAVAFALL = s("lava fall pouring loop (heavy, crackling)", 0.35, IDS.LAVA_FIRE)
 
 -- S51 the Frost Peaks' caves
-local ICE_CAVE = s("ice cave ambience loop (wind, creaking ice, distant drips)", 0.35)
-local ICE_CRACK = s("frozen waterfall ice cracking creak loop", 0.3)
-local SHAFT_HOWL = s("wind howling through shaft loop", 0.3)
-local BEAST_BREATH = s("large beast breathing low growl loop", 0.3)
-local WOLF_PACK = s("wolves growling low pack loop", 0.3)
-local UNDER_ICE = s("water lapping under ice loop", 0.25)
+local ICE_CAVE = s("ice cave ambience loop (wind, creaking ice, distant drips)", 0.35, IDS.SPACE_PRES)
+local ICE_CRACK = s("frozen waterfall ice cracking creak loop", 0.3, IDS.WOOD_CRACK)
+local SHAFT_HOWL = s("wind howling through shaft loop", 0.3, IDS.EERIE_PIPE)
+local BEAST_BREATH = s("large beast breathing low growl loop", 0.3, IDS.BREATH_GROWL)
+local WOLF_PACK = s("wolves growling low pack loop", 0.3, IDS.WOLF_GROWL)
+local UNDER_ICE = s("water lapping under ice loop", 0.25, IDS.CAVE_LAP)
 local RAPTOR = s("bird of prey screech distant echo (rare)", 0.2)
-local LANTERN_SWAY = s("old lantern creaking in the wind loop", 0.2)
-local FROZEN_CASTLE = s("frozen castle ambience loop (wind through halls, creaking ice, distant metal)", 0.35)
-local GLACIER_GROAN = s("glacier groaning deep ice creak loop", 0.3)
-local CHOIR_FAINT = s("faint choir drone cathedral reverb loop", 0.25)
-local ARMOR_CHAINS = s("armor clanking distant, chains loop", 0.25)
-local ICE_WHISPER = s("faint whispers in ice loop", 0.2)
-local GLACIER_DEEP = s("deep glacier ambience loop (low rumble, ice creaking)", 0.35)
-local HEARTBEAT = s("slow deep heartbeat loop (low, ~25 bpm)", 0.35)
-local CRYSTAL_CHIME = s("crystal chime resonance loop", 0.25)
-local ICE_ORGAN = s("wind through ice organ drone loop", 0.3)
-local ICE_SLITHER = s("ice scraping slither loop", 0.25)
-local DRAGON_BREATH = s("dragon breathing low distant growl loop", 0.3)
-local COINS = s("coins tinkle sparse loop", 0.2)
-local DRAGON_ROAR = s("distant dragon roar echo, cold wind under door loop", 0.3)
-local LAIR_WIND = s("dragon lair ambience (cold wind, deep breathing) loop", 0.35)
-local BRAZIER = s("fire brazier crackle loop", 0.3)
-local HIGH_WIND = s("high wind blizzard loop", 0.3)
+local LANTERN_SWAY = s("old lantern creaking in the wind loop", 0.2, IDS.WAGON_METAL)
+local FROZEN_CASTLE =
+	s("frozen castle ambience loop (wind through halls, creaking ice, distant metal)", 0.35, IDS.SPACE_PRES)
+local GLACIER_GROAN = s("glacier groaning deep ice creak loop", 0.3, IDS.WOOD_CRACK)
+local CHOIR_FAINT = s("faint choir drone cathedral reverb loop", 0.25, IDS.CHOIR)
+local ARMOR_CHAINS = s("armor clanking distant, chains loop", 0.25, IDS.ARMOR)
+local ICE_WHISPER = s("faint whispers in ice loop", 0.2, IDS.GHOST_FOREST_B)
+local GLACIER_DEEP = s("deep glacier ambience loop (low rumble, ice creaking)", 0.35, IDS.HOLLOW_B)
+local HEARTBEAT = s("slow deep heartbeat loop (low, ~25 bpm)", 0.35, IDS.HEARTBEAT)
+local CRYSTAL_CHIME = s("crystal chime resonance loop", 0.25, IDS.CHIMES_TUNED)
+local ICE_ORGAN = s("wind through ice organ drone loop", 0.3, IDS.COSMIC)
+local ICE_SLITHER = s("ice scraping slither loop", 0.25, IDS.ICE_CUBE)
+local DRAGON_BREATH = s("dragon breathing low distant growl loop", 0.3, IDS.BREATH_GROWL)
+local COINS = s("coins tinkle sparse loop", 0.2, IDS.KEYS)
+local DRAGON_ROAR = s("distant dragon roar echo, cold wind under door loop", 0.3, IDS.CRAB_ROAR)
+local LAIR_WIND = s("dragon lair ambience (cold wind, deep breathing) loop", 0.35, IDS.BREATH_GROWL)
+local BRAZIER = s("fire brazier crackle loop", 0.3, IDS.FIRE)
+local HIGH_WIND = s("high wind blizzard loop", 0.3, IDS.BARSTOW)
 
 local function room(o: { [string]: any }): Mood
 	return o :: any
@@ -909,7 +998,7 @@ local maps: { [string]: Mood } = {
 	ashen = {
 		sounds = {
 			day = { DESERT_WIND },
-			night = { DESERT_NIGHT_WIND, s("distant thunder rumble loop (dry storm, long gaps)", 0.25) },
+			night = { DESERT_NIGHT_WIND, s("distant thunder rumble loop (dry storm, long gaps)", 0.25, IDS.THUNDER) },
 		},
 	},
 	frostpeak = { sounds = { day = { MOUNTAIN_WIND }, night = { HOWLING_WIND } } },
@@ -938,24 +1027,46 @@ local maps: { [string]: Mood } = {
 -- Positional loops (map-relative).
 local points: { [string]: { Point } } = {
 	meadows = {
-		{ x = 742, z = 268, radius = 160, sound = s("waterfall loop (medium, steady roar)", 0.7) },
+		{ x = 742, z = 268, radius = 160, sound = s("waterfall loop (medium, steady roar)", 0.7, IDS.WATERFALL_MED) },
 		{ x = 600, z = 266, radius = 70, sound = STREAM },
 		{ x = 250, z = 214, radius = 70, sound = STREAM },
 		{ x = -100, z = 188, radius = 70, sound = STREAM },
 		{ x = -246, z = 120, radius = 60, sound = STREAM },
-		{ x = 40, z = -150, radius = 70, sound = s("fire embers crackling loop (smouldering, quiet)", 0.4) },
-		{ x = 350, z = 470, radius = 80, sound = s("campfire crackle loop", 0.45) },
-		{ x = 665, z = -410, radius = 150, sound = s("tribal drums loop (goblin camp, rhythmic)", 0.45), night = true },
-		{ x = -652, z = -196, radius = 90, sound = s("farm animals loop (sheep, hens, distant)", 0.4), night = false },
-		{ x = -688, z = -182, radius = 30, sound = s("bees buzzing loop (hive)", 0.35), night = false },
-		{ x = -480, z = 520, radius = 140, sound = s("lake shore water lapping loop", 0.35) },
+		{
+			x = 40,
+			z = -150,
+			radius = 70,
+			sound = s("fire embers crackling loop (smouldering, quiet)", 0.4, IDS.FIRE_B),
+		},
+		{ x = 350, z = 470, radius = 80, sound = s("campfire crackle loop", 0.45, IDS.FIRE) },
+		{
+			x = 665,
+			z = -410,
+			radius = 150,
+			sound = s("tribal drums loop (goblin camp, rhythmic)", 0.45, IDS.KODO),
+			night = true,
+		},
+		{
+			x = -652,
+			z = -196,
+			radius = 90,
+			sound = s("farm animals loop (sheep, hens, distant)", 0.4, IDS.FARM),
+			night = false,
+		},
+		{ x = -688, z = -182, radius = 30, sound = s("bees buzzing loop (hive)", 0.35, IDS.BEES), night = false },
+		{ x = -480, z = 520, radius = 140, sound = s("lake shore water lapping loop", 0.35, IDS.LAKE_LAP) },
 	},
 	-- S45 (positions: Data/Areas/duskwood sites)
 	duskwood = {
-		{ x = 604, z = -142, radius = 120, sound = s("small waterfall loop (thin cascade over rocks)", 0.55) },
+		{
+			x = 604,
+			z = -142,
+			radius = 120,
+			sound = s("small waterfall loop (thin cascade over rocks)", 0.55, IDS.WATERFALL_SMALL),
+		},
 		{ x = 389, z = -128, radius = 70, sound = STREAM },
 		{ x = 200, z = -20, radius = 70, sound = STREAM },
-		{ x = 596, z = -606, radius = 80, sound = s("magic fire loop (crackling, eerie hum)", 0.4) },
+		{ x = 596, z = -606, radius = 80, sound = s("magic fire loop (crackling, eerie hum)", 0.4, IDS.FIRE_WHOOSH) },
 		{
 			x = 560,
 			z = -560,
@@ -965,27 +1076,37 @@ local points: { [string]: { Point } } = {
 		},
 		{ x = 300, z = -82, radius = 40, sound = s("rope creaking loop (gallows, slow sway)", 0.3) },
 		{ x = 4, z = -586, radius = 120, sound = s("single distant church bell toll loop (long gaps, eerie)", 0.3) },
-		{ x = 702, z = 612, radius = 90, sound = s("big cauldron bubbling loop (thick, slow)", 0.4) },
-		{ x = -66, z = 122, radius = 60, sound = s("bubbling cauldron loop (small, magical)", 0.4) },
-		{ x = 66, z = 72, radius = 50, sound = s("wooden and bone wind chimes loop (hollow)", 0.35) },
+		{ x = 702, z = 612, radius = 90, sound = s("big cauldron bubbling loop (thick, slow)", 0.4, IDS.LAB_BUBBLE) },
+		{ x = -66, z = 122, radius = 60, sound = s("bubbling cauldron loop (small, magical)", 0.4, IDS.LAB_BUBBLE) },
+		{ x = 66, z = 72, radius = 50, sound = s("wooden and bone wind chimes loop (hollow)", 0.35, IDS.CHIMES_GLASS) },
 		{ x = 616, z = -40, radius = 90, sound = s("bat colony squeaks loop (cave, many bats)", 0.35), night = true },
 		{ x = 150, z = 372, radius = 110, sound = s("rotting wood groans and bubbling mud loop (creepy forest)", 0.4) },
-		{ x = 768, z = 0, radius = 80, sound = s("crypt wind howl loop (low, cold, stone)", 0.35) },
+		{ x = 768, z = 0, radius = 80, sound = s("crypt wind howl loop (low, cold, stone)", 0.35, IDS.GODS_WIND) },
 	},
 	-- S46 (positions: Data/Areas/ashen sites, Data/Terrain/ashen lava)
 	ashen = {
 		{ x = 60, z = 262, radius = 80, sound = LAVA_BUBBLING },
 		{ x = -182, z = 300, radius = 80, sound = LAVA_BUBBLING },
-		{ x = -60, z = 281, radius = 70, sound = s("lava flowing loop (slow, thick, crackling crust)", 0.4) },
-		{ x = 130, z = 100, radius = 150, sound = s("volcanic vent roar loop (deep, rumbling)", 0.5) },
-		{ x = 92, z = 138, radius = 90, sound = s("lava fall loop (heavy pouring, hissing)", 0.5) },
+		{
+			x = -60,
+			z = 281,
+			radius = 70,
+			sound = s("lava flowing loop (slow, thick, crackling crust)", 0.4, IDS.ORGANIC),
+		},
+		{ x = 130, z = 100, radius = 150, sound = s("volcanic vent roar loop (deep, rumbling)", 0.5, IDS.LAVA_RUMBLE) },
+		{ x = 92, z = 138, radius = 90, sound = s("lava fall loop (heavy pouring, hissing)", 0.5, IDS.LAVA_FIRE) },
 		{ x = -590, z = -190, radius = 70, sound = LAVA_BUBBLING },
 		{ x = -166, z = -540, radius = 80, sound = FORGE_HAMMERS },
 		{ x = -250, z = -640, radius = 160, sound = WAR_DRUMS, night = true },
-		{ x = -680, z = 304, radius = 60, sound = s("bubbling hot spring loop (water, steam hiss)", 0.4) },
+		{ x = -680, z = 304, radius = 60, sound = s("bubbling hot spring loop (water, steam hiss)", 0.4, IDS.JACUZZI) },
 		{ x = 214, z = 604, radius = 80, sound = SMOULDER },
 		{ x = 560, z = -560, radius = 140, sound = CRAG_WIND },
-		{ x = 752, z = 0, radius = 100, sound = s("dwarven forge deep loop (muffled hammers, bellows)", 0.45) },
+		{
+			x = 752,
+			z = 0,
+			radius = 100,
+			sound = s("dwarven forge deep loop (muffled hammers, bellows)", 0.45, IDS.ANVIL),
+		},
 		{ x = 610, z = 150, radius = 110, sound = DRONE_LOW, night = true },
 	},
 	-- S48 (caves on the engine; y over the floor)
@@ -1054,7 +1175,12 @@ local points: { [string]: { Point } } = {
 	duskwood_den = {
 		{ x = -175, z = -24, radius = 40, sound = LANTERN_CREAK },
 		{ x = 25, z = -49, radius = 50, sound = BEES },
-		{ x = 134, z = -70, radius = 50, sound = s("wind through a hole in a cave roof loop (soft, night)", 0.25) },
+		{
+			x = 134,
+			z = -70,
+			radius = 50,
+			sound = s("wind through a hole in a cave roof loop (soft, night)", 0.25, IDS.BARSTOW_B),
+		},
 		{ x = -112, z = 120, radius = 40, sound = DRIP_ECHO },
 	},
 	duskwood_barrow = {
@@ -1069,7 +1195,7 @@ local points: { [string]: { Point } } = {
 		{ x = 40, z = 0, radius = 60, sound = BONES_CHAINS },
 	},
 	dungeon_duskwood = {
-		{ x = 0, z = -10, radius = 100, sound = s("chains creaking loop (chandelier, slow)", 0.25) },
+		{ x = 0, z = -10, radius = 100, sound = s("chains creaking loop (chandelier, slow)", 0.25, IDS.WAGON_METAL) },
 	},
 	dungeon_meadows = {
 		{ x = -100, z = -10, radius = 90, sound = ARENA_DRUMS },
@@ -1077,32 +1203,67 @@ local points: { [string]: { Point } } = {
 	},
 	-- S47 (positions: Data/Areas/frostpeak sites, streams and lakes)
 	frostpeak = {
-		{ x = -610, z = 11, radius = 50, sound = s("water flowing under ice loop (muffled brook, gurgling)", 0.35) },
-		{ x = -612, z = 80, radius = 50, sound = s("water flowing under ice loop (muffled brook, gurgling)", 0.35) },
-		{ x = -555, z = -169, radius = 50, sound = s("old lantern creaking in the wind loop (metal, slow)", 0.3) },
+		{
+			x = -610,
+			z = 11,
+			radius = 50,
+			sound = s("water flowing under ice loop (muffled brook, gurgling)", 0.35, IDS.STREAM),
+		},
+		{
+			x = -612,
+			z = 80,
+			radius = 50,
+			sound = s("water flowing under ice loop (muffled brook, gurgling)", 0.35, IDS.STREAM),
+		},
+		{
+			x = -555,
+			z = -169,
+			radius = 50,
+			sound = s("old lantern creaking in the wind loop (metal, slow)", 0.3, IDS.WAGON_METAL),
+		},
 		{ x = 196, z = 104, radius = 130, sound = BIG_FIRE },
-		{ x = 22, z = 352, radius = 120, sound = s("ice cracking and creaking loop (frozen waterfall, icicles)", 0.4) },
-		{ x = 166, z = 584, radius = 60, sound = s("water splashing in an ice hole loop (small, cold)", 0.3) },
+		{
+			x = 22,
+			z = 352,
+			radius = 120,
+			sound = s("ice cracking and creaking loop (frozen waterfall, icicles)", 0.4, IDS.WOOD_CRACK),
+		},
+		{
+			x = 166,
+			z = 584,
+			radius = 60,
+			sound = s("water splashing in an ice hole loop (small, cold)", 0.3, IDS.CAVE_LAP),
+		},
 		{ x = 300, z = 640, radius = 90, sound = CRYSTAL_HUM, night = true },
-		{ x = 560, z = 0, radius = 70, sound = s("brazier fire loop (crackling, medium)", 0.35) },
+		{ x = 560, z = 0, radius = 70, sound = s("brazier fire loop (crackling, medium)", 0.35, IDS.FIRE) },
 		{ x = 562, z = 570, radius = 80, sound = FLAG_CREAK },
-		{ x = 690, z = -650, radius = 220, sound = s("wind roaring over a mountain summit loop (very strong)", 0.5) },
-		{ x = 745, z = 0, radius = 100, sound = s("deep glacier cracking loop (groaning ice, low booms)", 0.45) },
+		{
+			x = 690,
+			z = -650,
+			radius = 220,
+			sound = s("wind roaring over a mountain summit loop (very strong)", 0.5, IDS.BARSTOW),
+		},
+		{
+			x = 745,
+			z = 0,
+			radius = 100,
+			sound = s("deep glacier cracking loop (groaning ice, low booms)", 0.45, IDS.WOOD_CRACK),
+		},
 		-- S149b: the Forefather's Barrow (Data/WorldBoss.spots[1]): a faint choir over the wind, also while it stands empty
 		{ x = 490, z = 360, radius = 90, sound = CHOIR_FAINT },
 	},
 }
 
 -- S105: the city's seasons for one character (Logic/CitySeason; summer = no mood, as before): snow in the middle of
--- summer once the dragon is beaten, the first spring after the finale. Sounds without ids like everything here.
+-- summer once the dragon is beaten, the first spring after the finale.
 local seasons: { [string]: Mood } = {
 	snow = {
 		tint = "#DDE8F4",
 		tintMix = 0.3,
 		saturation = -0.08,
 		sounds = {
-			day = { s("soft winter wind in town loop (snow falling, quiet streets)", 0.35) },
-			night = { s("soft winter wind in town loop (snow falling, quiet streets)", 0.3) },
+			day = { s("soft winter wind in town loop (snow falling, quiet streets)", 0.35, IDS.BARSTOW_B) },
+			night = { s("soft winter wind in town loop (snow falling, quiet streets)", 0.3, IDS.BARSTOW_B) },
 		},
 	},
 	spring = {

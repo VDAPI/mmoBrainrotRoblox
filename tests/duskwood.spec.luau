@@ -70,7 +70,8 @@ describe("Duskwood", function()
 			local mood = assert(Ambience.moodOf("duskwood", a.id), `{a.id} mood`)
 			expect(#mood.sounds.day > 0 and #mood.sounds.night > 0).toBe(true)
 			for _, s in mood.sounds.day do
-				expect(s.id).toBe("")
+				-- W27 (owner decision 2026-10-20): ids from ProSoundEffects / APMOfficial, empty = not found
+				expect(s.id == "" or string.match(s.id, "^rbxassetid://%d+$") ~= nil).toBe(true)
 				expect(#s.hint > 10).toBe(true)
 			end
 		end

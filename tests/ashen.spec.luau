@@ -319,7 +319,8 @@ describe("Ashen Wastes: data", function()
 			expect(#mood.sounds.day > 0 and #mood.sounds.night > 0).toBe(true)
 			for _, list in { mood.sounds.day, mood.sounds.night } do
 				for _, s in list do
-					expect(s.id).toBe("")
+					-- W27 (owner decision 2026-10-20): ids from ProSoundEffects / APMOfficial, empty = not found
+					expect(s.id == "" or string.match(s.id, "^rbxassetid://%d+$") ~= nil).toBe(true)
 					expect(#s.hint > 10).toBe(true)
 				end
 			end
