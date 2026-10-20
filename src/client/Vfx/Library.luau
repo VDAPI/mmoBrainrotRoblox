@@ -1219,6 +1219,16 @@ function Library.telegraph(kind: "circle" | "cone" | "line", at: CFrame, a: numb
 		Pool.later(part, 0.55)
 	end
 	if kind == "circle" then
+		-- W03: the soft ring texture (its band sits at 0.44 of the image) instead of 16 neon segments; it settles
+		-- onto the radius and fades
+		local holder, image = surfaceAt("ring", CFrame.new(base), a / 0.44 * 1.08, color)
+		if holder and image then
+			image.ImageTransparency = 0.2
+			tween(holder, 0.18, { Size = Vector3.new(a / 0.44, 0.05, a / 0.44) })
+			tween(image, 0.5, { ImageTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+			Pool.holderLater(holder, 0.55)
+			return
+		end
 		for i = 0, count - 1 do
 			local a0, a1 = i / count * math.pi * 2, (i + 1) / count * math.pi * 2
 			seg(
@@ -1569,9 +1579,10 @@ function Library.fireBlast(at: Vector3, size: number, color: Color3, opts: FxOpt
 		Library.burst(at, size * 2, color, 0.4, o.simple)
 		return
 	end
-	burstFrom(fire, "fire", color:Lerp(Color3.new(1, 1, 1), 0.45), 16, {
+	-- gold-orange to deep red (anything paler turns white under the bloom and reads as steam)
+	burstFrom(fire, "fire", color:Lerp(Color3.fromHex("#FFC24A"), 0.35), 16, {
 		simple = o.simple,
-		to = color:Lerp(Color3.new(0.25, 0, 0), 0.55),
+		to = color:Lerp(Color3.fromHex("#5A0A04"), 0.6),
 		spread = 180,
 		speedMin = 3 * size,
 		speedMax = 9 * size,
@@ -1582,9 +1593,10 @@ function Library.fireBlast(at: Vector3, size: number, color: Color3, opts: FxOpt
 		rotation = NumberRange.new(0, 360),
 		rotSpeed = NumberRange.new(-90, 90),
 		sizeSeq = NumberSequence.new({ kp(0, 1.2 * size), kp(0.35, 3.2 * size), kp(1, 0.8 * size) }),
-		transparency = NumberSequence.new({ kp(0, 0), kp(0.55, 0.2), kp(1, 1) }),
+		transparency = NumberSequence.new({ kp(0, 0.1), kp(0.55, 0.3), kp(1, 1) }),
 		area = Vector3.one * size,
-		emission = 1,
+		emission = 0.7,
+		brightness = 0.8,
 	})
 	local smoke = textured("smoke", CFrame.new(at + Vector3.new(0, 1.2 * size, 0)))
 	if smoke then
@@ -1621,6 +1633,71 @@ function Library.fireBlast(at: Vector3, size: number, color: Color3, opts: FxOpt
 			orient = "parallel",
 			sizeSeq = NumberSequence.new({ kp(0, 0.22), kp(1, 0.06) }),
 			transparency = NumberSequence.new({ kp(0, 0), kp(0.8, 0.2), kp(1, 1) }),
+		})
+	end
+end
+
+-- W04: the body of an ice spell's blow, the frost twin of fireBlast: shards of ice thrown outwards and falling, a
+-- cold mist rolling low (barely lit) and a few sharp glints. Without the ice texture a plain burst.
+function Library.frostBlast(at: Vector3, size: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local shards = textured("iceShard", CFrame.new(at + Vector3.new(0, 0.6 * size, 0)))
+	if not shards then
+		Library.burst(at, size * 2, color, 0.4, o.simple)
+		return
+	end
+	burstFrom(shards, "iceShard", color:Lerp(Color3.new(1, 1, 1), 0.35), 14, {
+		simple = o.simple,
+		to = color,
+		spread = 80,
+		speedMin = 8 * size,
+		speedMax = 18 * size,
+		drag = 2,
+		accel = Vector3.new(0, -30, 0),
+		lifeMin = 0.45,
+		lifeMax = 0.8,
+		rotation = NumberRange.new(0, 360),
+		rotSpeed = NumberRange.new(-240, 240),
+		sizeSeq = NumberSequence.new({ kp(0, 0.7 * size), kp(1, 0.4 * size) }),
+		transparency = NumberSequence.new({ kp(0, 0), kp(0.75, 0.15), kp(1, 1) }),
+		area = Vector3.one * 0.6 * size,
+		emission = 0.4,
+	})
+	local mist = textured("smoke", CFrame.new(ground(at) + Vector3.new(0, 0.5 * size, 0)))
+	if mist then
+		burstFrom(mist, "smoke", color:Lerp(Color3.new(1, 1, 1), 0.6), 6, {
+			simple = o.simple,
+			to = color,
+			spread = 85,
+			speedMin = 3,
+			speedMax = 7,
+			drag = 3,
+			accel = Vector3.new(0, 0.5, 0),
+			lifeMin = 0.9,
+			lifeMax = 1.4,
+			rotation = NumberRange.new(0, 360),
+			rotSpeed = NumberRange.new(-30, 30),
+			sizeSeq = NumberSequence.new({ kp(0, 1.6 * size), kp(1, 4 * size) }),
+			transparency = NumberSequence.new({ kp(0, 1), kp(0.2, 0.45), kp(1, 1) }),
+			area = Vector3.new(size, 0.2, size),
+			emission = 0.25,
+		})
+	end
+	local glints = textured("star", CFrame.new(at + Vector3.new(0, 0.8 * size, 0)))
+	if glints then
+		burstFrom(glints, "star", Color3.new(1, 1, 1), 5, {
+			simple = o.simple,
+			to = color,
+			spread = 180,
+			speedMin = 2,
+			speedMax = 6,
+			drag = 4,
+			lifeMin = 0.25,
+			lifeMax = 0.5,
+			rotation = NumberRange.new(0, 360),
+			sizeSeq = NumberSequence.new({ kp(0, 0.2), kp(0.3, 0.9 * size), kp(1, 0) }),
+			area = Vector3.one * 1.5 * size,
+			emission = 1,
 		})
 	end
 end
@@ -1712,8 +1789,14 @@ function Library.glow(
 		local part = model:FindFirstChild(name, true)
 		if part and part:IsA("BasePart") then
 			-- W03: a small white-hot core instead of a big flat disc of colour; the colour lives in the particles
-			local orb =
-				Pool.part("Ball", color:Lerp(Color3.new(1, 1, 1), 0.45), Vector3.one * 0.45, Enum.Material.Neon, 0.15)
+			-- (a fire spell keeps its orange: bloom turns any pale neon to white)
+			local orb = Pool.part(
+				"Ball",
+				if flame then color else color:Lerp(Color3.new(1, 1, 1), 0.25),
+				Vector3.one * (if flame then 0.3 else 0.4),
+				Enum.Material.Neon,
+				if flame then 0.35 else 0.2
+			)
 			orb.Anchored = false
 			orb.Massless = true
 			orb.CFrame = part.CFrame
@@ -1730,7 +1813,7 @@ function Library.glow(
 				e.Lifetime = NumberRange.new(0.2, 0.4)
 				e.Speed = NumberRange.new(0.5, 1.5)
 				e.Size = NumberSequence.new(0.35, 0)
-				e.Transparency = NumberSequence.new(0.2, 1)
+				e.Transparency = NumberSequence.new(if flame then 0.6 else 0.2, 1)
 				if Textures.particle(e, "glow") then -- S112
 					e.Size = NumberSequence.new(if flame then 0.45 else 0.7, 0)
 				end
@@ -1776,7 +1859,7 @@ function Library.glow(
 					end
 				end
 			end
-			tween(orb, seconds, { Size = Vector3.one * 0.9 })
+			tween(orb, seconds, { Size = Vector3.one * (if flame then 0.55 else 0.8) })
 			detachLater(orb, seconds)
 		end
 	end
