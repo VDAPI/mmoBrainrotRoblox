@@ -13,7 +13,8 @@
 --     Necropolis (pyramid, procession avenue, courtyards, rock tombs), Mouths (mine, lair, Deepforge),
 --   * stone bridges over the lava (Logic/WorldGen/Structures), braziers by the roads, rocks, dead trees last
 --     (Logic/WorldGen/Flora: charred stumps, burnt trees, dead palms; they keep clear of everything above),
---   * S107: the props of the side quest anchors (Quest) after the trees, so nothing before them moves.
+--   * S107: the props of the side quest anchors (Quest) after the trees, so nothing before them moves; W18 / W17-18
+--     part 2: the map plan's details and secrets (Details, Finish), last and without clearings.
 -- Also: gathering node placements by theme (`nodes`), life points (`life`), map sketch shapes (`sketch`).
 
 local AreaSpawns = require("./AreaSpawns")
@@ -22,6 +23,7 @@ local Crags = require("@self/Crags")
 local Dunes = require("@self/Dunes")
 local Details = require("@self/Details")
 local Env = require("@self/Env")
+local Finish = require("@self/Finish")
 local Flats = require("@self/Flats")
 local Flora = require("./WorldGen/Flora")
 local Kit = require("./WorldGen/Kit")
@@ -286,6 +288,8 @@ function AshenGen.all(): { Build }
 	Quest.all(e, out)
 	-- W18: the map plan's details and secrets, after everything and without clearings (nothing earlier moves)
 	Details.all(e, out)
+	-- W17-W18 part 2: the plan's remaining props (caravan stop, dwarven pier, crest palm, cart ruts, river embers)
+	Finish.all(e, out)
 	treeCache = trees
 	cache = out
 	return out
