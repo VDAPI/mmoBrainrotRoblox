@@ -247,6 +247,8 @@ Kit.slots = {
 	["landmark:chapel"] = { fit = "width", size = 18, forest = { fixed("forest_landmark_02", 90) } },
 	["landmark:ribcage"] = { fit = "width", size = 30, desert = { fixed("desert_landmark_03", 0) } },
 	["landmark:bigSkull"] = { fit = "height", size = 9, desert = { fixed("desert_landmark_04", 0) } },
+	-- the hooded mourners with lanterns at the Gate of the Forgotten (Crypt, bor.md: forest_landmark_04)
+	["landmark:mourner"] = { fit = "height", size = 14, crypt = { fixed("forest_landmark_04", 0) } },
 	["landmark:harpyNest"] = { fit = "width", size = 14, snow = { fixed("snow_nest_01", 0) } },
 } :: { [string]: Entry }
 
