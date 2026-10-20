@@ -140,9 +140,31 @@ end
 
 -- W01: the map's sky from ReplicatedStorage.Assets.Sky (the default sky when the key or the asset is missing). The
 -- place's own Sky is the default; it leaves Lighting while a map sky shows (two skies in Lighting pick one at random).
+-- 2026-10-20: a painted sky of the look (MapLooks.paintedSky: all six image ids uploaded) wins over the asset key; on
+-- the city's cycle the night one swaps in by the hour.
 local defaultSky: Sky? = nil
 
-local function applySky(key: string?)
+local function paintedSkyInstance(sky: MapLooks.PaintedSky): Sky
+	local out = Instance.new("Sky")
+	out.SkyboxBk = `rbxassetid://{sky.ids.bk}`
+	out.SkyboxDn = `rbxassetid://{sky.ids.dn}`
+	out.SkyboxFt = `rbxassetid://{sky.ids.ft}`
+	out.SkyboxLf = `rbxassetid://{sky.ids.lf}`
+	out.SkyboxRt = `rbxassetid://{sky.ids.rt}`
+	out.SkyboxUp = `rbxassetid://{sky.ids.up}`
+	-- the stars are painted into the night sky; the engine's sun and moon stay (the glow is painted behind them)
+	out.StarCount = 0
+	if sky.turn ~= 0 then
+		pcall(function()
+			(out :: any).SkyboxOrientation = Vector3.new(0, sky.turn, 0)
+		end)
+	end
+	return out
+end
+
+local function applySky(look: MapLooks.Look, clock: number?)
+	local paintedKey, painted = MapLooks.paintedSky(look, clock)
+	local key = if painted then `painted:{paintedKey}` else look.sky
 	local current = Lighting:FindFirstChild("VaelthornSky")
 	if current and current:GetAttribute("Key") == key then
 		return
@@ -152,12 +174,17 @@ local function applySky(key: string?)
 	end
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
 	local folder = assets and assets:FindFirstChild("Sky")
-	local source = if key and folder then folder:FindFirstChild(key) else nil
-	if source and source:IsA("Sky") then
+	local source = if key and folder and not painted then folder:FindFirstChild(key) else nil
+	local sky: Sky? = nil
+	if painted then
+		sky = paintedSkyInstance(painted)
+	elseif source and source:IsA("Sky") then
+		sky = source:Clone()
+	end
+	if sky then
 		if defaultSky then
 			defaultSky.Parent = nil
 		end
-		local sky = source:Clone()
 		sky.Name = "VaelthornSky"
 		sky:SetAttribute("Key", key)
 		sky.Parent = Lighting
@@ -182,7 +209,7 @@ local function applyMaterials(look: MapLooks.Look)
 end
 
 -- W01: bloom, sun rays, far blur and clouds of a map at the current graphics level, tweened over `seconds`.
-local function applyPost(map: Maps.MapDef, seconds: number)
+local function applyPost(map: Maps.MapDef, seconds: number, clock: number?)
 	local look = MapLooks.of(map.id)
 	local level = graphicsLevel()
 	local info = TweenInfo.new(seconds, Enum.EasingStyle.Sine)
@@ -213,7 +240,11 @@ local function applyPost(map: Maps.MapDef, seconds: number)
 	elseif clouds then
 		clouds.Enabled = false
 	end
-	applySky(look.sky)
+	local hour = clock
+	if hour == nil and map.dayNight and look.clock == nil then
+		hour = WorldController.TimeOfDay()
+	end
+	applySky(look, hour)
 	applyMaterials(look)
 end
 
@@ -343,7 +374,7 @@ function WorldController.PreviewEnvironment(mapId: string?, clock: number?)
 	TweenService:Create(Lighting, info, lightingProps):Play()
 	TweenService:Create(atmosphere, info, atmosphereProps):Play()
 	TweenService:Create(grade, info, gradeProps):Play()
-	applyPost(map, 0.8)
+	applyPost(map, 0.8, if previewing then clock else nil)
 	tweenUntil = if previewing then math.huge else os.clock() + 0.9
 end
 
@@ -910,6 +941,10 @@ function WorldController.Start()
 		end
 		local lightingProps, atmosphereProps, gradeProps = environment(map)
 		modulate(lightingProps, atmosphereProps, gradeProps)
+		if cycle and map.dayNight then
+			-- the painted night sky swaps in by the hour (no-op while the key stays)
+			applySky(MapLooks.of(map.id), lightingProps.ClockTime)
+		end
 		for key, value in lightingProps do
 			(Lighting :: any)[key] = value
 		end

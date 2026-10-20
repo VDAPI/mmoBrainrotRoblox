@@ -26,7 +26,7 @@ Wniosek: dotąd kod powstawał przed ustaleniem, jak efekt ma wyglądać, więc 
 | Interfejs | zostaje **„Pergamin i żelazo”** (S135, S136) |
 | Pora dnia | **każda mapa ma stałą porę i nastrój**; cykl dnia i nocy **tylko w mieście** |
 | Pogoda | **tak, zależna od mapy** (deszcz na Bagnach, burze piasku, zamieć, mgła w Borze) |
-| Płatne pluginy i paczki | **tak, jednorazowo do ok. 300 zł**; listę zakupów przygotowuje W02, kupuje właściciel |
+| Płatne pluginy i paczki | **tak, jednorazowo do ok. 300 zł**; listę zakupów przygotowuje W02, kupuje właściciel. **2026-10-20: wariant 0 zł** (bez płatnych paczek: Tripo, CC0 Quaternius, nieba wygenerowane, `docs/wyglad/ZAKUPY.md`) |
 
 ## 2. Gry-wzory i co z każdej bierzemy
 

@@ -538,3 +538,10 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Wygląd latarni zostaje z równoległej poprawki na `main` (słup 13 st., światło zasięg 26, bez cieni, tylko nocą, tylko w promieniu detalu); `Structures.lamps` bierze teraz obrót ramienia z danych (`rot`), a gdy go brak, dalej celuje w najbliższą ulicę.
 - Noc w mieście odrobinę jaśniejsza w cieniu między latarniami (`LIGHT.cityNight` otoczenie `#424C6A`, na zewnątrz `#606C8E`).
 - Części: shell miasta ok. 5690 (limit testu 6500). Nowy test w `town.spec`: dane równe wynikowi generatora, brak ciemnych przerw na ulicach, latarnie na wolnym gruncie, z dala od areny, NPC i drzwi. Bez podglądu w Studio.
+
+## Wariant 0 zł: nieba i gniazda zestawu (2026-10-20)
+
+- Właściciel: bez płatnych paczek. Koszyk z `ZAKUPY.md` odrzucony; prompty Tripo na to, czego nie daje nic darmowego (mury, baszta, brama, sosna w śniegu jako minimum; domy i martwe drzewa najpierw z CC0 Quaternius) w plikach właściciela `wyglad/TRIPO-KIT-MIASTO.md`.
+- Nieba: `tools/sky/sky.py` maluje 6 nieb (Łąki, miasto dzień / noc, Bór, Pustkowia, Szczyty) z funkcji kierunku, więc ściany sześcianu bez szwów (konwencja ścian Roblox: DevForum „Custom Skyboxes 101”); PNG i instrukcja w `wyglad/niebo/`. Gra: `MapLooks.paintedSkies` (id 0 = dotychczasowe niebo), `painted` / `paintedNight` w wyglądzie mapy, `WorldController.applySky` (noc miasta 18:30–6:30).
+- Gniazda zestawu: każdy zwykły dom miasta (`house:<styl>:<piętra>`), suchy odcinek muru (`wall:segment`), baszta (`wall:tower`), brama (`wall:gate`, portal i krata zostają z generatora), martwe drzewa (`tree:blackDead`, `burntTree`, `charredStump`, `frozenDead`). Nowe: długość gniazda (`beginKit` `stretch`), `KitAssets` rozciąga model wzdłuż osi X gniazda (0,6–1,6×) dla murów i frontów domów.
+- Bez podglądu w Studio; modele i id nieb czekają na właściciela.

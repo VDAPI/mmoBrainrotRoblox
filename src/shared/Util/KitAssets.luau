@@ -16,7 +16,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 
 local KitAssets = {}
 
-export type Slot = { key: string, p: { number }, s: number, lod: string }
+export type Slot = { key: string, p: { number }, s: number, lod: string, x: number? }
 export type Placement = {
 	template: Model,
 	cframe: CFrame,
@@ -24,11 +24,14 @@ export type Placement = {
 	tint: Color3?,
 	paint: { color: Color3, material: Enum.Material }?,
 	persistent: boolean?, -- W29: a big landmark kept streamed to every player (Config.Kit.persistentSize)
+	-- 2026-10-20: stretched by `stretch` along `axis` (world) after the scale: a wall piece's length, a house's front
+	stretch: number?,
+	axis: Vector3?,
 }
 -- (slot, frame of the Build) -> where the slot's model stands, or nil (keep the pieces)
 export type Resolver = (slot: Slot, base: CFrame) -> Placement?
 
-type Template = { model: Model, height: number, width: number }
+type Template = { model: Model, height: number, width: number, sizeX: number, sizeZ: number }
 
 local templates: { [string]: Template | false } = {}
 local warned: { [string]: boolean } = {}
@@ -96,7 +99,8 @@ local function prepare(name: string): Template?
 	local box, size = model:GetBoundingBox()
 	model.WorldPivot = CFrame.new(box.Position - Vector3.new(0, size.Y / 2, 0))
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
-	local t: Template = { model = model, height = size.Y, width = math.max(size.X, size.Z) }
+	local t: Template =
+		{ model = model, height = size.Y, width = math.max(size.X, size.Z), sizeX = size.X, sizeZ = size.Z }
 	templates[name] = t
 	return t
 end
@@ -136,6 +140,16 @@ function KitAssets.resolver(mapId: string): Resolver?
 			end)
 			material = if ok then value else Enum.Material.Rock
 		end
+		-- a slot with a length (`x`): a fixed-turn model stretched along the slot's local X to that length (a wall piece,
+		-- a house front), at most 0.6x..1.6x so the painted texture keeps its look
+		local stretch: number? = nil
+		if slot.x and not choice.variant.yaw then
+			local quarter = math.floor((choice.yaw % 180) / 90 + 0.5) % 2 == 1
+			local length = (if quarter then t.sizeZ else t.sizeX) * scale
+			if length > 0 then
+				stretch = math.clamp(slot.x / length, 0.6, 1.6)
+			end
+		end
 		return {
 			template = t.model,
 			-- a model with a fixed turn (a landmark: its front matters) turns with its building, a random one only by
@@ -151,6 +165,8 @@ function KitAssets.resolver(mapId: string): Resolver?
 			tint = if tint then Color3.fromHex(tint) else nil,
 			paint = if paint and material then { color = Color3.fromHex(paint.color), material = material } else nil,
 			persistent = string.sub(slot.key, 1, 9) == "landmark:" and choice.size >= Config.Kit.persistentSize,
+			stretch = stretch,
+			axis = if stretch then base.XVector else nil,
 		}
 	end
 end
@@ -172,6 +188,32 @@ function KitAssets.place(placement: Placement, parent: Instance): Model
 		model:ScaleTo(placement.scale)
 	end
 	model:PivotTo(placement.cframe)
+	local stretch, axis = placement.stretch, placement.axis
+	if stretch and axis and math.abs(stretch - 1) > 1e-3 then
+		-- every part moves away from the pivot along the axis and grows along its own side closest to the axis (the
+		-- Tripo models are one mesh, square to the slot)
+		local origin = placement.cframe.Position
+		for _, d in model:GetDescendants() do
+			if d:IsA("BasePart") then
+				local part = d :: BasePart
+				local along = axis:Dot(part.Position - origin)
+				local cf = part.CFrame
+				local x = math.abs(cf.RightVector:Dot(axis))
+				local y = math.abs(cf.UpVector:Dot(axis))
+				local z = math.abs(cf.LookVector:Dot(axis))
+				local size = part.Size
+				if x >= y and x >= z then
+					size = Vector3.new(size.X * stretch, size.Y, size.Z)
+				elseif y >= z then
+					size = Vector3.new(size.X, size.Y * stretch, size.Z)
+				else
+					size = Vector3.new(size.X, size.Y, size.Z * stretch)
+				end
+				part.Size = size
+				part.CFrame = cf + axis * along * (stretch - 1)
+			end
+		end
+	end
 	local tint = placement.tint
 	if tint then
 		-- the leaves: colourless leaf textures take the variant's colour (Data/Kit `tint`)
