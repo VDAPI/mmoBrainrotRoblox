@@ -894,7 +894,7 @@ liczy terminy sam, bez komunikacji między serwerami; areny i turnieje nigdy) na
 Szczyty) budzi się Hrimvald, Praojciec Olbrzymów. Ogłoszenia 10 i 2 minuty przed i przy pojawieniu się; walka na
 otwartym świecie dla 10–20 graczy z ciosami do unikania, wspólnym ciosem, trzema piętnami naraz i zaklęciem do
 przerwania (zasady §16); boss nie zależy od liczby graczy (więcej graczy = krócej, pięciu nie wygrywa), nie ma tarczy,
-pomocnicy faz 2–3 nie dają łupu ani EXP. Po 15 minutach bez zabicia odchodzi. Nagroda (EXP, złoto, materiały i jeden
+pomocnicy faz 2–3 nie dają łupu ani EXP. Po 60 minutach walki wpada w szał, po 2 godzinach bez zabicia odchodzi. Nagroda (EXP, złoto, materiały i jeden
 przedmiot Heroiczny, Legendarny albo Mityczny, niezwiązany) dla każdego z poziomem od progu i udziałem jak w
 wydarzeniach świata (obrażenia, leczenie, tarcze, przejęte ciosy), **raz na konto na termin**: przejście na inny
 serwer w trakcie nie daje drugiej nagrody. W oknie bossa nie startuje Inwazja ani Czempion, w kole walki nie ma PvP,
