@@ -46,6 +46,7 @@ local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
+local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
@@ -89,8 +90,9 @@ local DUST_TINT = Color3.fromHex("#6A5A48") -- the cracks a summon leaves
 type JointState = { motor: Motor6D, joint: Gait.Joint, scale: number, body: boolean }
 
 type Clips = {
-	animator: Animator,
+	animator: Animator?,
 	tracks: { [string]: AnimationTrack },
+	mixer: BoneClips.Mixer?, -- W26: rig "bones" (the tracks are BoneClips tracks)
 	playing: AnimationTrack?,
 	slot: string?,
 	walkSpeed: number?,
@@ -218,6 +220,23 @@ local function loadClips(model: Model): Clips?
 	local lookId = model:GetAttribute("Look")
 	local look = if type(lookId) == "string" then MonsterLooks.get(lookId) else nil
 	local asset = look and look.asset
+	if asset and asset.rig == "bones" then
+		-- W26: imported clips played on the bones (client/Anim/BoneClips)
+		local holder = model:FindFirstChild("Look")
+		local mixer = if holder and holder:IsA("Model") then BoneClips.new(holder, asset.model) else nil
+		if not mixer then
+			return nil
+		end
+		return {
+			animator = nil,
+			tracks = mixer.tracks :: any,
+			mixer = mixer,
+			playing = nil,
+			slot = nil,
+			walkSpeed = asset.walkSpeed,
+			paused = false,
+		}
+	end
 	if not asset or asset.rig ~= "animator" or not asset.anims then
 		return nil
 	end
@@ -594,6 +613,9 @@ local function step(dt: number)
 		local clips = s.clips
 		if clips then
 			stepClips(s, clips, now, speed)
+			if clips.mixer then
+				BoneClips.step(clips.mixer, frame)
+			end
 			continue
 		end
 

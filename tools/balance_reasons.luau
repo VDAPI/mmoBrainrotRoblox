@@ -162,6 +162,8 @@ return {
 		["Data/CaveShapes"] = "wygląd",
 		["Data/MapMarks"] = "wygląd",
 		["Data/MonsterLooks"] = "wygląd",
+		["Data/MonsterAssets"] = "wygląd", -- W26: imported monster models (hitbox numbers copy the generator's)
+		["Data/MonsterClips/*"] = "generowane", -- W26: bone clips sampled from the imported models
 		["Data/WeaponLooks"] = "wygląd",
 		["Data/SkillMotions"] = "wygląd",
 		["Data/SkillVfx"] = "wygląd",
@@ -235,21 +237,30 @@ return {
 				session = "S87",
 				why = "G10 / T-SK4: 1.4 -> 1.89, geometric mean of what Destroyer exp (2.36) and Arcanist boss (1.52) need",
 			},
-			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 25: 1.37 -> 1.02 (the curve never falls)" },
+			{
+				session = "S147",
+				why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 25: 1.37 -> 1.02 (the curve never falls)",
+			},
 		},
 		["LevelCurves:curves.manaCost.Mage[3][2]"] = {
 			{
 				session = "S87",
 				why = "G10 / T-SK4: 1.9 -> 2.59, geometric mean of Destroyer exp (3.51) and Arcanist boss (1.91)",
 			},
-			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 30: 1.47 -> 1.04" },
+			{
+				session = "S147",
+				why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 30: 1.47 -> 1.04",
+			},
 		},
 		["LevelCurves:curves.manaCost.Mage[4][2]"] = {
 			{
 				session = "S87",
 				why = "G10 / T-SK4: 2.5 -> 3.49, geometric mean of Destroyer exp (6.1) and Arcanist boss (2.0)",
 			},
-			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 40: 1.82 -> 1.08" },
+			{
+				session = "S147",
+				why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 40: 1.82 -> 1.08",
+			},
 		},
 		["LevelCurves:curves.heal[2][2]"] = {
 			{ session = "S87", why = "G10 / T-SK5: 1 -> 2.33, Healer dungeon on Defender 0.272 -> 0.300 at 45" },
@@ -644,7 +655,10 @@ return {
 				session = "S89",
 				why = "B R1: rank 10 295 -> 222; Furia R1 2.89 / 3.12 / 3.35 -> 2.41 / 2.51 / 2.60 (<= 1.15 x L20 2.27)",
 			},
-			{ session = "S146", why = "222 -> 200 (rank 6 knot 196): R1 of Sword and Shield (the Defender) at 45 / 100 in band; Brutal Strike (the two-handed S1) keeps 222" },
+			{
+				session = "S146",
+				why = "222 -> 200 (rank 6 knot 196): R1 of Sword and Shield (the Defender) at 45 / 100 in band; Brutal Strike (the two-handed S1) keeps 222",
+			},
 		},
 		["Skills/Warrior:[mightyStrike].breakpoints[10].b.effect.value"] = {
 			{ session = "S89", why = "B R1 / R4: bleed 90 -> 45, 10B gain 0.27 -> 0.18 (band 0.17-0.28)" },
@@ -737,7 +751,10 @@ return {
 				session = "S89",
 				why = "C B: crit 20 -> 24 points; support at 100 4.93 / 4.95 (sword / sabre, band 4.9-5.1)",
 			},
-			{ session = "S146", why = "24 -> 21 points: with the banner on the bar and Fervor 5-15 the support at 100 5.11 > 5.1 with the sabre; now 5.07 / 5.09 (sword / sabre)" },
+			{
+				session = "S146",
+				why = "24 -> 21 points: with the banner on the bar and Fervor 5-15 the support at 100 5.11 > 5.1 with the sabre; now 5.07 / 5.09 (sword / sabre)",
+			},
 		},
 		["Paths/Warrior:[berserker].rows[4].nodes[berserker_executioner].values.executioner[1]"] = {
 			{ session = "S89", why = "B x base: 5 -> 1.5 % (x base 1.33 / 1.42 at 70 / 100 -> 1.31 / 1.35)" },
@@ -1684,7 +1701,10 @@ return {
 				session = "S90",
 				why = "90 -> 30: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
-			{ session = "S147", why = "30 -> 12: R3 of the Trapper at 100 2.05 -> 1.996 (<= 2.0) after the stronger Venom Snare poison" },
+			{
+				session = "S147",
+				why = "30 -> 12: R3 of the Trapper at 100 2.05 -> 1.996 (<= 2.0) after the stronger Venom Snare poison",
+			},
 		},
 		["Skills/Hunter:[snarefield].values.dmg[2]"] = {
 			{
@@ -1779,7 +1799,10 @@ return {
 				session = "S90",
 				why = "130 -> 232: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
-			{ session = "S147", why = "232 -> 80: the trap's damage moves to its poison (R9 of the Crossbow, R3 of the Trapper)" },
+			{
+				session = "S147",
+				why = "232 -> 80: the trap's damage moves to its poison (R9 of the Crossbow, R3 of the Trapper)",
+			},
 		},
 		["Skills/Hunter:[venomSnare].values.dmg[2]"] = {
 			{
@@ -1793,7 +1816,10 @@ return {
 				session = "S90",
 				why = "60 -> 285: D: Kłusownik area 8 s >= 1.15 Marksman, 1 target 1.05-1.15 base, R3 <= 2.0 (ROZWOJ 11.6)",
 			},
-			{ session = "S147", why = "285 -> 405: R9 of the Crossbow, damage over time >= 25 % (the Poacher 0.20 -> 0.26 at 70)" },
+			{
+				session = "S147",
+				why = "285 -> 405: R9 of the Crossbow, damage over time >= 25 % (the Poacher 0.20 -> 0.26 at 70)",
+			},
 		},
 		["Skills/Hunter:[venomSnare].values.poison[2]"] = {
 			{
@@ -1963,7 +1989,10 @@ return {
 				session = "S90",
 				why = "90 -> 119: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
-			{ session = "S147", why = "119 -> 220: T-SK4 of the Destroyer's variants at 100 with the lower curve (the Arcanist never casts it)" },
+			{
+				session = "S147",
+				why = "119 -> 220: T-SK4 of the Destroyer's variants at 100 with the lower curve (the Arcanist never casts it)",
+			},
 		},
 		["Skills/Mage:[cataclysm].values.dmg[1]"] = {
 			{
@@ -2052,7 +2081,10 @@ return {
 			},
 		},
 		["Skills/Mage:[firebolt].values.dmg[2]"] = {
-			{ session = "S142", why = "255.7 -> 184: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70" },
+			{
+				session = "S142",
+				why = "255.7 -> 184: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70",
+			},
 			{
 				session = "S90",
 				why = "310 -> 255.7: F1 R1: rank > 20 nearly flat (Mage base R1; rank <= 20 pinned in SkillCurves)",
@@ -2172,14 +2204,20 @@ return {
 				session = "S90",
 				why = "120 -> 174: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
-			{ session = "S147", why = "174 -> 460: T-SK4 of the Destroyer's fire variant at 100 >= 2.0 with the lower curve and the stronger storm" },
+			{
+				session = "S147",
+				why = "174 -> 460: T-SK4 of the Destroyer's fire variant at 100 >= 2.0 with the lower curve and the stronger storm",
+			},
 		},
 		["Skills/Mage:[meteorStorm].values.dmg[1]"] = {
 			{
 				session = "S90",
 				why = "60 -> 24: F2: destroyerExp area 60 s x base 1.20-1.45, destroyerBoss 1.05-1.20, T-SK4 2.0-2.8 (ROZWOJ 12.7)",
 			},
-			{ session = "S147", why = "24 -> 81 (7 impacts): R9 fire with its burn >= lightning on 3 targets 8 s at 100 (1.22 -> 1.02)" },
+			{
+				session = "S147",
+				why = "24 -> 81 (7 impacts): R9 fire with its burn >= lightning on 3 targets 8 s at 100 (1.22 -> 1.02)",
+			},
 		},
 		["Skills/Mage:[meteorStorm].values.dmg[2]"] = {
 			{
@@ -2490,7 +2528,10 @@ return {
 		},
 		["SkillCurves:knots.mightyStrike.dmg[6]"] = {
 			{ session = "S91", why = "new, 220.4 pinned (rank 6 before S91)" },
-			{ session = "S146", why = "220.4 -> 196 (with rank 10 222 -> 200): R1 of Sword and Shield (the Defender) at 45 / 100 <= 1.15 x its R1 at 20 (2.26 / 2.30 -> 2.19 / 2.24, limit 2.26)" },
+			{
+				session = "S146",
+				why = "220.4 -> 196 (with rank 10 222 -> 200): R1 of Sword and Shield (the Defender) at 45 / 100 <= 1.15 x its R1 at 20 (2.26 / 2.30 -> 2.19 / 2.24, limit 2.26)",
+			},
 		},
 		["SkillCurves:knots.charge.dmg[5]"] = {
 			{ session = "S91", why = "160 -> 136 (x0.85, R1 Fury at L20)" },
@@ -2506,7 +2547,10 @@ return {
 		},
 		["SkillCurves:knots.holyStrike.dmg[5]"] = {
 			{ session = "S91", why = "new, 226 (x0.88 of 256.7, R1 Inquisitor at L20)" },
-			{ session = "S145", why = "226 -> 190: R1 of the Mace and Flail pool at 20 in the S91 band with Brand of Light from 15 (DESIGN-18 §6.4)" },
+			{
+				session = "S145",
+				why = "226 -> 190: R1 of the Mace and Flail pool at 20 in the S91 band with Brand of Light from 15 (DESIGN-18 §6.4)",
+			},
 		},
 		["SkillCurves:knots.holyStrike.dmg[6]"] = {
 			{ session = "S91", why = "new, 273.33 pinned (rank 6 before S91)" },
@@ -2528,7 +2572,10 @@ return {
 			{ session = "S91", why = "232.2 -> 174 (x0.75, R1 Mage builds at L20)" },
 		},
 		["SkillCurves:knots.firebolt.dmg[6]"] = {
-			{ session = "S142", why = "236.9 -> 170.6 (x0.72): Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70" },
+			{
+				session = "S142",
+				why = "236.9 -> 170.6 (x0.72): Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70",
+			},
 			{ session = "S91", why = "new, 236.92 pinned (rank 6 before S91)" },
 		},
 		["SkillCurves:knots.fireball.dmg[5]"] = {
@@ -5195,7 +5242,10 @@ return {
 			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (bow, crossbow; transitional)" },
 		},
 		["SkillPools/Mage:*"] = {
-			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (fire, ice, lightning; transitional)" },
+			{
+				session = "S137",
+				why = "new module (DESIGN-18 §4.2): pool version 1 (fire, ice, lightning; transitional)",
+			},
 		},
 		["SkillPools/Warrior:*"] = {
 			{ session = "S137", why = "new module (DESIGN-18 §4.2): pool version 1 (onehand, twohand; transitional)" },
@@ -5241,46 +5291,87 @@ return {
 			},
 		},
 		["SkillPools/Cleric:version"] = {
-			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+			{
+				session = "S138",
+				why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents",
+			},
 		},
 		["SkillPools/Hunter:version"] = {
-			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+			{
+				session = "S138",
+				why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents",
+			},
 		},
 		["SkillPools/Mage:version"] = {
-			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+			{
+				session = "S138",
+				why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents",
+			},
 		},
 		["SkillPools/Warrior:version"] = {
-			{ session = "S138", why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents" },
+			{
+				session = "S138",
+				why = "1 -> 2 (DESIGN-18 §10): directions replace the main path, a free reset to rethink the talents",
+			},
 		},
 		-- S140 (DESIGN-18 §6.1, §7): the Mage's fire pool, common skills and directions
 		["Skills/Mage:[flameWave]*"] = {
-			{ session = "S140", why = "new (K1 of the fire pool, 6): a cone that throws back and burns; rank 1 45 % (the fire variants' R1 at 20 in the S91 band), breakpoints in the R4 bands at 45-100" },
+			{
+				session = "S140",
+				why = "new (K1 of the fire pool, 6): a cone that throws back and burns; rank 1 45 % (the fire variants' R1 at 20 in the S91 band), breakpoints in the R4 bands at 45-100",
+			},
 		},
 		["Skills/Mage:[emberShield]*"] = {
-			{ session = "S140", why = "new (O1 of the fire pool, 10): a self shield like Shield of Faith (8-12 % HP + 10-15 % magic attack), melee attackers burn for 20-40 % magic attack; options are utility (R4_UTILITY)" },
+			{
+				session = "S140",
+				why = "new (O1 of the fire pool, 10): a self shield like Shield of Faith (8-12 % HP + 10-15 % magic attack), melee attackers burn for 20-40 % magic attack; options are utility (R4_UTILITY)",
+			},
 		},
 		["Skills/Mage:[pyroblast]*"] = {
-			{ session = "S140", why = "new (S2 of the fire pool, 15): 1 s aim, two burn stacks, cooldown 10 s; rank 1 90 % for the S91 band at 20, rank 10 380 %; 5A splash 12 % / 5B +45 and 10A +1 stack / 10B +80 in the R4 bands" },
+			{
+				session = "S140",
+				why = "new (S2 of the fire pool, 15): 1 s aim, two burn stacks, cooldown 10 s; rank 1 90 % for the S91 band at 20, rank 10 380 %; 5A splash 12 % / 5B +45 and 10A +1 stack / 10B +80 in the R4 bands",
+			},
 		},
 		["Skills/Mage:[kindling]*"] = {
-			{ session = "S140", why = "new (P1 of the fire pool, 20): the burn stacks up to 3 (+2), +1..5 % fire damage per own stack (rank 1 low for the S91 band at 20)" },
+			{
+				session = "S140",
+				why = "new (P1 of the fire pool, 20): the burn stacks up to 3 (+2), +1..5 % fire damage per own stack (rank 1 low for the S91 band at 20)",
+			},
 		},
 		["Skills/Mage:[combustion]*"] = {
-			{ session = "S140", why = "new (K2 of the fire pool, 33): 80-140 % hit, then the target's burn stacks burst for 60-105 % each within 6 studs, a 1 s stun at 3 stacks; 5B +14 / 10B cooldown x0.8 in the R4 bands" },
+			{
+				session = "S140",
+				why = "new (K2 of the fire pool, 33): 80-140 % hit, then the target's burn stacks burst for 60-105 % each within 6 studs, a 1 s stun at 3 stacks; 5B +14 / 10B cooldown x0.8 in the R4 bands",
+			},
 		},
 		["Skills/Mage:[immolate]*"] = {
-			{ session = "S140", why = "new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands" },
+			{
+				session = "S140",
+				why = "new (S3 of the fire pool, 40): the finisher, 180-300 %, +10-16 % per own burn stack, x1.5 below 30 % HP; 5A splash 8 % / 5B +5 per stack, 10A sure crit below 50 % / 10B +60 in the R4 bands",
+			},
 		},
 		["Skills/Mage:[phoenixHeart]*"] = {
-			{ session = "S140", why = "new (P2 of the fire pool, 50): a lethal blow leaves 1 HP once per 180 s, 2 s invulnerability, a 150-300 % magic attack fire blast" },
+			{
+				session = "S140",
+				why = "new (P2 of the fire pool, 50): a lethal blow leaves 1 HP once per 180 s, 2 s invulnerability, a 150-300 % magic attack fire blast",
+			},
 		},
 		["Skills/Mage:[elementalist]*"] = {
-			{ session = "S140", why = "a 3-rank passive node of the Destroyer now (Paths/Mage destroyer_elementalist, the old ranks 1 / 3 / 5); the skill points come back through SkillPoints.clean" },
+			{
+				session = "S140",
+				why = "a 3-rank passive node of the Destroyer now (Paths/Mage destroyer_elementalist, the old ranks 1 / 3 / 5); the skill points come back through SkillPoints.clean",
+			},
 		},
 		["Skills/Mage:[arcaneMind]*"] = {
-			{ session = "S140", why = "a 3-rank passive node of the Arcanist now (Paths/Mage arcanist_arcaneMind, the old ranks 1 / 3 / 5); the skill points come back through SkillPoints.clean" },
+			{
+				session = "S140",
+				why = "a 3-rank passive node of the Arcanist now (Paths/Mage arcanist_arcaneMind, the old ranks 1 / 3 / 5); the skill points come back through SkillPoints.clean",
+			},
 		},
-		["Skills/Mage:[blink].unlock"] = { { session = "S140", why = "14 -> 4: C1 of the common ladder (DESIGN-18 §5)" } },
+		["Skills/Mage:[blink].unlock"] = {
+			{ session = "S140", why = "14 -> 4: C1 of the common ladder (DESIGN-18 §5)" },
+		},
 		["Skills/Mage:[manaShield].unlock"] = {
 			{ session = "S140", why = "10 (row 1 of the Arcanist) -> 12: C2 of the common ladder, a common skill now" },
 		},
@@ -5288,11 +5379,17 @@ return {
 			{ session = "S140", why = "48 (row 7 of the Arcanist) -> 30: C3 of the common ladder, a common skill now" },
 		},
 		["Skills/Mage:[focus].unlock"] = {
-			{ session = "S140", why = "80 (row 10 of the Destroyer) -> 45: C4 of the common ladder, a common passive now" },
+			{
+				session = "S140",
+				why = "80 (row 10 of the Destroyer) -> 45: C4 of the common ladder, a common passive now",
+			},
 		},
 		["Skills/Mage:[meteor].unlock"] = { { session = "S140", why = "30 -> 26: A2 of the ladder (DESIGN-18 §5)" } },
 		["Skills/Mage:[meteor].values.dmg[1]"] = {
-			{ session = "S140", why = "98 -> 89.6: rank 1 at 26 one step below; the knot keeps rank 2 (level 30) at the old rank 1 (98)" },
+			{
+				session = "S140",
+				why = "98 -> 89.6: rank 1 at 26 one step below; the knot keeps rank 2 (level 30) at the old rank 1 (98)",
+			},
 		},
 		["Skills/Mage:[meteor].breakpoints[5].b.values.dmg"] = {
 			{ session = "S140", why = "23 -> 20: rank 5 now at 42, R4 at 45 0.182 -> 0.158 (band 0.08-0.17)" },
@@ -5301,66 +5398,120 @@ return {
 			{ session = "S140", why = "48 (row 7 of the Destroyer) -> 60: U of the fire pool (Rain of Meteors)" },
 		},
 		["Skills/Mage:[meteorStorm].burnStacks"] = {
-			{ session = "S140", why = "new: fire (no longer adaptive), one burn stack per impact (the adaptive burn it had with a fire weapon)" },
+			{
+				session = "S140",
+				why = "new: fire (no longer adaptive), one burn stack per impact (the adaptive burn it had with a fire weapon)",
+			},
 		},
 		["Skills/Mage:[firebolt].values.dmg[1]"] = {
-			{ session = "S142", why = "118 -> 85: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70" },
-			{ session = "S140", why = "128 -> 118 (ranks <= 20 x0.92 with the knot): the fire variants' R1 at 20 in the S91 band (2.6-2.65 of 2.73)" },
+			{
+				session = "S142",
+				why = "118 -> 85: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70",
+			},
+			{
+				session = "S140",
+				why = "128 -> 118 (ranks <= 20 x0.92 with the knot): the fire variants' R1 at 20 in the S91 band (2.6-2.65 of 2.73)",
+			},
 		},
 		["Skills/Mage:[fireball].values.dmg[1]"] = {
-			{ session = "S140", why = "128 -> 120 (ranks <= 20 x0.94 with the knot): the fire variants' R1 at 20 in the S91 band" },
+			{
+				session = "S140",
+				why = "128 -> 120 (ranks <= 20 x0.94 with the knot): the fire variants' R1 at 20 in the S91 band",
+			},
 		},
 		["SkillCurves:knots.firebolt.dmg[5]"] = {
-			{ session = "S142", why = "160 -> 115: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70" },
-			{ session = "S140", why = "174 -> 160: Magic Bolt's ranks <= 20 x0.92 (the fire variants' R1 at 20), rank 6 pinned" },
+			{
+				session = "S142",
+				why = "160 -> 115: Fire Bolt x0.72 at every rank with its new burn stack (S142, Logic/Burn: the fire weapon's adaptive burn became the fire school's burn, a stack pays 30 % of each hit): the fire variants' R1 at 20 2.38 / 2.44, lightning 1.11-1.14 x fire on one target at 20-70",
+			},
+			{
+				session = "S140",
+				why = "174 -> 160: Magic Bolt's ranks <= 20 x0.92 (the fire variants' R1 at 20), rank 6 pinned",
+			},
 		},
 		["SkillCurves:knots.fireball.dmg[5]"] = {
-			{ session = "S140", why = "173 -> 162: Fireball's ranks <= 20 x0.94 (the fire variants' R1 at 20), rank 6 pinned" },
+			{
+				session = "S140",
+				why = "173 -> 162: Fireball's ranks <= 20 x0.94 (the fire variants' R1 at 20), rank 6 pinned",
+			},
 		},
 		["SkillCurves:knots.meteor.dmg[2]"] = {
 			{ session = "S140", why = "new: Meteor unlocks at 26, rank 2 (level 30) keeps the old rank 1 (98)" },
 		},
 		["Skills/init:ADAPTIVE.burnPct"] = {
-			{ session = "S140", why = "30 -> 15: the weapon's fire burn is one stack of the player's one burn (Logic/Burn) beside the fire pool's own burns; the fire variants' R1 at 20 in the S91 band" },
+			{
+				session = "S140",
+				why = "30 -> 15: the weapon's fire burn is one stack of the player's one burn (Logic/Burn) beside the fire pool's own burns; the fire variants' R1 at 20 in the S91 band",
+			},
 		},
 		["Skills/init:BURN*"] = {
-			{ session = "S140", why = "new (Logic/Burn): a stack is 30 % of its hit over 4 s, 1 stack without Kindling, Combustion stuns at 3" },
+			{
+				session = "S140",
+				why = "new (Logic/Burn): a stack is 30 % of its hit over 4 s, 1 stack without Kindling, Combustion stuns at 3",
+			},
 		},
 		["Skills/init:EMBER*"] = {
 			{ session = "S140", why = "new: Ember Shield burns one attacker at most once per 1 s" },
 		},
 		["Skills/init:PHOENIX*"] = { { session = "S140", why = "new: Phoenix Heart's fire blast reaches 8 studs" } },
 		["Combat:pvp.phoenix"] = {
-			{ session = "S140", why = "new: Phoenix Heart saves from a player's blow too, its invulnerability x0.5 then" },
+			{
+				session = "S140",
+				why = "new: Phoenix Heart saves from a player's blow too, its invulnerability x0.5 then",
+			},
 		},
 		["SkillPools/Mage:version"] = {
-			{ session = "S140", why = "2 -> 3 (DESIGN-18 §10): the fire pool, the common skills and the directions' new nodes, a free reset" },
+			{
+				session = "S140",
+				why = "2 -> 3 (DESIGN-18 §10): the fire pool, the common skills and the directions' new nodes, a free reset",
+			},
 		},
-		["Skills/Mage:[arcaneDischarge].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
-		["Skills/Mage:[arcaneTorrent].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[arcaneDischarge].order"] = {
+			{ session = "S140", why = "data order of the new file (not balance)" },
+		},
+		["Skills/Mage:[arcaneTorrent].order"] = {
+			{ session = "S140", why = "data order of the new file (not balance)" },
+		},
 		["Skills/Mage:[cataclysm].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
-		["Skills/Mage:[elementalVortex].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
+		["Skills/Mage:[elementalVortex].order"] = {
+			{ session = "S140", why = "data order of the new file (not balance)" },
+		},
 		["Skills/Mage:[evocation].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
 		["Skills/Mage:[focus].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
 		["Skills/Mage:[manaShield].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
 		["Skills/Mage:[meteorStorm].order"] = { { session = "S140", why = "data order of the new file (not balance)" } },
 		["Paths/Mage:[destroyer].reference*"] = {
-			{ session = "S140", why = "the moved skill nodes replaced (Elemental Echo, Elemental Surge), Elementalist 3 ranks, the points of 10-14 in the Arcanist's row 1 (Ward, Precision 2), Grit 2, no Tempered; the fire variant destroyerFire (staff, fire, ranks order)" },
+			{
+				session = "S140",
+				why = "the moved skill nodes replaced (Elemental Echo, Elemental Surge), Elementalist 3 ranks, the points of 10-14 in the Arcanist's row 1 (Ward, Precision 2), Grit 2, no Tempered; the fire variant destroyerFire (staff, fire, ranks order)",
+			},
 		},
 		["Paths/Mage:[arcanist].reference*"] = {
-			{ session = "S140", why = "Arcane Ward and Quick Discharge for the moved skill nodes, Arcane Mind 3 ranks, Will 3 -> 1; the fire variant arcanistFire (runestaff, fire, ranks order)" },
+			{
+				session = "S140",
+				why = "Arcane Ward and Quick Discharge for the moved skill nodes, Arcane Mind 3 ranks, Will 3 -> 1; the fire variant arcanistFire (runestaff, fire, ranks order)",
+			},
 		},
 		["Paths/Mage:[destroyer].rows[1].nodes[destroyer_elementalist]*"] = {
-			{ session = "S140", why = "the skill node of Elementalist became a 3-rank passive node (elementDamage 3 / 9 / 15 = the old ranks 1 / 3 / 5)" },
+			{
+				session = "S140",
+				why = "the skill node of Elementalist became a 3-rank passive node (elementDamage 3 / 9 / 15 = the old ranks 1 / 3 / 5)",
+			},
 		},
 		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_meteorStorm]*"] = {
 			{ session = "S140", why = "Wrath of Elements left the Destroyer for the fire pool (U, Rain of Meteors)" },
 		},
 		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_echo]*"] = {
-			{ session = "S140", why = "new, one rank in place of the skill node: Elemental Vortex strikes once more for 100 % of a wave" },
+			{
+				session = "S140",
+				why = "new, one rank in place of the skill node: Elemental Vortex strikes once more for 100 % of a wave",
+			},
 		},
 		["Paths/Mage:[destroyer].rows[7].nodes[destroyer_wrath]*"] = {
-			{ session = "S140", why = "Storm's Wrath shortens Elemental Vortex now (cooldown 12 s): 1.15-3.44 -> 0.3-0.9 s per enemy" },
+			{
+				session = "S140",
+				why = "Storm's Wrath shortens Elemental Vortex now (cooldown 12 s): 1.15-3.44 -> 0.3-0.9 s per enemy",
+			},
 		},
 		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_focus]*"] = {
 			{ session = "S140", why = "Focus is the Mage's common C4 now" },
@@ -5369,16 +5520,25 @@ return {
 			{ session = "S140", why = "new, one rank in place of Focus: +3 % area damage on 2+ enemies" },
 		},
 		["Paths/Mage:[destroyer].rows[10].nodes[destroyer_grit].maxRank"] = {
-			{ session = "S140", why = "3 -> 2 (the same top value): one whole direction stays within 50 points with Elementalist's 3 ranks" },
+			{
+				session = "S140",
+				why = "3 -> 2 (the same top value): one whole direction stays within 50 points with Elementalist's 3 ranks",
+			},
 		},
 		["Paths/Mage:[arcanist].rows[1].nodes[arcanist_manaShield]*"] = {
 			{ session = "S140", why = "Mana Shield is the Mage's common C2 now" },
 		},
 		["Paths/Mage:[arcanist].rows[1].nodes[arcanist_ward]*"] = {
-			{ session = "S140", why = "new, one rank in place of Mana Shield: +3 % max HP (no mana or damage change: T-SK4 and 1-20 stay)" },
+			{
+				session = "S140",
+				why = "new, one rank in place of Mana Shield: +3 % max HP (no mana or damage change: T-SK4 and 1-20 stay)",
+			},
 		},
 		["Paths/Mage:[arcanist].rows[5].nodes[arcanist_will].maxRank"] = {
-			{ session = "S140", why = "3 -> 2 (the same top value): one whole direction stays within 50 points with Arcane Mind's 3 ranks" },
+			{
+				session = "S140",
+				why = "3 -> 2 (the same top value): one whole direction stays within 50 points with Arcane Mind's 3 ranks",
+			},
 		},
 		["Paths/Mage:[arcanist].rows[7].nodes[arcanist_evocation]*"] = {
 			{ session = "S140", why = "Evocation is the Mage's common C3 now" },
@@ -5387,240 +5547,563 @@ return {
 			{ session = "S140", why = "new, one rank in place of Evocation: Arcane Discharge's cooldown x0.85" },
 		},
 		["Paths/Mage:[arcanist].rows[10].nodes[arcanist_arcaneMind]*"] = {
-			{ session = "S140", why = "the skill node of Arcane Mind became a 3-rank passive node (the old ranks 1 / 3 / 5)" },
+			{
+				session = "S140",
+				why = "the skill node of Arcane Mind became a 3-rank passive node (the old ranks 1 / 3 / 5)",
+			},
 		},
 		-- S141 (DESIGN-18 §6.1): the Mage's ice pool (Logic/Chill)
 		["Skills/Mage:[hailstorm]*"] = {
-			{ session = "S141", why = "new (A1 of the ice pool, 3): three waves on a 7-stud circle, each slows 30 % (waveEffects); rank 1 18 % a wave for the ice variants' R1 at 20 in the S91 band; 5B +7 / 10B +16 in the R4 bands, A options control" },
+			{
+				session = "S141",
+				why = "new (A1 of the ice pool, 3): three waves on a 7-stud circle, each slows 30 % (waveEffects); rank 1 18 % a wave for the ice variants' R1 at 20 in the S91 band; 5B +7 / 10B +16 in the R4 bands, A options control",
+			},
 		},
 		["Skills/Mage:[iceBarrier]*"] = {
-			{ session = "S141", why = "new (O1 of the ice pool, 10): Ember Shield's shield (8-12 % HP + 10-15 % magic attack), melee attackers slowed 40-55 % for 2 s; options are utility (R4_UTILITY)" },
+			{
+				session = "S141",
+				why = "new (O1 of the ice pool, 10): Ember Shield's shield (8-12 % HP + 10-15 % magic attack), melee attackers slowed 40-55 % for 2 s; options are utility (R4_UTILITY)",
+			},
 		},
 		["Skills/Mage:[glacialSpike]*"] = {
-			{ session = "S141", why = "new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control)" },
+			{
+				session = "S141",
+				why = "new (S2 of the ice pool, 15): 0.8 s aim, x1.5 on frozen, x1.25 on a boss with Deep Chill; rank 1 70 % for the S91 band at 20, rank 10 330 (ice 0.85-0.95 x fire on one target); 5A splash 9 % / 5B +45, 10B +75 in the R4 bands, 10A a freeze (control)",
+			},
 		},
 		["Skills/Mage:[wintersGrip]*"] = {
-			{ session = "S141", why = "new (P1 of the ice pool, 20): 4 ice hits on a slowed enemy freeze it for 1.5-2.5 s; bosses get Deep Chill +10-18 % for 4 s (Logic/Chill)" },
+			{
+				session = "S141",
+				why = "new (P1 of the ice pool, 20): 4 ice hits on a slowed enemy freeze it for 1.5-2.5 s; bosses get Deep Chill +10-18 % for 4 s (Logic/Chill)",
+			},
 		},
 		["Skills/Mage:[frozenOrb]*"] = {
-			{ session = "S141", why = "new (A2 of the ice pool, 26): an orb flying 20 studs, 10 waves of 12-24 % in 5 studs every 0.4 s, a slow of up to 5 stacks of 8 %; 5B +2.5 / 10B +5 in the R4 bands, A options control and geometry" },
+			{
+				session = "S141",
+				why = "new (A2 of the ice pool, 26): an orb flying 20 studs, 10 waves of 12-24 % in 5 studs every 0.4 s, a slow of up to 5 stacks of 8 %; 5B +2.5 / 10B +5 in the R4 bands, A options control and geometry",
+			},
 		},
 		["Skills/Mage:[deepFreeze]*"] = {
-			{ session = "S141", why = "new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control)" },
+			{
+				session = "S141",
+				why = "new (K2 of the ice pool, 33): 70-120 %, a 3 s freeze and 30 % slower attacks for 4 s (bosses: Deep Chill); 5B +13, 10A cooldown x0.85 / 10B +30 in the R4 bands, 5A +1 s (control)",
+			},
 		},
 		["Skills/Mage:[shatter]*"] = {
-			{ session = "S141", why = "new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control)" },
+			{
+				session = "S141",
+				why = "new (S3 of the ice pool, 40): the finisher, 160-230 %, x2 on frozen (ends the freeze), x1.6 on a boss spending Deep Chill; 5A splash 12 % / 5B +30 shatter, 10B +55 in the R4 bands, 10A a refreeze (control)",
+			},
 		},
 		["Skills/Mage:[iceBlood]*"] = {
-			{ session = "S141", why = "new (P2 of the ice pool, 50): 4-12 % less damage from slowed or frozen attackers (own reduction)" },
+			{
+				session = "S141",
+				why = "new (P2 of the ice pool, 50): 4-12 % less damage from slowed or frozen attackers (own reduction)",
+			},
 		},
 		["Skills/Mage:[blizzard]*"] = {
-			{ session = "S141", why = "new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage)" },
+			{
+				session = "S141",
+				why = "new (U of the ice pool, 60): 8 waves of 17-21 % on a 12-stud circle, a slow of up to 8 stacks of 6 %, a 1 s freeze once from wave 5; options like Rain of Meteors (hits, cooldown, radius, damage)",
+			},
 		},
 		["Skills/Mage:[iceShard].unlock"] = { { session = "S141", why = "6 -> 1: S1 of the ice pool (DESIGN-18 §5)" } },
 		["Skills/Mage:[iceShard].values.dmg[1]"] = {
-			{ session = "S141", why = "119 -> 70 at level 1 (with the knots): beside the adaptive Magic Bolt the ice variants' R1 at 20 stays in the S91 band (2.69 of 2.73); ranks above 20 keep their values" },
+			{
+				session = "S141",
+				why = "119 -> 70 at level 1 (with the knots): beside the adaptive Magic Bolt the ice variants' R1 at 20 stays in the S91 band (2.69 of 2.73); ranks above 20 keep their values",
+			},
 		},
 		["SkillCurves:knots.iceShard*"] = {
-			{ session = "S141", why = "Ice Shard unlocks at 1: rank 5 (level 17) 80 for the S91 band, rank 6 (level 21) keeps the old rank 5 (182.7); the old knot of rank 4 goes" },
+			{
+				session = "S141",
+				why = "Ice Shard unlocks at 1: rank 5 (level 17) 80 for the S91 band, rank 6 (level 21) keeps the old rank 5 (182.7); the old knot of rank 4 goes",
+			},
 		},
-		["Skills/Mage:[frostNova].unlock"] = { { session = "S141", why = "18 -> 6: K1 of the ice pool (DESIGN-18 §5)" } },
+		["Skills/Mage:[frostNova].unlock"] = {
+			{ session = "S141", why = "18 -> 6: K1 of the ice pool (DESIGN-18 §5)" },
+		},
 		["Skills/Mage:[frostNova].values.dmg[1]"] = {
-			{ session = "S141", why = "120 -> 90: rank 1 at 6 below the old rank 1; the knot keeps rank 4 (level 18) at the old 120" },
+			{
+				session = "S141",
+				why = "120 -> 90: rank 1 at 6 below the old rank 1; the knot keeps rank 4 (level 18) at the old 120",
+			},
 		},
 		["Skills/Mage:[frostNova].values.freeze*"] = {
-			{ session = "S141", why = "1.5-2.5 -> 1-2 s (session plan): the freeze comes at 6 now, Winter's Grip and Deep Freeze add more" },
+			{
+				session = "S141",
+				why = "1.5-2.5 -> 1-2 s (session plan): the freeze comes at 6 now, Winter's Grip and Deep Freeze add more",
+			},
 		},
 		["Skills/Mage:[frostNova].effects[1].duration*"] = {
 			{ session = "S141", why = "1.5-2.5 -> 1-2 s with values.freeze (the effect's own pair)" },
 		},
 		["Skills/Mage:[frostNova].cost"] = { { session = "S141", why = "45 -> 40: a K1 at 6 (Flame Wave's cost)" } },
-		["Skills/Mage:[frostNova].cooldown"] = { { session = "S141", why = "18 -> 16: a K1 at 6 (near Flame Wave's 14)" } },
+		["Skills/Mage:[frostNova].cooldown"] = {
+			{ session = "S141", why = "18 -> 16: a K1 at 6 (near Flame Wave's 14)" },
+		},
 		["SkillCurves:knots.frostNova*"] = {
-			{ session = "S141", why = "new: Frost Nova unlocks at 6, rank 4 (level 18) keeps the old rank 1 (120), rank 5 (level 22) the old rank 2" },
+			{
+				session = "S141",
+				why = "new: Frost Nova unlocks at 6, rank 4 (level 18) keeps the old rank 1 (120), rank 5 (level 22) the old rank 2",
+			},
 		},
 		["Skills/init:CHILL*"] = {
-			{ session = "S141", why = "new (Logic/Chill): Winter's Grip freezes at 4 counted hits (the counter lasts 5 s), Deep Chill +10 % for 4 s, Ice Barrier slows 2 s at most once per 1 s per attacker" },
+			{
+				session = "S141",
+				why = "new (Logic/Chill): Winter's Grip freezes at 4 counted hits (the counter lasts 5 s), Deep Chill +10 % for 4 s, Ice Barrier slows 2 s at most once per 1 s per attacker",
+			},
 		},
 		["SkillPools/Mage:version"] = {
 			{ session = "S141", why = "3 -> 4 (DESIGN-18 §10): the ice pool, a free reset" },
 		},
 		["Paths/Mage:[destroyer].reference[destroyerIce]*"] = {
-			{ session = "S141", why = "new: the Destroyer with an ice weapon (staff, ice, the ice pool alone; rank order, area B options)" },
+			{
+				session = "S141",
+				why = "new: the Destroyer with an ice weapon (staff, ice, the ice pool alone; rank order, area B options)",
+			},
 		},
 		["Paths/Mage:[arcanist].reference[arcanistIce]*"] = {
-			{ session = "S141", why = "new: the Arcanist with an ice weapon (runestaff, ice, the ice pool alone; rank order, B options)" },
+			{
+				session = "S141",
+				why = "new: the Arcanist with an ice weapon (runestaff, ice, the ice pool alone; rank order, B options)",
+			},
 		},
 		-- S142 (DESIGN-18 §6.1): the Mage's lightning pool (Logic/Shock), the end of the transitional Mage
 		["Skills/Mage:[firebolt].burnStacks"] = {
-			{ session = "S142", why = "new: Fire Bolt is the fire pool's S1 (no longer adaptive), one burn stack per hit (DESIGN-18 §6.1, the burn it had with a fire weapon)" },
+			{
+				session = "S142",
+				why = "new: Fire Bolt is the fire pool's S1 (no longer adaptive), one burn stack per hit (DESIGN-18 §6.1, the burn it had with a fire weapon)",
+			},
 		},
 		["Skills/Mage:[lightningBolt]*"] = {
-			{ session = "S142", why = "new (S1 of the lightning pool, 1): Fire Bolt's shape, +10 crit points; rank 1 112 % (knots: rank 5 170, rank 6 265) for the lightning variants' R1 at 20 in the S91 band (2.63 / 2.70) and lightning 1.08-1.19 x fire on one target; 5A +25 crit / 5B cooldown x0.88, 10A splash 13 % / 10B two bolts in the R4 bands" },
+			{
+				session = "S142",
+				why = "new (S1 of the lightning pool, 1): Fire Bolt's shape, +10 crit points; rank 1 112 % (knots: rank 5 170, rank 6 265) for the lightning variants' R1 at 20 in the S91 band (2.63 / 2.70) and lightning 1.08-1.19 x fire on one target; 5A +25 crit / 5B cooldown x0.88, 10A splash 13 % / 10B two bolts in the R4 bands",
+			},
 		},
 		["Skills/Mage:[staticShock]*"] = {
-			{ session = "S142", why = "new (K1 of the lightning pool, 6): 70-150 % and a 0.8 s paralysis (stun, bosses immune), cooldown 12 below Frost Nova's 16; 5B +16 / 10A cooldown x0.8 / 10B +38 in the R4 bands, 5A +0.4 s (control)" },
+			{
+				session = "S142",
+				why = "new (K1 of the lightning pool, 6): 70-150 % and a 0.8 s paralysis (stun, bosses immune), cooldown 12 below Frost Nova's 16; 5B +16 / 10A cooldown x0.8 / 10B +38 in the R4 bands, 5A +0.4 s (control)",
+			},
 		},
 		["Skills/Mage:[stormArmor]*"] = {
-			{ session = "S142", why = "new (O1 of the lightning pool, 10): a small own reduction 6-10 % for 10 s (no shield: lightning has the least defence) and a strike back of 30-60 % magic attack on melee attackers; options are utility (R4_UTILITY)" },
+			{
+				session = "S142",
+				why = "new (O1 of the lightning pool, 10): a small own reduction 6-10 % for 10 s (no shield: lightning has the least defence) and a strike back of 30-60 % magic attack on melee attackers; options are utility (R4_UTILITY)",
+			},
 		},
 		["Skills/Mage:[thunderStrike]*"] = {
-			{ session = "S142", why = "new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control)" },
+			{
+				session = "S142",
+				why = "new (S2 of the lightning pool, 15): the bolt falls 0.5 s after the cast, 100-400 % (cooldown 9), the Mage's heaviest S2; 5A splash 7 % / 5B +50, 10B +90 in the R4 bands, 10A a stun (control)",
+			},
 		},
 		["Skills/Mage:[overcharge]*"] = {
-			{ session = "S142", why = "new (P1 of the lightning pool, 20): +3-8 crit points and +10-30 crit damage points on lightning spells (Logic/Shock.critOf)" },
+			{
+				session = "S142",
+				why = "new (P1 of the lightning pool, 20): +3-8 crit points and +10-30 crit damage points on lightning spells (Logic/Shock.critOf)",
+			},
 		},
 		["Skills/Mage:[ballLightning]*"] = {
-			{ session = "S142", why = "new (K2 of the lightning pool, 33): a ball flying 16 studs, 8 waves of 16-30 % in 4 studs every 0.5 s, the last knocks back 6 studs and stuns 1 s (bosses immune); 5B +3.5, 10A cooldown x0.8 / 10B +7 in the R4 bands, 5A radius (geometry)" },
+			{
+				session = "S142",
+				why = "new (K2 of the lightning pool, 33): a ball flying 16 studs, 8 waves of 16-30 % in 4 studs every 0.5 s, the last knocks back 6 studs and stuns 1 s (bosses immune); 5B +3.5, 10A cooldown x0.8 / 10B +7 in the R4 bands, 5A radius (geometry)",
+			},
 		},
 		["Skills/Mage:[lightningLance]*"] = {
-			{ session = "S142", why = "new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry)" },
+			{
+				session = "S142",
+				why = "new (S3 of the lightning pool, 40): a 26 x 3 line, 140-200 %, a sure crit on the main hit, x1.5 below 30 % HP; 5B +22, 10A cooldown x0.8 / 10B +50 in the R4 bands, 5A width (geometry)",
+			},
 		},
 		["Skills/Mage:[conductor]*"] = {
-			{ session = "S142", why = "new (P2 of the lightning pool, 50): a single-target lightning spell's main hit jumps to a second enemy within 10 studs for 20-40 % (a secondary hit)" },
+			{
+				session = "S142",
+				why = "new (P2 of the lightning pool, 50): a single-target lightning spell's main hit jumps to a second enemy within 10 studs for 20-40 % (a secondary hit)",
+			},
 		},
 		["Skills/Mage:[tempest]*"] = {
-			{ session = "S142", why = "new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control)" },
+			{
+				session = "S142",
+				why = "new (U of the lightning pool, 60): 12 bolts of 40-48 % on random enemies in a 12-stud circle (randomTarget), cost 170, cooldown 50 like Blizzard; 5A +2 bolts / 5B cooldown x0.88, 10B +8.5 in the R4 bands, 10A a stun (control)",
+			},
 		},
-		["Skills/Mage:[chainLightning].unlock"] = { { session = "S142", why = "10 -> 3: A1 of the lightning pool (DESIGN-18 §5, the owner's complaint)" } },
-		["Skills/Mage:[chainLightning].cooldown"] = { { session = "S142", why = "9 -> 8: an A1 like Fireball and Hailstorm" } },
+		["Skills/Mage:[chainLightning].unlock"] = {
+			{ session = "S142", why = "10 -> 3: A1 of the lightning pool (DESIGN-18 §5, the owner's complaint)" },
+		},
+		["Skills/Mage:[chainLightning].cooldown"] = {
+			{ session = "S142", why = "9 -> 8: an A1 like Fireball and Hailstorm" },
+		},
 		["Skills/Mage:[chainLightning].values.dmg*"] = {
-			{ session = "S142", why = "rank 1 110 -> 100 at level 3 and rank 10 163.5 -> 200 (lightning has the highest area damage; with the knots rank 5 at 19 is 140)" },
+			{
+				session = "S142",
+				why = "rank 1 110 -> 100 at level 3 and rank 10 163.5 -> 200 (lightning has the highest area damage; with the knots rank 5 at 19 is 140)",
+			},
 		},
-		["Skills/Mage:[chainLightning].values.jumps*"] = { { session = "S142", why = "jumps 3 -> 6 became 3 -> 5 (the session plan; 5A still adds 2)" } },
+		["Skills/Mage:[chainLightning].values.jumps*"] = {
+			{ session = "S142", why = "jumps 3 -> 6 became 3 -> 5 (the session plan; 5A still adds 2)" },
+		},
 		["SkillCurves:knots.chainLightning*"] = {
-			{ session = "S142", why = "Chain Lightning unlocks at 3: rank 5 (level 19) 140 (the old rank 3 at 18 was 129: lightning's area at 20), rank 6 (level 23) keeps the old rank 4 (level 22)" },
+			{
+				session = "S142",
+				why = "Chain Lightning unlocks at 3: rank 5 (level 19) 140 (the old rank 3 at 18 was 129: lightning's area at 20), rank 6 (level 23) keeps the old rank 4 (level 22)",
+			},
 		},
-		["Skills/Mage:[firewall].unlock"] = { { session = "S142", why = "45 -> 26: A2 of the lightning pool (DESIGN-18 §5)" } },
+		["Skills/Mage:[firewall].unlock"] = {
+			{ session = "S142", why = "45 -> 26: A2 of the lightning pool (DESIGN-18 §5)" },
+		},
 		["Skills/Mage:[firewall].values.dmg*"] = {
-			{ session = "S142", why = "rank 1 24.9 -> 24 at level 26, rank 10 49.8 -> 58 (the lightning pool's A2 against Meteor and Frozen Orb)" },
+			{
+				session = "S142",
+				why = "rank 1 24.9 -> 24 at level 26, rank 10 49.8 -> 58 (the lightning pool's A2 against Meteor and Frozen Orb)",
+			},
 		},
 		["SkillCurves:knots.firewall*"] = {
-			{ session = "S142", why = "new: Thunderstorm unlocks at 26, rank 6 (level 46) 32 near the old rank 1 at 45 x 1.3" },
+			{
+				session = "S142",
+				why = "new: Thunderstorm unlocks at 26, rank 6 (level 46) 32 near the old rank 1 at 45 x 1.3",
+			},
 		},
 		["SkillCurves:knots.lightningBolt*"] = {
-			{ session = "S142", why = "new: Lightning Bolt's ranks <= 20 cut like Fire Bolt's (rank 5 170 at 17 for the S91 band), rank 6 265 near rank 10" },
+			{
+				session = "S142",
+				why = "new: Lightning Bolt's ranks <= 20 cut like Fire Bolt's (rank 5 170 at 17 for the S91 band), rank 6 265 near rank 10",
+			},
 		},
-		["Skills/Mage:[iceShard].cost"] = { { session = "S142", why = "15 -> 12: Fire Bolt left the ice pool, Ice Shard is its only bolt (like Fire Bolt's 12)" } },
-		["Skills/Mage:[iceShard].cooldown"] = { { session = "S142", why = "5 -> 3: the ice pool's only bolt without the adaptive Fire Bolt (ice 0.86-0.89 x fire on one target)" } },
+		["Skills/Mage:[iceShard].cost"] = {
+			{
+				session = "S142",
+				why = "15 -> 12: Fire Bolt left the ice pool, Ice Shard is its only bolt (like Fire Bolt's 12)",
+			},
+		},
+		["Skills/Mage:[iceShard].cooldown"] = {
+			{
+				session = "S142",
+				why = "5 -> 3: the ice pool's only bolt without the adaptive Fire Bolt (ice 0.86-0.89 x fire on one target)",
+			},
+		},
 		["Skills/Mage:[iceShard].values.dmg[1]"] = {
-			{ session = "S142", why = "70 -> 90 at level 1 (the S141 cut was for the adaptive Fire Bolt beside it; ice variants' R1 at 20 2.16-2.21)" },
+			{
+				session = "S142",
+				why = "70 -> 90 at level 1 (the S141 cut was for the adaptive Fire Bolt beside it; ice variants' R1 at 20 2.16-2.21)",
+			},
 		},
 		["SkillCurves:knots.iceShard*"] = {
-			{ session = "S142", why = "rank 5 80 -> 130 (Fire Bolt left the ice pool; ice 0.85-0.95 x fire on one target), rank 6 pinned" },
+			{
+				session = "S142",
+				why = "rank 5 80 -> 130 (Fire Bolt left the ice pool; ice 0.85-0.95 x fire on one target), rank 6 pinned",
+			},
 		},
 		["Skills/init:SHOCK*"] = {
-			{ session = "S142", why = "new (Logic/Shock): Conductor's jump within 10 studs, Storm Armor strikes back at most once per 1 s per attacker" },
+			{
+				session = "S142",
+				why = "new (Logic/Shock): Conductor's jump within 10 studs, Storm Armor strikes back at most once per 1 s per attacker",
+			},
 		},
 		["SkillPools/Mage:version"] = {
-			{ session = "S142", why = "4 -> 5 (DESIGN-18 §10): the lightning pool, Fire Bolt fire only, a free reset" },
+			{
+				session = "S142",
+				why = "4 -> 5 (DESIGN-18 §10): the lightning pool, Fire Bolt fire only, a free reset",
+			},
 		},
 		["Paths/Mage:[destroyer].reference[destroyerLightning]*"] = {
-			{ session = "S142", why = "new: the Destroyer with a lightning weapon (staff, lightning, the lightning pool alone; rank order, area A options)" },
+			{
+				session = "S142",
+				why = "new: the Destroyer with a lightning weapon (staff, lightning, the lightning pool alone; rank order, area A options)",
+			},
 		},
 		["Paths/Mage:[arcanist].reference[arcanistLightning]*"] = {
-			{ session = "S142", why = "new: the Arcanist with a lightning weapon (runestaff, lightning, the lightning pool alone; rank order, B options)" },
+			{
+				session = "S142",
+				why = "new: the Arcanist with a lightning weapon (runestaff, lightning, the lightning pool alone; rank order, B options)",
+			},
 		},
 		-- S143 (DESIGN-18 §6.2): the Warrior's pools Sword and Shield (onehand) and Two-Handed (twohand), the common
 		-- skills, the directions with skill nodes only in rows 4 and 8
 		["Skills/Warrior:[shieldSweep]*"] = {
-			{ session = "S143", why = "new (A1 of Sword and Shield, 3): a 6-stud 100° cone, knockback 4, 100-160 % (+20 % with a shield, Logic/Block), cost 25, cooldown 7 like Cleave; 5B +18 / 10B +36 in the R4 bands, 5A +40° and 10A a 0.8 s stun (geometry, control)" },
+			{
+				session = "S143",
+				why = "new (A1 of Sword and Shield, 3): a 6-stud 100° cone, knockback 4, 100-160 % (+20 % with a shield, Logic/Block), cost 25, cooldown 7 like Cleave; 5B +18 / 10B +36 in the R4 bands, 5A +40° and 10A a 0.8 s stun (geometry, control)",
+			},
 		},
 		["Skills/Warrior:[shieldBash]*"] = {
-			{ session = "S143", why = "new (K1 of Sword and Shield, 6): one target 70-130 % and a 1.5 s stun (bosses immune), needs a shield (SkillDef.weapon), cost 20, cooldown 12; 5B +14, 10A cooldown x0.8 / 10B +32 in the R4 bands, 5A +0.5 s (control)" },
+			{
+				session = "S143",
+				why = "new (K1 of Sword and Shield, 6): one target 70-130 % and a 1.5 s stun (bosses immune), needs a shield (SkillDef.weapon), cost 20, cooldown 12; 5B +14, 10A cooldown x0.8 / 10B +32 in the R4 bands, 5A +0.5 s (control)",
+			},
 		},
 		["Skills/Warrior:[vindicate]*"] = {
-			{ session = "S143", why = "new (S3 of Sword and Shield, 40): the shield's finisher 200-300 %, +15 % for each block of the last 6 s (at most 3, Logic/Block), cost 30, cooldown 10; 5A +5 % per block / 5B +30, 10A splash 50 % / 10B +66 in the R4 bands" },
+			{
+				session = "S143",
+				why = "new (S3 of Sword and Shield, 40): the shield's finisher 200-300 %, +15 % for each block of the last 6 s (at most 3, Logic/Block), cost 30, cooldown 10; 5A +5 % per block / 5B +30, 10A splash 50 % / 10B +66 in the R4 bands",
+			},
 		},
 		["Skills/Warrior:[brutalStrike]*"] = {
-			{ session = "S143", why = "new (S1 of Two-Handed, 1): Mighty Strike's numbers and S91 knots (136-222 %) with 2 Fury stacks per hit (Rage); 5A execute 30 / 5B +28, 10A splash 50 % / 10B +50 in the R4 bands" },
+			{
+				session = "S143",
+				why = "new (S1 of Two-Handed, 1): Mighty Strike's numbers and S91 knots (136-222 %) with 2 Fury stacks per hit (Rage); 5A execute 30 / 5B +28, 10A splash 50 % / 10B +50 in the R4 bands",
+			},
 		},
 		["Skills/Warrior:[sunder]*"] = {
-			{ session = "S143", why = "new (K1 of Two-Handed, 6): 60-110 % (a control skill below Brutal Strike), the target's defence -10-20 % for 6 s (enemyArmor) and slowed 30 % for 3 s; 80-140 % pushed the Berserker (the damage reference) too far above S142 at 70; 5B +15, 10A +10 armour break / 10B +34, 5A +2 s" },
+			{
+				session = "S143",
+				why = "new (K1 of Two-Handed, 6): 60-110 % (a control skill below Brutal Strike), the target's defence -10-20 % for 6 s (enemyArmor) and slowed 30 % for 3 s; 80-140 % pushed the Berserker (the damage reference) too far above S142 at 70; 5B +15, 10A +10 armour break / 10B +34, 5A +2 s",
+			},
 		},
 		["Skills/Warrior:[rage]*"] = {
-			{ session = "S143", why = "new (P1 of Two-Handed, 20): Fury exists only with Rage (Logic/Fury.cap): 6 stacks alone, the Berserker's nodes raise the cap to 10; +0.2-0.5 % damage per stack (0.4-1.2 put the Berserker, the damage reference of every class, 22 % above S142 at 70 and broke the Hunter's R7 and the Inquisitor's ratio)" },
+			{
+				session = "S143",
+				why = "new (P1 of Two-Handed, 20): Fury exists only with Rage (Logic/Fury.cap): 6 stacks alone, the Berserker's nodes raise the cap to 10; +0.2-0.5 % damage per stack (0.4-1.2 put the Berserker, the damage reference of every class, 22 % above S142 at 70 and broke the Hunter's R7 and the Inquisitor's ratio)",
+			},
 		},
 		["Skills/Warrior:[warStomp]*"] = {
-			{ session = "S143", why = "new (K2 of Two-Handed, 33): a 6-stud circle around the Warrior, 60-110 %, a 1 s stun (bosses immune) and 20 % slower attacks for 4 s (enemyAttackSlow, bosses too; the category cap, 30 was clamped to 20), cost 35, cooldown 18; 5B +12 / 10B +26 in the R4 bands, 5A radius, 10A +0.5 s" },
+			{
+				session = "S143",
+				why = "new (K2 of Two-Handed, 33): a 6-stud circle around the Warrior, 60-110 %, a 1 s stun (bosses immune) and 20 % slower attacks for 4 s (enemyAttackSlow, bosses too; the category cap, 30 was clamped to 20), cost 35, cooldown 18; 5B +12 / 10B +26 in the R4 bands, 5A radius, 10A +0.5 s",
+			},
 		},
 		["Skills/Warrior:[execute]*"] = {
-			{ session = "S143", why = "new (S3 of Two-Handed, 40): the finisher 180-260 %, x2 below 30 % HP (finisher), consumes all Fury for +4 % per stack (Rend's 6 % is the bigger spender), cost 25, cooldown 10; 5A execute 30 / 5B +26, 10A lifesteal 15 / 10B +3 % per stack" },
+			{
+				session = "S143",
+				why = "new (S3 of Two-Handed, 40): the finisher 180-260 %, x2 below 30 % HP (finisher), consumes all Fury for +4 % per stack (Rend's 6 % is the bigger spender), cost 25, cooldown 10; 5A execute 30 / 5B +26, 10A lifesteal 15 / 10B +3 % per stack",
+			},
 		},
 		["Skills/Warrior:[unstoppable]*"] = {
-			{ session = "S143", why = "new (P2 of Two-Handed, 50): at full Fury immune to stuns and knockbacks (own) and 3-9 % less damage taken (the furyGuard hook of the Berserker's Relentless)" },
+			{
+				session = "S143",
+				why = "new (P2 of Two-Handed, 50): at full Fury immune to stuns and knockbacks (own) and 3-9 % less damage taken (the furyGuard hook of the Berserker's Relentless)",
+			},
 		},
-		["Skills/Warrior:[charge].unlock"] = { { session = "S143", why = "3 -> 4: C1 of the Warrior (DESIGN-18 §5 common ladder)" } },
-		["Skills/Warrior:[taunt].unlock"] = { { session = "S143", why = "10 -> 12: C2 of the Warrior (common ladder)" } },
-		["Skills/Warrior:[battleCry].unlock"] = { { session = "S143", why = "the Standard-Bearer's row 1 (10) -> 30: C3 of the Warrior (common ladder)" } },
-		["Skills/Warrior:[battleCry].values.atk[1]"] = { { session = "S143", why = "10 -> 14.9: rank 1 at 30 keeps the old rank 6 at 30 (no drop for a level 30 Warrior)" } },
-		["Skills/Warrior:[steelSkin].unlock"] = { { session = "S143", why = "14 -> 45: C4 of the Warrior (common ladder)" } },
-		["Skills/Warrior:[steelSkin].values.armor[1]"] = { { session = "S143", why = "5 -> 20: rank 1 at 45 keeps the old rank 4 at 41" } },
-		["Skills/Warrior:[cleave].unlock"] = { { session = "S143", why = "the Berserker's row 1 (10) -> 3: A1 of Two-Handed" } },
-		["Skills/Warrior:[cleave].values.dmg[1]"] = { { session = "S143", why = "140 -> 115 at level 3: rank 3 (11) near the old rank 1 at 10, rank 5 (19) keeps the old rank 3 (knot)" } },
+		["Skills/Warrior:[charge].unlock"] = {
+			{ session = "S143", why = "3 -> 4: C1 of the Warrior (DESIGN-18 §5 common ladder)" },
+		},
+		["Skills/Warrior:[taunt].unlock"] = {
+			{ session = "S143", why = "10 -> 12: C2 of the Warrior (common ladder)" },
+		},
+		["Skills/Warrior:[battleCry].unlock"] = {
+			{ session = "S143", why = "the Standard-Bearer's row 1 (10) -> 30: C3 of the Warrior (common ladder)" },
+		},
+		["Skills/Warrior:[battleCry].values.atk[1]"] = {
+			{
+				session = "S143",
+				why = "10 -> 14.9: rank 1 at 30 keeps the old rank 6 at 30 (no drop for a level 30 Warrior)",
+			},
+		},
+		["Skills/Warrior:[steelSkin].unlock"] = {
+			{ session = "S143", why = "14 -> 45: C4 of the Warrior (common ladder)" },
+		},
+		["Skills/Warrior:[steelSkin].values.armor[1]"] = {
+			{ session = "S143", why = "5 -> 20: rank 1 at 45 keeps the old rank 4 at 41" },
+		},
+		["Skills/Warrior:[cleave].unlock"] = {
+			{ session = "S143", why = "the Berserker's row 1 (10) -> 3: A1 of Two-Handed" },
+		},
+		["Skills/Warrior:[cleave].values.dmg[1]"] = {
+			{
+				session = "S143",
+				why = "140 -> 115 at level 3: rank 3 (11) near the old rank 1 at 10, rank 5 (19) keeps the old rank 3 (knot)",
+			},
+		},
 		["Skills/Warrior:[bloodlust].unlock"] = { { session = "S143", why = "18 -> 10: O1 of Two-Handed" } },
-		["Skills/Warrior:[bloodlust].values.speed[1]"] = { { session = "S143", why = "15 -> 13 at level 10: rank 3 (18) keeps the old rank 1 (knots)" } },
-		["Skills/Warrior:[rend].unlock"] = { { session = "S143", why = "the Berserker's row 4 (26) -> 15: S2 of Two-Handed" } },
-		["Skills/Warrior:[rend].values.dmg[1]"] = { { session = "S143", why = "280 -> 200 at level 15 (rank 4 at 27 226.7; the S91 band of the two-handed R1 at 20)" } },
+		["Skills/Warrior:[bloodlust].values.speed[1]"] = {
+			{ session = "S143", why = "15 -> 13 at level 10: rank 3 (18) keeps the old rank 1 (knots)" },
+		},
+		["Skills/Warrior:[rend].unlock"] = {
+			{ session = "S143", why = "the Berserker's row 4 (26) -> 15: S2 of Two-Handed" },
+		},
+		["Skills/Warrior:[rend].values.dmg[1]"] = {
+			{
+				session = "S143",
+				why = "280 -> 200 at level 15 (rank 4 at 27 226.7; the S91 band of the two-handed R1 at 20)",
+			},
+		},
 		["Skills/Warrior:[bladeWhirl].unlock"] = { { session = "S143", why = "6 -> 26: A2 of Two-Handed" } },
-		["Skills/Warrior:[bladeWhirl].values.dmg[1]"] = { { session = "S143", why = "33 -> 48: rank 1 at 26 keeps the old rank 6 at 26" } },
-		["Skills/Warrior:[titansWrath].unlock"] = { { session = "S143", why = "the Berserker's row 7 (48) -> 60: U of Two-Handed" } },
-		["Skills/Warrior:[titansWrath].values.dmg[1]"] = { { session = "S143", why = "105 -> 120: rank 1 at 60 keeps the old rank 4 at 60" } },
-		["Skills/Warrior:[intercept].unlock"] = { { session = "S143", why = "the Guardian's row 4 (26) -> 10: O1 of Sword and Shield" } },
-		["Skills/Warrior:[intercept].values.share[1]"] = { { session = "S143", why = "20 -> 12 at level 10: rank 5 (26) keeps the old rank 1 (knots)" } },
-		["Skills/Warrior:[intercept].values.guard[1]"] = { { session = "S143", why = "10 -> 6 at level 10: rank 5 (26) keeps the old rank 1 (knots)" } },
-		["Skills/Warrior:[crushingBlow].unlock"] = { { session = "S143", why = "the Standard-Bearer's row 7 (48) -> 15: S2 of Sword and Shield" } },
+		["Skills/Warrior:[bladeWhirl].values.dmg[1]"] = {
+			{ session = "S143", why = "33 -> 48: rank 1 at 26 keeps the old rank 6 at 26" },
+		},
+		["Skills/Warrior:[titansWrath].unlock"] = {
+			{ session = "S143", why = "the Berserker's row 7 (48) -> 60: U of Two-Handed" },
+		},
+		["Skills/Warrior:[titansWrath].values.dmg[1]"] = {
+			{ session = "S143", why = "105 -> 120: rank 1 at 60 keeps the old rank 4 at 60" },
+		},
+		["Skills/Warrior:[intercept].unlock"] = {
+			{ session = "S143", why = "the Guardian's row 4 (26) -> 10: O1 of Sword and Shield" },
+		},
+		["Skills/Warrior:[intercept].values.share[1]"] = {
+			{ session = "S143", why = "20 -> 12 at level 10: rank 5 (26) keeps the old rank 1 (knots)" },
+		},
+		["Skills/Warrior:[intercept].values.guard[1]"] = {
+			{ session = "S143", why = "10 -> 6 at level 10: rank 5 (26) keeps the old rank 1 (knots)" },
+		},
+		["Skills/Warrior:[crushingBlow].unlock"] = {
+			{ session = "S143", why = "the Standard-Bearer's row 7 (48) -> 15: S2 of Sword and Shield" },
+		},
 		["Skills/Warrior:[crushingBlow].values.dmg*"] = {
-			{ session = "S143", why = "300-520 -> 220-324.4 from 15: the one-handed S2 below Rend's 280 at rank 10; rank 9 (47) keeps the old rank 1 at 48 (knot), rank 10 the old rank 2" },
+			{
+				session = "S143",
+				why = "300-520 -> 220-324.4 from 15: the one-handed S2 below Rend's 280 at rank 10; rank 9 (47) keeps the old rank 1 at 48 (knot), rank 10 the old rank 2",
+			},
 		},
 		["Skills/Warrior:[earthquake].unlock"] = { { session = "S143", why = "30 -> 26: A2 of Sword and Shield" } },
-		["Skills/Warrior:[earthquake].values.dmg[1]"] = { { session = "S143", why = "150 -> 147 at 26: rank 2 (30) keeps the old rank 1 (knot)" } },
-		["Skills/Warrior:[fortitude].unlock"] = { { session = "S143", why = "the Guardian's row 1 (10) -> 20: P1 of Sword and Shield" } },
-		["Skills/Warrior:[fortitude].values.hp[1]"] = { { session = "S143", why = "4 -> 6: rank 1 at 20, below the old rank 2 at 19 (8): with the new 1-3 block points 8 put the Warrior's Elite fight at 20 under the S32 band (0.54 < 0.55)" } },
-		["Skills/Warrior:[fortitude].values.block*"] = { { session = "S143", why = "new: 1-3 block points (the shield school's P1; the blocks feed Vindicate)" } },
-		["Skills/Warrior:[warBanner].unlock"] = { { session = "S143", why = "the Standard-Bearer's row 4 (26) -> 33: K2 of Sword and Shield" } },
-		["Skills/Warrior:[warBanner].values.haste[1]"] = { { session = "S143", why = "5 -> 5.5: rank 1 at 33 keeps the old rank 2 at 30" } },
+		["Skills/Warrior:[earthquake].values.dmg[1]"] = {
+			{ session = "S143", why = "150 -> 147 at 26: rank 2 (30) keeps the old rank 1 (knot)" },
+		},
+		["Skills/Warrior:[fortitude].unlock"] = {
+			{ session = "S143", why = "the Guardian's row 1 (10) -> 20: P1 of Sword and Shield" },
+		},
+		["Skills/Warrior:[fortitude].values.hp[1]"] = {
+			{
+				session = "S143",
+				why = "4 -> 6: rank 1 at 20, below the old rank 2 at 19 (8): with the new 1-3 block points 8 put the Warrior's Elite fight at 20 under the S32 band (0.54 < 0.55)",
+			},
+		},
+		["Skills/Warrior:[fortitude].values.block*"] = {
+			{ session = "S143", why = "new: 1-3 block points (the shield school's P1; the blocks feed Vindicate)" },
+		},
+		["Skills/Warrior:[warBanner].unlock"] = {
+			{ session = "S143", why = "the Standard-Bearer's row 4 (26) -> 33: K2 of Sword and Shield" },
+		},
+		["Skills/Warrior:[warBanner].values.haste[1]"] = {
+			{ session = "S143", why = "5 -> 5.5: rank 1 at 33 keeps the old rank 2 at 30" },
+		},
 		["Skills/Warrior:[riposte].unlock"] = { { session = "S143", why = "45 -> 50: P2 of Sword and Shield" } },
-		["Skills/Warrior:[lastBastion].unlock"] = { { session = "S143", why = "the Guardian's row 7 (48) -> 60: the Guardian's capstone in row 8 (DESIGN-18 §7)" } },
-		["Skills/Warrior:[lastBastion].values.reduction[1]"] = { { session = "S143", why = "40 -> 46.7: rank 1 at 60 keeps the old rank 4 at 60" } },
-		["Skills/init:BLOCK*"] = { { session = "S143", why = "new (Logic/Block): Vindicate counts the blocks of the last 6 s, at most 3" } },
-		["SkillCurves:knots.battleCry*"] = { { session = "S143", why = "removed: Battle Cry unlocks at 30 (rank 1 = the old rank 6)" } },
-		["SkillCurves:knots.bladeWhirl*"] = { { session = "S143", why = "removed: Blade Whirl unlocks at 26 (rank 1 = the old rank 6)" } },
-		["SkillCurves:knots.cleave*"] = { { session = "S143", why = "Cleave unlocks at 3: the knot moves from rank 3 (18) to rank 5 (19), the same 164.4" } },
-		["SkillCurves:knots.brutalStrike*"] = { { session = "S143", why = "new: Brutal Strike on Mighty Strike's S91 knots (rank 5 187, rank 6 pinned)" } },
-		["SkillCurves:knots.bloodlust*"] = { { session = "S143", why = "new: Bloodlust unlocks at 10, rank 3 (18) and rank 4 (22) keep the old ranks 1 and 2" } },
-		["SkillCurves:knots.earthquake*"] = { { session = "S143", why = "new: Earthquake unlocks at 26, rank 2 (30) keeps the old rank 1" } },
-		["SkillCurves:knots.intercept*"] = { { session = "S143", why = "new: Intercept unlocks at 10, ranks 5 and 6 (26, 30) keep the old ranks 1 and 2" } },
-		["SkillCurves:knots.crushingBlow*"] = { { session = "S143", why = "new: Crushing Blow unlocks at 15, rank 9 (47) keeps the old rank 1 (300)" } },
-		["SkillPools/Warrior:version"] = { { session = "S143", why = "2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset" } },
-		["Paths/Warrior:[guardian].rows[1].nodes[guardian_fortitude]*"] = { { session = "S143", why = "removed: Fortitude is the one-handed P1" } },
-		["Paths/Warrior:[guardian].rows[1].nodes[guardian_stalwart]*"] = { { session = "S143", why = "new: Stalwart (+1 % max HP) takes Fortitude's one rank (rows and need unchanged)" } },
-		["Paths/Warrior:[guardian].rows[4].nodes[guardian_intercept]*"] = { { session = "S143", why = "removed: Intercept is the one-handed O1" } },
-		["Paths/Warrior:[guardian].rows[4].nodes[guardian_twinGuard]*"] = { { session = "S143", why = "new: Twin Guard (Intercept covers a second ally) takes Intercept's one rank" } },
-		["Paths/Warrior:[guardian].rows[7].nodes[guardian_lastBastion]*"] = { { session = "S143", why = "moved to row 8 (the capstone, DESIGN-18 §7)" } },
-		["Paths/Warrior:[guardian].rows[7].nodes[guardian_bashMastery]*"] = { { session = "S143", why = "new: Shield Bash Mastery (+0.5 s stun) takes Last Bastion's rank in row 7" } },
-		["Paths/Warrior:[guardian].rows[8].nodes[guardian_shieldWall]*"] = { { session = "S143", why = "removed: Shield Wall is the one-handed U" } },
-		["Paths/Warrior:[guardian].rows[8].nodes[guardian_lastBastion]*"] = { { session = "S143", why = "Last Bastion is the Guardian's capstone (row 8)" } },
-		["Paths/Warrior:[berserker].rows[1].nodes[berserker_cleave]*"] = { { session = "S143", why = "removed: Cleave is the two-handed A1" } },
-		["Paths/Warrior:[berserker].rows[1].nodes[berserker_scars]*"] = { { session = "S143", why = "new: Scars (+1 % max HP) take Cleave's one rank" } },
-		["Paths/Warrior:[berserker].rows[4].nodes[berserker_rend]*"] = { { session = "S143", why = "removed: Rend is the two-handed S2" } },
-		["Paths/Warrior:[berserker].rows[4].nodes[berserker_frenzy]*"] = { { session = "S143", why = "new: Frenzy (+0.3 % damage per Fury stack, only with Rage) takes Rend's one rank" } },
-		["Paths/Warrior:[berserker].rows[7].nodes[berserker_titansWrath]*"] = { { session = "S143", why = "removed: Titan's Wrath is the two-handed U" } },
-		["Paths/Warrior:[berserker].rows[7].nodes[berserker_reaper]*"] = { { session = "S143", why = "new: Reaper (Execute below 35 % instead of 30 %) takes Titan's Wrath's one rank" } },
-		["Paths/Warrior:[standard].rows[1].nodes[standard_battleCry]*"] = { { session = "S143", why = "removed: Battle Cry is the Warrior's common C3" } },
-		["Paths/Warrior:[standard].rows[1].nodes[standard_pennant]*"] = { { session = "S143", why = "new: Pennant (+3 % armour) takes Battle Cry's one rank" } },
-		["Paths/Warrior:[standard].rows[4].nodes[standard_warBanner]*"] = { { session = "S143", why = "removed: War Banner is the one-handed K2" } },
-		["Paths/Warrior:[standard].rows[4].nodes[standard_herald]*"] = { { session = "S143", why = "new: Herald (Battle Cry +4 s) takes War Banner's one rank" } },
-		["Paths/Warrior:[standard].rows[7].nodes[standard_crushingBlow]*"] = { { session = "S143", why = "removed: Crushing Blow is the one-handed S2" } },
-		["Paths/Warrior:[standard].rows[7].nodes[standard_drill]*"] = { { session = "S143", why = "new: Drill (War Banner cooldown x0.85) takes Crushing Blow's one rank" } },
+		["Skills/Warrior:[lastBastion].unlock"] = {
+			{
+				session = "S143",
+				why = "the Guardian's row 7 (48) -> 60: the Guardian's capstone in row 8 (DESIGN-18 §7)",
+			},
+		},
+		["Skills/Warrior:[lastBastion].values.reduction[1]"] = {
+			{ session = "S143", why = "40 -> 46.7: rank 1 at 60 keeps the old rank 4 at 60" },
+		},
+		["Skills/init:BLOCK*"] = {
+			{ session = "S143", why = "new (Logic/Block): Vindicate counts the blocks of the last 6 s, at most 3" },
+		},
+		["SkillCurves:knots.battleCry*"] = {
+			{ session = "S143", why = "removed: Battle Cry unlocks at 30 (rank 1 = the old rank 6)" },
+		},
+		["SkillCurves:knots.bladeWhirl*"] = {
+			{ session = "S143", why = "removed: Blade Whirl unlocks at 26 (rank 1 = the old rank 6)" },
+		},
+		["SkillCurves:knots.cleave*"] = {
+			{
+				session = "S143",
+				why = "Cleave unlocks at 3: the knot moves from rank 3 (18) to rank 5 (19), the same 164.4",
+			},
+		},
+		["SkillCurves:knots.brutalStrike*"] = {
+			{ session = "S143", why = "new: Brutal Strike on Mighty Strike's S91 knots (rank 5 187, rank 6 pinned)" },
+		},
+		["SkillCurves:knots.bloodlust*"] = {
+			{
+				session = "S143",
+				why = "new: Bloodlust unlocks at 10, rank 3 (18) and rank 4 (22) keep the old ranks 1 and 2",
+			},
+		},
+		["SkillCurves:knots.earthquake*"] = {
+			{ session = "S143", why = "new: Earthquake unlocks at 26, rank 2 (30) keeps the old rank 1" },
+		},
+		["SkillCurves:knots.intercept*"] = {
+			{
+				session = "S143",
+				why = "new: Intercept unlocks at 10, ranks 5 and 6 (26, 30) keep the old ranks 1 and 2",
+			},
+		},
+		["SkillCurves:knots.crushingBlow*"] = {
+			{ session = "S143", why = "new: Crushing Blow unlocks at 15, rank 9 (47) keeps the old rank 1 (300)" },
+		},
+		["SkillPools/Warrior:version"] = {
+			{
+				session = "S143",
+				why = "2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset",
+			},
+		},
+		["Paths/Warrior:[guardian].rows[1].nodes[guardian_fortitude]*"] = {
+			{ session = "S143", why = "removed: Fortitude is the one-handed P1" },
+		},
+		["Paths/Warrior:[guardian].rows[1].nodes[guardian_stalwart]*"] = {
+			{
+				session = "S143",
+				why = "new: Stalwart (+1 % max HP) takes Fortitude's one rank (rows and need unchanged)",
+			},
+		},
+		["Paths/Warrior:[guardian].rows[4].nodes[guardian_intercept]*"] = {
+			{ session = "S143", why = "removed: Intercept is the one-handed O1" },
+		},
+		["Paths/Warrior:[guardian].rows[4].nodes[guardian_twinGuard]*"] = {
+			{ session = "S143", why = "new: Twin Guard (Intercept covers a second ally) takes Intercept's one rank" },
+		},
+		["Paths/Warrior:[guardian].rows[7].nodes[guardian_lastBastion]*"] = {
+			{ session = "S143", why = "moved to row 8 (the capstone, DESIGN-18 §7)" },
+		},
+		["Paths/Warrior:[guardian].rows[7].nodes[guardian_bashMastery]*"] = {
+			{ session = "S143", why = "new: Shield Bash Mastery (+0.5 s stun) takes Last Bastion's rank in row 7" },
+		},
+		["Paths/Warrior:[guardian].rows[8].nodes[guardian_shieldWall]*"] = {
+			{ session = "S143", why = "removed: Shield Wall is the one-handed U" },
+		},
+		["Paths/Warrior:[guardian].rows[8].nodes[guardian_lastBastion]*"] = {
+			{ session = "S143", why = "Last Bastion is the Guardian's capstone (row 8)" },
+		},
+		["Paths/Warrior:[berserker].rows[1].nodes[berserker_cleave]*"] = {
+			{ session = "S143", why = "removed: Cleave is the two-handed A1" },
+		},
+		["Paths/Warrior:[berserker].rows[1].nodes[berserker_scars]*"] = {
+			{ session = "S143", why = "new: Scars (+1 % max HP) take Cleave's one rank" },
+		},
+		["Paths/Warrior:[berserker].rows[4].nodes[berserker_rend]*"] = {
+			{ session = "S143", why = "removed: Rend is the two-handed S2" },
+		},
+		["Paths/Warrior:[berserker].rows[4].nodes[berserker_frenzy]*"] = {
+			{
+				session = "S143",
+				why = "new: Frenzy (+0.3 % damage per Fury stack, only with Rage) takes Rend's one rank",
+			},
+		},
+		["Paths/Warrior:[berserker].rows[7].nodes[berserker_titansWrath]*"] = {
+			{ session = "S143", why = "removed: Titan's Wrath is the two-handed U" },
+		},
+		["Paths/Warrior:[berserker].rows[7].nodes[berserker_reaper]*"] = {
+			{
+				session = "S143",
+				why = "new: Reaper (Execute below 35 % instead of 30 %) takes Titan's Wrath's one rank",
+			},
+		},
+		["Paths/Warrior:[standard].rows[1].nodes[standard_battleCry]*"] = {
+			{ session = "S143", why = "removed: Battle Cry is the Warrior's common C3" },
+		},
+		["Paths/Warrior:[standard].rows[1].nodes[standard_pennant]*"] = {
+			{ session = "S143", why = "new: Pennant (+3 % armour) takes Battle Cry's one rank" },
+		},
+		["Paths/Warrior:[standard].rows[4].nodes[standard_warBanner]*"] = {
+			{ session = "S143", why = "removed: War Banner is the one-handed K2" },
+		},
+		["Paths/Warrior:[standard].rows[4].nodes[standard_herald]*"] = {
+			{ session = "S143", why = "new: Herald (Battle Cry +4 s) takes War Banner's one rank" },
+		},
+		["Paths/Warrior:[standard].rows[7].nodes[standard_crushingBlow]*"] = {
+			{ session = "S143", why = "removed: Crushing Blow is the one-handed S2" },
+		},
+		["Paths/Warrior:[standard].rows[7].nodes[standard_drill]*"] = {
+			{ session = "S143", why = "new: Drill (War Banner cooldown x0.85) takes Crushing Blow's one rank" },
+		},
 		["Paths/Warrior:[guardian].rows[11].nodes[guardian_shieldWall2]*"] = {
 			{ session = "S143", why = "removed: row 11 upgrades the capstone, and Shield Wall is the one-handed U" },
 		},
 		["Paths/Warrior:[guardian].rows[11].nodes[guardian_lastBastion2]*"] = {
-			{ session = "S143", why = "new: the capstone's upgrade (Last Bastion +1 / 2 s, reduction +2.5 / 5 points; Unbroken Wall's numbers)" },
+			{
+				session = "S143",
+				why = "new: the capstone's upgrade (Last Bastion +1 / 2 s, reduction +2.5 / 5 points; Unbroken Wall's numbers)",
+			},
 		},
 		["Paths/Warrior:[berserker].rows[2].nodes[berserker_rhythm].values.rhythmMax*"] = {
-			{ session = "S143", why = "4-10 -> 2-4: on top of Rage's 6 stacks the cap is 8 / 9 / 10 (with 4-10 every rank hit maxStacks 10)" },
+			{
+				session = "S143",
+				why = "4-10 -> 2-4: on top of Rage's 6 stacks the cap is 8 / 9 / 10 (with 4-10 every rank hit maxStacks 10)",
+			},
 		},
 		["Paths/Warrior:[guardian].reference[defender]*"] = {
 			{ session = "S143", why = "Unbroken Wall (Shield Wall) -> Unyielding Bastion (Last Bastion) in row 11" },
@@ -5629,127 +6112,343 @@ return {
 			{ session = "S143", why = "Unbroken Wall (Shield Wall) -> Unyielding Bastion (Last Bastion) in row 11" },
 		},
 		["Paths/Warrior:[berserker].reference[fury]*"] = {
-			{ session = "S143", why = "the Two-Handed build: Battle Rhythm before the other directions' rows 1-2 (Fury from Rage at 20), the replaced nodes, Sunder / Execute / War Stomp in the rotation" },
+			{
+				session = "S143",
+				why = "the Two-Handed build: Battle Rhythm before the other directions' rows 1-2 (Fury from Rage at 20), the replaced nodes, Sunder / Execute / War Stomp in the rotation",
+			},
 		},
 		["Paths/Warrior:[berserker].reference[butcher]*"] = {
-			{ session = "S143", why = "the Two-Handed build: Battle Rhythm before the other directions' rows 1-2, the replaced nodes" },
+			{
+				session = "S143",
+				why = "the Two-Handed build: Battle Rhythm before the other directions' rows 1-2, the replaced nodes",
+			},
 		},
 		-- S144 (DESIGN-18 §6.3): the Hunter's pools Bow (bow) and Crossbow (crossbow), the common skills, the directions
 		-- with a skill node only in row 8 of the Scout (the Drive) and keystones in row 8 of the Marksman and the Trapper
 		["Skills/Hunter:[heavyBolt]*"] = {
-			{ session = "S144", why = "new (S1 of the Crossbow, 1): Aimed Shot x1.3 on its S91 knots (187.2-302.9 %), cost 20, cooldown 5.2 (x1.3: the same damage per cooldown, slower); 5A poison 30 % over 6 s / 5B +39, 10A pierce 60 % (area option) / 10B +60 in the R4 bands" },
+			{
+				session = "S144",
+				why = "new (S1 of the Crossbow, 1): Aimed Shot x1.3 on its S91 knots (187.2-302.9 %), cost 20, cooldown 5.2 (x1.3: the same damage per cooldown, slower); 5A poison 30 % over 6 s / 5B +39, 10A pierce 60 % (area option) / 10B +60 in the R4 bands",
+			},
 		},
 		["Skills/Hunter:[pinningShot]*"] = {
-			{ session = "S144", why = "new (K1 of the Bow, 6): one target 70-130 % and a 2 s root (bosses and Elite IIs: a 40 % slow, Logic/Snare), cost 20, cooldown 12 like Shield Bash; 5B +14, 10A cooldown x0.8 / 10B +32 in the R4 bands, 5A +0.5 s (control)" },
+			{
+				session = "S144",
+				why = "new (K1 of the Bow, 6): one target 70-130 % and a 2 s root (bosses and Elite IIs: a 40 % slow, Logic/Snare), cost 20, cooldown 12 like Shield Bash; 5B +14, 10A cooldown x0.8 / 10B +32 in the R4 bands, 5A +0.5 s (control)",
+			},
 		},
 		["Skills/Hunter:[windstep]*"] = {
-			{ session = "S144", why = "new (O1 of the Bow, 10): +10-20 dodge points and +20-35 % movement for 4 s (own), cost 20, cooldown 20; 5A +2 s / 5B +5 dodge, 10A the next shot +25 % / 10B cooldown x0.75 (defence and movement, R4_UTILITY)" },
+			{
+				session = "S144",
+				why = "new (O1 of the Bow, 10): +10-20 dodge points and +20-35 % movement for 4 s (own), cost 20, cooldown 20; 5A +2 s / 5B +5 dodge, 10A the next shot +25 % / 10B cooldown x0.75 (defence and movement, R4_UTILITY)",
+			},
 		},
 		["Skills/Hunter:[toxicTips]*"] = {
-			{ session = "S144", why = "new (P1 of the Crossbow, 20): every main hit of a Crossbow skill adds a stack of the tip poison worth 10-20 % of the attack over 6 s (Data/Skills.CROSSBOW: at most 5 stacks, once a second per target); it feeds the Executioner's Bolt" },
+			{
+				session = "S144",
+				why = "new (P1 of the Crossbow, 20): every main hit of a Crossbow skill adds a stack of the tip poison worth 10-20 % of the attack over 6 s (Data/Skills.CROSSBOW: at most 5 stacks, once a second per target); it feeds the Executioner's Bolt",
+			},
 		},
 		["Skills/Hunter:[netShot]*"] = {
-			{ session = "S144", why = "new (K2 of the Crossbow, 33): a 5-stud circle at up to 30 studs, 60-110 % and a 2.5 s root (bosses: a 40 % slow, Logic/Snare), cost 30, cooldown 18; 5B +12 / 10B +26 in the R4 bands, 5A radius, 10A +0.5 s (control)" },
+			{
+				session = "S144",
+				why = "new (K2 of the Crossbow, 33): a 5-stud circle at up to 30 studs, 60-110 % and a 2.5 s root (bosses: a 40 % slow, Logic/Snare), cost 30, cooldown 18; 5B +12 / 10B +26 in the R4 bands, 5A radius, 10A +0.5 s (control)",
+			},
 		},
 		["Skills/Hunter:[deadlyBolt]*"] = {
-			{ session = "S144", why = "new (S3 of the Crossbow, 40): the finisher 180-260 %, x1.5 on a target with at least 3 stacks of the Hunter's poisons (Logic/Crossbow.venomMul), cost 25, cooldown 10; 5A +20 / 10A +35 bonus points (the threshold option gave 0 in the rotation), 5B +26 / 10B +52" },
+			{
+				session = "S144",
+				why = "new (S3 of the Crossbow, 40): the finisher 180-260 %, x1.5 on a target with at least 3 stacks of the Hunter's poisons (Logic/Crossbow.venomMul), cost 25, cooldown 10; 5A +20 / 10A +35 bonus points (the threshold option gave 0 in the rotation), 5B +26 / 10B +52",
+			},
 		},
 		["Skills/Hunter:[quickReload]*"] = {
-			{ session = "S144", why = "new (P2 of the Crossbow, 50): the Crossbow's skills only 4-12 % shorter cooldowns (Logic/Crossbow.cdrFor, one cap with the items' cooldown reduction)" },
+			{
+				session = "S144",
+				why = "new (P2 of the Crossbow, 50): the Crossbow's skills only 4-12 % shorter cooldowns (Logic/Crossbow.cdrFor, one cap with the items' cooldown reduction)",
+			},
 		},
-		["Skills/Hunter:[disengage].unlock"] = { { session = "S144", why = "6 -> 4: C1 of the Hunter (DESIGN-18 §5 common ladder)" } },
-		["Skills/Hunter:[huntersMark].unlock"] = { { session = "S144", why = "the Scout's row 7 (48) -> 12: C2 of the Hunter (common ladder); the values stay (rank 1 = the old rank 1)" } },
-		["Skills/Hunter:[drawBead].unlock"] = { { session = "S144", why = "the Marksman's row 4 (26) -> 30: C3 of the Hunter (common ladder)" } },
-		["Skills/Hunter:[drawBead].values.crit[1]"] = { { session = "S144", why = "20 -> 20.33: rank 1 at 30 keeps the old rank 2 at 30" } },
-		["Skills/Hunter:[drawBead].values.critDmg[1]"] = { { session = "S144", why = "26.5 -> 26.67: rank 1 at 30 keeps the old rank 2 at 30" } },
+		["Skills/Hunter:[disengage].unlock"] = {
+			{ session = "S144", why = "6 -> 4: C1 of the Hunter (DESIGN-18 §5 common ladder)" },
+		},
+		["Skills/Hunter:[huntersMark].unlock"] = {
+			{
+				session = "S144",
+				why = "the Scout's row 7 (48) -> 12: C2 of the Hunter (common ladder); the values stay (rank 1 = the old rank 1)",
+			},
+		},
+		["Skills/Hunter:[drawBead].unlock"] = {
+			{ session = "S144", why = "the Marksman's row 4 (26) -> 30: C3 of the Hunter (common ladder)" },
+		},
+		["Skills/Hunter:[drawBead].values.crit[1]"] = {
+			{ session = "S144", why = "20 -> 20.33: rank 1 at 30 keeps the old rank 2 at 30" },
+		},
+		["Skills/Hunter:[drawBead].values.critDmg[1]"] = {
+			{ session = "S144", why = "26.5 -> 26.67: rank 1 at 30 keeps the old rank 2 at 30" },
+		},
 		["Skills/Hunter:[arrowRain].unlock"] = { { session = "S144", why = "10 -> 3: A1 of the Bow" } },
-		["Skills/Hunter:[arrowRain].values.dmg[1]"] = { { session = "S144", why = "45 -> 36 at level 3: rank 3 (11) near the old rank 1 at 10, rank 5 (19) keeps the old rank 3 (knot)" } },
+		["Skills/Hunter:[arrowRain].values.dmg[1]"] = {
+			{
+				session = "S144",
+				why = "45 -> 36 at level 3: rank 3 (11) near the old rank 1 at 10, rank 5 (19) keeps the old rank 3 (knot)",
+			},
+		},
 		["Skills/Hunter:[doubleShot].unlock"] = { { session = "S144", why = "3 -> 15: S2 of the Bow" } },
-		["Skills/Hunter:[doubleShot].values.dmg[1]"] = { { session = "S144", why = "62 -> 77.75: rank 1 at 15 keeps the old rank 4 at 15 (rank 2 the old rank 5, rank 3 the old rank 6: knots)" } },
-		["Skills/Hunter:[hawkEye].unlock"] = { { session = "S144", why = "14 -> 20: P1 of the Bow (rank 1 at 20 = the old rank 1 at 20)" } },
-		["Skills/Hunter:[venomArrow].unlock"] = { { session = "S144", why = "18 -> 15: S2 of the Crossbow (the values stay: no drop at 18)" } },
+		["Skills/Hunter:[doubleShot].values.dmg[1]"] = {
+			{
+				session = "S144",
+				why = "62 -> 77.75: rank 1 at 15 keeps the old rank 4 at 15 (rank 2 the old rank 5, rank 3 the old rank 6: knots)",
+			},
+		},
+		["Skills/Hunter:[hawkEye].unlock"] = {
+			{ session = "S144", why = "14 -> 20: P1 of the Bow (rank 1 at 20 = the old rank 1 at 20)" },
+		},
+		["Skills/Hunter:[venomArrow].unlock"] = {
+			{ session = "S144", why = "18 -> 15: S2 of the Crossbow (the values stay: no drop at 18)" },
+		},
 		["Skills/Hunter:[venomArrow].breakpoints[5].a.values.poison"] = {
-			{ session = "S144", why = "5A 21 -> 15: R4 on the Crossbow's Trapper (stacks and poison nodes) 0.19 -> 0.14 (band 0.08-0.17)" },
+			{
+				session = "S144",
+				why = "5A 21 -> 15: R4 on the Crossbow's Trapper (stacks and poison nodes) 0.19 -> 0.14 (band 0.08-0.17)",
+			},
 		},
 		["Skills/Hunter:[venomArrow].breakpoints[10].b.values.poison"] = {
-			{ session = "S144", why = "10B 60 -> 28: R4 on the Crossbow's Trapper 0.45 -> 0.22 (band 0.17-0.28, |A - B| <= 0.05)" },
+			{
+				session = "S144",
+				why = "10B 60 -> 28: R4 on the Crossbow's Trapper 0.45 -> 0.22 (band 0.17-0.28, |A - B| <= 0.05)",
+			},
 		},
 		["Skills/Hunter:[volley].unlock"] = { { session = "S144", why = "30 -> 26: A2 of the Bow" } },
-		["Skills/Hunter:[volley].values.dmg[1]"] = { { session = "S144", why = "25 -> 24 at 26: rank 2 (30) keeps the old rank 1 (knot)" } },
-		["Skills/Hunter:[volley].breakpoints[5].b.values.dmg"] = { { session = "S144", why = "5B 5 -> 4: R4 0.176 -> 0.14 at 70 (rank 5 at 42 from 26)" } },
-		["Skills/Hunter:[piercingArrow].unlock"] = { { session = "S144", why = "the Marksman's row 1 (10) -> 3: A1 of the Crossbow (Piercing Bolt)" } },
-		["Skills/Hunter:[piercingArrow].values.dmg[1]"] = { { session = "S144", why = "200 -> 164.4 at level 3: rank 3 (11) keeps the old rank 1 at 10, rank 5 (19) the old rank 3 (knot)" } },
+		["Skills/Hunter:[volley].values.dmg[1]"] = {
+			{ session = "S144", why = "25 -> 24 at 26: rank 2 (30) keeps the old rank 1 (knot)" },
+		},
+		["Skills/Hunter:[volley].breakpoints[5].b.values.dmg"] = {
+			{ session = "S144", why = "5B 5 -> 4: R4 0.176 -> 0.14 at 70 (rank 5 at 42 from 26)" },
+		},
+		["Skills/Hunter:[piercingArrow].unlock"] = {
+			{ session = "S144", why = "the Marksman's row 1 (10) -> 3: A1 of the Crossbow (Piercing Bolt)" },
+		},
+		["Skills/Hunter:[piercingArrow].values.dmg[1]"] = {
+			{
+				session = "S144",
+				why = "200 -> 164.4 at level 3: rank 3 (11) keeps the old rank 1 at 10, rank 5 (19) the old rank 3 (knot)",
+			},
+		},
 		["Skills/Hunter:[piercingArrow].breakpoints[5].b.effect.value"] = {
-			{ session = "S144", why = "5B bleed 50 -> 40: rank 5 is reached at 19 now, R4 at 20 0.20 -> 0.16 (the S91 band 0.08-0.17)" },
+			{
+				session = "S144",
+				why = "5B bleed 50 -> 40: rank 5 is reached at 19 now, R4 at 20 0.20 -> 0.16 (the S91 band 0.08-0.17)",
+			},
 		},
-		["Skills/Hunter:[stormArrow].unlock"] = { { session = "S144", why = "the Marksman's row 7 (48) -> 60: U of the Bow" } },
-		["Skills/Hunter:[stormArrow].values.dmg[1]"] = { { session = "S144", why = "200 -> 266.7: rank 1 at 60 keeps the old rank 4 at 60" } },
-		["Skills/Hunter:[heartseeker].unlock"] = { { session = "S144", why = "the Marksman's capstone (60) -> 40: S3 of the Bow" } },
-		["Skills/Hunter:[heartseeker].values.dmg[1]"] = { { session = "S144", why = "220 -> 170 at 40: rank 6 (60) keeps the old rank 1 (knot)" } },
-		["Skills/Hunter:[frostTrap].unlock"] = { { session = "S144", why = "the Trapper's row 1 (10) -> 6: K1 of the Crossbow (the root grows with the rank: no drop at 10)" } },
-		["Skills/Hunter:[camouflage].unlock"] = { { session = "S144", why = "the Trapper's row 7 (48) -> 10: O1 of the Crossbow (no rank-dependent numbers)" } },
-		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = { { session = "S144", why = "10A 38 -> 44: R4 on the Crossbow's Trapper 0.15 -> 0.18 at 100 (band 0.17-0.28)" },
-			{ session = "S147", why = "44 -> 135: the echo repeats the trap's hit, a third of what it was (R4 of 10A 0.06 -> 0.18-0.22)" },
+		["Skills/Hunter:[stormArrow].unlock"] = {
+			{ session = "S144", why = "the Marksman's row 7 (48) -> 60: U of the Bow" },
 		},
-		["Skills/Hunter:[agility].unlock"] = { { session = "S144", why = "the Scout's row 1 (10) -> 50: P2 of the Bow" } },
-		["Skills/Hunter:[agility].values*"] = { { session = "S144", why = "dodge 2-10 -> 10-12, move 3-15 -> 15-18: rank 1 at 50 keeps the old rank 5 at 46" } },
-		["Skills/Hunter:[falcon].unlock"] = { { session = "S144", why = "the Scout's row 4 (26) -> 33: K2 of the Bow" } },
-		["Skills/Hunter:[falcon].values.dmg[1]"] = { { session = "S144", why = "27 -> 28.9: rank 1 at 33 keeps the old rank 2 at 30" } },
-		["Skills/Hunter:[drive].unlock"] = { { session = "S144", why = "the Scout's row 10 (80) -> row 8 (60): the Scout's capstone (DESIGN-18 §7)" } },
-		["Skills/Hunter:[drive].values.dmg[1]"] = { { session = "S144", why = "102 -> 90 at 60: rank 6 (79) keeps the old rank 1 at 80 (knot)" } },
-		["Skills/init:CROSSBOW*"] = { { session = "S144", why = "new (Logic/Crossbow): Toxic Tips' stack 6 s, at most 5, once a second per target" } },
-		["SkillCurves:knots.heavyBolt*"] = { { session = "S144", why = "new: Heavy Bolt on Aimed Shot's S91 knots x1.3" } },
-		["SkillCurves:knots.doubleShot*"] = { { session = "S144", why = "Double Shot unlocks at 15: the S91 knots move from ranks 5 / 6 (19 / 23) to ranks 2 / 3 (19 / 23), the same numbers" } },
-		["SkillCurves:knots.piercingArrow*"] = { { session = "S144", why = "Piercing Arrow unlocks at 3: the knot moves from rank 3 (18) to rank 5 (19), the same 235.6" } },
-		["SkillCurves:knots.arrowRain*"] = { { session = "S144", why = "new: Arrow Rain unlocks at 3, rank 5 (19) keeps the old rank 3 (18)" } },
-		["SkillCurves:knots.volley*"] = { { session = "S144", why = "new: Volley unlocks at 26, rank 2 (30) keeps the old rank 1" } },
-		["SkillCurves:knots.heartseeker*"] = { { session = "S144", why = "new: Heartseeker unlocks at 40, rank 6 (60) keeps the old rank 1" } },
-		["SkillCurves:knots.drive*"] = { { session = "S144", why = "new: the Drive unlocks at 60 (row 8), rank 6 (79) keeps the old rank 1 at 80" } },
-		["SkillPools/Hunter:version"] = { { session = "S144", why = "2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset" } },
-		["Paths/Hunter:[marksman].rows[1].nodes[marksman_piercingArrow]*"] = { { session = "S144", why = "removed: Piercing Arrow is the Crossbow's A1" } },
-		["Paths/Hunter:[marksman].rows[1].nodes[marksman_fletching]*"] = { { session = "S144", why = "new: True Fletching (+3 crit damage points) takes Piercing Arrow's one rank (rows and need unchanged)" } },
-		["Paths/Hunter:[marksman].rows[4].nodes[marksman_drawBead]*"] = { { session = "S144", why = "removed: Draw a Bead is the Hunter's common C3" } },
-		["Paths/Hunter:[marksman].rows[4].nodes[marksman_patience]*"] = { { session = "S144", why = "new: Patience (Draw a Bead +1 crit point) takes Draw a Bead's one rank" } },
-		["Paths/Hunter:[marksman].rows[7].nodes[marksman_stormArrow]*"] = { { session = "S144", why = "removed: Storm Arrow is the Bow's U" } },
-		["Paths/Hunter:[marksman].rows[7].nodes[marksman_poise]*"] = { { session = "S144", why = "new: Poise (+0.5 crit points) takes Storm Arrow's one rank" } },
-		["Paths/Hunter:[marksman].rows[8].nodes[marksman_heartseeker]*"] = { { session = "S144", why = "removed: Heartseeker is the Bow's S3" } },
+		["Skills/Hunter:[stormArrow].values.dmg[1]"] = {
+			{ session = "S144", why = "200 -> 266.7: rank 1 at 60 keeps the old rank 4 at 60" },
+		},
+		["Skills/Hunter:[heartseeker].unlock"] = {
+			{ session = "S144", why = "the Marksman's capstone (60) -> 40: S3 of the Bow" },
+		},
+		["Skills/Hunter:[heartseeker].values.dmg[1]"] = {
+			{ session = "S144", why = "220 -> 170 at 40: rank 6 (60) keeps the old rank 1 (knot)" },
+		},
+		["Skills/Hunter:[frostTrap].unlock"] = {
+			{
+				session = "S144",
+				why = "the Trapper's row 1 (10) -> 6: K1 of the Crossbow (the root grows with the rank: no drop at 10)",
+			},
+		},
+		["Skills/Hunter:[camouflage].unlock"] = {
+			{ session = "S144", why = "the Trapper's row 7 (48) -> 10: O1 of the Crossbow (no rank-dependent numbers)" },
+		},
+		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = {
+			{
+				session = "S144",
+				why = "10A 38 -> 44: R4 on the Crossbow's Trapper 0.15 -> 0.18 at 100 (band 0.17-0.28)",
+			},
+			{
+				session = "S147",
+				why = "44 -> 135: the echo repeats the trap's hit, a third of what it was (R4 of 10A 0.06 -> 0.18-0.22)",
+			},
+		},
+		["Skills/Hunter:[agility].unlock"] = {
+			{ session = "S144", why = "the Scout's row 1 (10) -> 50: P2 of the Bow" },
+		},
+		["Skills/Hunter:[agility].values*"] = {
+			{
+				session = "S144",
+				why = "dodge 2-10 -> 10-12, move 3-15 -> 15-18: rank 1 at 50 keeps the old rank 5 at 46",
+			},
+		},
+		["Skills/Hunter:[falcon].unlock"] = {
+			{ session = "S144", why = "the Scout's row 4 (26) -> 33: K2 of the Bow" },
+		},
+		["Skills/Hunter:[falcon].values.dmg[1]"] = {
+			{ session = "S144", why = "27 -> 28.9: rank 1 at 33 keeps the old rank 2 at 30" },
+		},
+		["Skills/Hunter:[drive].unlock"] = {
+			{ session = "S144", why = "the Scout's row 10 (80) -> row 8 (60): the Scout's capstone (DESIGN-18 §7)" },
+		},
+		["Skills/Hunter:[drive].values.dmg[1]"] = {
+			{ session = "S144", why = "102 -> 90 at 60: rank 6 (79) keeps the old rank 1 at 80 (knot)" },
+		},
+		["Skills/init:CROSSBOW*"] = {
+			{
+				session = "S144",
+				why = "new (Logic/Crossbow): Toxic Tips' stack 6 s, at most 5, once a second per target",
+			},
+		},
+		["SkillCurves:knots.heavyBolt*"] = {
+			{ session = "S144", why = "new: Heavy Bolt on Aimed Shot's S91 knots x1.3" },
+		},
+		["SkillCurves:knots.doubleShot*"] = {
+			{
+				session = "S144",
+				why = "Double Shot unlocks at 15: the S91 knots move from ranks 5 / 6 (19 / 23) to ranks 2 / 3 (19 / 23), the same numbers",
+			},
+		},
+		["SkillCurves:knots.piercingArrow*"] = {
+			{
+				session = "S144",
+				why = "Piercing Arrow unlocks at 3: the knot moves from rank 3 (18) to rank 5 (19), the same 235.6",
+			},
+		},
+		["SkillCurves:knots.arrowRain*"] = {
+			{ session = "S144", why = "new: Arrow Rain unlocks at 3, rank 5 (19) keeps the old rank 3 (18)" },
+		},
+		["SkillCurves:knots.volley*"] = {
+			{ session = "S144", why = "new: Volley unlocks at 26, rank 2 (30) keeps the old rank 1" },
+		},
+		["SkillCurves:knots.heartseeker*"] = {
+			{ session = "S144", why = "new: Heartseeker unlocks at 40, rank 6 (60) keeps the old rank 1" },
+		},
+		["SkillCurves:knots.drive*"] = {
+			{ session = "S144", why = "new: the Drive unlocks at 60 (row 8), rank 6 (79) keeps the old rank 1 at 80" },
+		},
+		["SkillPools/Hunter:version"] = {
+			{
+				session = "S144",
+				why = "2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[1].nodes[marksman_piercingArrow]*"] = {
+			{ session = "S144", why = "removed: Piercing Arrow is the Crossbow's A1" },
+		},
+		["Paths/Hunter:[marksman].rows[1].nodes[marksman_fletching]*"] = {
+			{
+				session = "S144",
+				why = "new: True Fletching (+3 crit damage points) takes Piercing Arrow's one rank (rows and need unchanged)",
+			},
+		},
+		["Paths/Hunter:[marksman].rows[4].nodes[marksman_drawBead]*"] = {
+			{ session = "S144", why = "removed: Draw a Bead is the Hunter's common C3" },
+		},
+		["Paths/Hunter:[marksman].rows[4].nodes[marksman_patience]*"] = {
+			{ session = "S144", why = "new: Patience (Draw a Bead +1 crit point) takes Draw a Bead's one rank" },
+		},
+		["Paths/Hunter:[marksman].rows[7].nodes[marksman_stormArrow]*"] = {
+			{ session = "S144", why = "removed: Storm Arrow is the Bow's U" },
+		},
+		["Paths/Hunter:[marksman].rows[7].nodes[marksman_poise]*"] = {
+			{ session = "S144", why = "new: Poise (+0.5 crit points) takes Storm Arrow's one rank" },
+		},
+		["Paths/Hunter:[marksman].rows[8].nodes[marksman_heartseeker]*"] = {
+			{ session = "S144", why = "removed: Heartseeker is the Bow's S3" },
+		},
 		["Paths/Hunter:[marksman].rows[8].nodes[marksman_deadEye]*"] = {
-			{ session = "S144", why = "new keystone (the Marksman's capstone, DESIGN-18 §7): one-target main hits on a target at 80 % health or more always crit (Logic/DeadEye) and +10 crit damage points, with any weapon" },
+			{
+				session = "S144",
+				why = "new keystone (the Marksman's capstone, DESIGN-18 §7): one-target main hits on a target at 80 % health or more always crit (Logic/DeadEye) and +10 crit damage points, with any weapon",
+			},
 		},
-		["Paths/Hunter:[trapper].rows[1].nodes[trapper_frostTrap]*"] = { { session = "S144", why = "removed: Frost Trap is the Crossbow's K1" } },
-		["Paths/Hunter:[trapper].rows[1].nodes[trapper_leathers]*"] = { { session = "S144", why = "new: Hunter's Leathers (+1 % max HP) take Frost Trap's one rank" } },
-		["Paths/Hunter:[trapper].rows[4].nodes[trapper_venomSnare]*"] = { { session = "S144", why = "removed: Venom Snare is the Crossbow's A2" } },
-		["Paths/Hunter:[trapper].rows[4].nodes[trapper_bait]*"] = { { session = "S144", why = "new: Bait (Venom Snare's poison +10 points) takes Venom Snare's one rank" } },
-		["Paths/Hunter:[trapper].rows[7].nodes[trapper_camouflage]*"] = { { session = "S144", why = "removed: Camouflage is the Crossbow's O1" } },
-		["Paths/Hunter:[trapper].rows[7].nodes[trapper_stalker]*"] = { { session = "S144", why = "new: Stalker (+1 dodge point) takes Camouflage's one rank" } },
-		["Paths/Hunter:[trapper].rows[8].nodes[trapper_snarefield]*"] = { { session = "S144", why = "removed: Snarefield is the Crossbow's U" } },
+		["Paths/Hunter:[trapper].rows[1].nodes[trapper_frostTrap]*"] = {
+			{ session = "S144", why = "removed: Frost Trap is the Crossbow's K1" },
+		},
+		["Paths/Hunter:[trapper].rows[1].nodes[trapper_leathers]*"] = {
+			{ session = "S144", why = "new: Hunter's Leathers (+1 % max HP) take Frost Trap's one rank" },
+		},
+		["Paths/Hunter:[trapper].rows[4].nodes[trapper_venomSnare]*"] = {
+			{ session = "S144", why = "removed: Venom Snare is the Crossbow's A2" },
+		},
+		["Paths/Hunter:[trapper].rows[4].nodes[trapper_bait]*"] = {
+			{ session = "S144", why = "new: Bait (Venom Snare's poison +10 points) takes Venom Snare's one rank" },
+		},
+		["Paths/Hunter:[trapper].rows[7].nodes[trapper_camouflage]*"] = {
+			{ session = "S144", why = "removed: Camouflage is the Crossbow's O1" },
+		},
+		["Paths/Hunter:[trapper].rows[7].nodes[trapper_stalker]*"] = {
+			{ session = "S144", why = "new: Stalker (+1 dodge point) takes Camouflage's one rank" },
+		},
+		["Paths/Hunter:[trapper].rows[8].nodes[trapper_snarefield]*"] = {
+			{ session = "S144", why = "removed: Snarefield is the Crossbow's U" },
+		},
 		["Paths/Hunter:[trapper].rows[8].nodes[trapper_masterTrapper]*"] = {
-			{ session = "S144", why = "new keystone (the Trapper's capstone, DESIGN-18 §7): every trap hit adds a tip poison stack worth at least 15 % without the gap (Logic/Crossbow.tipFor) and every poison +10 %" },
+			{
+				session = "S144",
+				why = "new keystone (the Trapper's capstone, DESIGN-18 §7): every trap hit adds a tip poison stack worth at least 15 % without the gap (Logic/Crossbow.tipFor) and every poison +10 %",
+			},
 		},
-		["Paths/Hunter:[scout].rows[1].nodes[scout_agility]*"] = { { session = "S144", why = "removed: Agility is the Bow's P2" } },
-		["Paths/Hunter:[scout].rows[1].nodes[scout_fleet]*"] = { { session = "S144", why = "new: Fleet Foot (+3 % movement) takes Agility's one rank" } },
-		["Paths/Hunter:[scout].rows[4].nodes[scout_falcon]*"] = { { session = "S144", why = "removed: the Falcon is the Bow's K2" } },
-		["Paths/Hunter:[scout].rows[4].nodes[scout_falconer]*"] = { { session = "S144", why = "new: Falconer (the Falcon +2 s) takes the Falcon's one rank" } },
-		["Paths/Hunter:[scout].rows[7].nodes[scout_huntersMark]*"] = { { session = "S144", why = "removed: Hunter's Mark is the Hunter's common C2" } },
-		["Paths/Hunter:[scout].rows[7].nodes[scout_keenMark]*"] = { { session = "S144", why = "new: Keen Mark (+0.5 vulnerability points) takes Hunter's Mark's one rank" } },
-		["Paths/Hunter:[scout].rows[8].nodes[scout_royalFalcon]*"] = { { session = "S144", why = "moved to row 10: the Drive is the Scout's capstone (row 8, DESIGN-18 §7)" } },
-		["Paths/Hunter:[scout].rows[8].nodes[scout_drive]*"] = { { session = "S144", why = "the Drive moved from row 10 to row 8 (the capstone)" } },
-		["Paths/Hunter:[scout].rows[10].nodes[scout_drive]*"] = { { session = "S144", why = "moved to row 8 (the capstone)" } },
-		["Paths/Hunter:[scout].rows[10].nodes[scout_royalFalcon]*"] = { { session = "S144", why = "the Royal Falcon keystone moved from row 8 to row 10 (the Drive's old place, the same rank)" } },
+		["Paths/Hunter:[scout].rows[1].nodes[scout_agility]*"] = {
+			{ session = "S144", why = "removed: Agility is the Bow's P2" },
+		},
+		["Paths/Hunter:[scout].rows[1].nodes[scout_fleet]*"] = {
+			{ session = "S144", why = "new: Fleet Foot (+3 % movement) takes Agility's one rank" },
+		},
+		["Paths/Hunter:[scout].rows[4].nodes[scout_falcon]*"] = {
+			{ session = "S144", why = "removed: the Falcon is the Bow's K2" },
+		},
+		["Paths/Hunter:[scout].rows[4].nodes[scout_falconer]*"] = {
+			{ session = "S144", why = "new: Falconer (the Falcon +2 s) takes the Falcon's one rank" },
+		},
+		["Paths/Hunter:[scout].rows[7].nodes[scout_huntersMark]*"] = {
+			{ session = "S144", why = "removed: Hunter's Mark is the Hunter's common C2" },
+		},
+		["Paths/Hunter:[scout].rows[7].nodes[scout_keenMark]*"] = {
+			{ session = "S144", why = "new: Keen Mark (+0.5 vulnerability points) takes Hunter's Mark's one rank" },
+		},
+		["Paths/Hunter:[scout].rows[8].nodes[scout_royalFalcon]*"] = {
+			{ session = "S144", why = "moved to row 10: the Drive is the Scout's capstone (row 8, DESIGN-18 §7)" },
+		},
+		["Paths/Hunter:[scout].rows[8].nodes[scout_drive]*"] = {
+			{ session = "S144", why = "the Drive moved from row 10 to row 8 (the capstone)" },
+		},
+		["Paths/Hunter:[scout].rows[10].nodes[scout_drive]*"] = {
+			{ session = "S144", why = "moved to row 8 (the capstone)" },
+		},
+		["Paths/Hunter:[scout].rows[10].nodes[scout_royalFalcon]*"] = {
+			{
+				session = "S144",
+				why = "the Royal Falcon keystone moved from row 8 to row 10 (the Drive's old place, the same rank)",
+			},
+		},
 		["Paths/Hunter:[marksman].reference[kingslayer]*"] = {
-			{ session = "S144", why = "the Bow build with a longbow (was the heavy crossbow), the replaced nodes, the rotation and rank order of both pools" },
+			{
+				session = "S144",
+				why = "the Bow build with a longbow (was the heavy crossbow), the replaced nodes, the rotation and rank order of both pools",
+			},
 		},
 		["Paths/Hunter:[marksman].reference[eliteHunter]*"] = {
-			{ session = "S144", why = "the replaced nodes, the rotation and rank order of both pools (Piercing Bolt on 3 enemies)" },
+			{
+				session = "S144",
+				why = "the replaced nodes, the rotation and rank order of both pools (Piercing Bolt on 3 enemies)",
+			},
 		},
 		["Paths/Hunter:[trapper].reference[poacher]*"] = {
-			{ session = "S144", why = "the Crossbow build: the replaced nodes, Net Shot, the Executioner's Bolt and Heavy Bolt in the rotation, the rank order" },
+			{
+				session = "S144",
+				why = "the Crossbow build: the replaced nodes, Net Shot, the Executioner's Bolt and Heavy Bolt in the rotation, the rank order",
+			},
 		},
 		["Paths/Hunter:[trapper].reference[poisoner]*"] = {
-			{ session = "S144", why = "the Crossbow build with a crossbow (was the bow: the traps and poison are the Crossbow's), the replaced nodes and rotation" },
+			{
+				session = "S144",
+				why = "the Crossbow build with a crossbow (was the bow: the traps and poison are the Crossbow's), the replaced nodes and rotation",
+			},
 		},
 		["Paths/Hunter:[scout].reference[partyHunter]*"] = {
-			{ session = "S144", why = "the Bow build: the replaced nodes (the Drive in row 8, the Royal Falcon in row 10), Pinning Shot and the other pool's skills in the rotation" },
+			{
+				session = "S144",
+				why = "the Bow build: the replaced nodes (the Drive in row 8, the Royal Falcon in row 10), Pinning Shot and the other pool's skills in the rotation",
+			},
 		},
 		["Paths/Hunter:[scout].reference[tracker]*"] = {
 			{ session = "S144", why = "the Bow build with a shortbow: the replaced nodes and the rotation of S144" },
@@ -5758,146 +6457,327 @@ return {
 		-- (Heal 4, Circle of Light 12, Resurrection 30, Devotion 45), the directions with skill nodes only in rows 4 and 8
 		-- (the Healer: Prayer, Divine Intervention; Fortune: Roll of the Dice, Wheel of Fortune) and the Inquisitor's keystone
 		["Skills/Cleric:[lightRay]*"] = {
-			{ session = "S145", why = "new (S1 of the light pool, 1): a holy projectile on Holy Strike's knots before S145 x0.85 (142-289 %), 25 % of the hit heals the most wounded ally (the caster solo), cost 12, cooldown 3; 5A heal +10 points (utility) / 5B +30, 10A +60 / 10B splash 40 % (area option) in the R4 bands" },
+			{
+				session = "S145",
+				why = "new (S1 of the light pool, 1): a holy projectile on Holy Strike's knots before S145 x0.85 (142-289 %), 25 % of the hit heals the most wounded ally (the caster solo), cost 12, cooldown 3; 5A heal +10 points (utility) / 5B +30, 10A +60 / 10B splash 40 % (area option) in the R4 bands",
+			},
 		},
 		["Skills/Cleric:[blindingLight]*"] = {
-			{ session = "S145", why = "new (K1 of the light pool, 6): a 90-degree cone 60-110 %, the enemies miss their regular attacks for 3 s (misfortune, enemyMiss), cost 25, cooldown 12; 5B +14, 10A cooldown x0.8 in the R4 bands, 5A +1 s and 10B the wider cone (control, geometry)" },
+			{
+				session = "S145",
+				why = "new (K1 of the light pool, 6): a 90-degree cone 60-110 %, the enemies miss their regular attacks for 3 s (misfortune, enemyMiss), cost 25, cooldown 12; 5B +14, 10A cooldown x0.8 in the R4 bands, 5A +1 s and 10B the wider cone (control, geometry)",
+			},
 		},
 		["Skills/Cleric:[grace]*"] = {
-			{ session = "S145", why = "new (P1 of the light pool, 20): heals +7-12 % (what Devotion gave the dungeon Healer before 45: T-SK5 at 20 0.221, the S91 value), heal crits 20-60 % of the crit chance, +10-30 % on a target below LOW_HP_HEAL" },
+			{
+				session = "S145",
+				why = "new (P1 of the light pool, 20): heals +7-12 % (what Devotion gave the dungeon Healer before 45: T-SK5 at 20 0.221, the S91 value), heal crits 20-60 % of the crit chance, +10-30 % on a target below LOW_HP_HEAL",
+			},
 		},
 		["Skills/Cleric:[miracle]*"] = {
-			{ session = "S145", why = "new (S3 of the light pool, 40): the biggest single heal (26-32 % of the target's max HP + 13-18 % magic), a 1.2 s prayer, cost 40, cooldown 15; 5A +4 / 10B +8 in the R4 bands on the dungeon Healer, 5B -0.4 s and 10A a second target (utility)" },
+			{
+				session = "S145",
+				why = "new (S3 of the light pool, 40): the biggest single heal (26-32 % of the target's max HP + 13-18 % magic), a 1.2 s prayer, cost 40, cooldown 15; 5A +4 / 10B +8 in the R4 bands on the dungeon Healer, 5B -0.4 s and 10A a second target (utility)",
+			},
 		},
 		["Skills/Cleric:[guidingLight]*"] = {
-			{ session = "S145", why = "new (P2 of the light pool, 50): every heal of a heal skill leaves a ward of 10-20 % of the HP it restored for 6 s, at most FAITH.wardCap % of the target's max HP (Logic/Faith.ward)" },
+			{
+				session = "S145",
+				why = "new (P2 of the light pool, 50): every heal of a heal skill leaves a ward of 10-20 % of the HP it restored for 6 s, at most FAITH.wardCap % of the target's max HP (Logic/Faith.ward)",
+			},
 		},
 		["Skills/Cleric:[consecrate]*"] = {
-			{ session = "S145", why = "new (A1 of the hammer pool, 3): 4 waves of 34-70 % in a 6-stud circle under the caster, cost 25, cooldown 10; 5B +6, 10B +1 wave in the R4 bands, 5A radius and 10A slow (geometry, control)" },
+			{
+				session = "S145",
+				why = "new (A1 of the hammer pool, 3): 4 waves of 34-70 % in a 6-stud circle under the caster, cost 25, cooldown 10; 5B +6, 10B +1 wave in the R4 bands, 5A radius and 10A slow (geometry, control)",
+			},
 		},
 		["Skills/Cleric:[holyChains]*"] = {
-			{ session = "S145", why = "new (K1 of the hammer pool, 6): one target 70-130 % and a 2 s root (bosses and Elite IIs: a 40 % slow, Logic/Snare) like Pinning Shot, cost 25, cooldown 12; 5B +14, 10A cooldown x0.8 in the R4 bands, 5A +0.5 s and 10B vulnerability (control, weakening)" },
+			{
+				session = "S145",
+				why = "new (K1 of the hammer pool, 6): one target 70-130 % and a 2 s root (bosses and Elite IIs: a 40 % slow, Logic/Snare) like Pinning Shot, cost 25, cooldown 12; 5B +14, 10A cooldown x0.8 in the R4 bands, 5A +0.5 s and 10B vulnerability (control, weakening)",
+			},
 		},
 		["Skills/Cleric:[holyNova]*"] = {
-			{ session = "S145", why = "new (A2 of the hammer pool, 26): an 8-stud burst 120-200 % and a heal of the allies in the circle (3-5 % of their max HP + magic) in one cast, cost 45, cooldown 14; 10A echo 22 % / 10B +44 at 0.22 (R4 band, |A - B| 0), 5A radius and 5B +1 heal point (utility)" },
+			{
+				session = "S145",
+				why = "new (A2 of the hammer pool, 26): an 8-stud burst 120-200 % and a heal of the allies in the circle (3-5 % of their max HP + magic) in one cast, cost 45, cooldown 14; 10A echo 22 % / 10B +44 at 0.22 (R4 band, |A - B| 0), 5A radius and 5B +1 heal point (utility)",
+			},
 		},
 		["Skills/Cleric:[rebuke]*"] = {
-			{ session = "S145", why = "new (K2 of the hammer pool, 33): a 100-degree cone 90-160 %, knockback 8 and the interrupt of an enemy player's channel (never a boss's), cost 30, cooldown 16; 5B +18, 10B cooldown x0.8 in the R4 bands, 5A radius and 10A stun (control)" },
+			{
+				session = "S145",
+				why = "new (K2 of the hammer pool, 33): a 100-degree cone 90-160 %, knockback 8 and the interrupt of an enemy player's channel (never a boss's), cost 30, cooldown 16; 5B +18, 10B cooldown x0.8 in the R4 bands, 5A radius and 10A stun (control)",
+			},
 		},
 		["Skills/Cleric:[zeal]*"] = {
-			{ session = "S145", why = "new (P2 of the hammer pool, 50): every offensive cast of a Mace and Flail skill takes 0.3-0.8 s off the running cooldowns of the pool's other skills (Logic/Faith.zealCut)" },
+			{
+				session = "S145",
+				why = "new (P2 of the hammer pool, 50): every offensive cast of a Mace and Flail skill takes 0.3-0.8 s off the running cooldowns of the pool's other skills (Logic/Faith.zealCut)",
+			},
 		},
-		["Skills/Cleric:[heal].unlock"] = { { session = "S145", why = "3 -> 4: C1 of the Cleric (DESIGN-18 §5 common ladder)" } },
+		["Skills/Cleric:[heal].unlock"] = {
+			{ session = "S145", why = "3 -> 4: C1 of the Cleric (DESIGN-18 §5 common ladder)" },
+		},
 		["Skills/Cleric:[circleOfLight].unlock"] = {
 			{ session = "S145", why = "14 -> 12: C2 of the Cleric; rank 3 (level 20) keeps the old rank 2 (knot)" },
 		},
-		["Skills/Cleric:[resurrection].unlock"] = { { session = "S145", why = "Fortune's row 1 (10) -> 30: C3 of the Cleric" } },
-		["Skills/Cleric:[resurrection].cooldown[1]"] = { { session = "S145", why = "120 -> 86.67: rank 1 at 30 keeps the old rank 6 at 30" } },
-		["Skills/Cleric:[resurrection].values.hp[1]"] = { { session = "S145", why = "20 -> 42.22: rank 1 at 30 keeps the old rank 6 at 30" } },
+		["Skills/Cleric:[resurrection].unlock"] = {
+			{ session = "S145", why = "Fortune's row 1 (10) -> 30: C3 of the Cleric" },
+		},
+		["Skills/Cleric:[resurrection].cooldown[1]"] = {
+			{ session = "S145", why = "120 -> 86.67: rank 1 at 30 keeps the old rank 6 at 30" },
+		},
+		["Skills/Cleric:[resurrection].values.hp[1]"] = {
+			{ session = "S145", why = "20 -> 42.22: rank 1 at 30 keeps the old rank 6 at 30" },
+		},
 		["Skills/Cleric:[devotion].unlock"] = { { session = "S145", why = "10 -> 45: C4 of the Cleric" } },
 		["Skills/Cleric:[devotion].values.heal[1]"] = {
 			{ session = "S145", why = "5 -> 20: rank 1 at 45 keeps the old rank 4 at 37" },
-			{ session = "S146", why = "20 -> 6 (rank 5 25 -> 9): T-SK5 of the light pool at 95-100 0.37 / 0.38 -> 0.33 / 0.34 (<= 0.35; the dungeon Healer buys Devotion at 95)" },
+			{
+				session = "S146",
+				why = "20 -> 6 (rank 5 25 -> 9): T-SK5 of the light pool at 95-100 0.37 / 0.38 -> 0.33 / 0.34 (<= 0.35; the dungeon Healer buys Devotion at 95)",
+			},
 		},
 		["Skills/Cleric:[radiance].unlock"] = { { session = "S145", why = "6 -> 3: A1 of the light pool" } },
 		["Skills/Cleric:[radiance].values.dmg[1]"] = {
-			{ session = "S145", why = "130 -> 120 at 3: rank 5 (19) keeps the old rank 4 (18), rank 6 (23) the old rank 5 (22; knots)" },
+			{
+				session = "S145",
+				why = "130 -> 120 at 3: rank 5 (19) keeps the old rank 4 (18), rank 6 (23) the old rank 5 (22; knots)",
+			},
 		},
 		["Skills/Cleric:[shieldOfFaith].unlock"] = { { session = "S145", why = "18 -> 10: O1 of the light pool" } },
-		["Skills/Cleric:[shieldOfFaith].values.shieldHp[1]"] = { { session = "S145", why = "12 -> 10 at 10: rank 3 (18) keeps the old rank 1 (knot)" } },
-		["Skills/Cleric:[shieldOfFaith].values.shieldMag[1]"] = { { session = "S145", why = "10 -> 8 at 10: rank 3 (18) keeps the old rank 1 (knot)" } },
-		["Skills/Cleric:[renew].unlock"] = { { session = "S145", why = "the Healer's row 1 (10) -> 15: S2 of the light pool" } },
-		["Skills/Cleric:[renew].values*"] = { { session = "S145", why = "healHp 16 -> 16.89, healMag 10 -> 10.56: rank 1 at 15 keeps the old rank 2 at 14" } },
-		["Skills/Cleric:[purify].unlock"] = { { session = "S145", why = "the Inquisitor's row 1 (10) -> 33: K2 of the light pool" } },
-		["Skills/Cleric:[purify].values*"] = { { session = "S145", why = "healHp 8 -> 10.22, healMag 6 -> 8.22: rank 1 at 33 keeps the old rank 6 at 30" } },
-		["Skills/Cleric:[brandOfLight].unlock"] = { { session = "S145", why = "the Inquisitor's row 4 (26) -> 15: S2 of the hammer pool" } },
-		["Skills/Cleric:[brandOfLight].values*"] = {
-			{ session = "S145", why = "dmg 120 -> 30, dot 170 -> 35 at 15: rank 4 (27) keeps the old rank 1 (knots); ranks 1-3 low, R1 of the hammer pool at 20 (2.09) under the S91 cap 2.104" },
+		["Skills/Cleric:[shieldOfFaith].values.shieldHp[1]"] = {
+			{ session = "S145", why = "12 -> 10 at 10: rank 3 (18) keeps the old rank 1 (knot)" },
 		},
-		["Skills/Cleric:[auraOfEndurance].unlock"] = { { session = "S145", why = "the Inquisitor's row 7 (48) -> 10: O1 of the hammer pool" } },
+		["Skills/Cleric:[shieldOfFaith].values.shieldMag[1]"] = {
+			{ session = "S145", why = "10 -> 8 at 10: rank 3 (18) keeps the old rank 1 (knot)" },
+		},
+		["Skills/Cleric:[renew].unlock"] = {
+			{ session = "S145", why = "the Healer's row 1 (10) -> 15: S2 of the light pool" },
+		},
+		["Skills/Cleric:[renew].values*"] = {
+			{
+				session = "S145",
+				why = "healHp 16 -> 16.89, healMag 10 -> 10.56: rank 1 at 15 keeps the old rank 2 at 14",
+			},
+		},
+		["Skills/Cleric:[purify].unlock"] = {
+			{ session = "S145", why = "the Inquisitor's row 1 (10) -> 33: K2 of the light pool" },
+		},
+		["Skills/Cleric:[purify].values*"] = {
+			{ session = "S145", why = "healHp 8 -> 10.22, healMag 6 -> 8.22: rank 1 at 33 keeps the old rank 6 at 30" },
+		},
+		["Skills/Cleric:[brandOfLight].unlock"] = {
+			{ session = "S145", why = "the Inquisitor's row 4 (26) -> 15: S2 of the hammer pool" },
+		},
+		["Skills/Cleric:[brandOfLight].values*"] = {
+			{
+				session = "S145",
+				why = "dmg 120 -> 30, dot 170 -> 35 at 15: rank 4 (27) keeps the old rank 1 (knots); ranks 1-3 low, R1 of the hammer pool at 20 (2.09) under the S91 cap 2.104",
+			},
+		},
+		["Skills/Cleric:[auraOfEndurance].unlock"] = {
+			{ session = "S145", why = "the Inquisitor's row 7 (48) -> 10: O1 of the hammer pool" },
+		},
 		["Skills/Cleric:[auraOfEndurance].values*"] = {
-			{ session = "S145", why = "hp 5-15 -> 4-12: from level 10 (was 48) rank 10 comes at 46, a party aura of the whole pool" },
+			{
+				session = "S145",
+				why = "hp 5-15 -> 4-12: from level 10 (was 48) rank 10 comes at 46, a party aura of the whole pool",
+			},
 		},
 		["Skills/Cleric:[divineWrath].unlock"] = { { session = "S145", why = "30 -> 20: P1 of the hammer pool" } },
-		["Skills/Cleric:[divineWrath].values.bonus[1]"] = { { session = "S145", why = "4 -> 2 at 20: rank 2 (29) keeps the old rank 1 (knot)" } },
+		["Skills/Cleric:[divineWrath].values.bonus[1]"] = {
+			{ session = "S145", why = "4 -> 2 at 20: rank 2 (29) keeps the old rank 1 (knot)" },
+		},
 		["Skills/Cleric:[judgement].unlock"] = { { session = "S145", why = "45 -> 40: S3 of the hammer pool" } },
 		["Skills/Cleric:[judgement].values.dmg[1]"] = {
 			{ session = "S145", why = "320 -> 300 at 40: rank 2 (44) keeps the old rank 1 (knot)" },
-			{ session = "S146", why = "300 -> 270 (rank 2 knot 320 -> 290, rank 10 kept): R9 of the hammer pool at 45 <= 0.86 x Furia (0.862 -> 0.855)" },
+			{
+				session = "S146",
+				why = "300 -> 270 (rank 2 knot 320 -> 290, rank 10 kept): R9 of the hammer pool at 45 <= 0.86 x Furia (0.862 -> 0.855)",
+			},
 		},
-		["Skills/Cleric:[prayer].unlock"] = { { session = "S145", why = "Fortune's row 7 (48) -> the Healer's row 4 (26), DESIGN-18 §6.4" } },
-		["Skills/Cleric:[prayer].values.mana[1]"] = { { session = "S145", why = "25 -> 20: from 26 (was 48) the mana grows with the ranks bought earlier" } },
-		["Skills/Cleric:[divineIntervention].unlock"] = { { session = "S145", why = "the Healer's row 7 (48) -> row 8 (60): the Healer's capstone (DESIGN-18 §7)" } },
-		["Skills/Cleric:[divineIntervention].values.invuln[1]"] = { { session = "S145", why = "2 -> 2.5: rank 1 at 60 near the old rank 4 at 60" } },
-		["Skills/Cleric:[divineIntervention].effects[1].duration[1]"] = { { session = "S145", why = "2 -> 2.5: the invulnerability of values.invuln" } },
+		["Skills/Cleric:[prayer].unlock"] = {
+			{ session = "S145", why = "Fortune's row 7 (48) -> the Healer's row 4 (26), DESIGN-18 §6.4" },
+		},
+		["Skills/Cleric:[prayer].values.mana[1]"] = {
+			{ session = "S145", why = "25 -> 20: from 26 (was 48) the mana grows with the ranks bought earlier" },
+		},
+		["Skills/Cleric:[divineIntervention].unlock"] = {
+			{ session = "S145", why = "the Healer's row 7 (48) -> row 8 (60): the Healer's capstone (DESIGN-18 §7)" },
+		},
+		["Skills/Cleric:[divineIntervention].values.invuln[1]"] = {
+			{ session = "S145", why = "2 -> 2.5: rank 1 at 60 near the old rank 4 at 60" },
+		},
+		["Skills/Cleric:[divineIntervention].effects[1].duration[1]"] = {
+			{ session = "S145", why = "2 -> 2.5: the invulnerability of values.invuln" },
+		},
 		["Skills/init:FAITH*"] = {
-			{ session = "S145", why = "new (Logic/Faith): Guiding Light's ward 6 s, at most 20 % of the target's max HP; the Wandering Brand's jump radius 8 studs" },
+			{
+				session = "S145",
+				why = "new (Logic/Faith): Guiding Light's ward 6 s, at most 20 % of the target's max HP; the Wandering Brand's jump radius 8 studs",
+			},
 		},
-		["SkillCurves:knots.lightRay*"] = { { session = "S145", why = "new: Light Ray on Holy Strike's knots before S145 x0.85" } },
-		["SkillCurves:knots.radiance*"] = { { session = "S145", why = "new: Radiance unlocks at 3, ranks 5 / 6 (19 / 23) keep the old ranks 4 / 5 (18 / 22)" } },
-		["SkillCurves:knots.shieldOfFaith*"] = { { session = "S145", why = "new: Shield of Faith unlocks at 10, rank 3 (18) keeps the old rank 1" } },
-		["SkillCurves:knots.circleOfLight*"] = { { session = "S145", why = "new: Circle of Light unlocks at 12, rank 3 (20) keeps the old rank 2 (18)" } },
-		["SkillCurves:knots.brandOfLight*"] = { { session = "S145", why = "new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26)" } },
-		["SkillCurves:knots.divineWrath*"] = { { session = "S145", why = "new: Divine Wrath unlocks at 20, rank 2 (29) keeps the old rank 1 (30)" } },
-		["SkillCurves:knots.judgement*"] = { { session = "S145", why = "new: Judgement unlocks at 40, rank 2 (44) keeps the old rank 1 (45)" } },
-		["SkillPools/Cleric:version"] = { { session = "S145", why = "2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset" } },
-		["Paths/Cleric:[healer].rows[1].nodes[healer_renew]*"] = { { session = "S145", why = "removed: Renew is the light pool's S2" } },
-		["Paths/Cleric:[healer].rows[1].nodes[healer_solace]*"] = { { session = "S145", why = "new: Solace (+2 % healing) takes Renew's one rank (rows and need unchanged)" } },
-		["Paths/Cleric:[healer].rows[4].nodes[healer_sanctuary]*"] = { { session = "S145", why = "removed: Sanctuary is the light pool's A2" } },
-		["Paths/Cleric:[healer].rows[4].nodes[healer_prayer]*"] = { { session = "S145", why = "new: Prayer is the Healer's row 4 skill (was Fortune's row 7)" } },
-		["Paths/Cleric:[healer].rows[7].nodes[healer_divineIntervention]*"] = { { session = "S145", why = "moved to row 8 (the Healer's capstone)" } },
-		["Paths/Cleric:[healer].rows[7].nodes[healer_halo]*"] = { { session = "S145", why = "new: Halo (Circle of Light +2 studs) takes Divine Intervention's one rank" } },
-		["Paths/Cleric:[healer].rows[8].nodes[healer_guardianAngel]*"] = { { session = "S145", why = "removed: Guardian Angel is the light pool's U" } },
-		["Paths/Cleric:[healer].rows[8].nodes[healer_divineIntervention]*"] = { { session = "S145", why = "Divine Intervention moved from row 7 to row 8 (the capstone)" } },
-		["Paths/Cleric:[fortune].rows[1].nodes[fortune_resurrection]*"] = { { session = "S145", why = "removed: Resurrection is the Cleric's common C3" } },
-		["Paths/Cleric:[fortune].rows[1].nodes[fortune_clover]*"] = { { session = "S145", why = "new: Four-Leaf Clover (+0.5 crit points) takes Resurrection's one rank" } },
-		["Paths/Cleric:[fortune].rows[7].nodes[fortune_prayer]*"] = { { session = "S145", why = "removed: Prayer is the Healer's row 4 skill" } },
-		["Paths/Cleric:[fortune].rows[7].nodes[fortune_coin]*"] = { { session = "S145", why = "new: Coin Toss (Roll of the Dice's Wind face +1 attack speed point) takes Prayer's one rank" } },
-		["Paths/Cleric:[inquisitor].rows[1].nodes[inquisitor_purify]*"] = { { session = "S145", why = "removed: Purify is the light pool's K2" } },
+		["SkillCurves:knots.lightRay*"] = {
+			{ session = "S145", why = "new: Light Ray on Holy Strike's knots before S145 x0.85" },
+		},
+		["SkillCurves:knots.radiance*"] = {
+			{
+				session = "S145",
+				why = "new: Radiance unlocks at 3, ranks 5 / 6 (19 / 23) keep the old ranks 4 / 5 (18 / 22)",
+			},
+		},
+		["SkillCurves:knots.shieldOfFaith*"] = {
+			{ session = "S145", why = "new: Shield of Faith unlocks at 10, rank 3 (18) keeps the old rank 1" },
+		},
+		["SkillCurves:knots.circleOfLight*"] = {
+			{ session = "S145", why = "new: Circle of Light unlocks at 12, rank 3 (20) keeps the old rank 2 (18)" },
+		},
+		["SkillCurves:knots.brandOfLight*"] = {
+			{ session = "S145", why = "new: Brand of Light unlocks at 15, rank 4 (27) keeps the old rank 1 (26)" },
+		},
+		["SkillCurves:knots.divineWrath*"] = {
+			{ session = "S145", why = "new: Divine Wrath unlocks at 20, rank 2 (29) keeps the old rank 1 (30)" },
+		},
+		["SkillCurves:knots.judgement*"] = {
+			{ session = "S145", why = "new: Judgement unlocks at 40, rank 2 (44) keeps the old rank 1 (45)" },
+		},
+		["SkillPools/Cleric:version"] = {
+			{
+				session = "S145",
+				why = "2 -> 3 (DESIGN-18 §10): both pools on the ladder and the directions' new nodes, a free reset",
+			},
+		},
+		["Paths/Cleric:[healer].rows[1].nodes[healer_renew]*"] = {
+			{ session = "S145", why = "removed: Renew is the light pool's S2" },
+		},
+		["Paths/Cleric:[healer].rows[1].nodes[healer_solace]*"] = {
+			{ session = "S145", why = "new: Solace (+2 % healing) takes Renew's one rank (rows and need unchanged)" },
+		},
+		["Paths/Cleric:[healer].rows[4].nodes[healer_sanctuary]*"] = {
+			{ session = "S145", why = "removed: Sanctuary is the light pool's A2" },
+		},
+		["Paths/Cleric:[healer].rows[4].nodes[healer_prayer]*"] = {
+			{ session = "S145", why = "new: Prayer is the Healer's row 4 skill (was Fortune's row 7)" },
+		},
+		["Paths/Cleric:[healer].rows[7].nodes[healer_divineIntervention]*"] = {
+			{ session = "S145", why = "moved to row 8 (the Healer's capstone)" },
+		},
+		["Paths/Cleric:[healer].rows[7].nodes[healer_halo]*"] = {
+			{ session = "S145", why = "new: Halo (Circle of Light +2 studs) takes Divine Intervention's one rank" },
+		},
+		["Paths/Cleric:[healer].rows[8].nodes[healer_guardianAngel]*"] = {
+			{ session = "S145", why = "removed: Guardian Angel is the light pool's U" },
+		},
+		["Paths/Cleric:[healer].rows[8].nodes[healer_divineIntervention]*"] = {
+			{ session = "S145", why = "Divine Intervention moved from row 7 to row 8 (the capstone)" },
+		},
+		["Paths/Cleric:[fortune].rows[1].nodes[fortune_resurrection]*"] = {
+			{ session = "S145", why = "removed: Resurrection is the Cleric's common C3" },
+		},
+		["Paths/Cleric:[fortune].rows[1].nodes[fortune_clover]*"] = {
+			{ session = "S145", why = "new: Four-Leaf Clover (+0.5 crit points) takes Resurrection's one rank" },
+		},
+		["Paths/Cleric:[fortune].rows[7].nodes[fortune_prayer]*"] = {
+			{ session = "S145", why = "removed: Prayer is the Healer's row 4 skill" },
+		},
+		["Paths/Cleric:[fortune].rows[7].nodes[fortune_coin]*"] = {
+			{
+				session = "S145",
+				why = "new: Coin Toss (Roll of the Dice's Wind face +1 attack speed point) takes Prayer's one rank",
+			},
+		},
+		["Paths/Cleric:[inquisitor].rows[1].nodes[inquisitor_purify]*"] = {
+			{ session = "S145", why = "removed: Purify is the light pool's K2" },
+		},
 		["Paths/Cleric:[inquisitor].rows[1].nodes[inquisitor_vow]*"] = {
-			{ session = "S145", why = "new: Vow (+1 % holy damage) takes Purify's one rank; not HP: the S32 group of the Cleric at 20 stays >= 0.30" },
+			{
+				session = "S145",
+				why = "new: Vow (+1 % holy damage) takes Purify's one rank; not HP: the S32 group of the Cleric at 20 stays >= 0.30",
+			},
 		},
-		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_brandOfLight]*"] = { { session = "S145", why = "removed: Brand of Light is the hammer pool's S2" } },
-		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_conviction]*"] = { { session = "S145", why = "new: Conviction (+0.5 crit points) takes Brand of Light's one rank" } },
-		["Paths/Cleric:[inquisitor].rows[7].nodes[inquisitor_auraOfEndurance]*"] = { { session = "S145", why = "removed: the Aura of Endurance is the hammer pool's O1" } },
-		["Paths/Cleric:[inquisitor].rows[7].nodes[inquisitor_enduring]*"] = { { session = "S145", why = "new: Enduring Faith (the aura +1 % HP) takes the aura's one rank" } },
-		["Paths/Cleric:[inquisitor].rows[8].nodes[inquisitor_hammerOfHeaven]*"] = { { session = "S145", why = "removed: Hammer of Heaven is the hammer pool's U" } },
+		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_brandOfLight]*"] = {
+			{ session = "S145", why = "removed: Brand of Light is the hammer pool's S2" },
+		},
+		["Paths/Cleric:[inquisitor].rows[4].nodes[inquisitor_conviction]*"] = {
+			{ session = "S145", why = "new: Conviction (+0.5 crit points) takes Brand of Light's one rank" },
+		},
+		["Paths/Cleric:[inquisitor].rows[7].nodes[inquisitor_auraOfEndurance]*"] = {
+			{ session = "S145", why = "removed: the Aura of Endurance is the hammer pool's O1" },
+		},
+		["Paths/Cleric:[inquisitor].rows[7].nodes[inquisitor_enduring]*"] = {
+			{ session = "S145", why = "new: Enduring Faith (the aura +1 % HP) takes the aura's one rank" },
+		},
+		["Paths/Cleric:[inquisitor].rows[8].nodes[inquisitor_hammerOfHeaven]*"] = {
+			{ session = "S145", why = "removed: Hammer of Heaven is the hammer pool's U" },
+		},
 		["Paths/Cleric:[inquisitor].rows[8].nodes[inquisitor_wanderingBrand]*"] = {
-			{ session = "S145", why = "new keystone (the Inquisitor's capstone, DESIGN-18 §7): a brand skill's burn lands on the nearest other enemy within 8 studs for 60 % (Logic/Faith.brandShare) and holy damage +5 %, with any weapon" },
+			{
+				session = "S145",
+				why = "new keystone (the Inquisitor's capstone, DESIGN-18 §7): a brand skill's burn lands on the nearest other enemy within 8 studs for 60 % (Logic/Faith.brandShare) and holy damage +5 %, with any weapon",
+			},
 		},
 		["Paths/Cleric:[healer].reference[dungeon]*"] = {
-			{ session = "S145", why = "the light pool build (a scepter): the replaced nodes, Miracle and Light Ray in the rotation, the rank order" },
+			{
+				session = "S145",
+				why = "the light pool build (a scepter): the replaced nodes, Miracle and Light Ray in the rotation, the rank order",
+			},
 		},
 		["Paths/Cleric:[healer].reference[solo]*"] = {
-			{ session = "S145", why = "the light pool build with the holy staff: the replaced nodes, Light Ray and Blinding Light in the rotation, damage ranks first" },
+			{
+				session = "S145",
+				why = "the light pool build with the holy staff: the replaced nodes, Light Ray and Blinding Light in the rotation, damage ranks first",
+			},
 		},
 		["Paths/Cleric:[fortune].reference[plunder]*"] = {
-			{ session = "S145", why = "the hammer pool build (a mace and a relic): the replaced nodes, Brand of Light, Judgement, Holy Chains and Consecrate in the rotation, the rank order" },
+			{
+				session = "S145",
+				why = "the hammer pool build (a mace and a relic): the replaced nodes, Brand of Light, Judgement, Holy Chains and Consecrate in the rotation, the rank order",
+			},
 		},
 		["Paths/Cleric:[inquisitor].reference[solo]*"] = {
-			{ session = "S145", why = "the hammer pool build: the replaced nodes, Heal below 50 % for Purify's self heal, the pool's new skills in the rotation, the rank order" },
+			{
+				session = "S145",
+				why = "the hammer pool build: the replaced nodes, Heal below 50 % for Purify's self heal, the pool's new skills in the rotation, the rank order",
+			},
 		},
 		["Paths/Cleric:[inquisitor].reference[bulwark]*"] = {
 			{ session = "S145", why = "the hammer pool build with a shield: the same changes as the solo build" },
 		},
 		-- S146 (DESIGN-18 §13): balance 21-100 after the rework, the Warrior and the Cleric (docs/SESJE.md S146)
 		["Skills/Warrior:[fortitude].values.hp[2]"] = {
-			{ session = "S146", why = "20 -> 14: the Guardian's EHP / Furia 1.87 / 2.18 / 2.17 -> 1.68 / 1.78 / 1.78 at 45 / 70 / 100 (1.6-1.8), ehpRed 1.3-1.5" },
+			{
+				session = "S146",
+				why = "20 -> 14: the Guardian's EHP / Furia 1.87 / 2.18 / 2.17 -> 1.68 / 1.78 / 1.78 at 45 / 70 / 100 (1.6-1.8), ehpRed 1.3-1.5",
+			},
 		},
 		["Skills/Warrior:[rage].values.hp[1]"] = {
-			{ session = "S146", why = "new: Rage +maxHp, rank 1 (20) 0 (1-20 unchanged): the two-handed pool's life after Fortitude went to Sword and Shield (S143)" },
+			{
+				session = "S146",
+				why = "new: Rage +maxHp, rank 1 (20) 0 (1-20 unchanged): the two-handed pool's life after Fortitude went to Sword and Shield (S143)",
+			},
 		},
 		["Skills/Warrior:[rage].values.hp[2]"] = {
-			{ session = "S146", why = "new: rank 5 (56) +17 % maxHp: Morvane's biggest blow on the Berserker 1.06 -> 0.98 HP (no support), the Inquisitor's HP / Furia 1.39-1.40 (1.3-1.4), the Guardian's EHP band" },
+			{
+				session = "S146",
+				why = "new: rank 5 (56) +17 % maxHp: Morvane's biggest blow on the Berserker 1.06 -> 0.98 HP (no support), the Inquisitor's HP / Furia 1.39-1.40 (1.3-1.4), the Guardian's EHP band",
+			},
 		},
 		["Paths/Warrior:[standard].rows[3].nodes[standard_fervor].values.fervor[1]"] = {
-			{ session = "S146", why = "4 -> 5 (rank 3 12 -> 15): the Standard-Bearer's own damage S at 70 >= 0.55 with the banner and the cries on its bar (0.529 -> 0.554)" },
+			{
+				session = "S146",
+				why = "4 -> 5 (rank 3 12 -> 15): the Standard-Bearer's own damage S at 70 >= 0.55 with the banner and the cries on its bar (0.529 -> 0.554)",
+			},
 		},
 		["Paths/Warrior:[standard].rows[3].nodes[standard_fervor].values.fervor[2]"] = {
 			{ session = "S146", why = "12 -> 15: see fervor[1]" },
 		},
 		["Paths/Warrior:[berserker].reference[fury].nodes*"] = {
-			{ session = "S146", why = "the node order: Rending Cuts (row 5) before Amok and the Standard-Bearer's row 1 (Cleave 10A's bleed stacks need its duration: R4 at 45 0 -> 0.26)" },
+			{
+				session = "S146",
+				why = "the node order: Rending Cuts (row 5) before Amok and the Standard-Bearer's row 1 (Cleave 10A's bleed stacks need its duration: R4 at 45 0 -> 0.26)",
+			},
 		},
 		["Paths/Warrior:[berserker].reference[butcher].nodes*"] = {
 			{ session = "S146", why = "the node order of the fury build (Rending Cuts before Amok)" },
@@ -5909,13 +6789,22 @@ return {
 			{ session = "S146", why = "12 -> 10 (rank 1 at 20 kept): T-SK5 of the light pool at 100 0.347 -> 0.343" },
 		},
 		["Skills/Cleric:[divineWrath].values.bonus[2]"] = {
-			{ session = "S146", why = "20 -> 22 (rank 4 at 47 pinned by a knot): R9 of the hammer pool at 70 / 100 0.89 / 0.91 x Furia (0.85-0.91 / 0.87-0.93) with the reference builds' ranks in the bar's order" },
+			{
+				session = "S146",
+				why = "20 -> 22 (rank 4 at 47 pinned by a knot): R9 of the hammer pool at 70 / 100 0.89 / 0.91 x Furia (0.85-0.91 / 0.87-0.93) with the reference builds' ranks in the bar's order",
+			},
 		},
 		["Skills/Warrior:[cleave].breakpoints[5].b.values.bleed"] = {
-			{ session = "S146", why = "+20 -> +15: R4 of 5B 0.22 -> 0.16 at 45-100 (10A's stacks with Rending Cuts first), 0.12 -> 0.09 at 20 (0.08-0.17); R4_REPORT entry removed" },
+			{
+				session = "S146",
+				why = "+20 -> +15: R4 of 5B 0.22 -> 0.16 at 45-100 (10A's stacks with Rending Cuts first), 0.12 -> 0.09 at 20 (0.08-0.17); R4_REPORT entry removed",
+			},
 		},
 		["Skills/Cleric:[zeal].values.zeal[1]"] = {
-			{ session = "S146", why = "0.3 -> 0.1 s: the Inquisitor buys Zeal at 100 (ranks in the bar's order); 0.8 s a cast made R9 of the hammer pool 1.08 x Furia (0.87-0.93)" },
+			{
+				session = "S146",
+				why = "0.3 -> 0.1 s: the Inquisitor buys Zeal at 100 (ranks in the bar's order); 0.8 s a cast made R9 of the hammer pool 1.08 x Furia (0.87-0.93)",
+			},
 		},
 		["Skills/Cleric:[zeal].values.zeal[2]"] = {
 			{ session = "S146", why = "0.8 -> 0.2 s: see zeal[1] (R9 of the hammer pool at 100 0.91)" },
@@ -5924,7 +6813,10 @@ return {
 			{ session = "S146", why = "new, 14.67 pinned (rank 4 at 47 before S146) for the rank 5 20 -> 22" },
 		},
 		["SkillCurves:knots.brandOfLight.dmg[8]"] = {
-			{ session = "S146", why = "new: rank 8 (43) 213.3 -> 186, rank 10 kept: R9 of the hammer pool at 45 <= 0.86 x Furia" },
+			{
+				session = "S146",
+				why = "new: rank 8 (43) 213.3 -> 186, rank 10 kept: R9 of the hammer pool at 45 <= 0.86 x Furia",
+			},
 		},
 		["SkillCurves:knots.brandOfLight.dot[8]"] = {
 			{ session = "S146", why = "new: rank 8 (43) 270 -> 237 with dmg[8]" },
@@ -5934,22 +6826,40 @@ return {
 		},
 		-- S147 (DESIGN-18 §13): balance 21-100 after the rework, the Hunter, the Mage and the bosses (docs/SESJE.md S147)
 		["LevelCurves:curves.manaCost.Mage[5][2]"] = {
-			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 45: 1.89 -> 1.096 (4.80 / 3.47 -> 2.78 / 2.01 Destroyer / Arcanist fire)" },
+			{
+				session = "S147",
+				why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 45: 1.89 -> 1.096 (4.80 / 3.47 -> 2.78 / 2.01 Destroyer / Arcanist fire)",
+			},
 		},
 		["LevelCurves:curves.manaCost.Mage[6][2]"] = {
-			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 50: 2.0375 -> 1.3" },
+			{
+				session = "S147",
+				why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 50: 2.0375 -> 1.3",
+			},
 		},
 		["LevelCurves:curves.manaCost.Mage[7][2]"] = {
-			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 55: 2.25 -> 1.4" },
+			{
+				session = "S147",
+				why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 55: 2.25 -> 1.4",
+			},
 		},
 		["LevelCurves:curves.manaCost.Mage[8][2]"] = {
-			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 60: 2.3204 -> 1.55" },
+			{
+				session = "S147",
+				why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 60: 2.3204 -> 1.55",
+			},
 		},
 		["LevelCurves:curves.manaCost.Mage[9][2]"] = {
-			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 70: 2.59 -> 1.865" },
+			{
+				session = "S147",
+				why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 70: 2.59 -> 1.865",
+			},
 		},
 		["LevelCurves:curves.manaCost.Mage[10][2]"] = {
-			{ session = "S147", why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 100: 3.49 -> 2.1 (the Arcanist's variants 2.4 at most)" },
+			{
+				session = "S147",
+				why = "manaCost.Mage lowered from 25 (T-SK4 of the element variants: the pools cast every spell of their bar; at 45 / 70 / 100 the Arcanist's variants 2.0-2.4, the Destroyer's 2.0-2.8 but the ice Destroyer at 70); 100: 3.49 -> 2.1 (the Arcanist's variants 2.4 at most)",
+			},
 		},
 		["SkillCurves:knots.deadlyBolt.dmg[8]"] = {
 			{ session = "S147", why = "new: rank 8 (level 68) pinned for the rank 10 260 -> 248" },
@@ -5958,7 +6868,10 @@ return {
 			{ session = "S147", why = "new: rank 7 (level 39) pinned for the rank 10 330 -> 360" },
 		},
 		["SkillCurves:knots.heavyBolt.dmg[6]"] = {
-			{ session = "S147", why = "x0.93 (level 21): with the rank 10 302.9 -> 281.7, the Crossbow's damage moves to its poison (R9: damage over time >= 25 % from 45; R7 of the heavy crossbow <= 1.35 at 100)" },
+			{
+				session = "S147",
+				why = "x0.93 (level 21): with the rank 10 302.9 -> 281.7, the Crossbow's damage moves to its poison (R9: damage over time >= 25 % from 45; R7 of the heavy crossbow <= 1.35 at 100)",
+			},
 		},
 		["SkillCurves:knots.immolate.dmg[8]"] = {
 			{ session = "S147", why = "new: rank 8 (level 68) pinned for the rank 10 300 -> 283.3" },
@@ -5979,19 +6892,31 @@ return {
 			{ session = "S147", why = "new: rank 2 (level 19) pinned for the poison 50 -> 57.5 at rank 10" },
 		},
 		["Skills/Hunter:[deadlyBolt].values.dmg[2]"] = {
-			{ session = "S147", why = "260 -> 248: R7 of the Marksman with a heavy crossbow at 100 1.356 -> 1.343 (1.15-1.35) after the stronger Toxic Tips" },
+			{
+				session = "S147",
+				why = "260 -> 248: R7 of the Marksman with a heavy crossbow at 100 1.356 -> 1.343 (1.15-1.35) after the stronger Toxic Tips",
+			},
 		},
 		["Skills/Hunter:[heavyBolt].values.dmg[2]"] = {
-			{ session = "S147", why = "302.9 -> 281.7 (x0.93 from 21, knot 6): the Crossbow's direct damage moves to its poison (R9 of the Crossbow)" },
+			{
+				session = "S147",
+				why = "302.9 -> 281.7 (x0.93 from 21, knot 6): the Crossbow's direct damage moves to its poison (R9 of the Crossbow)",
+			},
 		},
 		["Skills/Hunter:[toxicTips].values.tip[2]"] = {
-			{ session = "S147", why = "20 -> 30 (ranks 2-5 from 29): R9 of the Crossbow, damage over time 0.20-0.24 -> 0.26-0.32 at 45-100" },
+			{
+				session = "S147",
+				why = "20 -> 30 (ranks 2-5 from 29): R9 of the Crossbow, damage over time 0.20-0.24 -> 0.26-0.32 at 45-100",
+			},
 		},
 		["Skills/Mage:[blizzard].breakpoints[10].b.values.dmg"] = {
 			{ session = "S147", why = "+3.5 -> +3.8: R4 of 10B at 100 0.167 -> 0.18" },
 		},
 		["Skills/Mage:[blizzard].cost"] = {
-			{ session = "S147", why = "170 -> 270: T-SK4 of the Destroyer's ice variant at 100 1.64 -> 2.0 with the lower curve" },
+			{
+				session = "S147",
+				why = "170 -> 270: T-SK4 of the Destroyer's ice variant at 100 1.64 -> 2.0 with the lower curve",
+			},
 		},
 		["Skills/Mage:[deepFreeze].breakpoints[10].b.values.dmg"] = {
 			{ session = "S147", why = "+30 -> +36: R4 |A - B| of 10 0.068 -> <= 0.05 with the higher base" },
@@ -6000,7 +6925,10 @@ return {
 			{ session = "S147", why = "+13 -> +15: R4 of 5B 0.077 -> 0.09 with the higher base" },
 		},
 		["Skills/Mage:[deepFreeze].values.dmg[1]"] = {
-			{ session = "S147", why = "70 -> 80 (x1.15): R9 ice / fire on one target 0.85-0.95 at 70 / 100 (0.83 / 0.78 before)" },
+			{
+				session = "S147",
+				why = "70 -> 80 (x1.15): R9 ice / fire on one target 0.85-0.95 at 70 / 100 (0.83 / 0.78 before)",
+			},
 		},
 		["Skills/Mage:[deepFreeze].values.dmg[2]"] = {
 			{ session = "S147", why = "120 -> 138: see dmg[1]" },
@@ -6009,7 +6937,10 @@ return {
 			{ session = "S147", why = "330 -> 360 (rank 7 pinned): R9 ice / fire on one target at 70 0.852 -> 0.862" },
 		},
 		["Skills/Mage:[immolate].values.dmg[2]"] = {
-			{ session = "S147", why = "300 -> 283.3 (rank 8 pinned): R9 lightning / fire on one target at 100 >= 1.10" },
+			{
+				session = "S147",
+				why = "300 -> 283.3 (rank 8 pinned): R9 lightning / fire on one target at 100 >= 1.10",
+			},
 		},
 		["Skills/Mage:[lightningLance].breakpoints[10].b.values.dmg"] = {
 			{ session = "S147", why = "+50 -> +65: R4 of 10B at 100 0.166 -> 0.21 with the higher base" },
@@ -6018,7 +6949,10 @@ return {
 			{ session = "S147", why = "+22 -> +30: R4 of 5B at 100 0.067 -> 0.087 with the higher base" },
 		},
 		["Skills/Mage:[lightningLance].values.dmg[2]"] = {
-			{ session = "S147", why = "200 -> 280 (rank 8 pinned): R9 lightning / fire on one target at 100 1.05 -> 1.10" },
+			{
+				session = "S147",
+				why = "200 -> 280 (rank 8 pinned): R9 lightning / fire on one target at 100 1.05 -> 1.10",
+			},
 		},
 		["Skills/Mage:[meteorStorm].hits"] = {
 			{ session = "S147", why = "6 -> 7: R4 of 5A (+1 impact) 0.174 -> 0.148" },
@@ -6030,10 +6964,16 @@ return {
 			{ session = "S147", why = "160 -> 184 (x1.15): R9 ice / fire on one target at 70 / 100 >= 0.85" },
 		},
 		["Skills/Mage:[shatter].values.dmg[2]"] = {
-			{ session = "S147", why = "230 -> 420 (rank 8 pinned at the x1.15 value): R9 ice / fire on one target at 100 0.78 -> 0.86" },
+			{
+				session = "S147",
+				why = "230 -> 420 (rank 8 pinned at the x1.15 value): R9 ice / fire on one target at 100 0.78 -> 0.86",
+			},
 		},
 		["Skills/Mage:[tempest].cost"] = {
-			{ session = "S147", why = "170 -> 360: T-SK4 of the Destroyer's lightning variant at 100 1.55 -> 2.0 with the lower curve" },
+			{
+				session = "S147",
+				why = "170 -> 360: T-SK4 of the Destroyer's lightning variant at 100 1.55 -> 2.0 with the lower curve",
+			},
 		},
 		["Skills/Mage:[tempest].values.dmg[1]"] = {
 			{ session = "S147", why = "40 -> 29: R9 fire with its burn >= lightning on 3 targets 8 s at 100" },
@@ -6042,7 +6982,10 @@ return {
 			{ session = "S147", why = "48 -> 34: see dmg[1]" },
 		},
 		["Skills/Mage:[thunderStrike].values.dmg[2]"] = {
-			{ session = "S147", why = "400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16)" },
+			{
+				session = "S147",
+				why = "400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16)",
+			},
 		},
 		["WorldBoss:*"] = {
 			{
@@ -6057,7 +7000,10 @@ return {
 			},
 		},
 		["WorldBoss:players[1]"] = {
-			{ session = "S149b", why = "new field: the party size of the S149 model (10-20 players) on the map card and the wiki" },
+			{
+				session = "S149b",
+				why = "new field: the party size of the S149 model (10-20 players) on the map card and the wiki",
+			},
 		},
 		["WorldBoss:players[2]"] = {
 			{ session = "S149b", why = "new field: see players[1]" },

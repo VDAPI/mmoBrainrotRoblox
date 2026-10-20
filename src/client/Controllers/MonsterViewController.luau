@@ -110,7 +110,9 @@ end
 
 -- `offset`: where the model's pivot sits relative to the root (generated looks: the root centre; real models:
 -- their PrimaryPart stands on the ground, docs/MODELE.md §5).
-local function weldTo(model: Model, root: BasePart, offset: CFrame?)
+-- W26 `body`: a real model without clips (rig "static") hangs on a Motor6D with the Gait body role instead, so
+-- AnimationController bobs, leans, flinches and topples the whole model like a generated body.
+local function weldTo(model: Model, root: BasePart, offset: CFrame?, body: { scale: number, hover: boolean }?)
 	local primary = model.PrimaryPart
 	if not primary then
 		return
@@ -118,6 +120,21 @@ local function weldTo(model: Model, root: BasePart, offset: CFrame?)
 	local c0 = offset or CFrame.identity
 	primary.Anchored = false
 	model:PivotTo(root.CFrame * c0)
+	if body then
+		local motor = Instance.new("Motor6D")
+		motor.Name = "Gait_Body"
+		motor.Part0 = root
+		motor.Part1 = primary
+		motor.C0 = c0
+		motor:SetAttribute("Role", "body")
+		motor:SetAttribute("Side", 0)
+		motor:SetAttribute("Phase", 0)
+		motor:SetAttribute("Amp", if body.hover then 1.3 else 1)
+		motor:SetAttribute("Scale", body.scale)
+		motor:SetAttribute("Front", 0)
+		motor.Parent = primary
+		return
+	end
 	local weld = Instance.new("Weld")
 	weld.Name = "LookWeld"
 	weld.Part0 = root
@@ -245,7 +262,14 @@ local function buildFull(view: View)
 		end
 	end
 	local look = model :: Model
-	weldTo(look, view.root, offset)
+	local asset = view.look and view.look.asset
+	local body = if view.assetName
+			and asset
+			and asset.rig == "static"
+			and look:GetAttribute("Hover") ~= nil
+		then { scale = view.scale, hover = (tonumber(look:GetAttribute("Hover")) or 0) > 0 }
+		else nil
+	weldTo(look, view.root, offset, body)
 	look.Parent = view.model
 	view.full = look
 	view.fullParts = partsOf(look)

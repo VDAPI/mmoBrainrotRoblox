@@ -31,7 +31,7 @@ W14 / W16 / W18 / W20 (części 1, 2026-10-18/19): sekrety i brakujące rekwizyt
 
 W21–W24 (sekrety jaskiń z planów): wszystkie punkty „Sekrety” i „dodać” z `laki.md`, `bor.md`, `pustkowia.md`, `szczyty.md` w kodzie. Strojenie światła jaskiń na oko czeka na Studio.
 
-W25 / W26: prompty Tripo dla wszystkich potworów i bossów (`docs/wyglad/POTWORY-TRIPO.md`); generator czworonogów z udami, goleniami i łapami. Modele czekają na właściciela.
+W25 / W26: 47 modeli Tripo w grze (`Data/MonsterAssets`, modele w miejscu w `Assets.Monsters`); 27 dwunożnych z klipami (`Data/MonsterClips`, `client/Anim/BoneClips`), 20 czworonogów i latających ruszanych całym ciałem (`Gait_Body`). Brak: własne klipy czworonogów, ataki z bronią zamiast Zombie Attack, modele bossów bez Tripo (Vaelgrath i inne z listy).
 
 W28 (części 1–2): liczby obrażeń (obrys, połysk, wyskok, dryf); okna i okna dialogowe otwierają się na sprężynie i zamykają tą samą drogą, wyskakujące karty wskakują; przyciski HUD z welonem przy najechaniu i wciśnięciem; pasek HP ze śladem straconego zdrowia i oddechem przy niskim HP; toasty wchodzą i gasną; obrysy HUD z tokenów. Nieobejrzane w Studio. Czeka na ocenę.
 
