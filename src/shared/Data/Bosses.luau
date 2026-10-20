@@ -743,7 +743,7 @@ boss({
 		{ phase = 3, monster = "iceWolf", level = 95, count = 3 },
 	},
 	haste = { [3] = 1.2 },
-	enrageAfter = 780,
+	enrageAfter = 3600, -- owner 2026-10-20: 13 min -> 60 min (the boss stays up to 2 h)
 	enrageDamage = 1.6,
 	timeLimit = 7200, -- S149: then it leaves (WorldBossService); owner 2026-10-20: 15 min -> 2 h
 	look = { size = 6, aura = "#9FD8FF" },

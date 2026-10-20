@@ -398,7 +398,7 @@ T.describe("World boss: the boss (S149)", function()
 		T.expect(table.find(Bosses.world, WorldBoss.def()) ~= nil).toBe(true)
 		T.expect((Bosses.forRegion(Data.map) :: any).id).toBe("vaelgrath")
 		local def = WorldBoss.def()
-		T.expect(def.enrageAfter).toBe(780)
+		T.expect(def.enrageAfter).toBe(3600) -- owner 2026-10-20: 60 min (S149: 13 min)
 		T.expect(def.timeLimit).toBe(7200) -- owner 2026-10-20: 2 h (S149: 15 min)
 		-- three brands at once
 		local brands = 0

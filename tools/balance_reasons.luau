@@ -7137,6 +7137,12 @@ return {
 				why = "400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16)",
 			},
 		},
+		["Bosses:byId.hrimvald.enrageAfter"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20: enrage at 60 min, boss stays 2 h (780 -> 3600; commit S149c, ledger session S156 because the snapshot is S154)",
+			},
+		},
 		["Bosses:byId.hrimvald.timeLimit"] = {
 			{
 				session = "S156",
