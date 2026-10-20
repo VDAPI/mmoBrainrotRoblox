@@ -13150,6 +13150,32 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
 
+### W28: tabliczka nad głową gracza (znikanie, wygląd, klik)
+
+- **Zgłoszenie właściciela:** nick nad własną głową czasem znika (także po teleportach na inne mapy); tabliczka zbyt
+  widoczna, duża, z ramką; ma zostać sam nick i tytuł, klikalne.
+- **Przyczyna znikania:** BillboardGui trzymał się części `Head` znalezionej przy budowie i zmieniał ją tylko przy
+  `ChildAdded` z nazwą `Head`. Głowa wymieniona (ApplyDescription wyglądu klasy, streaming, podmiana modelu) bez takiego
+  zdarzenia zostawiała Adornee na martwej części i napis znikał na stałe. Do tego zapasowe dołączanie po nazwie modelu
+  w `Workspace.ChildAdded` mogło zabrać tabliczkę żywej postaci drugiemu modelowi o tej samej nazwie, a `byPlayer`
+  zostawał na zniszczonym modelu. Nic potem tabliczki nie odbudowywało.
+- **Naprawa (`NameplateController`):** kotwica (Head, a bez niej HumanoidRootPart wyżej o `rootLift`) sprawdzana co
+  `checkEvery` i przy każdym `ChildAdded` / `ChildRemoved`; co `sweepEvery` (oraz zaraz po CharacterAdded i przy
+  `MapTransition`) każdy gracz z postacią dostaje żywą tabliczkę: brak tabliczki, zniszczony BillboardGui albo
+  zgubiony folder w PlayerGui są budowane od nowa. Model o tej samej nazwie nie zabiera tabliczki żywej postaci,
+  `drop` czyści `byPlayer`. Dotyczy też własnej postaci.
+- **Na bazie poprawki właściciela 837de9c8** (bez tła i ramki, rozmiary 19 / 14, pełny ciemny obrys, szukanie Head
+  w sprawdzaniu odległości): zostawione, rozszerzone jak niżej.
+- **Wygląd:** bez tła, ramki, linii poziomu i klasy, plakietki VIP i kropki PvP. Nick (ciemny obrys, kolor:
+  czerwony przy PvP, złoty własny i VIP, biały pozostali), tag gildii małą czcionką przed nickiem, tytuł mniejszy nad
+  nickiem, ✶ błogosławieństwa za nickiem, cienki pasek HP tylko u rannych innych graczy. Mniejsze rozmiary
+  (`Config.Nameplate`), `UIScale` z odległości kamery (`Nameplate.scale`: 1 do 18 studów, nigdy większe, do 0,7 na 110).
+- **Klik:** nick innego gracza (lewy, prawy przycisk, dotknięcie) otwiera istniejące menu gracza S133
+  (`PartyController.OpenMenu`: profil, drużyna, handel, szept itd.); przycisk ma szerokość samego tekstu, więc nie
+  zasłania potworów. Własny nick nie łapie kliknięć (nie blokuje obrotu kamery na telefonie).
+- **Testy:** `tests/nameplate.spec.luau` (widok bez poziomu i VIP, brak własnego paska HP, `Nameplate.scale`).
+- **Pliki:** `src/client/Controllers/NameplateController.luau`, `src/shared/Logic/Nameplate.luau`,
+  `src/shared/Config.luau`, `tests/nameplate.spec.luau`, `docs/{SESJE,DECYZJE}.md`.
 ### W28: Ristalle (arena PvP w mieście) jako kamienne koloseum
 
 Zgłoszenie właściciela: arena wyglądała jak rozsypany piasek, trawa wrastała w podłogę. Miejsce bez zmian: środek (190, -160),
@@ -13213,6 +13239,122 @@ Prośba właściciela: „Żeby ramki itemów uni itp. były grubsze i bardziej 
 - **Pliki:** `src/shared/Logic/MeadowsGen/Nature.luau`, `src/shared/Data/Kit.luau`, `src/shared/Util/KitAssets.luau`,
   `src/client/Controllers/DecorController.luau`, `tests/meadows.spec.luau`, `docs/SESJE.md`.
 - Bez przeglądu w Studio (brak MCP); modele `grass_tree_11` / `12` są już w miejscu (paczka Yasu).
+
+
+### W28: szybkie klikanie bez „Nieprawidłowe żądanie”
+- **Przyczyna:** `Net.Handle` odpowiadał `error.badRequest` także na pełny kubełek limitu (remote'y z `rate` 0.5–2,
+  np. `SetPvp`, `AutoGrind`, `LureToggle`, `MailRefresh`, `ArenaSpectate`, pozwalają na 2–4 wywołania naraz). Do tego
+  drugie kliknięcie w tę samą akcję szło do serwera, gdy pierwsze już zmieniło slot (`UseItem`, `DestroyItem`,
+  `ToggleLock`, `MoveItem`, `EquipItem` na pustym slocie, `UnequipItem` już zdjętego, `SwapRings` bez pierścieni).
+- **Serwer:** limit odpowiada `error.rateLimited` (`RequestGuard.rejectCode`), `error.badRequest` tylko przy złych
+  argumentach (log z nazwą remote'a i skrótem argumentów); każde `error.badRequest` zwrócone przez handler też trafia
+  do logu z nazwą remote'a. Pusty slot po poprzednim kliknięciu: nowy cichy klucz `error.stale`; `UnequipItem`
+  pustego slotu i `SwapRings` bez pierścieni zwracają ok, `LureToggle` z tym samym stanem ok bez drugiego toastu.
+  `UnequipItem` z nieznaną nazwą slotu dalej `error.badRequest`.
+- **Klient:** na bazie poprawki 7fed5891 (powtórka po `error.rateLimited`, końcowe nile w `ArgCheck`) `Net.Invoke`
+  dodatkowo przez `Logic/RequestGuard`: to samo wywołanie (remote + argumenty) w locie czeka na
+  pierwsze i dostaje jego wynik, powtórzone w 0,25 s dostaje ostatni wynik (bez drugiego wywołania), przełącznik
+  (`Definitions.toggle`) w 0,2 s z innymi argumentami odpowiada `error.tooFast`; `Definitions.repeatable` (rzucanie,
+  zakupy po jednym, ulepszanie, rozdawanie punktów) wysyła powtórzenie od razu po odpowiedzi. `Toast.push` pomija
+  ciche klucze (`RequestGuard.SILENT`: `error.tooFast`, `error.rateLimited`, `error.stale`), przyciski HUD (Wabik,
+  Auto-polowanie, Auto-mikstury) i `ItemController` nie grają wtedy dźwięku błędu.
+- **Testy:** nowy `tests/requestguard.spec.luau` (kody odrzucenia, ciche klucze w PL i EN, klucze wywołań, werdykty
+  join / reuse / drop / send, flagi w `Definitions`).
+- **Pliki:** `src/shared/Logic/RequestGuard.luau` (nowy), `src/shared/Net/{init,Definitions}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/client/UI/Components/Toast.luau`,
+  `src/client/Controllers/ItemController.luau`, `src/client/UI/Screens/Hud/{LureButton,AutoGrindButton,AutoPotionButton}.luau`,
+  `src/server/Services/{InventoryService,EquipmentService,DepositService,LureService}.luau`,
+  `tests/requestguard.spec.luau`, `docs/{SESJE,DECYZJE}.md`.
+
+### S134d: Inwazja jako strefa (gorące łowisko)
+
+Prośba właściciela z 2026-10-20: „Mało potworów i łatwa ta inwazja i potwory po prostu przybiegają, może niech się
+zrespią w jednym miejscu (obszarze) więcej, żeby to miało sens expowiskowy”. Start na `439661d`, scalone z `40ab759`
+(S156: gęstsze fale na 3 spawnerach najbliżej środka): strefa zastępuje fale, `focus` 3 zostaje jako 3 spawnery
+łowiska najbliżej środka dodane do punktów strefy (bez drugiego systemu).
+
+- **Dane** (`Data/WorldEvents.kinds.invasion`): zamiast fal `zone` (promień 70, 28 punktów w pierścieniu 16–64, nie
+  bliżej 18 od gracza, aggro 25, smycz 30, margines 15, punkty wyżej / niżej o 18 od środka odrzucane), `population`
+  18 + 6 na gracza do 60 (1 / 3 / 5 graczy: 24 / 36 / 48), `refillEvery` 3 s, `refillBatch` 8, `phases` 6 po
+  `phaseEvery` 120 s (`minPhase` 60, `phaseKills` 1), `elitesPerPhase` 0 / 1 / 1 / 2 / 2 / 3, `elite2Phase` 5,
+  `mods` HP × 1,3 i atak × 1,2, `expMul` 1,4; `radius` 160 → 100, `leash` dowódcy 120 → 100.
+- **Logika** (`Logic/WorldEvents`): `population`, `quota`, `refill` (Elity najpierw, partia, budżet), `phaseDone`,
+  `commanderLatest`, `zonePoints` (spirala słonecznika w pierścieniu), `pickSpawn` (punkt z dala od graczy),
+  `hardLeash`, `hasPhaseElite2`, `phaseElite2Kinds`, `progressOf(p, now?)` po fazach (zabicia albo czas); stan
+  `Public` z `zone`, `stage`, `stages`, `stageAt`, `quota`, `got`, `alive`, `size`, `kills` (bez `wave` / `left`).
+- **Serwer**: `WorldEventService` (tylko część Inwazji): punkty strefy na ziemi (promień w dół, bez wody i urwisk,
+  zapas z punktów spawnerów łowiska), uzupełnianie co 3 s, fazy z toastem `event.phase`, Elita II 5. fazy
+  (ogłoszenie `event.elite2`), dowódca w 6.; potwór strefy ma dom w swoim punkcie, `leashRange` 30, nowe
+  `Monster.leashHard` (twarda smycz od domu) i `Monster.expMul` (`CombatService` mnoży EXP zabicia),
+  `stats.aggroRange` 25. Obóz `World/InvasionCamp` (wyrwa z neonu, krąg na ziemi z 40 odcinków, 6 palenisk z
+  fioletowym ogniem, 4 połamane sztandary, dym; bez kolizji i zapytań), usuwany na końcu.
+- **Klient**: krąg strefy na mapie świata (`WorldMap/Overlay`) i minimapie (`Hud/Minimap`), panel: „Faza 3/6 ·
+  potworów 36 · pokonano 52” (`hud.event.phase`), pasek po fazach.
+- **Teksty**: `event.invasion.desc`, `event.start.invasion`, `event.elite2` (zamiast `event.lastWave`), `event.phase`,
+  `hud.event.phase` (zamiast `hud.event.wave`), PL i EN. Wiki: strony `wydarzenia-swiata` / `world-events`, pole
+  `waves` eksportu = liczba faz (kształt danych bez zmian).
+- **Model** (`Balance.invasion`): populacja nie pustoszeje, każdy członek bije po `INVASION_PULL` 3 potwory strefy z
+  `INVASION_WALK` 3 s dojścia, fazy po zabiciu populacji albo czasie, dowódca razem × `BOSS_UPTIME` × (1 −
+  `INVASION_ADDS` 0,2); EXP zabić z pulą drużyny wobec bicia tego łowiska z miksturami i z odpoczynkiem.
+  Nowe wiersze `S134d.invasion.*` w `targetsS134c` (blok „Balance: Invasion (S134c)”), „solo trudne” liczy też
+  ≥ 0,8 limitu; `INVASION_S101` usunięte (raport bez kolumn „przed”). Księga: wpisy z sesją S156 (migawka S154).
+
+Model, 4 łowiska z celów S134c (Gobliński Obóz L15, Osada Kultystów L33, Równiny Salamander L47, Mamucia Tundra L85):
+
+| graczy | populacja | zabici | czas (limit 15 min) | EXP / bicie z miksturami | EXP / bicie z odpoczynkiem |
+|---|---|---|---|---|---|
+| 1 | 24 | 37–50 | 13,7–15,2 min (Osada nie zdąża) | 0,8–0,9 | ok. 3,5–4,7 |
+| 3 | 36 | 121–165 | 11,2–11,7 min (0,75–0,78 limitu) | 1,02–1,11 | 4,2–5,4 |
+| 5 | 48 | 225–245 | 9,0–10,8 min | 1,09–1,20 | ok. 5 |
+
+Przed (S134c, Równiny Salamander L47): fale 13 / 19 / 25, 1 / 3 / 5 graczy 16,3 / 6,9 / 4,8 min. Zabicia i nagroda
+dają 3 graczom 1,3–2,9 poziomu na inwazję (najwięcej na L15, gdzie poziomy są krótkie). Limit 3% nagrody bez zmian.
+
+Dla właściciela: jeśli inwazja leveluje za szybko, dźwignia to `expMul` (1,25 = jak bicie z miksturami) albo
+`phaseEvery`; jeśli solo za trudne, `mods`.
+
+Testy: `worldevents.spec` (nowy blok „Invasion zone (S134d)”: populacja i kwota, uzupełnianie partiami z Elitami
+najpierw i budżetem, koniec fazy, punkty w pierścieniu, wybór punktu z dala od graczy, smycz strefy; postęp HUD po
+fazach; S134c bez fal), `balance.spec` (wiersze S134d asertowane).
+
+Pliki: `src/shared/Data/WorldEvents.luau`, `src/shared/Logic/WorldEvents.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/server/Services/{WorldEvent,Combat}Service.luau`, `src/server/Entities/Monster.luau`,
+`src/server/World/InvasionCamp.luau`, `src/client/UI/Screens/{WorldMap/Overlay,Hud/Minimap,Hud/WorldEventPanel}.luau`,
+`tests/Balance.luau`, `tests/worldevents.spec.luau`, `tools/{balance_reasons,balance_report}.luau`,
+`tools/WikiData/Basics.luau`, wiki `mechanics/{pl/wydarzenia-swiata,en/world-events}.mdx`, `docs/{DESIGN-15,DECYZJE,PROGRESS}.md`.
+
+### W28: portale w ramach, „E” przy bramie bossa (zgłoszenia właściciela 2026-10-20)
+- **Zgłoszenia:** „Krypta Zapomnianych: fioletowe nie jest w ramkach na portal”, „Jak wchodzi się na bossa to buguje
+  się odległość, w której możemy kliknąć E”, „więcej wejść jest popsutych”.
+- **Przyczyna 1 (ramy w jaskiniach):** ramy wokół wyjść i bram (Krypta: rzeźbiona Brama Zapomnianych, nadproże
+  z czaszek; Nora: łuk z korzeni; Kurhan: dolmen; Kopalnia: obudowa sztolni; Grota: sople; Twierdza: krata; Serce:
+  szpony; Jaskinia Mchów: paszcza gobl.) stały na liczbach wpisanych w planie (`Kit.at(-268)` itd.) z przesunięciem
+  w głąb, a portal z `Data/Portals`; po powiększeniu jaskiń (S134h, ×1,35) rama odjechała od fioletowego pola
+  o 4 do 17 studów (w Krypcie 12). Teraz `CaveDress/Kit.atPortal` stawia ramę w ramce samego portalu (x, z, obrót).
+- **Przyczyna 2 (wejścia na mapach regionów):** otwory wejść mniejsze od łuku portalu (Twierdza 13 x 11, Kopalnia
+  11 x 12, Kuźnia 10 x 13, Grota 14 x 13 z soplami do połowy), kopiec Kurhanu i nasyp Nory przecinały łuk, nadproże
+  Kurhanu wchodziło w łuk, jajo w Legowisku stało w filarze, zasłona wody Jaskini Mchów biegła przez pole, drzwi
+  fasady Krypty zasłaniały pół bramy, a portal stał 6 studów przed nią (przesunięty w bramę, x 748,5, drzwi otwarte).
+- **Przyczyna 3 („E” przy bramie bossa):** podpowiedź wisiała na drzwiach bramy (16 studów), a serwer liczył
+  odległość od punktu lądowania `dungeonEntrance.x - 22`, 40 do 65 studów od bramy: przy bramie „za daleko”.
+  Teraz serwer mierzy od drzwi bramy (część z podpowiedzią), `Data/Portals.PROMPT_RANGE` 12 i `SERVER_RANGE` 20
+  wspólne dla portali i bram; odliczanie drużyny i `NearAnyEntrance` zostają przy 52 studach od tych samych drzwi.
+- **Pole portalu:** `Prefabs.portal` obraca malowany model, gdy stoi bokiem, i dopasowuje fioletowe pole do jego
+  otworu (środek modelu, 62% szerokości, 78% wysokości, nie więcej niż 9,5 x 13,5); pole, filary, nadproże i model
+  w jednej ramce `base`. Wymiary łuku i bramy w `Data/Portals` (`ARCH`, `GATE`, `clearance`).
+- **Test:** `tests/portals.spec.luau` + `tests/PortalClearance.luau`: żaden element wystroju żadnej mapy
+  (`Logic/WorldGen`) nie wchodzi w łuk portalu ani w bramę (test osi rozdzielających), każda rama stoi w ramce
+  swojego portalu, pole mieści się w łuku, podpowiedź i serwer z jednej części i zgodnych zasięgów, lądowania
+  na terenie, po którym da się chodzić. Przed poprawką test wskazywał 7 wejść na mapach regionów.
+- **Pliki:** `src/shared/Data/{Portals,Areas/duskwood}.luau`, `src/shared/Logic/CaveDress/{Kit,Crypt,Den,Barrow,Mine,
+  Grotto,Hold,Heart,Moss,Forge}.luau`, `src/shared/Logic/{DuskwoodGen/{Cliffs,Cult,Thicket},AshenGen/Mouths,
+  FrostpeakGen/Mouths,MeadowsGen/{Kit,Water},WorldGen/{Kit,init}}.luau`, `src/server/World/Prefabs.luau`,
+  `src/server/Services/{DungeonService,TravelService}.luau`, `src/client/Controllers/{WorldController,
+  DungeonController}.luau`, `tests/{portals.spec,PortalClearance}.luau`.
+- `Prefabs.caveMouth` (Łąki: nora, kryjówka): głazy stały w filarach łuku, nadproże 1 stud w jego szczycie; otwór,
+  głazy i nadproże rozsunięte wokół łuku (tylko serwer, poza testem wystroju).
+- Nieobejrzane w Studio: proporcje otworu malowanego modelu `common_portal_02` (dopasowanie pola liczone z jego
+  pudełka).
 ### S149c: boss świata, wskaźnik w HUD, 10:00 i 22:00 czasu polskiego, przedmioty Hrimvalda, wkład i poczta
 
 Właściciel 2026-10-20: komunikat o bossie ma nie znikać tak szybko, boss dwa razy dziennie (10:00 i 22:00), mocniejsze

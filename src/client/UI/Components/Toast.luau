@@ -5,7 +5,9 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.Sounds)
+local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 
 local Children = Fusion.Children
@@ -68,7 +70,21 @@ local function pump()
 	pump()
 end
 
+-- W28: callers toast a failed request as Text.now(err); "too fast" / "already done" answers
+-- (RequestGuard.SILENT: a merged double click, a rate limit, a slot the click before already emptied) show nothing.
+local function silent(text: string): boolean
+	for key in RequestGuard.SILENT do
+		if text == key or text == Text.now(key) then
+			return true
+		end
+	end
+	return false
+end
+
 function Toast.push(text: string, kind: Kind?, duration: number?)
+	if silent(text) then
+		return
+	end
 	nextId += 1
 	local entry: Entry = {
 		id = nextId,

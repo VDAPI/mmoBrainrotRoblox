@@ -23,6 +23,7 @@ local FightView = require(script.Parent.Parent.UI.FightView)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Portals = require(ReplicatedStorage.Shared.Data.Portals)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -271,7 +272,7 @@ local function decorate(instance: Instance)
 	local prompt = Instance.new("ProximityPrompt")
 	Keybinds.bindPrompt(prompt, "interact")
 	prompt.HoldDuration = 0
-	prompt.MaxActivationDistance = 16
+	prompt.MaxActivationDistance = Portals.PROMPT_RANGE -- W28: the server checks from the same door
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = anchor
 	local function refresh()

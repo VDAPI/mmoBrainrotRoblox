@@ -220,6 +220,30 @@ function Kit.build(env: Env, name: string, tag: string, x: number, z: number, ro
 	return WK.build(env.ctx, name, tag, x, z, rot, lift)
 end
 
+-- W28 (owner: the purple field outside its frame): a Build in the frame of the portal `portalId` (Data/Portals: its
+-- x, z and yaw, local -z its face, +z into the rock behind it), so a frame round an exit or a gate stands where the
+-- portal stands on every cave scale. `frames` marks a frame round the portal's arch (tests/portals.spec checks it is
+-- centred on the portal and keeps out of the arch); backdrops behind a portal leave it false.
+function Kit.atPortal(env: Env, name: string, tag: string, portalId: string, frames: boolean): Build
+	local p = Portals.get(portalId)
+	assert(p and p.map == env.mapId, `CaveDress: no portal {portalId} on {env.mapId}`)
+	local b = WK.build(env.ctx, name, tag, p.x, p.z, p.rot)
+	if frames then
+		b.frames = portalId
+	end
+	return b
+end
+
+-- Id of the dungeon gate (Data/Portals, kind "dungeon") standing in this cave.
+function Kit.gateOf(env: Env): string
+	for _, p in Portals.onMap(env.mapId) do
+		if p.kind == "dungeon" then
+			return p.id
+		end
+	end
+	error(`CaveDress: no dungeon gate on {env.mapId}`)
+end
+
 function Kit.gy(env: Env, b: Build, lx: number, lz: number): number
 	return WK.gy(env.ctx, b, lx, lz)
 end

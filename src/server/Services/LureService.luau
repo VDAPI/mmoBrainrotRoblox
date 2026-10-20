@@ -185,6 +185,9 @@ local function toggle(player: Player, on: boolean): (boolean, string?)
 	if on and Lure.left(data.lure, os.time()) <= 0 then
 		return false, "lure.error.none"
 	end
+	if data.lure.on == on then
+		return true, nil -- W28: a second click with the same wish: already so, no second toast
+	end
 	PlayerStateService.Set(player, { "account", "lure", "on" }, on)
 	Net.Fire(player, "Toast", if on then "lure.on" else "lure.off", nil, "info")
 	step(player)
