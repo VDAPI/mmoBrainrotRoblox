@@ -445,7 +445,7 @@ function Panels.bar(scope: Scope, props: BarProps): Instance
 	local function toggleButton(order: number, key: string, value: Fusion.Value<boolean>): Instance
 		return scope:New("TextButton")({
 			LayoutOrder = order,
-			Size = UDim2.fromOffset(104, 34),
+			Size = UDim2.fromOffset(92, 34),
 			AutoButtonColor = false,
 			BackgroundColor3 = scope:Computed(function(use): Color3
 				return if use(value) then Theme.Paper.Hover else Theme.Paper.Surface
@@ -494,13 +494,14 @@ function Panels.bar(scope: Scope, props: BarProps): Instance
 			toggleButton(3, "worldmap.layer.npcs", toggles.npcs),
 			toggleButton(4, "worldmap.layer.nodes", toggles.nodes),
 			toggleButton(5, "worldmap.layer.quest", toggles.quest),
-			smallButton(6, "+", function()
+			toggleButton(6, "worldmap.layer.labels", toggles.labels), -- owner 2026-10-21
+			smallButton(7, "+", function()
 				props.ZoomBy(1)
 			end),
-			smallButton(7, "−", function()
+			smallButton(8, "−", function()
 				props.ZoomBy(-1)
 			end),
-			smallButton(8, Text.T(scope, "worldmap.center"), props.CentreOnMe),
+			smallButton(9, Text.T(scope, "worldmap.center"), props.CentreOnMe),
 		},
 	})
 end
