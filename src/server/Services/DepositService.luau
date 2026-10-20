@@ -60,7 +60,7 @@ local function deposit(player: Player, invIndex: number, depIndex: number?): (bo
 	end
 	local item = InventoryService.Get(player, invIndex)
 	if not item then
-		return false, "error.badRequest"
+		return false, "error.stale" -- W28: the click before already took it (silent on the client)
 	end
 	local size = DepositService.Size(player)
 	local items = data.deposit.items
@@ -96,7 +96,7 @@ local function withdraw(player: Player, depIndex: number, invIndex: number?): (b
 	local key = tostring(depIndex)
 	local item = data.deposit.items[key]
 	if not item then
-		return false, "error.badRequest"
+		return false, "error.stale" -- W28: the click before already took it (silent on the client)
 	end
 	local capacity = InventoryService.CapacityOf(char, player)
 	if invIndex and invIndex >= 1 and invIndex <= capacity and InventoryService.Get(player, invIndex) == nil then
@@ -125,7 +125,13 @@ local function move(player: Player, from: number, to: number): (boolean, string?
 	end
 	local changed = Inventory.move(data.deposit.items, DepositService.Size(player), from, to)
 	if not changed then
-		return false, "error.badRequest"
+		-- W28: a drag from a slot the click before already emptied is stale, not a bad request
+		return false,
+			if from ~= to
+					and from >= 1
+					and data.deposit.items[tostring(from)] == nil
+				then "error.stale"
+				else "error.badRequest"
 	end
 	syncSlots(player, changed)
 	return true, nil

@@ -228,6 +228,7 @@ function Water.caveCurtain(out: { Build })
 		end
 	end
 	local b = Kit.build("CaveCurtain", "waterfall", m.x, m.z, m.rot)
+	b.frames = "meadows_meadows_cave"
 	local bp = b.bp
 	local gy = Kit.gy(b, 0, 0)
 	for k = -1, 1 do
@@ -237,7 +238,7 @@ function Water.caveCurtain(out: { Build })
 			0.3,
 			k * 3,
 			gy + 8,
-			-math.abs(k) * 0.3,
+			-1.6 - math.abs(k) * 0.3, -- W28: just before the portal's arch (it ran through its purple field)
 			o({ c = "#CFE6F2", m = "Glass" }, "detail", {
 				col = false,
 				q = false,

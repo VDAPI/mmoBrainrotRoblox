@@ -1,7 +1,7 @@
 --!strict
 -- World events (S101, docs/DESIGN-15.md §4): pure rules WorldEventService runs. The schedule (one event per server
 -- about every hour), the region (weighted by players), the hunting ground (median level of the players there), the
--- kind, the Elite II scale by players, the waves, the champion's route, the contribution (damage, healing, shields,
+-- kind, the Elite II scale by players, the Invasion zone (S134d: spawn points, population, refill, phases), the champion's route, the contribution (damage, healing, shields,
 -- intercepted damage), the reward threshold, the reward and the chest. The HUD reads `progressOf`.
 -- Points are map-relative (like Data/Spawns); every random choice goes through the given Rng.
 
@@ -40,10 +40,18 @@ export type Public = {
 	z: number,
 	startsAt: number,
 	endsAt: number,
-	wave: number?,
-	waves: number?,
-	size: number?, -- monsters of the current wave
-	left: number?, -- of them still alive
+	-- S134d: the Invasion zone (radius in studs, the map / minimap circle), the intensity phase (`stage`: `phase` is
+	-- warn / active), when it began, the kills it needs to end early and the kills so far, the live monsters, the
+	-- population target and all kills
+	zone: number?,
+	stage: number?,
+	stages: number?,
+	stageAt: number?,
+	quota: number?,
+	got: number?,
+	alive: number?,
+	size: number?,
+	kills: number?,
 	boss: string?,
 	hp: number?,
 }
@@ -394,26 +402,118 @@ function WorldEvents.route(mapId: string, area: Area, level: number, rng: Rng.Rn
 	return route
 end
 
--- Monsters of one wave (all waves equal; `wave` stays for a later growing rule), without its Elites.
-function WorldEvents.waveSize(players: number, _wave: number?): number
-	local w = Data.kinds.invasion.wave
-	return math.min(w.max, w.base + w.perPlayer * math.max(1, players))
+-- Invasion zone (S134d) ------------------------------------------------------------------------------------
+
+-- The live population of the zone for `players` in its radius (at least one counted).
+function WorldEvents.population(players: number): number
+	local p = Data.kinds.invasion.population
+	return math.min(p.max, p.base + p.perPlayer * math.max(1, math.floor(players)))
 end
 
--- S134c: Elites of wave `wave` (Data elitesPerWave; none past the list).
-function WorldEvents.elitesOf(wave: number): number
-	return Data.kinds.invasion.elitesPerWave[wave] or 0
+-- Live Elites of the population in phase `phase` (Data elitesPerPhase; none past the list).
+function WorldEvents.elitesOf(phase: number): number
+	return Data.kinds.invasion.elitesPerPhase[phase] or 0
 end
 
--- S134c: whether wave `wave` also brings one Elite II of the ground (the last wave, lastWaveElite2).
-function WorldEvents.hasWaveElite2(wave: number): boolean
+-- Whether phase `phase` brings the Elite II of the ground (elite2Phase).
+function WorldEvents.hasPhaseElite2(phase: number): boolean
+	return phase == Data.kinds.invasion.elite2Phase
+end
+
+-- Kills a phase needs to end before phaseEvery (phaseKills x the population).
+function WorldEvents.quota(players: number): number
+	return math.ceil(Data.kinds.invasion.phaseKills * WorldEvents.population(players))
+end
+
+-- The commander's latest second (the last phase's start when every phase runs to phaseEvery).
+function WorldEvents.commanderLatest(): number
 	local def = Data.kinds.invasion
-	return def.lastWaveElite2 == true and wave == def.waves
+	return (def.phases - 1) * def.phaseEvery
 end
 
--- S134c: the kinds the last wave's Elite II may be: the ground's host kinds other than the commander's, or all of
+-- Whether phase `phase` (begun `since` s ago, `kills` of `quota` killed in it) is over: never the last phase (the
+-- commander's), always after phaseEvery, else after minPhase with the quota met and nothing `holding` it (the
+-- phase's Elite II alive).
+function WorldEvents.phaseDone(phase: number, since: number, kills: number, quota: number, holding: boolean): boolean
+	local def = Data.kinds.invasion
+	if phase >= def.phases then
+		return false
+	end
+	if since >= def.phaseEvery then
+		return true
+	end
+	return since >= def.minPhase and kills >= quota and not holding
+end
+
+export type Refill = { normals: number, elites: number }
+
+-- What one refill tick spawns: up to the population of `players` (Elites first, up to the phase's live Elites),
+-- at most refillBatch and at most `free` (the server's monster budget left; nil = no limit).
+function WorldEvents.refill(alive: number, aliveElites: number, players: number, phase: number, free: number?): Refill
+	local def = Data.kinds.invasion
+	local target = WorldEvents.population(players)
+	local room = math.max(0, math.min(target - alive, def.refillBatch, if free then math.max(0, free) else math.huge))
+	local elites = math.clamp(math.min(WorldEvents.elitesOf(phase), target) - aliveElites, 0, room)
+	return { normals = room - elites, elites = elites }
+end
+
+-- Spawn points of the zone as offsets from its centre: `points` spread evenly over the ring from `core` to
+-- radius - edge (a sunflower spiral turned at random, each point jittered a little); the server drops the ones on
+-- bad ground.
+function WorldEvents.zonePoints(rng: Rng.Rng): { Point }
+	local z = Data.kinds.invasion.zone
+	local inner, outer = z.core, z.radius - z.edge
+	local turn = rng:float(0, math.pi * 2)
+	local golden = math.pi * (3 - math.sqrt(5))
+	local out: { Point } = {}
+	for i = 1, z.points do
+		-- equal areas: r^2 evenly between inner^2 and outer^2
+		local u = (i - 0.5) / z.points
+		local r = math.sqrt(inner * inner + u * (outer * outer - inner * inner))
+		local a = turn + i * golden + rng:float(-0.15, 0.15)
+		r = math.clamp(r + rng:float(-2, 2), inner, outer)
+		table.insert(out, { x = math.cos(a) * r, z = math.sin(a) * r })
+	end
+	return out
+end
+
+-- A spawn point (index into `points`) at least `clear` from every player (`players` positions, the same frame),
+-- at random among those; none clear = the one farthest from the nearest player. nil for no points.
+function WorldEvents.pickSpawn(points: { Point }, players: { Point }, rng: Rng.Rng): number?
+	if #points == 0 then
+		return nil
+	end
+	local clear2 = Data.kinds.invasion.zone.clear ^ 2
+	local free: { number } = {}
+	local best, bestD = 1, -1
+	for i, p in points do
+		local nearest = math.huge
+		for _, q in players do
+			nearest = math.min(nearest, dist2(p, q))
+		end
+		if nearest >= clear2 then
+			table.insert(free, i)
+		end
+		if nearest > bestD then
+			best, bestD = i, nearest
+		end
+	end
+	if #free > 0 then
+		return free[rng:int(1, #free)]
+	end
+	return best
+end
+
+-- Hard leash of a zone monster from its own spot `fromCentre` studs off the centre: it never chases past
+-- radius + margin from the centre (and never less than the soft leash).
+function WorldEvents.hardLeash(fromCentre: number): number
+	local z = Data.kinds.invasion.zone
+	return math.max(z.leash, z.radius + z.margin - fromCentre)
+end
+
+-- S134c: the kinds the Elite II of elite2Phase may be: the ground's host kinds other than the commander's, or all of
 -- them when the ground has only the commander's.
-function WorldEvents.waveElite2Kinds(area: Area, commanderKind: string?): { string }
+function WorldEvents.phaseElite2Kinds(area: Area, commanderKind: string?): { string }
 	local hosts = WorldEvents.hostKinds(area)
 	local others = {}
 	for _, id in hosts do
@@ -492,23 +592,26 @@ end
 
 -- Client state (B5) -----------------------------------------------------------------------------------------
 
--- Progress 0-1 for the HUD bar: an Invasion by its waves until the commander comes, then the commander's HP; the
--- champion by its HP.
-function WorldEvents.progressOf(p: Public): number
+-- Progress 0-1 for the HUD bar: an Invasion by its phases (each by its kills or its time, whichever is further;
+-- `now` = server time, nil = kills only) until the commander comes, then the commander's HP; the champion by its HP.
+function WorldEvents.progressOf(p: Public, now: number?): number
 	if p.boss ~= nil then
 		return math.clamp(1 - (p.hp or 1), 0, 1)
 	end
 	if p.kind ~= "invasion" then
 		return 0
 	end
-	local waves = p.waves or 0
-	local wave = p.wave or 0
-	if waves <= 0 or wave <= 0 then
+	local stages = p.stages or 0
+	local stage = p.stage or 0
+	if stages <= 0 or stage <= 0 then
 		return 0
 	end
-	local size = p.size or 0
-	local killed = if size > 0 then math.clamp((size - (p.left or size)) / size, 0, 1) else 0
-	return math.clamp((wave - 1 + killed) / waves, 0, 1)
+	local quota = p.quota or 0
+	local done = if quota > 0 then math.clamp((p.got or 0) / quota, 0, 1) else 0
+	if now and p.stageAt then
+		done = math.max(done, math.clamp((now - p.stageAt) / Data.kinds.invasion.phaseEvery, 0, 1))
+	end
+	return math.clamp((stage - 1 + done) / stages, 0, 1)
 end
 
 return WorldEvents

@@ -34,21 +34,23 @@ local function mine(env: Env.Env, out: { Build })
 	local c = cave(env, "ashen_mine")
 	Env.clear(env, c.x, c.z, 30)
 	local b = Kit.build(ctx, "mineMouth", "cave", c.x, c.z, c.rot)
+	b.frames = "ashen_ashen_mine"
 	local bp = b.bp
 	local wood = Kit.timber
-	-- the adit: a dark hole framed by beams, set into the rock behind
-	bp:box(26, 18, 8, 0, 7, 9, o(Props.ash, "shell", { q = true }))
-	bp:box(11, 12, 1, 0, 5.4, 4.6, o(Kit.dark, "shell", { q = false }))
+	-- the adit: a dark hole framed by beams, set into the rock behind; W28: as wide and tall as the portal's arch in
+	-- front of it (11 x 12 before, the arch 14.5 x 18 stood over it)
+	bp:box(30, 24, 8, 0, 10, 9, o(Props.ash, "shell", { q = true }))
+	bp:box(15, 18.6, 1, 0, 9, 4.6, o(Kit.dark, "shell", { q = false }))
 	for _, side in { -1, 1 } do
-		bp:box(1.6, 13, 1.6, side * 6.2, 5.8, 3.6, o(wood, "shell", { q = false }))
-		bp:rbox(1, 9, 1, side * 4.6, 4, 2.6, 0, 0, side * 14, o(wood, "detail", { col = false }))
+		bp:box(1.6, 19.4, 1.6, side * 8.4, 9, 3.6, o(wood, "shell", { q = false }))
+		bp:rbox(1, 9, 1, side * 7.4, 4, 2.6, 0, 0, side * 14, o(wood, "detail", { col = false }))
 	end
-	bp:box(15, 1.8, 2, 0, 12.6, 3.6, o(wood, "shell", { q = false }))
+	bp:box(19, 1.8, 2, 0, 19.6, 3.6, o(wood, "shell", { q = false }))
 	-- dwarven runes on the lintel smeared with red orc paint
 	for k = -2, 2 do
-		bp:box(1, 1, 0.1, k * 2.2, 12.6, 2.55, o({ c = "#C9A45C", m = "SmoothPlastic" }, "fine"))
+		bp:box(1, 1, 0.1, k * 2.2, 19.6, 2.55, o({ c = "#C9A45C", m = "SmoothPlastic" }, "fine"))
 	end
-	bp:rbox(9, 1.2, 0.12, 0, 12.4, 2.5, 0, 0, 8, o({ c = "#8A2A1E", m = "SmoothPlastic" }, "fine", { t = 0.2 }))
+	bp:rbox(9, 1.2, 0.12, 0, 19.4, 2.5, 0, 0, 8, o({ c = "#8A2A1E", m = "SmoothPlastic" }, "fine", { t = 0.2 }))
 	-- rails out onto the slope, overturned carts
 	for _, side in { -1, 1 } do
 		bp:box(
@@ -148,10 +150,11 @@ local function lair(env: Env.Env, out: { Build })
 	local c = cave(env, "ashen_lair")
 	Env.clear(env, c.x, c.z, 30)
 	local b = Kit.build(ctx, "lairMouth", "cave", c.x, c.z, c.rot)
+	b.frames = "ashen_ashen_lair"
 	local bp = b.bp
 	-- the huge scorched mouth in the wall and the fan of soot over it
 	bp:box(34, 26, 8, 0, 11, 10, o({ c = "#6E2F2A", m = "Sandstone" }, "shell", { q = true }))
-	bp:add("ball", 20, 18, 4, 0, 7, 5.4, 0, 0, 0, o(Kit.dark, "shell", { q = false }))
+	bp:add("ball", 20, 22, 4, 0, 9, 5.4, 0, 0, 0, o(Kit.dark, "shell", { q = false })) -- W28: over the arch
 	for k = -2, 2 do
 		bp:rbox(5, 14, 0.2, k * 4.6, 20, 5.6, 0, 0, k * 14, o(Props.soot, "detail", { col = false, t = 0.1 }))
 	end
@@ -179,13 +182,14 @@ local function lair(env: Env.Env, out: { Build })
 			Props.carcass(bp, p[1], Kit.gy(ctx, b, p[1], p[2]), p[2], 40)
 		end
 	end
-	local ey = Kit.gy(ctx, b, 9, -2)
+	-- W28: the egg beside the portal's arch (it stood in its pillar)
+	local ey = Kit.gy(ctx, b, 11, -2)
 	bp:add(
 		"ball",
 		4,
 		5.4,
 		4,
-		9,
+		11,
 		ey + 2.2,
 		-2,
 		0,
@@ -198,7 +202,7 @@ local function lair(env: Env.Env, out: { Build })
 			2.2,
 			0.3,
 			1.6,
-			12 + k * 0.8,
+			14 + k * 0.8,
 			ey + 0.2,
 			-4 + k,
 			k * 30,
@@ -229,13 +233,15 @@ local function forgeGate(env: Env.Env, out: { Build })
 	local c = cave(env, "ashen_cave")
 	Env.clear(env, c.x, c.z, 34)
 	local b = Kit.build(ctx, "forgeGate", "cave", c.x, c.z, c.rot)
+	b.frames = "ashen_ashen_cave"
 	local bp = b.bp
 	local stone = { c = "#4E4A48", m = "Slate" }
 	local dressed = { c = "#5E5856", m = "Cobblestone" }
 	-- the gate's frame of dressed stone set into the mountain
 	bp:box(30, 30, 8, 0, 13, 11, o(stone, "shell", { q = true }))
-	bp:box(14, 16, 2, 0, 7, 7, o(dressed, "shell", { q = true }))
-	bp:box(10, 13, 0.6, 0, 5.6, 5.9, {
+	-- W28: the glowing gateway as wide and tall as the portal's arch in front of it (10 x 13 before)
+	bp:box(20, 22, 2, 0, 10, 7, o(dressed, "shell", { q = true }))
+	bp:box(15, 18.6, 0.6, 0, 9.3, 5.9, {
 		c = "#FF8A2A",
 		m = "Neon",
 		lod = "shell",
@@ -247,12 +253,12 @@ local function forgeGate(env: Env.Env, out: { Build })
 	})
 	-- doors ajar
 	for _, side in { -1, 1 } do
-		bp:rbox(5, 13, 0.8, side * 5.6, 5.6, 4.2, 0, side * -35, 0, o(Props.ironDark, "detail", { col = false }))
+		bp:rbox(6.5, 18.6, 0.8, side * 7.4, 9.3, 4.2, 0, side * -35, 0, o(Props.ironDark, "detail", { col = false }))
 	end
-	bp:light(0, 6, 2, "#FF8A2A", 36, 2, "fire")
+	bp:light(0, 8, 2, "#FF8A2A", 36, 2, "fire")
 	-- glowing runes over the gate
 	for k = -3, 3 do
-		bp:box(1.2, 1.6, 0.2, k * 2, 17, 5.9, {
+		bp:box(1.2, 1.6, 0.2, k * 2, 23, 5.9, {
 			c = "#FFB040",
 			m = "Neon",
 			lod = "detail",
@@ -262,7 +268,7 @@ local function forgeGate(env: Env.Env, out: { Build })
 			jitter = 0,
 		})
 	end
-	bp:box(18, 2, 2.4, 0, 15.4, 6.4, o(dressed, "shell", { q = false }))
+	bp:box(22, 2, 2.4, 0, 20.6, 6.4, o(dressed, "shell", { q = false }))
 	-- two carved kings with hammers
 	for _, side in { -1, 1 } do
 		bp:push(side * 12, 0, 4, 0, 0, 0)

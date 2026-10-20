@@ -1,6 +1,7 @@
 --!strict
 -- World events (S101, docs/DESIGN-15.md §4): data, schedule, region / hunting ground / kind, route and points,
--- scale and waves, contribution, reward, chest and the HUD progress (Logic/WorldEvents).
+-- scale and waves, contribution, reward, chest and the HUD progress (Logic/WorldEvents). S134d: the Invasion zone
+-- (spawn points, population and refill, phases, the zone leash).
 local Areas = require("../src/shared/Data/Areas")
 local Classes = require("../src/shared/Data/Classes")
 local Data = require("../src/shared/Data/WorldEvents")
@@ -254,17 +255,17 @@ T.describe("WorldEvents: points and route", function()
 	end)
 end)
 
-T.describe("WorldEvents: scale and waves", function()
-	T.it("scales the Elite II by players and caps the waves", function()
+T.describe("WorldEvents: scale and population", function()
+	T.it("scales the Elite II by players and caps the population", function()
 		local s = Data.scale.commander
 		T.expect(WorldEvents.scaleOf("commander", 1).hpMul).toBe(s.hp[1])
 		T.expect(WorldEvents.scaleOf("commander", 0).hpMul).toBe(s.hp[1])
 		T.expect(WorldEvents.scaleOf("commander", 99).hpMul).toBe(s.hp[#s.hp])
 		T.expect(WorldEvents.scaleOf("champion", 2).atkMul).toBe(Data.scale.champion.atk[2])
-		local w = Data.kinds.invasion.wave
-		T.expect(WorldEvents.waveSize(1)).toBe(w.base + w.perPlayer)
-		T.expect(WorldEvents.waveSize(0)).toBe(w.base + w.perPlayer)
-		T.expect(WorldEvents.waveSize(50)).toBe(w.max)
+		local w = Data.kinds.invasion.population
+		T.expect(WorldEvents.population(1)).toBe(w.base + w.perPlayer)
+		T.expect(WorldEvents.population(0)).toBe(w.base + w.perPlayer)
+		T.expect(WorldEvents.population(50)).toBe(w.max)
 	end)
 end)
 
@@ -375,7 +376,7 @@ T.describe("WorldEvents: chest", function()
 end)
 
 T.describe("WorldEvents: HUD progress", function()
-	T.it("follows the waves, then the commander, and the champion's HP", function()
+	T.it("follows the phases (kills or time), then the commander, and the champion's HP", function()
 		local base: WorldEvents.Public = {
 			id = "e1",
 			kind = "invasion",
@@ -389,10 +390,15 @@ T.describe("WorldEvents: HUD progress", function()
 			endsAt = 1,
 		}
 		local p = table.clone(base)
-		p.wave, p.waves, p.size, p.left = 1, 6, 8, 8
+		p.stage, p.stages, p.quota, p.got, p.stageAt = 1, 6, 30, 0, 100
 		T.expect(WorldEvents.progressOf(p)).toBe(0)
-		p.wave, p.left = 3, 4
+		T.expect(WorldEvents.progressOf(p, 100)).toBe(0)
+		p.stage, p.got = 3, 15
 		T.expect(WorldEvents.progressOf(p)).toBeNear(2.5 / 6, 1e-9)
+		-- the time counts when it is further than the kills
+		local every = Data.kinds.invasion.phaseEvery
+		T.expect(WorldEvents.progressOf(p, 100 + every * 0.75)).toBeNear(2.75 / 6, 1e-9)
+		T.expect(WorldEvents.progressOf(p, 100 + every * 0.25)).toBeNear(2.5 / 6, 1e-9)
 		p.boss, p.hp = "monster.wolf.elite2", 0.25
 		T.expect(WorldEvents.progressOf(p)).toBeNear(0.75, 1e-9)
 		local c = table.clone(base)
@@ -429,30 +435,28 @@ T.describe("WorldEvents: Blood Moon block (S129)", function()
 	end)
 end)
 
--- S134c: the harder Invasion (owner 2026-10-15): bigger waves with Elites in every wave and an Elite II in the last,
--- the commander the same for every party with the bosses 2.0 blows, the chest up to Legendary.
+-- S134c: the harder Invasion (owner 2026-10-15): the commander the same for every party with the bosses 2.0 blows, the
+-- chest up to Legendary. S134d: the zone's phases (more Elites, an Elite II, the commander last).
 T.describe("WorldEvents: harder Invasion (S134c)", function()
 	T.it(
-		"waves of 18 / 26 / 34 for 1 / 3 / 5 players (capped at 36), Elites in every wave, an Elite II in the last",
+		"phases bring more Elites, the Elite II in elite2Phase (another kind than the commander), the commander in time",
 		function()
-			-- owner 2026-10-20: bigger waves (S134c: 13 / 19 / 25, cap 25)
-			T.expect(WorldEvents.waveSize(1)).toBe(18)
-			T.expect(WorldEvents.waveSize(3)).toBe(26)
-			T.expect(WorldEvents.waveSize(5)).toBe(34)
-			T.expect(WorldEvents.waveSize(9)).toBe(36)
 			local inv = Data.kinds.invasion
-			for wave = 1, inv.waves do
-				T.expect({ wave, WorldEvents.elitesOf(wave) >= 1 }).toEqual({ wave, true })
-				T.expect({ wave, WorldEvents.hasWaveElite2(wave) }).toEqual({ wave, wave == inv.waves })
+			for phase = 2, inv.phases do
+				T.expect({ phase, WorldEvents.elitesOf(phase) >= WorldEvents.elitesOf(phase - 1) })
+					.toEqual({ phase, true })
+				T.expect({ phase, WorldEvents.hasPhaseElite2(phase) }).toEqual({ phase, phase == inv.elite2Phase })
 			end
-			T.expect(WorldEvents.elitesOf(inv.waves + 1)).toBe(0)
-			T.expect(inv.commanderAt < inv.duration).toBe(true)
-			-- the last wave's Elite II is another kind than the commander when the ground has two
+			T.expect(WorldEvents.elitesOf(inv.phases) > WorldEvents.elitesOf(1)).toBe(true)
+			T.expect(WorldEvents.elitesOf(inv.phases + 1)).toBe(0)
+			T.expect(inv.elite2Phase < inv.phases).toBe(true)
+			T.expect(WorldEvents.commanderLatest() < inv.duration).toBe(true)
+			-- the phase's Elite II is another kind than the commander when the ground has two
 			for _, mapId in Data.regions do
 				for _, area in areasOf(mapId) do
 					local hosts = WorldEvents.hostKinds(area)
 					if #hosts > 0 then
-						local others = WorldEvents.waveElite2Kinds(area, hosts[1])
+						local others = WorldEvents.phaseElite2Kinds(area, hosts[1])
 						T.expect({ area.id, #others > 0 }).toEqual({ area.id, true })
 						if #hosts > 1 then
 							T.expect({ area.id, table.find(others, hosts[1]) }).toEqual({ area.id, nil })
@@ -495,7 +499,7 @@ T.describe("WorldEvents: harder Invasion (S134c)", function()
 			end
 			T.expect(avoid >= 2).toBe(true)
 			T.expect(split).toBe(1)
-			for _, k in { "event.lastWave", "boss.mechanic.split.hint" } do
+			for _, k in { "event.elite2", "event.phase", "hud.event.phase", "boss.mechanic.split.hint" } do
 				T.expect({ k, type(pl[k]), type(en[k]) }).toEqual({ k, "string", "string" })
 			end
 		end
@@ -518,6 +522,136 @@ T.describe("WorldEvents: harder Invasion (S134c)", function()
 				assert(drop, `seed {seed}`)
 				T.expect(drop.rarity <= Rarities.LEGENDARY).toBe(true)
 			end
+		end
+	)
+end)
+
+-- S134d (owner 2026-10-20: few monsters, easy, they just run in): the Invasion zone. A live population growing with the
+-- players, refilled in batches (Elites first), the phases by time or kills, spread spawn points away from the
+-- players, a leash that keeps the monsters in the zone.
+T.describe("WorldEvents: Invasion zone (S134d)", function()
+	local inv = Data.kinds.invasion
+
+	T.it("the population is 24 / 36 / 48 for 1 / 3 / 5 players and caps at 60", function()
+		T.expect(WorldEvents.population(1)).toBe(24)
+		T.expect(WorldEvents.population(3)).toBe(36)
+		T.expect(WorldEvents.population(5)).toBe(48)
+		T.expect(WorldEvents.population(7)).toBe(60)
+		T.expect(WorldEvents.population(40)).toBe(60)
+		for n = 1, 10 do
+			T.expect(WorldEvents.population(n + 1) >= WorldEvents.population(n)).toBe(true)
+			T.expect(WorldEvents.quota(n)).toBe(math.ceil(inv.phaseKills * WorldEvents.population(n)))
+		end
+	end)
+
+	T.it("a refill tops the zone up in batches, Elites first, never over the population or the budget", function()
+		-- an empty zone of one player in phase 1 (no Elites): a full batch of normals
+		T.expect(WorldEvents.refill(0, 0, 1, 1)).toEqual({ normals = inv.refillBatch, elites = 0 })
+		-- the batches fill it exactly to the population, then nothing
+		for _, players in { 1, 3, 5, 9 } do
+			for phase = 1, inv.phases do
+				local alive, elites, ticks = 0, 0, 0
+				while ticks < 50 do
+					local r = WorldEvents.refill(alive, elites, players, phase)
+					if r.normals + r.elites == 0 then
+						break
+					end
+					T.expect(r.normals + r.elites <= inv.refillBatch).toBe(true)
+					alive += r.normals + r.elites
+					elites += r.elites
+					ticks += 1
+				end
+				T.expect({ players, phase, alive }).toEqual({ players, phase, WorldEvents.population(players) })
+				T.expect({ players, phase, elites }).toEqual({ players, phase, WorldEvents.elitesOf(phase) })
+			end
+		end
+		-- a kill is refilled; a dead Elite comes back as an Elite
+		local full = WorldEvents.population(3)
+		T.expect(WorldEvents.refill(full, 2, 3, 4)).toEqual({ normals = 0, elites = 0 })
+		T.expect(WorldEvents.refill(full - 3, 2, 3, 4)).toEqual({ normals = 3, elites = 0 })
+		T.expect(WorldEvents.refill(full - 1, 1, 3, 4)).toEqual({ normals = 0, elites = 1 })
+		-- a new phase with more Elites: they come first
+		T.expect(WorldEvents.refill(full - 5, 0, 3, 6)).toEqual({ normals = 2, elites = 3 })
+		-- the server budget caps a tick; a player leaving never removes monsters
+		T.expect(WorldEvents.refill(0, 0, 5, 1, 3)).toEqual({ normals = 3, elites = 0 })
+		T.expect(WorldEvents.refill(0, 0, 5, 1, 0)).toEqual({ normals = 0, elites = 0 })
+		T.expect(WorldEvents.refill(WorldEvents.population(5), 0, 1, 1)).toEqual({ normals = 0, elites = 0 })
+	end)
+
+	T.it("a phase ends after phaseEvery, or early after minPhase with its kills and its Elite II dead", function()
+		local q = WorldEvents.quota(3)
+		T.expect(WorldEvents.phaseDone(1, inv.phaseEvery, 0, q, false)).toBe(true)
+		T.expect(WorldEvents.phaseDone(1, inv.phaseEvery - 1, 0, q, false)).toBe(false)
+		T.expect(WorldEvents.phaseDone(1, inv.minPhase, q, q, false)).toBe(true)
+		T.expect(WorldEvents.phaseDone(1, inv.minPhase - 1, q * 3, q, false)).toBe(false)
+		T.expect(WorldEvents.phaseDone(1, inv.minPhase, q - 1, q, false)).toBe(false)
+		-- the Elite II holds an early end, never the time
+		T.expect(WorldEvents.phaseDone(inv.elite2Phase, inv.minPhase, q, q, true)).toBe(false)
+		T.expect(WorldEvents.phaseDone(inv.elite2Phase, inv.phaseEvery, 0, q, true)).toBe(true)
+		-- the last phase (the commander's) never ends by itself
+		T.expect(WorldEvents.phaseDone(inv.phases, 10 * inv.phaseEvery, 999, q, false)).toBe(false)
+		-- the commander comes at the latest after (phases - 1) full phases, with time left to fight it
+		T.expect(WorldEvents.commanderLatest()).toBe((inv.phases - 1) * inv.phaseEvery)
+		T.expect(inv.duration - WorldEvents.commanderLatest() >= 240).toBe(true)
+	end)
+
+	T.it("spawn points spread over the ring inside the zone, the core stays free", function()
+		local z = inv.zone
+		for seed = 1, 20 do
+			local points = WorldEvents.zonePoints(Rng.new(seed))
+			T.expect(#points).toBe(z.points)
+			local inner, near, far = 0, 0, 0
+			for _, p in points do
+				local r = math.sqrt(p.x * p.x + p.z * p.z)
+				T.expect(r >= z.core - 1e-9 and r <= z.radius - z.edge + 1e-9).toBe(true)
+				if r < (z.core + z.radius) / 2 then
+					inner += 1
+				end
+				if r > z.radius * 0.7 then
+					far += 1
+				end
+				-- no two points on top of each other
+				for _, q in points do
+					if q ~= p then
+						near = math.max(near, if (p.x - q.x) ^ 2 + (p.z - q.z) ^ 2 < 4 then 1 else 0)
+					end
+				end
+			end
+			-- equal areas: both halves of the ring hold points, the outer part too
+			T.expect(inner >= 3 and far >= 3).toBe(true)
+			T.expect(near).toBe(0)
+		end
+	end)
+
+	T.it("a monster spawns clear of the players, else as far as possible", function()
+		local points = { { x = 0, z = 0 }, { x = 40, z = 0 }, { x = 0, z = 40 } }
+		local clear = inv.zone.clear
+		for seed = 1, 30 do
+			local i = WorldEvents.pickSpawn(points, { { x = 1, z = 1 } }, Rng.new(seed))
+			T.expect(i ~= nil and i ~= 1).toBe(true)
+		end
+		-- every point taken: the farthest from its nearest player
+		local crowd = { { x = 0, z = 0 }, { x = 40, z = 2 }, { x = 2, z = 40 - clear / 2 } }
+		T.expect(WorldEvents.pickSpawn(points, crowd, Rng.new(1))).toBe(3)
+		T.expect(WorldEvents.pickSpawn({}, crowd, Rng.new(1))).toBeNil()
+		-- nobody there: any point
+		T.expect(WorldEvents.pickSpawn(points, {}, Rng.new(4)) ~= nil).toBe(true)
+	end)
+
+	T.it(
+		"the zone leash keeps a monster within radius + margin of the centre and never below the soft leash",
+		function()
+			local z = inv.zone
+			for _, d in { 0, z.core, 30, z.radius - z.edge } do
+				local hard = WorldEvents.hardLeash(d)
+				T.expect(hard >= z.leash).toBe(true)
+				T.expect(d + hard <= z.radius + z.margin or hard == z.leash).toBe(true)
+			end
+			-- aggro and leash far below the S134c event (120 studs from the centre): no long runs at players
+			T.expect(z.aggro <= 30 and z.leash <= 40).toBe(true)
+			T.expect(z.radius >= 60 and z.radius <= 80).toBe(true)
+			-- the zone's monsters are tougher and pay more per kill
+			T.expect(inv.mods.hpMul > 1 and inv.mods.atkMul > 1 and inv.expMul > 1).toBe(true)
 		end
 	)
 end)
