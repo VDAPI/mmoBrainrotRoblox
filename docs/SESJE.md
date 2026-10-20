@@ -13355,6 +13355,7 @@ Pliki: `src/shared/Data/WorldEvents.luau`, `src/shared/Logic/WorldEvents.luau`, 
   głazy i nadproże rozsunięte wokół łuku (tylko serwer, poza testem wystroju).
 - Nieobejrzane w Studio: proporcje otworu malowanego modelu `common_portal_02` (dopasowanie pola liczone z jego
   pudełka).
+
 ### S157: blokada poziomu na Elity i bossy (zasada Margonem), reszta po S156
 
 - **Zastany stan** (S156, c7ed158f): `Config.LevelLock.gap` 10, `Logic/LevelLock.blocked`, w `CombatService.DealDamage`
