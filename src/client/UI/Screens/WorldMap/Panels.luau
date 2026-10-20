@@ -329,6 +329,7 @@ export type FilterProps = {
 	Hidden: Fusion.Value<{ [string]: boolean }>, -- hidden categories (Logic/MapMarkers)
 	Counts: Fusion.UsedAs<{ [string]: number }>, -- symbols per category on the shown map
 	Open: Fusion.Value<boolean>,
+	Labels: Fusion.Value<boolean>, -- names under the symbols where they fit (owner's session 2026-10-21)
 	Touch: Fusion.UsedAs<boolean>,
 }
 
@@ -562,6 +563,16 @@ function Panels.filters(scope: Scope, props: FilterProps): Instance
 					headerButton(3, Text.T(scope, "worldmap.filter.none"), function()
 						props.Hidden:set(MapMarkers.setAll(false))
 					end, props.Open),
+					headerButton(
+						4,
+						scope:Computed(function(use): string
+							return `{if use(props.Labels) then "☑" else "☐"} {Text.get(use, "worldmap.layer.labels")}`
+						end),
+						function()
+							props.Labels:set(not Fusion.peek(props.Labels))
+						end,
+						true
+					),
 				},
 			}),
 			scope:New("Frame")({

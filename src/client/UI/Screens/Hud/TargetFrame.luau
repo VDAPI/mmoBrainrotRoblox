@@ -11,6 +11,8 @@ local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local EffectIcons = require(script.Parent.EffectIcons)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local State = require(script.Parent.Parent.Parent.State)
@@ -20,6 +22,9 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
+
+local PHONE_TARGET = assert(PhoneHud.place("target"))
+local PHONE_ACTIONS = assert(PhoneHud.place("actions"))
 
 export type Props = {
 	Target: Fusion.Value<Model?>,
@@ -126,9 +131,10 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 
 	return scope:New("Frame")({
 		Name = "TargetFrame",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, Theme.Padding.Large),
-		Size = UDim2.fromOffset(420, 92),
+		-- W29: narrower, right of the portrait on a phone in landscape (Logic/PhoneHud)
+		AnchorPoint = PhoneLayout.Anchor(scope, "target", Vector2.new(0.5, 0)),
+		Position = PhoneLayout.Position(scope, "target", UDim2.new(0.5, 0, 0, Theme.Padding.Large)),
+		Size = PhoneLayout.Size(scope, "target", UDim2.fromOffset(420, 92)),
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
 		-- A dungeon boss has its own bar at the top of the screen (DungeonController), so no second frame for it.
@@ -142,8 +148,17 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				Name = "PlayerMenu",
 				AnchorPoint = Vector2.new(0, 0),
 				-- S133: a labelled "Actions" button (the bare "⋯" was not found by players)
-				Position = UDim2.new(1, Theme.Padding.Medium + 8, 0, 0),
-				Size = UDim2.fromOffset(120, Theme.Size.MinTouch + 8),
+				-- W29: on a phone in landscape under the cast bar (right of the frame is the minimap's column)
+				Position = PhoneLayout.Pick(
+					scope,
+					UDim2.new(0, 0, 1, PHONE_ACTIONS.y - PHONE_TARGET.y - PHONE_TARGET.h),
+					UDim2.new(1, Theme.Padding.Medium + 8, 0, 0)
+				),
+				Size = PhoneLayout.Pick(
+					scope,
+					UDim2.fromOffset(PHONE_ACTIONS.w, PHONE_ACTIONS.h),
+					UDim2.fromOffset(120, Theme.Size.MinTouch + 8)
+				),
 				-- S136: styled as a secondary iron button
 				BackgroundColor3 = Theme.Iron.Raised,
 				BackgroundTransparency = Theme.HudAlpha,

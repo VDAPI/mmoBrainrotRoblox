@@ -8,6 +8,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local PathBadge = require(script.Parent.Parent.Components.PathBadge)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
@@ -152,7 +154,12 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 
 	return scope:New("Frame")({
 		Name = "PartyFrames",
-		Position = UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large + 136 + 70),
+		-- W29: at the top of the phone stack in landscape (Logic/PhoneHud)
+		Position = PhoneLayout.Pick(
+			scope,
+			UDim2.fromOffset(PhoneHud.PLACES.stack.x, PhoneHud.STACK_TOP),
+			UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large + 136 + 70)
+		),
 		Size = UDim2.fromOffset(WIDTH, 4 * (HEIGHT + 6)),
 		BackgroundTransparency = 1,
 		[Children] = {

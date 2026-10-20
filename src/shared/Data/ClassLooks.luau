@@ -132,12 +132,13 @@ local classes: { [string]: ClassLook } = {
 		garment("sash", "trim"),
 		garment("stole", "second"),
 	}, ROBE_BODY),
-	-- Leathers, a hood and the quiver on the back.
+	-- Leathers, a hood and the quiver on the back. Owner 2026-10-21: green trousers under the brown vest (all brown read
+	-- as bare skin).
 	Hunter = look("Hunter", {
 		main = "#4A5A34",
-		second = "#6B4E2E",
+		second = "#3E4A2C",
 		trim = "#4FA35A",
-		leather = "#5A3E24",
+		leather = "#7A5232",
 		metal = "#8A8070",
 	}, {
 		garment("leather_vest", "leather"),
@@ -148,9 +149,10 @@ local classes: { [string]: ClassLook } = {
 		garment("boots", "leather"),
 	}),
 	-- A robe to the ground, a high collar and a book at the belt.
+	-- owner 2026-10-21: violet sleeves and mantle (the pale second colour read as bare arms)
 	Mage = look("Mage", {
 		main = "#2E3A6B",
-		second = "#C9B98A",
+		second = "#5B4E8C",
 		trim = "#4A8FE7",
 		leather = "#4A3A2A",
 		metal = "#B8A060",

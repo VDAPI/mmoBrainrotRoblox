@@ -31,7 +31,7 @@ end
 -- Util/AvatarBuild draws every name here; tests/classlooks.spec checks every look uses only these.
 CharacterLook.GARMENTS = table.freeze({
 	-- the outfits before S132 (Data/Cosmetics `parts`)
-	hood = g("head", 1, "main", true),
+	hood = g("head", 2, "main", true), -- owner 2026-10-21: a round hood and its tail
 	crown = g("head", 1, "second"),
 	halo = g("head", 1, "second"),
 	horns = g("head", 2, "second"),
@@ -44,14 +44,14 @@ CharacterLook.GARMENTS = table.freeze({
 	gauntlets = g("hands", 2, "metal"),
 	greaves = g("legs", 2, "metal"),
 	belt = g("waist", 1, "leather"),
-	robe_skirt = g("legs", 1, "main"),
+	robe_skirt = g("legs", 8, "main"), -- owner 2026-10-21: a flared skirt of 8 panels
 	holy_symbol = g("chest", 2, "second"),
 	sash = g("waist", 1, "trim"),
 	stole = g("chest", 2, "second"),
 	leather_vest = g("chest", 1, "leather"),
 	quiver_back = g("back", 2, "leather"),
 	bracers = g("arms", 2, "leather"),
-	boots = g("feet", 2, "leather"),
+	boots = g("feet", 4, "leather"), -- owner 2026-10-21: shoes and shin cuffs
 	high_collar = g("shoulders", 1, "main"),
 	belt_book = g("waist", 2, "leather"),
 	shoulder_mantle = g("shoulders", 1, "second"),

@@ -8,7 +8,9 @@
 -- keeps one screen size at every zoom (a UIScale of 1 / zoom); the name shows on hover (PC) and the card on a click /
 -- tap (WorldMap/init). `applyLayout` places the symbols for the zoom and the filter: overlapping ones are nudged apart,
 -- crowds fold into a cluster badge with a count (a click zooms in), and at the closest zoom everything is spread.
--- Area plates (name and levels) take a free spot inside their area, shrink to the levels, or hide.
+-- Area plates show the levels (with the Labels switch also the name) on a free spot inside their area, or hide.
+-- The "Labels" switch (owner's session 2026-10-21, kept in the merge) puts names under the symbols, but only those that
+-- touch no other name or symbol (most important first), so even then no text overlaps.
 -- The window wires one set of connections for the shown map (WorldMap/init); cluster badges are pooled here and call
 -- the window's `cached.onCluster`.
 -- S119: symbols get the owner's silhouettes (UiArtState.decorate, glyph colour) once the map atlas is loaded; a map with
@@ -66,6 +68,8 @@ export type Icon = {
 	stroke: UIStroke,
 	scale: UIScale,
 	mark: TextLabel?,
+	caption: TextLabel?, -- the name under the symbol (only with the Labels switch)
+	name: string, -- set by Canvas.applyNames
 	color: Color3,
 	category: string, -- Logic/MapMarkers category (NPCs: by services, "quest" while marked)
 	base: number, -- importance without quest marks
@@ -234,6 +238,31 @@ local function icon(
 	if art then
 		UiArtState.decorate(label, art, { tint = tint, size = if small then NODE_ART else ART })
 	end
+	local caption: TextLabel? = nil
+	if not small then
+		local c = Instance.new("TextLabel")
+		c.Name = "Caption"
+		c.AnchorPoint = Vector2.new(0.5, 0)
+		c.Position = UDim2.new(0.5, 0, 0.5, Canvas.PLATE / 2 + 2)
+		c.AutomaticSize = Enum.AutomaticSize.X
+		c.Size = UDim2.fromOffset(0, Theme.TextSize.Caption + 6)
+		c.BackgroundColor3 = PLATE_COLOR
+		c.BackgroundTransparency = 0.2
+		c.FontFace = Theme.Fonts.BodyBold
+		c.TextSize = Theme.TextSize.Caption
+		c.TextColor3 = tint
+		c.ZIndex = parent.ZIndex + 3
+		c.Visible = false
+		local padding = Instance.new("UIPadding")
+		padding.PaddingLeft = UDim.new(0, 5)
+		padding.PaddingRight = UDim.new(0, 5)
+		padding.Parent = c
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 4)
+		corner.Parent = c
+		c.Parent = button
+		caption = c
+	end
 	local entry: Icon = {
 		kind = kind,
 		id = id,
@@ -247,6 +276,8 @@ local function icon(
 		stroke = stroke,
 		scale = scale,
 		mark = nil,
+		caption = caption,
+		name = "",
 		color = tint,
 		category = category,
 		base = PRIORITY[kind],
@@ -539,6 +570,9 @@ function Canvas.applyMarks(cached: Cached, marks: { [string]: NpcMarks.Mark })
 			entry.color = Canvas.categoryColor(category)
 			entry.stroke.Color = entry.color
 			entry.glyph.TextColor3 = entry.color
+			if entry.caption then
+				entry.caption.TextColor3 = entry.color
+			end
 			UiArtState.retarget(entry.glyph, entry.art, entry.color)
 		end
 	end
@@ -558,10 +592,26 @@ function Canvas.counts(cached: Cached): { [string]: number }
 	return out
 end
 
+-- Names of the symbols (the window passes the hover hint's title; refreshed on a language change).
+function Canvas.applyNames(cached: Cached, nameOf: (entry: Icon) -> string)
+	for _, entry in cached.icons do
+		entry.name = nameOf(entry)
+		if entry.caption then
+			entry.caption.Text = entry.name
+		end
+	end
+end
+
 -- Places everything for a zoom and a filter (hidden categories): symbol visibility and nudged positions, cluster
 -- badges, the constant screen size of symbols and plates, and the area plates' spots. Cheap (a few hundred symbols at
 -- most); runs on zoom, filter, quest mark and map changes, never per frame.
-function Canvas.applyLayout(cached: Cached, zoomIndex: number, hidden: { [string]: boolean }, touch: boolean)
+function Canvas.applyLayout(
+	cached: Cached,
+	zoomIndex: number,
+	hidden: { [string]: boolean },
+	touch: boolean,
+	labels: boolean?
+)
 	local zoom = Canvas.ZOOMS[zoomIndex]
 	local hit = if touch then Canvas.HIT_TOUCH else Canvas.HIT
 	local detail = zoomIndex >= Canvas.DETAIL_ZOOM
@@ -619,6 +669,59 @@ function Canvas.applyLayout(cached: Cached, zoomIndex: number, hidden: { [string
 	for i = #layout.clusters + 1, #cached.clusterButtons do
 		cached.clusterButtons[i].Visible = false
 	end
+	-- Labels switch: a name under a placed symbol only where it touches no other name or symbol (screen pixels).
+	local taken: { { x0: number, y0: number, x1: number, y1: number } } = {}
+	local named: { Icon } = {}
+	for _, entry in cached.icons do
+		if entry.caption then
+			entry.caption.Visible = false
+			if labels and entry.button.Visible and entry.name ~= "" then
+				table.insert(named, entry)
+			end
+		end
+	end
+	table.sort(named, function(a, b)
+		if a.priority ~= b.priority then
+			return a.priority > b.priority
+		end
+		return a.button.Name < b.button.Name
+	end)
+	local captionH = Theme.TextSize.Caption + 6
+	for _, entry in named do
+		local w = MapMarkers.textWidth(entry.name, Theme.TextSize.Caption) + 10
+		local cx, top = entry.shown.X * zoom, entry.shown.Y * zoom + Canvas.PLATE / 2 + 2
+		local box = { x0 = cx - w / 2, y0 = top, x1 = cx + w / 2, y1 = top + captionH }
+		local free = true
+		for _, other in taken do
+			if box.x0 < other.x1 and box.x1 > other.x0 and box.y0 < other.y1 and box.y1 > other.y0 then
+				free = false
+				break
+			end
+		end
+		if free then
+			for _, o in obstacles do
+				local ox, oy = o.x * zoom, o.y * zoom
+				local half = hit / 2
+				local own = math.abs(o.x - entry.shown.X) < 1e-3 and math.abs(o.y - entry.shown.Y) < 1e-3
+				if
+					not own
+					and box.x0 < ox + half
+					and box.x1 > ox - half
+					and box.y0 < oy + half
+					and box.y1 > oy - half
+				then
+					free = false
+					break
+				end
+			end
+		end
+		if free then
+			table.insert(taken, box)
+			if entry.caption then
+				entry.caption.Visible = true
+			end
+		end
+	end
 	-- Area plates: name and levels, else the levels alone, else nothing (room comes with the zoom).
 	local nameSize, levelSize = Theme.TextSize.Caption, Theme.TextSize.Small
 	for _, entry in cached.areas do
@@ -628,7 +731,11 @@ function Canvas.applyLayout(cached: Cached, zoomIndex: number, hidden: { [string
 		local levelsWidth = MapMarkers.textWidth(entry.levels.Text, levelSize) + 14
 		local fullW = math.max(entry.nameWidth, levelsWidth) + 14
 		local fullH = nameSize + levelSize + 10
-		local spot, cx, cy = MapMarkers.placeLabel(rect, fullW, fullH, zoom, obstacles, hit)
+		-- the owner's view (2026-10-21): the levels alone; the name too only with the Labels switch
+		local spot, cx, cy = nil, nil, nil
+		if labels then
+			spot, cx, cy = MapMarkers.placeLabel(rect, fullW, fullH, zoom, obstacles, hit)
+		end
 		local withName = spot ~= nil
 		if not spot then
 			spot, cx, cy = MapMarkers.placeLabel(rect, levelsWidth, levelSize + 8, zoom, obstacles, hit)

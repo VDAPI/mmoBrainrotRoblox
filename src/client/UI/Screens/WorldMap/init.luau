@@ -92,6 +92,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	-- Hidden symbol categories (Logic/MapMarkers), from the account setting; the panel starts closed on touch.
 	local hidden = scope:Value(MapMarkers.hiddenSet(State.Get({ "account", "settings", "mapHide" })))
 	local filterOpen = scope:Value(not Fusion.peek(touch))
+	local labels = scope:Value(false) -- the Labels switch (names under the symbols where they fit), off by default
 	local staticCounts = scope:Value({} :: { [string]: number }) -- symbols per category on the shown map (Canvas)
 	local partyState = State.Value({ "party" })
 	local worldEvent = State.Value({ "worldEvent" })
@@ -184,11 +185,22 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	end
 
 	local placeRing: () -> ()
+	local function applyNames(cached: Canvas.Cached)
+		Canvas.applyNames(cached, function(entry: Canvas.Icon): string
+			return (Cards.hint(entry.kind, entry.id, Fusion.peek(level) or 1, nil))
+		end)
+	end
 	local function applyLayout()
 		if not current then
 			return
 		end
-		Canvas.applyLayout(current, Fusion.peek(zoomIndex), Fusion.peek(hidden), Fusion.peek(touch))
+		Canvas.applyLayout(
+			current,
+			Fusion.peek(zoomIndex),
+			Fusion.peek(hidden),
+			Fusion.peek(touch),
+			Fusion.peek(labels)
+		)
 		overlay.setZoom(zoom())
 		placeRing()
 	end
@@ -661,6 +673,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 			profiles = Fusion.peek(showProfiles),
 		})
 		Canvas.applyMarks(cached, Fusion.peek(NpcMarkState.Marks))
+		applyNames(cached)
 		staticCounts:set(Canvas.counts(cached))
 		uiScale.Parent = cached.canvas
 		dynamic.Parent = cached.canvas
@@ -689,6 +702,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	end)
 	scope:Observer(center):onChange(place)
 	scope:Observer(touch):onChange(applyLayout)
+	scope:Observer(labels):onChange(applyLayout)
 	-- Filters: relayout now, save the hidden categories a moment after the last change.
 	local saveToken = 0
 	local unsaved = false
@@ -724,6 +738,10 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	scope:Observer(level):onChange(refreshView)
 	scope:Observer(Text.Lang):onChange(function()
 		refreshView()
+		if current then
+			applyNames(current)
+			applyLayout()
+		end
 		if #stack > 0 then
 			renderCard(true)
 		end
@@ -938,6 +956,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 			Hidden = hidden,
 			Counts = counts,
 			Open = filterOpen,
+			Labels = labels,
 			Touch = touch,
 		}),
 		card.frame,

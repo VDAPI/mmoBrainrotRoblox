@@ -1242,6 +1242,18 @@ local function scheduleBossImpact(
 	end
 end
 
+-- Owner 2026-10-21: the size of a caster for its charge-up (1 a man, up to 3 a big boss).
+local function casterSize(caster: Model): number
+	local ok, size = pcall(function()
+		local _, s = caster:GetBoundingBox()
+		return s
+	end)
+	if not ok or typeof(size) ~= "Vector3" then
+		return 1
+	end
+	return math.clamp(math.max(size.X, size.Y, size.Z) / 5, 0.8, 4.5)
+end
+
 -- The effect of an Elite II ability at the blow (D5): by shape, in the element's colour, a flash in the middle.
 local function eliteImpact(event: { [string]: any }, color: Color3, simple: boolean)
 	local area = event.cf :: CFrame
@@ -1441,6 +1453,23 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 	if motion then
 		scheduleBossImpact(motion, event, caster, windup, color, simpleFx)
 	end
+	-- owner 2026-10-21: the blow gathers on the caster, the danger area comes alive and a spell or a thrown blow flies
+	-- in as a volley that lands with the flash
+	if first and caster and mechanic ~= "split" then
+		Library.charge(caster, color, windup, casterSize(caster), simpleFx)
+	end
+	local reach = tonumber(event.r) or tonumber(event.l) or 6
+	Library.dangerMotes(area.Position, if shape == "line" then math.min(reach, 8) else reach, color, windup, simpleFx)
+	local impactKind = if motion then motion.impact else nil
+	local flies = impactKind ~= "meteor" and impactKind ~= "bolt" and impactKind ~= "breath" and impactKind ~= "slash"
+	if caster and flies and (shape == "circle" or shape == "ring") and windup >= 0.6 and reach >= 4 then
+		local from = centre(caster) + Vector3.new(0, 2, 0)
+		local far = (Vector3.new(area.Position.X, from.Y, area.Position.Z) - from).Magnitude
+		if magic or far > reach + 2 then
+			local count = math.clamp(math.floor(reach / 2.5), 3, if motion then 8 else 5)
+			Library.volley(from, area.Position, reach, count, windup, color, if magic then "orb" else "rock", simpleFx)
+		end
+	end
 	GroundTelegraph.start({
 		shape = shape :: any,
 		dims = {
@@ -1475,6 +1504,27 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 				bossImpact(motion, blow, color, simpleFx)
 			else
 				eliteImpact(event, color, simpleFx)
+			end
+			-- owner 2026-10-21: every blow throws something up: debris and dust for a physical one, the element's blast
+			-- for a spell
+			if not simpleFx then
+				local blowAt = (blow.cf :: CFrame).Position
+				local big = math.clamp((tonumber(event.r) or 6) / 6, 0.6, 1.8)
+				if magic then
+					local el = event.el
+					if el == "fire" then
+						Library.fireBlast(blowAt + Vector3.new(0, 1, 0), 2.5 * big, color, {})
+					elseif el == "ice" then
+						Library.frostBlast(blowAt + Vector3.new(0, 1, 0), 2.5 * big, color, {})
+					elseif el == "lightning" then
+						Library.arcBurst(blowAt + Vector3.new(0, 1, 0), 2.5 * big, color, {})
+					else
+						Library.holyBurst(blowAt + Vector3.new(0, 1, 0), 2.2 * big, color, {})
+					end
+				else
+					Library.rockBurst(blowAt, math.min(tonumber(event.r) or 6, 8), big, color, {})
+				end
+				Library.dust(blowAt, 2 * big, false)
 			end
 			if not first then
 				return
