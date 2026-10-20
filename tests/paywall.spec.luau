@@ -788,7 +788,10 @@ end)
 
 -- S124 (DESIGN-17 §0.2, §5): a leaderboard score depends on the character only. Every scorer is listed here (S125+
 -- add theirs with a comment); none may read the account, purchases, VIP, passes or shards.
-local ALLOWED_SCORERS: { [string]: string } = { level = "level, EXP and the moment of the top level (S124)" }
+local ALLOWED_SCORERS: { [string]: string } = {
+	level = "level, EXP and the moment of the top level (S124)",
+	playtime = "the character's minutes in the world (S156)",
+}
 
 T.describe("Rankings (S124)", function()
 	local Leaderboard = require("../src/shared/Logic/Leaderboard")
@@ -809,7 +812,8 @@ T.describe("Rankings (S124)", function()
 
 	T.it("a score depends only on the character, never on what the account bought", function()
 		local now = 1791763200
-		local character = { id = "c1", name = "Aria", class = "Mage", level = 63, exp = 4321, gold = 10 }
+		local character =
+			{ id = "c1", name = "Aria", class = "Mage", level = 63, exp = 4321, gold = 10, playtime = 7260 }
 		local bought = table.clone(character) :: any
 		bought.title = "title_highborn"
 		bought.guildId = "g1"

@@ -7035,6 +7035,36 @@ return {
 		["Rarities:list[4].frame.thickness"] = {
 			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
 		},
+		["WorldEvents:kinds.invasion.focus"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.base"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.cluster"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.max"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.perPlayer"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
 		["WorldBoss:schedule*"] = {
 			{
 				session = "S156",

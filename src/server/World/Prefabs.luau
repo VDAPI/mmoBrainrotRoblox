@@ -697,6 +697,24 @@ function Prefabs.signpost(
 	return model
 end
 
+-- W28: turns boards drawn by the town generator (pieces tagged like the Ristalle's "arenaSign") into signposts that
+-- SignController writes on: each part becomes the "Board" of its own "Signpost" model with the NameKey attribute.
+function Prefabs.signBoards(boards: { BasePart }?, nameKey: string)
+	if not boards then
+		return
+	end
+	for _, board in boards do
+		local model = Instance.new("Model")
+		model.Name = "Signpost"
+		model:SetAttribute("NameKey", nameKey)
+		model.Parent = board.Parent
+		board.Name = "Board"
+		board.Parent = model
+		model.PrimaryPart = board
+		CollectionService:AddTag(model, "Signpost")
+	end
+end
+
 -- Cave mouth (S19): a rock arch around a dark opening with torches and a sign. The opening looks towards
 -- `rot` (0 = -Z). The portal into the cave stands in the opening (placed by the caller).
 function Prefabs.caveMouth(

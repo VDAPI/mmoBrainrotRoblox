@@ -83,6 +83,7 @@ return {
 	["toast.enterWorld"] = "Welcome to Vaelthorn, {name}!",
 
 	-- Errors (server answers carry these keys)
+	["combat.levelLock"] = "You are {gap}+ levels too high for this foe: leave it to the players of its level.",
 	["error.badRequest"] = "Invalid request.",
 	["error.busy"] = "Please wait, the previous action is still in progress.",
 	["error.confirmMismatch"] = "The name you typed does not match.",
@@ -2571,6 +2572,7 @@ return {
 	["quest.obj.talkClassVendor"] = "Talk to your class vendor",
 	["town.sign.donzon"] = "Order Armoury",
 	["town.sign.loza"] = "Hunters' Lodge",
+	["town.sign.arena"] = "Arena", -- W28: the Ristalle gate signs
 	["town.sign.wieza"] = "Mages' Tower",
 	["shop.requiresLevel"] = "Requires level {level}",
 	-- FIX 2026-10-14: groups of the Buy grid (Logic/ShopGroups) and the buy bar hint
@@ -8274,6 +8276,13 @@ return {
 	["arena.hof.bracket"] = "Levels {min}–{max}",
 	["leaderboard.board.arena3"] = "Arena: 3 vs 3 rating",
 	["leaderboard.tab.arena3"] = "Arena 3 vs 3",
+	["leaderboard.tab.playtime"] = "Time played",
+	["leaderboard.board.playtime"] = "Time played",
+	["leaderboard.col.time"] = "Time",
+	["leaderboard.time.m"] = "{m} min",
+	["leaderboard.time.hm"] = "{h} h {m} min",
+	["leaderboard.time.you"] = "Your place: {rank} · {time} in the world",
+	["leaderboard.time.outside"] = "{time} in the world · outside the top",
 	["title.arena_bronze"] = "Bronze Gladiator {season}",
 	["title.arena_silver"] = "Silver Gladiator {season}",
 	["title.arena_gold"] = "Gold Gladiator {season}",

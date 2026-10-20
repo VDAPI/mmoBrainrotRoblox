@@ -657,6 +657,17 @@ local function begin(mapId: string, area: Areas.Area, kind: WorldEvents.KindId, 
 	for _, p in WorldEvents.spawnPoints(mapId, area.id) do
 		table.insert(e.points, world(e, p))
 	end
+	-- owner 2026-10-20: the invasion comes down on one place of the hunting ground (its nearest spawners to the
+	-- centre, Data/WorldEvents invasion.focus), a crowded field to fight on, instead of monsters running in from all over
+	if kind == "invasion" and #e.points > 0 then
+		local focus = (def :: any).focus or 0
+		table.sort(e.points, function(a: Vector3, b: Vector3): boolean
+			return (a - e.centre).Magnitude < (b - e.centre).Magnitude
+		end)
+		while focus > 0 and #e.points > focus do
+			table.remove(e.points)
+		end
+	end
 	if kind == "champion" then
 		local route = {}
 		for _, p in WorldEvents.route(mapId, area, e.level, rng) do
