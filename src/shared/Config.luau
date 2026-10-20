@@ -143,10 +143,10 @@ local Config = {
 		width = 280, -- px: the BillboardGui
 		height = 104,
 		offset = 3.1, -- studs above the head
-		plateTransparency = 0.45, -- the iron plate behind the text
-		nameSize = 22, -- px
+		plateTransparency = 1, -- owner 2026-10-20: no plate behind the text (outlined text only)
+		nameSize = 19, -- px (owner 2026-10-20: 22 -> 19, smaller)
 		levelSize = 17,
-		titleSize = 15,
+		titleSize = 14,
 		checkEvery = 0.25, -- s: distance check of all plates
 	},
 	-- Leaderboards (S124, DESIGN-17 §5): store names and request limits; boards in Data/Leaderboards.
