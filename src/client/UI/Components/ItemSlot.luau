@@ -3,11 +3,11 @@
 -- `frame` data (S30: grey, yellow, blue with a glow, orange / red with a rotating gradient), stack count, "+N" upgrade, lock when bound, red tint when the
 -- character cannot use it. Interaction (select, drag & drop, double-click, tap) comes from UI/DragDrop;
 -- the rich tooltip from ItemTooltip.
--- S135: drawn for its `Surface` (default "paper"): raised slot with an iron-brown edge, the rarity frame in its
--- parchment variant (Rarities.paperHex, >= 3:1 on the slot), count and "+N" on a small dark iron plaque.
+-- S135: drawn for its `Surface` (default "paper"): raised slot with an iron-brown edge, count and "+N" on a small dark
+-- iron plaque. W28: the rarity frame (full-colour band inside the slot scaled to its size, dark keyline on parchment,
+-- tint, inner glow, corner studs, Legendary shimmer, Mythic pulse) is drawn by Components/RarityFrame.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local ArtIcon = require(script.Parent.ArtIcon)
 local DragDrop = require(script.Parent.Parent.DragDrop)
@@ -15,9 +15,9 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemIcon = require(script.Parent.ItemIcon)
 local ItemTooltip = require(script.Parent.ItemTooltip)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
-local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local RarityFrame = require(script.Parent.RarityFrame)
 local SameRef = require(script.Parent.Parent.SameRef)
 local State = require(script.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Theme)
@@ -65,44 +65,9 @@ local function canUse(item: ItemInstance, level: number?, classId: string?): boo
 	return true
 end
 
--- One rotation angle shared by every spinning frame (legendary, mythic): a single RenderStepped connection
--- for the whole UI, not one per slot.
-local spinScope = Fusion.scoped(Fusion)
-local spin = spinScope:Value(0)
-RunService.RenderStepped:Connect(function(dt: number)
-	spin:set((Fusion.peek(spin) + dt * 90) % 360)
-end)
-
 -- Selected slot: an ink outline on parchment (iron: the parchment text colour) and the selected background (not gold:
 -- it would read as a Unique frame).
 local SELECTED = { paper = Theme.Paper.Heading, iron = Theme.Iron.Text }
-
--- Frame colour of a rarity on a surface (ItemText.rarityFrame: the parchment variant on paper, identity on iron).
-local function frameColor(r: Rarities.RarityDef, surface: string): Color3
-	return ItemText.rarityFrame(r.id, surface)
-end
-
--- Gradient of a frame (c1 → c2 → c1), cached per rarity and surface. On parchment the light second colour would
--- vanish, so it runs from the parchment frame colour to a darker shade of it.
-local gradients: { [string]: ColorSequence } = {}
-local function gradientOf(r: Rarities.RarityDef, surface: string): ColorSequence
-	local key = `{r.id}|{surface}`
-	local cached = gradients[key]
-	if cached then
-		return cached
-	end
-	local colors = r.frame.gradient or { r.color, r.color }
-	if surface ~= "iron" then
-		colors = { r.paperColor, Theme.mix(r.paperColor, Theme.Shade, 0.35) }
-	end
-	local sequence = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, colors[1]),
-		ColorSequenceKeypoint.new(0.5, colors[2]),
-		ColorSequenceKeypoint.new(1, colors[1]),
-	})
-	gradients[key] = sequence
-	return sequence
-end
 
 -- S135: a small dark plaque with a number (stack count, "+N"); hidden while empty.
 local function plaque(
@@ -173,9 +138,10 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 		local current = use(item)
 		return if current then ItemRoll.elementOf(current) else nil
 	end)
-	local rarity = scope:Computed(function(use): Rarities.RarityDef?
+	-- W28: the rarity id (a number: the frame is rebuilt only when it really changes)
+	local rarity = scope:Computed(function(use): number?
 		local i = use(item)
-		return if i then Rarities.get(i.rarity) else nil
+		return if i then Rarities.get(i.rarity).id else nil
 	end)
 	local selected = scope:Computed(function(use): boolean
 		return use(DragDrop.Selected) == props.SlotId
@@ -210,78 +176,34 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 		Active = true,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			-- Rarity frame (S30): thickness / gradient / glow / spin from Rarities.get(r).frame. Drop hints (S29) and
-			-- the selection replace it with a plain green / red / white outline so they never read as a rarity.
-			scope:New("UIStroke")({
-				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Thickness = scope:Computed(function(use): number
-					if use(selected) or use(hint) ~= nil then
-						return 3
-					end
-					local r = use(rarity)
-					return if r then r.frame.thickness else 1.5
-				end),
-				Color = scope:Computed(function(use): Color3
+			-- Rarity frame (S30, W28: Components/RarityFrame). Drop hints (S29) and the selection replace it with a plain
+			-- green / red / ink outline so they never read as a rarity.
+			RarityFrame.back(scope, { Rarity = rarity, Size = size, Surface = surface }),
+			RarityFrame.stroke(scope, {
+				Rarity = rarity,
+				Size = size,
+				EmptyColor = roles.Border,
+				EmptyTransparency = 0.2,
+				Override = scope:Computed(function(use): RarityFrame.Override?
 					local h = use(hint)
 					if h == "ok" then
-						return roles.Success
+						return { color = roles.Success, thickness = 3 }
 					elseif h == "bad" then
-						return roles.Danger
+						return { color = roles.Danger, thickness = 3 }
 					elseif use(selected) then
-						return SELECTED[surface] or SELECTED.paper
+						return { color = SELECTED[surface] or SELECTED.paper, thickness = 3 }
 					end
-					local r = use(rarity)
-					if r and r.frame.gradient then
-						return Theme.Plain -- the gradient carries the colour
-					end
-					return if r then frameColor(r, surface) else roles.Border
-				end),
-				Transparency = scope:Computed(function(use): number
-					return if use(item) or use(selected) or use(hint) ~= nil then 0 else 0.2
-				end),
-				[Children] = scope:Computed(function(use, s: Fusion.Scope<typeof(Fusion)>): Instance?
-					local r = use(rarity)
-					if not r or not r.frame.gradient or use(hint) ~= nil or use(selected) then
-						return nil
-					end
-					return s:New("UIGradient")({
-						Color = gradientOf(r, surface),
-						Rotation = if r.frame.spin then spin else 45,
-					})
-				end) :: any,
-			}),
-			-- Glow outside the frame (heroic and better; stronger with a thicker frame).
-			scope:Computed(function(use, s: Fusion.Scope<typeof(Fusion)>): Instance?
-				local r = use(rarity)
-				if not r or not r.frame.glow or use(hint) ~= nil or use(selected) then
 					return nil
-				end
-				local width = math.max(2, (r.frame.thickness - 1) * 2.5)
-				return s:New("Frame")({
-					Name = "Glow",
-					AnchorPoint = Vector2.new(0.5, 0.5),
-					Position = UDim2.fromScale(0.5, 0.5),
-					Size = UDim2.new(1, math.ceil(r.frame.thickness * 2), 1, math.ceil(r.frame.thickness * 2)),
-					BackgroundTransparency = 1,
-					[Children] = {
-						s:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-						s:New("UIStroke")({
-							ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-							Thickness = width,
-							Color = frameColor(r, surface),
-							Transparency = if r.frame.spin then 0.45 else 0.6,
-							[Children] = s:New("UIGradient")({
-								Transparency = NumberSequence.new({
-									NumberSequenceKeypoint.new(0, 0),
-									NumberSequenceKeypoint.new(0.5, 0.5),
-									NumberSequenceKeypoint.new(1, 0),
-								}),
-								Rotation = if r.frame.spin then spin else 90,
-							}),
-						}),
-					},
-				})
-			end) :: any,
+				end),
+			}),
+			RarityFrame.front(scope, {
+				Rarity = rarity,
+				Size = size,
+				Surface = surface,
+				Visible = scope:Computed(function(use): boolean
+					return use(hint) == nil and not use(selected)
+				end),
+			}),
 			-- Icon (S35): atlas layers while loaded, otherwise the glyph on its tile; mage weapons get their element.
 			ItemIcon(scope, {
 				Def = lookDef,
@@ -385,6 +307,7 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 					local d = use(def)
 					return i ~= nil and i.bound and d ~= nil and d.category == "equipment"
 				end),
+				ZIndex = 3, -- W28: above the rarity frame's corner stud
 				Label = { FontFace = Theme.Fonts.BodyBold, TextScaled = true },
 			}),
 		},

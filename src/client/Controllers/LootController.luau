@@ -217,15 +217,33 @@ local function spawnBag(data: { [string]: any })
 	gui.LightInfluence = 0
 	gui.Adornee = bag
 	gui.Parent = model
+	-- W28: the name on a dark plate framed in the best item's rarity colour (thicker from Unique)
 	local label = Instance.new("TextLabel")
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.fromScale(1, 1)
+	label.AnchorPoint = Vector2.new(0.5, 0.5)
+	label.Position = UDim2.fromScale(0.5, 0.5)
+	label.Size = UDim2.fromOffset(0, 26)
+	label.AutomaticSize = Enum.AutomaticSize.X
+	label.BackgroundColor3 = Theme.Iron.Surface
+	label.BackgroundTransparency = 0.35
 	label.FontFace = Theme.Fonts.BodyBold
 	label.TextSize = 18
 	label.TextColor3 = color
 	label.TextStrokeTransparency = 0.3
 	label.Text = labelText(items)
 	label.Parent = gui
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = Theme.Corner.Small
+	corner.Parent = label
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 8)
+	padding.PaddingRight = UDim.new(0, 8)
+	padding.Parent = label
+	local edge = Instance.new("UIStroke")
+	edge.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	edge.Color = color
+	edge.Thickness = if best and best.rarity >= Rarities.UNIQUE then 2.5 else 1.5
+	edge.Transparency = if best and best.rarity >= Rarities.UNIQUE then 0 else 0.4
+	edge.Parent = label
 
 	local prompt = Instance.new("ProximityPrompt")
 	prompt.ActionText = Text.now("loot.pickup")

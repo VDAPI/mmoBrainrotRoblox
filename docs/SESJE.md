@@ -13150,3 +13150,23 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/server/Admin/Character.luau`, `src/client/Controllers/{LoginRewardController,ReturningController}.luau`,
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### W28: grubsze i wyraźniejsze ramki rzadkości przedmiotów
+Prośba właściciela: „Żeby ramki itemów uni itp. były grubsze i bardziej widoczne”.
+- **Jedno miejsce:** nowy `UI/Components/RarityFrame.luau` rysuje ramkę każdej komórki przedmiotu (`ItemSlot`, więc
+  plecak, ekwipunek, depozyt, sklep, łup, handel, poczta, kowal), ramkę dymka przedmiotu i tabliczkę łupu na ziemi.
+- **Wygląd:** pełny kolor rzadkości (bez ciemniejszego wariantu na pergaminie), pasek wewnątrz komórki (obrys `Inner`,
+  nie nachodzi na sąsiednie komórki), grubość `frame.thickness + 1` px przy 64 px i skalowana z rozmiarem komórki
+  (0,65 do 1,3; telefon 40 px dalej czytelny), ciemna linia 1 px na krawędzi na pergaminie (żółty Unikatowy widoczny),
+  delikatne podświetlenie tła kolorem rzadkości od dołu (od Unikatowego), wewnętrzna poświata (od Heroicznego),
+  romby w narożnikach (od Unikatowego). Ikona nietknięta: pasek i poświata mieszczą się w marginesie ikony (11%).
+- **Ruch:** Legendarny ma przesuwający się błysk na ramce, Mityczny powoli pulsującą poświatę. Jedno połączenie
+  `RenderStepped` (tylko gdy taka ramka istnieje), ~30 Hz, pomija ramki niewidoczne (ukryte okno, wyłączony ScreenGui).
+  Stary obracający się gradient i poświata na zewnątrz komórki usunięte.
+- **Dymek:** obramowanie 3 px od Unikatowego, gradient dla Legendarnego i Mitycznego. **Łup na ziemi:** nazwa na
+  ciemnej tabliczce z obwódką w kolorze najlepszego przedmiotu (2,5 px od Unikatowego).
+- **Testy:** nowy `tests/rarityframe.spec.luau` (grubość rośnie z rzadkością, skala, minimum, poświata w marginesie
+  ikony, romby i tło od Unikatowego). Brak przeglądu w Studio.
+- **Pliki:** `src/shared/Logic/RarityFrame.luau`, `src/client/UI/Components/RarityFrame.luau`,
+  `tests/rarityframe.spec.luau` (nowe), `src/client/UI/Components/{ItemSlot,ItemTooltip}.luau`,
+  `src/client/Controllers/LootController.luau`, `docs/SESJE.md`.
