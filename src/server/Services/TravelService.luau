@@ -23,6 +23,7 @@ local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Maps = require(Shared.Data.Maps)
 local Mounts = require(Shared.Logic.Mounts)
 local Net = require(Shared.Net)
+local Portals = require(Shared.Data.Portals)
 local Placement = require(script.Parent.Parent.Placement)
 local Types = require(Shared.Types)
 
@@ -118,7 +119,7 @@ function TravelService.TeleportToMap(player: Player, mapId: string, at: CFrame?)
 end
 
 -- Portals (S08): walk up and press E; the client warns before red zones and maps above your level.
-local PORTAL_RANGE = 20
+local PORTAL_RANGE = Portals.SERVER_RANGE -- W28: measured from the field, the prompt's part
 local portalBusy: { [Player]: boolean } = {}
 
 -- Arrival on a region map with monster areas (S22): the picked area (or the lowest one). Returns nil without

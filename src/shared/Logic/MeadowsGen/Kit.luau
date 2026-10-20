@@ -17,6 +17,7 @@ export type Build = {
 	bp: BP,
 	at: { x: number, y: number, z: number, rot: number },
 	tag: string,
+	frames: string?, -- W28: the portal it frames (Logic/WorldGen/Kit)
 }
 -- A point the client brings to life (MeadowsLifeController): crows on perches, sheep in a pen, ducks on water.
 export type Life = { kind: string, x: number, y: number, z: number, r: number? }

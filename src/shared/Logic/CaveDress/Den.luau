@@ -72,22 +72,24 @@ end
 
 local function threshold(env: Env, out: { Build })
 	local r = env.T.rooms[1]
-	-- the arch of thick roots over the exit (-211, 0)
-	local arch = Kit.build(env, "RootArch", "landmark", Kit.at(env, -205), 0, 90)
-	for k = -2, 2 do
-		local x = k * 4
-		arch.bp:beam(
-			x,
-			0,
-			6 + math.abs(k),
-			x * 0.6,
-			17,
-			4,
-			1.4,
-			o(ROOT, if math.abs(k) == 2 then "shell" else "detail", { col = false })
-		)
+	-- the arch of thick roots over the exit; W28: in the exit portal's frame, the roots round its arch (they stood
+	-- 12 studs off it, across the opening, on the scaled cave)
+	local arch = Kit.atPortal(env, "RootArch", "landmark", `{env.mapId}_exit`, true)
+	for _, side in { -1, 1 } do
+		for k = 0, 2 do
+			arch.bp:beam(
+				side * (9 + k * 1.6),
+				0,
+				-1.5 + k * 1.5,
+				side * (8.6 + k * 0.6),
+				19,
+				0,
+				1.4,
+				o(ROOT, if k == 2 then "shell" else "detail", { col = false })
+			)
+		end
 	end
-	arch.bp:beam(-8, 16, 4, 8, 17, 4, 1.6, o(BARK, "detail", { col = false }))
+	arch.bp:beam(-10, 19.4, 0, 10, 19.8, 0, 1.6, o(BARK, "detail", { col = false }))
 	table.insert(out, arch)
 	-- the hunters' last bivouac
 	local x, z = Kit.spot(env, r, math.rad(-50), 8, 4)

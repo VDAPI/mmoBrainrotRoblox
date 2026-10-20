@@ -747,17 +747,18 @@ end
 
 local function antechamber(env: Env, out: { Build })
 	-- Azgor's horned flame over the gate (282, 0) with lava in its grooves and a small fall into a bowl
-	local s = Kit.build(env, "AzgorSign", "landmark", Kit.at(env, 290), 0, 270)
+	-- W28: in the gate's own frame, 3-4 studs behind its door, facing the way in (it stood 10 behind it, facing away)
+	local s = Kit.atPortal(env, "AzgorSign", "landmark", Kit.gateOf(env), false)
 	local y = Kit.gy(env, s, 0, 0)
 	local bp = s.bp
-	bp:box(16, 14, 1, 0, y + 22, 1, o(STONE, "detail", { col = false }))
-	glowBox(bp, 1.2, 9, 0.2, 0, y + 22, 0.4, Kit.LAVA, "lava")
+	bp:box(16, 14, 1, 0, y + 22, 4, o(STONE, "detail", { col = false }))
+	glowBox(bp, 1.2, 9, 0.2, 0, y + 22, 3.4, Kit.LAVA, "lava")
 	for _, side in { -1, 1 } do
-		bp:rbox(1, 6, 0.2, side * 3, y + 25, 0.4, 0, 0, side * -30, Kit.lavaOpts(Kit.LAVA, 0, "lava"))
-		bp:rbox(1, 5, 0.2, side * 5.6, y + 28, 0.4, 0, 0, side * 20, Kit.lavaOpts(Kit.LAVA, 0, "lava")) -- the horns
+		bp:rbox(1, 6, 0.2, side * 3, y + 25, 3.4, 0, 0, side * -30, Kit.lavaOpts(Kit.LAVA, 0, "lava"))
+		bp:rbox(1, 5, 0.2, side * 5.6, y + 28, 3.4, 0, 0, side * 20, Kit.lavaOpts(Kit.LAVA, 0, "lava")) -- the horns
 	end
-	bp:box(0.8, 14, 0.2, 0, y + 10.5, 0.3, Kit.lavaOpts(Kit.LAVA, 0.2, "lavafall"))
-	bp:light(0, y + 20, -2, AZGOR, 40, 1.8, "lava")
+	bp:box(0.8, 14, 0.2, 0, y + 10.5, 3.3, Kit.lavaOpts(Kit.LAVA, 0.2, "lavafall"))
+	bp:light(0, y + 20, 1, AZGOR, 40, 1.8, "lava")
 	table.insert(out, s)
 	-- kneeling chained kings by the gate, a row of fire baskets, the offering of helmets and broken hammers
 	local k = Kit.build(env, "ChainedKings", "landmark", Kit.at(env, 272), 0, 270)

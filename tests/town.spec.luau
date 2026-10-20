@@ -156,6 +156,45 @@ T.describe("Town plan", function()
 		end
 	end)
 
+	T.it("W28: lights every street evenly with tall lamps placed by rule", function()
+		local TownLamps = require("../src/shared/Logic/TownLamps")
+		-- the data is the generator's output (lune run tools/town_lamps.luau after a plan change)
+		local placed = TownLamps.place(city)
+		T.expect(#city.lamps).toBe(#placed)
+		for i, l in placed do
+			local d = city.lamps[i]
+			T.expect({ d.id, d.kind, d.x, d.z, d.rot }).toEqual({ l.id, l.kind, l.x, l.z, l.rot })
+		end
+		-- no dark gap on any street centre line
+		for _, p in TownLamps.samples(city) do
+			local d = TownLamps.nearest(city.lamps, p[1], p[2])
+			if d > TownLamps.COVER then
+				error(`street point ({p[1]}, {p[2]}) is {d} studs from the nearest lamp`)
+			end
+		end
+		-- on open ground, off the arena, the NPCs, the doors and each other
+		local a = city.arena
+		for _, l in city.lamps do
+			T.expect({ l.id, TownTerrain.isOpen(l.x, l.z, 0.8) }).toEqual({ l.id, true })
+			local inArena = math.abs(l.x - a.x) < a.half + a.stands + 5 and math.abs(l.z - a.z) < a.half + a.stands + 5
+			T.expect({ l.id, inArena }).toEqual({ l.id, false })
+			for id, spot in Town.allNpcSpots() do
+				local d = math.sqrt((l.x - spot.x) ^ 2 + (l.z - spot.z) ^ 2)
+				T.expect({ l.id, id, d >= 4 }).toEqual({ l.id, id, true })
+			end
+			for _, sp in city.specials do
+				if sp.kind ~= "arena" then
+					local dx, dz = TownGeom.door(sp.x, sp.z, sp.d, sp.rot)
+					T.expect({ l.id, sp.id, math.sqrt((l.x - dx) ^ 2 + (l.z - dz) ^ 2) >= 5 }).toEqual({
+						l.id,
+						sp.id,
+						true,
+					})
+				end
+			end
+		end
+	end)
+
 	T.it("puts NPCs next to their buildings", function()
 		for id, spot in Town.allNpcSpots() do
 			local at = spot.at

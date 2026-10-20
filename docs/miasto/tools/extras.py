@@ -117,6 +117,8 @@ def gardens(cell=34, min_area=160):
 GARDENS = gardens()
 
 # ---------------------------------------------------------------- street lamps (main streets + squares)
+# W28: superseded. The game's lamps come from src/shared/Logic/TownLamps.luau (lune run tools/town_lamps.luau writes
+# them into city.luau); after an export.py run, run that tool again (only the ramp lanterns below are kept).
 def lamps():
     occ = []
     for l in P.LOTS:

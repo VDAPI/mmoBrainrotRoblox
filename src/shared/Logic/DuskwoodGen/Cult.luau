@@ -361,20 +361,23 @@ local function barrow(env: Env.Env, out: { Build })
 	local cave = env.areas.caves[2]
 	Env.clear(env, cave.x, cave.z, 30)
 	local b = Kit.build(ctx, "CultBarrow", "cave", cave.x, cave.z, cave.rot)
+	b.frames = "duskwood_duskwood_barrow"
 	local bp = b.bp
-	bp:add("ball", 44, 20, 32, 0, 1, 16, 0, 0, 0, o({ c = "#2E3A26", m = "LeafyGrass" }, "shell", { q = true }))
-	bp:box(16, 17, 1, 0, 8, 3.6, o(Kit.dark, "shell", { q = false }))
+	-- W28: the mound behind the portal's arch (its face cut through the arch), the dark entrance before it and the
+	-- dolmen's capstone over the arch (it lay 1 stud into it)
+	bp:add("ball", 44, 20, 32, 0, 1, 17.5, 0, 0, 0, o({ c = "#2E3A26", m = "LeafyGrass" }, "shell", { q = true }))
+	bp:box(16, 19.5, 1, 0, 9.25, 1.8, o(Kit.dark, "shell", { q = false }))
 	for _, side in { -1, 1 } do
-		bp:rbox(3.2, 18, 3.2, side * 9.4, 8.4, 1, 0, 0, side * 3, o(Kit.darkStone, "shell", { q = true }))
+		bp:rbox(3.2, 20.6, 3.2, side * 9.6, 9.7, 1, 0, 0, side * 3, o(Kit.darkStone, "shell", { q = true }))
 	end
-	bp:rbox(24, 3.4, 5, 0, 18.6, 1.4, 0, 0, 2, o(Kit.darkStone, "shell", { q = false }))
+	bp:rbox(24, 3.4, 5, 0, 21.5, 1.4, 0, 0, 2, o(Kit.darkStone, "shell", { q = false }))
 	for k = 0, 2 do
 		bp:box(
 			1.2,
 			1.4,
 			0.2,
 			-2 + k * 2,
-			18.6,
+			21.5,
 			-1.2,
 			o({ c = "#B060FF", m = "Neon" }, "fine", { tag = "lamp", fxColor = Kit.VIOLET })
 		)

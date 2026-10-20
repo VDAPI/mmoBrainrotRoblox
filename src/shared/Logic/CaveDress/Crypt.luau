@@ -61,15 +61,17 @@ local function torchAt(env: Env, out: { Build }, name: string, x: number, z: num
 end
 
 local function gate(env: Env, out: { Build })
-	local b = Kit.build(env, "CryptGate", "landmark", Kit.at(env, -268), 0, 90)
+	-- W28 (owner: the purple field stood 12 studs off its carved frame): the frame stands in the exit portal's own
+	-- frame, its opening (15 x 18.5) round the portal's arch
+	local b = Kit.atPortal(env, "CryptGate", "landmark", "duskwood_cave_exit", true)
 	local bp = b.bp
 	for _, s in { -1, 1 } do
-		bp:box(3, 20, 3, s * 9, 9, 3, o(STONE, "shell", { q = false }))
+		bp:box(3, 20, 3, s * 9, 9, 0, o(STONE, "shell", { q = false }))
 		for t = 0, 2 do
-			Kit.skull(bp, s * 13, 4 + t * 4, 4, 1.1, 0)
+			Kit.skull(bp, s * 13, 4 + t * 4, 1, 1.1, 0)
 		end
 	end
-	bp:box(22, 3, 4, 0, 20, 3, o(STONE, "detail", { col = false }))
+	bp:box(22, 3, 4, 0, 20, 0, o(STONE, "detail", { col = false }))
 	table.insert(out, b)
 	-- the hooded mourners with cold lamps at the start of the axis
 	local m = Kit.build(env, "CryptMourners", "landmark", Kit.at(env, -228), 0, 90)
@@ -417,7 +419,7 @@ local function antechamber(env: Env, out: { Build })
 	bp:add("cyl", 0.07, 10, 10, 0, y + 0.06, 0, 0, 0, 90, o(SILVER, "fine", { col = false, t = 0.3 }))
 	bp:light(0, y + 3, 0, VIOLET, 24, 1, "crystal")
 	table.insert(out, b)
-	-- two kneeling knights by the gate (282, 0), a lintel of skulls, violet banners, a path of candles, ghost flames
+	-- two kneeling knights by the gate (282, 0), violet banners, a path of candles, ghost flames
 	local k = Kit.build(env, "SealKnights", "landmark", Kit.at(env, 272), 0, 90)
 	for _, s in { -1, 1 } do
 		statue(k.bp, s * 14, Kit.gy(env, k, s * 14, 0), 2, 1.3, 0, true)
@@ -425,10 +427,13 @@ local function antechamber(env: Env, out: { Build })
 		k.bp:box(0.6, 3, 0.6, s * 9, Kit.gy(env, k, s * 9, -8) + 1.4, -8, o(Kit.iron, "detail", { col = false }))
 		Kit.fire(k.bp, s * 9, Kit.gy(env, k, s * 9, -8) + 3.3, -8, 1.2, WRAITH, "detail")
 	end
-	for t = -3, 3 do
-		Kit.skull(k.bp, t * 1.6, 18, 6, 1.2, 0)
-	end
 	table.insert(out, k)
+	-- W28: the lintel of skulls over the gate itself (it hung 7 studs off it on the scaled crypt)
+	local l = Kit.atPortal(env, "SealLintel", "landmark", "dungeon_duskwood", true)
+	for t = -3, 3 do
+		Kit.skull(l.bp, t * 1.6, 19.6, 0, 1.2, 0)
+	end
+	table.insert(out, l)
 	local c = Kit.build(env, "CandlePath", "traces", Kit.at(env, 238), 0, 0)
 	for t = 0, 5 do
 		for _, s in { -1, 1 } do
