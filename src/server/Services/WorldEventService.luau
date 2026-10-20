@@ -1,9 +1,11 @@
 --!strict
 -- World events (S101, docs/DESIGN-15.md §4). About every hour each server starts one event in an open region with
 -- players (weighted by players), on the hunting ground that fits the median level of the players there:
---   * Invasion: waves of the ground's monsters around its centre, then the commander (an Elite II scaled by the
---     players near it); victory = the commander dies before the end. S134c: bigger waves with Elites in every wave
---     and an Elite II in the last one; the commander is the same for every party and casts big blows to dodge and a
+--   * Invasion: S134d an invasion zone around the ground's centre (a rift / war camp, World/InvasionCamp, the map
+--     circle): its monsters spawn at spread points inside, keep their spot (zone leash, aggro from 25 studs) and are
+--     refilled every few seconds to a live population that grows with the players there (Logic/WorldEvents.refill);
+--     six intensity phases bring more Elites, the fifth an Elite II, the last the commander; victory = the commander
+--     dies before the end. S134c: the commander is the same for every party and casts big blows to dodge and a
 --     shared blow (Monster.SetExtraAbilities, the bosses 2.0 telegraph), the chest may hold a Legendary item.
 --   * Wandering Champion: an Elite II walking a route through the region (Monster.SetPatrol) for 15 min; victory =
 --     it dies before the end, else it leaves.
@@ -34,6 +36,7 @@ local Maps = require(Shared.Data.Maps)
 local Monsters = require(Shared.Data.Monsters)
 local Net = require(Shared.Net)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
+local InvasionCamp = require(script.Parent.Parent.World.InvasionCamp)
 local Rng = require(Shared.Logic.Rng)
 local Schedule = require(Shared.Logic.Schedule)
 local ScheduledEvents = require(Shared.Data.ScheduledEvents)
@@ -89,14 +92,21 @@ type Event = {
 	seen: { [any]: { [Player]: number } }, -- damageBy of each live monster at the last look
 	bank: { [Player]: Contribution }, -- banked contribution (damage of dead / reset monsters, heals, shields)
 	chars: { [Player]: string }, -- the character that earned the first point (the reward goes only to it)
-	wave: number,
-	waveSize: number,
-	waveAlive: number,
-	waveStarted: number,
-	nextWaveAt: number,
-	waveMembers: { [any]: boolean },
-	waveElite2: any?, -- S134c: the last wave's Elite II (the commander waits for its death or commanderAt)
-	points: { Vector3 }, -- wave spawn points (world)
+	-- S134d: the Invasion zone: the phase, its start and kills, all kills, the live zone monsters (variant), the
+	-- phase's Elite II (holds the phase until it dies), the next refill, the population target, the camp model
+	stage: number,
+	stageAt: number,
+	stageKills: number,
+	kills: number,
+	members: { [any]: string },
+	alive: number,
+	elitesAlive: number,
+	elite2: any?,
+	nextRefill: number,
+	target: number,
+	camp: Model?,
+	points: { Vector3 }, -- zone spawn points (world)
+	pointDist: { number }, -- each point's flat distance from the centre
 	route: { Vector3 }?, -- champion route (world)
 	bossKind: string?,
 	bossKey: string?,
@@ -289,9 +299,20 @@ local function removeMonster(e: Event, monster: any, killed: boolean)
 	if monster.entity then
 		e.byEntity[monster.entity.id] = nil
 	end
-	if e.waveMembers[monster] then
-		e.waveMembers[monster] = nil
-		e.waveAlive = math.max(0, e.waveAlive - 1)
+	local variant = e.members[monster]
+	if variant then
+		e.members[monster] = nil
+		e.alive = math.max(0, e.alive - 1)
+		if variant == "elite" then
+			e.elitesAlive = math.max(0, e.elitesAlive - 1)
+		end
+		if killed then
+			e.kills += 1
+			e.stageKills += 1
+		end
+		if monster == e.elite2 then
+			e.elite2 = nil
+		end
 		e.dirty = true
 	end
 	if monster == e.boss then
@@ -347,12 +368,20 @@ local function publicOf(e: Event): WorldEvents.Public
 		startsAt = e.startsAt,
 		endsAt = e.endsAt,
 	}
+	if e.kind == "invasion" then
+		p.zone = Data.kinds.invasion.zone.radius -- S134d: the map circle, also while warned
+	end
 	if e.phase == "active" then
 		if e.kind == "invasion" then
-			p.wave = e.wave
-			p.waves = Data.kinds.invasion.waves
-			p.size = e.waveSize
-			p.left = e.waveAlive
+			p.zone = Data.kinds.invasion.zone.radius
+			p.stage = e.stage
+			p.stages = Data.kinds.invasion.phases
+			p.stageAt = e.stageAt
+			p.quota = WorldEvents.quota(#playersNear(e, e.centre, e.def.radius))
+			p.got = e.stageKills
+			p.alive = e.alive
+			p.size = e.target
+			p.kills = e.kills
 		end
 		if boss and boss:IsAlive() then
 			p.boss = e.bossKey
@@ -458,7 +487,7 @@ local function spawnOne(
 	return monster
 end
 
-local function waveLevel(e: Event): number
+local function zoneLevel(e: Event): number
 	return rng:int(math.max(e.area.lv[1], e.level - 2), math.min(e.area.lv[2], e.level + 1))
 end
 
@@ -476,60 +505,135 @@ local function pickBossKind(e: Event): string?
 	return e.bossKind
 end
 
-local function spawnWave(e: Event, t: number)
+-- S134d: one zone monster at a spawn point clear of the players: tougher (mods), its own spot as home, the zone's
+-- aggro and leash, x expMul EXP. nil when there is no point or the server budget is full.
+local function spawnZone(e: Event, kind: string, variant: "normal" | "elite" | "elite2", players: { Player }): any?
 	local def = Data.kinds.invasion
-	e.wave += 1
-	-- the monsters of earlier waves still count for the contribution, no longer for the wave
-	e.waveMembers = {}
-	local players = #playersNear(e, e.centre, def.radius)
-	local size = WorldEvents.waveSize(players, e.wave)
-	local kinds = WorldEvents.waveKinds(e.area)
-	local spawned = 0
-	local remaining = if #kinds > 0 and #e.points > 0 then size else 0
-	while remaining > 0 do
-		local n = math.min(def.wave.cluster, remaining)
-		remaining -= n
-		local point = e.points[rng:int(1, #e.points)]
-		for _ = 1, n do
-			local angle = rng:float(0, math.pi * 2)
-			local r = rng:float(0, 8)
-			local at = point + Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
-			local monster = spawnOne(e, rng:pick(kinds), "normal", waveLevel(e), at, n)
-			if monster then
-				spawned += 1
-				e.waveMembers[monster] = true
-			end
+	local around: { WorldEvents.Point } = {}
+	for _, player in players do
+		local root = rootOf(player)
+		if root then
+			table.insert(around, { x = root.Position.X, z = root.Position.Z })
 		end
 	end
-	-- S134c: Elites in every wave (WorldEvents.elitesOf) and one Elite II of the ground in the last wave (another kind
-	-- than the commander's when there is one; an ordinary Elite II with its own ability, rewards through CombatService)
-	local elites = if #e.points > 0 then WorldEvents.eliteKinds(e.area) else {}
-	if #elites > 0 then
-		for _ = 1, WorldEvents.elitesOf(e.wave) do
-			local monster = spawnOne(e, rng:pick(elites), "elite", waveLevel(e), e.points[rng:int(1, #e.points)])
-			if monster then
-				spawned += 1
-				e.waveMembers[monster] = true
-			end
-		end
+	local flat: { WorldEvents.Point } = {}
+	for _, point in e.points do
+		table.insert(flat, { x = point.X, z = point.Z })
 	end
-	if WorldEvents.hasWaveElite2(e.wave) and #e.points > 0 then
-		local hostKinds = WorldEvents.waveElite2Kinds(e.area, pickBossKind(e))
-		if #hostKinds > 0 then
-			local monster = spawnOne(e, rng:pick(hostKinds), "elite2", waveLevel(e), e.points[rng:int(1, #e.points)])
-			if monster then
-				spawned += 1
-				e.waveMembers[monster] = true
-				e.waveElite2 = monster
-				AnnounceService.Server("event.lastWave", { name = "@" .. monster:Name(), area = areaArg(e) })
-			end
-		end
+	local index = WorldEvents.pickSpawn(flat, around, rng)
+	if not index then
+		return nil
 	end
-	e.waveSize = spawned
-	e.waveAlive = spawned
-	e.waveStarted = t
-	e.nextWaveAt = t + def.waveEvery
+	local at = e.points[index]
+	local monster = spawnOne(e, kind, variant, zoneLevel(e), at, nil, def.mods)
+	if not monster then
+		return nil
+	end
+	monster.home = at
+	monster.leashRange = def.zone.leash
+	monster.leashHard = WorldEvents.hardLeash(e.pointDist[index])
+	monster.expMul = def.expMul
+	monster.stats.aggroRange = math.max(monster.stats.aggroRange, def.zone.aggro)
+	e.members[monster] = variant
+	e.alive += 1
+	if variant == "elite" then
+		e.elitesAlive += 1
+	end
 	e.dirty = true
+	return monster
+end
+
+-- S134d: tops the zone up to its population (Logic/WorldEvents.refill), the phase's Elites first.
+local function refillZone(e: Event)
+	local players = playersNear(e, e.centre, e.def.radius)
+	e.target = WorldEvents.population(#players)
+	local plan = WorldEvents.refill(e.alive, e.elitesAlive, #players, e.stage)
+	local kinds = WorldEvents.waveKinds(e.area)
+	local elites = WorldEvents.eliteKinds(e.area)
+	for _ = 1, if #elites > 0 then plan.elites else 0 do
+		if not spawnZone(e, rng:pick(elites), "elite", players) then
+			return
+		end
+	end
+	local normals = plan.normals + (if #elites > 0 then 0 else plan.elites)
+	for _ = 1, if #kinds > 0 then normals else 0 do
+		if not spawnZone(e, rng:pick(kinds), "normal", players) then
+			return
+		end
+	end
+end
+
+-- S134d: the zone's spawn points: the spiral of Logic/WorldEvents.zonePoints on the ground, without points on water
+-- or far above / below the centre (a cliff, a roof), and the ground's spawners nearest the centre (S156 focus).
+local function zonePoints(e: Event, centre: WorldEvents.Point)
+	local z = Data.kinds.invasion.zone
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { Workspace.Terrain }
+	params.IgnoreWater = false
+	local points: { Vector3 } = {}
+	for _, offset in WorldEvents.zonePoints(rng) do
+		local at = world(e, { x = centre.x + offset.x, z = centre.z + offset.z })
+		local hit = Workspace:Raycast(at + Vector3.new(0, 30, 0), Vector3.new(0, -40, 0), params)
+		local wet = hit ~= nil and hit.Material == Enum.Material.Water
+		if not wet and math.abs(at.Y - e.centre.Y) <= z.maxSlope then
+			table.insert(points, at)
+		end
+	end
+	-- S156: the `focus` spawners of the ground nearest its centre (known good ground) inside the zone; all of them
+	-- inside when the spiral left too few points
+	local spawners: { Vector3 } = {}
+	for _, p in WorldEvents.spawnPoints(e.map, e.area.id) do
+		local at = world(e, p)
+		if flatDistance(at, e.centre) <= z.radius then
+			table.insert(spawners, at)
+		end
+	end
+	table.sort(spawners, function(a: Vector3, b: Vector3): boolean
+		return flatDistance(a, e.centre) < flatDistance(b, e.centre)
+	end)
+	local take = if #points < 6 then #spawners else math.min(#spawners, Data.kinds.invasion.focus)
+	for i = 1, take do
+		table.insert(points, spawners[i])
+	end
+	if #points == 0 then
+		table.insert(points, e.centre)
+	end
+	e.points = points
+	e.pointDist = {}
+	for i, at in points do
+		e.pointDist[i] = flatDistance(at, e.centre)
+	end
+end
+
+-- S134d: the next intensity phase: its Elite II (elite2Phase) or the commander (the last one), a toast to the zone.
+local function nextPhase(e: Event, t: number)
+	local def = Data.kinds.invasion
+	e.stage += 1
+	e.stageAt = t
+	e.stageKills = 0
+	e.dirty = true
+	local players = playersNear(e, e.centre, e.def.radius)
+	if e.stage > 1 then
+		for _, player in players do
+			Net.Fire(player, "Toast", "event.phase", { phase = e.stage, phases = def.phases }, "warning")
+		end
+	end
+	if WorldEvents.hasPhaseElite2(e.stage) then
+		local hostKinds = WorldEvents.phaseElite2Kinds(e.area, pickBossKind(e))
+		if #hostKinds > 0 then
+			local monster = spawnZone(e, rng:pick(hostKinds), "elite2", players)
+			if monster then
+				e.elite2 = monster
+				AnnounceService.Server("event.elite2", { name = "@" .. monster:Name(), area = areaArg(e) })
+			end
+		end
+	end
+	if e.stage >= def.phases then
+		e.commanderDue = true
+	end
+	refillZone(e)
+	e.nextRefill = t + def.refillEvery
 end
 
 local function spawnCommander(e: Event)
@@ -594,7 +698,16 @@ local function activate(e: Event, t: number)
 		-- S134f: the after-fight meter of the Invasion (contributors and everyone its monsters hit take part)
 		e.fightId = FightLogService.Begin("invasion", e.id, nil, e.def.nameKey)
 		AnnounceService.Server("event.start.invasion", map)
-		spawnWave(e, t)
+		-- S134d: the camp and the first phase
+		local ok, err = pcall(function()
+			e.camp = InvasionCamp.build(`Invasion_{e.id}`, e.centre, Data.kinds.invasion.zone.radius, function(dx, dz)
+				return world(e, { x = e.centre.X - e.offset.X + dx, z = e.centre.Z - e.offset.Z + dz })
+			end, counter)
+		end)
+		if not ok then
+			log:warn("invasion camp failed: %s", tostring(err))
+		end
+		nextPhase(e, t)
 	else
 		pickBossKind(e)
 		spawnChampion(e)
@@ -634,14 +747,19 @@ local function begin(mapId: string, area: Areas.Area, kind: WorldEvents.KindId, 
 		seen = {},
 		bank = {},
 		chars = {},
-		wave = 0,
-		waveSize = 0,
-		waveAlive = 0,
-		waveStarted = t,
-		nextWaveAt = math.huge,
-		waveMembers = {},
-		waveElite2 = nil,
+		stage = 0,
+		stageAt = t,
+		stageKills = 0,
+		kills = 0,
+		members = {},
+		alive = 0,
+		elitesAlive = 0,
+		elite2 = nil,
+		nextRefill = math.huge,
+		target = 0,
+		camp = nil,
 		points = {},
+		pointDist = {},
 		route = nil,
 		bossKind = nil,
 		bossKey = nil,
@@ -653,20 +771,10 @@ local function begin(mapId: string, area: Areas.Area, kind: WorldEvents.KindId, 
 	}
 	e.endsAt = e.startsAt + def.duration
 	e.plannedStart = e.startsAt
-	e.centre = world(e, WorldEvents.centre(mapId, area))
-	for _, p in WorldEvents.spawnPoints(mapId, area.id) do
-		table.insert(e.points, world(e, p))
-	end
-	-- owner 2026-10-20: the invasion comes down on one place of the hunting ground (its nearest spawners to the
-	-- centre, Data/WorldEvents invasion.focus), a crowded field to fight on, instead of monsters running in from all over
-	if kind == "invasion" and #e.points > 0 then
-		local focus = (def :: any).focus or 0
-		table.sort(e.points, function(a: Vector3, b: Vector3): boolean
-			return (a - e.centre).Magnitude < (b - e.centre).Magnitude
-		end)
-		while focus > 0 and #e.points > focus do
-			table.remove(e.points)
-		end
+	local centre = WorldEvents.centre(mapId, area)
+	e.centre = world(e, centre)
+	if kind == "invasion" then
+		zonePoints(e, centre)
 	end
 	if kind == "champion" then
 		local route = {}
@@ -799,6 +907,10 @@ local function finish(e: Event, success: boolean, mode: EndMode)
 		end
 	end
 	current = nil
+	if e.camp then
+		e.camp:Destroy()
+		e.camp = nil
+	end
 	local t = now()
 	local rewarded = if mode == "normal" then rewardAll(e, success) else 0
 	local fightId = e.fightId
@@ -845,22 +957,15 @@ end
 local function stepInvasion(e: Event, t: number)
 	local def = Data.kinds.invasion
 	if not e.commanderDue then
-		local cleared = e.waveSize > 0
-			and (e.waveSize - e.waveAlive) / e.waveSize >= def.clearShare
-			and t - e.waveStarted >= def.minWaveGap
-		if t - e.startsAt >= def.commanderAt then
-			e.commanderDue = true
-		elseif t >= e.nextWaveAt or cleared then
-			if e.wave >= def.waves then
-				-- S134c: the last wave's Elite II holds the commander back (removeMonster drops it on death or despawn)
-				local elite2 = e.waveElite2
-				if not (elite2 and e.monsters[elite2]) then
-					e.commanderDue = true
-				end
-			else
-				spawnWave(e, t)
-			end
+		local quota = WorldEvents.quota(#playersNear(e, e.centre, e.def.radius))
+		local holding = e.elite2 ~= nil and e.monsters[e.elite2] ~= nil
+		if WorldEvents.phaseDone(e.stage, t - e.stageAt, e.stageKills, quota, holding) then
+			nextPhase(e, t)
 		end
+	end
+	if t >= e.nextRefill then
+		e.nextRefill = t + def.refillEvery
+		refillZone(e)
 	end
 	if e.commanderDue and not e.boss and not e.bossDead and not e.bossGone then
 		spawnCommander(e)
@@ -983,7 +1088,7 @@ function WorldEventService.Info(): Info
 	if boss and boss:IsAlive() then
 		progress = `{e.bossKey} {math.floor(boss.hp / math.max(1, boss.stats.maxHp) * 100 + 0.5)}%`
 	elseif e.kind == "invasion" and e.phase == "active" then
-		progress = `{e.wave}/{Data.kinds.invasion.waves} ({e.waveAlive}/{e.waveSize})`
+		progress = `{e.stage}/{Data.kinds.invasion.phases} ({e.alive}/{e.target}, {e.kills} killed)`
 	else
 		progress = "-"
 	end

@@ -3,7 +3,7 @@ title: World Events
 description: "Invasions and the Wandering Champion: when and where they start, how your part counts and what the participants get."
 key: worldEvents
 order: 12
-updated: 2026-10-16
+updated: 2026-10-20
 tags: [Events, Monsters, Rewards]
 ---
 
@@ -17,9 +17,11 @@ The hunting ground is chosen for the level of the players in that region, so the
 
 ## Invasion
 
-The monsters of the ground come in waves and gather around its centre. There are <Stat path="mechanics.worldEvents.kinds[invasion].waves" /> waves: the next one comes after a while, or earlier once you defeat most of the current one. The waves are large and grow with the number of players nearby, every one of them brings Elites, and an Elite II leads the last one as well.
+A rift tears open in the middle of the ground and an invaders' camp rises around it: braziers with violet fire, broken banners, smoke and a glowing circle on the ground. The zone's circle also shows on the map and the minimap. The ground's monsters appear all over the circle, spread out, and stay in it: they attack only when you come close and do not chase far outside the circle. When one falls, another appears in the zone soon after, so it is a hot hunting ground: the more players in the zone, the more monsters at once. The invasion's monsters are a little stronger than ordinary ones but give more experience per kill.
 
-After the last wave the invasion's commander enters the fight: an Elite II of one of the ground's kinds, with its special ability. The commander is no weaker for a lone player and no stronger for a group, so a bigger group simply has it easier. It has two big blows you must dodge and "Warlord's Command": a golden circle under one of the players where you must stand together, because the blow is shared by everyone inside, while an empty circle hurts everyone nearby. It is an event for a group; only a clearly stronger character copes alone. An Invasion lasts up to <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minutes; defeating the commander in time is a victory.
+The Invasion has <Stat path="mechanics.worldEvents.kinds[invasion].waves" /> phases. Each ends after a while, or earlier once you defeat enough monsters, and each is more dangerous than the last: more and more of the monsters are Elites, and an Elite II joins in the second to last phase.
+
+In the last phase the invasion's commander enters the fight: an Elite II of one of the ground's kinds, with its special ability. The commander is no weaker for a lone player and no stronger for a group, so a bigger group simply has it easier. It has two big blows you must dodge and "Warlord's Command": a golden circle under one of the players where you must stand together, because the blow is shared by everyone inside, while an empty circle hurts everyone nearby. For a group of 3 to 5 players the Invasion is comfortable; alone it is a fight on the edge of the time limit. An Invasion lasts up to <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minutes; defeating the commander in time is a victory.
 
 ## Wandering Champion
 
@@ -37,7 +39,7 @@ The event's monsters also pay their usual rewards when defeated: experience, gol
 
 ## On the map and on screen
 
-The event's mark shows on the world map (with the time to its start or end), in the map list and on the minimap. Players on the event's map get a panel with the timer, the progress of the waves or the champion's health, whether their part already counts, and a "Guide" button that shows the way there.
+The event's mark shows on the world map (with the time to its start or end), in the map list and on the minimap. Players on the event's map get a panel with the timer, the phase, the monsters in the zone and the ones defeated, or the commander's or the champion's health, whether their part already counts, and a "Guide" button that shows the way there.
 
 ## Weekly contract
 

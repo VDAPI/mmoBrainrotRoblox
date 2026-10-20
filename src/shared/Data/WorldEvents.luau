@@ -4,7 +4,8 @@
 -- Balance numbers: tools/balance_reasons.luau (BALANCE_MODULES), the <= 3 % pace check in tests/balance.spec.luau
 -- ("World events (S101)"). Rarity keys are numbers (Rarities.UNIQUE / HEROIC / LEGENDARY), like Data/LoginReward.chest.
 -- S134c: the Invasion targets (3 players in time, solo almost impossible on equal gear) in tests/balance.spec.luau
--- ("Balance: Invasion (S134c)", tests/Balance.invasion).
+-- ("Balance: Invasion (S134c)", tests/Balance.invasion). S134d: the Invasion is a zone with a live population refilled
+-- in place and intensity phases (Logic/WorldEvents.refill, phaseDone; WorldEventService), the same targets.
 
 export type KindId = "invasion" | "champion"
 
@@ -41,28 +42,53 @@ return table.freeze({
 			glyph = "⚔",
 			color = "#E0564A",
 			weight = 1,
-			duration = 900, -- S134c: 720 -> 900 (bigger waves)
-			waves = 6,
-			waveEvery = 90, -- S134c: 80 -> 90
-			minWaveGap = 40,
-			clearShare = 0.8, -- the next wave comes early once 80 % of the current one is dead
-			-- monsters per wave = min(max, base + perPlayer x players), in clusters of `cluster` per spawn point
-			-- (S134c: 1 player 13, 3 players 19, 5 players 25; S101: 4 + 2 per player, max 16, clusters of 4)
-			-- owner 2026-10-20: more monsters at once (10 / 3 / 25 / 5 -> 14 / 4 / 36 / 7), on fewer spawners (`focus`)
-			wave = table.freeze({ base = 14, perPlayer = 4, max = 36, cluster = 7 }),
-			focus = 3, -- spawners of the ground nearest its centre the waves come down on
-			-- S134c: Elites of each wave (index = wave; S101: one Elite in waves 3 and 6 only)
-			elitesPerWave = table.freeze({ 1, 1, 1, 1, 2, 2 }),
-			-- S134c: the last wave also brings one Elite II of the ground (another kind than the commander when there
-			-- is one), an ordinary Elite II with its own ability
-			lastWaveElite2 = true,
-			commanderAt = 630, -- the commander comes after the last wave or at this second (S134c: 480 -> 630)
+			duration = 900, -- S134c: 720 -> 900
+			-- S134d (owner 2026-10-20: "few monsters, easy, they just run in; let them spawn in one area, more, like a
+			-- hunting ground"): the Invasion is a zone around the ground's centre (a rift / war camp, the map circle).
+			-- Its monsters spawn at spread points inside (`points` in a ring from `core` to radius - `edge`, never
+			-- within `clear` of a player), keep their own spot as home (soft leash `leash`, the hard leash keeps them
+			-- within radius + `margin` of the centre) and aggro from `aggro` studs; no long runs at players.
+			zone = table.freeze({
+				radius = 70,
+				core = 16, -- the rift and the commander's ground stay free of spawn points
+				edge = 6,
+				points = 28,
+				clear = 18,
+				aggro = 25,
+				leash = 30,
+				margin = 15,
+				maxSlope = 18, -- a spawn point this much above / below the centre is dropped (a cliff, a roof)
+			}),
+			-- S134d: the live population = min(max, base + perPlayer x players in the radius), refilled every
+			-- `refillEvery` s with at most `refillBatch` monsters (1 player 24, 3 players 36, 5 players 48, 7+ 60)
+			population = table.freeze({ base = 18, perPlayer = 6, max = 60 }),
+			-- S156 (owner 2026-10-20, the waves on the 3 spawners nearest the centre): in the zone these spawners are
+			-- spawn points too (known good ground, within the radius) next to the spiral's
+			focus = 3,
+			refillEvery = 3,
+			refillBatch = 8,
+			-- S134d: intensity phases (S134c waves): a phase ends after phaseEvery s, or after minPhase s once the
+			-- party has killed phaseKills x the population in it (and the phase's Elite II is dead). Live Elites of the
+			-- population per phase; elite2Phase brings one Elite II of the ground, the last phase the commander (at the
+			-- latest after (phases - 1) x phaseEvery = 600 s)
+			phases = 6,
+			phaseEvery = 120,
+			minPhase = 60,
+			phaseKills = 1,
+			elitesPerPhase = table.freeze({ 0, 1, 1, 2, 2, 3 }),
+			elite2Phase = 5,
+			-- S134d: the zone's monsters (not the commander) are a little tougher and pay more EXP per kill
+			-- (CombatService: monster.expMul): 3 players earn 1.03-1.13 x grinding the same ground with potions for
+			-- the same time (owner's x1.25 = 0.92-1.01: the commander's part kills slower), 3.8-4.8 x the pace
+			-- convention (resting between fights); tests/balance.spec "Balance: Invasion (S134c)" S134d rows
+			mods = table.freeze({ hpMul = 1.3, atkMul = 1.2 }),
+			expMul = 1.4,
 			-- S134c: the commander's blows on top of its own ability (Data/MonsterAbilities; list order = priority,
 			-- its own ability last) and the gap after each cast (like Data/BossTuning.globalGap)
 			commanderAbilities = table.freeze({ "warlordCleave", "warlordLeap", "warlordRally" }),
 			commanderGap = 2.2,
-			radius = 160,
-			leash = 120,
+			radius = 100, -- participants, heal / shield counting, HUD (S134d: the zone + 30; S134c: 160)
+			leash = 100, -- the commander's leash from the centre (S134c: 120)
 		}),
 		champion = table.freeze({
 			id = "champion",
