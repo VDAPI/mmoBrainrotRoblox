@@ -10,6 +10,7 @@ local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -95,8 +96,9 @@ local function PvpToggle(scope: Scope): Instance
 	local artShown = ArtIcon.Shown(scope, ART)
 	local button = scope:New("TextButton")({
 		Name = "PvpToggle",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -Theme.Padding.Large, 1, -120),
+		-- W29: under the menu drawer button left of the minimap on a phone in landscape (Logic/PhoneHud)
+		AnchorPoint = PhoneLayout.Anchor(scope, "pvp", Vector2.new(1, 1)),
+		Position = PhoneLayout.Position(scope, "pvp", UDim2.new(1, -Theme.Padding.Large, 1, -120)),
 		Size = UDim2.fromOffset(SIZE, SIZE),
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
@@ -137,9 +139,11 @@ local function PvpToggle(scope: Scope): Instance
 			-- Countdown / "forced" badge above the button.
 			scope:New("TextLabel")({
 				Name = "Badge",
-				AnchorPoint = Vector2.new(0.5, 1),
-				Position = UDim2.new(0.5, 0, 0, -4),
-				Size = UDim2.fromOffset(110, 24),
+				-- W29: under the button, as wide as it, on a phone in landscape (above it the drawer button)
+				AnchorPoint = PhoneLayout.Pick(scope, Vector2.new(0.5, 0), Vector2.new(0.5, 1)),
+				Position = PhoneLayout.Pick(scope, UDim2.new(0.5, 0, 1, 4), UDim2.new(0.5, 0, 0, -4)),
+				Size = PhoneLayout.Pick(scope, UDim2.fromOffset(SIZE, 24), UDim2.fromOffset(110, 24)),
+				TextScaled = PhoneLayout.Compact,
 				BackgroundColor3 = Theme.Iron.Surface,
 				BackgroundTransparency = Theme.HudAlpha,
 				Visible = scope:Computed(function(use): boolean

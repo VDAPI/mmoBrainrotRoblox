@@ -11,6 +11,8 @@ local UserInputService = game:GetService("UserInputService")
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -62,14 +64,24 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 		local artShown = ArtIcon.Shown(scope, artKey)
 		local rad = math.rad(angle)
 		local offset = Vector2.new(math.cos(rad), -math.sin(rad)) * RADIUS
+		-- W29: a tighter arc of smaller buttons around the corner attack button on a phone in landscape
+		local phoneX, phoneY = PhoneHud.skillCenter(i)
 		local button = scope:New("TextButton")({
 			Name = `MobileSkill{i}`,
 			Visible = scope:Computed(function(use): boolean
 				return use(slot) <= SkillData.HOTBAR_SLOTS
 			end),
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(1, CENTER.X + offset.X, 1, CENTER.Y + offset.Y),
-			Size = UDim2.fromOffset(SIZE, SIZE),
+			Position = PhoneLayout.Pick(
+				scope,
+				UDim2.new(1, phoneX, 1, phoneY),
+				UDim2.new(1, CENTER.X + offset.X, 1, CENTER.Y + offset.Y)
+			),
+			Size = PhoneLayout.Pick(
+				scope,
+				UDim2.fromOffset(PhoneHud.SKILL, PhoneHud.SKILL),
+				UDim2.fromOffset(SIZE, SIZE)
+			),
 			AutoButtonColor = true,
 			BackgroundColor3 = Theme.Iron.Raised, -- S136: the iron slot
 			BackgroundTransparency = Theme.HudAlpha,
@@ -157,11 +169,18 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 		table.insert(buttons, button)
 	end
 
-	local function smallButton(name: string, position: UDim2, text: Fusion.UsedAs<string>, onClick: () -> ())
+	-- `place`: its place on a phone in landscape (Logic/PhoneHud)
+	local function smallButton(
+		name: string,
+		place: string,
+		position: UDim2,
+		text: Fusion.UsedAs<string>,
+		onClick: () -> ()
+	)
 		return scope:New("TextButton")({
 			Name = name,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = position,
+			AnchorPoint = PhoneLayout.Anchor(scope, place, Vector2.new(0.5, 0.5)),
+			Position = PhoneLayout.Position(scope, place, position),
 			Size = UDim2.fromOffset(84, 44),
 			BackgroundColor3 = Theme.Iron.Raised,
 			BackgroundTransparency = Theme.HudAlpha,
@@ -186,6 +205,7 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			buttons :: any,
 			smallButton(
 				"Page",
+				"page",
 				UDim2.new(1, CENTER.X - RADIUS - 70, 1, CENTER.Y + 40),
 				scope:Computed(function(use): string
 					return Text.get(use, "hud.page", { page = use(page) + 1 })
@@ -196,6 +216,7 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			),
 			smallButton(
 				"Target",
+				"targetButton",
 				UDim2.new(1, CENTER.X, 1, CENTER.Y - RADIUS - 56),
 				Text.T(scope, "hud.targetButton"),
 				props.SelectTarget

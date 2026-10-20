@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -87,9 +88,9 @@ end
 function EmoteButton.Touch(scope: Scope, props: { OnOpen: () -> () }): Instance
 	local button = scope:New("TextButton")({
 		Name = "EmoteButton",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 132 + 64 + 10, 1, -264),
-		Size = UDim2.fromOffset(TOUCH_SIZE, TOUCH_SIZE),
+		AnchorPoint = PhoneLayout.Anchor(scope, "emote", Vector2.new(0, 1)), -- W29: Logic/PhoneHud
+		Position = PhoneLayout.Position(scope, "emote", UDim2.new(0, 132 + 64 + 10, 1, -264)),
+		Size = PhoneLayout.Size(scope, "emote", UDim2.fromOffset(TOUCH_SIZE, TOUCH_SIZE)),
 		Visible = scope:Computed(function(use): boolean
 			return use(Device.Touch) == true
 		end),

@@ -34,7 +34,7 @@ local PANEL_W = 236
 local AMBER = Theme.Glyph.Amber
 local POTION = Theme.Glyph.Potion
 
-local function AutoPotionButton(scope: Scope, position: UDim2): Instance
+local function AutoPotionButton(scope: Scope, position: Fusion.UsedAs<UDim2>): Instance
 	local account = State.Value({ "account", "autoPotion" })
 	local runtime = State.Value({ "autoPotion" })
 	local classId = State.Value({ "character", "class" })

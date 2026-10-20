@@ -28,7 +28,7 @@ local SIZE = 48
 local GLYPH = "⚔"
 local HUNT = Theme.Glyph.Hunt
 
-local function AutoGrindButton(scope: Scope, position: UDim2): Instance
+local function AutoGrindButton(scope: Scope, position: Fusion.UsedAs<UDim2>): Instance
 	local bank = State.Value({ "account", "autoGrind" })
 	local runtime = State.Value({ "autoGrind" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
