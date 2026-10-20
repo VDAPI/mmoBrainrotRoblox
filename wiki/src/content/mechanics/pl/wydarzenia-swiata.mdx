@@ -3,7 +3,7 @@ title: Wydarzenia świata
 description: "Inwazje i Wędrowny czempion: kiedy i gdzie się zaczynają, jak liczy się udział i jaką nagrodę dostają uczestnicy."
 key: worldEvents
 order: 12
-updated: 2026-10-16
+updated: 2026-10-20
 tags: [Wydarzenia, Potwory, Nagrody]
 ---
 
@@ -17,9 +17,11 @@ Na <Stat path="mechanics.worldEvents.warnMin" /> minuty przed startem cały serw
 
 ## Inwazja
 
-Potwory łowiska nadciągają falami i krążą wokół jego środka. Fal jest <Stat path="mechanics.worldEvents.kinds[invasion].waves" />: następna przychodzi po upływie czasu albo wcześniej, gdy pokonacie większość poprzedniej. Fale są liczne i rosną z liczbą graczy w pobliżu, w każdej idą też Elity, a ostatnią prowadzi dodatkowo Elita II.
+Na środku łowiska otwiera się wyrwa i wokół niej powstaje obóz najeźdźców: paleniska z fioletowym ogniem, połamane sztandary, dym i świecący krąg na ziemi. Krąg strefy widać też na mapie i na minimapie. Potwory łowiska pojawiają się w całym kręgu, rozrzucone po nim, i w nim zostają: atakują dopiero, gdy podejdziesz blisko, i nie gonią daleko poza krąg. Gdy któryś padnie, po chwili w strefie pojawia się następny, więc to gorące łowisko: im więcej graczy w strefie, tym więcej potworów naraz. Potwory inwazji są nieco silniejsze od zwykłych, ale dają więcej doświadczenia za pokonanie.
 
-Po ostatniej fali do walki wkracza dowódca inwazji: Elita II jednego z rodzajów łowiska, ze swoją specjalną umiejętnością. Dowódca nie słabnie dla jednego gracza i nie rośnie z grupą, więc większa grupa ma po prostu łatwiej. Ma dwa wielkie ciosy, których trzeba uniknąć, i „Rozkaz Wodza”: złoty krąg pod jednym z graczy, w którym trzeba stanąć razem, bo cios dzieli się między wszystkich w środku, a pusty krąg rani każdego w pobliżu. To wydarzenie dla grupy; w pojedynkę poradzi sobie tylko wyraźnie silniejsza postać. Inwazja trwa do <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minut; pokonanie dowódcy przed czasem to zwycięstwo.
+Inwazja ma <Stat path="mechanics.worldEvents.kinds[invasion].waves" /> faz. Każda kończy się po upływie czasu albo wcześniej, gdy pokonacie dość potworów, a każda następna jest groźniejsza: wśród potworów jest coraz więcej Elit, w przedostatniej fazie wkracza Elita II.
+
+W ostatniej fazie do walki wkracza dowódca inwazji: Elita II jednego z rodzajów łowiska, ze swoją specjalną umiejętnością. Dowódca nie słabnie dla jednego gracza i nie rośnie z grupą, więc większa grupa ma po prostu łatwiej. Ma dwa wielkie ciosy, których trzeba uniknąć, i „Rozkaz Wodza”: złoty krąg pod jednym z graczy, w którym trzeba stanąć razem, bo cios dzieli się między wszystkich w środku, a pusty krąg rani każdego w pobliżu. W grupie 3–5 graczy inwazja jest wygodna; w pojedynkę to walka na krawędzi czasu. Inwazja trwa do <Stat path="mechanics.worldEvents.kinds[invasion].durationMin" /> minut; pokonanie dowódcy przed czasem to zwycięstwo.
 
 ## Wędrowny czempion
 
@@ -37,7 +39,7 @@ Potwory wydarzenia dają przy tym zwykłe nagrody za pokonanie: doświadczenie, 
 
 ## Na mapie i na ekranie
 
-Znak wydarzenia widać na mapie świata (z czasem do startu albo do końca), na liście map i na minimapie. Gracze na mapie wydarzenia mają na ekranie panel z licznikiem, postępem fal albo życiem czempiona, informacją, czy ich udział już wystarcza, oraz przyciskiem „Prowadź”, który wyznacza drogę na miejsce.
+Znak wydarzenia widać na mapie świata (z czasem do startu albo do końca), na liście map i na minimapie. Gracze na mapie wydarzenia mają na ekranie panel z licznikiem, fazą, liczbą potworów w strefie i pokonanych albo życiem dowódcy lub czempiona, informacją, czy ich udział już wystarcza, oraz przyciskiem „Prowadź”, który wyznacza drogę na miejsce.
 
 ## Tygodniowe zlecenie
 

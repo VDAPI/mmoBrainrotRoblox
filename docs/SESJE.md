@@ -13266,6 +13266,63 @@ Prośba właściciela: „Żeby ramki itemów uni itp. były grubsze i bardziej 
   `src/server/Services/{InventoryService,EquipmentService,DepositService,LureService}.luau`,
   `tests/requestguard.spec.luau`, `docs/{SESJE,DECYZJE}.md`.
 
+### S134d: Inwazja jako strefa (gorące łowisko)
+
+Prośba właściciela z 2026-10-20: „Mało potworów i łatwa ta inwazja i potwory po prostu przybiegają, może niech się
+zrespią w jednym miejscu (obszarze) więcej, żeby to miało sens expowiskowy”. Start na `439661d`, scalone z `40ab759`
+(S156: gęstsze fale na 3 spawnerach najbliżej środka): strefa zastępuje fale, `focus` 3 zostaje jako 3 spawnery
+łowiska najbliżej środka dodane do punktów strefy (bez drugiego systemu).
+
+- **Dane** (`Data/WorldEvents.kinds.invasion`): zamiast fal `zone` (promień 70, 28 punktów w pierścieniu 16–64, nie
+  bliżej 18 od gracza, aggro 25, smycz 30, margines 15, punkty wyżej / niżej o 18 od środka odrzucane), `population`
+  18 + 6 na gracza do 60 (1 / 3 / 5 graczy: 24 / 36 / 48), `refillEvery` 3 s, `refillBatch` 8, `phases` 6 po
+  `phaseEvery` 120 s (`minPhase` 60, `phaseKills` 1), `elitesPerPhase` 0 / 1 / 1 / 2 / 2 / 3, `elite2Phase` 5,
+  `mods` HP × 1,3 i atak × 1,2, `expMul` 1,4; `radius` 160 → 100, `leash` dowódcy 120 → 100.
+- **Logika** (`Logic/WorldEvents`): `population`, `quota`, `refill` (Elity najpierw, partia, budżet), `phaseDone`,
+  `commanderLatest`, `zonePoints` (spirala słonecznika w pierścieniu), `pickSpawn` (punkt z dala od graczy),
+  `hardLeash`, `hasPhaseElite2`, `phaseElite2Kinds`, `progressOf(p, now?)` po fazach (zabicia albo czas); stan
+  `Public` z `zone`, `stage`, `stages`, `stageAt`, `quota`, `got`, `alive`, `size`, `kills` (bez `wave` / `left`).
+- **Serwer**: `WorldEventService` (tylko część Inwazji): punkty strefy na ziemi (promień w dół, bez wody i urwisk,
+  zapas z punktów spawnerów łowiska), uzupełnianie co 3 s, fazy z toastem `event.phase`, Elita II 5. fazy
+  (ogłoszenie `event.elite2`), dowódca w 6.; potwór strefy ma dom w swoim punkcie, `leashRange` 30, nowe
+  `Monster.leashHard` (twarda smycz od domu) i `Monster.expMul` (`CombatService` mnoży EXP zabicia),
+  `stats.aggroRange` 25. Obóz `World/InvasionCamp` (wyrwa z neonu, krąg na ziemi z 40 odcinków, 6 palenisk z
+  fioletowym ogniem, 4 połamane sztandary, dym; bez kolizji i zapytań), usuwany na końcu.
+- **Klient**: krąg strefy na mapie świata (`WorldMap/Overlay`) i minimapie (`Hud/Minimap`), panel: „Faza 3/6 ·
+  potworów 36 · pokonano 52” (`hud.event.phase`), pasek po fazach.
+- **Teksty**: `event.invasion.desc`, `event.start.invasion`, `event.elite2` (zamiast `event.lastWave`), `event.phase`,
+  `hud.event.phase` (zamiast `hud.event.wave`), PL i EN. Wiki: strony `wydarzenia-swiata` / `world-events`, pole
+  `waves` eksportu = liczba faz (kształt danych bez zmian).
+- **Model** (`Balance.invasion`): populacja nie pustoszeje, każdy członek bije po `INVASION_PULL` 3 potwory strefy z
+  `INVASION_WALK` 3 s dojścia, fazy po zabiciu populacji albo czasie, dowódca razem × `BOSS_UPTIME` × (1 −
+  `INVASION_ADDS` 0,2); EXP zabić z pulą drużyny wobec bicia tego łowiska z miksturami i z odpoczynkiem.
+  Nowe wiersze `S134d.invasion.*` w `targetsS134c` (blok „Balance: Invasion (S134c)”), „solo trudne” liczy też
+  ≥ 0,8 limitu; `INVASION_S101` usunięte (raport bez kolumn „przed”). Księga: wpisy z sesją S156 (migawka S154).
+
+Model, 4 łowiska z celów S134c (Gobliński Obóz L15, Osada Kultystów L33, Równiny Salamander L47, Mamucia Tundra L85):
+
+| graczy | populacja | zabici | czas (limit 15 min) | EXP / bicie z miksturami | EXP / bicie z odpoczynkiem |
+|---|---|---|---|---|---|
+| 1 | 24 | 37–50 | 13,7–15,2 min (Osada nie zdąża) | 0,8–0,9 | ok. 3,5–4,7 |
+| 3 | 36 | 121–165 | 11,2–11,7 min (0,75–0,78 limitu) | 1,02–1,11 | 4,2–5,4 |
+| 5 | 48 | 225–245 | 9,0–10,8 min | 1,09–1,20 | ok. 5 |
+
+Przed (S134c, Równiny Salamander L47): fale 13 / 19 / 25, 1 / 3 / 5 graczy 16,3 / 6,9 / 4,8 min. Zabicia i nagroda
+dają 3 graczom 1,3–2,9 poziomu na inwazję (najwięcej na L15, gdzie poziomy są krótkie). Limit 3% nagrody bez zmian.
+
+Dla właściciela: jeśli inwazja leveluje za szybko, dźwignia to `expMul` (1,25 = jak bicie z miksturami) albo
+`phaseEvery`; jeśli solo za trudne, `mods`.
+
+Testy: `worldevents.spec` (nowy blok „Invasion zone (S134d)”: populacja i kwota, uzupełnianie partiami z Elitami
+najpierw i budżetem, koniec fazy, punkty w pierścieniu, wybór punktu z dala od graczy, smycz strefy; postęp HUD po
+fazach; S134c bez fal), `balance.spec` (wiersze S134d asertowane).
+
+Pliki: `src/shared/Data/WorldEvents.luau`, `src/shared/Logic/WorldEvents.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/server/Services/{WorldEvent,Combat}Service.luau`, `src/server/Entities/Monster.luau`,
+`src/server/World/InvasionCamp.luau`, `src/client/UI/Screens/{WorldMap/Overlay,Hud/Minimap,Hud/WorldEventPanel}.luau`,
+`tests/Balance.luau`, `tests/worldevents.spec.luau`, `tools/{balance_reasons,balance_report}.luau`,
+`tools/WikiData/Basics.luau`, wiki `mechanics/{pl/wydarzenia-swiata,en/world-events}.mdx`, `docs/{DESIGN-15,DECYZJE,PROGRESS}.md`.
+
 ### W28: strzałka samouczka (GuidePointer)
 - **Zgłoszenie właściciela:** „w samouczku pisze idź za strzałką a nie ma żadnej strzałki”.
 - **Przyczyna:** w świecie nie było żadnej strzałki. Tekst `tutorial.attack.travel` mówił o „strzałce zadania”, a jedyną
