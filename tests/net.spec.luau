@@ -22,8 +22,10 @@ T.describe("ArgCheck", function()
 		T.expect((ArgCheck.check({}, { "string" }))).toBe(false)
 		T.expect((ArgCheck.check({ "a", "b" }, { "string" }))).toBe(false)
 		T.expect((ArgCheck.check({ 5 }, { "string" }))).toBe(false)
-		-- Trailing nils still count as extra arguments when the caller passes select("#").
-		T.expect((ArgCheck.check({ "a" }, { "string" }, 3))).toBe(false)
+		-- owner 2026-10-20: trailing nils are no arguments (a caller passing an optional value it does not have); a
+		-- real extra value still is
+		T.expect((ArgCheck.check({ "a" }, { "string" }, 3))).toBe(true)
+		T.expect((ArgCheck.check({ "a", nil, 5 }, { "string" }, 3))).toBe(false)
 	end)
 
 	T.it("rejects NaN, infinity and fractional integers", function()
