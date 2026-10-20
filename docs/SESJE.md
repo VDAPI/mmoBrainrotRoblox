@@ -13538,3 +13538,31 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
   `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
   `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.
+### S151c: bestiariusz w oknie osiągnięć, widoczny przycisk osiągnięć (właściciel 2026-10-20)
+- **Bestiariusz** (`Data/Bestiary`, `Logic/Bestiary`, DESIGN §20c): wpis dla każdego rodzaju potwora i każdego bossa
+  (lochy i boss świata) w jego krainie; stopnie 10 / 100 / 1000 (bossowie 1 / 10 / 50 nagrodzonych zwycięstw), punkty
+  2 / 5 / 10 (5 / 10 / 25) wliczone do punktów osiągnięć postaci (`AchievementView.summary.bestiary`, profil). Stopień I
+  odkrywa podgląd modelu, poziomy, miejsce i atak; II łupy widziane i cechę obrony; III słabości (z liczb danych).
+- **Premia:** wpis na III stopniu +1% obrażeń przeciw rodzinie, najwyżej +3% (hook `vs_<rodzina>` przez
+  `CombatService.RegisterHookProvider`, pamięć podręczna na postać); `balance.spec` „Bestiary (S151c)” pilnuje limitu.
+- **Kraina:** wszystkie wpisy na III stopniu → osiągnięcie `bestiary_<kraina>` (licznik `bestiaryRegions`, zdarzenie
+  `bestiary`, także z `backfill`) z tytułem `ach_lore_<kraina>` („Znawca Łąk / Boru / Pustkowi / Szczytów”).
+- **Serwer:** `AchievementService` liczy zabicia z `MonsterKilled` (bez bossów i pomocników), bossów z „boss” /
+  „worldboss”, łupy z nowego `QuestEvents` „drop” (`LootService`: materiały każdego zaliczonego, `DungeonService`: worek,
+  `WorldBossService`: nagroda); stopień wysyła `AchievementDone { bestiary, tier, points }` (toast „Bestiariusz”,
+  „Zobacz” otwiera wpis). Zapis w `character.ach.b` / `bd` (szablon + reconcile, bez migracji).
+- **Okno:** ostatnia kategoria „Bestiariusz” (❦; telefon: zakładka): cztery krainy z paskami postępu, wpisy krainy
+  („???” przed pierwszym zabiciem, stopnie, licznik, pasek), szczegóły z podglądem 3D (`WorldMap/Preview`, telefon arkusz).
+- **Przycisk HUD:** ✪ z literą N pod przyciskiem przepustki sezonu, zawsze widoczny, „!” i pulsująca ramka po nowym
+  osiągnięciu albo stopniu do otwarcia okna (`Hud/AchievementButton`).
+- **Testy:** `tests/bestiary.spec.luau` (dane, stopnie, odkrywanie, łupy, słabości, premia i limit, punkty, krainy,
+  osiągnięcie z `backfill`, naprawa zapisu), `achievements.spec` (szablon, suma punktów), `balance.spec` (limit premii).
+  Wiki pominięta (tytuły `wiki = false`, jak S151b).
+- **Admin:** `/ach best <potwór|boss> <zabicia> [gracz]` dodaje zabicia (stopnie, toasty i kraina jak w grze).
+- **Pliki:** `src/shared/Data/{Bestiary,Achievements,Titles,AdminCommands,Localization/pl,Localization/en}.luau`,
+  `src/server/Admin/Character.luau`,
+  `src/shared/Logic/{Bestiary,Achievements,AchievementView,AccountSchema}.luau`,
+  `src/server/Services/{AchievementService,LootService,DungeonService,WorldBossService}.luau`, `src/server/QuestEvents.luau`,
+  `src/client/Controllers/AchievementController.luau`, `src/client/UI/Screens/AchievementsWindow/{init,Context,List,BestiaryTab}.luau`,
+  `src/client/UI/Screens/Hud/{init,AchievementButton}.luau`, `tests/{bestiary,achievements,balance}.spec.luau`,
+  `tools/balance_reasons.luau`, `docs/{DESIGN,DECYZJE,JAK-DODAC,PROGRESS,SESJE}.md`.

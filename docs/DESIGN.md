@@ -1279,6 +1279,23 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   okno; telefon pokazuje 1, reszta po rozwinięciu); zdobyte znika samo. Profil gracza: punkty, zdobyte i 3 ostatnie
   zdobyte (bez postępów w trakcie).
 
+## 20c. Bestiariusz (S151c)
+
+- **Zakładka okna osiągnięć** (ostatnia kategoria „Bestiariusz”, klawisz `N`, przycisk ✪ na HUD pod przepustką sezonu
+  i wpis w menu HUD). Każdy rodzaj potwora (50) i każdy boss (lochy i boss świata) to jeden wpis w swojej krainie
+  (Łąki, Bór, Pustkowia, Szczyty); u góry cztery krainy z paskiem postępu (zdobyte stopnie / wszystkie), pod nimi wpisy
+  wybranej krainy, po prawej szczegóły (telefon: arkusz).
+- **Stopnie:** potwory 10 / 100 / 1000 pokonanych (każdy wariant się liczy, przyzwani pomocnicy bossów nie), bossowie
+  1 / 10 / 50 nagrodzonych zwycięstw. Punkty bestiariusza za stopnie: potwory 2 / 5 / 10, bossowie 5 / 10 / 25;
+  wliczają się do punktów osiągnięć postaci (pasek u góry okna, profil).
+- **Co odkrywają:** przed pierwszym zabiciem „???” i kraina; od pierwszego nazwa, rodzina i licznik; stopień I podgląd
+  modelu, poziomy, miejsce i sposób ataku; stopień II łupy widziane przez tę postać (reszta „???”) i cecha obrony;
+  stopień III słabości (pancerz a odporność na magię, unik zwykłych ataków, żywioł ciosów).
+- **Premia za opanowanie:** każdy wpis na III stopniu daje +1% obrażeń przeciw swojej rodzinie, najwyżej +3% na rodzinę
+  (jak linia `vs_<rodzina>` przedmiotu, poza modelem tempa; test pilnuje, że limit jest mniejszy od najsłabszej
+  zwykłej linii `vs_`). Kraina z wszystkimi wpisami na III stopniu daje osiągnięcie „Znawca …” (50 pkt) z tytułem.
+- **Zakres:** postać (jak licznik zabójstw). Liczone od wprowadzenia bestiariusza (zapis nie pamięta zabójstw rodzajów).
+
 ## 21. Monetyzacja (bez pay-to-win)
 
 - **Smocza Waluta** (Developer Products: 100 / 550 / 1 200 / 2 600 / 7 000).

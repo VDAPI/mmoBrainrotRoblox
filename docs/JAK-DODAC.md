@@ -214,6 +214,10 @@
   budżecie `Config.Achievements.shardBudget` (test). Okno, tracker i profil (S151b) tylko z `Logic/AchievementView`
   (seria zwinięta do bieżącego stopnia, sekretne „???”), śledzenie przez `Achievements.canTrack` / `setTracked`
   (`character.ach.track`, remote `AchievementTrack`).
+- **Wpis bestiariusza** (S151c): nowy rodzaj w `Data/Monsters` albo boss w `Data/Bosses` sam staje się wpisem
+  (`Data/Bestiary`, kraina z `region`); łupy z jego tabeli (`LootTables`). Stopnie, punkty i limit premii rodziny tylko
+  w `Data/Bestiary`; widok tylko z `Logic/Bestiary` (`view`, `rows`, `regions`). Nowa kraina = wpis w `REGIONS` +
+  osiągnięcie `bestiary_<kraina>` z tytułem.
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez

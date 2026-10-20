@@ -11,6 +11,10 @@
 -- written ({ "character", "ach", "c", "kills" } …), so the state diff of a kill stays a few numbers.
 -- S151b: AchievementTrack follows / stops following an achievement in the HUD tracker (Logic/Achievements.canTrack,
 -- character.ach.track); a done achievement leaves the tracker in grant.
+-- S151c: the bestiary (Logic/Bestiary, character.ach.b / bd): kills of monsters (MonsterKilled, no boss helpers) and
+-- bosses (the rewarded wins of QuestEvents "boss" / "worldboss"), drops seen (QuestEvents "drop"); a crossed tier sends
+-- AchievementDone { bestiary, tier, points }, a complete region grants bestiary_<region> (counter bestiaryRegions), and
+-- the mastered entries give the hook vs_<family> through CombatService.RegisterHookProvider (cached per character).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +22,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 
 local AchData = require(Shared.Data.Achievements)
+local BestiaryData = require(Shared.Data.Bestiary)
+local Bestiary = require(Shared.Logic.Bestiary)
+local Bonuses = require(Shared.Data.Bonuses)
+local Bosses = require(Shared.Data.Bosses)
 local Achievements = require(Shared.Logic.Achievements)
 local Analytics = require(script.Parent.Parent.Analytics)
 local Config = require(Shared.Config)
@@ -178,7 +186,98 @@ local function grantAll(player: Player, st: State, ids: { string }): { Payload }
 	return out
 end
 
+-- S151c: the bestiary ---------------------------------------------------------------------------------------------------
+
+-- vs_<family> hooks of the mastered entries per character (rebuilt when the character changes or masters an entry).
+local familyCache: { [Player]: { character: any, hooks: { [string]: number } } } = {}
+
+local function familyHooks(player: Player): { [string]: number }
+	local character = PlayerStateService.GetCharacter(player)
+	local cached = familyCache[player]
+	if cached and cached.character == character then
+		return cached.hooks
+	end
+	local hooks: { [string]: number } = {}
+	local st = if character then stateOf(player) else nil
+	if st then
+		for family, pct in Bestiary.familyBonus(st.chr) do
+			hooks[Bonuses.familyLine("vs_", family)] = pct
+		end
+	end
+	familyCache[player] = { character = character, hooks = hooks }
+	return hooks
+end
+
+local function grantAndTell(player: Player, st: State, ids: { string }): number
+	local granted = grantAll(player, st, ids)
+	for _, payload in granted do
+		Net.Fire(player, "AchievementDone", payload)
+	end
+	return #granted
+end
+
+-- Counts `n` kills of bestiary entry `id` (a monster kind or a boss); a crossed tier tells the client, a mastered
+-- entry refreshes the family hooks, a region that became complete grants its achievement.
+local function bestiaryKill(player: Player, id: string, n: number?)
+	local st = stateOf(player)
+	if not st or BestiaryData.get(id) == nil then
+		return
+	end
+	local kill = Bestiary.addKill(st.chr, id, n)
+	if not kill then
+		return
+	end
+	PlayerStateService.Set(player, { "character", "ach", "b", id }, kill.kills)
+	if kill.to <= kill.from then
+		return
+	end
+	local entry = BestiaryData.get(id) :: BestiaryData.Entry
+	for tier = kill.from + 1, kill.to do
+		Net.Fire(player, "AchievementDone", { bestiary = id, tier = tier, points = entry.points[tier] })
+	end
+	if kill.to >= #entry.tiers then
+		familyCache[player] = nil
+		if Bestiary.regionComplete(st.chr, entry.region) then
+			local newly = applyEntries(player, st, Achievements.entriesFor("bestiary", { region = entry.region }))
+			if grantAndTell(player, st, newly) > 0 then
+				SeasonService.Add(player, "achievement", 1)
+			end
+		end
+	end
+end
+
+-- Marks the drops of entry `id` seen (only what it can drop; the leaves that changed are written).
+local function bestiaryDrops(player: Player, id: any, ids: any)
+	if type(id) ~= "string" or BestiaryData.get(id) == nil then
+		return
+	end
+	local st = stateOf(player)
+	if not st then
+		return
+	end
+	for _, itemId in Bestiary.addDrops(st.chr, id, ids) do
+		PlayerStateService.Set(player, { "character", "ach", "bd", id, itemId }, true)
+	end
+end
+
+local function bestiaryEvent(player: Player, kind: string, data: { [string]: any }?)
+	local d: { [string]: any } = data or {}
+	if kind == "boss" or kind == "worldboss" then
+		local id = d.bossId
+		if kind == "worldboss" and type(id) ~= "string" then
+			local first = Bosses.world[1]
+			id = if first then first.id else nil
+		end
+		if type(id) == "string" then
+			bestiaryKill(player, id, 1)
+		end
+	elseif kind == "drop" then
+		bestiaryDrops(player, d.monsterId, d.ids)
+	end
+end
+
 local function handle(player: Player, kind: string, data: { [string]: any }?)
+	bestiaryEvent(player, kind, data)
 	local entries = Achievements.entriesFor(kind, data)
 	if #entries == 0 then
 		return
@@ -290,6 +389,10 @@ function AchievementService.Reset(player: Player, id: string): number?
 			table.clear(branch.c)
 			table.clear(branch.s)
 		end
+		-- S151c: the bestiary too
+		st.chr.b = {}
+		st.chr.bd = {}
+		familyCache[player] = nil
 		PlayerStateService.Set(player, { "account", "ach" }, st.acc)
 		PlayerStateService.Set(player, { "character", "ach" }, st.chr)
 		return n
@@ -334,6 +437,17 @@ function AchievementService.SetCounter(player: Player, counter: string, value: n
 	return true
 end
 
+-- S151c: adds `n` bestiary kills of entry `id` (tiers, toasts and a complete region follow). The kills now, nil for an
+-- unknown entry or a bad count.
+function AchievementService.AddBestiaryKills(player: Player, id: string, n: number): number?
+	local st = stateOf(player)
+	if not st or BestiaryData.get(id) == nil or n < 1 then
+		return nil
+	end
+	bestiaryKill(player, id, math.floor(n))
+	return Bestiary.kills(st.chr, id)
+end
+
 -- Runs the catch-up of old progress now (toasts at once). Returns how many achievements it granted.
 function AchievementService.Backfill(player: Player): number
 	return catchUp(player, 0)
@@ -372,9 +486,22 @@ function AchievementService.Start()
 	end)
 	CombatService.MonsterKilled:Connect(function(info: any, credit: { Player })
 		local data = { variant = info.variant, lair = info.lair }
+		-- S151c: monsters only (bosses count their rewarded wins; boss helpers never)
+		local entry = if type(info.monsterId) == "string" then BestiaryData.get(info.monsterId) else nil
+		local bestiary = entry ~= nil and not entry.boss and not info.boss and not info.noLoot
 		for _, player in credit do
 			handle(player, "kill", data)
+			if bestiary then
+				bestiaryKill(player, info.monsterId, 1)
+			end
 		end
+	end)
+	-- S151c: the bestiary's family bonus (vs_<family>, like an item line)
+	CombatService.RegisterHookProvider(function(player: Player, id: string): number
+		if string.sub(id, 1, 3) ~= "vs_" then
+			return 0
+		end
+		return familyHooks(player)[id] or 0
 	end)
 	LevelService.LevelChanged:Connect(function(player: Player, level: number)
 		handle(player, "level", { level = level })
@@ -384,6 +511,7 @@ function AchievementService.Start()
 	end)
 	Players.PlayerRemoving:Connect(function(player: Player)
 		cache[player] = nil
+		familyCache[player] = nil
 	end)
 end
 

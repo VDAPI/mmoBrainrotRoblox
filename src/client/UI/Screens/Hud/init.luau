@@ -44,6 +44,7 @@ local MobileSkills = require(script.MobileSkills)
 local PoolLabel = require(script.PoolLabel)
 local PvpToggle = require(script.PvpToggle)
 local SeasonButton = require(script.SeasonButton) -- S152b
+local AchievementButton = require(script.AchievementButton) -- S151c
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -493,6 +494,13 @@ local function Hud(scope: Scope, props: Props): Instance
 					props.OpenWindow("season")
 				end,
 				Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 + 8),
+			}),
+			-- S151c: the achievements and the bestiary under the season pass, always shown (easy to find)
+			AchievementButton.new(scope, {
+				Open = function()
+					props.OpenWindow("achievements")
+				end,
+				Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 + 8 + 44 + 8),
 			}),
 			-- S122: the Cloak of Luring right of the login button, below the elixirs (only while it has time)
 			LureButton(

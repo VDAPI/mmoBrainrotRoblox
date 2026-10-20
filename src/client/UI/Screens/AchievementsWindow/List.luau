@@ -5,11 +5,14 @@
 -- the reward glyphs, the description with its goal, the range and the points, a thin progress bar and the tracking
 -- star. The rows are rebuilt only when the list's shape changes (order, done steps, tracking); a row's bar and numbers
 -- follow its own entry.
+-- S151c: the bestiary (Context.BESTIARY) is the last category: "entries met / all".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AchData = require(ReplicatedStorage.Shared.Data.Achievements)
 local AchievementView = require(ReplicatedStorage.Shared.Logic.AchievementView)
+local BestiaryData = require(ReplicatedStorage.Shared.Data.Bestiary)
+local Bestiary = require(ReplicatedStorage.Shared.Logic.Bestiary)
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local Context = require(script.Parent.Context)
@@ -27,6 +30,15 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 type Row = AchievementView.Row
 
 local List = {}
+
+-- S151c: "entries met / all" of the bestiary tab.
+local function bestiaryCount(use: Fusion.Use, ctx: Context.Ctx): string
+	local known = 0
+	for _, region in Bestiary.regions(use(ctx.st).chr) do
+		known += region.known
+	end
+	return `{known}/{#BestiaryData.list}`
+end
 
 List.CATEGORY_WIDTH = 190
 local ICON = 26
@@ -72,6 +84,36 @@ function List.categories(scope: Scope, ctx: Context.Ctx): Instance
 			})
 		)
 	end
+	local bestiaryOrder = #AchData.CATEGORIES + 1
+	table.insert(
+		rows,
+		ListRow(scope, {
+			Name = Context.BESTIARY,
+			LayoutOrder = bestiaryOrder,
+			Index = bestiaryOrder,
+			Inset = ICON + 8,
+			Text = Text.T(scope, "best.tab"),
+			Value = scope:Computed(function(use): string?
+				return bestiaryCount(use, ctx)
+			end),
+			Dense = true,
+			Selected = scope:Computed(function(use): boolean
+				return use(ctx.cat) == Context.BESTIARY
+			end),
+			OnClick = function()
+				ctx.cat:set(Context.BESTIARY)
+			end,
+			[Children] = ArtIcon(scope, {
+				Key = UiArt.achCategory(Context.BESTIARY),
+				Glyph = Context.CAT_GLYPH[Context.BESTIARY],
+				GlyphColor = Theme.Paper.Label,
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 10, 0.5, 0),
+				Size = UDim2.fromOffset(ICON, ICON),
+				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Body },
+			}),
+		})
+	)
 	return scope:New("ScrollingFrame")({
 		Name = "Categories",
 		Size = UDim2.new(0, List.CATEGORY_WIDTH, 1, 0),
@@ -104,6 +146,12 @@ function List.categoryTabs(scope: Scope, ctx: Context.Ctx): Instance
 			end),
 		})
 	end
+	table.insert(tabs, {
+		id = Context.BESTIARY,
+		label = scope:Computed(function(use): string
+			return `{Context.CAT_GLYPH[Context.BESTIARY]} {Text.get(use, "best.tab")} {bestiaryCount(use, ctx)}`
+		end),
+	})
 	return Tabs(scope, {
 		Tabs = tabs,
 		Selected = ctx.cat,

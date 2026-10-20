@@ -12,9 +12,11 @@
 --                                           the HUD tracker, at most Config.Achievements.trackMax; `paidHere` =
 --                                           { [achId] = true }, the character achievements whose shards this
 --                                           character received, added on the first payment)
+--                  S151c: `b` / `bd` = the bestiary's kills and drops seen (Logic/Bestiary)
 
 local AchData = require("../Data/Achievements")
 local Areas = require("../Data/Areas")
+local Bestiary = require("./Bestiary")
 local Bosses = require("../Data/Bosses")
 local Config = require("../Config")
 local Cosmetics = require("../Data/Cosmetics")
@@ -31,6 +33,8 @@ export type Branch = {
 	paid: { [string]: boolean }?,
 	track: { string }?, -- S151b: character branch only
 	paidHere: { [string]: boolean }?, -- S151b: character branch only, the shards this character received
+	b: { [string]: number }?, -- S151c: character branch only, the bestiary kills (Logic/Bestiary)
+	bd: { [string]: { [string]: boolean } }?, -- S151c: character branch only, the bestiary drops seen
 }
 export type State = { acc: Branch, chr: Branch }
 export type Entry = { counter: string, mode: string, value: number, key: string? }
@@ -158,6 +162,7 @@ function Achievements.state(account: any, character: any): State
 	end
 	local chr = branchOf(if type(character) == "table" then character.ach else nil, false)
 	trackOf(chr)
+	Bestiary.repair(chr)
 	if type(character) == "table" then
 		character.ach = chr
 	end
@@ -576,6 +581,17 @@ local COUNTER_EVENTS: { [string]: (data: { [string]: any }) -> { Entry } } = {
 		local def = if type(data.id) == "string" then Cosmetics.get(data.id) else nil
 		return if Achievements.earnedInGame(def) then { add("earnedCosmetics") } else {}
 	end,
+	-- S151c: the drops of a kill (LootService, DungeonService, WorldBossService) only feed the bestiary
+	-- (AchievementService, Logic/Bestiary.addDrops): no counter
+	drop = function(_data)
+		return {}
+	end,
+	-- S151c: a bestiary region became complete (AchievementService after a tier, never through QuestEvents)
+	bestiary = function(data)
+		return if type(data.region) == "string" and data.region ~= ""
+			then { member("bestiaryRegions", data.region) }
+			else {}
+	end,
 }
 Achievements.COUNTER_EVENTS = table.freeze(COUNTER_EVENTS)
 
@@ -683,6 +699,10 @@ function Achievements.backfill(account: any, character: any): { Entry }
 		if g.caves[id] then
 			table.insert(out, member("caves", id))
 		end
+	end
+	-- S151c: the complete bestiary regions of the character
+	for _, region in Bestiary.completeRegions(chr.ach) do
+		table.insert(out, member("bestiaryRegions", region))
 	end
 	-- account (every character of the account counts)
 	local characters: { any } = {}

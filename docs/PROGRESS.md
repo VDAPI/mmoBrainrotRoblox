@@ -47,6 +47,11 @@
 
 ## Niedokończone (kod)
 
+- **Bestiariusz (S151c):** zakładka okna osiągnięć i przycisk ✪ na HUD gotowe. Bez przeglądu w grze (zakładka na PC i
+  telefonie, podgląd 3D wpisu, toast stopnia, miejsce przycisku obok przepustki i blokady telefonu W29). Wiki czeka na
+  odświeżenie (tytuły „Znawca …” z `wiki = false`). Ikona kategorii `hud/ach_bestiary` do dorobienia (dziś znak ❦).
+  Zabójstwa rodzajów liczą się od S151c (zapis wcześniej ich nie miał).
+
 - **Zgłoszenia właściciela 2026-10-20:** zrobione (S156): menu HUD w dwóch rzędach, limit przesuwania mapy, efekty broni
   z jej puli, Zwój Przemiany, kurhan bossa świata jako niecka z przedsionkiem bez PvP i dłuższe ogłoszenia, kolorowe
   stragany z NPC przed ladą, ranking czasu gry i podium, marmurowe posągi, przesuwany i skalowany tropiciel zadań.

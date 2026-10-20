@@ -192,6 +192,7 @@ return {
 		["Data/Titles"] = "wygląd",
 		["Data/Changelog"] = "teksty", -- S153: the in-game "What has changed" log (ids, days, text keys)
 		["Data/Achievements"] = "postęp", -- S151: achievement milestones and rewards (gold checked in balance.spec)
+		["Data/Bestiary"] = "postęp", -- S151c: bestiary tiers and points; the family bonus cap checked in balance.spec
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
 		["Data/ArenaPit"] = "geometria", -- S127: the arena server map (sand, stands, start points)
 		["Data/Portals"] = "świat",
