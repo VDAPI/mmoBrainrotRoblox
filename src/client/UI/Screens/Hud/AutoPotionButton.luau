@@ -17,6 +17,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
+local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -78,7 +79,7 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 	local function send(wantOn: boolean, hp: number, res: number)
 		task.spawn(function()
 			local ok, err = Net.Invoke("AutoPotionSet", wantOn, hp, res)
-			if not ok then
+			if not ok and not RequestGuard.isSilent(err) then
 				Sounds.play("error")
 				Toast.push(Text.now(err or "error.internal"), "error")
 			end

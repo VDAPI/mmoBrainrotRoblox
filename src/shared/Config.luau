@@ -139,15 +139,21 @@ local Config = {
 	-- S135: nameplates above player characters (NameplateController, Logic/Nameplate).
 	Nameplate = {
 		maxDistance = 150, -- studs from the camera: other players' plates (your own has none)
-		detailDistance = 60, -- studs: beyond this only the name (no title, level line or HP bar)
-		width = 280, -- px: the BillboardGui
-		height = 104,
-		offset = 3.1, -- studs above the head
-		plateTransparency = 1, -- owner 2026-10-20: no plate behind the text (outlined text only)
+		detailDistance = 60, -- studs: beyond this only the name (no title or HP bar)
+		width = 240, -- px: the BillboardGui (W28: just the text, no plate)
+		height = 52,
+		offset = 1.2, -- studs above the head (the gui's bottom edge, SizeOffset)
+		rootLift = 2.4, -- studs more when the plate falls back to the HumanoidRootPart (no Head yet)
 		nameSize = 19, -- px (owner 2026-10-20: 22 -> 19, smaller)
-		levelSize = 17,
+		tagSize = 12, -- px: the guild tag before the name
 		titleSize = 14,
-		checkEvery = 0.25, -- s: distance check of all plates
+		hpWidth = 64, -- px: the thin HP bar of a hurt player
+		scaleNear = 18, -- studs: full size up to here (W28, Logic/Nameplate.scale)
+		scaleFar = 110, -- studs: smallest from here
+		scaleMin = 0.7,
+		scaleStep = 0.05,
+		checkEvery = 0.25, -- s: distance and anchor check of all plates
+		sweepEvery = 1, -- s: W28 every character without a live plate gets one (respawn, teleport, streaming)
 	},
 	-- Leaderboards (S124, DESIGN-17 §5): store names and request limits; boards in Data/Leaderboards.
 	Leaderboard = {

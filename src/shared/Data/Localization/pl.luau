@@ -93,6 +93,8 @@ return {
 	["error.rateLimited"] = "Za dużo żądań, zwolnij.",
 	["error.slotEmpty"] = "Ten slot jest pusty.",
 	["error.slotTaken"] = "Ten slot jest już zajęty.",
+	["error.stale"] = "Ten przedmiot już się zmienił.",
+	["error.tooFast"] = "Za szybko, poczekaj chwilę.",
 	["error.wrongPhase"] = "Nie możesz tego teraz zrobić.",
 	["error.name.invalidUtf8"] = "Imię zawiera nieprawidłowe znaki.",
 	["error.name.tooShort"] = "Imię musi mieć co najmniej {min} znaki.",
