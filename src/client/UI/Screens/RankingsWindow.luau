@@ -214,8 +214,8 @@ local function headerCells(use: Use, format: string, touch: boolean): { Cell }
 			{ text = Text.get(use, "leaderboard.col.members"), width = if touch then 90 else 120, color = muted },
 			{ text = Text.get(use, "leaderboard.col.score"), width = if touch then 80 else 120, color = muted },
 		}
-	elseif format == "int" or format == "rating" then
-		-- S125: place, name, (class, guild on PC), level, EXP; S126: the arena rating in the last column
+	elseif format == "int" or format == "rating" or format == "time" then
+		-- S125: place, name, (class, guild on PC), level, EXP; S126: the arena rating in the last column; S156 time
 		local cells: { Cell } = {
 			{ text = Text.get(use, "leaderboard.col.rank"), width = if touch then 44 else 56, color = muted },
 			{ text = Text.get(use, "leaderboard.col.name"), color = muted },
@@ -229,7 +229,13 @@ local function headerCells(use: Use, format: string, touch: boolean): { Cell }
 			{ text = Text.get(use, "leaderboard.col.level"), width = if touch then 56 else 80, color = muted }
 		)
 		table.insert(cells, {
-			text = Text.get(use, if format == "rating" then "leaderboard.col.rating" else "leaderboard.col.exp"),
+			text = Text.get(
+				use,
+				if format == "rating"
+					then "leaderboard.col.rating"
+					elseif format == "time" then "leaderboard.col.time"
+					else "leaderboard.col.exp"
+			),
 			width = if touch then 100 else 130,
 			color = muted,
 		})
@@ -254,6 +260,15 @@ local function headerCells(use: Use, format: string, touch: boolean): { Cell }
 	return cells
 end
 
+-- S156: minutes in the world as "12 h 05 min" (under an hour "37 min").
+local function playtime(use: Use, minutes: number): string
+	local m = math.max(0, math.floor(minutes))
+	if m < 60 then
+		return Text.get(use, "leaderboard.time.m", { m = m })
+	end
+	return Text.get(use, "leaderboard.time.hm", { h = Format.number(m // 60), m = string.format("%02d", m % 60) })
+end
+
 local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: boolean): { Cell }
 	local top = row.r <= 3
 	local medal = medalColor(row.r)
@@ -269,8 +284,8 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 			{ text = if row.m then Format.number(row.m) else "", width = if touch then 90 else 120 },
 			{ text = Format.number(row.s), width = if touch then 80 else 120, bold = top },
 		}
-	elseif format == "int" or format == "rating" then
-		-- S125: weekly EXP; S126: the arena rating
+	elseif format == "int" or format == "rating" or format == "time" then
+		-- S125: weekly EXP; S126: the arena rating; S156: minutes in the world
 		if touch and row.g then
 			nameText ..= ` <font size="{Theme.TextSize.Small}" color="{Theme.hex(Theme.Paper.TextMuted)}">[{escape(
 				row.g
@@ -289,7 +304,8 @@ local function rowCells(use: Use, row: Leaderboard.Row, format: string, touch: b
 			)
 		end
 		table.insert(cells, { text = if row.l then tostring(row.l) else "", width = if touch then 56 else 80 })
-		table.insert(cells, { text = Format.number(row.s), width = if touch then 100 else 130, bold = top })
+		local score = if format == "time" then playtime(use, row.s) else Format.number(row.s)
+		table.insert(cells, { text = score, width = if touch then 100 else 130, bold = top })
 		return cells
 	end
 	if touch and row.g then
@@ -360,6 +376,16 @@ local function meText(use: Use, snap: Leaderboard.Snapshot): string
 			return Text.get(use, "leaderboard.arena.you", { rank = me.r, rating = me.s or 0 })
 		end
 		return Text.get(use, "leaderboard.arena.outside", { rating = me.s or 0 })
+	end
+	if snap.format == "time" then
+		-- S156: the own place and time in the world
+		if me.below then
+			return Text.get(use, "leaderboard.meBelow", { level = me.below })
+		end
+		local time = playtime(use, me.s or 0)
+		return if me.r
+			then Text.get(use, "leaderboard.time.you", { rank = me.r, time = time })
+			else Text.get(use, "leaderboard.time.outside", { time = time })
 	end
 	if snap.format == "int" then
 		-- S125: the week's EXP, and the own bracket when another one is shown
