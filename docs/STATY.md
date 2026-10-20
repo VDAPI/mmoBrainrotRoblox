@@ -565,6 +565,10 @@ broni głównej, np. „z Łukiem Krótkim +39%”):
 - S134j: pole `ItemInstance.rr = { i, n }` (linia przemiany, liczba przemian), bez migracji (`AccountSchema.CURRENT` bez
   zmian); odczyt tylko `Reroll.state` z ochroną typów (śmieci → `n = 0`, indeks spoza zakresu otwiera wybór, licznik
   zostaje). Pole wędruje z przedmiotem (handel, poczta, aukcje, depozyt).
+- S154: pole `ItemInstance.tm` (klucz wyglądu z kolekcji konta, `Logic/Transmog`), bez migracji. **Tylko wygląd:**
+  statystyki (`ItemRoll.itemStats`, `StatCalc`), `ItemScore`, wymagania, cecha, efekty `fx`, żywioł i pula umiejętności
+  broni (S137) czytają przedmiot, nigdy `tm` (`transmog.spec` A9, `paywall.spec` 14). Odczyt przez `Transmog.current`
+  (nieznany klucz albo inny typ = własny wygląd). Pole wędruje z przedmiotem.
 
 ## 13. Mapa kodu
 

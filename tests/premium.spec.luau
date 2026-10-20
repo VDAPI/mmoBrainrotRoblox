@@ -342,6 +342,9 @@ T.describe("S97 mount skins and premium mounts", function()
 						or def.obtain.event ~= nil
 						or def.obtain.hunt ~= nil -- S134k: the Huntmaster's shop (Hunter's Marks)
 						or def.obtain.quest ~= nil -- S134k: the title of the last hunting contract
+						or def.obtain.achievement ~= nil -- S151: an achievement reward
+						or def.obtain.season ~= nil -- S152: a season pass reward
+						or def.obtain.tutorial ~= nil -- S155: the tutorial reward at level 5
 						or def.class ~= nil -- S132: class outfits from a quest or a boss win
 				).toBe(true)
 				T.expect(def.price).toBe(0)
@@ -569,7 +572,7 @@ T.describe("Prices (S131)", function()
 		T.expect(vip.so).toBe(Config.Vip.dailyShards * 30)
 		T.expect(vip.robuxValueCheap <= vip.robuxValueDear).toBe(true)
 		T.expect(#Pricing.starterPacks()).toBe(#Products.starterPacks)
-		T.expect(#Pricing.shopTable()).toBe(#Products.shop)
+		T.expect(#Pricing.shopTable()).toBe(#Products.shop + 1) -- S152: + the season pass row
 	end)
 end)
 
@@ -627,6 +630,29 @@ T.describe("Shop funnel (S131)", function()
 		T.expect(ShopFunnel.clientAllowed("vip", "active")).toBe(false)
 		T.expect(ShopFunnel.clientAllowed("other", "open")).toBe(false)
 	end)
+
+	-- S152b: the season pass funnel; the client reports only the window's steps, the purchase and the claim are the
+	-- server's
+	T.it("the season funnel: five steps in order, the client only open, view and prompt (S152b)", function()
+		T.expect(ShopFunnel.FUNNELS.season).toEqual({ "open", "view", "prompt", "bought", "claimed" })
+		local state = ShopFunnel.empty()
+		local got = {}
+		for i, name in ShopFunnel.FUNNELS.season do
+			local step, nextState = ShopFunnel.track(state, "season", name, 2000 + i, TIMEOUT)
+			table.insert(got, step)
+			state = nextState
+		end
+		T.expect(got).toEqual({ 1, 2, 3, 4, 5 })
+		for name, allowed in { open = true, view = true, prompt = true, bought = false, claimed = false } do
+			T.expect({ name, ShopFunnel.clientAllowed("season", name) }).toEqual({ name, allowed })
+		end
+		-- every client step of every funnel is a step of that funnel
+		for funnel, steps in ShopFunnel.CLIENT_STEPS do
+			for name in steps do
+				T.expect({ funnel, name, ShopFunnel.stepOf(funnel, name) ~= nil }).toEqual({ funnel, name, true })
+			end
+		end
+	end)
 end)
 
 -- S131: edges of the one purchase rule (Logic/Premium) not covered above.
@@ -646,7 +672,9 @@ T.describe("Purchase rule edges (S131)", function()
 		T.expect({ Premium.canBuyPack(key, { packs = { [key] = true } }) }).toEqual({ false, "premium.error.owned" })
 		for _, def in Cosmetics.list do
 			local o = def.obtain :: any
-			if o and (o.vipMonth or o.pack or o.event or o.arena) then
+			-- S151: an achievement reward (obtain.achievement) is never for sale either; S152: nor a season pass reward;
+			-- S155: nor the tutorial reward
+			if o and (o.vipMonth or o.pack or o.event or o.arena or o.achievement or o.season or o.tutorial) then
 				T.expect({ def.id, (Premium.canBuyCosmetic(def.id, {}, 999999)) }).toEqual({ def.id, false })
 			end
 		end

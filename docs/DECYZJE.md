@@ -5632,3 +5632,303 @@
   odświeżenie wiki należy do właściciela (17.10).
 
 - **Właściciel 2026-10-18 (pytania z S137/S146)**: (3.1) obrażenia bossów w tanka zostają, leczenie berła przy bossie (T-SK6) zostaje w raporcie; (3.2) miecz z tarczą zostaje tankiem, R9 dwuręczna / jednoręczna 1,45–1,80 zostaje w raporcie; (3.3) cel tempa solo Uzdrowiciela do poluzowania (bez drugiego buildu z buzdyganem); (6) punkty umiejętności zostają 1 na poziom + 7 na start (S137).
+
+- **FIX 2026-10-18 (portale bez „E” w opublikowanej grze)**: tag `Portal` dociera do klienta przed częściami łuku albo atrybutami, a `decoratePortal` wtedy wychodził i nigdy nie wracał. Teraz portal bez części lub atrybutów czeka na pierwszą część (`DescendantAdded`) albo atrybut i dekoruje się ponownie (`retryPortal`).
+
+- **S150** Limity platformy (create.roblox.com, 10.2026): MemoryStore 1000 + 120 × CCU jednostek na minutę na całe
+  doświadczenie (GetAsync / SetAsync / RemoveAsync 1, UpdateAsync ≥ 2), wartość mapy ≤ 32 KB, klucz ≤ 128 znaków,
+  TTL ≤ 45 dni; MessagingService 600 + 240 × gracze wysłanych na serwer i minutę, 40 + 80 × serwery odebranych na
+  temat, 20 + 8 × gracze subskrypcji na serwer, wiadomość ≤ 1 KiB, temat ≤ 80 znaków; `TeleportAsync` z
+  `TeleportOptions.ServerInstanceId`, błąd przez `TeleportInitFailed` (`GameFull`, `GameNotFound`, `GameEnded`, …);
+  `Players:GetFriendsAsync` na serwerze (strony `FriendPages`); `Player:GetFriendsOnlineAsync` tylko klient, pamięć
+  30 s, `GameId` = JobId, `PlaceId`; `IsFriendsWith` przestarzałe → `IsFriendsWithAsync`. Stałe w `Config.Friends`.
+- **S150** Jeden wpis obecności na konto: rozszerzony wpis S133 (`{ j, m, p, map, lvl, cls, name, t, pj }`) w nowej mapie
+  `Vaelthorn_Presence_v2` (inny kształt niż v1; stara mapa wygasa sama po TTL), `Social/Presence` zastąpione przez
+  `Friends/Presence`, pisze tylko `FriendService` (SocialService już nie). TTL 150 s, zapis co 60 s i od razu przy
+  zmianie mapy, postaci lub ustawień (sprawdzenie co 2 s bez wywołań usług). Zapis `SetAsync` (1 jednostka, wpis nigdy
+  nie jest łączony), odczyt jeden `GetAsync` bez ponowień (błąd = „nieznany”), zapis i usunięcie przez `Market/Retry`.
+- **S150** Budżet odczytów: kubeł żetonów 300 / min na serwer (min(1000 / 2, 300)), odświeżenie okna ma pierwszeństwo
+  (znajomi z Roblox zostawiają 25% kubła oknom), sprawdzenie „Dołącz” czyta zawsze (rzadkie, liczone), wspólna pamięć
+  20 s na serwer. Szacunek pełnego serwera: 40 graczy, 10 z oknem, po 50 znajomych, odświeżenie co 30 s = 1000
+  odczytów / min wobec budżetu 300 (reszta wierszy czeka z ostatnim stanem i „odświeżanie…”) + 40 zapisów / min, wobec
+  4800 jednostek, które ten serwer wnosi do limitu.
+- **S150** Serwer prywatny (`PrivateServerId ~= ""`, też zarezerwowany, który bez wpisu w rejestrze gra jako świat) =
+  status „W grze (serwer prywatny)” bez „Dołącz” (Roblox nie wpuści bez zaproszenia); zaproszenie do grupy do takiego
+  znajomego działa (to on przechodzi do mnie).
+- **S150** Przybycie przez „Dołącz” w zapisanym miejscu postaci (jak każde wejście; mapa znajomego może być inna), u
+  znajomego toast „{name} dołącza do twojego serwera” (niewidoczny przybysz bez toastu). Zapis profilu przed
+  teleportem, grupa zostaje (toast), handel i walka blokują przycisk.
+- **S150** Blokady `friendJoin` (`Logic/UseBlocks`): dead, duel, arena, dungeon, pvpLock, bloodMoon, tourney + nowe
+  `trade` (TradeService), `combat` (istniejący stan walki `ResourceService.InCombat`, `Config.CombatTimeout` = 5 s, nie
+  10 s) i `worldBoss` (koło żywego bossa świata: bez ucieczki w środku mechaniki). Odnowienie 60 s po każdej próbie
+  teleportu; pełny serwer, brak serwera i odmowa kończą próby od razu.
+- **S150** Zaproszenie do grupy z innego serwera: jeden temat `Vaelthorn_FriendInvite` dla wszystkich serwerów, 3 na
+  gracza na minutę, ważne 60 s. Serwer zapraszającego pamięta swoje zaproszenia, więc po przybyciu (`TeleportData via =
+  "friendParty"`) wpuszcza do grupy tylko zaproszonego (samo TeleportData nic nie dowodzi), gdy zapraszający jest
+  przywódcą albo bez grupy i jest miejsce (`PartyService.AddMember`); inaczej toast „zaproszenie wygasło”. Okno zaproszenia
+  = istniejący popup SocialController (bez nowego ekranu).
+- **S150** Znajomi z Roblox: serwer czyta `GetFriendsAsync` raz na sesję (do 200, ponownie najwyżej co 600 s przy
+  otwartym oknie, wynik tylko w pamięci); klient co 30 s przy otwartym oknie wysyła `FriendsRobloxHint` z userId
+  znajomych z `GetFriendsOnlineAsync`, których `PlaceId` to ta gra (≤ 50). Serwer bierze tylko tych, których sam zna
+  jako znajomych Roblox, czyta ich obecność (≤ 20 na odświeżenie, rotacyjnie, w budżecie) i nigdy nie używa JobId od
+  klienta. Wyświetlana jest nazwa postaci z wpisu, nigdy nazwa konta Roblox.
+- **S150** Niewidoczny (`settings.appearOffline`): brak wpisu (usuwany od razu), brak „jest w grze” i „dołącza”, dla
+  wszystkich „Poza grą” — także na tym samym serwerze w oknie znajomych (szept na tym serwerze dalej działa, bo i tak
+  widać go w świecie). „Kto może dołączyć” (`settings.friendJoin` = znajomi / nikt) = pole `pj`; „nikt” wyłącza „Dołącz”
+  i zaproszenia z innych serwerów. Oba ustawienia przez `SettingsService` (biała lista), bez migracji (reconcile).
+- **S150** `Config.Friends` poza księgą balansu (`CONFIG_KEYS` bez zmian): to limity usług, nie ekonomia. Licznik
+  znajomych w grze na przycisku HUD pominięty: przyciski menu mają tylko znak „!” (`IconButton.Badge`), bez liczb.
+- **S150** `FriendsStatus` (S133) usunięte: okno dostaje gałąź runtime `friends` przez `FriendsWatch` (wzór
+  `FinderWatch`), pełne odświeżenie co 30 s, lekkie (blokada, odnowienie) co 2 s, wysyłka tylko przy zmianie.
+- **S151** Osiągnięcia w sześciu kategoriach: pięć właściciela (walka, bossowie, odkrywanie z kryjówkami, rzemiosło,
+  społeczność) i szósta `journey` („Droga”: poziomy, fabuła, poboczne, zlecenia, kosmetyki z gry), bo tytuły poziomu i
+  fabuły już są kamieniami milowymi tej drogi. 79 osiągnięć (szkic mówił ok. 55; serie z tabeli sesji dały więcej).
+- **S151** Każdy licznik ma zakres konta albo postaci (`Data/Achievements.COUNTERS`), zakres osiągnięcia = zakres
+  licznika. Zapis bez migracji (`account.ach`, `character.ach` z szablonu i reconcile, `CURRENT` bez zmian);
+  `Achievements.backfill` przy każdym wejściu postaci (wpisy `max` / `set`, więc dwa razy = raz). Liczniki konta z
+  dawnych postępów biorą wszystkie postacie konta.
+- **S151** Wstecz da się zaliczyć: poziom, fabułę (z nią bossów, których zadanie fabuły albo `boss_<id>` jest
+  oddane; `bossKills` = liczba tych bossów, dolna granica), poboczne, zlecenia (`done + #extra`), PvP i pojedynki
+  (`pvp`), arenę (max z bieżącego i poprzedniego sezonu, dolna granica), mapy i jaskinie (`visitedMaps`), bossa świata
+  (1, gdy `worldBoss.last`), znajomych, gildię, kosmetyki z `obtain` (bez `vipMonth` i `pack`). Od S151 liczą się:
+  zabójstwa, Elity, Elity II, kryjówki, uniki, kowal, alchemia, zbieractwo, ryby, handel, listy, Krwawe Księżyce,
+  Inwazje, pełna drużyna.
+- **S151** Smocze Odłamki: jedna wypłata na konto za osiągnięcie (`account.ach.paid`), budżet
+  `Config.Achievements.shardBudget` = 500 (ok. 5 najmniejszych paczek sklepu, rozłożone na setki godzin gry), dziś
+  rozdane 320, żadna kwota > 50; nic za znajomych, handel i listy (łatwe do nabicia drugim kontem), nic za kosmetyki
+  ze sklepu, VIP i paczek (licznik: `Achievements.earnedInGame` = `obtain` bez `vipMonth` i `pack`, test na
+  `aura_vip_hearth` i `aura_valor`). Wypłata od razu na konto z `Analytics.shards(..., "achievement")`.
+- **S151** Dawne tytuły poziomu, fabuły, pojedynków i PvP (`wanderer` … `legend`, `sentinel`, `dragonbane`,
+  `thornbearer`, `duelist`, `gladiator`, `bloodied`, `warlord`) zostają z dawnymi `req`: zmiana rodzaju zabrałaby je na
+  chwilę przed `backfill`. Osiągnięcia tych liczników dają punkty, odłamki albo nic. Nowe tytuły tylko za osiągnięcia
+  bez tytułu (7, `req.kind = "achievement"`; tytuł osiągnięcia konta przez `Titles.contextOf(...).ach`).
+- **S151** Cele „wszystkie X” liczy `Logic/Achievements.goalOf` z danych (`regions` = mapy pod niebem z miastem,
+  `world` = mapy podróży bez lochów i serwerów areny, `caves` = biome `cave` i `crypt`, `lairs` = `Data/Areas.lairs`,
+  `dungeonBosses` = `Bosses.list`); nowa mapa podnosi cel, zdobyte zostaje zdobyte. Krypty liczą się jako jaskinie.
+- **S151** Zmiany celów wobec szkicu: zlecenia 25 / 99 (jest jedno zlecenie na poziom 1–99, 200 było nieosiągalne),
+  fabuła = końce rozdziałów I–IV i finał (5 stopni z `Main.CHAPTERS`), Krwawy Księżyc jako zbiór id wystąpień (dwie
+  postacie w jednym wystąpieniu liczą się raz), `earnedCosmetics` jako `add` (+1 przy każdym `CosmeticService.Grant`
+  kosmetyku z `obtain`, wstecz `max` z posiadanych). Bez sekretnych osiągnięć: żaden istniejący licznik ich nie niesie.
+- **S151** `Data/Achievements` poza księgą balansu (`NOT_BALANCE` „postęp”): cele to kamienie milowe, nie tempo gry.
+  Złoto tylko za poziom 10 (100), test `balance.spec` „Achievements (S151)” pilnuje ≤ 5% złota pasma 1–20.
+  `Config.Achievements` poza `CONFIG_KEYS`.
+- **S151** Jedna droga zdarzeń: `QuestEvents.fire` w serwisie, który zna fakt; `AchievementService` nikt nie woła
+  (poza adminem). Wyjątki: zabójstwo i poziom przez istniejące sygnały `CombatService.MonsterKilled` (+ pole `lair` w
+  `KillInfo`) i `LevelService.LevelChanged`, bo QuestService słucha ich osobno i kopia w `QuestEvents` liczyłaby
+  questy dwa razy. Mecz areny = istniejące zdarzenie `duel` z `arena = true` (licznik `arenaWins`, nie `duelsWon`).
+  Nowe rodzaje nie pasują do żadnego typu celu questu (test), więc QuestService je pomija.
+- **S151** Gorąca ścieżka (zabójstwo): jeden przebieg `Logic` na zdarzenie bez yieldów, gałęzie w pamięci serwisu,
+  osiągnięcia z indeksu `byCounter`, zapis tylko zmienionych liści (`{ "character", "ach", "c", "kills" }`), żeby diff
+  stanu po zabójstwie był parą liczb, a nie całą gałęzią.
+- **S151** Uniki liczy `FightLogService.End` (wszystkie walki z podsumowaniem: boss, Elita II, Inwazja, boss świata);
+  walka porzucona (`Drop`) nie liczy. Pełna drużyna = 5 zwycięzców obecnych przy bossie lochu. Handel liczy się, gdy
+  coś przeszło z rąk do rąk. Zadanie poboczne liczy się przy pierwszym oddaniu.
+- **S151** Toasty: jeden naraz, 5 s, u góry ekranu (telefon też, z dala od paska umiejętności); przy wejściu jeden
+  zbiorczy i najwyżej 3 pojedyncze (najwięcej punktów). Ustawienie `achToasts` wyłączone = wpis w czacie systemowym.
+  Kosmetyk z osiągnięcia bez własnego toastu (`CosmeticService.Grant(..., quiet)`). Bez przycisku „Zobacz” do S151b.
+- **S151b** Okno osiągnięć: seria (`after`) zwinięta do bieżącego stopnia (pierwszy niezdobyty, cała zdobyta = ostatni),
+  w filtrze „Zdobyte” do najwyższego zdobytego; stopnie jako „I✓ II [III] IV” w nazwie wiersza, następny stopień w
+  szczegółach. Kolejność: w trakcie (najbliżej celu), nie zaczęte (kolejność danych), zdobyte (najnowsze). Model widoku
+  tylko w `Logic/AchievementView` (test), okno nie liczy nic samo.
+- **S151b** Sekretne niezdobyte: „???” bez opisu, celu i nagrody (dziś żadne osiągnięcie nie jest sekretne); nie da się
+  ich śledzić.
+- **S151b** Śledzenie: najwyżej `Config.Achievements.trackMax` (3) na postać (`character.ach.track`, szablon +
+  reconcile), także osiągnięcia konta; zdobyte znika samo (`grant`), a zdobyte inną postacią albo usunięte z danych
+  wypada przy wczytaniu (`Achievements.state`). Remote `AchievementTrack` (`rate = 2`). Na telefonie tracker pokazuje 1
+  (`trackPhone`), reszta po „Jeszcze {n}”.
+- **S151b** Lista okna czyta stan najwyżej co `listRefresh` (0,5 s) i przebudowuje wiersze tylko przy zmianie kształtu
+  (kolejność, zdobyte, śledzone); pasek wiersza słucha swojego wpisu. Wiersz trackera słucha tylko swojego licznika.
+- **S151b** Klawisz okna `N` (`win_achievements`; `Y` mają znajomi od S133), pozycja w menu HUD i w menu gry (☰).
+  Ikony kategorii: klucze `hud/ach_<cat>` (`UiArt.achCategory`, w `UiArt.FIXED.hud`), do czasu grafik znaki.
+- **S151b** Profil: `PlayerProfile` dostaje `ach = { points, done, total, recent }` (3 ostatnie zdobyte konta i postaci),
+  bez postępów w trakcie, także dla cudzego profilu; „Wszystkie” tylko we własnym profilu (gdy otwarty na sobie).
+  Gablota (`showcase`) nie zrobiona.
+- **S151b** Podpowiedź „Gwiazdką dodasz…” raz na konto przy pierwszym otwarciu okna: ustawienie `achHint` przez
+  istniejące `SetSetting` (osobnego mechanizmu „hints” nie ma).
+- **S151b** Wiki pominięta (właściciel 17.10: bez odświeżania danych i zmian w `wiki/`): eksporter
+  `tools/WikiData/Achievements.luau`, strona, publikacja tytułów `ach_*` i kosmetyków osiągnięć (`wiki = false` zostaje)
+  idą razem z odświeżeniem wiki; zasada bez kwot odłamków i `retro` z `backfill` obowiązuje wtedy dalej.
+- **S151b** Odłamki osiągnięcia postaci: kwota w oknie tylko na postaci, która je dostała (`character.ach.paidHere`,
+  zapis w `grant`, bez szablonu: ścieżka tworzy się sama); inna postać z tym samym osiągnięciem widzi „już odebrane na
+  tym koncie”. Osiągnięcie konta: kwota, gdy zdobyte. Postać opłacona przed S151b (bez `paidHere`) też widzi „już odebrane”.
+- **S151b** Telefon: „Zobacz” w toaście ma `MinTouch`, wiersz osiągnięcia w trackerze `RowHeight` (PC bez zmian: 32 i 40).
+  „Zobacz” / klik w trackerze na już wybranym osiągnięciu otwiera arkusz ponownie (fokus przez `nil`).
+- **S152** VIP i przepustka sezonu to dwa niezależne produkty: VIP (subskrypcja Roblox, S121) daje stałe udogodnienia,
+  przepustka (raz na sezon za Smocze Odłamki) tylko odblokowuje drugą ścieżkę nagród zdobywanych grą. VIP nie
+  przyspiesza punktów i nie daje premium przepustki; przepustka nie daje odłamków, stopni nie da się kupić.
+- **S152** Przepustka premium za Smocze Odłamki (`Products.seasonPass = { key = "season_pass", price = 800 }`, poza
+  `SHOP`), bez własnego produktu Robux: jeden kanał płatności (paczki odłamków), w Creator Hub nic nowego. 800 ≈ paczka
+  550 + reszta; mieści się w przeglądzie cen S131 (≤ największa paczka), wiersz w `docs/SKLEP-ID.md`.
+- **S152** Punkty jawnymi wywołaniami `SeasonService.Add(player, źródło)` w serwisach, które znają fakt (QuestService:
+  fabuła, dzienne, tygodniowe, zlecenie na bossa = `weekly`; SideQuestService: pierwsze oddanie; ContractService;
+  DungeonService; WorldEventService; WorldBossService; BloodMoonService: opłacony udział; ArenaService: mecz rozegrany,
+  nie przerwany; AchievementService: zdobyte w grze, bez zaliczeń dawnych postępów przy wejściu) i z sygnału
+  `CombatService.MonsterKilled` (zwykły / Elita / Elita II, tylko zaliczeni; bossowie lochu i przyzwani nie), nie z EXP:
+  postać na 100. i zadania bez EXP też liczą. Serwisy biorą `SeasonService` przez `registry.Get` bez `Deps`.
+- **S152** Liczby tylko w `Data/Seasons` (`POINTS`, `TIER_POINTS = 1000` na każdy stopień, `LIMITS`, `CATCHUP`,
+  `GRACE_DAYS`), w księdze balansu bez list sezonów (`omit SEASONS`). Startowe liczby z planu sesji zostały: model mieści
+  wszystkie pasma E2 (1 h dziennie kończy 40 stopni w 8. tygodniu, 2–4 h w 7., start w 5. tygodniu 35–36 stopni,
+  potwory 27% punktów przy 2 h).
+- **S152** Limit narastający (`weekCap × tydzień sezonu`) jest nadrabianiem; mnożnik ×1,5 pod linią nadrabiania liczoną
+  w sposób ciągły (`behind × stopnie × upłynięta część sezonu`, nie skokami tygodni: na starcie sezonu nikt nie jest
+  „w tyle”), dopłata tylko do linii. Limit potworów (zwykłe + Elity, bez Elit II) 400 pkt na dzień UTC, po nadrabianiu.
+  Punkty ponad limit przepadają (toast raz na tydzień na serwerze).
+- **S152** Model tempa: godzina gry = 70% czasu na zwykłych potworach (`Balance.paceAt`), 10% na Elitach jaskiń, 0,5
+  Elity II, po 0,5 oddania fabuły / pobocznego / zlecenia (stała zamiast budżetu questów, poniżej 100. poziomu),
+  wydarzenie co 2 h, 0,5 wygranej z bossem lochu, boss świata co 3 h (od 80.), dzienne zlecenia od 1 h gry, tygodniowe
+  + zlecenie na bossa, 1 Krwawy Księżyc i 3 osiągnięcia na tydzień; potwory pierwsze w dniu (udział potworów to górna
+  granica).
+- **S152** Zakup premium do ostatniej sekundy sezonu; nagrody premium osiągniętych stopni odbiera się wstecz. Odbiór
+  przez cały sezon i 14 dni po nim (`Season.claimUntil`), potem nieodebrane (darmowe i premium, jeśli kupiona) idą
+  pocztą raz (klucz `once` = `season_<id>_<userId>`, `mailed[id]` w stanie konta). Poczta niesie kosmetyki i przedmioty;
+  czas Płaszcza Przynęty trafia od razu na konto (list go nie umie). Przedmioty łączone po id (`Season.pack`), po
+  najwyżej `maxItemsPerParcel` stosów na list; list k > 1 ma klucz `season_<id>_<userId>_<k>`.
+- **S152** `account.seasonPrev` = jeden poprzedni sezon w okresie łaski (pole opcjonalne, bez szablonu). Gdy kończy się
+  kolejny sezon, a starszy jeszcze czeka na pocztę, najpierw idzie poczta starszego, potem przejście (zawsze już po
+  jego okresie łaski).
+- **S152** Mapy odebranych stopni z kluczami tekstowymi (`tostring(tier)`), nie liczbowymi: magazyn danych Roblox i
+  replikacja nie przyjmują tablic z dziurami. `Season.sanitize` przyjmuje też klucze liczbowe.
+- **S152** Odbiór: `SeasonClaim(tier, tor, idSezonu?)` (bez id = trwający, z id = poprzedni w okresie łaski) i
+  `SeasonClaimAll` (oba sezony); najpierw zapis odbioru, potem nagroda. Kosmetyk posiadany = nic, nagroda i tak odebrana.
+  Kamienie Powrotu związane i niesprzedawalne (`bound`, `ns`, łączone po id), nadmiar pocztą (`Season.pack`, listy po
+  limicie poczty). Odbiór wymaga postaci w grze.
+- **S152** Nagrody sezonu 1: ścieżka darmowa co 2 stopnie (5 kosmetyków: emotka, barwnik, ramka, efekt awansu, tytuł
+  „Weteran Sezonu Szronu” na 40.), premium na każdym stopniu (12 kosmetyków, na 40. aura „Serce Zimy”, tytuł „Strażnik
+  Szronu” na 17.); reszta: 3 / 5 Kamieni Powrotu i 1 h Płaszcza na zmianę. Tytuł weterana na darmowej 40. zamiast
+  pary aura + tytuł na premium 40. (nagroda stopnia to jedna rzecz).
+- **S152** Kosmetyki sezonu: `obtain.season`, cena 0, nigdy w ofercie tygodnia ani w sklepie, zostają na zawsze; czy
+  wrócą kiedyś do sprzedaży, zdecyduje właściciel. Do licznika osiągnięć „kosmetyki zdobyte w grze” wchodzi tylko
+  ścieżka darmowa (`Seasons.trackOf`). Na wiki ukryte przez `wiki = false` (jak S151) do S152b; garderoba: „Przepustka
+  sezonu: {sezon}” (`wardrobe.obtain.season`, wzór kluczy `wardrobe.obtain.*`).
+- **S152** Nowy sezon = nowy wpis w `Data/Seasons.SEASONS` z własnymi kosmetykami (decyzja właściciela); sezonu 2 nie
+  ma, po sezonie 1 „Następny sezon wkrótce”.
+- **S152** Admin `/seasonpass` (`info | points | tier | premium on|off | reset | week <n>`), bo `/pass` to test przepustek
+  S23, a `/season` pora roku miasta (S105). `week` przesuwa zegar przepustki tego serwera tylko w Studio.
+- **S152** Wiki pominięta (właściciel 17.10): bez `npm run data`; nowe kosmetyki i tytuły nie wchodzą do eksportu
+  (`wiki = false`).
+- **S152b** Okno przepustki na pergaminie (`UI/Screens/SeasonPass.luau`, `UiWindows.season`): PC poziomy pas kolumn
+  stopni (stopień, darmowa nad premium, nazwy ścieżek stałe z lewej), telefon pionowa lista stopni z dwiema komórkami;
+  otwiera się na pierwszym stopniu do odebrania. Wszystko z `Logic/SeasonView` (czysty widok nad `Logic/Season`, bez
+  własnych reguł) nad replikowanym `account.season` / `seasonPrev`; zegar `UI/SeasonState` (co 1 s).
+- **S152b** Komórka do odebrania: krawędź `paper.accent` (informacyjna, ≥ 3:1) i pulsujący ozdobny brzeg
+  `Brass.Bright` (na pergaminie ma < 3:1, więc niesie tylko ozdobę); pasek stopnia: `Brass.Bright` na
+  `Resource.track`. Nowe pary w `UiPalette.PAIRS`. Klik zablokowanej komórki premium otwiera zakup.
+- **S152b** „Limit tygodnia: {pkt}/{limit}” = punkty konta / limit narastający `Season.capAt` (limit jest narastający,
+  nie przyrostem tygodnia); plakietki „Nadrabianie ×1,5”, „Limit tygodnia osiągnięty”, „Wszystkie stopnie zdobyte”.
+- **S152b** Przycisk ❖ pod ✧ (nie na prawo: tam rząd Płaszcza i Auto), kropka = „!” `IconButton` + pulsująca rama;
+  widoczny w trwającym sezonie i w okresie łaski tylko z nagrodami do odebrania (przed 2026-11-02 ukryty, okno z menu i
+  klawisza mówi „Następny sezon wkrótce” z datą). Grafika `hud/season` (do tego czasu znak).
+- **S152b** Klawisz C (`win_season`, wolny od FIX 2026-10-14; N zajęła S151b). Okno ma id `season`, nie `seasonpass`:
+  `WindowManager` łączy okno z akcją `win_<id>`.
+- **S152b** Karta przepustki nad kartą VIP w „Przepustkach” (nie kupiona: „Odblokuj ◆ cena” + „Zobacz nagrody”,
+  kupiona ✓ ze stopniem, po sezonie / przed sezonem sam podgląd), pod nimi `premium.passVsVip` (to samo zdanie co
+  `season.vsVip`). Notka „Przepustka zostaje na koncie na zawsze” zeszła pod karty Gamepassów (przepustka sezonu nie
+  zostaje). Jeden modal zakupu `UI/SeasonPassBuy` (okno i karta), opis i saldo z `PremiumConfirm.describe`, bez
+  odłamków przycisk „Doładuj”.
+- **S152b** Lejek `season` (`open`, `view`, `prompt`, `bought`, `claimed`): klient wysyła `open` / `view` tylko, gdy
+  premium można kupić; `view` = pierwsze najechanie / klik komórki premium albo przewinięcie pasa po
+  auto-przewinięciu; `claimed` = pierwszy odbiór premium trwającego sezonu po zakupie na tym serwerze (odbiór z
+  poprzedniego sezonu w łasce się nie liczy).
+- **S152b** „Odbierz wszystko” widać przy > 1 nagrodzie pokazanego sezonu albo przy dowolnej nagrodzie poprzedniego
+  sezonu w łasce (pas nie ma jego komórek; `SeasonView.claimAllShown`). Data łaski w oknie = ostatni dzień odbioru
+  (`claimUntil - 1`). Pas i lista mają jawny `CanvasSize` (auto-przewinięcie przed pierwszym układem).
+- **S152b** Toast `season.tierUp` bez „Otwórz” (`Toast` nie umie akcji); wejście przez ❖, C i menu.
+- **S152b** Poprawka S152: zegar Studio `/seasonpass week` idzie do klienta atrybutem `SeasonClockOffset`, okno liczy
+  ten sam czas co serwer.
+- **S152b** Wiki pominięta (właściciel 17.10): rekord `season` w `WikiData/Premium` (bez ceny), odsłonięcie kosmetyków
+  sezonu, artykuł `przepustka-sezonu` / `season-pass` i wpis aktualizacji czekają na odświeżenie wiki.
+- **S153** Premia powrotu nie jest błogosławieństwem (nie wypiera go): osobne źródło statystyk `returning`
+  (`StatService.RegisterModifierSource`, klucz `source.returning` „Powrót” jak inne źródła, nie `stats.source.*`).
+  „Podwójne” = +100 pkt `expBonus` dodane do reszty: z Fortuną +22 daje +122%, nie ×2,44. Działa na każde źródło EXP
+  (`GiveExp` nie rozróżnia źródeł dla `expBonus`), także w tygodniowym rankingu EXP (S125, bez wyjątku w
+  `ExpGained`): premii nie da się kupić (`returning.spec` pilnuje `Data/Products`), godzina raz na 14 dni rankingu
+  nie przestawia.
+- **S153** Próg 7 dni od `account.stats.lastSeen`, odstęp 14 dni od ostatniego przyznania (`account.returning.at`),
+  `minLevel` 10 = najwyższa postać konta (nowe konta i alty od zera bez premii); premia działa na każdej postaci konta,
+  także 100. poziomu. Przyznanie ustawia czas, nie dodaje. Czas liczy się tylko w świecie: faza `playing`, postać w
+  grze, serwer świata (arena i turniej nie zjadają premii); przerywnik nie zatrzymuje licznika (serwer go nie zna).
+- **S153** Bez przyznania wstecz: konto bez `lastSeen` (pierwsze wczytanie po S153, nowe konto) dostaje tylko znacznik
+  czasu i `seen` = najnowszy wpis dziennika (bez premii i bez listu w dniu wdrożenia, nowy gracz bez historii).
+  `lastSeen` zapisuje wczytanie (po sprawdzeniu), pętla co 5 min i zwolnienie profilu.
+- **S153** List „Co się zmieniło” dla każdego gracza z nowymi wpisami (nie tylko po 7 dniach; wtedy jest krótki), raz:
+  zamknięcie przez gracza (przycisk, X, Esc, inne okno) wysyła `ChangelogSeen`; `CloseAll` przerywnika nie (list
+  wraca po scenie). Czeka na wczytany świat i postać oraz brak okna, modala i przerywnika (po oknie nagrody za
+  logowanie). Z menu gry („Co nowego”, klucz `menu.whatsnew` jak inne przyciski menu, nie
+  `hud.menu.*`) pokazuje ostatnie wpisy niezależnie od `seen`. Dziennik w grze jest osobny od „Aktualizacji” wiki
+  (krótszy, tylko to, co gracz czuje w grze), bez generowania jednego z drugiego.
+- **S153** Model: premia poza tempem (jak S100 i S101), wiersze 1–100 bez zmian. `S153.hour` (premia ≤ EXP 1 h walki)
+  asertowany wszędzie, `S153.bonus` (≤ 0,8 poziomu, średnia klas jak w S152) asertowany od 45. poziomu; na 10. i 20.
+  poziom trwa krócej niż godzinę walki, więc premia to ok. 1,6–1,9 poziomu (raport z powodem). Kapłan na 45. ma 0,82
+  (wiersz klasy w raporcie).
+- **S153** `/returning away <dni>` robi sprawdzenie od razu, jakby ostatnia wizyta była tyle dni temu (prawdziwy
+  `lastSeen` i tak nadpisuje następny zapis); `/returning clear` zeruje też odstęp.
+- **S153** Wiki pominięta (właściciel 17.10): bez `npm run data`; akapit „Premia powrotu” w `doswiadczenie.mdx` czeka.
+- **S154** Transmog tylko dla typów z wyglądem w `Data/WeaponLooks` (broń i druga ręka): zbroja i biżuteria nie są
+  dziś rysowane na postaci (strój klasy S132). `Transmog.SLOTS` liczy się z danych, więc zbroja dojdzie razem z
+  warstwami zbroi (`ClassLooks.layers`) bez zmiany zapisu.
+- **S154** Klucz wyglądu: własny model przedmiotu (boss) = id przedmiotu, inaczej model progu z `ArtTiers`
+  (`<typ>_<próg>`), bez żadnego modelu jeden klucz `<typ>` (bryły są takie same na każdym progu, więc kolekcja nie ma
+  identycznych pozycji). Przedmiot bossa bez własnego modelu ma wygląd progu, nie rzadki wygląd (dziś 1 wygląd z
+  bossa: Rozłupywacz Grimroka; każdy nowy model bossa w `WeaponLooks.assets` dochodzi sam).
+- **S154** Odblokowanie przy wejściu przedmiotu do plecaka lub ekwipunku: `TransmogService` słucha
+  `InventoryService.Changed`, `EquipmentService.Changed` i wejścia postaci (jedno sprawdzenie na klatkę), bo przez
+  plecak przechodzi łup, poczta, handel, aukcja, nagrody, kowal i depozyt. Skan jednorazowy (`scanned`) plecaków,
+  ekwipunku i depozytu wszystkich postaci konta bez toastów; poczta i aukcje bez skanu. Kolekcja kontowa, zostaje po
+  sprzedaży i rozbiciu; zapis tylko nowych kluczy, odczyt przez `Transmog.sanitize` (nieznane klucze zostają w zapisie,
+  ale nie liczą się). Toast pojedynczo do 3 wyglądów, reszta jedną linią; wygląd z bossa osobnym toastem ♛.
+- **S154** Koszt `Config.Transmog` według rzadkości przedmiotu, który dostaje wygląd (pył 2 / odłamek 1 / kryształ 1 /
+  kryształ 1, Zwykły bez esencji) + złoto na krzywej ulepszania × 1,5. Klucze esencji jak w `Config.Reroll` (nazwy
+  rzadkości, nie indeksy). Zdjęcie darmowe; wygląd z bossa bez dopłaty (rzadkość wyglądu to nagroda za bossa, nie
+  podatek). Nałożenie wyglądu, który przedmiot już ma (własny albo obecny), jest odrzucane (`transmog.error.same`).
+- **S154** Kolor `"rarity"`, poświata Heroiczny+ i klejnot żywiołu na ikonie zawsze z przedmiotu, nie z wyglądu; typ ten
+  sam, więc chwyt, `WeaponType` i animacje S113 / S115 bez zmian. `/weaponpreview` bez zmian.
+- **S154** `tm` wędruje z przedmiotem (handel, poczta, aukcja, depozyt); kupujący dostaje do kolekcji tylko własny
+  wygląd przedmiotu (`lookOf(def)`), nie nałożony, i może zdjąć go za darmo.
+- **S154** Ikona w slocie = ikona wyglądu ze znakiem ↺ na plakietce (prawy dolny róg: sprzęt nie ma tam licznika
+  stosu; na broni maga nad klejnotem żywiołu, żeby go nie zasłaniać); nazwa, opis, porównanie i duszek przeciągania mówią, czym przedmiot jest naprawdę.
+- **S154** Kolekcja u kowala w „gablocie” na żelazie (`Iron.Sunken`, kafelki `Iron.Raised`), bo ramka `Brass.Bright`
+  obecnego wyglądu na pergaminie nie ma kontrastu 3:1; para `brass.bright on iron.{raised,selected,sunken}` w `PAIRS`.
+  Zablokowany wygląd można kliknąć i obejrzeć w podglądzie (przycisk nieaktywny, podpowiedź skąd go wziąć).
+- **S154** Premium tylko kosmetyczne: istniejące kosmetyki `weapon` (cząsteczki) działają na każdym wyglądzie; nowych
+  produktów nie ma, wyglądy za odłamki to decyzja właściciela później (przez `Data/Cosmetics` i `paywall.spec`).
+- **S154** Wiki pominięta (właściciel 17.10): bez rekordu `Transmog` w `tools/WikiData` i bez `npm run data`.
+- **S155** Samouczek z działaniem zastępuje dymki S14 (jeden przewodnik): `GuideController`, remote `GuideDone`, handler w
+  `SettingsService` i teksty `guide.*` usunięte; `character.guideDone` zostaje w zapisie jako historia (nic go nie czyta).
+- **S155** Kroki `Logic/Tutorial.STEPS`: `move` (klient, 8 st. przejścia sterowanego graczem), `quest` (przyjęcie zadania fabuły,
+  `QuestService.MainAccepted`), `backpack` (klient, okno `inventory` / `character`), `potion` (`PotionService.Drank`),
+  `attack` (nowy `CombatService.BasicHit`), `skill` (nowy `SkillService.Casted`: udany `CastSkill`, bez warunku celu).
+- **S155** Zdarzenie późniejszego kroku liczy się z góry (`pending`), wcześniejszego jest pomijane; po `skill` `done`, a
+  klient pokazuje „Gotowe” 6 s albo do dotknięcia, tylko gdy widział przejście na żywo.
+- **S155** Klient zgłasza tylko `move` i `backpack` (`Tutorial.clientAllowed`, `TutorialEvent` 2/s, ponowienie po 3 s);
+  `TutorialService` dostaje resztę z sygnałów (nikt od niego nie zależy poza `AdminService`, bez cykli).
+- **S155** Przy wejściu postaci krok `quest` zaliczony, gdy zadanie fabuły jest już wzięte albo oddane (awaria, `/tutorial reset`).
+- **S155** Kotwice z prawdziwych elementów HUD (`UI/HudAnchors`, po nazwie, tylko widoczne); joystick telefonu = lewa
+  dolna strefa ekranu; pozycja co 0,2 s (rozmiar, obrót); na telefonie na lewo od łuku ataku i umiejętności.
+- **S155** Wskazówka na żelazie w warstwie HUD, ramki `Active = false` (klik łapią tylko jej przyciski); obwódka pulsuje
+  przez `Heartbeat` jak `SeasonButton` (UI, nie efekt świata: reguła `Vfx/Clock` S110 jej nie dotyczy).
+- **S155** Wskazówka czeka na okna `npc`, `questnpc`, `login`, `whatsnew`, modal, przerywnik i śmierć, a także na
+  nagrodę za logowanie i list S153, dopóki czekają na samoczynne otwarcie (`Pending` obu kontrolerów); te dwa przestały
+  czekać na przewodnik, więc przy pierwszym wejściu idą przed wskazówką.
+- **S155** Ruch nie jest w `Data/Keybinds` (klawisze zarezerwowane), więc tekst PC kroku `move` ma stałe „W A S D”; inne
+  kroki biorą klawisze z mapy gracza (`Tutorial.keyArgs`), na telefonie słowa przycisków (test).
+- **S155** Strzałka zostaje przy fabule: krok `quest` raz na sesję `GuideToNpc("captain")` tylko bez wziętego i oddanego
+  zadania fabuły; krok `attack` w mieście mówi „Idź za strzałką zadania na Łąki” i podświetla tracker.
+- **S155** Jeden lejek onboardingu: samouczek 1–6, zadania fabuły 1–10 jako 7–16 (w S14 były 1–10), `level5` jako 17;
+  numery tylko z `Tutorial.funnelStep` (`TUTORIAL_STEPS` usunięte). Pominięcie: `Analytics.custom("TutorialSkip", krok)`.
+- **S155** Nagroda na 5. poziomie (`Data/Tutorial.REWARD`): tytuł „Pierwsze Kroki” (`obtain.tutorial`, cena 0), 3 Kamienie
+  Powrotu i 10 Małych Mikstur Życia związane, bez EXP i złota; także po pominięciu (za poziom, nie za klikanie).
+- **S155** Nagroda: znacznik `reward` przed wydaniem, pełny plecak → poczta `once = tutorial_<id postaci>`, nieudana
+  poczta cofa znacznik; sprawdzenie przy awansie i wejściu. Tytuł jest kontowy; listę w toaście składa klient.
+- **S155** Krok `potion`: nowa postać stoi w mieście z pełnym HP, więc gdy to bieżący krok, zwykła mikstura pije się
+  mimo pełnego zasobu (`PotionService.AddFullDrink`, `Tutorial.wantsPotion`; zalicza też cel `potion` zadania `healer`).
+  Odnowienie bez zmian; poza tym krokiem „Nie potrzebujesz tego teraz” jak dotąd.
+- **S155** Krok `move` liczy tylko drogę, gdy gracz steruje (`Humanoid.MoveDirection`), bez skoków ponad
+  `Data/Tutorial.MAX_STEP` na próbkę i przy zakotwiczonym korzeniu (`Tutorial.walk`): ustawienie postaci po wejściu
+  (pivot z domyślnego spawnu) i teleporty się nie liczą.
+- **S155** Nieudana poczta nagrody cofa znacznik na postaci, która go dostała (zmiana postaci w trakcie poczty: wpis do
+  jej zapisanej tabeli), nigdy na postaci aktywnej po powrocie z wywołania.
+- **S155** Postacie sprzed S155: szablon `tutorial` z `done = true, reward = true` (reconcile), bez samouczka i nagrody.
+- **S155** Osiągnięcia S151 nie mają „ukończ samouczek” („Pierwsze Kroki” to `level10`): nic nie podpięte.
+- **S155** Wiki pominięta (właściciel 17.10): tytuł i kosmetyk bez `wiki = false`, wejdą przy hurtowym odświeżeniu.
+
+- **Właściciel 2026-10-19 (pytania S149–S153)**: PvP przy bossie świata zostaje wyłączone; nagroda za bossa świata od 70. poziomu (`Bosses.hrimvald.minLevel` 80 → 70, Lodowe Szczyty od 70); kierunki klas zostają na wiki; przepustka zostaje (800 odłamków, 1 h dziennie kończy całość); premia za powrót zostaje od postaci 10. poziomu.

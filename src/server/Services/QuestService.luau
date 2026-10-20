@@ -23,6 +23,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local Clock = require(Shared.Util.Clock)
 local Cutscenes = require(Shared.Logic.Cutscenes)
@@ -39,12 +40,10 @@ local Rng = require(Shared.Logic.Rng)
 local SideQuests = require(Shared.Logic.SideQuests)
 local Skills = require(Shared.Logic.Skills)
 local Time = require(Shared.Logic.Time)
+local Tutorial = require(Shared.Logic.Tutorial)
 local Types = require(Shared.Types)
 
 local log = Log.new("QuestService")
-
--- The first story quests form the tutorial (Data/Quests/Main); reported as the onboarding funnel.
-local TUTORIAL_STEPS = 10
 
 local QuestService = {
 	Name = "QuestService",
@@ -60,6 +59,8 @@ local QuestService = {
 		"ContractService", -- S99: hunting contracts (ContractService.Handle)
 		"CosmeticService", -- S97: Reward.cosmetic (the Dragonslayer's mount skin of the quest vaelgrath)
 	},
+	-- S155: (player, questId) after a story quest was accepted; TutorialService (the "quest" step)
+	MainAccepted = Signal.new(),
 }
 
 local PlayerStateService: any
@@ -72,6 +73,7 @@ local ZoneService: any
 local SideQuestService: any
 local ContractService: any
 local CosmeticService: any
+local SeasonService: any -- S152: season pass points (registry.Get only, no Deps)
 local Registry: any -- S101b: CompanionService during play (it is not in Deps: no cycle with the quest services)
 
 local rng = Rng.new()
@@ -370,6 +372,7 @@ local function accept(player: Player, npcId: string): (boolean, string?)
 	handle(player, "talk", { npc = npcId })
 	catchUp(player)
 	refreshCompanion(player)
+	QuestService.MainAccepted:Fire(player, quest.id)
 	return true, nil
 end
 
@@ -399,11 +402,15 @@ local function turnIn(player: Player, npcId: string): (boolean, string?)
 	local index = Quests.Main.indexOf[quest.id]
 	PlayerStateService.Set(player, { "character", "quests", "mainDone" }, index)
 	PlayerStateService.Set(player, { "character", "quests", "mainLast" }, quest.id)
-	-- The first story quests are the tutorial: report them as the onboarding funnel.
-	if index <= TUTORIAL_STEPS then
-		Analytics.onboarding(player, index, quest.id)
+	QuestEvents.fire(player, "quest", { kind = "main", index = index }) -- S151: achievements
+	-- The first story quests are in the onboarding funnel after the hands-on tutorial (S155: numbers only from
+	-- Logic/Tutorial.funnelStep)
+	local funnelStep = Tutorial.funnelStep("quest", quest.id)
+	if funnelStep then
+		Analytics.onboarding(player, funnelStep, quest.id)
 	end
 	give(player, quest.reward)
+	SeasonService.Add(player, "quest") -- S152: a story quest handed in
 	-- S132: class outfits of this quest for the character's class (obtain.quest; owned = nothing)
 	CosmeticService.GrantQuestOutfits(player, quest.id, char.class)
 	queueScenes(player, quest.id, "turnIn")
@@ -496,6 +503,7 @@ local function claim(player: Player, index: number): (boolean, string?)
 	end
 	PlayerStateService.Set(player, { "character", "quests", "daily", "list", index, "claimed" } :: { any }, true)
 	give(player, reward)
+	SeasonService.Add(player, "daily") -- S152
 	Net.Fire(player, "QuestCompleted", `daily.{entry.template}.title`)
 	return true, nil
 end
@@ -524,6 +532,7 @@ local function claimWeekly(player: Player, index: number): (boolean, string?)
 	end
 	PlayerStateService.Set(player, { "character", "quests", "weekly", "list", index, "claimed" } :: { any }, true)
 	give(player, reward)
+	SeasonService.Add(player, "weekly") -- S152
 	Net.Fire(player, "QuestCompleted", `weekly.{entry.template}.title`)
 	return true, nil
 end
@@ -552,6 +561,7 @@ local function claimBossContract(player: Player): (boolean, string?)
 	end
 	PlayerStateService.Set(player, { "character", "quests", "weekly", "boss", "claimed" }, true)
 	give(player, reward)
+	SeasonService.Add(player, "weekly") -- S152: the boss contract counts as a weekly contract
 	Net.Fire(player, "QuestCompleted", "quest.bossContract.title")
 	return true, nil
 end
@@ -693,6 +703,7 @@ function QuestService.CompleteWeekly(player: Player): boolean
 end
 
 function QuestService.Init(registry)
+	SeasonService = registry.Get("SeasonService")
 	PlayerStateService = registry.Get("PlayerStateService")
 	CharacterService = registry.Get("CharacterService")
 	InventoryService = registry.Get("InventoryService")

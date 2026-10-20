@@ -33,6 +33,8 @@ export type Ctx = {
 	OpenWardrobe: (start: { kind: string?, try: string? }?) -> (),
 	Select: (tab: string) -> (),
 	OpenVip: (() -> ())?, -- S121: the VIP window
+	OpenSeason: (() -> ())?, -- S152b: the season pass window
+	BuySeason: (() -> ())?, -- S152b: the purchase dialog of the season pass's premium track (UI/SeasonPassBuy)
 }
 
 export type CardSpec = {

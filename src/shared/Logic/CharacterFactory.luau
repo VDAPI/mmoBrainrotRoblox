@@ -9,6 +9,7 @@ local CharacterLook = require("./CharacterLook")
 local SkillPools = require("./SkillPools")
 local Skills = require("./Skills")
 local StarterGear = require("./StarterGear")
+local Tutorial = require("./Tutorial")
 
 type CharacterData = Types.CharacterData
 
@@ -45,7 +46,8 @@ function CharacterFactory.create(classId: Types.ClassId, name: string, ids: Ids,
 	character.equipment = {}
 	StarterGear.apply(character, ids.newId)
 	character.createdAt = ids.now
-	character.guideDone = false
+	character.guideDone = false -- S14; S155: legacy, read by nothing
+	character.tutorial = Tutorial.newState() -- S155: the hands-on tutorial from step 1, the level reward waits
 	character.look = CharacterLook.normalize(look)
 	character.lookFree = true
 	return character

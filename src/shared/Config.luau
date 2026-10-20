@@ -103,14 +103,38 @@ local Config = {
 		maxFriends = 50,
 		maxIgnored = 100,
 		storeName = "Vaelthorn_Social_v1", -- DataStore "Social_<userId>": ignore mirror and pending unfriends
-		presenceMap = "Vaelthorn_Presence_v1", -- MemoryStore HashMap: userId -> { j, m, l, c, n, t }
-		presenceTtl = 120, -- s: an entry without a refresh counts as offline
-		presenceRefresh = 60, -- s: how often a server rewrites its players' entries
-		statusRefresh = 30, -- s: the friends window asks again; the server caches a read for as long
+		-- S150: presence moved to Config.Friends (FriendService, Friends/Presence)
 		inviteSeconds = 30, -- friend request popup
 		holdSeconds = 0.5, -- touch: holding a player this long opens the player menu
 		holdMove = 14, -- px: a finger moving further cancels the hold (camera drag)
 		followRefresh = 0.5, -- s: "Follow player" re-reads the target position
+	},
+	-- S150: friends 2.0 (Logic/Presence, Logic/FriendJoin, FriendService, Friends/Presence). Not balance (outside
+	-- CONFIG_KEYS). Platform limits (create.roblox.com, 2026-10): MemoryStore 1000 + 120 x CCU request units per minute
+	-- for the whole experience (GetAsync / SetAsync / RemoveAsync 1 unit, UpdateAsync >= 2), hash map value <= 32 KB,
+	-- key <= 128 characters, TTL <= 45 days; MessagingService 600 + 240 x players messages sent per server and minute,
+	-- 40 + 80 x servers received per topic and minute, 20 + 8 x players subscriptions per server, message <= 1 KiB,
+	-- topic <= 80 characters; Player:GetFriendsOnlineAsync is a client call with a 30 s cache (GameId = JobId).
+	Friends = {
+		presenceMap = "Vaelthorn_Presence_v2", -- MemoryStore HashMap: userId -> { j, m, p, map, lvl, cls, name, t, pj }
+		presenceTtl = 150, -- s: an entry without a refresh counts as offline
+		presenceEvery = 60, -- s: a server rewrites its players' entries (and at once on a map or setting change)
+		changeCheck = 2, -- s: how often a server looks for such a change (no store call without one)
+		readsPerMinute = 300, -- per server: min(1000 / 2, 300) (the fixed part of the MemoryStore quota halved)
+		otherReserve = 0.25, -- share of the bucket that only window refreshes may use (Roblox friends wait)
+		cacheSeconds = 20, -- s: one read of an entry serves every viewer of this server for this long
+		refreshEvery = 30, -- s: an open friends window is refreshed this often
+		lightEvery = 2, -- s: blocks and cooldown of an open window (no store call)
+		joinCooldown = 60, -- s: after a teleport to a friend's server (done or failed)
+		inviteSeconds = 60, -- s: a party invitation from another server waits this long
+		inviteGrace = 90, -- s: the inviter's server accepts the arrival this long after the invitation expired
+		invitesPerMinute = 3, -- per player: party invitations to other servers
+		inviteTopic = "Vaelthorn_FriendInvite", -- MessagingService: one topic for every server
+		robloxMax = 200, -- Roblox friends read per player (Players:GetFriendsAsync pages)
+		robloxRefresh = 600, -- s: the Roblox friends list is read again at most this often (window open)
+		robloxReads = 20, -- Roblox friends whose presence one refresh reads (rotating)
+		robloxHint = 50, -- user ids a client may name as "Roblox friends in this game" (FriendsRobloxHint)
+		hintEvery = 30, -- s: the client sends the hint this often while the window is open
 	},
 	-- S135: nameplates above player characters (NameplateController, Logic/Nameplate).
 	Nameplate = {
@@ -767,6 +791,46 @@ local Config = {
 		goldMul = 1.8,
 		growth = 0.25,
 		growthCap = 3,
+	},
+	-- S151 (docs/DESIGN.md §20b): achievements (Data/Achievements, Logic/Achievements). The sum of every Dragon Shard
+	-- reward stays within shardBudget (tests/achievements.spec), a toast stays toastSeconds, after the catch-up of old
+	-- progress at most backfillToastMax single toasts (the most points) follow the summary one. Not balance.
+	-- S151b: at most trackMax achievements in the HUD tracker (trackPhone shown on a phone before it is expanded), the
+	-- open window refreshes its list at most every listRefresh seconds, a profile shows profileRecent latest ones.
+	Achievements = {
+		shardBudget = 500,
+		toastSeconds = 5,
+		backfillToastMax = 3,
+		trackMax = 3,
+		trackPhone = 1,
+		listRefresh = 0.5,
+		profileRecent = 3,
+	},
+	-- S153 (docs/DESIGN.md §11, Logic/Returning): the returning player's bonus. After at least awayDays without playing
+	-- (account.stats.lastSeen) an account whose highest character has minLevel gets `seconds` of play in the world
+	-- with +expBonus points of the expBonus stat (added to the blessing of Fortune), at most once per cooldownDays; the
+	-- "What has changed" letter shows at most letterMax entries of Data/Changelog. Outside the pace model (like the
+	-- login reward S100); Balance.targetsS153 reports what the hour is worth in levels.
+	Returning = {
+		awayDays = 7,
+		seconds = 3600,
+		expBonus = 100,
+		cooldownDays = 14,
+		minLevel = 10,
+		letterMax = 6,
+	},
+	-- S154 (docs/DESIGN.md §6b, Logic/Transmog): putting a look from the account's collection on a weapon or an off-hand
+	-- at the smith. Gold ilvl x Upgrade.goldPerIlvl(ilvl) x goldMul (the upgrade gold curve), rounded; essence by the
+	-- rarity of the item that gets the look (Common none). Taking a look off is free; a boss look costs the same.
+	-- Outside the pace model (a look, never power).
+	Transmog = {
+		goldMul = 1.5,
+		essence = {
+			unique = { id = "essence_dust", n = 2 },
+			heroic = { id = "essence_shard", n = 1 },
+			legendary = { id = "essence_crystal", n = 1 },
+			mythic = { id = "essence_crystal", n = 1 },
+		},
 	},
 	-- Streaming (S20, decision in docs/DECYZJE.md): also set in default.project.json (Workspace properties).
 	StreamingTargetRadius = 512,

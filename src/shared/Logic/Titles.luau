@@ -11,6 +11,8 @@
 -- cosmetic of kind title); Titles.contextOf builds the context the same way on the server and the client.
 -- S125: timed titles (req.kind "timed") are unlocked while character.timedTitles[id] > now; `now` comes in the context
 -- (ctx.now, default Util/Clock.now(): the server clock with the /time offset on both sides).
+-- S151: achievement titles (req.kind "achievement") are unlocked when the achievement is done: a character achievement
+-- in character.ach.done, an account one in ctx.ach (account.ach.done, Titles.contextOf).
 
 local Clock = require("../Util/Clock")
 local Paths = require("./Paths")
@@ -24,7 +26,8 @@ local Titles = {}
 -- the account's owned cosmetics (account.cosmetics.owned) for bought titles.
 -- one context argument for every account-dependent title kind (S121 vip, S123 cosmetic)
 -- S125: `now` for timed titles (unix seconds; nil = Clock.now()).
-export type Context = { vip: boolean?, owned: { [string]: boolean }?, now: number? }
+-- S151: `ach` = the account's done achievements (account.ach.done).
+export type Context = { vip: boolean?, owned: { [string]: boolean }?, now: number?, ach: { [string]: number }? }
 
 Titles.NONE = TitleData.NONE
 
@@ -80,6 +83,13 @@ local function meets(character: any, def: TitleDef, ctx: Context?): boolean
 		return ctx ~= nil and ctx.vip == true
 	elseif req.kind == "cosmetic" then
 		return ctx ~= nil and ctx.owned ~= nil and ctx.owned[req.id] == true
+	elseif req.kind == "achievement" then
+		-- S151: either scope; achievement ids are unique over both
+		local own = if type(character) == "table" and type(character.ach) == "table" then character.ach.done else nil
+		if type(own) == "table" and own[req.id] ~= nil then
+			return true
+		end
+		return ctx ~= nil and ctx.ach ~= nil and ctx.ach[req.id] ~= nil
 	elseif req.kind == "arenaSeason" then
 		-- S128: only the character (character.arena.titles[tier]); the account context stays as it is
 		return Titles.arenaSeason(character, req.tier) ~= nil
@@ -92,7 +102,10 @@ end
 function Titles.contextOf(account: any, vip: boolean?, now: number?): Context
 	local cosmetics = if type(account) == "table" then account.cosmetics else nil
 	local owned = if type(cosmetics) == "table" and type(cosmetics.owned) == "table" then cosmetics.owned else nil
-	return { vip = vip == true, owned = owned, now = now }
+	-- S151: the account's done achievements
+	local ach = if type(account) == "table" then account.ach else nil
+	local done = if type(ach) == "table" and type(ach.done) == "table" then ach.done else nil
+	return { vip = vip == true, owned = owned, now = now, ach = done }
 end
 
 -- S125: a new map with `id` unlocked until `untilTs` (the later of the old and the new term; the input is not

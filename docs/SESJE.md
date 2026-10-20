@@ -12680,3 +12680,473 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
 - **Dla właściciela:** ID dźwięków `ui.worldboss.spawn|victory` (i z S149 `boss.hrimvald.*`), obrazek
   `mapa/map_worldboss` (dziś ♛). Decyzja: panel na telefonie stoi w lewej kolumnie jak panel wydarzenia, a nie nad
   paskiem umiejętności (tam są przyciski); jedna linia w `Hud/WorldBossPanel`, jeśli wolisz inaczej.
+
+### S150: Znajomi 2.0
+
+- **Obecność 2.0:** czyste `Logic/Presence` (wpis `{ j, m, p, map, lvl, cls, name, t, pj }`, `record`, `parse`, `fresh`,
+  `statusOf` → here / world / private / arena / tournament / offline / unknown, `label`, `serverTag` — 4 znaki z
+  hasha JobId, `ORDER`, kubeł żetonów `budget`, `reader` z pamięcią na serwer) i jeden moduł serwera
+  `src/server/Friends/Presence.luau` (MemoryStore `Vaelthorn_Presence_v2` przez `SetAsync` / `GetAsync` / `RemoveAsync`,
+  temat zaproszeń, atrapa `Logic/MemoryFake` w Studio i przy braku usług). `src/server/Social/Presence.luau` usunięty.
+- **FriendService** (nowy): zapis obecności (co 60 s, od razu przy zmianie mapy / postaci / ustawień, usunięcie przy
+  niewidocznym i wyjściu), gałąź runtime `friends` = `{ list, roblox, online, at, block, cd, mode }` dla oglądających
+  (pełna co 30 s w budżecie, lekka co 2 s), „Dołącz” (`Logic/FriendJoin.canJoin`, ignorowanie obu stron, blokady,
+  odnowienie 60 s, `Arena/Transfer.toServer`, w Studio toast), zaproszenie do grupy przez temat i dołączenie do grupy
+  po przybyciu (`PartyService.AddMember`, tylko zaproszenie znane temu serwerowi), znajomi z Roblox
+  (`GetFriendsAsync` raz na sesję, wskazówka klienta), toast „dołącza do twojego serwera”.
+- **Arena/Transfer:** `toServer(player, jobId, data, onFail)` na tym samym `teleport` / `drive` / watchdogu; `drive`
+  podaje nazwę ostatniego `TeleportResult`, pełny / nieistniejący serwer kończy próby od razu.
+- **Blokady:** `UseBlocks.friendJoin` (+ powody `trade` — TradeService, `combat` — ResourceService, `worldBoss` —
+  WorldBossService), teksty `friends.block.*`.
+- **SocialService:** bez obecności i `FriendsStatus` (nazwy znajomych aktualizuje FriendService), niewidoczny nie jest
+  ogłaszany („jest w grze”).
+- **Okno „Znajomi”:** nagłówek „W grze n / max”, czas odświeżenia, przełączniki „Niewidoczny” i „Dołączać mogą”;
+  wiersz z klasą, poziomem, statusem, znacznikiem serwera i powodem przy szarym „Dołącz”; przyciski z
+  `Social.friendRowEntries` (Dołącz, Zaproś do grupy, Szepnij, Napisz list, „⋯” z Usuń / Ignoruj w arkuszu
+  `ActionMenu`; na telefonie w wierszu tylko „Dołącz”); sekcja „Znajomi z Roblox w grze” z „Dołącz” i „Dodaj do
+  znajomych”. Popup zaproszenia z innego serwera w SocialController („Dołącz i wejdź do grupy”). `GameMenu`: dwa
+  ustawienia.
+- **Remote'y:** `FriendJoin` (function, 0,2/s, integer), `FriendPartyInvite` (function, 0,2/s, integer),
+  `FriendPartyInvited` (s2c: imię, poziom, klasa, sekundy), `FriendPartyRespond` (function, 1/s, boolean),
+  `FriendsWatch` (event, 2/s, boolean), `FriendsRobloxHint` (event, 0,1/s, table ≤ 50 liczb); `FriendsStatus` usunięty.
+- **Pola zapisu:** `account.settings.appearOffline` (false), `account.settings.friendJoin` ("friends"), przez
+  reconcile, bez migracji.
+- **Limity platformy i budżet:** MemoryStore 1000 + 120 × CCU / min (doświadczenie), MessagingService 600 + 240 ×
+  gracze wysłanych na serwer / min, 40 + 80 × serwery odebranych na temat / min, wiadomość ≤ 1 KiB; budżet odczytów
+  300 / min na serwer, pamięć 20 s; pełny serwer (40 graczy, 10 okien, 50 znajomych) chce 1000 odczytów / min, dostaje
+  300 + 40 zapisów wobec 4800 jednostek swojej części limitu.
+- **Admin:** `/presence gracz|userId`, `/friends budget`, `/friendinvite gracz` (kategoria `guild`, `admin.usage.*`).
+- **Testy:** nowy `tests/friends.spec.luau` (obecność na atrapie z dwoma serwerami, TTL, niewidoczny, statusy,
+  `label`, `serverTag`, budżet i pamięć, `canJoin` — każdy powód, `canInvite`, zaproszenia przez temat, limit, przybycie
+  do grupy, `friendJoin` z tekstami i rejestracją, remote'y); `social.spec` (wiersz znajomego; test obecności przeniesiony
+  na `Logic/Presence` z komentarzem S150), `character.spec` (nowe ustawienia), `data.spec` (przestrzeń `friends`).
+- wiki do odświeżenia (właściciel 17.10); `wikidump --check` pominięty (sesja nie zmienia eksportowanych danych).
+- **Pliki:** `src/shared/Logic/{Presence,FriendJoin,Social,UseBlocks,AccountSchema}.luau`, `src/shared/Config.luau`,
+  `src/shared/Types.luau`, `src/shared/Net/Definitions.luau`, `src/shared/Data/AdminCommands.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/server/Friends/Presence.luau`, `src/server/Social/Presence.luau`
+  (usunięty), `src/server/Services/{FriendService,SocialService,SettingsService,AdminService,TradeService,ResourceService,WorldBossService}.luau`,
+  `src/server/Arena/Transfer.luau`, `src/server/Admin/Guild.luau`, `src/client/Controllers/SocialController.luau`,
+  `src/client/UI/Screens/{FriendsWindow,GameMenu}.luau`, `tests/{friends,social,character,data}.spec.luau`,
+  `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S151: Osiągnięcia (rdzeń)
+
+- **Dane** `src/shared/Data/Achievements.luau`: `CATEGORIES` (walka, bossowie, odkrywanie, rzemiosło, społeczność,
+  droga), `COUNTERS` (22 liczniki postaci, 11 konta; `add` / `max` / `set`), 79 osiągnięć (`ach(id, cat, counter, goal,
+  points, { reward, key, all, after })`), `byId`, `byCounter` (posortowane po celu), `forCategory`.
+- **Logika** `src/shared/Logic/Achievements.luau` (czysta): `state` (naprawa śmieci, tabele zapisu), `apply`
+  (add / max / set → osiągnięcia spełnione i niezdobyte), `progress` / `goalOf` (cele „wszystkie” z grup `regions`,
+  `world`, `caves`, `lairs`, `dungeonBosses` liczonych z danych), `reward` (odłamki 0 przy `paid`), `COUNTER_EVENTS` /
+  `entriesFor`, `backfill` (dawne postępy), `applyAll`, `allPending`, `shardTotal`, `typical` / `shardsBy` (model).
+- **Serwis** `AchievementService`: `QuestEvents.Fired`, `CombatService.MonsterKilled` (`kill` z kryjówką),
+  `LevelService.LevelChanged` (`level`), wejście postaci → `backfill` + zbiorczy toast i najwyżej 3 pojedyncze;
+  `grant` (done i `paid` przed czymkolwiek, tytuł → `TitleService.Refresh`, kosmetyk `CosmeticService.Grant(..., quiet)`,
+  odłamki na konto + `Analytics.shards(..., "achievement")`, złoto + `Analytics.gold`), `AchievementDone` do klienta;
+  zapis tylko zmienionych liści. Admin `/ach list | give | reset | counter | backfill [gracz]`.
+- **Zdarzenia `QuestEvents` dopisane w serwisach:** `boss` + `party` (DungeonService), `duel` + `arena` (ArenaService),
+  `worldboss` (WorldBossService, nagrodzony), `bloodmoon` (BloodMoonService, pierwsze punkty wystąpienia), `pvpkill`
+  (PvpService), `craft` / `dismantle` / `reroll` (BlacksmithService), `brew` (AlchemyService, odbiór), `trade`
+  (TradeService, obie strony), `mail` (MailService, list gracza), `visit` (TravelService.MarkVisited, pierwsze wejście),
+  `quest` main / side / contract (QuestService, SideQuestService — pierwsze oddanie, ContractService), `dodge`
+  (FightLogService.End), `social` friends / guild (SocialService, Guild/Runtime), `cosmetic` (CosmeticService.Grant);
+  `KillInfo.lair` (CombatService ← `MonsterService.LairOf`). Nagłówek `QuestEvents.luau` uzupełniony.
+- **Nagrody:** `Data/Titles` rodzaj `achievement` + 7 tytułów `ach_*` (`wiki = false`), `Logic/Titles` (postać:
+  `character.ach.done`, konto: `contextOf(...).ach`), wybór tytułu w oknie postaci z `account.ach.done`;
+  `Data/Cosmetics.Obtain.achievement` + 5 kosmetyków (`frame_elitehunter`, `chatframe_five`, `chatframe_merchant`,
+  `levelup_gatherer`, `aura_ancestorfrost`; cena 0, `wiki = false`), garderoba „Za osiągnięcie: {name}”.
+- **Powiadomienie:** `AchievementController` (kolejka, jedno naraz, dźwięk `ui.achievement` bez ID), ekran
+  `Hud/AchievementToast` (żelazo, mosiężny brzeg, `UiWindows.SCREENS`), ustawienie `achToasts` (SettingsService,
+  GameMenu; wyłączone = wpis w czacie systemowym). Remote `AchievementDone` (s2c).
+- **Zapis:** `account.ach = { c, s, done, paid }`, `character.ach = { c, s, done }`, `settings.achToasts` — szablon i
+  reconcile, `CURRENT` bez zmian.
+- **Budżet odłamków:** suma **320** z 500 (`Config.Achievements.shardBudget`), najwyższa kwota 50 (poziom 100). Po
+  zaliczeniu dawnych postępów typowa postać (`Achievements.typical`: fabuła do swojego poziomu, połowa pobocznych i
+  zleceń, mapy do poziomu) dostaje od razu: L50 — **10**, L75 — 35, L100 — **130** odłamków.
+- **Testy:** nowy `tests/achievements.spec.luau` (dane, budżet, liczenie, raz na konto, zdarzenia → liczniki, każdy
+  rodzaj z serwera policzony albo świadomie pominięty, nowe rodzaje nie są typami celów questów, dawne postępy
+  idempotentne, konto z wielu postaci, schemat bez migracji); `titles.spec` (rodzaj `achievement`, dawne tytuły bez
+  zmian), `premium.spec` (kosmetyk osiągnięcia nie na sprzedaż), `balance.spec` („Achievements (S151)”: złoto ≤ 5%
+  pasma, odłamki w budżecie), `data.spec` (przestrzeń `ach`).
+- wiki do odświeżenia (właściciel 17.10); nowe tytuły i kosmetyki mają `wiki = false`, więc eksport ich nie bierze.
+- **Lista osiągnięć:**
+
+| kat. | id | licznik (zakres) | cel | pkt | nagroda |
+|---|---|---|---|---|---|
+| walka | `slayer1` | `kills` (postać) | 100 | 5 | — |
+| walka | `slayer2` | `kills` (postać) | 1000 | 10 | — |
+| walka | `slayer3` | `kills` (postać) | 10000 | 25 | 10 odł. |
+| walka | `slayer4` | `kills` (postać) | 50000 | 50 | tytuł „Rzeźnik Szczytów” |
+| walka | `slayer5` | `kills` (postać) | 200000 | 50 | 25 odł. |
+| walka | `elite1` | `eliteKills` (postać) | 50 | 5 | — |
+| walka | `elite2` | `eliteKills` (postać) | 500 | 10 | — |
+| walka | `elite3` | `eliteKills` (postać) | 2500 | 25 | kosmetyk „Rama Łowcy Elit” |
+| walka | `elite2_1` | `elite2Kills` (postać) | 10 | 10 | — |
+| walka | `elite2_2` | `elite2Kills` (postać) | 100 | 25 | — |
+| walka | `elite2_3` | `elite2Kills` (postać) | 500 | 50 | 20 odł. |
+| walka | `dodge1` | `dodged` (postać) | 25 | 5 | — |
+| walka | `dodge2` | `dodged` (postać) | 250 | 10 | — |
+| walka | `dodge3` | `dodged` (postać) | 1000 | 25 | tytuł „Nieuchwytny” |
+| walka | `pvp1` | `pvpKills` (postać) | 10 | 10 | — |
+| walka | `pvp2` | `pvpKills` (postać) | 100 | 25 | — |
+| walka | `duel1` | `duelsWon` (postać) | 10 | 5 | — |
+| walka | `duel2` | `duelsWon` (postać) | 50 | 10 | — |
+| walka | `arena1` | `arenaWins` (postać) | 25 | 10 | — |
+| walka | `arena2` | `arenaWins` (postać) | 200 | 25 | — |
+| bossowie | `boss_grimrok` | `bosses` (konto) | grimrok | 10 | — |
+| bossowie | `boss_morvane` | `bosses` (konto) | morvane | 10 | — |
+| bossowie | `boss_azgor` | `bosses` (konto) | azgor | 25 | — |
+| bossowie | `boss_vaelgrath` | `bosses` (konto) | vaelgrath | 25 | 10 odł. |
+| bossowie | `bossAll` | `bosses` (konto) | wszystkie dungeonBosses (4) | 50 | tytuł „Pogromca Czterech” |
+| bossowie | `bossKills1` | `bossKills` (konto) | 10 | 10 | — |
+| bossowie | `bossKills2` | `bossKills` (konto) | 100 | 25 | — |
+| bossowie | `bossKills3` | `bossKills` (konto) | 500 | 50 | 15 odł. |
+| bossowie | `worldBoss1` | `worldBoss` (konto) | 1 | 25 | tytuł „Pogromca Praojca” |
+| bossowie | `worldBoss2` | `worldBoss` (konto) | 10 | 25 | 25 odł. |
+| bossowie | `worldBoss3` | `worldBoss` (konto) | 50 | 50 | kosmetyk „Mróz Praojca” |
+| bossowie | `fullParty1` | `fullParty` (konto) | 10 | 25 | kosmetyk „Ramka czatu Pięciorga” |
+| odkrywanie | `maps1` | `maps` (postać) | wszystkie regions (5) | 10 | — |
+| odkrywanie | `maps2` | `maps` (postać) | wszystkie world (17) | 25 | tytuł „Kartograf” |
+| odkrywanie | `caves1` | `caves` (postać) | wszystkie caves (12) | 25 | 15 odł. |
+| odkrywanie | `lairs1` | `lairs` (postać) | 6 | 25 | — |
+| odkrywanie | `lairs2` | `lairs` (postać) | wszystkie lairs (11) | 50 | tytuł „Tropiciel Kryjówek”, 20 odł. |
+| odkrywanie | `bloodMoon1` | `bloodMoon` (konto) | 1 | 10 | — |
+| odkrywanie | `bloodMoon2` | `bloodMoon` (konto) | 10 | 25 | — |
+| odkrywanie | `invasion1` | `invasions` (konto) | 5 | 10 | — |
+| odkrywanie | `invasion2` | `invasions` (konto) | 50 | 25 | 10 odł. |
+| rzemiosło | `craft1` | `crafted` (postać) | 10 | 5 | — |
+| rzemiosło | `craft2` | `crafted` (postać) | 100 | 10 | — |
+| rzemiosło | `craft3` | `crafted` (postać) | 500 | 25 | 10 odł. |
+| rzemiosło | `upgrade7` | `upgraded7` (postać) | 10 | 25 | — |
+| rzemiosło | `upgrade9` | `upgraded9` (postać) | 1 | 50 | tytuł „Mistrz Kuźni” |
+| rzemiosło | `dismantle1` | `dismantled` (postać) | 100 | 10 | — |
+| rzemiosło | `dismantle2` | `dismantled` (postać) | 1000 | 25 | 10 odł. |
+| rzemiosło | `reroll1` | `rerolled` (postać) | 10 | 10 | — |
+| rzemiosło | `reroll2` | `rerolled` (postać) | 100 | 25 | 10 odł. |
+| rzemiosło | `brew1` | `brewed` (postać) | 50 | 10 | — |
+| rzemiosło | `brew2` | `brewed` (postać) | 500 | 25 | 10 odł. |
+| rzemiosło | `gather1` | `gathered` (postać) | 100 | 5 | — |
+| rzemiosło | `gather2` | `gathered` (postać) | 1000 | 10 | — |
+| rzemiosło | `gather3` | `gathered` (postać) | 5000 | 25 | kosmetyk „Krąg Zbieracza” |
+| rzemiosło | `fish1` | `fish` (postać) | 50 | 10 | — |
+| rzemiosło | `fish2` | `fish` (postać) | 500 | 25 | 10 odł. |
+| społeczność | `friends1` | `friends` (konto) | 1 | 5 | — |
+| społeczność | `friends2` | `friends` (konto) | 10 | 10 | — |
+| społeczność | `guild1` | `guild` (konto) | 1 | 10 | — |
+| społeczność | `trade1` | `trades` (konto) | 10 | 10 | — |
+| społeczność | `trade2` | `trades` (konto) | 100 | 25 | kosmetyk „Ramka czatu Kupca” |
+| społeczność | `mail1` | `mailSent` (konto) | 10 | 10 | — |
+| droga | `level10` | `level` (postać) | 10 | 5 | 100 zł. |
+| droga | `level25` | `level` (postać) | 25 | 10 | — |
+| droga | `level50` | `level` (postać) | 50 | 25 | 10 odł. |
+| droga | `level75` | `level` (postać) | 75 | 25 | 25 odł. |
+| droga | `level100` | `level` (postać) | 100 | 50 | 50 odł. |
+| droga | `story1` | `mainDone` (postać) | 19 | 10 | — |
+| droga | `story2` | `mainDone` (postać) | 36 | 10 | — |
+| droga | `story3` | `mainDone` (postać) | 51 | 25 | — |
+| droga | `story4` | `mainDone` (postać) | 66 | 25 | — |
+| droga | `story5` | `mainDone` (postać) | 70 | 50 | 20 odł. |
+| droga | `side1` | `sideDone` (postać) | 25 | 10 | — |
+| droga | `side2` | `sideDone` (postać) | 100 | 25 | 15 odł. |
+| droga | `contract1` | `contracts` (postać) | 25 | 10 | — |
+| droga | `contract2` | `contracts` (postać) | 99 | 25 | — |
+| droga | `collector1` | `earnedCosmetics` (konto) | 5 | 10 | — |
+| droga | `collector2` | `earnedCosmetics` (konto) | 15 | 25 | — |
+
+- **Pliki:** `src/shared/Data/Achievements.luau` (nowy), `src/shared/Logic/Achievements.luau` (nowy),
+  `src/server/Services/AchievementService.luau` (nowy), `src/client/Controllers/AchievementController.luau` (nowy),
+  `src/client/UI/Screens/Hud/AchievementToast.luau` (nowy), `src/shared/{Config,Types}.luau`,
+  `src/shared/Data/{Titles,Cosmetics,AdminCommands,Sfx,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/shared/Logic/{Titles,AccountSchema}.luau`, `src/shared/Net/Definitions.luau`, `src/server/QuestEvents.luau`,
+  `src/server/Guild/Runtime.luau`, `src/server/Admin/Character.luau`,
+  `src/server/Services/{AdminService,AlchemyService,ArenaService,BlacksmithService,BloodMoonService,CombatService,ContractService,CosmeticService,DungeonService,FightLogService,MailService,PvpService,QuestService,SettingsService,SideQuestService,SocialService,TradeService,TravelService,WorldBossService}.luau`,
+  `src/client/UI/Screens/{GameMenu,Wardrobe}.luau`, `src/client/UI/Screens/CharacterWindow/init.luau`,
+  `tests/{achievements,titles,premium,balance,data}.spec.luau`, `tools/balance_reasons.luau`,
+  `docs/{DESIGN,ARCHITECTURE,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S151b: Osiągnięcia (okno, śledzenie, profil, wiki)
+
+- **Model widoku** `src/shared/Logic/AchievementView.luau` (czysty, test): `summary(st, zakres)` (punkty, zdobyte, na
+  kategorię; konto / postać / razem), `rows(st, kat, filtr, zakres)` (serie zwinięte do bieżącego stopnia z `steps` i
+  `next`, sekretne „???”, kolejność w trakcie → nie zaczęte → zdobyte), `detail`, `rewardLines` (tytuł, kosmetyk,
+  odłamki, złoto, „już odebrane na tym koncie”), `trackedRows`, `recent`, `read` (stan bez naprawiania lustra klienta).
+- **Śledzenie:** `Logic/Achievements.canTrack` / `setTracked` / `tracked` (powody `ach.error.unknown|done|secret|full`),
+  zapis `character.ach.track` (szablon, naprawa w `state`, zdobyte i nieznane wypadają), remote `AchievementTrack`
+  (`AchievementService`, zdobyte znika w `grant`), `Config.Achievements.trackMax = 3`, `trackPhone`, `listRefresh`,
+  `profileRecent`.
+- **Nowe okno** `achievements` (pergamin, `Data/UiWindows`, sesja S151b): `UI/Screens/AchievementsWindow/{init,Context,
+  Summary,List,Details}.luau`; klawisz `N` (`win_achievements`), przycisk w menu HUD, pozycja w menu gry, „Zobacz” w
+  toaście, klik w trackerze, „Wszystkie” w profilu (`AchievementController.Open(id?)`). PC: podsumowanie z przełącznikami
+  zakresu i filtra, kolumna kategorii (`ListRow` + `ArtIcon` `hud/ach_<cat>`), lista z paskiem i gwiazdką, panel
+  szczegółów (seria, nagrody, daty, „Śledź” / „Nie śledź”, „Ustaw tytuł”, „Otwórz garderobę”); telefon: kategorie jako
+  przewijane `Tabs`, szczegóły w arkuszu. Podpowiedź gwiazdki raz (`settings.achHint`).
+- **Zmienione ekrany:** `Hud/QuestTracker` (sekcja „Osiągnięcia” pod questami, żelazo), `Hud/AchievementToast`
+  („Zobacz”), `ProfileWindow` (sekcja osiągnięć, przewijana treść; `ProfileService` dodaje `ach`), `GameMenu`.
+- **Testy:** `achievements.spec` (śledzenie: powody, limit, naprawa zapisu, zdobyte i konta z innej postaci;
+  `AchievementView`: podsumowanie, serie, filtry, zakres, kolejność, sekretne, nagrody, `recent`, `read`; szablon z
+  `track`; odłamki tylko na postaci z `paidHere`), `uitheme.spec` (sesja S151b w liście okien), `uiart.spec` (klucze
+  kategorii).
+- **Po przeglądzie:** `character.ach.paidHere` (kwota odłamków tylko na opłaconej postaci), tracker z
+  `AchievementView.trackedRows`, cele dotyku na telefonie (toast „Zobacz” 44, wiersz trackera 48), ponowne otwarcie
+  arkusza przy tym samym fokusie, bez martwego `Context.refresh`.
+- Opublikowanych tytułów i kosmetyków brak: wiki do odświeżenia (właściciel 17.10); eksporter, strona i publikacja w
+  „Niedokończone”.
+- **Pliki:** `src/shared/Logic/AchievementView.luau` (nowy), `src/client/UI/Screens/AchievementsWindow/*` (nowe),
+  `src/shared/{Config,Types}.luau`, `src/shared/Logic/{Achievements,AccountSchema,UiArt}.luau`,
+  `src/shared/Data/{Keybinds,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/shared/Net/Definitions.luau`, `src/server/Services/{AchievementService,ProfileService,SettingsService}.luau`,
+  `src/client/Controllers/{AchievementController,PartyController,QuestController,ScreenController}.luau`,
+  `src/client/UI/Screens/{GameMenu,ProfileWindow}.luau`, `src/client/UI/Screens/Hud/{AchievementToast,QuestTracker}.luau`,
+  `tests/{achievements,uiart,uitheme}.spec.luau`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S152: przepustka sezonu 1/2 (rdzeń)
+
+- **Dane** `src/shared/Data/Seasons.luau` (nowy): `SEASONS` (sezon 1 „Sezon Szronu” / „Season of Frost”: start
+  2026-11-02 00:00 UTC, 8 tygodni, 40 stopni, nagrody obu ścieżek przez konstruktory `cosmetic` / `item` / `lure`),
+  `POINTS` (14 źródeł), `TIER_POINTS = 1000`, `LIMITS = { killPerDay = 400, weekCap = 6500 }`, `CATCHUP = { mul = 1.5,
+  behind = 0.6 }`, `GRACE_DAYS = 14`, `at` / `next` / `lastEnded` / `get` / `endsAt` / `trackOf`.
+- **Logika** `src/shared/Logic/Season.luau` (czysta): `sanitize`, `fresh`, `roll`, `week`, `ends`, `claimUntil`,
+  `running`, `tierOf`, `progress`, `capAt`, `lineAt`, `add` (nadrabianie do linii → limit potworów → limit narastający;
+  powody `cap`, `killCap`, `noSeason`, `unknown`), `rewardOf`, `canClaim` / `claim` / `claimable` / `unclaimed`,
+  `canBuy` / `buy`, `pack` (przedmioty łączone po id, stosy po `maxStack`, listy po `maxItemsPerParcel`). Stan
+  `account.season` (`Types.SeasonState`, szablon + reconcile, bez migracji), `account.seasonPrev` opcjonalne.
+- **Serwis** `SeasonService` (nowy): `Add(player, source, n?)` (punkty z potworów w pamięci, zapis najwyżej co 1 s i
+  przy zwolnieniu profilu; reszta od razu; toast stopnia i raz na tydzień toast limitu), remote'y `SeasonBuy`
+  (odłamki + `premium` w jednym kroku, `Analytics.shards(..., "season_pass", true)`, `Analytics.custom("SeasonPass",
+  stopień)`), `SeasonClaim(tier, tor, idSezonu?)`, `SeasonClaimAll`; koniec sezonu przy wejściu i co 10 min
+  (`seasonPrev`, po 14 dniach poczta `once` z kosmetykami i Kamieniami, czas Płaszcza od razu na konto); admin
+  `/seasonpass info | points | tier | premium | reset | week` (`week` tylko w Studio).
+- **Źródła punktów:** `CombatService.MonsterKilled` (zwykły / Elita / Elita II zaliczonych graczy), QuestService
+  (fabuła, dzienne, tygodniowe, zlecenie na bossa), SideQuestService (pierwsze oddanie), ContractService (n zleceń),
+  DungeonService (wygrana), WorldEventService (nagroda udziału), WorldBossService (nagrodzona walka), BloodMoonService
+  (opłacony udział), ArenaService (rozegrany mecz), AchievementService (zdobyte w grze, bez zaliczeń wstecz).
+- **Cena:** `Products.seasonPass = { key = "season_pass", price = 800 }` (odłamki, bez produktu Robux), wiersz w
+  `docs/SKLEP-ID.md` (`tests/Pricing` liczy go w przeglądzie cen).
+- **Kosmetyki sezonu 1** (`obtain.season = "s1"`, cena 0, `wiki = false`): darmowe — emotka „Chuchanie w dłonie” (6),
+  barwnik Lodowca (12), Ramka Szadzi (20), Awans Szronu (30), tytuł „Weteran Sezonu Szronu” (40); premium — Rama
+  Mroźnej Nocy (1), emotka „Strzepnięcie szronu” (5), ramka czatu Szadzi (8), barwnik Zimowej Północy (11), Ślad Zawiei
+  (14), tytuł „Strażnik Szronu” (17), Strój Strażnika Szronu (20), Szadź na Ostrzu (23), Szronowy Rumak (27), Śnieżny Lis
+  (31), Awans Zorzy (35), aura „Serce Zimy” (40). Pozostałe stopnie: 3 (darmowa) / 5 (premium) Kamieni Powrotu i 1 h
+  Płaszcza Przynęty na zmianę. Dwie emotki w `Data/Emotes` (`breath`, `brushfrost`), dwa tytuły w `Data/Titles`,
+  garderoba „Przepustka sezonu: {sezon}”; licznik osiągnięć „kosmetyki zdobyte w grze” liczy tylko ścieżkę darmową.
+- **Testy:** nowy `tests/season.spec.luau` (dane, stan, zegar na granicach, limit dzienny z północą UTC, limit
+  narastający 6500 / 19 500, nadrabianie do linii, premium nie zmienia punktów, wszystkie błędy odbioru, odbiór premium
+  wstecz, `claimable`, `unclaimed`, zakup raz, `pack`: pełna premium 40. mieści się w jednym liście); `paywall.spec` 11–13; `premium.spec` (`obtain.season` nie na
+  sprzedaż), `cosmetics2.spec` (10 emotek), `lookdump.spec` (pet ukryty na wiki bez renderu), `balance.spec`
+  („Balance: season pass (S152)”).
+- **Model tempa** (`Balance.seasonPace`, `Balance.targetsS152`, sekcja „Przepustka sezonu (S152)” w `docs/BALANS.md`,
+  księga `Seasons:*`), stopień na koniec / tydzień ukończenia na L70:
+
+| gra | start w tygodniu 1 | start w tygodniu 3 | start w tygodniu 5 |
+|---|---|---|---|
+| 1 h dziennie | 40 / 8. tydz. | 35 / — | 27 / — |
+| 2 h dziennie | 40 / 7. tydz. | 40 / 7. tydz. | 36 / — |
+| 3 h dziennie | 40 / 7. tydz. | 40 / 7. tydz. | 40 / 8. tydz. |
+
+  Przy 2 h dziennie (L70) ok. 7 500 punktów na tydzień przed limitem 6 500: dzienne 22%, potwory 27%, boss lochu 14%,
+  tygodniowe 11%, wydarzenia 11%, zadania 13%. Wszystkie wiersze E2 w paśmie na L20 / 45 / 70 / 100 bez trybu raportu.
+- wiki do odświeżenia (właściciel 17.10)
+- **Dla właściciela:** (1) 1 h dziennie kończy całą przepustkę w 8. tygodniu (pasmo 30–40 to dopuszcza); jeśli ma być
+  trudniej, dźwignią jest `LIMITS.weekCap` albo `TIER_POINTS`. (2) Cena 800 odłamków i to, czy kosmetyki sezonu kiedyś
+  wrócą do sprzedaży.
+- **Pliki:** `src/shared/Data/Seasons.luau` (nowy), `src/shared/Logic/Season.luau` (nowy),
+  `src/server/Services/SeasonService.luau` (nowy), `tests/season.spec.luau` (nowy),
+  `src/shared/{Types}.luau`, `src/shared/Data/{Products,Cosmetics,Titles,Emotes,AdminCommands}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/shared/Logic/{AccountSchema,Achievements}.luau`,
+  `src/shared/Net/Definitions.luau`, `src/server/Admin/Economy.luau`,
+  `src/server/Services/{AdminService,AchievementService,ArenaService,BloodMoonService,ContractService,DungeonService,QuestService,SideQuestService,WorldBossService,WorldEventService}.luau`,
+  `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium,cosmetics2,lookdump,balance}.spec.luau`,
+  `tests/{Balance,Pricing}.luau`, `tools/{balance_report,balance_reasons,shop_report}.luau`, `tools/balance_before.json`,
+  `docs/{DESIGN,DESIGN-17,DECYZJE,SESJE,PROGRESS,BALANS,SKLEP-ID}.md`, `CLAUDE.md`.
+
+### S152b: przepustka sezonu 2/2 (okno, sklep, wiki, lejek)
+
+- **Widok** `src/shared/Logic/SeasonView.luau` (nowy, czysty): tryb `running` / `grace` / `soon` z `account.season` i
+  `seasonPrev` (także przed przetoczeniem stanu przez serwer), stopień, postęp, limit narastający, nadrabianie, limit
+  potworów dziś, czas do końca, termin odbioru, `cell` (empty / locked / noPremium / claimable / claimed), `claimCount`
+  (z poprzednim sezonem w łasce), `claimAllShown`, `shown`, `focusTier`, `canBuy`, lista `SOURCES`. Klient: `UI/SeasonState` (zegar co
+  1 s z przesunięciem Studio, `View`).
+- **Okno** `UI/Screens/SeasonPass.luau` (pergamin, `UiWindows.season`, 1000 × 660, na telefonie pełny ekran):
+  nagłówek (nazwa, „Koniec za”, stopień, pasek `Brass.Bright` na torze, limit tygodnia z plakietkami), zakładki
+  „Nagrody” (PC pas kolumn stopni, telefon lista stopni; komórka: obrazek kosmetyku / przedmiotu / Płaszcza, nazwa,
+  stan, dymek na żelazie) i „Jak zdobywać punkty” (źródła z `Data/Seasons.POINTS`, akapit limitów, „Czym to się różni
+  od VIP?”), „Odbierz wszystko (n)”, „Odblokuj premium”; po sezonie okres łaski z datą, przed sezonem „Następny sezon
+  wkrótce” z datą startu. `SeasonController` (rejestracja, `SeasonClaim` / `SeasonClaimAll`, błędy jako toast, `Open`,
+  `Buy`), modal `UI/SeasonPassBuy` (jeden dla okna i sklepu).
+- **Wejścia:** `Hud/SeasonButton` (❖ pod ✧, „!” i pulsująca rama, dymek ze stopniem i punktami), klawisz C
+  (`win_season`), przycisk w menu gry, klucz grafiki `hud/season` w `UiArt.FIXED.hud`.
+- **Sklep:** karta przepustki nad VIP w „Przepustkach” („Odblokuj ◆ cena”, „Zobacz nagrody”, stan), linia
+  `premium.passVsVip`; `Cards.Ctx.OpenSeason` / `BuySeason` (PremiumController przez rejestr).
+- **Lejek:** `ShopFunnel.FUNNELS.season` + `CLIENT_STEPS.season`; serwer `bought` (SeasonBuy) i `claimed` (pierwszy
+  odbiór premium po zakupie na tym serwerze), klient `open`, `view`, `prompt`.
+- **Poprawka S152:** `/seasonpass week` ustawia atrybut `SeasonClockOffset` (okno liczy czas serwera).
+- **Testy:** nowy `tests/seasonview.spec.luau` (tryby, łaska przed i po przetoczeniu, komórki = `Season.claimable`,
+  badge, „Odbierz wszystko”, focus, zakup, źródła); `premium.spec` (lejek `season`), `uitheme.spec` (sesja S152b), pary w `UiPalette`.
+- wiki do odświeżenia (właściciel 17.10): rekord `season` w `tools/WikiData/Premium.luau`, kosmetyki sezonu na wiki,
+  artykuł i wpis aktualizacji pominięte; `docs/WIKI.md` bez zmian.
+- **Pliki:** `src/shared/Logic/SeasonView.luau` (nowy), `src/client/UI/SeasonState.luau` (nowy),
+  `src/client/UI/SeasonPassBuy.luau` (nowy), `src/client/UI/Screens/SeasonPass.luau` (nowy),
+  `src/client/UI/Screens/Hud/SeasonButton.luau` (nowy), `src/client/Controllers/SeasonController.luau` (nowy),
+  `tests/seasonview.spec.luau` (nowy), `src/client/UI/Screens/Hud/init.luau`, `src/client/UI/Screens/GameMenu.luau`,
+  `src/client/UI/Screens/PremiumShop/{init,Cards,Passes}.luau`, `src/client/Controllers/PremiumController.luau`,
+  `src/server/Services/SeasonService.luau`, `src/shared/Logic/{ShopFunnel,UiArt}.luau`,
+  `src/shared/Data/{Keybinds,UiPalette,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `tests/{premium,uitheme}.spec.luau`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS}.md`, `CLAUDE.md`.
+
+### S153: pomoc dla powracających (podwójny EXP, list zmian)
+
+- **Logika** `src/shared/Logic/Returning.luau` (nowy, czysty): `sanitize`, `check` (7 dni nieobecności, odstęp 14 dni od
+  przyznania, najwyższa postać konta ≥ 10, przyznanie ustawia czas), `tick` (tylko w świecie, nie poniżej 0), `bonus`,
+  `minutes`, `letter` (wpisy nowsze niż `seen`, już wydane, od najnowszego, najwyżej 6), `recent`, `markSeen`,
+  `readUpTo`. Liczby w `Config.Returning` (`awayDays` 7, `seconds` 3600, `expBonus` 100, `cooldownDays` 14, `minLevel`
+  10, `letterMax` 6).
+- **Zapis:** `account.stats.lastSeen` i `account.returning = { left, at, seen }` w szablonie (reconcile, bez migracji),
+  typy w `Types.luau`.
+- **Serwer** `ReturningService` (nowy): przy `PlayerStateService.Ready` sprawdzenie z poprzednim `lastSeen`, potem
+  `lastSeen = now` (konto bez `lastSeen`: tylko znacznik i `seen` = najnowszy wpis); `lastSeen` co 5 min i przy
+  zwolnieniu profilu; źródło statystyk `returning` (+100 `expBonus`, „Powrót” w rozbiciu); odliczanie co 5 s dla postaci
+  w świecie (serwer świata), zapis co 30 s, przy wyjściu postaci i zwolnieniu profilu; toasty `returning.granted` (przy
+  wejściu postaci) i `returning.ended`; remote `ChangelogSeen` (id z dziennika, wyżej niż `seen`). Admin `/returning
+  info | grant [s] | clear | away <dni> | letter`.
+- **Dziennik** `src/shared/Data/Changelog.luau` (nowy, `NOT_BALANCE` „teksty”): 7 wpisów (wygląd interfejsu
+  17.10, Umiejętności 2.0, boss świata Hrimvald, znajomi 2.0, osiągnięcia, przepustka sezonu 18.10 (dni UTC), premia
+  powrotu 19.10), teksty `changelog.<key>.title/.body`.
+- **Klient:** okno `UI/Screens/WhatsNew.luau` (pergamin, `UiWindows.whatsnew`, nagłówek Merriweather, wpisy z datą
+  `SectionLabel`, tytułem i treścią, przewijane, „Do gry”), `ReturningController` (samo otwarcie raz w świecie po
+  przewodniku, ze wczytanym światem, bez okna, modala i przerywnika, 4 s po wejściu; zamknięcie przez gracza =
+  `ChangelogSeen`, zamknięcie przez przerywnik nie; z menu ostatnie wpisy),
+  przycisk „Co nowego” w menu gry, ikona » z minutami i dymkiem na początku rzędu eliksirów (`Hud/BlessingIcon`,
+  `Brass.Bright` na żelazie).
+- **Model** `Balance.returningBonus` / `Balance.targetsS153`, blok „Balance: returning bonus (S153)” w `balance.spec`,
+  sekcja „Premia powrotu (S153)” w `docs/BALANS.md`, księga `Config:Returning*`. Tempo 1–100 bez zmian
+  (`balance1_20.spec` bez nowych wpisów, `quest_budget check` zielony). Jedna premia (godzina walki z `Balance.paceAt`
+  × 100%):
+
+| poziom | Wojownik | Łowca | Mag | Kapłan | średnio | asercja |
+|---|---|---|---|---|---|---|
+| 10 | 1,63 | 1,53 | 1,49 | 1,81 | 1,61 | raport (poziom < 1 h) |
+| 20 | 1,91 | 1,94 | 1,74 | 2,09 | 1,92 | raport (poziom < 1 h) |
+| 45 | 0,77 | 0,79 | 0,70 | 0,82 | 0,77 | ≤ 0,8 |
+| 70 | 0,58 | 0,60 | 0,53 | 0,61 | 0,58 | ≤ 0,8 |
+| 99 | 0,49 | 0,51 | 0,46 | 0,50 | 0,49 | ≤ 0,8 |
+
+  (poziomy; EXP premii = EXP 1 h walki na każdym poziomie, wiersze `S153.hour` asertowane).
+- **Testy:** nowy `tests/returning.spec.luau` (premia, odstęp, `minLevel`, `tick`, `sanitize`, list, `markSeen`,
+  `readUpTo`, dziennik: id rosnące, dni niemalejące, teksty PL i EN, `Products` bez premii), `balance.spec` (S153),
+  `uitheme.spec` (sesja S153).
+- wiki do odświeżenia (właściciel 17.10): akapit „Premia powrotu” w `doswiadczenie.mdx` pominięty.
+- **Dla właściciela:** asercja „≤ 0,8 poziomu” trzyma od 45. poziomu; na 10.–20. godzina podwójnego EXP to ok. 2
+  poziomy (poziom trwa tam krócej niż godzinę). Jeśli to za dużo, dźwignią jest `minLevel` (np. 25) albo krótsza
+  premia na niskich poziomach.
+- **Pliki:** `src/shared/Logic/Returning.luau` (nowy), `src/shared/Data/Changelog.luau` (nowy),
+  `src/server/Services/ReturningService.luau` (nowy), `src/client/Controllers/ReturningController.luau` (nowy),
+  `src/client/UI/Screens/WhatsNew.luau` (nowy), `tests/returning.spec.luau` (nowy), `src/shared/{Config,Types}.luau`,
+  `src/shared/Logic/AccountSchema.luau`, `src/shared/Net/Definitions.luau`,
+  `src/shared/Data/{AdminCommands,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Admin/Character.luau`, `src/server/Services/AdminService.luau`,
+  `src/client/UI/Screens/{GameMenu,Hud/BlessingIcon}.luau`, `tests/{Balance,balance.spec,uitheme.spec}.luau`,
+  `tools/{balance_report,balance_reasons}.luau`, `tools/balance_before.json`,
+  `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### S154: transmogryfikacja broni i drugiej ręki
+
+- **Logika** `src/shared/Logic/Transmog.luau` (nowy, czysty): `SLOTS` (typy z wyglądem w `WeaponLooks`: 24, broń i druga
+  ręka), `supports`, `lookOf` (model bossa = id przedmiotu, model progu `ArtTiers`, bez modelu `<typ>`), `lookType`,
+  `lookDef`, `isBoss`, `catalogue` / `looksOf` / `count`, `unlocks`, `current`, `canApply` (błędy `transmog.error.type`,
+  `.locked`, `.mismatch`, `.same`; `""` = zdjęcie), `cost`, `apply` (zmienia tylko `tm`), `displayDef`, `sanitize`,
+  `KEEP` (pola, których transmog nie rusza), `MARK` ↺. Liczby w `Config.Transmog` (`goldMul` 1,5, esencja według
+  rzadkości), księga `Config:Transmog*`.
+- **Zapis:** `ItemInstance.tm` i `account.transmog = { looks, scanned }` w szablonie (reconcile, bez migracji).
+- **Serwer:** `TransmogService` (nowy): odblokowanie przy `InventoryService.Changed`, `EquipmentService.Changed` i wejściu
+  postaci (jedno sprawdzenie na klatkę), toasty `transmog.unlocked` / `.unlockedBoss` (♛) / `.unlockedMore`, skan
+  jednorazowy przy wczytaniu profilu (plecaki, ekwipunek, depozyt wszystkich postaci). `BlacksmithService.Transmog` +
+  remote `TransmogApply` (wzór `Reroll`: blokada handlu, odległość, `locate`, uid, `canApply`, koszt, zapłata i zapis bez
+  yieldów, przebudowa broni w dłoni, `Analytics` `Transmog` / `TransmogBoss` z rzadkością). `EquipmentService` rysuje
+  `Transmog.displayDef` (kolor rzadkości i poświata z przedmiotu). Admin `/transmog <slot|indeks> <wygląd|clear>
+  [pay|free]`, `/transmoglooks [list|all|clear]`.
+- **Klient:** zakładka „Wygląd” u kowala (`BlacksmithWindow/Transmog.luau`, piąta, pasek zakładek przewijany): lista
+  przedmiotów wspólnym `Picker`, upuszczenie na kowadło (`smith:transmog`, `NpcController.SetTransmogTarget`), gablota na
+  żelazie z „Własnym wyglądem” na początku, ♛ dla wyglądów z bossa, 🔒 i przygaszenie dla brakujących, ramka
+  `Brass.Bright` na obecnym, obracany podgląd modelu (`Util/WeaponBuild` na niewidocznej dłoni w `ViewportFrame`, kolor
+  rzadkości przedmiotu), koszt „masz / trzeba”, „Nałóż wygląd” z potwierdzeniem, darmowe „Przywróć własny”. `ItemSlot`:
+  ikona wyglądu i ↺ na plakietce. `TooltipModel`: linia `tooltip.transmog` po poziomie przedmiotu. Garderoba: zakładka
+  „Wyglądy broni” (`UI/Screens/WardrobeTransmog.luau`: licznik całości, „{typ}: n/wszystkie” z ikonami, wyglądy z bossów
+  ze źródłem, „Prowadź do kowala”).
+- **Koszt** (złoto + esencja; zdjęcie 0):
+
+| rzadkość | L 20 | L 45 | L 70 | L 100 |
+|---|---|---|---|---|
+| Zwykły | 120 | 608 | 1470 | 3000 |
+| Unikat | 120 + 2 pyłu | 608 + 2 pyłu | 1470 + 2 pyłu | 3000 + 2 pyłu |
+| Heroiczny | 120 + 1 odłamek | 608 + 1 odłamek | 1470 + 1 odłamek | 3000 + 1 odłamek |
+| Legendarny | 120 + 1 kryształ | 608 + 1 kryształ | 1470 + 1 kryształ | 3000 + 1 kryształ |
+| Mityczny | 120 + 1 kryształ | 608 + 1 kryształ | 1470 + 1 kryształ | 3000 + 1 kryształ |
+
+- **Kolekcja:** 121 wyglądów: 120 bazowych (24 typy × modele progów 1 / 5 / 10 / 15 / 20) i 1 z bossa (Rozłupywacz
+  Grimroka); każdy nowy model bossa w `WeaponLooks.assets` dochodzi sam.
+- **Testy:** nowy `tests/transmog.spec.luau` (typy, klucze, katalog, `unlocks`, `canApply`, `apply`, `displayDef`, ikona
+  wyglądu, koszt, `sanitize`, ta sama moc: `itemStats`, `ItemScore`, `StatCalc`, pula broni), `paywall.spec` 14,
+  `tooltip.spec` (linia „Wygląd”, kolejność ról bez zmian), `uitheme.spec` (oświetlenie podglądu), para palety
+  `brass.bright on iron.{raised,selected,sunken}`. `balance1_20.spec` bez nowych wpisów.
+- wiki do odświeżenia (właściciel 17.10): rekord `Transmog` i akapit „Wygląd przedmiotu” pominięte.
+- **Pliki:** `src/shared/Logic/Transmog.luau` (nowy), `src/server/Services/TransmogService.luau` (nowy),
+  `src/client/UI/Screens/BlacksmithWindow/Transmog.luau` (nowy), `src/client/UI/Screens/WardrobeTransmog.luau` (nowy),
+  `tests/transmog.spec.luau` (nowy), `src/shared/{Config,Types}.luau`, `src/shared/Logic/{AccountSchema,TooltipModel}.luau`,
+  `src/shared/Net/Definitions.luau`, `src/shared/Data/{AdminCommands,UiPalette,UiWindows}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/server/Services/{BlacksmithService,EquipmentService,AdminService}.luau`,
+  `src/server/Admin/Items.luau`, `src/client/Controllers/{ItemController,NpcController,PremiumController}.luau`,
+  `src/client/UI/Components/ItemSlot.luau`, `src/client/UI/Screens/{Wardrobe,BlacksmithWindow/init}.luau`,
+  `tests/{paywall,tooltip,uitheme}.spec.luau`, `tools/balance_reasons.luau`, `tools/balance_before.json`,
+  `docs/{DESIGN,STATY,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### S155: lepsze pierwsze minuty (samouczek z działaniem)
+
+- **Zastany stan:** `GuideController` (S14: 9 dymków `guide.*` na sztywnych pozycjach 1920×1080, „Dalej” / „Pomiń”,
+  remote `GuideDone` → `character.guideDone`), `QuestService.TUTORIAL_STEPS = 10` (oddanie zadań fabuły 1–10 =
+  `Analytics.onboarding`), cele zadań `potion` / `loot` / `stats` / `learn` / `equip` / `upgrade` / `reach`,
+  `LoginRewardController` i `ReturningController` czekały na `guideDone`; osiągnięcia S151 bez „ukończ samouczek”
+  (nic nie podpięte).
+- **Kroki** (`Logic/Tutorial.STEPS`, każdy kończy czynność):
+
+| # | krok | kto widzi | kończy się | PC | telefon | kotwica |
+|---|---|---|---|---|---|---|
+| 1 | `move` | klient | 8 st. przejścia sterowanego (`Tutorial.walk`) | W A S D, kamera prawym | palec po lewej części ekranu | joystick (telefon) |
+| 2 | `quest` | serwer | przyjęcie zadania fabuły (`arrival`) | rozmowa ({interact}) | dotknij kapitana | tracker + strzałka do kapitana |
+| 3 | `backpack` | klient | okno plecaka otwarte | {key} (B) | przycisk torby | przycisk plecaka |
+| 4 | `potion` | serwer | `PotionService.Drank` (w tym kroku także przy pełnym HP) | {key} (Z) albo klik w plecaku | dotknij mikstury | pasek mikstur |
+| 5 | `attack` | serwer | atak podstawowy trafił potwora | {target} (Tab) albo klik | potwór + przycisk ataku | przycisk ataku; w mieście tracker i „Idź za strzałką zadania na Łąki” |
+| 6 | `skill` | serwer | udane rzucenie z paska | {key} (1) | okrągły przycisk obok ataku | pierwszy slot paska |
+| 7 | `done` | — | „Gotowe. Zadania poprowadzą Cię dalej.” 6 s albo dotknięcie | | | |
+
+  Kroki późniejsze liczą się z góry (`pending`), wcześniejsze są pomijane. Pomijanie w każdej chwili („Pomiń samouczek”
+  → „Na pewno?” + „Pomiń”).
+- **Lejek onboardingu** (`Tutorial.FUNNEL`, `LogOnboardingFunnelStepEvent`): 1 `move`, 2 `quest`, 3 `backpack`,
+  4 `potion`, 5 `attack`, 6 `skill`, 7–16 zadania fabuły `arrival`, `healer`, `smith`, `portal`, `firstHunt`, `gearUp`,
+  `wolves`, `wolfFangs`, `boars`, `herbs`, 17 `level5`; pominięcie `custom` `TutorialSkip` z numerem kroku.
+- **Nagroda na 5. poziomie** (`Data/Tutorial`, księga `Tutorial:*`): tytuł „Pierwsze Kroki” (`title_firststeps`,
+  `obtain.tutorial`, `Titles.firststeps`), 3 Kamienie Powrotu i 10 Małych Mikstur Życia związane; bez EXP i złota, także
+  po pominięciu; pełny plecak → poczta (`once`). Postacie sprzed S155 nic nie dostają.
+- **Serwer:** `TutorialService` (nowy: `Event`, `Skip`, `TryReward`, admin `Info` / `Reset` / `SetStep` / `Finish`),
+  remote'y `TutorialEvent` (tylko `move` / `backpack`) i `TutorialSkip`, sygnały `QuestService.MainAccepted`,
+  `CombatService.BasicHit`, `SkillService.Casted`; `QuestService` bierze numer lejka z `Tutorial.funnelStep`. Admin
+  `/tutorial info | reset | step <id> | done`.
+- **Klient:** `TutorialController` (nowy, zamiast `GuideController`), `UI/Screens/Hud/TutorialHint.luau` (na żelazie,
+  `UiWindows.SCREENS`), `UI/HudAnchors.luau` (kotwice z elementów HUD i pulsująca obwódka), toast nagrody, garderoba
+  „Nagroda samouczka”.
+- **Testy:** nowy `tests/tutorial.spec.luau` (kolejność, `advance`, `skip`, `clientAllowed`, teksty PC / telefon PL i EN,
+  `keyArgs` z mapą gracza, `FUNNEL`, `rewardDue`, nagroda bez EXP i złota, tytuł poza sprzedażą, opcje `/tutorial`),
+  `paywall.spec` 15, `premium.spec` (`obtain.tutorial`). `balance1_20.spec` bez nowych wpisów, `quest_budget check`
+  zielony, raport księgi bez „BRAK POWODU”.
+- **Poprawki po przeglądzie:** krok `potion` do zrobienia w mieście (mikstura przy pełnym HP w tym kroku,
+  `PotionService.AddFullDrink`); `move` nie liczy się z ustawienia postaci po wejściu (`Tutorial.walk`, `MAX_STEP`);
+  wskazówka czeka też na oczekujące okno nagrody za logowanie i list (`Pending`); nieudana poczta nagrody cofa
+  znacznik na właściwej postaci. Testy `walk` / `moved` / `wantsPotion`. Pliki: `PotionService.luau`, `Data/Tutorial`.
+- wiki do odświeżenia (właściciel 17.10): akapit o samouczku i nagrodzie w poradniku dla nowych pominięty.
+- **Pliki:** `src/shared/Data/Tutorial.luau`, `src/shared/Logic/Tutorial.luau`, `src/server/Services/TutorialService.luau`,
+  `src/client/Controllers/TutorialController.luau`, `src/client/UI/HudAnchors.luau`,
+  `src/client/UI/Screens/Hud/TutorialHint.luau`, `tests/tutorial.spec.luau` (nowe), `GuideController.luau` (usunięty),
+  `src/shared/Types.luau`, `src/shared/Logic/{AccountSchema,CharacterFactory}.luau`, `src/shared/Net/Definitions.luau`,
+  `src/shared/Data/{AdminCommands,Cosmetics,Titles,UiWindows}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{QuestService,CombatService,SkillService,SettingsService,AdminService,PotionService}.luau`,
+  `src/server/Admin/Character.luau`, `src/client/Controllers/{LoginRewardController,ReturningController}.luau`,
+  `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
+  `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.

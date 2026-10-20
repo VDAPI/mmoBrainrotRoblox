@@ -26,6 +26,8 @@ Ten plik trafia do repo jako `docs/DESIGN-17.md`. Odejście od niego = linia w `
 - **Tooltip i potwierdzenie** przy każdym zakupie za odłamki (nazwa, co daje, cena, saldo po zakupie). Zakup za Robux: natywne okno Roblox.
 - **`tests/paywall.spec.luau`** (nowy): przechodzi po `Products.shop`, `Products.passes`, przyszłych `Products.subscriptions`, `Products.starterPacks` i `Data/Cosmetics` i sprawdza, że żaden wpis nie wskazuje przedmiotu z bonusami/statami, materiału ulepszania, błogosławieństwa, mikstury EXP ani waluty złota; lista dozwolonych rodzajów jest jawna w teście.
 - `Premium.luau` (Logic) zbiera reguły zakupu (`canBuy(entry, account, now)`), żeby okno i serwer liczyły to samo.
+- **Przepustka sezonu** (S152, `docs/DESIGN.md` §21b): ścieżka premium raz na sezon za Smocze Odłamki
+  (`Products.seasonPass`), w zakładce „Przepustki” obok VIP od S152b; nagrody tylko kosmetyki i wygoda (`paywall.spec` 11–13).
 
 ## 2. VIP i przepustki (S121)
 

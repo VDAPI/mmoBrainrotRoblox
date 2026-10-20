@@ -22,6 +22,7 @@ local SameRef = require(script.Parent.Parent.SameRef)
 local State = require(script.Parent.Parent.State)
 local Theme = require(script.Parent.Parent.Theme)
 local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
+local Transmog = require(ReplicatedStorage.Shared.Logic.Transmog)
 local Types = require(ReplicatedStorage.Shared.Types)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
@@ -109,7 +110,7 @@ local function plaque(
 	props: {
 		Name: string,
 		AnchorPoint: Vector2,
-		Position: UDim2,
+		Position: Fusion.UsedAs<UDim2>,
 		Color: Color3,
 		Text: Fusion.UsedAs<string>,
 	}
@@ -159,6 +160,19 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 			return if id then Items.get(id) else nil
 		end)
 	)
+	-- S154: the icon of the worn look (Logic/Transmog); the tooltip, frame and marks stay the item's own
+	local lookDef = SameRef.of(
+		scope,
+		scope:Computed(function(use): Items.ItemDef?
+			local i = use(item)
+			return if i then Transmog.displayDef(i) else nil
+		end)
+	)
+	-- Mage weapons: the element gem in the icon's bottom-right corner (always the item's own element)
+	local element = scope:Computed(function(use): string?
+		local current = use(item)
+		return if current then ItemRoll.elementOf(current) else nil
+	end)
 	local rarity = scope:Computed(function(use): Rarities.RarityDef?
 		local i = use(item)
 		return if i then Rarities.get(i.rarity) else nil
@@ -270,11 +284,8 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 			end) :: any,
 			-- Icon (S35): atlas layers while loaded, otherwise the glyph on its tile; mage weapons get their element.
 			ItemIcon(scope, {
-				Def = def,
-				Element = scope:Computed(function(use): string?
-					local current = use(item)
-					return if current then ItemRoll.elementOf(current) else nil
-				end),
+				Def = lookDef,
+				Element = element,
 				Fallback = props.Placeholder,
 				FallbackArt = props.PlaceholderArt,
 				Transparency = scope:Computed(function(use): number
@@ -290,6 +301,20 @@ local function ItemSlot(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 				Text = scope:Computed(function(use): string
 					local i = use(item)
 					return if i and i.n > 1 then tostring(i.n) else ""
+				end),
+			}),
+			-- S154: ↺ an item wearing another look (on the plaque: equipment never shows a stack count there);
+			-- above the element gem on mage weapons so the gem stays visible.
+			plaque(scope, {
+				Name = "Transmog",
+				AnchorPoint = Vector2.new(1, 1),
+				Position = scope:Computed(function(use): UDim2
+					return if use(element) ~= nil then UDim2.new(1, -2, 0.64, 0) else UDim2.new(1, -2, 1, -2)
+				end),
+				Color = Theme.Brass.Bright,
+				Text = scope:Computed(function(use): string
+					local i = use(item)
+					return if i and Transmog.current(i) ~= nil then Transmog.MARK else ""
 				end),
 			}),
 			-- Upgrade level

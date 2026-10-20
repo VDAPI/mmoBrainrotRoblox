@@ -217,6 +217,60 @@ local list: { Emote } = {
 			loop = { from = 0.8, to = 4.8 },
 		},
 	},
+	{
+		-- S152 (season pass 1, free track): both cupped hands to the mouth, breathing on them against the cold.
+		id = "breath",
+		aliases = { "breath", "chuchaj" },
+		motion = {
+			keys = {
+				k(0.35, {
+					rShoulder = { 55, 30, 0 },
+					rElbow = { 138, 0, 0 },
+					lShoulder = { 55, -30, 0 },
+					lElbow = { 138, 0, 0 },
+					waist = { -8, 0, 0 },
+				}, "out"),
+				k(0.9, {
+					rShoulder = { 58, 26, 0 },
+					rElbow = { 142, 0, 0 },
+					lShoulder = { 58, -26, 0 },
+					lElbow = { 142, 0, 0 },
+					waist = { -12, 0, 0 },
+				}, "inOut"),
+				k(1.4, {
+					rShoulder = { 52, 34, 0 },
+					rElbow = { 134, 0, 0 },
+					lShoulder = { 52, -34, 0 },
+					lElbow = { 134, 0, 0 },
+					waist = { -6, 0, 0 },
+				}, "inOut"),
+				k(1.9, {
+					rShoulder = { 58, 26, 0 },
+					rElbow = { 142, 0, 0 },
+					lShoulder = { 58, -26, 0 },
+					lElbow = { 142, 0, 0 },
+					waist = { -12, 0, 0 },
+				}, "inOut"),
+			},
+			recover = 0.5,
+		},
+	},
+	{
+		-- S152 (season pass 1, premium track): brushing the frost off one shoulder, then off the other.
+		id = "brushfrost",
+		aliases = { "brushfrost", "otrzep" },
+		motion = {
+			keys = {
+				k(0.3, { rShoulder = { 60, 42, 0 }, rElbow = { 112, 0, 0 }, waist = { 0, 10, 0 } }, "out"),
+				k(0.55, { rShoulder = { 48, 50, 0 }, rElbow = { 96, 0, 0 }, waist = { 0, 12, 0 } }, "inOut"),
+				k(0.8, { rShoulder = { 60, 42, 0 }, rElbow = { 112, 0, 0 }, waist = { 0, 10, 0 } }, "inOut"),
+				k(1.2, { lShoulder = { 60, -42, 0 }, lElbow = { 112, 0, 0 }, waist = { 0, -10, 0 } }, "inOut"),
+				k(1.45, { lShoulder = { 48, -50, 0 }, lElbow = { 96, 0, 0 }, waist = { 0, -12, 0 } }, "inOut"),
+				k(1.7, { lShoulder = { 60, -42, 0 }, lElbow = { 112, 0, 0 }, waist = { 0, -10, 0 } }, "inOut"),
+			},
+			recover = 0.4,
+		},
+	},
 }
 
 local byId: { [string]: Emote } = {}

@@ -46,7 +46,7 @@ T.describe("Look dump: wiki entries", function()
 		end
 		expected += #Bosses.list
 		for _, def in Cosmetics.list do
-			if def.kind == "pet" then
+			if def.kind == "pet" and def.wiki ~= false then -- S152: a pet off the wiki (wiki = false) has no render
 				expected += 1
 			end
 		end
@@ -106,7 +106,7 @@ T.describe("Look dump: wiki entries", function()
 			T.expect(e.aura).toBe(boss.look.aura)
 		end
 		for _, def in Cosmetics.list do
-			if def.kind == "pet" then
+			if def.kind == "pet" and def.wiki ~= false then -- S152: hidden pets are not rendered
 				T.expect(byFile[def.id].scale).toBeNear(Cosmetics.PET_SCALE, 1e-4)
 			end
 		end

@@ -1,6 +1,6 @@
 --!strict
--- Shop and VIP analytics funnels (S131, DESIGN-17 §9). Pure: which funnel step to log (src/server/PremiumFunnel.luau
--- sends it to AnalyticsService:LogFunnelStepEvent through Analytics.funnel).
+-- Shop, VIP and season pass analytics funnels (S131, DESIGN-17 §9; S152b `season`). Pure: which funnel step to log
+-- (src/server/PremiumFunnel.luau sends it to AnalyticsService:LogFunnelStepEvent through Analytics.funnel).
 --   * FUNNELS: the steps of each funnel in order; the step number is the position (1-based).
 --   * "open" (the first step) starts a new funnel session; a session ends after Config.ShopFunnel.sessionTimeout s
 --     without a step, and then any other step starts a new session and logs itself (no artificial "open").
@@ -15,12 +15,16 @@ export type State = { [string]: Session }
 ShopFunnel.FUNNELS = table.freeze({
 	shop = table.freeze({ "open", "tab", "item", "prompt", "granted" }),
 	vip = table.freeze({ "open", "prompt", "active" }),
+	-- S152b: the season pass window opened, the premium track looked at, the purchase dialog, bought (server), the
+	-- first premium reward claimed after the purchase (server)
+	season = table.freeze({ "open", "view", "prompt", "bought", "claimed" }),
 }) :: { [string]: { string } }
 
 -- Steps the client may report (the PremiumFunnel remote); the rest only the server logs.
 ShopFunnel.CLIENT_STEPS = table.freeze({
 	shop = table.freeze({ open = true, tab = true, item = true }),
 	vip = table.freeze({ open = true }),
+	season = table.freeze({ open = true, view = true, prompt = true }), -- S152b
 }) :: { [string]: { [string]: boolean } }
 
 function ShopFunnel.empty(): State

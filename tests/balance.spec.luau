@@ -548,6 +548,76 @@ T.describe("Balance: world boss (S149)", function()
 	end)
 end)
 
+-- S152 (E2): the season pass pace (Balance.targetsS152): 1 h a day finishes 30-40 tiers, 2 h a day the last tier in
+-- week 5-7, 4 h a day never before week 5 (the growing cap), 2 h a day from week 5 at least 30 tiers (the catch-up),
+-- monsters at most half of the points at 2 h a day; every row without `report` asserted, the cap rows never in
+-- Balance.S152_REPORT (docs/sessions S152 rule 10).
+T.describe("Balance: season pass (S152)", function()
+	local rows = B.targetsS152()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S152, docs/sessions S152 E2)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S152 targets (printed); the cap rows are never in Balance.S152_REPORT", function()
+		printReport("S152", rows, 20)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+			if row.report then
+				print(`  raport: {row.id} {fmt(row.value)} ({row.report})`)
+			end
+		end
+		for _, L in B.S152.levels do
+			local id = `S152.cap.L{L}`
+			T.expect({ id, ids[id] == true, B.S152_REPORT[id] }).toEqual({ id, true, nil })
+		end
+		for key in B.S152_REPORT do
+			T.expect({ key, ids[key] == true }).toEqual({ key, true })
+		end
+	end)
+end)
+
+-- S153 (D1): the returning bonus (Balance.targetsS153), outside the pace model: worth at most 1 h of grinding EXP at
+-- every level and at most Balance.S153.maxLevels levels (the mean of the classes) from Balance.S153.assertFrom on;
+-- every row without `report` asserted, the hour rows never in Balance.S153_REPORT.
+T.describe("Balance: returning bonus (S153)", function()
+	local rows = B.targetsS153()
+	for _, row in rows do
+		if row.report == nil then
+			T.it(`{row.id}: {row.label}`, function()
+				if not B.inBand(row) then
+					local at = if row.level then `L{row.level} ` else ""
+					error(`{at}{describeRow(row)} (S153, docs/sessions S153 D1)`, 0)
+				end
+			end)
+		end
+	end
+	T.it("S153 targets (printed); the hour rows and the mean from assertFrom on are never reported", function()
+		printReport("S153", rows, 30)
+		local ids: { [string]: boolean } = {}
+		for _, row in rows do
+			ids[row.id] = true
+		end
+		for _, L in B.S153.levels do
+			local hour = `S153.hour.L{L}`
+			T.expect({ hour, ids[hour] == true, B.S153_REPORT[hour] }).toEqual({ hour, true, nil })
+			if L >= B.S153.assertFrom then
+				local mean = `S153.bonus.L{L}`
+				T.expect({ mean, ids[mean] == true, B.S153_REPORT[mean] }).toEqual({ mean, true, nil })
+			end
+		end
+		for key in B.S153_REPORT do
+			T.expect({ key, ids[key] == true }).toEqual({ key, true })
+		end
+	end)
+end)
+
 -- S134c (E2): the harder Invasion (Balance.targetsS134c, Balance.invasion): 3 players end in time and survive, 5 are
 -- faster than 3 and 3 than 2, solo on equal gear loses or barely makes it, solo with an edge wins, the commander's big
 -- blows in the S134 band; every row without `report` asserted (Balance.S134C_REPORT prints the rest with the reason).
@@ -3091,5 +3161,32 @@ T.describe("Balance: GLOBAL_REPORT_ONLY keys", function()
 				.toEqual({ key = key, later = true })
 			T.expect({ key = key, why = #entry.why > 0 }).toEqual({ key = key, why = true })
 		end
+	end)
+end)
+
+-- S151 (docs/DESIGN.md §20b, F4): achievement gold stays under 5% of the gold of the band it is earned in (only level
+-- achievements up to 20 pay gold, so the 1-20 economy of every class is the band); the Dragon Shard sum within the
+-- budget (the economy side of tests/achievements.spec).
+T.describe("Achievements (S151)", function()
+	local AchData = require("../src/shared/Data/Achievements")
+	local Achievements = require("../src/shared/Logic/Achievements")
+
+	T.it("gold of achievements stays under 5% of the band's gold, shards within the budget", function()
+		local gold = 0
+		for _, def in AchData.list do
+			local g = (def.reward and def.reward.gold) or 0
+			if g > 0 then
+				T.expect({ def.id, def.counter, def.goal <= 20 }).toEqual({ def.id, "level", true })
+				gold += g
+			end
+		end
+		for _, classId in B.CLASSES do
+			local income = 0
+			for _, row in B.economy(classId, 20).rows do
+				income += row.income
+			end
+			T.expect({ classId, gold <= 0.05 * income }).toEqual({ classId, true })
+		end
+		T.expect(Achievements.shardTotal() <= Config.Achievements.shardBudget).toBe(true)
 	end)
 end)

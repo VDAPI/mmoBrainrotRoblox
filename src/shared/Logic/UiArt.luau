@@ -30,6 +30,15 @@ UiArt.FIXED = table.freeze({
 		"dead",
 		"mail",
 		"vip",
+		-- S151b: the achievement categories (Data/Achievements.CATEGORIES; UiArt.achCategory, glyphs until the pictures)
+		"ach_combat",
+		"ach_bosses",
+		"ach_explore",
+		"ach_craft",
+		"ach_social",
+		"ach_journey",
+		-- S152b: the season pass button next to the login reward (Hud/SeasonButton; glyph ❖ until the picture)
+		"season",
 	}),
 	map = table.freeze({
 		"portal",
@@ -66,6 +75,7 @@ UiArt.MENUS = table.freeze({
 	"rankings", -- S124: no picture yet (glyph ♔)
 	"arena", -- S126: no picture yet (glyph ⚔)
 	"bloodmoon", -- S129: no picture yet (glyph ☾)
+	"achievements", -- S151b: no picture yet (glyph ✪)
 	"wardrobe",
 	"premium",
 	"menu",
@@ -129,6 +139,11 @@ end
 
 function UiArt.hud(name: string): string
 	return `hud/{name}`
+end
+
+-- S151b: an achievement category (one of UiArt.FIXED.hud "ach_<cat>").
+function UiArt.achCategory(cat: string): string
+	return `hud/ach_{cat}`
 end
 
 -- Equipment slot id (ring1 / ring2 share "ring") -> empty slot silhouette.

@@ -3,6 +3,7 @@
 -- details hint; S134g: the head line, the stat groups, the skill effects and no comparison numbers.
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Combat = require("../src/shared/Data/Combat")
+local ItemName = require("../src/shared/Logic/ItemName")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local ItemTraits = require("../src/shared/Data/ItemTraits")
 local Items = require("../src/shared/Data/Items")
@@ -237,6 +238,46 @@ T.describe("TooltipModel reroll mark (S134j)", function()
 		end
 		T.expect(any).toBe(false)
 		T.expect(firstOf(open).rerollCount ~= nil).toBe(true)
+	end)
+end)
+
+T.describe("TooltipModel item look (S154)", function()
+	T.it("'Appearance: …' after the item level only with a valid look; the name and the order stay", function()
+		local bonuses = { { stat = "str", v = 5 }, { stat = "critChance", v = 2 } }
+		local plain = made("sword1h_60", Rarities.LEGENDARY, bonuses)
+		local looked = made("sword1h_60", Rarities.LEGENDARY, bonuses)
+		looked.tm = "sword1h_5"
+		local before = TooltipModel.build(plain, nil, { lang = "pl", class = "Warrior" }).lines
+		local after = TooltipModel.build(looked, nil, { lang = "pl", class = "Warrior" }).lines
+		local roles: { string } = {}
+		for _, line in after do
+			if line.role ~= "transmog" then
+				table.insert(roles, line.role)
+			end
+		end
+		local plainRoles: { string } = {}
+		for _, line in before do
+			T.expect(line.role ~= "transmog").toBe(true)
+			table.insert(plainRoles, line.role)
+		end
+		T.expect(roles).toEqual(plainRoles)
+		T.expect(after[1].text).toBe(before[1].text) -- the item's own name
+		local first = firstOf(after)
+		T.expect(first.transmog).toBe(first.ilvl + 1)
+		local line = after[first.transmog]
+		T.expect(line.text).toBe(Locale.T("tooltip.transmog", { name = ItemName.get("pl", "sword1h_5") }, "pl"))
+		T.expect({ line.tone, line.size }).toEqual({ "muted", "small" })
+		-- a boss look: the full name of the boss item
+		local axe = made("axe1h_45", Rarities.HEROIC, bonuses)
+		axe.tm = "unique_grimrok_cleaver"
+		local axeLines = TooltipModel.build(axe, nil, { lang = "en" }).lines
+		T.expect(axeLines[firstOf(axeLines).transmog].text)
+			.toBe(Locale.T("tooltip.transmog", { name = ItemName.get("en", "unique_grimrok_cleaver") }, "en"))
+		-- another type's look or a key that no longer exists: no line
+		for _, bad in { "bow_5", "gone_model" } do
+			looked.tm = bad
+			T.expect(firstOf(TooltipModel.build(looked, nil, { lang = "pl" }).lines).transmog).toBeNil()
+		end
 	end)
 end)
 

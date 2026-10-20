@@ -119,6 +119,12 @@ return {
 		{ path = "Data/WorldEvents" },
 		-- S149: the world boss (UTC schedule, the arena spot, contribution threshold, reward, item rarities)
 		{ path = "Data/WorldBoss" },
+		-- S152: the season pass pace (points per source, tier size, the daily monster limit, the growing cap, the catch-up,
+		-- grace days); the seasons themselves (dates, tiers, reward lists) and the lookups are not balance
+		{ path = "Data/Seasons", omit = { "SEASONS", "list", "KILL_SOURCES", "WEEK" } },
+		-- S155: the tutorial reward at level 5 (bound comfort items, no EXP, no gold); MOVE_STUDS / DONE_SECONDS are hint
+		-- timings, not balance
+		{ path = "Data/Tutorial", pick = { "REWARD", "REWARD_LEVEL" } },
 	} :: { ModuleEntry },
 	-- S134d: AutoPotion and AutoGrind (premium services with limits, like FullElixir / Lure)
 	CONFIG_KEYS = {
@@ -134,6 +140,8 @@ return {
 		"AutoGrind",
 		"Reroll", -- S134j: bonus reroll at the smith
 		"SkillPools", -- S137: the lock after a weapon pool switch in combat
+		"Returning", -- S153: the returning player's bonus (outside the pace model)
+		"Transmog", -- S154: item looks at the smith (gold and essence; outside the pace model)
 	},
 	NOT_BALANCE = {
 		["Data/AdminCommands"] = "sekret",
@@ -181,6 +189,8 @@ return {
 		["Data/ClassLooks"] = "wygląd", -- S132: class looks, creator choices, catalog hooks (DESIGN-17 §9a)
 		["Data/Emotes"] = "wygląd", -- S123: emote motions (Data/SkillMotions format), aliases, cooldown
 		["Data/Titles"] = "wygląd",
+		["Data/Changelog"] = "teksty", -- S153: the in-game "What has changed" log (ids, days, text keys)
+		["Data/Achievements"] = "postęp", -- S151: achievement milestones and rewards (gold checked in balance.spec)
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
 		["Data/ArenaPit"] = "geometria", -- S127: the arena server map (sand, stands, start points)
 		["Data/Portals"] = "świat",
@@ -6998,10 +7008,40 @@ return {
 		["WorldBoss:players[2]"] = {
 			{ session = "S149b", why = "new field: see players[1]" },
 		},
+		["Seasons:*"] = {
+			{
+				session = "S152",
+				why = "new module: the season pass pace. Points: kill 2, elite 10, elite2 40, boss 150, worldBoss 200, quest 60, side 40, contract 40, daily 80, weekly 250, worldEvent 120, bloodMoon 150, arena 20, achievement 50; 1000 a tier (40 tiers); 400 monster points a UTC day; growing cap 6500 x week of the season; catch-up x1.5 below 0.6 x tiers x elapsed share; 14 grace days. Model (Balance.targetsS152): 1 h a day finishes 40 tiers in week 8, 2-4 h a day in week 7 (the cap), 2 h a day from week 5 35-36 tiers, monster points 27 % at 2 h a day",
+			},
+		},
+		["Config:Returning*"] = {
+			{
+				session = "S153",
+				why = "new: the returning bonus outside the pace model (like the login reward S100): after 7 days away, once per 14 days, an account with a character of level 10+ gets 3600 s of play in the world with +100 expBonus points (added to Fortune), the letter shows at most 6 changelog entries. Model (Balance.targetsS153): the bonus = 1 h of grinding EXP, the mean of the classes 0.5-0.8 of a level at 45 / 70 / 99 (asserted <= 0.8), about 2 levels at 10 / 20 (a level takes under an hour there; report)",
+			},
+		},
+		["Bosses:byId.hrimvald.minLevel"] = {
+			{
+				session = "S154",
+				why = "owner 2026-10-18: world boss reward from level 70 (was 80; frostpeak opens at 70)",
+			},
+		},
 		["Bosses:byId.hrimvald*"] = {
 			{
 				session = "S149",
 				why = "new boss: the world boss, numbers from the S149 model (Balance.targetsS149): hpMul 7.8 (10 players L99 11.6 min, 20 players 5.8 min, with nodes 10.2 / 5.1), the blows on a Mage L100: fist 0.40 (tank), boulder 0.43, stomp 0.83, spikes 0.73, avalanche 0.71, the shared stone 7.2 Mage HP in all (10 in the circle 0.73, 7 in the circle 1.05), three brands 0.72 / 0.31, the winter 0.90 unless 0.7 % of its HP breaks it (10 players 4.8 s, 5 players 9.6 s), helpers 6 a phase at 95, enrage 13 min, leave at 15 min",
+			},
+		},
+		["Config:Transmog*"] = {
+			{
+				session = "S154",
+				why = "new: item looks at the smith outside the pace model (a look, never power): gold ilvl x goldPerIlvl(ilvl) x 1.5 (the upgrade gold curve: 120 / 608 / 1470 / 3000 at L20 / 45 / 70 / 100, half of +1 on the weapon and below one reroll x1.8), essence by the rarity of the item that gets the look: Unique 2 dust, Heroic 1 shard, Legendary and Mythic 1 crystal, Common none (a sink small next to the band's dismantling); taking a look off is free, a boss look costs the same",
+			},
+		},
+		["Tutorial:*"] = {
+			{
+				session = "S155",
+				why = "new module: the tutorial reward at level 5 for every character made from S155 on (skipped or not): the title First Steps, 3 Stones of Return and 10 Small Health Potions, all bound; no EXP and no gold, so the pace of levels 1-20 is unchanged (balance1_20 without new entries). The stones are worth about one trip each, the potions one start pack (the arrival quest gives 5, Items.startingPotions 10): comfort, not power",
 			},
 		},
 	} :: { [string]: { Reason } },

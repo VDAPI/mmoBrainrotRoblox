@@ -310,9 +310,15 @@ function PartyController.Init(registry)
 	WindowManager.Register({
 		id = "profile",
 		titleKey = "window.profile.title",
-		size = Vector2.new(560, 560),
+		size = Vector2.new(560, 640), -- S151b: room for the achievements section (the body scrolls)
 		build = function(s)
-			return ProfileWindow(s, profileData)
+			return ProfileWindow(s, profileData, {
+				-- S151b: "All" in the own profile (AchievementController from the registry: no Deps cycle)
+				OpenAchievements = function()
+					WindowManager.Close("profile")
+					Registry.Get("AchievementController").Open(nil)
+				end,
+			})
 		end,
 	})
 	local layer = UIController.GetLayer("Screens")

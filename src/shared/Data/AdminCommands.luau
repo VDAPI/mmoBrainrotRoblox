@@ -166,6 +166,26 @@ cmd("character", "luck", {})
 cmd("character", "buildset", { enum("action", { "1", "2", "copy" }) }, { dangerActions = { "copy" } })
 -- S125: timed titles (TitleService.GrantTimed; 0 days takes the title away)
 cmd("character", "timedtitle", { str("id"), int("days", 0, 365, true, "7") })
+-- S151: achievements of the caller or of a named player (the last argument): list, give <id>, reset <id|all>, counter
+-- <counter> <value>, backfill (the catch-up of old progress). Reset never takes paid Dragon Shards back.
+cmd("character", "ach", {
+	enum("action", { "list", "give", "reset", "counter", "backfill" }),
+	str("a", true),
+	str("b", true),
+	str("c", true),
+}, { dangerActions = { "reset" } })
+-- S153: the caller's returning bonus and "What has changed" letter: state, the bonus now [seconds], none (and no
+-- cooldown), the check now as after <days> away, the letter from the start
+cmd("character", "returning", {
+	enum("action", { "info", "grant", "clear", "away", "letter" }),
+	int("value", 0, 31536000, true),
+})
+-- S155: the caller's hands-on tutorial (character.tutorial): state, back to step 1 with the reward waiting, jump to a
+-- step, finish it
+cmd("character", "tutorial", {
+	enum("action", { "info", "reset", "step", "done" }),
+	enum("step", { "move", "quest", "backpack", "potion", "attack", "skill", "done" }, true),
+})
 cmd("combat", "skillpreview", { str("id") })
 cmd("combat", "dummy", { int("level", 1, MAX_LEVEL, true) })
 -- S29: every kind of damage number in turn (look check).
@@ -259,6 +279,11 @@ cmd("items", "itemscore", {})
 -- smith ("pay"), with a Stone of Transmutation ("stone") or nothing ("free"); /rerollstate shows `rr` and the next cost.
 cmd("items", "reroll", { str("where"), int("line", 1, 9), enum("mode", { "pay", "stone", "free" }, true, "pay") })
 cmd("items", "rerollstate", { str("where") })
+-- S154: item looks: puts a look of the collection on an equipped (slot) or backpack (index) item without the smith's
+-- distance ("clear" takes it off; "free" without the cost); /transmoglooks unlocks every look, empties the collection
+-- or lists the counts per type.
+cmd("items", "transmog", { str("where"), str("look"), enum("mode", { "pay", "free" }, true, "pay") })
+cmd("items", "transmoglooks", { enum("mode", { "list", "all", "clear" }, true, "list") })
 
 -- World
 cmd("world", "tp", { str("target"), str("a", true), str("b", true) })
@@ -530,6 +555,15 @@ cmd(
 	{ enum("action", { "on", "off", "status", "reset", "month", "grant", "take" }), str("month", true) },
 	{ dangerActions = { "take" } }
 )
+-- S152: the caller's season pass (account.season): state, points / tier without limits, the premium track without shards,
+-- a clean state, the season clock of this server (week, Studio only). /pass is the S23 pass test, /season the town's
+-- season of S105.
+cmd(
+	"economy",
+	"seasonpass",
+	{ enum("action", { "info", "points", "tier", "premium", "reset", "week" }), str("value", true) },
+	{ dangerActions = { "reset" } }
+)
 -- S131: the caller's weekly counters back to zero: shop limits, Arena Tokens of the week, weekly EXP
 cmd("economy", "weekreset", { enum("what", { "limits", "tokens", "expweek" }) })
 -- S120: the caller's premium shop limit counters (account.shopLimits)
@@ -578,6 +612,11 @@ cmd("guild", "rankguild", { enum("action", { "info", "push" }) })
 -- S133: the friends and ignored players of a player on this server; the daily letter limit of a character reset
 cmd("guild", "social", { ref("player", "player") })
 cmd("economy", "mailcap", { enum("action", { "reset" }), ref("player", "player", true) })
+-- S150: the raw presence entry of a player (name on this server or user id), the read budget of this server and a
+-- party invitation through the topic (in Studio through the in-memory fake)
+cmd("guild", "presence", { str("who") })
+cmd("guild", "friends", { enum("action", { "budget" }) })
+cmd("guild", "friendinvite", { ref("player", "player") })
 
 -- Performance and logs
 cmd("perf", "perf", {})

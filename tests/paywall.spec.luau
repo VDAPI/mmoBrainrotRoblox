@@ -20,6 +20,7 @@ local Rng = require("../src/shared/Logic/Rng")
 local Shops = require("../src/shared/Data/Shops")
 local T = require("./Test")
 local Trade = require("../src/shared/Logic/Trade")
+local Transmog = require("../src/shared/Logic/Transmog")
 local UseBlocks = require("../src/shared/Logic/UseBlocks")
 local fs = require("@lune/fs")
 
@@ -1795,6 +1796,238 @@ T.describe("S134d auto services", function()
 			end
 		end
 		T.expect(bosses).toBe(4)
+	end)
+end)
+
+-- S152 (docs/DESIGN.md §21b): the season pass. Reward kind -> why it is not pay-to-win (new kind: owner's decision);
+-- the items a reward may give, by id -> why (bound, never sold).
+local ALLOWED_SEASON_REWARDS: { [string]: string } = {
+	cosmetic = "looks: a cosmetic with obtain.season, never sold",
+	item = "only stone_return, bound: travel comfort (ALLOWED_SEASON_ITEMS)",
+	lure = "DESIGN-17 §3 exception: Cloak of Luring time like lure_1h",
+}
+local ALLOWED_SEASON_ITEMS: { [string]: string } = { stone_return = "travel: teleport to the city, bound" }
+
+T.describe("Paywall S152: season pass", function()
+	local Season = require("../src/shared/Logic/Season")
+	local Seasons = require("../src/shared/Data/Seasons")
+
+	T.it("11. season pass rewards are looks and allowed comfort only (S152)", function()
+		for name, list in
+			{ ALLOWED_SEASON_REWARDS = ALLOWED_SEASON_REWARDS, ALLOWED_SEASON_ITEMS = ALLOWED_SEASON_ITEMS }
+		do
+			for key, why in list do
+				T.expect({ name, key, type(why) == "string" and why ~= "" }).toEqual({ name, key, true })
+			end
+		end
+		local seen: { [string]: string } = {}
+		local n = 0
+		for _, def in Seasons.list do
+			for _, track in { "free", "premium" } do
+				for tier, reward in (def.rewards :: any)[track] do
+					n += 1
+					local where = `{def.id}.{track}[{tier}]`
+					if not ALLOWED_SEASON_REWARDS[reward.kind] then
+						error(`{where}: kind {tostring(reward.kind)} is not in ALLOWED_SEASON_REWARDS`)
+					end
+					scan(reward, where)
+					if reward.kind == "cosmetic" then
+						local c = Cosmetics.get(reward.id or "")
+						T.expect({ where, c ~= nil }).toEqual({ where, true })
+						local cos = c :: Cosmetics.Def
+						T.expect({ where, cos.obtain and cos.obtain.season, cos.price, cos.weekly == true }).toEqual({
+							where,
+							def.id,
+							0,
+							false,
+						})
+						fieldsWithin(cos.obtain :: any, { season = true }, `{where}.obtain`)
+						T.expect({ where, Premium.canBuyCosmetic(cos.id, {}, 1e9) }).toEqual({
+							where,
+							false,
+							"premium.error.notForSale",
+						})
+						for _, pack in starterPacks do
+							T.expect({ where, table.find(pack.cosmetics, cos.id) }).toEqual({ where, nil })
+						end
+						T.expect({ where, seen[cos.id] }).toEqual({ where, nil })
+						seen[cos.id] = where
+					elseif reward.kind == "item" then
+						local id = reward.id or ""
+						if not ALLOWED_SEASON_ITEMS[id] then
+							error(`{where}: item {id} is not in ALLOWED_SEASON_ITEMS`)
+						end
+						expectAllowed(id, where)
+						local item = Items.get(id) :: any
+						for _, category in { "material", "blessing", "equipment" } do
+							T.expect({ where, item.category ~= category }).toEqual({ where, true })
+						end
+						T.expect({ where, isInt(reward.n) and reward.n >= 1 }).toEqual({ where, true })
+						fieldsWithin(reward, { kind = true, id = true, n = true }, where)
+					else
+						T.expect({ where, isInt(reward.seconds) and reward.seconds > 0 }).toEqual({ where, true })
+						T.expect({ where, reward.seconds <= (Products.getShop("lure_1h") :: any).seconds }).toEqual({
+							where,
+							true,
+						})
+						fieldsWithin(reward, { kind = true, seconds = true }, where)
+					end
+				end
+			end
+		end
+		T.expect(n > 0).toBe(true)
+		-- and the other way round: every cosmetic with obtain.season is a reward of that season
+		for _, def in Cosmetics.list do
+			local season = def.obtain and def.obtain.season
+			if season then
+				T.expect({ def.id, seen[def.id] ~= nil, Seasons.get(season) ~= nil }).toEqual({ def.id, true, true })
+			end
+		end
+	end)
+
+	T.it("12. season points come from play only", function()
+		for _, file in { "src/shared/Logic/Season.luau", "src/shared/Data/Seasons.luau" } do
+			local text = fs.readFile(file)
+			for _, word in PURCHASE_WORDS do
+				T.expect({ file, word, string.find(text, word, 1, true) }).toEqual({ file, word, nil })
+			end
+		end
+		for source in Seasons.POINTS do
+			for _, part in partsOf(source) do
+				for _, word in { "premium", "shop", "purchase", "product", "robux", "shard", "pass", "buy" } do
+					T.expect({ source, part ~= word }).toEqual({ source, true })
+				end
+			end
+		end
+		-- the purchase handler of SeasonService never adds points
+		local service = fs.readFile("src/server/Services/SeasonService.luau")
+		local from = string.find(service, "local function buy(", 1, true)
+		T.expect(from ~= nil).toBe(true)
+		local body = string.sub(service, from :: number)
+		local stop = string.find(body, "\nend\n", 1, true)
+		T.expect(stop ~= nil).toBe(true)
+		body = string.sub(body, 1, stop :: number)
+		T.expect(string.find(body, "Add(", 1, true)).toBeNil()
+		T.expect(string.find(body, "Season.add", 1, true)).toBeNil()
+		-- the premium track never changes the points of a source
+		local def = Seasons.list[1]
+		for source in Seasons.POINTS do
+			for _, week in { 1, 4, 8 } do
+				local now = def.start + (week - 1) * Seasons.WEEK + 3600
+				for _, points in { 0, 9000 } do
+					local free = Season.fresh(def.id)
+					free.points = points
+					local paid = Season.buy(free)
+					local _, a = Season.add(free, def, source, now, 2)
+					local _, b = Season.add(paid, def, source, now, 2)
+					T.expect({ source, week, points, a }).toEqual({ source, week, points, b })
+				end
+			end
+		end
+	end)
+
+	T.it("13. the season pass price is shards, once per season", function()
+		local pass = Products.seasonPass :: any
+		T.expect(isInt(pass.price) and pass.price > 0).toBe(true)
+		fieldsWithin(pass, { key = true, price = true }, "seasonPass")
+		T.expect(pass.productId).toBeNil()
+		for _, list in { Products.shardPacks, Products.passes, Products.starterPacks, Products.mounts, Products.shop } do
+			for _, e in list :: { any } do
+				T.expect({ e.key, e.key ~= pass.key }).toEqual({ e.key, true })
+			end
+		end
+		local def = Seasons.list[1]
+		local state = Season.fresh(def.id)
+		T.expect({ Season.canBuy(state, def, def.start) }).toEqual({ true, nil })
+		T.expect({ Season.canBuy(Season.buy(state), def, def.start) }).toEqual({ false, "season.error.owned" })
+		local biggest = 0
+		for _, p in Products.shardPacks do
+			biggest = math.max(biggest, p.shards)
+		end
+		T.expect(pass.price <= biggest).toBe(true)
+	end)
+end)
+
+T.describe("Paywall S154: transmog", function()
+	T.it("14. transmog is looks only and never sold (S154)", function()
+		-- the rules never read the shop or premium state
+		local source = fs.readFile("src/shared/Logic/Transmog.luau")
+		for _, needle in { "Data/Products", "Logic/Premium", '"./Premium"', "Products", "dragonShards" } do
+			T.expect({ needle, string.find(source, needle, 1, true) }).toEqual({ needle })
+		end
+		-- the cost is gold and essence only (no shards, no Robux, no premium item)
+		local function noMoney(t: any, path: string)
+			for key, value in t do
+				local lower = string.lower(tostring(key))
+				for _, word in { "shard", "robux", "premium", "product" } do
+					T.expect({ path, lower, string.find(lower, word, 1, true) }).toEqual({ path, lower })
+				end
+				if type(value) == "table" then
+					noMoney(value, `{path}.{key}`)
+				end
+			end
+		end
+		noMoney(Config.Transmog, "Config.Transmog")
+		for _, essence in Config.Transmog.essence :: { [string]: { id: string, n: number } } do
+			local def = Items.get(essence.id)
+			T.expect({ essence.id, def ~= nil and def.category == "material" }).toEqual({ essence.id, true })
+		end
+		-- nothing in the Dragon Shop is a look of an item (looks for shards: the owner's later decision, Data/Cosmetics)
+		for _, list in { Products.shop, Products.passes, Products.starterPacks, Products.mounts, Products.shardPacks } do
+			for _, e in list :: { any } do
+				for _, field in { "key", "kind", "itemId" } do
+					local value = string.lower(tostring(e[field] or ""))
+					T.expect({ e.key, field, string.find(value, "transmog", 1, true) }).toEqual({ e.key, field })
+				end
+			end
+		end
+		-- a look never changes a power field (the list shared with tests/transmog.spec)
+		local item: any = {
+			uid = "u",
+			id = "sword1h_45",
+			rarity = 4,
+			ilvl = 45,
+			bonuses = { { stat = "str", v = 5 } },
+			up = 5,
+			bound = true,
+			n = 1,
+			fx = { "x" },
+			rv = 2,
+			rr = { i = 1, n = 1 },
+		}
+		local after = Transmog.apply(item, "sword1h_1")
+		for _, field in Transmog.KEEP do
+			T.expect({ field, after[field] }).toEqual({ field, item[field] })
+		end
+		T.expect(ItemRoll.itemStats(after)).toEqual(ItemRoll.itemStats(item))
+	end)
+end)
+
+-- S155 (docs/DESIGN.md §20 "Samouczek"): the tutorial reward at level 5. Items it may give, by id -> why (bound, no EXP,
+-- no gold); a new item here is the owner's decision.
+local ALLOWED_TUTORIAL_ITEMS: { [string]: string } = {
+	stone_return = "travel: teleport to the city, bound",
+	potion_hp_1 = "the starting potion of the arrival quest, bound",
+}
+
+T.describe("Paywall S155: the tutorial reward", function()
+	T.it("15. the tutorial title is never sold and the items are bound comfort (S155)", function()
+		local TutorialData = require("../src/shared/Data/Tutorial")
+		local def = Cosmetics.get(TutorialData.REWARD.title) :: any
+		T.expect(def ~= nil).toBe(true)
+		T.expect(def.price).toBe(0)
+		T.expect(def.weekly == true).toBe(false)
+		fieldsWithin(def.obtain :: any, { tutorial = true }, `cosmetics.{def.id}.obtain`)
+		T.expect({ Premium.canBuyCosmetic(def.id, {}, 999999) }).toEqual({ false, "premium.error.notForSale" })
+		for _, entry in TutorialData.REWARD.items do
+			T.expect({ entry.id, ALLOWED_TUTORIAL_ITEMS[entry.id] ~= nil }).toEqual({ entry.id, true })
+		end
+		-- nothing in the Dragon Shop sells the title
+		for _, list in { Products.shop, Products.passes, Products.starterPacks, Products.mounts, Products.shardPacks } do
+			for _, e in list :: { any } do
+				T.expect({ e.key, e.itemId == def.id or e.key == def.id }).toEqual({ e.key, false })
+			end
+		end
 	end)
 end)
 

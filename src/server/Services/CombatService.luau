@@ -106,6 +106,8 @@ local CombatService = {
 	-- inside the area when it was announced, `hit` took the blow (dodged = aimed - hit). Moving marks and channels
 	-- (no ground area at the announcement) do not fire.
 	TelegraphResolved = Signal.new(),
+	-- S155: (player, monster entity) after a player's basic attack hit a monster (not dodged); TutorialService
+	BasicHit = Signal.new(),
 }
 
 export type KillInfo = {
@@ -121,6 +123,7 @@ export type KillInfo = {
 	dropLevel: number?, -- S32: base level for item drops (spawner level without the variant's levels)
 	luck: Luck.MonsterLuck?, -- S60: luck of the credited group (nil for bosses)
 	finisher: Player?, -- S72: the player who dealt the killing blow (Monster.killedBy); credit is unchanged
+	lair: string?, -- S151: the Elite II hideout of the monster's spawner (MonsterService.LairOf; achievements)
 }
 
 type FxEvent = { [string]: any }
@@ -937,6 +940,7 @@ local function onMonsterDied(monster: any)
 		dropLevel = Loot.dropBaseLevel(monster.stats.level, monster.variant, monster.levelCap),
 		luck = luck,
 		finisher = monster.killedBy,
+		lair = MonsterService.LairOf(monster),
 	}
 	CombatService.MonsterKilled:Fire(info, credit, credit[1])
 	-- Clear player targets pointing at the corpse.
@@ -1752,6 +1756,9 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 		if result and not result.dodged and result.amount > 0 then
 			runThrough(player, target, params, delivery)
 			spark(player, target, params, result, delivery)
+		end
+		if result and not result.dodged and target.kind == "monster" then
+			CombatService.BasicHit:Fire(player, target)
 		end
 	end)
 end

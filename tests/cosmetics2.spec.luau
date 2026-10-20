@@ -274,7 +274,7 @@ T.describe("Cosmetics 2: ownership and emotes (S123)", function()
 			end
 			T.expect({ emote.id, n }).toEqual({ emote.id, 1 })
 		end
-		T.expect(#Emotes.list).toBe(8)
+		T.expect(#Emotes.list).toBe(10) -- S152: two emotes of season pass 1 (breath, brushfrost)
 		T.expect(Emotes.COOLDOWN).toBe(3)
 	end)
 end)

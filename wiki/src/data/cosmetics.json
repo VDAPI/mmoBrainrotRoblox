@@ -87,6 +87,7 @@
     {"color":"#A8743A","icon":"✎","id":"title_bountyhunter","kind":"title","name":{"en":"Title: Bounty Hunter","pl":"Tytuł: Łowca Nagród"}},
     {"color":"#6B5A2E","color2":"#C9A45C","icon":"➶","id":"frame_trophy","kind":"frame","name":{"en":"Trophy Frame","pl":"Ramka Trofeum"}},
     {"color":"#7FA04A","icon":"✎","id":"title_huntlord","kind":"title","name":{"en":"Title: Master of the Hunt","pl":"Tytuł: Mistrz Łowów"}},
+    {"color":"#C9B48A","icon":"✎","id":"title_firststeps","kind":"title","name":{"en":"Title: First Steps","pl":"Tytuł: Pierwsze Kroki"}},
     {"class":"Warrior","color":"#6A707A","color2":"#2A3550","icon":"⛨","id":"outfit_warrior_vanguard","kind":"outfit","name":{"en":"Gate Warden","pl":"Straż Bram"}},
     {"class":"Warrior","color":"#2A2A2E","color2":"#4A4A50","icon":"⛨","id":"outfit_warrior_blackiron","kind":"outfit","name":{"en":"Blackiron","pl":"Czarne Żelazo"}},
     {"class":"Warrior","color":"#7A1E22","color2":"#5A1418","icon":"⛨","id":"outfit_warrior_crimson","kind":"outfit","name":{"en":"Crimson Guard","pl":"Szkarłatna Gwardia"}},

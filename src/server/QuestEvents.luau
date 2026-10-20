@@ -16,6 +16,24 @@
 --            "event" counts on the kind alone, S101)
 --   escort   { npc, quest }                               (S101b CompanionService: the leading companion arrived
 --            with the player)
+-- S151 (achievements, Logic/Achievements.COUNTER_EVENTS; QuestService ignores these kinds: no objective type matches):
+--   boss     + party (the winners present)                (DungeonService)
+--   duel     + arena = true                               (ArenaService: a ranked match)
+--   worldboss { occId, bossId }                           (WorldBossService, every rewarded fighter)
+--   bloodmoon { id }                                      (BloodMoonService, the first points of an occurrence)
+--   pvpkill  {}                                           (PvpService, the killer; the same kill as pvp.kills)
+--   craft    { recipeId, n }  dismantle { n }  reroll {}  (BlacksmithService)
+--   brew     { n }                                        (AlchemyService, collected orders)
+--   trade    {}                                           (TradeService, both sides of a trade that moved something)
+--   mail     {}                                           (MailService, a letter to a player)
+--   visit    { mapId }                                    (TravelService.MarkVisited, the first visit)
+--   quest    { kind = "main", index } | { kind = "side", questId } | { kind = "contract", n }
+--            (QuestService / SideQuestService (first hand-in) / ContractService)
+--   dodge    { n }                                        (FightLogService.End: dodged telegraphed blows)
+--   social   { friends } | { guild = true }               (SocialService list writes, Guild/Runtime joining)
+--   cosmetic { id }                                       (CosmeticService.Grant)
+-- Kills and levels reach the achievements through CombatService.MonsterKilled (+ lair) and LevelService.LevelChanged
+-- (QuestService already handles both signals; a QuestEvents copy would count quests twice).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

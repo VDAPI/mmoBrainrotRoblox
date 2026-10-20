@@ -614,7 +614,7 @@ boss({
 	nameKey = "boss.hrimvald.name",
 	region = "frostpeak", -- the map (read only: no dungeon)
 	world = true,
-	minLevel = 80,
+	minLevel = 70, -- owner 2026-10-18: reward from 70 (was 80)
 	level = 100,
 	hpMul = 7.8,
 	atkMul = 0.38,

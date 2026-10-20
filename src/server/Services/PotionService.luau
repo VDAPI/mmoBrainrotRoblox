@@ -7,6 +7,8 @@
 -- list Logic/UseBlocks.LISTS.fullElixir asked through src/server/UseGuards. It never goes through `drink`.
 -- S126: guards of the ordinary potions (AddGuard: ArenaService counts the potions of a ranked match) and the Drank
 -- signal after every ordinary potion.
+-- S155: full-drink hooks (AddFullDrink): an ordinary potion asked for at full (the tutorial's potion step) is drunk
+-- anyway instead of "potion.notNeeded".
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -38,6 +40,9 @@ local PotionService = {
 -- S126: a guard returns an error key to refuse an ordinary potion (checked after the level, before the cooldown).
 export type Guard = (player: Player, def: Items.ItemDef) -> string?
 local guards: { Guard } = {}
+-- S155: a full-drink hook returns true when the player may drink an ordinary potion of a full resource.
+export type FullDrink = (player: Player) -> boolean
+local fullDrinks: { FullDrink } = {}
 
 local PlayerStateService: any
 local CharacterService: any
@@ -49,6 +54,15 @@ local readyAt: { [Player]: { [string]: number } } = {}
 
 local function now(): number
 	return Workspace:GetServerTimeNow()
+end
+
+local function fullAllowed(player: Player): boolean
+	for _, hook in fullDrinks do
+		if hook(player) then
+			return true
+		end
+	end
+	return false
 end
 
 -- Drinks the potion stack at `index`. Returns (ok, errorKey?).
@@ -83,7 +97,7 @@ local function drink(player: Player, index: number): (boolean, string?)
 	if (timers[resource] or 0) > t then
 		return false, "potion.cooldown"
 	end
-	if ResourceService.Missing(player, resource) <= 0 then
+	if ResourceService.Missing(player, resource) <= 0 and not fullAllowed(player) then
 		return false, "potion.notNeeded"
 	end
 	InventoryService.ConsumeAt(player, index)
@@ -98,6 +112,11 @@ end
 -- S126: adds a guard of the ordinary potions (the first refusal wins).
 function PotionService.AddGuard(guard: Guard)
 	table.insert(guards, guard)
+end
+
+-- S155: adds a full-drink hook (any true lets the potion through at full).
+function PotionService.AddFullDrink(hook: FullDrink)
+	table.insert(fullDrinks, hook)
 end
 
 -- S122: drinks the Elixir of Wholeness at `index` (backpack or any bar slot). Place blocks first (UseGuards), then

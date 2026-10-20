@@ -591,6 +591,51 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 					end
 				end,
 			}),
+			-- S151b: the achievements window (the phone has no N key)
+			Button(scope, {
+				LayoutOrder = 2.6,
+				Text = Text.T(scope, "menu.achievements"),
+				Variant = "secondary",
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Disabled = extra == nil or extra.OpenWindow == nil,
+				OnClick = function()
+					local open = extra and extra.OpenWindow
+					if open then
+						close()
+						open("achievements")
+					end
+				end,
+			}),
+			-- S152b: the season pass window (the phone has no C key)
+			Button(scope, {
+				LayoutOrder = 2.7,
+				Text = Text.T(scope, "menu.season"),
+				Variant = "secondary",
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Disabled = extra == nil or extra.OpenWindow == nil,
+				OnClick = function()
+					local open = extra and extra.OpenWindow
+					if open then
+						close()
+						open("season")
+					end
+				end,
+			}),
+			-- S153: the "What has changed" letter again (the latest entries)
+			Button(scope, {
+				LayoutOrder = 2.8,
+				Text = Text.T(scope, "menu.whatsnew"),
+				Variant = "secondary",
+				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Disabled = extra == nil or extra.OpenWindow == nil,
+				OnClick = function()
+					local open = extra and extra.OpenWindow
+					if open then
+						close()
+						open("whatsnew")
+					end
+				end,
+			}),
 			row(
 				scope,
 				3,
@@ -632,6 +677,7 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 			row(scope, 14, "menu.barks", toggle(scope, "barks", true)), -- S101b: NPC comments during quests
 			row(scope, 14, "menu.lowHpWarn", toggle(scope, "lowHpWarn", true)), -- S134f: low health vignette and heartbeat
 			row(scope, 14, "menu.fightCard", toggle(scope, "fightCard", true)), -- S134f: the after-fight card
+			row(scope, 14, "menu.achToasts", toggle(scope, "achToasts", true)), -- S151: achievement toasts
 			-- S133: who may whisper, and the "<name> is in the game" toast
 			row(
 				scope,
@@ -642,6 +688,16 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 				end)
 			),
 			row(scope, 14, "menu.friendAlerts", toggle(scope, "friendAlerts", true)),
+			-- S150: appear offline and who may join my server (FriendService writes the presence entry by them)
+			row(scope, 14, "menu.appearOffline", toggle(scope, "appearOffline", false)),
+			row(
+				scope,
+				14,
+				"menu.friendJoin",
+				cycle(scope, "friendJoin", "friends", { "friends", "none" }, function(use, value)
+					return Text.get(use, `menu.friendJoin.{value}`)
+				end)
+			),
 			avatarRow(scope, 14), -- S132
 			row(
 				scope,

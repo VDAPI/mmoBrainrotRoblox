@@ -327,6 +327,31 @@ local function buildPairs(): { Pair }
 			what = `resource.{key} on resource.track`,
 		})
 	end
+	-- S152b: the season pass bar (brass on the track) and the green edge of a cell to claim on its parchment
+	table.insert(out, {
+		fg = UiPalette.brass.bright,
+		bg = UiPalette.resource.track,
+		min = UiPalette.MIN_EDGE,
+		what = "brass.bright on resource.track (season pass bar)",
+	})
+	for _, bg in { "selected", "raised", "surface" } do
+		table.insert(out, {
+			fg = paper.accent,
+			bg = (paper :: any)[bg],
+			min = UiPalette.MIN_EDGE,
+			what = `paper.accent on paper.{bg} (season pass cell to claim)`,
+		})
+	end
+	-- S154: the transmog collection is an iron showcase inside the smith's window: the brass frame of the worn look on
+	-- a tile (raised, selected) and on the showcase around it (sunken)
+	for _, bg in { "raised", "selected", "sunken" } do
+		table.insert(out, {
+			fg = UiPalette.brass.bright,
+			bg = (iron :: any)[bg],
+			min = UiPalette.MIN_EDGE,
+			what = `brass.bright on iron.{bg} (transmog: the worn look's frame)`,
+		})
+	end
 	-- bar numbers: iron text with a dark stroke on the track
 	table.insert(out, {
 		fg = iron.text,

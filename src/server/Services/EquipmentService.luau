@@ -3,7 +3,7 @@
 -- weapons (they push the off-hand back into the backpack), backpack swaps (only when everything fits) and
 -- binding on equip. Plugs equipment into StatService (modifier source + weapon provider), exposes legendary
 -- effect totals (hooks) and shows the weapon and off-hand on the character (placeholder parts, Data/WeaponLooks, or
--- the owner's real models from ReplicatedStorage.Assets.Weapons, S52).
+-- the owner's real models from ReplicatedStorage.Assets.Weapons, S52; S154: the worn look of Logic/Transmog).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +17,7 @@ local Paths = require(Shared.Logic.Paths)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Rarities = require(Shared.Data.Rarities)
 local Signal = require(ReplicatedStorage.Packages.Signal)
+local Transmog = require(Shared.Logic.Transmog)
 local Types = require(Shared.Types)
 local WeaponBuild = require(Shared.Util.WeaponBuild)
 local WeaponLooks = require(Shared.Data.WeaponLooks)
@@ -95,7 +96,9 @@ local function updateHeldModel(player: Player, slot: "weapon" | "offhand")
 	end
 	local char = character(player)
 	local item = char and (char.equipment :: any)[slot] :: ItemInstance?
-	local def = item and Items.get(item.id)
+	-- S154: the worn look (Logic/Transmog, same type: grip, WeaponType and animations unchanged); the rarity colour
+	-- and the glow stay the item's own
+	local def = item and Transmog.displayDef(item)
 	local rarity = item and item.rarity
 	local preview = previews[player]
 	if preview and preview.slot == slot then

@@ -176,6 +176,8 @@ T.describe("AccountSchema", function()
 			T.expect(old.social).toEqual({ friends = {}, ignored = {} })
 			T.expect(old.settings.whispers).toBe("all")
 			T.expect(old.settings.friendAlerts).toBe(true)
+			T.expect(old.settings.appearOffline).toBe(false) -- S150
+			T.expect(old.settings.friendJoin).toBe("friends") -- S150
 			T.expect(old.settings.volume).toBe(0.5)
 			T.expect(old.characters["1"].mailSent).toEqual({ day = 0, n = 0 })
 			T.expect(old.characters["1"].playerMenuHint).toBe(false)

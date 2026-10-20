@@ -324,4 +324,61 @@ T.describe("S128 arena season titles", function()
 	end)
 end)
 
+-- S151: achievement titles (req.kind "achievement"): a character achievement from character.ach.done, an account one
+-- from the context (account.ach.done through Titles.contextOf)
+T.describe("Achievement titles (S151)", function()
+	T.it("a character achievement unlocks its title on that character only", function()
+		local c = character(80, 0, 0, 0)
+		T.expect(Titles.isUnlocked(c, "ach_elusive")).toBe(false)
+		c.ach = { c = {}, s = {}, done = { dodge3 = 1700000000 } }
+		T.expect(Titles.isUnlocked(c, "ach_elusive")).toBe(true)
+		T.expect(Titles.isUnlocked(character(80, 0, 0, 0), "ach_elusive")).toBe(false)
+	end)
+
+	T.it("an account achievement unlocks its title for every character of the account", function()
+		local account = { cosmetics = { owned = {} }, ach = { c = {}, s = {}, done = { worldBoss1 = 1 }, paid = {} } }
+		local ctx = Titles.contextOf(account, false)
+		T.expect(Titles.isUnlocked(character(1, 0, 0, 0), "ach_ancestorbane", nil, ctx)).toBe(true)
+		T.expect(Titles.isUnlocked(character(1, 0, 0, 0), "ach_ancestorbane")).toBe(false)
+		T.expect(Titles.isUnlocked(character(1, 0, 0, 0), "ach_ancestorbane", nil, Titles.contextOf({}, false)))
+			.toBe(false)
+	end)
+
+	T.it("every achievement title names an achievement with that title as reward, stays off the wiki", function()
+		local Achievements = require("../src/shared/Data/Achievements")
+		local n = 0
+		for _, def in TitleData.list do
+			if def.req.kind == "achievement" then
+				n += 1
+				local ach = Achievements.get((def.req :: any).id)
+				T.expect({ def.id, ach ~= nil and ach.reward ~= nil and ach.reward.title }).toEqual({ def.id, def.id })
+				T.expect({ def.id, def.wiki }).toEqual({ def.id, false })
+				T.expect({ def.id, pl[def.nameKey] ~= nil, en[def.nameKey] ~= nil }).toEqual({ def.id, true, true })
+			end
+		end
+		T.expect(n).toBe(7)
+	end)
+
+	T.it("the old level, story, duel and PvP titles keep their requirements", function()
+		local kinds = {
+			wanderer = "level",
+			adventurer = "level",
+			veteran = "level",
+			champion = "level",
+			legend = "level",
+			sentinel = "mainDone",
+			dragonbane = "mainDone",
+			thornbearer = "mainDone",
+			duelist = "duelsWon",
+			gladiator = "duelsWon",
+			bloodied = "pvpKills",
+			warlord = "pvpKills",
+		}
+		for id, kind in kinds do
+			local def = TitleData.get(id)
+			T.expect({ id, def and def.req.kind }).toEqual({ id, kind })
+		end
+	end)
+end)
+
 return nil
