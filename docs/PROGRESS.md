@@ -49,7 +49,8 @@
 
 - **Zgłoszenia właściciela 2026-10-20:** zrobione (S156): menu HUD w dwóch rzędach, limit przesuwania mapy, efekty broni
   z jej puli, Zwój Przemiany, kurhan bossa świata jako niecka z przedsionkiem bez PvP i dłuższe ogłoszenia, kolorowe
-  stragany z NPC przed ladą. Zostaje: ikona PNG Zwoju Przemiany; „chatki z wygenerowanych” (modele Tripo do miasta?)
+  stragany z NPC przed ladą, ranking czasu gry i podium, marmurowe posągi, przesuwany i skalowany tropiciel zadań.
+  Zostaje: ikona PNG Zwoju Przemiany; „chatki z wygenerowanych” (modele Tripo do miasta?)
   czeka na odpowiedź właściciela; nic z tego nieobejrzane w Studio.
 
 - **Samouczek z działaniem (S155):** wiki czeka na odświeżenie (właściciel 17.10): akapit o samouczku i nagrodzie na 5.

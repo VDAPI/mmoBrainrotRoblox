@@ -787,6 +787,11 @@ local function snapshotOf(instanceId: string, player: Player?, wait: boolean): L
 				end
 				me = Leaderboard.arenaMe(character, rows, excludedPlayer(player, character), field)
 			end
+		elseif def.format == "time" then
+			-- S156: the own place and minutes in the world
+			if player and character then
+				me = Leaderboard.timeMe(character, rows, CFG, excludedPlayer(player, character))
+			end
 		elseif player and character and (def.class == nil or def.class == character.class) then
 			me = Leaderboard.me(character, rows, CFG, excludedPlayer(player, character))
 		end
