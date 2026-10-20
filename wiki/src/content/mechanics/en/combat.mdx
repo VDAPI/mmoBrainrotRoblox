@@ -3,7 +3,7 @@ title: Combat
 description: "How the game counts damage step by step, how much armour stops, how elements, crits and dodges work and how monster ranks differ."
 key: combat
 order: 1
-updated: 2026-10-16
+updated: 2026-10-20
 tags: [Damage, Monsters]
 ---
 
@@ -40,6 +40,8 @@ A basic melee attack reaches <Stat path="mechanics.combat.meleeRange" /> studs, 
 ## Monster ranks
 
 Elites are bigger, stronger and higher level than normal monsters of their kind. Elite II fight like a small boss and need a party.
+
+**Level lock.** Elites, Elite IIs, dungeon bosses and their helpers cannot be hurt by a character <Stat path="mechanics.levelLockGap" /> or more levels above them. Such a character sees such a target greyed out with a lock and "Too high a level (max N)": it deals no damage (areas, burning and poison included), gets no loot or experience from it and cannot enter that boss's dungeon. Healing and buffing the party still works. This keeps the Elites for the players of their band. Normal monsters, the world boss and world events have no lock.
 
 An Elite II announces a **Crushing Blow**: a dark crimson circle under its target that you must leave before it lands. At its own level it takes a big part of your health, and the higher it is above you, the more dangerous it gets: a few levels above you it kills in one hit. Running away does not save you: the Elite II throws at a target that keeps it at a distance (the harder, the lower the target is below it), pounces on it, and announces the Crushing Blow from afar too. An ordinary Elite has a **Heavy Blow**, a cone in front of it to dodge.
 

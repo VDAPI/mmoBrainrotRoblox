@@ -13436,6 +13436,40 @@ Pliki: `src/shared/Data/WorldEvents.luau`, `src/shared/Logic/WorldEvents.luau`, 
 - Nieobejrzane w Studio.
 - **Pliki:** `src/shared/Data/{MonsterAssetVariants,MonsterAssets,MonsterLooks}.luau`,
   `src/client/Controllers/MonsterViewController.luau`, `tests/monsterassets.spec.luau` (nowy), `tools/balance_reasons.luau`, `docs/SESJE.md`.
+
+### S157: blokada poziomu na Elity i bossy (zasada Margonem), reszta po S156
+
+- **Zastany stan** (S156, c7ed158f): `Config.LevelLock.gap` 10, `Logic/LevelLock.blocked`, w `CombatService.DealDamage`
+  zero obrażeń i komunikat `combat.levelLock` co 4 s; bez klienta, wejścia do lochu, DoT, zagrożenia i łupu.
+- **Zasada** (bez zmian liczby): postać o 10+ poziomów wyższa od Elity, Elity II, bossa lochu albo jego pomocnika
+  nie może go bić; +9 wolno, +10 nie. Zwykłe potwory, boss świata (z pomocnikami) i potwory wydarzeń świata bez
+  blokady. Leczenie i wzmocnienia sojuszników wolno.
+- **Logika:** `Logic/LevelLock` dostał `applies`, `maxLevel` (poziom + gap - 1), `capOf`, `over`, `filter`,
+  `bossEntry`; `blocked` z S156 zostaje (test sprawdza, że oba dają tę samą granicę).
+- **Serwer:** blokada siedzi na potworze (`Monster.capLevel`, atrybut modelu `CapLevel`, `Monster.SetCap` /
+  `LockedFor`). `MonsterService.SpawnAt` daje ją Elitom i Elitom II (bez atrybutu `WorldEvent`), `DungeonService`
+  bossowi i jego pomocnikom (`/boss spawn` bez blokady). `Monster.TakeDamage` i `AddThreat` nic nie robią dla takiej
+  postaci (DoT, odbicia, Retribution, prowokacja), potwór sam jej nie atakuje (`lookForAggro`).
+  `CombatService.DealDamage` zwraca nil (sprawdzenie S156 zastąpione `overCap`, komunikat `combat.levelLock` zostaje),
+  `ApplyBurn` / `ApplyPoison` odmawiają, atak podstawowy staje z tym samym komunikatem, `ResolveKillCredit` pomija
+  członków drużyny z blokadą (EXP, złoto, łup, zadania). Umiejętności: `cast.error.overLevel` na wybranym celu,
+  `Context.isEnemy` pomija taki cel (obszary, łańcuchy, efekty), łuk żywiołu (`Skills/Elements`) też.
+- **Loch:** `DungeonService.blocker` → `dungeon.reason.overLevel` (lider dostaje odmowę, członek zostaje na zewnątrz
+  z powodem, reszta wchodzi); `info` wysyła `maxLevel`.
+- **Klient:** `TargetFrame` (kłódka, szara nazwa, poziom i pasek HP, „Za wysoki poziom (maks. N)”),
+  `TargetController` (szara obwódka, atak zamienia się w komunikat, Tab / auto cel / oddawanie ciosów pomijają taki
+  cel), `dungeon.levels` z „do {max}” w oknie lochu i na tabliczce bramy, karta lochu na mapie świata
+  („Maksymalny poziom”). Samodzielne Łowy i Płaszcz Przynęty już biorą tylko zwykłe potwory.
+- **Wiki:** `bosses.json` `maxLevel`, `mechanics.json` `levelLockGap`, strona bossa „Maksymalny poziom”, akapit
+  „Blokada poziomu” w Walce (PL / EN).
+- **Testy:** `tests/levellock.spec.luau` rozszerzony (rangi z blokadą, +9 / +10, obszar bez zablokowanych celów,
+  odmowa wejścia do lochu).
+- **Pliki:** `src/shared/Logic/LevelLock.luau`, `tests/levellock.spec.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Entities/Monster.luau`, `src/server/Services/{MonsterService,CombatService,SkillService,DungeonService}.luau`,
+  `src/server/Skills/{Context,Elements}.luau`, `src/client/Controllers/{TargetController,DungeonController}.luau`,
+  `src/client/UI/Screens/{DungeonWindow,Hud/TargetFrame,WorldMap/CreatureCards}.luau`,
+  `tools/WikiData/{Bosses,Basics}.luau`, `wiki/src/{views/BossView.astro,i18n/pl.ts,i18n/en.ts}`,
+  `wiki/src/content/mechanics/{pl/walka,en/combat}.mdx`, `wiki/src/data/*`, `docs/{DESIGN,DECYZJE,SESJE}.md`.
 ### S149c: boss świata, wskaźnik w HUD, 10:00 i 22:00 czasu polskiego, przedmioty Hrimvalda, wkład i poczta
 
 Właściciel 2026-10-20: komunikat o bossie ma nie znikać tak szybko, boss dwa razy dziennie (10:00 i 22:00), mocniejsze

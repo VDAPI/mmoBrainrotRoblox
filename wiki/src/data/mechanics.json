@@ -52,6 +52,7 @@
     {"band":"yellow","color":"#E8C83A","max":5,"min":3},
     {"band":"red","color":"#E0503F","max":10,"min":6}
   ],
+  "levelLockGap": 10,
   "market": {
     "auction": {"depositPct":1,"durations":[24,48],"feePct":5,"maxListings":20},
     "categories": [{"id":"weapon","name":{"en":"Weapons","pl":"Broń"}},{"id":"offhand","name":{"en":"Off-hands","pl":"Druga ręka"}},{"id":"armor","name":{"en":"Armour","pl":"Zbroje"}},{"id":"jewelry","name":{"en":"Jewellery","pl":"Biżuteria"}},{"id":"material","name":{"en":"Materials","pl":"Materiały"}},{"id":"consumable","name":{"en":"Consumables","pl":"Zużywalne"}},{"id":"other","name":{"en":"Other","pl":"Inne"}}],

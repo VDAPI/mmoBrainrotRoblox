@@ -383,7 +383,8 @@ function Context.new(
 			return false
 		end
 		if entity.kind == "monster" then
-			return entity.monster ~= nil and entity.monster:IsAlive()
+			-- S157 (Logic/LevelLock): a monster over the caster's level cap is no enemy (areas, chains, effects skip it)
+			return entity.monster ~= nil and entity.monster:IsAlive() and not entity.monster:LockedFor(player)
 		end
 		local other = entity.player
 		return other ~= nil and other ~= player and (services.Pvp.CanAttack(player, other))

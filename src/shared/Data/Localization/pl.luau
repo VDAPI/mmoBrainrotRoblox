@@ -1340,6 +1340,7 @@ return {
 	["cast.error.range"] = "Cel jest za daleko.",
 	["cast.error.disabled"] = "Nie możesz teraz działać.",
 	["cast.error.invalidTarget"] = "Nieprawidłowy cel.",
+	["cast.error.overLevel"] = "Za wysoki poziom na tego przeciwnika.",
 	["cast.error.safeZone"] = "W strefie bezpiecznej nie można walczyć.",
 	["cast.error.noDeadAlly"] = "Brak poległego sojusznika do wskrzeszenia.",
 	["cast.channel"] = "Kanałowanie…",
@@ -1699,7 +1700,7 @@ return {
 	-- Dungeons and bosses (S09)
 	["window.dungeon.title"] = "Loch bossa",
 	["dungeon.open"] = "Loch",
-	["dungeon.levels"] = "Boss poziom {level} · wejście od poziomu {required}",
+	["dungeon.levels"] = "Boss poziom {level} · wejście od poziomu {required} do {max}",
 	["dungeon.free"] = "Wolny",
 	["dungeon.busyBy"] = "Zajęty przez grupę gracza {name} ({time})",
 	["dungeon.enter"] = "Wejdź",
@@ -1708,6 +1709,7 @@ return {
 	["dungeon.busy"] = "W środku jest inna grupa. Poczekaj, aż loch się zwolni.",
 	["dungeon.notLeader"] = "Wejść może tylko lider grupy.",
 	["dungeon.reason.level"] = "za niski poziom",
+	["dungeon.reason.overLevel"] = "za wysoki poziom na tego bossa",
 	["dungeon.reason.locked"] = "dzienny limit zabić wykorzystany",
 	["dungeon.reason.far"] = "za daleko od lidera",
 	["dungeon.reason.dead"] = "martwy",
@@ -2524,6 +2526,7 @@ return {
 	["combat.reject.safeZone"] = "Strefa bezpieczna: tu nie walczysz.",
 	["combat.reject.tooFar"] = "Za daleko od celu.",
 	["combat.reject.stunned"] = "Jesteś ogłuszony.",
+	["combat.overLevel"] = "Za wysoki poziom (maks. {max})",
 	["hud.sprint"] = "Sprint",
 
 	-- S18: PvP dot
@@ -3215,6 +3218,7 @@ return {
 	["worldmap.card.rarely"] = "rzadko",
 	["worldmap.card.veryRarely"] = "bardzo rzadko",
 	["worldmap.card.required"] = "Wymagany poziom: {level}",
+	["worldmap.card.maxLevel"] = "Maksymalny poziom: {level}",
 	["worldmap.card.available"] = "Dziś dostępny",
 	["worldmap.card.lockedFor"] = "Już pokonany dziś, dostępny za {time}",
 	["worldmap.card.group"] = "Grupa 1–5 osób, wchodzi lider z członkami w pobliżu; do 3 zabić dziennie",
