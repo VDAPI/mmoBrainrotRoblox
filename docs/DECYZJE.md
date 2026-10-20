@@ -5946,5 +5946,8 @@
 - **S156** (właściciel 2026-10-20) Blokada poziomu: postać o 10+ poziomów wyższa od Elity, Elity II albo bossa lochu nie zadaje mu obrażeń (komunikat co 4 s; `Config.LevelLock.gap`, `Logic/LevelLock`, `CombatService.DealDamage`); zwykłe potwory i boss świata bez blokady. Liczba do potwierdzenia przez właściciela.
 - **S156** Grubsze ramki rzadkości (1,5 / 2 / 2,5 / 2,5 / 3 → 2 / 3 / 3,5 / 4 / 4,5).
 - **S156** (właściciel 2026-10-20) Inwazja gęstsza: fale 14 + 4 na gracza do 36 w grupach po 7, spadają na 3 spawnery łowiska najbliżej jego środka (`invasion.focus`), zamiast nadbiegać z całego łowiska.
+- **S156** (właściciel 2026-10-20) Ranking „Czas w grze”: pełne minuty `character.playtime` (scorer `playtime`, zakładka 7, tylko postać); okno rankingów ma podium pierwszej trójki nad tabelą.
+- **S156** (właściciel 2026-10-20) Posągi Galerii Sław: marmurowi bohaterowie ~1,5 wzrostu gracza z pozą klasy (miecz, łuk, kostur z kulą w kolorze klasy, młot z księgą; arena po kolei, turniej z mieczem w górze), złote listwy i światło nocą.
+- **S156** (właściciel 2026-10-20) Układ HUD gracza w `account.settings.hud` (`Logic/HudLayout`: róg jako ułamek ekranu, rozmiar w pikselach wirtualnych, biała lista elementów); na razie tropiciel zadań: przesuwany za ⠿, rozmiar za ◢, lista przewija się w środku; „Przywróć” w menu.
 - **W28** Rama portalu w jaskini stoi w ramce portalu z `Data/Portals` (`CaveDress/Kit.atPortal`), nie na liczbach planu; wystrój żadnej mapy nie wchodzi w łuk portalu ani w bramę lochu (`tests/portals.spec`).
 - **W28** „E” przy portalu i bramie lochu: podpowiedź `Data/Portals.PROMPT_RANGE` (12), serwer `SERVER_RANGE` (20) od tej samej części (pole / drzwi bramy); brama nie liczy już od punktu lądowania.

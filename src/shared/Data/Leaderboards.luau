@@ -11,7 +11,7 @@ local Config = require("../Config")
 
 export type Kind = "ordered" | "sorted" | "list"
 export type Filter = "class" | "bracket" | "region" | "arenaBracket" -- S126: the arena brackets (Data/Arena.BRACKETS)
-export type Format = "level" | "int" | "date" | "guild" | "rating" -- S125: "guild" = Logic/Leaderboard.decodeGuild; S126 arena rating
+export type Format = "level" | "int" | "date" | "guild" | "rating" | "time" -- S125: "guild" = Logic/Leaderboard.decodeGuild; S126 arena rating; S156 minutes played
 export type ListMode = "first" | "latest"
 
 export type BoardDef = {
@@ -168,6 +168,19 @@ table.insert(
 	} :: BoardDef
 )
 
+-- S156 (owner 2026-10-20): time in the world, whole minutes of the character's `playtime` (scorer "playtime").
+table.insert(
+	list,
+	{
+		id = "playtime",
+		kind = "ordered",
+		nameKey = "leaderboard.board.playtime",
+		scope = "character",
+		score = "playtime",
+		format = "time",
+	} :: BoardDef
+)
+
 local byId: { [string]: BoardDef } = {}
 for _, def in list do
 	assert(byId[def.id] == nil, `Data/Leaderboards: duplicate board {def.id}`)
@@ -183,6 +196,8 @@ local tabs: { TabDef } = {
 	{ id = "arena", nameKey = "leaderboard.tab.arena", boards = { "arena" }, filter = "arenaBracket", order = 5 },
 	-- S128: this season's 3v3 arena board of an arena bracket
 	{ id = "arena3", nameKey = "leaderboard.tab.arena3", boards = { "arena3" }, filter = "arenaBracket", order = 6 },
+	-- S156: time in the world
+	{ id = "playtime", nameKey = "leaderboard.tab.playtime", boards = { "playtime" }, order = 7 },
 }
 
 local plinths: { PlinthDef } = {}

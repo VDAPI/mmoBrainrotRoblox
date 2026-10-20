@@ -151,6 +151,11 @@ Leaderboard.SCORERS = table.freeze({
 	level = function(c: any, now: number): number?
 		return Leaderboard.levelScore(c.level, c.exp, c.reached100At, now)
 	end,
+	-- S156: whole minutes in the world (CharacterService adds the session time to `playtime`)
+	playtime = function(c: any, _now: number): number?
+		local minutes = math.floor((tonumber(c.playtime) or 0) / 60)
+		return if minutes > 0 then minutes else nil
+	end,
 }) :: { [string]: (character: any, now: number) -> number? }
 
 -- B2. Board ids -----------------------------------------------------------------------------------------------------
@@ -663,8 +668,9 @@ function Leaderboard.rows(
 			row.l = if meta then meta.l else nil
 			row.m = if meta then meta.m else nil
 			row.c = nil
-		elseif def.format == "int" or def.format == "rating" then
-			-- S125: weekly EXP, the level at the last write; S126: the arena rating, the level at the last write
+		elseif def.format == "int" or def.format == "rating" or def.format == "time" then
+			-- S125: weekly EXP, the level at the last write; S126: the arena rating, the level at the last write; S156
+			-- minutes played
 			row.l = if meta then meta.l else nil
 		end
 		table.insert(out, row)
@@ -753,6 +759,18 @@ function Leaderboard.me(character: any, rows: { Row }, cfg: Cfg, excluded: boole
 		pct = if need > 0 then math.clamp(math.floor((tonumber(character.exp) or 0) / need * 100), 0, 99) else 0
 	end
 	return { l = level, p = pct }
+end
+
+-- S156: the player's line under the playtime board: the rank (from the rows) and the own minutes in `s`.
+function Leaderboard.timeMe(character: any, rows: { Row }, cfg: Cfg, excluded: boolean): Me
+	if excluded then
+		return { hidden = true }
+	end
+	if not Leaderboard.eligible(character, cfg) then
+		return { below = cfg.minLevel }
+	end
+	local minutes = Leaderboard.SCORERS.playtime(character, 0) or 0
+	return { r = Leaderboard.rankOf(rows), s = minutes }
 end
 
 -- S126: the player's line under an arena board: the rank (from the rows) and the own rating; `below` = the arena
