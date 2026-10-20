@@ -1,0 +1,27 @@
+{
+  "dungeon_meadows": {
+    "x0": -150,
+    "z0": -150,
+    "size": 300
+  },
+  "dungeon_duskwood": {
+    "x0": -150,
+    "z0": -150,
+    "size": 300
+  },
+  "dungeon_ashen": {
+    "x0": -150,
+    "z0": -150,
+    "size": 300
+  },
+  "dungeon_frostpeak": {
+    "x0": -150,
+    "z0": -150,
+    "size": 300
+  },
+  "arena_pit": {
+    "x0": -140,
+    "z0": -140,
+    "size": 280
+  }
+}
