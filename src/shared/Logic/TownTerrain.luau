@@ -128,25 +128,29 @@ end
 
 TownTerrain.WATER_LEVEL = T.river.water
 TownTerrain.VOXEL = 4
+-- Lawns, fields and verges: LeafyGrass, never Grass. Roblox grows its waist-high decoration grass on Grass only
+-- (Terrain.Decoration, no script can switch it off), and the owner wants a tidy city with clear streets and roads.
+-- The city's look tints LeafyGrass like the old grass (Data/MapLooks city `terrainColors`).
+TownTerrain.LAWN = "LeafyGrass"
+local LAWN = TownTerrain.LAWN
 
 local GARDEN_MATERIAL: { [string]: string } = {
-	orchard = "LeafyGrass",
+	orchard = LAWN,
 	vegetables = "Ground",
 	vineyard = "Ground",
-	formal = "Grass",
+	formal = LAWN,
 	yard = "Ground",
-	backGarden = "Grass",
+	backGarden = LAWN,
 	paddock = "Mud",
 	herbs = "Ground",
 	trainingYard = "Sand",
-	meadow = "LeafyGrass",
-	pasture = "LeafyGrass",
+	meadow = LAWN,
+	pasture = LAWN,
 }
 local STREET_MATERIAL: { [string]: string } = { main = "Cobblestone", lane = "Pavement", alley = "Ground" }
 local STEEP = math.tan(math.rad(40))
 
 TownTerrain.MATERIALS = {
-	"Grass",
 	"LeafyGrass",
 	"Ground",
 	"Mud",
@@ -214,15 +218,15 @@ local STREETS = lines(city.streets, function(s)
 	return STREET_MATERIAL[s.kind] or "Pavement"
 end)
 local GARDENS = polys(city.gardens, function(g)
-	return GARDEN_MATERIAL[g.kind] or "Grass"
+	return GARDEN_MATERIAL[g.kind] or LAWN
 end)
 local FIELDS = polys(city.outside.fields, function(f)
-	return if f.crop == "ploughed" then "Ground" else "Grass"
+	return if f.crop == "ploughed" then "Ground" else LAWN
 end)
 local ROADS = lines(city.outside.roads, function()
 	return "Ground"
 end)
-local CEMETERY: { Shape } = { { box = boxOf(city.cemetery, 0), poly = city.cemetery, half = 0, value = "Grass" } }
+local CEMETERY: { Shape } = { { box = boxOf(city.cemetery, 0), poly = city.cemetery, half = 0, value = LAWN } }
 
 -- W28: the Ristalle's square (sand + stands) plus `margin` studs around it. The colosseum stands on its own stone
 -- foundation there (Logic/TownGen/Specials arena); the ground around it is paved, so no grass, tufts or flowers grow
@@ -236,7 +240,7 @@ end
 
 -- Surface material at (x, z) for ground height `h` and slope `slope` (rise per stud; 0 when unknown).
 -- First match wins: river bed, arena sand (W28: its forecourt paved), squares, ramps, streets, river banks, steep ground (rock), gardens,
--- cemetery, then the base: grass with leafy patches inside the walls; moat, roads, fields and forest outside.
+-- cemetery, then the base: lawn inside the walls; moat, roads, fields and forest outside (no Grass anywhere: LAWN).
 function TownTerrain.materialAt(x: number, z: number, h: number, slope: number): string
 	local river = T.river
 	if h < river.water then
@@ -270,9 +274,7 @@ function TownTerrain.materialAt(x: number, z: number, h: number, slope: number):
 		return "Rock"
 	end
 	if inside then
-		return hit(GARDENS, x, z)
-			or hit(CEMETERY, x, z)
-			or (if TownTerrain.noise(x / 23, z / 23, 7) > 0.66 then "LeafyGrass" else "Grass")
+		return hit(GARDENS, x, z) or hit(CEMETERY, x, z) or LAWN
 	end
 	local dWall = TownGeom.edgeDist(city.wall, x, z)
 	if math.abs(dWall - T.moat.center) < T.moat.half then
@@ -283,9 +285,9 @@ function TownTerrain.materialAt(x: number, z: number, h: number, slope: number):
 		return road
 	end
 	if math.max(math.abs(x), math.abs(z)) >= city.outside.forestStart then
-		return if TownTerrain.noise(x / 17, z / 17, 11) > 0.7 then "Mud" else "LeafyGrass"
+		return if TownTerrain.noise(x / 17, z / 17, 11) > 0.7 then "Mud" else LAWN
 	end
-	return "LeafyGrass"
+	return LAWN
 end
 
 export type Voxels = TerrainLayers.Voxels

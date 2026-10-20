@@ -3,7 +3,7 @@
     lune run tools/regiondump.luau duskwood d.json 8 builds
     python tools/regionmap.py d.json out.png [--overlay] [--pieces] [--trees] [--zoom x1 z1 x2 z2] [--scale 1]
 
-Hill-shaded terrain in the material colours of WorldBuilder, water, and (with --overlay) roads, streams, monster
+Hill-shaded terrain in the material colours of Data/MapLooks, water, and (with --overlay) roads, streams, monster
 areas, groups, sites, NPC spots, quest anchors, crossings, nodes, life points and building footprints.
 """
 import json
@@ -12,7 +12,7 @@ import sys
 import numpy as np
 from PIL import Image, ImageDraw
 
-# World/WorldBuilder MATERIAL_COLORS
+# Data/MapLooks TERRAIN_COLORS
 COLORS = {
     "Grass": (92, 122, 58),
     "LeafyGrass": (52, 69, 42),

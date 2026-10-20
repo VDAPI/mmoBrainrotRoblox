@@ -36,10 +36,10 @@
 - Wiki: Astro w `wiki/`, dane z `tools/wikidump.luau`, wdrożenie Actions → https://vaelthorn-wiki.pages.dev.
 
 **Decyzje właściciela (otwarte, z rekomendacją):**
-- Boss świata (S149): PvP przy bossie wyłączone (rek.: zostawić); nagroda od 80. poziomu (rek.) albo 70.
 - Balans S146/S147: pytania 1–3 (rek. „1a 2b 3b”), cele niespełnione w raporcie; DESIGN-18: zwroty węzłów za złoto (§3.2).
 - Kierunki klas na wiki pokazane (S148) albo schowane (`wiki = false`).
-- Punkty umiejętności 1 na poziom + 7 na start; reroll tylko za pył albo Kamień Przemiany; „E” przy portalach z powrotem?
+- Reroll tylko za pył albo Kamień Przemiany; „E” przy portalach z powrotem? (Zamknięte, DECYZJE: punkty umiejętności
+  1 na poziom + 7 na start; boss świata bez PvP, nagroda od 70.)
 - Backfill 738 Znaków Łowcy; przepustka: czy 1 h dziennie ma kończyć sezon w 8. tygodniu (SESJE → S152).
 - Do zrobienia przez właściciela: id produktów (`docs/SKLEP-ID.md`), id dźwięków bez `ids` (`docs/ASSETS.md`), osierocone
   assety z krwią do archiwum (`docs/ASSETS.md` → „Osierocone”), sekcje „Dla właściciela” w `docs/SESJE.md`.
@@ -61,8 +61,9 @@
 - **Samouczek z działaniem (S155):** wiki czeka na odświeżenie (właściciel 17.10): akapit o samouczku i nagrodzie na 5.
   poziomie w poradniku dla nowych (liczby z `Data/Tutorial` przez eksporter), tytuł „Pierwsze Kroki” w danych wiki.
   Pozycje wskazówki liczone z ramek HUD bez przeglądu w grze (PC i telefon w pionie i poziomie, strefa joysticka,
-  łuk przycisków umiejętności, kolejność z oknem nagrody za logowanie). Krok `skill` liczy każde udane rzucenie z paska,
-  także bez celu.
+  łuk przycisków umiejętności). Krok `skill` liczy każde udane rzucenie z paska, także bez celu. S155b (pierwszy cenny
+  łup, nagroda za logowanie po samouczku, „!” nowych funkcji i punktów statystyk) bez przeglądu w grze: słup światła
+  i okno odsłonięcia Heroicznej broni, toasty awansu na 10. / 20.
 
 - **Transmogryfikacja (S154):** wiki czeka na odświeżenie wiki (właściciel 17.10): rekord `Transmog` w
   `tools/WikiData` (koszt z `Config.Transmog` dla L 20 / 45 / 70 / 100 według rzadkości, liczba wyglądów na typ i z

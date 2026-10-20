@@ -57,6 +57,7 @@ type Bag = {
 	personal: boolean?, -- a boss's personal roll (S30)
 	source: string?, -- monster kind (loot log)
 	luckFrom: string?, -- S60: the priest whose Fortune counted on this boss roll
+	first: boolean?, -- S155b: the first valuable drop of a new character (TutorialService; pillar and reveal)
 }
 
 local LOOT_LOG_SIZE = 50
@@ -88,6 +89,7 @@ local function summary(bag: Bag): { [string]: any }
 		mythic = bag.mythic,
 		best = bag.best,
 		personal = bag.personal == true,
+		first = bag.first == true,
 		expiresIn = bag.expiresAt - os.clock(),
 	}
 end
@@ -146,14 +148,15 @@ local function decision(player: Player, item: ItemInstance): LootFilter.Decision
 end
 
 -- Creates a bag for `owner` at `position` (also used by /legend). Returns the bag id. Items the owner's
--- loot filter hides are not dropped at all.
+-- loot filter hides are not dropped at all. `first` (S155b): the first valuable drop of a new character.
 function LootService.SpawnBag(
 	owner: Player,
 	position: Vector3,
 	items: { ItemInstance },
 	source: string?,
 	personal: boolean?,
-	luckFrom: string?
+	luckFrom: string?,
+	first: boolean?
 ): string?
 	local kept = {}
 	for _, item in items do
@@ -186,6 +189,7 @@ function LootService.SpawnBag(
 		personal = personal,
 		source = source,
 		luckFrom = luckFrom,
+		first = first,
 	}
 	bags[bag.id] = bag
 	Net.Fire(owner, "LootSpawn", summary(bag))

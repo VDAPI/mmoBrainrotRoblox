@@ -21,6 +21,7 @@ local Workspace = game:GetService("Workspace")
 local Build = require(script.Parent.Build)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Log = require(ReplicatedStorage.Shared.Util.Log)
+local MapLooks = require(ReplicatedStorage.Shared.Data.MapLooks)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
@@ -43,33 +44,6 @@ WorldBuilder.MapBuilt = Signal.new() -- S45: (mapId) after a background build or
 -- Work slice of a background build before it yields a frame.
 local SLICE = 0.010
 local STARTUP_SLICE = 0.25 -- the startup build may hog the server longer per frame: nobody is playing yet
-
-local MATERIAL_COLORS: { [Enum.Material]: string } = {
-	[Enum.Material.Grass] = "#5C7A3A",
-	[Enum.Material.LeafyGrass] = "#34452A",
-	[Enum.Material.Ground] = "#7A6A4E",
-	[Enum.Material.Mud] = "#3F3A2E",
-	[Enum.Material.Cobblestone] = "#8A8070",
-	[Enum.Material.Pavement] = "#7A7468",
-	[Enum.Material.Rock] = "#5A5650",
-	[Enum.Material.Slate] = "#4A4744",
-	[Enum.Material.Basalt] = "#2F2B30",
-	[Enum.Material.Sand] = "#C2A878",
-	[Enum.Material.Snow] = "#EEF3F7",
-	[Enum.Material.Glacier] = "#A8D8F0",
-	[Enum.Material.Ice] = "#C9E8F7",
-	[Enum.Material.CrackedLava] = "#D6542A",
-	-- S21: light warm stone of the city market and temple square (no other map uses it).
-	[Enum.Material.Limestone] = "#B9AE96",
-	-- S26: grey gravel of the Meadows' quarry terraces and stream beds (S47 the Peaks' moraines and trails, S48 the
-	-- caves' lake and stream beds use the same colour; Pebble is a part-only material, terrain rejects it).
-	[Enum.Material.Salt] = "#8A847A",
-	-- S45: dark red rock of Duskwood's Blood Cliffs (S46's red crags of the Ashen Wastes match it).
-	[Enum.Material.Sandstone] = "#6E2F2A",
-	-- S46: the Ashen Wastes' grey ash and the salt crust of the Dead Oasis (no other map uses them).
-	[Enum.Material.Asphalt] = "#77716C",
-	[Enum.Material.Concrete] = "#D6CFC0",
-}
 
 local function layoutModule(mapId: string): ModuleScript?
 	local folder = script.Parent:FindFirstChild("Layouts")
@@ -256,8 +230,9 @@ function WorldBuilder.build(mode: string?): Folder
 	if existing then
 		existing:Destroy()
 	end
-	for material, color in MATERIAL_COLORS do
-		Workspace.Terrain:SetMaterialColor(material, Color3.fromHex(color))
+	-- terrain colours shared by every map (Data/MapLooks; the client tints a map's own on entering it)
+	for name, color in MapLooks.TERRAIN_COLORS do
+		Workspace.Terrain:SetMaterialColor((Enum.Material :: any)[name], Color3.fromHex(color))
 	end
 	local root = Instance.new("Folder")
 	root.Name = "World"

@@ -44,7 +44,8 @@ return table.freeze({
 	default = "flesh",
 	player = "armor",
 	-- A critical hit: a gold impactFlash this much bigger than a material's flash, and more sparks.
-	crit = table.freeze({ flashScale = 1.6, countMul = 1.5 }),
+	-- walka-wk: and both bodies freeze `hitstop` seconds (scaled by the "Hit feel" option)
+	crit = table.freeze({ flashScale = 1.6, countMul = 1.5, hitstop = 0.05 }),
 	flashSize = 2, -- studs of the material's white impactFlash
 	puffSize = 0.6, -- size of the material's smokePuff
 	smashTint = "#B8A888", -- the smoke of a smash (mace, hammer) at the target
