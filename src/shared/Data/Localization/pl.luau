@@ -8301,7 +8301,7 @@ return {
 	["arena.hof.bracket"] = "Poziomy {min}–{max}",
 	["leaderboard.board.arena3"] = "Arena: rating 3 na 3",
 	["leaderboard.tab.arena3"] = "Arena 3 na 3",
-	["menu.hudLayout"] = "Układ HUD (zadania przesuniesz za ⠿, rozmiar zmienisz za ◢)",
+	["menu.hudLayout"] = "Układ HUD (zadania przesuniesz za ≡, rozmiar zmienisz za ◢)",
 	["menu.hudLayout.reset"] = "Przywróć",
 	["leaderboard.tab.playtime"] = "Czas w grze",
 	["leaderboard.board.playtime"] = "Czas w grze",

@@ -377,6 +377,9 @@ local function chapel(env: Env.Env, out: { Build })
 	local lo = math.min(Kit.gy(ctx, b, -6, -9), Kit.gy(ctx, b, 6, 9), Kit.gy(ctx, b, 6, -9), Kit.gy(ctx, b, -6, 9))
 	local base = lo - 0.6
 	local h = 9
+	-- owner 2026-10-20: the chapel's walls, roof and dressing are one asset kit slot (Data/Kit "landmark:chapel", the
+	-- owner's ruined chapel); the collision of the walls stays
+	bp:beginKit("landmark:chapel", 0, lo, 0, 1, "shell")
 	for _, w in { { -6, -4, 2.4 }, { 4, 6, 2.4 } } do
 		bp:box(w[2] - w[1], h, 1.4, (w[1] + w[2]) / 2, base + h / 2, -9, o(STONE, "shell", { q = true }))
 	end
@@ -409,6 +412,7 @@ local function chapel(env: Env.Env, out: { Build })
 	bp:box(4, 2.2, 2, 0, base + 1.1, 6.6, o(STONE_DARK, "detail", { col = false }))
 	Kit.candle(bp, -0.8, base + 2.2, 6.6, 0.9)
 	Kit.candle(bp, 0.9, base + 2.2, 6.6, 0.6)
+	bp:endKit()
 	Kit.rect(ctx, "building", b.at.x, b.at.z, 12, 18, b.at.rot)
 	table.insert(out, b)
 end

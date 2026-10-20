@@ -760,7 +760,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						Name = "MoveGrip",
 						Size = UDim2.fromOffset(GRIP, HEADER),
 						BackgroundTransparency = 1,
-						Text = "⠿",
+						Text = "≡",
 						FontFace = Theme.Fonts.BodyBold,
 						TextSize = Theme.TextSize.Body,
 						TextColor3 = Theme.Iron.TextMuted,

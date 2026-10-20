@@ -76,8 +76,11 @@ local function gate(env: Env, out: { Build })
 	-- the hooded mourners with cold lamps at the start of the axis
 	local m = Kit.build(env, "CryptMourners", "landmark", Kit.at(env, -228), 0, 90)
 	for _, s in { -1, 1 } do
+		-- owner 2026-10-20: each mourner with its lantern is an asset kit slot (Data/Kit "landmark:mourner")
+		m.bp:beginKit("landmark:mourner", s * 14, Kit.gy(env, m, s * 14, 0), 0, 1, "shell")
 		statue(m.bp, s * 14, Kit.gy(env, m, s * 14, 0), 0, 1.2, 0, false)
 		Kit.lantern(m.bp, s * 14 + 2, Kit.gy(env, m, s * 14, 0), -2, COLD, 7, "detail")
+		m.bp:endKit()
 	end
 	table.insert(out, m)
 end

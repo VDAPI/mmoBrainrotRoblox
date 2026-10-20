@@ -352,6 +352,7 @@ local T: { [string]: Template } = {
 		lift = 0.05,
 		tilt = true,
 	},
+	-- review 2026-10-21: a flat web square read as floating paper in the caves, so no mix uses it any more
 	web = {
 		size = Vector3.new(3, 3, 0.05),
 		color = rgb("#E8E8F0"),
@@ -396,10 +397,10 @@ local BIOMES: { [string]: { count: number, mix: { { string | number } } } } = {
 	},
 	desert = { count = 16, mix = { { "tuftDry", 6 }, { "pebbleRed", 6 }, { "bone", 2 } } },
 	snow = { count = 18, mix = { { "pebbleSnow", 6 }, { "tuftDry", 3 }, { "crystal", 1 } } },
-	cave = { count = 14, mix = { { "stalactite", 5 }, { "pebble", 4 }, { "crystal", 2 }, { "web", 1 }, { "bone", 2 } } },
+	cave = { count = 14, mix = { { "stalactite", 5 }, { "pebble", 4 }, { "crystal", 2 }, { "bone", 2 } } },
 	crypt = {
 		count = 14,
-		mix = { { "stalactite", 3 }, { "pebble", 3 }, { "bone", 4 }, { "web", 3 }, { "crystal", 1 } },
+		mix = { { "stalactite", 3 }, { "pebble", 3 }, { "bone", 4 }, { "crystal", 1 } },
 	},
 }
 
@@ -589,7 +590,6 @@ THEMES.ruins = {
 		{ "ivy", 6 },
 		{ "stone", 4 },
 		{ "tuftDark", 4 },
-		{ "web", 2 },
 		{ "skull", 2 },
 		{ "bone", 2 },
 		{ "leaf", 3 },
@@ -758,7 +758,7 @@ THEMES.moss = {
 }
 THEMES.web = {
 	count = 26,
-	mix = { { "web", 7 }, { "bone", 5 }, { "pebble", 4 }, { "stalactite", 4 } },
+	mix = { { "bone", 5 }, { "pebble", 4 }, { "stalactite", 4 } },
 }
 THEMES.den = {
 	count = 24,
@@ -778,7 +778,7 @@ THEMES.pen = {
 }
 THEMES.diggings = {
 	count = 26,
-	mix = { { "gravel", 7 }, { "chip", 5 }, { "plank", 3 }, { "pebble", 4 }, { "web", 1 } },
+	mix = { { "gravel", 7 }, { "chip", 5 }, { "plank", 3 }, { "pebble", 4 } },
 }
 
 local THEME_MAX = 44

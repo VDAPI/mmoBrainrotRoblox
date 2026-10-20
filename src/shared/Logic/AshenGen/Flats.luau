@@ -26,6 +26,8 @@ local function ribcage(env: Env.Env, out: { Build })
 	local bp = b.bp
 	-- the road runs along local Z (the gate faces west): every rib springs from the spine's side (north, local -X),
 	-- arches over the road and comes down short of the ground on the south side
+	-- owner 2026-10-20: ribs and spine are one asset kit slot (Data/Kit "landmark:ribcage", the owner's bone arch)
+	bp:beginKit("landmark:ribcage", 0, Kit.gy(ctx, b, 0, 0) - 0.5, 0, 1, "shell")
 	for i = -3, 3 do
 		local z = i * 5.5
 		local s = 1 - math.abs(i) * 0.08
@@ -68,6 +70,7 @@ local function ribcage(env: Env.Env, out: { Build })
 			o(Kit.oldBone, if k % 3 == 0 then "shell" else "detail", { q = false })
 		)
 	end
+	bp:endKit()
 	Kit.lifeAt(ctx, b, "vulturePerch", 0, 23, 0)
 	table.insert(out, b)
 end
@@ -77,7 +80,10 @@ local function hyenaDen(env: Env.Env, out: { Build })
 	local ctx = env.ctx
 	local b = Env.atSite(env, "hyenaDen", "traces", 18)
 	local bp = b.bp
+	-- owner 2026-10-20: the skull is an asset kit slot (Data/Kit "landmark:bigSkull", the owner's skull sculpture)
+	bp:beginKit("landmark:bigSkull", 0, Kit.gy(ctx, b, 0, 4) - 1, 4, 1, "shell")
 	Props.bigSkull(bp, 0, Kit.gy(ctx, b, 0, 4) - 2.4, 4, 1.4, 0)
+	bp:endKit()
 	-- the den: a dark hollow under the skull's jaw, a trampled ring of ash, torn hides, gnawed bones, paw prints
 	bp:add("ball", 7, 3, 4, 0, Kit.gy(ctx, b, 0, -2) + 0.2, -2, 0, 0, 0, o(Kit.dark, "detail", { col = false }))
 	for k = 0, 5 do
