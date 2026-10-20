@@ -731,7 +731,7 @@ function Basics.worldEvents(): any
 			desc = Names.of(def.descKey),
 			glyph = def.glyph,
 			durationMin = def.duration / 60,
-			waves = def.waves,
+			waves = def.phases, -- S134d: the Invasion's intensity phases (the key keeps its S101 name)
 		})
 	end
 	local chestTop = 0

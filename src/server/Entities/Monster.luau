@@ -125,6 +125,10 @@ export type Monster = typeof(setmetatable(
 		speedFactor: number,
 		-- Bosses: own leash range (arena) and no rewards through CombatService.
 		leashRange: number?,
+		-- S134d: an Invasion zone monster's hard leash from its home (keeps it inside the zone; nil = Combat.leashMax)
+		leashHard: number?,
+		-- S134d: EXP of its kill x this (CombatService; the Invasion zone's monsters), nil = 1
+		expMul: number?,
 		-- Centre of the monster's group (S19): wander and leash around it instead of the own spawn point.
 		home: Vector3?,
 		isBoss: boolean?,
@@ -247,6 +251,8 @@ function Monster.new(
 		damageOverride = nil,
 		speedFactor = 1,
 		leashRange = nil,
+		leashHard = nil,
+		expMul = nil,
 		home = nil,
 		isBoss = nil,
 		keepHp = nil,
@@ -608,6 +614,9 @@ local function leashMax(self: Monster): number
 	if self.isBoss then
 		return self.leashRange or Combat.leashRange
 	end
+	if self.leashHard then
+		return self.leashHard
+	end
 	return math.max(self.leashRange or Combat.leashRange, Combat.leashMax)
 end
 
@@ -760,10 +769,10 @@ local function leashed(self: Monster, now: number, hasTarget: boolean): boolean
 		return not hasTarget or distHome > (self.leashRange or Combat.leashRange)
 	end
 	local cfg = Combat :: any
-	if self.leashRange then
+	if self.leashRange or self.leashHard then
 		cfg = table.clone(Combat) :: any
-		cfg.leashRange = self.leashRange
-		cfg.leashMax = math.max(self.leashRange, Combat.leashMax)
+		cfg.leashRange = self.leashRange or Combat.leashRange
+		cfg.leashMax = leashMax(self)
 	end
 	local stuckFor = if self.ctx.isRooted(self) then 0 else now - self.movedAt
 	local back = Leash.shouldReturn({

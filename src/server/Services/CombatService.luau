@@ -945,9 +945,11 @@ local function onMonsterDied(monster: any)
 		-- Logic/PartyLoot (solo unchanged).
 		local level = monster.stats.level
 		local pool = poolMembers(credit, monster)
+		-- S134d: an Invasion zone monster pays x its expMul
 		local expTotal = Exp.monsterExp(level, monster.variant)
 			* MonsterStats.kindReward(monster.def)
 			* (mods.expMul * varietyMul)
+			* (monster.expMul or 1)
 		local expShares = PartyLoot.expShares(expTotal, pool, level)
 		local shares = PartyLoot.goldShares(total, pool, level, rng)
 		for i, player in credit do
