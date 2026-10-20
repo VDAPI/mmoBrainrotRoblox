@@ -750,10 +750,67 @@ local Config = {
 	-- also needs a keyboard and mouse device); particles multiplies emitter rates (low keeps the S14 third).
 	Graphics = {
 		default = "high",
+		-- W29 (Logic/GraphicsLevel): `shadows` = Lighting.GlobalShadows; `decor` = share of the small client decor
+		-- (grass tufts, flowers, pebbles; DecorController) kept per chunk; `detail` = the highest "World detail" level
+		-- the client builds at (nil = the player's setting: radii of the decor, the building detail and the region
+		-- lights); `fill` / `under` = share of the client's filler trees / undergrowth kept (kit slots "tree:*" and
+		-- "under:*" of the detail level, picked by position); `lights` = surface PointLights on at once (city lamps,
+		-- fires, candles: the nearest; lava and crystals keep Config.RegionLights, caves Config.CaveLights; nil = all);
+		-- `motion` = the shimmer and pulse of Legendary / Mythic item frames; `chevrons` = ground chevrons of the guide
+		-- pointer; `plateEvery` = seconds between two distance checks of the nameplates; `fxRadius` = studs from the
+		-- camera within which TownFxController animates flags, flickering lights and water shimmer.
 		levels = {
-			low = { bloom = 0, sunRays = false, clouds = false, farBlur = false, particles = 1 / 3 },
-			medium = { bloom = 0.6, sunRays = true, clouds = true, farBlur = false, particles = 0.7 },
-			high = { bloom = 1, sunRays = true, clouds = true, farBlur = true, particles = 1 },
+			low = {
+				bloom = 0,
+				sunRays = false,
+				clouds = false,
+				farBlur = false,
+				particles = 1 / 3,
+				shadows = false,
+				decor = 0.5,
+				detail = "low" :: string?,
+				fill = 0.5,
+				under = 0.35,
+				lights = 12 :: number?,
+				motion = false,
+				chevrons = 4,
+				plateEvery = 0.5,
+				fxRadius = 90,
+			},
+			medium = {
+				bloom = 0.6,
+				sunRays = true,
+				clouds = true,
+				farBlur = false,
+				particles = 0.7,
+				shadows = true,
+				decor = 0.8,
+				detail = nil :: string?,
+				fill = 1,
+				under = 0.75,
+				lights = 32 :: number?,
+				motion = true,
+				chevrons = 7,
+				plateEvery = 0.25,
+				fxRadius = 150,
+			},
+			high = {
+				bloom = 1,
+				sunRays = true,
+				clouds = true,
+				farBlur = true,
+				particles = 1,
+				shadows = true,
+				decor = 1,
+				detail = nil :: string?,
+				fill = 1,
+				under = 1,
+				lights = 64 :: number?,
+				motion = true,
+				chevrons = 7,
+				plateEvery = 0.25,
+				fxRadius = 200,
+			},
 		},
 		-- Seconds the post effects tween when the map or the level changes.
 		fade = 1.5,
@@ -782,6 +839,9 @@ local Config = {
 		-- W29 (W01 D2): a landmark slot ("landmark:*") at least this many studs tall or wide streams to every player
 		-- (ModelStreamingMode Persistent), so it stays on the skyline past the streaming radius (512 studs)
 		persistentSize = 30,
+		-- W29: a placed kit model smaller than this (studs, its taller or wider side after scaling: bushes,
+		-- undergrowth, small rocks) casts no shadow
+		shadowMin = 6,
 	},
 	-- S134j (docs/DESIGN.md §6a, Logic/Reroll): bonus reroll at the smith. Essence of one attempt by rarity, gold
 	-- ilvl x Upgrade.goldPerIlvl(ilvl) x goldMul (the upgrade gold curve), each earlier attempt on the item adds `growth`

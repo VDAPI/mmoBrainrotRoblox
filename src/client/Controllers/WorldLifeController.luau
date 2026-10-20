@@ -42,6 +42,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
 local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
 local Net = require(ReplicatedStorage.Shared.Net)
 local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
@@ -119,7 +120,7 @@ end
 
 local function particleFactor(): number
 	return (if lowDetail() then 0.5 else 1)
-		* (if State.Get({ "account", "settings", "quality" }) == "low" then 1 / 3 else 1)
+		* GraphicsLevel.get(State.Get({ "account", "settings", "quality" })).particles
 end
 
 local function rootPosition(): Vector3?
@@ -130,6 +131,7 @@ end
 
 local function emitter(holder: BasePart, props: { [string]: any }): ParticleEmitter
 	local e = Instance.new("ParticleEmitter")
+	e:SetAttribute("OwnRate", true) -- W29: rate scaled here, not by SettingsController
 	e.Shape = Enum.ParticleEmitterShape.Box
 	e.ShapeStyle = Enum.ParticleEmitterShapeStyle.Volume
 	for k, v in props do

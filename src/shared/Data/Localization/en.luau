@@ -1354,6 +1354,7 @@ return {
 	["cast.aiming"] = "Aiming: {skill}",
 	["hud.skillSlot"] = "Slot {n} · right-click to clear",
 	["hud.targetButton"] = "Target",
+	["hud.menuDrawer"] = "Menu", -- W29: the menu drawer button on a phone in landscape
 	["hud.page"] = "Skills {page}/2",
 	["menu.quickCast"] = "Quick cast (area skills on key press)",
 	["admin.usage.cd"] = "/cd off|on: disable / enable your skill cooldowns",

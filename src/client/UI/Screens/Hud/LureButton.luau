@@ -28,7 +28,7 @@ local GLYPH = "❂"
 local CLOAK = Theme.Glyph.Lure
 local AMBER = Theme.Glyph.Amber
 
-local function LureButton(scope: Scope, position: UDim2): Instance
+local function LureButton(scope: Scope, position: Fusion.UsedAs<UDim2>): Instance
 	local lure = State.Value({ "account", "lure" })
 	local runtime = State.Value({ "lure" })
 	local now = scope:Value(Workspace:GetServerTimeNow())

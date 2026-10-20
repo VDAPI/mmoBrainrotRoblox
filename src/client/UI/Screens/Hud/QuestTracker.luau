@@ -30,6 +30,8 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local GuidePointer = require(ReplicatedStorage.Shared.Logic.GuidePointer)
 local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
@@ -620,11 +622,15 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	end)
 	local width = scope:Computed(function(use): number
 		local e = use(entry)
-		return if e and e.w then e.w else WIDTH
+		return if e and e.w then e.w elseif use(PhoneLayout.Compact) then PhoneHud.TRACKER_WIDTH else WIDTH
 	end)
 	-- the built-in place: under the menu, lower by the panels standing above it
 	local defaultTop = scope:Computed(function(use): number
 		local offset = if props and props.Offset then use(props.Offset) else 0
+		if use(PhoneLayout.Compact) then
+			-- W29: on a phone in landscape the left stack, under the party frames and the panels (Logic/PhoneHud)
+			return PhoneHud.stackTop(use(PhoneLayout.Others)) + offset
+		end
 		-- owner 2026-10-20: the menu has two rows (Hud Menu), so the tracker starts one button row lower
 		return 400 + Theme.Size.IconButton + Theme.Padding.Small + offset
 	end)
@@ -651,7 +657,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local screen = use(Scale.VirtualSize)
 		local at = use(corner)
 		local top = if at then at.Y else use(defaultTop)
-		return math.min(use(contentHeight), math.max(80, screen.Y - top - 24 - chrome))
+		local bottom = if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24
+		return math.min(use(contentHeight), math.max(80, screen.Y - top - bottom - chrome))
 	end)
 
 	-- S156: the grips. A drag starts on the header grip ("move") or the corner ("size") and follows the mouse or finger.
@@ -717,12 +724,15 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	local frame = scope:New("Frame")({
 		Name = "QuestTracker",
 		AnchorPoint = scope:Computed(function(use): Vector2
-			return if use(corner) then Vector2.zero else Vector2.new(1, 0)
+			return if use(corner) or use(PhoneLayout.Compact) then Vector2.zero else Vector2.new(1, 0)
 		end),
 		Position = scope:Computed(function(use): UDim2
 			local at = use(corner)
 			if at then
 				return UDim2.fromOffset(at.X, at.Y)
+			end
+			if use(PhoneLayout.Compact) then
+				return UDim2.fromOffset(PhoneHud.PLACES.stack.x, use(defaultTop))
 			end
 			return UDim2.new(1, -Theme.Padding.Large, 0, use(defaultTop))
 		end),
