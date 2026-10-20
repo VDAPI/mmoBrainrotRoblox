@@ -12,6 +12,7 @@ local Workspace = game:GetService("Workspace")
 local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Motion)
 local PvpDot = require(script.Parent.Parent.Components.PvpDot)
 local PvpRules = require(ReplicatedStorage.Shared.Logic.PvpRules)
 local Social = require(ReplicatedStorage.Shared.Logic.Social)
@@ -160,6 +161,10 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 		return PC_WIDTH
 	end)
 
+	local shown = scope:Computed(function(use): boolean
+		return use(props.Target) ~= nil
+	end)
+
 	return scope:New("Frame")({
 		Name = "PlayerMenu",
 		AnchorPoint = scope:Computed(function(use): Vector2
@@ -181,11 +186,10 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 		end),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Paper.Surface,
-		Visible = scope:Computed(function(use): boolean
-			return use(props.Target) ~= nil
-		end),
+		Visible = shown,
 		ZIndex = 20,
 		[Children] = {
+			Motion.popWhen(scope, shown), -- W28: springs open like a window
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({ Color = Theme.Paper.Border, Thickness = 1.5 }),
 			scope:New("UIPadding")({

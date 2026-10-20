@@ -19,6 +19,7 @@ local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Motion)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -98,6 +99,10 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 		return o ~= nil and o.combat == true
 	end)
 
+	local shown = scope:Computed(function(use): boolean
+		return use(offer) ~= nil or use(isInvite)
+	end)
+
 	return scope:New("Frame")({
 		Name = "ArenaOffer",
 		AnchorPoint = Vector2.new(0.5, 1),
@@ -108,10 +113,9 @@ local function ArenaOffer(scope: Scope, props: Props): Instance
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Paper.Surface,
-		Visible = scope:Computed(function(use): boolean
-			return use(offer) ~= nil or use(isInvite)
-		end),
+		Visible = shown,
 		[Children] = {
+			Motion.popWhen(scope, shown), -- W28: springs open like a window
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({ Color = Theme.Paper.Border, Thickness = 1.5 }),
 			scope:New("UISizeConstraint")({ MaxSize = Vector2.new(WIDTH, math.huge) }),

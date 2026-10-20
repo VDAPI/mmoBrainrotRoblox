@@ -9,6 +9,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Motion)
 local Scale = require(script.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Sounds)
 local Theme = require(script.Parent.Parent.Theme)
@@ -26,6 +27,7 @@ export type Props = {
 	ZIndex: UsedAs<number>?,
 	Name: string?,
 	Surface: Theme.SurfaceName?, -- S136: "paper" (default) or "iron" (the admin overlay); Data/UiWindows
+	Closing: Fusion.Value<boolean>?, -- W28: true plays the closing motion (WindowManager removes the window after it)
 	[typeof(Children)]: Fusion.Child?,
 }
 
@@ -44,12 +46,8 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 	-- Offset from the screen centre, in virtual pixels (desktop only).
 	local offset = scope:Value(props.Offset or Vector2.zero)
 	local closeHovered = scope:Value(false)
-	-- W28: the opening motion (scale up and rise into place); the targets flip after the first frame
-	local opening = scope:Value(0)
-	local motion = scope:Spring(opening, Theme.Anim.WindowSpeed, Theme.Anim.WindowDamping)
-	task.defer(function()
-		opening:set(1)
-	end)
+	-- W28: the opening motion (scale up and rise into place) and, once `Closing` is set, the same path backwards
+	local motion = Motion.progress(scope, props.Closing)
 	local dragging = false
 	local dragStart = Vector2.zero
 	local offsetStart = Vector2.zero
@@ -91,7 +89,7 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		Name = props.Name or "Window",
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = scope:Computed(function(use): UDim2
-			local rise = (1 - use(motion)) * Theme.Anim.WindowRise
+			local rise = Motion.rise(use(motion))
 			if use(fullscreen) then
 				return UDim2.new(0.5, 0, 0.5, rise)
 			end
@@ -121,11 +119,7 @@ local function Window(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		end,
 
 		[Children] = {
-			scope:New("UIScale")({
-				Scale = scope:Computed(function(use): number
-					return Theme.Anim.WindowFrom + (1 - Theme.Anim.WindowFrom) * use(motion)
-				end),
-			}),
+			Motion.scale(scope, motion),
 			scope:New("UICorner")({
 				CornerRadius = scope:Computed(function(use): UDim
 					return if use(fullscreen) then UDim.new(0, 0) else corner

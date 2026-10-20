@@ -243,6 +243,22 @@ Theme.Anim = {
 	WindowRise = 16,
 	WindowSpeed = 28,
 	WindowDamping = 0.72,
+	-- W28 (part 2): closing plays the opening backwards, short and accelerating (UI/Motion); the window is
+	-- removed when it ends
+	WindowClose = TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+	WindowCloseTime = 0.12,
+	-- W28: a pressed button sinks to this scale (HUD icon buttons a little deeper)
+	PressScale = 0.96,
+	PressScaleIcon = 0.92,
+	PressSpeed = 40,
+	-- W28: the pale "ghost" of lost HP holds this long, then drains to the new value
+	BarGhostHold = 0.35,
+	BarGhost = TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+	-- W28: a low HP bar breathes (one way of the loop) and toasts fade out over this time
+	BarPulse = TweenInfo.new(0.7, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut, -1, true),
+	ToastOut = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+	ToastOutTime = 0.25,
+	ToastFrom = 0.94,
 }
 
 -- Base resolution for UIScale (see UI/Scale).
