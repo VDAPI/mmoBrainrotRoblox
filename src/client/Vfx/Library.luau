@@ -1702,6 +1702,40 @@ function Library.frostBlast(at: Vector3, size: number, color: Color3, opts: FxOp
 	end
 end
 
+-- W04: the body of a lightning spell's blow: two short arcs crackling out from the point to the ground round it,
+-- with a spray of white-hot sparks (the lightning twin of fireBlast / frostBlast).
+function Library.arcBurst(at: Vector3, size: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local count = if o.simple then 1 else 2 -- Config.Vfx.perCast.beams: a skill may hold 3 beams at once
+	local from = at + Vector3.new(0, 0.6 * size, 0)
+	for i = 1, count do
+		local ang = (i / count + rng:NextNumber(-0.1, 0.1)) * math.pi * 2
+		local reach = rng:NextNumber(2.5, 4.5) * size
+		local to = ground(at + Vector3.new(math.cos(ang) * reach, 0, math.sin(ang) * reach)) + Vector3.new(0, 0.1, 0)
+		Clock.after((i - 1) * 0.03, function()
+			Library.lightning(from, to, color:Lerp(Color3.new(1, 1, 1), 0.35), 0.15 * size, o.simple)
+		end)
+	end
+	local sparks = textured("spark", CFrame.new(from))
+	if sparks then
+		burstFrom(sparks, "spark", Color3.new(1, 1, 1), 14, {
+			simple = o.simple,
+			to = color,
+			spread = 180,
+			speedMin = 12,
+			speedMax = 26,
+			drag = 3,
+			accel = Vector3.new(0, -20, 0),
+			lifeMin = 0.15,
+			lifeMax = 0.35,
+			orient = "parallel",
+			sizeSeq = NumberSequence.new({ kp(0, 0.18), kp(1, 0.04) }),
+			transparency = NumberSequence.new({ kp(0, 0), kp(1, 1) }),
+			emission = 1,
+		})
+	end
+end
+
 -- Dust puff at the feet (landings, slams). S112: with the smoke texture a smoke puff in the dust colour and a burst of
 -- the dust texture.
 function Library.dust(at: Vector3, size: number, low: boolean?)

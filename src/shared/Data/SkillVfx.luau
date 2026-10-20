@@ -745,7 +745,7 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "weapon", dur = 0.18 },
 		projectile = "bolt",
 		launch = "weapon",
-		impact = { "impactFlash", "sparks", "cracks" },
+		impact = { "impactFlash", "arcBurst", "cracks" }, -- W04: arcs crackle out from the hit
 		markRadius = 1.5,
 		flash = 2,
 		size = 0.6,
@@ -769,7 +769,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.42 },
-		impact = { "magicCircle", "skyBolt", "impactFlash", "groundDecal", "sparks" },
+		impact = { "magicCircle", "skyBolt", "impactFlash", "arcBurst", "groundDecal" }, -- W04
 		landsAfter = true, -- the bolt falls the event's `d` (0.5 s): the blow, the shake and the sound then
 		markRadius = 3,
 		flash = 4,
@@ -779,7 +779,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.38 },
-		impact = { "burst", "shockwave", "sparks" },
+		impact = { "impactFlash", "arcBurst", "shockwave", "sparks" }, -- W04
 		everyWave = { "shockwave", "sparks" },
 		waves = true,
 		telegraph = "circle",
@@ -789,7 +789,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.26 },
-		impact = { "impactFlash", "lineBeam", "cracks", "sparks" },
+		impact = { "impactFlash", "lineBeam", "arcBurst", "cracks" }, -- W04
 		telegraph = "line",
 		flash = 3,
 		shake = 0.35,
