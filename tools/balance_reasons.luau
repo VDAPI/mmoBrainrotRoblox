@@ -7014,6 +7014,33 @@ return {
 				why = "400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16)",
 			},
 		},
+		["Bosses:byId.hrimvald.timeLimit"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20: the world boss stays until it is killed, at most 2 h (was 15 min)",
+			},
+		},
+		["Rarities:get.f(1).frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["Rarities:get.f(20).frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["Rarities:list[2].frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["Rarities:list[3].frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["Rarities:list[4].frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["WorldBoss:schedule*"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20: the world boss twice a day (every 12 h from 08:00 UTC = 10:00 and 22:00 Polish summer time) instead of every 3 h",
+			},
+		},
 		["WorldBoss:antechamber*"] = {
 			{
 				session = "S156",

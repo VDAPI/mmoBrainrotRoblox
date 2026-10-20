@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Build = require(script.Parent.Parent.Build)
+local Prefabs = require(script.Parent.Parent.Prefabs)
 
 local Shared = ReplicatedStorage.Shared
 local ArenaPit = require(Shared.Data.ArenaPit)
@@ -126,6 +127,7 @@ return function(ctx: Build.Context)
 		local result =
 			BlueprintBuild.build(build :: any, ctx.origin, { shell = true, detail = true, fine = true }, folder)
 		ctx.parts += result.parts
+		Prefabs.signBoards(result.tagged.arenaSign, "town.sign.arena") -- W28: the gate signs, as in the city
 		Build.zone(
 			ctx,
 			"yellow",

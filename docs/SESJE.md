@@ -13151,6 +13151,32 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
 
+### W28: Ristalle (arena PvP w mieście) jako kamienne koloseum
+
+Zgłoszenie właściciela: arena wyglądała jak rozsypany piasek, trawa wrastała w podłogę. Miejsce bez zmian: środek (190, -160),
+piasek 80 x 80 (strefa `zone.arena`), trybuny 14, wyjście (190, -88), punkty startu pojedynków, miejsca widzów i ławki 3v3
+(`Data/Arena`), Mistrz Areny i Galeria Sław areny na swoich miejscach.
+- **Budowla** (`Logic/TownGen/Specials.luau`, `arena`): kamienny fundament pod całym kwadratem (połowa + trybuny) z
+  podłogą 0,3 nad najwyższym gruntem, więc teren i trawa nie przebijają; ubity piasek walki z kamiennym obrzeżem,
+  kołem na środku i dwoma znacznikami startu; niski mur wewnętrzny z gzymsem i proporcami w kolorach klas; kamienne
+  trybuny z czterema rzędami siedzisk, parapetem i ślepymi arkadami od zewnątrz; dwie bramy (12 studów, jak dotąd) pod
+  łukiem z napisem „Arena”, chorągwiami klas, pochodniami i stojakami z bronią w przejściu (bez kolizji); cztery
+  narożne wieże z koksownikami i proporcami, koksowniki na rogach muru, loża sędziów na zachodniej trybunie
+  (miejsca widzów 12+ od osi). 57 / 276 / 32 części (limit `special` 80 / 340 / 140), 13 świateł.
+- **Teren** (`Logic/TownTerrain.luau`): `TownTerrain.inArena(x, z, margin)` i `ARENA_MARGIN = 4` (najbliższe ogrody
+  zaczynają się 4,8 od trybun); kwadrat areny z marginesem bez trawy (piasek w środku, `Pavement` dookoła).
+- **Ozdoby klienta** (`DecorController.luau`): kępki, kwiaty i kamyki pomijają arenę z marginesem.
+- **Napis** „Arena”: deska z tagiem `arenaSign` (shell), `Prefabs.signBoards` robi z niej `Signpost` dla
+  `SignController` (miasto `World/Layouts/city.luau` i serwer areny `World/Layouts/arena_pit.luau`, ta sama budowla);
+  klucz `town.sign.arena` (PL / EN).
+- **Testy:** `tests/towngen.spec.luau` W28: żadna inna budowla (ogrody, drzewa) nie stoi na arenie z marginesem (mur
+  miasta tylko poza kwadratem), podłoga nad gruntem, piasek pokrywa strefę, dwa napisy, przejścia bram wolne, brak
+  trawy w kwadracie z marginesem.
+- **Pliki:** `src/shared/Logic/TownGen/Specials.luau`, `src/shared/Logic/TownTerrain.luau`,
+  `src/client/Controllers/DecorController.luau`, `src/server/World/Prefabs.luau`,
+  `src/server/World/Layouts/{city,arena_pit}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `tests/towngen.spec.luau`, `docs/SESJE.md`. Bez przeglądu w Studio.
+
 ### W28: strzałka samouczka (GuidePointer)
 - **Zgłoszenie właściciela:** „w samouczku pisze idź za strzałką a nie ma żadnej strzałki”.
 - **Przyczyna:** w świecie nie było żadnej strzałki. Tekst `tutorial.attack.travel` mówił o „strzałce zadania”, a jedyną
@@ -13168,6 +13194,8 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   kroki HUD (ruch, plecak, mikstura, umiejętność) bez celu w świecie. Wskazówka kroku podróży stoi w swoim miejscu
   (`anchorOf` bez tropiciela).
 - **Teksty:** „Idź za złotą strzałką na Łąki…”, krok kapitana też mówi o złotej strzałce (PL i EN), `guide.distance`.
+  Poprawka właściciela z `main` (ścieżka `NavController` na pierwsze łowisko Łąk w kroku podróży) zostaje; bez celu
+  zadania złoty przewodnik prowadzi w to samo miejsce.
 - **Wspólna logika:** `Logic/GuidePointer` (kąt względem kamery, strzałka przy krawędzi, szewrony, zasięg); strzałka w
   tropicielu zadań liczy kąt tą samą funkcją i rysuje „▲” (znak, który ma font).
 - **Testy:** nowy `tests/guidepointer.spec.luau`, `tests/tutorial.spec.luau` (cele kroków, każdy tekst ze strzałką ma

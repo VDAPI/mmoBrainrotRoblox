@@ -745,7 +745,7 @@ boss({
 	haste = { [3] = 1.2 },
 	enrageAfter = 780,
 	enrageDamage = 1.6,
-	timeLimit = 900, -- S149: then it leaves (WorldBossService)
+	timeLimit = 7200, -- S149: then it leaves (WorldBossService); owner 2026-10-20: 15 min -> 2 h
 	look = { size = 6, aura = "#9FD8FF" },
 })
 
