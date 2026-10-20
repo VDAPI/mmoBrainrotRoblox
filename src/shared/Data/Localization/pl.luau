@@ -1354,6 +1354,7 @@ return {
 	["cast.aiming"] = "Celowanie: {skill}",
 	["hud.skillSlot"] = "Slot {n} · prawy klik: usuń",
 	["hud.targetButton"] = "Cel",
+	["hud.menuDrawer"] = "Menu", -- W29: the menu drawer button on a phone in landscape
 	["hud.page"] = "Umiejętności {page}/2",
 	["menu.quickCast"] = "Szybkie rzucanie (obszarowe od razu)",
 	["admin.usage.cd"] = "/cd off|on: wyłącz / włącz odnowienie umiejętności",
@@ -2833,6 +2834,7 @@ return {
 	["worldmap.layer.npcs"] = "NPC",
 	["worldmap.layer.nodes"] = "Węzły",
 	["worldmap.layer.quest"] = "Quest",
+	["worldmap.layer.labels"] = "Napisy",
 	["worldmap.center"] = "Wyśrodkuj na mnie",
 	["worldmap.yourLevel"] = "Twój poziom: {level}",
 	["worldmap.band.grey"] = "łatwe, mało doświadczenia",

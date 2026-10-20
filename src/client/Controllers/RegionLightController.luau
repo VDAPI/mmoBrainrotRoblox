@@ -7,7 +7,8 @@
 -- light of that map (fires, lamps, candles, crystals: any light with an Fx tag) and keeps Config.CaveLights of them on
 -- (S134h: 12 low, 16 mid, 24 high; hysteresis of 10 studs, every 0.3 s; admin /lights forces a number). S134h: underground
 -- the local player carries one soft warm PointLight (Config.CaveLights.player, no shadows, outside that count), taken
--- off on the surface.
+-- off on the surface. W29: on the surface every other light of a Build shares the graphics level's light budget
+-- (Config.Graphics.levels[*].lights nearest the camera, Util/LightBudget; low 12); low quality caps "World detail".
 
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
@@ -17,6 +18,8 @@ local Workspace = game:GetService("Workspace")
 
 local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local Config = require(ReplicatedStorage.Shared.Config)
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
+local LightBudget = require(script.Parent.Parent.Util.LightBudget)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
@@ -37,10 +40,16 @@ local UNDERGROUND: { [string]: boolean } = { cave = true, crypt = true, dungeon 
 local forced: number? = nil -- admin /lights <n>
 local enabled = true -- admin /worldfx lavaglow off: every managed light stays off
 
+-- "World detail" (settings.decor) capped by the graphics level (W29).
+local function detailKey(): string
+	return GraphicsLevel.detail(
+		State.Get({ "account", "settings", "quality" }),
+		State.Get({ "account", "settings", "decor" })
+	)
+end
+
 local function limit(): number
-	local value = State.Get({ "account", "settings", "decor" })
-	local key = if value == "low" or value == "high" then value else "mid"
-	return (Config.RegionLights :: any)[key] or 8
+	return (Config.RegionLights :: any)[detailKey()] or 8
 end
 
 local function onAdded(instance: Instance)
@@ -62,10 +71,54 @@ local function onAdded(instance: Instance)
 	end
 end
 
+local budgetOn: { [BasePart]: boolean } = {}
+
 local function onRemoved(instance: Instance)
 	if instance:IsA("BasePart") then
 		lights[instance] = nil
+		local light = anyLights[instance]
+		if light then
+			LightBudget.Forget(light)
+		end
 		anyLights[instance] = nil
+		budgetOn[instance] = nil
+	end
+end
+
+-- W29: on the surface every light the region LOD above does not own (city and road lamps, fires, candles, glows)
+-- shares the graphics level's budget (Config.Graphics.levels[*].lights): only the nearest of the wanted ones (a lamp
+-- is wanted at night) shine, with 10 studs of hysteresis.
+local function updateBudget(at: Vector3)
+	local cap = GraphicsLevel.get(State.Get({ "account", "settings", "quality" })).lights
+	local list: { GraphicsLevel.Candidate } = {}
+	local parts: { BasePart } = {}
+	for part, light in anyLights do
+		if lights[part] then
+			continue
+		end
+		if not part.Parent then
+			anyLights[part] = nil
+			budgetOn[part] = nil
+			continue
+		end
+		if not LightBudget.Wanted(light) then
+			if budgetOn[part] then
+				budgetOn[part] = nil
+			end
+			LightBudget.SetCapped(light, false)
+			continue
+		end
+		table.insert(parts, part)
+		table.insert(list, { d = (part.Position - at).Magnitude, on = budgetOn[part] })
+	end
+	local keep = GraphicsLevel.nearest(list, cap, 10)
+	for i, part in parts do
+		local on = keep[i] == true
+		budgetOn[part] = on
+		local light = anyLights[part]
+		if light then
+			LightBudget.SetCapped(light, not on)
+		end
 	end
 end
 
@@ -103,9 +156,7 @@ end
 
 -- Caves: the N lights of the current map nearest the camera, hysteresis of 10 studs for the last few.
 local function updateCave(map: Maps.MapDef, at: Vector3)
-	local value = State.Get({ "account", "settings", "decor" })
-	local key = if value == "low" or value == "high" then value else "mid"
-	local n = forced or (Config.CaveLights :: any)[key] or 16
+	local n = forced or (Config.CaveLights :: any)[detailKey()] or 16
 	local o = map.offset
 	local half = map.size.x / 2 + 40
 	local list: { { part: BasePart, d: number } } = {}
@@ -146,6 +197,7 @@ local function update()
 		updateCave(cave, at)
 		return
 	end
+	updateBudget(at)
 	local list: { { part: BasePart, d: number } } = {}
 	for part in lights do
 		if part.Parent then

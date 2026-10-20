@@ -16,6 +16,7 @@ local Workspace = game:GetService("Workspace")
 
 local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local Config = require(ReplicatedStorage.Shared.Config)
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
 local KitAssets = require(ReplicatedStorage.Shared.Util.KitAssets)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -69,10 +70,20 @@ local origin = Vector3.zero
 local kit: KitAssets.Resolver? = nil -- W02: the asset kit of the prepared map
 local queue: { Job } = {}
 local stats = { builds = 0, detail = 0, fine = 0, lastMs = 0, prepareMs = 0 }
+local builtQuality: any = nil -- W29: the graphics level the current detail was built at
 
+-- "World detail" (settings.decor), capped by the graphics level (W29: low quality builds at "low").
 local function setting(): string
-	local value = State.Get({ "account", "settings", "decor" })
-	return if value == "low" or value == "high" then value else "mid"
+	return GraphicsLevel.detail(
+		State.Get({ "account", "settings", "quality" }),
+		State.Get({ "account", "settings", "decor" })
+	)
+end
+
+-- W29: the filler trees and undergrowth (kit slots of the detail level) this graphics level leaves out.
+local function dropSlot(slot: any, foot: Vector3): boolean
+	local quality = State.Get({ "account", "settings", "quality" })
+	return not GraphicsLevel.keepSlot(quality, slot.key, slot.lod, foot.X - origin.X, foot.Z - origin.Z)
 end
 
 -- Generates a map's Builds once per visit (same list as the server) and counts their parts per level.
@@ -166,6 +177,12 @@ local function tick()
 	if not entries then
 		prepare(mapId)
 	end
+	-- W29: a new graphics level changes which filler trees and undergrowth exist: build the detail again
+	local quality = State.Get({ "account", "settings", "quality" })
+	if quality ~= builtQuality then
+		builtQuality = quality
+		clearAll(false)
+	end
 	local list = entries
 	local focus = focusPoint()
 	if not list or not focus then
@@ -220,7 +237,7 @@ local function buildSome()
 			done -= 1
 			break
 		end
-		local result = BlueprintBuild.build(entry.build, origin, { [lod] = true } :: any, folder, nil, kit)
+		local result = BlueprintBuild.build(entry.build, origin, { [lod] = true } :: any, folder, nil, kit, dropSlot)
 		if result.model then
 			entry.models[lod] = result.model
 			stats[lod] += entry.counts[lod]
@@ -275,6 +292,7 @@ function TownDetailController.Start()
 		KitAssets.Reset()
 		clearAll(true)
 	end)
+
 	local accumulator = TICK
 	RunService.Heartbeat:Connect(function(dt: number)
 		accumulator += dt

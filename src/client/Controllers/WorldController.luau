@@ -192,6 +192,8 @@ local function applyPost(map: Maps.MapDef, seconds: number)
 		Threshold = look.bloom.threshold,
 	}):Play()
 	TweenService:Create(sunRays, info, { Intensity = if level.sunRays then look.sunRays else 0 }):Play()
+	-- W29: low quality draws no sun shadows (the lamps never cast any)
+	Lighting.GlobalShadows = level.shadows
 	local blur = level.farBlur and look.farBlur > 0 and UserInputService.KeyboardEnabled
 	farBlur.Enabled = blur
 	if blur then

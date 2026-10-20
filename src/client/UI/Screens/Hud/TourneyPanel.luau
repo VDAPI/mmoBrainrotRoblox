@@ -20,6 +20,8 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local ClockText = require(script.Parent.Parent.Parent.ClockText)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -236,6 +238,10 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 				end
 			end
 		end
+		if use(PhoneLayout.Compact) then
+			-- W29: the phone stack (Logic/PhoneHud), under the panels above it as on PC
+			return PhoneHud.stackTop(others) + (if props.Above then use(props.Above) else 0)
+		end
 		local top = if others > 0 then PARTY_TOP + others * PARTY_ROW else TOUCH_TOP
 		if use(worldEvent) ~= nil then
 			top += TOUCH_EVENT
@@ -245,7 +251,8 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 	if props.Offset then
 		local offset = props.Offset
 		local pushed = scope:Computed(function(use): number
-			if not use(shown) or use(touch) then
+			-- W29: on a phone in landscape the tracker stacks under the panel as on PC
+			if not use(shown) or (use(touch) and not use(PhoneLayout.Compact)) then
 				return 0
 			end
 			return use(height) + 8

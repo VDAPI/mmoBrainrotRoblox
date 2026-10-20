@@ -38,11 +38,13 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local MapMarks = require(ReplicatedStorage.Shared.Data.MapMarks)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local State = require(script.Parent.Parent.Parent.State)
 local ScoutRange = require(ReplicatedStorage.Shared.Logic.ScoutRange)
@@ -60,6 +62,8 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SIZE = 220
+-- W29: the mail envelope on a phone in landscape (x MINIMAP_SCALE = MinTouch)
+local MAIL_PHONE = math.ceil(Theme.Size.MinTouch / PhoneHud.MINIMAP_SCALE)
 local ZOOMS = { 0.25, 0.4, 0.6, 0.9 }
 local MONSTER_RANGE = 140
 local MONSTER_DOTS = 60
@@ -684,7 +688,13 @@ local function Minimap(scope: Scope, props: Props): Instance
 		return scope:New("TextButton")({
 			Name = "MailEnvelope",
 			Position = UDim2.fromOffset(0, 0),
-			Size = UDim2.fromOffset(Theme.Size.MinTouch, Theme.Size.MinTouch),
+			-- W29: the minimap is scaled to MINIMAP_SCALE on a phone in landscape; the envelope grows so it stays a
+			-- MinTouch target there
+			Size = PhoneLayout.Pick(
+				scope,
+				UDim2.fromOffset(MAIL_PHONE, MAIL_PHONE),
+				UDim2.fromOffset(Theme.Size.MinTouch, Theme.Size.MinTouch)
+			),
 			BackgroundColor3 = Theme.Iron.Surface,
 			BackgroundTransparency = Theme.HudAlpha,
 			Visible = scope:Computed(function(use): boolean
@@ -754,6 +764,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 		Size = UDim2.fromOffset(SIZE + 44, SIZE + 46),
 		BackgroundTransparency = 1,
 		[Children] = {
+			PhoneLayout.UIScale(scope, "minimap"), -- W29
 			scope:New("CanvasGroup")({
 				Name = "Disc",
 				AnchorPoint = Vector2.new(1, 0),
@@ -846,6 +857,8 @@ local function Minimap(scope: Scope, props: Props): Instance
 			mailButton(),
 			scope:New("Frame")({
 				Name = "Zoom",
+				-- W29: no zoom buttons on a phone in landscape (scaled they would be under MinTouch; the map window zooms)
+				Visible = PhoneLayout.Pick(scope, false, true),
 				AnchorPoint = Vector2.new(0, 0),
 				Position = UDim2.fromOffset(0, SIZE - 2 * Theme.Size.MinTouch - 6),
 				Size = UDim2.fromOffset(Theme.Size.MinTouch, 2 * Theme.Size.MinTouch + 6),

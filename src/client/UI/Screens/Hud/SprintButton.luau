@@ -8,6 +8,7 @@ local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Parent.Motion)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -30,9 +31,10 @@ local function SprintButton(scope: Scope, props: Props): Instance
 	local artShown = ArtIcon.Shown(scope, ART)
 	local button = scope:New("TextButton")({
 		Name = "SprintButton",
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 60, 1, -260),
-		Size = UDim2.fromOffset(SIZE, SIZE),
+		-- W29: over the potions on a phone in landscape, clear of the thumbstick (Logic/PhoneHud)
+		AnchorPoint = PhoneLayout.Anchor(scope, "sprint", Vector2.new(0, 1)),
+		Position = PhoneLayout.Position(scope, "sprint", UDim2.new(0, 60, 1, -260)),
+		Size = PhoneLayout.Size(scope, "sprint", UDim2.fromOffset(SIZE, SIZE)),
 		Visible = scope:Computed(function(use): boolean
 			return use(Device.Touch) and not (props.Riding ~= nil and use(props.Riding) == true)
 		end),
