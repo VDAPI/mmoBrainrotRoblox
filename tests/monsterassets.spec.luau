@@ -42,7 +42,7 @@ T.describe("MonsterAssetVariants", function()
 		end
 		T.expect(MonsterLooks.assetModel("iceWolf")).toBe("wolf")
 		T.expect(MonsterLooks.assetModel("snowLeopard")).toBe("lynx")
-		T.expect(MonsterLooks.assetModel("blackBear")).toBe(nil)
+		T.expect(MonsterLooks.assetModel("blackBear")).toBe("brownBear")
 		T.expect(MonsterLooks.assetModel("wolf")).toBe("wolf")
 	end)
 end)

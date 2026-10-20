@@ -95,6 +95,24 @@ function Nature.tree(bp: Kit.BP, kind: TreeKind, x: number, y: number, z: number
 		local h = 4.5 * s
 		bp:add("cyl", h, 1.8 * s, 1.8 * s, x, y + h / 2 - 0.5, z, 0, 0, 90 + rng:float(-6, 6), trunkOpt(Kit.bark))
 		bp:add("ball", 12 * s, 7 * s, 12 * s, x, y + h + 2.5 * s, z, 0, 0, 0, crown("shell"))
+		-- W28: drooping lumps break the dome (no lone green ball when the kit model is missing)
+		for i = 0, 2 do
+			local a = i * 2.1 + rng:float(-0.3, 0.3)
+			local lw = 6.5 * s * rng:float(0.85, 1.1)
+			bp:add(
+				"ball",
+				lw,
+				lw * 0.65,
+				lw,
+				x + math.cos(a) * 3.6 * s,
+				y + h + rng:float(1.6, 3.6) * s,
+				z + math.sin(a) * 3.6 * s,
+				0,
+				0,
+				0,
+				crown("detail")
+			)
+		end
 		-- hanging curtains of twigs
 		for i = 0, 7 do
 			local a = i * math.pi / 4 + rng:float(-0.2, 0.2)
@@ -134,7 +152,8 @@ function Nature.tree(bp: Kit.BP, kind: TreeKind, x: number, y: number, z: number
 		local w = (if birch then 6.5 elseif giant then 15 else 10) * s
 		local ch = if birch then w * 1.35 else w * 0.75
 		bp:add("ball", w, ch, w, x, y + h + ch * 0.32, z, 0, 0, 0, crown("shell"))
-		local lumps = if giant then 4 elseif birch then 1 else 2
+		-- W28: at least two lumps besides the main crown (a birch had one: a bare ball without its kit model)
+		local lumps = if giant then 4 elseif birch then 2 else 3
 		for _ = 1, lumps do
 			local a = rng:float(0, math.pi * 2)
 			local r = w * rng:float(0.25, 0.4)
@@ -217,50 +236,85 @@ end
 -- Undergrowth (client only): a sapling, a bush or a fern clump at (x, y, z).
 function Nature.undergrowth(bp: Kit.BP, kind: string, x: number, y: number, z: number)
 	local rng = bp.rng
+	-- W28: a leafy lump of the undergrowth (no collision)
+	local function leaf(c: string, lod: Blueprint.Lod, jitter: number): Blueprint.Options
+		return o({ c = c, m = "LeafyGrass" }, lod, { col = false, jitter = jitter })
+	end
 	if kind == "sapling" then
 		local s = rng:float(0.45, 0.7)
 		bp:add("cyl", 4 * s, 0.6 * s, 0.6 * s, x, y + 2 * s, z, 0, 0, 90, o(Kit.bark, "detail", { col = false }))
-		bp:add(
-			"ball",
-			6 * s,
-			6 * s,
-			6 * s,
-			x,
-			y + 5.5 * s,
-			z,
-			0,
-			0,
-			0,
-			o({ c = "#46662F", m = "LeafyGrass" }, "detail", { col = false, jitter = 0.08 })
-		)
+		-- W28: a crown of three lumps in two greens (one 6-stud sphere read as an unrendered blob)
+		local greens = { "#46662F", "#3C5A2A", "#557434" }
+		bp:add("ball", 4.6 * s, 3.8 * s, 4.6 * s, x, y + 5 * s, z, 0, 0, 0, leaf(greens[1], "detail", 0.08))
+		for i = 1, 2 do
+			local a = i * math.pi + rng:float(-0.6, 0.6)
+			local lw = 3.2 * s * rng:float(0.9, 1.1)
+			bp:add(
+				"ball",
+				lw,
+				lw * 0.8,
+				lw,
+				x + math.cos(a) * 1.3 * s,
+				y + (4.4 + i * 0.8) * s,
+				z + math.sin(a) * 1.3 * s,
+				0,
+				0,
+				0,
+				leaf(greens[i + 1], "detail", 0.08)
+			)
+		end
 	elseif kind == "juniper" then
+		-- W28: a layered cone of tiers narrowing upwards and a side shoot (was two smooth ellipsoids; the asset kit
+		-- puts a small conifer here, Data/Kit "under:juniper")
 		local s = rng:float(0.7, 1.2)
+		local greens = { "#2E4A3A", "#35503E", "#2A4434", "#3A5A44" }
+		for k = 0, 3 do
+			local w = 3.4 * s * (1 - k * 0.2)
+			bp:add(
+				"ball",
+				w,
+				2 * s,
+				w,
+				x + rng:float(-0.2, 0.2) * s,
+				y + (0.9 + k * 1.05) * s,
+				z + rng:float(-0.2, 0.2) * s,
+				0,
+				rng:float(0, 180),
+				0,
+				leaf(greens[k + 1], "detail", 0.06)
+			)
+		end
+		bp:add("ball", 0.9 * s, 1.4 * s, 0.9 * s, x, y + 4.6 * s, z, 0, 0, 0, leaf(greens[2], "fine", 0.06))
 		bp:add(
 			"ball",
-			3 * s,
-			5 * s,
-			3 * s,
-			x,
-			y + 2 * s,
-			z,
-			0,
-			0,
-			0,
-			o({ c = "#2E4A3A", m = "LeafyGrass" }, "detail", { col = false, jitter = 0.06 })
-		)
-		bp:add(
-			"ball",
-			2.4 * s,
-			3 * s,
-			2.4 * s,
-			x + 1.2 * s,
-			y + 1.4 * s,
+			2.2 * s,
+			2.6 * s,
+			2.2 * s,
+			x + 1.3 * s,
+			y + 1.2 * s,
 			z + 0.6 * s,
 			0,
 			0,
 			0,
-			o({ c = "#35503E", m = "LeafyGrass" }, "detail", { col = false })
+			leaf(greens[4], "detail", 0.06)
 		)
+		-- a few dusky blue berries
+		for i = 1, 3 do
+			local a = i * 2.2 + rng:float(-0.3, 0.3)
+			bp:add(
+				"ball",
+				0.35,
+				0.35,
+				0.35,
+				x + math.cos(a) * 1.4 * s,
+				y + (1.2 + i * 0.7) * s,
+				z + math.sin(a) * 1.4 * s,
+				0,
+				0,
+				0,
+				{ c = "#4A5A8A", m = "SmoothPlastic", lod = "fine", col = false }
+			)
+		end
 	elseif kind == "poppies" then
 		-- W13: a clump of poppies: thin stems, red heads with a dark eye, a few buds
 		for _ = 1, rng:int(4, 7) do
@@ -388,35 +442,77 @@ function Nature.undergrowth(bp: Kit.BP, kind: string, x: number, y: number, z: n
 			)
 		end
 	else -- bush
+		-- W28: a cluster of leafy lumps in three greens (dark base, lighter top) instead of one 4.5-stud ellipsoid,
+		-- the owner's "green blobs" when the kit bush is missing; berries or field flowers on some
 		local s = rng:float(0.8, 1.3)
+		local greens = { "#3E5E2C", "#4A6A32", "#557636", "#62823E" }
 		bp:add(
 			"ball",
-			4.5 * s,
-			3.2 * s,
-			4.5 * s,
+			4 * s,
+			2.2 * s,
+			3.6 * s,
 			x,
-			y + 1.2 * s,
+			y + 0.9 * s,
 			z,
 			0,
+			rng:float(0, 180),
 			0,
-			0,
-			o({ c = "#4A6A32", m = "LeafyGrass" }, "detail", { col = false, jitter = 0.08 })
+			leaf(greens[1], "detail", 0.08)
 		)
-		if rng:chance(0.4) then
-			for i = 1, 4 do
-				local a = i * 1.6
+		local turn = rng:float(0, math.pi * 2)
+		for i = 1, 4 do
+			local a = turn + i * math.pi / 2 + rng:float(-0.35, 0.35)
+			local lw = rng:float(2.2, 2.8) * s
+			bp:add(
+				"ball",
+				lw,
+				lw * 0.78,
+				lw,
+				x + math.cos(a) * 1.25 * s,
+				y + rng:float(1.3, 1.7) * s,
+				z + math.sin(a) * 1.25 * s,
+				0,
+				0,
+				0,
+				leaf(greens[i % 3 + 1], "detail", 0.08)
+			)
+		end
+		bp:add("ball", 2.4 * s, 1.7 * s, 2.4 * s, x, y + 2.3 * s, z, 0, 0, 0, leaf(greens[4], "detail", 0.08))
+		local roll = rng:next()
+		if roll < 0.35 then
+			for i = 1, 5 do
+				local a = turn + i * 1.25
 				bp:add(
 					"ball",
-					0.5,
-					0.5,
-					0.5,
-					x + math.cos(a) * 1.6 * s,
-					y + 1.8 * s,
-					z + math.sin(a) * 1.6 * s,
+					0.45,
+					0.45,
+					0.45,
+					x + math.cos(a) * 1.7 * s,
+					y + rng:float(1.4, 2.2) * s,
+					z + math.sin(a) * 1.7 * s,
 					0,
 					0,
 					0,
-					{ c = "#9A2A2A", m = "SmoothPlastic", lod = "fine" }
+					{ c = "#9A2A2A", m = "SmoothPlastic", lod = "fine", col = false }
+				)
+			end
+		elseif roll < 0.7 then
+			local petal = if rng:chance(0.5) then "#F2EEE6" else "#E8C83A"
+			for i = 1, 6 do
+				local a = turn + i * 1.05 + rng:float(-0.2, 0.2)
+				local r = rng:float(0.6, 1.6) * s
+				bp:add(
+					"ball",
+					0.4,
+					0.22,
+					0.4,
+					x + math.cos(a) * r,
+					y + 3.1 * s - r * 0.5,
+					z + math.sin(a) * r,
+					0,
+					0,
+					0,
+					{ c = petal, m = "SmoothPlastic", lod = "fine", col = false, jitter = 0.04 }
 				)
 			end
 		end

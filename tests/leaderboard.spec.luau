@@ -926,4 +926,44 @@ T.describe("S126 arena boards", function()
 	end)
 end)
 
+T.describe("Leaderboard playtime (S156)", function()
+	T.it("scores whole minutes, nothing under a minute", function()
+		local score = Leaderboard.SCORERS.playtime
+		T.expect(score({ playtime = 59 }, 0)).toBe(nil)
+		T.expect(score({ playtime = 125 }, 0)).toBe(2)
+		T.expect(score({}, 0)).toBe(nil)
+	end)
+	T.it("has a board, a tab and both languages", function()
+		local def = Leaderboards.get("playtime")
+		T.expect(def ~= nil).toBe(true)
+		T.expect((def :: any).score).toBe("playtime")
+		T.expect((def :: any).format).toBe("time")
+		local found = false
+		for _, tab in Leaderboards.tabs do
+			if tab.id == "playtime" then
+				found = true
+			end
+		end
+		T.expect(found).toBe(true)
+		for _, key in
+			{ "leaderboard.board.playtime", "leaderboard.tab.playtime", "leaderboard.col.time", "leaderboard.time.you" }
+		do
+			T.expect(pl[key] ~= nil and en[key] ~= nil).toBe(true)
+			T.expect(placeholders(pl[key])).toEqual(placeholders(en[key]))
+		end
+	end)
+	T.it("gives the own place and minutes", function()
+		local def = Leaderboards.get("playtime") :: any
+		local rows = Leaderboard.rows(def, { entry("1_1", 300), entry("2_1", 90) }, function()
+			return nil
+		end, function()
+			return false
+		end, "2_1")
+		local me = Leaderboard.timeMe({ level = 30, playtime = 90 * 60 + 20 }, rows, CFG, false)
+		T.expect(me.r).toBe(2)
+		T.expect(me.s).toBe(90)
+		T.expect(Leaderboard.timeMe({ level = 1, playtime = 600 }, rows, CFG, false).below).toBe(CFG.minLevel)
+	end)
+end)
+
 return nil
