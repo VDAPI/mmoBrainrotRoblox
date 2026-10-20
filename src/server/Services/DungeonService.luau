@@ -35,6 +35,7 @@ local Clock = require(Shared.Util.Clock)
 local Exp = require(Shared.Logic.Exp)
 local FightStats = require(Shared.Logic.FightStats)
 local ItemRoll = require(Shared.Logic.ItemRoll)
+local LevelLock = require(Shared.Logic.LevelLock)
 local Log = require(Shared.Util.Log)
 local Config = require(Shared.Config)
 local Loot = require(Shared.Logic.Loot)
@@ -93,6 +94,8 @@ type Run = {
 	lastState: number,
 	warned: { [number]: boolean }, -- time-left warnings already sent (minutes)
 	fightId: number?, -- S134f: the FightLogService fight while the boss is up (healing, shields, intercepts: S60 / S61)
+	-- S157 (Logic/LevelLock): the highest level that may fight the boss and its helpers (nil: /boss spawn, no cap)
+	cap: number?,
 }
 
 local PlayerStateService: any
@@ -508,7 +511,11 @@ local function services(run: Run): Boss.Services
 	return {
 		spawnCustom = MonsterService.SpawnCustom,
 		spawnMonster = function(monsterId: string, level: number, at: CFrame, attributes: { [string]: any }?)
-			return MonsterService.SpawnAt(monsterId, "normal", level, at, nil, attributes)
+			local monster = MonsterService.SpawnAt(monsterId, "normal", level, at, nil, attributes)
+			if monster then
+				monster:SetCap(run.cap) -- S157: the helpers share the boss's cap
+			end
+			return monster
 		end,
 		despawn = MonsterService.Despawn,
 		telegraph = function(monster: any, ability: any, area: CFrame, opts: any?)
@@ -548,7 +555,7 @@ local function arenaCentre(mapId: string): CFrame
 end
 
 -- Starts a run for `members` (already checked). Teleports them in and summons the boss after the countdown.
-local function start(region: string, leader: Player, members: { Player }): Run
+local function start(region: string, leader: Player, members: { Player }, forced: boolean?): Run
 	local def = Bosses.forRegion(region) :: Bosses.BossDef
 	local mapId = `dungeon_{region}`
 	local run: Run = {
@@ -567,6 +574,7 @@ local function start(region: string, leader: Player, members: { Player }): Run
 		lastState = 0,
 		warned = {},
 		fightId = nil,
+		cap = if forced then nil else LevelLock.maxLevel(def.level),
 	}
 	runs[region] = run
 	for i, member in members do
@@ -584,6 +592,7 @@ local function start(region: string, leader: Player, members: { Player }): Run
 		end
 		-- S134: the boss is the same for every party (the log above keeps the party size)
 		local boss = Boss.new(def, arenaCentre(mapId), services(run))
+		boss.monster:SetCap(run.cap) -- S157 (Logic/LevelLock)
 		run.boss = boss
 		run.startedAt = os.clock()
 		-- S134f: the fight meter starts with the boss (members join at once; damage on the boss and its summons)
@@ -604,6 +613,11 @@ local function blocker(player: Player, def: Bosses.BossDef): (string?, number?)
 	end
 	if char.level < BossScaling.requiredLevel(def.level) then
 		return "dungeon.reason.level", nil
+	end
+	-- S157 (Logic/LevelLock): Config.LevelLock.gap or more levels above the boss stays out (the others may go)
+	local over = LevelLock.bossEntry(char.level, def.level)
+	if over then
+		return over, nil
 	end
 	local now = Clock.now()
 	if BossScaling.isLocked(char.bossRuns, def.id, now, Config.Boss.dailyRuns) then
@@ -663,6 +677,7 @@ local function info(player: Player, region: string): (boolean, string?, any)
 			nameKey = def.nameKey,
 			level = def.level,
 			required = BossScaling.requiredLevel(def.level),
+			maxLevel = LevelLock.maxLevel(def.level), -- S157
 			built = WorldService.IsBuilt(`dungeon_{region}`),
 			busy = run ~= nil or checks[region] ~= nil, -- S134f: a ready check holds the gate too
 			leaderName = if run then run.leaderName else nil,
@@ -1006,7 +1021,7 @@ function DungeonService.ForceStart(player: Player, bossId: string): boolean
 	if existing then
 		finish(existing)
 	end
-	start(def.region, player, { player })
+	start(def.region, player, { player }, true)
 	return true
 end
 

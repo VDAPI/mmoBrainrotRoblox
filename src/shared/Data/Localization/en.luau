@@ -1320,6 +1320,7 @@ return {
 	["cast.error.range"] = "Target is too far away.",
 	["cast.error.disabled"] = "You cannot act right now.",
 	["cast.error.invalidTarget"] = "Invalid target.",
+	["cast.error.overLevel"] = "Your level is too high for this enemy.",
 	["cast.error.safeZone"] = "You cannot fight in a safe zone.",
 	["cast.error.noDeadAlly"] = "No fallen ally to revive.",
 	["cast.channel"] = "Channelling…",
@@ -1679,7 +1680,7 @@ return {
 	-- Dungeons and bosses (S09)
 	["window.dungeon.title"] = "Boss dungeon",
 	["dungeon.open"] = "Dungeon",
-	["dungeon.levels"] = "Boss level {level} · entry from level {required}",
+	["dungeon.levels"] = "Boss level {level} · entry from level {required} to {max}",
 	["dungeon.free"] = "Free",
 	["dungeon.busyBy"] = "Taken by {name}'s group ({time})",
 	["dungeon.enter"] = "Enter",
@@ -1688,6 +1689,7 @@ return {
 	["dungeon.busy"] = "Another group is inside. Wait until it is free.",
 	["dungeon.notLeader"] = "Only the party leader can enter.",
 	["dungeon.reason.level"] = "level too low",
+	["dungeon.reason.overLevel"] = "level too high for this boss",
 	["dungeon.reason.locked"] = "daily kill limit used up",
 	["dungeon.reason.far"] = "too far from the leader",
 	["dungeon.reason.dead"] = "dead",
@@ -2504,6 +2506,7 @@ return {
 	["combat.reject.safeZone"] = "Safe zone: no fighting here.",
 	["combat.reject.tooFar"] = "Too far from the target.",
 	["combat.reject.stunned"] = "You are stunned.",
+	["combat.overLevel"] = "Too high a level (max {max})",
 
 	-- S18: sprint
 	["hud.sprint"] = "Sprint",
@@ -3197,6 +3200,7 @@ return {
 	["worldmap.card.rarely"] = "rarely",
 	["worldmap.card.veryRarely"] = "very rarely",
 	["worldmap.card.required"] = "Required level: {level}",
+	["worldmap.card.maxLevel"] = "Highest level: {level}",
 	["worldmap.card.available"] = "Available today",
 	["worldmap.card.lockedFor"] = "Already defeated today, available in {time}",
 	["worldmap.card.group"] = "Party of 1–5, the leader enters with the members nearby; up to 3 kills a day",

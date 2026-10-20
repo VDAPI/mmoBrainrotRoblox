@@ -19,6 +19,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
+local LevelLock = require(Shared.Logic.LevelLock)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Monster = require(script.Parent.Parent.Entities.Monster)
@@ -330,6 +331,11 @@ function MonsterService.SpawnAt(
 		monster.home = spawner.origin
 		monster.levelCap = spawner.data.level.max
 	end
+	-- S157 (Logic/LevelLock): Elites and Elites II are capped, a world event's are not (dungeon bosses: DungeonService)
+	monster:SetCap(LevelLock.capOf({
+		variant = actualVariant,
+		worldEvent = attributes ~= nil and (attributes :: any).WorldEvent ~= nil,
+	}, monster.stats.level))
 	table.insert(monsters, monster)
 	nextTick[monster] = os.clock() + random:NextNumber() * TICK
 	if spawner then

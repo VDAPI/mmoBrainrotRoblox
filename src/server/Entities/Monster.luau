@@ -28,6 +28,7 @@ local AreaProfiles = require(Shared.Data.AreaProfiles)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local Combat = require(Shared.Data.Combat)
 local Leash = require(Shared.Logic.Leash)
+local LevelLock = require(Shared.Logic.LevelLock)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterCast = require(Shared.Logic.MonsterCast)
 local MonsterStats = require(Shared.Logic.MonsterStats)
@@ -135,6 +136,8 @@ export type Monster = typeof(setmetatable(
 		noReward: boolean?,
 		-- S32: highest level of the monster's spawner (drops never get a higher item level).
 		levelCap: number?,
+		-- S157 (Logic/LevelLock): the highest player level that may fight this monster (nil = everyone).
+		capLevel: number?,
 		-- S22 leash: last hit by a player, last time the monster moved (or attacked) while chasing and where.
 		lastHit: number,
 		-- S72: the player whose damage brought HP to 0; nil for the environment.
@@ -250,6 +253,7 @@ function Monster.new(
 		summoned = nil,
 		noReward = nil,
 		levelCap = nil,
+		capLevel = nil,
 		lastHit = 0,
 		movedAt = 0,
 		movedFrom = spawnCFrame.Position,
@@ -496,6 +500,15 @@ local function pickTarget(self: Monster): Player?
 	return best
 end
 
+-- S157: whether `player` is over the monster's level cap (Logic/LevelLock; no cap = never).
+local function lockedFor(self: Monster, player: Player?): boolean
+	local cap = self.capLevel
+	if cap == nil or player == nil then
+		return false
+	end
+	return LevelLock.over(self.ctx.playerLevel(player), cap)
+end
+
 local function lookForAggro(self: Monster): Player?
 	if self.def.passive then
 		return nil
@@ -507,6 +520,7 @@ local function lookForAggro(self: Monster): Player?
 		if
 			self.ctx.canTarget(self, player)
 			and MonsterStats.isAggressiveTowards(self.stats.level, self.ctx.playerLevel(player))
+			and not lockedFor(self, player) -- S157: no pulling a capped monster away from its band
 		then
 			local p = self.ctx.playerPosition(player)
 			local d = if p then (p - position).Magnitude else math.huge
@@ -984,9 +998,24 @@ function Monster.Step(self: Monster, now: number)
 	self.ctx.moved(self)
 end
 
--- Applies damage from a player (or nil for environment). Returns the HP removed.
+-- S157: sets the over-level cap (Logic/LevelLock; nil = none), also as the model attribute CapLevel for the clients.
+function Monster.SetCap(self: Monster, cap: number?)
+	self.capLevel = cap
+	self.model:SetAttribute("CapLevel", cap)
+end
+
+-- S157: whether `player` is too high to fight this monster (Logic/LevelLock).
+function Monster.LockedFor(self: Monster, player: Player?): boolean
+	return lockedFor(self, player)
+end
+
+-- Applies damage from a player (or nil for environment). Returns the HP removed. S157: a player over the level cap
+-- removes nothing (damage over time, reflections and every other source end here).
 function Monster.TakeDamage(self: Monster, amount: number, source: Player?): number
 	if self.state == "dead" or self.invulnerable or amount <= 0 then
+		return 0
+	end
+	if source and lockedFor(self, source) then
 		return 0
 	end
 	local dealt = math.min(self.hp, amount)
@@ -1015,7 +1044,7 @@ end
 
 -- Adds threat without damage (taunts, heals on allies in later sessions).
 function Monster.AddThreat(self: Monster, player: Player, amount: number)
-	if self.state == "dead" or self.state == "return" then
+	if self.state == "dead" or self.state == "return" or lockedFor(self, player) then
 		return
 	end
 	-- Engage first: it pulls the group only while this player has no threat entry yet.

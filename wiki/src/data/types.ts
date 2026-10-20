@@ -311,6 +311,7 @@ export interface Boss {
   id: string;
   level: number;
   loot: BossLoot;
+  maxLevel: number;
   moveSpeed: number;
   name: Name;
   personal: BossPersonal;
@@ -1068,6 +1069,7 @@ export interface MechanicsFile {
   guild: GuildInfo;
   keybinds: KeybindInfo[];
   levelBands: LevelBandInfo[];
+  levelLockGap: number;
   market: MarketInfo;
   potionInterval: PotionInterval[];
   pvp: PvpInfo;

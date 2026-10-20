@@ -754,6 +754,7 @@ magicznego; leczenie i wzmocnienia działają tylko na Kapłana i jego drużynę
 ### 15.1 Zasady
 
 - Każdy **rodzaj** potwora ma 3 warianty: **zwykły**, **Elita** (poziom +2, HP ×3, obrażenia ×1.25, większy model ×1.25, czerwona nazwa), **Elita II** (poziom +4, HP ×10, obrażenia ×1.35, model ×1.5, fioletowa aura, 1 specjalna zdolność z telegrafem). (S32; wcześniej ×4 / ×1.5 i ×12 / ×2.)
+- **Blokada poziomu** (właściciel 2026-10-20, zasada Margonem; S156 `Config.LevelLock.gap` 10, S157 reszta; `Logic/LevelLock`): postać o 10 lub więcej poziomów wyższa od Elity, Elity II, bossa lochu albo jego pomocnika nie zadaje mu obrażeń (ciosy, umiejętności, obszar, DoT, odbicia), nie daje zagrożenia, nie dostaje udziału w zabiciu i nie wchodzi do lochu takiego bossa (tylko ona, reszta drużyny tak). Leczenie i wzmocnienia drużyny wolno. Cel widać na szaro z kłódką i „Za wysoki poziom (maks. N)” (N = poziom potwora + 9); taki potwór sam jej nie atakuje. Zwykłe potwory, boss świata z pomocnikami i potwory wydarzeń świata bez blokady.
 - Elity i Elity II **w jaskiniach** (czerwone strefy), zasady w §3.5 (S134i: Elity II także w kryjówkach na mapach
   regionów, §3.6, bez ogłoszenia, powrót ×1,5): 2 rodzaje Elit i 2 Elity II (S134h, każda ze swoim łupem §5.5) na jaskinię, odrodzenie Elity II 300 + 3 × poziom jaskini s ±15% (S134e: ok. 6 min na 20., 8 min na 66., 10 min na 100.; wcześniej 480 + 12 × poziom), ogłoszenie na mapie przy pojawieniu się.
 - **Zestawy Elit** (S134e, `Data/MonsterAbilities.KITS`, wybór `Logic/MonsterCast`): Elita II ma obok własnej zdolności

@@ -204,7 +204,11 @@ local function DungeonWindow(scope: Scope, props: Props): Fusion.Child
 				if not data then
 					return ""
 				end
-				return Text.get(use, "dungeon.levels", { level = data.level, required = data.required })
+				return Text.get(
+					use,
+					"dungeon.levels",
+					{ level = data.level, required = data.required, max = data.maxLevel or data.level }
+				)
 			end),
 			FontFace = Theme.Fonts.BodyMedium,
 			TextSize = Theme.TextSize.Body,

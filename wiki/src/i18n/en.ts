@@ -435,6 +435,8 @@ export const en: Record<Key, string> = {
   "boss.entry": "Entry and rules",
   "boss.room": "Chamber",
   "boss.required": "Required level",
+  "boss.maxLevel": "Highest level",
+  "boss.maxLevelText": "a higher character cannot enter or hit the boss and its helpers",
   "boss.gate": "Gate in the cave",
   "boss.stone": "Dungeon Stone",
   "boss.stoneText": "Takes you to the dungeon gate.",

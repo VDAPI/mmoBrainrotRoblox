@@ -27,6 +27,7 @@ local GroupLuck = require(script.Parent.Parent.Parent.GroupLuck)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
+local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
 local Loot = require(ReplicatedStorage.Shared.Logic.Loot)
 local LootTables = require(ReplicatedStorage.Shared.Data.LootTables)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -605,6 +606,14 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 		{
 			text = T("worldmap.card.required", { level = required }),
 			color = if ctx.level >= required then Theme.Paper.Success else Theme.Paper.Danger,
+			bold = true,
+		},
+		{
+			-- S157 (Logic/LevelLock): above this level the boss is out of reach
+			text = T("worldmap.card.maxLevel", { level = LevelLock.maxLevel(boss.level) }),
+			color = if LevelLock.over(ctx.level, LevelLock.maxLevel(boss.level))
+				then Theme.Paper.Danger
+				else Theme.Paper.Success,
 			bold = true,
 		},
 		{

@@ -185,6 +185,8 @@ S.file(
 		combat = "data",
 		formula = "data",
 		config = map("number"),
+		-- owner 2026-10-20 / S157: the level lock on Elites, Elites II and dungeon bosses (Config.LevelLock.gap)
+		levelLockGap = "int",
 		zones = map(rec("ZoneInfo", { name = "name", rule = "name", color = "color" })),
 		variants = map(rec("VariantInfo", {
 			["name?"] = "name",
@@ -698,6 +700,7 @@ function Basics.mechanics(ctx: any): any
 		combat = Clean.clean(Combat),
 		formula = Clean.clean(Stats.Formula),
 		config = config,
+		levelLockGap = Config.LevelLock.gap,
 		zones = zones,
 		variants = variants,
 		areaProfiles = profiles,
