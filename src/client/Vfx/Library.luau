@@ -61,6 +61,9 @@ local RING_END = 2.2
 -- shows its bright edge where the blade starts instead of where it ends.
 local SLASH_SIDE = 1
 local SURFACE_LIFT = 0.1 -- studs a ground image floats over the ground
+-- W05: the painted swoosh that replaces each old arc, and the keys that are swooshes (a glint, no neon edges)
+local BOLD_ARC: { [string]: string } = { slashWide = "slashBold", slashNarrow = "slashBoldNarrow" }
+local BOLD_KEYS: { [string]: boolean } = { slashBold = true, slashBoldNarrow = true }
 
 local function tween(
 	instance: Instance,
@@ -163,6 +166,7 @@ local function setupBeam(holder: BasePart, color: Color3, width: number, faceCam
 	beam.CurveSize0 = 0
 	beam.CurveSize1 = 0
 	beam.ZOffset = 0
+	beam.Brightness = 1 -- W05: the swoosh raises it on its pooled beams
 	beam.Transparency = NumberSequence.new(1)
 	return beam
 end
@@ -596,24 +600,54 @@ function Library.slash(
 	-- S112: a flat Beam with the arc texture in the arc's plane (slashWide from 120 degrees, else slashNarrow), the
 	-- beam running forwards from the origin through the middle of the arc; it appears over the sweep and fades in 0.25 s.
 	-- Beside it every second segment (an edge), none on low quality. S114: `textureKey` picks the arc (SkillVfx.tex).
-	local key = textureKey or (if math.abs(from - to) >= 120 then "slashWide" else "slashNarrow")
+	-- W05: the painted swoosh (slashBold / slashBoldNarrow) by default; the old ribbed arcs stay for an explicit key
+	local wide = math.abs(from - to) >= 120
+	local key = textureKey or BOLD_ARC[if wide then "slashWide" else "slashNarrow"] or "slashWide"
+	if not textureKey and not Textures.id(key) then
+		key = if wide then "slashWide" else "slashNarrow"
+	end
 	local holder = if Textures.id(key) then Pool.holder("beam", key) else nil
 	local beam = if holder then setupBeam(holder, color, radius * 2, false, simple) else nil
 	if holder and beam then
 		local a0, a1 = attachments(holder)
 		-- the texture's leading edge is at +V: a sweep to the left (from < to) turns the plane over
 		local side = if from >= to then SLASH_SIDE else -SLASH_SIDE
-		holder.CFrame = origin
+		local frame = origin
 			* roll
 			* CFrame.Angles(0, math.rad((from + to) / 2), 0)
 			* CFrame.Angles(0, 0, if side > 0 then 0 else math.pi)
+		holder.CFrame = frame
 		a0.CFrame = CFrame.new(0, 0, radius)
 		a1.CFrame = CFrame.new(0, 0, -radius)
 		beam.LightEmission = 1
+		local bold = BOLD_KEYS[key] == true
+		-- W05: the body darker than the edge (the colour carries it, the glint the heat), a longer fade
+		if bold then
+			beam.Color = ColorSequence.new(color:Lerp(Color3.new(0, 0, 0), 0.08))
+			beam.Brightness = 1.4
+		end
 		fadeBeam(beam, 1, 0.05, sweep)
-		Clock.after(sweep, fadeBeam, beam, 0.05, 1, 0.25)
-		Pool.holderLater(holder, sweep + 0.3)
-		if lowQuality() then
+		Clock.after(sweep + 0.04, fadeBeam, beam, 0.05, 1, if bold then 0.32 else 0.25)
+		Pool.holderLater(holder, sweep + 0.4)
+		-- W05: a glint: the same arc a little smaller and whiter, flashing over the leading edge as the blade passes
+		if bold and not simple and not lowQuality() then
+			local glintHolder = Pool.holder("beam", key)
+			local glint = if glintHolder
+				then setupBeam(glintHolder, color:Lerp(Color3.new(1, 1, 1), 0.55), radius * 1.9, false, simple)
+				else nil
+			if glintHolder and glint then
+				local g0, g1 = attachments(glintHolder)
+				glintHolder.CFrame = frame * CFrame.new(0, 0.05, 0)
+				g0.CFrame = CFrame.new(0, 0, radius * 0.95)
+				g1.CFrame = CFrame.new(0, 0, -radius * 0.95)
+				glint.LightEmission = 1
+				glint.Brightness = 2
+				fadeBeam(glint, 1, 0.1, sweep * 0.8)
+				Clock.after(sweep * 0.8, fadeBeam, glint, 0.1, 1, 0.12)
+				Pool.holderLater(glintHolder, sweep + 0.2)
+			end
+		end
+		if bold or lowQuality() then
 			return
 		end
 	end
@@ -1734,6 +1768,211 @@ function Library.arcBurst(at: Vector3, size: number, color: Color3, opts: FxOpts
 			emission = 1,
 		})
 	end
+end
+
+-- W05: the body of a blow into the ground: rock chips thrown up and falling back, a ring of dust rolling outwards
+-- over `radius` and a low cloud at the centre. `color` tints the dust a little (the class colour); the chips stay stone.
+local ROCK = Color3.fromHex("#5E5246")
+function Library.rockBurst(at: Vector3, radius: number, size: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local base = ground(at)
+	local dustTint = DUST_COLOR:Lerp(color, 0.12)
+	local chips = textured("debris", CFrame.new(base + Vector3.new(0, 0.4, 0)))
+	if chips then
+		burstFrom(chips, "debris", ROCK:Lerp(Color3.new(1, 1, 1), 0.15), math.floor(14 * size), {
+			simple = o.simple,
+			to = ROCK,
+			spread = 55,
+			speedMin = 9 * size,
+			speedMax = 20 * size,
+			accel = Vector3.new(0, -55, 0),
+			drag = 0.6,
+			lifeMin = 0.55,
+			lifeMax = 0.95,
+			rotation = NumberRange.new(0, 360),
+			rotSpeed = NumberRange.new(-400, 400),
+			sizeSeq = NumberSequence.new({ kp(0, 0.75 * size, 0.3 * size), kp(1, 0.55 * size, 0.2 * size) }),
+			transparency = NumberSequence.new({ kp(0, 0), kp(0.8, 0), kp(1, 1) }),
+			area = Vector3.new(radius * 0.3, 0.2, radius * 0.3),
+			emission = 0,
+		})
+	end
+	-- the dust ring: a ground image growing to the radius while it thins out
+	local lift = base + Vector3.new(0, SURFACE_LIFT + 0.03, 0)
+	local holder, image = surfaceAt(
+		"dustRing",
+		CFrame.new(lift) * CFrame.Angles(0, rng:NextNumber(0, math.pi * 2), 0),
+		radius * 0.4,
+		dustTint
+	)
+	if holder and image then
+		image.ImageTransparency = 0.05
+		local s = 0.7
+		tween(
+			holder,
+			s,
+			{ Size = Vector3.new(radius * 2.3, 0.05, radius * 2.3) },
+			Enum.EasingStyle.Quart,
+			Enum.EasingDirection.Out
+		)
+		tween(image, s, { ImageTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+		Pool.holderLater(holder, s + 0.05)
+	elseif not o.simple then
+		Library.shockwave(at, radius, dustTint, 0.5, true)
+	end
+	-- a low cloud rolling out from the centre
+	local cloud = textured("smoke", CFrame.new(base + Vector3.new(0, 0.5, 0)))
+	if cloud then
+		burstFrom(cloud, "smoke", dustTint, if o.simple then 3 else 6, {
+			simple = o.simple,
+			spread = 80,
+			speedMin = radius * 0.8,
+			speedMax = radius * 1.6,
+			drag = 3,
+			accel = Vector3.new(0, 1.2, 0),
+			lifeMin = 0.8,
+			lifeMax = 1.3,
+			rotation = NumberRange.new(0, 360),
+			rotSpeed = NumberRange.new(-40, 40),
+			sizeSeq = NumberSequence.new({ kp(0, 1.4 * size), kp(1, 3.6 * size) }),
+			transparency = NumberSequence.new({ kp(0, 0.35), kp(1, 1) }),
+			area = Vector3.new(1, 0.2, 1),
+			emission = 0,
+		})
+	end
+end
+
+-- W05: a war cry / a shout: a flare of rays at the chest, two rings of force running out over the ground one after the
+-- other and a few embers thrown up.
+function Library.warCry(at: Vector3, radius: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local flare = textured("rays", CFrame.new(at + Vector3.new(0, 0.5, 0)))
+	if flare then
+		burstFrom(flare, "rays", color:Lerp(Color3.new(1, 1, 1), 0.25), 1, {
+			exact = true,
+			to = color,
+			lifeMin = 0.35,
+			lifeMax = 0.35,
+			rotation = NumberRange.new(0, 360),
+			rotSpeed = NumberRange.new(-60, 60),
+			sizeSeq = NumberSequence.new({ kp(0, 2), kp(0.3, 7), kp(1, 9) }),
+			transparency = NumberSequence.new({ kp(0, 0.1), kp(0.4, 0.3), kp(1, 1) }),
+			zOffset = 1,
+			emission = 1,
+		})
+	end
+	ringSurface(at, radius * 0.7, color, 0.35)
+	Clock.after(0.12, function()
+		ringSurface(at, radius, color, 0.45)
+	end)
+	if not o.simple then
+		local embers = textured("spark", CFrame.new(at))
+		if embers then
+			burstFrom(embers, "spark", color:Lerp(Color3.new(1, 1, 1), 0.3), 10, {
+				simple = o.simple,
+				to = color,
+				spread = 70,
+				speedMin = 8,
+				speedMax = 16,
+				drag = 2,
+				accel = Vector3.new(0, -6, 0),
+				lifeMin = 0.4,
+				lifeMax = 0.7,
+				orient = "parallel",
+				sizeSeq = NumberSequence.new({ kp(0, 0.25), kp(1, 0.05) }),
+				transparency = NumberSequence.new({ kp(0, 0), kp(1, 1) }),
+				area = Vector3.new(2, 1, 2),
+				emission = 1,
+			})
+		end
+	end
+end
+
+-- W05: a whirlwind of blades: the full swoosh round the body plus a spiral of wind on the ground turning as it grows.
+function Library.whirl(origin: CFrame, radius: number, color: Color3, simple: boolean?, key: string?)
+	Library.slash(origin, radius, 180, -180, color, 0, simple, key)
+	local base = ground(origin.Position) + Vector3.new(0, SURFACE_LIFT + 0.04, 0)
+	local holder, image = surfaceAt("swirl", CFrame.new(base), radius * 1.2, color:Lerp(Color3.new(1, 1, 1), 0.2))
+	if not holder or not image then
+		return
+	end
+	image.ImageTransparency = 0.25
+	local s = 0.45
+	local turn = rng:NextNumber(0, math.pi * 2)
+	holder.CFrame = CFrame.new(base) * CFrame.Angles(0, turn, 0)
+	tween(holder, s, {
+		Size = Vector3.new(radius * 2.2, 0.05, radius * 2.2),
+		CFrame = CFrame.new(base) * CFrame.Angles(0, turn - math.pi * 0.9, 0),
+	}, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	tween(image, s, { ImageTransparency = 1 }, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
+	Pool.holderLater(holder, s + 0.05)
+end
+
+-- W07: holy light: rays opening behind the point, motes of light rising slowly and a soft ring on the ground. The
+-- body of the Cleric's heals and blessings (`size` 1 = a person).
+function Library.holyBurst(at: Vector3, size: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local flare = textured("rays", CFrame.new(at + Vector3.new(0, 0.6 * size, 0)))
+	if flare then
+		burstFrom(flare, "rays", color:Lerp(Color3.new(1, 1, 1), 0.35), 1, {
+			exact = true,
+			to = color,
+			lifeMin = 0.5,
+			lifeMax = 0.5,
+			rotation = NumberRange.new(0, 360),
+			rotSpeed = NumberRange.new(-25, 25),
+			sizeSeq = NumberSequence.new({ kp(0, 1.5 * size), kp(0.35, 6 * size), kp(1, 7 * size) }),
+			transparency = NumberSequence.new({ kp(0, 0.2), kp(0.5, 0.35), kp(1, 1) }),
+			zOffset = 0.5,
+			emission = 1,
+		})
+	end
+	local motes = textured("glow", CFrame.new(ground(at) + Vector3.new(0, 0.5, 0)))
+	if motes then
+		burstFrom(motes, "glow", color:Lerp(Color3.new(1, 1, 1), 0.4), math.floor(10 * size), {
+			simple = o.simple,
+			to = color,
+			spread = 25,
+			speedMin = 2,
+			speedMax = 5,
+			drag = 0.8,
+			accel = Vector3.new(0, 1.5, 0),
+			lifeMin = 0.9,
+			lifeMax = 1.5,
+			sizeSeq = NumberSequence.new({ kp(0, 0), kp(0.2, 0.5 * size, 0.2 * size), kp(1, 0) }),
+			transparency = NumberSequence.new({ kp(0, 0.1), kp(1, 1) }),
+			area = Vector3.new(2.2 * size, 0.3, 2.2 * size),
+			emission = 1,
+		})
+	end
+	ringSurface(at, 2.2 * size, color, 0.5)
+end
+
+-- W06: leaves whirled up from the ground and fluttering down (the Hunter's traps, camouflage, nature shots).
+local LEAF_GREEN = Color3.fromHex("#7FA04A")
+function Library.leafBurst(at: Vector3, size: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local leaves = textured("leaf", CFrame.new(ground(at) + Vector3.new(0, 0.5, 0)))
+	if not leaves then
+		return
+	end
+	burstFrom(leaves, "leaf", LEAF_GREEN:Lerp(color, 0.25), math.floor(10 * size), {
+		simple = o.simple,
+		to = LEAF_GREEN:Lerp(Color3.fromHex("#C9A45A"), 0.4),
+		spread = 50,
+		speedMin = 6 * size,
+		speedMax = 12 * size,
+		drag = 2.5,
+		accel = Vector3.new(0, -5, 0),
+		lifeMin = 1,
+		lifeMax = 1.7,
+		rotation = NumberRange.new(0, 360),
+		rotSpeed = NumberRange.new(-260, 260),
+		sizeSeq = NumberSequence.new({ kp(0, 0.5 * size, 0.15 * size), kp(1, 0.45 * size, 0.15 * size) }),
+		transparency = NumberSequence.new({ kp(0, 0), kp(0.8, 0), kp(1, 1) }),
+		area = Vector3.new(1.5 * size, 0.3, 1.5 * size),
+		emission = 0,
+	})
 end
 
 -- Dust puff at the feet (landings, slams). S112: with the smoke texture a smoke puff in the dust colour and a burst of

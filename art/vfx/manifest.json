@@ -276,6 +276,94 @@
       "frames": null,
       "hash": "6cec78b5065e9b75",
       "custom": false
+    },
+    {
+      "key": "slashBold",
+      "file": "slash_bold.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "9a0fd7b44fa330b7",
+      "custom": false
+    },
+    {
+      "key": "slashBoldNarrow",
+      "file": "slash_bold_narrow.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "cc63ffb1fab4c65c",
+      "custom": false
+    },
+    {
+      "key": "debris",
+      "file": "debris.png",
+      "w": 1024,
+      "h": 1024,
+      "kind": "particle",
+      "grid": "4x4",
+      "frames": 16,
+      "hash": "cc51849d95a06961",
+      "custom": false
+    },
+    {
+      "key": "dustRing",
+      "file": "dust_ring.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "1b7ddedae12a5f57",
+      "custom": false
+    },
+    {
+      "key": "hitStar",
+      "file": "hit_star.png",
+      "w": 256,
+      "h": 256,
+      "kind": "particle",
+      "grid": null,
+      "frames": null,
+      "hash": "d8b08cb27c382631",
+      "custom": false
+    },
+    {
+      "key": "rays",
+      "file": "rays.png",
+      "w": 512,
+      "h": 512,
+      "kind": "particle",
+      "grid": null,
+      "frames": null,
+      "hash": "0923459ba11ed7de",
+      "custom": false
+    },
+    {
+      "key": "swirl",
+      "file": "swirl.png",
+      "w": 512,
+      "h": 512,
+      "kind": "beam",
+      "grid": null,
+      "frames": null,
+      "hash": "e89b679c52e14035",
+      "custom": false
+    },
+    {
+      "key": "leaf",
+      "file": "leaf.png",
+      "w": 1024,
+      "h": 1024,
+      "kind": "particle",
+      "grid": "2x2",
+      "frames": 4,
+      "hash": "3fda314b992b3a24",
+      "custom": false
     }
   ]
 }

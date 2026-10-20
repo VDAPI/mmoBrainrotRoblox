@@ -81,21 +81,23 @@ local function e(def: Entry): Entry
 end
 
 local SkillVfx: { [string]: Entry } = {
-	-- Warrior (S114): steel and dust near the weapon and the ground, the class colour; arcs slashNarrow / slashWide
+	-- Warrior (S114): steel and dust near the weapon and the ground, the class colour. W05: painted swooshes with a glint
+	-- (slashBold / slashBoldNarrow), a jagged impact star on every blade hit (hitStar), blows into the ground throw rock
+	-- chips and a rolling dust ring (rockBurst), shouts flare and send two rings out (warCry)
 	mightyStrike = e({
 		color = "class",
 		sound = "",
 		trail = true,
 		impact = { "impactFlash", "slash", "sparks", "dust" },
 		slash = { from = 70, to = -70, tilt = 55, radius = 7 },
-		tex = { slash = "slashNarrow" },
+		tex = { slash = "slashBoldNarrow", impactFlash = "hitStar" },
 		shake = 0.25,
 		hitstop = 0.07,
 	}),
 	battleCry = e({
 		color = "#FF6A3A",
 		sound = "",
-		impact = { "impactFlash", "ringWave", "aura", "sparks" },
+		impact = { "impactFlash", "warCry", "aura", "sparks" }, -- W05: a flare of rays and two rings
 		flash = 4,
 		shake = 0.2,
 	}),
@@ -103,7 +105,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "class",
 		sound = "",
 		impact = { "dash", "impactFlash", "dust", "smokePuff" },
-		tex = { dash = "trailStreak" },
+		tex = { dash = "trailStreak", impactFlash = "hitStar" },
 		coreDelay = 0.15,
 		shake = 0.35,
 		hitstop = 0.06,
@@ -114,7 +116,7 @@ local SkillVfx: { [string]: Entry } = {
 		trail = true,
 		impact = { "impactFlash", "whirl", "sparks", "dust" },
 		everyWave = { "whirl", "sparks" },
-		tex = { whirl = "slashWide" },
+		tex = { whirl = "slashBold", impactFlash = "hitStar" },
 		hitstop = 0.04,
 	}),
 	cleave = e({
@@ -123,7 +125,7 @@ local SkillVfx: { [string]: Entry } = {
 		trail = true,
 		impact = { "impactFlash", "slash", "sparks", "dust" },
 		slash = { from = 60, to = -60, tilt = 0 },
-		tex = { slash = "slashWide" },
+		tex = { slash = "slashBold", impactFlash = "hitStar" },
 		sparks = "darkSpark",
 		telegraph = "cone",
 		hitstop = 0.06,
@@ -131,14 +133,14 @@ local SkillVfx: { [string]: Entry } = {
 	taunt = e({
 		color = "#E2483A",
 		sound = "",
-		impact = { "impactFlash", "ringWave", "sparks", "dust" },
+		impact = { "impactFlash", "warCry", "dust" }, -- W05
 		telegraph = "circle",
 	}),
 	earthquake = e({
 		color = "#C08A4A",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "ringWave", "groundDecal", "dust", "smokePuff", "sparks" },
+		impact = { "impactFlash", "rockBurst", "ringWave", "groundDecal", "sparks" }, -- W05: chips and a dust ring
 		land = { "dust" },
 		telegraph = "circle",
 		shake = 0.6,
@@ -149,7 +151,9 @@ local SkillVfx: { [string]: Entry } = {
 		color = "class",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "groundDecal", "ringWave", "dust", "sparks" },
+		impact = { "impactFlash", "rockBurst", "groundDecal", "sparks" }, -- W05
+		markRadius = 3,
+		tex = { impactFlash = "hitStar" },
 		flash = 5,
 		shake = 0.5,
 		hitstop = 0.08,
@@ -166,8 +170,8 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#E8C25A",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "ringWave", "pillar", "groundDecal", "dust" },
-		everyWave = { "impactFlash", "ringWave", "pillar", "groundDecal", "dust" },
+		impact = { "impactFlash", "ringWave", "pillar", "groundDecal", "rockBurst" }, -- W05
+		everyWave = { "impactFlash", "ringWave", "pillar", "groundDecal", "rockBurst" },
 		pillar = { radius = 3, height = 8 },
 		land = { "dust" },
 		telegraph = "circle",
@@ -180,7 +184,7 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		-- shield on `t`: the protected ally (the Warrior himself in the self variant); 10A: the second ally's own line
 		impact = { "dash", "tether", "shield", "impactFlash", "dust" },
-		tex = { dash = "trailStreak", tether = "beamHoly" },
+		tex = { dash = "trailStreak", tether = "beamHoly", impactFlash = "hitStar" },
 		allies = { "shield", "tether" },
 	}),
 	shieldWall = e({
@@ -198,7 +202,7 @@ local SkillVfx: { [string]: Entry } = {
 		trail = true,
 		impact = { "impactFlash", "slash", "sparks" },
 		slash = { from = 70, to = -70, tilt = 80, radius = 7 },
-		tex = { slash = "slashNarrow" },
+		tex = { slash = "slashBoldNarrow", impactFlash = "hitStar" },
 		sparks = "darkSpark",
 		shake = 0.3,
 		hitstop = 0.08,
@@ -221,7 +225,7 @@ local SkillVfx: { [string]: Entry } = {
 	advanceOrder = e({
 		color = "class",
 		sound = "",
-		impact = { "impactFlash", "ringWave", "dust", "sparks" },
+		impact = { "impactFlash", "warCry", "sparks" }, -- W05
 		allies = { "aura" },
 		allyColor = "#E8C25A",
 		telegraph = "circle",
@@ -233,6 +237,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#E8C25A",
 		sound = "",
 		impact = { "impactFlash", "shieldArc", "sparks" },
+		tex = { impactFlash = "hitStar" },
 		markRadius = 3,
 		telegraph = "cone",
 		shake = 0.2,
@@ -242,6 +247,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#E8C25A",
 		sound = "",
 		impact = { "impactFlash", "shield", "sparks" },
+		tex = { impactFlash = "hitStar" },
 		flash = 4,
 		size = 0.6,
 		shake = 0.3,
@@ -253,7 +259,7 @@ local SkillVfx: { [string]: Entry } = {
 		trail = true,
 		impact = { "impactFlash", "slash", "pillar", "sparks" },
 		slash = { from = 70, to = -70, tilt = 55, radius = 7 },
-		tex = { slash = "slashNarrow" },
+		tex = { slash = "slashBoldNarrow", impactFlash = "hitStar" },
 		pillar = { radius = 1.5, height = 8 },
 		shake = 0.35,
 		hitstop = 0.08,
@@ -264,7 +270,7 @@ local SkillVfx: { [string]: Entry } = {
 		trail = true,
 		impact = { "impactFlash", "slash", "dust", "smokePuff" },
 		slash = { from = 80, to = -60, tilt = 70, radius = 8 },
-		tex = { slash = "slashWide" },
+		tex = { slash = "slashBold", impactFlash = "hitStar" },
 		shake = 0.3,
 		hitstop = 0.08,
 	}),
@@ -272,18 +278,18 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#8E6B4A",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "slash", "groundDecal", "sparks" },
+		impact = { "impactFlash", "slash", "rockBurst", "sparks" }, -- W05: the blade bites the ground
 		slash = { from = 40, to = -80, tilt = 30, radius = 7 },
-		tex = { slash = "slashNarrow" },
+		tex = { slash = "slashBoldNarrow", impactFlash = "hitStar" },
 		sparks = "darkSpark",
-		markRadius = 2,
+		markRadius = 2.5,
 		shake = 0.3,
 		hitstop = 0.07,
 	}),
 	warStomp = e({
 		color = "#C08A4A",
 		sound = "",
-		impact = { "impactFlash", "shockwave", "dust", "cracks" },
+		impact = { "impactFlash", "rockBurst", "shockwave", "cracks" }, -- W05
 		land = { "dust" },
 		telegraph = "circle",
 		shake = 0.5,
@@ -293,9 +299,10 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#8E1B1B",
 		sound = "",
 		trail = true,
-		impact = { "burst", "slash", "smokePuff", "sparks" },
+		impact = { "impactFlash", "slash", "smokePuff", "sparks" }, -- W05: the jagged star instead of the ball
+		flash = 5,
 		slash = { from = 90, to = -90, tilt = 85, radius = 8 },
-		tex = { slash = "slashWide" },
+		tex = { slash = "slashBold", impactFlash = "hitStar" },
 		sparks = "darkSpark",
 		shake = 0.45,
 		hitstop = 0.08,
@@ -812,7 +819,7 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		impact = { "impactFlash", "whirl", "aura", "sparks" },
 		everyWave = { "whirl", "sparks" },
-		tex = { whirl = "slashWide" },
+		tex = { whirl = "slashBold" },
 		flash = 2,
 	}),
 	cataclysm = e({

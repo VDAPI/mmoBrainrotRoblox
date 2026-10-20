@@ -715,6 +715,26 @@ local function piece(
 		if at then
 			Library.arcBurst(at, scale, color, { simple = simple })
 		end
+	elseif name == "rockBurst" then
+		-- W05: a blow into the ground (chips, a dust ring over the area or the local mark)
+		if at then
+			Library.rockBurst(at, markRadius or math.max(3, radius * 0.8), scale, color, { simple = simple })
+		end
+	elseif name == "warCry" then
+		local where = if caster then centre(caster) else at
+		if where then
+			Library.warCry(where, math.max(4, radius * 0.6), color, { simple = simple })
+		end
+	elseif name == "holyBurst" then
+		local model = target or caster
+		local where = if model then centre(model) else at
+		if where then
+			Library.holyBurst(where, scale, color, { simple = simple })
+		end
+	elseif name == "leafBurst" then
+		if at then
+			Library.leafBurst(at, scale, color, { simple = simple })
+		end
 	elseif name == "magicCircle" then
 		local where = at or (if caster then centre(caster) else nil)
 		if where then
@@ -754,7 +774,7 @@ local function piece(
 		if frame then
 			local spec = entry.slash
 			if name == "whirl" then
-				Library.slash(frame, radius, 180, -180, color, 0, simple, tex)
+				Library.whirl(frame, radius, color, simple, tex) -- W05: with the spiral of wind on the ground
 			else
 				local angle = tonumber(data.a)
 				local half = if angle then angle / 2 else nil

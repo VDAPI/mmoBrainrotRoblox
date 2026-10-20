@@ -714,6 +714,225 @@ def draw_trail_streak(key, w, h):
 # The list (fixed order; new textures at the end) ----------------------------------------------------------------------
 
 # key, file, w, h, kind, grid, frames, wrap, draw
+
+# W05-W07: the class pass (bolder arcs, debris, dust rings, impact stars, rays, a whirl, leaves) -------------------
+
+
+def slash_bold(key, w, h, span, inner, outer):
+    """A painted swoosh: a thick hot leading edge, a body fading to the tail with wispy streaks broken by noise."""
+    rng = rng_for(key)
+    half = math.radians(span / 2)
+    noise = noise_sampler(value_noise(rng, w, h, 5, 3), w, h)
+    wisps = [(rng.uniform(0.15, 0.95), rng.uniform(0.25, 0.75), rng.uniform(0.006, 0.014)) for _ in range(9)]
+
+    def fn(x, y):
+        dx, dy = x / w - 0.5, y / h - 0.5
+        r = math.hypot(dx, dy)
+        if r < inner - 0.02 or r > outer + 0.01:
+            return 0.0
+        # the same frame as slash(): 0 = forward along +U, the leading edge at the +V side
+        phi = math.atan2(-dy, dx)
+        if abs(phi) > half:
+            return 0.0
+        s = (half - phi) / (2 * half)  # 1 at the leading edge, 0 at the tail
+        band = (r - inner) / (outer - inner)  # 0 inner, 1 outer
+        px = 1 / w
+        # the blade's edge: bright and thick on the outside, thinning towards the tail
+        thick = 0.18 + 0.55 * s**1.5
+        rim = 1 - smoothstep(1 - 1.5 * px / (outer - inner), 1.0, band)
+        edge = smoothstep(1 - thick, 1 - thick * 0.35, band) * rim
+        body = (0.25 + 0.45 * band) * s**1.2 * rim
+        streak = 0.0
+        for start, pos, width in wisps:
+            if s > start:
+                continue
+            streak = max(streak, 0.5 * (1 - smoothstep(0, width, abs(band - pos))) * (s / start) ** 0.6)
+        n = noise(x, y)
+        tail_break = smoothstep(0.0, 0.35, s + (n - 0.5) * 0.35)
+        lead = smoothstep(0, 0.025, 1 - s)
+        inner_soft = smoothstep(-0.05, 0.25, band)
+        a = max(edge * (0.55 + 0.45 * s), body * (0.6 + 0.4 * n), streak * (0.5 + 0.5 * n))
+        return a * tail_break * lead * inner_soft
+
+    return blur(field(w, h, fn), 0.8)
+
+
+def draw_slash_bold(key, w, h):
+    return slash_bold(key, w, h, 190, 0.22, 0.465)
+
+
+def draw_slash_bold_narrow(key, w, h):
+    return slash_bold(key, w, h, 120, 0.28, 0.465)
+
+
+DEBRIS_FRAMES = 16
+
+
+def draw_debris(key, w, h):
+    """16 different rock chips (a random frame per particle): jagged polygons with a lighter and a darker facet."""
+    rng = rng_for(key)
+    fs = w // 4
+    frames = []
+    for _ in range(DEBRIS_FRAMES):
+        n = rng.randint(5, 8)
+        pts = []
+        for j in range(n):
+            a = j / n * TAU + rng.uniform(-0.25, 0.25)
+            r = rng.uniform(0.22, 0.38)
+            pts.append((0.5 + math.cos(a) * r * rng.uniform(0.8, 1.1), 0.5 + math.sin(a) * r * 0.85))
+        facet = rng.randint(0, n - 1)
+        off = rng.uniform(-0.05, 0.05)
+
+        def body(draw, img, k, pts=pts, facet=facet, off=off):
+            unit = fs * k
+            world = [(x * unit, y * unit) for x, y in pts]
+            m = len(world)
+            draw.polygon(world, fill=185)
+            c = ((0.5 + off) * unit, 0.5 * unit)
+            draw.polygon([c, world[facet], world[(facet + 1) % m]], fill=255)
+            draw.polygon([c, world[(facet + 2) % m], world[(facet + 3) % m]], fill=140)
+
+        frames.append(supersample(body, fs, fs))
+    return grid(frames, 4, fs)
+
+
+def draw_dust_ring(key, w, h):
+    """A ring of dust rolling outwards (a ground image): a soft noisy band, thicker inside, lumpy in tufts."""
+    rng = rng_for(key)
+    noise = noise_sampler(value_noise(rng, w, h, 7, 4), w, h)
+    tufts = rng.randint(9, 13)
+    phase = rng.uniform(0, TAU)
+    rim_noise = value_noise(rng, 256, 1, 9, 3)
+
+    def rim(a):
+        return rim_noise[int((a % TAU) / TAU * 256) % 256]
+
+    def fn(x, y):
+        dx, dy = x / w - 0.5, y / h - 0.5
+        r = math.hypot(dx, dy)
+        if r > 0.47:
+            return 0.0
+        a = math.atan2(dy, dx)
+        # irregular tufts: two waves and the noise along the rim
+        lump = clamp01(0.5 + 0.3 * math.sin(a * tufts + phase) + 0.25 * math.sin(a * 5 - phase * 2)
+                       + 0.35 * (rim(a) - 0.5))
+        outer = 0.4 + 0.035 * lump
+        band = smoothstep(0.22, outer - 0.06, r) * (1 - smoothstep(outer - 0.03, outer + 0.015, r))
+        return band * (0.35 + 0.65 * noise(x, y)) * (0.7 + 0.3 * lump) * (1 - smoothstep(0.44, 0.47, r))
+
+    return blur(field(w, h, fn), 1.5)
+
+
+def draw_hit_star(key, w, h):
+    """An impact burst: 7 uneven spikes round a small soft core (less white than the star)."""
+    rng = rng_for(key)
+    spikes = [(i / 7 * TAU + rng.uniform(-0.25, 0.25), rng.uniform(0.3, 0.46), rng.uniform(0.05, 0.085))
+              for i in range(7)]
+
+    def rays(draw, img, k):
+        cx, cy = w * k / 2, h * k / 2
+        for angle, length, base in spikes:
+            L, half = length * w * k, base * w * k / 2
+            pts = [(0, -half), (L, 0), (0, half), (-half * 0.6, 0)]
+            c, s_ = math.cos(angle), math.sin(angle)
+            draw.polygon([(cx + x * c - y * s_, cy + x * s_ + y * c) for x, y in pts], fill=235)
+
+    ray_img = blur(supersample(rays, w, h), 1.2)
+
+    def core(x, y):
+        r = math.hypot(x / w - 0.5, y / h - 0.5)
+        return 0.9 * math.exp(-((r / 0.12) ** 2) * 2.0)
+
+    def fade(x, y):
+        r = math.hypot(x / w - 0.5, y / h - 0.5)
+        return 1 - smoothstep(0.12, 0.47, r) * 0.65
+
+    out = multiply(lighter(ray_img, field(w, h, core)), field(w, h, fade))
+    return multiply(out, edge_window(w, h, 0.025, 0.025))
+
+
+def draw_rays(key, w, h):
+    """Rays of light from a centre (holy light, a war cry): many thin rays of uneven length round a soft core."""
+    rng = rng_for(key)
+    count = 22
+    spokes = [(i / count * TAU + rng.uniform(-0.08, 0.08), rng.uniform(0.25, 0.46), rng.uniform(0.012, 0.03),
+               rng.uniform(0.5, 1)) for i in range(count)]
+
+    def body(draw, img, k):
+        cx, cy = w * k / 2, h * k / 2
+        for angle, length, base, bright in spokes:
+            L, half = length * w * k, base * w * k / 2
+            pts = [(0.04 * w * k, -half), (L, 0), (0.04 * w * k, half)]
+            c, s_ = math.cos(angle), math.sin(angle)
+            draw.polygon([(cx + x * c - y * s_, cy + x * s_ + y * c) for x, y in pts], fill=int(255 * bright))
+
+    ray_img = blur(supersample(body, w, h, 2), 2)
+
+    def fade(x, y):
+        r = math.hypot(x / w - 0.5, y / h - 0.5)
+        return (1 - smoothstep(0.08, 0.47, r)) ** 1.2
+
+    def core(x, y):
+        r = math.hypot(x / w - 0.5, y / h - 0.5)
+        return 0.7 * math.exp(-((r / 0.1) ** 2) * 2.0)
+
+    out = lighter(multiply(ray_img, field(w, h, fade)), field(w, h, core))
+    return multiply(out, edge_window(w, h, 0.025, 0.025))
+
+
+def draw_swirl(key, w, h):
+    """A whirlwind seen from above (a ground image): five streaks spiralling round the centre, bright at the head."""
+    rng = rng_for(key)
+    noise = noise_sampler(value_noise(rng, w, h, 6, 3), w, h)
+
+    def fn(x, y):
+        dx, dy = x / w - 0.5, y / h - 0.5
+        r = math.hypot(dx, dy)
+        if r > 0.47 or r < 0.12:
+            return 0.0
+        a = math.atan2(dy, dx)
+        best = 0.0
+        for arm in range(5):
+            target = arm / 5 * TAU + (r - 0.12) * 7.0
+            d = (a - target) % TAU
+            if d < 0.95:
+                best = max(best, (1 - d / 0.95) ** 2.2)
+        band = smoothstep(0.12, 0.2, r) * (1 - smoothstep(0.4, 0.47, r))
+        return best * band * (0.55 + 0.45 * noise(x, y))
+
+    return blur(field(w, h, fn), 1.2)
+
+
+LEAF_FRAMES = 4
+
+
+def draw_leaf(key, w, h):
+    """Four leaves (a random frame per particle): a pointed leaf with a midrib, some a little curled."""
+    rng = rng_for(key)
+    fs = w // 2
+    frames = []
+    for _ in range(LEAF_FRAMES):
+        bend = rng.uniform(-0.08, 0.08)
+        width = rng.uniform(0.13, 0.2)
+
+        def body(draw, img, k, bend=bend, width=width):
+            unit = fs * k
+            left, right = [], []
+            for j in range(21):
+                t = j / 20
+                y = 0.1 + 0.8 * t
+                x = 0.5 + bend * math.sin(math.pi * t)
+                half = width * math.sin(math.pi * t) ** 0.8
+                left.append(((x - half) * unit, y * unit))
+                right.append(((x + half) * unit, y * unit))
+            draw.polygon(left + list(reversed(right)), fill=215)
+            rib = [((0.5 + bend * math.sin(math.pi * j / 20)) * unit, (0.1 + 0.8 * j / 20) * unit) for j in range(21)]
+            draw.line(rib, fill=255, width=max(1, int(0.02 * unit)))
+
+        frames.append(supersample(body, fs, fs))
+    return grid(frames, 2, fs)
+
+
 TEXTURES = [
     ("glow", "glow.png", 256, 256, "particle", None, None, False, draw_glow),
     ("spark", "spark.png", 128, 128, "particle", None, None, False, draw_spark),
@@ -740,6 +959,15 @@ TEXTURES = [
     ("poisonBubble", "poison_bubble.png", 1024, 1024, "particle", "4x4", 16, False, draw_poison_bubble),
     ("feather", "feather.png", 256, 256, "particle", None, None, False, draw_feather),
     ("darkSpark", "dark_spark.png", 128, 128, "particle", None, None, False, draw_dark_spark),
+    # W05-W07
+    ("slashBold", "slash_bold.png", 512, 512, "beam", None, None, False, draw_slash_bold),
+    ("slashBoldNarrow", "slash_bold_narrow.png", 512, 512, "beam", None, None, False, draw_slash_bold_narrow),
+    ("debris", "debris.png", 1024, 1024, "particle", "4x4", 16, False, draw_debris),
+    ("dustRing", "dust_ring.png", 512, 512, "beam", None, None, False, draw_dust_ring),
+    ("hitStar", "hit_star.png", 256, 256, "particle", None, None, False, draw_hit_star),
+    ("rays", "rays.png", 512, 512, "particle", None, None, False, draw_rays),
+    ("swirl", "swirl.png", 512, 512, "beam", None, None, False, draw_swirl),
+    ("leaf", "leaf.png", 1024, 1024, "particle", "2x2", 4, False, draw_leaf),
 ]
 
 
