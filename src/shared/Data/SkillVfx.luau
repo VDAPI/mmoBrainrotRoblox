@@ -309,6 +309,8 @@ local SkillVfx: { [string]: Entry } = {
 	}),
 	-- Hunter (S115): the class colour, forest green and brown; arrows with a thin bright streak (trailStreak), sparks,
 	-- dust and feathers; magic light only on Storm Arrow and the marks. Arrows leave the bow in the left hand.
+	-- W06: arrows are wooden shafts with a glowing head and vanes (Vfx/Library), every arrow and bolt hit shows the
+	-- jagged impact star, the woodland skills whirl leaves up (leafBurst), heavy bolts bite the ground (rockBurst)
 	aimedShot = e({
 		color = "class",
 		sound = "",
@@ -316,7 +318,7 @@ local SkillVfx: { [string]: Entry } = {
 		projectile = "arrow",
 		launch = "l",
 		impact = { "impactFlash", "sparks", "dust" },
-		tex = { projectile = "trailStreak" },
+		tex = { projectile = "trailStreak", impactFlash = "hitStar" },
 		flash = 1.8,
 		size = 0.6,
 	}),
@@ -326,14 +328,14 @@ local SkillVfx: { [string]: Entry } = {
 		projectile = "arrow",
 		launch = "l",
 		impact = { "impactFlash", "sparks" },
-		tex = { projectile = "trailStreak" },
+		tex = { projectile = "trailStreak", impactFlash = "hitStar" },
 		flash = 1.2,
 		size = 0.4,
 	}),
 	disengage = e({
 		color = "class",
 		sound = "",
-		impact = { "dash", "impactFlash", "sparks", "dust" },
+		impact = { "dash", "impactFlash", "sparks", "leafBurst" }, -- W06: leaves whirled up where he leaps from
 		land = { "dust" },
 		tex = { dash = "trailStreak" },
 		sparks = "feather",
@@ -342,7 +344,8 @@ local SkillVfx: { [string]: Entry } = {
 	arrowRain = e({
 		color = "class",
 		sound = "",
-		impact = { "arrowRain", "impactFlash", "dust" },
+		impact = { "arrowRain", "impactFlash", "dust", "leafBurst" }, -- W06
+		tex = { impactFlash = "hitStar" },
 		coreDelay = 0.15, -- the first arrows reach the ground (Vfx/Library.projectile, ARROW_FALL)
 		telegraph = "circle",
 		flash = 2,
@@ -372,7 +375,7 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		glow = { hand = "l", dur = 0.4 },
 		impact = { "impactFlash", "lineBeam", "groundDecal", "sparks" },
-		tex = { lineBeam = "trailStreak" },
+		tex = { lineBeam = "trailStreak", impactFlash = "hitStar" },
 		telegraph = "line",
 		markRadius = 2.5,
 		flash = 2,
@@ -390,6 +393,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "class",
 		sound = "",
 		impact = { "fan", "impactFlash", "sparks" },
+		tex = { impactFlash = "hitStar" },
 		coreDelay = 0.12, -- the first arrows reach the cone
 		telegraph = "cone",
 		flash = 1.6,
@@ -397,7 +401,7 @@ local SkillVfx: { [string]: Entry } = {
 	camouflage = e({
 		color = "#5F7A4A",
 		sound = "",
-		impact = { "smokePuff", "aura", "dust" },
+		impact = { "smokePuff", "aura", "leafBurst" }, -- W06: he vanishes in smoke and falling leaves
 		tex = { aura = "smoke" },
 	}),
 	stormArrow = e({
@@ -426,7 +430,7 @@ local SkillVfx: { [string]: Entry } = {
 		projectile = "arrow",
 		launch = "l",
 		impact = { "impactFlash", "beam", "sparks" },
-		tex = { projectile = "trailStreak", beam = "trailStreak" },
+		tex = { projectile = "trailStreak", beam = "trailStreak", impactFlash = "hitStar" },
 		sparks = "darkSpark",
 		flash = 3,
 		shake = 0.3,
@@ -446,14 +450,14 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		toss = { from = 0.2, to = 0.4 },
 		impact = { "impactFlash", "snare", "rune" },
-		trigger = { "impactFlash", "groundDecal", "sparks" },
+		trigger = { "impactFlash", "groundDecal", "sparks", "leafBurst" },
 		flash = 1.2,
 		size = 0.4,
 	}),
 	falcon = e({
 		color = "#C8A060",
 		sound = "",
-		impact = { "impactFlash", "falcon", "sparks", "dust" },
+		impact = { "impactFlash", "falcon", "sparks", "leafBurst" }, -- W06: feathers and leaves where the falcon strikes
 		sparks = "feather",
 		flash = 1.2,
 		size = 0.6,
@@ -463,6 +467,7 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		rim = true,
 		impact = { "arrowRain", "impactFlash", "ringWave", "dust" },
+		tex = { impactFlash = "hitStar" },
 		coreDelay = 0.15,
 		telegraph = "circle",
 		flash = 2.4,
@@ -475,8 +480,8 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		projectile = "arrow",
 		launch = "l",
-		impact = { "impactFlash", "sparks", "cracks" },
-		tex = { projectile = "trailStreak" },
+		impact = { "impactFlash", "sparks", "rockBurst" }, -- W06: a heavy bolt throws up earth
+		tex = { projectile = "trailStreak", impactFlash = "hitStar" },
 		markRadius = 1.5,
 		flash = 2.2,
 		size = 0.7,
@@ -487,8 +492,8 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		projectile = "arrow",
 		launch = "l",
-		impact = { "impactFlash", "groundDecal", "sparks" },
-		tex = { projectile = "trailStreak" },
+		impact = { "impactFlash", "groundDecal", "sparks", "leafBurst" }, -- W06
+		tex = { projectile = "trailStreak", impactFlash = "hitStar" },
 		markRadius = 1.5,
 		flash = 1.4,
 		size = 0.5,
@@ -496,7 +501,7 @@ local SkillVfx: { [string]: Entry } = {
 	windstep = e({
 		color = "#A8D8C0",
 		sound = "",
-		impact = { "impactFlash", "dash", "smokePuff" },
+		impact = { "impactFlash", "dash", "smokePuff", "leafBurst" }, -- W06
 		land = { "dust" },
 		tex = { dash = "trailStreak" },
 		flash = 1.2,
@@ -505,6 +510,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#7A5C3A",
 		sound = "",
 		impact = { "impactFlash", "ringWave", "groundDecal" },
+		tex = { impactFlash = "hitStar" },
 		telegraph = "circle",
 		flash = 1.6,
 		shake = 0.1,

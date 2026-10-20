@@ -676,10 +676,58 @@ end
 
 type Shape = "orb" | "arrow" | "shard" | "bolt" | "rock" | "die" | "snare"
 
-local function projectilePart(shape: Shape, color: Color3, size: number): BasePart
+-- W06: an arrow is a wooden shaft with a glowing head of the skill's colour and two small vanes at the tail (pieces
+-- welded to the pooled shaft, gone with it when the pool takes it back); `simple` keeps the bare glowing stick.
+local ARROW_WOOD = Color3.fromHex("#6B4E32")
+local function arrowPiece(shaft: BasePart, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material)
+	local piece = Instance.new("Part")
+	piece.Size = size
+	piece.Color = color
+	piece.Material = material
+	piece.CanCollide = false
+	piece.CanQuery = false
+	piece.CanTouch = false
+	piece.CastShadow = false
+	piece.Massless = true
+	piece.Anchored = false
+	piece.CFrame = shaft.CFrame * offset
+	local weld = Instance.new("WeldConstraint")
+	weld.Part0 = shaft
+	weld.Part1 = piece
+	weld.Parent = piece
+	piece.Parent = shaft
+end
+
+local function arrowPart(color: Color3, size: number, simple: boolean?): BasePart
+	if simple then
+		return Pool.part("Block", color, Vector3.new(0.14, 0.14, 2.4 * size), Enum.Material.Neon, 0.05)
+	end
+	local length = 2.2 * size
+	local shaft =
+		Pool.part("Block", ARROW_WOOD, Vector3.new(0.09, 0.09, length) * math.max(1, size), Enum.Material.Wood, 0)
+	local head = color:Lerp(Color3.new(1, 1, 1), 0.25)
+	arrowPiece(
+		shaft,
+		Vector3.new(0.22, 0.08, 0.5) * size,
+		CFrame.new(0, 0, -length / 2 - 0.2 * size),
+		head,
+		Enum.Material.Neon
+	)
+	for _, roll in { 0, math.pi / 2 } do
+		arrowPiece(
+			shaft,
+			Vector3.new(0.3, 0.03, 0.45) * size,
+			CFrame.new(0, 0, length / 2 - 0.25 * size) * CFrame.Angles(0, 0, roll),
+			color,
+			Enum.Material.SmoothPlastic
+		)
+	end
+	return shaft
+end
+
+local function projectilePart(shape: Shape, color: Color3, size: number, simple: boolean?): BasePart
 	if shape == "arrow" then
-		local p = Pool.part("Block", color, Vector3.new(0.14, 0.14, 2.4 * size), Enum.Material.Neon, 0.05)
-		return p
+		return arrowPart(color, size, simple)
 	elseif shape == "shard" then
 		return Pool.part("Block", color, Vector3.new(0.45, 0.45, 1.8) * size, Enum.Material.Glass, 0.15)
 	elseif shape == "bolt" then
@@ -737,7 +785,7 @@ function Library.projectile(
 	local o: ProjectileOpts = options or {}
 	local size = o.size or 1
 	local speed = o.speed or 90
-	local p = projectilePart(shape, color, size)
+	local p = projectilePart(shape, color, size, o.simple)
 	p.CFrame = CFrame.new(from)
 	if not o.simple then
 		local a0 = Instance.new("Attachment")
