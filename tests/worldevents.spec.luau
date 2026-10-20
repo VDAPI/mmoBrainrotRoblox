@@ -433,12 +433,13 @@ end)
 -- the commander the same for every party with the bosses 2.0 blows, the chest up to Legendary.
 T.describe("WorldEvents: harder Invasion (S134c)", function()
 	T.it(
-		"waves of 13 / 19 / 25 for 1 / 3 / 5 players (capped), Elites in every wave, an Elite II in the last",
+		"waves of 18 / 26 / 34 for 1 / 3 / 5 players (capped at 36), Elites in every wave, an Elite II in the last",
 		function()
-			T.expect(WorldEvents.waveSize(1)).toBe(13)
-			T.expect(WorldEvents.waveSize(3)).toBe(19)
-			T.expect(WorldEvents.waveSize(5)).toBe(25)
-			T.expect(WorldEvents.waveSize(9)).toBe(25)
+			-- owner 2026-10-20: bigger waves (S134c: 13 / 19 / 25, cap 25)
+			T.expect(WorldEvents.waveSize(1)).toBe(18)
+			T.expect(WorldEvents.waveSize(3)).toBe(26)
+			T.expect(WorldEvents.waveSize(5)).toBe(34)
+			T.expect(WorldEvents.waveSize(9)).toBe(36)
 			local inv = Data.kinds.invasion
 			for wave = 1, inv.waves do
 				T.expect({ wave, WorldEvents.elitesOf(wave) >= 1 }).toEqual({ wave, true })

@@ -808,8 +808,17 @@ local function acquire(key: string): BasePart
 	p.Color = template.color
 	p.Material = template.material
 	p.Transparency = template.transparency or 0
-	if template.shape then
-		p.Shape = template.shape
+	local shape = template.shape
+	local size = template.size
+	if shape == Enum.PartType.Ball and (math.abs(size.X - size.Y) > 0.01 or math.abs(size.X - size.Z) > 0.01) then
+		-- W28: a Ball part is always a sphere (Roblox makes its size uniform): the flat moss pads, pebbles and mud
+		-- clumps stood up as round green and grey balls; an ellipsoid is a Block with a Sphere mesh
+		-- (Util/BlueprintBuild does the same)
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = p
+	elseif shape then
+		p.Shape = shape
 	end
 	return p
 end
@@ -1000,6 +1009,10 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 		local inCity = map.biome == "city"
 		local insideWalls = inCity and TownTerrain.insideWalls(x, z)
 		if insideWalls and (rng:NextNumber() > CITY_INSIDE_SHARE or not TownTerrain.isOpen(x, z, 1)) then
+			continue
+		end
+		-- W28: nothing grows on the Ristalle or its paved forecourt
+		if inCity and TownTerrain.inArena(x, z, TownTerrain.ARENA_MARGIN) then
 			continue
 		end
 		local from = origin + Vector3.new(x, if floorY then floorY + 3 elseif inCave then 4 else 120, z)

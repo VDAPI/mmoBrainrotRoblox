@@ -3,7 +3,6 @@
 > Dla każdej sesji: co zrobiono, najważniejsze pliki (bez instrukcji testu od fazy gameplayu). Nowe sesje i poprawki dopisuj na końcu.
 > Stan i niedokończone: `docs/PROGRESS.md`; decyzje: `docs/DECYZJE.md`; API silników: `docs/SILNIKI.md`.
 
-
 ### S01: Fundament, dane, wybór postaci
 
 **Zrobione**
@@ -13151,6 +13150,69 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
 
+### W28: Ristalle (arena PvP w mieście) jako kamienne koloseum
+
+Zgłoszenie właściciela: arena wyglądała jak rozsypany piasek, trawa wrastała w podłogę. Miejsce bez zmian: środek (190, -160),
+piasek 80 x 80 (strefa `zone.arena`), trybuny 14, wyjście (190, -88), punkty startu pojedynków, miejsca widzów i ławki 3v3
+(`Data/Arena`), Mistrz Areny i Galeria Sław areny na swoich miejscach.
+- **Budowla** (`Logic/TownGen/Specials.luau`, `arena`): kamienny fundament pod całym kwadratem (połowa + trybuny) z
+  podłogą 0,3 nad najwyższym gruntem, więc teren i trawa nie przebijają; ubity piasek walki z kamiennym obrzeżem,
+  kołem na środku i dwoma znacznikami startu; niski mur wewnętrzny z gzymsem i proporcami w kolorach klas; kamienne
+  trybuny z czterema rzędami siedzisk, parapetem i ślepymi arkadami od zewnątrz; dwie bramy (12 studów, jak dotąd) pod
+  łukiem z napisem „Arena”, chorągwiami klas, pochodniami i stojakami z bronią w przejściu (bez kolizji); cztery
+  narożne wieże z koksownikami i proporcami, koksowniki na rogach muru, loża sędziów na zachodniej trybunie
+  (miejsca widzów 12+ od osi). 57 / 276 / 32 części (limit `special` 80 / 340 / 140), 13 świateł.
+- **Teren** (`Logic/TownTerrain.luau`): `TownTerrain.inArena(x, z, margin)` i `ARENA_MARGIN = 4` (najbliższe ogrody
+  zaczynają się 4,8 od trybun); kwadrat areny z marginesem bez trawy (piasek w środku, `Pavement` dookoła).
+- **Ozdoby klienta** (`DecorController.luau`): kępki, kwiaty i kamyki pomijają arenę z marginesem.
+- **Napis** „Arena”: deska z tagiem `arenaSign` (shell), `Prefabs.signBoards` robi z niej `Signpost` dla
+  `SignController` (miasto `World/Layouts/city.luau` i serwer areny `World/Layouts/arena_pit.luau`, ta sama budowla);
+  klucz `town.sign.arena` (PL / EN).
+- **Testy:** `tests/towngen.spec.luau` W28: żadna inna budowla (ogrody, drzewa) nie stoi na arenie z marginesem (mur
+  miasta tylko poza kwadratem), podłoga nad gruntem, piasek pokrywa strefę, dwa napisy, przejścia bram wolne, brak
+  trawy w kwadracie z marginesem.
+- **Pliki:** `src/shared/Logic/TownGen/Specials.luau`, `src/shared/Logic/TownTerrain.luau`,
+  `src/client/Controllers/DecorController.luau`, `src/server/World/Prefabs.luau`,
+  `src/server/World/Layouts/{city,arena_pit}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `tests/towngen.spec.luau`, `docs/SESJE.md`. Bez przeglądu w Studio.
+### W28: grubsze i wyraźniejsze ramki rzadkości przedmiotów
+Prośba właściciela: „Żeby ramki itemów uni itp. były grubsze i bardziej widoczne”.
+- **Jedno miejsce:** nowy `UI/Components/RarityFrame.luau` rysuje ramkę każdej komórki przedmiotu (`ItemSlot`, więc
+  plecak, ekwipunek, depozyt, sklep, łup, handel, poczta, kowal), ramkę dymka przedmiotu i tabliczkę łupu na ziemi.
+- **Wygląd:** pełny kolor rzadkości (bez ciemniejszego wariantu na pergaminie), pasek wewnątrz komórki (obrys `Inner`,
+  nie nachodzi na sąsiednie komórki), grubość z `frame.thickness` (podniesionej przez właściciela 20.10, e30f5107)
+  przy 64 px, skalowana z rozmiarem komórki (0,65 do 1,3; telefon 40 px dalej czytelny), ciemna linia 1 px na krawędzi na pergaminie (żółty Unikatowy widoczny),
+  delikatne podświetlenie tła kolorem rzadkości od dołu (od Unikatowego), wewnętrzna poświata (od Heroicznego),
+  romby w narożnikach (od Unikatowego). Ikona nietknięta: pasek i poświata mieszczą się w marginesie ikony (11%).
+- **Ruch:** Legendarny ma przesuwający się błysk na ramce, Mityczny powoli pulsującą poświatę. Jedno połączenie
+  `RenderStepped` (tylko gdy taka ramka istnieje), ~30 Hz, pomija ramki niewidoczne (ukryte okno, wyłączony ScreenGui).
+  Stary obracający się gradient i poświata na zewnątrz komórki usunięte.
+- **Dymek:** obramowanie 3 px od Unikatowego, gradient dla Legendarnego i Mitycznego. **Łup na ziemi:** nazwa na
+  ciemnej tabliczce z obwódką w kolorze najlepszego przedmiotu (2,5 px od Unikatowego).
+- **Testy:** nowy `tests/rarityframe.spec.luau` (grubość rośnie z rzadkością, skala, minimum, poświata w marginesie
+  ikony, romby i tło od Unikatowego). Brak przeglądu w Studio.
+- **Pliki:** `src/shared/Logic/RarityFrame.luau`, `src/client/UI/Components/RarityFrame.luau`,
+  `tests/rarityframe.spec.luau` (nowe), `src/client/UI/Components/{ItemSlot,ItemTooltip}.luau`,
+  `src/client/Controllers/LootController.luau`, `docs/SESJE.md`.
+
+### W28: zielone bańki na Łąkach (zgłoszenie właściciela 2026-10-20)
+
+- **Co to było:** gładkie zielone elipsoidy z klocków generatora. Jałowce (`under:juniper`, ok. 440 na Łąkach) nie
+  miały modelu w zestawie, więc zawsze stały jako dwie gładkie kule do 6 studów (Wilcze Wzgórza, wąwóz, goblini);
+  krzak, sadzonka, brzoza i wierzba bez modelu (zapas, gdy model zestawu nie wczyta się) były jedną kulą. Do tego
+  `DecorController`: szablony z `Shape = Ball` i nierównym rozmiarem (mech, kamyki, błoto, grzyby, wełna) Roblox
+  wyrównuje do kuli, więc płaskie poduszki mchu stały jak okrągłe zielone kulki.
+- **Poprawki:** `Data/Kit` wpis `under:juniper` (małe iglaki Yasu `grass_tree_12` / `11`, zieleń sosny). Zapasowe
+  klocki w `MeadowsGen/Nature`: krzak jako kępa 6 brył w czterech zieleniach (ciemna podstawa, jaśniejszy wierzch),
+  czasem jagody albo drobne kwiaty; jałowiec jako stożek 4 pięter, czubek, boczny pęd i granatowe jagody; sadzonka z
+  koroną z trzech brył; dąb 3, brzoza 2 i wierzba 3 dodatkowe bryły korony. `DecorController`: kula o nierównym
+  rozmiarze to Block z `SpecialMesh` Sphere (jak `BlueprintBuild`). `KitAssets.place`: przyciemnia też samą siatkę
+  liści, więc korona bez wczytanej tekstury ma kolor odcienia, a nie jasną plamę.
+- **Testy:** `tests/meadows.spec.luau` „Meadows foliage (W28)”: żadnej samotnej zielonej kuli od 2,5 studa (każdy
+  liściasty rekwizyt to co najmniej 3 bryły) i model zestawu dla każdego slotu drzewa / podszytu z liśćmi na Łąkach.
+- **Pliki:** `src/shared/Logic/MeadowsGen/Nature.luau`, `src/shared/Data/Kit.luau`, `src/shared/Util/KitAssets.luau`,
+  `src/client/Controllers/DecorController.luau`, `tests/meadows.spec.luau`, `docs/SESJE.md`.
+- Bez przeglądu w Studio (brak MCP); modele `grass_tree_11` / `12` są już w miejscu (paczka Yasu).
 ### S149c: boss świata, wskaźnik w HUD, 10:00 i 22:00 czasu polskiego, przedmioty Hrimvalda, wkład i poczta
 
 Właściciel 2026-10-20: komunikat o bossie ma nie znikać tak szybko, boss dwa razy dziennie (10:00 i 22:00), mocniejsze
