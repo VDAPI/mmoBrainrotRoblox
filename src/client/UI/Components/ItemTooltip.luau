@@ -28,10 +28,10 @@ local ItemIcon = require(script.Parent.ItemIcon)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemScore = require(ReplicatedStorage.Shared.Logic.ItemScore)
 local ItemTraits = require(ReplicatedStorage.Shared.Data.ItemTraits)
-local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local RarityFrame = require(script.Parent.RarityFrame)
 local Scale = require(script.Parent.Parent.Scale)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
@@ -599,13 +599,15 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		ZIndex = 200,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({
-				Thickness = 2,
-				Color = scope:Computed(function(use): Color3
+			-- W28: the rarity border (3 px from Unique, gradient for Legendary / Mythic)
+			RarityFrame.panelStroke(
+				scope,
+				scope:Computed(function(use): number?
 					local item = use(shown)
-					return if item then ItemText.rarityColor(item.rarity) else Theme.Brass.Line
+					return if item then Rarities.get(item.rarity).id else nil
 				end),
-			}),
+				Theme.Brass.Line
+			),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 10),
 				PaddingBottom = UDim.new(0, 10),
@@ -664,13 +666,15 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			scope:New("UIStroke")({
-				Thickness = 2,
-				Color = scope:Computed(function(use): Color3
+			-- W28: the rarity border (3 px from Unique, gradient for Legendary / Mythic)
+			RarityFrame.panelStroke(
+				scope,
+				scope:Computed(function(use): number?
 					local item = use(compared)
-					return if item then ItemText.rarityColor(item.rarity) else Theme.Brass.Line
+					return if item then Rarities.get(item.rarity).id else nil
 				end),
-			}),
+				Theme.Brass.Line
+			),
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, 10),
 				PaddingBottom = UDim.new(0, 10),
