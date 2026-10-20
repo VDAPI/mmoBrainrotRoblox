@@ -48,7 +48,7 @@
 ## Niedokończone (kod)
 
 - **Bestiariusz (S151c):** zakładka okna osiągnięć i przycisk ✪ na HUD gotowe. Bez przeglądu w grze (zakładka na PC i
-  telefonie, podgląd 3D wpisu, toast stopnia, miejsce przycisku obok przepustki i blokady telefonu W29). Wiki czeka na
+  telefonie, podgląd 3D wpisu, toast stopnia, miejsce przycisku pod przepustką; telefon w poziomie ma osiągnięcia w szufladzie menu W29). Wiki czeka na
   odświeżenie (tytuły „Znawca …” z `wiki = false`). Ikona kategorii `hud/ach_bestiary` do dorobienia (dziś znak ❦).
   Zabójstwa rodzajów liczą się od S151c (zapis wcześniej ich nie miał).
 

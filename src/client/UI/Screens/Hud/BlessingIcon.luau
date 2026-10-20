@@ -91,7 +91,7 @@ local function icon(
 	return frame
 end
 
-local function BlessingIcon(scope: Scope, position: UDim2): Instance
+local function BlessingIcon(scope: Scope, position: Fusion.UsedAs<UDim2>): Instance
 	local elixirs = State.Value({ "character", "elixirs" })
 	local now = scope:Value(Clock.now())
 	local accumulator = 0

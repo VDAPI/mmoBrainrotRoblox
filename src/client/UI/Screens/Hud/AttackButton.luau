@@ -8,6 +8,7 @@ local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Parent.Motion)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -30,8 +31,9 @@ local function AttackButton(scope: Scope, props: Props): Instance
 	local button = scope:New("TextButton")({
 		Name = "AttackButton",
 		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -110, 1, -150),
-		Size = UDim2.fromOffset(SIZE, SIZE),
+		-- W29: in the bottom-right corner on a phone in landscape (Logic/PhoneHud)
+		Position = PhoneLayout.Position(scope, "attack", UDim2.new(1, -110, 1, -150)),
+		Size = PhoneLayout.Size(scope, "attack", UDim2.fromOffset(SIZE, SIZE)),
 		Visible = Device.Touch,
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3

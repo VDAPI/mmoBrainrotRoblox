@@ -13554,7 +13554,8 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Okno:** ostatnia kategoria „Bestiariusz” (❦; telefon: zakładka): cztery krainy z paskami postępu, wpisy krainy
   („???” przed pierwszym zabiciem, stopnie, licznik, pasek), szczegóły z podglądem 3D (`WorldMap/Preview`, telefon arkusz).
 - **Przycisk HUD:** ✪ z literą N pod przyciskiem przepustki sezonu, zawsze widoczny, „!” i pulsująca ramka po nowym
-  osiągnięciu albo stopniu do otwarcia okna (`Hud/AchievementButton`).
+  osiągnięciu albo stopniu do otwarcia okna (`Hud/AchievementButton`); telefon w poziomie: wpis w szufladzie menu W29,
+  „!” na jej przycisku ☰.
 - **Testy:** `tests/bestiary.spec.luau` (dane, stopnie, odkrywanie, łupy, słabości, premia i limit, punkty, krainy,
   osiągnięcie z `backfill`, naprawa zapisu), `achievements.spec` (szablon, suma punktów), `balance.spec` (limit premii).
   Wiki pominięta (tytuły `wiki = false`, jak S151b).

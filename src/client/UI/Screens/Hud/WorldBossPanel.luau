@@ -22,6 +22,8 @@ local ChannelBar = require(script.Parent.Parent.Parent.Components.ChannelBar)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -171,6 +173,9 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 				end
 			end
 		end
+		if use(PhoneLayout.Compact) then
+			return PhoneHud.stackTop(others) -- W29: the phone stack (Logic/PhoneHud)
+		end
 		return if others > 0 then PARTY_TOP + others * PARTY_ROW else TOUCH_TOP
 	end)
 	local height = scope:Computed(function(use): number
@@ -203,7 +208,8 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 	if props.Offset then
 		local offset = props.Offset
 		local pixels = scope:Computed(function(use): number
-			return if use(shown) and not use(touch) then use(height) + 8 else 0
+			-- W29: on a phone in landscape the tracker stacks under the panel as on PC
+			return if use(shown) and (not use(touch) or use(PhoneLayout.Compact)) then use(height) + 8 else 0
 		end)
 		scope:Observer(pixels):onBind(function()
 			offset:set(Fusion.peek(pixels))

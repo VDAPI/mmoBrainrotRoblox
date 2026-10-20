@@ -16,7 +16,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SHOW = 2 -- seconds
 
-local function PoolLabel(scope: Scope, position: UDim2): Instance
+local function PoolLabel(scope: Scope, position: Fusion.UsedAs<UDim2>): Instance
 	local barPool = State.Value({ "character", "barPool" })
 	local classId = State.Value({ "character", "class" })
 	local shown = scope:Value(false)

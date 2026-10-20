@@ -22,11 +22,11 @@ local HudAnchors = {}
 -- Anchor -> element Name on PC / on a phone (nil: no element on that device).
 HudAnchors.NAMES = table.freeze({
 	questTracker = { pc = "QuestTracker", touch = "QuestTracker" },
-	backpackButton = { pc = "inventory", touch = "inventory" }, -- the menu button of the backpack window (Hud menu)
+	backpackButton = { pc = "inventory", touch = "inventory", drawer = true }, -- the menu button of the backpack window (Hud menu)
 	potionBar = { pc = "PotionBar", touch = "PotionBar" },
 	attackButton = { touch = "AttackButton" },
 	skillBar = { pc = "Skill1", touch = "MobileSkill1" },
-} :: { [string]: { pc: string?, touch: string? } })
+} :: { [string]: { pc: string?, touch: string?, drawer: boolean? } })
 
 -- The thumbstick zone of a phone as shares of the layer (left, top, width, height).
 local JOYSTICK = { x = 0.04, y = 0.58, w = 0.26, h = 0.34 }
@@ -65,8 +65,20 @@ function HudAnchors.find(root: GuiObject, anchor: string?, touch: boolean, scale
 	if not name then
 		return nil
 	end
-	local object = root:FindFirstChild(name, true)
-	if not object or not object:IsA("GuiObject") or not shown(object, root) then
+	-- W29: the first shown element of that name (the menu buttons exist twice: over the minimap and in the phone
+	-- drawer); a menu button in the closed drawer points at the drawer's button
+	local object: Instance? = nil
+	for _, candidate in root:GetDescendants() do
+		if candidate.Name == name and candidate:IsA("GuiObject") and shown(candidate, root) then
+			object = candidate
+			break
+		end
+	end
+	if not object and names and names.drawer then
+		local toggle = root:FindFirstChild("MenuToggle", true)
+		object = if toggle and toggle:IsA("GuiObject") and shown(toggle, root) then toggle else nil
+	end
+	if not object or not object:IsA("GuiObject") then
 		return nil
 	end
 	local at = (object.AbsolutePosition - root.AbsolutePosition) / scale

@@ -1354,6 +1354,7 @@ return {
 	["cast.aiming"] = "Aiming: {skill}",
 	["hud.skillSlot"] = "Slot {n} · right-click to clear",
 	["hud.targetButton"] = "Target",
+	["hud.menuDrawer"] = "Menu", -- W29: the menu drawer button on a phone in landscape
 	["hud.page"] = "Skills {page}/2",
 	["menu.quickCast"] = "Quick cast (area skills on key press)",
 	["admin.usage.cd"] = "/cd off|on: disable / enable your skill cooldowns",
@@ -2835,6 +2836,7 @@ return {
 	["worldmap.layer.npcs"] = "NPCs",
 	["worldmap.layer.nodes"] = "Nodes",
 	["worldmap.layer.quest"] = "Quest",
+	["worldmap.layer.labels"] = "Labels",
 	["worldmap.center"] = "Centre on me",
 	["worldmap.yourLevel"] = "Your level: {level}",
 	["worldmap.band.grey"] = "easy, little experience",
