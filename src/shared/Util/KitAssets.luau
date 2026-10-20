@@ -182,6 +182,12 @@ function KitAssets.place(placement: Placement, parent: Instance): Model
 				and (d.Parent.Name:find("Canopy") or d.Parent.Name:find("Leaves"))
 			then
 				d.Color = tint
+				-- W28: the leaf mesh itself in the tint too, so a canopy whose texture has not loaded yet is a
+				-- tinted crown, never a pale or bright green blob
+				local leaves = d.Parent
+				if leaves and leaves:IsA("BasePart") then
+					(leaves :: BasePart).Color = tint
+				end
 			end
 		end
 	end
