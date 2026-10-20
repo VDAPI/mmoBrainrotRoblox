@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Parent.Motion)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -26,7 +27,7 @@ local SIZE = 104
 local function AttackButton(scope: Scope, props: Props): Instance
 	local pressed = scope:Value(false)
 	local artShown = ArtIcon.Shown(scope, ART)
-	return scope:New("TextButton")({
+	local button = scope:New("TextButton")({
 		Name = "AttackButton",
 		AnchorPoint = Vector2.new(1, 1),
 		Position = UDim2.new(1, -110, 1, -150),
@@ -78,6 +79,8 @@ local function AttackButton(scope: Scope, props: Props): Instance
 			}),
 		},
 	})
+	Motion.feedback(scope, button :: GuiButton, nil) -- W28: sinks while held
+	return button
 end
 
 return AttackButton

@@ -108,7 +108,7 @@ function BlessingBadge.new(scope: Scope, layoutOrder: number): Instance
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
 				Color = color,
-				Thickness = 1,
+				Thickness = Theme.Stroke.Thin,
 				Transparency = scope:Computed(function(use): number
 					return 0.5 - 0.5 * use(pulse)
 				end),

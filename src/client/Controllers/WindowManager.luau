@@ -30,6 +30,7 @@ local Scale = require(script.Parent.Parent.UI.Scale)
 local Window = require(script.Parent.Parent.UI.Components.Window)
 local WindowRules = require(ReplicatedStorage.Shared.Logic.WindowRules)
 local State = require(script.Parent.Parent.UI.State)
+local Theme = require(script.Parent.Parent.UI.Theme)
 
 local log = Log.new("WindowManager")
 
@@ -49,6 +50,8 @@ export type WindowDef = {
 type OpenWindow = {
 	scope: Scope,
 	z: Fusion.Value<number>,
+	closing: Fusion.Value<boolean>, -- W28: drives the closing motion of Window
+	root: GuiObject?,
 }
 
 local WindowManager = {
@@ -117,8 +120,20 @@ function WindowManager.IsOpen(id: string): Fusion.Value<boolean>
 	return openValue(id)
 end
 
--- Removes one window from the screen (no pairing rules).
-local function destroyWindow(id: string)
+-- W28: plays the closing motion of a window or dialog that already left the bookkeeping (no clicks reach it),
+-- then cleans it up.
+local function closeLater(scope: Scope, closing: Fusion.Value<boolean>, root: GuiObject?)
+	if root then
+		root.Interactable = false
+	end
+	closing:set(true)
+	task.delay(Theme.Anim.WindowCloseTime, function()
+		Fusion.doCleanup(scope)
+	end)
+end
+
+-- Removes one window from the screen (no pairing rules). W28: with the closing motion unless `instant`.
+local function destroyWindow(id: string, instant: boolean?)
 	local window = open[id]
 	if not window then
 		return
@@ -128,7 +143,11 @@ local function destroyWindow(id: string)
 	if index then
 		table.remove(stack, index)
 	end
-	Fusion.doCleanup(window.scope)
+	if instant then
+		Fusion.doCleanup(window.scope)
+	else
+		closeLater(window.scope, window.closing, window.root)
+	end
 	openValue(id):set(false)
 end
 
@@ -225,7 +244,7 @@ function WindowManager.Open(id: string)
 			local invOffset, serviceOffset = pairOffsets(openId)
 			if open[INVENTORY] and not table.find(plan.open, INVENTORY) then
 				-- The backpack was already open: move it next to the new service.
-				destroyWindow(INVENTORY)
+				destroyWindow(INVENTORY, true)
 				openWindow(INVENTORY, invOffset)
 			end
 			offset = serviceOffset
@@ -250,24 +269,28 @@ openWindow = function(id: string, offset: Vector2?)
 	local def = defs[id]
 	local scope = rootScope:innerScope()
 	local z = scope:Value(zCounter)
-	open[id] = { scope = scope, z = z }
+	local closing = scope:Value(false)
+	local entry: OpenWindow = { scope = scope, z = z, closing = closing }
+	open[id] = entry
 	local function close()
 		WindowManager.Close(id)
 	end
-	Window(scope, {
+	local root = Window(scope, {
 		Name = `Window_{id}`,
 		Title = Text.T(scope, def.titleKey),
 		Size = def.size,
 		Offset = offset,
 		Surface = UiWindows.surface(id), -- S135/S136: parchment and iron (Data/UiWindows)
 		ZIndex = z,
+		Closing = closing,
 		OnClose = close,
 		OnFocus = function()
 			bringToFront(id)
 		end,
 		[Fusion.Children] = def.build(scope, close),
-	}).Parent =
-		UIController.GetLayer("Windows")
+	}) :: GuiObject
+	entry.root = root
+	root.Parent = UIController.GetLayer("Windows")
 	bringToFront(id)
 	openValue(id):set(true)
 	Sounds.play("open")
@@ -357,13 +380,17 @@ local function showNextModal()
 	local spec = table.remove(modalQueue, 1) :: Modal.Spec
 	local scope = rootScope:innerScope()
 	modalScope = scope
+	local closing = scope:Value(false)
+	local root: GuiObject? = nil
 	local props = table.clone(spec) :: any
+	props.Closing = closing
 	props.Close = function()
 		if modalScope == scope then
 			modalScope = nil
 			modalCancel = nil
-			Fusion.doCleanup(scope)
-			showNextModal()
+			-- W28: the dialog shrinks away first; the next one in the queue follows once it is gone
+			closeLater(scope, closing, root)
+			task.delay(Theme.Anim.WindowCloseTime, showNextModal)
 		end
 	end
 	if spec.CancelText then
@@ -374,7 +401,9 @@ local function showNextModal()
 			props.Close()
 		end
 	end
-	Modal(scope, props).Parent = UIController.GetLayer("Modals")
+	local dialog = Modal(scope, props) :: GuiObject
+	root = dialog
+	dialog.Parent = UIController.GetLayer("Modals")
 	Sounds.play("open")
 end
 

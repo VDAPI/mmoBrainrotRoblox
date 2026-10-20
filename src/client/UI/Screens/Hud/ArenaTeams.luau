@@ -152,7 +152,10 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 							BackgroundColor3 = if f.out then Theme.Iron.Rule else hpColor(pct),
 							[Children] = {
 								s:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
-								s:New("UIStroke")({ Color = if side == 1 then ALLY else ENEMY, Thickness = 2 }),
+								s:New("UIStroke")({
+									Color = if side == 1 then ALLY else ENEMY,
+									Thickness = Theme.Stroke.Normal,
+								}),
 							},
 						})
 					)

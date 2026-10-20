@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Motion)
 local Theme = require(script.Parent.Parent.Theme)
 local TextInput = require(script.Parent.TextInput)
 
@@ -35,7 +36,10 @@ export type Spec = {
 
 export type Props = Spec & {
 	Close: () -> (),
+	Closing: Fusion.Value<boolean>?, -- W28: true plays the closing motion (WindowManager removes the dialog after it)
 }
+
+local DIM = 0.45 -- overlay transparency once the dialog is in place
 
 local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	local text = scope:Value("")
@@ -85,12 +89,16 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 	end
 
 	local width = 520
+	-- W28: the dialog opens and closes like a window, the dim behind it fades with it
+	local motion = Motion.progress(scope, props.Closing)
 
 	return scope:New("TextButton")({
 		Name = "ModalOverlay",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Theme.Shade,
-		BackgroundTransparency = 0.45,
+		BackgroundTransparency = scope:Computed(function(use): number
+			return 1 - (1 - DIM) * math.clamp(use(motion), 0, 1)
+		end),
 		AutoButtonColor = false,
 		Text = "",
 		Active = true,
@@ -99,7 +107,9 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 			scope:New("Frame")({
 				Name = "Dialog",
 				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 0.5),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 0.5, Motion.rise(use(motion)))
+				end),
 				Size = UDim2.fromOffset(width, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				-- S135: parchment with the iron frame of a window (a danger dialog keeps a red frame)
@@ -107,6 +117,7 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 				Active = true,
 
 				[Children] = {
+					Motion.scale(scope, motion),
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					scope:New("UIStroke")({
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,

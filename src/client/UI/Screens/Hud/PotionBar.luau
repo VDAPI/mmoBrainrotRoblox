@@ -14,6 +14,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local FullElixir = require(ReplicatedStorage.Shared.Logic.FullElixir)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Parent.Motion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
 local IconState = require(script.Parent.Parent.Parent.IconState)
 local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
@@ -248,6 +249,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 				}),
 			},
 		})
+		Motion.feedback(scope, slot :: GuiButton, Theme.Corner.Small) -- W28: hover sheen and a sink while held
 		DragDrop.register(scope, slot :: GuiObject, `pot:{entry.kind}`)
 		Tooltip.attach(
 			scope,

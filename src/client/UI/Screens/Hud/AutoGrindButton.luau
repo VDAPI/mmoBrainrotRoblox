@@ -9,6 +9,7 @@ local Workspace = game:GetService("Workspace")
 
 local AutoGrind = require(ReplicatedStorage.Shared.Logic.AutoGrind)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Parent.Motion)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -105,6 +106,7 @@ local function AutoGrindButton(scope: Scope, position: UDim2): Instance
 			}),
 		},
 	})
+	Motion.feedback(scope, button :: GuiButton, Theme.Corner.Small) -- W28: hover sheen and a sink while held
 	Tooltip.attach(
 		scope,
 		button :: GuiObject,

@@ -10,6 +10,7 @@ local Workspace = game:GetService("Workspace")
 local Button = require(script.Parent.Parent.Components.Button)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Motion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
@@ -89,6 +90,10 @@ local function ReadyCheck(scope: Scope): Instance
 		return out
 	end)
 
+	local shown = scope:Computed(function(use): boolean
+		return type(use(check)) == "table"
+	end)
+
 	return scope:New("Frame")({
 		Name = "ReadyCheck",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -98,10 +103,9 @@ local function ReadyCheck(scope: Scope): Instance
 		BackgroundColor3 = Theme.Paper.Surface,
 		BackgroundTransparency = 0,
 		Active = true,
-		Visible = scope:Computed(function(use): boolean
-			return type(use(check)) == "table"
-		end),
+		Visible = shown,
 		[Children] = {
+			Motion.popWhen(scope, shown), -- W28: springs open like a window
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,

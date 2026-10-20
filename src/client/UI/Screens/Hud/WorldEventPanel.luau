@@ -232,7 +232,13 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 				BorderSizePixel = 0,
 				Visible = active,
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					-- W28: the brass edge of the resource bars (UI/Components/Bar)
+					scope:New("UIStroke")({
+						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+						Color = Theme.Brass.Line,
+						Thickness = Theme.Stroke.Thin,
+					}),
 					scope:New("Frame")({
 						Name = "Fill",
 						BackgroundColor3 = color,
@@ -240,7 +246,7 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 						Size = scope:Computed(function(use): UDim2
 							return UDim2.fromScale(math.clamp(use(progress), 0, 1), 1)
 						end),
-						[Children] = scope:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
+						[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					}),
 				},
 			}),

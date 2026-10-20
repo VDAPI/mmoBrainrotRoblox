@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Parent.Motion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -77,13 +78,14 @@ function EmoteButton.Slot(scope: Scope, props: { OnOpen: () -> (), LayoutOrder: 
 			}),
 		},
 	})
+	Motion.feedback(scope, slot :: GuiButton, Theme.Corner.Small) -- W28: hover sheen and a sink while held
 	Tooltip.attach(scope, slot :: GuiObject, tooltip(scope))
 	return slot
 end
 
 -- Touch: a round button right of the mount button (same row as sprint and mount).
 function EmoteButton.Touch(scope: Scope, props: { OnOpen: () -> () }): Instance
-	return scope:New("TextButton")({
+	local button = scope:New("TextButton")({
 		Name = "EmoteButton",
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.new(0, 132 + 64 + 10, 1, -264),
@@ -111,6 +113,8 @@ function EmoteButton.Touch(scope: Scope, props: { OnOpen: () -> () }): Instance
 			}),
 		},
 	})
+	Motion.feedback(scope, button :: GuiButton, nil) -- W28: sinks while held
+	return button
 end
 
 return EmoteButton

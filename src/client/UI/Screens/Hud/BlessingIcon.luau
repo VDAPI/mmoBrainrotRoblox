@@ -58,7 +58,7 @@ local function icon(
 				TextColor3 = color,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIStroke")({ Color = color, Thickness = 2 }),
+					scope:New("UIStroke")({ Color = color, Thickness = Theme.Stroke.Normal }),
 					ItemIcon(scope, { Def = def, Size = UDim2.fromScale(1, 1), Visible = art }),
 					scope:New("UIPadding")({
 						PaddingTop = UDim.new(0, 6),

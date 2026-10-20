@@ -13,6 +13,7 @@ local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Crossbow = require(ReplicatedStorage.Shared.Logic.Crossbow)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Parent.Motion)
 local Keybinds = require(script.Parent.Parent.Parent.Keybinds)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
@@ -287,6 +288,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 				}),
 			},
 		})
+		Motion.feedback(scope, slot :: GuiButton, Theme.Corner.Small) -- W28: hover sheen and a sink while held
 		DragDrop.register(scope, slot :: GuiObject, `bar:{index}`)
 		Tooltip.attach(
 			scope,

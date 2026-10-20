@@ -155,6 +155,16 @@ local function Button(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		end,
 
 		[Children] = {
+			-- W28: the button sinks a little while held
+			scope:New("UIScale")({
+				Scale = scope:Spring(
+					scope:Computed(function(use): number
+						return if use(pressed) and not use(disabled) then Theme.Anim.PressScale else 1
+					end),
+					Theme.Anim.PressSpeed,
+					1
+				),
+			}),
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,

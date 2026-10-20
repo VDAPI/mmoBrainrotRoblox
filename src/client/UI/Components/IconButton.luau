@@ -33,6 +33,7 @@ export type Props = {
 
 local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	local hovered = scope:Value(false)
+	local pressed = scope:Value(false)
 	local size = Theme.Size.IconButton
 	local artShown = ArtIcon.Shown(scope, props.ArtKey)
 
@@ -46,7 +47,9 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 		Visible = if props.Visible ~= nil then props.Visible else true,
 		BackgroundColor3 = scope:Tween(
 			scope:Computed(function(use): Color3
-				if use(props.Active) == true then
+				if use(pressed) then
+					return Theme.Iron.Selected
+				elseif use(props.Active) == true then
 					return Theme.Iron.Hover
 				end
 				return if use(hovered) then Theme.Iron.Raised else Theme.Iron.Surface
@@ -66,6 +69,13 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 		end,
 		[OnEvent("MouseLeave")] = function()
 			hovered:set(false)
+			pressed:set(false)
+		end,
+		[OnEvent("MouseButton1Down")] = function()
+			pressed:set(true)
+		end,
+		[OnEvent("MouseButton1Up")] = function()
+			pressed:set(false)
 		end,
 		[OnEvent("Activated")] = function()
 			Sounds.play("click")
@@ -75,6 +85,16 @@ local function IconButton(scope: Fusion.Scope<typeof(Fusion)>, props: Props): In
 		end,
 
 		[Children] = {
+			-- W28: pressed, the tile sinks (a short spring back on release)
+			scope:New("UIScale")({
+				Scale = scope:Spring(
+					scope:Computed(function(use): number
+						return if use(pressed) then Theme.Anim.PressScaleIcon else 1
+					end),
+					Theme.Anim.PressSpeed,
+					1
+				),
+			}),
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,

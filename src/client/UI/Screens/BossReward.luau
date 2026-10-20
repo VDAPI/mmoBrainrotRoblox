@@ -27,6 +27,7 @@ local FightTable = require(script.Parent.Parent.Components.FightTable)
 local FightView = require(script.Parent.Parent.FightView)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Motion)
 local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
 local GroupLuck = require(script.Parent.Parent.GroupLuck)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
@@ -366,6 +367,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 		BackgroundColor3 = Theme.Paper.Surface,
 		Active = true,
 		[Children] = {
+			Motion.scale(scope, Motion.progress(scope)), -- W28: opens like a window
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
