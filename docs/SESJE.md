@@ -13150,3 +13150,22 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/server/Admin/Character.luau`, `src/client/Controllers/{LoginRewardController,ReturningController}.luau`,
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### W28: zielone bańki na Łąkach (zgłoszenie właściciela 2026-10-20)
+
+- **Co to było:** gładkie zielone elipsoidy z klocków generatora. Jałowce (`under:juniper`, ok. 440 na Łąkach) nie
+  miały modelu w zestawie, więc zawsze stały jako dwie gładkie kule do 6 studów (Wilcze Wzgórza, wąwóz, goblini);
+  krzak, sadzonka, brzoza i wierzba bez modelu (zapas, gdy model zestawu nie wczyta się) były jedną kulą. Do tego
+  `DecorController`: szablony z `Shape = Ball` i nierównym rozmiarem (mech, kamyki, błoto, grzyby, wełna) Roblox
+  wyrównuje do kuli, więc płaskie poduszki mchu stały jak okrągłe zielone kulki.
+- **Poprawki:** `Data/Kit` wpis `under:juniper` (małe iglaki Yasu `grass_tree_12` / `11`, zieleń sosny). Zapasowe
+  klocki w `MeadowsGen/Nature`: krzak jako kępa 6 brył w czterech zieleniach (ciemna podstawa, jaśniejszy wierzch),
+  czasem jagody albo drobne kwiaty; jałowiec jako stożek 4 pięter, czubek, boczny pęd i granatowe jagody; sadzonka z
+  koroną z trzech brył; dąb 3, brzoza 2 i wierzba 3 dodatkowe bryły korony. `DecorController`: kula o nierównym
+  rozmiarze to Block z `SpecialMesh` Sphere (jak `BlueprintBuild`). `KitAssets.place`: przyciemnia też samą siatkę
+  liści, więc korona bez wczytanej tekstury ma kolor odcienia, a nie jasną plamę.
+- **Testy:** `tests/meadows.spec.luau` „Meadows foliage (W28)”: żadnej samotnej zielonej kuli od 2,5 studa (każdy
+  liściasty rekwizyt to co najmniej 3 bryły) i model zestawu dla każdego slotu drzewa / podszytu z liśćmi na Łąkach.
+- **Pliki:** `src/shared/Logic/MeadowsGen/Nature.luau`, `src/shared/Data/Kit.luau`, `src/shared/Util/KitAssets.luau`,
+  `src/client/Controllers/DecorController.luau`, `tests/meadows.spec.luau`, `docs/SESJE.md`.
+- Bez przeglądu w Studio (brak MCP); modele `grass_tree_11` / `12` są już w miejscu (paczka Yasu).
