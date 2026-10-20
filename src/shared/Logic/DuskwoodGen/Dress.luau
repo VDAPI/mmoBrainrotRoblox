@@ -237,18 +237,10 @@ function Dress.shafts(env: Env.Env, out: { Build }, trees: { Flora.TreeInfo })
 				lod = "detail",
 				col = false,
 				q = false,
-				t = 0.94,
+				-- owner review 2026-10-21: in Studio the Neon box read as a white slab; one faint column, no core
+				t = 0.975,
 				jitter = 0,
 			}, w)
-			bp:beam(lx, gy, lz, tx, ty, tz, w * 0.5, {
-				c = "#FFF8E6",
-				m = "Neon",
-				lod = "detail",
-				col = false,
-				q = false,
-				t = 0.92,
-				jitter = 0,
-			}, w * 0.5)
 			Kit.lifeAt(env.ctx, b, "spores", lx, gy + 4, lz, 5)
 		end
 	end
