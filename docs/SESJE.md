@@ -13150,3 +13150,27 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/server/Admin/Character.luau`, `src/client/Controllers/{LoginRewardController,ReturningController}.luau`,
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### W28: szybkie klikanie bez „Nieprawidłowe żądanie”
+- **Przyczyna:** `Net.Handle` odpowiadał `error.badRequest` także na pełny kubełek limitu (remote'y z `rate` 0.5–2,
+  np. `SetPvp`, `AutoGrind`, `LureToggle`, `MailRefresh`, `ArenaSpectate`, pozwalają na 2–4 wywołania naraz). Do tego
+  drugie kliknięcie w tę samą akcję szło do serwera, gdy pierwsze już zmieniło slot (`UseItem`, `DestroyItem`,
+  `ToggleLock`, `MoveItem`, `EquipItem` na pustym slocie, `UnequipItem` już zdjętego, `SwapRings` bez pierścieni).
+- **Serwer:** limit odpowiada `error.rateLimited` (`RequestGuard.rejectCode`), `error.badRequest` tylko przy złych
+  argumentach (log z nazwą remote'a i skrótem argumentów); każde `error.badRequest` zwrócone przez handler też trafia
+  do logu z nazwą remote'a. Pusty slot po poprzednim kliknięciu: nowy cichy klucz `error.stale`; `UnequipItem`
+  pustego slotu i `SwapRings` bez pierścieni zwracają ok, `LureToggle` z tym samym stanem ok bez drugiego toastu.
+  `UnequipItem` z nieznaną nazwą slotu dalej `error.badRequest`.
+- **Klient:** `Net.Invoke` przez `Logic/RequestGuard`: to samo wywołanie (remote + argumenty) w locie czeka na
+  pierwsze i dostaje jego wynik, powtórzone w 0,25 s dostaje ostatni wynik (bez drugiego wywołania), przełącznik
+  (`Definitions.toggle`) w 0,2 s z innymi argumentami odpowiada `error.tooFast`; `Definitions.repeatable` (rzucanie,
+  zakupy po jednym, ulepszanie, rozdawanie punktów) wysyła powtórzenie od razu po odpowiedzi. `Toast.push` pomija
+  ciche klucze (`RequestGuard.SILENT`: `error.tooFast`, `error.rateLimited`, `error.stale`), przyciski HUD (Wabik,
+  Auto-polowanie, Auto-mikstury) i `ItemController` nie grają wtedy dźwięku błędu.
+- **Testy:** nowy `tests/requestguard.spec.luau` (kody odrzucenia, ciche klucze w PL i EN, klucze wywołań, werdykty
+  join / reuse / drop / send, flagi w `Definitions`).
+- **Pliki:** `src/shared/Logic/RequestGuard.luau` (nowy), `src/shared/Net/{init,Definitions}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/client/UI/Components/Toast.luau`,
+  `src/client/Controllers/ItemController.luau`, `src/client/UI/Screens/Hud/{LureButton,AutoGrindButton,AutoPotionButton}.luau`,
+  `src/server/Services/{InventoryService,EquipmentService,DepositService,LureService}.luau`,
+  `tests/requestguard.spec.luau`, `docs/{SESJE,DECYZJE}.md`.

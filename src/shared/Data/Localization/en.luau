@@ -92,6 +92,8 @@ return {
 	["error.rateLimited"] = "Too many requests, slow down.",
 	["error.slotEmpty"] = "This slot is empty.",
 	["error.slotTaken"] = "This slot is already taken.",
+	["error.stale"] = "That item has already changed.",
+	["error.tooFast"] = "Too fast, wait a moment.",
 	["error.wrongPhase"] = "You cannot do that right now.",
 	["error.name.invalidUtf8"] = "The name contains invalid characters.",
 	["error.name.tooShort"] = "The name must have at least {min} characters.",

@@ -266,7 +266,13 @@ local function moveItem(player: Player, from: number, to: number): (boolean, str
 	end
 	local changed = Inventory.move(char.inventory, InventoryService.CapacityOf(char, player), from, to)
 	if not changed then
-		return false, "error.badRequest"
+		-- W28: a drag from a slot the click before already emptied is stale, not a bad request
+		return false,
+			if from ~= to
+					and from >= 1
+					and char.inventory[tostring(from)] == nil
+				then "error.stale"
+				else "error.badRequest"
 	end
 	sync(player, changed)
 	return true, nil
@@ -305,7 +311,7 @@ local function toggleLock(player: Player, index: number): (boolean, string?)
 	end
 	local item = char.inventory[tostring(index)]
 	if not item then
-		return false, "error.badRequest"
+		return false, "error.stale" -- W28: the click before already took it (silent on the client)
 	end
 	local updated = table.clone(item)
 	updated.locked = if item.locked then nil else true
@@ -324,7 +330,7 @@ local function destroyItem(player: Player, index: number): (boolean, string?)
 	local key = tostring(index)
 	local item = char.inventory[key]
 	if not item then
-		return false, "error.badRequest"
+		return false, "error.stale" -- W28: the click before already took it (silent on the client)
 	end
 	if item.locked then
 		return false, "item.error.locked"
@@ -345,7 +351,10 @@ local function useItem(player: Player, index: number): (boolean, string?)
 	end
 	local item = char.inventory[tostring(index)]
 	local def = item and Items.get(item.id)
-	if not item or not def then
+	if not item then
+		return false, "error.stale" -- W28: the click before already took it (silent on the client)
+	end
+	if not def then
 		return false, "error.badRequest"
 	end
 	local kind = def.use and def.use.kind
