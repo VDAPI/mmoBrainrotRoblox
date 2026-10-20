@@ -11,6 +11,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
+local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -84,7 +85,7 @@ local function LureButton(scope: Scope, position: UDim2): Instance
 				local ok, err = Net.Invoke("LureToggle", wanted)
 				if ok then
 					Sounds.play("levelUp")
-				else
+				elseif not RequestGuard.isSilent(err) then
 					Sounds.play("error")
 					Toast.push(Text.now(err or "error.internal"), "error")
 				end
