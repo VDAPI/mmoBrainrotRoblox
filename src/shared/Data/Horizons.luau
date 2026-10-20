@@ -90,7 +90,7 @@ local Horizons: { [string]: Horizon } = {
 		},
 		landmarks = {
 			{ model = "desert_landmark_01", deg = 272, dist = 930, height = 300, turn = 90 },
-			{ model = "forest_landmark_01", deg = 352, dist = 720, height = 150 },
+			{ model = "forest_horizon_01", deg = 352, dist = 720, height = 150 },
 		},
 	},
 	-- Whispering Meadows (laki.md 1.7 c): north beyond the forest the snowy border peaks (the "lord from the north"),

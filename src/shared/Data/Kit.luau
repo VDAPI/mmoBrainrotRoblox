@@ -241,6 +241,12 @@ Kit.slots = {
 	["landmark:giantColossus"] = { fit = "height", size = 24.5, snow = { fixed("snow_landmark_04", 0) } },
 	["landmark:frozenFalls"] = { fit = "height", size = 39, snow = { fixed("snow_landmark_01", 0) } },
 	["landmark:watchTower"] = { fit = "height", size = 34, snow = { fixed("snow_landmark_02", 0) } },
+	-- owner 2026-10-20 (TRIPO-REKWIZYTY-MAP): the Duskwood's cult runestones and the Vael chapel, the Ashen Wastes'
+	-- Ribcage Gate and the skull over the hyenas' den
+	["landmark:cultStone"] = { fit = "height", size = 6, forest = { v("forest_landmark_01", 1, 1, 1) } },
+	["landmark:chapel"] = { fit = "width", size = 18, forest = { fixed("forest_landmark_02", 90) } },
+	["landmark:ribcage"] = { fit = "width", size = 30, desert = { fixed("desert_landmark_03", 0) } },
+	["landmark:bigSkull"] = { fit = "height", size = 9, desert = { fixed("desert_landmark_04", 0) } },
 	["landmark:harpyNest"] = { fit = "width", size = 14, snow = { fixed("snow_nest_01", 0) } },
 } :: { [string]: Entry }
 

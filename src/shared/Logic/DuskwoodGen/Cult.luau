@@ -225,6 +225,8 @@ local function ritualCircle(env: Env.Env, out: { Build })
 		local gy = Kit.gy(ctx, b, lx, lz)
 		local yaw = -math.deg(a) + 90
 		local h = 6 + (i % 3) * 1.2
+		-- owner 2026-10-20: each runestone is an asset kit slot (Data/Kit "landmark:cultStone", the owner's rune stone)
+		bp:beginKit("landmark:cultStone", lx, gy - 0.6, lz, h / 6, "shell")
 		bp:add("box", 2.4, h, 1.4, lx, gy + h / 2 - 0.6, lz, 0, yaw, 0, o(RUNE, "shell", { q = true }))
 		-- the runes glow violet at night
 		bp:push(lx, gy, lz, 0, yaw, 0)
@@ -240,6 +242,7 @@ local function ritualCircle(env: Env.Env, out: { Build })
 			})
 		end
 		bp:pop()
+		bp:endKit()
 	end
 	-- the altar with violet fire, a dagger, black wax run down from the candles and ash (W16, bor.md A4: no blood), coin
 	-- bowls

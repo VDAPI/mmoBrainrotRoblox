@@ -485,7 +485,6 @@ end
 function CreatureCards.worldBoss(ctx: Context): Spec?
 	local now = Clock.now()
 	local card = WorldBoss.cardOf(State.Get({ "worldBoss" }), { level = ctx.level, now = now })
-	local data = WorldBoss.Data
 	local stateLine: DetailCard.Line
 	if card.state == "sleeps" then
 		stateLine = ln(T("worldboss.card.sleeps", { time = ClockText.hhmm(card.at or now) }), Theme.Paper.Text, true)
