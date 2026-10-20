@@ -74,6 +74,7 @@ function AccountSchema.accountTemplate(): AccountData
 			friendJoin = "friends", -- S150: who may join my server: friends or nobody (reconcile)
 			achToasts = true, -- S151: achievement toasts (false = one line in the system chat; reconcile)
 			achHint = false, -- S151b: the one-time "star an achievement" hint of the achievements window was shown
+			hud = {}, -- S156: the player's HUD layout (Logic/HudLayout; reconcile)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },

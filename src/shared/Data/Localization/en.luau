@@ -8274,6 +8274,8 @@ return {
 	["arena.hof.bracket"] = "Levels {min}–{max}",
 	["leaderboard.board.arena3"] = "Arena: 3 vs 3 rating",
 	["leaderboard.tab.arena3"] = "Arena 3 vs 3",
+	["menu.hudLayout"] = "HUD layout (drag the quests by ⠿, resize by ◢)",
+	["menu.hudLayout.reset"] = "Reset",
 	["leaderboard.tab.playtime"] = "Time played",
 	["leaderboard.board.playtime"] = "Time played",
 	["leaderboard.podium.level"] = "Level {level}",
