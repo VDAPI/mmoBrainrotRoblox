@@ -496,3 +496,11 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 
 - Minimapa: kropki potworów większe (9 / 12 / 16 px zamiast 6 / 9 / 12), w kolorze rodziny (`Data/Families`: zwierzę, humanoid, nieumarły, bestia, żywiołak, smok; `UiPalette.map.fam*`), z ciemnym obrysem; elity w złotej obwódce.
 - Mapa świata: ikony większe o ok. 1/3 (jaskinie, lochy, portale, boss świata, kryjówki Elity II, NPC, złoża).
+
+### W25 / W26: modele Tripo w grze
+
+- 47 modeli z `Pobrane\monsters_ready` (Blender: klipy Mixamo przeniesione na rigi Tripo, bossy do 19,5 tys. trójkątów) zaimportowane w Studio do `ReplicatedStorage.Assets.Monsters.<id>` (tylko w miejscu, zapisuje właściciel): przód −Z, `HumanoidRootPart` u stóp (latające 2,5 st. niżej), skala do wysokości generatora, części na `WeldConstraint`. Atrybut `Hover` na szablonie.
+- `Data/MonsterAssets`: wpis `asset` każdego (hitbox i wysokość z generatora, więc walka bez zmian), scalany w `Data/MonsterLooks` (z odcieniem regionu dla wariantów, które dziedziczą).
+- 27 dwunożnych (rig `bones`): klipy idle / chód / bieg / atak / śmierć z importu, wyciągnięte ze Studio do `Data/MonsterClips/<id>` (15 kl./s, 22 kości, kwaterniony int16 w base64; format w nagłówku), czytane przez `Logic/BoneClip`, grane przez `client/Anim/BoneClips` (ścieżki jak `AnimationTrack`, mieszanie z przejściami, `Bone.Transform`), bez publikowania animacji. Test `boneclip.spec`.
+- 20 pozostałych (rig `static`): model wisi na `Motor6D` `Gait_Body` z rolą `body`, więc oddycha, unosi się, pochyla przy ataku, drga od ciosu i przewraca się przy śmierci jak generator.
+- Obejrzane w Play: wszystkie stoją, patrzą przodem, idle / chód / atak dwunożnych działają.
