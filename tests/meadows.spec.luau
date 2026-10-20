@@ -4,6 +4,7 @@
 -- character, bridges and fishing spots.
 
 local Ambience = require("../src/shared/Data/Ambience")
+local KitData = require("../src/shared/Data/Kit")
 local AreaSpawns = require("../src/shared/Logic/AreaSpawns")
 local Areas = require("../src/shared/Data/Areas")
 local Maps = require("../src/shared/Data/Maps")
@@ -260,5 +261,65 @@ describe("Meadows generator (S26)", function()
 		expect((shapes.bridge or 0) >= 3).toBe(true)
 		expect((shapes.field or 0) >= 3).toBe(true)
 		expect(#MeadowsGen.trees() > 200).toBe(true)
+	end)
+end)
+
+-- W28 (owner 2026-10-20: "green unrendered blobs on the Meadows"): foliage comes in clusters, never one bare green ball.
+local function greenish(hex: string): boolean
+	local r, g, b =
+		tonumber(string.sub(hex, 2, 3), 16), tonumber(string.sub(hex, 4, 5), 16), tonumber(string.sub(hex, 6, 7), 16)
+	return r ~= nil and g ~= nil and b ~= nil and g > r + 6 and g > b + 6
+end
+
+describe("Meadows foliage (W28)", function()
+	it(
+		"draws no lone green ball of 2.5 studs or more: every leafy prop is a cluster of at least three lumps",
+		function()
+			local bad: { string } = {}
+			for _, b in MeadowsGen.all() do
+				-- group by kit slot (a tree, a bush), the pieces outside any slot by Build
+				local groups: { [string]: { n: number, big: number } } = {}
+				for _, piece in b.bp.pieces do
+					if piece.s == "ball" and greenish(piece.c) then
+						local key = if piece.k then `{b.name}#{piece.k}` else b.name
+						local g = groups[key] or { n = 0, big = 0 }
+						g.n += 1
+						g.big = math.max(g.big, piece.size[1], piece.size[2], piece.size[3])
+						groups[key] = g
+					end
+				end
+				for key, g in groups do
+					if g.big >= 2.5 and g.n < 3 then
+						table.insert(bad, `{key} ({g.n} ball, {g.big})`)
+					end
+				end
+			end
+			expect(table.concat(bad, ", ")).toBe("")
+		end
+	)
+
+	it("has an asset kit model for every leafy tree and undergrowth slot of the Meadows", function()
+		local missing: { [string]: boolean } = {}
+		for _, b in MeadowsGen.all() do
+			local leafy: { [number]: boolean } = {}
+			for _, piece in b.bp.pieces do
+				if piece.k and piece.s == "ball" and piece.m == "LeafyGrass" then
+					leafy[piece.k] = true
+				end
+			end
+			for k in leafy do
+				local key = b.bp.kits[k].key
+				local entry = KitData.slots[key]
+				if not (entry and (entry :: any).grass) then
+					missing[key] = true
+				end
+			end
+		end
+		local list = {}
+		for key in missing do
+			table.insert(list, key)
+		end
+		table.sort(list)
+		expect(table.concat(list, ", ")).toBe("")
 	end)
 end)
