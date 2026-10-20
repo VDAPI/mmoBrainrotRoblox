@@ -4799,11 +4799,19 @@ return {
 				session = "S134c",
 				why = "80 -> 90 with the bigger waves (owner answer 4a)",
 			},
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: phaseEvery 120 (6 phases over 15 min, the commander at the latest at 600 s)",
+			},
 		},
 		["WorldEvents:kinds.invasion.commanderAt"] = {
 			{
 				session = "S134c",
 				why = "480 -> 630: the commander at the latest after 10.5 min of the 15 (the waves need longer)",
+			},
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: the commander comes with the last phase, at the latest (phases - 1) x phaseEvery = 600 s (Logic/WorldEvents.commanderLatest; S134c 630)",
 			},
 		},
 		["WorldEvents:kinds.invasion.commanderGap"] = {
@@ -4829,6 +4837,10 @@ return {
 				session = "S134c",
 				why = "new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2)",
 			},
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: Elites per phase (elitesPerPhase)",
+			},
 		},
 		["WorldEvents:scale.commander*"] = {
 			{
@@ -4846,6 +4858,116 @@ return {
 			{
 				session = "S134c",
 				why = "owner answer 5 (a chance at an Epic = Legendary, the game has no Epic): Unique 60 / Heroic 37 / Legendary 3 (half the boss's base 6 %, an event every hour without a daily limit), never Mythic (S101: 80 / 20)",
+			},
+		},
+		-- S134d invasion zone (owner 2026-10-20, docs/SESJE.md "S134d: Inwazja jako strefa"); session S156 = the ledger's
+		-- numbered session after the S154 snapshot
+		["WorldEvents:kinds.invasion.waves"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: the waves became 6 intensity phases (phases)",
+			},
+		},
+		["WorldEvents:kinds.invasion.minWaveGap"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: minPhase 60",
+			},
+		},
+		["WorldEvents:kinds.invasion.clearShare"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: a phase ends early on phaseKills x the population killed in it",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: waves of 10 + 3 per player became a live population refilled in place (population)",
+			},
+		},
+		["WorldEvents:kinds.invasion.phases"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: 6 intensity phases (owner: waves as phases over 15 min, each stronger)",
+			},
+		},
+		["WorldEvents:kinds.invasion.phaseEvery"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: a phase lasts at most 120 s (1-3 players reach the commander at 600 s, 5 players at 490-600 s; 3 players end in 0.75-0.78 of 15 min, <= 0.8)",
+			},
+		},
+		["WorldEvents:kinds.invasion.minPhase"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: a phase ends early at the soonest after 60 s (a big party does not rush the commander in 5 min)",
+			},
+		},
+		["WorldEvents:kinds.invasion.phaseKills"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: a phase ends early once the party killed 1 x the population in it (5 players: 87-120 s a phase)",
+			},
+		},
+		["WorldEvents:kinds.invasion.elitesPerPhase*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: live Elites of the population by phase 0 / 1 / 1 / 2 / 2 / 3 (more Elites each phase), refilled first",
+			},
+		},
+		["WorldEvents:kinds.invasion.elite2Phase"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: phase 5 brings one Elite II of the ground (it holds an early end of the phase), phase 6 the commander",
+			},
+		},
+		["WorldEvents:kinds.invasion.population.*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: owner 'many more monsters': live population min(60, 18 + 6 x players in the radius) = 24 / 36 / 48 for 1 / 3 / 5 (S134c waves 13 / 19 / 25), 60 the per-server cap of one event",
+			},
+		},
+		["WorldEvents:kinds.invasion.refillEvery"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: the zone is topped up every 3 s",
+			},
+		},
+		["WorldEvents:kinds.invasion.refillBatch"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: at most 8 monsters a refill (no pop-in of a whole population; technical)",
+			},
+		},
+		["WorldEvents:kinds.invasion.mods.*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: the zone's monsters (not the commander) hp x1.3, atk x1.2 (owner's e.g.): a pull + Elite of the zone 0.04-0.18 of the sustain for 3 players, solo ends on the edge (0.91-1.01 of the limit)",
+			},
+		},
+		["WorldEvents:kinds.invasion.expMul"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: EXP of the zone's kills x1.4 (owner's e.g. x1.25 gave 0.92-1.01 of grinding the same ground with potions, the commander's part kills slower): 3 players 1.02-1.11 x potion grinding, 4.2-5.4 x resting grinding (Balance.targetsS134c S134d rows)",
+			},
+		},
+		["WorldEvents:kinds.invasion.zone.*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: the zone (owner: spawn in one area, no long runs): radius 70, 28 spread spawn points from 16 to 64 studs, none within 18 of a player, aggro 25, soft leash 30 from the own spot, hard leash to radius + 15 from the centre, points 18 above / below the centre dropped",
+			},
+		},
+		["WorldEvents:kinds.invasion.radius"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): 160 -> 100: participants, heals and the population count within the zone + 30",
+			},
+		},
+		["WorldEvents:kinds.invasion.leash"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): 120 -> 100: the commander's leash from the centre (the zone + 30)",
 			},
 		},
 		-- S134d: fight back, Auto Potions, Auto Hunt (docs/SESJE.md S134d)

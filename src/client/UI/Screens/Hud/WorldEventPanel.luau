@@ -1,8 +1,8 @@
 --!strict
 -- World event panel (S101, docs/DESIGN-15.md §4): seen by the players on the event's map. The kind and the hunting
--- ground, the time to the start (warning) or to the end, the progress (waves, then the commander's / champion's
--- HP), the own contribution (counted for the reward or not) and "Guide" (like ➤ of the quest tracker). PC: the
--- right column over the quest tracker, which moves down by `Offset` while the panel shows; touch: the left column
+-- ground, the time to the start (warning) or to the end, the progress (S134d: the Invasion's phases with the live
+-- monsters and the kills; then the commander's / champion's HP), the own contribution (counted for the reward or
+-- not) and "Guide" (like ➤ of the quest tracker). PC: the right column over the quest tracker, which moves down by `Offset` while the panel shows; touch: the left column
 -- under the portrait and the effect icons, below the party frames when in a party (the right column holds the
 -- minimap, the tracker and the skill buttons). S149b: under the world boss panel when both show (`Above`).
 -- Reads only the narrow branches `worldEvent` and `zone.map`; the clock ticks every 0.5 s like Elite2Timer.
@@ -171,7 +171,7 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 	end)
 	local progress = scope:Computed(function(use): number
 		local e = use(current)
-		return if e then WorldEvents.progressOf(e) else 0
+		return if e then WorldEvents.progressOf(e, use(now)) else 0
 	end)
 	local progressText = scope:Computed(function(use): string
 		local e = use(current)
@@ -183,7 +183,12 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 			return Text.get(use, "hud.event.boss", { name = Text.get(use, e.boss), pct = pct })
 		end
 		if e.kind == "invasion" then
-			return Text.get(use, "hud.event.wave", { wave = e.wave or 0, waves = e.waves or 0, left = e.left or 0 })
+			return Text.get(use, "hud.event.phase", {
+				phase = e.stage or 0,
+				phases = e.stages or 0,
+				alive = e.alive or 0,
+				kills = e.kills or 0,
+			})
 		end
 		return ""
 	end)

@@ -38,16 +38,18 @@ Cliffs.edgeX = edgeX
 local function cryptGate(env: Env.Env, out: { Build })
 	local ctx = env.ctx
 	local b = Env.atSite(env, "cryptGate", "cryptGate", 30)
+	b.frames = "duskwood_duskwood_cave"
 	local bp = b.bp
 	local y0 = -1.5
-	-- the facade of red rock with the dark gateway (the portal stands 6 studs in front of it)
+	-- the facade of red rock with the dark gateway; W28: the portal stands in the gateway (Data/Areas, x 748.5), the
+	-- iron doors swung open along its sides (one of them half shut the gateway)
 	bp:box(56, 38, 28, 0, y0 + 19, -3, o(RED, "shell", { q = true }))
 	bp:box(17, 21, 1, 0, y0 + 10.5, -17.4, o(Kit.dark, "shell", { q = false }))
 	bp:box(22, 4, 4, 0, y0 + 23, -18.6, o(RED_DARK, "shell", { q = false }))
 	for _, side in { -1, 1 } do
 		bp:box(3, 24, 3, side * 10, y0 + 12, -18.4, o(RED_DARK, "detail", { col = false }))
 		-- the iron doors, one ajar
-		bp:push(side * 8.4, y0, -17.6, 0, if side > 0 then -38 else 4, 0)
+		bp:push(side * 8.4, y0, -17.6, 0, -side * 88, 0)
 		bp:box(8, 19, 0.6, -side * 4, 9.5, 0, o(Kit.iron, "detail", { col = false }))
 		for k = 0, 3 do
 			bp:box(8.1, 0.4, 0.7, -side * 4, 3 + k * 4.4, 0, o({ c = "#2A2826", m = "CorrodedMetal" }, "fine"))

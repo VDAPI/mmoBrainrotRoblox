@@ -167,6 +167,21 @@ local function Minimap(scope: Scope, props: Props): Instance
 		markPool[i].Visible = false
 		UiArtState.decorate(markPool[i], nil)
 	end
+	-- S134d: the Invasion zone's circle (radius from the state); the disc's CanvasGroup clips it
+	local eventZone = Instance.new("Frame")
+	eventZone.Name = "EventZone"
+	eventZone.AnchorPoint = Vector2.new(0.5, 0.5)
+	eventZone.BackgroundTransparency = 0.82
+	eventZone.BorderSizePixel = 0
+	eventZone.ZIndex = 2
+	eventZone.Visible = false
+	eventZone.Parent = dynamic
+	local eventZoneCorner = Instance.new("UICorner")
+	eventZoneCorner.CornerRadius = UDim.new(0.5, 0)
+	eventZoneCorner.Parent = eventZone
+	local eventZoneStroke = Instance.new("UIStroke")
+	eventZoneStroke.Thickness = 1.5
+	eventZoneStroke.Parent = eventZone
 	local eventGlyph = glyph(dynamic, "⚔", MAP.event, Vector2.zero, 20, 6)
 	eventGlyph.Visible = false
 	-- S149b: the live world boss (in the disc) and the arrow towards it (out of the disc)
@@ -520,6 +535,17 @@ local function Minimap(scope: Scope, props: Props): Instance
 				else nil
 			local eventPoint = if eventDef and type(event) == "table" then at(event.x, event.z) else nil
 			eventGlyph.Visible = eventPoint ~= nil and (eventPoint - pixel).Magnitude <= EDGE
+			local zone = if eventPoint and type(event) == "table" then tonumber(event.zone) else nil
+			eventZone.Visible = zone ~= nil
+			if eventDef and eventPoint and zone and type(event) == "table" then
+				local size = math.max(6, (at(event.x + zone, event.z) - eventPoint).Magnitude * 2)
+				local tint = Theme.tint(eventDef.color)
+				eventZone.Position = UDim2.fromOffset(eventPoint.X, eventPoint.Y)
+				eventZone.Size = UDim2.fromOffset(size, size)
+				eventZone.BackgroundColor3 = tint
+				eventZoneStroke.Color = tint
+				eventZoneStroke.Transparency = if event.phase == "warn" then 0.5 else 0.1
+			end
 			if eventDef and eventPoint and type(event) == "table" then
 				eventGlyph.Position = UDim2.fromOffset(eventPoint.X, eventPoint.Y)
 				eventGlyph.Text = eventDef.glyph

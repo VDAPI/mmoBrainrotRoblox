@@ -170,7 +170,41 @@ for _, onMap in byMap do
 	end)
 end
 
+-- W28 (owner: the purple field outside its frame, "E" at the boss gate refused): the one geometry of a portal arch
+-- (World/Prefabs.portal) and of a dungeon gate (Prefabs.dungeonGate) in the portal's frame (x across, y up from the
+-- ground, -z its face), the box round it the dressing keeps out of (tests/portals.spec), and the interaction ranges
+-- shared by the "E" prompt on the field / door and the server's check (TravelService, DungeonService).
+local ARCH = table.freeze({
+	pillarX = 6, -- pillars' centres (2.5 thick, 15 tall)
+	height = 18, -- the arch (and the painted model scaled to it)
+	field = table.freeze({ w = 9.5, h = 13.5, y = 7.5, d = 0.4 }), -- the purple field, between the pillars
+})
+local GATE = table.freeze({
+	hornX = 8, -- the leaning horns (3 thick, 18 tall)
+	height = 18,
+	door = table.freeze({ w = 12, h = 15, y = 7.5, d = 0.6 }), -- the red door
+})
+local CLEARANCE: { [Kind]: { center: { number }, half: { number } } } = {
+	-- from 1 stud over the ground (rubble, tracks and furs on the threshold stay) to the arch's top
+	portal = { center = { 0, 9.5, 0 }, half = { 7.25, 8.5, 1.25 } },
+	cave = { center = { 0, 9.5, 0 }, half = { 7.25, 8.5, 1.25 } },
+	exit = { center = { 0, 9.5, 0 }, half = { 7.25, 8.5, 1.25 } },
+	dungeon = { center = { 0, 9.5, 0 }, half = { 9.5, 8.5, 1.5 } },
+}
+-- The prompt shows this close to the field / door centre; the server accepts up to SERVER_RANGE from the same point
+-- (the root part stands a few studs lower and moves on while the request travels).
+local PROMPT_RANGE = 12
+local SERVER_RANGE = PROMPT_RANGE + 8
+
 return table.freeze({
+	ARCH = ARCH,
+	GATE = GATE,
+	PROMPT_RANGE = PROMPT_RANGE,
+	SERVER_RANGE = SERVER_RANGE,
+	-- The box (portal frame) a portal of `kind` keeps free of dressing (nil: city gates, drawn by the town plan).
+	clearance = function(kind: Kind): { center: { number }, half: { number } }?
+		return CLEARANCE[kind]
+	end,
 	list = list,
 	byId = byId,
 	get = function(id: string): Portal?
