@@ -37,7 +37,9 @@ Locomotion.clips = {
 	fall = "rbxassetid://134039131468808", -- Falling Idle
 	land = "rbxassetid://71203138252727", -- Falling To Landing
 	climb = "rbxassetid://97694774293222", -- Climbing Ladder
-	swim = "rbxassetid://127317644570676", -- Swimming
+	-- owner 2026-10-20: the Mixamo "Swimming" (127317644570676) lies the body down itself and the Swimming state tilts the
+	-- character too: upside down. The Roblox swim clip is made for the tilt.
+	swim = "rbxassetid://507784897",
 	swimIdle = "rbxassetid://118483475541123", -- Treading Water
 } :: ClipSet
 
