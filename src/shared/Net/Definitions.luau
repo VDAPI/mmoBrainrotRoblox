@@ -5,12 +5,17 @@
 -- dir:  "c2s" client -> server, "s2c" server -> client, "both"
 -- rate: allowed calls per second per player (c2s only; burst = 2x rate)
 -- args: argument spec checked by Net before the handler runs (c2s only), see Net.Check
+-- toggle: (functions) W28 a switch: the client sends one call of it per Logic/RequestGuard.TOGGLE_WINDOW at most
+-- repeatable: (functions) W28 the same call twice in a row is meant (casts, buying one by one): the client does not
+--   answer a repeat from the last call's results (Logic/RequestGuard "reuse")
 
 export type Definition = {
 	kind: "event" | "function",
 	dir: "c2s" | "s2c" | "both",
 	rate: number?,
 	args: { string }?,
+	toggle: boolean?,
+	repeatable: boolean?,
 }
 
 local Definitions: { [string]: Definition } = {
@@ -62,14 +67,14 @@ local Definitions: { [string]: Definition } = {
 	SetKeybind = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (action | "*", key?), S17
 
 	-- Stats and progression
-	AllocateStats = { kind = "function", dir = "c2s", rate = 2, args = { "table", "integer?" } }, -- ({ str, dex, int, vit }, buildSlot?)
+	AllocateStats = { kind = "function", dir = "c2s", rate = 2, args = { "table", "integer?" }, repeatable = true }, -- ({ str, dex, int, vit }, buildSlot?)
 	LevelUp = { kind = "event", dir = "s2c" }, -- (player, newLevel, statPoints, pathPoints, fromLevel, skillPoints) to nearby players; S59 adds fromLevel, S137 skillPoints
 
 	-- Combat
 	-- (entityId or nil to clear, attack: false keeps the target but stops the auto-attack; S18)
 	SetTarget = { kind = "event", dir = "c2s", rate = 12, args = { "string?", "boolean?" } },
 	SetSprint = { kind = "event", dir = "c2s", rate = 10, args = { "boolean" } }, -- S18
-	SetMounted = { kind = "function", dir = "c2s", rate = 4, args = { "boolean" } }, -- S96: (true = mount, false = dismount) -> (ok, errKey?)
+	SetMounted = { kind = "function", dir = "c2s", rate = 4, args = { "boolean" }, toggle = true }, -- S96: (true = mount, false = dismount) -> (ok, errKey?)
 	MountUpgrade = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (mount id) at the stablemaster, S97
 	MountSetActive = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (mount id), S97
 	-- S20: quick sell (npcId, max rarity 1..2), item lock (backpack index)
@@ -84,15 +89,15 @@ local Definitions: { [string]: Definition } = {
 
 	-- Items (S04). Functions answer (ok, errorKey?).
 	MoveItem = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "integer" } }, -- (from, to)
-	SplitStack = { kind = "function", dir = "c2s", rate = 4, args = { "integer", "integer" } }, -- (from, amount)
-	SortInventory = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	SplitStack = { kind = "function", dir = "c2s", rate = 4, args = { "integer", "integer" }, repeatable = true }, -- (from, amount)
+	SortInventory = { kind = "function", dir = "c2s", rate = 1, args = {}, toggle = true },
 	DestroyItem = { kind = "function", dir = "c2s", rate = 4, args = { "integer" } },
 	UseItem = { kind = "function", dir = "c2s", rate = 6, args = { "integer" } },
 	EquipItem = { kind = "function", dir = "c2s", rate = 6, args = { "integer", "string?" } }, -- (index, slot?)
 	UnequipItem = { kind = "function", dir = "c2s", rate = 6, args = { "string", "integer?" } }, -- (slot, index?)
-	SwapRings = { kind = "function", dir = "c2s", rate = 4, args = {} }, -- S29: ring1 <-> ring2
+	SwapRings = { kind = "function", dir = "c2s", rate = 4, args = {}, toggle = true }, -- S29: ring1 <-> ring2
 	SetPotionSlot = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string?" } }, -- (hp|mana|energy, itemId?)
-	UsePotion = { kind = "function", dir = "c2s", rate = 6, args = { "string" } },
+	UsePotion = { kind = "function", dir = "c2s", rate = 6, args = { "string" }, repeatable = true },
 	PickupLoot = { kind = "function", dir = "c2s", rate = 10, args = { "string" } },
 	LootSpawn = { kind = "event", dir = "s2c" }, -- (bag) only to the owner
 	LootUpdate = { kind = "event", dir = "s2c" }, -- (bagId, items)
@@ -105,8 +110,8 @@ local Definitions: { [string]: Definition } = {
 	PutOnBar = { kind = "function", dir = "c2s", rate = 6, args = { "string", "integer?" } }, -- (skillId, slot 1..8?) S56
 	AckRework = { kind = "event", dir = "c2s", rate = 0.5, args = {} }, -- S56: the rework notice was seen
 	-- Skill points and weapon pools (S137, DESIGN-18 §11; PathService); every handler returns (ok, errKey?)
-	AllocateSkills = { kind = "function", dir = "c2s", rate = 2, args = { "string", "table" } }, -- (poolId, { [skillId] = +n })
-	RefundSkillRank = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string" } }, -- (poolId, skillId)
+	AllocateSkills = { kind = "function", dir = "c2s", rate = 2, args = { "string", "table" }, repeatable = true }, -- (poolId, { [skillId] = +n })
+	RefundSkillRank = { kind = "function", dir = "c2s", rate = 4, args = { "string", "string" }, repeatable = true }, -- (poolId, skillId)
 	ResetSkills = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- S138: the full reset (ranks and nodes; scroll)
 	SetPoolBar = { kind = "function", dir = "c2s", rate = 10, args = { "string", "integer", "string?" } }, -- (poolId, slot 1..8, skillId?)
 	-- Class paths (S57, PathService; S138: directions, no main path); every handler returns (ok, errKey?)
@@ -114,13 +119,13 @@ local Definitions: { [string]: Definition } = {
 	RefundNode = { kind = "function", dir = "c2s", rate = 8, args = { "string" } }, -- (nodeId)
 	ResetPaths = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- refund every node (S138: gold from L20)
 	ChooseBreakpoint = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer", "string" } }, -- (skillId, 5|10, "a"|"b")
-	SwitchBuildSet = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- S58: build set 1 <-> 2 (ROZWOJ 2.9)
+	SwitchBuildSet = { kind = "function", dir = "c2s", rate = 1, args = {}, toggle = true }, -- S58: build set 1 <-> 2 (ROZWOJ 2.9)
 	CopyBuildSet = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- S58: copy the active set onto the other one
-	CastSkill = { kind = "function", dir = "c2s", rate = 8, args = { "string", "string?", "any?" } }, -- (skillId, targetId?, aim: Vector3?)
+	CastSkill = { kind = "function", dir = "c2s", rate = 8, args = { "string", "string?", "any?" }, repeatable = true }, -- (skillId, targetId?, aim: Vector3?)
 	SkillFx = { kind = "event", dir = "s2c" }, -- skill visuals for players nearby
 
 	-- City (S06). All validate the distance to the NPC on the server.
-	Buy = { kind = "function", dir = "c2s", rate = 6, args = { "string", "string", "integer" } }, -- (npcId, itemId, n)
+	Buy = { kind = "function", dir = "c2s", rate = 6, args = { "string", "string", "integer" }, repeatable = true }, -- (npcId, itemId, n)
 	Sell = { kind = "function", dir = "c2s", rate = 8, args = { "string", "table" } }, -- (npcId, { index }); S134f: 4 → 8
 	Buyback = { kind = "function", dir = "c2s", rate = 4, args = { "string", "integer" } }, -- (npcId, buyback index)
 	HealMe = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
@@ -128,9 +133,15 @@ local Definitions: { [string]: Definition } = {
 	DepositItem = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "integer?" } }, -- (inv index, vault index?)
 	WithdrawItem = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "integer?" } }, -- (vault index, inv index?)
 	MoveDeposit = { kind = "function", dir = "c2s", rate = 10, args = { "integer", "integer" } },
-	SortDeposit = { kind = "function", dir = "c2s", rate = 1, args = {} },
-	Craft = { kind = "function", dir = "c2s", rate = 4, args = { "string" } }, -- (recipeId)
-	UpgradeItem = { kind = "function", dir = "c2s", rate = 3, args = { "string", "string", "boolean" } }, -- ("inv"|"eq", key, protect)
+	SortDeposit = { kind = "function", dir = "c2s", rate = 1, args = {}, toggle = true },
+	Craft = { kind = "function", dir = "c2s", rate = 4, args = { "string" }, repeatable = true }, -- (recipeId)
+	UpgradeItem = {
+		kind = "function",
+		dir = "c2s",
+		rate = 3,
+		args = { "string", "string", "boolean" },
+		repeatable = true,
+	}, -- ("inv"|"eq", key, protect)
 	Dismantle = { kind = "function", dir = "c2s", rate = 3, args = { "table" } }, -- ({ index })
 	DismantleAll = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (max rarity)
 	UnbindItem = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string" } }, -- ("inv"|"eq", key)
@@ -142,7 +153,7 @@ local Definitions: { [string]: Definition } = {
 		args = { "string", "string", "integer", "string", "boolean" },
 	},
 	-- S156: ("inv"|"eq", key, the item's line signature Reroll.signature) -> (ok, err, { changes, n })
-	RerollAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string", "string" } },
+	RerollAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string", "string" }, repeatable = true },
 	-- S154: ("inv"|"eq", key, look key or "" to remove, expected item uid) -> (ok, err, { look })
 	TransmogApply = {
 		kind = "function",
@@ -152,7 +163,7 @@ local Definitions: { [string]: Definition } = {
 	},
 
 	-- Alchemy, blessings, gathering, fishing, stones (S07)
-	StartRecipe = { kind = "function", dir = "c2s", rate = 3, args = { "string", "string" } }, -- (npcId, recipeId)
+	StartRecipe = { kind = "function", dir = "c2s", rate = 3, args = { "string", "string" }, repeatable = true }, -- (npcId, recipeId)
 	CollectAlchemy = { kind = "function", dir = "c2s", rate = 3, args = { "string" } }, -- (npcId) -> collected count
 	UseBlessing = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (inv index), replaces active
 	StartGather = { kind = "function", dir = "c2s", rate = 3, args = { "string" } }, -- (node uid) -> (ok, err, seconds)
@@ -173,14 +184,14 @@ local Definitions: { [string]: Definition } = {
 	PartyInviteUser = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (userId)
 	PartyInvited = { kind = "event", dir = "s2c" }, -- (fromName, seconds)
 	PartyRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
-	PartyLeave = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	PartyLeave = { kind = "function", dir = "c2s", rate = 1, args = {}, toggle = true },
 	PartyKick = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } },
 	PartyPromote = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } },
 	DungeonInfo = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (region) -> info
 	EnterDungeon = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (region)
 	BossAnnounce = { kind = "event", dir = "s2c" }, -- (key, args) big centred message (boss fights, duels)
 	-- S134f: the ready check at the dungeon gate (the asked member's answer: true = ready) -> (ok, errKey?)
-	DungeonReady = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
+	DungeonReady = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" }, toggle = true },
 	-- S134f: after a boss / Elite II / Invasion fight, the party's table (FightLogService) { kind, key, nameKey,
 	-- outcome, time, rows, deaths, dodged, aimed, drop? }
 	FightSummary = { kind = "event", dir = "s2c" },
@@ -199,7 +210,7 @@ local Definitions: { [string]: Definition } = {
 		rate = 1,
 		args = { "string", "string", "integer", "integer", "table" },
 	},
-	FinderCancel = { kind = "function", dir = "c2s", rate = 2, args = {} },
+	FinderCancel = { kind = "function", dir = "c2s", rate = 2, args = {}, toggle = true },
 	FinderJoin = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (listing id) -> (ok, errKey?)
 	FinderWatch = { kind = "event", dir = "c2s", rate = 2, args = { "boolean" } }, -- the board is open (state `finder`)
 
@@ -224,7 +235,13 @@ local Definitions: { [string]: Definition } = {
 	ContractAcceptOne = { kind = "function", dir = "c2s", rate = 4, args = { "string", "integer" } },
 	ContractAbandon = { kind = "function", dir = "c2s", rate = 4, args = { "integer" } },
 	-- S134k: (npcId, entry key of Data/HuntShop, amount) a purchase at the Huntmaster for Hunter's Marks
-	HuntShopBuy = { kind = "function", dir = "c2s", rate = 3, args = { "string", "string", "integer" } },
+	HuntShopBuy = {
+		kind = "function",
+		dir = "c2s",
+		rate = 3,
+		args = { "string", "string", "integer" },
+		repeatable = true,
+	},
 	-- Side quests (S27): (questId) / (questId, reward choice 1..3) / (questId) / (quest anchor id) / ()
 	SideAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	SideTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer?" } },
@@ -239,17 +256,17 @@ local Definitions: { [string]: Definition } = {
 	DuelRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
 	-- Arena (S126): the ranked queue of this server, the ready check of a match offer, watching from the stands and the
 	-- window's status (-> { scope, waiting = { [bracket] = n }, busy = { kind, names }?, pending })
-	ArenaJoin = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (mode)
-	ArenaLeave = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	ArenaJoin = { kind = "function", dir = "c2s", rate = 1, args = { "string" }, toggle = true }, -- (mode)
+	ArenaLeave = { kind = "function", dir = "c2s", rate = 1, args = {}, toggle = true },
 	ArenaRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } }, -- (accept)
-	ArenaSpectate = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
+	ArenaSpectate = { kind = "function", dir = "c2s", rate = 0.5, args = {}, toggle = true },
 	ArenaStatus = { kind = "function", dir = "c2s", rate = 1, args = {} },
 	-- S127: leave the arena server now (after the result); ArenaRespond also answers a global offer (same arguments)
-	ArenaReturnNow = { kind = "function", dir = "c2s", rate = 0.5, args = {} },
+	ArenaReturnNow = { kind = "function", dir = "c2s", rate = 0.5, args = {}, toggle = true },
 	-- S128: the arena shop at the Arena Master (Data/Arena.SHOP key); 3v3 joins with ArenaJoin("3v3")
-	ArenaShopBuy = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
+	ArenaShopBuy = { kind = "function", dir = "c2s", rate = 2, args = { "string" }, repeatable = true },
 	-- S130: the Champion's Tournament (TourneyService); the state goes through the runtime branch `tourney`
-	TourneySignup = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } }, -- (true = sign up, false = withdraw)
+	TourneySignup = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" }, toggle = true }, -- (true = sign up, false = withdraw)
 	TourneyRespond = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } }, -- (accept the invitation)
 	TourneyLeave = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- back to the world from a tournament server
 	TourneyInfo = { kind = "function", dir = "c2s", rate = 0.5, args = {} }, -- signup count, mode, hall
@@ -258,8 +275,8 @@ local Definitions: { [string]: Definition } = {
 	TradeRespond = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } },
 	TradeAddItem = { kind = "function", dir = "c2s", rate = 10, args = { "integer" } }, -- (inventory index)
 	TradeRemoveItem = { kind = "function", dir = "c2s", rate = 10, args = { "string" } }, -- (item uid)
-	TradeSetGold = { kind = "function", dir = "c2s", rate = 6, args = { "number" } },
-	TradeAccept = { kind = "function", dir = "c2s", rate = 4, args = { "boolean" } },
+	TradeSetGold = { kind = "function", dir = "c2s", rate = 6, args = { "number" }, repeatable = true },
+	TradeAccept = { kind = "function", dir = "c2s", rate = 4, args = { "boolean" }, toggle = true },
 	TradeConfirm = { kind = "function", dir = "c2s", rate = 2, args = {} },
 	TradeCancel = { kind = "event", dir = "c2s", rate = 2, args = {} },
 
@@ -323,10 +340,10 @@ local Definitions: { [string]: Definition } = {
 	BuyProduct = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (product key) prompt or simulated grant
 	BuyPass = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (pass key)
 	PremiumBuy = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (shop key) for Dragon Shards
-	LureToggle = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } }, -- (on) Cloak of Luring switch, S122
+	LureToggle = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" }, toggle = true }, -- (on) Cloak of Luring switch, S122
 	-- (on, hp %, class resource %) S134d: Auto Potions switch and thresholds (Logic/AutoPotion.clampThreshold)
 	AutoPotionSet = { kind = "function", dir = "c2s", rate = 4, args = { "boolean", "number", "number" } },
-	AutoGrind = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" } }, -- (on) S134d: Auto Hunt start / stop
+	AutoGrind = { kind = "function", dir = "c2s", rate = 2, args = { "boolean" }, toggle = true }, -- (on) S134d: Auto Hunt start / stop
 	-- (cosmetic id, expected price) S123: the weekly price can change at Monday 00:00 UTC
 	PremiumBuyCosmetic = { kind = "function", dir = "c2s", rate = 2, args = { "string", "number?" } },
 	PremiumRename = { kind = "function", dir = "c2s", rate = 0.5, args = { "string" } }, -- (new character name)
@@ -345,9 +362,9 @@ local Definitions: { [string]: Definition } = {
 	TutorialEvent = { kind = "event", dir = "c2s", rate = 2, args = { "string" } }, -- client steps only (Tutorial.clientAllowed)
 	TutorialSkip = { kind = "event", dir = "c2s", rate = 0.5, args = {} },
 	BuySubscription = { kind = "function", dir = "c2s", rate = 1, args = { "string" } }, -- (subscription key) prompt or simulated, S121
-	VipRecall = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free return to the city (VIP), S121
+	VipRecall = { kind = "function", dir = "c2s", rate = 1, args = {}, toggle = true }, -- free return to the city (VIP), S121
 	PremiumFunnel = { kind = "event", dir = "c2s", rate = 2, args = { "string", "string" } }, -- (funnel, step) S131: shop/VIP window funnel steps from the client
-	VipRespawn = { kind = "function", dir = "c2s", rate = 1, args = {} }, -- free instant respawn once a day (VIP), S121
+	VipRespawn = { kind = "function", dir = "c2s", rate = 1, args = {}, toggle = true }, -- free instant respawn once a day (VIP), S121
 	OutfitSave = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index) saves the current look, S121
 	OutfitWear = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (outfit index), S121
 
@@ -369,8 +386,8 @@ local Definitions: { [string]: Definition } = {
 	PlayerProfile = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (userId) same server
 
 	-- PvP and death
-	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" } },
-	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {} },
+	SetPvp = { kind = "function", dir = "c2s", rate = 1, args = { "boolean" }, toggle = true },
+	RespawnNow = { kind = "function", dir = "c2s", rate = 1, args = {}, toggle = true },
 	RespawnChoice = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- ("city" | "here"), S22
 }
 

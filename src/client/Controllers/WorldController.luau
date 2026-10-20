@@ -35,6 +35,7 @@ local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local MapSketch = require(script.Parent.Parent.UI.MapSketch)
 local MapLooks = require(ReplicatedStorage.Shared.Data.MapLooks)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Portals = require(ReplicatedStorage.Shared.Data.Portals)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
@@ -607,7 +608,7 @@ decoratePortal = function(instance: Instance)
 	local prompt = Instance.new("ProximityPrompt")
 	Keybinds.bindPrompt(prompt, "interact")
 	prompt.HoldDuration = 0
-	prompt.MaxActivationDistance = 14
+	prompt.MaxActivationDistance = Portals.PROMPT_RANGE -- W28: the server checks from the same field
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = anchor
 	local function refresh()

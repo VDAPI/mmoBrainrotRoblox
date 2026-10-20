@@ -71,7 +71,7 @@ export type Retaining = {
 }
 
 export type Garden = { id: string, kind: string, seed: number, poly: { Vec2 } }
-export type Lamp = { id: string, kind: "post" | "rampLantern", x: number, z: number }
+export type Lamp = { id: string, kind: "post" | "rampLantern", x: number, z: number, rot: number? } -- W28: rot = arm toward the road
 export type Field = { id: string, crop: string, rows: number, seed: number, poly: { Vec2 } }
 export type OutsideRoad = {
 	gate: string,

@@ -621,23 +621,26 @@ local function antechamber(env: Env, out: { Build })
 			Kit.skull(bp, 4 + m * 1.6, Kit.gy(env, b, 4 + m, s * 28), s * 28, 1.2, m * 40)
 		end
 	end
-	-- the goblin maw carved round the gate (x 272): fangs over the arch
+	table.insert(out, b)
+	-- the goblin maw carved round the gate (x 272): fangs over the arch; W28: in the gate's own frame, over its door
+	-- and horns (they hung 17 studs before the gate, into the way, on the scaled cave)
+	local maw = Kit.atPortal(env, "GoblinMaw", "landmark", Kit.gateOf(env), true)
 	for k = -3, 3 do
-		bp:add(
+		maw.bp:add(
 			"wedge",
 			1.2,
 			4,
 			1.2,
-			33,
-			15 - math.abs(k) * 0.6,
 			k * 2.2,
+			20.2 + math.abs(k) * 0.3,
+			-1,
 			180,
-			90,
+			0,
 			0,
 			o(Kit.bone, "detail", { col = false })
 		)
 	end
-	table.insert(out, b)
+	table.insert(out, maw)
 	local _ = r
 end
 

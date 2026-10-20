@@ -256,8 +256,10 @@
 - **Nagroda za logowanie (S100)**: liczby skrzyni (85 / 15 zamiast planowanych 65 / 35) i to, czy dzień bez odbioru
   przerywa serię, do decyzji właściciela (`docs/SESJE.md` → S100); nagroda bez strony na wiki. Uproszczenie wyglądu:
   karty dni w siatce równej szerokości (karta 7 nie jest szersza), bez dźwięku „reward” (jest `levelUp`).
-- **Wydarzenia świata (S101, S134c)**: Inwazja od S134c trudniejsza (fale, Elity, Elita II, dowódca z ciosami S134,
-  skrzynia do Legendarnej). EXP nagrody to tylko 1,9 zwykłego potwora (limit ≤ 3% przy jednym wydarzeniu na 2 h,
+- **Wydarzenia świata (S101, S134c, S134d)**: Inwazja od S134d to strefa (krąg 70 studów z wyrwą i obozem, na mapie i
+  minimapie) z żywą populacją 24–60 potworów uzupełnianą na miejscu, 6 faz (Elity, Elita II, dowódca z ciosami S134),
+  skrzynia do Legendarnej. Obóz i punkty strefy bez obejrzenia w Studio (punkty na wodzie i urwiskach odrzucane
+  promieniem, reszta niesprawdzona). EXP nagrody to tylko 1,9 zwykłego potwora (limit ≤ 3% przy jednym wydarzeniu na 2 h,
   najostrzej na L3 z `monsterExpMul` 0,5; decyzja właściciela: `docs/SESJE.md` → S101). Szablon tygodniowy `event`
   wchodzi do list od następnego resetu tygodnia. Mapa świata nie ma widoku regionów: glif wydarzenia tylko na mapie
   wydarzenia i na liście map; znak nie jest klikalny (bez karty). Uproszczenie: minimapa bez pulsowania znaku.

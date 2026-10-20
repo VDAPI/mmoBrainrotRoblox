@@ -2790,44 +2790,45 @@ do
 	add()
 end
 
--- S134c: the harder Invasion (Balance.invasion, Balance.targetsS134c): before (the S101 numbers, Balance.INVASION_S101)
--- and now for 1 / 2 / 3 / 5 players on the target grounds, then the asserted rows.
+-- S134c: the harder Invasion (Balance.invasion, Balance.targetsS134c). S134d: the Invasion zone for 1 / 2 / 3 / 5
+-- players on the target grounds, then the asserted rows.
 do
-	add("## Inwazja (S134c)")
+	add("## Inwazja (S134c, strefa S134d)")
 	add()
 	add(
-		"Model `Balance.invasion`: drużyna bije gromady i Elity osobno (każdy swoją, tempa zabić się sumują), Elitę II ostatniej fali i dowódcę razem (dowódca × `BOSS_UPTIME`); następna fala, gdy padło `clearShare` bieżącej (nie przed `minWaveGap`) albo po `waveEvery`, reszta zostaje jako zaległość; dowódca po ostatniej fali albo w `commanderAt`, drużyna najpierw kończy zaległość. Ciosy dowódcy według reguły serwera (`Monster.SetExtraAbilities`: pierwsza gotowa z listy, własna zdolność na końcu, przerwa po każdym rzucie); ciosy `avoid` uniknięte, „Rozkaz” dzielony przez stojących razem (solo: pusty krąg, `missAll`). Drużyny: 1 Wojownik, 2 + Łowca, 3 + Kapłan, 5 + Mag i Wojownik; sprzęt konwencji, poziom wydarzenia. „Przed” = liczby S101 (`Balance.INVASION_S101`). Asertuje `balance.spec` („Balance: Invasion (S134c)”)."
+		"Model `Balance.invasion` (S134d): strefa nigdy nie pustoszeje, więc drużyna bije w swoim tempie: każdy ściąga po `INVASION_PULL` potworów strefy (HP i atak × `mods`) i idzie `INVASION_WALK` s do następnych (tempa zabić się sumują), Elity fazy w mieszance według składu populacji. Faza kończy się po zabiciu `phaseKills` × populacji (nie przed `minPhase`, Elitę II fazy `elite2Phase` drużyna bije razem najpierw) albo po `phaseEvery`; ostatnia faza przynosi dowódcę (razem, × `BOSS_UPTIME` i × (1 − `INVASION_ADDS`) na potwory strefy wokół). Ciosy dowódcy według reguły serwera (`Monster.SetExtraAbilities`); ciosy `avoid` uniknięte, „Rozkaz” dzielony przez stojących razem (solo: pusty krąg, `missAll`). EXP zabić × `expMul` z pulą drużyny wobec bicia tego łowiska przez ten sam czas z miksturami (oczekiwana grupa, przerwa i dojście) i z odpoczynkiem (`Balance.areaHour`). Drużyny: 1 Wojownik, 2 + Łowca, 3 + Kapłan, 5 + Mag i Wojownik; sprzęt konwencji, poziom wydarzenia. Przed S134d (fale S134c, Równiny Salamander L47): 1 / 3 / 5 graczy 16,3 / 6,9 / 4,8 min. Asertuje `balance.spec` („Balance: Invasion (S134c)”)."
 	)
 	add()
 	local rows: { { string } } = {}
 	for _, spec in B.S134c.areas do
 		local areaId, L = spec[1], spec[2]
 		for _, n in { 1, 2, 3, 5 } do
-			local before = B.invasionOf(B.S134c.teams[n], areaId, L, nil, { params = B.INVASION_S101 })
-			local after = B.invasionOf(B.S134c.teams[n], areaId, L)
+			local r = B.invasionOf(B.S134c.teams[n], areaId, L)
 			table.insert(rows, {
 				`{areaId} L{L}`,
 				tostring(n),
-				`{before.waveSize} / {before.elites}`,
-				`{fmtValue(before.seconds / 60, "1")} z {fmtValue(before.duration / 60, "1")}`,
-				`{after.waveSize} / {after.elites} + E2`,
-				fmtValue(after.commanderAt / 60, "1"),
-				fmtValue(after.commanderSeconds, "i"),
-				`{fmtValue(after.seconds / 60, "1")} z {fmtValue(after.duration / 60, "1")}`,
-				if after.inTime then "tak" else "nie",
+				tostring(r.population),
+				fmtValue(r.kills, "i"),
+				fmtValue(r.commanderAt / 60, "1"),
+				fmtValue(r.commanderSeconds, "i"),
+				`{fmtValue(r.seconds / 60, "1")} z {fmtValue(r.duration / 60, "1")}`,
+				if r.inTime then "tak" else "nie",
+				fmtValue(r.expEach / math.max(1e-9, r.grindEach), "2"),
+				fmtValue(r.expEach / math.max(1e-9, r.restEach), "2"),
 			})
 		end
 	end
 	tableOut({
 		"łowisko",
 		"graczy",
-		"przed: fala / Elity",
-		"przed: min",
-		"po: fala / Elity",
-		"po: dowódca od min",
-		"po: dowódca s",
-		"po: min",
-		"po: w czasie",
+		"populacja",
+		"zabici",
+		"dowódca od min",
+		"dowódca s",
+		"min",
+		"w czasie",
+		"EXP / bicie z miksturami",
+		"EXP / bicie z odpoczynkiem",
 	}, rows)
 	add()
 	local banded: { B.TargetRow } = {}
@@ -2934,7 +2935,19 @@ do
 	add("## Przepustka sezonu (S152)")
 	add()
 	add(
-		`Model \`Balance.seasonPace\` (\`Data/Seasons\`, sezon 1: {def.weeks} tygodni, {def.tiers} stopni po {Seasons.TIER_POINTS} pkt): godzina gry to {fmtValue(S.grind * 100, "0")}% czasu na zwykłych potworach łowiska (\`Balance.paceAt\`, średnia klas), {fmtValue(S.caves * 100, "0")}% na Elitach jaskiń, {fmtValue(S.elite2PerHour, "1")} Elity II, po {fmtValue(S.quests.quest, "1")} oddania fabuły, pobocznego i zlecenia poniżej 100. poziomu, wydarzenie świata co {B.WORLD_EVENT_HOURS} h, {fmtValue(S.bossPerHour, "1")} wygranej z bossem lochu (od pierwszego bossa) i boss świata co 3 h (od jego poziomu); dzień daje dzienne zlecenia, tydzień tygodniowe (+ zlecenie na bossa), {S.bloodMoonPerWeek} Krwawy Księżyc i {S.achievementsPerWeek} osiągnięcia. Każdy punkt przechodzi przez \`Logic/Season.add\` (limit potworów {Seasons.LIMITS.killPerDay} pkt dziennie, limit narastający {Seasons.LIMITS.weekCap} × tydzień, nadrabianie ×{fmtValue(Seasons.CATCHUP.mul, "1")} pod linią {fmtValue(Seasons.CATCHUP.behind * 100, "0")}% stopni czasu sezonu), potwory pierwsze w dniu. Asertuje \`balance.spec\` („Balance: season pass (S152)”).`
+		`Model \`Balance.seasonPace\` (\`Data/Seasons\`, sezon 1: {def.weeks} tygodni, {def.tiers} stopni po {Seasons.TIER_POINTS} pkt): godzina gry to {fmtValue(
+			S.grind * 100,
+			"0"
+		)}% czasu na zwykłych potworach łowiska (\`Balance.paceAt\`, średnia klas), {fmtValue(S.caves * 100, "0")}% na Elitach jaskiń, {fmtValue(
+			S.elite2PerHour,
+			"1"
+		)} Elity II, po {fmtValue(S.quests.quest, "1")} oddania fabuły, pobocznego i zlecenia poniżej 100. poziomu, wydarzenie świata co {B.WORLD_EVENT_HOURS} h, {fmtValue(
+			S.bossPerHour,
+			"1"
+		)} wygranej z bossem lochu (od pierwszego bossa) i boss świata co 3 h (od jego poziomu); dzień daje dzienne zlecenia, tydzień tygodniowe (+ zlecenie na bossa), {S.bloodMoonPerWeek} Krwawy Księżyc i {S.achievementsPerWeek} osiągnięcia. Każdy punkt przechodzi przez \`Logic/Season.add\` (limit potworów {Seasons.LIMITS.killPerDay} pkt dziennie, limit narastający {Seasons.LIMITS.weekCap} × tydzień, nadrabianie ×{fmtValue(
+			Seasons.CATCHUP.mul,
+			"1"
+		)} pod linią {fmtValue(Seasons.CATCHUP.behind * 100, "0")}% stopni czasu sezonu), potwory pierwsze w dniu. Asertuje \`balance.spec\` („Balance: season pass (S152)”).`
 	)
 	add()
 	add(`### Stopień na koniec / tydzień ukończenia (L{S.reportLevel})`)
@@ -3004,7 +3017,13 @@ do
 	add("## Premia powrotu (S153)")
 	add()
 	add(
-		`Poza modelem tempa (jak nagroda za logowanie S100): po {R.awayDays} dniach nieobecności, raz na {R.cooldownDays} dni, konto z postacią od {R.minLevel}. poziomu dostaje {fmtValue(R.seconds / 60, "0")} min gry w świecie z +{R.expBonus} pkt \`expBonus\` (dodane do Fortuny). Wartość premii = EXP tego czasu walki z \`Balance.paceAt\` × {R.expBonus}%, w poziomach liczonych od poziomu postaci (\`Logic/Exp\`). Asertuje \`balance.spec\` („Balance: returning bonus (S153)”): premia ≤ 1 h walki na każdym poziomie i ≤ {fmtValue(S.maxLevels, "1")} poziomu (średnia klas) od {S.assertFrom}. poziomu.`
+		`Poza modelem tempa (jak nagroda za logowanie S100): po {R.awayDays} dniach nieobecności, raz na {R.cooldownDays} dni, konto z postacią od {R.minLevel}. poziomu dostaje {fmtValue(
+			R.seconds / 60,
+			"0"
+		)} min gry w świecie z +{R.expBonus} pkt \`expBonus\` (dodane do Fortuny). Wartość premii = EXP tego czasu walki z \`Balance.paceAt\` × {R.expBonus}%, w poziomach liczonych od poziomu postaci (\`Logic/Exp\`). Asertuje \`balance.spec\` („Balance: returning bonus (S153)”): premia ≤ 1 h walki na każdym poziomie i ≤ {fmtValue(
+			S.maxLevels,
+			"1"
+		)} poziomu (średnia klas) od {S.assertFrom}. poziomu.`
 	)
 	add()
 	local grid: { { string } } = {}
