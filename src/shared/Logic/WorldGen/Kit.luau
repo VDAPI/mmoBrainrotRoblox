@@ -20,6 +20,9 @@ export type Build = {
 	bp: BP,
 	at: { x: number, y: number, z: number, rot: number },
 	tag: string,
+	-- W28: the id of the portal (Data/Portals) this build frames: it stands in the portal's own frame (x, z, rot),
+	-- its opening round the portal's arch (tests/portals.spec)
+	frames: string?,
 }
 -- A point the client brings to life (Controllers/WorldLifeController): bats, crows, wisps, mist, moths...
 export type Life = { kind: string, x: number, y: number, z: number, r: number? }

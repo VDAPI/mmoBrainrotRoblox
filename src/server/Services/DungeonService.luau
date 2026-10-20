@@ -17,6 +17,7 @@
 -- remote DungeonReady, 3-2-1, then the gate checks again); the fight summary comes from FightLogService (the S60 healing /
 -- shield / intercept books moved there) with the time, deaths, dodged blows and the party's loot on the reward card.
 
+local CollectionService = game:GetService("CollectionService")
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -44,6 +45,7 @@ local LootTables = require(Shared.Data.LootTables)
 local Maps = require(Shared.Data.Maps)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Net = require(Shared.Net)
+local Portals = require(Shared.Data.Portals)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
@@ -74,7 +76,10 @@ local DungeonService = {
 	},
 }
 
-local ENTRANCE_RANGE = 30
+-- W28 (owner: "E" at the boss gate refused at the wrong distance): the range is measured from the gate's door, the
+-- part the "E" prompt hangs on (Data/Portals.PROMPT_RANGE), not from the landing point in front of it; the ready
+-- check's leader and the path / build changes at the gate (NearAnyEntrance) keep a wider ring round the same door.
+local GATE_NEAR_RANGE = 52
 local STATE_INTERVAL = 0.25
 
 type Run = {
@@ -615,11 +620,26 @@ local function blocker(player: Player, def: Bosses.BossDef): (string?, number?)
 	return nil, nil
 end
 
-local function nearEntrance(player: Player, region: string): boolean
-	local at = entranceCFrame(region)
+-- Centre of a region's dungeon gate door (the "E" prompt's part): the built gate, else its place in Data/Portals.
+local function gatePosition(region: string): Vector3?
+	for _, instance in CollectionService:GetTagged("DungeonEntrance") do
+		if instance:IsA("Model") and instance:GetAttribute("DungeonRegion") == region and instance.PrimaryPart then
+			return instance.PrimaryPart.Position
+		end
+	end
+	local gate = Portals.get(`dungeon_{region}`)
+	if not gate then
+		return nil
+	end
+	return WorldService.GroundCFrame(gate.map, gate.x, gate.z).Position + Vector3.new(0, Portals.GATE.door.y, 0)
+end
+
+-- Whether the player stands within `range` (default Data/Portals.SERVER_RANGE, what the "E" prompt allows) of the gate.
+local function nearEntrance(player: Player, region: string, range: number?): boolean
+	local at = gatePosition(region)
 	local model = player.Character
 	local root = model and model:FindFirstChild("HumanoidRootPart") :: BasePart?
-	return at ~= nil and root ~= nil and (root.Position - at.Position).Magnitude <= ENTRANCE_RANGE + 22
+	return at ~= nil and root ~= nil and (root.Position - at).Magnitude <= (range or Portals.SERVER_RANGE)
 end
 
 local function info(player: Player, region: string): (boolean, string?, any)
@@ -772,7 +792,7 @@ local function launchCheck(region: string)
 		runs[region]
 		or leader.Parent == nil
 		or not PartyService.IsLeader(leader)
-		or not nearEntrance(leader, region)
+		or not nearEntrance(leader, region, GATE_NEAR_RANGE)
 		or blocker(leader, pending.def) ~= nil
 	then
 		cancelCheck(region, "dungeon.ready.cancelled")
@@ -972,15 +992,20 @@ function DungeonService.InRun(player: Player): boolean
 	return false
 end
 
--- S57 (ROZWOJ 2.7, 2.9, 2.10): at the entrance of some boss dungeon (on its cave map, within the entering range of
--- 52 studs) and not a member of a running dungeon. Path refunds, breakpoint changes and (S58) build sets use it.
+-- S57 (ROZWOJ 2.7, 2.9, 2.10): at the entrance of some boss dungeon (on its cave map, within 52 studs of the gate's
+-- door, W28) and not a member of a running dungeon. Path refunds, breakpoint changes and (S58) build sets use it.
 function DungeonService.NearAnyEntrance(player: Player): boolean
 	if DungeonService.InRun(player) then
 		return false
 	end
 	for _, map in Maps.byId do
 		local region = map.dungeonRegion
-		if region and map.dungeonEntrance and onMap(player, map.id) and nearEntrance(player, region) then
+		if
+			region
+			and map.dungeonEntrance
+			and onMap(player, map.id)
+			and nearEntrance(player, region, GATE_NEAR_RANGE)
+		then
 			return true
 		end
 	end

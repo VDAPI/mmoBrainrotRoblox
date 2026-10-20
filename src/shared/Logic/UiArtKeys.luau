@@ -115,7 +115,7 @@ function UiArtKeys.ids(): Ids
 	for _, def in Cosmetics.list do
 		cosmetics[def.id] = true
 	end
-	local shop: { [string]: boolean } = { [Products.respawn.key] = true, rename = true, wardrobe = true }
+	local shop: { [string]: boolean } = { respawn = true, rename = true, wardrobe = true } -- respawn: the death screen's shard button
 	for _, pack in Products.shardPacks do
 		shop[pack.key] = true
 	end

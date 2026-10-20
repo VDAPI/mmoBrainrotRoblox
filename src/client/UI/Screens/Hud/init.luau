@@ -12,6 +12,7 @@ local Bar = require(script.Parent.Parent.Components.Bar)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local DeathScreen = require(script.DeathScreen)
+local PremiumShop = require(script.Parent.PremiumShop)
 local Device = require(script.Parent.Parent.Device)
 local Exp = require(ReplicatedStorage.Shared.Logic.Exp)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
@@ -533,7 +534,13 @@ local function Hud(scope: Scope, props: Props): Instance
 			MountButton.Touch(scope, { Riding = props.Riding, Has = props.HasMount, OnToggle = props.OnMount }),
 			EmoteButton.Touch(scope, { OnOpen = props.OpenEmotes }),
 			PvpToggle(scope),
-			DeathScreen(scope),
+			DeathScreen(scope, {
+				-- W28: "Top up" on the death screen opens the Dragon Shop on the currency tab
+				OpenShop = function()
+					PremiumShop.select("currency")
+					props.OpenWindow("premium")
+				end,
+			}),
 		},
 	})
 end

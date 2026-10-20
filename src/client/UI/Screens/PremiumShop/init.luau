@@ -9,6 +9,7 @@
 --   PremiumShop.select(tab)         selects a visible tab (PremiumController.OpenShop)
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local Cards = require(script.Cards)
@@ -24,10 +25,12 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Passes = require(script.Passes)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local SideTabs = require(script.Parent.Parent.Components.SideTabs)
+local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local Toast = require(script.Parent.Parent.Components.Toast)
 
 local Children = Fusion.Children
 
@@ -43,6 +46,10 @@ export type Props = {
 }
 
 local HEADER = 52
+local TOP_UP = 120
+local STUDIO_BUTTON = 150
+-- W28: the right part of the header (balance up to 170, the Studio button, "Top up"); the title gets the rest
+local HEADER_RIGHT = 170 + TOP_UP + 16 + (if RunService:IsStudio() then STUDIO_BUTTON + 8 else 0)
 local SIDE = 190
 local STRIP = Theme.Size.ButtonHeightSmall + 8
 
@@ -70,8 +77,25 @@ function PremiumShop.select(tab: string)
 	end
 end
 
+-- W28 (owner's Studio tests): +1000 Dragon Shards through the admin command /shards. Only in Studio, where every
+-- player is an admin (AdminService.IsAdmin); a live server never shows the button and refuses non-admins anyway.
+local STUDIO_SHARDS = 1000
+
+local function studioShards()
+	task.spawn(function()
+		local ok, err = Net.Invoke("AdminRun", "shards", { tostring(STUDIO_SHARDS) })
+		if ok then
+			Sounds.play("coin")
+		else
+			Sounds.play("error")
+			Toast.push(Text.now(err or "error.internal"), "error")
+		end
+	end)
+end
+
 local function header(scope: Scope, selected: Fusion.Value<string>): Instance
 	local shards = State.Value({ "account", "dragonShards" })
+	local studio = RunService:IsStudio()
 	return scope:New("Frame")({
 		Name = "Header",
 		Size = UDim2.new(1, 0, 0, HEADER),
@@ -79,7 +103,8 @@ local function header(scope: Scope, selected: Fusion.Value<string>): Instance
 		[Children] = {
 			-- On a phone the tab strip right under the header names the tab.
 			scope:New("TextLabel")({
-				Size = UDim2.new(1, -380, 1, 0),
+				Name = "Title",
+				Size = UDim2.new(1, -HEADER_RIGHT, 1, 0),
 				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
 					return not use(Device.Touch)
@@ -93,10 +118,12 @@ local function header(scope: Scope, selected: Fusion.Value<string>): Instance
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
+			-- W28: balance, the Studio button and "Top up" in one right-aligned row (no fixed offsets to collide).
 			scope:New("Frame")({
+				Name = "Right",
 				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -132, 0.5, 0),
-				Size = UDim2.fromOffset(240, 32),
+				Position = UDim2.fromScale(1, 0.5),
+				Size = UDim2.new(0, HEADER_RIGHT, 1, 0),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("UIListLayout")({
@@ -104,37 +131,77 @@ local function header(scope: Scope, selected: Fusion.Value<string>): Instance
 						HorizontalAlignment = Enum.HorizontalAlignment.Right,
 						VerticalAlignment = Enum.VerticalAlignment.Center,
 						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, 6),
+						Padding = UDim.new(0, 8),
 					}),
-					CurrencyIcon(scope, { Currency = "dragon", LayoutOrder = 1, Size = UDim2.fromOffset(24, 24) }),
-					scope:New("TextLabel")({
-						LayoutOrder = 2,
-						Size = UDim2.fromOffset(0, 32),
+					scope:New("Frame")({
+						Name = "Balance",
+						LayoutOrder = 1,
+						Size = UDim2.fromOffset(0, 36),
 						AutomaticSize = Enum.AutomaticSize.X,
-						BackgroundTransparency = 1,
-						Text = scope:Computed(function(use): string
-							return Format.number(use(shards) or 0)
+						BackgroundColor3 = Theme.Paper.Surface,
+						BackgroundTransparency = 0.1,
+						[Children] = {
+							scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+							scope:New("UIStroke")({
+								ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+								Color = Theme.Paper.Rule,
+								Thickness = Theme.Stroke.Thin,
+							}),
+							scope:New("UIPadding")({
+								PaddingLeft = UDim.new(0, 8),
+								PaddingRight = UDim.new(0, 12),
+							}),
+							scope:New("UIListLayout")({
+								FillDirection = Enum.FillDirection.Horizontal,
+								VerticalAlignment = Enum.VerticalAlignment.Center,
+								SortOrder = Enum.SortOrder.LayoutOrder,
+								Padding = UDim.new(0, 6),
+							}),
+							CurrencyIcon(scope, {
+								Currency = "dragon",
+								LayoutOrder = 1,
+								Size = UDim2.fromOffset(24, 24),
+							}),
+							scope:New("TextLabel")({
+								LayoutOrder = 2,
+								Size = UDim2.fromOffset(0, 32),
+								AutomaticSize = Enum.AutomaticSize.X,
+								BackgroundTransparency = 1,
+								Text = scope:Computed(function(use): string
+									return Format.number(use(shards) or 0)
+								end),
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Large,
+								TextColor3 = Theme.Paper.Link,
+							}),
+						},
+					}),
+					(if studio
+						then Button(scope, {
+							Name = "StudioShards",
+							LayoutOrder = 2,
+							Size = UDim2.fromOffset(STUDIO_BUTTON, Theme.Size.MinTouch),
+							Variant = "secondary",
+							TextSize = Theme.TextSize.Small,
+							Text = Text.T(scope, "premium.studioShards", { n = Format.number(STUDIO_SHARDS) }),
+							OnClick = studioShards,
+						})
+						else nil) :: any,
+					-- Disabled (not hidden) on the currency tab, so the header never jumps.
+					Button(scope, {
+						LayoutOrder = 3,
+						Size = UDim2.fromOffset(TOP_UP, Theme.Size.MinTouch),
+						Variant = "primary",
+						TextSize = Theme.TextSize.Small,
+						Text = Text.T(scope, "premium.topUp"),
+						Disabled = scope:Computed(function(use): boolean
+							return use(selected) == "currency"
 						end),
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Large,
-						TextColor3 = Theme.Paper.Link,
+						OnClick = function()
+							PremiumShop.select("currency")
+						end,
 					}),
 				},
-			}),
-			-- Disabled (not hidden) on the currency tab, so the header never jumps.
-			Button(scope, {
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.fromScale(1, 0.5),
-				Size = UDim2.fromOffset(120, Theme.Size.MinTouch),
-				Variant = "primary",
-				TextSize = Theme.TextSize.Small,
-				Text = Text.T(scope, "premium.topUp"),
-				Disabled = scope:Computed(function(use): boolean
-					return use(selected) == "currency"
-				end),
-				OnClick = function()
-					PremiumShop.select("currency")
-				end,
 			}),
 		},
 	})
@@ -219,8 +286,14 @@ function PremiumShop.build(scope: Scope, props: Props): Fusion.Child
 			BorderSizePixel = 0,
 			ScrollBarThickness = 6,
 			[Children] = {
-				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-				scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
+				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
+				-- W28: room for the card strokes at the edges and for the scroll bar on the right
+				scope:New("UIPadding")({
+					PaddingTop = UDim.new(0, 2),
+					PaddingBottom = UDim.new(0, 8),
+					PaddingLeft = UDim.new(0, 2),
+					PaddingRight = UDim.new(0, 12),
+				}),
 				content :: any,
 			},
 		}),

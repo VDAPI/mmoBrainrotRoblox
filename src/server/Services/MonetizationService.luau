@@ -43,6 +43,7 @@ local Net = require(Shared.Net)
 local Premium = require(Shared.Logic.Premium)
 local PremiumFunnel = require(script.Parent.Parent.PremiumFunnel)
 local Products = require(Shared.Data.Products)
+local ShopPayload = require(Shared.Logic.ShopPayload)
 local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local log = Log.new("MonetizationService")
@@ -74,7 +75,7 @@ local testSubs: { [Player]: { [string]: boolean } } = {}
 local vipNow: { [Player]: boolean } = {}
 -- S131: players whose active VIP was reported to analytics in this server session ("VipActiveJoin").
 local vipLogged: { [Player]: boolean } = {}
--- Product kinds other than shard packs: "respawn" -> handler(player) -> granted?
+-- Product kinds other than shard packs: starter packs (PremiumShopService) -> handler(player) -> granted?
 local productHandlers: { [string]: (player: Player) -> boolean } = {}
 
 -- Simulated purchases exist only in Studio. On live servers an unconfigured id (0) is refused, never free.
@@ -231,9 +232,6 @@ local function keyOfProduct(productId: number): string?
 			return pack.key
 		end
 	end
-	if Products.respawn.productId == productId and productId ~= 0 then
-		return Products.respawn.key
-	end
 	for _, entry in Products.mounts do
 		if entry.productId == productId and productId ~= 0 then
 			return entry.key
@@ -269,9 +267,7 @@ local function processReceipt(info: any): Enum.ProductPurchaseDecision
 	Premium.pruneReceipts(data.purchases, os.time(), RECEIPT_KEEP)
 	DataService.Save(player)
 	Analytics.custom(player, "PremiumPurchase", info.CurrencySpent or 0)
-	if key ~= Products.respawn.key then -- the death screen's respawn is not a shop purchase (S131)
-		PremiumFunnel.step(player, "shop", "granted")
-	end
+	PremiumFunnel.step(player, "shop", "granted")
 	log:info("receipt %s: %s granted %s", receiptId, player.Name, key)
 	return Enum.ProductPurchaseDecision.PurchaseGranted
 end
@@ -296,17 +292,12 @@ local function buyProduct(player: Player, key: string): (boolean, string?)
 			return false, err
 		end
 	end
-	local productId = if Products.getPack(key)
-		then (Products.getPack(key) :: any).productId
-		elseif key == Products.respawn.key then Products.respawn.productId
-		elseif mount then mount.productId
-		elseif starter then starter.productId
-		else nil
+	local productId = ShopPayload.productIdOf(key)
 	if productId == nil then
 		return false, "error.badRequest"
 	end
-	-- the death screen's respawn is not a shop purchase: it stays out of the shop funnel (S131)
-	local shop = key ~= Products.respawn.key
+	-- W28: every Robux product is a shop purchase now (the death screen's respawn costs Dragon Shards)
+	local shop = true
 	if simulated() then
 		-- Test mode: no Robux, same grant path (receipt ids are not needed without MarketplaceService).
 		if shop then

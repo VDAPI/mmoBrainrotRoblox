@@ -1,6 +1,6 @@
 --!strict
 -- Death screen (DESIGN §3.4): dimmed world, "You died", respawn countdown and "Respawn now" for Dragon
--- Shards or Robux. Visible while the state branch `death` exists. S22: once the countdown ends (or after a
+-- Shards (W28: only shards, cheap; "Top up" opens the shop when the balance is short). Visible while the state branch `death` exists. S22: once the countdown ends (or after a
 -- paid skip) two choices replace it: "Respawn in the city" [1] and "Respawn here" [2] (in a dungeon: at its
 -- entrance); without a choice the server picks the city at `deadline`. Keys 1 and 2 are local to this screen.
 -- FIX 2026-10-15: "Respawn here" shows its gold price (`death.hereCost`) and is disabled without enough gold.
@@ -11,20 +11,17 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
-local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
+local CurrencyIcon = require(script.Parent.Parent.Parent.Components.CurrencyIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
-local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
-local Products = require(ReplicatedStorage.Shared.Data.Products)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
+local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
-local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
-local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local Vip = require(ReplicatedStorage.Shared.Logic.Vip)
 
 local Children = Fusion.Children
@@ -45,23 +42,26 @@ local function label(scope: Scope, props: { [string]: any }): Instance
 	return scope:New("TextLabel")(base :: any)
 end
 
--- S119: the product's picture at the left end of a button once loaded (the button text stays centred).
-local function withArt(scope: Scope, button: Instance, key: string): Instance
-	local image = ArtIcon.Image(scope, {
-		Key = key,
-		Size = UDim2.new(1, -6, 1, -6),
-		Position = UDim2.new(0, 4, 0.5, 0),
+-- W28: the Dragon Currency icon at the left end of the paid respawn button (the text stays centred).
+local function withCurrency(scope: Scope, button: Instance): Instance
+	local icon = CurrencyIcon(scope, {
+		Currency = "dragon",
+		Surface = "iron",
 		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 10, 0.5, 0),
+		Size = UDim2.fromOffset(26, 26),
 		ZIndex = 2,
 	})
-	local ratio = Instance.new("UIAspectRatioConstraint")
-	ratio.AspectRatio = 1
-	ratio.Parent = image
-	image.Parent = button
+	icon.Parent = button
 	return button
 end
 
-local function DeathScreen(scope: Scope): Instance
+export type Props = {
+	OpenShop: (() -> ())?, -- W28: the Dragon Shop on the currency tab ("Top up" without enough shards)
+}
+
+local function DeathScreen(scope: Scope, props: Props?): Instance
+	local openShop = props and props.OpenShop
 	local death = State.Value({ "death" })
 	local shards = State.Value({ "account", "dragonShards" })
 	local gold = State.Value({ "character", "gold" })
@@ -145,28 +145,27 @@ local function DeathScreen(scope: Scope): Instance
 		end)
 	)
 
-	-- Pay Robux to skip the countdown. S120: without a product id on a live server a disabled "Soon" with the hint
-	-- (DESIGN-17 §0.8), as in the Dragon Shop.
-	local respawnSoon = Premium.robuxState(Products.respawn.productId, RunService:IsStudio()) == "soon"
-	local robuxButton = Button(scope, {
+	-- W28 (owner): the skip costs Dragon Shards only (cheap, Config.RespawnNowCost); without enough a "Top up" button
+	-- opens the shop on the currency tab (the Robux respawn product is gone).
+	local short = scope:Computed(function(use): boolean
+		local owned = use(shards)
+		return type(owned) ~= "number" or owned < use(cost)
+	end)
+	local topUpButton = Button(scope, {
 		Surface = "iron", -- S135: on a dark HUD / overlay surface
-		Name = "RespawnRobux",
+		Name = "RespawnTopUp",
 		LayoutOrder = 5,
 		Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
-		Visible = canSkip,
-		Text = if respawnSoon
-			then Text.T(scope, "premium.soon")
-			else Text.T(scope, "death.respawnRobux", { robux = Products.respawn.robux }),
-		Disabled = if respawnSoon then true else busy,
+		Visible = scope:Computed(function(use): boolean
+			return use(canSkip) and use(short) and openShop ~= nil
+		end),
+		Text = Text.T(scope, "death.topUp"),
 		OnClick = function()
-			if not respawnSoon then
-				invoke("BuyProduct", Products.respawn.key)
+			if openShop then
+				openShop()
 			end
 		end,
 	})
-	if respawnSoon then
-		Tooltip.attach(scope, robuxButton :: GuiObject, Text.T(scope, "premium.soon.hint"))
-	end
 
 	-- S121: the free VIP respawn (VipService; once per UTC day).
 	local vipActive = State.Value({ "vip", "active" })
@@ -271,26 +270,32 @@ local function DeathScreen(scope: Scope): Instance
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Iron.Danger,
 					}),
-					-- Countdown: pay to skip it.
-					Button(scope, {
-						Surface = "iron", -- S135: on a dark HUD / overlay surface
-						Name = "RespawnNow",
-						LayoutOrder = 4,
-						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-						Variant = "primary",
-						Visible = canSkip,
-						Text = scope:Computed(function(use): string
-							return Text.get(use, "death.respawnNow", { cost = use(cost) })
-						end),
-						Disabled = scope:Computed(function(use): boolean
-							local owned = use(shards)
-							return use(busy) or type(owned) ~= "number" or owned < use(cost)
-						end),
-						OnClick = function()
-							invoke("RespawnNow")
-						end,
-					}),
-					withArt(scope, robuxButton, UiArt.shop(Products.respawn.key)),
+					-- Countdown: pay to skip it (W28: Dragon Shards only, the shard icon at the left end).
+					withCurrency(
+						scope,
+						Button(scope, {
+							Surface = "iron", -- S135: on a dark HUD / overlay surface
+							Name = "RespawnNow",
+							LayoutOrder = 4,
+							Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+							Variant = "primary",
+							Visible = canSkip,
+							Text = scope:Computed(function(use): string
+								return Text.get(use, "death.respawnNow", { cost = Format.number(use(cost)) })
+							end),
+							Disabled = busy,
+							OnClick = function()
+								if Fusion.peek(short) then
+									-- a clear refusal at once (the server says the same), "Top up" is right below
+									Sounds.play("error")
+									Toast.push(Text.now("death.error.noShards"), "error")
+									return
+								end
+								invoke("RespawnNow")
+							end,
+						})
+					),
+					topUpButton,
 					-- Choice.
 					Button(scope, {
 						Surface = "iron", -- S135: on a dark HUD / overlay surface

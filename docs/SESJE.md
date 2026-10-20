@@ -13323,6 +13323,75 @@ Pliki: `src/shared/Data/WorldEvents.luau`, `src/shared/Logic/WorldEvents.luau`, 
 `tests/Balance.luau`, `tests/worldevents.spec.luau`, `tools/{balance_reasons,balance_report}.luau`,
 `tools/WikiData/Basics.luau`, wiki `mechanics/{pl/wydarzenia-swiata,en/world-events}.mdx`, `docs/{DESIGN-15,DECYZJE,PROGRESS}.md`.
 
+### W28: portale w ramach, „E” przy bramie bossa (zgłoszenia właściciela 2026-10-20)
+- **Zgłoszenia:** „Krypta Zapomnianych: fioletowe nie jest w ramkach na portal”, „Jak wchodzi się na bossa to buguje
+  się odległość, w której możemy kliknąć E”, „więcej wejść jest popsutych”.
+- **Przyczyna 1 (ramy w jaskiniach):** ramy wokół wyjść i bram (Krypta: rzeźbiona Brama Zapomnianych, nadproże
+  z czaszek; Nora: łuk z korzeni; Kurhan: dolmen; Kopalnia: obudowa sztolni; Grota: sople; Twierdza: krata; Serce:
+  szpony; Jaskinia Mchów: paszcza gobl.) stały na liczbach wpisanych w planie (`Kit.at(-268)` itd.) z przesunięciem
+  w głąb, a portal z `Data/Portals`; po powiększeniu jaskiń (S134h, ×1,35) rama odjechała od fioletowego pola
+  o 4 do 17 studów (w Krypcie 12). Teraz `CaveDress/Kit.atPortal` stawia ramę w ramce samego portalu (x, z, obrót).
+- **Przyczyna 2 (wejścia na mapach regionów):** otwory wejść mniejsze od łuku portalu (Twierdza 13 x 11, Kopalnia
+  11 x 12, Kuźnia 10 x 13, Grota 14 x 13 z soplami do połowy), kopiec Kurhanu i nasyp Nory przecinały łuk, nadproże
+  Kurhanu wchodziło w łuk, jajo w Legowisku stało w filarze, zasłona wody Jaskini Mchów biegła przez pole, drzwi
+  fasady Krypty zasłaniały pół bramy, a portal stał 6 studów przed nią (przesunięty w bramę, x 748,5, drzwi otwarte).
+- **Przyczyna 3 („E” przy bramie bossa):** podpowiedź wisiała na drzwiach bramy (16 studów), a serwer liczył
+  odległość od punktu lądowania `dungeonEntrance.x - 22`, 40 do 65 studów od bramy: przy bramie „za daleko”.
+  Teraz serwer mierzy od drzwi bramy (część z podpowiedzią), `Data/Portals.PROMPT_RANGE` 12 i `SERVER_RANGE` 20
+  wspólne dla portali i bram; odliczanie drużyny i `NearAnyEntrance` zostają przy 52 studach od tych samych drzwi.
+- **Pole portalu:** `Prefabs.portal` obraca malowany model, gdy stoi bokiem, i dopasowuje fioletowe pole do jego
+  otworu (środek modelu, 62% szerokości, 78% wysokości, nie więcej niż 9,5 x 13,5); pole, filary, nadproże i model
+  w jednej ramce `base`. Wymiary łuku i bramy w `Data/Portals` (`ARCH`, `GATE`, `clearance`).
+- **Test:** `tests/portals.spec.luau` + `tests/PortalClearance.luau`: żaden element wystroju żadnej mapy
+  (`Logic/WorldGen`) nie wchodzi w łuk portalu ani w bramę (test osi rozdzielających), każda rama stoi w ramce
+  swojego portalu, pole mieści się w łuku, podpowiedź i serwer z jednej części i zgodnych zasięgów, lądowania
+  na terenie, po którym da się chodzić. Przed poprawką test wskazywał 7 wejść na mapach regionów.
+- **Pliki:** `src/shared/Data/{Portals,Areas/duskwood}.luau`, `src/shared/Logic/CaveDress/{Kit,Crypt,Den,Barrow,Mine,
+  Grotto,Hold,Heart,Moss,Forge}.luau`, `src/shared/Logic/{DuskwoodGen/{Cliffs,Cult,Thicket},AshenGen/Mouths,
+  FrostpeakGen/Mouths,MeadowsGen/{Kit,Water},WorldGen/{Kit,init}}.luau`, `src/server/World/Prefabs.luau`,
+  `src/server/Services/{DungeonService,TravelService}.luau`, `src/client/Controllers/{WorldController,
+  DungeonController}.luau`, `tests/{portals.spec,PortalClearance}.luau`.
+- `Prefabs.caveMouth` (Łąki: nora, kryjówka): głazy stały w filarach łuku, nadproże 1 stud w jego szczycie; otwór,
+  głazy i nadproże rozsunięte wokół łuku (tylko serwer, poza testem wystroju).
+- Nieobejrzane w Studio: proporcje otworu malowanego modelu `common_portal_02` (dopasowanie pola liczone z jego
+  pudełka).
+
+
+### W28: Smoczy Sklep, błąd „Nieprawidłowe żądanie”, układ okna, zakupy w Studio, odrodzenie za walutę (właściciel 2026-10-20)
+
+- **Przyczyna błędu:** okno potwierdzenia zakupu (`UI/PremiumConfirm`) wysyłało `PremiumBuy(klucz, nil)`. `Net` liczy
+  argumenty przez `select("#")`, więc serwer widział 2 argumenty przy definicji `{ "string" }` i odrzucał wywołanie w
+  `ArgCheck` jako `error.badRequest`, zanim doszło do `PremiumShopService`. Dotyczyło każdego przedmiotu za Smoczą
+  Walutę (zwoje, plecaki, eliksiry, Płaszcz Wabienia, Auto Mikstury, Auto Polowanie). Kosmetyki (2 argumenty) i
+  zakupy Robux działały.
+- **Poprawka:** sama poprawka serwera jest w `7fed5891` (`ArgCheck` pomija nile na końcu, limit zapytań czeka i
+  ponawia). Tu: nowy `Logic/ShopPayload` (wywołania sklepu bez nilów na końcu, `productIdOf` wspólny z
+  `MonetizationService`), używany przez `PremiumConfirm` i `Cards.invoke`.
+- **Test regresji:** `tests/shoppayload.spec.luau`: każdy wpis sklepu, kosmetyk na sprzedaż, paczka, przepustka,
+  subskrypcja i paczka startowa przechodzi `ArgCheck` z `Net/Definitions` i trafia w gałąź serwera; w Studio każda włączona oferta Robux ma stan „kup”.
+- **Studio:** zakupy Robux z id `0` były już symulowane w Studio; dopisany przycisk „+1000 ◆ (Studio)” w nagłówku sklepu
+  (tylko `RunService:IsStudio()`, przez `AdminRun shards`, serwer i tak wpuszcza tylko admina). `docs/SKLEP-ID.md`
+  (z `tools/shop_report.luau`): instrukcja krok po kroku dla Creator Hub, kolumna „Ikona” (plik z folderu Graphics),
+  sekcja 1a o testach w Studio; bez długich myślników w tabelach. Wpis w `docs/JAK-DODAC.md`.
+- **Układ okna:** karta sklepu (`Cards.card`) to wiersz w `UIListLayout` (obrazek | kolumna tekstu | przyciski),
+  rośnie z opisem (bez ucinania i nachodzenia), minimalna wysokość 76, obrys z tokenów, plakietka premii jako pigułka;
+  VIP ma złoty obrys przez `highlight` (wcześniej drugi `UIStroke`). Oferta tygodnia: części w pionowej liście (cena
+  wcześniej wchodziła pod „Przymierz”), wysokość liczona z części. Nagłówek: saldo w pigułce, przycisk Studio i
+  „Doładuj” w jednym wierszu z prawej, tytuł dostaje resztę. Treść z marginesami na obrys i pasek przewijania. Wiersz
+  kosmetyku węższy (110 + 134).
+- **Odrodzenie (właściciel: „Odkup niech będzie za walutę, tanio”):** `Config.RespawnNowCost` 10 → 5, produkt Robux
+  `respawn` usunięty (`Data/Products`, `MonetizationService`, `DeathService`), płatność w jednym kroku
+  (`PlayerStateService.Update`), odmowa `death.error.noShards`. Ekran śmierci: „Odródź teraz (5 ◆)” z ikoną waluty,
+  przy braku waluty komunikat i „Doładuj Smoczą Walutę” (sklep na zakładce waluty). Szybki Powrót bez zmian.
+- **Bez przeglądu w Studio** (brak MCP w tej sesji): układ sprawdzony w kodzie dla 1920×1080, 1366×768 (okno
+  900×640 w wirtualnych px) i telefonu 844×390 (okno pełnoekranowe ok. 997×461).
+- **Pliki:** `src/shared/Logic/{ShopPayload,UiArtKeys}.luau`,
+  `src/shared/Data/Products.luau`, `src/shared/Config.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{MonetizationService,DeathService}.luau`, `src/client/UI/PremiumConfirm.luau`,
+  `src/client/UI/Screens/PremiumShop/{init,Cards,Cosmetics,Passes}.luau`, `src/client/UI/Screens/Hud/{init,DeathScreen}.luau`,
+  `tests/shoppayload.spec.luau` (nowy), `tests/{premium,paywall,cosmetics2}.spec.luau`, `tools/shop_report.luau`,
+  `docs/{SKLEP-ID,JAK-DODAC,DECYZJE,DESIGN,SESJE}.md`.
+
 ### W28: strzałka samouczka (GuidePointer)
 - **Zgłoszenie właściciela:** „w samouczku pisze idź za strzałką a nie ma żadnej strzałki”.
 - **Przyczyna:** w świecie nie było żadnej strzałki. Tekst `tutorial.attack.travel` mówił o „strzałce zadania”, a jedyną

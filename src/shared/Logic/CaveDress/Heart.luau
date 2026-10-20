@@ -579,8 +579,9 @@ local function antechamber(env: Env, out: { Build })
 		)
 	end
 	table.insert(out, b)
-	-- the two ice claws round the gate (284, 0), the baskets of cold fire, the mist
-	local g = Kit.build(env, "ClawGate", "landmark", Kit.at(env, 290), 0, 270)
+	-- the two ice claws round the gate (284, 0), the baskets of cold fire, the mist; W28: the claws in the gate's own
+	-- frame, just behind its horns (they stood 7 studs behind it on the scaled cave)
+	local g = Kit.atPortal(env, "ClawGate", "landmark", Kit.gateOf(env), true)
 	local gy = Kit.gy(env, g, 0, 0)
 	for _, side in { -1, 1 } do
 		for t = 0, 4 do
@@ -590,7 +591,7 @@ local function antechamber(env: Env, out: { Build })
 				2.6 - t * 0.3,
 				side * (10 - t * 1.2),
 				gy + 3 + t * 6,
-				1,
+				3.2,
 				0,
 				0,
 				side * (-8 - t * 9),

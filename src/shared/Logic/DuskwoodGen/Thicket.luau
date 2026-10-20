@@ -145,11 +145,13 @@ local function wolfDen(env: Env.Env, out: { Build })
 	local cave = env.areas.caves[1]
 	Env.clear(env, cave.x, cave.z, 26)
 	local b = Kit.build(ctx, "WolfDen", "cave", cave.x, cave.z, cave.rot)
+	b.frames = "duskwood_duskwood_den"
 	local bp = b.bp
-	-- the dead oak behind the opening and the earth bank under it
+	-- the dead oak behind the opening and the earth bank under it; W28: the bank behind the portal's arch and the
+	-- dark opening before the bank, as tall as the arch (the bank hid it, the arch stood against the earth)
 	bp:add("cyl", 26, 11, 11, 0, 12, 13, 0, 0, 90, o(Kit.blackBark, "shell", { q = true }))
-	bp:add("ball", 38, 18, 26, 0, 2, 14, 0, 0, 0, o({ c = "#3A3128", m = "Ground" }, "shell", { q = true }))
-	bp:box(15, 16, 1, 0, 7.5, 4.6, o(Kit.dark, "shell", { q = false }))
+	bp:add("ball", 38, 18, 26, 0, 2, 15.5, 0, 0, 0, o({ c = "#3A3128", m = "Ground" }, "shell", { q = true }))
+	bp:box(16, 19, 1, 0, 9, 2, o(Kit.dark, "shell", { q = false }))
 	-- the root arch over the mouth
 	for _, side in { -1, 1 } do
 		bp:beam(side * 11, -0.5, 0, side * 7, 15, 3, 2.4, o(Kit.blackBark, "shell", { q = false }))
