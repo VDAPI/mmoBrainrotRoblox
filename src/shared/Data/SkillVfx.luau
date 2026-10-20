@@ -864,6 +864,7 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		trail = true,
 		impact = { "impactFlash", "pillar", "sparks" },
+		tex = { impactFlash = "hitStar" },
 		pillar = { radius = 0.8, height = 16 },
 		hitstop = 0.06,
 		size = 0.5,
@@ -872,14 +873,14 @@ local SkillVfx: { [string]: Entry } = {
 		color = "heal",
 		sound = "",
 		glow = { hand = "l", dur = 0.3 },
-		impact = { "impactFlash", "beam", "sparkle" },
+		impact = { "impactFlash", "beam", "holyBurst", "sparkle" }, -- W07: rays open and motes rise round the healed
 		size = 0.6,
 	}),
 	renew = e({
 		color = "heal",
 		sound = "",
 		glow = { hand = "both", dur = 0.35 },
-		impact = { "impactFlash", "aura", "sparkle" },
+		impact = { "impactFlash", "holyBurst", "aura", "sparkle" }, -- W07
 		size = 0.5,
 	}),
 	radiance = e({
@@ -893,19 +894,20 @@ local SkillVfx: { [string]: Entry } = {
 	circleOfLight = e({
 		color = "heal",
 		sound = "",
-		impact = { "impactFlash", "magicCircle", "ringWave", "sparkle" },
+		impact = { "impactFlash", "magicCircle", "holyBurst", "sparkle" }, -- W07
 	}),
 	purify = e({
 		color = "#F4F1E0",
 		sound = "",
 		impact = { "impactFlash", "ringWave", "sparks", "smokePuff" },
+		tex = { impactFlash = "rays" },
 		size = 0.5,
 	}),
-	auraOfEndurance = e({ color = "holy", sound = "", impact = { "impactFlash", "ringWave", "aura", "sparkle" } }),
+	auraOfEndurance = e({ color = "holy", sound = "", impact = { "impactFlash", "holyBurst", "aura", "sparks" } }), -- W07
 	resurrection = e({
 		color = "holy",
 		sound = "",
-		impact = { "impactFlash", "pillar", "sparkle" },
+		impact = { "impactFlash", "pillar", "holyBurst", "sparkle" }, -- W07
 		tex = { impactFlash = "glow" },
 		pillar = { radius = 2, height = 20 },
 		size = 1.4,
@@ -915,18 +917,24 @@ local SkillVfx: { [string]: Entry } = {
 		color = "holy",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "skyBolt", "groundDecal" },
+		impact = { "impactFlash", "skyBolt", "groundDecal", "rockBurst" }, -- W07
+		markRadius = 2.5,
 		tex = { skyBolt = "beamHoly" },
 		land = { "dust" },
 		shake = 0.5,
 		hitstop = 0.08,
 		size = 0.6,
 	}),
-	prayer = e({ color = "holy", sound = "", impact = { "impactFlash", "magicCircle", "aura", "sparkle" }, size = 0.6 }),
+	prayer = e({
+		color = "holy",
+		sound = "",
+		impact = { "impactFlash", "magicCircle", "holyBurst", "sparkle" },
+		size = 0.6,
+	}), -- W07
 	divineIntervention = e({
 		color = "holy",
 		sound = "",
-		impact = { "impactFlash", "pillar", "ringWave", "sparkle" },
+		impact = { "impactFlash", "pillar", "holyBurst", "sparkle" }, -- W07
 		pillar = { radius = 3, height = 24 },
 		flash = 6,
 		shake = 0.3,
@@ -968,7 +976,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "holy",
 		sound = "",
 		trail = true,
-		impact = { "magicCircle", "impactFlash", "skyBolt", "ringWave", "groundDecal", "dust" },
+		impact = { "magicCircle", "impactFlash", "skyBolt", "groundDecal", "rockBurst" }, -- W07: the hammer of light breaks the ground
 		tex = { skyBolt = "beamHoly" },
 		landsAfter = true,
 		land = { "dust" },
@@ -979,6 +987,8 @@ local SkillVfx: { [string]: Entry } = {
 		size = 0.9,
 	}),
 	-- S145 (DESIGN-18 §6.4): the Cleric pools' new skills from the existing pieces (holy gold, heal green, white light)
+	-- W07: heals and blessings open rays of light with rising motes (holyBurst), hammer blows show the impact star,
+	-- blows from the sky break the ground (rockBurst), blinding light flashes as rays
 	lightRay = e({
 		color = "holy",
 		sound = "",
@@ -994,6 +1004,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#FFF6D0",
 		sound = "",
 		impact = { "impactFlash", "fan", "sparkle" },
+		tex = { impactFlash = "rays" },
 		telegraph = "cone",
 		flash = 4,
 	}),
@@ -1001,7 +1012,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "heal",
 		sound = "",
 		glow = { hand = "both", dur = 1.2 },
-		impact = { "impactFlash", "pillar", "sparkle", "sparks" },
+		impact = { "impactFlash", "pillar", "holyBurst", "sparks" }, -- W07
 		pillar = { radius = 1.6, height = 22 },
 		flash = 4,
 		size = 1.2,
@@ -1025,7 +1036,7 @@ local SkillVfx: { [string]: Entry } = {
 	holyNova = e({
 		color = "holy",
 		sound = "",
-		impact = { "burst", "ringWave", "aura", "sparkle" },
+		impact = { "impactFlash", "ringWave", "holyBurst", "sparkle" }, -- W07: a star instead of the ball
 		telegraph = "circle",
 		flash = 5,
 		shake = 0.2,
@@ -1034,6 +1045,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#F4F1E0",
 		sound = "",
 		impact = { "impactFlash", "fan", "smokePuff" },
+		tex = { impactFlash = "hitStar" },
 		telegraph = "cone",
 		flash = 2.4,
 		shake = 0.2,
