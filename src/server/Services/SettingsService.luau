@@ -54,6 +54,10 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	quality = function(value)
 		return value == "high" or value == "medium" or value == "low" -- W01: medium
 	end,
+	-- W29: the client's first-entry pick (Logic/AutoQuality); applied only while the player has not chosen a level.
+	qualityAuto = function(value)
+		return value == "medium" or value == "low"
+	end,
 	-- W01: the camera: free (the Roblox camera) or from above at an angle (CameraController).
 	cameraMode = function(value)
 		return value == "free" or value == "top"
@@ -143,6 +147,17 @@ function SettingsService.Start()
 		if name == "robloxAvatar" then
 			CosmeticService.SetRobloxAvatar(player, value) -- S132: writes the setting and refreshes the appearance
 			return
+		end
+		-- W29: the automatic level once, then never again; a choice in the menu ends the automatic pick for good
+		if name == "qualityAuto" then
+			if PlayerStateService.Get(player, { "account", "settings", "qualityPicked" }) ~= true then
+				PlayerStateService.Set(player, { "account", "settings", "quality" }, value)
+				PlayerStateService.Set(player, { "account", "settings", "qualityPicked" }, true)
+			end
+			return
+		end
+		if name == "quality" then
+			PlayerStateService.Set(player, { "account", "settings", "qualityPicked" }, true)
 		end
 		PlayerStateService.Set(player, { "account", "settings", name }, value)
 	end)

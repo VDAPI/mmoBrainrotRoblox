@@ -40,7 +40,6 @@ W28 (część 1): liczby obrażeń (obrys, połysk, wyskok, dryf), okna na sprę
 - W01: malowane niebo na 4 pory (`docs/wyglad/ZAKUPY.md`); Łąki, miasto i Szczyty na niebie miejsca.
 - W01: pusta przestrzeń za brzegiem mapy widoczna przy horyzoncie jako szare pasmo, zanim streaming wczyta dalszy teren (tło gór / dalekie LOD w sesjach map W12–W20).
 - W01: `ModelStreamingMode` / LOD `StreamingMesh` dla punktów orientacyjnych (D2) i `RenderFidelity` siatek (D3): do zrobienia przy przebudowie map (W12+).
-- W01: automatyczny poziom `low` na telefonie przy pierwszym wejściu (W29).
 - W02: zestaw ma warianty tylko dla Łąk (`grass`); Bór, Pustkowia, Szczyty, miasto na klockach do czasu zakupów albo darmowych paczek (Quaternius) w sesjach map.
 - W02: modele zestawu i materiały żyją w miejscu (`Assets.Kit`, `MaterialService`): właściciel zapisuje miejsce.
 - W02: drzewa wypełnienia i krzaki na kliencie przy niskiej jakości bez osobnego przycięcia (koszt +0,3 ms na PC); sprawdzić na telefonie (W29).

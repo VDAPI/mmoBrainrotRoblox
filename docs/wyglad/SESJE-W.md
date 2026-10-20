@@ -462,3 +462,11 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - W16: płaty szronu z kryształkami lodu u stóp ścian Niedźwiedziego Jaru wzdłuż drogi trumny (`Hollow.coffinFrost`, `bor.md` A4).
 - W20: porzucone zbroje pielgrzymów z granatowymi strzępami pod śniegiem na północ od Zasypanego Obozu (`Details.pilgrimArmour`, tabela 1.4).
 - W14: przewrócony kosz z jabłkami i zgubione dzwonki owiec na Polanie Królików (`pastureTraces`), goblińskie włócznie z zieloną szmatą w porzuconej gawrze (`bearDens`, druga gawra).
+
+### W29: telefon, część 1 (poziom grafiki przy pierwszym wejściu)
+
+- Ekran tylko dotykowy o krótszym boku poniżej `Config.Graphics.phoneShortSide` (600 px) dostaje przy pierwszym wejściu `low`, większy dotykowy `medium`; z klawiaturą bez zmian (`Logic/AutoQuality`, test `autoquality.spec`). Klient prosi raz przez `SetSetting("qualityAuto")`, serwer stosuje tylko przy `settings.qualityPicked = false` (nowe pole, reconcile) i ustawia flagę; każdy wybór jakości w menu też ją ustawia.
+
+### W03: pilot walki, część 1 (WIP)
+
+- Ładowanie czaru: mały rozgrzany rdzeń zamiast dużego płaskiego dysku, drobinki ściągane do dłoni (każdy żywioł), płomień nad dłonią przy ogniu; lot: języki ognia za kulą ognia (`ProjectileOpts.flame`); trafienie Kuli Ognia: nowy składnik `fireBlast` (kula płomieni, ciemny dym, żar), warstwa `body` w `tests/SkillLooks`. Ognistość z żywiołu (`VfxController.fiery`). Ładowanie obejrzane w Studio (pomniejszone po zrzucie), lot i wybuch czekają na podgląd.

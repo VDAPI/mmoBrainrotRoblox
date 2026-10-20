@@ -11,8 +11,10 @@ local SoundService = game:GetService("SoundService")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
+local AutoQuality = require(ReplicatedStorage.Shared.Logic.AutoQuality)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
 
 local SettingsController = {
@@ -79,8 +81,28 @@ function SettingsController.Init()
 	sfxGroup.Parent = SoundService
 end
 
+-- W29: on a phone or a tablet that never chose a level, ask the server once for the lighter one (Logic/AutoQuality).
+local autoAsked = false
+local function autoQuality()
+	if autoAsked or State.Get({ "account", "settings", "qualityPicked" }) ~= false then
+		return
+	end
+	local camera = Workspace.CurrentCamera
+	if not camera then
+		return
+	end
+	local view = camera.ViewportSize
+	local touchOnly = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	local level = AutoQuality.pick(touchOnly, math.min(view.X, view.Y))
+	autoAsked = true
+	if level then
+		Net.Send("SetSetting", "qualityAuto", level)
+	end
+end
+
 function SettingsController.Start()
 	scope:Observer(State.Value({ "account", "settings", "quality" })):onBind(adjustAll)
+	scope:Observer(State.Value({ "account", "settings", "qualityPicked" })):onBind(autoQuality)
 	Workspace.DescendantAdded:Connect(function(descendant)
 		if descendant:IsA("ParticleEmitter") and particleFactor() < 1 then
 			task.defer(adjust, descendant)

@@ -724,6 +724,9 @@ local Config = {
 		},
 		-- Seconds the post effects tween when the map or the level changes.
 		fade = 1.5,
+		-- W29 (Logic/AutoQuality): a touch-only screen whose short side is under this many pixels is a phone and
+		-- gets "low" on its first entry; a larger touch-only screen "medium".
+		phoneShortSide = 600,
 	},
 	-- W01: the "from above" camera (settings.cameraMode "top"): pitch below the horizon (degrees), the zoom range
 	-- (studs from the character) and, underground (caves, crypts, boss chambers), a shorter reach and a flatter pitch.

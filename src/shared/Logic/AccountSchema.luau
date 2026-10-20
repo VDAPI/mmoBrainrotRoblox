@@ -49,6 +49,7 @@ function AccountSchema.accountTemplate(): AccountData
 			musicVolume = 0.6,
 			ambientVolume = 0.7,
 			quality = "high",
+			qualityPicked = false, -- W29: the player chose the level (or the first-entry pick ran); reconcile
 			minimapRotate = false,
 			cameraSens = 1,
 			shake = 1,
