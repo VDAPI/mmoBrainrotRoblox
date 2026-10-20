@@ -5949,7 +5949,7 @@ end
 -- Metrics -----------------------------------------------------------------------------------------------------------
 
 -- S85 fields keep their names and definitions; S86 (D) adds the PathMetrics fields of "Definicje metryk"
--- (docs/sessions/S86.md, DECYZJE S86): single60 (= sustained60), r1 (= tsk1), boss180, maxHp, ehp, ehpRed, the Fury
+-- (docs/archiwum/sesje/S86.md, DECYZJE S86): single60 (= sustained60), r1 (= tsk1), boss180, maxHp, ehp, ehpRed, the Fury
 -- means, the measured situations (C3) and the counters of the S86 mechanics.
 export type Metrics = {
 	basic: number,
@@ -7335,7 +7335,7 @@ local function grindRatio(build: Build, L: number): number
 	return ratio(SkillModel.grind(build, L).seconds, SkillModel.grind(byKey("inquisitor.solo"), L).seconds)
 end
 
--- S86 (D): every metric of a target row: (row, L) -> value. Ratios are the definitions of docs/sessions/S86.md
+-- S86 (D): every metric of a target row: (row, L) -> value. Ratios are the definitions of docs/archiwum/sesje/S86.md
 -- "Definicje metryk" (DECYZJE S86).
 SkillModel.TARGET_METRICS = {
 	["single60/base"] = function(row: PathTarget, L: number): number
@@ -7882,7 +7882,7 @@ function SkillModel.traitBuild(traitId: string): Build
 	return SkillModel.withWeapon(base, weapon, offhand)
 end
 
--- S86 (C1, the table of docs/sessions/S86.md): traits whose value comes from the blows taken (counters, block, weaken,
+-- S86 (C1, the table of docs/archiwum/sesje/S86.md): traits whose value comes from the blows taken (counters, block, weaken,
 -- attack slow, stun, kill heal) go through Balance.traitTerms with the measured situation; the rest on the event.
 SkillModel.TRAIT_VIA_TERMS = {
 	swordplay = true,

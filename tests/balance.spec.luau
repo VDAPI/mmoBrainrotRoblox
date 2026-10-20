@@ -103,7 +103,7 @@ T.describe("Balance 1-20: S91", function()
 			if not B.inBand(row) then
 				local who = if row.classId then `{row.classId} ` else ""
 				local at = if row.level then `L{row.level} ` else ""
-				error(`{who}{at}{describeRow(row)} (S91, docs/sessions S91 "Cele 1–20")`, 0)
+				error(`{who}{at}{describeRow(row)} (S91, docs/archiwum/sesje S91 "Cele 1–20")`, 0)
 			end
 		end)
 	end
@@ -135,7 +135,7 @@ T.describe("Balance S140: fire pool", function()
 		if row.report == nil then
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
-					error(`Mage L{row.level} {describeRow(row)} (S140, docs/sessions S140 D)`, 0)
+					error(`Mage L{row.level} {describeRow(row)} (S140, docs/archiwum/sesje S140 D)`, 0)
 				end
 			end)
 		end
@@ -161,7 +161,7 @@ T.describe("Balance S141: ice pool", function()
 		if row.report == nil then
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
-					error(`Mage L{row.level} {describeRow(row)} (S141, docs/sessions S141 C)`, 0)
+					error(`Mage L{row.level} {describeRow(row)} (S141, docs/archiwum/sesje S141 C)`, 0)
 				end
 			end)
 		end
@@ -188,7 +188,7 @@ T.describe("Balance S142: lightning pool", function()
 		if row.report == nil then
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
-					error(`Mage L{row.level} {describeRow(row)} (S142, docs/sessions S142 D)`, 0)
+					error(`Mage L{row.level} {describeRow(row)} (S142, docs/archiwum/sesje S142 D)`, 0)
 				end
 			end)
 		end
@@ -455,7 +455,7 @@ T.describe("Balance: bosses 2.0 (S134)", function()
 				if not B.inBand(row) then
 					local who = if row.classId then `{row.classId} ` else ""
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{who}{at}{describeRow(row)} (S134, docs/sessions S134 E2)`, 0)
+					error(`{who}{at}{describeRow(row)} (S134, docs/archiwum/sesje S134 E2)`, 0)
 				end
 			end)
 		end
@@ -513,7 +513,7 @@ T.describe("Balance: world boss (S149)", function()
 				if not B.inBand(row) then
 					local who = if row.classId then `{row.classId} ` else ""
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{who}{at}{describeRow(row)} (S149, docs/sessions S149 F2)`, 0)
+					error(`{who}{at}{describeRow(row)} (S149, docs/archiwum/sesje S149 F2)`, 0)
 				end
 			end)
 		end
@@ -551,7 +551,7 @@ end)
 -- S152 (E2): the season pass pace (Balance.targetsS152): 1 h a day finishes 30-40 tiers, 2 h a day the last tier in
 -- week 5-7, 4 h a day never before week 5 (the growing cap), 2 h a day from week 5 at least 30 tiers (the catch-up),
 -- monsters at most half of the points at 2 h a day; every row without `report` asserted, the cap rows never in
--- Balance.S152_REPORT (docs/sessions S152 rule 10).
+-- Balance.S152_REPORT (docs/archiwum/sesje S152 rule 10).
 T.describe("Balance: season pass (S152)", function()
 	local rows = B.targetsS152()
 	for _, row in rows do
@@ -559,7 +559,7 @@ T.describe("Balance: season pass (S152)", function()
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{at}{describeRow(row)} (S152, docs/sessions S152 E2)`, 0)
+					error(`{at}{describeRow(row)} (S152, docs/archiwum/sesje S152 E2)`, 0)
 				end
 			end)
 		end
@@ -593,7 +593,7 @@ T.describe("Balance: returning bonus (S153)", function()
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{at}{describeRow(row)} (S153, docs/sessions S153 D1)`, 0)
+					error(`{at}{describeRow(row)} (S153, docs/archiwum/sesje S153 D1)`, 0)
 				end
 			end)
 		end
@@ -628,7 +628,7 @@ T.describe("Balance: Invasion (S134c)", function()
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{at}{describeRow(row)} (S134c, docs/sessions S134c E2)`, 0)
+					error(`{at}{describeRow(row)} (S134c, docs/archiwum/sesje S134c E2)`, 0)
 				end
 			end)
 		end
@@ -663,7 +663,7 @@ T.describe("Balance: Elite II kit (S134e)", function()
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{at}{describeRow(row)} (S134e, docs/sessions S134e C2)`, 0)
+					error(`{at}{describeRow(row)} (S134e, docs/archiwum/sesje S134e C2)`, 0)
 				end
 			end)
 		end
@@ -694,7 +694,7 @@ T.describe("Balance: Elite II loot (S134h)", function()
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{at}{describeRow(row)} (S134h, docs/sessions S134h C2)`, 0)
+					error(`{at}{describeRow(row)} (S134h, docs/archiwum/sesje S134h C2)`, 0)
 				end
 			end)
 		end
@@ -723,7 +723,7 @@ T.describe("Balance: Elite II hideouts (S134i)", function()
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{at}{describeRow(row)} (S134i, docs/sessions S134i C2)`, 0)
+					error(`{at}{describeRow(row)} (S134i, docs/archiwum/sesje S134i C2)`, 0)
 				end
 			end)
 		end
@@ -752,7 +752,7 @@ T.describe("Balance: bonus reroll (S134j)", function()
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{at}{describeRow(row)} (S134j, docs/sessions S134j F2)`, 0)
+					error(`{at}{describeRow(row)} (S134j, docs/archiwum/sesje S134j F2)`, 0)
 				end
 			end)
 		end
@@ -788,7 +788,7 @@ T.describe("Balance: hunting contracts and marks (S134k)", function()
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{at}{describeRow(row)} (S134k, docs/sessions S134k F2)`, 0)
+					error(`{at}{describeRow(row)} (S134k, docs/archiwum/sesje S134k F2)`, 0)
 				end
 			end)
 		end
@@ -814,7 +814,7 @@ T.describe("Balance: Legendary and Mythic (S134g)", function()
 			T.it(`{row.id}: {row.label}`, function()
 				if not B.inBand(row) then
 					local at = if row.level then `L{row.level} ` else ""
-					error(`{at}{describeRow(row)} (S134g, docs/sessions S134g E2)`, 0)
+					error(`{at}{describeRow(row)} (S134g, docs/archiwum/sesje S134g E2)`, 0)
 				end
 			end)
 		end

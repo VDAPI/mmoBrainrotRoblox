@@ -3369,7 +3369,7 @@ end
 
 -- S91: levels 1-20 retuned and frozen ------------------------------------------------------------------------------
 
--- Thresholds of the new 1-20 targets (docs/sessions S91 "Cele 1–20"; test data, never game numbers).
+-- Thresholds of the new 1-20 targets (docs/archiwum/sesje S91 "Cele 1–20"; test data, never game numbers).
 Balance.S91 = {
 	-- tempo (B2, plan D4): m(L) / m(L - 1) <= step for L = from..20, >= mono for L = from..19, h(20) / h(19) <= raw,
 	-- sum h(1..19) within hours (definition S91; 05b859d about 2.3 h)
@@ -3700,7 +3700,7 @@ Balance.S91_REPORT = {
 	["S91.r4.hailstorm.5b"] = "Grad 5B +19% na 20 (płaski przełom na niskiej randze 5; na 45–100 0,092)",
 } :: { [string]: string }
 
--- S140: the Mage's fire pool (DESIGN-18 §6.1, §13; docs/sessions S140 D) ------------------------------------------
+-- S140: the Mage's fire pool (DESIGN-18 §6.1, §13; docs/archiwum/sesje S140 D) ------------------------------------------
 
 -- The fire variants of the Mage's reference builds (Data/Paths/Mage, weapon.element "fire": the fire pool alone) and
 -- the levels of their rows. Thresholds are test data (S91's R1 band, the builds' areaCap, DESIGN-18 §6.1 identity).
@@ -3791,7 +3791,7 @@ function Balance.targetsS140(): { TargetRow }
 	return rows
 end
 
--- S141: the Mage's ice pool (DESIGN-18 §6.1, §13; docs/sessions S141 C) ---------------------------------------------
+-- S141: the Mage's ice pool (DESIGN-18 §6.1, §13; docs/archiwum/sesje S141 C) ---------------------------------------------
 
 -- The ice variants of the Mage's reference builds (Data/Paths/Mage, weapon.element "ice": the ice pool alone; their R1
 -- at 20 is a row of the S91 block, session rule 4) and the identity of ice (DESIGN-18 §6.1, asserted by S147).
@@ -3878,7 +3878,7 @@ function Balance.targetsS141(): { TargetRow }
 	return rows
 end
 
--- S142: the Mage's lightning pool and the three elements (DESIGN-18 §6.1, §13; docs/sessions S142 D) ----------------
+-- S142: the Mage's lightning pool and the three elements (DESIGN-18 §6.1, §13; docs/archiwum/sesje S142 D) ----------------
 
 -- The lightning variants of the Mage's reference builds (Data/Paths/Mage, weapon.element "lightning": the lightning pool
 -- alone; their R1 at 20 is a row of the S91 block, session rule 4) and the identity of the three elements (DESIGN-18
@@ -6690,7 +6690,7 @@ end
 
 -- S134: bosses 2.0 ------------------------------------------------------------------------------------------------
 
--- Targets of the boss rework (docs/sessions S134 E2; test data, never game numbers): a boss never scales with the
+-- Targets of the boss rework (docs/archiwum/sesje S134 E2; test data, never game numbers): a boss never scales with the
 -- party, so 5 players beat it faster than 3 and 3 faster than 2; the big blows (`avoid`) are dodged, the regular
 -- attacks stay survivable, the party mechanics need the party, and a solo player loses on equal gear but wins with
 -- overpowered gear (the Fury Warrior with a Mythic set +9).
@@ -6903,7 +6903,7 @@ end
 
 -- S149: the world boss ---------------------------------------------------------------------------------------------
 
--- Targets of the world boss (docs/sessions S149 F2; test data, never game numbers): built for 10-20 players of the
+-- Targets of the world boss (docs/archiwum/sesje S149 F2; test data, never game numbers): built for 10-20 players of the
 -- late game; it never scales with them (more players = shorter), 5 never win, the shared blow kills below 7 in the
 -- circle, the channel needs 10, three brands at once; its Legendaries and Mythics per hour of play stay a side dish
 -- next to Vaelgrath's. Teams of 10-20 repeat Balance.ORDER (one tank and one Cleric on every 5 players).
@@ -7312,7 +7312,7 @@ do
 		assert(R[key] == nil, `GLOBAL_REPORT_ONLY: duplicate {key}`)
 		R[key] = { session = session, why = why }
 	end
-	-- S134g: poza zasięgiem dźwigni S134g (G8 bands unchanged, docs/sessions S134g E3): a rolled two-hander's regular
+	-- S134g: poza zasięgiem dźwigni S134g (G8 bands unchanged, docs/archiwum/sesje S134g E3): a rolled two-hander's regular
 	-- lines count x Rarities.twoHandedBonusMul (2.7), so the lower Legendary / Mythic rangeMul (1.1 -> 1.05, 1.2 -> 1.1)
 	-- and the end of the legendary lines take more from the two-handed set than from weapon + off-hand; the lever is
 	-- twoHandedBonusMul per rarity (S87 C2), the owner decides
@@ -10384,7 +10384,7 @@ function Balance.dropsPerHour(
 	return result
 end
 
--- Elite II loot (S134h, docs/sessions/S134h.md C) -------------------------------------------------------------------
+-- Elite II loot (S134h, docs/archiwum/sesje/S134h.md C) -------------------------------------------------------------------
 -- Every Elite II drops only its own 2-3 slot groups (LootTables.slotsFor) and every cave has two of them (spawners A and
 -- B, each with its own respawn). The model per kill (elite2Seat) and per hour of a cave (elite2Cave) against the state
 -- before the session (`legacy`: one spawner, DEFAULT_SLOTS, the old item count and materials), computed by the same
@@ -10620,7 +10620,7 @@ function Balance.targetsS134h(): { TargetRow }
 	return rows
 end
 
--- Elite II hideouts (S134i, docs/sessions/S134i.md C) ----------------------------------------------------------------
+-- Elite II hideouts (S134i, docs/archiwum/sesje/S134i.md C) ----------------------------------------------------------------
 -- 2-3 hideouts on every region map, each with one Elite II of its own loot (LootTables.ELITE2_SLOTS) and its respawn
 -- (AreaSpawns.elite2Respawn of its top level x Combat.lairElite2RespawnMul). The model per hour of a level band
 -- (LootTables.ELITE2_BANDS): every Elite II spawner of the world whose level range overlaps the band, killed as soon as
@@ -11990,7 +11990,7 @@ function Balance.targetsS134c(): { TargetRow }
 	return rows
 end
 
--- Elite II kit (S134e, docs/sessions/S134e.md C) ----------------------------------------------------------------------
+-- Elite II kit (S134e, docs/archiwum/sesje/S134e.md C) ----------------------------------------------------------------------
 -- Crushing Blow (lethal from the monster's level advantage), Pounce and the throw against kiting, Heavy Blow of the
 -- Elites. One Elite II kind of a cave of each region (spawner level -> Elite II level spawner + 4): 26, 46, 66, 96.
 
@@ -12198,7 +12198,7 @@ function Balance.targetsS134e(): { TargetRow }
 	return rows
 end
 
--- Full income (S109, docs/sessions/S109.md E1) ------------------------------------------------------------------------
+-- Full income (S109, docs/archiwum/sesje/S109.md E1) ------------------------------------------------------------------------
 -- The one-time quest gold in the distribution of the quest EXP credit, the gold of the extras outside economyAt and
 -- the pace model (daily and weekly contracts, the boss contract, the login reward, world events) per hour of play, and
 -- the full income of a player who does everything.
@@ -12656,7 +12656,7 @@ function Balance.bloodMoon(): BloodMoonBalance
 	}
 end
 
--- S134g: Legendary and Mythic with skill effects (docs/sessions/S134g.md E) ------------------------------------------
+-- S134g: Legendary and Mythic with skill effects (docs/archiwum/sesje/S134g.md E) ------------------------------------------
 -- The stats of a Legendary / Mythic against a Heroic of the same level, the levels a Heroic needs to catch up
 -- (rarityEdge, ItemScore with the expected effect points) and the owner's case (Legendary L36 against Heroic L48).
 -- Expected lines here are smooth (the middle of ItemRoll.bonusRange, not rounded): the rounded middle of
@@ -12941,7 +12941,7 @@ function Balance.targetsS134g(): { TargetRow }
 	return rows
 end
 
--- Bonus reroll (S134j, docs/sessions/S134j.md F) -------------------------------------------------------------------
+-- Bonus reroll (S134j, docs/archiwum/sesje/S134j.md F) -------------------------------------------------------------------
 -- The class weapon of ilvl L - GEAR_GAP (like upgradeVsIncome) at a rarity; Reroll.costAt for every attempt (the count
 -- grows like in the game). goldEq with Balance.materialPrices; hours = essence hours of the level's grinding
 -- (materialSupply.normal, materialHours with transmutation) + gold / economyAt.incomePerHour. The reroll is optional
@@ -13269,7 +13269,7 @@ function Balance.targetsS134j(): { TargetRow }
 	return rows
 end
 
--- Hunting contracts on a monster kind and Hunter's Marks (S134k, docs/sessions/S134k.md F) ------------------------------
+-- Hunting contracts on a monster kind and Hunter's Marks (S134k, docs/archiwum/sesje/S134k.md F) ------------------------------
 -- The contract time: the kills of the hunting ground it takes to kill n of the kind (n / its share of the area's normal
 -- monsters, Logic/ContractGen) at the Warrior's grinding pace of the level (paceAt.secondsPerKill), against S99 (any
 -- monster of the area: killsAt(L)). Marks per hour of contracts of the own level = marksFor(L) / that time. The shop's
@@ -13486,7 +13486,7 @@ end
 
 -- S152: the season pass ---------------------------------------------------------------------------------------------
 
--- Pace of the season pass (docs/sessions S152 E; test data, never game numbers). An hour of play is a model of what a
+-- Pace of the season pass (docs/archiwum/sesje S152 E; test data, never game numbers). An hour of play is a model of what a
 -- player does in it (DECYZJE S152): `grind` of it on ordinary monsters of the level's ground (Balance.paceAt, mean of
 -- the classes), `caves` on cave Elites (Balance.elitesPerHour), Elites II, story / side / contract hand-ins below
 -- level 100, world events (one in WORLD_EVENT_HOURS), dungeon boss wins (from the first boss, at most

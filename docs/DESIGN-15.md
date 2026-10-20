@@ -1,6 +1,6 @@
 # DESIGN-15: sprzedawcy klas, questy 1–100, wierzchowce, wydarzenia świata, nagroda za logowanie (S95–S109)
 
-Kontrakt dla sesji S95–S109. Właściciel (ProjektG, 2026-10-12) wybrał w ankiecie wszystkie rekomendowane odpowiedzi, z pomysłów dodatkowych tylko **wydarzenia świata** i **nagrodę za logowanie**. Wszystkie te sesje idą **po S94** (balans 1–100 zamknięty), w kolejce DALEJ po S94. Kod w chwili pisania: `e5f2074` (S57); S58–S94 są w planie (`docs/sessions/S58..S94.md`), więc nazwy i linie z S57 mogą się przesunąć. Wygrywa kod.
+Kontrakt dla sesji S95–S109. Właściciel (ProjektG, 2026-10-12) wybrał w ankiecie wszystkie rekomendowane odpowiedzi, z pomysłów dodatkowych tylko **wydarzenia świata** i **nagrodę za logowanie**. Wszystkie te sesje idą **po S94** (balans 1–100 zamknięty), w kolejce DALEJ po S94. Kod w chwili pisania: `e5f2074` (S57); S58–S94 są w planie (`docs/archiwum/sesje/S58..S94.md`), więc nazwy i linie z S57 mogą się przesunąć. Wygrywa kod.
 
 Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `docs/DECYZJE.md` i poprawka tego pliku w tym samym commicie.
 

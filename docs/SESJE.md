@@ -837,7 +837,7 @@ kilku sekund); dystans do NPC liczony od pozycji postaci kontrolowanej przez kli
 ### S17b: Animacje proceduralne potworów, modele broni, pozy rzucania
 
 > Sesja dodatkowa zrobiona z listy „Niedokończone” przed otrzymaniem planu S18–S20; commity mają w opisie „S18”
-> (`f388d97`, `d386f18`). Numer S18 należy teraz do sesji z `docs/sessions/S18.md`.
+> (`f388d97`, `d386f18`). Numer S18 należy teraz do sesji z `docs/archiwum/sesje/S18.md`.
 
 **Zrobione**
 - Potwory się ruszają (bez assetów animacji): chód (nogi na przemian, pająk przebiera nogami, ręce humanoidów i golemów
@@ -2057,7 +2057,7 @@ Szczegóły, decyzje i niedokończone: `docs/WIKI.md` (Stan, Decyzje, Niedokońc
 
 **Pliki**: nowe `tools/wikidump.luau`, `tools/WikiData/*` (19 modułów), `tests/wikidump.spec.luau`,
 `scripts/wikidump.{ps1,sh}`, generowane `wiki/src/data/*`, `wiki/src/styles/tokens.data.css`, `docs/PRZEDMIOTY.md`;
-zmiany: `CLAUDE.md`, `docs/WIKI.md`, `docs/sessions/S34–S43` (ścieżka `tools/WikiData`). Kod gry bez zmian (729 testów).
+zmiany: `CLAUDE.md`, `docs/WIKI.md`, `docs/archiwum/sesje/S34–S43` (ścieżka `tools/WikiData`). Kod gry bez zmian (729 testów).
 
 #### Instrukcja testu S34
 
@@ -4880,7 +4880,7 @@ jako osobne wiersze celów).
 
 ### S52: Modele broni i ikony właściciela w grze (hak, packer, import)
 
-Sesja z `docs/sessions/S52.md` rozszerzona prośbą właściciela z 2026-10-12: zamiast samego haka gra dostaje już zrobione
+Sesja z `docs/archiwum/sesje/S52.md` rozszerzona prośbą właściciela z 2026-10-12: zamiast samego haka gra dostaje już zrobione
 grafiki i modele z folderu `D:/Users/vdapi/Downloads/Graphics`. Kod wygrywa nad planem z S46: model to MeshPart z wpisem
 w `WeaponLooks.assets` (było od 2026-10-09), grafika jest na próg przedmiotu, ikony PNG to warstwa nad SVG (`DECYZJE`, S52).
 - **Rozdzielacz progów** `Logic/ArtTiers` (`pick`, `modelId`, `iconKeys`): własny próg, potem najbliższy niższy tego
@@ -8220,7 +8220,7 @@ Co zrobiono:
 - **Testy:** `tests/motionkeys.spec.luau` (punkty 1–11 planu i broń każdej aktywnej umiejętności); `gait.spec` i
   `admin.spec` bez zmian.
 - **Dokumentacja (I–K):** `docs/ANIMACJE.md` (nowy), `CLAUDE.md` (wyjątek fazy dla S110–S119 i „Podgląd ruchu”),
-  `docs/DESIGN-16.md` (§1 poprawione, §11 „Ustalenia S110”); `docs/sessions/DALEJ.md` miał już wyjątek w punkcie 4
+  `docs/DESIGN-16.md` (§1 poprawione, §11 „Ustalenia S110”); `docs/archiwum/sesje/DALEJ.md` miał już wyjątek w punkcie 4
   w docelowym brzmieniu, bez zmian.
 - **Poprawki po przeglądzie:** `freeze` zeruje czekające zamrożenie poprzedniego `freeze` / `step`; `Clock.track`
   nie nadpisuje zapamiętanego `Lifetime` smugi / `TimeScale` emitera przy ponownym śledzeniu w zamrożeniu; klatki

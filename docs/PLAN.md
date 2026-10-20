@@ -13,9 +13,9 @@ Instalacja narzędzi i uruchomienie gry: `README.md` w katalogu głównym.
 | `docs/SESJE.md` | Dziennik sesji: co zrobiono, pliki, poprawki po testach |
 | `docs/DECYZJE.md` | Decyzje z numerem sesji (nadpisują DESIGN i ARCHITECTURE) |
 | `docs/SILNIKI.md` | Faktyczne pola silnika krain i jaskiń (S45–S51) |
-| `docs/sessions/S01–S14.md` | Prompty sesji podstawowych (zrobione) |
-| `docs/sessions/S18–S20.md` | Po testach S17: S18 walka, sterowanie, przedmioty, broń, UI; S19 grupy potworów, jaskinie, nowe potwory; S20 szczegółowa mapa z obszarami potworów, bogatszy i wydajniejszy świat, wygoda łupu |
-| `docs/sessions/S21–S24.md` | Po testach S20: S21 nowe miasto startowe, S22 animacje ataku, smycz, śmierć z wyborem miejsca, wybór expowiska, czytelna mapa; S23 panel developerski; S24 ładne potwory, bossowie i pety |
+| `docs/archiwum/sesje/S01–S14.md` | Prompty sesji podstawowych (zrobione) |
+| `docs/archiwum/sesje/S18–S20.md` | Po testach S17: S18 walka, sterowanie, przedmioty, broń, UI; S19 grupy potworów, jaskinie, nowe potwory; S20 szczegółowa mapa z obszarami potworów, bogatszy i wydajniejszy świat, wygoda łupu |
+| `docs/archiwum/sesje/S21–S24.md` | Po testach S20: S21 nowe miasto startowe, S22 animacje ataku, smycz, śmierć z wyborem miejsca, wybór expowiska, czytelna mapa; S23 panel developerski; S24 ładne potwory, bossowie i pety |
 | `docs/SWIAT.md` | Spis świata: expowiska, potwory z Elitami, jaskinie, bossy, dropy |
 | `docs/MODELE.md` | Research: skąd brać modele potworów, bossów i petów, licencje, wgrywanie i animacje |
 | `docs/miasto/MIASTO.md` | Specyfikacja miasta startowego (S21) i narzędzia planu |
