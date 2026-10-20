@@ -243,6 +243,85 @@ local function pair(ctx: Ctx, left: string, right: string, fn: (part: BasePart?,
 	fn(ctx.part(right), 1)
 end
 
+-- Owner 2026-10-21 ("the looks of our characters are awful"): garments that cover the body are drawn as shells, a copy
+-- of the body part's own mesh a little larger in the garment's colour and material, so cloth and plate follow the
+-- Dawson body (W09) instead of standing off it as blocks. `k` scales the part's size, `offset` is in its space. A body
+-- without meshes (the block figure, R6) gets a block of the same size.
+local function shell(
+	ctx: Ctx,
+	body: BasePart?,
+	k: Vector3,
+	offset: CFrame?,
+	color: Color3?,
+	material: Enum.Material?
+): BasePart?
+	if not body then
+		return nil
+	end
+	local size = body.Size * k
+	if not body:IsA("MeshPart") then
+		return piece(ctx, body, size, offset or CFrame.identity, color, material)
+	end
+	local archivable = body.Archivable
+	body.Archivable = true
+	local part = body:Clone()
+	body.Archivable = archivable
+	if not part then
+		return piece(ctx, body, size, offset or CFrame.identity, color, material)
+	end
+	part:ClearAllChildren()
+	part.Name = "Piece"
+	part.Size = size
+	part.TextureID = ""
+	part.Color = color or ctx.color
+	part.Material = material or Enum.Material.Fabric
+	part.Transparency = 0
+	part.CanCollide = false
+	part.CanQuery = false
+	part.CanTouch = false
+	part.Massless = true
+	part.CastShadow = false
+	weld(part, body, offset or CFrame.identity)
+	part.Parent = ctx.folder
+	return part
+end
+
+-- A round piece (a ball with a stretched sphere mesh), for pauldrons, hoods and collars.
+local function blob(ctx: Ctx, to: BasePart?, size: Vector3, offset: CFrame, color: Color3?, material: Enum.Material?)
+	local part = piece(ctx, to, Vector3.one * math.max(size.X, size.Y, size.Z), offset, color, material)
+	if part then
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Scale = size / part.Size.X
+		mesh.Parent = part
+	end
+	return part
+end
+
+-- A flared skirt from the waist to the ankles: `n` cloth panels round the hips, leaning outwards to the hem.
+local function skirt(ctx: Ctx, n: number, material: Enum.Material?)
+	local l = ctx.lower
+	if not l then
+		return
+	end
+	local upper = ctx.part("LeftUpperLeg")
+	local lowerLeg = ctx.part("LeftLowerLeg")
+	local length = ((if upper then upper.Size.Y else 1.2) + (if lowerLeg then lowerLeg.Size.Y else 1.2)) * 0.92
+	local rx, rz = l.Size.X * 0.5, l.Size.Z * 0.62
+	local flare = math.rad(9)
+	for i = 0, n - 1 do
+		local a = (i + 0.5) / n * math.pi * 2
+		local x, z = math.sin(a) * rx, math.cos(a) * rz
+		local width = 2 * math.pi * math.max(rx, rz) / n * 1.18
+		-- the panel hangs from the hip ring, turned to face out and leaning out at the hem
+		local cf = CFrame.new(x, l.Size.Y * 0.2, z)
+			* CFrame.Angles(0, a, 0)
+			* CFrame.Angles(flare, 0, 0)
+			* CFrame.new(0, -length / 2, 0)
+		piece(ctx, l, Vector3.new(width, length, 0.07), cf, nil, material or Enum.Material.Fabric)
+	end
+end
+
 local function cape(ctx: Ctx)
 	local t = ctx.torso
 	local part = piece(
@@ -263,7 +342,7 @@ end
 
 local function belt(ctx: Ctx)
 	local l = ctx.lower
-	piece(ctx, l, rel(l, 1.06, 0.7, 1.1), at(l, 0, 0.1, 0))
+	shell(ctx, l, Vector3.new(1.07, 0.42, 1.12), at(l, 0, 0.22, 0), nil, Enum.Material.Leather)
 end
 
 local function cap(ctx: Ctx, height: number)
@@ -274,13 +353,33 @@ end
 -- One drawing per procedural garment of Logic/CharacterLook.GARMENTS (tests/classlooks.spec checks the names; the
 -- number of parts drawn matches GARMENTS[g].pieces).
 local DRAW: { [string]: (ctx: Ctx) -> () } = {
+	-- a round hood over the back and the top of the head (the face stays free) and its tail down the neck
 	hood = function(ctx)
 		local h = ctx.head
-		piece(ctx, h, rel(h, 1.18, 1.12, 1.18), at(h, 0, 0.07, 0.06), nil, Enum.Material.Fabric)
+		if not h then
+			return
+		end
+		blob(ctx, h, rel(h, 1.2, 0.98, 1.14), at(h, 0, 0.1, 0.17), nil, Enum.Material.Fabric)
+		piece(
+			ctx,
+			h,
+			rel(h, 0.62, 0.55, 0.1),
+			at(h, 0, -0.42, 0.42) * CFrame.Angles(-0.35, 0, 0),
+			nil,
+			Enum.Material.Fabric
+		)
 	end,
 	crown = function(ctx)
 		local h = ctx.head
-		piece(ctx, h, rel(h, 0.96, 0.29, 0.96), at(h, 0, 0.62, 0), nil, Enum.Material.Neon)
+		piece(
+			ctx,
+			h,
+			Vector3.new(0.18, (h and h.Size.X or 1) * 0.92, (h and h.Size.Z or 1) * 0.92),
+			at(h, 0, 0.42, 0.03) * CFrame.Angles(0, 0, math.rad(90)),
+			nil,
+			Enum.Material.Neon,
+			Enum.PartType.Cylinder
+		)
 	end,
 	halo = function(ctx)
 		local h = ctx.head
@@ -288,7 +387,7 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 			ctx,
 			h,
 			Vector3.new(0.1, (h and h.Size.X or 1) * 1.15, (h and h.Size.Z or 1) * 1.15),
-			at(h, 0, 0.95, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			at(h, 0, 0.75, 0) * CFrame.Angles(0, 0, math.rad(90)),
 			nil,
 			Enum.Material.Neon,
 			Enum.PartType.Cylinder
@@ -297,28 +396,28 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 	horns = function(ctx)
 		local h = ctx.head
 		for _, side in { -1, 1 } do
-			piece(ctx, h, rel(h, 0.2, 0.58, 0.2), at(h, 0.37 * side, 0.62, 0) * CFrame.Angles(0, 0, -0.4 * side))
+			blob(ctx, h, rel(h, 0.16, 0.5, 0.16), at(h, 0.36 * side, 0.45, 0.05) * CFrame.Angles(0, 0, -0.45 * side))
 		end
 	end,
 	mask = function(ctx)
 		local h = ctx.head
-		piece(ctx, h, rel(h, 0.88, 0.38, 0.17), at(h, 0, -0.12, -0.46), nil, Enum.Material.Fabric)
+		blob(ctx, h, rel(h, 0.8, 0.3, 0.3), at(h, 0, -0.18, -0.38), nil, Enum.Material.Fabric)
 	end,
 	cape = cape,
 	pauldrons = function(ctx)
 		local t = ctx.torso
 		for _, side in { -1, 1 } do
-			piece(ctx, t, rel(t, 0.45, 0.31, 1.1), at(t, 0.575 * side, 0.47, 0), nil, Enum.Material.Metal)
+			blob(ctx, t, rel(t, 0.42, 0.34, 1.0), at(t, 0.52 * side, 0.42, 0), nil, Enum.Material.Fabric)
 		end
 	end,
+	-- plate over the chest and the hips
 	breastplate = function(ctx)
-		local t, l = ctx.torso, ctx.lower
-		piece(ctx, t, rel(t, 1.06, 0.92, 1.14), at(t, 0, 0.04, 0), nil, Enum.Material.Metal)
-		piece(
+		shell(ctx, ctx.torso, Vector3.new(1.07, 1.03, 1.12), nil, nil, Enum.Material.Metal)
+		shell(
 			ctx,
-			l,
-			rel(l, 1.1, 1.7, 1.16),
-			at(l, 0, -0.25, 0),
+			ctx.lower,
+			Vector3.new(1.09, 1.1, 1.14),
+			nil,
 			ctx.color:Lerp(Color3.new(), 0.15),
 			Enum.Material.Metal
 		)
@@ -326,57 +425,39 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 	plate_pauldrons = function(ctx)
 		local t = ctx.torso
 		for _, side in { -1, 1 } do
-			piece(
+			blob(
 				ctx,
 				t,
-				rel(t, 0.52, 0.36, 1.24),
-				at(t, 0.6 * side, 0.45, 0) * CFrame.Angles(0, 0, -0.18 * side),
+				rel(t, 0.5, 0.36, 1.08),
+				at(t, 0.56 * side, 0.42, 0) * CFrame.Angles(0, 0, -0.2 * side),
 				nil,
 				Enum.Material.Metal
 			)
 		end
 	end,
 	gauntlets = function(ctx)
-		pair(ctx, "LeftHand", "RightHand", function(hand)
-			piece(ctx, hand, rel(hand, 1.16, 1.7, 1.16), at(hand, 0, 0.3, 0), nil, Enum.Material.Metal)
+		pair(ctx, "LeftLowerArm", "RightLowerArm", function(arm)
+			shell(ctx, arm, Vector3.new(1.16, 0.62, 1.16), at(arm, 0, -0.2, 0), nil, Enum.Material.Metal)
 		end)
 	end,
 	greaves = function(ctx)
 		pair(ctx, "LeftLowerLeg", "RightLowerLeg", function(leg)
-			piece(ctx, leg, rel(leg, 1.1, 0.9, 1.16), at(leg, 0, 0.02, -0.04), nil, Enum.Material.Metal)
+			shell(ctx, leg, Vector3.new(1.12, 0.85, 1.14), at(leg, 0, -0.04, 0), nil, Enum.Material.Metal)
 		end)
 	end,
 	belt = belt,
+	-- the robe falls from the hips as a flared skirt of panels (the legs under it are in the robe's colour)
 	robe_skirt = function(ctx)
-		local l = ctx.lower
-		local upper = ctx.part("LeftUpperLeg")
-		local lowerLeg = ctx.part("LeftLowerLeg")
-		local length = (if upper then upper.Size.Y else 1.2) + (if lowerLeg then lowerLeg.Size.Y else 1.2)
-		local lh = if l then l.Size.Y else 0.4
-		piece(
-			ctx,
-			l,
-			Vector3.new((l and l.Size.X or 2) * 1.08, length * 0.95, (l and l.Size.Z or 1) * 1.18),
-			CFrame.new(0, -(lh / 2 + length * 0.95 / 2) + lh * 0.4, 0),
-			nil,
-			Enum.Material.Fabric
-		)
+		skirt(ctx, 8, Enum.Material.Fabric)
 	end,
 	holy_symbol = function(ctx)
 		local t = ctx.torso
 		piece(ctx, t, rel(t, 0.07, 0.38, 0.08), at(t, 0, 0.08, -0.56), nil, Enum.Material.Metal)
 		piece(ctx, t, rel(t, 0.2, 0.06, 0.08), at(t, 0, 0.16, -0.56), nil, Enum.Material.Metal)
 	end,
+	-- a sash round the waist
 	sash = function(ctx)
-		local t = ctx.torso
-		piece(
-			ctx,
-			t,
-			rel(t, 1.14, 0.16, 1.12),
-			at(t, 0, -0.05, 0) * CFrame.Angles(0, 0, math.rad(32)),
-			nil,
-			Enum.Material.Fabric
-		)
+		shell(ctx, ctx.torso, Vector3.new(1.08, 0.2, 1.13), at(ctx.torso, 0, -0.38, 0), nil, Enum.Material.Fabric)
 	end,
 	stole = function(ctx)
 		local t = ctx.torso
@@ -385,64 +466,65 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 		end
 	end,
 	leather_vest = function(ctx)
-		local t = ctx.torso
-		piece(ctx, t, rel(t, 1.05, 0.94, 1.1), at(t, 0, -0.02, 0))
+		shell(ctx, ctx.torso, Vector3.new(1.06, 1.0, 1.1), nil, nil, Enum.Material.Leather)
 	end,
 	quiver_back = function(ctx)
 		local t = ctx.torso
-		local tilt = CFrame.Angles(0, 0, math.rad(-25))
-		piece(ctx, t, rel(t, 0.18, 1.0, 0.36), at(t, 0.18, 0.08, 0.64) * tilt)
+		local tilt = CFrame.Angles(0, 0, math.rad(90 - 25))
+		local d = (t and t.Size.Z or 1) * 0.36
 		piece(
 			ctx,
 			t,
-			rel(t, 0.16, 0.18, 0.3),
+			Vector3.new((t and t.Size.Y or 1.6) * 1.0, d, d),
+			at(t, 0.18, 0.08, 0.64) * tilt,
+			nil,
+			Enum.Material.Leather,
+			Enum.PartType.Cylinder
+		)
+		piece(
+			ctx,
+			t,
+			Vector3.new(0.22, d * 0.8, d * 0.8),
 			at(t, 0.38, 0.55, 0.64) * tilt,
 			lighter(ctx.color, 0.55),
-			Enum.Material.Fabric
+			Enum.Material.Fabric,
+			Enum.PartType.Cylinder
 		)
 	end,
 	bracers = function(ctx)
 		pair(ctx, "LeftLowerArm", "RightLowerArm", function(arm)
-			piece(ctx, arm, rel(arm, 1.12, 0.62, 1.12), at(arm, 0, -0.12, 0))
+			shell(ctx, arm, Vector3.new(1.14, 0.55, 1.14), at(arm, 0, -0.18, 0), nil, Enum.Material.Leather)
 		end)
 	end,
 	boots = function(ctx)
 		pair(ctx, "LeftFoot", "RightFoot", function(foot)
-			piece(ctx, foot, rel(foot, 1.1, 2.4, 1.12), at(foot, 0, 0.62, 0))
+			shell(ctx, foot, Vector3.new(1.12, 1.25, 1.08), at(foot, 0, 0.1, 0), nil, Enum.Material.Leather)
 		end)
 	end,
 	high_collar = function(ctx)
 		local t = ctx.torso
-		piece(
-			ctx,
-			t,
-			rel(t, 0.62, 0.42, 0.24),
-			at(t, 0, 0.62, 0.42) * CFrame.Angles(-0.25, 0, 0),
-			nil,
-			Enum.Material.Fabric
-		)
+		blob(ctx, t, rel(t, 0.7, 0.36, 0.8), at(t, 0, 0.5, 0.08), nil, Enum.Material.Fabric)
 	end,
 	belt_book = function(ctx)
 		belt(ctx)
 		local l = ctx.lower
-		piece(ctx, l, rel(l, 0.22, 1.1, 0.42), at(l, 0.58, -0.35, -0.1), nil, Enum.Material.Fabric)
+		piece(ctx, l, rel(l, 0.22, 1.1, 0.42), at(l, 0.6, -0.3, -0.1), nil, Enum.Material.Fabric)
 	end,
+	-- a short cape over the shoulders, shaped like the chest
 	shoulder_mantle = function(ctx)
-		local t = ctx.torso
-		piece(ctx, t, rel(t, 1.26, 0.26, 1.22), at(t, 0, 0.42, 0), nil, Enum.Material.Fabric)
+		shell(ctx, ctx.torso, Vector3.new(1.12, 0.42, 1.16), at(ctx.torso, 0, 0.33, 0), nil, Enum.Material.Fabric)
 	end,
 	helm_crest = function(ctx)
 		local h = ctx.head
-		piece(ctx, h, rel(h, 1.12, 0.98, 1.12), at(h, 0, 0.09, 0), nil, Enum.Material.Metal)
-		piece(ctx, h, rel(h, 0.12, 0.34, 0.92), at(h, 0, 0.66, 0.04), lighter(ctx.color, 0.15), Enum.Material.Metal)
+		blob(ctx, h, rel(h, 1.12, 0.72, 1.14), at(h, 0, 0.2, 0.06), nil, Enum.Material.Metal)
+		piece(ctx, h, rel(h, 0.1, 0.32, 0.86), at(h, 0, 0.56, 0.06), lighter(ctx.color, 0.15), Enum.Material.Metal)
 	end,
 	fur_mantle = function(ctx)
-		local t = ctx.torso
-		piece(ctx, t, rel(t, 1.3, 0.32, 1.3), at(t, 0, 0.45, 0.04), nil, Enum.Material.Fabric)
+		shell(ctx, ctx.torso, Vector3.new(1.16, 0.45, 1.2), at(ctx.torso, 0, 0.32, 0.02), nil, Enum.Material.Fabric)
 	end,
 	fur_collar = function(ctx)
 		local t = ctx.torso
-		piece(ctx, t, rel(t, 0.72, 0.2, 1.2), at(t, 0, 0.55, 0), nil, Enum.Material.Fabric)
+		blob(ctx, t, rel(t, 0.78, 0.26, 1.08), at(t, 0, 0.5, 0), nil, Enum.Material.Fabric)
 	end,
 	spectacles = function(ctx)
 		local h = ctx.head
@@ -463,8 +545,8 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 		piece(
 			ctx,
 			h,
-			Vector3.new(0.12, (h and h.Size.X or 1.2) * 1.08, (h and h.Size.Z or 1.2) * 1.08),
-			at(h, 0, 0.42, 0) * CFrame.Angles(0, 0, math.rad(90)),
+			Vector3.new(0.12, (h and h.Size.X or 1.2) * 1.02, (h and h.Size.Z or 1.2) * 1.02),
+			at(h, 0, 0.3, 0.02) * CFrame.Angles(0, 0, math.rad(90)),
 			nil,
 			Enum.Material.Grass,
 			Enum.PartType.Cylinder
@@ -477,7 +559,7 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 				ctx,
 				t,
 				rel(t, 0.2, 0.36, 0.2),
-				at(t, 0.55 * side, 0.66, 0) * CFrame.Angles(0, math.rad(45), 0.3 * side),
+				at(t, 0.55 * side, 0.62, 0) * CFrame.Angles(0, math.rad(45), 0.3 * side),
 				nil,
 				Enum.Material.Ice
 			)
@@ -502,8 +584,7 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 		piece(ctx, t, rel(t, 0.55, 1.45, 0.06), at(t, 0, -0.3, -0.57), nil, Enum.Material.Fabric)
 	end,
 	chain_mail = function(ctx)
-		local t = ctx.torso
-		piece(ctx, t, rel(t, 1.06, 1.15, 1.1), at(t, 0, -0.12, 0), nil, Enum.Material.DiamondPlate)
+		shell(ctx, ctx.torso, Vector3.new(1.05, 1.06, 1.1), at(ctx.torso, 0, -0.03, 0), nil, Enum.Material.DiamondPlate)
 	end,
 	hair_short = function(ctx)
 		cap(ctx, 0.38)
