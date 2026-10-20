@@ -91,6 +91,7 @@ local MonsterAssets: { [string]: Entry } = {
 	-- owner 2026-10-20: the bear (blackBear inherits it with its tint) and the frost dragon boss; the young frost dragon
 	-- above got its own small dragon model the same day
 	brownBear = { rig = "static", rootSize = { 2.37, 1.99, 3.45 }, hipHeight = 1.05, height = 3.40, walkSpeed = 5.1 },
+	specter = { rig = "static", rootSize = { 1.83, 2.91, 1.50 }, hipHeight = 2.75, height = 6.33, walkSpeed = 9.5 },
 	vaelgrath = { rig = "static", rootSize = { 1.94, 1.61, 3.23 }, hipHeight = 1.17, height = 4.70, walkSpeed = 7.0 },
 }
 
