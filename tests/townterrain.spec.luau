@@ -43,6 +43,23 @@ T.describe("TownTerrain", function()
 		end
 	end)
 
+	T.it("grows no decoration grass anywhere in the city (lawns are LeafyGrass)", function()
+		T.expect(table.find(TownTerrain.MATERIALS, "Grass")).toBe(nil)
+		T.expect(TownTerrain.LAWN).toBe("LeafyGrass")
+		local lawns = 0
+		for x = -440, 440, 8 do
+			for z = -440, 440, 8 do
+				local m = TownTerrain.materialAt(x, z, TownTerrain.heightAt(x, z), 0)
+				if m == "Grass" then
+					error(`decoration grass at {x},{z}`)
+				elseif m == TownTerrain.LAWN then
+					lawns += 1
+				end
+			end
+		end
+		T.expect(lawns > 100).toBe(true)
+	end)
+
 	T.it("fills voxel blocks for WriteVoxels", function()
 		local spawn = Town.city.spawn
 		local x0 = math.floor(spawn.x / 4) * 4

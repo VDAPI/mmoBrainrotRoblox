@@ -596,6 +596,7 @@ end
 export type Info = {
 	road: number, -- distance past the road edge (negative on the road)
 	ramp: boolean,
+	rampD: number, -- distance past the nearest ramp's edge (negative on it)
 	stream: number, -- index of the nearest stream (0: none)
 	streamD: number, -- distance past the water edge of that stream
 	streamW: number, -- its water level
@@ -645,6 +646,7 @@ function MeadowsTerrain.sample(x: number, z: number): (number, Info)
 	local info: Info = {
 		road = rd - rhalf,
 		ramp = pd < phalf + 0.5,
+		rampD = pd - phalf,
 		stream = sIndex,
 		streamD = sd - shalf,
 		streamW = sw,
@@ -806,7 +808,8 @@ function MeadowsTerrain.materialAt(x: number, z: number, h: number, slope: numbe
 	end
 	local theme = MeadowsTerrain.themeAt(x, z)
 	local pick = THEME_GROUND[theme] or THEME_GROUND.meadow
-	return pick(fbm(x, z, 31, SEED + 21, 3))
+	-- no decoration grass beside the roads and ramps (TerrainLayers.PATH_CLEAR)
+	return TerrainLayers.clearPaths(pick(fbm(x, z, 31, SEED + 21, 3)), info.road, info.rampD)
 end
 
 -- Material of the surface at a point (tools, admin).
