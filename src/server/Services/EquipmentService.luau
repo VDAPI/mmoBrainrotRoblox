@@ -211,7 +211,10 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 	local key = tostring(index)
 	local item = char.inventory[key]
 	local def = item and Items.get(item.id)
-	if not item or not def or not def.slot then
+	if not item then
+		return false, "error.stale" -- W28: the click before already took it (silent on the client)
+	end
+	if not def or not def.slot then
 		return false, "equip.error.slot"
 	end
 	local ok, err = canUse(char, def, item)
@@ -318,9 +321,13 @@ function EquipmentService.Unequip(player: Player, slot: string, targetIndex: num
 	if slot == "backpack" then
 		return false, "equip.error.backpackSlot"
 	end
+	if Items.slotGroup[slot] == nil then
+		return false, "error.badRequest"
+	end
 	local item = char.equipment[slot]
 	if not item then
-		return false, "error.badRequest"
+		-- W28: already off (a second click on the same slot): the state already matches
+		return true, nil
 	end
 	local capacity = InventoryService.CapacityOf(char, player)
 	local index: number? = nil
@@ -354,7 +361,7 @@ function EquipmentService.SwapRings(player: Player): (boolean, string?)
 	end
 	local equipment = char.equipment :: any
 	if equipment.ring1 == nil and equipment.ring2 == nil then
-		return false, "error.badRequest"
+		return true, nil -- W28: nothing to swap, nothing changes
 	end
 	equipment.ring1, equipment.ring2 = equipment.ring2, equipment.ring1
 	changed(player, { "ring1", "ring2" })

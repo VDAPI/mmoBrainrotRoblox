@@ -23,6 +23,7 @@ local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Potions = require(ReplicatedStorage.Shared.Logic.Potions)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
+local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -75,7 +76,7 @@ function ItemController.ItemAt(slotId: string): ItemInstance?
 end
 
 local function report(ok: any, err: any)
-	if not ok then
+	if not ok and not RequestGuard.isSilent(err) then
 		Sounds.play("error")
 		Toast.push(Text.now(if type(err) == "string" then err else "error.internal"), "error")
 	end
