@@ -613,64 +613,216 @@ local function forge(sp: any, ground: Ground): Build
 	return { name = sp.id, bp = bp, at = { x = sp.x, y = y0, z = sp.z, rot = sp.rot }, tag = "special" }
 end
 
--- Tournament ground (Ristalle): wooden stands with four tiers on four sides, entrances in the middle of the
--- north and south sides, a fenced sand ring, the lord's box with a canopy and banners on poles.
+-- Tournament ground (Ristalle). W28 (owner: "the arena looks like scattered sand with grass through the floor"):
+-- a stone colosseum on its own foundation. The floor sits over the highest ground of the footprint (no terrain or
+-- grass pokes through), the packed sand of the fight is the yellow zone (city.arena half) with a stone border, a
+-- centre ring and the two start marks; a low inner wall with a trim cap; stone stands with four rows of seats on the
+-- x-axis sides and on both halves of the z-axis sides; gates in the middle of the z-axis sides (12 studs, as before)
+-- under an arch with the "Arena" sign (tag arenaSign: World/Layouts writes it like a signpost), class-coloured
+-- banners, torches and weapon racks in the passage; square corner towers with braziers; the judges' box on the west
+-- stand. Everything stays inside the square of half + stands (tests/town.spec footprints, Data/Arena seats).
+local ARENA_CLOTH = { "#9A3A2C", "#3E7A45", "#35609E", "#B8963E" } -- class colours (Data/Classes) as cloth
+
+local function brazier(bp: BP, x: number, y: number, z: number, range: number)
+	bp:add("cyl", 1.2, 0.5, 0.5, x, y + 0.6, z, 0, 0, 90, o(Palette.metal[1]))
+	bp:add("cyl", 0.7, 2, 2, x, y + 1.5, z, 0, 0, 90, o(Palette.metal[2]))
+	bp:box(1.2, 0.8, 1.2, x, y + 2.1, z, { c = "#FF8A2A", m = "Neon", lod = "detail", tag = "fire" })
+	bp:light(x, y + 3, z, "#FF9A50", range, 1.4, "fire")
+end
+
 local function arena(sp: any, city: any, ground: Ground): Build
 	local a = city.arena
 	local bp = Blueprint.new(seedOf(sp.id))
-	local y0 = ground(a.x, a.z) + 0.1
 	local h, st = a.half, a.stands
-	local plank = Palette.planks[2]
+	local R = h + st
+	local lo, hi = math.huge, -math.huge
+	for i = -6, 6 do
+		for j = -6, 6 do
+			local g = ground(a.x + i * R / 6, a.z + j * R / 6)
+			lo, hi = math.min(lo, g), math.max(hi, g)
+		end
+	end
+	local y0 = hi + 0.3
+	local base = y0 - lo + 1.5
+	local stone = Palette.ashlar[2]
+	local trim = Palette.ashlar[3]
+	local dark = Palette.slate[1]
+	local flat = { jitter = 0 }
+	local SAND = 0.3 -- top of the sand over the stone floor
+	local WALL = 2.6 -- inner wall (the cap adds 0.4)
+	local d = (st - 1) / 4 -- depth of a row of seats
+	local TOP = 3.2 + 3 * 1.7 -- top of the last row
+	-- foundation (the stone floor of the passages) and the packed sand of the fight
+	bp:box(2 * R, base, 2 * R, 0, -base / 2, 0, o(Palette.rubble[1], "shell", { q = true }))
+	bp:box(2 * h, SAND, 2 * h, 0, SAND / 2, 0, o({ c = "#C9B184", m = "Sand" }, "shell", { q = true, jitter = 0 }))
+	-- stone border along the wall, the centre ring and the two start marks
+	for _, f in { 0, 90, 180, 270 } do
+		bp:push(0, 0, 0, 0, f, 0)
+		local len = if f % 180 == 0 then 2 * h else 2 * h - 2.8
+		bp:box(len, 0.08, 1.4, 0, SAND + 0.04, -h + 0.7, o(dark, nil, flat))
+		bp:pop()
+	end
+	bp:add("cyl", 0.08, 18, 18, 0, SAND + 0.04, 0, 0, 0, 90, o(dark, nil, flat))
+	bp:add("cyl", 0.1, 16, 16, 0, SAND + 0.05, 0, 0, 0, 90, o({ c = "#C9B184", m = "Sand" }, nil, flat))
+	bp:add("cyl", 0.12, 4, 4, 0, SAND + 0.06, 0, 0, 0, 90, o({ c = "#B8963E", m = "Slate" }, nil, flat))
+	for _, p in a.duel do
+		bp:add("cyl", 0.1, 3.4, 3.4, p[1] - a.x, SAND + 0.05, p[2] - a.z, 0, 0, 90, o(dark, nil, flat))
+	end
 	for _, f in { 0, 90, 180, 270 } do
 		bp:push(0, 0, 0, 0, f, 0)
 		local gate = f == 0 or f == 180
-		for tier = 0, 3 do
-			local depth = st / 4
-			local z = -h - depth * (tier + 0.5)
-			local y = 1.2 + tier * 1.6
-			local parts: { { number } } = if gate then { { -h - st, -6 }, { 6, h + st } } else { { -h, h } }
-			for _, span in parts do
-				local x0, x1 = span[1], span[2]
-				bp:box(x1 - x0, y, depth, (x0 + x1) / 2, y / 2, z, o(plank, "shell", { q = true }))
+		-- low inner wall with its cap and pennants on the sand side
+		local walls: { { number } } = if gate then { { -h, -6 }, { 6, h } } else { { -h - 1, h + 1 } }
+		for _, s in walls do
+			local cx, len = (s[1] + s[2]) / 2, s[2] - s[1]
+			bp:box(len, WALL, 1, cx, WALL / 2, -h - 0.5, o(stone, "shell", { q = true }))
+			bp:box(len + 0.2, 0.4, 1.5, cx, WALL + 0.2, -h - 0.5, o(trim))
+		end
+		for k, x in (if gate then { -34, -22, 22, 34 } else { -30, -18, 18, 30 }) :: { number } do
+			local cloth = ARENA_CLOTH[(k + f // 90) % #ARENA_CLOTH + 1]
+			bp:box(1.8, 1.9, 0.12, x, WALL - 0.9, -h + 0.07, { c = cloth, m = "Fabric", lod = "detail" })
+		end
+		-- the stands: four rows of stone seats, a parapet at the back, a blind arcade on the outer face
+		local spans: { { number } } = if gate then { { -h - 1, -6 }, { 6, h + 1 } } else { { -h - 1, h + 1 } }
+		for _, s in spans do
+			local x0, x1 = s[1], s[2]
+			local cx, len = (x0 + x1) / 2, x1 - x0
+			for k = 0, 3 do
+				local zf = -(h + 1 + k * d)
+				local y = 3.2 + k * 1.7
+				bp:box(len, y, d, cx, y / 2, zf - d / 2, o(stone, "shell", { q = true }))
+				bp:box(len, 0.3, 1.1, cx, y + 0.15, zf - 0.55, o(trim))
+			end
+			bp:box(len, 1.4, 0.8, cx, TOP + 0.7, -R + 0.4, o(stone, "shell"))
+			bp:box(len, 0.5, 1, cx, TOP - 0.2, -R - 0.2, o(trim))
+			bp:box(len, 0.8, 0.8, cx, 0.4, -R - 0.2, o(dark))
+			local bays = math.max(1, math.floor(len / 11))
+			local bay = len / bays
+			for i = 0, bays do
+				bp:box(1.4, TOP - 0.5, 0.6, x0 + i * bay, (TOP - 0.5) / 2, -R - 0.3, o(trim))
+			end
+			for i = 1, bays do
+				local x = x0 + (i - 0.5) * bay
+				bp:box(4, 3.6, 0.1, x, 2.6, -R - 0.05, o(Palette.soot, nil, flat))
+				bp:add("cyl", 0.1, 4, 4, x, 4.4, -R - 0.05, 0, 90, 0, o(Palette.soot, nil, flat))
 			end
 		end
-		-- fence around the sand
-		local parts: { { number } } = if gate then { { -h, -6 }, { 6, h } } else { { -h, h } }
-		for _, span in parts do
-			Parts.fence(bp, span[1], 0, -h + 0.5, span[2], 0, -h + 0.5, "rail")
-		end
-		-- banners on poles at the back of the stands
-		for _, x in { -h * 0.6, h * 0.6 } do
-			bp:add("cyl", 14, 0.4, 0.4, x, 7, -h - st - 0.5, 0, 0, 90, o(Palette.timber[1]))
+		if gate then
+			-- the gate arch over the passage, the "Arena" sign on its attic, banners, torches and weapon racks
+			local zo = -R + 1
+			for _, s in { -1, 1 } do
+				bp:box(2, 12, 2, s * 7, 6, zo, o(stone, "shell", { q = true }))
+				bp:box(2, 7, 1.6, s * 7, 3.5, -h - 1.8, o(stone, "shell", { q = true }))
+				bp:add("wedge", 2, 2.4, 2.6, s * 4.7, 9.8, zo, 0, s * 90, 180, o(stone))
+				banner(bp, s * 11, 6.5, -R - 0.75, 2.6, 5, ARENA_CLOTH[if f == 0 then (s + 3) / 2 else (s + 7) / 2])
+				-- torch on the outer face of the post
+				bp:box(0.3, 0.3, 1.2, s * 7, 7.5, -R - 0.6, o(Palette.metal[1]))
+				bp:add("cyl", 1.4, 0.4, 0.4, s * 7, 8.2, -R - 1.1, 0, 0, 90, o(Palette.timber[1]))
+				bp:box(0.6, 0.7, 0.6, s * 7, 9.2, -R - 1.1, { c = "#FF9A3A", m = "Neon", lod = "detail", tag = "fire" })
+				bp:light(s * 7, 9.8, -R - 1.4, "#FF9A50", 18, 1.2, "fire")
+				-- weapon racks against the passage walls (not colliding: the passage stays 12 studs wide)
+				for _, zc in { -h - 5, -h - 9.5 } do
+					local x = s * 5.5
+					for _, dz in { -1.4, 1.4 } do
+						bp:box(0.3, 3, 0.3, x, 1.5, zc + dz, o(Palette.timber[1]))
+					end
+					bp:box(0.3, 0.3, 3.2, x, 2.7, zc, o(Palette.timber[1]))
+					for i = -1, 1 do
+						bp:rbox(
+							0.15,
+							2.6,
+							0.4,
+							x - s * 0.25,
+							1.45,
+							zc + i * 0.8,
+							0,
+							0,
+							-s * 6,
+							o(Palette.metal[2], "fine")
+						)
+					end
+					bp:add(
+						"cyl",
+						0.2,
+						1.8,
+						1.8,
+						x - s * 0.2,
+						1.2,
+						zc + 2.4,
+						0,
+						0,
+						0,
+						o(
+							{ c = ARENA_CLOTH[(f // 90 + (if zc < -h - 6 then 1 else 0)) % 4 + 1], m = "WoodPlanks" },
+							"fine"
+						)
+					)
+				end
+			end
+			bp:box(16, 2, 2, 0, 12, zo, o(stone, "shell", { q = true }))
+			bp:box(18, 3.4, 2, 0, 14.7, zo, o(trim))
+			for _, x in { -8, 0, 8 } do
+				bp:box(1.8, 1.4, 2, x, 17.1, zo, o(trim))
+			end
+			bp:box(1.4, 1.8, 0.4, 0, 11.6, -R - 0.15, { c = "#C8A040", m = "Slate", lod = "detail" })
 			bp:box(
-				2.4,
-				5,
-				0.15,
-				x,
-				11,
-				-h - st - 0.5,
-				{ c = if f % 180 == 0 then "#7A2A22" else "#2E4A6B", m = "Fabric", lod = "detail", tag = "flag" }
+				12,
+				2.6,
+				0.3,
+				0,
+				14.7,
+				-R - 0.25,
+				{ c = "#3A2C22", m = "WoodPlanks", lod = "shell", tag = "arenaSign" }
 			)
+			bp:box(12.6, 3.2, 0.1, 0, 14.7, -R - 0.05, o(Palette.metal[1]))
+			-- the inner arch over the passage
+			bp:box(16, 1.6, 1.6, 0, 7.8, -h - 1.8, o(stone, "shell", { q = true }))
 		end
 		bp:pop()
 	end
-	-- lord's box on the west stand
-	bp:push(0, 0, 0, 0, 90, 0)
-	for _, x in { -6, 6 } do
-		bp:box(0.6, 8, 0.6, x, 10, -h - 2, o(Palette.timber[1]))
-		bp:box(0.6, 8, 0.6, x, 10, -h - 9, o(Palette.timber[1]))
+	-- square corner towers with a round turret, a brazier and a pennant
+	for _, c in { { -1, -1 }, { 1, -1 }, { -1, 1 }, { 1, 1 } } do
+		local tx, tz = c[1] * (R - (st - 1) / 2), c[2] * (R - (st - 1) / 2)
+		local side = st - 1
+		bp:box(side, TOP + 3, side, tx, (TOP + 3) / 2, tz, o(stone, "shell", { q = true }))
+		bp:box(side + 0.6, 0.6, side + 0.6, tx, TOP + 3.1, tz, o(trim))
+		bp:add("cyl", 3, 8, 8, tx, TOP + 4.6, tz, 0, 0, 90, o(stone))
+		bp:add("cyl", 0.5, 8.8, 8.8, tx, TOP + 6.3, tz, 0, 0, 90, o(trim))
+		brazier(bp, tx, TOP + 6.5, tz, 30)
+		local px, pz = tx + c[1] * 3.2, tz + c[2] * 3.2
+		bp:add("cyl", 11, 0.35, 0.35, px, TOP + 9.1, pz, 0, 0, 90, o(Palette.timber[1]))
+		bp:box(
+			0.15,
+			2,
+			3.4,
+			px,
+			TOP + 12.9,
+			pz - c[2] * 1.8,
+			{ c = ARENA_CLOTH[(c[1] + 1) + (c[2] + 1) // 2 + 1], m = "Fabric", lod = "detail", tag = "flag" }
+		)
+		-- a brazier on the inner wall's corner
+		brazier(bp, c[1] * (h + 0.5), WALL + 0.4, c[2] * (h + 0.5), 22)
 	end
-	bp:rbox(14, 0.3, 9, 0, 14.4, -h - 5.5, -8, 0, 0, { c = "#6B2A24", m = "Fabric", lod = "detail" })
-	bp:box(13, 1.2, 0.4, 0, 7.4, -h - 1.6, { c = "#C8A040", m = "Fabric", lod = "detail" })
-	bp:pop()
-	-- torches at the two entrances
-	for _, s in { -1, 1 } do
-		for _, x in { -7, 7 } do
-			bp:add("cyl", 5, 0.5, 0.5, x, 2.5, s * (h + st + 1), 0, 0, 90, o(Palette.timber[1]))
-			bp:box(0.8, 0.8, 0.8, x, 5.3, s * (h + st + 1), { c = "#FF9A3A", m = "Neon", lod = "detail", tag = "fire" })
-			bp:light(x, 5.8, s * (h + st + 1), "#FF9A50", 16, 1, "lamp")
+	-- the judges' box on the west stand (the seats of the spectators are 12+ studs off the centre line)
+	bp:push(0, 0, 0, 0, 90, 0)
+	local jf = -(h + 1)
+	bp:box(14, 6.4, 2 * d, 0, 3.2, jf - d, o(stone, "shell", { q = true }))
+	bp:box(14.4, 1, 0.5, 0, 6.9, jf - 0.25, o(trim))
+	bp:box(12, 2.2, 0.12, 0, 5, jf + 0.06, { c = "#6B2A24", m = "Fabric", lod = "detail" })
+	bp:box(12, 0.4, 0.14, 0, 4, jf + 0.07, { c = "#C8A040", m = "Fabric", lod = "detail" })
+	for _, x in { -6.5, 6.5 } do
+		for _, z in { jf - 0.5, jf - 2 * d + 0.5 } do
+			bp:add("cyl", 6, 0.8, 0.8, x, 9.4, z, 0, 0, 90, o(trim))
 		end
 	end
+	bp:rbox(15, 0.3, 2 * d + 1.4, 0, 12.6, jf - d, -6, 0, 0, { c = "#6B2A24", m = "Fabric", lod = "detail" })
+	bp:box(15, 0.8, 0.15, 0, 12.4, jf + 0.6, { c = "#C8A040", m = "Fabric", lod = "detail" })
+	for _, x in { -2, 2 } do
+		bp:box(2, 1.2, 1.8, x, 7, jf - 3.5, { c = "#4A2F22", m = "WoodPlanks", lod = "detail" })
+		bp:box(2, 2.6, 0.3, x, 8.6, jf - 4.3, { c = "#C8A040", m = "Fabric", lod = "detail" })
+	end
+	bp:light(0, 10.5, jf - 2, "#FFC88A", 16, 0.8, "lamp")
+	bp:pop()
 	return { name = sp.id, bp = bp, at = { x = a.x, y = y0, z = a.z, rot = 0 }, tag = "special" }
 end
 

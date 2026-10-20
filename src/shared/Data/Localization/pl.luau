@@ -2567,6 +2567,7 @@ return {
 	["quest.obj.talkClassVendor"] = "Porozmawiaj ze sprzedawcą swojej klasy",
 	["town.sign.donzon"] = "Zbrojmistrz Zakonu",
 	["town.sign.loza"] = "Loża Łowców",
+	["town.sign.arena"] = "Arena", -- W28: the Ristalle gate signs
 	["town.sign.wieza"] = "Wieża Magów",
 	["shop.requiresLevel"] = "Wymaga poziomu {level}",
 	-- FIX 2026-10-14: groups of the Buy grid (Logic/ShopGroups) and the buy bar hint

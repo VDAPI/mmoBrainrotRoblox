@@ -210,4 +210,69 @@ T.describe("Town generator", function()
 			end
 		end
 	end)
+
+	-- W28: the Ristalle is a stone colosseum on its own floor: nothing else (gardens, trees, tufts, props) is drawn
+	-- in its square plus the paved forecourt, the floor lies over the ground everywhere, the sand covers the yellow
+	-- zone, both gates carry a server-built "Arena" sign and the 12-stud passages stay free of anything solid.
+	T.it("W28: builds the Ristalle as a colosseum with nothing else in its footprint", function()
+		local a = city.arena
+		local R = a.half + a.stands
+		local margin = TownTerrain.ARENA_MARGIN
+		local arena: Item? = nil
+		for _, b in all do
+			if b.name == "arena" then
+				arena = b
+				continue
+			end
+			local r = math.rad(b.at.rot)
+			local c, s = math.cos(r), math.sin(r)
+			for _, p in b.bp.pieces do
+				local x = b.at.x + p.p[1] * c + p.p[3] * s
+				local z = b.at.z - p.p[1] * s + p.p[3] * c
+				-- the town wall passes 4 studs off the south-east corner: only scenery is kept off the forecourt
+				local m = if b.tag == "wall" or b.tag == "tower" then 0 else margin
+				if TownTerrain.inArena(x, z, m) then
+					error(`{b.name} ({b.tag}) draws a piece at {x}, {z} on the Ristalle`)
+				end
+			end
+		end
+		T.expect(arena ~= nil).toBe(true)
+		local bp = (arena :: Item).bp
+		local at = (arena :: Item).at
+		T.expect(at.x).toBe(a.x)
+		T.expect(at.z).toBe(a.z)
+		for x = -R, R, 6 do
+			for z = -R, R, 6 do
+				T.expect(at.y > TownTerrain.heightAt(a.x + x, a.z + z)).toBe(true)
+			end
+		end
+		local signs, sand = 0, false
+		for _, p in bp.pieces do
+			if p.tag == "arenaSign" then
+				signs += 1
+				T.expect(p.lod).toBe("shell")
+			end
+			if p.m == "Sand" and p.lod == "shell" and p.size[1] >= 2 * a.half and p.size[3] >= 2 * a.half then
+				sand = true
+			end
+			local x, z = p.p[1], p.p[3]
+			-- inside the square of half + stands (a hair over for the outer face's trim, banners and torches)
+			T.expect(math.abs(x) <= R + 1.5 and math.abs(z) <= R + 1.5).toBe(true)
+			-- the gate passages (z-axis sides, |x| < 6) hold no colliding piece above the floor
+			if p.col and p.p[2] > 0.5 and math.abs(z) > a.half + 0.5 and math.abs(z) < R then
+				T.expect(math.abs(x) - p.size[1] / 2 >= 5.9 or math.abs(p.p[2]) > 7).toBe(true)
+			end
+		end
+		T.expect(signs).toBe(2)
+		T.expect(sand).toBe(true)
+		T.expect(#bp.lights >= 8).toBe(true)
+		for x = -R - margin, R + margin, 4 do
+			for z = -R - margin, R + margin, 4 do
+				local m = TownTerrain.materialAt(a.x + x, a.z + z, TownTerrain.heightAt(a.x + x, a.z + z), 0)
+				if m == "Grass" or m == "LeafyGrass" then
+					error(`grass at {a.x + x}, {a.z + z} under the Ristalle`)
+				end
+			end
+		end
+	end)
 end)
