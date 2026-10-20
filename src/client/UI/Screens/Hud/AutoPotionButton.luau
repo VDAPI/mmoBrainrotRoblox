@@ -14,6 +14,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Motion = require(script.Parent.Parent.Parent.Motion)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -254,6 +255,7 @@ local function AutoPotionButton(scope: Scope, position: UDim2): Instance
 			}),
 		},
 	})
+	Motion.feedback(scope, button :: GuiButton, Theme.Corner.Small) -- W28: hover sheen and a sink while held
 	local timeText = scope:Computed(function(use): string
 		local s = use(state)
 		if s and s.permanent then

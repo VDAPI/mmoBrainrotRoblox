@@ -7,13 +7,19 @@
 --   Motion.rise(p)                               pixels to add to the Y offset (inside a Computed: rise(use(p)))
 --   Motion.popWhen(scope, shown)                 a UIScale child that springs open each time `shown` turns true
 --                                                (popups that stay mounted and only toggle Visible)
+--   Motion.feedback(scope, button, corner?)      a sink while held and, with `corner`, a hover sheen (mouse only),
+--                                                for HUD slots and round buttons built without Button / IconButton
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Device = require(script.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Theme = require(script.Parent.Theme)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
+
+local SHEEN_HOVER = 0.9 -- transparency of the light veil over a hovered slot
+local SHEEN_PRESS = 0.82
 
 local Motion = {}
 
@@ -60,6 +66,83 @@ function Motion.popWhen(scope: Scope, shown: Fusion.StateObject<boolean>): Insta
 		end
 	end)
 	return Motion.scale(scope, spring)
+end
+
+function Motion.feedback(scope: Scope, button: GuiButton, corner: UDim?)
+	local hovered = scope:Value(false)
+	local pressed = scope:Value(false)
+	local function isPress(input: InputObject): boolean
+		return input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch
+	end
+	table.insert(
+		scope,
+		button.MouseEnter:Connect(function()
+			hovered:set(true)
+		end)
+	)
+	table.insert(
+		scope,
+		button.MouseLeave:Connect(function()
+			hovered:set(false)
+			pressed:set(false)
+		end)
+	)
+	table.insert(
+		scope,
+		button.InputBegan:Connect(function(input: InputObject)
+			if isPress(input) then
+				pressed:set(true)
+			end
+		end)
+	)
+	table.insert(
+		scope,
+		button.InputEnded:Connect(function(input: InputObject)
+			if isPress(input) then
+				pressed:set(false)
+			end
+		end)
+	)
+	scope:New("UIScale")({
+		Parent = button,
+		Scale = scope:Spring(
+			scope:Computed(function(use): number
+				return if use(pressed) then Theme.Anim.PressScaleIcon else 1
+			end),
+			Theme.Anim.PressSpeed,
+			1
+		),
+	})
+	if not corner then
+		return -- round touch buttons: the sink only (a padded caption would push the veil off the circle)
+	end
+	-- the veil covers the whole button even when its content is padded
+	local pad = button:FindFirstChildOfClass("UIPadding")
+	local left = if pad then pad.PaddingLeft.Offset else 0
+	local top = if pad then pad.PaddingTop.Offset else 0
+	local width = if pad then left + pad.PaddingRight.Offset else 0
+	local height = if pad then top + pad.PaddingBottom.Offset else 0
+	scope:New("Frame")({
+		Name = "Sheen",
+		Parent = button,
+		Position = UDim2.fromOffset(-left, -top),
+		Size = UDim2.new(1, width, 1, height),
+		BackgroundColor3 = Theme.Plain,
+		BackgroundTransparency = scope:Tween(
+			scope:Computed(function(use): number
+				if use(pressed) then
+					return SHEEN_PRESS
+				end
+				-- touch fires MouseEnter without a matching MouseLeave: no hover veil there
+				return if use(hovered) and not use(Device.Touch) then SHEEN_HOVER else 1
+			end),
+			Theme.Anim.Fast
+		),
+		BorderSizePixel = 0,
+		Active = false,
+		ZIndex = 20,
+		[Fusion.Children] = scope:New("UICorner")({ CornerRadius = corner }),
+	})
 end
 
 return Motion
