@@ -10,11 +10,15 @@
 -- name, "value / goal" and a thin bar; a click opens the achievements window on it. A row listens only to its own
 -- counter; on a phone Config.Achievements.trackPhone of them show until "+N" unfolds the rest. Collapses with the
 -- tracker.
+-- S156 (owner 2026-10-20): the player moves the tracker by the grip in its header and sizes it by the corner grip
+-- (Logic/HudLayout, account.settings.hud.questTracker; "Reset HUD layout" in the menu); the quest list scrolls inside
+-- it when it is longer than the tracker (the screen's height at most without a saved size).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local AchData = require(ReplicatedStorage.Shared.Data.Achievements)
@@ -27,25 +31,34 @@ local Device = require(script.Parent.Parent.Parent.Device)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GuidePointer = require(ReplicatedStorage.Shared.Logic.GuidePointer)
+local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestRows = require(ReplicatedStorage.Shared.Logic.QuestRows)
 local QuestText = require(script.Parent.Parent.Parent.QuestText)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
+local Scale = require(script.Parent.Parent.Parent.Scale)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 
-local Children, OnEvent = Fusion.Children, Fusion.OnEvent
+local Children, OnChange, OnEvent = Fusion.Children, Fusion.OnChange, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local WIDTH = 300
+-- S156: the frame of the tracker around its scrolling body
+local HEADER = 28
+local GAP = 3
+local PAD_TOP, PAD_BOTTOM = 6, 8
+local GRIP = 22
+local ELEMENT = "questTracker"
 -- S29: a finished objective pulses for this long (seconds), then keeps a soft green glow.
 local PULSE_TIME = 1
 local GLOW_TRANSPARENCY = 0.6
@@ -590,34 +603,165 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		return out
 	end)
 
-	return scope:New("Frame")({
+	-- S156: the saved place and size; `live` holds the new ones while a grip is held and until the save comes back
+	local saved = State.Value({ "account", "settings", "hud" })
+	local live = scope:Value(nil :: HudLayout.Entry?)
+	scope:Observer(saved):onChange(function()
+		live:set(nil)
+	end)
+	local entry = scope:Computed(function(use): HudLayout.Entry?
+		local now = use(live)
+		if now then
+			return now
+		end
+		local layout = use(saved)
+		local e = if type(layout) == "table" then layout[ELEMENT] else nil
+		return if type(e) == "table" and type(e.x) == "number" and type(e.y) == "number" then e else nil
+	end)
+	local width = scope:Computed(function(use): number
+		local e = use(entry)
+		return if e and e.w then e.w else WIDTH
+	end)
+	-- the built-in place: under the menu, lower by the panels standing above it
+	local defaultTop = scope:Computed(function(use): number
+		local offset = if props and props.Offset then use(props.Offset) else 0
+		-- owner 2026-10-20: the menu has two rows (Hud Menu), so the tracker starts one button row lower
+		return 400 + Theme.Size.IconButton + Theme.Padding.Small + offset
+	end)
+	local corner = scope:Computed(function(use): Vector2?
+		local e = use(entry)
+		if not e then
+			return nil
+		end
+		local screen = use(Scale.VirtualSize)
+		local x, y = HudLayout.place(e, use(width), screen.X, screen.Y)
+		return Vector2.new(x, y)
+	end)
+	local contentHeight = scope:Value(0)
+	local bodyHeight = scope:Computed(function(use): number
+		if use(collapsed) then
+			return 0
+		end
+		local e = use(entry)
+		local chrome = PAD_TOP + HEADER + GAP + PAD_BOTTOM
+		if e and e.h then
+			-- a sized tracker keeps its height (the list scrolls inside)
+			return math.max(0, e.h - chrome)
+		end
+		local screen = use(Scale.VirtualSize)
+		local at = use(corner)
+		local top = if at then at.Y else use(defaultTop)
+		return math.min(use(contentHeight), math.max(80, screen.Y - top - 24 - chrome))
+	end)
+
+	-- S156: the grips. A drag starts on the header grip ("move") or the corner ("size") and follows the mouse or finger.
+	local root: Frame? = nil
+	local drag: { mode: string, start: Vector2, x: number, y: number, w: number, h: number }? = nil
+	local function begin(mode: string, input: InputObject)
+		local kind = input.UserInputType
+		if kind ~= Enum.UserInputType.MouseButton1 and kind ~= Enum.UserInputType.Touch then
+			return
+		end
+		local frame = root
+		local parent = frame and frame.Parent
+		if not frame or not parent or not parent:IsA("GuiObject") then
+			return
+		end
+		local k = Scale.get()
+		local at = (frame.AbsolutePosition - parent.AbsolutePosition) / k
+		local size = frame.AbsoluteSize / k
+		drag = {
+			mode = mode,
+			start = Vector2.new(input.Position.X, input.Position.Y),
+			x = at.X,
+			y = at.Y,
+			w = size.X,
+			h = size.Y,
+		}
+	end
+	table.insert(
+		scope,
+		UserInputService.InputChanged:Connect(function(input)
+			local d = drag
+			local kind = input.UserInputType
+			if not d or (kind ~= Enum.UserInputType.MouseMovement and kind ~= Enum.UserInputType.Touch) then
+				return
+			end
+			local delta = (Vector2.new(input.Position.X, input.Position.Y) - d.start) / Scale.get()
+			local screen = Fusion.peek(Scale.VirtualSize)
+			if d.mode == "size" then
+				local w, h = HudLayout.clampSize(ELEMENT, d.w + delta.X, d.h + delta.Y)
+				live:set(HudLayout.entryAt(d.x, d.y, screen.X, screen.Y, w, h))
+			else
+				local e = Fusion.peek(entry)
+				local w, h = if e and e.w and e.h then e.w else nil, if e and e.h then e.h else nil
+				live:set(HudLayout.entryAt(d.x + delta.X, d.y + delta.Y, screen.X, screen.Y, w, h))
+			end
+		end)
+	)
+	table.insert(
+		scope,
+		UserInputService.InputEnded:Connect(function(input)
+			local kind = input.UserInputType
+			if not drag or (kind ~= Enum.UserInputType.MouseButton1 and kind ~= Enum.UserInputType.Touch) then
+				return
+			end
+			drag = nil
+			local now = Fusion.peek(live)
+			if now then
+				Net.Send("SetSetting", "hud", HudLayout.with(Fusion.peek(saved), ELEMENT, now))
+			end
+		end)
+	)
+
+	local frame = scope:New("Frame")({
 		Name = "QuestTracker",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = scope:Computed(function(use): UDim2
-			local offset = if props and props.Offset then use(props.Offset) else 0
-			-- owner 2026-10-20: the menu has two rows (Hud Menu), so the tracker starts one button row lower
-			return UDim2.new(1, -Theme.Padding.Large, 0, 400 + Theme.Size.IconButton + Theme.Padding.Small + offset)
+		AnchorPoint = scope:Computed(function(use): Vector2
+			return if use(corner) then Vector2.zero else Vector2.new(1, 0)
 		end),
-		Size = UDim2.fromOffset(WIDTH, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
+		Position = scope:Computed(function(use): UDim2
+			local at = use(corner)
+			if at then
+				return UDim2.fromOffset(at.X, at.Y)
+			end
+			return UDim2.new(1, -Theme.Padding.Large, 0, use(defaultTop))
+		end),
+		Size = scope:Computed(function(use): UDim2
+			local body = use(bodyHeight)
+			local height = PAD_TOP + HEADER + PAD_BOTTOM + (if use(collapsed) then 0 else GAP + body)
+			return UDim2.fromOffset(use(width), height)
+		end),
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, 6),
-				PaddingBottom = UDim.new(0, 8),
+				PaddingTop = UDim.new(0, PAD_TOP),
+				PaddingBottom = UDim.new(0, PAD_BOTTOM),
 				PaddingLeft = UDim.new(0, 10),
 				PaddingRight = UDim.new(0, 10),
 			}),
-			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 3) }),
 			scope:New("Frame")({
-				LayoutOrder = 0,
-				Size = UDim2.new(1, 0, 0, 28),
+				Name = "Header",
+				Size = UDim2.new(1, 0, 0, HEADER),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("TextButton")({
-						Size = UDim2.new(1, -74, 1, 0),
+						Name = "MoveGrip",
+						Size = UDim2.fromOffset(GRIP, HEADER),
+						BackgroundTransparency = 1,
+						Text = "⠿",
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Body,
+						TextColor3 = Theme.Iron.TextMuted,
+						AutoButtonColor = false,
+						[OnEvent("InputBegan")] = function(input: InputObject)
+							begin("move", input)
+						end,
+					}),
+					scope:New("TextButton")({
+						Position = UDim2.fromOffset(GRIP, 0),
+						Size = UDim2.new(1, -(74 + GRIP), 1, 0),
 						BackgroundTransparency = 1,
 						Text = scope:Computed(function(use): string
 							return `{if use(collapsed) then "▸" else "▾"} {Text.get(use, "quest.tracker")}`
@@ -673,10 +817,57 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					}),
 				},
 			}),
-			lines :: any,
-			achLines :: any,
+			scope:New("ScrollingFrame")({
+				Name = "Body",
+				Position = UDim2.fromOffset(0, HEADER + GAP),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, 0, 0, use(bodyHeight))
+				end),
+				Visible = scope:Computed(function(use): boolean
+					return not use(collapsed)
+				end),
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				CanvasSize = UDim2.new(),
+				AutomaticCanvasSize = Enum.AutomaticSize.Y,
+				ScrollingDirection = Enum.ScrollingDirection.Y,
+				ScrollBarThickness = 4,
+				ScrollBarImageColor3 = Theme.Iron.Rule,
+				VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+				[Children] = {
+					scope:New("UIListLayout")({
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 3),
+						[OnChange("AbsoluteContentSize")] = function(size: Vector2)
+							contentHeight:set(size.Y / Scale.get())
+						end,
+					}),
+					lines :: any,
+					achLines :: any,
+				},
+			}),
+			scope:New("TextButton")({
+				Name = "SizeGrip",
+				AnchorPoint = Vector2.new(1, 1),
+				Position = UDim2.new(1, 8, 1, PAD_BOTTOM),
+				Size = UDim2.fromOffset(18, 18),
+				BackgroundTransparency = 1,
+				Text = "◢",
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Caption,
+				TextColor3 = Theme.Iron.TextMuted,
+				AutoButtonColor = false,
+				Visible = scope:Computed(function(use): boolean
+					return not use(collapsed)
+				end),
+				[OnEvent("InputBegan")] = function(input: InputObject)
+					begin("size", input)
+				end,
+			}),
 		},
-	})
+	}) :: Frame
+	root = frame
+	return frame
 end
 
 return QuestTracker
