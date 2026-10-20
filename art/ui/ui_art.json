@@ -36,11 +36,29 @@
    "i": 35,
    "src": "tylko_2d/efekty/effect_carnage.png"
   },
+  "efekty/effect_chill": {
+   "atlas": "status",
+   "h": "b03d10efade4",
+   "i": 44,
+   "src": "tylko_2d/efekty/effect_chill.png"
+  },
   "efekty/effect_damageReduction": {
    "atlas": "status",
    "h": "c5c2bf291413",
    "i": 4,
    "src": "tylko_2d/efekty/effect_damageReduction.png"
+  },
+  "efekty/effect_deepChill": {
+   "atlas": "status",
+   "h": "5ae0b88d9c87",
+   "i": 45,
+   "src": "tylko_2d/efekty/effect_deepChill.png"
+  },
+  "efekty/effect_emberShield": {
+   "atlas": "status",
+   "h": "03691c2bca4c",
+   "i": 46,
+   "src": "tylko_2d/efekty/effect_emberShield.png"
   },
   "efekty/effect_empowered": {
    "atlas": "status",
@@ -53,6 +71,18 @@
    "h": "1b1514be56bd",
    "i": 5,
    "src": "tylko_2d/efekty/effect_freeze.png"
+  },
+  "efekty/effect_frostbite": {
+   "atlas": "status",
+   "h": "488d9a8e2321",
+   "i": 47,
+   "src": "tylko_2d/efekty/effect_frostbite.png"
+  },
+  "efekty/effect_fury": {
+   "atlas": "status",
+   "h": "59d9b342df9a",
+   "i": 48,
+   "src": "tylko_2d/efekty/effect_fury.png"
   },
   "efekty/effect_guaranteedCrit": {
    "atlas": "status",
@@ -71,6 +101,12 @@
    "h": "abd5a3b9309a",
    "i": 7,
    "src": "tylko_2d/efekty/effect_hot.png"
+  },
+  "efekty/effect_iceBarrier": {
+   "atlas": "status",
+   "h": "beb0c24c03d0",
+   "i": 49,
+   "src": "tylko_2d/efekty/effect_iceBarrier.png"
   },
   "efekty/effect_intercept": {
    "atlas": "status",
@@ -96,6 +132,12 @@
    "i": 41,
    "src": "tylko_2d/efekty/effect_misfortune.png"
   },
+  "efekty/effect_nextBasic": {
+   "atlas": "status",
+   "h": "7010d8353a05",
+   "i": 50,
+   "src": "tylko_2d/efekty/effect_nextBasic.png"
+  },
   "efekty/effect_nextShot": {
    "atlas": "status",
    "h": "439749bc7221",
@@ -120,6 +162,12 @@
    "i": 14,
    "src": "tylko_2d/efekty/effect_root.png"
   },
+  "efekty/effect_runeSeal": {
+   "atlas": "status",
+   "h": "e62ba6dfb79e",
+   "i": 51,
+   "src": "tylko_2d/efekty/effect_runeSeal.png"
+  },
   "efekty/effect_shield": {
    "atlas": "status",
    "h": "3a6c25e7c0b1",
@@ -143,6 +191,12 @@
    "h": "f69adc9dc902",
    "i": 17,
    "src": "tylko_2d/efekty/effect_statBuff.png"
+  },
+  "efekty/effect_stormArmor": {
+   "atlas": "status",
+   "h": "44a32aa73269",
+   "i": 52,
+   "src": "tylko_2d/efekty/effect_stormArmor.png"
   },
   "efekty/effect_stun": {
    "atlas": "status",
@@ -198,6 +252,42 @@
    "i": 25,
    "src": "tylko_2d/gildia/guild_wisdom.png"
   },
+  "hud/ach_bosses": {
+   "atlas": "hud",
+   "h": "383b078413b9",
+   "i": 30,
+   "src": "tylko_2d/hud/ach_bosses.png"
+  },
+  "hud/ach_combat": {
+   "atlas": "hud",
+   "h": "0797b93d8c9e",
+   "i": 31,
+   "src": "tylko_2d/hud/ach_combat.png"
+  },
+  "hud/ach_craft": {
+   "atlas": "hud",
+   "h": "5a48740caa89",
+   "i": 32,
+   "src": "tylko_2d/hud/ach_craft.png"
+  },
+  "hud/ach_explore": {
+   "atlas": "hud",
+   "h": "3999073683a3",
+   "i": 33,
+   "src": "tylko_2d/hud/ach_explore.png"
+  },
+  "hud/ach_journey": {
+   "atlas": "hud",
+   "h": "a4101adba233",
+   "i": 34,
+   "src": "tylko_2d/hud/ach_journey.png"
+  },
+  "hud/ach_social": {
+   "atlas": "hud",
+   "h": "366622c164c6",
+   "i": 35,
+   "src": "tylko_2d/hud/ach_social.png"
+  },
   "hud/attack": {
    "atlas": "hud",
    "h": "2865b46582c2",
@@ -228,6 +318,30 @@
    "i": 4,
    "src": "tylko_2d/hud/mail.png"
   },
+  "hud/menu_achievements": {
+   "atlas": "hud",
+   "h": "15ed6d8f6293",
+   "i": 36,
+   "src": "tylko_2d/hud/menu_achievements.png"
+  },
+  "hud/menu_arena": {
+   "atlas": "hud",
+   "h": "8dc9708a2b3d",
+   "i": 37,
+   "src": "tylko_2d/hud/menu_arena.png"
+  },
+  "hud/menu_bloodmoon": {
+   "atlas": "hud",
+   "h": "17fcc13d6135",
+   "i": 38,
+   "src": "tylko_2d/hud/menu_bloodmoon.png"
+  },
+  "hud/menu_friends": {
+   "atlas": "hud",
+   "h": "fb6fea464602",
+   "i": 39,
+   "src": "tylko_2d/hud/menu_friends.png"
+  },
   "hud/menu_guild": {
    "atlas": "hud",
    "h": "e34437a83c0c",
@@ -252,6 +366,12 @@
    "i": 9,
    "src": "tylko_2d/hud/menu_menu.png"
   },
+  "hud/menu_mounts": {
+   "atlas": "hud",
+   "h": "6c6991d853be",
+   "i": 40,
+   "src": "tylko_2d/hud/menu_mounts.png"
+  },
   "hud/menu_party": {
    "atlas": "hud",
    "h": "24ece5e34375",
@@ -269,6 +389,12 @@
    "h": "2c7b8a877a1c",
    "i": 12,
    "src": "tylko_2d/hud/menu_quests.png"
+  },
+  "hud/menu_rankings": {
+   "atlas": "hud",
+   "h": "0e5e8d7e8e0c",
+   "i": 41,
+   "src": "tylko_2d/hud/menu_rankings.png"
   },
   "hud/menu_skills": {
    "atlas": "hud",
@@ -299,6 +425,12 @@
    "h": "0ce8f96db895",
    "i": 17,
    "src": "tylko_2d/hud/pvp.png"
+  },
+  "hud/season": {
+   "atlas": "hud",
+   "h": "3ebdf18c2e3e",
+   "i": 42,
+   "src": "tylko_2d/hud/season.png"
   },
   "hud/slot_armor": {
    "atlas": "hud",
@@ -396,6 +528,24 @@
    "i": 25,
    "src": "tylko_2d/klasy/class_warrior.png"
   },
+  "kosmetyki/aura_ancestorfrost": {
+   "atlas": "shop",
+   "h": "a0f6d8263233",
+   "i": 38,
+   "src": "tylko_2d/kosmetyki/aura_ancestorfrost.png"
+  },
+  "kosmetyki/aura_arena_season": {
+   "atlas": "shop",
+   "h": "43842d020cfc",
+   "i": 39,
+   "src": "tylko_2d/kosmetyki/aura_arena_season.png"
+  },
+  "kosmetyki/aura_champion": {
+   "atlas": "shop",
+   "h": "83385bd638fa",
+   "i": 40,
+   "src": "tylko_2d/kosmetyki/aura_champion.png"
+  },
   "kosmetyki/aura_ember": {
    "atlas": "shop",
    "h": "5e958dbad792",
@@ -408,17 +558,419 @@
    "i": 1,
    "src": "tylko_2d/kosmetyki/aura_frost.png"
   },
+  "kosmetyki/aura_gladiator": {
+   "atlas": "shop",
+   "h": "28d67f28acb7",
+   "i": 41,
+   "src": "tylko_2d/kosmetyki/aura_gladiator.png"
+  },
   "kosmetyki/aura_gold": {
    "atlas": "shop",
    "h": "ed016283c94c",
    "i": 2,
    "src": "tylko_2d/kosmetyki/aura_gold.png"
   },
+  "kosmetyki/aura_s1_winterheart": {
+   "atlas": "shop",
+   "h": "611224b98863",
+   "i": 42,
+   "src": "tylko_2d/kosmetyki/aura_s1_winterheart.png"
+  },
   "kosmetyki/aura_shadow": {
    "atlas": "shop",
    "h": "65f9b3400783",
    "i": 3,
    "src": "tylko_2d/kosmetyki/aura_shadow.png"
+  },
+  "kosmetyki/aura_valor": {
+   "atlas": "shop",
+   "h": "8117d38dc09b",
+   "i": 43,
+   "src": "tylko_2d/kosmetyki/aura_valor.png"
+  },
+  "kosmetyki/aura_vip_bloodrose": {
+   "atlas": "shop",
+   "h": "643d2755bfc8",
+   "i": 44,
+   "src": "tylko_2d/kosmetyki/aura_vip_bloodrose.png"
+  },
+  "kosmetyki/aura_vip_hearth": {
+   "atlas": "shop",
+   "h": "084ada61c24e",
+   "i": 45,
+   "src": "tylko_2d/kosmetyki/aura_vip_hearth.png"
+  },
+  "kosmetyki/chatframe_ember": {
+   "atlas": "shop",
+   "h": "6611d9ba8088",
+   "i": 46,
+   "src": "tylko_2d/kosmetyki/chatframe_ember.png"
+  },
+  "kosmetyki/chatframe_five": {
+   "atlas": "shop",
+   "h": "ff935185e87f",
+   "i": 47,
+   "src": "tylko_2d/kosmetyki/chatframe_five.png"
+  },
+  "kosmetyki/chatframe_frost": {
+   "atlas": "shop",
+   "h": "446386216183",
+   "i": 48,
+   "src": "tylko_2d/kosmetyki/chatframe_frost.png"
+  },
+  "kosmetyki/chatframe_gladiator": {
+   "atlas": "shop",
+   "h": "2ff4ce6292b7",
+   "i": 49,
+   "src": "tylko_2d/kosmetyki/chatframe_gladiator.png"
+  },
+  "kosmetyki/chatframe_merchant": {
+   "atlas": "shop",
+   "h": "4fbfd1c1ed1b",
+   "i": 50,
+   "src": "tylko_2d/kosmetyki/chatframe_merchant.png"
+  },
+  "kosmetyki/chatframe_parchment": {
+   "atlas": "shop",
+   "h": "65d7eb374fb5",
+   "i": 51,
+   "src": "tylko_2d/kosmetyki/chatframe_parchment.png"
+  },
+  "kosmetyki/chatframe_royal": {
+   "atlas": "shop",
+   "h": "7eb5a0270c3d",
+   "i": 52,
+   "src": "tylko_2d/kosmetyki/chatframe_royal.png"
+  },
+  "kosmetyki/chatframe_s1_rime": {
+   "atlas": "shop",
+   "h": "bdbaece70e95",
+   "i": 53,
+   "src": "tylko_2d/kosmetyki/chatframe_s1_rime.png"
+  },
+  "kosmetyki/dye_azure": {
+   "atlas": "shop",
+   "h": "e184c7b788fa",
+   "i": 54,
+   "src": "tylko_2d/kosmetyki/dye_azure.png"
+  },
+  "kosmetyki/dye_crimson": {
+   "atlas": "shop",
+   "h": "573cca312990",
+   "i": 55,
+   "src": "tylko_2d/kosmetyki/dye_crimson.png"
+  },
+  "kosmetyki/dye_forest": {
+   "atlas": "shop",
+   "h": "96d2d581229a",
+   "i": 56,
+   "src": "tylko_2d/kosmetyki/dye_forest.png"
+  },
+  "kosmetyki/dye_gold": {
+   "atlas": "shop",
+   "h": "ba220aec67f7",
+   "i": 57,
+   "src": "tylko_2d/kosmetyki/dye_gold.png"
+  },
+  "kosmetyki/dye_ivory": {
+   "atlas": "shop",
+   "h": "681ecfc5baf4",
+   "i": 58,
+   "src": "tylko_2d/kosmetyki/dye_ivory.png"
+  },
+  "kosmetyki/dye_onyx": {
+   "atlas": "shop",
+   "h": "c0ef05f72a03",
+   "i": 59,
+   "src": "tylko_2d/kosmetyki/dye_onyx.png"
+  },
+  "kosmetyki/dye_s1_glacier": {
+   "atlas": "shop",
+   "h": "061347651397",
+   "i": 60,
+   "src": "tylko_2d/kosmetyki/dye_s1_glacier.png"
+  },
+  "kosmetyki/dye_s1_midnight": {
+   "atlas": "shop",
+   "h": "a3b834b5ecd0",
+   "i": 61,
+   "src": "tylko_2d/kosmetyki/dye_s1_midnight.png"
+  },
+  "kosmetyki/emote_bow": {
+   "atlas": "shop",
+   "h": "b8009aa12a34",
+   "i": 62,
+   "src": "tylko_2d/kosmetyki/emote_bow.png"
+  },
+  "kosmetyki/emote_cheer": {
+   "atlas": "shop",
+   "h": "d1231c5c8cae",
+   "i": 63,
+   "src": "tylko_2d/kosmetyki/emote_cheer.png"
+  },
+  "kosmetyki/emote_kneel": {
+   "atlas": "shop",
+   "h": "170d7cff19bf",
+   "i": 64,
+   "src": "tylko_2d/kosmetyki/emote_kneel.png"
+  },
+  "kosmetyki/emote_point": {
+   "atlas": "shop",
+   "h": "6790d420acc6",
+   "i": 65,
+   "src": "tylko_2d/kosmetyki/emote_point.png"
+  },
+  "kosmetyki/emote_ponder": {
+   "atlas": "shop",
+   "h": "bd714a3e9398",
+   "i": 66,
+   "src": "tylko_2d/kosmetyki/emote_ponder.png"
+  },
+  "kosmetyki/emote_s1_breath": {
+   "atlas": "shop",
+   "h": "157469137119",
+   "i": 67,
+   "src": "tylko_2d/kosmetyki/emote_s1_breath.png"
+  },
+  "kosmetyki/emote_s1_brushfrost": {
+   "atlas": "shop",
+   "h": "25548b29f829",
+   "i": 68,
+   "src": "tylko_2d/kosmetyki/emote_s1_brushfrost.png"
+  },
+  "kosmetyki/emote_salute": {
+   "atlas": "shop",
+   "h": "65c80624e9a6",
+   "i": 69,
+   "src": "tylko_2d/kosmetyki/emote_salute.png"
+  },
+  "kosmetyki/emote_sit": {
+   "atlas": "shop",
+   "h": "3c17ca8223c1",
+   "i": 70,
+   "src": "tylko_2d/kosmetyki/emote_sit.png"
+  },
+  "kosmetyki/emote_wave": {
+   "atlas": "shop",
+   "h": "51a2c19d273e",
+   "i": 71,
+   "src": "tylko_2d/kosmetyki/emote_wave.png"
+  },
+  "kosmetyki/frame_arena_season": {
+   "atlas": "shop",
+   "h": "2434f2ebaf71",
+   "i": 72,
+   "src": "tylko_2d/kosmetyki/frame_arena_season.png"
+  },
+  "kosmetyki/frame_bloodmoon": {
+   "atlas": "shop",
+   "h": "51eb7997e7a2",
+   "i": 73,
+   "src": "tylko_2d/kosmetyki/frame_bloodmoon.png"
+  },
+  "kosmetyki/frame_bronze": {
+   "atlas": "shop",
+   "h": "68e4c942d38f",
+   "i": 74,
+   "src": "tylko_2d/kosmetyki/frame_bronze.png"
+  },
+  "kosmetyki/frame_elitehunter": {
+   "atlas": "shop",
+   "h": "0c2881eccd1a",
+   "i": 75,
+   "src": "tylko_2d/kosmetyki/frame_elitehunter.png"
+  },
+  "kosmetyki/frame_gladiator": {
+   "atlas": "shop",
+   "h": "fe39052ebd5c",
+   "i": 76,
+   "src": "tylko_2d/kosmetyki/frame_gladiator.png"
+  },
+  "kosmetyki/frame_royal": {
+   "atlas": "shop",
+   "h": "06218b5ed272",
+   "i": 77,
+   "src": "tylko_2d/kosmetyki/frame_royal.png"
+  },
+  "kosmetyki/frame_runic": {
+   "atlas": "shop",
+   "h": "1eb681d70c5d",
+   "i": 78,
+   "src": "tylko_2d/kosmetyki/frame_runic.png"
+  },
+  "kosmetyki/frame_s1_hoarfrost": {
+   "atlas": "shop",
+   "h": "f3316f684083",
+   "i": 79,
+   "src": "tylko_2d/kosmetyki/frame_s1_hoarfrost.png"
+  },
+  "kosmetyki/frame_s1_rime": {
+   "atlas": "shop",
+   "h": "cb96171b2da8",
+   "i": 80,
+   "src": "tylko_2d/kosmetyki/frame_s1_rime.png"
+  },
+  "kosmetyki/frame_silver": {
+   "atlas": "shop",
+   "h": "0e3eab8d190d",
+   "i": 81,
+   "src": "tylko_2d/kosmetyki/frame_silver.png"
+  },
+  "kosmetyki/frame_thorns": {
+   "atlas": "shop",
+   "h": "8c1540a5f497",
+   "i": 82,
+   "src": "tylko_2d/kosmetyki/frame_thorns.png"
+  },
+  "kosmetyki/frame_tourney": {
+   "atlas": "shop",
+   "h": "99b59730f150",
+   "i": 83,
+   "src": "tylko_2d/kosmetyki/frame_tourney.png"
+  },
+  "kosmetyki/frame_trophy": {
+   "atlas": "shop",
+   "h": "6c4bfde6eca2",
+   "i": 84,
+   "src": "tylko_2d/kosmetyki/frame_trophy.png"
+  },
+  "kosmetyki/levelup_embers": {
+   "atlas": "shop",
+   "h": "43d5e0b3e168",
+   "i": 85,
+   "src": "tylko_2d/kosmetyki/levelup_embers.png"
+  },
+  "kosmetyki/levelup_frost": {
+   "atlas": "shop",
+   "h": "d2da97457ddb",
+   "i": 86,
+   "src": "tylko_2d/kosmetyki/levelup_frost.png"
+  },
+  "kosmetyki/levelup_gatherer": {
+   "atlas": "shop",
+   "h": "1aa421a3702d",
+   "i": 87,
+   "src": "tylko_2d/kosmetyki/levelup_gatherer.png"
+  },
+  "kosmetyki/levelup_radiance": {
+   "atlas": "shop",
+   "h": "12386093c149",
+   "i": 88,
+   "src": "tylko_2d/kosmetyki/levelup_radiance.png"
+  },
+  "kosmetyki/levelup_runes": {
+   "atlas": "shop",
+   "h": "693b6cdd80ca",
+   "i": 89,
+   "src": "tylko_2d/kosmetyki/levelup_runes.png"
+  },
+  "kosmetyki/levelup_s1_aurora": {
+   "atlas": "shop",
+   "h": "bae7690c0fe3",
+   "i": 90,
+   "src": "tylko_2d/kosmetyki/levelup_s1_aurora.png"
+  },
+  "kosmetyki/levelup_s1_hoarfrost": {
+   "atlas": "shop",
+   "h": "96bc65eac4ae",
+   "i": 91,
+   "src": "tylko_2d/kosmetyki/levelup_s1_hoarfrost.png"
+  },
+  "kosmetyki/mountskin_cinder": {
+   "atlas": "shop",
+   "h": "446308182614",
+   "i": 92,
+   "src": "tylko_2d/kosmetyki/mountskin_cinder.png"
+  },
+  "kosmetyki/mountskin_dapple": {
+   "atlas": "shop",
+   "h": "60ad6260d877",
+   "i": 93,
+   "src": "tylko_2d/kosmetyki/mountskin_dapple.png"
+  },
+  "kosmetyki/mountskin_dragonslayer": {
+   "atlas": "shop",
+   "h": "075c641800d1",
+   "i": 94,
+   "src": "tylko_2d/kosmetyki/mountskin_dragonslayer.png"
+  },
+  "kosmetyki/mountskin_herald": {
+   "atlas": "shop",
+   "h": "be095ee61b37",
+   "i": 95,
+   "src": "tylko_2d/kosmetyki/mountskin_herald.png"
+  },
+  "kosmetyki/mountskin_ivory": {
+   "atlas": "shop",
+   "h": "33fedd46c758",
+   "i": 96,
+   "src": "tylko_2d/kosmetyki/mountskin_ivory.png"
+  },
+  "kosmetyki/mountskin_lantern": {
+   "atlas": "shop",
+   "h": "d86b92842730",
+   "i": 97,
+   "src": "tylko_2d/kosmetyki/mountskin_lantern.png"
+  },
+  "kosmetyki/mountskin_meadow": {
+   "atlas": "shop",
+   "h": "f2c905f9342a",
+   "i": 98,
+   "src": "tylko_2d/kosmetyki/mountskin_meadow.png"
+  },
+  "kosmetyki/mountskin_raven": {
+   "atlas": "shop",
+   "h": "5a2c129345a7",
+   "i": 99,
+   "src": "tylko_2d/kosmetyki/mountskin_raven.png"
+  },
+  "kosmetyki/mountskin_s1_frost": {
+   "atlas": "shop",
+   "h": "b60d5a72ac20",
+   "i": 100,
+   "src": "tylko_2d/kosmetyki/mountskin_s1_frost.png"
+  },
+  "kosmetyki/mountskin_shade": {
+   "atlas": "shop",
+   "h": "496b4778d665",
+   "i": 101,
+   "src": "tylko_2d/kosmetyki/mountskin_shade.png"
+  },
+  "kosmetyki/mountskin_spring": {
+   "atlas": "shop",
+   "h": "d71f3138c1a1",
+   "i": 102,
+   "src": "tylko_2d/kosmetyki/mountskin_spring.png"
+  },
+  "kosmetyki/outfit_cleric_ashen": {
+   "atlas": "shop",
+   "h": "5b0040f77805",
+   "i": 103,
+   "src": "tylko_2d/kosmetyki/outfit_cleric_ashen.png"
+  },
+  "kosmetyki/outfit_cleric_dawn": {
+   "atlas": "shop",
+   "h": "3dae4b325ef3",
+   "i": 104,
+   "src": "tylko_2d/kosmetyki/outfit_cleric_dawn.png"
+  },
+  "kosmetyki/outfit_cleric_duskwood": {
+   "atlas": "shop",
+   "h": "eb4a409616c8",
+   "i": 105,
+   "src": "tylko_2d/kosmetyki/outfit_cleric_duskwood.png"
+  },
+  "kosmetyki/outfit_cleric_inquisitor": {
+   "atlas": "shop",
+   "h": "782b1adf8a35",
+   "i": 106,
+   "src": "tylko_2d/kosmetyki/outfit_cleric_inquisitor.png"
+  },
+  "kosmetyki/outfit_cleric_pilgrim": {
+   "atlas": "shop",
+   "h": "2c9cf27ce3d4",
+   "i": 107,
+   "src": "tylko_2d/kosmetyki/outfit_cleric_pilgrim.png"
   },
   "kosmetyki/outfit_druid": {
    "atlas": "shop",
@@ -438,6 +990,66 @@
    "i": 6,
    "src": "tylko_2d/kosmetyki/outfit_frost.png"
   },
+  "kosmetyki/outfit_hunter_ashen": {
+   "atlas": "shop",
+   "h": "78c8cd03e5ad",
+   "i": 108,
+   "src": "tylko_2d/kosmetyki/outfit_hunter_ashen.png"
+  },
+  "kosmetyki/outfit_hunter_duskwood": {
+   "atlas": "shop",
+   "h": "6fed08f37021",
+   "i": 109,
+   "src": "tylko_2d/kosmetyki/outfit_hunter_duskwood.png"
+  },
+  "kosmetyki/outfit_hunter_nightstalker": {
+   "atlas": "shop",
+   "h": "f78183661238",
+   "i": 110,
+   "src": "tylko_2d/kosmetyki/outfit_hunter_nightstalker.png"
+  },
+  "kosmetyki/outfit_hunter_tracker": {
+   "atlas": "shop",
+   "h": "c8aabbe62a15",
+   "i": 111,
+   "src": "tylko_2d/kosmetyki/outfit_hunter_tracker.png"
+  },
+  "kosmetyki/outfit_hunter_wolfpelt": {
+   "atlas": "shop",
+   "h": "7fe25fbe9403",
+   "i": 112,
+   "src": "tylko_2d/kosmetyki/outfit_hunter_wolfpelt.png"
+  },
+  "kosmetyki/outfit_mage_ashen": {
+   "atlas": "shop",
+   "h": "e1151005c2b4",
+   "i": 113,
+   "src": "tylko_2d/kosmetyki/outfit_mage_ashen.png"
+  },
+  "kosmetyki/outfit_mage_duskwood": {
+   "atlas": "shop",
+   "h": "5386e7c09512",
+   "i": 114,
+   "src": "tylko_2d/kosmetyki/outfit_mage_duskwood.png"
+  },
+  "kosmetyki/outfit_mage_ember": {
+   "atlas": "shop",
+   "h": "beb817252bb4",
+   "i": 115,
+   "src": "tylko_2d/kosmetyki/outfit_mage_ember.png"
+  },
+  "kosmetyki/outfit_mage_frostweave": {
+   "atlas": "shop",
+   "h": "2892073519a5",
+   "i": 116,
+   "src": "tylko_2d/kosmetyki/outfit_mage_frostweave.png"
+  },
+  "kosmetyki/outfit_mage_scholar": {
+   "atlas": "shop",
+   "h": "366d3c8832bc",
+   "i": 117,
+   "src": "tylko_2d/kosmetyki/outfit_mage_scholar.png"
+  },
   "kosmetyki/outfit_paladin": {
    "atlas": "shop",
    "h": "170da3c2fd3e",
@@ -456,6 +1068,12 @@
    "i": 9,
    "src": "tylko_2d/kosmetyki/outfit_royal.png"
   },
+  "kosmetyki/outfit_s1_frostwarden": {
+   "atlas": "shop",
+   "h": "90405ad15f23",
+   "i": 118,
+   "src": "tylko_2d/kosmetyki/outfit_s1_frostwarden.png"
+  },
   "kosmetyki/outfit_saint": {
    "atlas": "shop",
    "h": "b64d737208b2",
@@ -467,6 +1085,48 @@
    "h": "f6cecdddac67",
    "i": 11,
    "src": "tylko_2d/kosmetyki/outfit_shadow.png"
+  },
+  "kosmetyki/outfit_vip_herald": {
+   "atlas": "shop",
+   "h": "fc3aeee36623",
+   "i": 119,
+   "src": "tylko_2d/kosmetyki/outfit_vip_herald.png"
+  },
+  "kosmetyki/outfit_warrior_ashen": {
+   "atlas": "shop",
+   "h": "ec49b1694402",
+   "i": 120,
+   "src": "tylko_2d/kosmetyki/outfit_warrior_ashen.png"
+  },
+  "kosmetyki/outfit_warrior_blackiron": {
+   "atlas": "shop",
+   "h": "9cc1ef401ef1",
+   "i": 121,
+   "src": "tylko_2d/kosmetyki/outfit_warrior_blackiron.png"
+  },
+  "kosmetyki/outfit_warrior_crimson": {
+   "atlas": "shop",
+   "h": "e616516e5b7c",
+   "i": 122,
+   "src": "tylko_2d/kosmetyki/outfit_warrior_crimson.png"
+  },
+  "kosmetyki/outfit_warrior_duskwood": {
+   "atlas": "shop",
+   "h": "915865a74c8e",
+   "i": 123,
+   "src": "tylko_2d/kosmetyki/outfit_warrior_duskwood.png"
+  },
+  "kosmetyki/outfit_warrior_vanguard": {
+   "atlas": "shop",
+   "h": "d5bb5e5fb14d",
+   "i": 124,
+   "src": "tylko_2d/kosmetyki/outfit_warrior_vanguard.png"
+  },
+  "kosmetyki/outfit_wayfarer": {
+   "atlas": "shop",
+   "h": "d4d6fbc0327c",
+   "i": 125,
+   "src": "tylko_2d/kosmetyki/outfit_wayfarer.png"
   },
   "kosmetyki/pet_cat": {
    "atlas": "shop",
@@ -492,11 +1152,23 @@
    "i": 15,
    "src": "tylko_2d/kosmetyki/pet_frog.png"
   },
+  "kosmetyki/pet_hound": {
+   "atlas": "shop",
+   "h": "9c80c1c6b1b7",
+   "i": 126,
+   "src": "tylko_2d/kosmetyki/pet_hound.png"
+  },
   "kosmetyki/pet_owl": {
    "atlas": "shop",
    "h": "32588ab61134",
    "i": 16,
    "src": "tylko_2d/kosmetyki/pet_owl.png"
+  },
+  "kosmetyki/pet_s1_snowfox": {
+   "atlas": "shop",
+   "h": "6d0cb529c78f",
+   "i": 127,
+   "src": "tylko_2d/kosmetyki/pet_s1_snowfox.png"
   },
   "kosmetyki/pet_wisp": {
    "atlas": "shop",
@@ -504,17 +1176,107 @@
    "i": 17,
    "src": "tylko_2d/kosmetyki/pet_wisp.png"
   },
+  "kosmetyki/title_bountyhunter": {
+   "atlas": "shop",
+   "h": "5e28ae16fdd8",
+   "i": 128,
+   "src": "tylko_2d/kosmetyki/title_bountyhunter.png"
+  },
+  "kosmetyki/title_firststeps": {
+   "atlas": "shop",
+   "h": "0178778fddbd",
+   "i": 35,
+   "src": "tylko_2d/kosmetyki/title_firststeps.png"
+  },
+  "kosmetyki/title_highborn": {
+   "atlas": "shop",
+   "h": "212045362b85",
+   "i": 129,
+   "src": "tylko_2d/kosmetyki/title_highborn.png"
+  },
+  "kosmetyki/title_huntlord": {
+   "atlas": "shop",
+   "h": "d8b0821c95df",
+   "i": 130,
+   "src": "tylko_2d/kosmetyki/title_huntlord.png"
+  },
+  "kosmetyki/title_ironwill": {
+   "atlas": "shop",
+   "h": "4fd549b909ff",
+   "i": 131,
+   "src": "tylko_2d/kosmetyki/title_ironwill.png"
+  },
+  "kosmetyki/title_lorekeeper": {
+   "atlas": "shop",
+   "h": "8f521cfc397b",
+   "i": 132,
+   "src": "tylko_2d/kosmetyki/title_lorekeeper.png"
+  },
+  "kosmetyki/title_nightwatch": {
+   "atlas": "shop",
+   "h": "3a4872f4871c",
+   "i": 133,
+   "src": "tylko_2d/kosmetyki/title_nightwatch.png"
+  },
+  "kosmetyki/title_oathbound": {
+   "atlas": "shop",
+   "h": "c1cec353931e",
+   "i": 134,
+   "src": "tylko_2d/kosmetyki/title_oathbound.png"
+  },
+  "kosmetyki/title_pilgrim": {
+   "atlas": "shop",
+   "h": "084bbea53833",
+   "i": 135,
+   "src": "tylko_2d/kosmetyki/title_pilgrim.png"
+  },
+  "kosmetyki/title_s1_frostwarden": {
+   "atlas": "shop",
+   "h": "e081a37532fe",
+   "i": 36,
+   "src": "tylko_2d/kosmetyki/title_s1_frostwarden.png"
+  },
+  "kosmetyki/title_s1_veteran": {
+   "atlas": "shop",
+   "h": "f7cf08312ab9",
+   "i": 37,
+   "src": "tylko_2d/kosmetyki/title_s1_veteran.png"
+  },
+  "kosmetyki/title_sandveteran": {
+   "atlas": "shop",
+   "h": "eb62a80fb6e8",
+   "i": 136,
+   "src": "tylko_2d/kosmetyki/title_sandveteran.png"
+  },
   "kosmetyki/trail_mist": {
    "atlas": "shop",
    "h": "4e18d5540b4e",
    "i": 18,
    "src": "tylko_2d/kosmetyki/trail_mist.png"
   },
+  "kosmetyki/trail_s1_snowdrift": {
+   "atlas": "shop",
+   "h": "4e779e0ac155",
+   "i": 137,
+   "src": "tylko_2d/kosmetyki/trail_s1_snowdrift.png"
+  },
   "kosmetyki/trail_spark": {
    "atlas": "shop",
    "h": "f620962ab94b",
    "i": 19,
    "src": "tylko_2d/kosmetyki/trail_spark.png"
+  },
+  "kosmetyki/trail_vip_snowfall": {
+   "atlas": "shop",
+   "h": "2b2efad64e7f",
+   "i": 138,
+   "src": "tylko_2d/kosmetyki/trail_vip_snowfall.png"
+  },
+  "kosmetyki/trail_vip_thaw": {
+   "atlas": "shop",
+   "h": "fec69754ef92",
+   "i": 139,
+   "src": "tylko_2d/kosmetyki/trail_vip_thaw.png"
   },
   "kosmetyki/weapon_flame": {
    "atlas": "shop",
@@ -533,6 +1295,18 @@
    "h": "7977d7643926",
    "i": 22,
    "src": "tylko_2d/kosmetyki/weapon_holy.png"
+  },
+  "kosmetyki/weapon_s1_rime": {
+   "atlas": "shop",
+   "h": "819b818ca758",
+   "i": 140,
+   "src": "tylko_2d/kosmetyki/weapon_s1_rime.png"
+  },
+  "kosmetyki/weapon_vip_starlight": {
+   "atlas": "shop",
+   "h": "296d6d20763a",
+   "i": 141,
+   "src": "tylko_2d/kosmetyki/weapon_vip_starlight.png"
   },
   "mapa/map_area": {
    "atlas": "map",
@@ -582,6 +1356,12 @@
    "i": 7,
    "src": "tylko_2d/mapa/map_herb.png"
   },
+  "mapa/map_lair": {
+   "atlas": "map",
+   "h": "269e8cea9896",
+   "i": 33,
+   "src": "tylko_2d/mapa/map_lair.png"
+  },
   "mapa/map_monster": {
    "atlas": "map",
    "h": "0d638c6c297a",
@@ -630,6 +1410,12 @@
    "i": 15,
    "src": "tylko_2d/mapa/map_vein.png"
   },
+  "mapa/map_worldboss": {
+   "atlas": "map",
+   "h": "93da03750373",
+   "i": 34,
+   "src": "tylko_2d/mapa/map_worldboss.png"
+  },
   "mapa/mark_cross": {
    "atlas": "map",
    "h": "f630a90bf908",
@@ -672,6 +1458,18 @@
    "i": 22,
    "src": "tylko_2d/mapa/service_alchemy.png"
   },
+  "mapa/service_arena": {
+   "atlas": "map",
+   "h": "4b5a58d9314d",
+   "i": 35,
+   "src": "tylko_2d/mapa/service_arena.png"
+  },
+  "mapa/service_arenashop": {
+   "atlas": "map",
+   "h": "f6073498ae0e",
+   "i": 36,
+   "src": "tylko_2d/mapa/service_arenashop.png"
+  },
   "mapa/service_auction": {
    "atlas": "map",
    "h": "351926ffc28c",
@@ -708,11 +1506,29 @@
    "i": 28,
    "src": "tylko_2d/mapa/service_heal.png"
   },
+  "mapa/service_huntshop": {
+   "atlas": "map",
+   "h": "f46e44c5fa86",
+   "i": 37,
+   "src": "tylko_2d/mapa/service_huntshop.png"
+  },
+  "mapa/service_look": {
+   "atlas": "map",
+   "h": "c5018c4692c1",
+   "i": 38,
+   "src": "tylko_2d/mapa/service_look.png"
+  },
   "mapa/service_mail": {
    "atlas": "map",
    "h": "5c9d632811f0",
    "i": 29,
    "src": "tylko_2d/mapa/service_mail.png"
+  },
+  "mapa/service_mounts": {
+   "atlas": "map",
+   "h": "2046c573b54c",
+   "i": 39,
+   "src": "tylko_2d/mapa/service_mounts.png"
   },
   "mapa/service_quests": {
    "atlas": "map",
@@ -732,6 +1548,12 @@
    "i": 32,
    "src": "tylko_2d/mapa/service_story.png"
   },
+  "mapa/service_vendors": {
+   "atlas": "map",
+   "h": "efb23b538886",
+   "i": 40,
+   "src": "tylko_2d/mapa/service_vendors.png"
+  },
   "profile/profile_exp": {
    "atlas": "status",
    "h": "1883869bd947",
@@ -750,6 +1572,24 @@
    "i": 28,
    "src": "tylko_2d/profile/profile_loot.png"
   },
+  "sklep/autoGrind": {
+   "atlas": "shop",
+   "h": "8b1d3dc35a6a",
+   "i": 142,
+   "src": "tylko_2d/sklep/autoGrind.png"
+  },
+  "sklep/autoPotion": {
+   "atlas": "shop",
+   "h": "ecb05d49a578",
+   "i": 143,
+   "src": "tylko_2d/sklep/autoPotion.png"
+  },
+  "sklep/lure": {
+   "atlas": "shop",
+   "h": "a8edacf89217",
+   "i": 144,
+   "src": "tylko_2d/sklep/lure.png"
+  },
   "sklep/pass_autoLoot": {
    "atlas": "shop",
    "h": "ed36e9891f0d",
@@ -762,6 +1602,24 @@
    "i": 24,
    "src": "tylko_2d/sklep/pass_fastRespawn.png"
   },
+  "sklep/pass_pockets": {
+   "atlas": "shop",
+   "h": "ed663ab63734",
+   "i": 145,
+   "src": "tylko_2d/sklep/pass_pockets.png"
+  },
+  "sklep/pass_slot4": {
+   "atlas": "shop",
+   "h": "eb60430ed6ac",
+   "i": 146,
+   "src": "tylko_2d/sklep/pass_slot4.png"
+  },
+  "sklep/pass_slot5": {
+   "atlas": "shop",
+   "h": "9946571cfa90",
+   "i": 147,
+   "src": "tylko_2d/sklep/pass_slot5.png"
+  },
   "sklep/pass_vault": {
    "atlas": "shop",
    "h": "c6eedf8ce9e0",
@@ -773,6 +1631,12 @@
    "h": "eab6ed252cd3",
    "i": 26,
    "src": "tylko_2d/sklep/pass_vip.png"
+  },
+  "sklep/pass_wardrobePlus": {
+   "atlas": "shop",
+   "h": "d091d381050b",
+   "i": 148,
+   "src": "tylko_2d/sklep/pass_wardrobePlus.png"
   },
   "sklep/rename": {
    "atlas": "shop",
@@ -822,11 +1686,101 @@
    "i": 34,
    "src": "tylko_2d/sklep/wardrobe.png"
   },
+  "tytuly/title_ach_ancestorbane": {
+   "atlas": "emblems",
+   "h": "3fcd24b22e7c",
+   "i": 26,
+   "src": "tylko_2d/tytuly/title_ach_ancestorbane.png"
+  },
+  "tytuly/title_ach_butcher": {
+   "atlas": "emblems",
+   "h": "4824e180efa1",
+   "i": 27,
+   "src": "tylko_2d/tytuly/title_ach_butcher.png"
+  },
+  "tytuly/title_ach_cartographer": {
+   "atlas": "emblems",
+   "h": "ce9711eb1b30",
+   "i": 28,
+   "src": "tylko_2d/tytuly/title_ach_cartographer.png"
+  },
+  "tytuly/title_ach_elusive": {
+   "atlas": "emblems",
+   "h": "4ae054358874",
+   "i": 29,
+   "src": "tylko_2d/tytuly/title_ach_elusive.png"
+  },
+  "tytuly/title_ach_forgemaster": {
+   "atlas": "emblems",
+   "h": "ac41b27433ee",
+   "i": 30,
+   "src": "tylko_2d/tytuly/title_ach_forgemaster.png"
+  },
+  "tytuly/title_ach_fourslayer": {
+   "atlas": "emblems",
+   "h": "3ae2cda5ac63",
+   "i": 31,
+   "src": "tylko_2d/tytuly/title_ach_fourslayer.png"
+  },
+  "tytuly/title_ach_lairtracker": {
+   "atlas": "emblems",
+   "h": "7d3eb895d75b",
+   "i": 32,
+   "src": "tylko_2d/tytuly/title_ach_lairtracker.png"
+  },
   "tytuly/title_adventurer": {
    "atlas": "emblems",
    "h": "d7f98220a728",
    "i": 4,
    "src": "tylko_2d/tytuly/title_adventurer.png"
+  },
+  "tytuly/title_arena_bronze": {
+   "atlas": "emblems",
+   "h": "628c459acb33",
+   "i": 33,
+   "src": "tylko_2d/tytuly/title_arena_bronze.png"
+  },
+  "tytuly/title_arena_diamond": {
+   "atlas": "emblems",
+   "h": "acd3af2a49d9",
+   "i": 34,
+   "src": "tylko_2d/tytuly/title_arena_diamond.png"
+  },
+  "tytuly/title_arena_gold": {
+   "atlas": "emblems",
+   "h": "ba9ccfc72685",
+   "i": 35,
+   "src": "tylko_2d/tytuly/title_arena_gold.png"
+  },
+  "tytuly/title_arena_master": {
+   "atlas": "emblems",
+   "h": "1a23f6b4a139",
+   "i": 36,
+   "src": "tylko_2d/tytuly/title_arena_master.png"
+  },
+  "tytuly/title_arena_silver": {
+   "atlas": "emblems",
+   "h": "486a208771e3",
+   "i": 37,
+   "src": "tylko_2d/tytuly/title_arena_silver.png"
+  },
+  "tytuly/title_bloodied": {
+   "atlas": "emblems",
+   "h": "7a7a658f8813",
+   "i": 38,
+   "src": "tylko_2d/tytuly/title_bloodied.png"
+  },
+  "tytuly/title_bloodmoon": {
+   "atlas": "emblems",
+   "h": "02e736ca79a7",
+   "i": 39,
+   "src": "tylko_2d/tytuly/title_bloodmoon.png"
+  },
+  "tytuly/title_bountyhunter": {
+   "atlas": "emblems",
+   "h": "2609e13df00a",
+   "i": 40,
+   "src": "tylko_2d/tytuly/title_bountyhunter.png"
   },
   "tytuly/title_champion": {
    "atlas": "emblems",
@@ -846,11 +1800,35 @@
    "i": 8,
    "src": "tylko_2d/tytuly/title_duelist.png"
   },
+  "tytuly/title_firststeps": {
+   "atlas": "emblems",
+   "h": "973460c210f2",
+   "i": 41,
+   "src": "tylko_2d/tytuly/title_firststeps.png"
+  },
   "tytuly/title_gladiator": {
    "atlas": "emblems",
    "h": "8671cf3ac41f",
    "i": 9,
    "src": "tylko_2d/tytuly/title_gladiator.png"
+  },
+  "tytuly/title_highborn": {
+   "atlas": "emblems",
+   "h": "9c4d62aea7da",
+   "i": 42,
+   "src": "tylko_2d/tytuly/title_highborn.png"
+  },
+  "tytuly/title_huntlord": {
+   "atlas": "emblems",
+   "h": "ace2bcc93099",
+   "i": 43,
+   "src": "tylko_2d/tytuly/title_huntlord.png"
+  },
+  "tytuly/title_ironwill": {
+   "atlas": "emblems",
+   "h": "03bc1775af98",
+   "i": 44,
+   "src": "tylko_2d/tytuly/title_ironwill.png"
   },
   "tytuly/title_legend": {
    "atlas": "emblems",
@@ -858,11 +1836,35 @@
    "i": 10,
    "src": "tylko_2d/tytuly/title_legend.png"
   },
+  "tytuly/title_lorekeeper": {
+   "atlas": "emblems",
+   "h": "5949443e380a",
+   "i": 45,
+   "src": "tylko_2d/tytuly/title_lorekeeper.png"
+  },
+  "tytuly/title_nightwatch": {
+   "atlas": "emblems",
+   "h": "f892bc42d8da",
+   "i": 46,
+   "src": "tylko_2d/tytuly/title_nightwatch.png"
+  },
+  "tytuly/title_oathbound": {
+   "atlas": "emblems",
+   "h": "6fbc959e1f83",
+   "i": 47,
+   "src": "tylko_2d/tytuly/title_oathbound.png"
+  },
   "tytuly/title_path_arcanist": {
    "atlas": "emblems",
    "h": "0f094f26e840",
    "i": 23,
    "src": "tylko_2d/tytuly/title_path_arcanist.png"
+  },
+  "tytuly/title_path_berserker": {
+   "atlas": "emblems",
+   "h": "4ac1c1c0fd2e",
+   "i": 48,
+   "src": "tylko_2d/tytuly/title_path_berserker.png"
   },
   "tytuly/title_path_destroyer": {
    "atlas": "emblems",
@@ -918,11 +1920,59 @@
    "i": 22,
    "src": "tylko_2d/tytuly/title_path_trapper.png"
   },
+  "tytuly/title_pilgrim": {
+   "atlas": "emblems",
+   "h": "29c9444ca11c",
+   "i": 49,
+   "src": "tylko_2d/tytuly/title_pilgrim.png"
+  },
+  "tytuly/title_s1_frostwarden": {
+   "atlas": "emblems",
+   "h": "1099c8bd2aba",
+   "i": 50,
+   "src": "tylko_2d/tytuly/title_s1_frostwarden.png"
+  },
+  "tytuly/title_s1_veteran": {
+   "atlas": "emblems",
+   "h": "6afbb50abb58",
+   "i": 51,
+   "src": "tylko_2d/tytuly/title_s1_veteran.png"
+  },
+  "tytuly/title_sandveteran": {
+   "atlas": "emblems",
+   "h": "70185ea09425",
+   "i": 52,
+   "src": "tylko_2d/tytuly/title_sandveteran.png"
+  },
   "tytuly/title_sentinel": {
    "atlas": "emblems",
    "h": "76b61cc8c99b",
    "i": 11,
    "src": "tylko_2d/tytuly/title_sentinel.png"
+  },
+  "tytuly/title_thornbearer": {
+   "atlas": "emblems",
+   "h": "edb42f2a2ec1",
+   "i": 53,
+   "src": "tylko_2d/tytuly/title_thornbearer.png"
+  },
+  "tytuly/title_tourney_champion": {
+   "atlas": "emblems",
+   "h": "577bc39336f6",
+   "i": 54,
+   "src": "tylko_2d/tytuly/title_tourney_champion.png"
+  },
+  "tytuly/title_veteran": {
+   "atlas": "emblems",
+   "h": "081c8ad051ca",
+   "i": 55,
+   "src": "tylko_2d/tytuly/title_veteran.png"
+  },
+  "tytuly/title_vip": {
+   "atlas": "emblems",
+   "h": "5f69412eeaf5",
+   "i": 56,
+   "src": "tylko_2d/tytuly/title_vip.png"
   },
   "tytuly/title_wanderer": {
    "atlas": "emblems",
@@ -935,6 +1985,12 @@
    "h": "1ec26b7823e9",
    "i": 14,
    "src": "tylko_2d/tytuly/title_warlord.png"
+  },
+  "tytuly/title_weekly_diligent": {
+   "atlas": "emblems",
+   "h": "a60974655af0",
+   "i": 57,
+   "src": "tylko_2d/tytuly/title_weekly_diligent.png"
   },
   "umiejetnosci/skill_advanceOrder": {
    "atlas": "skills",
@@ -984,11 +2040,29 @@
    "i": 4,
    "src": "tylko_2d/umiejetnosci/cleric/skill_auraOfEndurance.png"
   },
+  "umiejetnosci/skill_ballLightning": {
+   "atlas": "skills",
+   "h": "b2807bea2752",
+   "i": 76,
+   "src": "tylko_2d/umiejetnosci/mage/skill_ballLightning.png"
+  },
   "umiejetnosci/skill_battleCry": {
    "atlas": "skills",
    "h": "f781375515d8",
    "i": 5,
    "src": "tylko_2d/umiejetnosci/warrior/skill_battleCry.png"
+  },
+  "umiejetnosci/skill_bladeWhirl": {
+   "atlas": "skills",
+   "h": "36439335a88a",
+   "i": 77,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_bladeWhirl.png"
+  },
+  "umiejetnosci/skill_blindingLight": {
+   "atlas": "skills",
+   "h": "2554cb083d99",
+   "i": 78,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_blindingLight.png"
   },
   "umiejetnosci/skill_blink": {
    "atlas": "skills",
@@ -996,11 +2070,29 @@
    "i": 7,
    "src": "tylko_2d/umiejetnosci/mage/skill_blink.png"
   },
+  "umiejetnosci/skill_blizzard": {
+   "atlas": "skills",
+   "h": "946954f53d34",
+   "i": 79,
+   "src": "tylko_2d/umiejetnosci/mage/skill_blizzard.png"
+  },
+  "umiejetnosci/skill_bloodlust": {
+   "atlas": "skills",
+   "h": "d2150110d5e7",
+   "i": 80,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_bloodlust.png"
+  },
   "umiejetnosci/skill_brandOfLight": {
    "atlas": "skills",
    "h": "49ef517d0528",
    "i": 59,
    "src": "tylko_2d/umiejetnosci/cleric/skill_brandOfLight.png"
+  },
+  "umiejetnosci/skill_brutalStrike": {
+   "atlas": "skills",
+   "h": "862db52c6a15",
+   "i": 81,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_brutalStrike.png"
   },
   "umiejetnosci/skill_camouflage": {
    "atlas": "skills",
@@ -1037,6 +2129,48 @@
    "h": "b47c4b9aa27c",
    "i": 12,
    "src": "tylko_2d/umiejetnosci/cleric/skill_circleOfLight.png"
+  },
+  "umiejetnosci/skill_cleave": {
+   "atlas": "skills",
+   "h": "6aa553b73cea",
+   "i": 82,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_cleave.png"
+  },
+  "umiejetnosci/skill_combustion": {
+   "atlas": "skills",
+   "h": "6395fe5bedac",
+   "i": 83,
+   "src": "tylko_2d/umiejetnosci/mage/skill_combustion.png"
+  },
+  "umiejetnosci/skill_conductor": {
+   "atlas": "skills",
+   "h": "e227e8f41fba",
+   "i": 84,
+   "src": "tylko_2d/umiejetnosci/mage/skill_conductor.png"
+  },
+  "umiejetnosci/skill_consecrate": {
+   "atlas": "skills",
+   "h": "a4fdecbee426",
+   "i": 85,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_consecrate.png"
+  },
+  "umiejetnosci/skill_crushingBlow": {
+   "atlas": "skills",
+   "h": "01b31373a972",
+   "i": 86,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_crushingBlow.png"
+  },
+  "umiejetnosci/skill_deadlyBolt": {
+   "atlas": "skills",
+   "h": "5e99715030d5",
+   "i": 87,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_deadlyBolt.png"
+  },
+  "umiejetnosci/skill_deepFreeze": {
+   "atlas": "skills",
+   "h": "13d0ed394a0e",
+   "i": 88,
+   "src": "tylko_2d/umiejetnosci/mage/skill_deepFreeze.png"
   },
   "umiejetnosci/skill_devotion": {
    "atlas": "skills",
@@ -1098,11 +2232,23 @@
    "i": 21,
    "src": "tylko_2d/umiejetnosci/mage/skill_elementalist.png"
   },
+  "umiejetnosci/skill_emberShield": {
+   "atlas": "skills",
+   "h": "f39b7ea98708",
+   "i": 89,
+   "src": "tylko_2d/umiejetnosci/mage/skill_emberShield.png"
+  },
   "umiejetnosci/skill_evocation": {
    "atlas": "skills",
    "h": "dfc735b9185d",
    "i": 22,
    "src": "tylko_2d/umiejetnosci/mage/skill_evocation.png"
+  },
+  "umiejetnosci/skill_execute": {
+   "atlas": "skills",
+   "h": "459e7d2fd104",
+   "i": 90,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_execute.png"
   },
   "umiejetnosci/skill_falcon": {
    "atlas": "skills",
@@ -1128,11 +2274,23 @@
    "i": 25,
    "src": "tylko_2d/umiejetnosci/mage/skill_firewall.png"
   },
+  "umiejetnosci/skill_flameWave": {
+   "atlas": "skills",
+   "h": "afdde7be0ce4",
+   "i": 91,
+   "src": "tylko_2d/umiejetnosci/mage/skill_flameWave.png"
+  },
   "umiejetnosci/skill_focus": {
    "atlas": "skills",
    "h": "99512f5b7f14",
    "i": 26,
    "src": "tylko_2d/umiejetnosci/mage/skill_focus.png"
+  },
+  "umiejetnosci/skill_fortitude": {
+   "atlas": "skills",
+   "h": "d2435c604e60",
+   "i": 92,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_fortitude.png"
   },
   "umiejetnosci/skill_fortuneDice": {
    "atlas": "skills",
@@ -1152,11 +2310,41 @@
    "i": 29,
    "src": "tylko_2d/umiejetnosci/hunter/skill_frostTrap.png"
   },
+  "umiejetnosci/skill_frozenOrb": {
+   "atlas": "skills",
+   "h": "45bfd4b4f13d",
+   "i": 93,
+   "src": "tylko_2d/umiejetnosci/mage/skill_frozenOrb.png"
+  },
+  "umiejetnosci/skill_glacialSpike": {
+   "atlas": "skills",
+   "h": "856b041397a8",
+   "i": 94,
+   "src": "tylko_2d/umiejetnosci/mage/skill_glacialSpike.png"
+  },
+  "umiejetnosci/skill_grace": {
+   "atlas": "skills",
+   "h": "ea866b977815",
+   "i": 95,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_grace.png"
+  },
   "umiejetnosci/skill_guardianAngel": {
    "atlas": "skills",
    "h": "72d988eb879d",
    "i": 67,
    "src": "tylko_2d/umiejetnosci/cleric/skill_guardianAngel.png"
+  },
+  "umiejetnosci/skill_guidingLight": {
+   "atlas": "skills",
+   "h": "1990434fcb81",
+   "i": 96,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_guidingLight.png"
+  },
+  "umiejetnosci/skill_hailstorm": {
+   "atlas": "skills",
+   "h": "1c435cfa8051",
+   "i": 97,
+   "src": "tylko_2d/umiejetnosci/mage/skill_hailstorm.png"
   },
   "umiejetnosci/skill_hammerOfHeaven": {
    "atlas": "skills",
@@ -1182,6 +2370,24 @@
    "i": 69,
    "src": "tylko_2d/umiejetnosci/hunter/skill_heartseeker.png"
   },
+  "umiejetnosci/skill_heavyBolt": {
+   "atlas": "skills",
+   "h": "da942458703d",
+   "i": 98,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_heavyBolt.png"
+  },
+  "umiejetnosci/skill_holyChains": {
+   "atlas": "skills",
+   "h": "bc653d10ebaa",
+   "i": 99,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_holyChains.png"
+  },
+  "umiejetnosci/skill_holyNova": {
+   "atlas": "skills",
+   "h": "f543c650be23",
+   "i": 100,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_holyNova.png"
+  },
   "umiejetnosci/skill_holyStrike": {
    "atlas": "skills",
    "h": "b71132ccf1db",
@@ -1194,11 +2400,35 @@
    "i": 33,
    "src": "tylko_2d/umiejetnosci/hunter/skill_huntersMark.png"
   },
+  "umiejetnosci/skill_iceBarrier": {
+   "atlas": "skills",
+   "h": "0a09107ac1fa",
+   "i": 101,
+   "src": "tylko_2d/umiejetnosci/mage/skill_iceBarrier.png"
+  },
+  "umiejetnosci/skill_iceBlood": {
+   "atlas": "skills",
+   "h": "57c3293e6225",
+   "i": 102,
+   "src": "tylko_2d/umiejetnosci/mage/skill_iceBlood.png"
+  },
   "umiejetnosci/skill_iceShard": {
    "atlas": "skills",
    "h": "935f8d18e569",
    "i": 34,
    "src": "tylko_2d/umiejetnosci/mage/skill_iceShard.png"
+  },
+  "umiejetnosci/skill_immolate": {
+   "atlas": "skills",
+   "h": "069fe87fcace",
+   "i": 103,
+   "src": "tylko_2d/umiejetnosci/mage/skill_immolate.png"
+  },
+  "umiejetnosci/skill_intercept": {
+   "atlas": "skills",
+   "h": "218ac28b181d",
+   "i": 104,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_intercept.png"
   },
   "umiejetnosci/skill_judgement": {
    "atlas": "skills",
@@ -1206,11 +2436,35 @@
    "i": 35,
    "src": "tylko_2d/umiejetnosci/cleric/skill_judgement.png"
   },
+  "umiejetnosci/skill_kindling": {
+   "atlas": "skills",
+   "h": "f61fe31d53db",
+   "i": 105,
+   "src": "tylko_2d/umiejetnosci/mage/skill_kindling.png"
+  },
   "umiejetnosci/skill_lastBastion": {
    "atlas": "skills",
    "h": "90bb5fe09780",
    "i": 36,
    "src": "tylko_2d/umiejetnosci/warrior/skill_lastBastion.png"
+  },
+  "umiejetnosci/skill_lightRay": {
+   "atlas": "skills",
+   "h": "7776650fb5f7",
+   "i": 106,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_lightRay.png"
+  },
+  "umiejetnosci/skill_lightningBolt": {
+   "atlas": "skills",
+   "h": "826ec2320e9c",
+   "i": 107,
+   "src": "tylko_2d/umiejetnosci/mage/skill_lightningBolt.png"
+  },
+  "umiejetnosci/skill_lightningLance": {
+   "atlas": "skills",
+   "h": "5b2de400f3e0",
+   "i": 108,
+   "src": "tylko_2d/umiejetnosci/mage/skill_lightningLance.png"
   },
   "umiejetnosci/skill_manaShield": {
    "atlas": "skills",
@@ -1236,11 +2490,41 @@
    "i": 40,
    "src": "tylko_2d/umiejetnosci/warrior/skill_mightyStrike.png"
   },
+  "umiejetnosci/skill_miracle": {
+   "atlas": "skills",
+   "h": "cd46770cdd9c",
+   "i": 109,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_miracle.png"
+  },
+  "umiejetnosci/skill_netShot": {
+   "atlas": "skills",
+   "h": "5f1526d458e9",
+   "i": 110,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_netShot.png"
+  },
+  "umiejetnosci/skill_overcharge": {
+   "atlas": "skills",
+   "h": "d40a5b63ef6a",
+   "i": 111,
+   "src": "tylko_2d/umiejetnosci/mage/skill_overcharge.png"
+  },
+  "umiejetnosci/skill_phoenixHeart": {
+   "atlas": "skills",
+   "h": "0bf15c4cfc8e",
+   "i": 112,
+   "src": "tylko_2d/umiejetnosci/mage/skill_phoenixHeart.png"
+  },
   "umiejetnosci/skill_piercingArrow": {
    "atlas": "skills",
    "h": "14d8801be895",
    "i": 41,
    "src": "tylko_2d/umiejetnosci/hunter/skill_piercingArrow.png"
+  },
+  "umiejetnosci/skill_pinningShot": {
+   "atlas": "skills",
+   "h": "92cd8e3554e8",
+   "i": 113,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_pinningShot.png"
   },
   "umiejetnosci/skill_prayer": {
    "atlas": "skills",
@@ -1260,11 +2544,41 @@
    "i": 44,
    "src": "tylko_2d/umiejetnosci/cleric/skill_purify.png"
   },
+  "umiejetnosci/skill_pyroblast": {
+   "atlas": "skills",
+   "h": "96a364c719fa",
+   "i": 114,
+   "src": "tylko_2d/umiejetnosci/mage/skill_pyroblast.png"
+  },
+  "umiejetnosci/skill_quickReload": {
+   "atlas": "skills",
+   "h": "76ae11504993",
+   "i": 115,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_quickReload.png"
+  },
   "umiejetnosci/skill_radiance": {
    "atlas": "skills",
    "h": "3e09fe0ed283",
    "i": 45,
    "src": "tylko_2d/umiejetnosci/cleric/skill_radiance.png"
+  },
+  "umiejetnosci/skill_rage": {
+   "atlas": "skills",
+   "h": "3598abfdf4b4",
+   "i": 116,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_rage.png"
+  },
+  "umiejetnosci/skill_rebuke": {
+   "atlas": "skills",
+   "h": "5829b615dec2",
+   "i": 117,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_rebuke.png"
+  },
+  "umiejetnosci/skill_rend": {
+   "atlas": "skills",
+   "h": "8a68c3e50dd9",
+   "i": 118,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_rend.png"
   },
   "umiejetnosci/skill_renew": {
    "atlas": "skills",
@@ -1290,11 +2604,29 @@
    "i": 70,
    "src": "tylko_2d/umiejetnosci/cleric/skill_sanctuary.png"
   },
+  "umiejetnosci/skill_shatter": {
+   "atlas": "skills",
+   "h": "70632c757373",
+   "i": 119,
+   "src": "tylko_2d/umiejetnosci/mage/skill_shatter.png"
+  },
+  "umiejetnosci/skill_shieldBash": {
+   "atlas": "skills",
+   "h": "a496b8cb086d",
+   "i": 120,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_shieldBash.png"
+  },
   "umiejetnosci/skill_shieldOfFaith": {
    "atlas": "skills",
    "h": "5ad72c15e07c",
    "i": 49,
    "src": "tylko_2d/umiejetnosci/cleric/skill_shieldOfFaith.png"
+  },
+  "umiejetnosci/skill_shieldSweep": {
+   "atlas": "skills",
+   "h": "49666454cac2",
+   "i": 121,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_shieldSweep.png"
   },
   "umiejetnosci/skill_shieldWall": {
    "atlas": "skills",
@@ -1308,11 +2640,35 @@
    "i": 72,
    "src": "tylko_2d/umiejetnosci/hunter/skill_snarefield.png"
   },
+  "umiejetnosci/skill_staticShock": {
+   "atlas": "skills",
+   "h": "daf867bc287d",
+   "i": 122,
+   "src": "tylko_2d/umiejetnosci/mage/skill_staticShock.png"
+  },
+  "umiejetnosci/skill_steelSkin": {
+   "atlas": "skills",
+   "h": "c78a509714d6",
+   "i": 123,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_steelSkin.png"
+  },
+  "umiejetnosci/skill_stormArmor": {
+   "atlas": "skills",
+   "h": "dc872b0f93f9",
+   "i": 124,
+   "src": "tylko_2d/umiejetnosci/mage/skill_stormArmor.png"
+  },
   "umiejetnosci/skill_stormArrow": {
    "atlas": "skills",
    "h": "10a36af51156",
    "i": 51,
    "src": "tylko_2d/umiejetnosci/hunter/skill_stormArrow.png"
+  },
+  "umiejetnosci/skill_sunder": {
+   "atlas": "skills",
+   "h": "8e07a9bb972e",
+   "i": 125,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_sunder.png"
   },
   "umiejetnosci/skill_taunt": {
    "atlas": "skills",
@@ -1320,11 +2676,35 @@
    "i": 52,
    "src": "tylko_2d/umiejetnosci/warrior/skill_taunt.png"
   },
+  "umiejetnosci/skill_tempest": {
+   "atlas": "skills",
+   "h": "053d7dad2c9b",
+   "i": 126,
+   "src": "tylko_2d/umiejetnosci/mage/skill_tempest.png"
+  },
+  "umiejetnosci/skill_thunderStrike": {
+   "atlas": "skills",
+   "h": "353b277df190",
+   "i": 127,
+   "src": "tylko_2d/umiejetnosci/mage/skill_thunderStrike.png"
+  },
   "umiejetnosci/skill_titansWrath": {
    "atlas": "skills",
    "h": "9cf3b2bd12ec",
    "i": 53,
    "src": "tylko_2d/umiejetnosci/warrior/skill_titansWrath.png"
+  },
+  "umiejetnosci/skill_toxicTips": {
+   "atlas": "skills",
+   "h": "d5b8591cbc18",
+   "i": 128,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_toxicTips.png"
+  },
+  "umiejetnosci/skill_unstoppable": {
+   "atlas": "skills",
+   "h": "6cdbe708cac8",
+   "i": 129,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_unstoppable.png"
   },
   "umiejetnosci/skill_venomArrow": {
    "atlas": "skills",
@@ -1338,6 +2718,12 @@
    "i": 73,
    "src": "tylko_2d/umiejetnosci/hunter/skill_venomSnare.png"
   },
+  "umiejetnosci/skill_vindicate": {
+   "atlas": "skills",
+   "h": "16361ec3da70",
+   "i": 130,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_vindicate.png"
+  },
   "umiejetnosci/skill_volley": {
    "atlas": "skills",
    "h": "d8d1d927aae2",
@@ -1350,11 +2736,35 @@
    "i": 74,
    "src": "tylko_2d/umiejetnosci/warrior/skill_warBanner.png"
   },
+  "umiejetnosci/skill_warStomp": {
+   "atlas": "skills",
+   "h": "c053b6ebf13e",
+   "i": 131,
+   "src": "tylko_2d/umiejetnosci/warrior/skill_warStomp.png"
+  },
   "umiejetnosci/skill_wheelOfFortune": {
    "atlas": "skills",
    "h": "84454ef0083b",
    "i": 75,
    "src": "tylko_2d/umiejetnosci/cleric/skill_wheelOfFortune.png"
+  },
+  "umiejetnosci/skill_windstep": {
+   "atlas": "skills",
+   "h": "5c87d1073629",
+   "i": 132,
+   "src": "tylko_2d/umiejetnosci/hunter/skill_windstep.png"
+  },
+  "umiejetnosci/skill_wintersGrip": {
+   "atlas": "skills",
+   "h": "c4a3c41133e4",
+   "i": 133,
+   "src": "tylko_2d/umiejetnosci/mage/skill_wintersGrip.png"
+  },
+  "umiejetnosci/skill_zeal": {
+   "atlas": "skills",
+   "h": "ca146bc41cc4",
+   "i": 134,
+   "src": "tylko_2d/umiejetnosci/cleric/skill_zeal.png"
   },
   "zywioly/element_fire": {
    "atlas": "status",
@@ -1382,6 +2792,11 @@
   }
  },
  "frames": {
+  "arena_pit": {
+   "size": 280,
+   "x0": -140,
+   "z0": -140
+  },
   "ashen": {
    "size": 1600,
    "x0": -800,
@@ -1406,6 +2821,26 @@
    "size": 800,
    "x0": -400,
    "z0": -400
+  },
+  "dungeon_ashen": {
+   "size": 300,
+   "x0": -150,
+   "z0": -150
+  },
+  "dungeon_duskwood": {
+   "size": 300,
+   "x0": -150,
+   "z0": -150
+  },
+  "dungeon_frostpeak": {
+   "size": 300,
+   "x0": -150,
+   "z0": -150
+  },
+  "dungeon_meadows": {
+   "size": 300,
+   "x0": -150,
+   "z0": -150
   },
   "duskwood": {
    "size": 1600,
@@ -1469,13 +2904,16 @@
   }
  },
  "sheets": {
-  "ui_emblems_01.png": "a32800a517b3",
-  "ui_hud_01.png": "c66de2676c82",
-  "ui_map_01.png": "aef364aeb499",
-  "ui_shop_01.png": "d198e19d314e",
+  "ui_emblems_01.png": "104bb1fdf8c0",
+  "ui_hud_01.png": "300bf67383f4",
+  "ui_map_01.png": "74288aa9337d",
+  "ui_shop_01.png": "0cb645f6772f",
+  "ui_shop_02.png": "cd122920a779",
+  "ui_shop_03.png": "7a3a50235545",
   "ui_skills_01.png": "093ffdd90d5b",
-  "ui_skills_02.png": "b9819f918682",
-  "ui_status_01.png": "ca6dd7e53a93"
+  "ui_skills_02.png": "52edeb2adf93",
+  "ui_skills_03.png": "1175ab4cd715",
+  "ui_status_01.png": "38a0f2bc3efb"
  },
  "singles": {
   "bossowie/boss_azgor": {
@@ -1490,6 +2928,13 @@
    "h": 512,
    "hash": "b9abea6b4135",
    "src": "tylko_2d/bossowie/boss_grimrok.png",
+   "w": 512
+  },
+  "bossowie/boss_hrimvald": {
+   "file": "bossowie__boss_hrimvald.jpg",
+   "h": 512,
+   "hash": "e291d931b076",
+   "src": "tylko_2d/bossowie/boss_hrimvald.png",
    "w": 512
   },
   "bossowie/boss_morvane": {
@@ -1562,6 +3007,13 @@
    "src": "tylko_2d/lochy/dungeon_vaelgrath.png",
    "w": 1024
   },
+  "mapy/arena_pit": {
+   "file": "mapy__arena_pit.jpg",
+   "h": 1024,
+   "hash": "5d69557bdd53",
+   "src": "tylko_2d/mapy/arena_pit.png",
+   "w": 1024
+  },
   "mapy/ashen": {
    "file": "mapy__ashen.jpg",
    "h": 1024,
@@ -1595,6 +3047,34 @@
    "h": 1024,
    "hash": "c4f30818b5fe",
    "src": "tylko_2d/mapy/city.png",
+   "w": 1024
+  },
+  "mapy/dungeon_ashen": {
+   "file": "mapy__dungeon_ashen.jpg",
+   "h": 1024,
+   "hash": "d9fab99c91c5",
+   "src": "tylko_2d/mapy/dungeon_ashen.png",
+   "w": 1024
+  },
+  "mapy/dungeon_duskwood": {
+   "file": "mapy__dungeon_duskwood.jpg",
+   "h": 1024,
+   "hash": "e23787b125a4",
+   "src": "tylko_2d/mapy/dungeon_duskwood.png",
+   "w": 1024
+  },
+  "mapy/dungeon_frostpeak": {
+   "file": "mapy__dungeon_frostpeak.jpg",
+   "h": 1024,
+   "hash": "f9467e42e1e9",
+   "src": "tylko_2d/mapy/dungeon_frostpeak.png",
+   "w": 1024
+  },
+  "mapy/dungeon_meadows": {
+   "file": "mapy__dungeon_meadows.jpg",
+   "h": 1024,
+   "hash": "87272f425411",
+   "src": "tylko_2d/mapy/dungeon_meadows.png",
    "w": 1024
   },
   "mapy/duskwood": {

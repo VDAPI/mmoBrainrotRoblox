@@ -33,8 +33,9 @@ export type Ids = {
 	marks: { string },
 	services: { string },
 	cosmetics: { string },
-	shop: { string }, -- names in sklep/: shards_<n>, pass_<key>, respawn, rename, wardrobe
-	bosses: { string },
+	shop: { string }, -- names in sklep/: shards_<n>, pass_<key>, respawn, rename, wardrobe, service kinds (lure, ...)
+	bosses: { string }, -- every boss (portrait boss_<id>); dungeon banners only for the dungeon bosses
+	dungeonBosses: { string },
 	fixed: { hud: { string }, map: { string } },
 }
 
@@ -121,9 +122,19 @@ function UiArtKeys.ids(): Ids
 	for _, pass in Products.passes do
 		shop[`pass_{pass.key}`] = true
 	end
+	-- Service cards of the premium shop (UI/Screens/PremiumShop/Items) show one tile per kind: UiArt.shop(kind).
+	for _, entry in Products.shop do
+		if entry.kind == "lure" or entry.kind == "autoPotion" or entry.kind == "autoGrind" then
+			shop[entry.kind] = true
+		end
+	end
 	local bosses: { [string]: boolean } = {}
-	for _, boss in Bosses.list do
+	local dungeonBosses: { [string]: boolean } = {}
+	for _, boss in Bosses.all do
 		bosses[boss.id] = true
+		if not boss.world then
+			dungeonBosses[boss.id] = true
+		end
 	end
 	return {
 		skills = skills,
@@ -141,6 +152,7 @@ function UiArtKeys.ids(): Ids
 		cosmetics = sorted(cosmetics),
 		shop = sorted(shop),
 		bosses = sorted(bosses),
+		dungeonBosses = sorted(dungeonBosses),
 		fixed = { hud = listOf(UiArt.FIXED.hud), map = listOf(UiArt.FIXED.map) },
 	}
 end
@@ -212,6 +224,8 @@ function UiArtKeys.byCategory(): { [string]: { string } }
 	end
 	for _, k in ids.bosses do
 		add("boss", UiArt.boss(k))
+	end
+	for _, k in ids.dungeonBosses do
 		add("dungeon", UiArt.dungeon(k))
 	end
 	for _, k in ids.maps do

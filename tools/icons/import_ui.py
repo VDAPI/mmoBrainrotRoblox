@@ -8,7 +8,7 @@
 # checked against the game (tools/icons/ids.luau, section "ui"); a file without a game id is rejected with a hint.
 # Styles: tile (skills, effects, elements, profiles, guild: square crop, rounded corners), medal (class emblems,
 # titles: cut to alpha, 4% margin), silhouette (hud, mapa: white with alpha, tinted in game), object (sklep,
-# kosmetyki: like item icons), single (portraits, bosses, dungeon banners, painted maps: JPEG, cropped to the ratio;
+# kosmetyki: like item icons; an opaque painted tile without --key is taken as a tile), single (portraits, bosses, dungeon banners, painted maps: JPEG, cropped to the ratio;
 # maps must be square). Cells never move: a changed key keeps its cell, new keys go after the last used one, --prune
 # clears the cells of keys whose file is gone. Two runs give the same bytes. The Graphics folder is read only.
 import argparse
@@ -56,7 +56,7 @@ RULES = [
     ("sklep", "sklep", r"(\w+)", "shop", "object", "shop"),
     ("kosmetyki", "kosmetyki", r"(\w+)", "cosmetics", "object", "shop"),
     ("portrety bossów", "bossowie", r"boss_(\w+)", "bosses", "single", (512, 512)),
-    ("banery lochów", "lochy", r"dungeon_(\w+)", "bosses", "single", (1024, 512)),
+    ("banery lochów", "lochy", r"dungeon_(\w+)", "dungeonBosses", "single", (1024, 512)),
 ]
 FOLDERS = sorted({r[1] for r in RULES})
 # Never interface pictures of the game: item folders (import_graphics.py), Roblox store art (Creator Dashboard),
@@ -308,6 +308,9 @@ def process(path, rule, key_color, warnings, label):
     if style in ("single", "painted"):
         w, h = target
         return fit_box(img, w, h, exact_square=style == "painted")
+    if style == "object" and not key_color and not import_png._has_alpha(img):
+        # Shop and cosmetic prompts (BRAKI-GRAFIK-4) ask for full painted tiles: same as the skill tiles.
+        return fit_tile(img, warnings, label)
     cell = fit_icon(img, MARGIN[style], key_color, label)
     if style == "silhouette":
         cell = to_silhouette(cell, warnings, label)
@@ -826,6 +829,7 @@ SELFTEST_IDS = {
         "cosmetics": ["pet_fox"],
         "shop": ["pass_vip", "shards_100"],
         "bosses": ["grimrok"],
+        "dungeonBosses": ["grimrok"],
         "fixed": {"hud": ["pvp", "lock"], "map": ["portal", "npc"]},
     }
 }
