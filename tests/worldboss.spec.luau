@@ -109,18 +109,19 @@ T.describe("World boss: data (S149)", function()
 end)
 
 T.describe("World boss: schedule (S149)", function()
-	T.it("starts at 02, 05, ..., 23 UTC every day with ids wbYYYYMMDDHH, the same on every server", function()
+	T.it("starts at 08 and 20 UTC every day with ids wbYYYYMMDDHH, the same on every server", function()
 		local day0 = Time.dayNumber(tuesday())
 		for day = day0, day0 + 13 do
 			local starts = WorldBoss.startsOn(day)
-			T.expect(#starts).toBe(8)
+			-- owner 2026-10-20: twice a day (S149: every 3 h from 02)
+			T.expect(#starts).toBe(2)
 			for i, start in starts do
-				T.expect(start).toBe(day * DAY + (2 + 3 * (i - 1)) * 3600)
+				T.expect(start).toBe(day * DAY + (8 + 12 * (i - 1)) * 3600)
 			end
 			local list = WorldBoss.list(day * DAY, (day + 1) * DAY)
-			T.expect(#list).toBe(8)
+			T.expect(#list).toBe(2)
 			for i, occ in list do
-				T.expect(occ.id).toBe(`wb{Schedule.dateKey(occ.startsAt)}{string.format("%02d", 2 + 3 * (i - 1))}`)
+				T.expect(occ.id).toBe(`wb{Schedule.dateKey(occ.startsAt)}{string.format("%02d", 8 + 12 * (i - 1))}`)
 				T.expect(occ.endsAt - occ.startsAt).toBe(WorldBoss.def().timeLimit)
 				-- the next one starts long after this one's marker is gone
 				if list[i + 1] then
@@ -130,11 +131,11 @@ T.describe("World boss: schedule (S149)", function()
 			end
 		end
 		local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[1]
-		T.expect(occ.id).toBe(`wb{Schedule.dateKey(tuesday())}02`)
+		T.expect(occ.id).toBe(`wb{Schedule.dateKey(tuesday())}08`)
 	end)
 
 	T.it("an occurrence runs from the 10 min warning to the end of the marker; next and phase", function()
-		local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[3] -- 08:00
+		local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[1] -- 08:00
 		local s = Data.schedule
 		T.expect(s.warn).toEqual({ 600, 120 })
 		T.expect((WorldBoss.occurrenceAt(occ.startsAt - 600) :: any).id).toBe(occ.id)
@@ -142,10 +143,10 @@ T.describe("World boss: schedule (S149)", function()
 		T.expect((WorldBoss.occurrenceAt(occ.endsAt + s.linger) :: any).id).toBe(occ.id)
 		T.expect(WorldBoss.occurrenceAt(occ.endsAt + s.linger + 1)).toBeNil()
 		T.expect(WorldBoss.next(occ.startsAt - 1)).toEqual({ id = occ.id, startsAt = occ.startsAt })
-		T.expect(WorldBoss.next(occ.startsAt).startsAt).toBe(occ.startsAt + 3 * 3600)
-		-- 23:00 -> 02:00 the next day
-		local late = WorldBoss.list(tuesday(), tuesday() + DAY)[8]
-		T.expect(WorldBoss.next(late.startsAt).startsAt).toBe(tuesday() + DAY + 2 * 3600)
+		T.expect(WorldBoss.next(occ.startsAt).startsAt).toBe(occ.startsAt + 12 * 3600)
+		-- 20:00 -> 08:00 the next day
+		local late = WorldBoss.list(tuesday(), tuesday() + DAY)[2]
+		T.expect(WorldBoss.next(late.startsAt).startsAt).toBe(tuesday() + DAY + 8 * 3600)
 		T.expect(WorldBoss.phase(occ, occ.startsAt - 1)).toBe("warn")
 		T.expect(WorldBoss.phase(occ, occ.startsAt)).toBe("active")
 		T.expect(WorldBoss.phase(occ, occ.endsAt - 1)).toBe("active")
@@ -263,7 +264,7 @@ end)
 
 T.describe("World boss: client state (S149)", function()
 	T.it("publicOf carries the spot, the times, the rounded HP and the levels; mineOf the own line", function()
-		local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[5]
+		local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[2]
 		local p = WorldBoss.publicOf(occ, { phase = "active", hp = 0.4567, bossPhase = 2 })
 		local spot = WorldBoss.spot()
 		T.expect(p.id).toBe(occ.id)
@@ -363,7 +364,7 @@ T.describe("World boss: the boss (S149)", function()
 		T.expect((Bosses.forRegion(Data.map) :: any).id).toBe("vaelgrath")
 		local def = WorldBoss.def()
 		T.expect(def.enrageAfter).toBe(780)
-		T.expect(def.timeLimit).toBe(900)
+		T.expect(def.timeLimit).toBe(7200) -- owner 2026-10-20: 2 h (S149: 15 min)
 		-- three brands at once
 		local brands = 0
 		for _, attack in def.attacks do
@@ -376,7 +377,7 @@ T.describe("World boss: the boss (S149)", function()
 end)
 
 T.describe("World boss: the view (S149b)", function()
-	local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[5]
+	local occ = WorldBoss.list(tuesday(), tuesday() + DAY)[2]
 	local function public(phase: string, hp: number?, mine: any?): any
 		local p: any = WorldBoss.publicOf(occ, { phase = phase :: any, hp = hp or 1, bossPhase = 1 })
 		p.mine = mine

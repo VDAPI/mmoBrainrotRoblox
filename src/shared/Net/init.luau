@@ -26,6 +26,8 @@ local Net = {}
 
 local folder: Folder? = nil
 local limiters: { [string]: RateLimit.RateLimit } = {}
+local RATE_RETRIES = 2
+local RATE_RETRY_WAIT = 0.35 -- seconds before the first retry (the second waits twice as long)
 local suspicion: { [number]: number } = {}
 
 Net.Check = ArgCheck.check
@@ -55,18 +57,26 @@ local function flag(player: Player, name: string, reason: string)
 end
 
 -- Returns true when the call may proceed.
-local function admit(player: Player, name: string, def: Definitions.Definition, args: { any }, n: number): boolean
+-- Whether a call passes; the second value is the error key for a refused function call (owner 2026-10-20: a rate limit
+-- said "bad request" too, so fast clicks looked like a broken button).
+local function admit(
+	player: Player,
+	name: string,
+	def: Definitions.Definition,
+	args: { any },
+	n: number
+): (boolean, string?)
 	local limiter = limiters[name]
 	if limiter and not limiter:take(`{player.UserId}`, os.clock()) then
 		flag(player, name, "rate limit")
-		return false
+		return false, "error.rateLimited"
 	end
 	local ok, reason = Net.Check(args, def.args or {}, n)
 	if not ok then
 		flag(player, name, reason or "bad args")
-		return false
+		return false, "error.badRequest"
 	end
-	return true
+	return true, nil
 end
 
 -- Server ------------------------------------------------------------------------------------------
@@ -125,8 +135,9 @@ function Net.Handle(name: string, handler: (player: Player, ...any) -> ...any)
 	remote.OnServerInvoke = function(player: Player, ...: any): ...any
 		local n = select("#", ...)
 		local args = { ... }
-		if not admit(player, name, def, args, n) then
-			return false, "error.badRequest"
+		local admitted, refusal = admit(player, name, def, args, n)
+		if not admitted then
+			return false, refusal or "error.badRequest"
 		end
 		local results = table.pack(pcall(handler, player, ...))
 		if not results[1] then
@@ -181,12 +192,21 @@ function Net.Invoke(name: string, ...: any): ...any
 	local def = getDefinition(name)
 	assert(def.kind == "function", `Net.Invoke: '{name}' is not a function`)
 	local remote = getRemote(name) :: RemoteFunction
-	local results = table.pack(pcall(remote.InvokeServer, remote, ...))
-	if not results[1] then
-		log:warn("%s invoke failed: %s", name, tostring(results[2]))
-		return false, "error.network"
+	-- owner 2026-10-20: a click faster than the remote's rate waits a moment and asks again (twice at most) instead of
+	-- showing an error
+	for attempt = 1, RATE_RETRIES + 1 do
+		local results = table.pack(pcall(remote.InvokeServer, remote, ...))
+		if not results[1] then
+			log:warn("%s invoke failed: %s", name, tostring(results[2]))
+			return false, "error.network"
+		end
+		if results[2] == false and results[3] == "error.rateLimited" and attempt <= RATE_RETRIES then
+			task.wait(RATE_RETRY_WAIT * attempt)
+		else
+			return table.unpack(results, 2, results.n)
+		end
 	end
-	return table.unpack(results, 2, results.n)
+	return false, "error.rateLimited"
 end
 
 return Net

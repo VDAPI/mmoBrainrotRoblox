@@ -25,8 +25,9 @@ return table.freeze({
 	schedule = table.freeze({
 		-- starts every `everyHours` h from `offsetHour`:`minute` UTC (02, 05, 08, 11, 14, 17, 20, 23): never over the Blood
 		-- Moon (Tue / Thu 19:00-19:30 with its quiet 10 min) nor the tournament start (Sat 19:00)
-		everyHours = 3,
-		offsetHour = 2,
+		-- owner 2026-10-20: twice a day, 10:00 and 22:00 Polish summer time (08:00 / 20:00 UTC; 09:00 / 21:00 in winter)
+		everyHours = 12,
+		offsetHour = 8,
 		minute = 0,
 		warn = table.freeze({ 600, 120 }), -- announcements, seconds before the start (descending)
 		linger = 60, -- seconds the marker stays after the kill or the leave
