@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych a8285f8b (`wiki/src/data/meta.json`).
+> Odcisk danych 2a78d626 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1281,3 +1281,4 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Kamień Lochu: Jaskinia Mchów | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Jaskinia Mchów. | — | 150 |
 | Kamień Mapy | Kamień teleportu | 1 | Teleportuje na wybraną mapę. | — | 50 |
 | Kamień Powrotu | Kamień teleportu | 1 | Teleportuje do stolicy po 5 s kanałowania. | 20 | 5 |
+| Zwój Przemiany | Zwój | 1 | Kowal przelosuje nim naraz wszystkie premie jednego przedmiotu (płacisz trzykrotność złota jednej przemiany, bez esencji). Związany z kontem. | — | 1 |

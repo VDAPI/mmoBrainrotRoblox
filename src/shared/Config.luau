@@ -143,10 +143,10 @@ local Config = {
 		width = 280, -- px: the BillboardGui
 		height = 104,
 		offset = 3.1, -- studs above the head
-		plateTransparency = 0.45, -- the iron plate behind the text
-		nameSize = 22, -- px
+		plateTransparency = 1, -- owner 2026-10-20: no plate behind the text (outlined text only)
+		nameSize = 19, -- px (owner 2026-10-20: 22 -> 19, smaller)
 		levelSize = 17,
-		titleSize = 15,
+		titleSize = 14,
 		checkEvery = 0.25, -- s: distance check of all plates
 	},
 	-- Leaderboards (S124, DESIGN-17 §5): store names and request limits; boards in Data/Leaderboards.
@@ -351,6 +351,9 @@ local Config = {
 	-- speed buffs and sprint do not apply, slows do (S63 speed factor). Mounting takes mountTime seconds standing
 	-- still (mountTimeFast from mount level fastFromLevel); moving more than moveLimit studs, taking damage or using
 	-- a skill interrupts it. Levels are raised in S97.
+	-- Owner 2026-10-20 (Logic/LevelLock): a character this many levels or more above an Elite, an Elite II or a dungeon
+	-- boss cannot hurt it (the world boss and ordinary monsters never locked).
+	LevelLock = { gap = 10 },
 	Mount = {
 		minLevel = 20,
 		baseMul = 2.0, -- owner: 1.6 -> 2.0 and 2.0 -> 2.6 (a horse felt barely faster than the sprint, x1.35)
@@ -791,6 +794,9 @@ local Config = {
 		goldMul = 1.8,
 		growth = 0.25,
 		growthCap = 3,
+		-- S156: the Scroll of Transformation rerolls every regular line at once for this many times one attempt's gold
+		-- (the essence is paid by the scroll); it counts as one attempt
+		allGoldMul = 3,
 	},
 	-- S151 (docs/DESIGN.md §20b): achievements (Data/Achievements, Logic/Achievements). The sum of every Dragon Shard
 	-- reward stays within shardBudget (tests/achievements.spec), a toast stays toastSeconds, after the catch-up of old

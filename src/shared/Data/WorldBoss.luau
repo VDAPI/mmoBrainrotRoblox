@@ -25,8 +25,9 @@ return table.freeze({
 	schedule = table.freeze({
 		-- starts every `everyHours` h from `offsetHour`:`minute` UTC (02, 05, 08, 11, 14, 17, 20, 23): never over the Blood
 		-- Moon (Tue / Thu 19:00-19:30 with its quiet 10 min) nor the tournament start (Sat 19:00)
-		everyHours = 3,
-		offsetHour = 2,
+		-- owner 2026-10-20: twice a day, 10:00 and 22:00 Polish summer time (08:00 / 20:00 UTC; 09:00 / 21:00 in winter)
+		everyHours = 12,
+		offsetHour = 8,
 		minute = 0,
 		warn = table.freeze({ 600, 120 }), -- announcements, seconds before the start (descending)
 		linger = 60, -- seconds the marker stays after the kill or the leave
@@ -72,5 +73,9 @@ return table.freeze({
 		failMul = 0, -- the boss left: nothing
 	}),
 	pvpSafe = true, -- no PvP in the fighters' circle while the boss lives
+	-- S156 (owner 2026-10-20): the barrow is a cave hollow (cliff walls round the ring, Logic/WorldGen/WorldBossArena) entered
+	-- through a vestibule in front of the opening (local -Z): its circle (centre r + d from the spot's centre, radius r)
+	-- is always free of PvP, boss or no boss
+	antechamber = table.freeze({ d = 20, r = 16 }),
 	publishEvery = 0.5, -- seconds between two state sends at most (only on a change)
 })

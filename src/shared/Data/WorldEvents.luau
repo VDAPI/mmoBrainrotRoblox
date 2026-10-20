@@ -48,7 +48,9 @@ return table.freeze({
 			clearShare = 0.8, -- the next wave comes early once 80 % of the current one is dead
 			-- monsters per wave = min(max, base + perPlayer x players), in clusters of `cluster` per spawn point
 			-- (S134c: 1 player 13, 3 players 19, 5 players 25; S101: 4 + 2 per player, max 16, clusters of 4)
-			wave = table.freeze({ base = 10, perPlayer = 3, max = 25, cluster = 5 }),
+			-- owner 2026-10-20: more monsters at once (10 / 3 / 25 / 5 -> 14 / 4 / 36 / 7), on fewer spawners (`focus`)
+			wave = table.freeze({ base = 14, perPlayer = 4, max = 36, cluster = 7 }),
+			focus = 3, -- spawners of the ground nearest its centre the waves come down on
 			-- S134c: Elites of each wave (index = wave; S101: one Elite in waves 3 and 6 only)
 			elitesPerWave = table.freeze({ 1, 1, 1, 1, 2, 2 }),
 			-- S134c: the last wave also brings one Elite II of the ground (another kind than the commander when there

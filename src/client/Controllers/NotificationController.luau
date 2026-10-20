@@ -9,6 +9,7 @@ local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Text = require(script.Parent.Parent.UI.Text)
 local Announcement = require(script.Parent.Parent.UI.Components.Announcement)
+local WORLD_BOSS_SECONDS = 15 -- owner 2026-10-20: the world boss banner stays this long (an ordinary one 5 s)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
 
 local NotificationController = {
@@ -88,7 +89,13 @@ function NotificationController.Start()
 		local text = Text.now(key, escapeArgs(args))
 		local mythic = type(key) == "string"
 			and (string.find(key, "announceMythic", 1, true) ~= nil or string.sub(key, 1, 10) == "bloodmoon.")
-		Announcement.push(text, if mythic then "mythic" else nil)
+		-- owner 2026-10-20: the world boss's announcements (worldboss.*) are red and stay WORLD_BOSS_SECONDS
+		local worldBoss = type(key) == "string" and string.sub(key, 1, 10) == "worldboss."
+		Announcement.push(
+			text,
+			if mythic or worldBoss then "mythic" else nil,
+			if worldBoss then WORLD_BOSS_SECONDS else nil
+		)
 		NotificationController.System(text)
 	end)
 end

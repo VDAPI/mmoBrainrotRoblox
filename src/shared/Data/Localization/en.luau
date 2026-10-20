@@ -83,6 +83,7 @@ return {
 	["toast.enterWorld"] = "Welcome to Vaelthorn, {name}!",
 
 	-- Errors (server answers carry these keys)
+	["combat.levelLock"] = "You are {gap}+ levels too high for this foe: leave it to the players of its level.",
 	["error.badRequest"] = "Invalid request.",
 	["error.busy"] = "Please wait, the previous action is still in progress.",
 	["error.confirmMismatch"] = "The name you typed does not match.",
@@ -2569,6 +2570,7 @@ return {
 	["quest.obj.talkClassVendor"] = "Talk to your class vendor",
 	["town.sign.donzon"] = "Order Armoury",
 	["town.sign.loza"] = "Hunters' Lodge",
+	["town.sign.arena"] = "Arena", -- W28: the Ristalle gate signs
 	["town.sign.wieza"] = "Mages' Tower",
 	["shop.requiresLevel"] = "Requires level {level}",
 	-- FIX 2026-10-14: groups of the Buy grid (Logic/ShopGroups) and the buy bar hint
@@ -8983,6 +8985,16 @@ return {
 	["smith.reroll.error.notRegular"] = "This line cannot be transmuted.",
 	["smith.reroll.error.lockedOther"] = "You are already transmuting another line of this item.",
 	["smith.reroll.error.changed"] = "The item has changed, pick it again.",
+	["smith.reroll.error.noScroll"] = "You have no Scroll of Transformation.",
+	["smith.reroll.all.button"] = "Transform every bonus ({count})",
+	["smith.reroll.all.title"] = "Scroll of Transformation",
+	["smith.reroll.all.confirm"] = "Reroll every bonus of this item at once? The current values are lost. Cost: a Scroll of Transformation and {gold} gold.",
+	["smith.reroll.all.result"] = "Bonuses transformed: {n}.",
+	["smith.reroll.all.hint"] = "The Scroll of Transformation (shop, Dragon Shards) rerolls every bonus at once.",
+	["item.transmute_scroll.name"] = "Scroll of Transformation",
+	["item.transmute_scroll.desc"] = "The blacksmith rerolls every bonus of one item at once with it (you pay three times the gold of one reroll, no essence). Account-bound.",
+	["item.transmute_scroll.useHint"] = "Use it at the blacksmith, in the Transmute tab.",
+	["premium.shop.transmute_scroll.desc"] = "The blacksmith rerolls every bonus of one item at once with it (you always pay the gold). One a day, account-bound.",
 	["smith.reroll.error.noStone"] = "You have no Stone of Transmutation.",
 	["smith.reroll.error.empty"] = "There is no other bonus for this line.",
 	["tooltip.reroll.count"] = "Transmuted at the blacksmith: {n}",

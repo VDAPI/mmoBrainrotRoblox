@@ -5161,8 +5161,18 @@ return {
 		},
 		["Config:Reroll*"] = {
 			{
+				session = "S156",
+				why = "new allGoldMul 3 (owner 2026-10-20): the Scroll of Transformation rerolls every regular line for 3 attempts' gold and counts one attempt (the scroll replaces the essence)",
+			},
+			{
 				session = "S134j",
 				why = "new: bonus reroll at the smith, essence dust 1 / 1 / 2 / 3 (Unique / Heroic / Legendary / Mythic), gold ilvl x goldPerIlvl x 1.8, +25% an attempt up to x3: 10 attempts 0.8-1.0 h at L20 (Unique) and 1.2-3.4 h at L45-100 (Heroic / Legendary / Mythic), the sink of 10 attempts on every worn item 24-34% of the band's essence, a stone on a capped attempt 6-8% of 2 h (x4 and Mythic 4 dust put it at 10-14%; Balance.targetsS134j); shards or crystals put 10 attempts at 8-60 h",
+			},
+		},
+		["Items/Consumables:[transmute_scroll]*"] = {
+			{
+				session = "S156",
+				why = "new item (owner 2026-10-20): Scroll of Transformation (premium shop, 1 a day): price 1 with noSell, stack 999, level 1",
 			},
 		},
 		["Items/Consumables:[reroll_stone]*"] = {
@@ -6272,7 +6282,10 @@ return {
 			},
 		},
 		["Skills/Hunter:[camouflage].unlock"] = {
-			{ session = "S144", why = "the Trapper's row 7 (48) -> 10: O1 of the Crossbow (no rank-dependent numbers)" },
+			{
+				session = "S144",
+				why = "the Trapper's row 7 (48) -> 10: O1 of the Crossbow (no rank-dependent numbers)",
+			},
 		},
 		["Skills/Hunter:[venomSnare].breakpoints[10].a.echo.pct"] = {
 			{
@@ -6999,6 +7012,69 @@ return {
 			{
 				session = "S147",
 				why = "400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16)",
+			},
+		},
+		["Bosses:byId.hrimvald.timeLimit"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20: the world boss stays until it is killed, at most 2 h (was 15 min)",
+			},
+		},
+		["Rarities:get.f(1).frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["Rarities:get.f(20).frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["Rarities:list[2].frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["Rarities:list[3].frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["Rarities:list[4].frame.thickness"] = {
+			{ session = "S156", why = "looks only (owner 2026-10-20): thicker rarity frames on item slots" },
+		},
+		["WorldEvents:kinds.invasion.focus"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.base"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.cluster"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.max"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.perPlayer"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20 (the Invasion was thin and easy, monsters ran in from all over): waves 14 + 4 a player up to 36 in clusters of 7, on the 3 spawners nearest the ground's centre",
+			},
+		},
+		["WorldBoss:schedule*"] = {
+			{
+				session = "S156",
+				why = "owner 2026-10-20: the world boss twice a day (every 12 h from 08:00 UTC = 10:00 and 22:00 Polish summer time) instead of every 3 h",
+			},
+		},
+		["WorldBoss:antechamber*"] = {
+			{
+				session = "S156",
+				why = "new (owner 2026-10-20): the barrow's vestibule in front of the opening (centre r + 20, radius 16) is always free of PvP",
 			},
 		},
 		["WorldBoss:*"] = {

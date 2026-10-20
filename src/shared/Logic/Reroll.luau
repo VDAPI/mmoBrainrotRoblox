@@ -28,6 +28,8 @@ local Reroll = {}
 
 -- The premium item that pays the essence of one attempt (Data/Items/Consumables, Data/Products).
 Reroll.STONE = "reroll_stone"
+-- S156: the premium item that rerolls every regular line of an item at once (Reroll.rollAll).
+Reroll.SCROLL = "transmute_scroll"
 
 export type State = { line: number?, n: number }
 export type Cost = Upgrade.Cost
@@ -224,6 +226,46 @@ end
 -- The same attempt paid with a Stone of Transmutation: the gold stays, no essence.
 function Reroll.costWithStone(item: ItemInstance): Cost
 	return { gold = Reroll.cost(item).gold, materials = {} }
+end
+
+-- S156 (owner 2026-10-20): the Scroll of Transformation. Every regular line of the item, top to bottom, each drawn from
+-- its pool against the lines already rolled (no two lines of one stat, like a drop); the lock (`rr.i`) does not limit
+-- it and stays. Returns the new bonuses list and the changes; does not change the item.
+export type Change = { index: number, old: Types.Bonus, new: Types.Bonus }
+function Reroll.rollAll(item: ItemInstance, classId: string?, rng: Rng.Rng): ({ Types.Bonus }, { Change })
+	local work: any = table.clone(item)
+	work.bonuses = table.clone(item.bonuses)
+	local changes: { Change } = {}
+	for index = 1, #work.bonuses do
+		if isRegular(work, index) and next(Reroll.pool(work, index, classId)) ~= nil then
+			local old = work.bonuses[index]
+			local line = Reroll.roll(work, index, classId, rng)
+			work.bonuses[index] = { stat = line.stat, v = line.v }
+			table.insert(changes, { index = index, old = { stat = old.stat, v = old.v }, new = line })
+		end
+	end
+	return work.bonuses, changes
+end
+
+-- Writes the rolled lines and counts one attempt; the lock stays as it was.
+function Reroll.applyAll(item: ItemInstance, bonuses: { Types.Bonus })
+	local state = Reroll.state(item)
+	item.bonuses = bonuses
+	item.rr = if state.line then { i = state.line, n = state.n + 1 } else { n = state.n + 1 } :: any
+end
+
+-- Cost of the whole transformation with the scroll: Config.Reroll.allGoldMul times one attempt's gold, no essence.
+function Reroll.costAll(item: ItemInstance): Cost
+	return { gold = math.floor(Reroll.cost(item).gold * Config.Reroll.allGoldMul + 0.5), materials = {} }
+end
+
+-- The stats of the item's lines in order, joined (what the client saw: a changed item refuses the transformation).
+function Reroll.signature(item: ItemInstance): string
+	local parts: { string } = {}
+	for _, line in (item.bonuses or {}) :: { any } do
+		table.insert(parts, if type(line) == "table" and type(line.stat) == "string" then line.stat else "?")
+	end
+	return table.concat(parts, ",")
 end
 
 return Reroll

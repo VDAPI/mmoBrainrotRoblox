@@ -124,6 +124,15 @@ do
 	stone.bindOnPickup = true
 	stone.noSell = true
 end
+-- S156 (owner 2026-10-20): Scroll of Transformation, sold only in the premium shop (Data/Products transmute_scroll, 1 a
+-- day): the blacksmith rerolls every regular line of one item at once with it (Logic/Reroll.rollAll, gold x
+-- Config.Reroll.allGoldMul, no essence). Bound and never sold like the stone; no material.
+other("transmute_scroll", "scroll", "scroll", "📜", "#B07CFF", 1, nil, { kind = "scroll", target = "transmuteAll" })
+do
+	local scroll = LIST[#LIST] :: any
+	scroll.bindOnPickup = true
+	scroll.noSell = true
+end
 -- Gathering tools (S07)
 other("pickaxe", "tool", "tool", "⛏", "#8E8E93", 25, 100, { kind = "none" }, false)
 other("fishing_rod", "tool", "tool", "🎣", "#8A6B4A", 25, 100, { kind = "none" }, false)

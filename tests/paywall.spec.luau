@@ -67,6 +67,8 @@ local ALLOWED_SCROLLS: { [string]: string } = {
 	protection = "EXCEPTION: keeps the upgrade level on a failure; dailyLimit must be 1 (DESIGN-17 §1)",
 	-- S134j: the Stone of Transmutation (test 2b)
 	transmute = "EXCEPTION (S134j): pays the essence of one bonus reroll at the smith, never gold; dailyLimit must be 1; bindOnPickup",
+	-- S156 (owner 2026-10-20): the Scroll of Transformation (test 2c)
+	transmuteAll = "EXCEPTION (S156, owner 2026-10-20): rerolls every regular line of one item at the smith (gold x3 always, the same pools and values as a drop); dailyLimit must be 1; bindOnPickup",
 }
 -- item id -> reason (DESIGN-17 §3). Never add "fullElixir" to ALLOWED_USE_KINDS: every future item of that kind
 -- would pass without an exception.
@@ -309,6 +311,51 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 			end
 		end
 	end)
+
+	-- S156: the Scroll of Transformation rerolls the regular lines only (pools and values of a drop), costs gold always,
+	-- 1 a day, bound; no material.
+	T.it(
+		"2c. the Scroll of Transformation is 1 a day, account-bound, always costs gold and rolls like a drop",
+		function()
+			local Rarities = require("../src/shared/Data/Rarities")
+			local Reroll = require("../src/shared/Logic/Reroll")
+			local Bonuses = require("../src/shared/Data/Bonuses")
+			local found = 0
+			for _, entry in Products.shop do
+				local def = entry.itemId and Items.get(entry.itemId)
+				if def and def.use and def.use.target == "transmuteAll" then
+					found += 1
+					T.expect({ entry.key, entry.dailyLimit }).toEqual({ entry.key, 1 })
+					T.expect({ entry.key, def.bindOnPickup }).toEqual({ entry.key, true })
+					T.expect({ entry.key, ItemValue.canSell(ItemRoll.makeStack(def.id, 1, "s"), def) })
+						.toEqual({ entry.key, false })
+				end
+			end
+			T.expect(found).toBe(1)
+			for _, rarity in Rarities.list do
+				local item = ItemRoll.rollItem(
+					`sword1h_{Items.generate.tierFor(45)}`,
+					45,
+					rarity.id,
+					Rng.new(rarity.id),
+					"s",
+					"Warrior"
+				)
+				local cost = Reroll.costAll(item)
+				T.expect(cost.gold >= Reroll.cost(item).gold).toBe(true)
+				local bonuses = Reroll.rollAll(item, "Warrior", Rng.new(7))
+				T.expect(#bonuses).toBe(#item.bonuses)
+				for index, line in bonuses do
+					local def = Bonuses.get(line.stat)
+					T.expect(def ~= nil).toBe(true)
+					local low, high = ItemRoll.bonusRange(line.stat, 45, rarity.id)
+					if def and def.tier == "regular" then
+						T.expect({ index, line.v >= low - 1e-6 and line.v <= high + 1e-6 }).toEqual({ index, true })
+					end
+				end
+			end
+		end
+	)
 
 	T.it("3. the item checker refuses power and accepts comfort", function()
 		local refused = {

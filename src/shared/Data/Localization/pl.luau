@@ -84,6 +84,7 @@ return {
 
 	-- Errors (server answers carry these keys)
 	["error.badRequest"] = "Nieprawidłowe żądanie.",
+	["combat.levelLock"] = "Masz o {gap}+ poziomów za dużo na tego przeciwnika: zostaw go graczom jego poziomu.",
 	["error.busy"] = "Poczekaj, poprzednia akcja jeszcze trwa.",
 	["error.confirmMismatch"] = "Wpisana nazwa się nie zgadza.",
 	["error.internal"] = "Coś poszło nie tak. Spróbuj ponownie.",
@@ -2567,6 +2568,7 @@ return {
 	["quest.obj.talkClassVendor"] = "Porozmawiaj ze sprzedawcą swojej klasy",
 	["town.sign.donzon"] = "Zbrojmistrz Zakonu",
 	["town.sign.loza"] = "Loża Łowców",
+	["town.sign.arena"] = "Arena", -- W28: the Ristalle gate signs
 	["town.sign.wieza"] = "Wieża Magów",
 	["shop.requiresLevel"] = "Wymaga poziomu {level}",
 	-- FIX 2026-10-14: groups of the Buy grid (Logic/ShopGroups) and the buy bar hint
@@ -8982,6 +8984,16 @@ return {
 	["smith.reroll.error.lockedOther"] = "Na tym przedmiocie przemieniasz już inną linię.",
 	["smith.reroll.error.changed"] = "Przedmiot się zmienił, wybierz go ponownie.",
 	["smith.reroll.error.noStone"] = "Nie masz Kamienia Przemiany.",
+	["smith.reroll.error.noScroll"] = "Nie masz Zwoju Przemiany.",
+	["smith.reroll.all.button"] = "Przemień wszystkie premie ({count})",
+	["smith.reroll.all.title"] = "Zwój Przemiany",
+	["smith.reroll.all.confirm"] = "Przelosować wszystkie premie tego przedmiotu naraz? Obecne wartości przepadną. Koszt: Zwój Przemiany i {gold} złota.",
+	["smith.reroll.all.result"] = "Przemienione premie: {n}.",
+	["smith.reroll.all.hint"] = "Zwój Przemiany (sklep, Smocza Waluta) przelosowuje wszystkie premie naraz.",
+	["item.transmute_scroll.name"] = "Zwój Przemiany",
+	["item.transmute_scroll.desc"] = "Kowal przelosuje nim naraz wszystkie premie jednego przedmiotu (płacisz trzykrotność złota jednej przemiany, bez esencji). Związany z kontem.",
+	["item.transmute_scroll.useHint"] = "Użyj go u kowala, w zakładce Przemiana.",
+	["premium.shop.transmute_scroll.desc"] = "Kowal przelosuje nim wszystkie premie jednego przedmiotu naraz (złoto płacisz zawsze). Jeden dziennie, związany z kontem.",
 	["smith.reroll.error.empty"] = "Dla tej linii nie ma innej premii.",
 	["tooltip.reroll.count"] = "Przemiany u kowala: {n}",
 	["tooltip.details.reroll"] = "Linię można przemienić u kowala.",
