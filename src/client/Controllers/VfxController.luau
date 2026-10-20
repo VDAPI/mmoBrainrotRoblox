@@ -707,6 +707,10 @@ local function piece(
 		if at then
 			Library.fireBlast(at, scale, color, { simple = simple })
 		end
+	elseif name == "frostBlast" then
+		if at then
+			Library.frostBlast(at, scale, color, { simple = simple })
+		end
 	elseif name == "magicCircle" then
 		local where = at or (if caster then centre(caster) else nil)
 		if where then

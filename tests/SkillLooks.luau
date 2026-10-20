@@ -46,6 +46,7 @@ SkillLooks.PIECE_LAYER = {
 	snare = "body", -- S115
 	stormCloud = "body", -- S115
 	fireBlast = "body", -- W03
+	frostBlast = "body", -- W04
 	-- trail: what stays for 0.3-1.5 s
 	sparks = "trail",
 	dust = "trail",
@@ -96,6 +97,7 @@ SkillLooks.PIECE_COST = {
 	snare = c(0, 0, 0, 0), -- S115: plain parts
 	stormCloud = c(4, 0, 0, 0), -- S115: a smoke burst every 0.5 s living 1.5 s
 	fireBlast = c(3, 0, 0, 0), -- W03: flame, smoke and embers
+	frostBlast = c(3, 0, 0, 0), -- W04: shards, mist and glints
 	sparks = c(1, 0, 0, 0),
 	dust = c(2, 0, 0, 0),
 	smokePuff = c(1, 0, 0, 0),

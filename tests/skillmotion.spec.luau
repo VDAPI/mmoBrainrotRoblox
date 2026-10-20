@@ -79,6 +79,7 @@ for _, name in
 		"stormCloud",
 		-- W03
 		"fireBlast",
+		"frostBlast", -- W04
 	}
 do
 	VFX_PIECES[name] = true

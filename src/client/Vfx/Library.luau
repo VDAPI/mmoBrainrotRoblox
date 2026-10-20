@@ -1637,6 +1637,71 @@ function Library.fireBlast(at: Vector3, size: number, color: Color3, opts: FxOpt
 	end
 end
 
+-- W04: the body of an ice spell's blow, the frost twin of fireBlast: shards of ice thrown outwards and falling, a
+-- cold mist rolling low (barely lit) and a few sharp glints. Without the ice texture a plain burst.
+function Library.frostBlast(at: Vector3, size: number, color: Color3, opts: FxOpts?)
+	local o: FxOpts = opts or {}
+	local shards = textured("iceShard", CFrame.new(at + Vector3.new(0, 0.6 * size, 0)))
+	if not shards then
+		Library.burst(at, size * 2, color, 0.4, o.simple)
+		return
+	end
+	burstFrom(shards, "iceShard", color:Lerp(Color3.new(1, 1, 1), 0.35), 14, {
+		simple = o.simple,
+		to = color,
+		spread = 80,
+		speedMin = 8 * size,
+		speedMax = 18 * size,
+		drag = 2,
+		accel = Vector3.new(0, -30, 0),
+		lifeMin = 0.45,
+		lifeMax = 0.8,
+		rotation = NumberRange.new(0, 360),
+		rotSpeed = NumberRange.new(-240, 240),
+		sizeSeq = NumberSequence.new({ kp(0, 0.7 * size), kp(1, 0.4 * size) }),
+		transparency = NumberSequence.new({ kp(0, 0), kp(0.75, 0.15), kp(1, 1) }),
+		area = Vector3.one * 0.6 * size,
+		emission = 0.4,
+	})
+	local mist = textured("smoke", CFrame.new(ground(at) + Vector3.new(0, 0.5 * size, 0)))
+	if mist then
+		burstFrom(mist, "smoke", color:Lerp(Color3.new(1, 1, 1), 0.6), 6, {
+			simple = o.simple,
+			to = color,
+			spread = 85,
+			speedMin = 3,
+			speedMax = 7,
+			drag = 3,
+			accel = Vector3.new(0, 0.5, 0),
+			lifeMin = 0.9,
+			lifeMax = 1.4,
+			rotation = NumberRange.new(0, 360),
+			rotSpeed = NumberRange.new(-30, 30),
+			sizeSeq = NumberSequence.new({ kp(0, 1.6 * size), kp(1, 4 * size) }),
+			transparency = NumberSequence.new({ kp(0, 1), kp(0.2, 0.45), kp(1, 1) }),
+			area = Vector3.new(size, 0.2, size),
+			emission = 0.25,
+		})
+	end
+	local glints = textured("star", CFrame.new(at + Vector3.new(0, 0.8 * size, 0)))
+	if glints then
+		burstFrom(glints, "star", Color3.new(1, 1, 1), 5, {
+			simple = o.simple,
+			to = color,
+			spread = 180,
+			speedMin = 2,
+			speedMax = 6,
+			drag = 4,
+			lifeMin = 0.25,
+			lifeMax = 0.5,
+			rotation = NumberRange.new(0, 360),
+			sizeSeq = NumberSequence.new({ kp(0, 0.2), kp(0.3, 0.9 * size), kp(1, 0) }),
+			area = Vector3.one * 1.5 * size,
+			emission = 1,
+		})
+	end
+end
+
 -- Dust puff at the feet (landings, slams). S112: with the smoke texture a smoke puff in the dust colour and a burst of
 -- the dust texture.
 function Library.dust(at: Vector3, size: number, low: boolean?)

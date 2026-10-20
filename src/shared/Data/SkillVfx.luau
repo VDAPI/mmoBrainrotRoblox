@@ -523,7 +523,7 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "weapon", dur = 0.18 },
 		projectile = "orb",
 		launch = "weapon",
-		impact = { "impactFlash", "sparks" },
+		impact = { "impactFlash", "fireBlast", "sparks" }, -- W04: a small ball of flame (fireBlast at size 0.7)
 		flash = 2,
 		size = 0.7,
 	}),
@@ -533,7 +533,7 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "both", dur = 0.28 },
 		projectile = "shard",
 		launch = "both",
-		impact = { "impactFlash", "sparks", "groundDecal" },
+		impact = { "impactFlash", "frostBlast", "groundDecal" }, -- W04: the frost burst carries the splinters
 		sparks = "iceShard",
 		markRadius = 2,
 		flash = 2,
@@ -581,7 +581,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.9 },
-		impact = { "magicCircle", "meteor", "impactFlash", "ringWave", "groundDecal", "smokePuff" },
+		impact = { "magicCircle", "meteor", "impactFlash", "fireBlast", "ringWave", "groundDecal" }, -- W04
 		landsAfter = true, -- the rock falls the event's `d` (1 s, 0.5 s with 5A): the blow, the shake and the sound then
 		telegraph = "circle",
 		flash = 5,
@@ -637,7 +637,7 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "both", dur = 1 },
 		projectile = "orb",
 		launch = "both",
-		impact = { "impactFlash", "ringWave", "smokePuff", "sparks" },
+		impact = { "impactFlash", "fireBlast", "ringWave", "groundDecal", "sparks" }, -- W04
 		flash = 4.5,
 		shake = 0.4,
 		size = 1.7,
@@ -646,7 +646,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.25 },
-		impact = { "burst", "ringWave", "cracks", "smokePuff" },
+		impact = { "fireBlast", "ringWave", "cracks", "impactFlash" }, -- W04: the burst becomes a ball of flame
 		markRadius = 3,
 		shake = 0.3,
 	}),
@@ -685,7 +685,7 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "both", dur = 0.8 },
 		projectile = "shard",
 		launch = "both",
-		impact = { "impactFlash", "ringWave", "cracks", "sparks" },
+		impact = { "impactFlash", "frostBlast", "ringWave", "cracks" }, -- W04
 		sparks = "iceShard",
 		markRadius = 2.5,
 		flash = 4,
@@ -696,7 +696,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.38 },
-		impact = { "burst", "ringWave", "sparks" },
+		impact = { "impactFlash", "frostBlast", "ringWave", "sparks" }, -- W04
 		everyWave = { "ringWave", "sparks" },
 		waves = true,
 		sparks = "iceShard",
@@ -719,7 +719,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "r", dur = 0.26 },
-		impact = { "burst", "shockwave", "cracks", "sparks" },
+		impact = { "frostBlast", "shockwave", "cracks", "impactFlash" }, -- W04
 		sparks = "iceShard",
 		markRadius = 2.5,
 		flash = 3,
