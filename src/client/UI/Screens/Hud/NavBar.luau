@@ -7,6 +7,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -22,6 +24,11 @@ export type Props = {
 }
 
 local WIDTH = 264
+
+-- W29: narrower on a phone in landscape (Logic/PhoneHud: under the scaled minimap, clear of the skill arc)
+local function width(scope: Scope): Fusion.Computed<UDim2>
+	return PhoneLayout.Pick(scope, UDim2.fromOffset(PhoneHud.NAVBAR_WIDTH, 0), UDim2.fromOffset(WIDTH, 0))
+end
 
 local function NavBar(scope: Scope, props: Props): Instance
 	local target = NavTarget.Target
@@ -48,7 +55,7 @@ local function NavBar(scope: Scope, props: Props): Instance
 	return scope:New("Frame")({
 		Name = "NavBar",
 		LayoutOrder = 3,
-		Size = UDim2.fromOffset(WIDTH, 0),
+		Size = width(scope),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		Visible = scope:Computed(function(use): boolean
@@ -59,7 +66,11 @@ local function NavBar(scope: Scope, props: Props): Instance
 			scope:New("Frame")({
 				Name = "Bar",
 				LayoutOrder = 1,
-				Size = UDim2.fromOffset(WIDTH, Theme.Size.MinTouch),
+				Size = PhoneLayout.Pick(
+					scope,
+					UDim2.fromOffset(PhoneHud.NAVBAR_WIDTH, Theme.Size.MinTouch),
+					UDim2.fromOffset(WIDTH, Theme.Size.MinTouch)
+				),
 				BackgroundColor3 = Theme.Iron.Surface,
 				BackgroundTransparency = Theme.HudAlpha,
 				Visible = scope:Computed(function(use): boolean
@@ -118,7 +129,7 @@ local function NavBar(scope: Scope, props: Props): Instance
 			scope:New("TextLabel")({
 				Name = "Debug",
 				LayoutOrder = 2,
-				Size = UDim2.fromOffset(WIDTH, 0),
+				Size = width(scope),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundColor3 = Theme.Iron.Sunken,
 				BackgroundTransparency = Theme.HudAlpha,

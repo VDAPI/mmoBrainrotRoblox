@@ -17,6 +17,8 @@
 -- from the room's `decor` (moss, web, den, junk, smugglers, pen, diggings); tunnels take the biome's mix.
 -- S47: the Frost Peaks' themes (snowforest, snowfield, harpyrocks, giants, icelake, tundra, dragontemple, icefort,
 -- wyrmpeak); frozen reeds and ice shards on the shores of the frozen lakes' ice.
+-- W29: the graphics level (Logic/GraphicsLevel) keeps a share of each chunk's tries (low half) and low quality caps
+-- the radius at the "low" World detail.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,6 +29,7 @@ local AreaSpawns = require(ReplicatedStorage.Shared.Logic.AreaSpawns)
 local CaveTerrain = require(ReplicatedStorage.Shared.Logic.CaveTerrain)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Config = require(ReplicatedStorage.Shared.Config)
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local MeadowsTerrain = require(ReplicatedStorage.Shared.Logic.MeadowsTerrain)
 local RegionTerrain = require(ReplicatedStorage.Shared.Logic.RegionTerrain)
@@ -788,6 +791,7 @@ local folder: Folder
 local pool: { [string]: { BasePart } } = {}
 local chunks: { [string]: { BasePart } } = {}
 local currentMap: string? = nil
+local builtQuality: any = nil
 local frameTime = 0
 
 local function acquire(key: string): BasePart
@@ -956,7 +960,12 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 	local origin = Vector3.new(map.offset.x, map.offset.y, map.offset.z)
 	-- S48: caves on the engine
 	local engine = CaveTerrain.get(map.id)
-	for _ = 1, if themed or engine then THEME_MAX else biome.count do
+	-- W29: the graphics level keeps the first share of the tries (a subset of the same layout)
+	local tries = GraphicsLevel.decorTries(
+		State.Get({ "account", "settings", "quality" }),
+		if themed or engine then THEME_MAX else biome.count
+	)
+	for _ = 1, tries do
 		local x = cx * size + rng:NextNumber() * size
 		local z = cz * size + rng:NextNumber() * size
 		local mix = biome.mix
@@ -1057,9 +1066,13 @@ local function unloadAll()
 	end
 end
 
+-- "World detail" radius, capped by the graphics level (W29: low quality = the "low" radius).
 local function radius(): number
-	local setting = State.Get({ "account", "settings", "decor" })
-	return (Config.DecorRadius :: any)[setting or "mid"] or Config.DecorRadius.mid
+	local level = GraphicsLevel.detail(
+		State.Get({ "account", "settings", "quality" }),
+		State.Get({ "account", "settings", "decor" })
+	)
+	return (Config.DecorRadius :: any)[level] or Config.DecorRadius.mid
 end
 
 -- Loads up to `budget` missing chunks around the player and unloads far ones.
@@ -1071,9 +1084,12 @@ local function update(budget: number)
 	if not map or not root then
 		return
 	end
-	if map.id ~= currentMap then
+	-- W29: a new graphics level changes the density: the chunks are built again
+	local quality = State.Get({ "account", "settings", "quality" })
+	if map.id ~= currentMap or quality ~= builtQuality then
 		unloadAll()
 		currentMap = map.id
+		builtQuality = quality
 	end
 	local size = Config.DecorChunk
 	local reach = radius()
