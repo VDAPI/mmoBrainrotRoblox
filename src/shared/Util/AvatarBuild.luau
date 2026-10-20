@@ -322,6 +322,13 @@ local function skirt(ctx: Ctx, n: number, material: Enum.Material?)
 	end
 end
 
+-- Shoes over both feet (the base body's bare feet read badly under every outfit).
+local function shoes(ctx: Ctx)
+	pair(ctx, "LeftFoot", "RightFoot", function(foot)
+		blob(ctx, foot, rel(foot, 1.18, 1.45, 1.1), at(foot, 0, 0.1, -0.03), nil, Enum.Material.Leather)
+	end)
+end
+
 local function cape(ctx: Ctx)
 	local t = ctx.torso
 	local part = piece(
@@ -342,7 +349,7 @@ end
 
 local function belt(ctx: Ctx)
 	local l = ctx.lower
-	shell(ctx, l, Vector3.new(1.07, 0.42, 1.12), at(l, 0, 0.22, 0), nil, Enum.Material.Leather)
+	shell(ctx, l, Vector3.new(1.07, 0.34, 1.12), at(l, 0, 0.36, 0), nil, Enum.Material.Leather)
 end
 
 local function cap(ctx: Ctx, height: number)
@@ -359,7 +366,7 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 		if not h then
 			return
 		end
-		blob(ctx, h, rel(h, 1.2, 0.98, 1.14), at(h, 0, 0.1, 0.17), nil, Enum.Material.Fabric)
+		blob(ctx, h, rel(h, 1.16, 0.9, 1.06), at(h, 0, 0.2, 0.26), nil, Enum.Material.Fabric)
 		piece(
 			ctx,
 			h,
@@ -496,9 +503,11 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 			shell(ctx, arm, Vector3.new(1.14, 0.55, 1.14), at(arm, 0, -0.18, 0), nil, Enum.Material.Leather)
 		end)
 	end,
+	-- shoes and leather cuffs up the shins
 	boots = function(ctx)
-		pair(ctx, "LeftFoot", "RightFoot", function(foot)
-			shell(ctx, foot, Vector3.new(1.12, 1.25, 1.08), at(foot, 0, 0.1, 0), nil, Enum.Material.Leather)
+		shoes(ctx)
+		pair(ctx, "LeftLowerLeg", "RightLowerLeg", function(leg)
+			shell(ctx, leg, Vector3.new(1.14, 0.55, 1.14), at(leg, 0, -0.24, 0), nil, Enum.Material.Leather)
 		end)
 	end,
 	high_collar = function(ctx)
@@ -512,7 +521,7 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 	end,
 	-- a short cape over the shoulders, shaped like the chest
 	shoulder_mantle = function(ctx)
-		shell(ctx, ctx.torso, Vector3.new(1.12, 0.42, 1.16), at(ctx.torso, 0, 0.33, 0), nil, Enum.Material.Fabric)
+		shell(ctx, ctx.torso, Vector3.new(1.13, 0.3, 1.18), at(ctx.torso, 0, 0.43, 0), nil, Enum.Material.Fabric)
 	end,
 	helm_crest = function(ctx)
 		local h = ctx.head
@@ -520,7 +529,7 @@ local DRAW: { [string]: (ctx: Ctx) -> () } = {
 		piece(ctx, h, rel(h, 0.1, 0.32, 0.86), at(h, 0, 0.56, 0.06), lighter(ctx.color, 0.15), Enum.Material.Metal)
 	end,
 	fur_mantle = function(ctx)
-		shell(ctx, ctx.torso, Vector3.new(1.16, 0.45, 1.2), at(ctx.torso, 0, 0.32, 0.02), nil, Enum.Material.Fabric)
+		shell(ctx, ctx.torso, Vector3.new(1.17, 0.32, 1.22), at(ctx.torso, 0, 0.42, 0.02), nil, Enum.Material.Fabric)
 	end,
 	fur_collar = function(ctx)
 		local t = ctx.torso
@@ -1081,6 +1090,20 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 			if not (item.asset and placeAsset(ctx, item.asset, ctx.color)) then
 				draw(ctx)
 			end
+		end
+	end
+	-- owner 2026-10-21: no bare feet; a look without boots wears plain shoes a shade darker than its feet
+	if spec.mode == "class" then
+		local shod = false
+		for _, item in spec.garments do
+			if item.g == "boots" then
+				shod = true
+			end
+		end
+		local foot = part("LeftFoot")
+		if not shod and foot then
+			ctx.color = foot.Color:Lerp(Color3.new(), 0.45)
+			shoes(ctx)
 		end
 	end
 	-- (f) hairstyle
