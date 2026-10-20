@@ -584,7 +584,7 @@ local SkillVfx: { [string]: Entry } = {
 	frostNova = e({
 		color = "element",
 		sound = "",
-		impact = { "impactFlash", "ringWave", "groundDecal", "sparks" },
+		impact = { "impactFlash", "frostBlast", "ringWave", "groundDecal" }, -- W04: shards burst out with the ring
 		sparks = "iceShard",
 		telegraph = "circle",
 		flash = 3,
@@ -621,7 +621,7 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		glow = { hand = "both", dur = 0.55 },
 		impact = { "magicCircle" },
-		strike = { "impactFlash", "ringWave", "smokePuff" },
+		strike = { "impactFlash", "fireBlast", "ringWave", "groundDecal" },
 		leadStrike = true,
 		telegraph = "circle",
 		flash = 3,
@@ -633,7 +633,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "r", dur = 0.25 },
-		impact = { "impactFlash", "fan", "groundDecal", "smokePuff" },
+		impact = { "impactFlash", "fan", "fireBlast", "groundDecal" }, -- W04
 		telegraph = "cone",
 		flash = 2.5,
 		shake = 0.2,
@@ -667,7 +667,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.16 },
-		impact = { "impactFlash", "pillar", "groundDecal", "sparkle" },
+		impact = { "impactFlash", "pillar", "fireBlast", "groundDecal" }, -- W04
 		pillar = { radius = 1.4, height = 10 },
 		markRadius = 2.5,
 		flash = 2.5,
@@ -678,7 +678,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.42 },
-		impact = { "impactFlash", "shockwave", "groundDecal", "sparks" },
+		impact = { "impactFlash", "frostBlast", "shockwave", "groundDecal", "sparks" }, -- W04
 		everyWave = { "shockwave", "sparks" },
 		waves = true,
 		sparks = "iceShard",
@@ -721,7 +721,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.34 },
-		impact = { "impactFlash", "pillar", "cracks", "sparks" },
+		impact = { "impactFlash", "pillar", "frostBlast", "cracks" }, -- W04
 		pillar = { radius = 1.6, height = 7 },
 		sparks = "iceShard",
 		markRadius = 2.5,
@@ -742,7 +742,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.55 },
-		impact = { "magicCircle", "impactFlash", "ringWave", "groundDecal", "sparks" },
+		impact = { "magicCircle", "impactFlash", "frostBlast", "ringWave", "groundDecal", "sparks" }, -- W04
 		everyWave = { "ringWave", "sparks" },
 		waves = true,
 		sparks = "iceShard",
@@ -767,7 +767,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "r", dur = 0.26 },
-		impact = { "burst", "tether", "sparks" },
+		impact = { "impactFlash", "tether", "arcBurst", "sparks" }, -- W04
 		tex = { tether = "beamLightning" },
 		flash = 2,
 		shake = 0.15,
@@ -775,7 +775,7 @@ local SkillVfx: { [string]: Entry } = {
 	stormArmor = e({
 		color = "element",
 		sound = "",
-		impact = { "burst", "aura", "ringWave", "sparks" },
+		impact = { "impactFlash", "aura", "arcBurst", "sparks" }, -- W04
 		flash = 2,
 	}),
 	thunderStrike = e({
