@@ -433,6 +433,8 @@ export const pl = {
   "boss.entry": "Wejście i zasady",
   "boss.room": "Komnata",
   "boss.required": "Wymagany poziom",
+  "boss.maxLevel": "Maksymalny poziom",
+  "boss.maxLevelText": "wyższa postać nie wejdzie i nie zrani bossa ani jego pomocników",
   "boss.gate": "Brama w jaskini",
   "boss.stone": "Kamień Lochu",
   "boss.stoneText": "Przenosi pod bramę lochu.",

@@ -61,7 +61,8 @@ local function nearestOther(services: Services, proc: Proc, from: Vector3, radiu
 	local best, bestDistance = nil, radius
 	for _, other in Entity.QueryMonsters(from, radius) do
 		local p = Entity.Position(other)
-		local alive = other.monster ~= nil and other.monster:IsAlive()
+		-- S157: never a monster over the player's level cap (Logic/LevelLock)
+		local alive = other.monster ~= nil and other.monster:IsAlive() and not other.monster:LockedFor(proc.player)
 		if other ~= proc.target and alive and p and (p - from).Magnitude <= bestDistance then
 			best, bestDistance = other, (p - from).Magnitude
 		end

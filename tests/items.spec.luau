@@ -155,7 +155,7 @@ T.describe("ItemRoll", function()
 				end
 			end
 		end
-		T.expect(named).toBe(12)
+		T.expect(named).toBe(20) -- S149c: + 8 of the world boss
 		T.expect(B.NAMED_LINE_MAX).toBe(2.5)
 	end)
 

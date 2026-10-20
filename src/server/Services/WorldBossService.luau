@@ -16,6 +16,9 @@
 -- `{ next }`), sent at most every publishEvery seconds and only on a change. The after-fight meter is
 -- FightLogService ("worldboss", S149b: with each player's place in the contribution); S149b: every winner gets the
 -- reward card (`WorldBossReward`: EXP, gold and the items, or the reason without a reward).
+-- S149c: the contribution factor f (Logic/WorldBoss.factor) multiplies the Legendary and Mythic weights and the chance of
+-- one of Hrimvald's own named items (character.worldBossPity, certain after 30 dry fights); a winner who is gone gets
+-- the reward by mail with the EXP and the pity applied the next time that character's mailbox is read (ApplyPending).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -30,6 +33,7 @@ local Clock = require(Shared.Util.Clock)
 local Contribution = require(Shared.Logic.Contribution)
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local ItemRoll = require(Shared.Logic.ItemRoll)
+local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
@@ -68,6 +72,7 @@ local WorldBossService = {
 }
 
 type Occurrence = WorldBoss.Occurrence
+type Winner = { userId: number, name: string, charId: string, level: number, class: string, pity: number }
 type State = "warn" | "active" | "slain" | "left"
 
 type Fight = {
@@ -80,8 +85,9 @@ type Fight = {
 	helpers: { [any]: boolean },
 	bank: { [Player]: Contribution.Contribution },
 	chars: { [Player]: string }, -- the character that earned the first point (the reward goes only to it)
-	-- owner 2026-10-20: who earned points, for a reward by mail when they are gone at the kill
-	who: { [Player]: { userId: number, charId: string, level: number, class: string } },
+	-- S149c: who earned the points (account, character, level, class, named-item pity at the first point): an absent
+	-- winner's reward is rolled from it and mailed
+	who: { [Player]: Winner },
 	fightId: number?,
 	spawnedAt: number?, -- Clock time
 	endedAt: number?, -- Clock time of the kill or the leave
@@ -202,7 +208,14 @@ local function bankAdd(f: Fight, player: Player, field: "dmg" | "heal" | "shield
 		local char: Types.CharacterData? = PlayerStateService.GetCharacter(player)
 		if char then
 			f.chars[player] = char.id
-			f.who[player] = { userId = player.UserId, charId = char.id, level = char.level, class = char.class }
+			f.who[player] = {
+				userId = player.UserId,
+				name = player.Name,
+				charId = char.id,
+				level = char.level,
+				class = char.class,
+				pity = tonumber(char.worldBossPity) or 0,
+			}
 		end
 	end
 end
@@ -297,10 +310,18 @@ end
 
 -- Reward ------------------------------------------------------------------------------------------------------
 
-local function mailItems(player: Player, charId: string, items: { Types.ItemInstance })
+-- S149c: the share of a winner (percent of all points) and the factor, also the mail subject's arguments.
+type Share = { pct: number, f: number }
+
+local function shareArgs(share: Share): { [string]: any }
+	return { pct = string.format("%.1f", share.pct), f = string.format("%.2f", share.f) }
+end
+
+local function mailItems(player: Player, charId: string, items: { Types.ItemInstance }, share: Share)
 	local sent, err = MailService.Send(player.UserId, {
 		from = "system",
-		subjectKey = "mail.subject.worldBoss",
+		subjectKey = "mail.subject.worldBossShare",
+		args = shareArgs(share),
 		items = items,
 		charId = charId,
 	})
@@ -320,57 +341,11 @@ local function mailItems(player: Player, charId: string, items: { Types.ItemInst
 	end
 end
 
--- Owner 2026-10-20: the reward of a fighter who is gone at the kill, by mail to the character that fought (the item,
--- the materials and the gold; EXP needs the character in the game).
-local function mailAbsent(who: { userId: number, charId: string, level: number, class: string })
+-- The rolled items of one winner: the item (rarity weights times the factor), the named item (S149c: chance times
+-- the factor plus the pity) and the materials. Returns the items and the new pity count.
+local function rollItems(level: number, classId: string, share: Share, pity: number): ({ Types.ItemInstance }, number)
 	local items: { Types.ItemInstance } = {}
-	local drop = WorldBoss.rollItem(who.level, who.class, rng)
-	if drop then
-		local rolled = ItemRoll.rollItem(
-			drop.defId,
-			drop.ilvl,
-			drop.rarity,
-			rng,
-			HttpService:GenerateGUID(false),
-			drop.forClass,
-			{ family = WorldBoss.def().family :: string? }
-		)
-		if Data.reward.bound then
-			rolled.bound = true
-		end
-		table.insert(items, rolled)
-	end
-	for _, m in WorldBoss.rollMaterials(rng) do
-		table.insert(items, ItemRoll.makeStack(m.id, m.n, HttpService:GenerateGUID(false)))
-	end
-	local r = WorldBoss.reward(who.level, true)
-	local sent, err = MailService.Send(who.userId, {
-		from = "system",
-		subjectKey = "mail.subject.worldBoss",
-		items = items,
-		gold = r.gold,
-		charId = who.charId,
-	})
-	if not sent then
-		log:warn("world boss reward of absent %d not mailed: %s", who.userId, tostring(err))
-	end
-end
-
--- EXP, gold, materials and the item of one winner; returns the items for the fight summary.
-local function giveReward(player: Player, char: Types.CharacterData): { any }
-	local r = WorldBoss.reward(char.level, true)
-	LevelService.GiveExp(player, r.exp, "worldBoss")
-	if r.gold > 0 then
-		local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
-			return gold + r.gold
-		end)
-		Analytics.gold(player, r.gold, balance, "worldBoss")
-	end
-	local expBonus = StatService.GetValue(player, "expBonus")
-	local shownExp = if char.level >= 100 then 0 else math.floor(r.exp * (1 + expBonus / 100))
-	Net.Fire(player, "CombatFx", { { k = "reward", exp = shownExp, gold = r.gold } })
-	local items: { Types.ItemInstance } = {}
-	local drop = WorldBoss.rollItem(char.level, char.class, rng)
+	local drop = WorldBoss.rollItem(level, classId, rng, share.f)
 	if drop then
 		local rolled = ItemRoll.rollItem(
 			drop.defId,
@@ -385,15 +360,55 @@ local function giveReward(player: Player, char: Types.CharacterData): { any }
 			rolled.bound = true
 		end
 		table.insert(items, rolled)
-		if drop.rarity >= Rarities.LEGENDARY then
-			Analytics.custom(player, if drop.rarity >= Rarities.MYTHIC then "WorldBossMythic" else "WorldBossLegendary")
-		end
 	else
-		log:warn("no world boss item at level %d for %s", char.level, char.class)
+		log:warn("no world boss item at level %d for %s", level, classId)
+	end
+	local namedId, dry = WorldBoss.rollNamed(classId, share.f, pity, rng)
+	if namedId then
+		local def = Items.get(namedId)
+		if def then
+			local named =
+				ItemRoll.rollItem(namedId, def.level or 100, Rarities.MYTHIC, rng, InventoryService.NewUid(), classId)
+			named.bound = true -- bind on pickup
+			if def.elemental then
+				named.el = Data.reward.named.element
+			end
+			table.insert(items, named)
+		end
 	end
 	for _, m in WorldBoss.rollMaterials(rng) do
 		table.insert(items, ItemRoll.makeStack(m.id, m.n, InventoryService.NewUid()))
 	end
+	return items, dry
+end
+
+local function analyticsOf(player: Player, items: { Types.ItemInstance })
+	for _, item in items do
+		local def = Items.get(item.id)
+		if def and def.bossId == WorldBoss.def().id then
+			Analytics.custom(player, "WorldBossNamed")
+		elseif (item.rarity or 0) >= Rarities.LEGENDARY then
+			Analytics.custom(player, if item.rarity >= Rarities.MYTHIC then "WorldBossMythic" else "WorldBossLegendary")
+		end
+	end
+end
+
+-- EXP, gold, materials and the items of one winner here; returns the items for the fight summary.
+local function giveReward(player: Player, char: Types.CharacterData, share: Share): { any }
+	local r = WorldBoss.reward(char.level, true)
+	LevelService.GiveExp(player, r.exp, "worldBoss")
+	if r.gold > 0 then
+		local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+			return gold + r.gold
+		end)
+		Analytics.gold(player, r.gold, balance, "worldBoss")
+	end
+	local expBonus = StatService.GetValue(player, "expBonus")
+	local shownExp = if char.level >= 100 then 0 else math.floor(r.exp * (1 + expBonus / 100))
+	Net.Fire(player, "CombatFx", { { k = "reward", exp = shownExp, gold = r.gold } })
+	local items, dry = rollItems(char.level, char.class, share, tonumber(char.worldBossPity) or 0)
+	PlayerStateService.Set(player, { "character", "worldBossPity" }, dry)
+	analyticsOf(player, items)
 	if #items > 0 then
 		if not InventoryService.IsTradeLocked(player) and InventoryService.CanFit(player, items) then
 			for _, item in items do
@@ -403,7 +418,7 @@ local function giveReward(player: Player, char: Types.CharacterData): { any }
 				end
 			end
 		else
-			task.spawn(mailItems, player, char.id, items)
+			task.spawn(mailItems, player, char.id, items, share)
 		end
 	end
 	Analytics.custom(player, "WorldBossReward", char.level)
@@ -411,35 +426,99 @@ local function giveReward(player: Player, char: Types.CharacterData): { any }
 	for _, item in items do
 		table.insert(listed, { id = item.id, r = item.rarity, up = item.up, n = item.n })
 	end
-	-- S149b: the reward card (BossReward in its world boss form) instead of the S149 toast
-	Net.Fire(player, "WorldBossReward", { boss = WorldBoss.def().id, exp = shownExp, gold = r.gold, items = listed })
+	-- S149b: the reward card (BossReward in its world boss form) instead of the S149 toast; S149c: with the share
+	Net.Fire(player, "WorldBossReward", {
+		boss = WorldBoss.def().id,
+		exp = shownExp,
+		gold = r.gold,
+		items = listed,
+		share = share.pct,
+		f = share.f,
+	})
 	return listed
 end
 
--- Rewards every participant still here with the same character (the check and the account write without a yield
--- between them). Returns the participants and the rewarded, and the items for the fight summary.
+-- S149c: the reward of a winner who is gone (left the server, logged out, switched character): gold, the items and
+-- the materials go by mail to the character that fought; the EXP and the named-item pity ride in the parcel
+-- (`worldBoss`) and are applied the next time that character's mailbox is read (MailService, ApplyPending). The
+-- occurrence id is the parcel's `once` key: one parcel per account and occurrence across all servers. Yields.
+local function mailAbsent(who: Winner, share: Share, occId: string)
+	local r = WorldBoss.reward(who.level, true)
+	local items, dry = rollItems(who.level, who.class, share, who.pity)
+	local sent, err = MailService.Send(who.userId, {
+		from = "system",
+		subjectKey = "mail.subject.worldBossAbsent",
+		args = shareArgs(share),
+		gold = r.gold,
+		items = items,
+		charId = who.charId,
+		once = occId,
+		worldBoss = { occ = occId, exp = r.exp, named = dry == 0 },
+	})
+	if sent then
+		log:info("world boss reward of absent %s mailed (%s, %d items)", who.name, occId, #items)
+	else
+		log:warn("world boss reward of absent %s not mailed: %s", who.name, tostring(err))
+	end
+end
+
+-- S149c: applies the EXP and the pity of world boss parcels (MailService, the first read of the character's mailbox
+-- after they arrived): once per account and occurrence (account.worldBoss.last, as a reward here).
+function WorldBossService.ApplyPending(player: Player, list: { { occ: string, exp: number, named: boolean } })
+	local char: Types.CharacterData? = PlayerStateService.GetCharacter(player)
+	if not char then
+		return
+	end
+	local total = 0
+	for _, entry in list do
+		if not WorldBoss.isForced(entry.occ) then
+			PlayerStateService.Set(player, { "account", "worldBoss" }, { last = entry.occ })
+		end
+		local exp = math.max(0, math.floor(tonumber(entry.exp) or 0))
+		if exp > 0 then
+			LevelService.GiveExp(player, exp, "worldBoss")
+			total += exp
+		end
+		local dry = tonumber(char.worldBossPity) or 0
+		PlayerStateService.Set(player, { "character", "worldBossPity" }, if entry.named then 0 else dry + 1)
+		QuestEvents.fire(player, "worldboss", { occId = entry.occ, bossId = WorldBoss.def().id })
+		SeasonService.Add(player, "worldBoss")
+		Analytics.custom(player, "WorldBossRewardMailed", char.level)
+	end
+	Net.Fire(player, "Toast", "worldboss.pending", { exp = total }, "info")
+end
+
+-- Rewards every winner (the check and the account write without a yield between them): one still here with the same
+-- character at once, S149c: one gone by mail (mailAbsent). Returns the participants and the rewarded, and the items
+-- for the fight summary.
 local function rewardAll(f: Fight): (number, number, { [Player]: { any } })
 	local per, total = contributions(f)
 	local participants, rewarded = 0, 0
 	local drops: { [Player]: { any } } = {}
+	local count = 0
+	for _, points in per do
+		if points > 0 then
+			count += 1
+		end
+	end
 	for player, points in per do
 		if points <= 0 then
 			continue
 		end
 		participants += 1
+		local who = f.who[player]
+		if not who then
+			continue
+		end
+		local share: Share = { pct = 100 * points / math.max(total, 1e-9), f = WorldBoss.factor(points, total, count) }
 		local char: Types.CharacterData? = if player.Parent ~= nil and playing(player)
 			then PlayerStateService.GetCharacter(player)
 			else nil
-		if not char or f.chars[player] ~= char.id then
-			-- owner 2026-10-20: gone (left, another character) but fought: the item, the materials and the gold by mail
-			local who = f.who[player]
-			if
-				who
-				and who.level >= WorldBoss.minLevel()
-				and WorldBoss.canReward(nil, who.level, points, total, f.occ.id)
-			then
-				task.spawn(mailAbsent, who)
+		if not char or char.id ~= who.charId then
+			-- S149c: gone: the level and the share decide, the account's claim is checked when the parcel is applied
+			if WorldBoss.canReward(nil, who.level, points, total, f.occ.id) then
 				rewarded += 1
+				task.spawn(mailAbsent, who, share, f.occ.id)
 			end
 			continue
 		end
@@ -458,7 +537,7 @@ local function rewardAll(f: Fight): (number, number, { [Player]: { any } })
 		if not f.forced then
 			PlayerStateService.Set(player, { "account", "worldBoss" }, { last = f.occ.id })
 		end
-		local done, result = pcall(giveReward, player, char)
+		local done, result = pcall(giveReward, player, char, share)
 		if done then
 			rewarded += 1
 			drops[player] = result

@@ -66,6 +66,7 @@ export type Outgoing = {
 	body: string?,
 	fromId: number?,
 	fromChar: string?,
+	worldBoss: Mail.WorldBossPart?, -- S149c: an absent world boss winner's EXP and pity (system only, with charId)
 }
 
 local Registry: any
@@ -100,6 +101,13 @@ local function lazy(name: string, cached: any): any
 		return if ok and service then service else false
 	end
 	return cached
+end
+
+local WorldBossService: any
+
+local function worldBossService(): any
+	WorldBossService = lazy("WorldBossService", WorldBossService)
+	return WorldBossService or nil
 end
 
 local function arenaService(): any
@@ -146,11 +154,76 @@ local function publish(player: Player)
 	PlayerStateService.Set(player, { "mail" }, { list = list, count = #list })
 end
 
+-- S149c: the world boss parts (an absent winner's EXP and pity) waiting for the active character: marked applied in
+-- the store first (so no other read or server applies them again), then given (WorldBossService.ApplyPending); a part
+-- of an occurrence the account was already rewarded for (account.worldBoss.last: it won on another server meanwhile)
+-- takes its whole parcel away. Yields.
+local function applyWorldBoss(player: Player, box: Mail.Box)
+	local char = character(player)
+	if not char or next(Mail.pendingWorldBoss(box, char.id)) == nil then
+		return
+	end
+	local service = worldBossService()
+	if not service then
+		return
+	end
+	local account = PlayerStateService.Get(player, { "account" })
+	local last = if account and type(account.worldBoss) == "table" then account.worldBoss.last else nil
+	local taken: { Mail.WorldBossPart } = {}
+	local dropped = 0
+	local ok, newBox = store:update(key(player.UserId), function(current: any?)
+		taken, dropped = {}, 0
+		local b = Mail.box(current, classOf(player))
+		for id, part in Mail.pendingWorldBoss(b, char.id) do
+			if part.occ == last then
+				b.parcels[id] = nil
+				dropped += 1
+			else
+				part.applied = true
+				table.insert(taken, part)
+			end
+		end
+		if #taken == 0 and dropped == 0 then
+			return nil, "none"
+		end
+		return b, nil
+	end)
+	if not ok or player.Parent ~= Players then
+		return
+	end
+	boxes[player] = Mail.box(newBox, classOf(player))
+	if dropped > 0 then
+		log:info("%s: %d world boss parcel(s) dropped (rewarded elsewhere)", player.Name, dropped)
+	end
+	if #taken > 0 then
+		if character(player) == char then
+			service.ApplyPending(player, taken)
+		else
+			-- the character switched while the store yielded: unmark them for the next read of that character
+			store:update(key(player.UserId), function(current: any?)
+				local b = Mail.box(current, classOf(player))
+				for _, parcel in b.parcels do
+					local part = parcel.worldBoss
+					if type(part) == "table" and parcel.charId == char.id then
+						for _, mine in taken do
+							if mine.occ == part.occ then
+								part.applied = nil
+							end
+						end
+					end
+				end
+				return b, nil
+			end)
+		end
+	end
+end
+
 -- Re-reads the player's mailbox. Yields.
 function MailService.Refresh(player: Player)
 	local ok, value = store:get(key(player.UserId))
 	if ok and player.Parent == Players then
 		boxes[player] = Mail.box(value, classOf(player))
+		applyWorldBoss(player, boxes[player])
 		publish(player)
 	end
 end
@@ -178,6 +251,7 @@ function MailService.Send(userId: number, outgoing: Outgoing): (boolean, string?
 		body = outgoing.body,
 		fromId = outgoing.fromId,
 		fromChar = outgoing.fromChar,
+		worldBoss = if outgoing.from == "system" and outgoing.charId then outgoing.worldBoss else nil,
 	}
 	local ok, _, err = store:update(key(userId), function(current: any?)
 		local box = Mail.box(current)

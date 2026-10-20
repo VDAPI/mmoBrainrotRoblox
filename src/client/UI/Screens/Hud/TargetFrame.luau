@@ -1,6 +1,7 @@
 --!strict
 -- Target frame at the top centre (DESIGN §23): name in the variant colour, level, elite badge, HP bar with
 -- numbers (percentage for players) and distance. Polls the selected model ten times per second.
+-- S157 (Logic/LevelLock): a monster over the player's level cap is greyed out with a lock and "Too high a level (max N)".
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -10,7 +11,9 @@ local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local EffectIcons = require(script.Parent.EffectIcons)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
+local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 
@@ -35,6 +38,8 @@ type Info = {
 	maxHp: number,
 	isPlayer: boolean,
 	distance: number,
+	cap: number?, -- S157: the highest level that may fight it (nil = no cap)
+	locked: boolean, -- S157: the local player is over the cap
 }
 
 -- S136: the monster plate colours (Data/UiPalette.plate, >= 4.5:1 on the HUD tile)
@@ -63,6 +68,9 @@ local function read(model: Model): Info?
 	if type(monsterId) == "string" then
 		local def = Monsters.get(monsterId)
 		local variant = attr(model, "Variant") or "normal"
+		local cap = attr(model, "CapLevel")
+		local capped: number? = if type(cap) == "number" then cap else nil
+		local myLevel = State.Get({ "character", "level" })
 		return {
 			nameKey = attr(model, "NameKey") or (if def then def.nameKeys[variant] or def.nameKeys.normal else nil),
 			variant = variant,
@@ -71,6 +79,8 @@ local function read(model: Model): Info?
 			maxHp = attr(model, "MaxHp") or 1,
 			isPlayer = false,
 			distance = distance,
+			cap = capped,
+			locked = type(myLevel) == "number" and LevelLock.over(myLevel, capped),
 		}
 	end
 	local humanoid = model:FindFirstChildOfClass("Humanoid")
@@ -84,6 +94,8 @@ local function read(model: Model): Info?
 		maxHp = 100,
 		isPlayer = true,
 		distance = distance,
+		cap = nil,
+		locked = false,
 	}
 end
 
@@ -188,12 +200,16 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 					end
 					local name = if i.nameKey then Text.get(use, i.nameKey) else (i.name or "?")
 					local badge = BADGES[i.variant]
-					return if badge then `{badge} {name}` else name
+					local shown = if badge then `{badge} {name}` else name
+					return if i.locked then `🔒 {shown}` else shown
 				end),
 				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Large,
 				TextColor3 = scope:Computed(function(use): Color3
 					local i = use(info)
+					if i and i.locked then
+						return Theme.Iron.TextMuted -- S157: greyed out
+					end
 					return if i then VARIANT_COLORS[i.variant] or Theme.Iron.Text else Theme.Iron.Text
 				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
@@ -228,6 +244,9 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 					if i.classKey then
 						return `{levelText} · {Text.get(use, i.classKey)}`
 					end
+					if i.locked and i.cap then
+						return `{levelText} · {Text.get(use, "combat.overLevel", { max = i.cap })}`
+					end
 					if i.variant ~= "normal" then
 						return `{levelText} · {Text.get(use, `variant.{i.variant}`)}`
 					end
@@ -235,7 +254,10 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Iron.Text,
+				TextColor3 = scope:Computed(function(use): Color3
+					local i = use(info)
+					return if i and i.locked then Theme.Iron.TextMuted else Theme.Iron.Text
+				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
 			EffectIcons(scope, {
@@ -249,7 +271,10 @@ local function TargetFrame(scope: Scope, props: Props): Instance
 				Size = UDim2.new(1, 0, 0, Theme.Size.BarHeight),
 				Value = hp,
 				Max = maxHp,
-				Color = Theme.Resource.Hp,
+				Color = scope:Computed(function(use): Color3
+					local i = use(info)
+					return if i and i.locked then Theme.Iron.TextMuted else Theme.Resource.Hp
+				end),
 				ShowNumbers = false,
 				Label = scope:Computed(function(use): string
 					local i = use(info)

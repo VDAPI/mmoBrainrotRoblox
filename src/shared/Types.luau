@@ -177,6 +177,8 @@ export type CharacterData = {
 	-- S30: boss kills today (UTC day `day`, `n` kills) and pity counters (kills without a Legendary / Mythic).
 	bossRuns: { [string]: BossRun },
 	bossPity: { [string]: BossPity },
+	-- S149c: rewarded world boss fights since the last named item of the world boss (nil = 0, Logic/WorldBoss.rollNamed)
+	worldBossPity: number?,
 	alchemy: { { recipeId: string, readyAt: number } },
 	-- S11: main = the accepted story quest, daily = contracts.
 	quests: {

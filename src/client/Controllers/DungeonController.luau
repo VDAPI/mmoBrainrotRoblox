@@ -14,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 
 local BossReward = require(script.Parent.Parent.UI.Screens.BossReward)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
+local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
 local ChannelBar = require(script.Parent.Parent.UI.Components.ChannelBar)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local DungeonWindow = require(script.Parent.Parent.UI.Screens.DungeonWindow)
@@ -277,7 +278,11 @@ local function decorate(instance: Instance)
 	prompt.Parent = anchor
 	local function refresh()
 		title.Text = Text.now(def.nameKey)
-		sub.Text = Text.now("dungeon.levels", { level = def.level, required = BossScaling.requiredLevel(def.level) })
+		sub.Text = Text.now("dungeon.levels", {
+			level = def.level,
+			required = BossScaling.requiredLevel(def.level),
+			max = LevelLock.maxLevel(def.level), -- S157
+		})
 		prompt.ActionText = Text.now("dungeon.open")
 		prompt.ObjectText = Text.now(def.nameKey)
 	end
@@ -384,6 +389,8 @@ function DungeonController.Start()
 			gotLeg = best == Rarities.LEGENDARY,
 			gotMyth = best >= Rarities.MYTHIC,
 			drop = items,
+			share = tonumber(raw.share), -- S149c
+			factor = tonumber(raw.f),
 		})
 	end)
 	Net.On("BossAnnounce", function(key: string, args: { [string]: any }?)

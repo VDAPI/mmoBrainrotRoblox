@@ -2852,7 +2852,7 @@ do
 	add("## Boss świata (S149)")
 	add()
 	add(
-		"Model `Balance.bossFight` z Hrimvaldem (`Data/Bosses`, `world = true`): HP i pomocnicy nie zależą od liczby graczy; drużyna 10–20 to powtórzony skład `Balance.ORDER` (jeden tank i jeden Kapłan na 5 graczy), poziom 99 (5 graczy: 100), sprzęt konwencji. Pomocnicy faz 2–3 bez tarczy: drużyna bije ich po kolei, boss atakuje dalej. Wspólny cios dzieli się między wszystkich w kręgu (tu: cała drużyna), zaklęcie przerywa się obrażeniami w `seconds − 0,5` s, piętno trafia trzech naraz. Łup: Legendarne i Mityczne na godzinę gry (2 h dziennie, ok. 0,67 walki dziennie) wobec Vaelgratha na godzinę wejścia (240 s) i walki 5 graczy L99. Asertuje `balance.spec` („Balance: world boss (S149)”)."
+		"Model `Balance.bossFight` z Hrimvaldem (`Data/Bosses`, `world = true`): HP i pomocnicy nie zależą od liczby graczy; drużyna 10–20 to powtórzony skład `Balance.ORDER` (jeden tank i jeden Kapłan na 5 graczy), poziom 99 (5 graczy: 100), sprzęt konwencji. Pomocnicy faz 2–3 bez tarczy: drużyna bije ich po kolei, boss atakuje dalej. Wspólny cios dzieli się między wszystkich w kręgu (tu: cała drużyna), zaklęcie przerywa się obrażeniami w `seconds − 0,5` s, piętno trafia trzech naraz. Łup: Legendarne i Mityczne (S149c: z przedmiotem Hrimvalda przy równym wkładzie, f = 1, z jego pity) na godzinę gry (2 h dziennie, boss o 10:00 i 22:00 czasu polskiego, ok. 0,67 walki dziennie) wobec Vaelgratha na godzinę wejścia (240 s) i walki 5 graczy L99. Asertuje `balance.spec` („Balance: world boss (S149)”)."
 	)
 	add()
 	local def = Bosses.byId[B.S149.boss] :: any
@@ -2944,7 +2944,10 @@ do
 		)} Elity II, po {fmtValue(S.quests.quest, "1")} oddania fabuły, pobocznego i zlecenia poniżej 100. poziomu, wydarzenie świata co {B.WORLD_EVENT_HOURS} h, {fmtValue(
 			S.bossPerHour,
 			"1"
-		)} wygranej z bossem lochu (od pierwszego bossa) i boss świata co 3 h (od jego poziomu); dzień daje dzienne zlecenia, tydzień tygodniowe (+ zlecenie na bossa), {S.bloodMoonPerWeek} Krwawy Księżyc i {S.achievementsPerWeek} osiągnięcia. Każdy punkt przechodzi przez \`Logic/Season.add\` (limit potworów {Seasons.LIMITS.killPerDay} pkt dziennie, limit narastający {Seasons.LIMITS.weekCap} × tydzień, nadrabianie ×{fmtValue(
+		)} wygranej z bossem lochu (od pierwszego bossa) i boss świata {fmtValue(
+			S.worldBossPerHour,
+			"2"
+		)} na godzinę gry (od jego poziomu); dzień daje dzienne zlecenia, tydzień tygodniowe (+ zlecenie na bossa), {S.bloodMoonPerWeek} Krwawy Księżyc i {S.achievementsPerWeek} osiągnięcia. Każdy punkt przechodzi przez \`Logic/Season.add\` (limit potworów {Seasons.LIMITS.killPerDay} pkt dziennie, limit narastający {Seasons.LIMITS.weekCap} × tydzień, nadrabianie ×{fmtValue(
 			Seasons.CATCHUP.mul,
 			"1"
 		)} pod linią {fmtValue(Seasons.CATCHUP.behind * 100, "0")}% stopni czasu sezonu), potwory pierwsze w dniu. Asertuje \`balance.spec\` („Balance: season pass (S152)”).`

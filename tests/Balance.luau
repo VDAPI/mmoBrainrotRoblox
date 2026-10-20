@@ -6923,7 +6923,9 @@ Balance.S149 = {
 	markSelf = 0.35, -- ... on the branded one, at most
 	tankPerMinute = 3.5, -- the S32 tank model (Balance.boss), the S94 band of Vaelgrath
 	wave = 1.10, -- HP per member per helper wave of 10 players (the S134 limit)
-	-- F3 (loot per hour): 2 h of play a day hit on average 1 occurrence in 3 h = ~0.67 fights a day; Vaelgrath's hour
+	-- F3 (loot per hour): 2 h of play a day hit on average 1 occurrence in 3 h = ~0.67 fights a day (S149c: two a day
+	-- at 10:00 and 22:00 Polish time, each open 2 h 10 min: 2 h at a random time of the day meet one with a chance
+	-- of (2 + 2.17) / 24 = 0.35 each, ~0.7 a day, the same model); Vaelgrath's hour
 	-- is his entry (cave walk, ready check, countdown: entrySeconds) and fight of 5 players L99 for Config.Boss.dailyRuns
 	-- kills a day
 	playHours = 2,
@@ -6937,7 +6939,7 @@ Balance.S149 = {
 -- S149: rows of targetsS149 out of reach of the S149 levers (printed with the reason; docs/DECYZJE.md S149).
 Balance.S149_REPORT = {} :: { [string]: string }
 
--- S149: Legendaries + Mythics of one world boss reward for `classId` (Data/WorldBoss.reward.rarity: a Legendary
+-- S149: Legendaries + Mythics of one world boss reward for `classId` (S149c: the named item too, f = 1) (Data/WorldBoss.reward.rarity: a Legendary
 -- through Loot.pickItem with classBias, a Mythic always usable, Loot.pickUsable), at item level 100.
 function Balance.worldBossDrops(classId: string): number
 	local Data = (require :: any)("../src/shared/Data/WorldBoss")
@@ -6954,7 +6956,25 @@ function Balance.worldBossDrops(classId: string): number
 	for ilvl = low, high do
 		usable += Balance.usableShare(LootTables.bossSlots, ilvl, Data.reward.classBias, classId) / (high - low + 1)
 	end
-	return legendary * usable + mythic
+	-- S149c: the named item of an even share (f = 1) with its pity, one per this many rewarded fights on average
+	return legendary * usable + mythic + 1 / Balance.worldBossNamedEvery(1)
+end
+
+-- S149c: the mean number of rewarded fights per named item of the world boss at factor `f` (the pity chain of
+-- Logic/WorldBoss.namedChance: chance x f + step per dry fight, certain at pityAt).
+function Balance.worldBossNamedEvery(f: number): number
+	local WorldBoss = (require :: any)("../src/shared/Logic/WorldBoss")
+	local Data = (require :: any)("../src/shared/Data/WorldBoss")
+	local mean, reach = 0, 1
+	for dry = 0, Data.reward.named.pityAt do
+		local p = WorldBoss.namedChance(f, dry)
+		mean += reach * p * (dry + 1)
+		reach *= 1 - p
+		if reach <= 0 then
+			break
+		end
+	end
+	return mean
 end
 
 -- S149: Vaelgrath's Legendaries + Mythics for `classId` per hour of entering and fighting him (Balance.bossDrops of a
@@ -13638,7 +13658,7 @@ Balance.S152 = {
 	elite2PerHour = 0.5,
 	quests = { quest = 0.5, side = 0.5, contract = 0.5 }, -- hand-ins per hour below level 100
 	bossPerHour = 0.5,
-	worldBossPerHour = 1 / 3,
+	worldBossPerHour = 1 / 3, -- S149c: two a day (10:00, 22:00 Polish time), 2 h at a random time meet ~0.7 of them (S149.fightsPerDay)
 	bloodMoonPerWeek = 1,
 	arenaPerHour = 0,
 	achievementsPerWeek = 3,

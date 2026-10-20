@@ -12,6 +12,7 @@ local Clean = require("./Clean")
 local Config = require("../../src/shared/Config")
 local Exp = require("../../src/shared/Logic/Exp")
 local Loot = require("../../src/shared/Logic/Loot")
+local LevelLock = require("../../src/shared/Logic/LevelLock")
 local LootTables = require("../../src/shared/Data/LootTables")
 local MonsterStats = require("../../src/shared/Logic/MonsterStats")
 local Monsters = require("./Monsters")
@@ -43,6 +44,8 @@ S.file(
 			region = "string",
 			level = "int",
 			requiredLevel = "int",
+			-- S157 (Logic/LevelLock): above this level a player cannot enter nor fight the boss
+			maxLevel = "int",
 			dungeon = "ref:maps",
 			["gateCave?"] = "ref:caves",
 			attack = "string",
@@ -246,6 +249,7 @@ function Bosses.build(ctx: any): any
 				region = def.region,
 				level = def.level,
 				requiredLevel = BossScaling.requiredLevel(def.level),
+				maxLevel = LevelLock.maxLevel(def.level),
 				dungeon = `dungeon_{def.region}`,
 				gateCave = gate,
 				attack = def.attack,

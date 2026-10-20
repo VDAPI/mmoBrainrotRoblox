@@ -40,7 +40,6 @@ local AreaProfiles = require(Shared.Data.AreaProfiles)
 local AttackPose = require(Shared.Logic.AttackPose)
 local AutoGrind = require(Shared.Logic.AutoGrind)
 local Bonuses = require(Shared.Data.Bonuses)
-local Bosses = require(Shared.Data.Bosses)
 local Config = require(Shared.Config)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local BuffCategories = require(Shared.Data.BuffCategories)
@@ -65,7 +64,6 @@ local MonsterCast = require(Shared.Logic.MonsterCast)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local QuestBudget = require(Shared.Logic.QuestBudget)
 local Net = require(Shared.Net)
-local LevelLock = require(Shared.Logic.LevelLock)
 local Loot = require(Shared.Logic.Loot)
 local Luck = require(Shared.Logic.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
@@ -494,11 +492,34 @@ function CombatService.DotBonus(player: Player, kind: string): number
 	return 0
 end
 
+-- Owner 2026-10-20 / S157 (Logic/LevelLock): whether `player` is locked out of a monster entity (the monster's
+-- capLevel: Elites, Elites II, a dungeon boss and its helpers; never players).
+local function overCap(player: Player, entity: any): boolean
+	if type(entity) ~= "table" or entity.kind ~= "monster" or not entity.monster then
+		return false
+	end
+	return entity.monster:LockedFor(player)
+end
+CombatService.OverCap = overCap
+
+-- Owner 2026-10-20: the level lock message, at most every 4 s.
+local function lockToast(player: Player)
+	local state = attackerState(player)
+	local now = os.clock()
+	if now - (state.lockToast or 0) > 4 then
+		state.lockToast = now
+		Net.Fire(player, "Toast", "combat.levelLock", { gap = Config.LevelLock.gap }, "error")
+	end
+end
+
 -- S140 (Logic/Burn, DESIGN-18 §6.1): every fire burn of a player but the items' (fire skills, the adaptive weapon burn,
 -- Ember Shield's retaliation) is applied here: ONE entry per target (skillId Burn.KEY), `stacks` more stacks up to
 -- Burn.cap with Kindling's burnStacks hook, `tick` = the damage per tick of these stacks (Burn.tick / the element plan,
 -- dotPower already in it), accumulate without the stack cap (every hit is paid in full).
 function CombatService.ApplyBurn(player: Player, entity: any, tick: number, stacks: number, duration: number?): boolean
+	if overCap(player, entity) then
+		return false
+	end
 	local cap = Burn.cap(hook(player, "burnStacks"))
 	local current = StatusEffectService.StacksFrom(entity, "burn", player, Burn.KEY)
 	return StatusEffectService.Apply(entity, "burn", {
@@ -596,6 +617,9 @@ end
 -- S76: every poison of a player (skill, item trait, spread copy) is applied here. tickAmount already holds DotBonus
 -- (dotPower + poisonDamage); this adds poisonSlow (Numbing Venom: slowed while poisoned, enemySlow).
 function CombatService.ApplyPoison(player: Player, entity: any, options: any): boolean
+	if overCap(player, entity) then
+		return false
+	end
 	local opts = table.clone(options)
 	opts.source = player
 	local applied = StatusEffectService.Apply(entity, "poison", opts)
@@ -795,7 +819,8 @@ function CombatService.ResolveKillCredit(monster: any): { Player }
 	end
 	local credit = { top }
 	for _, member in PartyService.MembersInRange(top, monster:Position(), PARTY_RANGE) do
-		if member ~= top then
+		-- S157: a member over the monster's level cap gets no share (no EXP, gold, loot or quest credit)
+		if member ~= top and not monster:LockedFor(member) then
 			table.insert(credit, member)
 		end
 	end
@@ -1227,6 +1252,11 @@ function CombatService.DealDamage(
 	if not attacker then
 		return nil
 	end
+	-- Owner 2026-10-20 / S157: no hit at all on a locked monster (no number, no procs; areas and pets skip it before)
+	if overCap(player, targetEntity) then
+		lockToast(player)
+		return nil
+	end
 	-- Any attack ends the attacker's respawn protection (S22).
 	StatusEffectService.BreakRespawnShield(player)
 	local selfEntity = EntityService.GetPlayerEntity(player)
@@ -1279,24 +1309,6 @@ function CombatService.DealDamage(
 	if targetEntity.kind == "monster" then
 		local monster = targetEntity.monster
 		if not monster or not monster:IsAlive() then
-			return nil
-		end
-		-- owner 2026-10-20: an out-levelled Elite / Elite II / dungeon boss takes nothing from this character
-		local bossDef = Bosses.get(monster.def.id)
-		if
-			LevelLock.blocked(
-				attacker.level,
-				monster.stats.level,
-				monster.variant,
-				bossDef ~= nil and bossDef.world == true
-			)
-		then
-			local state = attackerState(player)
-			local now = os.clock()
-			if now - (state.lockToast or 0) > 4 then
-				state.lockToast = now
-				Net.Fire(player, "Toast", "combat.levelLock", { gap = Config.LevelLock.gap }, "error")
-			end
 			return nil
 		end
 		local defender = MonsterStats.asDefender(monster.stats)
@@ -1694,6 +1706,12 @@ local function tryBasicAttack(player: Player, state: Attacker, now: number)
 	end
 	if target.kind == "monster" and (not target.monster or not target.monster:IsAlive()) then
 		state.target = nil
+		return
+	end
+	-- S157: a monster over the level cap stays selected, but the attack stops with a message
+	if overCap(player, target) then
+		lockToast(player)
+		state.attack = false
 		return
 	end
 	local myRoot = rootOf(player.Character)

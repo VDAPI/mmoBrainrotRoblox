@@ -7193,6 +7193,22 @@ return {
 				session = "S156",
 				why = "owner 2026-10-20: the world boss twice a day (every 12 h from 08:00 UTC = 10:00 and 22:00 Polish summer time) instead of every 3 h",
 			},
+			{
+				session = "S156",
+				why = "S149c (owner 2026-10-20): 10:00 and 22:00 Polish time all year: local `times` {10, 0} / {22, 0} in the zone `tz` (CET +1, CEST +2 by the EU rule; 08 / 20 UTC in summer, 09 / 21 UTC in winter) instead of everyHours / offsetHour / minute; the loot model keeps ~0.67 fights a day for 2 h of play (Balance.S149)",
+			},
+		},
+		["WorldBoss:reward*"] = {
+			{
+				session = "S156",
+				why = "S149c (owner 2026-10-20): EXP and gold x2 (expKills 16 -> 32, goldKills 24 -> 48: one fight ~25 % of a level at 80-99, he comes twice a day); the item Heroic 60 / Legendary 34 / Mythic 6 (was 72 / 24 / 4), the Legendary and Mythic weights times the contribution factor f = clamp(0.5 + 0.5 x own points / (all points / fighters), 0.5, 2) (factor lo 0.5, slope 0.5, hi 2); his own named item on top: chance 4 % x f + 1 % per rewarded fight without one, certain after 30 (named chance 0.04, step 0.01, pityAt 30; one per ~13 fights of an even share). Legendaries + Mythics per hour of play with the named item stay under 0.5 x Vaelgrath's (Balance.targetsS149 loot.*)",
+			},
+		},
+		["Items/Uniques:[unique_hrimvald_*"] = {
+			{
+				session = "S156",
+				why = "S149c (owner 2026-10-20): eight named items of the world boss (two per class: the class weapon and an armour piece or shield), Mythic, bound, level 100, base stats x1.40 (1.15 x a rolled Mythic's 1.22; dungeon named 1.26), lines about 1.1 x Vaelgrath's within the S88 cap (2.5 x a rolled Mythic line); ItemScore >= 1.15 x the mean rolled Mythic of the base and above every dungeon named item of the slot (tests/worldboss.spec)",
+			},
 		},
 		["WorldBoss:antechamber*"] = {
 			{

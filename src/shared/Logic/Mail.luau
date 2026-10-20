@@ -38,7 +38,11 @@ export type Parcel = {
 	body: string?,
 	fromId: number?,
 	fromChar: string?,
+	-- S149c: the world boss reward of an absent winner (system only, with `charId`): the EXP and whether the named
+	-- item came, applied once (`applied`) when that character's mailbox is next read (WorldBossService.ApplyPending)
+	worldBoss: WorldBossPart?,
 }
+export type WorldBossPart = { occ: string, exp: number, named: boolean, applied: boolean? }
 
 -- S128: `sent` = the once keys of parcels added (key -> os.time it is forgotten), kept after the parcel is claimed
 export type Box = { parcels: { [string]: Parcel }, sent: { [string]: number }? }
@@ -244,6 +248,23 @@ function Mail.take(box: Box, id: string, charId: string?, now: number): Parcel?
 	end
 	box.parcels[id] = nil
 	return parcel
+end
+
+-- S149c: the world boss parts of `charId` not applied yet: parcel id -> part (WorldBossService.ApplyPending).
+function Mail.pendingWorldBoss(box: Box, charId: string): { [string]: WorldBossPart }
+	local out: { [string]: WorldBossPart } = {}
+	for id, parcel in box.parcels do
+		local part = parcel.worldBoss
+		if
+			type(part) == "table"
+			and part.applied ~= true
+			and parcel.charId == charId
+			and type(part.occ) == "string"
+		then
+			out[id] = part
+		end
+	end
+	return out
 end
 
 return Mail

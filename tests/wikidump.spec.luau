@@ -1031,7 +1031,7 @@ T.describe("Wiki export: items and monsters (S68)", function()
 				named += 1
 			end
 		end
-		T.expect(named).toBe(12)
+		T.expect(named).toBe(20) -- S149c: + 8 of the world boss
 	end)
 
 	T.it("keeps weights, node hooks and cap references out and lists four markers", function()

@@ -34,6 +34,7 @@ local Combat = require(ReplicatedStorage.Shared.Data.Combat)
 local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
+local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -89,6 +90,17 @@ end
 
 local function isMonster(model: Model): boolean
 	return model:GetAttribute("MonsterId") ~= nil
+end
+
+-- S157 (Logic/LevelLock): the cap of a monster the local player is over (an Elite, an Elite II, a dungeon boss and its
+-- helpers Config.LevelLock.gap or more levels below); nil = may fight it.
+local function overCap(model: Model): number?
+	local cap = model:GetAttribute("CapLevel")
+	local level = State.Get({ "character", "level" })
+	if type(cap) ~= "number" or type(level) ~= "number" then
+		return nil
+	end
+	return if LevelLock.over(level, cap) then cap else nil
 end
 
 -- Monsters always (S22: also those going home, they can be hit and turn back); other players only while they
@@ -149,7 +161,10 @@ local function apply(model: Model?, engage: boolean, approach: boolean, send: bo
 		highlight.Adornee = model
 		highlight.Enabled = model ~= nil
 		if model then
-			highlight.OutlineColor = if isMonster(model) then Theme.Zone.Red else Theme.Brass.Bright
+			highlight.OutlineColor = if overCap(model)
+				then Theme.Iron.TextMuted -- S157: greyed out
+				elseif isMonster(model) then Theme.Zone.Red
+				else Theme.Brass.Bright
 		end
 	end
 	approaching = engage and approach
@@ -169,6 +184,12 @@ function TargetController.SetTarget(model: Model?, engage: boolean?)
 		model = nil
 	end
 	local shouldEngage = if model == nil then false elseif engage == nil then isHostile(model) else engage
+	-- S157: a monster over the level cap is only selected (greyed out); trying to attack it says why
+	local cap = if model then overCap(model) else nil
+	if cap and shouldEngage then
+		shouldEngage = false
+		Toast.push(Text.now("combat.overLevel", { max = cap }), "info", 2)
+	end
 	retaliating = false
 	apply(model, shouldEngage, true, true)
 end
@@ -176,7 +197,7 @@ end
 -- S134d: fight back `model` (a monster hitting us) where we stand: attack without walking into range. The server
 -- attacks whenever it is in reach (melee 7 / ranged 35), so a melee character hit from afar stays and waits.
 function TargetController.Retaliate(model: Model)
-	if not isAlive(model) or not isHostile(model) then
+	if not isAlive(model) or not isHostile(model) or overCap(model) then
 		return
 	end
 	apply(model, true, false, true)
@@ -284,7 +305,8 @@ function TargetController.FindNearest(range: number, includePlayers: boolean, in
 	local best: Model? = nil
 	local bestScore = math.huge
 	for _, model in candidates(includePlayers) do
-		if model ~= current and (isMonster(model) or includePlayers) then
+		-- S157: auto targeting never picks a monster over the level cap
+		if model ~= current and (isMonster(model) or includePlayers) and not overCap(model) then
 			local offset = model:GetPivot().Position - root.Position
 			local distance = offset.Magnitude
 			if distance <= range and distance > 0 then
@@ -311,7 +333,7 @@ local function nearestAttacker(range: number): Model?
 	local best: Model? = nil
 	local bestDistance = range
 	for _, model in candidates(false) do
-		if model:GetAttribute("AggroUserId") == player.UserId and isHostile(model) then
+		if model:GetAttribute("AggroUserId") == player.UserId and isHostile(model) and not overCap(model) then
 			local distance = (model:GetPivot().Position - root.Position).Magnitude
 			if distance <= bestDistance then
 				best = model
