@@ -165,6 +165,13 @@ Kit.slots = {
 		grass = { v("grass_tree_14", 1, 0.85, 1.1, nil, OAK), v("grass_tree_12", 1, 0.85, 1.05, nil, PINE) },
 		forest = { v("grass_tree_14", 1, 0.85, 1.1, nil, DARK), v("grass_tree_12", 1, 0.85, 1.05, nil, DARK) },
 	},
+	-- W28: the junipers of the Wolf Hills and the ravine were the generator's green ellipsoids on the Meadows (no
+	-- model); now the small Yasu conifers under the pine green, a size smaller than the saplings
+	["under:juniper"] = {
+		fit = "height",
+		size = 5,
+		grass = { v("grass_tree_12", 2, 0.8, 1.05, nil, PINE), v("grass_tree_11", 1, 0.75, 0.95, nil, PINE) },
+	},
 	-- W15: the Duskwood's berry bushes and brambles: the Yasu bushes under dark leaves
 	["under:berryBush"] = {
 		fit = "height",
