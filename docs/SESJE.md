@@ -13556,3 +13556,26 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Dla właściciela:** domyślne wartości do potwierdzenia: co 3 h / 45 min, miasto 1/3 wizyt, ceny sprzętu (360 / 1080 ×
   poziom złota, Legendarny 400 Znaków), barwnik 12 000 złota, limity 1 na sprzęt. Bez przeglądu w Studio (wóz stoi na
   ziemi pod środkiem, na pochyłości może lekko wisieć).
+
+### S155b: pierwsze minuty po S155 (pierwszy cenny łup, HUD sam się tłumaczy)
+- **Przejście nowego gracza w kodzie:** kreator → miasto (10 mikstur, broń i zbroja startowa) → samouczek (ruch, kapitan,
+  plecak, mikstura, atak, umiejętność) równolegle z zadaniami 1–10. Martwe punkty: nagroda za logowanie zasłaniała
+  pierwszą wskazówkę; w kroku „atak” złota strzałka szła do lekarki, a ścieżka i tekst na Łąki; „Załóż przedmiot” w
+  `gearUp` czekało na losowy przedmiot z królików; tekst telefonu o torbie nie znał szuflady menu W29.
+- **Pierwszy cenny łup:** `Data/Tutorial.FIRST_DROP`, `Tutorial.firstDrop` / `firstDropDue` / `withDrop` (pole `drop`
+  stanu, poza szablonem, żeby reconcile go nie dopisał), `TutorialService` na `MonsterKilled` (osobny worek obok,
+  `LootService.SpawnBag(..., first)`), klient: słup światła, toast `loot.firstDrop`, okno odsłonięcia z tytułem
+  `reveal.titleFirst` i „Załóż” (`LegendReveal.TitleKey`).
+- **Kolejność:** `LoginRewardController` czeka na koniec samouczka; `TutorialController` prowadzi na Łąki tylko bez
+  celu zadania; „Znam grę, pomiń samouczek” dla konta z postacią 5.+ (`Tutorial.veteran`, `TutorialHint`).
+- **HUD:** `UI/MenuAttention` („!” plecaka przy punktach statystyk, „!” nowej funkcji), `Logic/Unlocks` (loch 10,
+  wierzchowce 20, arena 20 z danych), `UnlockController` (toast `unlock.*`, czyszczenie przy otwarciu okna).
+- **Teksty:** bez półpauz w tekstach pierwszych minut (zadania 2, 5, 6, `quest.readyShort`, sierżant, porady 1 i 6,
+  `quest.side.none`, `banditRoad.done`); krótszy `firstHunt.text`.
+- **Testy:** `onboarding.spec` (łup: rzadkość, związanie, ta sama pula i żywioł; weterani; odblokowania; tempo 1–3),
+  `tutorial.spec` (pole `drop`). Księga: `Tutorial:FIRST_DROP*`.
+- **Pliki:** `src/shared/{Data/Tutorial,Logic/Tutorial,Logic/Unlocks,Types}.luau`, `src/server/Services/{TutorialService,
+  LootService}.luau`, `src/client/Controllers/{LootController,LoginRewardController,TutorialController,UnlockController,
+  ScreenController}.luau`, `src/client/UI/{MenuAttention,Screens/LegendReveal,Screens/Hud/TutorialHint}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `tests/{onboarding,tutorial}.spec.luau`, `tools/balance_reasons.luau`,
+  `docs/{DESIGN,DECYZJE,PROGRESS,SESJE}.md`.

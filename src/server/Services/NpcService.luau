@@ -7,6 +7,9 @@
 -- S29: feet on the ground. The ground ray ignores NPCs and characters and stops on the top surface of the map's
 -- own geometry (porch, stairs, paving; WorldService.FloorAt); after placing, the figure's real lowest corner
 -- (Logic/Footing) is moved onto that ground and HipHeight is set to match.
+-- W30: an owner's model at ReplicatedStorage.Assets.Npcs.<id> (docs/wyglad TRIPO-NPC.md) replaces the drawn figure: it
+-- is fitted to the figure (Logic/NpcAssetFit), welded to the root part and the R15 body under it is hidden (it keeps the
+-- Humanoid, the Head for the nameplate and the feet for Footing). No model = the coloured figure with its hat.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -19,6 +22,8 @@ local Maps = require(Shared.Data.Maps)
 local Npcs = require(Shared.Data.Npcs)
 local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Footing = require(Shared.Logic.Footing)
+local LookBuild = require(Shared.Util.LookBuild)
+local NpcAssetFit = require(Shared.Logic.NpcAssetFit)
 local MapTerrain = require(Shared.Logic.MapTerrain)
 
 local log = Log.new("NpcService")
@@ -66,6 +71,74 @@ local function ghostLook(npc: Model)
 		light.Shadows = false
 		light.Parent = chest
 	end
+end
+
+-- W30: the owner's model of the NPC (ReplicatedStorage.Assets.Npcs.<id>, numbered NPCs like guard1 / guard2 also share
+-- Assets.Npcs.guard), or nil. No warning when it is missing: most NPCs have no model yet and keep the figure.
+local function assetTemplate(id: string): Model?
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local folder = assets and assets:FindFirstChild("Npcs")
+	if not folder then
+		return nil
+	end
+	local source = folder:FindFirstChild(id) or folder:FindFirstChild((string.gsub(id, "%d+$", "")))
+	return if source and source:IsA("Model") then source else nil
+end
+
+-- Puts the owner's model on the figure: the figure's height and facing, its bottom on the figure's feet, welded to the
+-- root part without collision; the R15 parts under it go invisible. False (nothing changed) without a usable model.
+local function dressAsset(npc: Model, def: Npcs.NpcDef): boolean
+	local template = assetTemplate(def.id)
+	local root = npc:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not template or not root then
+		return false
+	end
+	local clone = template:Clone()
+	if LookBuild.stripScripts(clone) > 0 then
+		log:warn("removed scripts from Assets.Npcs.%s", def.id)
+	end
+	local figureFrame, figureSize = npc:GetBoundingBox()
+	clone:PivotTo(
+		CFrame.new(clone:GetPivot().Position)
+			* root.CFrame.Rotation
+			* CFrame.Angles(0, NpcAssetFit.yaw(clone:GetAttribute("Yaw")), 0)
+	)
+	local _, modelSize = clone:GetBoundingBox()
+	local factor = NpcAssetFit.scale(modelSize.Y, figureSize.Y, clone:GetAttribute("Scale"))
+	if not factor then
+		log:warn("Assets.Npcs.%s has no height: the figure stays", def.id)
+		clone:Destroy()
+		return false
+	end
+	clone:ScaleTo(clone:GetScale() * factor)
+	local modelFrame, scaledSize = clone:GetBoundingBox()
+	local feet = Vector3.new(root.Position.X, figureFrame.Position.Y - figureSize.Y / 2, root.Position.Z)
+	local bottom = modelFrame.Position - Vector3.new(0, scaledSize.Y / 2, 0)
+	clone:PivotTo(clone:GetPivot() + (feet - bottom))
+	for _, part in npc:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Transparency = 1
+		elseif part:IsA("Decal") then
+			part.Transparency = 1 -- the face on the hidden head
+		end
+	end
+	for _, part in clone:GetDescendants() do
+		if part:IsA("BasePart") then
+			part.Anchored = false
+			part.CanCollide = false
+			part.CanQuery = false
+			part.CanTouch = false
+			part.Massless = true
+			local weld = Instance.new("WeldConstraint")
+			weld.Part0 = root
+			weld.Part1 = part
+			weld.Parent = part
+		end
+	end
+	clone.Name = "Asset"
+	clone.Parent = npc
+	npc:SetAttribute("NpcAsset", true)
+	return true
 end
 
 -- Ground point under the NPC (the world is built in WorldService.Init, before Start): the top surface of the
@@ -170,8 +243,11 @@ function NpcService.Figure(def: Npcs.NpcDef): Model?
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
 	end
-	-- Placeholder hat in the accent colour.
+	-- Placeholder hat in the accent colour (W30: not over an owner's model).
 	local head = npc:FindFirstChild("Head") :: BasePart?
+	if dressAsset(npc, def) then
+		head = nil
+	end
 	if head then
 		local hat = Instance.new("Part")
 		hat.Name = "Hat"

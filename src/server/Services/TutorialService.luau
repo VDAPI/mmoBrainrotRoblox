@@ -12,7 +12,12 @@
 -- Characters made before S155 have reward = true.
 -- The potion step: while it is the current step an ordinary potion can be drunk at full (PotionService.AddFullDrink),
 -- since a new character stands in the city at full HP.
+-- S155b: the first valuable drop (Data/Tutorial.FIRST_DROP, Tutorial.firstDrop): the first monster a new character
+-- gets loot credit for drops, in its own bag next to the usual one, a Heroic bound copy of the wielded weapon; the
+-- client shows the bag with a pillar and opens the reveal on pickup (LootService.SpawnBag `first`). Marked when the
+-- bag spawns (a bag hidden by the loot filter is not one: the next kill tries again).
 
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -22,6 +27,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
+local Rng = require(Shared.Logic.Rng)
 local Tutorial = require(Shared.Logic.Tutorial)
 local TutorialData = require(Shared.Data.Tutorial)
 local Types = require(Shared.Types)
@@ -45,6 +51,7 @@ local TutorialService = {
 		"InventoryService",
 		"CosmeticService",
 		"MailService",
+		"LootService",
 	},
 }
 
@@ -59,8 +66,11 @@ local LevelService: any
 local InventoryService: any
 local CosmeticService: any
 local MailService: any
+local LootService: any
 
 local busy: { [Player]: boolean } = {} -- a reward being mailed
+local rng = Rng.new()
+local FIRST_DROP_OFFSET = Vector3.new(3, 0, 0) -- studs between the first-drop bag and the monster's own bag
 
 local function character(player: Player): Types.CharacterData?
 	return PlayerStateService.GetCharacter(player)
@@ -106,6 +116,29 @@ function TutorialService.Skip(player: Player): boolean
 	write(player, Tutorial.skip(before))
 	Analytics.custom(player, "TutorialSkip", before.step)
 	return true
+end
+
+-- S155b: the first valuable drop of `player`'s character when it is due (one kill with loot credit).
+local function firstDrop(player: Player, info: any)
+	local char = character(player)
+	if not char or PlayerStateService.GetPhase(player) ~= "playing" then
+		return
+	end
+	local state = Tutorial.sanitize(char.tutorial)
+	if not Tutorial.firstDropDue(state) then
+		return
+	end
+	local item = Tutorial.firstDrop(char.class, char.level, char.equipment.weapon, rng, HttpService:GenerateGUID(false))
+	if not item then
+		return
+	end
+	local position: Vector3 = info.position + FIRST_DROP_OFFSET
+	if LootService.SpawnBag(player, position, { item }, info.monsterId, true, nil, true) == nil then
+		return -- hidden by the player's loot filter
+	end
+	write(player, Tutorial.withDrop(state))
+	Analytics.custom(player, "FirstDrop", char.level)
+	log:info("%s got the first drop (%s)", player.Name, item.id)
 end
 
 -- The reward stacks, bound to the character (Data/Tutorial.REWARD.items).
@@ -210,6 +243,7 @@ function TutorialService.SetStep(player: Player, id: string): boolean
 		done = index == #Tutorial.STEPS,
 		skipped = false,
 		reward = before.reward,
+		drop = before.drop,
 	}
 	write(player, after)
 	return true
@@ -232,6 +266,7 @@ function TutorialService.Init(registry)
 	InventoryService = registry.Get("InventoryService")
 	CosmeticService = registry.Get("CosmeticService")
 	MailService = registry.Get("MailService")
+	LootService = registry.Get("LootService")
 	PotionService.AddFullDrink(function(player: Player): boolean
 		local state = stateOf(player)
 		return state ~= nil and Tutorial.wantsPotion(state)
@@ -259,6 +294,14 @@ function TutorialService.Start()
 	end)
 	SkillService.Casted:Connect(function(player: Player)
 		TutorialService.Event(player, "skill")
+	end)
+	CombatService.MonsterKilled:Connect(function(info: any, credit: { Player })
+		if info.boss or info.noLoot then
+			return
+		end
+		for _, player in credit do
+			firstDrop(player, info)
+		end
 	end)
 
 	LevelService.LeveledUp:Connect(function(player: Player)
