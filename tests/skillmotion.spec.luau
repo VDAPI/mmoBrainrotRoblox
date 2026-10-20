@@ -80,6 +80,7 @@ for _, name in
 		-- W03
 		"fireBlast",
 		"frostBlast", -- W04
+		"arcBurst", -- W04
 	}
 do
 	VFX_PIECES[name] = true
