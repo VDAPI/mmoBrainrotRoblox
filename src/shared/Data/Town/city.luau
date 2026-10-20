@@ -329,12 +329,13 @@ local city: Types.City = {
 		{ id = "wieza", kind = "mageTower", x = -248, z = -182, w = 14, d = 14, rot = 180 },
 	},
 	stalls = {
-		{ id = "stall_merchant", x = 6, z = 30, rot = 0, color = "#8E3B2E", npc = "merchant" },
-		{ id = "stall_backpacker", x = 30, z = 30, rot = 0, color = "#3E5A7A", npc = "backpacker" },
-		{ id = "stall_bread", x = -36, z = 30, rot = 0, color = "#A8843A" },
-		{ id = "stall_cloth", x = -15, z = 30, rot = 0, color = "#6B3E6B" },
-		{ id = "stall_pottery", x = 54, z = 30, rot = 0, color = "#7A5A3A" },
-		{ id = "stall_fish", x = 76, z = 30, rot = 0, color = "#3E6B5A" },
+		-- owner 2026-10-20: brighter awnings, each stall its own colour
+		{ id = "stall_merchant", x = 6, z = 30, rot = 0, color = "#C8402E", npc = "merchant" },
+		{ id = "stall_backpacker", x = 30, z = 30, rot = 0, color = "#2F6FB0", npc = "backpacker" },
+		{ id = "stall_bread", x = -36, z = 30, rot = 0, color = "#E0A030" },
+		{ id = "stall_cloth", x = -15, z = 30, rot = 0, color = "#8E3E9E" },
+		{ id = "stall_pottery", x = 54, z = 30, rot = 0, color = "#D06A2E" },
+		{ id = "stall_fish", x = 76, z = 30, rot = 0, color = "#2E9E7E" },
 	},
 	-- NPC spots: x, z, facing (deg, same convention as rot). Ground y comes from TownTerrain.heightAt.
 	npcs = {
@@ -342,8 +343,9 @@ local city: Types.City = {
 		questboard = { x = 28, z = -68, facing = 180 },
 		banker = { x = 56, z = -72, facing = 180, at = "ratusz" },
 		auctioneer = { x = -16, z = -14, facing = 90, at = "hala" },
-		merchant = { x = 6, z = 36, facing = 0, at = "stall_merchant" },
-		backpacker = { x = 30, z = 36, facing = 0, at = "stall_backpacker" },
+		-- owner 2026-10-20: the vendors stand in front of their counters (they were hard to reach behind them)
+		merchant = { x = 6, z = 24, facing = 0, at = "stall_merchant" },
+		backpacker = { x = 30, z = 24, facing = 0, at = "stall_backpacker" },
 		healer = { x = -120, z = -134, facing = 180, at = "swiatynia" },
 		teacher = { x = -100, z = -134, facing = 180, at = "swiatynia" },
 		guildmaster = { x = -150, z = -122, facing = 270, at = "gildia" },
