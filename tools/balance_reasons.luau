@@ -7273,5 +7273,53 @@ return {
 				why = "new module: the tutorial reward at level 5 for every character made from S155 on (skipped or not): the title First Steps, 3 Stones of Return and 10 Small Health Potions, all bound; no EXP and no gold, so the pace of levels 1-20 is unchanged (balance1_20 without new entries). The stones are worth about one trip each, the potions one start pack (the arrival quest gives 5, Items.startingPotions 10): comfort, not power",
 			},
 		},
+		["Stats:Formula.energyRegenBase"] = {
+			{
+				session = "S158",
+				why = "owner 2026-10-20: slower regen so potions matter: energy 8 -> 4 per second out of combat (pool 101-200, a refill 25-50 s); with the in-combat x0.6 Warrior / Hunter sustained 60 s without potions -25 to -36 %, with potions -0 to -5 % (SkillModel.fight, potions as PotionService); grind kill times unchanged",
+			},
+		},
+		["Stats:Formula.energyRegenCombatMul"] = {
+			{
+				session = "S158",
+				why = "owner 2026-10-20: slower regen so potions matter: in combat (Config.CombatTimeout) the energy base x0.6 (2.4/s), gear and path energy regen in full; mana keeps its rate (0.5 % of the pool a second is already 2-8x slower than energy, Mage T-SK4 2-3 by design)",
+			},
+		},
+		["Items/Consumables:[potion_energy_1].use.amount"] = {
+			{
+				session = "S158",
+				why = "owner 2026-10-20: slower regen so potions matter: Small energy potion 30 -> 40 (40 % of the level-1 pool 101; the larger tiers already give 50 % or more of the pool where they start)",
+			},
+		},
+		["Stats:byId.energyRegenCombat.decimals"] = {
+			{
+				session = "S158",
+				why = "new derived stat: energy regeneration in combat (Logic/StatCalc, character window), shown after the energy regen",
+			},
+		},
+		["Stats:byId.energyRegenCombat.order"] = {
+			{
+				session = "S158",
+				why = "new derived stat: energy regeneration in combat (Logic/StatCalc, character window), shown after the energy regen",
+			},
+		},
+		["Stats:byId.costReduce.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.moveSpeed.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.expBonus.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.dropBonus.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.goldBonus.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.potionDiscount.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
 	} :: { [string]: { Reason } },
 }

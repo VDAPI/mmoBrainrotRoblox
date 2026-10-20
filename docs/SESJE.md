@@ -13520,3 +13520,21 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `src/client/Controllers/{QuestController,DungeonController}.luau`, `src/client/UI/Screens/{BossReward,Hud/WorldBossPanel,WorldMap/CreatureCards}.luau`,
   `tests/{worldboss,data,items,wikidump}.spec.luau`, `tests/Balance.luau`, `tools/{balance_reasons,balance_report}.luau`,
   `wiki/src/data/*.json`, `docs/{PRZEDMIOTY,DECYZJE,SESJE}.md`.
+### S158: wolniejsza regeneracja energii, mikstury mają sens (zgłoszenie właściciela 2026-10-20)
+- **Energia:** baza 8 → 4 na s poza walką (`Stats.Formula.energyRegenBase`), w walce baza ×0,6 = 2,4 na s
+  (`energyRegenCombatMul`, stan walki z `Config.CombatTimeout` w `ResourceService.regenerate`). Nowa statystyka
+  `energyRegenCombat` (`Logic/StatCalc`, okno postaci, wiki „Wzory”): premie płaskie i procentowe do regeneracji energii
+  z ekwipunku i ścieżek liczą się w walce w pełni. Mana bez zmian (już 2–8× wolniejsza względem puli, T-SK4 Maga 2–3).
+- **Mikstury:** Mała Mikstura Energii 30 → 40 (40% puli na 1. poziomie); większe już dają ≥ 50% puli tam, gdzie się
+  zaczynają, mikstury many bez zmian. Odstępy między miksturami bez zmian.
+- **Model:** `SkillModel.fight` liczy energię w walce i dolewkę z mikstur `ASSUMPTIONS.energyPotionRate` (5,6 na s, czyli
+  to, co zabrała S158), chyba że `potions = false`; cele S91–S147, tabela 1–20 i fixture ścieżek bez zmian (0 różnic).
+  Bez mikstur wojownik i łowca tracą w walce 60 s z jednym celem 25–36% (Furia L20 391 → 280, L100 10089 → 7153;
+  Królobójca L100 13357 → 8961); czasy zabicia w expieniu bez zmian. Klasy wobec siebie bez zmian przy piciu mikstur.
+  Reguła „pij przy < 30% puli” odrzucona: prawie nieograniczona energia, R1 +12…+40%, 77 wierszy poza pasmem (DECYZJE).
+- **Testy:** `statcalc.spec` (4 / 2,4 na s, premie w walce w pełni), `balance.spec` nowy blok `Energy potions matter
+  (S158)` (bez mikstur ≤ 80% obrażeń na 45 i 100), księga `tools/balance_reasons.luau` (wpisy S158).
+- **Pliki:** `src/shared/Data/Stats.luau`, `src/shared/Logic/StatCalc.luau`, `src/server/Services/ResourceService.luau`,
+  `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
+  `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
+  `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.

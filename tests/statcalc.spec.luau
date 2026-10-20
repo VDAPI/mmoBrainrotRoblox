@@ -62,7 +62,18 @@ T.describe("StatCalc", function()
 		T.expect(result.values.critChance).toBeNear(5.25)
 		T.expect(result.values.hpRegen).toBeNear(0.98)
 		T.expect(result.values.hpRegenCombat).toBeNear(0.196)
-		T.expect(result.values.energyRegen).toBe(8)
+		T.expect(result.values.energyRegen).toBe(4)
+		T.expect(result.values.energyRegenCombat).toBeNear(2.4)
+	end)
+
+	T.it("S158: in combat only the energy base slows, bonuses count in full", function()
+		local result = StatCalc.compute({
+			level = 1,
+			stats = { str = 10, dex = 5, int = 3, vit = 8 },
+			sources = { { key = "source.gear", flat = { energyRegen = 2 }, pct = { energyRegen = 50 } } },
+		})
+		T.expect(result.values.energyRegen).toBeNear((4 + 2) * 1.5)
+		T.expect(result.values.energyRegenCombat).toBeNear((2.4 + 2) * 1.5)
 	end)
 
 	T.it("sources add flat, then pct multiplies", function()
