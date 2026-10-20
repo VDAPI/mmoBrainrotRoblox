@@ -5971,3 +5971,4 @@
 - **S156** (właściciel 2026-10-21) Stroje klas jako powłoki z siatki części ciała (`AvatarBuild.shell`), szata ze spódnicą z 8 paneli, buty dla każdej postaci, Łowca z zielonymi spodniami, Mag z fioletowymi rękawami; fryzury zakładane ponownie po wczytaniu części.
 - **S156** (właściciel 2026-10-21) Ciosy bossów i Elit: ładowanie na rzucającym (`Library.charge`), iskry nad obszarem (`dangerMotes`), salwa pocisków (`volley`) przy czarach i rzutach z daleka, odłamki / wybuch żywiołu przy uderzeniu; zwykłe potwory: gruby łuk cięcia i świecący pocisk.
 - **S156** (właściciel 2026-10-21) Mapa świata: same symbole na ciemnych krążkach, napisy tylko z przełącznikiem „Napisy” albo po najechaniu, na obszarach tylko poziomy.
+- **W30** Nowe umiejętności pul Łowcy i Maga (S140–S142, S144, bez Serca Feniksa) dostały zastępcze dźwięki z listy S111 w innej wysokości (`docs/ASSETS.md`), zamiast domyślnego dźwięku rodzaju; właściciel może je podmienić.

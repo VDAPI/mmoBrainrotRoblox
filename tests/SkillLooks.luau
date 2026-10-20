@@ -10,6 +10,7 @@
 --   PIECE_COST   what one piece may hold at once (Vfx/Library): emitters, beams, lights, decals / ground images; a
 --                cast's sum stays within Config.Vfx.perCast
 
+local LmVfxPieces = require("../src/shared/Data/LmVfxPieces")
 local SkillMotions = require("../src/shared/Data/SkillMotions")
 local SkillPose = require("../src/shared/Logic/SkillPose")
 local SkillVfx = require("../src/shared/Data/SkillVfx")
@@ -117,6 +118,14 @@ SkillLooks.PIECE_COST = {
 	sparkle = c(1, 0, 0, 0),
 	cloud = c(1, 0, 1, 0),
 } :: { [string]: Cost }
+
+-- W30: the lm pieces of the Hunter and the Mage (Data/LmVfxPieces) bring their own layer and cost
+for name, spec in LmVfxPieces do
+	if spec.phase == "impact" then
+		SkillLooks.PIECE_LAYER[name] = spec.layer
+		SkillLooks.PIECE_COST[name] = spec.cost
+	end
+end
 
 -- Every piece name of an entry (each list once per name), the object and the projectile as their own names.
 local function pieces(entry: SkillVfx.Entry): { string }

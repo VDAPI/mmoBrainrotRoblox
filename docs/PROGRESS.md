@@ -99,13 +99,11 @@
 - **Seria „Umiejętności 2.0” (S137–S148, `docs/DESIGN-18.md`), co zostało w jednym miejscu:**
   - Bez przeglądu w grze: okno umiejętności 2.0 (S139: szerokości drzewka 484 / 468 px, podpisy ról, tabela rangi,
     przypięte „Zatwierdź”, napis puli nad paskiem HUD); nowe umiejętności pul (S140–S145): ruchy to warianty ruchów klas
-    i pozy `ShotRig` (dopracowanie W03–W07, kilka par z tą samą sylwetką), wygląd z istniejących składników.
-  - Dla właściciela: ID dźwięków nowych umiejętności (`docs/ASSETS.md`): S140 `skill.flameWave|emberShield|pyroblast|
-    combustion|immolate|phoenixHeart`, S141 `skill.hailstorm|iceBarrier|glacialSpike|frozenOrb|deepFreeze|shatter|
-    blizzard`, S142 `skill.lightningBolt|staticShock|stormArmor|thunderStrike|ballLightning|lightningLance|tempest`,
-    S143 `skill.shieldSweep|shieldBash|vindicate|brutalStrike|sunder|warStomp|execute`, S144 `skill.heavyBolt|
-    pinningShot|windstep|netShot|deadlyBolt`, S145 `skill.lightRay|blindingLight|miracle|consecrate|holyChains|holyNova|
-    rebuke`; ikony PNG nowych umiejętności i węzłów (dziś znaki), obrazki na wiki (`npm run art`).
+    i pozy `ShotRig` (dopracowanie W03–W07, kilka par z tą samą sylwetką), wygląd z istniejących składników; Łowca
+    i Mag mają od W30 własne ruchy i składniki `lm*` (`docs/ANIMACJE.md` §15), bez przeglądu w grze.
+  - Dla właściciela: ID dźwięków nowych umiejętności (`docs/ASSETS.md`; Łowca i Mag mają zastępcze z listy S111 od
+    W30, pusty `skill.phoenixHeart`), S143 `skill.shieldSweep|shieldBash|vindicate|brutalStrike|sunder|warStomp|
+    execute`, S145 `skill.lightRay|blindingLight|miracle|consecrate|holyChains|holyNova|rebuke`; ikony PNG nowych umiejętności i węzłów (dziś znaki), obrazki na wiki (`npm run art`).
   - Balans w trybie raportu z powodem (decyzje właściciela w `docs/SESJE.md` → S146, S147): T-SK6 berła na 45 / 70 /
     100 (2,8 / 8,6 / 14,4, cel 1–2) i R1 Inkwizytora 4,4–6,2 mimo zasady 5 S146; R9 Wojownika dwuręczna / jednoręczna
     (1,45–1,69 w jeden cel, 0,98–1,12 na 3 cele, cel 1,15–1,25); R1 Chorążego; R6 Strażnika, Uzdrowiciela, Fortuny,

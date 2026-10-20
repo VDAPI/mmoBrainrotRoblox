@@ -46,6 +46,11 @@
 -- stick in the ground (The Drive: on the rim), Volley's fan shoots the cast's `w` arrows; `meteor` is the falling rock
 -- only (landsAfter: the landing pieces, the shake and the sound wait the event's `d`). Phase sounds skill.<id>.trigger,
 -- .wave (later waves, storm strikes) and skill.falcon.strike.
+-- W30 (Hunter and Mage, docs/ANIMACJE.md §15): pieces the old chain does not know come from Vfx/LmPieces (the `lm`
+-- pieces of Vfx/LmHunterMage, described in Data/LmVfxPieces) with one context (Vfx/LmTypes.Ctx); SkillVfx castFx play
+-- when the cast starts (following the gathering hand / tip until the release), releaseFx when the shot leaves (a
+-- projectile skill's event, else the motion's release / hit), flight replaces the projectile's own flight (arcane
+-- missiles), lmOpts tunes a piece; an lm piece marked `immediate` shows at once when the blow lands `d` later.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -56,6 +61,8 @@ local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Library = require(script.Parent.Parent.Vfx.Library)
+local LmPieces = require(script.Parent.Parent.Vfx.LmPieces)
+local LmVfxPieces = require(ReplicatedStorage.Shared.Data.LmVfxPieces)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
@@ -202,6 +209,51 @@ local function launchPoint(caster: Model, entry: SkillVfx.Entry?): Vector3
 		end
 	end
 	return weaponTip(caster)
+end
+
+-- W30: plays a registered piece (Vfx/LmPieces) of `phase` with its context; false when no such piece exists.
+local function lmPiece(
+	name: string,
+	phase: string,
+	skill: SkillData.SkillDef,
+	entry: SkillVfx.Entry,
+	data: { [string]: any },
+	color: Color3,
+	caster: Model?,
+	target: Model?,
+	simple: boolean,
+	extra: { [string]: any }?
+): boolean
+	local fn = LmPieces.pieces[name]
+	if not fn then
+		return false
+	end
+	local x: { [string]: any } = extra or {}
+	local scale = (entry.size or 1) + (entry.chargeSize or 0) * (tonumber(data.ch) or 0)
+	local opts = if entry.lmOpts then entry.lmOpts[name] else nil
+	local ctx: LmPieces.Ctx = {
+		name = name,
+		phase = phase,
+		skill = skill,
+		entry = entry,
+		data = data,
+		color = color,
+		simple = simple,
+		caster = caster,
+		target = target,
+		from = x.from,
+		at = x.at,
+		aim = x.aim,
+		frame = x.frame,
+		radius = tonumber(data.r) or skill.radius or (6 * scale),
+		seconds = x.seconds or tonumber(data.d) or 1,
+		scale = scale,
+		wave = x.wave or 1,
+		opts = opts or {},
+		launch = x.launch,
+	}
+	fn(ctx)
+	return true
 end
 
 -- The last walk speed the server set (StatService.applyWalkSpeed), else `fallback`.
@@ -476,6 +528,42 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 		if entry.toss then
 			tossSnares(data, skill, entry, motion, caster, color, simple)
 		end
+		-- W30: the gathering (castFx, until the release or the aim's end `ct`) and the release (releaseFx; a projectile
+		-- skill's release comes with its own event in onImpact)
+		local releaseAt = motion.release or motion.hit or 0
+		local aimTarget = findModel(data.t)
+		local function aimPoint(): Vector3?
+			if typeof(data.p) == "Vector3" then
+				return data.p
+			end
+			return if aimTarget then centre(aimTarget) else nil
+		end
+		local gather = tonumber(data.ct) or releaseAt
+		local castFx: { string } = entry.castFx or {}
+		for _, name in castFx do
+			lmPiece(name, "cast", skill, entry, data, color, caster, aimTarget, simple, {
+				at = launchPoint(caster, entry),
+				aim = aimPoint(),
+				seconds = math.max(0.15, gather),
+				launch = function(): Vector3
+					return launchPoint(caster, entry)
+				end,
+			})
+		end
+		local releaseFx = entry.releaseFx
+		if releaseFx and skill.type ~= "projectile" then
+			Clock.after(releaseAt, function()
+				if not caster.Parent then
+					return
+				end
+				for _, name in releaseFx do
+					lmPiece(name, "release", skill, entry, data, color, caster, aimTarget, simple, {
+						at = launchPoint(caster, entry),
+						aim = aimPoint(),
+					})
+				end
+			end)
+		end
 		if entry.land and motion.land then
 			Clock.after(motion.land, function()
 				local land: { string } = entry.land or {}
@@ -492,6 +580,18 @@ local function onCast(data: { [string]: any }, skill: SkillData.SkillDef, caster
 		if entry.projectile and skill.type == "circleTarget" and typeof(data.p) == "Vector3" then
 			local release = motion.release or motion.hit or 0
 			Clock.after(release, function()
+				-- W30: a flight of its own (SkillVfx flight) at the same speed and cap
+				local flight = if entry.flight then LmPieces.flights[entry.flight] else nil
+				if flight then
+					flight(launchPoint(caster, entry), data.p, color, {
+						size = 1.2,
+						simple = simple,
+						maxTime = 0.8,
+						speed = 140,
+						onArrive = function() end,
+					})
+					return
+				end
 				Library.projectile(launchPoint(caster, entry), data.p, entry.projectile :: any, color, {
 					size = 1.2,
 					speed = 140,
@@ -911,6 +1011,15 @@ local function piece(
 		end
 	elseif name == "falcon" then
 		falconOf(casterKey(data), caster, color, simple, seconds)
+	elseif LmPieces.pieces[name] then
+		-- W30: a registered piece (Vfx/LmPieces) with the blow's point, facing and wave
+		lmPiece(name, "impact", skill, entry, data, color, caster, target, simple, {
+			at = at,
+			aim = at,
+			frame = facing(caster, target, data),
+			from = from,
+			wave = SkillFxWave.of(skill.type, entry.waves, tonumber(data.n)).wave,
+		})
 	end
 end
 
@@ -950,6 +1059,18 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 			Library.impactFlash(centre(target), entry.flash or 1, color, { simple = simple })
 			Library.sparkle(target, color, simple)
 			Library.sparks(tip, color, { simple = simple, key = entry.sparks, count = 4 })
+			-- W30: the entry's lm pieces every tick (the helix winding along the ray from the tip)
+			for _, name in entry.impact do
+				if LmPieces.pieces[name] then
+					lmPiece(name, "impact", skill, entry, data, color, caster, target, simple, {
+						at = centre(target),
+						wave = n,
+						launch = function(): Vector3
+							return weaponTip(caster)
+						end,
+					})
+				end
+			end
 			if n == 1 then
 				playSound(skill, entry, at, caster, data)
 			end
@@ -965,17 +1086,41 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 		local from = launchPoint(caster, entry)
 		-- S80: Arcane Discharge grows with the charges it spent
 		local size = (entry.size or 1) + (entry.chargeSize or 0) * (tonumber(data.ch) or 0)
-		Library.projectile(from, aimAt, entry.projectile or "orb", color, {
-			size = size,
-			simple = simple,
-			maxTime = Config.Vfx.shotMaxTime,
-			trail = if entry.tex then entry.tex.projectile else nil,
-			onArrive = function()
-				for _, name in entry.impact do
-					piece(name, skill, entry, data, color, caster, target, simple)
-				end
-			end,
-		})
+		local function arrive()
+			for _, name in entry.impact do
+				piece(name, skill, entry, data, color, caster, target, simple)
+			end
+		end
+		-- W30: the release pieces where the shot leaves (SkillVfx releaseFx) and a flight of its own (flight): the
+		-- same speed and cap as the server's (Offense.projectile), so the pieces land with the damage
+		local aimPoint = if typeof(aimAt) == "Vector3" then aimAt else centre(aimAt :: Model)
+		local releaseFx: { string } = entry.releaseFx or {}
+		for _, name in releaseFx do
+			lmPiece(name, "release", skill, entry, data, color, caster, target, simple, { at = from, aim = aimPoint })
+		end
+		local flight = if entry.flight then LmPieces.flights[entry.flight] else nil
+		if flight then
+			flight(from, aimAt, color, {
+				size = size,
+				simple = simple,
+				maxTime = Config.Vfx.shotMaxTime,
+				speed = 90,
+				count = 3 + math.floor(tonumber(data.ch) or 0),
+				onArrive = function()
+					arrive()
+				end,
+			})
+		else
+			Library.projectile(from, aimAt, entry.projectile or "orb", color, {
+				size = size,
+				simple = simple,
+				maxTime = Config.Vfx.shotMaxTime,
+				trail = if entry.tex then entry.tex.projectile else nil,
+				onArrive = function()
+					arrive()
+				end,
+			})
+		end
 		-- the cast sound at the caster when the projectile leaves (the hit's material comes with its dmg event)
 		playSound(skill, entry, nil, caster, data)
 		return
@@ -1035,7 +1180,11 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 				or name == "pillar"
 		if wave == 1 or again then
 			local wait = linkDelay
-				+ (if MARKS[name] or FALLS[name] then 0 else landDelay)
+				+ (if MARKS[name]
+						or FALLS[name]
+						or (LmVfxPieces[name] and LmVfxPieces[name].immediate)
+					then 0
+					else landDelay)
 				+ (if CORE[name] then coreDelay else 0)
 			if wait > 0 then
 				Clock.after(wait, piece, name, skill, entry, data, color, caster, target, simple, previous)

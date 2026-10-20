@@ -641,3 +641,33 @@ klipu 1,0): w Play idź po prostej i dobierz liczbę tak, żeby stopy nie ślizg
 na poziomach `footIk.levels` (bez `low`), gdy postać stoi albo idzie (do `footIk.maxSpeed`), nie w powietrzu i nie na
 wierzchowcu. Podnosi stopę, pod którą ziemia jest wyżej niż podłoga postaci (najwyżej `footIk.maxDrop`); biodra zostają
 (bez zmian `HipHeight` i fizyki).
+
+## 15. Łowca i Mag: własne składniki `lm*` (W30)
+
+Każda aktywna umiejętność Łowcy i Maga ma co najmniej jeden własny składnik (test `tests/lmvfx.spec.luau`). Opis
+składników (warstwa, faza, koszt w limitach `Config.Vfx.perCast`): `src/shared/Data/LmVfxPieces.luau`; kod:
+`src/client/Vfx/LmHunterMage.luau` (pomocniki `LmKit`, typy `LmTypes`), rejestr `LmPieces` (moduły innych autorów
+dopisują się jedną linią). `VfxController` pyta rejestr o składnik, którego nie zna `Vfx/Library`.
+
+**Fazy (pola `SkillVfx`).** `castFx`: od początku rzutu do wypuszczenia (`lmCharge`: drobiny krążą i zaciskają się na
+grocie albo dłoni, rdzeń puchnie, błysk); `releaseFx`: w chwili `release` ruchu (`lmMuzzle`, `lmSkyVolley`, `lmSpiral`);
+`flight`: własny lot pocisku zamiast `Library.projectile` (`lmMissiles`: pociski po łukach Béziera); listy `impact`,
+`strike`, `trigger`, `everyWave`: składniki uderzenia jak dotąd. `lmOpts[nazwa]` stroi składnik (liczby, tryby).
+
+**Co widać (wybór).** Strzała w cel zostaje wbita i drży (`lmStuckArrow`), drzazgi odskakują (`lmSplinters`); salwa
+leci w niebo i spada z cieniem na ziemi (`lmSkyVolley`, `lmRainShadow`); pułapki uzbrajają się z błyskiem
+(`lmTrapArm`), zatrzaskują szczęki (`lmSpringJaws`), sieć rozpina się na celu (`lmNet`); unik zostawia powidoki
+(`lmAfterimage`, `lmWindRibbons`); meteor wypada z rozdarcia nieba (`lmSkyRift`) i wybucha z gruzem (`lmExplosion`,
+`lmDebris`); ogień: strumień płomieni i żar (`lmFlameJet`, `lmEmbers`); lód: kolce w pierścieniu, kępie, uwięzieniu albo
+wybuchu (`lmIceSpikes`), grad (`lmHail`); błyskawice rozgałęzione z nieba, chmury, między celami albo w linii
+(`lmForkBolt`), pełzające łuki (`lmArcCrawl`); runy, wir, spirala (`lmRuneRings`, `lmVortex`, `lmHelix`).
+
+**Ataki podstawowe.** `Vfx/LmShots`: przy wypuszczeniu łuk daje pierścień powietrza i kurz, kusza iskry, różdżka mały
+dysk w kolorze żywiołu, kostur większy z drobinami; przy trafieniu strzała drzazgi, bełt odpryski i iskry, czar wybuch
+po żywiole broni (ogień, lód, błyskawica, trucizna, brak). Strzała i bełt mają smugę (`LmStreak`, bez niej na `low`).
+
+**Ruchy.** Nowe umiejętności pul Maga (S140–S142) mają własne klucze w `SkillMotions` (te same czasy `hit` / `release`
+co wcześniej, fixture `skill_timing`); Kula Piorunów pcha kulę nisko w wykroku, Ciężki Bełt mocniej odrzuca barki.
+
+**Wydajność.** Wszystko z `Vfx/Pool` i na zegarze `Vfx/Clock`; `LmKit.amount` mnoży liczby przez
+`GraphicsLevel.particles` (W29) i połowę dla `simple` (daleko albo `low`), `lmSkyRift` bez światła.

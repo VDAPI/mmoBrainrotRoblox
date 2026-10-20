@@ -13538,3 +13538,12 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
   `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
   `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.
+### W30: walka Łowcy i Maga, efekty i ruchy umiejętności (walka-lm)
+- **Składniki `lm*`:** 33 nowe składniki efektów (`Data/LmVfxPieces`, `Vfx/LmHunterMage`, rejestr `Vfx/LmPieces`),
+  nowe pola `SkillVfx` `castFx`, `releaseFx`, `flight`, `lmOpts`; wszystkie wpisy Łowcy i Maga przepisane (opis:
+  `docs/ANIMACJE.md` §15). Obrażenia i zasady bez zmian.
+- **Ataki podstawowe:** `Vfx/LmShots` (wypuszczenie i trafienie łuku, kuszy, różdżki, kostura), smuga strzał i bełtów.
+- **Ruchy:** własne klucze nowych umiejętności Maga (S140–S142) w `SkillMotions`, te same czasy serwera; Kula
+  Piorunów i Ciężki Bełt z własną sylwetką.
+- **Dźwięki:** zastępcze ID z listy S111 dla S140–S142 i S144 (`Data/Sfx`, `docs/ASSETS.md`, DECYZJE).
+- **Testy:** `tests/lmvfx.spec.luau`; `SkillLooks` i `skillmotion.spec` znają składniki `lm*`.

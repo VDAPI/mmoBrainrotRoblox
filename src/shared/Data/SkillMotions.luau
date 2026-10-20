@@ -1387,8 +1387,9 @@ local function heavyBoltKeys(rig: ShotRig): { Key }
 	return {
 		k(0.18, merge(rig.aim, BRACED, body(rig, 4, 0)), "out"),
 		k(0.36, merge(rig.full, BRACED, body(rig, 0, 0)), "inOut"),
-		k(0.42, merge(rig.loose, BRACED, body(rig, 12, 0), { root = { -6, 0, 0, -0.25 } }), "out"),
-		k(0.54, merge(rig.after, BRACED, body(rig, 8, 0)), "out"),
+		-- W30: the heavy kick throws the shoulders back and sinks the brace (its own silhouette against Double Shot)
+		k(0.42, merge(rig.loose, BRACED, body(rig, 18, 0), { root = { -10, 0, 0, -0.45 } }), "out"),
+		k(0.54, merge(rig.after, BRACED, body(rig, 10, 0)), "out"),
 	}
 end
 motions.heavyBolt = {
@@ -2109,136 +2110,755 @@ motions.arcaneTorrent = {
 	lock = true,
 }
 
--- S140 (DESIGN-18 §6.1): the fire pool's new skills move as variants of the Mage's S115 motions (session rule E); the
--- look apart is their SkillVfx (fire, own pieces). A full motion pass comes with W03-W07.
--- Flame Wave: Chain Lightning's throw, the palm swept forward at the release (the cone leaves it).
+-- S140-S142 (DESIGN-18 §6.1) gave the fire, ice and lightning pools' new skills the S115 motions; W30 (walka-lm) gives
+-- every one a body of its own (the server's hit / release / loop times unchanged, tests/fixtures/skill_timing): the
+-- anticipation, the blow on the event and a follow-through.
+
+-- Fire ------------------------------------------------------------------------------------------------------------
+-- Flame Wave: the palms drawn back to the chest, then both thrust out wide in a lunge at the release (0.26), the cone
+-- of fire leaving the spread hands; the arms run on outwards.
 motions.flameWave = {
-	keys = motions.chainLightning.keys,
+	keys = {
+		k(
+			0.16,
+			merge(crouch(0.3), {
+				rShoulder = { 40, 30, 30 },
+				rElbow = { 110, 0, 0 },
+				lShoulder = { 40, -30, -30 },
+				lElbow = { 110, 0, 0 },
+				waist = { 4, -20, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.26,
+			merge(lunge(0.6), {
+				rShoulder = { 85, -25, 0 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 85, 25, 0 },
+				lElbow = { 5, 0, 0 },
+				waist = { -10, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.34,
+			merge(lunge(0.65), {
+				rShoulder = { 80, -45, 0 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 80, 45, 0 },
+				lElbow = { 5, 0, 0 },
+				waist = { -12, 0, 0 },
+			}),
+			"out"
+		),
+	},
 	recover = 0.3,
 	release = 0.26,
 	hit = 0.26,
 }
--- Ember Shield: Mana Shield's arms raised over the head.
+-- Ember Shield: the forearms crossed before the chest in a crouch, then flung apart and up as the embers burst round
+-- (0.28), the chest open, a little rise on the toes.
 motions.emberShield = {
-	keys = motions.manaShield.keys,
+	keys = {
+		k(
+			0.14,
+			merge(crouch(0.3), {
+				rShoulder = { 70, 60, 0 },
+				rElbow = { 100, 0, 0 },
+				lShoulder = { 70, -60, 0 },
+				lElbow = { 100, 0, 0 },
+				waist = { -10, 0, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.28,
+			merge(STAND, {
+				rShoulder = { 60, -50, 40 },
+				rElbow = { 10, 0, 0 },
+				lShoulder = { 60, 50, -40 },
+				lElbow = { 10, 0, 0 },
+				waist = { 12, 0, 0 },
+				root = { 6, 0, 0, 0.15 },
+			}),
+			"in"
+		),
+		k(
+			0.6,
+			merge(STAND, {
+				rShoulder = { 50, -45, 35 },
+				rElbow = { 15, 0, 0 },
+				lShoulder = { 50, 45, -35 },
+				lElbow = { 15, 0, 0 },
+				waist = { 6, 0, 0 },
+			})
+		),
+	},
 	recover = 0.3,
 	hit = 0.28,
 }
--- Pyroblast: Fireball's gather held while focusing (the loop over the gather pose, castTime), pushed at the end.
+-- Pyroblast: a great orb held over the head with both hands while focusing (the loop, castTime), then hurled down at
+-- the target in a deep lunge.
+local PYRO_HOLD: Pose = merge(STAND, {
+	rShoulder = { 165, 10, 20 },
+	rElbow = { 60, 0, 0 },
+	lShoulder = { 165, -10, -20 },
+	lElbow = { 60, 0, 0 },
+	waist = { 14, 0, 0 },
+	root = { 4, 0, 0, 0.1 },
+})
 motions.pyroblast = {
-	keys = motions.fireball.keys,
+	keys = {
+		k(0.2, PYRO_HOLD, "out"),
+		k(
+			0.28,
+			merge(PYRO_HOLD, { rShoulder = { 170, 10, 24 }, lShoulder = { 170, -10, -24 }, waist = { 16, 0, 0 } }),
+			"inOut"
+		),
+		k(
+			0.38,
+			merge(lunge(0.8), {
+				rShoulder = { 70, 10, 0 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 70, -10, 0 },
+				lElbow = { 5, 0, 0 },
+				waist = { -16, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.46,
+			merge(lunge(0.85), { rShoulder = { 55, 10, 0 }, lShoulder = { 55, -10, 0 }, waist = { -18, 0, 0 } }),
+			"out"
+		),
+	},
 	recover = 0.3,
 	loop = { from = 0.2, to = 0.28 },
 }
--- Combustion: Ice Shard's hands brought together and pushed (the target's burns burst at the push).
+-- Combustion: the right hand raised by the face, fingers ready to snap, then the fist clenched and pulled down at the
+-- event (0.26): the target's burns burst.
 motions.combustion = {
-	keys = motions.iceShard.keys,
+	keys = {
+		k(0.14, {
+			rShoulder = { 120, -20, 0 },
+			rElbow = { 110, 0, 0 },
+			rWrist = { -30, 0, 0 },
+			lShoulder = { 30, 0, -15 },
+			waist = { 4, -10, 0 },
+		}, "out"),
+		k(0.26, {
+			rShoulder = { 60, -10, 10 },
+			rElbow = { 95, 0, 0 },
+			rWrist = { 20, 0, 0 },
+			lShoulder = { 25, 0, -20 },
+			waist = { -8, 8, 0 },
+		}, "in"),
+		k(0.34, {
+			rShoulder = { 52, -10, 12 },
+			rElbow = { 100, 0, 0 },
+			rWrist = { 25, 0, 0 },
+			lShoulder = { 25, 0, -20 },
+			waist = { -10, 10, 0 },
+		}, "out"),
+	},
 	recover = 0.25,
 	hit = 0.26,
 }
--- Immolate: the bolt's flick of the weapon, the target burning at the tip (wand; a staff pushes its tip).
+-- Immolate: a dip, then the weapon swept up from below (0.16), the flames rising round the target with it.
 motions.immolate = {
-	keys = fireboltKeys(WAND, 1),
+	keys = {
+		k(
+			0.08,
+			merge(crouch(0.2), {
+				rShoulder = { 20, 0, 20 },
+				rElbow = { 60, 0, 0 },
+				rWrist = { -10, 0, 0 },
+				lShoulder = { 30, 0, -10 },
+				waist = { -10, -10, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.16,
+			merge(STAND, {
+				rShoulder = { 135, 0, 10 },
+				rElbow = { 10, 0, 0 },
+				rWrist = { -50, 0, 0 },
+				lShoulder = { 40, 0, -20 },
+				waist = { 8, 10, 0 },
+				root = { 2, 0, 0, 0.15 },
+			}),
+			"in"
+		),
+		k(
+			0.24,
+			merge(STAND, {
+				rShoulder = { 145, 0, 12 },
+				rElbow = { 10, 0, 0 },
+				rWrist = { -55, 0, 0 },
+				lShoulder = { 40, 0, -20 },
+				waist = { 10, 12, 0 },
+			}),
+			"out"
+		),
+	},
 	recover = 0.22,
 	hit = 0.16,
-	variants = { variant({ weapon = "staff", keys = fireboltKeys(STAFF, 1) }) },
 }
 
--- S141 (DESIGN-18 §6.1): the ice pool's new skills as variants of the Mage's S115 motions (the same rule as S140); the
--- look apart is their SkillVfx (ice, own pieces). A full motion pass comes with W03-W07.
--- Hailstorm: Thunderstorm's weapon raised to the clouds, the hail called down with the left hand.
+-- Ice -------------------------------------------------------------------------------------------------------------
+-- Hailstorm: both hands raised with the fingers spread, then flung down and apart over the circle (0.42) in a crouch.
 motions.hailstorm = {
-	keys = motions.firewall.keys,
+	keys = {
+		k(
+			0.28,
+			merge(STAND, {
+				rShoulder = { 170, 0, 40 },
+				rElbow = { 20, 0, 0 },
+				lShoulder = { 170, 0, -40 },
+				lElbow = { 20, 0, 0 },
+				waist = { 16, 0, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.42,
+			merge(crouch(0.4), {
+				rShoulder = { 95, 0, 55 },
+				rElbow = { 10, 0, 0 },
+				lShoulder = { 95, 0, -55 },
+				lElbow = { 10, 0, 0 },
+				waist = { -12, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.55,
+			merge(crouch(0.45), { rShoulder = { 80, 0, 60 }, lShoulder = { 80, 0, -60 }, waist = { -14, 0, 0 } }),
+			"out"
+		),
+	},
 	recover = 0.3,
 	hit = 0.42,
 }
--- Ice Barrier: Mana Shield's arms raised over the head.
+-- Ice Barrier: a kneel with the palms at the ground drawing the frost up, then the forearms crossed before the face as
+-- the ice closes round (0.28).
 motions.iceBarrier = {
-	keys = motions.manaShield.keys,
+	keys = {
+		k(
+			0.14,
+			merge(crouch(0.6), {
+				rShoulder = { 30, 0, 10 },
+				rElbow = { 20, 0, 0 },
+				lShoulder = { 30, 0, -10 },
+				lElbow = { 20, 0, 0 },
+				waist = { -25, 0, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.28,
+			merge(crouch(0.15), {
+				rShoulder = { 110, 40, 0 },
+				rElbow = { 70, 0, 0 },
+				lShoulder = { 110, -40, 0 },
+				lElbow = { 70, 0, 0 },
+				waist = { 4, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.6,
+			merge(STAND, {
+				rShoulder = { 105, 40, 0 },
+				rElbow = { 75, 0, 0 },
+				lShoulder = { 105, -40, 0 },
+				lElbow = { 75, 0, 0 },
+				waist = { 2, 0, 0 },
+			})
+		),
+	},
 	recover = 0.3,
 	hit = 0.28,
 }
--- Glacial Spike: Ice Shard's hands held together while focusing (the loop over the gather pose, castTime), pushed at
--- the end.
+-- Glacial Spike: the spike cocked behind the shoulder like a javelin, the left arm aiming, held while focusing (the
+-- loop, castTime), then thrown in a lunge.
+local SPIKE_COCK: Pose = merge(STAND, {
+	rShoulder = { 150, -10, 35 },
+	rElbow = { 80, 0, 0 },
+	lShoulder = { 90, 20, 0 },
+	lElbow = { 0, 0, 0 },
+	waist = { 8, -30, 0 },
+	root = { 0, -12, 0, 0 },
+	rHip = { -10, 0, 4 },
+	lHip = { 20, 0, -4 },
+})
 motions.glacialSpike = {
-	keys = motions.iceShard.keys,
+	keys = {
+		k(0.18, SPIKE_COCK, "out"),
+		k(0.26, merge(SPIKE_COCK, { rShoulder = { 156, -10, 38 }, waist = { 10, -32, 0 } }), "inOut"),
+		k(
+			0.34,
+			merge(lunge(0.7), {
+				rShoulder = { 80, 20, 0 },
+				rElbow = { 0, 0, 0 },
+				lShoulder = { 30, 0, -25 },
+				lElbow = { 10, 0, 0 },
+				waist = { -12, 28, 0 },
+			}),
+			"in"
+		),
+	},
 	recover = 0.25,
 	loop = { from = 0.18, to = 0.26 },
 }
--- Frozen Orb: Fireball's gather and push (the orb leaves the hands slowly).
+-- Frozen Orb: the orb swung low behind the hip and bowled forward along the ground in a lunge (release 0.38).
 motions.frozenOrb = {
-	keys = motions.fireball.keys,
+	keys = {
+		k(
+			0.26,
+			merge(crouch(0.5), {
+				rShoulder = { -30, 0, 15 },
+				rElbow = { 20, 0, 0 },
+				lShoulder = { 50, 0, -20 },
+				lElbow = { 40, 0, 0 },
+				waist = { -14, -15, 0 },
+			}),
+			"inOut"
+		),
+		k(
+			0.38,
+			merge(lunge(0.8), {
+				rShoulder = { 70, 0, 5 },
+				rElbow = { 0, 0, 0 },
+				rWrist = { -30, 0, 0 },
+				lShoulder = { 30, 0, -30 },
+				waist = { -16, 10, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.46,
+			merge(lunge(0.85), { rShoulder = { 95, 0, 5 }, lShoulder = { 25, 0, -30 }, waist = { -14, 14, 0 } }),
+			"out"
+		),
+	},
 	recover = 0.3,
 	release = 0.38,
 	hit = 0.38,
 }
--- Deep Freeze: Frost Nova's arms raised and brought down, standing (the target freezes at the low pose).
+-- Deep Freeze: both open hands reaching at the target, then clenched shut and pulled in (0.34): the ice closes.
 motions.deepFreeze = {
-	keys = motions.frostNova.keys,
+	keys = {
+		k(
+			0.18,
+			merge(STAND, {
+				rShoulder = { 95, -35, 0 },
+				rElbow = { 20, 0, 0 },
+				lShoulder = { 95, 35, 0 },
+				lElbow = { 20, 0, 0 },
+				waist = { 6, 0, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.34,
+			merge(crouch(0.3), {
+				rShoulder = { 85, 10, 0 },
+				rElbow = { 95, 0, 0 },
+				rWrist = { 30, 0, 0 },
+				lShoulder = { 85, -10, 0 },
+				lElbow = { 95, 0, 0 },
+				lWrist = { 30, 0, 0 },
+				waist = { -10, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.5,
+			merge(crouch(0.35), {
+				rShoulder = { 80, 12, 0 },
+				rElbow = { 100, 0, 0 },
+				lShoulder = { 80, -12, 0 },
+				lElbow = { 100, 0, 0 },
+				waist = { -12, 0, 0 },
+			})
+		),
+	},
 	recover = 0.35,
 	hit = 0.34,
 }
--- Shatter: Chain Lightning's throw, the palm cracking the ice at the release.
+-- Shatter: the right fist drawn back in a crouch and punched straight at the frozen target (0.26).
 motions.shatter = {
-	keys = motions.chainLightning.keys,
+	keys = {
+		k(
+			0.16,
+			merge(crouch(0.25), {
+				rShoulder = { 30, 0, 20 },
+				rElbow = { 130, 0, 0 },
+				lShoulder = { 70, 0, -20 },
+				lElbow = { 60, 0, 0 },
+				waist = { 4, -25, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.26,
+			merge(lunge(0.7), {
+				rShoulder = { 90, 0, 0 },
+				rElbow = { 0, 0, 0 },
+				lShoulder = { 20, 0, -25 },
+				lElbow = { 90, 0, 0 },
+				waist = { -10, 25, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.34,
+			merge(
+				lunge(0.75),
+				{ rShoulder = { 88, 0, -2 }, lShoulder = { 20, 0, -25 }, lElbow = { 95, 0, 0 }, waist = { -12, 28, 0 } }
+			),
+			"out"
+		),
+	},
 	recover = 0.3,
 	hit = 0.26,
 }
--- Blizzard: Rain of Meteors' arms raised and swept down across the circle in a wide stance.
+-- Blizzard: the arms swept round in a wide circle and up over the head, then brought down and apart across the circle
+-- in a crouch (0.55).
 motions.blizzard = {
-	keys = motions.meteorStorm.keys,
+	keys = {
+		k(
+			0.25,
+			merge(STAND, {
+				rShoulder = { 120, 60, 0 },
+				rElbow = { 10, 0, 0 },
+				lShoulder = { 60, 60, -30 },
+				lElbow = { 10, 0, 0 },
+				waist = { 6, 30, 0 },
+			}),
+			"inOut"
+		),
+		k(
+			0.4,
+			merge(STAND, {
+				rShoulder = { 175, 0, 20 },
+				lShoulder = { 175, 0, -20 },
+				waist = { 18, 0, 0 },
+				root = { 4, 0, 0, 0.25 },
+			}),
+			"inOut"
+		),
+		k(
+			0.55,
+			merge(crouch(0.5), {
+				rShoulder = { 110, -50, 30 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 110, 50, -30 },
+				lElbow = { 5, 0, 0 },
+				waist = { -14, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.7,
+			merge(crouch(0.55), { rShoulder = { 100, -60, 35 }, lShoulder = { 100, 60, -35 }, waist = { -16, 0, 0 } })
+		),
+	},
 	recover = 0.35,
 	hit = 0.55,
 	lock = true,
 }
 
--- S142 (DESIGN-18 §6.1): the lightning pool's new skills as variants of the Mage's S115 motions (the same rule as S140 /
--- S141); the look apart is their SkillVfx (lightning, own pieces). A full motion pass comes with W03-W07.
--- Lightning Bolt: Fire Bolt's flick of the weapon (a staff pushes its tip; 10B two flicks).
+-- Lightning ---------------------------------------------------------------------------------------------------------
+-- Lightning Bolt: two fingers pointed down the straight arm, the left hand bracing the right forearm; with 10B two
+-- jabs (a staff pushes its tip as Fire Bolt does).
+local JAB: CastRig = {
+	back = {
+		rShoulder = { 60, 0, 30 },
+		rElbow = { 100, 0, 0 },
+		lShoulder = { 50, 0, -10 },
+		lElbow = { 90, 0, 0 },
+		waist = { 0, -10, 0 },
+	},
+	point = {
+		rShoulder = { 90, -5, 0 },
+		rElbow = { 0, 0, 0 },
+		rWrist = { -60, 0, 0 },
+		lShoulder = { 70, -30, 0 },
+		lElbow = { 60, 0, 0 },
+		waist = { -8, 15, 0 },
+	},
+	after = {
+		rShoulder = { 92, -5, 0 },
+		rElbow = { 0, 0, 0 },
+		rWrist = { -55, 0, 0 },
+		lShoulder = { 68, -30, 0 },
+		lElbow = { 62, 0, 0 },
+		waist = { -8, 17, 0 },
+	},
+}
 motions.lightningBolt = {
-	keys = fireboltKeys(WAND, 1),
+	keys = fireboltKeys(JAB, 1),
 	recover = 0.22,
 	release = 0.16,
 	variants = {
 		variant({ weapon = "staff", hits = 2, keys = fireboltKeys(STAFF, 2) }),
 		variant({ weapon = "staff", keys = fireboltKeys(STAFF, 1) }),
-		variant({ hits = 2, keys = fireboltKeys(WAND, 2) }),
+		variant({ hits = 2, keys = fireboltKeys(JAB, 2) }),
 	},
 }
--- Static Shock: Chain Lightning's throw, the spark leaving the spread fingers at the release.
+-- Static Shock: the left palm thrust out at the target in a short lunge (0.26), the right hand charged at the hip.
 motions.staticShock = {
-	keys = motions.chainLightning.keys,
+	keys = {
+		k(
+			0.16,
+			merge(STAND, {
+				lShoulder = { 40, 0, -60 },
+				lElbow = { 90, 0, 0 },
+				rShoulder = { 40, 0, 30 },
+				rElbow = { 100, 0, 0 },
+				waist = { 0, 20, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.26,
+			merge(lunge(0.4), {
+				lShoulder = { 90, -20, 0 },
+				lElbow = { 0, 0, 0 },
+				lWrist = { -50, 0, 0 },
+				rShoulder = { 20, 0, 30 },
+				rElbow = { 80, 0, 0 },
+				waist = { -6, -20, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.34,
+			merge(lunge(0.45), {
+				lShoulder = { 88, -22, 0 },
+				lElbow = { 0, 0, 0 },
+				lWrist = { -50, 0, 0 },
+				rShoulder = { 20, 0, 30 },
+				rElbow = { 85, 0, 0 },
+				waist = { -8, -22, 0 },
+			}),
+			"out"
+		),
+	},
 	recover = 0.3,
 	hit = 0.26,
 }
--- Storm Armor: Mana Shield's arms raised over the head.
+-- Storm Armor: a tense crouch with the fists at the chest, then the arms thrown down and back, chest out, a hop on the
+-- toes as the storm takes the body (0.28).
 motions.stormArmor = {
-	keys = motions.manaShield.keys,
+	keys = {
+		k(
+			0.16,
+			merge(crouch(0.35), {
+				rShoulder = { 20, 0, 20 },
+				rElbow = { 120, 0, 0 },
+				lShoulder = { 20, 0, -20 },
+				lElbow = { 120, 0, 0 },
+				waist = { -14, 0, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.28,
+			merge(STAND, {
+				root = { 8, 0, 0, 0.35 },
+				rShoulder = { -20, 0, 45 },
+				rElbow = { 30, 0, 0 },
+				lShoulder = { -20, 0, -45 },
+				lElbow = { 30, 0, 0 },
+				waist = { 18, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.6,
+			merge(STAND, {
+				rShoulder = { -10, 0, 40 },
+				rElbow = { 35, 0, 0 },
+				lShoulder = { -10, 0, -40 },
+				lElbow = { 35, 0, 0 },
+				waist = { 10, 0, 0 },
+			})
+		),
+	},
 	recover = 0.3,
 	hit = 0.28,
 }
--- Thunder Strike: Thunderstorm's weapon raised to the clouds, the bolt called down with the left hand.
+-- Thunder Strike: the weapon raised straight up to the sky, then swept down to point at the target in a lunge (0.42),
+-- the bolt following the tip.
 motions.thunderStrike = {
-	keys = motions.firewall.keys,
+	keys = {
+		k(
+			0.3,
+			merge(STAND, {
+				rShoulder = { 175, 0, 15 },
+				rElbow = { 0, 0, 0 },
+				rWrist = { -30, 0, 0 },
+				lShoulder = { 40, 0, -30 },
+				waist = { 14, -10, 0 },
+				root = { 4, 0, 0, 0.2 },
+			}),
+			"out"
+		),
+		k(
+			0.42,
+			merge(lunge(0.6), {
+				rShoulder = { 100, 0, 0 },
+				rElbow = { 0, 0, 0 },
+				rWrist = { -60, 0, 0 },
+				lShoulder = { 20, 0, -40 },
+				waist = { -12, 12, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.55,
+			merge(lunge(0.65), {
+				rShoulder = { 92, 0, 0 },
+				rElbow = { 0, 0, 0 },
+				rWrist = { -60, 0, 0 },
+				lShoulder = { 20, 0, -40 },
+				waist = { -14, 14, 0 },
+			}),
+			"out"
+		),
+	},
 	recover = 0.3,
 	hit = 0.42,
 }
--- Ball Lightning: Fireball's gather and push (the ball leaves the hands slowly).
+-- Ball Lightning: the ball spun between both hands at the right side, then pushed out low with the right palm in a
+-- lunge (0.38), rolling away.
 motions.ballLightning = {
-	keys = motions.fireball.keys,
+	keys = {
+		k(
+			0.26,
+			merge(STAND, {
+				rShoulder = { 40, -30, 40 },
+				rElbow = { 90, 0, 0 },
+				lShoulder = { 60, -60, 0 },
+				lElbow = { 90, 0, 0 },
+				waist = { 0, -30, 0 },
+				root = { 0, -12, 0, 0 },
+			}),
+			"inOut"
+		),
+		k(
+			0.38,
+			merge(lunge(0.7), {
+				rShoulder = { 55, -10, 0 },
+				rElbow = { 25, 0, 0 },
+				rWrist = { -40, 0, 0 },
+				lShoulder = { 60, -40, 0 },
+				lElbow = { 60, 0, 0 },
+				waist = { -14, 20, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.46,
+			merge(lunge(0.75), {
+				rShoulder = { 62, -10, 0 },
+				rElbow = { 15, 0, 0 },
+				lShoulder = { 55, -40, 0 },
+				lElbow = { 65, 0, 0 },
+				waist = { -16, 22, 0 },
+			}),
+			"out"
+		),
+	},
 	recover = 0.3,
 	release = 0.38,
 	hit = 0.38,
 }
--- Lightning Lance: Ice Shard's hands brought together and pushed (the lance leaves both palms).
+-- Lightning Lance: both hands drawn back to the right hip, then thrust straight ahead together in a deep lunge (0.26),
+-- the lance leaving both palms.
 motions.lightningLance = {
-	keys = motions.iceShard.keys,
+	keys = {
+		k(
+			0.16,
+			merge(crouch(0.3), {
+				rShoulder = { 20, 40, 30 },
+				rElbow = { 110, 0, 0 },
+				lShoulder = { 30, 60, 0 },
+				lElbow = { 110, 0, 0 },
+				waist = { 0, -35, 0 },
+				root = { 0, -15, 0, -0.25 },
+			}),
+			"out"
+		),
+		k(
+			0.26,
+			merge(lunge(0.9), {
+				rShoulder = { 80, 10, 0 },
+				rElbow = { 0, 0, 0 },
+				lShoulder = { 80, -10, 0 },
+				lElbow = { 0, 0, 0 },
+				waist = { -8, -5, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.34,
+			merge(lunge(0.95), {
+				rShoulder = { 76, 10, 0 },
+				rElbow = { 0, 0, 0 },
+				lShoulder = { 76, -10, 0 },
+				lElbow = { 0, 0, 0 },
+				waist = { -10, -5, 0 },
+			}),
+			"out"
+		),
+	},
 	recover = 0.25,
 	hit = 0.26,
 }
--- Tempest: Rain of Meteors' arms raised and swept down across the circle in a wide stance.
+-- Tempest: the arms raised wide on the toes calling the storm, then the fists pulled down hard in a deep crouch at the
+-- event (0.55).
 motions.tempest = {
-	keys = motions.meteorStorm.keys,
+	keys = {
+		k(
+			0.3,
+			merge(STAND, {
+				rShoulder = { 170, 0, 50 },
+				rElbow = { 30, 0, 0 },
+				lShoulder = { 170, 0, -50 },
+				lElbow = { 30, 0, 0 },
+				waist = { 20, 0, 0 },
+				root = { 6, 0, 0, 0.3 },
+			}),
+			"out"
+		),
+		k(
+			0.55,
+			merge(crouch(0.8), {
+				rShoulder = { 40, 0, 40 },
+				rElbow = { 110, 0, 0 },
+				lShoulder = { 40, 0, -40 },
+				lElbow = { 110, 0, 0 },
+				waist = { -20, 0, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.7,
+			merge(crouch(0.85), {
+				rShoulder = { 35, 0, 42 },
+				rElbow = { 115, 0, 0 },
+				lShoulder = { 35, 0, -42 },
+				lElbow = { 115, 0, 0 },
+				waist = { -22, 0, 0 },
+			})
+		),
+	},
 	recover = 0.35,
 	hit = 0.55,
 	lock = true,

@@ -89,6 +89,12 @@ for _, name in
 do
 	VFX_PIECES[name] = true
 end
+-- W30: the lm pieces of the Hunter and the Mage (Data/LmVfxPieces, tests/lmvfx.spec)
+for name, spec in require("../src/shared/Data/LmVfxPieces") do
+	if spec.phase == "impact" then
+		VFX_PIECES[name] = true
+	end
+end
 
 local BEHAVIOURS: { [string]: boolean } = require("./BreakpointKeys")
 
