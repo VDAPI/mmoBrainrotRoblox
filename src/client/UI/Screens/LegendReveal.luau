@@ -30,6 +30,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	Item: Types.ItemInstance,
+	TitleKey: string?, -- S155b: another title (the first valuable drop of a new character)
 	OnEquip: (() -> ())?,
 	Close: () -> (),
 }
@@ -187,7 +188,10 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 						LayoutOrder = 1,
 						Size = UDim2.new(1, 0, 0, 34),
 						BackgroundTransparency = 1,
-						Text = Text.T(scope, if mythic then "reveal.titleMythic" else "reveal.title"),
+						Text = Text.T(
+							scope,
+							props.TitleKey or (if mythic then "reveal.titleMythic" else "reveal.title")
+						),
 						FontFace = Theme.Fonts.Display,
 						TextSize = if mythic then Theme.TextSize.Title + 6 else Theme.TextSize.Title,
 						TextColor3 = accentText,

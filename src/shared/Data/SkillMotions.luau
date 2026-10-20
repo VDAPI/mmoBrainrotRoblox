@@ -272,16 +272,13 @@ motions.battleCry = {
 	keys = {
 		k(
 			0.12,
-			merge(
-				crouch(0.35),
-				{
-					rShoulder = { -25, 0, 20 },
-					rElbow = { 40, 0, 0 },
-					lShoulder = { 20, 0, -20 },
-					lElbow = { 80, 0, 0 },
-					waist = { -18, 0, 0 },
-				}
-			),
+			merge(crouch(0.35), {
+				rShoulder = { -25, 0, 20 },
+				rElbow = { 40, 0, 0 },
+				lShoulder = { 20, 0, -20 },
+				lElbow = { 80, 0, 0 },
+				waist = { -18, 0, 0 },
+			}),
 			"out"
 		), -- walka-wk: the breath drawn in, the weapon low
 		k(0.25, ROAR, "out"),
@@ -518,17 +515,14 @@ motions.lastBastion = {
 	keys = {
 		k(
 			0.07,
-			merge(
-				STAND,
-				{
-					lShoulder = { 60, 10, -10 },
-					lElbow = { 60, 0, 0 },
-					rShoulder = { 40, 0, 20 },
-					rElbow = { 50, 0, 0 },
-					waist = { 6, 0, 0 },
-					root = { 4, 0, 0, 0.15 },
-				}
-			),
+			merge(STAND, {
+				lShoulder = { 60, 10, -10 },
+				lElbow = { 60, 0, 0 },
+				rShoulder = { 40, 0, 20 },
+				rElbow = { 50, 0, 0 },
+				waist = { 6, 0, 0 },
+				root = { 4, 0, 0, 0.15 },
+			}),
 			"out"
 		), -- walka-wk: a rise before dropping into the guard
 		k(
@@ -2322,16 +2316,13 @@ motions.heal = {
 	keys = {
 		k(
 			0.1,
-			merge(
-				crouch(0.2),
-				{
-					lShoulder = { 40, -30, 0 },
-					lElbow = { 110, 0, 0 },
-					rShoulder = { 40, 40, 0 },
-					rElbow = { 100, 0, 0 },
-					waist = { -6, -8, 0 },
-				}
-			),
+			merge(crouch(0.2), {
+				lShoulder = { 40, -30, 0 },
+				lElbow = { 110, 0, 0 },
+				rShoulder = { 40, 40, 0 },
+				rElbow = { 100, 0, 0 },
+				waist = { -6, -8, 0 },
+			}),
 			"out"
 		), -- walka-wk: the hand gathers the light at the chest
 		k(
@@ -2367,16 +2358,13 @@ motions.renew = {
 	keys = {
 		k(
 			0.08,
-			merge(
-				crouch(0.3),
-				{
-					rShoulder = { 20, 25, 0 },
-					rElbow = { 70, 0, 0 },
-					lShoulder = { 20, -25, 0 },
-					lElbow = { 70, 0, 0 },
-					waist = { -14, 0, 0 },
-				}
-			),
+			merge(crouch(0.3), {
+				rShoulder = { 20, 25, 0 },
+				rElbow = { 70, 0, 0 },
+				lShoulder = { 20, -25, 0 },
+				lElbow = { 70, 0, 0 },
+				waist = { -14, 0, 0 },
+			}),
 			"out"
 		), -- walka-wk: a dip before the lift
 		k(0.18, {
@@ -2393,17 +2381,13 @@ motions.renew = {
 			lElbow = { 30, 0, 0 },
 			waist = { 8, 0, 0 },
 		}, "inOut"),
-		k(
-			0.55,
-			{
-				rShoulder = { 128, 25, 0 },
-				rElbow = { 20, 0, 0 },
-				lShoulder = { 128, -25, 0 },
-				lElbow = { 20, 0, 0 },
-				waist = { 12, 0, 0 },
-			},
-			"out"
-		), -- walka-wk: the pour runs on
+		k(0.55, {
+			rShoulder = { 128, 25, 0 },
+			rElbow = { 20, 0, 0 },
+			lShoulder = { 128, -25, 0 },
+			lElbow = { 20, 0, 0 },
+			waist = { 12, 0, 0 },
+		}, "out"), -- walka-wk: the pour runs on
 	},
 	recover = 0.3,
 	hit = 0.35,
@@ -2482,17 +2466,13 @@ motions.purify = {
 			lElbow = { 10, 0, 0 },
 			waist = { 10, 0, 0 },
 		}, "out"),
-		k(
-			0.42,
-			{
-				rShoulder = { 70, -10, 98 },
-				rElbow = { 6, 0, 0 },
-				lShoulder = { 70, 10, -98 },
-				lElbow = { 6, 0, 0 },
-				waist = { 16, 0, 0 },
-			},
-			"out"
-		), -- walka-wk: the arms fly on
+		k(0.42, {
+			rShoulder = { 70, -10, 98 },
+			rElbow = { 6, 0, 0 },
+			lShoulder = { 70, 10, -98 },
+			lElbow = { 6, 0, 0 },
+			waist = { 16, 0, 0 },
+		}, "out"), -- walka-wk: the arms fly on
 	},
 	recover = 0.3,
 	hit = 0.3,
@@ -2503,16 +2483,13 @@ motions.auraOfEndurance = {
 	keys = {
 		k(
 			0.14,
-			merge(
-				crouch(0.3),
-				{
-					rShoulder = { 25, 30, 0 },
-					rElbow = { 60, 0, 0 },
-					lShoulder = { 25, -30, 0 },
-					lElbow = { 60, 0, 0 },
-					waist = { -10, 0, 0 },
-				}
-			),
+			merge(crouch(0.3), {
+				rShoulder = { 25, 30, 0 },
+				rElbow = { 60, 0, 0 },
+				lShoulder = { 25, -30, 0 },
+				lElbow = { 60, 0, 0 },
+				waist = { -10, 0, 0 },
+			}),
 			"out"
 		), -- walka-wk: a breath in before the arms rise
 		k(
@@ -2570,18 +2547,14 @@ motions.resurrection = {
 -- Shield of Faith: the mace upright, the left palm pushed forward.
 motions.shieldOfFaith = {
 	keys = {
-		k(
-			0.1,
-			{
-				rShoulder = { 60, 0, 10 },
-				rElbow = { 95, 0, 0 },
-				lShoulder = { 45, -40, 0 },
-				lElbow = { 115, 0, 0 },
-				lWrist = { 10, 0, 0 },
-				waist = { -4, -18, 0 },
-			},
-			"out"
-		), -- walka-wk: the palm drawn back
+		k(0.1, {
+			rShoulder = { 60, 0, 10 },
+			rElbow = { 95, 0, 0 },
+			lShoulder = { 45, -40, 0 },
+			lElbow = { 115, 0, 0 },
+			lWrist = { 10, 0, 0 },
+			waist = { -4, -18, 0 },
+		}, "out"), -- walka-wk: the palm drawn back
 		k(0.2, {
 			rShoulder = { 70, 0, 10 },
 			rElbow = { 90, 0, 0 },
@@ -2666,16 +2639,13 @@ motions.divineIntervention = {
 	keys = {
 		k(
 			0.2,
-			merge(
-				crouch(0.6),
-				{
-					rShoulder = { 30, 50, 0 },
-					rElbow = { 100, 0, 0 },
-					lShoulder = { 30, -50, 0 },
-					lElbow = { 100, 0, 0 },
-					waist = { -18, 0, 0 },
-				}
-			),
+			merge(crouch(0.6), {
+				rShoulder = { 30, 50, 0 },
+				rElbow = { 100, 0, 0 },
+				lShoulder = { 30, -50, 0 },
+				lElbow = { 100, 0, 0 },
+				waist = { -18, 0, 0 },
+			}),
 			"out"
 		), -- walka-wk: gathered low before the rise
 		k(
@@ -2789,16 +2759,13 @@ motions.fortuneDice = {
 		),
 		k(
 			0.42,
-			merge(
-				lunge(0.2),
-				{
-					rShoulder = { 128, 0, 12 },
-					rElbow = { 5, 0, 0 },
-					rWrist = { 30, 0, 0 },
-					lShoulder = { 15, 0, -15 },
-					waist = { -2, 14, 0 },
-				}
-			),
+			merge(lunge(0.2), {
+				rShoulder = { 128, 0, 12 },
+				rElbow = { 5, 0, 0 },
+				rWrist = { 30, 0, 0 },
+				lShoulder = { 15, 0, -15 },
+				waist = { -2, 14, 0 },
+			}),
 			"out"
 		), -- walka-wk: the throw follows through
 	},
@@ -2820,17 +2787,13 @@ motions.wheelOfFortune = {
 -- Brand of Light (S70): hands crossed at the chest like Purify, then the left palm thrust at the enemy.
 motions.brandOfLight = {
 	keys = {
-		k(
-			0.06,
-			{
-				rShoulder = { 30, 30, 0 },
-				rElbow = { 60, 0, 0 },
-				lShoulder = { 30, -30, 0 },
-				lElbow = { 60, 0, 0 },
-				waist = { -10, 0, 0 },
-			},
-			"out"
-		), -- walka-wk: the arms drawn in
+		k(0.06, {
+			rShoulder = { 30, 30, 0 },
+			rElbow = { 60, 0, 0 },
+			lShoulder = { 30, -30, 0 },
+			lElbow = { 60, 0, 0 },
+			waist = { -10, 0, 0 },
+		}, "out"), -- walka-wk: the arms drawn in
 		k(0.15, {
 			rShoulder = { 70, 60, 0 },
 			rElbow = { 110, 0, 0 },
@@ -2846,18 +2809,14 @@ motions.brandOfLight = {
 			rElbow = { 100, 0, 0 },
 			waist = { -6, 10, 0 },
 		}, "out"),
-		k(
-			0.36,
-			{
-				lShoulder = { 96, 4, -5 },
-				lElbow = { 0, 0, 0 },
-				lWrist = { -58, 0, 0 },
-				rShoulder = { 44, 40, 0 },
-				rElbow = { 100, 0, 0 },
-				waist = { -8, 14, 0 },
-			},
-			"out"
-		), -- walka-wk: the palm presses on
+		k(0.36, {
+			lShoulder = { 96, 4, -5 },
+			lElbow = { 0, 0, 0 },
+			lWrist = { -58, 0, 0 },
+			rShoulder = { 44, 40, 0 },
+			rElbow = { 100, 0, 0 },
+			waist = { -8, 14, 0 },
+		}, "out"), -- walka-wk: the palm presses on
 	},
 	recover = 0.3,
 	hit = 0.25,
