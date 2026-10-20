@@ -84,6 +84,7 @@ return {
 
 	-- Errors (server answers carry these keys)
 	["error.badRequest"] = "Nieprawidłowe żądanie.",
+	["combat.levelLock"] = "Masz o {gap}+ poziomów za dużo na tego przeciwnika: zostaw go graczom jego poziomu.",
 	["error.busy"] = "Poczekaj, poprzednia akcja jeszcze trwa.",
 	["error.confirmMismatch"] = "Wpisana nazwa się nie zgadza.",
 	["error.internal"] = "Coś poszło nie tak. Spróbuj ponownie.",

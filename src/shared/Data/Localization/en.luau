@@ -83,6 +83,7 @@ return {
 	["toast.enterWorld"] = "Welcome to Vaelthorn, {name}!",
 
 	-- Errors (server answers carry these keys)
+	["combat.levelLock"] = "You are {gap}+ levels too high for this foe: leave it to the players of its level.",
 	["error.badRequest"] = "Invalid request.",
 	["error.busy"] = "Please wait, the previous action is still in progress.",
 	["error.confirmMismatch"] = "The name you typed does not match.",
