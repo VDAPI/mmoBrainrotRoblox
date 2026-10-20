@@ -108,6 +108,18 @@ function MonsterService.Near(position: Vector3, radius: number): { Monster.Monst
 	return out
 end
 
+-- S157: the level caps (capLevel) of the living monsters fighting `player` (the player on their threat list).
+function MonsterService.FightCaps(player: Player): { number }
+	local caps: { number } = {}
+	for _, monster in monsters do
+		local cap = monster.capLevel
+		if cap ~= nil and monster.threat[player] ~= nil and monster:IsAlive() then
+			table.insert(caps, cap)
+		end
+	end
+	return caps
+end
+
 -- S122: the living members of the monster's spawner group (S19: they fight together), or the monster alone.
 function MonsterService.GroupOf(monster: Monster.Monster): { Monster.Monster }
 	local spawner = spawnerOf[monster]

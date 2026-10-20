@@ -235,7 +235,10 @@ function Context.alliesInCircle(player: Player, center: Vector3, radius: number)
 		local entity = Entity.GetPlayerEntity(member)
 		local p = entity and Entity.Position(entity)
 		if p and flat(p - center).Magnitude <= radius and not services.Resource.IsDead(member) then
-			table.insert(list, member)
+			-- S157: no heals, shields or buffs on an ally fighting a monster that locks the caster out
+			if not services.Combat.SupportLocked(player, member) then
+				table.insert(list, member)
+			end
 		end
 	end
 	return list
@@ -939,6 +942,10 @@ function Context.new(
 			if amount <= 0 or duration <= 0 then
 				return
 			end
+			-- S157: no shield on an ally fighting a monster that locks the caster out
+			if entity.kind == "player" and entity.player and services.Combat.SupportLocked(player, entity.player) then
+				return
+			end
 			-- healPower and the healCrit roll on a player bearer; PvP x0.7 comes in StatusEffectService.Apply (S61)
 			local mul = if entity.kind == "player" and entity.player
 				then Context.healFactor(player, entity.player, true)
@@ -975,6 +982,15 @@ function Context.new(
 			end
 		end,
 		applyEffect = function(entity: any, effect: SkillData.SkillEffect, opts: EffectOptions?)
+			-- S157: no buff on an ally fighting a monster that locks the caster out (enemies: Combat.OverCap via isEnemy)
+			if entity and entity.kind == "player" and entity.player and entity.player ~= player then
+				if
+					not services.Pvp.CanAttack(player, entity.player)
+					and services.Combat.SupportLocked(player, entity.player)
+				then
+					return
+				end
+			end
 			local scale = if opts and opts.scale then opts.scale else 1
 			local durationMul = if opts and opts.durationMul then opts.durationMul else 1
 			local duration = Skills.scaled(skill, effect.duration, rank) * durationMul

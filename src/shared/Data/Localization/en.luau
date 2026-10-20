@@ -84,6 +84,7 @@ return {
 
 	-- Errors (server answers carry these keys)
 	["combat.levelLock"] = "You are {gap}+ levels too high for this foe: leave it to the players of its level.",
+	["combat.supportLock"] = "You cannot support an ally fighting a foe you are {gap}+ levels too high for.",
 	["error.badRequest"] = "Invalid request.",
 	["error.busy"] = "Please wait, the previous action is still in progress.",
 	["error.confirmMismatch"] = "The name you typed does not match.",

@@ -71,6 +71,16 @@ T.describe("S157 LevelLock on the monster (capLevel)", function()
 		T.expect(#LevelLock.filter(targets, 30 + gap - 1, capOf)).toBe(4)
 	end)
 
+	T.it("no support from above: a locked healer may not help an ally fighting that monster", function()
+		local elite40 = LevelLock.maxLevel(40)
+		local elite60 = LevelLock.maxLevel(60)
+		T.expect(LevelLock.supportLocked(40 + gap - 1, { elite40 })).toBe(false)
+		T.expect(LevelLock.supportLocked(40 + gap, { elite40 })).toBe(true)
+		T.expect(LevelLock.supportLocked(40 + gap, { elite60 })).toBe(false)
+		T.expect(LevelLock.supportLocked(40 + gap, { elite60, elite40 })).toBe(true) -- any locked fight is enough
+		T.expect(LevelLock.supportLocked(100, {})).toBe(false) -- out of combat or only free monsters
+	end)
+
 	T.it("the dungeon gate refuses a member gap or more levels above the boss", function()
 		T.expect(LevelLock.bossEntry(60 + gap - 1, 60)).toBeNil()
 		T.expect(LevelLock.bossEntry(60 + gap, 60)).toBe("dungeon.reason.overLevel")

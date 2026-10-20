@@ -64,6 +64,17 @@ function LevelLock.filter<T>(targets: { T }, playerLevel: number, capOf: (T) -> 
 	return out
 end
 
+-- S157 (no "support from above"): whether a character of `healerLevel` may not heal, shield or buff an ally who is
+-- fighting monsters with these caps (the capLevel of every living monster with the ally on its threat list).
+function LevelLock.supportLocked(healerLevel: number, fightCaps: { number }): boolean
+	for _, cap in fightCaps do
+		if LevelLock.over(healerLevel, cap) then
+			return true
+		end
+	end
+	return false
+end
+
 -- S157: why a character of `playerLevel` cannot enter the dungeon of a boss of `bossLevel` (nil = may enter).
 function LevelLock.bossEntry(playerLevel: number, bossLevel: number): string?
 	return if LevelLock.over(playerLevel, LevelLock.maxLevel(bossLevel)) then "dungeon.reason.overLevel" else nil

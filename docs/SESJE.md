@@ -13462,6 +13462,11 @@ Pliki: `src/shared/Data/WorldEvents.luau`, `src/shared/Logic/WorldEvents.luau`, 
   („Maksymalny poziom”). Samodzielne Łowy i Płaszcz Przynęty już biorą tylko zwykłe potwory.
 - **Wiki:** `bosses.json` `maxLevel`, `mechanics.json` `levelLockGap`, strona bossa „Maksymalny poziom”, akapit
   „Blokada poziomu” w Walce (PL / EN).
+- **Bez wsparcia z góry** (koordynator, po pierwszym wypchnięciu): `LevelLock.supportLocked`,
+  `MonsterService.FightCaps` (limity żywych potworów z sojusznikiem na liście zagrożenia),
+  `CombatService.SupportLocked` (komunikat `combat.supportLock` co 4 s). Blokuje `ResourceService.Heal` od innego
+  gracza (też leczenie w czasie, przez `SetSupportGuard`), `Context.alliesInCircle` (leczenia, osłony, wzmocnienia
+  i strefy drużyny), tarczę i efekty umiejętności na takim sojuszniku. Brak leczenia = brak wkładu w podsumowaniu walki.
 - **Testy:** `tests/levellock.spec.luau` rozszerzony (rangi z blokadą, +9 / +10, obszar bez zablokowanych celów,
   odmowa wejścia do lochu).
 - **Pliki:** `src/shared/Logic/LevelLock.luau`, `tests/levellock.spec.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
