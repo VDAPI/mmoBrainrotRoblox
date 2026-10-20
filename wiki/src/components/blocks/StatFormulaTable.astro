@@ -19,7 +19,7 @@ args.magPct = n(f.magPerInt * 100);
 args.atkPct = n(f.atkSpeedPerDex * 100);
 // S54: above this level a DEX point gives less crit, speed and dodge (x dexLevel / character level)
 args.dexLevel = n(load("mechanics").dexRatingLevel as number);
-const rows = ["maxHp", "maxMana", "maxEnergy", "physAtk", "magAtk", "critChance", "critDmg", "atkSpeed", "armor", "mres", "dodge", "hpRegen", "hpRegenCombat", "manaRegen", "energyRegen"];
+const rows = ["maxHp", "maxMana", "maxEnergy", "physAtk", "magAtk", "critChance", "critDmg", "atkSpeed", "armor", "mres", "dodge", "hpRegen", "hpRegenCombat", "manaRegen", "energyRegen", "energyRegenCombat"];
 ---
 <table class="vw-table vw-table--plain">
   <caption class="vw-sr">{t(lang, "block.formula.caption")}</caption>

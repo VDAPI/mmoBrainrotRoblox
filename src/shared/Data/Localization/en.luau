@@ -165,6 +165,7 @@ return {
 	["stat.hpRegenCombat"] = "Health regen in combat (per s)",
 	["stat.manaRegen"] = "Mana regen (per s)",
 	["stat.energyRegen"] = "Energy regen (per s)",
+	["stat.energyRegenCombat"] = "Energy regen in combat (per s)", -- S158
 	["stat.costReduce"] = "Skill cost reduction",
 	["stat.manaReserve"] = "Mana reserve", -- S79
 	["stat.moveSpeed"] = "Movement speed",
@@ -186,6 +187,7 @@ return {
 	["breakdown.maxHpPct"] = "Share of max health",
 	["breakdown.maxManaPct"] = "Share of max mana",
 	["breakdown.manaReserve"] = "Mana reserve", -- S79
+	["breakdown.inCombat"] = "Base in combat", -- S158
 	["source.total"] = "Bonuses",
 	["source.gear"] = "Equipment",
 	["source.blessing"] = "Blessing",

@@ -52,6 +52,7 @@ local DEFS: { StatDef } = {
 	-- S79 (ROZWOJ 12.4, 12.5): extra max mana in % points that does not raise mana regeneration (Focus, Deep Reserve)
 	{ id = "manaReserve", group = "resources", format = "pct", decimals = 0, cap = 40 },
 	{ id = "energyRegen", group = "resources", format = "flat", decimals = 1 },
+	{ id = "energyRegenCombat", group = "resources", format = "flat", decimals = 1 }, -- S158
 	{ id = "costReduce", group = "resources", format = "pct", decimals = 1, cap = 20 }, -- S62 (STATY 4)
 	-- Other
 	{ id = "moveSpeed", group = "other", format = "pct", decimals = 0, cap = 30 },
@@ -99,7 +100,12 @@ local Formula = {
 	hpRegenPct = 0.5, -- % of max HP per second out of combat
 	hpRegenCombatPct = 0.1, -- % of max HP per second in combat
 	manaRegenPct = 0.5,
-	energyRegenBase = 8,
+	-- S158 (owner 2026-10-20: slower regen so potions matter): 8 -> 4 per second out of combat; in combat
+	-- (Config.CombatTimeout after the last damage) the energy base regenerates x energyRegenCombatMul (gear and path
+	-- bonuses count in full, Logic/StatCalc). Mana keeps its rate in combat: 0.5 % of the pool a second is already
+	-- 2-8x slower than energy relative to the pool (Mage T-SK4 2-3 by design, ROZWOJ 12.7).
+	energyRegenBase = 4,
+	energyRegenCombatMul = 0.6,
 	walkSpeed = 16,
 	-- Used until a weapon is equipped (S04).
 	unarmed = { dmg = 4, mdmg = 3, speed = 1.0, ranged = false },

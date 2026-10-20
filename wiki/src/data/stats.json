@@ -1,5 +1,5 @@
 {
-  "formula": {"armorPerStr":0.5,"armorPerVit":1,"atkSpeedPerDex":0.002,"critBase":5,"critDmgBase":150,"critPerDex":0.05,"dodgePerDex":0.03,"energyBase":100,"energyPerLevel":1,"energyRegenBase":8,"hpBase":80,"hpPerLevel":20,"hpPerVit":12,"hpRegenCombatPct":0.1,"hpRegenPct":0.5,"magPerInt":0.025,"manaBase":40,"manaPerInt":8,"manaPerLevel":6,"manaRegenPct":0.5,"mresPerInt":0.5,"mresPerVit":0.5,"physPerStat":0.02,"unarmed":{"dmg":4,"mdmg":3,"ranged":false,"speed":1},"walkSpeed":16},
+  "formula": {"armorPerStr":0.5,"armorPerVit":1,"atkSpeedPerDex":0.002,"critBase":5,"critDmgBase":150,"critPerDex":0.05,"dodgePerDex":0.03,"energyBase":100,"energyPerLevel":1,"energyRegenBase":4,"energyRegenCombatMul":0.6,"hpBase":80,"hpPerLevel":20,"hpPerVit":12,"hpRegenCombatPct":0.1,"hpRegenPct":0.5,"magPerInt":0.025,"manaBase":40,"manaPerInt":8,"manaPerLevel":6,"manaRegenPct":0.5,"mresPerInt":0.5,"mresPerVit":0.5,"physPerStat":0.02,"unarmed":{"dmg":4,"mdmg":3,"ranged":false,"speed":1},"walkSpeed":16},
   "groups": [
     {"id":"offense","name":{"en":"Offense","pl":"Ofensywa"}},
     {"id":"defense","name":{"en":"Defense","pl":"Defensywa"}},
@@ -44,11 +44,12 @@
     {"decimals":1,"format":"flat","group":"resources","id":"manaRegen","name":{"en":"Mana regen (per s)","pl":"Regeneracja many (na s)"},"order":28},
     {"cap":40,"decimals":0,"format":"pct","group":"resources","id":"manaReserve","name":{"en":"Mana reserve","pl":"Rezerwa many"},"order":29},
     {"decimals":1,"format":"flat","group":"resources","id":"energyRegen","name":{"en":"Energy regen (per s)","pl":"Regeneracja energii (na s)"},"order":30},
-    {"cap":20,"decimals":1,"format":"pct","group":"resources","id":"costReduce","name":{"en":"Skill cost reduction","pl":"Obniżka kosztu umiejętności"},"order":31},
-    {"cap":30,"decimals":0,"format":"pct","group":"other","id":"moveSpeed","name":{"en":"Movement speed","pl":"Szybkość ruchu"},"order":32},
-    {"decimals":0,"format":"pct","group":"other","id":"expBonus","name":{"en":"Experience bonus","pl":"Bonus do doświadczenia"},"order":33},
-    {"decimals":0,"format":"pct","group":"other","id":"dropBonus","name":{"en":"Drop bonus","pl":"Bonus do dropu"},"order":34},
-    {"decimals":0,"format":"pct","group":"other","id":"goldBonus","name":{"en":"Gold bonus","pl":"Bonus do złota"},"order":35},
-    {"cap":50,"decimals":0,"format":"pct","group":"other","id":"potionDiscount","name":{"en":"Potion discount","pl":"Zniżka na mikstury"},"order":36}
+    {"decimals":1,"format":"flat","group":"resources","id":"energyRegenCombat","name":{"en":"Energy regen in combat (per s)","pl":"Regeneracja energii w walce (na s)"},"order":31},
+    {"cap":20,"decimals":1,"format":"pct","group":"resources","id":"costReduce","name":{"en":"Skill cost reduction","pl":"Obniżka kosztu umiejętności"},"order":32},
+    {"cap":30,"decimals":0,"format":"pct","group":"other","id":"moveSpeed","name":{"en":"Movement speed","pl":"Szybkość ruchu"},"order":33},
+    {"decimals":0,"format":"pct","group":"other","id":"expBonus","name":{"en":"Experience bonus","pl":"Bonus do doświadczenia"},"order":34},
+    {"decimals":0,"format":"pct","group":"other","id":"dropBonus","name":{"en":"Drop bonus","pl":"Bonus do dropu"},"order":35},
+    {"decimals":0,"format":"pct","group":"other","id":"goldBonus","name":{"en":"Gold bonus","pl":"Bonus do złota"},"order":36},
+    {"cap":50,"decimals":0,"format":"pct","group":"other","id":"potionDiscount","name":{"en":"Potion discount","pl":"Zniżka na mikstury"},"order":37}
   ]
 }

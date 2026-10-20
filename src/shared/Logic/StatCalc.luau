@@ -256,6 +256,15 @@ function StatCalc.compute(input: Input): Result
 		{ { key = "breakdown.maxManaPct", value = maxMana * F.manaRegenPct / 100 } }
 	)
 	finish("energyRegen", F.energyRegenBase, { { key = "breakdown.base", value = F.energyRegenBase } })
+	do
+		-- S158: in combat only the base slows to x energyRegenCombatMul; gear and path bonuses (flat and %) count in
+		-- full, as the in-combat health regen keeps the gear hpRegen bonus.
+		local base = F.energyRegenBase * F.energyRegenCombatMul
+		local parts: { Part } = { { key = "breakdown.inCombat", value = base } }
+		sourceParts("energyRegen", parts, true, true)
+		values.energyRegenCombat = math.max(0, (base + (flat.energyRegen or 0)) * (1 + (pct.energyRegen or 0) / 100))
+		breakdown.energyRegenCombat = parts
+	end
 	finish("costReduce", 0, {})
 
 	-- Other

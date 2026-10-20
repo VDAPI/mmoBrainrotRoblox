@@ -165,6 +165,7 @@ return {
 	["stat.hpRegenCombat"] = "Regeneracja życia w walce (na s)",
 	["stat.manaRegen"] = "Regeneracja many (na s)",
 	["stat.energyRegen"] = "Regeneracja energii (na s)",
+	["stat.energyRegenCombat"] = "Regeneracja energii w walce (na s)", -- S158
 	["stat.costReduce"] = "Obniżka kosztu umiejętności",
 	["stat.manaReserve"] = "Rezerwa many", -- S79
 	["stat.moveSpeed"] = "Szybkość ruchu",
@@ -186,6 +187,7 @@ return {
 	["breakdown.maxHpPct"] = "Część maks. życia",
 	["breakdown.maxManaPct"] = "Część maks. many",
 	["breakdown.manaReserve"] = "Rezerwa many", -- S79
+	["breakdown.inCombat"] = "Bazowo w walce", -- S158
 	["source.total"] = "Bonusy",
 	["source.gear"] = "Ekwipunek",
 	["source.blessing"] = "Błogosławieństwo",

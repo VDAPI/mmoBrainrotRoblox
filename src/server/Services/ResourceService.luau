@@ -327,10 +327,13 @@ local function regenerate(dt: number)
 			continue
 		end
 		local v = result.values
-		local hpRate = if os.clock() - pool.lastCombat < Config.CombatTimeout then v.hpRegenCombat else v.hpRegen
+		local inCombat = os.clock() - pool.lastCombat < Config.CombatTimeout
+		local hpRate = if inCombat then v.hpRegenCombat else v.hpRegen
+		-- S158: the energy base regenerates slower in combat (Data/Stats energyRegenCombatMul); mana keeps its rate
+		local energyRate = if inCombat then v.energyRegenCombat or v.energyRegen else v.energyRegen
 		pool.hp = math.min(v.maxHp, pool.hp + hpRate * dt)
 		pool.mana = math.min(v.maxMana, pool.mana + v.manaRegen * dt)
-		pool.energy = math.min(v.maxEnergy, pool.energy + v.energyRegen * dt)
+		pool.energy = math.min(v.maxEnergy, pool.energy + energyRate * dt)
 		publish(player, pool)
 	end
 end

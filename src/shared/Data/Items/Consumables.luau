@@ -9,7 +9,9 @@ local LIST: { Types.ItemDef } = {}
 
 -- Five qualities: Small, Medium, Large, Great, Mighty.
 local HP_MANA = { 150, 500, 1500, 4000, 10000 }
-local ENERGY = { 30, 60, 100, 150, 250 }
+-- S158: Small energy 30 -> 40 (40 % of the level-1 pool of 101); the others already give 50 % or more of the pool
+-- where their tier starts (Medium ~115, Large ~130, Great 145 at 45, Mighty 170 at 70)
+local ENERGY = { 40, 60, 100, 150, 250 }
 -- S93: the Great potion 900 -> 700 (gold per HP 0.175 between the Large 0.167 and the Mighty 0.30). S94: the Mighty
 -- 3000 -> 1800 (0.18 per HP, just above the Great: chain potions 71-99 as low as the price order allows)
 local PRICES = { 10, 60, 250, 700, 1800 }
