@@ -13181,8 +13181,8 @@ Prośba właściciela: „Żeby ramki itemów uni itp. były grubsze i bardziej 
 - **Jedno miejsce:** nowy `UI/Components/RarityFrame.luau` rysuje ramkę każdej komórki przedmiotu (`ItemSlot`, więc
   plecak, ekwipunek, depozyt, sklep, łup, handel, poczta, kowal), ramkę dymka przedmiotu i tabliczkę łupu na ziemi.
 - **Wygląd:** pełny kolor rzadkości (bez ciemniejszego wariantu na pergaminie), pasek wewnątrz komórki (obrys `Inner`,
-  nie nachodzi na sąsiednie komórki), grubość `frame.thickness + 1` px przy 64 px i skalowana z rozmiarem komórki
-  (0,65 do 1,3; telefon 40 px dalej czytelny), ciemna linia 1 px na krawędzi na pergaminie (żółty Unikatowy widoczny),
+  nie nachodzi na sąsiednie komórki), grubość z `frame.thickness` (podniesionej przez właściciela 20.10, e30f5107)
+  przy 64 px, skalowana z rozmiarem komórki (0,65 do 1,3; telefon 40 px dalej czytelny), ciemna linia 1 px na krawędzi na pergaminie (żółty Unikatowy widoczny),
   delikatne podświetlenie tła kolorem rzadkości od dołu (od Unikatowego), wewnętrzna poświata (od Heroicznego),
   romby w narożnikach (od Unikatowego). Ikona nietknięta: pasek i poświata mieszczą się w marginesie ikony (11%).
 - **Ruch:** Legendarny ma przesuwający się błysk na ramce, Mityczny powoli pulsującą poświatę. Jedno połączenie

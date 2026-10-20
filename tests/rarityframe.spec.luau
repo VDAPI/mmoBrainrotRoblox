@@ -19,7 +19,7 @@ describe("RarityFrame W28", function()
 			expect(RarityFrame.band(Rarities.UNIQUE, size) > RarityFrame.band(Rarities.COMMON, size)).toBe(true)
 		end
 		expect(RarityFrame.band(Rarities.UNIQUE, 64)).toBe(3)
-		expect(RarityFrame.band(Rarities.MYTHIC, 64)).toBe(4)
+		expect(RarityFrame.band(Rarities.MYTHIC, 64)).toBe(4.5)
 	end)
 
 	it("scales with the slot size and keeps a readable minimum on phone slots", function()

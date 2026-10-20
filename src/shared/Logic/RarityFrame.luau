@@ -1,9 +1,10 @@
 --!strict
 -- W28: geometry of an item slot's rarity frame (pure, tested in Lune; drawn by UI/Components/RarityFrame).
 -- The frame lies inside the slot (inner stroke) so thick frames never touch the neighbours in a tight grid; its
--- width grows with the rarity (Data/Rarities `frame.thickness` + 1 px at the 64 px reference slot) and scales with the
--- slot size, so a 40 px phone slot keeps the same proportions as an 84 px smith slot. Everything the frame draws
--- inside the slot (band + inner glow) stays within the icon's margin (ItemIcon is 78 % of the slot).
+-- width grows with the rarity (Data/Rarities `frame.thickness`, raised by the owner 2026-10-20, is the width at the
+-- 64 px reference slot) and scales with the slot size, so a 40 px phone slot keeps the same proportions as an 84 px
+-- smith slot. Everything the frame draws inside the slot (band + inner glow) stays within the icon's margin (ItemIcon
+-- is 78 % of the slot).
 
 local Rarities = require("../Data/Rarities")
 
@@ -27,7 +28,7 @@ end
 -- Width (px, step 0.5) of the coloured band of a rarity's frame in a slot of `size` px.
 function RarityFrame.band(rarity: number?, size: number): number
 	local r = Rarities.get(rarity or Rarities.COMMON)
-	return math.max(1.5, round((r.frame.thickness + 1) * RarityFrame.scale(size)))
+	return math.max(1.5, round(r.frame.thickness * RarityFrame.scale(size)))
 end
 
 -- Width (px) of the inner glow strip measured from the slot edge (band included); never past the icon margin.
