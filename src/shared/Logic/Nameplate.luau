@@ -1,13 +1,15 @@
 --!strict
--- S135: what a player's nameplate shows (NameplateController draws it on iron, DESIGN §23). Pure (Lune test
+-- S135: what a player's nameplate shows (NameplateController draws it, DESIGN §23). Pure (Lune test
 -- tests/nameplate.spec).
 --   Nameplate.view(input, cfg?) -> View
+--   Nameplate.scale(distance, cfg?) -> number   (W28)
 --   Nameplate.monster(input) -> MonsterView   (S136, MonsterPlateController)
 --   Nameplate.npc(input) -> NpcView           (S136, NpcController and CompanionController)
 -- Name colour role by priority: an enemy (PvP on or a red zone) > your own plate > VIP > plain. The title line only
--- with a known title definition (its colour made readable on iron by the client). Beyond cfg.detailDistance (the
--- distance from the camera) only the name row stays: no title, level line or HP bar. Your own plate always has the
--- details.
+-- with a known title definition. Beyond cfg.detailDistance (the distance from the camera) only the name stays: no
+-- title or HP bar. Your own plate always has the title and never an HP bar (the HUD shows it).
+-- W28 (owner: "too visible, too big, with a frame; just the nick and the title"): no plate, no level line, no VIP
+-- badge, no PvP dot; the PvP state is the name colour.
 
 local Config = require("../Config")
 
@@ -27,13 +29,10 @@ export type Input = {
 
 export type View = {
 	nameRole: NameRole,
-	swords: boolean, -- "⚔" in front of the name (enemy)
 	guildTag: string?,
 	showTitle: boolean,
 	titleHex: string?,
-	showLevel: boolean,
 	showHp: boolean,
-	showVip: boolean,
 	clickable: boolean, -- the name opens the player menu (S133)
 }
 
@@ -50,15 +49,28 @@ function Nameplate.view(input: Input, cfg: Cfg?): View
 	local tag = if input.guildTag ~= nil and input.guildTag ~= "" then input.guildTag else nil
 	return {
 		nameRole = role,
-		swords = input.hostile,
 		guildTag = tag,
 		showTitle = near and input.titleHex ~= nil,
 		titleHex = if near then input.titleHex else nil,
-		showLevel = near,
-		showHp = near and input.hurt,
-		showVip = input.vip,
+		showHp = near and input.hurt and not input.isLocal,
 		clickable = not input.isLocal,
 	}
+end
+
+export type ScaleCfg = { scaleNear: number, scaleFar: number, scaleMin: number, scaleStep: number }
+
+-- W28: the size factor of a plate (UIScale) by its distance from the camera: 1 up to scaleNear studs (never larger,
+-- so a close camera never gets a huge name), falling linearly to scaleMin at scaleFar and beyond, rounded to
+-- scaleStep (the controller sets it only on a change). Unknown distance = 1.
+function Nameplate.scale(distance: number?, cfg: ScaleCfg?): number
+	local c: ScaleCfg = cfg or Config.Nameplate :: any
+	if distance == nil or distance ~= distance or distance <= c.scaleNear then
+		return 1
+	end
+	local t = math.clamp((distance - c.scaleNear) / math.max(c.scaleFar - c.scaleNear, 1), 0, 1)
+	local raw = 1 - t * (1 - c.scaleMin)
+	local stepped = math.floor(raw / c.scaleStep + 0.5) * c.scaleStep
+	return math.clamp(stepped, c.scaleMin, 1)
 end
 
 -- S136: monster plates (the same iron style as the players'): the name colour role by variant (an unknown variant reads
