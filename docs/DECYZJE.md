@@ -5937,3 +5937,5 @@
 - **S156** (właściciel 2026-10-20) 10 slotów umiejętności (klawisze 1–9 i 0) zamiast 8 z S137; paski zostają, model balansu dalej rzuca pierwsze 8 (`Skills.MODEL_BAR`), dwa sloty to miejsce na umiejętności sytuacyjne.
 - **S156** Koperta poczty przy minimapie (okrągły przycisk z licznikiem w wolnym rogu nad lupą) zamiast pływającej nad środkiem górnej krawędzi.
 - **S156** Od 2026-10-20 praca idzie na `main` (gałąź `wyglad` scalona, sesja DALEJ nieaktualna).
+- **S156** (właściciel 2026-10-20) Efekt przedmiotu na broni zawsze z puli tej broni albo z umiejętności wspólnych klasy (łuk nigdy z efektem kuszy): `ItemEffects.weaponPool`, losowanie i każde wczytanie (`AccountSchema.migrate` → `migrateItem`, bez nowego kroku schematu) wymieniają efekty innej puli na wylosowane z puli broni (ziarno z uid).
+- **S156** Menu HUD w dwóch rzędach po 7 (nie zasłania paska HP celu / bossa), mapa świata przesuwa się tylko nad narysowaną mapą.
