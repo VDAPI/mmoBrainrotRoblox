@@ -13150,3 +13150,38 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/server/Admin/Character.luau`, `src/client/Controllers/{LoginRewardController,ReturningController}.luau`,
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
+
+### W28: Smoczy Sklep, błąd „Nieprawidłowe żądanie”, układ okna, zakupy w Studio, odrodzenie za walutę (właściciel 2026-10-20)
+
+- **Przyczyna błędu:** okno potwierdzenia zakupu (`UI/PremiumConfirm`) wysyłało `PremiumBuy(klucz, nil)`. `Net` liczy
+  argumenty przez `select("#")`, więc serwer widział 2 argumenty przy definicji `{ "string" }` i odrzucał wywołanie w
+  `ArgCheck` jako `error.badRequest`, zanim doszło do `PremiumShopService`. Dotyczyło każdego przedmiotu za Smoczą
+  Walutę (zwoje, plecaki, eliksiry, Płaszcz Wabienia, Auto Mikstury, Auto Polowanie). Kosmetyki (2 argumenty) i
+  zakupy Robux działały.
+- **Poprawka:** sama poprawka serwera jest w `7fed5891` (`ArgCheck` pomija nile na końcu, limit zapytań czeka i
+  ponawia). Tu: nowy `Logic/ShopPayload` (wywołania sklepu bez nilów na końcu, `productIdOf` wspólny z
+  `MonetizationService`), używany przez `PremiumConfirm` i `Cards.invoke`.
+- **Test regresji:** `tests/shoppayload.spec.luau`: każdy wpis sklepu, kosmetyk na sprzedaż, paczka, przepustka,
+  subskrypcja i paczka startowa przechodzi `ArgCheck` z `Net/Definitions` i trafia w gałąź serwera; w Studio każda włączona oferta Robux ma stan „kup”.
+- **Studio:** zakupy Robux z id `0` były już symulowane w Studio; dopisany przycisk „+1000 ◆ (Studio)” w nagłówku sklepu
+  (tylko `RunService:IsStudio()`, przez `AdminRun shards`, serwer i tak wpuszcza tylko admina). `docs/SKLEP-ID.md`
+  (z `tools/shop_report.luau`): instrukcja krok po kroku dla Creator Hub, kolumna „Ikona” (plik z folderu Graphics),
+  sekcja 1a o testach w Studio; bez długich myślników w tabelach. Wpis w `docs/JAK-DODAC.md`.
+- **Układ okna:** karta sklepu (`Cards.card`) to wiersz w `UIListLayout` (obrazek | kolumna tekstu | przyciski),
+  rośnie z opisem (bez ucinania i nachodzenia), minimalna wysokość 76, obrys z tokenów, plakietka premii jako pigułka;
+  VIP ma złoty obrys przez `highlight` (wcześniej drugi `UIStroke`). Oferta tygodnia: części w pionowej liście (cena
+  wcześniej wchodziła pod „Przymierz”), wysokość liczona z części. Nagłówek: saldo w pigułce, przycisk Studio i
+  „Doładuj” w jednym wierszu z prawej, tytuł dostaje resztę. Treść z marginesami na obrys i pasek przewijania. Wiersz
+  kosmetyku węższy (110 + 134).
+- **Odrodzenie (właściciel: „Odkup niech będzie za walutę, tanio”):** `Config.RespawnNowCost` 10 → 5, produkt Robux
+  `respawn` usunięty (`Data/Products`, `MonetizationService`, `DeathService`), płatność w jednym kroku
+  (`PlayerStateService.Update`), odmowa `death.error.noShards`. Ekran śmierci: „Odródź teraz (5 ◆)” z ikoną waluty,
+  przy braku waluty komunikat i „Doładuj Smoczą Walutę” (sklep na zakładce waluty). Szybki Powrót bez zmian.
+- **Bez przeglądu w Studio** (brak MCP w tej sesji): układ sprawdzony w kodzie dla 1920×1080, 1366×768 (okno
+  900×640 w wirtualnych px) i telefonu 844×390 (okno pełnoekranowe ok. 997×461).
+- **Pliki:** `src/shared/Logic/{ShopPayload,UiArtKeys}.luau`,
+  `src/shared/Data/Products.luau`, `src/shared/Config.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{MonetizationService,DeathService}.luau`, `src/client/UI/PremiumConfirm.luau`,
+  `src/client/UI/Screens/PremiumShop/{init,Cards,Cosmetics,Passes}.luau`, `src/client/UI/Screens/Hud/{init,DeathScreen}.luau`,
+  `tests/shoppayload.spec.luau` (nowy), `tests/{premium,paywall,cosmetics2}.spec.luau`, `tools/shop_report.luau`,
+  `docs/{SKLEP-ID,JAK-DODAC,DECYZJE,DESIGN,SESJE}.md`.

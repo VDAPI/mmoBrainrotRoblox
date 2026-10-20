@@ -399,7 +399,8 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 				`shardPacks.{pack.key}`
 			)
 		end
-		fieldsWithin(Products.respawn :: any, { key = true, productId = true, robux = true }, "respawn")
+		-- W28: no Robux respawn product any more (the death screen skip costs Dragon Shards)
+		T.expect((Products :: any).respawn).toBeNil()
 	end)
 
 	T.it("6. future subscriptions and starter packs", function()
@@ -446,7 +447,6 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 		scan(Products.shop, "shop")
 		scan(Products.passes, "passes")
 		scan(Products.shardPacks, "shardPacks")
-		scan(Products.respawn, "respawn")
 		scan(Products.mounts, "mounts")
 		scan(subscriptions, "subscriptions")
 		scan(starterPacks, "starterPacks")
@@ -1484,7 +1484,7 @@ end)
 
 T.describe("Paywall S131: products and starter packs (C3)", function()
 	T.it("every product key is unique across Products", function()
-		local seen: { [string]: boolean } = { [Products.respawn.key] = true }
+		local seen: { [string]: boolean } = {}
 		local lists: { { any } } =
 			{ Products.shardPacks, Products.passes, Products.starterPacks, Products.mounts, Products.shop }
 		for _, list in lists do

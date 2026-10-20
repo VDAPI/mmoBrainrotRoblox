@@ -7,11 +7,13 @@
 
 local fs = require("@lune/fs")
 local process = require("@lune/process")
+local serde = require("@lune/serde")
 
 local Config = require("../src/shared/Config")
 local Locale = require("../src/shared/Util/Locale")
 local Pricing = require("../tests/Pricing")
 local Products = require("../src/shared/Data/Products")
+local UiArt = require("../src/shared/Logic/UiArt")
 
 local OUT = "docs/SKLEP-ID.md"
 
@@ -44,6 +46,21 @@ local function idState(id: number | string, enabled: boolean?): string
 	return "gotowy"
 end
 
+-- W28: the icon for the Creator Hub: the owner's picture behind the shop card (art/ui/ui_art.json `src`, a path in
+-- the Graphics folder); the same picture is in the shop atlas art/ui/ui_shop_0N.png.
+local artCells: { [string]: any } = {}
+if fs.isFile("art/ui/ui_art.json") then
+	local decoded = serde.decode("json", fs.readFile("art/ui/ui_art.json"))
+	artCells = if type(decoded) == "table" and type(decoded.cells) == "table" then decoded.cells else {}
+end
+local function icon(key: string): string
+	local cell = artCells[UiArt.shop(key)]
+	if type(cell) == "table" and type(cell.src) == "string" then
+		return `\`Graphics/{cell.src}\``
+	end
+	return "brak obrazka (512×512 do zrobienia)"
+end
+
 local lines: { string } = {}
 local function add(line: string?)
 	table.insert(lines, line or "")
@@ -56,61 +73,92 @@ add("> Odśwież: `lune run tools/shop_report.luau`; sprawdzenie: `lune run tool
 add('> Plik nigdy nie trafia na wiki. Nie zawiera prawdziwych id: dopóki w `Data/Products` jest `0` / `""`,')
 add("> gra na żywym serwerze pokazuje „Wkrótce”, a w Studio zakup jest symulowany.")
 add()
-add("## 1. Co zrobić w Creator Hub")
+add("## 1. Co zrobić w Creator Hub (krok po kroku)")
 add()
-add("1. Otwórz https://create.roblox.com → Creations → gra Vaelthorn → **Monetization**.")
+add("Raz na początek:")
+add()
+add("1. Opublikuj grę (Studio: File → Publish to Roblox), jeśli jeszcze nie jest opublikowana.")
+add("2. Otwórz https://create.roblox.com → Creations → gra Vaelthorn → **Monetization** (menu po lewej).")
+add()
+add("**Przepustki (Game Pass)**, każdy wiersz „Game Pass” z tabeli w punkcie 2:")
+add()
+add("1. Monetization → **Passes** → „Create a Pass”.")
+add("2. Ikona: plik z kolumny „Ikona” (folder Graphics; kwadrat, Roblox przytnie do koła), nazwa z kolumny")
+add("   „Nazwa (PL)”, opis z kolumny „Co daje”. Zapisz („Create Pass”).")
 add(
-	"2. **Developer Products** (paczki Smoczej Waluty, natychmiastowe odrodzenie, paczki startowe, wierzchowiec premium):"
+	"3. Otwórz nową przepustkę → **Sales** → włącz „Item for Sale”, wpisz cenę z kolumny „Proponowana cena”, zapisz."
 )
+add("4. Skopiuj id: menu ⋯ przy przepustce → „Copy Asset ID” (albo liczba w adresie strony).")
+add("5. Wklej id w `src/shared/Data/Products.luau` w miejsce z kolumny „Gdzie wkleić id” (np. `passId = 0` →")
+add("   `passId = 123456789` w wierszu z tym kluczem).")
+add()
+add("**Produkty (Developer Product)**, każdy wiersz „Developer Product”:")
+add()
+add("1. Monetization → **Developer Products** → „Create a Developer Product”.")
+add("2. Ikona z kolumny „Ikona”, nazwa, opis, cena z kolumny „Proponowana cena”. Zapisz.")
 add(
-	"   „Create a Developer Product”, nazwa i opis po polsku albo angielsku, cena z kolumny „Proponowana cena”, ikona."
+	"3. Id: menu ⋯ przy produkcie → „Copy Asset ID”. Wklej w `productId` w miejscu z kolumny „Gdzie wkleić id”."
 )
-add("   Id produktu (liczba) jest na liście produktów („Copy Asset ID” w menu ⋯).")
-add(
-	"3. **Passes** (przepustki): „Create a Pass”, ikona, potem na stronie przepustki włącz sprzedaż i ustaw cenę."
-)
-add("   Id przepustki (liczba) jest w adresie strony przepustki albo w menu ⋯ („Copy Asset ID”).")
-add("4. **Subscriptions** (VIP): „Create Subscription”, opis korzyści jak w oknie VIP, cena **z progów**")
-add("   Roblox (nie dowolna liczba: wybierz próg najbliższy propozycji). Id subskrypcji ma postać `EXP-...`.")
+add()
+add("**Subskrypcja VIP** (wiersz „Subscription”):")
+add()
+add("1. Monetization → **Subscriptions** → „Create Subscription”; opis korzyści jak w oknie VIP w grze.")
+add("2. Cena tylko z progów Roblox: wybierz próg najbliższy propozycji. Ikona z kolumny „Ikona”.")
+add('3. Id ma postać `EXP-...`: wklej jako tekst w `subscriptionId = ""` (w cudzysłowie).')
 add(
 	"   Nazwy zakładek wg dokumentacji Roblox znanej w sesji S131 (2026-10); jeśli się różnią, szukaj „Subscriptions”."
 )
-add("5. Ikony: obrazki właściciela według `docs/GRAFIKA.md` (`sklep/pass_<klucz>.png`, `sklep/shards_<n>.png`);")
-add("   bez obrazka gra rysuje znak.")
+add()
+add("Na koniec:")
+add()
+add("1. `scripts/check` (albo `bash scripts/check.sh`) i `lune run tools/shop_report.luau`: kolumna „Stan” pokaże")
+add("   „gotowy” przy każdym wklejonym id.")
 add(
-	"6. Wklej id w `src/shared/Data/Products.luau` w miejscu z kolumny „Gdzie wkleić id”, uruchom `scripts/check` i"
+	"2. Commit, w Studio Rojo sync, File → Publish to Roblox. Od tej chwili na żywym serwerze zamiast „Wkrótce”"
 )
-add("   `lune run tools/shop_report.luau` (stan zmieni się na „gotowy”), commit, publikacja miejsca.")
+add("   jest przycisk z ceną i prawdziwe okno zakupu Roblox.")
+add("3. Zakupu za prawdziwe Robux nie trzeba robić do testu: w Studio wszystko działa jako zakup testowy (punkt 1a).")
+add()
+add("## 1a. Testy zakupów w Studio")
+add()
+add('- W Studio (Play) przyciski Robux nigdy nie pokazują „Wkrótce”: id `0` / `""` daje zakup symulowany bez')
+add(
+	"  płacenia (`MonetizationService`, tylko `RunService:IsStudio()`); na żywym serwerze id `0` jest zawsze odmawiane."
+)
+add("- Paczki waluty dodają odłamki od razu; przepustki działają od razu (Auto-łup podnosi worki, Skarbiec,")
+add("  Kieszenie, miejsca na postać, Garderoba+); VIP z subskrypcji włącza się na tę sesję.")
+add(
+	"- Przepustki i VIP z symulacji trzymają się do końca sesji Play (nie są zapisywane), tak jak `/pass <klucz> on`"
+)
+add("  i `/vip on`. Na stałe w profilu: `/premium grant <klucz>`, `/vip grant`.")
+add(
+	"- Smocze Odłamki do testów: przycisk „+1000 ◆ (Studio)” w nagłówku Smoczego Sklepu (widoczny tylko w Studio)"
+)
+add("  albo `/shards <ile>` i `/setshards <ile>` (panel F2, zakładka ekonomii).")
 add()
 add("## 2. Produkty, przepustki i subskrypcja")
 add()
-add("| Klucz | Nazwa (PL) | Rodzaj | Proponowana cena | Co daje | Gdzie wkleić id | Stan |")
-add("|---|---|---|---|---|---|---|")
+add("| Klucz | Nazwa (PL) | Rodzaj | Proponowana cena | Co daje | Ikona | Gdzie wkleić id | Stan |")
+add("|---|---|---|---|---|---|---|---|")
 for i, pack in Products.shardPacks do
 	add(
-		`| \`{pack.key}\` | {num(pack.shards)} Smoczej Waluty | Developer Product | {num(pack.robux)} R$ | Smocza Waluta na konto | \`SHARD_PACKS[{i}].productId\` | {idState(
-			pack.productId
-		)} |`
+		`| \`{pack.key}\` | {num(pack.shards)} Smoczej Waluty | Developer Product | {num(pack.robux)} R$ | Smocza Waluta na konto | {icon(
+			pack.key
+		)} | \`SHARD_PACKS[{i}].productId\` | {idState(pack.productId)} |`
 	)
 end
-local respawn = Products.respawn
-add(
-	`| \`{respawn.key}\` | Natychmiastowe odrodzenie | Developer Product | {num(respawn.robux)} R$ | Odrodzenie bez czekania (ekran śmierci) | \`RESPAWN_PRODUCT.productId\` | {idState(
-		respawn.productId
-	)} |`
-)
 for i, pass in Products.passes do
 	add(
 		`| \`{pass.key}\` | {pl(`premium.pass.{pass.key}`)} | Game Pass | {num(pass.robux)} R$ | {pl(
 			`premium.pass.{pass.key}.desc`
-		)} | \`PASSES[{i}].passId\` | {idState(pass.passId, pass.enabled)} |`
+		)} | {icon(pass.key)} | \`PASSES[{i}].passId\` | {idState(pass.passId, pass.enabled)} |`
 	)
 end
 for i, sub in Products.subscriptions do
 	add(
 		`| \`{sub.key}\` (subskrypcja) | {pl(`premium.sub.{sub.key}`)} | Subscription | ok. {num(
 			Pricing.PROPOSED.vipSubscription
-		)} R$ / mies. (próg Roblox) | {pl(`premium.sub.{sub.key}.desc`)} | \`SUBSCRIPTIONS[{i}].subscriptionId\` | {idState(
+		)} R$ / mies. (próg Roblox) | {pl(`premium.sub.{sub.key}.desc`)} | {icon(sub.key)} | \`SUBSCRIPTIONS[{i}].subscriptionId\` | {idState(
 			sub.subscriptionId,
 			sub.enabled
 		)} |`
@@ -120,14 +168,14 @@ for i, pack in Products.starterPacks do
 	add(
 		`| \`{pack.key}\` | {pl(`premium.pack.{pack.key}`)} | Developer Product (raz na konto) | {num(pack.robux)} R$ | {pl(
 			`premium.pack.{pack.key}.desc`
-		)} | \`STARTER_PACKS[{i}].productId\` | {idState(pack.productId)} |`
+		)} | {icon(pack.key)} | \`STARTER_PACKS[{i}].productId\` | {idState(pack.productId)} |`
 	)
 end
 for i, mount in Products.mounts do
 	add(
 		`| \`{mount.key}\` | {pl(`mount.{mount.mount}.name`)} | Developer Product | {if mount.robux > 0
 			then `{num(mount.robux)} R$`
-			else "do decyzji"} | Wierzchowiec premium (szybkość jak każdy wierzchowiec) | \`MOUNTS[{i}].productId\` | {idState(
+			else "do decyzji"} | Wierzchowiec premium (szybkość jak każdy wierzchowiec) | {icon(mount.key)} | \`MOUNTS[{i}].productId\` | {idState(
 			mount.productId,
 			mount.enabled
 		)} |`
@@ -137,9 +185,15 @@ add()
 add("Ceny za Smoczą Walutę (sklep, garderoba) są w grze (`Data/Products.shop`, `Data/Cosmetics`); w Creator Hub nic")
 add("się dla nich nie ustawia.")
 add(
-	`Przepustka sezonu (\`{Products.seasonPass.key}\`, S152) to ścieżka premium kupowana raz na sezon za {num(Products.seasonPass.price)}`
+	`Przepustka sezonu (\`{Products.seasonPass.key}\`, S152) to ścieżka premium kupowana raz na sezon za {num(
+		Products.seasonPass.price
+	)}`
 )
 add("Smoczej Waluty (`Data/Products.seasonPass`): bez własnego produktu Robux, w Creator Hub nic do utworzenia.")
+add(
+	`Natychmiastowe odrodzenie na ekranie śmierci kosztuje {num(Config.RespawnNowCost)} Smoczej Waluty (\`Config.RespawnNowCost\`, W28):`
+)
+add("bez produktu Robux, w Creator Hub nic do utworzenia (stary produkt `respawn` za 15 R$ usunięty).")
 add()
 add("## 3. Wyłączone do decyzji właściciela")
 add()
@@ -192,9 +246,9 @@ add("| Wpis | Sekcja | Cena | Za sztukę | R$ (najtaniej) | R$ (najdrożej) | Li
 add("|---|---|---|---|---|---|---|")
 for _, row in Pricing.shopTable() do
 	add(
-		`| \`{row.key}\` | {row.cat} | {num(row.so)} | {if row.perUnit then num(row.perUnit) else "—"} | {num(
+		`| \`{row.key}\` | {row.cat} | {num(row.so)} | {if row.perUnit then num(row.perUnit) else "-"} | {num(
 			row.robuxCheap
-		)} | {num(row.robuxDear)} | {row.limit or "—"} |`
+		)} | {num(row.robuxDear)} | {row.limit or "-"} |`
 	)
 end
 add()

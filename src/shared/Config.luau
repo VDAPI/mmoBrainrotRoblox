@@ -233,7 +233,7 @@ local Config = {
 	RespawnBase = 5,
 	RespawnPerLevel = 0.3,
 	FastRespawnMultiplier = 0.5, -- "Fast Return" gamepass
-	RespawnNowCost = 10, -- Dragon Shards
+	RespawnNowCost = 5, -- Dragon Shards (W28, owner: cheap, only for shards; the Robux respawn product is gone)
 	-- VIP (DESIGN-17 §2, S121): comfort and looks only, never EXP, gold, drops or stats (tests/paywall.spec).
 	-- MonetizationService.HasVip = an active VIP subscription or the "vip" pass ("VIP forever").
 	Vip = {
