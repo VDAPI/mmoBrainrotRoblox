@@ -672,7 +672,10 @@ function Structures.lamps(city: any, ground: Ground): { Build }
 		bp:light(2.1, hgt - 1.4, 0, "#FFB860", LAMP_RANGE, LAMP_BRIGHTNESS, "lamp")
 		local rot = bp.rng:float(0, 360)
 		local sx, sz = nearestStreet(city, l.x, l.z)
-		if sx and sz and (sx - l.x) ^ 2 + (sz - l.z) ^ 2 > 0.25 then
+		if l.rot ~= nil then
+			-- W28: the placement (Logic/TownLamps) already turned the arm: over the road, a square or a gate's way in
+			rot = l.rot
+		elseif sx and sz and (sx - l.x) ^ 2 + (sz - l.z) ^ 2 > 0.25 then
 			-- the arm is local +X: turned by `rot` degrees about Y it points (cos, -sin)
 			rot = math.deg(math.atan2(-(sz - l.z), sx - l.x))
 		end

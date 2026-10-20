@@ -170,6 +170,7 @@ const pity = boss
             <dl>
               <div><dt>{t(lang, "boss.room")}</dt><dd>{name(dungeon?.name, lang)} · {t(lang, "levelRangeCap", { min: dungeon?.minLevel ?? boss.level, max: dungeon?.maxLevel ?? boss.level })}</dd></div>
               <div><dt>{t(lang, "boss.required")}</dt><dd>{t(lang, "level", { level: boss.requiredLevel })}</dd></div>
+              <div><dt>{t(lang, "boss.maxLevel")}</dt><dd>{t(lang, "level", { level: boss.maxLevel })} <span class="muted">— {t(lang, "boss.maxLevelText")}</span></dd></div>
               {cave && <div><dt>{t(lang, "boss.gate")}</dt><dd>{placeHref(lang, cave.id) ? <a href={placeHref(lang, cave.id)!}>{name(cave.name, lang)}</a> : name(cave.name, lang)}</dd></div>}
               {stone && <div><dt>{t(lang, "boss.stone")}</dt><dd>{itemHref(lang, stone.id) ? <a href={itemHref(lang, stone.id)!}>{name(stone.name, lang)}</a> : name(stone.name, lang)} <span class="muted">— {t(lang, "boss.stoneText")}</span></dd></div>}
               <div><dt>{t(lang, "boss.daily")}</dt><dd>{t(lang, "boss.dailyText", { n: file.dailyRuns })}</dd></div>

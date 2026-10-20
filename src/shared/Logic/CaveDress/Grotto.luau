@@ -183,12 +183,14 @@ end
 
 local function mouth(env: Env, out: { Build })
 	local r = env.T.rooms[1]
-	-- fangs of icicles over the exit (-211, 0)
-	local f = Kit.build(env, "IcicleFangs", "landmark", Kit.at(env, -214), 0, 90)
-	local top = (Kit.ceil(env, f.at.x, 0) or 20) - f.at.y
+	-- fangs of icicles over the exit; W28: in the exit portal's frame, never down into its arch
+	local f = Kit.atPortal(env, "IcicleFangs", "landmark", `{env.mapId}_exit`, true)
+	local top = (Kit.ceil(env, f.at.x, f.at.z) or 20) - f.at.y
 	for k = -4, 4 do
-		local len = 3 + (4 - math.abs(k)) * 0.8
-		f.bp:add("cyl", len, 1.2, 1.2, k * 2.2, top - len / 2, 0, 0, 0, 90, o(ICE, "detail", { col = false }))
+		local len = math.min(3 + (4 - math.abs(k)) * 0.8, top - 19)
+		if len >= 1 then
+			f.bp:add("cyl", len, 1.2, 1.2, k * 2.2, top - len / 2, 0, 0, 0, 90, o(ICE, "detail", { col = false }))
+		end
 	end
 	table.insert(out, f)
 	-- the trappers' abandoned camp

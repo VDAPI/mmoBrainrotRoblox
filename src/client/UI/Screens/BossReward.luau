@@ -68,6 +68,8 @@ export type Reward = {
 	world: boolean?, -- S149b: the world boss form
 	reason: string?, -- S149b: no reward ("level" | "share" | "claimed")
 	minLevel: number?, -- S149b: the reward level (the "level" reason's text)
+	share: number?, -- S149c: the own share of all contribution points, percent
+	factor: number?, -- S149c: the contribution factor of the Legendary, Mythic and named chances
 }
 
 export type Props = {
@@ -337,17 +339,33 @@ local function BossReward(scope: Scope, props: Props): Instance
 					Theme.Fonts.BodyBold
 				)
 			)
+			-- S149c: the own contribution and the factor of the chances
+			if reward.share and reward.factor then
+				table.insert(
+					worldLines,
+					label(
+						3,
+						Text.T(scope, "worldboss.rewardCard.share", {
+							pct = string.format("%.1f", reward.share),
+							f = string.format("%.2f", reward.factor),
+						}),
+						Theme.Paper.TextMuted,
+						Theme.TextSize.Small,
+						Theme.Fonts.BodyMedium
+					)
+				)
+			end
 			if reward.gotLeg or reward.gotMyth then
 				table.insert(
 					worldLines,
-					label(3, Text.T(scope, resultKey), resultColor, Theme.TextSize.Body, Theme.Fonts.BodyBold)
+					label(4, Text.T(scope, resultKey), resultColor, Theme.TextSize.Body, Theme.Fonts.BodyBold)
 				)
 			end
 		end
 		table.insert(
 			worldLines,
 			label(
-				4,
+				5,
 				Text.T(scope, "worldboss.rewardCard.next", {
 					time = ClockText.hhmm(WorldBoss.next(Clock.now()).startsAt),
 				}),

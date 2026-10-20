@@ -17,6 +17,8 @@ export type AssetLook = {
 	walkSpeed: number?, -- speed the walk clip was authored for
 	visual: number?, -- W26: the drawn model's size over the hitbox (Data/MonsterAssets; looks only)
 	tint: boolean?, -- apply the region tint
+	color: string?, -- W26 variants (Data/MonsterAssetVariants): "#RRGGBB" multiply colour of the model's textures
+	variant: boolean?, -- W26: the model is another kind's; a missing model falls back to the generator silently
 	anims: { [string]: string }?, -- idle, walk, run, attack1, attack2, cast, hit, death, spawn -> "rbxassetid://..."
 }
 
@@ -567,19 +569,22 @@ local LOOKS: { [string]: any } = {
 	},
 }
 
--- W26: imported models (tinted like the regional variants that inherit them)
+-- W26: imported models (tinted like the regional variants that inherit them). A variant (entry.from) draws its base's
+-- model in its own colour instead of the region tint.
 for id, entry in MonsterAssets do
 	local look = LOOKS[id]
 	if look then
 		look.asset = {
-			model = id,
+			model = entry.from or id,
 			rig = entry.rig,
 			rootSize = entry.rootSize,
 			hipHeight = entry.hipHeight,
 			height = entry.height,
 			walkSpeed = entry.walkSpeed,
 			visual = entry.visual,
-			tint = true,
+			tint = entry.from == nil,
+			color = entry.tint,
+			variant = if entry.from then true else nil,
 		}
 	end
 end
@@ -641,6 +646,12 @@ function MonsterLooks.get(id: string, region: (number | string)?): Look?
 		end
 	end
 	return out :: any
+end
+
+-- W26: the Assets.Monsters model (and clip set) the look of `id` draws, nil for a generated look.
+function MonsterLooks.assetModel(id: string): string?
+	local look = MonsterLooks.get(id)
+	return if look and look.asset then look.asset.model else nil
 end
 
 function MonsterLooks.has(id: string): boolean

@@ -14,6 +14,7 @@ local Workspace = game:GetService("Workspace")
 
 local BossReward = require(script.Parent.Parent.UI.Screens.BossReward)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
+local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
 local ChannelBar = require(script.Parent.Parent.UI.Components.ChannelBar)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local DungeonWindow = require(script.Parent.Parent.UI.Screens.DungeonWindow)
@@ -23,6 +24,7 @@ local FightView = require(script.Parent.Parent.UI.FightView)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Portals = require(ReplicatedStorage.Shared.Data.Portals)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -271,12 +273,16 @@ local function decorate(instance: Instance)
 	local prompt = Instance.new("ProximityPrompt")
 	Keybinds.bindPrompt(prompt, "interact")
 	prompt.HoldDuration = 0
-	prompt.MaxActivationDistance = 16
+	prompt.MaxActivationDistance = Portals.PROMPT_RANGE -- W28: the server checks from the same door
 	prompt.RequiresLineOfSight = false
 	prompt.Parent = anchor
 	local function refresh()
 		title.Text = Text.now(def.nameKey)
-		sub.Text = Text.now("dungeon.levels", { level = def.level, required = BossScaling.requiredLevel(def.level) })
+		sub.Text = Text.now("dungeon.levels", {
+			level = def.level,
+			required = BossScaling.requiredLevel(def.level),
+			max = LevelLock.maxLevel(def.level), -- S157
+		})
 		prompt.ActionText = Text.now("dungeon.open")
 		prompt.ObjectText = Text.now(def.nameKey)
 	end
@@ -383,6 +389,8 @@ function DungeonController.Start()
 			gotLeg = best == Rarities.LEGENDARY,
 			gotMyth = best >= Rarities.MYTHIC,
 			drop = items,
+			share = tonumber(raw.share), -- S149c
+			factor = tonumber(raw.f),
 		})
 	end)
 	Net.On("BossAnnounce", function(key: string, args: { [string]: any }?)

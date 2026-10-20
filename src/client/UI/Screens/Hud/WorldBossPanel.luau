@@ -4,7 +4,9 @@
 -- name, the time to the start, then the HP bar, the phase and the time to its leave, the channel to break (the shared
 -- Components/ChannelBar of the dungeon boss bar), the own share ("Share 12 %") and whether the reward is due (✓ or the
 -- reason: level / share / claimed), "Guide" while outside the circle; after the fight "Slain" / "Gone" for the
--- marker's linger. On any other map only during the warning: one line "{boss} in 7:42 · {map}" with "Guide".
+-- marker's linger. On any other map from the first warning to the end of the fight (S149c): one line "{boss} in 7:42 ·
+-- {place}", then "{boss} fights, 1:52:31 left · {place}" (Logic/WorldBoss.lineOf) with "Guide"; a tap on the line opens
+-- the world map at the barrow with its card (props.OpenMap).
 -- A tap on the header folds the panel to one line (kept for the session). PC: the right column over the quest
 -- tracker (the S101 world event panel stands under it: the boss comes first); touch: the left column under the
 -- portrait like the world event panel (never over the skill buttons). Sounds: ui.worldboss.spawn when the boss
@@ -41,6 +43,8 @@ export type Props = {
 	-- Set to the panel's height plus a gap while it shows (both devices): the world event panel stands under it.
 	Height: Fusion.Value<number>?,
 	Sfx: ((key: string) -> boolean)?,
+	-- S149c: opens the world map centred on the barrow with its card (the compact line's tap)
+	OpenMap: (() -> ())?,
 }
 
 local WIDTH_PC = 280
@@ -236,9 +240,11 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 		end
 		if use(mode) == "line" then
 			local map = Maps.get(b.map)
-			return Text.get(use, "hud.worldboss.line", {
+			local key, seconds = WorldBoss.lineOf(b, use(now))
+			return Text.get(use, key or "hud.worldboss.line", {
 				boss = use(bossName),
-				time = Time.format(Time.remaining(tonumber(b.startsAt) or 0, use(now))),
+				time = Time.format(seconds or 0),
+				place = Text.get(use, WorldBoss.spot().nameKey),
 				map = if map then Text.get(use, map.nameKey) else b.map,
 			})
 		end
@@ -356,6 +362,13 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				[OnEvent("Activated")] = function()
+					if Fusion.peek(mode) == "line" then
+						-- S149c: the compact line opens the map at the barrow
+						if props.OpenMap then
+							props.OpenMap()
+						end
+						return
+					end
 					if Fusion.peek(mode) ~= "full" then
 						return
 					end

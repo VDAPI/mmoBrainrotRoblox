@@ -106,6 +106,21 @@ function Overlay.new(scope: Scope): Api
 	UiArtState.decorate(quest, UiArt.mapIcon("quest"), { size = 18 })
 	UiArtState.decorate(nav, UiArt.mapIcon("guide"), { size = 16 })
 	-- S101: the world event on this map (warning: faded) and its time to the start / end.
+	-- S134d: the Invasion zone's circle under the marker (radius from the state, `zone` studs)
+	local eventZone = Instance.new("Frame")
+	eventZone.Name = "WorldEventZone"
+	eventZone.AnchorPoint = Vector2.new(0.5, 0.5)
+	eventZone.BackgroundTransparency = 0.8
+	eventZone.BorderSizePixel = 0
+	eventZone.ZIndex = 10
+	eventZone.Visible = false
+	eventZone.Parent = frame
+	local eventZoneCorner = Instance.new("UICorner")
+	eventZoneCorner.CornerRadius = UDim.new(0.5, 0)
+	eventZoneCorner.Parent = eventZone
+	local eventZoneStroke = Instance.new("UIStroke")
+	eventZoneStroke.Thickness = 2
+	eventZoneStroke.Parent = eventZone
 	local eventMarker = label(frame, "⚔", Theme.Brass.Bright, 20, 11)
 	eventMarker.Visible = false
 	local eventTime = label(frame, "", Theme.Iron.Text, 12, 11)
@@ -331,8 +346,20 @@ function Overlay.new(scope: Scope): Api
 				else nil
 			eventMarker.Visible = eventDef ~= nil
 			eventTime.Visible = eventDef ~= nil
+			local zone = if eventDef and type(event) == "table" then tonumber(event.zone) else nil
+			eventZone.Visible = zone ~= nil
 			if eventDef and type(event) == "table" then
 				local p = Canvas.toPixel(cached, event.x, event.z)
+				if zone then
+					local edge = Canvas.toPixel(cached, event.x + zone, event.z)
+					local size = math.max(8, (edge - p).Magnitude * 2)
+					local tint = Theme.tint(eventDef.color)
+					eventZone.Position = UDim2.fromOffset(p.X, p.Y)
+					eventZone.Size = UDim2.fromOffset(size, size)
+					eventZone.BackgroundColor3 = tint
+					eventZoneStroke.Color = tint
+					eventZoneStroke.Transparency = if event.phase == "warn" then 0.5 else 0.1
+				end
 				eventMarker.Position = UDim2.fromOffset(p.X, p.Y)
 				eventMarker.Text = eventDef.glyph
 				eventMarker.TextColor3 = Theme.tint(eventDef.color)

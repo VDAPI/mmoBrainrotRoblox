@@ -4,6 +4,10 @@
 -- key, tint = true). The hitbox numbers are the generator's at LookScale 1, so the fight stays the same; the models
 -- were scaled in Studio to the generator's height (hover plans stand `Anatomy.HOVER` above their root part).
 -- rig "bones": clips from Data/MonsterClips/<id> (client/Anim/BoneClips); "static": no clips yet.
+-- Variants (Data/MonsterAssetVariants) get an entry copied from their base's with `from` (the model and clips to use)
+-- and `tint` (the multiply colour of its textures); a variant whose base has no entry yet keeps the generator.
+
+local MonsterAssetVariants = require("./MonsterAssetVariants")
 
 export type Entry = {
 	rig: "bones" | "static",
@@ -12,6 +16,8 @@ export type Entry = {
 	height: number,
 	walkSpeed: number,
 	visual: number?, -- filled below: the drawn model's size over the hitbox (looks only)
+	from: string?, -- filled below for variants: the base kind whose model and clips this kind uses
+	tint: string?, -- filled below for variants: "#RRGGBB" multiply colour of the base model's textures
 }
 
 local MonsterAssets: { [string]: Entry } = {
@@ -97,6 +103,23 @@ local VISUAL_MIN = 3.4
 local VISUAL_MAX = 2.2
 for _, entry in MonsterAssets do
 	entry.visual = math.clamp(VISUAL_MIN / entry.height, VISUAL, VISUAL_MAX)
+end
+
+-- Variants: the base's numbers (the same model at the variant's own LookScale), its model and clips by `from`.
+for id, variant in MonsterAssetVariants do
+	local base = MonsterAssets[variant.from]
+	if base and not base.from and not MonsterAssets[id] then
+		MonsterAssets[id] = {
+			rig = base.rig,
+			rootSize = base.rootSize,
+			hipHeight = base.hipHeight,
+			height = base.height,
+			walkSpeed = base.walkSpeed,
+			visual = base.visual,
+			from = variant.from,
+			tint = variant.tint,
+		}
+	end
 end
 
 return MonsterAssets

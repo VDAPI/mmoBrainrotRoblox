@@ -3,7 +3,6 @@
 > Dla każdej sesji: co zrobiono, najważniejsze pliki (bez instrukcji testu od fazy gameplayu). Nowe sesje i poprawki dopisuj na końcu.
 > Stan i niedokończone: `docs/PROGRESS.md`; decyzje: `docs/DECYZJE.md`; API silników: `docs/SILNIKI.md`.
 
-
 ### S01: Fundament, dane, wybór postaci
 
 **Zrobione**
@@ -13151,6 +13150,32 @@ brzegu w kolorze klasy (klasa zostaje w kolorze znaku); (3) karty postaci: portr
   `src/client/UI/Screens/Wardrobe.luau`, `tests/{paywall,premium}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,BALANS}.md`, `CLAUDE.md`.
 
+### W28: tabliczka nad głową gracza (znikanie, wygląd, klik)
+
+- **Zgłoszenie właściciela:** nick nad własną głową czasem znika (także po teleportach na inne mapy); tabliczka zbyt
+  widoczna, duża, z ramką; ma zostać sam nick i tytuł, klikalne.
+- **Przyczyna znikania:** BillboardGui trzymał się części `Head` znalezionej przy budowie i zmieniał ją tylko przy
+  `ChildAdded` z nazwą `Head`. Głowa wymieniona (ApplyDescription wyglądu klasy, streaming, podmiana modelu) bez takiego
+  zdarzenia zostawiała Adornee na martwej części i napis znikał na stałe. Do tego zapasowe dołączanie po nazwie modelu
+  w `Workspace.ChildAdded` mogło zabrać tabliczkę żywej postaci drugiemu modelowi o tej samej nazwie, a `byPlayer`
+  zostawał na zniszczonym modelu. Nic potem tabliczki nie odbudowywało.
+- **Naprawa (`NameplateController`):** kotwica (Head, a bez niej HumanoidRootPart wyżej o `rootLift`) sprawdzana co
+  `checkEvery` i przy każdym `ChildAdded` / `ChildRemoved`; co `sweepEvery` (oraz zaraz po CharacterAdded i przy
+  `MapTransition`) każdy gracz z postacią dostaje żywą tabliczkę: brak tabliczki, zniszczony BillboardGui albo
+  zgubiony folder w PlayerGui są budowane od nowa. Model o tej samej nazwie nie zabiera tabliczki żywej postaci,
+  `drop` czyści `byPlayer`. Dotyczy też własnej postaci.
+- **Na bazie poprawki właściciela 837de9c8** (bez tła i ramki, rozmiary 19 / 14, pełny ciemny obrys, szukanie Head
+  w sprawdzaniu odległości): zostawione, rozszerzone jak niżej.
+- **Wygląd:** bez tła, ramki, linii poziomu i klasy, plakietki VIP i kropki PvP. Nick (ciemny obrys, kolor:
+  czerwony przy PvP, złoty własny i VIP, biały pozostali), tag gildii małą czcionką przed nickiem, tytuł mniejszy nad
+  nickiem, ✶ błogosławieństwa za nickiem, cienki pasek HP tylko u rannych innych graczy. Mniejsze rozmiary
+  (`Config.Nameplate`), `UIScale` z odległości kamery (`Nameplate.scale`: 1 do 18 studów, nigdy większe, do 0,7 na 110).
+- **Klik:** nick innego gracza (lewy, prawy przycisk, dotknięcie) otwiera istniejące menu gracza S133
+  (`PartyController.OpenMenu`: profil, drużyna, handel, szept itd.); przycisk ma szerokość samego tekstu, więc nie
+  zasłania potworów. Własny nick nie łapie kliknięć (nie blokuje obrotu kamery na telefonie).
+- **Testy:** `tests/nameplate.spec.luau` (widok bez poziomu i VIP, brak własnego paska HP, `Nameplate.scale`).
+- **Pliki:** `src/client/Controllers/NameplateController.luau`, `src/shared/Logic/Nameplate.luau`,
+  `src/shared/Config.luau`, `tests/nameplate.spec.luau`, `docs/{SESJE,DECYZJE}.md`.
 ### W28: Ristalle (arena PvP w mieście) jako kamienne koloseum
 
 Zgłoszenie właściciela: arena wyglądała jak rozsypany piasek, trawa wrastała w podłogę. Miejsce bez zmian: środek (190, -160),
@@ -13176,3 +13201,340 @@ piasek 80 x 80 (strefa `zone.arena`), trybuny 14, wyjście (190, -88), punkty st
   `src/client/Controllers/DecorController.luau`, `src/server/World/Prefabs.luau`,
   `src/server/World/Layouts/{city,arena_pit}.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
   `tests/towngen.spec.luau`, `docs/SESJE.md`. Bez przeglądu w Studio.
+### W28: grubsze i wyraźniejsze ramki rzadkości przedmiotów
+Prośba właściciela: „Żeby ramki itemów uni itp. były grubsze i bardziej widoczne”.
+- **Jedno miejsce:** nowy `UI/Components/RarityFrame.luau` rysuje ramkę każdej komórki przedmiotu (`ItemSlot`, więc
+  plecak, ekwipunek, depozyt, sklep, łup, handel, poczta, kowal), ramkę dymka przedmiotu i tabliczkę łupu na ziemi.
+- **Wygląd:** pełny kolor rzadkości (bez ciemniejszego wariantu na pergaminie), pasek wewnątrz komórki (obrys `Inner`,
+  nie nachodzi na sąsiednie komórki), grubość z `frame.thickness` (podniesionej przez właściciela 20.10, e30f5107)
+  przy 64 px, skalowana z rozmiarem komórki (0,65 do 1,3; telefon 40 px dalej czytelny), ciemna linia 1 px na krawędzi na pergaminie (żółty Unikatowy widoczny),
+  delikatne podświetlenie tła kolorem rzadkości od dołu (od Unikatowego), wewnętrzna poświata (od Heroicznego),
+  romby w narożnikach (od Unikatowego). Ikona nietknięta: pasek i poświata mieszczą się w marginesie ikony (11%).
+- **Ruch:** Legendarny ma przesuwający się błysk na ramce, Mityczny powoli pulsującą poświatę. Jedno połączenie
+  `RenderStepped` (tylko gdy taka ramka istnieje), ~30 Hz, pomija ramki niewidoczne (ukryte okno, wyłączony ScreenGui).
+  Stary obracający się gradient i poświata na zewnątrz komórki usunięte.
+- **Dymek:** obramowanie 3 px od Unikatowego, gradient dla Legendarnego i Mitycznego. **Łup na ziemi:** nazwa na
+  ciemnej tabliczce z obwódką w kolorze najlepszego przedmiotu (2,5 px od Unikatowego).
+- **Testy:** nowy `tests/rarityframe.spec.luau` (grubość rośnie z rzadkością, skala, minimum, poświata w marginesie
+  ikony, romby i tło od Unikatowego). Brak przeglądu w Studio.
+- **Pliki:** `src/shared/Logic/RarityFrame.luau`, `src/client/UI/Components/RarityFrame.luau`,
+  `tests/rarityframe.spec.luau` (nowe), `src/client/UI/Components/{ItemSlot,ItemTooltip}.luau`,
+  `src/client/Controllers/LootController.luau`, `docs/SESJE.md`.
+
+### W28: zielone bańki na Łąkach (zgłoszenie właściciela 2026-10-20)
+
+- **Co to było:** gładkie zielone elipsoidy z klocków generatora. Jałowce (`under:juniper`, ok. 440 na Łąkach) nie
+  miały modelu w zestawie, więc zawsze stały jako dwie gładkie kule do 6 studów (Wilcze Wzgórza, wąwóz, goblini);
+  krzak, sadzonka, brzoza i wierzba bez modelu (zapas, gdy model zestawu nie wczyta się) były jedną kulą. Do tego
+  `DecorController`: szablony z `Shape = Ball` i nierównym rozmiarem (mech, kamyki, błoto, grzyby, wełna) Roblox
+  wyrównuje do kuli, więc płaskie poduszki mchu stały jak okrągłe zielone kulki.
+- **Poprawki:** `Data/Kit` wpis `under:juniper` (małe iglaki Yasu `grass_tree_12` / `11`, zieleń sosny). Zapasowe
+  klocki w `MeadowsGen/Nature`: krzak jako kępa 6 brył w czterech zieleniach (ciemna podstawa, jaśniejszy wierzch),
+  czasem jagody albo drobne kwiaty; jałowiec jako stożek 4 pięter, czubek, boczny pęd i granatowe jagody; sadzonka z
+  koroną z trzech brył; dąb 3, brzoza 2 i wierzba 3 dodatkowe bryły korony. `DecorController`: kula o nierównym
+  rozmiarze to Block z `SpecialMesh` Sphere (jak `BlueprintBuild`). `KitAssets.place`: przyciemnia też samą siatkę
+  liści, więc korona bez wczytanej tekstury ma kolor odcienia, a nie jasną plamę.
+- **Testy:** `tests/meadows.spec.luau` „Meadows foliage (W28)”: żadnej samotnej zielonej kuli od 2,5 studa (każdy
+  liściasty rekwizyt to co najmniej 3 bryły) i model zestawu dla każdego slotu drzewa / podszytu z liśćmi na Łąkach.
+- **Pliki:** `src/shared/Logic/MeadowsGen/Nature.luau`, `src/shared/Data/Kit.luau`, `src/shared/Util/KitAssets.luau`,
+  `src/client/Controllers/DecorController.luau`, `tests/meadows.spec.luau`, `docs/SESJE.md`.
+- Bez przeglądu w Studio (brak MCP); modele `grass_tree_11` / `12` są już w miejscu (paczka Yasu).
+
+
+### W28: szybkie klikanie bez „Nieprawidłowe żądanie”
+- **Przyczyna:** `Net.Handle` odpowiadał `error.badRequest` także na pełny kubełek limitu (remote'y z `rate` 0.5–2,
+  np. `SetPvp`, `AutoGrind`, `LureToggle`, `MailRefresh`, `ArenaSpectate`, pozwalają na 2–4 wywołania naraz). Do tego
+  drugie kliknięcie w tę samą akcję szło do serwera, gdy pierwsze już zmieniło slot (`UseItem`, `DestroyItem`,
+  `ToggleLock`, `MoveItem`, `EquipItem` na pustym slocie, `UnequipItem` już zdjętego, `SwapRings` bez pierścieni).
+- **Serwer:** limit odpowiada `error.rateLimited` (`RequestGuard.rejectCode`), `error.badRequest` tylko przy złych
+  argumentach (log z nazwą remote'a i skrótem argumentów); każde `error.badRequest` zwrócone przez handler też trafia
+  do logu z nazwą remote'a. Pusty slot po poprzednim kliknięciu: nowy cichy klucz `error.stale`; `UnequipItem`
+  pustego slotu i `SwapRings` bez pierścieni zwracają ok, `LureToggle` z tym samym stanem ok bez drugiego toastu.
+  `UnequipItem` z nieznaną nazwą slotu dalej `error.badRequest`.
+- **Klient:** na bazie poprawki 7fed5891 (powtórka po `error.rateLimited`, końcowe nile w `ArgCheck`) `Net.Invoke`
+  dodatkowo przez `Logic/RequestGuard`: to samo wywołanie (remote + argumenty) w locie czeka na
+  pierwsze i dostaje jego wynik, powtórzone w 0,25 s dostaje ostatni wynik (bez drugiego wywołania), przełącznik
+  (`Definitions.toggle`) w 0,2 s z innymi argumentami odpowiada `error.tooFast`; `Definitions.repeatable` (rzucanie,
+  zakupy po jednym, ulepszanie, rozdawanie punktów) wysyła powtórzenie od razu po odpowiedzi. `Toast.push` pomija
+  ciche klucze (`RequestGuard.SILENT`: `error.tooFast`, `error.rateLimited`, `error.stale`), przyciski HUD (Wabik,
+  Auto-polowanie, Auto-mikstury) i `ItemController` nie grają wtedy dźwięku błędu.
+- **Testy:** nowy `tests/requestguard.spec.luau` (kody odrzucenia, ciche klucze w PL i EN, klucze wywołań, werdykty
+  join / reuse / drop / send, flagi w `Definitions`).
+- **Pliki:** `src/shared/Logic/RequestGuard.luau` (nowy), `src/shared/Net/{init,Definitions}.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `src/client/UI/Components/Toast.luau`,
+  `src/client/Controllers/ItemController.luau`, `src/client/UI/Screens/Hud/{LureButton,AutoGrindButton,AutoPotionButton}.luau`,
+  `src/server/Services/{InventoryService,EquipmentService,DepositService,LureService}.luau`,
+  `tests/requestguard.spec.luau`, `docs/{SESJE,DECYZJE}.md`.
+
+### S134d: Inwazja jako strefa (gorące łowisko)
+
+Prośba właściciela z 2026-10-20: „Mało potworów i łatwa ta inwazja i potwory po prostu przybiegają, może niech się
+zrespią w jednym miejscu (obszarze) więcej, żeby to miało sens expowiskowy”. Start na `439661d`, scalone z `40ab759`
+(S156: gęstsze fale na 3 spawnerach najbliżej środka): strefa zastępuje fale, `focus` 3 zostaje jako 3 spawnery
+łowiska najbliżej środka dodane do punktów strefy (bez drugiego systemu).
+
+- **Dane** (`Data/WorldEvents.kinds.invasion`): zamiast fal `zone` (promień 70, 28 punktów w pierścieniu 16–64, nie
+  bliżej 18 od gracza, aggro 25, smycz 30, margines 15, punkty wyżej / niżej o 18 od środka odrzucane), `population`
+  18 + 6 na gracza do 60 (1 / 3 / 5 graczy: 24 / 36 / 48), `refillEvery` 3 s, `refillBatch` 8, `phases` 6 po
+  `phaseEvery` 120 s (`minPhase` 60, `phaseKills` 1), `elitesPerPhase` 0 / 1 / 1 / 2 / 2 / 3, `elite2Phase` 5,
+  `mods` HP × 1,3 i atak × 1,2, `expMul` 1,4; `radius` 160 → 100, `leash` dowódcy 120 → 100.
+- **Logika** (`Logic/WorldEvents`): `population`, `quota`, `refill` (Elity najpierw, partia, budżet), `phaseDone`,
+  `commanderLatest`, `zonePoints` (spirala słonecznika w pierścieniu), `pickSpawn` (punkt z dala od graczy),
+  `hardLeash`, `hasPhaseElite2`, `phaseElite2Kinds`, `progressOf(p, now?)` po fazach (zabicia albo czas); stan
+  `Public` z `zone`, `stage`, `stages`, `stageAt`, `quota`, `got`, `alive`, `size`, `kills` (bez `wave` / `left`).
+- **Serwer**: `WorldEventService` (tylko część Inwazji): punkty strefy na ziemi (promień w dół, bez wody i urwisk,
+  zapas z punktów spawnerów łowiska), uzupełnianie co 3 s, fazy z toastem `event.phase`, Elita II 5. fazy
+  (ogłoszenie `event.elite2`), dowódca w 6.; potwór strefy ma dom w swoim punkcie, `leashRange` 30, nowe
+  `Monster.leashHard` (twarda smycz od domu) i `Monster.expMul` (`CombatService` mnoży EXP zabicia),
+  `stats.aggroRange` 25. Obóz `World/InvasionCamp` (wyrwa z neonu, krąg na ziemi z 40 odcinków, 6 palenisk z
+  fioletowym ogniem, 4 połamane sztandary, dym; bez kolizji i zapytań), usuwany na końcu.
+- **Klient**: krąg strefy na mapie świata (`WorldMap/Overlay`) i minimapie (`Hud/Minimap`), panel: „Faza 3/6 ·
+  potworów 36 · pokonano 52” (`hud.event.phase`), pasek po fazach.
+- **Teksty**: `event.invasion.desc`, `event.start.invasion`, `event.elite2` (zamiast `event.lastWave`), `event.phase`,
+  `hud.event.phase` (zamiast `hud.event.wave`), PL i EN. Wiki: strony `wydarzenia-swiata` / `world-events`, pole
+  `waves` eksportu = liczba faz (kształt danych bez zmian).
+- **Model** (`Balance.invasion`): populacja nie pustoszeje, każdy członek bije po `INVASION_PULL` 3 potwory strefy z
+  `INVASION_WALK` 3 s dojścia, fazy po zabiciu populacji albo czasie, dowódca razem × `BOSS_UPTIME` × (1 −
+  `INVASION_ADDS` 0,2); EXP zabić z pulą drużyny wobec bicia tego łowiska z miksturami i z odpoczynkiem.
+  Nowe wiersze `S134d.invasion.*` w `targetsS134c` (blok „Balance: Invasion (S134c)”), „solo trudne” liczy też
+  ≥ 0,8 limitu; `INVASION_S101` usunięte (raport bez kolumn „przed”). Księga: wpisy z sesją S156 (migawka S154).
+
+Model, 4 łowiska z celów S134c (Gobliński Obóz L15, Osada Kultystów L33, Równiny Salamander L47, Mamucia Tundra L85):
+
+| graczy | populacja | zabici | czas (limit 15 min) | EXP / bicie z miksturami | EXP / bicie z odpoczynkiem |
+|---|---|---|---|---|---|
+| 1 | 24 | 37–50 | 13,7–15,2 min (Osada nie zdąża) | 0,8–0,9 | ok. 3,5–4,7 |
+| 3 | 36 | 121–165 | 11,2–11,7 min (0,75–0,78 limitu) | 1,02–1,11 | 4,2–5,4 |
+| 5 | 48 | 225–245 | 9,0–10,8 min | 1,09–1,20 | ok. 5 |
+
+Przed (S134c, Równiny Salamander L47): fale 13 / 19 / 25, 1 / 3 / 5 graczy 16,3 / 6,9 / 4,8 min. Zabicia i nagroda
+dają 3 graczom 1,3–2,9 poziomu na inwazję (najwięcej na L15, gdzie poziomy są krótkie). Limit 3% nagrody bez zmian.
+
+Dla właściciela: jeśli inwazja leveluje za szybko, dźwignia to `expMul` (1,25 = jak bicie z miksturami) albo
+`phaseEvery`; jeśli solo za trudne, `mods`.
+
+Testy: `worldevents.spec` (nowy blok „Invasion zone (S134d)”: populacja i kwota, uzupełnianie partiami z Elitami
+najpierw i budżetem, koniec fazy, punkty w pierścieniu, wybór punktu z dala od graczy, smycz strefy; postęp HUD po
+fazach; S134c bez fal), `balance.spec` (wiersze S134d asertowane).
+
+Pliki: `src/shared/Data/WorldEvents.luau`, `src/shared/Logic/WorldEvents.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+`src/server/Services/{WorldEvent,Combat}Service.luau`, `src/server/Entities/Monster.luau`,
+`src/server/World/InvasionCamp.luau`, `src/client/UI/Screens/{WorldMap/Overlay,Hud/Minimap,Hud/WorldEventPanel}.luau`,
+`tests/Balance.luau`, `tests/worldevents.spec.luau`, `tools/{balance_reasons,balance_report}.luau`,
+`tools/WikiData/Basics.luau`, wiki `mechanics/{pl/wydarzenia-swiata,en/world-events}.mdx`, `docs/{DESIGN-15,DECYZJE,PROGRESS}.md`.
+
+### W28: portale w ramach, „E” przy bramie bossa (zgłoszenia właściciela 2026-10-20)
+- **Zgłoszenia:** „Krypta Zapomnianych: fioletowe nie jest w ramkach na portal”, „Jak wchodzi się na bossa to buguje
+  się odległość, w której możemy kliknąć E”, „więcej wejść jest popsutych”.
+- **Przyczyna 1 (ramy w jaskiniach):** ramy wokół wyjść i bram (Krypta: rzeźbiona Brama Zapomnianych, nadproże
+  z czaszek; Nora: łuk z korzeni; Kurhan: dolmen; Kopalnia: obudowa sztolni; Grota: sople; Twierdza: krata; Serce:
+  szpony; Jaskinia Mchów: paszcza gobl.) stały na liczbach wpisanych w planie (`Kit.at(-268)` itd.) z przesunięciem
+  w głąb, a portal z `Data/Portals`; po powiększeniu jaskiń (S134h, ×1,35) rama odjechała od fioletowego pola
+  o 4 do 17 studów (w Krypcie 12). Teraz `CaveDress/Kit.atPortal` stawia ramę w ramce samego portalu (x, z, obrót).
+- **Przyczyna 2 (wejścia na mapach regionów):** otwory wejść mniejsze od łuku portalu (Twierdza 13 x 11, Kopalnia
+  11 x 12, Kuźnia 10 x 13, Grota 14 x 13 z soplami do połowy), kopiec Kurhanu i nasyp Nory przecinały łuk, nadproże
+  Kurhanu wchodziło w łuk, jajo w Legowisku stało w filarze, zasłona wody Jaskini Mchów biegła przez pole, drzwi
+  fasady Krypty zasłaniały pół bramy, a portal stał 6 studów przed nią (przesunięty w bramę, x 748,5, drzwi otwarte).
+- **Przyczyna 3 („E” przy bramie bossa):** podpowiedź wisiała na drzwiach bramy (16 studów), a serwer liczył
+  odległość od punktu lądowania `dungeonEntrance.x - 22`, 40 do 65 studów od bramy: przy bramie „za daleko”.
+  Teraz serwer mierzy od drzwi bramy (część z podpowiedzią), `Data/Portals.PROMPT_RANGE` 12 i `SERVER_RANGE` 20
+  wspólne dla portali i bram; odliczanie drużyny i `NearAnyEntrance` zostają przy 52 studach od tych samych drzwi.
+- **Pole portalu:** `Prefabs.portal` obraca malowany model, gdy stoi bokiem, i dopasowuje fioletowe pole do jego
+  otworu (środek modelu, 62% szerokości, 78% wysokości, nie więcej niż 9,5 x 13,5); pole, filary, nadproże i model
+  w jednej ramce `base`. Wymiary łuku i bramy w `Data/Portals` (`ARCH`, `GATE`, `clearance`).
+- **Test:** `tests/portals.spec.luau` + `tests/PortalClearance.luau`: żaden element wystroju żadnej mapy
+  (`Logic/WorldGen`) nie wchodzi w łuk portalu ani w bramę (test osi rozdzielających), każda rama stoi w ramce
+  swojego portalu, pole mieści się w łuku, podpowiedź i serwer z jednej części i zgodnych zasięgów, lądowania
+  na terenie, po którym da się chodzić. Przed poprawką test wskazywał 7 wejść na mapach regionów.
+- **Pliki:** `src/shared/Data/{Portals,Areas/duskwood}.luau`, `src/shared/Logic/CaveDress/{Kit,Crypt,Den,Barrow,Mine,
+  Grotto,Hold,Heart,Moss,Forge}.luau`, `src/shared/Logic/{DuskwoodGen/{Cliffs,Cult,Thicket},AshenGen/Mouths,
+  FrostpeakGen/Mouths,MeadowsGen/{Kit,Water},WorldGen/{Kit,init}}.luau`, `src/server/World/Prefabs.luau`,
+  `src/server/Services/{DungeonService,TravelService}.luau`, `src/client/Controllers/{WorldController,
+  DungeonController}.luau`, `tests/{portals.spec,PortalClearance}.luau`.
+- `Prefabs.caveMouth` (Łąki: nora, kryjówka): głazy stały w filarach łuku, nadproże 1 stud w jego szczycie; otwór,
+  głazy i nadproże rozsunięte wokół łuku (tylko serwer, poza testem wystroju).
+- Nieobejrzane w Studio: proporcje otworu malowanego modelu `common_portal_02` (dopasowanie pola liczone z jego
+  pudełka).
+
+
+### W28: Smoczy Sklep, błąd „Nieprawidłowe żądanie”, układ okna, zakupy w Studio, odrodzenie za walutę (właściciel 2026-10-20)
+
+- **Przyczyna błędu:** okno potwierdzenia zakupu (`UI/PremiumConfirm`) wysyłało `PremiumBuy(klucz, nil)`. `Net` liczy
+  argumenty przez `select("#")`, więc serwer widział 2 argumenty przy definicji `{ "string" }` i odrzucał wywołanie w
+  `ArgCheck` jako `error.badRequest`, zanim doszło do `PremiumShopService`. Dotyczyło każdego przedmiotu za Smoczą
+  Walutę (zwoje, plecaki, eliksiry, Płaszcz Wabienia, Auto Mikstury, Auto Polowanie). Kosmetyki (2 argumenty) i
+  zakupy Robux działały.
+- **Poprawka:** sama poprawka serwera jest w `7fed5891` (`ArgCheck` pomija nile na końcu, limit zapytań czeka i
+  ponawia). Tu: nowy `Logic/ShopPayload` (wywołania sklepu bez nilów na końcu, `productIdOf` wspólny z
+  `MonetizationService`), używany przez `PremiumConfirm` i `Cards.invoke`.
+- **Test regresji:** `tests/shoppayload.spec.luau`: każdy wpis sklepu, kosmetyk na sprzedaż, paczka, przepustka,
+  subskrypcja i paczka startowa przechodzi `ArgCheck` z `Net/Definitions` i trafia w gałąź serwera; w Studio każda włączona oferta Robux ma stan „kup”.
+- **Studio:** zakupy Robux z id `0` były już symulowane w Studio; dopisany przycisk „+1000 ◆ (Studio)” w nagłówku sklepu
+  (tylko `RunService:IsStudio()`, przez `AdminRun shards`, serwer i tak wpuszcza tylko admina). `docs/SKLEP-ID.md`
+  (z `tools/shop_report.luau`): instrukcja krok po kroku dla Creator Hub, kolumna „Ikona” (plik z folderu Graphics),
+  sekcja 1a o testach w Studio; bez długich myślników w tabelach. Wpis w `docs/JAK-DODAC.md`.
+- **Układ okna:** karta sklepu (`Cards.card`) to wiersz w `UIListLayout` (obrazek | kolumna tekstu | przyciski),
+  rośnie z opisem (bez ucinania i nachodzenia), minimalna wysokość 76, obrys z tokenów, plakietka premii jako pigułka;
+  VIP ma złoty obrys przez `highlight` (wcześniej drugi `UIStroke`). Oferta tygodnia: części w pionowej liście (cena
+  wcześniej wchodziła pod „Przymierz”), wysokość liczona z części. Nagłówek: saldo w pigułce, przycisk Studio i
+  „Doładuj” w jednym wierszu z prawej, tytuł dostaje resztę. Treść z marginesami na obrys i pasek przewijania. Wiersz
+  kosmetyku węższy (110 + 134).
+- **Odrodzenie (właściciel: „Odkup niech będzie za walutę, tanio”):** `Config.RespawnNowCost` 10 → 5, produkt Robux
+  `respawn` usunięty (`Data/Products`, `MonetizationService`, `DeathService`), płatność w jednym kroku
+  (`PlayerStateService.Update`), odmowa `death.error.noShards`. Ekran śmierci: „Odródź teraz (5 ◆)” z ikoną waluty,
+  przy braku waluty komunikat i „Doładuj Smoczą Walutę” (sklep na zakładce waluty). Szybki Powrót bez zmian.
+- **Bez przeglądu w Studio** (brak MCP w tej sesji): układ sprawdzony w kodzie dla 1920×1080, 1366×768 (okno
+  900×640 w wirtualnych px) i telefonu 844×390 (okno pełnoekranowe ok. 997×461).
+- **Pliki:** `src/shared/Logic/{ShopPayload,UiArtKeys}.luau`,
+  `src/shared/Data/Products.luau`, `src/shared/Config.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{MonetizationService,DeathService}.luau`, `src/client/UI/PremiumConfirm.luau`,
+  `src/client/UI/Screens/PremiumShop/{init,Cards,Cosmetics,Passes}.luau`, `src/client/UI/Screens/Hud/{init,DeathScreen}.luau`,
+  `tests/shoppayload.spec.luau` (nowy), `tests/{premium,paywall,cosmetics2}.spec.luau`, `tools/shop_report.luau`,
+  `docs/{SKLEP-ID,JAK-DODAC,DECYZJE,DESIGN,SESJE}.md`.
+
+### W28: strzałka samouczka (GuidePointer)
+- **Zgłoszenie właściciela:** „w samouczku pisze idź za strzałką a nie ma żadnej strzałki”.
+- **Przyczyna:** w świecie nie było żadnej strzałki. Tekst `tutorial.attack.travel` mówił o „strzałce zadania”, a jedyną
+  strzałką był mały znak „⬆” (28 px) w nagłówku tropiciela zadań, w foncie Builder Sans bez tego znaku (pusty albo
+  kwadrat), do tego niewidoczny po zwinięciu tropiciela. Krok `quest` raz włączał ścieżkę `NavController` do kapitana,
+  ale to tylko płaskie złote kwadraciki 1,1 st. przy ziemi, łatwe do przeoczenia i chowane w terenie.
+- **Teraz:** `GuidePointerController` (nowy, klient): złota strzałka unosząca się nad głową i obracająca do celu,
+  płynące szewrony na ziemi od gracza do celu, migający romb z odległością („42 m”) nad celem (zawsze na wierzchu,
+  widać go przez ściany) i strzałka przy krawędzi ekranu, gdy cel jest poza kadrem (za kamerą: na dole). Wszystko
+  liczone co klatkę od aktualnej postaci (bez załączników na postaci), więc przeżywa śmierć, teleport i zmianę mapy;
+  cel na innej mapie prowadzi do portalu na trasie (`MapRoute.nextExit`), NPC poza strumieniowaniem z `Data/Npcs`.
+  Znika po dojściu (`GuidePointer.REACH`) i razem ze wskazówką samouczka (okna, przerywniki, śmierć).
+- **Cele kroków (`Tutorial.guide`):** `quest` kapitan (po przyjęciu zadania: cel zadania), `attack` w mieście cel
+  zadania fabuły (droga na Łąki), na łowisku wybrany cel albo najbliższy żywy potwór (bez potwora: cel zadania);
+  kroki HUD (ruch, plecak, mikstura, umiejętność) bez celu w świecie. Wskazówka kroku podróży stoi w swoim miejscu
+  (`anchorOf` bez tropiciela).
+- **Teksty:** „Idź za złotą strzałką na Łąki…”, krok kapitana też mówi o złotej strzałce (PL i EN), `guide.distance`.
+  Poprawka właściciela z `main` (ścieżka `NavController` na pierwsze łowisko Łąk w kroku podróży) zostaje; bez celu
+  zadania złoty przewodnik prowadzi w to samo miejsce.
+- **Wspólna logika:** `Logic/GuidePointer` (kąt względem kamery, strzałka przy krawędzi, szewrony, zasięg); strzałka w
+  tropicielu zadań liczy kąt tą samą funkcją i rysuje „▲” (znak, który ma font).
+- **Testy:** nowy `tests/guidepointer.spec.luau`, `tests/tutorial.spec.luau` (cele kroków, każdy tekst ze strzałką ma
+  cel w świecie, `anchorOf`).
+- **Pliki:** `src/shared/Logic/GuidePointer.luau`, `src/client/Controllers/GuidePointerController.luau`,
+  `tests/guidepointer.spec.luau` (nowe), `src/shared/Logic/Tutorial.luau`,
+  `src/client/Controllers/TutorialController.luau`, `src/client/UI/Screens/Hud/QuestTracker.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `tests/tutorial.spec.luau`, `docs/SESJE.md`.
+
+### W26: warianty potworów na modelach bazy (iceWolf, snowLeopard, blackBear)
+- `Data/MonsterAssetVariants` (nowy): wariant bierze model Tripo bazy (`from`) i własny kolor (`tint`, mnożnik tekstury):
+  `iceWolf` = `wolf` w lodowym błękicie (`#C4DCF6`), `snowLeopard` = `lynx` w chłodnej biało-szarej (`#D2D6DE`, cętki
+  zostają ciemne), `blackBear` = `brownBear` prawie czarny brąz (`#463C36`). `Data/MonsterAssets` kopiuje wariantowi wpis
+  bazy (hitbox, klipy, `visual`) z polami `from` i `tint`, tylko gdy baza ma wpis (wariant bazy bez modelu zostaje przy
+  generatorze bez błędu; `brownBear` dostał model równolegle, więc `blackBear` już go bierze). Bez łańcuchów.
+- `Data/MonsterLooks`: `asset.model` = baza, `color` = barwa wariantu, bez odcienia regionu; `MonsterLooks.assetModel(id)`.
+  Wcześniej iceWolf i snowLeopard dziedziczyły model bazy przez `inherit`, ale tylko z odcieniem regionu przez
+  `BasePart.Color`, który na teksturze Tripo nic nie zmienia.
+- `MonsterViewController`: przemalowanie `SurfaceAppearance.Color` (jak kolor włosów); teksturowany MeshPart bez
+  SurfaceAppearance dostaje ją z tą samą teksturą, gdy silnik pozwala (inaczej zostaje bez zmian); części bez tekstury
+  mnożą `Color`. Brak modelu bazy w grze: wariant cicho wraca do generatora. Skala wariantu jego własna (`size`, elity
+  na tym samym modelu, jak dotąd); klipy i role kości ze wspólnego szkieletu bazy.
+- Nieobejrzane w Studio.
+- **Pliki:** `src/shared/Data/{MonsterAssetVariants,MonsterAssets,MonsterLooks}.luau`,
+  `src/client/Controllers/MonsterViewController.luau`, `tests/monsterassets.spec.luau` (nowy), `tools/balance_reasons.luau`, `docs/SESJE.md`.
+
+### S157: blokada poziomu na Elity i bossy (zasada Margonem), reszta po S156
+
+- **Zastany stan** (S156, c7ed158f): `Config.LevelLock.gap` 10, `Logic/LevelLock.blocked`, w `CombatService.DealDamage`
+  zero obrażeń i komunikat `combat.levelLock` co 4 s; bez klienta, wejścia do lochu, DoT, zagrożenia i łupu.
+- **Zasada** (bez zmian liczby): postać o 10+ poziomów wyższa od Elity, Elity II, bossa lochu albo jego pomocnika
+  nie może go bić; +9 wolno, +10 nie. Zwykłe potwory, boss świata (z pomocnikami) i potwory wydarzeń świata bez
+  blokady. Leczenie i wzmocnienia sojuszników wolno.
+- **Logika:** `Logic/LevelLock` dostał `applies`, `maxLevel` (poziom + gap - 1), `capOf`, `over`, `filter`,
+  `bossEntry`; `blocked` z S156 zostaje (test sprawdza, że oba dają tę samą granicę).
+- **Serwer:** blokada siedzi na potworze (`Monster.capLevel`, atrybut modelu `CapLevel`, `Monster.SetCap` /
+  `LockedFor`). `MonsterService.SpawnAt` daje ją Elitom i Elitom II (bez atrybutu `WorldEvent`), `DungeonService`
+  bossowi i jego pomocnikom (`/boss spawn` bez blokady). `Monster.TakeDamage` i `AddThreat` nic nie robią dla takiej
+  postaci (DoT, odbicia, Retribution, prowokacja), potwór sam jej nie atakuje (`lookForAggro`).
+  `CombatService.DealDamage` zwraca nil (sprawdzenie S156 zastąpione `overCap`, komunikat `combat.levelLock` zostaje),
+  `ApplyBurn` / `ApplyPoison` odmawiają, atak podstawowy staje z tym samym komunikatem, `ResolveKillCredit` pomija
+  członków drużyny z blokadą (EXP, złoto, łup, zadania). Umiejętności: `cast.error.overLevel` na wybranym celu,
+  `Context.isEnemy` pomija taki cel (obszary, łańcuchy, efekty), łuk żywiołu (`Skills/Elements`) też.
+- **Loch:** `DungeonService.blocker` → `dungeon.reason.overLevel` (lider dostaje odmowę, członek zostaje na zewnątrz
+  z powodem, reszta wchodzi); `info` wysyła `maxLevel`.
+- **Klient:** `TargetFrame` (kłódka, szara nazwa, poziom i pasek HP, „Za wysoki poziom (maks. N)”),
+  `TargetController` (szara obwódka, atak zamienia się w komunikat, Tab / auto cel / oddawanie ciosów pomijają taki
+  cel), `dungeon.levels` z „do {max}” w oknie lochu i na tabliczce bramy, karta lochu na mapie świata
+  („Maksymalny poziom”). Samodzielne Łowy i Płaszcz Przynęty już biorą tylko zwykłe potwory.
+- **Wiki:** `bosses.json` `maxLevel`, `mechanics.json` `levelLockGap`, strona bossa „Maksymalny poziom”, akapit
+  „Blokada poziomu” w Walce (PL / EN).
+- **Bez wsparcia z góry** (koordynator, po pierwszym wypchnięciu): `LevelLock.supportLocked`,
+  `MonsterService.FightCaps` (limity żywych potworów z sojusznikiem na liście zagrożenia),
+  `CombatService.SupportLocked` (komunikat `combat.supportLock` co 4 s). Blokuje `ResourceService.Heal` od innego
+  gracza (też leczenie w czasie, przez `SetSupportGuard`), `Context.alliesInCircle` (leczenia, osłony, wzmocnienia
+  i strefy drużyny), tarczę i efekty umiejętności na takim sojuszniku. Brak leczenia = brak wkładu w podsumowaniu walki.
+- **Testy:** `tests/levellock.spec.luau` rozszerzony (rangi z blokadą, +9 / +10, obszar bez zablokowanych celów,
+  odmowa wejścia do lochu).
+- **Pliki:** `src/shared/Logic/LevelLock.luau`, `tests/levellock.spec.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Entities/Monster.luau`, `src/server/Services/{MonsterService,CombatService,SkillService,DungeonService}.luau`,
+  `src/server/Skills/{Context,Elements}.luau`, `src/client/Controllers/{TargetController,DungeonController}.luau`,
+  `src/client/UI/Screens/{DungeonWindow,Hud/TargetFrame,WorldMap/CreatureCards}.luau`,
+  `tools/WikiData/{Bosses,Basics}.luau`, `wiki/src/{views/BossView.astro,i18n/pl.ts,i18n/en.ts}`,
+  `wiki/src/content/mechanics/{pl/walka,en/combat}.mdx`, `wiki/src/data/*`, `docs/{DESIGN,DECYZJE,SESJE}.md`.
+### S149c: boss świata, wskaźnik w HUD, 10:00 i 22:00 czasu polskiego, przedmioty Hrimvalda, wkład i poczta
+
+Właściciel 2026-10-20: komunikat o bossie ma nie znikać tak szybko, boss dwa razy dziennie (10:00 i 22:00), mocniejsze
+własne przedmioty, nieobecni z wkładem dostają nagrodę pocztą, wkład zwiększa szanse, mityk rzadki i lepszy niż z
+bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszenia na 15 s i limit 2 h zrobiła S156
+(b8c3efbc, 959533b9); ta sesja na tym buduje.
+- **Wskaźnik w HUD:** `WorldBoss.panelOf` daje linię także w czasie walki poza mapą bossa, `WorldBoss.lineOf`:
+  „♛ Hrimvald za mm:ss · Kurhan Praojca”, potem „♛ Hrimvald walczy, zostało h:mm:ss · Kurhan Praojca”
+  (`hud.worldboss.line`, `hud.worldboss.lineActive`); dotknięcie linii otwiera mapę na karcie bossa
+  (`NavTarget.MapFocus`, `QuestController`). Linia czatu z ogłoszeniem już była (`NotificationController`).
+- **Harmonogram:** `Data/WorldBoss.schedule.times` {10:00, 22:00} w strefie `tz` (CET +1, CEST +2 od ostatniej niedzieli
+  marca 01:00 UTC do ostatniej niedzieli października 01:00 UTC), `WorldBoss.utcOffset`, `startsOn`, `timesText`; latem
+  08 / 20 UTC, zimą 09 / 21 UTC (S156 miała stałe 08 / 20 UTC). Karta mapy: „Budzi się codziennie o 10:00, 22:00 czasu
+  polskiego”. Testy: daty po obu stronach zmian czasu (2026-10-24 / 25 / 26, 2027-03-27 / 28), dwa lata godzin 10 i 22
+  na zegarze polskim, bez Krwawego Księżyca (z ciszą i ostrzeżeniami) i bez startu turnieju.
+- **Bez resetu HP:** sprawdzone: `monster.keepHp` (powrót bez leczenia), bossowie się nie regenerują
+  (`Monster.regenerate`), boss odchodzi dopiero po `timeLimit` 7200 s. Furia po 13 min zostaje jak w S156.
+- **Nagroda:** EXP i złoto ×2 (`expKills` 32, `goldKills` 48); przedmiot Heroiczny 60 / Legendarny 34 / Mityczny 6,
+  wagi Legendarnego i Mitycznego × współczynnik wkładu `f = clamp(0,5 + 0,5 · s, 0,5, 2)`, `s` = punkty / (wszystkie
+  punkty / walczący z punktami) (`WorldBoss.factor`, `rarityWeights`). Wkład w % i `f` na karcie nagrody
+  (`worldboss.rewardCard.share`) i w temacie listu (`mail.subject.worldBossShare`, `mail.subject.worldBossAbsent`).
+- **Przedmioty Hrimvalda** (`Data/Items/Uniques`, `reward.named.byClass`): Wojownik Topór Praojca (axe2h) i Korona
+  Szronowego Kurhanu (hełm ciężki), Łowca Łuk Zamieci (longbow) i Płaszcz Białej Grani, Mag Kostur Wiecznej Zimy (staff,
+  zawsze lód) i Szata Lodowego Snu, Kapłan Pastorał Pierwszego Śniegu (holystaff) i Tarcza z Kurhanu. Mityczne, związane,
+  poziom 100, statystyki bazy ×1,40 (1,15 × losowy Mityczny, lochy 1,26), linie ok. 1,1 × Vaelgratha w limicie S88.
+  Szansa 4 % × `f` + 1 % za każdą nagrodzoną walkę bez niego, pewny po 30 (`character.worldBossPity`,
+  `WorldBoss.namedChance`, `rollNamed`); przy równym wkładzie średnio raz na ok. 13 walk. Dodatkowo do zwykłego
+  przedmiotu.
+- **Nieobecni:** kto ma próg wkładu i poziom, a zniknął przed zabiciem (wyszedł, zmienił postać), dostaje pocztą na tę
+  postać przedmiot, przedmiot Hrimvalda (z `f` i pity z chwili walki), materiały i złoto; EXP i pity jadą w paczce
+  (`Mail.Parcel.worldBoss`) i wchodzą przy pierwszym odczycie skrzynki tej postaci (logowanie, zmiana postaci, nadejście
+  listu: `MailService.applyWorldBoss`, `WorldBossService.ApplyPending`, toast `worldboss.pending`). Klucz `once` =
+  id terminu (jedna paczka na konto i termin na wszystkich serwerach); paczka terminu, za który konto dostało już nagrodę
+  gdzie indziej, znika.
+- **Balans:** `Balance.worldBossDrops` liczy przedmiot Hrimvalda (`Balance.worldBossNamedEvery`); cel F3 (Legendarne i
+  Mityczne na godzinę gry ≤ 0,5 Vaelgratha) zielony; księga: `WorldBoss:reward*`, `WorldBoss:schedule*`,
+  `Items/Uniques:[unique_hrimvald_*` (sesja S156 w księdze, bo migawka jest z S154).
+- **Testy:** `worldboss.spec` (harmonogram DST, `lineOf`, współczynnik, tabela rzadkości, szansa i pity, osiem
+  przedmiotów, +15 % nad losowym Mitycznym i ponad przedmiotami bossów lochów w `ItemScore`, część paczki),
+  `data.spec` i `items.spec` (20 przedmiotów nazwanych). Wiki: `wikidump`.
+- **Pliki:** `src/shared/Data/{WorldBoss,Localization/pl,Localization/en,Items/Uniques}.luau`,
+  `src/shared/Logic/{WorldBoss,Mail}.luau`, `src/shared/Types.luau`, `src/server/Services/{WorldBossService,MailService}.luau`,
+  `src/client/Controllers/{QuestController,DungeonController}.luau`, `src/client/UI/Screens/{BossReward,Hud/WorldBossPanel,WorldMap/CreatureCards}.luau`,
+  `tests/{worldboss,data,items,wikidump}.spec.luau`, `tests/Balance.luau`, `tools/{balance_reasons,balance_report}.luau`,
+  `wiki/src/data/*.json`, `docs/{PRZEDMIOTY,DECYZJE,SESJE}.md`.
+### S158: wolniejsza regeneracja energii, mikstury mają sens (zgłoszenie właściciela 2026-10-20)
+- **Energia:** baza 8 → 4 na s poza walką (`Stats.Formula.energyRegenBase`), w walce baza ×0,6 = 2,4 na s
+  (`energyRegenCombatMul`, stan walki z `Config.CombatTimeout` w `ResourceService.regenerate`). Nowa statystyka
+  `energyRegenCombat` (`Logic/StatCalc`, okno postaci, wiki „Wzory”): premie płaskie i procentowe do regeneracji energii
+  z ekwipunku i ścieżek liczą się w walce w pełni. Mana bez zmian (już 2–8× wolniejsza względem puli, T-SK4 Maga 2–3).
+- **Mikstury:** Mała Mikstura Energii 30 → 40 (40% puli na 1. poziomie); większe już dają ≥ 50% puli tam, gdzie się
+  zaczynają, mikstury many bez zmian. Odstępy między miksturami bez zmian.
+- **Model:** `SkillModel.fight` liczy energię w walce i dolewkę z mikstur `ASSUMPTIONS.energyPotionRate` (5,6 na s, czyli
+  to, co zabrała S158), chyba że `potions = false`; cele S91–S147, tabela 1–20 i fixture ścieżek bez zmian (0 różnic).
+  Bez mikstur wojownik i łowca tracą w walce 60 s z jednym celem 25–36% (Furia L20 391 → 280, L100 10089 → 7153;
+  Królobójca L100 13357 → 8961); czasy zabicia w expieniu bez zmian. Klasy wobec siebie bez zmian przy piciu mikstur.
+  Reguła „pij przy < 30% puli” odrzucona: prawie nieograniczona energia, R1 +12…+40%, 77 wierszy poza pasmem (DECYZJE).
+- **Testy:** `statcalc.spec` (4 / 2,4 na s, premie w walce w pełni), `balance.spec` nowy blok `Energy potions matter
+  (S158)` (bez mikstur ≤ 80% obrażeń na 45 i 100), księga `tools/balance_reasons.luau` (wpisy S158).
+- **Pliki:** `src/shared/Data/Stats.luau`, `src/shared/Logic/StatCalc.luau`, `src/server/Services/ResourceService.luau`,
+  `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
+  `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
+  `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.

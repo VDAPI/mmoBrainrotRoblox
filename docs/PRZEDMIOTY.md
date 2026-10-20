@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 2a78d626 (`wiki/src/data/meta.json`).
+> Odcisk danych eeec9910 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1159,6 +1159,14 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Rozłupywacz Grimroka | Grimrok, Wódz Goblinów | 20 | obr. 72, szybkość 1,05 | +{v}% Ataku fizycznego +6%, +{v} Siły +6, Silny przeciw ludziom i plemionom +{v}% +12% |
 | Kieł Wodza | Grimrok, Wódz Goblinów | 20 | Atak magiczny % 5,2, Atak fizyczny % 5,2 | +{v}% Szansy na krytyk +4%, +{v}% Wampiryzmu +2%, +{v} Zręczności +6 |
 | Totem Plemienia | Grimrok, Wódz Goblinów | 20 | Obrona 27,7, hp 83,2, Odporność magiczna 27,7 | +{v} Witalności +6, +{v}% Życia +5%, Odporność na ludzi i plemiona {v}% +8% |
+| Topór Praojca | — | 100 | obr. 535, szybkość 0,8 | +{v}% Ataku fizycznego +12%, +{v} Siły +38, +{v}% Obrażeń krytycznych +44% |
+| Łuk Zamieci | — | 100 | obr. 465, szybkość 0,78 | +{v}% Ataku fizycznego +8%, +{v} Zręczności +29, +{v}% Szansy na krytyk +4% |
+| Pastorał Pierwszego Śniegu | — | 100 | obr. 158, obr. mag. 475, szybkość 0,8 | +{v}% Ataku magicznego +10%, +{v} Intelektu +30, +{v}% mocy leczenia +11% |
+| Korona Szronowego Kurhanu | — | 100 | Obrona 204,4, hp 257,6 | +{v} Witalności +26, +{v} Obrony +110, +{v}% Odporności na lód +16% |
+| Płaszcz Białej Grani | — | 100 | Obrona 242,2, Unik 3,5, hp 357 | +{v} Zręczności +28, +{v}% Życia +7%, +{v}% Odporności na lód +16% |
+| Szata Lodowego Snu | — | 100 | Obrona 142,8, hp 214,2, mana 357, Odporność magiczna 198,8 | +{v} Intelektu +28, +{v} Many +200, +{v}% Odporności na lód +16% |
+| Tarcza z Kurhanu | — | 100 | Obrona 228,2, hp 574 | +{v} Obrony +185, +{v}% Życia +7%, +{v}% Odporności na lód +16% |
+| Kostur Wiecznej Zimy | — | 100 | obr. 0, obr. mag. 465, szybkość 0,85 | +{v}% Ataku magicznego +10%, +{v} Intelektu +32, Przebicie magii {v}% +11% |
 | Łuk Zawodzących Cieni | Morvane, Królowa Krypt | 45 | obr. 152, szybkość 1 | +{v}% Ataku fizycznego +6%, +{v} Zręczności +10, +{v}% szansy na zatrucie +5% |
 | Berło Krypt | Morvane, Królowa Krypt | 45 | obr. 53, obr. mag. 146, szybkość 1 | +{v}% Ataku magicznego +8%, +{v} Intelektu +12, +{v}% mocy leczenia +8% |
 | Całun Królowej | Morvane, Królowa Krypt | 45 | Obrona 59,2, hp 89,5, mana 148,7, Odporność magiczna 81,9 | +{v} Intelektu +14, +{v} Many +120, Odporność na nieumarłych {v}% +10% |

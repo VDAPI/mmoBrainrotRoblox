@@ -12,6 +12,7 @@ local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local ItemTraits = require("../src/shared/Data/ItemTraits")
 local Items = require("../src/shared/Data/Items")
 local LootTables = require("../src/shared/Data/LootTables")
+local WorldBossData = require("../src/shared/Data/WorldBoss")
 local Maps = require("../src/shared/Data/Maps")
 local Rarities = require("../src/shared/Data/Rarities")
 local Sfx = require("../src/shared/Data/Sfx")
@@ -399,8 +400,9 @@ T.describe("Data: Items", function()
 		-- 39 base types (S18: +8 weapons) x 21 tiers + 30 materials + 24 consumables + 9 backpacks + 12 uniques
 		-- + S07: 25 blessings, 4 elixirs, 4 dungeon stones; S32: 3 monster parts; 2026-10-10: 3 premium backpacks;
 		-- S92: 1 monster part (cursed_bone); S122: potion_full; S134d: scroll_hunt
-		-- S134j: reroll_stone (Stone of Transmutation); S156: transmute_scroll (Scroll of Transformation)
-		T.expect(count).toBe(39 * 21 + 30 + 24 + 9 + 12 + 25 + 4 + 4 + 3 + 3 + 1 + 1 + 1 + 1 + 1)
+		-- S134j: reroll_stone (Stone of Transmutation); S156: transmute_scroll (Scroll of Transformation); S149c: 8
+		-- named items of the world boss (20 uniques)
+		T.expect(count).toBe(39 * 21 + 30 + 24 + 9 + 20 + 25 + 4 + 4 + 3 + 3 + 1 + 1 + 1 + 1 + 1)
 	end)
 
 	T.it("class weapon types exist as item bases", function()
@@ -445,7 +447,14 @@ T.describe("Data: Items", function()
 	end)
 
 	T.it("named boss items use known bonuses, are Mythic and belong to a boss table", function()
-		T.expect(#Items.uniques).toBe(12)
+		-- S149c: 12 of the dungeon bosses + 8 of the world boss (Data/WorldBoss.reward.named.byClass)
+		T.expect(#Items.uniques).toBe(20)
+		local worldNamed: { [string]: boolean } = {}
+		for _, list in WorldBossData.reward.named.byClass do
+			for _, id in list do
+				worldNamed[id] = true
+			end
+		end
 		for _, def in Items.uniques do
 			for _, bonus in def.fixedBonuses or {} do
 				if not Bonuses.get(bonus.stat) then
@@ -453,7 +462,11 @@ T.describe("Data: Items", function()
 				end
 			end
 			local boss = LootTables.bosses[def.bossId or ""]
-			if not boss or not table.find(boss.named, def.id) then
+			if def.bossId == WorldBossData.boss then
+				if not worldNamed[def.id] then
+					fail(def.id, "not in the world boss's named list")
+				end
+			elseif not boss or not table.find(boss.named, def.id) then
 				fail(def.id, "not in its boss table")
 			end
 			if def.rarity ~= Rarities.MYTHIC then

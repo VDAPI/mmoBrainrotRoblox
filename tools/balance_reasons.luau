@@ -163,6 +163,7 @@ return {
 		["Data/MapMarks"] = "wygląd",
 		["Data/MonsterLooks"] = "wygląd",
 		["Data/MonsterAssets"] = "wygląd", -- W26: imported monster models (hitbox numbers copy the generator's)
+		["Data/MonsterAssetVariants"] = "wygląd", -- W26: variants drawn with their base's model in their own colour
 		["Data/MonsterClips/*"] = "generowane", -- W26: bone clips sampled from the imported models
 		["Data/WeaponLooks"] = "wygląd",
 		["Data/SkillMotions"] = "wygląd",
@@ -4799,11 +4800,19 @@ return {
 				session = "S134c",
 				why = "80 -> 90 with the bigger waves (owner answer 4a)",
 			},
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: phaseEvery 120 (6 phases over 15 min, the commander at the latest at 600 s)",
+			},
 		},
 		["WorldEvents:kinds.invasion.commanderAt"] = {
 			{
 				session = "S134c",
 				why = "480 -> 630: the commander at the latest after 10.5 min of the 15 (the waves need longer)",
+			},
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: the commander comes with the last phase, at the latest (phases - 1) x phaseEvery = 600 s (Logic/WorldEvents.commanderLatest; S134c 630)",
 			},
 		},
 		["WorldEvents:kinds.invasion.commanderGap"] = {
@@ -4829,6 +4838,10 @@ return {
 				session = "S134c",
 				why = "new: Elites per wave 1 / 1 / 1 / 1 / 2 / 2 (owner answer 4: an Elite in every wave; S101: one in waves 3 and 6), plus one Elite II in the last wave (lastWaveElite2)",
 			},
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: Elites per phase (elitesPerPhase)",
+			},
 		},
 		["WorldEvents:scale.commander*"] = {
 			{
@@ -4846,6 +4859,116 @@ return {
 			{
 				session = "S134c",
 				why = "owner answer 5 (a chance at an Epic = Legendary, the game has no Epic): Unique 60 / Heroic 37 / Legendary 3 (half the boss's base 6 %, an event every hour without a daily limit), never Mythic (S101: 80 / 20)",
+			},
+		},
+		-- S134d invasion zone (owner 2026-10-20, docs/SESJE.md "S134d: Inwazja jako strefa"); session S156 = the ledger's
+		-- numbered session after the S154 snapshot
+		["WorldEvents:kinds.invasion.waves"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: the waves became 6 intensity phases (phases)",
+			},
+		},
+		["WorldEvents:kinds.invasion.minWaveGap"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: minPhase 60",
+			},
+		},
+		["WorldEvents:kinds.invasion.clearShare"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: a phase ends early on phaseKills x the population killed in it",
+			},
+		},
+		["WorldEvents:kinds.invasion.wave.*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): removed: waves of 10 + 3 per player became a live population refilled in place (population)",
+			},
+		},
+		["WorldEvents:kinds.invasion.phases"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: 6 intensity phases (owner: waves as phases over 15 min, each stronger)",
+			},
+		},
+		["WorldEvents:kinds.invasion.phaseEvery"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: a phase lasts at most 120 s (1-3 players reach the commander at 600 s, 5 players at 490-600 s; 3 players end in 0.75-0.78 of 15 min, <= 0.8)",
+			},
+		},
+		["WorldEvents:kinds.invasion.minPhase"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: a phase ends early at the soonest after 60 s (a big party does not rush the commander in 5 min)",
+			},
+		},
+		["WorldEvents:kinds.invasion.phaseKills"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: a phase ends early once the party killed 1 x the population in it (5 players: 87-120 s a phase)",
+			},
+		},
+		["WorldEvents:kinds.invasion.elitesPerPhase*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: live Elites of the population by phase 0 / 1 / 1 / 2 / 2 / 3 (more Elites each phase), refilled first",
+			},
+		},
+		["WorldEvents:kinds.invasion.elite2Phase"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: phase 5 brings one Elite II of the ground (it holds an early end of the phase), phase 6 the commander",
+			},
+		},
+		["WorldEvents:kinds.invasion.population.*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: owner 'many more monsters': live population min(60, 18 + 6 x players in the radius) = 24 / 36 / 48 for 1 / 3 / 5 (S134c waves 13 / 19 / 25), 60 the per-server cap of one event",
+			},
+		},
+		["WorldEvents:kinds.invasion.refillEvery"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: the zone is topped up every 3 s",
+			},
+		},
+		["WorldEvents:kinds.invasion.refillBatch"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: at most 8 monsters a refill (no pop-in of a whole population; technical)",
+			},
+		},
+		["WorldEvents:kinds.invasion.mods.*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: the zone's monsters (not the commander) hp x1.3, atk x1.2 (owner's e.g.): a pull + Elite of the zone 0.04-0.18 of the sustain for 3 players, solo ends on the edge (0.91-1.01 of the limit)",
+			},
+		},
+		["WorldEvents:kinds.invasion.expMul"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: EXP of the zone's kills x1.4 (owner's e.g. x1.25 gave 0.92-1.01 of grinding the same ground with potions, the commander's part kills slower): 3 players 1.02-1.11 x potion grinding, 4.2-5.4 x resting grinding (Balance.targetsS134c S134d rows)",
+			},
+		},
+		["WorldEvents:kinds.invasion.zone.*"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: the zone (owner: spawn in one area, no long runs): radius 70, 28 spread spawn points from 16 to 64 studs, none within 18 of a player, aggro 25, soft leash 30 from the own spot, hard leash to radius + 15 from the centre, points 18 above / below the centre dropped",
+			},
+		},
+		["WorldEvents:kinds.invasion.radius"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): 160 -> 100: participants, heals and the population count within the zone + 30",
+			},
+		},
+		["WorldEvents:kinds.invasion.leash"] = {
+			{
+				session = "S156",
+				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): 120 -> 100: the commander's leash from the centre (the zone + 30)",
 			},
 		},
 		-- S134d: fight back, Auto Potions, Auto Hunt (docs/SESJE.md S134d)
@@ -7070,6 +7193,22 @@ return {
 				session = "S156",
 				why = "owner 2026-10-20: the world boss twice a day (every 12 h from 08:00 UTC = 10:00 and 22:00 Polish summer time) instead of every 3 h",
 			},
+			{
+				session = "S156",
+				why = "S149c (owner 2026-10-20): 10:00 and 22:00 Polish time all year: local `times` {10, 0} / {22, 0} in the zone `tz` (CET +1, CEST +2 by the EU rule; 08 / 20 UTC in summer, 09 / 21 UTC in winter) instead of everyHours / offsetHour / minute; the loot model keeps ~0.67 fights a day for 2 h of play (Balance.S149)",
+			},
+		},
+		["WorldBoss:reward*"] = {
+			{
+				session = "S156",
+				why = "S149c (owner 2026-10-20): EXP and gold x2 (expKills 16 -> 32, goldKills 24 -> 48: one fight ~25 % of a level at 80-99, he comes twice a day); the item Heroic 60 / Legendary 34 / Mythic 6 (was 72 / 24 / 4), the Legendary and Mythic weights times the contribution factor f = clamp(0.5 + 0.5 x own points / (all points / fighters), 0.5, 2) (factor lo 0.5, slope 0.5, hi 2); his own named item on top: chance 4 % x f + 1 % per rewarded fight without one, certain after 30 (named chance 0.04, step 0.01, pityAt 30; one per ~13 fights of an even share). Legendaries + Mythics per hour of play with the named item stay under 0.5 x Vaelgrath's (Balance.targetsS149 loot.*)",
+			},
+		},
+		["Items/Uniques:[unique_hrimvald_*"] = {
+			{
+				session = "S156",
+				why = "S149c (owner 2026-10-20): eight named items of the world boss (two per class: the class weapon and an armour piece or shield), Mythic, bound, level 100, base stats x1.40 (1.15 x a rolled Mythic's 1.22; dungeon named 1.26), lines about 1.1 x Vaelgrath's within the S88 cap (2.5 x a rolled Mythic line); ItemScore >= 1.15 x the mean rolled Mythic of the base and above every dungeon named item of the slot (tests/worldboss.spec)",
+			},
 		},
 		["WorldBoss:antechamber*"] = {
 			{
@@ -7133,6 +7272,54 @@ return {
 				session = "S155",
 				why = "new module: the tutorial reward at level 5 for every character made from S155 on (skipped or not): the title First Steps, 3 Stones of Return and 10 Small Health Potions, all bound; no EXP and no gold, so the pace of levels 1-20 is unchanged (balance1_20 without new entries). The stones are worth about one trip each, the potions one start pack (the arrival quest gives 5, Items.startingPotions 10): comfort, not power",
 			},
+		},
+		["Stats:Formula.energyRegenBase"] = {
+			{
+				session = "S158",
+				why = "owner 2026-10-20: slower regen so potions matter: energy 8 -> 4 per second out of combat (pool 101-200, a refill 25-50 s); with the in-combat x0.6 Warrior / Hunter sustained 60 s without potions -25 to -36 %, with potions -0 to -5 % (SkillModel.fight, potions as PotionService); grind kill times unchanged",
+			},
+		},
+		["Stats:Formula.energyRegenCombatMul"] = {
+			{
+				session = "S158",
+				why = "owner 2026-10-20: slower regen so potions matter: in combat (Config.CombatTimeout) the energy base x0.6 (2.4/s), gear and path energy regen in full; mana keeps its rate (0.5 % of the pool a second is already 2-8x slower than energy, Mage T-SK4 2-3 by design)",
+			},
+		},
+		["Items/Consumables:[potion_energy_1].use.amount"] = {
+			{
+				session = "S158",
+				why = "owner 2026-10-20: slower regen so potions matter: Small energy potion 30 -> 40 (40 % of the level-1 pool 101; the larger tiers already give 50 % or more of the pool where they start)",
+			},
+		},
+		["Stats:byId.energyRegenCombat.decimals"] = {
+			{
+				session = "S158",
+				why = "new derived stat: energy regeneration in combat (Logic/StatCalc, character window), shown after the energy regen",
+			},
+		},
+		["Stats:byId.energyRegenCombat.order"] = {
+			{
+				session = "S158",
+				why = "new derived stat: energy regeneration in combat (Logic/StatCalc, character window), shown after the energy regen",
+			},
+		},
+		["Stats:byId.costReduce.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.moveSpeed.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.expBonus.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.dropBonus.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.goldBonus.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["Stats:byId.potionDiscount.order"] = {
+			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
 		},
 	} :: { [string]: { Reason } },
 }

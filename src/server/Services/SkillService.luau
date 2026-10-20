@@ -846,6 +846,9 @@ local function cast(player: Player, skillId: string, targetId: string?, aim: any
 		if not isEnemy then
 			return false, "cast.error.invalidTarget"
 		end
+		if CombatService.OverCap(player, target) then
+			return false, "cast.error.overLevel" -- S157 (Logic/LevelLock)
+		end
 		local position = EntityService.Position(target)
 		if
 			not position

@@ -8,6 +8,7 @@ local CharacterFactory = require("../src/shared/Logic/CharacterFactory")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
 local Items = require("../src/shared/Data/Items")
 local Keybinds = require("../src/shared/Data/Keybinds")
+local Npcs = require("../src/shared/Data/Npcs")
 local Premium = require("../src/shared/Logic/Premium")
 local Quests = require("../src/shared/Data/Quests")
 local T = require("./Test")
@@ -200,7 +201,7 @@ T.describe("Tutorial: texts", function()
 				local key = Tutorial.text(s, false, true)
 				T.expect(key).toBe(`{s.textKey}.travel`)
 				T.expect({ key, pl[key] ~= nil, en[key] ~= nil }).toEqual({ key, true, true })
-				T.expect(Tutorial.anchorOf(s, true)).toBe("questTracker")
+				T.expect(Tutorial.anchorOf(s, true)).toBe(nil)
 			else
 				T.expect(Tutorial.text(s, true, true)).toBe(`{s.textKey}.touch`)
 				T.expect(Tutorial.anchorOf(s, true)).toBe(s.anchor)
@@ -319,5 +320,38 @@ T.describe("Tutorial: the level reward", function()
 		T.expect(entry ~= nil).toBe(true)
 		T.expect((entry :: any).req).toEqual({ kind = "cosmetic", id = def.id })
 		T.expect({ pl["title.firststeps"] ~= nil, en["title.firststeps"] ~= nil }).toEqual({ true, true })
+	end)
+end)
+
+T.describe("Tutorial: world guide targets (W28)", function()
+	local function guide(id: string, away: boolean?, mainTaken: boolean?): any
+		return Tutorial.guide(Tutorial.STEPS[Tutorial.indexOf[id]], away, mainTaken)
+	end
+	T.it("the quest step leads to the captain, or to the quest once one is taken", function()
+		T.expect(guide("quest")).toEqual({ kind = "npc", id = Tutorial.CAPTAIN })
+		T.expect(guide("quest", false, true)).toEqual({ kind = "quest" })
+		T.expect(Npcs.get(Tutorial.CAPTAIN) ~= nil).toBe(true)
+	end)
+	T.it("the attack step follows the quest from the city and points at a monster on a hunting ground", function()
+		T.expect(guide("attack", true)).toEqual({ kind = "quest" })
+		T.expect(guide("attack", false)).toEqual({ kind = "monster" })
+	end)
+	T.it("HUD steps and no step have no world target", function()
+		for _, id in { "move", "backpack", "potion", "skill", "done" } do
+			T.expect({ id, guide(id, true, true) }).toEqual({ id, nil })
+			T.expect({ id, guide(id) }).toEqual({ id, nil })
+		end
+		T.expect(Tutorial.guide(nil)).toBe(nil)
+	end)
+	T.it("every text that mentions an arrow belongs to a step with a world guide", function()
+		for _, s in Tutorial.STEPS do
+			for _, key in { `{s.textKey}.pc`, `{s.textKey}.touch`, `{s.textKey}.travel` } do
+				local text = pl[key]
+				if text and string.find(string.lower(text), "strzałk") then
+					local away = string.sub(key, -7) == ".travel"
+					T.expect({ key, Tutorial.guide(s, away) ~= nil }).toEqual({ key, true })
+				end
+			end
+		end
 	end)
 end)

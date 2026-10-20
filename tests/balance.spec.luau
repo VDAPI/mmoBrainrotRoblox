@@ -3190,3 +3190,21 @@ T.describe("Achievements (S151)", function()
 		T.expect(Achievements.shardTotal() <= Config.Achievements.shardBudget).toBe(true)
 	end)
 end)
+
+-- S158 (owner 2026-10-20: slower regen so potions matter): an energy fighter without potions loses at least a fifth
+-- of its one-target 60 s damage at 45 and 100 (the targets assume the potion top-up, SkillModel.ASSUMPTIONS).
+T.describe("Energy potions matter (S158)", function()
+	T.it("Warrior and Hunter deal clearly less over 60 s without potions", function()
+		local SkillModel = (require :: any)("./SkillModel")
+		for _, key in { "berserker.fury", "marksman.kingslayer" } do
+			local build = SkillModel.build(key)
+			for _, L in { 45, 100 } do
+				local sp = SkillModel.player(build, L)
+				local one = { B.monster(B.GENERIC, L) }
+				local with = SkillModel.fight(sp, { targets = one }).dps
+				local without = SkillModel.fight(sp, { targets = one, potions = false }).dps
+				T.expect({ key, L, without <= 0.8 * with }).toEqual({ key, L, true })
+			end
+		end
+	end)
+end)

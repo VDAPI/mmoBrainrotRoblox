@@ -150,6 +150,13 @@ SkillModel.ASSUMPTIONS = {
 	enemiesNear = 3, -- EHP: monsters within HOOK_RULES.perEnemy.radius for Front Line (ROZWOJ 10.6)
 	-- S141: the dummies stand at this share of a flying circle's travel (Frozen Orb aimed through the group)
 	orbAim = 0.5,
+	-- S158 (owner 2026-10-20: slower regen so potions matter): energy per second an energy fighter gets from potions in
+	-- every fight without `potions = false`: the regen S158 took away in combat (8 before, Stats energyRegenBase x
+	-- energyRegenCombatMul now), so the S91-S147 targets measure a player who tops the pool up with potions (about one
+	-- Medium potion every 11 s, one Mighty every 45 s; the potion interval allows 25 /s and more). Drinking the best
+	-- potion whenever the pool falls below 30 % gives near-unlimited energy (1.5 s interval up to 20) and moved Warrior /
+	-- Hunter R1 by +12 to +40 % (DECYZJE S158); without potions the same fights lose 25-36 %.
+	energyPotionRate = 8 - Stats.Formula.energyRegenBase * Stats.Formula.energyRegenCombatMul,
 }
 local A = SkillModel.ASSUMPTIONS
 
@@ -2244,7 +2251,7 @@ export type FightOpts = {
 	skills: boolean?, -- false = basic attacks only
 	startPool: number?, -- share of the pool at the start (default 1)
 	unlimited: boolean?, -- costs count in `spent` but never leave the pool (on cooldown, T-SK4)
-	potions: boolean?, -- E4
+	potions: boolean?, -- E4; S158: false also drops the energy fighter's potion top-up (ASSUMPTIONS.energyPotionRate)
 	control: boolean?, -- H1: leaves out the terms FightSim.dps does not count
 	heal: any?, -- F: { tank = Player, team = n }: heal rotation of a Cleric on a boss
 	-- S86 (D3): the monsters hit back (FightSim.hit, misfortune, block, reductions, shields, heals cut to the missing
@@ -5705,8 +5712,11 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 	if o.startCharges and o.startCharges > 0 then
 		giveCharges(state, o.startCharges)
 	end
-	local regen = if sp.resource == "mana" then p0.values.manaRegen or 0 else p0.values.energyRegen or 0
-	state.regen = regen
+	-- S158: a fight is in combat: energy at its in-combat rate (Data/Stats energyRegenCombatMul) plus the potion
+	-- top-up at A.energyPotionRate unless `potions = false` (income of T-SK4 like the regen)
+	local potionTopUp = if sp.resource == "energy" and o.potions ~= false then A.energyPotionRate else 0
+	local regen = if sp.resource == "mana" then p0.values.manaRegen or 0 else p0.values.energyRegenCombat or 0
+	state.regen = regen + potionTopUp
 	local items: { any } = {}
 	if o.skills ~= false then
 		for _, entry in o.rotation or SkillModel.barRotation(sp) do
@@ -5847,8 +5857,8 @@ function SkillModel.fight(sp: any, opts: FightOpts?): FightResult
 			state.hp = math.min(state.maxHp, state.hp + regenHp)
 		end
 		local p = current(state)
-		local r = if sp.resource == "mana" then p.values.manaRegen or 0 else p.values.energyRegen or 0
-		state.gain(r * A.dt)
+		local r = if sp.resource == "mana" then p.values.manaRegen or 0 else p.values.energyRegenCombat or 0
+		state.gain((r + potionTopUp) * A.dt)
 		if o.sample then
 			o.sample(state)
 		end

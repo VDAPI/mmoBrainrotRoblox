@@ -185,6 +185,8 @@ S.file(
 		combat = "data",
 		formula = "data",
 		config = map("number"),
+		-- owner 2026-10-20 / S157: the level lock on Elites, Elites II and dungeon bosses (Config.LevelLock.gap)
+		levelLockGap = "int",
 		zones = map(rec("ZoneInfo", { name = "name", rule = "name", color = "color" })),
 		variants = map(rec("VariantInfo", {
 			["name?"] = "name",
@@ -698,6 +700,7 @@ function Basics.mechanics(ctx: any): any
 		combat = Clean.clean(Combat),
 		formula = Clean.clean(Stats.Formula),
 		config = config,
+		levelLockGap = Config.LevelLock.gap,
 		zones = zones,
 		variants = variants,
 		areaProfiles = profiles,
@@ -728,7 +731,7 @@ function Basics.worldEvents(): any
 			desc = Names.of(def.descKey),
 			glyph = def.glyph,
 			durationMin = def.duration / 60,
-			waves = def.waves,
+			waves = def.phases, -- S134d: the Invasion's intensity phases (the key keeps its S101 name)
 		})
 	end
 	local chestTop = 0

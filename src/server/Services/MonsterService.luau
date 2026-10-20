@@ -19,6 +19,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Combat = require(Shared.Data.Combat)
 local Config = require(Shared.Config)
+local LevelLock = require(Shared.Logic.LevelLock)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Monster = require(script.Parent.Parent.Entities.Monster)
@@ -105,6 +106,18 @@ function MonsterService.Near(position: Vector3, radius: number): { Monster.Monst
 		end
 	end
 	return out
+end
+
+-- S157: the level caps (capLevel) of the living monsters fighting `player` (the player on their threat list).
+function MonsterService.FightCaps(player: Player): { number }
+	local caps: { number } = {}
+	for _, monster in monsters do
+		local cap = monster.capLevel
+		if cap ~= nil and monster.threat[player] ~= nil and monster:IsAlive() then
+			table.insert(caps, cap)
+		end
+	end
+	return caps
 end
 
 -- S122: the living members of the monster's spawner group (S19: they fight together), or the monster alone.
@@ -330,6 +343,11 @@ function MonsterService.SpawnAt(
 		monster.home = spawner.origin
 		monster.levelCap = spawner.data.level.max
 	end
+	-- S157 (Logic/LevelLock): Elites and Elites II are capped, a world event's are not (dungeon bosses: DungeonService)
+	monster:SetCap(LevelLock.capOf({
+		variant = actualVariant,
+		worldEvent = attributes ~= nil and (attributes :: any).WorldEvent ~= nil,
+	}, monster.stats.level))
 	table.insert(monsters, monster)
 	nextTick[monster] = os.clock() + random:NextNumber() * TICK
 	if spawner then

@@ -185,12 +185,23 @@ function ResourceService.Damage(player: Player, amount: number, source: string?,
 	return dealt, amount
 end
 
+-- S157: (healer, ally) -> true when the healer may not support that ally (CombatService.SupportLocked).
+local supportGuard: ((healer: Player, ally: Player) -> boolean)? = nil
+
+function ResourceService.SetSupportGuard(guard: ((healer: Player, ally: Player) -> boolean)?)
+	supportGuard = guard
+end
+
 -- Returns the HP actually restored.
 -- `source` (S60): the player who heals (skills and their effects); nil for potions, regeneration, kill heal and
--- life steal.
+-- life steal. S157: nothing from a healer level-locked out of the ally's fight (heals over time too).
 function ResourceService.Heal(player: Player, amount: number, source: Player?): number
 	local pool = pools[player]
 	if not pool or pool.dead or amount <= 0 or amount ~= amount then
+		return 0
+	end
+	local guard = supportGuard
+	if source and source ~= player and guard and guard(source, player) then
 		return 0
 	end
 	local before = pool.hp
@@ -327,10 +338,13 @@ local function regenerate(dt: number)
 			continue
 		end
 		local v = result.values
-		local hpRate = if os.clock() - pool.lastCombat < Config.CombatTimeout then v.hpRegenCombat else v.hpRegen
+		local inCombat = os.clock() - pool.lastCombat < Config.CombatTimeout
+		local hpRate = if inCombat then v.hpRegenCombat else v.hpRegen
+		-- S158: the energy base regenerates slower in combat (Data/Stats energyRegenCombatMul); mana keeps its rate
+		local energyRate = if inCombat then v.energyRegenCombat or v.energyRegen else v.energyRegen
 		pool.hp = math.min(v.maxHp, pool.hp + hpRate * dt)
 		pool.mana = math.min(v.maxMana, pool.mana + v.manaRegen * dt)
-		pool.energy = math.min(v.maxEnergy, pool.energy + v.energyRegen * dt)
+		pool.energy = math.min(v.maxEnergy, pool.energy + energyRate * dt)
 		publish(player, pool)
 	end
 end

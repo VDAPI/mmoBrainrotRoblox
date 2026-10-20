@@ -5,6 +5,9 @@
 -- on top); 3 fixed lines and (S134g) two fixed skill effects per class that wears it; the bonuses
 -- below are fixed (no rolling; S32: an instance always shows the definition's current bonuses, attack bonuses
 -- are percentages since S32). Bind on pickup.
+-- S149c: the world boss Hrimvald has eight of his own (two per class, Data/WorldBoss.reward.named), stronger than the
+-- dungeon ones: base stats x HRIMVALD_MUL (1.40 = 1.15 x a rolled Mythic's baseMul 1.22; the dungeon ones 1.26) and
+-- lines about 1.1 x Vaelgrath's (one-handed bows: the S88 cap of 2.5 x a rolled Mythic line) (tests/worldboss.spec "named items")
 
 local Bases = require("./Bases")
 local Rarities = require("../Rarities")
@@ -13,6 +16,11 @@ local Types = require("./Types")
 local LIST: { Types.ItemDef } = {}
 
 local UNIQUE_MUL = 1.26
+local HRIMVALD_MUL = 1.40
+
+-- S149c: `opts.mul` replaces UNIQUE_MUL; `opts.elemental` keeps a Mage weapon elemental (the world boss sets the
+-- element of the instance, Data/WorldBoss.reward.named[].el)
+type Opts = { mul: number?, elemental: boolean? }
 
 local function unique(
 	id: string,
@@ -21,8 +29,10 @@ local function unique(
 	level: number,
 	glyph: string,
 	bonuses: { { stat: string, v: number } },
-	fx: ({ string } | { [string]: { string } })?
+	fx: ({ string } | { [string]: { string } })?,
+	opts: Opts?
 )
+	local mul = if opts and opts.mul then opts.mul else UNIQUE_MUL
 	local base = Bases.byType[baseType]
 	assert(base, `Uniques: unknown base {baseType}`)
 	local stats: { [string]: number }? = nil
@@ -30,7 +40,7 @@ local function unique(
 		local raw = base.stats(level)
 		local scaled: { [string]: number } = {}
 		for stat, value in raw do
-			scaled[stat] = math.floor(value * UNIQUE_MUL * 10 + 0.5) / 10
+			scaled[stat] = math.floor(value * mul * 10 + 0.5) / 10
 		end
 		stats = scaled
 	end
@@ -38,8 +48,8 @@ local function unique(
 	if base.weapon then
 		local raw = base.weapon(level)
 		weapon = {
-			dmg = math.floor(raw.dmg * UNIQUE_MUL + 0.5),
-			mdmg = math.floor(raw.mdmg * UNIQUE_MUL + 0.5),
+			dmg = math.floor(raw.dmg * mul + 0.5),
+			mdmg = math.floor(raw.mdmg * mul + 0.5),
 			speed = raw.speed,
 			ranged = raw.ranged,
 			twoHanded = raw.twoHanded,
@@ -57,6 +67,7 @@ local function unique(
 		maxStack = 1,
 		base = stats,
 		weapon = weapon,
+		elemental = if opts and opts.elemental then base.elemental else nil,
 		trait = base.trait, -- S62: named weapons carry their type's trait (STATY 9)
 		nameKey = `item.{id}.name`,
 		descKey = `item.{id}.desc`,
@@ -188,5 +199,56 @@ unique("unique_vaelgrath_eye", "orb", "vaelgrath", 100, "◉", {
 	{ stat = "int", v = 29 },
 	{ stat = "magicPierce", v = 10 },
 }, { "iceShard_shatter", "frostNova_maelstrom" })
+-- S149c: Hrimvald, the Frost Forefather (the world boss, 100): two per class, frost and old stone
+local HRIMVALD: Opts = { mul = HRIMVALD_MUL }
+unique("unique_hrimvald_axe", "axe2h", "hrimvald", 100, "⚒", {
+	{ stat = "physAtk", v = 12 },
+	{ stat = "str", v = 38 },
+	{ stat = "critDmg", v = 44 },
+}, { "cleave_wide", "bladeWhirl_secondwind" }, HRIMVALD)
+unique("unique_hrimvald_helm", "helmet_heavy", "hrimvald", 100, "⛑", {
+	{ stat = "vit", v = 26 },
+	{ stat = "armor", v = 110 },
+	{ stat = "resIce", v = 16 },
+}, {
+	Warrior = { "taunt_muster", "bladeWhirl_secondwind" },
+	Cleric = { "shieldOfFaith_steadfast", "circleOfLight_aegis" },
+}, HRIMVALD)
+unique("unique_hrimvald_bow", "longbow", "hrimvald", 100, "➶", {
+	{ stat = "physAtk", v = 8 },
+	{ stat = "dex", v = 29 },
+	{ stat = "critChance", v = 4 },
+}, { "aimedShot_burst", "doubleShot_instinct" }, HRIMVALD)
+unique("unique_hrimvald_mantle", "armor_medium", "hrimvald", 100, "♜", {
+	{ stat = "dex", v = 28 },
+	{ stat = "hpPct", v = 7 },
+	{ stat = "resIce", v = 16 },
+}, { "disengage_tailwind", "volley_followup" }, HRIMVALD)
+unique("unique_hrimvald_staff", "staff", "hrimvald", 100, "⚕", {
+	{ stat = "magAtk", v = 10 },
+	{ stat = "int", v = 32 },
+	{ stat = "magicPierce", v = 11 },
+}, { "iceShard_shatter", "frostNova_maelstrom" }, { mul = HRIMVALD_MUL, elemental = true })
+unique("unique_hrimvald_robe", "armor_light", "hrimvald", 100, "♜", {
+	{ stat = "int", v = 28 },
+	{ stat = "mana", v = 200 },
+	{ stat = "resIce", v = 16 },
+}, {
+	Mage = { "frostNova_deepcold", "frostNova_maelstrom" },
+	Cleric = { "radiance_dazzle", "sanctuary_haven" },
+}, HRIMVALD)
+unique("unique_hrimvald_crozier", "holystaff", "hrimvald", 100, "⚚", {
+	{ stat = "magAtk", v = 10 },
+	{ stat = "int", v = 30 },
+	{ stat = "healPower", v = 11 },
+}, { "shieldOfFaith_steadfast", "sanctuary_haven" }, HRIMVALD)
+unique("unique_hrimvald_shield", "shield", "hrimvald", 100, "⛨", {
+	{ stat = "armor", v = 185 },
+	{ stat = "hpPct", v = 7 },
+	{ stat = "resIce", v = 16 },
+}, {
+	Warrior = { "taunt_muster", "shieldWall_rally" },
+	Cleric = { "renew_lasting", "sanctuary_haven" },
+}, HRIMVALD)
 
 return LIST

@@ -6923,7 +6923,9 @@ Balance.S149 = {
 	markSelf = 0.35, -- ... on the branded one, at most
 	tankPerMinute = 3.5, -- the S32 tank model (Balance.boss), the S94 band of Vaelgrath
 	wave = 1.10, -- HP per member per helper wave of 10 players (the S134 limit)
-	-- F3 (loot per hour): 2 h of play a day hit on average 1 occurrence in 3 h = ~0.67 fights a day; Vaelgrath's hour
+	-- F3 (loot per hour): 2 h of play a day hit on average 1 occurrence in 3 h = ~0.67 fights a day (S149c: two a day
+	-- at 10:00 and 22:00 Polish time, each open 2 h 10 min: 2 h at a random time of the day meet one with a chance
+	-- of (2 + 2.17) / 24 = 0.35 each, ~0.7 a day, the same model); Vaelgrath's hour
 	-- is his entry (cave walk, ready check, countdown: entrySeconds) and fight of 5 players L99 for Config.Boss.dailyRuns
 	-- kills a day
 	playHours = 2,
@@ -6937,7 +6939,7 @@ Balance.S149 = {
 -- S149: rows of targetsS149 out of reach of the S149 levers (printed with the reason; docs/DECYZJE.md S149).
 Balance.S149_REPORT = {} :: { [string]: string }
 
--- S149: Legendaries + Mythics of one world boss reward for `classId` (Data/WorldBoss.reward.rarity: a Legendary
+-- S149: Legendaries + Mythics of one world boss reward for `classId` (S149c: the named item too, f = 1) (Data/WorldBoss.reward.rarity: a Legendary
 -- through Loot.pickItem with classBias, a Mythic always usable, Loot.pickUsable), at item level 100.
 function Balance.worldBossDrops(classId: string): number
 	local Data = (require :: any)("../src/shared/Data/WorldBoss")
@@ -6954,7 +6956,25 @@ function Balance.worldBossDrops(classId: string): number
 	for ilvl = low, high do
 		usable += Balance.usableShare(LootTables.bossSlots, ilvl, Data.reward.classBias, classId) / (high - low + 1)
 	end
-	return legendary * usable + mythic
+	-- S149c: the named item of an even share (f = 1) with its pity, one per this many rewarded fights on average
+	return legendary * usable + mythic + 1 / Balance.worldBossNamedEvery(1)
+end
+
+-- S149c: the mean number of rewarded fights per named item of the world boss at factor `f` (the pity chain of
+-- Logic/WorldBoss.namedChance: chance x f + step per dry fight, certain at pityAt).
+function Balance.worldBossNamedEvery(f: number): number
+	local WorldBoss = (require :: any)("../src/shared/Logic/WorldBoss")
+	local Data = (require :: any)("../src/shared/Data/WorldBoss")
+	local mean, reach = 0, 1
+	for dry = 0, Data.reward.named.pityAt do
+		local p = WorldBoss.namedChance(f, dry)
+		mean += reach * p * (dry + 1)
+		reach *= 1 - p
+		if reach <= 0 then
+			break
+		end
+	end
+	return mean
 end
 
 -- S149: Vaelgrath's Legendaries + Mythics for `classId` per hour of entering and fighting him (Balance.bossDrops of a
@@ -11458,60 +11478,52 @@ function Balance.worldEventRow(level: number): WorldEventRow
 end
 
 -- S134c (E1): the Invasion model ----------------------------------------------------------------------------------
--- The waves of Data/WorldEvents.kinds.invasion around the event ground: the party fights the clusters apart (the S83
--- convention: every member its own cluster, the kill rates add up), the Elites apart, the last wave's Elite II and the
--- commander together. The next wave comes when clearShare of the current one is dead (never before minWaveGap) or
--- after waveEvery; what is left alive stays as backlog. The commander comes after the last wave (or at commanderAt),
--- the party first finishes the backlog, then the commander (x BOSS_UPTIME, like a boss with blows to dodge). The
--- commander's blows run on the server's rule (Monster.SetExtraAbilities: the first ready one of the list, its own
--- ability last, a gap after each cast); `avoid` blows land x avoidHit (default 0: dodged), the split is shared by
--- `splitInside` players (default the whole party; 0 = nobody inside: missAll on everyone).
+-- S134d: the Invasion zone (Data/WorldEvents.kinds.invasion). The live population never runs out, so the party works at
+-- its kill rate: every member pulls INVASION_PULL monsters of the zone at once (aggro 25 over spawn points ~20 studs
+-- apart) and walks INVASION_WALK s to the next pull (the S83 convention: every member its own pull, the kill rates add
+-- up); the kills mix normals and the phase's live Elites by the population's make-up. A phase ends when the party has
+-- killed its quota (phaseKills x the population, not before minPhase, the elite2Phase's Elite II fought together
+-- first) or after phaseEvery; the last phase brings the commander, fought together (x BOSS_UPTIME, minus
+-- INVASION_ADDS for the zone's monsters around it). The commander's blows run on the server's rule
+-- (Monster.SetExtraAbilities: the first ready one of the list, its own ability last, a gap after each cast); `avoid`
+-- blows land x avoidHit (default 0: dodged), the split is shared by `splitInside` players (default the whole party;
+-- 0 = nobody inside: missAll on everyone). The EXP of the kills (x expMul, the party pool) is compared with grinding
+-- the same ground for the same time (Balance.areaHour).
 
 export type InvasionParams = {
 	duration: number,
-	waves: number,
-	waveEvery: number,
-	minWaveGap: number,
-	clearShare: number,
-	commanderAt: number,
-	wave: { base: number, perPlayer: number, max: number, cluster: number },
-	elitesPerWave: { number },
-	lastWaveElite2: boolean,
+	phases: number,
+	phaseEvery: number,
+	minPhase: number,
+	phaseKills: number,
+	population: { base: number, perPlayer: number, max: number },
+	elitesPerPhase: { number },
+	elite2Phase: number,
+	mods: { hpMul: number, atkMul: number },
+	expMul: number,
 	commander: { hp: { number }, atk: { number } },
 	abilities: { any },
 	gap: number,
 }
 
--- S134c: the S101 Invasion (the "before" of the report): waves of 4 + 2 per player (max 16) in clusters of 4, one
--- Elite in waves 3 and 6, no Elite II in the waves, the commander scaled by the players, no extra blows.
-Balance.INVASION_S101 = table.freeze({
-	duration = 720,
-	waves = 6,
-	waveEvery = 80,
-	minWaveGap = 40,
-	clearShare = 0.8,
-	commanderAt = 480,
-	wave = { base = 4, perPlayer = 2, max = 16, cluster = 4 },
-	elitesPerWave = { 0, 0, 1, 0, 0, 1 },
-	lastWaveElite2 = false,
-	commander = { hp = { 0.45, 0.7, 1.0, 1.2, 1.4 }, atk = { 0.85, 0.95, 1, 1, 1 } },
-	abilities = {},
-	gap = 0,
-}) :: InvasionParams
+Balance.INVASION_PULL = 3 -- S134d: zone monsters a member fights at once
+Balance.INVASION_WALK = 3 -- S134d: seconds to the next pull inside the zone
+Balance.INVASION_ADDS = 0.2 -- S134d: share of the commander fight spent on the zone's monsters around it
 
 -- The Invasion of Data/WorldEvents now (Logic/WorldEvents reads the same numbers).
 function Balance.invasionParams(): InvasionParams
 	local d = WorldEvents.Data.kinds.invasion
 	return {
 		duration = d.duration,
-		waves = d.waves,
-		waveEvery = d.waveEvery,
-		minWaveGap = d.minWaveGap,
-		clearShare = d.clearShare,
-		commanderAt = d.commanderAt,
-		wave = d.wave,
-		elitesPerWave = d.elitesPerWave,
-		lastWaveElite2 = d.lastWaveElite2,
+		phases = d.phases,
+		phaseEvery = d.phaseEvery,
+		minPhase = d.minPhase,
+		phaseKills = d.phaseKills,
+		population = d.population,
+		elitesPerPhase = d.elitesPerPhase,
+		elite2Phase = d.elite2Phase,
+		mods = d.mods,
+		expMul = d.expMul,
 		commander = WorldEvents.Data.scale.commander,
 		abilities = WorldEvents.commanderAbilities(),
 		gap = d.commanderGap,
@@ -11526,18 +11538,22 @@ export type InvasionOpts = {
 
 export type Invasion = {
 	players: number,
-	waveSize: number, -- monsters of a wave without its Elites
-	elites: number, -- Elites of all waves
-	waveSeconds: number, -- the waves until the commander comes
+	population: number, -- live monsters of the zone
+	kills: number, -- zone monsters the party kills (normals and Elites, the Elite II and the commander apart)
+	elites: number, -- of them Elites
+	phaseSeconds: { number }, -- each phase before the commander's
 	commanderAt: number, -- second the commander comes
-	backlog: number, -- seconds of wave monsters left when the commander comes
+	backlog: number, -- seconds of the Elite II left when the commander comes
 	commanderSeconds: number,
 	seconds: number, -- the whole event (to the commander's death)
 	duration: number,
 	inTime: boolean,
+	expEach: number, -- EXP of the kills per member (party pool, x expMul), to the end of the event
+	grindEach: number, -- EXP per member grinding the same ground for the same time with potions (same party pool)
+	restEach: number, -- ... resting to full HP between fights (Balance.areaHour, the pace convention)
 	casts: { [string]: number }, -- the commander's casts by ability over its fight
 	-- taken / sustain (potions + regeneration in combat + life steal) of the worst member, at the commander and on one
-	-- cluster of the wave with an Elite
+	-- pull of the zone with an Elite
 	commanderRatio: number,
 	waveRatio: number,
 	commanderRatioOf: { [string]: number }, -- by class (the worst member of the class)
@@ -11613,34 +11629,38 @@ function Balance.invasion(team: { Player }, areaId: string, level: number, opts:
 	local splitInside = o.splitInside or n
 	local mods = AreaProfiles.modsOf(areaId)
 	local profile = { hpMul = mods.hpMul, atkMul = mods.atkMul }
+	-- the zone's monsters: the ground's profile x the zone's mods
+	local zoneMods = { hpMul = mods.hpMul * P.mods.hpMul, atkMul = mods.atkMul * P.mods.atkMul }
 	local waveKinds = WorldEvents.waveKinds(area)
 	local eliteKinds = WorldEvents.eliteKinds(area)
 	local hostKinds = WorldEvents.hostKinds(area)
-	local cluster = P.wave.cluster
-	local size = math.min(P.wave.max, P.wave.base + P.wave.perPlayer * math.max(1, n))
-	-- kill rates (monsters per second) of the party: every member fights its own cluster / Elite
-	local normalRate, eliteRate = 0, 0
+	local pull = Balance.INVASION_PULL
+	local walk = Balance.INVASION_WALK
+	local population = math.min(P.population.max, P.population.base + P.population.perPlayer * math.max(1, n))
+	-- seconds per kill of each member (normals in pulls, Elites one by one, the walk between pulls included)
+	local perNormal: { number } = {}
+	local perElite: { number } = {}
 	local waveRatio = 0
-	for _, p in team do
-		local perNormal = meanOver(waveKinds, function(def): number
+	for i, p in team do
+		perNormal[i] = meanOver(waveKinds, function(def): number
 			local fight =
-				FightSim.groupFight(p :: any, FightSim.group(def, level, cluster, "normal", profile), Balance.SKILL_DPS)
-			return fight.seconds / cluster
+				FightSim.groupFight(p :: any, FightSim.group(def, level, pull, "normal", zoneMods), Balance.SKILL_DPS)
+			return (fight.seconds + walk) / pull
 		end)
-		local perElite = if #eliteKinds > 0
+		perElite[i] = if #eliteKinds > 0
 			then meanOver(eliteKinds, function(def): number
-				return FightSim.groupFight(p :: any, FightSim.group(def, level, 1, "elite", profile), Balance.SKILL_DPS).seconds
+				return FightSim.groupFight(
+					p :: any,
+					FightSim.group(def, level, 1, "elite", zoneMods),
+					Balance.SKILL_DPS
+				).seconds + walk
 			end)
-			else 0
-		normalRate += 1 / math.max(1e-9, perNormal)
-		if perElite > 0 then
-			eliteRate += 1 / perElite
-		end
-		-- one cluster of the wave and an Elite on this member: taken per second against its sustain
+			else perNormal[i]
+		-- one pull of the zone and an Elite on this member: taken per second against its sustain
 		for _, id in waveKinds do
-			local members = FightSim.group(Monsters.get(id), level, cluster, "normal", profile)
+			local members = FightSim.group(Monsters.get(id), level, pull, "normal", zoneMods)
 			if #eliteKinds > 0 then
-				table.insert(members, FightSim.group(Monsters.get(eliteKinds[1]), level, 1, "elite", profile)[1])
+				table.insert(members, FightSim.group(Monsters.get(eliteKinds[1]), level, 1, "elite", zoneMods)[1])
 			end
 			local fight = FightSim.groupFight(p :: any, members, Balance.SKILL_DPS)
 			local regen = p.values.hpRegenCombat or 0
@@ -11652,7 +11672,16 @@ function Balance.invasion(team: { Player }, areaId: string, level: number, opts:
 			waveRatio = math.max(waveRatio, taken / math.max(1e-9, sustainOf(p, level, own)))
 		end
 	end
-	-- the Elite II fought together (the last wave's and the commander): team DPS on it
+	-- the party's kill rate (kills per second) in a phase with `elites` live Elites of the population
+	local function rateOf(elites: number): number
+		local share = math.clamp(elites / population, 0, 1)
+		local rate = 0
+		for i in team do
+			rate += 1 / math.max(1e-9, (1 - share) * perNormal[i] + share * perElite[i])
+		end
+		return rate
+	end
+	-- the Elite II fought together (the phase's and the commander): team DPS on it
 	local function together(m: any, uptime: number): number
 		local dps = 0
 		for _, p in team do
@@ -11660,36 +11689,31 @@ function Balance.invasion(team: { Player }, areaId: string, level: number, opts:
 		end
 		return m.maxHp / math.max(1e-9, dps)
 	end
-	local elite2Seconds = if P.lastWaveElite2 and #hostKinds > 0
+	local elite2Seconds = if #hostKinds > 0
 		then meanOver(hostKinds, function(def): number
-			return together(FightSim.group(def, level, 1, "elite2", profile)[1], 1)
+			return together(FightSim.group(def, level, 1, "elite2", zoneMods)[1], 1)
 		end)
 		else 0
-	-- the waves: work (seconds of the party) queue
-	local t, backlog, elites = 0, 0, 0
-	local commanderAt = P.commanderAt
-	for wave = 1, P.waves do
-		local eliteCount = P.elitesPerWave[wave] or 0
-		elites += eliteCount
-		local work = size / normalRate + (if eliteRate > 0 then eliteCount / eliteRate else 0)
-		if P.lastWaveElite2 and wave == P.waves then
-			work += elite2Seconds
-		end
-		backlog += work
-		-- the next wave (or the commander) when clearShare of this one is dead, after minWaveGap, at most waveEvery
-		local need = math.max(0, backlog - (1 - P.clearShare) * work)
-		local gap = math.clamp(need, P.minWaveGap, P.waveEvery)
-		if t + gap >= P.commanderAt then
-			gap = math.max(0, P.commanderAt - t)
-		end
-		backlog = math.max(0, backlog - gap)
-		t += gap
-		if t >= P.commanderAt then
-			-- the waves not spawned yet never come
-			break
-		end
+	-- the phases before the commander's
+	local quota = math.ceil(P.phaseKills * population)
+	local t, kills, elites, backlog = 0, 0, 0, 0
+	local phaseSeconds: { number } = {}
+	for phase = 1, P.phases - 1 do
+		local live = math.min(P.elitesPerPhase[phase] or 0, population)
+		local rate = rateOf(live)
+		local hold = if phase == P.elite2Phase then elite2Seconds else 0
+		local d = math.clamp(quota / rate + hold, P.minPhase, P.phaseEvery)
+		local fighting = math.max(0, d - hold)
+		backlog = math.max(0, backlog + hold - d)
+		local k = rate * fighting
+		kills += k
+		elites += k * live / population
+		phaseSeconds[phase] = d
+		t += d
 	end
-	commanderAt = math.min(t, P.commanderAt)
+	local commanderAt = t
+	local lastLive = math.min(P.elitesPerPhase[P.phases] or 0, population)
+	local lastRate = rateOf(lastLive)
 	-- the commander: each host kind in turn, the mean time and the worst hits
 	local cLevel = math.min(area.lv[2], level + 1)
 	local hpMul = scaleIndex(P.commander.hp, n)
@@ -11710,7 +11734,7 @@ function Balance.invasion(team: { Player }, areaId: string, level: number, opts:
 	for _, id in hostKinds do
 		local def = Monsters.get(id) :: any
 		local m = FightSim.group(def, cLevel, 1, "elite2", cMods)[1]
-		local seconds = together(m, Balance.BOSS_UPTIME)
+		local seconds = together(m, Balance.BOSS_UPTIME * (1 - Balance.INVASION_ADDS))
 		commanderSeconds += seconds / #hostKinds
 		local own = m.ability
 		local castsOf, casting = Balance.commanderCasts(own, P.abilities, P.gap, seconds)
@@ -11764,17 +11788,82 @@ function Balance.invasion(team: { Player }, areaId: string, level: number, opts:
 		end
 	end
 	local seconds = commanderAt + backlog + commanderSeconds
+	-- the commander's fight: the zone's monsters around it; the event ends at its death or at the duration
+	local ends = math.min(seconds, P.duration)
+	local addSeconds = math.max(0, ends - commanderAt - backlog) * Balance.INVASION_ADDS
+	kills += lastRate * addSeconds
+	elites += lastRate * addSeconds * lastLive / population
+	if ends < commanderAt then
+		-- (never: commanderAt <= (phases - 1) x phaseEvery < duration)
+		kills *= ends / commanderAt
+	end
+	-- EXP of the kills per member: the party pool (PartyLoot.poolMul / n, PartyBonus), x the ground's profile and expMul;
+	-- the Elite II and the commander (killed in time) too
+	local classes: { string } = {}
+	for _, p in team do
+		table.insert(classes, p.classId)
+	end
+	local share = PartyLoot.poolMul(n) * PartyBonus.expMul(classes) / n * mods.expMul * P.expMul
+	local normalExp = meanOver(waveKinds, function(def): number
+		return Balance.killExp(level, def, level)
+	end)
+	local eliteExp = if #eliteKinds > 0
+		then meanOver(eliteKinds, function(def): number
+			return Balance.killExp(level, def, level, "elite")
+		end)
+		else normalExp
+	local elite2Exp = if #hostKinds > 0
+		then meanOver(hostKinds, function(def): number
+			return Balance.killExp(level, def, level, "elite2")
+		end)
+		else 0
+	local expEach = ((kills - elites) * normalExp + elites * eliteExp) * share
+	if #hostKinds > 0 then
+		expEach += elite2Exp * share * (if seconds <= P.duration then 2 else 1)
+	end
+	-- grinding the same ground for the same time, per member with the same party pool: with potions (the expected
+	-- group of the ground, BREAK + its walk, the potion wait; ordinary monsters) and with rest (Balance.areaHour)
+	local partyMul = PartyLoot.poolMul(n) * PartyBonus.expMul(classes)
+	local areaProfile = AreaProfiles.get(area.profile)
+	local grind, rest = 0, 0
+	for _, p in team do
+		local perHour = meanOver(waveKinds, function(def): number
+			local fight = FightSim.expectedGroup(
+				p :: any,
+				def,
+				level,
+				Balance.SKILL_DPS,
+				if areaProfile then areaProfile.sizeWeights else nil,
+				mods
+			)
+			local free = AreaRates.BREAK + AreaRates.walkSeconds(areaProfile)
+			local wait = Balance.potionsAt(p.classId, level, fight.hpLost, fight.seconds + free).wait
+			return Balance.killExp(level, def, level)
+				* mods.expMul
+				* 3600
+				* fight.members
+				/ (fight.seconds + free + wait)
+		end)
+		grind += perHour / n
+		rest += Balance.areaHour(p.classId, level, area).expPerHour / n
+	end
+	grind *= partyMul
+	rest *= partyMul
 	return {
 		players = n,
-		waveSize = size,
+		population = population,
+		kills = kills,
 		elites = elites,
-		waveSeconds = commanderAt,
+		phaseSeconds = phaseSeconds,
 		commanderAt = commanderAt,
 		backlog = backlog,
 		commanderSeconds = commanderSeconds,
 		seconds = seconds,
 		duration = P.duration,
 		inTime = seconds <= P.duration,
+		expEach = expEach,
+		grindEach = grind * ends / 3600,
+		restEach = rest * ends / 3600,
 		casts = casts,
 		commanderRatio = commanderRatio,
 		waveRatio = waveRatio,
@@ -11808,7 +11897,7 @@ Balance.S134c = {
 	} :: { [number]: { string } },
 	blows = { "Warrior", "Hunter", "Mage" }, -- the party whose Mage measures the commander's blows
 	share3 = 0.8, -- 3 players: the whole event / duration
-	sustain = 1.0, -- taken / sustain at the commander and on a cluster + Elite of the wave (3 players)
+	sustain = 1.0, -- taken / sustain at the commander and on a pull + Elite of the zone (3 players)
 	avoid = { 0.60, 0.85 }, -- the biggest big blow / HP of a Mage of the event level (S134)
 	split3 = 0.60, -- the shared blow on 3 players together / HP of the Mage
 	splitSolo = 1.0, -- ... on a lone player standing in it
@@ -11816,6 +11905,12 @@ Balance.S134c = {
 	soloHard = 0.9, -- solo "almost impossible": missAll + the biggest blow that cannot be dodged / HP of the Mage
 	op = { rarity = Rarities.HEROIC, up = 6 }, -- the solo with an edge: this gear ...
 	opGap = 5, -- ... at the event level + opGap
+	-- S134d (owner 2026-10-20: the zone must be worth farming): EXP of the zone's kills per member of 3 / grinding the
+	-- same ground for the same time with potions (same party pool), and / resting between fights (the pace
+	-- convention); solo on equal gear ends on the edge of the limit (hard but doable)
+	exp3 = { 1.0, 1.5 },
+	rest3 = 2.5,
+	soloEdge = { 0.8, 1.2 },
 }
 
 -- S134c: rows of targetsS134c out of reach of the S134c levers (printed with the reason; docs/DECYZJE.md S134c).
@@ -11843,9 +11938,7 @@ function Balance.invasionOf(
 ): Invasion
 	local key = `{table.concat(classes, ",")}|{areaId}|{level}|{playerLevel or level}|{if gear
 		then `{gear.rarity or "-"}+{gear.up or 0}`
-		else "-"}|{if opts and opts.params == Balance.INVASION_S101 then "S101" else "now"}|{if opts
-		then tostring(opts.splitInside)
-		else "-"}`
+		else "-"}|{if opts then tostring(opts.splitInside) else "-"}`
 	local cached = invasionCache[key]
 	if cached then
 		return cached
@@ -11938,10 +12031,14 @@ function Balance.targetsS134c(): { TargetRow }
 			S.missAll,
 			L
 		)
-		-- solo on equal gear: out of time, the commander out-damages the sustain, or the shared blow + a hit kill
+		-- solo on equal gear: out of time, barely in time (S134d: the zone's commander phase), the commander
+		-- out-damages the sustain, or the shared blow + a hit kill
 		local solo = Balance.invasionOf(S.teams[1], areaId, L, nil, { splitInside = 0 })
 		local combo = (blows.missAll.Mage or 0) + (blows.biggestHit.Mage or 0)
-		local hard = not solo.inTime or solo.commanderRatio > S.sustain or combo >= S.soloHard
+		local hard = not solo.inTime
+			or solo.seconds / solo.duration >= S.soloEdge[1]
+			or solo.commanderRatio > S.sustain
+			or combo >= S.soloHard
 		add(
 			`{areaId}.solo.hard`,
 			areaId,
@@ -11978,6 +12075,63 @@ function Balance.targetsS134c(): { TargetRow }
 			op.commanderRatio,
 			nil,
 			S.sustain,
+			L
+		)
+		-- S134d: the zone is worth farming, solo on the edge
+		target(
+			rows,
+			`S134d.invasion.{areaId}.exp3`,
+			areaId,
+			`{tag}: 3 graczy, EXP zabić na gracza / bicie z miksturami w tym czasie`,
+			three.expEach / math.max(1e-9, three.grindEach),
+			S.exp3[1],
+			S.exp3[2],
+			nil,
+			L
+		)
+		target(
+			rows,
+			`S134d.invasion.{areaId}.rest3`,
+			areaId,
+			`{tag}: 3 graczy, EXP zabić na gracza / bicie z odpoczynkiem w tym czasie`,
+			three.expEach / math.max(1e-9, three.restEach),
+			S.rest3,
+			nil,
+			nil,
+			L
+		)
+		target(
+			rows,
+			`S134d.invasion.{areaId}.solo.edge`,
+			areaId,
+			`{tag}: solo na równym sprzęcie, czas / limit (na krawędzi)`,
+			solo.seconds / solo.duration,
+			S.soloEdge[1],
+			S.soloEdge[2],
+			nil,
+			L
+		)
+		local five = Balance.invasionOf(S.teams[5], areaId, L)
+		target(
+			rows,
+			`S134d.invasion.{areaId}.exp5`,
+			areaId,
+			`{tag}: 5 graczy, EXP zabić na gracza / bicie z miksturami`,
+			five.expEach / math.max(1e-9, five.grindEach),
+			nil,
+			nil,
+			nil,
+			L
+		)
+		target(
+			rows,
+			`S134d.invasion.{areaId}.levels3`,
+			areaId,
+			`{tag}: 3 graczy, EXP zabić i nagrody na gracza w poziomach`,
+			(three.expEach + WorldEvents.reward(L, L, three.inTime).exp) / Exp.expToNext(L),
+			nil,
+			nil,
+			nil,
 			L
 		)
 	end
@@ -13504,7 +13658,7 @@ Balance.S152 = {
 	elite2PerHour = 0.5,
 	quests = { quest = 0.5, side = 0.5, contract = 0.5 }, -- hand-ins per hour below level 100
 	bossPerHour = 0.5,
-	worldBossPerHour = 1 / 3,
+	worldBossPerHour = 1 / 3, -- S149c: two a day (10:00, 22:00 Polish time), 2 h at a random time meet ~0.7 of them (S149.fightsPerDay)
 	bloodMoonPerWeek = 1,
 	arenaPerHour = 0,
 	achievementsPerWeek = 3,
