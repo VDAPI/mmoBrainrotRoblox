@@ -16,6 +16,10 @@
 -- anchors in quests.main.used, `deliver`, places to reach), hand-in keeps the place in the story (mainDone = index of
 -- the quest, mainLast = its id; Logic/StoryProgress recounts both on load) and story events queue the cutscenes of
 -- Data/Cutscenes in quests.scenes (false = queued); the client plays them and reports CutsceneDone(sceneId).
+-- S159 (owner 2026-10-20, docs/DESIGN.md §20): 4 daily contracts by groups, one free reroll a day (DailyReroll, anywhere),
+-- and the set bonuses: collecting the last daily (weekly) contract also pays the set's bonus (Data/Quests/Daily.bonus with
+-- the account's streak of full days, Weekly.bonus) and its Dragon Shards once per account and day (week), from
+-- Daily.SHARD_MIN_LEVEL (Logic/Dailies, account.dailies).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,6 +31,7 @@ local Signal = require(ReplicatedStorage.Packages.Signal)
 
 local Clock = require(Shared.Util.Clock)
 local Cutscenes = require(Shared.Logic.Cutscenes)
+local Dailies = require(Shared.Logic.Dailies)
 local Dialogue = require(Shared.Logic.Dialogue)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
@@ -78,6 +83,10 @@ local Registry: any -- S101b: CompanionService during play (it is not in Deps: n
 
 local rng = Rng.new()
 
+-- S159: the set bonuses (defined with the claims)
+local giveDailyBonus: (player: Player) -> ()
+local giveWeeklyBonus: (player: Player) -> ()
+
 -- S101b: the companion follows the active quests (Logic/Companion.want).
 local function refreshCompanion(player: Player)
 	local companions = Registry and Registry.Get("CompanionService")
@@ -106,7 +115,11 @@ local function ensureDaily(player: Player)
 		return
 	end
 	local list = QuestLogic.dailyFor(player.UserId, char.id, today, char.level)
-	PlayerStateService.Set(player, { "character", "quests", "daily" }, { day = today, list = list, rerolls = 0 })
+	PlayerStateService.Set(
+		player,
+		{ "character", "quests", "daily" },
+		{ day = today, list = list, rerolls = 0, swaps = 0, bonus = false }
+	)
 end
 
 -- S98: the week's boss contract for the character's level (nil below the first boss's entry level).
@@ -130,6 +143,7 @@ local function ensureWeekly(player: Player)
 			list = QuestLogic.weeklyFor(player.UserId, char.id, week, char.level),
 			rerolls = 0,
 			boss = bossContract(char.level),
+			bonus = false,
 		})
 		return
 	end
@@ -481,6 +495,100 @@ local function cutsceneDone(player: Player, sceneId: string): (boolean, string?)
 	return true, nil
 end
 
+-- S159: whether collecting contract `index` of a period (daily / weekly state) completes the set with its bonus due.
+local function lastOfSet(period: any, index: number): boolean
+	if type(period) ~= "table" or period.bonus == true or type(period.list) ~= "table" then
+		return false
+	end
+	for i, entry in period.list do
+		if i ~= index and not entry.claimed then
+			return false
+		end
+	end
+	return true
+end
+
+local function joinItems(
+	a: { { id: string, n: number } }?,
+	b: { { id: string, n: number } }?
+): { { id: string, n: number } }
+	local out: { { id: string, n: number } } = table.clone(a or {})
+	local more: { { id: string, n: number } } = b or {}
+	for _, item in more do
+		table.insert(out, item)
+	end
+	return out
+end
+
+-- S159: the account's Dragon Shards of a set bonus (MonetizationService.addShards pattern).
+local function addShards(player: Player, amount: number, reason: string)
+	local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(n: number)
+		return (n or 0) + amount
+	end)
+	Analytics.shards(player, amount, total, reason)
+end
+
+local function dailiesState(player: Player): Dailies.State
+	return Dailies.sanitize(PlayerStateService.Get(player, { "account", "dailies" }))
+end
+
+-- S159: the daily set bonus, once per character and day (the bonus flag is written before anything is given).
+giveDailyBonus = function(player: Player)
+	local char = character(player)
+	if not char or not Dailies.bonusDue(char.quests.daily) then
+		return
+	end
+	local today = char.quests.daily.day
+	PlayerStateService.Set(player, { "character", "quests", "daily", "bonus" }, true)
+	local state = dailiesState(player)
+	local shardsDue = Dailies.dayShardsDue(state, today, char.level)
+	local new, streak = Dailies.fullDay(state, today)
+	if shardsDue then
+		new.shardDay = today
+	end
+	PlayerStateService.Set(player, { "account", "dailies" }, new)
+	local reward = Quests.Daily.bonus(char.level, streak)
+	give(player, reward)
+	local shards = if shardsDue then reward.shards or 0 else 0
+	if shards > 0 then
+		addShards(player, shards, "daily_set")
+	end
+	Net.Fire(player, "Toast", if shards > 0 then "quest.dailyBonus" else "quest.dailyBonusNoShards", {
+		streak = streak,
+		shards = shards,
+	}, "success")
+end
+
+-- S159: the weekly set bonus, once per character and week.
+giveWeeklyBonus = function(player: Player)
+	local char = character(player)
+	local weekly: any = if char then char.quests.weekly else nil
+	if not char or not Dailies.bonusDue(weekly) then
+		return
+	end
+	PlayerStateService.Set(player, { "character", "quests", "weekly", "bonus" }, true)
+	local state = dailiesState(player)
+	local shardsDue = Dailies.weekShardsDue(state, weekly.week, char.level)
+	if shardsDue then
+		local new = table.clone(state)
+		new.shardWeek = weekly.week
+		PlayerStateService.Set(player, { "account", "dailies" }, new)
+	end
+	local reward = Quests.Weekly.bonus(char.level)
+	give(player, reward)
+	local shards = if shardsDue then reward.shards or 0 else 0
+	if shards > 0 then
+		addShards(player, shards, "weekly_set")
+	end
+	Net.Fire(
+		player,
+		"Toast",
+		if shards > 0 then "quest.weeklyBonus" else "quest.weeklyBonusNoShards",
+		{ shards = shards },
+		"success"
+	)
+end
+
 local function claim(player: Player, index: number): (boolean, string?)
 	local char = character(player)
 	if not char then
@@ -498,13 +606,42 @@ local function claim(player: Player, index: number): (boolean, string?)
 		return false, "quest.error.notDone"
 	end
 	local reward = Quests.Daily.reward(char.level)
-	if not canFit(player, reward.items) then
+	-- S159: the last contract of the set also pays the bonus, so both need the space
+	local last = lastOfSet(char.quests.daily, index)
+	local bonusItems = if last then Quests.Daily.bonus(char.level, 1).items else nil
+	if not canFit(player, joinItems(reward.items, bonusItems)) then
 		return false, "inventory.full"
 	end
 	PlayerStateService.Set(player, { "character", "quests", "daily", "list", index, "claimed" } :: { any }, true)
 	give(player, reward)
 	SeasonService.Add(player, "daily") -- S152
 	Net.Fire(player, "QuestCompleted", `daily.{entry.template}.title`)
+	if last then
+		giveDailyBonus(player)
+	end
+	return true, nil
+end
+
+-- S159: rerolls daily contract `index` (one free reroll a day, anywhere): another template open at the level and not
+-- on the list, its progress from zero.
+local function reroll(player: Player, index: number): (boolean, string?)
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	ensureDaily(player)
+	local daily: any = char.quests.daily
+	local ok, err = Dailies.canReroll(daily, index)
+	if not ok then
+		return false, err
+	end
+	local swaps = (daily.swaps or 0) + 1
+	local entry = QuestLogic.rerollDaily(daily.list, index, player.UserId, char.id, daily.day, char.level, swaps)
+	if not entry then
+		return false, "quest.reroll.none"
+	end
+	PlayerStateService.Set(player, { "character", "quests", "daily", "swaps" }, swaps)
+	PlayerStateService.Set(player, { "character", "quests", "daily", "list", index } :: { any }, entry)
 	return true, nil
 end
 
@@ -527,13 +664,18 @@ local function claimWeekly(player: Player, index: number): (boolean, string?)
 		return false, "quest.error.notDone"
 	end
 	local reward = Quests.Weekly.reward(char.level)
-	if not canFit(player, reward.items) then
+	local last = lastOfSet(weekly, index)
+	local bonusItems = if last then Quests.Weekly.bonus(char.level).items else nil
+	if not canFit(player, joinItems(reward.items, bonusItems)) then
 		return false, "inventory.full"
 	end
 	PlayerStateService.Set(player, { "character", "quests", "weekly", "list", index, "claimed" } :: { any }, true)
 	give(player, reward)
 	SeasonService.Add(player, "weekly") -- S152
 	Net.Fire(player, "QuestCompleted", `weekly.{entry.template}.title`)
+	if last then
+		giveWeeklyBonus(player)
+	end
 	return true, nil
 end
 
@@ -654,7 +796,28 @@ function QuestService.RerollDaily(player: Player): boolean
 	local today = Time.dayNumber(Clock.now())
 	local rerolls = (char.quests.daily.rerolls or 0) + 1
 	local list = QuestLogic.dailyFor(player.UserId, `{char.id}#{rerolls}`, today, char.level)
-	PlayerStateService.Set(player, { "character", "quests", "daily" }, { day = today, list = list, rerolls = rerolls })
+	PlayerStateService.Set(
+		player,
+		{ "character", "quests", "daily" },
+		{ day = today, list = list, rerolls = rerolls, swaps = 0, bonus = false }
+	)
+	return true
+end
+
+-- S159 /daily complete: fills every daily contract (to test collecting them and the set bonus).
+function QuestService.CompleteDaily(player: Player): boolean
+	local char = character(player)
+	if not char then
+		return false
+	end
+	ensureDaily(player)
+	for index, entry in char.quests.daily.list do
+		PlayerStateService.Set(
+			player,
+			{ "character", "quests", "daily", "list", index, "progress" } :: { any },
+			entry.objective.n
+		)
+	end
 	return true
 end
 
@@ -673,6 +836,7 @@ function QuestService.RerollWeekly(player: Player): boolean
 		list = QuestLogic.weeklyFor(player.UserId, `{char.id}#{rerolls}`, week, char.level),
 		rerolls = rerolls,
 		boss = weekly.boss,
+		bonus = false,
 	})
 	return true
 end
@@ -722,6 +886,7 @@ function QuestService.Start()
 	Net.Handle("QuestAccept", accept)
 	Net.Handle("QuestTurnIn", turnIn)
 	Net.Handle("DailyClaim", claim)
+	Net.Handle("DailyReroll", reroll) -- S159
 	Net.Handle("WeeklyClaim", claimWeekly)
 	Net.Handle("BossContractClaim", claimBossContract)
 	Net.Handle("QuestSay", say)

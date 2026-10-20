@@ -6,6 +6,9 @@
 -- and "Track" before, or the next one with "Accept", or "Next contract from level N" instead of a button; hidden once
 -- all 99 are done), its hunting ground in the colour of its level band with the S33 profile, and the backlog. S134k: the
 -- hunting contracts' counts (to take, active, finished), the Hunter's Marks and "Accept all" / "Hand in all" instead.
+-- S159 (owner 2026-10-20): over the list the set's progress ("Today's contracts 2/4"), the time to the new set and the
+-- account's streak; "Swap" on an open daily contract while today's free reroll is left; under the contracts the set
+-- bonus card (EXP with the streak, blessings, Dragon Shards; why there are no shards: taken on this account, level).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,6 +16,7 @@ local RunService = game:GetService("RunService")
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local ContractActions = require(script.Parent.Parent.ContractActions)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
+local Dailies = require(ReplicatedStorage.Shared.Logic.Dailies)
 local NpcPresence = require(script.Parent.Parent.NpcPresence)
 local QuestTrack = require(script.Parent.Parent.QuestTrack)
 local Button = require(script.Parent.Parent.Components.Button)
@@ -162,7 +166,21 @@ type Card = {
 	claimed: boolean,
 	reward: Quests.Reward,
 	claim: () -> (boolean, string?),
+	reroll: (() -> ())?, -- S159: "Swap" (nil = no button)
 }
+
+-- S159: runs a board action and shows its error.
+local function act(fn: () -> (boolean, string?), after: (() -> ())?)
+	task.spawn(function()
+		local ok, err = fn()
+		if not ok then
+			Sounds.play("error")
+			Toast.push(Text.now(err or "error.internal"), "error")
+		elseif after then
+			after()
+		end
+	end)
+end
 
 local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 	return s:New("Frame")({
@@ -211,23 +229,116 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 			}),
 			Button(s, {
 				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -10, 0.5, -4),
-				Size = UDim2.fromOffset(150, 50),
+				Position = UDim2.new(1, -10, 0.5, if c.reroll then 12 else -4),
+				Size = UDim2.fromOffset(150, if c.reroll then 44 else 50),
 				Variant = "primary",
 				Text = Text.get(use, if c.claimed then "quest.claimed" else "quest.claim"),
 				Disabled = c.claimed or not c.done,
 				OnClick = function()
-					task.spawn(function()
-						local ok, err = c.claim()
-						if not ok then
-							Sounds.play("error")
-							Toast.push(Text.now(err or "error.internal"), "error")
-						end
-					end)
+					act(c.claim)
 				end,
 			}),
+			if c.reroll
+				then Button(s, {
+					Name = "Reroll",
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, -10, 0, 0),
+					Size = UDim2.fromOffset(150, 30),
+					Variant = "ghost",
+					TextSize = Theme.TextSize.Small,
+					Text = `⟳ {Text.get(use, "quest.reroll")}`,
+					OnClick = c.reroll,
+				}) :: any
+				else nil,
 		},
 	})
+end
+
+-- S159: the set bonus card: what the bonus gives now (EXP with the streak it would pay, blessings, shards when they are
+-- still due on this account), whether it is taken, and the streak rule (daily only).
+local function bonusCard(
+	s: Scope,
+	use: Fusion.Use,
+	id: string,
+	reward: Quests.Reward,
+	lines: { string },
+	taken: boolean
+)
+	local text = `<b>{Text.get(use, if taken then "quest.set.bonusTaken" else "quest.set.bonus")}</b>`
+	for _, line in lines do
+		text ..= `\n<font color="{Theme.hex(Theme.Paper.TextMuted)}">{line}</font>`
+	end
+	return s:New("Frame")({
+		LayoutOrder = 200,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = Theme.Paper.Raised,
+		BackgroundTransparency = if taken then 0.6 else 0.2,
+		[Children] = {
+			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			s:New("UIStroke")({
+				Color = if taken then Theme.Paper.TextMuted else Theme.Paper.Heading,
+				Thickness = 1,
+				Transparency = 0.4,
+			}),
+			s:New("UIPadding")({
+				PaddingLeft = UDim.new(0, 12),
+				PaddingRight = UDim.new(0, 12),
+				PaddingTop = UDim.new(0, 8),
+				PaddingBottom = UDim.new(0, 8),
+			}),
+			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+			s:New("TextLabel")({
+				LayoutOrder = 1,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				RichText = true,
+				TextWrapped = true,
+				Text = text,
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.Heading,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
+			if taken
+				then nil :: any
+				else QuestRewards(s, { Id = id, Reward = reward, SlotSize = 38, LayoutOrder = 2 }) :: any,
+		},
+	})
+end
+
+-- S159: the lines under the bonus card's title (why there are no shards, the streak rule).
+local function bonusLines(
+	use: Fusion.Use,
+	reward: Quests.Reward,
+	shardsDue: boolean,
+	level: number,
+	weekly: boolean
+): ({ string }, Quests.Reward)
+	local lines = {}
+	local shown = table.clone(reward)
+	if not shardsDue then
+		shown.shards = nil
+		if level < Quests.Daily.SHARD_MIN_LEVEL then
+			table.insert(lines, Text.get(use, "quest.set.shardsLevel", { level = Quests.Daily.SHARD_MIN_LEVEL }))
+		else
+			table.insert(lines, Text.get(use, if weekly then "quest.set.shardsTakenWeek" else "quest.set.shardsTaken"))
+		end
+	end
+	table.insert(lines, Text.get(use, "quest.set.bonusHint"))
+	if not weekly then
+		local b = Quests.Daily.BONUS
+		table.insert(
+			lines,
+			Text.get(
+				use,
+				"quest.set.streakHint",
+				{ cap = Quests.Daily.STREAK_CAP, from = b.streakShardsFrom, n = b.streakShards }
+			)
+		)
+	end
+	return lines, shown
 end
 
 local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
@@ -236,6 +347,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 	local daily = State.Value({ "character", "quests", "daily" })
 	local weekly = State.Value({ "character", "quests", "weekly" })
 	local level = State.Value({ "character", "level" })
+	local account = State.Value({ "account", "dailies" }) -- S159: the streak and the account's bonus shards
 	local tab = scope:Value("daily")
 	local now = scope:Value(Clock.now())
 	local accumulator = 0
@@ -260,6 +372,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 			end
 			local reward = Quests.Daily.reward(lvl)
 			for i, entry in d.list or {} do
+				local canReroll = Dailies.canReroll(d, i)
 				table.insert(
 					list,
 					card(s, use, {
@@ -273,8 +386,32 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 						claim = function()
 							return Net.Invoke("DailyClaim", i)
 						end,
+						reroll = if canReroll
+							then function()
+								act(function()
+									return Net.Invoke("DailyReroll", i)
+								end, function()
+									local now = State.Get({ "character", "quests", "daily", "list", i, "template" })
+									if type(now) == "string" then
+										Toast.push(
+											Text.now("quest.reroll.ok", { title = Text.now(`daily.{now}.title`) }),
+											"success"
+										)
+									end
+								end)
+							end
+							else nil,
 					})
 				)
+			end
+			-- S159: the set bonus with the streak it would pay
+			local state = Dailies.sanitize(use(account))
+			local today = Time.dayNumber(use(now))
+			local streak = Dailies.nextStreak(state, today)
+			local lines, shown =
+				bonusLines(use, Quests.Daily.bonus(lvl, streak), Dailies.dayShardsDue(state, today, lvl), lvl, false)
+			if #(d.list or {}) > 0 then
+				table.insert(list, bonusCard(s, use, "dailyBonus", shown, lines, d.bonus == true))
 			end
 			return list
 		end
@@ -299,6 +436,13 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 					end,
 				})
 			)
+		end
+		-- S159: the weekly set bonus (the boss contract is apart from the set)
+		if #(w.list or {}) > 0 then
+			local state = Dailies.sanitize(use(account))
+			local lines, shown =
+				bonusLines(use, Quests.Weekly.bonus(lvl), Dailies.weekShardsDue(state, w.week or 0, lvl), lvl, true)
+			table.insert(list, bonusCard(s, use, "weeklyBonus", shown, lines, w.bonus == true))
 		end
 		local contract = w.boss
 		if type(contract) == "table" then
@@ -352,30 +496,53 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 						{ id = "weekly", label = Text.T(scope, "quest.board.weekly") },
 					},
 				}),
+				-- S159: the set's progress, the time to the new set and (daily) the streak and the free swap
 				scope:New("TextLabel")({
 					Position = UDim2.fromOffset(0, 46),
-					Size = UDim2.new(1, 0, 0, 26),
+					Size = UDim2.new(1, 0, 0, 44),
 					BackgroundTransparency = 1,
+					RichText = true,
+					TextWrapped = true,
 					Text = scope:Computed(function(use): string
 						local t = use(now)
+						local muted = Theme.hex(Theme.Paper.TextMuted)
 						if use(tab) == "weekly" then
+							local w = use(weekly)
+							local p = Dailies.progress(if type(w) == "table" then w.list else nil)
 							local days, hours = Time.split(Time.weekStart(Time.weekNumber(t) + 1) - t)
-							return Text.get(use, "quest.weeklyReset", { days = days, hours = hours })
+							return `<b>{Text.get(use, "quest.set.weekly", { done = p.complete, total = p.total })}</b>`
+								.. `  <font color="{muted}">{Text.get(
+									use,
+									"quest.weeklyReset",
+									{ days = days, hours = hours }
+								)}</font>`
 						end
-						return Text.get(
-							use,
-							"quest.dailyReset",
-							{ time = Time.format((Time.dayNumber(t) + 1) * 86400 - t) }
-						)
+						local d = use(daily)
+						local p = Dailies.progress(if type(d) == "table" then d.list else nil)
+						local today = Time.dayNumber(t)
+						local streak = Dailies.streakNow(Dailies.sanitize(use(account)), today)
+						local swaps =
+							math.max(0, Quests.Daily.REROLLS - (if type(d) == "table" then d.swaps or 0 else 0))
+						return `<b>{Text.get(use, "quest.set.daily", { done = p.complete, total = p.total })}</b>`
+							.. `  <font color="{muted}">{Text.get(
+								use,
+								"quest.dailyReset",
+								{ time = Time.format((today + 1) * 86400 - t) }
+							)}</font>\n`
+							.. `<font color="{Theme.hex(Theme.Paper.Heading)}">{if streak > 0
+								then Text.get(use, "quest.set.streak", { n = streak })
+								else Text.get(use, "quest.set.streakNone")}</font>`
+							.. `  <font color="{muted}">{Text.get(use, "quest.reroll.left", { n = swaps })}</font>`
 					end),
 					FontFace = Theme.Fonts.BodyMedium,
-					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Paper.TextMuted,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
+					TextYAlignment = Enum.TextYAlignment.Top,
 				}),
 				scope:New("ScrollingFrame")({
-					Position = UDim2.fromOffset(0, 78),
-					Size = UDim2.new(1, 0, 1, -78),
+					Position = UDim2.fromOffset(0, 94),
+					Size = UDim2.new(1, 0, 1, -94),
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
 					CanvasSize = UDim2.new(),

@@ -121,6 +121,9 @@ function AccountSchema.accountTemplate(): AccountData
 		-- S154: the collection of item looks (Logic/Transmog; read through Transmog.sanitize); no migration
 		-- (reconcile). `scanned` false = the one-time scan of every character's items is still due (TransmogService)
 		transmog = { looks = {}, scanned = false },
+		-- S159: the streak of full daily sets and the account's bonus shards (Logic/Dailies; read through
+		-- Dailies.sanitize); no migration (reconcile)
+		dailies = { streak = 0, last = 0, shardDay = 0, shardWeek = 0 },
 	}
 end
 

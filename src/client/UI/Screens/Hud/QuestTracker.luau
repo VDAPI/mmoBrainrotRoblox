@@ -10,6 +10,9 @@
 -- name, "value / goal" and a thin bar; a click opens the achievements window on it. A row listens only to its own
 -- counter; on a phone Config.Achievements.trackPhone of them show until "+N" unfolds the rest. Collapses with the
 -- tracker.
+-- S159 (owner 2026-10-20): the daily contracts under one line with the set's progress and the time to the new set
+-- (minutes), one row per open contract, "Done: collect at the board" once all are done, and the weekly set's progress
+-- while it has open contracts.
 -- S156 (owner 2026-10-20): the player moves the tracker by the grip in its header and sizes it by the corner grip
 -- (Logic/HudLayout, account.settings.hud.questTracker; "Reset HUD layout" in the menu); the quest list scrolls inside
 -- it when it is longer than the tracker (the screen's height at most without a saved size).
@@ -28,7 +31,9 @@ local AreaState = require(script.Parent.Parent.Parent.AreaState)
 local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Parent.Device)
+local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
+local Dailies = require(ReplicatedStorage.Shared.Logic.Dailies)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GuidePointer = require(ReplicatedStorage.Shared.Logic.GuidePointer)
 local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
@@ -47,6 +52,7 @@ local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local Time = require(ReplicatedStorage.Shared.Logic.Time)
 
 local Children, OnChange, OnEvent = Fusion.Children, Fusion.OnChange, Fusion.OnEvent
 
@@ -181,6 +187,22 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	local seen: QuestRows.Seen = {}
 	local pulseUntil: { [string]: number } = {}
 	local arrow = scope:Value(nil :: number?)
+	-- S159: the minute of the clock (the daily set's countdown)
+	local minute = scope:Value(math.floor(Clock.now() / 60))
+	local minuteAcc = 0
+	table.insert(
+		scope,
+		RunService.Heartbeat:Connect(function(dt)
+			minuteAcc += dt
+			if minuteAcc >= 5 then
+				minuteAcc = 0
+				local m = math.floor(Clock.now() / 60)
+				if m ~= Fusion.peek(minute) then
+					minute:set(m)
+				end
+			end
+		end)
+	)
 
 	table.insert(
 		scope,
@@ -498,40 +520,62 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			end
 		end
 
+		-- S159: the daily set (progress, countdown, open contracts) and the weekly set's progress
 		local daily = q.daily
-		local open = {}
-		for _, entry in (if type(daily) == "table" then daily.list else {}) or {} do
-			if not entry.claimed then
-				table.insert(open, entry)
-			end
-		end
-		if #open > 0 then
+		local dailyList = if type(daily) == "table" then daily.list else nil
+		local p = Dailies.progress(dailyList)
+		local weekly = q.weekly
+		local wp = Dailies.progress(if type(weekly) == "table" then weekly.list else nil)
+		if p.claimed < p.total or wp.claimed < wp.total then
 			if order > 0 then
 				gap()
 			end
+		end
+		if p.claimed < p.total then
+			local t = use(minute) * 60
+			local left = (Time.dayNumber(t) + 1) * 86400 - t
+			local hh = math.floor(left / 3600)
+			local mm = math.floor((left % 3600) / 60)
 			line(
-				Text.get(use, "quest.tracker.contracts", { npc = npcName("questboard") }),
+				Text.get(use, "quest.tracker.daily", {
+					done = p.complete,
+					total = p.total,
+					time = string.format("%d:%02d", hh, mm),
+				}),
 				Theme.Iron.Heading,
 				Theme.TextSize.Small,
 				Theme.Fonts.BodyBold
 			)
-			for _, entry in open do
-				local done = entry.progress >= entry.objective.n
+			if p.complete >= p.total then
 				line(
-					Text.get(use, `daily.{entry.template}.title`),
-					if done then Theme.Iron.Success else Theme.Iron.Text,
+					Text.get(use, "quest.tracker.collect"),
+					Theme.Brass.Bright,
 					Theme.TextSize.Small,
 					Theme.Fonts.BodyMedium,
 					4
 				)
-				line(
-					`{if done then "✔" else "◦"} {QuestText.objective(use, entry.objective, entry.progress)}`,
-					if done then Theme.Iron.Success else Theme.Iron.Text,
-					Theme.TextSize.Small,
-					Theme.Fonts.Body,
-					10
-				)
+			else
+				for _, entry in dailyList or {} do
+					if not entry.claimed then
+						local done = entry.progress >= entry.objective.n
+						line(
+							`{if done then "✔" else "◦"} {QuestText.objective(use, entry.objective, entry.progress)}`,
+							if done then Theme.Iron.Success else Theme.Iron.Text,
+							Theme.TextSize.Small,
+							Theme.Fonts.Body,
+							4
+						)
+					end
+				end
 			end
+		end
+		if wp.claimed < wp.total then
+			line(
+				Text.get(use, "quest.tracker.weekly", { done = wp.complete, total = wp.total }),
+				if wp.complete >= wp.total then Theme.Brass.Bright else Theme.Iron.TextMuted,
+				Theme.TextSize.Small,
+				Theme.Fonts.BodyMedium
+			)
 		end
 		return list
 	end)

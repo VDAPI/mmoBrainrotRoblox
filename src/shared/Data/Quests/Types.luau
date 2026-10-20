@@ -2,7 +2,8 @@
 -- Quest shapes (DESIGN §20). Objective types:
 --   talk     talk to `npc`
 --   kill     kill `n` of `monster` (any kind when nil), `variant` ("normal" / "elite" = elite or Elite II /
---            S98: "elite2" = Elite II only), `region` (1–4, any kind of that region when `monster` is nil)
+--            S98: "elite2" = Elite II only), `region` (1–4, any kind of that region when `monster` is nil),
+--            `lvMin` (S159: only monsters of this level or higher; the daily and weekly hunts in the level range)
 --   collect  quest items dropped by `monster` with `chance` while the quest is active (virtual, `item` key)
 --   gather   gather `n` from nodes of `node` (kind id) or `category` ("ore" / "herb")
 --   fish     catch `n` fish
@@ -13,7 +14,9 @@
 --   level    reach character level `level`
 --   loot / stats / learn / potion   tutorial actions (pick up loot, spend a stat point, put a skill on the bar
 --            (SkillService: SetHotbar, PutOnBar, auto-put on unlock), drink a potion)
---   duel     finish `n` duels
+--   duel     finish `n` duels (an arena match counts too)
+--   handin   (S159) hand in `n` side quests, hunting contracts or story quests (QuestEvents "quest", `data.n` each)
+--   dismantle (S159) dismantle `n` items at the blacksmith (QuestEvents "dismantle", `data.n` each)
 --   use      (S27) hold an interaction at the quest anchor `anchor` (one) or every one of `anchors` (progress =
 --            distinct anchors done); `action` = locale key of the prompt, `hold` seconds, `fx` = what the player
 --            sees change at the anchor afterwards (client only)
@@ -60,6 +63,7 @@ export type Objective = {
 	place: string?, -- S27 reach with x/z: locale key of the place ("place.stonecircle"); S101b escort too
 	via: { { x: number, z: number } }?, -- S101b escort: waypoints between the start and x/z
 	line: string?, -- S102 talk / deliver: locale key the NPC says while the quest is active
+	lvMin: number?, -- S159 kill: the lowest monster level that counts
 }
 
 -- S101b: dialogue (DESIGN-15 §3.5): choices, recall, barks, companion. Every field is optional; a quest without them
@@ -102,6 +106,7 @@ export type Reward = {
 	mount: string?, -- S96: a Data/Mounts id given on hand-in (once per character)
 	cosmetic: string?, -- S97: account cosmetic granted on turn-in; nothing when already owned
 	marks: number?, -- S134k: Hunter's Marks of a hunting contract (Logic/Contracts.marksFor)
+	shards: number?, -- S159: Dragon Shards of the daily / weekly set bonus (account, once per account and period)
 }
 
 export type MainQuest = {
@@ -152,6 +157,11 @@ export type DailyTemplate = {
 	-- Builds the objective for a character level (region and amounts scale with level).
 	objective: (level: number) -> Objective,
 	hidden: boolean?, -- S98: in the data but never picked (Daily and Weekly templates)
+	-- S159: the template's group (Daily.SLOTS: every day has one "combat" and one "gather" task, the rest from any
+	-- group), its draw weight (default 1) and `pvp` (duels / arena: only in the free slots, lower weight)
+	slot: ("combat" | "gather" | "craft" | "social")?,
+	weight: number?,
+	pvp: boolean?,
 }
 
 -- S98 (docs/DESIGN-15.md §3.3): a hunting contract of Data/Quests/Contracts (filled by S99), one per level 1-99, id

@@ -506,7 +506,7 @@ cmd(
 	{ enum("action", { "play", "list", "reset" }), str("id", true) },
 	{ dangerActions = { "reset" } }
 )
-cmd("quests", "daily", { enum("action", { "reroll" }) })
+cmd("quests", "daily", { enum("action", { "reroll", "complete" }) }) -- S159: complete
 cmd("quests", "questmarks", {})
 -- S98: weekly contracts and the boss contract; the quest EXP budget multiplier of a level (own level by default)
 cmd("quests", "weekly", { enum("action", { "reroll", "complete" }) })

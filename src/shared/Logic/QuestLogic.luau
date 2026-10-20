@@ -47,6 +47,10 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 				return 0
 			end
 		end
+		-- S159: the daily and weekly hunts count monsters in the character's level range
+		if objective.lvMin and (tonumber(data.level) or 0) < objective.lvMin then
+			return 0
+		end
 		local variant: string = data.variant or "normal"
 		local wanted: string? = objective.variant
 		local isElite = variant == "elite" or variant == "elite2"
@@ -108,6 +112,12 @@ function QuestLogic.amount(objective: Objective, kind: string, data: { [string]:
 		return 1
 	elseif t == "level" then
 		return if kind == "level" and (data.level or 0) >= (objective.level or 1) then objective.n else 0
+	elseif t == "handin" then
+		-- S159: QuestEvents "quest" (story, side quest, hunting contracts: `n` handed in at once)
+		return if kind == "quest" then math.max(1, math.floor(tonumber(data.n) or 1)) else 0
+	elseif t == "dismantle" then
+		-- S159: BlacksmithService fires the items taken apart at once
+		return if kind == "dismantle" then math.max(1, math.floor(tonumber(data.n) or 1)) else 0
 	elseif t == "escort" then
 		-- S101b: only CompanionService fires it, when the leading companion arrives with the player
 		return if kind == "escort" and objective.npc ~= nil and data.npc == objective.npc then 1 else 0
@@ -188,15 +198,8 @@ end
 
 export type DailyEntry = { template: string, objective: Objective, progress: number, claimed: boolean }
 
--- S98: `perPeriod` templates of `templates` for a seed (the daily rules of S11: character bytes, 8 warm-up draws,
--- draws without repetition from the templates open at `level`); `hidden` templates are never picked.
-local function pickTemplates(
-	templates: { Quests.DailyTemplate },
-	perPeriod: number,
-	seed: number,
-	characterId: string,
-	level: number
-): { DailyEntry }
+-- S98: the generator of a period's draws (the daily rules of S11: character bytes, 8 warm-up draws).
+local function seeded(seed: number, characterId: string): Rng.Rng
 	for i = 1, #characterId do
 		seed = (seed * 31 + string.byte(characterId, i)) % 2147483647
 	end
@@ -205,20 +208,87 @@ local function pickTemplates(
 	for _ = 1, 8 do
 		rng:next()
 	end
+	return rng
+end
+
+-- S159: one template of `pool` drawn by weight (Daily.templates `weight`, default 1) and removed from it. Equal weights
+-- draw with rng:int like S98, so the weekly lists of a seed stay what they were.
+local function draw(pool: { Quests.DailyTemplate }, rng: Rng.Rng): Quests.DailyTemplate
+	local total, even = 0, true
+	for _, template in pool do
+		local w = template.weight or 1
+		total += w
+		even = even and w == 1
+	end
+	local index = #pool
+	if even then
+		index = rng:int(1, #pool)
+	else
+		local roll = rng:next() * total
+		for i, template in pool do
+			roll -= template.weight or 1
+			if roll < 0 then
+				index = i
+				break
+			end
+		end
+	end
+	return table.remove(pool, index) :: Quests.DailyTemplate
+end
+
+local function entryOf(template: Quests.DailyTemplate, level: number): DailyEntry
+	return { template = template.id, objective = template.objective(level), progress = 0, claimed = false }
+end
+
+-- The templates open at `level` (`hidden` never), without the ids in `except`.
+local function openTemplates(
+	templates: { Quests.DailyTemplate },
+	level: number,
+	except: { [string]: boolean }?
+): { Quests.DailyTemplate }
 	local pool = {}
 	for _, template in templates do
-		if level >= template.minLevel and template.hidden ~= true then
+		if level >= template.minLevel and template.hidden ~= true and not (except and except[template.id]) then
 			table.insert(pool, template)
 		end
 	end
+	return pool
+end
+
+-- S98: `perPeriod` templates of `templates` for a seed, drawn without repetition from the templates open at `level`.
+-- S159: `slots` first (one template of each group, in order, when the group has one open; never a PvP one), then
+-- the rest from every group left.
+local function pickTemplates(
+	templates: { Quests.DailyTemplate },
+	perPeriod: number,
+	seed: number,
+	characterId: string,
+	level: number,
+	slots: { string }?
+): { DailyEntry }
+	local rng = seeded(seed, characterId)
+	local pool = openTemplates(templates, level)
 	local list: { DailyEntry } = {}
-	for _ = 1, math.min(perPeriod, #pool) do
-		local template = table.remove(pool, rng:int(1, #pool))
-		assert(template, "template")
-		table.insert(
-			list,
-			{ template = template.id, objective = template.objective(level), progress = 0, claimed = false }
-		)
+	local groups: { string } = slots or {}
+	for _, slot in groups do
+		if #list >= perPeriod then
+			break
+		end
+		local group, indexOf = {}, {}
+		for i, template in pool do
+			if template.slot == slot and template.pvp ~= true then
+				table.insert(group, template)
+				indexOf[template] = i
+			end
+		end
+		if #group > 0 then
+			local template = draw(group, rng)
+			table.remove(pool, indexOf[template])
+			table.insert(list, entryOf(template, level))
+		end
+	end
+	while #list < perPeriod and #pool > 0 do
+		table.insert(list, entryOf(draw(pool, rng), level))
 	end
 	return list
 end
@@ -226,7 +296,43 @@ end
 -- The day's contracts for a character (deterministic for the same user, character and day).
 function QuestLogic.dailyFor(userId: number, characterId: string, day: number, level: number): { DailyEntry }
 	local seed = (userId * 7919 + day * 104729) % 2147483647
-	return pickTemplates(Quests.Daily.templates, Quests.Daily.PER_DAY, seed, characterId, level)
+	return pickTemplates(Quests.Daily.templates, Quests.Daily.PER_DAY, seed, characterId, level, Quests.Daily.SLOTS)
+end
+
+-- S159: the contract that replaces daily contract `index` on a reroll: another template open at `level` that is not
+-- on the list (the same group first, any group else); `n` = the reroll of the day (another draw each). Nil when the
+-- index is out of the list or nothing else is open.
+function QuestLogic.rerollDaily(
+	list: { DailyEntry },
+	index: number,
+	userId: number,
+	characterId: string,
+	day: number,
+	level: number,
+	n: number
+): DailyEntry?
+	local old = list[index]
+	if not old then
+		return nil
+	end
+	local taken: { [string]: boolean } = {}
+	for _, entry in list do
+		taken[entry.template] = true
+	end
+	local pool = openTemplates(Quests.Daily.templates, level, taken)
+	if #pool == 0 then
+		return nil
+	end
+	local before = Quests.Daily.get(old.template)
+	local same = {}
+	for _, template in pool do
+		if before and template.slot == before.slot then
+			table.insert(same, template)
+		end
+	end
+	local seed = (userId * 7919 + day * 104729 + (index * 31 + n) * 1299709) % 2147483647
+	local rng = seeded(seed, characterId)
+	return entryOf(draw(if #same > 0 then same else pool, rng), level)
 end
 
 -- S98: the week's contracts for a character (deterministic for the same user, character and week; another sequence

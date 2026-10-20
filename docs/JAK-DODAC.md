@@ -136,6 +136,11 @@
 - **Łup Elity II** (S134h): `LootTables.ELITE2_SLOTS[kind]` (2–3 grupy, czytane tylko przez `LootTables.slotsFor`), pasma
   `ELITE2_BANDS` (test pokrycia `tests/elite2loot.spec`); jaskinia: `scale` w `CaveShapes`, plan i współrzędne przez
   `Logic/CavePlan` (ubiór: `Kit.at`).
+- **Zlecenie dzienne / tygodniowe** (S159): szablon w `Data/Quests/Daily` albo `Weekly` (`slot` z grup `Daily.SLOTS`
+  albo `craft` / `social`, `weight`, `pvp`; cel z typów `Data/Quests/Types`, nowy typ = gałąź w `QuestLogic.amount` i
+  zdarzenie `QuestEvents`) + tekst `daily.<id>.title` / `weekly.<id>.title` (PL, EN) i etykieta celu w `UI/QuestText` oraz
+  `tools/WikiData/Quests.label`. Premie, seria i odłamki tylko w `Logic/Dailies` (liczby `Daily.BONUS`, `Weekly.BONUS`);
+  sufit odłamków i tempo EXP pilnuje `tests/dailies.spec`, zmiana liczb idzie z powodem w `tools/balance_reasons.luau`.
 - **Zlecenia łowieckie** (S99): reguły w nagłówku `Data/Quests/Contracts` (`RULES`); po każdej zmianie `lv` / `groups`
   łowisk albo reguł `lune run tools/contracts_gen.luau`, potem `lune run tools/quest_budget.luau` (i powody w księdze);
   test `tests/contracts.spec`. Kolejka i biorący tylko w `Logic/Contracts`, serwer `ContractService`. S134k: rodzaj
