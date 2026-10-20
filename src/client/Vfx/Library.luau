@@ -2839,4 +2839,28 @@ end
 -- Helpers for the controller
 Library.flat = flat
 
+-- Shared building blocks for the piece modules next to this one (Vfx/Wk*, Vfx/Lm*): the same pooled holders, budgets,
+-- clock and fallbacks as the pieces above, so a new piece never builds its own emitter or light.
+Library.kit = {
+	burstFrom = burstFrom,
+	textured = textured,
+	flashLight = flashLight,
+	animate = animate,
+	setupBeam = setupBeam,
+	attachments = attachments,
+	surfaceAt = surfaceAt,
+	ringSurface = ringSurface,
+	particleCount = particleCount,
+	lowQuality = lowQuality,
+	kp = kp,
+	tween = tween,
+	fadeBeam = fadeBeam,
+	facingFrame = facingFrame,
+	ground = ground,
+	centre = centre,
+	flat = flat,
+	SURFACE_LIFT = SURFACE_LIFT,
+	DUST_COLOR = DUST_COLOR,
+}
+
 return Library
