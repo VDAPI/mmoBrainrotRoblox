@@ -34,7 +34,7 @@ local BUDGET: { [string]: { number } } = {
 	forest = { 140, 0, 0 },
 	outside = { 80, 260, 120 },
 	cemetery = { 40, 200, 160 },
-	fame = { 60, 200, 80 }, -- S124: the Hall of Fame board and four plinths with statues
+	fame = { 60, 300, 140 }, -- S124: the Hall of Fame board and four plinths with statues (S156: marble heroes)
 }
 
 T.describe("Town generator", function()

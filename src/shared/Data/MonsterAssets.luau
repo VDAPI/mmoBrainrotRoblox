@@ -80,6 +80,12 @@ local MonsterAssets: { [string]: Entry } = {
 	caveSpider = { rig = "static", rootSize = { 1.50, 1.02, 1.50 }, hipHeight = 0.54, height = 2.35, walkSpeed = 3.5 },
 	lynx = { rig = "static", rootSize = { 1.56, 1.34, 2.91 }, hipHeight = 1.06, height = 3.61, walkSpeed = 5.4 },
 	rabbit = { rig = "static", rootSize = { 1.50, 1.34, 1.94 }, hipHeight = 0.28, height = 2.96, walkSpeed = 4.4 },
+	-- owner 2026-10-20: the serpent model (first imported as youngFrostDragon) is the Frost Wyrm
+	frostWyrm = { rig = "static", rootSize = { 1.66, 1.53, 1.72 }, hipHeight = 0.20, height = 2.00, walkSpeed = 3.0 },
+	-- owner 2026-10-20: the bear (blackBear inherits it with its tint) and the frost dragon boss; the young frost dragon
+	-- above got its own small dragon model the same day
+	brownBear = { rig = "static", rootSize = { 2.37, 1.99, 3.45 }, hipHeight = 1.05, height = 3.40, walkSpeed = 5.1 },
+	vaelgrath = { rig = "static", rootSize = { 1.94, 1.61, 3.23 }, hipHeight = 1.17, height = 4.70, walkSpeed = 7.0 },
 }
 
 -- Owner 2026-10-20: the models looked too small next to the players. Only the drawn model grows (the hitbox, the hip

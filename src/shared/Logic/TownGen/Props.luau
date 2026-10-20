@@ -517,9 +517,134 @@ type FameSpec = {
 	boardTag: string,
 	plinthTag: string,
 	emblem: (i: number) -> string,
+	pose: (i: number) -> string, -- S156: heroStatue pose of plinth i
 	name: string,
 	tag: string,
 }
+
+-- S156 (owner 2026-10-20: "the statues look weak"): a hero in white marble, half again a man's height, on the pedestal
+-- top `top`: boots, greaves, a tasset skirt, a breastplate with a tabard in the emblem colour, pauldrons, a head with a
+-- gilded wreath, a cloak falling to the pedestal, and the pose of the class: "sword" (both hands on the pommel of a
+-- planted sword), "bow" (a longbow at the side, a quiver on the back), "staff" (a raised staff with a glowing orb),
+-- "hammer" (a war hammer held upright and a book) or "raised" (a champion holding a sword aloft).
+local MARBLE = { c = "#E9E4D8", m = "Marble" }
+local MARBLE_SHADE = { c = "#D6D0C2", m = "Marble" }
+local GILT = { c = "#D4AE52", m = "Metal" }
+
+local function heroStatue(bp: BP, top: number, emblem: string, pose: string)
+	local function mb(lod: Blueprint.Lod?): Blueprint.Options
+		return o(MARBLE, lod or "detail", { col = false, jitter = 0 })
+	end
+	local shade = o(MARBLE_SHADE, "detail", { col = false, jitter = 0 })
+	local gilt = o(GILT, "fine", { col = false, jitter = 0 })
+	local cloth = { c = emblem, m = "Fabric", lod = "detail" :: Blueprint.Lod, col = false, jitter = 0 }
+	-- legs in a light step (the left foot forward), boots, greaves
+	for _, side in { -1, 1 } do
+		local z = if side < 0 then -0.25 else 0.1
+		bp:add("ball", 0.62, 0.45, 1.0, side * 0.42, top + 0.22, z - 0.08, 0, 0, 0, mb())
+		bp:rbox(0.6, 1.25, 0.66, side * 0.42, top + 0.95, z, if side < 0 then -6 else 4, 0, 0, mb())
+		bp:rbox(0.66, 1.2, 0.72, side * 0.42, top + 2.1, z * 0.6, if side < 0 then -4 else 2, 0, 0, shade)
+		bp:add("ball", 0.5, 0.42, 0.5, side * 0.42, top + 1.55, z - 0.3, 0, 0, 0, mb("fine"))
+	end
+	-- the tasset skirt and the belt
+	bp:add("cyl", 1.0, 1.95, 1.3, 0, top + 2.75, 0, 0, 0, 90, shade)
+	bp:add("cyl", 0.28, 1.95, 1.35, 0, top + 3.3, 0, 0, 0, 90, gilt)
+	-- the breastplate, rounded chest, the tabard in the class colour
+	bp:box(1.75, 1.55, 1.0, 0, top + 4.1, 0, mb())
+	bp:add("ball", 1.85, 1.3, 1.15, 0, top + 4.35, -0.05, 0, 0, 0, mb())
+	bp:box(0.8, 2.3, 0.08, 0, top + 3.15, -0.66, cloth)
+	bp:box(0.86, 0.14, 0.1, 0, top + 2.0, -0.67, gilt)
+	-- pauldrons, neck, head and the wreath
+	for _, side in { -1, 1 } do
+		bp:add("ball", 1.0, 0.8, 1.05, side * 1.05, top + 4.85, 0, 0, 0, side * -12, mb())
+	end
+	bp:add("cyl", 0.5, 0.45, 0.45, 0, top + 5.25, 0, 0, 0, 90, mb())
+	bp:add("ball", 0.92, 1.08, 0.98, 0, top + 5.95, 0, 0, 0, 0, mb())
+	bp:add("ball", 0.75, 0.32, 0.5, 0, top + 5.55, -0.28, 0, 0, 0, mb("fine")) -- the jaw
+	bp:add("cyl", 0.16, 1.02, 1.08, 0, top + 6.25, 0, 0, 0, 90, gilt)
+	-- the cloak from the shoulders to the pedestal, flaring at the hem
+	bp:rbox(2.2, 4.1, 0.22, 0, top + 3.05, 0.62, 7, 0, 0, shade)
+	bp:rbox(2.6, 1.0, 0.3, 0, top + 0.95, 0.88, 14, 0, 0, shade)
+	bp:add("ball", 1.1, 0.6, 0.7, 0, top + 5.05, 0.5, 0, 0, 0, shade) -- the clasp roll
+	local shL, shR = top + 4.75, top + 4.75
+	if pose == "bow" then
+		-- the longbow held at the left side, the right hand on the chest, a quiver on the back
+		bp:beam(-1.1, shL, 0, -1.35, top + 3.0, -0.15, 0.42, mb())
+		local bx, bz = -1.45, -0.15
+		bp:beam(bx, top + 3.0, bz, bx - 0.3, top + 5.2, bz, 0.16, gilt)
+		bp:beam(bx, top + 3.0, bz, bx - 0.3, top + 0.8, bz, 0.16, gilt)
+		bp:box(0.04, 4.4, 0.04, bx - 0.48, top + 3.0, bz, gilt)
+		bp:beam(1.1, shR, 0, 0.55, top + 3.9, -0.6, 0.42, mb())
+		bp:add("ball", 0.4, 0.4, 0.4, 0.45, top + 3.95, -0.65, 0, 0, 0, mb("fine"))
+		bp:rbox(0.55, 2.2, 0.55, 0.55, top + 4.3, 0.95, 0, 0, -18, shade)
+		for k = 0, 2 do
+			bp:rbox(0.1, 0.5, 0.1, 0.95 + k * 0.12, top + 5.55, 0.95, 0, 0, -18, gilt)
+		end
+	elseif pose == "staff" then
+		-- the staff raised in the right hand, a glowing orb in the emblem colour; the left hand open forward
+		bp:beam(1.1, shR, 0, 1.45, top + 5.9, -0.35, 0.42, mb())
+		local sx, sz = 1.55, -0.4
+		bp:box(0.2, 6.6, 0.2, sx, top + 3.6, sz, mb())
+		bp:add("ball", 0.42, 0.42, 0.42, sx, top + 6.0, sz, 0, 0, 0, mb("fine"))
+		for _, a in { 0, 120, 240 } do
+			bp:rbox(
+				0.1,
+				0.9,
+				0.1,
+				sx + math.cos(math.rad(a)) * 0.3,
+				top + 7.0,
+				sz + math.sin(math.rad(a)) * 0.3,
+				0,
+				0,
+				0,
+				gilt
+			)
+		end
+		bp:add(
+			"ball",
+			0.7,
+			0.7,
+			0.7,
+			sx,
+			top + 7.35,
+			sz,
+			0,
+			0,
+			0,
+			{ c = emblem, m = "Neon", lod = "fine", col = false, jitter = 0, t = 0.15 }
+		)
+		bp:light(sx, top + 7.35, sz, emblem, 12, 1.1, "lamp")
+		bp:beam(-1.1, shL, 0, -0.95, top + 3.8, -0.95, 0.42, mb())
+		bp:add("ball", 0.42, 0.22, 0.5, -0.95, top + 3.75, -1.15, 0, 0, 0, mb("fine"))
+	elseif pose == "hammer" then
+		-- a war hammer held upright before the body, a book under the left arm
+		bp:beam(1.1, shR, 0, 0.25, top + 3.6, -0.85, 0.42, mb())
+		bp:beam(-1.1, shL, 0, -0.75, top + 3.3, -0.35, 0.42, mb())
+		bp:box(0.2, 3.4, 0.2, 0.15, top + 2.2, -0.9, mb())
+		bp:box(1.1, 0.7, 0.7, 0.15, top + 0.45, -0.9, shade)
+		bp:box(1.2, 0.12, 0.8, 0.15, top + 0.85, -0.9, gilt)
+		bp:box(0.35, 1.3, 1.0, -1.05, top + 3.2, -0.2, cloth)
+		bp:box(0.4, 1.36, 0.08, -1.05, top + 3.2, -0.72, gilt)
+	elseif pose == "raised" then
+		-- the champion: the right arm and the sword aloft, the left fist on the hip
+		bp:beam(1.1, shR, 0, 1.25, top + 6.5, -0.2, 0.42, mb())
+		bp:add("ball", 0.42, 0.42, 0.42, 1.27, top + 6.6, -0.2, 0, 0, 0, mb("fine"))
+		bp:box(0.9, 0.16, 0.22, 1.27, top + 6.75, -0.2, gilt)
+		bp:box(0.24, 3.0, 0.1, 1.27, top + 8.3, -0.2, mb())
+		bp:add("wedge", 0.1, 0.5, 0.24, 1.27, top + 10.05, -0.2, 0, 90, 0, mb("fine"))
+		bp:beam(-1.1, shL, 0, -1.25, top + 3.85, -0.1, 0.42, mb())
+		bp:beam(-1.25, top + 3.85, -0.1, -0.85, top + 3.3, -0.25, 0.4, mb())
+	else
+		-- "sword": both hands on the pommel of a sword planted on the pedestal
+		bp:beam(1.1, shR, 0, 0.18, top + 3.2, -0.95, 0.42, mb())
+		bp:beam(-1.1, shL, 0, -0.18, top + 3.2, -0.95, 0.42, mb())
+		bp:add("ball", 0.62, 0.45, 0.5, 0, top + 3.2, -1.0, 0, 0, 0, mb("fine"))
+		bp:box(0.26, 2.6, 0.1, 0, top + 1.45, -1.05, mb())
+		bp:add("wedge", 0.1, 0.4, 0.26, 0, top, -1.05, 180, 90, 0, mb("fine"))
+		bp:box(1.2, 0.18, 0.24, 0, top + 2.8, -1.05, gilt)
+		bp:add("ball", 0.28, 0.28, 0.28, 0, top + 3.55, -1.05, 0, 0, 0, gilt)
+	end
+end
 
 local function fameHall(ground: Ground, spec: FameSpec): Build
 	local fame = spec
@@ -556,7 +681,6 @@ local function fameHall(ground: Ground, spec: FameSpec): Build
 	-- the plinths, placed in the board's frame
 	local a = math.rad(b.facing)
 	local cosA, sinA = math.cos(a), math.sin(a)
-	local statue = Palette.ashlar[3]
 	for i, spot in fame.plinths do
 		local dx, dz = spot.x - b.x, spot.z - b.z
 		local lx, lz = dx * cosA - dz * sinA, dx * sinA + dz * cosA
@@ -576,21 +700,11 @@ local function fameHall(ground: Ground, spec: FameSpec): Build
 			o(BRONZE, "shell", { tag = spec.plinthTag, col = false, q = false, jitter = 0 })
 		)
 		bp:box(0.8, 0.85, 0.12, 0, 2.95, -1.46, { c = spec.emblem(i), m = "SmoothPlastic", lod = "detail", jitter = 0 })
-		-- the statue: feet, robe, torso, cloak, shoulders, head, arms, and a sword with its point on the pedestal
-		local top = 3.7
-		for _, x in { -0.3, 0.3 } do
-			bp:box(0.5, 0.4, 0.9, x, top + 0.2, -0.05, o(statue))
-		end
-		bp:box(1.2, 1.7, 0.8, 0, top + 1.25, 0, o(statue))
-		bp:box(1.3, 1.4, 0.75, 0, top + 2.8, 0, o(statue))
-		bp:box(1.6, 3.0, 0.25, 0, top + 1.9, 0.45, o(statue))
-		bp:box(1.8, 0.35, 0.85, 0, top + 3.4, 0, o(statue))
-		bp:add("ball", 0.85, 0.9, 0.85, 0, top + 4.05, 0, 0, 0, 0, o(statue))
-		bp:beam(-0.8, top + 3.3, 0, -0.75, top + 2.1, -0.1, 0.35, o(statue))
-		bp:beam(0.8, top + 3.3, 0, 0.35, top + 2.75, -0.55, 0.35, o(statue))
-		bp:box(0.15, 2.4, 0.06, 0.3, top + 1.2, -0.6, o(statue, "fine"))
-		bp:box(0.8, 0.12, 0.14, 0.3, top + 2.45, -0.6, o(statue, "fine"))
-		bp:add("ball", 0.25, 0.25, 0.25, 0.3, top + 2.7, -0.6, 0, 0, 0, o(statue, "fine"))
+		-- S156: gilded trims on the steps and the cornice, and a warm light at the foot for the night
+		bp:box(4.5, 0.12, 4.5, 0, 0.52, 0, o(GILT, "fine", { col = false }))
+		bp:box(2.9, 0.16, 2.9, 0, 3.32, 0, o(GILT, "fine", { col = false }))
+		bp:light(0, 1.2, -3.2, "#FFD7A0", 11, 0.8, "lamp")
+		heroStatue(bp, 3.82, spec.emblem(i), spec.pose(i))
 		bp:pop()
 	end
 	return { name = spec.name, bp = bp, at = { x = b.x, y = y0, z = b.z, rot = b.facing }, tag = spec.tag }
@@ -602,6 +716,23 @@ local function classEmblem(i: number): string
 	local board = plinth and Leaderboards.get(plinth.board)
 	local class = board and board.class and Classes.get(board.class)
 	return if class then class.color else "#8A8A8A"
+end
+
+-- S156: the statue pose of a Hall of Fame plinth: the weapon of its class.
+local CLASS_POSE: { [string]: string } = { Warrior = "sword", Hunter = "bow", Mage = "staff", Cleric = "hammer" }
+local function classPose(i: number): string
+	local plinth = Leaderboards.TOWN.plinths[i]
+	local board = plinth and Leaderboards.get(plinth.board)
+	return board and board.class and CLASS_POSE[board.class] or "sword"
+end
+
+-- S156: the arena brackets show every weapon in turn, the tournament champions hold their swords aloft.
+local ARENA_POSES = { "sword", "bow", "staff", "hammer" }
+local function arenaPose(i: number): string
+	return ARENA_POSES[(i - 1) % #ARENA_POSES + 1]
+end
+local function tourneyPose(_i: number): string
+	return "raised"
 end
 
 -- S128: the arena plinths carry the bronze of the arena (one per bracket).
@@ -633,6 +764,7 @@ function Props.all(city: any, ground: Ground): { Build }
 			boardTag = "fameBoard",
 			plinthTag = "famePlinth",
 			emblem = classEmblem,
+			pose = classPose,
 			name = "FameHall",
 			tag = "fame",
 		})
@@ -646,6 +778,7 @@ function Props.all(city: any, ground: Ground): { Build }
 			boardTag = "arenaFameBoard",
 			plinthTag = "arenaFamePlinth",
 			emblem = arenaEmblem,
+			pose = arenaPose,
 			name = "ArenaFameHall",
 			tag = "arenaFame",
 		})
@@ -659,6 +792,7 @@ function Props.all(city: any, ground: Ground): { Build }
 			boardTag = "tourneyFameBoard",
 			plinthTag = "tourneyFamePlinth",
 			emblem = tourneyEmblem,
+			pose = tourneyPose,
 			name = "TourneyFameHall",
 			tag = "tourneyFame",
 		})
