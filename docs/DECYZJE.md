@@ -5939,3 +5939,5 @@
 - **S156** Od 2026-10-20 praca idzie na `main` (gałąź `wyglad` scalona, sesja DALEJ nieaktualna).
 - **S156** (właściciel 2026-10-20) Efekt przedmiotu na broni zawsze z puli tej broni albo z umiejętności wspólnych klasy (łuk nigdy z efektem kuszy): `ItemEffects.weaponPool`, losowanie i każde wczytanie (`AccountSchema.migrate` → `migrateItem`, bez nowego kroku schematu) wymieniają efekty innej puli na wylosowane z puli broni (ziarno z uid).
 - **S156** Menu HUD w dwóch rzędach po 7 (nie zasłania paska HP celu / bossa), mapa świata przesuwa się tylko nad narysowaną mapą.
+- **W28** Rama portalu w jaskini stoi w ramce portalu z `Data/Portals` (`CaveDress/Kit.atPortal`), nie na liczbach planu; wystrój żadnej mapy nie wchodzi w łuk portalu ani w bramę lochu (`tests/portals.spec`).
+- **W28** „E” przy portalu i bramie lochu: podpowiedź `Data/Portals.PROMPT_RANGE` (12), serwer `SERVER_RANGE` (20) od tej samej części (pole / drzwi bramy); brama nie liczy już od punktu lądowania.

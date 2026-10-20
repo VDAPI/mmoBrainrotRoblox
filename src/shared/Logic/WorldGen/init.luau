@@ -19,6 +19,7 @@ export type Build = {
 	bp: any,
 	at: { x: number, y: number, z: number, rot: number },
 	tag: string,
+	frames: string?, -- W28: the portal it frames (Logic/WorldGen/Kit)
 }
 export type Life = { kind: string, x: number, y: number, z: number, r: number? }
 export type TreeInfo = { x: number, z: number, kind: string }

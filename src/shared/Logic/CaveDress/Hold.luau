@@ -108,11 +108,12 @@ local function glacierTongue(env: Env, out: { Build }, name: string, x: number, 
 end
 
 local function gatehouse(env: Env, out: { Build })
-	-- the raised frozen portcullis over the exit (-211, 0): lower edge 20+ over the floor
-	local p = Kit.build(env, "FrozenPortcullis", "landmark", Kit.at(env, -214), 0, 90)
+	-- the raised frozen portcullis over the exit: lower edge 20+ over the floor; W28: in the exit portal's frame, the
+	-- icicles under it clear of the arch (18)
+	local p = Kit.atPortal(env, "FrozenPortcullis", "landmark", `{env.mapId}_exit`, true)
 	for k = -4, 4 do
 		p.bp:box(0.6, 6, 0.6, k * 2, 23, 0, o(Kit.iron, "detail", { col = false }))
-		p.bp:add("cyl", 2, 0.5, 0.5, k * 2, 19, 0, 0, 0, 90, o(ICE, "fine", { col = false }))
+		p.bp:add("cyl", 1.4, 0.5, 0.5, k * 2, 19.5, 0, 0, 0, 90, o(ICE, "fine", { col = false }))
 	end
 	for t = 0, 1 do
 		p.bp:box(18, 0.6, 0.6, 0, 21 + t * 4, 0, o(Kit.iron, "detail", { col = false }))

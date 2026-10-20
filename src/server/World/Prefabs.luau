@@ -580,8 +580,55 @@ end
 -- height in studs and turn (degrees) on the arch.
 local PORTAL_MODEL = "common_portal_01"
 local PORTAL_MODEL_WILD = "common_portal_02"
-local PORTAL_HEIGHT = 18
 local PORTAL_TURN = 0
+-- W28: the field inside the painted model's opening keeps this share of the model's width and height
+local OPENING_WIDTH = 0.62
+local OPENING_HEIGHT = 0.78
+
+-- Box of `model`'s parts in the frame `base` (min and max corners), or nil without parts.
+local function boxIn(model: Model, base: CFrame): (Vector3?, Vector3?)
+	local lo, hi = Vector3.one * math.huge, -Vector3.one * math.huge
+	local any = false
+	for _, item in model:GetDescendants() do
+		if item:IsA("BasePart") then
+			local cf, half = base:ToObjectSpace(item.CFrame), item.Size / 2
+			for _, sx in { -1, 1 } do
+				for _, sy in { -1, 1 } do
+					for _, sz in { -1, 1 } do
+						local p = cf * Vector3.new(sx * half.X, sy * half.Y, sz * half.Z)
+						lo, hi = lo:Min(p), hi:Max(p)
+						any = true
+					end
+				end
+			end
+		end
+	end
+	if not any then
+		return nil, nil
+	end
+	return lo, hi
+end
+
+-- W28 (owner: the purple field stood outside the portal's frame): the painted model is turned so that it stands
+-- across the portal like the field (its thin side along the frame's z) and the field is fitted into its opening:
+-- centred on the model, never wider or taller than the opening's share of it. The field, the pillars, the lintel and
+-- the model share the portal's one frame `base`.
+local function fitModel(arch: Model, base: CFrame, field: BasePart)
+	local lo, hi = boxIn(arch, base)
+	if lo and hi and (hi.Z - lo.Z) > (hi.X - lo.X) then
+		arch:PivotTo(arch:GetPivot() * CFrame.Angles(0, math.rad(90), 0))
+		lo, hi = boxIn(arch, base)
+	end
+	if not lo or not hi then
+		return
+	end
+	local spec = Portals.ARCH.field
+	local w = math.min(spec.w, (hi.X - lo.X) * OPENING_WIDTH)
+	local h = math.min(spec.h, (hi.Y - lo.Y) * OPENING_HEIGHT)
+	local cx, cz = (lo.X + hi.X) / 2, (lo.Z + hi.Z) / 2
+	field.Size = Vector3.new(w, h, spec.d)
+	field.CFrame = base * CFrame.new(cx, lo.Y + 0.5 + h / 2, cz)
+end
 
 function Prefabs.portal(
 	ctx: Context,
@@ -599,11 +646,12 @@ function Prefabs.portal(
 	local base = baseAt(ctx, x, z, rot)
 	local model = newModel(ctx, `Portal_{id}`, ctx.folder)
 	local stone = hex("#5E5A64")
+	local arch = Portals.ARCH
 	for _, side in { -1, 1 } do
 		part(ctx, model, {
 			Name = "Pillar",
 			Size = Vector3.new(2.5, 15, 2.5),
-			CFrame = base * CFrame.new(side * 6, 7.5, 0),
+			CFrame = base * CFrame.new(side * arch.pillarX, 7.5, 0),
 			Color = stone,
 			Material = Enum.Material.Slate,
 			CanQuery = true,
@@ -618,8 +666,8 @@ function Prefabs.portal(
 	})
 	local field = part(ctx, model, {
 		Name = "Field",
-		Size = Vector3.new(9.5, 13.5, 0.4),
-		CFrame = base * CFrame.new(0, 7.5, 0),
+		Size = Vector3.new(arch.field.w, arch.field.h, arch.field.d),
+		CFrame = base * CFrame.new(0, arch.field.y, 0),
 		Color = hex("#7A5CFF"),
 		Material = Enum.Material.Neon,
 		Transparency = 0.35,
@@ -634,11 +682,12 @@ function Prefabs.portal(
 		template, height = KitAssets.model(if ctx.map.id == "city" then PORTAL_MODEL else PORTAL_MODEL_WILD)
 	end
 	if template and height > 0 then
-		local arch = template:Clone()
-		arch.Name = "PortalModel"
-		arch:ScaleTo(PORTAL_HEIGHT / height)
-		arch:PivotTo(base * CFrame.Angles(0, math.rad(PORTAL_TURN), 0))
-		arch.Parent = model
+		local painted = template:Clone()
+		painted.Name = "PortalModel"
+		painted:ScaleTo(arch.height / height)
+		painted:PivotTo(base * CFrame.Angles(0, math.rad(PORTAL_TURN), 0))
+		painted.Parent = model
+		fitModel(painted, base, field)
 		for _, item in model:GetChildren() do
 			if item:IsA("BasePart") and (item.Name == "Pillar" or item.Name == "Lintel") then
 				item.Transparency = 1
@@ -713,19 +762,20 @@ function Prefabs.caveMouth(
 	local base = baseAt(ctx, x, z, rot)
 	local model = newModel(ctx, "CaveMouth", ctx.folder)
 	local rock = hex(rockColor or "#5A5650")
-	-- Back wall of rock and the dark hole
+	-- Back wall of rock and the dark hole; W28: the hole, the boulders and the lintel round the portal's arch
+	-- (Data/Portals.ARCH, 14.5 x 18; the boulders stood in its pillars, the lintel 1 stud into its top)
 	part(ctx, model, {
 		Name = "Back",
-		Size = Vector3.new(30, 24, 10),
-		CFrame = base * CFrame.new(0, 10, 8),
+		Size = Vector3.new(34, 28, 10),
+		CFrame = base * CFrame.new(0, 12, 8),
 		Color = rock,
 		Material = Enum.Material.Slate,
 		CanQuery = true,
 	})
 	part(ctx, model, {
 		Name = "Hole",
-		Size = Vector3.new(14, 15, 0.4),
-		CFrame = base * CFrame.new(0, 7.5, 2.9),
+		Size = Vector3.new(17, 19.5, 0.4),
+		CFrame = base * CFrame.new(0, 9.75, 2.9),
 		Color = hex("#050506"),
 		Material = Enum.Material.SmoothPlastic,
 	})
@@ -736,7 +786,7 @@ function Prefabs.caveMouth(
 				Name = "Boulder",
 				Shape = Enum.PartType.Ball,
 				Size = Vector3.one * (7 - i),
-				CFrame = base * CFrame.new(side * (9 + i * 0.6), 3 + i * 5.5, 1),
+				CFrame = base * CFrame.new(side * (11 + i * 0.6), 3 + i * 6.5, 1),
 				Color = rock,
 				Material = Enum.Material.Slate,
 				CanQuery = true,
@@ -745,8 +795,8 @@ function Prefabs.caveMouth(
 	end
 	part(ctx, model, {
 		Name = "Lintel",
-		Size = Vector3.new(24, 4, 6),
-		CFrame = base * CFrame.new(0, 17, 1) * CFrame.Angles(0, 0, math.rad(4)),
+		Size = Vector3.new(28, 4, 6),
+		CFrame = base * CFrame.new(0, 21, 1) * CFrame.Angles(0, 0, math.rad(4)),
 		Color = rock,
 		Material = Enum.Material.Slate,
 	})
@@ -1069,7 +1119,7 @@ function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number,
 		local horn = part(ctx, model, {
 			Name = "Horn",
 			Size = Vector3.new(3, 18, 3),
-			CFrame = base * CFrame.new(side * 8, 8, 0) * CFrame.Angles(0, 0, math.rad(-side * 12)),
+			CFrame = base * CFrame.new(side * Portals.GATE.hornX, 8, 0) * CFrame.Angles(0, 0, math.rad(-side * 12)),
 			Color = hex("#2A2428"),
 			Material = Enum.Material.Basalt,
 			CanQuery = true,
@@ -1078,8 +1128,8 @@ function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number,
 	end
 	local door = part(ctx, model, {
 		Name = "Door",
-		Size = Vector3.new(12, 15, 0.6),
-		CFrame = base * CFrame.new(0, 7.5, 0),
+		Size = Vector3.new(Portals.GATE.door.w, Portals.GATE.door.h, Portals.GATE.door.d),
+		CFrame = base * CFrame.new(0, Portals.GATE.door.y, 0),
 		Color = hex("#D64A3E"),
 		Material = Enum.Material.Neon,
 		Transparency = 0.25,

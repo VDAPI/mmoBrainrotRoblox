@@ -284,7 +284,8 @@ local data: Types.MapAreas = {
 	caves = {
 		{ cave = "duskwood_den", x = -420, z = -745, rot = 180 },
 		{ cave = "duskwood_barrow", x = 180, z = -745, rot = 180 },
-		{ cave = "duskwood_cave", x = 745, z = 0, rot = 90 },
+		-- W28: in the gateway of the facade (Logic/DuskwoodGen/Cliffs cryptGate), it stood 6 studs before it
+		{ cave = "duskwood_cave", x = 748.5, z = 0, rot = 90 },
 	},
 	sites = SITES,
 	npcSpots = NPC_SPOTS, -- S103
