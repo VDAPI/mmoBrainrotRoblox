@@ -1,5 +1,5 @@
 --!strict
--- Monetisation (DESIGN §21), without pay-to-win: Dragon Shard packs and the instant respawn are Developer
+-- Monetisation (DESIGN §21), without pay-to-win: Dragon Shard packs (and starter packs) are Developer
 -- Products, Gamepasses, the VIP subscription (S121) and the premium shop that sells services for shards.
 --
 -- IDs ARE PLACEHOLDERS (0). The owner creates the products and passes in the Creator Hub
@@ -69,8 +69,8 @@ local SHARD_PACKS: { ShardPack } = {
 	{ key = "shards_7000", productId = 0, shards = 7000, robux = 4999 },
 }
 
--- Instant respawn bought with Robux on the death screen (the shard price is Config.RespawnNowCost).
-local RESPAWN_PRODUCT = { key = "respawn", productId = 0, robux = 15 }
+-- W28 (owner): the instant respawn is bought only for Dragon Shards (Config.RespawnNowCost, DeathService RespawnNow);
+-- the Robux Developer Product "respawn" is gone.
 
 local PASSES: { Pass } = {
 	{ key = "autoLoot", passId = 0, robux = 199, icon = "✋" },
@@ -215,7 +215,6 @@ end
 
 return table.freeze({
 	shardPacks = SHARD_PACKS,
-	respawn = RESPAWN_PRODUCT,
 	passes = PASSES,
 	subscriptions = SUBSCRIPTIONS,
 	shop = SHOP,
