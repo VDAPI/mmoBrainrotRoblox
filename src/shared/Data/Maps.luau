@@ -103,11 +103,12 @@ local LIGHT = {
 	}),
 	-- Night in the city (S21): cool moonlight, dark blue fog; windows, lamps and fires do the rest.
 	-- W01 (Studio): roofs and streets were black at 22:00; a brighter moonlit blue, the windows still stand out
+	-- W28: a touch more moonlight in the shade between the street lamps (owner: the town was patchy at night)
 	cityNight = lighting({
 		clockTime = 0,
 		brightness = 0.9,
-		ambient = "#3A4462",
-		outdoorAmbient = "#5A6688",
+		ambient = "#424C6A",
+		outdoorAmbient = "#606C8E",
 		fogColor = "#1C2438",
 		fogEnd = 700,
 		atmosphere = { density = 0.3, haze = 1, glare = 0, color = "#2E3A58", decay = "#141A2C" },

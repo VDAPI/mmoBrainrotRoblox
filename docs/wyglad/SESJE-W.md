@@ -529,3 +529,12 @@ pod szronem oparta o ołtarz, wieko na posadzce, zimne światło; nakrycie ołta
 - Pustkowia (`AshenGen/Finish`): postój karawan, krasnoludzki pomost z wędką (sekret 4), martwa palma w kadrze widoku 3, koleiny na drodze procesyjnej, żar nad rzekami lawy.
 - Szczyty (`FrostpeakGen/Scenery`): kosze ciepłego ognia, kłody i drewno przy 7 punktach odrodzenia, kopiec z chorągwią na siodle, ścieżka pielgrzymów (zapasowa Z1 bez wpisu w `roads`), miejsca zestawu na modele Tripo (`landmark:giantColossus`, `frozenFalls`, `watchTower`, `harpyNest`; do czasu modeli ostrzeżenia `[Kit] no model`), atmosfera 0,34 → 0,30, mocniejsze zawieje Tundry, kolor kolców lodu.
 - Bez zmian: grupy, spawny, kotwice, portale, drogi (Z1 Łąk, Szlak Popiołu, rampa Z2 Szczytów pominięte). Budżety części w testach.
+
+### W28: latarnie miasta
+
+- Prośba właściciela: latarnie były niskie (9 st.), nieliczne (60, tylko przy 4 głównych ulicach) i obrócone losowo, a miasto nocą ciemne i nierówno oświetlone.
+- Nowy `Logic/TownLamps` stawia latarnie według reguł: para przy każdej bramie, przy wejściach budowli specjalnych (świątynia, donżon, ratusz, gildia, karczma i inne), na obu końcach mostów, między straganami i na końcach ich rzędu, w rogach placów, potem wzdłuż każdej ulicy co 24 st. na przemian stronami, a na koniec dopełnienie tam, gdzie punkt środka ulicy jest dalej niż 18 st. od latarni (przy ulicach zabudowanych do krawędzi latarnia może stać na skraju drogi). Omija drzwi, NPC, punkty eskorty Dobiesława, drogowskazy, studnie, fontannę, spawn, pręgierz, rampy, mury oporowe, mosty, arenę i Hale Sławy.
+- Wynik: 217 latarni (212 słupów i 5 dawnych latarni przy rampach), najciemniejszy punkt ulicy 16,8 st. od latarni. Dane zapisuje `lune run tools/town_lamps.luau` do `Data/Town/city.luau` (pole `rot`: ramię zawsze nad drogą); `check` mówi, czy są aktualne.
+- Wygląd latarni zostaje z równoległej poprawki na `main` (słup 13 st., światło zasięg 26, bez cieni, tylko nocą, tylko w promieniu detalu); `Structures.lamps` bierze teraz obrót ramienia z danych (`rot`), a gdy go brak, dalej celuje w najbliższą ulicę.
+- Noc w mieście odrobinę jaśniejsza w cieniu między latarniami (`LIGHT.cityNight` otoczenie `#424C6A`, na zewnątrz `#606C8E`).
+- Części: shell miasta ok. 5690 (limit testu 6500). Nowy test w `town.spec`: dane równe wynikowi generatora, brak ciemnych przerw na ulicach, latarnie na wolnym gruncie, z dala od areny, NPC i drzwi. Bez podglądu w Studio.

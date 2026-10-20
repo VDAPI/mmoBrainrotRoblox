@@ -13,6 +13,7 @@ local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
+local ShopPayload = require(ReplicatedStorage.Shared.Logic.ShopPayload)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -50,22 +51,29 @@ export type CardSpec = {
 	buttonWidth: number?, -- width the right side takes (default 190)
 	tooltip: UsedAs<string>?, -- on the whole card (PC: hover, phone: long press)
 	rich: boolean?, -- S123: the subtitle is rich text (an old price struck through)
+	highlight: boolean?, -- W28: a brass frame instead of the thin rule (the VIP card)
 }
 
-local CARD_HEIGHT = 70
-local TILE = 54
+-- W28: the card is a row (tile | text column | right side) in a UIListLayout and grows with its subtitle, so a long
+-- description wraps instead of running under the buttons; MIN_HEIGHT keeps one-line cards even.
+local MIN_HEIGHT = 76
+local TILE = 56
+local GAP = 12
+local PAD = 10
+local TITLE_HEIGHT = 26
+local BADGE_RESERVE = 116
+local RIGHT_HEIGHT = 56
 
 local function tile(scope: Scope, spec: CardSpec): Instance
 	if spec.item then
 		return ItemIcon(scope, {
 			Def = spec.item,
-			Position = UDim2.fromOffset(10, 8),
+			Position = UDim2.fromOffset(0, 0),
 			Size = UDim2.fromOffset(TILE, TILE),
 		})
 	end
 	local art = spec.art
 	return scope:New("TextLabel")({
-		Position = UDim2.fromOffset(10, 8),
 		Size = UDim2.fromOffset(TILE, TILE),
 		BackgroundColor3 = spec.tileColor or Theme.Paper.Surface,
 		Text = scope:Computed(function(use): string
@@ -96,42 +104,68 @@ end
 
 function Cards.card(scope: Scope, spec: CardSpec): Instance
 	local right = spec.buttonWidth or 190
-	local badgeWidth = if spec.badge ~= nil then 120 else 0
-	local frame = scope:New("Frame")({
-		LayoutOrder = spec.order,
-		Size = UDim2.new(1, 0, 0, CARD_HEIGHT),
-		BackgroundColor3 = Theme.Paper.Raised,
-		BackgroundTransparency = 0.2,
+	local hasBadge = spec.badge ~= nil
+	local textColumn = scope:New("Frame")({
+		Name = "Text",
+		LayoutOrder = 2,
+		Size = UDim2.new(1, -(TILE + right + GAP * 2), 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
 		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			tile(scope, spec),
-			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(76, 8),
-				Size = UDim2.new(1, -(86 + right + badgeWidth), 0, 28),
-				BackgroundTransparency = 1,
-				Text = spec.title,
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Paper.Text,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				Padding = UDim.new(0, 2),
 			}),
-			(if spec.badge ~= nil
-				then scope:New("TextLabel")({
-					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.new(1, -(right + 10), 0, 10),
-					Size = UDim2.fromOffset(badgeWidth, 24),
-					BackgroundTransparency = 1,
-					Text = spec.badge,
-					FontFace = Theme.Fonts.BodyBold,
-					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Paper.Success,
-					TextXAlignment = Enum.TextXAlignment.Right,
-				})
-				else nil) :: any,
+			scope:New("Frame")({
+				Name = "TitleRow",
+				LayoutOrder = 1,
+				Size = UDim2.new(1, 0, 0, TITLE_HEIGHT),
+				BackgroundTransparency = 1,
+				[Children] = {
+					scope:New("TextLabel")({
+						Name = "Title",
+						Size = UDim2.new(1, if hasBadge then -BADGE_RESERVE else 0, 1, 0),
+						BackgroundTransparency = 1,
+						Text = spec.title,
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Body,
+						TextColor3 = Theme.Paper.Text,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+					}),
+					(if hasBadge
+						then scope:New("TextLabel")({
+							Name = "Badge",
+							AnchorPoint = Vector2.new(1, 0.5),
+							Position = UDim2.fromScale(1, 0.5),
+							Size = UDim2.fromOffset(0, 22),
+							AutomaticSize = Enum.AutomaticSize.X,
+							BackgroundColor3 = Theme.Paper.Surface,
+							BackgroundTransparency = 0.1,
+							Text = spec.badge,
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Paper.Success,
+							[Children] = {
+								scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+								scope:New("UIPadding")({
+									PaddingLeft = UDim.new(0, 8),
+									PaddingRight = UDim.new(0, 8),
+								}),
+								scope:New("UISizeConstraint")({
+									MaxSize = Vector2.new(BADGE_RESERVE - 6, math.huge),
+								}),
+							},
+						})
+						else nil) :: any,
+				},
+			}),
 			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(76, 36),
-				Size = UDim2.new(1, -(86 + right), 0, 24),
+				Name = "Subtitle",
+				LayoutOrder = 2,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
 				Text = spec.subtitle,
 				RichText = spec.rich == true,
@@ -140,9 +174,51 @@ function Cards.card(scope: Scope, spec: CardSpec): Instance
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
+				TextYAlignment = Enum.TextYAlignment.Top,
 			}),
-			spec.button :: any,
+		} :: any,
+	})
+	local frame = scope:New("Frame")({
+		LayoutOrder = spec.order,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = Theme.Paper.Raised,
+		BackgroundTransparency = 0.2,
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			scope:New("UIStroke")({
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Color = if spec.highlight then Theme.Brass.Frame else Theme.Paper.Rule,
+				Thickness = if spec.highlight then Theme.Stroke.Normal else Theme.Stroke.Thin,
+			}),
+			scope:New("UISizeConstraint")({ MinSize = Vector2.new(0, MIN_HEIGHT) }),
+			scope:New("UIPadding")({
+				PaddingLeft = UDim.new(0, PAD),
+				PaddingTop = UDim.new(0, 8),
+				PaddingBottom = UDim.new(0, 8),
+			}),
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, GAP),
+			}),
+			scope:New("Frame")({
+				Name = "Tile",
+				LayoutOrder = 1,
+				Size = UDim2.fromOffset(TILE, TILE),
+				BackgroundTransparency = 1,
+				[Children] = { tile(scope, spec) },
+			}),
+			textColumn,
+			-- The right side: the buttons keep their own anchor (right edge, centred) inside this holder.
+			scope:New("Frame")({
+				Name = "Right",
+				LayoutOrder = 3,
+				Size = UDim2.fromOffset(right, RIGHT_HEIGHT),
+				BackgroundTransparency = 1,
+				[Children] = { spec.button :: any },
+			}),
 		} :: any,
 	}) :: Frame
 	if spec.tooltip ~= nil then
@@ -257,12 +333,12 @@ end
 -- A Robux request (BuyProduct / BuyPass / BuySubscription): the server opens the native prompt (or simulates in
 -- Studio).
 function Cards.invoke(name: string, ...: any)
-	local args = table.pack(...)
+	local call = ShopPayload.pack(name, ...)
 	if name == "BuyProduct" or name == "BuyPass" then
 		Net.Send("PremiumFunnel", "shop", "item") -- S131: the shop funnel (the VIP funnel's prompt is the server's)
 	end
 	task.spawn(function()
-		local ok, err, errArgs = Net.Invoke(name, table.unpack(args, 1, args.n))
+		local ok, err, errArgs = Net.Invoke(call.remote, table.unpack(call.args, 1, call.n))
 		if ok then
 			if err then
 				-- the native prompt is open (premium.prompted): no sound until something is granted

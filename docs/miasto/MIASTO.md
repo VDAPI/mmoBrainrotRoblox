@@ -48,7 +48,7 @@ Mapa ma **800 × 800 st.** (środek w 0,0; `city.size = 800`). Miasto otacza mur
 | Stragany (6) | `city.stalls` | kupiec i sakwiarz stoją za ladą |
 | Mury oporowe (59) | `city.retaining` | krawędzie tarasów, boki ramp, klif zamkowy |
 | Ogrody (153) | `city.gardens` | §8 |
-| Latarnie (60) | `city.lamps` | słupy co ok. 26 st. przy głównych ulicach i latarnie przy rampach |
+| Latarnie (217, W28) | `city.lamps` | wysokie słupy 13 st. z ramieniem nad drogą przy wszystkich ulicach (co 24 st. na przemian stronami), przy bramach, wejściach budowli, mostach, straganach i w rogach placów, plus 5 latarni przy rampach; układ liczy `Logic/TownLamps`, zapis `lune run tools/town_lamps.luau` (nie `export.py`) |
 | Okolica (§9) | `city.outside` | las od max(|x|,|z|) ≥ 340, wiatrak, 4 farmy, ruina, 4 drogi z mostami zwodzonymi, 51 pól |
 
 ### NPC

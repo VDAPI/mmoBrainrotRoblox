@@ -163,6 +163,7 @@ return {
 		["Data/MapMarks"] = "wygląd",
 		["Data/MonsterLooks"] = "wygląd",
 		["Data/MonsterAssets"] = "wygląd", -- W26: imported monster models (hitbox numbers copy the generator's)
+		["Data/MonsterAssetVariants"] = "wygląd", -- W26: variants drawn with their base's model in their own colour
 		["Data/MonsterClips/*"] = "generowane", -- W26: bone clips sampled from the imported models
 		["Data/WeaponLooks"] = "wygląd",
 		["Data/SkillMotions"] = "wygląd",
