@@ -628,27 +628,55 @@ function Structures.bridges(city: any, ground: Ground): { Build }
 	return out
 end
 
+-- The point of the nearest street centre line to (x, z) (the lamp's arm reaches over the street).
+local function nearestStreet(city: any, x: number, z: number): (number?, number?)
+	local best, bx, bz = math.huge, nil, nil
+	for _, street in city.streets or {} do
+		local pts = street.pts
+		for i = 1, #pts - 1 do
+			local ax, az, cx, cz = pts[i][1], pts[i][2], pts[i + 1][1], pts[i + 1][2]
+			local d, t = segDist(ax, az, cx, cz, x, z)
+			if d < best then
+				best = d
+				bx, bz = ax + (cx - ax) * t, az + (cz - az) * t
+			end
+		end
+	end
+	if bx and bz and best < 40 then
+		return bx, bz
+	end
+	return nil, nil
+end
+
 -- Street lamps: iron post with an arm and a lantern (tag "lamp" + a light the client switches on at night).
+-- Owner 2026-10-20: taller (9 -> 13 studs), the arm always over the nearest street (it pointed anywhere) and a wider,
+-- brighter light so the streets are lit evenly at night.
+local LAMP_HEIGHT = 13
+local LAMP_RANGE = 26
+local LAMP_BRIGHTNESS = 1.15
 function Structures.lamps(city: any, ground: Ground): { Build }
 	local out: { Build } = {}
 	for _, l in city.lamps do
 		local y = ground(l.x, l.z)
 		local bp = Blueprint.new(hash(l.x, l.z))
-		local hgt = if l.kind == "rampLantern" then 6 else 9
+		local hgt = if l.kind == "rampLantern" then 7 else LAMP_HEIGHT
 		-- W12: the post, the arm and the lantern are one asset kit slot (Data/Kit "prop:lamp": the painted street lamp);
 		-- the light stays
 		bp:beginKit("prop:lamp", 0, 0, 0, hgt / 9, "shell")
-		bp:box(1.2, 0.6, 1.2, 0, 0.3, 0, o(Palette.slate[1], "shell"))
-		bp:add("cyl", hgt, 0.45, 0.45, 0, hgt / 2, 0, 0, 0, 90, o(Palette.metal[1], "shell", { q = false }))
-		bp:box(2, 0.25, 0.25, 0.9, hgt - 0.3, 0, o(Palette.metal[1]))
-		bp:box(0.9, 1.2, 0.9, 1.7, hgt - 1.3, 0, { c = "#FFD08A", m = "Neon", lod = "detail", t = 0.15, tag = "lamp" })
-		bp:box(1.2, 0.3, 1.2, 1.7, hgt - 0.6, 0, o(Palette.metal[1]))
+		bp:box(1.4, 0.7, 1.4, 0, 0.35, 0, o(Palette.slate[1], "shell"))
+		bp:add("cyl", hgt, 0.5, 0.5, 0, hgt / 2, 0, 0, 0, 90, o(Palette.metal[1], "shell", { q = false }))
+		bp:box(2.4, 0.28, 0.28, 1.1, hgt - 0.3, 0, o(Palette.metal[1]))
+		bp:box(1, 1.4, 1, 2.1, hgt - 1.4, 0, { c = "#FFD08A", m = "Neon", lod = "detail", t = 0.15, tag = "lamp" })
+		bp:box(1.3, 0.3, 1.3, 2.1, hgt - 0.6, 0, o(Palette.metal[1]))
 		bp:endKit()
-		bp:light(1.7, hgt - 1.3, 0, "#FFB860", 16, 0.8, "lamp")
-		table.insert(
-			out,
-			{ name = "Lamp", bp = bp, at = { x = l.x, y = y, z = l.z, rot = bp.rng:float(0, 360) }, tag = "lamp" }
-		)
+		bp:light(2.1, hgt - 1.4, 0, "#FFB860", LAMP_RANGE, LAMP_BRIGHTNESS, "lamp")
+		local rot = bp.rng:float(0, 360)
+		local sx, sz = nearestStreet(city, l.x, l.z)
+		if sx and sz and (sx - l.x) ^ 2 + (sz - l.z) ^ 2 > 0.25 then
+			-- the arm is local +X: turned by `rot` degrees about Y it points (cos, -sin)
+			rot = math.deg(math.atan2(-(sz - l.z), sx - l.x))
+		end
+		table.insert(out, { name = "Lamp", bp = bp, at = { x = l.x, y = y, z = l.z, rot = rot }, tag = "lamp" })
 	end
 	return out
 end

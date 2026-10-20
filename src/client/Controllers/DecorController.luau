@@ -1011,6 +1011,10 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 		if insideWalls and (rng:NextNumber() > CITY_INSIDE_SHARE or not TownTerrain.isOpen(x, z, 1)) then
 			continue
 		end
+		-- W28: nothing grows on the Ristalle or its paved forecourt
+		if inCity and TownTerrain.inArena(x, z, TownTerrain.ARENA_MARGIN) then
+			continue
+		end
 		local from = origin + Vector3.new(x, if floorY then floorY + 3 elseif inCave then 4 else 120, z)
 		local hit = Workspace:Raycast(from, Vector3.new(0, -200, 0), rayParams)
 		if not hit or (hit.Material == Enum.Material.Water) ~= (template.onWater == true) then

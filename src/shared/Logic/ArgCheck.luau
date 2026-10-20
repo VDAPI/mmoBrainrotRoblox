@@ -11,6 +11,11 @@ ArgCheck.MAX_STRING = 200
 -- `count` is select("#", ...) of the received arguments, so trailing nils are counted too.
 function ArgCheck.check(args: { any }, spec: { string }, count: number?): (boolean, string?)
 	local n = count or #args
+	-- owner 2026-10-20 (Dragon Shop "bad request"): trailing nils (a caller passing an optional argument it does not
+	-- have, e.g. PremiumConfirm's arg2) are not arguments
+	while n > #spec and args[n] == nil do
+		n -= 1
+	end
 	if n > #spec then
 		return false, `too many arguments ({n} > {#spec})`
 	end
