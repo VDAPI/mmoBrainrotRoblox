@@ -71,7 +71,8 @@ T.describe("Tutorial: steps", function()
 			end,
 			now = 0,
 		})
-		T.expect(Tutorial.sanitize(made.tutorial)).toEqual({ step = 1, done = false, skipped = false, reward = false })
+		T.expect(Tutorial.sanitize(made.tutorial))
+			.toEqual({ step = 1, done = false, skipped = false, reward = false, drop = false })
 		local old = Tutorial.sanitize(AccountSchema.characterTemplate().tutorial)
 		T.expect(old.done).toBe(true)
 		T.expect(old.reward).toBe(true)
@@ -79,12 +80,13 @@ T.describe("Tutorial: steps", function()
 		T.expect(Tutorial.finale(old)).toBeNil()
 		T.expect(Tutorial.rewardDue(old, 50)).toBe(false)
 		-- a missing or broken save reads as finished with the reward taken
-		T.expect(Tutorial.sanitize(nil)).toEqual({ step = 1, done = true, skipped = false, reward = true })
+		T.expect(Tutorial.sanitize(nil)).toEqual({ step = 1, done = true, skipped = false, reward = true, drop = true })
 		T.expect(Tutorial.sanitize({ step = 99, pending = { nope = true, done = true, skill = true } })).toEqual({
 			step = 7,
 			done = false,
 			skipped = false,
 			reward = true,
+			drop = true,
 			pending = { skill = true },
 		})
 	end)
@@ -100,7 +102,7 @@ T.describe("Tutorial: advance", function()
 		T.expect(s.done).toBe(false)
 		T.expect((Tutorial.current(s) :: Tutorial.Step).id).toBe("skill")
 		s = Tutorial.advance(s, "skill")
-		T.expect(s).toEqual({ step = 7, done = true, skipped = false, reward = false })
+		T.expect(s).toEqual({ step = 7, done = true, skipped = false, reward = false, drop = false })
 		T.expect(Tutorial.current(s)).toBeNil()
 		T.expect((Tutorial.finale(s) :: Tutorial.Step).id).toBe("done")
 	end)
@@ -119,7 +121,7 @@ T.describe("Tutorial: advance", function()
 		local all = feed(fresh(), { "skill", "attack", "potion", "backpack", "quest" })
 		T.expect(all.step).toBe(1)
 		all = Tutorial.advance(all, "move")
-		T.expect(all).toEqual({ step = 7, done = true, skipped = false, reward = false })
+		T.expect(all).toEqual({ step = 7, done = true, skipped = false, reward = false, drop = false })
 	end)
 
 	T.it("an earlier step, an unknown name, done and anything after the end change nothing", function()
@@ -138,7 +140,7 @@ T.describe("Tutorial: advance", function()
 		local s = fresh()
 		local _ = Tutorial.advance(s, "move")
 		local _ = Tutorial.advance(s, "skill")
-		T.expect(s).toEqual({ step = 1, done = false, skipped = false, reward = false })
+		T.expect(s).toEqual({ step = 1, done = false, skipped = false, reward = false, drop = false })
 	end)
 end)
 
