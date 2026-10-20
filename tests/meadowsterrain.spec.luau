@@ -207,6 +207,56 @@ describe("Meadows terrain", function()
 		end
 	end)
 
+	it("keeps decoration grass PATH_CLEAR studs off every road", function()
+		local clear = TerrainLayers.PATH_CLEAR
+		local checked, grass = 0, 0
+		for _, road in DATA.roads do
+			local pts = road.points
+			for i = 1, #pts - 3, 2 do
+				local ax, az, bx, bz = pts[i], pts[i + 1], pts[i + 2], pts[i + 3]
+				local len = math.sqrt((bx - ax) ^ 2 + (bz - az) ^ 2)
+				if len > 0 then
+					local nx, nz = -(bz - az) / len, (bx - ax) / len
+					for _, t in { 0.25, 0.5, 0.75 } do
+						local cx, cz = ax + (bx - ax) * t, az + (bz - az) * t
+						for _, side in { -1, 1 } do
+							for d = 0, 30, 1 do
+								local x, z = cx + nx * d * side, cz + nz * d * side
+								local rd = MeadowsTerrain.roadDistance(x, z)
+								if rd >= 0 and rd < clear and math.abs(x) < 790 and math.abs(z) < 790 then
+									checked += 1
+									if MeadowsTerrain.material(x, z) == "Grass" then
+										error(`decoration grass {rd} studs off a road at {x},{z}`)
+									end
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		expect(checked > 200).toBe(true)
+		-- the open meadow away from the roads keeps its grass
+		for x = -780, 780, 40 do
+			for z = -780, 780, 40 do
+				if MeadowsTerrain.material(x, z) == "Grass" then
+					grass += 1
+				end
+			end
+		end
+		expect(grass > 50).toBe(true)
+	end)
+
+	it("swaps Grass for the plain grass only near a road or ramp", function()
+		local clear = TerrainLayers.PATH_CLEAR
+		expect(TerrainLayers.clearPaths("Grass", clear - 0.5)).toBe(TerrainLayers.NO_DECOR_GRASS)
+		expect(TerrainLayers.clearPaths("Grass", 40, clear - 1)).toBe(TerrainLayers.NO_DECOR_GRASS)
+		expect(TerrainLayers.clearPaths("Grass", -3)).toBe(TerrainLayers.NO_DECOR_GRASS)
+		expect(TerrainLayers.clearPaths("Grass", clear + 0.5, clear + 2)).toBe("Grass")
+		expect(TerrainLayers.clearPaths("Mud", 0)).toBe("Mud")
+		expect(TerrainLayers.NO_DECOR_GRASS ~= "Grass").toBe(true)
+	end)
+
 	it("fills voxel blocks with known materials and water in the pond", function()
 		local known: { [string]: boolean } = {}
 		for _, name in MeadowsTerrain.MATERIALS do

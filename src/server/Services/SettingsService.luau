@@ -7,6 +7,7 @@ local Shared = ReplicatedStorage.Shared
 local Keybinds = require(Shared.Logic.Keybinds)
 local HudLayout = require(Shared.Logic.HudLayout)
 local Locale = require(Shared.Util.Locale)
+local MapMarkers = require(Shared.Logic.MapMarkers)
 local Net = require(Shared.Net)
 local Rarities = require(Shared.Data.Rarities)
 
@@ -84,6 +85,10 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	end,
 	mapCloseOnWalk = function(value)
 		return type(value) == "boolean"
+	end,
+	-- Owner 2026-10-20 "Mapa": the world map's hidden symbol categories (filter chips)
+	mapHide = function(value)
+		return MapMarkers.validHidden(value)
 	end,
 	betterItem = function(value)
 		return type(value) == "boolean"

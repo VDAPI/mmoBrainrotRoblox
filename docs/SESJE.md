@@ -13573,3 +13573,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   ScreenController}.luau`, `src/client/UI/{MenuAttention,Screens/LegendReveal,Screens/Hud/TutorialHint}.luau`,
   `src/shared/Data/Localization/{pl,en}.luau`, `tests/{onboarding,tutorial}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,PROGRESS,SESJE}.md`.
+### Mapa (2026-10-20/21): symbole zamiast napisów, skupiska, filtry
+- **Co:** mapa świata bez stałych napisów: symbole na ciemnych tarczach w kolorze i kształcie kategorii, stały rozmiar
+  na ekranie; rozsuwanie nachodzących i znaczki skupisk z liczbą (klik przybliża do poziomu, na którym się rozchodzą);
+  tabliczki obszarów z poziomami w wolnym miejscu obszaru albo schowane; przełącznik „Napisy” (scalony z sesją PC)
+  pokazuje nazwy tylko bez kolizji. Panel filtrów: chip na kategorię (symbol, nazwa, liczba), Wszystko / Nic,
+  zwijany; zapis `account.settings.mapHide`. Wyszukiwarka, podpowiedź i karta z większym tekstem; wyniki z symbolem
+  kategorii. Cele dotyku 46 px na telefonie.
+- **Pliki:** `src/shared/Logic/MapMarkers.luau`, `tests/mapmarkers.spec.luau`, `src/client/UI/Screens/WorldMap/{init,
+  Canvas,Overlay,Panels,Search,DetailCard}.luau`, `src/shared/Data/UiPalette.luau` (`map.cat*`, `plate`, `cluster`),
+  `SettingsService`, `AccountSchema`, `Types`, lokalizacja (`worldmap.cat.*`, `worldmap.filter.*`, `worldmap.cluster.*`).
+- **Bez przeglądu w Studio** (wygląd na PC i telefonie, skupiska w mieście, chipy filtrów). Minimapa nie ruszana.

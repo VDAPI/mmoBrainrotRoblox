@@ -252,6 +252,19 @@ UiPalette.map = {
 	famElemental = "#4FD8F0",
 	famDragon = "#5CE6A0",
 	dotOutline = "#140E0A",
+	-- Owner 2026-10-20 "Mapa": world map symbol categories (Logic/MapMarkers): one clear hue each, on a dark plate
+	catQuest = "#F5C542",
+	catShop = "#62D37E",
+	catSmith = "#F08A3C",
+	catBank = "#4FB8E8",
+	catNpc = "#F2E8C9",
+	catTravel = "#B58CFF",
+	catCave = "#D9B98A",
+	catDungeon = "#E0453A",
+	catLair = "#FF9F1C",
+	catArea = "#D8C27A",
+	plate = "#17110C", -- the dark disc behind every map symbol (reads on any terrain)
+	cluster = "#F2E28A", -- the ring of a cluster badge (several symbols in one)
 }
 
 -- Neutral values: `plain` is an untinted image (ImageColor3 white), `shade` the black of overlays and text strokes.
