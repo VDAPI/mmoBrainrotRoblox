@@ -141,6 +141,8 @@ local Definitions: { [string]: Definition } = {
 		rate = 2,
 		args = { "string", "string", "integer", "string", "boolean" },
 	},
+	-- S156: ("inv"|"eq", key, the item's line signature Reroll.signature) -> (ok, err, { changes, n })
+	RerollAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string", "string" } },
 	-- S154: ("inv"|"eq", key, look key or "" to remove, expected item uid) -> (ok, err, { look })
 	TransmogApply = {
 		kind = "function",

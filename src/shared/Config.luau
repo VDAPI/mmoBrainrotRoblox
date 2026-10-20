@@ -791,6 +791,9 @@ local Config = {
 		goldMul = 1.8,
 		growth = 0.25,
 		growthCap = 3,
+		-- S156: the Scroll of Transformation rerolls every regular line at once for this many times one attempt's gold
+		-- (the essence is paid by the scroll); it counts as one attempt
+		allGoldMul = 3,
 	},
 	-- S151 (docs/DESIGN.md §20b): achievements (Data/Achievements, Logic/Achievements). The sum of every Dragon Shard
 	-- reward stays within shardBudget (tests/achievements.spec), a toast stays toastSeconds, after the catch-up of old

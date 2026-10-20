@@ -280,6 +280,65 @@ function BlacksmithService.Reroll(
 	return true, nil, { index = index, old = old, new = { stat = line.stat, v = line.v }, n = n }
 end
 
+-- S156: rerolls every regular line of an item with a Scroll of Transformation (Logic/Reroll.rollAll). `expected` is the
+-- item's line signature the client saw (Reroll.signature). Pay, roll and write without yields in between.
+function BlacksmithService.RerollAll(
+	player: Player,
+	location: string,
+	key: string,
+	expected: string,
+	opts: RerollOpts?
+): (boolean, string?, any)
+	local o: RerollOpts = opts or {}
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	if not o.anywhere and not nearSmith(player) then
+		return false, "npc.error.tooFar"
+	end
+	local item, commit = locate(player, location, key)
+	if not item then
+		return false, "error.badRequest"
+	end
+	local ok, err = Reroll.eligible(item)
+	if not ok then
+		return false, err
+	end
+	if Reroll.signature(item) ~= expected then
+		return false, "smith.reroll.error.changed"
+	end
+	if not o.free and InventoryService.Count(player, Reroll.SCROLL) < 1 then
+		return false, "smith.reroll.error.noScroll"
+	end
+	local cost = if o.free then { gold = 0, materials = {} } else Reroll.costAll(item)
+	if char.gold < cost.gold then
+		return false, "shop.error.gold"
+	end
+	-- Pay, roll, write — no yields in between.
+	if cost.gold > 0 then
+		addGold(player, -cost.gold)
+	end
+	if not o.free then
+		InventoryService.Remove(player, Reroll.SCROLL, 1)
+	end
+	local bonuses, changes = Reroll.rollAll(item, char.class, rng)
+	Reroll.applyAll(item, bonuses)
+	commit()
+	local n = Reroll.state(item).n
+	Analytics.custom(player, "RerollAll", item.rarity)
+	QuestEvents.fire(player, "reroll", nil)
+	log:info("%s reroll all %s (%d lines, n=%d)", player.Name, item.id, #changes, n)
+	return true, nil, { changes = changes, n = n }
+end
+
+local function rerollAll(player: Player, location: string, key: string, expected: string): (boolean, string?, any)
+	return BlacksmithService.RerollAll(player, location, key, expected)
+end
+
 local function reroll(
 	player: Player,
 	location: string,
@@ -476,6 +535,7 @@ function BlacksmithService.Start()
 	Net.Handle("Dismantle", dismantle)
 	Net.Handle("DismantleAll", dismantleAll)
 	Net.Handle("RerollBonus", reroll)
+	Net.Handle("RerollAll", rerollAll) -- S156
 	Net.Handle("TransmogApply", transmog) -- S154
 end
 

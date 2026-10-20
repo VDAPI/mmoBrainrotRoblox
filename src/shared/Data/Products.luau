@@ -113,6 +113,16 @@ local SHOP: { ShopEntry } = {
 		price = 80,
 		dailyLimit = 1,
 	},
+	-- S156 (owner 2026-10-20): 1 a day, rerolls every regular line of one item at the smith (gold x3 of one reroll,
+	-- no essence), account-bound; paywall.spec exception
+	{
+		key = "transmute_scroll",
+		kind = "item",
+		cat = "scroll",
+		itemId = "transmute_scroll",
+		price = 240,
+		dailyLimit = 1,
+	},
 	{ key = "rename", kind = "rename", cat = "service", price = 400 },
 	-- 2026-10-10: big backpacks without the level requirement.
 	{ key = "backpack_premium_100", kind = "item", cat = "backpack", itemId = "backpack_premium_100", price = 300 },
