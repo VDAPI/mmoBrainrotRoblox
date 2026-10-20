@@ -7014,6 +7014,12 @@ return {
 				why = "400 -> 460 (rank 7 pinned): R9 lightning / fire on one target at 100 >= 1.10 (70: 1.16)",
 			},
 		},
+		["WorldBoss:antechamber*"] = {
+			{
+				session = "S156",
+				why = "new (owner 2026-10-20): the barrow's vestibule in front of the opening (centre r + 20, radius 16) is always free of PvP",
+			},
+		},
 		["WorldBoss:*"] = {
 			{
 				session = "S149",

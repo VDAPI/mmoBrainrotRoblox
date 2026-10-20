@@ -42,7 +42,7 @@ local FRAME = {
 	mythic = sequence(MYTHIC_COLORS[1], MYTHIC_COLORS[2]),
 }
 
-type Entry = { text: string, style: Style }
+type Entry = { text: string, style: Style, seconds: number? } -- seconds: how long it stays (default by style)
 
 local moduleScope = Fusion.scoped(Fusion)
 local current = moduleScope:Value(nil :: string?)
@@ -81,7 +81,7 @@ local function nextAnnouncement()
 	style:set(entry.style)
 	animate(entry.style == "mythic")
 	offset:set(if entry.style == "mythic" then 150 else 130)
-	task.delay(if entry.style == "mythic" then MYTHIC_SECONDS else SHOW_SECONDS, function()
+	task.delay(entry.seconds or (if entry.style == "mythic" then MYTHIC_SECONDS else SHOW_SECONDS), function()
 		offset:set(-80)
 		task.delay(0.6, function()
 			showing = false
@@ -92,8 +92,8 @@ local function nextAnnouncement()
 	end)
 end
 
-function Announcement.push(text: string, kind: Style?)
-	local entry: Entry = { text = text, style = kind or "legendary" }
+function Announcement.push(text: string, kind: Style?, seconds: number?)
+	local entry: Entry = { text = text, style = kind or "legendary", seconds = seconds }
 	-- A mythic drop jumps ahead of the queued ordinary announcements.
 	if entry.style == "mythic" then
 		local at = 1

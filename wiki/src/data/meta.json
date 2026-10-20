@@ -1,8 +1,8 @@
 {
-  "counts": {"areas":36,"arena":21,"blessings":25,"bonuses":63,"bosses":4,"caves":12,"classes":4,"classlooks":12,"cosmetics":108,"crafting":189,"elements":4,"fish":4,"gather":14,"icons":91,"items":937,"maps":21,"mapsearch":184,"mechanics":100,"monsters":50,"mounts":10,"npcs":67,"portals":46,"premium":18,"progression":100,"quests":109,"rankings":14,"rarities":5,"recipes":32,"search":1435,"shops":11,"skills":127,"stats":36,"titles":32,"upgrade":28},
-  "dataCommit": "3adb78cd",
-  "dataDate": "2026-10-20T16:13:35+02:00",
-  "dataHash": "a8285f8b",
+  "counts": {"areas":36,"arena":21,"blessings":25,"bonuses":63,"bosses":4,"caves":12,"classes":4,"classlooks":12,"cosmetics":108,"crafting":189,"elements":4,"fish":4,"gather":14,"icons":91,"items":938,"maps":21,"mapsearch":184,"mechanics":100,"monsters":50,"mounts":10,"npcs":67,"portals":46,"premium":19,"progression":100,"quests":109,"rankings":14,"rarities":5,"recipes":32,"search":1436,"shops":11,"skills":127,"stats":36,"titles":32,"upgrade":28},
+  "dataCommit": "439661d5",
+  "dataDate": "2026-10-20T19:51:10+02:00",
+  "dataHash": "f52830ea",
   "features": {"areaProfiles":true,"arena":true,"fightSim":true,"itemIconAtlas":true,"itemIcons":true,"itemValue":true,"leaderboards":true,"scheduledEvents":true,"sideQuests":true,"skillMotions":true,"tooltipModel":true,"worldEvents":true},
   "rolls": 100000,
   "schemaVersion": 1

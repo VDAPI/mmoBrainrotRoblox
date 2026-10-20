@@ -266,9 +266,20 @@ function WorldBoss.inArena(spot: Spot, x: number, z: number): boolean
 	return flatDistance(spot, x, z) <= spot.r + Data.fighterReach
 end
 
--- S149 (C5): whether PvP is off at a map-relative point: pvpSafe, the boss alive and the point in the circle.
+-- S156: whether a map-relative point is in the barrow's vestibule (Data/WorldBoss.antechamber, in front of the opening).
+function WorldBoss.inAntechamber(spot: Spot, x: number, z: number): boolean
+	local a = Data.antechamber
+	local cz = spot.z - (spot.r + a.d)
+	return math.sqrt((x - spot.x) ^ 2 + (z - cz) ^ 2) <= a.r
+end
+
+-- S149 (C5): whether PvP is off at a map-relative point: pvpSafe, the boss alive and the point in the circle. S156: the
+-- vestibule always.
 function WorldBoss.pvpSafe(spot: Spot, x: number, z: number, bossAlive: boolean): boolean
-	return Data.pvpSafe == true and bossAlive and WorldBoss.inArena(spot, x, z)
+	if Data.pvpSafe ~= true then
+		return false
+	end
+	return (bossAlive and WorldBoss.inArena(spot, x, z)) or WorldBoss.inAntechamber(spot, x, z)
 end
 
 -- The player's own line: points, share of all (0..1), whether the reward is due and why not.
@@ -445,6 +456,10 @@ end
 -- S149b (A4): the note of the zone banner at a map-relative point: "worldboss.safeZone" in the fighters' circle of a
 -- living boss when PvP is off there (Data/WorldBoss.pvpSafe, S149 C5), else nil.
 function WorldBoss.zoneNote(branch: any, mapId: string?, x: number, z: number): string?
+	-- S156: the vestibule is safe at every hour
+	if mapId == Data.map and WorldBoss.inAntechamber(WorldBoss.spot(), x, z) then
+		return "worldboss.safeZone"
+	end
 	if not isPublic(branch) or branch.phase ~= "active" or mapId ~= Data.map then
 		return nil
 	end

@@ -193,6 +193,109 @@ local function floor(ctx: Kit.Ctx, b: Build, r: number)
 	end
 end
 
+-- S156 (owner 2026-10-20): the barrow is a cave hollow: a ring of cliff walls just outside the rune stones (shell, with
+-- collision: the way in is the opening), each with a ledge leaning in at the top (detail) and icicles hanging from it
+-- (fine), never over the free middle; the opening stays open towards the vestibule.
+local CLIFF = { c = "#4A4E58", m = "Slate" }
+local CLIFF_DARK = { c = "#3A3D46", m = "Rock" }
+local WALL_SEGMENTS = 22
+local WALL_OPENING = 40 -- degrees left open at the front (wider than the stones' opening)
+
+local function walls(ctx: Kit.Ctx, b: Build, r: number)
+	local bp = b.bp
+	local rng = bp.rng
+	local d = r + 5
+	local span = 360 - WALL_OPENING
+	local width = 2 * math.pi * d * (span / 360) / WALL_SEGMENTS + 3
+	for k = 0, WALL_SEGMENTS - 1 do
+		local angle = WALL_OPENING / 2 + span * (k + 0.5) / WALL_SEGMENTS
+		local x, z = polar(angle, d)
+		local y = Kit.gy(ctx, b, x, z)
+		local height = rng:float(26, 36)
+		bp:push(x, y, z, 0, -angle, 0)
+		-- the wall leans a little inwards (local -Z is the middle)
+		bp:rbox(
+			width,
+			height,
+			7,
+			0,
+			height / 2 - 1,
+			1,
+			-6,
+			0,
+			rng:float(-3, 3),
+			o(if k % 2 == 0 then CLIFF else CLIFF_DARK, "shell")
+		)
+		-- the ledge at the top leaning over the rim (no collision), snow on it, icicles under it
+		bp:rbox(width + 1, 2.4, 9, 0, height - 2, -4.5, 14, 0, 0, o(CLIFF_DARK, "detail", { col = false }))
+		bp:rbox(width, 0.8, 8, 0, height - 0.6, -4, 14, 0, 0, o(SNOW, "detail", { col = false }))
+		for s = -2, 2 do
+			bp:add(
+				"wedge",
+				0.6,
+				rng:float(2, 4.5),
+				0.6,
+				s * width / 5,
+				height - 5,
+				-7.5,
+				180,
+				0,
+				0,
+				o(ICE, "fine", { col = false })
+			)
+		end
+		bp:pop()
+	end
+end
+
+-- S156: the vestibule in front of the opening (Data/WorldBoss.antechamber, always free of PvP): two short cliff walls
+-- making a passage, an ice arch at its outer end, stone slabs on the floor and two warm braziers that burn at every hour.
+local WARM_FIRE = "#FF9A3A"
+local function vestibule(ctx: Kit.Ctx, b: Build, r: number)
+	local bp = b.bp
+	local a = WorldBossData.antechamber
+	local near, far = r + 2, r + a.d + a.r
+	local half = 14
+	local mid = (near + far) / 2
+	local length = far - near
+	for _, side in { -1, 1 } do
+		local x, z = side * (half + 3), -mid
+		local y = Kit.gy(ctx, b, x, z)
+		bp:rbox(6, 22, length, x, y + 10, z, 0, 0, side * 5, o(CLIFF, "shell"))
+		bp:rbox(7, 0.8, length, x - side * 1.5, y + 21.4, z, 0, 0, side * 5, o(SNOW, "detail", { col = false }))
+		-- warm braziers along the passage
+		local bx, bz = side * (half - 3), -(near + length * 0.55)
+		local by = Kit.gy(ctx, b, bx, bz)
+		bp:box(1.6, 2.6, 1.6, bx, by + 1.3, bz, o(Kit.darkStone, "detail", { col = false }))
+		bp:add("cyl", 0.8, 3.4, 3.4, bx, by + 2.9, bz, 0, 0, 90, o(Kit.iron, "detail", { col = false }))
+		Kit.fire(bp, bx, by + 3.5, bz, 1.6, WARM_FIRE)
+	end
+	-- the ice arch at the outer end
+	local ay = Kit.gy(ctx, b, 0, -far)
+	for _, side in { -1, 1 } do
+		bp:box(3, 18, 3, side * half, ay + 9, -far, o(ICE, "shell"))
+	end
+	bp:box(half * 2 + 3, 3, 3, 0, ay + 18.5, -far, o(ICE, "shell"))
+	bp:rbox(half * 2 + 4, 1, 3.4, 0, ay + 20.4, -far, 0, 0, 0, o(SNOW, "detail", { col = false }))
+	-- floor slabs
+	for k = 0, 5 do
+		local z = -(near + length * (k + 0.5) / 6)
+		local y = Kit.gy(ctx, b, 0, z)
+		bp:rbox(
+			half * 1.6,
+			0.3,
+			length / 6 - 0.6,
+			0,
+			y + 0.1,
+			z,
+			0,
+			bp.rng:float(-4, 4),
+			0,
+			o(Kit.darkStone, "detail", { col = false })
+		)
+	end
+end
+
 -- The Build of the barrow on `spot` (Data/WorldBoss.spots).
 function WorldBossArena.build(ctx: Kit.Ctx, spot: Spot): Build
 	local b = Kit.build(ctx, `WorldBossArena_{spot.id}`, WorldBossArena.TAG, spot.x, spot.z, 0)
@@ -226,6 +329,8 @@ function WorldBossArena.build(ctx: Kit.Ctx, spot: Spot): Build
 		Kit.skull(b.bp, x, Kit.gy(ctx, b, x, z) - 0.2, z, 3.2, 200)
 	end
 	floor(ctx, b, r)
+	walls(ctx, b, r)
+	vestibule(ctx, b, r)
 	return b
 end
 

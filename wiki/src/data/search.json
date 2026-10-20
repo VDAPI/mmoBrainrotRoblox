@@ -901,6 +901,7 @@
     {"id":"tome_85","key":"pradawna ksiega ancient tome","level":85,"name":{"en":"Ancient Tome","pl":"Pradawna Księga"},"rarity":"mythic","type":"item"},
     {"id":"tome_90","key":"niebianska ksiega celestial tome","level":90,"name":{"en":"Celestial Tome","pl":"Niebiańska Księga"},"rarity":"mythic","type":"item"},
     {"id":"tome_95","key":"eteryczna ksiega ethereal tome","level":95,"name":{"en":"Ethereal Tome","pl":"Eteryczna Księga"},"rarity":"mythic","type":"item"},
+    {"id":"transmute_scroll","key":"zwoj przemiany scroll of transformation","level":1,"name":{"en":"Scroll of Transformation","pl":"Zwój Przemiany"},"rarity":"common","type":"item"},
     {"id":"unique_azgor_heart","key":"plomienne serce burning heart","level":70,"name":{"en":"Burning Heart","pl":"Płomienne Serce"},"rarity":"mythic","type":"item"},
     {"id":"unique_azgor_helm","key":"helm pana plomieni helm of the flame lord","level":70,"name":{"en":"Helm of the Flame Lord","pl":"Hełm Pana Płomieni"},"rarity":"mythic","type":"item"},
     {"id":"unique_azgor_staff","key":"kostur pozogi staff of the inferno","level":70,"name":{"en":"Staff of the Inferno","pl":"Kostur Pożogi"},"rarity":"mythic","type":"item"},
