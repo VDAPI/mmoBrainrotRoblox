@@ -47,6 +47,7 @@ local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
+local BoneGait = require(script.Parent.Parent.Anim.BoneGait)
 local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
@@ -104,6 +105,7 @@ type MonsterState = {
 	root: BasePart,
 	joints: { JointState },
 	clips: Clips?,
+	boneGait: BoneGait.Rig?, -- W26: bones of an imported model without clips
 	spawnedAt: number,
 	attackSlot: string,
 	scale: number,
@@ -256,6 +258,13 @@ local function refresh(model: Model)
 	end
 	s.joints = collectJoints(model)
 	s.clips = loadClips(model)
+	local holder = model:FindFirstChild("Look")
+	s.boneGait = if s.clips == nil
+			and holder
+			and holder:IsA("Model")
+			and holder:FindFirstChild("Gait_Body", true)
+		then BoneGait.new(holder)
+		else nil
 	for _, j in s.joints do
 		if j.joint.role == "body" then
 			s.scale = j.scale
@@ -345,6 +354,7 @@ local function track(model: Instance)
 		root = root,
 		joints = {},
 		clips = nil,
+		boneGait = nil,
 		spawnedAt = Clock.now(),
 		attackSlot = "attack1",
 		scale = if type(scale) == "number" then scale else 1,
@@ -629,6 +639,9 @@ local function step(dt: number)
 				transform = CFrame.new(leap) * transform
 			end
 			j.motor.Transform = transform
+		end
+		if s.boneGait then
+			BoneGait.step(s.boneGait, m)
 		end
 	end
 end
