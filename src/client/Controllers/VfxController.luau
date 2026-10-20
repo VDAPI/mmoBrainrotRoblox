@@ -77,6 +77,7 @@ local SkillGeom = require(ReplicatedStorage.Shared.Logic.SkillGeom)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local State = require(script.Parent.Parent.UI.State)
 local VfxTextures = require(ReplicatedStorage.Shared.Data.VfxTextures)
+local WkFx = require(script.Parent.Parent.Vfx.WkFx)
 
 local VfxController = {
 	Name = "VfxController",
@@ -1011,6 +1012,22 @@ local function piece(
 		end
 	elseif name == "falcon" then
 		falconOf(casterKey(data), caster, color, simple, seconds)
+	elseif WkFx.has(name) then
+		-- walka-wk: the Warrior and Cleric pieces (Vfx/WkFx), sized like the ones above
+		WkFx.pieces[name]({
+			at = at,
+			radius = radius,
+			scale = scale,
+			seconds = seconds,
+			color = color,
+			caster = caster,
+			target = target,
+			frame = facing(caster, target, data),
+			simple = simple,
+			markRadius = markRadius,
+			coreDelay = entry.coreDelay,
+			from = if typeof(data.from) == "Vector3" then data.from else nil,
+		})
 	elseif LmPieces.pieces[name] then
 		-- W30: a registered piece (Vfx/LmPieces) with the blow's point, facing and wave
 		lmPiece(name, "impact", skill, entry, data, color, caster, target, simple, {
@@ -1182,6 +1199,7 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 			local wait = linkDelay
 				+ (if MARKS[name]
 						or FALLS[name]
+						or WkFx.FALLS[name]
 						or (LmVfxPieces[name] and LmVfxPieces[name].immediate)
 					then 0
 					else landDelay)

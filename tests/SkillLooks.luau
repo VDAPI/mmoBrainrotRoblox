@@ -62,6 +62,28 @@ SkillLooks.PIECE_LAYER = {
 	groundDecal = "trail",
 	sparkle = "trail",
 	cloud = "trail",
+	-- Warrior/Cleric wk pieces (Vfx/WkFx, walka-wk)
+	wkCrit = "core",
+	wkSlam = "body",
+	wkChargeTrail = "body",
+	wkShieldBash = "body",
+	wkShockRing = "body",
+	wkVortex = "body",
+	wkShout = "body",
+	wkNova = "body",
+	wkHolyBeam = "body",
+	wkHealBurst = "body",
+	wkChains = "body",
+	wkSkySword = "body",
+	wkSkyHammer = "body",
+	wkRageLoop = "body",
+	wkHolyLoop = "body",
+	wkGuardLoop = "body",
+	wkGroundGlow = "body",
+	wkFissure = "trail",
+	wkFissureStar = "trail",
+	wkDebris = "trail",
+	wkFeathers = "trail",
 } :: { [string]: Layer }
 
 -- Skills allowed to miss a layer (reason). Every class is held to three layers (S114 Warrior and Cleric, S115 Hunter
@@ -117,6 +139,28 @@ SkillLooks.PIECE_COST = {
 	groundDecal = c(0, 0, 0, 1),
 	sparkle = c(1, 0, 0, 0),
 	cloud = c(1, 0, 1, 0),
+	-- Warrior/Cleric wk pieces (Vfx/WkFx, walka-wk); plain parts (chunks, spikes, links, weapons of light) are free
+	wkCrit = c(2, 0, 1, 1), -- the star and its glow, a light, the standing ring
+	wkSlam = c(1, 0, 1, 2), -- the dust wall, a light, the bright ring and the dust ring
+	wkChargeTrail = c(1, 1, 0, 0), -- the dust along the path, the streak
+	wkShieldBash = c(1, 0, 0, 1), -- sparks, the ripple
+	wkShockRing = c(0, 0, 0, 1),
+	wkVortex = c(1, 0, 0, 0),
+	wkShout = c(0, 0, 0, 1),
+	wkNova = c(1, 0, 1, 1), -- rays, a light, the ring
+	wkHolyBeam = c(1, 2, 1, 1), -- motes, the holy and the white beam, a light, the ring
+	wkHealBurst = c(2, 0, 0, 1), -- the glint and the glow, the halo
+	wkChains = c(0, 0, 0, 0),
+	wkSkySword = c(0, 0, 0, 0),
+	wkSkyHammer = c(0, 0, 0, 0),
+	wkRageLoop = c(1, 0, 1, 1), -- embers, the pulsing light, the rune
+	wkHolyLoop = c(1, 0, 1, 1),
+	wkGuardLoop = c(1, 0, 1, 0),
+	wkGroundGlow = c(1, 0, 0, 0),
+	wkFissure = c(0, 0, 0, 0),
+	wkFissureStar = c(0, 0, 0, 0),
+	wkDebris = c(0, 0, 0, 0),
+	wkFeathers = c(1, 0, 0, 0),
 } :: { [string]: Cost }
 
 -- W30: the lm pieces of the Hunter and the Mage (Data/LmVfxPieces) bring their own layer and cost

@@ -4,19 +4,25 @@
 -- to the window, which switches the map, zooms to the thing and opens its card. The index is built once per
 -- language; gathering nodes come from the map sketches the client already has. S104: NPCs the character does not
 -- see yet (NpcMarkState.Hidden) are dropped from the results, not from the cached index.
+-- Owner 2026-10-20 "Mapa": bigger text and rows; each result shows its symbol as on the map (category colour on a
+-- dark plate with a ring, Logic/MapMarkers) so the list and the map read alike.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
+local Canvas = require(script.Parent.Canvas)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GatherNodes = require(ReplicatedStorage.Shared.Data.GatherNodes)
+local MapMarkers = require(ReplicatedStorage.Shared.Logic.MapMarkers)
 local MapSearch = require(ReplicatedStorage.Shared.Logic.MapSearch)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Children, OnEvent, OnChange = Fusion.Children, Fusion.OnEvent, Fusion.OnChange
 
@@ -59,6 +65,14 @@ local function resultArt(result: MapSearch.Result): string?
 	return UiArt.mapIcon(
 		if kind.category == "fishing" then "fishing" elseif kind.category == "herb" then "herb" else "vein"
 	)
+end
+
+-- Category of a result (its symbol's colour and shape on the map).
+local function resultCategory(result: MapSearch.Result): MapMarkers.Category
+	local id = if result.kind == "npc"
+		then MapMarkers.npcCategory((Npcs.get(result.id) or { services = {} } :: any).services)
+		else MapMarkers.kindCategory(result.kind)
+	return MapMarkers.byId[id] or MapMarkers.CATEGORIES[1]
 end
 
 local indexes: { [string]: MapSearch.Index } = {}
@@ -158,14 +172,14 @@ function Search.new(scope: Scope, props: Props): Api
 
 	local field = scope:New("Frame")({
 		Name = "Search",
-		Size = UDim2.new(1, -8, 0, 40),
+		Size = UDim2.new(1, -8, 0, 44),
 		BackgroundColor3 = Theme.Paper.Sunken,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
 			scope:New("TextLabel")({
 				Position = UDim2.fromOffset(8, 0),
-				Size = UDim2.fromOffset(20, 40),
+				Size = UDim2.fromOffset(20, 44),
 				BackgroundTransparency = 1,
 				Text = "⌕",
 				FontFace = Theme.Fonts.BodyBold,
@@ -183,7 +197,7 @@ function Search.new(scope: Scope, props: Props): Api
 					PlaceholderText = Text.T(scope, "worldmap.search.placeholder"),
 					PlaceholderColor3 = Theme.Paper.TextMuted,
 					FontFace = Theme.Fonts.Body,
-					TextSize = Theme.TextSize.Small,
+					TextSize = Theme.TextSize.Body,
 					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
@@ -222,8 +236,8 @@ function Search.new(scope: Scope, props: Props): Api
 
 	local list = scope:New("ScrollingFrame")({
 		Name = "Results",
-		Position = UDim2.fromOffset(0, 46),
-		Size = UDim2.new(1, 0, 1, -46),
+		Position = UDim2.fromOffset(0, 50),
+		Size = UDim2.new(1, 0, 1, -50),
 		BackgroundColor3 = Theme.Paper.Surface,
 		BackgroundTransparency = 0.05,
 		BorderSizePixel = 0,
@@ -250,9 +264,11 @@ function Search.new(scope: Scope, props: Props): Api
 			}),
 			scope:ForValues(results, function(use, s: Scope, result: MapSearch.Result): Instance
 				local map = Maps.get(result.map)
+				local category = resultCategory(result)
+				local color = Canvas.categoryColor(category.id)
 				return s:New("TextButton")({
 					Size = s:Computed(function(inner): UDim2
-						return UDim2.new(1, -8, 0, if inner(props.Touch) then 48 else 40)
+						return UDim2.new(1, -8, 0, if inner(props.Touch) then 58 else 52)
 					end),
 					BackgroundColor3 = Theme.Paper.Raised,
 					AutoButtonColor = true,
@@ -263,31 +279,50 @@ function Search.new(scope: Scope, props: Props): Api
 					end,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+						-- the result's symbol as on the map: a dark plate in the category's shape, ringed in its colour
+						s:New("Frame")({
+							AnchorPoint = Vector2.new(0.5, 0.5),
+							Position = UDim2.new(0, 23, 0.5, 0),
+							Size = if category.shape == "diamond"
+								then UDim2.fromOffset(26, 26)
+								else UDim2.fromOffset(34, 34),
+							Rotation = if category.shape == "diamond" then 45 else 0,
+							BackgroundColor3 = Theme.tint(UiPalette.map.plate),
+							ZIndex = 7,
+							[Children] = {
+								s:New("UICorner")({
+									CornerRadius = if category.shape == "round"
+										then UDim.new(0.5, 0)
+										else UDim.new(0, 6),
+								}),
+								s:New("UIStroke")({ Color = color, Thickness = 2 }),
+							},
+						}),
 						ArtIcon(s, {
 							Key = resultArt(result), -- S119
 							Glyph = KIND_ICONS[result.kind] or "•",
-							GlyphColor = Theme.Paper.Heading,
-							Position = UDim2.fromOffset(6, 0),
-							Size = UDim2.new(0, 24, 1, 0),
-							ImageScale = 0.8,
-							ZIndex = 7,
-							Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Small },
+							GlyphColor = color,
+							Position = UDim2.fromOffset(9, 0),
+							Size = UDim2.new(0, 28, 1, 0),
+							ImageScale = 0.6,
+							ZIndex = 8,
+							Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Body },
 						}),
 						s:New("TextLabel")({
-							Position = UDim2.fromOffset(34, 3),
-							Size = UDim2.new(1, -38, 0.55, 0),
+							Position = UDim2.fromOffset(48, 4),
+							Size = UDim2.new(1, -52, 0.55, 0),
 							BackgroundTransparency = 1,
 							Text = Text.get(use, result.labelKey),
 							FontFace = Theme.Fonts.BodyBold,
-							TextSize = Theme.TextSize.Small,
+							TextSize = Theme.TextSize.Body,
 							TextColor3 = Theme.Paper.Text,
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 							ZIndex = 7,
 						}),
 						s:New("TextLabel")({
-							Position = UDim2.new(0, 34, 0.55, 0),
-							Size = UDim2.new(1, -38, 0.4, 0),
+							Position = UDim2.new(0, 48, 0.55, 0),
+							Size = UDim2.new(1, -52, 0.4, 0),
 							BackgroundTransparency = 1,
 							Text = `{Text.get(use, `worldmap.search.kind.{result.kind}`)} · {if map
 								then Text.get(use, map.nameKey)

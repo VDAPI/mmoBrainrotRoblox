@@ -464,6 +464,23 @@ i koszt (`PIECE_COST`) w `tests/SkillLooks.luau`, inaczej test pada. Jeden rzut 
 | `auraOfEndurance` | ramiona powoli w górę | 0,4 | błysk / fala, aura / iskierki | — |
 | `hammerOfHeaven` | długi skok, cios z nieba; młot po `delay` | 0,5 (+0,5 lot) | koło od razu; po `d`: błysk / promień nieba, fala / pęknięcia, pył | bass; zamach whoosh |
 
+**Walka-wk (2026-10-20, „wow” Wojownika i Kapłana).** Nowe składniki `wk*` w `client/Vfx/WkFx.luau` (tylko z
+`Vfx/Library.kit`: pula, limity urządzenia, zegar efektów, niska jakość), wołane z `VfxController.piece` przez
+`WkFx.pieces[name](ctx)`. Wojownik: `wkSlam` (kolce skał wyrastające na pierścieniu, odłamki lecące po łukach z jednym
+odbiciem, pierścień i pył), `wkFissureStar` / `wkFissure` (świecące pęknięcia), `wkChargeTrail` (pył, ślady stóp, linie
+pędu, smuga szarży), `wkShieldBash` (tarcza mocy pchnięta do przodu, fala, iskry), `wkShockRing` (stojący pierścień
+uderzenia), `wkVortex` (smugi ostrza krążące wokół ciała), `wkShout` (kule mocy), `wkCrit` (gwiazda krytyka z promieniami);
+pętle wzmocnień na cały czas efektu `wkRageLoop` (iskry, czerwona runa, światło jak bicie serca), `wkGuardLoop` (krążące
+płyty tarcz). Kapłan: `wkHolyBeam` (słup światła z nieba, dwie wiązki, opadające drobiny), `wkHealBurst` (aureola
+wznosząca się od stóp nad głowę, drobiny po spirali, błysk nad głową), `wkHolyLoop` (obracająca się runa i drobiny przez
+cały czas efektu), `wkNova` (kopuła światła), `wkSkySword` / `wkSkyHammer` (miecz i młot światła spadające z nieba; młot
+startuje ze zdarzeniem i ląduje po `d`, `WkFx.FALLS`), `wkChains` (łańcuch ogniw, pęka na końcu), `wkFeathers`,
+`wkGroundGlow` (uświęcona ziemia na czas strefy). Ataki podstawowe: krytyk = `WkFx.crit` i hitstop `HitFx.crit.hitstop`
+(skalowany opcją „Czucie trafień”), ciężka głowica (buzdygan, młot) wybija odłamki (`WkFx.chips`), broń święta stawia mały
+pierścień światła (`WkFx.holyTap`). Siedem umiejętności pul Kapłana (S145) ma własne ruchy, słabe ruchy Kapłana i Wojownika
+dostały klucz zapowiedzi i wybrzmienia (czasy serwera bez zmian). Koszt i warstwa każdego `wk*` w `tests/SkillLooks`,
+spójność danych z modułem w `tests/wkfx.spec`.
+
 **Warianty ruchu.** `SkillMotions.<id>.variants = { variant({ weapon?, hits?, move?, keys, recover?, trail? }) }`:
 `weapon` = rodzina broni z `AttackMotions.byWeapon` (`slash2h`, `thrust`, `smash`, …), `hits` = co najmniej tyle fal
 (pole `w` zdarzenia `cast`, przełomy i węzły), `move` = rzut w ruchu (`mv`, np. `castMove`). `Logic/SkillPose.pick`

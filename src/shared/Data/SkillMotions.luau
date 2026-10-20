@@ -270,6 +270,17 @@ motions.mightyStrike = {
 -- Battle Cry: weapon raised, the body arched back, a roar.
 motions.battleCry = {
 	keys = {
+		k(
+			0.12,
+			merge(crouch(0.35), {
+				rShoulder = { -25, 0, 20 },
+				rElbow = { 40, 0, 0 },
+				lShoulder = { 20, 0, -20 },
+				lElbow = { 80, 0, 0 },
+				waist = { -18, 0, 0 },
+			}),
+			"out"
+		), -- walka-wk: the breath drawn in, the weapon low
 		k(0.25, ROAR, "out"),
 		k(
 			0.75,
@@ -502,6 +513,18 @@ motions.crushingBlow = {
 -- Last Bastion: a low guard, shield arm forward, the weapon held back.
 motions.lastBastion = {
 	keys = {
+		k(
+			0.07,
+			merge(STAND, {
+				lShoulder = { 60, 10, -10 },
+				lElbow = { 60, 0, 0 },
+				rShoulder = { 40, 0, 20 },
+				rElbow = { 50, 0, 0 },
+				waist = { 6, 0, 0 },
+				root = { 4, 0, 0, 0.15 },
+			}),
+			"out"
+		), -- walka-wk: a rise before dropping into the guard
 		k(
 			0.18,
 			merge(crouch(0.45), {
@@ -2912,6 +2935,17 @@ motions.holyStrike = {
 motions.heal = {
 	keys = {
 		k(
+			0.1,
+			merge(crouch(0.2), {
+				lShoulder = { 40, -30, 0 },
+				lElbow = { 110, 0, 0 },
+				rShoulder = { 40, 40, 0 },
+				rElbow = { 100, 0, 0 },
+				waist = { -6, -8, 0 },
+			}),
+			"out"
+		), -- walka-wk: the hand gathers the light at the chest
+		k(
 			0.22,
 			merge(lunge(0.3), {
 				lShoulder = { 95, 10, 0 },
@@ -2942,6 +2976,17 @@ motions.heal = {
 -- Renew: hands cupped low, then lifted as if pouring.
 motions.renew = {
 	keys = {
+		k(
+			0.08,
+			merge(crouch(0.3), {
+				rShoulder = { 20, 25, 0 },
+				rElbow = { 70, 0, 0 },
+				lShoulder = { 20, -25, 0 },
+				lElbow = { 70, 0, 0 },
+				waist = { -14, 0, 0 },
+			}),
+			"out"
+		), -- walka-wk: a dip before the lift
 		k(0.18, {
 			rShoulder = { 40, 25, 0 },
 			rElbow = { 80, 0, 0 },
@@ -2956,6 +3001,13 @@ motions.renew = {
 			lElbow = { 30, 0, 0 },
 			waist = { 8, 0, 0 },
 		}, "inOut"),
+		k(0.55, {
+			rShoulder = { 128, 25, 0 },
+			rElbow = { 20, 0, 0 },
+			lShoulder = { 128, -25, 0 },
+			lElbow = { 20, 0, 0 },
+			waist = { 12, 0, 0 },
+		}, "out"), -- walka-wk: the pour runs on
 	},
 	recover = 0.3,
 	hit = 0.35,
@@ -3034,6 +3086,13 @@ motions.purify = {
 			lElbow = { 10, 0, 0 },
 			waist = { 10, 0, 0 },
 		}, "out"),
+		k(0.42, {
+			rShoulder = { 70, -10, 98 },
+			rElbow = { 6, 0, 0 },
+			lShoulder = { 70, 10, -98 },
+			lElbow = { 6, 0, 0 },
+			waist = { 16, 0, 0 },
+		}, "out"), -- walka-wk: the arms fly on
 	},
 	recover = 0.3,
 	hit = 0.3,
@@ -3042,6 +3101,17 @@ motions.purify = {
 -- Aura of Endurance: arms raised slowly, slightly apart, the head lifted.
 motions.auraOfEndurance = {
 	keys = {
+		k(
+			0.14,
+			merge(crouch(0.3), {
+				rShoulder = { 25, 30, 0 },
+				rElbow = { 60, 0, 0 },
+				lShoulder = { 25, -30, 0 },
+				lElbow = { 60, 0, 0 },
+				waist = { -10, 0, 0 },
+			}),
+			"out"
+		), -- walka-wk: a breath in before the arms rise
 		k(
 			0.35,
 			merge(STAND, {
@@ -3097,6 +3167,14 @@ motions.resurrection = {
 -- Shield of Faith: the mace upright, the left palm pushed forward.
 motions.shieldOfFaith = {
 	keys = {
+		k(0.1, {
+			rShoulder = { 60, 0, 10 },
+			rElbow = { 95, 0, 0 },
+			lShoulder = { 45, -40, 0 },
+			lElbow = { 115, 0, 0 },
+			lWrist = { 10, 0, 0 },
+			waist = { -4, -18, 0 },
+		}, "out"), -- walka-wk: the palm drawn back
 		k(0.2, {
 			rShoulder = { 70, 0, 10 },
 			rElbow = { 90, 0, 0 },
@@ -3179,6 +3257,17 @@ motions.prayer = {
 -- Divine Intervention: the arms spread wide and up, the body rising.
 motions.divineIntervention = {
 	keys = {
+		k(
+			0.2,
+			merge(crouch(0.6), {
+				rShoulder = { 30, 50, 0 },
+				rElbow = { 100, 0, 0 },
+				lShoulder = { 30, -50, 0 },
+				lElbow = { 100, 0, 0 },
+				waist = { -18, 0, 0 },
+			}),
+			"out"
+		), -- walka-wk: gathered low before the rise
 		k(
 			0.45,
 			merge(air(1.2, 0.3), {
@@ -3288,6 +3377,17 @@ motions.fortuneDice = {
 			}),
 			"out"
 		),
+		k(
+			0.42,
+			merge(lunge(0.2), {
+				rShoulder = { 128, 0, 12 },
+				rElbow = { 5, 0, 0 },
+				rWrist = { 30, 0, 0 },
+				lShoulder = { 15, 0, -15 },
+				waist = { -2, 14, 0 },
+			}),
+			"out"
+		), -- walka-wk: the throw follows through
 	},
 	recover = 0.3,
 	release = 0.25,
@@ -3307,6 +3407,13 @@ motions.wheelOfFortune = {
 -- Brand of Light (S70): hands crossed at the chest like Purify, then the left palm thrust at the enemy.
 motions.brandOfLight = {
 	keys = {
+		k(0.06, {
+			rShoulder = { 30, 30, 0 },
+			rElbow = { 60, 0, 0 },
+			lShoulder = { 30, -30, 0 },
+			lElbow = { 60, 0, 0 },
+			waist = { -10, 0, 0 },
+		}, "out"), -- walka-wk: the arms drawn in
 		k(0.15, {
 			rShoulder = { 70, 60, 0 },
 			rElbow = { 110, 0, 0 },
@@ -3322,6 +3429,14 @@ motions.brandOfLight = {
 			rElbow = { 100, 0, 0 },
 			waist = { -6, 10, 0 },
 		}, "out"),
+		k(0.36, {
+			lShoulder = { 96, 4, -5 },
+			lElbow = { 0, 0, 0 },
+			lWrist = { -58, 0, 0 },
+			rShoulder = { 44, 40, 0 },
+			rElbow = { 100, 0, 0 },
+			waist = { -8, 14, 0 },
+		}, "out"), -- walka-wk: the palm presses on
 	},
 	recover = 0.3,
 	hit = 0.25,
@@ -3346,47 +3461,333 @@ motions.hammerOfHeaven = {
 	trail = { from = 0.3, to = 0.52 },
 }
 
--- S145 (DESIGN-18 §6.4): the Cleric pools' new skills as variants of the Cleric's S114 motions (the same rule as S140 -
--- S144); the look apart is their SkillVfx (light, own pieces). A full motion pass comes with W03-W07.
--- Light Ray: Heal's open palm pushed at the target, the ray leaving it at the release.
+-- S145 (DESIGN-18 §6.4): the Cleric pools' new skills. walka-wk: each has its own motion now (anticipation, the
+-- action on the server's time, follow-through), no longer the keys of an S114 skill.
+-- Light Ray: the left palm drawn back past the right shoulder with the body wound up, then thrust at the target in a
+-- half lunge; the ray leaves the palm at the release (0.25), the arm overshoots and settles.
 motions.lightRay = {
-	keys = motions.heal.keys,
+	keys = {
+		k(
+			0.12,
+			merge(crouch(0.25), {
+				lShoulder = { 70, -70, 0 },
+				lElbow = { 110, 0, 0 },
+				lWrist = { 10, 0, 0 },
+				rShoulder = { 30, 20, 10 },
+				rElbow = { 60, 0, 0 },
+				waist = { -4, -28, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.25,
+			merge(lunge(0.45), {
+				lShoulder = { 96, 8, 0 },
+				lElbow = { 0, 0, 0 },
+				lWrist = { -55, 0, 0 },
+				rShoulder = { 20, 0, 18 },
+				rElbow = { 40, 0, 0 },
+				waist = { -8, 18, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.33,
+			merge(lunge(0.5), {
+				lShoulder = { 102, 12, 0 },
+				lElbow = { 0, 0, 0 },
+				lWrist = { -62, 0, 0 },
+				rShoulder = { 14, 0, 22 },
+				rElbow = { 35, 0, 0 },
+				waist = { -10, 22, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.5,
+			merge(lunge(0.25), {
+				lShoulder = { 80, 6, 0 },
+				lElbow = { 15, 0, 0 },
+				lWrist = { -35, 0, 0 },
+				rShoulder = { 20, 0, 15 },
+				rElbow = { 45, 0, 0 },
+				waist = { -4, 12, 0 },
+			})
+		),
+	},
 	recover = 0.25,
 	release = 0.25,
 }
--- Blinding Light: Purify's raised hand, the flash at the hit.
+-- Blinding Light: both hands gathered before the face in a small crouch (the light held in), then thrown up and out
+-- with the body arched back at the flash (0.3), held a breath.
 motions.blindingLight = {
-	keys = motions.purify.keys,
+	keys = {
+		k(
+			0.14,
+			merge(crouch(0.35), {
+				rShoulder = { 95, 50, 0 },
+				rElbow = { 120, 0, 0 },
+				lShoulder = { 95, -50, 0 },
+				lElbow = { 120, 0, 0 },
+				waist = { -14, 0, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.3,
+			merge(STAND, {
+				rShoulder = { 150, -10, 35 },
+				rElbow = { 10, 0, 0 },
+				lShoulder = { 150, 10, -35 },
+				lElbow = { 10, 0, 0 },
+				lWrist = { -30, 0, 0 },
+				waist = { 18, 0, 0 },
+				root = { 6, 0, 0, 0.25 },
+			}),
+			"in"
+		),
+		k(
+			0.46,
+			merge(STAND, {
+				rShoulder = { 140, -10, 40 },
+				rElbow = { 14, 0, 0 },
+				lShoulder = { 140, 10, -40 },
+				lElbow = { 14, 0, 0 },
+				lWrist = { -25, 0, 0 },
+				waist = { 14, 0, 0 },
+				root = { 4, 0, 0, 0.1 },
+			}),
+			"out"
+		),
+	},
 	recover = 0.3,
 	hit = 0.3,
 }
--- Miracle: Prayer's folded hands held while praying (the loop over the prayer pose, castTime), the heal at the end.
+-- Miracle: kneeling, both arms raised to the sky with open palms gathering the light (the loop breathes between 0.4
+-- and 0.6 for the cast time, both ends the same pose), then rising with the palms brought down towards the healed.
+local MIRACLE_RAISED: Pose = merge(KNEEL, {
+	rShoulder = { 160, 0, 30 },
+	rElbow = { 15, 0, 0 },
+	rWrist = { -20, 0, 0 },
+	lShoulder = { 160, 0, -30 },
+	lElbow = { 15, 0, 0 },
+	lWrist = { -20, 0, 0 },
+	waist = { 16, 0, 0 },
+})
 motions.miracle = {
-	keys = motions.prayer.keys,
+	keys = {
+		k(
+			0.2,
+			merge(KNEEL, {
+				rShoulder = { 60, 45, 0 },
+				rElbow = { 120, 0, 0 },
+				lShoulder = { 60, -45, 0 },
+				lElbow = { 120, 0, 0 },
+				waist = { -16, 0, 0 },
+			}),
+			"out"
+		),
+		k(0.4, MIRACLE_RAISED, "inOut"),
+		k(
+			0.5,
+			merge(MIRACLE_RAISED, {
+				rShoulder = { 166, 0, 36 },
+				lShoulder = { 166, 0, -36 },
+				waist = { 20, 0, 0 },
+				root = { 0, 0, 0, -1.2 },
+			}),
+			"inOut"
+		),
+		k(0.6, MIRACLE_RAISED, "inOut"),
+		k(
+			0.82,
+			merge(lunge(0.3), {
+				rShoulder = { 85, 25, 0 },
+				rElbow = { 10, 0, 0 },
+				rWrist = { -35, 0, 0 },
+				lShoulder = { 85, -25, 0 },
+				lElbow = { 10, 0, 0 },
+				lWrist = { -35, 0, 0 },
+				waist = { -6, 0, 0 },
+			}),
+			"out"
+		),
+	},
 	recover = 0.3,
 	loop = { from = 0.4, to = 0.6 },
 }
--- Consecrate: Holy Strike's mace brought down to the ground; the waves of light follow it.
+-- Consecrate: the mace swung up in both hands, rising on the toes, then driven head down into the ground at the feet
+-- in a deep crouch (0.25); the Cleric stays down while the waves of light run out, then rises.
+local CONSECRATE_DOWN: Pose = merge(crouch(1), {
+	rShoulder = { 40, 20, -10 },
+	rElbow = { 20, 0, 0 },
+	rWrist = { 40, 0, 0 },
+	lShoulder = { 40, -20, 10 },
+	lElbow = { 25, 0, 0 },
+	waist = { -32, 0, 0 },
+})
 motions.consecrate = {
-	keys = motions.holyStrike.keys,
+	keys = {
+		k(0.12, merge(STAND, OVERHEAD, { waist = { 14, 0, 0 }, root = { 4, 0, 0, 0.3 } }), "out"),
+		k(0.25, CONSECRATE_DOWN, "in"),
+		k(0.34, merge(CONSECRATE_DOWN, { waist = { -36, 0, 0 }, root = { -6, 0, 0, -0.95 } }), "out"),
+		k(0.75, CONSECRATE_DOWN),
+		k(
+			0.95,
+			merge(crouch(0.3), { rShoulder = { 30, 10, 0 }, lShoulder = { 30, -10, 0 }, waist = { -8, 0, 0 } }),
+			"inOut"
+		),
+	},
 	recover = 0.3,
 	hit = 0.25,
+	trail = { from = 0.1, to = 0.28 },
 }
--- Holy Chains: Brand of Light's palm thrust at the target, the chains at the hit.
+-- Holy Chains: the left arm wound across the body, flung at the target like a whip in a lunge (0.25), then yanked
+-- back to the hip with the body leaning away (the chain pulled tight).
 motions.holyChains = {
-	keys = motions.brandOfLight.keys,
+	keys = {
+		k(
+			0.12,
+			merge(crouch(0.2), {
+				lShoulder = { 60, -80, 0 },
+				lElbow = { 90, 0, 0 },
+				rShoulder = { 40, 20, 0 },
+				rElbow = { 80, 0, 0 },
+				waist = { -6, -30, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.25,
+			merge(lunge(0.6), {
+				lShoulder = { 100, 10, -10 },
+				lElbow = { 0, 0, 0 },
+				lWrist = { 30, 0, 0 },
+				rShoulder = { 20, 0, 20 },
+				rElbow = { 50, 0, 0 },
+				waist = { -10, 22, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.4,
+			merge(lunge(0.2), {
+				lShoulder = { 30, 0, -30 },
+				lElbow = { 70, 0, 0 },
+				lWrist = { 30, 0, 0 },
+				rShoulder = { 30, 0, 20 },
+				rElbow = { 60, 0, 0 },
+				waist = { 14, -10, 0 },
+				root = { 8, 0, 0, -0.2 },
+			}),
+			"out"
+		),
+		k(
+			0.55,
+			merge(STAND, {
+				lShoulder = { 35, 0, -25 },
+				lElbow = { 65, 0, 0 },
+				rShoulder = { 25, 0, 15 },
+				rElbow = { 50, 0, 0 },
+				waist = { 8, -6, 0 },
+			})
+		),
+	},
 	recover = 0.3,
 	hit = 0.25,
 }
--- Holy Nova: Radiance's weapon raised, the burst at the hit.
+-- Holy Nova: crouched with both fists gathered at the chest (the light pressed in), then a burst upwards: the body
+-- leaves the ground with the arms flung wide and down in a star at the hit (0.3), landing soft.
 motions.holyNova = {
-	keys = motions.radiance.keys,
+	keys = {
+		k(
+			0.16,
+			merge(crouch(0.6), {
+				rShoulder = { 70, 55, 0 },
+				rElbow = { 130, 0, 0 },
+				lShoulder = { 70, -55, 0 },
+				lElbow = { 130, 0, 0 },
+				waist = { -20, 0, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.3,
+			merge(air(0.6, 0.2), {
+				rShoulder = { 60, 0, 110 },
+				rElbow = { 5, 0, 0 },
+				lShoulder = { 60, 0, -110 },
+				lElbow = { 5, 0, 0 },
+				waist = { 14, 0, 0 },
+				rHip = { 0, 0, 18 },
+				lHip = { 0, 0, -18 },
+			}),
+			"in"
+		),
+		k(
+			0.42,
+			merge(air(0.3, 0.2), {
+				rShoulder = { 50, 0, 100 },
+				lShoulder = { 50, 0, -100 },
+				waist = { 10, 0, 0 },
+				rHip = { 0, 0, 12 },
+				lHip = { 0, 0, -12 },
+			}),
+			"out"
+		),
+		k(0.55, merge(crouch(0.3), { rShoulder = { 30, 0, 40 }, lShoulder = { 30, 0, -40 }, waist = { -4, 0, 0 } })),
+	},
 	recover = 0.3,
 	hit = 0.3,
 }
--- Rebuke: Shield of Faith's hand pushed forward, the light at the hit.
+-- Rebuke: the mace pulled back to the right hip with both hands and the body turned away, then shoved straight ahead
+-- in a lunge (0.2) like a ram, the shoulders following through.
 motions.rebuke = {
-	keys = motions.shieldOfFaith.keys,
+	keys = {
+		k(
+			0.1,
+			merge(crouch(0.35), {
+				rShoulder = { 10, 0, 30 },
+				rElbow = { 90, 0, 0 },
+				lShoulder = { 40, 60, 0 },
+				lElbow = { 100, 0, 0 },
+				waist = { -6, -35, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.2,
+			merge(lunge(0.8), {
+				rShoulder = { 88, 10, 0 },
+				rElbow = { 10, 0, 0 },
+				lShoulder = { 88, -10, 0 },
+				lElbow = { 15, 0, 0 },
+				waist = { -14, 10, 0 },
+			}),
+			"in"
+		),
+		k(
+			0.3,
+			merge(lunge(0.9), {
+				rShoulder = { 92, 12, 0 },
+				rElbow = { 4, 0, 0 },
+				lShoulder = { 92, -12, 0 },
+				lElbow = { 8, 0, 0 },
+				waist = { -18, 14, 0 },
+			}),
+			"out"
+		),
+		k(
+			0.45,
+			merge(lunge(0.4), {
+				rShoulder = { 60, 10, 0 },
+				rElbow = { 30, 0, 0 },
+				lShoulder = { 60, -10, 0 },
+				lElbow = { 35, 0, 0 },
+				waist = { -8, 6, 0 },
+			})
+		),
+	},
 	recover = 0.25,
 	hit = 0.2,
 }
