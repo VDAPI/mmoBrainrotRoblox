@@ -537,7 +537,6 @@ T.describe("Prices (S131)", function()
 		for _, p in Products.shardPacks do
 			check(p.key, p.productId)
 		end
-		check(Products.respawn.key, Products.respawn.productId)
 		for _, p in Products.passes do
 			check(p.key, p.passId)
 		end
@@ -554,7 +553,7 @@ T.describe("Prices (S131)", function()
 
 	T.it("6. docs/SKLEP-ID.md lists every product, pass and subscription (tools/shop_report.luau)", function()
 		local text = fs.readFile("docs/SKLEP-ID.md")
-		local keys: { string } = { Products.respawn.key }
+		local keys: { string } = {}
 		local lists: { { any } } =
 			{ Products.shardPacks, Products.passes, Products.subscriptions, Products.starterPacks, Products.mounts }
 		for _, list in lists do

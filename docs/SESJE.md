@@ -13355,6 +13355,87 @@ Pliki: `src/shared/Data/WorldEvents.luau`, `src/shared/Logic/WorldEvents.luau`, 
   głazy i nadproże rozsunięte wokół łuku (tylko serwer, poza testem wystroju).
 - Nieobejrzane w Studio: proporcje otworu malowanego modelu `common_portal_02` (dopasowanie pola liczone z jego
   pudełka).
+
+
+### W28: Smoczy Sklep, błąd „Nieprawidłowe żądanie”, układ okna, zakupy w Studio, odrodzenie za walutę (właściciel 2026-10-20)
+
+- **Przyczyna błędu:** okno potwierdzenia zakupu (`UI/PremiumConfirm`) wysyłało `PremiumBuy(klucz, nil)`. `Net` liczy
+  argumenty przez `select("#")`, więc serwer widział 2 argumenty przy definicji `{ "string" }` i odrzucał wywołanie w
+  `ArgCheck` jako `error.badRequest`, zanim doszło do `PremiumShopService`. Dotyczyło każdego przedmiotu za Smoczą
+  Walutę (zwoje, plecaki, eliksiry, Płaszcz Wabienia, Auto Mikstury, Auto Polowanie). Kosmetyki (2 argumenty) i
+  zakupy Robux działały.
+- **Poprawka:** sama poprawka serwera jest w `7fed5891` (`ArgCheck` pomija nile na końcu, limit zapytań czeka i
+  ponawia). Tu: nowy `Logic/ShopPayload` (wywołania sklepu bez nilów na końcu, `productIdOf` wspólny z
+  `MonetizationService`), używany przez `PremiumConfirm` i `Cards.invoke`.
+- **Test regresji:** `tests/shoppayload.spec.luau`: każdy wpis sklepu, kosmetyk na sprzedaż, paczka, przepustka,
+  subskrypcja i paczka startowa przechodzi `ArgCheck` z `Net/Definitions` i trafia w gałąź serwera; w Studio każda włączona oferta Robux ma stan „kup”.
+- **Studio:** zakupy Robux z id `0` były już symulowane w Studio; dopisany przycisk „+1000 ◆ (Studio)” w nagłówku sklepu
+  (tylko `RunService:IsStudio()`, przez `AdminRun shards`, serwer i tak wpuszcza tylko admina). `docs/SKLEP-ID.md`
+  (z `tools/shop_report.luau`): instrukcja krok po kroku dla Creator Hub, kolumna „Ikona” (plik z folderu Graphics),
+  sekcja 1a o testach w Studio; bez długich myślników w tabelach. Wpis w `docs/JAK-DODAC.md`.
+- **Układ okna:** karta sklepu (`Cards.card`) to wiersz w `UIListLayout` (obrazek | kolumna tekstu | przyciski),
+  rośnie z opisem (bez ucinania i nachodzenia), minimalna wysokość 76, obrys z tokenów, plakietka premii jako pigułka;
+  VIP ma złoty obrys przez `highlight` (wcześniej drugi `UIStroke`). Oferta tygodnia: części w pionowej liście (cena
+  wcześniej wchodziła pod „Przymierz”), wysokość liczona z części. Nagłówek: saldo w pigułce, przycisk Studio i
+  „Doładuj” w jednym wierszu z prawej, tytuł dostaje resztę. Treść z marginesami na obrys i pasek przewijania. Wiersz
+  kosmetyku węższy (110 + 134).
+- **Odrodzenie (właściciel: „Odkup niech będzie za walutę, tanio”):** `Config.RespawnNowCost` 10 → 5, produkt Robux
+  `respawn` usunięty (`Data/Products`, `MonetizationService`, `DeathService`), płatność w jednym kroku
+  (`PlayerStateService.Update`), odmowa `death.error.noShards`. Ekran śmierci: „Odródź teraz (5 ◆)” z ikoną waluty,
+  przy braku waluty komunikat i „Doładuj Smoczą Walutę” (sklep na zakładce waluty). Szybki Powrót bez zmian.
+- **Bez przeglądu w Studio** (brak MCP w tej sesji): układ sprawdzony w kodzie dla 1920×1080, 1366×768 (okno
+  900×640 w wirtualnych px) i telefonu 844×390 (okno pełnoekranowe ok. 997×461).
+- **Pliki:** `src/shared/Logic/{ShopPayload,UiArtKeys}.luau`,
+  `src/shared/Data/Products.luau`, `src/shared/Config.luau`, `src/shared/Data/Localization/{pl,en}.luau`,
+  `src/server/Services/{MonetizationService,DeathService}.luau`, `src/client/UI/PremiumConfirm.luau`,
+  `src/client/UI/Screens/PremiumShop/{init,Cards,Cosmetics,Passes}.luau`, `src/client/UI/Screens/Hud/{init,DeathScreen}.luau`,
+  `tests/shoppayload.spec.luau` (nowy), `tests/{premium,paywall,cosmetics2}.spec.luau`, `tools/shop_report.luau`,
+  `docs/{SKLEP-ID,JAK-DODAC,DECYZJE,DESIGN,SESJE}.md`.
+
+### W28: strzałka samouczka (GuidePointer)
+- **Zgłoszenie właściciela:** „w samouczku pisze idź za strzałką a nie ma żadnej strzałki”.
+- **Przyczyna:** w świecie nie było żadnej strzałki. Tekst `tutorial.attack.travel` mówił o „strzałce zadania”, a jedyną
+  strzałką był mały znak „⬆” (28 px) w nagłówku tropiciela zadań, w foncie Builder Sans bez tego znaku (pusty albo
+  kwadrat), do tego niewidoczny po zwinięciu tropiciela. Krok `quest` raz włączał ścieżkę `NavController` do kapitana,
+  ale to tylko płaskie złote kwadraciki 1,1 st. przy ziemi, łatwe do przeoczenia i chowane w terenie.
+- **Teraz:** `GuidePointerController` (nowy, klient): złota strzałka unosząca się nad głową i obracająca do celu,
+  płynące szewrony na ziemi od gracza do celu, migający romb z odległością („42 m”) nad celem (zawsze na wierzchu,
+  widać go przez ściany) i strzałka przy krawędzi ekranu, gdy cel jest poza kadrem (za kamerą: na dole). Wszystko
+  liczone co klatkę od aktualnej postaci (bez załączników na postaci), więc przeżywa śmierć, teleport i zmianę mapy;
+  cel na innej mapie prowadzi do portalu na trasie (`MapRoute.nextExit`), NPC poza strumieniowaniem z `Data/Npcs`.
+  Znika po dojściu (`GuidePointer.REACH`) i razem ze wskazówką samouczka (okna, przerywniki, śmierć).
+- **Cele kroków (`Tutorial.guide`):** `quest` kapitan (po przyjęciu zadania: cel zadania), `attack` w mieście cel
+  zadania fabuły (droga na Łąki), na łowisku wybrany cel albo najbliższy żywy potwór (bez potwora: cel zadania);
+  kroki HUD (ruch, plecak, mikstura, umiejętność) bez celu w świecie. Wskazówka kroku podróży stoi w swoim miejscu
+  (`anchorOf` bez tropiciela).
+- **Teksty:** „Idź za złotą strzałką na Łąki…”, krok kapitana też mówi o złotej strzałce (PL i EN), `guide.distance`.
+  Poprawka właściciela z `main` (ścieżka `NavController` na pierwsze łowisko Łąk w kroku podróży) zostaje; bez celu
+  zadania złoty przewodnik prowadzi w to samo miejsce.
+- **Wspólna logika:** `Logic/GuidePointer` (kąt względem kamery, strzałka przy krawędzi, szewrony, zasięg); strzałka w
+  tropicielu zadań liczy kąt tą samą funkcją i rysuje „▲” (znak, który ma font).
+- **Testy:** nowy `tests/guidepointer.spec.luau`, `tests/tutorial.spec.luau` (cele kroków, każdy tekst ze strzałką ma
+  cel w świecie, `anchorOf`).
+- **Pliki:** `src/shared/Logic/GuidePointer.luau`, `src/client/Controllers/GuidePointerController.luau`,
+  `tests/guidepointer.spec.luau` (nowe), `src/shared/Logic/Tutorial.luau`,
+  `src/client/Controllers/TutorialController.luau`, `src/client/UI/Screens/Hud/QuestTracker.luau`,
+  `src/shared/Data/Localization/{pl,en}.luau`, `tests/tutorial.spec.luau`, `docs/SESJE.md`.
+
+### W26: warianty potworów na modelach bazy (iceWolf, snowLeopard, blackBear)
+- `Data/MonsterAssetVariants` (nowy): wariant bierze model Tripo bazy (`from`) i własny kolor (`tint`, mnożnik tekstury):
+  `iceWolf` = `wolf` w lodowym błękicie (`#C4DCF6`), `snowLeopard` = `lynx` w chłodnej biało-szarej (`#D2D6DE`, cętki
+  zostają ciemne), `blackBear` = `brownBear` prawie czarny brąz (`#463C36`). `Data/MonsterAssets` kopiuje wariantowi wpis
+  bazy (hitbox, klipy, `visual`) z polami `from` i `tint`, tylko gdy baza ma wpis (wariant bazy bez modelu zostaje przy
+  generatorze bez błędu; `brownBear` dostał model równolegle, więc `blackBear` już go bierze). Bez łańcuchów.
+- `Data/MonsterLooks`: `asset.model` = baza, `color` = barwa wariantu, bez odcienia regionu; `MonsterLooks.assetModel(id)`.
+  Wcześniej iceWolf i snowLeopard dziedziczyły model bazy przez `inherit`, ale tylko z odcieniem regionu przez
+  `BasePart.Color`, który na teksturze Tripo nic nie zmienia.
+- `MonsterViewController`: przemalowanie `SurfaceAppearance.Color` (jak kolor włosów); teksturowany MeshPart bez
+  SurfaceAppearance dostaje ją z tą samą teksturą, gdy silnik pozwala (inaczej zostaje bez zmian); części bez tekstury
+  mnożą `Color`. Brak modelu bazy w grze: wariant cicho wraca do generatora. Skala wariantu jego własna (`size`, elity
+  na tym samym modelu, jak dotąd); klipy i role kości ze wspólnego szkieletu bazy.
+- Nieobejrzane w Studio.
+- **Pliki:** `src/shared/Data/{MonsterAssetVariants,MonsterAssets,MonsterLooks}.luau`,
+  `src/client/Controllers/MonsterViewController.luau`, `tests/monsterassets.spec.luau` (nowy), `tools/balance_reasons.luau`, `docs/SESJE.md`.
 ### S158: wolniejsza regeneracja energii, mikstury mają sens (zgłoszenie właściciela 2026-10-20)
 - **Energia:** baza 8 → 4 na s poza walką (`Stats.Formula.energyRegenBase`), w walce baza ×0,6 = 2,4 na s
   (`energyRegenCombatMul`, stan walki z `Config.CombatTimeout` w `ResourceService.regenerate`). Nowa statystyka

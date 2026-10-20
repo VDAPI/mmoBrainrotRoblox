@@ -13,6 +13,7 @@ local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Log = require(ReplicatedStorage.Shared.Util.Log)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
+local ShopPayload = require(ReplicatedStorage.Shared.Logic.ShopPayload)
 local Sounds = require(script.Parent.Sounds)
 local Text = require(script.Parent.Text)
 local Toast = require(script.Parent.Components.Toast)
@@ -65,7 +66,9 @@ end
 
 -- Sends the purchase; returns (ok, localized error).
 local function send(spec: Spec): (boolean, string?)
-	local ok, err = Net.Invoke(spec.remote, spec.arg, spec.arg2)
+	-- W28: through ShopPayload (no trailing nil: PremiumBuy(key, nil) was refused as "error.badRequest")
+	local call = ShopPayload.confirm(spec.remote, spec.arg, spec.arg2)
+	local ok, err = Net.Invoke(call.remote, table.unpack(call.args, 1, call.n))
 	if not ok then
 		Sounds.play("error")
 		if err == "premium.error.priceChanged" then
