@@ -4,6 +4,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -83,8 +84,24 @@ Common.RANK_COLORS = table.freeze({
 	member = Theme.Paper.TextMuted,
 }) :: { [string]: Color3 }
 
--- S159g: a section heading in the display font.
-function Common.heading(scope: Scope, order: number, text: Fusion.UsedAs<string>): Instance
+-- S159g: a section heading in the display font; 2026-10-21: with `info`, an "i" right after it (Components/InfoLine)
+-- holds the explanation of the section.
+function Common.heading(
+	scope: Scope,
+	order: number,
+	text: Fusion.UsedAs<string>,
+	info: Fusion.UsedAs<string>?
+): Instance
+	if info then
+		return InfoLine.new(scope, {
+			LayoutOrder = order,
+			Text = text,
+			Info = info,
+			Font = Theme.Fonts.Display,
+			TextSize = Theme.TextSize.Large,
+			Color = Theme.Paper.Heading,
+		})
+	end
 	return scope:New("TextLabel")({
 		LayoutOrder = order,
 		Size = UDim2.new(1, 0, 0, 30),

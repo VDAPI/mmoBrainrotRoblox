@@ -6,6 +6,7 @@
 -- builder), the tiers with their points, then what the tiers reveal: levels, where and how it attacks (I), the drops
 -- seen and the defence (II), the weaknesses (III), and the character's bonus against the family. Everything from
 -- Logic/Bestiary over Context.st (the replicated character.ach); the window computes no rule of its own.
+-- 2026-10-21 (owner: too many descriptions): the family bonus is one short line, how it grows behind an "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +17,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Families = require(ReplicatedStorage.Shared.Data.Families)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local ItemName = require(ReplicatedStorage.Shared.Logic.ItemName)
 local ListRow = require(script.Parent.Parent.Parent.Components.ListRow)
 local Preview = require(script.Parent.Parent.WorldMap.Preview)
@@ -458,16 +460,20 @@ function BestiaryTab.lines(s: Scope, use: Fusion.Use, ctx: Context.Ctx): { Insta
 
 	if family then
 		section("best.section.bonus")
-		text(
-			Text.get(use, "best.bonus", {
-				pct = view.familyPct,
-				per = BestiaryData.FAMILY_PCT,
-				cap = BestiaryData.FAMILY_CAP,
-				family = Text.get(use, family.nameKey),
-			}),
-			Theme.Fonts.Body,
-			Theme.TextSize.Small,
-			if view.familyPct > 0 then Theme.Paper.Success else Theme.Paper.Text
+		local args = {
+			pct = view.familyPct,
+			per = BestiaryData.FAMILY_PCT,
+			cap = BestiaryData.FAMILY_CAP,
+			family = Text.get(use, family.nameKey),
+		}
+		table.insert(
+			out,
+			InfoLine.new(s, {
+				LayoutOrder = #out + 1,
+				Text = Text.get(use, "best.bonus.short", args),
+				Info = Text.get(use, "best.bonus", args),
+				Color = if view.familyPct > 0 then Theme.Paper.Success else Theme.Paper.Text,
+			})
 		)
 	end
 	return out

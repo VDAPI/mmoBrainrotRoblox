@@ -3,16 +3,21 @@
 -- colour, more with the guild level; the leader picks) and the rights table of the ranks below the leader (the leader
 -- switches rights and sets daily bank limits, others read it), the chat channel hint, leave the guild, disband it
 -- (leader, confirmed by typing the guild name).
+-- 2026-10-21 (owner: too many descriptions): every explanation is one short line or none, the long text behind an "i"
+-- (Components/InfoLine); the rights table is folded (Components/Details), the banner pickers too for everyone but the
+-- leader (only the leader picks).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Common = require(script.Parent.Common)
+local Details = require(script.Parent.Parent.Parent.Components.Details)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Guild = require(ReplicatedStorage.Shared.Logic.Guild)
 local GuildBanners = require(ReplicatedStorage.Shared.Data.GuildBanners)
 local GuildProgressData = require(ReplicatedStorage.Shared.Data.GuildProgress)
+local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -25,9 +30,10 @@ local CELL = 120 -- width of a rank column in the rights table
 local ROW = 40
 
 -- A horizontal row of square picker buttons (emblems or colours).
-local function pickerRow(scope: Scope, order: number, children: { Instance }): Instance
+local function pickerRow(scope: Scope, order: number, children: { Instance }, visible: Fusion.UsedAs<boolean>): Instance
 	return scope:New("Frame")({
 		LayoutOrder = order,
+		Visible = visible,
 		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
@@ -133,17 +139,37 @@ local function bannerPicker(scope: Scope, guild: Fusion.Value<any>, isLeader: Fu
 			})
 		)
 	end
+	local hintKey = scope:Computed(function(use): string
+		return if use(isLeader) then "guild.banner.hint" else "guild.banner.hintMember"
+	end)
+	-- the leader always sees the pickers, the others after "More"
+	local memberOpen = scope:Value(Details.isOpen("guild/banner"))
+	local shown = scope:Computed(function(use): boolean
+		return use(isLeader) or use(memberOpen)
+	end)
 	return {
 		Common.heading(scope, 20, Text.T(scope, "guild.banner.title")),
-		Common.paragraph(
-			scope,
-			21,
-			scope:Computed(function(use): string
-				return Text.get(use, if use(isLeader) then "guild.banner.hint" else "guild.banner.hintMember")
-			end)
-		),
-		pickerRow(scope, 22, emblems),
-		pickerRow(scope, 23, colours),
+		InfoLine.new(scope, {
+			LayoutOrder = 21,
+			Text = scope:Computed(function(use): string
+				return Text.get(use, `{use(hintKey)}.short`)
+			end),
+			Info = scope:Computed(function(use): string
+				return Text.get(use, use(hintKey))
+			end),
+			Color = Theme.Paper.TextMuted,
+		}),
+		-- the others see the pickers folded (only to look): a "More" header that shows them
+		Details.new(scope, {
+			Key = "guild/banner",
+			Open = memberOpen,
+			LayoutOrder = 22,
+			Visible = scope:Computed(function(use): boolean
+				return not use(isLeader)
+			end),
+		}),
+		pickerRow(scope, 23, emblems, shown),
+		pickerRow(scope, 24, colours, shown),
 	}
 end
 
@@ -283,23 +309,14 @@ local function rightsTable(
 			})
 		)
 	end
-	local rows = {
-		Common.heading(scope, 40, Text.T(scope, "guild.rights.title")),
-		Common.paragraph(
-			scope,
-			41,
-			scope:Computed(function(use): string
-				return Text.get(use, if use(isLeader) then "guild.rights.hint" else "guild.rights.hintMember")
-			end)
-		),
-		row(42, "", header),
-	}
+	-- the table itself is folded (Details, closed by default, remembered for the session)
+	local rows = { row(1, "", header) }
 	for i, action in Guild.EDITABLE do
 		local cells = {}
 		for j, rank in Guild.EDITABLE_RANKS do
 			table.insert(cells, rightCell(scope, guild, isLeader, rank, action, j))
 		end
-		table.insert(rows, row(42 + i, Text.T(scope, `guild.right.{action}`), cells))
+		table.insert(rows, row(1 + i, Text.T(scope, `guild.right.{action}`), cells))
 	end
 	for i, kind in { "gold", "items" } do
 		local cells = {}
@@ -308,7 +325,19 @@ local function rightsTable(
 		end
 		table.insert(rows, row(60 + i, Text.T(scope, `guild.rights.{kind}`), cells))
 	end
-	return rows
+	return {
+		Common.heading(scope, 40, Text.T(scope, "guild.rights.title")),
+		InfoLine.new(scope, {
+			LayoutOrder = 41,
+			Text = scope:Computed(function(use): string
+				return Text.get(use, if use(isLeader) then "guild.rights.hint.short" else "guild.rights.hintMember")
+			end),
+			Info = Text.T(scope, "guild.rights.hint"),
+			InfoVisible = isLeader,
+			Color = Theme.Paper.TextMuted,
+		}),
+		Details.new(scope, { Key = "guild/rights", LayoutOrder = 42, Children = rows }),
+	}
 end
 
 local function Settings(scope: Scope, showModal: (spec: any) -> ()): Instance
@@ -323,8 +352,7 @@ local function Settings(scope: Scope, showModal: (spec: any) -> ()): Instance
 	end)
 
 	return Common.page(scope, 10, {
-		Common.heading(scope, 1, Text.T(scope, "guild.settings.pvp")),
-		Common.paragraph(scope, 2, Text.T(scope, "guild.settings.pvpHint")),
+		Common.heading(scope, 1, Text.T(scope, "guild.settings.pvp"), Text.T(scope, "guild.settings.pvpHint")),
 		Button(scope, {
 			LayoutOrder = 3,
 			Size = UDim2.fromOffset(300, 46),
@@ -342,16 +370,21 @@ local function Settings(scope: Scope, showModal: (spec: any) -> ()): Instance
 				task.spawn(Common.invoke, "GuildSetting", "guildPvpProtection", not Fusion.peek(protection))
 			end,
 		}),
-		Common.paragraph(scope, 4, Text.T(scope, "guild.settings.chatHint")),
+		InfoLine.new(scope, {
+			LayoutOrder = 4,
+			Text = Text.T(scope, "guild.settings.chatHint.short"),
+			Info = Text.T(scope, "guild.settings.chatHint"),
+			Color = Theme.Paper.TextMuted,
+		}),
 		bannerPicker(scope, guild, isLeader) :: any,
 		rightsTable(scope, guild, isLeader, showModal) :: any,
-		Common.paragraph(
-			scope,
-			80,
-			scope:Computed(function(use): string
-				return if use(isLeader) then Text.get(use, "guild.settings.leaderHint") else ""
-			end)
-		),
+		InfoLine.new(scope, {
+			LayoutOrder = 80,
+			Visible = isLeader,
+			Text = Text.T(scope, "guild.settings.leaderHint.short"),
+			Info = Text.T(scope, "guild.settings.leaderHint"),
+			Color = Theme.Paper.TextMuted,
+		}),
 		scope:New("Frame")({
 			LayoutOrder = 81,
 			Size = UDim2.new(1, 0, 0, 48),

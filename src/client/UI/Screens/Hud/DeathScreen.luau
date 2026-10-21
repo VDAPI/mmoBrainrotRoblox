@@ -5,6 +5,8 @@
 -- entrance); without a choice the server picks the city at `deadline`. Keys 1 and 2 are local to this screen.
 -- FIX 2026-10-15: "Respawn here" shows its gold price (`death.hereCost`) and is disabled without enough gold.
 -- S121: "VIP respawn (free)" above the paid buttons while counting, only with VIP and a free respawn left today.
+-- 2026-10-21 (owner: too many descriptions): every note is one short line; what the respawn protection does sits behind
+-- an "i" (Components/InfoLine on iron).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -16,6 +18,7 @@ local CurrencyIcon = require(script.Parent.Parent.Parent.Components.CurrencyIcon
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -261,7 +264,7 @@ local function DeathScreen(scope: Scope, props: Props?): Instance
 					label(scope, {
 						Name = "BloodMoonHint",
 						LayoutOrder = 3,
-						Size = UDim2.new(1, 0, 0, 40),
+						Size = UDim2.new(1, 0, 0, 24),
 						Visible = scope:Computed(function(use): boolean
 							return use(counting) and use(moonBlocked)
 						end),
@@ -349,15 +352,17 @@ local function DeathScreen(scope: Scope, props: Props?): Instance
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Iron.TextMuted,
 					}),
-					label(scope, {
+					InfoLine.new(scope, {
 						Name = "Protection",
 						LayoutOrder = 9,
-						Size = UDim2.new(1, 0, 0, 40),
+						Size = UDim2.new(1, 0, 0, 24),
+						Center = true,
 						Visible = choosing,
-						TextWrapped = true,
 						Text = Text.T(scope, "death.protectionNote"),
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Iron.TextMuted,
+						Info = Text.T(scope, "death.protectionNote.info"),
+						Surface = "iron",
+						Color = Theme.Iron.TextMuted,
+						ZIndex = 52,
 					}),
 				},
 			}),

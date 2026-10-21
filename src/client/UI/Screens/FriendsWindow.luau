@@ -9,7 +9,8 @@
 --     the reason line from Logic/FriendJoin.canJoin), Invite to party, Whisper, Write a letter, "..." (Remove, Ignore).
 --     On a phone only Join stays in the row; the rest goes to the action sheet of "...";
 --   * "Roblox friends in the game": character name, status, Join and Add friend (a request needs the same server).
--- The ignored tab lists ignored players with "Stop ignoring" and ignores a character by name.
+-- The ignored tab lists ignored players with "Stop ignoring" and ignores a character by name; 2026-10-21: its header
+-- is the count only, what ignoring does sits behind an "i" (Components/InfoLine).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,6 +21,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Device)
 local FriendJoin = require(ReplicatedStorage.Shared.Logic.FriendJoin)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoLine = require(script.Parent.Parent.Components.InfoLine)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Presence = require(ReplicatedStorage.Shared.Logic.Presence)
 local Social = require(ReplicatedStorage.Shared.Logic.Social)
@@ -566,25 +568,27 @@ local function FriendsWindow(scope: Scope, props: Props): Fusion.Child
 			}),
 		}),
 		header,
-		scope:New("TextLabel")({
+		InfoLine.new(scope, {
 			Position = UDim2.fromOffset(0, Theme.Size.ButtonHeightSmall + 6),
 			Size = UDim2.new(1, 0, 0, 40),
-			BackgroundTransparency = 1,
-			TextWrapped = true,
 			Visible = scope:Computed(function(use): boolean
 				return use(tab) == "ignored"
 			end),
 			Text = scope:Computed(function(use): string
 				return Text.get(
 					use,
+					"social.ignored.hint.short",
+					{ n = count(use, "ignored"), max = Config.Social.maxIgnored }
+				)
+			end),
+			Info = scope:Computed(function(use): string
+				return Text.get(
+					use,
 					"social.ignored.hint",
 					{ n = count(use, "ignored"), max = Config.Social.maxIgnored }
 				)
 			end),
-			FontFace = Theme.Fonts.Body,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Paper.TextMuted,
-			TextXAlignment = Enum.TextXAlignment.Left,
+			Color = Theme.Paper.TextMuted,
 		}),
 		scope:New("ScrollingFrame")({
 			Position = scope:Computed(function(use): UDim2
