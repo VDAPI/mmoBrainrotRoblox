@@ -609,6 +609,32 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
 - Cele questów mogą wskazywać sprzedawcę klasy gracza: `npc = "classVendor"` w celach `talk` / `deliver`
   (`QuestLogic.npcFor`).
 
+## 8b. Wędrowny kupiec (S159w, właściciel 2026-10-20)
+
+- **Radosław** (`Data/Npcs.WANDERER`, id `wanderer`, poza `Npcs.list`) przyjeżdża karawaną (kryty wóz w szafranie i
+  śliwce, muł Bursztyn, latarnia, proporzec; model `Assets.Npcs.wanderer_caravan` zastąpi proceduralny) **co 3 h na
+  45 min**, start o 01:30, 04:30, …, 22:30 UTC (`Data/WanderingMerchant.schedule`). Harmonogram, miejsce i towar liczy
+  każdy serwer i klient z zegara i numeru wizyty (`Logic/WanderingMerchant`, `Logic/Rng`), bez wiadomości między
+  serwerami.
+- **Miejsce:** mapa losowana z wagami miasto 2, każdy region 1, potem jeden z jej punktów: w mieście rynek i place przy
+  bramach i świątyni, w regionach obozy przy punktach odrodzenia (w kole bez potworów). Nigdy dwa razy z rzędu w tym
+  samym punkcie.
+- **Ogłoszenia** w czacie i na pasku: 10 i 1 min przed przyjazdem, przyjazd, 5 min przed odjazdem, odjazd. Na mapie
+  świata ⚖ z czasem (wyblakłe 10 min przed przyjazdem), na minimapie ⚖ albo strzałka na krawędzi.
+- **Towar** (nowy na każdej wizycie, ten sam na każdym serwerze):
+  - 3 × ekwipunek: różne miejsca (wagi `LootTables.bossSlots`), Unikatowy 70% / Heroiczny 27% / Legendarny 3%, nigdy
+    Mityczny. Podstawa dla klasy kupującego, poziom przedmiotu = poziom postaci w paśmie mapy (miasto 1–100, Łąki 1–20,
+    Bór 20–45, Pustkowia 45–70, Szczyty 70–100), premie losowane przy zakupie. Ceny: Unikatowy 360 × poziom złota,
+    Heroiczny 1080 × poziom złota (ok. 120 / 360 zabójstw tego poziomu), Legendarny 400 Znaków Łowcy.
+  - 2 × materiały z puli (pył, odłamki, kryształ, rdzeń legendy za 150 Znaków, księżycowy płatek, złota płetwa, srebro,
+    mithril, adamantyt), tylko te, które pasmo mapy osiąga.
+  - 1 × barwnik karawany (4 nowe: szafran, śliwka, morska zieleń, rdza; `obtain.merchant`), 12 000 złota, kosmetyk
+    konta, nigdy za Smocze Łuski.
+  - 3 × zapasy: 10 mikstur jakości poziomu za 80% ceny alchemika, Heroiczne błogosławieństwo wylosowanej linii
+    (60 × poziom), Kamienie Mapy, Kamień Lochu, rzadko Zwój Ochrony (400 × poziom).
+- **Limity:** każda oferta ma limit na postać na wizytę (sprzęt, esencje, rdzeń, Zwój Ochrony 1; reszta 2–3). Wszystko
+  kupione jest związane z postacią i nie do sprzedania kupcowi (`bound`, `ns`). Bez Robux i Smoczych Łusek.
+
 ## 9. Mikstury (lekarz)
 
 - Trzy rodzaje: Życie (HP), Mana, Energia. Pięć jakości: Mała, Średnia, Duża, Wielka, Potężna. Przywracają odpowiednio 150 / 500 / 1 500 / 4 000 / 10 000 punktów (energia: 30/60/100/150/250). Ceny: 10 / 60 / 250 / 700 / 1 800 złota (S93: Wielka 900 → 700; S94: Potężna 3000 → 1800; złoto za 1 HP rośnie z

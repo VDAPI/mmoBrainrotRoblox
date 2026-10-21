@@ -51,6 +51,9 @@
   telefonie, podgląd 3D wpisu, toast stopnia, miejsce przycisku pod przepustką; telefon w poziomie ma osiągnięcia w szufladzie menu W29). Wiki czeka na
   odświeżenie (tytuły „Znawca …” z `wiki = false`). Ikona kategorii `hud/ach_bestiary` do dorobienia (dziś znak ❦).
   Zabójstwa rodzajów liczą się od S151c (zapis wcześniej ich nie miał).
+- **Wędrowny kupiec (S159w):** wiki bez artykułu i bez barwników karawany (dane `Data/WanderingMerchant` poza eksportem);
+  wóz i muł proceduralne do czasu modelu `Assets.Npcs.wanderer_caravan`; bez przeglądu w Studio (punkty postoju
+  sprawdzone testem na otwartym terenie, nie w grze).
 
 - **Zgłoszenia właściciela 2026-10-20:** zrobione (S156): menu HUD w dwóch rzędach, limit przesuwania mapy, efekty broni
   z jej puli, Zwój Przemiany, kurhan bossa świata jako niecka z przedsionkiem bez PvP i dłuższe ogłoszenia, kolorowe

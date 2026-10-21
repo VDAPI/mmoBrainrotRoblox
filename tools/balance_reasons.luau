@@ -117,6 +117,8 @@ return {
 		{ path = "Data/ScheduledEvents", omit = { "byKey", "sky" } },
 		-- S101: world events (schedule, scale of the commander / champion, contribution threshold, reward, chest)
 		{ path = "Data/WorldEvents" },
+		-- S159w: the wandering merchant (schedule, stock pools, prices, limits); spots are geometry, look is looks
+		{ path = "Data/WanderingMerchant", omit = { "spots", "look", "dyes", "blessingLines", "groups" } },
 		-- S149: the world boss (UTC schedule, the arena spot, contribution threshold, reward, item rarities)
 		{ path = "Data/WorldBoss" },
 		-- S152: the season pass pace (points per source, tier size, the daily monster limit, the growing cap, the catch-up,
@@ -7335,6 +7337,12 @@ return {
 		},
 		["Stats:byId.potionDiscount.order"] = {
 			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["WanderingMerchant:*"] = {
+			{
+				session = "S159w",
+				why = "new module (owner 2026-10-20): the wandering merchant every 3 h for 45 min; gear of the band's levels Unique 70 / Heroic 27 / Legendary 3 (never Mythic), Unique 360 x ilvl and Heroic 1080 x ilvl gold (about 120 / 360 kills of that level), Legendary 400 Hunter's Marks, 1 each a visit; 2 materials (essences 1 a visit, ores and herbs ~3-4x their value), a caravan dye 12000 gold, 3 consumables (potions at 80 % of the alchemist, a Heroic blessing 60 x level, stones, a Scroll of Protection 400 x level); everything bound and never sold back",
+			},
 		},
 	} :: { [string]: { Reason } },
 }
