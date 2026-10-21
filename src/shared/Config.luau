@@ -758,7 +758,9 @@ local Config = {
 		-- fires, candles: the nearest; lava and crystals keep Config.RegionLights, caves Config.CaveLights; nil = all);
 		-- `motion` = the shimmer and pulse of Legendary / Mythic item frames; `chevrons` = ground chevrons of the guide
 		-- pointer; `plateEvery` = seconds between two distance checks of the nameplates; `fxRadius` = studs from the
-		-- camera within which TownFxController animates flags, flickering lights and water shimmer.
+		-- camera within which TownFxController animates flags, flickering lights and water shimmer; `npcRadius` = studs
+		-- from the camera within which the owner's NPC models breathe and gesture (NpcAnimController; farther ones keep
+		-- their relaxed stance), `npcRate` = their pose updates per second.
 		levels = {
 			low = {
 				bloom = 0,
@@ -776,6 +778,8 @@ local Config = {
 				chevrons = 4,
 				plateEvery = 0.5,
 				fxRadius = 90,
+				npcRadius = 60,
+				npcRate = 15,
 			},
 			medium = {
 				bloom = 0.6,
@@ -793,6 +797,8 @@ local Config = {
 				chevrons = 7,
 				plateEvery = 0.25,
 				fxRadius = 150,
+				npcRadius = 100,
+				npcRate = 30,
 			},
 			high = {
 				bloom = 1,
@@ -810,6 +816,8 @@ local Config = {
 				chevrons = 7,
 				plateEvery = 0.25,
 				fxRadius = 200,
+				npcRadius = 140,
+				npcRate = 60,
 			},
 		},
 		-- Seconds the post effects tween when the map or the level changes.

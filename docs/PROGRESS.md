@@ -49,6 +49,9 @@
 
 ## Niedokończone (kod)
 
+- **W30 animacja NPC z Tripo:** postawa, oddech, rozglądanie, gesty rozmowy i kucie kowala proceduralnie
+  (`NpcAnimController`); nieobejrzane na prawdziwym modelu (rozstaw rąk `ArmSpread`, kierunek przodu eksportu `Yaw`).
+  Klony NPC (towarzysz, podgląd mapy) zostają w pozie z pliku.
 - **S159 pociski bossów do unikania:** serwer, wzory i rysowanie gotowe, testy zielone; nic nieobejrzane w Studio
   (czytelność wzorów, wygląd ścian lodowca i oddechu Hrimvalda do przejrzenia w AnimLab).
 - **S159a gesty bossów:** gest i ryk każdego wzoru, warstwa proceduralna na klipach kości (`Anim/BoneOverlay`), rzut

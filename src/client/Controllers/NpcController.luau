@@ -216,6 +216,25 @@ function NpcController.Talk(npcId: string)
 	WindowManager.Open("npc")
 end
 
+-- W30: the NPC whose dialogue (or one of its service windows) is open now, or nil (NpcAnimController: talk gestures).
+function NpcController.TalkingTo(): string?
+	local npcId = Fusion.peek(NpcController.Current)
+	if not npcId then
+		return nil
+	end
+	for _, id in SERVICE_WINDOWS do
+		if Fusion.peek(WindowManager.IsOpen(id)) then
+			return npcId
+		end
+	end
+	for id in fromNpc do
+		if Fusion.peek(WindowManager.IsOpen(id)) then
+			return npcId
+		end
+	end
+	return nil
+end
+
 -- Opens the forge on the upgrade tab with an item (drop on the anvil from anywhere).
 function NpcController.SetUpgradeTarget(location: string, key: string)
 	NpcController.UpgradeTarget:set({ location = location, key = key })

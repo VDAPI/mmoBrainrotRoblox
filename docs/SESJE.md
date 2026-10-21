@@ -13756,3 +13756,13 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Cele gildii:** odłamki raz na konto, grupę i tydzień (`GuildProgress.shardsTaken` / `markShards`,
   `account.guildShards`, zakładka Cele).
 - **Testy:** `guildprogress`, `net`, `hazards`, `meadowsterrain`, `onboarding`.
+
+### W30: animacja proceduralna modeli NPC z Tripo (2026-10-21)
+- **Logika:** `Logic/NpcPose` (macierze obrotu, nazwy kości Mixamo z prefiksem i bez, postawa rąk z kierunków kości
+  w przestrzeni korzenia, zwrot do gracza, klatki ruchu: bezczynność, rozmowa, kucie).
+- **Klient:** `Anim/NpcRig` (Bone.Transform = rest⁻¹·C·rest jak `Anim/BoneOverlay`), `Controllers/NpcAnimController`
+  (jeden rig na NPC z `NpcAsset`, odcięcie odległością i częstotliwość z `Config.Graphics.levels[*].npcRadius/npcRate`),
+  `NpcController.TalkingTo` (otwarta rozmowa lub okno usługi NPC).
+- **Testy:** `tests/npcpose.spec`.
+- **Dla właściciela:** bez przeglądu w Studio (nie ma jeszcze modeli); kowal kuje w miejscu, `Work = "none"` na modelu
+  to wyłącza.
