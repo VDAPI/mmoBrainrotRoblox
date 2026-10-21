@@ -3,6 +3,8 @@
 -- through. The total, then per held type "{type}: n/all" with the looks as icons (owned bright, the rest dimmed), then
 -- the rare boss looks with the boss that drops them. Looks are put on at the blacksmith (Appearance tab): "Guide me to
 -- the blacksmith". Weapon effects (particles, the cosmetic kind `weapon`) stay on their own tab and work on any look.
+-- 2026-10-21 (owner: too many detailed descriptions): the hint is one short line, how the collection grows and that
+-- weapon effects work on every look behind its "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -10,6 +12,7 @@ local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Button = require(script.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local ItemIcon = require(script.Parent.Parent.Components.ItemIcon)
 local ItemText = require(script.Parent.Parent.ItemText)
 local State = require(script.Parent.Parent.State)
@@ -44,6 +47,35 @@ local function text(scope: Scope, order: number, value: Fusion.UsedAs<string>, c
 		TextSize = Theme.TextSize.Small,
 		TextColor3 = color,
 		TextXAlignment = Enum.TextXAlignment.Left,
+	})
+end
+
+-- 2026-10-21: a short line with an "i" right after it holding the full text.
+local function infoText(
+	scope: Scope,
+	order: number,
+	value: Fusion.UsedAs<string>,
+	info: Fusion.UsedAs<string>
+): Instance
+	local line = text(scope, 1, value, Theme.Paper.TextMuted) :: TextLabel
+	line.Size = UDim2.new()
+	line.AutomaticSize = Enum.AutomaticSize.XY
+	scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink, Parent = line })
+	return scope:New("Frame")({
+		LayoutOrder = order,
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 6),
+			}),
+			line,
+			InfoTip.new(scope, { Text = info, LayoutOrder = 2 }),
+		},
 	})
 end
 
@@ -183,7 +215,7 @@ local function WardrobeTransmog(scope: Scope, props: Props): Instance
 		[Children] = {
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
 			text(scope, 1, totalText, Theme.Paper.Heading, true),
-			text(scope, 2, Text.T(scope, "wardrobe.transmog.hint"), Theme.Paper.TextMuted),
+			infoText(scope, 2, Text.T(scope, "wardrobe.transmog.hint.short"), Text.T(scope, "wardrobe.transmog.hint")),
 			Button(scope, {
 				LayoutOrder = 3,
 				Size = scope:Computed(function(use): UDim2
@@ -204,7 +236,7 @@ local function WardrobeTransmog(scope: Scope, props: Props): Instance
 				LayoutOrder = 4,
 				Size = scope:Computed(function(use): UDim2
 					local touch = use(Device.Touch)
-					return UDim2.new(1, 0, 1, -(if touch then 150 else 140))
+					return UDim2.new(1, 0, 1, -(if touch then 130 else 116)) -- total, the one-line hint, the button
 				end),
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,

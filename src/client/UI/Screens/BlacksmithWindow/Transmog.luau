@@ -5,6 +5,8 @@
 -- looks not yet owned dimmed with where to get them), see it turning in the preview with the item's rarity colour and
 -- the cost (owned / needed). "Apply look" asks first; "Restore own" is free. Everything is checked again by the server
 -- (TransmogApply); stats never change.
+-- 2026-10-21 (owner: too many detailed descriptions): the note under the buttons is one short line, the full note
+-- (smith.transmog.note) behind its "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -14,6 +16,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
@@ -110,6 +113,49 @@ local function buildPreview(def: Items.ItemDef, accent: Color3): (Model?, Vector
 	local frame, size = holder:GetBoundingBox()
 	anchor.Parent = holder
 	return holder, frame.Position, math.max(3, size.Magnitude * 1.15)
+end
+
+-- 2026-10-21 (owner: too many detailed descriptions): a short line with an "i" right after it holding the longer text
+-- (Components/InfoTip); the row hides while the line is empty.
+local function infoLine(
+	scope: Scope,
+	order: number,
+	text: Fusion.UsedAs<string>,
+	info: Fusion.UsedAs<string>,
+	color: Color3?
+): Instance
+	return scope:New("Frame")({
+		LayoutOrder = order,
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Visible = scope:Computed(function(use): boolean
+			return use(text) ~= ""
+		end),
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 6),
+			}),
+			scope:New("TextLabel")({
+				LayoutOrder = 1,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(),
+				AutomaticSize = Enum.AutomaticSize.XY,
+				RichText = true,
+				TextWrapped = true,
+				Text = text,
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = color or Theme.Paper.Text,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+			}),
+			InfoTip.new(scope, { Text = info, LayoutOrder = 2 }),
+		},
+	})
 end
 
 local function Transmog(scope: Scope, props: Props): Instance
@@ -637,12 +683,15 @@ local function Transmog(scope: Scope, props: Props): Instance
 						else Theme.Paper.Danger
 				end)
 			),
-			label(
+			infoLine(
 				scope,
 				12,
 				scope:Computed(function(use): string
-					return if use(item) ~= nil and use(refusal) == nil then Text.get(use, "smith.transmog.note") else ""
+					return if use(item) ~= nil and use(refusal) == nil
+						then Text.get(use, "smith.transmog.note.short")
+						else ""
 				end),
+				Text.T(scope, "smith.transmog.note"),
 				Theme.Paper.TextMuted
 			),
 		},

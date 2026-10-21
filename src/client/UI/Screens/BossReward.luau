@@ -12,6 +12,8 @@
 -- S149b: the world boss form (`world`): EXP, gold and the own items (FightLoot) or the reason without a reward (level,
 -- share, claimed), the next world boss in the player's own time instead of today's runs and the next kill's chances;
 -- the fight table stays on the small after-fight card (FightCard, with the place in the contribution).
+-- 2026-10-21 (owner: too many detailed descriptions): short lines; the world boss share line names the factor, what it
+-- multiplies is behind its "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -25,6 +27,7 @@ local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local FightLoot = require(script.Parent.Parent.Components.FightLoot)
 local FightTable = require(script.Parent.Parent.Components.FightTable)
 local FightView = require(script.Parent.Parent.FightView)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Motion)
@@ -108,6 +111,38 @@ local function BossReward(scope: Scope, props: Props): Instance
 			FontFace = font,
 			TextSize = size,
 			TextColor3 = color,
+		})
+	end
+
+	-- 2026-10-21: a centred short line with an "i" right after it holding the full text.
+	local function infoLabel(
+		order: number,
+		text: Fusion.UsedAs<string>,
+		info: Fusion.UsedAs<string>,
+		color: Color3,
+		size: number,
+		font: Font
+	): Instance
+		local line = label(1, text, color, size, font) :: TextLabel
+		line.Size = UDim2.new()
+		line.AutomaticSize = Enum.AutomaticSize.XY
+		scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink, Parent = line })
+		return scope:New("Frame")({
+			LayoutOrder = order,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			[Children] = {
+				scope:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 6),
+				}),
+				line,
+				InfoTip.new(scope, { Text = info, LayoutOrder = 2 }),
+			},
 		})
 	end
 
@@ -341,14 +376,16 @@ local function BossReward(scope: Scope, props: Props): Instance
 			)
 			-- S149c: the own contribution and the factor of the chances
 			if reward.share and reward.factor then
+				local shareArgs = {
+					pct = string.format("%.1f", reward.share),
+					f = string.format("%.2f", reward.factor),
+				}
 				table.insert(
 					worldLines,
-					label(
+					infoLabel(
 						3,
-						Text.T(scope, "worldboss.rewardCard.share", {
-							pct = string.format("%.1f", reward.share),
-							f = string.format("%.2f", reward.factor),
-						}),
+						Text.T(scope, "worldboss.rewardCard.share.short", shareArgs),
+						Text.T(scope, "worldboss.rewardCard.share", shareArgs),
 						Theme.Paper.TextMuted,
 						Theme.TextSize.Small,
 						Theme.Fonts.BodyMedium
