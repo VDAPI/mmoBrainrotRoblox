@@ -17,6 +17,10 @@
 --          ground following it
 -- Pooled parts (Vfx/Pool), lights within Pool.takeLight, emitters only on medium / high quality; low quality and far
 -- away keep the bodies and the lanes (what must be dodged) and drop trails, lights and debris.
+-- S160 (owner 2026-10-21: "boss abilities are barely visible"): an orb is a bright core inside a glowing shell as wide
+-- as its hit radius (never wider than what hits: inst.radius + Hazards.PLAYER_RADIUS), with a bigger glow, a longer
+-- trail and a stronger light; a lane is as wide as the band a bolt hits, shows from its first frame, glows (Neon) and
+-- lies on a dark under-lane for contrast; a shock ring carries a glowing band at its foot; axes and icicles are larger.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -47,6 +51,8 @@ type Piece = {
 	emitter: ParticleEmitter?,
 	trail: Trail?,
 	lane: BasePart?,
+	laneUnder: BasePart?, -- S160: the dark lane under it (contrast)
+	strips: { BasePart }, -- S160: the glowing foot of a shock ring
 	spin: number,
 	stopTele: (() -> ())?,
 	lastRow: number, -- waves: the front of the last row of spikes
@@ -71,7 +77,9 @@ type Live = {
 
 local WHITE = Color3.new(1, 1, 1)
 local DARK = Color3.fromHex("#2A2420")
-local LANE_ALPHA = 0.55
+local LANE_ALPHA = 0.8 -- S160: 0.55 -> 0.8 (and LANE_FIRST from the first frame)
+local LANE_FIRST = 0.3
+local SHELL_ALPHA = 0.6 -- S160: transparency of an orb's glowing shell
 local LOB_HEIGHT = 0.35 -- arc height per stud of distance
 local SKY_HEIGHT = 46 -- studs a falling shard / meteor starts above its landing
 local ROW_STEP = 3 -- studs between two rows of spikes of a wave
@@ -111,7 +119,7 @@ local function addLight(piece: Piece, holder: BasePart, color: Color3, range: nu
 	local l = Instance.new("PointLight")
 	l.Color = color
 	l.Range = range
-	l.Brightness = 1.6
+	l.Brightness = 2.6 -- S160: 1.6 -> 2.6
 	l.Shadows = false
 	l.Parent = holder
 	piece.light = l
@@ -124,8 +132,8 @@ local function addGlow(piece: Piece, holder: BasePart, color: Color3, size: numb
 	local e = Instance.new("ParticleEmitter")
 	e.Color = ColorSequence.new(color:Lerp(WHITE, 0.3), color)
 	e.LightEmission = 1
-	e.Rate = 30
-	e.Lifetime = NumberRange.new(0.25, 0.45)
+	e.Rate = 45 -- S160: 30 -> 45
+	e.Lifetime = NumberRange.new(0.3, 0.55)
 	e.Speed = NumberRange.new(0.5, 1.5)
 	e.SpreadAngle = Vector2.new(180, 180)
 	e.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, size), NumberSequenceKeypoint.new(1, 0) })
@@ -150,7 +158,7 @@ local function addTrail(piece: Piece, holder: BasePart, color: Color3, width: nu
 	local trail = Instance.new("Trail")
 	trail.Attachment0 = a0
 	trail.Attachment1 = a1
-	trail.Lifetime = 0.3
+	trail.Lifetime = 0.45 -- S160: 0.3 -> 0.45
 	trail.LightEmission = 1
 	trail.Color = ColorSequence.new(color)
 	trail.Transparency = NumberSequence.new(0.2, 1)
@@ -161,7 +169,7 @@ local function addTrail(piece: Piece, holder: BasePart, color: Color3, width: nu
 end
 
 local function newPiece(): Piece
-	return { parts = {}, spin = 0, lastRow = -1, lastBreath = -1 }
+	return { parts = {}, strips = {}, spin = 0, lastRow = -1, lastBreath = -1 }
 end
 
 -- The body of a bolt by its look.
@@ -171,12 +179,12 @@ local function boltBody(inst: Hazards.Inst, live: Live): Piece
 	local r = inst.radius
 	local look = inst.look
 	if look == "axe" then
-		local handle = part("Block", Color3.fromHex("#5A3E26"), v3(0.35, 0.35, 2.6), Enum.Material.Wood)
-		local blade = part("Wedge", color, v3(0.18, 1.6, 1.2), Enum.Material.Metal)
+		local handle = part("Block", Color3.fromHex("#5A3E26"), v3(0.45, 0.45, 3.2), Enum.Material.Wood)
+		local blade = part("Wedge", color:Lerp(WHITE, 0.25), v3(0.24, 2.2, 1.6), Enum.Material.Metal)
 		table.insert(piece.parts, handle)
 		table.insert(piece.parts, blade)
 		piece.spin = 14
-		addTrail(piece, blade, Color3.fromHex("#E8E4D8"), 1.2, live)
+		addTrail(piece, blade, Color3.fromHex("#E8E4D8"), 1.8, live)
 	elseif look == "arrow" then
 		local shaft = part("Block", Color3.fromHex("#8A6B4A"), v3(0.12, 0.12, 2.4), Enum.Material.Wood)
 		local head = part("Block", color, v3(0.22, 0.22, 0.45), Enum.Material.Metal)
@@ -194,21 +202,24 @@ local function boltBody(inst: Hazards.Inst, live: Live): Piece
 		table.insert(piece.parts, ball)
 		piece.spin = if snow then 6 else 9
 	elseif look == "icicle" then
-		local spike = part("Block", color, v3(0.5, 0.5, 3.2), Enum.Material.Glass, 0.15)
+		local spike = part("Block", color, v3(0.7, 0.7, 3.8), Enum.Material.Glass, 0.1)
 		table.insert(piece.parts, spike)
-		addTrail(piece, spike, color, 0.5, live)
-		addLight(piece, spike, color, 6, live)
+		addTrail(piece, spike, color, 0.9, live)
+		addLight(piece, spike, color, 9, live)
 	else
 		-- orbs: soul, frost, fire, magma, a magic bolt
-		local core = part("Ball", color:Lerp(WHITE, 0.35), Vector3.one * math.max(0.6, r * 0.9), Enum.Material.Neon)
+		-- S160: a bright core (0.9 -> 1.4 x the radius) in a glowing shell as wide as the hit radius
+		local core = part("Ball", color:Lerp(WHITE, 0.45), Vector3.one * math.max(0.9, r * 1.4), Enum.Material.Neon)
 		table.insert(piece.parts, core)
+		local shell = part("Ball", color, Vector3.one * (2 * r), Enum.Material.Neon, SHELL_ALPHA)
+		table.insert(piece.parts, shell)
 		local key = if look == "fireball" or look == "magma" then "flame" else "glow"
 		if not Textures.id(key) then
 			key = "glow"
 		end
-		addGlow(piece, core, color, r * 1.6, live, key)
-		addTrail(piece, core, color, r * 1.2, live)
-		addLight(piece, core, color, 8 + r * 2, live)
+		addGlow(piece, core, color, r * 2.2, live, key)
+		addTrail(piece, core, color, r * 1.8, live)
+		addLight(piece, core, color, 10 + r * 3, live)
 	end
 	return piece
 end
@@ -230,7 +241,9 @@ local function placeBolt(piece: Piece, inst: Hazards.Inst, x: number, z: number,
 		local lift = if look == "snowball" then inst.radius - BOLT_Y else 0
 		piece.parts[1].CFrame = (base + v3(0, lift, 0)) * CFrame.Angles(-t * piece.spin, 0, 0)
 	else
-		piece.parts[1].CFrame = base
+		for _, p in piece.parts do
+			p.CFrame = base
+		end
 	end
 end
 
@@ -240,9 +253,18 @@ local function laneFor(inst: Hazards.Inst, live: Live): BasePart?
 		return nil
 	end
 	local length = math.min(inst.range, inst.speed * inst.life, 60)
-	local lane = part("Block", live.color, v3(inst.radius * 1.4, 0.08, length), Enum.Material.Neon, 1)
-	lane.CFrame = facing(inst.x, inst.y + 0.15, inst.z, inst.a) * CFrame.new(0, 0, -length / 2)
+	-- S160: as wide as the band it hits (radius + the player's), thicker and lifted out of grass
+	local width = 2 * (inst.radius + Hazards.PLAYER_RADIUS)
+	local lane = part("Block", live.color, v3(width, 0.25, length), Enum.Material.Neon, 1 - LANE_FIRST)
+	lane.CFrame = facing(inst.x, inst.y + 0.2, inst.z, inst.a) * CFrame.new(0, 0, -length / 2)
 	return lane
+end
+
+-- S160: the dark lane under a lane (contrast on snow and sand): a little wider, matte.
+local function laneUnderFor(lane: BasePart): BasePart
+	local under = part("Block", DARK, lane.Size + v3(0.6, -0.05, 0.6), Enum.Material.SmoothPlastic, 0.35)
+	under.CFrame = lane.CFrame * CFrame.new(0, -0.04, 0)
+	return under
 end
 
 local function release(piece: Piece)
@@ -258,6 +280,14 @@ local function release(piece: Piece)
 		Pool.release(piece.lane)
 		piece.lane = nil
 	end
+	if piece.laneUnder then
+		Pool.release(piece.laneUnder)
+		piece.laneUnder = nil
+	end
+	for _, p in piece.strips do
+		Pool.release(p)
+	end
+	table.clear(piece.strips)
 	if piece.stopTele then
 		piece.stopTele = nil
 	end
@@ -303,6 +333,9 @@ local function begin(live: Live, i: number, inst: Hazards.Inst, t: number)
 		piece = boltBody(inst, live)
 		placeBolt(piece, inst, inst.x, inst.z, inst.a, t)
 		piece.lane = laneFor(inst, live)
+		if piece.lane then
+			piece.laneUnder = laneUnderFor(piece.lane)
+		end
 	elseif inst.kind == "lob" then
 		local look = inst.look
 		local body = if look == "bomb"
@@ -372,7 +405,9 @@ local function begin(live: Live, i: number, inst: Hazards.Inst, t: number)
 	elseif inst.kind == "ring" then
 		local n = if live.low then 14 else 28
 		for _ = 1, n do
-			table.insert(piece.parts, part("Block", color:Lerp(DARK, 0.3), v3(1, 1.2, 1), Enum.Material.Slate))
+			table.insert(piece.parts, part("Block", color:Lerp(DARK, 0.15), v3(1, 1.6, 1), Enum.Material.Slate))
+			-- S160: a glowing band at its foot (the edge to jump), on low quality too
+			table.insert(piece.strips, part("Block", color:Lerp(WHITE, 0.2), v3(1, 0.3, 1), Enum.Material.Neon, 0.15))
 		end
 		if live.full and not live.low then
 			Library.dangerMotes(v3(inst.x, inst.y, inst.z), 4, color, left, false)
@@ -412,13 +447,17 @@ local function draw(live: Live, i: number, inst: Hazards.Inst, st: Hazards.State
 				p.CFrame += v3(0, math.sin(t * 6 + i) * 0.15, 0)
 			end
 			if piece.lane then
-				piece.lane.Transparency = 1 - LANE_ALPHA * k
+				piece.lane.Transparency = 1 - (LANE_FIRST + (LANE_ALPHA - LANE_FIRST) * k)
 			end
 			return true
 		end
 		if piece.lane then
 			Pool.release(piece.lane)
 			piece.lane = nil
+		end
+		if piece.laneUnder then
+			Pool.release(piece.laneUnder)
+			piece.laneUnder = nil
 		end
 		placeBolt(piece, inst, st.x, st.z, st.a, t)
 		return not st.done
@@ -544,14 +583,24 @@ local function draw(live: Live, i: number, inst: Hazards.Inst, st: Hazards.State
 		local fade = math.clamp(r / math.max(1, inst.maxRadius), 0, 1)
 		for j, p in piece.parts do
 			local a = (j - 0.5) / n * 2 * math.pi
+			local strip = piece.strips[j]
 			if Hazards.inRingGap(inst, a) then
 				p.Transparency = 1
+				if strip then
+					strip.Transparency = 1
+				end
 			else
 				local arc = 2 * math.pi * math.max(r, 1) / n
-				p.Size = v3(math.min(arc + 0.2, 6), 1.2 * (1 - 0.5 * fade) + 0.2, inst.thick * 0.6)
-				p.CFrame = CFrame.new(inst.x + math.cos(a) * r, inst.y + p.Size.Y / 2, inst.z + math.sin(a) * r)
-					* CFrame.Angles(0, -a + math.pi / 2, 0)
+				p.Size = v3(math.min(arc + 0.2, 6), 1.6 * (1 - 0.5 * fade) + 0.2, inst.thick * 0.6)
+				local turn = CFrame.Angles(0, -a + math.pi / 2, 0)
+				local foot = CFrame.new(inst.x + math.cos(a) * r, inst.y, inst.z + math.sin(a) * r) * turn
+				p.CFrame = foot * CFrame.new(0, p.Size.Y / 2, 0)
 				p.Transparency = 0.1 + 0.6 * fade
+				if strip then
+					strip.Size = v3(math.min(arc + 0.3, 6.2), 0.3, inst.thick * 0.9)
+					strip.CFrame = foot * CFrame.new(0, 0.2, 0)
+					strip.Transparency = 0.15 + 0.6 * fade
+				end
 			end
 		end
 		return not st.done

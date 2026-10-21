@@ -6,6 +6,9 @@
 -- under the portrait and the effect icons, below the party frames when in a party (the right column holds the
 -- minimap, the tracker and the skill buttons). S149b: under the world boss panel when both show (`Above`).
 -- Reads only the narrow branches `worldEvent` and `zone.map`; the clock ticks every 0.5 s like Elite2Timer.
+-- Owner 2026-10-21 ("the invasion covers the map"): the PC place starts under the minimap with the quest tracker
+-- (HudDrag.RIGHT_TOP), and the player moves the panel by its "≡" tab and scales it by "◢" (UI/HudDrag, HudLayout
+-- `worldEvent`); a moved panel leaves the column, so the tracker stays where it is.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +19,7 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local State = require(script.Parent.Parent.Parent.State)
@@ -53,7 +57,6 @@ local TOUCH_TOP = Theme.Padding.Large + 136 + 6 + 44
 -- Touch in a party: under the party frames (PartyFrames: top Large + 136 + 70, rows 58 + 6 per other member).
 local PARTY_TOP = Theme.Padding.Large + 136 + 70
 local PARTY_ROW = 58 + 6
-local PC_TOP = 400 -- the quest tracker's top (Hud/QuestTracker)
 
 local function WorldEventPanel(scope: Scope, props: Props): Instance
 	local event = State.Value({ "worldEvent" })
@@ -116,11 +119,14 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 		end
 		return h
 	end)
+	local handle = HudDrag.new(scope, "worldEvent", function(use)
+		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
+	end)
 	if props.Offset then
 		local offset = props.Offset
 		local shown = scope:Computed(function(use): number
 			-- W29: on a phone in landscape the tracker stacks under the panel as on PC
-			if use(current) == nil or (use(touch) and not use(PhoneLayout.Compact)) then
+			if use(current) == nil or (use(touch) and not use(PhoneLayout.Compact)) or use(handle.corner) then
 				return 0
 			end
 			return use(height) + 8
@@ -203,26 +209,11 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 		return e ~= nil and type(e.mine) == "table" and e.mine.ok == true
 	end)
 
-	return scope:New("Frame")({
-		Name = "WorldEventPanel",
-		AnchorPoint = scope:Computed(function(use): Vector2
-			return if use(touch) then Vector2.new(0, 0) else Vector2.new(1, 0)
-		end),
-		Position = scope:Computed(function(use): UDim2
-			local above = use(props.Above) or 0
-			if use(touch) then
-				return UDim2.fromOffset(Theme.Padding.Large, use(touchTop) + above)
-			end
-			return UDim2.new(1, -Theme.Padding.Large, 0, PC_TOP + above)
-		end),
-		Size = scope:Computed(function(use): UDim2
-			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
-		end),
+	local body = scope:New("Frame")({
+		Name = "Body",
+		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
-		Visible = scope:Computed(function(use): boolean
-			return use(current) ~= nil
-		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({ Color = color, Thickness = Theme.Stroke.Thin }),
@@ -294,6 +285,26 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 				end,
 			}),
 		},
+	})
+	return HudDrag.frame(scope, handle, {
+		Name = "WorldEventPanel",
+		AnchorPoint = scope:Computed(function(use): Vector2
+			return if use(touch) then Vector2.new(0, 0) else Vector2.new(1, 0)
+		end),
+		Position = scope:Computed(function(use): UDim2
+			local above = use(props.Above) or 0
+			if use(touch) then
+				return UDim2.fromOffset(Theme.Padding.Large, use(touchTop) + above)
+			end
+			return UDim2.new(1, -Theme.Padding.Large, 0, HudDrag.RIGHT_TOP + above)
+		end),
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
+		end),
+		Visible = scope:Computed(function(use): boolean
+			return use(current) ~= nil
+		end),
+		Content = body,
 	})
 end
 

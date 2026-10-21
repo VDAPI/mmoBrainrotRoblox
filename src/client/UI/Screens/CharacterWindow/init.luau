@@ -9,31 +9,26 @@
 -- stat reservation belongs to a set and clears on a switch.
 -- S123: a portrait tile (UI/Components/PortraitFrame, the frame cosmetic) next to the name and class / level; the title
 -- picker sees the bought titles (Titles.contextOf with the owned cosmetics and the VIP branch).
+-- Owner 2026-10-21: the title is picked from a list (TitleChooser: a visible "Change title" button opens every owned
+-- title over the whole window) instead of the S16 "◀ ▶" cycler.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local BackpackPanel = require(script.Parent.BackpackPanel)
 local BuildSetSwitch = require(script.Parent.Parent.Components.BuildSetSwitch)
-local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
-local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local DerivedList = require(script.DerivedList)
 local Device = require(script.Parent.Parent.Device)
 local Equipment = require(script.Equipment)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local Net = require(ReplicatedStorage.Shared.Net)
 local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local StatAllocator = require(script.StatAllocator)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
-local TitleText = require(script.Parent.Parent.TitleText)
-local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
-local Time = require(ReplicatedStorage.Shared.Logic.Time)
-local Titles = require(ReplicatedStorage.Shared.Logic.Titles)
-local Toast = require(script.Parent.Parent.Components.Toast)
+local TitleChooser = require(script.TitleChooser)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 local Children = Fusion.Children
@@ -54,137 +49,11 @@ local TOUCH_GAP = 8
 -- 4 stat rows (44 + 4) + points line + buttons + plan line + spacing.
 local ALLOCATOR_HEIGHT = 338 -- FIX 2026-10-09: rows grew by a description line; S58: the plan line
 local TAB_HEIGHT = Theme.Size.ButtonHeightSmall
-local TIMED_TICK = 30 -- S125: s between checks of the timed titles (the picker list and the time left)
 
--- "◀ title ▶" picker (S16): cycles through none + the unlocked titles, saved with SetTitle.
-local function TitlePicker(scope: Scope, order: number): Instance
-	local character = State.Value({ "character" })
-	local vip = State.Value({ "vip", "active" }) -- S121: the VIP title
-	local owned = State.Value({ "account", "cosmetics", "owned" }) -- S123: bought titles
-	local achDone = State.Value({ "account", "ach", "done" }) -- S151: account achievement titles
-	-- S125: timed titles need the time (the server clock with the /time offset), refreshed every TIMED_TICK s
-	local clock = scope:Value(Clock.now())
-	local alive = true
-	table.insert(scope, function()
-		alive = false
-	end)
-	task.spawn(function()
-		while alive do
-			task.wait(TIMED_TICK)
-			if alive then
-				clock:set(Clock.now())
-			end
-		end
-	end)
-	local ctx = scope:Computed(function(use): Titles.Context
-		return Titles.contextOf(
-			{ cosmetics = { owned = use(owned) }, ach = { done = use(achDone) } },
-			use(vip) == true,
-			use(clock)
-		)
-	end)
-	local unlocked = scope:Computed(function(use): { string }
-		local c = use(character)
-		return if c then Titles.unlocked(c, nil, use(ctx)) else {}
-	end)
-	local current = scope:Computed(function(use): string?
-		local c = use(character)
-		return if c then Titles.shown(c, nil, use(ctx)) else nil
-	end)
-	local medal = scope:Computed(function(use): string?
-		local id = use(current)
-		return if id then UiArt.title(id) else nil
-	end)
-	local medalShown = ArtIcon.Shown(scope, medal)
-	local function step(delta: number)
-		local list = Fusion.peek(unlocked)
-		if #list == 0 then
-			Toast.push(Text.now("title.none.hint"), "info", 3)
-			return
-		end
-		local index = 0 -- 0 = no title
-		for i, id in list do
-			if id == Fusion.peek(current) then
-				index = i
-			end
-		end
-		index = (index + delta) % (#list + 1)
-		task.spawn(function()
-			local ok, err = Net.Invoke("SetTitle", if index == 0 then nil else list[index])
-			if not ok then
-				Toast.push(Text.now(err or "error.internal"), "error")
-			end
-		end)
-	end
-	return scope:New("Frame")({
-		Name = "Title",
-		LayoutOrder = order,
-		Size = UDim2.new(1, 0, 0, 34),
-		BackgroundTransparency = 1,
-		[Children] = {
-			Button(scope, {
-				Size = UDim2.fromOffset(34, 34),
-				Text = "◀",
-				Variant = "ghost",
-				OnClick = function()
-					step(-1)
-				end,
-			}),
-			-- S119: the title's medallion before its name once loaded (the name moves right by its width).
-			ArtIcon.Image(scope, {
-				Key = medal,
-				Size = UDim2.fromOffset(24, 24),
-				Position = UDim2.new(0, 40, 0.5, 0),
-				AnchorPoint = Vector2.new(0, 0.5),
-			}),
-			scope:New("TextLabel")({
-				Position = scope:Computed(function(use): UDim2
-					return UDim2.fromOffset(if use(medalShown) then 66 else 38, 0)
-				end),
-				Size = scope:Computed(function(use): UDim2
-					return UDim2.new(1, if use(medalShown) then -104 else -76, 1, 0)
-				end),
-				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					local id = use(current)
-					local def = if id then TitleData.get(id) else nil
-					if def and def.req.kind == "timed" then
-						-- S125: how long the timed title still lasts
-						local untilTs = Titles.timedUntil(use(character), def.id) or 0
-						local d, h = Time.split(untilTs - use(clock))
-						return `« {Text.get(use, def.nameKey)} » {Text.get(use, "title.timedLeft", { d = d, h = h })}`
-					elseif def then
-						-- S128: an arena season title with its season
-						local args = Titles.argsOf(use(character), def.id)
-						return `« {TitleText.get(use, def, if args then args.season else nil)} »`
-					end
-					return Text.get(use, "title.none", { count = #use(unlocked) })
-				end),
-				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = scope:Computed(function(use): Color3
-					local id = use(current)
-					local def = if id then TitleData.get(id) else nil
-					return if def then Theme.readable(def.color, "paper") else Theme.Paper.TextMuted
-				end),
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
-			Button(scope, {
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.fromScale(1, 0),
-				Size = UDim2.fromOffset(34, 34),
-				Text = "▶",
-				Variant = "ghost",
-				OnClick = function()
-					step(1)
-				end,
-			}),
-		},
-	})
-end
+type Chooser = { open: Fusion.Value<boolean>, state: TitleChooser.ChooserState }
 
 -- Name, class / level, title picker and the equipment.
-local function heroColumn(scope: Scope, props: Props, touch: boolean): { Instance }
+local function heroColumn(scope: Scope, props: Props, touch: boolean, titles: Chooser): { Instance }
 	local name = State.Value({ "character", "name" })
 	local classId = State.Value({ "character", "class" })
 	local level = State.Value({ "character", "level" })
@@ -265,7 +134,7 @@ local function heroColumn(scope: Scope, props: Props, touch: boolean): { Instanc
 			ButtonWidth = if touch then 94 else 122,
 			LayoutOrder = 3,
 		}),
-		TitlePicker(scope, 4),
+		TitleChooser.Picker(scope, { LayoutOrder = 4, Open = titles.open, State = titles.state, Touch = touch }),
 		Equipment(scope, {
 			LayoutOrder = 5,
 			SlotSize = if touch then TOUCH_SLOT else nil,
@@ -304,7 +173,12 @@ local function rule(scope: Scope, name: string, x: number): Instance
 	})
 end
 
-local function desktopLayout(scope: Scope, props: Props, pending: Fusion.Value<{ [string]: number }>): { Instance }
+local function desktopLayout(
+	scope: Scope,
+	props: Props,
+	pending: Fusion.Value<{ [string]: number }>,
+	titles: Chooser
+): { Instance }
 	local pad = Theme.Padding.Large
 	local rightX = LEFT_WIDTH + MIDDLE_WIDTH + pad * 2
 	return {
@@ -312,7 +186,7 @@ local function desktopLayout(scope: Scope, props: Props, pending: Fusion.Value<{
 			Name = "Left",
 			Size = UDim2.new(0, LEFT_WIDTH, 1, 0),
 			BackgroundTransparency = 1,
-			[Children] = heroColumn(scope, props, false),
+			[Children] = heroColumn(scope, props, false, titles),
 		}),
 		rule(scope, "RuleLeft", LEFT_WIDTH + pad / 2),
 		scope:New("Frame")({
@@ -333,7 +207,12 @@ local function desktopLayout(scope: Scope, props: Props, pending: Fusion.Value<{
 	}
 end
 
-local function touchLayout(scope: Scope, props: Props, pending: Fusion.Value<{ [string]: number }>): { Instance }
+local function touchLayout(
+	scope: Scope,
+	props: Props,
+	pending: Fusion.Value<{ [string]: number }>,
+	titles: Chooser
+): { Instance }
 	local pad = Theme.Padding.Medium
 	local focus = props.Focus
 	local contentTop = TAB_HEIGHT + Theme.Padding.Small
@@ -348,7 +227,7 @@ local function touchLayout(scope: Scope, props: Props, pending: Fusion.Value<{ [
 			ScrollingDirection = Enum.ScrollingDirection.Y,
 			ScrollBarThickness = 4,
 			ScrollBarImageColor3 = Theme.Paper.Label,
-			[Children] = heroColumn(scope, props, true),
+			[Children] = heroColumn(scope, props, true, titles),
 		}),
 		scope:New("Frame")({
 			Name = "Right",
@@ -414,11 +293,16 @@ local function CharacterWindow(scope: Scope, props: Props): Fusion.Child
 	end)
 
 	-- The layout follows the input device (touch = full-screen window).
+	-- Owner 2026-10-21: the title list (closed on every layout switch), drawn over the whole window
+	local titles: Chooser = { open = scope:Value(false), state = TitleChooser.state(scope) }
+	scope:Observer(Device.Touch):onChange(function()
+		titles.open:set(false)
+	end)
 	return scope:Computed(function(use, s: Scope): { Instance }
-		if use(Device.Touch) then
-			return touchLayout(s, props, pending)
-		end
-		return desktopLayout(s, props, pending)
+		local touch = use(Device.Touch)
+		local out = if touch then touchLayout(s, props, pending, titles) else desktopLayout(s, props, pending, titles)
+		table.insert(out, TitleChooser.Panel(s, { Open = titles.open, State = titles.state, Touch = touch }))
+		return out
 	end) :: any
 end
 

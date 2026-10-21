@@ -329,6 +329,7 @@ local function show(screen: "select" | "hud")
 			ClearSlot = SkillController.ClearSlot,
 			SkillUsable = SkillController.Usable,
 			SkillColor = SkillController.Color,
+			SkillCost = SkillController.Cost,
 			SelectTarget = function()
 				local found = TargetController.FindNearest(60, true, false)
 				if found then

@@ -647,13 +647,53 @@ T.describe("WorldEvents: Invasion zone (S134d)", function()
 				T.expect(hard >= z.leash).toBe(true)
 				T.expect(d + hard <= z.radius + z.margin or hard == z.leash).toBe(true)
 			end
-			-- aggro and leash far below the S134c event (120 studs from the centre): no long runs at players
-			T.expect(z.aggro <= 30 and z.leash <= 40).toBe(true)
+			-- aggro and leash far below the S134c event (120 studs from the centre): no long runs at players; S160:
+			-- the aggro reaches across a good part of the zone (everyone inside is attacked), never past its diameter
+			T.expect(z.aggro >= 35 and z.aggro <= 50 and z.leash <= 40).toBe(true)
 			T.expect(z.radius >= 60 and z.radius <= 80).toBe(true)
 			-- the zone's monsters are tougher and pay more per kill
 			T.expect(inv.mods.hpMul > 1 and inv.mods.atkMul > 1 and inv.expMul > 1).toBe(true)
 		end
 	)
+end)
+
+T.describe("Invasion zone aggro (S160)", function()
+	local z = Data.kinds.invasion.zone
+	local function cand(
+		dist: number,
+		attackers: number?,
+		fromCentre: number?,
+		fromHome: number?
+	): WorldEvents.ZoneCandidate
+		return { dist = dist, fromHome = fromHome or dist, fromCentre = fromCentre or 20, attackers = attackers or 0 }
+	end
+
+	T.it("goes for the nearest player inside the zone", function()
+		T.expect(WorldEvents.zoneTarget({ cand(30), cand(12), cand(20) }, 60)).toBe(2)
+	end)
+
+	T.it("ignores players outside the circle, out of reach or past the hard leash", function()
+		T.expect(WorldEvents.zoneTarget({ cand(5, 0, z.radius + 1) }, 60)).toBeNil()
+		T.expect(WorldEvents.zoneTarget({ cand(z.aggro + 1) }, 60)).toBeNil()
+		T.expect(WorldEvents.zoneTarget({ cand(10, 0, 20, 31) }, 30)).toBeNil()
+		T.expect(WorldEvents.zoneTarget({}, 60)).toBeNil()
+		-- right at the edge of the circle still counts
+		T.expect(WorldEvents.zoneTarget({ cand(10, 0, z.radius) }, 60)).toBe(1)
+	end)
+
+	T.it("shares the players out: a crowded player loses to a free one a little farther", function()
+		-- 3 monsters on the near player (+3 x spread) against a free one 15 studs farther
+		T.expect(WorldEvents.zoneTarget({ cand(10, 3), cand(25, 0) }, 60)).toBe(2)
+		-- a free player far away still loses to the near crowded one when the gap is large
+		T.expect(WorldEvents.zoneTarget({ cand(5, 1), cand(z.aggro, 0) }, 60)).toBe(1)
+	end)
+
+	T.it("every point of the circle has the zone's spawn ring within reach (nobody inside is left alone)", function()
+		-- the spawn ring runs from core to radius - edge: any point inside the circle lies within aggro of it
+		local farthest = math.max(z.core, z.radius - (z.radius - z.edge))
+		T.expect(farthest <= z.aggro).toBe(true)
+		T.expect(z.spread > 0 and z.spread < z.aggro).toBe(true)
+	end)
 end)
 
 return nil

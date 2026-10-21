@@ -134,6 +134,9 @@ export type Monster = typeof(setmetatable(
 		leashRange: number?,
 		-- S134d: an Invasion zone monster's hard leash from its home (keeps it inside the zone; nil = Combat.leashMax)
 		leashHard: number?,
+		-- S160: an Invasion zone monster's own target pick (any player inside the zone, shared out among the zone's
+		-- monsters; WorldEventService); nil = the usual aggro by range and level
+		aggroPicker: ((any) -> Player?)?,
 		-- S134d: EXP of its kill x this (CombatService; the Invasion zone's monsters), nil = 1
 		expMul: number?,
 		-- Centre of the monster's group (S19): wander and leash around it instead of the own spawn point.
@@ -260,6 +263,7 @@ function Monster.new(
 		speedFactor = 1,
 		leashRange = nil,
 		leashHard = nil,
+		aggroPicker = nil,
 		expMul = nil,
 		home = nil,
 		isBoss = nil,
@@ -524,6 +528,14 @@ local function lockedFor(self: Monster, player: Player?): boolean
 end
 
 local function lookForAggro(self: Monster): Player?
+	-- S160: an Invasion zone monster attacks every player inside the zone (its own pick, no level rule)
+	local picker = self.aggroPicker
+	if picker then
+		local picked = picker(self)
+		if picked and self.ctx.canTarget(self, picked) then
+			return picked
+		end
+	end
 	if self.def.passive then
 		return nil
 	end

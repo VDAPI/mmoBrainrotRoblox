@@ -116,7 +116,13 @@ type Event = {
 	bossGone: boolean,
 	dirty: boolean,
 	fightId: number?, -- S134f: the Invasion's fight (FightLogService)
+	-- S160: the players inside the zone and how many zone monsters fight each, refreshed at most every ZONE_LOOK s
+	zoneLook: ZoneLook?,
 }
+
+type ZoneLook = { at: number, players: { { player: Player, pos: Vector3 } }, attackers: { [Player]: number } }
+
+local ZONE_LOOK = 0.5 -- S160: seconds between two looks of the zone's players (shared by its idle monsters)
 
 local PlayerStateService: any
 local CharacterService: any
@@ -505,6 +511,65 @@ local function pickBossKind(e: Event): string?
 	return e.bossKind
 end
 
+-- S160: the zone's players (inside the circle) and their zone attackers, cached for ZONE_LOOK s.
+local function zoneLook(e: Event): ZoneLook
+	local t = os.clock()
+	local look = e.zoneLook
+	if look and t - look.at < ZONE_LOOK then
+		return look
+	end
+	local players: { { player: Player, pos: Vector3 } } = {}
+	for _, player in playersNear(e, e.centre, Data.kinds.invasion.zone.radius) do
+		local root = rootOf(player)
+		if root then
+			table.insert(players, { player = player, pos = root.Position })
+		end
+	end
+	local attackers: { [Player]: number } = {}
+	for monster in e.members do
+		local target = monster.target
+		if target then
+			attackers[target] = (attackers[target] or 0) + 1
+		end
+	end
+	local fresh: ZoneLook = { at = t, players = players, attackers = attackers }
+	e.zoneLook = fresh
+	return fresh
+end
+
+-- S160 (owner 2026-10-21): a zone monster's target: any player inside the zone within its reach, shared out among the
+-- zone's monsters (Logic/WorldEvents.zoneTarget). The pick counts at once, so the next idle monster sees it.
+local function zonePicker(e: Event): (any) -> Player?
+	return function(monster: any): Player?
+		local look = zoneLook(e)
+		if #look.players == 0 then
+			return nil
+		end
+		local position = monster.root.Position
+		local home = monster.home or position
+		local candidates: { WorldEvents.ZoneCandidate } = {}
+		local players: { Player } = {}
+		for _, entry in look.players do
+			if MonsterService.CanTarget(monster, entry.player) then
+				table.insert(players, entry.player)
+				table.insert(candidates, {
+					dist = flatDistance(entry.pos, position),
+					fromHome = flatDistance(entry.pos, home),
+					fromCentre = flatDistance(entry.pos, e.centre),
+					attackers = look.attackers[entry.player] or 0,
+				})
+			end
+		end
+		local index = WorldEvents.zoneTarget(candidates, monster.leashHard or Data.kinds.invasion.zone.leash)
+		if not index then
+			return nil
+		end
+		local player = players[index]
+		look.attackers[player] = (look.attackers[player] or 0) + 1
+		return player
+	end
+end
+
 -- S134d: one zone monster at a spawn point clear of the players: tougher (mods), its own spot as home, the zone's
 -- aggro and leash, x expMul EXP. nil when there is no point or the server budget is full.
 local function spawnZone(e: Event, kind: string, variant: "normal" | "elite" | "elite2", players: { Player }): any?
@@ -530,10 +595,12 @@ local function spawnZone(e: Event, kind: string, variant: "normal" | "elite" | "
 		return nil
 	end
 	monster.home = at
-	monster.leashRange = def.zone.leash
 	monster.leashHard = WorldEvents.hardLeash(e.pointDist[index])
+	-- S160: the soft leash is the hard one (it keeps fighting a player inside the zone, never ping-pongs home)
+	monster.leashRange = monster.leashHard
 	monster.expMul = def.expMul
 	monster.stats.aggroRange = math.max(monster.stats.aggroRange, def.zone.aggro)
+	monster.aggroPicker = zonePicker(e)
 	e.members[monster] = variant
 	e.alive += 1
 	if variant == "elite" then

@@ -22,6 +22,7 @@ local Keybinds = require(script.Parent.Parent.Keybinds)
 local LoginButton = require(script.LoginButton)
 local LowHp = require(ReplicatedStorage.Shared.Logic.LowHp)
 local LowHpVignette = require(script.LowHpVignette) -- S134f
+local MailButton = require(script.MailButton) -- owner 2026-10-21
 local LureButton = require(script.LureButton)
 local AutoGrindButton = require(script.AutoGrindButton) -- S134d
 local AutoPotionButton = require(script.AutoPotionButton) -- S134d
@@ -98,6 +99,7 @@ export type Props = {
 	ClearSlot: (slot: number) -> (),
 	SkillUsable: (skillId: string) -> (boolean, boolean, boolean),
 	SkillColor: (skillId: string) -> Color3,
+	SkillCost: ((skillId: string) -> (number, string?))?, -- owner 2026-10-21: the cost badge of a slot
 	SelectTarget: () -> (),
 	OnPlayerMenu: ((player: Player, at: Vector2) -> ())?,
 }
@@ -392,6 +394,7 @@ local function actionBar(scope: Scope, props: Props): Instance
 					Clear = props.ClearSlot,
 					Usable = props.SkillUsable,
 					Color = props.SkillColor,
+					Cost = props.SkillCost,
 					SlotSize = SLOT_SIZE,
 				}) :: any,
 			},
@@ -690,6 +693,7 @@ local function Hud(scope: Scope, props: Props): Instance
 			MobileSkills(scope, {
 				Cast = props.CastSlot,
 				Color = props.SkillColor,
+				Cost = props.SkillCost,
 				SelectTarget = props.SelectTarget,
 				AimStart = props.AimStart,
 				AimMove = props.AimMove,
@@ -712,6 +716,12 @@ local function Hud(scope: Scope, props: Props): Instance
 			ZoneBanner(scope),
 			AreaBanner(scope),
 			AttackButton(scope, { OnAttack = props.OnAttack }),
+			-- owner 2026-10-21: parcels waiting, under the attack button (over the target button on a phone)
+			MailButton(scope, {
+				Open = function()
+					props.ShowWindow("mail")
+				end,
+			}),
 			SprintButton(scope, { Sprinting = props.Sprinting, OnToggle = props.OnSprint, Riding = props.Riding }),
 			MountButton.Touch(scope, { Riding = props.Riding, Has = props.HasMount, OnToggle = props.OnMount }),
 			EmoteButton.Touch(scope, { OnOpen = props.OpenEmotes }),

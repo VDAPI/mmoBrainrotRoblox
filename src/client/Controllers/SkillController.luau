@@ -578,13 +578,13 @@ function SkillController.ArcaneCharges(): number
 	return EffectStack.stacksOf(character:GetAttribute("Effects"), "arcaneCharge", Workspace:GetServerTimeNow())
 end
 
--- For the UI: can the current level / resources / range allow this skill now?
--- (enough resource, in range, weapon fits: S57 the path weapon of a path skill, S143 the skill's own weapon; S142: the
--- Mage's element is the pool)
-function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
+-- The resource a cast of this skill takes now, as the server counts it (rank, breakpoints and nodes, the S62 item
+-- saving, the S76 / S79 / S80 cost hooks, Arcane Charges; a beam: the mana of one tick), and the resource
+-- (nil: free). Owner 2026-10-21: the cost badge of a skill slot (Logic/SkillCostBadge) shows it too.
+function SkillController.Cost(skillId: string): (number, string?)
 	local skill = SkillData.get(skillId)
 	if not skill then
-		return false, false, true
+		return 0, nil
 	end
 	local rank = math.max(1, rankOf(skill))
 	local def = effective(skill, rank)
@@ -599,6 +599,20 @@ function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
 		-- S80: a beam needs the mana of one tick (Skills.drain, as the server counts it)
 		cost = Skills.drain(def, rank, State.Get({ "derived", "values", "maxMana" }) or 0, mods)
 	end
+	return cost, skill.resource
+end
+
+-- For the UI: can the current level / resources / range allow this skill now?
+-- (enough resource, in range, weapon fits: S57 the path weapon of a path skill, S143 the skill's own weapon; S142: the
+-- Mage's element is the pool)
+function SkillController.Usable(skillId: string): (boolean, boolean, boolean)
+	local skill = SkillData.get(skillId)
+	if not skill then
+		return false, false, true
+	end
+	local def = effective(skill, math.max(1, rankOf(skill)))
+	local c = me()
+	local cost = SkillController.Cost(skillId)
 	local current = if skill.resource then State.Get({ "character", skill.resource }) or 0 else math.huge
 	local enoughResource = current >= cost
 	local inRange = skill.target ~= "enemy" or SkillController.TargetDistance() <= (def.range or 10) + 2

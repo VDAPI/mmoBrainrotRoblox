@@ -15,11 +15,20 @@
 -- S134 (bosses 2.0): `follow` keeps a circle under a character (a boss mark: moved every frame from its root, no
 -- texture layer), `rimWidth` thickens the rim of a big blow to dodge, `key` + GroundTelegraph.cancel drop a mark that
 -- will not blast. S134e: `pulseFast` speeds up the end of the rim pulse (a lethal blow).
+-- S160 (owner 2026-10-21: "boss abilities are barely visible"): the rim is vivid (Logic/BossCast.vivid) and at least
+-- Config.Telegraph.rimShare of the radius, a light runs round it (a turning gradient on circles, a wave along the edges
+-- of cones and lines) and speeds up towards the blow, the area pulses with the rim, band and area are Neon (they glow
+-- in dark dungeons), the dark under-rim is nearly opaque (contrast on snow and sand). A circle's rim, front and
+-- under-rim sit on a second SurfaceGui drawn on top of everything (a slope, grass or a step no longer hides them); its
+-- area stays in the world. The edges of cones and lines stand Config.Telegraph.edgeThick tall. A big blow (thick rim)
+-- lights the ground under it (Pool.takeLight, not on low quality). Over maxActive (`simple`) only the band goes: the
+-- area, the rim and the front (the warning itself) always stay, on low quality too.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Clock = require(script.Parent.Clock)
+local BossCast = require(ReplicatedStorage.Shared.Logic.BossCast)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Library = require(script.Parent.Library)
 local Pool = require(script.Parent.Pool)
@@ -30,11 +39,12 @@ local GroundTelegraph = {}
 
 local CFG = Config.Telegraph
 local WHITE = Color3.new(1, 1, 1)
-local DARK = Color3.fromHex("#140C0A")
+local DARK = Color3.fromHex(CFG.underColor)
 local SAFE = Color3.fromHex("#5BD66B")
-local BAND_THICK = 0.08
-local EDGE_THICK = 0.1
-local FRONT_WIDTH = 0.14 -- studs: the moving front line
+local BAND_THICK = 0.12
+local EDGE_THICK = CFG.edgeThick -- S160: 0.1 -> 0.45 (rim and under-rim parts of cones and lines)
+local FRONT_WIDTH = 0.3 -- studs: the moving front line (S160: 0.14 -> 0.3)
+local CHASE_SPOT = 0.12 -- S160: share of the rim's gradient lit by the running light
 local MAX_CANVAS = 1024 -- pixels across a circle's SurfaceGui
 local SURFACE_KEEP = 8 -- free circle surfaces kept for reuse
 
@@ -59,6 +69,8 @@ type Trapezoid = { block: BasePart, left: BasePart, right: BasePart }
 type Surface = {
 	part: BasePart,
 	gui: SurfaceGui,
+	edgeGui: SurfaceGui, -- S160: rim, front and under-rim, drawn on top of everything
+	chase: UIGradient, -- S160: the light running round the rim
 	area: Frame,
 	under: Frame,
 	underStroke: UIStroke,
@@ -86,6 +98,8 @@ type Active = {
 	surface: Surface?,
 	ppu: number,
 	stopTexture: (() -> ())?,
+	rimColor: Color3, -- S160: the vivid rim colour
+	light: PointLight?, -- S160: a big blow's ground light
 	blown: boolean,
 	pulseCfg: Telegraph.Cfg, -- S134e: CFG, or a copy with the spec's pulseFast
 }
@@ -96,8 +110,11 @@ local connection: RBXScriptConnection? = nil
 
 -- Parts -----------------------------------------------------------------------------------------------------------
 
-local function flat(shape: string, color: Color3, transparency: number): BasePart
-	local p = Pool.part(shape, color, Vector3.new(0.1, 0.1, 0.1), Enum.Material.SmoothPlastic, transparency)
+-- S160: coloured layers are Neon (they glow in dark dungeons and keep their colour under any light); `matte` for the
+-- dark under-rim.
+local function flat(shape: string, color: Color3, transparency: number, matte: boolean?): BasePart
+	local material = if matte then Enum.Material.SmoothPlastic else Enum.Material.Neon
+	local p = Pool.part(shape, color, Vector3.new(0.1, 0.1, 0.1), material, transparency)
 	p.CastShadow = false
 	return p
 end
@@ -211,20 +228,30 @@ local function takeSurface(): Surface
 	part.CanTouch = false
 	part.CastShadow = false
 	part.Transparency = 1
-	local gui = Instance.new("SurfaceGui")
-	gui.Face = Enum.NormalId.Top
-	gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
-	gui.LightInfluence = 0
-	gui.Brightness = 1.4
-	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-	gui.ClipsDescendants = false
-	gui.ResetOnSpawn = false
-	gui.Parent = part
+	local function surfaceGui(name: string, onTop: boolean): SurfaceGui
+		local gui = Instance.new("SurfaceGui")
+		gui.Name = name
+		gui.Face = Enum.NormalId.Top
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.LightInfluence = 0
+		gui.Brightness = 1.8 -- S160: 1.4 -> 1.8
+		gui.AlwaysOnTop = onTop
+		gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+		gui.ClipsDescendants = false
+		gui.ResetOnSpawn = false
+		gui.Parent = part
+		return gui
+	end
+	local gui = surfaceGui("Fill", false)
+	local edgeGui = surfaceGui("Edge", true)
 	local area = ringFrame(gui, "Area", 1)
-	local under, underStroke = ringFrame(gui, "Under", 2)
 	local safe, safeStroke = ringFrame(gui, "Safe", 3)
-	local front, frontStroke = ringFrame(gui, "Front", 4)
-	local rim, rimStroke = ringFrame(gui, "Rim", 5)
+	local under, underStroke = ringFrame(edgeGui, "Under", 2)
+	local front, frontStroke = ringFrame(edgeGui, "Front", 4)
+	local rim, rimStroke = ringFrame(edgeGui, "Rim", 5)
+	local chase = Instance.new("UIGradient")
+	chase.Name = "Chase"
+	chase.Parent = rimStroke
 	local areaStroke = area:FindFirstChildOfClass("UIStroke")
 	if areaStroke then
 		areaStroke:Destroy()
@@ -233,6 +260,8 @@ local function takeSurface(): Surface
 	return {
 		part = part,
 		gui = gui,
+		edgeGui = edgeGui,
+		chase = chase,
 		area = area,
 		under = under,
 		underStroke = underStroke,
@@ -262,9 +291,11 @@ end
 local function build(a: Active)
 	local spec = a.spec
 	local color = spec.color
-	local rimWidth = spec.rimWidth or CFG.rimWidth
 	local shape = spec.shape
 	local dims = spec.dims
+	local reach = if shape == "line" then Telegraph.width(dims) / 2 else Telegraph.radius(spec.shape, dims)
+	local rimWidth = Telegraph.rimFor(spec.rimWidth or CFG.rimWidth, reach, CFG.rimShare)
+	local rimColor = a.rimColor
 	if shape == "circle" or shape == "ring" then
 		local r = Telegraph.radius(spec.shape, dims)
 		local outer = r + CFG.underRim + 0.5
@@ -275,18 +306,27 @@ local function build(a: Active)
 		surface.part.Size = Vector3.new(outer * 2, 0.05, outer * 2)
 		surface.part.CFrame = spec.area * CFrame.new(0, CFG.lift + 0.1, 0)
 		surface.gui.PixelsPerStud = ppu
+		surface.edgeGui.PixelsPerStud = ppu
 		px(surface.area, 2 * r * ppu)
 		surface.area.BackgroundColor3 = color
-		surface.area.BackgroundTransparency = if a.simple then 1 else CFG.areaAlpha
+		surface.area.BackgroundTransparency = CFG.areaAlpha -- S160: the area stays in `simple` too
 		px(surface.under, 2 * r * ppu)
 		surface.underStroke.Color = DARK
 		surface.underStroke.Thickness = CFG.underRim * ppu
-		surface.underStroke.Transparency = 0.5
+		surface.underStroke.Transparency = CFG.underAlpha
 		px(surface.rim, 2 * (r - rimWidth) * ppu)
-		surface.rimStroke.Color = color:Lerp(WHITE, 0.15)
+		surface.rimStroke.Color = WHITE -- S160: the gradient carries the colour and the running light
 		surface.rimStroke.Thickness = rimWidth * ppu
-		surface.rimStroke.Transparency = 0.2
-		surface.frontStroke.Color = color:Lerp(WHITE, 0.55)
+		surface.rimStroke.Transparency = 0.1
+		surface.chase.Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, rimColor),
+			ColorSequenceKeypoint.new(0.5 - CHASE_SPOT, rimColor),
+			ColorSequenceKeypoint.new(0.5, rimColor:Lerp(WHITE, 0.75)),
+			ColorSequenceKeypoint.new(0.5 + CHASE_SPOT, rimColor),
+			ColorSequenceKeypoint.new(1, rimColor),
+		})
+		surface.chase.Rotation = 0
+		surface.frontStroke.Color = rimColor:Lerp(WHITE, 0.55)
 		surface.frontStroke.Thickness = math.max(1.5, FRONT_WIDTH * ppu)
 		surface.frontStroke.Transparency = 0.2
 		px(surface.front, 2 * r * ppu)
@@ -303,20 +343,20 @@ local function build(a: Active)
 			surface.safe.Visible = false
 		end
 		surface.gui.Enabled = true
+		surface.edgeGui.Enabled = true
 	elseif shape == "cone" then
 		local r = Telegraph.radius(spec.shape, dims)
 		local angle = math.rad(Telegraph.angle(dims))
 		local count = math.max(1, math.floor(a.segments / 2))
 		local slice = angle / count
-		-- the area: slices as wide as their arc (they overlap a little towards the tip, like before S117)
-		if not a.simple then
-			for i = 0, count - 1 do
-				local yaw = -angle / 2 + slice * (i + 0.5)
-				local p = flat("Block", color, CFG.areaAlpha)
-				p.Size = Vector3.new(2 * r * math.tan(slice / 2) + 0.05, BAND_THICK, r)
-				p.CFrame = spec.area * CFrame.Angles(0, yaw, 0) * CFrame.new(0, CFG.lift, -r / 2)
-				table.insert(a.areaParts, p)
-			end
+		-- the area: slices as wide as their arc (they overlap a little towards the tip, like before S117); S160: also
+		-- in `simple` (the warning itself)
+		for i = 0, count - 1 do
+			local yaw = -angle / 2 + slice * (i + 0.5)
+			local p = flat("Block", color, CFG.areaAlpha)
+			p.Size = Vector3.new(2 * r * math.tan(slice / 2) + 0.05, BAND_THICK, r)
+			p.CFrame = spec.area * CFrame.Angles(0, yaw, 0) * CFrame.new(0, CFG.lift, -r / 2)
+			table.insert(a.areaParts, p)
 		end
 		-- the under-rim and the rim: the arc and both sides
 		for _, list in { a.underParts, a.rimParts } do
@@ -325,7 +365,7 @@ local function build(a: Active)
 			local height = CFG.lift + (if isRim then 0.07 else 0.05)
 			for i = 0, count - 1 do
 				local y0, y1 = -angle / 2 + slice * i, -angle / 2 + slice * (i + 1)
-				local p = if isRim then neon(color, 0.2) else flat("Block", DARK, 0.5)
+				local p = if isRim then neon(rimColor, 0.1) else flat("Block", DARK, CFG.underAlpha, true)
 				placeEdge(
 					p,
 					spec.area,
@@ -339,22 +379,20 @@ local function build(a: Active)
 				table.insert(list, p)
 			end
 			for _, y in { -angle / 2, angle / 2 } do
-				local p = if isRim then neon(color, 0.2) else flat("Block", DARK, 0.5)
+				local p = if isRim then neon(rimColor, 0.1) else flat("Block", DARK, CFG.underAlpha, true)
 				placeEdge(p, spec.area, 0, 0, -math.sin(y) * r, -math.cos(y) * r, width, height)
 				table.insert(list, p)
 			end
 		end
 		for _ = 1, count do
-			table.insert(a.frontParts, neon(color:Lerp(WHITE, 0.55), 0.2))
+			table.insert(a.frontParts, neon(rimColor:Lerp(WHITE, 0.55), 0.1))
 		end
 	else
 		local l, w = Telegraph.length(dims), Telegraph.width(dims)
-		if not a.simple then
-			local p = flat("Block", color, CFG.areaAlpha)
-			p.Size = Vector3.new(w, BAND_THICK, l)
-			p.CFrame = spec.area * CFrame.new(0, CFG.lift, -l / 2)
-			table.insert(a.areaParts, p)
-		end
+		local areaPart = flat("Block", color, CFG.areaAlpha)
+		areaPart.Size = Vector3.new(w, BAND_THICK, l)
+		areaPart.CFrame = spec.area * CFrame.new(0, CFG.lift, -l / 2)
+		table.insert(a.areaParts, areaPart)
 		local corners = { { -w / 2, 0 }, { w / 2, 0 }, { w / 2, -l }, { -w / 2, -l } }
 		for _, list in { a.underParts, a.rimParts } do
 			local isRim = list == a.rimParts
@@ -362,13 +400,28 @@ local function build(a: Active)
 			local height = CFG.lift + (if isRim then 0.07 else 0.05)
 			for i = 1, 4 do
 				local c0, c1 = corners[i], corners[i % 4 + 1]
-				local p = if isRim then neon(color, 0.2) else flat("Block", DARK, 0.5)
+				local p = if isRim then neon(rimColor, 0.1) else flat("Block", DARK, CFG.underAlpha, true)
 				placeEdge(p, spec.area, c0[1], c0[2], c1[1], c1[2], width, height)
 				table.insert(list, p)
 			end
 		end
 		for _ = 1, 2 do
-			table.insert(a.frontParts, neon(color:Lerp(WHITE, 0.55), 0.2))
+			table.insert(a.frontParts, neon(rimColor:Lerp(WHITE, 0.55), 0.1))
+		end
+	end
+	-- S160: a big blow lights the ground under it (dark dungeons, night), within the light budget
+	if spec.rimWidth and not spec.low and Pool.takeLight() then
+		local holder = a.surface and a.surface.part or a.areaParts[1]
+		if holder then
+			local light = Instance.new("PointLight")
+			light.Color = rimColor
+			light.Range = math.min(40, reach * CFG.lightRange + 2)
+			light.Brightness = 0.6
+			light.Shadows = false
+			light.Parent = holder
+			a.light = light
+		else
+			Pool.dropLight()
 		end
 	end
 	if not a.simple then
@@ -380,6 +433,11 @@ local function build(a: Active)
 end
 
 local function finish(a: Active)
+	if a.light then
+		a.light:Destroy()
+		a.light = nil
+		Pool.dropLight()
+	end
 	for _, t in a.band do
 		Pool.release(t.block)
 		Pool.release(t.left)
@@ -439,6 +497,13 @@ local function update(a: Active, now: number): boolean
 	local color = spec.color
 	local lit = color:Lerp(WHITE, 0.7 * flash)
 	local rim = Telegraph.rimPulse(elapsed, w, a.pulseCfg)
+	local rimColor = a.rimColor
+	-- S160: the area breathes with the rim; the light running round the rim
+	local areaAlpha = Telegraph.areaAlpha(CFG.areaAlpha, CFG.areaPulse, rim, p)
+	local turns = Telegraph.chase(elapsed, w, CFG.chaseSpeed)
+	if a.light then
+		a.light.Brightness = (0.6 + 1.4 * p + 3 * flash) * (1 - fade)
+	end
 	local function faded(t: number): number
 		return t + (1 - t) * fade
 	end
@@ -459,26 +524,30 @@ local function update(a: Active, now: number): boolean
 	end
 	for _, part in a.areaParts do
 		part.Color = lit
-		part.Transparency = faded(CFG.areaAlpha * (1 - 0.5 * flash))
+		part.Transparency = faded(areaAlpha * (1 - 0.5 * flash))
 	end
-	for _, part in a.rimParts do
-		part.Color = color:Lerp(WHITE, 0.15 + 0.6 * flash)
+	-- S160: a wave of light runs along the edges of cones and lines
+	local rimCount = #a.rimParts
+	for i, part in a.rimParts do
+		local wave = 0.5 + 0.5 * math.cos(2 * math.pi * (turns - i / math.max(1, rimCount)))
+		part.Color = rimColor:Lerp(WHITE, math.max(0.6 * flash, 0.45 * wave ^ 4))
 		part.Transparency = faded(rim)
 	end
 	for _, part in a.underParts do
-		part.Transparency = faded(0.5)
+		part.Transparency = faded(CFG.underAlpha)
 	end
 	-- the front
 	local surface = a.surface
 	if surface then
 		local ppu = a.ppu
 		surface.rimStroke.Transparency = faded(rim)
-		surface.rimStroke.Color = color:Lerp(WHITE, 0.15 + 0.6 * flash)
-		surface.underStroke.Transparency = faded(0.5)
-		if not a.simple then
-			surface.area.BackgroundColor3 = lit
-			surface.area.BackgroundTransparency = faded(CFG.areaAlpha * (1 - 0.5 * flash))
+		surface.chase.Rotation = (turns * 360) % 360
+		if flash > 0 then
+			surface.chase.Color = ColorSequence.new(rimColor:Lerp(WHITE, 0.6 * flash))
 		end
+		surface.underStroke.Transparency = faded(CFG.underAlpha)
+		surface.area.BackgroundColor3 = lit
+		surface.area.BackgroundTransparency = faded(areaAlpha * (1 - 0.5 * flash))
 		local inner = if shape == "ring" then Telegraph.inner(spec.dims) else 0
 		surface.front.Visible = front > inner + 0.05 and elapsed < w
 		px(surface.front, 2 * front * ppu)
@@ -565,6 +634,8 @@ function GroundTelegraph.start(spec: Spec)
 		stopTexture = nil,
 		blown = false,
 		pulseCfg = CFG,
+		rimColor = Color3.fromHex(BossCast.vivid("#" .. spec.color:ToHex())),
+		light = nil,
 	}
 	if spec.pulseFast then
 		local cfg = table.clone(CFG) :: any

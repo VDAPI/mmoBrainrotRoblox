@@ -8,7 +8,8 @@
 --   right   minimap (scaled), the menu drawer button (the 14 menu buttons open as a drawer), the PvP toggle, the
 --           guide bar under the minimap;
 --   bottom  attack button in the corner, five skill buttons on an arc around it, page and target buttons, potions,
---           sprint, mount and emote (the bottom skill bar is hidden: the arc holds the same ten slots).
+--           sprint, mount and emote (the bottom skill bar is hidden: the arc holds the same ten slots), the mail
+--           icon over the target button.
 -- A place is a rectangle measured from one corner of the UI area (`edge` "tl" / "tr" / "bl" / "br", `x`, `y` = the
 -- distance of the rectangle's corner on that side from the screen's corner) or, for the stack, from the top-left
 -- down to `bottom` pixels above the screen's bottom. Pure; tests/phonehud.spec checks that nothing overlaps on the
@@ -96,6 +97,8 @@ local PLACES: { [string]: Place } = {
 	},
 	page = { edge = "br", x = 206, y = 30, w = 84, h = 44, touch = true },
 	targetButton = { edge = "br", x = 206, y = 80, w = 84, h = 44, touch = true },
+	-- owner 2026-10-21: the mail icon (only while parcels wait) over the target button, left of the arc
+	mail = { edge = "br", x = 206, y = 130, w = 48, h = 48, touch = true },
 	potions = { edge = "br", x = 298, y = 28, w = 180, h = 56, touch = true },
 	sprint = { edge = "br", x = 298, y = 92, w = 64, h = 64, touch = true, round = true },
 	mount = { edge = "br", x = 368, y = 92, w = 64, h = 64, touch = true },

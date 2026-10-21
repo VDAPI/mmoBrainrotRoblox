@@ -138,7 +138,7 @@ S116 (kod + pierwsza partia):
 
 - Generator (`Logic/Gait`): ataki według planu ciała (czworonóg: skok z ugryzieniem; niedźwiedź: wspięcie i uderzenie łapami; ptak: nurkowanie; pająk: wypad przednich nóg; humanoid: cięcie bronią, uderzenie z góry; pozostałe plany z `Logic/Anatomy` według ich kształtu), zapowiedź specjalnego ataku Elity II trwa dokładnie `windup` z `MonsterAbilities` (poza zbierania siły zsynchronizowana z wypełnianiem czerwonego obszaru), trafienie z kierunkiem (odrzut od atakującego), śmierć według planu ciała.
 - Bossowie: osobna poza (albo klip `anims[<attackId>]`) dla każdego ataku z `Data/Bosses`, zapowiedź = `windup`, ryk i wstrząs przy zmianie fazy, przyzwanie z animacją `spawn`, śmierć z dłuższą sekwencją i światłem.
-- **Telegrafy 2.0:** obszar wypełnia się od krawędzi do środka w czasie `windup`, pulsujący brzeg, tekstura z S112 (runy dla magii, pęknięcia dla uderzeń), dźwięk `telegraph.warn` na starcie, błysk w chwili trafienia; czytelne na jasnej trawie, śniegu i w jaskini.
+- **Telegrafy 2.0:** obszar wypełnia się od krawędzi do środka w czasie `windup`, pulsujący brzeg, tekstura z S112 (runy dla magii, pęknięcia dla uderzeń), dźwięk `telegraph.warn` na starcie, błysk w chwili trafienia; czytelne na jasnej trawie, śniegu i w jaskini. S160 (właściciel 2026-10-21: „umiejętności bossa nie widać”): mocniejsze wypełnienie, gruby jaskrawy brzeg z biegnącym światłem i ciemną obwódką rysowany nad terenem, światło pod wielkim ciosem, pasek rzucania z nazwą nad bossem i ostrzeżenie na ekranie przy wielkim ataku.
 - Limit animowanych potworów i LOD bez zmian.
 - Id ataku w zdarzeniu `tele` (pole `a`) dodała S117 (S116 pominięta do czasu modeli; §17). S117 może dodać atrybut serwera `Summoned` na przyzwanych (czysto wizualny).
 

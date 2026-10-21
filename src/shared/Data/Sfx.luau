@@ -180,6 +180,13 @@ local defs: { [string]: Def } = {
 	["ui.worldboss.spawn"] = d("deep war horn blast distant giant awakening", 0.7, 0, { ui = true, pitch = FLAT }),
 	["ui.worldboss.victory"] = d("epic victory fanfare choir short", 0.7, 0, { ui = true, pitch = FLAT }),
 	-- S151: an achievement done (Hud/AchievementToast); silent until the owner picks an id (docs/ASSETS.md)
+	-- S160: the warning banner of a boss's big attack (the telegraph's alarm, lower and louder)
+	["ui.boss.danger"] = d(
+		"boss big attack warning alarm deep",
+		0.8,
+		0,
+		{ ui = true, pitch = FLAT, cooldown = 1, ids = { "rbxassetid://12221990" } }
+	),
 	["ui.achievement"] = d("achievement unlocked bright chime short", 0.6, 0, { ui = true, pitch = FLAT }),
 }
 

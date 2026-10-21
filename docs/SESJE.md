@@ -13767,6 +13767,38 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Dla właściciela:** bez przeglądu w Studio (nie ma jeszcze modeli); kowal kuje w miejscu, `Work = "none"` na modelu
   to wyłącza.
 
+### S160: Inwazja atakuje każdego w strefie, widoczne umiejętności bossów (właściciel 2026-10-21)
+- **Inwazja:** `Data/WorldEvents` (`zone.aggro` 40, `zone.spread` 10), `Logic/WorldEvents.zoneTarget` (cel w kręgu, w
+  zasięgu i w twardej smyczy, rozkład na graczy), `Entities/Monster.aggroPicker` (przed zwykłym aggro, bez reguły
+  poziomu), `WorldEventService.zonePicker` (gracze strefy i liczba potworów na każdym, odświeżane co 0,5 s; smycz miękka =
+  twarda).
+- **Telegrafy:** `Config.Telegraph` (mocniejsze warstwy, `rimShare`, `underAlpha`, `areaPulse`, `chaseSpeed`,
+  `edgeThick`, `lightRange`), `Logic/Telegraph.rimFor / chase / areaAlpha`, `Vfx/GroundTelegraph` (drugi SurfaceGui
+  brzegu z `AlwaysOnTop`, gradient biegnący po brzegu, fala światła po krawędziach stożków i linii, Neon, światło pod
+  wielkim ciosem, w trybie `simple` zostaje obszar).
+- **Pociski:** `Vfx/HazardFx` (rdzeń i powłoka orba = promień trafienia, większe poświaty, ślady i światła, pas lotu
+  szerokości trafienia z ciemnym podkładem od pierwszej klatki, świecąca stopa fali wstrząsu, większe topory i sople).
+- **Pasek rzucania i baner:** `Logic/BossCast` (klucze nazw, baner, odstęp, kolor jaskrawy), `Vfx/BossCastBar`
+  (pasek nad bossem / Elitą, baner na ekranie), `CombatFxController.announceCast` (telegrafy, kanał, wzory), klucze
+  `boss.cast.*` i `hazard.<wzór>.name`, dźwięk `ui.boss.danger`.
+- **Testy:** `tests/bosscast.spec` (nazwy, baner, czasy, kontrast na 10 rodzajach podłoża, liczby widoczności),
+  `tests/worldevents.spec` (aggro strefy).
+- **Dla właściciela:** bez przeglądu w Studio.
+### Tabliczki: poziom i VIP, lista tytułów (2026-10-21)
+- **Tabliczka:** `Logic/Nameplate.view` (`level`, `showVip`), `NameplateController` (etykieta „Lv N” z atrybutu `Level`
+  modelu, złota plakietka VIP z atrybutu `Vip` gracza), `Config.Nameplate.levelSize`.
+- **Tytuły:** `Logic/Titles.choices` / `sourceOf`, `UI/Screens/CharacterWindow/TitleChooser` (przycisk „Zmień tytuł”
+  i lista nad oknem) zamiast cyklera ◀ ▶; serwer bez zmian (`SetTitle` sprawdza `Titles.isUnlocked`).
+- **Testy:** `nameplate`, `titles`.
+
+### HUD 2026-10-21: koszt na slotach, przesuwane panele wydarzeń, poczta pod przyciskiem ataku
+- **Koszt umiejętności:** `Logic/SkillCostBadge` (tekst, kolor zasobu), `Components/CostBadge`, `SkillController.Cost`
+  (wspólny z `Usable`), `Hud/SkillBar`, `Hud/MobileSkills`, prop `SkillCost` HUD.
+- **Panele wydarzeń:** `UI/HudDrag` (wspólny chwyt i zapis, wyjęty z `Hud/QuestTracker`), `Logic/HudLayout` (elementy
+  `worldEvent`, `worldBoss`, `bloodMoon`, `tourney`, skala `s`), `Hud/WorldEventPanel`, `WorldBossPanel`,
+  `BloodMoonPanel`, `TourneyPanel` (ramka zewnętrzna z chwytami, przesunięty panel nie spycha tropiciela).
+- **Poczta:** `Hud/MailButton`, `Logic/Mail.badge`, miejsce `mail` w `Logic/PhoneHud`; koperta usunięta z `Hud/Minimap`.
+- **Testy:** `skillcostbadge`, `mailbadge`, `hudlayout` (panele), `phonehud` (z pocztą bez nakładania).
 ### S160k: kowal (premia za złoto + pył + kamień, zmiana efektu) i Mistrz Portali (2026-10-21)
 - **Kowal:** przemiana premii płaci złoto, pył i Kamień Przemiany Bonusu naraz (`Reroll.payment`, `BlacksmithService.Reroll`
   bez flagi kamienia, `RerollBonus` 4 argumenty); nowa zakładka „Efekt” (`BlacksmithWindow/Effect`, `Logic/EffectReroll`,

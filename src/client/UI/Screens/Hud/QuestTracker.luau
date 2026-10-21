@@ -21,7 +21,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local AchData = require(ReplicatedStorage.Shared.Data.Achievements)
@@ -38,11 +37,11 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local GuidePointer = require(ReplicatedStorage.Shared.Logic.GuidePointer)
+local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
-local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestRows = require(ReplicatedStorage.Shared.Logic.QuestRows)
@@ -649,24 +648,14 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		return out
 	end)
 
-	-- S156: the saved place and size; `live` holds the new ones while a grip is held and until the save comes back
-	local saved = State.Value({ "account", "settings", "hud" })
-	local live = scope:Value(nil :: HudLayout.Entry?)
-	scope:Observer(saved):onChange(function()
-		live:set(nil)
-	end)
-	local entry = scope:Computed(function(use): HudLayout.Entry?
-		local now = use(live)
-		if now then
-			return now
-		end
-		local layout = use(saved)
-		local e = if type(layout) == "table" then layout[ELEMENT] else nil
-		return if type(e) == "table" and type(e.x) == "number" and type(e.y) == "number" then e else nil
-	end)
-	local width = scope:Computed(function(use): number
-		local e = use(entry)
+	-- S156: the saved place and size (UI/HudDrag: the entry being dragged until the save comes back)
+	local function widthOf(use: Fusion.Use, e: HudLayout.Entry?): number
 		return if e and e.w then e.w elseif use(PhoneLayout.Compact) then PhoneHud.TRACKER_WIDTH else WIDTH
+	end
+	local handle = HudDrag.new(scope, ELEMENT, widthOf)
+	local entry = handle.entry
+	local width = scope:Computed(function(use): number
+		return widthOf(use, use(entry))
 	end)
 	-- the built-in place: under the menu, lower by the panels standing above it
 	local defaultTop = scope:Computed(function(use): number
@@ -676,17 +665,9 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			return PhoneHud.stackTop(use(PhoneLayout.Others)) + offset
 		end
 		-- owner 2026-10-20: the menu has two rows (Hud Menu), so the tracker starts one button row lower
-		return 400 + Theme.Size.IconButton + Theme.Padding.Small + offset
+		return HudDrag.RIGHT_TOP + offset
 	end)
-	local corner = scope:Computed(function(use): Vector2?
-		local e = use(entry)
-		if not e then
-			return nil
-		end
-		local screen = use(Scale.VirtualSize)
-		local x, y = HudLayout.place(e, use(width), screen.X, screen.Y)
-		return Vector2.new(x, y)
-	end)
+	local corner = handle.corner
 	local contentHeight = scope:Value(0)
 	local bodyHeight = scope:Computed(function(use): number
 		if use(collapsed) then
@@ -704,66 +685,6 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local bottom = if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24
 		return math.min(use(contentHeight), math.max(80, screen.Y - top - bottom - chrome))
 	end)
-
-	-- S156: the grips. A drag starts on the header grip ("move") or the corner ("size") and follows the mouse or finger.
-	local root: Frame? = nil
-	local drag: { mode: string, start: Vector2, x: number, y: number, w: number, h: number }? = nil
-	local function begin(mode: string, input: InputObject)
-		local kind = input.UserInputType
-		if kind ~= Enum.UserInputType.MouseButton1 and kind ~= Enum.UserInputType.Touch then
-			return
-		end
-		local frame = root
-		local parent = frame and frame.Parent
-		if not frame or not parent or not parent:IsA("GuiObject") then
-			return
-		end
-		local k = Scale.get()
-		local at = (frame.AbsolutePosition - parent.AbsolutePosition) / k
-		local size = frame.AbsoluteSize / k
-		drag = {
-			mode = mode,
-			start = Vector2.new(input.Position.X, input.Position.Y),
-			x = at.X,
-			y = at.Y,
-			w = size.X,
-			h = size.Y,
-		}
-	end
-	table.insert(
-		scope,
-		UserInputService.InputChanged:Connect(function(input)
-			local d = drag
-			local kind = input.UserInputType
-			if not d or (kind ~= Enum.UserInputType.MouseMovement and kind ~= Enum.UserInputType.Touch) then
-				return
-			end
-			local delta = (Vector2.new(input.Position.X, input.Position.Y) - d.start) / Scale.get()
-			local screen = Fusion.peek(Scale.VirtualSize)
-			if d.mode == "size" then
-				local w, h = HudLayout.clampSize(ELEMENT, d.w + delta.X, d.h + delta.Y)
-				live:set(HudLayout.entryAt(d.x, d.y, screen.X, screen.Y, w, h))
-			else
-				local e = Fusion.peek(entry)
-				local w, h = if e and e.w and e.h then e.w else nil, if e and e.h then e.h else nil
-				live:set(HudLayout.entryAt(d.x + delta.X, d.y + delta.Y, screen.X, screen.Y, w, h))
-			end
-		end)
-	)
-	table.insert(
-		scope,
-		UserInputService.InputEnded:Connect(function(input)
-			local kind = input.UserInputType
-			if not drag or (kind ~= Enum.UserInputType.MouseButton1 and kind ~= Enum.UserInputType.Touch) then
-				return
-			end
-			drag = nil
-			local now = Fusion.peek(live)
-			if now then
-				Net.Send("SetSetting", "hud", HudLayout.with(Fusion.peek(saved), ELEMENT, now))
-			end
-		end)
-	)
 
 	local frame = scope:New("Frame")({
 		Name = "QuestTracker",
@@ -810,7 +731,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						TextColor3 = Theme.Iron.TextMuted,
 						AutoButtonColor = false,
 						[OnEvent("InputBegan")] = function(input: InputObject)
-							begin("move", input)
+							handle.begin("move", input)
 						end,
 					}),
 					scope:New("TextButton")({
@@ -915,12 +836,12 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					return not use(collapsed)
 				end),
 				[OnEvent("InputBegan")] = function(input: InputObject)
-					begin("size", input)
+					handle.begin("size", input)
 				end,
 			}),
 		},
 	}) :: Frame
-	root = frame
+	handle.bind(frame)
 	return frame
 end
 
