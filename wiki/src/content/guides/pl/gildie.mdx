@@ -1,16 +1,17 @@
 ---
 title: Gildie
-description: "Jak założyć gildię, ustawić rangi, zbierać do skarbca i w jakiej kolejności kupować umiejętności gildii."
+description: "Jak założyć gildię, ustawić rangi, rozwijać poziom gildii celami tygodnia i w jakiej kolejności kupować umiejętności."
 key: guilds
 order: 5
 levels: [20, 100]
-updated: 2026-10-08
+updated: 2026-10-21
 tags: [Gildie]
 ---
 
 <Callout kind="tip" title="W skrócie">
 - Gildię zakładasz od poziomu <Stat path="mechanics.guild.rules.createLevel" /> za <Stat path="mechanics.guild.rules.createCost" format="gold" />.
-- Oficerowie mogą zapraszać i kupować umiejętności, członkowie tylko wpłacać.
+- Oficerowie mogą zapraszać i kupować umiejętności, weterani zapraszać i brać ze skarbca przedmiotów, członkowie wpłacać i odkładać przedmioty.
+- Gildia rośnie sama, gdy gracie: zbierajcie EXP gildii i robcie trzy cele tygodnia, żeby dostać Zryw.
 - Najpierw Mądrość albo Rozbudowa, potem reszta.
 </Callout>
 
@@ -20,15 +21,24 @@ Idź do <Npc id="guildmaster" />. Wybierz nazwę i krótki tag: tag widać nad g
 
 ## Rangi
 
-Daj rangę oficera tylko osobom, którym ufasz: oficer może wyrzucać członków i wydawać skarbiec na umiejętności.
+Daj rangę oficera tylko osobom, którym ufasz: oficer może wyrzucać członków, wypłacać złoto i wydawać skarbiec na umiejętności. Ranga weterana to dobra nagroda dla stałych graczy: mogą zapraszać i brać kilka przedmiotów dziennie ze skarbca. Przywódca może te ustawienia zmienić w zakładce Ustawienia.
 
 <GuildRanksTable />
 
+## Poziom i cele tygodnia
+
+EXP gildii zbiera się samo z gry: potwory, Elity, bossy, zadania, zlecenia, wydarzenia, zbieranie, rzemiosło i ulepszanie. Dzienny limit na postać sprawia, że dziesięciu graczy grających codziennie da gildii więcej niż jeden, który gra całą dobę. Szare potwory się nie liczą.
+
+Na początku tygodnia zajrzyjcie do zakładki Cele. Trzy cele to jeden z walki, jeden z przygody i jeden z rzemiosła, więc każdy coś dorzuci. Za wszystkie trzy przychodzi Zryw: więcej doświadczenia i złota dla wszystkich przez cały następny tydzień. Kto w tygodniu zdobył dość EXP gildii, odbiera jeszcze Smocze Odłamki za każdy cel.
+
 ## Skarbiec
 
-Wpłacać może każdy, a lista członków pokazuje, kto ile dał. Umówcie się na prostą zasadę, na przykład część złota z każdego dnia polowania.
+Wpłacać może każdy, a lista członków pokazuje, kto ile dał. Umówcie się na prostą zasadę, na przykład część złota z każdego dnia polowania. W skarbcu przedmiotów zostawiajcie rzeczy dla młodszych postaci i materiały do rzemiosła; kronika pokazuje, kto co wziął.
 
 ## Które umiejętności najpierw
+
+Kolejne poziomy umiejętności otwiera poziom gildii, więc na początku i tak kupicie tylko pierwsze.
+
 
 - **Mądrość** dodaje <Stat path="mechanics.guild.skills[wisdom].effects.0" format="pct" /> EXP na poziom umiejętności dla każdego. Opłaca się od razu, bo działa na wszystkich.
 - **Rozbudowa** dodaje <Stat path="mechanics.guild.skills[expansion].effects.0" /> miejsc na poziom. Kupuj, gdy brakuje miejsc dla chętnych.

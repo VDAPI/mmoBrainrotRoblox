@@ -1,11 +1,14 @@
 ---
-// Guild rank permissions (S43): mechanics.guild.ranks (Guild.can for every rank x action).
+// Guild rank permissions (S43): mechanics.guild.ranks (Guild.can for every rank x action). WIKI-3 (S159g): the
+// default daily bank limits of every rank (gold and items out of the vault; the leader has none).
 import Source from "./Source.astro";
 import type { Lang } from "../../i18n/routes";
 import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
 import { name, t, type Key } from "../../lib/i18n";
 const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const guild = load("mechanics").guild;
+const limit = (v: number | undefined) => (v === undefined ? "—" : v < 0 ? t(lang, "block.guild.noLimit") : formatNumber(v, lang));
 ---
 <div class="vw-scroll" tabindex="0">
   <table class="vw-table vw-table--plain vw-table--keep vw-perm">
@@ -22,6 +25,18 @@ const guild = load("mechanics").guild;
           ))}
         </tr>
       ))}
+      {guild.ranks.some((r) => r.gold !== undefined) && (
+        <>
+          <tr>
+            <th scope="row" class="rowhead">{t(lang, "block.guild.goldLimit")}</th>
+            {guild.ranks.map((r) => <td style="text-align: center">{limit(r.gold)}</td>)}
+          </tr>
+          <tr>
+            <th scope="row" class="rowhead">{t(lang, "block.guild.itemLimit")}</th>
+            {guild.ranks.map((r) => <td style="text-align: center">{limit(r.items)}</td>)}
+          </tr>
+        </>
+      )}
     </tbody>
   </table>
 </div>

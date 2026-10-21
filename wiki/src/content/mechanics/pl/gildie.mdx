@@ -1,9 +1,9 @@
 ---
 title: Gildie
-description: "Jak założyć gildię, co mogą rangi, skarbiec, umiejętności gildii na każdym poziomie, czat i ochrona PvP."
+description: "Zakładanie gildii, poziom i EXP gildii, cele tygodnia i Zryw, rangi i uprawnienia, skarbiec złota i przedmiotów, umiejętności, sztandar i czat."
 key: guilds
 order: 8
-updated: 2026-10-08
+updated: 2026-10-21
 tags: [Gracze, Skarbiec]
 ---
 
@@ -15,21 +15,51 @@ Gildię zakładasz u <Npc id="guildmaster" />. Potrzebujesz poziomu <Stat path="
 - Tag: od <Stat path="mechanics.guild.rules.tagMin" /> do <Stat path="mechanics.guild.rules.tagMax" /> wielkich liter albo cyfr. Widać go nad głową każdego członka.
 - Gildia należy do postaci, nie do konta: każda twoja postać może być w innej.
 
-## Rangi
+Okno gildii ma zakładki Przegląd (sztandar, pasek poziomu i kronika ostatnich zdarzeń), Członkowie, Cele, Skarbiec, Umiejętności i Ustawienia.
 
-Są trzy rangi: przywódca, oficer i członek. Zaproszenie ważne jest <Stat path="mechanics.guild.rules.inviteSeconds" format="s" />.
+## Poziom gildii
+
+Gildia rośnie do poziomu <Stat path="mechanics.guild.progress.maxLevel" /> z EXP gildii, które członkowie zdobywają zwykłą grą. Nic z tego nie jest na sprzedaż, a wynik gildii w rankingu liczy się dalej z poziomów członków. Potwór liczy się, jeśli jest najwyżej <Stat path="mechanics.guild.progress.greyGap" /> poziomów niżej od postaci, więc bicie szarych potworów nic nie daje. Każda postać może dać gildii najwyżej <Stat path="mechanics.guild.progress.dailyCap" /> EXP gildii na dzień (według UTC); to, co ponad limit, i tak liczy się do celów tygodnia.
+
+<GuildProgressTable part="points" />
+
+Poziom otwiera kolejne poziomy umiejętności gildii, miejsca w skarbcu przedmiotów oraz godła i barwy sztandaru.
+
+<GuildProgressTable part="levels" />
+
+## Cele tygodnia i Zryw
+
+Co tydzień (od poniedziałku według UTC) gildia dostaje trzy cele: walki, przygody i rzemiosła. Są takie same na każdym serwerze, a ich wielkość zależy od liczby członków na początku tygodnia. Wykonany cel daje gildii EXP i złoto do skarbca. Każdy członek, który w tym tygodniu zdobył co najmniej <Stat path="mechanics.guild.progress.claimMin" /> EXP gildii, odbiera w oknie gildii Smocze Odłamki za ten cel.
+
+Gdy gildia wykona wszystkie trzy cele, zaczyna się **Zryw**: do końca następnego tygodnia członkowie dostają <Stat path="mechanics.guild.progress.rallyExp" format="pct" /> więcej doświadczenia i <Stat path="mechanics.guild.progress.rallyGold" format="pct" /> więcej złota.
+
+<GuildProgressTable part="goals" />
+
+## Rangi i uprawnienia
+
+Są cztery rangi: przywódca, oficer, weteran i członek. Zaproszenie ważne jest <Stat path="mechanics.guild.rules.inviteSeconds" format="s" />. Tabela pokazuje ustawienia domyślne; przywódca może w Ustawieniach zmienić uprawnienia i dzienne limity każdej niższej rangi. Wpłacać złoto może zawsze każdy. Oficer zmienia rangi niższe od swojej, jeśli przywódca mu na to pozwoli.
 
 <GuildRanksTable />
 
-## Skarbiec i umiejętności
+## Skarbiec
 
-Każdy członek może wpłacać złoto do skarbca. Za złoto ze skarbca przywódca i oficerowie kupują umiejętności gildii, każdą do poziomu <Stat path="mechanics.guild.maxLevel" />. Premie działają na wszystkich członków, także na tych, którzy dołączą później.
+Skarbiec ma dwie części. Do skarbca złota wpłaca każdy, a wypłaty mają dzienny limit rangi. Skarbiec przedmiotów ma tyle miejsc, ile daje poziom gildii; odkładać i brać przedmioty można wszędzie poza walką, bez chodzenia do mistrza gildii. Wpłaty, wypłaty i ruchy w skarbcu przedmiotów trafiają do kroniki gildii razem z dołączeniami, odejściami, zmianami rang, zakupami umiejętności, nowymi poziomami i wykonanymi celami (ostatnie <Stat path="mechanics.guild.progress.logMax" /> wpisów).
+
+## Umiejętności
+
+Za złoto ze skarbca kupuje się umiejętności gildii, każdą do poziomu <Stat path="mechanics.guild.maxLevel" />. Kolejne poziomy czekają na poziom gildii; poziomy kupione przed tą zmianą zostają. Premie działają na wszystkich członków, także na tych, którzy dołączą później.
 
 <GuildSkillsTable />
 
 Na start gildia ma <Stat path="mechanics.guild.rules.baseMembers" /> miejsc. Rozbudowa podnosi limit do <Stat path="mechanics.guild.memberLimits.5" />.
 
+## Sztandar
+
+Przywódca wybiera godło i barwę gildii. Sztandar widać przed tagiem nad głową członków, w czacie gildii i w oknie gildii. Kolejne godła i barwy otwiera poziom gildii.
+
+<GuildProgressTable part="banner" />
+
 ## Czat i ochrona
 
-- Czat gildii działa między serwerami, a lista członków pokazuje, kto gra i gdzie.
+- Czat gildii działa między serwerami, a lista członków pokazuje, kto gra, gdzie i ile EXP gildii zdobył w tym tygodniu.
 - Członkowie gildii nie mogą się atakować w żadnej strefie. Przywódca może tę ochronę wyłączyć w ustawieniach gildii (zobacz <Link to="mechanics" id="pvp">PvP</Link>).

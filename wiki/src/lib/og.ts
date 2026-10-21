@@ -3,7 +3,7 @@
 // values (satori cannot read CSS variables): ranks from the design tokens, rarities and zones from the export.
 import { LANGS, type Lang } from "../i18n/routes";
 import { familyName, finalLevels, occurringVariants, pageVariantsOrNormal, placesOf } from "./bestiary";
-import { bosses, getMap, load, monsters } from "./data";
+import { bosses, getMap, load, monsters, worldBosses } from "./data";
 import { name, t, type Key } from "./i18n";
 import { renderSrc } from "./renders";
 
@@ -81,7 +81,21 @@ export function ogManifest(): OgEntry[] {
         accent: b.aura || RED,
       });
     }
-    const count = monsters().reduce((n, m) => n + occurringVariants(m).length, 0) + bosses().length;
+    // WIKI-3: the world boss (its map instead of a dungeon)
+    for (const b of worldBosses()) {
+      const map = getMap(b.map);
+      out.push({
+        out: `img/og/${lang}/boss/${b.id}.jpg`,
+        lang,
+        kicker: t(lang, "og.kicker"),
+        title: name(b.name, lang),
+        meta: `${t(lang, "level", { level: b.level })} · ${t(lang, "worldboss.rank")} · ${name(map?.name, lang)}`,
+        chips: [{ text: t(lang, "worldboss.rank"), color: RED, fill: true }, zoneChip(map?.zone ?? "red", lang)],
+        render: (renderSrc(b.id, "boss", "hero") ?? renderSrc(b.id, "boss", "full"))?.replace(/^\//, "") ?? null,
+        accent: b.aura || RED,
+      });
+    }
+    const count = monsters().reduce((n, m) => n + occurringVariants(m).length, 0) + bosses().length + worldBosses().length;
     const hero = [...bosses()].sort((a, b) => b.level - a.level)[0];
     out.push({
       out: `img/og/${lang}/bestiary.jpg`,

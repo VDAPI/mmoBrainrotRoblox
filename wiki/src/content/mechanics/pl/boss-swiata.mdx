@@ -1,0 +1,69 @@
+---
+title: Boss świata
+description: "Hrimvald na Lodowych Szczytach: kiedy się budzi, jak liczy się wkład, co dostajesz, nagroda pocztą, szał i Mityczne przedmioty z pity."
+key: worldBoss
+order: 13
+updated: 2026-10-21
+tags: [Bossowie, Wydarzenia, Nagrody]
+---
+
+<Callout kind="tip" title="W skrócie">
+- Hrimvald budzi się codziennie rano i wieczorem o tych samych godzinach czasu polskiego, przez cały rok.
+- Walczy z nim cały serwer naraz. Nagrodę dostaje każdy z wystarczającym wkładem, nie tylko ten, kto zadał ostatni cios.
+- Nagroda jest od poziomu <Stat path="bosses.world[hrimvald].minLevel" />, a im większy wkład, tym większa szansa na Legendę, Mityka i przedmioty Hrimvalda.
+</Callout>
+
+## Kiedy i gdzie
+
+<Monster id="hrimvald" /> śpi w Kurhanie Praojca na <Region id="frostpeak" />. Budzi się dwa razy dziennie o stałych godzinach czasu polskiego; dokładne godziny (też w czasie UTC, zimą i latem) są na <Link to="bosses" id="hrimvald">stronie bossa</Link>. Na <Stat path="bosses.world[hrimvald].schedule.warn.0" format="min" /> i na <Stat path="bosses.world[hrimvald].schedule.warn.1" format="min" /> przed startem cały serwer widzi czerwone ogłoszenie na czacie i na ekranie.
+
+W HUD przez cały czas od ostrzeżenia do końca walki wisi linia z koroną: najpierw czas do przebudzenia, potem czas, który bossowi został. Dotknięcie tej linii otwiera mapę świata na karcie bossa, a przycisk „Prowadź” wyznacza drogę.
+
+Kurhan to skalna niecka z jednym wejściem. Przed nim leży przedsionek z lodowym łukiem i koszami z ogniem. W kręgu walki i w przedsionku nie działa PvP, więc nikt nie zaatakuje cię w drodze do bossa ani w trakcie walki.
+
+Boss zostaje do zabicia, najdłużej <Stat path="bosses.world[hrimvald].timeLimit" format="h" />. Nie leczy się i nie wraca do pełnego zdrowia, gdy wszyscy odejdą, więc można dołączyć w każdej chwili i dobić go z kolejną falą graczy.
+
+## Walka
+
+Hrimvald ma to samo zdrowie bez względu na to, ilu graczy walczy, i nie ma blokady poziomu: może go bić każdy. Najlepiej idzie w <Stat path="bosses.world[hrimvald].players.0" /> do <Stat path="bosses.world[hrimvald].players.1" /> osób. Ma trzy fazy; od drugiej walczą z nim jego pomocnicy, a w trzeciej uderza szybciej.
+
+Większość jego ciosów to rzeczy, przed którymi się ucieka, a nie stoi i leczy:
+
+- **Głaz** leci łukiem na jednego gracza; jego cień i krąg na ziemi pokazują, gdzie spadnie.
+- **Fala lodowych kolców** biegnie po ziemi w trzech pasach. Stań między nimi.
+- **Bryły lodu** spadają na kilku graczy naraz, każda na swój krąg.
+- **Tupnięcie** rozpycha po ziemi niski pierścień: przeskocz go albo trzymaj się daleko.
+- **Deszcz odłamków** sypie małymi soplami na całe pole, każdy z własnym kręgiem.
+- **Mroźny oddech** to stożek, który obraca się przed olbrzymem. Wyjdź za jego plecy albo ucieknij przed nim w bok.
+- **Salwa oszczepów** leci wachlarzem w jednego gracza, a zaraz potem w drugiego.
+- **Ściany lodowca** (od drugiej fazy) wyrastają na brzegu areny i suną przez nią. Każda ma jedną przerwę: znajdź ją na czas.
+
+Po <Stat path="bosses.world[hrimvald].enrageAfter" format="min" /> walki Hrimvald wpada w szał i każdy jego cios bije mocniej. Do tego czasu duża grupa zwykle zdąży go pokonać.
+
+## Wkład
+
+Do wkładu liczą się obrażenia zadane bossowi i jego pomocnikom, leczenie i tarcze rzucone na walczących oraz obrażenia przejęte za sojusznika. Każdy z tych sposobów liczy się tak samo, więc uzdrowiciel i obrońca dostają nagrodę na równi z tymi, którzy zadają obrażenia.
+
+Nagrodę dostaje postać od <Stat path="bosses.world[hrimvald].minLevel" format="lvl" />, która zebrała co najmniej <Stat path="bosses.world[hrimvald].sharePct" format="pct" /> całego wkładu albo tyle, ile zdrowia ma <Stat path="bosses.world[hrimvald].shareMonsters" /> zwykłych potworów poziomu bossa, zależnie od tego, co jest mniejsze. Niższa postać może pomagać, ale nagrody nie dostaje. Jedna nagroda na konto i termin.
+
+Wkład mnoży szansę na lepszy przedmiot. Gra porównuje twój wkład ze średnią wszystkich walczących: przy symbolicznym udziale szansa na Legendę i Mityka spada do <Stat path="bosses.world[hrimvald].reward.factorLo" format="x" />, przy średnim jest zwykła, a najlepsi mają ją aż <Stat path="bosses.world[hrimvald].reward.factorHi" format="x" />. Swój udział w procentach i ten mnożnik widzisz na karcie nagrody po walce.
+
+## Nagroda
+
+Doświadczenie to <Stat path="bosses.world[hrimvald].reward.expKills" format="x" />, a złoto <Stat path="bosses.world[hrimvald].reward.goldKills" format="x" /> nagrody za zwykłego potwora twojego poziomu. Do tego materiały i jeden przedmiot Heroiczny, Legendarny albo Mityczny. Pełne tabele są na stronie bossa.
+
+## Przedmioty Hrimvalda
+
+Każda klasa ma dwa Mityczne przedmioty Hrimvalda: broń i część zbroi, mocniejsze od zwykłego Mityka i od przedmiotów bossów lochów. Wypadają obok zwykłego przedmiotu, nie zamiast niego.
+
+Szansa to <Stat path="bosses.world[hrimvald].reward.named.chance" format="frac" /> razy mnożnik wkładu. Każda nagrodzona walka bez przedmiotu Hrimvalda podnosi ją o <Stat path="bosses.world[hrimvald].reward.named.step" format="frac" />, a po <Stat path="bosses.world[hrimvald].reward.named.pityAt" /> takich walkach przedmiot jest pewny. Przy średnim wkładzie wypada mniej więcej raz na <Stat path="bosses.world[hrimvald].reward.named.expectedFights" /> walk.
+
+## Gdy cię zabraknie
+
+Jeśli zdobyłeś wymagany wkład, ale przed końcem walki wyszedłeś z gry albo zmieniłeś postać, nagroda przychodzi pocztą na tę postać. Przedmiot, materiały i złoto są w liście, a doświadczenie i licznik pity wchodzą przy pierwszym otwarciu skrzynki tej postaci. Jedna paczka na konto i termin, na wszystkich serwerach.
+
+## Co dalej
+
+- <Link to="bosses" id="hrimvald">Hrimvald: fazy, pomocnicy, łup i godziny</Link>
+- <Link to="mechanics" id="worldEvents">Wydarzenia świata</Link>
+- <Link to="mechanics" id="combat">Walka</Link>

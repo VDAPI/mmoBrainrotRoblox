@@ -1,0 +1,94 @@
+---
+// Daily and weekly contract sets (WIKI-3, S159): quests.json daily.set and weekly.bonus. `part` = "daily" (the set
+// bonus on the daily levels: EXP at a streak of one day and at the streak cap, the blessings) or "weekly" (the weekly
+// set bonus). Dragon Shards only as a mark, never an amount (S131).
+import ItemIcon from "../ItemIcon.svelte";
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { getItem, load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { iconFor } from "../../lib/icons";
+import { name, t } from "../../lib/i18n";
+import { itemHref } from "../../lib/monster";
+interface Props {
+  part: "daily" | "weekly";
+}
+const { part } = Astro.props;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const quests = load("quests");
+const set = quests.daily.set;
+const weekly = quests.weekly.bonus ?? [];
+const n = (v: number) => formatNumber(v, lang);
+const itemCell = (items: { id: string; n: number }[]) =>
+  items.map((x) => {
+    const item = getItem(x.id);
+    const rar = item?.rarities[item.rarities.length - 1] ?? "common";
+    return { id: x.id, n: x.n, item, rar, href: itemHref(lang, x.id) };
+  });
+---
+{part === "daily" && set && (
+  <div class="vw-scroll" tabindex="0">
+    <table class="vw-table vw-table--plain vw-table--keep">
+      <caption class="vw-sr">{t(lang, "block.dset.daily")}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{t(lang, "block.dset.level")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.dset.expFirst")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.dset.expCap", { n: set.streakCap })}</th>
+          <th scope="col">{t(lang, "block.dset.items")}</th>
+          <th scope="col" style="text-align: center">{t(lang, "block.dset.currency")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {set.bonus.map((row) => (
+          <tr>
+            <th scope="row">{n(row.level)}</th>
+            <td style="text-align: right">{n(row.expFirst)}</td>
+            <td style="text-align: right">{n(row.expCap)}</td>
+            <td>
+              {itemCell(row.items).map((x) => (
+                <span class="it"><ItemIcon glyph={x.item?.glyph ?? "◆"} color={x.item?.color ?? "#9DA3AB"} rarity={x.rar} size={24} src={iconFor(x.id)} /> {x.href ? <a href={x.href}>{name(x.item?.name, lang)}</a> : name(x.item?.name, lang)} ×{n(x.n)}</span>
+              ))}
+            </td>
+            <td style="text-align: center">{row.currency ? "✓" : "—"}<span class="vw-sr">{t(lang, row.currency ? "block.yes" : "block.no")}</span></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+{part === "weekly" && weekly.length > 0 && (
+  <div class="vw-scroll" tabindex="0">
+    <table class="vw-table vw-table--plain vw-table--keep">
+      <caption class="vw-sr">{t(lang, "block.dset.weekly")}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{t(lang, "block.dset.level")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.dset.exp")}</th>
+          <th scope="col">{t(lang, "block.dset.items")}</th>
+          <th scope="col" style="text-align: center">{t(lang, "block.dset.currency")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {weekly.map((row) => (
+          <tr>
+            <th scope="row">{n(row.level)}</th>
+            <td style="text-align: right">{n(row.exp)}</td>
+            <td>
+              {itemCell(row.items).map((x) => (
+                <span class="it"><ItemIcon glyph={x.item?.glyph ?? "◆"} color={x.item?.color ?? "#9DA3AB"} rarity={x.rar} size={24} src={iconFor(x.id)} /> {x.href ? <a href={x.href}>{name(x.item?.name, lang)}</a> : name(x.item?.name, lang)} ×{n(x.n)}</span>
+              ))}
+            </td>
+            <td style="text-align: center">{row.currency ? "✓" : "—"}<span class="vw-sr">{t(lang, row.currency ? "block.yes" : "block.no")}</span></td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+<p class="vw-label note">{t(lang, "block.dset.note")}</p>
+<Source from={part === "daily" ? "Data/Quests/Daily, Logic/Dailies" : "Data/Quests/Weekly"} />
+<style>
+  .it { display: inline-flex; align-items: center; gap: 6px; margin-right: 10px; }
+  .note { margin: 6px 0 14px; color: var(--vw-text-muted); }
+</style>

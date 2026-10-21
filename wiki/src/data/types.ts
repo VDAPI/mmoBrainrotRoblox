@@ -225,6 +225,26 @@ export interface BestArea {
   map: string; // id in maps.json
 }
 
+export interface BestiaryInfo {
+  bossPoints: number[];
+  bossTiers: number[];
+  familyCap: number;
+  familyPct: number;
+  monsterPoints: number[];
+  monsterTiers: number[];
+  regions: BestiaryRegion[];
+  reveal: Record<string, number>;
+}
+
+export interface BestiaryRegion {
+  bosses: number;
+  id: string;
+  map: string; // id in maps.json
+  monsters: number;
+  points: number;
+  title?: string; // id in titles.json
+}
+
 export interface Blessing {
   id: string;
   item: string; // id in items.json
@@ -335,6 +355,7 @@ export interface BossAttack {
   count?: number;
   damage: number;
   damageKind?: string;
+  delivery?: string;
   dmgMax: number;
   dmgMin: number;
   element?: ElementId;
@@ -389,6 +410,7 @@ export interface BossLoot {
 }
 
 export interface BossMark {
+  count?: number;
   seconds: number;
   self: number;
 }
@@ -442,6 +464,7 @@ export interface BossesFile {
   dailyRuns: number;
   entryRange: number;
   releaseAfter: number;
+  world: WorldBoss[];
 }
 
 export interface CategoryInfo {
@@ -615,6 +638,19 @@ export interface CraftingFile {
   rows: CraftRow[];
 }
 
+export interface DailyBonusItem {
+  id: string; // id in items.json
+  n: number;
+}
+
+export interface DailyBonusLevel {
+  currency: boolean;
+  expCap: number;
+  expFirst: number;
+  items: DailyBonusItem[];
+  level: number;
+}
+
 export interface DailyLevel {
   level: number;
   objective: QuestObjective;
@@ -623,7 +659,17 @@ export interface DailyLevel {
 
 export interface DailyQuests {
   perDay: number;
+  set?: DailySet;
   templates: DailyTemplate[];
+}
+
+export interface DailySet {
+  bonus: DailyBonusLevel[];
+  rerolls: number;
+  shardMinLevel: number;
+  slots: string[];
+  streakCap: number;
+  streakShardsFrom: number;
 }
 
 export interface DailyTemplate {
@@ -744,18 +790,70 @@ export interface GatherPlacement {
   z?: number;
 }
 
+export interface GuildColourInfo {
+  color: string;
+  id: string;
+  level: number;
+  name: Name;
+}
+
+export interface GuildEmblemInfo {
+  glyph: string;
+  id: string;
+  level: number;
+}
+
+export interface GuildGoalInfo {
+  desc: Name;
+  exp: number;
+  group: string;
+  id: string;
+  name: Name;
+}
+
 export interface GuildInfo {
   actions: string[];
   maxLevel: number;
   memberLimits: number[];
+  progress?: GuildProgressInfo;
   ranks: GuildRankInfo[];
   rules: Record<string, number>;
   skills: GuildSkillInfo[];
 }
 
+export interface GuildLevelRow {
+  colours: number;
+  emblems: number;
+  exp: number;
+  level: number;
+  skillLevel: number;
+  total: number;
+  vault: number;
+}
+
+export interface GuildProgressInfo {
+  claimMin: number;
+  colours: GuildColourInfo[];
+  dailyCap: number;
+  emblems: GuildEmblemInfo[];
+  goalGoldBase: number;
+  goalGoldPerLevel: number;
+  goalMembers: number;
+  goals: GuildGoalInfo[];
+  greyGap: number;
+  levels: GuildLevelRow[];
+  logMax: number;
+  maxLevel: number;
+  points: Record<string, number>;
+  rallyExp: number;
+  rallyGold: number;
+}
+
 export interface GuildRankInfo {
   can: Record<string, boolean>;
+  gold?: number;
   id: string;
+  items?: number;
   name: Name;
 }
 
@@ -991,6 +1089,15 @@ export interface MainQuest {
   turnIn: string; // id in npcs.json
 }
 
+export interface MapCategory {
+  color: string;
+  glyph: string;
+  id: string;
+  live: boolean;
+  name: Name;
+  shape: string;
+}
+
 export interface MapFeatures {
   caves: CaveEntranceInfo[];
   lakes: Lake[];
@@ -1061,6 +1168,7 @@ export interface MaterialChance {
 
 export interface MechanicsFile {
   areaProfiles?: Record<string, AreaProfileInfo>;
+  bestiary: BestiaryInfo;
   bossDailyRuns: number;
   combat: Json;
   config: Record<string, number>;
@@ -1070,6 +1178,7 @@ export interface MechanicsFile {
   keybinds: KeybindInfo[];
   levelBands: LevelBandInfo[];
   levelLockGap: number;
+  mapCategories: MapCategory[];
   market: MarketInfo;
   potionInterval: PotionInterval[];
   pvp: PvpInfo;
@@ -1536,6 +1645,7 @@ export interface RerollEssence {
 }
 
 export interface RerollRules {
+  allGoldMul?: number;
   attempts: number[];
   costs: Record<string, Record<string, UpgradeCost[]>>;
   essence: Record<string, RerollEssence>;
@@ -1594,6 +1704,7 @@ export interface ShopEntry {
 
 export interface ShopsFile {
   shops: Shop[];
+  wanderer?: Wanderer;
   weaponsmithTiers: number[];
 }
 
@@ -1908,7 +2019,9 @@ export interface Title {
 
 export interface TitleReq {
   days?: number;
+  desc?: Name;
   kind: string;
+  name?: Name;
   path?: string;
   tier?: string;
   value?: number;
@@ -2012,7 +2125,88 @@ export interface VipMonthCosmetic {
   name: Name;
 }
 
+export interface Wanderer {
+  consumableCount: number;
+  dyeGold: number;
+  dyes: WandererDye[];
+  everyHours: number;
+  gear: WandererGear;
+  leavingMin: number;
+  maps: WandererMap[];
+  materialCount: number;
+  name: Name;
+  offers: WandererOffer[];
+  plSummer: string[];
+  plWinter: string[];
+  spots: WandererSpot[];
+  stayMin: number;
+  utc: string[];
+  warnMin: number[];
+}
+
+export interface WandererDye {
+  color: string;
+  color2: string;
+  name: Name;
+}
+
+export interface WandererGear {
+  count: number;
+  limit: number;
+  rarities: WandererGearRarity[];
+}
+
+export interface WandererGearRarity {
+  chance: number;
+  goldPerLevel?: number;
+  marks?: number;
+  rarity: string;
+}
+
+export interface WandererMap {
+  chance: number;
+  map: string; // id in maps.json
+  max: number;
+  min: number;
+}
+
+export interface WandererOffer {
+  chance: number;
+  gold?: number;
+  goldPerLevel?: number;
+  goldShare?: number;
+  group: string;
+  item?: string; // id in items.json
+  key: string;
+  kind: string;
+  limit: number;
+  marks?: number;
+  minLevel: number;
+  n: number;
+}
+
+export interface WandererSpot {
+  id: string;
+  map: string; // id in maps.json
+  name: Name;
+  x: number;
+  z: number;
+}
+
+export interface WeeklyBonusItem {
+  id: string; // id in items.json
+  n: number;
+}
+
+export interface WeeklyBonusLevel {
+  currency: boolean;
+  exp: number;
+  items: WeeklyBonusItem[];
+  level: number;
+}
+
 export interface WeeklyQuests {
+  bonus?: WeeklyBonusLevel[];
   bossContract: BossContract;
   perWeek: number;
   templates: WeeklyTemplate[];
@@ -2023,6 +2217,90 @@ export interface WeeklyTemplate {
   id: string;
   minLevel: number;
   title: Name;
+}
+
+export interface WorldBoss {
+  attack: string;
+  attacks: BossAttack[];
+  aura: string;
+  damageKind: string;
+  enrageAfter: number;
+  enrageDamage: number;
+  enrageText?: Name;
+  haste?: Record<string, number>;
+  id: string;
+  level: number;
+  map: string; // id in maps.json
+  minLevel: number;
+  moveSpeed: number;
+  name: Name;
+  phaseTexts: Name[];
+  phases: number[];
+  place: WorldBossPlace;
+  players: number[];
+  pvpSafe: boolean;
+  range: number;
+  reward: WorldBossReward;
+  schedule: WorldBossSchedule;
+  scriptConsts: Record<string, number>;
+  shareMonsters: number;
+  sharePct: number;
+  size: number;
+  stats: WorldBossStats;
+  summons: BossSummon[];
+  timeLimit: number;
+}
+
+export interface WorldBossNamed {
+  chance: number;
+  expectedFights: number;
+  items: WorldBossNamedItem[];
+  pityAt: number;
+  step: number;
+}
+
+export interface WorldBossNamedItem {
+  class: string;
+  id: string; // id in items.json
+}
+
+export interface WorldBossPlace {
+  name: Name;
+  r: number;
+  x: number;
+  z: number;
+}
+
+export interface WorldBossRarityRow {
+  factor: number;
+  shares: Record<string, number>;
+}
+
+export interface WorldBossReward {
+  expKills: number;
+  factorHi: number;
+  factorLo: number;
+  factorSlope: number;
+  goldKills: number;
+  itemBound: boolean;
+  materials: BossMaterial[];
+  named: WorldBossNamed;
+  rarities: WorldBossRarityRow[];
+}
+
+export interface WorldBossSchedule {
+  times: string[];
+  utcSummer: string[];
+  utcWinter: string[];
+  warn: number[];
+}
+
+export interface WorldBossStats {
+  armor: number;
+  dmgMax: number;
+  dmgMin: number;
+  hp: number;
+  mres: number;
 }
 
 export interface WorldEventKind {

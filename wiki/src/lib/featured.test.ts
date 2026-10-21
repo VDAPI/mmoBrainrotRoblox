@@ -41,7 +41,8 @@ describe("featured", () => {
     const items = load("items").items;
     const hero = pickFeaturedItem(items, load("rarities").rarities)!;
     const boss = pickHeroBoss(bosses, hero)!;
-    const sources = hero.sources.bosses.map((s) => s.boss);
+    // WIKI-3: a world boss item (Hrimvald) has no dungeon boss behind it; then the highest dungeon boss stands in.
+    const sources = hero.sources.bosses.map((s) => s.boss).filter((id) => bosses.some((b) => b.id === id));
     if (sources.length > 0) expect(sources).toContain(boss.id);
     const top = Math.max(...bosses.map((b) => b.level));
     expect(pickHeroBoss(bosses, undefined)!.level).toBe(top);

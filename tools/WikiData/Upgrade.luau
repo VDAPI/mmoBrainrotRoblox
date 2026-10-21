@@ -46,6 +46,7 @@ S.file(
 		reroll = rec("RerollRules", {
 			essence = map(rec("RerollEssence", { id = "ref:items", n = "int" })),
 			goldMul = "number",
+			["allGoldMul?"] = "number", -- WIKI-3 (S156): the Scroll of Transformation rerolls every line for this x the gold
 			growth = "number",
 			growthCap = "number",
 			attempts = arr("int"),
@@ -203,6 +204,7 @@ function Upgrade.build(ctx: any): any
 		reroll = {
 			essence = essence,
 			goldMul = c.goldMul,
+			allGoldMul = c.allGoldMul,
 			growth = c.growth,
 			growthCap = c.growthCap,
 			attempts = Upgrade.REROLL_ATTEMPTS,

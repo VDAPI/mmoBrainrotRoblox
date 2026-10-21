@@ -272,55 +272,49 @@ local list: { TitleDef } = {
 		req = { kind = "cosmetic", id = "title_s1_frostwarden" },
 		color = "#8FC8F0",
 	},
-	-- S151 (docs/DESIGN.md §20b): achievement titles (Data/Achievements reward.title); off the wiki until S151b
+	-- S151 (docs/DESIGN.md §20b): achievement titles (Data/Achievements reward.title); on the wiki since WIKI-3
+	-- (2026-10-21: the owner wants the full information; the wiki's TitleTable names the achievement)
 	{
 		id = "ach_butcher",
 		nameKey = "title.ach_butcher",
 		req = { kind = "achievement", id = "slayer4" },
 		color = "#C8463A",
-		wiki = false,
 	},
 	{
 		id = "ach_elusive",
 		nameKey = "title.ach_elusive",
 		req = { kind = "achievement", id = "dodge3" },
 		color = "#7EC4E0",
-		wiki = false,
 	},
 	{
 		id = "ach_fourslayer",
 		nameKey = "title.ach_fourslayer",
 		req = { kind = "achievement", id = "bossAll" },
 		color = "#FF9F1C",
-		wiki = false,
 	},
 	{
 		id = "ach_ancestorbane",
 		nameKey = "title.ach_ancestorbane",
 		req = { kind = "achievement", id = "worldBoss1" },
 		color = "#8FD8FF",
-		wiki = false,
 	},
 	{
 		id = "ach_cartographer",
 		nameKey = "title.ach_cartographer",
 		req = { kind = "achievement", id = "maps2" },
 		color = "#E8D9A8",
-		wiki = false,
 	},
 	{
 		id = "ach_lairtracker",
 		nameKey = "title.ach_lairtracker",
 		req = { kind = "achievement", id = "lairs2" },
 		color = "#7FA650",
-		wiki = false,
 	},
 	{
 		id = "ach_forgemaster",
 		nameKey = "title.ach_forgemaster",
 		req = { kind = "achievement", id = "upgrade9" },
 		color = "#E8C25A",
-		wiki = false,
 	},
 	-- S151c: a complete region of the bestiary (every entry at its last tier, Data/Bestiary)
 	{
@@ -328,28 +322,24 @@ local list: { TitleDef } = {
 		nameKey = "title.ach_lore_meadows",
 		req = { kind = "achievement", id = "bestiary_meadows" },
 		color = "#9CCB6A",
-		wiki = false,
 	},
 	{
 		id = "ach_lore_duskwood",
 		nameKey = "title.ach_lore_duskwood",
 		req = { kind = "achievement", id = "bestiary_duskwood" },
 		color = "#8A7FC0",
-		wiki = false,
 	},
 	{
 		id = "ach_lore_ashen",
 		nameKey = "title.ach_lore_ashen",
 		req = { kind = "achievement", id = "bestiary_ashen" },
 		color = "#E07A3A",
-		wiki = false,
 	},
 	{
 		id = "ach_lore_frostpeak",
 		nameKey = "title.ach_lore_frostpeak",
 		req = { kind = "achievement", id = "bestiary_frostpeak" },
 		color = "#9FD8F0",
-		wiki = false,
 	},
 	-- S155: the tutorial reward at level 5 (Data/Tutorial.REWARD.title, a cosmetic with obtain.tutorial)
 	{

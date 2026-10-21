@@ -24,6 +24,7 @@ local Shops = require("../../src/shared/Data/Shops")
 local Spawns = require("../../src/shared/Data/Spawns")
 local Town = require("../../src/shared/Data/Town")
 local Visibility = require("./Visibility")
+local WanderingMerchant = require("../../src/shared/Data/WanderingMerchant")
 
 local S = Schema
 local arr, map, rec = S.arr, S.map, S.rec
@@ -200,6 +201,50 @@ S.file(
 			})),
 		})),
 		weaponsmithTiers = arr("int"),
+		-- WIKI-3 (S159w): the wandering merchant (Data/WanderingMerchant): when, where and what he may bring, with
+		-- prices in gold or Hunter's Marks (never Robux or Dragon Shards; the price keys are `gold` / `marks`)
+		["wanderer?"] = rec("Wanderer", {
+			name = "name",
+			utc = arr("string"), -- arrival times, UTC
+			plWinter = arr("string"), -- the same in Polish winter time (UTC+1)
+			plSummer = arr("string"), -- and summer time (UTC+2)
+			everyHours = "number",
+			stayMin = "number",
+			warnMin = arr("number"),
+			leavingMin = "number",
+			spots = arr(
+				rec("WandererSpot", { id = "string", name = "name", map = "ref:maps", x = "number", z = "number" })
+			),
+			maps = arr(rec("WandererMap", { map = "ref:maps", chance = "number", min = "int", max = "int" })),
+			gear = rec("WandererGear", {
+				count = "int",
+				limit = "int",
+				rarities = arr(rec("WandererGearRarity", {
+					rarity = "string",
+					chance = "number",
+					["goldPerLevel?"] = "int",
+					["marks?"] = "int",
+				})),
+			}),
+			materialCount = "int",
+			consumableCount = "int",
+			offers = arr(rec("WandererOffer", {
+				key = "string",
+				group = "string",
+				kind = "string",
+				["item?"] = "ref:items",
+				n = "int",
+				["gold?"] = "int",
+				["goldPerLevel?"] = "int",
+				["goldShare?"] = "number", -- potions: share of the alchemist's price
+				["marks?"] = "int",
+				minLevel = "int",
+				limit = "int",
+				chance = "number", -- weight share within its pool
+			})),
+			dyes = arr(rec("WandererDye", { name = "name", color = "color", color2 = "color" })),
+			dyeGold = "int",
+		}),
 	})
 )
 
@@ -553,7 +598,129 @@ function World.shops(ctx: any): any
 		-- S95: class vendors (key kept for the wiki shape)
 		table.insert(list, { id = id, npcs = npcsOf[id] or {}, classTabs = shop.class ~= nil, entries = entries })
 	end
-	return { shops = list, weaponsmithTiers = Clean.clean(Shops.WEAPONSMITH_TIERS) }
+	return {
+		shops = list,
+		weaponsmithTiers = Clean.clean(Shops.WEAPONSMITH_TIERS),
+		wanderer = if ctx.hidden.wanderer then nil else World.wanderer(ctx),
+	}
+end
+
+local function clock(seconds: number): string
+	local m = math.floor(seconds / 60 + 0.5) % (24 * 60)
+	return string.format("%02d:%02d", m // 60, m % 60)
+end
+
+-- WIKI-3 (S159w): the wandering merchant's schedule, places and possible stock (Data/WanderingMerchant).
+function World.wanderer(ctx: any): any
+	local W = WanderingMerchant
+	local sch = W.schedule
+	local utc, winter, summer = {}, {}, {}
+	local t = sch.offset
+	while t < 24 * 3600 do
+		table.insert(utc, clock(t))
+		table.insert(winter, clock(t + 3600))
+		table.insert(summer, clock(t + 7200))
+		t += sch.interval
+	end
+	local spots = {}
+	for _, sp in W.spots do
+		table.insert(spots, {
+			id = sp.id,
+			name = Names.of(`wanderer.spot.{sp.id}`),
+			map = sp.map,
+			x = sp.x,
+			z = sp.z,
+		})
+	end
+	local weightTotal = 0
+	for _, w in W.mapWeights do
+		weightTotal += w
+	end
+	local maps = {}
+	for _, mapId in Clean.keys(W.mapWeights) do
+		local band = W.bands[mapId]
+		table.insert(maps, { map = mapId, chance = W.mapWeights[mapId] / weightTotal, min = band[1], max = band[2] })
+	end
+	table.sort(maps, function(a, b)
+		return a.min < b.min or (a.min == b.min and a.map < b.map)
+	end)
+	local rarityTotal = 0
+	for _, w in W.gear.rarity do
+		rarityTotal += w
+	end
+	local rarities = {}
+	for _, r in Clean.keys(W.gear.rarity) do
+		local price = W.gear.price[r]
+		table.insert(rarities, {
+			rarity = Rarities.get(r).key,
+			chance = W.gear.rarity[r] / rarityTotal,
+			goldPerLevel = if price.currency == "gold" then price.perLevel else nil,
+			marks = if price.currency == "marks" then price.price else nil,
+		})
+	end
+	local offers = {}
+	local function addPool(pool: { any }, group: string)
+		local total = 0
+		for _, e in pool do
+			total += e.weight
+		end
+		for _, e in pool do
+			local itemId = if e.kind == "item" then e.id else nil
+			if not (itemId and ctx.hidden[itemId]) then
+				local gold = e.currency == "gold" and e.kind ~= "potion" and e.price or nil
+				table.insert(offers, {
+					key = e.key,
+					group = group,
+					kind = e.kind,
+					item = itemId,
+					n = e.n,
+					gold = if gold then math.floor(gold + 0.5) else nil,
+					goldPerLevel = if e.currency == "gold" then e.perLevel else nil,
+					goldShare = if e.kind == "potion" then e.price else nil,
+					marks = if e.currency == "marks" then e.price else nil,
+					minLevel = e.minLevel,
+					limit = e.limit,
+					chance = e.weight / total,
+				})
+			end
+		end
+	end
+	addPool(W.materials, "material")
+	addPool(W.consumables, "consumable")
+	local Cosmetics = (require :: any)("../../src/shared/Data/Cosmetics")
+	local dyes = {}
+	for _, id in W.dyes do
+		local c = Cosmetics.get(id)
+		if c then
+			table.insert(dyes, {
+				name = Names.of(`cosmetic.{id}`),
+				color = c.dye and c.dye.main or c.color,
+				color2 = c.dye and c.dye.second or c.color2 or c.color,
+			})
+		end
+	end
+	local warn = {}
+	for _, w in sch.warn do
+		table.insert(warn, w / 60)
+	end
+	return {
+		name = Names.of("npc.wanderer.name"),
+		utc = utc,
+		plWinter = winter,
+		plSummer = summer,
+		everyHours = sch.interval / 3600,
+		stayMin = sch.duration / 60,
+		warnMin = warn,
+		leavingMin = sch.leaving / 60,
+		spots = spots,
+		maps = maps,
+		gear = { count = W.gear.count, limit = W.gear.limit, rarities = rarities },
+		materialCount = W.materialCount,
+		consumableCount = W.consumableCount,
+		offers = offers,
+		dyes = dyes,
+		dyeGold = W.dyePrice,
+	}
 end
 
 return World

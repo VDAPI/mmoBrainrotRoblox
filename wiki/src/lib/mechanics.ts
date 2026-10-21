@@ -1,5 +1,5 @@
 // Mechanics topics of the index (S42): all eighteen in three groups (S97: mounts, S101: world events; S131: premium shop,
-// VIP, rankings, arena, Blood Moon, tournament); a topic links once its article exists
+// VIP, rankings, arena, Blood Moon, tournament; WIKI-3: world boss, contracts, in-game bestiary, wandering merchant); a topic links once its article exists
 // (mechanicsHref finds the key), otherwise its card shows "Soon". Titles and descriptions in the wiki i18n.
 export interface Topic {
   key: string;
@@ -26,6 +26,10 @@ export const TOPICS: Topic[] = [
   { key: "premiumShop", group: "world", icon: "M16 4l10 8-10 16L6 12zM6 12h20M12 12l4 16 4-16" },
   { key: "vip", group: "world", icon: "M6 24l3-13 7 6 7-6 3 13zM6 27h20M9 8a1 1 0 1 0 0.1 0M23 8a1 1 0 1 0 0.1 0" },
   { key: "worldEvents", group: "world", icon: "M16 4v6m0 12v6M4 16h6m12 0h6M9 9l3 3m8 8l3 3m0-14l-3 3m-8 8l-3 3M16 13a3 3 0 1 0 0 6a3 3 0 1 0 0-6" },
+  { key: "worldBoss", group: "world", icon: "M6 24l3-12 5 5 2-9 2 9 5-5 3 12zM6 27h20" },
+  { key: "dailies", group: "character", icon: "M8 5h16v22H8zM12 11h8m-8 5h8m-8 5h5" },
+  { key: "bestiaryBook", group: "character", icon: "M6 7h9a3 3 0 0 1 3 3v17a3 3 0 0 0-3-3H6zM26 7h-5a3 3 0 0 0-3 3" },
+  { key: "wanderer", group: "world", icon: "M4 22h18V11H4zM22 15h4l2 4v3h-6M9 25a2 2 0 1 0 0.1 0M23 25a2 2 0 1 0 0.1 0" },
 ];
 
 export const GROUPS: Topic["group"][] = ["character", "players", "world"];

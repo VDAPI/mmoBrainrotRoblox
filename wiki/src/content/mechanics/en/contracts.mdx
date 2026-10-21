@@ -1,0 +1,42 @@
+---
+title: Daily and weekly contracts
+description: "Contracts from the plaza board as a daily and a weekly set: the day streak, the free swap, the set bonus and Dragon Shards."
+key: dailies
+order: 14
+updated: 2026-10-21
+tags: [Quests, Rewards]
+---
+
+<Callout kind="tip" title="In short">
+- <Stat path="quests.daily.perDay" /> contracts every day, <Stat path="quests.weekly.perWeek" /> every week. Collect them all to get the set bonus.
+- Every full day in a row extends your streak and raises the daily bonus.
+- Once a day you can swap one open contract for another for free.
+</Callout>
+
+## The contract board
+
+You take contracts from the board on the town plaza. The daily ones change at midnight UTC, the weekly ones on Monday at the same hour. Every character has its own set, and the progress shows on the board, in the journal and in the quest tracker on screen (the set counter, the time to the next set and the "Done: collect at the board" reminder).
+
+The daily set always has one combat and one gathering contract, and the rest is random: a hunt, Elites, a dungeon boss, a world event, herbs, ore, fish, upgrading, dismantling at the blacksmith, handing in quests, and sometimes duels or arena matches (only in the free slots). Hunts and Elites count monsters from five levels below yours and up, so grey hunting grounds do not help.
+
+## The free swap
+
+Once a day you can swap one open daily contract for another, of the same group where possible. The button is next to the contract on the board and in the journal. The swap costs nothing and does not break your streak.
+
+## The set bonus
+
+When you collect the last contract of the day you get the set bonus right away: experience, two blessings and, from level <Stat path="quests.daily.set.shardMinLevel" />, a few Dragon Shards. The shards of the daily bonus come once per account and day, and those of the weekly bonus once per account and week, however many characters you play.
+
+The experience of the daily bonus grows with the streak: every full day in a row (all contracts and the bonus collected by any character of the account) raises it up to a streak of <Stat path="quests.daily.set.streakCap" /> days. From streak day <Stat path="quests.daily.set.streakShardsFrom" /> the bonus also gives one more shard. The streak lasts while your last full day was today or yesterday; one missed day starts it over.
+
+<DailySetTable part="daily" />
+
+The weekly bonus comes once every contract of the week is collected. The dungeon boss contract is separate and does not count towards the set.
+
+<DailySetTable part="weekly" />
+
+## What next
+
+- <Link to="quests">All quests and contracts</Link>
+- <Link to="mechanics" id="worldEvents">World events</Link>
+- <Link to="mechanics" id="premiumShop">Premium shop and Dragon Shards</Link>

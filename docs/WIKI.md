@@ -818,6 +818,11 @@ jako wzór dla nowego kierunku albo ponownej publikacji po `wiki = false`.
   ponad limit, węzły nieosiągalne), jak planer v2.
 - **S148** Budżet JS strony klasy 40 → 44 KB gzip (planer v3: 41 KB).
 
+- **WIKI-3** (2026-10-21) Boss świata jako osobna tablica `bosses.json` `world` (`Bosses.worldBoss`: harmonogram z `WorldBoss.timesText` / `utcOffset` dla zimy i lata, miejsce, próg wkładu, nagroda z tabelą rzadkości dla trzech współczynników, przedmioty Hrimvalda z `expectedNamedFights`), strona `/pl/bossy/hrimvald/` w widoku bossa (gałąź `world`) i wpis w bestiariuszu; kod lochów bez zmian.
+- **WIKI-3** Nowe pola tylko dodane: `mechanics.guild.progress` (poziomy, EXP za grę, cele dla 10 członków, godła, barwy; bez Odłamków celów), rangi z limitami `gold` / `items`, `mechanics.bestiary`, `mechanics.mapCategories`, `quests.daily.set` i `quests.weekly.bonus` (Odłamki tylko jako `currency`), `shops.wanderer` (ceny pod `gold`, `goldPerLevel`, `goldShare`, `marks`), `upgrade.reroll.allGoldMul`, `titles` z nazwą i opisem osiągnięcia (`req.name`, `req.desc`).
+- **WIKI-3** Tytuły za osiągnięcia (`ach_*`, w tym znawcy krain) są na wiki (właściciel chce pełnej informacji); `wiki = false` zdjęte w `Data/Titles`.
+- **WIKI-3** Artykuły `worldBoss`, `dailies`, `bestiaryBook`, `wanderer` (mechaniki) i `map-and-phone` (poradnik), bloki `GuildProgressTable`, `DailySetTable`, `BestiaryBook`, `MapLegend`, `WandererTable`; wzory do unikania jako notatki faz w `content/bosses` (bez cyfr).
+
 ## Niedokończone
 
 - **S148** Obrazki umiejętności nowych pul i kierunków (`npm run art` z folderu Graphics właściciela) i ikony

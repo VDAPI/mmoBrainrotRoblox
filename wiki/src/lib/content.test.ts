@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { ROUTES } from "../i18n/routes";
 import { contentEntries, contentEntry, frontmatter, translateSlug, type Collection } from "./content";
-import { getBoss, getItem, getMonster, load, rarityOf } from "./data";
+import { getBoss, getItem, getMonster, getWorldBoss, load, rarityOf } from "./data";
 import { questById } from "./quests";
 import { resolveStat } from "./stat";
 import { areaOf, caveOf, getMapInfo } from "./world";
@@ -55,7 +55,7 @@ describe("content", () => {
         const src = body(e.file);
         for (const p of attrs(src, "Stat", "path")) expect(() => resolveStat(p), `${e.file}: ${p}`).not.toThrow();
         for (const id of attrs(src, "Item", "id")) expect(getItem(id), `${e.file}: item ${id}`).toBeDefined();
-        for (const id of attrs(src, "Monster", "id")) expect(getMonster(id) ?? getBoss(id), `${e.file}: monster ${id}`).toBeDefined();
+        for (const id of attrs(src, "Monster", "id")) expect(getMonster(id) ?? getBoss(id) ?? getWorldBoss(id), `${e.file}: monster ${id}`).toBeDefined();
         for (const id of attrs(src, "Quest", "id")) expect(questById(id), `${e.file}: quest ${id}`).toBeDefined();
         for (const id of attrs(src, "Npc", "id")) expect(npcs.has(id), `${e.file}: npc ${id}`).toBe(true);
         for (const id of attrs(src, "Region", "id")) expect(areaOf(id) ?? caveOf(id) ?? getMapInfo(id), `${e.file}: region ${id}`).toBeDefined();

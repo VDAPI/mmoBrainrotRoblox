@@ -6,7 +6,7 @@ import type { Lang, RouteKey } from "../i18n/routes";
 import { ROUTES } from "../i18n/routes";
 import { SECTIONS } from "../lib/sections";
 import { areas, caves, maps } from "../lib/world";
-import { bosses, items, monsters } from "../lib/data";
+import { bosses, items, monsters, worldBosses } from "../lib/data";
 import { classes } from "../lib/classes";
 import { contentEntries } from "../lib/content";
 import { mainQuests, sideQuests } from "../lib/quests";
@@ -44,7 +44,12 @@ export const PAGES: PageEntry[] = [
   {
     key: "bosses",
     view: "BossView",
-    getPaths: () => [{ ids: [], props: { page: "index" } }, ...bosses().map((b) => ({ ids: [b.id], props: { page: "boss", id: b.id } }))],
+    getPaths: () => [
+      { ids: [], props: { page: "index" } },
+      ...bosses().map((b) => ({ ids: [b.id], props: { page: "boss", id: b.id } })),
+      // WIKI-3: the world boss's page in the same section
+      ...worldBosses().map((b) => ({ ids: [b.id], props: { page: "world", id: b.id } })),
+    ],
   },
   {
     key: "items",

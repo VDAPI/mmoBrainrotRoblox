@@ -1,0 +1,42 @@
+---
+title: Wędrowny kupiec
+description: "Karawana Radosława: o której przyjeżdża, gdzie staje, jak długo zostaje, co ma na wozie i ile to kosztuje."
+key: wanderer
+order: 16
+updated: 2026-10-21
+tags: [Handel, Ekwipunek, Kosmetyki]
+---
+
+<Callout kind="tip" title="W skrócie">
+- Radosław przyjeżdża co <Stat path="shops.wanderer.everyHours" /> godziny i zostaje <Stat path="shops.wanderer.stayMin" /> min.
+- Staje w mieście albo w obozie przy punkcie odrodzenia jednej z krain; na mapie świata i na minimapie widać go jako ⚖.
+- Towar jest nowy na każdej wizycie i taki sam na każdym serwerze. Płacisz złotem albo Znakami Łowcy, nigdy Robux ani Smoczymi Odłamkami.
+</Callout>
+
+## Kiedy
+
+Karawana przyjeżdża o stałych porach, osiem razy na dobę. Godziny w czasie UTC i w czasie polskim, zimą i latem:
+
+<WandererTable part="schedule" />
+
+Na <Stat path="shops.wanderer.warnMin.0" /> min i na <Stat path="shops.wanderer.warnMin.1" /> min przed przyjazdem, przy przyjeździe, <Stat path="shops.wanderer.leavingMin" /> min przed odjazdem i przy odjeździe pojawia się ogłoszenie na czacie. Na mapie świata ⚖ pokazuje czas do przyjazdu albo odjazdu; na minimapie widać znak, a gdy kupiec jest poza nią, strzałkę na krawędzi.
+
+## Gdzie
+
+Na każdą wizytę gra losuje mapę, a potem jedno z jej miejsc: w mieście rynek i place przy bramach i świątyni, w krainach obozy przy punktach odrodzenia, w kole, do którego nie podchodzą potwory. Kupiec nigdy nie staje dwa razy z rzędu w tym samym miejscu. Kraina wyznacza też poziomy towaru.
+
+<WandererTable part="places" />
+
+## Co sprzedaje
+
+Każda wizyta to nowy towar: kilka sztuk ekwipunku, materiały, jeden barwnik karawany i zapasy. Ekwipunek jest dla klasy kupującego i ma poziom twojej postaci w paśmie poziomów mapy, a dodatkowe premie losują się przy zakupie. Nigdy nie ma przedmiotów Mitycznych.
+
+<WandererTable part="stock" />
+
+Każda oferta ma limit na postać i wizytę. Wszystko, co kupisz, jest związane z postacią i nie da się tego odsprzedać kupcowi. Barwnik karawany to kosmetyk całego konta, którego nie kupisz w sklepie premium.
+
+## Co dalej
+
+- <Link to="mechanics" id="trading">Handel</Link>
+- <Link to="mechanics" id="cosmetics">Kosmetyki i barwniki</Link>
+- <Link to="mechanics" id="city">Miasto</Link>

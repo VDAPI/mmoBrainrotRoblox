@@ -12,13 +12,16 @@ const { kinds } = Astro.props;
 const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
 const titles = load("titles").titles.filter((x) => !kinds || kinds.includes(x.req.kind));
 // S131: counted conditions carry `value`, the arena season titles a `tier`, the timed titles their `days`; S148: a
-// direction title its `path` (the leading direction, skills.json paths).
+// direction title its `path` (the leading direction, skills.json paths); WIKI-3: an achievement title its
+// achievement's `name` and `desc`.
 const paths = load("skills").paths;
 const reqText = (req: (typeof titles)[number]["req"]) =>
   t(lang, `block.titles.req.${req.kind}` as Key, {
     n: formatNumber(req.value ?? req.days ?? 0, lang),
     tier: req.tier ? t(lang, `arena.tier.${req.tier}` as Key) : "",
     path: req.path ? name(paths.find((p) => p.id === req.path)?.name, lang) || req.path : "",
+    ach: req.name ? name(req.name, lang) : "",
+    desc: req.desc ? name(req.desc, lang) : "",
   });
 ---
 <table class="vw-table vw-table--plain">

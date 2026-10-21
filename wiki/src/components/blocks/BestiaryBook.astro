@@ -1,0 +1,80 @@
+---
+// The in-game bestiary (WIKI-3, S151c): mechanics.bestiary. `part` = "tiers" (kills and points of the three tiers for
+// monsters and bosses, what each tier shows) or "regions" (entries of every land, its points and the title for a
+// mastered land).
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { getMap, load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t, type Key } from "../../lib/i18n";
+interface Props {
+  part: "tiers" | "regions";
+}
+const { part } = Astro.props;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const b = load("mechanics").bestiary;
+const titles = load("titles").titles;
+const n = (v: number) => formatNumber(v, lang);
+const ROMAN = ["I", "II", "III", "IV", "V"];
+const shows = (tier: number) =>
+  Object.entries(b.reveal)
+    .filter(([, at]) => at === tier)
+    .map(([what]) => t(lang, `block.best.reveal.${what}` as Key))
+    .join(", ");
+---
+{part === "tiers" && (
+  <div class="vw-scroll" tabindex="0">
+    <table class="vw-table vw-table--plain vw-table--keep">
+      <caption class="vw-sr">{t(lang, "block.best.tiers")}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{t(lang, "block.best.tier")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.best.monsterKills")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.best.bossKills")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.best.points")}</th>
+          <th scope="col">{t(lang, "block.best.shows")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {b.monsterTiers.map((kills, i) => (
+          <tr>
+            <th scope="row">{ROMAN[i]}</th>
+            <td style="text-align: right">{n(kills)}</td>
+            <td style="text-align: right">{n(b.bossTiers[i])}</td>
+            <td style="text-align: right">{n(b.monsterPoints[i])} / {n(b.bossPoints[i])}</td>
+            <td>{shows(i + 1)}{i === b.monsterTiers.length - 1 && <> · {t(lang, "block.best.bonus", { pct: n(b.familyPct), cap: n(b.familyCap) })}</>}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+{part === "regions" && (
+  <table class="vw-table vw-table--plain">
+    <caption class="vw-sr">{t(lang, "block.best.regions")}</caption>
+    <thead>
+      <tr>
+        <th scope="col">{t(lang, "block.best.region")}</th>
+        <th scope="col" style="text-align: right">{t(lang, "block.best.monsters")}</th>
+        <th scope="col" style="text-align: right">{t(lang, "block.best.bosses")}</th>
+        <th scope="col" style="text-align: right">{t(lang, "block.best.allPoints")}</th>
+        <th scope="col">{t(lang, "block.best.title")}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {b.regions.map((r) => {
+        const title = r.title ? titles.find((x) => x.id === r.title) : undefined;
+        return (
+          <tr>
+            <th scope="row">{name(getMap(r.map)?.name, lang) || r.id}</th>
+            <td style="text-align: right">{n(r.monsters)}</td>
+            <td style="text-align: right">{n(r.bosses)}</td>
+            <td style="text-align: right">{n(r.points)}</td>
+            <td>{title ? <strong class="vw-title-name" style={`color: ${title.color}`}>{name(title.name, lang)}</strong> : "—"}</td>
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+)}
+<Source from="Data/Bestiary, Data/Achievements" />

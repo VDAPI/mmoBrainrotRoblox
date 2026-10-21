@@ -1,16 +1,17 @@
 ---
 title: Guilds
-description: "How to found a guild, set up ranks, fill the treasury and in which order to buy guild skills."
+description: "How to found a guild, set up ranks, grow the guild level with weekly goals and in which order to buy guild skills."
 key: guilds
 order: 5
 levels: [20, 100]
-updated: 2026-10-08
+updated: 2026-10-21
 tags: [Guilds]
 ---
 
 <Callout kind="tip" title="In short">
 - You can found a guild from level <Stat path="mechanics.guild.rules.createLevel" /> for <Stat path="mechanics.guild.rules.createCost" format="gold" />.
-- Officers can invite and buy skills, members can only deposit.
+- Officers can invite and buy skills, veterans invite and take items from the vault, members deposit and put items in.
+- The guild grows on its own while you play: earn guild EXP and complete the three weekly goals to get the Rally.
 - Wisdom or Expansion first, the rest later.
 </Callout>
 
@@ -20,15 +21,24 @@ Go to <Npc id="guildmaster" />. Pick a name and a short tag: the tag shows above
 
 ## Ranks
 
-Only make people you trust officers: an officer can remove members and spend the treasury on skills.
+Only make people you trust officers: an officer can remove members, withdraw gold and spend the treasury on skills. The veteran rank is a good reward for regulars: they can invite and take a few items a day from the vault. The leader can change all this in the Settings tab.
 
 <GuildRanksTable />
 
-## Treasury
+## Level and weekly goals
 
-Anyone can deposit, and the member list shows who gave how much. Agree on a simple rule, for example a share of the gold from every day of hunting.
+Guild EXP comes on its own from play: monsters, Elites, bosses, quests, contracts, events, gathering, crafting and upgrading. The daily cap per character means ten players who play every day give the guild more than one who plays all day long. Grey monsters do not count.
+
+At the start of the week look at the Goals tab. The three goals are one of fight, one of adventure and one of craft, so everyone can chip in. All three bring the Rally: more experience and gold for everyone for the whole next week. Whoever earned enough guild EXP in the week also collects Dragon Shards for each goal.
+
+## Vault
+
+Anyone can deposit, and the member list shows who gave how much. Agree on a simple rule, for example a share of the gold from every day of hunting. Leave gear for younger characters and crafting materials in the item vault; the log shows who took what.
 
 ## Which skills first
+
+Further skill levels open with the guild level, so at first you can only buy the first ones anyway.
+
 
 - **Wisdom** adds <Stat path="mechanics.guild.skills[wisdom].effects.0" format="pct" /> EXP per skill level for everyone. It pays off at once because it works for all members.
 - **Expansion** adds <Stat path="mechanics.guild.skills[expansion].effects.0" /> places per level. Buy it when you run out of places for new players.

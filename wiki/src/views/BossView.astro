@@ -2,7 +2,9 @@
 // Boss page (S39, /pl/bossy/<id>/): BossHeader (S134: one HP for every party; phases with mechanics and script notes from
 // src/content/bosses), stats for the chosen party size, shared loot, boss items, the Legendary / Mythic chances by kills that day
 // bars, and on the right the entry rules, the gate on the cave mini map and the summons. Also the boss list
-// (/pl/bossy/, page "index"). Behaviour: src/scripts/boss.ts.
+// (/pl/bossy/, page "index"). Behaviour: src/scripts/boss.ts. WIKI-3: page "world" = a world boss (bosses.json
+// `world`): the same header, then the reward by contribution, the boss's own items with their pity, the schedule in
+// Polish time and the place on the map.
 import { getCollection } from "astro:content";
 import Base from "../layouts/Base.astro";
 import BossHeader from "../components/BossHeader.astro";
@@ -15,7 +17,7 @@ import SectionTitle from "../components/SectionTitle.astro";
 import { href, type Lang } from "../i18n/routes";
 import { bossHref, monsterHref } from "../lib/bestiary";
 import { fillConsts, noteHtml } from "../lib/bossnotes";
-import { bosses, getBoss, getItem, getMap, getMonster, load, rarities } from "../lib/data";
+import { bosses, getBoss, getItem, getMap, getMonster, getWorldBoss, load, rarities, worldBosses } from "../lib/data";
 import { formatChance, formatDuration, formatNumber } from "../lib/format";
 import { iconFor } from "../lib/icons";
 import { name, t } from "../lib/i18n";
@@ -23,10 +25,11 @@ import { itemHref } from "../lib/monster";
 import { sectionHref } from "../lib/sections";
 import { tooltipData } from "../lib/tooltip";
 import { caveOf, placeHref } from "../lib/world";
+import type { Name } from "../data/types";
 
 interface Props {
   lang: Lang;
-  page: "index" | "boss";
+  page: "index" | "boss" | "world";
   id?: string;
 }
 const { lang, page, id } = Astro.props;
@@ -35,14 +38,16 @@ const crumbsBase = [
   { label: t(lang, "monster.crumb"), href: sectionHref(lang, "bestiary") },
 ];
 const file = load("bosses");
-const boss = id ? getBoss(id) : undefined;
-const notes = boss
+const boss = id && page === "boss" ? getBoss(id) : undefined;
+const wb = id && page === "world" ? getWorldBoss(id) : undefined;
+const noteFor = boss ?? wb;
+const notes = noteFor
   ? (await getCollection("bosses"))
-      .filter((e) => e.data.boss === boss.id && e.id.startsWith(`${lang}/`))
+      .filter((e) => e.data.boss === noteFor.id && e.id.startsWith(`${lang}/`))
       .sort((a, b) => a.data.phase - b.data.phase || (a.id < b.id ? -1 : 1))
-      .map((e) => ({ phase: e.data.phase, title: e.data.title, html: noteHtml(fillConsts(e.body ?? "", boss.scriptConsts, lang, `src/content/bosses/${e.id}`)) }))
+      .map((e) => ({ phase: e.data.phase, title: e.data.title, html: noteHtml(fillConsts(e.body ?? "", noteFor.scriptConsts, lang, `src/content/bosses/${e.id}`)) }))
   : [];
-const title = boss ? name(boss.name, lang) : t(lang, "bosses.title");
+const title = noteFor ? name(noteFor.name, lang) : t(lang, "bosses.title");
 const range = (a: number, b: number) => (a === b ? formatNumber(a, lang) : `${formatNumber(a, lang)}–${formatNumber(b, lang)}`);
 const rarityName = (key: string) => name(rarities().find((r) => r.key === key)?.name, lang);
 const rarityOrder = (key: string) => rarities().findIndex((r) => r.key === key);
@@ -55,6 +60,13 @@ const bind = t(lang, "tooltip.bind");
 const pity = boss
   ? (["legendary", "mythic"] as const).map((k) => ({ key: k, line: boss.personal[k], rarity: k === "legendary" ? "legendary" : "mythic" }))
   : [];
+// WIKI-3: the world boss page
+const wbMap = wb ? getMap(wb.map) : undefined;
+const pct = (v: number) => formatChance(v, lang);
+const classNames = new Map<string, Name>(load("classes").classes.map((c) => [c.id as string, c.name]));
+const wbClasses = wb ? [...new Set(wb.reward.named.items.map((x) => x.class))] : [];
+const wbRarityKeys = wb ? Object.keys(wb.reward.rarities[0]?.shares ?? {}).sort((a, b) => rarityOrder(a) - rarityOrder(b)) : [];
+const factorLabel = (f: number) => (f === wb?.reward.factorLo ? t(lang, "worldboss.factor.low") : f === wb?.reward.factorHi ? t(lang, "worldboss.factor.high") : t(lang, "worldboss.factor.even"));
 ---
 {page === "index" ? (
   <Base lang={lang} title={title} description={t(lang, "bosses.lead")} section="bestiary" og={{ image: `/img/og/${lang}/bestiary.jpg`, alt: title }}>
@@ -65,6 +77,137 @@ const pity = boss
       <ul class="bossgrid">
         {bosses().map((b) => <li><MonsterCard boss={b} lang={lang} href={bossHref(lang, b.id)} /></li>)}
       </ul>
+      {worldBosses().length > 0 && (
+        <section class="worldlist">
+          <SectionTitle>{t(lang, "worldboss.listTitle")}</SectionTitle>
+          <p class="lead small">{t(lang, "worldboss.listLead")}</p>
+          <ul class="bossgrid">
+            {worldBosses().map((b) => <li><MonsterCard boss={b} lang={lang} href={bossHref(lang, b.id)} /></li>)}
+          </ul>
+        </section>
+      )}
+    </div>
+  </Base>
+) : wb ? (
+  <Base
+    lang={lang}
+    title={title}
+    description={t(lang, "og.worldBoss", { name: title, level: wb.level })}
+    section="bestiary"
+    search={{ type: "monster", meta: { title, line: `${t(lang, "worldboss.rank")} · ${t(lang, "level", { level: wb.level })} · ${name(wbMap?.name, lang)}` } }}
+    og={{ image: `/img/og/${lang}/boss/${wb.id}.jpg`, alt: title }}
+  >
+    <div class="page" data-boss-page>
+      <Crumbs items={[...crumbsBase, { label: t(lang, "boss.crumb"), href: sectionHref(lang, "bosses") }, { label: title }]} />
+      <div class="header"><BossHeader boss={wb} lang={lang} notes={notes} heading="h1" /></div>
+
+      <div class="lower">
+        <div class="main">
+          <section>
+            <SectionTitle>{t(lang, "boss.stats")}</SectionTitle>
+            <dl class="cells">
+              <div><dt>{t(lang, "monster.stat.hp")}</dt><dd>{formatNumber(wb.stats.hp, lang)}</dd></div>
+              <div><dt>{t(lang, "boss.attack")}</dt><dd>{range(wb.stats.dmgMin, wb.stats.dmgMax)}</dd></div>
+              <div><dt>{t(lang, "monster.stat.armor")}</dt><dd>{formatNumber(wb.stats.armor, lang)}</dd></div>
+              <div><dt>{t(lang, "monster.stat.mres")}</dt><dd>{formatNumber(wb.stats.mres, lang)}</dd></div>
+              <div><dt>{t(lang, "worldboss.players")}</dt><dd>{range(wb.players[0], wb.players[wb.players.length - 1])}</dd></div>
+              <div><dt>{t(lang, "monster.stat.time")}</dt><dd>{formatDuration(wb.timeLimit, lang)}</dd></div>
+            </dl>
+            <p class="note">{t(lang, "monster.dmgNote")} {t(lang, "worldboss.noScaling")}</p>
+          </section>
+
+          <section>
+            <SectionTitle>{t(lang, "worldboss.reward")}</SectionTitle>
+            <p>{t(lang, "worldboss.rewardWho", { level: wb.minLevel, pct: formatNumber(wb.sharePct, lang), n: formatNumber(wb.shareMonsters, lang) })}</p>
+            <p>{t(lang, "worldboss.rewardWhat", { exp: wb.reward.expKills, gold: wb.reward.goldKills })}</p>
+            <table class="vw-table">
+              <caption class="vw-sr">{t(lang, "worldboss.reward")}</caption>
+              <thead><tr><th scope="col"><span class="vw-sr">{t(lang, "renders.title")}</span></th><th scope="col">{t(lang, "loot.col.item")}</th><th scope="col">{t(lang, "loot.amount", { range: "" }).trim()}</th><th scope="col" style="text-align: right">{t(lang, "loot.col.chance")}</th></tr></thead>
+              <tbody>
+                {wb.reward.materials.map((m) => {
+                  const item = getItem(m.id);
+                  const rar = item?.rarities[item.rarities.length - 1] ?? "common";
+                  const ih = itemHref(lang, m.id);
+                  return (
+                    <tr>
+                      <td class="icon"><ItemIcon glyph={item?.glyph ?? "◆"} color={item?.color ?? "#9DA3AB"} rarity={rar} size={36} src={iconFor(m.id)} /></td>
+                      <td class="strong">{ih ? <a href={ih} style={`color: var(--vw-r-${rar}-text)`}>{name(item?.name, lang)}</a> : <span style={`color: var(--vw-r-${rar}-text)`}>{name(item?.name, lang)}</span>}</td>
+                      <td>{range(m.min, m.max)}</td>
+                      <td class="chance">{pct(m.chance)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <h3 class="vw-h3">{t(lang, "worldboss.itemTitle")}</h3>
+            <p>{t(lang, wb.reward.itemBound ? "worldboss.itemBound" : "worldboss.itemFree")} {t(lang, "worldboss.factorText", { lo: formatNumber(wb.reward.factorLo, lang), hi: formatNumber(wb.reward.factorHi, lang) })}</p>
+            <div class="vw-scroll" tabindex="0">
+              <table class="vw-table vw-table--plain">
+                <caption class="vw-sr">{t(lang, "worldboss.itemTitle")}</caption>
+                <thead><tr><th scope="col">{t(lang, "worldboss.factor")}</th>{wbRarityKeys.map((k) => <th scope="col" style="text-align: right"><span style={`color: var(--vw-r-${k}-text)`}>{rarityName(k)}</span></th>)}</tr></thead>
+                <tbody>
+                  {wb.reward.rarities.map((row) => (
+                    <tr>
+                      <th scope="row" class="rowhead">{factorLabel(row.factor)} · ×{formatNumber(row.factor, lang)}</th>
+                      {wbRarityKeys.map((k) => <td style="text-align: right" class="strong">{pct(row.shares[k] ?? 0)}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section>
+            <SectionTitle>{t(lang, "worldboss.named")}</SectionTitle>
+            <p>{t(lang, "worldboss.namedText", { chance: pct(wb.reward.named.chance), step: pct(wb.reward.named.step), pity: wb.reward.named.pityAt, avg: formatNumber(wb.reward.named.expectedFights, lang) })}</p>
+            {wbClasses.map((c) => (
+              <>
+                <h3 class="vw-h3">{name(classNames.get(c), lang) || c}</h3>
+                <div class="named">
+                  {wb.reward.named.items.filter((x) => x.class === c).map((x) => {
+                    const data = tooltipData(x.id, { lang });
+                    return data && <ItemTooltip data={data} href={itemHref(lang, x.id)} labels={{ bind }} />;
+                  })}
+                </div>
+              </>
+            ))}
+          </section>
+
+          <section>
+            <SectionTitle>{t(lang, "worldboss.absent")}</SectionTitle>
+            <p>{t(lang, "worldboss.absentText")}</p>
+          </section>
+        </div>
+
+        <aside class="side">
+          <section class="rules">
+            <h2 class="vw-label">{t(lang, "worldboss.when")}</h2>
+            <dl>
+              <div><dt>{t(lang, "worldboss.times")}</dt><dd>{wb.schedule.times.join(", ")} <span class="muted">— {t(lang, "worldboss.timesPl")}</span></dd></div>
+              <div><dt>{t(lang, "worldboss.utc")}</dt><dd>{t(lang, "worldboss.utcText", { winter: wb.schedule.utcWinter.join(", "), summer: wb.schedule.utcSummer.join(", ") })}</dd></div>
+              <div><dt>{t(lang, "worldboss.warn")}</dt><dd>{t(lang, "worldboss.warnText", { list: wb.schedule.warn.map((s) => formatNumber(Math.round(s / 60), lang)).join(", ") })}</dd></div>
+              <div><dt>{t(lang, "monster.stat.time")}</dt><dd>{t(lang, "worldboss.stayText", { time: formatDuration(wb.timeLimit, lang) })}</dd></div>
+              <div><dt>{t(lang, "worldboss.enrage")}</dt><dd>{t(lang, "boss.enrageText", { time: formatDuration(wb.enrageAfter, lang), mul: formatNumber(wb.enrageDamage, lang) })}</dd></div>
+              <div><dt>{t(lang, "worldboss.place")}</dt><dd>{name(wb.place.name, lang)} · {wbMap ? (placeHref(lang, wbMap.id) ? <a href={placeHref(lang, wbMap.id)!}>{name(wbMap.name, lang)}</a> : name(wbMap.name, lang)) : ""}</dd></div>
+              <div><dt>{t(lang, "worldboss.minLevel")}</dt><dd>{t(lang, "level", { level: wb.minLevel })} <span class="muted">— {t(lang, "worldboss.minLevelText")}</span></dd></div>
+              <div><dt>{t(lang, "worldboss.pvp")}</dt><dd>{t(lang, wb.pvpSafe ? "worldboss.pvpSafe" : "worldboss.pvpOn")}</dd></div>
+            </dl>
+            {wbMap && <MiniMap map={wbMap.id} lang={lang} size="md" highlight={{ point: { x: wb.place.x, z: wb.place.z } }} />}
+          </section>
+          {wb.summons.length > 0 && (
+            <section>
+              <h2 class="vw-label">{t(lang, "boss.summonsTitle")}</h2>
+              <p class="muted">{t(lang, "worldboss.summonsText")}</p>
+              <ul class="summons">
+                {[...new Map(wb.summons.map((s) => [s.monster, s])).values()].map((s) => {
+                  const m = getMonster(s.monster);
+                  return m && <li><MonsterCard monster={m} level={s.level} lang={lang} href={monsterHref(lang, m.id)} /></li>;
+                })}
+              </ul>
+            </section>
+          )}
+        </aside>
+      </div>
     </div>
   </Base>
 ) : boss && (
@@ -234,6 +377,9 @@ const pity = boss
   .rules dl { margin: 0 0 12px; padding: 14px 16px; background: var(--vw-panel); border: 1px solid var(--vw-border); display: flex; flex-direction: column; gap: 10px; }
   .rules dt { font-size: 13px; color: var(--vw-text-muted); }
   .rules dd { margin: 2px 0 0; font-weight: 700; }
+  .worldlist { margin-top: 48px; }
+  .lead.small { font-size: 16px; margin-bottom: 16px; }
+  .rowhead { text-align: left; font-weight: 700; }
   .summons { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
   @media (max-width: 1279px) { .bossgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cells { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
   @media (max-width: 1023px) { .lower { grid-template-columns: minmax(0, 1fr); } .pity { grid-template-columns: 1fr; } }

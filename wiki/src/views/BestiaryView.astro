@@ -14,7 +14,7 @@ import RankBadge from "../components/RankBadge.astro";
 import { href, type Lang } from "../i18n/routes";
 import { bestiaryEntries, maxLevel, regionTree } from "../lib/bestiary";
 import { levelBands, RANKS, sortEntries } from "../lib/bestiary-filters";
-import { getBoss, getItem, getMonster, load } from "../lib/data";
+import { getBoss, getItem, getMonster, getWorldBoss, load } from "../lib/data";
 import { iconFor } from "../lib/icons";
 import { pluralForm } from "../lib/format";
 import { name, t, type Key } from "../lib/i18n";
@@ -137,7 +137,7 @@ const placeText = (e: (typeof entries)[number]) => e.placeList[0]?.name ?? "";
           {entries.map((e, i) => (
             <li {...data(e)}>
               {e.rank === "boss" ? (
-                <MonsterCard boss={getBoss(e.id)} lang={lang} href={e.href} />
+                <MonsterCard boss={getBoss(e.id) ?? getWorldBoss(e.id)} lang={lang} href={e.href} />
               ) : (
                 <MonsterCard monster={getMonster(e.id)} variant={e.rank} lang={lang} href={e.href} eager={i < 2} />
               )}

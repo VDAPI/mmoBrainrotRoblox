@@ -22,6 +22,11 @@ local Families = require("../../src/shared/Data/Families")
 local Fish = require("../../src/shared/Data/Fish")
 local Guild = require("../../src/shared/Logic/Guild")
 local GuildSkills = require("../../src/shared/Data/GuildSkills")
+local GuildProgress = require("../../src/shared/Data/GuildProgress")
+local GuildBanners = require("../../src/shared/Data/GuildBanners")
+local GuildBank = require("../../src/shared/Logic/GuildBank")
+local Bestiary = require("../../src/shared/Data/Bestiary")
+local MapMarkers = require("../../src/shared/Logic/MapMarkers")
 local Auction = require("../../src/shared/Logic/Auction")
 local Market = require("../../src/shared/Data/Market")
 local GatherNodes = require("../../src/shared/Data/GatherNodes")
@@ -248,8 +253,47 @@ S.file(
 			maxLevel = "int",
 			rules = map("number"),
 			memberLimits = arr("int"),
-			ranks = arr(rec("GuildRankInfo", { id = "string", name = "name", can = map("bool") })),
+			-- S159g: `gold` / `items` = the default daily bank limits of the rank (the leader has none: -1)
+			ranks = arr(rec("GuildRankInfo", {
+				id = "string",
+				name = "name",
+				can = map("bool"),
+				["gold?"] = "int",
+				["items?"] = "int",
+			})),
 			actions = arr("string"),
+			-- WIKI-3 (S159g): guild level, guild EXP per activity, weekly goals, vault and banner
+			["progress?"] = rec("GuildProgressInfo", {
+				maxLevel = "int",
+				levels = arr(rec("GuildLevelRow", {
+					level = "int",
+					exp = "int", -- guild EXP from this level to the next (0 at the top)
+					total = "int", -- guild EXP from level 1 to this level
+					vault = "int", -- vault slots
+					skillLevel = "int", -- the highest guild skill level open
+					emblems = "int",
+					colours = "int",
+				})),
+				points = map("int"),
+				dailyCap = "int",
+				greyGap = "int",
+				goals = arr(rec("GuildGoalInfo", {
+					id = "string",
+					group = "string",
+					name = "name",
+					desc = "name", -- with the target of a guild of `goalMembers` members
+					exp = "int",
+				})),
+				goalMembers = "int",
+				goalGoldBase = "int",
+				goalGoldPerLevel = "int",
+				claimMin = "int",
+				rallyExp = "number",
+				rallyGold = "number",
+				logMax = "int",
+				emblems = arr(rec("GuildEmblemInfo", { id = "string", glyph = "string", level = "int" })),
+				colours = arr(rec("GuildColourInfo", { id = "string", name = "name", color = "color", level = "int" })),
+			}),
 		}),
 		market = rec("MarketInfo", {
 			auction = rec("AuctionRules", {
@@ -284,6 +328,34 @@ S.file(
 			chestMax = "name",
 			regions = arr("name"),
 		}),
+		-- WIKI-3 (S151c): the bestiary of the achievements window (tiers, points, what a tier shows, the family bonus,
+		-- the regions with their entries and titles)
+		bestiary = rec("BestiaryInfo", {
+			monsterTiers = arr("int"),
+			bossTiers = arr("int"),
+			monsterPoints = arr("int"),
+			bossPoints = arr("int"),
+			reveal = map("int"), -- what -> tier that shows it
+			familyPct = "number",
+			familyCap = "number",
+			regions = arr(rec("BestiaryRegion", {
+				id = "string",
+				map = "ref:maps",
+				monsters = "int",
+				bosses = "int",
+				points = "int", -- all tiers of every entry
+				["title?"] = "ref:titles",
+			})),
+		}),
+		-- WIKI-3 (map 2026-10-21): the symbol categories of the world map and the minimap (Logic/MapMarkers)
+		mapCategories = arr(rec("MapCategory", {
+			id = "string",
+			glyph = "string",
+			shape = "string",
+			color = "color",
+			name = "name",
+			live = "bool", -- a moving marker (party, own marks, quest target, world event)
+		})),
 	})
 )
 
@@ -302,6 +374,9 @@ S.file(
 				["tier?"] = "string",
 				["days?"] = "int",
 				["path?"] = "string",
+				-- WIKI-3: the achievement that gives the title (kind "achievement") with its goal
+				["name?"] = "name",
+				["desc?"] = "name",
 			}),
 		})),
 	})
@@ -714,7 +789,64 @@ function Basics.mechanics(ctx: any): any
 		dexRatingLevel = StatCalc.dexRatingLevel(),
 		potionInterval = Basics.potionInterval(),
 		worldEvents = if ctx.features.worldEvents then Basics.worldEvents() else nil,
+		bestiary = Basics.bestiary(ctx),
+		mapCategories = Basics.mapCategories(),
 	}
+end
+
+-- WIKI-3 (S151c): the in-game bestiary in general (Data/Bestiary); region titles only when published.
+function Basics.bestiary(ctx: any): any
+	local Achievements = (require :: any)("../../src/shared/Data/Achievements")
+	local regions = {}
+	for _, region in Bestiary.REGIONS do
+		local monsters, bosses, points = 0, 0, 0
+		for _, entry in Bestiary.forRegion(region) do
+			if entry.boss then
+				bosses += 1
+			else
+				monsters += 1
+			end
+			for _, p in entry.points do
+				points += p
+			end
+		end
+		local ach = Achievements.get(`bestiary_{region}`)
+		local title = ach and ach.reward and ach.reward.title
+		table.insert(regions, {
+			id = region,
+			map = region,
+			monsters = monsters,
+			bosses = bosses,
+			points = points,
+			title = if title and not ctx.hidden[title] then title else nil,
+		})
+	end
+	return {
+		monsterTiers = table.clone(Bestiary.TIERS.monster),
+		bossTiers = table.clone(Bestiary.TIERS.boss),
+		monsterPoints = table.clone(Bestiary.POINTS.monster),
+		bossPoints = table.clone(Bestiary.POINTS.boss),
+		reveal = table.clone(Bestiary.REVEAL),
+		familyPct = Bestiary.FAMILY_PCT,
+		familyCap = Bestiary.FAMILY_CAP,
+		regions = regions,
+	}
+end
+
+-- WIKI-3: the symbol categories of the world map in filter order (glyph, shape, colour, name).
+function Basics.mapCategories(): any
+	local out = {}
+	for _, c in MapMarkers.CATEGORIES do
+		table.insert(out, {
+			id = c.id,
+			glyph = c.glyph,
+			shape = c.shape,
+			color = (UiPalette.map :: any)[c.color], -- hex text
+			name = Names.of(`worldmap.cat.{c.id}`),
+			live = c.overlay == true,
+		})
+	end
+	return out
 end
 
 -- S101: world events in general, explicitly picked fields of Data/WorldEvents (never the whole module: no reward
@@ -759,7 +891,20 @@ function Basics.worldEvents(): any
 	}
 end
 
-Basics.GUILD_ACTIONS = { "deposit", "invite", "kick", "motd", "upgrade", "promote", "settings", "transfer", "disband" }
+Basics.GUILD_ACTIONS = {
+	"deposit",
+	"invite",
+	"kick",
+	"motd",
+	"upgrade",
+	"promote",
+	"withdrawGold", -- S159g
+	"putItem", -- S159g
+	"takeItem", -- S159g
+	"settings",
+	"transfer",
+	"disband",
+}
 
 -- Guild skills with their effect and cost on every level, rules, member limits and rank permissions (S43).
 function Basics.guild(): any
@@ -797,7 +942,14 @@ function Basics.guild(): any
 		for _, action in Basics.GUILD_ACTIONS do
 			can[action] = Guild.can(rank, action :: any)
 		end
-		table.insert(ranks, { id = rank, name = Names.of(`guild.rank.{rank}`), can = can })
+		local defaults = (GuildProgress.RANK_DEFAULTS :: any)[rank]
+		table.insert(ranks, {
+			id = rank,
+			name = Names.of(`guild.rank.{rank}`),
+			can = can,
+			gold = if rank == "leader" then -1 elseif defaults then defaults.gold else nil,
+			items = if rank == "leader" then -1 elseif defaults then defaults.items else nil,
+		})
 	end
 	return {
 		skills = skills,
@@ -806,6 +958,86 @@ function Basics.guild(): any
 		memberLimits = limits,
 		ranks = ranks,
 		actions = table.clone(Basics.GUILD_ACTIONS),
+		progress = Basics.guildProgress(),
+	}
+end
+
+-- WIKI-3 (S159g): a goal's text for a guild of this many members (Logic/GuildProgress rounds the same way).
+Basics.GUILD_GOAL_MEMBERS = 10
+
+-- WIKI-3 (S159g): the guild level table, EXP per activity, the weekly goals, the vault and the banner. The Dragon
+-- Shards of a goal never leave (S131: no shard amounts on the wiki).
+function Basics.guildProgress(): any
+	local R = GuildProgress.Rules
+	local levels = {}
+	local total = 0
+	for level = 1, GuildProgress.MAX_LEVEL do
+		local skillLevel = 0
+		for n = 1, GuildSkills.MAX_LEVEL do
+			if Guild.skillUnlock(n) <= level then
+				skillLevel = n
+			end
+		end
+		local emblems, colours = 0, 0
+		for _, e in GuildBanners.EMBLEMS do
+			if e.level <= level then
+				emblems += 1
+			end
+		end
+		for _, c in GuildBanners.COLOURS do
+			if c.level <= level then
+				colours += 1
+			end
+		end
+		local exp = GuildProgress.LEVEL_EXP[level] or 0
+		table.insert(levels, {
+			level = level,
+			exp = exp,
+			total = total,
+			vault = GuildBank.vaultSize({ exp = total }),
+			skillLevel = skillLevel,
+			emblems = emblems,
+			colours = colours,
+		})
+		total += exp
+	end
+	local goals = {}
+	local members = Basics.GUILD_GOAL_MEMBERS
+	for _, g in GuildProgress.GOALS do
+		local target = math.max(g.min, g.perMember * members)
+		target = math.ceil(target / g.step) * g.step
+		table.insert(goals, {
+			id = g.id,
+			group = g.group,
+			name = Names.of(g.nameKey),
+			desc = Names.of(g.descKey, { n = target }),
+			exp = g.exp,
+		})
+	end
+	local emblems = {}
+	for _, e in GuildBanners.EMBLEMS do
+		table.insert(emblems, { id = e.id, glyph = e.glyph, level = e.level })
+	end
+	local colours = {}
+	for _, c in GuildBanners.COLOURS do
+		table.insert(colours, { id = c.id, name = Names.of(c.nameKey), color = c.hex, level = c.level })
+	end
+	return {
+		maxLevel = GuildProgress.MAX_LEVEL,
+		levels = levels,
+		points = table.clone(GuildProgress.POINTS),
+		dailyCap = R.dailyCap,
+		greyGap = R.greyGap,
+		goals = goals,
+		goalMembers = members,
+		goalGoldBase = R.goalGoldBase,
+		goalGoldPerLevel = R.goalGoldPerLevel,
+		claimMin = R.claimMin,
+		rallyExp = R.rallyExp,
+		rallyGold = R.rallyGold,
+		logMax = R.logMax,
+		emblems = emblems,
+		colours = colours,
 	}
 end
 
@@ -965,6 +1197,17 @@ function Basics.titles(ctx: any): any
 				days = if r.kind == "timed" then days[t.id] else nil,
 				path = if r.kind == "mainPath" and type(r.path) == "string" then r.path else nil,
 			}
+			-- WIKI-3: an achievement title names its achievement and what it asks (Data/Achievements, goal from
+			-- Logic/Achievements.goalOf)
+			if r.kind == "achievement" and type(r.id) == "string" then
+				local AchData = (require :: any)("../../src/shared/Data/Achievements")
+				local AchLogic = (require :: any)("../../src/shared/Logic/Achievements")
+				local ach = AchData.get(r.id)
+				if ach then
+					req.name = Names.of(`ach.{ach.id}.name`)
+					req.desc = Names.of(`ach.{ach.id}.desc`, { goal = AchLogic.goalOf(ach) })
+				end
+			end
 			-- an arena season title carries the season in game ("{season}"): the wiki shows its plain name (S128)
 			local name = if (t :: any).seasonArg then Names.of(`{t.nameKey}.plain`) else Names.of(t.nameKey)
 			table.insert(list, { id = t.id, name = name, color = t.color, req = req })
