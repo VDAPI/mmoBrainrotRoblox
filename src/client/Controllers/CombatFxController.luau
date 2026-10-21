@@ -63,6 +63,7 @@ local GroundTelegraph = require(script.Parent.Parent.Vfx.GroundTelegraph)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
 local Textures = require(script.Parent.Parent.Vfx.Textures)
+local WkFx = require(script.Parent.Parent.Vfx.WkFx)
 
 -- S136: colours of the 3D effects (world, not interface): the old gold and magic blue of the legacy UI palette.
 local WORLD_GOLD_BRIGHT = Color3.fromHex("#E8C25A")
@@ -1015,10 +1016,14 @@ local function attackFx(
 			dust(target)
 			if not lowQuality() then
 				Library.smokePuff(centre(target), HitFx.puffSize, DUST_TINT)
+				-- walka-wk: a heavy head knocks a few chips out of the ground
+				WkFx.chips(centre(target), if weaponType == "hammer2h" then 4 else 2)
 			end
 		end
 		if weaponType and HOLY[weaponType] then
 			holyFlash(target)
+			-- walka-wk: a small ring of light facing the Cleric
+			WkFx.holyTap(centre(target), centre(attacker), lowQuality())
 		end
 	end
 	local timing, clipped = AnimationController.Attack(attacker, weaponType, nil, onHit, step)
@@ -1087,7 +1092,8 @@ local function hitSparks(model: Model, from: Vector3?, material: string, crit: b
 		gravity = spark.gravity,
 	})
 	if crit then
-		Library.impactFlash(at, HitFx.flashSize * HitFx.crit.flashScale, WORLD_GOLD_BRIGHT, { simple = simple })
+		-- walka-wk: the critical star with radial streaks and a ring facing the attacker (Vfx/WkFx.crit)
+		WkFx.crit(at, from, WORLD_GOLD_BRIGHT, simple)
 	elseif spark.flash then
 		Library.impactFlash(at, HitFx.flashSize, Color3.new(1, 1, 1), { simple = simple })
 	end
@@ -1718,6 +1724,11 @@ local function onDamage(event: { [string]: any })
 		end
 		if not sparked then
 			impact(model, event.c == true)
+		end
+		-- walka-wk: a critical basic blow freezes both bodies a moment (the "Hit feel" option scales it)
+		if event.sk == nil and event.c == true and attacker and near then
+			AnimationController.Hitstop(attacker, HitFx.crit.hitstop)
+			AnimationController.Hitstop(model, HitFx.crit.hitstop)
 		end
 		AnimationController.MonsterHit(model, from)
 		if model:GetAttribute("MonsterId") == nil then

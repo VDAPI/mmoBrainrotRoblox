@@ -81,6 +81,7 @@ export type Info = {
 	road: number, -- distance past the road edge (negative on the road)
 	roadMat: string, -- terrain material of that road
 	ramp: boolean,
+	rampD: number, -- distance past the nearest ramp's edge (negative on it)
 	stream: number, -- index of the nearest stream (0: none)
 	streamD: number, -- distance past the water edge of that stream
 	streamW: number, -- its water level
@@ -1712,6 +1713,7 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 			road = rd - rhalf,
 			roadMat = if rli > 0 then roadMats[rli] else "Ground",
 			ramp = pd < phalf + 0.5,
+			rampD = pd - phalf,
 			stream = sIndex,
 			streamD = sd - shalf,
 			streamW = sw,
@@ -1889,7 +1891,7 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 	-- Surface material (first match wins): water beds, ramps, roads (their own material), stream banks and lake
 	-- shores, painted patches, then the shape's material rules. S46: lava, crack bottoms and lava banks come before
 	-- the roads, dry lake floors and mesa / spire caps after them.
-	function T.materialAt(x: number, z: number, h: number, slope: number, info: Info): string
+	local function surfaceAt(x: number, z: number, h: number, slope: number, info: Info): string
 		local n = fbm(x, z, 21, SEED + 20, 2)
 		local water = waterOf(h, info)
 		if water then
@@ -2043,6 +2045,11 @@ function RegionTerrain.new(shape: ShapeTypes.Shape, areas: AreaTypes.MapAreas): 
 			return rule.mat
 		end
 		return FALLBACK
+	end
+
+	-- No decoration grass beside the roads and ramps (TerrainLayers.PATH_CLEAR), whatever the shape's rules paint.
+	function T.materialAt(x: number, z: number, h: number, slope: number, info: Info): string
+		return TerrainLayers.clearPaths(surfaceAt(x, z, h, slope, info), info.road, info.rampD)
 	end
 
 	function T.material(x: number, z: number): string

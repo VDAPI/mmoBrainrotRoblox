@@ -136,3 +136,26 @@ describe("Graphics levels (W01)", function()
 		expect(c.topPitch > 0 and c.topPitch < 90 and c.underPitch > 0 and c.underPitch <= c.topPitch).toBe(true)
 	end)
 end)
+
+describe("Map terrain colours", function()
+	it("colours every terrain material and lets a map override known ones", function()
+		for name, color in MapLooks.TERRAIN_COLORS do
+			expect(`{name} {hex(color)}`).toBe(`{name} true`)
+		end
+		for id in Maps.byId do
+			local own: { [string]: string } = MapLooks.of(id).terrainColors or {}
+			for name, color in own do
+				local known = MapLooks.TERRAIN_COLORS[name] ~= nil and hex(color)
+				expect(`{id} {name} {known}`).toBe(`{id} {name} true`)
+			end
+		end
+	end)
+
+	it("tints the city's LeafyGrass lawns like the grass and keeps the defaults elsewhere", function()
+		local city = MapLooks.terrainColorsOf("city")
+		expect(city.LeafyGrass).toBe(MapLooks.TERRAIN_COLORS.Grass)
+		local meadows = MapLooks.terrainColorsOf("meadows")
+		expect(meadows.LeafyGrass).toBe(MapLooks.TERRAIN_COLORS.LeafyGrass)
+		expect(meadows.Grass).toBe(MapLooks.TERRAIN_COLORS.Grass)
+	end)
+end)

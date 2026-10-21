@@ -208,6 +208,15 @@ local function applyMaterials(look: MapLooks.Look)
 	end
 end
 
+-- The map's terrain colours (Data/MapLooks `terrainColors` over TERRAIN_COLORS), e.g. the city's grass-green lawns.
+local function applyTerrainColors(mapId: string)
+	for name, color in MapLooks.terrainColorsOf(mapId) do
+		pcall(function()
+			Workspace.Terrain:SetMaterialColor((Enum.Material :: any)[name], Color3.fromHex(color))
+		end)
+	end
+end
+
 -- W01: bloom, sun rays, far blur and clouds of a map at the current graphics level, tweened over `seconds`.
 local function applyPost(map: Maps.MapDef, seconds: number, clock: number?)
 	local look = MapLooks.of(map.id)
@@ -248,6 +257,7 @@ local function applyPost(map: Maps.MapDef, seconds: number, clock: number?)
 	end
 	applySky(look, hour)
 	applyMaterials(look)
+	applyTerrainColors(map.id)
 end
 
 -- Light modulation of the current area (S26, AmbienceController): fog distance / colour, tint, saturation,
