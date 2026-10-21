@@ -4171,6 +4171,11 @@ return {
 	-- S68: item details panel, comparison in %, details key
 	["tooltip.detailsHint.mouse"] = "Hold {key} and point at a line for details",
 	["tooltip.detailsHint.touch"] = "Tap a line or the „i” icon for details",
+	-- 2026-10-21: short descriptions, details behind "i", "More" and the details key (InfoTip, Details, Tooltip)
+	["ui.details.more"] = "More ▸",
+	["ui.details.less"] = "Less ▾",
+	["tooltip.more.mouse"] = "{key}: details",
+	["tooltip.more.touch"] = "Hold longer: details",
 	["tooltip.detail.statAdd"] = "Adds {v} to „{stat}” (Backpack window)",
 	["tooltip.detail.statPct"] = "Raises „{stat}” by {v}%",
 	["tooltip.detail.range"] = "Range on this item: {min}–{max} (quality {q}%)",
@@ -4186,7 +4191,7 @@ return {
 	["tooltip.detail.traitPower"] = "Trait power: ×{power} (rarity and upgrade)",
 	["tooltip.detail.quiverMain"] = "With „{weapon}”: +{v}%",
 	["tooltip.detail.nodes"] = "Strengthened by nodes: {list}",
-	["keys.itemDetails"] = "Item details (hold)",
+	["keys.itemDetails"] = "Tooltip details (hold)",
 	["admin.tooltip.detail"] = "[{role}] {title}: {text}",
 
 	-- S68: what each item line does (tooltip details)

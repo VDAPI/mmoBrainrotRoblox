@@ -4169,6 +4169,11 @@ return {
 	-- S68: item details panel, comparison in %, details key
 	["tooltip.detailsHint.mouse"] = "Przytrzymaj {key} i wskaż linię: szczegóły",
 	["tooltip.detailsHint.touch"] = "Dotknij linii albo ikony „i”: szczegóły",
+	-- 2026-10-21: short descriptions, details behind "i", "Więcej" and the details key (InfoTip, Details, Tooltip)
+	["ui.details.more"] = "Więcej ▸",
+	["ui.details.less"] = "Mniej ▾",
+	["tooltip.more.mouse"] = "{key}: szczegóły",
+	["tooltip.more.touch"] = "Przytrzymaj dłużej: szczegóły",
 	["tooltip.detail.statAdd"] = "Dodaje {v} do statystyki „{stat}” (okno plecaka)",
 	["tooltip.detail.statPct"] = "Zwiększa „{stat}” o {v}%",
 	["tooltip.detail.range"] = "Zakres na tym przedmiocie: {min}–{max} (jakość {q}%)",
@@ -4184,7 +4189,7 @@ return {
 	["tooltip.detail.traitPower"] = "Siła cechy: ×{power} (rzadkość i ulepszenie)",
 	["tooltip.detail.quiverMain"] = "Z bronią „{weapon}”: +{v}%",
 	["tooltip.detail.nodes"] = "Wzmacniają ją węzły: {list}",
-	["keys.itemDetails"] = "Szczegóły opisu przedmiotu (przytrzymaj)",
+	["keys.itemDetails"] = "Szczegóły opisów (przytrzymaj)",
 	["admin.tooltip.detail"] = "[{role}] {title}: {text}",
 
 	-- S68: what each item line does (tooltip details)
