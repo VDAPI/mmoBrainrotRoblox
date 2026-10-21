@@ -9,9 +9,11 @@ local Config = require("../src/shared/Config")
 local Contrast = require("../src/shared/Logic/Contrast")
 local HazardPatterns = require("../src/shared/Data/HazardPatterns")
 local Hazards = require("../src/shared/Logic/Hazards")
+local MapLooks = require("../src/shared/Data/MapLooks")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 local T = require("./Test")
 local Telegraph = require("../src/shared/Logic/Telegraph")
+local fs = require("@lune/fs")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 
@@ -200,6 +202,135 @@ T.describe("Boss telegraph visibility (S160)", function()
 		end
 		T.expect(Telegraph.chase(w + 1, w, CFG.chaseSpeed)).toBeNear(last, 1e-9)
 		T.expect(Telegraph.chase(w, w, CFG.chaseSpeed)).toBeNear(CFG.chaseSpeed * 1.5 * w, 1e-9)
+	end)
+end)
+
+-- Studio review 2026-10-21 (Hrimvald's stomp ring "white dashes" weak on snow, Vaelgrath's mark pale pink on ice,
+-- Azgor's meteor orange on lava): the telegraph's colours follow the ground under it (Logic/BossCast.onGround,
+-- Vfx/Library.groundColor in GroundTelegraph and HazardFx).
+local G = CFG.ground
+-- every terrain colour of the maps (Data/MapLooks) and the grounds above
+local ALL_GROUNDS = table.clone(GROUNDS)
+for _, hex in MapLooks.TERRAIN_COLORS do
+	table.insert(ALL_GROUNDS, hex)
+end
+
+local function hue(hex: string): (number, number)
+	local r, g, b = Contrast.rgb(hex)
+	local hi, lo = math.max(r, g, b), math.min(r, g, b)
+	local d = hi - lo
+	if d == 0 then
+		return 0, 0
+	end
+	local h
+	if hi == r then
+		h = ((g - b) / d) % 6
+	elseif hi == g then
+		h = (b - r) / d + 2
+	else
+		h = (r - g) / d + 4
+	end
+	return h / 6, d / hi
+end
+
+local function hueGap(a: string, b: string): number
+	local d = math.abs(hue(a) - hue(b)) % 1
+	return math.min(d, 1 - d)
+end
+
+T.describe("Telegraph colours on their ground (studio review 2026-10-21)", function()
+	T.it("on a light ground (snow, ice, sand) the rim itself stands out and keeps its hue", function()
+		local seen = 0
+		for _, hex in TELE_COLORS do
+			for _, ground in ALL_GROUNDS do
+				if Contrast.luminance(ground) >= G.light then
+					local style = BossCast.onGround(hex, ground)
+					T.expect({ hex, ground, Contrast.contrast(style.rim, ground) >= G.rimMin }).toEqual({
+						hex,
+						ground,
+						true,
+					})
+					T.expect({ hex, ground, hueGap(style.rim, BossCast.vivid(hex)) <= 0.02 }).toEqual({
+						hex,
+						ground,
+						true,
+					})
+					seen += 1
+				end
+			end
+		end
+		T.expect(seen > 40).toBe(true)
+	end)
+
+	T.it("on every ground the rim or the dark under-rim stands out, and a deep or white-hot rim gains", function()
+		for _, hex in TELE_COLORS do
+			local vivid = BossCast.vivid(hex)
+			for _, ground in ALL_GROUNDS do
+				local style = BossCast.onGround(hex, ground)
+				local best = math.max(Contrast.contrast(style.rim, ground), Contrast.contrast(style.under, ground))
+				T.expect({ hex, ground, best >= 3 }).toEqual({ hex, ground, true })
+				T.expect({ hex, ground, style.underScale >= 1 }).toEqual({ hex, ground, true })
+				if style.kind == "plain" then
+					T.expect(style.rim).toBe(vivid)
+				else
+					-- never weaker than the vivid rim, and the dark under-rim widens with it
+					local gain = Contrast.contrast(style.rim, ground) > Contrast.contrast(vivid, ground)
+					T.expect({ hex, ground, gain, style.underScale > 1 }).toEqual({ hex, ground, true, true })
+				end
+			end
+		end
+		-- without a ground (nothing under the area) the S160 rim stays
+		T.expect(BossCast.onGround("#FF7A1A", nil).rim).toBe(BossCast.vivid("#FF7A1A"))
+		-- on dark rock the vivid rim already stands out: unchanged
+		T.expect(BossCast.onGround("#FF7A1A", MapLooks.TERRAIN_COLORS.Basalt).kind).toBe("plain")
+	end)
+
+	T.it("Hrimvald's stomp ring and ice spikes, Vaelgrath's mark: deep on snow and ice", function()
+		local T_ = MapLooks.TERRAIN_COLORS
+		local cases = {
+			{ (HazardPatterns.get("hv_stompRing") :: any).color, T_.Snow },
+			{ (HazardPatterns.get("hv_stompRing") :: any).color, T_.Ice },
+			{ (HazardPatterns.get("hv_spikeWave") :: any).color, T_.Snow },
+			{ (HazardPatterns.get("hv_spikeWave") :: any).color, T_.Glacier },
+			{ CFG.mechanicColors.mark, T_.Ice },
+			{ CFG.mechanicColors.mark, T_.Snow },
+		}
+		for _, case in cases do
+			local style = BossCast.onGround(case[1], case[2])
+			T.expect({ case[1], case[2], style.kind }).toEqual({ case[1], case[2], "deep" })
+			T.expect(Contrast.contrast(style.rim, case[2]) >= G.rimMin + 0.4).toBe(true)
+			T.expect(Contrast.contrast(style.front, case[2]) >= G.rimMin).toBe(true)
+		end
+		-- the ring's glowing band was the pattern's colour whitened: pale dashes on white (owner's screenshot)
+		local before = Contrast.mix(BossCast.vivid((HazardPatterns.get("hv_stompRing") :: any).color), "#FFFFFF", 0.2)
+		T.expect(Contrast.contrast(before, T_.Snow) < 2).toBe(true)
+	end)
+
+	T.it("Azgor's fire on lava turns white-hot over a wider dark under-rim", function()
+		local lava = MapLooks.TERRAIN_COLORS.CrackedLava
+		for _, id in { "az_meteor", "az_fireballs", "az_flameWall", "az_magma" } do
+			local color = (HazardPatterns.get(id) :: any).color
+			local style = BossCast.onGround(color, lava)
+			T.expect({ id, style.kind }).toEqual({ id, "hot" })
+			T.expect({ id, Contrast.contrast(style.rim, lava) >= G.rimMin }).toEqual({ id, true })
+			T.expect(Contrast.luminance(style.rim) > Contrast.luminance(BossCast.vivid(color))).toBe(true)
+			T.expect(style.underScale).toBe(G.underHot)
+		end
+	end)
+
+	T.it("the client draws them on the ground it finds (GroundTelegraph, HazardFx)", function()
+		local tele = fs.readFile("src/client/Vfx/GroundTelegraph.luau")
+		T.expect(string.find(tele, "BossCast.onGround(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(tele, "Library.groundColor(spec.area.Position)", 1, true) ~= nil).toBe(true)
+		local fx = fs.readFile("src/client/Vfx/HazardFx.luau")
+		T.expect(string.find(fx, "BossCast.onGround(pattern.color, Library.groundColor(at))", 1, true) ~= nil)
+			.toBe(true)
+		-- the stomp ring's blocks and band, the lanes, the walls and the ice spikes take the ground's colour
+		local _, uses = string.gsub(fx, "live%.mark", "")
+		T.expect(uses >= 6).toBe(true)
+		T.expect(string.find(fx, "if live.deep then live.mark else", 1, true) ~= nil).toBe(true)
+		local lib = fs.readFile("src/client/Vfx/Library.luau")
+		T.expect(string.find(lib, "GetMaterialColor(hit.Material)", 1, true) ~= nil).toBe(true)
 	end)
 end)
 

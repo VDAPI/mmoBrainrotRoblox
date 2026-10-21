@@ -473,6 +473,23 @@ local Config = {
 		lethalColor = "#8B0A1E",
 		pulseLethal = 0.07,
 		underColor = "#140C0A", -- S160: the dark under-rim
+		-- Studio review 2026-10-21 (Hrimvald's stomp ring and Vaelgrath's mark pale on snow, Azgor's meteor orange on
+		-- lava): the colours follow the ground under the telegraph (Logic/BossCast.onGround). Where the vivid rim
+		-- stands out less than `rimMin` against it: on a light ground (luminance at least `light`: snow, ice, sand)
+		-- the rim, the front and the area turn deep (the same hue towards black, at most `deepMax`) and the dark
+		-- under-rim widens by `underLight`; on a ground of the rim's own hue (within `sameHue` of a turn, saturation
+		-- at least `sameSat`: lava under fire), and on a mid-dark one the dark under-rim does not mark either (grey
+		-- rock), the rim turns white-hot (towards white, at most `hotMax`) and the under-rim widens by `underHot`
+		ground = {
+			rimMin = 3,
+			light = 0.35,
+			deepMax = 0.85,
+			sameHue = 0.1,
+			sameSat = 0.35,
+			hotMax = 0.8,
+			underLight = 1.8,
+			underHot = 1.5,
+		},
 	},
 	-- S160 (owner 2026-10-21): the cast bar over a boss or an Elite II with the ability's name (Vfx/BossCastBar,
 	-- Logic/BossCast), the warning banner of a big attack for players within bannerRange studs (one per bannerGap s),
@@ -697,6 +714,12 @@ local Config = {
 		freezeWait = 12, -- seconds AnimLabCall waits for a freeze before it answers
 		settle = 2, -- seconds a replay waits at most for the effects of the previous one to end
 		castWindup = 1.2, -- seconds of the windup of `mob <id> cast` (AnimationController: windup > 1 is a cast)
+		-- Studio review 2026-10-21: with a look on the stage the cameras frame it, the actor and the cast bar (studs
+		-- over the look's top, Vfx/BossCastBar sits above its name plate) with this much room; floor under a look
+		-- that pokes out of the stage reaches this far past it
+		frameMargin = 1.1,
+		castBarAbove = 5,
+		floorPast = 4,
 		comboGap = 0.6, -- S113: seconds between the steps of `attack <type> combo` (inside AttackMotions.COMBO_WINDOW)
 		hitShow = 0.6, -- S113: seconds a `hit` / `flinch` motion lasts (freeze, loop, keys)
 		stressRadius = 10, -- studs: the circle of the stress mannequins around the actor

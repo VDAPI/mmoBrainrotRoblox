@@ -13,6 +13,10 @@
 --   barSeconds(windup)                    how long the cast bar fills (at least MIN_BAR, the shortest fair warning)
 --   vivid(hex)                            the rim's colour: saturated and bright, a deep red / blue lifted towards
 --                                         white to Config.BossCast.minLuminance (white and greys keep their hue)
+--   onGround(hex, ground?)                studio review 2026-10-21: the telegraph's colours on the ground under it
+--                                         (Config.Telegraph.ground): the vivid rim where it stands out, else deep on
+--                                         light ground (snow, ice, sand) and white-hot on a ground of its own hue
+--                                         (lava) or one the dark under-rim hardly marks, with a wider dark under-rim
 
 local Config = require("../Config")
 local Contrast = require("./Contrast")
@@ -20,6 +24,17 @@ local Contrast = require("./Contrast")
 local BossCast = {}
 
 BossCast.MIN_BAR = 0.6 -- seconds: the shortest cast bar (= Logic/Hazards.MIN_WARN, the shortest warning)
+
+-- The colours of a telegraph on its ground (hex strings): the rim and its moving front, the faint area, the dark
+-- under-rim and how much wider than Config.Telegraph.underRim it is; `kind` says which rule chose them.
+export type Style = {
+	kind: "plain" | "deep" | "hot",
+	rim: string,
+	front: string,
+	area: string,
+	under: string,
+	underScale: number,
+}
 
 export type Info = {
 	mechanic: string?, -- "avoid" | "split" | "mark" | "channel" | nil
@@ -132,6 +147,70 @@ function BossCast.vivid(hex: string): string
 		out = Contrast.mix(Contrast.hexOf(nr, ng, nb), "#FFFFFF", step / 20)
 	end
 	return out
+end
+
+-- Hue distance on the colour wheel (0..0.5 of a turn).
+local function hueGap(a: number, b: number): number
+	local d = math.abs(a - b) % 1
+	return math.min(d, 1 - d)
+end
+
+-- `hex` mixed towards `towards` in 5 % steps (at most `most`) until it stands out `min` against `ground`.
+local function pushed(hex: string, ground: string, towards: string, min: number, most: number): string
+	local out = hex
+	for step = 1, 20 do
+		if Contrast.contrast(out, ground) >= min or step / 20 > most + 1e-9 then
+			break
+		end
+		out = Contrast.mix(hex, towards, step / 20)
+	end
+	return out
+end
+
+function BossCast.onGround(hex: string, ground: string?): Style
+	local cfg = Config.Telegraph
+	local g = cfg.ground
+	local rim = BossCast.vivid(hex)
+	local plain: Style = {
+		kind = "plain",
+		rim = rim,
+		front = Contrast.mix(rim, "#FFFFFF", 0.55),
+		area = string.upper(hex),
+		under = cfg.underColor,
+		underScale = 1,
+	}
+	if not ground or Contrast.contrast(rim, ground) >= g.rimMin then
+		return plain
+	end
+	if Contrast.luminance(ground) >= g.light then
+		-- snow, ice, sand: the same hue, deep, so the rim itself stands out (not only the dark under-rim)
+		local deep = pushed(rim, ground, "#000000", g.rimMin + 0.5, g.deepMax)
+		return {
+			kind = "deep",
+			rim = deep,
+			front = Contrast.mix(deep, "#000000", 0.3),
+			area = deep,
+			under = cfg.underColor,
+			underScale = g.underLight,
+		}
+	end
+	local rh, rs = hsv(Contrast.rgb(rim))
+	local gh, gs = hsv(Contrast.rgb(ground))
+	local sameHue = rs >= g.sameSat and gs >= g.sameSat and hueGap(rh, gh) <= g.sameHue
+	if sameHue or Contrast.contrast(cfg.underColor, ground) < g.rimMin then
+		-- lava under fire, grass under poison, and a mid-dark rock the dark under-rim hardly marks: a white-hot rim
+		-- over a wider dark under-rim
+		local hot = pushed(rim, ground, "#FFFFFF", g.rimMin, g.hotMax)
+		return {
+			kind = "hot",
+			rim = hot,
+			front = Contrast.mix(hot, "#FFFFFF", 0.6),
+			area = string.upper(hex),
+			under = cfg.underColor,
+			underScale = g.underHot,
+		}
+	end
+	return plain
 end
 
 return BossCast

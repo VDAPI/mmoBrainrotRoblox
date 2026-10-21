@@ -25,6 +25,7 @@ local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
+local BasicBlow = require(Shared.Logic.BasicBlow)
 local BossMechanics = require(Shared.Logic.BossMechanics)
 local Combat = require(Shared.Data.Combat)
 local Leash = require(Shared.Logic.Leash)
@@ -744,7 +745,7 @@ local function throwAt(self: Monster, now: number, target: Player, targetPositio
 	local multiplier = MonsterCast.throwMul(throw, self.stats.level, self.ctx.playerLevel(target))
 	local params = { kind = self.stats.damageKind, multiplier = multiplier, element = self.def.element }
 	local wind = self.ctx.attackWind
-	local seconds = Combat.basicWind.throw
+	local seconds = BasicBlow.throwWind(self.variant)
 	if not wind or seconds <= 0 then
 		send(self, target, params)
 		return true
@@ -861,22 +862,18 @@ end
 
 -- S159: a regular blow: the draw (Data/Combat.basicWind) on the clients, then the blow lands if the target is still
 -- near (reach x windReach + windSlack; a step back dodges it), the monster still chasing and not stunned. A monster
--- without the hook strikes at once.
+-- without the hook strikes at once. Studio review 2026-10-21: the draw of Logic/BasicBlow (longer, an Elite's longer
+-- still); the clients pose the same seconds, so the blow lands where the swing does.
 windUp = function(self: Monster, target: Player)
 	local wind = self.ctx.attackWind
-	local seconds = if self.def.attack == "ranged" then Combat.basicWind.ranged else Combat.basicWind.melee
+	local seconds = BasicBlow.wind(self.def.attack, self.variant)
 	if not wind or seconds <= 0 then
 		self.ctx.basicAttack(self, target)
 		return
 	end
 	self.windToken += 1
 	local token = self.windToken
-	wind(
-		self,
-		target,
-		seconds,
-		if self.def.attack ~= "ranged" then "melee" elseif self.stats.damageKind == "magic" then "bolt" else "arrow"
-	)
+	wind(self, target, seconds, BasicBlow.shot(self.def.attack, self.stats.damageKind))
 	task.delay(seconds, function()
 		if self.windToken ~= token or self.state ~= "chase" or self.ctx.isDisabled(self) then
 			return

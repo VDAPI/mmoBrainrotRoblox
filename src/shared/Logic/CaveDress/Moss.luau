@@ -66,7 +66,9 @@ end
 
 local function entrance(env: Env, out: { Build })
 	local r = room(env, 1)
-	-- the curtain of water behind the exit (x -278): sheets of falling water and foam, green daylight through it
+	-- the curtain of water behind the exit (x -278): sheets of falling water and foam, green daylight through it;
+	-- studio review 2026-10-21: SmoothPlastic, not Glass (Roblox hides every transparent part behind Glass: the exit's
+	-- glowing veil seen through the curtain; tests/portalglass.spec)
 	local b = Kit.build(env, "MossEntrance", "landmark", Kit.at(env, -290), 0, 90)
 	local bp = b.bp
 	for k = -3, 3 do
@@ -77,7 +79,7 @@ local function entrance(env: Env, out: { Build })
 			k * 3.6,
 			11,
 			4,
-			{ c = "#9FD8E8", m = "Glass", lod = "detail", col = false, t = 0.45, tag = "waterfall" }
+			{ c = "#9FD8E8", m = "SmoothPlastic", lod = "detail", col = false, t = 0.45, tag = "waterfall" }
 		)
 	end
 	bp:box(
