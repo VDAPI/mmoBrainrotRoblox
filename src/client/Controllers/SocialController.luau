@@ -18,6 +18,7 @@ local ActionMenu = require(script.Parent.Parent.UI.Components.ActionMenu)
 local Button = require(script.Parent.Parent.UI.Components.Button)
 local Config = require(ReplicatedStorage.Shared.Config)
 local FriendsWindow = require(script.Parent.Parent.UI.Screens.FriendsWindow)
+local HudGate = require(script.Parent.Parent.UI.HudGate)
 local MailDraft = require(script.Parent.Parent.UI.MailDraft)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -500,7 +501,7 @@ function SocialController.Init(registry)
 		end,
 	})
 	invitePopup().Parent = UIController.GetLayer("Modals")
-	killFeed().Parent = UIController.GetLayer("Screens")
+	killFeed().Parent = HudGate.Layer(UIController.GetLayer("Screens")) -- owner 2026-10-21: not over the loading screen
 end
 
 function SocialController.Start()

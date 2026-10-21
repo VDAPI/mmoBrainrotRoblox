@@ -7,10 +7,13 @@
 -- W31 (owner 2026-10-21: the NPCs without a model stood frozen): an R15 figure (NpcService: its root anchored, the limbs
 -- on their Motor6Ds) moves the same way through Motor6D.Transform (Logic/NpcPose.R15_JOINTS, the bones' offsets folded
 -- onto its fewer joints by NpcPose.fold); its rest frames come from the joints' C0 / C1 from the root outwards.
+-- W31 (Studio check: still statues): the dressed body's joints are AnimationConstraints (the avatar joint upgrade);
+-- NpcService turns them into Motor6Ds and this rig takes either kind (Util/RigJoints: the attachments' frames).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local NpcPose = require(ReplicatedStorage.Shared.Logic.NpcPose)
+local RigJoints = require(ReplicatedStorage.Shared.Util.RigJoints)
 
 local NpcRig = {}
 
@@ -20,7 +23,7 @@ export type Rig = {
 	bones: { Driven },
 	arms: { [string]: NpcPose.ArmPose }, -- "RightArm" / "LeftArm"
 	seed: number,
-	r15: boolean, -- W31: Motor6Ds of an R15 figure (the frame is folded onto its joints)
+	r15: boolean, -- W31: the joints of an R15 figure (the frame is folded onto them)
 }
 
 local function toMat(cf: CFrame): NpcPose.Mat
@@ -86,52 +89,39 @@ function NpcRig.new(npc: Model, asset: Model, seed: number): Rig?
 	return { bones = bones, arms = arms, seed = seed, r15 = false }
 end
 
--- W31: a rig for an R15 figure without the owner's model, nil without its arm joints. Every part's rest frame in the
--- root's space from the joints (Part1 = Part0 * C0 * C1^-1 with Transform at identity), from the root outwards.
+-- W31: a rig for an R15 figure without the owner's model (Motor6D or AnimationConstraint joints, Util/RigJoints), nil
+-- without its arm joints. Every part's rest frame in the root's space from the joints (Transform at identity), from
+-- the root outwards.
 function NpcRig.newR15(npc: Model, seed: number): Rig?
 	local root = npc:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root then
 		return nil
 	end
-	local motors: { Motor6D } = {}
-	local byName: { [string]: Motor6D } = {}
-	for _, item in npc:GetDescendants() do
-		if item:IsA("Motor6D") and item.Part0 and item.Part1 then
-			table.insert(motors, item)
-			if NpcPose.R15_JOINTS[item.Name] and not byName[item.Name] then
-				byName[item.Name] = item
-			end
+	local joints = RigJoints.collect(npc)
+	local byName: { [string]: RigJoints.Joint } = {}
+	for _, j in joints do
+		if NpcPose.R15_JOINTS[j.name] and not byName[j.name] then
+			byName[j.name] = j
 		end
 	end
 	if not byName.RightShoulder or not byName.LeftShoulder or not byName.Root then
 		return nil
 	end
-	local rest: { [BasePart]: CFrame } = { [root] = CFrame.identity }
-	local moved = true
-	while moved do
-		moved = false
-		for _, motor in motors do
-			local p0, p1 = motor.Part0 :: BasePart, motor.Part1 :: BasePart
-			if rest[p0] and not rest[p1] then
-				rest[p1] = rest[p0] * motor.C0 * motor.C1:Inverse()
-				moved = true
-			end
-		end
-	end
+	local rest = RigJoints.rests(root, joints, CFrame.identity)
 	-- the joint's frame in root space: where Transform turns Part1
 	local function joint(name: string): CFrame?
-		local motor = byName[name]
-		local base = motor and rest[motor.Part0 :: BasePart]
-		return if motor and base then base * motor.C0 else nil
+		local j = byName[name]
+		local base = j and rest[j.part0]
+		return if j and base then base * j.c0 else nil
 	end
 	local bones: { Driven } = {}
 	for name, key in NpcPose.R15_JOINTS do
-		local motor, frame = byName[name], joint(name)
-		if motor and frame then
-			motor.Transform = CFrame.identity
+		local j, frame = byName[name], joint(name)
+		if j and frame then
+			RigJoints.set(j, CFrame.identity)
 			table.insert(bones, {
 				set = function(cf: CFrame)
-					motor.Transform = cf
+					RigJoints.set(j, cf)
 				end,
 				key = key,
 				rest = toMat(frame),

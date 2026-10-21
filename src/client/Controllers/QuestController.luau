@@ -18,6 +18,7 @@ local QuestJournal = require(script.Parent.Parent.UI.Screens.QuestJournal)
 local QuestText = require(script.Parent.Parent.UI.QuestText)
 local NavTarget = require(script.Parent.Parent.UI.NavTarget)
 local QuestTrack = require(script.Parent.Parent.UI.QuestTrack)
+local HudGate = require(script.Parent.Parent.UI.HudGate)
 local NpcQuests = require(script.Parent.Parent.UI.NpcQuests)
 local NpcMarkState = require(script.Parent.Parent.UI.NpcMarkState)
 local BloodMoonPanel = require(script.Parent.Parent.UI.Screens.Hud.BloodMoonPanel)
@@ -222,6 +223,8 @@ function QuestController.Init(registry)
 		end,
 	})
 	local Nav = registry.Get("NavController")
+	-- owner 2026-10-21: hidden under the loading / select screen (UI/HudGate)
+	local hud = HudGate.Layer(UIController.GetLayer("Screens"))
 	-- S101 / S129 / S130 / S149b: the world boss, world event, Blood Moon and tournament panels stand over the tracker;
 	-- owner 2026-10-21: in one column with it and the Elite II timers, round whatever the player moved (UI/HudSlots)
 	QuestTracker(scope, {
@@ -243,8 +246,8 @@ function QuestController.Init(registry)
 			registry.Get("AchievementController").Open(id)
 		end,
 	}).Parent =
-		UIController.GetLayer("Screens")
-	Elite2Timer(scope).Parent = UIController.GetLayer("Screens")
+		hud
+	Elite2Timer(scope).Parent = hud
 	WorldBossPanel(scope, {
 		Guide = function(target)
 			Nav.Guide({ map = target.map, x = target.x, z = target.z, labelKey = target.labelKey })
@@ -265,19 +268,18 @@ function QuestController.Init(registry)
 			WindowManager.Open("map")
 		end,
 	}).Parent =
-		UIController.GetLayer("Screens")
+		hud
 	WorldEventPanel(scope, {
 		Guide = function(target)
 			Nav.Guide({ map = target.map, x = target.x, z = target.z, labelKey = target.labelKey })
 		end,
 	}).Parent =
-		UIController.GetLayer("Screens")
+		hud
 	BloodMoonPanel(scope, {
 		OpenResults = function()
 			WindowManager.Open("bloodmoon")
 		end,
-	}).Parent =
-		UIController.GetLayer("Screens")
+	}).Parent = hud
 	local Arena = registry.Get("ArenaController")
 	TourneyPanel(scope, {
 		OpenTab = Arena.OpenTourney,
@@ -286,7 +288,7 @@ function QuestController.Init(registry)
 		end,
 		Leave = Arena.TourneyLeave,
 	}).Parent =
-		UIController.GetLayer("Screens")
+		hud
 end
 
 function QuestController.Start()

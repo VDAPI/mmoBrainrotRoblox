@@ -13958,3 +13958,28 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   ramą; kierunki łuków; rogi bramy; napisy; drobiazgi poza portalami), `tests/PortalClearance` (elementy w układzie
   portalu).
 - **Do obejrzenia w Studio:** wszystko powyżej, nic nieoglądane.
+### Przegląd Studio 2026-10-21: Mistrz Portali, szyldy, NPC bez modelu, kolumna i róg HUD, koszt umiejętności
+- **Mistrz Portali i szyldy:** Teodor na 250, -5 przodem do bramy; tabliczki strażników bramy z 24 studów
+  (`Nameplate.npcDistance`); szyldy usług 7 studów z boku NPC (`TownSigns`), szyldy regionów jako dane
+  (`Logic/SignSpots`, `Prefabs` i układy map). Testy `signspots.spec`, `npcplates.spec`.
+- **NPC bez modelu:** `Data/NpcLooks` (role, NPC, listy twarzy, włosów, kolorów, bród), `Logic/NpcLook` (wygląd i strój
+  z id, `CharacterLook.resolve`), `NpcService` (ciało gracza, młot kowala, kotwiczony tylko korzeń, włosy Robloxa po
+  wczytaniu), `AvatarBuild.solveJoints` wspólne z manekinem. Po sprawdzeniu w Studio (wszystkie stawy to
+  `AnimationConstraint`, 0 `Motor6D`, kończyny zakotwiczone jako luźne części): `Util/RigJoints` (staw dowolnego
+  rodzaju: części i ramki, spoczynek od korzenia, `motorize` na serwerze), `NpcRig.newR15` czyta oba rodzaje.
+  `NpcAnimController` porusza `npcMax` najbliższych (`Config.Graphics`: 6 / 12 / 20). Testy `npclook.spec`,
+  `npcpose.spec` (R15), `rigjoints.spec` (ciało z `AnimationConstraint` i z `Motor6D`, te same ramki, zamiana).
+- **Kolumna HUD:** `Logic/HudStack` (róg, kolumna na PC / tablecie / telefonie, `place`, `layout`), `UI/HudSlots`
+  (elementy zgłaszają rozmiar i przesunięcie, czytają miejsce). Panele wydarzeń, tropiciel, `Elite2Timer`, pigułka
+  areny bez dawnych przesunięć S101 / S149b (`QuestController` bez `Offset` / `Height`).
+- **Róg HUD:** `HudStack.MAIL` / `PVP` / `PVP_BADGE` / `ATTACK` / `ARC` / `PAGE` / `TARGET` czytają `MailButton`,
+  `PvpToggle` (plakietka pod przełącznikiem, `AutomaticSize`), `AttackButton`, `MobileSkills`.
+- **Koszt umiejętności:** `Components/CostBadge` (plakietka, `CostBadge.new`, rozmiar ze skali), `SkillCostBadge`
+  (`textSize`, `barPlate`, `overhang`, `arcPlate`), `PoolLabel` wyżej o `CostBadge.OVERHANG`.
+- **Wczytywanie:** `UI/HudGate` (ramka widoczna w fazie „playing”) w `QuestController`, `PartyController`,
+  `DungeonController`, `SocialController`.
+- **Testy:** `hudlayout.spec` (ekrany PC 1920 x 1080 do 2560 x 1080 i 1707 x 1000, tablety 1280 x 720 do 1280 x 960,
+  telefony; scenariusze: sam tropiciel, linia bossa, boss i wydarzenie, tłok, przesunięty tropiciel, przesunięty boss;
+  nic się nie nakłada, nic nie wychodzi z ekranu ani pod podłogę kolumny; poczta z odstępem od PvP i ataku),
+  `skillcostbadge.spec` (rozmiar 16–18 px przy skali 0,65–1, plakietka paska poza sekundami i klawiszem, plakietki
+  łuku na tablecie i telefonach poza przyciskami). Bez przeglądu w Studio.
