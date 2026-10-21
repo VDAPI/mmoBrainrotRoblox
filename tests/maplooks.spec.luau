@@ -87,6 +87,7 @@ describe("Map looks (W01)", function()
 		skies.miastoDzien.ids = { bk = 1, dn = 2, ft = 3, lf = 4, rt = 5, up = 0 }
 		expect(MapLooks.paintedSky(city, 12) == nil).toBe(true)
 		skies.miastoDzien.ids = full
+		skies.miastoNoc.ids = { bk = 0, dn = 0, ft = 0, lf = 0, rt = 0, up = 0 }
 		expect(MapLooks.paintedSky(city, 12)).toBe("miastoDzien")
 		-- night without its own sky: the place's sky, never the day one
 		expect(MapLooks.paintedSky(city, 22) == nil).toBe(true)
