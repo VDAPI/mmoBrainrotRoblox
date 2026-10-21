@@ -24,6 +24,7 @@ local KitAssets = require(Shared.Util.KitAssets)
 local Log = require(Shared.Util.Log)
 local Portals = require(Shared.Data.Portals)
 local RegionTerrain = require(Shared.Logic.RegionTerrain)
+local SignSpots = require(Shared.Logic.SignSpots)
 local WorldGen = require(Shared.Logic.WorldGen)
 
 local RegionLayout = {}
@@ -33,7 +34,6 @@ export type Options = {
 	border: Enum.Material, -- mountains past the edge
 	borderHeight: number,
 	signColor: string?, -- colour of the generic area landmarks (Prefabs.areaFeatures)
-	nameSign: { x: number, z: number, rot: number }?, -- the map's name sign (Prefabs.signpost)
 }
 
 function RegionLayout.build(ctx: Build.Context, options: Options)
@@ -117,7 +117,7 @@ function RegionLayout.build(ctx: Build.Context, options: Options)
 	end
 	Prefabs.caveEntrances(ctx, areas, nil, { mouth = false })
 	Prefabs.areaFeatures(ctx, areas, options.signColor, { lanterns = false })
-	local sign = options.nameSign
+	local sign = SignSpots.nameSign(mapId) -- the map's name sign by its entrance (Logic/SignSpots)
 	if sign then
 		Prefabs.signpost(ctx, sign.x, sign.z, sign.rot, `map.{mapId}.name`, ctx.map.minLevel, ctx.map.maxLevel)
 	end

@@ -199,3 +199,54 @@ describe("NpcPose.frame", function()
 		expect(high - low > 1).toBe(true)
 	end)
 end)
+
+-- W31 (owner 2026-10-21: the NPCs without a model stood frozen): the R15 figures move through their Motor6Ds.
+describe("NpcPose on an R15 figure", function()
+	it("drives every skeleton key through some R15 joint", function()
+		local carried: { [string]: boolean } = {}
+		for _, key in NpcPose.R15_JOINTS do
+			carried[key] = true
+			expect({ key, table.find(NpcPose.KEYS, key) ~= nil }).toEqual({ key, true })
+		end
+		for _, key in NpcPose.KEYS do
+			local into = NpcPose.FOLD[key] or key
+			expect({ key, carried[into] == true }).toEqual({ key, true })
+		end
+	end)
+	it("folds the chest, the head and the clavicles onto the joints that carry them", function()
+		local frame = NpcPose.frame(2.3, 0.4, "talk", 1, 0.5)
+		local folded = NpcPose.fold(frame)
+		local function sum(keys: { string }, axis: string): number
+			local total = 0
+			for _, key in keys do
+				local e = frame[key]
+				total += if e then (e :: any)[axis] else 0
+			end
+			return total
+		end
+		for _, axis in { "rx", "ry", "rz" } do
+			expect((folded.Spine :: any)[axis]).toBeNear(sum({ "Spine", "Spine1", "Spine2" }, axis))
+			expect((folded.Neck :: any)[axis]).toBeNear(sum({ "Neck", "Head" }, axis))
+			expect((folded.RightArm :: any)[axis]).toBeNear(sum({ "RightShoulder", "RightArm" }, axis))
+		end
+		expect(folded.Spine1).toBe(nil)
+		expect(folded.Head).toBe(nil)
+		expect(folded.RightShoulder).toBe(nil)
+		expect(folded.Hips.ry).toBeNear(frame.Hips.ry)
+		-- the elbow bends stay, the frame given is not changed
+		if frame._bendR then
+			expect(folded._bendR.rx).toBeNear(frame._bendR.rx)
+		end
+		expect(frame.Spine1 ~= nil).toBe(true)
+	end)
+	it("hangs R15 arms close to the body with a light elbow bend", function()
+		-- the base body's arm straight down from the shoulder, the forearm on from it
+		local pose = NpcPose.armPose(1, { 0, -1.2, 0 }, { 0, -1.1, 0 }, NpcPose.R15_SPREAD, NpcPose.R15_ELBOW)
+		local arm = NpcPose.apply(pose.arm, { 0, -1, 0 })
+		near(arm, NpcPose.armTarget(1, NpcPose.R15_SPREAD))
+		expect(arm[1] > 0 and arm[1] < math.sin(math.rad(6))).toBe(true)
+		-- the stance turn of the shoulder is small: no T-pose to undo
+		local tilt = math.deg(math.acos(math.clamp(-arm[2], -1, 1)))
+		expect(tilt < 8).toBe(true)
+	end)
+end)
