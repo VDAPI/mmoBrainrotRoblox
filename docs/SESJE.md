@@ -13834,6 +13834,19 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `WIKI_KEYS_ALLOW="upgrade:*,items:items.items[].use.keep,types.ts"`), poradnik Ulepszanie (PL / EN), dane odświeżone.
 - **Testy:** `effectreroll.spec`, `portalshop.spec`, `paywall.spec` (2b, 2d, 2e), `reroll.spec`, `data.spec` (+8 przedmiotów).
 - **Dla właściciela:** model Tripo Mistrza Portali (`TRIPO-NPC.md` nr 68); bez przeglądu w Studio.
+### Opisy-1: krótkie opisy, „i” i „Więcej ▸” (2026-10-21)
+- **Komponenty** (osobny commit, dla kolejnych sesji okien): `UI/Components/InfoTip` (okrągłe „i”, dymek w warstwie
+  Tooltip, montowany w `UIController`), `UI/Components/Details` („Więcej ▸ / Mniej ▾”, `Key` na sesję), `Tooltip.attach`
+  z `details`, czysty `Logic/TipText`; przepis „Krótki opis + (i)” w `docs/JAK-DODAC.md`.
+- **Tooltip przedmiotu:** `TooltipModel.build(..., { view = "compact" | "full" })`, `TooltipModel.compactOf` (limit linii
+  `COMPACT_MAX_LINES`, statystyki z budżetu, „+N więcej”, `moreHint` / `lessHint`); `ItemTooltip`: Alt = pełny widok
+  (i przypięcie jak w S68), dotyk: wiersz „Więcej ▸ / Mniej ▾”, nowy przedmiot od skróconego; panel porównania też.
+- **Umiejętności:** `SkillInfo.tooltipParts` / `SkillInfo.tooltip` → `{ short, details }`, `costLine(..., "main" | "extra")`;
+  pasek umiejętności przekazuje szczegóły do `Tooltip`.
+- **Teksty:** `ui.details.more/less`, `tooltip.more.mouse/touch`, `tooltip.compact.dps/more`; krótsze
+  `tooltip.detailsHint.*`, `keys.itemDetails` (klawisz rozwija każdy dymek).
+- **Testy:** `tests/tiptext.spec`, `tests/tooltip.spec` („compact view”: limit linii dla każdego typu, kolejność, ceny,
+  dotyk, pełny widok bez zmian). Bez przeglądu w Studio.
 ### Przegląd Studio 2026-10-21, partia 1: wodospad, łowiska, budżet części
 - **Wodospad:** niecka pod ścianą (`Data/Terrain/meadows.plunge`, `MeadowsTerrain` waga cięcia tylko na niskim brzegu,
   woda stawu w niecce, `Basalt` w `MATERIALS`), mokra ciemna skała w promieniu `wet` pod `wetTop`; `TerrainLayers.voxelWater`
