@@ -10,6 +10,14 @@ export type Bloom = { intensity: number, size: number, threshold: number }
 
 export type Clouds = { cover: number, density: number, color: string }
 
+-- 2026-10-20 (owner: no paid packs, the painted skies are generated, docs/wyglad/ZAKUPY.md): the six faces of a painted
+-- sky as uploaded image ids (0 = not uploaded yet), and its turn around the vertical axis in degrees (Sky.
+-- SkyboxOrientation) so the painted sun glow sits behind the engine's sun.
+export type PaintedSky = {
+	ids: { bk: number, dn: number, ft: number, lf: number, rt: number, up: number },
+	turn: number,
+}
+
 export type Look = {
 	-- Fixed clock time (0..24): no day and night on this map. nil = the map's own clock (its preset, or the cycle).
 	clock: number?,
@@ -27,6 +35,10 @@ export type Look = {
 	farBlur: number,
 	-- Sky key in ReplicatedStorage.Assets.Sky (nil or missing = the default sky).
 	sky: string?,
+	-- Painted sky (MapLooks.paintedSkies key): wins over `sky` once all six of its ids are uploaded. On a map with the
+	-- day and night cycle `paintedNight` shows at night (MapLooks.NIGHT); without it the night keeps the place's sky.
+	painted: string?,
+	paintedNight: string?,
 	-- W02: painted terrain materials (MaterialVariant in MaterialService) shown on this map: base material name ->
 	-- variant name (nil = the plain materials). The client sets them with SetBaseMaterialOverride on entering the map.
 	materials: { [string]: string }?,
@@ -112,6 +124,8 @@ local BY_MAP: { [string]: Look } = {
 		contrast = 0.14,
 		brightness = -0.03,
 		clouds = { cover = 0.4, density = 0.55, color = "#F6EFE6" },
+		painted = "miastoDzien",
+		paintedNight = "miastoNoc",
 	}),
 	-- Late afternoon, golden sun (16.6 still looked like noon: the sun is low enough from 17).
 	meadows = with(OUTDOOR, {
@@ -122,6 +136,7 @@ local BY_MAP: { [string]: Look } = {
 		clouds = { cover = 0.55, density = 0.5, color = "#FFE8CC" },
 		-- W02: the painted rock of the border mountains (the generated grass and dirt looked worse than the plain ones)
 		materials = { Rock = "VaelthornRock" },
+		painted = "laki",
 	}),
 	-- Overcast day under a grey sky, shafts through the crowns (the sun high enough to reach between the trees).
 	duskwood = with(OUTDOOR, {
@@ -131,6 +146,7 @@ local BY_MAP: { [string]: Look } = {
 		contrast = 0.14,
 		clouds = { cover = 0.85, density = 0.8, color = "#7A8078" },
 		sky = "overcast",
+		painted = "bor",
 	}),
 	-- Sunset through dust, hot air.
 	ashen = with(OUTDOOR, {
@@ -141,6 +157,7 @@ local BY_MAP: { [string]: Look } = {
 		bloom = { intensity = 0.5, size = 24, threshold = 1.15 },
 		clouds = { cover = 0.25, density = 0.5, color = "#E8A27A" },
 		sky = "dustSunset",
+		painted = "pustkowia",
 	}),
 	-- Cold morning, low sun: warm light on the snow, blue shadows.
 	frostpeak = with(OUTDOOR, {
@@ -150,6 +167,7 @@ local BY_MAP: { [string]: Look } = {
 		contrast = 0.16,
 		brightness = -0.02,
 		clouds = { cover = 0.45, density = 0.55, color = "#FFFFFF" },
+		painted = "szczyty",
 	}),
 	-- Underground rooms that stayed too dark with the shared lift (W01, Studio): the Wyvern's roosts, the tomb of
 	-- Morvane and Azgor's furnace (their lamps light the edges only).
@@ -159,6 +177,47 @@ local BY_MAP: { [string]: Look } = {
 }
 
 local MapLooks = {}
+
+local function unset(): { bk: number, dn: number, ft: number, lf: number, rt: number, up: number }
+	return { bk = 0, dn = 0, ft = 0, lf = 0, rt = 0, up = 0 }
+end
+
+-- 2026-10-20: the generated painted skies (docs/wyglad/niebo/JAK-WGRAC.md; source PNGs per folder in the owner's
+-- project files `wyglad/niebo/<folder>`). The owner pastes the six image ids of a folder here after the upload; a sky
+-- with any id 0 is skipped and the map keeps its `sky` (or the place's sky). The glow of each is painted at the sun of
+-- its map's hour (east +X, Roblox latitude); `turn` corrects it if the engine's sun shows elsewhere.
+MapLooks.paintedSkies = {
+	laki = { ids = unset(), turn = 0 }, -- folder laki: Meadows 17:00, golden afternoon
+	miastoDzien = { ids = unset(), turn = 0 }, -- folder miasto-dzien: the city by day, high sun
+	miastoNoc = { ids = unset(), turn = 0 }, -- folder miasto-noc: the city at night, moonlit clouds, stars
+	bor = { ids = unset(), turn = 0 }, -- folder bor: Duskwood 15:30, violet dusk under heavy cloud
+	pustkowia = { ids = unset(), turn = 0 }, -- folder pustkowia: Ashen Wastes 17:12, warm dust haze
+	szczyty = { ids = unset(), turn = 0 }, -- folder szczyty: Frostpeak 07:36, cold clear morning
+} :: { [string]: PaintedSky }
+
+-- The night of the cycle for `paintedNight`: from 18.5 to 6.5 (the lamps' hours, the sky swaps in the twilight).
+MapLooks.NIGHT = { from = 18.5, to = 6.5 }
+
+local function uploaded(sky: PaintedSky?): boolean
+	if not sky then
+		return false
+	end
+	local ids = sky.ids
+	return ids.bk > 0 and ids.dn > 0 and ids.ft > 0 and ids.lf > 0 and ids.rt > 0 and ids.up > 0
+end
+
+-- The painted sky a look shows at an hour (clock nil = no cycle): its key and entry, or nil (keep `sky`).
+function MapLooks.paintedSky(look: Look, clock: number?): (string?, PaintedSky?)
+	local key = look.painted
+	if look.paintedNight and clock and (clock >= MapLooks.NIGHT.from or clock < MapLooks.NIGHT.to) then
+		key = look.paintedNight
+	end
+	local sky = if key then MapLooks.paintedSkies[key] else nil
+	if uploaded(sky) then
+		return key, sky
+	end
+	return nil, nil
+end
 
 MapLooks.OUTDOOR = OUTDOOR
 MapLooks.UNDERGROUND_LOOK = UNDER

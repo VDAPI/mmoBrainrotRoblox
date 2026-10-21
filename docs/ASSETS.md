@@ -155,6 +155,20 @@ listą S111); klucze biorą pliki z tabel wyżej w innej wysokości (w Play `/an
 | `skill.evocation`, `skill.manaShield` | `rbxassetid://10128760939`, `rbxassetid://10066968815` | RBLX UI Select 01 / 02 (SFX) | Roblox | 0,58 / 0,49 | Creator Store, twórca Roblox | 2026-10-14 | S115, nisko |
 | `skill.chainLightning` | `rbxassetid://12221990` | electronicpingshort.wav | Roblox | 0,46 | Creator Store, twórca Roblox | 2026-10-14 | S115, wyładowanie zastępcze |
 
+W30 (nowe umiejętności pul Łowcy i Maga, S140–S142, S144): nowych ID nie ma; klucze biorą pliki z listy S111 w innej
+wysokości (nieodsłuchane, wybór po nazwie). Puste: `skill.phoenixHeart`.
+
+| Klucz | ID | Nazwa w Creator Store | Twórca | Długość (s) | Licencja | Data | Uwagi |
+|---|---|---|---|---|---|---|---|
+| `skill.heavyBolt`, `skill.pinningShot`, `skill.netShot`, `skill.deadlyBolt`, `skill.hailstorm`, `skill.glacialSpike`, `skill.deepFreeze`, `skill.shatter`, `skill.lightningLance` | `rbxassetid://12222140` | snap.wav | Roblox | 0,26 | Creator Store, twórca Roblox | 2026-10-20 | W30, cięciwa, bełt i trzask lodu w różnej wysokości; sieć także swoosh, roztrzaskanie także collide, włócznia także ping |
+| `skill.pyroblast`, `skill.combustion`, `skill.thunderStrike`, `skill.tempest` | `rbxassetid://12221944` | bass.wav | Roblox | 0,78 | Creator Store, twórca Roblox | 2026-10-20 | W30, wybuchy i grzmoty zastępcze |
+| `skill.lightningBolt`, `skill.staticShock`, `skill.ballLightning` | `rbxassetid://12221990` | electronicpingshort.wav | Roblox | 0,46 | Creator Store, twórca Roblox | 2026-10-20 | W30, wyładowania zastępcze |
+| `skill.flameWave`, `skill.blizzard` | `rbxassetid://15674975792` | Roblox_UI_Whoosh_03 | Roblox | 1,10 | Creator Store, twórca Roblox | 2026-10-20 | W30, nisko |
+| `skill.emberShield`, `skill.frozenOrb`, `skill.pyroblast.cast`, `skill.glacialSpike.cast` | `rbxassetid://15675012262` | Roblox_UI_Whoosh_04 | Roblox | 0,35 | Creator Store, twórca Roblox | 2026-10-20 | W30 |
+| `skill.windstep` | `rbxassetid://15675028888` | Roblox_UI_Whoosh_02 | Roblox | 0,49 | Creator Store, twórca Roblox | 2026-10-20 | W30, wyżej |
+| `skill.iceBarrier`, `skill.stormArmor` | `rbxassetid://10066968815` | RBLX UI Select 02 (SFX) | Roblox | 0,49 | Creator Store, twórca Roblox | 2026-10-20 | W30, osłony |
+| `skill.immolate` | `rbxassetid://15675046931` | Roblox_UI_Sweep | Roblox | 0,61 | Creator Store, twórca Roblox | 2026-10-20 | W30, nisko |
+
 ## Dźwięk otoczenia (W27)
 
 Decyzja właściciela (2026-10-20): pętle otoczenia (`src/shared/Data/Ambience.luau`, tabela `IDS`) pochodzą z biblioteki
