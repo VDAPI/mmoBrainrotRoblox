@@ -47,6 +47,8 @@
 
 ## Niedokończone (kod)
 
+- **S159 pociski bossów do unikania:** serwer, wzory i rysowanie gotowe, testy zielone; nic nieobejrzane w Studio
+  (czytelność wzorów, gesty `pose`, wygląd ścian lodowca i oddechu Hrimvalda do przejrzenia w AnimLab).
 - **Zgłoszenia właściciela 2026-10-20:** zrobione (S156): menu HUD w dwóch rzędach, limit przesuwania mapy, efekty broni
   z jej puli, Zwój Przemiany, kurhan bossa świata jako niecka z przedsionkiem bez PvP i dłuższe ogłoszenia, kolorowe
   stragany z NPC przed ladą, ranking czasu gry i podium, marmurowe posągi, przesuwany i skalowany tropiciel zadań.

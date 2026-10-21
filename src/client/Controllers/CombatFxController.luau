@@ -14,6 +14,10 @@
 --            (Vfx/GroundTelegraph: from the edge to the centre, pulsing rim, flash and effect at the blow)
 --            S134e: a lethal blow (`x`) dark crimson, thick-rimmed, pulsing faster at the end
 --   reward : "+EXP · +gold" above our character
+--   hz / hzx / hzc : S159 dodgeable hazards (Vfx/HazardFx: projectiles, lobs, waves, rings, breaths); the caster
+--            poses (a boss pattern gathers like a telegraph), "hzx" bursts a bolt that hit, "hzc" clears a cast
+--   aw     : S159 a monster's basic attack draws back before the blow lands (its "atk" then strikes without a
+--            second windup); a hit with `bg` (a heavy blow on us) flashes the screen red and shakes the camera
 -- Damage numbers: setting "all / mine and received / off" (settings.dmgMode, DamageText.mode; the old
 -- dmgNumbers = false counts as "off"); telegraphs and hit flashes always show. Tuning in Data/DamageNumbers.
 -- S110: the attack and telegraph visuals run on the effect clock (Vfx/Clock: delays, tweens, trails, flights), so
@@ -60,9 +64,12 @@ local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 local GroundTelegraph = require(script.Parent.Parent.Vfx.GroundTelegraph)
+local HazardPatterns = require(ReplicatedStorage.Shared.Data.HazardPatterns)
+local Hazards = require(ReplicatedStorage.Shared.Logic.Hazards)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
 local Textures = require(script.Parent.Parent.Vfx.Textures)
+local HazardFx = require(script.Parent.Parent.Vfx.HazardFx)
 
 -- S136: colours of the 3D effects (world, not interface): the old gold and magic blue of the legacy UI palette.
 local WORLD_GOLD_BRIGHT = Color3.fromHex("#E8C25A")
@@ -1651,6 +1658,50 @@ local function hitSounds(model: Model, event: { [string]: any }, result: DamageT
 	end
 end
 
+-- S159: a short red flash over the screen when a heavy blow hits us (edge bands, no image; low quality: one frame).
+local hurtGui: ScreenGui? = nil
+local hurtFrame: Frame? = nil
+local function hurtFlash()
+	if not hurtFrame then
+		local gui = Instance.new("ScreenGui")
+		gui.Name = "Vaelthorn_HurtFlash"
+		gui.IgnoreGuiInset = true
+		gui.DisplayOrder = 5
+		gui.ResetOnSpawn = false
+		local frame = Instance.new("Frame")
+		frame.Size = UDim2.fromScale(1, 1)
+		frame.BackgroundColor3 = Color3.fromHex("#C8281E")
+		frame.BackgroundTransparency = 1
+		frame.BorderSizePixel = 0
+		frame.Active = false
+		local gradient = Instance.new("UIGradient")
+		-- clear in the middle, red at the edges
+		gradient.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0),
+			NumberSequenceKeypoint.new(0.3, 0.75),
+			NumberSequenceKeypoint.new(0.7, 0.75),
+			NumberSequenceKeypoint.new(1, 0),
+		})
+		gradient.Parent = frame
+		frame.Parent = gui
+		gui.Parent = guiFolder
+		hurtGui = gui
+		hurtFrame = frame
+	end
+	local frame = hurtFrame :: Frame
+	local gui = hurtGui :: ScreenGui
+	gui.Enabled = true
+	frame.BackgroundTransparency = 0.45
+	TweenService:Create(
+		frame,
+		TweenInfo.new(if lowQuality() then 0.15 else 0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ BackgroundTransparency = 1 }
+	):Play()
+end
+
+-- S159: monsters whose basic attack is drawn back by "aw" until this os.clock() (their "atk" then strikes at once).
+local windUntil: { [Model]: number } = setmetatable({}, { __mode = "k" }) :: any
+
 local function onDamage(event: { [string]: any })
 	local model = findModel(event.e)
 	if not model then
@@ -1682,7 +1733,11 @@ local function onDamage(event: { [string]: any })
 		if model:GetAttribute("MonsterId") == nil then
 			AnimationController.CharacterHit(model, from, event.c == true)
 		end
-		if isMe and event.c then
+		if isMe and event.bg then
+			-- S159: a heavy blow (a boss pattern, a lethal or avoidable attack) on us
+			hurtFlash()
+			shake(0.55)
+		elseif isMe and event.c then
 			shake(0.35)
 		end
 	elseif event.ab or event.im then
@@ -1748,6 +1803,38 @@ local function traitFx(event: { [string]: any })
 	end
 end
 
+-- S159: a hazard cast: HazardFx draws it; the caster gathers over its warning (a boss pattern: its pose by the attack
+-- id, the charge glow, the warning sound), a regular shot already drew back with its "aw".
+local function hazardCast(event: { [string]: any })
+	HazardFx.spawn(event)
+	local caster = findModel(if type(event.e) == "string" then event.e else nil)
+	local pattern = if type(event.p) == "string" then HazardPatterns.get(event.p) else nil
+	if not caster or not pattern or pattern.regular then
+		return
+	end
+	local w = tonumber(event.w) or tonumber(event.d) or Hazards.MIN_WARN
+	-- a replaced attack poses as itself; a pattern cast on its own as its `pose`; one added to an attack not at all
+	local info = SfxController.Mob(caster)
+	local bossId = info and info.boss
+	local a = if type(event.a) == "string" then event.a else nil
+	local pose = if bossId and a and BossMotions.attack(bossId, a) then a else pattern.pose
+	if pose then
+		AnimationController.MonsterAttack(caster, w, false, pose)
+	end
+	if not lowQuality() then
+		Library.charge(caster, Color3.fromHex(pattern.color), w, 2.5, false)
+	end
+	SfxController.Play("telegraph.warn", caster, "other")
+	if bossId then
+		local boss = bossId
+		Clock.after(w, function()
+			if caster.Parent then
+				SfxController.Play(`boss.{boss}.attack`, caster, "other")
+			end
+		end)
+	end
+end
+
 local function handle(event: { [string]: any })
 	local kind = event.k
 	if kind == "dmg" then
@@ -1759,7 +1846,12 @@ local function handle(event: { [string]: any })
 		local target = findModel(event.t)
 		if attacker and target then
 			if attacker:GetAttribute("MonsterId") ~= nil then
-				AnimationController.MonsterAttack(attacker, nil, true)
+				local wound = windUntil[attacker]
+				if wound and os.clock() <= wound + 0.35 then
+					windUntil[attacker] = nil -- S159: drawn back by "aw": the pose strikes on its own
+				else
+					AnimationController.MonsterAttack(attacker, nil, true)
+				end
 				if event.st == "melee" then
 					swing(attacker, target)
 				else
@@ -1789,6 +1881,19 @@ local function handle(event: { [string]: any })
 				if type(event.a) == "string" then event.a else nil,
 				if typeof(event.cf) == "CFrame" then event.cf else nil
 			)
+		end
+	elseif kind == "hz" then
+		hazardCast(event) -- S159
+	elseif kind == "hzx" then
+		HazardFx.hit(event)
+	elseif kind == "hzc" then
+		HazardFx.clear(event)
+	elseif kind == "aw" then
+		local attacker = findModel(event.s)
+		local w = tonumber(event.w)
+		if attacker and w then
+			windUntil[attacker] = os.clock() + w
+			AnimationController.MonsterAttack(attacker, w, false, nil)
 		end
 	elseif kind == "teleCancel" then
 		cancelMark(event) -- S134
@@ -1866,6 +1971,18 @@ function CombatFxController.Init(registry)
 	for _ = 1, 12 do
 		table.insert(pool, newBillboard())
 	end
+	-- S159: the hazards' drawing
+	HazardFx.init({
+		findModel = findModel,
+		low = lowQuality,
+		play = function(key: string, at: Vector3)
+			SfxController.Play(key, at, "other")
+		end,
+		near = function(at: Vector3): boolean
+			local camera = Workspace.CurrentCamera
+			return not camera or (camera.CFrame.Position - at).Magnitude <= Config.EffectRadius + 40
+		end,
+	})
 end
 
 -- Admin /anim (S22): plays a weapon's attack on our own character (no target, no damage). S110: `model` (an AnimLab

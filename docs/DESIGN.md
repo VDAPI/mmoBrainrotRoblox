@@ -963,6 +963,21 @@ nazw obcych) i tabelą własnej drużyny.
 - **Wybór ataku** (S87, `Logic/BossSchedule`, ta sama funkcja w grze i w modelu): spośród gotowych ataków fazy ten
   z największą zaległością względem swojego odnowienia; każdy atak dostaje co najmniej połowę swojego tempa (inferno
   Azgora i pierścień lodu Vaelgratha wchodzą; S134: mechaniki też idą przez harmonogram). Odstęp między atakami i obrażenia lawy / burzy w `Data/BossTuning`.
+- **Pociski do unikania** (S159, właściciel 2026-10-21, `Logic/Hazards`, `Data/HazardPatterns`, `HazardService`):
+  część ataków bossów leci jako prawdziwe pociski, fale i pierścienie, które serwer prowadzi co klatkę, a klient rysuje
+  z tego samego ziarna; trafia tylko to, co dotknie gracza. Każde zagrożenie ostrzega ≥ 0,6 s (pas na ziemi, krąg
+  lądowania, stożek), leci najwyżej 70 st./s, jeden cios dodatkowego wzoru to najwyżej 45% HP Maga na poziomie bossa.
+  Atak zastąpiony wzorem zachowuje liczby i harmonogram (model balansu bez zmian), wzory dodatkowe i fazowe liczą się
+  jak wielkie ciosy do unikania. Grimrok: szczelina skał zamiast linii Rozłupania, wracające topory (rzut, wachlarz przy
+  tarczy), pierścień wstrząsu po Skoku (przeskocz), topory wokół po Wirze, od 2. fazy bomby pod dwóch graczy. Morvane:
+  wolne naprowadzane kule dusz i salwa trzech, przy tarczy i w 3. fazie spirala z trzech ramion. Azgor: ściana ognia i
+  meteor spadający z nieba, wachlarz pięciu kul ognia na uciekających, od 2. fazy dwie kule magmy odbijające się od
+  brzegu areny. Vaelgrath: komety lodu, lawina pięciu kul śniegu, naprowadzane kule mrozu, od 2. fazy odłamki z nieba
+  pod dwóch graczy, w 3. fazie też kule mrozu. Hrimvald (§15.6): deszcz odłamków, mroźny oddech obracający się stożkiem,
+  salwa sopli, rzut głazem, fala kolców, bloki lodu, pierścień tupnięcia, od 2. fazy dwie ściany lodowca sunące przez
+  koło z przerwą do przejścia. Zwykłe potwory dystansowe strzelają strzałą albo pociskiem, który można obejść, a
+  rzut Elity II to kamień albo mroczny pocisk; atak wręcz ma zamach 0,45 s i trafia tylko, gdy cel nadal jest w zasięgu.
+  Mocny cios w gracza: czerwony błysk brzegów ekranu i wstrząs kamery (ustawienie wstrząsu działa).
 - Łup wspólny (FIX 2026-10-09, `Loot.rollBossLoot`): bez przedmiotów, tylko złoto i materiały z tabeli bossa (Odłamki i Kryształy Esencji, Rdzeń Legendy, Zwój Ochrony, Zwój Rozwiązania). Przedmioty daje rzut osobisty niżej i drugi przedmiot Fortuny (S60).
 - **Przedmiot osobisty** (FIX 2026-10-09, `Loot.rollBossItem`, każdy zwycięzca dostaje dokładnie jeden przedmiot we własnym worku): Legendarny 6% + 1 pkt. proc. za każde zabicie tego bossa dziś, Mityczny 1% + 1 pkt. proc. (przy 3 zabiciach dziennie średnio 2%, ok. 50 zabić do pierwszego Mityka); bez progów litości. **Osobisty Mityk u Vaelgratha** (S94, plan 8.4): 0,3% + 1 pkt. proc. na zabicie tego dnia, średnio ok. 77 zabić (×1,54 Grimroka). Legenda: losowy Legendarny przedmiot na poziomie bossa (80% dla klasy gracza); mityk: w 50% ręczny przedmiot bossa (tylko pasujący klasie), inaczej losowy Mityczny dla klasy (4 bonusy + 2 linie legendarne); S87: Mityk zawsze dla klasy zwycięzcy (gdy żaden ręczny nie pasuje, np. Vaelgrath dla Łowcy, losowy Mityczny dla klasy, `Loot.pickUsable`). Szanse widać na karcie lochu i w karcie nagrody po walce; mityk ma osobne, mocniejsze ogłoszenie na serwerze.
 

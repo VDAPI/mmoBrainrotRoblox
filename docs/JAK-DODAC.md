@@ -62,6 +62,11 @@
   test `uiart.spec`) albo `UiArtState.decorate` z kluczem z `Logic/UiArt`.
 - **Wybór ataku bossa** (S87): `Logic/BossSchedule` (gra i model); stałe bossów poza `Data/Bosses` w `Data/BossTuning`,
   ale linie `local NAZWA = liczba` czytane przez wiki zostają w skryptach.
+- **Pociski i zagrożenia do unikania** (S159): wzór w `Data/HazardPatterns` (emitery `bolt` / `lob` / `wave` / `ring` /
+  `sweep`, pola w nagłówku `Logic/Hazards`; zapowiedź ≥ `Hazards.MIN_WARN`, prędkość ≤ 70), wygląd po `look` w
+  `Vfx/HazardFx`, gest bossa przez `pose` (id ataku z `Data/BossMotions`). Bossowi przypina się go w
+  `BossTuning.patterns` (`replace` ataku, `add` po ataku, `ambient` z fazami i odstępem); rzuca `HazardService.Cast`
+  (serwer liczy trafienia, klient rysuje z tego samego ziarna). `tests/hazards.spec` pilnuje zasad i udziału HP Maga.
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez
   `Prefabs.portalFrom(ctx, id)`); trasa (`Logic/MapRoute`), mapa świata i prowadzenie widzą go same.
 - **Karta na mapie świata** (S25): treść w `UI/Screens/WorldMap/Cards.luau` (albo `CreatureCards`) jako spec

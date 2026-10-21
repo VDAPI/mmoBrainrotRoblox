@@ -612,6 +612,9 @@ local function services(f: Fight): Boss.Services
 		cancelMark = function(monster: any, ability: any, player: Player)
 			CombatService.MonsterTelegraphCancel(monster, ability, player)
 		end,
+		hazard = function(monster: any, patternId: string, opts: any): number?
+			return CombatService.MonsterHazard(monster, patternId, opts) -- S159
+		end,
 		fighters = fighters,
 		position = function(player: Player): Vector3?
 			local root = rootOf(player)

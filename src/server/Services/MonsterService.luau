@@ -51,6 +51,7 @@ export type Handlers = {
 	threatMultiplier: ((monster: Monster.Monster, player: Player) -> number)?,
 	-- S134e: the kit's throw at a fleeing target (a regular ranged blow)
 	rangedThrow: ((monster: Monster.Monster, player: Player, params: any) -> ())?,
+	attackWind: ((monster: Monster.Monster, player: Player, seconds: number) -> ())?, -- S159
 	-- S134f: a player's damage booked on the monster (CombatService.MonsterDamaged)
 	damaged: ((monster: Monster.Monster, player: Player, dealt: number) -> ())?,
 }
@@ -263,6 +264,12 @@ local context: Monster.Context = {
 	basicAttack = function(monster, player)
 		if handlers then
 			handlers.basicAttack(monster, player)
+		end
+	end,
+	attackWind = function(monster, player, seconds)
+		local wind = handlers and handlers.attackWind
+		if wind then
+			wind(monster, player, seconds)
 		end
 	end,
 	telegraph = function(monster, ability, area, opts)

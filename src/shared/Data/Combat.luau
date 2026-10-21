@@ -63,6 +63,12 @@ return table.freeze({
 
 	-- Who sees damage numbers / hit effects.
 	fxRadius = 80,
+	-- S159 (owner 2026-10-21, "a blow you can see coming"): a monster's regular blow winds up this long before it lands
+	-- (the clients pose the draw, "aw"); the interval between blows stays. A target that stepped farther than
+	-- reach x windReach + windSlack (flat studs) by then is missed. Ranged blows fly as projectiles after the draw.
+	basicWind = table.freeze({ melee = 0.45, ranged = 0.35 }),
+	windReach = 1.5,
+	windSlack = 3,
 
 	-- Gold from a monster (DESIGN §5.5): round(L x goldPerLevel x random(goldRandomMin..Max) x variant multiplier)
 	goldPerLevel = 3,
