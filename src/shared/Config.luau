@@ -438,21 +438,32 @@ local Config = {
 		maxActive = 16,
 		segments = 24,
 		segmentsLow = 12,
-		rimWidth = 0.35, -- studs: the bright rim
-		underRim = 0.25, -- studs: a dark rim under / outside it (contrast on snow)
-		fillFrom = 0.8, -- transparency of the filled band at the start of the windup
-		fillTo = 0.45, -- ... and at its end
-		areaAlpha = 0.85, -- transparency of the whole area from the first frame (where the blow will land)
+		-- S160 (owner 2026-10-21: "boss abilities are barely visible"): every layer stronger. The rim 0.35 -> 0.7
+		-- studs and at least rimShare of the radius (a 20-stud circle gets a 1-stud rim), the dark under-rim 0.25 ->
+		-- 0.45 and far less transparent (underAlpha: it carries the contrast on snow and sand), the area 0.85 -> 0.62
+		-- and the filling band 0.8 / 0.45 -> 0.55 / 0.25 transparent; band and area are Neon (they glow in dark
+		-- dungeons), the edges of cones and lines stand thicker (grass and slopes no longer swallow them)
+		rimWidth = 0.7, -- studs: the bright rim
+		rimShare = 0.05, -- S160: the rim is at least this share of the radius
+		underRim = 0.45, -- studs: a dark rim under / outside it (contrast on snow)
+		underAlpha = 0.2, -- S160: transparency of the dark under-rim
+		fillFrom = 0.55, -- transparency of the filled band at the start of the windup
+		fillTo = 0.25, -- ... and at its end
+		areaAlpha = 0.62, -- transparency of the whole area from the first frame (where the blow will land)
+		areaPulse = 0.18, -- S160: the area's transparency swings by this much with the rim pulse
+		chaseSpeed = 1.6, -- S160: turns per second of the bright light running round the rim (faster at the end)
 		pulseSlow = 0.5, -- seconds per rim pulse at the start
 		pulseFast = 0.12, -- ... and at the end
-		flashSeconds = 0.08, -- the whole area brighter and whiter at the blow
-		fadeSeconds = 0.2, -- then it fades
+		flashSeconds = 0.12, -- the whole area brighter and whiter at the blow
+		fadeSeconds = 0.25, -- then it fades
 		safePulse = 0.3, -- seconds before the blow the safe centre of a ring pulses
 		shakeRange = 60, -- studs: players farther feel no boss shake
-		lift = 0.12, -- studs above the ground
+		lift = 0.2, -- studs above the ground
+		edgeThick = 0.45, -- S160: studs of height of the rim parts of cones and lines (they poke out of grass)
+		lightRange = 1.1, -- S160: a big blow's ground light reaches this x its radius (dark dungeons), at most 40
 		-- S134 (bosses 2.0): a big blow to dodge keeps its colour with a thicker rim; the party mechanics have their own
 		-- colours (split: the golden circle to stand in together, mark: the purple circle on the marked player)
-		rimWidthAvoid = 0.7,
+		rimWidthAvoid = 1.3,
 		mechanicColors = { split = "#F2C14E", mark = "#A35BFF" },
 		markRange = 60, -- studs: the marked player's glow shows for players this close (and the marked one)
 		tagHeight = 4, -- studs above the split circle of its "Together" label
@@ -460,6 +471,21 @@ local Config = {
 		-- split), the thick rim of a big blow and a faster pulse at the end (seconds per pulse instead of pulseFast)
 		lethalColor = "#8B0A1E",
 		pulseLethal = 0.07,
+		underColor = "#140C0A", -- S160: the dark under-rim
+	},
+	-- S160 (owner 2026-10-21): the cast bar over a boss or an Elite II with the ability's name (Vfx/BossCastBar,
+	-- Logic/BossCast), the warning banner of a big attack for players within bannerRange studs (one per bannerGap s),
+	-- and the rim's colour made vivid (saturation at least minSaturation unless the colour is a grey under greyBelow,
+	-- brightness at least minValue, luminance at least minLuminance)
+	BossCast = {
+		barRange = 160, -- studs: the cast bar shows within this distance of the camera
+		bannerRange = 90,
+		bannerGap = 1.5,
+		bannerSeconds = 2.2, -- the banner stays at least this long (or the windup)
+		minSaturation = 0.7,
+		greyBelow = 0.15,
+		minValue = 0.95,
+		minLuminance = 0.3, -- a deep red or blue rim is lifted towards white until it is this bright
 	},
 	-- Interactive map and the guide (S25, DESIGN §23): a target counts as reached within `arrive` studs
 	-- (`arriveNpc` for NPCs, who stand behind their counter); the path is recomputed when the player is more than

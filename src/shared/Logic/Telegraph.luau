@@ -189,6 +189,26 @@ function Telegraph.rimPulse(elapsed: number, windup: number, cfg: Cfg): number
 	return math.clamp(0.1 + depth * (1 - wave), 0, 1)
 end
 
+-- S160: the rim's width for an area of `radius`: `base`, and at least `share` of the radius (big areas, thick rims).
+function Telegraph.rimFor(base: number, radius: number, share: number): number
+	return math.max(base, radius * share)
+end
+
+-- S160: turns of the bright light running round the rim `elapsed` s in: `speed` turns a second at the start, twice that
+-- at the blow (the integral of speed x (1 + p)), held after it.
+function Telegraph.chase(elapsed: number, windup: number, speed: number): number
+	local w = Telegraph.windup(windup)
+	local t = math.clamp(elapsed, 0, w)
+	return speed * (t + t * t / (2 * w))
+end
+
+-- S160: transparency of the whole area with the rim's pulse: `base` when the rim is at its dimmest, up to `swing`
+-- lower (brighter) when the rim flares, the swing growing with progress p. Never below 0.
+function Telegraph.areaAlpha(base: number, swing: number, rim: number, p: number): number
+	local flare = 1 - math.clamp((rim - 0.1) / 0.45, 0, 1)
+	return math.clamp(base - swing * flare * (0.4 + 0.6 * math.clamp(p, 0, 1)), 0, 1)
+end
+
 function Telegraph.fillAlpha(p: number, cfg: Cfg): number
 	p = math.clamp(p, 0, 1)
 	return cfg.fillFrom + (cfg.fillTo - cfg.fillFrom) * p
