@@ -9,6 +9,8 @@
 -- mouth keeps out of Data/Portals.frameKeepOut too (the painted arch, its view from the path, the opening before the
 -- hole): the pillars' boulders 12 studs from the axis (11 touched the painted pillars), the hole straight behind the
 -- arch like every dressed cave mouth's (Data/Portals.HOLE), the back slab behind it, the torches 10 studs out.
+-- W31 fix (the painted arch keeps its full size, its real footprint with the base slab 21 x 16.5): the buttresses,
+-- the boulders and the torches further out, the hole and the back slab further back (Data/Portals.ARCH.model).
 
 export type Slab = {
 	name: string,
@@ -20,10 +22,10 @@ export type Slab = {
 
 local SLABS: { Slab } = {
 	-- behind the hole, leaning back
-	{ name = "Back", size = { 30, 26, 8 }, p = { 0, 11, 9.8 }, r = { 4, 0, 0 }, shade = -1 },
+	{ name = "Back", size = { 30, 26, 8 }, p = { 0, 11, 15 }, r = { 4, 0, 0 }, shade = -1 },
 	-- the buttresses either side, turned towards the path and leaning out
-	{ name = "Buttress", size = { 11, 25, 10 }, p = { -15, 10.5, 6 }, r = { 3, 14, -5 }, shade = 0 },
-	{ name = "Buttress", size = { 10, 23, 9 }, p = { 14.5, 9.5, 6.5 }, r = { -2, -12, 6 }, shade = 1 },
+	{ name = "Buttress", size = { 11, 25, 10 }, p = { -18.6, 10.5, 7 }, r = { 3, 14, -5 }, shade = 0 },
+	{ name = "Buttress", size = { 10, 23, 9 }, p = { 18, 9.5, 7.5 }, r = { -2, -12, 6 }, shade = 1 },
 	-- the crown over everything, tipped back
 	{ name = "Crown", size = { 28, 8, 10 }, p = { 0.5, 24.5, 6 }, r = { 8, 3, -3 }, shade = 0 },
 	-- the lintel: two stones meeting over the arch
@@ -32,14 +34,14 @@ local SLABS: { Slab } = {
 }
 
 -- The stacked boulders of the two pillars: side * (x + i * step), y0 + i * rise, z; diameter size - i (i = 0, 1, 2).
-local BOULDERS = table.freeze({ x = 12, step = 0.6, y0 = 3, rise = 6.5, z = 1, size = 7 })
+local BOULDERS = table.freeze({ x = 14.4, step = 0.6, y0 = 3, rise = 6.5, z = 1, size = 7 })
 
--- The dark hole the portal stands in front of: its face 4.08 behind the veil (Data/Portals.HOLE: from the arch's back
+-- The dark hole the portal stands in front of: its face 9.18 behind the veil (Data/Portals.HOLE: from the arch's back
 -- plus margin to HOLE.z + 0.5), 17 wide, from under the ground to 16.75, its visible middle near the veil's.
-local HOLE = table.freeze({ size = table.freeze({ 17, 17.5, 0.6 }), p = table.freeze({ 0, 8, 4.38 }) })
+local HOLE = table.freeze({ size = table.freeze({ 17, 17.5, 0.6 }), p = table.freeze({ 0, 8, 9.48 }) })
 
 -- The two torches before the mouth: side * x across, z before the veil (W31: clear of the painted arch).
-local TORCHES = table.freeze({ x = 10, z = -6 })
+local TORCHES = table.freeze({ x = 12.5, z = -6 })
 
 -- Rotation matrix (row-major 3 x 3) of CFrame.Angles(rx, ry, rz) in degrees: Rx * Ry * Rz.
 local function matrix(r: { number }): { number }

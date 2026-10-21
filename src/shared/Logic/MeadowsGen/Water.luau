@@ -328,8 +328,9 @@ end
 -- the veil (z 0) and before the dark hole (World/Prefabs.caveMouth, Data/CaveMouth.HOLE), out of the portal's clearance
 -- box (Data/Portals, half depth 1.25), and is SmoothPlastic (tests/portalglass.spec: no Glass before any portal).
 -- Partia 6 (W31: the painted arch fills z -3.25..3.25 and the opening before the hole is kept free,
--- Data/Portals.frameKeepOut): the sheets hang between that opening (3.6) and the hole's face (4.08).
-Water.CURTAIN_Z = 3.76 -- the middle sheet
+-- Data/Portals.frameKeepOut): the sheets hang between that opening (3.6) and the hole's face (4.08). W31 fix (the
+-- painted arch at full size, its real footprint 16.5 deep): between the opening (8.7) and the hole's face (9.18).
+Water.CURTAIN_Z = 8.86 -- the middle sheet
 Water.CURTAIN_STEP = 0.14 -- the side ones this much deeper
 function Water.caveCurtain(out: { Build })
 	local m = { x = 745, z = 330, rot = 45 }

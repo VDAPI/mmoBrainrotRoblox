@@ -13978,7 +13978,9 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   modelu, jak przed W31. Test na zmierzonym obrysie.
 - **Prawdziwy obrys:** `ARCH.model` 21 x 18 x 16,5 (z płytą podstawy), `HOLE.z` 8,7. Wszystkie ramy wejść (Szczyty,
   Pustkowia, Mroczna Puszcza) i wyjść przesunięte poza ten obrys (słupy dalej na boki, ściany i otwory dalej w tył);
-  Głęboka Brama w Kuźni za wyjściem. Drobiazgi klienta omijają portale o 14 studów.
+  Głęboka Brama w Kuźni za wyjściem. Wylot Jaskini Mchów (`Data/CaveMouth`): przypory, głazy (14,4) i pochodnie
+  (12,5) dalej na boki, otwór (lico 9,18) i tylna płyta dalej w tył, zasłona wody między pasem przed otworem a jego
+  licem (`Water.CURTAIN_Z` 8,86, bez `Glass`). Drobiazgi klienta omijają portale o 14 studów.
 - **Brama lochu:** żarzące się krawędzie i runy na rogach z przyćmionym światłem (`GATE.rim`), drzwi na podniesionym
   progu (`GATE.sill`, wierzch 1,2 nad podłogą; w Jaskini Mchów próg tonął w podłodze).
 - **Testy:** `portals.spec` (skala 1 i zasłona dla zmierzonego obrysu, ramy poza obrysem 21 x 16,5, próg i krawędzie
