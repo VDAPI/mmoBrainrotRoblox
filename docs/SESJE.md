@@ -13878,6 +13878,9 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   przez wspólne `Details` (`Open = ctx.fullOpen`); „i” przy nazwie kierunku, `skills.tree.leadingHint.short`,
   `skill.adaptive.short`, linia kosztu `SkillInfo.costLine` „main” z „extra” za „i”; krótszy `paths.tree.hint`.
   Test: `shorttext3.spec` (każdy długi węzeł ma krótką linię ≤ 60 znaków z liczbami, te same placeholdery, `plan`).
+- **Nic nie znika (koordynator):** wycięte części skróconych tekstów wróciły jako `<klucz>.info`: powitania 4 NPC
+  („i” w `NpcDialog`, m.in. zdanie Łowczego o Znaku), potwierdzenia resetu, zwrotu i kopiowania zestawu oraz
+  `rework2.*` z liczbami (`Modal.Spec.Details`, „Więcej ▸”); „na tym koncie” wróciło do `quest.set.shardsTaken*`.
 - **Dla właściciela:** bez przeglądu w Studio (wysokość tropiciela przy 3 zleceniach, dymek przytrzymania na telefonie).
 ### Opisy, grupa 2: sklepy, kowal, premium, poczta, nagrody (2026-10-21)
 - **Co widać:** jedna krótka linia (do 60 znaków), pełny tekst pod „i” (`Components/InfoTip`): Smoczy Sklep (Przedmioty,

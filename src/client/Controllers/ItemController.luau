@@ -134,6 +134,7 @@ function ItemController.Use(index: number)
 		WindowManager.ShowModal({
 			Title = Text.now("skills.points.resetTitle"),
 			Message = Text.now("skills.reset.confirm"),
+			Details = Text.now("skills.reset.confirm.info"), -- owner 2026-10-21: the full text under "More ▸"
 			ConfirmText = Text.now("common.confirm"),
 			CancelText = Text.now("common.cancel"),
 			Variant = "danger",

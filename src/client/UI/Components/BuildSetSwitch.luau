@@ -121,6 +121,8 @@ local function BuildSetSwitch(scope: Fusion.Scope<typeof(Fusion)>, props: Props)
 					showModal({
 						Title = Text.now("buildset.copy.title"),
 						Message = Text.now("buildset.copy.message", { from = from, to = 3 - from }),
+						-- owner 2026-10-21: what is copied and that the free reset stays, under "More ▸"
+						Details = Text.now("buildset.copy.message.info", { from = from, to = 3 - from }),
 						ConfirmText = Text.now("buildset.copy"),
 						CancelText = Text.now("common.cancel"),
 						OnConfirm = function(): (boolean, string?)

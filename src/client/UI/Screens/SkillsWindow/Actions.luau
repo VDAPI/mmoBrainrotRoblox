@@ -15,6 +15,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Progression = require(ReplicatedStorage.Shared.Data.Progression)
@@ -82,10 +83,13 @@ function Actions.new(ctx: Context.Ctx): Actions
 		end)
 	end
 
+	-- owner 2026-10-21: the short message, its longer text (`<messageKey>.info`) under "More ▸"
 	local function confirm(titleKey: string, messageKey: string, args: { [string]: any }?, run: () -> ())
+		local infoKey = `{messageKey}.info`
 		ctx.props.ShowModal({
 			Title = Text.now(titleKey),
 			Message = Text.now(messageKey, args),
+			Details = if Locale.has(infoKey) then Text.now(infoKey, args) else nil,
 			ConfirmText = Text.now("common.confirm"),
 			CancelText = Text.now("common.cancel"),
 			OnConfirm = function(): (boolean, string?)
