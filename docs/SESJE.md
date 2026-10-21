@@ -13538,6 +13538,18 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
   `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
   `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.
+### walka-wk: walka Wojownika i Kapłana „wow” (właściciel 2026-10-20)
+- **Efekty:** `src/client/Vfx/WkFx.luau` (21 składników `wk*`: uderzenia w ziemię z kolcami i odłamkami, pęknięcia,
+  szarża z pyłem i liniami pędu, tarcza mocy, pierścienie uderzeń, krytyk, wir, okrzyk, nowa, słup światła, aureola
+  leczenia, pióra, łańcuchy, miecz i młot z nieba, pętle wzmocnień i uświęconej ziemi); `Library.kit` wystawia pomocniki
+  puli (wspólne z sesją Łowcy i Maga); hak w `VfxController.piece`. Wszystkie 49 aktywnych umiejętności obu klas ma
+  nowy zestaw w `Data/SkillVfx` w budżecie `Config.Vfx.perCast`.
+- **Ataki podstawowe:** krytyk `WkFx.crit` + hitstop (`HitFx.crit.hitstop`), odłamki ciężkiej głowicy, pierścień
+  broni świętej (`CombatFxController`).
+- **Ruchy:** własne ruchy siedmiu umiejętności pul Kapłana (S145), zapowiedź i wybrzmienie w 10 słabych ruchach;
+  powtórzone sylwetki w klasach 13 → 3. Czasy serwera bez zmian (`skill_timing`).
+- **Dźwięki:** 26 cichych kluczy obu klas dostało pliki S111 we własnej wysokości (`Data/Sfx`).
+- **Testy:** `tests/wkfx.spec.luau`, `tests/SkillLooks` (warstwy i koszty `wk*`), `skillmotion.spec` (znane składniki).
 
 ### S155b: pierwsze minuty po S155 (pierwszy cenny łup, HUD sam się tłumaczy)
 - **Przejście nowego gracza w kodzie:** kreator → miasto (10 mikstur, broń i zbroja startowa) → samouczek (ruch, kapitan,
@@ -13561,6 +13573,17 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   ScreenController}.luau`, `src/client/UI/{MenuAttention,Screens/LegendReveal,Screens/Hud/TutorialHint}.luau`,
   `src/shared/Data/Localization/{pl,en}.luau`, `tests/{onboarding,tutorial}.spec.luau`, `tools/balance_reasons.luau`,
   `docs/{DESIGN,DECYZJE,PROGRESS,SESJE}.md`.
+### Mapa (2026-10-20/21): symbole zamiast napisów, skupiska, filtry
+- **Co:** mapa świata bez stałych napisów: symbole na ciemnych tarczach w kolorze i kształcie kategorii, stały rozmiar
+  na ekranie; rozsuwanie nachodzących i znaczki skupisk z liczbą (klik przybliża do poziomu, na którym się rozchodzą);
+  tabliczki obszarów z poziomami w wolnym miejscu obszaru albo schowane; przełącznik „Napisy” (scalony z sesją PC)
+  pokazuje nazwy tylko bez kolizji. Panel filtrów: chip na kategorię (symbol, nazwa, liczba), Wszystko / Nic,
+  zwijany; zapis `account.settings.mapHide`. Wyszukiwarka, podpowiedź i karta z większym tekstem; wyniki z symbolem
+  kategorii. Cele dotyku 46 px na telefonie.
+- **Pliki:** `src/shared/Logic/MapMarkers.luau`, `tests/mapmarkers.spec.luau`, `src/client/UI/Screens/WorldMap/{init,
+  Canvas,Overlay,Panels,Search,DetailCard}.luau`, `src/shared/Data/UiPalette.luau` (`map.cat*`, `plate`, `cluster`),
+  `SettingsService`, `AccountSchema`, `Types`, lokalizacja (`worldmap.cat.*`, `worldmap.filter.*`, `worldmap.cluster.*`).
+- **Bez przeglądu w Studio** (wygląd na PC i telefonie, skupiska w mieście, chipy filtrów). Minimapa nie ruszana.
 ### S159: zlecenia dzienne i tygodniowe jako zestawy z premią, serią, zamianą i Smoczymi Odłamkami (właściciel 2026-10-20)
 
 - **Dzienne:** 4 na dzień z grup (`Daily.SLOTS`: walka, zbieranie, potem dowolne; wagi, PvP tylko w wolnych miejscach),
