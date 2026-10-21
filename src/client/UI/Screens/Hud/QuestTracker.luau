@@ -43,6 +43,8 @@ local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local GuidePointer = require(ReplicatedStorage.Shared.Logic.GuidePointer)
 local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -109,8 +111,6 @@ end
 export type Props = {
 	-- S25: "Guide" to the tracked quest's target (NavController).
 	Guide: ((target: QuestTrack.Target) -> ())?,
-	-- S101: pixels the tracker moves down while the world event panel stands above it (QuestController).
-	Offset: Fusion.UsedAs<number>?,
 	-- S151b: a tracked achievement's row opens the achievements window on it.
 	OpenAchievement: ((id: string) -> ())?,
 }
@@ -913,49 +913,58 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	local width = scope:Computed(function(use): number
 		return widthOf(use, use(entry))
 	end)
-	-- the built-in place: under the menu, lower by the panels standing above it
-	local defaultTop = scope:Computed(function(use): number
-		local offset = if props and props.Offset then use(props.Offset) else 0
-		if use(PhoneLayout.Compact) then
-			-- W29: on a phone in landscape the left stack, under the party frames and the panels (Logic/PhoneHud)
-			return PhoneHud.stackTop(use(PhoneLayout.Others)) + offset
-		end
-		-- owner 2026-10-20: the menu has two rows (Hud Menu), so the tracker starts one button row lower
-		return HudDrag.RIGHT_TOP + offset
-	end)
 	local corner = handle.corner
 	local contentHeight = scope:Value(0)
+	local chrome = PAD_TOP + HEADER + GAP + PAD_BOTTOM
+	-- the body of a tracker at `top` whose list may reach down to `floor` (a sized one keeps its height, the list
+	-- scrolls inside)
+	local function bodyTo(use: Fusion.Use, top: number, floor: number): number
+		local e = use(entry)
+		if e and e.h then
+			return math.max(0, e.h - chrome)
+		end
+		return math.min(use(contentHeight), math.max(0, floor - top - chrome))
+	end
+	-- the floor of a moved tracker: the bottom of the screen (a phone: of its stack)
+	local function movedFloor(use: Fusion.Use): number
+		return use(Scale.VirtualSize).Y - (if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24)
+	end
+	-- owner 2026-10-21: the built-in place in the HUD column (UI/HudSlots): under the event panels, over the corner's
+	-- buttons (PC) or the sprint row (touch); a moved tracker is in the panels' way instead (they go round it)
+	local slot = HudSlots.join(
+		scope,
+		"questTracker",
+		scope:Computed(function(use): HudSlots.Box
+			local w = use(width)
+			local folded = use(collapsed)
+			local at = use(corner)
+			if at then
+				local body = if folded then 0 else bodyTo(use, at.Y, math.max(at.Y + 80 + chrome, movedFloor(use)))
+				local h = PAD_TOP + HEADER + PAD_BOTTOM + (if folded then 0 else GAP + body)
+				return { shown = true, w = w, h = h, custom = HudSlots.moved(at, w, h, 1) }
+			end
+			return { shown = true, w = w, h = if folded then PAD_TOP + HEADER + PAD_BOTTOM else HudStack.TRACKER_MIN }
+		end)
+	)
 	local bodyHeight = scope:Computed(function(use): number
 		if use(collapsed) then
 			return 0
 		end
-		local e = use(entry)
-		local chrome = PAD_TOP + HEADER + GAP + PAD_BOTTOM
-		if e and e.h then
-			-- a sized tracker keeps its height (the list scrolls inside)
-			return math.max(0, e.h - chrome)
-		end
-		local screen = use(Scale.VirtualSize)
 		local at = use(corner)
-		local top = if at then at.Y else use(defaultTop)
-		local bottom = if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24
-		return math.min(use(contentHeight), math.max(80, screen.Y - top - bottom - chrome))
+		if at then
+			return bodyTo(use, at.Y, math.max(at.Y + 80 + chrome, movedFloor(use)))
+		end
+		local place = use(slot)
+		return if place then bodyTo(use, place.top, place.bottom) else 0
 	end)
+	local position = HudSlots.position(scope, slot)
 
 	local frame = scope:New("Frame")({
 		Name = "QuestTracker",
-		AnchorPoint = scope:Computed(function(use): Vector2
-			return if use(corner) or use(PhoneLayout.Compact) then Vector2.zero else Vector2.new(1, 0)
-		end),
+		AnchorPoint = Vector2.zero,
 		Position = scope:Computed(function(use): UDim2
 			local at = use(corner)
-			if at then
-				return UDim2.fromOffset(at.X, at.Y)
-			end
-			if use(PhoneLayout.Compact) then
-				return UDim2.fromOffset(PhoneHud.PLACES.stack.x, use(defaultTop))
-			end
-			return UDim2.new(1, -Theme.Padding.Large, 0, use(defaultTop))
+			return if at then UDim2.fromOffset(at.X, at.Y) else use(position)
 		end),
 		Size = scope:Computed(function(use): UDim2
 			local body = use(bodyHeight)

@@ -4,7 +4,8 @@
 -- the target is out of range. The tooltip is UI/SkillInfo (shape, numbers, next level, breakpoints).
 -- Drag skills from the skill window or between slots; right-click clears a slot; click casts.
 -- S57: rank and numbers through Logic/Paths (skillRank, effectiveFor: chosen breakpoints, modify nodes).
--- Owner 2026-10-21: the cost in the top-left corner (Components/CostBadge: blue mana, yellow energy).
+-- Owner 2026-10-21: the cost in the top-left corner (Components/CostBadge: blue mana, yellow energy), on a plate half
+-- over the slot's top edge (~17 real pixels on any screen; never over the picture's centre, the seconds or the key).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -273,7 +274,7 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 					ZIndex = 4,
 				}),
 				if props.Cost
-					then CostBadge(scope, { SkillId = skillId, Cost = props.Cost, Tick = tick })
+					then CostBadge.new(scope, { SkillId = skillId, Cost = props.Cost, Tick = tick })
 					else nil :: any,
 				scope:New("TextLabel")({
 					Name = "Key",

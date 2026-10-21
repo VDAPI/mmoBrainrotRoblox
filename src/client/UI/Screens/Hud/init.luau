@@ -11,6 +11,7 @@ local AttackButton = require(script.AttackButton)
 local Bar = require(script.Parent.Parent.Components.Bar)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
+local CostBadge = require(script.Parent.Parent.Components.CostBadge) -- owner 2026-10-21: the cost plates over the bar
 local DeathScreen = require(script.DeathScreen)
 local PremiumShop = require(script.Parent.PremiumShop)
 local Device = require(script.Parent.Parent.Device)
@@ -702,13 +703,19 @@ local function Hud(scope: Scope, props: Props): Instance
 			menu(scope, props),
 			drawer(scope, props) :: any,
 			actionBar(scope, props),
-			-- S139: the weapon pool's name over the bar for a moment after a weapon change
+			-- S139: the weapon pool's name over the bar for a moment after a weapon change (owner 2026-10-21: over
+			-- the slots' cost plates too)
 			PoolLabel(
 				scope,
 				PhoneLayout.Pick(
 					scope,
 					UDim2.fromOffset(POOL.x + POOL.w / 2, POOL.y + POOL.h),
-					UDim2.new(0.5, 0, 1, -(14 + Theme.Padding.Medium + SLOT_SIZE + Theme.Padding.Small))
+					UDim2.new(
+						0.5,
+						0,
+						1,
+						-(14 + Theme.Padding.Medium + SLOT_SIZE + CostBadge.OVERHANG + Theme.Padding.Small)
+					)
 				)
 			),
 			expBar(scope),

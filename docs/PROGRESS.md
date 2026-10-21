@@ -54,6 +54,10 @@
   Bez przeglądu w Studio (dymek „i” przy krawędzi ekranu, wiersz „Więcej ▸” w tooltipie na telefonie).
 - **Opisy-3 (postać, umiejętności, zadania, menu, tropiciel):** zwijany tropiciel celów (`Logic/TrackerFold`), krótkie
   linie z „i” / „Więcej ▸” w oknach grupy 3; bez przeglądu w Studio (wysokość tropiciela, dymek przytrzymania na telefonie).
+- **Przegląd Studio 2026-10-21 (HUD, NPC):** kolumna HUD (`Logic/HudStack`), róg (poczta, plakietka PvP pod
+  przełącznikiem), plakietki kosztu umiejętności, ukrycie paneli pod ekranem wczytywania (`UI/HudGate`) i ruch NPC bez
+  modelu po zamianie stawów `AnimationConstraint` na `Motor6D` (`Util/RigJoints`) nieobejrzane w Studio. Na tablecie
+  1280 x 720 przy wielu panelach naraz kolumna może zejść pod rząd sprintu (brak miejsca w obu kolumnach).
 - **W31 ramy portali i wyjść:** nieobejrzane w Studio (dopasowanie modelu łuku przez `fitModel`, ramy wejść i wyjść,
   płomienie piecyków Krypty, napisy stref na śniegu, brama lochu).
 - **S160k kowal i Mistrz Portali:** Kamień Przemiany Efektu i wieczne kamienie teleportu nie mają własnych ikon PNG (rysowany kamień / zwój w kolorze); model Tripo Mistrza Portali do wygenerowania (`TRIPO-NPC.md` nr 68).

@@ -7,11 +7,11 @@
 --     the field of the match, out with the place, champion), "Bracket", and "Return to the world" (a tournament server,
 --     or out of a local bracket; while still in the bracket it asks first: a walkover) with "Stay and watch" for the
 --     out; after the final "Returning in 52 s".
--- PC: the right column over the quest tracker (under the world event / Blood Moon panel, `Above`), the tracker moves
--- down by `Offset`. Touch: the left column under the portrait (under a world event panel), folded to one line, a tap
--- unfolds it (buttons 44 px); it leaves the match panel (top centre) and the skill buttons free.
+-- PC: the right column over the quest tracker (under the world event / Blood Moon panel). Touch: the left column
+-- under the portrait (under a world event panel), folded to one line, a tap unfolds it (buttons 44 px); it leaves the
+-- match panel (top centre) and the skill buttons free. Owner 2026-10-21: the column's order and places come from
+-- UI/HudSlots (Logic/HudStack), round the elements the player moved.
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -21,8 +21,7 @@ local ClockText = require(script.Parent.Parent.Parent.ClockText)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
-local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
-local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -37,10 +36,6 @@ export type Props = {
 	OpenTab: () -> (),
 	ShowInvite: () -> (),
 	Leave: () -> (),
-	-- PC: set to the pixels the quest tracker moves down for this panel (0 while hidden or on touch)
-	Offset: Fusion.Value<number>?,
-	-- PC: the height of the panels above this one (world event, Blood Moon)
-	Above: Fusion.UsedAs<number>?,
 }
 
 local GOLD = Theme.Brass.Bright
@@ -52,17 +47,10 @@ local TITLE = 22
 local LINE = 20
 local BUTTON_PC = 34
 local BUTTON_TOUCH = 44
--- the anchors of Hud/WorldEventPanel and Hud/BloodMoonPanel
-local TOUCH_TOP = Theme.Padding.Large + 136 + 6 + 44
-local TOUCH_EVENT = 150 -- a world event panel above on touch (its largest height + a gap)
-local PARTY_TOP = Theme.Padding.Large + 136 + 70
-local PARTY_ROW = 58 + 6
 
 local function TourneyPanel(scope: Scope, props: Props): Instance
 	local tourney = State.Value({ "tourney" })
 	local level = State.Value({ "character", "level" })
-	local party = State.Value({ "party" })
-	local worldEvent = State.Value({ "worldEvent" })
 	local touch = Device.Touch
 	local now = scope:Value(Clock.now())
 	local expanded = scope:Value(false)
@@ -228,43 +216,24 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 		end
 		return h
 	end)
-	local touchTop = scope:Computed(function(use): number
-		local p = use(party)
-		local others = 0
-		if type(p) == "table" and type(p.members) == "table" then
-			for _, member in p.members do
-				if member.id ~= Players.LocalPlayer.UserId then
-					others += 1
-				end
-			end
-		end
-		if use(PhoneLayout.Compact) then
-			-- W29: the phone stack (Logic/PhoneHud), under the panels above it as on PC
-			return PhoneHud.stackTop(others) + (if props.Above then use(props.Above) else 0)
-		end
-		local top = if others > 0 then PARTY_TOP + others * PARTY_ROW else TOUCH_TOP
-		if use(worldEvent) ~= nil then
-			top += TOUCH_EVENT
-		end
-		return top
-	end)
 	-- owner 2026-10-21: moved by its tab, scaled by its corner (UI/HudDrag); a moved panel leaves the column
 	local handle = HudDrag.new(scope, "tourney", function(use)
 		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
 	end)
-	if props.Offset then
-		local offset = props.Offset
-		local pushed = scope:Computed(function(use): number
-			-- W29: on a phone in landscape the tracker stacks under the panel as on PC
-			if not use(shown) or (use(touch) and not use(PhoneLayout.Compact)) or use(handle.corner) then
-				return 0
-			end
-			return use(height) + 8
+	-- owner 2026-10-21: the built-in place in the HUD column, round the moved elements (UI/HudSlots)
+	local slot = HudSlots.join(
+		scope,
+		"tourney",
+		scope:Computed(function(use): HudSlots.Box
+			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height)
+			return {
+				shown = use(shown),
+				w = w,
+				h = h,
+				custom = HudSlots.moved(use(handle.corner), w, h, use(handle.scale)),
+			}
 		end)
-		scope:Observer(pushed):onBind(function()
-			offset:set(Fusion.peek(pushed))
-		end)
-	end
+	)
 
 	local function label(order: number, h: number, text: any, color: any, size: number, font: Font, visible: any?)
 		return scope:New("TextLabel")({
@@ -431,16 +400,8 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 	})
 	return HudDrag.frame(scope, handle, {
 		Name = "TourneyPanel",
-		AnchorPoint = scope:Computed(function(use): Vector2
-			return if use(touch) then Vector2.new(0, 0) else Vector2.new(1, 0)
-		end),
-		Position = scope:Computed(function(use): UDim2
-			if use(touch) then
-				return UDim2.fromOffset(Theme.Padding.Large, use(touchTop))
-			end
-			local above = if props.Above then use(props.Above) else 0
-			return UDim2.new(1, -Theme.Padding.Large, 0, HudDrag.RIGHT_TOP + above)
-		end),
+		AnchorPoint = Vector2.zero,
+		Position = HudSlots.position(scope, slot),
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
 		end),

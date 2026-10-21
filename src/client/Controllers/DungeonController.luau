@@ -21,6 +21,7 @@ local DungeonWindow = require(script.Parent.Parent.UI.Screens.DungeonWindow)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local ReadyCheckScreen = require(script.Parent.Parent.UI.Screens.ReadyCheck)
 local FightView = require(script.Parent.Parent.UI.FightView)
+local HudGate = require(script.Parent.Parent.UI.HudGate)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -337,7 +338,7 @@ function DungeonController.Init(registry)
 			})
 		end,
 	})
-	bossBar().Parent = UIController.GetLayer("Screens")
+	bossBar().Parent = HudGate.Layer(UIController.GetLayer("Screens")) -- owner 2026-10-21: not over the loading screen
 	announcer().Parent = UIController.GetLayer("Toasts")
 	ReadyCheckScreen(scope).Parent = UIController.GetLayer("Toasts") -- S134f: the ready check at the gate
 end

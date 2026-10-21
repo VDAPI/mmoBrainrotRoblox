@@ -13,7 +13,8 @@
 -- W31 (owner 2026-10-21: "about 60 NPCs stand as bare default avatars, frozen"): an NPC without the owner's model
 -- wears the player's body and its role's outfit (Logic/NpcLook, Util/AvatarBuild; the Roblox hairstyles once
 -- CosmeticService has loaded them), the smith holds a hammer, and only the root part is anchored: the limbs hang on
--- their Motor6Ds, which every client poses (NpcAnimController: breathing, looks, talk gestures). No Animator.
+-- their Motor6Ds (the body's AnimationConstraints turned into them, Util/RigJoints), which every client poses
+-- (NpcAnimController: breathing, looks, talk gestures). No Animator.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -32,6 +33,7 @@ local Footing = require(Shared.Logic.Footing)
 local LookBuild = require(Shared.Util.LookBuild)
 local NpcAssetFit = require(Shared.Logic.NpcAssetFit)
 local NpcLook = require(Shared.Logic.NpcLook)
+local RigJoints = require(Shared.Util.RigJoints)
 local MapTerrain = require(Shared.Logic.MapTerrain)
 
 local log = Log.new("NpcService")
@@ -360,6 +362,10 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 	if animator then
 		animator:Destroy()
 	end
+	-- W31 (Studio check: the dressed NPCs still stood like statues): the dressed body's joints are AnimationConstraints
+	-- (the avatar joint upgrade), which hold the limbs physically, not as one body with the anchored root, so the
+	-- limbs were anchored below as loose parts and NpcRig found no Motor6D; each becomes the Motor6D it stands for
+	RigJoints.motorize(npc, Instance.new)
 	-- W31: only the root part is anchored, the limbs hang on their joints so the clients can move them
 	for _, part in npc:GetDescendants() do
 		if part:IsA("BasePart") then

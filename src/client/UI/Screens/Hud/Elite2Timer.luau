@@ -6,6 +6,8 @@
 -- FIX 2026-10-15 (owner): a timer that ran out stays green only for READY_SECONDS, then its row goes (and the panel
 -- with the last one); a timer from another server goes once its time is up. The server still drops a timer the
 -- moment its Elite II is back (MonsterService.clearTimers).
+-- Owner 2026-10-21: PC right over the bottom-right corner's buttons (it stood over the PvP toggle), a touch screen in
+-- the column of panels with the quest tracker, never over the skill arc (Logic/HudStack, UI/HudSlots).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -13,8 +15,11 @@ local Workspace = game:GetService("Workspace")
 
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
+local Scale = require(script.Parent.Parent.Parent.Scale)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local TextCase = require(ReplicatedStorage.Shared.Logic.TextCase)
@@ -25,7 +30,10 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local WIDTH = 240
+local WIDTH = HudStack.ELITE
+-- the height of the panel: its padding and header, then one row of two lines per timer (the list's gap included)
+local HEAD = 6 + 20 + 6
+local ROW = 42 + 2
 local READY_SECONDS = 30
 
 local function Elite2Timer(scope: Scope): Instance
@@ -71,12 +79,27 @@ local function Elite2Timer(scope: Scope): Instance
 		return out
 	end)
 
+	local slot = HudSlots.join(
+		scope,
+		"elite",
+		scope:Computed(function(use): HudSlots.Box
+			local n = #use(list)
+			return { shown = n > 0, w = WIDTH, h = HEAD + n * ROW }
+		end)
+	)
+	local stacked = HudSlots.position(scope, slot)
+
 	return scope:New("Frame")({
 		Name = "Elite2Timer",
-		AnchorPoint = Vector2.new(1, 1),
+		AnchorPoint = scope:Computed(function(use): Vector2
+			return if use(Device.Touch) then Vector2.zero else Vector2.new(1, 1)
+		end),
 		Position = scope:Computed(function(use): UDim2
-			-- Touch: above the attack and skill buttons.
-			return UDim2.new(1, -Theme.Padding.Large, 1, if use(Device.Touch) then -290 else -130)
+			if use(Device.Touch) then
+				return use(stacked)
+			end
+			local screen = use(Scale.VirtualSize)
+			return UDim2.fromOffset(screen.X - Theme.Padding.Large, HudStack.eliteBottom(screen.X, screen.Y))
 		end),
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,

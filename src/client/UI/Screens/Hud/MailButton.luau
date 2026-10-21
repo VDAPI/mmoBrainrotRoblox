@@ -2,14 +2,17 @@
 -- Owner 2026-10-21 ("when the player gets something in the mail, show a mail icon with the number of messages in the
 -- bottom-right corner under the attack button"): an envelope with the number of parcels waiting (state branch `mail`,
 -- MailService publish, Logic/Mail.badge), only while there are any; a click opens the mail window (viewing works
--- anywhere, collecting at the mailbox). PC and tablet: under the attack button's place (on PC the attack button is
--- hidden; the Elite II timers end above it, the action bar starts below); a phone in landscape: over the target button,
--- left of the skill arc (Logic/PhoneHud `mail`). It replaces the S156 envelope by the minimap.
+-- anywhere, collecting at the mailbox). A phone in landscape: over the target button, left of the skill arc
+-- (Logic/PhoneHud `mail`). It replaces the S156 envelope by the minimap.
+-- Owner 2026-10-21 ("it touches the quest tracker and sits right by the attack button"): PC and tablet in its own slot
+-- in the corner under the PvP toggle and its badge, over the EXP bar, clear of the attack button, the skill arc and the
+-- column of panels above (Logic/HudStack.MAIL).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Mail = require(ReplicatedStorage.Shared.Logic.Mail)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
@@ -29,10 +32,7 @@ export type Props = {
 }
 
 local ART = UiArt.hud("mail")
-local SIZE = 52
--- the attack button's column (Hud/AttackButton: anchored bottom-right at (-110, -150), 104 px wide)
-local COLUMN_X = -(110 + 104 / 2)
-local TOP = -128
+local SPOT = HudStack.MAIL
 
 local function MailButton(scope: Scope, props: Props): Instance
 	local state = State.Value({ "mail" })
@@ -46,9 +46,9 @@ local function MailButton(scope: Scope, props: Props): Instance
 	local artShown = ArtIcon.Shown(scope, ART)
 	local button = scope:New("TextButton")({
 		Name = "MailButton",
-		AnchorPoint = PhoneLayout.Anchor(scope, "mail", Vector2.new(0.5, 0)),
-		Position = PhoneLayout.Position(scope, "mail", UDim2.new(1, COLUMN_X, 1, TOP)),
-		Size = PhoneLayout.Size(scope, "mail", UDim2.fromOffset(SIZE, SIZE)),
+		AnchorPoint = PhoneLayout.Anchor(scope, "mail", Vector2.new(1, 1)),
+		Position = PhoneLayout.Position(scope, "mail", UDim2.new(1, -SPOT.right, 1, -SPOT.bottom)),
+		Size = PhoneLayout.Size(scope, "mail", UDim2.fromOffset(SPOT.w, SPOT.h)),
 		Visible = scope:Computed(function(use): boolean
 			return use(count) > 0
 		end),
