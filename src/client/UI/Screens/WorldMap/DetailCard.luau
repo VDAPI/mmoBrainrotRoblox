@@ -77,9 +77,10 @@ export type Api = {
 
 local DetailCard = {}
 
-local WIDTH = 316
+local WIDTH = 340 -- owner 2026-10-20 "Mapa": wider for the bigger body text (was 316)
 local PREVIEW_HEIGHT = 176
 local SHEET_PREVIEW = 150
+DetailCard.WIDTH = WIDTH -- the window keeps the filter panel clear of the card
 
 function DetailCard.new(scope: Scope, props: Props): Api
 	local touch = props.Touch
@@ -329,7 +330,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 					Enum.FontStyle.Italic
 				)
 				else Theme.Fonts.Body,
-			TextSize = line.size or Theme.TextSize.Small,
+			TextSize = line.size or Theme.TextSize.Body, -- owner 2026-10-20: body text (was small)
 			TextColor3 = line.color or Theme.Paper.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			[Children] = if line.art

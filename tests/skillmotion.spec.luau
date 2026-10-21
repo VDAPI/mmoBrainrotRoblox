@@ -89,6 +89,12 @@ for _, name in
 do
 	VFX_PIECES[name] = true
 end
+-- walka-wk: the Warrior and Cleric pieces of Vfx/WkFx (tests/wkfx.spec checks them against the module)
+for name in (require("./SkillLooks") :: any).PIECE_LAYER do
+	if string.sub(name, 1, 2) == "wk" then
+		VFX_PIECES[name] = true
+	end
+end
 
 local BEHAVIOURS: { [string]: boolean } = require("./BreakpointKeys")
 

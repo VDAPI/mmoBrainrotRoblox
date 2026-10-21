@@ -30,6 +30,37 @@ export type Look = {
 	-- W02: painted terrain materials (MaterialVariant in MaterialService) shown on this map: base material name ->
 	-- variant name (nil = the plain materials). The client sets them with SetBaseMaterialOverride on entering the map.
 	materials: { [string]: string }?,
+	-- Terrain colours of this map over TERRAIN_COLORS (material name -> hex), set by the client on entering the map.
+	terrainColors: { [string]: string }?,
+}
+
+-- Terrain material colours of every map (Terrain:SetMaterialColor; the server sets them, maps override some through
+-- `terrainColors`). Moved here from World/WorldBuilder so the client can put them back after a map's own.
+local TERRAIN_COLORS: { [string]: string } = {
+	Grass = "#5C7A3A",
+	LeafyGrass = "#34452A",
+	Ground = "#7A6A4E",
+	Mud = "#3F3A2E",
+	Cobblestone = "#8A8070",
+	Pavement = "#7A7468",
+	Rock = "#5A5650",
+	Slate = "#4A4744",
+	Basalt = "#2F2B30",
+	Sand = "#C2A878",
+	Snow = "#EEF3F7",
+	Glacier = "#A8D8F0",
+	Ice = "#C9E8F7",
+	CrackedLava = "#D6542A",
+	-- S21: light warm stone of the city market and temple square (no other map uses it).
+	Limestone = "#B9AE96",
+	-- S26: grey gravel of the Meadows' quarry terraces and stream beds (S47 the Peaks' moraines and trails, S48 the
+	-- caves' lake and stream beds use the same colour; Pebble is a part-only material, terrain rejects it).
+	Salt = "#8A847A",
+	-- S45: dark red rock of Duskwood's Blood Cliffs (S46's red crags of the Ashen Wastes match it).
+	Sandstone = "#6E2F2A",
+	-- S46: the Ashen Wastes' grey ash and the salt crust of the Dead Oasis (no other map uses them).
+	Asphalt = "#77716C",
+	Concrete = "#D6CFC0",
 }
 
 local UNDERGROUND = { cave = true, crypt = true, dungeon = true }
@@ -76,6 +107,8 @@ end
 local BY_MAP: { [string]: Look } = {
 	city = with(OUTDOOR, {
 		sunColor = "#FFE6C4",
+		-- The city's lawns are LeafyGrass (no decoration grass, Logic/TownTerrain.LAWN), tinted like the old Grass.
+		terrainColors = { LeafyGrass = "#5C7A3A" },
 		contrast = 0.14,
 		brightness = -0.03,
 		clouds = { cover = 0.4, density = 0.55, color = "#F6EFE6" },
@@ -130,6 +163,17 @@ local MapLooks = {}
 MapLooks.OUTDOOR = OUTDOOR
 MapLooks.UNDERGROUND_LOOK = UNDER
 MapLooks.byMap = BY_MAP
+MapLooks.TERRAIN_COLORS = table.freeze(TERRAIN_COLORS)
+
+-- Terrain colours on a map: TERRAIN_COLORS with the map's own `terrainColors` on top.
+function MapLooks.terrainColorsOf(mapId: string): { [string]: string }
+	local out = table.clone(TERRAIN_COLORS)
+	local own: { [string]: string } = MapLooks.of(mapId).terrainColors or {}
+	for name, color in own do
+		out[name] = color
+	end
+	return out
+end
 
 -- W12 (docs/wyglad/mapy/miasto.md A7): windows at night: about a third glow, a warm amber instead of the yellow neon.
 MapLooks.windows = { share = 0.35, color = "#F0A050" }

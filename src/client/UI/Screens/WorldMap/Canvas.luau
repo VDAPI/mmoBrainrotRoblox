@@ -1,30 +1,32 @@
 --!strict
 -- Static layer of one map in the world map window (S20, reworked in S25), built once per map and cached:
--- the sketch (terrain, roads, water, buildings), monster areas (buttons with a name and level pill) and the
--- icons: NPCs (with the quest mark), portals, city gates, cave mouths, exits, dungeon gates (Data/Portals) and
--- gathering nodes (from the sketch). Every icon is a light transparent TextButton whose hit area stays
--- Canvas.HIT pixels wide at every zoom (its size is divided by the zoom); the glyph and caption inside grow
--- with the zoom like the rest of the drawing. At the smallest zoom overlapping icons keep only the most
--- important one (NPC with a quest > portal > dungeon > NPC > node); the hidden ones stay reachable by search.
--- The window wires one set of connections for the shown map (WorldMap/init).
--- S119: icons get the owner's silhouettes (UiArtState.decorate, glyph colour) once the map atlas is loaded; a map with
+-- the sketch (terrain, roads, water, buildings), monster areas (buttons with a name and level plate) and the
+-- symbols: NPCs (with the quest mark), portals, cave mouths, dungeon gates (Data/Portals), Elite II hideouts, the world
+-- boss's barrow and gathering nodes (from the sketch).
+-- Owner 2026-10-20 "Mapa" (labels overlapped): no text stays on the map. Every symbol is a dark plate with a ring and
+-- glyph in its category's colour and shape (Logic/MapMarkers: round = people, diamond = ways, square = danger) that
+-- keeps one screen size at every zoom (a UIScale of 1 / zoom); the name shows on hover (PC) and the card on a click /
+-- tap (WorldMap/init). `applyLayout` places the symbols for the zoom and the filter: overlapping ones are nudged apart,
+-- crowds fold into a cluster badge with a count (a click zooms in), and at the closest zoom everything is spread.
+-- Area plates show the levels (with the Labels switch also the name) on a free spot inside their area, or hide.
+-- The "Labels" switch (owner's session 2026-10-21, kept in the merge) puts names under the symbols, but only those that
+-- touch no other name or symbol (most important first), so even then no text overlaps.
+-- The window wires one set of connections for the shown map (WorldMap/init); cluster badges are pooled here and call
+-- the window's `cached.onCluster`.
+-- S119: symbols get the owner's silhouettes (UiArtState.decorate, glyph colour) once the map atlas is loaded; a map with
 -- a painted picture (Logic/UiArt.map, frame from the wiki SVG viewBox) shows it instead of the sketch's terrain once
 -- loaded (the sketch is not drawn when the picture is already there; otherwise it hides when the picture arrives).
--- S134i: Elite II hideouts as an orange skull (smaller than the dungeon's) with the name and levels, from the data only.
--- S149b: the world boss's barrow as an icy crown with its name (WorldMap/Overlay adds the boss's live state).
--- Owner 2026-10-21 ("the labels overlap; leave the clickable symbols and show more on a click, make them more
--- visible"): every icon sits on a dark round badge ringed in its colour; captions and area names show only with the
--- "Labels" switch (off by default) or while the pointer is over the icon or area; the card opens on a click as before.
+-- S134i: Elite II hideouts, S149b: the world boss's barrow (WorldMap/Overlay adds the boss's live state).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local AreaProfileText = require(script.Parent.Parent.Parent.AreaProfileText)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
-local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.Parent.Parent.IconState)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
+local MapMarkers = require(ReplicatedStorage.Shared.Logic.MapMarkers)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
@@ -42,9 +44,14 @@ local Canvas = {}
 
 Canvas.SIZE = 760 -- base canvas size in pixels (zoom 1)
 Canvas.ZOOMS = { 1, 1.6, 2.5, 4 }
-Canvas.DETAIL_ZOOM = 2 -- nodes and NPC names from this zoom index
-Canvas.HIT = 36 -- icon hit area in pixels at every zoom (UI scale 1)
-local CROWD = 22 -- icons closer than this at zoom 1 overlap
+Canvas.DETAIL_ZOOM = 2 -- gathering nodes from this zoom index
+Canvas.HIT = 40 -- symbol hit area (and spacing) in screen pixels at every zoom (UI scale 1), PC
+Canvas.HIT_TOUCH = 46 -- the same on touch (>= 44 px tap targets)
+Canvas.PLATE = 34 -- the dark plate of a symbol
+local NODE_PLATE = 24
+local CLUSTER_PLATE = 40
+local ART = 22 -- silhouette size on a plate
+local NODE_ART = 16
 
 export type IconKind = "npc" | "portal" | "cave" | "dungeon" | "node" | "lair" | "worldboss"
 
@@ -53,18 +60,24 @@ export type Icon = {
 	id: string, -- NPC id, portal id, cave map id, dungeon region, node kind, hideout id (S134i)
 	x: number,
 	z: number,
-	pixel: Vector2, -- canvas pixel at zoom 1
+	pixel: Vector2, -- canvas pixel at zoom 1 (the true place)
+	shown: Vector2, -- canvas pixel where the symbol is drawn now (nudged by the layout)
 	button: TextButton,
 	glyph: TextLabel,
-	caption: TextLabel?,
+	plate: Frame,
+	stroke: UIStroke,
+	scale: UIScale,
 	mark: TextLabel?,
+	caption: TextLabel?, -- the name under the symbol (only with the Labels switch)
+	name: string, -- set by Canvas.applyNames
 	color: Color3,
+	category: string, -- Logic/MapMarkers category (NPCs: by services, "quest" while marked)
 	base: number, -- importance without quest marks
 	priority: number,
-	hover: boolean?, -- owner 2026-10-21: the pointer is over it (its caption shows)
-	crowded: boolean,
 	target: string?, -- portals: map they lead to
 	hidden: boolean?, -- S104: an NPC the character does not see yet (NpcMarkState.Hidden)
+	services: { string }?, -- NPCs
+	art: string?,
 }
 
 export type AreaEntry = {
@@ -72,10 +85,14 @@ export type AreaEntry = {
 	area: Areas.Area,
 	stroke: UIStroke,
 	pill: Frame,
+	pillScale: UIScale,
 	name: TextLabel,
 	levels: TextLabel,
 	star: ImageLabel, -- S119: "recommended" badge in the area's corner (the ★ leaves the name while it shows)
+	nameWidth: number, -- estimated screen width of the name line (set by refresh)
 }
+
+export type Cluster = { x: number, y: number, members: { Icon } }
 
 export type Cached = {
 	mapId: string,
@@ -86,22 +103,19 @@ export type Cached = {
 	layers: { [string]: Frame },
 	icons: { Icon },
 	npcIcons: { [string]: Icon },
-	captions: { TextLabel },
 	painted: ImageLabel?, -- S119
 	sketchLayer: Frame?, -- S119: the drawn terrain (nil when the painted map replaced it at build time)
-	labels: boolean, -- owner 2026-10-21: the "Labels" switch
-	detail: boolean, -- the zoom shows NPC names
+	clusters: { Cluster }, -- shown cluster badges (index = pooled button)
+	clusterButtons: { TextButton },
+	-- set by the open window: "tap" | "enter" | "leave" on the cluster badge `index`
+	onCluster: ((event: string, index: number, input: InputObject?) -> ())?,
 }
 
 local PRIORITY: { [IconKind]: number } =
 	{ portal = 40, cave = 40, worldboss = 35, dungeon = 30, lair = 30, npc = 20, node = 10 }
--- S134i: an Elite II hideout's skull: orange, smaller than the dungeon's red one
--- S136: the drawing keeps its colours (Data/UiPalette.map)
 local MAP = UiPalette.map
-local LAIR_COLOR = Theme.tint(MAP.lair)
-local LAIR_CAPTION = Theme.tint(MAP.lairCaption)
-local WORLD_BOSS = Theme.tint(MAP.worldBoss) -- S149b
-local WORLD_BOSS_CAPTION = Theme.tint(MAP.worldBossCaption)
+local PLATE_COLOR = Theme.tint(MAP.plate)
+local CLUSTER_COLOR = Theme.tint(MAP.cluster)
 local NODE_COLORS: { [string]: string } = { vein = MAP.vein, bush = MAP.bush, fishing = MAP.fishing }
 
 local cache: { [string]: Cached } = {}
@@ -118,33 +132,64 @@ local function layer(parent: Instance, name: string, z: number): Frame
 	return f
 end
 
-local function text(parent: Instance, value: string, color: Color3, size: number, z: number): TextLabel
+-- Colour of a category (Data/UiPalette.map through Logic/MapMarkers).
+function Canvas.categoryColor(id: string): Color3
+	local category = MapMarkers.byId[id]
+	local hex = if category then (MAP :: any)[category.color] else nil
+	return Theme.tint(if type(hex) == "string" then hex else MAP.npc)
+end
+
+-- The dark plate of a symbol in its shape, with a ring of `color`. Shared with WorldMap/Overlay and the filter chips.
+function Canvas.plate(
+	parent: Instance,
+	shape: MapMarkers.Shape,
+	side: number,
+	color: Color3,
+	z: number
+): (Frame, UIStroke)
+	local plate = Instance.new("Frame")
+	plate.Name = "Plate"
+	plate.AnchorPoint = Vector2.new(0.5, 0.5)
+	plate.Position = UDim2.fromScale(0.5, 0.5)
+	local s = if shape == "diamond" then math.floor(side * 0.78) else side
+	plate.Size = UDim2.fromOffset(s, s)
+	plate.Rotation = if shape == "diamond" then 45 else 0
+	plate.BackgroundColor3 = PLATE_COLOR
+	plate.BackgroundTransparency = 0.08
+	plate.BorderSizePixel = 0
+	plate.ZIndex = z
+	plate.Active = false
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = if shape == "round" then UDim.new(0.5, 0) else UDim.new(0, 6)
+	corner.Parent = plate
+	local stroke = Instance.new("UIStroke")
+	stroke.Color = color
+	stroke.Thickness = 2.5
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = plate
+	plate.Parent = parent
+	return plate, stroke
+end
+
+local function glyphLabel(parent: Instance, value: string, color: Color3, size: number, z: number): TextLabel
 	local l = Instance.new("TextLabel")
+	l.Name = "Glyph"
 	l.AnchorPoint = Vector2.new(0.5, 0.5)
 	l.Position = UDim2.fromScale(0.5, 0.5)
-	l.Size = UDim2.fromOffset(220, size + 4)
+	l.Size = UDim2.fromOffset(size + 8, size + 6)
 	l.BackgroundTransparency = 1
 	l.Text = value
 	l.TextSize = size
 	l.FontFace = Theme.Fonts.BodyBold
 	l.TextColor3 = color
-	l.TextStrokeTransparency = 0.25
+	l.TextStrokeTransparency = 0.4
 	l.ZIndex = z
 	l.Active = false
 	l.Parent = parent
 	return l
 end
 
-local function bossOf(region: string?): string?
-	for _, boss in Bosses.list do
-		if boss.region == region then
-			return boss.nameKey
-		end
-	end
-	return nil
-end
-
--- One icon: a transparent button (hit area) with the glyph, an optional caption under it and a quest mark.
+-- One symbol: a transparent button (the hit area, constant on screen) holding the plate, the glyph and a quest mark.
 local function icon(
 	cached: Cached,
 	parent: Frame,
@@ -153,11 +198,13 @@ local function icon(
 	x: number,
 	z: number,
 	glyph: string,
-	color: Color3,
-	size: number,
-	art: string? -- S119: interface picture key (silhouette tinted with `color`)
+	category: string,
+	art: string?, -- S119: interface picture key (silhouette tinted with the category colour)
+	color: Color3?
 ): Icon
 	local pixel = MapSketch.toPixel(cached.sketch, cached.scale, x, z)
+	local tint = color or Canvas.categoryColor(category)
+	local small = kind == "node"
 	local button = Instance.new("TextButton")
 	button.Name = `{kind}:{id}`
 	button.AnchorPoint = Vector2.new(0.5, 0.5)
@@ -168,28 +215,53 @@ local function icon(
 	button.Text = ""
 	button.ZIndex = parent.ZIndex + 1
 	button.Parent = parent
-	-- owner 2026-10-21: a dark badge ringed in the icon's colour, so a symbol reads on any ground
-	local badge = Instance.new("Frame")
-	badge.Name = "Badge"
-	badge.AnchorPoint = Vector2.new(0.5, 0.5)
-	badge.Position = UDim2.fromScale(0.5, 0.5)
-	badge.Size = UDim2.fromOffset(size + 10, size + 10)
-	badge.BackgroundColor3 = Theme.Iron.Sunken
-	badge.BackgroundTransparency = 0.15
-	badge.ZIndex = parent.ZIndex + 1
-	badge.Active = false
-	local round = Instance.new("UICorner")
-	round.CornerRadius = UDim.new(1, 0)
-	round.Parent = badge
-	local ring = Instance.new("UIStroke")
-	ring.Color = color
-	ring.Thickness = 2
-	ring.Parent = badge
-	badge.Parent = button
-	local label = text(button, glyph, color, size, parent.ZIndex + 2)
-	label.Size = UDim2.fromOffset(size + 8, size + 6)
+	local scale = Instance.new("UIScale")
+	scale.Parent = button
+	local def = MapMarkers.byId[category]
+	local plate, stroke = Canvas.plate(
+		button,
+		if def then def.shape else "round",
+		if small then NODE_PLATE else Canvas.PLATE,
+		tint,
+		parent.ZIndex + 1
+	)
+	if small then
+		stroke.Thickness = 1.5
+	end
+	local label = glyphLabel(
+		button,
+		glyph,
+		tint,
+		if small then Theme.TextSize.Caption else Theme.TextSize.Body,
+		parent.ZIndex + 2
+	)
 	if art then
-		UiArtState.decorate(label, art, { tint = color, size = math.max(size, 12) })
+		UiArtState.decorate(label, art, { tint = tint, size = if small then NODE_ART else ART })
+	end
+	local caption: TextLabel? = nil
+	if not small then
+		local c = Instance.new("TextLabel")
+		c.Name = "Caption"
+		c.AnchorPoint = Vector2.new(0.5, 0)
+		c.Position = UDim2.new(0.5, 0, 0.5, Canvas.PLATE / 2 + 2)
+		c.AutomaticSize = Enum.AutomaticSize.X
+		c.Size = UDim2.fromOffset(0, Theme.TextSize.Caption + 6)
+		c.BackgroundColor3 = PLATE_COLOR
+		c.BackgroundTransparency = 0.2
+		c.FontFace = Theme.Fonts.BodyBold
+		c.TextSize = Theme.TextSize.Caption
+		c.TextColor3 = tint
+		c.ZIndex = parent.ZIndex + 3
+		c.Visible = false
+		local padding = Instance.new("UIPadding")
+		padding.PaddingLeft = UDim.new(0, 5)
+		padding.PaddingRight = UDim.new(0, 5)
+		padding.Parent = c
+		local corner = Instance.new("UICorner")
+		corner.CornerRadius = UDim.new(0, 4)
+		corner.Parent = c
+		c.Parent = button
+		caption = c
 	end
 	local entry: Icon = {
 		kind = kind,
@@ -197,46 +269,24 @@ local function icon(
 		x = x,
 		z = z,
 		pixel = pixel,
+		shown = pixel,
 		button = button,
 		glyph = label,
-		caption = nil,
+		plate = plate,
+		stroke = stroke,
+		scale = scale,
 		mark = nil,
-		color = color,
+		caption = caption,
+		name = "",
+		color = tint,
+		category = category,
 		base = PRIORITY[kind],
 		priority = PRIORITY[kind],
-		crowded = false,
 		target = nil,
+		art = art,
 	}
 	table.insert(cached.icons, entry)
-	-- the caption shows while the pointer is over the icon (Canvas.showCaption)
-	button.MouseEnter:Connect(function()
-		entry.hover = true
-		Canvas.showCaption(cached, entry)
-	end)
-	button.MouseLeave:Connect(function()
-		entry.hover = false
-		Canvas.showCaption(cached, entry)
-	end)
 	return entry
-end
-
-local function caption(
-	cached: Cached,
-	entry: Icon,
-	key: string,
-	suffix: string?,
-	color: Color3,
-	size: number,
-	dy: number
-)
-	local l = text(entry.button, "", color, size, entry.button.ZIndex + 1)
-	l.Position = UDim2.new(0.5, 0, 0.5, dy)
-	l:SetAttribute("Key", key)
-	if suffix then
-		l:SetAttribute("Suffix", suffix)
-	end
-	entry.caption = l
-	table.insert(cached.captions, l)
 end
 
 local function portalIcons(cached: Cached, layers: { [string]: Frame })
@@ -245,9 +295,7 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 		if not target then
 			continue
 		end
-		local levels = if target.id == "city" then "" else ` {target.minLevel}–{target.maxLevel}`
 		if portal.kind == "cave" then
-			local cave = Areas.caves.get(portal.target)
 			local entry = icon(
 				cached,
 				layers.icons,
@@ -256,20 +304,10 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.x,
 				portal.z,
 				"⛰",
-				Theme.Zone.Red,
-				26, -- W28: bigger map icons (was 20)
+				"cave",
 				UiArt.mapIcon("cave")
 			)
 			entry.target = portal.target
-			caption(
-				cached,
-				entry,
-				if cave then cave.nameKey else target.nameKey,
-				if cave then ` {cave.levels[1]}–{cave.levels[2]}` else levels,
-				Theme.tint(MAP.caveCaption),
-				11,
-				16
-			)
 		elseif portal.kind == "dungeon" then
 			local region = string.match(portal.target, "^dungeon_(.+)$") or ""
 			local entry = icon(
@@ -280,15 +318,10 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.x,
 				portal.z,
 				"☠",
-				Theme.tint(MAP.dungeonMark),
-				28, -- W28 (was 20)
+				"dungeon",
 				UiArt.mapIcon("dungeon")
 			)
 			entry.target = portal.target
-			local key = bossOf(region)
-			if key then
-				caption(cached, entry, key, nil, Theme.tint(MAP.dungeonMark), 11, 15)
-			end
 		else
 			local entry = icon(
 				cached,
@@ -298,47 +331,30 @@ local function portalIcons(cached: Cached, layers: { [string]: Frame })
 				portal.x,
 				portal.z,
 				"◎",
-				Theme.tint(MAP.portal),
-				24, -- W28 (was 18)
+				"travel",
 				UiArt.mapIcon("portal")
 			)
 			entry.target = portal.target
-			caption(cached, entry, target.nameKey, levels, Theme.tint(MAP.portalCaption), 11, 14)
 		end
 	end
 end
 
--- S134i: the Elite II hideouts of the map (Data/Areas lairs): a skull with the name and levels, from the data alone
--- (never whether the Elite II lives).
+-- S134i: the Elite II hideouts of the map (Data/Areas lairs), from the data alone (never whether the Elite II lives).
 local function lairIcons(cached: Cached, layers: { [string]: Frame })
 	local data = Areas.byMap[cached.mapId]
 	for _, lair in (if data then data.lairs or {} else {}) :: { Areas.Lair } do
-		local entry =
-			icon(cached, layers.icons, "lair", lair.id, lair.x, lair.z, "☠", LAIR_COLOR, 22, UiArt.mapIcon("lair"))
-		caption(cached, entry, lair.nameKey, ` {lair.lv[1]}–{lair.lv[2]}`, LAIR_CAPTION, 11, 14)
+		icon(cached, layers.icons, "lair", lair.id, lair.x, lair.z, "☠", "lair", UiArt.mapIcon("lair"))
 	end
 end
 
--- S149b: the world boss's barrow on its map (a crown with the place's name, from the data); the live state (warning,
--- fight, the time of the next one) is drawn over it by WorldMap/Overlay.
+-- S149b: the world boss's barrow on its map; the live state (warning, fight, the time of the next one) is drawn over it
+-- by WorldMap/Overlay.
 local function worldBossIcon(cached: Cached, layers: { [string]: Frame })
 	if cached.mapId ~= WorldBoss.Data.map then
 		return
 	end
 	local spot = WorldBoss.spot()
-	local entry = icon(
-		cached,
-		layers.icons,
-		"worldboss",
-		spot.id,
-		spot.x,
-		spot.z,
-		"♛",
-		WORLD_BOSS,
-		24, -- W28 (was 16)
-		UiArt.mapIcon("worldboss")
-	)
-	caption(cached, entry, spot.nameKey, nil, WORLD_BOSS_CAPTION, 11, 14)
+	icon(cached, layers.icons, "worldboss", spot.id, spot.x, spot.z, "♛", "worldboss", UiArt.mapIcon("worldboss"))
 end
 
 local function npcIcons(cached: Cached, layers: { [string]: Frame })
@@ -352,17 +368,27 @@ local function npcIcons(cached: Cached, layers: { [string]: Frame })
 				npc.position.x,
 				npc.position.z,
 				npc.icon,
-				Theme.Iron.Text,
-				20, -- W28 (was 15)
+				MapMarkers.npcCategory(npc.services :: any),
 				UiArt.serviceOfNpc(npc)
 			)
-			caption(cached, entry, npc.nameKey, nil, Theme.Iron.Text, 10, 13)
-			local mark = text(entry.button, "", Theme.Brass.Bright, 17, entry.button.ZIndex + 2)
-			mark.FontFace = Theme.Fonts.Display
-			mark.Position = UDim2.new(0.5, 0, 0.5, -15)
+			entry.services = npc.services :: any
+			-- the quest mark (! / ?) as a small badge on the plate's upper right
+			local mark = Instance.new("TextLabel")
+			mark.Name = "Mark"
+			mark.AnchorPoint = Vector2.new(0.5, 0.5)
+			mark.Position = UDim2.new(0.5, Canvas.PLATE / 2 - 3, 0.5, -Canvas.PLATE / 2 + 3)
 			mark.Size = UDim2.fromOffset(20, 20)
-			mark.TextStrokeTransparency = 0.1
+			mark.BackgroundColor3 = PLATE_COLOR
+			mark.Text = ""
+			mark.TextSize = Theme.TextSize.Small
+			mark.FontFace = Theme.Fonts.Display
+			mark.TextColor3 = Theme.Brass.Bright
+			mark.ZIndex = entry.button.ZIndex + 3
 			mark.Visible = false
+			local corner = Instance.new("UICorner")
+			corner.CornerRadius = UDim.new(0.5, 0)
+			corner.Parent = mark
+			mark.Parent = entry.button
 			entry.mark = mark
 			cached.npcIcons[npc.id] = entry
 		end
@@ -374,7 +400,7 @@ local function nodeIcons(cached: Cached, layers: { [string]: Frame })
 		if item.t == "node" and item.id then
 			local family = string.match(item.id, "^(%a+)_") or "vein"
 			local color = Theme.tint(NODE_COLORS[family] or MAP.node)
-			local entry = icon(
+			icon(
 				cached,
 				layers.nodes,
 				"node",
@@ -382,11 +408,10 @@ local function nodeIcons(cached: Cached, layers: { [string]: Frame })
 				item.x,
 				item.z,
 				"●",
-				color,
-				11, -- W28 (was 7)
-				UiArt.mapIcon("node", family)
+				"node",
+				UiArt.mapIcon("node", family),
+				color
 			)
-			UiArtState.fade(entry.glyph, 0, 0.6)
 		end
 	end
 end
@@ -420,9 +445,11 @@ local function areaFrames(cached: Cached, layers: { [string]: Frame })
 		pill.Position = UDim2.fromScale(0.5, 0.5)
 		pill.AutomaticSize = Enum.AutomaticSize.XY
 		pill.Size = UDim2.fromOffset(0, 0)
-		pill.BackgroundColor3 = Theme.Iron.Sunken
-		pill.BackgroundTransparency = 0.2
+		pill.BackgroundColor3 = PLATE_COLOR
+		pill.BackgroundTransparency = 0.15
 		pill.ZIndex = 3
+		local pillScale = Instance.new("UIScale")
+		pillScale.Parent = pill
 		local pillCorner = Instance.new("UICorner")
 		pillCorner.CornerRadius = UDim.new(0, 6)
 		pillCorner.Parent = pill
@@ -449,17 +476,10 @@ local function areaFrames(cached: Cached, layers: { [string]: Frame })
 			l.Parent = pill
 			return l
 		end
-		local name = line(1, 12, Theme.Fonts.BodyBold)
+		local name = line(1, Theme.TextSize.Caption, Theme.Fonts.BodyBold)
 		name.RichText = true -- S33: the profile icon in its colour
-		local levels = line(2, 17, Theme.Fonts.Display)
+		local levels = line(2, Theme.TextSize.Small, Theme.Fonts.Display)
 		pill.Parent = f
-		f.MouseEnter:Connect(function()
-			name.Visible = true
-		end)
-		f.MouseLeave:Connect(function()
-			name.Visible = cached.labels
-		end)
-		name.Visible = false
 		local star = Instance.new("ImageLabel")
 		star.Name = "Recommended"
 		star.AnchorPoint = Vector2.new(1, 0)
@@ -470,43 +490,70 @@ local function areaFrames(cached: Cached, layers: { [string]: Frame })
 		star.ZIndex = 4
 		star.Visible = false
 		star.Parent = f
-		table.insert(
-			cached.areas,
-			{ frame = f, area = area, stroke = stroke, pill = pill, name = name, levels = levels, star = star }
-		)
+		table.insert(cached.areas, {
+			frame = f,
+			area = area,
+			stroke = stroke,
+			pill = pill,
+			pillScale = pillScale,
+			name = name,
+			levels = levels,
+			star = star,
+			nameWidth = 0,
+		})
 	end
 end
 
--- Recomputes which icons overlap at the smallest zoom (the more important one stays).
-function Canvas.declutter(cached: Cached)
-	local order = table.clone(cached.icons)
-	table.sort(order, function(a, b)
-		if a.priority ~= b.priority then
-			return a.priority > b.priority
+-- One pooled cluster badge (a ringed plate with the count); its events go to the window through `cached.onCluster`.
+local function clusterButton(cached: Cached, index: number): TextButton
+	local existing = cached.clusterButtons[index]
+	if existing then
+		return existing
+	end
+	local parent = cached.layers.clusters
+	local button = Instance.new("TextButton")
+	button.Name = `cluster:{index}`
+	button.AnchorPoint = Vector2.new(0.5, 0.5)
+	button.Size = UDim2.fromOffset(Canvas.HIT, Canvas.HIT)
+	button.BackgroundTransparency = 1
+	button.AutoButtonColor = false
+	button.Text = ""
+	button.ZIndex = parent.ZIndex + 1
+	button.Visible = false
+	button.Parent = parent
+	local scale = Instance.new("UIScale")
+	scale.Parent = button
+	local _, stroke = Canvas.plate(button, "round", CLUSTER_PLATE, CLUSTER_COLOR, parent.ZIndex + 1)
+	stroke.Thickness = 3
+	local count = glyphLabel(button, "", Theme.Plain, Theme.TextSize.Body, parent.ZIndex + 2)
+	count.Name = "Count"
+	count.FontFace = Theme.Fonts.Display
+	button.Activated:Connect(function(input: InputObject)
+		local handler = cached.onCluster
+		if handler then
+			handler("tap", index, input)
 		end
-		return a.button.Name < b.button.Name
 	end)
-	local kept: { Icon } = {}
-	for _, entry in order do
-		entry.crowded = false
-		if entry.kind ~= "node" and not entry.hidden then
-			for _, other in kept do
-				if (other.pixel - entry.pixel).Magnitude < CROWD then
-					entry.crowded = true
-					break
-				end
-			end
-			if not entry.crowded then
-				table.insert(kept, entry)
-			end
+	button.MouseEnter:Connect(function()
+		local handler = cached.onCluster
+		if handler then
+			handler("enter", index, nil)
 		end
-	end
+	end)
+	button.MouseLeave:Connect(function()
+		local handler = cached.onCluster
+		if handler then
+			handler("leave", index, nil)
+		end
+	end)
+	cached.clusterButtons[index] = button
+	return button
 end
 
--- Quest marks over the NPC icons (and their importance on the map).
+-- Quest marks on the NPC symbols: the badge, the importance and the category (a marked NPC is a "quest" one).
 function Canvas.applyMarks(cached: Cached, marks: { [string]: NpcMarks.Mark })
 	for npcId, entry in cached.npcIcons do
-		entry.hidden = NpcMarkState.isHidden(npcId) -- S104 (applyZoom hides the icon)
+		entry.hidden = NpcMarkState.isHidden(npcId) -- S104 (applyLayout hides the symbol)
 		local mark: any = marks[npcId]
 		local style = NpcMarkState.style(mark)
 		if entry.mark then
@@ -517,76 +564,197 @@ function Canvas.applyMarks(cached: Cached, marks: { [string]: NpcMarks.Mark })
 			end
 		end
 		entry.priority = entry.base + NpcMarks.priority(mark) * 12
+		local category = MapMarkers.npcCategory(entry.services or {}, mark ~= nil)
+		if category ~= entry.category then
+			entry.category = category
+			entry.color = Canvas.categoryColor(category)
+			entry.stroke.Color = entry.color
+			entry.glyph.TextColor3 = entry.color
+			if entry.caption then
+				entry.caption.TextColor3 = entry.color
+			end
+			UiArtState.retarget(entry.glyph, entry.art, entry.color)
+		end
 	end
-	Canvas.declutter(cached)
 end
 
--- Service chips (S25): matching NPCs stay bright, the others fade (transparency only).
-function Canvas.applyFilter(cached: Cached, services: { [string]: boolean }?)
-	for npcId, entry in cached.npcIcons do
-		local def = Npcs.get(npcId)
-		local match = true
-		if services and next(services) ~= nil then
-			match = false
-			for _, service in (if def then def.services else {}) :: { string } do
-				if services[service] then
-					match = true
+-- Symbols per category on this map (NPCs the character sees, areas), for the filter chips.
+function Canvas.counts(cached: Cached): { [string]: number }
+	local out: { [string]: number } = {}
+	for _, entry in cached.icons do
+		if not entry.hidden then
+			out[entry.category] = (out[entry.category] or 0) + 1
+		end
+	end
+	if #cached.areas > 0 then
+		out.area = #cached.areas
+	end
+	return out
+end
+
+-- Names of the symbols (the window passes the hover hint's title; refreshed on a language change).
+function Canvas.applyNames(cached: Cached, nameOf: (entry: Icon) -> string)
+	for _, entry in cached.icons do
+		entry.name = nameOf(entry)
+		if entry.caption then
+			entry.caption.Text = entry.name
+		end
+	end
+end
+
+-- Places everything for a zoom and a filter (hidden categories): symbol visibility and nudged positions, cluster
+-- badges, the constant screen size of symbols and plates, and the area plates' spots. Cheap (a few hundred symbols at
+-- most); runs on zoom, filter, quest mark and map changes, never per frame.
+function Canvas.applyLayout(
+	cached: Cached,
+	zoomIndex: number,
+	hidden: { [string]: boolean },
+	touch: boolean,
+	labels: boolean?
+)
+	local zoom = Canvas.ZOOMS[zoomIndex]
+	local hit = if touch then Canvas.HIT_TOUCH else Canvas.HIT
+	local detail = zoomIndex >= Canvas.DETAIL_ZOOM
+	cached.layers.areas.Visible = not hidden.area
+	local points: { MapMarkers.Point } = {}
+	local byKey: { [string]: Icon } = {}
+	for _, entry in cached.icons do
+		local visible = not entry.hidden and not hidden[entry.category] and (entry.kind ~= "node" or detail)
+		entry.button.Visible = false
+		entry.button.Size = UDim2.fromOffset(hit, hit)
+		entry.scale.Scale = 1 / zoom
+		if visible then
+			local key = entry.button.Name
+			byKey[key] = entry
+			table.insert(points, { key = key, x = entry.pixel.X, y = entry.pixel.Y, priority = entry.priority })
+		end
+	end
+	local layout = MapMarkers.layout(points, zoom, { size = hit, spread = zoomIndex >= #Canvas.ZOOMS })
+	local obstacles: { { x: number, y: number } } = {}
+	for key, at in layout.placed do
+		local entry = byKey[key]
+		entry.shown = Vector2.new(at.x, at.y)
+		entry.button.Position = UDim2.fromOffset(at.x, at.y)
+		entry.button.Visible = true
+		table.insert(obstacles, at)
+	end
+	table.clear(cached.clusters)
+	for i, group in layout.clusters do
+		local members: { Icon } = {}
+		for _, key in group.members do
+			local entry = byKey[key]
+			entry.shown = Vector2.new(group.x, group.y)
+			table.insert(members, entry)
+		end
+		cached.clusters[i] = { x = group.x, y = group.y, members = members }
+		local button = clusterButton(cached, i)
+		button.Position = UDim2.fromOffset(group.x, group.y)
+		button.Size = UDim2.fromOffset(hit, hit)
+		local scale = button:FindFirstChildOfClass("UIScale")
+		if scale then
+			scale.Scale = 1 / zoom
+		end
+		local plate = button:FindFirstChild("Plate")
+		local stroke = plate and plate:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Color = members[1].color -- the ring of the most important symbol inside
+		end
+		local count = button:FindFirstChild("Count") :: TextLabel?
+		if count then
+			count.Text = tostring(#members)
+		end
+		button.Visible = true
+		table.insert(obstacles, { x = group.x, y = group.y })
+	end
+	for i = #layout.clusters + 1, #cached.clusterButtons do
+		cached.clusterButtons[i].Visible = false
+	end
+	-- Labels switch: a name under a placed symbol only where it touches no other name or symbol (screen pixels).
+	local taken: { { x0: number, y0: number, x1: number, y1: number } } = {}
+	local named: { Icon } = {}
+	for _, entry in cached.icons do
+		if entry.caption then
+			entry.caption.Visible = false
+			if labels and entry.button.Visible and entry.name ~= "" then
+				table.insert(named, entry)
+			end
+		end
+	end
+	table.sort(named, function(a, b)
+		if a.priority ~= b.priority then
+			return a.priority > b.priority
+		end
+		return a.button.Name < b.button.Name
+	end)
+	local captionH = Theme.TextSize.Caption + 6
+	for _, entry in named do
+		local w = MapMarkers.textWidth(entry.name, Theme.TextSize.Caption) + 10
+		local cx, top = entry.shown.X * zoom, entry.shown.Y * zoom + Canvas.PLATE / 2 + 2
+		local box = { x0 = cx - w / 2, y0 = top, x1 = cx + w / 2, y1 = top + captionH }
+		local free = true
+		for _, other in taken do
+			if box.x0 < other.x1 and box.x1 > other.x0 and box.y0 < other.y1 and box.y1 > other.y0 then
+				free = false
+				break
+			end
+		end
+		if free then
+			for _, o in obstacles do
+				local ox, oy = o.x * zoom, o.y * zoom
+				local half = hit / 2
+				local own = math.abs(o.x - entry.shown.X) < 1e-3 and math.abs(o.y - entry.shown.Y) < 1e-3
+				if
+					not own
+					and box.x0 < ox + half
+					and box.x1 > ox - half
+					and box.y0 < oy + half
+					and box.y1 > oy - half
+				then
+					free = false
+					break
 				end
 			end
 		end
-		local filtering = services ~= nil and next(services) ~= nil
-		local color = if filtering and match then Theme.Brass.Bright else entry.color
-		entry.glyph.TextColor3 = color
-		UiArtState.fade(entry.glyph, if match then 0 else 0.75, if match then 0.25 else 0.85, color)
-		if entry.caption then
-			entry.caption.TextTransparency = if match then 0 else 0.8
-			entry.caption.TextStrokeTransparency = if match then 0.25 else 0.9
+		if free then
+			table.insert(taken, box)
+			if entry.caption then
+				entry.caption.Visible = true
+			end
 		end
 	end
-end
-
-export type Toggles = { areas: boolean, icons: boolean, npcs: boolean, nodes: boolean, labels: boolean? }
-
--- Owner 2026-10-21: whether an icon's caption shows: the "Labels" switch (NPC names only from the detail zoom) or the
--- pointer over it.
-function Canvas.showCaption(cached: Cached, entry: Icon)
-	local caption = entry.caption
-	if not caption then
-		return
-	end
-	local labels = cached.labels and (entry.kind ~= "npc" or cached.detail)
-	caption.Visible = labels or entry.hover == true
-	-- a hovered caption draws over its neighbours
-	caption.ZIndex = if entry.hover then entry.button.ZIndex + 6 else entry.button.ZIndex + 1
-end
-
--- Layer switches, crowding at the smallest zoom and hit areas that keep their size at every zoom.
-function Canvas.applyZoom(cached: Cached, zoomIndex: number, toggles: Toggles)
-	local zoom = Canvas.ZOOMS[zoomIndex]
-	local detail = zoomIndex >= Canvas.DETAIL_ZOOM
-	cached.layers.areas.Visible = toggles.areas
-	cached.layers.icons.Visible = toggles.icons
-	cached.layers.npcs.Visible = toggles.npcs
-	cached.layers.nodes.Visible = toggles.nodes and detail
-	cached.labels = toggles.labels == true
-	cached.detail = detail
-	for _, area in cached.areas do
-		area.name.Visible = cached.labels
-	end
-	local hit = Canvas.HIT / zoom
-	for _, entry in cached.icons do
-		entry.button.Size = UDim2.fromOffset(hit, hit)
-		entry.button.Visible = not (zoomIndex == 1 and entry.crowded) and not entry.hidden
-		Canvas.showCaption(cached, entry)
+	-- Area plates: name and levels, else the levels alone, else nothing (room comes with the zoom).
+	local nameSize, levelSize = Theme.TextSize.Caption, Theme.TextSize.Small
+	for _, entry in cached.areas do
+		local f = entry.frame
+		local x0, y0 = f.Position.X.Offset, f.Position.Y.Offset
+		local rect = { x0 = x0, y0 = y0, x1 = x0 + f.Size.X.Offset, y1 = y0 + f.Size.Y.Offset }
+		local levelsWidth = MapMarkers.textWidth(entry.levels.Text, levelSize) + 14
+		local fullW = math.max(entry.nameWidth, levelsWidth) + 14
+		local fullH = nameSize + levelSize + 10
+		-- the owner's view (2026-10-21): the levels alone; the name too only with the Labels switch
+		local spot, cx, cy = nil, nil, nil
+		if labels then
+			spot, cx, cy = MapMarkers.placeLabel(rect, fullW, fullH, zoom, obstacles, hit)
+		end
+		local withName = spot ~= nil
+		if not spot then
+			spot, cx, cy = MapMarkers.placeLabel(rect, levelsWidth, levelSize + 8, zoom, obstacles, hit)
+		end
+		entry.pill.Visible = spot ~= nil
+		entry.name.Visible = withName
+		entry.pillScale.Scale = 1 / zoom
+		if spot and cx and cy then
+			entry.pill.Position = UDim2.fromOffset(cx - x0, cy - y0)
+		end
 	end
 end
 
 -- `profiles` (S33): hunting ground profile icons before the area names.
 export type View = { onlyRecommended: boolean, highlight: string?, profiles: boolean? }
 
--- Localized captions and area colours (cheap: a few dozen objects), refreshed on language / level / view
+-- Localized plate texts and area colours (cheap: a few dozen objects), refreshed on language / level / view
 -- change (S22: band of the nearest end of the range, "★" on recommended areas, dimmed others when only the
--- recommended ones are wanted, a gold outline on the highlighted area).
+-- recommended ones are wanted, a gold outline on the highlighted area). The plates' spots come from applyLayout.
 function Canvas.refresh(cached: Cached, level: number, view: View)
 	for _, entry in cached.areas do
 		local area = entry.area
@@ -599,7 +767,7 @@ function Canvas.refresh(cached: Cached, level: number, view: View)
 		entry.stroke.Color = if highlighted then Theme.Brass.Bright else color:Lerp(Theme.Shade, 0.45)
 		entry.stroke.Thickness = if highlighted then 4 else 2
 		entry.stroke.Transparency = if dim then 0.7 else 0
-		entry.pill.BackgroundTransparency = if dim then 0.75 else 0.2
+		entry.pill.BackgroundTransparency = if dim then 0.75 else 0.15
 		local icon = if view.profiles ~= false then AreaProfileText.iconRich(area.profile, nil, "iron") else ""
 		local starLook = if recommended then UiArtState.lookNow(UiArt.mapIcon("recommended")) else nil
 		entry.star.Visible = starLook ~= nil
@@ -607,21 +775,18 @@ function Canvas.refresh(cached: Cached, level: number, view: View)
 			UiArtState.apply(entry.star, starLook)
 			entry.star.ImageTransparency = if dim then 0.6 else 0
 		end
+		local plain = Text.now(area.nameKey)
 		entry.name.Text = (if icon ~= "" then icon .. " " else "")
 			.. (if recommended and not starLook then "★ " else "")
-			.. AreaProfileText.escape(Text.now(area.nameKey))
+			.. AreaProfileText.escape(plain)
+		entry.nameWidth = MapMarkers.textWidth(plain, Theme.TextSize.Caption)
+			+ (if icon ~= "" then Theme.TextSize.Caption + 4 else 0)
+			+ (if recommended and not starLook then Theme.TextSize.Caption else 0)
 		entry.name.TextColor3 = color
 		entry.name.TextTransparency = if dim then 0.6 else 0
 		entry.levels.Text = `{area.lv[1]}–{area.lv[2]}`
 		entry.levels.TextColor3 = color
 		entry.levels.TextTransparency = if dim then 0.6 else 0
-	end
-	for _, label in cached.captions do
-		local key = label:GetAttribute("Key")
-		if type(key) == "string" then
-			local suffix = label:GetAttribute("Suffix")
-			label.Text = Text.now(key) .. (if type(suffix) == "string" then suffix else "")
-		end
 	end
 end
 
@@ -703,6 +868,7 @@ function Canvas.get(mapId: string): Cached?
 		nodes = layer(canvas, "Nodes", 4),
 		icons = layer(canvas, "Icons", 5),
 		npcs = layer(canvas, "Npcs", 5),
+		clusters = layer(canvas, "Clusters", 6),
 	}
 	local cached: Cached = {
 		mapId = mapId,
@@ -713,11 +879,11 @@ function Canvas.get(mapId: string): Cached?
 		layers = layers,
 		icons = {},
 		npcIcons = {},
-		captions = {},
 		painted = painted,
 		sketchLayer = sketchLayer,
-		labels = false,
-		detail = false,
+		clusters = {},
+		clusterButtons = {},
+		onCluster = nil,
 	}
 	paint(cached)
 	areaFrames(cached, layers)
@@ -726,7 +892,6 @@ function Canvas.get(mapId: string): Cached?
 	worldBossIcon(cached, layers) -- S149b
 	npcIcons(cached, layers)
 	nodeIcons(cached, layers)
-	Canvas.declutter(cached)
 	local count = #canvas:GetDescendants()
 	print(`[WorldMap] {mapId}: static layer built in {math.floor((os.clock() - started) * 1000)} ms, {count} objects`)
 	cache[mapId] = cached
