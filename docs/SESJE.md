@@ -13538,6 +13538,27 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
   `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
   `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.
+
+### S159: walka z bossami do unikania (pociski, fale, pierścienie; właściciel 2026-10-21)
+- **Silnik:** `Logic/Hazards` (czysty, Lune): rodzaje `bolt` (pocisk: naprowadzanie, odbicia od brzegu areny,
+  bumerang), `lob` (łuk albo spadek z nieba na krąg), `wave` (pas przesuwający się po ziemi, ściana z przerwą), `ring`
+  (rosnący niski pierścień, przeskakiwany, z przerwami), `sweep` (obracający się stożek oddechu); rozwinięcie wzoru z
+  ziarna jest deterministyczne, więc serwer (`HazardService`, trafienia co Heartbeat) i klient (`Vfx/HazardFx`, ten sam
+  zegar `GetServerTimeNow`) widzą to samo. Zapowiedź ≥ 0,6 s, prędkość ≤ 70 st./s, limit trafień na rzut i odstęp.
+- **Wzory:** `Data/HazardPatterns` (strzała i pocisk zwykłych potworów, rzut Elity II, po kilka wzorów na bossa),
+  przypięcie w `Data/BossTuning.patterns` (`replace` / `add` / `ambient` z fazami) i `pattern` w `extra` (tarcza,
+  pościg za uciekającym). Liczby `Data/Bosses` bez zmian; morvane: spirala przy tarczy co 6 s zamiast 4.
+- **Potwory:** atak wręcz z zamachem (`Combat.basicWind` 0,45 s, dystansowy 0,35 s, zdarzenie `aw`), trafia tylko,
+  gdy cel nadal jest w zasięgu × `windReach` + `windSlack`; strzały i pociski dystansowe oraz rzut Elity II lecą jako
+  prawdziwe pociski z wyprzedzeniem celu (unik i blok nadal działają).
+- **Klient:** `Vfx/HazardFx` (kule z poświatą, smugą i światłem, wirujące topory, strzały, kamienie, kule śniegu,
+  sople, łuki i spadające meteory nad kręgiem `GroundTelegraph`, rzędy kolców / płomieni, ściany lodowca, pierścień
+  ziemi, oddech ze stożkiem), pule części, światła z `Pool.takeLight`, bez emiterów na niskiej jakości; gest bossa
+  (`pose`), ładowanie (`Library.charge`) i dźwięk ostrzeżenia. Mocny cios w gracza (`bg`): czerwony błysk brzegów
+  ekranu i wstrząs (ustawienie wstrząsu).
+- **Testy:** `tests/hazards.spec.luau` (geometria, czasy, trafienia, determinizm, dane, każdy boss ma pocisk i
+  eskalację w 2. fazie, ≤ 45% HP Maga na trafienie, gesty i dźwięki); księga `tools/balance_reasons.luau` (S159).
+- **Nieobejrzane w Studio:** wygląd i czytelność wzorów, ustawienie gestów; do przejrzenia w AnimLab.
 ### S151c: bestiariusz w oknie osiągnięć, widoczny przycisk osiągnięć (właściciel 2026-10-20)
 - **Bestiariusz** (`Data/Bestiary`, `Logic/Bestiary`, DESIGN §20c): wpis dla każdego rodzaju potwora i każdego bossa
   (lochy i boss świata) w jego krainie; stopnie 10 / 100 / 1000 (bossowie 1 / 10 / 50 nagrodzonych zwycięstw), punkty
