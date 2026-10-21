@@ -207,6 +207,34 @@ function TerrainLayers.atSegment(values: { number }, i: number, t: number): numb
 	return a + (b - a) * t
 end
 
+-- Studio review 2026-10-21: the water surface that the voxels of `voxels` below show at a point, or nil. A 4-stud cell
+-- is water only where the ground fills less than half of it, so the shallow rim of a pond or a pool (ground less than
+-- about 2 studs under the surface, depending on where the surface cuts the cell) is written as ground: things that
+-- must stand in water (a waterfall's foot and foam, fishing buoys) ask this rather than the height function's water.
+-- Every writer starts its blocks and its bottom layer on multiples of VOXEL (map-relative), as World/TerrainWriter does
+-- for the Meadows and the shaped regions; the cell takes the height and water of its centre column.
+function TerrainLayers.voxelWater(
+	height: (x: number, z: number) -> number,
+	water: (x: number, z: number) -> number?,
+	x: number,
+	z: number
+): number?
+	local V = TerrainLayers.VOXEL
+	local cx, cz = V * math.floor(x / V) + V / 2, V * math.floor(z / V) + V / 2
+	local level = water(cx, cz)
+	if level == nil then
+		return nil
+	end
+	local h = height(cx, cz)
+	-- the cell the surface cuts: water over the ground when the ground fills less than half of it (and the water at
+	-- least an eighth); else the full cell under it, when that one is water
+	local bottom = V * math.floor(level / V)
+	if (h < bottom + V / 2 and level - bottom >= V / 8) or h < bottom - V / 2 then
+		return level
+	end
+	return nil
+end
+
 export type Voxels = { materials: { { { string } } }, occupancy: { { { number } } } }
 -- Ground height at a column and an optional per-column record the material and water functions read (the Meadows
 -- keep their road / stream / lake lookups there so every column is probed once).

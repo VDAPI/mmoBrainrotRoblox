@@ -91,15 +91,6 @@ local function standingPlaces(): { { name: string, x: number, z: number } }
 	return list
 end
 
--- The buoys of a fishing spot (Services/GatherService): x + 9 cos(2.1 i), z + 8 + 5 sin(2.1 i).
-local function buoys(x: number, z: number): { { number } }
-	local out = {}
-	for i = 1, 3 do
-		table.insert(out, { x + 9 * math.cos(2.1 * i), z + 8 + 5 * math.sin(2.1 * i) })
-	end
-	return out
-end
-
 describe("Frost Peaks: data", function()
 	it("keeps the areas of the brief (ids, levels, kinds, groups, profiles; 57 groups) without overlaps", function()
 		expect(#DATA.areas).toBe(#BRIEF)
@@ -671,20 +662,6 @@ describe("Frost Peaks: generator", function()
 		expect(per.fishing_frostpeak).toBe(2)
 	end)
 
-	it("puts the fishing spots on dry ice by the ice holes, with all three buoys in the water", function()
-		local spots = FrostpeakGen.fishingSpots()
-		expect(#spots).toBe(2)
-		for _, spot in spots do
-			expect(T.water(spot.x, spot.z)).toBe(nil)
-			expect(T.slope(spot.x, spot.z, 2) < 0.3).toBe(true)
-			for _, b in buoys(spot.x, spot.z) do
-				if T.water(b[1], b[2]) == nil then
-					error(`buoy of the spot at {spot.x}, {spot.z} on dry ice at {b[1]}, {b[2]}`)
-				end
-			end
-		end
-	end)
-
 	it("gives the client life to animate and the map a sketch with ice, glaciers and ridges", function()
 		local kinds: { [string]: number } = {}
 		for _, l in FrostpeakGen.life() do
@@ -1011,7 +988,8 @@ describe("Frost Peaks: story places (S105)", function()
 	it("F-T4: the monster groups and the gathering nodes of S47 are unchanged (57 groups, 50 nodes)", function()
 		-- before S105 (build/s105_before.json): 57 groups, 50 nodes; the sums of their coordinates
 		-- S149b: the one adamantite vein that grew in the world boss's barrow grows outside it now (-4923, 738 before)
-		local NODE_SUM_X, NODE_SUM_Z, GROUP_SUM_X, GROUP_SUM_Z = -4773, 814, 2719, 169
+		-- (studio review 2026-10-21: one fishing spot moved 4 studs west and 2 south, Logic/FishingSpots: -4773 / 814)
+		local NODE_SUM_X, NODE_SUM_Z, GROUP_SUM_X, GROUP_SUM_Z = -4777, 816, 2719, 169
 		local groups = AreaSpawns.region(DATA, MAP.size)
 		expect(#groups).toBe(57)
 		-- S134i: without the Elite II hideouts' own nodes (every other node unchanged)

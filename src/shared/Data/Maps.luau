@@ -471,7 +471,9 @@ map({
 	lighting = LIGHT.city,
 	nightLighting = LIGHT.cityNight,
 	dayNight = true,
-	maxParts = 7000,
+	-- Studio review 2026-10-21: 7056 parts at start (houses, lamps, the verge, portals since S21's 7000); a warning
+	-- only (World/WorldBuilder), raised with ~8% headroom instead of thinning the city (docs/DECYZJE.md).
+	maxParts = 7600,
 	music = "",
 	buildMode = "generated",
 	worldMap = { x = 0.2, y = 0.5 },
@@ -496,8 +498,10 @@ map({
 	-- Creator Store: a calm pastoral loop ("medieval countryside ambient music", ~2-3 min, loops cleanly).
 	music = "",
 	buildMode = "generated",
-	-- S26 server part budget: the S20 map had ~2150 parts; the shaped map may use up to +30%.
-	maxParts = 2800,
+	-- S26 server part budget: the S20 map had ~2150 parts; the shaped map may use up to +30%. Studio review
+	-- 2026-10-21: 3342 parts at start (the W02 kit models stand in for the trees and rocks with their own meshes, the
+	-- props of W12-W30), a warning only: raised with ~10% headroom (docs/DECYZJE.md).
+	maxParts = 3700,
 	worldMap = { x = 0.42, y = 0.62 },
 	links = { "city", "meadows_hideout", "meadows_burrow", "meadows_cave", "duskwood" },
 })
@@ -544,8 +548,9 @@ map({
 	buildMode = "generated",
 	-- S45: the shaped forest builds in the background; server budget: ~930 big trees (2 parts each), buildings
 	-- ~350, portals / cave entrances / signposts ~300 (tests/duskwood.spec: generator shell + 300 <= maxParts).
+	-- Studio review 2026-10-21: 3126 parts with the W02 kit models, a warning only: raised with ~10% headroom.
 	buildLate = true,
-	maxParts = 3000,
+	maxParts = 3450,
 	worldMap = { x = 0.58, y = 0.38 },
 	links = { "meadows", "city", "duskwood_den", "duskwood_barrow", "duskwood_cave", "ashen" },
 })

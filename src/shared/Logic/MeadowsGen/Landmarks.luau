@@ -706,14 +706,17 @@ local function fallsLedge(out: { Build })
 	local top = 0
 	for i, p in path do
 		local wx, wz = x + p[1], z + p[2]
-		top = math.max(MeadowsTerrain.height(wx, wz), pool) + 0.45 - b.at.y
+		local ground = MeadowsTerrain.height(wx, wz) - b.at.y
+		top = math.max(ground + b.at.y, pool) + 0.45 - b.at.y
+		-- (studio review 2026-10-21: in the plunge pool a stone reaches down to the bed instead of floating)
+		local foot = math.min(top - 0.9, ground)
 		bp:add(
 			"cyl",
-			0.9,
+			top - foot,
 			2.6 + (i % 2) * 0.5,
 			2.2,
 			p[1],
-			top - 0.45,
+			(top + foot) / 2,
 			p[2],
 			0,
 			i * 40,

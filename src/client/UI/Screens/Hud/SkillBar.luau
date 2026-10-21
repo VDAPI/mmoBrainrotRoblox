@@ -297,16 +297,23 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 		})
 		Motion.feedback(scope, slot :: GuiButton, Theme.Corner.Small) -- W28: hover sheen and a sink while held
 		DragDrop.register(scope, slot :: GuiObject, `bar:{index}`)
+		-- 2026-10-21: short tooltip, the rest as its details (the details key held, or a long press on touch)
+		local tip = scope:Computed(function(use): SkillInfo.TooltipText
+			local s = use(skill)
+			if not s then
+				return { short = Text.get(use, "hud.skillSlot", { n = key }), details = "" }
+			end
+			local rank = math.max(1, Paths.skillRank(charOf(use), s.id))
+			return SkillInfo.tooltip(use, s, rank)
+		end)
 		Tooltip.attach(
 			scope,
 			slot :: GuiObject,
 			scope:Computed(function(use): string
-				local s = use(skill)
-				if not s then
-					return Text.get(use, "hud.skillSlot", { n = key })
-				end
-				local rank = math.max(1, Paths.skillRank(charOf(use), s.id))
-				return SkillInfo.tooltip(use, s, rank)
+				return use(tip).short
+			end),
+			scope:Computed(function(use): string?
+				return use(tip).details
 			end)
 		)
 		table.insert(slots, slot)
