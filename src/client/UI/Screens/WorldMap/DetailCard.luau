@@ -4,12 +4,15 @@
 -- PC: a panel at the right edge of the map; touch: a bottom sheet over the lower part of the map with the
 -- preview on its left and big buttons (>= 44 px). The content is a declarative spec built by WorldMap/Cards
 -- and rendered here in its own scope, rebuilt on every show (a card has a few dozen objects at most).
+-- 2026-10-21 (owner: too many descriptions): `info` puts an "i" (Components/InfoTip) in the header next to ✕ with the
+-- card's longer text; the header is built once, so the popover stays open while a live card refreshes its content.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local Preview = require(script.Parent.Preview)
 local QuestRewards = require(script.Parent.Parent.Parent.Components.QuestRewards)
@@ -61,6 +64,7 @@ export type Spec = {
 	sections: { Section },
 	actions: { Action },
 	grey: boolean?, -- "coming soon" cards
+	info: string?, -- 2026-10-21: the longer text behind the header's "i"
 }
 
 export type Props = {
@@ -80,6 +84,7 @@ local DetailCard = {}
 local WIDTH = 340 -- owner 2026-10-20 "Mapa": wider for the bigger body text (was 316)
 local PREVIEW_HEIGHT = 176
 local SHEET_PREVIEW = 150
+local INFO_ROOM = 34 -- the header's "i" left of ✕
 DetailCard.WIDTH = WIDTH -- the window keeps the filter panel clear of the card
 
 function DetailCard.new(scope: Scope, props: Props): Api
@@ -171,6 +176,29 @@ function DetailCard.new(scope: Scope, props: Props): Api
 		})
 	end
 
+	local infoTip = InfoTip.new(scope, {
+		Name = "Info",
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, -(Theme.Size.MinTouch + 8), 0, Theme.Size.MinTouch / 2),
+		Text = scope:Computed(function(use): string
+			local s = use(spec)
+			return if s and s.info then s.info else ""
+		end),
+		Visible = scope:Computed(function(use): boolean
+			local s = use(spec)
+			return s ~= nil and s.info ~= nil
+		end),
+		ZIndex = 3,
+	})
+	-- a card without an "i" (or no card) closes a popover this "i" left open
+	scope:Observer(spec):onChange(function()
+		local s = Fusion.peek(spec)
+		local hit = infoTip:FindFirstChild("Hit")
+		if (s == nil or s.info == nil) and hit and InfoTip.isOpen(hit :: GuiObject) then
+			InfoTip.close()
+		end
+	end)
+
 	local header = scope:New("Frame")({
 		Name = "Header",
 		Size = UDim2.new(1, 0, 0, 48),
@@ -222,7 +250,8 @@ function DetailCard.new(scope: Scope, props: Props): Api
 				end),
 				Size = scope:Computed(function(use): UDim2
 					local s = use(spec)
-					return UDim2.new(1, -((if s and s.back then 94 else 44) + Theme.Size.MinTouch + 4), 1, 0)
+					local right = Theme.Size.MinTouch + 4 + (if s and s.info then INFO_ROOM else 0)
+					return UDim2.new(1, -((if s and s.back then 94 else 44) + right), 1, 0)
 				end),
 				[Children] = {
 					scope:New("TextLabel")({
@@ -261,6 +290,7 @@ function DetailCard.new(scope: Scope, props: Props): Api
 				},
 			}),
 			headerButton("✕", props.OnClose, true, true),
+			infoTip,
 			-- Stripe in the zone / band colour.
 			scope:New("Frame")({
 				Name = "Accent",

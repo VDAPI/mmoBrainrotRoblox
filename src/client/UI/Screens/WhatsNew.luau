@@ -3,11 +3,14 @@
 -- after the last read, or the latest ones from the game menu), newest first, on parchment: a heading, each entry with
 -- its date (SectionLabel), title and text, scrolled, and "To the game" at the bottom. Static: the list is fixed when
 -- the window opens (ReturningController).
+-- 2026-10-21 (owner: too many descriptions): each entry shows its date and title, its text is folded
+-- (Components/Details); only the newest entry opens unfolded.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local Changelog = require(ReplicatedStorage.Shared.Data.Changelog)
+local Details = require(script.Parent.Parent.Components.Details)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local SectionLabel = require(script.Parent.Parent.Components.SectionLabel)
 local Text = require(script.Parent.Parent.Text)
@@ -31,7 +34,7 @@ local function dateArgs(day: number): { [string]: any }
 	return { d = string.format("%02d", d), m = string.format("%02d", m), y = y }
 end
 
-local function entryCard(scope: Scope, order: number, entry: Changelog.Entry): Instance
+local function entryCard(scope: Scope, order: number, entry: Changelog.Entry, open: boolean): Instance
 	return scope:New("Frame")({
 		Name = entry.key,
 		LayoutOrder = order,
@@ -59,17 +62,22 @@ local function entryCard(scope: Scope, order: number, entry: Changelog.Entry): I
 				TextWrapped = true,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
-			scope:New("TextLabel")({
+			Details.new(scope, {
 				LayoutOrder = 3,
-				Size = UDim2.fromScale(1, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundTransparency = 1,
-				Text = Text.T(scope, `changelog.{entry.key}.body`),
-				FontFace = Theme.Fonts.Body,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.Text,
-				TextWrapped = true,
-				TextXAlignment = Enum.TextXAlignment.Left,
+				Open = scope:Value(open),
+				Children = {
+					scope:New("TextLabel")({
+						Size = UDim2.fromScale(1, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						BackgroundTransparency = 1,
+						Text = Text.T(scope, `changelog.{entry.key}.body`),
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
+						TextWrapped = true,
+						TextXAlignment = Enum.TextXAlignment.Left,
+					}),
+				},
 			}),
 		},
 	})
@@ -78,7 +86,7 @@ end
 local function WhatsNew(scope: Scope, props: Props): Fusion.Child
 	local cards: { Instance } = {}
 	for i, entry in props.Entries do
-		table.insert(cards, entryCard(scope, i, entry))
+		table.insert(cards, entryCard(scope, i, entry, i == 1))
 	end
 	return scope:New("Frame")({
 		Name = "WhatsNew",

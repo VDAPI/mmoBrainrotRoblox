@@ -2,6 +2,7 @@
 -- Guild window, "Bank" tab (S159g, Logic/GuildBank): the treasury with deposit and withdrawal (rank right and daily
 -- limit), and the item vault next to the backpack. Items are dragged between them ("inv:N" <-> "gv:N", ItemController);
 -- a double click on a vault item takes it. Every move lands in the guild log (Overview tab).
+-- 2026-10-21 (owner: too many descriptions): the drag hint is one short line, its rules behind an "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -10,6 +11,7 @@ local Common = require(script.Parent.Common)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Guild = require(ReplicatedStorage.Shared.Logic.Guild)
+local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -236,9 +238,15 @@ local function Bank(scope: Scope): Instance
 								then Text.get(use, "guild.bank.noItems")
 								elseif g.itemsLeft == -1 then Text.get(use, "guild.bank.itemsFree")
 								else Text.get(use, "guild.bank.itemsLeft", { n = g.itemsLeft or 0 })
-							return `{goldLine}  ·  {itemLine}\n{Text.get(use, "guild.bank.hint")}`
+							return `{goldLine}  ·  {itemLine}`
 						end)
 					),
+					InfoLine.new(scope, {
+						LayoutOrder = 4,
+						Text = Text.T(scope, "guild.bank.hint.short"),
+						Info = Text.T(scope, "guild.bank.hint"),
+						Color = Theme.Paper.TextMuted,
+					}),
 				},
 			}),
 			-- Backpack | vault

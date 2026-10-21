@@ -5,6 +5,9 @@
 -- column on PC and phone (region tabs, rows 40 / 44 px). Opened from the HUD menu (from 10 min before the start until
 -- the results go), the HUD panel and the game menu; no key (DECYZJE S129).
 -- Reads UI/BloodMoonView, `bloodMoonBoard`, `character.bloodMoon` and `zone.map` only.
+-- 2026-10-21 (owner: too many descriptions): the description is one short line (the full one behind the "i" of the
+-- title), "this server only" is short with its reason behind an "i", the rules and rewards are folded under their
+-- title (Components/Details, closed).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -12,8 +15,10 @@ local BloodMoon = require(ReplicatedStorage.Shared.Logic.BloodMoon)
 local BloodMoonView = require(script.Parent.Parent.BloodMoonView)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local Details = require(script.Parent.Parent.Components.Details)
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoLine = require(script.Parent.Parent.Components.InfoLine)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local ScheduledEvents = require(ReplicatedStorage.Shared.Data.ScheduledEvents)
 local State = require(script.Parent.Parent.State)
@@ -111,7 +116,7 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 		end
 		local starts = tonumber(use(BloodMoonView.Next)) or 0
 		if starts <= 0 then
-			return Text.get(use, "bloodmoon.desc")
+			return Text.get(use, "bloodmoon.desc.short")
 		end
 		local weekday, clock = BloodMoon.when(starts)
 		local d, h, m = Time.split(starts - t)
@@ -132,7 +137,7 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 			return ""
 		end
 		if b.global == false then
-			return Text.get(use, "bloodmoon.window.localOnly")
+			return Text.get(use, "bloodmoon.window.localOnly.short")
 		end
 		local at = tonumber(b.updatedAt) or 0
 		if at <= 0 then
@@ -140,9 +145,12 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 		end
 		return Text.get(use, "bloodmoon.window.updated", { ago = Time.format(use(BloodMoonView.Now) - at) })
 	end)
-	local sourceColor = scope:Computed(function(use): Color3
+	local localOnly = scope:Computed(function(use): boolean
 		local b = use(board)
-		return if type(b) == "table" and b.global == false then Theme.Paper.Warning else Theme.Paper.TextMuted
+		return type(b) == "table" and b.global == false
+	end)
+	local sourceColor = scope:Computed(function(use): Color3
+		return if use(localOnly) then Theme.Paper.Warning else Theme.Paper.TextMuted
 	end)
 
 	local rows = scope:Computed(function(use, s: Scope): { any }
@@ -260,7 +268,7 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 	}
 	local ruleLines: { Instance } = {}
 	for i, rule in rules do
-		table.insert(ruleLines, line(scope, 20 + i, Text.T(scope, rule.key, rule.args), Theme.Paper.Text))
+		table.insert(ruleLines, line(scope, i, Text.T(scope, rule.key, rule.args), Theme.Paper.Text))
 	end
 
 	return scope:New("ScrollingFrame")({
@@ -276,18 +284,18 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 		[Children] = {
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
 			scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
-			line(
-				scope,
-				1,
-				scope:Computed(function(use): string
+			InfoLine.new(scope, {
+				LayoutOrder = 1,
+				Text = scope:Computed(function(use): string
 					return `☾ {Text.get(use, "bloodmoon.name")}`
 				end),
-				BLOOD,
-				Theme.TextSize.Large,
-				Theme.Fonts.Display
-			),
+				Info = Text.T(scope, "bloodmoon.desc"),
+				Font = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Large,
+				Color = BLOOD,
+			}),
 			line(scope, 2, header, Theme.Paper.Heading, Theme.TextSize.Body, Theme.Fonts.BodyBold),
-			line(scope, 3, Text.T(scope, "bloodmoon.desc"), Theme.Paper.TextMuted),
+			line(scope, 3, Text.T(scope, "bloodmoon.desc.short"), Theme.Paper.TextMuted),
 			Tabs(scope, {
 				Tabs = tabs,
 				Selected = selected,
@@ -307,9 +315,25 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 				},
 			}),
 			line(scope, 6, you, Theme.Paper.Text, Theme.TextSize.Small, Theme.Fonts.BodyBold),
-			line(scope, 7, source, sourceColor),
-			line(scope, 20, Text.T(scope, "bloodmoon.window.rules"), BLOOD, Theme.TextSize.Body, Theme.Fonts.BodyBold),
-			ruleLines :: any,
+			InfoLine.new(scope, {
+				LayoutOrder = 7,
+				Text = source,
+				Info = Text.T(scope, "bloodmoon.window.localOnly"),
+				InfoVisible = localOnly,
+				Color = sourceColor,
+			}),
+			-- the scoring and the rewards, folded under their title
+			Details.new(scope, {
+				Key = "bloodmoon/rules",
+				LayoutOrder = 20,
+				MoreText = scope:Computed(function(use): string
+					return `{Text.get(use, "bloodmoon.window.rules")} ▸`
+				end),
+				LessText = scope:Computed(function(use): string
+					return `{Text.get(use, "bloodmoon.window.rules")} ▾`
+				end),
+				Children = ruleLines,
+			}),
 		},
 	})
 end
