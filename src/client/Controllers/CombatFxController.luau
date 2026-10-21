@@ -61,6 +61,7 @@ local Theme = require(script.Parent.Parent.UI.Theme)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 local GroundTelegraph = require(script.Parent.Parent.Vfx.GroundTelegraph)
 local Library = require(script.Parent.Parent.Vfx.Library)
+local LmShots = require(script.Parent.Parent.Vfx.LmShots)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
 local Textures = require(script.Parent.Parent.Vfx.Textures)
 local WkFx = require(script.Parent.Parent.Vfx.WkFx)
@@ -683,6 +684,37 @@ local function takeProjectile(kind: string, color: Color3?): BasePart
 		end
 	end
 	local p = part :: BasePart
+	-- W30: arrows and bolts draw a thin bright streak (made once per pooled shot, switched on per flight)
+	if kind ~= "magic" then
+		local streak = p:FindFirstChild("LmStreak")
+		if not streak then
+			local a0 = Instance.new("Attachment")
+			a0.Position = Vector3.new(0, 0.08, 0)
+			a0.Parent = p
+			local a1 = Instance.new("Attachment")
+			a1.Position = Vector3.new(0, -0.08, 0)
+			a1.Parent = p
+			local trail = Instance.new("Trail")
+			trail.Name = "LmStreak"
+			trail.Attachment0 = a0
+			trail.Attachment1 = a1
+			trail.FaceCamera = true
+			trail.LightEmission = 1
+			trail.Lifetime = if kind == "bolt" then 0.1 else 0.14
+			trail.Color =
+				ColorSequence.new(if kind == "bolt" then Color3.fromHex("#FFE0A0") else Color3.fromHex("#F4F1E0"))
+			trail.Transparency = NumberSequence.new(0.25, 1)
+			trail.WidthScale = NumberSequence.new(1, 0)
+			Textures.trail(trail, "trailStreak")
+			trail.Parent = p
+			Clock.track(trail)
+			streak = trail
+		end
+		if streak and streak:IsA("Trail") then
+			streak:Clear()
+			streak.Enabled = not lowQuality()
+		end
+	end
 	if kind == "magic" then
 		local c = color or WORLD_MAGIC
 		p.Color = c:Lerp(Color3.new(1, 1, 1), 0.2)
@@ -1009,7 +1041,18 @@ local function attackFx(
 				weaponOf(attacker),
 				if kind == "arrow" then "VaelthornGrip" else "VaelthornTip"
 			) or centre(attacker) + Vector3.new(0, 0.8, 0)
-			launch(kind, from, target, color, nil)
+			-- W30: the release (a ring of air, sparks, a flick of the weapon's colour) and the hit by the motion and
+			-- the element (Vfx/LmShots); the far and low-quality versions keep only the core
+			local camera = Workspace.CurrentCamera
+			local simple = lowQuality()
+				or (camera ~= nil and (from - camera.CFrame.Position).Magnitude > Config.Vfx.simpleBeyond)
+			LmShots.release(kind, motion, from, centre(target), color, simple)
+			launch(kind, from, target, color, function()
+				if target.Parent then
+					local to = centre(target)
+					LmShots.arrive(kind, motion, to, to - from, color, element, simple)
+				end
+			end)
 			return
 		end
 		if motion == "smash" then

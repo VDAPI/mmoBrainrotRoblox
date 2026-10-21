@@ -38,6 +38,7 @@ UiWindows.list = table.freeze({
 	backpacks = win("S136", "paper", { "UI/Screens/BackpackShop.luau" }),
 	unbind = win("S136", "paper", { "UI/Screens/UnbindPicker.luau" }),
 	huntshop = win("S136", "paper", { "UI/Screens/HuntShopWindow.luau" }),
+	wanderer = win("S136", "paper", { "UI/Screens/WanderingMerchantWindow.luau" }), -- S159w
 	auction = win("S136", "paper", { "UI/Screens/AuctionWindow" }),
 	questboard = win("S136", "paper", { "UI/Screens/QuestBoard.luau" }),
 	guild = win("S136", "paper", { "UI/Screens/GuildWindow" }),

@@ -60,6 +60,7 @@ local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local WanderingMerchantData = require(ReplicatedStorage.Shared.Data.WanderingMerchant)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local TutorialData = require(ReplicatedStorage.Shared.Data.Tutorial)
@@ -185,6 +186,9 @@ local function obtainText(use: Fusion.Use, def: Cosmetics.Def): string
 	elseif obtain and obtain.achievement then
 		-- S151: the reward of an achievement
 		return Text.get(use, "wardrobe.obtain.achievement", { name = Text.get(use, `ach.{obtain.achievement}.name`) })
+	elseif obtain and obtain.merchant then
+		-- S159w: the wandering merchant's caravan dyes (gold, one a visit)
+		return Text.get(use, "wardrobe.obtain.merchant", { price = WanderingMerchantData.dyePrice })
 	elseif obtain and obtain.tutorial then
 		-- S155: the tutorial reward of a new character at level 5
 		return Text.get(use, "wardrobe.obtain.tutorial", { level = TutorialData.REWARD_LEVEL })

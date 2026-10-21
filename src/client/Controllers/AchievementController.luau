@@ -7,10 +7,15 @@
 -- S151b: registers the achievements window (N, the game menu, the HUD menu) and opens it on an achievement (the
 -- toast's "View", the tracker): AchievementController.Open(id?). Tracking goes to the server (AchievementTrack); the
 -- window's first opening shows the tracking hint once (account.settings.achHint).
+-- S151c: a bestiary tier ({ bestiary, tier, points }) is a notice too ("View" opens the bestiary tab on the entry:
+-- focus "best:<id>"); anything earned lights the HUD button (Hud/AchievementButton.Unseen) until the window opens.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AchData = require(ReplicatedStorage.Shared.Data.Achievements)
+local AchievementButton = require(script.Parent.Parent.UI.Screens.Hud.AchievementButton)
+local BestiaryData = require(ReplicatedStorage.Shared.Data.Bestiary)
+local Families = require(ReplicatedStorage.Shared.Data.Families)
 local AchievementToast = require(script.Parent.Parent.UI.Screens.Hud.AchievementToast)
 local AchievementsWindow = require(script.Parent.Parent.UI.Screens.AchievementsWindow)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -70,10 +75,33 @@ local function rewardText(reward: any): string
 	return table.concat(parts, " · ")
 end
 
+local ROMAN = { "I", "II", "III", "IV", "V" }
+
+-- S151c: a bestiary tier: the entry, the tier, its points and what it revealed.
+local function bestiaryView(payload: any): AchievementToast.View?
+	local entry = if type(payload.bestiary) == "string" then BestiaryData.get(payload.bestiary) else nil
+	local tier = num(payload.tier)
+	if not entry or not tier or tier > #entry.tiers then
+		return nil
+	end
+	local reveal = `best.toast.reveal{tier}`
+	local family = Families.get(entry.family)
+	return {
+		id = `best:{entry.id}`,
+		header = Text.now("best.toast.header"),
+		name = Text.now("best.toast.name", { name = Text.now(entry.nameKey), tier = ROMAN[tier] or tostring(tier) }),
+		meta = Text.now("best.toast.meta", { points = num(payload.points) or entry.points[tier] }),
+		reward = Text.now(reveal, { family = if family then Text.now(family.nameKey) else "" }),
+	}
+end
+
 -- The texts of one notice (nil for a malformed payload).
 local function viewOf(payload: any): AchievementToast.View?
 	if type(payload) ~= "table" then
 		return nil
+	end
+	if payload.bestiary ~= nil then
+		return bestiaryView(payload)
 	end
 	local backfill = num(payload.backfill)
 	if backfill then
@@ -120,6 +148,9 @@ local function onDone(payload: any)
 	if not view then
 		return
 	end
+	if not Fusion.peek(WindowManager.IsOpen("achievements")) then
+		AchievementButton.Unseen:set(true)
+	end
 	if State.Get({ "account", "settings", "achToasts" }) == false then
 		local line = if view.reward ~= "" then `{view.name} ({view.reward})` else view.name
 		NotificationController.System(Text.now("ach.chat", { text = line }))
@@ -133,13 +164,19 @@ local function onDone(payload: any)
 end
 
 -- S151b: opens the achievements window, on `id` when given (its category, selected; the sheet on a phone).
+-- S151c: "best:<entry id>" opens the bestiary tab on that entry.
 function AchievementController.Open(id: string?)
-	local def = if id then AchData.get(id) else nil
-	if def and Fusion.peek(focus) == def.id then
+	local known: string? = nil
+	if id and string.sub(id, 1, 5) == "best:" then
+		known = if BestiaryData.get(string.sub(id, 6)) then id else nil
+	elseif id and AchData.get(id) then
+		known = id
+	end
+	if known and Fusion.peek(focus) == known then
 		-- the same one again (its phone sheet closed by "Back"): a change, so the window opens its sheet again
 		focus:set(nil)
 	end
-	focus:set(if def then def.id else nil)
+	focus:set(known)
 	WindowManager.Open("achievements")
 end
 
@@ -195,6 +232,8 @@ function AchievementController.Init(registry)
 				Track = track,
 				SetTitle = setTitle,
 				OpenWardrobe = openWardrobe,
+				-- S151c: the bestiary's model preview (from the registry: no Deps cycle)
+				BuildLook = registry.Get("MonsterViewController").BuildPreview,
 			})
 		end,
 	})
@@ -209,6 +248,7 @@ function AchievementController.Start()
 			focus:set(nil)
 			return
 		end
+		AchievementButton.Unseen:set(false)
 		if State.Get({ "account", "settings", "achHint" }) ~= true then
 			Toast.push(Text.now("ach.hint"), "info", 8)
 			Net.Send("SetSetting", "achHint", true)

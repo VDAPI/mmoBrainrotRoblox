@@ -46,6 +46,7 @@ local MobileSkills = require(script.MobileSkills)
 local PoolLabel = require(script.PoolLabel)
 local PvpToggle = require(script.PvpToggle)
 local SeasonButton = require(script.SeasonButton) -- S152b
+local AchievementButton = require(script.AchievementButton) -- S151c
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -550,7 +551,8 @@ local function drawer(scope: Scope, props: Props): { Instance }
 			Size = UDim2.fromOffset(toggle.w, toggle.h),
 			Active = open,
 			Badge = scope:Computed(function(use): boolean
-				return use(props.LoginBadge) == true
+				-- S151c: also something new in the achievements window
+				return use(props.LoginBadge) == true or use(AchievementButton.Unseen) == true
 			end),
 			Visible = compact,
 			OnClick = function()
@@ -636,6 +638,17 @@ local function Hud(scope: Scope, props: Props): Instance
 							props.OpenWindow("season")
 						end,
 						Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 + 8),
+					}),
+					-- S151c: the achievements and the bestiary under the season pass, always shown (easy to find;
+					-- a phone in landscape has them in the menu drawer, its toggle shows the same "!")
+					AchievementButton.new(scope, {
+						Open = function()
+							props.OpenWindow("achievements")
+						end,
+						Position = UDim2.fromOffset(
+							Theme.Padding.Large + 400 + 12,
+							Theme.Padding.Large + 136 + 8 + 44 + 8
+						),
 					}),
 				},
 			}),

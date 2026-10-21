@@ -2,7 +2,8 @@
 -- S151b (docs/DESIGN.md §20b): the view model of the achievements window, the HUD tracker section and the achievement
 -- card of the player profile. Pure (Lune tests): it reads a Logic/Achievements state and the data, never a rule of its
 -- own: progress only through Achievements.progress / isDone, the reward through Achievements.reward.
---   summary(st, scope)        points, done / total and per category (scope "all" | "account" | "character")
+--   summary(st, scope)        points, done / total and per category (scope "all" | "account" | "character");
+--                             S151c: the points include the bestiary's (a character's), also apart in `bestiary`
 --   rows(st, cat, filter, scope)  the window list: a series (`after`) folded to its current step, secret ones not
 --                             done as "???", order: in progress (closest to the goal), not started, done (newest)
 --   detail(st, id)            one step and its whole series (goals, points, rewards, dates)
@@ -12,6 +13,7 @@
 
 local AchData = require("../Data/Achievements")
 local Achievements = require("./Achievements")
+local Bestiary = require("./Bestiary")
 local Cosmetics = require("../Data/Cosmetics")
 local Titles = require("../Data/Titles")
 
@@ -26,6 +28,7 @@ export type Summary = {
 	done: number,
 	total: number,
 	byCat: { [string]: CatCount },
+	bestiary: { points: number, pointsMax: number }, -- S151c: inside points / pointsMax (not for "account")
 }
 
 -- kind: "title" | "cosmetic" | "shards" | "shardsPaid" | "gold"; `nameKey` of the title or cosmetic, `n` an amount.
@@ -305,7 +308,8 @@ end
 -- Summary -------------------------------------------------------------------------------------------------------------
 
 function AchievementView.summary(st: State, scope: string?): Summary
-	local out: Summary = { points = 0, pointsMax = 0, done = 0, total = 0, byCat = {} }
+	local out: Summary =
+		{ points = 0, pointsMax = 0, done = 0, total = 0, byCat = {}, bestiary = { points = 0, pointsMax = 0 } }
 	for _, cat in AchData.CATEGORIES do
 		out.byCat[cat] = { done = 0, total = 0 }
 	end
@@ -326,6 +330,12 @@ function AchievementView.summary(st: State, scope: string?): Summary
 			out.points += def.points
 			cat.done += 1
 		end
+	end
+	-- S151c: the bestiary tiers belong to the character
+	if scope ~= "account" then
+		out.bestiary = { points = Bestiary.points(st.chr), pointsMax = Bestiary.pointsMax() }
+		out.points += out.bestiary.points
+		out.pointsMax += out.bestiary.pointsMax
 	end
 	return out
 end
@@ -380,6 +390,9 @@ function AchievementView.read(account: any, character: any): State
 			paid = if withPaid and type(b.paid) == "table" then b.paid else nil,
 			paidHere = if not withPaid and type(b.paidHere) == "table" then b.paidHere else nil,
 			track = if type(b.track) == "table" then table.clone(b.track) else nil,
+			-- S151c: the bestiary (read only: Bestiary.repair keeps good tables as they are)
+			b = if not withPaid and type(b.b) == "table" then b.b else nil,
+			bd = if not withPaid and type(b.bd) == "table" then b.bd else nil,
 		}
 	end
 	local acc = { ach = wrap(if type(account) == "table" then account.ach else nil, true) }

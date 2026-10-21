@@ -182,6 +182,8 @@ export type CharacterData = {
 	bossPity: { [string]: BossPity },
 	-- S149c: rewarded world boss fights since the last named item of the world boss (nil = 0, Logic/WorldBoss.rollNamed)
 	worldBossPity: number?,
+	-- S159w: the wandering merchant's purchases of one visit (Logic/WanderingMerchant.Bought; nil = none yet)
+	wanderer: { visit: number, counts: { [string]: number } }?,
 	alchemy: { { recipeId: string, readyAt: number } },
 	-- S11: main = the accepted story quest, daily = contracts.
 	quests: {

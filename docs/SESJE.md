@@ -13538,6 +13538,53 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
   `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
   `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.
+### S151c: bestiariusz w oknie osiągnięć, widoczny przycisk osiągnięć (właściciel 2026-10-20)
+- **Bestiariusz** (`Data/Bestiary`, `Logic/Bestiary`, DESIGN §20c): wpis dla każdego rodzaju potwora i każdego bossa
+  (lochy i boss świata) w jego krainie; stopnie 10 / 100 / 1000 (bossowie 1 / 10 / 50 nagrodzonych zwycięstw), punkty
+  2 / 5 / 10 (5 / 10 / 25) wliczone do punktów osiągnięć postaci (`AchievementView.summary.bestiary`, profil). Stopień I
+  odkrywa podgląd modelu, poziomy, miejsce i atak; II łupy widziane i cechę obrony; III słabości (z liczb danych).
+- **Premia:** wpis na III stopniu +1% obrażeń przeciw rodzinie, najwyżej +3% (hook `vs_<rodzina>` przez
+  `CombatService.RegisterHookProvider`, pamięć podręczna na postać); `balance.spec` „Bestiary (S151c)” pilnuje limitu.
+- **Kraina:** wszystkie wpisy na III stopniu → osiągnięcie `bestiary_<kraina>` (licznik `bestiaryRegions`, zdarzenie
+  `bestiary`, także z `backfill`) z tytułem `ach_lore_<kraina>` („Znawca Łąk / Boru / Pustkowi / Szczytów”).
+- **Serwer:** `AchievementService` liczy zabicia z `MonsterKilled` (bez bossów i pomocników), bossów z „boss” /
+  „worldboss”, łupy z nowego `QuestEvents` „drop” (`LootService`: materiały każdego zaliczonego, `DungeonService`: worek,
+  `WorldBossService`: nagroda); stopień wysyła `AchievementDone { bestiary, tier, points }` (toast „Bestiariusz”,
+  „Zobacz” otwiera wpis). Zapis w `character.ach.b` / `bd` (szablon + reconcile, bez migracji).
+- **Okno:** ostatnia kategoria „Bestiariusz” (❦; telefon: zakładka): cztery krainy z paskami postępu, wpisy krainy
+  („???” przed pierwszym zabiciem, stopnie, licznik, pasek), szczegóły z podglądem 3D (`WorldMap/Preview`, telefon arkusz).
+- **Przycisk HUD:** ✪ z literą N pod przyciskiem przepustki sezonu, zawsze widoczny, „!” i pulsująca ramka po nowym
+  osiągnięciu albo stopniu do otwarcia okna (`Hud/AchievementButton`); telefon w poziomie: wpis w szufladzie menu W29,
+  „!” na jej przycisku ☰.
+- **Testy:** `tests/bestiary.spec.luau` (dane, stopnie, odkrywanie, łupy, słabości, premia i limit, punkty, krainy,
+  osiągnięcie z `backfill`, naprawa zapisu), `achievements.spec` (szablon, suma punktów), `balance.spec` (limit premii).
+  Wiki pominięta (tytuły `wiki = false`, jak S151b).
+- **Admin:** `/ach best <potwór|boss> <zabicia> [gracz]` dodaje zabicia (stopnie, toasty i kraina jak w grze).
+- **Pliki:** `src/shared/Data/{Bestiary,Achievements,Titles,AdminCommands,Localization/pl,Localization/en}.luau`,
+  `src/server/Admin/Character.luau`,
+  `src/shared/Logic/{Bestiary,Achievements,AchievementView,AccountSchema}.luau`,
+  `src/server/Services/{AchievementService,LootService,DungeonService,WorldBossService}.luau`, `src/server/QuestEvents.luau`,
+  `src/client/Controllers/AchievementController.luau`, `src/client/UI/Screens/AchievementsWindow/{init,Context,List,BestiaryTab}.luau`,
+  `src/client/UI/Screens/Hud/{init,AchievementButton}.luau`, `tests/{bestiary,achievements,balance}.spec.luau`,
+  `tools/balance_reasons.luau`, `docs/{DESIGN,DECYZJE,JAK-DODAC,PROGRESS,SESJE}.md`.
+### S159w: wędrowny kupiec (właściciel 2026-10-20)
+- **Co jest:** Radosław z karawaną co 3 h na 45 min (01:30 UTC + k × 3 h) w miejscu losowanym na wizytę (5 placów
+  miasta, 3 obozy przy odrodzeniu w każdym regionie), ogłoszenia w czacie, ⚖ na mapie świata i minimapie, okno
+  „Karawana Radosława” (ekwipunek, materiały, barwnik, zapasy) z limitem na wizytę. Szczegóły i liczby: DESIGN §8b.
+- **Technika:** wizyta i towar z zegara i numeru wizyty (`Logic/WanderingMerchant`), więc mapa i okno nie potrzebują
+  remote; serwer (`WanderingMerchantService`) stawia postać przez nowe `NpcService.PlaceAt` / `Remove`, buduje wóz i muła,
+  ogłasza i obsługuje `WanderingMerchantBuy(key, amount)`. Licznik zakupów w `character.wanderer` (opcjonalne pole, bez
+  migracji). Model `Assets.Npcs.wanderer_caravan` (Tripo) zastąpi wóz proceduralny, `Assets.Npcs.wanderer` postać.
+- **Testy:** `wanderingmerchant.spec` (harmonogram, ogłoszenia, punkty na otwartym terenie / w kołach bez potworów,
+  rozkład map, towar, rzadkości, ceny, limity, barwniki), `premium.spec` (barwniki karawany nie na sprzedaż za łuski).
+- **Pliki:** `src/shared/Data/{WanderingMerchant,Npcs,Cosmetics,Localization/pl,Localization/en}.luau`,
+  `src/shared/Logic/WanderingMerchant.luau`, `src/shared/{Types,Net/Definitions}.luau`,
+  `src/server/Services/{WanderingMerchantService,NpcService}.luau`, `src/client/Controllers/NpcController.luau`,
+  `src/client/UI/Screens/{WanderingMerchantWindow,Wardrobe,Hud/Minimap,WorldMap/Overlay}.luau`,
+  `tests/{wanderingmerchant,premium}.spec.luau`, `tools/balance_reasons.luau`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS}.md`.
+- **Dla właściciela:** domyślne wartości do potwierdzenia: co 3 h / 45 min, miasto 1/3 wizyt, ceny sprzętu (360 / 1080 ×
+  poziom złota, Legendarny 400 Znaków), barwnik 12 000 złota, limity 1 na sprzęt. Bez przeglądu w Studio (wóz stoi na
+  ziemi pod środkiem, na pochyłości może lekko wisieć).
 ### walka-wk: walka Wojownika i Kapłana „wow” (właściciel 2026-10-20)
 - **Efekty:** `src/client/Vfx/WkFx.luau` (21 składników `wk*`: uderzenia w ziemię z kolcami i odłamkami, pęknięcia,
   szarża z pyłem i liniami pędu, tarcza mocy, pierścienie uderzeń, krytyk, wir, okrzyk, nowa, słup światła, aureola
@@ -13588,3 +13635,13 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `mapHide`; drużyna, znaczniki, gwiazda questa i wydarzenie na okrągłych tarczach. Układ telefonu W29 bez zmian.
   Usunięte nieużywane klucze `worldmap.chip.*`, `worldmap.layer.*` (poza `labels`).
 - **Bez przeglądu w Studio** (wygląd na PC i telefonie, skupiska w mieście, chipy filtrów, minimapa).
+
+### W30: walka Łowcy i Maga, efekty i ruchy umiejętności (walka-lm)
+- **Składniki `lm*`:** 33 nowe składniki efektów (`Data/LmVfxPieces`, `Vfx/LmHunterMage`, rejestr `Vfx/LmPieces`),
+  nowe pola `SkillVfx` `castFx`, `releaseFx`, `flight`, `lmOpts`; wszystkie wpisy Łowcy i Maga przepisane (opis:
+  `docs/ANIMACJE.md` §15). Obrażenia i zasady bez zmian.
+- **Ataki podstawowe:** `Vfx/LmShots` (wypuszczenie i trafienie łuku, kuszy, różdżki, kostura), smuga strzał i bełtów.
+- **Ruchy:** własne klucze nowych umiejętności Maga (S140–S142) w `SkillMotions`, te same czasy serwera; Kula
+  Piorunów i Ciężki Bełt z własną sylwetką.
+- **Dźwięki:** zastępcze ID z listy S111 dla S140–S142 i S144 (`Data/Sfx`, `docs/ASSETS.md`, DECYZJE).
+- **Testy:** `tests/lmvfx.spec.luau`; `SkillLooks` i `skillmotion.spec` znają składniki `lm*`.
