@@ -504,6 +504,33 @@ function WorldEvents.pickSpawn(points: { Point }, players: { Point }, rng: Rng.R
 	return best
 end
 
+-- S160: what a zone monster knows about one player when it looks for a target.
+export type ZoneCandidate = {
+	dist: number, -- flat studs from the monster
+	fromHome: number, -- flat studs from the monster's own spot (its hard leash)
+	fromCentre: number, -- flat studs from the zone's centre
+	attackers: number, -- zone monsters already fighting this player
+}
+
+-- S160 (owner 2026-10-21: everyone inside the Invasion zone gets attacked): the candidate a zone monster goes for, or
+-- nil. Only players inside the circle (radius), within `aggro` of the monster and within its hard leash `leash` of its
+-- spot (no chase it would give up at once); the lowest dist + spread x attackers wins (ties: the first), so the zone's
+-- monsters share out the players instead of all piling on the nearest one.
+function WorldEvents.zoneTarget(candidates: { ZoneCandidate }, leash: number): number?
+	local z = Data.kinds.invasion.zone
+	local best: number? = nil
+	local bestScore = math.huge
+	for i, c in candidates do
+		if c.fromCentre <= z.radius and c.dist <= z.aggro and c.fromHome <= leash then
+			local score = c.dist + z.spread * math.max(0, c.attackers)
+			if score < bestScore then
+				best, bestScore = i, score
+			end
+		end
+	end
+	return best
+end
+
 -- Hard leash of a zone monster from its own spot `fromCentre` studs off the centre: it never chases past
 -- radius + margin from the centre (and never less than the soft leash).
 function WorldEvents.hardLeash(fromCentre: number): number

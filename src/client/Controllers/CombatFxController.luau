@@ -58,6 +58,9 @@ local Sfx = require(ReplicatedStorage.Shared.Data.Sfx)
 local SfxRules = require(ReplicatedStorage.Shared.Logic.SfxRules)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Telegraph = require(ReplicatedStorage.Shared.Logic.Telegraph)
+local BossCast = require(ReplicatedStorage.Shared.Logic.BossCast)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
+local BossCastBar = require(script.Parent.Parent.Vfx.BossCastBar)
 local FightView = require(script.Parent.Parent.UI.FightView)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -1501,6 +1504,62 @@ local function splitTag(area: CFrame, windup: number)
 	end)
 end
 
+-- S160 (owner 2026-10-21: "boss abilities are barely visible"): the cast bar over the caster with the ability's name
+-- and, for a big attack near this player, the warning banner with a short alarm (Vfx/BossCastBar, Logic/BossCast).
+local bannerAt: { [string]: number } = {}
+
+local function castName(bossId: string?, attackId: string?, patternId: string?): string?
+	for _, key in BossCast.nameKeys(bossId, attackId, patternId) do
+		if Locale.has(key) then
+			return Text.now(key)
+		end
+	end
+	return nil
+end
+
+local function announceCast(
+	caster: Model?,
+	casterId: string?,
+	name: string?,
+	seconds: number,
+	color: Color3,
+	info: BossCast.Info,
+	at: Vector3
+)
+	local bannerKey = BossCast.banner(info)
+	if caster and name then
+		BossCastBar.cast(caster, name, seconds, color, bannerKey ~= nil)
+	end
+	if not bannerKey or not name then
+		return
+	end
+	local root = playerRoot()
+	local near = root ~= nil and (root.Position - at).Magnitude <= Config.BossCast.bannerRange
+	if not near and caster then
+		local casterRoot = caster:FindFirstChild("HumanoidRootPart")
+		near = root ~= nil
+			and casterRoot ~= nil
+			and casterRoot:IsA("BasePart")
+			and (root.Position - casterRoot.Position).Magnitude <= Config.BossCast.bannerRange
+	end
+	if not near then
+		return
+	end
+	local now = Clock.now()
+	local key = casterId or "?"
+	if not BossCast.allowBanner(bannerAt[key], now) then
+		return
+	end
+	bannerAt[key] = now
+	for other, last in bannerAt do
+		if now - last > 30 then
+			bannerAt[other] = nil
+		end
+	end
+	BossCastBar.banner(Text.now(bannerKey, { name = name }), color, seconds)
+	SfxController.Ui("ui.boss.danger")
+end
+
 -- One "tele" event (or an AnimLab preview): the ground telegraph, the warning, the blow's sound, effect and shake.
 local function telegraph(event: { [string]: any }, caster: Model?)
 	local area = event.cf
@@ -1517,8 +1576,23 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 	-- S134: the boss mechanics: a channel has no area (the boss only poses), a split is golden with its label, a mark
 	-- is purple, follows the marked character and makes it glow, a big blow to dodge has a thicker rim
 	local mechanic = if type(event.m) == "string" then event.m else nil
+	local attackId = if type(event.a) == "string" then event.a else nil
+	local casterId = if type(event.e) == "string" then event.e else nil
 	if mechanic == "channel" then
 		SfxController.Play("boss.mechanic.channel", area.Position, "party")
+		-- S160: the spell to break shows its bar over the boss
+		if firstOfGroup(event) then
+			local seconds = tonumber(event.t) or windup
+			announceCast(
+				caster,
+				casterId,
+				castName(bossId, attackId, nil),
+				seconds,
+				color,
+				{ mechanic = mechanic },
+				area.Position
+			)
+		end
 		return
 	end
 	local follow: Model? = nil
@@ -1542,6 +1616,17 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 		SfxController.Play("boss.mechanic.mark", if follow then follow else area.Position, "party")
 	end
 	local first = firstOfGroup(event)
+	if first then
+		announceCast(
+			caster,
+			casterId,
+			castName(bossId, attackId, nil),
+			windup,
+			color,
+			{ mechanic = mechanic, lethal = lethal },
+			area.Position
+		)
+	end
 	local low = lowQuality()
 	local camera = Workspace.CurrentCamera
 	local far = camera ~= nil and (area.Position - camera.CFrame.Position).Magnitude > Config.Vfx.simpleBeyond * 2
@@ -1948,6 +2033,17 @@ local function hazardCast(event: { [string]: any })
 	-- the event left the server a moment ago: the blow still lands at the server's release
 	local lag = math.clamp(Workspace:GetServerTimeNow() - (tonumber(event.t0) or Workspace:GetServerTimeNow()), 0, 0.3)
 	local windup = math.max(0.2, timing.windup - lag)
+	-- S160: the cast bar (the attack's or the pattern's name) and the banner of a big pattern
+	local origin = if typeof(event.o) == "Vector3" then event.o else Vector3.zero
+	announceCast(
+		caster,
+		if type(event.e) == "string" then event.e else nil,
+		castName(bossId, if type(event.a) == "string" then event.a else nil, patternId),
+		windup,
+		Color3.fromHex(pattern.color),
+		{ big = pattern.big, regular = pattern.regular },
+		origin
+	)
 	local style = gesture and gesture.style
 	if style then
 		local root = caster:FindFirstChild("HumanoidRootPart")

@@ -48,13 +48,18 @@ return table.freeze({
 			-- Its monsters spawn at spread points inside (`points` in a ring from `core` to radius - `edge`, never
 			-- within `clear` of a player), keep their own spot as home (soft leash `leash`, the hard leash keeps them
 			-- within radius + `margin` of the centre) and aggro from `aggro` studs; no long runs at players.
+			-- S160 (owner 2026-10-21: "everyone who enters the area gets attacked"): a zone monster goes for any
+			-- player standing inside the circle within `aggro` studs of it and its hard leash, whatever the level
+			-- (world event monsters are never level-locked), each player counting `spread` studs farther per zone
+			-- monster already on them (the zone's monsters share out the players); the soft leash is the hard one.
 			zone = table.freeze({
 				radius = 70,
 				core = 16, -- the rift and the commander's ground stay free of spawn points
 				edge = 6,
 				points = 28,
 				clear = 18,
-				aggro = 25,
+				aggro = 40, -- S160: 25 -> 40 (any player in the circle has zone monsters within reach)
+				spread = 10, -- S160: studs a player counts farther per zone monster already fighting it
 				leash = 30,
 				margin = 15,
 				maxSlope = 18, -- a spawn point this much above / below the centre is dropped (a cliff, a roof)
