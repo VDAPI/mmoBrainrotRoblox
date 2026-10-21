@@ -4989,6 +4989,10 @@ return {
 				session = "S156",
 				why = "S134d invasion zone (owner 2026-10-20, commit S134d; ledger session S156 because the snapshot is S154): new: the zone (owner: spawn in one area, no long runs): radius 70, 28 spread spawn points from 16 to 64 studs, none within 18 of a player, aggro 25, soft leash 30 from the own spot, hard leash to radius + 15 from the centre, points 18 above / below the centre dropped",
 			},
+			{
+				session = "S160",
+				why = "owner 2026-10-21 (everyone who enters the Invasion zone gets attacked): zone aggro 25 -> 40 for any player inside the circle (no level rule; world event monsters are never level-locked), spread 10 studs per zone monster already on a player so the zone shares its monsters out; aggro only, no damage, HP or EXP change",
+			},
 		},
 		["WorldEvents:kinds.invasion.radius"] = {
 			{
