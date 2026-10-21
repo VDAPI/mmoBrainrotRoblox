@@ -16,16 +16,19 @@ TerrainLayers.VOXEL = 4
 -- so the blades never hide a path; the city uses no Grass at all (Logic/TownTerrain).
 TerrainLayers.PATH_CLEAR = 6
 TerrainLayers.NO_DECOR_GRASS = "LeafyGrass" -- the grass material without decoration that replaces Grass there
+-- Audit 2026-10-21: the strip has to look like the Grass beside it. Its material is tinted like that map's Grass
+-- (Data/MapLooks `terrainColors`, tests/meadowsterrain.spec), so a map that paints LeafyGrass on purpose in its own
+-- darker colour (the Meadows' forest floor and patches) gives its painter another material here (`verge`).
 
--- `material` with Grass swapped for NO_DECOR_GRASS when the column lies within PATH_CLEAR studs past the edge of a
--- road (`roadD`) or ramp (`rampD`), both measured from the edge (negative on the road).
-function TerrainLayers.clearPaths(material: string, roadD: number, rampD: number?): string
+-- `material` with Grass swapped for `verge` (default NO_DECOR_GRASS) when the column lies within PATH_CLEAR studs
+-- past the edge of a road (`roadD`) or ramp (`rampD`), both measured from the edge (negative on the road).
+function TerrainLayers.clearPaths(material: string, roadD: number, rampD: number?, verge: string?): string
 	if material ~= "Grass" then
 		return material
 	end
 	local clear = TerrainLayers.PATH_CLEAR
 	if roadD < clear or (rampD or math.huge) < clear then
-		return TerrainLayers.NO_DECOR_GRASS
+		return verge or TerrainLayers.NO_DECOR_GRASS
 	end
 	return material
 end

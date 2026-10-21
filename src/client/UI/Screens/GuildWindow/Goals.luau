@@ -42,7 +42,13 @@ local SOURCES = {
 	"upgrade",
 }
 
-local function goalCard(scope: Scope, index: number, guild: Fusion.Value<any>, work: Fusion.Value<any>): Instance
+local function goalCard(
+	scope: Scope,
+	index: number,
+	guild: Fusion.Value<any>,
+	work: Fusion.Value<any>,
+	shards: Fusion.Value<any>
+): Instance
 	local goal = scope:Computed(function(use): any
 		local g = use(guild)
 		local week = if type(g) == "table" then g.week else nil
@@ -52,7 +58,8 @@ local function goalCard(scope: Scope, index: number, guild: Fusion.Value<any>, w
 		local current = use(goal)
 		return if current then GuildProgressData.goalById[current.id] else nil
 	end)
-	-- "claim" | "claimed" | "short" (not enough guild EXP this week) | "open"
+	-- "claim" | "claimed" | "account" (taken on another character this week) | "short" (not enough guild EXP this
+	-- week) | "open"
 	local status = scope:Computed(function(use): string
 		local g, current = use(guild), use(goal)
 		if type(g) ~= "table" or not current or not current.done then
@@ -61,6 +68,9 @@ local function goalCard(scope: Scope, index: number, guild: Fusion.Value<any>, w
 		local w = use(work)
 		if type(w) == "table" and w.week == g.week.w and type(w.claimed) == "table" and w.claimed[current.id] then
 			return "claimed"
+		end
+		if GuildProgress.shardsTaken(use(shards), g.week.w, current.id) then
+			return "account"
 		end
 		return if (g.week.mine or 0) >= Rules.claimMin then "claim" else "short"
 	end)
@@ -167,6 +177,8 @@ local function goalCard(scope: Scope, index: number, guild: Fusion.Value<any>, w
 					local s = use(status)
 					if s == "claimed" then
 						return Text.get(use, "guild.goal.claimed")
+					elseif s == "account" then
+						return Text.get(use, "guild.goal.claimedAccount")
 					elseif s == "short" then
 						return Text.get(use, "guild.goal.short", { n = Rules.claimMin })
 					elseif s == "claim" then
@@ -190,6 +202,7 @@ end
 local function Goals(scope: Scope): Instance
 	local guild = State.Value({ "guild" })
 	local work = State.Value({ "character", "guildWork" })
+	local shards = State.Value({ "account", "guildShards" })
 
 	return Common.page(scope, 8, {
 		Common.heading(scope, 1, Text.T(scope, "guild.goals.title")),
@@ -219,9 +232,9 @@ local function Goals(scope: Scope): Instance
 			end),
 			Theme.Paper.Text
 		),
-		goalCard(scope, 1, guild, work),
-		goalCard(scope, 2, guild, work),
-		goalCard(scope, 3, guild, work),
+		goalCard(scope, 1, guild, work, shards),
+		goalCard(scope, 2, guild, work, shards),
+		goalCard(scope, 3, guild, work, shards),
 		-- The rally of all three goals
 		scope:New("Frame")({
 			LayoutOrder = 20,

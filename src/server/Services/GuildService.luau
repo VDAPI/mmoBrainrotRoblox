@@ -646,6 +646,9 @@ local function putItem(player: Player, invIndex: number, slot: number?): (boolea
 	if not item then
 		return false, "error.stale"
 	end
+	if (item :: any).locked then
+		return false, "guild.error.itemLocked"
+	end
 	if item.bound then
 		return false, "trade.error.bound"
 	end
@@ -739,7 +742,8 @@ local function setBanner(player: Player, emblem: string, colour: string): (boole
 	end)
 end
 
--- The Dragon Shards of a weekly goal done (Logic/GuildProgress.canClaim; once per goal, week and character).
+-- The Dragon Shards of a weekly goal done (Logic/GuildProgress.canClaim; once per goal, week and character, and
+-- audit 2026-10-21 once per goal group, week and account: account.guildShards).
 local function claimGoal(player: Player, index: number): (boolean, string?)
 	local guildId, key = myGuild(player)
 	local char = character(player)
@@ -748,7 +752,8 @@ local function claimGoal(player: Player, index: number): (boolean, string?)
 	end
 	local data = cache[guildId].data
 	local week = Time.weekNumber(os.time())
-	local ok, err = GuildProgress.canClaim(data, key, index, week, char.guildWork)
+	local accountShards = PlayerStateService.Get(player, { "account", "guildShards" })
+	local ok, err = GuildProgress.canClaim(data, key, index, week, char.guildWork, accountShards)
 	if not ok then
 		return false, err
 	end
@@ -758,6 +763,7 @@ local function claimGoal(player: Player, index: number): (boolean, string?)
 		{ "character", "guildWork" },
 		GuildProgress.markClaimed(char.guildWork, week, goal.id)
 	)
+	PlayerStateService.Set(player, { "account", "guildShards" }, GuildProgress.markShards(accountShards, week, goal.id))
 	local shards = ProgressRules.claimShards
 	local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(value: number?)
 		return (value or 0) + shards

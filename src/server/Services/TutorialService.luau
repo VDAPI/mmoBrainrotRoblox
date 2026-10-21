@@ -14,8 +14,10 @@
 -- since a new character stands in the city at full HP.
 -- S155b: the first valuable drop (Data/Tutorial.FIRST_DROP, Tutorial.firstDrop): the first monster a new character
 -- gets loot credit for drops, in its own bag next to the usual one, a Heroic bound copy of the wielded weapon; the
--- client shows the bag with a pillar and opens the reveal on pickup (LootService.SpawnBag `first`). Marked when the
--- bag spawns (a bag hidden by the loot filter is not one: the next kill tries again).
+-- client shows the bag with a pillar and opens the reveal on pickup (LootService.SpawnBag `first`). Audit 2026-10-21:
+-- marked when the item is picked up (LootService.FirstPicked), not when the bag spawns: a bag left to expire, dropped
+-- by a character switch or hidden by the loot filter comes again on the next kill; one bag at a time
+-- (Tutorial.firstDropDue with LootService.HasFirstBag).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -125,7 +127,7 @@ local function firstDrop(player: Player, info: any)
 		return
 	end
 	local state = Tutorial.sanitize(char.tutorial)
-	if not Tutorial.firstDropDue(state) then
+	if not Tutorial.firstDropDue(state, LootService.HasFirstBag(player)) then
 		return
 	end
 	local item = Tutorial.firstDrop(char.class, char.level, char.equipment.weapon, rng, HttpService:GenerateGUID(false))
@@ -136,9 +138,21 @@ local function firstDrop(player: Player, info: any)
 	if LootService.SpawnBag(player, position, { item }, info.monsterId, true, nil, true) == nil then
 		return -- hidden by the player's loot filter
 	end
+	log:info("%s got the first drop bag (%s)", player.Name, item.id)
+end
+
+-- The first valuable drop reached the backpack: marked from now on (Tutorial.withDrop).
+local function firstPicked(player: Player)
+	local char = character(player)
+	if not char then
+		return
+	end
+	local state = Tutorial.sanitize(char.tutorial)
+	if state.drop then
+		return
+	end
 	write(player, Tutorial.withDrop(state))
 	Analytics.custom(player, "FirstDrop", char.level)
-	log:info("%s got the first drop (%s)", player.Name, item.id)
 end
 
 -- The reward stacks, bound to the character (Data/Tutorial.REWARD.items).
@@ -303,6 +317,8 @@ function TutorialService.Start()
 			firstDrop(player, info)
 		end
 	end)
+
+	LootService.FirstPicked:Connect(firstPicked)
 
 	LevelService.LeveledUp:Connect(function(player: Player)
 		task.spawn(TutorialService.TryReward, player)

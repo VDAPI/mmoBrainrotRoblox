@@ -127,6 +127,9 @@ function GuildBank.putItem(guild: GuildData?, key: string, item: any, slot: numb
 	if type(item) ~= "table" or type(item.id) ~= "string" then
 		return false, "error.badRequest"
 	end
+	if item.locked then
+		return false, "guild.error.itemLocked" -- audit 2026-10-21: a padlocked item stays with its owner (Trade.canOffer)
+	end
 	if item.bound then
 		return false, "trade.error.bound"
 	end
@@ -141,9 +144,7 @@ function GuildBank.putItem(guild: GuildData?, key: string, item: any, slot: numb
 	if not target then
 		return false, "guild.error.vaultFull"
 	end
-	local stored = table.clone(item)
-	stored.locked = nil -- the owner's sale lock is personal
-	vault[tostring(target)] = stored
+	vault[tostring(target)] = table.clone(item)
 	Guild.addLog(g, { t = now, k = "put", n = member.name, i = item.id, r = item.rarity, a = item.n })
 	g.version = (g.version or 0) + 1
 	return true, nil

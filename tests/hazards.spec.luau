@@ -419,3 +419,26 @@ T.describe("Boss patterns (BossTuning.patterns, S159)", function()
 		end
 	end)
 end)
+
+T.describe("Hazards budgets (audit 2026-10-21)", function()
+	T.it("monster shots never take the places of boss patterns", function()
+		for _, budget in { Hazards.SERVER_BUDGET, Hazards.CLIENT_BUDGET } do
+			T.expect(budget.regular > 0 and budget.patterns > 0).toBe(true)
+			-- every monster shot place taken: a boss pattern still fits, one more shot does not
+			T.expect(Hazards.admit(budget, false, budget.regular, 0)).toBe(true)
+			T.expect(Hazards.admit(budget, true, budget.regular, 0)).toBe(false)
+			-- a full pattern budget (a runaway) stops patterns only
+			T.expect(Hazards.admit(budget, false, 0, budget.patterns)).toBe(false)
+			T.expect(Hazards.admit(budget, true, 0, budget.patterns)).toBe(true)
+		end
+		-- both budgets together hold at least the old shared cap of 400
+		T.expect(Hazards.SERVER_BUDGET.regular + Hazards.SERVER_BUDGET.patterns >= 400).toBe(true)
+	end)
+
+	T.it("only the monsters' regular shots use the shot budget", function()
+		local shots = { mobArrow = true, mobBolt = true, eliteThrow = true, eliteThrowMagic = true }
+		for id, pattern in HazardPatterns.byId do
+			T.expect({ id, pattern.regular == true }).toEqual({ id, shots[id] == true })
+		end
+	end)
+end)

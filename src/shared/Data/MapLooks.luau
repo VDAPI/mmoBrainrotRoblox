@@ -136,6 +136,8 @@ local BY_MAP: { [string]: Look } = {
 		clouds = { cover = 0.55, density = 0.5, color = "#FFE8CC" },
 		-- W02: the painted rock of the border mountains (the generated grass and dirt looked worse than the plain ones)
 		materials = { Rock = "VaelthornRock" },
+		-- audit 2026-10-21: the strip beside the roads (Logic/MeadowsTerrain.VERGE) in the colour of the Grass next to it
+		terrainColors = { Limestone = TERRAIN_COLORS.Grass },
 		painted = "laki",
 	}),
 	-- Overcast day under a grey sky, shafts through the crowns (the sun high enough to reach between the trees).

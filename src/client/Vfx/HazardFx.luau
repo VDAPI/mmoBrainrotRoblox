@@ -71,7 +71,6 @@ type Live = {
 
 local WHITE = Color3.new(1, 1, 1)
 local DARK = Color3.fromHex("#2A2420")
-local MAX_CASTS = 60 -- casts drawn at once (the rest are simulated by the server only)
 local LANE_ALPHA = 0.55
 local LOB_HEIGHT = 0.35 -- arc height per stud of distance
 local SKY_HEIGHT = 46 -- studs a falling shard / meteor starts above its landing
@@ -81,6 +80,9 @@ local BOLT_Y = Hazards.BOLT_HEIGHT
 local ctx: Context? = nil
 local casts: { [number]: Live } = {}
 local count = 0
+-- casts drawn now per kind (Hazards.CLIENT_BUDGET; the rest are simulated by the server only): monster shots never
+-- keep a boss pattern from being drawn
+local drawnRegular = 0
 local connection: RBXScriptConnection? = nil
 
 local function now(): number
@@ -592,6 +594,9 @@ local function stopCast(id: number)
 	end
 	casts[id] = nil
 	count -= 1
+	if live.pattern.regular then
+		drawnRegular -= 1
+	end
 end
 
 local function step()
@@ -650,6 +655,7 @@ local function step()
 		connection:Disconnect()
 		connection = nil
 		count = 0
+		drawnRegular = 0
 	end
 end
 
@@ -674,7 +680,8 @@ function HazardFx.spawn(event: { [string]: any }): { Hazards.Inst }?
 	if not c or not id or not pattern or not origin or casts[id] then
 		return nil
 	end
-	if count >= MAX_CASTS then
+	local regular = pattern.regular == true
+	if not Hazards.admit(Hazards.CLIENT_BUDGET, regular, drawnRegular, count - drawnRegular) then
 		return nil
 	end
 	local points: { Hazards.Point } = {}
@@ -723,6 +730,9 @@ function HazardFx.spawn(event: { [string]: any }): { Hazards.Inst }?
 	}
 	casts[id] = live
 	count += 1
+	if regular then
+		drawnRegular += 1
+	end
 	if pattern.sound then
 		c.play(pattern.sound, at)
 	end

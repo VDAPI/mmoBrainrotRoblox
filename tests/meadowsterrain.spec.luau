@@ -4,6 +4,7 @@
 -- determinism and the voxel blocks of the terrain writer.
 
 local Areas = require("../src/shared/Data/Areas")
+local MapLooks = require("../src/shared/Data/MapLooks")
 local MeadowsTerrain = require("../src/shared/Logic/MeadowsTerrain")
 local TownTerrain = require("../src/shared/Logic/TownTerrain")
 local Portals = require("../src/shared/Data/Portals")
@@ -255,6 +256,37 @@ describe("Meadows terrain", function()
 		expect(TerrainLayers.clearPaths("Grass", clear + 0.5, clear + 2)).toBe("Grass")
 		expect(TerrainLayers.clearPaths("Mud", 0)).toBe("Mud")
 		expect(TerrainLayers.NO_DECOR_GRASS ~= "Grass").toBe(true)
+		expect(TerrainLayers.clearPaths("Grass", 0, nil, "Limestone")).toBe("Limestone")
+		expect(TerrainLayers.clearPaths("LeafyGrass", 0, nil, "Limestone")).toBe("LeafyGrass")
+	end)
+
+	it("audit 2026-10-21: the strip beside the roads has the colour of the grass next to it", function()
+		-- the Meadows paint LeafyGrass on purpose (darker forest floor and patches): the strip is another material
+		local verge = MeadowsTerrain.VERGE
+		expect(verge ~= "Grass" and verge ~= "LeafyGrass").toBe(true)
+		expect(table.find(MeadowsTerrain.MATERIALS, verge) ~= nil).toBe(true)
+		local colors = MapLooks.terrainColorsOf("meadows")
+		expect(colors[verge]).toBe(colors.Grass)
+		expect(colors.LeafyGrass ~= colors.Grass).toBe(true) -- the darker patches stay
+		-- the strip is the only place of the verge material: it lies by a road or ramp, and there is one
+		local strips, other = 0, 0
+		for x = -780, 780, 10 do
+			for z = -780, 780, 10 do
+				if MeadowsTerrain.material(x, z) == verge then
+					local _, info = MeadowsTerrain.sample(x, z)
+					if info.road < TerrainLayers.PATH_CLEAR or (info.rampD or math.huge) < TerrainLayers.PATH_CLEAR then
+						strips += 1
+					else
+						other += 1
+					end
+				end
+			end
+		end
+		expect(strips > 50).toBe(true)
+		expect(other).toBe(0)
+		-- the city keeps its LeafyGrass lawns tinted like grass (W30)
+		local city = MapLooks.terrainColorsOf("city")
+		expect(city.LeafyGrass).toBe(MapLooks.TERRAIN_COLORS.Grass)
 	end)
 
 	it("fills voxel blocks with known materials and water in the pond", function()

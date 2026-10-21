@@ -119,7 +119,7 @@ function Net.initServer()
 		remote.Name = name
 		remote.Parent = newFolder
 		if def.dir ~= "s2c" then
-			limiters[name] = RateLimit.new(def.rate or 10)
+			limiters[name] = RateLimit.new(def.rate or 10, def.burst)
 		end
 	end
 	newFolder.Parent = ReplicatedStorage

@@ -125,6 +125,9 @@ function AccountSchema.accountTemplate(): AccountData
 		-- S159: the streak of full daily sets and the account's bonus shards (Logic/Dailies; read through
 		-- Dailies.sanitize); no migration (reconcile)
 		dailies = { streak = 0, last = 0, shardDay = 0, shardWeek = 0 },
+		-- audit 2026-10-21: the guild goal groups whose shards the account took this week (Logic/GuildProgress
+		-- .shardsTaken); no migration (reconcile)
+		guildShards = { week = 0, groups = {} },
 	}
 end
 

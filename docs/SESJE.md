@@ -13729,3 +13729,16 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   lokalizacja PL / EN, `tests/{Balance,BalanceTables}.luau`, `tools/{balance_report,balance_reasons}.luau`,
   `tools/WikiData/Quests.luau`, `wiki/src/data/*`, `docs/{DESIGN,DECYZJE,SESJE,JAK-DODAC}.md`.
 - **Dla właściciela:** domyślne liczby wyżej; bez przeglądu w Studio (tablica i śledzik na telefonie).
+### Audyt 2026-10-21: poprawki ryzyk (skarbiec, pociski, pas przy drogach, pierwszy łup, odłamki gildii)
+
+- **Skarbiec gildii:** przedmiot z kłódką odrzucony (`GuildBank.putItem`, `GuildService`), ruchy przedmiotów 5 naraz,
+  potem 2/s (`Definitions.burst`, `Net`).
+- **Pociski:** osobne limity strzałów potworów i wzorów bossów na serwerze i u gracza (`Hazards.admit`,
+  `HazardService`, `Vfx/HazardFx`).
+- **Teren:** pas przy drogach na Łąkach to `Limestone` w kolorze trawy (`TerrainLayers.clearPaths` z `verge`,
+  `MeadowsTerrain.VERGE`, `MapLooks`).
+- **Pierwszy łup:** zaliczony przy podniesieniu (`LootService.FirstPicked` / `HasFirstBag`, `TutorialService`,
+  `Tutorial.firstDropDue`).
+- **Cele gildii:** odłamki raz na konto, grupę i tydzień (`GuildProgress.shardsTaken` / `markShards`,
+  `account.guildShards`, zakładka Cele).
+- **Testy:** `guildprogress`, `net`, `hazards`, `meadowsterrain`, `onboarding`.

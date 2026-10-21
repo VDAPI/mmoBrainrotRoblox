@@ -128,6 +128,28 @@ T.describe("RateLimit", function()
 		T.expect(limiter:take("2:A", 0)).toBe(false)
 	end)
 
+	T.it("audit 2026-10-21: guild vault items move 5 at once, then 2 a second", function()
+		for _, name in { "GuildPutItem", "GuildTakeItem", "GuildMoveVault" } do
+			local def = Definitions[name]
+			T.expect(def.burst).toBe(5)
+			local limiter = RateLimit.new(def.rate :: number, def.burst)
+			for _ = 1, 5 do
+				T.expect(limiter:take("p", 0)).toBe(true)
+			end
+			T.expect(limiter:take("p", 0)).toBe(false)
+			T.expect(limiter:take("p", 0.5)).toBe(true)
+			T.expect(limiter:take("p", 0.5)).toBe(false)
+			-- a minute of steady clicking gets at most 2 a second past the burst
+			local passed = 0
+			for i = 1, 600 do
+				if limiter:take("p", 0.5 + i * 0.1) then
+					passed += 1
+				end
+			end
+			T.expect(passed <= 121).toBe(true)
+		end
+	end)
+
 	T.it("defaults the burst to twice the rate (at least 2)", function()
 		T.expect(RateLimit.new(0.5).burst).toBe(2)
 		T.expect(RateLimit.new(5).burst).toBe(10)

@@ -40,7 +40,7 @@ export type State = {
 	done: boolean,
 	skipped: boolean,
 	reward: boolean,
-	drop: boolean, -- S155b: the first valuable drop was given (Data/Tutorial.FIRST_DROP)
+	drop: boolean, -- S155b: the first valuable drop was picked up (Data/Tutorial.FIRST_DROP; audit 2026-10-21: not on spawn)
 	pending: { [string]: boolean }?, -- later steps already done (counted when their turn comes)
 }
 export type FunnelKind = "tutorial" | "quest" | "level"
@@ -278,9 +278,10 @@ function Tutorial.rewardDue(state: State, level: number): boolean
 	return level >= TutorialData.REWARD_LEVEL and not state.reward
 end
 
--- S155b: whether the first valuable drop is still due (Data/Tutorial.FIRST_DROP; skipping does not matter).
-function Tutorial.firstDropDue(state: State): boolean
-	return not state.drop
+-- S155b: whether the first valuable drop is still due (Data/Tutorial.FIRST_DROP; skipping does not matter). Audit
+-- 2026-10-21: `drop` is set on pickup, so while its bag still lies on the ground (`bagOut`) no second one comes.
+function Tutorial.firstDropDue(state: State, bagOut: boolean?): boolean
+	return not state.drop and not bagOut
 end
 
 -- S155b: the first valuable drop (Data/Tutorial.FIRST_DROP) for a character of `classId` at `level` wielding

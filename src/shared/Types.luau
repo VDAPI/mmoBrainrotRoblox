@@ -534,6 +534,8 @@ export type AccountData = {
 	transmog: { looks: { [string]: boolean }, scanned: boolean },
 	-- S159: the streak of full daily sets and the shards of the set bonuses (Logic/Dailies; read through sanitize)
 	dailies: { streak: number, last: number, shardDay: number, shardWeek: number },
+	-- audit 2026-10-21: the guild goal groups whose Dragon Shards the account took in `week` (Logic/GuildProgress)
+	guildShards: { week: number, groups: { [string]: boolean } },
 }
 
 -- Character summary shown on the selection screen.

@@ -80,8 +80,8 @@ local casts: { Cast } = {}
 local nextId = 0
 local random = Random.new()
 
--- Casts at most at once (a runaway pattern never floods the server); a new one past it is dropped.
-local MAX_CASTS = 400
+-- Live casts per kind (Hazards.SERVER_BUDGET): monster shots and boss patterns never take each other's places.
+local liveRegular, livePatterns = 0, 0
 -- Extra studs of fx radius past the pattern's reach.
 local FX_MARGIN = 30
 
@@ -103,11 +103,18 @@ end
 function HazardService.Cast(caster: any, patternId: string, opts: CastOpts): number?
 	local pattern = HazardPatterns.get(patternId)
 	local h = handlers
-	if not pattern or not h or #casts >= MAX_CASTS then
+	if not pattern or not h then
 		if not pattern then
 			log:warn("unknown pattern %s", patternId)
 		end
 		return nil
+	end
+	local regular = pattern.regular == true
+	if not Hazards.admit(Hazards.SERVER_BUDGET, regular, liveRegular, livePatterns) then
+		if not regular then
+			log:warn("pattern budget full, %s dropped", patternId)
+		end
+		return nil -- a monster shot: the caller lands the instant blow instead
 	end
 	nextId = (nextId % 1000000) + 1
 	local id = nextId
@@ -177,6 +184,11 @@ function HazardService.Cast(caster: any, patternId: string, opts: CastOpts): num
 		hitList = {},
 	}
 	table.insert(casts, cast)
+	if regular then
+		liveRegular += 1
+	else
+		livePatterns += 1
+	end
 	local entityIds = {}
 	for _, player in targets do
 		table.insert(entityIds, h.playerEntityId(player) or "")
@@ -201,13 +213,23 @@ function HazardService.Cast(caster: any, patternId: string, opts: CastOpts): num
 	return id
 end
 
+local function removeAt(i: number): Cast
+	local cast = table.remove(casts, i) :: Cast
+	if cast.pattern.regular then
+		liveRegular -= 1
+	else
+		livePatterns -= 1
+	end
+	return cast
+end
+
 -- Drops every cast of `caster` (it died or was removed); the clients drop their pieces.
 function HazardService.ClearCaster(caster: any)
 	local h = handlers
 	for i = #casts, 1, -1 do
 		local cast = casts[i]
 		if cast.caster == caster then
-			table.remove(casts, i)
+			removeAt(i)
 			if h then
 				h.fx(cast.origin, { k = "hzc", g = cast.id }, cast.reach + FX_MARGIN)
 			end
@@ -340,7 +362,7 @@ function HazardService.Start()
 				log:error("cast %s failed: %s", cast.patternId, tostring(alive))
 			end
 			if not ok or not alive then
-				table.remove(casts, i)
+				removeAt(i)
 				if ok then
 					finish(cast)
 				end

@@ -41,6 +41,11 @@ T.describe("Onboarding: the first valuable drop", function()
 		local given = Tutorial.withDrop(Tutorial.newState())
 		T.expect(Tutorial.firstDropDue(given)).toBe(false)
 		T.expect(Tutorial.firstDropDue(Tutorial.sanitize(given))).toBe(false)
+		-- audit 2026-10-21: marked on pickup; while the bag lies on the ground no second one, a lost bag comes again
+		local fresh = Tutorial.sanitize(make("Warrior").tutorial)
+		T.expect(Tutorial.firstDropDue(fresh, true)).toBe(false)
+		T.expect(Tutorial.firstDropDue(fresh, false)).toBe(true)
+		T.expect(Tutorial.firstDropDue(given, false)).toBe(false)
 		-- counting steps and skipping keep it
 		T.expect(Tutorial.advance(given, "move").drop).toBe(true)
 		T.expect(Tutorial.skip(given).drop).toBe(true)

@@ -6,7 +6,8 @@
 --   * Weekly goals: three per week (one of every Data/GuildProgress.GROUPS group), the same on every server (seeded by
 --     the guild id and the week), targets from the member count at the start of the week. A goal done gives guild EXP
 --     and treasury gold; every member who earned at least Rules.claimMin guild EXP that week takes its Dragon Shards
---     in the guild window (once per goal and character: character.guildWork.claimed). All three done = the rally:
+--     in the guild window (once per goal and character: character.guildWork.claimed; audit 2026-10-21: and once per
+--     goal group, week and account: account.guildShards, so alts in one guild do not multiply them). All three done = the rally:
 --     +Rules.rallyExp % EXP and +Rules.rallyGold % gold for the members until the end of the next week.
 -- Nothing here reads purchases; the guild board score does not read guild EXP (DESIGN-17 §0.2).
 
@@ -24,6 +25,10 @@ export type Batch = { [string]: { exp: number, acts: { [string]: number } } }
 export type Work = { day: number, today: number, week: number, claimed: { [string]: boolean } }
 
 export type Notes = { levels: { number }, goals: { string }, rally: boolean }
+
+-- account.guildShards (audit 2026-10-21): the goal groups (Data/GuildProgress.GROUPS) whose Dragon Shards the account
+-- took in week `week`, on any character and in any guild.
+export type AccountShards = { week: number, groups: { [string]: boolean } }
 
 local GuildProgress = {}
 
@@ -195,7 +200,40 @@ end
 
 -- Whether the member `key` may take the reward of goal `index` in `week` (character.guildWork = `work`):
 -- (ok, errorKey?).
-function GuildProgress.canClaim(guild: any?, key: string, index: number, week: number, work: any?): (boolean, string?)
+-- The goal group a goal id belongs to (the account key of its shards; an unknown id is its own group).
+local function groupOf(goalId: string): string
+	local def = GuildProgressData.goalById[goalId]
+	return if def then def.group else goalId
+end
+
+-- Whether the account already took the shards of goal `goalId`'s group in `week` (on another character).
+function GuildProgress.shardsTaken(shards: any?, week: number, goalId: string): boolean
+	return type(shards) == "table"
+		and shards.week == week
+		and type(shards.groups) == "table"
+		and shards.groups[groupOf(goalId)] == true
+end
+
+-- The account record after taking the shards of goal `goalId` in `week`.
+function GuildProgress.markShards(shards: any?, week: number, goalId: string): AccountShards
+	local groups: { [string]: boolean } = {}
+	if type(shards) == "table" and shards.week == week and type(shards.groups) == "table" then
+		groups = table.clone(shards.groups)
+	end
+	groups[groupOf(goalId)] = true
+	return { week = week, groups = groups }
+end
+
+-- Whether the member `key` may take goal `index` of `week`: `work` = character.guildWork, `shards` =
+-- account.guildShards (the shards once per goal group, week and account).
+function GuildProgress.canClaim(
+	guild: any?,
+	key: string,
+	index: number,
+	week: number,
+	work: any?,
+	shards: any?
+): (boolean, string?)
 	local current = type(guild) == "table" and guild.week
 	local goal = type(current) == "table" and current.w == week and current.goals[index]
 	if not goal or not goal.done then
@@ -207,6 +245,9 @@ function GuildProgress.canClaim(guild: any?, key: string, index: number, week: n
 	local claimed = type(work) == "table" and work.week == week and work.claimed or nil
 	if claimed and claimed[goal.id] then
 		return false, "guild.error.claimed"
+	end
+	if GuildProgress.shardsTaken(shards, week, goal.id) then
+		return false, "guild.error.claimedAccount"
 	end
 	return true, nil
 end

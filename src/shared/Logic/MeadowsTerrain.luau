@@ -49,9 +49,14 @@ MeadowsTerrain.MATERIALS = {
 	"Slate",
 	"Sand",
 	"Salt",
+	"Limestone",
 	"Water",
 	"Air",
 }
+-- Audit 2026-10-21: the decoration-free strip beside the roads (TerrainLayers.clearPaths). LeafyGrass is the
+-- Meadows' own darker forest floor and patches, so the strip is a material nothing else here uses, tinted like the
+-- Grass on this map (Data/MapLooks meadows `terrainColors`): no dark stripes along the roads.
+MeadowsTerrain.VERGE = "Limestone"
 
 -- Spatial index of polyline segments ---------------------------------------------------------------------------
 
@@ -809,7 +814,7 @@ function MeadowsTerrain.materialAt(x: number, z: number, h: number, slope: numbe
 	local theme = MeadowsTerrain.themeAt(x, z)
 	local pick = THEME_GROUND[theme] or THEME_GROUND.meadow
 	-- no decoration grass beside the roads and ramps (TerrainLayers.PATH_CLEAR)
-	return TerrainLayers.clearPaths(pick(fbm(x, z, 31, SEED + 21, 3)), info.road, info.rampD)
+	return TerrainLayers.clearPaths(pick(fbm(x, z, 31, SEED + 21, 3)), info.road, info.rampD, MeadowsTerrain.VERGE)
 end
 
 -- Material of the surface at a point (tools, admin).

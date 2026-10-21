@@ -4,6 +4,7 @@
 -- kind: "event" (RemoteEvent) | "function" (RemoteFunction, client -> server only)
 -- dir:  "c2s" client -> server, "s2c" server -> client, "both"
 -- rate: allowed calls per second per player (c2s only; burst = 2x rate)
+-- burst: (c2s) calls allowed at once before `rate` applies, instead of 2x rate (moving many items one by one)
 -- args: argument spec checked by Net before the handler runs (c2s only), see Net.Check
 -- toggle: (functions) W28 a switch: the client sends one call of it per Logic/RequestGuard.TOGGLE_WINDOW at most
 -- repeatable: (functions) W28 the same call twice in a row is meant (casts, buying one by one): the client does not
@@ -13,6 +14,7 @@ export type Definition = {
 	kind: "event" | "function",
 	dir: "c2s" | "s2c" | "both",
 	rate: number?,
+	burst: number?,
 	args: { string }?,
 	toggle: boolean?,
 	repeatable: boolean?,
@@ -309,9 +311,10 @@ local Definitions: { [string]: Definition } = {
 	GuildChatLine = { kind = "event", dir = "s2c" }, -- (name?, text | key, args?) from other servers / system
 	-- S159g: the guild bank (treasury gold, item vault), rank rights, banner, weekly goal rewards
 	GuildWithdraw = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (gold)
-	GuildPutItem = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer?" } }, -- (inv index, vault slot?)
-	GuildTakeItem = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer?" } }, -- (vault slot, inv index?)
-	GuildMoveVault = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer" } }, -- (from, to)
+	-- audit 2026-10-21: vault items move in bursts of 5, then 2 a second (each call still one guild write, daily limits)
+	GuildPutItem = { kind = "function", dir = "c2s", rate = 2, burst = 5, args = { "integer", "integer?" } }, -- (inv index, vault slot?)
+	GuildTakeItem = { kind = "function", dir = "c2s", rate = 2, burst = 5, args = { "integer", "integer?" } }, -- (vault slot, inv index?)
+	GuildMoveVault = { kind = "function", dir = "c2s", rate = 2, burst = 5, args = { "integer", "integer" } }, -- (from, to)
 	GuildSetPerm = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string", "boolean" } }, -- (rank, action, on)
 	GuildSetLimit = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string", "integer" } }, -- (rank, "gold"|"items", n)
 	GuildSetBanner = { kind = "function", dir = "c2s", rate = 1, args = { "string", "string" } }, -- (emblem id, colour id)

@@ -156,6 +156,22 @@ Hazards.JUMP_CLEAR = 6 -- studs over the ground the root must be to jump a `low`
 Hazards.STEP = 1 / 30 -- seconds: the longest step of a bolt (homing and bounces)
 Hazards.ROOT_HEIGHT = 3 -- studs over the ground a standing character's root is
 
+-- Casts at once per kind (audit 2026-10-21): monster shots (`regular` patterns) and boss / world boss patterns each
+-- have their own budget, so a hunting ground full of archers never pushes a boss pattern out. A monster shot past its
+-- budget falls back to the instant blow (CombatService); the pattern budget only stops a runaway. The client budget is
+-- what one screen draws (Vfx/HazardFx).
+export type Budget = { regular: number, patterns: number }
+Hazards.SERVER_BUDGET = table.freeze({ regular = 300, patterns = 200 }) :: Budget
+Hazards.CLIENT_BUDGET = table.freeze({ regular = 30, patterns = 40 }) :: Budget
+
+-- Whether one more cast of a kind fits: `regular` = a monster shot; the live counts of both kinds.
+function Hazards.admit(budget: Budget, regular: boolean, regularLive: number, patternLive: number): boolean
+	if regular then
+		return regularLive < budget.regular
+	end
+	return patternLive < budget.patterns
+end
+
 local TAU = 2 * math.pi
 
 local function num(v: number?, default: number): number

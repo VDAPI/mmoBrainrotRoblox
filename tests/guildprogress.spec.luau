@@ -178,12 +178,13 @@ T.describe("Guild bank (S159g)", function()
 	T.it("items in and out, bound items never, full vault refused", function()
 		local g = sample()
 		T.expect({ GuildBank.putItem(g, MEMBER, item("a", true), nil, 0) }).toEqual({ false, "trade.error.bound" })
+		-- audit 2026-10-21: a padlocked item is refused like on the trade table (Trade.canOffer)
 		local locked = item("a")
 		locked.locked = true
-		T.expect((GuildBank.putItem(g, MEMBER, locked, 3, 0))).toBe(true)
+		T.expect({ GuildBank.putItem(g, MEMBER, locked, 3, 0) }).toEqual({ false, "guild.error.itemLocked" })
+		T.expect(GuildBank.count(g)).toBe(0)
+		T.expect((GuildBank.putItem(g, MEMBER, item("a"), 3, 0))).toBe(true)
 		T.expect((g.vault :: any)["3"].uid).toBe("a")
-		T.expect((g.vault :: any)["3"].locked).toBe(nil)
-		T.expect(locked.locked).toBe(true) -- the caller's copy is untouched
 		-- members cannot take by default, veterans up to their limit
 		T.expect({ GuildBank.takeItem(g, MEMBER, 3, "a", 0, 1) }).toEqual({ false, "guild.error.permission", nil })
 		T.expect({ GuildBank.takeItem(g, VETERAN, 3, "zzz", 0, 1) }).toEqual({ false, "error.stale", nil })
@@ -322,6 +323,39 @@ T.describe("Guild EXP and weekly goals (S159g)", function()
 		local work = GuildProgress.markClaimed(nil, week, goal.id)
 		T.expect({ GuildProgress.canClaim(g, MEMBER, 1, week, work) }).toEqual({ false, "guild.error.claimed" })
 		T.expect({ GuildProgress.canClaim(g, MEMBER, 1, week + 1, work) }).toEqual({ false, "guild.error.goalNotDone" })
+	end)
+
+	T.it("audit 2026-10-21: the shards of a goal group once per account and week", function()
+		local g = sample()
+		local week = 2900
+		GuildProgress.ensureWeek(g, week)
+		local goals = (g.week :: any).goals
+		for _, goal in goals do
+			goal.done = true
+		end
+		GuildProgress.apply(g, {
+			[MEMBER] = { exp = Rules.claimMin, acts = {} },
+			[VETERAN] = { exp = Rules.claimMin, acts = {} },
+		}, week, 0)
+		-- the account's first character takes goal 1
+		local shards = GuildProgress.markShards(nil, week, goals[1].id)
+		-- its second character in the same guild: goal 1 refused with the reason, the other goals still open
+		T.expect({ GuildProgress.canClaim(g, VETERAN, 1, week, nil, shards) })
+			.toEqual({ false, "guild.error.claimedAccount" })
+		T.expect({ GuildProgress.canClaim(g, VETERAN, 2, week, nil, shards) }).toEqual({ true, nil })
+		-- the key is the goal group: another guild's goal of the same group counts as taken
+		local group = GuildProgressData.goalById[goals[1].id].group
+		for id, def in GuildProgressData.goalById do
+			T.expect(GuildProgress.shardsTaken(shards, week, id)).toBe(def.group == group)
+		end
+		-- a new week starts clean; marking keeps the other groups of the week
+		T.expect(GuildProgress.shardsTaken(shards, week + 1, goals[1].id)).toBe(false)
+		local both = GuildProgress.markShards(shards, week, goals[2].id)
+		T.expect(GuildProgress.shardsTaken(both, week, goals[1].id)).toBe(true)
+		T.expect(GuildProgress.shardsTaken(both, week, goals[2].id)).toBe(true)
+		T.expect(GuildProgress.shardsTaken(shards, week, goals[2].id)).toBe(false) -- the old record is untouched
+		local fresh = GuildProgress.markShards(both, week + 1, goals[3].id)
+		T.expect(fresh.groups).toEqual({ [GuildProgressData.goalById[goals[3].id].group] = true })
 	end)
 
 	T.it("a failed write merges back into the next batch", function()

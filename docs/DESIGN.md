@@ -1092,10 +1092,12 @@ nazw obcych) i tabelą własnej drużyny.
     kupione wcześniej zostają), miejsca w skarbcu przedmiotów (10 + 2 na poziom) i godła / barwy sztandaru.
   - **Cele tygodnia**: trzy wspólne cele (walka, przygoda, rzemiosło) losowane z ziarna gildii i tygodnia, cele rosną z
     liczbą członków. Wykonany cel: +1200 EXP gildii i 3000 + 1500 × poziom gildii złota do skarbca; każdy członek z co
-    najmniej 60 EXP gildii w tym tygodniu odbiera 5 Smoczych Odłamków za cel (najwyżej 15 na tydzień). Wszystkie trzy:
+    najmniej 60 EXP gildii w tym tygodniu odbiera 5 Smoczych Odłamków za cel (najwyżej 15 na tydzień); odłamki za cel danej
+    grupy raz na konto i tydzień (druga postać tego samego konta widzi „Odebrano na innej postaci”). Wszystkie trzy:
     **Zryw gildii** +3% EXP i +3% złota dla członków do końca następnego tygodnia.
   - **Skarbiec**: wpłata złota (każdy), wypłata złota i branie przedmiotów według uprawnień i dziennych limitów rangi,
-    odkładanie przedmiotów (bez związanych), skarbiec przedmiotów dostępny wszędzie poza walką. **Kronika**: ostatnie 50
+    odkładanie przedmiotów (bez związanych i bez tych z kłódką), skarbiec przedmiotów dostępny wszędzie poza walką;
+    przedmioty można przenosić seriami (5 naraz, potem 2 na sekundę). **Kronika**: ostatnie 50
     zdarzeń (wpłaty, wypłaty, przedmioty, rangi, ulepszenia, cele, poziomy). Gildii z przedmiotami w skarbcu nie da się
     rozwiązać (najpierw trzeba je wyjąć; komenda admina rozwiązuje mimo to).
   - **Rangi**: Przywódca, Oficer, Weteran, Członek. Przywódca ustawia uprawnienia niższych rang (zapraszanie, wyrzucanie,

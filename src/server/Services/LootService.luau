@@ -6,6 +6,8 @@
 -- (AnnounceService); Mythic has its own, stronger message (`loot.announceMythic`).
 -- S20: the owner's loot filter hides weak equipment and limits Auto-loot (Logic/LootFilter); picked-up
 -- equipment goes to the character's loot log (last 50, with source monster and map).
+-- Audit 2026-10-21: FirstPicked fires when the first valuable drop (a `first` bag, S155b) reaches the backpack; the
+-- tutorial marks it then, so a bag left to expire comes again on the next kill (HasFirstBag stops a second one meanwhile).
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -27,12 +29,15 @@ local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local PartyLoot = require(Shared.Logic.PartyLoot)
 local Rarities = require(Shared.Data.Rarities)
 local Rng = require(Shared.Logic.Rng)
+local Signal = require(ReplicatedStorage.Packages.Signal)
 local Types = require(Shared.Types)
 
 type ItemInstance = Types.ItemInstance
 
 local LootService = {
 	Name = "LootService",
+	-- (player, items picked): the first valuable drop of a new character was picked up (TutorialService)
+	FirstPicked = Signal.new(),
 	Deps = {
 		"PlayerStateService",
 		"CharacterService",
@@ -199,6 +204,16 @@ function LootService.SpawnBag(
 	return bag.id
 end
 
+-- Whether `player` has a first valuable drop bag (S155b) lying on the ground.
+function LootService.HasFirstBag(player: Player): boolean
+	for _, bag in bags do
+		if bag.owner == player and bag.first then
+			return true
+		end
+	end
+	return false
+end
+
 local function instancesFrom(loot: Loot.LootResult): { ItemInstance }
 	local items: { ItemInstance } = {}
 	for _, drop in loot.items do
@@ -288,6 +303,9 @@ function LootService.Pickup(
 		Net.Fire(player, "LootPicked", picked)
 		QuestEvents.fire(player, "loot", nil)
 		logLoot(player, bag, picked)
+		if bag.first then
+			LootService.FirstPicked:Fire(player, picked)
+		end
 	end
 	if #remaining > 0 then
 		bag.items = remaining
