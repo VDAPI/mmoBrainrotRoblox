@@ -78,9 +78,9 @@ end
 
 -- Runs fn after the blow-moment delay (SkillVfx.coreDelay), at once without one.
 local function atBlow(ctx: Ctx, fn: () -> ())
-	local wait = ctx.coreDelay or 0
-	if wait > 0 then
-		Clock.after(wait, fn)
+	local hold = ctx.coreDelay or 0
+	if hold > 0 then
+		Clock.after(hold, fn)
 	else
 		fn()
 	end
@@ -190,7 +190,7 @@ end
 
 -- Rock spikes erupting on a ring of `radius` around `base`: wedges thrust up and out from under the ground in 0.08 s,
 -- held a moment, sunk back.
-local function spikes(base: Vector3, radius: number, count: number, height: number, tint: Color3, delay: number?)
+local function spikes(base: Vector3, radius: number, count: number, height: number, tint: Color3, after: number?)
 	local function raise()
 		local turn0 = rng:NextNumber(0, math.pi * 2)
 		for i = 1, count do
@@ -225,8 +225,8 @@ local function spikes(base: Vector3, radius: number, count: number, height: numb
 			end)
 		end
 	end
-	if delay and delay > 0 then
-		Clock.after(delay, raise)
+	if after and after > 0 then
+		Clock.after(after, raise)
 	else
 		raise()
 	end
