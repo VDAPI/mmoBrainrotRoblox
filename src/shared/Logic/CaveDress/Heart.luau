@@ -128,11 +128,11 @@ local function iceShards(env: Env, out: { Build })
 				0,
 				0,
 				-s * (6 + k * 6),
-				o(if k == 1 then ICEGLASS else ICE, if k == 0 then "shell" else "detail", {
-					col = false,
-					q = false,
-					t = if k == 1 then 0.3 else nil,
-				})
+				o(
+					ICE,
+					if k == 0 then "shell" else "detail",
+					{ col = false, q = false, t = if k == 1 then 0.3 else nil }
+				)
 			)
 		end
 	end

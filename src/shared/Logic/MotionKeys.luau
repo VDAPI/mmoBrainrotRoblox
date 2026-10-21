@@ -19,11 +19,22 @@
 --   boss attack / Elite II ability: a monster with w = attack.windup / ability.windup
 --   clip: start 0, hit = the marker (when given), end = length; a clip played at `speed` (S113, Logic/ClipFit) divides
 --     both by it
+--   bone clip (studio review 2026-10-21; client/Anim/BoneClips, Data/MonsterClips slot { from, to, rate, hit }) played
+--     with its blow fitted to land `lead` s after the start (it starts late in the clip, or plays slower): start 0;
+--     hit = strikePeak = when the clip's blow comes; peak = hit - Gait.STRIKE_SECONDS (the end of the draw, cut at 0);
+--     follow = hit + 0.3 * (end - hit); end = when the clip ends
+--   a monster kind's regular blow (`basicBlow`, AnimLab `mob <kind> attack1`): the draw of Logic/BasicBlow as the game
+--     plays it: a bone clip of the slot BasicBlow.slot on a model with clips, else a generated monster's attack
 
 local AttackPose = require("./AttackPose")
+local BasicBlow = require("./BasicBlow")
+local BoneClip = require("./BoneClip")
 local Bosses = require("../Data/Bosses")
 local Gait = require("./Gait")
 local MonsterAbilities = require("../Data/MonsterAbilities")
+local MonsterClips = require("../Data/MonsterClips")
+local MonsterLooks = require("../Data/MonsterLooks")
+local Monsters = require("../Data/Monsters")
 local SkillMotions = require("../Data/SkillMotions")
 local SkillPose = require("./SkillPose")
 
@@ -186,6 +197,57 @@ end
 function MotionKeys.clip(length: number, hitMarker: number?, speed: number?): Keys
 	local k = if speed and speed > 0 then speed else 1
 	return build({ start = 0, hit = if hitMarker then hitMarker / k else nil, ["end"] = length / k })
+end
+
+-- Where a bone clip's slot starts and how fast it plays when its blow must land `lead` s after the start (the rule of
+-- client/Anim/BoneClips play): the clip time at the start and the playback factor.
+function MotionKeys.boneFit(slot: MonsterClips.Slot, lead: number?): (number, number)
+	local hit = slot.hit
+	if not hit or not lead then
+		return 0, 1
+	end
+	local reach = math.max(0.05, lead) * slot.rate
+	if hit > reach then
+		return hit - reach, 1
+	end
+	return 0, math.max(0.4, hit / reach)
+end
+
+-- A bone clip slot played with its blow fitted to `lead` (client/Anim/BoneClips): seconds of the motion.
+function MotionKeys.boneClip(slot: MonsterClips.Slot, lead: number?): Keys
+	local t0, fit = MotionKeys.boneFit(slot, lead)
+	local pace = slot.rate * fit
+	local length = BoneClip.length(slot.from, slot.to, MonsterClips.FPS)
+	local finish = math.max(0, (length - t0) / pace)
+	local hit = if slot.hit then math.clamp((slot.hit - t0) / pace, 0, finish) else nil
+	return build({
+		start = 0,
+		peak = if hit then math.max(0, hit - Gait.STRIKE_SECONDS) else nil,
+		hit = hit,
+		strikePeak = hit,
+		follow = if hit then hit + FOLLOW_MONSTER * (finish - hit) else nil,
+		["end"] = finish,
+	})
+end
+
+-- A monster kind's regular blow as the game plays it (Logic/BasicBlow; nil for an unknown kind): its draw, and the
+-- slot and clip of the real model when it has bone clips. Also returns the draw's seconds and the slot.
+function MotionKeys.basicBlow(kindId: string, variant: string?): (Keys?, number, string)
+	local kind = Monsters.get(kindId)
+	if not kind then
+		return nil, 0, "attack1"
+	end
+	local w = BasicBlow.wind(kind.attack, variant)
+	local slotName = BasicBlow.slot(BasicBlow.shot(kind.attack, kind.damageKind))
+	local look = MonsterLooks.get(kindId, kind.region)
+	local asset = look and look.asset
+	if asset and asset.rig == "bones" and MonsterClips.get(asset.model) then
+		local slot = MonsterClips.slotsFor(asset.model)[slotName]
+		if slot then
+			return MotionKeys.boneClip(slot, w), w, slotName
+		end
+	end
+	return MotionKeys.monster(w), w, slotName
 end
 
 -- A motion without frames of its own (idle, walk, an NPC without a clip): only the start.

@@ -323,6 +323,11 @@ end
 
 -- W21 (laki.md 4.9): a thin curtain of water from the plateau over the mouth of the Moss Cave, so the way in looks the
 -- same from both sides (the cave's own entrance is behind a curtain of water); no collision, the mouth stays where it is.
+-- Studio review 2026-10-21: the curtain stood 1.6-1.9 studs before the portal and was Glass, which Roblox draws over
+-- every transparent part behind it: the portal's glowing veil and core were gone. It hangs in the mouth now, behind
+-- the veil (z 0) and before the dark hole (World/Prefabs.caveMouth, z 2.9), out of the portal's clearance box
+-- (Data/Portals, half depth 1.25), and is SmoothPlastic (tests/portalglass.spec: no Glass before any portal).
+Water.CURTAIN_Z = 1.75 -- the middle sheet; the side ones 0.3 deeper
 function Water.caveCurtain(out: { Build })
 	local m = { x = 745, z = 330, rot = 45 }
 	for _, mouth in (Areas :: any).caves or {} do
@@ -341,8 +346,8 @@ function Water.caveCurtain(out: { Build })
 			0.3,
 			k * 3,
 			gy + 8,
-			-1.6 - math.abs(k) * 0.3, -- W28: just before the portal's arch (it ran through its purple field)
-			o({ c = "#CFE6F2", m = "Glass" }, "detail", {
+			Water.CURTAIN_Z + math.abs(k) * 0.3, -- behind the veil (W28: never through the purple field)
+			o({ c = "#CFE6F2", m = "SmoothPlastic" }, "detail", {
 				col = false,
 				q = false,
 				t = 0.5 + math.abs(k) * 0.12,

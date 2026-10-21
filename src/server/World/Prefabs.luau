@@ -6,7 +6,7 @@
 local CollectionService = game:GetService("CollectionService")
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
-local CaveMouth = require(game:GetService("ReplicatedStorage").Shared.Logic.CaveMouth)
+local CaveMouth = require(game:GetService("ReplicatedStorage").Shared.Data.CaveMouth)
 local Portals = require(game:GetService("ReplicatedStorage").Shared.Data.Portals)
 local VfxTextures = require(game:GetService("ReplicatedStorage").Shared.Data.VfxTextures)
 local Build = require(script.Parent.Build)
@@ -880,27 +880,46 @@ function Prefabs.caveMouth(
 	Build.flatten(ctx, x, z, 26)
 	local base = baseAt(ctx, x, z, rot)
 	local model = newModel(ctx, "CaveMouth", ctx.folder)
-	-- W31: the wall, the dark mouth, the hole straight behind the arch, the boulders and the lintel round the painted
-	-- arch (Logic/CaveMouth; W28 had them round the old 14.5-wide arch, the hole centred 2.5 studs over the veil)
-	for _, piece in CaveMouth.pieces(rockColor) do
-		local ball = piece.shape == "ball"
-		local uneven = ball and (piece.size[1] ~= piece.size[2] or piece.size[2] ~= piece.size[3])
-		local p = part(ctx, model, {
-			Name = piece.name,
-			Shape = if ball and not uneven then Enum.PartType.Ball else Enum.PartType.Block,
-			Size = Vector3.new(piece.size[1], piece.size[2], piece.size[3]),
+	local rock = hex(rockColor or "#5A5650")
+	-- W28: the hole, the boulders and the lintel round the portal's arch (Data/Portals.ARCH, 14.5 x 18; the boulders
+	-- stood in its pillars, the lintel 1 stud into its top). Studio review 2026-10-21 ("smooth boxes"): leaning
+	-- slabs of Rock in three shades round the hole (Data/CaveMouth, tests/cavemouth.spec), Rock boulders.
+	local shades =
+		{ [-1] = rock:Lerp(Color3.new(0, 0, 0), 0.12), [0] = rock, [1] = rock:Lerp(Color3.new(1, 1, 1), 0.08) }
+	for _, slab in CaveMouth.SLABS do
+		local r = slab.r
+		part(ctx, model, {
+			Name = slab.name,
+			Size = Vector3.new(slab.size[1], slab.size[2], slab.size[3]),
 			CFrame = base
-				* CFrame.new(piece.at[1], piece.at[2], piece.at[3])
-				* CFrame.Angles(0, 0, math.rad(piece.roll or 0)),
-			Color = hex(piece.color),
-			Material = (Enum.Material :: any)[piece.material],
-			CanCollide = piece.collide,
-			CanQuery = piece.collide,
+				* CFrame.new(slab.p[1], slab.p[2], slab.p[3])
+				* CFrame.Angles(math.rad(r[1]), math.rad(r[2]), math.rad(r[3])),
+			Color = shades[slab.shade] or rock,
+			Material = Enum.Material.Rock,
+			CanQuery = slab.name ~= "Lintel",
 		})
-		if uneven then
-			local mesh = Instance.new("SpecialMesh")
-			mesh.MeshType = Enum.MeshType.Sphere -- a flat oval on the rock face
-			mesh.Parent = p
+	end
+	local hole = CaveMouth.HOLE
+	part(ctx, model, {
+		Name = "Hole",
+		Size = Vector3.new(hole.size[1], hole.size[2], hole.size[3]),
+		CFrame = base * CFrame.new(hole.p[1], hole.p[2], hole.p[3]),
+		Color = hex("#050506"),
+		Material = Enum.Material.SmoothPlastic,
+	})
+	-- Arch: two pillars of stacked boulders
+	local B = CaveMouth.BOULDERS
+	for _, side in { -1, 1 } do
+		for i = 0, 2 do
+			part(ctx, model, {
+				Name = "Boulder",
+				Shape = Enum.PartType.Ball,
+				Size = Vector3.one * (B.size - i),
+				CFrame = base * CFrame.new(side * (B.x + i * B.step), B.y0 + i * B.rise, B.z),
+				Color = if i == 1 then shades[-1] else rock,
+				Material = Enum.Material.Rock,
+				CanQuery = true,
+			})
 		end
 	end
 	-- Rocks around the mouth

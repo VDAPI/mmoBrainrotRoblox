@@ -7,7 +7,6 @@
 local fs = require("@lune/fs")
 
 local Areas = require("../src/shared/Data/Areas")
-local CaveMouth = require("../src/shared/Logic/CaveMouth")
 local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
 local MapTerrain = require("../src/shared/Logic/MapTerrain")
 local PortalClearance = require("./PortalClearance")
@@ -369,7 +368,7 @@ end)
 -- veil, a lava backdrop behind the purple, arches facing the void, unframed boss doors) -------------------------------
 
 -- The mouths dressed by another session (the Moss Cave's water curtain, Logic/MeadowsGen/Water) stay out of the
--- strict check; the generic mouth they stand in (Logic/CaveMouth) is checked below.
+-- strict check; the generic mouth they stand in (Prefabs.caveMouth, Data/CaveMouth) has its own tests/cavemouth.spec.
 local OWN_DRESSING = { meadows_meadows_cave = true, meadows_cave_exit = true }
 
 local function dark(hex: string): boolean
@@ -502,32 +501,6 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 			end
 		end
 	)
-
-	it("builds the generic cave mouth (Meadows) round the same arch and hole", function()
-		local placed: { PortalClearance.Placed } = {}
-		for k, piece in CaveMouth.pieces() do
-			local r = piece.r or { 1, 0, 0, 0, 1, 0, 0, 0, 1 }
-			table.insert(placed, {
-				build = "CaveMouth",
-				piece = k,
-				shape = piece.shape,
-				color = piece.color,
-				c = piece.at,
-				r = r,
-				h = { piece.size[1] / 2, piece.size[2] / 2, piece.size[3] / 2 },
-			})
-		end
-		local hole = holeOf(placed)
-		local bad = holeProblems("CaveMouth", hole)
-		for _, line in keepOutHits(placed, "cave", hole) do
-			table.insert(bad, line)
-		end
-		if #bad > 0 then
-			error(table.concat(bad, "\n"))
-		end
-		local prefabs = read("src/server/World/Prefabs.luau")
-		expect(string.find(prefabs, "CaveMouth.pieces(", 1, true) ~= nil).toBe(true)
-	end)
 
 	it("fits the painted model into the arch's box, centred on the portal's axis, the veil on the axis", function()
 		local m = Portals.ARCH.model
