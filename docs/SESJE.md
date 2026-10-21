@@ -13766,3 +13766,26 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `tests/npcpose.spec`.
 - **Dla właściciela:** bez przeglądu w Studio (nie ma jeszcze modeli); kowal kuje w miejscu, `Work = "none"` na modelu
   to wyłącza.
+
+### W30: wodospad Niedźwiedziego Jaru i wygląd portali (zgłoszenia właściciela 2026-10-21)
+- **Zgłoszenia:** „na mapie Niedźwiedzi Jar popraw by wodospad był lepszy bo w aktualnym nie ma spadającej wody”,
+  „nadal portale są zepsute wyglądowo”.
+- **Przyczyna (wodospad):** tafle biegły prosto od końca potoku na płaskowyżu do stopy ściany; ściana jest wypukła, więc
+  większość tafli leżała w skale (do 5 studów pod powierzchnią), widać było tylko pianę i mgłę.
+- **Wodospad:** `MeadowsGen/Water.fallGeometry` (krawędź = ostatnia woda potoku, kierunek = największy spadek ściany,
+  stopa = pierwsza głęboka woda stawu za skalnym progiem); trzy tafle od krawędzi do stawu z prześwitem ≥ 1,8 studa,
+  biały przelew na krawędzi, piana w dwóch warstwach, mokre skały (ciemny łupek) obok krawędzi, zasłony i stawu.
+  Klient (`TownFxController.addFallBeams`): na tafli „waterfall” szeroka wiązka wody i 2–5 wiązek smug (tekstura
+  `trailStreak`, Wrap, przesuw `FALL_SPEED`), zwrócone do kamery, wygięte nad krawędzią; krople jak dotąd. To samo
+  działa na górnym progu, zasłonie Jaskini Mchów i czarnym wodospadzie Boru. Dźwięk (`Ambience`) bez zmian.
+- **Portale:** `Data/Portals.LOOK` + `Portals.look(w, h)`; `Prefabs.makePortal` (łuki i bramy miasta): pole
+  niewidoczne (wyzwalacz, podpowiedź, światło), elipsy `Veil` i `Core` (SpecialMesh Sphere, 0,16 studa od siebie), wir
+  (`VfxTextures` swirl, cząstka w płaszczyźnie pola, własne tempo), iskry z rdzenia (prędkość 0,2–0,6, bez lotu w
+  górę ponad łuk). Brama lochu: drzwi 9,2 (`GATE.door.w`), pochylenie rogów `GATE.hornLean`. Jaskinia Mchów: `rot` 45.
+- **Testy:** `tests/waterfall.spec` (tafle poza skałą, tagi, skały poza zasłoną, wiązki klienta), `tests/portals.spec`
+  W30 (elipsy, rdzeń i iskry w polu, zasłona bram miasta poza kamieniami bramy, drzwi poza rogami, równy grunt pod
+  łukiem każdego portalu na mapie z funkcją wysokości, prześwit w jaskiniach).
+- **Pliki:** `src/shared/Logic/MeadowsGen/Water.luau`, `src/client/Controllers/TownFxController.luau`,
+  `src/shared/Data/{Portals,Areas/meadows}.luau`, `src/server/World/Prefabs.luau`, testy, dane wiki.
+- **Do obejrzenia w Studio:** lista w `wyglad/PORTALE-DO-SPRAWDZENIA.md` (folder projektu): kierunek przesuwu smug,
+  otwór malowanych modeli `common_portal_01/02` i bramy `city_gate_01` wobec elips.

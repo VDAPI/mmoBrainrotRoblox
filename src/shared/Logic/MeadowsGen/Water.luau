@@ -145,9 +145,31 @@ function Water.bridges(out: { Build })
 	end
 end
 
--- The waterfall: from the lip of the upper brook down the ravine wall into the pool, a few slanted sheets of
--- falling water ("waterfall": spray streaks), foam on the pool ("foam": mist and splashes), rocks around.
-function Water.waterfall(out: { Build })
+-- The waterfall (W30, owner: "no falling water"): the brook leaves the plateau at the edge of the ravine wall (where
+-- the ground first drops under its surface) and falls clear of the wall into the pool. Before, the sheets ran from the
+-- lip on the plateau straight to the foot of the wall and most of them lay inside the rock. Now: three sheets from the
+-- edge to the first water of the pool, never in the rock (tests/meadowsterrain.spec); the middle one is "waterfall"
+-- (the client hangs curved camera-facing beams with scrolling streaks and falling drops on it, TownFxController),
+-- two layers of foam on the pool ("foam": mist and splashes), dark wet rocks at the edge, beside the curtain and
+-- round the pool.
+Water.FALL = table.freeze({ main = 6.4, side = 2.8, sideAt = 3.8, thick = 0.5 })
+
+local WET = { c = "#3E4850", m = "Slate" } -- rock darkened by the spray
+local WET_MOSS = { c = "#44513F", m = "Slate" }
+local FALL_WATER = { c = "#CFE6F2", m = "Glass" }
+
+export type FallGeometry = {
+	x: number, -- the edge (map-relative)
+	z: number,
+	dx: number, -- downstream direction (unit, horizontal)
+	dz: number,
+	top: number, -- the brook's surface on the plateau
+	pool: number, -- the pool's surface
+	horiz: number, -- horizontal distance from the edge to the foot of the fall (in the pool)
+}
+
+-- Where the fall is (pure; the build below and the test read the same numbers).
+function Water.fallGeometry(): FallGeometry
 	local line = MeadowsTerrain.streamLine(3)
 	local lip = line.pts[#line.pts]
 	local prev = line.pts[#line.pts - 1]
@@ -155,73 +177,132 @@ function Water.waterfall(out: { Build })
 	local len = math.sqrt(dx * dx + dz * dz)
 	dx, dz = dx / len, dz / len
 	local top = MeadowsTerrain.streamLevel(3, line.length)
-	-- the pool is where the brook below starts; walk down the flow direction to the foot of the wall
 	local pool = MeadowsTerrain.streamLevel(1, 0)
-	local bx, bz = lip[1], lip[2]
-	for k = 1, 40 do
-		bx, bz = lip[1] + dx * k, lip[2] + dz * k
-		if MeadowsTerrain.height(bx, bz) < pool + 1.5 then
+	-- the edge: the last step of the brook's own water on the plateau
+	local edge = 0
+	for t = 0, 30, 0.5 do
+		if MeadowsTerrain.water(lip[1] + dx * t, lip[2] + dz * t) == nil then
+			break
+		end
+		edge = t
+	end
+	local ex, ez = lip[1] + dx * edge, lip[2] + dz * edge
+	-- the water falls straight down the face of the wall (its steepest way down below the edge), which meets the
+	-- brook at a slant: along the brook one side of the curtain would lie on the rock
+	local fx, fz = ex + dx * 2, ez + dz * 2
+	local gx = MeadowsTerrain.height(fx + 1, fz) - MeadowsTerrain.height(fx - 1, fz)
+	local gz = MeadowsTerrain.height(fx, fz + 1) - MeadowsTerrain.height(fx, fz - 1)
+	local glen = math.sqrt(gx * gx + gz * gz)
+	if glen > 1 then
+		dx, dz = -gx / glen, -gz / glen
+	end
+	-- the foot: where the pool below is first a little deep (past its rocky rim), half a stud into it
+	local horiz = 10
+	for t = 1, 40, 0.5 do
+		local px, pz = ex + dx * t, ez + dz * t
+		if MeadowsTerrain.water(px, pz) ~= nil and MeadowsTerrain.height(px, pz) < pool - 0.4 then
+			horiz = t + 0.5
 			break
 		end
 	end
-	local rot = math.deg(math.atan2(-dx, -dz))
+	return { x = ex, z = ez, dx = dx, dz = dz, top = top, pool = pool, horiz = horiz }
+end
+
+function Water.waterfall(out: { Build })
+	local g = Water.fallGeometry()
+	local rot = math.deg(math.atan2(-g.dx, -g.dz)) -- local -Z downstream
 	local b: Build = {
 		name = "Waterfall",
-		bp = Kit.build("Waterfall", "waterfall", lip[1], lip[2], rot).bp,
-		at = { x = lip[1], y = pool, z = lip[2], rot = rot },
+		bp = Kit.build("Waterfall", "waterfall", g.x, g.z, rot).bp,
+		at = { x = g.x, y = g.pool, z = g.z, rot = rot },
 		tag = "waterfall",
 	}
 	local bp = b.bp
-	local horiz = math.sqrt((bx - lip[1]) ^ 2 + (bz - lip[2]) ^ 2) + 2
-	local drop = top - pool + 0.6
+	local horiz = g.horiz
+	local drop = g.top - g.pool + 0.3
 	local tilt = math.deg(math.atan2(horiz, drop))
 	local sheetLen = math.sqrt(horiz * horiz + drop * drop)
+	local F = Water.FALL
+	-- the curtain: the wide middle sheet and two narrower ones a little behind it, slightly turned
 	for k = -1, 1 do
+		local side = k ~= 0
 		bp:rbox(
-			3.2 - math.abs(k) * 0.6,
+			if side then F.side else F.main,
 			sheetLen,
-			0.5,
-			k * 2.4,
+			if side then F.thick * 0.8 else F.thick,
+			k * F.sideAt,
 			drop / 2,
-			-horiz / 2,
+			-horiz / 2 + (if side then 0.35 else 0),
 			tilt,
 			0,
 			k * 3,
-			o({ c = "#CFE6F2", m = "Glass" }, "shell", {
+			o(FALL_WATER, "shell", {
 				col = false,
 				q = false,
-				t = 0.35 + math.abs(k) * 0.12,
-				tag = if k == 0 then "waterfall" else nil,
+				t = if side then 0.5 else 0.4,
+				tag = if side then nil else "waterfall",
 				jitter = 0,
 			})
 		)
 	end
+	-- the white water where the brook tips over the edge
+	bp:rbox(
+		F.main + 1,
+		0.4,
+		1.6,
+		0,
+		drop - 0.1,
+		-0.4,
+		-12,
+		0,
+		0,
+		o({ c = "#EEF6FA", m = "SmoothPlastic" }, "detail", { col = false, q = false, t = 0.35, jitter = 0 })
+	)
+	-- foam where it hits the pool: a wide ring and a brighter core
 	bp:add(
 		"ball",
-		10,
-		1.4,
+		12,
+		1.2,
 		9,
 		0,
-		0.1,
-		-horiz - 3,
+		0.15,
+		-horiz - 1,
 		0,
 		0,
 		0,
-		o({ c = "#E8F2F6", m = "SmoothPlastic" }, "detail", { col = false, t = 0.45, tag = "foam", jitter = 0 })
+		o({ c = "#E8F2F6", m = "SmoothPlastic" }, "detail", { col = false, t = 0.5, tag = "foam", jitter = 0 })
 	)
+	bp:add(
+		"ball",
+		7,
+		1,
+		4.5,
+		0,
+		0.3,
+		-horiz + 0.5,
+		0,
+		0,
+		0,
+		o({ c = "#F6FBFD", m = "SmoothPlastic" }, "detail", { col = false, t = 0.35, jitter = 0 })
+	)
+	-- wet rocks: on both sides of the edge, beside the curtain on the wall, round the pool
+	-- (each stands on the ground, its side clear of the curtain: the sheets reach FALL.sideAt + side / 2 = 5.2)
 	for k = -1, 1, 2 do
-		Kit.rock(bp, k * 6, drop - 2, 1, 6, Kit.mossyStone, "shell")
-		Kit.rock(bp, k * 7.5, 0, -horiz - 1, 5, Kit.mossyStone, "shell")
+		for i, r in { { 8.8, 0.8, 4 }, { 8.6, -horiz * 0.35, 4 }, { 9, -horiz - 1.5, 5 } } do
+			local lx, lz = k * r[1], r[2]
+			Kit.rock(bp, lx, math.max(Kit.gy(b, lx, lz), -0.8), lz, r[3], if i == 2 then WET_MOSS else WET, "shell")
+		end
+		Kit.rock(bp, k * 6.5, -0.6, -horiz - 6, 3, WET_MOSS, "detail")
 	end
 	table.insert(out, b)
-	local wx, wy, wz = Kit.worldOf(b, 0, 0.5, -horiz - 4)
+	local wx, wy, wz = Kit.worldOf(b, 0, 0.5, -horiz - 2)
 	Kit.life("mist", wx, wy, wz, 14)
 end
 
 -- W21 (laki.md 4.9): a thin curtain of water from the plateau over the mouth of the Moss Cave, so the way in looks the
 -- same from both sides (the cave's own entrance is behind a curtain of water); no collision, the mouth stays where it is.
 function Water.caveCurtain(out: { Build })
-	local m = { x = 745, z = 330, rot = 90 }
+	local m = { x = 745, z = 330, rot = 45 }
 	for _, mouth in (Areas :: any).caves or {} do
 		if mouth.cave == "meadows_cave" then
 			m = mouth

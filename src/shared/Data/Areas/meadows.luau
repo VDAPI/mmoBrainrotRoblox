@@ -336,7 +336,7 @@ local data: Types.MapAreas = {
 	caves = {
 		{ cave = "meadows_hideout", x = 60, z = 735, rot = 0 },
 		{ cave = "meadows_burrow", x = 420, z = -745, rot = 180 },
-		{ cave = "meadows_cave", x = 745, z = 330, rot = 90 },
+		{ cave = "meadows_cave", x = 745, z = 330, rot = 45 }, -- W30: faces the bowl (at 90 its north pillar stood 8 studs in the wall)
 	},
 	areas = {
 		{

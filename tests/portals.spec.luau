@@ -6,10 +6,14 @@
 
 local fs = require("@lune/fs")
 
+local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
 local MapTerrain = require("../src/shared/Logic/MapTerrain")
 local PortalClearance = require("./PortalClearance")
 local Portals = require("../src/shared/Data/Portals")
 local Test = require("./Test")
+local Town = require("../src/shared/Data/Town")
+local TownGen = require("../src/shared/Logic/TownGen")
+local TownTerrain = require("../src/shared/Logic/TownTerrain")
 local WorldGen = require("../src/shared/Logic/WorldGen")
 
 local describe, it, expect = Test.describe, Test.it, Test.expect
@@ -142,6 +146,221 @@ describe("Portals: landings (W28)", function()
 			if at and MapTerrain.has(target) and MapTerrain.height(target, at.x, at.z) ~= nil then
 				if not MapTerrain.walkable(target, at.x, at.z, 4) then
 					error(`{p.id}: lands on {target} at {at.x}, {at.z}, not walkable`)
+				end
+			end
+		end
+	end)
+end)
+
+-- W30 (owner 2026-10-21: "nadal portale są zepsute wyglądowo") -----------------------------------------------------
+
+-- The portal frame's local point (a across, b along its axis) on its map, map-relative x, z.
+local function onMap(p: Portals.Portal, a: number, b: number): (number, number)
+	local r = math.rad(p.rot)
+	return p.x + a * math.cos(r) + b * math.sin(r), p.z - a * math.sin(r) + b * math.cos(r)
+end
+
+-- Every field a portal's look is drawn in: the arch's (Prefabs.portal; with the painted model it only shrinks) and
+-- each city gate's (the "portal" piece of its gatehouse, TownGen).
+local function gateFields(): { { name: string, w: number, h: number, piece: any, build: any } }
+	local out = {}
+	for _, b in TownGen.all(Town.city, TownTerrain.heightAt) :: any do
+		for _, piece in b.bp.pieces do
+			if piece.tag == "portal" then
+				table.insert(out, { name = b.name, w = piece.size[1], h = piece.size[2], piece = piece, build = b })
+			end
+		end
+	end
+	return out
+end
+
+describe("Portals: the look stays inside the frame (W30)", function()
+	it("draws the veil and the core as ellipses inside the field, the core inside the veil", function()
+		local fields = { { name = "arch", w = Portals.ARCH.field.w, h = Portals.ARCH.field.h } }
+		for _, g in gateFields() do
+			table.insert(fields, { name = g.name, w = g.w, h = g.h })
+		end
+		expect(#fields).toBe(5)
+		for _, f in fields do
+			local look = Portals.look(f.w, f.h)
+			if look.veil.w > f.w or look.veil.h > f.h then
+				error(`{f.name}: the veil {look.veil.w} x {look.veil.h} is larger than its field {f.w} x {f.h}`)
+			end
+			-- the core's box corners inside the veil's ellipse (the core and its sparkles' source)
+			local ex = (look.core.w / look.veil.w) ^ 2 + (look.core.h / look.veil.h) ^ 2
+			if ex > 1 then
+				error(`{f.name}: the core's corners stand outside the veil ({ex})`)
+			end
+			-- a sparkle from anywhere in the core's box never leaves the field
+			if look.core.w / 2 + look.sparkleReach > f.w / 2 or look.core.h / 2 + look.sparkleReach > f.h / 2 then
+				error(`{f.name}: sparkles reach {look.sparkleReach} past the core, out of the field`)
+			end
+			-- the swirl (a round image in a square particle) within the core's width and height
+			expect(look.swirl <= math.min(look.core.w, look.core.h)).toBe(true)
+		end
+		-- the core and the veil never in one plane (no flicker)
+		expect(Portals.LOOK.gap > Portals.LOOK.thick).toBe(true)
+	end)
+
+	it("keeps the arch's veil between the pillars, under the lintel and above the ground", function()
+		local arch = Portals.ARCH
+		local look = Portals.look(arch.field.w, arch.field.h)
+		expect(look.veil.w / 2 <= arch.pillarX - 1.25 - 0.4).toBe(true)
+		expect(arch.field.y + look.veil.h / 2 <= 16 - 1.25 - 0.4).toBe(true) -- the lintel is 2.5 thick at 16
+		expect(arch.field.y - look.veil.h / 2 >= 0.4).toBe(true)
+	end)
+
+	it(
+		"keeps each city gate's veil out of its gatehouse's stones (passage walls, corner stones, portcullis)",
+		function()
+			for _, g in gateFields() do
+				local look = Portals.look(g.w, g.h)
+				local field = g.piece
+				for _, other in g.build.bp.pieces do
+					-- the gatehouse's solid stones (the barrier is invisible, lights and the field itself are not stones)
+					if other ~= field and other.tag ~= "barrier" and other.tag ~= "portal" and (other.t or 0) < 1 then
+						local inv = {
+							other.r[1],
+							other.r[4],
+							other.r[7],
+							other.r[2],
+							other.r[5],
+							other.r[8],
+							other.r[3],
+							other.r[6],
+							other.r[9],
+						}
+						for i = 0, 35 do
+							local ang = i * math.pi / 18
+							for _, k in { 1, 0.7, 0.4 } do
+								-- a point of the veil in the field's own frame, then in the build and in the stone's frame
+								local lx = math.cos(ang) * look.veil.w / 2 * k
+								local ly = math.sin(ang) * look.veil.h / 2 * k
+								local fr = field.r
+								local bx = field.p[1] + fr[1] * lx + fr[2] * ly
+								local by = field.p[2] + fr[4] * lx + fr[5] * ly
+								local bz = field.p[3] + fr[7] * lx + fr[8] * ly
+								local d = { bx - other.p[1], by - other.p[2], bz - other.p[3] }
+								local q = {
+									inv[1] * d[1] + inv[2] * d[2] + inv[3] * d[3],
+									inv[4] * d[1] + inv[5] * d[2] + inv[6] * d[3],
+									inv[7] * d[1] + inv[8] * d[2] + inv[9] * d[3],
+								}
+								local inBox = math.abs(q[1]) < other.size[1] / 2 - 0.05
+									and math.abs(q[2]) < other.size[2] / 2 - 0.05
+									and math.abs(q[3]) < other.size[3] / 2 - 0.05
+								-- a wedge fills the half of its box under the slope from its top back edge to its bottom front
+								if inBox and other.s == "wedge" then
+									inBox = q[2] / other.size[2] < q[3] / other.size[3] - 0.01
+								end
+								if inBox then
+									error(
+										string.format(
+											"%s: the veil runs through a %s piece at %.1f, %.1f",
+											g.name,
+											other.m,
+											lx,
+											ly
+										)
+									)
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+	)
+
+	it("builds the look from Data/Portals: invisible trigger field, ellipses, swirl in the field's plane", function()
+		local prefabs = read("src/server/World/Prefabs.luau")
+		for _, needle in
+			{
+				"portalLook(ctx, model, field)",
+				"field.Transparency = 1",
+				"mesh.MeshType = Enum.MeshType.Sphere",
+				"Enum.ParticleOrientation.VelocityPerpendicular",
+				'VfxTextures.idOf("swirl")',
+				"sparkles.Parent = core",
+				"Portals.GATE.hornLean",
+			}
+		do
+			if not string.find(prefabs, needle, 1, true) then
+				error(`Prefabs.luau: missing {needle}`)
+			end
+		end
+		-- the old sparkles flew up out of the arch (EmissionDirection Top, 3 studs a second for 2 s)
+		expect(string.find(prefabs, "sparkles.Speed = NumberRange.new(1, 3)", 1, true)).toBe(nil)
+	end)
+
+	it("keeps the dungeon gate's red door out of its leaning horns", function()
+		local gate = Portals.GATE
+		local door = gate.door
+		local r = math.rad(gate.hornLean)
+		for _, side in { -1, 1 } do
+			-- the horn turned about z by -side * lean (CFrame.Angles(0, 0, a): columns are the turned axes)
+			local a = -side * r
+			local c, s = math.cos(a), math.sin(a)
+			local rot = { c, -s, 0, s, c, 0, 0, 0, 1 }
+			local hit = PortalClearance.overlaps(
+				{ side * gate.hornX, 8, 0 },
+				rot,
+				{ 1.5, 9, 1.5 },
+				{ 0, door.y, 0 },
+				{ door.w / 2, door.h / 2, door.d / 2 }
+			)
+			expect(hit).toBe(false)
+		end
+	end)
+end)
+
+describe("Portals: frames on the ground, not in the rock (W30)", function()
+	it("stands every portal of a map with a height function on level ground: no terrain in the arch", function()
+		local bad = {}
+		for _, p in Portals.list do
+			local h0 = MapTerrain.has(p.map) and MapTerrain.height(p.map, p.x, p.z)
+			if h0 then
+				local half = if p.kind == "dungeon" then Portals.GATE.hornX + 1.5 else Portals.ARCH.pillarX + 1.25
+				local worst = 0
+				for a = -half, half, 0.5 do
+					for b = -1.5, 1.5, 0.5 do
+						local x, z = onMap(p, a, b)
+						local h = MapTerrain.height(p.map, x, z)
+						if h then
+							worst = math.max(worst, math.abs(h - h0))
+						end
+					end
+				end
+				if worst > 0.75 then
+					table.insert(
+						bad,
+						string.format("%s on %s: the ground under the arch differs by %.1f", p.id, p.map, worst)
+					)
+				end
+			end
+		end
+		if #bad > 0 then
+			error(table.concat(bad, "\n"))
+		end
+	end)
+
+	it("gives every portal in a cave open air under the whole arch", function()
+		for _, p in Portals.list do
+			local cave = CaveTerrain.get(p.map)
+			if cave then
+				local half = if p.kind == "dungeon" then Portals.GATE.hornX + 1.5 else Portals.ARCH.pillarX + 1.25
+				local h0 = cave.floor(p.x, p.z) or 0
+				for a = -half, half, 0.5 do
+					for b = -1.5, 1.5, 0.5 do
+						local x, z = onMap(p, a, b)
+						local floor, ceiling = cave.floor(x, z), cave.ceiling(x, z)
+						if not floor or not ceiling then
+							error(`{p.id}: rock in the arch at {a}, {b}`)
+						end
+						if ceiling - h0 < Portals.ARCH.height + 2 then
+							error(`{p.id}: the ceiling {ceiling - h0} over the arch at {a}, {b}`)
+						end
+					end
 				end
 			end
 		end
