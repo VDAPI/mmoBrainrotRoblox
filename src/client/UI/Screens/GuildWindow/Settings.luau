@@ -28,7 +28,7 @@ local ROW = 40
 local function pickerRow(scope: Scope, order: number, children: { Instance }): Instance
 	return scope:New("Frame")({
 		LayoutOrder = order,
-		Size = UDim2.new(1, 0, 0, 0),
+		Size = UDim2.fromScale(1, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		[Children] = {

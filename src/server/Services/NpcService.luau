@@ -118,7 +118,8 @@ local function dressAsset(npc: Model, def: Npcs.NpcDef): boolean
 	for _, part in npc:GetDescendants() do
 		if part:IsA("BasePart") then
 			part.Transparency = 1
-		elseif part:IsA("Decal") then
+		end
+		if part:IsA("Decal") then
 			part.Transparency = 1 -- the face on the hidden head
 		end
 	end

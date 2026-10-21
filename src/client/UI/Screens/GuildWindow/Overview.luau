@@ -143,7 +143,7 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 				list,
 				s:New("TextLabel")({
 					LayoutOrder = #entries - i + 1,
-					Size = UDim2.new(1, 0, 0, 0),
+					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
 					RichText = true,
@@ -205,7 +205,7 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 				}),
 				scope:New("TextLabel")({
 					Position = UDim2.fromOffset(78, 38),
-					Size = UDim2.new(0, 220, 0, 22),
+					Size = UDim2.fromOffset(220, 22),
 					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
 						return Text.get(use, "guild.level", { level = use(guildLevel) or 1 })
@@ -330,7 +330,7 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 		Common.heading(scope, 8, Text.T(scope, "guild.log")),
 		scope:New("Frame")({
 			LayoutOrder = 9,
-			Size = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
 			[Children] = {
