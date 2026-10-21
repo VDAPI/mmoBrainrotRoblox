@@ -200,4 +200,30 @@ function Titles.shown(character: any, list: { TitleDef }?, ctx: Context?): strin
 	return Titles.pathTitle(character, list)
 end
 
+-- Owner 2026-10-21 (the title list in the backpack window): where a title comes from, as a Localization key and its
+-- arguments (title.src.<kind>; the thresholds of level / duel / PvP titles in the text).
+function Titles.sourceOf(def: TitleDef): (string, { [string]: any }?)
+	local req: any = def.req
+	if req.kind == "level" or req.kind == "duelsWon" or req.kind == "pvpKills" then
+		return `title.src.{req.kind}`, { value = req.value }
+	end
+	return `title.src.{req.kind}`, nil
+end
+
+export type Choice = { id: string?, current: boolean } -- id nil = "no title"
+
+-- Owner 2026-10-21: the rows of the title list: "no title" first, then every unlocked title in display order; exactly
+-- one row is `current` (the shown title, else "no title", as the nameplate draws it).
+function Titles.choices(character: any, list: { TitleDef }?, ctx: Context?): { Choice }
+	local shownId = if type(character) == "table" then Titles.shown(character, list, ctx) else nil
+	local out: { Choice } = { { id = nil, current = shownId == nil } }
+	if type(character) ~= "table" then
+		return out
+	end
+	for _, id in Titles.unlocked(character, list, ctx) do
+		table.insert(out, { id = id, current = id == shownId })
+	end
+	return out
+end
+
 return Titles

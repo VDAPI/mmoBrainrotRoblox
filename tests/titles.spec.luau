@@ -381,4 +381,61 @@ T.describe("Achievement titles (S151)", function()
 	end)
 end)
 
+-- Owner 2026-10-21: the title list of the backpack window (TitleChooser) and where each title comes from.
+T.describe("Title list (owner 2026-10-21)", function()
+	T.it("starts with no title, lists every unlocked title and marks the shown one", function()
+		local c = character(30, 0, 0, 0)
+		c.title = "adventurer"
+		local rows = Titles.choices(c)
+		T.expect(rows[1].id).toBeNil()
+		T.expect(rows[1].current).toBe(false)
+		local ids = {}
+		local currents = 0
+		for i, row in rows do
+			if i > 1 then
+				table.insert(ids, row.id)
+			end
+			if row.current then
+				currents += 1
+				T.expect(row.id).toBe("adventurer")
+			end
+		end
+		T.expect(ids).toEqual(Titles.unlocked(c))
+		T.expect(currents).toBe(1)
+	end)
+
+	T.it("marks no title when the player hid it or owns none", function()
+		local hidden = character(30, 0, 0, 0)
+		hidden.title = Titles.NONE
+		T.expect(Titles.choices(hidden)[1].current).toBe(true)
+		local fresh = character(1, 0, 0, 0)
+		local rows = Titles.choices(fresh)
+		T.expect(#rows).toBe(1 + #Titles.unlocked(fresh))
+		T.expect(rows[1].current).toBe(Titles.shown(fresh) == nil)
+		T.expect(#Titles.choices(nil)).toBe(1)
+	end)
+
+	T.it("never lists a locked title (VIP only with VIP)", function()
+		local c = character(1, 0, 0, 0)
+		for _, row in Titles.choices(c) do
+			T.expect(row.id == "vip").toBe(false)
+		end
+		local found = false
+		for _, row in Titles.choices(c, nil, Titles.contextOf({}, true)) do
+			found = found or row.id == "vip"
+		end
+		T.expect(found).toBe(true)
+	end)
+
+	T.it("every title has a source text in both languages", function()
+		for _, def in TitleData.list do
+			local key, args = Titles.sourceOf(def)
+			T.expect({ def.id, pl[key] ~= nil, en[key] ~= nil }).toEqual({ def.id, true, true })
+			if string.find(pl[key] or "", "{value}", 1, true) then
+				T.expect({ def.id, args and args.value }).toEqual({ def.id, (def.req :: any).value })
+			end
+		end
+	end)
+end)
+
 return nil
