@@ -13886,3 +13886,25 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `src/client/UI/Screens/{PremiumShop/*,VipWindow,BlacksmithWindow/{Effect,Reroll,Transmog},PortalShopWindow,
   ShopWindow,WanderingMerchantWindow,AuctionWindow/Sell,MailCompose,LoginReward,BossReward,Wardrobe,WardrobeTransmog,
   LookWindow,MountWindow}.luau`, lokalizacja, test.
+### Opisy grupa 1: społeczność, PvP, sezon (właściciel 2026-10-21: „za dużo szczegółowych opisów, gra nieczytelna”)
+- **Zasada (AUDYT-OPISOW):** S = nowa krótka linia `<klucz>.short`, stary klucz bez zmian pod „i”; K = tekst skrócony
+  w miejscu, ucięta część w `<klucz>.info` albo w „i” sekcji; nic nie znika. Nowe klucze w bloku „Grupa 1 opisów” w
+  `pl.luau` / `en.luau`.
+- **Nowy komponent:** `UI/Components/InfoLine` (krótka linia + `InfoTip` zaraz za nią, tekst zawija się przed „i”);
+  `GuildWindow/Common.heading(..., info)` z „i” w nagłówku; `WorldMap/DetailCard` ma pole `info` (stałe „i” w nagłówku
+  karty, bo karta odświeża się co 2 s).
+- **Gildia:** Cele (wstęp, zbiórka krótko + „i”, źródła punktów pod „Więcej”), Ustawienia (sztandar, uprawnienia zwinięte
+  w `Details`, podpowiedzi czatu i lidera krótko + „i”), Skarbiec, brak gildii, zakładanie gildii.
+- **Drużyna / znajomi:** pusta drużyna krótko + „i”; zasady drużyny (premia, łup) w „i” obok premii zamiast 88 px tekstu;
+  lista ignorowanych i pusta lista znajomych krótko; podpowiedź Akcji (PC / dotyk) skrócona.
+- **Arena / turniej:** pod kartą „Twoja arena” tylko ocena, ranga, pasek i koniec sezonu, reszta pod „Więcej”; zasady
+  trybu w „i” przy przełączniku, uwagi kolejki w „i” tytułu karty; ranga sezonu krótko + „i” (z „jak awansować”).
+  Turniej: opis i nagroda Mistrza krótko + „i”.
+- **Krwawy Księżyc, rankingi, sezon:** opis w „i” tytułu, zasady pod „Zasady i nagrody ▸”; nagrody tygodnia i zasada
+  Galerii Sław w „i” tytułu tablicy; limity przepustki krótko + „Więcej”, porównanie z VIP w „i” przy „Odblokuj”.
+- **Inne:** ekran śmierci (krótsze teksty, ochrona z „i”), premia rodziny w bestiariuszu, karty bossa świata i lochu na
+  mapie (bez pauz), „Co nowego” (wpisy zwinięte, najnowszy otwarty).
+- **Testy:** `tests/socialshort.spec` (krótkie linie ≤ 60 znaków w obu językach, te same zmienne, pełny tekst istnieje i
+  jest dłuższy). Klucze `Details` w formie „x/y”, bo `data.spec` traktuje „x.y” jako klucz tekstu.
+- **Dla właściciela (domyślne, do zmiany):** uprawnienia gildii zwinięte też dla lidera; ochrona na ekranie śmierci dostała
+  „i” (audyt mówił bez); limity przepustki pod „Więcej” jako dotychczasowy akapit, nie 4 punkty.

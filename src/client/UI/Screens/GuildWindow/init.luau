@@ -1,6 +1,7 @@
 --!strict
 -- Guild window (G, DESIGN §19, §23): Overview / Members / Goals / Bank / Skills / Settings tabs (Goals and Bank S159g).
--- Without a guild it says where to found one (the Guild Master in the capital) and how to join (an invitation).
+-- Without a guild it says where to found one (the Guild Master in the capital) and how to join (an invitation);
+-- 2026-10-21: two short lines, the level and the price behind an "i" (Components/InfoLine).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -8,6 +9,7 @@ local Bank = require(script.Bank)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Goals = require(script.Goals)
 local GuildSkills = require(ReplicatedStorage.Shared.Data.GuildSkills)
+local InfoLine = require(script.Parent.Parent.Components.InfoLine)
 local Members = require(script.Members)
 local Overview = require(script.Overview)
 local Settings = require(script.Settings)
@@ -52,28 +54,31 @@ local function GuildWindow(scope: Scope, props: Props): Fusion.Child
 		return Overview(s, props.ShowModal)
 	end)
 
+	-- guildId without state = still loading the record from the store.
+	local loading = scope:Computed(function(use): boolean
+		return use(guildId) ~= nil
+	end)
 	return {
-		scope:New("TextLabel")({
+		InfoLine.new(scope, {
 			Name = "NoGuild",
-			Size = UDim2.new(1, 0, 0, 200),
-			BackgroundTransparency = 1,
+			Position = UDim2.fromOffset(0, 100), -- the middle of the old 200 px message
+			AnchorPoint = Vector2.new(0, 0.5),
+			Center = true,
 			Visible = scope:Computed(function(use): boolean
 				return not use(hasGuild)
 			end),
 			Text = scope:Computed(function(use): string
-				-- guildId without state = still loading the record from the store.
-				if use(guildId) ~= nil then
-					return Text.get(use, "guild.loading")
-				end
-				return Text.get(use, "guild.noneInfo", {
-					cost = Format.number(GuildSkills.Rules.createCost),
-					level = GuildSkills.Rules.createLevel,
-				})
+				return Text.get(use, if use(loading) then "guild.loading" else "guild.noneInfo.short")
 			end),
-			TextWrapped = true,
-			FontFace = Theme.Fonts.Body,
+			Info = Text.T(scope, "guild.noneInfo", {
+				cost = Format.number(GuildSkills.Rules.createCost),
+				level = GuildSkills.Rules.createLevel,
+			}),
+			InfoVisible = scope:Computed(function(use): boolean
+				return not use(loading)
+			end),
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = Theme.Paper.TextMuted,
+			Color = Theme.Paper.TextMuted,
 		}),
 		scope:New("Frame")({
 			Name = "TabStrip",

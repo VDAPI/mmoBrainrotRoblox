@@ -10,6 +10,7 @@ local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Guild = require(ReplicatedStorage.Shared.Logic.Guild)
 local GuildSkills = require(ReplicatedStorage.Shared.Data.GuildSkills)
+local InfoLine = require(script.Parent.Parent.Components.InfoLine)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
@@ -104,17 +105,13 @@ local function GuildFound(scope: Scope, onDone: () -> ()): Fusion.Child
 
 	return {
 		scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
-		scope:New("TextLabel")({
+		-- 2026-10-21: one short line, where the tag shows behind the "i"
+		InfoLine.new(scope, {
 			LayoutOrder = 1,
-			Size = UDim2.new(1, 0, 0, 52),
-			BackgroundTransparency = 1,
 			Text = Text.T(scope, "guild.found.intro"),
-			TextWrapped = true,
-			FontFace = Theme.Fonts.Body,
+			Info = Text.T(scope, "guild.found.intro.info"),
 			TextSize = Theme.TextSize.Body,
-			TextColor3 = Theme.Paper.TextMuted,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextYAlignment = Enum.TextYAlignment.Top,
+			Color = Theme.Paper.TextMuted,
 		}),
 		TextInput(scope, {
 			LayoutOrder = 2,

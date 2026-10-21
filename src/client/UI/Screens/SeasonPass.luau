@@ -6,8 +6,10 @@
 --            of tiers with two cells a row. A cell: the reward's picture, its name and its state (locked, to claim
 --            with the green edge and a glowing brass frame, claimed ✓, the premium lock); the tooltip (iron) says
 --            what it is. The strip opens on the first tier to claim.
---   How      the sources of points (Data/Seasons.POINTS), the limits and the catch-up in one paragraph, and the one
---            sentence "and VIP?" (season.vsVip, the shop says the same).
+--   How      the sources of points (Data/Seasons.POINTS), one short line of limits (the tier, the monsters' daily cap)
+--            with today's monster points, the full limits and the catch-up folded under "More" (2026-10-21).
+-- "And VIP?" (season.vsVip, the shop says the same) is the "i" next to "Unlock premium"; without a date of the next
+-- season one short line with the rest behind an "i" (2026-10-21, owner: too many descriptions).
 -- Actions: a cell to claim -> SeasonClaim, "Claim all" (more than one to claim) -> SeasonClaimAll, "Unlock premium"
 -- (or a locked premium cell) -> the shop's confirmation (UI/SeasonPassBuy). After a season: its grace days ("claim
 -- until") with the same strip, or "the next season soon". Everything shown comes from Logic/SeasonView over the
@@ -22,9 +24,12 @@ local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Bar = require(script.Parent.Parent.Components.Bar)
 local Button = require(script.Parent.Parent.Components.Button)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
+local Details = require(script.Parent.Parent.Components.Details)
 local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoLine = require(script.Parent.Parent.Components.InfoLine)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local ItemIcon = require(script.Parent.Parent.Components.ItemIcon)
 local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -562,25 +567,26 @@ local function soon(scope: Scope, ctx: Ctx): Instance
 				TextSize = Theme.TextSize.Large,
 				TextColor3 = Theme.Paper.Heading,
 			}),
-			scope:New("TextLabel")({
+			InfoLine.new(scope, {
 				LayoutOrder = 2,
 				Size = UDim2.new(1, -40, 0, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundTransparency = 1,
+				Center = true,
 				Text = scope:Computed(function(use): string
 					local nextDef = use(ctx.view).next
 					if not nextDef then
-						return Text.get(use, "season.soon.desc")
+						return Text.get(use, "season.soon.desc.short")
 					end
 					return Text.get(use, "season.soon.next", {
 						season = Text.get(use, nextDef.nameKey),
 						date = date(nextDef.start),
 					})
 				end),
-				TextWrapped = true,
-				FontFace = Theme.Fonts.Body,
+				Info = Text.T(scope, "season.soon.desc"),
+				InfoVisible = scope:Computed(function(use): boolean
+					return use(ctx.view).next == nil
+				end),
 				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Paper.Text,
+				Color = Theme.Paper.Text,
 			}),
 		},
 	})
@@ -601,7 +607,7 @@ local function paragraph(scope: Scope, order: number, text: Fusion.UsedAs<string
 	})
 end
 
--- "How to earn points": the sources, the limits and the catch-up, and "and VIP?".
+-- "How to earn points": the sources, one short line of limits with today's monster points, the rest under "More".
 local function howTab(scope: Scope, ctx: Ctx): Instance
 	local rows: { Instance } = {}
 	for i, source in SeasonView.SOURCES do
@@ -657,16 +663,10 @@ local function howTab(scope: Scope, ctx: Ctx): Instance
 			paragraph(
 				scope,
 				101,
-				scope:Computed(function(use): string
-					return Text.get(use, "season.how.limits", {
-						kill = Format.number(Seasons.LIMITS.killPerDay),
-						week = Format.number(Seasons.LIMITS.weekCap),
-						mul = mulText(use),
-						behind = math.floor(Seasons.CATCHUP.behind * 100 + 0.5),
-						tier = Format.number(Seasons.TIER_POINTS),
-						days = Seasons.GRACE_DAYS,
-					})
-				end)
+				Text.T(scope, "season.how.limits.short", {
+					kill = Format.number(Seasons.LIMITS.killPerDay),
+					tier = Format.number(Seasons.TIER_POINTS),
+				})
 			),
 			paragraph(
 				scope,
@@ -683,8 +683,27 @@ local function howTab(scope: Scope, ctx: Ctx): Instance
 				end),
 				Theme.Paper.TextMuted
 			),
-			SectionLabel(scope, { LayoutOrder = 200, Text = Text.T(scope, "season.vsVip.title") }),
-			paragraph(scope, 201, Text.T(scope, "season.vsVip")),
+			-- the full limits: the week's cap, the catch-up and the days to claim after the season
+			Details.new(scope, {
+				Key = "season/limits",
+				LayoutOrder = 103,
+				Children = {
+					paragraph(
+						scope,
+						1,
+						scope:Computed(function(use): string
+							return Text.get(use, "season.how.limits", {
+								kill = Format.number(Seasons.LIMITS.killPerDay),
+								week = Format.number(Seasons.LIMITS.weekCap),
+								mul = mulText(use),
+								behind = math.floor(Seasons.CATCHUP.behind * 100 + 0.5),
+								tier = Format.number(Seasons.TIER_POINTS),
+								days = Seasons.GRACE_DAYS,
+							})
+						end)
+					),
+				},
+			}),
 		},
 	})
 end
@@ -889,6 +908,9 @@ local function SeasonPass(scope: Scope, props: Props): Instance
 		return SeasonView.claimCount(use(view))
 	end)
 
+	local canBuy = scope:Computed(function(use): boolean
+		return SeasonView.canBuy(use(view), use(SeasonState.Now))
+	end)
 	local toolbar = scope:New("Frame")({
 		Name = "Toolbar",
 		Position = scope:Computed(function(use): UDim2
@@ -939,10 +961,16 @@ local function SeasonPass(scope: Scope, props: Props): Instance
 						Variant = "primary",
 						TextSize = Theme.TextSize.Small,
 						Text = Text.T(scope, "season.unlock"),
-						Visible = scope:Computed(function(use): boolean
-							return SeasonView.canBuy(use(view), use(SeasonState.Now))
-						end),
+						Visible = canBuy,
 						OnClick = props.Buy,
+					}),
+					-- "And VIP?" next to the button that sells the pass
+					InfoTip.new(scope, {
+						Name = "VsVip",
+						LayoutOrder = 3,
+						Title = Text.T(scope, "season.vsVip.title"),
+						Text = Text.T(scope, "season.vsVip"),
+						Visible = canBuy,
 					}),
 				},
 			}),

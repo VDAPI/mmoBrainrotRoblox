@@ -6,6 +6,8 @@
 -- rewards from Data/Arena.TOURNEY, the character's tournaments and the Champions of Vaelthorn (TourneyInfo.hall). With
 -- a bracket here (`tourney.live`): the player's state, the bracket (ArenaWindow/TourneyBracket) and the way out. PC: two
 -- columns; a phone: one column in the window's scrolling frame, buttons 44 px.
+-- 2026-10-21 (owner: too many descriptions): the description and the Champion's reward are one short line each, the
+-- full texts behind an "i" (Components/InfoLine; the description's "i" in the card title, which is built once).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -18,6 +20,7 @@ local ClockText = require(script.Parent.Parent.Parent.ClockText)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -67,7 +70,25 @@ local function label(
 	})
 end
 
-local function card(s: Scope, order: number, titleKey: string, size: Fusion.UsedAs<UDim2>, body: any): Instance
+-- A titled card; with `info` an "i" after the title.
+local function card(
+	s: Scope,
+	order: number,
+	titleKey: string,
+	size: Fusion.UsedAs<UDim2>,
+	body: any,
+	info: Fusion.UsedAs<string>?
+): Instance
+	local title = if info
+		then InfoLine.new(s, {
+			LayoutOrder = 0,
+			Text = Text.T(s, titleKey),
+			Info = info,
+			Font = Theme.Fonts.Display,
+			TextSize = Theme.TextSize.Body,
+			Color = Theme.Paper.Heading,
+		})
+		else label(s, 0, Text.T(s, titleKey), Theme.TextSize.Body, Theme.Paper.Heading, Theme.Fonts.Display)
 	return s:New("Frame")({
 		LayoutOrder = order,
 		Size = size,
@@ -83,7 +104,7 @@ local function card(s: Scope, order: number, titleKey: string, size: Fusion.Used
 				PaddingRight = UDim.new(0, 12),
 			}),
 			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-			label(s, 0, Text.T(s, titleKey), Theme.TextSize.Body, Theme.Paper.Heading, Theme.Fonts.Display),
+			title,
 			body,
 		},
 	})
@@ -157,7 +178,7 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 			phase, startAt = t.phase :: Tourney.Phase, tonumber(t.startAt) :: number
 		end
 		local times = Tourney.times(startAt)
-		add(label(s, 0, Text.get(use, "tourney.desc"), nil, Theme.Paper.Text))
+		add(label(s, 0, Text.get(use, "tourney.desc.short"), nil, Theme.Paper.Text))
 		add(
 			label(
 				s,
@@ -324,7 +345,7 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 			local def = if id then Cosmetics.get(id) else nil
 			return if def then Text.get(use, def.nameKey) else ""
 		end
-		local function swatch(order: number, id: string?, text: string): Instance
+		local function swatch(order: number, id: string?, text: string, info: string?): Instance
 			local def = if id then Cosmetics.get(id) else nil
 			return s:New("Frame")({
 				LayoutOrder = order,
@@ -348,18 +369,25 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 						FontFace = Theme.Fonts.Body,
 						[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					}),
-					s:New("TextLabel")({
-						LayoutOrder = 2,
-						Size = UDim2.new(1, -36, 0, 0),
-						AutomaticSize = Enum.AutomaticSize.Y,
-						BackgroundTransparency = 1,
-						Text = text,
-						TextWrapped = true,
-						FontFace = Theme.Fonts.Body,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Paper.Text,
-						TextXAlignment = Enum.TextXAlignment.Left,
-					}),
+					if info
+						then InfoLine.new(s, {
+							LayoutOrder = 2,
+							Size = UDim2.new(1, -36, 0, 0),
+							Text = text,
+							Info = info,
+						})
+						else s:New("TextLabel")({
+							LayoutOrder = 2,
+							Size = UDim2.new(1, -36, 0, 0),
+							AutomaticSize = Enum.AutomaticSize.Y,
+							BackgroundTransparency = 1,
+							Text = text,
+							TextWrapped = true,
+							FontFace = Theme.Fonts.Body,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = Theme.Paper.Text,
+							TextXAlignment = Enum.TextXAlignment.Left,
+						}),
 				},
 			})
 		end
@@ -367,13 +395,17 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 			local cosmetic = if r.cosmetics then r.cosmetics[1] else nil
 			local title = if r.title then TitleData.get(r.title) else nil
 			local text: string
+			local info: string? = nil
 			if r.place == 1 then
-				text = Text.get(use, "tourney.rewards.champion", {
+				-- 2026-10-21: the title, the aura and the shards; the days and the statue behind the "i"
+				local args = {
 					title = if title then Text.get(use, title.nameKey) else "",
 					days = r.titleDays or 0,
 					aura = cosmeticName(cosmetic),
 					shards = r.shards or 0,
-				})
+				}
+				text = Text.get(use, "tourney.rewards.champion.short", args)
+				info = Text.get(use, "tourney.rewards.champion", args)
 			elseif r.place == 2 then
 				text = Text.get(
 					use,
@@ -383,7 +415,7 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 			else
 				text = Text.get(use, "tourney.rewards.semi", { shards = r.shards or 0 })
 			end
-			table.insert(items, swatch(i, cosmetic, text))
+			table.insert(items, swatch(i, cosmetic, text, info))
 		end
 		table.insert(items, label(s, 10, Text.get(use, "tourney.rewards.all", { tokens = RULES.participantTokens })))
 		local st = use(mine)
@@ -550,7 +582,8 @@ local function TourneyTab(scope: Scope, props: Props): Instance
 							BackgroundTransparency = 1,
 							LayoutOrder = 1,
 							[Children] = signupBody :: any,
-						})
+						}),
+						Text.T(scope, "tourney.desc")
 					),
 					card(
 						scope,
