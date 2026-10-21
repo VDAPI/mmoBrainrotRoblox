@@ -13874,3 +13874,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `trackerfold.spec` (domyślne, zapis, walidator, `compact`, `withoutCount`), `shorttext3.spec` (linia ≤ 60
   znaków w obu językach, te same placeholdery, długi tekst istnieje, modale ≤ 120, bez długiej pauzy).
 - **Dla właściciela:** bez przeglądu w Studio (wysokość tropiciela przy 3 zleceniach, dymek przytrzymania na telefonie).
+### Opisy, grupa 2: sklepy, kowal, premium, poczta, nagrody (2026-10-21)
+- **Co widać:** jedna krótka linia (do 60 znaków), pełny tekst pod „i” (`Components/InfoTip`): Smoczy Sklep (Przedmioty,
+  Przepustki, Waluta, Wierzchowce: `Cards.card` pole `info`, `subtitle` opcjonalny, `Cards.note(..., infoKey)`), okno VIP,
+  kowal (Efekt, Przemiana, Wygląd), Mistrz Portali (intro, opis kamienia przy nazwie), sklep NPC (pasek sprzedawcy klasy),
+  aukcja (wystawianie), list, nagroda logowania, nagroda bossa świata, garderoba, wygląd broni, zmiana wyglądu, wierzchowce.
+- **Klucze:** blok „group 2” na końcu `pl.luau` / `en.luau` (`.short`, `.info`, `auction.sell.costs`,
+  `wanderer.confirmGear`); skrócone w miejscu tylko klucze czytane wyłącznie przez okna (modale, podpowiedzi).
+- **Test:** `tests/shopshort.spec` (krótkie linie ≤ 60 znaków w obu językach, bez pauzy; modale ≤ 2 linie; `.short`
+  używa tylko placeholderów pełnego tekstu; każdy wpis sklepu i przepustka z opisem > 60 znaków ma `.short`).
+- **Pliki:** `src/client/UI/Screens/{PremiumShop/*,VipWindow,BlacksmithWindow/{Effect,Reroll,Transmog},PortalShopWindow,
+  ShopWindow,WanderingMerchantWindow,AuctionWindow/Sell,MailCompose,LoginReward,BossReward,Wardrobe,WardrobeTransmog,
+  LookWindow,MountWindow}.luau`, lokalizacja, test.

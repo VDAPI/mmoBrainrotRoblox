@@ -3,6 +3,8 @@
 -- a subject, the text, gold and up to Config.PlayerMail.maxItems whole stacks from the backpack (unbound, without the
 -- padlock). The postage and today's count are shown before sending; gold and items leave only at the mailbox (the
 -- Auctioneer), a plain letter goes from anywhere. The server checks, filters and sends everything (MailService).
+-- 2026-10-21 (owner: too many detailed descriptions): a one-line intro (the mailbox line under the form says the rest
+-- when it matters), the rule for items behind the "i" of the items label.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -11,6 +13,7 @@ local Button = require(script.Parent.Parent.Components.Button)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local MailDraft = require(script.Parent.Parent.MailDraft)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NumberInput = require(script.Parent.Parent.Components.NumberInput)
@@ -45,6 +48,37 @@ local function label(scope: Scope, key: string, order: number): Instance
 		TextSize = Theme.TextSize.Small,
 		TextColor3 = Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
+	})
+end
+
+-- 2026-10-21 (owner: too many detailed descriptions): a field label with an "i" after it holding the rule.
+local function labelWithInfo(scope: Scope, key: string, infoKey: string, order: number): Instance
+	return scope:New("Frame")({
+		LayoutOrder = order,
+		Size = UDim2.new(1, 0, 0, 22),
+		BackgroundTransparency = 1,
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 6),
+			}),
+			scope:New("TextLabel")({
+				LayoutOrder = 1,
+				Size = UDim2.fromScale(0, 1),
+				AutomaticSize = Enum.AutomaticSize.X,
+				BackgroundTransparency = 1,
+				Text = Text.T(scope, key),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.Text,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+			}),
+			InfoTip.new(scope, { Text = Text.T(scope, infoKey), LayoutOrder = 2 }),
+		},
 	})
 end
 
@@ -342,7 +376,7 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 						}),
 					},
 				}),
-				label(scope, "mail.compose.items", 9),
+				labelWithInfo(scope, "mail.compose.items", "mail.compose.items.info", 9),
 				scope:New("Frame")({
 					LayoutOrder = 10,
 					Size = UDim2.fromScale(1, 0),

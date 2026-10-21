@@ -180,13 +180,21 @@ local function WanderingMerchantWindow(scope: Scope, props: Props): Fusion.Child
 		end
 		if offer.kind == "gear" or offer.currency == "marks" then
 			local lvl = Fusion.peek(level) or 1
-			props.ShowModal({
-				Title = Text.now(Npcs.WANDERER.nameKey),
-				Message = Text.now(if offer.currency == "marks" then "wanderer.confirmMarks" else "wanderer.confirm", {
+			-- 2026-10-21 (owner: too many detailed descriptions): the question, plus one line on gear only
+			local message =
+				Text.now(if offer.currency == "marks" then "wanderer.confirmMarks" else "wanderer.confirm", {
 					name = name,
 					price = price,
-					level = WanderingMerchant.ilvlOf(visit.band, lvl),
-				}),
+				})
+			if offer.kind == "gear" then
+				message ..= "\n" .. Text.now(
+					"wanderer.confirmGear",
+					{ level = WanderingMerchant.ilvlOf(visit.band, lvl) }
+				)
+			end
+			props.ShowModal({
+				Title = Text.now(Npcs.WANDERER.nameKey),
+				Message = message,
 				ConfirmText = Text.now("wanderer.buy"),
 				CancelText = Text.now("quest.back"),
 				OnConfirm = function(): (boolean, string?)

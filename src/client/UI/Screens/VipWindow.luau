@@ -305,14 +305,8 @@ function VipWindow.build(scope: Scope, props: Props?): Instance
 	for i, row in Vip.BENEFITS do
 		table.insert(benefitRows, benefitRow(scope, i, row))
 	end
-	table.insert(
-		benefitRows,
-		label(scope, {
-			LayoutOrder = 100,
-			Text = Text.T(scope, "vip.noPower"),
-			TextColor3 = Theme.Paper.TextMuted,
-		})
-	)
+	-- 2026-10-21 (owner: too many detailed descriptions): one short line, what VIP never gives behind its "i"
+	table.insert(benefitRows, Cards.note(scope, 100, "vip.noPower", "vip.noPower.info"))
 
 	-- Right column: today.
 	local recallButton = Button(scope, {

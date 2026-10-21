@@ -11,6 +11,8 @@
 -- group); items above the character's level show a red "Requires level N" in the bar and a disabled "Buy", gear
 -- another class wears "Only for: ..." (the server refuses both too); the icons of both are red. Another class's
 -- vendor and the dealer (no entries: no Buy tab) show who sells the player's gear, with "Guide me".
+-- 2026-10-21 (owner: too many detailed descriptions): short hints; the vendor bar names the vendor, where to find them
+-- is behind its "i" (shop.vendor.otherClass).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -19,6 +21,7 @@ local DragDrop = require(script.Parent.Parent.DragDrop)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local ItemTooltip = require(script.Parent.Parent.Components.ItemTooltip)
 local ItemText = require(script.Parent.Parent.ItemText)
@@ -423,19 +426,39 @@ local function vendorBar(
 		BackgroundTransparency = 0.3,
 		[Children] = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			s:New("TextLabel")({
+			-- who sells the player's gear, where they stand behind the "i"
+			s:New("Frame")({
 				Position = UDim2.fromOffset(10, 0),
 				Size = UDim2.new(1, -170, 1, 0),
 				BackgroundTransparency = 1,
-				Text = Text.get(use, "shop.vendor.otherClass", {
-					name = Text.get(use, vendor.nameKey),
-					where = Text.get(use, `npc.{vendorId}.where`),
-				}),
-				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.Text,
-				TextWrapped = true,
-				TextXAlignment = Enum.TextXAlignment.Left,
+				[Children] = {
+					s:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 6),
+					}),
+					s:New("TextLabel")({
+						LayoutOrder = 1,
+						Size = UDim2.new(),
+						AutomaticSize = Enum.AutomaticSize.XY,
+						BackgroundTransparency = 1,
+						Text = Text.get(use, "shop.vendor.otherClass.short", { name = Text.get(use, vendor.nameKey) }),
+						FontFace = Theme.Fonts.BodyMedium,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
+						TextWrapped = true,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						[Children] = s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+					}),
+					InfoTip.new(s, {
+						Text = Text.get(use, "shop.vendor.otherClass", {
+							name = Text.get(use, vendor.nameKey),
+							where = Text.get(use, `npc.{vendorId}.where`),
+						}),
+						LayoutOrder = 2,
+					}),
+				},
 			}),
 			Button(s, {
 				AnchorPoint = Vector2.new(1, 0.5),

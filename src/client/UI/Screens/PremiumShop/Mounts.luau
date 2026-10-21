@@ -2,6 +2,7 @@
 -- Dragon Shop, "Mounts" tab (S97 section moved here in S120): every premium mount on sale (Logic/Premium.mountOffers)
 -- for Robux through the native prompt, the same speed cap as every mount. The tab exists only while one is on sale
 -- (Premium.visibleTabs); today none is (Data/Products.mounts enabled = false), so the player does not see it.
+-- 2026-10-21: the note is one short line, the rest (looks, starting level) behind its "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,7 +18,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local Mounts = {}
 
 function Mounts.build(scope: Scope, _ctx: Cards.Ctx): { any }
-	local list: { any } = { Cards.note(scope, 1, "premium.mounts.desc") }
+	local list: { any } = { Cards.note(scope, 1, "premium.mounts.short", "premium.mounts.desc") }
 	for i, offer in Premium.mountOffers() do
 		local def = MountData.get(offer.mount)
 		if def then
