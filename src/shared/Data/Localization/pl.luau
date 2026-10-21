@@ -2315,6 +2315,7 @@ return {
 	["guild.error.guildLevel"] = "Gildia ma za niski poziom.",
 	["guild.error.dailyLimit"] = "Wyczerpano dzienny limit twojej rangi.",
 	["guild.error.vaultFull"] = "Skarbiec przedmiotów jest pełny.",
+	["guild.error.vaultNotEmpty"] = "Skarbiec przedmiotów nie jest pusty: najpierw wyjmij z niego przedmioty.",
 	["guild.error.combat"] = "Nie w trakcie walki.",
 	["guild.error.goalNotDone"] = "Ten cel nie jest jeszcze wykonany.",
 	["guild.error.claimMin"] = "Zdobądź najpierw więcej EXP gildii w tym tygodniu.",

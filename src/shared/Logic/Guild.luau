@@ -508,7 +508,9 @@ function Guild.forceRemove(guild: GuildData?, key: string): (boolean, string?)
 	return true, nil
 end
 
-function Guild.disband(guild: GuildData?, actorKey: string): (boolean, string?)
+-- `force` (admin) disbands with items still in the vault; a leader has to take them out first (S159g audit: a
+-- disband wiped the members' items).
+function Guild.disband(guild: GuildData?, actorKey: string, force: boolean?): (boolean, string?)
 	local ok, err = alive(guild)
 	if not ok then
 		return false, err
@@ -516,6 +518,9 @@ function Guild.disband(guild: GuildData?, actorKey: string): (boolean, string?)
 	local g = guild :: GuildData
 	if g.leaderCharId ~= actorKey or not Guild.can(rankOf(g, actorKey), "disband") then
 		return false, "guild.error.permission"
+	end
+	if not force and type(g.vault) == "table" and next(g.vault) ~= nil then
+		return false, "guild.error.vaultNotEmpty"
 	end
 	g.disbanded = true
 	g.members = {}

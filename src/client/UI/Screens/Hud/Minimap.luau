@@ -730,7 +730,11 @@ local function Minimap(scope: Scope, props: Props): Instance
 			end
 			-- S159w: the wandering merchant
 			local visit = WanderingMerchant.current(Clock.now())
-			local merchantPoint = if visit and visit.spot.map == currentMap then at(visit.spot.x, visit.spot.z) else nil
+			local merchantPoint = if visit
+					and not hide.shop
+					and visit.spot.map == currentMap
+				then at(visit.spot.x, visit.spot.z)
+				else nil
 			local merchantIn = merchantPoint ~= nil and (merchantPoint - pixel).Magnitude <= EDGE
 			merchantGlyph.Visible = merchantIn
 			merchantArrow.Visible = merchantPoint ~= nil and not merchantIn

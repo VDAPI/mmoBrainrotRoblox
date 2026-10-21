@@ -175,6 +175,18 @@ T.describe("Guild membership", function()
 		T.expect({ Guild.join(g, member(9, "X"), 0) }).toEqual({ false, "guild.error.gone" })
 	end)
 
+	T.it("a guild with items in the vault is not disbanded (admin force still is)", function()
+		local g = sample()
+		g.vault = { ["1"] = { id = "x", uid = "u1", n = 1 } }
+		T.expect({ Guild.disband(g, LEADER) }).toEqual({ false, "guild.error.vaultNotEmpty" })
+		T.expect(g.disbanded).toBeFalsy()
+		g.vault = {}
+		T.expect((Guild.disband(g, LEADER))).toBe(true)
+		local h = sample()
+		h.vault = { ["1"] = { id = "x", uid = "u1", n = 1 } }
+		T.expect((Guild.disband(h, LEADER, true))).toBe(true)
+	end)
+
 	T.it("every change bumps the version", function()
 		local g = sample()
 		local before = g.version

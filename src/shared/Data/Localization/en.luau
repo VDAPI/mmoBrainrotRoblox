@@ -2315,6 +2315,7 @@ return {
 	["guild.error.guildLevel"] = "The guild level is too low.",
 	["guild.error.dailyLimit"] = "Your rank's daily limit is used up.",
 	["guild.error.vaultFull"] = "The item vault is full.",
+	["guild.error.vaultNotEmpty"] = "The item vault is not empty: take the items out first.",
 	["guild.error.combat"] = "Not during a fight.",
 	["guild.error.goalNotDone"] = "This goal is not done yet.",
 	["guild.error.claimMin"] = "Earn more guild EXP this week first.",

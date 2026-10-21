@@ -1096,7 +1096,8 @@ nazw obcych) i tabelą własnej drużyny.
     **Zryw gildii** +3% EXP i +3% złota dla członków do końca następnego tygodnia.
   - **Skarbiec**: wpłata złota (każdy), wypłata złota i branie przedmiotów według uprawnień i dziennych limitów rangi,
     odkładanie przedmiotów (bez związanych), skarbiec przedmiotów dostępny wszędzie poza walką. **Kronika**: ostatnie 50
-    zdarzeń (wpłaty, wypłaty, przedmioty, rangi, ulepszenia, cele, poziomy).
+    zdarzeń (wpłaty, wypłaty, przedmioty, rangi, ulepszenia, cele, poziomy). Gildii z przedmiotami w skarbcu nie da się
+    rozwiązać (najpierw trzeba je wyjąć; komenda admina rozwiązuje mimo to).
   - **Rangi**: Przywódca, Oficer, Weteran, Członek. Przywódca ustawia uprawnienia niższych rang (zapraszanie, wyrzucanie,
     zmiana rang niższych, ulepszanie, wiadomość dnia, wypłata złota, branie i odkładanie przedmiotów) i dzienne limity
     (domyślnie oficer 50 000 złota i 10 przedmiotów, weteran 3 przedmioty, członek tylko odkłada).
