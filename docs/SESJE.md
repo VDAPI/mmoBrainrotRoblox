@@ -13790,3 +13790,12 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Tytuły:** `Logic/Titles.choices` / `sourceOf`, `UI/Screens/CharacterWindow/TitleChooser` (przycisk „Zmień tytuł”
   i lista nad oknem) zamiast cyklera ◀ ▶; serwer bez zmian (`SetTitle` sprawdza `Titles.isUnlocked`).
 - **Testy:** `nameplate`, `titles`.
+
+### HUD 2026-10-21: koszt na slotach, przesuwane panele wydarzeń, poczta pod przyciskiem ataku
+- **Koszt umiejętności:** `Logic/SkillCostBadge` (tekst, kolor zasobu), `Components/CostBadge`, `SkillController.Cost`
+  (wspólny z `Usable`), `Hud/SkillBar`, `Hud/MobileSkills`, prop `SkillCost` HUD.
+- **Panele wydarzeń:** `UI/HudDrag` (wspólny chwyt i zapis, wyjęty z `Hud/QuestTracker`), `Logic/HudLayout` (elementy
+  `worldEvent`, `worldBoss`, `bloodMoon`, `tourney`, skala `s`), `Hud/WorldEventPanel`, `WorldBossPanel`,
+  `BloodMoonPanel`, `TourneyPanel` (ramka zewnętrzna z chwytami, przesunięty panel nie spycha tropiciela).
+- **Poczta:** `Hud/MailButton`, `Logic/Mail.badge`, miejsce `mail` w `Logic/PhoneHud`; koperta usunięta z `Hud/Minimap`.
+- **Testy:** `skillcostbadge`, `mailbadge`, `hudlayout` (panele), `phonehud` (z pocztą bez nakładania).

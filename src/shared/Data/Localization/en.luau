@@ -2700,6 +2700,7 @@ return {
 
 	-- S18: sprint
 	["hud.sprint"] = "Sprint",
+	["hud.mail"] = "Mail: {count} (click to open)",
 
 	-- S18: PvP dot
 	["pvp.dot.off"] = "PvP off: other players cannot attack you (outside red zones).",
@@ -8517,7 +8518,7 @@ return {
 	["arena.hof.bracket"] = "Levels {min}–{max}",
 	["leaderboard.board.arena3"] = "Arena: 3 vs 3 rating",
 	["leaderboard.tab.arena3"] = "Arena 3 vs 3",
-	["menu.hudLayout"] = "HUD layout (drag the quests by ≡, resize by ◢)",
+	["menu.hudLayout"] = "HUD layout (drag the quests and event panels by ≡, resize by ◢)",
 	["menu.hudLayout.reset"] = "Reset",
 	["leaderboard.tab.playtime"] = "Time played",
 	["leaderboard.board.playtime"] = "Time played",

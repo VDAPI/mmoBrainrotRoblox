@@ -2698,6 +2698,7 @@ return {
 	["combat.reject.stunned"] = "Jesteś ogłuszony.",
 	["combat.overLevel"] = "Za wysoki poziom (maks. {max})",
 	["hud.sprint"] = "Sprint",
+	["hud.mail"] = "Poczta: {count} (kliknij, by otworzyć)",
 
 	-- S18: PvP dot
 	["pvp.dot.off"] = "PvP wyłączone: inni gracze nie mogą cię zaatakować (poza czerwoną strefą).",
@@ -8515,7 +8516,7 @@ return {
 	["arena.hof.bracket"] = "Poziomy {min}–{max}",
 	["leaderboard.board.arena3"] = "Arena: rating 3 na 3",
 	["leaderboard.tab.arena3"] = "Arena 3 na 3",
-	["menu.hudLayout"] = "Układ HUD (zadania przesuniesz za ≡, rozmiar zmienisz za ◢)",
+	["menu.hudLayout"] = "Układ HUD (zadania i panele wydarzeń przesuniesz za ≡, rozmiar zmienisz za ◢)",
 	["menu.hudLayout.reset"] = "Przywróć",
 	["leaderboard.tab.playtime"] = "Czas w grze",
 	["leaderboard.board.playtime"] = "Czas w grze",

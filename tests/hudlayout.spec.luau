@@ -33,6 +33,31 @@ T.describe("HUD layout (S156)", function()
 		T.expect(HudLayout.valid(HudLayout.with({ junk = 1 }, "questTracker", e))).toBe(true)
 		T.expect(HudLayout.with({ questTracker = e }, "questTracker", nil)).toEqual({})
 	end)
+	T.it("moves and scales the event panels (owner 2026-10-21)", function()
+		for _, id in { "worldEvent", "worldBoss", "bloodMoon", "tourney" } do
+			T.expect(HudLayout.valid({ [id] = { x = 0.1, y = 0.6 } })).toBe(true)
+			T.expect(HudLayout.valid({ [id] = { x = 0.1, y = 0.6, s = 1.25 } })).toBe(true)
+			-- a panel follows its content: no width or height, and the scale stays in range
+			T.expect(HudLayout.valid({ [id] = { x = 0.1, y = 0.6, w = 300, h = 300 } })).toBe(false)
+			T.expect(HudLayout.valid({ [id] = { x = 0.1, y = 0.6, s = 3 } })).toBe(false)
+			T.expect(HudLayout.valid({ [id] = { x = 0.1, y = 0.6, s = 0 / 0 } })).toBe(false)
+		end
+		T.expect(HudLayout.valid({ questTracker = { x = 0, y = 0, s = 1 } })).toBe(false)
+		T.expect(HudLayout.clampScale("worldEvent", 9)).toBe(1.5)
+		T.expect(HudLayout.clampScale("worldEvent", 0.1)).toBe(0.7)
+		T.expect(HudLayout.clampScale("questTracker", 2)).toBe(1)
+		T.expect(HudLayout.scaleOf(nil)).toBe(1)
+		local e = HudLayout.entryAt(100, 400, 1000, 800, nil, nil, 1.234)
+		T.expect(e).toEqual({ x = 0.1, y = 0.5, s = 1.23 })
+		local both = HudLayout.with(HudLayout.with({}, "questTracker", { x = 0.5, y = 0.5 }), "worldEvent", e)
+		T.expect(HudLayout.valid(both)).toBe(true)
+		T.expect(both.questTracker).toEqual({ x = 0.5, y = 0.5 })
+		-- a scaled panel is kept on the screen by its scaled width
+		local x = HudLayout.place({ x = 0, y = 0 }, 280 * 1.5, 1000, 800)
+		T.expect(x).toBe(0)
+		x = HudLayout.place({ x = 1, y = 0 }, 280 * 1.5, 1000, 800)
+		T.expect(x).toBe(1000 - HudLayout.KEEP)
+	end)
 end)
 
 return nil
