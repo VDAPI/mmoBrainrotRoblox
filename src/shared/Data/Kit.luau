@@ -50,6 +50,11 @@ local function fixed(model: string, turn: number): Variant
 	return { model = model, weight = 1, scale = { 1, 1 }, yaw = false, turn = turn }
 end
 
+-- 2026-10-20: a whole house, front to local -Z; the foot sits a little into the ground (the plinth hides a slope)
+local function house(model: string): Variant
+	return { model = model, weight = 1, scale = { 1, 1 }, yaw = false, turn = 0, sink = 0.04 }
+end
+
 local OAK = "#3A5A22"
 local PINE = "#22381C"
 local BIRCH = "#5E7A2A"
@@ -250,6 +255,38 @@ Kit.slots = {
 	-- the hooded mourners with lanterns at the Gate of the Forgotten (Crypt, bor.md: forest_landmark_04)
 	["landmark:mourner"] = { fit = "height", size = 14, crypt = { fixed("forest_landmark_04", 0) } },
 	["landmark:harpyNest"] = { fit = "width", size = 14, snow = { fixed("snow_nest_01", 0) } },
+	-- owner 2026-10-20 (no paid packs: Tripo / CC0, docs/wyglad/ZAKUPY.md, TRIPO-KIT-MIASTO): the city's ordinary
+	-- houses, one slot per house (TownGen/Houses): fitted to the lot's longer side (the slot's scale, size 1) and
+	-- stretched to its front; the front faces local -Z. A style shares its model across floor counts until a taller
+	-- one comes; the patrician houses take the tall townhouse. Without the model the generator's house stays.
+	["house:burgher:3"] = { fit = "width", size = 1, city = { house("city_house_01"), house("city_house_02") } },
+	["house:burgher:2"] = { fit = "width", size = 1, city = { house("city_house_03"), house("city_house_02") } },
+	["house:cottage:1"] = { fit = "width", size = 1, city = { house("city_cottage_01") } },
+	["house:cottage:2"] = { fit = "width", size = 1, city = { house("city_cottage_01") } },
+	["house:craft:1"] = { fit = "width", size = 1, city = { house("city_workshop_01") } },
+	["house:craft:2"] = { fit = "width", size = 1, city = { house("city_workshop_01") } },
+	["house:patrician:2"] = { fit = "width", size = 1, city = { house("city_house_04") } },
+	["house:patrician:3"] = { fit = "width", size = 1, city = { house("city_house_04") } },
+	-- the town wall (TownGen/Structures): a dry piece from the low ground to the merlons (the slot's scale is that
+	-- height) stretched to its length, a corner tower to its merlons, the gatehouse to its full width (34)
+	["wall:segment"] = { fit = "height", size = 1, city = { fixed("city_wall_01", 0) } },
+	["wall:tower"] = { fit = "height", size = 1, city = { fixed("city_tower_01", 0) } },
+	["wall:gate"] = { fit = "width", size = 1, city = { fixed("city_gate_01", 0) } },
+	-- dead trees (WorldGen/Flora): the Duskwood's black dead trees, the Wastes' burnt trees and stumps, Frostpeak's
+	-- frost-killed trees (CC0 Quaternius or Tripo, docs TRIPO-KIT-MIASTO)
+	["tree:blackDead"] = {
+		fit = "height",
+		size = 12,
+		forest = { v("forest_deadtree_01", 1, 0.9, 1.15), v("forest_deadtree_02", 1, 0.9, 1.15) },
+		desert = { v("desert_deadtree_01", 1, 0.9, 1.1) },
+	},
+	["tree:burntTree"] = {
+		fit = "height",
+		size = 11,
+		desert = { v("desert_deadtree_01", 1, 0.9, 1.15), v("desert_deadtree_02", 1, 0.9, 1.15) },
+	},
+	["tree:charredStump"] = { fit = "height", size = 4, desert = { v("desert_stump_01", 1, 0.8, 1.2, 0.05) } },
+	["tree:frozenDead"] = { fit = "height", size = 10.5, snow = { v("snow_deadtree_01", 1, 0.9, 1.15) } },
 } :: { [string]: Entry }
 
 return Kit

@@ -1,5 +1,7 @@
 # Faza wyglądu: zakupy i rzeczy do wygenerowania (W02)
 
+> **Decyzja właściciela 2026-10-20: wariant 0 zł.** Nie kupujemy płatnych paczek (koszyk §3 odpada, także zapas na niebo z §4). Braki z §2 pokrywają: Tripo (konto właściciela, ok. 6000 kredytów wspólnych z NPC, tylko to, czego nie daje nic darmowego: mury, baszta, brama, sosna w śniegu; prompty i kolejność w plikach właściciela `wyglad/TRIPO-KIT-MIASTO.md`), darmowe paczki CC0 Quaternius (Medieval Village MegaKit na domy i rekwizyty, Stylized Nature MegaKit na martwe drzewa, paprocie, grzyby) i malowane nieba wygenerowane w sesji (`tools/sky`, pliki i instrukcja w `wyglad/niebo/`, id w `Data/MapLooks.paintedSkies`). Gniazda na nowe modele są już w `Data/Kit` (domy `house:<styl>:<piętra>`, mury `wall:segment` / `wall:tower` / `wall:gate`, martwe drzewa); bez modelu zostają klocki generatora.
+>
 > Lista dla właściciela. Budżet jednorazowo do ok. 300 zł (`docs/WYGLAD.md` §1), decyzja właściciela 2026-10-17: **możliwie za darmo**. Ceny z kart sklepów 2026-10-17, kurs USD 3,90 zł (NBP 15.10.2026: 3,8952), zaokrąglone w górę. Zasady importu: `docs/wyglad/ZASOBY.md`.
 
 ## 1. Licencje: co wolno kupić
@@ -23,9 +25,9 @@
 | Malowane tekstury terenu (zapas) | **Voxel Core Lab, Watercolor Terrain Textures** (CC0, 16 × 1024 px: trawa, kamień, ziemia, woda) | do wgrania, jeśli Material Generator nie wystarczy |
 | Niebo | 2 darmowe nieba W01 (Bór, Pustkowia) | Łąki, miasto, Szczyty na niebie miejsca |
 
-**Czego brakuje przy 0 zł:** domy, mury i rekwizyty miasta w jednym stylu (darmowe paczki z Creator Store są niespójne albo „blokowe”), sosny w śniegu i martwe drzewa w tym samym stylu co Yasu, malowane niebo, skały w kolorach regionów (pakiet nizendo jest niebiesko-szary).
+**Czego brakuje przy 0 zł** (2026-10-20: pokryte bez zakupów, patrz nota na górze): domy, mury i rekwizyty miasta w jednym stylu (darmowe paczki z Creator Store są niespójne albo „blokowe”), sosny w śniegu i martwe drzewa w tym samym stylu co Yasu, malowane niebo, skały w kolorach regionów (pakiet nizendo jest niebiesko-szary).
 
-## 3. Propozycja koszyka ≤ 300 zł (kolejność: najwięcej map, największa zmiana)
+## 3. Propozycja koszyka ≤ 300 zł (odrzucona 2026-10-20: wariant 0 zł)
 
 Wszystkie pozycje z jednej serii jednego twórcy (**Earthdall, „Silvergarden” i „Greenleaf”**, Creator Store): „stylized low poly” z teksturami, wspólny zestaw tekstur w całej serii (spójność ważniejsza niż ilość). Seria „Chunky Low Poly” tego samego twórcy (Fablewood, Hearthfire, Chunky Islands) jest grubsza i bardziej bajkowa: **nie** mieszamy jej z resztą. Styl Silvergarden jest jaśniejszy niż nasz: kolory przemalowujemy do palety map (`ZASOBY.md` §2), a przed zakupem całości **najpierw próbka** (pozycja 0: trzy gotowe domy na tych samych teksturach).
 
@@ -50,7 +52,7 @@ Zapas do 300 zł (ok. 70 zł): malowane niebo (§4) albo Moon Animator 2 przy W0
 
 | Pozycja | Po co | Skąd | Stan |
 |---|---|---|---|
-| Niebo malowane: 4 pory (złote popołudnie, pochmurno, zachód, zimny poranek) + noc miasta | W01: darmowe nieba malowane z rynku („Cartoon Sky”) mają turkusowy dół, który barwi całą scenę pod Future | wygenerować (6 ścian 1024 px na porę, Tripo/Material Generator nie robią skyboxów: generator obrazów + `upload_image`) albo Creator Store (np. „Colorful Fantasy Forest – Sky box”, 2,99 USD = 12 zł, do sprawdzenia na zrzucie) | do decyzji (zapas koszyka) |
+| Niebo malowane: 4 pory (złote popołudnie, pochmurno, zachód, zimny poranek) + noc miasta | W01: darmowe nieba malowane z rynku („Cartoon Sky”) mają turkusowy dół, który barwi całą scenę pod Future | **2026-10-20: wygenerowane (0 zł)**: `tools/sky/sky.py` (malowane chmury, gradient, poświata słońca o godzinie mapy, 6 ścian 1024 px bez szwów): Łąki, miasto dzień i noc, Bór (fioletowy zmierzch), Pustkowia (ciepła mgiełka), Szczyty (zimny poranek) | wgrywa właściciel (`wyglad/niebo/JAK-WGRAC.md`), id do `Data/MapLooks.paintedSkies` |
 
 ## 5. Do wygenerowania w Tripo (konto Pro właściciela)
 
