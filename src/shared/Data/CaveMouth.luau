@@ -5,7 +5,10 @@
 -- the straight lintel became leaning slabs of Rock (a back slab, two buttresses, a crown and a lintel of two stones),
 -- each turned a little, in three shades; the stacked boulders of the pillars are Rock too. Six slabs for the two boxes
 -- (+4 parts). None reaches into the arch (Data/Portals clearance) or before the dark hole within the arch's width
--- (tests/cavemouth.spec).
+-- (tests/cavemouth.spec). Partia 6 (W31, the painted arch fitted into Data/Portals.ARCH.model, 16 wide, 6 deep): the
+-- mouth keeps out of Data/Portals.frameKeepOut too (the painted arch, its view from the path, the opening before the
+-- hole): the pillars' boulders 12 studs from the axis (11 touched the painted pillars), the hole straight behind the
+-- arch like every dressed cave mouth's (Data/Portals.HOLE), the back slab behind it, the torches 10 studs out.
 
 export type Slab = {
 	name: string,
@@ -17,7 +20,7 @@ export type Slab = {
 
 local SLABS: { Slab } = {
 	-- behind the hole, leaning back
-	{ name = "Back", size = { 30, 26, 8 }, p = { 0, 11, 8.5 }, r = { 4, 0, 0 }, shade = -1 },
+	{ name = "Back", size = { 30, 26, 8 }, p = { 0, 11, 9.8 }, r = { 4, 0, 0 }, shade = -1 },
 	-- the buttresses either side, turned towards the path and leaning out
 	{ name = "Buttress", size = { 11, 25, 10 }, p = { -15, 10.5, 6 }, r = { 3, 14, -5 }, shade = 0 },
 	{ name = "Buttress", size = { 10, 23, 9 }, p = { 14.5, 9.5, 6.5 }, r = { -2, -12, 6 }, shade = 1 },
@@ -29,10 +32,14 @@ local SLABS: { Slab } = {
 }
 
 -- The stacked boulders of the two pillars: side * (x + i * step), y0 + i * rise, z; diameter size - i (i = 0, 1, 2).
-local BOULDERS = table.freeze({ x = 11, step = 0.6, y0 = 3, rise = 6.5, z = 1, size = 7 })
+local BOULDERS = table.freeze({ x = 12, step = 0.6, y0 = 3, rise = 6.5, z = 1, size = 7 })
 
--- The dark hole the portal stands in front of.
-local HOLE = table.freeze({ size = table.freeze({ 17, 19.5, 0.4 }), p = table.freeze({ 0, 9.75, 2.9 }) })
+-- The dark hole the portal stands in front of: its face 4.08 behind the veil (Data/Portals.HOLE: from the arch's back
+-- plus margin to HOLE.z + 0.5), 17 wide, from under the ground to 16.75, its visible middle near the veil's.
+local HOLE = table.freeze({ size = table.freeze({ 17, 17.5, 0.6 }), p = table.freeze({ 0, 8, 4.38 }) })
+
+-- The two torches before the mouth: side * x across, z before the veil (W31: clear of the painted arch).
+local TORCHES = table.freeze({ x = 10, z = -6 })
 
 -- Rotation matrix (row-major 3 x 3) of CFrame.Angles(rx, ry, rz) in degrees: Rx * Ry * Rz.
 local function matrix(r: { number }): { number }
@@ -59,5 +66,6 @@ return table.freeze({
 	SLABS = table.freeze(SLABS),
 	BOULDERS = BOULDERS,
 	HOLE = HOLE,
+	TORCHES = TORCHES,
 	matrix = matrix,
 })

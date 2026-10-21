@@ -116,6 +116,20 @@ function WindowManager.Register(def: WindowDef)
 	defs[def.id] = def
 end
 
+-- Studio review 2026-10-21 (UiDevController, `/ui list`): the registered window ids and the open ones, sorted.
+function WindowManager.Ids(): ({ string }, { string })
+	local all, shown = {}, {}
+	for id in defs do
+		table.insert(all, id)
+		if open[id] then
+			table.insert(shown, id)
+		end
+	end
+	table.sort(all)
+	table.sort(shown)
+	return all, shown
+end
+
 function WindowManager.IsOpen(id: string): Fusion.Value<boolean>
 	return openValue(id)
 end

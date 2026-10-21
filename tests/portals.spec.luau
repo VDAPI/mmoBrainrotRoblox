@@ -7,6 +7,7 @@
 local fs = require("@lune/fs")
 
 local Areas = require("../src/shared/Data/Areas")
+local ArchFit = require("../src/shared/Logic/ArchFit")
 local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
 local MapTerrain = require("../src/shared/Logic/MapTerrain")
 local PortalClearance = require("./PortalClearance")
@@ -502,17 +503,35 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 		end
 	)
 
-	it("fits the painted model into the arch's box, centred on the portal's axis, the veil on the axis", function()
-		local m = Portals.ARCH.model
-		expect(m.h).toBe(Portals.ARCH.height)
-		-- the field and its veil stand between the painted pillars (W28 opening shares of the model)
-		expect(Portals.ARCH.field.w <= m.w * 0.62).toBe(true)
+	it("keeps the painted arch at full size and its veil in the opening down to the ground (W31 regression)", function()
+		-- the box of common_portal_02 measured in Studio at 18 studs tall: 16 across, 20.9 deep with its base slab,
+		-- the slab sunk 1.5 studs (the arch stood at a third of its size when it was fitted into 16 x 18 x 6)
+		local lo, hi = { -8, -1.5, -10.45 }, { 8, 16.5, 10.45 }
+		local fit = ArchFit.fit(lo, hi)
+		expect(fit.turn).toBe(true)
+		expect(math.abs(fit.scale - 1) < 1e-6).toBe(true)
+		local f = fit.field
+		local spec = Portals.ARCH.field
+		expect(math.abs(f.w - spec.w) < 1e-6).toBe(true) -- 9.5 (the veil 8.55)
+		expect(math.abs(f.h - spec.h) < 1e-6).toBe(true) -- 13.5 (the veil 12.7)
+		local bottom = f.y - f.h / 2
+		expect(bottom <= 0 and bottom >= -1.5).toBe(true) -- down to the ground, not floating
+		expect(math.abs(f.x) < 1e-6 and math.abs(f.z) < 1e-6).toBe(true)
+		-- the veil's ellipse in that field
+		local look = Portals.look(f.w, f.h)
+		expect(look.veil.w >= 8.5 and look.veil.h >= 12.5).toBe(true)
+		-- a model already across the portal is not turned; its field follows its foot
+		local across = ArchFit.fit({ -10.45, 0, -8 }, { 10.45, 18, 8 })
+		expect(across.turn).toBe(false)
+		expect(math.abs(across.field.y - across.field.h / 2 - ArchFit.FOOT) < 1e-6).toBe(true)
 		local prefabs = read("src/server/World/Prefabs.luau")
-		for _, needle in { "Portals.ARCH.model", "local function fitModel", "Portals.palette(ctx.map.id)" } do
+		for _, needle in { "ArchFit.fit(", "local function fitModel", "Portals.palette(ctx.map.id)" } do
 			if not string.find(prefabs, needle, 1, true) then
 				error(`Prefabs.luau: missing {needle}`)
 			end
 		end
+		-- nothing scales the painted model by a box any more
+		expect(string.find(prefabs, "Portals.ARCH.model", 1, true)).toBe(nil)
 	end)
 
 	it("frames the cave exits too (light themed frames round the arch)", function()

@@ -24,7 +24,8 @@
 --     hit = strikePeak = when the clip's blow comes; peak = hit - Gait.STRIKE_SECONDS (the end of the draw, cut at 0);
 --     follow = hit + 0.3 * (end - hit); end = when the clip ends
 --   a monster kind's regular blow (`basicBlow`, AnimLab `mob <kind> attack1`): the draw of Logic/BasicBlow as the game
---     plays it: a bone clip of the slot BasicBlow.slot on a model with clips, else a generated monster's attack
+--     plays it: a bone clip of the slot BasicBlow.slot on a model with clips, else a generated monster's attack; a
+--     boss id draws as the "boss" variant (x Combat.basicWindVariant.boss)
 
 local AttackPose = require("./AttackPose")
 local BasicBlow = require("./BasicBlow")
@@ -233,13 +234,18 @@ end
 -- A monster kind's regular blow as the game plays it (Logic/BasicBlow; nil for an unknown kind): its draw, and the
 -- slot and clip of the real model when it has bone clips. Also returns the draw's seconds and the slot.
 function MotionKeys.basicBlow(kindId: string, variant: string?): (Keys?, number, string)
+	-- a boss swings its regular blow as a monster of the "boss" variant (Entities/Boss: spawnCustom(kindFor(def),
+	-- "boss"), the kind's attack and damage kind from Data/Bosses); studio review 2026-10-21
 	local kind = Monsters.get(kindId)
-	if not kind then
+	local boss = if kind then nil else Bosses.get(kindId)
+	local attack = if kind then kind.attack elseif boss then boss.attack else nil
+	if not attack then
 		return nil, 0, "attack1"
 	end
-	local w = BasicBlow.wind(kind.attack, variant)
-	local slotName = BasicBlow.slot(BasicBlow.shot(kind.attack, kind.damageKind))
-	local look = MonsterLooks.get(kindId, kind.region)
+	local damageKind = if kind then kind.damageKind elseif boss then boss.damageKind else nil
+	local w = BasicBlow.wind(attack, variant or (if boss then "boss" else nil))
+	local slotName = BasicBlow.slot(BasicBlow.shot(attack, damageKind))
+	local look = if kind then MonsterLooks.get(kindId, kind.region) else MonsterLooks.get(kindId)
 	local asset = look and look.asset
 	if asset and asset.rig == "bones" and MonsterClips.get(asset.model) then
 		local slot = MonsterClips.slotsFor(asset.model)[slotName]
