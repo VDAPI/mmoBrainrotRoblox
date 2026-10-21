@@ -238,13 +238,6 @@ describe("Meadows generator (S26)", function()
 		expect(counts.fishing_meadows or 0).toBe(3)
 	end)
 
-	it("puts fishing spots on the shore with water where the buoys float", function()
-		for _, spot in MeadowsGen.fishingSpots() do
-			expect(MeadowsTerrain.isWater(spot.x, spot.z)).toBe(false)
-			expect(MeadowsTerrain.isWater(spot.x, spot.z + 9)).toBe(true)
-		end
-	end)
-
 	it("gives the client life to animate and the map a sketch", function()
 		local kinds: { [string]: number } = {}
 		for _, p in MeadowsGen.life() do

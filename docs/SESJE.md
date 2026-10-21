@@ -13834,3 +13834,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `WIKI_KEYS_ALLOW="upgrade:*,items:items.items[].use.keep,types.ts"`), poradnik Ulepszanie (PL / EN), dane odświeżone.
 - **Testy:** `effectreroll.spec`, `portalshop.spec`, `paywall.spec` (2b, 2d, 2e), `reroll.spec`, `data.spec` (+8 przedmiotów).
 - **Dla właściciela:** model Tripo Mistrza Portali (`TRIPO-NPC.md` nr 68); bez przeglądu w Studio.
+### Przegląd Studio 2026-10-21, partia 1: wodospad, łowiska, budżet części
+- **Wodospad:** niecka pod ścianą (`Data/Terrain/meadows.plunge`, `MeadowsTerrain` waga cięcia tylko na niskim brzegu,
+  woda stawu w niecce, `Basalt` w `MATERIALS`), mokra ciemna skała w promieniu `wet` pod `wetTop`; `TerrainLayers.voxelWater`
+  (gdzie zapisane woksele pokazują wodę); `Water.fallGeometry` szuka stopy w wodzie wokseli z zasłoną poza ścianą;
+  kamienie półki za zasłoną (`Landmarks.fallsLedge`) sięgają dna niecki.
+- **Łowiska:** `Logic/FishingSpots` (reguła, obrót boi, kolizja z budowlami, szukanie najbliższego punktu), cztery
+  generatory na nim, `GatherService` obraca boje i kładzie je na wodzie (atrybut `Pond`), `GatherController` stawia
+  spławik na wodzie między bojami.
+- **Budżet części:** `Data/Maps` miasto 7600, Łąki 3700, Bór 3450 (ostrzeżenie `WorldBuilder`). Asset 203785492 nie
+  występuje w repozytorium ani w historii (siedzi w pliku miejsca).
+- **Testy:** `fishingspots.spec` (wszystkie mapy), `waterfall.spec` (stopa i piana na wodzie wokseli, mokra skała),
+  `meadowsterrain.spec` (`voxelWater` zgodne z `voxels`, niecka), sumy kontrolne węzłów Boru, Pustkowi i Szczytów.

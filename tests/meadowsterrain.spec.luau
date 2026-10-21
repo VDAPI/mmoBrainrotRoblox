@@ -289,6 +289,50 @@ describe("Meadows terrain", function()
 		expect(city.LeafyGrass).toBe(MapLooks.TERRAIN_COLORS.Grass)
 	end)
 
+	it(
+		"studio review 2026-10-21: voxelWater says where the written voxels show water (the pool's rim is ground)",
+		function()
+			-- a block over the pool under the waterfall, its shallow rim and the plunge pool at the foot of the wall
+			local x0, z0, n, ny = 704, 248, 16, 18 -- (the writer: bottom -24, top 48)
+			local block = MeadowsTerrain.voxels(x0, z0, n, n, -24, ny)
+			local shown, rim = 0, 0
+			for i = 1, n do
+				for k = 1, n do
+					-- the top filled cell of the column
+					local top, occ = "Air", 0
+					for j = ny, 1, -1 do
+						if block.materials[i][j][k] ~= "Air" then
+							top, occ = block.materials[i][j][k], block.occupancy[i][j][k]
+							break
+						end
+					end
+					local x, z = x0 + 4 * (i - 0.5), z0 + 4 * (k - 0.5)
+					local level =
+						TerrainLayers.voxelWater(MeadowsTerrain.height, MeadowsTerrain.water, x + 1.3, z - 1.1)
+					expect(level ~= nil).toBe(top == "Water" and occ >= 0.125)
+					if level then
+						shown += 1
+					elseif MeadowsTerrain.water(x, z) then
+						rim += 1
+					end
+				end
+			end
+			expect(shown > 40).toBe(true)
+			expect(rim > 0).toBe(true)
+		end
+	)
+
+	it("cuts the plunge pool under the waterfall without touching the wall above it", function()
+		local P = Shape.plunge
+		local pool = MeadowsTerrain.streamLevel(1, 0)
+		expect(MeadowsTerrain.water(P.x, P.z)).toBe(pool)
+		expect(MeadowsTerrain.height(P.x, P.z) < pool - 2).toBe(true)
+		-- the plateau's edge and the upper wall keep their height
+		for _, p in { { 750, 258 }, { 746, 262 }, { 754, 270 } } do
+			expect(MeadowsTerrain.height(p[1], p[2]) > pool + 6).toBe(true)
+		end
+	end)
+
 	it("fills voxel blocks with known materials and water in the pond", function()
 		local known: { [string]: boolean } = {}
 		for _, name in MeadowsTerrain.MATERIALS do

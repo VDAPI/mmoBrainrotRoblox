@@ -18,6 +18,7 @@ local AreaTypes = require("../Data/Areas/Types")
 local AreaSpawns = require("./AreaSpawns")
 local Camps = require("@self/Camps")
 local Dressing = require("@self/Dressing")
+local FishingSpots = require("./FishingSpots")
 local Homes = require("@self/Homes")
 local Kit = require("@self/Kit")
 local Lairs = require("./WorldGen/Lairs")
@@ -265,35 +266,18 @@ function MeadowsGen.nodes(): { NodePlacement }
 	return out
 end
 
--- Fishing spots: a dry point on the shore with open water 8-13 studs to the south (+Z), where the spot's buoys
--- float (GatherService builds the marker): by the jetty on Toad Pond, under the waterfall and at the bandits' pond.
+-- Fishing spots (Logic/FishingSpots: dry, gentle ground at the water's edge, no wall over it, the buoys on water the
+-- voxels show, clear of the builds): by the jetty on Toad Pond, on the north bank of the pool under the waterfall
+-- (studio review 2026-10-21: before, the sign stood in the ravine wall and the buoys on the pool's dry rim) and at the
+-- pond in the southern hills.
 function MeadowsGen.fishingSpots(): { { x: number, z: number } }
 	local out = {}
 	local sites = assert(Areas.sites, "meadows sites")
-	for _, c in
-		{ { sites.jetty.x - 8, sites.jetty.z - 8 }, { sites.waterfall.x - 14, sites.waterfall.z - 10 }, { -60, 520 } }
-	do
-		local best: { x: number, z: number }? = nil
-		local bestD = math.huge
-		for dx = -32, 32, 2 do
-			for dz = -32, 32, 2 do
-				local x, z = c[1] + dx, c[2] + dz
-				if
-					not MeadowsTerrain.isWater(x, z)
-					and MeadowsTerrain.slope(x, z, 2) < 0.5
-					and MeadowsTerrain.isWater(x, z + 9)
-					and MeadowsTerrain.isWater(x, z + 12)
-				then
-					local d = dx * dx + dz * dz
-					if d < bestD then
-						bestD = d
-						best = { x = x, z = z }
-					end
-				end
-			end
-		end
-		if best then
-			table.insert(out, best)
+	local builds = MeadowsGen.all()
+	for _, c in { { sites.jetty.x, sites.jetty.z }, { sites.waterfall.x - 14, sites.waterfall.z - 10 }, { -60, 560 } } do
+		local spot = FishingSpots.find(MeadowsTerrain, builds, c[1], c[2], 40)
+		if spot then
+			table.insert(out, spot)
 		end
 	end
 	return out

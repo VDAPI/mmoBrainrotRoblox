@@ -21,6 +21,7 @@ local AreaSpawns = require("./AreaSpawns")
 local AreaTypes = require("../Data/Areas/Types")
 local Details = require("@self/Details")
 local Env = require("@self/Env")
+local FishingSpots = require("./FishingSpots")
 local Flora = require("./WorldGen/Flora")
 local Fortress = require("@self/Fortress")
 local Harpy = require("@self/Harpy")
@@ -559,39 +560,16 @@ function FrostpeakGen.nodes(): { NodePlacement }
 	return out
 end
 
--- Fishing spots: dry ice just north of each ice hole, with all three buoys of Services/GatherService (x + 9 cos(2.1 i),
--- z + 8 + 5 sin(2.1 i)) in open water, a stud clear of the hole's edge.
+-- Fishing spots: dry ice just north of each ice hole (Logic/FishingSpots, studio review 2026-10-21: no wall over it,
+-- all three buoys on the hole's open water as the voxels show it, clear of the builds).
 function FrostpeakGen.fishingSpots(): { { x: number, z: number } }
 	local e = envOf()
-	local T = e.T
 	local out = {}
+	local builds = FrostpeakGen.all()
 	for _, lake in e.areas.lakes do
-		local best: { x: number, z: number }? = nil
-		local bestD = math.huge
-		local tx, tz = lake.x, lake.z - lake.r - 1.5
-		for dx = -12, 12 do
-			for dz = -8, 8 do
-				local x, z = tx + dx, tz + dz
-				if T.water(x, z) == nil and T.slope(x, z, 2) < 0.28 then
-					local ok = true
-					for i = 1, 3 do
-						local bx, bz = x + 9 * math.cos(2.1 * i), z + 8 + 5 * math.sin(2.1 * i)
-						local d = math.sqrt((bx - lake.x) ^ 2 + (bz - lake.z) ^ 2)
-						if T.water(bx, bz) == nil or d > lake.r - 1 then
-							ok = false
-							break
-						end
-					end
-					local d = dx * dx + dz * dz
-					if ok and d < bestD then
-						bestD = d
-						best = { x = x, z = z }
-					end
-				end
-			end
-		end
-		if best then
-			table.insert(out, best)
+		local spot = FishingSpots.find(e.T, builds, lake.x, lake.z - lake.r - 1.5, 12)
+		if spot then
+			table.insert(out, spot)
 		end
 	end
 	return out

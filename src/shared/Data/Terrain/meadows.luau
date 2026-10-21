@@ -121,6 +121,12 @@ return table.freeze({
 			{ x = 718, z = 300, half = 44, floor = 4.8 },
 		} :: { RavinePoint },
 	},
+	-- Studio review 2026-10-21: the plunge pool under the waterfall. The pool's shallow rim was written as ground (a
+	-- 4-stud voxel is water only where the ground fills less than half of it), so the fall and its foam landed on a
+	-- dry bank 3-5 studs short of the water. Within `r` (blending out over `blend`) the low bank under the wall is cut
+	-- down to `floor` and holds the pool's water; the wall above keeps its face. Within `wet` studs of the point the
+	-- dry ground under `wetTop` (the wall and the bank beside the fall, not the plateau) is wet dark rock (Basalt).
+	plunge = { x = 745, z = 269, r = 6, blend = 4, floor = 0.9, wet = 17, wetTop = 25 },
 	-- Old Quarry: elliptic pit, three terraces (outer ring -> bottom), each `y` deep, walls between them.
 	quarry = {
 		x = sites.quarry.x,
