@@ -4,6 +4,7 @@
 -- parse. Every refusal is a key "animlab.error.<why>" (PL and EN).
 
 local AttackMotions = require("../Data/AttackMotions")
+local BossMotions = require("../Data/BossMotions")
 local Bosses = require("../Data/Bosses")
 local Classes = require("../Data/Classes")
 local Config = require("../Config")
@@ -72,8 +73,9 @@ AnimLab.NPC_SLOTS = { "idle", "talk", "wave", "work" }
 AnimLab.MOTIONS = { "attack", "skill", "mob", "boss", "npc", "vfx", "hit", "flinch", "clip" } :: { Action }
 -- S117: the floors of `floor <name>` (telegraphs on light grass, snow and a dark cave; Config.AnimLab.floors).
 AnimLab.FLOORS = { "grass", "snow", "cave" }
--- S117: what `boss <id>` plays besides an attack: the phase roar and the long death.
-AnimLab.BOSS_EXTRAS = { "roar", "death" }
+-- S117: what `boss <id>` plays besides an attack: the phase roar and the long death (S159g: `rage` the roar into the
+-- last phase; a pattern id its gesture).
+AnimLab.BOSS_EXTRAS = { "roar", "rage", "death" }
 -- S113: the sides a `flinch <side> [crit]` comes from.
 AnimLab.FLINCH_SIDES = { "front", "back", "left", "right" }
 -- S112: pieces `vfx <piece> [color]` plays (Vfx/Library: the six new ones first, then the old ones and the three
@@ -277,6 +279,10 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 			if attack.id == b then
 				return make("boss", a, b), nil
 			end
+		end
+		local gesture = BossMotions.gesture(a, b)
+		if gesture and gesture.style then
+			return make("boss", a, b), nil
 		end
 		return nil, "animlab.error.boss"
 	elseif action == "npc" then

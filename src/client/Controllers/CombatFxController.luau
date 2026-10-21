@@ -64,8 +64,10 @@ local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 local GroundTelegraph = require(script.Parent.Parent.Vfx.GroundTelegraph)
+local HazardGesture = require(ReplicatedStorage.Shared.Logic.HazardGesture)
 local HazardPatterns = require(ReplicatedStorage.Shared.Data.HazardPatterns)
 local Hazards = require(ReplicatedStorage.Shared.Logic.Hazards)
+local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local LmShots = require(script.Parent.Parent.Vfx.LmShots)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
@@ -1681,15 +1683,20 @@ local function channelBlow(event: { [string]: any })
 end
 
 -- S117 (E4): a boss's new phase: the camera of players near it shakes (Data/BossMotions roar), its aura flashes in the
--- look's glow for Config.MonsterLook.phaseLight s.
-local function onRoar(model: Model, bossId: string?)
+-- look's glow for Config.MonsterLook.phaseLight s. S159g: the intro roar at the first aggro shakes half as hard; the
+-- roar's own sound plays while the boss's roar key has no sound yet (SfxController plays that one).
+local function onRoar(model: Model, bossId: string?, intro: boolean?)
 	local def = if bossId then BossMotions.get(bossId) else nil
 	local root = model:FindFirstChild("HumanoidRootPart")
 	if not root or not root:IsA("BasePart") then
 		return
 	end
 	if def then
-		shakeNear(root.Position, def.roar.shake)
+		shakeNear(root.Position, def.roar.shake * (if intro then 0.5 else 1))
+		local sound = def.roar.sound
+		if sound and not Sfx.playable(`boss.{bossId}.roar`) then
+			SfxController.Play(sound, model, SfxController.WhoOf(model), sourceOf(model))
+		end
 	end
 	if lowQuality() or not Pool.takeLight() then
 		return
@@ -1787,6 +1794,25 @@ local function hurtFlash()
 		TweenInfo.new(if lowQuality() then 0.15 else 0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 		{ BackgroundTransparency = 1 }
 	):Play()
+end
+
+-- S159g: the draw before a regular ranged blow ("aw" `st` "arrow" / "bolt" / "throw"): the plan's own style
+-- (MonsterMotions.rangedFor), a spell plays the "cast" clip of a real model and gathers like a telegraphed attack;
+-- nil for a melee blow (the basic style as before).
+local function rangedDraw(attacker: Model, shot: any): any
+	if shot ~= "arrow" and shot ~= "bolt" and shot ~= "throw" then
+		return nil
+	end
+	local lookId = attacker:GetAttribute("Look")
+	local look = if type(lookId) == "string" then MonsterLooks.get(lookId) else nil
+	if not look then
+		return nil
+	end
+	return {
+		style = MonsterMotions.rangedFor(look.plan, look.weapon, shot),
+		slot = if shot == "bolt" then "cast" else "attack2",
+		charged = true,
+	}
 end
 
 -- S159: monsters whose basic attack is drawn back by "aw" until this os.clock() (their "atk" then strikes at once).
@@ -1898,36 +1924,69 @@ local function traitFx(event: { [string]: any })
 	end
 end
 
--- S159: a hazard cast: HazardFx draws it; the caster gathers over its warning (a boss pattern: its pose by the attack
--- id, the charge glow, the warning sound), a regular shot already drew back with its "aw".
+-- S159: a hazard cast: HazardFx draws it; the caster gathers over its warning, a regular shot already drew back with
+-- its "aw". S159g: a boss pattern plays its gesture (Data/BossMotions.patterns, timed by Logic/HazardGesture against
+-- the server clock): the anticipation and the charge glow over the warning with its wind sound, the blow at the
+-- release with its sound and shake, a channel held to its last shot, the body turning with a breath or a spiral. A
+-- pattern added to an attack (`rides`) leaves all of it to the attack's own telegraph.
 local function hazardCast(event: { [string]: any })
-	HazardFx.spawn(event)
+	local insts = HazardFx.spawn(event)
 	local caster = findModel(if type(event.e) == "string" then event.e else nil)
-	local pattern = if type(event.p) == "string" then HazardPatterns.get(event.p) else nil
-	if not caster or not pattern or pattern.regular then
+	local patternId = if type(event.p) == "string" then event.p else nil
+	local pattern = if patternId then HazardPatterns.get(patternId) else nil
+	if not caster or not patternId or not pattern or pattern.regular then
 		return
 	end
-	local w = tonumber(event.w) or tonumber(event.d) or Hazards.MIN_WARN
-	-- a replaced attack poses as itself; a pattern cast on its own as its `pose`; one added to an attack not at all
 	local info = SfxController.Mob(caster)
 	local bossId = info and info.boss
-	local a = if type(event.a) == "string" then event.a else nil
-	local pose = if bossId and a and BossMotions.attack(bossId, a) then a else pattern.pose
-	if pose then
-		AnimationController.MonsterAttack(caster, w, false, pose)
+	local gesture = if bossId then BossMotions.gesture(bossId, patternId) else nil
+	if gesture and gesture.rides then
+		return
+	end
+	local warn = tonumber(event.d) or tonumber(event.w) or Hazards.MIN_WARN
+	local timing = HazardGesture.timing(pattern, warn)
+	-- the event left the server a moment ago: the blow still lands at the server's release
+	local lag = math.clamp(Workspace:GetServerTimeNow() - (tonumber(event.t0) or Workspace:GetServerTimeNow()), 0, 0.3)
+	local windup = math.max(0.2, timing.windup - lag)
+	local style = gesture and gesture.style
+	if style then
+		local root = caster:FindFirstChild("HumanoidRootPart")
+		local look = if root and root:IsA("BasePart") then root.CFrame.LookVector else Vector3.new(0, 0, -1)
+		local from, to = HazardGesture.turnOf(pattern, insts or {}, HazardGesture.facing(look.X, look.Z))
+		AnimationController.MonsterAttack(caster, windup, false, patternId, nil, {
+			style = style,
+			hold = timing.hold,
+			turnFrom = from,
+			turnTo = to,
+			procedural = true,
+		})
+	else
+		-- no gesture of its own: a replaced attack poses as itself
+		local a = if type(event.a) == "string" then event.a else nil
+		if bossId and a and BossMotions.attack(bossId, a) then
+			AnimationController.MonsterAttack(caster, windup, false, a)
+		end
 	end
 	if not lowQuality() then
-		Library.charge(caster, Color3.fromHex(pattern.color), w, 2.5, false)
+		Library.charge(caster, Color3.fromHex(pattern.color), windup, 2.5, false)
 	end
-	SfxController.Play("telegraph.warn", caster, "other")
-	if bossId then
-		local boss = bossId
-		Clock.after(w, function()
-			if caster.Parent then
-				SfxController.Play(`boss.{boss}.attack`, caster, "other")
+	SfxController.Play((gesture and gesture.windSound) or "telegraph.warn", caster, "other")
+	local releaseSound = (gesture and gesture.sound) or (if bossId then `boss.{bossId}.attack` else nil)
+	local shakeAt = gesture and gesture.shake or 0
+	Clock.after(windup, function()
+		if not caster.Parent then
+			return
+		end
+		if releaseSound then
+			SfxController.Play(releaseSound, caster, "other")
+		end
+		if shakeAt > 0 then
+			local root = caster:FindFirstChild("HumanoidRootPart")
+			if root and root:IsA("BasePart") then
+				shakeNear(root.Position, shakeAt)
 			end
-		end)
-	end
+		end
+	end)
 end
 
 local function handle(event: { [string]: any })
@@ -1988,7 +2047,7 @@ local function handle(event: { [string]: any })
 		local w = tonumber(event.w)
 		if attacker and w then
 			windUntil[attacker] = os.clock() + w
-			AnimationController.MonsterAttack(attacker, w, false, nil)
+			AnimationController.MonsterAttack(attacker, w, false, nil, nil, rangedDraw(attacker, event.st))
 		end
 	elseif kind == "teleCancel" then
 		cancelMark(event) -- S134

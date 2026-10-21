@@ -3031,7 +3031,7 @@ return {
 	["animlab.error.skill"] = "give the id of an active skill (and optionally a weapon type).",
 	["animlab.error.mob"] = "give the id of a monster or a boss with a look.",
 	["animlab.error.slot"] = "unknown state (idle, walk, run, attack1, attack2, cast, hit, death, spawn).",
-	["animlab.error.boss"] = "give a boss and the id of its attack, or roar / death (e.g. grimrok sweep).",
+	["animlab.error.boss"] = "give a boss and the id of its attack or pattern, or roar / rage / death (e.g. grimrok sweep, grimrok gr_axeThrow).",
 	["animlab.error.npc"] = "give an NPC id and a state (idle, talk, wave, work).",
 	["animlab.error.sfx"] = "sfx <key> [variant], sfx list [prefix], sfx all [prefix] or sfx try <id>.",
 	["animlab.error.sfxId"] = "sfx try: give a numeric Creator Store sound id.",

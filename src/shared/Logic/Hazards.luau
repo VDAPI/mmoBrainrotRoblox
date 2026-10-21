@@ -66,7 +66,6 @@ export type Pattern = {
 	hits: number?, -- hits a player can take from one cast (default 1)
 	hitGap: number?, -- seconds between two hits of one cast on one player (default 0.6)
 	look: string, -- Vfx/HazardFx look
-	pose: string?, -- a boss attack id (Data/BossMotions) whose gesture the caster plays when cast on its own
 	color: string, -- hex
 	sound: string?, -- Data/Sfx key at the launch
 	impactSound: string?, -- Data/Sfx key where it lands / hits

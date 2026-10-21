@@ -73,8 +73,9 @@ export type Context = {
 	rangedThrow: ((monster: any, player: Player, params: any) -> ())?,
 	-- S134f: a player's damage was booked in damageBy (CombatService.MonsterDamaged, the fight meter).
 	damaged: ((monster: any, player: Player, dealt: number) -> ())?,
-	-- S159: a regular blow winds up (the clients pose the draw; CombatService.MonsterWindup)
-	attackWind: ((monster: any, player: Player, seconds: number) -> ())?,
+	-- S159: a regular blow winds up (the clients pose the draw; CombatService.MonsterWindup); S159g `shot` says what
+	-- (melee / arrow / bolt / throw) for the draw's pose
+	attackWind: ((monster: any, player: Player, seconds: number, shot: string?) -> ())?,
 }
 
 local Monster = {}
@@ -717,7 +718,8 @@ end
 
 -- S134e: the kit's throw at a fleeing target: a regular ranged blow (dodge, block and ranged protection count), every
 -- attack interval x intervalMul, harder the farther below the monster the target is (MonsterCast.throwMul). Returns
--- whether it threw.
+-- whether it threw. S159g: the throw is drawn back first (Data/Combat.basicWind.throw, the clients pose the throw or
+-- the spell): it flies after the draw if the monster is still chasing, not stunned and may still target the player.
 local function throwAt(self: Monster, now: number, target: Player, targetPosition: Vector3): boolean
 	local kit = self.kit
 	local throw = kit and kit.throw
@@ -728,7 +730,25 @@ local function throwAt(self: Monster, now: number, target: Player, targetPositio
 	self.nextThrow = now + attackInterval(self) * throw.intervalMul
 	face(self, targetPosition)
 	local multiplier = MonsterCast.throwMul(throw, self.stats.level, self.ctx.playerLevel(target))
-	send(self, target, { kind = self.stats.damageKind, multiplier = multiplier, element = self.def.element })
+	local params = { kind = self.stats.damageKind, multiplier = multiplier, element = self.def.element }
+	local wind = self.ctx.attackWind
+	local seconds = Combat.basicWind.throw
+	if not wind or seconds <= 0 then
+		send(self, target, params)
+		return true
+	end
+	self.windToken += 1
+	local token = self.windToken
+	wind(self, target, seconds, if self.stats.damageKind == "magic" then "bolt" else "throw")
+	task.delay(seconds, function()
+		if self.windToken ~= token or self.state ~= "chase" or self.ctx.isDisabled(self) then
+			return
+		end
+		self.windToken += 1
+		if self.ctx.canTarget(self, target) then
+			send(self, target, params)
+		end
+	end)
 	return true
 end
 
@@ -839,7 +859,12 @@ windUp = function(self: Monster, target: Player)
 	end
 	self.windToken += 1
 	local token = self.windToken
-	wind(self, target, seconds)
+	wind(
+		self,
+		target,
+		seconds,
+		if self.def.attack ~= "ranged" then "melee" elseif self.stats.damageKind == "magic" then "bolt" else "arrow"
+	)
 	task.delay(seconds, function()
 		if self.windToken ~= token or self.state ~= "chase" or self.ctx.isDisabled(self) then
 			return

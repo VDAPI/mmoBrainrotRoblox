@@ -290,35 +290,11 @@ T.describe("Hazard patterns data (S159)", function()
 end)
 
 T.describe("Hazard patterns look (S159)", function()
-	T.it("sounds exist in Data/Sfx; a pattern cast on its own poses as an attack of its boss", function()
+	-- S159g: the gestures of the patterns are checked in tests/bossgestures.spec
+	T.it("sounds exist in Data/Sfx", function()
 		for id, pattern in HazardPatterns.byId do
 			for _, key in { pattern.sound, pattern.impactSound } do
 				T.expect({ id, key, Sfx.has(key) }).toEqual({ id, key, true })
-			end
-		end
-		for bossId, entry in BossTuning.patterns :: any do
-			local boss = Bosses.get(bossId)
-			local ids: { [string]: boolean } = {}
-			for _, attack in (if boss then boss.attacks else {}) :: { any } do
-				ids[attack.id] = true
-			end
-			local own: { string } = {}
-			for _, ambient in entry.ambient or {} do
-				table.insert(own, ambient.pattern)
-			end
-			local extra = (BossTuning.extra :: any)[bossId]
-			for _, spec in (if extra then { extra.shield, extra.far } else {}) :: { any } do
-				if spec and spec.pattern then
-					table.insert(own, spec.pattern)
-				end
-			end
-			for _, patternId in own do
-				local pose = (HazardPatterns.get(patternId) :: any).pose
-				T.expect({ bossId, patternId, pose ~= nil and ids[pose] == true }).toEqual({ bossId, patternId, true })
-			end
-			-- a pattern added to an attack leaves the pose to the attack
-			for _, add in entry.add or {} do
-				T.expect({ add.pattern, (HazardPatterns.get(add.pattern) :: any).pose }).toEqual({ add.pattern, nil })
 			end
 		end
 	end)

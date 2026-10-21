@@ -2343,8 +2343,9 @@ function CombatService.MonsterHazard(monster: any, patternId: string, opts: any)
 	return HazardService.Cast(monster, patternId, opts)
 end
 
--- S159: a basic attack's windup on the clients ("aw": the monster draws back before the blow lands).
-function CombatService.MonsterWindup(monster: any, player: Player, seconds: number)
+-- S159: a basic attack's windup on the clients ("aw": the monster draws back before the blow lands). S159g `shot`
+-- ("melee" / "arrow" / "bolt" / "throw", st) picks the draw's pose.
+function CombatService.MonsterWindup(monster: any, player: Player, seconds: number, shot: string?)
 	local target = EntityService.GetPlayerEntity(player)
 	if monster.entity then
 		queueFx(monster:Position(), {
@@ -2352,6 +2353,7 @@ function CombatService.MonsterWindup(monster: any, player: Player, seconds: numb
 			s = monster.entity.id,
 			t = if target then target.id else nil,
 			w = seconds,
+			st = shot,
 		})
 	end
 end

@@ -111,7 +111,8 @@ end
 -- `offset`: where the model's pivot sits relative to the root (generated looks: the root centre; real models:
 -- their PrimaryPart stands on the ground, docs/MODELE.md §5).
 -- W26 `body`: a real model without clips (rig "static") hangs on a Motor6D with the Gait body role instead, so
--- AnimationController bobs, leans, flinches and topples the whole model like a generated body.
+-- AnimationController bobs, leans, flinches and topples the whole model like a generated body (S159g: a model with
+-- bone clips too, for the procedural gestures over its clips).
 local function weldTo(model: Model, root: BasePart, offset: CFrame?, body: { scale: number, hover: boolean }?)
 	local primary = model.PrimaryPart
 	if not primary then
@@ -279,11 +280,13 @@ end
 local function buildFull(view: View)
 	local model: Model? = nil
 	local offset: CFrame? = nil
+	local cloned = false
 	if view.assetName then
 		local region = view.model:GetAttribute("LookRegion")
 		model = cloneAsset(view.lookId, view.look, view.scale, if type(region) == "number" then region else nil)
 		if model then
 			offset = groundOffset(view.body)
+			cloned = true
 		end
 	end
 	if not model then
@@ -304,11 +307,14 @@ local function buildFull(view: View)
 	end
 	local look = model :: Model
 	local asset = view.look and view.look.asset
+	-- S159g: a model with bone clips hangs on the body motor too (the gestures and roars move the whole body on it,
+	-- client/Anim/BoneOverlay); it stays at rest while the clips play alone
 	local body = if view.assetName
 			and asset
 			and asset.rig == "static"
 			and look:GetAttribute("Hover") ~= nil
 		then { scale = view.scale, hover = (tonumber(look:GetAttribute("Hover")) or 0) > 0 }
+		elseif cloned and asset and asset.rig == "bones" then { scale = view.scale, hover = false }
 		else nil
 	weldTo(look, view.root, offset, body)
 	look.Parent = view.model
