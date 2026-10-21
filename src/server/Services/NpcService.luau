@@ -1,6 +1,6 @@
 --!strict
--- City NPCs (Data/Npcs). Builds a simple R15 figure per NPC (default avatar coloured from the data, with a
--- coloured hat), anchored in place. Clients add the localized nameplate and the "Talk [E]" prompt
+-- City NPCs (Data/Npcs). Builds an R15 figure per NPC (W31: dressed by role, below), its root anchored in place.
+-- Clients add the localized nameplate and the "Talk [E]" prompt
 -- (NpcController); every service call on the server checks the distance with NpcService.Near.
 -- S21: in the city NPCs stand on the plan's terrain (TownTerrain.heightAt); `body = "board"` NPCs (the quest
 -- board) get no figure, only an invisible anchored Head over the board model the city already has.
@@ -9,7 +9,11 @@
 -- (Logic/Footing) is moved onto that ground and HipHeight is set to match.
 -- W30: an owner's model at ReplicatedStorage.Assets.Npcs.<id> (docs/wyglad TRIPO-NPC.md) replaces the drawn figure: it
 -- is fitted to the figure (Logic/NpcAssetFit), welded to the root part and the R15 body under it is hidden (it keeps the
--- Humanoid, the Head for the nameplate and the feet for Footing). No model = the coloured figure with its hat.
+-- Humanoid, the Head for the nameplate and the feet for Footing).
+-- W31 (owner 2026-10-21: "about 60 NPCs stand as bare default avatars, frozen"): an NPC without the owner's model
+-- wears the player's body and its role's outfit (Logic/NpcLook, Util/AvatarBuild; the Roblox hairstyles once
+-- CosmeticService has loaded them), the smith holds a hammer, and only the root part is anchored: the limbs hang on
+-- their Motor6Ds, which every client poses (NpcAnimController: breathing, looks, talk gestures). No Animator.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -17,6 +21,9 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local AvatarBuild = require(Shared.Util.AvatarBuild)
+local BodyLooks = require(Shared.Data.BodyLooks)
+local CharacterLook = require(Shared.Logic.CharacterLook)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
 local Npcs = require(Shared.Data.Npcs)
@@ -24,6 +31,7 @@ local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local Footing = require(Shared.Logic.Footing)
 local LookBuild = require(Shared.Util.LookBuild)
 local NpcAssetFit = require(Shared.Logic.NpcAssetFit)
+local NpcLook = require(Shared.Logic.NpcLook)
 local MapTerrain = require(Shared.Logic.MapTerrain)
 
 local log = Log.new("NpcService")
@@ -45,6 +53,8 @@ local positions: { [string]: Vector3 } = {}
 -- S159w: the World.Npcs folder (Start) and the figures placed at run time (PlaceAt), by NPC id
 local npcFolder: Folder? = nil
 local placed: { [string]: Model } = {}
+-- W31: the placed figures in an outfit and its look, dressed again once the Roblox hairstyles have loaded
+local dressed: { [Model]: CharacterLook.LookSpec } = setmetatable({}, { __mode = "k" }) :: any
 
 -- S103: the look of a ghost NPC (NpcDef.ghost; looks, not balance): every visible part half-transparent, smooth and
 -- without a shadow, and a cold light in the chest, the same "wraith" colour as the Tomb of Morvane (CaveDress/Tomb).
@@ -63,8 +73,9 @@ local function ghostLook(npc: Model)
 		end
 	end
 	local chest = (npc:FindFirstChild("UpperTorso") or npc:FindFirstChild("HumanoidRootPart")) :: BasePart?
-	if chest then
+	if chest and not chest:FindFirstChild("GhostLight") then
 		local light = Instance.new("PointLight")
+		light.Name = "GhostLight"
 		light.Color = GHOST_LIGHT
 		light.Range = GHOST_RANGE
 		light.Brightness = GHOST_BRIGHTNESS
@@ -216,10 +227,9 @@ local function buildBoard(def: Npcs.NpcDef, parent: Instance)
 	positions[def.id] = position
 end
 
--- S101b: shared by CompanionService. The NPC's figure (R15 from a HumanoidDescription in its colours, the hat in the
--- accent colour welded to the head), unparented and unanchored, without NpcId, plate or placement; nil when Roblox
--- could not build it.
-function NpcService.Figure(def: Npcs.NpcDef): Model?
+-- The plain R15 figure in the NPC's colours (W30: under the owner's model, which hides it; W31: the fallback when the
+-- dressed body cannot be built). Nil when Roblox could not build it.
+local function plainFigure(def: Npcs.NpcDef): Model?
 	local description = Instance.new("HumanoidDescription")
 	local body = Color3.fromHex(def.colors.body)
 	local skin = Color3.fromHex("#C9A27E")
@@ -229,7 +239,6 @@ function NpcService.Figure(def: Npcs.NpcDef): Model?
 	description.TorsoColor = body
 	description.LeftLegColor = Color3.fromHex("#2F2F35")
 	description.RightLegColor = Color3.fromHex("#2F2F35")
-
 	local ok, model = pcall(function()
 		return Players:CreateHumanoidModelFromDescription(description, Enum.HumanoidRigType.R15)
 	end)
@@ -237,51 +246,126 @@ function NpcService.Figure(def: Npcs.NpcDef): Model?
 		log:warn("could not build NPC %s: %s", def.id, tostring(model))
 		return nil
 	end
-	local npc = model :: Model
+	return model :: Model
+end
+
+-- W31: the player's body (Data/BodyLooks) with the NPC's face and build (Logic/NpcLook), nil when Roblox could not
+-- build it (the plain figure takes its place, the outfit is drawn over that).
+local function dressedFigure(def: Npcs.NpcDef, spec: CharacterLook.LookSpec): Model?
+	local ok, model = pcall(function()
+		return Players:CreateHumanoidModelFromDescription(AvatarBuild.description(spec, nil), Enum.HumanoidRigType.R15)
+	end)
+	if not ok or not model then
+		log:warn("could not dress NPC %s (%s): the plain figure in its outfit", def.id, tostring(model))
+		return nil
+	end
+	return model :: Model
+end
+
+-- W31: the smith's hammer in the right hand, so the hammering of NpcAnimController reads as work (the handle forward
+-- out of the fist, the head at its end).
+local HAMMER_WOOD = Color3.fromHex("#6B4A2B")
+local HAMMER_IRON = Color3.fromHex("#5E6670")
+
+local function holdHammer(npc: Model)
+	local hand = npc:FindFirstChild("RightHand") :: BasePart?
+	if not hand then
+		return
+	end
+	local folder = Instance.new("Folder")
+	folder.Name = "NpcTool"
+	local function piece(name: string, size: Vector3, offset: CFrame, color: Color3, material: Enum.Material)
+		local part = Instance.new("Part")
+		part.Name = name
+		part.Size = size
+		part.Color = color
+		part.Material = material
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+		part.Massless = true
+		part.CastShadow = false
+		part.CFrame = hand.CFrame * offset
+		local weld = Instance.new("WeldConstraint")
+		weld.Part0 = hand
+		weld.Part1 = part
+		weld.Parent = part
+		part.Parent = folder
+	end
+	piece("Handle", Vector3.new(0.2, 0.2, 1.5), CFrame.new(0, -0.05, -0.45), HAMMER_WOOD, Enum.Material.Wood)
+	piece("Head", Vector3.new(0.42, 0.75, 0.42), CFrame.new(0, -0.05, -1.15), HAMMER_IRON, Enum.Material.Metal)
+	folder.Parent = npc
+end
+
+-- Whether the NPC works at the anvil (NpcAnimController hammers for the same rule).
+local function works(def: Npcs.NpcDef): boolean
+	return table.find(def.services, "blacksmith" :: any) ~= nil
+end
+
+-- The NPC's figure and, for one in an outfit (W31), its look; unparented, without NpcId, plate or placement.
+local function figure(def: Npcs.NpcDef): (Model?, CharacterLook.LookSpec?)
+	local asset = assetTemplate(def.id) ~= nil
+	local spec = NpcLook.resolve(def)
+	local npc = if spec and not asset then dressedFigure(def, spec) else nil
+	npc = npc or plainFigure(def)
+	if not npc then
+		return nil, nil
+	end
 	npc.Name = def.id
 	local humanoid = npc:FindFirstChildOfClass("Humanoid")
 	if humanoid then
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 		humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
 	end
-	-- Placeholder hat in the accent colour (W30: not over an owner's model).
-	local head = npc:FindFirstChild("Head") :: BasePart?
-	if dressAsset(npc, def) then
-		head = nil
-	end
-	if head then
-		local hat = Instance.new("Part")
-		hat.Name = "Hat"
-		hat.Size = Vector3.new(1.4, 0.5, 1.4)
-		hat.Color = Color3.fromHex(def.colors.accent)
-		hat.Material = Enum.Material.Fabric
-		hat.CanCollide = false
-		hat.CFrame = head.CFrame * CFrame.new(0, head.Size.Y / 2 + 0.2, 0)
-		local weld = Instance.new("WeldConstraint")
-		weld.Part0 = head
-		weld.Part1 = hat
-		weld.Parent = hat
-		hat.Parent = npc
+	if asset and dressAsset(npc, def) then
+		spec = nil
+	elseif spec then
+		-- the lashes are a layered accessory per NPC for a detail nobody sees at that distance
+		for _, child in npc:GetChildren() do
+			if child:IsA("Accessory") and child.AccessoryType == Enum.AccessoryType.Eyelash then
+				child:Destroy()
+			end
+		end
+		AvatarBuild.solveJoints(npc)
+		AvatarBuild.applyProcedural(npc, spec)
+		if works(def) then
+			holdHammer(npc)
+		end
 	end
 	if def.ghost then
 		ghostLook(npc)
 	end
-	return npc
+	return npc, spec
+end
+
+-- S101b: shared by CompanionService. The NPC's figure (W31: in its outfit, or the owner's model over the plain one),
+-- unparented and unanchored, without NpcId, plate or placement; nil when Roblox could not build it. Yields.
+function NpcService.Figure(def: Npcs.NpcDef): Model?
+	return (figure(def))
 end
 
 local function build(def: Npcs.NpcDef, parent: Instance)
-	local npc = NpcService.Figure(def)
+	-- W31: the place first: the dressed body yields while its parts load, and the services ask Near meanwhile
+	local position = worldPosition(def)
+	positions[def.id] = position
+	local npc, spec = figure(def)
 	if not npc then
 		return
 	end
+	LookBuild.stripScripts(npc)
 	local humanoid = npc:FindFirstChildOfClass("Humanoid")
 	local root = npc:FindFirstChild("HumanoidRootPart") :: BasePart?
+	-- W31: the client poses the joints itself (NpcAnimController); an Animator would write over them
+	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+	if animator then
+		animator:Destroy()
+	end
+	-- W31: only the root part is anchored, the limbs hang on their joints so the clients can move them
 	for _, part in npc:GetDescendants() do
 		if part:IsA("BasePart") then
-			part.Anchored = true
+			part.Anchored = root == nil or part == root
 		end
 	end
-	local position = worldPosition(def)
 	local height = if root and humanoid then humanoid.HipHeight + root.Size.Y / 2 else 3
 	npc:PivotTo(CFrame.new(position + Vector3.new(0, height, 0)) * CFrame.Angles(0, math.rad(def.facing), 0))
 	npc:SetAttribute("NpcId", def.id)
@@ -289,8 +373,40 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 	-- another map or out of the streaming radius.
 	npc.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	npc.Parent = parent
+	if root then
+		-- a part no rigid joint holds to the root would fall: it stays where it is
+		local held: { [BasePart]: boolean } = { [root] = true }
+		for _, part in root:GetConnectedParts(true) do
+			held[part] = true
+		end
+		for _, part in npc:GetDescendants() do
+			if part:IsA("BasePart") and not held[part] then
+				part.Anchored = true
+			end
+		end
+	end
 	settle(npc, def, position.Y)
-	positions[def.id] = position
+	if spec then
+		dressed[npc] = spec
+	end
+end
+
+-- W31: once CosmeticService has loaded the Roblox hairstyles (ReplicatedStorage.VaelthornLookParts), the NPCs dressed
+-- before that get them in place of the procedural hair.
+local function redress()
+	if not ReplicatedStorage:WaitForChild(BodyLooks.PARTS_FOLDER, 900) then
+		return
+	end
+	for npc, spec in dressed do
+		if npc.Parent then
+			AvatarBuild.applyProcedural(npc, spec)
+			local id = npc:GetAttribute("NpcId")
+			local def = if type(id) == "string" then Npcs.get(id) else nil
+			if def and def.ghost then
+				ghostLook(npc)
+			end
+		end
+	end
 end
 
 -- S159w: places the figure of an NPC that has no fixed place (Data/Npcs.WANDERER) at the map-relative (x, z) of `map`,
@@ -311,6 +427,7 @@ function NpcService.PlaceAt(def: Npcs.NpcDef, map: string, x: number, z: number,
 		placed[def.id] = model
 		return model, positions[def.id]
 	end
+	positions[def.id] = nil -- no figure: nobody stands there
 	return nil, nil
 end
 
@@ -377,6 +494,7 @@ function NpcService.Start()
 	end
 	-- FIX 2026-10-09: maps built in the background (S45 `buildLate`) have no terrain yet here, so the floor ray
 	-- missed and their NPCs stood under the ground. Those wait for their map.
+	-- W31: every figure in its own thread (the dressed body yields while its parts load); its place is set first
 	local late = 0
 	for _, def in Npcs.list do
 		if WorldService.IsBuilding(def.map) then
@@ -388,10 +506,11 @@ function NpcService.Start()
 				place(def)
 			end)
 		else
-			place(def)
+			task.spawn(place, def)
 		end
 	end
-	log:info("%d NPCs placed, %d wait for their map", #Npcs.list - late, late)
+	log:info("%d NPCs placing, %d wait for their map", #Npcs.list - late, late)
+	task.spawn(redress)
 end
 
 return NpcService

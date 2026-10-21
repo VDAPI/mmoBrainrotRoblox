@@ -8,6 +8,7 @@ local CollectionService = game:GetService("CollectionService")
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local CaveMouth = require(game:GetService("ReplicatedStorage").Shared.Data.CaveMouth)
 local Portals = require(game:GetService("ReplicatedStorage").Shared.Data.Portals)
+local SignSpots = require(game:GetService("ReplicatedStorage").Shared.Logic.SignSpots)
 local VfxTextures = require(game:GetService("ReplicatedStorage").Shared.Data.VfxTextures)
 local Build = require(script.Parent.Build)
 local KitAssets = require(game:GetService("ReplicatedStorage").Shared.Util.KitAssets)
@@ -932,16 +933,8 @@ function Prefabs.caveMouth(
 		local p = base * CFrame.new(side * 10, 0, -6)
 		Prefabs.torch(ctx, p.Position.X - ctx.origin.X, p.Position.Z - ctx.origin.Z)
 	end
-	local sign = base * CFrame.new(-13, 0, -14)
-	Prefabs.signpost(
-		ctx,
-		sign.Position.X - ctx.origin.X,
-		sign.Position.Z - ctx.origin.Z,
-		rot + 180,
-		nameKey,
-		lvMin,
-		lvMax
-	)
+	local sign = SignSpots.caveSign({ x = x, z = z, rot = rot })
+	Prefabs.signpost(ctx, sign.x, sign.z, sign.rot, nameKey, lvMin, lvMax)
 	Build.icon(ctx, "cave", x, z)
 	return model
 end
@@ -1105,47 +1098,12 @@ local LANDMARK_BY_KIND: { [string]: string } = {
 -- roads (S20, DESIGN §3.6–§3.7). S45: `options.lanterns = false` leaves the road lanterns to the map's generator.
 function Prefabs.areaFeatures(ctx: Context, data: Areas.MapAreas, color: string?, options: { lanterns: boolean? }?)
 	local clear = Build.clearOf(data, 4)
-	local signs: { { number } } = {}
-	local function farFromSigns(x: number, z: number): boolean
-		for _, other in signs do
-			if (x - other[1]) ^ 2 + (z - other[2]) ^ 2 < 60 * 60 then
-				return false
-			end
-		end
-		return true
+	-- the signs where the roads enter the areas (Logic/SignSpots: one source with tests/signspots.spec)
+	for _, sign in SignSpots.areaSigns(data, ctx.wet) do
+		Prefabs.signpost(ctx, sign.x, sign.z, sign.rot, sign.nameKey, sign.lv[1], sign.lv[2])
 	end
 	for _, area in data.areas do
 		local r = area.rect
-		local placed = 0
-		for _, road in data.roads do
-			local p = road.points
-			for i = 1, #p - 3, 2 do
-				local ax, az, bx, bz = p[i], p[i + 1], p[i + 2], p[i + 3]
-				local aInside = ax >= r[1] and ax <= r[3] and az >= r[2] and az <= r[4]
-				local bInside = bx >= r[1] and bx <= r[3] and bz >= r[2] and bz <= r[4]
-				if aInside ~= bInside and placed < 2 then
-					-- Walk along the segment to the edge, then 12 studs inside, beside the road.
-					local fromX, fromZ = if aInside then bx else ax, if aInside then bz else az
-					local toX, toZ = if aInside then ax else bx, if aInside then az else bz
-					local length = math.sqrt((toX - fromX) ^ 2 + (toZ - fromZ) ^ 2)
-					local dx, dz = (toX - fromX) / length, (toZ - fromZ) / length
-					local x, z = fromX, fromZ
-					for step = 0, math.floor(length) do
-						x, z = fromX + dx * step, fromZ + dz * step
-						if x >= r[1] and x <= r[3] and z >= r[2] and z <= r[4] then
-							break
-						end
-					end
-					x, z = x + dx * 12 - dz * (road.width / 2 + 4), z + dz * 12 + dx * (road.width / 2 + 4)
-					if farFromSigns(x, z) and not (ctx.wet and ctx.wet(x, z)) then
-						local facing = math.deg(math.atan2(dx, dz)) + 180
-						Prefabs.signpost(ctx, x, z, facing, area.nameKey, area.lv[1], area.lv[2])
-						table.insert(signs, { x, z })
-						placed += 1
-					end
-				end
-			end
-		end
 		if not area.landmark then
 			local cx, cz = (r[1] + r[3]) / 2, (r[2] + r[4]) / 2
 			for attempt = 0, 30 do
@@ -1194,17 +1152,8 @@ function Prefabs.caveEntrances(ctx: Context, data: Areas.MapAreas, rockColor: st
 	for _, entrance in data.caves do
 		local cave = Areas.caves.get(entrance.cave)
 		if cave and options and options.mouth == false then
-			local base = baseAt(ctx, entrance.x, entrance.z, entrance.rot)
-			local sign = base * CFrame.new(-13, 0, -14)
-			Prefabs.signpost(
-				ctx,
-				sign.Position.X - ctx.origin.X,
-				sign.Position.Z - ctx.origin.Z,
-				entrance.rot + 180,
-				cave.nameKey,
-				cave.levels[1],
-				cave.levels[2]
-			)
+			local sign = SignSpots.caveSign(entrance)
+			Prefabs.signpost(ctx, sign.x, sign.z, sign.rot, cave.nameKey, cave.levels[1], cave.levels[2])
 			Build.icon(ctx, "cave", entrance.x, entrance.z)
 			Prefabs.portal(ctx, `{ctx.map.id}_{entrance.cave}`, entrance.cave, entrance.x, entrance.z, entrance.rot)
 		elseif cave then
