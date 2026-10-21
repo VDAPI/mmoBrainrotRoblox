@@ -14,6 +14,7 @@ local BloodMoonView = require(script.Parent.Parent.Parent.BloodMoonView)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -46,7 +47,6 @@ local BUTTON_TOUCH = 44
 local TOUCH_TOP = Theme.Padding.Large + 136 + 6 + 44
 local PARTY_TOP = Theme.Padding.Large + 136 + 70
 local PARTY_ROW = 58 + 6
-local PC_TOP = 400
 
 local function BloodMoonPanel(scope: Scope, props: Props): Instance
 	local phase = BloodMoonView.Phase
@@ -86,11 +86,15 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 		end
 		return h
 	end)
+	-- owner 2026-10-21: moved by its tab, scaled by its corner (UI/HudDrag); a moved panel leaves the column
+	local handle = HudDrag.new(scope, "bloodMoon", function(use)
+		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
+	end)
 	if props.Offset then
 		local offset = props.Offset
 		local pushed = scope:Computed(function(use): number
 			-- W29: on a phone in landscape the tracker stacks under the panel as on PC
-			if not use(shown) or (use(touch) and not use(PhoneLayout.Compact)) then
+			if not use(shown) or (use(touch) and not use(PhoneLayout.Compact)) or use(handle.corner) then
 				return 0
 			end
 			return use(height) + 8
@@ -151,23 +155,11 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 		})
 	end
 
-	return scope:New("Frame")({
-		Name = "BloodMoonPanel",
-		AnchorPoint = scope:Computed(function(use): Vector2
-			return if use(touch) then Vector2.new(0, 0) else Vector2.new(1, 0)
-		end),
-		Position = scope:Computed(function(use): UDim2
-			if use(touch) then
-				return UDim2.fromOffset(Theme.Padding.Large, use(touchTop))
-			end
-			return UDim2.new(1, -Theme.Padding.Large, 0, PC_TOP)
-		end),
-		Size = scope:Computed(function(use): UDim2
-			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
-		end),
+	local body = scope:New("Frame")({
+		Name = "Body",
+		Size = UDim2.fromScale(1, 1),
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
-		Visible = shown,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({ Color = BLOOD, Thickness = Theme.Stroke.Thin }),
@@ -203,6 +195,23 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 				OnClick = props.OpenResults,
 			}),
 		},
+	})
+	return HudDrag.frame(scope, handle, {
+		Name = "BloodMoonPanel",
+		AnchorPoint = scope:Computed(function(use): Vector2
+			return if use(touch) then Vector2.new(0, 0) else Vector2.new(1, 0)
+		end),
+		Position = scope:Computed(function(use): UDim2
+			if use(touch) then
+				return UDim2.fromOffset(Theme.Padding.Large, use(touchTop))
+			end
+			return UDim2.new(1, -Theme.Padding.Large, 0, HudDrag.RIGHT_TOP)
+		end),
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
+		end),
+		Visible = shown,
+		Content = body,
 	})
 end
 

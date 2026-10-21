@@ -20,6 +20,9 @@
 --     HumanoidRootPart) is re-checked every `checkEvery`, and every `sweepEvery` (and right after CharacterAdded and a
 --     map transition) each player's current character gets a live plate: a missing plate, a destroyed BillboardGui
 --     or a lost folder in PlayerGui is rebuilt. Your own plate included.
+-- Owner 2026-10-21 ("show my level over my head and VIP when owned"): "Lv 37" small before the name (model attribute
+-- Level, LevelService keeps it current) and a small gold "VIP" tag after it (player attribute Vip,
+-- MonetizationService), on every plate including yours.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -35,6 +38,7 @@ local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Nameplate = require(ReplicatedStorage.Shared.Logic.Nameplate)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
+local Text = require(script.Parent.Parent.UI.Text)
 
 local TitleText = require(script.Parent.Parent.UI.TitleText)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
@@ -62,6 +66,10 @@ local NAME_COLORS: { [string]: Color3 } = {
 	text = Theme.Plain,
 }
 local TAG_HEX = Theme.readableHex(UiPalette.brass.line, "hud")
+-- Owner 2026-10-21: the level in light iron text, the VIP tag a gold pill with dark letters (readable on any ground)
+local LEVEL_COLOR = Theme.readable(UiPalette.iron.text, "hud")
+local VIP_FILL = Theme.Brass.Bright
+local VIP_TEXT = Theme.Iron.Sunken
 -- owner 2026-10-20 (837de9c8): a full dark outline
 local STROKE = Theme.Iron.Sunken
 local STROKE_ALPHA = 0
@@ -176,6 +184,7 @@ local function build(model: Model, owner: Player)
 	table.insert(scope, model.ChildRemoved:Connect(onChildren))
 
 	local charName = attributeValue(scope, model, "CharName")
+	local level = attributeValue(scope, model, "Level")
 	local guildTag = attributeValue(scope, model, "GuildTag")
 	local guildEmblem = attributeValue(scope, model, "GuildEmblem") -- S159g: the guild banner
 	local guildColor = attributeValue(scope, model, "GuildColor")
@@ -269,6 +278,7 @@ local function build(model: Model, owner: Player)
 			guildTag = if type(tag) == "string" then tag else nil,
 			hurt = r > 0.002 and (r < 0.999 or use(recentHit)),
 			distance = use(plate.far),
+			level = use(level),
 		})
 	end)
 
@@ -358,6 +368,23 @@ local function build(model: Model, owner: Player)
 								SortOrder = Enum.SortOrder.LayoutOrder,
 								Padding = UDim.new(0, 3),
 							}),
+							-- Owner 2026-10-21: the level before the name ("Lv 37")
+							scope:New("TextLabel")(stroked({
+								Name = "Level",
+								LayoutOrder = 0,
+								Size = UDim2.fromScale(0, 1),
+								AutomaticSize = Enum.AutomaticSize.X,
+								Visible = scope:Computed(function(use): boolean
+									return use(view).level ~= nil
+								end),
+								Text = scope:Computed(function(use): string
+									local lv = use(view).level
+									return if lv then Text.get(use, "nameplate.level", { level = lv }) else ""
+								end),
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = CFG.levelSize,
+								TextColor3 = LEVEL_COLOR,
+							})),
 							-- Another player's name is a button: the S133 player menu (left / right click, tap). Only
 							-- the text's own width catches input, so monsters behind a player stay clickable.
 							scope:New("TextButton")(stroked({
@@ -416,6 +443,35 @@ local function build(model: Model, owner: Player)
 									return if use(blessingEnding) and not use(blinkOn) then 0.85 else 0
 								end),
 							})),
+							-- Owner 2026-10-21: the gold VIP tag after the name
+							scope:New("TextLabel")({
+								Name = "Vip",
+								LayoutOrder = 3,
+								Size = UDim2.fromOffset(0, CFG.tagSize + 4),
+								AutomaticSize = Enum.AutomaticSize.X,
+								Visible = scope:Computed(function(use): boolean
+									return use(view).showVip
+								end),
+								BackgroundColor3 = VIP_FILL,
+								BackgroundTransparency = 0,
+								BorderSizePixel = 0,
+								Text = Text.T(scope, "nameplate.vip"),
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = CFG.tagSize,
+								TextColor3 = VIP_TEXT,
+								[Children] = {
+									scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
+									scope:New("UIPadding")({
+										PaddingLeft = UDim.new(0, 4),
+										PaddingRight = UDim.new(0, 4),
+									}),
+									scope:New("UIStroke")({
+										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+										Color = STROKE,
+										Thickness = 1,
+									}),
+								},
+							}),
 						},
 					}),
 					-- A thin HP bar under another player's name while hurt (your own HP is in the HUD).

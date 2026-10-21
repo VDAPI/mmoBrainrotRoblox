@@ -1540,6 +1540,18 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   (`WORLD_BRIGHT`, śnieg). Paski (HP, mana, energia, EXP, rzucanie, Elita II): ciemny tor `Resource.track`, mosiężny
   brzeg, wypełnienia z `Resource`, liczby z obrysem. Sloty umiejętności i mikstur jak `ItemSlot` w wariancie żelaza
   (`Iron.Raised`, brzeg `Brass.Line`), odnowienie jako ciemna zasłona z liczbą, klawisz na plakietce w rogu.
+  Właściciel 2026-10-21: w lewym górnym rogu slotu (pasek i łuk przycisków na dotyku) koszt rzucenia teraz, mała
+  liczba z ciemnym obrysem: mana niebieska, energia żółta, zdrowie czerwone (`Logic/SkillCostBadge`, ten sam koszt co
+  serwer i tooltip: ranga, przełomy, węzły, oszczędność z przedmiotów, Ładunki Arkanów; wiązka: mana jednego tiku).
+- **Układ HUD gracza (S156, właściciel 2026-10-21).** Tropiciel zadań i panele wydarzeń (wydarzenie świata, w tym
+  Inwazja, boss świata, Krwawy Księżyc, turniej) gracz przesuwa po całym ekranie: tropiciel za „≡” w nagłówku i
+  rozmiar za ◢, panel za kartę „≡” z boku zwróconego do środka ekranu, a ◢ w rogu go skaluje (0,7–1,5). Układ
+  zapisuje się na koncie (`account.settings.hud`, `Logic/HudLayout`), „Przywróć” przy „Układ HUD” w menu gry. Domyślnie prawa
+  kolumna na PC zaczyna się pod minimapą i paskiem prowadzenia (`HudDrag.RIGHT_TOP`), przesunięty panel z niej
+  wychodzi, a reszta kolumny się podnosi.
+- **Poczta na HUD (właściciel 2026-10-21).** Gdy czekają przesyłki, w prawym dolnym rogu pod przyciskiem ataku (na PC
+  w tym samym miejscu) koperta z liczbą przesyłek („9+” powyżej 9); klik otwiera okno poczty. Na telefonie w poziomie
+  nad przyciskiem „Cel”, na lewo od łuku umiejętności (`PhoneHud` `mail`). Zastępuje kopertę przy minimapie (S156).
 - **Tabliczki potworów i NPC (S136)**: ten sam styl co tabliczki graczy (płytka żelaza, nazwa z obrysem, poziom `Small` na
   ciemnej plakietce w kolorze pasma); kolory rodzajów (`UiPalette.plate`: zwykły, Elita, Elita II, boss), liczebności
   grup (`group`) i znaków questów (`mark`) mają parę kontrastu; co pokazać decyduje `Logic/Nameplate` (`monster`, `npc`).
@@ -1551,6 +1563,12 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   korona i plakietka VIP, pasek HP przy ranach, na lekkiej płytce żelaza z mosiężnym brzegiem; zawsze na wierzchu,
   widoczne do `Config.Nameplate.maxDistance` (150 st.), dalej niż `detailDistance` (60 st.) sama nazwa. Wróg (PvP)
   na czerwono z ⚔, własna nazwa i VIP mosiądzem. Klik / dotknięcie nicku innego gracza otwiera menu gracza (S133).
+  W28: bez płytki, ramki i kropki PvP (kolor nicku to stan PvP), tytuł mniejszy nad nickiem. Właściciel 2026-10-21:
+  wracają poziom i VIP w lekkiej formie: „Lv 37” małym jasnym tekstem przed nickiem i mała złota plakietka „VIP” za nim,
+  na każdej tabliczce (także własnej) i w każdej odległości.
+- **Tytuł w oknie Plecaka** (właściciel 2026-10-21): pod klasą obecny tytuł w swoim kolorze i wyraźny przycisk „Zmień
+  tytuł”; otwiera listę nad całym oknem: „Brak tytułu” i wszystkie odblokowane tytuły (kolor, skąd pochodzi, „Noszony”
+  przy obecnym, czas do końca tytułu czasowego). Wybór idzie przez `SetTitle`, serwer odrzuca tytuł nieodblokowany.
 - **HUD** (płytki żelaza, S136): lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim pasek 8 slotów umiejętności aktywnej puli broni (DESIGN-18 §4.1, S137) + 3 mikstury. Prawy górny: minimapa w mosiężnej ramie z pierścieniem w kolorze strefy i nazwą mapy na plakietce, przyciski menu (Postać C, Plecak B, Umiejętności K, Mapa M, Questy L, Gildia G, Grupa P, Opcje Esc). Prawy dolny: przełącznik PvP. Lewy dolny: czat. Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
 - **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×700; B i C otwierają to samo okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na dotyku ekwipunek + zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (S139, DESIGN-18 §12: zakładki pul broni i „Kierunki”, drzewko według wspólnej drabiny, szczegóły po kliknięciu, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Ikony przedmiotów (S118): obrazek właściciela (PNG), gdy jego atlas jest wgrany i wczytany, inaczej ikona rysowana kodem, a bez niej symbol; przedmioty questowe z obrazkiem w dzienniku questów (§5.3b).

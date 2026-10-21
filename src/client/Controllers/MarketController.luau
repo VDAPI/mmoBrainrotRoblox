@@ -1,7 +1,7 @@
 --!strict
 -- Auction house and mail on the client (DESIGN §18): the auction window (Auctioneer, service "auction"),
--- the mail window (service "mail", or the envelope by the minimap, S156: Hud/Minimap shows the number of parcels)
--- waiting. Collecting needs the mailbox nearby; AtMailbox follows the distance to the Auctioneer.
+-- the mail window (service "mail", or the mail icon of the HUD: owner 2026-10-21, Hud/MailButton shows the number of
+-- parcels waiting). Collecting needs the mailbox nearby; AtMailbox follows the distance to the Auctioneer.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

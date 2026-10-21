@@ -4,11 +4,14 @@
 -- Hidden on PC.
 -- S28: dragging a button aims an area skill (the preview follows the finger, release casts there, coming back onto
 -- the button cancels); a tap casts as before.
+-- Owner 2026-10-21: the cost in the button's top-left corner like the bar (Components/CostBadge).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
+local CostBadge = require(script.Parent.Parent.Parent.Components.CostBadge)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
@@ -26,6 +29,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	Cast: (slot: number) -> (),
 	Color: (skillId: string) -> Color3,
+	-- owner 2026-10-21: the cost a cast takes now and its resource (SkillController.Cost; nil: no badge)
+	Cost: ((skillId: string) -> (number, string?))?,
 	SelectTarget: () -> (),
 	-- S28 drag aiming (SkillController.AimStart / AimMove / AimEnd).
 	AimStart: ((slot: number) -> boolean)?,
@@ -44,6 +49,19 @@ local ANGLES = { 180, 150, 120, 90, 60 }
 local function MobileSkills(scope: Scope, props: Props): Instance
 	local page = scope:Value(0)
 	local hotbar = State.Value({ "character", "hotbar" })
+	-- refreshes the cost badges (twice a second, only while the buttons show)
+	local tick = scope:Value(0)
+	local acc = 0
+	table.insert(
+		scope,
+		RunService.Heartbeat:Connect(function(dt)
+			acc += dt
+			if acc >= 0.5 and Fusion.peek(Device.Touch) then
+				acc = 0
+				tick:set(Fusion.peek(tick) + 1)
+			end
+		end)
+	)
 
 	local buttons = {}
 	local buttonsByIndex: { [number]: GuiObject } = {}
@@ -163,6 +181,15 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 					AnchorPoint = Vector2.new(0.5, 0.5),
 					Corner = UDim.new(0.5, 0),
 				}),
+				-- the button's top-left corner: the content box starts 20 % in and is 60 % wide (-0.2 / 0.6)
+				if props.Cost
+					then CostBadge(scope, {
+						SkillId = skillId,
+						Cost = props.Cost,
+						Tick = tick,
+						Position = UDim2.fromScale(-1 / 3, -1 / 3),
+					})
+					else nil :: any,
 			},
 		})
 		buttonsByIndex[i] = button :: GuiObject
