@@ -42,6 +42,9 @@ local REPORT_LIFT = 0.3
 local WorldService: any = nil
 
 local positions: { [string]: Vector3 } = {}
+-- S159w: the World.Npcs folder (Start) and the figures placed at run time (PlaceAt), by NPC id
+local npcFolder: Folder? = nil
+local placed: { [string]: Model } = {}
 
 -- S103: the look of a ghost NPC (NpcDef.ghost; looks, not balance): every visible part half-transparent, smooth and
 -- without a shadow, and a cold light in the chest, the same "wraith" colour as the Tomb of Morvane (CaveDress/Tomb).
@@ -289,6 +292,38 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 	positions[def.id] = position
 end
 
+-- S159w: places the figure of an NPC that has no fixed place (Data/Npcs.WANDERER) at the map-relative (x, z) of `map`,
+-- facing `facing` degrees, like a fixed one (feet on the ground, Persistent, NpcId); a figure placed before under the
+-- same id goes first. Returns the model and its ground point (world), or nil when it could not be built.
+function NpcService.PlaceAt(def: Npcs.NpcDef, map: string, x: number, z: number, facing: number): (Model?, Vector3?)
+	NpcService.Remove(def.id)
+	if not npcFolder then
+		return nil, nil
+	end
+	local at = table.clone(def)
+	at.map = map
+	at.position = { x = x, z = z }
+	at.facing = facing
+	build(at, npcFolder)
+	local model = npcFolder:FindFirstChild(def.id)
+	if model and model:IsA("Model") then
+		placed[def.id] = model
+		return model, positions[def.id]
+	end
+	return nil, nil
+end
+
+-- S159w: removes a figure placed by PlaceAt (nothing for a fixed NPC); NpcService.Near is false for it afterwards.
+function NpcService.Remove(npcId: string)
+	local model = placed[npcId]
+	if not model then
+		return
+	end
+	placed[npcId] = nil
+	positions[npcId] = nil
+	model:Destroy()
+end
+
 -- Whether the player stands close enough to the NPC to use it.
 function NpcService.Near(player: Player, npcId: string): boolean
 	local position = positions[npcId]
@@ -328,6 +363,7 @@ function NpcService.Start()
 	local folder = Instance.new("Folder")
 	folder.Name = "Npcs"
 	folder.Parent = world
+	npcFolder = folder
 	if not ServerMode.isWorld() then
 		return -- S127: no NPCs on arena/tournament servers (the empty folder: clients wait for it)
 	end

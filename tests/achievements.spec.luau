@@ -485,7 +485,9 @@ T.describe("Save (S151)", function()
 	T.it("the templates carry ach, old saves get it from reconcile without a migration", function()
 		T.expect(AccountSchema.accountTemplate().ach).toEqual({ c = {}, s = {}, done = {}, paid = {} })
 		-- S151b: the character branch carries the tracked ids too
-		T.expect(AccountSchema.characterTemplate().ach).toEqual({ c = {}, s = {}, done = {}, track = {} })
+		-- S151c: and the bestiary's kills and drops seen
+		T.expect(AccountSchema.characterTemplate().ach)
+			.toEqual({ c = {}, s = {}, done = {}, track = {}, b = {}, bd = {} })
 		T.expect(AccountSchema.accountTemplate().settings.achToasts).toBe(true)
 		local old: any = AccountSchema.accountTemplate()
 		old.ach = nil
@@ -495,7 +497,8 @@ T.describe("Save (S151)", function()
 		T.expect(AccountSchema.migrate(old)).toEqual({})
 		T.expect(old.schema).toBe(AccountSchema.CURRENT)
 		T.expect(old.ach).toEqual({ c = {}, s = {}, done = {}, paid = {} })
-		T.expect(old.characters["1"].ach).toEqual({ c = {}, s = {}, done = {}, track = {} }) -- S151b: track
+		-- S151b: track, S151c: b / bd
+		T.expect(old.characters["1"].ach).toEqual({ c = {}, s = {}, done = {}, track = {}, b = {}, bd = {} })
 		T.expect(old.settings.achToasts).toBe(true)
 		local kept: any = AccountSchema.accountTemplate()
 		kept.ach = { c = { trades = 4 }, s = {}, done = { trade1 = 9 }, paid = {} }
@@ -590,7 +593,8 @@ T.describe("AchievementView (S151b)", function()
 		for _, def in AchData.list do
 			max += def.points
 		end
-		T.expect(all.pointsMax).toBe(max)
+		-- S151c: the bestiary's points belong to the character
+		T.expect(all.pointsMax).toBe(max + require("../src/shared/Logic/Bestiary").pointsMax())
 		T.expect(all.byCat.combat.done).toBe(1)
 		T.expect(all.byCat.social.done).toBe(1)
 		T.expect(all.byCat.combat.total).toBe(#AchData.forCategory("combat"))

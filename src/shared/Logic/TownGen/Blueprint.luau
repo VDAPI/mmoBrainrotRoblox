@@ -36,8 +36,9 @@ export type Piece = {
 -- W02: one prop of the asset kit (a tree, a rock, a bush...) the pieces between beginKit and endKit draw. When the
 -- kit has a model for it (Data/Kit, Util/KitAssets), Util/BlueprintBuild places the model instead of those pieces and
 -- keeps only their collision. `p` is the foot of the prop in building-local space, `s` the generator's scale, `lod`
--- the level that builds it (shell: server, detail: client near the camera).
-export type KitSlot = { key: string, p: { number }, s: number, lod: Lod }
+-- the level that builds it (shell: server, detail: client near the camera). 2026-10-20: `x` (optional) the length in
+-- studs the model is stretched to along the slot's local X (a wall piece's length, a house's front), Util/KitAssets.
+export type KitSlot = { key: string, p: { number }, s: number, lod: Lod, x: number? }
 
 export type Light = { p: { number }, color: string, range: number, brightness: number, tag: string? }
 
@@ -243,14 +244,26 @@ end
 -- W02: starts a kit slot `key` with its foot at (x, y, z) of the current frame; every piece added until endKit
 -- belongs to it. Slots do not nest (a nested begin is ignored, its pieces stay in the outer slot). Uses no random
 -- numbers, so a generator draws exactly the same pieces with or without slots.
-function Blueprint.beginKit(self: Blueprint, key: string, x: number, y: number, z: number, s: number, lod: Lod)
+function Blueprint.beginKit(
+	self: Blueprint,
+	key: string,
+	x: number,
+	y: number,
+	z: number,
+	s: number,
+	lod: Lod,
+	stretch: number?
+)
 	self.kitDepth += 1
 	if self.kitDepth > 1 then
 		return
 	end
 	local top = self.frames[#self.frames]
 	local dx, dy, dz = apply(top.r, x, y, z)
-	table.insert(self.kits, { key = key, p = { top.o[1] + dx, top.o[2] + dy, top.o[3] + dz }, s = s, lod = lod })
+	table.insert(
+		self.kits,
+		{ key = key, p = { top.o[1] + dx, top.o[2] + dy, top.o[3] + dz }, s = s, lod = lod, x = stretch }
+	)
 	self.slot = #self.kits
 end
 

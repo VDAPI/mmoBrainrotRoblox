@@ -598,7 +598,10 @@ commands.ach = function(player, args)
 	local AchievementService = Context.services.AchievementService
 	local action = args[1]
 	-- the player is the argument after the action's own ones
-	local own = if action == "list" or action == "backfill" then 0 elseif action == "counter" then 2 else 1
+	local own = if action == "list" or action == "backfill"
+		then 0
+		elseif action == "counter" or action == "best" then 2
+		else 1
 	local name = args[2 + own]
 	local target = player
 	if name and name ~= "" then
@@ -649,6 +652,16 @@ commands.ach = function(player, args)
 		end
 	elseif action == "backfill" then
 		reply(player, "admin.ach.backfill", { n = AchievementService.Backfill(target), name = target.Name })
+	elseif action == "best" then
+		-- S151c: bestiary kills
+		local id = args[2] or ""
+		local value = tonumber(args[3])
+		local kills = if value then AchievementService.AddBestiaryKills(target, id, value) else nil
+		if kills then
+			reply(player, "admin.ach.best", { id = id, n = kills, name = target.Name })
+		else
+			reply(player, "admin.ach.badBest", { id = id })
+		end
 	else
 		reply(player, "admin.usage.ach")
 	end

@@ -35,6 +35,7 @@ local Toast = require(script.Parent.Parent.UI.Components.Toast)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UI.UiArtState)
 local UnbindPicker = require(script.Parent.Parent.UI.Screens.UnbindPicker)
+local WanderingMerchantWindow = require(script.Parent.Parent.UI.Screens.WanderingMerchantWindow)
 
 local NpcController = {
 	Name = "NpcController",
@@ -80,6 +81,7 @@ local SERVICE_WINDOWS = {
 	"auction",
 	"mail",
 	"huntshop", -- S134k
+	"wanderer", -- S159w
 }
 -- S97: the mounts window opens anywhere (J, the HUD menu); it closes with the NPC's windows only when the
 -- stablemaster's dialog opened it. S126: the arena window the same way (U, the HUD menu, the Arena Master).
@@ -104,6 +106,7 @@ local SERVICE_TO_WINDOW: { [string]: string } = {
 	mounts = "mounts", -- S97: the stablemaster (MountController registers the window)
 	arena = "arena", -- S126: the Arena Master (ArenaController registers the window)
 	look = "look", -- S132: the barber (PremiumController registers the window)
+	wanderer = "wanderer", -- S159w: the wandering merchant's goods
 }
 
 local function heal(npcId: string)
@@ -439,6 +442,15 @@ local function registerWindows()
 			return HuntShopWindow(s, { NpcId = NpcController.Current, ShowModal = WindowManager.ShowModal })
 		end,
 	})
+	-- S159w: the wandering merchant's goods (gold, Hunter's Marks)
+	WindowManager.Register({
+		id = "wanderer",
+		titleKey = "wanderer.title",
+		size = Vector2.new(720, 620),
+		build = function(s)
+			return WanderingMerchantWindow(s, { NpcId = NpcController.Current, ShowModal = WindowManager.ShowModal })
+		end,
+	})
 	WindowManager.Register({
 		id = "unbind",
 		titleKey = "window.unbind.title",
@@ -508,6 +520,10 @@ function NpcController.Start()
 					closeServiceWindows()
 					NpcController.Current:set(nil)
 				end
+			elseif npcId == Npcs.WANDERER.id and folder and not model then
+				-- S159w: the wandering merchant packed up and left
+				closeServiceWindows()
+				NpcController.Current:set(nil)
 			end
 		end
 	end)

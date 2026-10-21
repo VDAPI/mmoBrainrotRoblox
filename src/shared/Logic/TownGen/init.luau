@@ -38,7 +38,7 @@ export type Ground = Structures.Ground
 function TownGen.all(city: any, ground: Ground): { Build }
 	local out: { any } = {}
 	for _, lot in city.lots do
-		local bp, at = Houses.build(lot, ground)
+		local bp, at = Houses.build(lot, ground, true) -- 2026-10-20: one kit slot per ordinary house
 		table.insert(out, { name = lot.id, tag = "house", bp = bp, at = at })
 	end
 	for _, key in { "walls", "retaining", "ramps", "bridges", "lamps" } do

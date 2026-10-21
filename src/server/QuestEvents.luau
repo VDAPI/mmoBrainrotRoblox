@@ -32,6 +32,9 @@
 --   dodge    { n }                                        (FightLogService.End: dodged telegraphed blows)
 --   social   { friends } | { guild = true }               (SocialService list writes, Guild/Runtime joining)
 --   cosmetic { id }                                       (CosmeticService.Grant)
+-- S151c (the bestiary only, Logic/Bestiary):
+--   drop     { monsterId, ids }                           (LootService: the materials of a kill, every credited player;
+--            DungeonService / WorldBossService: the boss bag's item ids)
 -- Kills and levels reach the achievements through CombatService.MonsterKilled (+ lair) and LevelService.LevelChanged
 -- (QuestService already handles both signals; a QuestEvents copy would count quests twice).
 

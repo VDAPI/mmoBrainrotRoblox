@@ -393,6 +393,12 @@ local function reward(run: Run, position: Vector3): { [Player]: { any } }
 					table.insert(listed, { id = item.id, r = item.rarity, up = item.up, n = item.n })
 				end
 				drops[player] = listed
+				-- S151c: the bestiary's drops seen (Logic/Bestiary keeps only the boss's own named items and materials)
+				local ids = {}
+				for _, item in listed do
+					table.insert(ids, item.id)
+				end
+				QuestEvents.fire(player, "drop", { monsterId = def.id, ids = ids })
 				if gotLeg or gotMyth then
 					Analytics.custom(player, if gotMyth then "BossMythic" else "BossLegendary", def.level)
 				end

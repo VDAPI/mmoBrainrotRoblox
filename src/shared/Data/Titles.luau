@@ -322,6 +322,35 @@ local list: { TitleDef } = {
 		color = "#E8C25A",
 		wiki = false,
 	},
+	-- S151c: a complete region of the bestiary (every entry at its last tier, Data/Bestiary)
+	{
+		id = "ach_lore_meadows",
+		nameKey = "title.ach_lore_meadows",
+		req = { kind = "achievement", id = "bestiary_meadows" },
+		color = "#9CCB6A",
+		wiki = false,
+	},
+	{
+		id = "ach_lore_duskwood",
+		nameKey = "title.ach_lore_duskwood",
+		req = { kind = "achievement", id = "bestiary_duskwood" },
+		color = "#8A7FC0",
+		wiki = false,
+	},
+	{
+		id = "ach_lore_ashen",
+		nameKey = "title.ach_lore_ashen",
+		req = { kind = "achievement", id = "bestiary_ashen" },
+		color = "#E07A3A",
+		wiki = false,
+	},
+	{
+		id = "ach_lore_frostpeak",
+		nameKey = "title.ach_lore_frostpeak",
+		req = { kind = "achievement", id = "bestiary_frostpeak" },
+		color = "#9FD8F0",
+		wiki = false,
+	},
 	-- S155: the tutorial reward at level 5 (Data/Tutorial.REWARD.title, a cosmetic with obtain.tutorial)
 	{
 		id = "firststeps",

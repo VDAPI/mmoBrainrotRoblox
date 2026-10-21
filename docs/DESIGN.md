@@ -609,6 +609,32 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
 - Cele questów mogą wskazywać sprzedawcę klasy gracza: `npc = "classVendor"` w celach `talk` / `deliver`
   (`QuestLogic.npcFor`).
 
+## 8b. Wędrowny kupiec (S159w, właściciel 2026-10-20)
+
+- **Radosław** (`Data/Npcs.WANDERER`, id `wanderer`, poza `Npcs.list`) przyjeżdża karawaną (kryty wóz w szafranie i
+  śliwce, muł Bursztyn, latarnia, proporzec; model `Assets.Npcs.wanderer_caravan` zastąpi proceduralny) **co 3 h na
+  45 min**, start o 01:30, 04:30, …, 22:30 UTC (`Data/WanderingMerchant.schedule`). Harmonogram, miejsce i towar liczy
+  każdy serwer i klient z zegara i numeru wizyty (`Logic/WanderingMerchant`, `Logic/Rng`), bez wiadomości między
+  serwerami.
+- **Miejsce:** mapa losowana z wagami miasto 2, każdy region 1, potem jeden z jej punktów: w mieście rynek i place przy
+  bramach i świątyni, w regionach obozy przy punktach odrodzenia (w kole bez potworów). Nigdy dwa razy z rzędu w tym
+  samym punkcie.
+- **Ogłoszenia** w czacie i na pasku: 10 i 1 min przed przyjazdem, przyjazd, 5 min przed odjazdem, odjazd. Na mapie
+  świata ⚖ z czasem (wyblakłe 10 min przed przyjazdem), na minimapie ⚖ albo strzałka na krawędzi.
+- **Towar** (nowy na każdej wizycie, ten sam na każdym serwerze):
+  - 3 × ekwipunek: różne miejsca (wagi `LootTables.bossSlots`), Unikatowy 70% / Heroiczny 27% / Legendarny 3%, nigdy
+    Mityczny. Podstawa dla klasy kupującego, poziom przedmiotu = poziom postaci w paśmie mapy (miasto 1–100, Łąki 1–20,
+    Bór 20–45, Pustkowia 45–70, Szczyty 70–100), premie losowane przy zakupie. Ceny: Unikatowy 360 × poziom złota,
+    Heroiczny 1080 × poziom złota (ok. 120 / 360 zabójstw tego poziomu), Legendarny 400 Znaków Łowcy.
+  - 2 × materiały z puli (pył, odłamki, kryształ, rdzeń legendy za 150 Znaków, księżycowy płatek, złota płetwa, srebro,
+    mithril, adamantyt), tylko te, które pasmo mapy osiąga.
+  - 1 × barwnik karawany (4 nowe: szafran, śliwka, morska zieleń, rdza; `obtain.merchant`), 12 000 złota, kosmetyk
+    konta, nigdy za Smocze Łuski.
+  - 3 × zapasy: 10 mikstur jakości poziomu za 80% ceny alchemika, Heroiczne błogosławieństwo wylosowanej linii
+    (60 × poziom), Kamienie Mapy, Kamień Lochu, rzadko Zwój Ochrony (400 × poziom).
+- **Limity:** każda oferta ma limit na postać na wizytę (sprzęt, esencje, rdzeń, Zwój Ochrony 1; reszta 2–3). Wszystko
+  kupione jest związane z postacią i nie do sprzedania kupcowi (`bound`, `ns`). Bez Robux i Smoczych Łusek.
+
 ## 9. Mikstury (lekarz)
 
 - Trzy rodzaje: Życie (HP), Mana, Energia. Pięć jakości: Mała, Średnia, Duża, Wielka, Potężna. Przywracają odpowiednio 150 / 500 / 1 500 / 4 000 / 10 000 punktów (energia: 30/60/100/150/250). Ceny: 10 / 60 / 250 / 700 / 1 800 złota (S93: Wielka 900 → 700; S94: Potężna 3000 → 1800; złoto za 1 HP rośnie z
@@ -1299,6 +1325,23 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - **Śledzenie** (S151b): do 3 osiągnięć na postać w trackerze HUD pod questami (nazwa, postęp, pasek; klik otwiera
   okno; telefon pokazuje 1, reszta po rozwinięciu); zdobyte znika samo. Profil gracza: punkty, zdobyte i 3 ostatnie
   zdobyte (bez postępów w trakcie).
+
+## 20c. Bestiariusz (S151c)
+
+- **Zakładka okna osiągnięć** (ostatnia kategoria „Bestiariusz”, klawisz `N`, przycisk ✪ na HUD pod przepustką sezonu
+  i wpis w menu HUD). Każdy rodzaj potwora (50) i każdy boss (lochy i boss świata) to jeden wpis w swojej krainie
+  (Łąki, Bór, Pustkowia, Szczyty); u góry cztery krainy z paskiem postępu (zdobyte stopnie / wszystkie), pod nimi wpisy
+  wybranej krainy, po prawej szczegóły (telefon: arkusz).
+- **Stopnie:** potwory 10 / 100 / 1000 pokonanych (każdy wariant się liczy, przyzwani pomocnicy bossów nie), bossowie
+  1 / 10 / 50 nagrodzonych zwycięstw. Punkty bestiariusza za stopnie: potwory 2 / 5 / 10, bossowie 5 / 10 / 25;
+  wliczają się do punktów osiągnięć postaci (pasek u góry okna, profil).
+- **Co odkrywają:** przed pierwszym zabiciem „???” i kraina; od pierwszego nazwa, rodzina i licznik; stopień I podgląd
+  modelu, poziomy, miejsce i sposób ataku; stopień II łupy widziane przez tę postać (reszta „???”) i cecha obrony;
+  stopień III słabości (pancerz a odporność na magię, unik zwykłych ataków, żywioł ciosów).
+- **Premia za opanowanie:** każdy wpis na III stopniu daje +1% obrażeń przeciw swojej rodzinie, najwyżej +3% na rodzinę
+  (jak linia `vs_<rodzina>` przedmiotu, poza modelem tempa; test pilnuje, że limit jest mniejszy od najsłabszej
+  zwykłej linii `vs_`). Kraina z wszystkimi wpisami na III stopniu daje osiągnięcie „Znawca …” (50 pkt) z tytułem.
+- **Zakres:** postać (jak licznik zabójstw). Liczone od wprowadzenia bestiariusza (zapis nie pamięta zabójstw rodzajów).
 
 ## 21. Monetyzacja (bez pay-to-win)
 

@@ -3,11 +3,14 @@
 -- Config.Achievements.listRefresh seconds (the kill counter changes many times a minute), the window's own values
 -- (category, filter, range, selection, phone sheet) and the text helpers of the view model (Logic/AchievementView).
 -- The window computes no rule of its own.
+-- S151c: the bestiary tab (Context.BESTIARY as the category; BestiaryTab): its region and selected entry; a focus
+-- "best:<entry id>" opens it on that entry.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AchData = require(ReplicatedStorage.Shared.Data.Achievements)
 local AchievementView = require(ReplicatedStorage.Shared.Logic.AchievementView)
+local BestiaryData = require(ReplicatedStorage.Shared.Data.Bestiary)
 local Achievements = require(ReplicatedStorage.Shared.Logic.Achievements)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -21,6 +24,7 @@ export type Props = {
 	Track: (id: string, on: boolean) -> (),
 	SetTitle: (titleId: string) -> (),
 	OpenWardrobe: (cosmeticId: string) -> (),
+	BuildLook: any?, -- S151c: MonsterViewController.BuildPreview (WorldMap/Preview.BuildLook) for the bestiary
 }
 
 export type Ctx = {
@@ -31,9 +35,22 @@ export type Ctx = {
 	range: Fusion.Value<string>, -- "all" | "account" | "character"
 	selected: Fusion.Value<string?>,
 	sheet: Fusion.Value<boolean>, -- phone: the details sheet is open
+	region: Fusion.Value<string>, -- S151c: the bestiary region shown
+	entry: Fusion.Value<string?>, -- S151c: the selected bestiary entry
 }
 
 local Context = {}
+
+-- S151c: the category id of the bestiary tab (after Data/Achievements.CATEGORIES).
+Context.BESTIARY = "bestiary"
+
+-- The bestiary entry of a focus "best:<id>" (nil for anything else).
+function Context.bestiaryFocus(focus: string?): BestiaryData.Entry?
+	if type(focus) == "string" and string.sub(focus, 1, 5) == "best:" then
+		return BestiaryData.get(string.sub(focus, 6))
+	end
+	return nil
+end
 
 Context.ROMAN = table.freeze({ "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" })
 
@@ -44,6 +61,7 @@ Context.CAT_GLYPH = table.freeze({
 	craft = "⚒",
 	social = "☺",
 	journey = "✎",
+	bestiary = "❦", -- S151c
 } :: { [string]: string })
 
 Context.REWARD_GLYPH = table.freeze({
@@ -83,13 +101,23 @@ function Context.new(scope: Scope, props: Props): Ctx
 
 	local focus = Fusion.peek(props.Focus)
 	local focusDef = if focus then AchData.get(focus) else nil
-	local cat = scope:Value(if focusDef then focusDef.cat else AchData.CATEGORIES[1])
-	local sheet = scope:Value(focusDef ~= nil)
+	local focusEntry = Context.bestiaryFocus(focus)
+	local cat =
+		scope:Value(if focusEntry then Context.BESTIARY elseif focusDef then focusDef.cat else AchData.CATEGORIES[1])
+	local sheet = scope:Value(focusDef ~= nil or focusEntry ~= nil)
+	local region = scope:Value(if focusEntry then focusEntry.region else BestiaryData.REGIONS[1])
+	local entry = scope:Value(if focusEntry then focusEntry.id else nil :: string?)
 	-- a "View" while the window is open: its category and (phone) the sheet
 	scope:Observer(props.Focus):onChange(function()
 		local id = Fusion.peek(props.Focus)
 		local def = if id then AchData.get(id) else nil
-		if def then
+		local best = Context.bestiaryFocus(id)
+		if best then
+			cat:set(Context.BESTIARY)
+			region:set(best.region)
+			entry:set(best.id)
+			sheet:set(true)
+		elseif def then
 			cat:set(def.cat)
 			sheet:set(true)
 		end
@@ -103,6 +131,8 @@ function Context.new(scope: Scope, props: Props): Ctx
 		range = scope:Value("all"),
 		selected = props.Focus,
 		sheet = sheet,
+		region = region,
+		entry = entry,
 	}
 end
 

@@ -543,6 +543,14 @@ local function rewardAll(f: Fight): (number, number, { [Player]: { any } })
 			drops[player] = result
 			-- S151: a rewarded world boss fight (achievements)
 			QuestEvents.fire(player, "worldboss", { occId = f.occ.id, bossId = WorldBoss.def().id })
+			-- S151c: the bestiary's drops seen
+			local ids = {}
+			for _, item in (if type(result) == "table" then result else {}) :: { any } do
+				if type(item) == "table" and type(item.id) == "string" then
+					table.insert(ids, item.id)
+				end
+			end
+			QuestEvents.fire(player, "drop", { monsterId = WorldBoss.def().id, ids = ids })
 			SeasonService.Add(player, "worldBoss") -- S152: a rewarded fight
 		else
 			log:error("world boss reward for %s failed: %s", player.Name, tostring(result))

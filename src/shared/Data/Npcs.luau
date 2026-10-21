@@ -26,6 +26,7 @@ export type Service =
 	| "arenashop" -- S128: Arena Tokens shop (opens the arena window on its shop tab)
 	| "look" -- S132: change face, skin and hair (the look window; paid changes only here, Logic/CharacterLook)
 	| "huntshop" -- S134k: the Huntmaster's shop for Hunter's Marks (Data/HuntShop)
+	| "wanderer" -- S159w: the wandering merchant's goods (Data/WanderingMerchant, WanderingMerchantController)
 
 export type NpcDef = {
 	id: string,
@@ -423,6 +424,25 @@ for _, def in LIST do
 	byId[def.id] = def
 end
 
+-- S159w (owner 2026-10-20): the wandering merchant Radoslav (Data/WanderingMerchant). He has no fixed place, so he is
+-- not in `list` (the map pins, the wiki, the guide and the NPC placement read `list`); `get` finds him and
+-- WanderingMerchantService places his figure (NpcService.PlaceAt) where the visit is. `map` / `position` below are only
+-- the fallback of code that reads them.
+local WANDERER: NpcDef = {
+	id = "wanderer",
+	map = "city",
+	nameKey = "npc.wanderer.name",
+	greetingKey = "npc.wanderer.greeting",
+	services = { "talk", "wanderer" },
+	position = { x = 8, z = -48 },
+	facing = 180,
+	colors = { body = "#7A3E5A", accent = "#D8A43A" }, -- a plum coat and a saffron hat, the colours of his canvas
+	icon = "⚖",
+	lines = 3,
+	wiki = false,
+}
+byId[WANDERER.id] = WANDERER
+
 return table.freeze({
 	list = LIST,
 	byId = byId,
@@ -433,4 +453,5 @@ return table.freeze({
 	INTERACT_RANGE = 12,
 	-- S102: NPCs of later sessions on region spots (exported for tests/story.spec)
 	regionfolk = regionfolk,
+	WANDERER = WANDERER, -- S159w (wandering merchant)
 })
