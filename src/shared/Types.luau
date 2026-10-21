@@ -96,6 +96,9 @@ export type TutorialState = {
 	done: boolean,
 	skipped: boolean,
 	reward: boolean,
+	-- S155b: the first valuable drop given (Data/Tutorial.FIRST_DROP); nil in older saves (Tutorial.sanitize decides,
+	-- deliberately not in the AccountSchema template so reconcile does not fill it)
+	drop: boolean?,
 	pending: { [string]: boolean }?,
 }
 

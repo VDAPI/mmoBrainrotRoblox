@@ -23,6 +23,8 @@
 --     to Neon with their PointLights on; by day both go back to their own colour and material and lamp lights
 --     are off. Switching runs over several frames.
 -- Parts are anchored: all motion is a local CFrame from the remembered base, nothing is replicated.
+-- W29: lamp lights go through Util/LightBudget (the nearest few on, RegionLightController); flags, flickering lights
+-- and water shimmer move only within the graphics level's `fxRadius` of the camera.
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -31,6 +33,8 @@ local Workspace = game:GetService("Workspace")
 
 local BlueprintBuild = require(ReplicatedStorage.Shared.Util.BlueprintBuild)
 local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
+local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
+local LightBudget = require(script.Parent.Parent.Util.LightBudget)
 local MapLooks = require(ReplicatedStorage.Shared.Data.MapLooks)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local State = require(script.Parent.Parent.UI.State)
@@ -501,7 +505,8 @@ end
 local function setLampLight(holder: BasePart, night: boolean)
 	local light = holder:FindFirstChildOfClass("PointLight")
 	if light and not underground() then
-		light.Enabled = night
+		-- W29: through the light budget (RegionLightController keeps only the nearest wanted lights on)
+		LightBudget.SetWanted(light, night)
 	end
 end
 
@@ -613,6 +618,7 @@ local function onRemoved(instance: Instance)
 	nightApplied[part] = nil
 	local light = part:FindFirstChildOfClass("PointLight")
 	if light then
+		LightBudget.Forget(light)
 		flickers[light] = nil
 		breathLights[light] = nil
 		heartLights[light] = nil
@@ -636,9 +642,12 @@ end
 
 local function animate(now: number)
 	local at = focus()
+	-- W29: flags, flickers and water shimmer only near the camera (Config.Graphics.levels[*].fxRadius)
+	local reach = GraphicsLevel.get(State.Get({ "account", "settings", "quality" })).fxRadius
+	local flagReach = math.min(FLAG_RADIUS, reach)
 	for part, flag in flags do
 		local base = flag.base
-		if (base.Position - at).Magnitude > FLAG_RADIUS then
+		if (base.Position - at).Magnitude > flagReach then
 			continue
 		end
 		local top = base * CFrame.new(0, part.Size.Y / 2, 0)
@@ -662,9 +671,19 @@ local function animate(now: number)
 		end
 	end
 	for light, flicker in flickers do
+		if not light.Enabled then
+			continue
+		end
+		local holder = light.Parent
+		if holder and holder:IsA("BasePart") and (holder.Position - at).Magnitude > reach then
+			continue
+		end
 		light.Brightness = flicker.base * (0.85 + 0.3 * math.noise(now * 3, flicker.phase, 0.5))
 	end
 	for part, base in shimmers do
+		if (part.Position - at).Magnitude > reach then
+			continue
+		end
 		part.Transparency = math.clamp(base + 0.08 * math.sin(now * 2.2 + part.Position.X), 0, 1)
 	end
 	if now - slowClock >= 1 / 15 then

@@ -124,7 +124,8 @@ return {
 		{ path = "Data/Seasons", omit = { "SEASONS", "list", "KILL_SOURCES", "WEEK" } },
 		-- S155: the tutorial reward at level 5 (bound comfort items, no EXP, no gold); MOVE_STUDS / DONE_SECONDS are hint
 		-- timings, not balance
-		{ path = "Data/Tutorial", pick = { "REWARD", "REWARD_LEVEL" } },
+		-- S155b: the first valuable drop (FIRST_DROP: the rarity of a one-time copy of the starting weapon)
+		{ path = "Data/Tutorial", pick = { "REWARD", "REWARD_LEVEL", "FIRST_DROP" } },
 	} :: { ModuleEntry },
 	-- S134d: AutoPotion and AutoGrind (premium services with limits, like FullElixir / Lure)
 	CONFIG_KEYS = {
@@ -7285,6 +7286,12 @@ return {
 			{
 				session = "S154",
 				why = "new: item looks at the smith outside the pace model (a look, never power): gold ilvl x goldPerIlvl(ilvl) x 1.5 (the upgrade gold curve: 120 / 608 / 1470 / 3000 at L20 / 45 / 70 / 100, half of +1 on the weapon and below one reroll x1.8), essence by the rarity of the item that gets the look: Unique 2 dust, Heroic 1 shard, Legendary and Mythic 1 crystal, Common none (a sink small next to the band's dismantling); taking a look off is free, a boss look costs the same",
+			},
+		},
+		["Tutorial:FIRST_DROP*"] = {
+			{
+				session = "S155b",
+				why = "new: the first monster a new character kills drops once a Heroic, bound copy of the weapon it wields (same kind and element, so the skill pool stays) at its level: the first exciting drop of the first minutes and the item the gearUp quest asks to equip; a starting-weapon base at level 1-2, outgrown by ordinary drops within a few levels (no EXP, no gold)",
 			},
 		},
 		["Tutorial:*"] = {

@@ -1179,6 +1179,12 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   klawisze gracza, telefon: przyciski), do pominięcia w każdej chwili („Pomiń samouczek” → „Na pewno?”). Na 5. poziomie
   każda nowa postać (także po pominięciu) dostaje tytuł „Pierwsze Kroki”, 3 Kamienie Powrotu i 10 Małych Mikstur Życia,
   związane, bez EXP i złota (`Data/Tutorial`). Lejek onboardingu: kroki samouczka, zadania fabuły 1–10, 5. poziom.
+  S155b: pierwszy potwór nowej postaci zostawia raz osobny worek z Heroiczną, związaną kopią trzymanej broni (ten sam
+  rodzaj i żywioł, więc pula umiejętności się nie zmienia; słup światła, toast i okno odsłonięcia z „Załóż”). Nagroda za
+  logowanie nie otwiera się sama w trakcie samouczka (tylko „!” na przycisku). Konto z postacią na 5.+ poziomie widzi
+  „Znam grę, pomiń samouczek”. HUD sam się tłumaczy: „!” na plecaku przy nierozdanych punktach statystyk, a awans na
+  poziom nowej funkcji (pierwszy loch, wierzchowce, arena; `Logic/Unlocks`) pokazuje toast i „!” na jej przycisku do
+  pierwszego otwarcia.
 - **Zlecenia łowieckie (S99)**: jedno na każdy poziom 1–99 (`Data/Quests/Contracts`, generowane z łowisk): ubij n
   potworów na łowisku otwartej krainy pasującym do poziomu (n 10 → 30 na 1–20, 30 → 60 na 20–99, rotacja łowisk).
   Nagroda 12% EXP poziomu (od 4. poziomu; 1–3 tylko złoto, S109) i złoto 20 + 4·L, co 10. zlecenie błogosławieństwo

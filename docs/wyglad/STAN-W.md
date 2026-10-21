@@ -33,6 +33,8 @@ W21–W24 (sekrety jaskiń z planów): wszystkie punkty „Sekrety” i „doda�
 
 W25 / W26: 47 modeli Tripo w grze (`Data/MonsterAssets`, modele w miejscu w `Assets.Monsters`); 27 dwunożnych z klipami (`Data/MonsterClips`, `client/Anim/BoneClips`), 20 czworonogów i latających ruszanych całym ciałem (`Gait_Body`). Brak: własne klipy czworonogów, ataki z bronią zamiast Zombie Attack, modele bossów bez Tripo (Vaelgrath i inne z listy).
 
+W29 (części 1–2): niska jakość na telefonie przy pierwszym wejściu; budżety części i świateł na komórkę 128 st. dla każdej mapy (`tools/perf_report.luau`, `perf.spec`); tryb niski naprawdę tnie (detal, połowa drzew wypełnienia, krzaki, dekoracje, 12 najbliższych świateł, cienie, cząsteczki, ruch ramek, strzałki, tabliczki); układ HUD telefonu bez nachodzeń na 844x390, 667x375 i 932x430 (`Logic/PhoneHud`, `phonehud.spec`). Nieobejrzane w Studio ani na telefonie. Czeka na ocenę.
+
 W28 (części 1–2): liczby obrażeń (obrys, połysk, wyskok, dryf); okna i okna dialogowe otwierają się na sprężynie i zamykają tą samą drogą, wyskakujące karty wskakują; przyciski HUD z welonem przy najechaniu i wciśnięciem; pasek HP ze śladem straconego zdrowia i oddechem przy niskim HP; toasty wchodzą i gasną; obrysy HUD z tokenów. Nieobejrzane w Studio. Czeka na ocenę.
 
 W13–W20 (części 2, kod, nieobejrzane): rekwizyty, postoje, roślinność i sekrety z planów czterech map (`MeadowsGen/Dressing`, `DuskwoodGen/Dress`, `AshenGen/Finish`, `FrostpeakGen/Scenery`). W03–W07: styl pilota na wszystkich klasach (8 nowych tekstur, `rockBurst`, `warCry`, `holyBurst`, `leafBurst`, swoosh). W27: 194 z 215 pętli otoczenia z ProSoundEffects (nieodsłuchane).
@@ -41,10 +43,11 @@ W13–W20 (części 2, kod, nieobejrzane): rekwizyty, postoje, roślinność i s
 
 - W01: malowane niebo na 4 pory (`docs/wyglad/ZAKUPY.md`); Łąki, miasto i Szczyty na niebie miejsca.
 - W01: pusta przestrzeń za brzegiem mapy widoczna przy horyzoncie jako szare pasmo, zanim streaming wczyta dalszy teren (tło gór / dalekie LOD w sesjach map W12–W20).
-- W01: punkty orientacyjne ≥ 30 st. (`landmark:*`) są `Persistent` (W29); w grze nieobejrzane, czy model zagnieżdżony w modelu budowli zostaje za promieniem 512. `RenderFidelity` siatek (D3) nieskryptowalne: ustawić na modelach w `Assets.Kit` w Studio.
+- W01: punkty orientacyjne ≥ 30 st. (`landmark:*`) są `Persistent` (W29); w grze nieobejrzane, czy model zagnieżdżony w modelu budowli zostaje za promieniem 512. `RenderFidelity` i `CollisionFidelity` siatek (D3) nieskryptowalne (sprawdzone w W29): ustawić na modelach w `Assets.Kit` w Studio. Poziomy jakości z W01 tną teraz także detal, światła i cienie (W29).
 - W02: zestaw ma warianty tylko dla Łąk (`grass`); Bór, Pustkowia, Szczyty, miasto na klockach do czasu zakupów albo darmowych paczek (Quaternius) w sesjach map.
 - W02: modele zestawu i materiały żyją w miejscu (`Assets.Kit`, `MaterialService`): właściciel zapisuje miejsce.
-- W02: drzewa wypełnienia i krzaki na kliencie przy niskiej jakości bez osobnego przycięcia (koszt +0,3 ms na PC); sprawdzić na telefonie (W29).
+- ~~W02: drzewa wypełnienia i krzaki na kliencie przy niskiej jakości bez osobnego przycięcia~~ Rozwiązane w W29: niska jakość buduje połowę drzew wypełnienia i 35% krzaków (średnia 100% / 75%), a detal świata najwyżej „niski”. Na prawdziwym telefonie nie mierzone.
+- W29: HUD telefonu i tryb niski nieobejrzane (Studio, telefon); stos po lewej nad strefą gałki ruchu, portret przy górnym pasku Roblox na 667x375.
 - W08: zrzuty i nagrania ruchu, pływanie i atak w biegu nie obejrzane wizualnie (Studio w tle nie renderuje).
 - W09: A2 (ciało z Tripo + Avatar Setup), ładniejsze kształty strojów (C2), blizna i piegi na dynamicznej głowie, przenikanie strojów w ruchu i chwyt broni nie oglądane.
 - W10: kolor oczu (oczy w teksturze dynamicznej głowy), malunki nieobejrzane na twarzy (pozycja na głowie z obliczeń), wygląd fryzur warstwowych w podglądzie przybliżony.

@@ -16,6 +16,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GameMenu = require(script.Parent.Parent.UI.Screens.GameMenu)
 local BackpackPanel = require(script.Parent.Parent.UI.Screens.BackpackPanel)
 local BloodMoonView = require(script.Parent.Parent.UI.BloodMoonView)
+local MenuAttention = require(script.Parent.Parent.UI.MenuAttention) -- S155b
 local SkillsAttention = require(script.Parent.Parent.UI.SkillsAttention)
 local SkillsWindow = require(script.Parent.Parent.UI.Screens.SkillsWindow)
 local Hud = require(script.Parent.Parent.UI.Screens.Hud)
@@ -66,7 +67,14 @@ end
 
 -- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
 local MENU: { Hud.MenuEntry } = {
-	{ id = "inventory", icon = "▣", hotkey = "B", tooltipKey = "hud.menu.inventory" },
+	-- S155b: "!" while stat points wait (MenuAttention)
+	{
+		id = "inventory",
+		icon = "▣",
+		hotkey = "B",
+		tooltipKey = "hud.menu.inventory",
+		badge = MenuAttention.statPoints,
+	},
 	{ id = "skills", icon = "✦", hotkey = "K", tooltipKey = "hud.menu.skills", badge = SkillsAttention.badge },
 	-- S127: the world map and the journal need the world (hidden on an arena server)
 	{ id = "map", icon = "⌖", hotkey = "M", tooltipKey = "hud.menu.map", visible = worldOnly },
@@ -81,6 +89,7 @@ local MENU: { Hud.MenuEntry } = {
 		icon = "♞",
 		hotkey = "J",
 		tooltipKey = "hud.menu.mounts",
+		badge = MenuAttention.unlocked("mounts"), -- S155b: "!" after the level up that unlocks it
 		visible = function(use: Fusion.Use): boolean
 			return use(MountController.Access) == true and ServerModeView.isWorld()
 		end,
@@ -88,7 +97,13 @@ local MENU: { Hud.MenuEntry } = {
 	-- S124: rankings (RankingsController registers the window; key win_rankings)
 	{ id = "rankings", icon = "♔", hotkey = "R", tooltipKey = "hud.menu.rankings" },
 	-- S126: the ranked arena next to the rankings (ArenaController registers the window; key win_arena)
-	{ id = "arena", icon = "⚔", hotkey = "U", tooltipKey = "hud.menu.arena" },
+	{
+		id = "arena",
+		icon = "⚔",
+		hotkey = "U",
+		tooltipKey = "hud.menu.arena",
+		badge = MenuAttention.unlocked("arena"), -- S155b
+	},
 	-- S129: the Blood Moon results, from 10 min before the start until the results go (BloodMoonController registers
 	-- the window; no key)
 	{

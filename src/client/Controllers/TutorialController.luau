@@ -8,7 +8,8 @@
 -- steering (Tutorial.walk: the spawn pivot and teleports never count), "backpack" when the backpack window opens; the
 -- server counts the rest itself. The hint hides while a modal, a cutscene (the HUD layer is hidden), death or a dialog
 -- window (NPC, quest, login reward, "What has changed") is up or the login reward / the letter still waits to open on
--- its own (their Pending), so on the first entry the login reward and the letter come first. The "quest" step guides the path
+-- its own (their Pending), so on the first entry the letter comes first (S155b: the login reward waits for the end
+-- of the tutorial instead, LoginRewardController). The "quest" step guides the path
 -- to the captain once (NavController.GuideToNpc) while no story quest is taken. W28: while the hint shows, every step
 -- with a world target (Logic/Tutorial.guide) drives the golden world guide (GuidePointerController: an arrow over the
 -- head, chevrons on the ground, a diamond over the target, an arrow at the screen's edge): the captain, in the city the
@@ -264,7 +265,11 @@ local function sameView(a: TutorialHint.View?, b: TutorialHint.View?): boolean
 	if a == nil or b == nil then
 		return a == b
 	end
-	return a.caption == b.caption and a.text == b.text and a.key == b.key and a.finale == b.finale
+	return a.caption == b.caption
+		and a.text == b.text
+		and a.key == b.key
+		and a.finale == b.finale
+		and a.veteran == b.veteran
 end
 
 local function sameRect(a: HudAnchors.Rect?, b: HudAnchors.Rect?): boolean
@@ -389,8 +394,10 @@ local function tick()
 	local touch = Fusion.peek(Device.Touch) == true
 	local away = step.travel == true and Fusion.peek(zoneMap) == Config.StartingMap
 	-- owner 2026-10-20: the hint says "follow the quest arrow" and there was none without a tracked quest: the travel
-	-- step guides to the first hunting ground of the Meadows itself (once per step)
-	if away and travelGuided ~= step.id then
+	-- step guides to the first hunting ground of the Meadows itself (once per step). S155b: only without a tracked
+	-- quest target; with one (the healer, the smith, the portal) the golden arrow follows the story quests and a path
+	-- straight to the Meadows would point the other way.
+	if away and travelGuided ~= step.id and Fusion.peek(QuestTrack.Target) == nil then
 		travelGuided = step.id
 		NavController.Guide({ map = "meadows", x = -672, z = 0, labelKey = "area.meadows_rabbitfields" })
 	end
@@ -405,6 +412,7 @@ local function tick()
 		text = Text.now(Tutorial.text(step, touch, away), args),
 		key = if touch or away then nil else plaque(args),
 		finale = finale,
+		veteran = Tutorial.veteran(State.Get({ "slots" })),
 	}
 	if not sameView(Fusion.peek(view), nextView) then
 		view:set(nextView)

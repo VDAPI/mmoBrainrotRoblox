@@ -24,6 +24,7 @@ export type Placement = {
 	tint: Color3?,
 	paint: { color: Color3, material: Enum.Material }?,
 	persistent: boolean?, -- W29: a big landmark kept streamed to every player (Config.Kit.persistentSize)
+	extent: number, -- W29: the template's larger side (height or width) before scaling
 }
 -- (slot, frame of the Build) -> where the slot's model stands, or nil (keep the pieces)
 export type Resolver = (slot: Slot, base: CFrame) -> Placement?
@@ -151,6 +152,7 @@ function KitAssets.resolver(mapId: string): Resolver?
 			tint = if tint then Color3.fromHex(tint) else nil,
 			paint = if paint and material then { color = Color3.fromHex(paint.color), material = material } else nil,
 			persistent = string.sub(slot.key, 1, 9) == "landmark:" and choice.size >= Config.Kit.persistentSize,
+			extent = math.max(t.height, t.width),
 		}
 	end
 end
@@ -205,6 +207,14 @@ function KitAssets.place(placement: Placement, parent: Instance): Model
 	end
 	if placement.persistent then
 		model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
+	end
+	-- W29: small props (bushes, undergrowth, pebbles) cast no shadow
+	if placement.extent * placement.scale < Config.Kit.shadowMin then
+		for _, d in model:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CastShadow = false
+			end
+		end
 	end
 	model.Parent = parent
 	return model
