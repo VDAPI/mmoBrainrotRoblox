@@ -3,10 +3,14 @@
 -- (MeadowsGen/Water) falls clear of the rock wall from the edge of the plateau into the pool (before, its sheets ran
 -- from the lip to the foot of the wall and lay inside the rock), the middle sheet carries the client's falling water
 -- ("waterfall"), foam lies on the pool, the wet rocks stay off the curtain and the client hangs its beams on it.
+-- Studio review 2026-10-21: the curtain's foot and the foam lay on the pool's shallow rim, which the 4-stud voxels
+-- write as dry ground; now they land in water the voxels show (the plunge pool of Data/Terrain/meadows) and the wall
+-- round the fall is wet dark rock.
 
 local fs = require("@lune/fs")
 
 local MeadowsTerrain = require("../src/shared/Logic/MeadowsTerrain")
+local TerrainLayers = require("../src/shared/Logic/TerrainLayers")
 local Test = require("./Test")
 local Water = require("../src/shared/Logic/MeadowsGen/Water")
 local WorldGen = require("../src/shared/Logic/WorldGen")
@@ -86,6 +90,67 @@ describe("Bear Ravine waterfall (W30)", function()
 			end
 		end
 		expect(sheets).toBe(3)
+	end)
+
+	it("lands in water the voxels show, a stud and more past the foot of the wall", function()
+		local g = Water.fallGeometry()
+		for _, back in { 0, 1 } do
+			local t = g.horiz - back
+			local x, z = g.x + g.dx * t, g.z + g.dz * t
+			if TerrainLayers.voxelWater(MeadowsTerrain.height, MeadowsTerrain.water, x, z) == nil then
+				error(string.format("the foot of the fall on dry voxels at %.1f, %.1f", x, z))
+			end
+		end
+	end)
+
+	it("lays the foam on the water, never on a dry bank (where it shows over the ground)", function()
+		local b = waterfall()
+		local foams = 0
+		for _, piece in b.bp.pieces do
+			if piece.s == "ball" and piece.m == "SmoothPlastic" then
+				foams += 1
+				local sx, sz = piece.size[1], piece.size[3]
+				for u = -0.45, 0.45, 0.05 do
+					for v = -0.45, 0.45, 0.05 do
+						if u * u + v * v <= 0.2 then
+							local p = world(b, piece, { u * sx, 0, v * sz })
+							if
+								MeadowsTerrain.height(p[1], p[3]) < p[2]
+								and TerrainLayers.voxelWater(
+										MeadowsTerrain.height,
+										MeadowsTerrain.water,
+										p[1],
+										p[3]
+									)
+									== nil
+							then
+								error(string.format("foam on dry ground at %.1f, %.1f, %.1f", p[1], p[2], p[3]))
+							end
+						end
+					end
+				end
+			end
+		end
+		expect(foams).toBe(2)
+	end)
+
+	it("turns the wall beside the fall to wet dark rock and leaves the rest of the ravine as it was", function()
+		local g = Water.fallGeometry()
+		local wall = 0
+		for t = 0.5, 4, 0.5 do
+			for _, u in { -9, -6, 6, 9 } do
+				local x, z = g.x + g.dx * t - g.dz * u, g.z + g.dz * t + g.dx * u
+				local h = MeadowsTerrain.height(x, z)
+				if MeadowsTerrain.water(x, z) == nil and h < g.top - 2 then
+					wall += 1
+					expect(MeadowsTerrain.material(x, z)).toBe("Basalt")
+				end
+			end
+		end
+		expect(wall > 10).toBe(true)
+		for _, p in { { 690, 296 }, { 640, 270 }, { 560, 282 }, { 718, 330 } } do
+			expect(MeadowsTerrain.material(p[1], p[2]) ~= "Basalt").toBe(true)
+		end
 	end)
 
 	it("tags the middle sheet for the falling water and the pool for foam", function()

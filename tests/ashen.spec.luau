@@ -821,16 +821,6 @@ describe("Ashen Wastes: generator", function()
 		expect(per.fishing_ashen).toBe(2)
 	end)
 
-	it("puts the fishing spots on the north shores with water where the buoys float", function()
-		local spots = AshenGen.fishingSpots()
-		expect(#spots).toBe(2)
-		for _, spot in spots do
-			expect(T.isWater(spot.x, spot.z)).toBe(false)
-			expect(T.isWater(spot.x, spot.z + 9)).toBe(true)
-			expect(T.isWater(spot.x, spot.z + 12)).toBe(true)
-		end
-	end)
-
 	it("gives the client life to animate and the map a sketch with lava", function()
 		local kinds: { [string]: number } = {}
 		for _, l in AshenGen.life() do
@@ -987,8 +977,9 @@ describe("Ashen Wastes: story places of chapter III (S104)", function()
 				sz += n.z
 			end
 			expect(#nodes).toBe(50)
-			expect(sx).toBe(-11331)
-			expect(sz).toBe(1059)
+			-- (studio review 2026-10-21: only the two fishing spots moved, Logic/FishingSpots: -11331 / 1059 before)
+			expect(sx).toBe(-11311)
+			expect(sz).toBe(1072)
 			local found: { [string]: boolean } = {}
 			for _, b in AshenGen.all() do
 				if b.name == "RunesmithCamp" or b.name == "ShamanRest" or b.name == "HermitThreshold" then

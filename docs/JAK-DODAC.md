@@ -196,7 +196,10 @@
   `Details.isOpen/setOpen`; `Build(s)` buduje treść dopiero po otwarciu) albo
   `Tooltip.attach(scope, obiekt, krótki, szczegóły?)` (dymek pokazuje krótki tekst i „Alt: szczegóły”; przytrzymany
   klawisz `item_details`, domyślnie Alt, bo Shift ma kamera, albo dłuższe przytrzymanie na telefonie dokłada szczegóły;
-  ze szczegółami oba teksty są rich text; skład w czystym `Logic/TipText`, test `tests/tiptext.spec`).
+  ze szczegółami oba teksty są rich text; skład w czystym `Logic/TipText`, test `tests/tiptext.spec`). Tooltip
+  przedmiotu: `TooltipModel.build(..., { view = "compact" | "full" })` (nowa rola pełnego widoku trafia do skróconego
+  tylko przez `COMPACT_KEEP` albo zwinięcie w `compactOf`; limit `COMPACT_MAX_LINES` pilnuje `tests/tooltip.spec`);
+  umiejętność na pasku: `SkillInfo.tooltip` → `{ short, details }`, rodzaj linii w `TipText.SKILL_COMPACT`.
   Linia z „i” zaraz za tekstem: `InfoLine.new(scope, { Text, Info, InfoTitle?, InfoVisible?, Center?, Font?,
   TextSize?, Color?, Size?, LayoutOrder? })` (`UI/Components/InfoLine`: tekst zawija się przed „i”, więc mieści się w
   wąskiej karcie i na telefonie). „i” nie budować w `Computed` przebudowywanym co sekundę (zegar areny, karta mapy):

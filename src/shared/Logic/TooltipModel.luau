@@ -22,6 +22,12 @@
 --   offhand: ItemInstance  -- S68: equipped off-hand (a two-handed candidate also replaces it)
 --   input: "mouse"|"touch" -- S68: picks the details hint; nil = no hint (tests, admin dump)
 --   detailsKey: string     -- S68: label of the details key on PC (Keybinds.label("item_details"))
+--   view: "compact"|"full" -- 2026-10-21: "compact" = the short tooltip (TooltipModel.compactOf); nil = the full one
+--
+-- 2026-10-21 (owner: descriptions too long, the game unreadable): the item tooltip opens compact (name, head, rarity,
+-- the main value in one line, at most COMPACT_STATS + 1 stat rows, the trait and each skill effect in one line, a price
+-- only in a shop or at a merchant, the "Alt: details" / "More ▸" line). Holding the details key (PC) or "More ▸"
+-- (touch) shows the full tooltip below; the compact one only leaves lines out, every one stays in the full view.
 --
 -- Line fields: `text` (may hold rich text), `role` (what the line is, for tests and the admin dump), `tone`
 -- (colour role), `hex` (explicit colour, overrides tone), `size`, `font`; bonus rows have `kind = "bonus"`,
@@ -95,6 +101,7 @@ export type Line = {
 	tier: Tier?, -- Bonuses tier of a bonus row (S62)
 	detail: DetailRef?, -- S68: rows that open a details panel
 	rerolled: boolean?, -- S134j: the item's locked reroll line (ItemTooltip adds TooltipModel.REROLL_MARK)
+	main: boolean?, -- 2026-10-21: the main value (damage, magic damage, armour), not a grouped statistic
 }
 
 export type Ctx = {
@@ -113,6 +120,7 @@ export type Ctx = {
 	offhand: ItemInstance?,
 	input: ("mouse" | "touch")?,
 	detailsKey: string?,
+	view: ("compact" | "full")?,
 }
 
 export type Model = { lines: { Line } }
@@ -497,14 +505,19 @@ local function mainValue(b: Builder, item: ItemInstance, stats: ItemRoll.ItemSta
 	local w = stats.weapon
 	if w then
 		if w.dmg > 0 then
-			b.add("stat", Locale.T("tooltip.damage", { dmg = w.dmg }, lang), "dark", { size = "body", font = "bold" })
+			b.add(
+				"stat",
+				Locale.T("tooltip.damage", { dmg = w.dmg }, lang),
+				"dark",
+				{ size = "body", font = "bold", main = true }
+			)
 		end
 		if w.mdmg > 0 then
 			b.add(
 				"stat",
 				Locale.T("tooltip.magicDamage", { mdmg = w.mdmg }, lang),
 				"dark",
-				{ size = "body", font = "bold" }
+				{ size = "body", font = "bold", main = true }
 			)
 		end
 		local speed = Locale.T("tooltip.speed", { speed = decimal(w.speed, 2, lang) }, lang)
@@ -515,7 +528,7 @@ local function mainValue(b: Builder, item: ItemInstance, stats: ItemRoll.ItemSta
 			"stat",
 			`{statName(lang, MAIN_BASE)}: <b>{formatStat(MAIN_BASE, stats.base[MAIN_BASE], lang)}</b>`,
 			"dark",
-			{ size = "body" }
+			{ size = "body", main = true }
 		)
 	end
 end
@@ -819,13 +832,11 @@ local function replaceNotes(b: Builder, item: ItemInstance, d: ItemDef, c: Ctx, 
 	end
 end
 
--- Builds the tooltip lines of `item` (def defaults to Items.get(item.id)). S134g (F1, docs/DESIGN.md §23): name, head
+-- The full tooltip of `item` (def defaults to Items.get(item.id)). S134g (F1, docs/DESIGN.md §23): name, head
 -- ("Kind · Category · Level N · Classes"), rarity (small), the main value, the statistics in small type in fixed
 -- groups, the rarity bonus, the trait, the skill effects, the description, the replace notes, binding, stack, item
 -- level, value / price, the details hint and the action hint. Every category has the same first three lines.
-function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
-	local c: Ctx = ctx or {}
-	local lang = c.lang or Locale.getLanguage()
+local function buildFull(item: ItemInstance, def: ItemDef?, c: Ctx, lang: string): Model
 	local b = builder()
 	local itemDef = def or Items.get(item.id)
 	if not itemDef then
@@ -960,9 +971,10 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 			end
 		end
 		if any then
+			-- 2026-10-21: on PC the full view shows while the details key is held, so the hint only says to point
 			local text = if c.input == "touch"
 				then Locale.T("tooltip.detailsHint.touch", nil, lang)
-				else Locale.T("tooltip.detailsHint.mouse", { key = c.detailsKey or "Alt" }, lang)
+				else Locale.T("tooltip.detailsHint.mouse", nil, lang)
 			b.add("detailsHint", text, "muted", { size = "small" })
 		end
 	end
@@ -977,6 +989,202 @@ function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
 		end
 	end
 	return { lines = b.lines }
+end
+
+-- Compact view (2026-10-21) --------------------------------------------------------------------------------------
+
+-- The most lines of a compact tooltip (tests/tooltip.spec: every legendary item with the hint line; a mythic one with
+-- two effects may need one more): the stat rows (base statistics and lines) get what the other lines leave, at least
+-- COMPACT_MIN_STATS of them are shown; rows over the budget become "+N more".
+TooltipModel.COMPACT_MAX_LINES = 10
+TooltipModel.COMPACT_MIN_STATS = 2
+-- Material uses shown before "+N more".
+TooltipModel.COMPACT_USES = 2
+
+-- Roles of the full tooltip the compact one keeps as they are.
+local COMPACT_KEEP: { [string]: boolean } = {
+	name = true,
+	head = true,
+	rarity = true,
+	effect = true, -- what a potion, elixir, blessing, stone, tool or backpack does
+	duration = true,
+	usedFor = true,
+	compareNote = true, -- red: an off-hand next to a two-hander
+	price = true, -- shop price
+	sellFor = true, -- a merchant is open
+}
+
+-- Roles folded into one compact line (mainShort, traitShort, fxShort) or counted in "+N more".
+local STAT_ROLES: { [string]: boolean } = { stat = true, bonus = true, gap = true }
+
+local function moreLine(b: Builder, n: number, lang: string)
+	b.add("more", Locale.T("tooltip.compact.more", { n = n }, lang), "muted", { size = "small" })
+end
+
+-- The compact tooltip made from the full one (`full` = buildFull's lines): it keeps COMPACT_KEEP, folds the weapon's
+-- main value, the trait and each skill effect into one line, cuts the stat rows to the line budget and the material
+-- uses, and ends with the details hint when the caller says the input ("moreHint"). Every line it leaves out stays in
+-- the full view.
+function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang: string): { Line }
+	local b = builder()
+	local hidden = false
+	local mainDone = false
+	local statRows: { Line } = {}
+	local statsAt: number? = nil
+	local i = 1
+	while i <= #full do
+		local line = full[i]
+		local role = line.role
+		-- "cannot be sold" only matters at a merchant or in a shop (red)
+		if COMPACT_KEEP[role] or (role == "noSell" and (c.merchantOpen or c.shopEntry ~= nil)) then
+			table.insert(b.lines, line)
+		elseif line.main or role == "speedDps" then
+			-- weapon: "Damage 191 · DPS 229.2" in one line; armour: its armour line as it is
+			local weapon = ItemRoll.itemStats(item).weapon
+			if not weapon then
+				table.insert(b.lines, line)
+			elseif not mainDone then
+				local parts: { string } = {}
+				if weapon.dmg > 0 then
+					table.insert(parts, Locale.T("tooltip.damage", { dmg = weapon.dmg }, lang))
+				end
+				if weapon.mdmg > 0 then
+					table.insert(parts, Locale.T("tooltip.magicDamage", { mdmg = weapon.mdmg }, lang))
+				end
+				table.insert(
+					parts,
+					Locale.T("tooltip.compact.dps", { dps = decimal(TooltipModel.dps(weapon), 1, lang) }, lang)
+				)
+				b.add("mainShort", table.concat(parts, " · "), "dark", { size = "body", font = "bold" })
+			end
+			mainDone = true
+			hidden = hidden or role == "speedDps"
+		elseif STAT_ROLES[role] then
+			-- the grouped statistics are one block, cut to the budget below (the place is kept)
+			while i <= #full and STAT_ROLES[full[i].role] and not full[i].main do
+				if full[i].role ~= "gap" then
+					local copy = table.clone(full[i])
+					copy.detail = nil -- the details panels belong to the full view
+					table.insert(statRows, copy)
+				end
+				i += 1
+			end
+			i -= 1
+			statsAt = #b.lines + 1
+		elseif role == "traitName" then
+			-- "◆ Fencing · 10%: counter after a blow"
+			local ref = line.detail
+			local def = if ref and ref.kind == "trait" then ItemTraits.get(ref.id) else nil
+			local nextLine = full[i + 1]
+			local text = if nextLine and nextLine.role == "trait" then nextLine.text else ""
+			local name = if def then Locale.T(def.nameKey, nil, lang) else TooltipModel.plain(line.text)
+			b.add(
+				"traitShort",
+				if text ~= "" then `{ItemTraits.ICON} <b>{name}</b> · {text}` else `{ItemTraits.ICON} <b>{name}</b>`,
+				"trait",
+				{ hex = ItemTraits.COLOR }
+			)
+			if nextLine and nextLine.role == "trait" then
+				i += 1
+			end
+			hidden = true
+		elseif role == "fxTitle" then
+			-- "<name> · <what it does>", muted with "(works for: Mage)" for another class
+			local ref = line.detail
+			local def = if ref and ref.kind == "effect" then ItemEffects.resolve(ref.id) else nil
+			local name = if def then Locale.T(def.nameKey, nil, lang) else TooltipModel.plain(line.text)
+			local text = ""
+			local other: string? = nil
+			local j = i + 1
+			while j <= #full and (full[j].role == "fx" or full[j].role == "fxPool" or full[j].role == "fxClass") do
+				if full[j].role == "fx" then
+					text = full[j].text
+				elseif full[j].role == "fxClass" then
+					other = full[j].text
+				end
+				j += 1
+			end
+			i = j - 1
+			local hex = line.hex or Rarities.get(Rarities.LEGENDARY).textHex
+			local short = `<font color="{hex}"><b>{name}</b></font>`
+			if text ~= "" then
+				short ..= ` · {text}`
+			end
+			if other then
+				short ..= ` {other}`
+			end
+			b.add("fxShort", short, if other then "muted" else "dark", { tier = line.tier })
+			hidden = true
+		elseif role == "use" then
+			-- material uses: the first ones, the rest counted
+			local uses: { Line } = {}
+			while i <= #full and full[i].role == "use" do
+				table.insert(uses, full[i])
+				i += 1
+			end
+			i -= 1
+			local shown = if #uses <= TooltipModel.COMPACT_USES + 1 then #uses else TooltipModel.COMPACT_USES
+			for n = 1, shown do
+				table.insert(b.lines, uses[n])
+			end
+			if shown < #uses then
+				moreLine(b, #uses - shown, lang)
+				hidden = true
+			end
+		elseif role ~= "detailsHint" then
+			hidden = true
+		end
+		i += 1
+	end
+	-- the stat rows: as many as the other lines leave (the hint line counted), the rest "+N more"
+	local at = statsAt
+	if at then
+		local others = #b.lines + (if c.input then 1 else 0)
+		local budget = math.max(TooltipModel.COMPACT_MIN_STATS + 1, TooltipModel.COMPACT_MAX_LINES - others)
+		local shown = if #statRows <= budget then #statRows else budget - 1
+		local block: { Line } = table.move(statRows, 1, shown, 1, {})
+		if shown < #statRows then
+			table.insert(block, {
+				kind = "text",
+				role = "more",
+				text = Locale.T("tooltip.compact.more", { n = #statRows - shown }, lang),
+				tone = "muted",
+				size = "small",
+			})
+			hidden = true
+		end
+		for n, line in block do
+			table.insert(b.lines, at + n - 1, line)
+		end
+	end
+	if hidden and c.input then
+		local text = if c.input == "touch"
+			then Locale.T("ui.details.more", nil, lang)
+			else Locale.T("tooltip.more.mouse", { key = c.detailsKey or "Alt" }, lang)
+		b.add("moreHint", text, if c.input == "touch" then "bonus" else "muted", { size = "small" })
+	end
+	return b.lines
+end
+
+-- Builds the tooltip lines of `item` (def defaults to Items.get(item.id)): the full view, or with ctx.view "compact"
+-- the short one (TooltipModel.compactOf). ctx.view "full" on touch ends with "Less ▾" (role lessHint), the way back.
+function TooltipModel.build(item: ItemInstance, def: ItemDef?, ctx: Ctx?): Model
+	local c: Ctx = ctx or {}
+	local lang = c.lang or Locale.getLanguage()
+	local model = buildFull(item, def, c, lang)
+	if c.view == "compact" then
+		return { lines = TooltipModel.compactOf(model.lines, item, c, lang) }
+	end
+	if c.view == "full" and c.input == "touch" and #model.lines > 3 then
+		table.insert(model.lines, {
+			kind = "text",
+			role = "lessHint",
+			text = Locale.T("ui.details.less", nil, lang),
+			tone = "bonus",
+			size = "small",
+		})
+	end
+	return model
 end
 
 -- Details panel (S68, STATY 11) ------------------------------------------------------------------------------
