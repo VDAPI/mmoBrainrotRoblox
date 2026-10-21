@@ -6,6 +6,7 @@
 local CollectionService = game:GetService("CollectionService")
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
+local ArchFit = require(game:GetService("ReplicatedStorage").Shared.Logic.ArchFit)
 local BlueprintBuild = require(game:GetService("ReplicatedStorage").Shared.Util.BlueprintBuild)
 local CaveMouth = require(game:GetService("ReplicatedStorage").Shared.Data.CaveMouth)
 local Portals = require(game:GetService("ReplicatedStorage").Shared.Data.Portals)
@@ -700,9 +701,6 @@ end
 local PORTAL_MODEL = "common_portal_01"
 local PORTAL_MODEL_WILD = "common_portal_02"
 local PORTAL_TURN = 0
--- W28: the field inside the painted model's opening keeps this share of the model's width and height
-local OPENING_WIDTH = 0.62
-local OPENING_HEIGHT = 0.78
 
 -- Box of `model`'s parts in the frame `base` (min and max corners), or nil without parts.
 local function boxIn(model: Model, base: CFrame): (Vector3?, Vector3?)
@@ -731,36 +729,29 @@ end
 -- W28 (owner: the purple field stood outside the portal's frame): the painted model is turned so that it stands
 -- across the portal like the field (its thin side along the frame's z) and the field is fitted into its opening:
 -- centred on the model, never wider or taller than the opening's share of it. The field, the pillars, the lintel and
--- the model share the portal's one frame `base`.
--- W31 (Studio review: the painted arch was 16 wide, its pillars stood in the cave frames' slabs): the model is fitted
--- into the box Data/Portals.ARCH.model (scaled down when wider or deeper) and its box centred on the portal's axis on
--- the ground, so the cave frames (tests/portals.spec) and the field know where its pillars are.
+-- the model share the portal's one frame `base`. W31 regression fix: the model keeps its size (Logic/ArchFit; it was
+-- scaled into a 16 x 18 x 6 box, a third of its size with its base slab 16 deep).
 local function fitModel(arch: Model, base: CFrame, field: BasePart)
 	local lo, hi = boxIn(arch, base)
-	if lo and hi and (hi.Z - lo.Z) > (hi.X - lo.X) then
-		arch:PivotTo(arch:GetPivot() * CFrame.Angles(0, math.rad(90), 0))
-		lo, hi = boxIn(arch, base)
-	end
 	if not lo or not hi then
 		return
 	end
-	local box = Portals.ARCH.model
-	local shrink = math.min(1, box.w / (hi.X - lo.X), box.d / math.max(hi.Z - lo.Z, 0.01), box.h / (hi.Y - lo.Y))
-	if shrink < 0.999 then
-		arch:ScaleTo(arch:GetScale() * shrink)
+	local fit = ArchFit.fit({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z })
+	local f = fit.field
+	if fit.turn then
+		arch:PivotTo(arch:GetPivot() * CFrame.Angles(0, math.rad(90), 0))
+		-- measured again on the turned parts (the pivot need not be the box's middle)
 		lo, hi = boxIn(arch, base)
 		if not lo or not hi then
 			return
 		end
+		f = ArchFit.field({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z })
 	end
-	-- the box's middle onto the axis, its foot onto the ground
-	local shift = base.Rotation * Vector3.new(-(lo.X + hi.X) / 2, -lo.Y, -(lo.Z + hi.Z) / 2)
-	arch:PivotTo(arch:GetPivot() + shift)
-	local spec = Portals.ARCH.field
-	local h = math.min(spec.h, (hi.Y - lo.Y) * OPENING_HEIGHT)
-	local w = math.min(spec.w, (hi.X - lo.X) * OPENING_WIDTH)
-	field.Size = Vector3.new(w, h, spec.d)
-	field.CFrame = base * CFrame.new(0, spec.y, 0)
+	if fit.scale ~= 1 then
+		arch:ScaleTo(arch:GetScale() * fit.scale)
+	end
+	field.Size = Vector3.new(f.w, f.h, Portals.ARCH.field.d)
+	field.CFrame = base * CFrame.new(f.x, f.y, f.z)
 end
 
 function Prefabs.portal(

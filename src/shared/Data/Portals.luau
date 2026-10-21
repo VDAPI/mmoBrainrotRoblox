@@ -184,9 +184,9 @@ local ARCH = table.freeze({
 	pillarX = 6, -- pillars' centres (2.5 thick, 15 tall)
 	height = 18, -- the arch (and the painted model scaled to it)
 	field = table.freeze({ w = 9.5, h = 13.5, y = 7.5, d = 0.4 }), -- the purple field, between the pillars
-	-- W31 (Studio review 2026-10-21: the painted pillars stood inside the cave frames' slabs, 16 studs wide against 14.5
-	-- here): the box the painted model (Assets.Kit common_portal_02) is fitted into, centred on the portal's axis and
-	-- standing on the ground (Prefabs.fitModel scales it down when it is wider or deeper)
+	-- W31 (Studio review 2026-10-21: the painted pillars stood inside the cave frames' slabs): the room the frames
+	-- round a cave mouth leave the painted arch (Assets.Kit common_portal_01 / 02 at `height`, Logic/ArchFit keeps
+	-- its size; the frames keep out of it, tests/portals.spec)
 	model = table.freeze({ w = 16, h = 18, d = 6 }),
 })
 -- W31: what a frame round a cave mouth keeps free (tests/portals.spec "cave mouths"): the painted arch (`model` and a
