@@ -185,9 +185,10 @@ local ARCH = table.freeze({
 	height = 18, -- the arch (and the painted model scaled to it)
 	field = table.freeze({ w = 9.5, h = 13.5, y = 7.5, d = 0.4 }), -- the purple field, between the pillars
 	-- W31 (Studio review 2026-10-21: the painted pillars stood inside the cave frames' slabs): the room the frames
-	-- round a cave mouth leave the painted arch (Assets.Kit common_portal_01 / 02 at `height`, Logic/ArchFit keeps
-	-- its size; the frames keep out of it, tests/portals.spec)
-	model = table.freeze({ w = 16, h = 18, d = 6 }),
+	-- round a cave mouth leave the painted arch, its real footprint with the base slab (Assets.Kit common_portal_01 /
+	-- 02 at `height`, measured in Studio about 20.9 across and 16 deep once turned; Logic/ArchFit keeps its size, the
+	-- frames keep out of it, tests/portals.spec)
+	model = table.freeze({ w = 21, h = 18, d = 16.5 }),
 })
 -- W31: what a frame round a cave mouth keeps free (tests/portals.spec "cave mouths"): the painted arch (`model` and a
 -- quarter stud), the view of it `front` studs down the path above `ground` (rubble, tracks and bones may lie lower),
@@ -195,7 +196,7 @@ local ARCH = table.freeze({
 -- (`w` wide, from under the ground to `top`; the painted opening is about 10 x 14) and is centred on the veil within
 -- `tolerance`: the dark the purple sits on, whatever the frame (ice, lava, rock) is made of.
 local VIEW = table.freeze({ front = 6, ground = 2, margin = 0.25 })
-local HOLE = table.freeze({ w = 17, top = 16, z = 3.6, d = 0.6, tolerance = table.freeze({ x = 0.25, y = 1 }) })
+local HOLE = table.freeze({ w = 17, top = 16, z = 8.7, d = 0.6, tolerance = table.freeze({ x = 0.25, y = 1 }) })
 local GATE = table.freeze({
 	-- W31 (Studio review: the horns leaned out by 12 degrees and stood 2-4 studs off the 9.2 door, a red slab in a V of
 	-- black horns): the horns (`horn` thick, 18 tall, centre 8 up) stand upright 0.2 studs off the door's sides, a basalt
@@ -203,9 +204,14 @@ local GATE = table.freeze({
 	hornX = 6.3,
 	horn = 3,
 	height = 18,
-	-- the red door; W30: 9.2 wide (it was 12 and its lower corners stood 1.2 studs inside the horns)
-	door = table.freeze({ w = 9.2, h = 15, y = 7.5, d = 0.6 }),
+	-- the red door; W30: 9.2 wide (it was 12 and its lower corners stood 1.2 studs inside the horns); W31 (Studio: the
+	-- sill half buried in the cave's floor in the Moss Cave): the door stands on a raised sill, its top under the lintel
+	door = table.freeze({ w = 9.2, h = 14, y = 8.1, d = 0.6 }),
 	lintel = table.freeze({ w = 15.6, h = 1.6, y = 15.9, d = 2.4 }),
+	sill = table.freeze({ w = 13.6, h = 1.6, y = 0.4, d = 3.6, z = -0.4 }),
+	-- W31 (Studio: the basalt horns black on black in the dark caves): glowing rims on the horns' outer front edges,
+	-- three runes up each horn and a dim light from each
+	rim = table.freeze({ w = 0.22, d = 0.1, t = 0.35, light = 12, brightness = 0.7 }),
 })
 -- W30 (owner: "the portals still look broken"): what is seen of a portal (World/Prefabs.makePortal, arches and city
 -- gates alike). The field stays the invisible trigger (prompt, server range); in it stand two glowing ellipses (an

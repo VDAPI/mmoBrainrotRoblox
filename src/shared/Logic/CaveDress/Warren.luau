@@ -43,7 +43,8 @@ local function jarLamp(bp: Kit.BP, x: number, y: number, z: number, light: boole
 end
 
 -- W31 (Studio review: the exit stood in the bare arch): a light frame round the exit's arch, in the exit portal's
--- frame (local -z the room it faces), beside the painted pillars (16 studs wide) and over its top (18): goblin junk,
+-- frame (local -z the room it faces), beside the painted arch (its real footprint 21 x 16.5, Data/Portals.ARCH.model)
+-- and over its top (18): goblin junk,
 -- planks leaning on both sides, a crossbar of scrap and two jar lamps.
 local function exitJunk(env: Env, out: { Build })
 	local f = Kit.atPortal(env, "JunkDoorway", "landmark", `{env.mapId}_exit`, true)
@@ -54,7 +55,7 @@ local function exitJunk(env: Env, out: { Build })
 				1.2,
 				12 + k * 3,
 				0.4,
-				s * (9.8 + k * 1.1),
+				s * (12.4 + k * 1.1),
 				5.5 + k * 1.5,
 				-0.6 + k * 0.6,
 				0,
@@ -63,9 +64,9 @@ local function exitJunk(env: Env, out: { Build })
 				o(Kit.planks, if k == 1 then "shell" else "detail", { col = false, q = false })
 			)
 		end
-		jarLamp(bp, s * 13.4 - 0.6, 0, -1.6, s > 0)
+		jarLamp(bp, s * 16 - 0.6, 0, -1.6, s > 0)
 	end
-	bp:rbox(22, 1, 0.6, 0, 20.2, -0.2, 0, 0, 3, o({ c = "#6A5A48", m = "CorrodedMetal" }, "detail", { col = false }))
+	bp:rbox(28, 1, 0.6, 0, 20.2, -0.2, 0, 0, 3, o({ c = "#6A5A48", m = "CorrodedMetal" }, "detail", { col = false }))
 	Kit.skull(bp, 0, 20.7, -0.6, 1.3, 0)
 	table.insert(out, f)
 end

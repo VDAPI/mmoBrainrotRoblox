@@ -39,17 +39,18 @@ local function grotto(env: Env.Env, out: { Build })
 	-- the ice wall behind the mouth and the hole; W28: the hole as wide and tall as the portal's arch in front of it
 	-- (14 x 13 before, the fangs hung down to its middle). W31 (Studio review: light purple on pale ice): the wall
 	-- behind the arch's depth, the dark hole straight behind the arch (Kit.portalHole) in a dark oval mouth in the ice,
-	-- the blue glow only from crystals beside the arch (the glowing slab behind the veil washed it out)
-	bp:box(34, 28, 10, 0, 11, 9.3, o(Props.glacier, "shell", { q = true }))
-	bp:rbox(14, 26, 12, -18, 8, 10, 0, 10, 0, o(Props.darkStone, "shell", { q = true }))
-	bp:rbox(14, 24, 12, 18, 7, 10, 0, -10, 0, o(Props.darkStone, "shell", { q = true }))
+	-- the blue glow only from crystals beside the arch (the glowing slab behind the veil washed it out); W31 fix: all of
+	-- it round the painted arch's real footprint (21 x 16.5 with its base slab, Data/Portals.ARCH.model)
+	bp:box(36, 28, 10, 0, 11, 14.6, o(Props.glacier, "shell", { q = true }))
+	bp:rbox(14, 26, 12, -20.5, 8, 14, 0, 10, 0, o(Props.darkStone, "shell", { q = true }))
+	bp:rbox(14, 24, 12, 20.5, 7, 14, 0, -10, 0, o(Props.darkStone, "shell", { q = true }))
 	Kit.portalHole(bp)
-	bp:add("ball", 22, 24, 0.2, 0, 8, 4.25, 0, 0, 0, o(Kit.dark, "shell", { q = false }))
+	bp:add("ball", 22, 24, 0.2, 0, 8, 9.45, 0, 0, 0, o(Kit.dark, "shell", { q = false }))
 	for _, side in { -1, 1 } do
-		Props.crystals(bp, side * 9.8, 0, 5.4, 0.7, "detail", false)
+		Props.crystals(bp, side * 13, 0, 8, 0.7, "detail", false)
 	end
-	bp:light(0, 9, 5.5, Props.CRYSTAL, 30, 1.6, "crystal")
-	Props.snowCap(bp, 0, 25.4, 8, 32, 9, "shell")
+	bp:light(0, 9, 7.5, Props.CRYSTAL, 30, 1.6, "crystal")
+	Props.snowCap(bp, 0, 25.4, 13, 34, 9, "shell")
 	-- fangs of icicles over the mouth, over the arch (W31: their tips half a stud clear of the painted arch)
 	for k = -5, 5 do
 		local l = if math.abs(k) <= 1 then 3.4 + (k + 1) % 2 * 0.4 else 1.4 + (5 - math.abs(k)) * 0.5
@@ -61,7 +62,7 @@ local function grotto(env: Env.Env, out: { Build })
 			w,
 			k * 1.4,
 			22.6 - l / 2,
-			2.6,
+			9,
 			180,
 			0,
 			0,
@@ -76,7 +77,7 @@ local function grotto(env: Env.Env, out: { Build })
 	Kit.bones(bp, -5, 0, -5, 6, ground)
 	Props.tracks(bp, ground, -2, -24, 0, 8, 2.4, 3)
 	Props.tracks(bp, ground, 3, -24, 0, 10, 0.9, 2)
-	Kit.lifeAt(ctx, b, "icicleDust", 0, 20, 1)
+	Kit.lifeAt(ctx, b, "icicleDust", 0, 20, 8)
 	table.insert(out, b)
 end
 
@@ -90,26 +91,27 @@ local function hold(env: Env.Env, out: { Build })
 	-- the gate front in the glacier: an arch between two towers buried to their battlements; W28: the gateway as wide
 	-- and tall as the portal's arch standing in it (13 x 11 before: the towers and the arch cut through the portal).
 	-- W31: the gate's lintel just over the painted arch, the gateway walled up with frost stone behind the arch's depth
-	-- and the dark passage straight behind the arch (Kit.portalHole), the banners clear of the arch
+	-- and the dark passage straight behind the arch (Kit.portalHole), the banners clear of the arch; W31 fix: the towers
+	-- and the walled-up gateway round the painted arch's real footprint (21 x 16.5, Data/Portals.ARCH.model)
 	for _, side in { -1, 1 } do
-		bp:box(9, 26, 9, side * 13.5, 11, 4, o(Props.frostStone, "shell", { q = true }))
+		bp:box(9, 26, 9, side * 16, 11, 4, o(Props.frostStone, "shell", { q = true }))
 		for m = -1, 1 do
-			bp:box(2.4, 2.4, 9.4, side * 13.5 + m * 3, 25, 4, o(Props.frostStone, "detail", { col = false }))
+			bp:box(2.4, 2.4, 9.4, side * 16 + m * 3, 25, 4, o(Props.frostStone, "detail", { col = false }))
 		end
-		Props.snowCap(bp, side * 13.5, 26.6, 4, 9, 9, "fine")
-		Props.torch(bp, side * 10, 6, -0.6)
-		Props.banner(bp, if side < 0 then -13 else 11.4, 9, -0.8, 6, Props.orderDark, Props.orderPale, true)
+		Props.snowCap(bp, side * 16, 26.6, 4, 9, 9, "fine")
+		Props.torch(bp, side * 12.4, 6, -0.6)
+		Props.banner(bp, if side < 0 then -15.5 else 13.9, 9, -0.8, 6, Props.orderDark, Props.orderPale, true)
 	end
-	bp:box(18, 5, 9, 0, 21.2, 4, o(Props.frostStone, "shell", { q = true }))
-	bp:box(18, 21, 1, 0, 9.5, 5.4, o(Props.frostStone, "shell", { q = false }))
+	bp:box(23, 5, 9, 0, 21.2, 4, o(Props.frostStone, "shell", { q = true }))
+	bp:box(23, 21, 1, 0, 9.5, 9.9, o(Props.frostStone, "shell", { q = false }))
 	Kit.portalHole(bp)
-	bp:light(0, 8, 6, Props.EYES, 26, 1.2, "crystal")
+	bp:light(0, 8, 7.5, Props.EYES, 26, 1.2, "crystal")
 	-- ice over everything, icicles from the arch (over the portal's arch)
 	bp:box(42, 10, 12, 0, 30, 8, o(Props.glacier, "shell", { q = false }))
 	Props.icicles(bp, 0, 18.7, -0.6, 14, 12, 0.4)
 	-- the torn iron doors frozen beside the gate
 	bp:rbox(5.4, 10, 0.8, -14, Kit.gy(ctx, b, -14, -8) + 1, -8, 76, 20, 0, o(Props.iron, "shell", { q = false }))
-	bp:rbox(5.4, 10, 0.8, 13, Kit.gy(ctx, b, 13, -10) + 2.6, -10, 62, -30, 10, o(Props.iron, "detail", { col = false }))
+	bp:rbox(5.4, 10, 0.8, 15, Kit.gy(ctx, b, 15, -11) + 2.6, -11, 62, -30, 10, o(Props.iron, "detail", { col = false }))
 	bp:rbox(7, 1, 3, -14, Kit.gy(ctx, b, -14, -8) + 0.3, -8, 0, 20, 0, o(Props.ice, "fine", { col = false, t = 0.3 }))
 	Kit.lifeAt(ctx, b, "icicleDust", 0, 19, -1)
 	table.insert(out, b)
@@ -126,15 +128,16 @@ local function heart(env: Env.Env, out: { Build })
 	-- a slab hid the painted pillar, the dark hole stood 22 studs deep and looked off the veil, light purple on pale
 	-- ice): the walls open towards the path (their front ends stood 6.9 off the axis, before the pillars), the icicles
 	-- hang from the walls' tops beside the arch, the dark hole straight behind the arch (Kit.portalHole) and the
-	-- crystals glow in the cleft beside it
+	-- crystals glow in the cleft beside it; W31 fix: the walls round the painted arch's real footprint (21 x 16.5,
+	-- Data/Portals.ARCH.model), the cleft's dark back wide enough to fill the walls' gap behind the hole
 	for _, side in { -1, 1 } do
-		bp:rbox(4, 20, 30, side * 11, 8, 10, 0, -side * 8, 0, o(Props.glacier, "shell", { q = true }))
+		bp:rbox(4, 20, 30, side * 13.5, 8, 10, 0, -side * 8, 0, o(Props.glacier, "shell", { q = true }))
 		for k = 0, 3 do
 			bp:rbox(
 				5,
 				6 + k,
 				5,
-				side * (13 + k),
+				side * (15.8 + k),
 				14 + k * 1.5,
 				-2 + k * 7,
 				10,
@@ -143,13 +146,13 @@ local function heart(env: Env.Env, out: { Build })
 				o(Props.ice, "detail", { col = false, t = 0.15 })
 			)
 		end
-		Props.crystals(bp, side * 9.6, 0, 6, 1.1, "detail", false)
-		Props.icicles(bp, side * 11.5, 18, -2, 3, 4, 5)
+		Props.crystals(bp, side * 13.4, 0, 9.4, 1.1, "detail", false)
+		Props.icicles(bp, side * 14, 18, -2, 3, 4, 5)
 	end
 	Kit.portalHole(bp)
-	bp:box(18, 18, 1, 0, 8, 22, o(Kit.dark, "shell", { q = false }))
+	bp:box(22, 18, 1, 0, 8, 16, o(Kit.dark, "shell", { q = false }))
 	Props.crystals(bp, 0, 0, 18, 2, "shell", false)
-	bp:light(0, 8, 6, Props.CRYSTAL, 30, 1.6, "crystal")
+	bp:light(0, 8, 7.5, Props.CRYSTAL, 30, 1.6, "crystal")
 	-- the threshold: scales and frozen bones, rime
 	local ground = function(lx: number, lz: number): number
 		return Kit.gy(ctx, b, lx, lz)

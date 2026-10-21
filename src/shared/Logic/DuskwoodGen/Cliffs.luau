@@ -46,19 +46,20 @@ local function cryptGate(env: Env.Env, out: { Build })
 	-- W31 (Studio review: the left painted pillar stood in the facade, two flat cyan tiles on the braziers): the
 	-- portal stands `along` studs before the build's origin (Data/Areas, x 748.5 against the gate's 768); the facade's
 	-- face behind the painted arch and its dark hole, the gateway's pillars and the open doors clear of the arch, the
-	-- braziers beside the path with tall cold flames (Kit.brazierFlame)
+	-- braziers beside the path with tall cold flames (Kit.brazierFlame); W31 fix: all of it round the painted arch's
+	-- real footprint (21 x 16.5 with its base slab, Data/Portals.ARCH.model)
 	local along = -19.5
 	local face = along + Portals.HOLE.z + Portals.HOLE.d + 0.1
 	-- the facade of red rock with the dark gateway; W28: the portal stands in the gateway (Data/Areas, x 748.5), the
 	-- iron doors swung open along its sides (one of them half shut the gateway)
 	bp:box(56, 38, 28, 0, y0 + 19, face + 14, o(RED, "shell", { q = true }))
 	Kit.portalHole(bp, along)
-	bp:box(16.6, 20, 0.2, 0, y0 + 10, face - 0.05, o(Kit.dark, "shell", { q = false }))
-	bp:box(22, 4, 4, 0, y0 + 22, face - 1.6, o(RED_DARK, "shell", { q = false }))
+	bp:box(21.6, 20, 0.2, 0, y0 + 10, face - 0.05, o(Kit.dark, "shell", { q = false }))
+	bp:box(29, 4, 4, 0, y0 + 22, face - 1.6, o(RED_DARK, "shell", { q = false }))
 	for _, side in { -1, 1 } do
-		bp:box(3, 24, 3, side * 9.8, y0 + 12, face - 1.4, o(RED_DARK, "detail", { col = false }))
+		bp:box(3, 24, 3, side * 12.4, y0 + 12, face - 1.4, o(RED_DARK, "detail", { col = false }))
 		-- the iron doors, swung open before the gateway's pillars
-		bp:push(side * 9.0, y0, face - 3.2, 0, -side * 88, 0)
+		bp:push(side * 11.6, y0, face - 3.2, 0, -side * 88, 0)
 		bp:box(8, 19, 0.6, -side * 4, 9.5, 0, o(Kit.iron, "detail", { col = false }))
 		for k = 0, 3 do
 			bp:box(8.1, 0.4, 0.7, -side * 4, 3 + k * 4.4, 0, o({ c = "#2A2826", m = "CorrodedMetal" }, "fine"))
@@ -114,7 +115,7 @@ local function cryptGate(env: Env.Env, out: { Build })
 		)
 		bp:box(2.6, 1, 1.2, fx, y0 + 10.6, fz - 2.2, o({ c = "#3A3438", m = "Slate" }, "detail", { col = false }))
 		-- cold blue flames in braziers: a stone stand, an iron bowl with a rim, a bed of embers and a tall flame
-		local bx, bz = side * 11, along - 7.5
+		local bx, bz = side * 13.5, along - 9
 		bp:add("cyl", 4, 1.6, 1.6, bx, y0 + 2, bz, 0, 0, 90, o(RED_DARK, "detail", { col = false }))
 		bp:add("cyl", 1.2, 3, 3, bx, y0 + 4.6, bz, 0, 0, 90, o(Kit.iron, "detail", { col = false }))
 		bp:add("cyl", 0.3, 3.4, 3.4, bx, y0 + 5.2, bz, 0, 0, 90, o(Kit.iron, "fine", { col = false }))

@@ -150,22 +150,23 @@ local function wolfDen(env: Env.Env, out: { Build })
 	-- the dead oak behind the opening and the earth bank under it; W28: the bank behind the portal's arch and the
 	-- dark opening before the bank, as tall as the arch (the bank hid it, the arch stood against the earth); W31: the
 	-- bank's face and the root arch clear of the painted arch, the opening its dark hole (Kit.portalHole)
-	bp:add("cyl", 26, 11, 11, 0, 12, 15, 0, 0, 90, o(Kit.blackBark, "shell", { q = true }))
-	bp:add("ball", 38, 18, 26, 0, 2, 17.4, 0, 0, 0, o({ c = "#3A3128", m = "Ground" }, "shell", { q = true }))
+	-- (W31 fix: round the painted arch's real footprint, 21 x 16.5 with its base slab, Data/Portals.ARCH.model)
+	bp:add("cyl", 26, 11, 11, 0, 12, 20, 0, 0, 90, o(Kit.blackBark, "shell", { q = true }))
+	bp:add("ball", 38, 18, 26, 0, 2, 22.5, 0, 0, 0, o({ c = "#3A3128", m = "Ground" }, "shell", { q = true }))
 	Kit.portalHole(bp)
 	-- the root arch over the mouth, climbing beside the painted pillars and meeting over the arch
 	for _, side in { -1, 1 } do
-		bp:beam(side * 11, -0.5, 0.5, side * 10.2, 19, 1.5, 2.4, o(Kit.blackBark, "shell", { q = false }))
-		bp:beam(side * 10.2, 19, 1.5, 0, 22.5, 3.5, 2.2, o(Kit.blackBark, "detail", { col = false }))
-		bp:beam(side * 14, -0.5, 4, side * 10, 11, 7, 1.6, o(Kit.blackBark, "detail", { col = false }))
+		bp:beam(side * 13, -0.5, 1, side * 12.4, 19.4, 2, 2.4, o(Kit.blackBark, "shell", { q = false }))
+		bp:beam(side * 12.4, 19.4, 2, 0, 23, 4, 2.2, o(Kit.blackBark, "detail", { col = false }))
+		bp:beam(side * 15.5, -0.5, 5, side * 12.6, 11, 8, 1.6, o(Kit.blackBark, "detail", { col = false }))
 	end
 	-- dead branches up top
 	for i = 1, 3 do
 		local a = i * 2
 		bp:beam(0, 22, 13, math.cos(a) * 9, 30, 13 + math.sin(a) * 9, 1.2, o(Kit.blackBark, "detail", { col = false }))
 	end
-	Kit.claws(bp, -12.4, 8, 6.2, 1.6)
-	Kit.claws(bp, 12.6, 9, 6.2, 1.4)
+	Kit.claws(bp, -13, 8, 12, 1.6)
+	Kit.claws(bp, 13.2, 9, 12, 1.4)
 	for _, p in { { -8, -8 }, { 7, -6 }, { 0, -12 } } do
 		Kit.bones(bp, p[1], Kit.gy(ctx, b, p[1], p[2]), p[2], 4)
 	end

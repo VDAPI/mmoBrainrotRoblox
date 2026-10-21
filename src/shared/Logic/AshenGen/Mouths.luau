@@ -40,19 +40,20 @@ local function mine(env: Env.Env, out: { Build })
 	-- the adit: a dark hole framed by beams, set into the rock behind; W28: as wide and tall as the portal's arch in
 	-- front of it (11 x 12 before, the arch 14.5 x 18 stood over it); W31 (Studio review: the painted arch is 16 studs
 	-- wide, the adit was 15): the adit is the portals' dark hole (Kit.portalHole), the posts and their braces beside
-	-- the painted pillars
-	bp:box(30, 24, 8, 0, 10, 9, o(Props.ash, "shell", { q = true }))
+	-- the painted pillars; W31 fix: round the painted arch's real footprint (21 x 16.5 with its base slab,
+	-- Data/Portals.ARCH.model)
+	bp:box(34, 24, 8, 0, 10, 13.4, o(Props.ash, "shell", { q = true }))
 	Kit.portalHole(bp)
 	for _, side in { -1, 1 } do
-		bp:box(1.6, 19.4, 1.6, side * 9.4, 9, 3.6, o(wood, "shell", { q = false }))
-		bp:rbox(1, 9, 1, side * 10.6, 4, 2.6, 0, 0, side * 14, o(wood, "detail", { col = false }))
+		bp:box(1.6, 19.4, 1.6, side * 11.6, 9, 8.9, o(wood, "shell", { q = false }))
+		bp:rbox(1, 9, 1, side * 12.8, 4, 7.9, 0, 0, side * 14, o(wood, "detail", { col = false }))
 	end
-	bp:box(21, 1.8, 2, 0, 19.6, 3.6, o(wood, "shell", { q = false }))
+	bp:box(25, 1.8, 2, 0, 19.6, 8.9, o(wood, "shell", { q = false }))
 	-- dwarven runes on the lintel smeared with red orc paint
 	for k = -2, 2 do
-		bp:box(1, 1, 0.1, k * 2.2, 19.6, 2.55, o({ c = "#C9A45C", m = "SmoothPlastic" }, "fine"))
+		bp:box(1, 1, 0.1, k * 2.2, 19.6, 7.85, o({ c = "#C9A45C", m = "SmoothPlastic" }, "fine"))
 	end
-	bp:rbox(9, 1.2, 0.12, 0, 19.7, 2.5, 0, 0, 8, o({ c = "#8A2A1E", m = "SmoothPlastic" }, "fine", { t = 0.2 }))
+	bp:rbox(9, 1.2, 0.12, 0, 19.7, 7.8, 0, 0, 8, o({ c = "#8A2A1E", m = "SmoothPlastic" }, "fine", { t = 0.2 }))
 	-- rails out onto the slope, overturned carts
 	for _, side in { -1, 1 } do
 		bp:box(
@@ -68,7 +69,7 @@ local function mine(env: Env.Env, out: { Build })
 	for k = 0, 8 do
 		bp:box(4.4, 0.3, 0.8, 0, Kit.gy(ctx, b, 0, -k * 3) + 0.15, -k * 3, o(wood, "fine"))
 	end
-	for k, p in { { -7, -14, 70 }, { 6, -20, 200 } } do
+	for k, p in { { -8, -18, 70 }, { 6, -20, 200 } } do
 		bp:push(p[1], Kit.gy(ctx, b, p[1], p[2]) + 1.2, p[2], 0, p[3], if k == 1 then 90 else 0)
 		bp:box(3, 2, 4, 0, 0.6, 0, o(Props.ironDark, "detail", { col = false }))
 		bp:box(2.6, 1, 3.6, 0, 1.2, 0, o({ c = "#8A8A90", m = "Slate" }, "fine")) -- ore
@@ -94,7 +95,7 @@ local function mine(env: Env.Env, out: { Build })
 	bp:add("cyl", 0.8, 7, 7, hx, hy + 16, hz, 0, 0, 0, o(wood, "detail", { col = false }))
 	bp:rbox(3.6, 0.8, 0.8, hx + 2, hy + 14, hz, 0, 0, 40, o(wood, "detail", { col = false }))
 	-- spoil heaps glinting with silver
-	for k, p in { { -14, -4 }, { -18, -14 } } do
+	for k, p in { { -17, -3 }, { -18, -14 } } do
 		local y = Kit.gy(ctx, b, p[1], p[2])
 		bp:add(
 			"ball",
@@ -115,13 +116,13 @@ local function mine(env: Env.Env, out: { Build })
 	end
 	-- orc banners and the hyena kennel
 	for _, side in { -1, 1 } do
-		bp:box(0.3, 9, 0.3, side * 9, Kit.gy(ctx, b, side * 9, -2) + 4.5, -2, o(wood, "detail", { col = false }))
+		bp:box(0.3, 9, 0.3, side * 12, Kit.gy(ctx, b, side * 12, -2) + 4.5, -2, o(wood, "detail", { col = false }))
 		bp:box(
 			0.15,
 			3.4,
 			2.4,
-			side * 9,
-			Kit.gy(ctx, b, side * 9, -2) + 7,
+			side * 12,
+			Kit.gy(ctx, b, side * 12, -2) + 7,
 			-0.8,
 			o({ c = "#B5462B", m = "Fabric" }, "fine", { tag = "flag" })
 		)
@@ -155,12 +156,13 @@ local function lair(env: Env.Env, out: { Build })
 	b.frames = "ashen_ashen_lair"
 	local bp = b.bp
 	-- the huge scorched mouth in the wall and the fan of soot over it
-	bp:box(34, 26, 8, 0, 11, 10, o({ c = "#6E2F2A", m = "Sandstone" }, "shell", { q = true }))
+	-- (W31 fix: round the painted arch's real footprint, 21 x 16.5 with its base slab, Data/Portals.ARCH.model)
+	bp:box(36, 26, 8, 0, 11, 14.4, o({ c = "#6E2F2A", m = "Sandstone" }, "shell", { q = true }))
 	-- W28: over the arch; W31: behind it, the portals' dark hole in its middle (Kit.portalHole)
-	bp:add("ball", 22, 24, 4, 0, 9, 6.2, 0, 0, 0, o(Kit.dark, "shell", { q = false }))
+	bp:add("ball", 22, 24, 4, 0, 9, 11.4, 0, 0, 0, o(Kit.dark, "shell", { q = false }))
 	Kit.portalHole(bp)
 	for k = -2, 2 do
-		bp:rbox(5, 14, 0.2, k * 4.6, 20, 5.6, 0, 0, k * 14, o(Props.soot, "detail", { col = false, t = 0.1 }))
+		bp:rbox(5, 14, 0.2, k * 4.6, 20, 10.25, 0, 0, k * 14, o(Props.soot, "detail", { col = false, t = 0.1 }))
 	end
 	-- claw furrows down the wall
 	for _, side in { -1, 1 } do
@@ -171,7 +173,7 @@ local function lair(env: Env.Env, out: { Build })
 				0.2,
 				side * (12 + k * 1.2),
 				10,
-				5.7,
+				10.25,
 				0,
 				0,
 				side * 8,
@@ -180,22 +182,22 @@ local function lair(env: Env.Env, out: { Build })
 		end
 	end
 	-- bones and the cracked giant egg on the threshold
-	for k, p in { { -8, -6 }, { 6, -9 }, { 0, -14 }, { -12, -12 } } do
+	for k, p in { { -8, -6 }, { 14, -12 }, { 0, -16 }, { -13, -12 } } do
 		Kit.bones(bp, p[1], Kit.gy(ctx, b, p[1], p[2]), p[2], 5)
 		if k == 2 then
 			Props.carcass(bp, p[1], Kit.gy(ctx, b, p[1], p[2]), p[2], 40)
 		end
 	end
 	-- W28: the egg beside the portal's arch (it stood in its pillar)
-	local ey = Kit.gy(ctx, b, 11, -2)
+	local ey = Kit.gy(ctx, b, 14, -3)
 	bp:add(
 		"ball",
 		4,
 		5.4,
 		4,
-		11,
+		14,
 		ey + 2.2,
-		-2,
+		-3,
 		0,
 		0,
 		0,
@@ -206,9 +208,9 @@ local function lair(env: Env.Env, out: { Build })
 			2.2,
 			0.3,
 			1.6,
-			14 + k * 0.8,
+			17 + k * 0.8,
 			ey + 0.2,
-			-4 + k,
+			-5 + k,
 			k * 30,
 			k * 40,
 			0,
@@ -242,12 +244,13 @@ local function forgeGate(env: Env.Env, out: { Build })
 	local stone = { c = "#4E4A48", m = "Slate" }
 	local dressed = { c = "#5E5856", m = "Cobblestone" }
 	-- the gate's frame of dressed stone set into the mountain
-	bp:box(30, 30, 8, 0, 13, 11, o(stone, "shell", { q = true }))
+	bp:box(36, 30, 8, 0, 13, 15, o(stone, "shell", { q = true }))
 	-- W28: the glowing gateway as wide and tall as the portal's arch in front of it (10 x 13 before); W31 (Studio
 	-- review: the flat bright Neon backdrop hid the portal's violet and its label, a door ajar stood between the
 	-- painted pillar and the ellipse): the gateway is the portals' dark hole (Kit.portalHole) and the forge's glow
-	-- seams around its edges, beside and over the painted arch; the iron doors swung wide open beside it
-	bp:box(20, 22, 2, 0, 10, 7, o(dressed, "shell", { q = true }))
+	-- seams around its edges, beside and over the painted arch; the iron doors swung wide open beside it. W31 fix: all
+	-- of it round the painted arch's real footprint (21 x 16.5 with its base slab, Data/Portals.ARCH.model)
+	bp:box(24, 22, 2, 0, 10, 10.4, o(dressed, "shell", { q = true }))
 	Kit.portalHole(bp)
 	local seam = o(
 		{ c = "#FF8A2A", m = "Neon" },
@@ -255,17 +258,17 @@ local function forgeGate(env: Env.Env, out: { Build })
 		{ col = false, q = false, t = 0.15, tag = "forge", jitter = 0 }
 	)
 	for _, side in { -1, 1 } do
-		bp:box(0.8, 16.8, 0.4, side * 8.9, 8.4, 4.4, seam)
+		bp:box(0.8, 16.8, 0.4, side * 8.9, 8.4, 8.75, seam)
 	end
-	bp:box(18.6, 0.8, 0.4, 0, 16.4, 4.4, seam)
+	bp:box(18.6, 0.8, 0.4, 0, 16.5, 8.75, seam)
 	-- the doors swung wide open, along the gateway's sides
 	for _, side in { -1, 1 } do
-		bp:rbox(6.5, 18.6, 0.8, side * 9.7, 9.3, 1.3, 0, 90, 0, o(Props.ironDark, "detail", { col = false }))
+		bp:rbox(6.5, 18.6, 0.8, side * 12, 9.3, 5.2, 0, 90, 0, o(Props.ironDark, "detail", { col = false }))
 	end
 	bp:light(0, 8, 2, "#FF8A2A", 36, 2, "fire")
 	-- glowing runes over the gate
 	for k = -3, 3 do
-		bp:box(1.2, 1.6, 0.2, k * 2, 23, 5.9, {
+		bp:box(1.2, 1.6, 0.2, k * 2, 23, 10.9, {
 			c = "#FFB040",
 			m = "Neon",
 			lod = "detail",
@@ -275,10 +278,10 @@ local function forgeGate(env: Env.Env, out: { Build })
 			jitter = 0,
 		})
 	end
-	bp:box(22, 2, 2.4, 0, 20.6, 6.4, o(dressed, "shell", { q = false }))
+	bp:box(26, 2, 2.4, 0, 20.6, 9.6, o(dressed, "shell", { q = false }))
 	-- two carved kings with hammers (W31: their hammers clear of the open doors)
 	for _, side in { -1, 1 } do
-		bp:push(side * 15, 0, 4, 0, 0, 0)
+		bp:push(side * 17.5, 0, 4, 0, 0, 0)
 		bp:box(6, 2, 6, 0, 1, 0, o(dressed, "shell", { q = false }))
 		bp:box(4.4, 11, 3.4, 0, 7.5, 0, o(stone, "shell", { q = false }))
 		bp:add("ball", 3, 3.2, 3, 0, 14.6, 0, 0, 0, 0, o(stone, "detail", { col = false }))

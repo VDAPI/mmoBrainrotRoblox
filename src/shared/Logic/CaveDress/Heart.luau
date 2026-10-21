@@ -110,7 +110,8 @@ local function veins(env: Env, out: { Build }, i: number, n: number, light: bool
 end
 
 -- W31 (Studio review: the exit stood in the bare arch): a light frame round the exit's arch, in the exit portal's
--- frame (local -z the room it faces), beside the painted pillars (16 studs wide) and over its top (18): shards of
+-- frame (local -z the room it faces), beside the painted arch (its real footprint 21 x 16.5, Data/Portals.ARCH.model)
+-- and over its top (18): shards of
 -- glacier ice leaning out on both sides and a crown of icicles over the arch, like the Heart of the Glacier outside.
 local function iceShards(env: Env, out: { Build })
 	local f = Kit.atPortal(env, "IceShards", "landmark", `{env.mapId}_exit`, true)
@@ -122,7 +123,7 @@ local function iceShards(env: Env, out: { Build })
 				1.6,
 				h,
 				1.4,
-				s * (10.4 + k * 1.5),
+				s * (12.9 + k * 1.5),
 				h / 2 - 0.5,
 				-0.8 + k * 0.8,
 				0,
@@ -137,7 +138,7 @@ local function iceShards(env: Env, out: { Build })
 		end
 	end
 	-- the icicles end 18.5 over the floor, over the arch's top
-	bp:box(22, 1.4, 1.6, 0, 21.2, -0.4, o(ICE, "detail", { col = false }))
+	bp:box(28, 1.4, 1.6, 0, 21.2, -0.4, o(ICE, "detail", { col = false }))
 	for k = -4, 4 do
 		local len = 0.8 + (4 - math.abs(k)) * 0.3
 		bp:add("cyl", len, 0.9, 0.9, k * 2.2, 20.5 - len / 2, -0.4, 0, 0, 90, o(ICE, "fine", { col = false }))

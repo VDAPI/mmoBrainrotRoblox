@@ -34,20 +34,21 @@ local function lantern(env: Env, out: { Build }, name: string, x: number, z: num
 end
 
 -- W31 (Studio review: the exit stood in the bare arch): a light frame round the exit's arch, in the exit portal's
--- frame (local -z the room it faces), beside the painted pillars (16 studs wide) and over its top (18): the gang's timber
+-- frame (local -z the room it faces), beside the painted arch (its real footprint 21 x 16.5, Data/Portals.ARCH.model)
+-- and over its top (18): the gang's timber
 -- doorway, a brace, the crossed keys on the lintel and a lantern by the way out.
 local function doorway(env: Env, out: { Build })
 	local f = Kit.atPortal(env, "SmugglersDoorway", "landmark", `{env.mapId}_exit`, true)
 	local bp = f.bp
 	for _, s in { -1, 1 } do
-		bp:box(1.6, 20, 1.6, s * 9.6, 10, 0, o(Kit.wood, "shell", { q = false }))
-		bp:rbox(1, 7, 1, s * 11.2, 3, -0.6, 0, 0, s * 24, o(Kit.wood, "detail", { col = false }))
+		bp:box(1.6, 20, 1.6, s * 12, 10, 0, o(Kit.wood, "shell", { q = false }))
+		bp:rbox(1, 7, 1, s * 13.6, 3, -0.6, 0, 0, s * 24, o(Kit.wood, "detail", { col = false }))
 	end
-	bp:box(22, 1.6, 2, 0, 19.6, 0, o(Kit.wood, "detail", { col = false }))
+	bp:box(27, 1.6, 2, 0, 19.6, 0, o(Kit.wood, "detail", { col = false }))
 	for _, s in { -1, 1 } do
 		bp:rbox(0.4, 2.6, 0.2, 0, 19.8, -1.1, 0, 0, s * 40, o(Kit.gold, "fine", { col = false }))
 	end
-	Kit.lantern(bp, 12.4, 0, -1.6, WARM, 6, "detail")
+	Kit.lantern(bp, 14.8, 0, -1.6, WARM, 6, "detail")
 	table.insert(out, f)
 end
 

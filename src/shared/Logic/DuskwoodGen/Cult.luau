@@ -368,13 +368,14 @@ local function barrow(env: Env.Env, out: { Build })
 	local bp = b.bp
 	-- W28: the mound behind the portal's arch (its face cut through the arch), the dark entrance before it and the
 	-- dolmen's capstone over the arch (it lay 1 stud into it); W31: the mound's face and the dolmen's stones clear of
-	-- the painted arch (16 studs wide), the entrance its dark hole (Kit.portalHole)
-	bp:add("ball", 44, 20, 32, 0, 1, 20.4, 0, 0, 0, o({ c = "#2E3A26", m = "LeafyGrass" }, "shell", { q = true }))
+	-- the painted arch (its real footprint 21 x 16.5 with the base slab, Data/Portals.ARCH.model), the entrance its
+	-- dark hole (Kit.portalHole)
+	bp:add("ball", 44, 20, 32, 0, 1, 25.5, 0, 0, 0, o({ c = "#2E3A26", m = "LeafyGrass" }, "shell", { q = true }))
 	Kit.portalHole(bp)
 	for _, side in { -1, 1 } do
-		bp:rbox(3.2, 20.6, 3.2, side * 10.8, 9.7, 1, 0, 0, side * 3, o(Kit.darkStone, "shell", { q = true }))
+		bp:rbox(3.2, 20.6, 3.2, side * 13, 9.7, 1, 0, 0, side * 3, o(Kit.darkStone, "shell", { q = true }))
 	end
-	bp:rbox(24, 3.4, 5, 0, 21.5, 1.4, 0, 0, 2, o(Kit.darkStone, "shell", { q = false }))
+	bp:rbox(30, 3.4, 5, 0, 21.5, 1.4, 0, 0, 2, o(Kit.darkStone, "shell", { q = false }))
 	for k = 0, 2 do
 		bp:box(
 			1.2,

@@ -603,6 +603,27 @@ describe("Portals: the boss door and the labels (W31)", function()
 		end
 	end)
 
+	it("lifts the door onto a sill over the cave floor and lights the horns' edges (W31, Studio)", function()
+		local g = Portals.GATE
+		local sillTop = g.sill.y + g.sill.h / 2
+		local doorBottom = g.door.y - g.door.h / 2
+		-- the sill stands a stud over the floor (the voxel floor bulged over the 0.45 stud sill) and under the ground
+		expect(sillTop >= 1).toBe(true)
+		expect(g.sill.y - g.sill.h / 2 < 0).toBe(true)
+		-- the door stands on it, not in the floor
+		expect(doorBottom >= sillTop - 0.2 and doorBottom <= sillTop).toBe(true)
+		expect(g.sill.w / 2 <= g.hornX + g.horn / 2).toBe(true)
+		-- a faint rim, a short-range light
+		expect(g.rim.t > 0 and g.rim.t < 1).toBe(true)
+		expect(g.rim.w <= 0.3 and g.rim.light <= 16).toBe(true)
+		local prefabs = read("src/server/World/Prefabs.luau")
+		for _, needle in { '"HornRim"', '"HornRune"', "Portals.GATE.rim", "Portals.GATE.sill" } do
+			if not string.find(prefabs, needle, 1, true) then
+				error(`Prefabs.luau: missing {needle}`)
+			end
+		end
+	end)
+
 	it("draws the zone labels over portals and gates on a dark plate, always on top, over the arch", function()
 		local world = read("src/client/Controllers/WorldController.luau")
 		local dungeon = read("src/client/Controllers/DungeonController.luau")

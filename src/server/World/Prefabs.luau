@@ -1177,7 +1177,9 @@ end
 -- W31 (Studio review: a flat red slab standing free in a V of black horns 2-4 studs off it): upright horns 0.2 studs off
 -- the door's sides with pointed caps, a basalt lintel and threshold, the door a sealed double door of deep red light
 -- that breathes (client "glow", Controllers/TownFxController) with iron bands, a seam and a ring of glowing runes.
--- The door stays the "E" prompt's part (PrimaryPart, DungeonController / DungeonService.gatePosition).
+-- The door stays the "E" prompt's part (PrimaryPart, DungeonController / DungeonService.gatePosition). W31 (Studio:
+-- the horns black on black in the dark caves, the sill half buried in the Moss Cave's floor): ember rims and runes on
+-- the horns with a dim light each, the door on a raised sill (Data/Portals.GATE.sill, .rim).
 local GATE_STONE = "#2A2428"
 local GATE_IRON = "#1E1A1C"
 local GATE_RUNE = "#FFB27A"
@@ -1209,6 +1211,32 @@ function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number,
 			Material = Enum.Material.Basalt,
 			CanCollide = false,
 		})
+		-- the ember rim down the horn's outer front edge and three runes up its face, a dim light from the rim
+		local rim = Portals.GATE.rim
+		local front = -G.horn / 2 - rim.d / 2
+		local glow = part(ctx, model, {
+			Name = "HornRim",
+			Size = Vector3.new(rim.w, top - 0.6, rim.d),
+			CFrame = base * CFrame.new(side * (G.hornX + G.horn / 2 - rim.w / 2), top / 2 + 0.2, front),
+			Color = hex(GATE_RUNE),
+			Material = Enum.Material.Neon,
+			Transparency = rim.t,
+			CanCollide = false,
+		})
+		light(glow, GATE_RUNE, rim.light, rim.brightness)
+		for k = 0, 2 do
+			part(ctx, model, {
+				Name = "HornRune",
+				Size = Vector3.new(0.45, 1, rim.d),
+				CFrame = base
+					* CFrame.new(side * G.hornX, 4 + k * 4, front)
+					* CFrame.Angles(0, 0, math.rad((k % 2 * 2 - 1) * 18)),
+				Color = hex(GATE_RUNE),
+				Material = Enum.Material.Neon,
+				Transparency = rim.t,
+				CanCollide = false,
+			})
+		end
 	end
 	local L = Portals.GATE.lintel
 	part(ctx, model, {
@@ -1220,8 +1248,8 @@ function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number,
 	})
 	part(ctx, model, {
 		Name = "Threshold",
-		Size = Vector3.new(L.w - 2, 0.5, 3.6),
-		CFrame = base * CFrame.new(0, 0.2, -0.4),
+		Size = Vector3.new(Portals.GATE.sill.w, G.sill.h, G.sill.d),
+		CFrame = base * CFrame.new(0, G.sill.y, G.sill.z),
 		Color = hex(GATE_STONE),
 		Material = Enum.Material.Basalt,
 	})

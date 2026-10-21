@@ -13958,3 +13958,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   ramą; kierunki łuków; rogi bramy; napisy; drobiazgi poza portalami), `tests/PortalClearance` (elementy w układzie
   portalu).
 - **Do obejrzenia w Studio:** wszystko powyżej, nic nieoglądane.
+### W31 poprawka: pełny rozmiar łuków, rama wokół prawdziwego obrysu, rogi i próg bramy lochu (2026-10-21)
+- **Regresja (Studio po 930a1ef0):** malowane łuki `common_portal_01/02` miały 1/3 rozmiaru, bo `fitModel` wciskał
+  model w 16 x 18 x 6, a z płytą podstawy ma on 20,9 głębokości (po obrocie 16). Dopasowanie jest teraz czyste
+  (`Logic/ArchFit`): model tylko obracany, bez skalowania; pole 9,5 x 13,5 (zasłona 8,55 x 12,7) pół studa nad stopą
+  modelu, jak przed W31. Test na zmierzonym obrysie.
+- **Prawdziwy obrys:** `ARCH.model` 21 x 18 x 16,5 (z płytą podstawy), `HOLE.z` 8,7. Wszystkie ramy wejść (Szczyty,
+  Pustkowia, Mroczna Puszcza) i wyjść przesunięte poza ten obrys (słupy dalej na boki, ściany i otwory dalej w tył);
+  Głęboka Brama w Kuźni za wyjściem. Drobiazgi klienta omijają portale o 14 studów.
+- **Brama lochu:** żarzące się krawędzie i runy na rogach z przyćmionym światłem (`GATE.rim`), drzwi na podniesionym
+  progu (`GATE.sill`, wierzch 1,2 nad podłogą; w Jaskini Mchów próg tonął w podłodze).
+- **Testy:** `portals.spec` (skala 1 i zasłona dla zmierzonego obrysu, ramy poza obrysem 21 x 16,5, próg i krawędzie
+  rogów).

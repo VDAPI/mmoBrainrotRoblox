@@ -946,7 +946,8 @@ local function shore(map: Maps.MapDef, areas: any, x: number, z: number): boolea
 end
 
 -- W31 (Studio review: a pebble lay in a portal's opening): nothing within this many studs of a portal, gate or exit
-local PORTAL_KEEP = 10
+-- (the painted arch's real footprint, 21 x 16.5 with its base slab, reaches 13.3 from its middle)
+local PORTAL_KEEP = 14
 
 local function nearPortal(portals: { Portals.Portal }, x: number, z: number): boolean
 	for _, p in portals do

@@ -42,13 +42,14 @@ end
 local function dromos(env: Env, out: { Build })
 	local r = env.T.rooms[1]
 	-- W28: the dolmen in the exit portal's frame, its opening round the arch (it stood 11 studs off it, its stones
-	-- narrower and lower than the arch); W31: the stones beside the painted arch's pillars (16 studs wide)
+	-- narrower and lower than the arch); W31: the stones beside the painted arch (its real footprint 21 x 16.5 with the
+	-- base slab, Data/Portals.ARCH.model)
 	local d = Kit.atPortal(env, "Dolmen", "landmark", `{env.mapId}_exit`, true)
 	local bp = d.bp
 	for _, s in { -1, 1 } do
-		bp:box(4, 20, 3, s * 10.6, 9, 0, o(STONE, "shell", { q = false }))
+		bp:box(4, 20, 3, s * 13, 9, 0, o(STONE, "shell", { q = false }))
 	end
-	bp:box(26, 3, 4, 0, 20.5, 0, o(STONE, "shell", { col = false })) -- over the way: no collision
+	bp:box(31, 3, 4, 0, 20.5, 0, o(STONE, "shell", { col = false })) -- over the way: no collision
 	table.insert(out, d)
 	-- the fresh offering, rags, chalk spirals
 	local b = Kit.build(env, "FreshOffering", "traces", r.x + 6, r.z - 14, 0)
