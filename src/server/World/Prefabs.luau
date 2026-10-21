@@ -7,6 +7,7 @@ local CollectionService = game:GetService("CollectionService")
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local ArchFit = require(game:GetService("ReplicatedStorage").Shared.Logic.ArchFit)
+local BlueprintBuild = require(game:GetService("ReplicatedStorage").Shared.Util.BlueprintBuild)
 local CaveMouth = require(game:GetService("ReplicatedStorage").Shared.Data.CaveMouth)
 local Portals = require(game:GetService("ReplicatedStorage").Shared.Data.Portals)
 local SignSpots = require(game:GetService("ReplicatedStorage").Shared.Logic.SignSpots)
@@ -416,30 +417,59 @@ function Prefabs.lantern(ctx: Context, x: number, z: number, color: string?): Mo
 	return model
 end
 
+-- Studio review 2026-10-21 (Moss Cave: "the torches are flat yellow Neon balls"): a torch like the generators' (CaveDress
+-- Kit.torch, WorldGen Kit.fire): a stick, an iron cup and a bed of coals tagged "fire" (BlueprintBuild.FX_TAG, Fx
+-- "fire", FxColor: TownFxController lets flames rise from it), its light on a "Light" holder tagged "fire" too (the
+-- flicker and the light budget, RegionLightController). Was a Neon ball with the old Fire effect.
+Prefabs.TORCH_FIRE = "#FF8A3A" -- WorldGen Kit.FIRE
+
+local function fxTag(target: BasePart, fx: string, color: string?)
+	target:SetAttribute("Fx", fx)
+	target:SetAttribute("Build", "Torch")
+	if color then
+		target:SetAttribute("FxColor", hex(color))
+	end
+	CollectionService:AddTag(target, BlueprintBuild.FX_TAG)
+end
+
 function Prefabs.torch(ctx: Context, x: number, z: number, color: string?): Model
 	local base = baseAt(ctx, x, z)
 	local model = newModel(ctx, "Torch")
+	local flameColor = color or Prefabs.TORCH_FIRE
 	part(ctx, model, {
 		Name = "Stick",
 		Size = Vector3.new(0.5, 5, 0.5),
 		CFrame = base * CFrame.new(0, 2.5, 0),
-		Color = hex("#4A3828"),
+		Color = hex("#5A4632"),
 		Material = Enum.Material.Wood,
 	})
-	local flame = part(ctx, model, {
+	part(ctx, model, {
+		Name = "Cup",
+		Shape = Enum.PartType.Cylinder,
+		Size = Vector3.new(0.8, 1.2, 1.2),
+		CFrame = base * CFrame.new(0, 5.1, 0) * CFrame.Angles(0, 0, math.rad(90)),
+		Color = hex("#4A4E56"),
+		Material = Enum.Material.CorrodedMetal,
+		CanCollide = false,
+	})
+	local coals = part(ctx, model, {
 		Name = "Flame",
-		Shape = Enum.PartType.Ball,
-		Size = Vector3.new(1.2, 1.2, 1.2),
-		CFrame = base * CFrame.new(0, 5.4, 0),
-		Color = hex(color or "#FF9A3A"),
+		Size = Vector3.new(0.8, 0.32, 0.8),
+		CFrame = base * CFrame.new(0, 5.6, 0),
+		Color = hex(flameColor),
 		Material = Enum.Material.Neon,
 		CanCollide = false,
 	})
-	light(flame, color or "#FF9A3A", 26, 1.6)
-	local fire = Instance.new("Fire")
-	fire.Size = 2
-	fire.Heat = 4
-	fire.Parent = flame
+	fxTag(coals, "fire", flameColor)
+	local holder = part(ctx, model, {
+		Name = "Light",
+		Size = Vector3.new(0.2, 0.2, 0.2),
+		CFrame = base * CFrame.new(0, 6.4, 0),
+		Transparency = 1,
+		CanCollide = false,
+	})
+	light(holder, flameColor, 22, 1.6)
+	fxTag(holder, "fire", nil)
 	return model
 end
 
@@ -921,7 +951,7 @@ function Prefabs.caveMouth(
 	end
 	-- Torches and the sign in front (W31: the torches clear of the painted arch)
 	for _, side in { -1, 1 } do
-		local p = base * CFrame.new(side * 10, 0, -6)
+		local p = base * CFrame.new(side * CaveMouth.TORCHES.x, 0, CaveMouth.TORCHES.z)
 		Prefabs.torch(ctx, p.Position.X - ctx.origin.X, p.Position.Z - ctx.origin.Z)
 	end
 	local sign = SignSpots.caveSign({ x = x, z = z, rot = rot })

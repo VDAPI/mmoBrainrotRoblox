@@ -720,6 +720,16 @@ local Config = {
 		frameMargin = 1.1,
 		castBarAbove = 5,
 		floorPast = 4,
+		-- studio review 2026-10-21 (2): a look's root stays this many studs inside the stage floor (a big boss stands
+		-- on it, its body over the extra floor); a look moves onto its lowest visible point when that is farther than
+		-- footTolerance from the floor (Logic/Footing); the weapon row's labels: studs over the mannequin, the lift of
+		-- every other one, width (share of two places of the row) and height in studs
+		rootInside = 3,
+		footTolerance = 0.05,
+		labelAbove = 3.6,
+		labelStagger = 0.9,
+		labelWidth = 0.95,
+		labelHeight = 0.55,
 		comboGap = 0.6, -- S113: seconds between the steps of `attack <type> combo` (inside AttackMotions.COMBO_WINDOW)
 		hitShow = 0.6, -- S113: seconds a `hit` / `flinch` motion lasts (freeze, loop, keys)
 		stressRadius = 10, -- studs: the circle of the stress mannequins around the actor

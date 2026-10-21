@@ -13958,6 +13958,19 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   ramą; kierunki łuków; rogi bramy; napisy; drobiazgi poza portalami), `tests/PortalClearance` (elementy w układzie
   portalu).
 - **Do obejrzenia w Studio:** wszystko powyżej, nic nieoglądane.
+### Przegląd Studio 2026-10-21, partia 6: zamach bossa w AnimLab, stopy i etykiety AnimLab, pochodnie, /ui
+- **Zamach bossa:** `Logic/MotionKeys.basicBlow` (id bossa: wariant „boss”, atak i rodzaj obrażeń z `Data/Bosses`),
+  `AnimLabController.playMob` (boss też gra zwykły cios).
+- **AnimLab:** `bodyBoxes` / `bodyBox` (widoczne części bez korzeni), `placeLook` (przód ciała, korzeń w podłodze,
+  `Footing.liftFor`, `ground` w wyniku), `frameLook` z ciała, `refreshLabels`; `Config.AnimLab` (`rootInside`,
+  `footTolerance`, `labelAbove`, `labelStagger`, `labelWidth`, `labelHeight`); `Logic/Footing.extent`.
+- **Pochodnie:** `Prefabs.torch` (czarka, żar i światło z tagiem `TownFx` / „fire”).
+- **Wejście do Jaskini Mchów a W31:** `Data/CaveMouth` (`BOULDERS.x` 12, `HOLE` za łukiem, tylna płyta z 9,8,
+  `TORCHES`), `MeadowsGen/Water` (`CURTAIN_Z` 3,76, `CURTAIN_STEP`), `cavemouth.spec` (pudełka `frameKeepOut`, reguła otworu).
+- **/ui:** `Data/AdminCommands` (`ui`, kategoria perf), `Admin/Perf.commands.ui`, nowy `Controllers/UiDevController`
+  (`UiCall`), `WindowManager.Ids`, teksty `admin.usage.ui`, `admin.ui.*` (PL / EN).
+- **Testy:** `basicblow.spec` (boss: zamach 0,74 s, ścieżka świata, AnimLab na najniższym punkcie, etykiety),
+  `footing.spec` (`extent`), `cavemouth.spec` (pochodnie), `admin.spec` (`/ui`). Bez przeglądu w Studio.
 ### W31 poprawka: pełny rozmiar łuków, rama wokół prawdziwego obrysu, rogi i próg bramy lochu (2026-10-21)
 - **Regresja (Studio po 930a1ef0):** malowane łuki `common_portal_01/02` miały 1/3 rozmiaru, bo `fitModel` wciskał
   model w 16 x 18 x 6, a z płytą podstawy ma on 20,9 głębokości (po obrocie 16). Dopasowanie jest teraz czyste

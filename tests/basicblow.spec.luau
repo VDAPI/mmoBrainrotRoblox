@@ -7,6 +7,7 @@
 local fs = require("@lune/fs")
 
 local BasicBlow = require("../src/shared/Logic/BasicBlow")
+local Bosses = require("../src/shared/Data/Bosses")
 local Combat = require("../src/shared/Data/Combat")
 local Gait = require("../src/shared/Logic/Gait")
 local MonsterClips = require("../src/shared/Data/MonsterClips")
@@ -115,12 +116,41 @@ T.describe("A monster's regular blow (studio review 2026-10-21)", function()
 		T.expect(string.find(fx, "BasicBlow.slot(shot)", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(fx, 'BasicBlow.slot("melee")', 1, true) ~= nil).toBe(true)
 		local lab = fs.readFile("src/client/Controllers/AnimLabController.luau")
-		T.expect(string.find(lab, "MotionKeys.basicBlow(id)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(lab, 'MotionKeys.basicBlow(id, if monster then "normal" else "boss")', 1, true) ~= nil)
+			.toBe(true)
 		T.expect(string.find(lab, "BoneClips.step(bone.mixer, 0)", 1, true) ~= nil).toBe(true)
 		-- the slot a draw plays: a bolt is a spell, every other draw the second attack (AnimationController's rule)
 		T.expect(BasicBlow.slot("bolt")).toBe("cast")
 		T.expect(BasicBlow.slot("arrow")).toBe("attack2")
 		T.expect(BasicBlow.slot("melee")).toBe("attack2")
+	end)
+end)
+
+T.describe("A boss's regular blow (studio review 2026-10-21, 2)", function()
+	T.it("is drawn as the boss variant in AnimLab and in the world (AnimLab reported peak 0.08, hit 0.22)", function()
+		local seen = 0
+		for _, id in { "grimrok", "vaelgrath", "hrimvald" } do
+			local boss = assert(Bosses.get(id), id)
+			local keys, w = MotionKeys.basicBlow(id)
+			local k = assert(keys, id)
+			local expected = BasicBlow.wind(boss.attack, "boss")
+			T.expect({ id, w }).toEqual({ id, expected })
+			T.expect({ id, expected > BasicBlow.wind(boss.attack, "normal") }).toEqual({ id, true })
+			T.expect({ id, math.abs((MotionKeys.at(k, "hit") :: number) - expected) < 0.02 }).toEqual({ id, true })
+			T.expect({ id, (MotionKeys.at(k, "peak") :: number) > 0.5 }).toEqual({ id, true })
+			seen += 1
+		end
+		T.expect(seen).toBe(3)
+		-- every boss has a regular blow drawn longer than a normal monster's
+		for _, boss in Bosses.all do
+			local _, w = MotionKeys.basicBlow(boss.id)
+			T.expect({ boss.id, w > BasicBlow.wind(boss.attack, "normal") }).toEqual({ boss.id, true })
+		end
+		-- the world: a boss is a monster of the "boss" variant with the boss's attack, drawn by Monster.windUp
+		local src = fs.readFile("src/server/Entities/Boss.luau")
+		T.expect(string.find(src, 'services.spawnCustom(kindFor(def), "boss"', 1, true) ~= nil).toBe(true)
+		T.expect(string.find(src, "attack = def.attack,", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(src, "damageKind = def.damageKind,", 1, true) ~= nil).toBe(true)
 	end)
 end)
 
@@ -137,6 +167,20 @@ T.describe("AnimLab: looks on the floor, cameras on the look (studio review 2026
 		T.expect(string.find(lab, "frameLook(model)", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(lab, "LAB.castBarAbove", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(lab, '"SubjectFloor"', 1, true) ~= nil).toBe(true)
+	end)
+
+	T.it("stands a look on its lowest visible point, keeps big bosses on the floor, labels by the camera", function()
+		local lab = fs.readFile("src/client/Controllers/AnimLabController.luau")
+		local from = assert(string.find(lab, "local function bodyBoxes(", 1, true))
+		local body = string.sub(lab, from, (string.find(lab, "\nend\n", from, true)))
+		-- the invisible root parts never count (a real model's HumanoidRootPart is centred at its feet)
+		T.expect(string.find(body, '"HumanoidRootPart"', 1, true) ~= nil).toBe(true)
+		T.expect(string.find(body, '"LookRoot"', 1, true) ~= nil).toBe(true)
+		T.expect(string.find(lab, "Footing.liftFor(bodyBoxes(model), centre.Y)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(lab, "LAB.rootInside", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(lab, "result.ground = ground", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(lab, "local function refreshLabels()", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(lab, "UDim2.new(120", 1, true)).toBe(nil)
 	end)
 end)
 

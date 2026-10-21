@@ -627,6 +627,9 @@ cmd("perf", "perf", {})
 cmd("perf", "adminlog", { int("n", 1, 200, true) })
 cmd("perf", "meadowsstats", {})
 cmd("perf", "regionstats", { enum("map", REGION_MAPS) })
+-- Studio review 2026-10-21: the windows and an item's tooltip on the admin's client without mouse or keyboard
+-- (client/Controllers/UiDevController; the Studio MCP session calls its UiCall the same way)
+cmd("perf", "ui", { enum("op", { "list", "open", "close", "tooltip" }), str("id", true), str("option", true) })
 
 -- Data
 cmd("data", "help", {})

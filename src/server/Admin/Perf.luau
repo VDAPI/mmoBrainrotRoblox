@@ -6,7 +6,9 @@ local Players = game:GetService("Players")
 
 local Shared = game:GetService("ReplicatedStorage").Shared
 
+local Items = require(Shared.Data.Items)
 local Net = require(Shared.Net)
+local UiWindows = require(Shared.Data.UiWindows)
 
 local Context = require(script.Parent.Context)
 
@@ -44,6 +46,34 @@ commands.perf = function(player)
 	table.sort(counts)
 	reply(player, "admin.perf.parts", { list = table.concat(counts, ", ") })
 	Net.Fire(player, "AdminClient", "perf")
+end
+
+-- Studio review 2026-10-21: /ui list | open <window> | close [window] | tooltip <item> [rarity]: the windows and an
+-- item's tooltip on the admin's client without mouse or keyboard (client/Controllers/UiDevController). The windows
+-- are Data/UiWindows' (every window WindowManager registers has its entry there).
+commands.ui = function(player, args)
+	local op, id, option = args[1], args[2], args[3]
+	if op == "list" then
+		local ids: { string } = {}
+		for windowId in UiWindows.list do
+			table.insert(ids, windowId)
+		end
+		table.sort(ids)
+		reply(player, "admin.ui.list", { n = #ids, list = table.concat(ids, ", ") })
+		Net.Fire(player, "AdminClient", "ui", { "list" })
+		return
+	end
+	local known = if op == "open"
+		then id ~= nil and UiWindows.list[id] ~= nil
+		elseif op == "tooltip" then id ~= nil and Items.get(id) ~= nil
+		else id == nil or UiWindows.list[id] ~= nil
+	if not known then
+		reply(player, "admin.ui.unknown", { id = id or "" })
+		reply(player, "admin.usage.ui")
+		return
+	end
+	Net.Fire(player, "AdminClient", "ui", { op, id or "", option or "" })
+	reply(player, "admin.ui.ok", { op = op, id = id or "" })
 end
 
 -- S23: the last admin calls (newest first).
