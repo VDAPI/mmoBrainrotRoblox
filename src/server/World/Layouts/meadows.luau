@@ -24,6 +24,7 @@ local KitAssets = require(Shared.Util.KitAssets)
 local Log = require(Shared.Util.Log)
 local MeadowsGen = require(Shared.Logic.MeadowsGen)
 local MeadowsTerrain = require(Shared.Logic.MeadowsTerrain)
+local SignSpots = require(Shared.Logic.SignSpots)
 local TerrainShape = require(Shared.Data.Terrain.meadows)
 
 local log = Log.new("Meadows")
@@ -145,8 +146,8 @@ return function(ctx: Build.Context)
 	Prefabs.portalFrom(ctx, "meadows_duskwood")
 	Prefabs.caveEntrances(ctx, AREAS)
 	Prefabs.areaFeatures(ctx, AREAS)
-	local gate = assert(AREAS.sites, "meadows sites").gate
-	Prefabs.signpost(ctx, gate.x + 8, gate.z - 13, 90, "map.meadows.name", ctx.map.minLevel, ctx.map.maxLevel)
+	local sign = assert(SignSpots.nameSign("meadows"), "meadows name sign") -- Logic/SignSpots
+	Prefabs.signpost(ctx, sign.x, sign.z, sign.rot, "map.meadows.name", ctx.map.minLevel, ctx.map.maxLevel)
 
 	-- Gathering nodes by the areas' character (fishing spots, herbs, ores).
 	local nodes = MeadowsGen.nodes()

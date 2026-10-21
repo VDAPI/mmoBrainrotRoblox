@@ -21,8 +21,10 @@ local spots: { [string]: Types.Spot } = {
 	-- S134k: the Huntmaster beside the contract board on the market (the board stands at 28, -68 facing 180)
 	huntmaster = { x = 40, z = -64, facing = 200 },
 	-- S160k: the Portal Master just inside the east gate (the way to the Meadows and the arrival of every region
-	-- portal's travellers, 270, 0), across the street from the stablemaster, facing the gate
-	portalmaster = { x = 252, z = -16, facing = 90 },
+	-- portal's travellers, 270, 0), across the street from the stablemaster, facing the gate. Owner 2026-10-21 (Studio:
+	-- he stood with his back to the gate and the guard behind him showed its plate over his head): facing 270 (east,
+	-- the gate) and 11 studs nearer the street, off the line from the town to the guard at 270, -16
+	portalmaster = { x = 250, z = -5, facing = 270 },
 }
 
 return spots
