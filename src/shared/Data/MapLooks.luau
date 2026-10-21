@@ -180,21 +180,77 @@ local BY_MAP: { [string]: Look } = {
 
 local MapLooks = {}
 
-local function unset(): { bk: number, dn: number, ft: number, lf: number, rt: number, up: number }
-	return { bk = 0, dn = 0, ft = 0, lf = 0, rt = 0, up = 0 }
-end
-
--- 2026-10-20: the generated painted skies (docs/wyglad/niebo/JAK-WGRAC.md; source PNGs per folder in the owner's
--- project files `wyglad/niebo/<folder>`). The owner pastes the six image ids of a folder here after the upload; a sky
--- with any id 0 is skipped and the map keeps its `sky` (or the place's sky). The glow of each is painted at the sun of
+-- 2026-10-20: the generated painted skies (tools/sky/sky.py; PNGs in the owner's Downloads/Graphics/niebo/<folder>,
+-- uploaded 2026-10-21 through Studio MCP); a sky with any id 0 is skipped and the map keeps its `sky` (or the place's
+-- sky). The glow of each is painted at the sun of
 -- its map's hour (east +X, Roblox latitude); `turn` corrects it if the engine's sun shows elsewhere.
 MapLooks.paintedSkies = {
-	laki = { ids = unset(), turn = 0 }, -- folder laki: Meadows 17:00, golden afternoon
-	miastoDzien = { ids = unset(), turn = 0 }, -- folder miasto-dzien: the city by day, high sun
-	miastoNoc = { ids = unset(), turn = 0 }, -- folder miasto-noc: the city at night, moonlit clouds, stars
-	bor = { ids = unset(), turn = 0 }, -- folder bor: Duskwood 15:30, violet dusk under heavy cloud
-	pustkowia = { ids = unset(), turn = 0 }, -- folder pustkowia: Ashen Wastes 17:12, warm dust haze
-	szczyty = { ids = unset(), turn = 0 }, -- folder szczyty: Frostpeak 07:36, cold clear morning
+	laki = {
+		ids = {
+			bk = 111973926781440,
+			dn = 130419743016858,
+			ft = 108410197500358,
+			lf = 132776300500921,
+			rt = 84050767163122,
+			up = 139614090925949,
+		},
+		turn = 0,
+	}, -- folder laki: Meadows 17:00, golden afternoon
+	miastoDzien = {
+		ids = {
+			bk = 84085079984549,
+			dn = 105517969356842,
+			ft = 108180633713936,
+			lf = 99941987569372,
+			rt = 72527182654836,
+			up = 103941250450475,
+		},
+		turn = 0,
+	}, -- folder miasto-dzien: the city by day, high sun
+	miastoNoc = {
+		ids = {
+			bk = 118648995820514,
+			dn = 92945774741073,
+			ft = 102369609065402,
+			lf = 120471458650734,
+			rt = 71763486584982,
+			up = 135924412097534,
+		},
+		turn = 0,
+	}, -- folder miasto-noc: the city at night, moonlit clouds, stars
+	bor = {
+		ids = {
+			bk = 127491639040313,
+			dn = 107276565259757,
+			ft = 74708928701669,
+			lf = 108651548144178,
+			rt = 104620415227364,
+			up = 88657699707764,
+		},
+		turn = 0,
+	}, -- folder bor: Duskwood 15:30, violet dusk under heavy cloud
+	pustkowia = {
+		ids = {
+			bk = 122096844162370,
+			dn = 122661951015929,
+			ft = 76108831185706,
+			lf = 89712099928253,
+			rt = 103120003643593,
+			up = 134035674694626,
+		},
+		turn = 0,
+	}, -- folder pustkowia: Ashen Wastes 17:12, warm dust haze
+	szczyty = {
+		ids = {
+			bk = 82075995385111,
+			dn = 114579150338642,
+			ft = 83387606618266,
+			lf = 117365338339076,
+			rt = 103091531325127,
+			up = 85182541007840,
+		},
+		turn = 0,
+	}, -- folder szczyty: Frostpeak 07:36, cold clear morning
 } :: { [string]: PaintedSky }
 
 -- The night of the cycle for `paintedNight`: from 18.5 to 6.5 (the lamps' hours, the sky swaps in the twilight).
