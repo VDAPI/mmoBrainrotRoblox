@@ -13873,6 +13873,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   umiejętności i ścieżek, powitania NPC (Skupiec, Mistrz Portali, Łowczy, Wędrowny kupiec), `fish.hint`, `quest.*`.
 - **Testy:** `trackerfold.spec` (domyślne, zapis, walidator, `compact`, `withoutCount`), `shorttext3.spec` (linia ≤ 60
   znaków w obu językach, te same placeholdery, długi tekst istnieje, modale ≤ 120, bez długiej pauzy).
+- **Okno umiejętności (po Opisy-1):** `SkillsWindow/Details`: węzeł kierunku jeden akapit (`Logic/NodeText.plan`),
+  43 krótkie linie `path.*.*.short` (opisy > 100 znaków), pełny tekst i obecna ranga pod `Details`; „Pełny opis”
+  przez wspólne `Details` (`Open = ctx.fullOpen`); „i” przy nazwie kierunku, `skills.tree.leadingHint.short`,
+  `skill.adaptive.short`, linia kosztu `SkillInfo.costLine` „main” z „extra” za „i”; krótszy `paths.tree.hint`.
+  Test: `shorttext3.spec` (każdy długi węzeł ma krótką linię ≤ 60 znaków z liczbami, te same placeholdery, `plan`).
+- **Nic nie znika (koordynator):** wycięte części skróconych tekstów wróciły jako `<klucz>.info`: powitania 4 NPC
+  („i” w `NpcDialog`, m.in. zdanie Łowczego o Znaku), potwierdzenia resetu, zwrotu i kopiowania zestawu oraz
+  `rework2.*` z liczbami (`Modal.Spec.Details`, „Więcej ▸”); „na tym koncie” wróciło do `quest.set.shardsTaken*`.
 - **Dla właściciela:** bez przeglądu w Studio (wysokość tropiciela przy 3 zleceniach, dymek przytrzymania na telefonie).
 ### Opisy, grupa 2: sklepy, kowal, premium, poczta, nagrody (2026-10-21)
 - **Co widać:** jedna krótka linia (do 60 znaków), pełny tekst pod „i” (`Components/InfoTip`): Smoczy Sklep (Przedmioty,
@@ -13927,3 +13935,26 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `portalglass.spec` (brak `Glass` przed polem portalu na wszystkich mapach i przy bramach miasta),
   `cavemouth.spec`, `bosscast.spec` (kolory na gruncie: śnieg, lód, lodowiec, lawa i reszta `TERRAIN_COLORS`),
   `basicblow.spec` (zamach, odstępy, klipy kości w chwili ciosu, jedna reguła, AnimLab). Bez przeglądu w Studio.
+### W31: ramy portali przy jaskiniach, wyjścia, brama lochu, napisy stref (2026-10-21)
+- **Wspólny kontrakt** (`Data/Portals`): obrys malowanego łuku `ARCH.model` 16 x 18 x 6, strefy bez ramy
+  `frameKeepOut()` (łuk, widok z drogi 6 studów przed łukiem, pas przed otworem), ciemny otwór `HOLE` (17 x 16,
+  3,6 studa za łukiem, `Kit.portalHole`), paleta `palette(mapId)` (głęboki fiolet na Szczytach). `Prefabs.fitModel`
+  skaluje i centruje model w obrysie, napis portalu nad łukiem.
+- **Ramy wejść:** Szczyty (`FrostpeakGen/Mouths`: Serce Lodowca, Grota, Twierdza), Pustkowia (`AshenGen/Mouths`: Kuźnia
+  Głębin bez neonowego tła, szwy żaru wokół otworu, drzwi otwarte na boki, królowie dalej; Kopalnia z otworem 17 i
+  słupami poza łukiem; Leże), Mroczna Puszcza (`DuskwoodGen`: Krypta z fasadą za łukiem, piecyki z płomieniem
+  `Kit.brazierFlame` i efektem `brazier` w `TownFxController`; Nora, Kurhan).
+- **Kierunki:** łuki zachodnie i narożne (740,-740 i podobne) przodem do środka mapy; wyjścia z jaskiń `EXIT_ROT` 270
+  (przodem do sali, nie do skały).
+- **Wyjścia z jaskiń:** stare ramy (Nora, Kurhan, Krypta, Kopalnia) poza łukiem; nowe lekkie ramy: Kryjówka (drewniane
+  odrzwia), Nora goblinów (deski, słoje), Leże (żebra wywerny), Kuźnia (krasnoludzkie słupy, runy), Serce Lodowca
+  (lodowe odłamki, sople). Żyły w Sercu stoją na dnie (bez wiszącego turkusowego pręta); drobiazgi klienta
+  (`DecorController`) omijają portale o 10 studów (kamyk w Krypcie).
+- **Brama lochu:** pionowe rogi tuż przy drzwiach (`GATE.hornX` 6,3), nadproże i próg z bazaltu, drzwi oddychające
+  (`glow`) z okuciami, szwem i kręgiem run; „E” bez zmian.
+- **Napisy stref:** `UI/WorldLabel` (ciemna płytka, obwódka, `AlwaysOnTop`, nad łukiem) w `WorldController` i
+  `DungeonController`.
+- **Testy:** `tests/portals.spec` W31 (nic z ramy w łuku, w widoku ani przed otworem; otwór na osi zasłony; wyjścia z
+  ramą; kierunki łuków; rogi bramy; napisy; drobiazgi poza portalami), `tests/PortalClearance` (elementy w układzie
+  portalu).
+- **Do obejrzenia w Studio:** wszystko powyżej, nic nieoglądane.

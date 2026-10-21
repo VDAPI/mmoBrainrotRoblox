@@ -133,4 +133,65 @@ function PortalClearance.hits(mapId: string): { Hit }
 	return out
 end
 
+export type Placed = {
+	build: string,
+	piece: number,
+	frames: string?,
+	shape: string,
+	color: string,
+	c: Vec, -- centre in the portal's frame (x across, y up from the ground under the portal, z behind it)
+	r: Mat, -- axes of the piece in that frame (columns)
+	h: Vec, -- half sizes
+}
+
+-- W31: every piece of `mapId`'s dressing within `radius` studs of the portal `portalId`, placed in the portal's own
+-- frame (Data/Portals: x across, y up from the ground under the portal, -z its face).
+function PortalClearance.around(mapId: string, portalId: string, radius: number): { Placed }
+	local gen = WorldGen.get(mapId)
+	local p = Portals.get(portalId)
+	local out: { Placed } = {}
+	if not gen or not p then
+		return out
+	end
+	local y0 = MapTerrain.height(mapId, p.x, p.z) or 0
+	local inv = transpose(ry(p.rot))
+	for _, b in gen.all() do
+		if (b.at.x - p.x) ^ 2 + (b.at.z - p.z) ^ 2 < (radius + 60) ^ 2 then
+			local frame = ry(b.at.rot)
+			local rot = mul(inv, frame)
+			for k, piece in b.bp.pieces do
+				local world = apply(frame, piece.p)
+				local c = apply(inv, { b.at.x + world[1] - p.x, b.at.y + world[2] - y0, b.at.z + world[3] - p.z })
+				if math.abs(c[1]) < radius and math.abs(c[3]) < radius then
+					table.insert(out, {
+						build = b.name,
+						piece = k,
+						frames = b.frames,
+						shape = piece.s,
+						color = piece.c,
+						c = c,
+						r = mul(rot, piece.r),
+						h = { piece.size[1] / 2, piece.size[2] / 2, piece.size[3] / 2 },
+					})
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- Whether a placed piece overlaps the box (centre, half sizes) of the portal's frame.
+function PortalClearance.inBox(q: Placed, center: Vec, half: Vec): boolean
+	return PortalClearance.overlaps(q.c, q.r, q.h, center, half)
+end
+
+-- Extent of a placed piece along an axis of the portal's frame (1 = x, 2 = y, 3 = z): lowest and highest.
+function PortalClearance.extent(q: Placed, axis: number): (number, number)
+	local reach = 0
+	for j = 1, 3 do
+		reach += q.h[j] * math.abs(q.r[(axis - 1) * 3 + j])
+	end
+	return q.c[axis] - reach, q.c[axis] + reach
+end
+
 return PortalClearance

@@ -34,16 +34,21 @@ local function check()
 	end
 	shown = true
 	-- S137: skill points, pools and the free reset (rework2.*); the Mage paragraph names the element pools
-	local message = Text.now("rework2.body", {
+	-- Owner 2026-10-21: two short sentences, the rest (with the bar size and the free refund level) under "More ▸"
+	local args = {
 		slots = SkillData.HOTBAR_SLOTS,
 		level = Progression.freeRespecLevel,
-	})
+	}
+	local message = Text.now("rework2.body", args)
+	local details = Text.now("rework2.body.info", args)
 	if State.Get({ "character", "class" }) == "Mage" then
 		message ..= "\n\n" .. Text.now("rework2.mage")
+		details ..= "\n\n" .. Text.now("rework2.mage.info")
 	end
 	WindowManager.ShowModal({
 		Title = Text.now("rework2.title"),
 		Message = message,
+		Details = details,
 		ConfirmText = Text.now("rework2.button"),
 		CancelText = Text.now("rework.later"),
 		OnConfirm = function(): (boolean, string?)

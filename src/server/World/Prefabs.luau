@@ -556,7 +556,7 @@ local function ellipse(
 	w: number,
 	h: number,
 	z: number,
-	spec: any
+	spec: { t: number, color: string }
 ): Part
 	local disc = part(ctx, model, {
 		Name = name,
@@ -577,9 +577,11 @@ end
 local function portalLook(ctx: Context, model: Model, field: BasePart)
 	local LOOK = Portals.LOOK
 	local look = Portals.look(field.Size.X, field.Size.Y)
+	-- W31: the deep violet on the Frost Peaks' snow and ice (the light purple was lost on them)
+	local colors = Portals.palette(ctx.map.id)
 	field.Transparency = 1
-	ellipse(ctx, model, field, "Veil", look.veil.w, look.veil.h, 0, LOOK.veil)
-	local core = ellipse(ctx, model, field, "Core", look.core.w, look.core.h, -LOOK.gap, LOOK.core)
+	ellipse(ctx, model, field, "Veil", look.veil.w, look.veil.h, 0, colors.veil)
+	local core = ellipse(ctx, model, field, "Core", look.core.w, look.core.h, -LOOK.gap, colors.core)
 	-- sparkles drift from the core in every direction, slowly enough to stay in the field
 	local sp = LOOK.sparkle
 	local sparkles = Instance.new("ParticleEmitter")
@@ -605,7 +607,7 @@ local function portalLook(ctx: Context, model: Model, field: BasePart)
 		local swirl = Instance.new("ParticleEmitter")
 		swirl.Name = "Swirl"
 		swirl.Texture = swirlId
-		swirl.Color = ColorSequence.new(hex(sw.color))
+		swirl.Color = ColorSequence.new(hex(colors.swirl))
 		swirl.LightEmission = 1
 		swirl.LightInfluence = 0
 		swirl.Orientation = Enum.ParticleOrientation.VelocityPerpendicular
@@ -640,9 +642,14 @@ function Prefabs.makePortal(
 	target: string,
 	x: number,
 	z: number,
-	arrive: { x: number, z: number }?
+	arrive: { x: number, z: number }?,
+	labelHeight: number?
 )
 	portalLook(ctx, model, field)
+	-- W31: how far over the field's centre the zone label stands (WorldController; over the arch, not in its crown)
+	if labelHeight then
+		model:SetAttribute("LabelHeight", labelHeight)
+	end
 	-- Atomic: WorldController.decoratePortal needs the PrimaryPart when the tag arrives on the client.
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	model.PrimaryPart = field
@@ -695,6 +702,9 @@ end
 -- across the portal like the field (its thin side along the frame's z) and the field is fitted into its opening:
 -- centred on the model, never wider or taller than the opening's share of it. The field, the pillars, the lintel and
 -- the model share the portal's one frame `base`.
+-- W31 (Studio review: the painted arch was 16 wide, its pillars stood in the cave frames' slabs): the model is fitted
+-- into the box Data/Portals.ARCH.model (scaled down when wider or deeper) and its box centred on the portal's axis on
+-- the ground, so the cave frames (tests/portals.spec) and the field know where its pillars are.
 local function fitModel(arch: Model, base: CFrame, field: BasePart)
 	local lo, hi = boxIn(arch, base)
 	if lo and hi and (hi.Z - lo.Z) > (hi.X - lo.X) then
@@ -704,12 +714,23 @@ local function fitModel(arch: Model, base: CFrame, field: BasePart)
 	if not lo or not hi then
 		return
 	end
+	local box = Portals.ARCH.model
+	local shrink = math.min(1, box.w / (hi.X - lo.X), box.d / math.max(hi.Z - lo.Z, 0.01), box.h / (hi.Y - lo.Y))
+	if shrink < 0.999 then
+		arch:ScaleTo(arch:GetScale() * shrink)
+		lo, hi = boxIn(arch, base)
+		if not lo or not hi then
+			return
+		end
+	end
+	-- the box's middle onto the axis, its foot onto the ground
+	local shift = base.Rotation * Vector3.new(-(lo.X + hi.X) / 2, -lo.Y, -(lo.Z + hi.Z) / 2)
+	arch:PivotTo(arch:GetPivot() + shift)
 	local spec = Portals.ARCH.field
-	local w = math.min(spec.w, (hi.X - lo.X) * OPENING_WIDTH)
 	local h = math.min(spec.h, (hi.Y - lo.Y) * OPENING_HEIGHT)
-	local cx, cz = (lo.X + hi.X) / 2, (lo.Z + hi.Z) / 2
+	local w = math.min(spec.w, (hi.X - lo.X) * OPENING_WIDTH)
 	field.Size = Vector3.new(w, h, spec.d)
-	field.CFrame = base * CFrame.new(cx, lo.Y + 0.5 + h / 2, cz)
+	field.CFrame = base * CFrame.new(0, spec.y, 0)
 end
 
 function Prefabs.portal(
@@ -776,7 +797,7 @@ function Prefabs.portal(
 			end
 		end
 	end
-	Prefabs.makePortal(ctx, model, field, id, target, x, z, arrive)
+	Prefabs.makePortal(ctx, model, field, id, target, x, z, arrive, arch.height - arch.field.y + 2.5)
 	return model
 end
 
@@ -907,9 +928,9 @@ function Prefabs.caveMouth(
 		local p = base * CFrame.new(offset[1], 0, offset[2])
 		Prefabs.rock(ctx, p.Position.X - ctx.origin.X, p.Position.Z - ctx.origin.Z, 1.6, rockColor)
 	end
-	-- Torches and the sign in front
+	-- Torches and the sign in front (W31: the torches clear of the painted arch)
 	for _, side in { -1, 1 } do
-		local p = base * CFrame.new(side * 9, 0, -6)
+		local p = base * CFrame.new(side * 10, 0, -6)
 		Prefabs.torch(ctx, p.Position.X - ctx.origin.X, p.Position.Z - ctx.origin.Z)
 	end
 	local sign = SignSpots.caveSign({ x = x, z = z, rot = rot })
@@ -1162,34 +1183,105 @@ function Prefabs.dungeonGateFrom(ctx: Context, region: string): Model?
 end
 
 -- Boss dungeon entrance (S09 handles entering; tag "DungeonEntrance", attribute DungeonRegion).
+-- W31 (Studio review: a flat red slab standing free in a V of black horns 2-4 studs off it): upright horns 0.2 studs off
+-- the door's sides with pointed caps, a basalt lintel and threshold, the door a sealed double door of deep red light
+-- that breathes (client "glow", Controllers/TownFxController) with iron bands, a seam and a ring of glowing runes.
+-- The door stays the "E" prompt's part (PrimaryPart, DungeonController / DungeonService.gatePosition).
+local GATE_STONE = "#2A2428"
+local GATE_IRON = "#1E1A1C"
+local GATE_RUNE = "#FFB27A"
+
 function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number, rot: number?): Model
 	local base = baseAt(ctx, x, z, rot)
 	local model = newModel(ctx, `Dungeon_{region}`, ctx.folder)
+	local G = Portals.GATE
+	local door = G.door
+	-- the horns from a stud under the ground to just over the lintel, their caps sloping up towards the door, the gate
+	-- `height` tall in all (the frames of the boss caves hang their teeth and skulls over it)
+	local top = G.lintel.y + G.lintel.h / 2
 	for _, side in { -1, 1 } do
-		local horn = part(ctx, model, {
+		part(ctx, model, {
 			Name = "Horn",
-			Size = Vector3.new(3, 18, 3),
-			CFrame = base
-				* CFrame.new(side * Portals.GATE.hornX, 8, 0)
-				* CFrame.Angles(0, 0, math.rad(-side * Portals.GATE.hornLean)),
-			Color = hex("#2A2428"),
+			Size = Vector3.new(G.horn, top + 1, G.horn),
+			CFrame = base * CFrame.new(side * Portals.GATE.hornX, (top - 1) / 2, 0),
+			Color = hex(GATE_STONE),
 			Material = Enum.Material.Basalt,
 			CanQuery = true,
 		})
-		local _ = horn
+		wedge(ctx, model, {
+			Name = "HornTip",
+			Size = Vector3.new(G.horn, G.height - top, G.horn),
+			CFrame = base
+				* CFrame.new(side * G.hornX, (top + G.height) / 2, 0)
+				* CFrame.Angles(0, math.rad(-side * 90), 0),
+			Color = hex(GATE_STONE),
+			Material = Enum.Material.Basalt,
+			CanCollide = false,
+		})
 	end
-	local door = part(ctx, model, {
+	local L = Portals.GATE.lintel
+	part(ctx, model, {
+		Name = "Lintel",
+		Size = Vector3.new(L.w, L.h, L.d),
+		CFrame = base * CFrame.new(0, L.y, 0),
+		Color = hex(GATE_STONE),
+		Material = Enum.Material.Basalt,
+	})
+	part(ctx, model, {
+		Name = "Threshold",
+		Size = Vector3.new(L.w - 2, 0.5, 3.6),
+		CFrame = base * CFrame.new(0, 0.2, -0.4),
+		Color = hex(GATE_STONE),
+		Material = Enum.Material.Basalt,
+	})
+	local slab = part(ctx, model, {
 		Name = "Door",
-		Size = Vector3.new(Portals.GATE.door.w, Portals.GATE.door.h, Portals.GATE.door.d),
-		CFrame = base * CFrame.new(0, Portals.GATE.door.y, 0),
-		Color = hex("#D64A3E"),
+		Size = Vector3.new(Portals.GATE.door.w, door.h, door.d),
+		CFrame = base * CFrame.new(0, door.y, 0),
+		Color = hex("#B8322A"),
 		Material = Enum.Material.Neon,
-		Transparency = 0.25,
+		Transparency = 0.1,
 		CanCollide = true,
 	})
-	door.CanQuery = true
-	light(door, "#D64A3E", 26, 1.6)
-	model.PrimaryPart = door
+	slab.CanQuery = true
+	light(slab, "#D64A3E", 26, 1.6)
+	-- the door breathes on the client (W31)
+	slab:SetAttribute("Fx", "glow")
+	CollectionService:AddTag(slab, "TownFx")
+	-- iron bands, the seam of the double door and the ring of runes on its face
+	local face = -door.d / 2 - 0.08
+	for _, y in { 3.2, 11.8 } do
+		part(ctx, model, {
+			Name = "Band",
+			Size = Vector3.new(door.w, 0.5, 0.16),
+			CFrame = base * CFrame.new(0, y, face),
+			Color = hex(GATE_IRON),
+			Material = Enum.Material.Metal,
+			CanCollide = false,
+		})
+	end
+	part(ctx, model, {
+		Name = "Seam",
+		Size = Vector3.new(0.25, door.h, 0.16),
+		CFrame = base * CFrame.new(0, door.y, face),
+		Color = hex(GATE_IRON),
+		Material = Enum.Material.Metal,
+		CanCollide = false,
+	})
+	for k = 0, 7 do
+		local a = k * math.pi / 4
+		part(ctx, model, {
+			Name = "Rune",
+			Size = Vector3.new(0.45, 1.1, 0.12),
+			CFrame = base
+				* CFrame.new(math.cos(a) * 2.7, door.y + math.sin(a) * 2.7, face - 0.06)
+				* CFrame.Angles(0, 0, a + math.pi / 2),
+			Color = hex(GATE_RUNE),
+			Material = Enum.Material.Neon,
+			CanCollide = false,
+		})
+	end
+	model.PrimaryPart = slab
 	model:SetAttribute("DungeonRegion", region)
 	CollectionService:AddTag(model, "DungeonEntrance")
 	Build.icon(ctx, "dungeon", x, z, region)

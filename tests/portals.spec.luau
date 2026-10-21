@@ -6,6 +6,7 @@
 
 local fs = require("@lune/fs")
 
+local Areas = require("../src/shared/Data/Areas")
 local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
 local MapTerrain = require("../src/shared/Logic/MapTerrain")
 local PortalClearance = require("./PortalClearance")
@@ -282,7 +283,7 @@ describe("Portals: the look stays inside the frame (W30)", function()
 				"Enum.ParticleOrientation.VelocityPerpendicular",
 				'VfxTextures.idOf("swirl")',
 				"sparkles.Parent = core",
-				"Portals.GATE.hornLean",
+				"Portals.GATE.lintel",
 			}
 		do
 			if not string.find(prefabs, needle, 1, true) then
@@ -293,19 +294,15 @@ describe("Portals: the look stays inside the frame (W30)", function()
 		expect(string.find(prefabs, "sparkles.Speed = NumberRange.new(1, 3)", 1, true)).toBe(nil)
 	end)
 
-	it("keeps the dungeon gate's red door out of its leaning horns", function()
+	it("keeps the dungeon gate's red door out of its horns (W31: upright, 0.2 studs off the door)", function()
 		local gate = Portals.GATE
 		local door = gate.door
-		local r = math.rad(gate.hornLean)
+		local top = gate.lintel.y + gate.lintel.h / 2
 		for _, side in { -1, 1 } do
-			-- the horn turned about z by -side * lean (CFrame.Angles(0, 0, a): columns are the turned axes)
-			local a = -side * r
-			local c, s = math.cos(a), math.sin(a)
-			local rot = { c, -s, 0, s, c, 0, 0, 0, 1 }
 			local hit = PortalClearance.overlaps(
-				{ side * gate.hornX, 8, 0 },
-				rot,
-				{ 1.5, 9, 1.5 },
+				{ side * gate.hornX, (top - 1) / 2, 0 },
+				{ 1, 0, 0, 0, 1, 0, 0, 0, 1 },
+				{ gate.horn / 2, (top + 1) / 2, gate.horn / 2 },
 				{ 0, door.y, 0 },
 				{ door.w / 2, door.h / 2, door.d / 2 }
 			)
@@ -364,5 +361,242 @@ describe("Portals: frames on the ground, not in the rock (W30)", function()
 				end
 			end
 		end
+	end)
+end)
+
+-- W31 (Studio review 2026-10-21 on main 79328cbb: painted pillars inside the cave frames' slabs, dark holes off the
+-- veil, a lava backdrop behind the purple, arches facing the void, unframed boss doors) -------------------------------
+
+-- The mouths dressed by another session (the Moss Cave's water curtain, Logic/MeadowsGen/Water) stay out of the
+-- strict check; the generic mouth they stand in (Prefabs.caveMouth, Data/CaveMouth) has its own tests/cavemouth.spec.
+local OWN_DRESSING = { meadows_meadows_cave = true, meadows_cave_exit = true }
+
+local function dark(hex: string): boolean
+	local r, g, b =
+		tonumber(string.sub(hex, 2, 3), 16), tonumber(string.sub(hex, 4, 5), 16), tonumber(string.sub(hex, 6, 7), 16)
+	return (r or 255) < 24 and (g or 255) < 24 and (b or 255) < 24
+end
+
+-- What a frame round a cave mouth or a cave exit (`kind`) keeps free: every placed piece against the boxes of
+-- Data/Portals.frameKeepOut (an exit has no hole: no "opening" box), the hole excepted.
+local function keepOutHits(placed: { PortalClearance.Placed }, kind: string, hole: PortalClearance.Placed?): { string }
+	local bad = {}
+	for _, box in Portals.frameKeepOut() do
+		if box.name ~= "opening" or kind == "cave" then
+			for _, q in placed do
+				if q ~= hole and PortalClearance.inBox(q, box.center, box.half) then
+					table.insert(
+						bad,
+						string.format(
+							"%s #%d (%s %.1f x %.1f x %.1f) at %.1f, %.1f, %.1f in the %s",
+							q.build,
+							q.piece,
+							q.shape,
+							q.h[1] * 2,
+							q.h[2] * 2,
+							q.h[3] * 2,
+							q.c[1],
+							q.c[2],
+							q.c[3],
+							box.name
+						)
+					)
+				end
+			end
+		end
+	end
+	return bad
+end
+
+-- The hole of a cave mouth: the dark piece nearest behind the arch that covers the veil's centre.
+local function holeOf(placed: { PortalClearance.Placed }): PortalClearance.Placed?
+	local veilY = Portals.ARCH.field.y
+	local best: PortalClearance.Placed?, bestZ = nil, math.huge
+	for _, q in placed do
+		if dark(q.color) then
+			local x0, x1 = PortalClearance.extent(q, 1)
+			local y0, y1 = PortalClearance.extent(q, 2)
+			local z0 = PortalClearance.extent(q, 3)
+			if x0 <= 0 and x1 >= 0 and y0 <= veilY and y1 >= veilY and z0 >= 0 and z0 < bestZ then
+				best, bestZ = q, z0
+			end
+		end
+	end
+	return best
+end
+
+local function holeProblems(id: string, hole: PortalClearance.Placed?): { string }
+	if not hole then
+		return { `{id}: no dark hole behind the arch` }
+	end
+	local H, m = Portals.HOLE, Portals.ARCH.model
+	local x0, x1 = PortalClearance.extent(hole, 1)
+	local y0, y1 = PortalClearance.extent(hole, 2)
+	local z0 = PortalClearance.extent(hole, 3)
+	local out = {}
+	local cx, cy = (x0 + x1) / 2, (math.max(y0, 0) + y1) / 2
+	if math.abs(cx) > H.tolerance.x then
+		table.insert(out, string.format("%s: the hole's centre %.2f across the axis", id, cx))
+	end
+	if math.abs(cy - Portals.ARCH.field.y) > H.tolerance.y then
+		table.insert(
+			out,
+			string.format("%s: the hole's visible centre at %.2f, the veil's at %.2f", id, cy, Portals.ARCH.field.y)
+		)
+	end
+	if x1 - x0 < H.w - 0.01 or y0 > 0 or y1 < H.top - 0.01 then
+		table.insert(
+			out,
+			string.format("%s: the hole %.1f x %.1f..%.1f does not fill the arch's opening", id, x1 - x0, y0, y1)
+		)
+	end
+	if z0 < m.d / 2 + Portals.VIEW.margin or z0 > H.z + 0.5 then
+		table.insert(
+			out,
+			string.format("%s: the hole's face %.2f behind the portal (straight behind the arch: %.2f)", id, z0, H.z)
+		)
+	end
+	return out
+end
+
+describe("Portals: cave mouths round the painted arch (W31)", function()
+	it("keeps every piece out of the painted arch, its view from the path and the opening before the hole", function()
+		local bad = {}
+		local seen = 0
+		for _, p in Portals.list do
+			if (p.kind == "cave" or p.kind == "exit") and not OWN_DRESSING[p.id] and WorldGen.get(p.map) then
+				seen += 1
+				local placed = PortalClearance.around(p.map, p.id, 40)
+				local hole = if p.kind == "cave" then holeOf(placed) else nil
+				for _, line in keepOutHits(placed, p.kind, hole) do
+					table.insert(bad, `{p.id}: {line}`)
+				end
+			end
+		end
+		expect(seen >= 20).toBe(true)
+		if #bad > 0 then
+			error(table.concat(bad, "\n"))
+		end
+	end)
+
+	it(
+		"puts a dark hole straight behind every dressed cave mouth's arch, centred on the veil and filling the opening",
+		function()
+			local bad = {}
+			for _, p in Portals.list do
+				if p.kind == "cave" and not OWN_DRESSING[p.id] and WorldGen.get(p.map) then
+					local frames = false
+					for _, b in assert(WorldGen.get(p.map)).all() do
+						frames = frames or b.frames == p.id
+					end
+					if frames then
+						for _, line in holeProblems(p.id, holeOf(PortalClearance.around(p.map, p.id, 40))) do
+							table.insert(bad, line)
+						end
+					end
+				end
+			end
+			if #bad > 0 then
+				error(table.concat(bad, "\n"))
+			end
+		end
+	)
+
+	it("fits the painted model into the arch's box, centred on the portal's axis, the veil on the axis", function()
+		local m = Portals.ARCH.model
+		expect(m.h).toBe(Portals.ARCH.height)
+		-- the field and its veil stand between the painted pillars (W28 opening shares of the model)
+		expect(Portals.ARCH.field.w <= m.w * 0.62).toBe(true)
+		local prefabs = read("src/server/World/Prefabs.luau")
+		for _, needle in { "Portals.ARCH.model", "local function fitModel", "Portals.palette(ctx.map.id)" } do
+			if not string.find(prefabs, needle, 1, true) then
+				error(`Prefabs.luau: missing {needle}`)
+			end
+		end
+	end)
+
+	it("frames the cave exits too (light themed frames round the arch)", function()
+		local found: { [string]: boolean } = {}
+		for _, mapId in WorldGen.maps() do
+			for _, b in assert(WorldGen.get(mapId)).all() do
+				if b.frames then
+					found[b.frames] = true
+				end
+			end
+		end
+		for _, p in Portals.list do
+			if p.kind == "exit" and Areas.caves.get(p.map) and not OWN_DRESSING[p.id] and not found[p.id] then
+				error(`no frame round the exit {p.id}`)
+			end
+		end
+	end)
+end)
+
+describe("Portals: every arch faces its way in (W31)", function()
+	it("turns the arches of the region maps to the map's middle and the cave portals to the open room", function()
+		local bad = {}
+		for _, p in Portals.list do
+			local r = math.rad(p.rot)
+			local fx, fz = -math.sin(r), -math.cos(r) -- the face (local -z)
+			local cave = CaveTerrain.get(p.map)
+			if cave then
+				local function rockAt(sign: number): number
+					for d = 1, 80 do
+						local x, z = p.x + fx * d * sign, p.z + fz * d * sign
+						if not cave.floor(x, z) then
+							return d
+						end
+					end
+					return 99
+				end
+				local front, back = rockAt(1), rockAt(-1)
+				if front < 12 or front < back then
+					table.insert(bad, `{p.id}: rock {front} studs before its face, {back} behind it`)
+				end
+			elseif p.kind ~= "gate" and MapTerrain.has(p.map) then
+				local d = math.sqrt(p.x * p.x + p.z * p.z)
+				local dot = (fx * -p.x + fz * -p.z) / d
+				if dot < 0.5 then
+					table.insert(bad, string.format("%s: faces %.2f away from the map's middle", p.id, dot))
+				end
+			end
+		end
+		if #bad > 0 then
+			error(table.concat(bad, "\n"))
+		end
+	end)
+end)
+
+describe("Portals: the boss door and the labels (W31)", function()
+	it("frames the red door with upright horns and a lintel", function()
+		local g = Portals.GATE
+		local inner = g.hornX - g.horn / 2
+		expect(inner > g.door.w / 2).toBe(true)
+		expect(inner - g.door.w / 2 <= 0.5).toBe(true)
+		expect(g.lintel.y - g.lintel.h / 2 >= g.door.y + g.door.h / 2).toBe(true)
+		expect(g.lintel.w / 2 <= g.hornX + g.horn / 2).toBe(true)
+		expect(g.lintel.w / 2 >= inner + 1).toBe(true)
+		local prefabs = read("src/server/World/Prefabs.luau")
+		for _, needle in { "Portals.GATE.lintel", "Portals.GATE.hornX", '"Rune"' } do
+			if not string.find(prefabs, needle, 1, true) then
+				error(`Prefabs.luau: missing {needle}`)
+			end
+		end
+	end)
+
+	it("draws the zone labels over portals and gates on a dark plate, always on top, over the arch", function()
+		local world = read("src/client/Controllers/WorldController.luau")
+		local dungeon = read("src/client/Controllers/DungeonController.luau")
+		local label = read("src/client/UI/WorldLabel.luau")
+		expect(string.find(label, "AlwaysOnTop = true", 1, true) ~= nil).toBe(true)
+		expect(string.find(label, "Theme.Iron.Surface", 1, true) ~= nil).toBe(true)
+		expect(string.find(world, "WorldLabel.new(", 1, true) ~= nil).toBe(true)
+		expect(string.find(dungeon, "WorldLabel.new(", 1, true) ~= nil).toBe(true)
+		expect(string.find(read("src/server/World/Prefabs.luau"), '"LabelHeight"', 1, true) ~= nil).toBe(true)
+	end)
+
+	it("keeps the client's pebbles and tufts out of every portal", function()
+		local decor = read("src/client/Controllers/DecorController.luau")
+		expect(string.find(decor, "Portals.onMap(map.id)", 1, true) ~= nil).toBe(true)
 	end)
 end)

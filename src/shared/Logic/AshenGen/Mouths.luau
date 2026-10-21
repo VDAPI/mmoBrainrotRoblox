@@ -7,8 +7,8 @@
 --   * the Wyvern Lair: a huge scorched mouth in the mesa's wall, a fan of soot over it, a heap of bones and a cracked
 --     giant egg on the threshold, deep claw furrows, scorpion tracks in the sand,
 --   * Deepforge: the dwarven gate in the Forge Mountain (the end of the main road): two carved kings with hammers,
---     glowing runes over it, doors ajar with an orange glow from inside, smoke from chimneys in the rock, a thin stream
---     of molten metal from under a statue's foot into a small pool of slag. Pure.
+--     glowing runes over it, the doors swung open and orange glow seams around the gateway, smoke from chimneys in
+--     the rock, a thin stream of molten metal from under a statue's foot into a small pool of slag. Pure.
 
 local Env = require("./Env")
 local Kit = require("../WorldGen/Kit")
@@ -38,19 +38,21 @@ local function mine(env: Env.Env, out: { Build })
 	local bp = b.bp
 	local wood = Kit.timber
 	-- the adit: a dark hole framed by beams, set into the rock behind; W28: as wide and tall as the portal's arch in
-	-- front of it (11 x 12 before, the arch 14.5 x 18 stood over it)
+	-- front of it (11 x 12 before, the arch 14.5 x 18 stood over it); W31 (Studio review: the painted arch is 16 studs
+	-- wide, the adit was 15): the adit is the portals' dark hole (Kit.portalHole), the posts and their braces beside
+	-- the painted pillars
 	bp:box(30, 24, 8, 0, 10, 9, o(Props.ash, "shell", { q = true }))
-	bp:box(15, 18.6, 1, 0, 9, 4.6, o(Kit.dark, "shell", { q = false }))
+	Kit.portalHole(bp)
 	for _, side in { -1, 1 } do
-		bp:box(1.6, 19.4, 1.6, side * 8.4, 9, 3.6, o(wood, "shell", { q = false }))
-		bp:rbox(1, 9, 1, side * 7.4, 4, 2.6, 0, 0, side * 14, o(wood, "detail", { col = false }))
+		bp:box(1.6, 19.4, 1.6, side * 9.4, 9, 3.6, o(wood, "shell", { q = false }))
+		bp:rbox(1, 9, 1, side * 10.6, 4, 2.6, 0, 0, side * 14, o(wood, "detail", { col = false }))
 	end
-	bp:box(19, 1.8, 2, 0, 19.6, 3.6, o(wood, "shell", { q = false }))
+	bp:box(21, 1.8, 2, 0, 19.6, 3.6, o(wood, "shell", { q = false }))
 	-- dwarven runes on the lintel smeared with red orc paint
 	for k = -2, 2 do
 		bp:box(1, 1, 0.1, k * 2.2, 19.6, 2.55, o({ c = "#C9A45C", m = "SmoothPlastic" }, "fine"))
 	end
-	bp:rbox(9, 1.2, 0.12, 0, 19.4, 2.5, 0, 0, 8, o({ c = "#8A2A1E", m = "SmoothPlastic" }, "fine", { t = 0.2 }))
+	bp:rbox(9, 1.2, 0.12, 0, 19.7, 2.5, 0, 0, 8, o({ c = "#8A2A1E", m = "SmoothPlastic" }, "fine", { t = 0.2 }))
 	-- rails out onto the slope, overturned carts
 	for _, side in { -1, 1 } do
 		bp:box(
@@ -154,7 +156,9 @@ local function lair(env: Env.Env, out: { Build })
 	local bp = b.bp
 	-- the huge scorched mouth in the wall and the fan of soot over it
 	bp:box(34, 26, 8, 0, 11, 10, o({ c = "#6E2F2A", m = "Sandstone" }, "shell", { q = true }))
-	bp:add("ball", 20, 22, 4, 0, 9, 5.4, 0, 0, 0, o(Kit.dark, "shell", { q = false })) -- W28: over the arch
+	-- W28: over the arch; W31: behind it, the portals' dark hole in its middle (Kit.portalHole)
+	bp:add("ball", 22, 24, 4, 0, 9, 6.2, 0, 0, 0, o(Kit.dark, "shell", { q = false }))
+	Kit.portalHole(bp)
 	for k = -2, 2 do
 		bp:rbox(5, 14, 0.2, k * 4.6, 20, 5.6, 0, 0, k * 14, o(Props.soot, "detail", { col = false, t = 0.1 }))
 	end
@@ -239,21 +243,24 @@ local function forgeGate(env: Env.Env, out: { Build })
 	local dressed = { c = "#5E5856", m = "Cobblestone" }
 	-- the gate's frame of dressed stone set into the mountain
 	bp:box(30, 30, 8, 0, 13, 11, o(stone, "shell", { q = true }))
-	-- W28: the glowing gateway as wide and tall as the portal's arch in front of it (10 x 13 before)
+	-- W28: the glowing gateway as wide and tall as the portal's arch in front of it (10 x 13 before); W31 (Studio
+	-- review: the flat bright Neon backdrop hid the portal's violet and its label, a door ajar stood between the
+	-- painted pillar and the ellipse): the gateway is the portals' dark hole (Kit.portalHole) and the forge's glow
+	-- seams around its edges, beside and over the painted arch; the iron doors swung wide open beside it
 	bp:box(20, 22, 2, 0, 10, 7, o(dressed, "shell", { q = true }))
-	bp:box(15, 18.6, 0.6, 0, 9.3, 5.9, {
-		c = "#FF8A2A",
-		m = "Neon",
-		lod = "shell",
-		col = false,
-		q = false,
-		t = 0.2,
-		tag = "forge",
-		jitter = 0,
-	})
-	-- doors ajar
+	Kit.portalHole(bp)
+	local seam = o(
+		{ c = "#FF8A2A", m = "Neon" },
+		"detail",
+		{ col = false, q = false, t = 0.15, tag = "forge", jitter = 0 }
+	)
 	for _, side in { -1, 1 } do
-		bp:rbox(6.5, 18.6, 0.8, side * 7.4, 9.3, 4.2, 0, side * -35, 0, o(Props.ironDark, "detail", { col = false }))
+		bp:box(0.8, 16.8, 0.4, side * 8.9, 8.4, 4.4, seam)
+	end
+	bp:box(18.6, 0.8, 0.4, 0, 16.4, 4.4, seam)
+	-- the doors swung wide open, along the gateway's sides
+	for _, side in { -1, 1 } do
+		bp:rbox(6.5, 18.6, 0.8, side * 9.7, 9.3, 1.3, 0, 90, 0, o(Props.ironDark, "detail", { col = false }))
 	end
 	bp:light(0, 8, 2, "#FF8A2A", 36, 2, "fire")
 	-- glowing runes over the gate
@@ -269,9 +276,9 @@ local function forgeGate(env: Env.Env, out: { Build })
 		})
 	end
 	bp:box(22, 2, 2.4, 0, 20.6, 6.4, o(dressed, "shell", { q = false }))
-	-- two carved kings with hammers
+	-- two carved kings with hammers (W31: their hammers clear of the open doors)
 	for _, side in { -1, 1 } do
-		bp:push(side * 12, 0, 4, 0, 0, 0)
+		bp:push(side * 15, 0, 4, 0, 0, 0)
 		bp:box(6, 2, 6, 0, 1, 0, o(dressed, "shell", { q = false }))
 		bp:box(4.4, 11, 3.4, 0, 7.5, 0, o(stone, "shell", { q = false }))
 		bp:add("ball", 3, 3.2, 3, 0, 14.6, 0, 0, 0, 0, o(stone, "detail", { col = false }))

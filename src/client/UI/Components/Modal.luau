@@ -2,10 +2,13 @@
 -- Confirmation dialog over a dimmed overlay, optionally with a text field (e.g. "type the name to
 -- delete"). OnConfirm may yield (server call); returning false keeps the dialog open and shows the error.
 -- Shown through WindowManager.ShowModal, which guarantees one modal at a time.
+-- Owner 2026-10-21 (descriptions: nothing removed, only hidden): `Details` is the longer text of a short message,
+-- under the shared "More ▸" (Components/Details), closed.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Button)
+local Details = require(script.Parent.Details)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Motion)
 local Theme = require(script.Parent.Parent.Theme)
@@ -25,6 +28,7 @@ export type InputSpec = {
 export type Spec = {
 	Title: UsedAs<string>,
 	Message: UsedAs<string>?,
+	Details: UsedAs<string>?, -- the longer text under "More ▸" (closed)
 	ConfirmText: UsedAs<string>,
 	CancelText: UsedAs<string>?, -- nil = no cancel button (info dialog)
 	Variant: ("primary" | "danger")?,
@@ -162,9 +166,29 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 							TextWrapped = true,
 						}) :: any
 						else nil,
+					if props.Details
+						then Details.new(scope, {
+							Name = "Details",
+							LayoutOrder = 3,
+							Children = {
+								scope:New("TextLabel")({
+									BackgroundTransparency = 1,
+									Size = UDim2.fromScale(1, 0),
+									AutomaticSize = Enum.AutomaticSize.Y,
+									Text = props.Details,
+									RichText = true,
+									FontFace = Theme.Fonts.Body,
+									TextSize = Theme.TextSize.Small,
+									TextColor3 = Theme.Paper.Text,
+									TextWrapped = true,
+									TextXAlignment = Enum.TextXAlignment.Left,
+								}),
+							},
+						}) :: any
+						else nil,
 					if props.Input
 						then TextInput(scope, {
-							LayoutOrder = 3,
+							LayoutOrder = 4,
 							Text = text,
 							Placeholder = props.Input.Placeholder,
 							MaxLength = props.Input.MaxLength,
@@ -175,7 +199,7 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 						})
 						else scope:New("TextLabel")({
 							Name = "Error",
-							LayoutOrder = 3,
+							LayoutOrder = 4,
 							BackgroundTransparency = 1,
 							Size = UDim2.fromScale(1, 0),
 							AutomaticSize = Enum.AutomaticSize.Y,
@@ -192,7 +216,7 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 						}),
 					scope:New("Frame")({
 						Name = "Buttons",
-						LayoutOrder = 4,
+						LayoutOrder = 5,
 						BackgroundTransparency = 1,
 						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 						[Children] = {

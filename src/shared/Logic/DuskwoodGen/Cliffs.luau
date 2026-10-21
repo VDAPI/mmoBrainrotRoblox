@@ -9,6 +9,7 @@
 
 local Env = require("./Env")
 local Kit = require("../WorldGen/Kit")
+local Portals = require("../../Data/Portals")
 local Props = require("./Props")
 local Structures = require("../WorldGen/Structures")
 
@@ -21,6 +22,7 @@ type Build = Kit.Build
 local RED = Kit.redRock
 local RED_DARK = Kit.redRockDark
 local GUANO = { c = "#7E7A70", m = "Slate" }
+local CRYPT_FIRE = "#4A8CFF" -- W31: the braziers' cold flame (a deeper blue than Kit.COLD reads as fire in daylight)
 
 -- x of the scarp's edge at z (the plateau polygon's west side in Data/Terrain/duskwood).
 local EDGE = { { -220, 626 }, { -142, 612 }, { -60, 606 }, { 40, 610 }, { 112, 604 }, { 172, 622 } }
@@ -41,15 +43,22 @@ local function cryptGate(env: Env.Env, out: { Build })
 	b.frames = "duskwood_duskwood_cave"
 	local bp = b.bp
 	local y0 = -1.5
+	-- W31 (Studio review: the left painted pillar stood in the facade, two flat cyan tiles on the braziers): the
+	-- portal stands `along` studs before the build's origin (Data/Areas, x 748.5 against the gate's 768); the facade's
+	-- face behind the painted arch and its dark hole, the gateway's pillars and the open doors clear of the arch, the
+	-- braziers beside the path with tall cold flames (Kit.brazierFlame)
+	local along = -19.5
+	local face = along + Portals.HOLE.z + Portals.HOLE.d + 0.1
 	-- the facade of red rock with the dark gateway; W28: the portal stands in the gateway (Data/Areas, x 748.5), the
 	-- iron doors swung open along its sides (one of them half shut the gateway)
-	bp:box(56, 38, 28, 0, y0 + 19, -3, o(RED, "shell", { q = true }))
-	bp:box(17, 21, 1, 0, y0 + 10.5, -17.4, o(Kit.dark, "shell", { q = false }))
-	bp:box(22, 4, 4, 0, y0 + 23, -18.6, o(RED_DARK, "shell", { q = false }))
+	bp:box(56, 38, 28, 0, y0 + 19, face + 14, o(RED, "shell", { q = true }))
+	Kit.portalHole(bp, along)
+	bp:box(16.6, 20, 0.2, 0, y0 + 10, face - 0.05, o(Kit.dark, "shell", { q = false }))
+	bp:box(22, 4, 4, 0, y0 + 22, face - 1.6, o(RED_DARK, "shell", { q = false }))
 	for _, side in { -1, 1 } do
-		bp:box(3, 24, 3, side * 10, y0 + 12, -18.4, o(RED_DARK, "detail", { col = false }))
-		-- the iron doors, one ajar
-		bp:push(side * 8.4, y0, -17.6, 0, -side * 88, 0)
+		bp:box(3, 24, 3, side * 9.8, y0 + 12, face - 1.4, o(RED_DARK, "detail", { col = false }))
+		-- the iron doors, swung open before the gateway's pillars
+		bp:push(side * 9.0, y0, face - 3.2, 0, -side * 88, 0)
 		bp:box(8, 19, 0.6, -side * 4, 9.5, 0, o(Kit.iron, "detail", { col = false }))
 		for k = 0, 3 do
 			bp:box(8.1, 0.4, 0.7, -side * 4, 3 + k * 4.4, 0, o({ c = "#2A2826", m = "CorrodedMetal" }, "fine"))
@@ -58,8 +67,8 @@ local function cryptGate(env: Env.Env, out: { Build })
 		-- niches with skulls
 		for k = 0, 2 do
 			local nx, ny = side * 15, y0 + 9 + k * 7
-			bp:box(2.6, 2.6, 1, nx, ny, -17.2, o(Kit.dark, "detail", { col = false }))
-			Kit.skull(bp, nx, ny - 1, -17.4, 1.4)
+			bp:box(2.6, 2.6, 1, nx, ny, face - 0.2, o(Kit.dark, "detail", { col = false }))
+			Kit.skull(bp, nx, ny - 1, face - 0.4, 1.4)
 		end
 		-- the hooded figures on their plinths
 		local fx, fz = side * 21, -21
@@ -104,30 +113,31 @@ local function cryptGate(env: Env.Env, out: { Build })
 			o(Kit.iron, "detail", { col = false })
 		)
 		bp:box(2.6, 1, 1.2, fx, y0 + 10.6, fz - 2.2, o({ c = "#3A3438", m = "Slate" }, "detail", { col = false }))
-		-- cold blue flames in braziers
-		local bx, bz = side * 7.5, -27
+		-- cold blue flames in braziers: a stone stand, an iron bowl with a rim, a bed of embers and a tall flame
+		local bx, bz = side * 11, along - 7.5
 		bp:add("cyl", 4, 1.6, 1.6, bx, y0 + 2, bz, 0, 0, 90, o(RED_DARK, "detail", { col = false }))
-		bp:add("cyl", 0.8, 3, 3, bx, y0 + 4.2, bz, 0, 0, 90, o(Kit.iron, "detail", { col = false }))
-		Kit.fire(bp, bx, y0 + 4.8, bz, 1.6, Kit.COLD, "detail")
+		bp:add("cyl", 1.2, 3, 3, bx, y0 + 4.6, bz, 0, 0, 90, o(Kit.iron, "detail", { col = false }))
+		bp:add("cyl", 0.3, 3.4, 3.4, bx, y0 + 5.2, bz, 0, 0, 90, o(Kit.iron, "fine", { col = false }))
+		Kit.brazierFlame(bp, bx, y0 + 5.2, bz, 2.2, CRYPT_FIRE, "detail")
 		-- wing walls framing the courtyard
 		bp:rbox(4, 20, 18, side * 30, y0 + 9, -14, 0, side * 24, side * 3, o(RED_DARK, "shell", { q = true }))
 	end
 	-- W16 (bor.md A5.1): a worn relief of the queen with the spear over the gateway, the same motif as the chapel's
 	-- window; weathered lighter stone proud of the facade
 	local worn = { c = "#8A5E4E", m = "Slate" }
-	bp:box(9, 11, 0.6, 0, y0 + 31, -17.3, o(RED_DARK, "detail", { col = false }))
-	bp:rbox(3.2, 6.4, 0.5, 0, y0 + 29.6, -17.7, 0, 0, 0, o(worn, "detail", { col = false }))
-	bp:add("ball", 1.6, 1.8, 0.6, 0, y0 + 33.9, -17.7, 0, 0, 0, o(worn, "detail", { col = false }))
+	bp:box(9, 11, 0.6, 0, y0 + 31, face - 0.3, o(RED_DARK, "detail", { col = false }))
+	bp:rbox(3.2, 6.4, 0.5, 0, y0 + 29.6, face - 0.7, 0, 0, 0, o(worn, "detail", { col = false }))
+	bp:add("ball", 1.6, 1.8, 0.6, 0, y0 + 33.9, face - 0.7, 0, 0, 0, o(worn, "detail", { col = false }))
 	for k = -1, 1 do
-		bp:box(0.3, 0.7 + math.abs(k) * 0.3, 0.3, k * 0.5, y0 + 35.1, -17.8, o(worn, "fine", { col = false }))
+		bp:box(0.3, 0.7 + math.abs(k) * 0.3, 0.3, k * 0.5, y0 + 35.1, face - 0.8, o(worn, "fine", { col = false }))
 	end
-	bp:rbox(0.35, 10, 0.35, 1.6, y0 + 31, -17.9, 0, 0, -14, o(worn, "fine", { col = false }))
-	bp:rbox(0.9, 1.2, 0.3, 2.85, y0 + 35.8, -17.9, 0, 0, -14, o(worn, "fine", { col = false }))
+	bp:rbox(0.35, 10, 0.35, 1.6, y0 + 31, face - 0.9, 0, 0, -14, o(worn, "fine", { col = false }))
+	bp:rbox(0.9, 1.2, 0.3, 2.85, y0 + 35.8, face - 0.9, 0, 0, -14, o(worn, "fine", { col = false }))
 	-- the overhang above the gate, bats under it
-	bp:rbox(30, 3, 14, 0, y0 + 39, -16, 6, 0, 0, o(RED_DARK, "shell", { q = false }))
+	bp:rbox(30, 3, 14, 0, y0 + 39, face + 1, 6, 0, 0, o(RED_DARK, "shell", { q = false }))
 	for k = -2, 2 do
-		Kit.lifeAt(ctx, b, "batRoost", k * 5, y0 + 36.6, -18, 4)
-		bp:box(0.6, 3, 0.3, k * 6 + 1, y0 + 35, -17.25, o(GUANO, "fine", { col = false }))
+		Kit.lifeAt(ctx, b, "batRoost", k * 5, y0 + 36.6, face - 1, 4)
+		bp:box(0.6, 3, 0.3, k * 6 + 1, y0 + 35, face - 0.25, o(GUANO, "fine", { col = false }))
 	end
 	Kit.rect(ctx, "cliff", b.at.x + 2, b.at.z, 28, 56, b.at.rot)
 	table.insert(out, b)

@@ -42,6 +42,34 @@ local function jarLamp(bp: Kit.BP, x: number, y: number, z: number, light: boole
 	end
 end
 
+-- W31 (Studio review: the exit stood in the bare arch): a light frame round the exit's arch, in the exit portal's
+-- frame (local -z the room it faces), beside the painted pillars (16 studs wide) and over its top (18): goblin junk,
+-- planks leaning on both sides, a crossbar of scrap and two jar lamps.
+local function exitJunk(env: Env, out: { Build })
+	local f = Kit.atPortal(env, "JunkDoorway", "landmark", `{env.mapId}_exit`, true)
+	local bp = f.bp
+	for _, s in { -1, 1 } do
+		for k = 0, 2 do
+			bp:rbox(
+				1.2,
+				12 + k * 3,
+				0.4,
+				s * (9.8 + k * 1.1),
+				5.5 + k * 1.5,
+				-0.6 + k * 0.6,
+				0,
+				0,
+				-s * (3 + k * 3),
+				o(Kit.planks, if k == 1 then "shell" else "detail", { col = false, q = false })
+			)
+		end
+		jarLamp(bp, s * 13.4 - 0.6, 0, -1.6, s > 0)
+	end
+	bp:rbox(22, 1, 0.6, 0, 20.2, -0.2, 0, 0, 3, o({ c = "#6A5A48", m = "CorrodedMetal" }, "detail", { col = false }))
+	Kit.skull(bp, 0, 20.7, -0.6, 1.3, 0)
+	table.insert(out, f)
+end
+
 local function gate(env: Env, out: { Build })
 	local r = env.T.rooms[1]
 	local b = Kit.build(env, "JunkGate", "camp", r.x + 18, r.z, 90)
@@ -401,6 +429,7 @@ local function spiderpit(env: Env, out: { Build })
 end
 
 function Warren.all(env: Env, out: { Build })
+	exitJunk(env, out)
 	gate(env, out)
 	village(env, out)
 	diggings(env, out)

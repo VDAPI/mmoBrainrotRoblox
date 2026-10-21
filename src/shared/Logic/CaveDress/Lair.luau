@@ -103,6 +103,47 @@ local function nest(bp: BP, x: number, y: number, z: number, s: number, eggs: nu
 	end
 end
 
+-- W31 (Studio review: the exit stood in the bare arch): a light frame round the exit's arch, in the exit portal's
+-- frame (local -z the room it faces), beside the painted pillars (16 studs wide) and over its top (18): the ribs of a
+-- wyvern meeting over the arch, a skull at their crown and soot on the threshold, like the scorched mouth outside.
+local function ribs(env: Env, out: { Build })
+	local f = Kit.atPortal(env, "WyvernRibs", "landmark", `{env.mapId}_exit`, true)
+	local bp = f.bp
+	local bone = { c = "#D8CDB4", m = "SmoothPlastic" }
+	for _, s in { -1, 1 } do
+		for k = 0, 1 do
+			local z = -1.2 + k * 2.4
+			local w = 1.6 - k * 0.3
+			bp:beam(
+				s * (10.6 + k),
+				-0.5,
+				z,
+				s * (10 + k),
+				18.5,
+				z,
+				w,
+				o(bone, if k == 0 then "shell" else "detail", {
+					col = false,
+					q = false,
+				})
+			)
+			bp:beam(
+				s * (10 + k),
+				18.5,
+				z,
+				s * (3.5 + k),
+				22.5 + k * 0.4,
+				z,
+				w * 0.9,
+				o(bone, "detail", { col = false })
+			)
+		end
+	end
+	Kit.skull(bp, 0, 21.4, -1.6, 2.2, 0)
+	bp:add("ball", 18, 0.3, 6, 0, 0.1, -3, 0, 0, 0, o(SOOT, "detail", { col = false }))
+	table.insert(out, f)
+end
+
 local function maw(env: Env, out: { Build })
 	local r = env.T.rooms[1]
 	local b = Kit.build(env, "ScorchedMaw", "traces", r.x, r.z, 0)
@@ -606,6 +647,7 @@ local function harnessLedge(env: Env, out: { Build })
 end
 
 function Lair.all(env: Env, out: { Build })
+	ribs(env, out)
 	maw(env, out)
 	chimneys(env, out)
 	sands(env, out)
