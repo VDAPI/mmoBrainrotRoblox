@@ -15,6 +15,7 @@ local CurrencyIcon = require(script.Parent.Parent.Components.CurrencyIcon)
 local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local LookPicker = require(script.Parent.Parent.Components.LookPicker)
 local LookPreview = require(script.Parent.Parent.Components.LookPreview)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -180,7 +181,8 @@ local function LookWindow(scope: Scope): Instance
 					}),
 				},
 			}),
-			scope:New("TextLabel")({
+			-- 2026-10-21 (owner: too many detailed descriptions): one short line, what the avatar hides behind the "i"
+			scope:New("Frame")({
 				Name = "AvatarOn",
 				LayoutOrder = 3,
 				Size = UDim2.fromScale(1, 0),
@@ -189,12 +191,28 @@ local function LookWindow(scope: Scope): Instance
 				Visible = scope:Computed(function(use): boolean
 					return use(avatar) == true
 				end),
-				Text = Text.T(scope, "look.avatarOn"),
-				FontFace = Theme.Fonts.Body,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.TextMuted,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextWrapped = true,
+				[Children] = {
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 6),
+					}),
+					scope:New("TextLabel")({
+						LayoutOrder = 1,
+						Size = UDim2.new(),
+						AutomaticSize = Enum.AutomaticSize.XY,
+						BackgroundTransparency = 1,
+						Text = Text.T(scope, "look.avatarOn.short"),
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.TextMuted,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextWrapped = true,
+						[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+					}),
+					InfoTip.new(scope, { Text = Text.T(scope, "look.avatarOn"), LayoutOrder = 2 }),
+				},
 			}),
 			Button(scope, {
 				LayoutOrder = 4,

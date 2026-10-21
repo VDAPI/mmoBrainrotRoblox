@@ -5,6 +5,8 @@
 -- equally likely), the cost (gold, essence and a Stone of Effect Transmutation together, each owned / needed) and where
 -- the stone comes from. "Change effect" asks first, plays the forge's tension and shows "old → new". Everything is
 -- computed again by the server (RerollEffect); this only shows it.
+-- 2026-10-21 (owner: too many detailed descriptions): one short line while empty (smith.effect.intro.short), and what a
+-- change takes and where the stone comes from (smith.effect.stoneHint) behind the "i" of the cost line.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,6 +15,7 @@ local Device = require(script.Parent.Parent.Parent.Device)
 local EffectReroll = require(ReplicatedStorage.Shared.Logic.EffectReroll)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local ItemEffects = require(ReplicatedStorage.Shared.Logic.ItemEffects)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
@@ -62,6 +65,49 @@ local function label(scope: Scope, order: number, text: Fusion.UsedAs<string>, c
 		TextSize = Theme.TextSize.Small,
 		TextColor3 = color or Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
+	})
+end
+
+-- 2026-10-21 (owner: too many detailed descriptions): a short line with an "i" right after it holding the longer text
+-- (Components/InfoTip); the row hides while the line is empty.
+local function infoLine(
+	scope: Scope,
+	order: number,
+	text: Fusion.UsedAs<string>,
+	info: Fusion.UsedAs<string>,
+	color: Color3?
+): Instance
+	return scope:New("Frame")({
+		LayoutOrder = order,
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Visible = scope:Computed(function(use): boolean
+			return use(text) ~= ""
+		end),
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 6),
+			}),
+			scope:New("TextLabel")({
+				LayoutOrder = 1,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(),
+				AutomaticSize = Enum.AutomaticSize.XY,
+				RichText = true,
+				TextWrapped = true,
+				Text = text,
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = color or Theme.Paper.Text,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+			}),
+			InfoTip.new(scope, { Text = info, LayoutOrder = 2 }),
+		},
 	})
 end
 
@@ -392,7 +438,7 @@ local function Effect(scope: Scope, props: Props): Instance
 				scope:Computed(function(use): string
 					local i = use(item)
 					if not i then
-						return Text.get(use, "smith.effect.intro")
+						return Text.get(use, "smith.effect.intro.short")
 					end
 					local why = use(refusal)
 					if why then
@@ -444,17 +490,13 @@ local function Effect(scope: Scope, props: Props): Instance
 					}),
 				},
 			}),
-			label(scope, 6, costText),
-			label(
+			infoLine(
 				scope,
-				7,
+				6,
+				costText,
 				scope:Computed(function(use): string
-					if use(cost) == nil then
-						return ""
-					end
 					return Text.get(use, "smith.effect.stoneHint", { count = use(stones) })
-				end),
-				Theme.Paper.TextMuted
+				end)
 			),
 			Button(scope, {
 				LayoutOrder = 8,

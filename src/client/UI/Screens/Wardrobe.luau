@@ -26,6 +26,8 @@
 -- look or the Roblox avatar). A saved look says which class it was saved on.
 -- S154: the "Weapon looks" tab (a group without kinds, UI/Screens/WardrobeTransmog): the collection of item looks to
 -- look through and the way to the blacksmith, who puts them on (weapon effects stay on their own tab).
+-- 2026-10-21 (owner: too many detailed descriptions): the hint under the preview is one short line, "looks only" (and
+-- for marks and gestures "others see them") behind its "i".
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -46,6 +48,7 @@ local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HuntShop = require(ReplicatedStorage.Shared.Data.HuntShop)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local MountLook = require(ReplicatedStorage.Shared.Util.MountLook)
 local Mounts = require(ReplicatedStorage.Shared.Logic.Mounts)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -1169,25 +1172,45 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 		viewport :: Instance,
 		overlay,
 		outfitRow,
-		scope:New("TextLabel")({
+		scope:New("Frame")({
 			Position = UDim2.fromOffset(0, HINT_Y),
 			Size = UDim2.fromOffset(PREVIEW, 56),
 			BackgroundTransparency = 1,
 			Visible = scope:Computed(function(use): boolean
 				return use(kind) ~= "mountskin" and use(group) ~= TRANSMOG
 			end),
-			-- S123: the marks and gestures are seen by others (one more line)
-			Text = scope:Computed(function(use): string
-				local g = use(group)
-				local hint = Text.get(use, "wardrobe.hint")
-				return if g == "marks" or g == "gestures"
-					then `{hint} {Text.get(use, "wardrobe.hint.social")}`
-					else hint
-			end),
-			TextWrapped = true,
-			FontFace = Theme.Fonts.Body,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Paper.TextMuted,
+			[Children] = {
+				scope:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					HorizontalAlignment = Enum.HorizontalAlignment.Center,
+					VerticalAlignment = Enum.VerticalAlignment.Top,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 6),
+				}),
+				scope:New("TextLabel")({
+					LayoutOrder = 1,
+					Size = UDim2.new(),
+					AutomaticSize = Enum.AutomaticSize.XY,
+					BackgroundTransparency = 1,
+					Text = Text.T(scope, "wardrobe.hint.short"),
+					TextWrapped = true,
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.TextMuted,
+					[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+				}),
+				-- S123: the marks and gestures are seen by others (one more sentence)
+				InfoTip.new(scope, {
+					LayoutOrder = 2,
+					Text = scope:Computed(function(use): string
+						local g = use(group)
+						local info = Text.get(use, "wardrobe.hint.info")
+						return if g == "marks" or g == "gestures"
+							then `{info} {Text.get(use, "wardrobe.hint.social")}`
+							else info
+					end),
+				}),
+			},
 		}),
 		-- S97: an extra line on the mount skin tab (the look works on every mount)
 		scope:New("TextLabel")({

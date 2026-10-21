@@ -7,6 +7,9 @@
 -- Bonus Transmutation together, each with owned / needed, and a line says where the stone comes from. "Transmute" asks
 -- first (the first reroll of an item also says the choice locks), plays the forge's tension and shows "old → new".
 -- Everything is computed again by the server (RerollBonus); this only shows it.
+-- 2026-10-21 (owner: too many detailed descriptions): what a transmutation takes and where the stone comes from
+-- (smith.reroll.stoneHint) sits behind the "i" of the cost line; without a Scroll of Transformation one short line
+-- with the scroll's text behind its "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,6 +17,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
@@ -117,6 +121,49 @@ local function label(scope: Scope, order: number, text: Fusion.UsedAs<string>, c
 		TextSize = size or Theme.TextSize.Small,
 		TextColor3 = color or Theme.Paper.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
+	})
+end
+
+-- 2026-10-21 (owner: too many detailed descriptions): a short line with an "i" right after it holding the longer text
+-- (Components/InfoTip); the row hides while the line is empty.
+local function infoLine(
+	scope: Scope,
+	order: number,
+	text: Fusion.UsedAs<string>,
+	info: Fusion.UsedAs<string>,
+	color: Color3?
+): Instance
+	return scope:New("Frame")({
+		LayoutOrder = order,
+		BackgroundTransparency = 1,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Visible = scope:Computed(function(use): boolean
+			return use(text) ~= ""
+		end),
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 6),
+			}),
+			scope:New("TextLabel")({
+				LayoutOrder = 1,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(),
+				AutomaticSize = Enum.AutomaticSize.XY,
+				RichText = true,
+				TextWrapped = true,
+				Text = text,
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = color or Theme.Paper.Text,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+			}),
+			InfoTip.new(scope, { Text = info, LayoutOrder = 2 }),
+		},
 	})
 end
 
@@ -645,20 +692,16 @@ local function Reroll_(scope: Scope, props: Props): Instance
 					}),
 				},
 			}),
-			label(scope, 7, costText),
-			label(scope, 8, countText, Theme.Paper.TextMuted),
-			-- S160k: what every transmutation takes and where the stone comes from
-			label(
+			-- S160k: what every transmutation takes and where the stone comes from (2026-10-21: behind the "i")
+			infoLine(
 				scope,
-				9,
+				7,
+				costText,
 				scope:Computed(function(use): string
-					if use(cost) == nil then
-						return ""
-					end
 					return Text.get(use, "smith.reroll.stoneHint", { count = use(stones) })
-				end),
-				Theme.Paper.TextMuted
+				end)
 			),
+			label(scope, 8, countText, Theme.Paper.TextMuted),
 			Button(scope, {
 				LayoutOrder = 10,
 				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
@@ -698,12 +741,18 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				scope,
 				14,
 				scope:Computed(function(use): string
-					local done = use(allResult)
-					if done then
-						return done
-					end
-					return if use(scrolls) < 1 and use(item) ~= nil then Text.get(use, "smith.reroll.all.hint") else ""
+					return use(allResult) or ""
 				end),
+				Theme.Paper.TextMuted
+			),
+			infoLine(
+				scope,
+				15,
+				scope:Computed(function(use): string
+					local missing = use(allResult) == nil and use(scrolls) < 1 and use(item) ~= nil
+					return if missing then Text.get(use, "smith.reroll.all.hint.short") else ""
+				end),
+				Text.T(scope, "smith.reroll.all.hint"),
 				Theme.Paper.TextMuted
 			),
 			-- Result: old (struck through) → new, with the new line's quality

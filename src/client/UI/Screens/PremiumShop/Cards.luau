@@ -2,6 +2,8 @@
 -- Shared pieces of the Dragon Shop tabs (S120): the entry card (S119 picture with today's glyph as the fallback, an
 -- item picture, or a cosmetic tile), the buy buttons (shards and Robux with the "Soon" state, DESIGN-17 §0.8), section
 -- headers, note lines and the Robux request.
+-- 2026-10-21 (owner: too many detailed descriptions): a card shows one short subtitle; the full description goes to
+-- `info`, an "i" after the title (Components/InfoTip: hover / click on PC, tap on a phone). A note can carry one too.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -9,6 +11,7 @@ local RunService = game:GetService("RunService")
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -45,7 +48,8 @@ export type CardSpec = {
 	item: Items.ItemDef?, -- an item picture instead (S118 ItemIcon)
 	tileColor: Color3?, -- cosmetics: the tile in the cosmetic's colour
 	title: UsedAs<string>,
-	subtitle: UsedAs<string>,
+	subtitle: UsedAs<string>?, -- nil: the title only (2026-10-21: the currency packs)
+	info: UsedAs<string>?, -- 2026-10-21: the full description behind an "i" after the title
 	badge: UsedAs<string>?, -- small green label next to the title (pack bonus)
 	button: Instance?, -- the right side (one button or a frame with two)
 	buttonWidth: number?, -- width the right side takes (default 190)
@@ -105,6 +109,17 @@ end
 function Cards.card(scope: Scope, spec: CardSpec): Instance
 	local right = spec.buttonWidth or 190
 	local hasBadge = spec.badge ~= nil
+	local info = if spec.info ~= nil then InfoTip.new(scope, { Text = spec.info, LayoutOrder = 2 }) else nil
+	-- pointing at the "i" swaps the card's mouse tooltip for the popover (never both on top of each other)
+	local infoHit = if info then info:FindFirstChild("Hit") else nil
+	if infoHit and infoHit:IsA("GuiObject") and spec.tooltip ~= nil then
+		table.insert(
+			scope,
+			infoHit.MouseEnter:Connect(function()
+				Tooltip.hide()
+			end)
+		)
+	end
 	local textColumn = scope:New("Frame")({
 		Name = "Text",
 		LayoutOrder = 2,
@@ -123,16 +138,34 @@ function Cards.card(scope: Scope, spec: CardSpec): Instance
 				Size = UDim2.new(1, 0, 0, TITLE_HEIGHT),
 				BackgroundTransparency = 1,
 				[Children] = {
-					scope:New("TextLabel")({
-						Name = "Title",
+					-- the title and its "i" right after it (the title shrinks and truncates first)
+					scope:New("Frame")({
+						Name = "Name",
 						Size = UDim2.new(1, if hasBadge then -BADGE_RESERVE else 0, 1, 0),
 						BackgroundTransparency = 1,
-						Text = spec.title,
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Paper.Text,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextTruncate = Enum.TextTruncate.AtEnd,
+						[Children] = {
+							scope:New("UIListLayout")({
+								FillDirection = Enum.FillDirection.Horizontal,
+								VerticalAlignment = Enum.VerticalAlignment.Center,
+								SortOrder = Enum.SortOrder.LayoutOrder,
+								Padding = UDim.new(0, 6),
+							}),
+							scope:New("TextLabel")({
+								Name = "Title",
+								LayoutOrder = 1,
+								Size = UDim2.fromScale(0, 1),
+								AutomaticSize = Enum.AutomaticSize.X,
+								BackgroundTransparency = 1,
+								Text = spec.title,
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Body,
+								TextColor3 = Theme.Paper.Text,
+								TextXAlignment = Enum.TextXAlignment.Left,
+								TextTruncate = Enum.TextTruncate.AtEnd,
+								[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+							}),
+							info :: any,
+						},
 					}),
 					(if hasBadge
 						then scope:New("TextLabel")({
@@ -161,21 +194,23 @@ function Cards.card(scope: Scope, spec: CardSpec): Instance
 						else nil) :: any,
 				},
 			}),
-			scope:New("TextLabel")({
-				Name = "Subtitle",
-				LayoutOrder = 2,
-				Size = UDim2.fromScale(1, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundTransparency = 1,
-				Text = spec.subtitle,
-				RichText = spec.rich == true,
-				TextWrapped = true,
-				FontFace = Theme.Fonts.Body,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.TextMuted,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextYAlignment = Enum.TextYAlignment.Top,
-			}),
+			(if spec.subtitle ~= nil
+				then scope:New("TextLabel")({
+					Name = "Subtitle",
+					LayoutOrder = 2,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					Text = spec.subtitle,
+					RichText = spec.rich == true,
+					TextWrapped = true,
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.TextMuted,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextYAlignment = Enum.TextYAlignment.Top,
+				})
+				else nil) :: any,
 		} :: any,
 	})
 	local frame = scope:New("Frame")({
@@ -295,12 +330,12 @@ function Cards.sectionHeader(scope: Scope, order: number, textKey: string): Inst
 	})
 end
 
--- One muted line of information (wraps).
-function Cards.note(scope: Scope, order: number, textKey: string): Instance
-	return scope:New("TextLabel")({
-		LayoutOrder = order,
-		Size = UDim2.fromScale(1, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
+-- One muted line of information (wraps). 2026-10-21: `infoKey` puts that longer text behind an "i" after the line.
+function Cards.note(scope: Scope, order: number, textKey: string, infoKey: string?): Instance
+	local line = scope:New("TextLabel")({
+		LayoutOrder = 1,
+		Size = if infoKey then UDim2.new() else UDim2.fromScale(1, 0),
+		AutomaticSize = if infoKey then Enum.AutomaticSize.XY else Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		Text = Text.T(scope, textKey),
 		TextWrapped = true,
@@ -308,8 +343,23 @@ function Cards.note(scope: Scope, order: number, textKey: string): Instance
 		TextSize = Theme.TextSize.Small,
 		TextColor3 = Theme.Paper.TextMuted,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		[Children] = if infoKey then scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }) else nil,
+	})
+	return scope:New("Frame")({
+		LayoutOrder = order,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
 		[Children] = {
 			scope:New("UIPadding")({ PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4) }),
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 6),
+			}),
+			line,
+			(if infoKey then InfoTip.new(scope, { Text = Text.T(scope, infoKey), LayoutOrder = 2 }) else nil) :: any,
 		},
 	})
 end
