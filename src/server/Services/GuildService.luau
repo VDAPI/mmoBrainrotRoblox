@@ -864,7 +864,7 @@ function GuildService.AdminDisband(player: Player): boolean
 	return (
 		disbandRecord(guildId, function(guild: GuildData?)
 			local key = guild and guild.leaderCharId
-			return Guild.disband(guild, key or "")
+			return Guild.disband(guild, key or "", true)
 		end)
 	)
 end

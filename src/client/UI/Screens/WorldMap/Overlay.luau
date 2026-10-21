@@ -514,7 +514,10 @@ function Overlay.new(scope: Scope): Api
 			local visit = WanderingMerchant.shown(now)
 			local soon = WanderingMerchant.Data.schedule.warn[1]
 			local trading = now >= visit.startsAt
-			local merchantHere = visit.spot.map == cached.mapId and (trading or visit.startsAt - now <= soon)
+			-- his caravan is a shop: the "shop" filter chip hides it too
+			local merchantHere = not hidden.shop
+				and visit.spot.map == cached.mapId
+				and (trading or visit.startsAt - now <= soon)
 			merchantMarker.Visible = merchantHere
 			merchantCaption.Visible = merchantHere
 			if merchantHere then

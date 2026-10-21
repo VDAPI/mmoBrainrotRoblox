@@ -235,16 +235,32 @@ local function finish(cast: Cast)
 	end
 end
 
+-- The players' root positions of this Heartbeat, read once for every cast (a world boss fight runs dozens of casts
+-- next to the regular shots of the hunting grounds: no GetPlayers / FindFirstChild per cast and frame).
+local framePlayers: { Player } = {}
+local framePos: { [Player]: Vector3 } = {}
+
+local function snapshot()
+	table.clear(framePlayers)
+	table.clear(framePos)
+	for _, player in Players:GetPlayers() do
+		local root = rootOf(player)
+		if root then
+			table.insert(framePlayers, player)
+			framePos[player] = root.Position
+		end
+	end
+end
+
 -- Candidates of a cast this tick: players near its origin (or only its target).
 local function candidates(cast: Cast): { Player }
 	local only = cast.opts.only
 	if only then
-		return if only.Parent then { only } else {}
+		return if only.Parent and framePos[only] then { only } else {}
 	end
 	local list = {}
-	for _, player in Players:GetPlayers() do
-		local root = rootOf(player)
-		if root and (root.Position - cast.origin).Magnitude <= cast.reach then
+	for _, player in framePlayers do
+		if (framePos[player] - cast.origin).Magnitude <= cast.reach then
 			table.insert(list, player)
 		end
 	end
@@ -259,9 +275,9 @@ local function step(cast: Cast, h: Handlers): boolean
 	local t = os.clock() - cast.started
 	local function aim(target: number): (number?, number?)
 		local player = cast.targets[target]
-		local root = player and rootOf(player)
-		if root then
-			return root.Position.X, root.Position.Z
+		local at = player and framePos[player]
+		if at then
+			return at.X, at.Z
 		end
 		return nil, nil
 	end
@@ -269,10 +285,10 @@ local function step(cast: Cast, h: Handlers): boolean
 	local positions: { Vector3 } = {}
 	local usable: { Player } = {}
 	for _, player in players do
-		local root = rootOf(player)
-		if root and h.canHit(player) then
+		local at = framePos[player]
+		if at and h.canHit(player) then
 			table.insert(usable, player)
-			table.insert(positions, root.Position)
+			table.insert(positions, at)
 		end
 	end
 	local alive = false
@@ -316,6 +332,7 @@ function HazardService.Start()
 		if not h or #casts == 0 then
 			return
 		end
+		snapshot()
 		for i = #casts, 1, -1 do
 			local cast = casts[i]
 			local ok, alive = pcall(step, cast, h)
@@ -329,6 +346,9 @@ function HazardService.Start()
 				end
 			end
 		end
+		-- no Player kept past the frame (a player who left is not held until the next cast)
+		table.clear(framePlayers)
+		table.clear(framePos)
 	end)
 end
 
