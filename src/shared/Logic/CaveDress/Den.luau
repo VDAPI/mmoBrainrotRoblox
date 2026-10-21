@@ -73,15 +73,15 @@ end
 local function threshold(env: Env, out: { Build })
 	local r = env.T.rooms[1]
 	-- the arch of thick roots over the exit; W28: in the exit portal's frame, the roots round its arch (they stood
-	-- 12 studs off it, across the opening, on the scaled cave)
+	-- 12 studs off it, across the opening, on the scaled cave); W31: beside the painted arch's pillars (16 studs wide)
 	local arch = Kit.atPortal(env, "RootArch", "landmark", `{env.mapId}_exit`, true)
 	for _, side in { -1, 1 } do
 		for k = 0, 2 do
 			arch.bp:beam(
-				side * (9 + k * 1.6),
+				side * (9.8 + k * 1.6),
 				0,
 				-1.5 + k * 1.5,
-				side * (8.6 + k * 0.6),
+				side * (9.6 + k * 0.6),
 				19,
 				0,
 				1.4,

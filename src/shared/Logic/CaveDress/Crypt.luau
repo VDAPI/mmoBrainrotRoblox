@@ -62,13 +62,14 @@ end
 
 local function gate(env: Env, out: { Build })
 	-- W28 (owner: the purple field stood 12 studs off its carved frame): the frame stands in the exit portal's own
-	-- frame, its opening (15 x 18.5) round the portal's arch
+	-- frame, its opening (15 x 18.5) round the portal's arch; W31: its pillars beside the painted arch's (16 studs
+	-- wide), the skulls on the side the exit faces (the room's, local -z)
 	local b = Kit.atPortal(env, "CryptGate", "landmark", "duskwood_cave_exit", true)
 	local bp = b.bp
 	for _, s in { -1, 1 } do
-		bp:box(3, 20, 3, s * 9, 9, 0, o(STONE, "shell", { q = false }))
+		bp:box(3, 20, 3, s * 9.9, 9, 0, o(STONE, "shell", { q = false }))
 		for t = 0, 2 do
-			Kit.skull(bp, s * 13, 4 + t * 4, 1, 1.1, 0)
+			Kit.skull(bp, s * 13, 4 + t * 4, -1, 1.1, 0)
 		end
 	end
 	bp:box(22, 3, 4, 0, 20, 0, o(STONE, "detail", { col = false }))

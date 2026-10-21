@@ -64,16 +64,19 @@ local function region(id: string, map: string, target: string, x: number, z: num
 		arrive = if target == "city" then cityArrival(map) else arrive,
 	})
 end
-region("meadows_city", "meadows", "city", -770, 0, 90)
-region("meadows_duskwood", "meadows", "duskwood", 730, -720, 45)
-region("duskwood_meadows", "duskwood", "meadows", -770, 0, 90, { x = 690, z = -690 })
-region("duskwood_city", "duskwood", "city", -770, 160, 90)
-region("duskwood_ashen", "duskwood", "ashen", 740, -740, 45)
-region("ashen_duskwood", "ashen", "duskwood", -770, 0, 90, { x = 690, z = -690 })
-region("ashen_city", "ashen", "city", -770, 160, 90)
-region("ashen_frostpeak", "ashen", "frostpeak", 740, -740, 45)
-region("frostpeak_ashen", "frostpeak", "ashen", -770, 0, 90, { x = 690, z = -690 })
-region("frostpeak_city", "frostpeak", "city", -770, 160, 90)
+-- W31 (Studio review: the corner arches showed their back to the path and their face to the void past the border):
+-- every arch faces into its map (local -z, the veil's bright side and the painted model's front): the west arches
+-- east (270), the north-east corner arches south-west (135, towards the map's middle and the road coming up to them).
+region("meadows_city", "meadows", "city", -770, 0, 270)
+region("meadows_duskwood", "meadows", "duskwood", 730, -720, 135)
+region("duskwood_meadows", "duskwood", "meadows", -770, 0, 270, { x = 690, z = -690 })
+region("duskwood_city", "duskwood", "city", -770, 160, 270)
+region("duskwood_ashen", "duskwood", "ashen", 740, -740, 135)
+region("ashen_duskwood", "ashen", "duskwood", -770, 0, 270, { x = 690, z = -690 })
+region("ashen_city", "ashen", "city", -770, 160, 270)
+region("ashen_frostpeak", "ashen", "frostpeak", 740, -740, 135)
+region("frostpeak_ashen", "frostpeak", "ashen", -770, 0, 270, { x = 690, z = -690 })
+region("frostpeak_city", "frostpeak", "city", -770, 160, 270)
 
 -- City gates (S21, the city plan).
 for _, gate in Town.city.gates do
@@ -90,12 +93,15 @@ for _, gate in Town.city.gates do
 end
 
 -- Cave mouths on the region maps and the way back out of every cave (S19).
+-- W31: an exit stands near the west wall of the entrance room and faces east into the room (270; at 90 its face looked
+-- at the rock and the players came up to its back), a dungeon gate near the east end faces west.
+local EXIT_ROT = 270
 local BOSS_CAVES: { [string]: { exit: { number }, gate: { number } } } = {
 	-- { x, z, rot } of the exit portal and of the dungeon gate (World/Layouts/<region>_cave)
-	meadows_cave = { exit = { -278, 0, 90 }, gate = { 272, 0, 90 } },
-	duskwood_cave = { exit = { -275, 0, 90 }, gate = { 282, 0, 90 } },
-	ashen_cave = { exit = { -278, 0, 90 }, gate = { 282, 0, 90 } },
-	frostpeak_cave = { exit = { -278, 0, 90 }, gate = { 284, 0, 90 } },
+	meadows_cave = { exit = { -278, 0, EXIT_ROT }, gate = { 272, 0, 90 } },
+	duskwood_cave = { exit = { -275, 0, EXIT_ROT }, gate = { 282, 0, 90 } },
+	ashen_cave = { exit = { -278, 0, EXIT_ROT }, gate = { 282, 0, 90 } },
+	frostpeak_cave = { exit = { -278, 0, EXIT_ROT }, gate = { 284, 0, 90 } },
 }
 for mapId, data in Areas.byMap do
 	for _, entrance in data.caves do
@@ -114,7 +120,7 @@ end
 for _, cave in Areas.caves.list do
 	local boss = BOSS_CAVES[cave.id]
 	local entrance = CaveGen.ENTRANCE
-	local planExit = if boss then boss.exit else { entrance.x - entrance.r + 10, entrance.z, 90 }
+	local planExit = if boss then boss.exit else { entrance.x - entrance.r + 10, entrance.z, EXIT_ROT }
 	-- S134h: drawn in the scaled cave (Logic/CavePlan; the exit stays in the entrance room, the gate in the antechamber)
 	local ex, ez = CavePlan.point(cave.id, planExit[1], planExit[2])
 	local exit = { ex, ez, planExit[3] }
@@ -178,14 +184,28 @@ local ARCH = table.freeze({
 	pillarX = 6, -- pillars' centres (2.5 thick, 15 tall)
 	height = 18, -- the arch (and the painted model scaled to it)
 	field = table.freeze({ w = 9.5, h = 13.5, y = 7.5, d = 0.4 }), -- the purple field, between the pillars
+	-- W31 (Studio review 2026-10-21: the painted pillars stood inside the cave frames' slabs, 16 studs wide against 14.5
+	-- here): the box the painted model (Assets.Kit common_portal_02) is fitted into, centred on the portal's axis and
+	-- standing on the ground (Prefabs.fitModel scales it down when it is wider or deeper)
+	model = table.freeze({ w = 16, h = 18, d = 6 }),
 })
+-- W31: what a frame round a cave mouth keeps free (tests/portals.spec "cave mouths"): the painted arch (`model` and a
+-- quarter stud), the view of it `front` studs down the path above `ground` (rubble, tracks and bones may lie lower),
+-- and the opening between the arch and its dark hole. The hole stands straight behind the arch, fills its opening
+-- (`w` wide, from under the ground to `top`; the painted opening is about 10 x 14) and is centred on the veil within
+-- `tolerance`: the dark the purple sits on, whatever the frame (ice, lava, rock) is made of.
+local VIEW = table.freeze({ front = 6, ground = 2, margin = 0.25 })
+local HOLE = table.freeze({ w = 17, top = 16, z = 3.6, d = 0.6, tolerance = table.freeze({ x = 0.25, y = 1 }) })
 local GATE = table.freeze({
-	hornX = 8, -- the horns (3 thick, 18 tall, centre 8 up, leaning out by `hornLean` degrees)
-	hornLean = 12,
+	-- W31 (Studio review: the horns leaned out by 12 degrees and stood 2-4 studs off the 9.2 door, a red slab in a V of
+	-- black horns): the horns (`horn` thick, 18 tall, centre 8 up) stand upright 0.2 studs off the door's sides, a basalt
+	-- lintel over the door with its ends in the horns
+	hornX = 6.3,
+	horn = 3,
 	height = 18,
-	-- the red door; W30: 9.2 wide (it was 12 and its lower corners stood 1.2 studs inside the horns, which lean in
-	-- towards their feet)
+	-- the red door; W30: 9.2 wide (it was 12 and its lower corners stood 1.2 studs inside the horns)
 	door = table.freeze({ w = 9.2, h = 15, y = 7.5, d = 0.6 }),
+	lintel = table.freeze({ w = 15.6, h = 1.6, y = 15.9, d = 2.4 }),
 })
 -- W30 (owner: "the portals still look broken"): what is seen of a portal (World/Prefabs.makePortal, arches and city
 -- gates alike). The field stays the invisible trigger (prompt, server range); in it stand two glowing ellipses (an
@@ -198,6 +218,13 @@ local LOOK = table.freeze({
 	thick = 0.08,
 	swirl = table.freeze({ share = 0.95, life = 3, rate = 1, spin = { 20, 45 }, color = "#C9B8FF" }), -- of core width
 	sparkle = table.freeze({ speed = { 0.2, 0.6 }, life = { 0.8, 1.4 }, size = 0.3, rate = 14 }),
+	-- W31 (Studio review: the light purple was lost on pale ice and snow): on the Frost Peaks and in their caves a
+	-- deeper violet, less see-through
+	deep = table.freeze({
+		veil = table.freeze({ t = 0.25, color = "#5530E0" }),
+		core = table.freeze({ t = 0.35, color = "#8A66FF" }),
+		swirl = "#A48CFF",
+	}),
 })
 local CLEARANCE: { [Kind]: { center: { number }, half: { number } } } = {
 	-- from 1 stud over the ground (rubble, tracks and furs on the threshold stay) to the arch's top
@@ -225,11 +252,49 @@ local function look(w: number, h: number)
 	}
 end
 
+-- W31: the colours of a portal's look on `mapId`: the deep violet on the snow and ice of the Frost Peaks.
+local function palette(
+	mapId: string
+): { veil: { t: number, color: string }, core: { t: number, color: string }, swirl: string }
+	if string.find(mapId, "frostpeak", 1, true) then
+		return LOOK.deep
+	end
+	return {
+		veil = { t = LOOK.veil.t, color = LOOK.veil.color },
+		core = { t = LOOK.core.t, color = LOOK.core.color },
+		swirl = LOOK.swirl.color,
+	}
+end
+
+-- W31: the boxes a frame round a cave mouth keeps free, in the portal's frame (x across, y up from the ground, z
+-- behind it; centre and half sizes): the painted arch, the view of it from the path, the opening before the hole.
+local function frameKeepOut(): { { name: string, center: { number }, half: { number } } }
+	local m, margin = ARCH.model, VIEW.margin
+	local hw, hd, top = m.w / 2 + margin, m.d / 2 + margin, m.h + margin
+	return {
+		{ name = "arch", center = { 0, (1 + top) / 2, 0 }, half = { hw, (top - 1) / 2, hd } },
+		{
+			name = "view",
+			center = { 0, (VIEW.ground + top) / 2, -hd - VIEW.front / 2 },
+			half = { hw, (top - VIEW.ground) / 2, VIEW.front / 2 },
+		},
+		{
+			name = "opening",
+			center = { 0, (1 + HOLE.top) / 2, (hd + HOLE.z) / 2 },
+			half = { HOLE.w / 2 - 2, (HOLE.top - 1) / 2, (HOLE.z - hd) / 2 },
+		},
+	}
+end
+
 return table.freeze({
 	ARCH = ARCH,
 	GATE = GATE,
 	LOOK = LOOK,
+	HOLE = HOLE,
+	VIEW = VIEW,
 	look = look,
+	palette = palette,
+	frameKeepOut = frameKeepOut,
 	PROMPT_RANGE = PROMPT_RANGE,
 	SERVER_RANGE = SERVER_RANGE,
 	-- The box (portal frame) a portal of `kind` keeps free of dressing (nil: city gates, drawn by the town plan).
