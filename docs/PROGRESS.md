@@ -54,6 +54,8 @@
   Bez przeglądu w Studio (dymek „i” przy krawędzi ekranu, wiersz „Więcej ▸” w tooltipie na telefonie).
 - **Opisy-3 (postać, umiejętności, zadania, menu, tropiciel):** zwijany tropiciel celów (`Logic/TrackerFold`), krótkie
   linie z „i” / „Więcej ▸” w oknach grupy 3; bez przeglądu w Studio (wysokość tropiciela, dymek przytrzymania na telefonie).
+- **W31 ramy portali i wyjść:** nieobejrzane w Studio (dopasowanie modelu łuku przez `fitModel`, ramy wejść i wyjść,
+  płomienie piecyków Krypty, napisy stref na śniegu, brama lochu).
 - **S160k kowal i Mistrz Portali:** Kamień Przemiany Efektu i wieczne kamienie teleportu nie mają własnych ikon PNG (rysowany kamień / zwój w kolorze); model Tripo Mistrza Portali do wygenerowania (`TRIPO-NPC.md` nr 68).
 - **W30 animacja NPC z Tripo:** postawa, oddech, rozglądanie, gesty rozmowy i kucie kowala proceduralnie
   (`NpcAnimController`); nieobejrzane na prawdziwym modelu (rozstaw rąk `ArmSpread`, kierunek przodu eksportu `Yaw`).

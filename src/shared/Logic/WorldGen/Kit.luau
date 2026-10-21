@@ -8,6 +8,7 @@
 
 local Blueprint = require("../TownGen/Blueprint")
 local MapTerrain = require("../MapTerrain")
+local Portals = require("../../Data/Portals")
 local Palette = require("../TownGen/Palette")
 local Parts = require("../TownGen/Parts")
 
@@ -221,6 +222,41 @@ function Kit.fire(bp: BP, x: number, y: number, z: number, size: number, color: 
 		{ c = color, m = "Neon", lod = l, col = false, tag = "fire", jitter = 0, fxColor = color }
 	)
 	bp:light(x, y + size, z, color, 18 + size * 2, 1.6, "fire")
+end
+
+-- W31 (Studio review: "flat cyan tiles on the braziers"): the fire of a big brazier bowl whose rim is at `y`: a bed of
+-- embers sunk into the bowl (Neon, "brazier" tag: the client raises a tall flame of the fire flipbook over it, sized
+-- to the bed, in `color`, with sparks) and a flickering light over it. `size` is the bed's width.
+function Kit.brazierFlame(bp: BP, x: number, y: number, z: number, size: number, color: string, lod: Blueprint.Lod?)
+	local l: Blueprint.Lod = lod or "detail"
+	bp:add("ball", size, size * 0.3, size, x, y - 0.1, z, 0, 0, 0, {
+		c = color,
+		m = "Neon",
+		lod = l,
+		col = false,
+		tag = "brazier",
+		jitter = 0,
+		fxColor = color,
+	})
+	bp:light(x, y + size * 1.2, z, color, 20 + size * 3, 1.8, "fire")
+end
+
+-- W31 (Studio review: the dark opening of a cave mouth stood off the purple veil, deep in the cleft or above it): the
+-- hole of a cave mouth straight behind its portal's arch (Data/Portals.HOLE), in a frame standing on the portal's
+-- axis `along` studs behind the portal (0 when the frame stands in the portal's own frame; +z into the rock): as wide
+-- as the painted arch, from under the ground to over its opening, centred on the veil.
+function Kit.portalHole(bp: BP, along: number?)
+	local h = Portals.HOLE
+	local bottom = -2
+	bp:box(
+		h.w,
+		h.top - bottom,
+		h.d,
+		0,
+		(h.top + bottom) / 2,
+		(along or 0) + h.z + h.d / 2,
+		Kit.o(Kit.dark, "shell", { q = false })
+	)
 end
 
 -- Candle (client detail): wax stick and a tiny flame with the "candle" tag.

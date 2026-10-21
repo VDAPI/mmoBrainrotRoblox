@@ -42,6 +42,7 @@ local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
+local WorldLabel = require(script.Parent.Parent.UI.WorldLabel)
 local WorldMapWindow = require(script.Parent.Parent.UI.Screens.WorldMap)
 
 local WorldController = {
@@ -621,33 +622,20 @@ decoratePortal = function(instance: Instance)
 	if not target then
 		return
 	end
-	local gui = Instance.new("BillboardGui")
-	gui.Name = "VaelthornPortal"
-	gui.Size = UDim2.fromOffset(280, 64)
-	gui.StudsOffsetWorldSpace = Vector3.new(0, 10, 0)
-	gui.MaxDistance = 120
-	gui.LightInfluence = 0
-	gui.Parent = anchor
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, 0, 0, 32)
-	title.BackgroundTransparency = 1
-	title.FontFace = Theme.Fonts.Display
-	title.TextSize = Theme.TextSize.Large + 2
-	title.TextColor3 = Theme.Brass.Bright
-	title.TextStrokeTransparency = 0.3
-	title.Parent = gui
-	local sub = Instance.new("TextLabel")
-	sub.Position = UDim2.fromOffset(0, 32)
-	sub.Size = UDim2.new(1, 0, 0, 24)
-	sub.BackgroundTransparency = 1
-	sub.FontFace = Theme.Fonts.BodyBold
-	sub.TextSize = Theme.TextSize.Small
-	sub.TextStrokeTransparency = 0.3
-	sub.TextColor3 = if target.zone == "red"
-		then Theme.ZoneText.Red
-		elseif target.zone == "yellow" then Theme.ZoneText.Yellow
-		else Theme.ZoneText.Green
-	sub.Parent = gui
+	-- W31: on a dark plate, always on top, over the arch (Prefabs.makePortal's LabelHeight; city gates: 10)
+	local height = model:GetAttribute("LabelHeight")
+	local label = WorldLabel.new(
+		anchor,
+		"VaelthornPortal",
+		if type(height) == "number" then height else 10,
+		120,
+		Theme.Brass.Bright,
+		if target.zone == "red"
+			then Theme.ZoneText.Red
+			elseif target.zone == "yellow" then Theme.ZoneText.Yellow
+			else Theme.ZoneText.Green
+	)
+	local gui, title, sub = label.gui, label.title, label.sub
 	local prompt = Instance.new("ProximityPrompt")
 	Keybinds.bindPrompt(prompt, "interact")
 	prompt.HoldDuration = 0

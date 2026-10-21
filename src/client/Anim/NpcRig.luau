@@ -4,6 +4,9 @@
 -- looks, talk gestures and the smith's hammering written as Bone.Transform on this client (Anim/BoneOverlay's
 -- convention: a turn in the NPC's root axes taken into the bone's own frame). Rest frames are read once with every
 -- Transform at identity, in the space of the NPC's HumanoidRootPart (the model is welded to it, front -Z).
+-- W31 (owner 2026-10-21: the NPCs without a model stood frozen): an R15 figure (NpcService: its root anchored, the limbs
+-- on their Motor6Ds) moves the same way through Motor6D.Transform (Logic/NpcPose.R15_JOINTS, the bones' offsets folded
+-- onto its fewer joints by NpcPose.fold); its rest frames come from the joints' C0 / C1 from the root outwards.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,11 +14,13 @@ local NpcPose = require(ReplicatedStorage.Shared.Logic.NpcPose)
 
 local NpcRig = {}
 
-type Driven = { bone: Bone, key: string, rest: NpcPose.Mat }
+-- One driven joint: a bone or a Motor6D (`set` writes its Transform), its key (NpcPose.KEYS) and rest rotation.
+type Driven = { set: (CFrame) -> (), key: string, rest: NpcPose.Mat }
 export type Rig = {
 	bones: { Driven },
 	arms: { [string]: NpcPose.ArmPose }, -- "RightArm" / "LeftArm"
 	seed: number,
+	r15: boolean, -- W31: Motor6Ds of an R15 figure (the frame is folded onto its joints)
 }
 
 local function toMat(cf: CFrame): NpcPose.Mat
@@ -55,7 +60,13 @@ function NpcRig.new(npc: Model, asset: Model, seed: number): Rig?
 	for _, key in NpcPose.KEYS do
 		local bone = byKey[key]
 		if bone then
-			table.insert(bones, { bone = bone, key = key, rest = toMat(space:ToObjectSpace(bone.WorldCFrame)) })
+			table.insert(bones, {
+				set = function(cf: CFrame)
+					bone.Transform = cf
+				end,
+				key = key,
+				rest = toMat(space:ToObjectSpace(bone.WorldCFrame)),
+			})
 		end
 	end
 	local function at(key: string): Vector3?
@@ -72,11 +83,82 @@ function NpcRig.new(npc: Model, asset: Model, seed: number): Rig?
 			arms[prefix .. "Arm"] = NpcPose.armPose(side, vec(elbow - shoulder), foreDir, spread)
 		end
 	end
-	return { bones = bones, arms = arms, seed = seed }
+	return { bones = bones, arms = arms, seed = seed, r15 = false }
 end
 
--- Writes one frame of motion (NpcPose.frame) to the bones.
-function NpcRig.apply(rig: Rig, frame: NpcPose.Frame)
+-- W31: a rig for an R15 figure without the owner's model, nil without its arm joints. Every part's rest frame in the
+-- root's space from the joints (Part1 = Part0 * C0 * C1^-1 with Transform at identity), from the root outwards.
+function NpcRig.newR15(npc: Model, seed: number): Rig?
+	local root = npc:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not root then
+		return nil
+	end
+	local motors: { Motor6D } = {}
+	local byName: { [string]: Motor6D } = {}
+	for _, item in npc:GetDescendants() do
+		if item:IsA("Motor6D") and item.Part0 and item.Part1 then
+			table.insert(motors, item)
+			if NpcPose.R15_JOINTS[item.Name] and not byName[item.Name] then
+				byName[item.Name] = item
+			end
+		end
+	end
+	if not byName.RightShoulder or not byName.LeftShoulder or not byName.Root then
+		return nil
+	end
+	local rest: { [BasePart]: CFrame } = { [root] = CFrame.identity }
+	local moved = true
+	while moved do
+		moved = false
+		for _, motor in motors do
+			local p0, p1 = motor.Part0 :: BasePart, motor.Part1 :: BasePart
+			if rest[p0] and not rest[p1] then
+				rest[p1] = rest[p0] * motor.C0 * motor.C1:Inverse()
+				moved = true
+			end
+		end
+	end
+	-- the joint's frame in root space: where Transform turns Part1
+	local function joint(name: string): CFrame?
+		local motor = byName[name]
+		local base = motor and rest[motor.Part0 :: BasePart]
+		return if motor and base then base * motor.C0 else nil
+	end
+	local bones: { Driven } = {}
+	for name, key in NpcPose.R15_JOINTS do
+		local motor, frame = byName[name], joint(name)
+		if motor and frame then
+			motor.Transform = CFrame.identity
+			table.insert(bones, {
+				set = function(cf: CFrame)
+					motor.Transform = cf
+				end,
+				key = key,
+				rest = toMat(frame),
+			})
+		end
+	end
+	local arms: { [string]: NpcPose.ArmPose } = {}
+	for _, side in { 1, -1 } do
+		local prefix = if side == 1 then "Right" else "Left"
+		local shoulder, elbow, wrist = joint(prefix .. "Shoulder"), joint(prefix .. "Elbow"), joint(prefix .. "Wrist")
+		if shoulder and elbow then
+			local foreDir = if wrist then vec(wrist.Position - elbow.Position) else nil
+			arms[prefix .. "Arm"] = NpcPose.armPose(
+				side,
+				vec(elbow.Position - shoulder.Position),
+				foreDir,
+				NpcPose.R15_SPREAD,
+				NpcPose.R15_ELBOW
+			)
+		end
+	end
+	return { bones = bones, arms = arms, seed = seed, r15 = true }
+end
+
+-- Writes one frame of motion (NpcPose.frame) to the bones (W31: or the R15 joints).
+function NpcRig.apply(rig: Rig, motion: NpcPose.Frame)
+	local frame = if rig.r15 then NpcPose.fold(motion) else motion
 	for _, d in rig.bones do
 		local key = d.key
 		local offset = frame[key]
@@ -95,17 +177,17 @@ function NpcRig.apply(rig: Rig, frame: NpcPose.Frame)
 		elseif offset then
 			turn = NpcPose.euler(offset)
 		else
-			d.bone.Transform = CFrame.identity
+			d.set(CFrame.identity)
 			continue
 		end
-		d.bone.Transform = toCFrame(NpcPose.toLocal(d.rest, turn))
+		d.set(toCFrame(NpcPose.toLocal(d.rest, turn)))
 	end
 end
 
 -- Back to the export's own pose (the rig is dropped).
 function NpcRig.clear(rig: Rig)
 	for _, d in rig.bones do
-		d.bone.Transform = CFrame.identity
+		d.set(CFrame.identity)
 	end
 end
 

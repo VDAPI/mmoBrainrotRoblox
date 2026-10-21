@@ -456,6 +456,44 @@ local function addEmber(part: BasePart)
 	pulses[part] = phaseOf(part)
 end
 
+-- W31 (Studio review: "flat cyan tiles on the braziers"): the tall flame of a brazier (Logic/WorldGen/Kit.brazierFlame)
+-- over its bed of embers: the looping fire flipbook as wide as the bed, in its FxColor, and a few sparks.
+local function addBrazier(part: BasePart)
+	if part:FindFirstChild("TownBrazier") then
+		return
+	end
+	local w = math.max(part.Size.X, part.Size.Z)
+	local flame = emitter(part, {
+		Name = "TownBrazier",
+		Color = flameColors(part),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.6),
+			NumberSequenceKeypoint.new(0.2, 0.15),
+			NumberSequenceKeypoint.new(0.75, 0.4),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Size = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, w * 0.55),
+			NumberSequenceKeypoint.new(0.5, w * 0.7),
+			NumberSequenceKeypoint.new(1, w * 0.25),
+		}),
+		Lifetime = NumberRange.new(0.6, 1),
+		Rate = 18,
+		Speed = NumberRange.new(w * 0.9, w * 1.6),
+		SpreadAngle = Vector2.new(8, 8),
+		Rotation = NumberRange.new(-20, 20),
+		LightEmission = 1,
+		LightInfluence = 0,
+		EmissionDirection = Enum.NormalId.Top,
+	})
+	Textures.particle(flame, "fire")
+	local glint = sparks(part, "BrazierSparks", 2, w * 2)
+	local c = fxColor(part)
+	if c then
+		glint.Color = ColorSequence.new(c:Lerp(Color3.new(1, 1, 1), 0.6), c)
+	end
+end
+
 local function addVent(part: BasePart)
 	if part:FindFirstChild("TownHaze") then
 		return
@@ -659,6 +697,8 @@ local function onAdded(instance: Instance)
 		addFoam(part)
 	elseif fx == "candle" then
 		addCandle(part)
+	elseif fx == "brazier" then
+		addBrazier(part)
 	elseif fx == "bubbles" then
 		addBubbles(part)
 	elseif fx == "lava" then

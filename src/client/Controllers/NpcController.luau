@@ -331,7 +331,7 @@ local function decorate(model: Model)
 	gui.Adornee = head
 	gui.Size = UDim2.fromOffset(280, 60)
 	gui.StudsOffsetWorldSpace = Vector3.new(0, 2.6, 0)
-	gui.MaxDistance = 70
+	gui.MaxDistance = Nameplate.npcDistance(def.decoration) -- owner 2026-10-21: the guards' plates only close by
 	gui.LightInfluence = 0
 	gui.Parent = model
 	local icon = Instance.new("TextLabel")

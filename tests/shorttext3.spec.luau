@@ -3,6 +3,8 @@
 -- tutorial): the visible texts stay one short line in both languages with the same placeholders, the long ones they
 -- replace still exist (they moved behind an "i" or "More"), and no em dash.
 
+local NodeText = require("../src/shared/Logic/NodeText")
+local PathData = require("../src/shared/Data/Paths")
 local T = require("./Test")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
@@ -60,6 +62,10 @@ local LINES: { [string]: string | false } = {
 	["fish.hint"] = false,
 	["quest.lowLevel"] = false,
 	["quest.say.later"] = false,
+	-- SkillsWindow/Details (the path card, the hints)
+	["skills.tree.leadingHint.short"] = "skills.tree.leadingHint",
+	["skill.adaptive.short"] = "skill.adaptive",
+	["paths.tree.hint"] = false,
 }
 
 -- modals, toasts and the tutorial tile: one or two short sentences
@@ -107,6 +113,28 @@ local function check(key: string, limit: number)
 	T.expect(table.concat(placeholders(pl[key] or ""), ",")).toBe(table.concat(placeholders(en[key] or ""), ","))
 end
 
+-- every description of a direction node (not the skill nodes, they show the skill's own text)
+local function nodeDescKeys(): { string }
+	local out: { string } = {}
+	for _, path in PathData.list do
+		for _, row in path.rows do
+			for _, node in row.nodes do
+				if string.sub(node.descKey, 1, 5) == "path." and pl[node.descKey] then
+					table.insert(out, node.descKey)
+				end
+			end
+		end
+	end
+	table.sort(out)
+	return out
+end
+
+-- a line as the player reads it: every placeholder as a two-digit number
+local function shown(text: string): number
+	local filled = string.gsub(text, "{%w+}", "10")
+	return utf8.len(filled) or #filled
+end
+
 T.describe("Short texts, group 3 (owner 2026-10-21)", function()
 	T.it(`every visible line has at most {LINE} characters in both languages`, function()
 		for key in LINES do
@@ -130,6 +158,63 @@ T.describe("Short texts, group 3 (owner 2026-10-21)", function()
 				end
 			end
 		end
+	end)
+
+	T.it("every long direction node has a short line in both languages, one line with its numbers", function()
+		local keys = nodeDescKeys()
+		T.expect(#keys > 100).toBe(true)
+		local long = 0
+		for _, descKey in keys do
+			if (utf8.len(pl[descKey]) or 0) > NodeText.LONG then
+				long += 1
+				local short = NodeText.shortKey(descKey, "pl")
+				if not short or NodeText.shortKey(descKey, "en") ~= short then
+					error(`{descKey}: no short line in both languages`)
+				end
+				local have: { [string]: boolean } = {}
+				for _, name in placeholders(pl[descKey]) do
+					have[name] = true
+				end
+				for lang, texts in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+					local text = texts[short]
+					if shown(text) > LINE then
+						error(`{lang} {short}: {shown(text)} > {LINE} characters`)
+					end
+					if string.find(text, "—", 1, true) then
+						error(`{lang} {short}: em dash`)
+					end
+					for _, name in placeholders(text) do
+						if not have[name] then
+							error(`{short}: {"{"}{name}{"}"} is not in {descKey}`)
+						end
+					end
+				end
+				T.expect(table.concat(placeholders(pl[short]), ",")).toBe(table.concat(placeholders(en[short]), ","))
+			end
+		end
+		T.expect(long >= 40).toBe(true)
+	end)
+
+	T.it("NodeText.plan: the next rank, the current one at the limit, rank 1 before buying", function()
+		local before = NodeText.plan(0, 3)
+		T.expect(before.rank).toBe(1)
+		T.expect(before.now).toBeNil()
+		T.expect(before.label).toBe("atRank")
+		local mid = NodeText.plan(1, 3)
+		T.expect(mid.rank).toBe(2)
+		T.expect(mid.now).toBe(1)
+		T.expect(mid.label).toBe("atRank")
+		local full = NodeText.plan(3, 3)
+		T.expect(full.rank).toBe(3)
+		T.expect(full.now).toBeNil()
+		T.expect(full.label).toBe("now")
+	end)
+
+	T.it("NodeText.shortKey: only an existing .short of a .desc", function()
+		T.expect(NodeText.shortKey("path.scout.royalFalcon.desc", "pl")).toBe("path.scout.royalFalcon.short")
+		T.expect(NodeText.shortKey("path.scout.royalFalcon.desc", "en")).toBe("path.scout.royalFalcon.short")
+		T.expect(NodeText.shortKey("path.scout.royalFalcon.name", "pl")).toBeNil()
+		T.expect(NodeText.shortKey("path.nope.nothing.desc", "pl")).toBeNil()
 	end)
 
 	T.it(`modals, toasts, greetings and the tutorial tile stay within {MODAL} characters`, function()

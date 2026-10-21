@@ -475,6 +475,11 @@ Idempotentna, z ochroną typów jak S30/S56, dla każdej postaci i obu zestawów
   rola i typ (ikona); „Co robi” (`short`); „Na randze N / N+1” (tabela liczb z `Skills.descriptionArgs`, różnica
   pogrubiona); koszt, odnowienie, zasięg; „Przełomy” (karty A/B 5 i 10); „Zmiany z kierunków” (lista węzłów `modify`);
   przyciski +, −, „Na pasek”. Długi opis `desc` w zwijanej sekcji „Pełny opis”.
+  Opisy-3 (właściciel 2026-10-21, za dużo opisów): węzeł kierunku pokazuje jeden akapit, następną rangę (przy
+  maksimum obecną, przed kupnem rangę 1; `Logic/NodeText`); opis dłuższy niż 100 znaków jako krótka linia
+  `path.<kierunek>.<węzeł>.short`, a pełny tekst i obecna ranga pod „Więcej ▸”. „Pełny opis” umiejętności to wspólne
+  `Details`. Za „i”: opis kierunku (przy nazwie), zasada kierunku przewodniego, żywioł adaptacyjny oraz celowanie,
+  rodzaj ciosu i mnożnik szybkości broni z linii kosztu (`SkillInfo.costLine` „extra”).
 - **Pasek**: 8 miejsc w HUD (`Hud/SkillBar`), telefon: łuk 5 + strona 3 (dzisiejsze strony łuku).
 - „!” na przycisku okna: wolne punkty umiejętności w aktywnej puli z umiejętnością do kupienia albo przełom bez wyboru
   albo wolny punkt talentu (dzisiejsze `PathView.attention` rozszerzone).

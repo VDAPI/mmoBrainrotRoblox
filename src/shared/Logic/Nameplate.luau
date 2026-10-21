@@ -138,4 +138,14 @@ function Nameplate.npc(input: NpcInput): NpcView
 	}
 end
 
+-- Studs from the camera an NPC's plate shows to (NpcController). Owner 2026-10-21 (the city guard's plate stood over
+-- the Portal Master's head from the street): a figure without a dialogue (NpcDef.decoration, the gate guards) shows
+-- its plate only close by, so it never crowds the plates of the NPCs a player looks for.
+Nameplate.NPC_DISTANCE = 70
+Nameplate.DECORATION_DISTANCE = 24
+
+function Nameplate.npcDistance(decoration: boolean?): number
+	return if decoration == true then Nameplate.DECORATION_DISTANCE else Nameplate.NPC_DISTANCE
+end
+
 return Nameplate
