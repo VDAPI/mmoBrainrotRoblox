@@ -3,7 +3,7 @@ title: Stats
 description: "The four attributes, points per level, how attributes turn into health, attack and defence, stat limits and resetting points."
 key: stats
 order: 2
-updated: 2026-10-16
+updated: 2026-10-21
 tags: [Attributes, Character]
 ---
 
@@ -20,6 +20,8 @@ Every level up gives you <Stat path="progression.statPointsPerLevel" /> attribut
 ## Formulas
 
 Attributes turn into stats by the game's formulas. Bonuses from gear, blessings and the guild are added on top. Dexterity gives its full crit chance, attack speed and dodge up to <Stat path="mechanics.dexRatingLevel" format="lvl" />; after that each point gives proportionally less, while attack from Dexterity stays the same.
+
+Energy regenerates more slowly in combat than outside it (<Stat path="stats.formula.energyRegenBase" /> a second outside combat, <Stat path="stats.formula.energyRegenCombatMul" format="x" /> of that in combat), so in a longer fight Warriors and Hunters drink energy potions. Energy regen bonuses from gear and paths work in full in combat.
 
 <StatFormulaTable />
 

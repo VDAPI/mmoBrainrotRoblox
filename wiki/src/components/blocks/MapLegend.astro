@@ -1,0 +1,32 @@
+---
+// World map symbols (WIKI-3, map 2026-10-21): mechanics.mapCategories (Logic/MapMarkers) in filter order: the symbol
+// as the game draws it (a dark plate ringed in the category colour; round = people, diamond = ways, square = danger)
+// and its name. Moving markers (party, own marks, quest target, events) are marked as such.
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { name, t } from "../../lib/i18n";
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const cats = load("mechanics").mapCategories;
+---
+<ul class="legend">
+  {cats.map((c) => (
+    <li>
+      <span class={`sym sym--${c.shape}`} style={`--c: ${c.color}`} aria-hidden="true"><span>{c.glyph}</span></span>
+      <span class="label">{name(c.name, lang)}{c.live && <span class="live"> · {t(lang, "block.map.live")}</span>}</span>
+    </li>
+  ))}
+</ul>
+<p class="vw-label note">{t(lang, "block.map.shapes")}</p>
+<Source from="Logic/MapMarkers, Data/UiPalette" />
+<style>
+  .legend { list-style: none; margin: 0 0 8px; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 16px; }
+  .legend li { display: flex; align-items: center; gap: 10px; }
+  .sym { flex: none; display: inline-grid; place-items: center; width: 30px; height: 30px; background: #1B1D21; border: 2px solid var(--c); color: var(--c); font-weight: 800; font-size: 15px; }
+  .sym--round { border-radius: 50%; }
+  .sym--square { border-radius: 4px; }
+  .sym--diamond { transform: rotate(45deg); width: 24px; height: 24px; margin: 3px; }
+  .sym--diamond > span { transform: rotate(-45deg); }
+  .live { color: var(--vw-text-muted); font-size: 14px; }
+  .note { margin: 6px 0 14px; color: var(--vw-text-muted); }
+</style>

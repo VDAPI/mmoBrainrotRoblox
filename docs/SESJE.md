@@ -13713,3 +13713,17 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   lokalizacja PL / EN, `tests/{Balance,BalanceTables}.luau`, `tools/{balance_report,balance_reasons}.luau`,
   `tools/WikiData/Quests.luau`, `wiki/src/data/*`, `docs/{DESIGN,DECYZJE,SESJE,JAK-DODAC}.md`.
 - **Dla właściciela:** domyślne liczby wyżej; bez przeglądu w Studio (tablica i śledzik na telefonie).
+
+### WIKI-3: wiki po S149c–S159 (boss świata, gildie, zlecenia, bestiariusz, kupiec, mapa; 2026-10-21)
+- **Eksport:** `tools/WikiData/{Bosses,Basics,Quests,World,Upgrade}.luau` (boss świata, postęp gildii, bestiariusz,
+  kategorie mapy, zestawy zleceń, wędrowny kupiec, mnożnik Zwoju Przemiany); `Data/Titles` bez `wiki = false` dla
+  tytułów osiągnięć (`tests/titles.spec`).
+- **Wiki:** strona bossa świata (`BossView` gałąź `world`, `BossHeader`, karta, bestiariusz, OG, źródła przedmiotów),
+  bloki `GuildProgressTable`, `DailySetTable`, `BestiaryBook`, `MapLegend`, `WandererTable`, limity skarbca i progi
+  umiejętności w tabelach gildii; artykuły nowe: Boss świata, Zlecenia dzienne i tygodniowe, Bestiariusz w grze,
+  Wędrowny kupiec, poradnik Mapa, filtry i gra na telefonie; zaktualizowane: Gildie (mechanika i poradnik), Walka
+  (ataki do unikania, bez wsparcia z góry), Statystyki (energia S158), Śmierć (odrodzenie za walutę), Rankingi (czas w
+  grze, posągi), Miasto (koloseum Ristalle), Pierwsze kroki (samouczek, pierwszy łup, „!”), Ulepszanie i Sklep premium
+  (Zwój Przemiany); notatki faz z wzorami pięciu bossów; wpis aktualizacji 2026-10-21.
+- **Testy:** `npm run check` zielone (vitest, astro check, build, linki, budżety, audyt), `featured.test` zna przedmiot
+  bossa świata, `content.test` zna `<Monster id="hrimvald">`.

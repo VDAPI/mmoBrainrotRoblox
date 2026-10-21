@@ -3,7 +3,7 @@ title: Walka
 description: "Jak gra liczy obrażenia krok po kroku, ile zatrzymuje pancerz, jak działają żywioły, krytyki i uniki oraz czym różnią się rangi potworów."
 key: combat
 order: 1
-updated: 2026-10-20
+updated: 2026-10-21
 tags: [Obrażenia, Potwory]
 ---
 
@@ -41,7 +41,7 @@ Podstawowy atak wręcz sięga <Stat path="mechanics.combat.meleeRange" /> studó
 
 Elity są większe, mocniejsze i mają wyższy poziom niż zwykłe potwory tego rodzaju. Elity II walczą jak mały boss i wymagają grupy.
 
-**Blokada poziomu.** Elity, Elity II, bossów lochów i ich pomocników nie zrani postać o <Stat path="mechanics.levelLockGap" /> lub więcej poziomów wyższa od nich. Taka postać widzi taki cel na szaro z kłódką i „Za wysoki poziom (maks. N)”: nie zada mu obrażeń (także obszarem, podpaleniem czy trucizną), nie dostanie z niego łupu ani doświadczenia i nie wejdzie do lochu takiego bossa. Leczyć i wzmacniać drużynę może. Dzięki temu Elity zostają dla graczy swojego przedziału. Zwykłe potwory, boss świata i wydarzenia świata nie mają blokady.
+**Blokada poziomu.** Elity, Elity II, bossów lochów i ich pomocników nie zrani postać o <Stat path="mechanics.levelLockGap" /> lub więcej poziomów wyższa od nich. Taka postać widzi taki cel na szaro z kłódką i „Za wysoki poziom (maks. N)”: nie zada mu obrażeń (także obszarem, podpaleniem czy trucizną), nie dostanie z niego łupu ani doświadczenia i nie wejdzie do lochu takiego bossa. Nie może też leczyć, osłaniać ani wzmacniać sojusznika, który walczy z takim potworem (bez „wsparcia z góry”); poza taką walką wspiera normalnie. Dzięki temu Elity zostają dla graczy swojego przedziału. Zwykłe potwory, boss świata i wydarzenia świata nie mają blokady.
 
 Elita II zapowiada **Druzgocący Cios**: ciemnokarminowy krąg pod celem, który trzeba opuścić przed uderzeniem. Na jej poziomie zabiera dużą część życia, a im wyższy jej poziom od twojego, tym jest groźniejszy: od kilku poziomów przewagi zabija jednym trafieniem. Uciekanie nie chroni: Elita II rzuca w cel, który trzyma ją na dystans (tym mocniej, im niżej od niej jest cel), doskakuje do niego, a Druzgocący Cios zapowiada także z daleka. Zwykła Elita ma **Ciężki Cios**, stożek przed sobą do uniknięcia.
 
@@ -52,6 +52,14 @@ Na mapach regionów są też **kryjówki** oznaczone czaszką: mały zakątek z 
 <VariantTable />
 
 Potwory w grupie biją słabiej każdy z osobna, ale atakują razem. Potwory dużo słabsze od ciebie (o <Stat path="mechanics.combat.passiveLevelGap" /> poziomów i więcej) nie atakują pierwsze.
+
+## Ataki do unikania
+
+Potwór, który bije wręcz, najpierw bierze zamach. Jeśli w tym czasie odejdziesz poza jego zasięg, cios trafia w powietrze. Łucznicy i czarownicy strzelają prawdziwymi pociskami, które lecą tam, gdzie będziesz za chwilę; zwykły unik i blok dalej przed nimi chronią, a zmiana kierunku w ostatniej chwili też pomaga. Elita II rzuca w uciekający cel głazem albo ciemnym pociskiem.
+
+Bossowie lochów i boss świata mają wzory, przed którymi ucieka się ruchem: pociski, które gonią albo odbijają się od ścian areny, pociski spadające z nieba na krąg, fale biegnące po ziemi (ze ścianą, w której jest przerwa), niskie pierścienie do przeskoczenia i obracające się stożki oddechu. Każdy wzór ma zapowiedź na ziemi albo w powietrzu, zanim może trafić, i jedna seria trafia cię najwyżej kilka razy. Unik ze statystyk nie chroni przed takimi zagrożeniami: chroni tylko ruch. Od drugiej fazy wzorów jest więcej. Co robi który boss, opisuje jego strona w dziale <Link to="bosses">Bossowie</Link>.
+
+Mocny cios w ciebie błyska czerwienią na brzegach ekranu i trzęsie kamerą; wstrząs wyłączysz w ustawieniach.
 
 ## Kolor poziomu
 

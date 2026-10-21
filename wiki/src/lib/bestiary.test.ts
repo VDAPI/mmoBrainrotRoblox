@@ -1,15 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { bestiaryEntries, familyName, occurringVariants, regionTree } from "./bestiary";
 import { DEFAULT_FILTERS, levelBands, matches, parseFilters, serializeFilters, sortEntries, type Filters } from "./bestiary-filters";
-import { bosses, load, monsters } from "./data";
+import { bosses, load, monsters, worldBosses } from "./data";
 
 const entries = bestiaryEntries("pl");
 const f = (patch: Partial<Filters>): Filters => ({ ...DEFAULT_FILTERS, types: [], ...patch });
 
 describe("bestiary", () => {
-  it("has one entry per occurring variant and one per boss", () => {
+  it("has one entry per occurring variant and one per boss (WIKI-3: world bosses too)", () => {
     const variants = monsters().reduce((n, m) => n + occurringVariants(m).length, 0);
-    expect(entries.length).toBe(variants + bosses().length);
+    expect(entries.length).toBe(variants + bosses().length + worldBosses().length);
     expect(new Set(entries.map((e) => `${e.id}:${e.variant}`)).size).toBe(entries.length);
   });
 

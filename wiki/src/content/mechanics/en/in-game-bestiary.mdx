@@ -1,0 +1,47 @@
+---
+title: In-game bestiary
+description: "The Bestiary tab of the achievements window: entry tiers, what they reveal, points, the bonus against a monster family and titles for whole lands."
+key: bestiaryBook
+order: 15
+updated: 2026-10-21
+tags: [Monsters, Achievements, Titles]
+---
+
+<Callout kind="tip" title="In short">
+- Every kind of monster and every boss has its own entry in the game. Keep killing and the entry climbs its tiers.
+- Tiers reveal more and more about the monster and give achievement points.
+- An entry at the top tier gives a small damage bonus against the whole monster family, and a complete land gives a title.
+</Callout>
+
+## Where to find it
+
+The bestiary is the last tab of the achievements window. You open it with the fixed ✪ button under the season pass button (on a phone in the ☰ menu drawer). When a new achievement or tier comes in, the button gets a "!" and pulses until you look at the window.
+
+The tab shows the four lands with progress bars. A land lists its monsters and bosses; until you defeat one, its entry reads "???". The entry details have a model preview you can turn around.
+
+## Tiers
+
+Every monster kill and every rewarded boss victory brings the entry closer to the next tier. Kills count from this update on, older ones do not. Each tier gives points that add to the character's achievement points and show in the profile.
+
+<BestiaryBook part="tiers" />
+
+Weaknesses come from the monster's numbers: more armour than magic resistance, so magic hurts it more, or the other way round; tough against both; dodges a lot, so skills work better; or strikes with an element, so resisting it pays off.
+
+## Bonus against a family
+
+An entry at the top tier gives <Stat path="mechanics.bestiary.familyPct" format="pct" /> more damage against the monster's whole family (all wolves, for example). Bonuses of several entries of one family add up, but to at most <Stat path="mechanics.bestiary.familyCap" format="pct" />. That is less than the weakest regular family bonus on an item.
+
+## Lands and titles
+
+When every entry of a land, its bosses included, is at the top tier, you get an achievement and the title of that land's expert. The Frostpeaks count the world boss too.
+
+<BestiaryBook part="regions" />
+
+Every achievement title, the bestiary ones included:
+
+<TitleTable kinds={["achievement"]} />
+
+## What next
+
+- <Link to="bestiary">The wiki bestiary: every monster with numbers</Link>
+- <Link to="mechanics" id="combat">Combat and monster ranks</Link>

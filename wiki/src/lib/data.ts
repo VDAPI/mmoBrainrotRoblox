@@ -10,6 +10,7 @@ import type {
   Monster,
   Rarity,
   RarityKey,
+  WorldBoss,
 } from "../data/types";
 
 const DATA_DIR = join(process.cwd(), "src", "data");
@@ -42,6 +43,8 @@ function byId<T extends { id: string }>(key: string, list: () => T[]): Map<strin
 export const items = (): Item[] => load("items").items;
 export const monsters = (): Monster[] => load("monsters").monsters;
 export const bosses = (): Boss[] => load("bosses").bosses;
+/** WIKI-3: world bosses (bosses.json `world`): their own pages under the boss section, no dungeon. */
+export const worldBosses = (): WorldBoss[] => load("bosses").world;
 export const maps = (): MapInfo[] => load("maps").maps;
 export const rarities = (): Rarity[] => load("rarities").rarities;
 export const meta = (): Files["meta"] => load("meta");
@@ -49,6 +52,7 @@ export const meta = (): Files["meta"] => load("meta");
 export const getItem = (id: string): Item | undefined => byId("items", items).get(id);
 export const getMonster = (id: string): Monster | undefined => byId("monsters", monsters).get(id);
 export const getBoss = (id: string): Boss | undefined => byId("bosses", bosses).get(id);
+export const getWorldBoss = (id: string): WorldBoss | undefined => byId("worldBosses", worldBosses).get(id);
 export const getMap = (id: string): MapInfo | undefined => byId("maps", maps).get(id);
 
 export function rarityOf(key: RarityKey | string): Rarity | undefined {

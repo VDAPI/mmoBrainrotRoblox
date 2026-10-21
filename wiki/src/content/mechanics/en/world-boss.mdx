@@ -1,0 +1,69 @@
+---
+title: World boss
+description: "Hrimvald on the Frostpeaks: when he wakes, how contribution counts, what you get, the reward by mail, enrage and Mythic items with pity."
+key: worldBoss
+order: 13
+updated: 2026-10-21
+tags: [Bosses, Events, Rewards]
+---
+
+<Callout kind="tip" title="In short">
+- Hrimvald wakes every morning and every evening at the same Polish times, all year round.
+- The whole server fights him at once. Everyone with enough contribution gets a reward, not just whoever lands the last blow.
+- The reward starts at level <Stat path="bosses.world[hrimvald].minLevel" />, and a bigger contribution means a better chance of a Legendary, a Mythic and Hrimvald's own items.
+</Callout>
+
+## When and where
+
+<Monster id="hrimvald" /> sleeps in the Forefather's Barrow on the <Region id="frostpeak" />. He wakes twice a day at fixed Polish times; the exact times (also in UTC, winter and summer) are on the <Link to="bosses" id="hrimvald">boss page</Link>. <Stat path="bosses.world[hrimvald].schedule.warn.0" format="min" /> and <Stat path="bosses.world[hrimvald].schedule.warn.1" format="min" /> before the start the whole server sees a red announcement in the chat and on screen.
+
+From the warning to the end of the fight a line with a crown stays in the HUD: first the time until he wakes, then the time the boss has left. Tap the line to open the world map on the boss card, and the "Guide" button marks the way.
+
+The barrow is a rocky hollow with one entrance. In front of it lies a vestibule with an ice arch and fire baskets. PvP is off in the fight circle and the vestibule, so nobody can attack you on the way to the boss or during the fight.
+
+The boss stays until slain, at most <Stat path="bosses.world[hrimvald].timeLimit" format="h" />. He does not heal or reset when everyone leaves, so you can join at any moment and finish him with the next wave of players.
+
+## The fight
+
+Hrimvald has the same health however many players fight him, and he has no level lock: anyone may hit him. He is best fought by <Stat path="bosses.world[hrimvald].players.0" /> to <Stat path="bosses.world[hrimvald].players.1" /> people. He has three phases; from the second his helpers join in, and in the third he strikes faster.
+
+Most of his blows are things you run from, not things you stand in and heal through:
+
+- **Boulder** flies in an arc at one player; its shadow and the circle on the ground show where it lands.
+- **Wave of ice spikes** runs along the ground in three lanes. Stand between them.
+- **Ice blocks** fall on several players at once, each on its own circle.
+- **Stomp** pushes a low ring along the ground: jump over it or keep well away.
+- **Shard rain** drops small icicles over the whole field, each with its own circle.
+- **Frost breath** is a cone that turns in front of the giant. Get behind him or run ahead of it to the side.
+- **Javelin volley** flies in a fan at one player, and right after at another.
+- **Glacier walls** (from the second phase) rise at the arena's edge and slide across it. Each has one gap: find it in time.
+
+After <Stat path="bosses.world[hrimvald].enrageAfter" format="min" /> of fighting Hrimvald flies into a rage and every blow hits harder. A big group usually beats him well before that.
+
+## Contribution
+
+Contribution is damage to the boss and his helpers, healing and shields cast on the fighters, and damage taken for an ally. Each counts the same, so healers and protectors get the reward on equal terms with the damage dealers.
+
+The reward goes to a character of <Stat path="bosses.world[hrimvald].minLevel" format="lvl" /> or higher with at least <Stat path="bosses.world[hrimvald].sharePct" format="pct" /> of all contribution or as much as the health of <Stat path="bosses.world[hrimvald].shareMonsters" /> normal monsters of the boss's level, whichever is lower. A lower character may help but gets no reward. One reward per account and occurrence.
+
+Contribution multiplies the chance of a better item. The game compares your contribution with the average of all fighters: with a token share the Legendary and Mythic chance drops to <Stat path="bosses.world[hrimvald].reward.factorLo" format="x" />, with an average share it is the usual one, and the best get as much as <Stat path="bosses.world[hrimvald].reward.factorHi" format="x" />. Your share in per cent and this multiplier are on the reward card after the fight.
+
+## Reward
+
+Experience is <Stat path="bosses.world[hrimvald].reward.expKills" format="x" /> and gold <Stat path="bosses.world[hrimvald].reward.goldKills" format="x" /> the reward for a normal monster of your level. On top come materials and one Heroic, Legendary or Mythic item. The full tables are on the boss page.
+
+## Hrimvald's items
+
+Each class has two Mythic items of Hrimvald: a weapon and a piece of armour, stronger than a regular Mythic and than the dungeon bosses' items. They drop next to the regular item, not instead of it.
+
+The chance is <Stat path="bosses.world[hrimvald].reward.named.chance" format="frac" /> times the contribution multiplier. Each rewarded fight without one of Hrimvald's items raises it by <Stat path="bosses.world[hrimvald].reward.named.step" format="frac" />, and after <Stat path="bosses.world[hrimvald].reward.named.pityAt" /> such fights the item is certain. With an average contribution it drops about once every <Stat path="bosses.world[hrimvald].reward.named.expectedFights" /> fights.
+
+## When you are gone
+
+If you earned the contribution but left the game or switched characters before the end, the reward comes by mail to that character. The item, materials and gold are in the letter, and the experience and the pity counter apply when that character first opens the mailbox. One parcel per account and occurrence, across all servers.
+
+## What next
+
+- <Link to="bosses" id="hrimvald">Hrimvald: phases, helpers, loot and times</Link>
+- <Link to="mechanics" id="worldEvents">World events</Link>
+- <Link to="mechanics" id="combat">Combat</Link>

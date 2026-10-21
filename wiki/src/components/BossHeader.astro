@@ -3,8 +3,8 @@
 // chips 1–5 of S39 are gone), phase tabs "Phase 1 · 100–70%" with the phase
 // shout (and the -p2 / -p3 render when it exists) and the mechanics of each phase: attacks with their telegraph,
 // summons, shield, haste, enrage and `notes` (script mechanics from src/content/bosses). Without JS every phase panel
-// is shown one under another. Behaviour: src/scripts/boss.ts.
-import type { Boss } from "../data/types";
+// is shown one under another. Behaviour: src/scripts/boss.ts. WIKI-3: also a world boss (bosses.json `world`).
+import type { Boss, WorldBoss } from "../data/types";
 import { getMap, getMonster } from "../lib/data";
 import { formatDuration, formatNumber } from "../lib/format";
 import { name, t } from "../lib/i18n";
@@ -19,7 +19,7 @@ import RankBadge from "./RankBadge.astro";
 import Telegraph from "./Telegraph.astro";
 import ZoneBadge from "./ZoneBadge.astro";
 interface Props {
-  boss: Boss;
+  boss: Boss | WorldBoss; // WIKI-3: a world boss too (its map instead of a dungeon)
   lang: Lang;
   notes?: { phase: number; title: string; html: string }[];
   heading?: "h1" | "h2";
@@ -27,7 +27,8 @@ interface Props {
 const { boss, lang, notes = [], heading = "h2" } = Astro.props;
 const Heading = heading;
 const scale = boss.stats;
-const dungeon = getMap(boss.dungeon);
+const world = "map" in boss;
+const dungeon = getMap("map" in boss ? boss.map : boss.dungeon);
 const bounds = [1, ...boss.phases, 0];
 const phases = boss.phases.map((_, i) => i).concat(boss.phases.length).map((i) => ({
   n: i + 1,
@@ -75,6 +76,7 @@ function mechanics(phase: number): Mech[] {
   <div class="body">
     <div class="badges">
       <RankBadge rank="boss" lang={lang} />
+      {world && <span class="vw-rank">{t(lang, "worldboss.rank")}</span>}
       <span class="vw-rank">{t(lang, "level", { level: boss.level })}</span>
       <ElementBadge element={null} damageKind={boss.damageKind} lang={lang} />
       <ZoneBadge zone={dungeon?.zone ?? "red"} lang={lang} />

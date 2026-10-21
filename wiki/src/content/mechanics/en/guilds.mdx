@@ -1,9 +1,9 @@
 ---
 title: Guilds
-description: "How to found a guild, what the ranks can do, the treasury, guild skills on every level, chat and PvP protection."
+description: "Founding a guild, guild level and EXP, weekly goals and the Rally, ranks and rights, the gold and item vault, skills, the banner and chat."
 key: guilds
 order: 8
-updated: 2026-10-08
+updated: 2026-10-21
 tags: [Players, Treasury]
 ---
 
@@ -15,21 +15,51 @@ You found a guild with <Npc id="guildmaster" />. You need level <Stat path="mech
 - Tag: <Stat path="mechanics.guild.rules.tagMin" /> to <Stat path="mechanics.guild.rules.tagMax" /> capital letters or digits. It shows above every member's head.
 - A guild belongs to a character, not to the account: each of your characters can be in a different one.
 
-## Ranks
+The guild window has the tabs Overview (banner, level bar and a log of recent events), Members, Goals, Vault, Skills and Settings.
 
-There are three ranks: leader, officer and member. An invitation lasts <Stat path="mechanics.guild.rules.inviteSeconds" format="s" />.
+## Guild level
+
+A guild grows up to level <Stat path="mechanics.guild.progress.maxLevel" /> from the guild EXP its members earn by simply playing. None of it is for sale, and the guild's ranking score still comes from the members' levels. A monster counts if it is at most <Stat path="mechanics.guild.progress.greyGap" /> levels below the character, so beating grey monsters gives nothing. Each character can give the guild at most <Stat path="mechanics.guild.progress.dailyCap" /> guild EXP a day (by UTC); whatever goes over the cap still counts for the weekly goals.
+
+<GuildProgressTable part="points" />
+
+The level opens further guild skill levels, item vault slots, and banner emblems and colours.
+
+<GuildProgressTable part="levels" />
+
+## Weekly goals and the Rally
+
+Every week (from Monday, by UTC) the guild gets three goals: one of fight, one of adventure and one of craft. They are the same on every server, and their size follows the member count at the start of the week. A goal done gives the guild EXP and gold into the treasury. Every member who earned at least <Stat path="mechanics.guild.progress.claimMin" /> guild EXP that week collects Dragon Shards for that goal in the guild window.
+
+Once the guild completes all three goals, the **Rally** starts: until the end of the next week the members get <Stat path="mechanics.guild.progress.rallyExp" format="pct" /> more experience and <Stat path="mechanics.guild.progress.rallyGold" format="pct" /> more gold.
+
+<GuildProgressTable part="goals" />
+
+## Ranks and rights
+
+There are four ranks: leader, officer, veteran and member. An invitation lasts <Stat path="mechanics.guild.rules.inviteSeconds" format="s" />. The table shows the defaults; in Settings the leader can change the rights and daily limits of every lower rank. Everyone can always deposit gold. An officer changes ranks below their own if the leader allows it.
 
 <GuildRanksTable />
 
-## Treasury and skills
+## Vault
 
-Every member can deposit gold into the treasury. With treasury gold the leader and officers buy guild skills, each up to level <Stat path="mechanics.guild.maxLevel" />. The bonuses work for every member, including those who join later.
+The vault has two parts. Everyone deposits into the gold treasury, and withdrawals have the rank's daily limit. The item vault has as many slots as the guild level gives; you can put in and take out items anywhere outside combat, without walking to the guildmaster. Deposits, withdrawals and item vault moves go into the guild log together with joins, departures, rank changes, skill purchases, new levels and completed goals (the last <Stat path="mechanics.guild.progress.logMax" /> entries).
+
+## Skills
+
+Treasury gold buys guild skills, each up to level <Stat path="mechanics.guild.maxLevel" />. Further levels wait for the guild level; levels bought before this change stay. The bonuses work for every member, including those who join later.
 
 <GuildSkillsTable />
 
 A new guild has <Stat path="mechanics.guild.rules.baseMembers" /> places. Expansion raises the limit to <Stat path="mechanics.guild.memberLimits.5" />.
 
+## Banner
+
+The leader picks the guild's emblem and colour. The banner shows before the tag above the members' heads, in guild chat and in the guild window. The guild level opens more emblems and colours.
+
+<GuildProgressTable part="banner" />
+
 ## Chat and protection
 
-- Guild chat works across servers, and the member list shows who is playing and where.
+- Guild chat works across servers, and the member list shows who is playing, where, and how much guild EXP they earned this week.
 - Guild members cannot attack each other in any zone. The leader can turn that protection off in the guild settings (see <Link to="mechanics" id="pvp">PvP</Link>).

@@ -3,7 +3,7 @@
 // and family, the first place with a diamond in its zone colour (+N more), the signature drop at the bottom (S39: the
 // rarest monster part of the variant, a boss's first named item) or "No unique loot". Top border: normal dark gold,
 // elite gold, Elite II orange, boss red. `boss` renders a boss card instead of a monster.
-import type { Boss, Monster } from "../data/types";
+import type { Boss, Monster, WorldBoss } from "../data/types";
 import { familyName, finalLevels, placesOf, signatureDrop } from "../lib/bestiary";
 import { getItem, getMap, load } from "../lib/data";
 import { iconFor } from "../lib/icons";
@@ -15,7 +15,7 @@ import MonsterImage from "./MonsterImage.astro";
 import RankBadge from "./RankBadge.astro";
 interface Props {
   monster?: Monster;
-  boss?: Boss;
+  boss?: Boss | WorldBoss; // WIKI-3: a world boss card shows its map and first named item
   variant?: "normal" | "elite" | "elite2";
   level?: number;
   lang: Lang;
@@ -33,11 +33,11 @@ else if (info) {
   const [min, max] = finalLevels(info);
   levelText = min === max ? t(lang, "level", { level: min }) : t(lang, "levelRangeCap", { min, max });
 }
-const family = monster?.family ? familyName(monster.family, lang) : boss ? t(lang, "rank.boss") : "";
+const family = monster?.family ? familyName(monster.family, lang) : boss ? t(lang, "map" in boss ? "worldboss.rank" : "rank.boss") : "";
 const places = monster ? placesOf(monster, variant, lang) : [];
-const dungeon = boss ? getMap(boss.dungeon) : undefined;
+const dungeon = boss ? getMap("map" in boss ? boss.map : boss.dungeon) : undefined;
 const place = boss ? { name: name(dungeon?.name, lang), zone: dungeon?.zone ?? "red" } : places[0] ?? (monster ? { name: name(getMap(monster.regionMap)?.name, lang), zone: getMap(monster.regionMap)?.zone ?? "yellow" } : undefined);
-const dropId = boss ? boss.loot.named[0] : monster ? signatureDrop(monster, variant) : undefined;
+const dropId = boss ? ("map" in boss ? boss.reward.named.items[0]?.id : boss.loot.named[0]) : monster ? signatureDrop(monster, variant) : undefined;
 const drop = dropId ? getItem(dropId) : undefined;
 const dropRarity = drop ? drop.rarities[drop.rarities.length - 1] : undefined;
 const dropRarityName = dropRarity ? name(load("rarities").rarities.find((r) => r.key === dropRarity)?.name, lang) : "";

@@ -4,7 +4,7 @@
 import type { Item } from "../data/types";
 import type { Lang } from "../i18n/routes";
 import { bossHref, finalLevels, monsterHref, placesOf } from "./bestiary";
-import { getBoss, getItem, getMonster, load } from "./data";
+import { getBoss, getWorldBoss, getItem, getMonster, load } from "./data";
 import { formatChance, formatNumber } from "./format";
 import { name, t } from "./i18n";
 import { mapHref, mapLinkFor } from "./world";
@@ -44,13 +44,15 @@ export function itemSources(item: Item, lang: Lang): SourceCard[] {
     });
   }
   for (const src of s.bosses) {
-    const b = getBoss(src.boss);
+    // WIKI-3: a world boss's own items (bosses.json `world`)
+    const b = getBoss(src.boss) ?? getWorldBoss(src.boss);
     if (!b) continue;
+    const rankLabel = "map" in b ? t(lang, "worldboss.rank") : t(lang, "rank.boss");
     out.push({
       kind: "boss",
       title: name(b.name, lang),
       href: bossHref(lang, b.id),
-      line: `${t(lang, "rank.boss")} · ${t(lang, "level", { level: b.level })}${src.personal ? ` · ${t(lang, "item.src.personal")}` : ""}`,
+      line: `${rankLabel} · ${t(lang, "level", { level: b.level })}${src.personal ? ` · ${t(lang, "item.src.personal")}` : ""}`,
       chance: src.personal ? undefined : formatChance(src.chance, lang),
       sort: src.personal ? 2 : src.chance + 1,
       monster: { id: b.id, variant: "boss" },

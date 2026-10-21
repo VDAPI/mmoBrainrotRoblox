@@ -1,0 +1,42 @@
+---
+title: Wandering merchant
+description: "Radoslav's caravan: when it arrives, where it stops, how long it stays, what is on the wagon and what it costs."
+key: wanderer
+order: 16
+updated: 2026-10-21
+tags: [Trading, Equipment, Cosmetics]
+---
+
+<Callout kind="tip" title="In short">
+- Radoslav arrives every <Stat path="shops.wanderer.everyHours" /> hours and stays <Stat path="shops.wanderer.stayMin" /> min.
+- He stops in town or at a camp by the respawn point of one of the lands; the world map and the minimap show him as ⚖.
+- The goods are new on every visit and the same on every server. You pay with gold or Hunter's Marks, never Robux or Dragon Shards.
+</Callout>
+
+## When
+
+The caravan arrives at fixed times, eight times a day. The times in UTC and in Polish time, winter and summer:
+
+<WandererTable part="schedule" />
+
+An announcement comes up in the chat <Stat path="shops.wanderer.warnMin.0" /> min and <Stat path="shops.wanderer.warnMin.1" /> min before the arrival, on arrival, <Stat path="shops.wanderer.leavingMin" /> min before leaving and on leaving. On the world map ⚖ shows the time to the arrival or departure; the minimap shows the mark, or an arrow on its edge when the merchant is off it.
+
+## Where
+
+For every visit the game picks a map, then one of its places: in town the market square and the squares by the gates and the temple, in the lands the camps by the respawn points, inside a circle monsters keep out of. The merchant never stops at the same place twice in a row. The land also sets the levels of the goods.
+
+<WandererTable part="places" />
+
+## What he sells
+
+Every visit brings new goods: a few pieces of equipment, materials, one caravan dye and supplies. The equipment is for the buyer's class and has your character's level within the map's level band, and its extra bonuses roll when you buy. There are never Mythic items.
+
+<WandererTable part="stock" />
+
+Every offer has a limit per character and visit. Everything you buy is bound to the character and cannot be sold back to a merchant. The caravan dye is an account cosmetic you cannot buy in the premium shop.
+
+## What next
+
+- <Link to="mechanics" id="trading">Trading</Link>
+- <Link to="mechanics" id="cosmetics">Cosmetics and dyes</Link>
+- <Link to="mechanics" id="city">The town</Link>

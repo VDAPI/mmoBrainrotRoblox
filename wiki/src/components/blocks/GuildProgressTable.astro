@@ -1,0 +1,103 @@
+---
+// Guild progress (WIKI-3, S159g): mechanics.guild.progress. `part` = "levels" (guild EXP of every level, vault slots,
+// the highest guild skill level open, banner emblems and colours), "points" (guild EXP per activity), "goals" (the
+// weekly goals for a guild of `goalMembers` members) or "banner" (emblems and colours with the guild level they need).
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { load } from "../../lib/data";
+import { formatNumber } from "../../lib/format";
+import { name, t, type Key } from "../../lib/i18n";
+interface Props {
+  part: "levels" | "points" | "goals" | "banner";
+}
+const { part } = Astro.props;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const progress = load("mechanics").guild.progress;
+const n = (v: number) => formatNumber(v, lang);
+const POINT_ORDER = ["kill", "elite", "elite2", "boss", "worldBoss", "quest", "contract", "event", "gather", "fish", "craft", "brew", "upgrade"];
+const points = progress
+  ? Object.entries(progress.points).sort((a, b) => POINT_ORDER.indexOf(a[0]) - POINT_ORDER.indexOf(b[0]))
+  : [];
+const groups = progress ? [...new Set(progress.goals.map((g) => g.group))] : [];
+---
+{progress && part === "levels" && (
+  <div class="vw-scroll" tabindex="0">
+    <table class="vw-table vw-table--plain vw-table--keep">
+      <caption class="vw-sr">{t(lang, "block.gprog.levels")}</caption>
+      <thead>
+        <tr>
+          <th scope="col">{t(lang, "block.gprog.level")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.gprog.next")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.gprog.total")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.gprog.vault")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.gprog.skill")}</th>
+          <th scope="col" style="text-align: right">{t(lang, "block.gprog.banner")}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {progress.levels.map((row) => (
+          <tr>
+            <th scope="row">{n(row.level)}</th>
+            <td style="text-align: right">{row.exp > 0 ? n(row.exp) : "—"}</td>
+            <td style="text-align: right">{n(row.total)}</td>
+            <td style="text-align: right">{n(row.vault)}</td>
+            <td style="text-align: right">{n(row.skillLevel)}</td>
+            <td style="text-align: right">{t(lang, "block.gprog.bannerCount", { e: row.emblems, c: row.colours })}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+)}
+{progress && part === "points" && (
+  <table class="vw-table vw-table--plain">
+    <caption class="vw-sr">{t(lang, "block.gprog.points")}</caption>
+    <thead><tr><th scope="col">{t(lang, "block.gprog.activity")}</th><th scope="col" style="text-align: right">{t(lang, "block.gprog.exp")}</th></tr></thead>
+    <tbody>
+      {points.map(([id, v]) => (
+        <tr><th scope="row">{t(lang, `block.gprog.act.${id}` as Key)}</th><td style="text-align: right">{n(v)}</td></tr>
+      ))}
+    </tbody>
+  </table>
+)}
+{progress && part === "goals" && (
+  <>
+    <table class="vw-table vw-table--plain">
+      <caption class="vw-sr">{t(lang, "block.gprog.goals")}</caption>
+      <thead><tr><th scope="col">{t(lang, "block.gprog.group")}</th><th scope="col">{t(lang, "block.gprog.goal")}</th><th scope="col" style="text-align: right">{t(lang, "block.gprog.exp")}</th></tr></thead>
+      <tbody>
+        {groups.map((g) =>
+          progress.goals.filter((x) => x.group === g).map((x, i) => (
+            <tr>
+              <th scope="row">{i === 0 ? t(lang, `block.gprog.grp.${g}` as Key) : ""}</th>
+              <td><strong>{name(x.name, lang)}</strong> · {name(x.desc, lang)}</td>
+              <td style="text-align: right">{n(x.exp)}</td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+    <p class="vw-label note">{t(lang, "block.gprog.goalNote", { n: progress.goalMembers })}</p>
+  </>
+)}
+{progress && part === "banner" && (
+  <div class="banner">
+    <ul class="chips" aria-label={t(lang, "block.gprog.emblems")}>
+      {progress.emblems.map((e) => (
+        <li class="vw-chip vw-chip--static"><span class="glyph" aria-hidden="true">{e.glyph}</span> {t(lang, "block.gprog.from", { n: e.level })}</li>
+      ))}
+    </ul>
+    <ul class="chips" aria-label={t(lang, "block.gprog.colours")}>
+      {progress.colours.map((c) => (
+        <li class="vw-chip vw-chip--static"><span class="swatch" style={`background: ${c.color}`} aria-hidden="true"></span> {name(c.name, lang)} · {t(lang, "block.gprog.from", { n: c.level })}</li>
+      ))}
+    </ul>
+  </div>
+)}
+<Source from={part === "banner" ? "Data/GuildBanners" : "Data/GuildProgress, Logic/Guild"} />
+<style>
+  .note { margin: 6px 0 14px; color: var(--vw-text-muted); }
+  .chips { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .glyph { color: var(--vw-gold); font-size: 18px; }
+  .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--vw-border); vertical-align: -2px; }
+</style>

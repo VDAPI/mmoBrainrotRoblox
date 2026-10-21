@@ -344,7 +344,7 @@ T.describe("Achievement titles (S151)", function()
 			.toBe(false)
 	end)
 
-	T.it("every achievement title names an achievement with that title as reward, stays off the wiki", function()
+	T.it("every achievement title names an achievement with that title as reward, on the wiki since WIKI-3", function()
 		local Achievements = require("../src/shared/Data/Achievements")
 		local n = 0
 		for _, def in TitleData.list do
@@ -352,7 +352,7 @@ T.describe("Achievement titles (S151)", function()
 				n += 1
 				local ach = Achievements.get((def.req :: any).id)
 				T.expect({ def.id, ach ~= nil and ach.reward ~= nil and ach.reward.title }).toEqual({ def.id, def.id })
-				T.expect({ def.id, def.wiki }).toEqual({ def.id, false })
+				T.expect({ def.id, def.wiki }).toEqual({ def.id, nil })
 				T.expect({ def.id, pl[def.nameKey] ~= nil, en[def.nameKey] ~= nil }).toEqual({ def.id, true, true })
 			end
 		end

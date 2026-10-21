@@ -3,7 +3,7 @@ title: Combat
 description: "How the game counts damage step by step, how much armour stops, how elements, crits and dodges work and how monster ranks differ."
 key: combat
 order: 1
-updated: 2026-10-20
+updated: 2026-10-21
 tags: [Damage, Monsters]
 ---
 
@@ -41,7 +41,7 @@ A basic melee attack reaches <Stat path="mechanics.combat.meleeRange" /> studs, 
 
 Elites are bigger, stronger and higher level than normal monsters of their kind. Elite II fight like a small boss and need a party.
 
-**Level lock.** Elites, Elite IIs, dungeon bosses and their helpers cannot be hurt by a character <Stat path="mechanics.levelLockGap" /> or more levels above them. Such a character sees such a target greyed out with a lock and "Too high a level (max N)": it deals no damage (areas, burning and poison included), gets no loot or experience from it and cannot enter that boss's dungeon. Healing and buffing the party still works. This keeps the Elites for the players of their band. Normal monsters, the world boss and world events have no lock.
+**Level lock.** Elites, Elite IIs, dungeon bosses and their helpers cannot be hurt by a character <Stat path="mechanics.levelLockGap" /> or more levels above them. Such a character sees such a target greyed out with a lock and "Too high a level (max N)": it deals no damage (areas, burning and poison included), gets no loot or experience from it and cannot enter that boss's dungeon. Nor can it heal, shield or buff an ally fighting such a monster (no "support from above"); outside such a fight it supports as usual. This keeps the Elites for the players of their band. Normal monsters, the world boss and world events have no lock.
 
 An Elite II announces a **Crushing Blow**: a dark crimson circle under its target that you must leave before it lands. At its own level it takes a big part of your health, and the higher it is above you, the more dangerous it gets: a few levels above you it kills in one hit. Running away does not save you: the Elite II throws at a target that keeps it at a distance (the harder, the lower the target is below it), pounces on it, and announces the Crushing Blow from afar too. An ordinary Elite has a **Heavy Blow**, a cone in front of it to dodge.
 
@@ -52,6 +52,14 @@ The region maps also have **lairs** marked with a skull: a small corner with an 
 <VariantTable />
 
 Monsters in a group hit weaker one by one but attack together. Monsters far below your level (<Stat path="mechanics.combat.passiveLevelGap" /> levels or more) do not attack first.
+
+## Attacks to dodge
+
+A melee monster winds up first. If you step out of its reach meanwhile, the blow hits thin air. Archers and casters shoot real projectiles that fly to where you will be a moment later; regular dodge and block still protect you, and a late change of direction helps too. An Elite II throws a boulder or a dark bolt at a fleeing target.
+
+Dungeon bosses and the world boss have patterns you escape by moving: projectiles that chase you or bounce off the arena's walls, projectiles falling from the sky onto a circle, waves running along the ground (a wall with a gap in it), low rings to jump over and turning breath cones. Every pattern warns on the ground or in the air before it can hit, and one volley hits you only a few times at most. Dodge from your stats does not protect you from these hazards: only moving does. From the second phase there are more patterns. What each boss does is on its page among the <Link to="bosses">bosses</Link>.
+
+A heavy blow on you flashes red at the screen's edges and shakes the camera; you can turn the shake off in the settings.
 
 ## Level colour
 

@@ -1,0 +1,126 @@
+---
+// The wandering merchant (WIKI-3, S159w): shops.json `wanderer`. `part` = "schedule" (arrival times in UTC and in
+// Polish winter / summer time, the stay, the warnings), "places" (the maps he may visit with their chance and level
+// band, the camps and squares) or "stock" (the gear by rarity, the materials and supplies he may bring, the caravan
+// dyes). Prices in gold or Hunter's Marks only; the game rolls the stock for every visit.
+import ItemIcon from "../ItemIcon.svelte";
+import Source from "./Source.astro";
+import type { Lang } from "../../i18n/routes";
+import { getItem, getMap, load, rarities } from "../../lib/data";
+import { formatChance, formatNumber } from "../../lib/format";
+import { iconFor } from "../../lib/icons";
+import { name, t, type Key } from "../../lib/i18n";
+import { itemHref } from "../../lib/monster";
+interface Props {
+  part: "schedule" | "places" | "stock";
+}
+const { part } = Astro.props;
+const lang = (Astro.url.pathname.startsWith("/en/") ? "en" : "pl") as Lang;
+const w = load("shops").wanderer;
+const n = (v: number) => formatNumber(v, lang);
+const rarityName = (key: string) => name(rarities().find((r) => r.key === key)?.name, lang);
+type Offer = NonNullable<typeof w>["offers"][number];
+const priceText = (o: Offer) => {
+  if (o.marks !== undefined) return t(lang, "block.wand.marks", { n: n(o.marks) });
+  if (o.gold !== undefined) return t(lang, "block.wand.gold", { n: n(o.gold) });
+  if (o.goldPerLevel !== undefined) return t(lang, "block.wand.goldPerLevel", { n: n(o.goldPerLevel) });
+  if (o.goldShare !== undefined) return t(lang, "block.wand.goldShare", { pct: n(Math.round(o.goldShare * 100)) });
+  return "—";
+};
+const offerName = (o: Offer) => {
+  if (o.item) return name(getItem(o.item)?.name, lang) || o.item;
+  return t(lang, `block.wand.offer.${o.key}` as Key);
+};
+const groups = ["material", "consumable"] as const;
+---
+{w && part === "schedule" && (
+  <table class="vw-table vw-table--plain">
+    <caption class="vw-sr">{t(lang, "block.wand.schedule")}</caption>
+    <thead><tr><th scope="col">{t(lang, "block.wand.utc")}</th><th scope="col">{t(lang, "block.wand.plWinter")}</th><th scope="col">{t(lang, "block.wand.plSummer")}</th></tr></thead>
+    <tbody>
+      {w.utc.map((u, i) => (
+        <tr><td>{u}</td><td>{w.plWinter[i]}</td><td>{w.plSummer[i]}</td></tr>
+      ))}
+    </tbody>
+  </table>
+)}
+{w && part === "places" && (
+  <>
+    <table class="vw-table vw-table--plain">
+      <caption class="vw-sr">{t(lang, "block.wand.places")}</caption>
+      <thead><tr><th scope="col">{t(lang, "block.wand.map")}</th><th scope="col" style="text-align: right">{t(lang, "block.wand.chance")}</th><th scope="col" style="text-align: right">{t(lang, "block.wand.band")}</th><th scope="col">{t(lang, "block.wand.spots")}</th></tr></thead>
+      <tbody>
+        {w.maps.map((m) => (
+          <tr>
+            <th scope="row">{name(getMap(m.map)?.name, lang) || m.map}</th>
+            <td style="text-align: right">{formatChance(m.chance, lang)}</td>
+            <td style="text-align: right">{n(m.min)}–{n(m.max)}</td>
+            <td>{w.spots.filter((s) => s.map === m.map).map((s) => name(s.name, lang)).join(", ")}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </>
+)}
+{w && part === "stock" && (
+  <>
+    <h3 class="vw-h3">{t(lang, "block.wand.gear", { n: w.gear.count })}</h3>
+    <table class="vw-table vw-table--plain">
+      <caption class="vw-sr">{t(lang, "block.wand.gear", { n: w.gear.count })}</caption>
+      <thead><tr><th scope="col">{t(lang, "block.wand.rarity")}</th><th scope="col" style="text-align: right">{t(lang, "block.wand.chance")}</th><th scope="col" style="text-align: right">{t(lang, "block.wand.price")}</th></tr></thead>
+      <tbody>
+        {w.gear.rarities.map((r) => (
+          <tr>
+            <th scope="row"><span style={`color: var(--vw-r-${r.rarity}-text)`}>{rarityName(r.rarity)}</span></th>
+            <td style="text-align: right">{formatChance(r.chance, lang)}</td>
+            <td style="text-align: right">{r.marks !== undefined ? t(lang, "block.wand.marks", { n: n(r.marks) }) : t(lang, "block.wand.goldPerItemLevel", { n: n(r.goldPerLevel ?? 0) })}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    {groups.map((g) => (
+      <>
+        <h3 class="vw-h3">{t(lang, `block.wand.group.${g}` as Key, { n: g === "material" ? w.materialCount : w.consumableCount })}</h3>
+        <div class="vw-scroll" tabindex="0">
+          <table class="vw-table vw-table--plain vw-table--keep">
+            <caption class="vw-sr">{t(lang, `block.wand.group.${g}` as Key, { n: g === "material" ? w.materialCount : w.consumableCount })}</caption>
+            <thead><tr><th scope="col">{t(lang, "block.wand.offer")}</th><th scope="col" style="text-align: right">{t(lang, "block.wand.price")}</th><th scope="col" style="text-align: right">{t(lang, "block.wand.from")}</th><th scope="col" style="text-align: right">{t(lang, "block.wand.limit")}</th><th scope="col" style="text-align: right">{t(lang, "block.wand.chance")}</th></tr></thead>
+            <tbody>
+              {w.offers.filter((o) => o.group === g).map((o) => {
+                const item = o.item ? getItem(o.item) : undefined;
+                const rar = item?.rarities[item.rarities.length - 1] ?? "common";
+                const ih = o.item ? itemHref(lang, o.item) : null;
+                return (
+                  <tr>
+                    <th scope="row" class="offer">
+                      {item && <ItemIcon glyph={item.glyph} color={item.color} rarity={rar} size={24} src={iconFor(item.id)} />}
+                      {ih ? <a href={ih}>{offerName(o)}</a> : <span>{offerName(o)}</span>} ×{n(o.n)}
+                    </th>
+                    <td style="text-align: right">{priceText(o)}</td>
+                    <td style="text-align: right">{n(o.minLevel)}</td>
+                    <td style="text-align: right">{n(o.limit)}</td>
+                    <td style="text-align: right">{formatChance(o.chance, lang)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </>
+    ))}
+    <h3 class="vw-h3">{t(lang, "block.wand.dyes")}</h3>
+    <ul class="dyes">
+      {w.dyes.map((d) => (
+        <li class="vw-chip vw-chip--static"><span class="swatch" style={`background: linear-gradient(135deg, ${d.color} 50%, ${d.color2} 50%)`} aria-hidden="true"></span> {name(d.name, lang)}</li>
+      ))}
+    </ul>
+    <p class="vw-label note">{t(lang, "block.wand.dyeNote", { n: n(w.dyeGold) })}</p>
+  </>
+)}
+<Source from="Data/WanderingMerchant" />
+<style>
+  .offer { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+  .dyes { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+  .swatch { display: inline-block; width: 16px; height: 16px; border-radius: 3px; border: 1px solid var(--vw-border); vertical-align: -3px; }
+  .note { margin: 6px 0 14px; color: var(--vw-text-muted); }
+</style>

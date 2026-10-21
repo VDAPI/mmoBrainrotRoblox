@@ -128,6 +128,22 @@ S.file(
 				title = "name",
 				byLevel = arr(DailyLevel),
 			})),
+			-- WIKI-3 (S159): the set: groups drawn first, free rerolls, the streak and the set bonus on the daily
+			-- levels (EXP at a streak of 1 and at the cap, the blessings); the Dragon Shards only as a flag (S131)
+			["set?"] = rec("DailySet", {
+				slots = arr("string"),
+				rerolls = "int",
+				streakCap = "int",
+				streakShardsFrom = "int",
+				shardMinLevel = "int",
+				bonus = arr(rec("DailyBonusLevel", {
+					level = "int",
+					expFirst = "int",
+					expCap = "int",
+					items = arr(rec("DailyBonusItem", { id = "ref:items", n = "int" })),
+					currency = "bool",
+				})),
+			}),
 		}),
 		-- S109: the first defeat of every boss (Data/Quests/Boss), given and handed in by the land's scout
 		bossQuests = arr(rec("BossQuest", {
@@ -147,6 +163,13 @@ S.file(
 				minLevel = "int",
 				title = "name",
 				byLevel = arr(DailyLevel),
+			})),
+			-- WIKI-3 (S159): the weekly set bonus on the daily levels (Dragon Shards only as a flag)
+			["bonus?"] = arr(rec("WeeklyBonusLevel", {
+				level = "int",
+				exp = "int",
+				items = arr(rec("WeeklyBonusItem", { id = "ref:items", n = "int" })),
+				currency = "bool",
 			})),
 			bossContract = rec("BossContract", {
 				n = "int",
@@ -376,6 +399,46 @@ function Quests.sideChoice(): any
 	return { count = Config.SideQuest.choiceCount, rarity = rarity }
 end
 
+-- WIKI-3 (S159): the daily set rules and its bonus on the daily levels (Data/Quests/Daily). Shards: a flag only.
+function Quests.dailySet(hidden: { [string]: boolean }): any
+	local D = QuestData.Daily
+	local rows = {}
+	for _, level in Quests.DAILY_LEVELS do
+		local first = D.bonus(level, 1)
+		local cap = D.bonus(level, D.STREAK_CAP)
+		table.insert(rows, {
+			level = level,
+			expFirst = first.exp,
+			expCap = cap.exp,
+			items = Clean.dropRefs(Clean.clean(first.items or {}), hidden, "id"),
+			currency = (first.shards or 0) > 0 and level >= D.SHARD_MIN_LEVEL,
+		})
+	end
+	return {
+		slots = table.clone(D.SLOTS),
+		rerolls = D.REROLLS,
+		streakCap = D.STREAK_CAP,
+		streakShardsFrom = D.BONUS.streakShardsFrom,
+		shardMinLevel = D.SHARD_MIN_LEVEL,
+		bonus = rows,
+	}
+end
+
+-- WIKI-3 (S159): the weekly set bonus on the daily levels (Data/Quests/Weekly). Shards: a flag only.
+function Quests.weeklyBonus(hidden: { [string]: boolean }): any
+	local rows = {}
+	for _, level in Quests.DAILY_LEVELS do
+		local b = QuestData.Weekly.bonus(level)
+		table.insert(rows, {
+			level = level,
+			exp = b.exp,
+			items = Clean.dropRefs(Clean.clean(b.items or {}), hidden, "id"),
+			currency = (b.shards or 0) > 0 and level >= QuestData.Daily.SHARD_MIN_LEVEL,
+		})
+	end
+	return rows
+end
+
 function Quests.build(ctx: any): any
 	ctx.questItems = {}
 	local function noteItems(questId: string, r: any)
@@ -581,11 +644,12 @@ function Quests.build(ctx: any): any
 		main = main,
 		chapters = chapters,
 		side = side,
-		daily = { perDay = QuestData.Daily.PER_DAY, templates = templates },
+		daily = { perDay = QuestData.Daily.PER_DAY, templates = templates, set = Quests.dailySet(ctx.hidden) },
 		bossQuests = bossQuests,
 		weekly = {
 			perWeek = QuestData.Weekly.PER_WEEK,
 			templates = weeklyTemplates,
+			bonus = Quests.weeklyBonus(ctx.hidden),
 			bossContract = { n = QuestData.Weekly.bossContract.n, byLevel = bossLevels },
 		},
 		contracts = {

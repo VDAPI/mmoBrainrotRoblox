@@ -1,0 +1,42 @@
+---
+title: Zlecenia dzienne i tygodniowe
+description: "Zlecenia z tablicy na placu jako dzienny i tygodniowy zestaw: seria dni, darmowa zamiana, premia za komplet i Smocze Odłamki."
+key: dailies
+order: 14
+updated: 2026-10-21
+tags: [Zadania, Nagrody]
+---
+
+<Callout kind="tip" title="W skrócie">
+- Codziennie <Stat path="quests.daily.perDay" /> zlecenia, co tydzień <Stat path="quests.weekly.perWeek" />. Odbierz wszystkie, a dostaniesz premię za komplet.
+- Każdy pełny dzień z rzędu wydłuża serię i podnosi premię dzienną.
+- Jedno otwarte zlecenie dziennie możesz za darmo zamienić na inne.
+</Callout>
+
+## Tablica zleceń
+
+Zlecenia bierzesz z tablicy na placu miasta. Dzienne zmieniają się o północy czasu UTC, tygodniowe w poniedziałek o tej samej porze. Każda postać ma własny zestaw, a postęp widać na tablicy, w dzienniku i w śledziku zadań na ekranie (licznik zestawu, czas do nowego i przypomnienie „Gotowe: odbierz na tablicy”).
+
+Dzienny zestaw zawsze ma jedno zlecenie walki i jedno zbierania, a reszta jest losowa: polowanie, Elity, boss lochu, wydarzenie świata, zioła, ruda, ryby, ulepszanie, rozkładanie u kowala, oddawanie zadań, a czasem pojedynki albo walki na arenie (tylko w wolnych miejscach). Polowania i Elity liczą potwory od pięciu poziomów poniżej twojego w górę, więc szare łowiska nie pomagają.
+
+## Darmowa zamiana
+
+Raz dziennie możesz zamienić jedno otwarte zlecenie dzienne na inne, z tej samej grupy, jeśli się da. Przycisk jest przy zleceniu na tablicy i w dzienniku. Zamiana nic nie kosztuje i nie przerywa serii.
+
+## Premia za komplet
+
+Gdy odbierzesz ostatnie zlecenie dnia, od razu dostajesz premię za komplet: doświadczenie, dwa błogosławieństwa i, od poziomu <Stat path="quests.daily.set.shardMinLevel" />, kilka Smoczych Odłamków. Odłamki z premii przychodzą raz na konto i dzień, a z premii tygodniowej raz na konto i tydzień, bez względu na to, iloma postaciami grasz.
+
+Doświadczenie premii dziennej rośnie z serią: każdy pełny dzień z rzędu (wszystkie zlecenia i premia odebrane którąkolwiek postacią konta) podnosi je aż do serii <Stat path="quests.daily.set.streakCap" /> dni. Od <Stat path="quests.daily.set.streakShardsFrom" />. dnia serii premia daje też jeden Odłamek więcej. Seria trwa, dopóki ostatni pełny dzień był dziś albo wczoraj; jeden pominięty dzień zaczyna ją od nowa.
+
+<DailySetTable part="daily" />
+
+Premia tygodniowa przychodzi po odebraniu wszystkich zleceń tygodnia. Zlecenie na bossa lochu jest osobno i nie wlicza się do kompletu.
+
+<DailySetTable part="weekly" />
+
+## Co dalej
+
+- <Link to="quests">Wszystkie zadania i zlecenia</Link>
+- <Link to="mechanics" id="worldEvents">Wydarzenia świata</Link>
+- <Link to="mechanics" id="premiumShop">Sklep premium i Smocze Odłamki</Link>

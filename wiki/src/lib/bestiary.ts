@@ -1,8 +1,8 @@
 // Bestiary list (S39, build time): one entry per occurring monster variant (a variant with spawns) and one per boss,
 // with what the cards, the table and the filters need. Numbers come from the export (monsters.json, bosses.json).
-import type { Boss, Monster, MonsterVariant } from "../data/types";
+import type { Boss, Monster, MonsterVariant, WorldBoss } from "../data/types";
 import type { Lang } from "../i18n/routes";
-import { bosses, getItem, getMap, load, monsters } from "./data";
+import { bosses, getItem, getMap, load, monsters, worldBosses } from "./data";
 import type { FilterEntry, Rank } from "./bestiary-filters";
 import { name } from "./i18n";
 import { normalize } from "./search";
@@ -138,6 +138,28 @@ function bossEntry(b: Boss, lang: Lang, order: number): BestiaryEntry {
   };
 }
 
+// WIKI-3: a world boss (its map instead of a dungeon, its first named item as the signature).
+function worldBossEntry(b: WorldBoss, lang: Lang, order: number): BestiaryEntry {
+  const map = getMap(b.map);
+  const label = name(b.name, lang);
+  return {
+    id: b.id,
+    variant: "boss",
+    rank: "boss",
+    name: label,
+    levelMin: b.level,
+    levelMax: b.level,
+    damageKind: b.damageKind,
+    placeList: [{ id: b.map, map: b.map, region: b.map, zone: map?.zone ?? "red", name: name(map?.name, lang) || b.map }],
+    places: [b.map],
+    regions: [b.map],
+    signature: b.reward.named.items[0]?.id,
+    key: normalize(`${label} ${b.id} ${name(b.name, lang === "pl" ? "en" : "pl")}`),
+    href: bossHref(lang, b.id),
+    order,
+  };
+}
+
 /** Every bestiary entry in data order (monsters by kind, variants by rank, then bosses). */
 export function bestiaryEntries(lang: Lang): BestiaryEntry[] {
   const out: BestiaryEntry[] = [];
@@ -168,6 +190,7 @@ export function bestiaryEntries(lang: Lang): BestiaryEntry[] {
     }
   }
   for (const b of bosses()) out.push(bossEntry(b, lang, out.length));
+  for (const b of worldBosses()) out.push(worldBossEntry(b, lang, out.length));
   return out;
 }
 
