@@ -13657,7 +13657,12 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `src/shared/Logic/MapMarkers.luau`, `tests/mapmarkers.spec.luau`, `src/client/UI/Screens/WorldMap/{init,
   Canvas,Overlay,Panels,Search,DetailCard}.luau`, `src/shared/Data/UiPalette.luau` (`map.cat*`, `plate`, `cluster`),
   `SettingsService`, `AccountSchema`, `Types`, lokalizacja (`worldmap.cat.*`, `worldmap.filter.*`, `worldmap.cluster.*`).
-- **Bez przeglądu w Studio** (wygląd na PC i telefonie, skupiska w mieście, chipy filtrów). Minimapa nie ruszana.
+- **Minimapa (druga część):** `Hud/Minimap` rysuje symbole przez `UI/MapSymbol` (wspólne z mapą świata), układ z
+  `MapMarkers.layout` (tłum = najważniejszy symbol), znak questa jako plakietka, poziomy łowisk z `placeLabel`, filtr
+  `mapHide`; drużyna, znaczniki, gwiazda questa i wydarzenie na okrągłych tarczach. Układ telefonu W29 bez zmian.
+  Usunięte nieużywane klucze `worldmap.chip.*`, `worldmap.layer.*` (poza `labels`).
+- **Bez przeglądu w Studio** (wygląd na PC i telefonie, skupiska w mieście, chipy filtrów, minimapa).
+
 ### W30: walka Łowcy i Maga, efekty i ruchy umiejętności (walka-lm)
 - **Składniki `lm*`:** 33 nowe składniki efektów (`Data/LmVfxPieces`, `Vfx/LmHunterMage`, rejestr `Vfx/LmPieces`),
   nowe pola `SkillVfx` `castFx`, `releaseFx`, `flight`, `lmOpts`; wszystkie wpisy Łowcy i Maga przepisane (opis:

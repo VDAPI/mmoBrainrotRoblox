@@ -28,6 +28,7 @@ local IconState = require(script.Parent.Parent.Parent.IconState)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local MapMarkers = require(ReplicatedStorage.Shared.Logic.MapMarkers)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
+local MapSymbol = require(script.Parent.Parent.Parent.MapSymbol)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
 local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
@@ -132,44 +133,9 @@ local function layer(parent: Instance, name: string, z: number): Frame
 	return f
 end
 
--- Colour of a category (Data/UiPalette.map through Logic/MapMarkers).
-function Canvas.categoryColor(id: string): Color3
-	local category = MapMarkers.byId[id]
-	local hex = if category then (MAP :: any)[category.color] else nil
-	return Theme.tint(if type(hex) == "string" then hex else MAP.npc)
-end
-
--- The dark plate of a symbol in its shape, with a ring of `color`. Shared with WorldMap/Overlay and the filter chips.
-function Canvas.plate(
-	parent: Instance,
-	shape: MapMarkers.Shape,
-	side: number,
-	color: Color3,
-	z: number
-): (Frame, UIStroke)
-	local plate = Instance.new("Frame")
-	plate.Name = "Plate"
-	plate.AnchorPoint = Vector2.new(0.5, 0.5)
-	plate.Position = UDim2.fromScale(0.5, 0.5)
-	local s = if shape == "diamond" then math.floor(side * 0.78) else side
-	plate.Size = UDim2.fromOffset(s, s)
-	plate.Rotation = if shape == "diamond" then 45 else 0
-	plate.BackgroundColor3 = PLATE_COLOR
-	plate.BackgroundTransparency = 0.08
-	plate.BorderSizePixel = 0
-	plate.ZIndex = z
-	plate.Active = false
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = if shape == "round" then UDim.new(0.5, 0) else UDim.new(0, 6)
-	corner.Parent = plate
-	local stroke = Instance.new("UIStroke")
-	stroke.Color = color
-	stroke.Thickness = 2.5
-	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	stroke.Parent = plate
-	plate.Parent = parent
-	return plate, stroke
-end
+-- Colour of a category and the dark ringed plate of a symbol (UI/MapSymbol, shared with the minimap).
+Canvas.categoryColor = MapSymbol.color
+Canvas.plate = MapSymbol.plate
 
 local function glyphLabel(parent: Instance, value: string, color: Color3, size: number, z: number): TextLabel
 	local l = Instance.new("TextLabel")

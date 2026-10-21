@@ -17,6 +17,12 @@
 -- fallen (Logic/WorldBoss.markerOf) a brighter crown, or an arrow on the edge towards it when it is out of the disc.
 -- S119: the owner's silhouettes on the markers and icons (UiArtState.decorate / retarget: pooled labels only change
 -- properties) and the painted map instead of the drawn sketch once its picture is loaded (same frame as the world map).
+-- Owner 2026-10-20 "Mapa": the world map's symbol language here too: every fixed symbol is a dark plate in its
+-- category's shape and colour (UI/MapSymbol, Logic/MapMarkers), no text over them. Overlapping symbols are nudged
+-- apart (up to MapMarkers.NUDGE_MAX), a bigger crowd shows only its most important symbol (spread at the closest
+-- zoom). The level ranges at the closest zoom take a free spot or hide. The world map's filter (account setting
+-- `mapHide`) hides the same categories here (monster dots always stay). Party, own marks, the quest star and the event
+-- sit on round plates too.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -36,7 +42,9 @@ local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local MapMarks = require(ReplicatedStorage.Shared.Data.MapMarks)
+local MapMarkers = require(ReplicatedStorage.Shared.Logic.MapMarkers)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
+local MapSymbol = require(script.Parent.Parent.Parent.MapSymbol)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local NpcMarkState = require(script.Parent.Parent.Parent.NpcMarkState)
@@ -88,6 +96,63 @@ local ICONS: { [string]: { glyph: string, color: string } } = {
 }
 
 local PLAYER_ART = UiArt.mapIcon("player")
+local SYMBOL = 20 -- plate of a fixed symbol (pixels; also the spacing of the declutter)
+local NODE_SYMBOL = 13
+local SYMBOL_ART = 15
+local NODE_ART = 10
+local MARKER = 18 -- round plate of the moving markers (party, own marks, quest star, event)
+-- sketch icon type -> symbol category (Logic/MapMarkers)
+local SKETCH_CATEGORY: { [string]: string } = { portal = "travel", cave = "cave", dungeon = "dungeon", node = "node" }
+local PRIORITY: { [string]: number } = {
+	travel = 40,
+	cave = 40,
+	worldboss = 35,
+	dungeon = 30,
+	lair = 30,
+	npc = 20,
+	node = 10,
+}
+
+-- A fixed symbol before the declutter (owner 2026-10-20 "Mapa").
+type Candidate = {
+	key: string,
+	category: string,
+	glyph: string,
+	art: string?,
+	color: Color3?,
+	p: Vector2,
+	priority: number,
+	mark: any,
+	faded: boolean?,
+}
+
+-- A moving marker's label on a round dark plate ringed in its colour (the world map's look).
+local function onPlate(label: TextLabel, color: Color3)
+	label.BackgroundColor3 = MapSymbol.PLATE_COLOR
+	label.BackgroundTransparency = 0.08
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0.5, 0)
+	corner.Parent = label
+	local stroke = Instance.new("UIStroke")
+	stroke.Name = "Ring"
+	stroke.Color = color
+	stroke.Thickness = 1.5
+	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+	stroke.Parent = label
+	local padding = Instance.new("UIPadding")
+	padding.PaddingTop = UDim.new(0, 3)
+	padding.PaddingBottom = UDim.new(0, 3)
+	padding.PaddingLeft = UDim.new(0, 3)
+	padding.PaddingRight = UDim.new(0, 3)
+	padding.Parent = label
+end
+
+local function ringOf(label: TextLabel, color: Color3)
+	local ring = label:FindFirstChild("Ring") :: UIStroke?
+	if ring then
+		ring.Color = color
+	end
+end
 
 -- W28: the colour of a monster's dot: its family (Data/Families), so a glance tells beasts from undead from people;
 -- unknown kinds keep the old group-size colour.
@@ -157,9 +222,10 @@ local function Minimap(scope: Scope, props: Props): Instance
 	}) :: Frame
 
 	-- Pools of the moving markers (S25): created once, only moved and shown / hidden.
-	local questStar = glyph(dynamic, "★", MAP.quest, Vector2.zero, 20, 6)
+	local questStar = glyph(dynamic, "★", MAP.quest, Vector2.zero, MARKER, 6)
 	questStar.Visible = false
-	UiArtState.decorate(questStar, UiArt.mapIcon("quest"))
+	onPlate(questStar, Theme.tint(MAP.quest))
+	UiArtState.decorate(questStar, UiArt.mapIcon("quest"), { size = SYMBOL_ART })
 	local navGlyph = glyph(dynamic, "◆", MAP.guide, Vector2.zero, 18, 7)
 	navGlyph.Visible = false
 	UiArtState.decorate(navGlyph, UiArt.mapIcon("guide"))
@@ -168,9 +234,10 @@ local function Minimap(scope: Scope, props: Props): Instance
 	navArrow.Visible = false
 	local markPool: { TextLabel } = {}
 	for i = 1, MAX_MARKS do
-		markPool[i] = glyph(dynamic, "⚑", MAP.flag, Vector2.zero, 16, 6)
+		markPool[i] = glyph(dynamic, "⚑", MAP.flag, Vector2.zero, MARKER, 6)
 		markPool[i].Visible = false
-		UiArtState.decorate(markPool[i], nil)
+		onPlate(markPool[i], Theme.tint(MAP.flag))
+		UiArtState.decorate(markPool[i], nil, { size = SYMBOL_ART })
 	end
 	-- S134d: the Invasion zone's circle (radius from the state); the disc's CanvasGroup clips it
 	local eventZone = Instance.new("Frame")
@@ -187,8 +254,9 @@ local function Minimap(scope: Scope, props: Props): Instance
 	local eventZoneStroke = Instance.new("UIStroke")
 	eventZoneStroke.Thickness = 1.5
 	eventZoneStroke.Parent = eventZone
-	local eventGlyph = glyph(dynamic, "⚔", MAP.event, Vector2.zero, 20, 6)
+	local eventGlyph = glyph(dynamic, "⚔", MAP.event, Vector2.zero, MARKER + 2, 6)
 	eventGlyph.Visible = false
+	onPlate(eventGlyph, Theme.tint(MAP.event))
 	-- S149b: the live world boss (in the disc) and the arrow towards it (out of the disc)
 	local bossGlyph = glyph(dynamic, ICONS.worldBoss.glyph, ICONS.worldBoss.color, Vector2.zero, 22, 7)
 	bossGlyph.Visible = false
@@ -204,9 +272,10 @@ local function Minimap(scope: Scope, props: Props): Instance
 	merchantArrow.Visible = false
 	local partyPool: { TextLabel } = {}
 	for i = 1, 4 do
-		partyPool[i] = glyph(dynamic, "●", MAP.party, Vector2.zero, 14, 5)
+		partyPool[i] = glyph(dynamic, "●", MAP.party, Vector2.zero, MARKER - 2, 5)
 		partyPool[i].Visible = false
-		UiArtState.decorate(partyPool[i], UiArt.mapIcon("party"))
+		onPlate(partyPool[i], Theme.tint(MAP.party))
+		UiArtState.decorate(partyPool[i], UiArt.mapIcon("party"), { size = NODE_ART + 2 })
 	end
 	-- S78: Elites beyond the disc (Scout's Eye), nearest first.
 	local elitePins: { TextLabel } = {}
@@ -239,25 +308,12 @@ local function Minimap(scope: Scope, props: Props): Instance
 	end
 
 	local current: MapSketch.Sketch? = nil
-	local npcMarks: { [string]: TextLabel } = {}
-	local npcGlyphs: { [string]: TextLabel } = {}
-	-- Quest marks over the NPC glyphs (S25), refreshed when the quests change. S104: NPCs the character does not see
-	-- yet (NpcMarkState.Hidden) have no glyph.
-	local function applyMarks()
-		local marks = Fusion.peek(NpcMarkState.Marks)
-		for npcId, label in npcGlyphs do
-			label.Visible = not NpcMarkState.isHidden(npcId)
-		end
-		for npcId, label in npcMarks do
-			local style = NpcMarkState.style(marks[npcId] :: any)
-			label.Visible = style ~= nil
-			if style then
-				label.Text = style.text
-				label.TextColor3 = style.color
-			end
-		end
-	end
-	scope:Observer(NpcMarkState.Marks):onChange(applyMarks)
+	-- Owner 2026-10-20 "Mapa": the world map's filter (hidden categories) applies here too.
+	local hideSetting = State.Value({ "account", "settings", "mapHide" })
+	local hidden = scope:Computed(function(use): { [string]: boolean }
+		return MapMarkers.hiddenSet(use(hideSetting))
+	end)
+	local redrawNow: () -> ()
 	local currentScale = 0
 	local currentMap = ""
 	local currentLevel = 0
@@ -277,11 +333,11 @@ local function Minimap(scope: Scope, props: Props): Instance
 		return math.floor((hooks.minimapEliteBonus or 0) + 0.5)
 	end)
 
-	local function redraw()
+	local function redraw(force: boolean?)
 		local id = Fusion.peek(mapId) or ""
 		local s = Fusion.peek(scale)
 		local playerLevel = Fusion.peek(level) or 1
-		if id == currentMap and s == currentScale and playerLevel == currentLevel and current then
+		if not force and id == currentMap and s == currentScale and playerLevel == currentLevel and current then
 			return
 		end
 		currentLevel = playerLevel
@@ -322,7 +378,9 @@ local function Minimap(scope: Scope, props: Props): Instance
 		-- level ranges at the closest zoom), under the icons.
 		local data = Areas.byMap[id]
 		local closest = s >= ZOOMS[#ZOOMS]
-		for _, area in (if data then data.areas else {}) :: { Areas.Area } do
+		local hide = Fusion.peek(hidden)
+		local levelLabels: { { area: Areas.Area, a1: Vector2, a2: Vector2, color: Color3 } } = {}
+		for _, area in (if data and not hide.area then data.areas else {}) :: { Areas.Area } do
 			local r = area.rect
 			local a1 = MapSketch.toPixel(sketch, s, r[1], r[2])
 			local a2 = MapSketch.toPixel(sketch, s, r[3], r[4])
@@ -337,64 +395,143 @@ local function Minimap(scope: Scope, props: Props): Instance
 			f.ZIndex = 1
 			f.Parent = canvas
 			if closest then
-				local levels = glyph(canvas, `{area.lv[1]}–{area.lv[2]}`, MAP.label, (a1 + a2) / 2, 16, 2)
-				levels.TextScaled = false
-				levels.TextSize = Theme.TextSize.Caption
-				levels.Size = UDim2.fromOffset(60, 16)
-				levels.TextColor3 = color
-				levels.TextStrokeTransparency = 0.1
+				table.insert(levelLabels, { area = area, a1 = a1, a2 = a2, color = color })
 			end
 		end
-		for _, icon in sketch.icons do
-			local style = ICONS[icon.t]
-			if style and style.glyph ~= "" then
-				local label = glyph(
-					canvas,
-					style.glyph,
-					style.color,
-					MapSketch.toPixel(sketch, s, icon.x, icon.z),
-					if icon.t == "node" then 10 else 18,
-					2
-				)
+		-- Fixed symbols: one candidate per thing, decluttered like the world map (Logic/MapMarkers.layout).
+		local marks = Fusion.peek(NpcMarkState.Marks)
+		local candidates: { [string]: Candidate } = {}
+		local points: { MapMarkers.Point } = {}
+		local function add(c: Candidate)
+			if hide[c.category] then
+				return
+			end
+			candidates[c.key] = c
+			table.insert(points, { key = c.key, x = c.p.X, y = c.p.Y, priority = c.priority })
+		end
+		for i, icon in sketch.icons do
+			local category = SKETCH_CATEGORY[icon.t]
+			if category and (category ~= "node" or s >= ZOOMS[2]) then
 				local family = if icon.id then string.match(icon.id, "^(%a+)_") else nil
-				UiArtState.decorate(
-					label,
-					UiArt.mapIcon(icon.t, family),
-					{ size = if icon.t == "node" then 12 else 18 }
-				)
+				add({
+					key = `{icon.t}:{i}`,
+					category = category,
+					glyph = (ICONS[icon.t] or ICONS.node).glyph,
+					art = UiArt.mapIcon(icon.t, family),
+					color = if category == "node"
+						then Theme.tint(
+							if family == "bush" then MAP.bush elseif family == "fishing" then MAP.fishing else MAP.vein
+						)
+						else nil,
+					p = MapSketch.toPixel(sketch, s, icon.x, icon.z),
+					priority = PRIORITY[category],
+				})
 			end
 		end
 		-- S134i: the Elite II hideouts from the data (the living Elites nearby get their markers as before)
-		local areaData = Areas.byMap[id]
-		for _, lair in (if areaData then areaData.lairs or {} else {}) :: { Areas.Lair } do
-			local style = ICONS.lair
-			local label = glyph(canvas, style.glyph, style.color, MapSketch.toPixel(sketch, s, lair.x, lair.z), 16, 2)
-			UiArtState.decorate(label, UiArt.mapIcon("lair"), { size = 16 })
+		for _, lair in (if data then data.lairs or {} else {}) :: { Areas.Lair } do
+			add({
+				key = `lair:{lair.id}`,
+				category = "lair",
+				glyph = ICONS.lair.glyph,
+				art = UiArt.mapIcon("lair"),
+				p = MapSketch.toPixel(sketch, s, lair.x, lair.z),
+				priority = PRIORITY.lair,
+			})
 		end
-		table.clear(npcMarks)
-		table.clear(npcGlyphs)
 		for _, npc in Npcs.list do
-			if npc.map == id and not npc.decoration then
-				local p = MapSketch.toPixel(sketch, s, npc.position.x, npc.position.z)
-				npcGlyphs[npc.id] = glyph(canvas, npc.icon, MAP.npc, p, 18, 2)
-				UiArtState.decorate(npcGlyphs[npc.id], UiArt.serviceOfNpc(npc), { size = 16 })
-				local mark = glyph(canvas, "", MAP.quest, p - Vector2.new(0, 14), 18, 3)
-				mark.FontFace = Theme.Fonts.Display
-				mark.TextStrokeTransparency = 0.1
-				mark.Visible = false
-				npcMarks[npc.id] = mark
+			-- S104: NPCs the character does not see yet are left out
+			if npc.map == id and not npc.decoration and not NpcMarkState.isHidden(npc.id) then
+				local mark = marks[npc.id]
+				add({
+					key = `npc:{npc.id}`,
+					category = MapMarkers.npcCategory(npc.services :: any, mark ~= nil),
+					glyph = npc.icon,
+					art = UiArt.serviceOfNpc(npc),
+					p = MapSketch.toPixel(sketch, s, npc.position.x, npc.position.z),
+					priority = PRIORITY.npc + (if mark then 12 else 0),
+					mark = mark,
+				})
 			end
 		end
 		-- S149b: the world boss's barrow (fixed, faded: the live boss has its own marker)
-		local arena = WorldBoss.spot()
 		if id == WorldBoss.Data.map then
-			local style = ICONS.worldBoss
-			local label = glyph(canvas, style.glyph, style.color, MapSketch.toPixel(sketch, s, arena.x, arena.z), 14, 2)
-			label.TextTransparency = 0.35
-			UiArtState.decorate(label, UiArt.mapIcon("worldboss"), { size = 14 })
+			local arena = WorldBoss.spot()
+			add({
+				key = "worldboss",
+				category = "worldboss",
+				glyph = ICONS.worldBoss.glyph,
+				art = UiArt.mapIcon("worldboss"),
+				p = MapSketch.toPixel(sketch, s, arena.x, arena.z),
+				priority = PRIORITY.worldboss,
+				faded = true,
+			})
 		end
-		applyMarks()
+		local function symbol(c: Candidate, at: Vector2)
+			local small = c.category == "node"
+			local side = if small then NODE_SYMBOL else SYMBOL
+			local color = c.color or MapSymbol.color(c.category)
+			local holderFrame = Instance.new("Frame")
+			holderFrame.Name = c.key
+			holderFrame.AnchorPoint = Vector2.new(0.5, 0.5)
+			holderFrame.Position = UDim2.fromOffset(at.X, at.Y)
+			holderFrame.Size = UDim2.fromOffset(side, side)
+			holderFrame.BackgroundTransparency = 1
+			holderFrame.ZIndex = 2
+			holderFrame.Parent = canvas
+			local def = MapMarkers.byId[c.category]
+			local plate = MapSymbol.plate(holderFrame, if def then def.shape else "round", side, color, 2)
+			if c.faded then
+				plate.BackgroundTransparency = 0.4
+			end
+			local label = glyph(holderFrame, c.glyph, MAP.npc, Vector2.new(side / 2, side / 2), side - 4, 3)
+			label.TextColor3 = color
+			if c.faded then
+				label.TextTransparency = 0.35
+			end
+			UiArtState.decorate(label, c.art, { tint = color, size = if small then NODE_ART else SYMBOL_ART })
+			local style = NpcMarkState.style(c.mark)
+			if style then
+				-- the quest mark as a badge on the plate's upper right (S25)
+				local badge = glyph(holderFrame, style.text, MAP.quest, Vector2.new(side - 1, 1), 13, 4)
+				badge.TextColor3 = style.color
+				badge.FontFace = Theme.Fonts.Display
+				badge.TextStrokeTransparency = 0
+			end
+		end
+		local layout = MapMarkers.layout(points, 1, { size = SYMBOL, spread = closest })
+		local obstacles: { { x: number, y: number } } = {}
+		for key, at in layout.placed do
+			symbol(candidates[key], Vector2.new(at.x, at.y))
+			table.insert(obstacles, at)
+		end
+		-- a crowd shows its most important symbol at its centre (no room on the disc for a count badge)
+		for _, group in layout.clusters do
+			symbol(candidates[group.members[1]], Vector2.new(group.x, group.y))
+			table.insert(obstacles, { x = group.x, y = group.y })
+		end
+		-- level ranges (closest zoom) only where they cover no symbol
+		for _, entry in levelLabels do
+			local text = `{entry.area.lv[1]}–{entry.area.lv[2]}`
+			local w = MapMarkers.textWidth(text, Theme.TextSize.Caption) + 4
+			local rect = { x0 = entry.a1.X, y0 = entry.a1.Y, x1 = entry.a2.X, y1 = entry.a2.Y }
+			local spot, cx, cy = MapMarkers.placeLabel(rect, w, Theme.TextSize.Caption, 1, obstacles, SYMBOL)
+			if spot and cx and cy then
+				local levels = glyph(canvas, text, MAP.label, Vector2.new(cx, cy), 16, 2)
+				levels.TextScaled = false
+				levels.TextSize = Theme.TextSize.Caption
+				levels.Size = UDim2.fromOffset(w, Theme.TextSize.Caption + 2)
+				levels.TextColor3 = entry.color
+				levels.TextStrokeTransparency = 0.1
+			end
+		end
 	end
+	redrawNow = function()
+		redraw(true)
+	end
+	scope:Observer(NpcMarkState.Marks):onChange(redrawNow) -- quest marks change categories and priorities
+	scope:Observer(NpcMarkState.Hidden):onChange(redrawNow)
+	scope:Observer(hidden):onChange(redrawNow)
 
 	scope:Observer(mapId):onChange(redraw)
 	scope:Observer(scale):onChange(redraw)
@@ -459,7 +596,9 @@ local function Minimap(scope: Scope, props: Props): Instance
 			end
 			-- Quest target (S11)
 			local target = Fusion.peek(QuestTrack.Target)
-			local showQuest = target ~= nil
+			local hide = Fusion.peek(hidden)
+			local showQuest = not hide.objective
+				and target ~= nil
 				and target.map == currentMap
 				and target.x ~= nil
 				and target.z ~= nil
@@ -501,7 +640,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 			-- Own marks (S25)
 			local marks = State.Get({ "character", "mapMarks" })
 			local usedMarks = 0
-			if type(marks) == "table" then
+			if type(marks) == "table" and not hide.mark then
 				for _, mark in marks do
 					if mark.map == currentMap and usedMarks < MAX_MARKS then
 						usedMarks += 1
@@ -510,6 +649,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 						label.Text = if icon then icon.glyph else "⚑"
 						label.TextColor3 = if icon then Theme.tint(icon.color) else Theme.Brass.Bright
 						UiArtState.retarget(label, if icon then UiArt.mark(icon.id) else nil, label.TextColor3)
+						ringOf(label, label.TextColor3)
 						local p = at(mark.x, mark.z)
 						label.Position = UDim2.fromOffset(p.X, p.Y)
 						label.Visible = true
@@ -522,7 +662,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 			-- Party members (blue dots)
 			local party = State.Get({ "party" })
 			local usedParty = 0
-			if type(party) == "table" then
+			if type(party) == "table" and not hide.party then
 				for _, member in party.members do
 					if
 						member.id ~= Players.LocalPlayer.UserId
@@ -541,7 +681,9 @@ local function Minimap(scope: Scope, props: Props): Instance
 			end
 			-- S101: the world event
 			local event = State.Get({ "worldEvent" })
-			local eventDef = if type(event) == "table" and event.map == currentMap
+			local eventDef = if not hide.event
+					and type(event) == "table"
+					and event.map == currentMap
 				then WorldEvents.kindOf(event.kind)
 				else nil
 			local eventPoint = if eventDef and type(event) == "table" then at(event.x, event.z) else nil
@@ -561,6 +703,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 				eventGlyph.Position = UDim2.fromOffset(eventPoint.X, eventPoint.Y)
 				eventGlyph.Text = eventDef.glyph
 				eventGlyph.TextColor3 = Theme.tint(eventDef.color)
+				ringOf(eventGlyph, eventGlyph.TextColor3)
 				eventGlyph.TextTransparency = if event.phase == "warn" then 0.4 else 0
 			end
 			-- S149b: the world boss while it wakes, fights or has just fallen
