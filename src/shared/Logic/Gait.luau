@@ -71,8 +71,8 @@ export type Motion = {
 	tremble: number?, -- 0..1 shaking of a long windup (grows like the telegraph fill)
 	hop: number?, -- 0..1 the visual jump of the blow (Gait.hopOf)
 	spin: number?, -- 0..1 progress of the turn of a whirlwind (Gait.spinOf)
-	follow: number?, -- S159g: 0..1 the style's follow-through pose after the blow (Gait.followOf)
-	turn: number?, -- S159g: radians the body turns on top of the style (a breath following its cone, a spiral)
+	follow: number?, -- S159a: 0..1 the style's follow-through pose after the blow (Gait.followOf)
+	turn: number?, -- S159a: radians the body turns on top of the style (a breath following its cone, a spiral)
 	roar: number?, -- 0..1 envelope of the phase roar (Gait.roarEnvelope)
 	roarStyle: string?, -- the roar's style (default "roar")
 	rise: number?, -- 0..1 climbing out of the ground (1 = on the ground, 0 = under it); nil = on the ground
@@ -100,7 +100,7 @@ Gait.HOP_SECONDS = 0.3
 Gait.RISE_DEPTH = 3
 -- S117: the strike overshoots a little in the recovery (follow-through), then settles.
 Gait.OVERSHOOT = 0.12
--- S159g: a style's `follow` pose fades in over the recovery (as the strike fades out), holds this long and settles
+-- S159a: a style's `follow` pose fades in over the recovery (as the strike fades out), holds this long and settles
 -- over FOLLOW_OUT s.
 Gait.FOLLOW_HOLD = 0.2
 Gait.FOLLOW_OUT = 0.4
@@ -182,14 +182,14 @@ function Gait.charge(elapsed: number, windup: number): (number, number, number)
 	return raise, strike, tremble
 end
 
--- Total length of an attack with the given windup (S117: the strike is inside the windup). S159g: `hold` s of a held
+-- Total length of an attack with the given windup (S117: the strike is inside the windup). S159a: `hold` s of a held
 -- blow (a channel) and a style with a follow-through (`follow`) last longer.
 function Gait.attackLength(windup: number, hold: number?, follow: boolean?): number
 	local base = math.max(windup, 0.05) + math.max(0, hold or 0) + Gait.RECOVER_SECONDS
 	return if follow then base + Gait.FOLLOW_HOLD + Gait.FOLLOW_OUT else base
 end
 
--- S159g: the elapsed time the attack curves see when the blow is held for `hold` s after the windup (a channel): the
+-- S159a: the elapsed time the attack curves see when the blow is held for `hold` s after the windup (a channel): the
 -- clock stops at the blow for the hold, then runs on into the recovery.
 function Gait.heldElapsed(elapsed: number, windup: number, hold: number?): number
 	local w = math.max(windup, 0.05)
@@ -200,7 +200,7 @@ function Gait.heldElapsed(elapsed: number, windup: number, hold: number?): numbe
 	return w + math.max(0, elapsed - w - h)
 end
 
--- S159g: the weight of a style's follow-through `elapsed` s into an attack of `windup` with a held blow of `hold` s:
+-- S159a: the weight of a style's follow-through `elapsed` s into an attack of `windup` with a held blow of `hold` s:
 -- 0 up to the end of the hold, up to 1 over the recovery (while the strike fades), held FOLLOW_HOLD s, down over
 -- FOLLOW_OUT s.
 function Gait.followOf(elapsed: number, windup: number, hold: number?): number
@@ -219,7 +219,7 @@ function Gait.followOf(elapsed: number, windup: number, hold: number?): number
 	return if t < Gait.FOLLOW_OUT then 1 - smooth(t / Gait.FOLLOW_OUT) else 0
 end
 
--- S159g: the body's turn `elapsed` s into an attack turning from `from` to `to` (radians) over its held blow: towards
+-- S159a: the body's turn `elapsed` s into an attack turning from `from` to `to` (radians) over its held blow: towards
 -- `from` over the windup, on to `to` over the hold, back to 0 over the recovery and follow-through.
 function Gait.turnOf(elapsed: number, windup: number, hold: number?, from: number, to: number): number
 	local w = math.max(windup, 0.05)
@@ -406,7 +406,7 @@ local function addDeath(p: Pose, def: MonsterMotions.DeathStyle, joint: Joint, m
 	end
 end
 
--- S117: the attack style's offsets of a joint (with its shake, hop, lunge and spin), S159g its follow-through and the
+-- S117: the attack style's offsets of a joint (with its shake, hop, lunge and spin), S159a its follow-through and the
 -- body turn, and the roar; `alive` scales them (0 when dead).
 local function addAction(p: Pose, joint: Joint, m: Motion, style: MonsterMotions.Style?, alive: number)
 	local role = joint.role
@@ -438,7 +438,7 @@ local function addAction(p: Pose, joint: Joint, m: Motion, style: MonsterMotions
 	end
 end
 
--- S159g: only the action of a joint (the attack style with its follow-through and turn, the roar), without the walk,
+-- S159a: only the action of a joint (the attack style with its follow-through and turn, the roar), without the walk,
 -- the idle, the generic attack, hits and deaths: the layer laid over the clips of an imported model
 -- (client/Anim/BoneOverlay) and the extra angles of a rig without clips (client/Anim/BoneGait). Zero without them.
 function Gait.overlay(joint: Joint, m: Motion): Pose
@@ -590,7 +590,7 @@ end
 
 -- S117: fills the attack fields of `m` for `elapsed` seconds into an attack of `windup` (`charged`: a telegraphed one,
 -- Gait.charge; else a basic attack, Gait.attack): raise, strike, tremble, hop, spin. Returns m.
--- S159g `extra`: `hold` s the blow is held (a channel, Gait.heldElapsed), the follow-through weight (Gait.followOf) and
+-- S159a `extra`: `hold` s the blow is held (a channel, Gait.heldElapsed), the follow-through weight (Gait.followOf) and
 -- the body turn from `turnFrom` to `turnTo` (Gait.turnOf).
 export type AttackExtra = { hold: number?, turnFrom: number?, turnTo: number? }
 
@@ -612,7 +612,7 @@ function Gait.attackMotion(m: Motion, elapsed: number, windup: number, charged: 
 	return m
 end
 
--- S159g: whether an attack's motion is still running (its curves or its follow-through).
+-- S159a: whether an attack's motion is still running (its curves or its follow-through).
 function Gait.acting(m: Motion): boolean
 	return m.raise > 0 or m.strike > 0 or (m.follow or 0) > 0 or (m.turn or 0) ~= 0
 end
@@ -627,7 +627,7 @@ export type StateOptions = {
 	-- S117 (the game's choices, AnimationController)
 	style: string?, -- attack slots: the attack's style
 	charged: boolean?, -- attack slots: a telegraphed attack (Gait.charge)
-	hold: number?, -- S159g attack slots: seconds the blow is held (a channel)
+	hold: number?, -- S159a attack slots: seconds the blow is held (a channel)
 	deathStyle: string?, -- death: the plan's death
 	deathSide: number?,
 	hover: number?,

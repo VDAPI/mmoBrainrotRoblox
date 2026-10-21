@@ -73,7 +73,7 @@ AnimLab.NPC_SLOTS = { "idle", "talk", "wave", "work" }
 AnimLab.MOTIONS = { "attack", "skill", "mob", "boss", "npc", "vfx", "hit", "flinch", "clip" } :: { Action }
 -- S117: the floors of `floor <name>` (telegraphs on light grass, snow and a dark cave; Config.AnimLab.floors).
 AnimLab.FLOORS = { "grass", "snow", "cave" }
--- S117: what `boss <id>` plays besides an attack: the phase roar and the long death (S159g: `rage` the roar into the
+-- S117: what `boss <id>` plays besides an attack: the phase roar and the long death (S159a: `rage` the roar into the
 -- last phase; a pattern id its gesture).
 AnimLab.BOSS_EXTRAS = { "roar", "rage", "death" }
 -- S113: the sides a `flinch <side> [crit]` comes from.

@@ -1,5 +1,5 @@
 --!strict
--- S159g: every dodgeable pattern a boss casts has a gesture (Data/BossMotions.patterns) whose blow lands at the
+-- S159a: every dodgeable pattern a boss casts has a gesture (Data/BossMotions.patterns) whose blow lands at the
 -- pattern's release (Logic/HazardGesture) after an anticipation of at least the fair warning, held over a channel;
 -- the roars by phase, the draws of ranged monsters and Elites, and the follow-through / hold / turn curves of Gait.
 
@@ -57,7 +57,7 @@ local function castsOf(bossId: string): { Cast }
 	return out
 end
 
-T.describe("Boss pattern gestures (S159g)", function()
+T.describe("Boss pattern gestures (S159a)", function()
 	T.it("every pattern a boss casts has its gesture (own style or the attack it rides), no dead entries", function()
 		for _, boss in Bosses.all do
 			local def = BossMotions.get(boss.id) :: any
@@ -176,7 +176,7 @@ T.describe("Boss pattern gestures (S159g)", function()
 	end)
 end)
 
-T.describe("Boss roars (S159g)", function()
+T.describe("Boss roars (S159a)", function()
 	T.it("every boss roars in its own style, a rage roar into the last phase, with a playable sound", function()
 		for _, boss in Bosses.all do
 			local def = BossMotions.get(boss.id) :: any
@@ -195,7 +195,7 @@ T.describe("Boss roars (S159g)", function()
 	end)
 end)
 
-T.describe("Ranged draws (S159g)", function()
+T.describe("Ranged draws (S159a)", function()
 	T.it("every ranged monster draws in a style of its own before its shot, every plan can throw", function()
 		for _, monster in Monsters.list do
 			if monster.attack ~= "ranged" then
@@ -223,7 +223,7 @@ T.describe("Ranged draws (S159g)", function()
 	end)
 end)
 
-T.describe("Gait follow-through, held blow and turn (S159g)", function()
+T.describe("Gait follow-through, held blow and turn (S159a)", function()
 	T.it("a held blow keeps the strike at its peak, then recovers", function()
 		local m: Gait.Motion = { cycle = 0, move = 0, time = 3, raise = 0, strike = 0, hit = 0, dead = 0 }
 		Gait.attackMotion(m, 1.0, 1.0, true, { hold = 1.5 })
@@ -237,7 +237,7 @@ T.describe("Gait follow-through, held blow and turn (S159g)", function()
 		Gait.attackMotion(m, 2.5 + Gait.attackLength(0, 0, true) + 0.01, 1.0, true, { hold = 1.5 })
 		T.expect(m.follow).toBe(0)
 		T.expect(Gait.acting(m)).toBe(false)
-		-- without a hold the curves are the ones before S159g
+		-- without a hold the curves are the ones before S159a
 		local a: Gait.Motion = { cycle = 0, move = 0, time = 3, raise = 0, strike = 0, hit = 0, dead = 0 }
 		Gait.attackMotion(a, 0.9, 1.2, true)
 		local raise, strike = Gait.charge(0.9, 1.2)

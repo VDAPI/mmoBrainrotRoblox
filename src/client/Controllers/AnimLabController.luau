@@ -24,7 +24,7 @@
 -- ability, Data/BossMotions of each boss attack, Gait.charge for telegraphed attacks, deaths by plan); `mob <kind>
 -- attack2|cast` of an Elite II kind plays its ability with its telegraph, `mob <kind> spawn` the climb of a summon,
 -- `boss <id> roar|death` the phase roar (camera shake, aura flash) and the death pose, a boss leap its arc to the actor;
--- S159g: `boss <id> rage` the roar into the last phase, `boss <id> <pattern>` a dodgeable pattern's gesture (its own
+-- S159a: `boss <id> rage` the roar into the last phase, `boss <id> <pattern>` a dodgeable pattern's gesture (its own
 -- warning, the channel held, the follow-through);
 -- `floor <grass|snow|cave>` dresses the floor (telegraph readability, Config.AnimLab.floors).
 
@@ -799,7 +799,7 @@ local function playBoss(command: Command)
 	end
 	local model = placeLook(bossId, look, "boss", boss.look.size)
 	local plan = look.plan
-	-- S117: the phase roar and the death of the boss (S159g: `rage` the roar into the last phase)
+	-- S117: the phase roar and the death of the boss (S159a: `rage` the roar into the last phase)
 	if attackId == "roar" or attackId == "rage" or attackId == "death" then
 		local roar = if def then def.roar.seconds else Config.MonsterLook.roarSeconds
 		subject = {
@@ -826,7 +826,7 @@ local function playBoss(command: Command)
 		end
 		return
 	end
-	-- S159g: a pattern's gesture over its warning (the attack it replaces: that attack's windup)
+	-- S159a: a pattern's gesture over its warning (the attack it replaces: that attack's windup)
 	local gesture = if def then def.patterns[attackId] else nil
 	local pattern = HazardPatterns.get(attackId)
 	if gesture and gesture.style and pattern then

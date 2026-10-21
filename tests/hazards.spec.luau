@@ -290,7 +290,7 @@ T.describe("Hazard patterns data (S159)", function()
 end)
 
 T.describe("Hazard patterns look (S159)", function()
-	-- S159g: the gestures of the patterns are checked in tests/bossgestures.spec
+	-- S159a: the gestures of the patterns are checked in tests/bossgestures.spec
 	T.it("sounds exist in Data/Sfx", function()
 		for id, pattern in HazardPatterns.byId do
 			for _, key in { pattern.sound, pattern.impactSound } do

@@ -353,10 +353,10 @@ T.describe("Gait: attack styles (S117)", function()
 			if style.left then
 				checkPose(id, "arm", style.left.windup)
 				checkPose(id, "arm", style.left.strike)
-				checkPose(id, "arm", style.left.follow) -- S159g
+				checkPose(id, "arm", style.left.follow) -- S159a
 			end
 			for role, o in style.follow or {} do
-				checkPose(id, role, o) -- S159g
+				checkPose(id, role, o) -- S159a
 			end
 			T.expect({ id, (style.dash or 0) >= 0 and (style.dash or 0) <= 4 }).toEqual({ id, true })
 			T.expect({ id, (style.hop or 0) >= 0 and (style.hop or 0) <= 2 }).toEqual({ id, true })

@@ -1,5 +1,5 @@
 --!strict
--- S159g (owner 2026-10-21, "when it attacks it is wow"): the timing of a caster's gesture for a dodgeable hazard cast
+-- S159a (owner 2026-10-21, "when it attacks it is wow"): the timing of a caster's gesture for a dodgeable hazard cast
 -- (Data/HazardPatterns, Data/BossMotions.patterns). The anticipation runs over the cast's warning and the blow peaks at
 -- the release: when the first bolt leaves, the first wave / ring starts running, the breath starts turning, a thrown
 -- lob leaves the hand (LOB_FLIGHT before it lands) or a rock called from the sky lands. Projectiles released later (a

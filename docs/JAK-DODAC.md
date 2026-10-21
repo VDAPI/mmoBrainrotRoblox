@@ -64,7 +64,7 @@
   ale linie `local NAZWA = liczba` czytane przez wiki zostają w skryptach.
 - **Pociski i zagrożenia do unikania** (S159): wzór w `Data/HazardPatterns` (emitery `bolt` / `lob` / `wave` / `ring` /
   `sweep`, pola w nagłówku `Logic/Hazards`; zapowiedź ≥ `Hazards.MIN_WARN`, prędkość ≤ 70), wygląd po `look` w
-  `Vfx/HazardFx`, gest bossa w `Data/BossMotions.patterns` (S159g: styl z `Data/MonsterMotions` z `follow`, dźwięki
+  `Vfx/HazardFx`, gest bossa w `Data/BossMotions.patterns` (S159a: styl z `Data/MonsterMotions` z `follow`, dźwięki
   `windSound` / `sound` z grających kluczy `Data/Sfx`, `rides` dla wzoru po ataku; czasy liczy `Logic/HazardGesture`,
   `tests/bossgestures.spec` wymaga gestu dla każdego wzoru bossa). Bossowi przypina się go w
   `BossTuning.patterns` (`replace` ataku, `add` po ataku, `ambient` z fazami i odstępem); rzuca `HazardService.Cast`

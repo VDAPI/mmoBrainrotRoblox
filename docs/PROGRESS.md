@@ -51,7 +51,7 @@
 
 - **S159 pociski bossów do unikania:** serwer, wzory i rysowanie gotowe, testy zielone; nic nieobejrzane w Studio
   (czytelność wzorów, wygląd ścian lodowca i oddechu Hrimvalda do przejrzenia w AnimLab).
-- **S159g gesty bossów:** gest i ryk każdego wzoru, warstwa proceduralna na klipach kości (`Anim/BoneOverlay`), rzut
+- **S159a gesty bossów:** gest i ryk każdego wzoru, warstwa proceduralna na klipach kości (`Anim/BoneOverlay`), rzut
   Elity z zamachem; nieobejrzane w Studio: kierunki osi kości rąk Mixamo (znaki obrotów), siła warstwy na klipie
   idle / walk, wygląd w AnimLab (`/animlab boss <id> <wzór>`, `rage`).
 - **Bestiariusz (S151c):** zakładka okna osiągnięć i przycisk ✪ na HUD gotowe. Bez przeglądu w grze (zakładka na PC i

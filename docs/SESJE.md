@@ -13693,7 +13693,7 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   Piorunów i Ciężki Bełt z własną sylwetką.
 - **Dźwięki:** zastępcze ID z listy S111 dla S140–S142 i S144 (`Data/Sfx`, `docs/ASSETS.md`, DECYZJE).
 - **Testy:** `tests/lmvfx.spec.luau`; `SkillLooks` i `skillmotion.spec` znają składniki `lm*`.
-### S159g: gesty wzorów bossów, ryki, zamach rzutu Elity (właściciel 2026-10-21)
+### S159a: gesty wzorów bossów, ryki, zamach rzutu Elity (właściciel 2026-10-21)
 - **Gesty:** `Data/BossMotions.patterns` dla każdego wzoru z `BossTuning.patterns` i `extra` (style `gr_*`, `mv_*`,
   `az_*`, `vg_*`, `hv_*` w `Data/MonsterMotions` z nowym polem `follow`); `Logic/HazardGesture` liczy zamach (do
   pierwszego wylotu, rzucany `lob` `LOB_FLIGHT` przed lądowaniem), trzymanie kanału i obrót ciała (oddech, spirala);
@@ -13705,7 +13705,7 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Ryki:** style `*_roar` / `*_rage`, `roar.byPhase`, `roar.intro` (pierwsze aggro), `roar.sound`; AnimLab `boss <id>
   rage` i `boss <id> <wzór>`.
 - **Potwory:** zdarzenie „aw” z `st` (melee / arrow / bolt / throw), `MonsterMotions.RANGED` + `rangedFor`, czar gra
-  klip „cast”; rzut Elity II z zamachem `Combat.basicWind.throw` 0,5 s (`Monster.throwAt`), księga S159g.
+  klip „cast”; rzut Elity II z zamachem `Combat.basicWind.throw` 0,5 s (`Monster.throwAt`), księga S159a.
 - **Testy:** `tests/bossgestures.spec.luau` (gest dla każdego wzoru, cios = wylot, zamach ≥ 0,6 s, kanały, obrót,
   dźwięki grające, ryki, naciągi dystansowych, krzywe Gait), `gait.spec` (zakres `follow`), `hazards.spec` (bez `pose`).
 - **Nieobejrzane w Studio:** znaki osi kości Mixamo, siła warstwy na klipach, ogólny wygląd gestów.

@@ -51,7 +51,7 @@ export type Handlers = {
 	threatMultiplier: ((monster: Monster.Monster, player: Player) -> number)?,
 	-- S134e: the kit's throw at a fleeing target (a regular ranged blow)
 	rangedThrow: ((monster: Monster.Monster, player: Player, params: any) -> ())?,
-	-- S159; S159g `shot`: "melee" / "arrow" / "bolt" / "throw" (the clients' draw)
+	-- S159; S159a `shot`: "melee" / "arrow" / "bolt" / "throw" (the clients' draw)
 	attackWind: ((monster: Monster.Monster, player: Player, seconds: number, shot: string?) -> ())?,
 	-- S134f: a player's damage booked on the monster (CombatService.MonsterDamaged)
 	damaged: ((monster: Monster.Monster, player: Player, dealt: number) -> ())?,

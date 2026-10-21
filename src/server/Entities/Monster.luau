@@ -73,7 +73,7 @@ export type Context = {
 	rangedThrow: ((monster: any, player: Player, params: any) -> ())?,
 	-- S134f: a player's damage was booked in damageBy (CombatService.MonsterDamaged, the fight meter).
 	damaged: ((monster: any, player: Player, dealt: number) -> ())?,
-	-- S159: a regular blow winds up (the clients pose the draw; CombatService.MonsterWindup); S159g `shot` says what
+	-- S159: a regular blow winds up (the clients pose the draw; CombatService.MonsterWindup); S159a `shot` says what
 	-- (melee / arrow / bolt / throw) for the draw's pose
 	attackWind: ((monster: any, player: Player, seconds: number, shot: string?) -> ())?,
 }
@@ -718,7 +718,7 @@ end
 
 -- S134e: the kit's throw at a fleeing target: a regular ranged blow (dodge, block and ranged protection count), every
 -- attack interval x intervalMul, harder the farther below the monster the target is (MonsterCast.throwMul). Returns
--- whether it threw. S159g: the throw is drawn back first (Data/Combat.basicWind.throw, the clients pose the throw or
+-- whether it threw. S159a: the throw is drawn back first (Data/Combat.basicWind.throw, the clients pose the throw or
 -- the spell): it flies after the draw if the monster is still chasing, not stunned and may still target the player.
 local function throwAt(self: Monster, now: number, target: Player, targetPosition: Vector3): boolean
 	local kit = self.kit

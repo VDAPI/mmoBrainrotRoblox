@@ -111,7 +111,7 @@ end
 -- `offset`: where the model's pivot sits relative to the root (generated looks: the root centre; real models:
 -- their PrimaryPart stands on the ground, docs/MODELE.md §5).
 -- W26 `body`: a real model without clips (rig "static") hangs on a Motor6D with the Gait body role instead, so
--- AnimationController bobs, leans, flinches and topples the whole model like a generated body (S159g: a model with
+-- AnimationController bobs, leans, flinches and topples the whole model like a generated body (S159a: a model with
 -- bone clips too, for the procedural gestures over its clips).
 local function weldTo(model: Model, root: BasePart, offset: CFrame?, body: { scale: number, hover: boolean }?)
 	local primary = model.PrimaryPart
@@ -307,7 +307,7 @@ local function buildFull(view: View)
 	end
 	local look = model :: Model
 	local asset = view.look and view.look.asset
-	-- S159g: a model with bone clips hangs on the body motor too (the gestures and roars move the whole body on it,
+	-- S159a: a model with bone clips hangs on the body motor too (the gestures and roars move the whole body on it,
 	-- client/Anim/BoneOverlay); it stays at rest while the clips play alone
 	local body = if view.assetName
 			and asset

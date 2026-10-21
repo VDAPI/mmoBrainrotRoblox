@@ -24,7 +24,7 @@ export type Style = {
 	hindWindup: RolePose?, -- hind legs (and hind spider legs) at full windup
 	hindStrike: RolePose?,
 	left: { windup: RolePose?, strike: RolePose?, follow: RolePose? }?, -- the left arm instead of the mirrored "arm"
-	-- S159g: the pose after the blow (a throw's arm across the body, a slam's bent back): the strike cross-fades into it
+	-- S159a: the pose after the blow (a throw's arm across the body, a slam's bent back): the strike cross-fades into it
 	-- over the recovery, it holds Gait.FOLLOW_HOLD s and settles (Gait.followOf); a held channel keeps the strike first
 	follow: { [string]: RolePose }?,
 	tremble: number?, -- radians of shaking at the end of a long windup (charging up), default 0
@@ -572,7 +572,7 @@ local STYLES: { [string]: Style } = {
 	az_meteor = style({
 		windup = { arm = P(2.5, 0, 0.3, 0, 0, 0), head = P(0.6, 0, 0, 0, 0, 0), body = P(0.15, 0, 0, 0, 0.1, 0) },
 		strike = { arm = P(0.3, 0, 0.2, 0, 0, 0), head = P(0, 0, 0, 0, 0, 0), body = P(-0.15, 0, 0, 0, 0, 0) },
-		-- S159g: crouched with the hands low while the meteors burn out
+		-- S159a: crouched with the hands low while the meteors burn out
 		follow = { arm = P(0.1, 0, 0.4, 0, 0, 0), body = P(-0.25, 0, 0, 0, -0.3, 0), head = P(-0.2, 0, 0, 0, 0, 0) },
 		arms = "both",
 		tremble = 0.04,
@@ -632,7 +632,7 @@ local STYLES: { [string]: Style } = {
 		arms = "both",
 		tremble = 0.05,
 	}),
-	-- S159g: gestures of the dodgeable patterns (Data/BossMotions.patterns): the windup is the anticipation over the
+	-- S159a: gestures of the dodgeable patterns (Data/BossMotions.patterns): the windup is the anticipation over the
 	-- pattern's warning, the strike peaks when the first projectile leaves (or the first rock lands), `follow` is the
 	-- follow-through; a channel (a spiral, a breath, a rain) holds the strike for its length (Logic/HazardGesture).
 	-- Grimrok axe throw: the hand axe cocked behind the head, the shield arm points at the target; the whip forward
@@ -982,7 +982,7 @@ local STYLES: { [string]: Style } = {
 		tremble = 0.04,
 		hop = 1.0,
 	}),
-	-- S159g: boss roars (only `windup`: the roar envelope); `*_rage` roars into the last phase
+	-- S159a: boss roars (only `windup`: the roar envelope); `*_rage` roars into the last phase
 	gr_roar = style({
 		windup = {
 			arm = P(2.4, 0, 0.6, 0, 0, 0),
@@ -1090,7 +1090,7 @@ local STYLES: { [string]: Style } = {
 		strike = {},
 		arms = "both",
 	}),
-	-- S159g: the draw before a regular ranged blow (RANGED; the "aw" event's shot), short windups (Data/Combat.basicWind)
+	-- S159a: the draw before a regular ranged blow (RANGED; the "aw" event's shot), short windups (Data/Combat.basicWind)
 	-- a bow: the bow arm out, the string hand drawn back past the cheek, the body side on; the release flicks it back
 	bowDraw = style({
 		windup = { arm = P(1.5, 0, 0.6, 0, 0, 0), body = P(0, -0.35, 0, 0, 0, 0), head = P(0, 0.3, 0, 0, 0, 0) },
@@ -1271,7 +1271,7 @@ local KIT_STYLES: { [string]: { [string]: string } } = {
 	elemental = { crush = "nova", pounce = "pulse", heavyBlow = "pulse" },
 }
 
--- S159g: the draw before a regular ranged blow by plan and shot (the "aw" event's `st`: "arrow" a physical shot,
+-- S159a: the draw before a regular ranged blow by plan and shot (the "aw" event's `st`: "arrow" a physical shot,
 -- "bolt" a magic one, "throw" an Elite II's throw); a plan without an entry draws its basic style.
 local RANGED: { [string]: { [string]: string } } = {
 	humanoid = { arrow = "bowDraw", bolt = "castBolt", throw = "throwOver" },
@@ -1450,7 +1450,7 @@ function MonsterMotions.styleFor(plan: string, weapon: string?, abilityId: strin
 	return entry.basic
 end
 
--- S159g: the style of the draw before a regular ranged blow (`shot` "arrow" / "bolt" / "throw"): RANGED[plan][shot],
+-- S159a: the style of the draw before a regular ranged blow (`shot` "arrow" / "bolt" / "throw"): RANGED[plan][shot],
 -- else the plan's basic style. Nil for a plan without an entry.
 function MonsterMotions.rangedFor(plan: string, weapon: string?, shot: string): string?
 	local own = RANGED[plan]

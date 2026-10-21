@@ -1,5 +1,5 @@
 --!strict
--- S159g (owner 2026-10-21, "animations of everything, the bosses' abilities too"): a procedural layer over the bone
+-- S159a (owner 2026-10-21, "animations of everything, the bosses' abilities too"): a procedural layer over the bone
 -- clips of an imported humanoid model (rig "bones", Data/MonsterClips). The imported clips have one spell and two
 -- weapon swings, so a boss pattern's gesture and a roar (Data/MonsterMotions styles, Logic/Gait.overlay) are posed
 -- here instead: the Mixamo arm and head bones turn about the model's own axes (the same convention as a generated

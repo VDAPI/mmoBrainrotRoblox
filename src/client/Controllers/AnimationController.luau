@@ -33,7 +33,7 @@
 --     by plan over Config.MonsterLook.deathSeconds; a hit pushes the body away from the attacker (Gait.hitLean, bosses
 --     less). Real models keep their clips (S116 adds attack / roar clips); the new poses are the generator's.
 --   S123: emotes (Data/Emotes) play through the skill motion path with a lower priority (Emote, EndEmote, StopEmote).
---   S159g: a boss pattern's gesture (MonsterAttack opts: its own style, a held blow for a channel, the follow-through,
+--   S159a: a boss pattern's gesture (MonsterAttack opts: its own style, a held blow for a channel, the follow-through,
 --     a body turn with a breath or a spiral) and the roars (a style per phase, an intro roar at the first aggro) pose a
 --     model with bone clips procedurally too: the attack clip is held back and client/Anim/BoneOverlay turns its arm
 --     and head bones while the Gait_Body motor moves the whole body; a regular ranged draw picks its own style and the
@@ -113,8 +113,8 @@ type MonsterState = {
 	joints: { JointState },
 	clips: Clips?,
 	boneGait: BoneGait.Rig?, -- W26: bones of an imported model without clips
-	overlay: BoneOverlay.Rig?, -- S159g: the procedural layer over bone clips
-	overlayOn: boolean, -- S159g: the layer (or the body motor) was posed last frame
+	overlay: BoneOverlay.Rig?, -- S159a: the procedural layer over bone clips
+	overlayOn: boolean, -- S159a: the layer (or the body motor) was posed last frame
 	spawnedAt: number,
 	attackSlot: string,
 	scale: number,
@@ -142,12 +142,12 @@ type MonsterState = {
 	riseStart: number?,
 	roarStart: number?,
 	roarSeconds: number,
-	roarStyle: string?, -- S159g: the running roar's style (by phase)
-	introDone: boolean, -- S159g: the intro roar at the first aggro played
-	hold: number, -- S159g: seconds the running attack holds its blow (a channel)
-	turnFrom: number?, -- S159g: the body turn of the running gesture (Gait.turnOf)
+	roarStyle: string?, -- S159a: the running roar's style (by phase)
+	introDone: boolean, -- S159a: the intro roar at the first aggro played
+	hold: number, -- S159a: seconds the running attack holds its blow (a channel)
+	turnFrom: number?, -- S159a: the body turn of the running gesture (Gait.turnOf)
 	turnTo: number?,
-	procedural: boolean, -- S159g: the running attack is a gesture posed procedurally (no attack clip)
+	procedural: boolean, -- S159a: the running attack is a gesture posed procedurally (no attack clip)
 	flying: boolean,
 	landedAt: number?,
 	phase: number,
@@ -299,14 +299,14 @@ local function bossIdOf(model: Model): string?
 end
 
 -- S117: listeners of a phase roar (CombatFxController: the camera shake and the aura's flash).
--- S159g: `intro` = the roar at the first aggro (no new phase).
+-- S159a: `intro` = the roar at the first aggro (no new phase).
 local roarListeners: { (model: Model, bossId: string?, intro: boolean?) -> () } = {}
 
 function AnimationController.OnRoar(fn: (model: Model, bossId: string?, intro: boolean?) -> ())
 	table.insert(roarListeners, fn)
 end
 
--- S117: a phase roar starts (a new phase of a boss; AnimLab `boss <id> roar` calls it directly). S159g: the style of
+-- S117: a phase roar starts (a new phase of a boss; AnimLab `boss <id> roar` calls it directly). S159a: the style of
 -- the phase (BossMotions.roarStyle), `intro` = the first aggro.
 local function startRoar(s: MonsterState, intro: boolean?)
 	local def = if s.bossId then BossMotions.get(s.bossId) else nil
@@ -349,7 +349,7 @@ local function onAttribute(s: MonsterState, name: string)
 			startRoar(s)
 		end
 	elseif name == "AggroUserId" then
-		-- S159g: a boss roars when it first turns on a fighter (BossMotions roar.intro)
+		-- S159a: a boss roars when it first turns on a fighter (BossMotions roar.intro)
 		if not s.introDone and model:GetAttribute("AggroUserId") ~= nil and model:GetAttribute("Dead") ~= true then
 			s.introDone = true
 			local def = if s.bossId then BossMotions.get(s.bossId) else nil
@@ -491,7 +491,7 @@ local function stepClips(s: MonsterState, clips: Clips, now: number, speed: numb
 	for slot in clips.tracks do
 		available[slot] = true
 	end
-	-- S159g: a procedural gesture holds the attack clip back (BoneOverlay poses it over idle / walk)
+	-- S159a: a procedural gesture holds the attack clip back (BoneOverlay poses it over idle / walk)
 	local attacking = (raise > 0 or strike > 0) and not s.procedural
 	local attackSlot = s.attackSlot
 	local restart = false
@@ -608,7 +608,7 @@ local function flyingOf(s: MonsterState, now: number): number
 	return if t <= 0 then 1 else 1 - t / LAND_FADE
 end
 
--- S159g: the running attack's held blow and body turn (shared, filled per monster).
+-- S159a: the running attack's held blow and body turn (shared, filled per monster).
 local extra: Gait.AttackExtra = { hold = 0, turnFrom = nil, turnTo = nil }
 
 -- The generated monster's Motion this frame (the shared `motion` table).
@@ -657,7 +657,7 @@ local function monsterMotion(s: MonsterState, now: number): Gait.Motion
 	return motion
 end
 
--- S159g: the procedural layer of a model with bone clips: a gesture (not the clip attacks) and a roar turn its arm
+-- S159a: the procedural layer of a model with bone clips: a gesture (not the clip attacks) and a roar turn its arm
 -- and head bones (BoneOverlay) and move the whole body on its Gait_Body motor; nothing running = back to the clips.
 local function overlayStep(s: MonsterState, mixer: BoneClips.Mixer, now: number)
 	local m = monsterMotion(s, now)
@@ -754,7 +754,7 @@ end
 -- S117: `attackId` (an Elite II ability or a boss attack, the "tele" event's `a`) picks the style and makes it a
 -- telegraphed gather (Gait.charge) over the same clamped windup the telegraph fills over; `area` (the event's CFrame)
 -- aims a boss leap. More telegraphs of one attack within SAME_ATTACK s pose it once.
--- S159g `opts`: `style` poses this style instead (a boss pattern's gesture, a ranged draw), `slot` picks the clip of a
+-- S159a `opts`: `style` poses this style instead (a boss pattern's gesture, a ranged draw), `slot` picks the clip of a
 -- real model, `hold` s the blow is held (a channel), `turnFrom` / `turnTo` turn the body over it (Gait.turnOf),
 -- `procedural` poses a model with bone clips through BoneOverlay instead of its attack clip; `charged` forces the
 -- telegraphed gather.

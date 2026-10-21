@@ -3,7 +3,7 @@
 -- Data/Bosses (a Data/MonsterMotions style, each attack of a boss a different one), the effect and the camera shake at
 -- the blow, the phase roar and the death. Looks only: the windup, the areas and the damage stay the server's. A real
 -- model plays its clip anims[<attack id>] instead of the style (S116; until then the generator). Data only (Lune).
--- S159g: `patterns` gives every dodgeable pattern of the boss (Data/BossTuning.patterns: replace, ambient, the shield
+-- S159a: `patterns` gives every dodgeable pattern of the boss (Data/BossTuning.patterns: replace, ambient, the shield
 -- and kiting casts) its own gesture: the style poses the anticipation over the pattern's warning and the blow at its
 -- release (Logic/HazardGesture), a channel holds it, the style's `follow` is the follow-through; an imported model
 -- (bone clips) poses it procedurally too (client/Anim/BoneOverlay). A pattern added to an attack names it in `rides`:
@@ -30,7 +30,7 @@ export type BossAttackMotion = {
 	sound: string?, -- Data/Sfx key, default "boss.<bossId>.attack"
 	arc: number?, -- `leap` attacks: studs of the visual jump arc (Gait.leapArc) before the server's teleport
 }
--- S159g: the gesture of a dodgeable pattern (Data/HazardPatterns) cast by the boss.
+-- S159a: the gesture of a dodgeable pattern (Data/HazardPatterns) cast by the boss.
 export type Gesture = {
 	style: string?, -- MonsterMotions.STYLES key (nil with `rides`)
 	rides: string?, -- an attack id of the boss whose own motion carries the pattern (BossTuning.patterns.add)
@@ -42,13 +42,13 @@ export type Roar = {
 	style: string,
 	shake: number,
 	seconds: number,
-	byPhase: { [number]: string }?, -- S159g: another style for the roar into this phase
-	sound: string?, -- S159g: Data/Sfx key played with the roar while boss.<id>.roar has no sound
-	intro: boolean?, -- S159g: the boss also roars when it first turns on a fighter
+	byPhase: { [number]: string }?, -- S159a: another style for the roar into this phase
+	sound: string?, -- S159a: Data/Sfx key played with the roar while boss.<id>.roar has no sound
+	intro: boolean?, -- S159a: the boss also roars when it first turns on a fighter
 }
 export type BossMotion = {
 	attacks: { [string]: BossAttackMotion }, -- every attack id of Data/Bosses
-	patterns: { [string]: Gesture }, -- S159g: every pattern id the boss casts (Data/BossTuning.patterns, extra)
+	patterns: { [string]: Gesture }, -- S159a: every pattern id the boss casts (Data/BossTuning.patterns, extra)
 	roar: Roar,
 	-- light: hex colour of the death flash; seconds: the clone's break-up (default Config.MonsterLook.bossDeathSeconds)
 	death: { style: string, light: string, seconds: number? },
@@ -69,7 +69,7 @@ local BY_BOSS: { [string]: BossMotion } = {
 			leap = { style = "gr_leap", impact = "shockwave", cracks = true, shake = 0.6, arc = 6 },
 			whirlwind = { style = "gr_whirl", impact = "ringWave", shake = 0.4 },
 			-- S134: generic styles of Data/MonsterMotions until the boss gets its own
-			groundSplitter = { style = "gr_fissure", impact = "cracks", cracks = true, shake = 0.5 }, -- S159g
+			groundSplitter = { style = "gr_fissure", impact = "cracks", cracks = true, shake = 0.5 }, -- S159a
 			boulder = { style = "jumpSlam", impact = "meteor", cracks = true, shake = 0.6 },
 		},
 		patterns = {
@@ -122,7 +122,7 @@ local BY_BOSS: { [string]: BossMotion } = {
 	}),
 	azgor = boss({
 		attacks = {
-			fireWave = { style = "az_flameWall", impact = "pillar", shake = 0.3 }, -- S159g: the flame wall's gesture
+			fireWave = { style = "az_flameWall", impact = "pillar", shake = 0.3 }, -- S159a: the flame wall's gesture
 			flameCleave = { style = "az_cleave", impact = "slash", shake = 0.3 },
 			meteor = { style = "az_meteor", impact = "meteor", shake = 0.4 },
 			inferno = { style = "az_inferno", impact = "ringWave", shake = 0.6 },
@@ -156,9 +156,9 @@ local BY_BOSS: { [string]: BossMotion } = {
 			frostBreath = { style = "vg_breath", impact = "breath", shake = 0.2 },
 			wingBuffet = { style = "vg_wings", impact = "ringWave", shake = 0.4 },
 			tailSwipe = { style = "vg_tail", impact = "slash", shake = 0.3 },
-			blizzard = { style = "vg_comets", impact = "meteor", shake = 0.2 }, -- S159g: the ice comets' gesture
+			blizzard = { style = "vg_comets", impact = "meteor", shake = 0.2 }, -- S159a: the ice comets' gesture
 			glacialRing = { style = "vg_glacial", impact = "ringWave", cracks = true, shake = 0.7 },
-			avalanche = { style = "vg_avalanche", impact = "cracks", shake = 0.5 }, -- S159g
+			avalanche = { style = "vg_avalanche", impact = "cracks", shake = 0.5 }, -- S159a
 			iceComet = { style = "rear", impact = "meteor", cracks = true, shake = 0.6 },
 			frostTomb = { style = "screech", impact = "rune", shake = 0.2 },
 			absoluteZero = { style = "nova", impact = "ringWave", shake = 0.8 },
@@ -193,7 +193,7 @@ local BY_BOSS: { [string]: BossMotion } = {
 	hrimvald = boss({
 		attacks = {
 			fistSlam = { style = "punch", impact = "shockwave", shake = 0.4 },
-			-- S159g: the attacks a pattern replaces pose as its gesture; the stomp as its own (the ring rides on it)
+			-- S159a: the attacks a pattern replaces pose as its gesture; the stomp as its own (the ring rides on it)
 			boulderToss = { style = "hv_boulderThrow", impact = "meteor", cracks = true, shake = 0.4 },
 			glacierStomp = { style = "hv_stomp", impact = "ringWave", cracks = true, shake = 0.7 },
 			iceSpikes = { style = "hv_spikeSlam", impact = "pillar", shake = 0.5 },
@@ -250,12 +250,12 @@ return table.freeze({
 		local def = BY_BOSS[bossId]
 		return if def then def.attacks[attackId] else nil
 	end,
-	-- S159g: the gesture of a pattern the boss casts (nil for an unknown boss or pattern).
+	-- S159a: the gesture of a pattern the boss casts (nil for an unknown boss or pattern).
 	gesture = function(bossId: string, patternId: string): Gesture?
 		local def = BY_BOSS[bossId]
 		return if def then def.patterns[patternId] else nil
 	end,
-	-- S159g: the roar style into `phase` (byPhase, else the boss's roar).
+	-- S159a: the roar style into `phase` (byPhase, else the boss's roar).
 	roarStyle = function(bossId: string, phase: number?): string?
 		local def = BY_BOSS[bossId]
 		if not def then

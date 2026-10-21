@@ -36,7 +36,7 @@ export type Mixer = {
 	scale: number, -- the model's scale (Hips offsets are in import units)
 	playing: { Track },
 	tracks: { [string]: Track },
-	-- S159g: turns laid before the clip's pose of a bone (index in `bones`; client/Anim/BoneOverlay), nil = none
+	-- S159a: turns laid before the clip's pose of a bone (index in `bones`; client/Anim/BoneOverlay), nil = none
 	pre: { [number]: CFrame }?,
 }
 

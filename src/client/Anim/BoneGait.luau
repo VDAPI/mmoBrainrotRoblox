@@ -3,7 +3,7 @@
 -- Logic/Gait's motion: Logic/BoneRoles finds legs, knees, wings, tails, the head and the spine in the rest skeleton
 -- and gives each an angle; this writes Bone.Transform as a turn about the model's side, forward or up axis taken into
 -- the bone's own frame. The whole body (bob, lean, death) stays on the Gait_Body motor.
--- S159g: an attack style, its follow-through and a roar (Data/MonsterMotions: a boss gesture of Vaelgrath) also bend
+-- S159a: an attack style, its follow-through and a roar (Data/MonsterMotions: a boss gesture of Vaelgrath) also bend
 -- the head, the wings, the front and hind legs and the tail by the style's offsets of the matching Gait role (head,
 -- flap, leg, tail; Logic/Gait.overlay); a role the style lists drops the generic attack swing.
 
@@ -18,7 +18,7 @@ local BoneGait = {}
 type Joint = { bone: Bone, role: BoneRoles.Role, axis: Vector3, gait: Gait.Joint? }
 export type Rig = { joints: { Joint } }
 
--- S159g: the Gait role whose style offset a bone role takes, and which component of it (its turn axis above).
+-- S159a: the Gait role whose style offset a bone role takes, and which component of it (its turn axis above).
 local GAIT_ROLE: { [string]: string } = { head = "head", wing = "flap", leg = "leg", tail = "tail" }
 local COMPONENT: { [string]: string } = { head = "rx", wing = "rz", leg = "rx", tail = "ry" }
 

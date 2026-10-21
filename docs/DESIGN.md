@@ -1004,7 +1004,7 @@ nazw obcych) i tabelą własnej drużyny.
   koło z przerwą do przejścia. Zwykłe potwory dystansowe strzelają strzałą albo pociskiem, który można obejść, a
   rzut Elity II to kamień albo mroczny pocisk; atak wręcz ma zamach 0,45 s i trafia tylko, gdy cel nadal jest w zasięgu.
   Mocny cios w gracza: czerwony błysk brzegów ekranu i wstrząs kamery (ustawienie wstrząsu działa).
-- **Gesty bossów** (S159g, `Data/BossMotions.patterns`, `Logic/HazardGesture`): każdy wzór bossa ma własny gest:
+- **Gesty bossów** (S159a, `Data/BossMotions.patterns`, `Logic/HazardGesture`): każdy wzór bossa ma własny gest:
   zamach trwa przez całą zapowiedź, cios wypada dokładnie wtedy, gdy wylatuje pierwszy pocisk (rzucana bomba i głaz
   wiszą nad głową do rzutu, meteor i odłamki z nieba spadają na cios), wzór ciągły (spirala, oddech, deszcz) trzyma
   pozę do ostatniego strzału, a ciało obraca się z oddechem i spiralą; potem poza po ciosie (`follow`). Bossowie z

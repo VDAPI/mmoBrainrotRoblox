@@ -7,7 +7,7 @@
 --          a rock, a rolling snowball or an icicle; while it waits for its launch it hovers at its start and its lane
 --          shows on the ground (a thin line filling up), homing ones without a lane
 --   lob    an arc (a bomb, a boulder) or a fall from the sky (a meteor, an ice shard) onto a GroundTelegraph circle that
---          fills for the whole warning, an impact with debris, dust and the element's blast where it lands; S159g: a
+--          fills for the whole warning, an impact with debris, dust and the element's blast where it lands; S159a: a
 --          thrown one is held over the caster's head until Logic/HazardGesture.flight s before it lands (the caster's
 --          gesture releases it then)
 --   wave   its lane fills on the ground for the warning, then the front runs: cracks with rock spikes, a wall of fire,
@@ -431,7 +431,7 @@ local function draw(live: Live, i: number, inst: Hazards.Inst, st: Hazards.State
 			at = from:Lerp(to, k * k)
 			body.CFrame = CFrame.lookAt(at, at + (to - from).Unit)
 		else
-			-- S159g: held over the caster until its flight, then the arc (the gesture throws it then)
+			-- S159a: held over the caster until its flight, then the arc (the gesture throws it then)
 			local from = v3(inst.x, inst.y + 6, inst.z)
 			local flight = HazardGesture.flight(inst.delay)
 			local f = math.clamp(1 - (start - t) / flight, 0, 1)
@@ -665,7 +665,7 @@ local function pointOf(v: any): Hazards.Point?
 end
 
 -- A "hz" event: expands the cast and draws it until it ends.
--- S159g: returns the cast's instances (the caster's gesture turns with a breath), nil when it is not drawn.
+-- S159a: returns the cast's instances (the caster's gesture turns with a breath), nil when it is not drawn.
 function HazardFx.spawn(event: { [string]: any }): { Hazards.Inst }?
 	local c = ctx
 	local id = tonumber(event.g)

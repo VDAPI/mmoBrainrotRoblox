@@ -4,7 +4,7 @@
 -- BossTuning.patterns entry, a monster's regular blow) x the emitter's `share`; a player takes at most `hits` hits of
 -- one cast. Every instance warns >= Logic/Hazards.MIN_WARN s before it can hit (tests/hazards.spec). `look` names the
 -- client's look (Vfx/HazardFx), `color` its tint, `sound` / `impactSound` Data/Sfx keys; the caster's gesture is the
--- boss's Data/BossMotions.patterns entry (S159g, timed by Logic/HazardGesture). Data only (Lune).
+-- boss's Data/BossMotions.patterns entry (S159a, timed by Logic/HazardGesture). Data only (Lune).
 
 local Hazards = require("../Logic/Hazards")
 
@@ -126,7 +126,7 @@ local PATTERNS: { [string]: Pattern } = {
 		color = "#E8862A",
 		hits = 2,
 		hitGap = 0.4,
-		impactSound = "skill.combustion", -- S159g: the bombs burst audibly (boss.grimrok.attack has no sound yet)
+		impactSound = "skill.combustion", -- S159a: the bombs burst audibly (boss.grimrok.attack has no sound yet)
 		emitters = { { kind = "lob", aim = "target", count = 2, every = 0.25, radius = 5, scatter = 7, delay = 1.4 } },
 	}),
 

@@ -1683,7 +1683,7 @@ local function channelBlow(event: { [string]: any })
 end
 
 -- S117 (E4): a boss's new phase: the camera of players near it shakes (Data/BossMotions roar), its aura flashes in the
--- look's glow for Config.MonsterLook.phaseLight s. S159g: the intro roar at the first aggro shakes half as hard; the
+-- look's glow for Config.MonsterLook.phaseLight s. S159a: the intro roar at the first aggro shakes half as hard; the
 -- roar's own sound plays while the boss's roar key has no sound yet (SfxController plays that one).
 local function onRoar(model: Model, bossId: string?, intro: boolean?)
 	local def = if bossId then BossMotions.get(bossId) else nil
@@ -1796,7 +1796,7 @@ local function hurtFlash()
 	):Play()
 end
 
--- S159g: the draw before a regular ranged blow ("aw" `st` "arrow" / "bolt" / "throw"): the plan's own style
+-- S159a: the draw before a regular ranged blow ("aw" `st` "arrow" / "bolt" / "throw"): the plan's own style
 -- (MonsterMotions.rangedFor), a spell plays the "cast" clip of a real model and gathers like a telegraphed attack;
 -- nil for a melee blow (the basic style as before).
 local function rangedDraw(attacker: Model, shot: any): any
@@ -1925,7 +1925,7 @@ local function traitFx(event: { [string]: any })
 end
 
 -- S159: a hazard cast: HazardFx draws it; the caster gathers over its warning, a regular shot already drew back with
--- its "aw". S159g: a boss pattern plays its gesture (Data/BossMotions.patterns, timed by Logic/HazardGesture against
+-- its "aw". S159a: a boss pattern plays its gesture (Data/BossMotions.patterns, timed by Logic/HazardGesture against
 -- the server clock): the anticipation and the charge glow over the warning with its wind sound, the blow at the
 -- release with its sound and shake, a channel held to its last shot, the body turning with a breath or a spiral. A
 -- pattern added to an attack (`rides`) leaves all of it to the attack's own telegraph.
