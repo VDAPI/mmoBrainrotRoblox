@@ -143,6 +143,44 @@ def house(name, w, d, floors, ground, upper, seed, wide=False):
     for v in obj.data.vertices:
         v.co -= shift
     obj.name = name
+    # one material per surface kind (the pieces bring their own copies "Brick.001" ...), then one mesh per material:
+    # a Roblox MeshPart carries one SurfaceAppearance
+    import re
+    base = {}
+    for i, slot in enumerate(obj.material_slots):
+        key = re.sub(r'\.\d+$', '', slot.material.name) if slot.material else 'none'
+        base.setdefault(key, slot.material)
+    remap = []
+    for slot in obj.material_slots:
+        key = re.sub(r'\.\d+$', '', slot.material.name) if slot.material else 'none'
+        remap.append(list(base.keys()).index(key))
+    new_index = [remap[p.material_index] for p in obj.data.polygons]
+    obj.data.materials.clear()
+    for mat in base.values():
+        obj.data.materials.append(mat)
+    obj.data.polygons.foreach_set('material_index', new_index)
+    obj.data.update()
+    import bmesh
+    parts = []
+    for index, mat in enumerate(obj.data.materials):
+        part = obj.copy()
+        part.data = obj.data.copy()
+        bpy.context.scene.collection.objects.link(part)
+        bm = bmesh.new()
+        bm.from_mesh(part.data)
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if f.material_index != index], context='FACES')
+        bm.to_mesh(part.data)
+        bm.free()
+        part.data.materials.clear()
+        part.data.materials.append(mat)
+        if len(part.data.polygons) > 0:
+            parts.append(part)
+        else:
+            bpy.data.objects.remove(part, do_unlink=True)
+    bpy.data.objects.remove(obj, do_unlink=True)
+    for i, o in enumerate(parts):
+        o.name = f'{name}_{i + 1}'
+    print('PARTS', name, len(parts), list(base.keys()))
     bpy.ops.export_scene.fbx(
         filepath=os.path.join(OUT, name + '.fbx'),
         path_mode='COPY',
@@ -151,7 +189,7 @@ def house(name, w, d, floors, ground, upper, seed, wide=False):
         axis_forward='-Z',
         axis_up='Y',
     )
-    print('HOUSE', name, len(obj.data.polygons), [round(x, 2) for x in (hi - lo)])
+    print('HOUSE', name, [round(x, 2) for x in (hi - lo)])
 
 
 only = set(argv[2:])
