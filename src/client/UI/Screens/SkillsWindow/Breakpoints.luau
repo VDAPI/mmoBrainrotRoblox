@@ -4,6 +4,7 @@
 -- working option has a gold frame; cards of a rank not reached yet are greyed with the level. With option B the
 -- rule of changes and the server's last refusal for that rank follow. Without B only card A, no button. The phone
 -- sheet shows the cards without buttons (its pinned A / B row chooses). Data from UI/SkillInfo.breakpointCards.
+-- Owner 2026-10-21 (too many detailed descriptions): the rule of changes in one short line, the whole rule behind an "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +12,7 @@ local Actions = require(script.Parent.Actions)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local SectionLabel = require(script.Parent.Parent.Parent.Components.SectionLabel)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local SkillInfo = require(script.Parent.Parent.Parent.SkillInfo)
@@ -160,7 +162,24 @@ function Breakpoints.new(
 			)
 		end
 		if hasB then
-			table.insert(out, label(Text.get(use, "bp.rule"), Theme.Paper.TextMuted, nil, Theme.TextSize.Small))
+			local rule: any = label(Text.get(use, "bp.rule.short"), Theme.Paper.TextMuted, nil, Theme.TextSize.Small)
+			rule.Size = UDim2.new(1, -32, 0, 0)
+			table.insert(
+				out,
+				s:New("Frame")({
+					BackgroundTransparency = 1,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					[Children] = {
+						rule,
+						InfoTip.new(s, {
+							Text = Text.get(use, "bp.rule"),
+							AnchorPoint = Vector2.new(1, 0),
+							Position = UDim2.fromScale(1, 0),
+						}),
+					},
+				})
+			)
 			if refused and refused.key == Skills.choiceKey(skill.id, card.at) then
 				table.insert(out, label(Text.get(use, refused.err), Theme.Paper.Danger, nil, Theme.TextSize.Small))
 			end

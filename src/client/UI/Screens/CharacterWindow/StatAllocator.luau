@@ -6,12 +6,15 @@
 -- S58 (ROZWOJ 2.11): "Spend as the path suggests" adds the free points to the reservation by the plan of the leading
 -- direction (S138, Logic/Paths.mainOf; or the class, Logic/Paths.statPlan; split by Logic/StatPlan.suggest); the
 -- player confirms as usual. A line below the buttons names the plan.
+-- Owner 2026-10-21 (too many detailed descriptions): under a stat one short line of what it raises (stat.<id>.short),
+-- the numbers per point behind the "i" next to its name.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -252,23 +255,44 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 						Size = UDim2.new(1, -(44 * 2 + 90 + Theme.Padding.Small * 3), 1, 0),
 						BackgroundTransparency = 1,
 						[Children] = {
-							scope:New("TextLabel")({
-								Name = "Name",
+							scope:New("Frame")({
+								Name = "Head",
 								Size = UDim2.new(1, 0, 0, 24),
 								BackgroundTransparency = 1,
-								Text = Text.T(scope, `stat.{id}`),
-								FontFace = Theme.Fonts.BodyBold,
-								TextSize = Theme.TextSize.Body,
-								TextColor3 = Theme.Paper.Text,
-								TextXAlignment = Enum.TextXAlignment.Left,
+								[Children] = {
+									scope:New("UIListLayout")({
+										FillDirection = Enum.FillDirection.Horizontal,
+										VerticalAlignment = Enum.VerticalAlignment.Center,
+										SortOrder = Enum.SortOrder.LayoutOrder,
+										Padding = UDim.new(0, 6),
+									}),
+									scope:New("TextLabel")({
+										Name = "Name",
+										LayoutOrder = 1,
+										Size = UDim2.fromScale(0, 1),
+										AutomaticSize = Enum.AutomaticSize.X,
+										BackgroundTransparency = 1,
+										Text = Text.T(scope, `stat.{id}`),
+										FontFace = Theme.Fonts.BodyBold,
+										TextSize = Theme.TextSize.Body,
+										TextColor3 = Theme.Paper.Text,
+										TextXAlignment = Enum.TextXAlignment.Left,
+									}),
+									-- owner 2026-10-21: what one point gives, with the numbers
+									InfoTip.new(scope, {
+										LayoutOrder = 2,
+										Title = Text.T(scope, `stat.{id}`),
+										Text = Text.T(scope, `stat.{id}.desc`, descArgs[id]),
+									}),
+								},
 							}),
 							scope:New("TextLabel")({
 								Name = "Desc",
 								Position = UDim2.fromOffset(0, 24),
 								Size = UDim2.new(1, 0, 1, -24),
 								BackgroundTransparency = 1,
-								Text = Text.T(scope, `stat.{id}.desc`, descArgs[id]),
-								TextWrapped = true,
+								Text = Text.T(scope, `stat.{id}.short`),
+								TextTruncate = Enum.TextTruncate.AtEnd,
 								FontFace = Theme.Fonts.Body,
 								TextSize = Theme.TextSize.Small,
 								TextColor3 = Theme.Paper.TextMuted,

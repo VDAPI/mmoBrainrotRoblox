@@ -1305,6 +1305,13 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - **Widok (S159)**: tablica i dziennik pokazują „Zlecenia dnia 2/4”, czas do nowego zestawu, serię, zamianę i kartę
   premii (co da, czemu bez odłamków); śledzik w HUD ma wiersz „Zlecenia dnia 2/4 · 5:12”, otwarte zlecenia, „Gotowe:
   odbierz na tablicy” i postęp tygodnia.
+- **Tropiciel celów (Opisy-3, właściciel 2026-10-21: tropiciel zajmował ok. 40% wysokości ekranu)**: nagłówek
+  „Cele” (klik zwija całość), pod nim grupy z nagłówkiem „▾ / ▸ nazwa” i podsumowaniem po prawej: Zadania (fabuła,
+  śledzone poboczne, następne „!”), Zlecenia łowieckie („1/3”), Zlecenia dnia („2/4 · 5:12”), Zlecenia tygodnia
+  („1/3”), Osiągnięcia. Wpis to jedna linia „nazwa · postęp” („◈ Wilk 3/15”), szczegóły (cele, obszar, gdzie oddać)
+  w dymku po najechaniu (dotyk: przytrzymanie), klik / tap rozwija wpis pod spodem (stan na sesję). Fabuła i poboczne
+  zaczynają rozwinięte (widać bieżący krok). Zwinięte grupy zapisują się na koncie (`account.settings.trackerFold`,
+  `Logic/TrackerFold`, ustawienie `SetSetting`); domyślnie zwinięte tylko tygodniowe. Pozycja i rozmiar jak w S156.
 - **Rozmowy (S101b, DESIGN-15 §3.5)**: odpowiedzi gracza na stronie dialogu (drobne skutki: podpowiedź na mapie,
   kolejność celów, mikstura), NPC pamięta wybór, komentarze NPC w trakcie (wyłączalne), towarzysz `follow` / `lead`.
 - **Budżet EXP (S98, audyt S109)**: questy jednorazowe dają ok. 30% EXP poziomu na 20–99 (zlecenie 12%, fabuła 10%,
@@ -1612,6 +1619,11 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   tak samo; „!” i pulsująca złota ramka, gdy nagroda czeka, podpowiedź z dniem serii. Okno (860 × 520; na telefonie
   pełny ekran, karty w dwóch rzędach po 4): siedem kart dni z nagrodą na poziom postaci, dzisiejsza w mosiężnej ramce,
   odebrane z ✓, stopka „Odbierz” albo „Odebrano dziś” z odliczaniem do następnej nagrody (§20a).
+- **Menu gry (Opisy-3, 2026-10-21)**: ustawienia w sekcjach z nagłówkami (Dźwięk, Grafika i kamera, Walka,
+  Interfejs), rzadziej zmieniane (Łup i handel, Społeczność, Skróty klawiszowe) zwinięte pod „nazwa ▸” (`Details`,
+  stan na sesję). Etykiety krótkie, dłuższe wyjaśnienia za „i” obok przełącznika. Okna postaci, umiejętności, dziennika
+  i tablicy zleceń pokazują krótką linię (`stat.<id>.short`, `class.<id>.short`, `*.short`), pełny opis za „i” albo
+  pod „Więcej ▸”.
 
 ### Ikony w UI (S35)
 

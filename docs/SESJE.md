@@ -13859,6 +13859,21 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   występuje w repozytorium ani w historii (siedzi w pliku miejsca).
 - **Testy:** `fishingspots.spec` (wszystkie mapy), `waterfall.spec` (stopa i piana na wodzie wokseli, mokra skała),
   `meadowsterrain.spec` (`voxelWater` zgodne z `voxels`, niecka), sumy kontrolne węzłów Boru, Pustkowi i Szczytów.
+### Opisy-3: postać, umiejętności, zadania, menu, samouczek; zwijany tropiciel (2026-10-21)
+- **Tropiciel celów:** `Hud/QuestTracker` (tylko treść; pozycja i chwyty `HudLayout` / `HudDrag` bez zmian): nagłówek
+  „Cele”, grupy z „▾ / ▸” i podsumowaniem, wpis w jednej linii (`QuestRows.compact`, `QuestRows.withoutCount`), dymek
+  `Tooltip.attach` z celami, klik rozwija wpis (stan na sesję). Zwinięcie grup: `Logic/TrackerFold`,
+  `account.settings.trackerFold` (`AccountSchema`, `Types`, walidator w `SettingsService`), domyślnie tygodniowe.
+- **Okna:** `QuestJournal` (opowieść i postęp pobocznych pod „Więcej ▸”, zlecenie na bossa i „gdzie oddać” krótko z „i”,
+  zasada zamiany za „i”), `QuestBoard` („i” przy nagłówku, kartach i premii), `GameMenu` (sekcje, rzadkie zwinięte,
+  „i” przy przełącznikach), `CharacterWindow/StatAllocator` i `CharacterSelect/Creator` (krótki opis, pełny za „i”),
+  `SkillsWindow/{PoolTree,Breakpoints,PathTab}`.
+- **Teksty:** blok „Opisy, grupa 3” w `pl.luau` / `en.luau` (nowe `*.short`, `*.info`, `tracker.*`,
+  `menu.section.*`), skrócone w miejscu: samouczek (`tutorial.*`), `unlock.dungeon`, `rework2.*`, potwierdzenia
+  umiejętności i ścieżek, powitania NPC (Skupiec, Mistrz Portali, Łowczy, Wędrowny kupiec), `fish.hint`, `quest.*`.
+- **Testy:** `trackerfold.spec` (domyślne, zapis, walidator, `compact`, `withoutCount`), `shorttext3.spec` (linia ≤ 60
+  znaków w obu językach, te same placeholdery, długi tekst istnieje, modale ≤ 120, bez długiej pauzy).
+- **Dla właściciela:** bez przeglądu w Studio (wysokość tropiciela przy 3 zleceniach, dymek przytrzymania na telefonie).
 ### Opisy, grupa 2: sklepy, kowal, premium, poczta, nagrody (2026-10-21)
 - **Co widać:** jedna krótka linia (do 60 znaków), pełny tekst pod „i” (`Components/InfoTip`): Smoczy Sklep (Przedmioty,
   Przepustki, Waluta, Wierzchowce: `Cards.card` pole `info`, `subtitle` opcjonalny, `Cards.note(..., infoKey)`), okno VIP,

@@ -15,6 +15,9 @@
 -- S102: the story tab names the chapter over the active or next quest (story.chapter.<n>), lets the player read the
 -- offer pages again ("Recall the conversation", variants by earlier answers) and groups the story so far by chapter,
 -- one row per quest with "▶" to watch its cutscenes again (only scenes already watched; props.Replay).
+-- Owner 2026-10-21 (too many detailed descriptions): a quest card shows its title, objectives and rewards; the story
+-- text (and "Recall the conversation") or the progress paragraph of a side / boss quest sit under "More" (Details),
+-- rules behind an "i" (InfoTip).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -29,7 +32,9 @@ local ContractActions = require(script.Parent.Parent.ContractActions)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Dailies = require(ReplicatedStorage.Shared.Logic.Dailies)
 local Cutscenes = require(ReplicatedStorage.Shared.Logic.Cutscenes)
+local Details = require(script.Parent.Parent.Components.Details)
 local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Modal = require(script.Parent.Parent.Components.Modal)
@@ -91,6 +96,24 @@ local function label(
 		TextSize = size,
 		TextColor3 = color,
 		TextXAlignment = Enum.TextXAlignment.Left,
+	})
+end
+
+-- Owner 2026-10-21: a line with an "i" on its right that holds the longer text.
+local function infoRow(scope: Scope, child: Instance, info: Fusion.UsedAs<string>): Instance
+	(child :: any).Size = UDim2.new(1, -32, 0, 0)
+	return scope:New("Frame")({
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		[Children] = {
+			child,
+			InfoTip.new(scope, {
+				Text = info,
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.fromScale(1, 0),
+			}),
+		},
 	})
 end
 
@@ -338,23 +361,23 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						Theme.Paper.Heading
 					)
 				)
-				table.insert(
-					list,
+				-- owner 2026-10-21: the story text and "Recall the conversation" under "More" (Details)
+				local story: { Instance } = {
 					label(
 						s,
-						2,
+						1,
 						Text.get(use, `quest.{quest.id}.text`),
 						Theme.Fonts.Body,
 						Theme.TextSize.Small,
 						Theme.Paper.Text
-					)
-				)
+					),
+				}
 				-- S102: the offer pages again (with the variants of earlier answers)
 				local pages = quest.pages
 				if pages then
 					local storyQuest = quest
 					table.insert(
-						list,
+						story,
 						Button(s, {
 							LayoutOrder = 2,
 							Size = UDim2.fromOffset(220, 40),
@@ -375,6 +398,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						})
 					)
 				end
+				table.insert(list, Details.new(s, { Key = "journal.main.story", LayoutOrder = 2, Children = story }))
 				-- S29: every objective stays (finished ones green), then "Return to: <NPC>" (Logic/QuestRows).
 				local lines =
 					QuestText.richRows(use, QuestText.rows(use, quest.objectives, main.progress, quest.turnIn))
@@ -589,16 +613,22 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 							Theme.Paper.Heading
 						)
 					)
+					-- owner 2026-10-21: the progress paragraph under "More" (the objectives below say the same)
 					table.insert(
 						shown,
-						label(
-							s,
-							0,
-							Text.get(use, `quest.{quest.id}.progress`),
-							Theme.Fonts.Body,
-							Theme.TextSize.Small,
-							Theme.Paper.Text
-						)
+						Details.new(s, {
+							Key = `journal.side.{quest.id}`,
+							Children = {
+								label(
+									s,
+									0,
+									Text.get(use, `quest.{quest.id}.progress`),
+									Theme.Fonts.Body,
+									Theme.TextSize.Small,
+									Theme.Paper.Text
+								),
+							},
+						})
 					)
 					table.insert(
 						shown,
@@ -708,16 +738,20 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					add(label(s, 0, `✔ {title}`, Theme.Fonts.BodyMedium, Theme.TextSize.Small, Theme.Paper.Success))
 				elseif type(entry) == "table" then
 					add(label(s, 0, `<b>{title}</b>`, Theme.Fonts.BodyBold, Theme.TextSize.Body, Theme.Paper.Heading))
-					add(
-						label(
-							s,
-							0,
-							Text.get(use, `quest.{quest.id}.progress`),
-							Theme.Fonts.Body,
-							Theme.TextSize.Small,
-							Theme.Paper.Text
-						)
-					)
+					-- owner 2026-10-21: the progress paragraph under "More"
+					add(Details.new(s, {
+						Key = `journal.boss.{quest.id}`,
+						Children = {
+							label(
+								s,
+								0,
+								Text.get(use, `quest.{quest.id}.progress`),
+								Theme.Fonts.Body,
+								Theme.TextSize.Small,
+								Theme.Paper.Text
+							),
+						},
+					}))
 					local rows = QuestText.rows(use, quest.objectives, entry.progress, quest.turnIn)
 					add(
 						label(
@@ -778,13 +812,18 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						Theme.Paper.Heading
 					)
 				)
-				local text = Text.get(use, "quest.bossContract.text", {
-					boss = if boss then Text.get(use, boss.nameKey) else "?",
-					n = n,
-				})
+				local bossArgs = { boss = if boss then Text.get(use, boss.nameKey) else "?", n = n }
+				local text = Text.get(use, "quest.bossContract.text.short", bossArgs)
 				local progress =
 					Text.get(use, "quest.bossContract.progress", { have = math.min(contract.progress, n), n = n })
-				add(label(s, 0, `{text}\n{progress}`, Theme.Fonts.Body, Theme.TextSize.Small, Theme.Paper.Text))
+				-- owner 2026-10-21: one short line, the captaincy's words behind the "i"
+				add(
+					infoRow(
+						s,
+						label(s, 0, `{text}\n{progress}`, Theme.Fonts.Body, Theme.TextSize.Small, Theme.Paper.Text),
+						Text.get(use, "quest.bossContract.text", bossArgs)
+					)
+				)
 				if not contract.claimed then
 					add(QuestRewards(s, {
 						Id = "bossContract",
@@ -939,13 +978,17 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				}))
 			else
 				add(
-					label(
+					infoRow(
 						s,
-						0,
-						Text.get(use, "contract.whereTurnIn"),
-						Theme.Fonts.BodyBold,
-						Theme.TextSize.Small,
-						Theme.Paper.Heading
+						label(
+							s,
+							0,
+							Text.get(use, "contract.whereTurnIn.short"),
+							Theme.Fonts.BodyBold,
+							Theme.TextSize.Small,
+							Theme.Paper.Heading
+						),
+						Text.get(use, "contract.whereTurnIn")
 					)
 				)
 			end
@@ -1162,28 +1205,27 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			local state = Dailies.sanitize(use(State.Value({ "account", "dailies" })))
 			local p = Dailies.progress(if type(daily) == "table" then daily.list else nil)
 			local streak = Dailies.streakNow(state, today)
-			table.insert(
-				list,
-				label(
-					s,
-					0,
-					"<b>"
-						.. Text.get(use, "npc.questboard.name")
-						.. "</b>\n"
-						.. Text.get(use, "quest.set.daily", { done = p.complete, total = p.total })
-						.. " · "
-						.. Text.get(use, "quest.dailyReset", { time = Time.format((today + 1) * 86400 - use(now)) })
-						.. "\n"
-						.. (if streak > 0
+			-- owner 2026-10-21: the reroll rule behind the "i" of the status lines
+			local status = label(
+				s,
+				0,
+				"<b>"
+					.. Text.get(use, "npc.questboard.name")
+					.. "</b>\n"
+					.. Text.get(use, "quest.set.daily", { done = p.complete, total = p.total })
+					.. " · "
+					.. Text.get(use, "quest.dailyReset", { time = Time.format((today + 1) * 86400 - use(now)) })
+					.. "\n"
+					.. (
+						if streak > 0
 							then Text.get(use, "quest.set.streak", { n = streak })
-							else Text.get(use, "quest.set.streakNone"))
-						.. " · "
-						.. Text.get(use, "quest.reroll.hint"),
-					Theme.Fonts.BodyMedium,
-					Theme.TextSize.Small,
-					Theme.Paper.TextMuted
-				)
+							else Text.get(use, "quest.set.streakNone")
+					),
+				Theme.Fonts.BodyMedium,
+				Theme.TextSize.Small,
+				Theme.Paper.TextMuted
 			)
+			table.insert(list, infoRow(s, status, Text.get(use, "quest.reroll.hint")))
 			contractRows(
 				s,
 				use,

@@ -13,6 +13,8 @@
 -- pool tree's tiles (SkillsWindow/Tile). The leading direction, the capstone and the free talent points stand in the
 -- window header (the phone: only the points; the other two under the switch). A class without directions shows
 -- "Paths soon".
+-- Owner 2026-10-21 (too many detailed descriptions): the "one capstone per set" rule behind an "i" on the name row
+-- (was a line over the tree); "Paths soon" in one short line with the rest behind an "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -20,6 +22,7 @@ local Actions = require(script.Parent.Actions)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local NodeCard = require(script.Parent.NodeCard)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
@@ -75,8 +78,9 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 		local list = use(ctx.paths)
 		local shown = use(ctx.shownDirection)
 		if #list == 0 or not shown then
-			-- "Paths soon" (a class without directions, ROZWOJ 2.6)
-			for i, key in { "paths.soon", "paths.soon.body" } do
+			-- "Paths soon" (a class without directions, ROZWOJ 2.6); owner 2026-10-21: the body short, the whole behind
+			-- the "i"
+			for i, key in { "paths.soon", "paths.soon.body.short" } do
 				add(s:New("TextLabel")({
 					BackgroundTransparency = 1,
 					Size = UDim2.new(1, -8, 0, 0),
@@ -89,6 +93,7 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}))
 			end
+			add(InfoTip.new(s, { Text = Text.get(use, "paths.soon.body") }))
 			return out
 		end
 		-- S139: the switch of directions (name, role, points; a dot when something waits there)
@@ -218,9 +223,9 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 			local sel = use2(ctx.selected)
 			return sel ~= nil and sel.kind == "path" and sel.id == def.id
 		end)
-		add(s:New("TextButton")({
+		local nameButton = s:New("TextButton")({
 			Name = "PathName",
-			Size = UDim2.new(1, -8, 0, 0),
+			Size = UDim2.new(1, -40, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			AutoButtonColor = false,
 			BackgroundTransparency = 1,
@@ -239,12 +244,26 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 					ctx.sheet:set(true)
 				end
 			end,
+		})
+		-- owner 2026-10-21: the "one capstone per set" rule behind the "i" on the right of the name
+		add(s:New("Frame")({
+			Name = "PathHead",
+			Size = UDim2.new(1, -8, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			[Children] = {
+				nameButton,
+				InfoTip.new(s, {
+					Text = Text.get(use, "skills.tree.oneCapstone"),
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, 0, 0, 4),
+				}),
+			},
 		}))
 		-- S138 (DESIGN-18 §7): a direction to mix, no main path choice and no direction weapon
 		if view.leading then
 			label(Text.get(use, "paths.isMain"), Theme.Paper.Success, Theme.Fonts.BodyBold)
 		end
-		label(Text.get(use, "skills.tree.oneCapstone"), Theme.Paper.TextMuted)
 
 		-- The tree.
 		local rows = view.rows
