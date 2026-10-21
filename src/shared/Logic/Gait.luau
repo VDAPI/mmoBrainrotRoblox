@@ -71,6 +71,8 @@ export type Motion = {
 	tremble: number?, -- 0..1 shaking of a long windup (grows like the telegraph fill)
 	hop: number?, -- 0..1 the visual jump of the blow (Gait.hopOf)
 	spin: number?, -- 0..1 progress of the turn of a whirlwind (Gait.spinOf)
+	follow: number?, -- S159a: 0..1 the style's follow-through pose after the blow (Gait.followOf)
+	turn: number?, -- S159a: radians the body turns on top of the style (a breath following its cone, a spiral)
 	roar: number?, -- 0..1 envelope of the phase roar (Gait.roarEnvelope)
 	roarStyle: string?, -- the roar's style (default "roar")
 	rise: number?, -- 0..1 climbing out of the ground (1 = on the ground, 0 = under it); nil = on the ground
@@ -98,6 +100,10 @@ Gait.HOP_SECONDS = 0.3
 Gait.RISE_DEPTH = 3
 -- S117: the strike overshoots a little in the recovery (follow-through), then settles.
 Gait.OVERSHOOT = 0.12
+-- S159a: a style's `follow` pose fades in over the recovery (as the strike fades out), holds this long and settles
+-- over FOLLOW_OUT s.
+Gait.FOLLOW_HOLD = 0.2
+Gait.FOLLOW_OUT = 0.4
 -- S110: reaction lengths shared by AnimationController, MobVizController and AnimLab (the same values as before).
 Gait.HIT_SECONDS = 0.25 -- the flinch after taking damage fades over this
 Gait.DEATH_SECONDS = Config.MonsterLook.deathSeconds -- the collapse (S117: 0.55 -> 0.8, a death by plan)
@@ -176,9 +182,59 @@ function Gait.charge(elapsed: number, windup: number): (number, number, number)
 	return raise, strike, tremble
 end
 
--- Total length of an attack with the given windup (S117: the strike is inside the windup).
-function Gait.attackLength(windup: number): number
-	return math.max(windup, 0.05) + Gait.RECOVER_SECONDS
+-- Total length of an attack with the given windup (S117: the strike is inside the windup). S159a: `hold` s of a held
+-- blow (a channel) and a style with a follow-through (`follow`) last longer.
+function Gait.attackLength(windup: number, hold: number?, follow: boolean?): number
+	local base = math.max(windup, 0.05) + math.max(0, hold or 0) + Gait.RECOVER_SECONDS
+	return if follow then base + Gait.FOLLOW_HOLD + Gait.FOLLOW_OUT else base
+end
+
+-- S159a: the elapsed time the attack curves see when the blow is held for `hold` s after the windup (a channel): the
+-- clock stops at the blow for the hold, then runs on into the recovery.
+function Gait.heldElapsed(elapsed: number, windup: number, hold: number?): number
+	local w = math.max(windup, 0.05)
+	local h = math.max(0, hold or 0)
+	if h <= 0 or elapsed <= w then
+		return elapsed
+	end
+	return w + math.max(0, elapsed - w - h)
+end
+
+-- S159a: the weight of a style's follow-through `elapsed` s into an attack of `windup` with a held blow of `hold` s:
+-- 0 up to the end of the hold, up to 1 over the recovery (while the strike fades), held FOLLOW_HOLD s, down over
+-- FOLLOW_OUT s.
+function Gait.followOf(elapsed: number, windup: number, hold: number?): number
+	local t = elapsed - math.max(windup, 0.05) - math.max(0, hold or 0)
+	if t <= 0 then
+		return 0
+	end
+	if t < Gait.RECOVER_SECONDS then
+		return smooth(t / Gait.RECOVER_SECONDS)
+	end
+	t -= Gait.RECOVER_SECONDS
+	if t < Gait.FOLLOW_HOLD then
+		return 1
+	end
+	t -= Gait.FOLLOW_HOLD
+	return if t < Gait.FOLLOW_OUT then 1 - smooth(t / Gait.FOLLOW_OUT) else 0
+end
+
+-- S159a: the body's turn `elapsed` s into an attack turning from `from` to `to` (radians) over its held blow: towards
+-- `from` over the windup, on to `to` over the hold, back to 0 over the recovery and follow-through.
+function Gait.turnOf(elapsed: number, windup: number, hold: number?, from: number, to: number): number
+	local w = math.max(windup, 0.05)
+	local h = math.max(0, hold or 0)
+	if elapsed <= 0 then
+		return 0
+	end
+	if elapsed <= w then
+		return from * smooth(elapsed / w)
+	end
+	if elapsed <= w + h then
+		return from + (to - from) * smooth((elapsed - w) / h)
+	end
+	local back = Gait.RECOVER_SECONDS + Gait.FOLLOW_HOLD + Gait.FOLLOW_OUT
+	return to * (1 - smooth((elapsed - w - h) / back))
 end
 
 -- S117: the visual jump of a pounce / slam: up and down over the last HOP_SECONDS of the windup, landing at the hit.
@@ -258,7 +314,7 @@ local function owns(style: MonsterMotions.Style, joint: Joint): boolean
 	if role == "arm" and joint.side < 0 and style.left then
 		return true
 	end
-	return style.windup[role] ~= nil or style.strike[role] ~= nil
+	return style.windup[role] ~= nil or style.strike[role] ~= nil or (style.follow ~= nil and style.follow[role] ~= nil)
 end
 
 -- Adds `k` x the offset `o` ({ rx, ry, rz, x, y, z }, right-side convention) to `p`, mirrored for the left side.
@@ -275,18 +331,27 @@ local function add(p: Pose, o: MonsterMotions.RolePose?, k: number, side: number
 	p.z += (o[6] or 0) * k
 end
 
--- The style's offset of a joint at (raise, strike): its entry (hind legs, the left arm), shared by `arms`.
-local function addStyle(p: Pose, style: MonsterMotions.Style, joint: Joint, raise: number, strike: number, k: number)
+-- The style's offset of a joint at (raise, strike, follow): its entry (hind legs, the left arm), shared by `arms`.
+local function addStyle(
+	p: Pose,
+	style: MonsterMotions.Style,
+	joint: Joint,
+	raise: number,
+	strike: number,
+	k: number,
+	follow: number?
+)
 	local role = joint.role
 	local front = joint.front or 0
-	local w: MonsterMotions.RolePose?, s: MonsterMotions.RolePose?
+	local w: MonsterMotions.RolePose?, s: MonsterMotions.RolePose?, f: MonsterMotions.RolePose?
 	local shared = false
 	if (role == "leg" or role == "spiderLeg") and front < 0 then
 		w, s = style.hindWindup, style.hindStrike
 	elseif role == "arm" and joint.side < 0 and style.left then
-		w, s = style.left.windup, style.left.strike
+		w, s, f = style.left.windup, style.left.strike, style.left.follow
 	else
 		w, s = style.windup[role], style.strike[role]
+		f = if style.follow then style.follow[role] else nil
 		shared = role == "arm" or (role == "leg" and front > 0)
 	end
 	local shareW, shareS = 1, 1
@@ -303,6 +368,9 @@ local function addStyle(p: Pose, style: MonsterMotions.Style, joint: Joint, rais
 	end
 	add(p, w, raise * shareW * k, joint.side)
 	add(p, s, strike * shareS * k, joint.side)
+	if follow and follow > 0 then
+		add(p, f, follow * shareS * k, joint.side)
+	end
 end
 
 -- A death style's offset at `dead` (0..1).
@@ -336,6 +404,48 @@ local function addDeath(p: Pose, def: MonsterMotions.DeathStyle, joint: Joint, m
 	if role == "body" and def.hoverDrop then
 		p.y -= (m.hover or 0) * smooth(d)
 	end
+end
+
+-- S117: the attack style's offsets of a joint (with its shake, hop, lunge and spin), S159a its follow-through and the
+-- body turn, and the roar; `alive` scales them (0 when dead).
+local function addAction(p: Pose, joint: Joint, m: Motion, style: MonsterMotions.Style?, alive: number)
+	local role = joint.role
+	if style and alive > 0 then
+		addStyle(p, style, joint, m.raise, m.strike, alive, m.follow)
+		local tremble = (m.tremble or 0) * (style.tremble or 0)
+		if tremble > 0 and (role == "body" or role == "arm" or role == "head") then
+			local shake = math.sin(m.time * TREMBLE_SPEED + joint.side) * tremble * alive
+			p.rx += shake
+			if role == "body" then
+				p.rz += math.sin(m.time * TREMBLE_SPEED * 1.3) * tremble * 0.6 * alive
+			end
+		end
+		if role == "body" then
+			p.y += (m.hop or 0) * (style.hop or 0) * alive
+			p.z -= m.strike * (style.dash or 0) * alive
+			p.ry += (m.spin or 0) * TAU * (style.spin or 0)
+		end
+	end
+	if role == "body" and alive > 0 then
+		p.ry += (m.turn or 0) * alive
+	end
+	local roar = m.roar or 0
+	if roar > 0 and alive > 0 then
+		local roarStyle = MonsterMotions.STYLES[m.roarStyle or "roar"]
+		if roarStyle then
+			addStyle(p, roarStyle, joint, roar, 0, alive)
+		end
+	end
+end
+
+-- S159a: only the action of a joint (the attack style with its follow-through and turn, the roar), without the walk,
+-- the idle, the generic attack, hits and deaths: the layer laid over the clips of an imported model
+-- (client/Anim/BoneOverlay) and the extra angles of a rig without clips (client/Anim/BoneGait). Zero without them.
+function Gait.overlay(joint: Joint, m: Motion): Pose
+	local p = pose(0, 0, 0, 0, 0, 0)
+	local style = if m.style then MonsterMotions.STYLES[m.style] else nil
+	addAction(p, joint, m, style, 1 - m.dead)
+	return p
 end
 
 function Gait.pose(joint: Joint, m: Motion): Pose
@@ -437,29 +547,7 @@ function Gait.pose(joint: Joint, m: Motion): Pose
 	end
 
 	-- S117 additions (each zero without its field)
-	if style and alive > 0 then
-		addStyle(p, style :: MonsterMotions.Style, joint, m.raise, m.strike, alive)
-		local tremble = (m.tremble or 0) * (style.tremble or 0)
-		if tremble > 0 and (role == "body" or role == "arm" or role == "head") then
-			local shake = math.sin(m.time * TREMBLE_SPEED + joint.side) * tremble * alive
-			p.rx += shake
-			if role == "body" then
-				p.rz += math.sin(m.time * TREMBLE_SPEED * 1.3) * tremble * 0.6 * alive
-			end
-		end
-		if role == "body" then
-			p.y += (m.hop or 0) * (style.hop or 0) * alive
-			p.z -= m.strike * (style.dash or 0) * alive
-			p.ry += (m.spin or 0) * TAU * (style.spin or 0)
-		end
-	end
-	local roar = m.roar or 0
-	if roar > 0 and alive > 0 then
-		local roarStyle = MonsterMotions.STYLES[m.roarStyle or "roar"]
-		if roarStyle then
-			addStyle(p, roarStyle, joint, roar, 0, alive)
-		end
-	end
+	addAction(p, joint, m, style, alive)
 	local rise = m.rise
 	if rise and rise < 1 then
 		local under = 1 - math.clamp(rise, 0, 1)
@@ -502,17 +590,31 @@ end
 
 -- S117: fills the attack fields of `m` for `elapsed` seconds into an attack of `windup` (`charged`: a telegraphed one,
 -- Gait.charge; else a basic attack, Gait.attack): raise, strike, tremble, hop, spin. Returns m.
-function Gait.attackMotion(m: Motion, elapsed: number, windup: number, charged: boolean?): Motion
+-- S159a `extra`: `hold` s the blow is held (a channel, Gait.heldElapsed), the follow-through weight (Gait.followOf) and
+-- the body turn from `turnFrom` to `turnTo` (Gait.turnOf).
+export type AttackExtra = { hold: number?, turnFrom: number?, turnTo: number? }
+
+function Gait.attackMotion(m: Motion, elapsed: number, windup: number, charged: boolean?, extra: AttackExtra?): Motion
+	local hold = if extra then extra.hold else nil
+	local e = Gait.heldElapsed(elapsed, windup, hold)
 	if charged then
-		m.raise, m.strike, m.tremble = Gait.charge(elapsed, windup)
+		m.raise, m.strike, m.tremble = Gait.charge(e, windup)
 	else
-		m.raise, m.strike = Gait.attack(elapsed, windup)
+		m.raise, m.strike = Gait.attack(e, windup)
 		m.tremble = 0
 	end
 	local busy = m.raise > 0 or m.strike > 0
-	m.hop = if busy then Gait.hopOf(elapsed, windup) else 0
-	m.spin = if busy then Gait.spinOf(elapsed, windup) else 0
+	m.hop = if busy then Gait.hopOf(e, windup) else 0
+	m.spin = if busy then Gait.spinOf(e, windup) else 0
+	m.follow = Gait.followOf(elapsed, windup, hold)
+	local from, to = if extra then extra.turnFrom else nil, if extra then extra.turnTo else nil
+	m.turn = if from and to then Gait.turnOf(elapsed, windup, hold, from, to) else 0
 	return m
+end
+
+-- S159a: whether an attack's motion is still running (its curves or its follow-through).
+function Gait.acting(m: Motion): boolean
+	return m.raise > 0 or m.strike > 0 or (m.follow or 0) > 0 or (m.turn or 0) ~= 0
 end
 
 -- S110 (AnimLab, docs/ANIMACJE.md): what a generated monster does `t` seconds into a state, as one Motion.
@@ -525,6 +627,7 @@ export type StateOptions = {
 	-- S117 (the game's choices, AnimationController)
 	style: string?, -- attack slots: the attack's style
 	charged: boolean?, -- attack slots: a telegraphed attack (Gait.charge)
+	hold: number?, -- S159a attack slots: seconds the blow is held (a channel)
 	deathStyle: string?, -- death: the plan's death
 	deathSide: number?,
 	hover: number?,
@@ -551,8 +654,8 @@ function Gait.stateMotion(slot: Slot, t: number, options: StateOptions?): Motion
 		m.move = 1
 		m.cycle = Gait.advance(0, t, speed, o.scale or 1)
 	elseif slot == "attack1" or slot == "attack2" or slot == "cast" then
-		Gait.attackMotion(m, t, o.windup or Gait.DEFAULT_WINDUP, o.charged)
-		if m.raise > 0 or m.strike > 0 then
+		Gait.attackMotion(m, t, o.windup or Gait.DEFAULT_WINDUP, o.charged, { hold = o.hold })
+		if Gait.acting(m) then
 			m.style = o.style
 		end
 	elseif slot == "hit" then

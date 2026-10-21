@@ -33,6 +33,11 @@
 --     by plan over Config.MonsterLook.deathSeconds; a hit pushes the body away from the attacker (Gait.hitLean, bosses
 --     less). Real models keep their clips (S116 adds attack / roar clips); the new poses are the generator's.
 --   S123: emotes (Data/Emotes) play through the skill motion path with a lower priority (Emote, EndEmote, StopEmote).
+--   S159a: a boss pattern's gesture (MonsterAttack opts: its own style, a held blow for a channel, the follow-through,
+--     a body turn with a breath or a spiral) and the roars (a style per phase, an intro roar at the first aggro) pose a
+--     model with bone clips procedurally too: the attack clip is held back and client/Anim/BoneOverlay turns its arm
+--     and head bones while the Gait_Body motor moves the whole body; a regular ranged draw picks its own style and the
+--     "cast" clip for a spell.
 -- Everything runs locally on every client, so other players see the same motion.
 
 local CollectionService = game:GetService("CollectionService")
@@ -48,6 +53,7 @@ local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local BoneGait = require(script.Parent.Parent.Anim.BoneGait)
+local BoneOverlay = require(script.Parent.Parent.Anim.BoneOverlay)
 local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
@@ -107,6 +113,8 @@ type MonsterState = {
 	joints: { JointState },
 	clips: Clips?,
 	boneGait: BoneGait.Rig?, -- W26: bones of an imported model without clips
+	overlay: BoneOverlay.Rig?, -- S159a: the procedural layer over bone clips
+	overlayOn: boolean, -- S159a: the layer (or the body motor) was posed last frame
 	spawnedAt: number,
 	attackSlot: string,
 	scale: number,
@@ -134,6 +142,12 @@ type MonsterState = {
 	riseStart: number?,
 	roarStart: number?,
 	roarSeconds: number,
+	roarStyle: string?, -- S159a: the running roar's style (by phase)
+	introDone: boolean, -- S159a: the intro roar at the first aggro played
+	hold: number, -- S159a: seconds the running attack holds its blow (a channel)
+	turnFrom: number?, -- S159a: the body turn of the running gesture (Gait.turnOf)
+	turnTo: number?,
+	procedural: boolean, -- S159a: the running attack is a gesture posed procedurally (no attack clip)
 	flying: boolean,
 	landedAt: number?,
 	phase: number,
@@ -151,6 +165,8 @@ local function clearExtra(m: Gait.Motion)
 	m.tremble = 0
 	m.hop = 0
 	m.spin = 0
+	m.follow = 0
+	m.turn = 0
 	m.roar = 0
 	m.roarStyle = nil
 	m.rise = nil
@@ -260,6 +276,9 @@ local function refresh(model: Model)
 	s.joints = collectJoints(model)
 	s.clips = loadClips(model)
 	local holder = model:FindFirstChild("Look")
+	local mixer = s.clips and s.clips.mixer
+	s.overlay = if mixer and holder and holder:IsA("Model") then BoneOverlay.new(holder, mixer) else nil
+	s.overlayOn = false
 	s.boneGait = if s.clips == nil
 			and holder
 			and holder:IsA("Model")
@@ -280,19 +299,22 @@ local function bossIdOf(model: Model): string?
 end
 
 -- S117: listeners of a phase roar (CombatFxController: the camera shake and the aura's flash).
-local roarListeners: { (model: Model, bossId: string?) -> () } = {}
+-- S159a: `intro` = the roar at the first aggro (no new phase).
+local roarListeners: { (model: Model, bossId: string?, intro: boolean?) -> () } = {}
 
-function AnimationController.OnRoar(fn: (model: Model, bossId: string?) -> ())
+function AnimationController.OnRoar(fn: (model: Model, bossId: string?, intro: boolean?) -> ())
 	table.insert(roarListeners, fn)
 end
 
--- S117: a phase roar starts (a new phase of a boss; AnimLab `boss <id> roar` calls it directly).
-local function startRoar(s: MonsterState)
+-- S117: a phase roar starts (a new phase of a boss; AnimLab `boss <id> roar` calls it directly). S159a: the style of
+-- the phase (BossMotions.roarStyle), `intro` = the first aggro.
+local function startRoar(s: MonsterState, intro: boolean?)
 	local def = if s.bossId then BossMotions.get(s.bossId) else nil
 	s.roarStart = Clock.now()
 	s.roarSeconds = if def then def.roar.seconds else LOOK.roarSeconds
+	s.roarStyle = if s.bossId then BossMotions.roarStyle(s.bossId, if intro then nil else s.phase) else nil
 	for _, fn in roarListeners do
-		task.spawn(fn, s.model, s.bossId)
+		task.spawn(fn, s.model, s.bossId, intro)
 	end
 end
 
@@ -321,10 +343,20 @@ local function onAttribute(s: MonsterState, name: string)
 	local model = s.model
 	if name == "Phase" then
 		local phase = tonumber(model:GetAttribute("Phase")) or 1
-		if phase > s.phase and model:GetAttribute("Dead") ~= true then
+		local roars = phase > s.phase and model:GetAttribute("Dead") ~= true
+		s.phase = phase
+		if roars then
 			startRoar(s)
 		end
-		s.phase = phase
+	elseif name == "AggroUserId" then
+		-- S159a: a boss roars when it first turns on a fighter (BossMotions roar.intro)
+		if not s.introDone and model:GetAttribute("AggroUserId") ~= nil and model:GetAttribute("Dead") ~= true then
+			s.introDone = true
+			local def = if s.bossId then BossMotions.get(s.bossId) else nil
+			if def and def.roar.intro and s.roarStart == nil then
+				startRoar(s, true)
+			end
+		end
 	elseif name == "Flying" then
 		local flying = model:GetAttribute("Flying") == true
 		if s.flying and not flying then
@@ -385,6 +417,14 @@ local function track(model: Instance)
 			else nil,
 		roarStart = nil,
 		roarSeconds = LOOK.roarSeconds,
+		roarStyle = nil,
+		introDone = false,
+		hold = 0,
+		turnFrom = nil,
+		turnTo = nil,
+		procedural = false,
+		overlay = nil,
+		overlayOn = false,
 		flying = model:GetAttribute("Flying") == true,
 		landedAt = nil,
 		phase = tonumber(model:GetAttribute("Phase")) or 1,
@@ -395,6 +435,7 @@ local function track(model: Instance)
 	s.connection = model.AttributeChanged:Connect(function(name: string)
 		onAttribute(s, name)
 	end)
+	s.introDone = model:GetAttribute("AggroUserId") ~= nil
 	monsters[model] = s
 	refresh(model)
 	if s.riseStart then
@@ -450,7 +491,8 @@ local function stepClips(s: MonsterState, clips: Clips, now: number, speed: numb
 	for slot in clips.tracks do
 		available[slot] = true
 	end
-	local attacking = raise > 0 or strike > 0
+	-- S159a: a procedural gesture holds the attack clip back (BoneOverlay poses it over idle / walk)
+	local attacking = (raise > 0 or strike > 0) and not s.procedural
 	local attackSlot = s.attackSlot
 	local restart = false
 	local mixer = clips.mixer
@@ -566,13 +608,18 @@ local function flyingOf(s: MonsterState, now: number): number
 	return if t <= 0 then 1 else 1 - t / LAND_FADE
 end
 
+-- S159a: the running attack's held blow and body turn (shared, filled per monster).
+local extra: Gait.AttackExtra = { hold = 0, turnFrom = nil, turnTo = nil }
+
 -- The generated monster's Motion this frame (the shared `motion` table).
 local function monsterMotion(s: MonsterState, now: number): Gait.Motion
+	extra.hold = s.hold
+	extra.turnFrom = s.turnFrom
+	extra.turnTo = s.turnTo
 	clearExtra(motion)
 	local elapsed = now - s.attackStart
-	Gait.attackMotion(motion, elapsed, s.attackWindup, s.charged)
-	local attacking = motion.raise > 0 or motion.strike > 0
-	if attacking then
+	Gait.attackMotion(motion, elapsed, s.attackWindup, s.charged, extra)
+	if Gait.acting(motion) then
 		motion.style = s.style
 	end
 	motion.cycle = s.cycle
@@ -581,7 +628,7 @@ local function monsterMotion(s: MonsterState, now: number): Gait.Motion
 	motion.hit = math.max(0, 1 - (now - s.hitAt) / HIT_SECONDS)
 	motion.dead = if s.deadAt then math.clamp((now - s.deadAt) / DEATH_SECONDS, 0, 1) else 0
 	motion.plan = s.plan
-	local gathering = s.charged and elapsed >= 0 and elapsed < s.attackWindup
+	local gathering = s.charged and elapsed >= 0 and elapsed < s.attackWindup + s.hold
 	if gathering then
 		-- D3: a hit during the gather only leans the body a little; the gather goes on
 		motion.hit *= CHARGE_HIT
@@ -595,7 +642,7 @@ local function monsterMotion(s: MonsterState, now: number): Gait.Motion
 	motion.roar = roarOf(s, now)
 	if s.bossId then
 		local def = BossMotions.get(s.bossId)
-		motion.roarStyle = if def then def.roar.style else nil
+		motion.roarStyle = s.roarStyle or (if def then def.roar.style else nil)
 	end
 	local riseStart = s.riseStart
 	if riseStart then
@@ -608,6 +655,38 @@ local function monsterMotion(s: MonsterState, now: number): Gait.Motion
 	end
 	motion.flying = flyingOf(s, now)
 	return motion
+end
+
+-- S159a: the procedural layer of a model with bone clips: a gesture (not the clip attacks) and a roar turn its arm
+-- and head bones (BoneOverlay) and move the whole body on its Gait_Body motor; nothing running = back to the clips.
+local function overlayStep(s: MonsterState, mixer: BoneClips.Mixer, now: number)
+	local m = monsterMotion(s, now)
+	if not s.procedural then
+		m.style = nil
+		m.turn = 0
+	end
+	local active = m.style ~= nil or (m.roar or 0) > 0 or (m.turn or 0) ~= 0
+	if active then
+		s.overlayOn = true
+		if s.overlay then
+			BoneOverlay.apply(s.overlay, mixer, m)
+		end
+		for _, j in s.joints do
+			if j.body then
+				local p = Gait.overlay(j.joint, m)
+				local k = j.scale
+				j.motor.Transform = CFrame.new(p.x * k, p.y * k, p.z * k) * CFrame.Angles(p.rx, p.ry, p.rz)
+			end
+		end
+	elseif s.overlayOn then
+		s.overlayOn = false
+		BoneOverlay.clear(mixer)
+		for _, j in s.joints do
+			if j.body then
+				j.motor.Transform = CFrame.identity
+			end
+		end
+	end
 end
 
 local function step(dt: number)
@@ -647,6 +726,7 @@ local function step(dt: number)
 		if clips then
 			stepClips(s, clips, now, speed)
 			if clips.mixer then
+				overlayStep(s, clips.mixer, now)
 				BoneClips.step(clips.mixer, frame)
 			end
 			continue
@@ -674,12 +754,27 @@ end
 -- S117: `attackId` (an Elite II ability or a boss attack, the "tele" event's `a`) picks the style and makes it a
 -- telegraphed gather (Gait.charge) over the same clamped windup the telegraph fills over; `area` (the event's CFrame)
 -- aims a boss leap. More telegraphs of one attack within SAME_ATTACK s pose it once.
+-- S159a `opts`: `style` poses this style instead (a boss pattern's gesture, a ranged draw), `slot` picks the clip of a
+-- real model, `hold` s the blow is held (a channel), `turnFrom` / `turnTo` turn the body over it (Gait.turnOf),
+-- `procedural` poses a model with bone clips through BoneOverlay instead of its attack clip; `charged` forces the
+-- telegraphed gather.
+export type AttackOpts = {
+	style: string?,
+	slot: string?,
+	hold: number?,
+	turnFrom: number?,
+	turnTo: number?,
+	procedural: boolean?,
+	charged: boolean?,
+}
+
 function AnimationController.MonsterAttack(
 	model: Model,
 	windup: number?,
 	strikeNow: boolean?,
 	attackId: string?,
-	area: CFrame?
+	area: CFrame?,
+	opts: AttackOpts?
 )
 	local s = monsters[model]
 	if not s then
@@ -694,13 +789,20 @@ function AnimationController.MonsterAttack(
 		else Telegraph.windup(windup or Gait.DEFAULT_WINDUP)
 	s.attackWindup = w
 	-- Real models: long windups are spells and specials.
-	s.attackSlot = if strikeNow then "attack1" elseif w > 1 then "cast" else "attack2"
+	s.attackSlot = (opts and opts.slot) or (if strikeNow then "attack1" elseif w > 1 then "cast" else "attack2")
 	s.attackStart = now - (if strikeNow then math.max(0, w - Gait.STRIKE_NOW_LEAD) else 0)
 	s.attackId = attackId
-	s.charged = not strikeNow and attackId ~= nil
+	s.charged = not strikeNow and (attackId ~= nil or (opts ~= nil and opts.charged == true))
 	s.leap = nil
-	local bossMotion = if s.bossId and attackId then BossMotions.attack(s.bossId, attackId) else nil
-	if bossMotion then
+	s.hold = math.max(0, (opts and opts.hold) or 0)
+	s.turnFrom = if opts then opts.turnFrom else nil
+	s.turnTo = if opts then opts.turnTo else nil
+	s.procedural = opts ~= nil and opts.procedural == true
+	local own = opts and opts.style
+	local bossMotion = if not own and s.bossId and attackId then BossMotions.attack(s.bossId, attackId) else nil
+	if own then
+		s.style = own
+	elseif bossMotion then
 		s.style = bossMotion.style
 		local arc = bossMotion.arc
 		local boss = Bosses.get(s.bossId :: string)

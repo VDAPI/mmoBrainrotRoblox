@@ -3,8 +3,8 @@
 -- the ground or turns, how fast and how wide. The damage of a hit is the cast's (a boss attack's `damage`, a
 -- BossTuning.patterns entry, a monster's regular blow) x the emitter's `share`; a player takes at most `hits` hits of
 -- one cast. Every instance warns >= Logic/Hazards.MIN_WARN s before it can hit (tests/hazards.spec). `look` names the
--- client's look (Vfx/HazardFx), `color` its tint, `pose` the boss attack whose gesture the caster plays (a pattern
--- cast on its own; a replaced attack poses as itself, one added to an attack leaves the pose to it), `sound` / `impactSound` Data/Sfx keys. Data only (Lune).
+-- client's look (Vfx/HazardFx), `color` its tint, `sound` / `impactSound` Data/Sfx keys; the caster's gesture is the
+-- boss's Data/BossMotions.patterns entry (S159a, timed by Logic/HazardGesture). Data only (Lune).
 
 local Hazards = require("../Logic/Hazards")
 
@@ -58,7 +58,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- three hand axes in a fan at a kiting fighter; they come back to the throw (BossTuning.extra far)
 	gr_axeThrow = pattern({
-		pose = "sweep",
 		look = "axe",
 		color = "#B8B0A0",
 		emitters = {
@@ -79,7 +78,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- behind the goblins' shield: five axes fan out from the throne and come back
 	gr_axeFan = pattern({
-		pose = "sweep",
 		look = "axe",
 		color = "#B8B0A0",
 		emitters = {
@@ -124,12 +122,11 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- phase 2-3: goblin bombs lobbed at random fighters, landing round them with a fizzing circle
 	gr_bombs = pattern({
-		pose = "boulder",
 		look = "bomb",
 		color = "#E8862A",
 		hits = 2,
 		hitGap = 0.4,
-		impactSound = "boss.grimrok.attack",
+		impactSound = "skill.combustion", -- S159a: the bombs burst audibly (boss.grimrok.attack has no sound yet)
 		emitters = { { kind = "lob", aim = "target", count = 2, every = 0.25, radius = 5, scatter = 7, delay = 1.4 } },
 	}),
 
@@ -171,7 +168,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- behind the guards' shield (and phase 3): a turning spiral of slow orbs from the queen
 	mv_spiral = pattern({
-		pose = "shadowBolt",
 		look = "soulOrb",
 		color = "#9E6BFF",
 		hits = 2,
@@ -195,7 +191,6 @@ local PATTERNS: { [string]: Pattern } = {
 	-- Azgor, Lord of Flames -------------------------------------------------------------------------------------------
 	-- a wall of fire runs along the lane (replaces fireWave's line)
 	az_flameWall = pattern({
-		pose = "fireWave",
 		look = "flameWall",
 		color = "#FF6A1A",
 		big = true,
@@ -210,7 +205,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- five fireballs in a fan at a kiting fighter (BossTuning.extra far)
 	az_fireballs = pattern({
-		pose = "meteor",
 		look = "fireball",
 		color = "#FF8A2A",
 		emitters = {
@@ -230,7 +224,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- phase 2-3: two balls of magma bouncing round the arena
 	az_magma = pattern({
-		pose = "eruption",
 		look = "magma",
 		color = "#FF5A10",
 		hits = 2,
@@ -254,7 +247,6 @@ local PATTERNS: { [string]: Pattern } = {
 	-- Vaelgrath, the Frost Dragon -------------------------------------------------------------------------------------
 	-- ice comets fall on every fighter (replaces blizzard's circles)
 	vg_iceComets = pattern({
-		pose = "blizzard",
 		look = "iceShard",
 		color = "#9FDCFF",
 		emitters = { { kind = "lob", aim = "target", radius = 6 } },
@@ -280,7 +272,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- three homing frost orbs at a kiting fighter (BossTuning.extra far)
 	vg_frostOrbs = pattern({
-		pose = "blizzard",
 		look = "frostOrb",
 		color = "#7FD4FF",
 		emitters = {
@@ -301,7 +292,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- in the air (phase 2) and in phase 3: ice shards fall round random fighters
 	vg_skyShards = pattern({
-		pose = "iceComet",
 		look = "iceShard",
 		color = "#BDE9FF",
 		hits = 2,
@@ -333,7 +323,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- the ice shard rain: small shards over the whole field, staggered, each with its own circle
 	hv_shardRain = pattern({
-		pose = "avalanche",
 		look = "iceShard",
 		color = "#D6F0FF",
 		hits = 2,
@@ -345,7 +334,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- the frost breath: a cone that turns across the front of the giant
 	hv_frostBreath = pattern({
-		pose = "endlessWinter",
 		look = "frostBreath",
 		color = "#9FE4FF",
 		big = true,
@@ -364,7 +352,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- phase 2-3: two glacier walls rise at the arena's edge and slide across it, each with one gap to slip through
 	hv_glacierWalls = pattern({
-		pose = "glacierStomp",
 		look = "iceWall",
 		color = "#A8DCFF",
 		big = true,
@@ -385,7 +372,6 @@ local PATTERNS: { [string]: Pattern } = {
 	}),
 	-- a fan of ice javelins hurled at a fighter (and a second at another)
 	hv_iceVolley = pattern({
-		pose = "boulderToss",
 		look = "icicle",
 		color = "#CFEFFF",
 		emitters = {

@@ -23,7 +23,10 @@ export type Style = {
 	arms: Arms?,
 	hindWindup: RolePose?, -- hind legs (and hind spider legs) at full windup
 	hindStrike: RolePose?,
-	left: { windup: RolePose?, strike: RolePose? }?, -- the left arm instead of the mirrored "arm" entry
+	left: { windup: RolePose?, strike: RolePose?, follow: RolePose? }?, -- the left arm instead of the mirrored "arm"
+	-- S159a: the pose after the blow (a throw's arm across the body, a slam's bent back): the strike cross-fades into it
+	-- over the recovery, it holds Gait.FOLLOW_HOLD s and settles (Gait.followOf); a held channel keeps the strike first
+	follow: { [string]: RolePose }?,
 	tremble: number?, -- radians of shaking at the end of a long windup (charging up), default 0
 	spin: number?, -- body turns (full circles) during the strike (whirlwind)
 	hop: number?, -- studs of the visual jump at the blow (pounce, slam)
@@ -557,13 +560,6 @@ local STYLES: { [string]: Style } = {
 		arms = "both",
 		tremble = 0.04,
 	}),
-	-- Azgor fire wave: the sword low behind on the side of the target, a swing from below upwards along the line
-	az_fireWave = style({
-		windup = { arm = P(-0.8, 0, 0.3, 0, 0, 0), body = P(-0.1, -0.4, 0, 0, -0.1, 0) },
-		strike = { arm = P(2.2, 0, 0, 0, 0, 0), body = P(0.15, 0.3, 0, 0, 0.1, 0) },
-		arms = "right",
-		dash = 0.4,
-	}),
 	-- Azgor flame cleave: the sword over the right shoulder, the left hand forward; a diagonal cut down
 	az_cleave = style({
 		windup = { arm = P(2.4, 0, 0.5, 0, 0, 0), body = P(0.1, -0.3, 0, 0, 0, 0) },
@@ -576,6 +572,8 @@ local STYLES: { [string]: Style } = {
 	az_meteor = style({
 		windup = { arm = P(2.5, 0, 0.3, 0, 0, 0), head = P(0.6, 0, 0, 0, 0, 0), body = P(0.15, 0, 0, 0, 0.1, 0) },
 		strike = { arm = P(0.3, 0, 0.2, 0, 0, 0), head = P(0, 0, 0, 0, 0, 0), body = P(-0.15, 0, 0, 0, 0, 0) },
+		-- S159a: crouched with the hands low while the meteors burn out
+		follow = { arm = P(0.1, 0, 0.4, 0, 0, 0), body = P(-0.25, 0, 0, 0, -0.3, 0), head = P(-0.2, 0, 0, 0, 0, 0) },
 		arms = "both",
 		tremble = 0.04,
 	}),
@@ -616,22 +614,6 @@ local STYLES: { [string]: Style } = {
 		windup = { body = P(0, 0.7, 0, 0, 0, 0), tail = P(0, -0.8, 0, 0, 0, 0), head = P(0, -0.4, 0, 0, 0, 0) },
 		strike = { body = P(0, -0.8, 0, 0, -0.1, 0), tail = P(0, 1.0, 0, 0, 0, 0), head = P(0, 0.3, 0, 0, 0, 0) },
 	}),
-	-- Vaelgrath blizzard: the head up, the maw open, the wings wide; a roar into the sky
-	vg_blizzard = style({
-		windup = {
-			head = P(1.0, 0, 0, 0, 0, 0),
-			jaw = P(-0.8, 0, 0, 0, 0, 0),
-			flap = P(0, 0, 0.8, 0, 0, 0),
-			body = P(0.3, 0, 0, 0, 0.2, 0),
-		},
-		strike = {
-			head = P(1.2, 0, 0, 0, 0, 0),
-			jaw = P(-0.9, 0, 0, 0, 0, 0),
-			flap = P(0, 0, 0.5, 0, 0, 0),
-			body = P(0.35, 0, 0, 0, 0.25, 0),
-		},
-		tremble = 0.05,
-	}),
 	-- Vaelgrath glacial ring: rears up on the hind legs with the wings spread; the front legs hit the ground
 	vg_glacial = style({
 		windup = {
@@ -649,6 +631,538 @@ local STYLES: { [string]: Style } = {
 		hindWindup = P(-0.5, 0, 0, 0, 0, 0),
 		arms = "both",
 		tremble = 0.05,
+	}),
+	-- S159a: gestures of the dodgeable patterns (Data/BossMotions.patterns): the windup is the anticipation over the
+	-- pattern's warning, the strike peaks when the first projectile leaves (or the first rock lands), `follow` is the
+	-- follow-through; a channel (a spiral, a breath, a rain) holds the strike for its length (Logic/HazardGesture).
+	-- Grimrok axe throw: the hand axe cocked behind the head, the shield arm points at the target; the whip forward
+	-- with a step, the arm follows through low across the body
+	gr_axeThrow = style({
+		windup = {
+			arm = P(2.5, 0, 0.35, 0, 0, 0),
+			body = P(0.12, -0.55, 0, 0, 0, 0.25),
+			head = P(0.1, 0.2, 0, 0, 0, 0),
+		},
+		strike = {
+			arm = P(0.9, 0, -0.35, 0, 0, 0),
+			body = P(-0.2, 0.6, 0, 0, 0, -0.1),
+			head = P(-0.1, -0.1, 0, 0, 0, 0),
+		},
+		follow = {
+			arm = P(0.5, 0, -0.5, 0, 0, 0),
+			body = P(-0.18, 0.45, 0, 0, -0.08, 0),
+			head = P(-0.05, 0, 0, 0, 0, 0),
+		},
+		left = {
+			windup = P(1.45, 0, -0.05, 0, 0, 0),
+			strike = P(0.3, 0, 0.25, 0, 0, 0),
+			follow = P(0.2, 0, 0.3, 0, 0, 0),
+		},
+		arms = "right",
+		dash = 0.5,
+	}),
+	-- Grimrok axe fan (behind the shield): both arms crossed over the chest in a crouch, then flung wide as the five
+	-- axes fly out of the hands; the arms stay spread while they come back
+	gr_axeFan = style({
+		windup = {
+			arm = P(1.1, 0, -0.75, 0, 0, 0),
+			body = P(-0.1, -0.3, 0, 0, -0.3, 0.1),
+			head = P(-0.2, 0, 0, 0, 0, 0),
+		},
+		strike = { arm = P(1.0, 0, 1.5, 0, 0, 0), body = P(0.12, 0.2, 0, 0, 0.1, 0), head = P(0.3, 0, 0, 0, 0, 0) },
+		follow = { arm = P(0.6, 0, 1.3, 0, 0, 0), body = P(0.05, 0, 0, 0, 0, 0), head = P(0.15, 0, 0, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.03,
+	}),
+	-- Grimrok bombs: bent down to the belt, a bomb in each hand; an underhand lob up and over, the hands stay high
+	gr_bombLob = style({
+		windup = {
+			arm = P(-0.5, 0, 0.25, 0, 0, 0),
+			body = P(-0.3, 0.2, 0, 0, -0.2, 0),
+			head = P(-0.3, 0, 0, 0, 0, 0),
+		},
+		strike = { arm = P(2.3, 0, 0.15, 0, 0, 0), body = P(0.2, -0.1, 0, 0, 0.15, 0.1), head = P(0.35, 0, 0, 0, 0, 0) },
+		follow = { arm = P(1.8, 0, 0.2, 0, 0, 0), body = P(0.1, 0, 0, 0, 0.05, 0), head = P(0.25, 0, 0, 0, 0, 0) },
+		left = {
+			windup = P(-0.3, 0, 0.2, 0, 0, 0),
+			strike = P(1.6, 0, 0.2, 0, 0, 0),
+			follow = P(1.2, 0, 0.25, 0, 0, 0),
+		},
+		arms = "right",
+	}),
+	-- Grimrok ground splitter: the cleaver high over the head in both hands, leaning back; down into the ground as the
+	-- crack runs, the back stays bent over the buried blade
+	gr_fissure = style({
+		windup = { arm = P(2.5, 0, 0.05, 0, 0, 0), body = P(0.3, 0, 0, 0, 0.1, 0.15), head = P(0.3, 0, 0, 0, 0, 0) },
+		strike = {
+			arm = P(-0.1, 0, 0.1, 0, 0, 0),
+			body = P(-0.5, 0, 0, 0, -0.35, -0.15),
+			head = P(-0.35, 0, 0, 0, 0, 0),
+		},
+		follow = { arm = P(0, 0, 0.15, 0, 0, 0), body = P(-0.45, 0, 0, 0, -0.3, -0.1), head = P(-0.25, 0, 0, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.04,
+		dash = 0.4,
+	}),
+	-- Morvane soul orbs: she rises with the free hand up, gathering the souls above it, the scythe low behind; the hand
+	-- sends them at her targets and stays pointing after them
+	mv_soulOrbs = style({
+		windup = {
+			arm = P(-0.3, 0, 0.35, 0, 0, 0),
+			body = P(0.15, 0, 0, 0, 0.5, 0.1),
+			head = P(0.35, 0, 0, 0, 0, 0),
+		},
+		strike = {
+			arm = P(0.2, 0, 0.2, 0, 0, 0),
+			body = P(-0.15, 0.1, 0, 0, 0.3, -0.2),
+			head = P(-0.15, 0, 0, 0, 0, 0),
+		},
+		follow = { arm = P(0.1, 0, 0.25, 0, 0, 0), body = P(-0.08, 0, 0, 0, 0.2, 0), head = P(-0.05, 0, 0, 0, 0, 0) },
+		left = {
+			windup = P(2.2, 0, 0.5, 0, 0, 0),
+			strike = P(1.5, 0, -0.15, 0, 0, 0),
+			follow = P(1.4, 0, 0.1, 0, 0, 0),
+		},
+		arms = "right",
+		tremble = 0.03,
+	}),
+	-- Morvane soul volley: both hands drawn to the chest, then pushed out; the fingers stay fanned like the orbs
+	mv_soulVolley = style({
+		windup = { arm = P(0.5, 0, -0.5, 0, 0, 0), body = P(0.1, 0, 0, 0, -0.1, 0.2), head = P(-0.2, 0, 0, 0, 0, 0) },
+		strike = { arm = P(1.7, 0, 0.3, 0, 0, 0), body = P(-0.15, 0, 0, 0, 0, -0.2), head = P(0.05, 0, 0, 0, 0, 0) },
+		follow = { arm = P(1.55, 0, 0.55, 0, 0, 0), body = P(-0.1, 0, 0, 0, 0, -0.1) },
+		arms = "both",
+		dash = 0.4,
+	}),
+	-- Morvane spiral: bowed, gathering, then she rises with the arms flung wide and turns with the spiral (the body
+	-- turn of Logic/HazardGesture.turnOf) while it pours out
+	mv_spiral = style({
+		windup = { arm = P(0.4, 0, 0.3, 0, 0, 0), body = P(-0.2, 0, 0, 0, 0.2, 0), head = P(-0.45, 0, 0, 0, 0, 0) },
+		strike = { arm = P(1.3, 0, 1.45, 0, 0, 0), body = P(0.15, 0, 0, 0, 0.9, 0), head = P(0.45, 0, 0, 0, 0, 0) },
+		follow = { arm = P(0.6, 0, 0.9, 0, 0, 0), body = P(0, 0, 0, 0, 0.3, 0), head = P(0.1, 0, 0, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.05,
+	}),
+	-- Azgor flame wall: the sword dragged low behind, crouched and turned; ripped up along the lane, held high after
+	az_flameWall = style({
+		windup = {
+			arm = P(-0.9, 0, 0.45, 0, 0, 0),
+			body = P(-0.15, -0.5, 0, 0, -0.25, 0.15),
+			head = P(-0.1, 0, 0, 0, 0, 0),
+		},
+		strike = {
+			arm = P(2.3, 0, -0.25, 0, 0, 0),
+			body = P(0.15, 0.45, 0, 0, 0.1, -0.2),
+			head = P(0.15, 0, 0, 0, 0, 0),
+		},
+		follow = { arm = P(2.0, 0, 0.1, 0, 0, 0), body = P(0.08, 0.35, 0, 0, 0.05, 0), head = P(0.1, 0, 0, 0, 0, 0) },
+		left = { windup = P(0.6, 0, 0.6, 0, 0, 0), strike = P(0.3, 0, 0.9, 0, 0, 0), follow = P(0.3, 0, 0.8, 0, 0, 0) },
+		arms = "right",
+		dash = 0.5,
+	}),
+	-- Azgor fireballs: both hands cupped at the hip, the body wound up and shaking; a push of both palms, the hands
+	-- stay spread like the fan
+	az_fireballs = style({
+		windup = {
+			arm = P(0.6, 0, -0.6, 0, 0, 0),
+			body = P(0.05, -0.6, 0, 0, -0.15, 0.2),
+			head = P(0, -0.3, 0, 0, 0, 0),
+		},
+		strike = {
+			arm = P(1.65, 0, 0.15, 0, 0, 0),
+			body = P(-0.12, 0.25, 0, 0, 0, -0.25),
+			head = P(-0.05, 0.1, 0, 0, 0, 0),
+		},
+		follow = { arm = P(1.5, 0, 0.45, 0, 0, 0), body = P(-0.08, 0.15, 0, 0, 0, -0.15) },
+		arms = "both",
+		tremble = 0.04,
+		dash = 0.5,
+	}),
+	-- Azgor magma: both fists high over the head, then a hop and both fists into the ground (the balls burst out of
+	-- it); he stays crouched over them
+	az_magmaSlam = style({
+		windup = { arm = P(2.5, 0, 0.2, 0, 0, 0), body = P(0.25, 0, 0, 0, 0.25, 0.1), head = P(0.3, 0, 0, 0, 0, 0) },
+		strike = { arm = P(0, 0, 0.3, 0, 0, 0), body = P(-0.45, 0, 0, 0, -0.45, -0.1), head = P(-0.3, 0, 0, 0, 0, 0) },
+		follow = { arm = P(0.1, 0, 0.35, 0, 0, 0), body = P(-0.4, 0, 0, 0, -0.4, 0), head = P(-0.2, 0, 0, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.05,
+		hop = 0.7,
+	}),
+	-- Vaelgrath ice comets: the head up with the maw open and the wings wide, calling them down; the head snaps to the
+	-- ground at the first landing and watches the rest fall
+	vg_comets = style({
+		windup = {
+			head = P(1.1, 0, 0, 0, 0, 0),
+			jaw = P(-0.8, 0, 0, 0, 0, 0),
+			flap = P(0, 0, 0.95, 0, 0, 0),
+			body = P(0.35, 0, 0, 0, 0.3, 0.1),
+			segment = P(0.3, 0, 0, 0, 0, 0),
+		},
+		strike = {
+			head = P(-0.55, 0, 0, 0, 0, 0),
+			jaw = P(-0.3, 0, 0, 0, 0, 0),
+			flap = P(0, 0, -0.3, 0, 0, 0),
+			body = P(-0.15, 0, 0, 0, -0.1, -0.2),
+			segment = P(-0.25, 0, 0, 0, 0, 0),
+		},
+		follow = {
+			head = P(-0.35, 0, 0, 0, 0, 0),
+			jaw = P(-0.5, 0, 0, 0, 0, 0),
+			flap = P(0, 0, 0.25, 0, 0, 0),
+			body = P(-0.08, 0, 0, 0, 0, 0),
+		},
+		tremble = 0.05,
+	}),
+	-- Vaelgrath avalanche: rears up on the hind legs with the wings spread, the front legs crash down and the
+	-- snowballs roll out; it roars after them
+	vg_avalanche = style({
+		windup = {
+			body = P(0.85, 0, 0, 0, 0.55, 0.25),
+			leg = P(1.3, 0, 0.1, 0, 0, 0),
+			flap = P(0, 0, 0.85, 0, 0, 0),
+			head = P(-0.2, 0, 0, 0, 0, 0),
+			jaw = P(-0.4, 0, 0, 0, 0, 0),
+		},
+		strike = {
+			body = P(-0.25, 0, 0, 0, -0.2, -0.4),
+			leg = P(-0.35, 0, 0, 0, 0, 0),
+			flap = P(0, 0, -0.2, 0, 0, 0),
+			head = P(-0.35, 0, 0, 0, 0, 0),
+			jaw = P(-0.7, 0, 0, 0, 0, 0),
+		},
+		follow = {
+			body = P(-0.18, 0, 0, 0, -0.15, -0.2),
+			head = P(0.1, 0, 0, 0, 0, 0),
+			jaw = P(-0.85, 0, 0, 0, 0, 0),
+			flap = P(0, 0, 0.4, 0, 0, 0),
+		},
+		hindWindup = P(-0.5, 0, 0, 0, 0, 0),
+		arms = "both",
+		tremble = 0.04,
+		dash = 0.6,
+	}),
+	-- Vaelgrath frost orbs: the neck coils back with the maw shut, then the spit; the maw stays open on the orbs
+	vg_orbSpit = style({
+		windup = {
+			segment = P(0.45, 0, 0, 0, 0, 0),
+			head = P(0.75, 0, 0, 0, 0, 0),
+			jaw = P(-0.05, 0, 0, 0, 0, 0),
+			body = P(0.2, 0, 0, 0, 0.1, 0.3),
+			flap = P(0, 0, 0.35, 0, 0, 0),
+		},
+		strike = {
+			segment = P(-0.35, 0, 0, 0, 0, 0),
+			head = P(-0.45, 0, 0, 0, 0, 0),
+			jaw = P(-0.9, 0, 0, 0, 0, 0),
+			body = P(-0.12, 0, 0, 0, 0, -0.25),
+		},
+		follow = { head = P(-0.25, 0, 0, 0, 0, 0), jaw = P(-0.6, 0, 0, 0, 0, 0), segment = P(-0.2, 0, 0, 0, 0, 0) },
+		tremble = 0.03,
+		dash = 0.3,
+	}),
+	-- Vaelgrath shard rain: the wings as high as they go, the head up; a hard beat down that shakes the shards loose,
+	-- then the wings rise again over the falling ice
+	vg_wingStorm = style({
+		windup = {
+			flap = P(0, 0, 1.05, 0, 0, 0),
+			body = P(0.3, 0, 0, 0, 0.65, 0.15),
+			head = P(0.6, 0, 0, 0, 0, 0),
+			jaw = P(-0.6, 0, 0, 0, 0, 0),
+		},
+		strike = {
+			flap = P(0, 0, -0.75, 0, 0, 0),
+			body = P(-0.05, 0, 0, 0, -0.15, 0),
+			head = P(0.2, 0, 0, 0, 0, 0),
+		},
+		follow = {
+			flap = P(0, 0, 0.5, 0, 0, 0),
+			body = P(0.1, 0, 0, 0, 0.3, 0),
+			head = P(0.4, 0, 0, 0, 0, 0),
+			jaw = P(-0.5, 0, 0, 0, 0, 0),
+		},
+		tremble = 0.03,
+	}),
+	-- Hrimvald boulder throw: squatting with the boulder over the head in both hands, leaning back; heaved forward
+	-- with a step, the arms follow it out
+	hv_boulderThrow = style({
+		windup = { arm = P(2.5, 0, 0.25, 0, 0, 0), body = P(0.3, 0, 0, 0, -0.25, 0.3), head = P(0.3, 0, 0, 0, 0, 0) },
+		strike = { arm = P(0.8, 0, 0.05, 0, 0, 0), body = P(-0.35, 0, 0, 0, 0, -0.4), head = P(-0.25, 0, 0, 0, 0, 0) },
+		follow = { arm = P(0.6, 0, 0.2, 0, 0, 0), body = P(-0.3, 0, 0, 0, -0.1, -0.25), head = P(-0.1, 0, 0, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.03,
+		dash = 0.6,
+	}),
+	-- Hrimvald ice spikes: the club high over the right shoulder in both hands, turned back; slammed into the ground,
+	-- bent over it while the spikes run
+	hv_spikeSlam = style({
+		windup = {
+			arm = P(2.5, 0, -0.1, 0, 0, 0),
+			body = P(0.25, -0.35, 0, 0, 0.1, 0.15),
+			head = P(0.25, 0, 0, 0, 0, 0),
+		},
+		strike = {
+			arm = P(-0.15, 0, 0.15, 0, 0, 0),
+			body = P(-0.5, 0.1, 0, 0, -0.4, -0.2),
+			head = P(-0.35, 0, 0, 0, 0, 0),
+		},
+		follow = {
+			arm = P(0, 0, 0.2, 0, 0, 0),
+			body = P(-0.45, 0.05, 0, 0, -0.4, -0.1),
+			head = P(-0.25, 0, 0, 0, 0, 0),
+		},
+		arms = "both",
+		tremble = 0.04,
+		hop = 0.5,
+	}),
+	-- Hrimvald ice blocks: both arms raised wide to the sky, shaking; pulled down hard as the blocks land
+	hv_iceCall = style({
+		windup = { arm = P(2.5, 0, 1.0, 0, 0, 0), head = P(0.7, 0, 0, 0, 0, 0), body = P(0.25, 0, 0, 0, 0.15, 0) },
+		strike = { arm = P(0.5, 0, 0.35, 0, 0, 0), body = P(-0.3, 0, 0, 0, -0.35, 0), head = P(-0.2, 0, 0, 0, 0, 0) },
+		follow = { arm = P(0.3, 0, 0.5, 0, 0, 0), body = P(-0.25, 0, 0, 0, -0.3, 0), head = P(-0.1, 0, 0, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.05,
+	}),
+	-- Hrimvald shard rain: the club raised to the sky, the free hand open; held up, shaking, while the shards fall
+	hv_shardCall = style({
+		windup = { arm = P(2.2, 0, 0.3, 0, 0, 0), head = P(0.5, 0, 0, 0, 0, 0), body = P(0.15, 0, 0, 0, 0.1, 0) },
+		strike = { arm = P(2.5, 0, 0.1, 0, 0, 0), head = P(0.7, 0, 0, 0, 0, 0), body = P(0.25, 0, 0, 0, 0.25, 0) },
+		follow = { arm = P(2.0, 0, 0.3, 0, 0, 0), head = P(0.3, 0, 0, 0, 0, 0), body = P(0.1, 0, 0, 0, 0.1, 0) },
+		left = { windup = P(0.8, 0, 0.9, 0, 0, 0), strike = P(1.0, 0, 1.1, 0, 0, 0), follow = P(0.5, 0, 0.6, 0, 0, 0) },
+		arms = "right",
+		tremble = 0.05,
+	}),
+	-- Hrimvald frost breath: a deep breath with the chest up and the arms back, then the head forward and the breath
+	-- turns with the body (Logic/HazardGesture.turnOf) across the front
+	hv_breath = style({
+		windup = { body = P(0.35, 0, 0, 0, 0.15, 0.25), head = P(0.7, 0, 0, 0, 0, 0), arm = P(-0.5, 0, 0.5, 0, 0, 0) },
+		strike = {
+			body = P(-0.2, 0, 0, 0, -0.05, -0.15),
+			head = P(-0.35, 0, 0, 0, 0, 0),
+			arm = P(0.4, 0, 0.7, 0, 0, 0),
+		},
+		follow = { body = P(-0.05, 0, 0, 0, 0, 0), head = P(-0.1, 0, 0, 0, 0, 0), arm = P(0.2, 0, 0.4, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.03,
+	}),
+	-- Hrimvald ice javelins: the right arm cocked far back, the left points, the body turned away; the hurl through,
+	-- the arm follows low
+	hv_javelins = style({
+		windup = { arm = P(2.5, 0, 0.65, 0, 0, 0), body = P(0.15, -0.75, 0, 0, 0, 0.3), head = P(0, 0.35, 0, 0, 0, 0) },
+		strike = {
+			arm = P(0.85, 0, -0.45, 0, 0, 0),
+			body = P(-0.25, 0.8, 0, 0, 0, -0.2),
+			head = P(-0.1, -0.2, 0, 0, 0, 0),
+		},
+		follow = { arm = P(0.5, 0, -0.55, 0, 0, 0), body = P(-0.22, 0.55, 0, 0, -0.1, -0.1) },
+		left = {
+			windup = P(1.5, 0, -0.1, 0, 0, 0),
+			strike = P(0.2, 0, 0.3, 0, 0, 0),
+			follow = P(0.1, 0, 0.35, 0, 0, 0),
+		},
+		arms = "right",
+		dash = 0.7,
+	}),
+	-- Hrimvald glacier walls: the arms wide and rising, shaking; a jump and both fists down at the arena's edge, then
+	-- the arms push outwards like the walls
+	hv_wallRise = style({
+		windup = { arm = P(1.6, 0, 1.35, 0, 0, 0), body = P(0.2, 0, 0, 0, 0.3, 0), head = P(0.5, 0, 0, 0, 0, 0) },
+		strike = { arm = P(0.4, 0, 0.4, 0, 0, 0), body = P(-0.35, 0, 0, 0, -0.45, 0), head = P(-0.2, 0, 0, 0, 0, 0) },
+		follow = { arm = P(1.2, 0, 0.9, 0, 0, 0), body = P(-0.1, 0, 0, 0, -0.2, 0), head = P(0, 0, 0, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.05,
+		hop = 0.9,
+	}),
+	-- Hrimvald glacier stomp (its shock ring rides on it): a crouch with the arms out, a jump and the stomp, the arms
+	-- stay out for balance while the ring runs
+	hv_stomp = style({
+		windup = { body = P(0.15, 0, 0, 0, -0.3, 0.1), arm = P(1.6, 0, 0.9, 0, 0, 0), head = P(0.2, 0, 0, 0, 0, 0) },
+		strike = { body = P(-0.25, 0, 0, 0, -0.35, 0), arm = P(0.2, 0, 0.7, 0, 0, 0), head = P(-0.25, 0, 0, 0, 0, 0) },
+		follow = { body = P(-0.2, 0, 0, 0, -0.3, 0), arm = P(0.3, 0, 0.8, 0, 0, 0), head = P(-0.1, 0, 0, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.04,
+		hop = 1.0,
+	}),
+	-- S159a: boss roars (only `windup`: the roar envelope); `*_rage` roars into the last phase
+	gr_roar = style({
+		windup = {
+			arm = P(2.4, 0, 0.6, 0, 0, 0),
+			head = P(0.55, 0, 0, 0, 0, 0),
+			jaw = P(-0.6, 0, 0, 0, 0, 0),
+			body = P(0.25, 0, 0, 0, 0.15, 0.1),
+		},
+		strike = {},
+		left = { windup = P(0.9, 0, 1.0, 0, 0, 0) },
+		arms = "right",
+	}),
+	gr_rage = style({
+		windup = {
+			arm = P(1.2, 0, 1.3, 0, 0, 0),
+			head = P(0.35, 0, 0, 0, 0, 0),
+			jaw = P(-0.7, 0, 0, 0, 0, 0),
+			body = P(-0.2, 0, 0, 0, -0.25, 0),
+		},
+		strike = {},
+		arms = "both",
+	}),
+	mv_wail = style({
+		windup = {
+			arm = P(1.1, 0, 1.4, 0, 0, 0),
+			head = P(0.75, 0, 0, 0, 0, 0),
+			jaw = P(-0.6, 0, 0, 0, 0, 0),
+			body = P(0.25, 0, 0, 0, 0.9, 0),
+		},
+		strike = {},
+		arms = "both",
+	}),
+	mv_rage = style({
+		windup = {
+			arm = P(2.5, 0, 0.6, 0, 0, 0),
+			head = P(0.5, 0, 0, 0, 0, 0),
+			jaw = P(-0.7, 0, 0, 0, 0, 0),
+			body = P(0.1, 0, 0, 0, 1.1, 0),
+		},
+		strike = {},
+		arms = "both",
+	}),
+	az_roar = style({
+		windup = {
+			arm = P(0.6, 0, 1.1, 0, 0, 0),
+			head = P(0.6, 0, 0, 0, 0, 0),
+			jaw = P(-0.6, 0, 0, 0, 0, 0),
+			body = P(0.3, 0, 0, 0, 0.1, 0.15),
+		},
+		strike = {},
+		arms = "both",
+	}),
+	az_rage = style({
+		windup = {
+			arm = P(2.3, 0, 0.8, 0, 0, 0),
+			head = P(0.7, 0, 0, 0, 0, 0),
+			jaw = P(-0.7, 0, 0, 0, 0, 0),
+			body = P(0.2, 0, 0, 0, 0.25, 0),
+		},
+		strike = {},
+		arms = "both",
+	}),
+	vg_roar = style({
+		windup = {
+			body = P(0.75, 0, 0, 0, 0.45, 0.2),
+			head = P(0.95, 0, 0, 0, 0, 0),
+			jaw = P(-0.95, 0, 0, 0, 0, 0),
+			flap = P(0, 0, 1.0, 0, 0, 0),
+			leg = P(1.0, 0, 0.1, 0, 0, 0),
+			segment = P(0.35, 0, 0, 0, 0, 0),
+			tail = P(0.3, 0, 0, 0, 0, 0),
+		},
+		strike = {},
+		hindWindup = P(-0.4, 0, 0, 0, 0, 0),
+		arms = "both",
+	}),
+	vg_rage = style({
+		windup = {
+			body = P(-0.15, 0, 0, 0, -0.1, 0),
+			head = P(0.25, 0, 0, 0, 0, 0),
+			jaw = P(-0.9, 0, 0, 0, 0, 0),
+			flap = P(0, 0, 0.9, 0, 0, 0),
+			leg = P(0.3, 0, 0, 0, 0, 0),
+			segment = P(-0.2, 0, 0, 0, 0, 0),
+		},
+		strike = {},
+		arms = "both",
+	}),
+	hv_roar = style({
+		windup = {
+			arm = P(1.3, 0, 1.2, 0, 0, 0),
+			head = P(0.65, 0, 0, 0, 0, 0),
+			jaw = P(-0.6, 0, 0, 0, 0, 0),
+			body = P(0.3, 0, 0, 0, 0.15, 0.15),
+		},
+		strike = {},
+		arms = "both",
+	}),
+	hv_rage = style({
+		windup = {
+			arm = P(2.5, 0, 0.5, 0, 0, 0),
+			head = P(0.6, 0, 0, 0, 0, 0),
+			jaw = P(-0.7, 0, 0, 0, 0, 0),
+			body = P(0.2, 0, 0, 0, 0.2, 0),
+		},
+		strike = {},
+		arms = "both",
+	}),
+	-- S159a: the draw before a regular ranged blow (RANGED; the "aw" event's shot), short windups (Data/Combat.basicWind)
+	-- a bow: the bow arm out, the string hand drawn back past the cheek, the body side on; the release flicks it back
+	bowDraw = style({
+		windup = { arm = P(1.5, 0, 0.6, 0, 0, 0), body = P(0, -0.35, 0, 0, 0, 0), head = P(0, 0.3, 0, 0, 0, 0) },
+		strike = { arm = P(1.2, 0, 0.9, 0, 0, 0), body = P(-0.05, -0.3, 0, 0, 0, 0.05), head = P(0, 0.25, 0, 0, 0, 0) },
+		left = { windup = P(1.55, 0, -0.1, 0, 0, 0), strike = P(1.5, 0, -0.1, 0, 0, 0) },
+		arms = "right",
+	}),
+	-- a staff / wand / bare hand: raised with the bolt gathering, thrust at the target, held out after it
+	castBolt = style({
+		windup = { arm = P(2.0, 0, 0.2, 0, 0, 0), body = P(0.12, 0, 0, 0, 0, 0.15), head = P(0.2, 0, 0, 0, 0, 0) },
+		strike = { arm = P(1.45, 0, -0.05, 0, 0, 0), body = P(-0.12, 0, 0, 0, 0, -0.15), head = P(-0.1, 0, 0, 0, 0, 0) },
+		follow = { arm = P(1.3, 0, 0, 0, 0, 0), body = P(-0.05, 0, 0, 0, 0, 0) },
+		arms = "right",
+		tremble = 0.03,
+	}),
+	-- an overhand throw (a rock, a dark bolt): cocked behind the head, the other hand points, a step into the throw
+	throwOver = style({
+		windup = { arm = P(2.5, 0, 0.4, 0, 0, 0), body = P(0.1, -0.45, 0, 0, 0, 0.2) },
+		strike = { arm = P(0.7, 0, -0.3, 0, 0, 0), body = P(-0.15, 0.45, 0, 0, 0, -0.15) },
+		follow = { arm = P(0.4, 0, -0.4, 0, 0, 0), body = P(-0.1, 0.3, 0, 0, 0, 0) },
+		left = { windup = P(1.2, 0, 0, 0, 0, 0), strike = P(0.2, 0, 0.2, 0, 0, 0), follow = P(0.1, 0, 0.2, 0, 0, 0) },
+		arms = "right",
+		dash = 0.3,
+	}),
+	-- golems and treants: a two-handed heave from over the head
+	heave = style({
+		windup = { arm = P(2.5, 0, 0.1, 0, 0, 0), body = P(0.25, 0, 0, 0, -0.15, 0.2) },
+		strike = { arm = P(0.9, 0, 0, 0, 0, 0), body = P(-0.3, 0, 0, 0, 0, -0.3) },
+		follow = { arm = P(0.7, 0, 0.1, 0, 0, 0), body = P(-0.2, 0, 0, 0, 0, -0.1) },
+		arms = "both",
+		dash = 0.3,
+	}),
+	-- ghosts: the hands drawn in to the chest as it rises, then pushed out with the curse
+	hex = style({
+		windup = { arm = P(0.4, 0, -0.6, 0, 0, 0), body = P(0.1, 0, 0, 0, 0.3, 0.2), head = P(-0.2, 0, 0, 0, 0, 0) },
+		strike = { arm = P(1.6, 0, 0.25, 0, 0, 0), body = P(-0.15, 0, 0, 0, 0, -0.2), head = P(0.1, 0, 0, 0, 0, 0) },
+		arms = "both",
+		tremble = 0.04,
+	}),
+	-- elementals: the core shrinks back, the shards whirl, then it pushes the bolt out
+	pulseShot = style({
+		windup = { body = P(0, 0, 0, 0, -0.2, 0.3), orbit = P(0, 1.5, 0, 0, 0, 0) },
+		strike = { body = P(-0.1, 0, 0, 0, 0.1, -0.4), orbit = P(0, 2.5, 0, 0, 0, 0) },
+		tremble = 0.05,
+	}),
+	-- birds and bats: the wings swept up and back, the body rises; a beat forward flings the shot
+	featherShot = style({
+		windup = { flap = P(0, 0.4, 0.8, 0, 0, 0), body = P(0.3, 0, 0, 0, 0.35, 0.3), head = P(0.3, 0, 0, 0, 0, 0) },
+		strike = { flap = P(0, -0.5, -0.4, 0, 0, 0), body = P(-0.2, 0, 0, 0, 0, -0.2), head = P(-0.3, 0, 0, 0, 0, 0) },
+		arms = "both",
+	}),
+	-- dragons and wyverns: the neck pulls back, then the spit with the maw open
+	spitShot = style({
+		windup = {
+			segment = P(0.35, 0, 0, 0, 0, 0),
+			head = P(0.6, 0, 0, 0, 0, 0),
+			jaw = P(-0.1, 0, 0, 0, 0, 0),
+			body = P(0.15, 0, 0, 0, 0.1, 0.25),
+		},
+		strike = {
+			segment = P(-0.3, 0, 0, 0, 0, 0),
+			head = P(-0.4, 0, 0, 0, 0, 0),
+			jaw = P(-0.8, 0, 0, 0, 0, 0),
+			body = P(-0.1, 0, 0, 0, 0, -0.2),
+		},
+		tremble = 0.03,
+	}),
+	-- four-legged throwers (an Elite II's rock): the head low to scoop, then tossed up and forward
+	toss = style({
+		windup = { head = P(-0.5, 0, 0, 0, 0, 0), body = P(-0.1, 0, 0, 0, -0.15, 0.2), jaw = P(-0.3, 0, 0, 0, 0, 0) },
+		strike = { head = P(0.6, 0, 0, 0, 0, 0), body = P(0.15, 0, 0, 0, 0.1, -0.2), jaw = P(-0.5, 0, 0, 0, 0, 0) },
+		dash = 0.2,
 	}),
 }
 
@@ -755,6 +1269,31 @@ local KIT_STYLES: { [string]: { [string]: string } } = {
 	treant = { crush = "rootSlam", pounce = "branch", heavyBlow = "branch" },
 	ghost = { crush = "reach", pounce = "reach", heavyBlow = "reach" },
 	elemental = { crush = "nova", pounce = "pulse", heavyBlow = "pulse" },
+}
+
+-- S159a: the draw before a regular ranged blow by plan and shot (the "aw" event's `st`: "arrow" a physical shot,
+-- "bolt" a magic one, "throw" an Elite II's throw); a plan without an entry draws its basic style.
+local RANGED: { [string]: { [string]: string } } = {
+	humanoid = { arrow = "bowDraw", bolt = "castBolt", throw = "throwOver" },
+	beast = { arrow = "throwOver", bolt = "castBolt", throw = "throwOver" },
+	golem = { arrow = "heave", bolt = "castBolt", throw = "heave" },
+	treant = { arrow = "heave", bolt = "heave", throw = "heave" },
+	ghost = { arrow = "hex", bolt = "hex", throw = "hex" },
+	elemental = { arrow = "pulseShot", bolt = "pulseShot", throw = "pulseShot" },
+	bird = { arrow = "featherShot", bolt = "featherShot", throw = "featherShot" },
+	bat = { arrow = "featherShot", bolt = "featherShot", throw = "featherShot" },
+	dragon = { arrow = "spitShot", bolt = "spitShot", throw = "spitShot" },
+	serpent = { arrow = "spit", bolt = "spit", throw = "spit" },
+	lizard = { arrow = "spit", bolt = "spit", throw = "spit" },
+	toad = { arrow = "spit", bolt = "spit", throw = "spit" },
+	spider = { arrow = "spiderSpit", bolt = "spiderSpit", throw = "spiderSpit" },
+	scorpion = { arrow = "sting", bolt = "sting", throw = "sting" },
+	canine = { arrow = "toss", bolt = "toss", throw = "toss" },
+	bear = { arrow = "toss", bolt = "toss", throw = "toss" },
+	boar = { arrow = "toss", bolt = "toss", throw = "toss" },
+	mammoth = { arrow = "toss", bolt = "toss", throw = "toss" },
+	hare = { arrow = "toss", bolt = "toss", throw = "toss" },
+	horse = { arrow = "toss", bolt = "toss", throw = "toss" },
 }
 
 -- Basic attacks of humanoids and beasts by the weapon of their look (Data/MonsterLooks `weapon`).
@@ -888,6 +1427,7 @@ local MonsterMotions = {
 	STYLES = STYLES,
 	PLANS = PLANS,
 	KIT_STYLES = KIT_STYLES,
+	RANGED = RANGED,
 	WEAPON_BASIC = WEAPON_BASIC,
 	DEATH = DEATH,
 }
@@ -908,6 +1448,13 @@ function MonsterMotions.styleFor(plan: string, weapon: string?, abilityId: strin
 		return WEAPON_BASIC[weapon]
 	end
 	return entry.basic
+end
+
+-- S159a: the style of the draw before a regular ranged blow (`shot` "arrow" / "bolt" / "throw"): RANGED[plan][shot],
+-- else the plan's basic style. Nil for a plan without an entry.
+function MonsterMotions.rangedFor(plan: string, weapon: string?, shot: string): string?
+	local own = RANGED[plan]
+	return (own and own[shot]) or MonsterMotions.styleFor(plan, weapon, nil)
 end
 
 -- The death style of a plan (nil for a plan without an entry).

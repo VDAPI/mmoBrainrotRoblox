@@ -50,7 +50,10 @@
 ## Niedokończone (kod)
 
 - **S159 pociski bossów do unikania:** serwer, wzory i rysowanie gotowe, testy zielone; nic nieobejrzane w Studio
-  (czytelność wzorów, gesty `pose`, wygląd ścian lodowca i oddechu Hrimvalda do przejrzenia w AnimLab).
+  (czytelność wzorów, wygląd ścian lodowca i oddechu Hrimvalda do przejrzenia w AnimLab).
+- **S159a gesty bossów:** gest i ryk każdego wzoru, warstwa proceduralna na klipach kości (`Anim/BoneOverlay`), rzut
+  Elity z zamachem; nieobejrzane w Studio: kierunki osi kości rąk Mixamo (znaki obrotów), siła warstwy na klipie
+  idle / walk, wygląd w AnimLab (`/animlab boss <id> <wzór>`, `rage`).
 - **Bestiariusz (S151c):** zakładka okna osiągnięć i przycisk ✪ na HUD gotowe. Bez przeglądu w grze (zakładka na PC i
   telefonie, podgląd 3D wpisu, toast stopnia, miejsce przycisku pod przepustką; telefon w poziomie ma osiągnięcia w szufladzie menu W29). Wiki czeka na
   odświeżenie (tytuły „Znawca …” z `wiki = false`). Ikona kategorii `hud/ach_bestiary` do dorobienia (dziś znak ❦).

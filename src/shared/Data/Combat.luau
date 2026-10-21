@@ -66,7 +66,8 @@ return table.freeze({
 	-- S159 (owner 2026-10-21, "a blow you can see coming"): a monster's regular blow winds up this long before it lands
 	-- (the clients pose the draw, "aw"); the interval between blows stays. A target that stepped farther than
 	-- reach x windReach + windSlack (flat studs) by then is missed. Ranged blows fly as projectiles after the draw.
-	basicWind = table.freeze({ melee = 0.45, ranged = 0.35 }),
+	-- S159a: an Elite II's throw at a fleeing target is drawn back too (a throw / a spell the target can see coming).
+	basicWind = table.freeze({ melee = 0.45, ranged = 0.35, throw = 0.5 }),
 	windReach = 1.5,
 	windSlack = 3,
 

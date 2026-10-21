@@ -24,6 +24,8 @@
 -- ability, Data/BossMotions of each boss attack, Gait.charge for telegraphed attacks, deaths by plan); `mob <kind>
 -- attack2|cast` of an Elite II kind plays its ability with its telegraph, `mob <kind> spawn` the climb of a summon,
 -- `boss <id> roar|death` the phase roar (camera shake, aura flash) and the death pose, a boss leap its arc to the actor;
+-- S159a: `boss <id> rage` the roar into the last phase, `boss <id> <pattern>` a dodgeable pattern's gesture (its own
+-- warning, the channel held, the follow-through);
 -- `floor <grass|snow|cave>` dresses the floor (telegraph readability, Config.AnimLab.floors).
 
 local HttpService = game:GetService("HttpService")
@@ -48,6 +50,10 @@ local LookAnim = require(ReplicatedStorage.Shared.Logic.LookAnim)
 local Anatomy = require(ReplicatedStorage.Shared.Logic.Anatomy)
 local AnatomyPlans = require(ReplicatedStorage.Shared.Logic.Anatomy.Plans)
 local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
+local BossTuning = require(ReplicatedStorage.Shared.Data.BossTuning)
+local HazardGesture = require(ReplicatedStorage.Shared.Logic.HazardGesture)
+local HazardPatterns = require(ReplicatedStorage.Shared.Data.HazardPatterns)
+local Hazards = require(ReplicatedStorage.Shared.Logic.Hazards)
 local MonsterAbilities = require(ReplicatedStorage.Shared.Data.MonsterAbilities)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
 local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
@@ -793,8 +799,8 @@ local function playBoss(command: Command)
 	end
 	local model = placeLook(bossId, look, "boss", boss.look.size)
 	local plan = look.plan
-	-- S117: the phase roar and the death of the boss
-	if attackId == "roar" or attackId == "death" then
+	-- S117: the phase roar and the death of the boss (S159a: `rage` the roar into the last phase)
+	if attackId == "roar" or attackId == "rage" or attackId == "death" then
 		local roar = if def then def.roar.seconds else Config.MonsterLook.roarSeconds
 		subject = {
 			model = model,
@@ -810,14 +816,52 @@ local function playBoss(command: Command)
 				deathSide = 1,
 				hover = hoverOf(plan),
 				plan = plan,
-				roar = if attackId == "roar" then roar else nil,
-				roarStyle = if def then def.roar.style else nil,
+				roar = if attackId ~= "death" then roar else nil,
+				roarStyle = BossMotions.roarStyle(bossId, if attackId == "rage" then 3 else nil),
 			},
 			leap = nil,
 		}
-		if attackId == "roar" then
+		if attackId ~= "death" then
 			Animation.Roar(model)
 		end
+		return
+	end
+	-- S159a: a pattern's gesture over its warning (the attack it replaces: that attack's windup)
+	local gesture = if def then def.patterns[attackId] else nil
+	local pattern = HazardPatterns.get(attackId)
+	if gesture and gesture.style and pattern then
+		local warn = Hazards.MIN_WARN
+		local first = pattern.emitters[1]
+		if first and first.delay then
+			warn = math.max(warn, first.delay)
+		end
+		local tuning = (BossTuning.patterns :: any)[bossId]
+		for replacedId, id in (if tuning and tuning.replace then tuning.replace else {}) :: { [string]: string } do
+			for _, a in boss.attacks do
+				if id == attackId and a.id == replacedId then
+					warn = a.windup
+				end
+			end
+		end
+		local timing = HazardGesture.timing(pattern, warn)
+		subject = {
+			model = model,
+			joints = collect(model),
+			slot = "cast",
+			windup = timing.windup,
+			shift = 0,
+			track = nil,
+			looped = false,
+			keys = MotionKeys.monster(timing.windup),
+			options = {
+				style = gesture.style,
+				charged = true,
+				hold = timing.hold,
+				plan = plan,
+				hover = hoverOf(plan),
+			},
+			leap = nil,
+		}
 		return
 	end
 	local attack: Bosses.Attack? = nil

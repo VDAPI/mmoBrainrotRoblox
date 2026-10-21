@@ -1004,6 +1004,14 @@ nazw obcych) i tabelą własnej drużyny.
   koło z przerwą do przejścia. Zwykłe potwory dystansowe strzelają strzałą albo pociskiem, który można obejść, a
   rzut Elity II to kamień albo mroczny pocisk; atak wręcz ma zamach 0,45 s i trafia tylko, gdy cel nadal jest w zasięgu.
   Mocny cios w gracza: czerwony błysk brzegów ekranu i wstrząs kamery (ustawienie wstrząsu działa).
+- **Gesty bossów** (S159a, `Data/BossMotions.patterns`, `Logic/HazardGesture`): każdy wzór bossa ma własny gest:
+  zamach trwa przez całą zapowiedź, cios wypada dokładnie wtedy, gdy wylatuje pierwszy pocisk (rzucana bomba i głaz
+  wiszą nad głową do rzutu, meteor i odłamki z nieba spadają na cios), wzór ciągły (spirala, oddech, deszcz) trzyma
+  pozę do ostatniego strzału, a ciało obraca się z oddechem i spiralą; potem poza po ciosie (`follow`). Bossowie z
+  modelem i klipami kości też: gest i ryk idą proceduralnie po kościach rąk i głowy oraz po całym ciele (bez wgrywania
+  animacji). Każdy boss ryczy po swojemu, w 3. fazie wściekle, także przy pierwszym ataku na gracza. Dystansowe potwory
+  przed strzałem napinają łuk, unoszą kostur albo pchają dłonie (czar gra klip „cast” modelu), a rzut Elity II ma
+  zamach 0,5 s.
 - Łup wspólny (FIX 2026-10-09, `Loot.rollBossLoot`): bez przedmiotów, tylko złoto i materiały z tabeli bossa (Odłamki i Kryształy Esencji, Rdzeń Legendy, Zwój Ochrony, Zwój Rozwiązania). Przedmioty daje rzut osobisty niżej i drugi przedmiot Fortuny (S60).
 - **Przedmiot osobisty** (FIX 2026-10-09, `Loot.rollBossItem`, każdy zwycięzca dostaje dokładnie jeden przedmiot we własnym worku): Legendarny 6% + 1 pkt. proc. za każde zabicie tego bossa dziś, Mityczny 1% + 1 pkt. proc. (przy 3 zabiciach dziennie średnio 2%, ok. 50 zabić do pierwszego Mityka); bez progów litości. **Osobisty Mityk u Vaelgratha** (S94, plan 8.4): 0,3% + 1 pkt. proc. na zabicie tego dnia, średnio ok. 77 zabić (×1,54 Grimroka). Legenda: losowy Legendarny przedmiot na poziomie bossa (80% dla klasy gracza); mityk: w 50% ręczny przedmiot bossa (tylko pasujący klasie), inaczej losowy Mityczny dla klasy (4 bonusy + 2 linie legendarne); S87: Mityk zawsze dla klasy zwycięzcy (gdy żaden ręczny nie pasuje, np. Vaelgrath dla Łowcy, losowy Mityczny dla klasy, `Loot.pickUsable`). Szanse widać na karcie lochu i w karcie nagrody po walce; mityk ma osobne, mocniejsze ogłoszenie na serwerze.
 

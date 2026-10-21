@@ -358,7 +358,7 @@ return {
 		},
 		["GuildProgress:*"] = {
 			{
-				session = "S159g",
+				session = "S159a",
 				why = "new module: guild levels from members' play, weekly guild goals (guild EXP, treasury gold, 5 shards per goal), vault slots and default rank rights (owner: develop guilds)",
 			},
 		},
@@ -7392,6 +7392,10 @@ return {
 			{
 				session = "S159",
 				why = "new: a monster's basic attack draws back for this long before it lands (melee 0.45 s, ranged 0.35 s) so it can be read and stepped out of; the blow lands only if the target is still in reach",
+			},
+			{
+				session = "S159a",
+				why = "new throw = 0.5: an Elite II's throw at a fleeing target is drawn back (a visible throw / spell pose) before the rock or bolt flies; the throw's interval, damage and reach are unchanged, it only leaves 0.5 s later",
 			},
 		},
 		["Combat:windReach"] = {

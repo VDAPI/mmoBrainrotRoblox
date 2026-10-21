@@ -36,6 +36,8 @@ export type Mixer = {
 	scale: number, -- the model's scale (Hips offsets are in import units)
 	playing: { Track },
 	tracks: { [string]: Track },
+	-- S159a: turns laid before the clip's pose of a bone (index in `bones`; client/Anim/BoneOverlay), nil = none
+	pre: { [number]: CFrame }?,
 }
 
 local decoded: { [string]: BoneClip.Decoded } = {}
@@ -121,6 +123,7 @@ function BoneClips.new(model: Model, id: string): Mixer?
 		scale = model:GetScale(),
 		playing = {},
 		tracks = {},
+		pre = nil,
 	}
 	for name, slot in MonsterClips.slotsFor(id) do
 		local track: Track = {
@@ -186,6 +189,7 @@ function BoneClips.step(mixer: Mixer, dt: number)
 	if #playing == 0 then
 		return
 	end
+	local pre = mixer.pre
 	for bone, instance in mixer.bones do
 		if not instance then
 			continue
@@ -195,7 +199,8 @@ function BoneClips.step(mixer: Mixer, dt: number)
 			local p = pose(mixer, track, bone)
 			result = if result then result:Lerp(p, track.weight) else p
 		end
-		instance.Transform = result :: CFrame
+		local turn = pre and pre[bone]
+		instance.Transform = if turn then turn * (result :: CFrame) else result :: CFrame
 	end
 end
 

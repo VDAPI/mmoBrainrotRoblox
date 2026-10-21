@@ -3143,7 +3143,7 @@ return {
 	["animlab.error.skill"] = "podaj id aktywnej umiejętności (i opcjonalnie typ broni).",
 	["animlab.error.mob"] = "podaj id potwora albo bossa z wyglądem.",
 	["animlab.error.slot"] = "nieznany stan (idle, walk, run, attack1, attack2, cast, hit, death, spawn).",
-	["animlab.error.boss"] = "podaj bossa i id jego ataku albo roar / death (np. grimrok sweep).",
+	["animlab.error.boss"] = "podaj bossa i id jego ataku albo wzoru, albo roar / rage / death (np. grimrok sweep, grimrok gr_axeThrow).",
 	["animlab.error.npc"] = "podaj id NPC i stan (idle, talk, wave, work).",
 	["animlab.error.sfx"] = "sfx <klucz> [wariant], sfx list [prefiks], sfx all [prefiks] albo sfx try <id>.",
 	["animlab.error.sfxId"] = "sfx try: podaj liczbowe ID dźwięku z Creator Store.",
