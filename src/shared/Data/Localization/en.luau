@@ -79,7 +79,7 @@ return {
 
 	-- Nameplates and notifications
 	["nameplate.levelClass"] = "Lv {level} {class}",
-	["nameplate.vip"] = "★ VIP",
+	["nameplate.vip"] = "VIP",
 	["toast.enterWorld"] = "Welcome to Vaelthorn, {name}!",
 
 	-- Errors (server answers carry these keys)
@@ -2625,6 +2625,25 @@ return {
 	["title.none"] = "No title ({count} unlocked)",
 	["title.none.hint"] = "Titles unlock with levels, the story, duels and PvP.",
 	["title.error.locked"] = "This title is not unlocked yet.",
+	-- Owner 2026-10-21: the title list in the backpack window
+	["title.change"] = "Change title",
+	["title.pick.title"] = "Your titles",
+	["title.pick.none"] = "No title",
+	["title.pick.noneSub"] = "Nothing above your name",
+	["title.pick.current"] = "Worn",
+	["title.pick.close"] = "Close",
+	["title.pick.count"] = "Unlocked: {count}",
+	["title.src.level"] = "Level {value}",
+	["title.src.mainDone"] = "Story",
+	["title.src.duelsWon"] = "{value} duels won",
+	["title.src.pvpKills"] = "{value} players defeated",
+	["title.src.mainPath"] = "Leading path",
+	["title.src.vip"] = "VIP",
+	["title.src.cosmetic"] = "Wardrobe",
+	["title.src.timed"] = "Timed reward",
+	["title.src.arenaSeason"] = "Arena season",
+	["title.src.achievement"] = "Achievement",
+	["nameplate.level"] = "Lv {level}",
 	["title.wanderer"] = "Wanderer",
 	["title.adventurer"] = "Adventurer",
 	["title.veteran"] = "Veteran",

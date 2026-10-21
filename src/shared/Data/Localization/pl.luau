@@ -79,7 +79,7 @@ return {
 
 	-- Nameplates and notifications
 	["nameplate.levelClass"] = "Poz. {level} {class}",
-	["nameplate.vip"] = "★ VIP",
+	["nameplate.vip"] = "VIP",
 	["toast.enterWorld"] = "Witaj w Vaelthorn, {name}!",
 
 	-- Errors (server answers carry these keys)
@@ -2625,6 +2625,25 @@ return {
 	["title.none"] = "Bez tytułu ({count} odblokowanych)",
 	["title.none.hint"] = "Tytuły odblokowujesz poziomem, fabułą, pojedynkami i PvP.",
 	["title.error.locked"] = "Ten tytuł nie jest jeszcze odblokowany.",
+	-- Owner 2026-10-21: the title list in the backpack window
+	["title.change"] = "Zmień tytuł",
+	["title.pick.title"] = "Twoje tytuły",
+	["title.pick.none"] = "Brak tytułu",
+	["title.pick.noneSub"] = "Nad imieniem nie będzie tytułu",
+	["title.pick.current"] = "Noszony",
+	["title.pick.close"] = "Zamknij",
+	["title.pick.count"] = "Odblokowane: {count}",
+	["title.src.level"] = "Za poziom {value}",
+	["title.src.mainDone"] = "Za fabułę",
+	["title.src.duelsWon"] = "Za {value} wygranych pojedynków",
+	["title.src.pvpKills"] = "Za {value} pokonanych graczy",
+	["title.src.mainPath"] = "Za wiodącą ścieżkę",
+	["title.src.vip"] = "Za VIP",
+	["title.src.cosmetic"] = "Z garderoby",
+	["title.src.timed"] = "Nagroda na czas",
+	["title.src.arenaSeason"] = "Za sezon areny",
+	["title.src.achievement"] = "Za osiągnięcie",
+	["nameplate.level"] = "Lv {level}",
 	["title.wanderer"] = "Wędrowiec",
 	["title.adventurer"] = "Poszukiwacz Przygód",
 	["title.veteran"] = "Weteran",

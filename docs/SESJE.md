@@ -13784,3 +13784,9 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `tests/bosscast.spec` (nazwy, baner, czasy, kontrast na 10 rodzajach podłoża, liczby widoczności),
   `tests/worldevents.spec` (aggro strefy).
 - **Dla właściciela:** bez przeglądu w Studio.
+### Tabliczki: poziom i VIP, lista tytułów (2026-10-21)
+- **Tabliczka:** `Logic/Nameplate.view` (`level`, `showVip`), `NameplateController` (etykieta „Lv N” z atrybutu `Level`
+  modelu, złota plakietka VIP z atrybutu `Vip` gracza), `Config.Nameplate.levelSize`.
+- **Tytuły:** `Logic/Titles.choices` / `sourceOf`, `UI/Screens/CharacterWindow/TitleChooser` (przycisk „Zmień tytuł”
+  i lista nad oknem) zamiast cyklera ◀ ▶; serwer bez zmian (`SetTitle` sprawdza `Titles.isUnlocked`).
+- **Testy:** `nameplate`, `titles`.

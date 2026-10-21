@@ -10,6 +10,8 @@
 -- title or HP bar. Your own plate always has the title and never an HP bar (the HUD shows it).
 -- W28 (owner: "too visible, too big, with a frame; just the nick and the title"): no plate, no level line, no VIP
 -- badge, no PvP dot; the PvP state is the name colour.
+-- Owner 2026-10-21 ("show my level over my head and VIP when owned"): a compact level ("Lv 37") before the name and a
+-- small gold VIP tag after it, on every plate (yours too) and at every distance (the name row never thins out).
 
 local Config = require("../Config")
 
@@ -25,6 +27,7 @@ export type Input = {
 	guildTag: string?,
 	hurt: boolean, -- HP below full or a recent hit
 	distance: number?, -- studs from the camera (nil = near)
+	level: number?, -- the model's Level attribute (nil or below 1 = no level label)
 }
 
 export type View = {
@@ -34,6 +37,8 @@ export type View = {
 	titleHex: string?,
 	showHp: boolean,
 	clickable: boolean, -- the name opens the player menu (S133)
+	level: number?, -- whole level shown before the name, nil = none
+	showVip: boolean, -- the gold VIP tag after the name
 }
 
 export type Cfg = { detailDistance: number }
@@ -47,6 +52,8 @@ function Nameplate.view(input: Input, cfg: Cfg?): View
 		elseif input.vip then "vip"
 		else "text"
 	local tag = if input.guildTag ~= nil and input.guildTag ~= "" then input.guildTag else nil
+	local level = input.level
+	local shownLevel = if type(level) == "number" and level == level and level >= 1 then math.floor(level) else nil
 	return {
 		nameRole = role,
 		guildTag = tag,
@@ -54,6 +61,8 @@ function Nameplate.view(input: Input, cfg: Cfg?): View
 		titleHex = if near then input.titleHex else nil,
 		showHp = near and input.hurt and not input.isLocal,
 		clickable = not input.isLocal,
+		level = shownLevel,
+		showVip = input.vip,
 	}
 end
 
