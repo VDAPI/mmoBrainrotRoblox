@@ -2,11 +2,11 @@
 -- Blood Moon panel (S129, DESIGN-17 §7): seen by every player from 10 min before the start to the end, also in the
 -- city. Before the start "In 9:41"; during it the time left, the own points and the place in the region's top 10 (or
 -- in the city: the regions are a PvP zone, the city is safe) and "Results" (the bloodmoon window). It stands where the
--- world event panel stands (S101: PC the right column over the quest tracker, which moves down by `Offset`; touch the
--- left column under the portrait, below the party frames in a party): world events never run during the Blood Moon.
+-- world event panel stands (S101: PC the right column over the quest tracker; touch the left column under the
+-- portrait, below the party frames in a party): world events never run during the Blood Moon. Owner 2026-10-21: the
+-- column's order and places come from UI/HudSlots (Logic/HudStack), round the elements the player moved.
 -- Reads UI/BloodMoonView (attributes, clock), `character.bloodMoon`, `bloodMoonBoard` and `zone.map` only.
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local BloodMoon = require(ReplicatedStorage.Shared.Logic.BloodMoon)
@@ -15,8 +15,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
-local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
-local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -29,8 +28,6 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	OpenResults: () -> (),
-	-- Set to the pixels the quest tracker moves down (0 while hidden or on touch).
-	Offset: Fusion.Value<number>?,
 }
 
 local BLOOD = Theme.Glyph.Blood
@@ -43,17 +40,12 @@ local LINE = 20
 local INFO = 40 -- two lines: the points and the place, or the city hint
 local BUTTON_PC = 34
 local BUTTON_TOUCH = 44
--- the same anchors as Hud/WorldEventPanel
-local TOUCH_TOP = Theme.Padding.Large + 136 + 6 + 44
-local PARTY_TOP = Theme.Padding.Large + 136 + 70
-local PARTY_ROW = 58 + 6
 
 local function BloodMoonPanel(scope: Scope, props: Props): Instance
 	local phase = BloodMoonView.Phase
 	local mine = State.Value({ "character", "bloodMoon" })
 	local board = BloodMoonView.Board
 	local zoneMap = State.Value({ "zone", "map" })
-	local party = State.Value({ "party" })
 	local touch = Device.Touch
 
 	local shown = scope:Computed(function(use): boolean
@@ -62,21 +54,6 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 	end)
 	local active = scope:Computed(function(use): boolean
 		return use(phase) == "active"
-	end)
-	local touchTop = scope:Computed(function(use): number
-		local p = use(party)
-		local others = 0
-		if type(p) == "table" and type(p.members) == "table" then
-			for _, member in p.members do
-				if member.id ~= Players.LocalPlayer.UserId then
-					others += 1
-				end
-			end
-		end
-		if use(PhoneLayout.Compact) then
-			return PhoneHud.stackTop(others) -- W29: the phone stack (Logic/PhoneHud)
-		end
-		return if others > 0 then PARTY_TOP + others * PARTY_ROW else TOUCH_TOP
 	end)
 	local height = scope:Computed(function(use): number
 		local button = if use(touch) then BUTTON_TOUCH else BUTTON_PC
@@ -90,19 +67,20 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 	local handle = HudDrag.new(scope, "bloodMoon", function(use)
 		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
 	end)
-	if props.Offset then
-		local offset = props.Offset
-		local pushed = scope:Computed(function(use): number
-			-- W29: on a phone in landscape the tracker stacks under the panel as on PC
-			if not use(shown) or (use(touch) and not use(PhoneLayout.Compact)) or use(handle.corner) then
-				return 0
-			end
-			return use(height) + 8
+	-- owner 2026-10-21: the built-in place in the HUD column, round the moved elements (UI/HudSlots)
+	local slot = HudSlots.join(
+		scope,
+		"bloodMoon",
+		scope:Computed(function(use): HudSlots.Box
+			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height)
+			return {
+				shown = use(shown),
+				w = w,
+				h = h,
+				custom = HudSlots.moved(use(handle.corner), w, h, use(handle.scale)),
+			}
 		end)
-		scope:Observer(pushed):onBind(function()
-			offset:set(Fusion.peek(pushed))
-		end)
-	end
+	)
 
 	local timeText = scope:Computed(function(use): string
 		local t = use(BloodMoonView.Now)
@@ -198,15 +176,8 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 	})
 	return HudDrag.frame(scope, handle, {
 		Name = "BloodMoonPanel",
-		AnchorPoint = scope:Computed(function(use): Vector2
-			return if use(touch) then Vector2.new(0, 0) else Vector2.new(1, 0)
-		end),
-		Position = scope:Computed(function(use): UDim2
-			if use(touch) then
-				return UDim2.fromOffset(Theme.Padding.Large, use(touchTop))
-			end
-			return UDim2.new(1, -Theme.Padding.Large, 0, HudDrag.RIGHT_TOP)
-		end),
+		AnchorPoint = Vector2.zero,
+		Position = HudSlots.position(scope, slot),
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
 		end),

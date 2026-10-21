@@ -222,24 +222,9 @@ function QuestController.Init(registry)
 		end,
 	})
 	local Nav = registry.Get("NavController")
-	-- S101: the world event panel stands over the tracker (PC), which moves down by its height meanwhile.
-	local eventOffset = scope:Value(0)
-	-- S129: the Blood Moon panel stands in the same place (never at the same time: no world event during it)
-	local moonOffset = scope:Value(0)
-	-- S130: the tournament panel stands under them (a world event may run during the signups)
-	local tourneyOffset = scope:Value(0)
-	-- S149b: the world boss panel stands over the world event panel (the boss comes first; they meet only during the
-	-- boss's warning): the event panel moves down by its height, the tracker by both
-	local bossOffset = scope:Value(0)
-	local bossHeight = scope:Value(0)
-	local aboveTourney = scope:Computed(function(use): number
-		return use(bossOffset) + math.max(use(eventOffset), use(moonOffset))
-	end)
-	local trackerOffset = scope:Computed(function(use): number
-		return use(aboveTourney) + use(tourneyOffset)
-	end)
+	-- S101 / S129 / S130 / S149b: the world boss, world event, Blood Moon and tournament panels stand over the tracker;
+	-- owner 2026-10-21: in one column with it and the Elite II timers, round whatever the player moved (UI/HudSlots)
 	QuestTracker(scope, {
-		Offset = trackerOffset,
 		-- S25: the tracker's "➤" guides to the quest target like "Guide" on the map.
 		Guide = function(target)
 			local npc = if target.npc then Npcs.get(target.npc) else nil
@@ -261,8 +246,6 @@ function QuestController.Init(registry)
 		UIController.GetLayer("Screens")
 	Elite2Timer(scope).Parent = UIController.GetLayer("Screens")
 	WorldBossPanel(scope, {
-		Offset = bossOffset,
-		Height = bossHeight,
 		Guide = function(target)
 			Nav.Guide({ map = target.map, x = target.x, z = target.z, labelKey = target.labelKey })
 		end,
@@ -284,15 +267,12 @@ function QuestController.Init(registry)
 	}).Parent =
 		UIController.GetLayer("Screens")
 	WorldEventPanel(scope, {
-		Offset = eventOffset,
-		Above = bossHeight,
 		Guide = function(target)
 			Nav.Guide({ map = target.map, x = target.x, z = target.z, labelKey = target.labelKey })
 		end,
 	}).Parent =
 		UIController.GetLayer("Screens")
 	BloodMoonPanel(scope, {
-		Offset = moonOffset,
 		OpenResults = function()
 			WindowManager.Open("bloodmoon")
 		end,
@@ -300,8 +280,6 @@ function QuestController.Init(registry)
 		UIController.GetLayer("Screens")
 	local Arena = registry.Get("ArenaController")
 	TourneyPanel(scope, {
-		Offset = tourneyOffset,
-		Above = aboveTourney,
 		OpenTab = Arena.OpenTourney,
 		ShowInvite = function()
 			Arena.InviteHidden:set(false)

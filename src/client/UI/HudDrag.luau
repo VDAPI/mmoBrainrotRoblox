@@ -12,6 +12,7 @@ local UserInputService = game:GetService("UserInputService")
 local Device = require(script.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Scale = require(script.Parent.Scale)
 local State = require(script.Parent.State)
@@ -24,8 +25,9 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local HudDrag = {}
 
 -- The top of the right column on PC (the quest tracker and the event panels): under the two rows of menu buttons,
--- the minimap and the guide bar (Hud menu: 16 + 2 x 52 + 8, then 8 + 220 + 8 + 44 = 408).
-HudDrag.RIGHT_TOP = 400 + Theme.Size.IconButton + Theme.Padding.Small
+-- the minimap and the guide bar (Hud menu: 16 + 2 x 52 + 8, then 8 + 220 + 8 + 44 = 408; one more row: 460).
+-- Owner 2026-10-21: the column itself is Logic/HudStack (UI/HudSlots).
+HudDrag.RIGHT_TOP = HudStack.RIGHT_TOP
 
 local TAB_W, TAB_H = 20, 30
 local TAB_TOUCH_W, TAB_TOUCH_H = 30, 44
@@ -169,8 +171,9 @@ function HudDrag.frame(scope: Scope, handle: Handle, props: FrameProps): Instanc
 		if at then
 			return at.X > screen.X / 2
 		end
-		local position = use(props.Position)
-		return position.X.Scale >= 0.5
+		-- the built-in place (a UI/HudSlots slot is an offset from the left edge)
+		local position: UDim2 = use(props.Position)
+		return position.X.Scale * screen.X + position.X.Offset >= screen.X / 2
 	end)
 	local frame = scope:New("Frame")({
 		Name = props.Name,

@@ -9,6 +9,7 @@ local Workspace = game:GetService("Workspace")
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -23,7 +24,9 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local SIZE = 64
+local SPOT = HudStack.PVP -- owner 2026-10-21: the corner's places in one module (the mail under it)
+local SIZE = SPOT.w
+local BADGE = HudStack.PVP_BADGE
 local ART = UiArt.hud("pvp") -- S119
 
 local function PvpToggle(scope: Scope): Instance
@@ -98,7 +101,7 @@ local function PvpToggle(scope: Scope): Instance
 		Name = "PvpToggle",
 		-- W29: under the menu drawer button left of the minimap on a phone in landscape (Logic/PhoneHud)
 		AnchorPoint = PhoneLayout.Anchor(scope, "pvp", Vector2.new(1, 1)),
-		Position = PhoneLayout.Position(scope, "pvp", UDim2.new(1, -Theme.Padding.Large, 1, -120)),
+		Position = PhoneLayout.Position(scope, "pvp", UDim2.new(1, -SPOT.right, 1, -SPOT.bottom)),
 		Size = UDim2.fromOffset(SIZE, SIZE),
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
@@ -136,13 +139,17 @@ local function PvpToggle(scope: Scope): Instance
 					return if use(isOn) then Theme.Zone.Red else Theme.Iron.Rule
 				end),
 			}),
-			-- Countdown / "forced" badge above the button.
+			-- Countdown / "forced" badge under the button.
 			scope:New("TextLabel")({
 				Name = "Badge",
 				-- W29: under the button, as wide as it, on a phone in landscape (above it the drawer button)
-				AnchorPoint = PhoneLayout.Pick(scope, Vector2.new(0.5, 0), Vector2.new(0.5, 1)),
-				Position = PhoneLayout.Pick(scope, UDim2.new(0.5, 0, 1, 4), UDim2.new(0.5, 0, 0, -4)),
-				Size = PhoneLayout.Pick(scope, UDim2.fromOffset(SIZE, 24), UDim2.fromOffset(110, 24)),
+				-- owner 2026-10-21: PC and tablet under the toggle too, right-aligned with it and as wide as its text
+				-- (centred above it the text ran past the screen's edge; the mail has its own slot under it,
+				-- Logic/HudStack)
+				AnchorPoint = PhoneLayout.Pick(scope, Vector2.new(0.5, 0), Vector2.new(1, 0)),
+				Position = PhoneLayout.Pick(scope, UDim2.new(0.5, 0, 1, 4), UDim2.new(1, 0, 1, BADGE.gap)),
+				Size = PhoneLayout.Pick(scope, UDim2.fromOffset(SIZE, 24), UDim2.fromOffset(0, BADGE.h)),
+				AutomaticSize = PhoneLayout.Pick(scope, Enum.AutomaticSize.None, Enum.AutomaticSize.X),
 				TextScaled = PhoneLayout.Compact,
 				BackgroundColor3 = Theme.Iron.Surface,
 				BackgroundTransparency = Theme.HudAlpha,
@@ -161,6 +168,14 @@ local function PvpToggle(scope: Scope): Instance
 				TextColor3 = Theme.Iron.Text,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					scope:New("UIPadding")({
+						PaddingLeft = UDim.new(0, Theme.Padding.Small),
+						PaddingRight = UDim.new(0, Theme.Padding.Small),
+					}),
+					scope:New("UISizeConstraint")({
+						MinSize = Vector2.new(SIZE, 0),
+						MaxSize = Vector2.new(BADGE.w, BADGE.h),
+					}),
 				},
 			}),
 		},

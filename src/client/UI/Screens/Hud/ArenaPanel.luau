@@ -1,7 +1,7 @@
 --!strict
 -- The arena on the HUD (S126, DESIGN-17 §6), from `arenaLive`:
---   * in the queue (no match): a small pill above the Elite II timers (bottom right) "1v1 queue · 0:42 · 3 waiting"
---     with ✕ to leave (44 px on a phone);
+--   * in the queue (no match): a small pill "1v1 queue · 0:42 · 3 waiting" with ✕ to leave (44 px on a phone); owner
+--     2026-10-21: the first of the HUD column (UI/HudSlots), it stood over the PvP toggle and the skill arc;
 --   * in a match: a panel at the top centre with the names of the sides and the round score, "Round 2 / 3", the time
 --     of the round (server clock), the match potions left and the phase. The countdown and the round results come as
 --     BossAnnounce (the panel does not repeat them).
@@ -19,6 +19,8 @@ local Workspace = game:GetService("Workspace")
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -30,7 +32,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = { Leave: () -> (), ReturnNow: () -> () }
 
-local PILL_WIDTH = 280
+local PILL_WIDTH = HudStack.ARENA_PILL
 local PANEL_WIDTH = 420
 
 local function ArenaPanel(scope: Scope, props: Props): Instance
@@ -58,15 +60,22 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		return if type(q) == "table" and use(match) == nil then q else nil
 	end)
 
+	local pillHeight = scope:Computed(function(use): number
+		return if use(Device.Touch) then Theme.Size.MinTouch else 36
+	end)
+	local slot = HudSlots.join(
+		scope,
+		"arena",
+		scope:Computed(function(use): HudSlots.Box
+			return { shown = use(queue) ~= nil, w = PILL_WIDTH, h = use(pillHeight) }
+		end)
+	)
 	local pill = scope:New("Frame")({
 		Name = "ArenaQueue",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = scope:Computed(function(use): UDim2
-			-- over the Elite II timers (Hud/Elite2Timer: -290 on a phone, -130 on a PC)
-			return UDim2.new(1, -Theme.Padding.Large, 1, if use(Device.Touch) then -340 else -180)
-		end),
+		AnchorPoint = Vector2.zero,
+		Position = HudSlots.position(scope, slot),
 		Size = scope:Computed(function(use): UDim2
-			return UDim2.fromOffset(PILL_WIDTH, if use(Device.Touch) then Theme.Size.MinTouch else 36)
+			return UDim2.fromOffset(PILL_WIDTH, use(pillHeight))
 		end),
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,

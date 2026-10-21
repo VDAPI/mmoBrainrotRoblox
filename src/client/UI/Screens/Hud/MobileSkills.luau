@@ -4,7 +4,8 @@
 -- Hidden on PC.
 -- S28: dragging a button aims an area skill (the preview follows the finger, release casts there, coming back onto
 -- the button cancels); a tap casts as before.
--- Owner 2026-10-21: the cost in the button's top-left corner like the bar (Components/CostBadge).
+-- Owner 2026-10-21: the cost on the button like the bar (Components/CostBadge); on its rim towards the attack button
+-- (Logic/SkillCostBadge.arcPlate: the page and target buttons stand outside the arc).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -15,7 +16,9 @@ local CostBadge = require(script.Parent.Parent.Parent.Components.CostBadge)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
+local SkillCostBadge = require(ReplicatedStorage.Shared.Logic.SkillCostBadge)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -40,11 +43,12 @@ export type Props = {
 
 local CANCEL_RADIUS = 34 -- pixels: releasing this close to the button cancels an aim
 
-local SIZE = 68
--- Arc around the attack button (anchored bottom-right at (-110, -150), 104 px): angles in degrees.
-local CENTER = Vector2.new(-162, -202)
-local RADIUS = 120
-local ANGLES = { 180, 150, 120, 90, 60 }
+-- Arc around the attack button: angles in degrees (owner 2026-10-21: the corner's places in Logic/HudStack).
+local ARC = HudStack.ARC
+local SIZE = ARC.size
+local CENTER = Vector2.new(ARC.x, ARC.y)
+local RADIUS = ARC.radius
+local ANGLES = ARC.angles
 
 local function MobileSkills(scope: Scope, props: Props): Instance
 	local page = scope:Value(0)
@@ -181,13 +185,23 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 					AnchorPoint = Vector2.new(0.5, 0.5),
 					Corner = UDim.new(0.5, 0),
 				}),
-				-- the button's top-left corner: the content box starts 20 % in and is 60 % wide (-0.2 / 0.6)
+				-- the plate's centre from the button's (the content box inside the 20 % padding has the same centre)
 				if props.Cost
-					then CostBadge(scope, {
+					then CostBadge.new(scope, {
 						SkillId = skillId,
 						Cost = props.Cost,
 						Tick = tick,
-						Position = UDim2.fromScale(-1 / 3, -1 / 3),
+						TextSize = Theme.TextSize.Small,
+						AnchorPoint = Vector2.new(0.5, 0.5),
+						Position = scope:Computed(function(use): UDim2
+							local phone = use(PhoneLayout.Compact)
+							local dx, dy = SkillCostBadge.arcPlate(
+								if phone then PhoneHud.ANGLES[i] else angle,
+								if phone then PhoneHud.SKILL else SIZE,
+								if phone then SkillCostBadge.RIM.phone else SkillCostBadge.RIM.tablet
+							)
+							return UDim2.new(0.5, dx, 0.5, dy)
+						end),
 					})
 					else nil :: any,
 			},
@@ -208,7 +222,7 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			Name = name,
 			AnchorPoint = PhoneLayout.Anchor(scope, place, Vector2.new(0.5, 0.5)),
 			Position = PhoneLayout.Position(scope, place, position),
-			Size = UDim2.fromOffset(84, 44),
+			Size = UDim2.fromOffset(HudStack.SMALL.w, HudStack.SMALL.h),
 			BackgroundColor3 = Theme.Iron.Raised,
 			BackgroundTransparency = Theme.HudAlpha,
 			Text = text,
@@ -233,7 +247,7 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			smallButton(
 				"Page",
 				"page",
-				UDim2.new(1, CENTER.X - RADIUS - 70, 1, CENTER.Y + 40),
+				UDim2.new(1, HudStack.PAGE.x, 1, HudStack.PAGE.y),
 				scope:Computed(function(use): string
 					return Text.get(use, "hud.page", { page = use(page) + 1 })
 				end),
@@ -244,7 +258,7 @@ local function MobileSkills(scope: Scope, props: Props): Instance
 			smallButton(
 				"Target",
 				"targetButton",
-				UDim2.new(1, CENTER.X, 1, CENTER.Y - RADIUS - 56),
+				UDim2.new(1, HudStack.TARGET.x, 1, HudStack.TARGET.y),
 				Text.T(scope, "hud.targetButton"),
 				props.SelectTarget
 			),

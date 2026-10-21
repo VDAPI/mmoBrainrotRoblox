@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
@@ -23,7 +24,7 @@ export type Props = {
 }
 
 local ART = UiArt.hud("attack") -- S119
-local SIZE = 104
+local SPOT = HudStack.ATTACK -- owner 2026-10-21: the corner's places in one module
 
 local function AttackButton(scope: Scope, props: Props): Instance
 	local pressed = scope:Value(false)
@@ -32,8 +33,8 @@ local function AttackButton(scope: Scope, props: Props): Instance
 		Name = "AttackButton",
 		AnchorPoint = Vector2.new(1, 1),
 		-- W29: in the bottom-right corner on a phone in landscape (Logic/PhoneHud)
-		Position = PhoneLayout.Position(scope, "attack", UDim2.new(1, -110, 1, -150)),
-		Size = PhoneLayout.Size(scope, "attack", UDim2.fromOffset(SIZE, SIZE)),
+		Position = PhoneLayout.Position(scope, "attack", UDim2.new(1, -SPOT.right, 1, -SPOT.bottom)),
+		Size = PhoneLayout.Size(scope, "attack", UDim2.fromOffset(SPOT.w, SPOT.h)),
 		Visible = Device.Touch,
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3

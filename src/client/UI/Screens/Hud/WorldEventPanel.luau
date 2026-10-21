@@ -2,15 +2,15 @@
 -- World event panel (S101, docs/DESIGN-15.md §4): seen by the players on the event's map. The kind and the hunting
 -- ground, the time to the start (warning) or to the end, the progress (S134d: the Invasion's phases with the live
 -- monsters and the kills; then the commander's / champion's HP), the own contribution (counted for the reward or
--- not) and "Guide" (like ➤ of the quest tracker). PC: the right column over the quest tracker, which moves down by `Offset` while the panel shows; touch: the left column
+-- not) and "Guide" (like ➤ of the quest tracker). PC: the right column over the quest tracker; touch: the left column
 -- under the portrait and the effect icons, below the party frames when in a party (the right column holds the
--- minimap, the tracker and the skill buttons). S149b: under the world boss panel when both show (`Above`).
+-- minimap and the skill buttons). S149b: under the world boss panel when both show. Owner 2026-10-21: the column's
+-- order and places come from UI/HudSlots (Logic/HudStack), round the elements the player moved.
 -- Reads only the narrow branches `worldEvent` and `zone.map`; the clock ticks every 0.5 s like Elite2Timer.
 -- Owner 2026-10-21 ("the invasion covers the map"): the PC place starts under the minimap with the quest tracker
 -- (HudDrag.RIGHT_TOP), and the player moves the panel by its "≡" tab and scales it by "◢" (UI/HudDrag, HudLayout
 -- `worldEvent`); a moved panel leaves the column, so the tracker stays where it is.
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
@@ -20,8 +20,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
-local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
-local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -36,10 +35,6 @@ export type GuideTarget = { map: string, x: number, z: number, labelKey: string 
 
 export type Props = {
 	Guide: (target: GuideTarget) -> (),
-	-- Set to the pixels the quest tracker moves down (0 while hidden or on touch).
-	Offset: Fusion.Value<number>?,
-	-- S149b: pixels of the world boss panel above (both devices): this panel stands under it.
-	Above: Fusion.UsedAs<number>?,
 }
 
 local WIDTH_PC = 280
@@ -52,15 +47,9 @@ local BAR = 8
 local MINE = 30
 local BUTTON_PC = 34
 local BUTTON_TOUCH = 44
--- Touch: under the portrait (136 high) and the effect icons (Hud/init: Large + 136 + 6, one row of ~40).
-local TOUCH_TOP = Theme.Padding.Large + 136 + 6 + 44
--- Touch in a party: under the party frames (PartyFrames: top Large + 136 + 70, rows 58 + 6 per other member).
-local PARTY_TOP = Theme.Padding.Large + 136 + 70
-local PARTY_ROW = 58 + 6
 
 local function WorldEventPanel(scope: Scope, props: Props): Instance
 	local event = State.Value({ "worldEvent" })
-	local party = State.Value({ "party" })
 	local zoneMap = State.Value({ "zone", "map" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
 	local clock = 0
@@ -95,22 +84,6 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 		return if def then Theme.readable(def.color, "hud") else Theme.Brass.Bright
 	end)
 	local touch = Device.Touch
-	-- Touch: the top clear of the party frames (the click targets for picking an ally to heal).
-	local touchTop = scope:Computed(function(use): number
-		local p = use(party)
-		local others = 0
-		if type(p) == "table" and type(p.members) == "table" then
-			for _, member in p.members do
-				if member.id ~= Players.LocalPlayer.UserId then
-					others += 1
-				end
-			end
-		end
-		if use(PhoneLayout.Compact) then
-			return PhoneHud.stackTop(others) -- W29: the phone stack (Logic/PhoneHud)
-		end
-		return if others > 0 then PARTY_TOP + others * PARTY_ROW else TOUCH_TOP
-	end)
 	local height = scope:Computed(function(use): number
 		local button = if use(touch) then BUTTON_TOUCH else BUTTON_PC
 		local h = PAD * 2 + TITLE + LINE + button + GAP * 2
@@ -122,19 +95,20 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 	local handle = HudDrag.new(scope, "worldEvent", function(use)
 		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
 	end)
-	if props.Offset then
-		local offset = props.Offset
-		local shown = scope:Computed(function(use): number
-			-- W29: on a phone in landscape the tracker stacks under the panel as on PC
-			if use(current) == nil or (use(touch) and not use(PhoneLayout.Compact)) or use(handle.corner) then
-				return 0
-			end
-			return use(height) + 8
+	-- owner 2026-10-21: the built-in place in the HUD column, round the moved elements (UI/HudSlots)
+	local slot = HudSlots.join(
+		scope,
+		"worldEvent",
+		scope:Computed(function(use): HudSlots.Box
+			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height)
+			return {
+				shown = use(current) ~= nil,
+				w = w,
+				h = h,
+				custom = HudSlots.moved(use(handle.corner), w, h, use(handle.scale)),
+			}
 		end)
-		scope:Observer(shown):onBind(function()
-			offset:set(Fusion.peek(shown))
-		end)
-	end
+	)
 
 	local function line(
 		order: number,
@@ -288,16 +262,8 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 	})
 	return HudDrag.frame(scope, handle, {
 		Name = "WorldEventPanel",
-		AnchorPoint = scope:Computed(function(use): Vector2
-			return if use(touch) then Vector2.new(0, 0) else Vector2.new(1, 0)
-		end),
-		Position = scope:Computed(function(use): UDim2
-			local above = use(props.Above) or 0
-			if use(touch) then
-				return UDim2.fromOffset(Theme.Padding.Large, use(touchTop) + above)
-			end
-			return UDim2.new(1, -Theme.Padding.Large, 0, HudDrag.RIGHT_TOP + above)
-		end),
+		AnchorPoint = Vector2.zero,
+		Position = HudSlots.position(scope, slot),
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
 		end),
