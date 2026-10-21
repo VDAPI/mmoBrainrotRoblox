@@ -104,6 +104,11 @@ function ItemIcons.candidates(def: ItemDef): { Candidate }
 		if group and own ~= base then
 			table.insert(out, { key = own, data = true })
 		end
+		-- S160k: an everlasting teleport stone (`<stone>_perm`) shows its stone's picture
+		local plain = string.match(def.id, "^(.+)_perm$")
+		if group and plain and def.category == "stone" then
+			table.insert(out, { key = `{group}/{plain}`, data = true })
+		end
 	end
 	if base then
 		table.insert(out, { key = base, data = dataAccent })

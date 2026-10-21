@@ -3,8 +3,9 @@
 -- backpack and equipped items that Logic/Reroll.eligible accepts), pick one random regular bonus line (after the
 -- first reroll only the locked line, marked ↻; the rest locked), see what it can become ("Possible results": chance
 -- and range from Logic/Reroll.preview, the same pure function the server rolls with), the cost (owned / needed, the
--- attempt number and the next attempt's gold) and an optional Stone of Transmutation. "Transmute" asks first (the
--- first reroll of an item also says the choice locks), plays the forge's tension and shows "old → new".
+-- attempt number and the next attempt's gold). S160k (owner 2026-10-21): the cost is the gold, the essence AND a Stone of
+-- Bonus Transmutation together, each with owned / needed, and a line says where the stone comes from. "Transmute" asks
+-- first (the first reroll of an item also says the choice locks), plays the forge's tension and shows "old → new".
 -- Everything is computed again by the server (RerollBonus); this only shows it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -124,7 +125,6 @@ local function Reroll_(scope: Scope, props: Props): Instance
 	local equipment = State.Value({ "character", "equipment" })
 	local gold = State.Value({ "character", "gold" })
 	local class = State.Value({ "character", "class" })
-	local useStone = scope:Value(false)
 	local picked = scope:Value(nil :: number?) -- clicked line (bonuses index) while the choice is open
 	local phase = scope:Value("idle") -- idle | forging | done
 	local result = scope:Value(nil :: Result?)
@@ -169,15 +169,13 @@ local function Reroll_(scope: Scope, props: Props): Instance
 	local stones = scope:Computed(function(use): number
 		return Picker.count(use(inventory), Reroll.STONE)
 	end)
-	local withStone = scope:Computed(function(use): boolean
-		return use(useStone) and use(stones) > 0
-	end)
+	-- S160k: gold, essence and the stone together (the stone is the last material)
 	local cost = scope:Computed(function(use): Reroll.Cost?
 		local i = use(item)
 		if not i or not use(ready) then
 			return nil
 		end
-		return if use(withStone) then Reroll.costWithStone(i) else Reroll.cost(i)
+		return Reroll.payment(i)
 	end)
 	-- Why "Transmute" is off (no modal then): the line, the gold, the materials.
 	local blocker = scope:Computed(function(use): string?
@@ -187,6 +185,9 @@ local function Reroll_(scope: Scope, props: Props): Instance
 		end
 		if use(line) == nil then
 			return "smith.reroll.pickLine"
+		end
+		if use(stones) < 1 then
+			return "smith.reroll.error.noStone"
 		end
 		if (use(gold) or 0) < c.gold then
 			return "shop.error.gold"
@@ -213,8 +214,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 		Picker.sparks(anvil, TENSION)
 		local startedAt = os.clock()
 		task.spawn(function()
-			local ok, err, data =
-				Net.Invoke("RerollBonus", target.location, target.key, index, expected, Fusion.peek(withStone))
+			local ok, err, data = Net.Invoke("RerollBonus", target.location, target.key, index, expected)
 			local wait = TENSION - (os.clock() - startedAt)
 			if wait > 0 then
 				task.wait(wait)
@@ -463,18 +463,11 @@ local function Reroll_(scope: Scope, props: Props): Instance
 			`<font color="{if enoughGold then Theme.hex(Theme.Paper.Heading) else BAD}">◉ {Format.number(c.gold)}</font>`,
 		}
 		local inv = use(inventory)
-		if use(withStone) then
-			-- the stone pays the essence: the essence of the attempt struck through
-			for _, material in Reroll.cost(i).materials do
-				table.insert(parts, `<s>{ItemText.get(use, material.id)} {material.n}</s>`)
-			end
-			table.insert(parts, `<font color="{GOOD}">{ItemText.get(use, Reroll.STONE)} 1/{use(stones)}</font>`)
-		else
-			for _, material in c.materials do
-				local have = Picker.count(inv, material.id)
-				local color = if have >= material.n then GOOD else BAD
-				table.insert(parts, `<font color="{color}">{ItemText.get(use, material.id)} {have}/{material.n}</font>`)
-			end
+		-- S160k: every material with owned / needed (the essence, then the Stone of Bonus Transmutation)
+		for _, material in c.materials do
+			local have = Picker.count(inv, material.id)
+			local color = if have >= material.n then GOOD else BAD
+			table.insert(parts, `<font color="{color}">{ItemText.get(use, material.id)} {have}/{material.n}</font>`)
 		end
 		return `{Text.get(use, "smith.upgrade.cost")}: ` .. table.concat(parts, "  ")
 	end)
@@ -654,28 +647,18 @@ local function Reroll_(scope: Scope, props: Props): Instance
 			}),
 			label(scope, 7, costText),
 			label(scope, 8, countText, Theme.Paper.TextMuted),
-			-- Stone of Transmutation (only when the player has one)
-			scope:New("TextButton")({
-				Name = "Stone",
-				LayoutOrder = 9,
-				Size = UDim2.new(1, 0, 0, 32),
-				BackgroundTransparency = 1,
-				Visible = scope:Computed(function(use): boolean
-					return use(stones) > 0 and use(cost) ~= nil
+			-- S160k: what every transmutation takes and where the stone comes from
+			label(
+				scope,
+				9,
+				scope:Computed(function(use): string
+					if use(cost) == nil then
+						return ""
+					end
+					return Text.get(use, "smith.reroll.stoneHint", { count = use(stones) })
 				end),
-				Text = scope:Computed(function(use): string
-					local mark = if use(useStone) then "☑" else "☐"
-					return `{mark}  {Text.get(use, "smith.reroll.stone", { count = use(stones) })}`
-				end),
-				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Paper.Text,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				[OnEvent("Activated")] = function()
-					Sounds.play("click")
-					useStone:set(not Fusion.peek(useStone))
-				end,
-			}),
+				Theme.Paper.TextMuted
+			),
 			Button(scope, {
 				LayoutOrder = 10,
 				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),

@@ -8,8 +8,9 @@
 --     A marker expands to a random variant (ItemRoll.expandParam without a context), the value rolls like a drop
 --     (ItemRoll.rollBonusValue for the item's ilvl and rarity).
 --   * Cost: Config.Reroll essence by rarity + gold on the upgrade gold curve, x min(1 + growth x n, growthCap) with
---     n = rerolls already done on the item (`rr.n`, it travels with the item). The Stone of Transmutation
---     (`reroll_stone`) pays the essence of one attempt, never the gold.
+--     n = rerolls already done on the item (`rr.n`, it travels with the item). S160k (owner 2026-10-21): every attempt
+--     also takes one Stone of Bonus Transmutation (`reroll_stone`): gold, essence and the stone together
+--     (Reroll.payment), never one instead of another.
 -- Randomness only through the given Rng (the server's in BlacksmithService); the client previews with the same code.
 
 local Bonuses = require("../Data/Bonuses")
@@ -26,7 +27,8 @@ type ItemInstance = Types.ItemInstance
 
 local Reroll = {}
 
--- The premium item that pays the essence of one attempt (Data/Items/Consumables, Data/Products).
+-- The premium item every attempt takes on top of the gold and the essence (S160k; Data/Items/Consumables,
+-- Data/Products: 100 Dragon Shards, 10 a day).
 Reroll.STONE = "reroll_stone"
 -- S156: the premium item that rerolls every regular line of an item at once (Reroll.rollAll).
 Reroll.SCROLL = "transmute_scroll"
@@ -223,9 +225,13 @@ function Reroll.cost(item: ItemInstance): Cost
 	return Reroll.costAt(item, Reroll.state(item).n)
 end
 
--- The same attempt paid with a Stone of Transmutation: the gold stays, no essence.
-function Reroll.costWithStone(item: ItemInstance): Cost
-	return { gold = Reroll.cost(item).gold, materials = {} }
+-- S160k (owner 2026-10-21): what the smith takes for the next attempt: the gold and the essence of Reroll.cost and one
+-- Stone of Bonus Transmutation, all together (the stone is the last material).
+function Reroll.payment(item: ItemInstance): Cost
+	local cost = Reroll.cost(item)
+	local materials = table.clone(cost.materials)
+	table.insert(materials, { id = Reroll.STONE, n = 1 })
+	return { gold = cost.gold, materials = materials }
 end
 
 -- S156 (owner 2026-10-20): the Scroll of Transformation. Every regular line of the item, top to bottom, each drawn from

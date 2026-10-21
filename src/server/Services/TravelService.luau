@@ -8,6 +8,8 @@
 -- Cave exits keep their own arrival in front of the cave mouth; portals to the city keep the city gate.
 -- S126: guards (AddGuard; ArenaService: a fighter of a ranked match) refuse the stone channels (and the VIP free
 -- return) and portals; teleports of the server (TeleportToMap) never ask them.
+-- S160k: the Portal Master's everlasting stones (`use.keep`, Data/PortalShop) work like their stones and are never
+-- used up.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -297,7 +299,7 @@ function TravelService.FreeRecall(player: Player, onArrive: () -> ()): (boolean,
 	end)
 end
 
-local function toMap(player: Player, itemId: string, mapId: string, areaId: string?): (boolean, string?)
+local function toMap(player: Player, itemId: string?, mapId: string, areaId: string?): (boolean, string?)
 	local map = Maps.get(mapId)
 	local char = PlayerStateService.GetCharacter(player)
 	if not map or not char then
@@ -320,7 +322,7 @@ local function toMap(player: Player, itemId: string, mapId: string, areaId: stri
 	end)
 end
 
-local function toDungeon(player: Player, itemId: string, region: string): (boolean, string?)
+local function toDungeon(player: Player, itemId: string?, region: string): (boolean, string?)
 	local map = dungeonMap(region)
 	local entrance = map and map.dungeonEntrance
 	if not map or not entrance then
@@ -334,11 +336,17 @@ local function toDungeon(player: Player, itemId: string, region: string): (boole
 	end)
 end
 
+-- The item a channel uses up: nil for an everlasting stone (S160k).
+local function spent(def: any, itemId: string): string?
+	return if def and def.use and def.use.keep == true then nil else itemId
+end
+
 local function useStone(player: Player, _index: number, item: Types.ItemInstance): (boolean, string?)
 	local def = Items.get(item.id)
 	local target = def and def.use and def.use.target
+	local itemId = spent(def, item.id)
 	if target == "city" then
-		return channel(player, item.id, "teleport.channel", function()
+		return channel(player, itemId, "teleport.channel", function()
 			TravelService.TeleportToMap(player, Config.StartingMap)
 			Net.Fire(player, "Toast", "teleport.done", nil, "success")
 		end)
@@ -346,7 +354,7 @@ local function useStone(player: Player, _index: number, item: Types.ItemInstance
 		-- Needs a destination: the client opens the picker and calls UseMapStone.
 		return false, "teleport.pick"
 	elseif target and string.sub(target, 1, 8) == "dungeon:" then
-		return toDungeon(player, item.id, string.sub(target, 9))
+		return toDungeon(player, itemId, string.sub(target, 9))
 	end
 	return false, "teleport.soon"
 end
@@ -359,10 +367,11 @@ local function useMapStone(player: Player, index: number, target: string, areaId
 	if not item or not def or def.use == nil or def.use.kind ~= "teleport" then
 		return false, "error.badRequest"
 	end
+	local itemId = spent(def, item.id)
 	if kind == "map" then
-		return toMap(player, item.id, target, areaId)
+		return toMap(player, itemId, target, areaId)
 	elseif kind == "dungeon" then
-		return toDungeon(player, item.id, target)
+		return toDungeon(player, itemId, target)
 	end
 	return false, "error.badRequest"
 end

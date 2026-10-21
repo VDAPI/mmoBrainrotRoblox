@@ -17,6 +17,7 @@ local DepositWindow = require(script.Parent.Parent.UI.Screens.DepositWindow)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HuntShopWindow = require(script.Parent.Parent.UI.Screens.HuntShopWindow)
+local PortalShopWindow = require(script.Parent.Parent.UI.Screens.PortalShopWindow)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcDialog = require(script.Parent.Parent.UI.Screens.NpcDialog)
@@ -64,6 +65,8 @@ NpcController.UpgradeTarget = scope:Value(nil :: any)
 NpcController.RerollTarget = scope:Value(nil :: any)
 -- S154: target of the forge's Appearance tab (transmog), set by dropping an item on its anvil.
 NpcController.TransmogTarget = scope:Value(nil :: any)
+-- S160k: target of the forge's Effect tab ("Change effect"), set by dropping an item on its anvil.
+NpcController.EffectTarget = scope:Value(nil :: any)
 NpcController.SmithTab = scope:Value("craft")
 
 local WindowManager: any
@@ -82,6 +85,7 @@ local SERVICE_WINDOWS = {
 	"mail",
 	"huntshop", -- S134k
 	"wanderer", -- S159w
+	"portalshop", -- S160k
 }
 -- S97: the mounts window opens anywhere (J, the HUD menu); it closes with the NPC's windows only when the
 -- stablemaster's dialog opened it. S126: the arena window the same way (U, the HUD menu, the Arena Master).
@@ -107,6 +111,7 @@ local SERVICE_TO_WINDOW: { [string]: string } = {
 	arena = "arena", -- S126: the Arena Master (ArenaController registers the window)
 	look = "look", -- S132: the barber (PremiumController registers the window)
 	wanderer = "wanderer", -- S159w: the wandering merchant's goods
+	portalshop = "portalshop", -- S160k: the Portal Master's teleport stones
 }
 
 local function heal(npcId: string)
@@ -251,6 +256,12 @@ end
 function NpcController.SetTransmogTarget(location: string, key: string)
 	NpcController.TransmogTarget:set({ location = location, key = key })
 	NpcController.SmithTab:set("transmog")
+end
+
+-- S160k: the Effect tab with an item (drop on its anvil).
+function NpcController.SetEffectTarget(location: string, key: string)
+	NpcController.EffectTarget:set({ location = location, key = key })
+	NpcController.SmithTab:set("effect")
 end
 
 function NpcController.OpenUnbind()
@@ -431,6 +442,7 @@ local function registerWindows()
 				UpgradeTarget = NpcController.UpgradeTarget,
 				RerollTarget = NpcController.RerollTarget,
 				TransmogTarget = NpcController.TransmogTarget,
+				EffectTarget = NpcController.EffectTarget,
 				ShowModal = WindowManager.ShowModal,
 				Tab = NpcController.SmithTab,
 			})
@@ -468,6 +480,15 @@ local function registerWindows()
 		size = Vector2.new(720, 620),
 		build = function(s)
 			return WanderingMerchantWindow(s, { NpcId = NpcController.Current, ShowModal = WindowManager.ShowModal })
+		end,
+	})
+	-- S160k: the Portal Master's teleport stones (Dragon Shards)
+	WindowManager.Register({
+		id = "portalshop",
+		titleKey = "portalshop.title",
+		size = Vector2.new(720, 620),
+		build = function(s)
+			return PortalShopWindow(s, { NpcId = NpcController.Current, ShowModal = WindowManager.ShowModal })
 		end,
 	})
 	WindowManager.Register({

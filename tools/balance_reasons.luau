@@ -155,6 +155,7 @@ return {
 		["Data/AdminCommands"] = "sekret",
 		["Data/Codes"] = "sekret",
 		["Data/Products"] = "sekret",
+		["Data/PortalShop"] = "premium", -- S160k: the Portal Master's teleport stones for Dragon Shards (convenience)
 		["Data/Localization/*"] = "teksty",
 		["Data/Spawns/*"] = "generowane",
 		["Data/ItemIconAtlas"] = "generowane",
@@ -5315,6 +5316,10 @@ return {
 		},
 		["Config:Reroll*"] = {
 			{
+				session = "S160k",
+				why = 'new effectGoldMul 3 and effectEssence dust 4 / 6 (Legendary / Mythic) (owner 2026-10-21): "Change effect" of one skill effect costs gold, essence and a Stone of Effect Transmutation together, no growth (the stone\'s 10 a day is the cap); outside the pace model like the bonus reroll',
+			},
+			{
 				session = "S156",
 				why = "new allGoldMul 3 (owner 2026-10-20): the Scroll of Transformation rerolls every regular line for 3 attempts' gold and counts one attempt (the scroll replaces the essence)",
 			},
@@ -5327,6 +5332,45 @@ return {
 			{
 				session = "S156",
 				why = "new item (owner 2026-10-20): Scroll of Transformation (premium shop, 1 a day): price 1 with noSell, stack 999, level 1",
+			},
+		},
+		["Items/Consumables:[effect_stone]*"] = {
+			{
+				session = "S160k",
+				why = "new item (owner 2026-10-21): Stone of Effect Transmutation (premium shop, 10 a day): price 1 with noSell, stack 999, level 1",
+			},
+		},
+		["Items/Consumables:[stone_return_perm]*"] = {
+			{
+				session = "S160k",
+				why = "new item (owner 2026-10-21): the Portal Master's everlasting Stone of Return (Data/PortalShop, never used up): price 1 with noSell, stack 999, level 1",
+			},
+		},
+		["Items/Consumables:[stone_map_perm]*"] = {
+			{ session = "S160k", why = "new item: the everlasting Map Stone (as stone_return_perm)" },
+		},
+		["Items/Consumables:[stone_dungeon_perm]*"] = {
+			{ session = "S160k", why = "new item: the everlasting Dungeon Stone (as stone_return_perm)" },
+		},
+		["Items/Consumables:[stone_dungeon_meadows_perm]*"] = {
+			{
+				session = "S160k",
+				why = "new item: the everlasting Dungeon Stone of the Meadows (as stone_return_perm)",
+			},
+		},
+		["Items/Consumables:[stone_dungeon_duskwood_perm]*"] = {
+			{ session = "S160k", why = "new item: the everlasting Dungeon Stone of Duskwood (as stone_return_perm)" },
+		},
+		["Items/Consumables:[stone_dungeon_ashen_perm]*"] = {
+			{
+				session = "S160k",
+				why = "new item: the everlasting Dungeon Stone of the Ashen Wastes (as stone_return_perm)",
+			},
+		},
+		["Items/Consumables:[stone_dungeon_frostpeak_perm]*"] = {
+			{
+				session = "S160k",
+				why = "new item: the everlasting Dungeon Stone of the Frost Peaks (as stone_return_perm)",
 			},
 		},
 		["Items/Consumables:[reroll_stone]*"] = {

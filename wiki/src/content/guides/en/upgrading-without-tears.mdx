@@ -35,8 +35,16 @@ In the blacksmith's "Transmute" tab you reroll one extra bonus of an item (a wea
 - Base stats, the weapon trait, legendary and mythic effects and the bonuses of named boss items cannot be transmuted.
 - An attempt costs gold and a little <Item id="essence_dust" />. Every further attempt on the same item costs <Stat path="upgrade.reroll.growth" format="frac" /> more, at most <Stat path="upgrade.reroll.growthCap" format="x" /> the first. For example a Heroic item of level <Stat path="upgrade.reroll.levels.1" />: the first attempt <Stat path="upgrade.reroll.costs.45.heroic.0.gold" format="gold" />, the tenth <Stat path="upgrade.reroll.costs.45.heroic.2.gold" format="gold" />.
 - The attempt count and the locked line travel with the item in a trade: the buyer keeps paying what the previous owner did.
-- A <Item id="reroll_stone" /> from the premium shop replaces the essence of one attempt (you always pay the gold), once a day.
+- Every attempt also takes one <Item id="reroll_stone" />: you pay the gold, the essence and the stone together, never one instead of another. Buy the stones in the premium shop, up to <Stat path="premium.shop.4.dailyLimit" /> a day.
 - A <Item id="transmute_scroll" /> from the premium shop rerolls every regular bonus line of an item at once at the blacksmith, even on an item with a locked line. The pools and values are the same as when the item drops. It costs <Stat path="upgrade.reroll.allGoldMul" format="x" /> the gold of one transmutation, no essence, and counts as one transmutation. You can buy it once a day.
+
+## Changing an effect
+
+In the blacksmith's "Effect" tab you change one skill effect of a Legendary or Mythic item. The new effect has the same rank (a legendary one stays legendary, a mythic one mythic) and comes from the same pool as when the item drops: the class, a Mage weapon's element and the weapon's pool. It is never an effect the item already has. Every possible effect has the same chance.
+
+- A change costs gold (the same for every change, it does not grow), <Item id="essence_dust" /> (Legendary <Stat path="upgrade.reroll.effectEssence.legendary.n" />, Mythic <Stat path="upgrade.reroll.effectEssence.mythic.n" />) and one <Item id="effect_stone" />, all together.
+- Buy the stone in the premium shop, up to <Stat path="premium.shop.5.dailyLimit" /> a day.
+- Effects of named boss items cannot be changed.
 
 ## A simple plan
 

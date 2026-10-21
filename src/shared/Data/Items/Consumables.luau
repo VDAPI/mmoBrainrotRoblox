@@ -102,6 +102,36 @@ for _, region in { "meadows", "duskwood", "ashen", "frostpeak" } do
 		target = `dungeon:{region}`,
 	})
 end
+-- S160k (owner 2026-10-21): the Portal Master's everlasting stones (Data/PortalShop): one per teleport stone above,
+-- the same target, never used up (`use.keep`, TravelService). Bought once per account for Dragon Shards; every
+-- character of the account takes its copy from him for free. Bound from creation (a bound stack), never sold.
+for _, base in
+	{
+		"stone_return",
+		"stone_map",
+		"stone_dungeon",
+		"stone_dungeon_meadows",
+		"stone_dungeon_duskwood",
+		"stone_dungeon_ashen",
+		"stone_dungeon_frostpeak",
+	}
+do
+	local source: any = nil
+	for _, def in LIST do
+		if def.id == base then
+			source = def
+		end
+	end
+	assert(source and source.use, `Consumables: no teleport stone {base}`)
+	other(`{base}_perm`, "stone", "stone", "◈", "#E8C25A", 1, nil, {
+		kind = "teleport",
+		target = source.use.target,
+		keep = true,
+	})
+	local stone = LIST[#LIST] :: any
+	stone.bindOnPickup = true
+	stone.noSell = true
+end
 -- Scrolls (S06–S07)
 other("scroll_protection", "scroll", "scroll", "📜", "#4FD16B", 200, nil, { kind = "scroll", target = "protection" })
 -- S31: the reset scrolls are worth 100 (bought for 500 / 400 x level, so selling never pays off).
@@ -116,11 +146,21 @@ do
 	hunt.bindOnPickup = true
 	hunt.noSell = true
 end
--- S134j: Stone of Transmutation, sold only in the premium shop (Data/Products reroll_stone, 1 a day): the blacksmith
--- takes it instead of the essence of one bonus reroll (gold always, Logic/Reroll.costWithStone). Account-bound from
--- creation (ItemRoll.makeStack binds `bindOnPickup` stacks), never sold, traded, mailed or listed; no material (no
--- dismantling, transmutation or upgrade use). Using it from the backpack only explains it (ScrollService).
+-- S134j: Stone of Transmutation, sold only in the premium shop (Data/Products reroll_stone). S160k (owner 2026-10-21):
+-- the Stone of Bonus Transmutation, 10 a day: every bonus reroll at the smith takes one together with the gold and
+-- the essence (Logic/Reroll.payment). Account-bound from creation (ItemRoll.makeStack binds `bindOnPickup` stacks),
+-- never sold, traded, mailed or listed; no material (no dismantling, transmutation or upgrade use). Using it from the
+-- backpack only explains it (ScrollService).
 other("reroll_stone", "scroll", "scroll", "◈", "#E8C25A", 1, nil, { kind = "scroll", target = "transmute" })
+do
+	local stone = LIST[#LIST] :: any
+	stone.bindOnPickup = true
+	stone.noSell = true
+end
+-- S160k (owner 2026-10-21): Stone of Effect Transmutation, sold only in the premium shop (Data/Products effect_stone,
+-- 10 a day): the smith's "Change effect" takes one with the gold and the essence (Logic/EffectReroll.payment). Bound
+-- and never sold like the bonus stone; no material.
+other("effect_stone", "scroll", "scroll", "◈", "#FF9F1C", 1, nil, { kind = "scroll", target = "transmuteFx" })
 do
 	local stone = LIST[#LIST] :: any
 	stone.bindOnPickup = true

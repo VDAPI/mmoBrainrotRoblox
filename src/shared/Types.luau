@@ -536,6 +536,8 @@ export type AccountData = {
 	dailies: { streak: number, last: number, shardDay: number, shardWeek: number },
 	-- audit 2026-10-21: the guild goal groups whose Dragon Shards the account took in `week` (Logic/GuildProgress)
 	guildShards: { week: number, groups: { [string]: boolean } },
+	-- S160k: the Portal Master's everlasting stones bought by the account (Data/PortalShop item id -> true)
+	portalStones: { [string]: boolean },
 }
 
 -- Character summary shown on the selection screen.

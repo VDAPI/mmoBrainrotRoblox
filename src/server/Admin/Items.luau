@@ -771,7 +771,7 @@ local function costText(cost: Reroll.Cost): string
 	return table.concat(parts, ", ")
 end
 
--- S134j: /reroll <slot|index> <line> [pay|stone|free]
+-- S134j: /reroll <slot|index> <line> [pay|free] (S160k: no "stone" mode, the stone is always part of the payment)
 commands.reroll = function(player, args)
 	local where, line = args[1], parseAmount(args[2])
 	if not where or line == nil then
@@ -796,7 +796,6 @@ commands.reroll = function(player, args)
 			key,
 			line,
 			current.stat,
-			mode == "stone",
 			{ anywhere = true, free = mode == "free" }
 		)
 		if not ok then
@@ -831,8 +830,42 @@ commands.rerollstate = function(player, args)
 			line = if state.line then tostring(state.line) else "-",
 			n = state.n,
 			cost = if ok then costText(Reroll.cost(item)) else `@{err}`,
-			stone = if ok then costText(Reroll.costWithStone(item)) else "-",
+			stone = if ok then costText(Reroll.payment(item)) else "-",
 		})
+	end)
+end
+
+-- S160k: /rerollfx <slot|index> <effect> [pay|free]
+commands.rerollfx = function(player, args)
+	local where, index = args[1], parseAmount(args[2])
+	if not where or index == nil then
+		reply(player, "admin.usage.rerollfx")
+		return
+	end
+	withCharacter(player, function()
+		local item, location, key = itemAt(player, where)
+		if not item then
+			reply(player, "admin.up.none")
+			return
+		end
+		local current = if type(item.fx) == "table" then item.fx[index] else nil
+		if type(current) ~= "string" then
+			reply(player, "smith.effect.error.none")
+			return
+		end
+		local ok, err, result = BlacksmithService.RerollEffect(
+			player,
+			location,
+			key,
+			index,
+			current,
+			{ anywhere = true, free = args[3] == "free" }
+		)
+		if not ok then
+			reply(player, err or "error.internal")
+			return
+		end
+		reply(player, "admin.rerollfx.ok", { effect = index, old = result.old, new = result.new })
 	end)
 end
 

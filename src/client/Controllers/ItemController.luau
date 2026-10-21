@@ -362,6 +362,8 @@ local function onDrop(from: string, to: string)
 		-- S134j: the Transmute tab's anvil ("smith:reroll") sets its own target
 		if toRest == "reroll" then
 			NpcController.SetRerollTarget(fromKind, fromRest)
+		elseif toRest == "effect" then
+			NpcController.SetEffectTarget(fromKind, fromRest) -- S160k: the Effect tab's anvil
 		elseif toRest == "transmog" then
 			NpcController.SetTransmogTarget(fromKind, fromRest) -- S154: the Appearance tab's anvil
 		else

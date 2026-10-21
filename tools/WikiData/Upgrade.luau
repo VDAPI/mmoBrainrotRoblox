@@ -7,6 +7,7 @@
 
 local Clean = require("./Clean")
 local Config = require("../../src/shared/Config")
+local EffectReroll = require("../../src/shared/Logic/EffectReroll")
 local Items = require("../../src/shared/Data/Items")
 local Rarities = require("../../src/shared/Data/Rarities")
 local Schema = require("./Schema")
@@ -47,6 +48,11 @@ S.file(
 			essence = map(rec("RerollEssence", { id = "ref:items", n = "int" })),
 			goldMul = "number",
 			["allGoldMul?"] = "number", -- WIKI-3 (S156): the Scroll of Transformation rerolls every line for this x the gold
+			-- S160k: the stone every bonus reroll takes, and "Change effect" (gold x effectGoldMul, essence, its stone)
+			["stone?"] = "ref:items",
+			["effectStone?"] = "ref:items",
+			["effectGoldMul?"] = "number",
+			["effectEssence?"] = map(rec("RerollEffectEssence", { id = "ref:items", n = "int" })),
 			growth = "number",
 			growthCap = "number",
 			attempts = arr("int"),
@@ -181,6 +187,10 @@ function Upgrade.build(ctx: any): any
 			essence[r.key] = { id = e.id, n = e.n }
 		end
 	end
+	local effectEssence = {}
+	for key, e in c.effectEssence :: any do
+		effectEssence[key] = { id = e.id, n = e.n }
+	end
 	for _, level in Upgrade.REROLL_LEVELS do
 		local byRarity = {}
 		for _, r in Rarities.list do
@@ -205,6 +215,10 @@ function Upgrade.build(ctx: any): any
 			essence = essence,
 			goldMul = c.goldMul,
 			allGoldMul = c.allGoldMul,
+			stone = Reroll.STONE,
+			effectStone = EffectReroll.STONE,
+			effectGoldMul = c.effectGoldMul,
+			effectEssence = effectEssence,
 			growth = c.growth,
 			growthCap = c.growthCap,
 			attempts = Upgrade.REROLL_ATTEMPTS,

@@ -27,6 +27,7 @@ export type Service =
 	| "look" -- S132: change face, skin and hair (the look window; paid changes only here, Logic/CharacterLook)
 	| "huntshop" -- S134k: the Huntmaster's shop for Hunter's Marks (Data/HuntShop)
 	| "wanderer" -- S159w: the wandering merchant's goods (Data/WanderingMerchant, WanderingMerchantController)
+	| "portalshop" -- S160k: the Portal Master's teleport stones for Dragon Shards (Data/PortalShop)
 
 export type NpcDef = {
 	id: string,
@@ -302,6 +303,10 @@ townsfolk(
 	"➶",
 	{ services = { "talk", "quests", "huntshop" } }
 )
+
+-- S160k (owner 2026-10-21): the Portal Master inside the east gate (Data/Town/npcExtra): every teleport stone of the
+-- game for Dragon Shards, by the piece or forever (Data/PortalShop, PortalShopService).
+townsfolk("portalmaster", { body = "#2E3A6B", accent = "#7FB8FF" }, "◈", { services = { "talk", "portalshop" } })
 
 -- S102: an NPC of a region map standing on a prepared spot of Areas.byMap[map].npcSpots (S27 on the Meadows, S103-S108
 -- elsewhere); `extra.services` / `shop` / `wiki` as for townsfolk; S103: `extra.ghost`; S104: `extra.showFrom`.

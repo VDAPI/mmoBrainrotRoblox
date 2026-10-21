@@ -13766,3 +13766,17 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `tests/npcpose.spec`.
 - **Dla właściciela:** bez przeglądu w Studio (nie ma jeszcze modeli); kowal kuje w miejscu, `Work = "none"` na modelu
   to wyłącza.
+
+### S160k: kowal (premia za złoto + pył + kamień, zmiana efektu) i Mistrz Portali (2026-10-21)
+- **Kowal:** przemiana premii płaci złoto, pył i Kamień Przemiany Bonusu naraz (`Reroll.payment`, `BlacksmithService.Reroll`
+  bez flagi kamienia, `RerollBonus` 4 argumenty); nowa zakładka „Efekt” (`BlacksmithWindow/Effect`, `Logic/EffectReroll`,
+  `BlacksmithService.RerollEffect`, remote `RerollEffect`, admin `/rerollfx`); okno pokazuje trzy koszty z „masz / trzeba”.
+- **Sklep premium:** `reroll_stone` 100, 10 dziennie; nowy `effect_stone` 100, 10 dziennie (`Data/Products`, `Data/Items/
+  Consumables`, `ScrollService` podpowiedź); `docs/SKLEP-ID.md` odświeżony.
+- **Mistrz Portali:** `Data/PortalShop`, `Logic/PortalShop`, `PortalShopService`, `PortalShopWindow`, NPC `portalmaster`
+  (`Data/Npcs`, `Data/Town/npcExtra` przy wschodniej bramie), 7 wiecznych kamieni `*_perm` (`use.keep`, `TravelService`
+  ich nie zużywa, ikony jak zwykłe kamienie), `account.portalStones`.
+- **Wiki:** `upgrade.json` (`reroll.stone`, `effectStone`, `effectGoldMul`, `effectEssence`; świadoma zmiana kształtu
+  `WIKI_KEYS_ALLOW="upgrade:*,items:items.items[].use.keep,types.ts"`), poradnik Ulepszanie (PL / EN), dane odświeżone.
+- **Testy:** `effectreroll.spec`, `portalshop.spec`, `paywall.spec` (2b, 2d, 2e), `reroll.spec`, `data.spec` (+8 przedmiotów).
+- **Dla właściciela:** model Tripo Mistrza Portali (`TRIPO-NPC.md` nr 68); bez przeglądu w Studio.

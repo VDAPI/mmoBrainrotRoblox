@@ -32,6 +32,7 @@ export type UseEffect = {
 	resource: ("hp" | "mana" | "energy")?,
 	amount: number?,
 	target: string?, -- teleport / scroll specifics (S06–S07)
+	keep: boolean?, -- S160k: a teleport stone that is never used up (the Portal Master's everlasting stones)
 }
 
 export type ItemDef = {

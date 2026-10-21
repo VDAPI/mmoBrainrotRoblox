@@ -277,9 +277,12 @@ cmd("items", "givefam", {
 })
 cmd("items", "itemscore", {})
 -- S134j: bonus reroll of an equipped (slot) or backpack (index) item without the smith's distance: pays like the
--- smith ("pay"), with a Stone of Transmutation ("stone") or nothing ("free"); /rerollstate shows `rr` and the next cost.
-cmd("items", "reroll", { str("where"), int("line", 1, 9), enum("mode", { "pay", "stone", "free" }, true, "pay") })
+-- smith ("pay": S160k gold, essence and a stone) or nothing ("free"); /rerollstate shows `rr` and the next cost.
+cmd("items", "reroll", { str("where"), int("line", 1, 9), enum("mode", { "pay", "free" }, true, "pay") })
 cmd("items", "rerollstate", { str("where") })
+-- S160k: "Change effect" of an equipped (slot) or backpack (index) item without the smith's distance (effect number in
+-- the item's fx list; "pay" like the smith, "free" without the cost).
+cmd("items", "rerollfx", { str("where"), int("effect", 1, 4), enum("mode", { "pay", "free" }, true, "pay") })
 -- S154: item looks: puts a look of the collection on an equipped (slot) or backpack (index) item without the smith's
 -- distance ("clear" takes it off; "free" without the cost); /transmoglooks unlocks every look, empties the collection
 -- or lists the counts per type.

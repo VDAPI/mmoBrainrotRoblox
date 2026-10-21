@@ -3,8 +3,10 @@
 -- equipped items, optional Scroll of Protection), dismantling into essences. Each operation checks the NPC
 -- distance, the costs and changes data in one step. +7 and higher is announced on the server; +9 on a
 -- legendary also across servers. S134j: bonus reroll (Logic/Reroll, docs/DESIGN.md §6a): one regular line, locked
--- after the first reroll, essence or a Stone of Transmutation + gold, each attempt on the item dearer. S154: item looks
--- (Logic/Transmog, §6b): a look from the account's collection on a weapon or an off-hand for gold and essence.
+-- after the first reroll, each attempt on the item dearer. S160k (owner 2026-10-21): gold, essence AND a Stone of Bonus
+-- Transmutation together (Reroll.payment); "Change effect" (Logic/EffectReroll) replaces one skill effect of a
+-- Legendary / Mythic item for gold, essence and a Stone of Effect Transmutation. S154: item looks (Logic/Transmog,
+-- §6b): a look from the account's collection on a weapon or an off-hand for gold and essence.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,6 +16,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 
 local Crafting = require(Shared.Data.Crafting)
 local Dismantle = require(Shared.Logic.Dismantle)
+local EffectReroll = require(Shared.Logic.EffectReroll)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
@@ -200,16 +203,15 @@ export type RerollOpts = {
 }
 
 -- Rerolls line `index` of an item (backpack or equipped). `expected` is the line's stat the client saw: a different
--- one (item changed in another window or by a trade) refuses before anything is paid. With `useStone` a Stone of
--- Transmutation pays the essence (never silently the essence when the stone is missing). Pay, roll and write without
--- yields in between; the server's rng only.
+-- one (item changed in another window or by a trade) refuses before anything is paid. S160k: the gold, the essence and
+-- a Stone of Bonus Transmutation together (Reroll.payment; no stone refuses with noStone before anything is paid).
+-- Pay, roll and write without yields in between; the server's rng only.
 function BlacksmithService.Reroll(
 	player: Player,
 	location: string,
 	key: string,
 	index: number,
 	expected: string,
-	useStone: boolean,
 	opts: RerollOpts?
 ): (boolean, string?, any)
 	local o: RerollOpts = opts or {}
@@ -238,28 +240,21 @@ function BlacksmithService.Reroll(
 	if next(Reroll.pool(item, index, char.class)) == nil then
 		return false, "smith.reroll.error.empty"
 	end
-	local stone = useStone and not o.free
-	if stone and InventoryService.Count(player, Reroll.STONE) < 1 then
+	if not o.free and InventoryService.Count(player, Reroll.STONE) < 1 then
 		return false, "smith.reroll.error.noStone"
 	end
-	local cost = if o.free
-		then { gold = 0, materials = {} }
-		elseif stone then Reroll.costWithStone(item)
-		else Reroll.cost(item)
+	local cost = if o.free then { gold = 0, materials = {} } else Reroll.payment(item)
 	if char.gold < cost.gold then
 		return false, "shop.error.gold"
 	end
 	if not hasMaterials(player, cost.materials) then
 		return false, "smith.missing"
 	end
-	-- Pay, roll, write — no yields in between.
+	-- Pay, roll, write — no yields in between (the stone is the payment's last material).
 	if cost.gold > 0 then
 		addGold(player, -cost.gold)
 	end
 	takeMaterials(player, cost.materials)
-	if stone then
-		InventoryService.Remove(player, Reroll.STONE, 1)
-	end
 	local old = { stat = current.stat, v = current.v }
 	local line = Reroll.roll(item, index, char.class, rng)
 	Reroll.apply(item, index, line)
@@ -267,16 +262,7 @@ function BlacksmithService.Reroll(
 	local n = Reroll.state(item).n
 	Analytics.custom(player, "Reroll", item.rarity)
 	QuestEvents.fire(player, "reroll", nil) -- S151: achievements
-	log:info(
-		"%s reroll %s line %d %s -> %s (n=%d, stone=%s)",
-		player.Name,
-		item.id,
-		index,
-		old.stat,
-		line.stat,
-		n,
-		tostring(stone)
-	)
+	log:info("%s reroll %s line %d %s -> %s (n=%d)", player.Name, item.id, index, old.stat, line.stat, n)
 	return true, nil, { index = index, old = old, new = { stat = line.stat, v = line.v }, n = n }
 end
 
@@ -344,10 +330,80 @@ local function reroll(
 	location: string,
 	key: string,
 	index: number,
-	expected: string,
-	useStone: boolean
+	expected: string
 ): (boolean, string?, any)
-	return BlacksmithService.Reroll(player, location, key, index, expected, useStone)
+	return BlacksmithService.Reroll(player, location, key, index, expected)
+end
+
+-- S160k (owner 2026-10-21): replaces effect `index` of a Legendary / Mythic item with another effect of the same tier
+-- (Logic/EffectReroll). `expected` is the effect id the client saw: another one refuses before anything is paid. The
+-- gold, the essence and a Stone of Effect Transmutation together. Pay, roll and write without yields in between.
+function BlacksmithService.RerollEffect(
+	player: Player,
+	location: string,
+	key: string,
+	index: number,
+	expected: string,
+	opts: RerollOpts?
+): (boolean, string?, any)
+	local o: RerollOpts = opts or {}
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
+	local char = character(player)
+	if not char then
+		return false, "error.wrongPhase"
+	end
+	if not o.anywhere and not nearSmith(player) then
+		return false, "npc.error.tooFar"
+	end
+	local item, commit = locate(player, location, key)
+	if not item then
+		return false, "error.badRequest"
+	end
+	local ok, err = EffectReroll.canIndex(item, index)
+	if not ok then
+		return false, err
+	end
+	local old = ((item :: any).fx :: { string })[index]
+	if old ~= expected then
+		return false, "smith.reroll.error.changed"
+	end
+	if #EffectReroll.pool(item, index, char.class) == 0 then
+		return false, "smith.effect.error.empty"
+	end
+	if not o.free and InventoryService.Count(player, EffectReroll.STONE) < 1 then
+		return false, "smith.effect.error.noStone"
+	end
+	local cost = if o.free then { gold = 0, materials = {} } else EffectReroll.payment(item)
+	if char.gold < cost.gold then
+		return false, "shop.error.gold"
+	end
+	if not hasMaterials(player, cost.materials) then
+		return false, "smith.missing"
+	end
+	-- Pay, roll, write — no yields in between (the stone is the payment's last material).
+	if cost.gold > 0 then
+		addGold(player, -cost.gold)
+	end
+	takeMaterials(player, cost.materials)
+	local new = EffectReroll.roll(item, index, char.class, rng)
+	EffectReroll.apply(item, index, new)
+	commit()
+	Analytics.custom(player, "RerollEffect", item.rarity)
+	QuestEvents.fire(player, "reroll", nil)
+	log:info("%s reroll effect %s #%d %s -> %s", player.Name, item.id, index, old, new)
+	return true, nil, { index = index, old = old, new = new }
+end
+
+local function rerollEffect(
+	player: Player,
+	location: string,
+	key: string,
+	index: number,
+	expected: string
+): (boolean, string?, any)
+	return BlacksmithService.RerollEffect(player, location, key, index, expected)
 end
 
 -- Item looks (S154) ----------------------------------------------------------------------------------------------
@@ -536,6 +592,7 @@ function BlacksmithService.Start()
 	Net.Handle("DismantleAll", dismantleAll)
 	Net.Handle("RerollBonus", reroll)
 	Net.Handle("RerollAll", rerollAll) -- S156
+	Net.Handle("RerollEffect", rerollEffect) -- S160k
 	Net.Handle("TransmogApply", transmog) -- S154
 end
 

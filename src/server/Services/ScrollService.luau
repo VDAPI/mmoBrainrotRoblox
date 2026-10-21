@@ -38,6 +38,9 @@ local function useScroll(player: Player, index: number, item: Types.ItemInstance
 	elseif target == "transmute" then
 		-- S134j: the Stone of Transmutation is taken by the blacksmith (Reroll tab), never used up here
 		return false, "item.reroll_stone.useHint"
+	elseif target == "transmuteFx" then
+		-- S160k: the Stone of Effect Transmutation too (the forge's Effect tab)
+		return false, "item.effect_stone.useHint"
 	elseif target == "transmuteAll" then
 		-- S156: the Scroll of Transformation too
 		return false, "item.transmute_scroll.useHint"

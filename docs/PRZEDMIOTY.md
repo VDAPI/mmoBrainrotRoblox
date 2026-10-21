@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych e1eb7e04 (`wiki/src/data/meta.json`).
+> Odcisk danych 66d09c49 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1254,6 +1254,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Błogosławieństwo Wojownika | Mikstura | 1 | — | — | 180 |
 | Błogosławieństwo Wojownika | Mikstura | 1 | — | — | 320 |
 | Błogosławieństwo Wojownika | Mikstura | 1 | — | — | 500 |
+| Kamień Przemiany Efektu | Zwój | 1 | Kowal bierze jeden przy każdej zmianie efektu umiejętności, razem ze złotem i esencją. Związany z kontem. | — | 1 |
 | Eliksir Odporności na Ogień | Mikstura | 1 | — | — | 60 |
 | Eliksir Odporności na Lód | Mikstura | 1 | — | — | 60 |
 | Eliksir Odporności na Błyskawice | Mikstura | 1 | — | — | 60 |
@@ -1276,7 +1277,7 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Duża Mikstura Many | Mikstura | 1 | — | 250 | 62 |
 | Wielka Mikstura Many | Mikstura | 45 | — | 700 | 175 |
 | Potężna Mikstura Many | Mikstura | 70 | — | 1800 | 450 |
-| Kamień Przemiany | Zwój | 1 | Kowal przyjmie go zamiast esencji przy jednej przemianie premii. Związany z kontem. | — | 1 |
+| Kamień Przemiany Bonusu | Zwój | 1 | Kowal bierze jeden przy każdej przemianie premii, razem ze złotem i esencją. Związany z kontem. | — | 1 |
 | Zwój Łowów | Zwój | 1 | Spisane ścieżki zwierzyny z leża bossa. Użyty dodaje czas Samodzielnych Łowów. Związany. | — | 1 |
 | Zwój Zapomnienia | Zwój | 1 | Resetuje punkty statystyk aktywnego zestawu. | 500 | 100 |
 | Zwój Ochrony | Zwój | 1 | Nieudane ulepszenie nie obniża przedmiotu. | — | 200 |
@@ -1284,9 +1285,16 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Zwój Rozwiązania | Zwój | 1 | Odwiązuje jeden przedmiot. | — | 500 |
 | Kamień Lochu | Kamień teleportu | 1 | Teleportuje przed wejście do lochu. | — | 150 |
 | Kamień Lochu: Kuźnia Głębin | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Kuźnia Głębin. | — | 150 |
+| Wieczny Kamień Lochu: Kuźnia Głębin | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Kuźnia Głębin. Nigdy się nie zużywa. | — | 1 |
 | Kamień Lochu: Krypta Zapomnianych | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Krypta Zapomnianych. | — | 150 |
+| Wieczny Kamień Lochu: Krypta Zapomnianych | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Krypta Zapomnianych. Nigdy się nie zużywa. | — | 1 |
 | Kamień Lochu: Serce Lodowca | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Serce Lodowca. | — | 150 |
+| Wieczny Kamień Lochu: Serce Lodowca | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Serce Lodowca. Nigdy się nie zużywa. | — | 1 |
 | Kamień Lochu: Jaskinia Mchów | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Jaskinia Mchów. | — | 150 |
+| Wieczny Kamień Lochu: Jaskinia Mchów | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Jaskinia Mchów. Nigdy się nie zużywa. | — | 1 |
+| Wieczny Kamień Lochu | Kamień teleportu | 1 | Teleportuje przed wejście do lochu. Nigdy się nie zużywa. | — | 1 |
 | Kamień Mapy | Kamień teleportu | 1 | Teleportuje na wybraną mapę. | — | 50 |
+| Wieczny Kamień Mapy | Kamień teleportu | 1 | Teleportuje na wybraną mapę. Nigdy się nie zużywa. | — | 1 |
 | Kamień Powrotu | Kamień teleportu | 1 | Teleportuje do stolicy po 5 s kanałowania. | 20 | 5 |
+| Wieczny Kamień Powrotu | Kamień teleportu | 1 | Teleportuje do stolicy po 5 s kanałowania. Nigdy się nie zużywa. | — | 1 |
 | Zwój Przemiany | Zwój | 1 | Kowal przelosuje nim naraz wszystkie premie jednego przedmiotu (płacisz trzykrotność złota jednej przemiany, bez esencji). Związany z kontem. | — | 1 |

@@ -147,12 +147,20 @@ local Definitions: { [string]: Definition } = {
 	Dismantle = { kind = "function", dir = "c2s", rate = 3, args = { "table" } }, -- ({ index })
 	DismantleAll = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (max rarity)
 	UnbindItem = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string" } }, -- ("inv"|"eq", key)
-	-- S134j: ("inv"|"eq", key, line index, expected stat of that line, use stone) -> (ok, err, { index, old, new, n })
+	-- S134j: ("inv"|"eq", key, line index, expected stat of that line) -> (ok, err, { index, old, new, n }); S160k: the
+	-- stone is always taken (no "use stone" flag)
 	RerollBonus = {
 		kind = "function",
 		dir = "c2s",
 		rate = 2,
-		args = { "string", "string", "integer", "string", "boolean" },
+		args = { "string", "string", "integer", "string" },
+	},
+	-- S160k: ("inv"|"eq", key, effect index in fx, expected effect id) -> (ok, err, { index, old, new })
+	RerollEffect = {
+		kind = "function",
+		dir = "c2s",
+		rate = 2,
+		args = { "string", "string", "integer", "string" },
 	},
 	-- S156: ("inv"|"eq", key, the item's line signature Reroll.signature) -> (ok, err, { changes, n })
 	RerollAll = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string", "string" }, repeatable = true },
@@ -238,6 +246,15 @@ local Definitions: { [string]: Definition } = {
 	ContractTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	ContractAcceptOne = { kind = "function", dir = "c2s", rate = 4, args = { "string", "integer" } },
 	ContractAbandon = { kind = "function", dir = "c2s", rate = 4, args = { "integer" } },
+	-- S160k: (stone item id of Data/PortalShop, "piece" | "perm" | "claim", amount of a piece purchase) at the Portal
+	-- Master for Dragon Shards (Logic/PortalShop)
+	PortalShopBuy = {
+		kind = "function",
+		dir = "c2s",
+		rate = 3,
+		args = { "string", "string", "integer" },
+		repeatable = true,
+	},
 	-- S134k: (npcId, entry key of Data/HuntShop, amount) a purchase at the Huntmaster for Hunter's Marks
 	HuntShopBuy = {
 		kind = "function",

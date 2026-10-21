@@ -84,6 +84,7 @@ local SERVICE_ICONS: { [string]: string } = {
 	story = "❗",
 	vendors = "⚔", -- S95: the dealer points to the class vendors
 	huntshop = "➶", -- S134k: the Huntmaster's shop (Hunter's Marks)
+	portalshop = "◈", -- S160k: the Portal Master's teleport stones
 }
 
 -- The item a shop entry sells (S31: the same instance as the shop window and the price).

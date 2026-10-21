@@ -543,7 +543,16 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
 - Koszt (`Config.Reroll`): pył 1 / 1 / 2 / 3 (Unikat / Heroiczny / Legendarny / Mityczny) + złoto ilvl × `k(ilvl)` ×
   1,8 (krzywa złota ulepszania), każda kolejna próba na tym samym przedmiocie +25% (najwyżej ×3). Licznik i linia
   idą z przedmiotem (handel, poczta, aukcje); przemiana nie zmienia wiązania, blokada sprzedaży jej nie blokuje.
-- **Kamień Przemiany** (sklep Smoczej Waluty, 1 dziennie, związany z kontem): płaci pył jednej próby, złoto zawsze.
+- **Kamień Przemiany Bonusu** (`reroll_stone`; S160k, właściciel 2026-10-21): każda próba bierze złoto, pył **i** jeden
+  kamień naraz (`Reroll.payment`), nigdy jedno zamiast drugiego. Sklep Smoczej Waluty: 100, do 10 dziennie na konto,
+  związany z kontem. Zwój Przemiany (S156) bez zmian.
+- **Zmiana efektu** (S160k, zakładka „Efekt”, `BlacksmithWindow/Effect`, `Logic/EffectReroll`, remote `RerollEffect`):
+  jeden efekt umiejętności (`fx`) przedmiotu Legendarnego lub Mitycznego zmienia się na inny efekt **tej samej rangi**
+  (legendarny na legendarny, mityczny na mityczny) z puli dropu (`ItemEffects.pool`: klasa postaci, gdy przedmiot do
+  niej pasuje, inaczej klasa zmienianego efektu; żywioł broni maga; pula broni i wspólne umiejętności klasy), bez
+  efektów, które przedmiot już ma; każdy kandydat z równą szansą. Nazwane przedmioty z bossów nie. Koszt naraz: złoto
+  ilvl × `k(ilvl)` × 3 (bez wzrostu), pył 4 / 6 (Legendarny / Mityczny) i **Kamień Przemiany Efektu** (`effect_stone`,
+  sklep Smoczej Waluty 100, do 10 dziennie, związany z kontem).
 
 ## 6b. Wygląd przedmiotu (transmog, kowal, S154)
 
@@ -692,6 +701,11 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
 - **Kamień Powrotu**: teleport do miasta (kanałowanie 5 s, przerywane obrażeniami). Tani u kupca.
 - **Kamień Mapy (X)**: teleport na wybraną mapę (do jej punktu odrodzenia).
 - **Kamień Lochu (X)**: teleport przed wejście do konkretnego lochu bossa.
+- **Mistrz Portali Teodor** (S160k, właściciel 2026-10-21; przy wschodniej bramie stolicy, `Data/PortalShop`,
+  `PortalShopService`): każdy kamień teleportu gry za Smoczą Walutę, na sztuki (1 lub 10, do 50 naraz) albo **na stałe**
+  (raz na konto, `account.portalStones`): wieczny kamień (`<kamień>_perm`, `use.keep`) działa jak zwykły i nigdy się nie
+  zużywa; każda postać konta odbiera u Mistrza swoją kopię za darmo (jedną naraz). Ceny: Powrotu 5 / 300, Mapy 10 / 600,
+  Lochu 15 / 600, Lochu regionu 10 / 250. Wygoda: te same kamienie są za złoto u alchemika i kupców (bez pay2win).
 - **Zwój Zapomnienia** (reset statów), **Zwój Odnowy Umiejętności** (pełny reset rang pul i węzłów kierunków, S138), **Zwój Rozwiązania**, **Zwój Ochrony**.
 
 ## 14. Umiejętności

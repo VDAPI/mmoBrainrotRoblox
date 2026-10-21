@@ -871,6 +871,14 @@ local Config = {
 		-- S156: the Scroll of Transformation rerolls every regular line at once for this many times one attempt's gold
 		-- (the essence is paid by the scroll); it counts as one attempt
 		allGoldMul = 3,
+		-- S160k (owner 2026-10-21): "Change effect" rerolls one skill effect of a Legendary / Mythic item
+		-- (Logic/EffectReroll) for gold ilvl x Upgrade.goldPerIlvl x effectGoldMul, the essence of its rarity and one
+		-- Stone of Effect Transmutation (`effect_stone`), all together; no growth (the stone's daily limit is the cap)
+		effectGoldMul = 3,
+		effectEssence = {
+			legendary = { id = "essence_dust", n = 4 },
+			mythic = { id = "essence_dust", n = 6 },
+		},
 	},
 	-- S151 (docs/DESIGN.md §20b): achievements (Data/Achievements, Logic/Achievements). The sum of every Dragon Shard
 	-- reward stays within shardBudget (tests/achievements.spec), a toast stays toastSeconds, after the catch-up of old

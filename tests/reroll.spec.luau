@@ -1,7 +1,7 @@
 --!strict
 -- S134j: bonus reroll at the smith (Logic/Reroll, docs/DESIGN.md §6a). Only random regular lines, one line per item
 -- (locked by the first reroll), the pool of the item without the other lines, the value like a drop, the cost growing
--- with the item's count up to growthCap, the Stone of Transmutation paying only the essence.
+-- with the item's count up to growthCap; S160k: the gold, the essence and a Stone of Bonus Transmutation together.
 
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Config = require("../src/shared/Config")
@@ -235,9 +235,9 @@ T.describe("Reroll cost (S134j)", function()
 			local cost = Reroll.cost(x)
 			local e = (c.essence :: any)[Rarities.get(rarity).key]
 			T.expect(cost.materials).toEqual({ { id = e.id, n = e.n } })
-			local stone = Reroll.costWithStone(x)
-			T.expect(stone.gold).toBe(cost.gold)
-			T.expect(#stone.materials).toBe(0)
+			local payment = Reroll.payment(x)
+			T.expect(payment.gold).toBe(cost.gold)
+			T.expect(payment.materials).toEqual({ { id = e.id, n = e.n }, { id = Reroll.STONE, n = 1 } })
 		end
 	end)
 end)

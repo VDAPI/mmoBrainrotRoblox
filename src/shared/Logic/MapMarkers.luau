@@ -55,6 +55,7 @@ local SERVICE_CATEGORY: { [string]: string } = {
 	mounts = "shop",
 	arenashop = "shop",
 	huntshop = "shop",
+	portalshop = "shop", -- S160k: the Portal Master
 	look = "shop",
 	blacksmith = "smith",
 	deposit = "bank",

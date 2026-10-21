@@ -20,6 +20,9 @@ local spots: { [string]: Types.Spot } = {
 	arenamaster = { x = 204, z = -96, facing = 135 },
 	-- S134k: the Huntmaster beside the contract board on the market (the board stands at 28, -68 facing 180)
 	huntmaster = { x = 40, z = -64, facing = 200 },
+	-- S160k: the Portal Master just inside the east gate (the way to the Meadows and the arrival of every region
+	-- portal's travellers, 270, 0), across the street from the stablemaster, facing the gate
+	portalmaster = { x = 252, z = -16, facing = 90 },
 }
 
 return spots

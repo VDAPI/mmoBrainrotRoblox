@@ -128,6 +128,9 @@ function AccountSchema.accountTemplate(): AccountData
 		-- audit 2026-10-21: the guild goal groups whose shards the account took this week (Logic/GuildProgress
 		-- .shardsTaken); no migration (reconcile)
 		guildShards = { week = 0, groups = {} },
+		-- S160k: the Portal Master's everlasting stones the account bought (Data/PortalShop item id -> true; read
+		-- through Logic/PortalShop.owned); no migration (reconcile)
+		portalStones = {},
 	}
 end
 

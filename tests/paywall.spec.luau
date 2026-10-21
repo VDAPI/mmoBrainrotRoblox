@@ -65,8 +65,11 @@ local ALLOWED_SCROLLS: { [string]: string } = {
 	skillreset = "redistributes own skill points",
 	unbind = "trade comfort",
 	protection = "EXCEPTION: keeps the upgrade level on a failure; dailyLimit must be 1 (DESIGN-17 §1)",
-	-- S134j: the Stone of Transmutation (test 2b)
-	transmute = "EXCEPTION (S134j): pays the essence of one bonus reroll at the smith, never gold; dailyLimit must be 1; bindOnPickup",
+	-- S134j: the Stone of Transmutation (test 2b); S160k (owner 2026-10-21): a ticket taken on top of the gold and the
+	-- essence of one bonus reroll (never instead of them), 10 a day
+	transmute = "EXCEPTION (S134j, S160k owner 2026-10-21): one is taken by every bonus reroll at the smith TOGETHER with the gold and the essence (it pays nothing of them); dailyLimit must be 10; bindOnPickup",
+	-- S160k (owner 2026-10-21): the Stone of Effect Transmutation (test 2d)
+	transmuteFx = "EXCEPTION (S160k, owner 2026-10-21): one is taken by every change of a skill effect at the smith TOGETHER with the gold and the essence; the new effect comes from the drop pool of the same tier; dailyLimit must be 10; bindOnPickup",
 	-- S156 (owner 2026-10-20): the Scroll of Transformation (test 2c)
 	transmuteAll = "EXCEPTION (S156, owner 2026-10-20): rerolls every regular line of one item at the smith (gold x3 always, the same pools and values as a drop); dailyLimit must be 1; bindOnPickup",
 }
@@ -264,53 +267,61 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 		T.expect(found).toBe(1)
 	end)
 
-	-- S134j: the Stone of Transmutation pays only the essence of one reroll (gold always, the count grows), 1 a day,
-	-- bound to the account; it is no material (no dismantling, recipe or upgrade cost names it).
-	T.it("2b. the Stone of Transmutation is 1 a day, account-bound and pays only essence", function()
-		local Rarities = require("../src/shared/Data/Rarities")
-		local Recipes = require("../src/shared/Data/Recipes")
-		local Reroll = require("../src/shared/Logic/Reroll")
-		local Upgrade = require("../src/shared/Logic/Upgrade")
-		local found = 0
-		for _, entry in Products.shop do
-			local def = entry.itemId and Items.get(entry.itemId)
-			if def and def.use and def.use.target == "transmute" then
-				found += 1
-				T.expect({ entry.key, entry.dailyLimit }).toEqual({ entry.key, 1 })
-				T.expect({ entry.key, def.bindOnPickup }).toEqual({ entry.key, true })
-				T.expect({ entry.key, ItemValue.canSell(ItemRoll.makeStack(def.id, 1, "s"), def) })
-					.toEqual({ entry.key, false })
+	-- S134j / S160k: the Stone of Bonus Transmutation is taken on top of the gold and the essence of one reroll (it pays
+	-- none of them), 10 a day, bound to the account; it is no material (no dismantling, recipe or upgrade cost names it).
+	T.it(
+		"2b. the Stone of Bonus Transmutation is 10 a day, account-bound and never replaces gold or essence",
+		function()
+			local Rarities = require("../src/shared/Data/Rarities")
+			local Recipes = require("../src/shared/Data/Recipes")
+			local Reroll = require("../src/shared/Logic/Reroll")
+			local Upgrade = require("../src/shared/Logic/Upgrade")
+			local found = 0
+			for _, entry in Products.shop do
+				local def = entry.itemId and Items.get(entry.itemId)
+				if def and def.use and def.use.target == "transmute" then
+					found += 1
+					T.expect({ entry.key, entry.dailyLimit }).toEqual({ entry.key, 10 })
+					T.expect({ entry.key, def.bindOnPickup }).toEqual({ entry.key, true })
+					T.expect({ entry.key, ItemValue.canSell(ItemRoll.makeStack(def.id, 1, "s"), def) })
+						.toEqual({ entry.key, false })
+				end
 			end
-		end
-		T.expect(found).toBe(1)
-		local stone = Reroll.STONE
-		for _, rarity in Rarities.list do
-			local item = ItemRoll.rollItem(
-				`sword1h_{Items.generate.tierFor(45)}`,
-				45,
-				rarity.id,
-				Rng.new(rarity.id),
-				"s",
-				"Warrior"
-			)
-			T.expect(Reroll.costWithStone(item).gold).toBe(Reroll.cost(item).gold)
-			T.expect(#Reroll.costWithStone(item).materials).toBe(0)
-			for _, drop in rarity.dismantle do
-				T.expect(drop.id ~= stone).toBe(true)
+			T.expect(found).toBe(1)
+			local stone = Reroll.STONE
+			for _, rarity in Rarities.list do
+				local item = ItemRoll.rollItem(
+					`sword1h_{Items.generate.tierFor(45)}`,
+					45,
+					rarity.id,
+					Rng.new(rarity.id),
+					"s",
+					"Warrior"
+				)
+				local cost, payment = Reroll.cost(item), Reroll.payment(item)
+				T.expect(payment.gold).toBe(cost.gold)
+				T.expect(#payment.materials).toBe(#cost.materials + 1)
+				for i, material in cost.materials do
+					T.expect(payment.materials[i]).toEqual(material)
+				end
+				T.expect(payment.materials[#payment.materials]).toEqual({ id = stone, n = 1 })
+				for _, drop in rarity.dismantle do
+					T.expect(drop.id ~= stone).toBe(true)
+				end
+				for n = 1, Upgrade.MAX do
+					for _, material in Upgrade.cost(item, n).materials do
+						T.expect(material.id ~= stone).toBe(true)
+					end
+				end
 			end
-			for n = 1, Upgrade.MAX do
-				for _, material in Upgrade.cost(item, n).materials do
-					T.expect(material.id ~= stone).toBe(true)
+			for _, recipe in Recipes.list do
+				T.expect({ recipe.id, recipe.result.id ~= stone }).toEqual({ recipe.id, true })
+				for _, ingredient in recipe.ingredients do
+					T.expect({ recipe.id, ingredient.id ~= stone }).toEqual({ recipe.id, true })
 				end
 			end
 		end
-		for _, recipe in Recipes.list do
-			T.expect({ recipe.id, recipe.result.id ~= stone }).toEqual({ recipe.id, true })
-			for _, ingredient in recipe.ingredients do
-				T.expect({ recipe.id, ingredient.id ~= stone }).toEqual({ recipe.id, true })
-			end
-		end
-	end)
+	)
 
 	-- S156: the Scroll of Transformation rerolls the regular lines only (pools and values of a drop), costs gold always,
 	-- 1 a day, bound; no material.
@@ -356,6 +367,62 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 			end
 		end
 	)
+
+	-- S160k (owner 2026-10-21): the Stone of Effect Transmutation: 10 a day, bound, taken on top of the gold and the
+	-- essence; the new effect has the old one's tier (never a Mythic effect on a Legendary item); no material.
+	T.it("2d. the Stone of Effect Transmutation is 10 a day, account-bound and keeps the effect tier", function()
+		local EffectReroll = require("../src/shared/Logic/EffectReroll")
+		local ItemEffects = require("../src/shared/Logic/ItemEffects")
+		local Rarities = require("../src/shared/Data/Rarities")
+		local found = 0
+		for _, entry in Products.shop do
+			local def = entry.itemId and Items.get(entry.itemId)
+			if def and def.use and def.use.target == "transmuteFx" then
+				found += 1
+				T.expect({ entry.key, entry.itemId }).toEqual({ entry.key, EffectReroll.STONE })
+				T.expect({ entry.key, entry.dailyLimit }).toEqual({ entry.key, 10 })
+				T.expect({ entry.key, def.bindOnPickup }).toEqual({ entry.key, true })
+				T.expect({ entry.key, ItemValue.canSell(ItemRoll.makeStack(def.id, 1, "s"), def) })
+					.toEqual({ entry.key, false })
+			end
+		end
+		T.expect(found).toBe(1)
+		for _, rarityId in { Rarities.LEGENDARY, Rarities.MYTHIC } do
+			for seed = 1, 20 do
+				local item = ItemRoll.rollItem(
+					`sword1h_{Items.generate.tierFor(60)}`,
+					60,
+					rarityId,
+					Rng.new(seed),
+					"s",
+					"Warrior"
+				)
+				local cost, payment = EffectReroll.cost(item), EffectReroll.payment(item)
+				T.expect(payment.gold).toBe(cost.gold)
+				T.expect(cost.gold > 0 and #cost.materials > 0).toBe(true)
+				T.expect(payment.materials[#payment.materials]).toEqual({ id = EffectReroll.STONE, n = 1 })
+				for index, id in item.fx or {} do
+					local tier = (ItemEffects.resolve(id) :: any).tier
+					for _, candidate in EffectReroll.pool(item, index, "Warrior") do
+						T.expect({ seed, index, candidate.tier }).toEqual({ seed, index, tier })
+					end
+				end
+			end
+		end
+	end)
+
+	-- S160k (owner 2026-10-21): the Portal Master sells teleport stones only (travel convenience, gold-buyable too)
+	T.it("2e. the Portal Master sells only teleport stones", function()
+		local PortalShop = require("../src/shared/Data/PortalShop")
+		T.expect(#PortalShop.list > 0).toBe(true)
+		for _, entry in PortalShop.list do
+			for _, id in { entry.itemId, entry.permId } do
+				local def = Items.get(id)
+				T.expect({ id, def ~= nil and def.category == "stone" }).toEqual({ id, true })
+				T.expect({ id, (def :: any).use.kind }).toEqual({ id, "teleport" })
+			end
+		end
+	end)
 
 	T.it("3. the item checker refuses power and accepts comfort", function()
 		local refused = {

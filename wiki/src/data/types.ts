@@ -1639,6 +1639,11 @@ export interface ReductionTable {
   rows: ReductionRow[];
 }
 
+export interface RerollEffectEssence {
+  id: string; // id in items.json
+  n: number;
+}
+
 export interface RerollEssence {
   id: string; // id in items.json
   n: number;
@@ -1648,11 +1653,15 @@ export interface RerollRules {
   allGoldMul?: number;
   attempts: number[];
   costs: Record<string, Record<string, UpgradeCost[]>>;
+  effectEssence?: Record<string, RerollEffectEssence>;
+  effectGoldMul?: number;
+  effectStone?: string; // id in items.json
   essence: Record<string, RerollEssence>;
   goldMul: number;
   growth: number;
   growthCap: number;
   levels: number[];
+  stone?: string; // id in items.json
 }
 
 export interface Road {

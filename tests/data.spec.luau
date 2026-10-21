@@ -401,8 +401,8 @@ T.describe("Data: Items", function()
 		-- + S07: 25 blessings, 4 elixirs, 4 dungeon stones; S32: 3 monster parts; 2026-10-10: 3 premium backpacks;
 		-- S92: 1 monster part (cursed_bone); S122: potion_full; S134d: scroll_hunt
 		-- S134j: reroll_stone (Stone of Transmutation); S156: transmute_scroll (Scroll of Transformation); S149c: 8
-		-- named items of the world boss (20 uniques)
-		T.expect(count).toBe(39 * 21 + 30 + 24 + 9 + 20 + 25 + 4 + 4 + 3 + 3 + 1 + 1 + 1 + 1 + 1)
+		-- named items of the world boss (20 uniques); S160k: effect_stone and 7 everlasting teleport stones
+		T.expect(count).toBe(39 * 21 + 30 + 24 + 9 + 20 + 25 + 4 + 4 + 3 + 3 + 1 + 1 + 1 + 1 + 1 + 1 + 7)
 	end)
 
 	T.it("class weapon types exist as item bases", function()
