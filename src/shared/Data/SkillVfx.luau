@@ -84,11 +84,16 @@ local SkillVfx: { [string]: Entry } = {
 	-- Warrior (S114): steel and dust near the weapon and the ground, the class colour. W05: painted swooshes with a glint
 	-- (slashBold / slashBoldNarrow), a jagged impact star on every blade hit (hitStar), blows into the ground throw rock
 	-- chips and a rolling dust ring (rockBurst), shouts flare and send two rings out (warCry)
+	-- walka-wk (Vfx/WkFx): heavy blows raise a ring of force at the target (wkShockRing), slams erupt rock spikes, throw
+	-- chunks that bounce and crack the ground in a star (wkSlam, wkFissureStar), charges leave dust, scuffs and speed
+	-- lines (wkChargeTrail), shields punch a disc of force (wkShieldBash), whirls drag blade streaks round the body
+	-- (wkVortex), shouts expand spheres of force (wkShout), buffs keep a loop for their whole time (wkRageLoop,
+	-- wkGuardLoop), finishers show the critical star (wkCrit)
 	mightyStrike = e({
 		color = "class",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "slash", "sparks", "dust" },
+		impact = { "impactFlash", "slash", "wkShockRing", "sparks", "dust" },
 		slash = { from = 70, to = -70, tilt = 55, radius = 7 },
 		tex = { slash = "slashBoldNarrow", impactFlash = "hitStar" },
 		shake = 0.25,
@@ -97,14 +102,14 @@ local SkillVfx: { [string]: Entry } = {
 	battleCry = e({
 		color = "#FF6A3A",
 		sound = "",
-		impact = { "impactFlash", "warCry", "aura", "sparks" }, -- W05: a flare of rays and two rings
+		impact = { "impactFlash", "warCry", "wkRageLoop", "sparks" }, -- wk: the flare, embers and the rune for the whole buff
 		flash = 4,
 		shake = 0.2,
 	}),
 	charge = e({
 		color = "class",
 		sound = "",
-		impact = { "dash", "impactFlash", "dust", "smokePuff" },
+		impact = { "dash", "impactFlash", "wkChargeTrail", "wkShockRing", "dust" },
 		tex = { dash = "trailStreak", impactFlash = "hitStar" },
 		coreDelay = 0.15,
 		shake = 0.35,
@@ -114,8 +119,8 @@ local SkillVfx: { [string]: Entry } = {
 		color = "class",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "whirl", "sparks", "dust" },
-		everyWave = { "whirl", "sparks" },
+		impact = { "impactFlash", "whirl", "wkVortex", "sparks", "dust" },
+		everyWave = { "whirl", "wkVortex", "sparks" },
 		tex = { whirl = "slashBold", impactFlash = "hitStar" },
 		hitstop = 0.04,
 	}),
@@ -123,7 +128,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "class",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "slash", "sparks", "dust" },
+		impact = { "impactFlash", "slash", "wkShockRing", "sparks", "dust" },
 		slash = { from = 60, to = -60, tilt = 0 },
 		tex = { slash = "slashBold", impactFlash = "hitStar" },
 		sparks = "darkSpark",
@@ -133,25 +138,25 @@ local SkillVfx: { [string]: Entry } = {
 	taunt = e({
 		color = "#E2483A",
 		sound = "",
-		impact = { "impactFlash", "warCry", "dust" }, -- W05
+		impact = { "impactFlash", "warCry", "wkShout", "dust" },
 		telegraph = "circle",
 	}),
 	earthquake = e({
 		color = "#C08A4A",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "rockBurst", "ringWave", "groundDecal", "sparks" }, -- W05: chips and a dust ring
+		impact = { "impactFlash", "wkSlam", "wkFissureStar", "groundDecal", "sparks" }, -- wk: spikes, chunks, cracks
 		land = { "dust" },
 		telegraph = "circle",
 		shake = 0.6,
 		hitstop = 0.08,
 	}),
-	bloodlust = e({ color = "#C21F2A", sound = "", impact = { "burst", "aura", "smokePuff" }, size = 0.8 }),
+	bloodlust = e({ color = "#C21F2A", sound = "", impact = { "burst", "wkRageLoop", "smokePuff" }, size = 0.8 }),
 	crushingBlow = e({
 		color = "class",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "rockBurst", "groundDecal", "sparks" }, -- W05
+		impact = { "impactFlash", "wkSlam", "groundDecal", "sparks" },
 		markRadius = 3,
 		tex = { impactFlash = "hitStar" },
 		flash = 5,
@@ -162,7 +167,7 @@ local SkillVfx: { [string]: Entry } = {
 	lastBastion = e({
 		color = "#E8C25A",
 		sound = "",
-		impact = { "impactFlash", "shield", "dust", "groundDecal" },
+		impact = { "impactFlash", "shield", "wkGuardLoop", "dust", "groundDecal" },
 		allies = { "shield" }, -- S73 bastionCover: allies behind the back (al of the buff event)
 		size = 0.5,
 	}),
@@ -170,9 +175,8 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#E8C25A",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "ringWave", "pillar", "groundDecal", "rockBurst" }, -- W05
-		everyWave = { "impactFlash", "ringWave", "pillar", "groundDecal", "rockBurst" },
-		pillar = { radius = 3, height = 8 },
+		impact = { "impactFlash", "wkSlam", "wkFissureStar", "groundDecal", "dust" },
+		everyWave = { "impactFlash", "wkSlam", "wkFissureStar", "groundDecal" },
 		land = { "dust" },
 		telegraph = "circle",
 		shake = 0.7,
@@ -183,14 +187,14 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#E8C25A",
 		sound = "",
 		-- shield on `t`: the protected ally (the Warrior himself in the self variant); 10A: the second ally's own line
-		impact = { "dash", "tether", "shield", "impactFlash", "dust" },
+		impact = { "dash", "tether", "shield", "impactFlash", "wkChargeTrail", "dust" },
 		tex = { dash = "trailStreak", tether = "beamHoly", impactFlash = "hitStar" },
 		allies = { "shield", "tether" },
 	}),
 	shieldWall = e({
 		color = "#E8C25A",
 		sound = "",
-		impact = { "impactFlash", "shieldArc", "dust", "cracks" },
+		impact = { "impactFlash", "shieldArc", "wkShout", "dust", "cracks" },
 		allies = { "shield" },
 		markRadius = 3,
 		telegraph = "circle",
@@ -200,7 +204,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#C21F2A",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "slash", "sparks" },
+		impact = { "impactFlash", "slash", "wkShockRing", "wkCrit", "sparks" },
 		slash = { from = 70, to = -70, tilt = 80, radius = 7 },
 		tex = { slash = "slashBoldNarrow", impactFlash = "hitStar" },
 		sparks = "darkSpark",
@@ -210,14 +214,13 @@ local SkillVfx: { [string]: Entry } = {
 	carnage = e({
 		color = "#8E1B1B",
 		sound = "",
-		impact = { "burst", "aura", "smokePuff", "sparks" },
-		tex = { aura = "smoke" },
+		impact = { "burst", "wkRageLoop", "smokePuff", "sparks" },
 		sparks = "darkSpark",
 	}),
 	warBanner = e({
 		color = "class",
 		sound = "",
-		impact = { "impactFlash", "ringWave", "dust", "groundDecal" },
+		impact = { "impactFlash", "wkShout", "dust", "groundDecal" },
 		markRadius = 2.5,
 		object = "banner",
 		shake = 0.25,
@@ -225,7 +228,7 @@ local SkillVfx: { [string]: Entry } = {
 	advanceOrder = e({
 		color = "class",
 		sound = "",
-		impact = { "impactFlash", "warCry", "sparks" }, -- W05
+		impact = { "impactFlash", "warCry", "wkFissureStar", "sparks" },
 		allies = { "aura" },
 		allyColor = "#E8C25A",
 		telegraph = "circle",
@@ -236,7 +239,7 @@ local SkillVfx: { [string]: Entry } = {
 	shieldSweep = e({
 		color = "#E8C25A",
 		sound = "",
-		impact = { "impactFlash", "shieldArc", "sparks" },
+		impact = { "impactFlash", "shieldArc", "wkShieldBash", "sparks" },
 		tex = { impactFlash = "hitStar" },
 		markRadius = 3,
 		telegraph = "cone",
@@ -246,7 +249,7 @@ local SkillVfx: { [string]: Entry } = {
 	shieldBash = e({
 		color = "#E8C25A",
 		sound = "",
-		impact = { "impactFlash", "shield", "sparks" },
+		impact = { "impactFlash", "wkShieldBash", "wkShockRing", "sparks" },
 		tex = { impactFlash = "hitStar" },
 		flash = 4,
 		size = 0.6,
@@ -257,7 +260,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#E8C25A",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "slash", "pillar", "sparks" },
+		impact = { "impactFlash", "slash", "pillar", "wkShockRing", "sparks" },
 		slash = { from = 70, to = -70, tilt = 55, radius = 7 },
 		tex = { slash = "slashBoldNarrow", impactFlash = "hitStar" },
 		pillar = { radius = 1.5, height = 8 },
@@ -268,7 +271,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "class",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "slash", "dust", "smokePuff" },
+		impact = { "impactFlash", "slash", "wkShockRing", "wkDebris", "dust", "smokePuff" },
 		slash = { from = 80, to = -60, tilt = 70, radius = 8 },
 		tex = { slash = "slashBold", impactFlash = "hitStar" },
 		shake = 0.3,
@@ -278,7 +281,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#8E6B4A",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "slash", "rockBurst", "sparks" }, -- W05: the blade bites the ground
+		impact = { "impactFlash", "slash", "wkFissure", "rockBurst", "sparks" },
 		slash = { from = 40, to = -80, tilt = 30, radius = 7 },
 		tex = { slash = "slashBoldNarrow", impactFlash = "hitStar" },
 		sparks = "darkSpark",
@@ -289,7 +292,7 @@ local SkillVfx: { [string]: Entry } = {
 	warStomp = e({
 		color = "#C08A4A",
 		sound = "",
-		impact = { "impactFlash", "rockBurst", "shockwave", "cracks" }, -- W05
+		impact = { "impactFlash", "wkSlam", "wkFissureStar", "cracks" },
 		land = { "dust" },
 		telegraph = "circle",
 		shake = 0.5,
@@ -299,7 +302,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#8E1B1B",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "slash", "smokePuff", "sparks" }, -- W05: the jagged star instead of the ball
+		impact = { "impactFlash", "slash", "wkCrit", "smokePuff", "sparks" },
 		flash = 5,
 		slash = { from = 90, to = -90, tilt = 85, radius = 8 },
 		tex = { slash = "slashBold", impactFlash = "hitStar" },
@@ -859,13 +862,16 @@ local SkillVfx: { [string]: Entry } = {
 		flash = 0.9,
 	}),
 	-- Cleric (S114): light from above and from the hands, little dust; holy gold, heal green, the Cleric's rune
+	-- walka-wk (Vfx/WkFx): columns of light from the sky (wkHolyBeam), heals raise a halo with motes spiralling up
+	-- (wkHealBurst), blessings and channels keep the turning rune and rising motes (wkHolyLoop, wkGuardLoop), domes of
+	-- light (wkNova), a sword and a hammer of light fall from the sky (wkSkySword, wkSkyHammer), chains of light
+	-- (wkChains), feathers of light (wkFeathers), sanctified ground (wkGroundGlow)
 	holyStrike = e({
 		color = "holy",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "pillar", "sparks" },
+		impact = { "impactFlash", "wkHolyBeam", "wkShockRing", "sparks" },
 		tex = { impactFlash = "hitStar" },
-		pillar = { radius = 0.8, height = 16 },
 		hitstop = 0.06,
 		size = 0.5,
 	}),
@@ -873,53 +879,60 @@ local SkillVfx: { [string]: Entry } = {
 		color = "heal",
 		sound = "",
 		glow = { hand = "l", dur = 0.3 },
-		impact = { "impactFlash", "beam", "holyBurst", "sparkle" }, -- W07: rays open and motes rise round the healed
+		impact = { "impactFlash", "beam", "wkHealBurst", "sparkle" },
 		size = 0.6,
 	}),
 	renew = e({
 		color = "heal",
 		sound = "",
 		glow = { hand = "both", dur = 0.35 },
-		impact = { "impactFlash", "holyBurst", "aura", "sparkle" }, -- W07
+		impact = { "impactFlash", "wkHealBurst", "wkHolyLoop", "sparkle" },
 		size = 0.5,
 	}),
 	radiance = e({
 		color = "holy",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.3 },
-		impact = { "impactFlash", "ringWave", "pillar", "sparks" },
+		impact = { "impactFlash", "wkNova", "ringWave", "sparks" },
 		pillar = { radius = 2.4, height = 9 },
 		telegraph = "circle",
 	}),
 	circleOfLight = e({
 		color = "heal",
 		sound = "",
-		impact = { "impactFlash", "magicCircle", "holyBurst", "sparkle" }, -- W07
+		impact = { "impactFlash", "magicCircle", "wkHealBurst", "sparkle" },
 	}),
 	purify = e({
 		color = "#F4F1E0",
 		sound = "",
-		impact = { "impactFlash", "ringWave", "sparks", "smokePuff" },
+		impact = { "impactFlash", "wkHealBurst", "sparks", "smokePuff" },
 		tex = { impactFlash = "rays" },
 		size = 0.5,
 	}),
-	auraOfEndurance = e({ color = "holy", sound = "", impact = { "impactFlash", "holyBurst", "aura", "sparks" } }), -- W07
+	auraOfEndurance = e({
+		color = "holy",
+		sound = "",
+		impact = { "impactFlash", "holyBurst", "wkHolyLoop", "sparks" },
+	}),
 	resurrection = e({
 		color = "holy",
 		sound = "",
-		impact = { "impactFlash", "pillar", "holyBurst", "sparkle" }, -- W07
+		impact = { "impactFlash", "wkHolyBeam", "wkHealBurst", "wkFeathers" },
 		tex = { impactFlash = "glow" },
-		pillar = { radius = 2, height = 20 },
 		size = 1.4,
 	}),
-	shieldOfFaith = e({ color = "holy", sound = "", impact = { "impactFlash", "shield", "sparkle" }, size = 0.6 }),
+	shieldOfFaith = e({
+		color = "holy",
+		sound = "",
+		impact = { "impactFlash", "shield", "wkGuardLoop", "sparkle" },
+		size = 0.6,
+	}),
 	judgement = e({
 		color = "holy",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "skyBolt", "groundDecal", "rockBurst" }, -- W07
+		impact = { "impactFlash", "wkSkySword", "wkSlam", "groundDecal" },
 		markRadius = 2.5,
-		tex = { skyBolt = "beamHoly" },
 		land = { "dust" },
 		shake = 0.5,
 		hitstop = 0.08,
@@ -928,14 +941,13 @@ local SkillVfx: { [string]: Entry } = {
 	prayer = e({
 		color = "holy",
 		sound = "",
-		impact = { "impactFlash", "magicCircle", "holyBurst", "sparkle" },
+		impact = { "impactFlash", "magicCircle", "holyBurst", "wkHolyLoop", "sparkle" },
 		size = 0.6,
 	}), -- W07
 	divineIntervention = e({
 		color = "holy",
 		sound = "",
-		impact = { "impactFlash", "pillar", "holyBurst", "sparkle" }, -- W07
-		pillar = { radius = 3, height = 24 },
+		impact = { "impactFlash", "wkHolyBeam", "holyBurst", "sparkle" },
 		flash = 6,
 		shake = 0.3,
 		size = 2,
@@ -944,13 +956,13 @@ local SkillVfx: { [string]: Entry } = {
 	sanctuary = e({
 		color = "heal",
 		sound = "",
-		impact = { "impactFlash", "magicCircle", "sparkle" },
+		impact = { "impactFlash", "magicCircle", "wkGroundGlow", "sparkle" },
 		telegraph = "circle",
 	}),
 	guardianAngel = e({
 		color = "holy",
 		sound = "",
-		impact = { "impactFlash", "wings", "sparkle" },
+		impact = { "impactFlash", "wings", "wkFeathers", "sparkle" },
 		allies = { "wings" }, -- behind every ally of the groupBuff event's `al`
 		size = 1.6,
 	}),
@@ -958,26 +970,29 @@ local SkillVfx: { [string]: Entry } = {
 		color = "#E8C25A",
 		sound = "",
 		projectile = "die",
-		impact = { "burst", "rune", "sparkle" },
+		impact = { "burst", "rune", "wkNova", "sparkle" },
 		size = 0.6,
 	}),
 	wheelOfFortune = e({
 		color = "#E8C25A",
 		sound = "",
-		impact = { "impactFlash", "magicCircle", "pillar", "sparks" },
+		impact = { "impactFlash", "magicCircle", "wkHolyBeam", "sparks" },
 		circle = "magicCircle",
-		pillar = { radius = 2, height = 18 },
 		flash = 5,
 		shake = 0.3,
 		size = 2.2,
 	}),
-	brandOfLight = e({ color = "holy", sound = "", impact = { "impactFlash", "rune", "sparks" }, size = 0.5 }),
+	brandOfLight = e({
+		color = "holy",
+		sound = "",
+		impact = { "impactFlash", "rune", "wkShockRing", "sparks" },
+		size = 0.5,
+	}),
 	hammerOfHeaven = e({
 		color = "holy",
 		sound = "",
 		trail = true,
-		impact = { "magicCircle", "impactFlash", "skyBolt", "groundDecal", "rockBurst" }, -- W07: the hammer of light breaks the ground
-		tex = { skyBolt = "beamHoly" },
+		impact = { "magicCircle", "impactFlash", "wkSkyHammer", "wkSlam", "dust" },
 		landsAfter = true,
 		land = { "dust" },
 		telegraph = "circle",
@@ -995,7 +1010,7 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "l", dur = 0.25 },
 		projectile = "orb",
 		launch = "l",
-		impact = { "impactFlash", "sparks", "sparkle" },
+		impact = { "impactFlash", "wkShockRing", "sparks", "sparkle" },
 		tex = { projectile = "beamHoly" },
 		flash = 1.4,
 		size = 0.5,
@@ -1003,7 +1018,7 @@ local SkillVfx: { [string]: Entry } = {
 	blindingLight = e({
 		color = "#FFF6D0",
 		sound = "",
-		impact = { "impactFlash", "fan", "sparkle" },
+		impact = { "impactFlash", "fan", "wkShockRing", "sparkle" },
 		tex = { impactFlash = "rays" },
 		telegraph = "cone",
 		flash = 4,
@@ -1012,8 +1027,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "heal",
 		sound = "",
 		glow = { hand = "both", dur = 1.2 },
-		impact = { "impactFlash", "pillar", "holyBurst", "sparks" }, -- W07
-		pillar = { radius = 1.6, height = 22 },
+		impact = { "impactFlash", "wkHolyBeam", "wkHealBurst", "sparks" },
 		flash = 4,
 		size = 1.2,
 	}),
@@ -1021,7 +1035,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "holy",
 		sound = "",
 		trail = true,
-		impact = { "impactFlash", "ringWave", "groundDecal", "sparks" },
+		impact = { "impactFlash", "wkNova", "ringWave", "groundDecal", "sparks" },
 		everyWave = { "ringWave", "sparks" },
 		telegraph = "circle",
 		flash = 2,
@@ -1029,14 +1043,14 @@ local SkillVfx: { [string]: Entry } = {
 	holyChains = e({
 		color = "holy",
 		sound = "",
-		impact = { "impactFlash", "tether", "sparks" },
+		impact = { "impactFlash", "wkChains", "sparks" },
 		flash = 1.6,
 		size = 0.6,
 	}),
 	holyNova = e({
 		color = "holy",
 		sound = "",
-		impact = { "impactFlash", "ringWave", "holyBurst", "sparkle" }, -- W07: a star instead of the ball
+		impact = { "impactFlash", "wkNova", "holyBurst", "sparkle" },
 		telegraph = "circle",
 		flash = 5,
 		shake = 0.2,
@@ -1044,7 +1058,7 @@ local SkillVfx: { [string]: Entry } = {
 	rebuke = e({
 		color = "#F4F1E0",
 		sound = "",
-		impact = { "impactFlash", "fan", "smokePuff" },
+		impact = { "impactFlash", "fan", "wkShockRing", "smokePuff" },
 		tex = { impactFlash = "hitStar" },
 		telegraph = "cone",
 		flash = 2.4,

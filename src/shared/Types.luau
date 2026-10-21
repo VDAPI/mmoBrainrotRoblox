@@ -423,6 +423,7 @@ export type Settings = {
 	keys: { [string]: string }, -- S17: rebound keys, action -> Enum.KeyCode name (Data/Keybinds)
 	devPins: { string }, -- S23: dev panel favourites (admins)
 	mapCloseOnWalk: boolean, -- S25: the world map closes after "Walk"
+	mapHide: { string }, -- owner 2026-10-20: hidden world map symbol categories (Logic/MapMarkers)
 	barks: boolean, -- S101b: NPC comments during quests (BarkController)
 	robloxAvatar: boolean, -- S132: the player's Roblox avatar (standard R15 scales) instead of the class look
 	whispers: string, -- S133: "all" | "friends" (friends and guild mates only)
