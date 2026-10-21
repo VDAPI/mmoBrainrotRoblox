@@ -30,6 +30,7 @@ local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local WorldLabel = require(script.Parent.Parent.UI.WorldLabel)
 
 local Children = Fusion.Children
 
@@ -246,30 +247,16 @@ local function decorate(instance: Instance)
 	if not def then
 		return
 	end
-	local gui = Instance.new("BillboardGui")
-	gui.Name = "VaelthornDungeon"
-	gui.Size = UDim2.fromOffset(300, 60)
-	gui.StudsOffsetWorldSpace = Vector3.new(0, 11, 0)
-	gui.MaxDistance = 90
-	gui.LightInfluence = 0
-	gui.Parent = anchor
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(1, 0, 0, 32)
-	title.BackgroundTransparency = 1
-	title.FontFace = Theme.Fonts.Display
-	title.TextSize = Theme.TextSize.Large
-	title.TextColor3 = Theme.Iron.Danger
-	title.TextStrokeTransparency = 0.3
-	title.Parent = gui
-	local sub = Instance.new("TextLabel")
-	sub.Position = UDim2.fromOffset(0, 32)
-	sub.Size = UDim2.new(1, 0, 0, 24)
-	sub.BackgroundTransparency = 1
-	sub.FontFace = Theme.Fonts.BodyBold
-	sub.TextSize = Theme.TextSize.Small
-	sub.TextColor3 = Theme.Iron.Text
-	sub.TextStrokeTransparency = 0.3
-	sub.Parent = gui
+	-- W31: the gate's name on the same dark plate as the portals' (UI/WorldLabel), over the horns' caps
+	local label = WorldLabel.new(
+		anchor,
+		"VaelthornDungeon",
+		Portals.GATE.height - Portals.GATE.door.y + 2.5,
+		90,
+		Theme.Iron.Danger,
+		Theme.Iron.Text
+	)
+	local title, sub = label.title, label.sub
 	local prompt = Instance.new("ProximityPrompt")
 	Keybinds.bindPrompt(prompt, "interact")
 	prompt.HoldDuration = 0

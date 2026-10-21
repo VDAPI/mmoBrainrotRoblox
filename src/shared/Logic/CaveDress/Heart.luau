@@ -68,6 +68,11 @@ local function heartBox(
 end
 
 -- Veins of crystal deep in the walls of a room, beating with the heart (n veins, brightness grows with `k`).
+-- W31 (Studio review: "a stray floating teal bar beside the exit"): a vein stood 2 studs before the wall from 2 to 14
+-- studs up, so it hung in the air where the ceiling sloped down to the floor and stood free where the ray ended in the
+-- open. Now it stands on the floor 1.5 studs further out, under the sloping ceiling, and runs 1.5 studs into the rock
+-- over it (into the wall where the rock comes down to the floor); no vein where the ceiling there is out of reach or
+-- over water.
 local function veins(env: Env, out: { Build }, i: number, n: number, light: boolean)
 	local r = env.T.rooms[i]
 	local b = Kit.build(env, `HeartVeins_{i}`, "glow", r.x, r.z, 0)
@@ -75,15 +80,69 @@ local function veins(env: Env, out: { Build }, i: number, n: number, light: bool
 		local a = (k + 0.3) * 2 * math.pi / n
 		local x, z = Kit.wallSpot(env, r, a, 0)
 		if x and z then
-			local lx, lz = x - r.x, z - r.z
-			local y = Kit.gy(env, b, lx, lz)
-			heartBox(b.bp, 0.5, 12, 0.4, lx, y + 8, lz, 0, math.deg(-a) + 90, (k % 3 - 1) * 20)
-			if light and k == 0 then
-				b.bp:light(lx * 0.95, y + 8, lz * 0.95, CRYSTAL, 22, 1.1, "heart")
+			local here = env.T.column(x, z)
+			local px, pz = x + math.cos(a) * 1.5, z + math.sin(a) * 1.5
+			local c = env.T.column(px, pz)
+			local floor = if c.open then c.floor else here.floor
+			local reach = if c.open then c.ceiling - c.floor + 1.5 else here.ceiling - here.floor - 1
+			if here.open and not here.liquid and not (c.open and c.liquid) and reach <= 12.5 then
+				local len = math.max(reach, 4)
+				local y = floor - b.at.y
+				heartBox(
+					b.bp,
+					0.5,
+					len,
+					0.4,
+					px - r.x,
+					y + len / 2 + 0.2,
+					pz - r.z,
+					0,
+					math.deg(-a) + 90,
+					(k % 3 - 1) * 10
+				)
+				if light and k == 0 then
+					b.bp:light(x - r.x, y + len / 2, z - r.z, CRYSTAL, 22, 1.1, "heart")
+				end
 			end
 		end
 	end
 	table.insert(out, b)
+end
+
+-- W31 (Studio review: the exit stood in the bare arch): a light frame round the exit's arch, in the exit portal's
+-- frame (local -z the room it faces), beside the painted pillars (16 studs wide) and over its top (18): shards of
+-- glacier ice leaning out on both sides and a crown of icicles over the arch, like the Heart of the Glacier outside.
+local function iceShards(env: Env, out: { Build })
+	local f = Kit.atPortal(env, "IceShards", "landmark", `{env.mapId}_exit`, true)
+	local bp = f.bp
+	for _, s in { -1, 1 } do
+		for k = 0, 2 do
+			local h = ({ 14, 18, 10 })[k + 1]
+			bp:rbox(
+				1.6,
+				h,
+				1.4,
+				s * (10.4 + k * 1.5),
+				h / 2 - 0.5,
+				-0.8 + k * 0.8,
+				0,
+				0,
+				-s * (6 + k * 6),
+				o(if k == 1 then ICEGLASS else ICE, if k == 0 then "shell" else "detail", {
+					col = false,
+					q = false,
+					t = if k == 1 then 0.3 else nil,
+				})
+			)
+		end
+	end
+	-- the icicles end 18.5 over the floor, over the arch's top
+	bp:box(22, 1.4, 1.6, 0, 21.2, -0.4, o(ICE, "detail", { col = false }))
+	for k = -4, 4 do
+		local len = 0.8 + (4 - math.abs(k)) * 0.3
+		bp:add("cyl", len, 0.9, 0.9, k * 2.2, 20.5 - len / 2, -0.4, 0, 0, 90, o(ICE, "fine", { col = false }))
+	end
+	table.insert(out, f)
 end
 
 local function crevasse(env: Env, out: { Build })
@@ -646,6 +705,7 @@ local function barefoot(env: Env, out: { Build })
 end
 
 function Heart.all(env: Env, out: { Build })
+	iceShards(env, out)
 	crevasse(env, out)
 	crystalHall(env, out)
 	hatchery(env, out)

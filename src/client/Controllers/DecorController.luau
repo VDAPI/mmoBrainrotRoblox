@@ -31,6 +31,7 @@ local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Config = require(ReplicatedStorage.Shared.Config)
 local GraphicsLevel = require(ReplicatedStorage.Shared.Logic.GraphicsLevel)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Portals = require(ReplicatedStorage.Shared.Data.Portals)
 local MeadowsTerrain = require(ReplicatedStorage.Shared.Logic.MeadowsTerrain)
 local RegionTerrain = require(ReplicatedStorage.Shared.Logic.RegionTerrain)
 local State = require(script.Parent.Parent.UI.State)
@@ -944,8 +945,21 @@ local function shore(map: Maps.MapDef, areas: any, x: number, z: number): boolea
 	return areas ~= nil and nearWater(areas.lakes, x, z)
 end
 
+-- W31 (Studio review: a pebble lay in a portal's opening): nothing within this many studs of a portal, gate or exit
+local PORTAL_KEEP = 10
+
+local function nearPortal(portals: { Portals.Portal }, x: number, z: number): boolean
+	for _, p in portals do
+		if (x - p.x) ^ 2 + (z - p.z) ^ 2 < PORTAL_KEEP * PORTAL_KEEP then
+			return true
+		end
+	end
+	return false
+end
+
 local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart }
 	local parts: { BasePart } = {}
+	local portals = Portals.onMap(map.id)
 	local biome = BIOMES[map.biome]
 	if not biome or (map.biome == "dungeon" and not CaveTerrain.has(map.id)) then
 		return parts
@@ -1000,6 +1014,9 @@ local function buildChunk(map: Maps.MapDef, cx: number, cz: number): { BasePart 
 		local key = pick(mix, rng)
 		local template = T[key]
 		if math.abs(x) > map.size.x / 2 - 4 or math.abs(z) > map.size.z / 2 - 4 then
+			continue
+		end
+		if nearPortal(portals, x, z) then
 			continue
 		end
 		if inCave and not engine and not inRoom(rooms, x, z) then

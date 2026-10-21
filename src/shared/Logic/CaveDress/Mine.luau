@@ -163,24 +163,25 @@ end
 local function pithead(env: Env, out: { Build })
 	local r = env.T.rooms[1]
 	-- the timbered adit round the exit; W28: in the exit portal's frame, its sets round the arch (they stood 7-15
-	-- studs off it, lower than the arch)
+	-- studs off it, lower than the arch); W31: the sets beside the painted arch's pillars (16 studs wide), the runes on
+	-- the side the exit faces (the room's, local -z)
 	local a = Kit.atPortal(env, "Adit", "landmark", `{env.mapId}_exit`, true)
 	for t = -1, 1 do
 		for _, s in { -1, 1 } do
-			a.bp:box(1.4, 20, 1.4, s * 8.6, 10, t * 4, o(TIMBER, "detail", { col = false }))
+			a.bp:box(1.4, 20, 1.4, s * 9.4, 10, t * 4, o(TIMBER, "detail", { col = false }))
 		end
-		a.bp:box(19.2, 1.4, 1.6, 0, 19.5, t * 4, o(TIMBER, "detail", { col = false }))
+		a.bp:box(20.4, 1.4, 1.6, 0, 19.5, t * 4, o(TIMBER, "detail", { col = false }))
 	end
-	-- dwarven runes smeared with orc paint and hand prints, on the cave side of the inner set
+	-- dwarven runes smeared with orc paint and hand prints, on the face of the outer set's lintel
 	for t = -2, 2 do
-		glowBox(a.bp, 1.2, 1.6, 0.1, t * 2.6, 21.6, 4.85, RUNE)
+		glowBox(a.bp, 1, 1.1, 0.1, t * 2.6, 19.5, -4.85, RUNE)
 		a.bp:box(
-			1.6,
-			1.8,
+			1.4,
+			1.1,
 			0.12,
 			t * 2.6 + 0.4,
-			21.4,
-			4.9,
+			19.45,
+			-4.9,
 			o({ c = ORC, m = "SmoothPlastic" }, "fine", { col = false, t = 0.2 })
 		)
 	end

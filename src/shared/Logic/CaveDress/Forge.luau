@@ -162,6 +162,26 @@ local function runes(env: Env, out: { Build }, i: number, color: string, n: numb
 	table.insert(out, b)
 end
 
+-- W31 (Studio review: the exit stood in the bare arch): a light frame round the exit's arch, in the exit portal's
+-- frame (local -z the room it faces), beside the painted pillars (16 studs wide) and over its top (18): dwarven posts of
+-- dressed stone with capitals, a lintel with a row of glowing runes and an ember seam over the way out, like the
+-- gate of Deepforge outside.
+local function exitPortal(env: Env, out: { Build })
+	local f = Kit.atPortal(env, "DwarvenPortal", "landmark", `{env.mapId}_exit`, true)
+	local bp = f.bp
+	for _, s in { -1, 1 } do
+		bp:box(2.4, 19, 2.4, s * 9.8, 9, 0, o(DWARF, "shell", { q = false }))
+		bp:box(3, 1, 3, s * 10, 18.9, 0, o(STONE, "detail", { col = false }))
+		bp:box(3, 1, 3, s * 10, 0.5, 0, o(STONE, "detail", { col = false }))
+	end
+	bp:box(24, 2.4, 2.8, 0, 20.6, 0, o(DWARF, "detail", { col = false }))
+	for k = -3, 3 do
+		glowBox(bp, 1, 1.3, 0.1, k * 2.4, 20.6, -1.45, RUNE)
+	end
+	glowBox(bp, 20, 0.25, 0.1, 0, 19.55, -1.45, EMBER, "forge")
+	table.insert(out, f)
+end
+
 local function gate(env: Env, out: { Build })
 	-- the wings of the gate behind the exit (-278, 0), ajar, on the west wall
 	local w = Kit.build(env, "DeepGate", "landmark", Kit.at(env, -286), 0, 90)
@@ -831,6 +851,7 @@ local function captivePosts(env: Env, out: { Build })
 end
 
 function Forge.all(env: Env, out: { Build })
+	exitPortal(env, out)
 	gate(env, out)
 	greatForge(env, out)
 	bridges(env, out)
