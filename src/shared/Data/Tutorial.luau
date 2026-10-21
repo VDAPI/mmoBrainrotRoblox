@@ -23,6 +23,13 @@ Tutorial.REWARD = table.freeze({
 	}),
 } :: Reward)
 
+-- S155b: the first valuable drop of a new character: the first monster it kills drops, next to the usual loot, a
+-- Heroic copy of the weapon it wields (the same weapon kind and element, so the skill pool stays) at its level. It
+-- opens the reveal window and serves the gearUp quest ("equip an item"). Once per character (state.drop).
+Tutorial.FIRST_DROP = table.freeze({
+	rarity = 3, -- Data/Rarities.HEROIC (blue; never an announced rarity)
+})
+
 -- Studs the player has to walk (steering, Logic/Tutorial.walk) for the "move" step (not a balance number).
 Tutorial.MOVE_STUDS = 8
 -- Studs between two samples (0.2 s) above which a jump is a pivot or a teleport, not walking (walk speed 16 gives 3.2).

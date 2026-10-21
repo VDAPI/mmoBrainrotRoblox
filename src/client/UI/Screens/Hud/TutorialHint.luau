@@ -20,7 +20,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 type UsedAs<T> = Fusion.UsedAs<T>
 
 -- What the tile shows (texts already in the viewer's language).
-export type View = { caption: string, text: string, key: string?, finale: boolean }
+-- `veteran` (S155b): the account knows the game (Logic/Tutorial.veteran): the skip button says "I know the game, skip".
+export type View = { caption: string, text: string, key: string?, finale: boolean, veteran: boolean? }
 -- The arrow: a glyph (▼ ▲ ◀ ▶) and its centre in the layer (next to the tile, towards the element).
 export type Arrow = { glyph: string, position: UDim2 }
 
@@ -204,7 +205,13 @@ local function TutorialHint(scope: Scope, props: Props): Api
 								Variant = "secondary",
 								Surface = "iron",
 								TextSize = Theme.TextSize.Small,
-								Text = Text.T(scope, "tutorial.skip"),
+								Text = scope:Computed(function(use): string
+									local v = view(use)
+									return Text.get(
+										use,
+										if v ~= nil and v.veteran then "tutorial.skipVeteran" else "tutorial.skip"
+									)
+								end),
 								Visible = scope:Computed(function(use): boolean
 									return not use(confirming)
 								end),

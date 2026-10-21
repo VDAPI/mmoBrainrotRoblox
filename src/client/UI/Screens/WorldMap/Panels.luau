@@ -1,8 +1,9 @@
 --!strict
 -- Side panels of the world map window: the map list (S22: region -> map -> caves in the band colour of the
 -- player's level, the PvP zone as a dot, the areas of the selected map under it), the band legend with
--- "Show only recommended" (S22), the service chips (S25: highlight NPCs with a service) and the bottom bar
--- (layer toggles, zoom, "Centre on me"). S101: the world event's glyph after its map and its hunting ground.
+-- "Show only recommended" (S22), the filter panel (owner 2026-10-20 "Mapa": one chip per symbol category with its
+-- symbol and count, All / None, collapsible; it replaced the S25 service chips and the layer toggles) and the bottom
+-- bar (zoom, "Centre on me"). S101: the world event's glyph after its map and its hunting ground.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -10,10 +11,11 @@ local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local AreaProfileText = require(script.Parent.Parent.Parent.AreaProfileText)
 local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
+local Canvas = require(script.Parent.Canvas)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
+local MapMarkers = require(ReplicatedStorage.Shared.Logic.MapMarkers)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
-local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -40,28 +42,6 @@ local REGIONS = {
 	{ "ashen", "ashen_mine", "ashen_lair", "ashen_cave" },
 	{ "frostpeak", "frostpeak_grotto", "frostpeak_hold", "frostpeak_cave" },
 }
-
--- Service chips (S25): label key -> services that match.
-Panels.CHIPS = {
-	{ key = "worldmap.chip.shops", icon = "⚖", services = { "shop" } },
-	{ key = "worldmap.chip.smith", icon = "⚒", services = { "blacksmith" } },
-	{ key = "worldmap.chip.alchemy", icon = "⚗", services = { "alchemy" } },
-	{ key = "worldmap.chip.quests", icon = "❗", services = { "story", "quests" } },
-	{ key = "worldmap.chip.bank", icon = "⛃", services = { "deposit", "mail", "auction" } },
-} :: { { key: string, icon: string, services: { string } } }
-
--- Services matched by the chips that are on.
-function Panels.servicesOf(on: { [string]: boolean }): { [string]: boolean }
-	local set: { [string]: boolean } = {}
-	for _, chip in Panels.CHIPS do
-		if on[chip.key] then
-			for _, service in chip.services do
-				set[service] = true
-			end
-		end
-	end
-	return set
-end
 
 export type ListProps = {
 	Selected: Fusion.Value<string>,
@@ -343,91 +323,276 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 	})
 end
 
-export type ChipProps = {
+export type FilterProps = {
 	Position: UDim2,
 	RightGap: number, -- space kept free on the right (the card) on desktop
-	Selected: Fusion.UsedAs<string>,
-	Chips: Fusion.Value<{ [string]: boolean }>,
+	Hidden: Fusion.Value<{ [string]: boolean }>, -- hidden categories (Logic/MapMarkers)
+	Counts: Fusion.UsedAs<{ [string]: number }>, -- symbols per category on the shown map
+	Open: Fusion.Value<boolean>,
+	Labels: Fusion.Value<boolean>, -- names under the symbols where they fit (owner's session 2026-10-21)
 	Touch: Fusion.UsedAs<boolean>,
 }
 
--- Service chips (S25): on maps with NPCs (the city), several can be on at once.
-function Panels.chips(scope: Scope, props: ChipProps): Instance
-	local buttons: { Instance } = {}
-	for i, chip in Panels.CHIPS do
+-- Owner 2026-10-20 "Mapa": the filter panel over the lower left of the map. A header (☰ Filters, how many categories
+-- show, All, None) and, while open, one chip per category present on the shown map: its symbol (the map's shape and
+-- colour), name and count; a tap hides or shows the category. Collapsible (closed by default on touch); the hidden
+-- set is saved on the account by the window.
+function Panels.filters(scope: Scope, props: FilterProps): Instance
+	local function height(use: Fusion.Use): number
+		return if use(props.Touch) then Theme.Size.MinTouch else 34
+	end
+	local function textSize(use: Fusion.Use): number
+		return if use(props.Touch) then Theme.TextSize.Body else Theme.TextSize.Small
+	end
+	local present = scope:Computed(function(use): { string }
+		local counts = use(props.Counts)
+		local out = {}
+		for _, category in MapMarkers.CATEGORIES do
+			if (counts[category.id] or 0) > 0 then
+				table.insert(out, category.id)
+			end
+		end
+		return out
+	end)
+	local function headerButton(
+		order: number,
+		text: Fusion.UsedAs<string>,
+		onClick: () -> (),
+		visible: Fusion.UsedAs<boolean>
+	): Instance
+		return scope:New("TextButton")({
+			LayoutOrder = order,
+			Visible = visible,
+			AutomaticSize = Enum.AutomaticSize.X,
+			Size = scope:Computed(function(use): UDim2
+				return UDim2.fromOffset(0, height(use))
+			end),
+			AutoButtonColor = true,
+			BackgroundColor3 = Theme.Paper.Raised,
+			Text = text,
+			FontFace = Theme.Fonts.BodyBold,
+			TextSize = scope:Computed(textSize),
+			TextColor3 = Theme.Paper.Text,
+			ZIndex = 21,
+			[OnEvent("Activated")] = onClick,
+			[Children] = {
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12) }),
+				scope:New("UIStroke")({ Color = Theme.Paper.Rule, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
+			},
+		})
+	end
+	local chips: { Instance } = {}
+	for i, category in MapMarkers.CATEGORIES do
+		local color = Canvas.categoryColor(category.id)
 		local on = scope:Computed(function(use): boolean
-			return use(props.Chips)[chip.key] == true
+			return not use(props.Hidden)[category.id]
 		end)
 		table.insert(
-			buttons,
+			chips,
 			scope:New("TextButton")({
+				Name = category.id,
 				LayoutOrder = i,
+				Visible = scope:Computed(function(use): boolean
+					return (use(props.Counts)[category.id] or 0) > 0
+				end),
 				AutomaticSize = Enum.AutomaticSize.X,
 				Size = scope:Computed(function(use): UDim2
-					return UDim2.fromOffset(0, if use(props.Touch) then 44 else 30)
+					return UDim2.fromOffset(0, height(use))
 				end),
 				AutoButtonColor = false,
 				BackgroundColor3 = scope:Computed(function(use): Color3
-					return if use(on) then Theme.Paper.Accent else Theme.Paper.Surface
+					return if use(on) then Theme.Paper.Raised else Theme.Paper.Sunken
 				end),
-				BackgroundTransparency = 0.08,
-				Text = scope:Computed(function(use): string
-					return `{chip.icon} {Text.get(use, chip.key)}`
+				BackgroundTransparency = scope:Computed(function(use): number
+					return if use(on) then 0 else 0.35
 				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.Text,
+				Text = "",
 				ZIndex = 21,
 				[OnEvent("Activated")] = function()
-					local next: { [string]: boolean } = table.clone(Fusion.peek(props.Chips))
-					if next[chip.key] then
-						next[chip.key] = nil
-					else
-						next[chip.key] = true
-					end
-					props.Chips:set(next)
+					props.Hidden:set(MapMarkers.toggle(Fusion.peek(props.Hidden), category.id))
 				end,
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = UDim.new(0, 15) }),
-					scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 10), PaddingRight = UDim.new(0, 10) }),
+					scope:New("UICorner")({ CornerRadius = UDim.new(0.5, 0) }),
+					scope:New("UIPadding")({ PaddingLeft = UDim.new(0, 5), PaddingRight = UDim.new(0, 12) }),
 					scope:New("UIStroke")({
-						Color = Theme.Paper.Rule,
-						Transparency = scope:Computed(function(use): number
-							return if use(on) then 0 else 0.5
+						Color = scope:Computed(function(use): Color3
+							return if use(on) then color else Theme.Paper.Rule
+						end),
+						Thickness = scope:Computed(function(use): number
+							return if use(on) then 2 else 1
 						end),
 						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+					}),
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 6),
+					}),
+					-- the category's symbol as on the map: a dark plate in its shape with the coloured ring and glyph
+					scope:New("Frame")({
+						LayoutOrder = 1,
+						Size = UDim2.fromOffset(28, 28),
+						BackgroundTransparency = 1,
+						ZIndex = 22,
+						[Children] = {
+							scope:New("Frame")({
+								AnchorPoint = Vector2.new(0.5, 0.5),
+								Position = UDim2.fromScale(0.5, 0.5),
+								Size = if category.shape == "diamond"
+									then UDim2.fromOffset(20, 20)
+									else UDim2.fromOffset(26, 26),
+								Rotation = if category.shape == "diamond" then 45 else 0,
+								BackgroundColor3 = Theme.tint(UiPalette.map.plate),
+								BackgroundTransparency = scope:Computed(function(use): number
+									return if use(on) then 0.05 else 0.5
+								end),
+								ZIndex = 22,
+								[Children] = {
+									scope:New("UICorner")({
+										CornerRadius = if category.shape == "round"
+											then UDim.new(0.5, 0)
+											else UDim.new(0, 5),
+									}),
+									scope:New("UIStroke")({
+										Color = color,
+										Thickness = 2,
+										Transparency = scope:Computed(function(use): number
+											return if use(on) then 0 else 0.6
+										end),
+										ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+									}),
+								},
+							}),
+							scope:New("TextLabel")({
+								Size = UDim2.fromScale(1, 1),
+								BackgroundTransparency = 1,
+								Text = category.glyph,
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Caption,
+								TextColor3 = color,
+								TextTransparency = scope:Computed(function(use): number
+									return if use(on) then 0 else 0.6
+								end),
+								ZIndex = 23,
+							}),
+						},
+					}),
+					scope:New("TextLabel")({
+						LayoutOrder = 2,
+						AutomaticSize = Enum.AutomaticSize.X,
+						Size = UDim2.fromScale(0, 1),
+						BackgroundTransparency = 1,
+						Text = scope:Computed(function(use): string
+							return `{Text.get(use, `worldmap.cat.{category.id}`)}  {use(props.Counts)[category.id] or 0}`
+						end),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = scope:Computed(textSize),
+						TextColor3 = scope:Computed(function(use): Color3
+							return if use(on) then Theme.Paper.Text else Theme.Paper.TextMuted
+						end),
+						ZIndex = 22,
 					}),
 				},
 			})
 		)
 	end
 	return scope:New("Frame")({
-		Name = "Chips",
+		Name = "Filters",
+		AnchorPoint = Vector2.new(0, 1),
 		Position = props.Position,
 		Size = scope:Computed(function(use): UDim2
 			return UDim2.new(1, -(props.Position.X.Offset + (if use(props.Touch) then 20 else props.RightGap)), 0, 0)
 		end),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundTransparency = 1,
+		BackgroundColor3 = Theme.Paper.Surface,
+		BackgroundTransparency = 0.12,
 		ZIndex = 20,
-		Visible = scope:Computed(function(use): boolean
-			local selected = use(props.Selected)
-			local count = 0
-			for _, npc in Npcs.list do
-				if npc.map == selected and not npc.decoration then
-					count += 1
-				end
-			end
-			return count >= 3 and Areas.byMap[selected] == nil
-		end),
 		[Children] = {
-			scope:New("UIListLayout")({
-				FillDirection = Enum.FillDirection.Horizontal,
-				Wraps = true,
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				Padding = UDim.new(0, 6),
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
+			scope:New("UIPadding")({
+				PaddingTop = UDim.new(0, 6),
+				PaddingBottom = UDim.new(0, 6),
+				PaddingLeft = UDim.new(0, 6),
+				PaddingRight = UDim.new(0, 6),
 			}),
-			buttons :: any,
+			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+			scope:New("Frame")({
+				Name = "Header",
+				LayoutOrder = 1,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				ZIndex = 21,
+				[Children] = {
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						Wraps = true,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						Padding = UDim.new(0, 6),
+					}),
+					headerButton(
+						1,
+						scope:Computed(function(use): string
+							local ids = use(present)
+							local hidden = use(props.Hidden)
+							local shown = 0
+							for _, id in ids do
+								if not hidden[id] then
+									shown += 1
+								end
+							end
+							local arrow = if use(props.Open) then "▾" else "▸"
+							return `☰ {Text.get(use, "worldmap.filter.title")} {arrow}   {Text.get(
+								use,
+								"worldmap.filter.shown",
+								{ shown = shown, total = #ids }
+							)}`
+						end),
+						function()
+							props.Open:set(not Fusion.peek(props.Open))
+						end,
+						true
+					),
+					headerButton(2, Text.T(scope, "worldmap.filter.all"), function()
+						props.Hidden:set(MapMarkers.setAll(true))
+					end, props.Open),
+					headerButton(3, Text.T(scope, "worldmap.filter.none"), function()
+						props.Hidden:set(MapMarkers.setAll(false))
+					end, props.Open),
+					headerButton(
+						4,
+						scope:Computed(function(use): string
+							return `{if use(props.Labels) then "☑" else "☐"} {Text.get(use, "worldmap.layer.labels")}`
+						end),
+						function()
+							props.Labels:set(not Fusion.peek(props.Labels))
+						end,
+						true
+					),
+				},
+			}),
+			scope:New("Frame")({
+				Name = "Chips",
+				LayoutOrder = 2,
+				Visible = props.Open,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				ZIndex = 21,
+				[Children] = {
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						Wraps = true,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 6),
+					}),
+					chips :: any,
+				},
+			}),
 		},
 	})
 end
@@ -435,33 +600,12 @@ end
 export type BarProps = {
 	Position: UDim2,
 	Size: UDim2,
-	Toggles: { [string]: Fusion.Value<boolean> },
 	ZoomBy: (delta: number) -> (),
 	CentreOnMe: () -> (),
 }
 
--- Bottom bar: layer toggles, zoom buttons, "Centre on me".
+-- Bottom bar: zoom buttons, "Centre on me" (the layer toggles became the filter panel's chips).
 function Panels.bar(scope: Scope, props: BarProps): Instance
-	local function toggleButton(order: number, key: string, value: Fusion.Value<boolean>): Instance
-		return scope:New("TextButton")({
-			LayoutOrder = order,
-			Size = UDim2.fromOffset(104, 34),
-			AutoButtonColor = false,
-			BackgroundColor3 = scope:Computed(function(use): Color3
-				return if use(value) then Theme.Paper.Hover else Theme.Paper.Surface
-			end),
-			Text = scope:Computed(function(use): string
-				return `{if use(value) then "☑" else "☐"} {Text.get(use, key)}`
-			end),
-			FontFace = Theme.Fonts.BodyMedium,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Paper.Text,
-			[OnEvent("Activated")] = function()
-				value:set(not Fusion.peek(value))
-			end,
-			[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-		})
-	end
 	local function smallButton(order: number, text: Fusion.UsedAs<string>, onClick: () -> ()): Instance
 		return scope:New("TextButton")({
 			LayoutOrder = order,
@@ -475,7 +619,6 @@ function Panels.bar(scope: Scope, props: BarProps): Instance
 			[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 		})
 	end
-	local toggles = props.Toggles
 	return scope:New("Frame")({
 		Name = "Legend",
 		AnchorPoint = Vector2.new(0, 1),
@@ -489,11 +632,6 @@ function Panels.bar(scope: Scope, props: BarProps): Instance
 				VerticalAlignment = Enum.VerticalAlignment.Center,
 				Padding = UDim.new(0, 6),
 			}),
-			toggleButton(1, "worldmap.layer.areas", toggles.areas),
-			toggleButton(2, "worldmap.layer.icons", toggles.icons),
-			toggleButton(3, "worldmap.layer.npcs", toggles.npcs),
-			toggleButton(4, "worldmap.layer.nodes", toggles.nodes),
-			toggleButton(5, "worldmap.layer.quest", toggles.quest),
 			smallButton(6, "+", function()
 				props.ZoomBy(1)
 			end),

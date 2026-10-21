@@ -70,6 +70,7 @@ local Library = require(script.Parent.Parent.Vfx.Library)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
 local Textures = require(script.Parent.Parent.Vfx.Textures)
 local HazardFx = require(script.Parent.Parent.Vfx.HazardFx)
+local WkFx = require(script.Parent.Parent.Vfx.WkFx)
 
 -- S136: colours of the 3D effects (world, not interface): the old gold and magic blue of the legacy UI palette.
 local WORLD_GOLD_BRIGHT = Color3.fromHex("#E8C25A")
@@ -812,6 +813,47 @@ local function projectile(attacker: Model, target: Model, style: string)
 	launch(if style == "arrow" then "arrow" else "magic", from, target, nil, nil)
 end
 
+-- Owner 2026-10-21 ("monster attacks are plain"): a monster's basic blow is a bold slash in front of it with sparks
+-- and dust at the target; a shot is a glowing orb (or an arrow) with a trail and a flash where it lands.
+local MONSTER_SLASH = Color3.fromHex("#FFE2B0")
+local MONSTER_MAGIC = Color3.fromHex("#C77BFF")
+
+local function monsterMelee(attacker: Model, target: Model)
+	local from = centre(attacker)
+	local to = centre(target)
+	local direction = Vector3.new(to.X - from.X, 0, to.Z - from.Z)
+	if direction.Magnitude < 0.1 then
+		return
+	end
+	local simple = lowQuality()
+	local reach = math.clamp(direction.Magnitude * 0.6, 2.5, 6)
+	local frame = CFrame.lookAt(from, from + direction) * CFrame.new(0, 0.4, 0)
+	Library.slash(frame, reach, 70, -70, MONSTER_SLASH, if math.random() < 0.5 then 25 else -25, simple)
+	Clock.after(0.1, function()
+		local hit = centre(target)
+		Library.sparks(hit, MONSTER_SLASH, { simple = simple, dir = -direction.Unit, count = 8 })
+		Library.impactFlash(hit, 1.6, MONSTER_SLASH, { simple = simple })
+	end)
+end
+
+local function monsterShot(attacker: Model, target: Model, style: string)
+	if style == "arrow" then
+		projectile(attacker, target, style)
+		return
+	end
+	local simple = lowQuality()
+	local from = centre(attacker) + Vector3.new(0, 1, 0)
+	Library.projectile(from, target, "orb", MONSTER_MAGIC, {
+		simple = simple,
+		size = 1.2,
+		flame = true,
+		onArrive = function(point: Vector3)
+			Library.impactFlash(point, 2.2, MONSTER_MAGIC, { simple = simple })
+			Library.sparks(point, MONSTER_MAGIC, { simple = simple, count = 8 })
+		end,
+	})
+end
+
 -- Weapon helpers (S22) ------------------------------------------------------------------------------------
 
 local function weaponOf(model: Model): BasePart?
@@ -981,10 +1023,14 @@ local function attackFx(
 			dust(target)
 			if not lowQuality() then
 				Library.smokePuff(centre(target), HitFx.puffSize, DUST_TINT)
+				-- walka-wk: a heavy head knocks a few chips out of the ground
+				WkFx.chips(centre(target), if weaponType == "hammer2h" then 4 else 2)
 			end
 		end
 		if weaponType and HOLY[weaponType] then
 			holyFlash(target)
+			-- walka-wk: a small ring of light facing the Cleric
+			WkFx.holyTap(centre(target), centre(attacker), lowQuality())
 		end
 	end
 	local timing, clipped = AnimationController.Attack(attacker, weaponType, nil, onHit, step)
@@ -1053,7 +1099,8 @@ local function hitSparks(model: Model, from: Vector3?, material: string, crit: b
 		gravity = spark.gravity,
 	})
 	if crit then
-		Library.impactFlash(at, HitFx.flashSize * HitFx.crit.flashScale, WORLD_GOLD_BRIGHT, { simple = simple })
+		-- walka-wk: the critical star with radial streaks and a ring facing the attacker (Vfx/WkFx.crit)
+		WkFx.crit(at, from, WORLD_GOLD_BRIGHT, simple)
 	elseif spark.flash then
 		Library.impactFlash(at, HitFx.flashSize, Color3.new(1, 1, 1), { simple = simple })
 	end
@@ -1729,6 +1776,11 @@ local function onDamage(event: { [string]: any })
 		if not sparked then
 			impact(model, event.c == true)
 		end
+		-- walka-wk: a critical basic blow freezes both bodies a moment (the "Hit feel" option scales it)
+		if event.sk == nil and event.c == true and attacker and near then
+			AnimationController.Hitstop(attacker, HitFx.crit.hitstop)
+			AnimationController.Hitstop(model, HitFx.crit.hitstop)
+		end
 		AnimationController.MonsterHit(model, from)
 		if model:GetAttribute("MonsterId") == nil then
 			AnimationController.CharacterHit(model, from, event.c == true)
@@ -1853,9 +1905,9 @@ local function handle(event: { [string]: any })
 					AnimationController.MonsterAttack(attacker, nil, true)
 				end
 				if event.st == "melee" then
-					swing(attacker, target)
+					monsterMelee(attacker, target)
 				else
-					projectile(attacker, target, event.st)
+					monsterShot(attacker, target, event.st)
 				end
 				-- S111: the family's attack sound at once (a basic monster attack lands with the event)
 				local info = SfxController.Mob(attacker)

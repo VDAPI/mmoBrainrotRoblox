@@ -2,18 +2,23 @@
 -- World map (M), DESIGN §23. S20/S22: a list of maps on the left (region -> map -> caves, coloured by the level
 -- band, areas of the selected map under it) and the detailed map on the right (WorldMap/Canvas: the sketch,
 -- monster areas, portals, caves, dungeons, NPCs, nodes), zoom with the wheel / pinch / buttons, drag to pan,
--- "Centre on me", layer toggles, the band legend and "Show only recommended".
+-- "Centre on me", the filter panel, the band legend and "Show only recommended".
 -- S25 (interactive map): every icon is clickable. PC: hover = a small hint, click = a pinned card
 -- (WorldMap/DetailCard + WorldMap/Cards) that stays until ✕, a click on empty ground or another icon; the
 -- selected icon gets a pulsing gold ring. Touch: tap = the card as a bottom sheet; dragging the map keeps it.
 -- Cards have a 3D preview (WorldMap/Preview) and actions: Guide (NavController draws a path, the HUD shows the
 -- distance), Walk (the character walks there itself), Centre, Show map, Profile, Remove. A double click / long
 -- press on the ground opens a menu: Walk here, Guide here, Place a mark (own marks, Data/MapMarks). Search
--- (WorldMap/Search) over the list, service chips that highlight NPCs, quest marks (! / ?) over NPC icons,
+-- (WorldMap/Search) over the list, quest marks (! / ?) over NPC icons,
 -- party members, own marks and the guide target on the map.
 -- Performance: the static layer of every map is built once and cached (Canvas), zoom is a UIScale, panning
 -- moves one frame; per frame only the player, party, quest and guide markers move. No Instance.new in
 -- RenderStepped; one set of connections for the shown map, dropped on map change and on close.
+-- Owner 2026-10-20 "Mapa": symbols only (no captions on the map; the name on hover, everything on the card), nudged
+-- apart or folded into cluster badges (a click zooms in to where they split, Logic/MapMarkers.splitZoom), and the
+-- filter panel (Panels.filters: a chip per category with its count, All / None, collapsible) instead of the layer
+-- toggles and service chips. The hidden categories are saved on the account (setting `mapHide`, sent a moment after
+-- the last change).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -30,6 +35,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Gestures = require(script.Gestures)
 local GroundMenu = require(script.GroundMenu)
 local IconState = require(script.Parent.Parent.IconState)
+local MapMarkers = require(ReplicatedStorage.Shared.Logic.MapMarkers)
 local MapSearch = require(ReplicatedStorage.Shared.Logic.MapSearch)
 local MapSketch = require(script.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
@@ -37,6 +43,7 @@ local NavTarget = require(script.Parent.Parent.NavTarget)
 local Net = require(ReplicatedStorage.Shared.Net)
 local NpcMarkState = require(script.Parent.Parent.NpcMarkState)
 local Panels = require(script.Panels)
+local QuestTrack = require(script.Parent.Parent.QuestTrack)
 local Overlay = require(script.Overlay)
 local Preview = require(script.Preview)
 local Scale = require(script.Parent.Parent.Scale)
@@ -55,6 +62,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local LIST_WIDTH = 230
 local ZOOMS = Canvas.ZOOMS
 local LIVE_REFRESH = 2 -- seconds between refreshes of live cards (party, timers)
+local SAVE_DELAY = 1.5 -- seconds after the last filter change before the setting is sent
 
 -- Services handed in by WorldController.
 export type Services = {
@@ -81,19 +89,13 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	local onlyRecommended = scope:Value(false)
 	local showProfiles = scope:Value(true) -- S33: hunting ground profile icons on the areas
 	local highlight = scope:Value(nil :: string?)
-	local chips = scope:Value({} :: { [string]: boolean })
-	local toggles = {
-		areas = scope:Value(true),
-		nodes = scope:Value(true),
-		npcs = scope:Value(true),
-		icons = scope:Value(true),
-		quest = scope:Value(true),
-	}
-
-	-- Chips hold chip keys; the canvas wants the set of services they match.
-	local function serviceFilter(): { [string]: boolean }
-		return Panels.servicesOf(Fusion.peek(chips))
-	end
+	-- Hidden symbol categories (Logic/MapMarkers), from the account setting; the panel starts closed on touch.
+	local hidden = scope:Value(MapMarkers.hiddenSet(State.Get({ "account", "settings", "mapHide" })))
+	local filterOpen = scope:Value(not Fusion.peek(touch))
+	local labels = scope:Value(false) -- the Labels switch (names under the symbols where they fit), off by default
+	local staticCounts = scope:Value({} :: { [string]: number }) -- symbols per category on the shown map (Canvas)
+	local partyState = State.Value({ "party" })
+	local worldEvent = State.Value({ "worldEvent" })
 
 	local current: Canvas.Cached? = nil
 	local stack: { Selection } = {}
@@ -178,17 +180,29 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 		return if root then root.Position else nil
 	end
 
-	local function applyToggles()
+	local function hitSize(): number
+		return if Fusion.peek(touch) then Canvas.HIT_TOUCH else Canvas.HIT
+	end
+
+	local placeRing: () -> ()
+	local function applyNames(cached: Canvas.Cached)
+		Canvas.applyNames(cached, function(entry: Canvas.Icon): string
+			return (Cards.hint(entry.kind, entry.id, Fusion.peek(level) or 1, nil))
+		end)
+	end
+	local function applyLayout()
 		if not current then
 			return
 		end
-		Canvas.applyZoom(current, Fusion.peek(zoomIndex), {
-			areas = Fusion.peek(toggles.areas),
-			icons = Fusion.peek(toggles.icons),
-			npcs = Fusion.peek(toggles.npcs),
-			nodes = Fusion.peek(toggles.nodes),
-		})
+		Canvas.applyLayout(
+			current,
+			Fusion.peek(zoomIndex),
+			Fusion.peek(hidden),
+			Fusion.peek(touch),
+			Fusion.peek(labels)
+		)
 		overlay.setZoom(zoom())
+		placeRing()
 	end
 
 	local function place()
@@ -235,10 +249,20 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 		local iconKind = if entry.kind == "boss" then "dungeon" else entry.kind
 		for _, icon in current.icons do
 			if icon.kind == iconKind and icon.id == entry.id then
-				return icon.pixel
+				return icon.shown
 			end
 		end
 		return nil
+	end
+
+	-- The selection ring over the first card's symbol where the layout drew it.
+	placeRing = function()
+		local first = stack[1]
+		local p = if first then selectionPixel(first) else nil
+		ring.Visible = p ~= nil
+		if p then
+			ring.Position = UDim2.fromOffset(p.X, p.Y)
+		end
 	end
 
 	local function centerOn(map: string, x: number, z: number, zoomTo: number?)
@@ -434,13 +458,47 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	end
 
 	-- Hover hint (PC) -------------------------------------------------------------------------------------------
+	-- A cluster: how many places, the names of the first three, "Click to zoom in".
+	local function clusterHint(cluster: any): (string, string?)
+		local members: { Canvas.Icon } = if type(cluster) == "table" then cluster.members else {}
+		local names = {}
+		for i, icon in members do
+			if i > 3 then
+				table.insert(names, "…")
+				break
+			end
+			local name = Cards.hint(icon.kind, icon.id, Fusion.peek(level) or 1, nil)
+			table.insert(names, name)
+		end
+		return Text.now("worldmap.cluster.title", { count = #members }),
+			`{table.concat(names, ", ")}\n{Text.now("worldmap.cluster.hint")}`
+	end
+
+	-- A click on a cluster badge: zoom in on it to the zoom where its symbols split.
+	local function openCluster(cluster: Canvas.Cluster)
+		local points: { MapMarkers.Point } = {}
+		for _, icon in cluster.members do
+			table.insert(
+				points,
+				{ key = icon.button.Name, x = icon.pixel.X, y = icon.pixel.Y, priority = icon.priority }
+			)
+		end
+		local index = MapMarkers.splitZoom(points, ZOOMS, Fusion.peek(zoomIndex), hitSize())
+		center:set(Vector2.new(cluster.x, cluster.y))
+		zoomIndex:set(index)
+	end
 	local function showHint(entry: Selection?, pixel: Vector2?)
 		hoverEntry = entry
 		if not entry or not pixel or Fusion.peek(touch) then
 			overlay.hideHint()
 			return
 		end
-		local title, sub = Cards.hint(entry.kind, entry.id, Fusion.peek(level) or 1, entry.extra)
+		local title, sub
+		if entry.kind == "cluster" then
+			title, sub = clusterHint(entry.extra)
+		else
+			title, sub = Cards.hint(entry.kind, entry.id, Fusion.peek(level) or 1, entry.extra)
+		end
 		overlay.showHint(title, sub, pixel, zoom())
 	end
 
@@ -474,6 +532,11 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 		Select = function(entry: Selection)
 			hideMenu()
 			Sounds.play("click")
+			if entry.kind == "cluster" then
+				overlay.hideHint()
+				openCluster(entry.extra :: any)
+				return
+			end
 			selectCard(entry.kind, entry.id, entry.extra)
 		end,
 		Ground = function()
@@ -487,11 +550,16 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 
 	-- One set of connections for the icons and areas of the shown map.
 	local connections: { RBXScriptConnection } = {}
+	local wiredCanvas: Canvas.Cached? = nil
 	local function unwire()
 		for _, connection in connections do
 			connection:Disconnect()
 		end
 		table.clear(connections)
+		if wiredCanvas then
+			wiredCanvas.onCluster = nil
+			wiredCanvas = nil
+		end
 	end
 	local function wire()
 		unwire()
@@ -499,6 +567,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 			return
 		end
 		local cached = current
+		wiredCanvas = cached
 		local function hook(button: GuiButton, entry: Selection, pixel: () -> Vector2?)
 			table.insert(
 				connections,
@@ -526,8 +595,24 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 				then { kind = "node", id = icon.id, extra = { map = cached.mapId, x = icon.x, z = icon.z } }
 				else { kind = icon.kind, id = icon.id }
 			hook(icon.button, entry, function()
-				return icon.pixel
+				return icon.shown
 			end)
+		end
+		-- Cluster badges are pooled in the canvas; the current cluster of a badge is read at the event.
+		local clusterEntry: Selection? = nil
+		cached.onCluster = function(event: string, index: number, input: InputObject?)
+			local cluster = cached.clusters[index]
+			if not cluster then
+				return
+			end
+			if event == "tap" and input then
+				gestures.buttonTap(input, { kind = "cluster", id = tostring(index), extra = cluster })
+			elseif event == "enter" then
+				clusterEntry = { kind = "cluster", id = tostring(index), extra = cluster }
+				showHint(clusterEntry, Vector2.new(cluster.x, cluster.y))
+			elseif hoverEntry ~= nil and hoverEntry == clusterEntry then
+				showHint(nil, nil)
+			end
 		end
 		for _, area in cached.areas do
 			local entry: Selection = { kind = "area", id = area.area.id, extra = { map = cached.mapId } }
@@ -562,7 +647,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	table.insert(scope, unwire)
 
 	local function refreshMarks()
-		overlay.refreshMarks(current, Fusion.peek(marksState))
+		overlay.refreshMarks(current, Fusion.peek(marksState), Fusion.peek(hidden))
 	end
 
 	local function show(id: string)
@@ -588,7 +673,8 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 			profiles = Fusion.peek(showProfiles),
 		})
 		Canvas.applyMarks(cached, Fusion.peek(NpcMarkState.Marks))
-		Canvas.applyFilter(cached, serviceFilter())
+		applyNames(cached)
+		staticCounts:set(Canvas.counts(cached))
 		uiScale.Parent = cached.canvas
 		dynamic.Parent = cached.canvas
 		cached.canvas.Parent = holder
@@ -599,31 +685,47 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 				center:set(me)
 			end
 		end
-		applyToggles()
+		applyLayout() -- also the ring: the pinned card stays, but its ring belongs to the old map
 		refreshMarks()
 		wire()
 		place()
-		-- The pinned card stays, but its ring belongs to the old map.
-		local first = stack[1]
-		local p = if first then selectionPixel(first) else nil
-		ring.Visible = p ~= nil
-		if p then
-			ring.Position = UDim2.fromOffset(p.X, p.Y)
-		end
 	end
 
 	scope:Observer(selected):onBind(function()
 		show(Fusion.peek(selected))
 	end)
 	scope:Observer(zoomIndex):onChange(function()
-		applyToggles()
+		overlay.hideHint()
+		applyLayout()
 		place()
 		hideMenu()
 	end)
 	scope:Observer(center):onChange(place)
-	for _, toggle in toggles do
-		scope:Observer(toggle):onChange(applyToggles)
+	scope:Observer(touch):onChange(applyLayout)
+	scope:Observer(labels):onChange(applyLayout)
+	-- Filters: relayout now, save the hidden categories a moment after the last change.
+	local saveToken = 0
+	local unsaved = false
+	local function saveFilters()
+		if unsaved then
+			unsaved = false
+			Net.Send("SetSetting", "mapHide", MapMarkers.hiddenList(Fusion.peek(hidden)))
+		end
 	end
+	scope:Observer(hidden):onChange(function()
+		overlay.hideHint()
+		applyLayout()
+		refreshMarks()
+		unsaved = true
+		saveToken += 1
+		local mine = saveToken
+		task.delay(SAVE_DELAY, function()
+			if mine == saveToken then
+				saveFilters()
+			end
+		end)
+	end)
+	table.insert(scope, saveFilters) -- closing the window right after a change still saves it
 	local function refreshView()
 		if current then
 			Canvas.refresh(current, Fusion.peek(level) or 1, {
@@ -636,6 +738,10 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	scope:Observer(level):onChange(refreshView)
 	scope:Observer(Text.Lang):onChange(function()
 		refreshView()
+		if current then
+			applyNames(current)
+			applyLayout()
+		end
 		if #stack > 0 then
 			renderCard(true)
 		end
@@ -648,12 +754,8 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	scope:Observer(NpcMarkState.Marks):onChange(function()
 		if current then
 			Canvas.applyMarks(current, Fusion.peek(NpcMarkState.Marks))
-			applyToggles()
-		end
-	end)
-	scope:Observer(chips):onChange(function()
-		if current then
-			Canvas.applyFilter(current, serviceFilter())
+			staticCounts:set(Canvas.counts(current))
+			applyLayout()
 		end
 	end)
 	scope:Observer(marksState):onChange(function()
@@ -739,6 +841,37 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 	end
 	local search = Search.new(scope, { OnPick = onSearch, Touch = touch })
 
+	-- Chip counts: the symbols of the shown map plus the live markers on it (party, own marks, quest target, event).
+	local counts = scope:Computed(function(use): { [string]: number }
+		local out = table.clone(use(staticCounts))
+		local map = use(selected)
+		local party = use(partyState)
+		if type(party) == "table" and type(party.members) == "table" then
+			for _, member in party.members do
+				if member.id ~= Players.LocalPlayer.UserId and member.map == map then
+					out.party = (out.party or 0) + 1
+				end
+			end
+		end
+		local marks = use(marksState)
+		if type(marks) == "table" then
+			for _, mark in marks do
+				if type(mark) == "table" and mark.map == map then
+					out.mark = (out.mark or 0) + 1
+				end
+			end
+		end
+		local target = use(QuestTrack.Target)
+		if target and target.map == map and target.x and use(QuestTrack.Tracked) == true then
+			out.objective = 1
+		end
+		local event = use(worldEvent)
+		if type(event) == "table" and event.map == map then
+			out.event = 1
+		end
+		return out
+	end)
+
 	local function zoomBy(delta: number)
 		zoomIndex:set(math.clamp(Fusion.peek(zoomIndex) + delta, 1, #ZOOMS))
 	end
@@ -759,7 +892,7 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 				local look = root.CFrame.LookVector
 				heading = math.deg(math.atan2(look.X, -look.Z))
 			end
-			overlay.step(current, me, heading, Fusion.peek(toggles.quest), stack[1])
+			overlay.step(current, me, heading, Fusion.peek(hidden), stack[1])
 			liveClock += dt
 			if liveClock >= LIVE_REFRESH then
 				liveClock = 0
@@ -784,8 +917,8 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 				search.box,
 				scope:New("ScrollingFrame")({
 					Name = "MapList",
-					Position = UDim2.fromOffset(0, 46),
-					Size = UDim2.new(1, 0, 1, -46),
+					Position = UDim2.fromOffset(0, 50),
+					Size = UDim2.new(1, 0, 1, -50),
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
 					CanvasSize = UDim2.new(),
@@ -817,18 +950,19 @@ local function WorldMapWindow(scope: Scope, closeWindow: (() -> ())?): Fusion.Ch
 			OnlyRecommended = onlyRecommended,
 			ShowProfiles = showProfiles,
 		}),
-		Panels.chips(scope, {
-			Position = UDim2.fromOffset(LIST_WIDTH + 22, 10),
-			RightGap = 340,
-			Selected = selected,
-			Chips = chips,
+		Panels.filters(scope, {
+			Position = UDim2.new(0, LIST_WIDTH + 20, 1, -56),
+			RightGap = DetailCard.WIDTH + 30,
+			Hidden = hidden,
+			Counts = counts,
+			Open = filterOpen,
+			Labels = labels,
 			Touch = touch,
 		}),
 		card.frame,
 		Panels.bar(scope, {
 			Position = UDim2.new(0, LIST_WIDTH + 12, 1, 0),
 			Size = UDim2.new(1, -(LIST_WIDTH + 12), 0, 40),
-			Toggles = toggles :: any,
 			ZoomBy = zoomBy,
 			CentreOnMe = function()
 				if Fusion.peek(selected) ~= Fusion.peek(mapId) then

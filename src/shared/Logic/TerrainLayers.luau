@@ -11,6 +11,25 @@ local TerrainLayers = {}
 
 TerrainLayers.VOXEL = 4
 
+-- Terrain grass: Roblox grows its decoration grass (Terrain.Decoration, waist high, scripts cannot turn it off) on
+-- Enum.Material.Grass only. Every height-function map keeps PATH_CLEAR studs beside its roads and ramps free of it,
+-- so the blades never hide a path; the city uses no Grass at all (Logic/TownTerrain).
+TerrainLayers.PATH_CLEAR = 6
+TerrainLayers.NO_DECOR_GRASS = "LeafyGrass" -- the grass material without decoration that replaces Grass there
+
+-- `material` with Grass swapped for NO_DECOR_GRASS when the column lies within PATH_CLEAR studs past the edge of a
+-- road (`roadD`) or ramp (`rampD`), both measured from the edge (negative on the road).
+function TerrainLayers.clearPaths(material: string, roadD: number, rampD: number?): string
+	if material ~= "Grass" then
+		return material
+	end
+	local clear = TerrainLayers.PATH_CLEAR
+	if roadD < clear or (rampD or math.huge) < clear then
+		return TerrainLayers.NO_DECOR_GRASS
+	end
+	return material
+end
+
 function TerrainLayers.smoothstep(t: number): number
 	t = math.clamp(t, 0, 1)
 	return t * t * (3 - 2 * t)

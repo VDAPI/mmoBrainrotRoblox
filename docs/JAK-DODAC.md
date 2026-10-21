@@ -70,7 +70,8 @@
 - **Portal / przejście między mapami** (S25): wpis w `Data/Portals.luau` (layout stawia go przez
   `Prefabs.portalFrom(ctx, id)`); trasa (`Logic/MapRoute`), mapa świata i prowadzenie widzą go same.
 - **Karta na mapie świata** (S25): treść w `UI/Screens/WorldMap/Cards.luau` (albo `CreatureCards`) jako spec
-  `DetailCard` (sekcje, akcje); ikona w `WorldMap/Canvas.luau`. Prowadzenie: `NavController.Guide/Walk` z celem
+  `DetailCard` (sekcje, akcje); ikona w `WorldMap/Canvas.luau` z kategorią z `Logic/MapMarkers` (kolor, kształt,
+  chip filtra, `worldmap.cat.<id>` PL i EN; bez stałego napisu, nazwa z `Cards.hint`). Prowadzenie: `NavController.Guide/Walk` z celem
   `UI/NavTarget.Target`.
 - **Teren / budowla / nastrój** (Łąki S26, krainy S45–S47) i **jaskinia** (silnik S48–S51): pełny opis pól, narzędzi
   podglądu i fixture'ów w `docs/SILNIKI.md` → „Jak dodać”. W skrócie: kraina = `Data/Terrain/<mapa>` + `Data/Areas/<mapa>` +
