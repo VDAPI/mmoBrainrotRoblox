@@ -37,6 +37,34 @@ function Footing.lowest(boxes: { Box }): number?
 	return low
 end
 
+-- Axis-aligned box (world) round the corners of every box: { lo, hi }, or nil for an empty list. Studio review
+-- 2026-10-21: AnimLab frames and floors a look by its body (the visible parts), not by its invisible root part.
+function Footing.extent(boxes: { Box }): { lo: { number }, hi: { number } }?
+	local lo: { number }? = nil
+	local hi: { number } = { 0, 0, 0 }
+	for _, box in boxes do
+		local r = box.r or { 1, 0, 0, 0, 1, 0, 0, 0, 1 }
+		local h = { box.size[1] / 2, box.size[2] / 2, box.size[3] / 2 }
+		for axis = 1, 3 do
+			-- the half extent of a turned box along a world axis: |row| . half size
+			local row = (axis - 1) * 3
+			local reach = math.abs(r[row + 1]) * h[1] + math.abs(r[row + 2]) * h[2] + math.abs(r[row + 3]) * h[3]
+			local a, b = box.p[axis] - reach, box.p[axis] + reach
+			if lo == nil then
+				lo = { math.huge, math.huge, math.huge }
+				hi = { -math.huge, -math.huge, -math.huge }
+			end
+			local low = lo :: { number }
+			low[axis] = math.min(low[axis], a)
+			hi[axis] = math.max(hi[axis], b)
+		end
+	end
+	if lo == nil then
+		return nil
+	end
+	return { lo = lo, hi = hi }
+end
+
 -- Vertical offset that puts the lowest corner at groundY + CLEARANCE: positive when the feet are under the
 -- ground (lift), negative when the figure hangs in the air (lower). 0 for an empty list.
 function Footing.liftFor(boxes: { Box }, groundY: number): number

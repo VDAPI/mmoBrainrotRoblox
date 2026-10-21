@@ -57,6 +57,25 @@ describe("Footing.liftFor", function()
 	end)
 end)
 
+describe("Footing.extent (studio review 2026-10-21)", function()
+	it("boxes every corner of the body, turned parts included", function()
+		local e = assert(Footing.extent(figure(1)))
+		expect(e.lo).toEqual({ -1, -2, -0.5 })
+		expect(e.hi).toEqual({ 1, 2, 0.5 })
+		-- the 1 x 4 bar at 45 degrees reaches (0.5 + 2) * sin 45 from its centre on x and y
+		local tilted = assert(Footing.extent({ { p = { 0, 5, 0 }, r = rotZ(45), size = { 1, 4, 1 } } }))
+		local reach = 2.5 * math.sqrt(0.5)
+		expect(tilted.lo[1]).toBeNear(-reach, 1e-6)
+		expect(tilted.lo[2]).toBeNear(5 - reach, 1e-6)
+		expect(tilted.lo[2]).toBeNear(
+			Footing.lowest({ { p = { 0, 5, 0 }, r = rotZ(45), size = { 1, 4, 1 } } }) :: number,
+			1e-6
+		)
+		expect(tilted.hi[3]).toBeNear(0.5, 1e-6)
+		expect(Footing.extent({})).toBeNil()
+	end)
+end)
+
 describe("Footing.hipHeight", function()
 	it("is the gap from the root part's bottom to the ground", function()
 		expect(Footing.hipHeight(5, 2, 2)).toBeNear(2 - Footing.CLEARANCE)

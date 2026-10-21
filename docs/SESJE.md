@@ -13927,3 +13927,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `portalglass.spec` (brak `Glass` przed polem portalu na wszystkich mapach i przy bramach miasta),
   `cavemouth.spec`, `bosscast.spec` (kolory na gruncie: śnieg, lód, lodowiec, lawa i reszta `TERRAIN_COLORS`),
   `basicblow.spec` (zamach, odstępy, klipy kości w chwili ciosu, jedna reguła, AnimLab). Bez przeglądu w Studio.
+### Przegląd Studio 2026-10-21, partia 6: zamach bossa w AnimLab, stopy i etykiety AnimLab, pochodnie, /ui
+- **Zamach bossa:** `Logic/MotionKeys.basicBlow` (id bossa: wariant „boss”, atak i rodzaj obrażeń z `Data/Bosses`),
+  `AnimLabController.playMob` (boss też gra zwykły cios).
+- **AnimLab:** `bodyBoxes` / `bodyBox` (widoczne części bez korzeni), `placeLook` (przód ciała, korzeń w podłodze,
+  `Footing.liftFor`, `ground` w wyniku), `frameLook` z ciała, `refreshLabels`; `Config.AnimLab` (`rootInside`,
+  `footTolerance`, `labelAbove`, `labelStagger`, `labelWidth`, `labelHeight`); `Logic/Footing.extent`.
+- **Pochodnie:** `Prefabs.torch` (czarka, żar i światło z tagiem `TownFx` / „fire”).
+- **/ui:** `Data/AdminCommands` (`ui`, kategoria perf), `Admin/Perf.commands.ui`, nowy `Controllers/UiDevController`
+  (`UiCall`), `WindowManager.Ids`, teksty `admin.usage.ui`, `admin.ui.*` (PL / EN).
+- **Testy:** `basicblow.spec` (boss: zamach 0,74 s, ścieżka świata, AnimLab na najniższym punkcie, etykiety),
+  `footing.spec` (`extent`), `cavemouth.spec` (pochodnie), `admin.spec` (`/ui`). Bez przeglądu w Studio.

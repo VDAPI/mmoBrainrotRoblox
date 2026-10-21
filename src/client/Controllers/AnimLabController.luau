@@ -49,6 +49,7 @@ local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local Footing = require(ReplicatedStorage.Shared.Logic.Footing)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -153,6 +154,8 @@ local subject: Subject? = nil
 local framed: { centre: Vector3, half: Vector3 }? = nil
 local subjectFloor: BasePart? = nil
 local cameraName: string? = nil
+-- studio review 2026-10-21 (2): how the look in the target's place stands (the `mob` / `boss` result's `ground`)
+local subjectGround: { [string]: number }? = nil
 local row: { Model } = {}
 local stressed: { Stressed } = {}
 local last: Command? = nil
@@ -241,6 +244,8 @@ local function part(name: string, size: Vector3, cframe: CFrame, color: Color3, 
 	return p
 end
 
+-- Studio review 2026-10-21 (2): sized in studs (two places of the row wide), so labels never grow over their
+-- neighbours from afar; refreshLabels shows and staggers them by the camera.
 local function label(model: Model, text: string)
 	local root = model.PrimaryPart or model:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root then
@@ -248,8 +253,8 @@ local function label(model: Model, text: string)
 	end
 	local gui = Instance.new("BillboardGui")
 	gui.Name = "AnimLabLabel"
-	gui.Size = UDim2.fromOffset(120, 24)
-	gui.StudsOffsetWorldSpace = Vector3.new(0, 3.6, 0)
+	gui.Size = UDim2.fromScale(LAYOUT.row.gap * 2 * LAB.labelWidth, LAB.labelHeight)
+	gui.StudsOffsetWorldSpace = Vector3.new(0, LAB.labelAbove, 0)
 	gui.LightInfluence = 0
 	gui.MaxDistance = 120
 	gui.Adornee = root
@@ -376,6 +381,7 @@ local function clearSubject()
 		subject = nil
 	end
 	framed = nil
+	subjectGround = nil
 	if subjectFloor then
 		subjectFloor:Destroy()
 		subjectFloor = nil
@@ -391,6 +397,33 @@ local function clearStress()
 		entry.model:Destroy()
 	end
 	table.clear(stressed)
+end
+
+-- Studio review 2026-10-21 (2): the weapon row's labels piled up into one unreadable heap seen from an angle. From
+-- the front and from above (and with the cameras off) every label shows, every other one higher, so two labels of
+-- one height are two places apart; from the side, the three-quarter view and the game camera only the label of the
+-- actor's weapon (the last `attack <type>`), or without one the label nearest to the camera.
+local function refreshLabels()
+	local camera = Workspace.CurrentCamera
+	local all = not cameraOn or cameraName == "front" or cameraName == "top"
+	local nearest: Model? = nil
+	if not all and not actorWeapon and camera then
+		local best = math.huge
+		for _, m in row do
+			local d = (m:GetPivot().Position - camera.CFrame.Position).Magnitude
+			if d < best then
+				best, nearest = d, m
+			end
+		end
+	end
+	for i, m in row do
+		local gui = m:FindFirstChild("AnimLabLabel")
+		if gui and gui:IsA("BillboardGui") then
+			gui.Enabled = all or m:GetAttribute("AnimLabWeapon") == actorWeapon or m == nearest
+			local up = if all and i % 2 == 0 then LAB.labelStagger else 0
+			gui.StudsOffsetWorldSpace = Vector3.new(0, LAB.labelAbove + up, 0)
+		end
+	end
 end
 
 -- Studio review 2026-10-21: the three walls hidden (a camera outside them) or shown.
@@ -418,6 +451,7 @@ local function setCamera(name: string?): (Vector3?, Vector3?)
 		end
 		cameraName = nil
 		fadeWalls(false)
+		refreshLabels()
 		return nil, nil
 	end
 	local spec = (LAYOUT.cameras :: any)[name]
@@ -445,6 +479,7 @@ local function setCamera(name: string?): (Vector3?, Vector3?)
 	-- the walls fade while the camera stands outside them (a big look needs a camera far back)
 	local floor = LAYOUT.floor
 	fadeWalls(math.abs(pos.X - centre.X) > floor.size[1] / 2 or pos.Z - centre.Z > floor.size[3] / 2)
+	refreshLabels()
 	return pos, look
 end
 
@@ -614,6 +649,7 @@ local function build(): boolean
 		if m then
 			stand(m, from + Vector3.new((i - 1) * LAYOUT.row.gap, 0, 0))
 			giveWeapon(m, weaponType, color)
+			m:SetAttribute("AnimLabWeapon", weaponType)
 			label(m, weaponType)
 			table.insert(row, m)
 		end
@@ -713,34 +749,74 @@ local function keysForSlot(slot: string, windup: number, strikeNow: boolean, tra
 	return MotionKeys.still()
 end
 
+-- S117: the hover of a plan (studs at scale 1).
+local function hoverOf(plan: string): number
+	return if AnatomyPlans.hovers(plan) then Anatomy.HOVER else 0
+end
+
+-- Studio review 2026-10-21 (2): the body of a look as Logic/Footing boxes, NpcService's rule for the NPCs' feet: every
+-- visible part, but not the invisible root parts (a real model's HumanoidRootPart is centred at its feet, half of it
+-- under the ground: the 0.5 x scale a bounding box reported as "buried"; a generated look's LookRoot hangs at hip
+-- height) and not accessory handles.
+local function bodyBoxes(model: Model): { Footing.Box }
+	local out: { Footing.Box } = {}
+	for _, item in model:GetDescendants() do
+		if not item:IsA("BasePart") or item.Transparency >= 0.99 then
+			continue
+		end
+		if item.Name == "HumanoidRootPart" or item.Name == "LookRoot" then
+			continue
+		end
+		if item.Parent and item.Parent:IsA("Accessory") then
+			continue
+		end
+		local _, _, _, r00, r01, r02, r10, r11, r12, r20, r21, r22 = item.CFrame:GetComponents()
+		local p, size = item.Position, item.Size
+		table.insert(out, {
+			p = { p.X, p.Y, p.Z },
+			r = { r00, r01, r02, r10, r11, r12, r20, r21, r22 },
+			size = { size.X, size.Y, size.Z },
+		})
+	end
+	return out
+end
+
+-- The world box round a look's body (bodyBoxes), or its bounding box when it has no visible part.
+local function bodyBox(model: Model): (Vector3, Vector3)
+	local extent = Footing.extent(bodyBoxes(model))
+	if extent then
+		local lo, hi = vec(extent.lo), vec(extent.hi)
+		return (lo + hi) / 2, hi - lo
+	end
+	local box, size = model:GetBoundingBox()
+	return box.Position, size
+end
+
 -- Studio review 2026-10-21: floor under a look that pokes out of the stage (the same dress as the stage's floor, a
 -- hair lower so the two never flicker where they overlap) and the box the cameras frame: the look, the actor and the
--- cast bar over the look.
+-- cast bar over the look. (2): both from the look's body.
 local function frameLook(model: Model)
-	local box, size = model:GetBoundingBox()
+	local at, size = bodyBox(model)
 	local floor = LAYOUT.floor
 	local main = (stage :: Folder):FindFirstChild("Floor") :: BasePart?
 	local reach = Vector3.new(size.X, 0, size.Z) / 2 + Vector3.one * LAB.floorPast
-	local rel = box.Position - centre
+	local rel = at - centre
 	if main and (math.abs(rel.X) + reach.X > floor.size[1] / 2 or math.abs(rel.Z) + reach.Z > floor.size[3] / 2) then
 		local under = main:Clone()
 		under.Name = "SubjectFloor"
 		under.Size = Vector3.new(reach.X * 2, main.Size.Y, reach.Z * 2)
-		under.CFrame = CFrame.new(box.Position.X, main.Position.Y - 0.02, box.Position.Z)
+		under.CFrame = CFrame.new(at.X, main.Position.Y - 0.02, at.Z)
 		under.Parent = stage
 		subjectFloor = under
 	end
 	local actorAt = centre + vec(LAYOUT.actor)
-	local top = box.Position.Y + size.Y / 2 + LAB.castBarAbove
-	local lo = Vector3.new(
-		math.min(box.Position.X - size.X / 2, actorAt.X - 2),
-		centre.Y,
-		math.min(box.Position.Z - size.Z / 2, actorAt.Z - 2)
-	)
+	local top = at.Y + size.Y / 2 + LAB.castBarAbove
+	local lo =
+		Vector3.new(math.min(at.X - size.X / 2, actorAt.X - 2), centre.Y, math.min(at.Z - size.Z / 2, actorAt.Z - 2))
 	local hi = Vector3.new(
-		math.max(box.Position.X + size.X / 2, actorAt.X + 2),
+		math.max(at.X + size.X / 2, actorAt.X + 2),
 		math.max(top, actorAt.Y + 7),
-		math.max(box.Position.Z + size.Z / 2, actorAt.Z + 2)
+		math.max(at.Z + size.Z / 2, actorAt.Z + 2)
 	)
 	framed = { centre = (lo + hi) / 2, half = (hi - lo) / 2 }
 end
@@ -754,11 +830,26 @@ local function placeLook(id: string, look: MonsterLooks.Look, variant: string, s
 		d.Parent = nil
 	end
 	local target = vec(LAYOUT.target)
-	-- the front of a big look stays where the dummy stood; studio review 2026-10-21: on the floor by the game's rule
-	-- (a real model's pivot is its feet, MonsterView groundOffset; a generated look's is its root, at hip height)
+	-- studio review 2026-10-21: on the floor by the game's rule (a real model's pivot is its feet, MonsterView
+	-- groundOffset; a generated look's is its root, at hip height). (2): the front of the body (-Z of the look as
+	-- built, at the origin) a stud before the dummy's place, not half the widest box back (that put Hrimvald at
+	-- z -34, off the 32-deep floor); the look's root stays `rootInside` studs inside the stage floor.
 	local lift = if info.real then 0 else info.hipHeight + info.rootHalf
-	local at = centre + Vector3.new(target.X, lift, target.Z - math.max(0, info.width / 2 - 1))
+	local built = Footing.extent(bodyBoxes(model))
+	local front = if built then math.max(0, -built.lo[3]) else info.width / 2
+	local floor = LAYOUT.floor
+	local back = math.clamp(front - 1, 0, math.max(0, target.Z + floor.size[3] / 2 - LAB.rootInside))
+	local at = centre + Vector3.new(target.X, lift, target.Z - back)
 	model:PivotTo(CFrame.lookAt(at, Vector3.new(centre.X, at.Y, centre.Z)))
+	-- (2) the lowest visible point on the floor (Logic/Footing, as NpcService stands the NPCs): a look standing by
+	-- the game's rule moves by the clearance only; a hovering look keeps its height
+	local hover = hoverOf(look.plan) > 0 or (tonumber(model:GetAttribute("Hover")) or 0) > 0
+	local dy = if hover then 0 else Footing.liftFor(bodyBoxes(model), centre.Y)
+	if math.abs(dy) > LAB.footTolerance then
+		model:PivotTo(model:GetPivot() + Vector3.new(0, dy, 0))
+	else
+		dy = 0
+	end
 	model:SetAttribute("PreviewMonsterId", id) -- S111: SfxController.Mob (family, boss, hit material)
 	for _, item in model:GetDescendants() do
 		if item:IsA("BasePart") then
@@ -766,6 +857,16 @@ local function placeLook(id: string, look: MonsterLooks.Look, variant: string, s
 		end
 	end
 	model.Parent = stage
+	local root = model.PrimaryPart
+	local placed = Footing.extent(bodyBoxes(model))
+	subjectGround = {
+		lift = round(dy), -- studs the look moved to stand on its lowest visible point
+		lowest = if placed then round(placed.lo[2] - centre.Y) else 0, -- its lowest visible point over the floor
+		-- the bottom of its invisible root part (a real model's HumanoidRootPart, centred at the feet)
+		rootBottom = if root then round(root.Position.Y - root.Size.Y / 2 - centre.Y) else 0,
+		z = round(at.Z - centre.Z), -- where its root stands (the stage floor reaches +-floor.size[3] / 2)
+		hover = if hover then 1 else 0,
+	}
 	frameLook(model)
 	return model
 end
@@ -795,11 +896,6 @@ local function boneOf(model: Model, look: MonsterLooks.Look, slot: string, lead:
 	track:Play(0)
 	track.weight = 1
 	return { mixer = mixer, track = track, t0 = track.time, pace = track.slot.rate * track.fit }
-end
-
--- S117: the hover of a plan (studs at scale 1).
-local function hoverOf(plan: string): number
-	return if AnatomyPlans.hovers(plan) then Anatomy.HOVER else 0
 end
 
 -- S117: a telegraph on the stage like CombatService sends it: around the caster for "self" circles / rings, on the
@@ -862,12 +958,16 @@ local function playMob(command: Command)
 		else nil
 	-- studio review 2026-10-21: attack1 is the kind's regular blow as the game plays it since S159 (the "aw" draw of
 	-- Logic/BasicBlow, then the blow; before, the strike-now pose with no draw: peak 0, hit 0 for every model)
+	-- (2): a boss's regular blow too, drawn as the "boss" variant (Entities/Boss spawns its monster as one)
 	local basicKeys, wind, basicSlot = nil, 0, slot
-	if monster and slot == "attack1" then
-		basicKeys, wind, basicSlot = MotionKeys.basicBlow(id)
+	if (monster or boss) and slot == "attack1" then
+		basicKeys, wind, basicSlot = MotionKeys.basicBlow(id, if monster then "normal" else "boss")
 	end
 	local basic = basicKeys ~= nil
-	local shot = if monster then BasicBlow.shot(monster.attack, monster.damageKind) else "melee"
+	local shot = if monster
+		then BasicBlow.shot(monster.attack, monster.damageKind)
+		elseif boss then BasicBlow.shot(boss.attack, boss.damageKind)
+		else "melee"
 	local windup = if ability
 		then ability.windup
 		elseif basic then wind
@@ -1832,7 +1932,7 @@ local function runClip(command: Command): { [string]: any }
 end
 
 -- Runs a command; returns the result for AnimLabCall (always with `ok`).
-local function run(command: Command): { [string]: any }
+local function runCommand(command: Command): { [string]: any }
 	local action = command.action
 	sfxRun += 1
 	vfxRun += 1
@@ -1967,6 +2067,21 @@ local function run(command: Command): { [string]: any }
 		return { ok = true }
 	end
 	return { ok = true }
+end
+
+-- Studio review 2026-10-21 (2): every command, then the row's labels for the camera and the actor's weapon; a look
+-- placed in the target's place reports how it stands (`ground`).
+local function run(command: Command): { [string]: any }
+	local result = runCommand(command)
+	if stage then
+		refreshLabels()
+	end
+	local ground = subjectGround
+	if ground and (command.action == "mob" or command.action == "boss") and result.ok ~= false then
+		result.ground = ground
+		print("[AnimLab] ground", HttpService:JSONEncode(ground))
+	end
+	return result
 end
 
 -- Waits (AnimLabCall) until a freeze / step has stopped the motion.

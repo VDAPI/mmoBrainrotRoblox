@@ -115,6 +115,21 @@ describe("Cave mouth: natural rock round the portal (studio review 2026-10-21)",
 		expect(string.find(body, "Enum.Material.Slate", 1, true)).toBe(nil)
 		expect(string.find(body, "Enum.Material.Rock", 1, true) ~= nil).toBe(true)
 	end)
+
+	it("lights torches with the game's flames, not Neon balls (studio review 2026-10-21, 2)", function()
+		local src = fs.readFile("src/server/World/Prefabs.luau")
+		local from = assert(string.find(src, "function Prefabs.torch(", 1, true))
+		local body = string.sub(src, from, (string.find(src, "\nend\n", from, true)))
+		expect(string.find(body, "Enum.PartType.Ball", 1, true)).toBe(nil)
+		expect(string.find(body, 'Instance.new("Fire")', 1, true)).toBe(nil)
+		-- the coals and the light holder carry the "fire" behaviour of TownFxController (flames, flicker)
+		local _, tagged = string.gsub(body, 'fxTag%(%w+, "fire"', "")
+		expect(tagged).toBe(2)
+		expect(string.find(src, "CollectionService:AddTag(target, BlueprintBuild.FX_TAG)", 1, true) ~= nil).toBe(true)
+		expect(string.find(body, 'Name = "Light"', 1, true) ~= nil).toBe(true)
+		local fx = fs.readFile("src/client/Controllers/TownFxController.luau")
+		expect(string.find(fx, 'elseif fx == "fire" then', 1, true) ~= nil).toBe(true)
+	end)
 end)
 
 return nil
