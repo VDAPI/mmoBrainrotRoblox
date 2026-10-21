@@ -14,6 +14,10 @@
 -- on the line or its "i" icon in the open tooltip (holding a slot stays the action menu; DragDrop.SetBlocker keeps
 -- taps on the panels away from the slots below). PC: holding the "item_details" key (default Alt) pins the tooltip,
 -- then pointing at a line opens its details next to it.
+-- 2026-10-21 (owner: descriptions too long): both panels open compact (TooltipModel view "compact": name, head, rarity,
+-- main value, the first stat rows, trait and effects in one line each, a price only where it matters). Holding the
+-- details key shows the full tooltip (and pins it, as above); on touch the "More ▸" / "Less ▾" row switches, and every
+-- new item starts compact again.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -112,6 +116,12 @@ type OpenDetail = {
 }
 local detail = moduleScope:Value(nil :: OpenDetail?)
 local pinned = moduleScope:Value(false)
+-- 2026-10-21: the full view: the details key held (PC) or "More ▸" tapped (touch; back to compact for a new item).
+local detailsHeld = moduleScope:Value(false)
+local touchFull = moduleScope:Value(false)
+local fullView = moduleScope:Computed(function(use): boolean
+	return use(detailsHeld) or use(touchFull)
+end)
 local overOwner = false
 local DETAIL_GAP = 6
 local ICON = 18 -- "i" icon on touch
@@ -330,12 +340,34 @@ local function detailRow(
 	return button :: GuiObject
 end
 
+-- "More ▸" / "Less ▾" on touch: a row that switches the view (PC: the same line is a plain hint).
+local function viewToggle(s: Scope, order: number, text: string): Instance
+	return s:New("TextButton")({
+		Name = "ViewToggle",
+		LayoutOrder = order,
+		AutoButtonColor = false,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+		Text = text,
+		FontFace = Theme.Fonts.BodyBold,
+		TextSize = Theme.TextSize.Small,
+		TextColor3 = BONUS,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		[OnEvent("Activated")] = function()
+			closeDetail()
+			touchFull:set(not Fusion.peek(touchFull))
+		end,
+	})
+end
+
 local function build(
 	s: Scope,
 	item: ItemInstance,
 	lang: string,
 	extra: TooltipModel.Ctx?,
-	merchant: boolean
+	merchant: boolean,
+	full: boolean,
+	compare: boolean?
 ): { Instance }
 	local def = Items.get(item.id)
 	local equipment = State.Get({ "character", "equipment" })
@@ -360,6 +392,7 @@ local function build(
 		offhand = gear.offhand,
 		input = if touch then "touch" else "mouse",
 		detailsKey = Keybinds.label("item_details"),
+		view = if full then "full" else "compact",
 	}
 	if extra then
 		for k, v in extra :: any do
@@ -379,6 +412,12 @@ local function build(
 					Size = UDim2.new(1, 0, 0, GROUP_GAP),
 				})
 			)
+			continue
+		elseif entry.role == "moreHint" or entry.role == "lessHint" then
+			-- the compare panel follows the main one; touch gets the switch, PC the plain hint
+			if not compare then
+				table.insert(out, if touch then viewToggle(s, order, entry.text) else line(s, order, entry.text, MUTED))
+			end
 			continue
 		end
 		local ref = entry.detail
@@ -640,7 +679,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 				local item = use(shown)
 				local lang = use(Text.Lang)
 				if item then
-					local lines = build(s, item, lang, use(shownCtx), use(merchantOpen))
+					local lines = build(s, item, lang, use(shownCtx), use(merchantOpen), use(fullView))
 					-- The name, the head line and the rarity line keep clear of the picture.
 					if use(showIcon) then
 						for i = 1, math.min(3, #lines) do
@@ -691,7 +730,7 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 					return {}
 				end
 				local lang = use(Text.Lang)
-				local lines = build(s, item, lang, { hints = false }, use(merchantOpen))
+				local lines = build(s, item, lang, { hints = false }, use(merchantOpen), use(fullView), true)
 				table.insert(lines, 1, line(s, 0, Text.get(use, "tooltip.equipped"), MUTED, nil, Theme.Fonts.BodyBold))
 				return lines
 			end) :: any,
@@ -730,7 +769,10 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 	})
 
 	-- S68: details panel ------------------------------------------------------------------------------------------
-	scope:Observer(shown):onChange(closeDetail)
+	scope:Observer(shown):onChange(function()
+		closeDetail()
+		touchFull:set(false) -- 2026-10-21: every new item opens compact
+	end)
 	local detailSize = scope:Value(Vector2.zero)
 	local model = scope:Computed(function(use): TooltipModel.Details?
 		local open = use(detail)
@@ -838,17 +880,19 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		},
 	})
 
-	-- PC: holding the details key pins the tooltip (it stops following the mouse); releasing it unpins.
+	-- PC: holding the details key shows the full view (2026-10-21) and pins the tooltip (it stops following the mouse);
+	-- releasing it goes back to compact and unpins.
 	table.insert(
 		scope,
 		UserInputService.InputBegan:Connect(function(input: InputObject)
 			if input.UserInputType == Enum.UserInputType.Keyboard then
-				if
-					Keybinds.is(input.KeyCode, "item_details")
+				local key = Keybinds.is(input.KeyCode, "item_details")
 					and UserInputService:GetFocusedTextBox() == nil
 					and not Fusion.peek(Device.Touch)
-					and Fusion.peek(shown) ~= nil
-				then
+				if key then
+					detailsHeld:set(true)
+				end
+				if key and Fusion.peek(shown) ~= nil then
 					pinned:set(true)
 				end
 			elseif input.UserInputType == Enum.UserInputType.Touch then
@@ -883,6 +927,9 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 	table.insert(
 		scope,
 		UserInputService.InputEnded:Connect(function(input: InputObject)
+			if input.UserInputType == Enum.UserInputType.Keyboard and Keybinds.is(input.KeyCode, "item_details") then
+				detailsHeld:set(false)
+			end
 			if input.UserInputType == Enum.UserInputType.Keyboard and Fusion.peek(pinned) then
 				if Keybinds.is(input.KeyCode, "item_details") then
 					pinned:set(false)

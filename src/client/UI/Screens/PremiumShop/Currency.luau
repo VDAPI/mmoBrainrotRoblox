@@ -4,6 +4,8 @@
 -- S123 (DESIGN-17 §4): the starter packs above them, once per account (Logic/Premium.packVisible: a bought one is
 -- gone, the section with it when both are): the shards, the cosmetics only found there, the pass granted for good
 -- (with a note when the player owns it already), "R$ n" or "Soon" without a product id on a live server.
+-- 2026-10-21 (owner: too many detailed descriptions): the pack cards have no subtitle (it was the same line on every
+-- card); one note above them says what the currency buys.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -216,7 +218,6 @@ function Currency.build(scope: Scope, _ctx: Cards.Ctx): { any }
 				glyph = "◆",
 				art = UiArt.shop(pack.key),
 				title = Text.T(scope, "premium.pack", { n = Format.number(pack.shards) }),
-				subtitle = Text.T(scope, "premium.pack.desc"),
 				badge = if bonus > 0 then Text.T(scope, "premium.pack.bonus", { n = bonus }) else nil,
 				button = Cards.robuxButton(scope, pack.productId, `R$ {pack.robux}`, function()
 					Cards.invoke("BuyProduct", pack.key)
@@ -224,7 +225,7 @@ function Currency.build(scope: Scope, _ctx: Cards.Ctx): { any }
 			})
 		)
 	end
-	table.insert(list, Cards.note(scope, 100, "premium.currency.note"))
+	table.insert(list, Cards.note(scope, 20, "premium.currency.note"))
 	return list
 end
 

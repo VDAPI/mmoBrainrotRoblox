@@ -6,6 +6,9 @@
 -- S152b: the season pass card over the VIP card (not bought / bought ✓ with the tier / no season; "See rewards" opens
 -- the season pass window, "Unlock" the same purchase dialog as the window, UI/SeasonPassBuy) and under both the one
 -- sentence of how they differ (premium.passVsVip).
+-- 2026-10-21 (owner: too many detailed descriptions): that sentence moved behind the "i" of the season pass card; the
+-- VIP card says premium.sub.vip.short, a pass with premium.pass.<key>.short shows it with the full .desc behind its "i"
+-- (the .desc texts stay: the wiki and docs/SKLEP-ID.md read them).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,6 +16,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Cards = require(script.Parent.Cards)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
 local Products = require(ReplicatedStorage.Shared.Data.Products)
 local SeasonState = require(script.Parent.Parent.Parent.SeasonState)
@@ -75,7 +79,7 @@ local function vipCard(scope: Scope, ctx: Cards.Ctx): Instance
 			if type(branch) == "table" and branch.active == true then
 				return VipWindow.statusText(use, branch)
 			end
-			return Text.get(use, "premium.sub.vip.desc")
+			return Text.get(use, "premium.sub.vip.short")
 		end),
 		button = buttons,
 		buttonWidth = 330,
@@ -155,6 +159,7 @@ local function seasonCard(scope: Scope, ctx: Cards.Ctx): Instance
 			end
 			return Text.get(use, "premium.season.desc")
 		end),
+		info = Text.T(scope, "premium.passVsVip"),
 		button = buttons,
 		buttonWidth = 330,
 	})
@@ -162,13 +167,12 @@ end
 
 function Passes.build(scope: Scope, ctx: Cards.Ctx): { any }
 	local passes = State.Value({ "passes" })
-	-- S121: VIP subscription card goes first (DESIGN-17 §2). S152b: the season pass card over it, the "and VIP?"
-	-- sentence under both.
+	-- S121: VIP subscription card goes first (DESIGN-17 §2). S152b: the season pass card over it (the "and VIP?"
+	-- sentence behind its "i" since 2026-10-21).
 	-- (the Gamepass note "stays on the account forever" moves down to the Gamepasses: the season pass does not stay)
 	local list: { any } = {
 		seasonCard(scope, ctx),
 		vipCard(scope, ctx),
-		Cards.note(scope, 4, "premium.passVsVip"),
 		Cards.note(scope, 5, "premium.passes.note"),
 	}
 	-- Rebuilt when the owned passes change (rare): a switched-off pass shows only to its owners.
@@ -192,6 +196,9 @@ function Passes.build(scope: Scope, ctx: Cards.Ctx): { any }
 					else Cards.robuxButton(s, pass.passId, `R$ {pass.robux}`, function()
 						Cards.invoke("BuyPass", pass.key)
 					end, isOwned)
+				local desc = `premium.pass.{pass.key}.desc`
+				local short = `premium.pass.{pass.key}.short`
+				local hasShort = Locale.has(short)
 				table.insert(
 					cards,
 					Cards.card(s, {
@@ -199,7 +206,8 @@ function Passes.build(scope: Scope, ctx: Cards.Ctx): { any }
 						glyph = pass.icon,
 						art = UiArt.shop(pass.key),
 						title = Text.T(s, `premium.pass.{pass.key}`),
-						subtitle = Text.T(s, `premium.pass.{pass.key}.desc`),
+						subtitle = Text.T(s, if hasShort then short else desc),
+						info = if hasShort then Text.T(s, desc) else nil,
 						button = button,
 					})
 				)

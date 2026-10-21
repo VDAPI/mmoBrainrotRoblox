@@ -24,6 +24,7 @@ local Dunes = require("@self/Dunes")
 local Details = require("@self/Details")
 local Env = require("@self/Env")
 local Finish = require("@self/Finish")
+local FishingSpots = require("./FishingSpots")
 local Flats = require("@self/Flats")
 local Flora = require("./WorldGen/Flora")
 local Kit = require("./WorldGen/Kit")
@@ -515,35 +516,17 @@ function AshenGen.nodes(): { NodePlacement }
 	return out
 end
 
--- Fishing spots: a dry point on the north shore with open water 9-12 studs to the south (+Z), where the spot's
--- buoys float: by the foot of the oasis jetty (beside it) and on the Hot Spring's north shore.
+-- Fishing spots (Logic/FishingSpots, studio review 2026-10-21: dry, gentle ground at the water's edge, no wall over
+-- it, the buoys on water the voxels show, clear of the builds): by the foot of the oasis jetty (beside it, east of
+-- the landing) and on the Hot Spring's north shore.
 function AshenGen.fishingSpots(): { { x: number, z: number } }
 	local e = envOf()
 	local out = {}
+	local builds = AshenGen.all()
 	for i, lake in e.areas.lakes do
-		local cx, cz = lake.x + (if i == 1 then 9 else 0), lake.z - lake.r - 4
-		local best: { x: number, z: number }? = nil
-		local bestD = math.huge
-		for dx = -24, 24, 2 do
-			for dz = -16, 16, 2 do
-				local x, z = cx + dx, cz + dz
-				if
-					not e.T.isWater(x, z)
-					and e.T.slope(x, z, 2) < 0.5
-					and e.T.isWater(x, z + 9)
-					and e.T.isWater(x, z + 12)
-					and (i ~= 1 or math.abs(x - lake.x) > 5)
-				then
-					local d = dx * dx + dz * dz
-					if d < bestD then
-						bestD = d
-						best = { x = x, z = z }
-					end
-				end
-			end
-		end
-		if best then
-			table.insert(out, best)
+		local spot = FishingSpots.find(e.T, builds, lake.x + (if i == 1 then 9 else 0), lake.z - lake.r - 4, 24)
+		if spot then
+			table.insert(out, spot)
 		end
 	end
 	return out

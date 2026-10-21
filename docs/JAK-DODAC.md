@@ -184,6 +184,22 @@
   `UiWindows.SCREENS`; kolory tylko z ról `Theme.Paper` / `Theme.Iron` / `Theme.Brass` (wartości `Data/UiPalette`, para w
   `PAIRS`; `Theme.Colors` nie istnieje), kolor z danych jako tekst przez `Theme.readable`, jako grafika przez
   `Theme.tint`; HUD na żelazie (`Theme.HudAlpha`); test `uitheme.spec` (ścisły: bez literałów koloru i `TextSize`).
+- **Krótki opis + (i)** (2026-10-21, właściciel: „za dużo szczegółowych opisów, gra nieczytelna”): w oknie widać jedną
+  krótką linię (do ~80 znaków, bez pauz), a długi tekst (zasady, wzory, źródła, fabuła, porównania) idzie pod nowy klucz
+  `<x>.info` (PL i EN; nic nie znika, tylko się chowa) i jest dostępny na jeden z trzech sposobów:
+  `InfoTip.new(scope, { Text, Title?, Surface = "paper" | "iron", Size?, LayoutOrder?, Position?, AnchorPoint?,
+  Visible? })` (`UI/Components/InfoTip`: okrągłe „i” obok linii; PC: wskazanie pokazuje dymek, klik go przypina;
+  telefon: dotknięcie przełącza, cel dotyku ≥ `Theme.Size.MinTouch`; klik / dotyk obok zamyka; dymek w warstwie Tooltip,
+  więc ScrollingFrame go nie przycina; `Text` / `Title` mogą być rich text i stanem Fusion),
+  `Details.new(scope, { Key?, Open?, Children? | Build?, MoreText?, LessText?, Surface?, LayoutOrder? })`
+  (`UI/Components/Details`: nagłówek „Więcej ▸” / „Mniej ▾”, domyślnie zwinięte; `Key` pamięta stan do końca sesji,
+  `Details.isOpen/setOpen`; `Build(s)` buduje treść dopiero po otwarciu) albo
+  `Tooltip.attach(scope, obiekt, krótki, szczegóły?)` (dymek pokazuje krótki tekst i „Alt: szczegóły”; przytrzymany
+  klawisz `item_details`, domyślnie Alt, bo Shift ma kamera, albo dłuższe przytrzymanie na telefonie dokłada szczegóły;
+  ze szczegółami oba teksty są rich text; skład w czystym `Logic/TipText`, test `tests/tiptext.spec`). Tooltip
+  przedmiotu: `TooltipModel.build(..., { view = "compact" | "full" })` (nowa rola pełnego widoku trafia do skróconego
+  tylko przez `COMPACT_KEEP` albo zwinięcie w `compactOf`; limit `COMPACT_MAX_LINES` pilnuje `tests/tooltip.spec`);
+  umiejętność na pasku: `SkillInfo.tooltip` → `{ short, details }`, rodzaj linii w `TipText.SKILL_COMPACT`.
 - **Walka z podsumowaniem** (S134f): `FightLogService.Begin/End` + `Logic/FightStats`; nowe źródło liczb przez sygnał, nie kopię.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i
   `Logic/Channel.stops`; stosy z licznikiem przez `StatusEffectService.Stacks` / `UseStack` i `ApplyOptions.stacks` (S76).

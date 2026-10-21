@@ -15,6 +15,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local ItemIcon = require(script.Parent.Parent.Components.ItemIcon)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -363,9 +364,30 @@ local function MountWindow(scope: Scope, props: Props): Fusion.Child
 		local lvl = owned or def.startLevel
 		local state = use(mounts)
 		local active = Mounts.activeOf(state)
-		table.insert(out, line(s, 2, Text.get(use, def.nameKey), Theme.Paper.Heading, Theme.TextSize.Large))
-		local desc = Text.get(use, `mount.{def.id}.desc`)
-		table.insert(out, line(s, 3, desc, Theme.Paper.TextMuted))
+		-- 2026-10-21 (owner: too many detailed descriptions): the name with its story behind the "i"
+		local name = line(s, 1, Text.get(use, def.nameKey), Theme.Paper.Heading, Theme.TextSize.Large) :: TextLabel
+		name.Size = UDim2.new()
+		name.AutomaticSize = Enum.AutomaticSize.XY
+		s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink, Parent = name })
+		table.insert(
+			out,
+			s:New("Frame")({
+				LayoutOrder = 2,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				[Children] = {
+					s:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 8),
+					}),
+					name,
+					InfoTip.new(s, { Text = Text.get(use, `mount.{def.id}.desc`), LayoutOrder = 2 }),
+				},
+			})
+		)
 		table.insert(
 			out,
 			line(

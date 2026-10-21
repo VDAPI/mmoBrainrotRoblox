@@ -4,6 +4,8 @@
 -- day and a countdown to the next UTC day. After a claim the received reward is shown (the chest item with its full
 -- tooltip). PC: the cards in one row; touch (fullscreen window): two rows of four, the footer pinned to the bottom.
 -- Reads narrow state branches only (account.login, the character's level, class and name).
+-- 2026-10-21 (owner: too many detailed descriptions): the chest line and the claiming character are short lines, the
+-- full texts (what the chest holds, the reward follows that character's level) behind their "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,6 +16,7 @@ local CurrencyIcon = require(script.Parent.Parent.Components.CurrencyIcon)
 local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local LoginReward = require(ReplicatedStorage.Shared.Logic.LoginReward)
 local QuestRewards = require(script.Parent.Parent.Components.QuestRewards)
@@ -57,6 +60,38 @@ local function label(scope: Scope, props: { [string]: any }): Instance
 		base[key] = value
 	end
 	return scope:New("TextLabel")(base :: any)
+end
+
+-- 2026-10-21: a short line (label props) with an "i" right after it holding the full text.
+local function infoLabel(scope: Scope, order: number, props: { [string]: any }, info: Fusion.UsedAs<string>): Instance
+	local text: { [string]: any } = {
+		LayoutOrder = 1,
+		Size = UDim2.new(),
+		AutomaticSize = Enum.AutomaticSize.XY,
+	}
+	for key, value in props do
+		text[key] = value
+	end
+	local line = label(scope, text)
+	-- the line gives way (and wraps) before the "i" leaves the row
+	scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink, Parent = line })
+	return scope:New("Frame")({
+		LayoutOrder = order,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		Visible = props.Visible,
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, 4),
+			}),
+			line,
+			InfoTip.new(scope, { Text = info, LayoutOrder = 2 }),
+		},
+	})
 end
 
 -- One day card: number, contents, state (claimed ✓ / today in gold / future).
@@ -137,17 +172,22 @@ local function card(
 				Width = UDim.new(1, 0),
 			}),
 			if contents.chest
-				then label(scope, {
-					LayoutOrder = 3,
-					Size = UDim2.fromScale(1, 0),
-					AutomaticSize = Enum.AutomaticSize.Y,
-					Text = scope:Computed(function(use): string
+				then infoLabel(
+					scope,
+					3,
+					{
+						Text = scope:Computed(function(use): string
+							local className = if class then Text.get(use, class.nameKey) else classId
+							return `{CHEST_GLYPH} {Text.get(use, "login.chest.short", { class = className })}`
+						end),
+						TextColor3 = Theme.Paper.Heading,
+						TextSize = Theme.TextSize.Small,
+					},
+					scope:Computed(function(use): string
 						local className = if class then Text.get(use, class.nameKey) else classId
-						return `{CHEST_GLYPH} {Text.get(use, "login.chest", { class = className })}`
-					end),
-					TextColor3 = Theme.Paper.Heading,
-					TextSize = Theme.TextSize.Small,
-				}) :: any
+						return Text.get(use, "login.chest", { class = className })
+					end)
+				) :: any
 				else nil,
 		},
 	})
@@ -384,18 +424,28 @@ local function LoginRewardWindow(scope: Scope, props: Props): Instance
 					return got ~= nil and got.mailed == true
 				end),
 			}),
-			label(scope, {
-				LayoutOrder = 3,
-				Text = scope:Computed(function(use): string
+			infoLabel(
+				scope,
+				3,
+				{
+					Text = scope:Computed(function(use): string
+						local L = use(level)
+						return Text.get(use, "login.claimFor.short", {
+							name = use(name) or "",
+							level = if type(L) == "number" then L else 1,
+						})
+					end),
+					TextColor3 = Theme.Paper.TextMuted,
+					Visible = claimable,
+				},
+				scope:Computed(function(use): string
 					local L = use(level)
 					return Text.get(use, "login.claimFor", {
 						name = use(name) or "",
 						level = if type(L) == "number" then L else 1,
 					})
-				end),
-				TextColor3 = Theme.Paper.TextMuted,
-				Visible = claimable,
-			}),
+				end)
+			),
 			label(scope, {
 				LayoutOrder = 4,
 				Size = UDim2.fromScale(1, 0),
