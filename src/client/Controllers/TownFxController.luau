@@ -7,7 +7,8 @@
 --     (the mill wheel ~20°/s, the windmill sails ~25°/s; the sails are split between shell and fine models);
 --   * smoke: a slow grey smoke emitter on chimney tops; fire: flames, and flickering of the fire lights;
 --   * water: the fountain's small jets and a gentle shimmer;
---   * waterfall (S26): streaks of falling water down the sheet and a shimmer; foam: mist rising from the pool and
+--   * waterfall (S26): streaks of falling water down the sheet and a shimmer (W30: curved beams of falling water with
+--     scrolling streaks in front of the sheet); foam: mist rising from the pool and
 --     splashes; candle: nothing extra (its light flickers with the "fire" lights), S45: a tiny flame when coloured;
 --   * S45: the part attribute FxColor (Color3) colours the flames of "fire" and "candle" and the night glow of
 --     "lamp" (violet ritual fire, cold blue flames and lanterns, green witch light); bubbles: bubbles rising and
@@ -38,6 +39,7 @@ local LightBudget = require(script.Parent.Parent.Util.LightBudget)
 local MapLooks = require(ReplicatedStorage.Shared.Data.MapLooks)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local State = require(script.Parent.Parent.UI.State)
+local Textures = require(script.Parent.Parent.Vfx.Textures)
 
 local TownFxController = {
 	Name = "TownFxController",
@@ -219,10 +221,99 @@ local function addWater(part: BasePart)
 	shimmers[part] = part.Transparency
 end
 
+-- W30 (owner: "no falling water" at Bear Ravine): on the sheet tagged "waterfall" the water itself falls: one wide
+-- body beam and a few streak beams from the top edge of the sheet to its bottom edge, camera-facing (a sheet seen from
+-- any side), curved out over the lip like a pouring jet when the sheet leans (the generator leans it from the edge to
+-- the pool), the streak texture (Data/VfxTextures trailStreak) tiling down the beam and scrolling at the speed of
+-- falling water. Fewer streaks on a lower graphics level; without the texture the body beam and the drops stay.
+local FALL_STREAKS = 5 -- on high (Config.Graphics.levels[*].particles scales it, at least 2)
+local FALL_SPEED = 1.6 -- texture lengths per second (positive: from the top attachment to the bottom one)
+local FALL_TILE = 5 -- studs per streak tile
+local FALL_COLOR = Color3.fromHex("#DCEEF8")
+
+local function fallBeam(part: BasePart, a0: Attachment, a1: Attachment, out: number, name: string): Beam
+	local beam = Instance.new("Beam")
+	beam.Name = name
+	beam.Attachment0 = a0
+	beam.Attachment1 = a1
+	beam.FaceCamera = true
+	beam.Segments = 12
+	beam.CurveSize0 = out
+	beam.CurveSize1 = out * 1.6
+	beam.Color = ColorSequence.new(FALL_COLOR)
+	beam.LightEmission = 0.15
+	beam.LightInfluence = 0.85
+	beam.Parent = part
+	return beam
+end
+
+local function addFallBeams(part: BasePart)
+	if part:FindFirstChild("TownFallTop") then
+		return
+	end
+	local cf = part.CFrame
+	local size = part.Size
+	-- down the sheet (local -Y), and how far the jet bows out horizontally over the lip
+	local down = -cf.UpVector
+	local flat = Vector3.new(down.X, 0, down.Z)
+	local lean = flat.Magnitude
+	local out = if lean > 0.1 then math.min(size.Y * 0.12, 3) else 0
+	local outward = if lean > 0.1 then flat.Unit else -cf.LookVector
+	local function attachment(name: string, y: number, axis: Vector3, x: number): Attachment
+		local a = Instance.new("Attachment")
+		a.Name = name
+		local localAxis = cf:VectorToObjectSpace(axis)
+		local secondary = if math.abs(localAxis.X) > 0.9 then Vector3.yAxis else Vector3.xAxis
+		local side = localAxis:Cross(secondary).Unit
+		a.CFrame = CFrame.fromMatrix(Vector3.new(x, y, -size.Z / 2 - 0.05), localAxis, side:Cross(localAxis).Unit)
+		a.Parent = part
+		return a
+	end
+	-- the body: one wide beam over the whole sheet
+	local top = attachment("TownFallTop", size.Y / 2, outward, 0)
+	local bottom = attachment("TownFallBottom", -size.Y / 2, Vector3.new(0, -1, 0), 0)
+	local body = fallBeam(part, top, bottom, out, "TownFallBody")
+	body.Width0 = size.X * 0.95
+	body.Width1 = size.X * 1.15
+	body.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0.55),
+		NumberSequenceKeypoint.new(0.6, 0.45),
+		NumberSequenceKeypoint.new(1, 0.7),
+	})
+	-- the streaks across the width, each at its own pace
+	local textured = Textures.id("trailStreak")
+	if not textured then
+		return
+	end
+	local quality = GraphicsLevel.get(State.Get({ "account", "settings", "quality" }))
+	local n = math.max(2, math.floor(FALL_STREAKS * quality.particles + 0.5))
+	for i = 1, n do
+		local x = (-0.5 + (i - 0.5) / n) * size.X * 0.85
+		local a0 = attachment(`TownFallTop{i}`, size.Y / 2, outward, x)
+		local a1 = attachment(`TownFallBottom{i}`, -size.Y / 2, Vector3.new(0, -1, 0), x)
+		local streak = fallBeam(part, a0, a1, out, `TownFallStreak{i}`)
+		Textures.beam(streak, "trailStreak", { speed = FALL_SPEED * (0.85 + 0.3 * ((i * 7) % 5) / 4) })
+		streak.TextureMode = Enum.TextureMode.Wrap
+		streak.TextureLength = FALL_TILE + (i % 3)
+		streak.LightEmission = 0.35
+		streak.LightInfluence = 0.7
+		streak.Width0 = size.X / n * 1.3
+		streak.Width1 = size.X / n * 1.6
+		streak.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 0.5),
+			NumberSequenceKeypoint.new(0.15, 0.2),
+			NumberSequenceKeypoint.new(0.85, 0.25),
+			NumberSequenceKeypoint.new(1, 0.8),
+		})
+	end
+end
+
 local function addWaterfall(part: BasePart)
 	if part:FindFirstChild("TownFall") then
 		return
 	end
+	addFallBeams(part)
+	-- drops spraying off the falling water
 	emitter(part, {
 		Name = "TownFall",
 		Color = ColorSequence.new(Color3.fromHex("#E8F4FA"), Color3.fromHex("#B8D8EA")),
@@ -231,11 +322,11 @@ local function addWaterfall(part: BasePart)
 			NumberSequenceKeypoint.new(0.7, 0.6),
 			NumberSequenceKeypoint.new(1, 1),
 		}),
-		Size = NumberSequence.new(1.4, 2.6),
+		Size = NumberSequence.new(0.8, 1.8),
 		Lifetime = NumberRange.new(0.5, 0.9),
-		Rate = 34,
+		Rate = 40,
 		Speed = NumberRange.new(4, 7),
-		SpreadAngle = Vector2.new(6, 6),
+		SpreadAngle = Vector2.new(10, 10),
 		Acceleration = Vector3.new(0, -60, 0),
 		LightInfluence = 1,
 		EmissionDirection = Enum.NormalId.Bottom,

@@ -7,6 +7,7 @@ local CollectionService = game:GetService("CollectionService")
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local Portals = require(game:GetService("ReplicatedStorage").Shared.Data.Portals)
+local VfxTextures = require(game:GetService("ReplicatedStorage").Shared.Data.VfxTextures)
 local Build = require(script.Parent.Build)
 local KitAssets = require(game:GetService("ReplicatedStorage").Shared.Util.KitAssets)
 
@@ -540,6 +541,92 @@ end
 
 -- Portals and gates -------------------------------------------------------------------------------
 
+-- W30 (owner: "the portals still look broken"): the look of a portal in its field (Data/Portals.LOOK). The field was
+-- a flat purple slab whose square corners stood in the round arch of the painted model and in the gatehouse's corner
+-- stones, with sparkles flying up out of the arch; now it is the invisible trigger, and in it stand the veil (an
+-- ellipse over 90% of the field), the brighter core in front of it, a slowly turning swirl behind the core (the
+-- swirl texture, in the plane of the field) and sparkles from the core that never leave the field.
+local function ellipse(
+	ctx: Context,
+	model: Model,
+	field: BasePart,
+	name: string,
+	w: number,
+	h: number,
+	z: number,
+	spec: any
+): Part
+	local disc = part(ctx, model, {
+		Name = name,
+		Size = Vector3.new(w, h, Portals.LOOK.thick),
+		CFrame = field.CFrame * CFrame.new(0, 0, z),
+		Color = hex(spec.color),
+		Material = Enum.Material.Neon,
+		Transparency = spec.t,
+		CanCollide = false,
+		CastShadow = false,
+	})
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.Sphere -- scaled to the part: a flat ellipse
+	mesh.Parent = disc
+	return disc
+end
+
+local function portalLook(ctx: Context, model: Model, field: BasePart)
+	local LOOK = Portals.LOOK
+	local look = Portals.look(field.Size.X, field.Size.Y)
+	field.Transparency = 1
+	ellipse(ctx, model, field, "Veil", look.veil.w, look.veil.h, 0, LOOK.veil)
+	local core = ellipse(ctx, model, field, "Core", look.core.w, look.core.h, -LOOK.gap, LOOK.core)
+	-- sparkles drift from the core in every direction, slowly enough to stay in the field
+	local sp = LOOK.sparkle
+	local sparkles = Instance.new("ParticleEmitter")
+	sparkles.Name = "Sparkles"
+	sparkles.Color = ColorSequence.new(hex("#D8CCFF"))
+	sparkles.Size = NumberSequence.new(sp.size, 0)
+	sparkles.Speed = NumberRange.new(sp.speed[1], sp.speed[2])
+	sparkles.Lifetime = NumberRange.new(sp.life[1], sp.life[2])
+	sparkles.SpreadAngle = Vector2.new(180, 180)
+	sparkles.Acceleration = Vector3.zero
+	sparkles.Rate = sp.rate
+	sparkles.LightEmission = 1
+	sparkles.Parent = core
+	-- the swirl: one big particle at a time on an attachment in the middle, in the plane of the field (it faces along
+	-- its tiny velocity through the field), turning; its own rate (one at a time on every graphics level)
+	local swirlId = VfxTextures.idOf("swirl")
+	if swirlId and swirlId ~= "" then
+		local sw = LOOK.swirl
+		local at = Instance.new("Attachment")
+		at.Name = "SwirlAt"
+		at.Position = Vector3.new(0, 0, LOOK.gap)
+		at.Parent = field
+		local swirl = Instance.new("ParticleEmitter")
+		swirl.Name = "Swirl"
+		swirl.Texture = swirlId
+		swirl.Color = ColorSequence.new(hex(sw.color))
+		swirl.LightEmission = 1
+		swirl.LightInfluence = 0
+		swirl.Orientation = Enum.ParticleOrientation.VelocityPerpendicular
+		swirl.EmissionDirection = Enum.NormalId.Front
+		swirl.SpreadAngle = Vector2.zero
+		swirl.Speed = NumberRange.new(0.001)
+		swirl.Size = NumberSequence.new(look.swirl)
+		swirl.Lifetime = NumberRange.new(sw.life)
+		swirl.Rate = sw.rate
+		swirl.Rotation = NumberRange.new(0, 360)
+		swirl.RotSpeed = NumberRange.new(sw.spin[1], sw.spin[2])
+		swirl.Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.3, 0.35),
+			NumberSequenceKeypoint.new(0.7, 0.35),
+			NumberSequenceKeypoint.new(1, 1),
+		})
+		swirl.LockedToPart = true
+		swirl:SetAttribute("OwnRate", true) -- SettingsController leaves its rate alone
+		swirl.Parent = at
+	end
+end
+
 -- Turns `model` into a portal with `field` as its clickable part (S21: shared by the portal arches and the
 -- city gates): sparkles, PrimaryPart, the PortalId / TargetMap / ArriveX / ArriveZ attributes read by
 -- WorldBuilder.collect, the "Portal" tag (WorldController adds the prompt) and the map icon at x/z.
@@ -553,14 +640,7 @@ function Prefabs.makePortal(
 	z: number,
 	arrive: { x: number, z: number }?
 )
-	local sparkles = Instance.new("ParticleEmitter")
-	sparkles.Color = ColorSequence.new(hex("#B9A8FF"))
-	sparkles.Size = NumberSequence.new(0.4, 0)
-	sparkles.Speed = NumberRange.new(1, 3)
-	sparkles.Lifetime = NumberRange.new(1, 2)
-	sparkles.Rate = 18
-	sparkles.LightEmission = 1
-	sparkles.Parent = field
+	portalLook(ctx, model, field)
 	-- Atomic: WorldController.decoratePortal needs the PrimaryPart when the tag arrives on the client.
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	model.PrimaryPart = field
@@ -693,7 +773,6 @@ function Prefabs.portal(
 				item.Transparency = 1
 			end
 		end
-		field.Transparency = 0.6
 	end
 	Prefabs.makePortal(ctx, model, field, id, target, x, z, arrive)
 	return model
@@ -1137,7 +1216,9 @@ function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number,
 		local horn = part(ctx, model, {
 			Name = "Horn",
 			Size = Vector3.new(3, 18, 3),
-			CFrame = base * CFrame.new(side * Portals.GATE.hornX, 8, 0) * CFrame.Angles(0, 0, math.rad(-side * 12)),
+			CFrame = base
+				* CFrame.new(side * Portals.GATE.hornX, 8, 0)
+				* CFrame.Angles(0, 0, math.rad(-side * Portals.GATE.hornLean)),
 			Color = hex("#2A2428"),
 			Material = Enum.Material.Basalt,
 			CanQuery = true,

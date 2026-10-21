@@ -180,9 +180,24 @@ local ARCH = table.freeze({
 	field = table.freeze({ w = 9.5, h = 13.5, y = 7.5, d = 0.4 }), -- the purple field, between the pillars
 })
 local GATE = table.freeze({
-	hornX = 8, -- the leaning horns (3 thick, 18 tall)
+	hornX = 8, -- the horns (3 thick, 18 tall, centre 8 up, leaning out by `hornLean` degrees)
+	hornLean = 12,
 	height = 18,
-	door = table.freeze({ w = 12, h = 15, y = 7.5, d = 0.6 }), -- the red door
+	-- the red door; W30: 9.2 wide (it was 12 and its lower corners stood 1.2 studs inside the horns, which lean in
+	-- towards their feet)
+	door = table.freeze({ w = 9.2, h = 15, y = 7.5, d = 0.6 }),
+})
+-- W30 (owner: "the portals still look broken"): what is seen of a portal (World/Prefabs.makePortal, arches and city
+-- gates alike). The field stays the invisible trigger (prompt, server range); in it stand two glowing ellipses (an
+-- outer veil and a brighter core, a little apart so they never flicker into each other), a slowly turning swirl on
+-- the core and sparkles that stay inside the field. Shares of the field's width and height; tests/portals.spec.
+local LOOK = table.freeze({
+	veil = table.freeze({ w = 0.9, h = 0.94, t = 0.45, color = "#7A5CFF" }),
+	core = table.freeze({ w = 0.62, h = 0.66, t = 0.55, color = "#B9A8FF" }),
+	gap = 0.16, -- the core stands this far in front of the veil, the swirl on the other side (studs)
+	thick = 0.08,
+	swirl = table.freeze({ share = 0.95, life = 3, rate = 1, spin = { 20, 45 }, color = "#C9B8FF" }), -- of core width
+	sparkle = table.freeze({ speed = { 0.2, 0.6 }, life = { 0.8, 1.4 }, size = 0.3, rate = 14 }),
 })
 local CLEARANCE: { [Kind]: { center: { number }, half: { number } } } = {
 	-- from 1 stud over the ground (rubble, tracks and furs on the threshold stay) to the arch's top
@@ -196,9 +211,25 @@ local CLEARANCE: { [Kind]: { center: { number }, half: { number } } } = {
 local PROMPT_RANGE = 12
 local SERVER_RANGE = PROMPT_RANGE + 8
 
+-- W30: the pieces of a portal's look in the field of size w x h (field-local x across, y up, z through it): the
+-- ellipses' sizes, how far a sparkle can get from the core's box and the swirl's diameter.
+local function look(w: number, h: number)
+	local veil = { w = w * LOOK.veil.w, h = h * LOOK.veil.h }
+	local core = { w = w * LOOK.core.w, h = h * LOOK.core.h }
+	local reach = LOOK.sparkle.speed[2] * LOOK.sparkle.life[2] + LOOK.sparkle.size
+	return {
+		veil = veil,
+		core = core,
+		swirl = core.w * LOOK.swirl.share,
+		sparkleReach = reach,
+	}
+end
+
 return table.freeze({
 	ARCH = ARCH,
 	GATE = GATE,
+	LOOK = LOOK,
+	look = look,
 	PROMPT_RANGE = PROMPT_RANGE,
 	SERVER_RANGE = SERVER_RANGE,
 	-- The box (portal frame) a portal of `kind` keeps free of dressing (nil: city gates, drawn by the town plan).
