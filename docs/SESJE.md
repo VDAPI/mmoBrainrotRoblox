@@ -13767,6 +13767,13 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Dla właściciela:** bez przeglądu w Studio (nie ma jeszcze modeli); kowal kuje w miejscu, `Work = "none"` na modelu
   to wyłącza.
 
+### Tabliczki: poziom i VIP, lista tytułów (2026-10-21)
+- **Tabliczka:** `Logic/Nameplate.view` (`level`, `showVip`), `NameplateController` (etykieta „Lv N” z atrybutu `Level`
+  modelu, złota plakietka VIP z atrybutu `Vip` gracza), `Config.Nameplate.levelSize`.
+- **Tytuły:** `Logic/Titles.choices` / `sourceOf`, `UI/Screens/CharacterWindow/TitleChooser` (przycisk „Zmień tytuł”
+  i lista nad oknem) zamiast cyklera ◀ ▶; serwer bez zmian (`SetTitle` sprawdza `Titles.isUnlocked`).
+- **Testy:** `nameplate`, `titles`.
+
 ### HUD 2026-10-21: koszt na slotach, przesuwane panele wydarzeń, poczta pod przyciskiem ataku
 - **Koszt umiejętności:** `Logic/SkillCostBadge` (tekst, kolor zasobu), `Components/CostBadge`, `SkillController.Cost`
   (wspólny z `Usable`), `Hud/SkillBar`, `Hud/MobileSkills`, prop `SkillCost` HUD.
