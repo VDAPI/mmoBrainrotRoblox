@@ -2,6 +2,8 @@
 -- Party window (P): members with class, level, HP/mana, leader crown; invite by name; leave; the leader can
 -- kick and promote; party chat toggle; the loot rules (DESIGN §17). S134f: a second tab with the party finder board
 -- (UI/Screens/PartyFinder) and "Recent fights" (the fight log window).
+-- 2026-10-21 (owner: too many descriptions): the loot rules are no longer a block of text under the list; they sit
+-- behind the "i" of the bonus lines (Components/InfoTip), the bonus lines are short, "not in a party" is one line.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
@@ -11,6 +13,8 @@ local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupLuck = require(script.Parent.Parent.GroupLuck)
+local InfoLine = require(script.Parent.Parent.Components.InfoLine)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PartyBonus = require(ReplicatedStorage.Shared.Logic.PartyBonus)
 local PartyLoot = require(ReplicatedStorage.Shared.Logic.PartyLoot)
@@ -106,14 +110,13 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 		if type(p) ~= "table" then
 			table.insert(
 				list,
-				s:New("TextLabel")({
+				InfoLine.new(s, {
 					Size = UDim2.new(1, 0, 0, 60),
-					BackgroundTransparency = 1,
-					Text = Text.get(use, "party.none"),
-					TextWrapped = true,
-					FontFace = Theme.Fonts.Body,
+					Center = true,
+					Text = Text.get(use, "party.none.short"),
+					Info = Text.get(use, "party.none"),
 					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Paper.TextMuted,
+					Color = Theme.Paper.TextMuted,
 				})
 			)
 			return list
@@ -270,7 +273,7 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 		}),
 		scope:New("ScrollingFrame")({
 			Position = UDim2.fromOffset(0, 58),
-			Size = UDim2.new(1, 0, 1, -276),
+			Size = UDim2.new(1, 0, 1, -188),
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
@@ -282,34 +285,34 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 				rows :: any,
 			},
 		}),
-		scope:New("TextLabel")({
+		-- the bonus lines (pool, classes, Fortune) with the loot rules behind the "i" at their right
+		scope:New("Frame")({
 			Name = "Bonus",
-			Position = UDim2.new(0, 0, 1, -214),
+			Position = UDim2.new(0, 0, 1, -126),
 			Size = UDim2.new(1, 0, 0, 60),
 			BackgroundTransparency = 1,
 			Visible = scope:Computed(function(use): boolean
 				return type(use(party)) == "table"
 			end),
-			Text = bonusText,
-			TextWrapped = true,
-			FontFace = Theme.Fonts.BodyMedium,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Paper.Heading,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextYAlignment = Enum.TextYAlignment.Top,
-		}),
-		scope:New("TextLabel")({
-			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.new(0, 0, 1, -58),
-			Size = UDim2.new(1, 0, 0, 88),
-			BackgroundTransparency = 1,
-			Text = Text.T(scope, "party.rules", { gap = Progression.partyCarryGap }),
-			TextWrapped = true,
-			FontFace = Theme.Fonts.Body,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Paper.TextMuted,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextYAlignment = Enum.TextYAlignment.Top,
+			[Children] = {
+				scope:New("TextLabel")({
+					Size = UDim2.new(1, -36, 1, 0),
+					BackgroundTransparency = 1,
+					Text = bonusText,
+					TextWrapped = true,
+					FontFace = Theme.Fonts.BodyMedium,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.Heading,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextYAlignment = Enum.TextYAlignment.Top,
+				}),
+				InfoTip.new(scope, {
+					Name = "Rules",
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, -6, 0, 0),
+					Text = Text.T(scope, "party.rules", { gap = Progression.partyCarryGap }),
+				}),
+			},
 		}),
 		scope:New("Frame")({
 			AnchorPoint = Vector2.new(0, 1),

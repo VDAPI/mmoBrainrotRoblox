@@ -12,6 +12,11 @@
 -- rating, tier and numbers of that mode; 3v3: solo or the party team of three, the reason a button is off from
 -- Logic/ArenaRules.canQueue3 on the replicated party). The shop rows come from Data/Arena.SHOP with the server's own
 -- check (Logic/ArenaRules.canBuyShop); buying asks first (UI/Components/Modal, ArenaController.Buy).
+-- 2026-10-21 (owner: too many descriptions): "Your arena" shows the rating, the tier and the season's end, the rest
+-- (bracket, season, the numbers, the last season) is folded (Components/Details); the queue shows the mode's rules in
+-- one short line, the full rules sit behind the "i" of the mode switch, the queue's hints (this server only, nobody
+-- waiting, solo or team) behind the "i" of the queue's title; the season tab's rule behind the "i" of the own tier.
+-- An "i" is never built inside a part rebuilt every second (its popover would close): those parts only get lines.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,8 +29,11 @@ local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local CurrencyIcon = require(script.Parent.Parent.Components.CurrencyIcon)
+local Details = require(script.Parent.Parent.Components.Details)
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoLine = require(script.Parent.Parent.Components.InfoLine)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local ItemIcon = require(script.Parent.Parent.Components.ItemIcon)
 local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
@@ -92,6 +100,16 @@ local function seasonName(use: Use, season: string): string
 	return Text.get(use, "arena.season.name", { month = Text.get(use, `arena.month.{month}`), year = year })
 end
 
+-- The arguments of a mode's rules (arena.rules.<mode> and its short line).
+local function rulesArgs(use: Use, mode: Arena.Mode): { [string]: any }
+	return {
+		wins = mode.winsNeeded,
+		time = Time.format(mode.roundTime),
+		potions = mode.potions,
+		elixir = Text.get(use, "item.potion_full.name"),
+	}
+end
+
 local function agoText(use: Use, seconds: number): string
 	local s = math.max(0, seconds)
 	if s < 3600 then
@@ -125,7 +143,28 @@ local function label(
 	})
 end
 
-local function card(s: Scope, order: number, titleKey: string, size: Fusion.UsedAs<UDim2>, body: any): Instance
+-- A titled card; with `info` an "i" after the title holds the card's hints (`info` "" hides it).
+local function card(
+	s: Scope,
+	order: number,
+	titleKey: string,
+	size: Fusion.UsedAs<UDim2>,
+	body: any,
+	info: Fusion.UsedAs<string>?
+): Instance
+	local title = if info
+		then InfoLine.new(s, {
+			LayoutOrder = 0,
+			Text = Text.T(s, titleKey),
+			Info = info,
+			InfoVisible = s:Computed(function(use): boolean
+				return use(info) ~= ""
+			end),
+			Font = Theme.Fonts.Display,
+			TextSize = Theme.TextSize.Body,
+			Color = Theme.Paper.Heading,
+		})
+		else label(s, 0, Text.T(s, titleKey), Theme.TextSize.Body, Theme.Paper.Heading, Theme.Fonts.Display)
 	return s:New("Frame")({
 		LayoutOrder = order,
 		Size = size,
@@ -141,7 +180,7 @@ local function card(s: Scope, order: number, titleKey: string, size: Fusion.Used
 				PaddingRight = UDim.new(0, 12),
 			}),
 			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-			label(s, 0, Text.T(s, titleKey), Theme.TextSize.Body, Theme.Paper.Heading, Theme.Fonts.Display),
+			title,
 			body,
 		},
 	})
@@ -290,6 +329,26 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				Theme.Paper.TextMuted
 			)
 		)
+		local season = ArenaRules.seasonOf(use(clock))
+		local d, h = Time.split(ArenaRules.seasonEndsAt(season) - use(clock))
+		table.insert(
+			items,
+			label(
+				s,
+				7,
+				Text.get(use, "arena.season.ends", { time = Text.get(use, "arena.time.dh", { d = d, h = h }) }),
+				nil,
+				Theme.Paper.TextMuted
+			)
+		)
+		return items
+	end)
+	-- 2026-10-21: the bracket, the season, this season's numbers and the last season, folded under "More"
+	local function mineDetails(use: Use, s: Scope): { any }
+		local a = use(arena)
+		local m = Arena.MODES[use(props.Mode)] or Arena.MODES["1v1"]
+		local rating = tonumber(a[m.ratingField]) or Arena.ELO.start
+		local items: { any } = {}
 		local bracket = Arena.bracket(ArenaRules.bracketOf(use(myLevel)) or "")
 		table.insert(
 			items,
@@ -302,18 +361,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 			)
 		)
 		local season = ArenaRules.seasonOf(use(clock))
-		local d, h = Time.split(ArenaRules.seasonEndsAt(season) - use(clock))
 		table.insert(items, label(s, 6, Text.get(use, "arena.season", { name = seasonName(use, season) })))
-		table.insert(
-			items,
-			label(
-				s,
-				7,
-				Text.get(use, "arena.season.ends", { time = Text.get(use, "arena.time.dh", { d = d, h = h }) }),
-				nil,
-				Theme.Paper.TextMuted
-			)
-		)
 		-- the numbers of this season (a state from the month before shows zeros until the server rolls it)
 		local current = a.season == season or a.season == ""
 		local wins = if current then tonumber(a[m.winsField]) or 0 else 0
@@ -349,7 +397,16 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 			)
 		end
 		return items
-	end)
+	end
+	local mineMore = Details.new(scope, {
+		Key = "arena/mine",
+		LayoutOrder = 50,
+		Build = function(ds: Scope): any
+			return ds:Computed(function(use, s: Scope): any
+				return mineDetails(use, s)
+			end)
+		end,
+	})
 
 	-- Queue ------------------------------------------------------------------------------------------------------------
 	-- S128: the 3v3 button: solo without a party, the team for the leader of a party of three in one bracket.
@@ -401,6 +458,33 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 		})
 	end
 
+	-- S127: the scope of the queue (all servers, or this server only) from the queue entry or the window's status
+	local function queueScope(use: Use): string
+		local q = use(liveValue).queue
+		local status = use(props.Status :: any)
+		return if type(q) == "table" and type(q.scope) == "string"
+			then q.scope
+			elseif type(status) == "table" and type(status.scope) == "string" then status.scope
+			else "local"
+	end
+
+	-- 2026-10-21: the hints of the queue behind the "i" of its title (built once, so the popover stays open while the
+	-- queue ticks): this server only, nobody else waiting, solo or team in 3 vs 3.
+	local queueInfo = scope:Computed(function(use): string
+		local parts: { string } = {}
+		if queueScope(use) ~= "global" then
+			table.insert(parts, Text.get(use, "arena.net.scope.localHint"))
+		end
+		local q = use(liveValue).queue
+		if type(q) == "table" and q.waitingLocal == true then
+			table.insert(parts, Text.get(use, "arena.net.waitingLocal"))
+		end
+		if use(props.Mode) == "3v3" then
+			table.insert(parts, Text.get(use, "arena.queue3.soloHint"))
+		end
+		return table.concat(parts, "\n\n")
+	end)
+
 	local queueBody = scope:Computed(function(use, s: Scope): any
 		local items: { any } = {}
 		local l = use(liveValue)
@@ -413,19 +497,14 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 		local chosen = use(props.Mode)
 		for _, mode in ArenaRules.enabledModes() do
 			if mode.id ~= chosen then
-				continue -- S128: the rules of the chosen mode
+				continue -- S128: the rules of the chosen mode (2026-10-21: one line, the full rules in the switch's "i")
 			end
 			table.insert(
 				items,
 				label(
 					s,
 					nextOrder(),
-					Text.get(use, `arena.rules.{mode.id}`, {
-						wins = mode.winsNeeded,
-						time = Time.format(mode.roundTime),
-						potions = mode.potions,
-						elixir = Text.get(use, "item.potion_full.name"),
-					}),
+					Text.get(use, `arena.rules.{mode.id}.short`, rulesArgs(use, mode)),
 					nil,
 					Theme.Paper.Text
 				)
@@ -434,11 +513,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 		-- S127: the scope of the queue: all servers (MemoryStore), or this server only (Studio, the link down) with why
 		local bracket = ArenaRules.bracketOf(use(myLevel))
 		local q = l.queue
-		local scopeId = if type(q) == "table" and type(q.scope) == "string"
-			then q.scope
-			elseif type(status) == "table" and type(status.scope) == "string" then status.scope
-			else "local"
-		local global = scopeId == "global"
+		local global = queueScope(use) == "global"
 		table.insert(
 			items,
 			label(
@@ -449,12 +524,6 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				Theme.Paper.Heading
 			)
 		)
-		if not global then
-			table.insert(
-				items,
-				label(s, nextOrder(), Text.get(use, "arena.net.scope.localHint"), nil, Theme.Paper.TextMuted)
-			)
-		end
 		local waiting: number? = nil
 		local waitingField = if chosen == "3v3" then "waiting3" else "waiting" -- S128
 		if type(q) == "table" and q.mode == chosen and type(q.waiting) == "number" then
@@ -471,7 +540,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 		if type(q) == "table" and q.waitingLocal == true then
 			table.insert(
 				items,
-				label(s, nextOrder(), Text.get(use, "arena.net.waitingLocal"), nil, Theme.Paper.TextMuted)
+				label(s, nextOrder(), Text.get(use, "arena.net.waitingLocal.short"), nil, Theme.Paper.TextMuted)
 			)
 		end
 		for _, mode in ArenaRules.enabledModes() do
@@ -552,12 +621,6 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 						end,
 					})
 				)
-				if mode.id == "3v3" and reason == nil then
-					table.insert(
-						items,
-						label(s, nextOrder(), Text.get(use, "arena.queue3.soloHint"), nil, Theme.Paper.TextMuted)
-					)
-				end
 				if reason then
 					use(now) -- the penalty countdown ticks
 					table.insert(items, label(s, nextOrder(), props.ErrorText(reason), nil, Theme.Paper.Warning))
@@ -893,32 +956,50 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 	end)
 
 	-- S128: the season rewards ------------------------------------------------------------------------------------------
+	-- The tier the season counts now (the best peak of 1 vs 1 or 3 vs 3; a state from the month before counts the start).
+	local function seasonTierOf(a: any, t: number): string
+		local current = a.season == ArenaRules.seasonOf(t) or a.season == ""
+		local peak = if current then tonumber(a.peak) or Arena.ELO.start else Arena.ELO.start
+		local peak3 = if current then tonumber(a.peak3) or Arena.ELO.start else Arena.ELO.start
+		return ArenaRules.seasonTier(peak, peak3)
+	end
+	-- 2026-10-21: the own tier as one short line (built once: its "i" holds where the tier comes from and when the
+	-- reward arrives, and stays open while the tab ticks).
+	local seasonTierNow = scope:Computed(function(use): string
+		return seasonTierOf(use(arena), use(clock))
+	end)
+	local yourTier = InfoLine.new(scope, {
+		LayoutOrder = 0,
+		Text = scope:Computed(function(use): string
+			return Text.get(
+				use,
+				"arena.season.yourTier.short",
+				{ tier = Text.get(use, `arena.tier.{use(seasonTierNow)}`) }
+			)
+		end),
+		Info = scope:Computed(function(use): string
+			local tier = Text.get(use, `arena.tier.{use(seasonTierNow)}`)
+			return `{Text.get(use, "arena.season.yourTier", { tier = tier })}\n\n{Text.get(use, "arena.season.howTo")}`
+		end),
+		Font = Theme.Fonts.BodyBold,
+		TextSize = Theme.TextSize.Body,
+		Color = scope:Computed(function(use): Color3
+			return tierColor(use(seasonTierNow))
+		end),
+	})
 	local seasonBody = scope:Computed(function(use, s: Scope): any
 		local a = use(arena)
 		local t = use(clock)
 		local season = ArenaRules.seasonOf(t)
 		local current = a.season == season or a.season == ""
-		local peak = if current then tonumber(a.peak) or Arena.ELO.start else Arena.ELO.start
-		local peak3 = if current then tonumber(a.peak3) or Arena.ELO.start else Arena.ELO.start
 		local played = if current then (tonumber(a.played) or 0) + (tonumber(a.played3) or 0) else 0
-		local myTier = ArenaRules.seasonTier(peak, peak3)
+		local myTier = seasonTierOf(a, t)
 		local items: { any } = {}
 		local order = 0
 		local function nextOrder(): number
 			order += 1
 			return order
 		end
-		table.insert(
-			items,
-			label(
-				s,
-				nextOrder(),
-				Text.get(use, "arena.season.yourTier", { tier = Text.get(use, `arena.tier.{myTier}`) }),
-				Theme.TextSize.Body,
-				tierColor(myTier),
-				Theme.Fonts.BodyBold
-			)
-		)
 		table.insert(
 			items,
 			label(
@@ -995,7 +1076,6 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				})
 			)
 		end
-		table.insert(items, label(s, nextOrder(), Text.get(use, "arena.season.howTo"), nil, Theme.Paper.TextMuted))
 		local last = a.last
 		if type(last) == "table" and last.rewarded == true then
 			local month, year = ArenaRules.seasonLabel(last.season)
@@ -1037,22 +1117,35 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 			s:New("UIListLayout")({
 				FillDirection = Enum.FillDirection.Horizontal,
 				SortOrder = Enum.SortOrder.LayoutOrder,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
 				Padding = UDim.new(0, 8),
 			}),
 		}
+		local chosen = use(props.Mode)
 		for i, mode in ArenaRules.enabledModes() do
 			table.insert(
 				items,
 				Button(s, {
 					LayoutOrder = i,
 					Size = UDim2.fromOffset(140, Theme.Size.MinTouch),
-					Variant = if use(props.Mode) == mode.id then "primary" else "secondary",
+					Variant = if chosen == mode.id then "primary" else "secondary",
 					Text = Text.get(use, `arena.mode.{mode.id}`),
 					OnClick = function()
 						props.Mode:set(mode.id)
 					end,
 				})
 			)
+			-- 2026-10-21: the full rules of the chosen mode behind the "i" next to the switch
+			if chosen == mode.id then
+				table.insert(
+					items,
+					InfoTip.new(s, {
+						LayoutOrder = 100,
+						Title = Text.get(use, `arena.mode.{mode.id}`),
+						Text = Text.get(use, `arena.rules.{mode.id}`, rulesArgs(use, mode)),
+					})
+				)
+			end
 		end
 		return items
 	end)
@@ -1080,8 +1173,8 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 						return if use(touch) then Enum.FillDirection.Vertical else Enum.FillDirection.Horizontal
 					end),
 				}),
-				card(scope, 1, "arena.section.mine", cardSize, mine :: any),
-				card(scope, 2, "arena.section.queue", cardSize, queueBody :: any),
+				card(scope, 1, "arena.section.mine", cardSize, { mine :: any, mineMore }),
+				card(scope, 2, "arena.section.queue", cardSize, queueBody :: any, queueInfo),
 			},
 		}),
 		card(scope, 2, "arena.history", UDim2.fromScale(1, 0), historyBody :: any),
@@ -1127,6 +1220,7 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 			}),
 			page("season", 5, {
 				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
+				yourTier,
 				seasonBody :: any,
 			}),
 			-- S130: the Champion's Tournament

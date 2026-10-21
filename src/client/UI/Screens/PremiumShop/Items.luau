@@ -9,6 +9,9 @@
 -- S134d: Auto Potions (autopotion_*: the time left or "forever", every entry "Owned" once bought forever) and Auto
 -- Hunt (hunt_*: the hours in the bank and left today): a service card before the first entry of each, then the buy
 -- cards (the same purchase rule, Logic/Premium.canBuy with the account's autoPotion branch).
+-- 2026-10-21 (owner: too many detailed descriptions): a card shows the short line premium.shop.<key>.short (with the
+-- limits used today when the entry has them) and the full premium.shop.<key>.desc behind an "i" after the title; the
+-- service cards (Cloak, Auto Potions, Auto Hunt) put their rules there too (the card tooltip stays for the mouse).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -22,6 +25,7 @@ local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local ItemData = require(ReplicatedStorage.Shared.Data.Items)
 local AutoGrind = require(ReplicatedStorage.Shared.Logic.AutoGrind)
 local AutoPotion = require(ReplicatedStorage.Shared.Logic.AutoPotion)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
@@ -85,6 +89,17 @@ local function descKey(entry: Products.ShopEntry): string
 	return `premium.shop.{entry.key}.desc`
 end
 
+-- 2026-10-21: the short line of an entry (premium.shop.<key>.short), nil when the description is short already.
+local function shortKey(entry: Products.ShopEntry): string?
+	local key = `premium.shop.{entry.key}.short`
+	return if Locale.has(key) then key else nil
+end
+
+-- The "i" text of a card with a short line: the full description (nil without a short line).
+local function infoOf(scope: Scope, entry: Products.ShopEntry): Fusion.UsedAs<string>?
+	return if shortKey(entry) then Text.T(scope, descKey(entry), DESC_ARGS) else nil
+end
+
 -- S122: the card title of an item entry: a pack of n (premium.<item>.pack) or the item name.
 local function itemTitle(use: Fusion.Use, entry: Products.ShopEntry, itemId: string): string
 	if (entry.n or 1) > 1 then
@@ -93,13 +108,17 @@ local function itemTitle(use: Fusion.Use, entry: Products.ShopEntry, itemId: str
 	return ItemText.get(use, itemId)
 end
 
--- The card subtitle: limits used today / this week, otherwise what the entry gives.
+-- The card subtitle: what the entry gives (the short line when there is one), then the limits used today / this week.
 local function subtitle(use: Fusion.Use, entry: Products.ShopEntry, b: Branches): string
+	local short = shortKey(entry)
 	if not entry.dailyLimit and not entry.weeklyLimit then
-		return Text.get(use, descKey(entry), DESC_ARGS)
+		return Text.get(use, short or descKey(entry), DESC_ARGS)
 	end
 	local today, week = Premium.usedOf(entry, accountOf(use, b), os.time())
 	local parts = {}
+	if short then
+		table.insert(parts, Text.get(use, short))
+	end
 	if entry.dailyLimit then
 		table.insert(parts, Text.get(use, "premium.service.limit", { used = today, max = entry.dailyLimit }))
 	end
@@ -136,6 +155,7 @@ local function itemCard(scope: Scope, entry: Products.ShopEntry, itemId: string,
 		subtitle = scope:Computed(function(use): string
 			return subtitle(use, entry, b)
 		end),
+		info = infoOf(scope, entry),
 		button = Cards.buyButton(
 			scope,
 			scope:Computed(function(use): string
@@ -269,6 +289,7 @@ local function lureCard(scope: Scope, order: number, lure: Fusion.Value<any>, no
 				end)
 			end,
 		}),
+		info = Text.T(scope, "lure.desc"),
 		tooltip = Text.T(scope, "lure.desc"),
 	})
 end
@@ -292,6 +313,7 @@ local function autoPotionCard(scope: Scope, order: number, b: Branches, now: Fus
 			end
 			return Text.get(use, "premium.lure.left", { time = lureTime(use, seconds) })
 		end),
+		info = Text.T(scope, "autoPotion.desc"),
 		tooltip = Text.T(scope, "autoPotion.desc"),
 	})
 end
@@ -313,6 +335,7 @@ local function autoGrindCard(scope: Scope, order: number, now: Fusion.Value<numb
 				today = lureTime(use, AutoGrind.todayLeft(s, t)),
 			})
 		end),
+		info = Text.T(scope, "autoGrind.desc", AutoGrind.descArgs()),
 		tooltip = scope:Computed(function(use): string
 			return Text.get(use, "autoGrind.desc", AutoGrind.descArgs())
 		end),
@@ -341,7 +364,8 @@ local function lureBuyCard(scope: Scope, entry: Products.ShopEntry, order: numbe
 		glyph = if entry.kind == "autoPotion" then "⚗" elseif entry.kind == "autoGrind" then "⚔" else "❂",
 		art = UiArt.shop(entry.key),
 		title = Text.T(scope, `premium.{entry.key}`),
-		subtitle = Text.T(scope, descKey(entry)),
+		subtitle = Text.T(scope, shortKey(entry) or descKey(entry)),
+		info = infoOf(scope, entry),
 		button = Cards.buyButton(
 			scope,
 			scope:Computed(function(use): string

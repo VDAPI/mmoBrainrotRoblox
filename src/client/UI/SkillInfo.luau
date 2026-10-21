@@ -17,6 +17,10 @@
 -- S139 (DESIGN-18 §12): `short` = the one sentence `skill.<id>.short` with the numbers of the rank; the bar tooltip
 -- shows it above the numbers (shape, cost, heal) instead of the full description (that one only in the skills
 -- window's details). Descriptions also count the equipped item effects (Logic/ItemEffects.mods, as effectiveFor).
+-- 2026-10-21 (owner: descriptions too long): the bar tooltip is short (name and rank, the one sentence, cost · cooldown ·
+-- range, the element it needs); the area, aiming, kind of blow, weapon speed factor, heal on you, the reached
+-- breakpoints and the full description are its details (Tooltip details: the details key held, or a long press).
+-- The split is Logic/TipText.SKILL_COMPACT.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -31,6 +35,7 @@ local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local State = require(script.Parent.State)
 local Text = require(script.Parent.Text)
+local TipText = require(ReplicatedStorage.Shared.Logic.TipText)
 
 local SkillInfo = {}
 
@@ -192,11 +197,15 @@ function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, shownRank: num
 	return `{SHAPE_GLYPH[shape]} {size}`
 end
 
--- "15 energy · Cooldown 4 s · Range 8 studs"
-function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: number): string
+-- "15 energy · Cooldown 4 s · Range 8 studs". 2026-10-21: `part` "main" = cost, cooldown and range (the bar tooltip's
+-- short part), "extra" = aiming, kind of blow and the weapon speed factor (its details); nil = all (the skills window).
+function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: number, part: ("main" | "extra")?): string
 	local rank = math.max(1, shownRank)
 	local def, behaviour = effective(use, skill, rank)
-	local parts = {}
+	local parts: { { text: string, extra: boolean } } = {}
+	local function insert(text: string, isExtra: boolean?)
+		table.insert(parts, { text = text, extra = isExtra == true })
+	end
 	local saving = use(costReduce)
 	local mods: Skills.CostMods = {
 		costReduce = if type(saving) == "number" then saving else 0,
@@ -210,11 +219,11 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 		local drain = if type(maxMana) == "number" and maxMana > 0
 			then Skills.drain(def, rank, maxMana, mods) / maxMana * 100
 			else Skills.valueAt(def, "drain", rank)
-		table.insert(parts, Text.get(use, "skills.cost.drain", { drain = math.floor(drain * 10 + 0.5) / 10 }))
+		insert(Text.get(use, "skills.cost.drain", { drain = math.floor(drain * 10 + 0.5) / 10 }))
 	elseif cost > 0 and skill.resource then
 		-- The bar needs the full amount, so a fractional cost (Mage above level 20) shows rounded up.
 		local shownCost = math.ceil(cost - 1e-6)
-		table.insert(parts, Text.get(use, `skills.cost.{skill.resource}`, { cost = shownCost }))
+		insert(Text.get(use, `skills.cost.{skill.resource}`, { cost = shownCost }))
 	end
 	-- S64: the cooldown after the item reduction (Skills.cooldown, as the server counts it).
 	local base = Skills.cooldown(def, rank, 0, behaviour)
@@ -224,21 +233,21 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 	local cooldown = math.floor(reduced * 10 + 0.5) / 10
 	if base > 0 and reduced < base - 1e-6 then
 		local pct = math.floor((1 - reduced / base) * 100 + 1e-6)
-		table.insert(parts, Text.get(use, "skills.cooldownReduced", { cooldown = cooldown, pct = pct }))
+		insert(Text.get(use, "skills.cooldownReduced", { cooldown = cooldown, pct = pct }))
 	else
-		table.insert(parts, Text.get(use, "skills.cooldown", { cooldown = cooldown }))
+		insert(Text.get(use, "skills.cooldown", { cooldown = cooldown }))
 	end
 	-- S76: aiming before the shot
 	if (def.castTime or 0) > 0 then
-		table.insert(parts, Text.get(use, "skills.castTime", { castTime = Skills.roundArg(def.castTime :: number) }))
+		insert(Text.get(use, "skills.castTime", { castTime = Skills.roundArg(def.castTime :: number) }), true)
 	end
 
 	-- S64: the kind of blow only where it means something (the skill deals damage, Skills.deliveryRule)
 	if def.delivery and Skills.deliveryRule(def) ~= nil then
-		table.insert(parts, Text.get(use, `skills.delivery.{def.delivery}`))
+		insert(Text.get(use, `skills.delivery.{def.delivery}`), true)
 	end
 	if def.range then
-		table.insert(parts, Text.get(use, "skills.range", { range = def.range }))
+		insert(Text.get(use, "skills.range", { range = def.range }))
 	end
 	if skill.values.dmg ~= nil then
 		local equipped = use(weapon)
@@ -246,10 +255,16 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 		local factor = Skills.speedFactor(speed)
 		if math.abs(factor - 1) > 0.005 then
 			local mul = math.floor(factor * 100 + 0.5) / 100
-			table.insert(parts, Text.get(use, "skills.weaponSpeed", { mul = mul }))
+			insert(Text.get(use, "skills.weaponSpeed", { mul = mul }), true)
 		end
 	end
-	return table.concat(parts, " · ")
+	local kept: { string } = {}
+	for _, entry in parts do
+		if part == nil or entry.extra == (part == "extra") then
+			table.insert(kept, entry.text)
+		end
+	end
+	return table.concat(kept, " · ")
 end
 
 local function choicesOf(use: any, choices: Skills.Choices?): Skills.Choices?
@@ -348,38 +363,51 @@ function SkillInfo.healLine(use: any, skill: SkillData.SkillDef, rank: number): 
 	return Text.get(use, key, { amount = math.floor(amount + 0.5) })
 end
 
--- The whole tooltip as plain text (the skill bar); `choices` default: path.bp of the character.
--- S139: name and rank, the short sentence, then the numbers (shape, cost, heal) and the working breakpoints reached;
--- the full description and the next rank only in the skills window.
-function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number, choices: Skills.Choices?): string
+-- The lines of the skill bar tooltip, each with its kind (Logic/TipText.SKILL_COMPACT picks the short ones); `choices`
+-- default: path.bp of the character. S139: name and rank, the short sentence, then the numbers (shape, cost, heal) and
+-- the working breakpoints reached; 2026-10-21: the full description too (details only).
+function SkillInfo.tooltipParts(
+	use: any,
+	skill: SkillData.SkillDef,
+	rank: number,
+	choices: Skills.Choices?
+): { TipText.Part }
 	local shown = math.max(1, rank)
+	local parts: { TipText.Part } = {}
+	local function add(kind: string, text: string)
+		table.insert(parts, { kind = kind, text = text })
+	end
 	local rankText = Text.get(use, "skills.rank", { rank = rank, max = skill.maxLevel })
-	local lines = { `{Text.get(use, skill.nameKey)} · {rankText}` }
+	add("name", `{Text.get(use, skill.nameKey)} · {rankText}`)
 	if rank <= 0 then
-		table.insert(lines, Text.get(use, "skills.unlockAt", { level = skill.unlock }))
+		add("unlock", Text.get(use, "skills.unlockAt", { level = skill.unlock }))
 	end
-	table.insert(lines, SkillInfo.short(use, skill, shown))
-	local shape = SkillInfo.shapeLine(use, skill, shown)
-	if shape ~= "" then
-		table.insert(lines, shape)
-	end
+	add("short", SkillInfo.short(use, skill, shown))
+	add("shape", SkillInfo.shapeLine(use, skill, shown))
 	if skill.type ~= "passive" then
-		table.insert(lines, SkillInfo.costLine(use, skill, shown))
+		add("cost", SkillInfo.costLine(use, skill, shown, "main"))
+		add("costExtra", SkillInfo.costLine(use, skill, shown, "extra"))
 	end
-	local heal = SkillInfo.healLine(use, skill, shown)
-	if heal ~= "" then
-		table.insert(lines, heal)
-	end
+	add("heal", SkillInfo.healLine(use, skill, shown))
 	for _, bp in SkillInfo.breakpoints(use, skill, rank, choices) do
 		if bp.reached then
-			table.insert(lines, `✔ {bp.text}`)
+			add("breakpoint", `✔ {bp.text}`)
 		end
 	end
 	local element = Skills.requiredElement(skill)
 	if element then
-		table.insert(lines, Text.get(use, "skill.requiresElement", { element = Text.get(use, `element.{element}`) }))
+		add("element", Text.get(use, "skill.requiresElement", { element = Text.get(use, `element.{element}`) }))
 	end
-	return table.concat(lines, "\n")
+	add("full", SkillInfo.full(use, skill, shown))
+	return parts
+end
+
+-- The skill bar tooltip: the short text and the details (Components/Tooltip `details`).
+export type TooltipText = { short: string, details: string }
+
+function SkillInfo.tooltip(use: any, skill: SkillData.SkillDef, rank: number, choices: Skills.Choices?): TooltipText
+	local short, details = TipText.split(SkillInfo.tooltipParts(use, skill, rank, choices), TipText.SKILL_COMPACT)
+	return { short = short, details = details }
 end
 
 return SkillInfo

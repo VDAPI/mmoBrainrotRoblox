@@ -1,6 +1,8 @@
 --!strict
 -- Auction window, "Sell" tab: pick an unbound backpack item (click or tap), set the price and 24/48 h; the
 -- deposit, the fee and what reaches the mail are computed live, with the average market price of the item.
+-- 2026-10-21 (owner: too many detailed descriptions): the deposit and the fee share one line (what each means and the
+-- VIP fee behind its "i"), the rules are one short line with the full text behind its "i".
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -8,6 +10,7 @@ local Auction = require(ReplicatedStorage.Shared.Logic.Auction)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Market = require(ReplicatedStorage.Shared.Data.Market)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -118,6 +121,44 @@ local function Sell(scope: Scope): Instance
 		})
 	end
 
+	-- 2026-10-21: a line like `line` with an "i" right after it holding the longer text.
+	local function infoLine(
+		order: number,
+		text: Fusion.UsedAs<string>,
+		info: Fusion.UsedAs<string>,
+		color: Color3?,
+		size: number?,
+		infoVisible: Fusion.UsedAs<boolean>?
+	): Instance
+		return scope:New("Frame")({
+			LayoutOrder = order,
+			Size = UDim2.new(1, 0, 0, 26),
+			BackgroundTransparency = 1,
+			[Children] = {
+				scope:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 6),
+				}),
+				scope:New("TextLabel")({
+					LayoutOrder = 1,
+					Size = UDim2.fromScale(0, 1),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundTransparency = 1,
+					Text = text,
+					FontFace = Theme.Fonts.BodyMedium,
+					TextSize = size or Theme.TextSize.Body,
+					TextColor3 = color or Theme.Paper.Text,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+				}),
+				InfoTip.new(scope, { Text = info, LayoutOrder = 2, Visible = infoVisible }),
+			},
+		})
+	end
+
 	local function submit()
 		local key = Fusion.peek(selected)
 		local p = Fusion.peek(price)
@@ -188,7 +229,7 @@ local function Sell(scope: Scope): Instance
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-					line(
+					infoLine(
 						1,
 						scope:Computed(function(use): string
 							local current = use(item)
@@ -198,7 +239,12 @@ local function Sell(scope: Scope): Instance
 							local name = ItemText.get(use, current.id, current.up, current.el)
 							return if current.n > 1 then `{name} x{current.n}` else name
 						end),
-						Theme.Paper.Heading
+						Text.T(scope, "auction.sell.pick.info"),
+						Theme.Paper.Heading,
+						nil,
+						scope:Computed(function(use): boolean
+							return use(item) == nil
+						end)
 					),
 					TextInput(scope, {
 						LayoutOrder = 2,
@@ -220,25 +266,34 @@ local function Sell(scope: Scope): Instance
 							durationButtons :: any,
 						},
 					}),
-					line(
+					-- the deposit and the fee in one line; the full lines (and the VIP fee) behind the "i"
+					infoLine(
 						4,
 						scope:Computed(function(use): string
 							local p = use(price)
-							return Text.get(use, "auction.sell.deposit", {
-								gold = if p then Format.number(Auction.deposit(p)) else "-",
+							local pct = feePct(use)
+							return Text.get(use, "auction.sell.costs", {
+								deposit = if p then Format.number(Auction.deposit(p)) else "-",
+								pct = pctText(use, pct),
+								fee = if p then Format.number(Auction.fee(p, pct)) else "-",
 							})
 						end),
-						Theme.Paper.TextMuted
-					),
-					line(
-						5,
 						scope:Computed(function(use): string
 							local p = use(price)
 							local pct = feePct(use)
-							return Text.get(use, "auction.sell.fee", {
-								pct = pctText(use, pct),
-								gold = if p then Format.number(Auction.fee(p, pct)) else "-",
-							})
+							local lines = {
+								Text.get(use, "auction.sell.deposit", {
+									gold = if p then Format.number(Auction.deposit(p)) else "-",
+								}),
+								Text.get(use, "auction.sell.fee", {
+									pct = pctText(use, pct),
+									gold = if p then Format.number(Auction.fee(p, pct)) else "-",
+								}),
+							}
+							if use(vip) == true then
+								table.insert(lines, Text.get(use, "auction.sell.vip"))
+							end
+							return table.concat(lines, "\n")
 						end),
 						Theme.Paper.TextMuted
 					),
@@ -293,38 +348,25 @@ local function Sell(scope: Scope): Instance
 						end),
 						OnClick = submit,
 					}),
-					scope:New("TextLabel")({
-						LayoutOrder = 10,
-						Size = UDim2.new(1, 0, 0, 60),
-						BackgroundTransparency = 1,
-						Text = scope:Computed(function(use): string
+					infoLine(
+						10,
+						scope:Computed(function(use): string
+							return Text.get(use, "auction.sell.rules.short", {
+								max = Auction.maxListingsFor(use(vip) == true),
+								deposit = Market.Auction.depositPct,
+								fee = pctText(use, feePct(use)),
+							})
+						end),
+						scope:Computed(function(use): string
 							return Text.get(use, "auction.sell.rules", {
 								max = Auction.maxListingsFor(use(vip) == true),
 								deposit = Market.Auction.depositPct,
 								fee = pctText(use, feePct(use)),
 							})
 						end),
-						TextWrapped = true,
-						FontFace = Theme.Fonts.Body,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Paper.TextMuted,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextYAlignment = Enum.TextYAlignment.Top,
-					}),
-					scope:New("TextLabel")({
-						LayoutOrder = 11,
-						Size = UDim2.new(1, 0, 0, 22),
-						BackgroundTransparency = 1,
-						Visible = scope:Computed(function(use): boolean
-							return use(vip) == true
-						end),
-						Text = Text.T(scope, "auction.sell.vip"),
-						TextWrapped = true,
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Paper.Heading,
-						TextXAlignment = Enum.TextXAlignment.Left,
-					}),
+						Theme.Paper.TextMuted,
+						Theme.TextSize.Small
+					),
 				},
 			}),
 		},

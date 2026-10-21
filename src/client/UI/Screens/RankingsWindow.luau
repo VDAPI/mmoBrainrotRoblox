@@ -10,6 +10,8 @@
 -- own guild). Narrow state branches only (expWeek, level), never the whole character.
 -- S126: the "Arena" tab (filter "arenaBracket": the arena brackets of Data/Arena, this season's board of each; the
 -- rating and the level in the columns; the own rank and rating; the end of the season in the footer).
+-- 2026-10-21 (owner: too many descriptions): the week's rewards are one short line; the full rewards (This week) and
+-- the rule of the Hall of Fame sit behind an "i" next to the board's title (Components/InfoLine, built once).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -22,6 +24,7 @@ local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoLine = require(script.Parent.Parent.Components.InfoLine)
 local Leaderboard = require(ReplicatedStorage.Shared.Logic.Leaderboard)
 local Leaderboards = require(ReplicatedStorage.Shared.Data.Leaderboards)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -705,12 +708,8 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 					Size = UDim2.fromScale(1, 0),
 					AutomaticSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
-					Text = Text.get(use, "leaderboard.week.rewards", {
+					Text = Text.get(use, "leaderboard.week.rewards.short", {
 						title = Text.get(use, "title." .. rewards.title),
-						days = rewards.titleDays,
-						first = rewards.shards[1],
-						second = rewards.shards[2],
-						third = rewards.shards[3],
 					}),
 					TextWrapped = true,
 					FontFace = Theme.Fonts.Body,
@@ -798,6 +797,24 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		end
 		return ""
 	end)
+	-- 2026-10-21: what the board's "i" explains: the week's rewards, or the rule of the Hall of Fame; "" = no "i"
+	local titleInfo = scope:Computed(function(use): string
+		local id = use(current)
+		local def = if id then Leaderboard.resolve(id) else nil
+		if def and def.id == "exp_week" then
+			local rewards = Leaderboards.WEEK_REWARDS
+			return Text.get(use, "leaderboard.week.rewards", {
+				title = Text.get(use, "title." .. rewards.title),
+				days = rewards.titleDays,
+				first = rewards.shards[1],
+				second = rewards.shards[2],
+				third = rewards.shards[3],
+			})
+		elseif def and def.format == "date" then
+			return Text.get(use, "leaderboard.hof.hint", { n = Leaderboards.HOF_SIZE, level = Config.MaxLevel })
+		end
+		return ""
+	end)
 	local footerHeight = scope:Computed(function(use): number
 		return if use(infoText) ~= "" then FOOTER + INFO else FOOTER
 	end)
@@ -831,20 +848,21 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			Size = contentSize,
 			BackgroundTransparency = 1,
 			[Children] = {
-				scope:New("TextLabel")({
+				InfoLine.new(scope, {
 					Name = "Title",
 					Size = UDim2.new(1, 0, 0, TITLE),
-					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
 						local id = use(current)
 						local def = if id then Leaderboard.resolve(id) else nil
 						return if def then Text.get(use, def.nameKey) else ""
 					end),
-					FontFace = Theme.Fonts.Display,
+					Info = titleInfo,
+					InfoVisible = scope:Computed(function(use): boolean
+						return use(titleInfo) ~= ""
+					end),
+					Font = Theme.Fonts.Display,
 					TextSize = Theme.TextSize.Large,
-					TextColor3 = Theme.Paper.Heading,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					TextTruncate = Enum.TextTruncate.AtEnd,
+					Color = Theme.Paper.Heading,
 				}),
 				scope:New("Frame")({
 					Name = "Filter",
@@ -914,16 +932,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 								if not snap then
 									return ""
 								end
-								local text = meText(use, snap)
-								if snap.format == "date" then
-									local hint = Text.get(
-										use,
-										"leaderboard.hof.hint",
-										{ n = Leaderboards.HOF_SIZE, level = Config.MaxLevel }
-									)
-									return if text ~= "" then `{text}  ·  {hint}` else hint
-								end
-								return text
+								return meText(use, snap)
 							end),
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,

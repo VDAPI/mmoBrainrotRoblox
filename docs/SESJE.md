@@ -13834,6 +13834,65 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `WIKI_KEYS_ALLOW="upgrade:*,items:items.items[].use.keep,types.ts"`), poradnik Ulepszanie (PL / EN), dane odświeżone.
 - **Testy:** `effectreroll.spec`, `portalshop.spec`, `paywall.spec` (2b, 2d, 2e), `reroll.spec`, `data.spec` (+8 przedmiotów).
 - **Dla właściciela:** model Tripo Mistrza Portali (`TRIPO-NPC.md` nr 68); bez przeglądu w Studio.
+### Opisy-1: krótkie opisy, „i” i „Więcej ▸” (2026-10-21)
+- **Komponenty** (osobny commit, dla kolejnych sesji okien): `UI/Components/InfoTip` (okrągłe „i”, dymek w warstwie
+  Tooltip, montowany w `UIController`), `UI/Components/Details` („Więcej ▸ / Mniej ▾”, `Key` na sesję), `Tooltip.attach`
+  z `details`, czysty `Logic/TipText`; przepis „Krótki opis + (i)” w `docs/JAK-DODAC.md`.
+- **Tooltip przedmiotu:** `TooltipModel.build(..., { view = "compact" | "full" })`, `TooltipModel.compactOf` (limit linii
+  `COMPACT_MAX_LINES`, statystyki z budżetu, „+N więcej”, `moreHint` / `lessHint`); `ItemTooltip`: Alt = pełny widok
+  (i przypięcie jak w S68), dotyk: wiersz „Więcej ▸ / Mniej ▾”, nowy przedmiot od skróconego; panel porównania też.
+- **Umiejętności:** `SkillInfo.tooltipParts` / `SkillInfo.tooltip` → `{ short, details }`, `costLine(..., "main" | "extra")`;
+  pasek umiejętności przekazuje szczegóły do `Tooltip`.
+- **Teksty:** `ui.details.more/less`, `tooltip.more.mouse/touch`, `tooltip.compact.dps/more`; krótsze
+  `tooltip.detailsHint.*`, `keys.itemDetails` (klawisz rozwija każdy dymek).
+- **Testy:** `tests/tiptext.spec`, `tests/tooltip.spec` („compact view”: limit linii dla każdego typu, kolejność, ceny,
+  dotyk, pełny widok bez zmian). Bez przeglądu w Studio.
+### Przegląd Studio 2026-10-21, partia 1: wodospad, łowiska, budżet części
+- **Wodospad:** niecka pod ścianą (`Data/Terrain/meadows.plunge`, `MeadowsTerrain` waga cięcia tylko na niskim brzegu,
+  woda stawu w niecce, `Basalt` w `MATERIALS`), mokra ciemna skała w promieniu `wet` pod `wetTop`; `TerrainLayers.voxelWater`
+  (gdzie zapisane woksele pokazują wodę); `Water.fallGeometry` szuka stopy w wodzie wokseli z zasłoną poza ścianą;
+  kamienie półki za zasłoną (`Landmarks.fallsLedge`) sięgają dna niecki.
+- **Łowiska:** `Logic/FishingSpots` (reguła, obrót boi, kolizja z budowlami, szukanie najbliższego punktu), cztery
+  generatory na nim, `GatherService` obraca boje i kładzie je na wodzie (atrybut `Pond`), `GatherController` stawia
+  spławik na wodzie między bojami.
+- **Budżet części:** `Data/Maps` miasto 7600, Łąki 3700, Bór 3450 (ostrzeżenie `WorldBuilder`). Asset 203785492 nie
+  występuje w repozytorium ani w historii (siedzi w pliku miejsca).
+- **Testy:** `fishingspots.spec` (wszystkie mapy), `waterfall.spec` (stopa i piana na wodzie wokseli, mokra skała),
+  `meadowsterrain.spec` (`voxelWater` zgodne z `voxels`, niecka), sumy kontrolne węzłów Boru, Pustkowi i Szczytów.
+### Opisy, grupa 2: sklepy, kowal, premium, poczta, nagrody (2026-10-21)
+- **Co widać:** jedna krótka linia (do 60 znaków), pełny tekst pod „i” (`Components/InfoTip`): Smoczy Sklep (Przedmioty,
+  Przepustki, Waluta, Wierzchowce: `Cards.card` pole `info`, `subtitle` opcjonalny, `Cards.note(..., infoKey)`), okno VIP,
+  kowal (Efekt, Przemiana, Wygląd), Mistrz Portali (intro, opis kamienia przy nazwie), sklep NPC (pasek sprzedawcy klasy),
+  aukcja (wystawianie), list, nagroda logowania, nagroda bossa świata, garderoba, wygląd broni, zmiana wyglądu, wierzchowce.
+- **Klucze:** blok „group 2” na końcu `pl.luau` / `en.luau` (`.short`, `.info`, `auction.sell.costs`,
+  `wanderer.confirmGear`); skrócone w miejscu tylko klucze czytane wyłącznie przez okna (modale, podpowiedzi).
+- **Test:** `tests/shopshort.spec` (krótkie linie ≤ 60 znaków w obu językach, bez pauzy; modale ≤ 2 linie; `.short`
+  używa tylko placeholderów pełnego tekstu; każdy wpis sklepu i przepustka z opisem > 60 znaków ma `.short`).
+- **Pliki:** `src/client/UI/Screens/{PremiumShop/*,VipWindow,BlacksmithWindow/{Effect,Reroll,Transmog},PortalShopWindow,
+  ShopWindow,WanderingMerchantWindow,AuctionWindow/Sell,MailCompose,LoginReward,BossReward,Wardrobe,WardrobeTransmog,
+  LookWindow,MountWindow}.luau`, lokalizacja, test.
+### Opisy grupa 1: społeczność, PvP, sezon (właściciel 2026-10-21: „za dużo szczegółowych opisów, gra nieczytelna”)
+- **Zasada (AUDYT-OPISOW):** S = nowa krótka linia `<klucz>.short`, stary klucz bez zmian pod „i”; K = tekst skrócony
+  w miejscu, ucięta część w `<klucz>.info` albo w „i” sekcji; nic nie znika. Nowe klucze w bloku „Grupa 1 opisów” w
+  `pl.luau` / `en.luau`.
+- **Nowy komponent:** `UI/Components/InfoLine` (krótka linia + `InfoTip` zaraz za nią, tekst zawija się przed „i”);
+  `GuildWindow/Common.heading(..., info)` z „i” w nagłówku; `WorldMap/DetailCard` ma pole `info` (stałe „i” w nagłówku
+  karty, bo karta odświeża się co 2 s).
+- **Gildia:** Cele (wstęp, zbiórka krótko + „i”, źródła punktów pod „Więcej”), Ustawienia (sztandar, uprawnienia zwinięte
+  w `Details`, podpowiedzi czatu i lidera krótko + „i”), Skarbiec, brak gildii, zakładanie gildii.
+- **Drużyna / znajomi:** pusta drużyna krótko + „i”; zasady drużyny (premia, łup) w „i” obok premii zamiast 88 px tekstu;
+  lista ignorowanych i pusta lista znajomych krótko; podpowiedź Akcji (PC / dotyk) skrócona.
+- **Arena / turniej:** pod kartą „Twoja arena” tylko ocena, ranga, pasek i koniec sezonu, reszta pod „Więcej”; zasady
+  trybu w „i” przy przełączniku, uwagi kolejki w „i” tytułu karty; ranga sezonu krótko + „i” (z „jak awansować”).
+  Turniej: opis i nagroda Mistrza krótko + „i”.
+- **Krwawy Księżyc, rankingi, sezon:** opis w „i” tytułu, zasady pod „Zasady i nagrody ▸”; nagrody tygodnia i zasada
+  Galerii Sław w „i” tytułu tablicy; limity przepustki krótko + „Więcej”, porównanie z VIP w „i” przy „Odblokuj”.
+- **Inne:** ekran śmierci (krótsze teksty, ochrona z „i”), premia rodziny w bestiariuszu, karty bossa świata i lochu na
+  mapie (bez pauz), „Co nowego” (wpisy zwinięte, najnowszy otwarty).
+- **Testy:** `tests/socialshort.spec` (krótkie linie ≤ 60 znaków w obu językach, te same zmienne, pełny tekst istnieje i
+  jest dłuższy). Klucze `Details` w formie „x/y”, bo `data.spec` traktuje „x.y” jako klucz tekstu.
+- **Dla właściciela (domyślne, do zmiany):** uprawnienia gildii zwinięte też dla lidera; ochrona na ekranie śmierci dostała
+  „i” (audyt mówił bez); limity przepustki pod „Więcej” jako dotychczasowy akapit, nie 4 punkty.
 ### W31: ramy portali przy jaskiniach, wyjścia, brama lochu, napisy stref (2026-10-21)
 - **Wspólny kontrakt** (`Data/Portals`): obrys malowanego łuku `ARCH.model` 16 x 18 x 6, strefy bez ramy
   `frameKeepOut()` (łuk, widok z drogi 6 studów przed łukiem, pas przed otworem), ciemny otwór `HOLE` (17 x 16,

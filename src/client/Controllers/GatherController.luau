@@ -74,6 +74,13 @@ local function placeBobber(nodeUid: string)
 	-- Land a few studs out from the player towards the middle of the pond.
 	local toward = (centre - root.Position) * Vector3.new(1, 0, 1)
 	local spot = if toward.Magnitude > 1 then root.Position + toward.Unit * math.min(toward.Magnitude, 8) else centre
+	local y = centre.Y + 0.6
+	-- Studio review 2026-10-21: a fishing spot lands it on the water among its buoys (GatherService sets "Pond" at
+	-- their middle, on the surface); before, it hung 3.6 studs over the ground by the sign post.
+	local pond = model:GetAttribute("Pond")
+	if typeof(pond) == "Vector3" and pond ~= Vector3.zero then
+		spot, y = pond, pond.Y + 0.15
+	end
 	local part = Instance.new("Part")
 	part.Name = "VaelthornBobber"
 	part.Shape = Enum.PartType.Ball
@@ -83,7 +90,7 @@ local function placeBobber(nodeUid: string)
 	part.Anchored = true
 	part.CanCollide = false
 	part.CanQuery = false
-	part.Position = Vector3.new(spot.X, centre.Y + 0.6, spot.Z)
+	part.Position = Vector3.new(spot.X, y, spot.Z)
 	part.Parent = workspace
 	TweenService:Create(
 		part,

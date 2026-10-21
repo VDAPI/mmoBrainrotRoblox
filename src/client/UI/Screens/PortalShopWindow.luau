@@ -4,6 +4,8 @@
 -- stone, ten stones, or the everlasting stone (once per account; "Owned" afterwards, "Take your copy" for a character
 -- without one). Logic/PortalShop.canBuy (the server's own rule) says why a button is off. Buying works only at the
 -- Portal Master (the window opens from his dialog and closes when the player walks away); forever asks first.
+-- 2026-10-21 (owner: too many detailed descriptions): one short line on top (the rules behind its "i"); a row says only
+-- how many the character carries, where the stone leads is behind the "i" after its name.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,6 +15,7 @@ local Data = require(ReplicatedStorage.Shared.Data.PortalShop)
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemIcon = require(script.Parent.Parent.Components.ItemIcon)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Modal = require(script.Parent.Parent.Components.Modal)
@@ -35,6 +38,7 @@ export type Props = {
 }
 
 local ICON = 48
+local INTRO = 24 -- the one-line intro under the balance
 local PACK = 10 -- the second "by the piece" button
 
 local function count(inv: any, itemId: string): number
@@ -132,7 +136,6 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 			local owned = PortalShop.owned(account, entry.itemId)
 			local held = count(inv, entry.permId)
 			local notes = {
-				Text.get(use, `item.{entry.itemId}.desc`),
 				Text.get(use, "portalshop.carry", { n = count(inv, entry.itemId) }),
 			}
 			if owned then
@@ -210,7 +213,40 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 									BackgroundTransparency = 1,
 									[Children] = {
 										s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder }),
-										label(s, 1, name, Theme.TextSize.Body, Theme.Paper.Text, Theme.Fonts.BodyBold),
+										-- the name and its "i" (where the stone leads)
+										s:New("Frame")({
+											LayoutOrder = 1,
+											Size = UDim2.fromScale(1, 0),
+											AutomaticSize = Enum.AutomaticSize.Y,
+											BackgroundTransparency = 1,
+											[Children] = {
+												s:New("UIListLayout")({
+													FillDirection = Enum.FillDirection.Horizontal,
+													VerticalAlignment = Enum.VerticalAlignment.Center,
+													SortOrder = Enum.SortOrder.LayoutOrder,
+													Padding = UDim.new(0, 6),
+												}),
+												s:New("TextLabel")({
+													LayoutOrder = 1,
+													Size = UDim2.new(),
+													AutomaticSize = Enum.AutomaticSize.XY,
+													BackgroundTransparency = 1,
+													TextWrapped = true,
+													Text = name,
+													FontFace = Theme.Fonts.BodyBold,
+													TextSize = Theme.TextSize.Body,
+													TextColor3 = Theme.Paper.Text,
+													TextXAlignment = Enum.TextXAlignment.Left,
+													[Children] = s:New("UIFlexItem")({
+														FlexMode = Enum.UIFlexMode.Shrink,
+													}),
+												}),
+												InfoTip.new(s, {
+													Text = Text.get(use, `item.{entry.itemId}.desc`),
+													LayoutOrder = 2,
+												}),
+											},
+										}),
 										label(
 											s,
 											2,
@@ -273,21 +309,37 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 				}),
 			},
 		}),
-		scope:New("TextLabel")({
+		-- one short line, the rules of the pieces and the everlasting stone behind its "i"
+		scope:New("Frame")({
 			Position = UDim2.fromOffset(0, 32),
-			Size = UDim2.new(1, 0, 0, 36),
+			Size = UDim2.new(1, 0, 0, INTRO),
 			BackgroundTransparency = 1,
-			TextWrapped = true,
-			Text = Text.T(scope, "portalshop.intro"),
-			FontFace = Theme.Fonts.Body,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Paper.TextMuted,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			TextYAlignment = Enum.TextYAlignment.Top,
+			[Children] = {
+				scope:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 6),
+				}),
+				scope:New("TextLabel")({
+					LayoutOrder = 1,
+					Size = UDim2.fromScale(0, 1),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundTransparency = 1,
+					Text = Text.T(scope, "portalshop.intro.short"),
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.TextMuted,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
+				}),
+				InfoTip.new(scope, { Text = Text.T(scope, "portalshop.intro"), LayoutOrder = 2 }),
+			},
 		}),
 		scope:New("ScrollingFrame")({
-			Position = UDim2.fromOffset(0, 72),
-			Size = UDim2.new(1, 0, 1, -72),
+			Position = UDim2.fromOffset(0, 32 + INTRO + 4),
+			Size = UDim2.new(1, 0, 1, -(32 + INTRO + 4)),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			ScrollBarThickness = 6,

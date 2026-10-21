@@ -137,14 +137,6 @@ describe("Duskwood", function()
 		expect(per.fishing_duskwood).toBe(2)
 	end)
 
-	it("puts fishing spots on the shore with water where the buoys float", function()
-		for _, spot in DuskwoodGen.fishingSpots() do
-			expect(T.isWater(spot.x, spot.z)).toBe(false)
-			expect(T.isWater(spot.x, spot.z + 9)).toBe(true)
-			expect(T.isWater(spot.x, spot.z + 12)).toBe(true)
-		end
-	end)
-
 	it("stays within the server part budget (generator shell + ~300 for portals, signs and nodes)", function()
 		local c = DuskwoodGen.counts()
 		local limit = assert(MAP.maxParts, "duskwood maxParts")
@@ -419,7 +411,8 @@ describe("Duskwood story places (S103)", function()
 			ns += n.x + 3 * n.z
 		end
 		expect(#nodes).toBe(50)
-		expect(string.format("%.3f", ns)).toBe("12269.000")
+		-- (studio review 2026-10-21: only the two fishing spots moved, Logic/FishingSpots: 12269 before)
+		expect(string.format("%.3f", ns)).toBe("12328.000")
 	end)
 end)
 

@@ -7,6 +7,8 @@
 -- current personal Legendary / Mythic chances (growing with the pity counters), the party rule and the boss's named
 -- mythic items (item tooltips). S134i: an Elite II hideout (its Elite II with its loot and abilities, guards, nodes).
 -- S149b: the world boss (its barrow, its state now, who it is for, the blows to know, the loot without percentages).
+-- 2026-10-21 (owner: too many descriptions): the world boss's hours and the dungeon's party rule are one short line
+-- each, the full sentence behind the card's "i" (DetailCard `info`).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -236,7 +238,7 @@ function CreatureCards.monster(ctx: Context, kind: string, extra: any?): Spec?
 			if not seen[drop.id] and Items.get(drop.id) then
 				seen[drop.id] = true
 				table.insert(loot, {
-					text = `• {ItemText.name(drop.id)} — {rarityWord(drop.chance)}`,
+					text = `• {ItemText.name(drop.id)} · {rarityWord(drop.chance)}`,
 				})
 			end
 		end
@@ -518,10 +520,7 @@ function CreatureCards.worldBoss(ctx: Context): Spec?
 	}
 	local blows: { DetailCard.Line } = {}
 	for _, attack in card.attacks do
-		table.insert(
-			blows,
-			ln(`• {T(attack.nameKey)} — {T(`worldboss.card.kind.{attack.kind}`)}`, Theme.Paper.Text)
-		)
+		table.insert(blows, ln(`• {T(attack.nameKey)}: {T(`worldboss.card.kind.{attack.kind}`)}`, Theme.Paper.Text))
 	end
 	local rarityNames: { string } = {}
 	for _, rarity in card.rarities do
@@ -545,7 +544,7 @@ function CreatureCards.worldBoss(ctx: Context): Spec?
 				ln(T(card.placeKey), Theme.Paper.Heading, true),
 				whereLine(ctx, card.map, card.x, card.z),
 				stateLine,
-				ln(T("worldboss.card.every", { times = WorldBoss.timesText() }), Theme.Paper.TextMuted),
+				ln(T("worldboss.card.every.short", { times = WorldBoss.timesText() }), Theme.Paper.TextMuted),
 			},
 		},
 		{ lines = who },
@@ -580,6 +579,7 @@ function CreatureCards.worldBoss(ctx: Context): Spec?
 		preview = { kind = "boss", id = card.boss, glyph = "♛", color = WORLD_BOSS_COLOR },
 		sections = sections,
 		actions = actions,
+		info = T("worldboss.card.every", { times = WorldBoss.timesText() }),
 	}
 end
 
@@ -639,7 +639,10 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 	if luckLine then
 		table.insert(lines, { text = luckLine, color = Theme.Paper.Heading })
 	end
-	table.insert(lines, { text = T("worldmap.card.group"), color = Theme.Paper.TextMuted })
+	table.insert(lines, {
+		text = T("worldmap.card.group.short", { n = limit }),
+		color = Theme.Paper.TextMuted,
+	})
 	table.insert(lines, whereLine(ctx, gate.map, gate.x, gate.z))
 	local items: { DetailCard.ItemRow } = {}
 	local bossTable = LootTables.bosses[boss.id]
@@ -685,6 +688,7 @@ function CreatureCards.dungeon(ctx: Context, region: string): Spec?
 		preview = { kind = "boss", id = boss.id, glyph = "☠", color = Theme.Paper.Danger },
 		sections = sections,
 		actions = actions,
+		info = T("worldmap.card.group"),
 	}
 end
 

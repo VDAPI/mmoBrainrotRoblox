@@ -21,6 +21,7 @@ local Crossroads = require("@self/Crossroads")
 local Cult = require("@self/Cult")
 local Dress = require("@self/Dress")
 local Env = require("@self/Env")
+local FishingSpots = require("./FishingSpots")
 local Flora = require("./WorldGen/Flora")
 local Heart = require("@self/Heart")
 local Hollow = require("@self/Hollow")
@@ -511,35 +512,19 @@ function DuskwoodGen.nodes(): { NodePlacement }
 	return out
 end
 
--- Fishing spots: a dry point on the shore with open water 9-12 studs to the south (+Z), where the spot's buoys
--- float: by the swamp's jetty and on the west shore of the swamp by the stilt village.
+-- Fishing spots (Logic/FishingSpots, studio review 2026-10-21: dry, gentle ground at the water's edge, no wall over
+-- it, the buoys on water the voxels show, clear of the builds): by the swamp's jetty and on the west shore of the
+-- swamp by the stilt village.
 function DuskwoodGen.fishingSpots(): { { x: number, z: number } }
 	local e = envOf()
 	local out = {}
+	local builds = DuskwoodGen.all()
 	local jetty = e.sites.swampJetty
 	local stilts = e.sites.stiltVillage
 	for _, c in { { jetty.x - 12, jetty.z - 2 }, { stilts.x + 10, stilts.z - 46 } } do
-		local best: { x: number, z: number }? = nil
-		local bestD = math.huge
-		for dx = -40, 40, 2 do
-			for dz = -40, 40, 2 do
-				local x, z = c[1] + dx, c[2] + dz
-				if
-					not e.T.isWater(x, z)
-					and e.T.slope(x, z, 2) < 0.5
-					and e.T.isWater(x, z + 9)
-					and e.T.isWater(x, z + 12)
-				then
-					local d = dx * dx + dz * dz
-					if d < bestD then
-						bestD = d
-						best = { x = x, z = z }
-					end
-				end
-			end
-		end
-		if best then
-			table.insert(out, best)
+		local spot = FishingSpots.find(e.T, builds, c[1], c[2], 40)
+		if spot then
+			table.insert(out, spot)
 		end
 	end
 	return out

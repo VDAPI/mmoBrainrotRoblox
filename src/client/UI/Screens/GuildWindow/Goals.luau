@@ -2,16 +2,20 @@
 -- Guild window, "Goals" tab (S159g, Logic/GuildProgress): the three goals of the week with progress, rewards and
 -- "Take" (Dragon Shards for members who earned enough guild EXP this week), the rally of all three, the player's own
 -- guild EXP (this week, today against the daily cap) and how guild EXP is earned.
+-- 2026-10-21 (owner: too many descriptions): one short line each (the end of the week, the rally); the rules of the
+-- goals and the rally behind an "i" (Components/InfoLine), "How to earn guild EXP" folded (Components/Details).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Common = require(script.Parent.Common)
+local Details = require(script.Parent.Parent.Parent.Components.Details)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GuildProgress = require(ReplicatedStorage.Shared.Logic.GuildProgress)
 local GuildProgressData = require(ReplicatedStorage.Shared.Data.GuildProgress)
+local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -204,18 +208,35 @@ local function Goals(scope: Scope): Instance
 	local work = State.Value({ "character", "guildWork" })
 	local shards = State.Value({ "account", "guildShards" })
 
+	-- the end of the week (short line) and the rules of the goals (the "i")
+	local weekArgs = scope:Computed(function(use): { [string]: any }
+		local g = use(guild)
+		local week = if type(g) == "table" and g.week then g.week.w else Time.weekNumber(os.time())
+		local d, h, m = Time.split(Time.weekStart(week + 1) - os.time())
+		return { d = d, h = h, m = m, min = Rules.claimMin }
+	end)
+	-- the rally: running (with the time left) or what it takes
+	local rallyArgs = scope:Computed(function(use): { [string]: any }?
+		local g = use(guild)
+		if type(g) == "table" and g.rally then
+			local d, h = Time.split(Time.weekStart(g.rally + 1) - os.time())
+			return { exp = Rules.rallyExp, gold = Rules.rallyGold, d = d, h = h }
+		end
+		return nil
+	end)
+
 	return Common.page(scope, 8, {
 		Common.heading(scope, 1, Text.T(scope, "guild.goals.title")),
-		Common.paragraph(
-			scope,
-			2,
-			scope:Computed(function(use): string
-				local g = use(guild)
-				local week = if type(g) == "table" and g.week then g.week.w else Time.weekNumber(os.time())
-				local d, h, m = Time.split(Time.weekStart(week + 1) - os.time())
-				return Text.get(use, "guild.goals.intro", { d = d, h = h, m = m, min = Rules.claimMin })
-			end)
-		),
+		InfoLine.new(scope, {
+			LayoutOrder = 2,
+			Text = scope:Computed(function(use): string
+				return Text.get(use, "guild.goals.intro.short", use(weekArgs))
+			end),
+			Info = scope:Computed(function(use): string
+				return Text.get(use, "guild.goals.intro", use(weekArgs))
+			end),
+			Color = Theme.Paper.TextMuted,
+		}),
 		Common.paragraph(
 			scope,
 			3,
@@ -241,8 +262,7 @@ local function Goals(scope: Scope): Instance
 			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundColor3 = scope:Computed(function(use): Color3
-				local g = use(guild)
-				return if type(g) == "table" and g.rally then Theme.Paper.Selected else Theme.Paper.Sunken
+				return if use(rallyArgs) then Theme.Paper.Selected else Theme.Paper.Sunken
 			end),
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -252,40 +272,59 @@ local function Goals(scope: Scope): Instance
 					PaddingLeft = UDim.new(0, 12),
 					PaddingRight = UDim.new(0, 12),
 				}),
+				InfoLine.new(scope, {
+					LayoutOrder = 1,
+					Text = scope:Computed(function(use): string
+						local args = use(rallyArgs)
+						if args then
+							return Text.get(use, "guild.rally.active.short", args)
+						end
+						return Text.get(use, "guild.rally.hint.short", { exp = Rules.rallyExp, gold = Rules.rallyGold })
+					end),
+					Info = scope:Computed(function(use): string
+						local args = use(rallyArgs)
+						if args then
+							return Text.get(use, "guild.rally.active", args)
+						end
+						return Text.get(use, "guild.rally.hint", { exp = Rules.rallyExp, gold = Rules.rallyGold })
+					end),
+					Color = Theme.Paper.Text,
+				}),
+			},
+		}),
+		-- How guild EXP is earned: folded under its own title (the rule and the points of every activity)
+		Details.new(scope, {
+			Key = "guild/sources",
+			LayoutOrder = 30,
+			MoreText = scope:Computed(function(use): string
+				return `{Text.get(use, "guild.source.title")} ▸`
+			end),
+			LessText = scope:Computed(function(use): string
+				return `{Text.get(use, "guild.source.title")} ▾`
+			end),
+			Children = {
 				Common.paragraph(
 					scope,
 					1,
+					Text.T(scope, "guild.source.intro", { gap = Rules.greyGap, cap = Rules.dailyCap })
+				),
+				Common.paragraph(
+					scope,
+					2,
 					scope:Computed(function(use): string
-						local g = use(guild)
-						if type(g) == "table" and g.rally then
-							local d, h = Time.split(Time.weekStart(g.rally + 1) - os.time())
-							return Text.get(use, "guild.rally.active", {
-								exp = Rules.rallyExp,
-								gold = Rules.rallyGold,
-								d = d,
-								h = h,
-							})
+						local parts = {}
+						for _, act in SOURCES do
+							table.insert(
+								parts,
+								`{Text.get(use, `guild.source.{act}`)} +{GuildProgressData.POINTS[act]}`
+							)
 						end
-						return Text.get(use, "guild.rally.hint", { exp = Rules.rallyExp, gold = Rules.rallyGold })
+						return table.concat(parts, "  ·  ")
 					end),
 					Theme.Paper.Text
 				),
 			},
 		}),
-		Common.heading(scope, 30, Text.T(scope, "guild.source.title")),
-		Common.paragraph(scope, 31, Text.T(scope, "guild.source.intro", { gap = Rules.greyGap, cap = Rules.dailyCap })),
-		Common.paragraph(
-			scope,
-			32,
-			scope:Computed(function(use): string
-				local parts = {}
-				for _, act in SOURCES do
-					table.insert(parts, `{Text.get(use, `guild.source.{act}`)} +{GuildProgressData.POINTS[act]}`)
-				end
-				return table.concat(parts, "  ·  ")
-			end),
-			Theme.Paper.Text
-		),
 	})
 end
 

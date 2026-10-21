@@ -50,6 +50,7 @@ MeadowsTerrain.MATERIALS = {
 	"Sand",
 	"Salt",
 	"Limestone",
+	"Basalt",
 	"Water",
 	"Air",
 }
@@ -597,6 +598,25 @@ local function streamAt(x: number, z: number): (number, number, number, number, 
 	return d, li, profileAt(streamProfiles[li], s), TerrainLayers.atSegment(STREAMS[li].widths, si, t) / 2, s
 end
 
+-- Studio review 2026-10-21: the plunge pool under the waterfall (Data/Terrain/meadows `plunge`). Its water stands at
+-- the level of the brook's head (the pool). Weight 0..1 of the cut at a column with ground `h`: inside the circle and
+-- on the low bank only (fading out from 1.5 to 4.5 studs over the pool), so the wall above keeps its face.
+local PLUNGE = Shape.plunge
+local POOL = streamProfiles[1][1]
+local function plungeWeight(x: number, z: number, h: number): number
+	local dx, dz = x - PLUNGE.x, z - PLUNGE.z
+	local reach = PLUNGE.r + PLUNGE.blend
+	if math.abs(dx) > reach or math.abs(dz) > reach then
+		return 0
+	end
+	local d = math.sqrt(dx * dx + dz * dz)
+	if d >= reach then
+		return 0
+	end
+	local w = if d <= PLUNGE.r then 1 else 1 - smoothstep((d - PLUNGE.r) / PLUNGE.blend)
+	return w * (1 - smoothstep((h - POOL - 1.5) / 3))
+end
+
 -- Column record shared by the height, material and water of one column.
 export type Info = {
 	road: number, -- distance past the road edge (negative on the road)
@@ -610,6 +630,7 @@ export type Info = {
 	marsh: number, -- marsh weight 0..1
 	ravine: boolean, -- inside Bear Ravine (floor or walls)
 	quarry: number, -- normalised quarry radius (1 = rim)
+	plunge: number, -- weight of the plunge pool's cut (0: outside it)
 }
 
 -- Height and the column record.
@@ -648,6 +669,10 @@ function MeadowsTerrain.sample(x: number, z: number): (number, Info)
 			h = math.min(h, target)
 		end
 	end
+	local plunge = plungeWeight(x, z, h)
+	if plunge > 0 then
+		h = lerp(h, math.min(h, PLUNGE.floor), plunge)
+	end
 	local info: Info = {
 		road = rd - rhalf,
 		ramp = pd < phalf + 0.5,
@@ -660,6 +685,7 @@ function MeadowsTerrain.sample(x: number, z: number): (number, Info)
 		marsh = marshWeight(x, z),
 		ravine = rv ~= nil and rv < ravineHalf + RAVINE.wall + 2,
 		quarry = quarryE(x, z),
+		plunge = plunge,
 	}
 	return h, info
 end
@@ -675,6 +701,10 @@ local function waterOf(h: number, info: Info): number?
 		if info.streamW - h <= info.streamDepth + 0.8 then
 			return info.streamW
 		end
+	end
+	-- the plunge pool (its cut may lie nearer the upper brook's end than the brook's head)
+	if info.plunge > 0 and h < POOL then
+		return POOL
 	end
 	if (info.lake < Shape.lakeShore or info.marsh > 0.02) and h < LAKE then
 		return LAKE
@@ -769,12 +799,18 @@ local THEME_GROUND: { [string]: (n: number) -> string } = {
 	end,
 }
 
--- Surface material of a column (first match wins): stream / lake bed, ramps and roads, cliffs (slate in the
--- ravine and the quarry, rock elsewhere), banks and shores, rocky slopes, quarry terraces, the ravine floor, painted
--- patches (camps, the wallow, the vegetable plot), then the area theme.
+-- Surface material of a column (first match wins): the wet rock round the waterfall, stream / lake bed, ramps and
+-- roads, cliffs (slate in the ravine and the quarry, rock elsewhere), banks and shores, rocky slopes, quarry terraces,
+-- the ravine floor, painted patches (camps, the wallow, the vegetable plot), then the area theme.
 function MeadowsTerrain.materialAt(x: number, z: number, h: number, slope: number, info: Info): string
 	local n = fbm(x, z, 21, SEED + 20, 2)
 	local water = waterOf(h, info)
+	-- the plunge pool's bed and the wet rock round the waterfall: the wall and the bank under the plateau within
+	-- `wet` studs (a ragged edge), dark as if the spray kept them wet
+	local wet = (x - PLUNGE.x) ^ 2 + (z - PLUNGE.z) ^ 2 < (PLUNGE.wet + 5 * (n - 0.5)) ^ 2 and h < PLUNGE.wetTop
+	if wet and (water == nil or info.plunge > 0.5) then
+		return "Basalt"
+	end
 	if water then
 		if info.stream > 0 and info.streamD < 0 then
 			return if info.ravine or n > 0.62 then "Salt" else "Sand"
