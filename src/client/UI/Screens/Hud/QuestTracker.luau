@@ -16,6 +16,10 @@
 -- S156 (owner 2026-10-20): the player moves the tracker by the grip in its header and sizes it by the corner grip
 -- (Logic/HudLayout, account.settings.hud.questTracker; "Reset HUD layout" in the menu); the quest list scrolls inside
 -- it when it is longer than the tracker (the screen's height at most without a saved size).
+-- Owner 2026-10-21 (the tracker took ~40 % of the screen): groups under a header with an arrow (Quests, Hunting
+-- contracts, Daily, Weekly, Achievements) that fold, remembered on the account (Logic/TrackerFold,
+-- account.settings.trackerFold); one line per entry (name, progress on the right), the full text in its tooltip, a
+-- click unfolds an entry's objectives (the story and the tracked side quest start unfolded).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -42,6 +46,7 @@ local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestRows = require(ReplicatedStorage.Shared.Logic.QuestRows)
@@ -54,6 +59,8 @@ local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
+local TrackerFold = require(ReplicatedStorage.Shared.Logic.TrackerFold)
 
 local Children, OnChange, OnEvent = Fusion.Children, Fusion.OnChange, Fusion.OnEvent
 
@@ -69,6 +76,11 @@ local ELEMENT = "questTracker"
 -- S29: a finished objective pulses for this long (seconds), then keeps a soft green glow.
 local PULSE_TIME = 1
 local GLOW_TRANSPARENCY = 0.6
+-- Owner 2026-10-21: one line per entry, group headers (PC / touch heights), the indent of an unfolded entry's lines
+local ROW_PC, ROW_TOUCH = 22, 28
+local GROUP_PC, GROUP_TOUCH = 22, 30
+local INDENT = 12
+local LONG_PRESS = 0.45 -- Components/Tooltip: a touch held this long shows the tooltip
 
 -- World position the arrow points to (nil = hide the arrow).
 local function aimPoint(target: QuestTrack.Target?): Vector3?
@@ -180,9 +192,49 @@ local function achievementRow(s: Scope, def: any, order: number, height: number,
 	})
 end
 
+-- Owner 2026-10-21 (the tracker took ~40 % of the screen): one entry of a group, a single line: the mark and name
+-- (cut at the end), the progress on the right and "▸" / "▾" when it unfolds (its objectives, "Return to" with ➤).
+export type Entry = {
+	key: string, -- its id (pulse and unfolded state)
+	text: string, -- mark and name
+	progress: string?,
+	color: Color3,
+	tip: string, -- the full text (tooltip: hover on PC, long press on touch)
+	pulse: string?, -- the pulse key of the whole entry (it turned done)
+	body: (() -> ())?, -- the lines under it while unfolded (a click on the entry folds and unfolds it)
+	openFirst: boolean?, -- unfolded until the player folds it
+}
+
+-- Entries unfolded or folded by the player this session (key -> open).
+local openRows: { [string]: boolean } = {}
+
 local function QuestTracker(scope: Scope, props: Props?): Instance
 	local quests = State.Value({ "character", "quests" })
-	local collapsed = scope:Value(false)
+	-- Owner 2026-10-21: the folded groups (Logic/TrackerFold, account.settings.trackerFold); a click shows its result at
+	-- once (`liveFold`) and keeps it until the save comes back.
+	local savedFold = State.Value({ "account", "settings", "trackerFold" })
+	local liveFold = scope:Value(nil :: { [string]: boolean }?)
+	scope:Observer(savedFold):onChange(function()
+		local live = Fusion.peek(liveFold)
+		if live and TrackerFold.same(live, Fusion.peek(savedFold)) then
+			liveFold:set(nil)
+		end
+	end)
+	local fold = scope:Computed(function(use): any
+		local live = use(liveFold)
+		return if live then live else use(savedFold)
+	end)
+	local function toggleFold(group: string)
+		local now = Fusion.peek(fold)
+		local nextFold = TrackerFold.with(now, group, not TrackerFold.isFolded(now, group))
+		liveFold:set(nextFold)
+		Net.Send("SetSetting", "trackerFold", nextFold)
+	end
+	local collapsed = scope:Computed(function(use): boolean
+		return TrackerFold.isFolded(use(fold), "all")
+	end)
+	-- bumped when the player folds or unfolds one entry (openRows)
+	local openTick = scope:Value(0)
 	-- S29: which objective rows were already seen done and when their pulse ends; kept outside the Computed, so a
 	-- recompute (progress, language) does not pulse them again.
 	local seen: QuestRows.Seen = {}
@@ -230,14 +282,85 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		end)
 	)
 
-	-- One block per quest (S18): title, a grey "From / Turn in: NPC" line and its own objectives, with a gap
-	-- between blocks; daily contracts under their own "Contracts: Quest Board" header.
+	-- Owner 2026-10-21: a group header with its arrow, the name and a short summary on the right ("2/5 · 5:12"); a
+	-- click folds or unfolds the group. Returns whether the group is open.
+	local function groupHeader(
+		s: Scope,
+		out: { Instance },
+		order: number,
+		group: string,
+		label: string,
+		summary: string?,
+		touch: boolean,
+		foldNow: any
+	): boolean
+		local isFolded = TrackerFold.isFolded(foldNow, group)
+		table.insert(
+			out,
+			s:New("TextButton")({
+				Name = `Group_{group}`,
+				LayoutOrder = order,
+				Size = UDim2.new(1, 0, 0, if touch then GROUP_TOUCH else GROUP_PC),
+				AutoButtonColor = false,
+				BackgroundTransparency = 1,
+				Text = "",
+				[OnEvent("Activated")] = function()
+					toggleFold(group)
+				end,
+				[Children] = {
+					s:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						VerticalAlignment = Enum.VerticalAlignment.Bottom,
+						Padding = UDim.new(0, 6),
+					}),
+					s:New("TextLabel")({
+						Name = "Name",
+						LayoutOrder = 1,
+						Size = UDim2.fromScale(0, 1),
+						BackgroundTransparency = 1,
+						Text = `{if isFolded then "▸" else "▾"} {label}`,
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Iron.Heading,
+						TextStrokeTransparency = 0.5,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextYAlignment = Enum.TextYAlignment.Bottom,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+						[Children] = s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
+					}),
+					if summary and summary ~= ""
+						then s:New("TextLabel")({
+							Name = "Summary",
+							LayoutOrder = 2,
+							Size = UDim2.fromScale(0, 1),
+							AutomaticSize = Enum.AutomaticSize.X,
+							BackgroundTransparency = 1,
+							Text = summary,
+							FontFace = Theme.Fonts.BodyMedium,
+							TextSize = Theme.TextSize.Caption,
+							TextColor3 = Theme.Iron.TextMuted,
+							TextStrokeTransparency = 0.5,
+							TextYAlignment = Enum.TextYAlignment.Bottom,
+						}) :: any
+						else nil,
+				},
+			})
+		)
+		return not isFolded
+	end
+
+	-- One block per group (owner 2026-10-21, before: S18 blocks with every objective): the story and the tracked side
+	-- quest, the hunting contracts, the daily and the weekly set, each under its folding header; one line per entry.
 	local lines = scope:Computed(function(use, s: Scope): { Instance }
 		local q = use(quests)
 		local list = {}
 		if type(q) ~= "table" or use(collapsed) then
 			return list
 		end
+		local foldNow = use(fold)
+		use(openTick)
+		local touch = use(Device.Touch)
 		local order = 0
 		local function line(text: string, color: Color3, size: number, font: Font, indent: number?): TextLabel
 			order += 1
@@ -264,10 +387,17 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 				list,
 				s:New("Frame")({
 					LayoutOrder = order,
-					Size = UDim2.new(1, 0, 0, 6),
+					Size = UDim2.new(1, 0, 0, 4),
 					BackgroundTransparency = 1,
 				})
 			)
+		end
+		local function group(id: string, label: string, summary: string?): boolean
+			if order > 0 then
+				gap()
+			end
+			order += 1
+			return groupHeader(s, list, order, id, label, summary, touch, foldNow)
 		end
 		local function npcName(npcId: string?): string
 			local npc = npcId and Npcs.get(npcId)
@@ -289,50 +419,62 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					Theme.Brass.Bright,
 					Theme.TextSize.Small,
 					Theme.Fonts.BodyMedium,
-					6
+					INDENT
 				)
+			end
+		end
+		-- S29: a finished line keeps a soft green glow; it pulses once (stronger stroke, white to green) while its pulse
+		-- time runs
+		local function glow(label: TextLabel, pulseKey: string)
+			local clockNow = os.clock()
+			local left = (pulseUntil[pulseKey] or 0) - clockNow
+			local alpha = math.clamp(left / PULSE_TIME, 0, 1)
+			if alpha <= 0 then
+				pulseUntil[pulseKey] = nil
+			end
+			local stroke = s:New("UIStroke")({
+				Color = Theme.Iron.Success,
+				Thickness = 1 + 2 * alpha,
+				Transparency = GLOW_TRANSPARENCY * (1 - alpha),
+				Parent = label,
+			})
+			if alpha > 0 then
+				label.TextColor3 = Theme.Iron.Success:Lerp(Theme.Plain, alpha)
+				local info = TweenInfo.new(left, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+				task.defer(function()
+					if stroke.Parent then
+						TweenService:Create(stroke, info, { Thickness = 1, Transparency = GLOW_TRANSPARENCY }):Play()
+						TweenService:Create(label, info, { TextColor3 = Theme.Iron.Success }):Play()
+					end
+				end)
+			end
+		end
+		-- S29: the rows that turned done since the last build pulse (also while their entry is folded, so unfolding it
+		-- later does not pulse old ones); the entry itself pulses when the last one is done.
+		local function track(key: string, rowList: QuestRows.List)
+			local clockNow = os.clock()
+			local fresh = QuestRows.newlyDone(seen, key, rowList)
+			for _, index in fresh do
+				pulseUntil[`{key}#{index}`] = clockNow + PULSE_TIME
+			end
+			if #fresh > 0 and rowList.complete then
+				pulseUntil[`{key}#all`] = clockNow + PULSE_TIME
 			end
 		end
 
 		-- S29: every objective stays in the list (Logic/QuestRows); finished ones are green with a soft glow and
 		-- pulse once when finished; a complete quest adds the gold "Return to: <NPC>" line with its own guide button.
 		local function objectives(key: string, rowList: QuestRows.List, guide: QuestTrack.Target?)
-			local clockNow = os.clock()
-			for _, index in QuestRows.newlyDone(seen, key, rowList) do
-				pulseUntil[`{key}#{index}`] = clockNow + PULSE_TIME
-			end
 			for _, row in rowList.rows do
 				local label = line(
 					QuestRows.line(row),
 					if row.done then Theme.Iron.Success else Theme.Iron.Text,
 					Theme.TextSize.Small,
 					Theme.Fonts.BodyMedium,
-					6
+					INDENT
 				)
 				if row.done then
-					local pulseKey = `{key}#{row.index}`
-					local left = (pulseUntil[pulseKey] or 0) - clockNow
-					local alpha = math.clamp(left / PULSE_TIME, 0, 1)
-					if alpha <= 0 then
-						pulseUntil[pulseKey] = nil
-					end
-					local stroke = s:New("UIStroke")({
-						Color = Theme.Iron.Success,
-						Thickness = 1 + 2 * alpha,
-						Transparency = GLOW_TRANSPARENCY * (1 - alpha),
-						Parent = label,
-					})
-					if alpha > 0 then
-						label.TextColor3 = Theme.Iron.Success:Lerp(Theme.Plain, alpha)
-						local info = TweenInfo.new(left, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-						task.defer(function()
-							if stroke.Parent then
-								TweenService:Create(stroke, info, { Thickness = 1, Transparency = GLOW_TRANSPARENCY })
-									:Play()
-								TweenService:Create(label, info, { TextColor3 = Theme.Iron.Success }):Play()
-							end
-						end)
-					end
+					glow(label, `{key}#{row.index}`)
 				end
 			end
 			if rowList.complete then
@@ -347,6 +489,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 							Size = UDim2.new(1, 0, 0, 26),
 							BackgroundTransparency = 1,
 							[Children] = {
+								s:New("UIPadding")({ PaddingLeft = UDim.new(0, INDENT) }),
 								s:New("TextLabel")({
 									Size = UDim2.new(1, if canGuide then -34 else 0, 1, 0),
 									BackgroundTransparency = 1,
@@ -386,203 +529,317 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			end
 		end
 
+		-- one entry: a single line; a click on an entry with a body folds / unfolds it (openRows, this session)
+		local function entry(e: Entry)
+			order += 1
+			local key = e.key
+			local isOpen = e.body ~= nil and (if openRows[key] ~= nil then openRows[key] else e.openFirst == true)
+			local hasBody = e.body ~= nil
+			local name = s:New("TextLabel")({
+				Name = "Name",
+				LayoutOrder = 1,
+				Size = UDim2.fromScale(0, 1),
+				BackgroundTransparency = 1,
+				Text = e.text,
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = e.color,
+				TextStrokeTransparency = 0.5,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				[Children] = s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
+			}) :: TextLabel
+			if e.pulse then
+				glow(name, e.pulse)
+			end
+			-- touch: a long press shows the tooltip, so its release does not fold the entry
+			local pressedAt: number? = nil
+			local row = s:New("TextButton")({
+				Name = key,
+				LayoutOrder = order,
+				Size = UDim2.new(1, 0, 0, if touch then ROW_TOUCH else ROW_PC),
+				AutoButtonColor = false,
+				BackgroundTransparency = 1,
+				Text = "",
+				[OnEvent("InputBegan")] = function(input: InputObject)
+					pressedAt = if input.UserInputType == Enum.UserInputType.Touch then os.clock() else nil
+				end,
+				[OnEvent("Activated")] = function()
+					local heldFor = if pressedAt then os.clock() - pressedAt else 0
+					pressedAt = nil
+					if hasBody and heldFor < LONG_PRESS then
+						openRows[key] = not isOpen
+						openTick:set(Fusion.peek(openTick) + 1)
+					end
+				end,
+				[Children] = {
+					s:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+						Padding = UDim.new(0, 6),
+					}),
+					name,
+					if e.progress and e.progress ~= ""
+						then s:New("TextLabel")({
+							Name = "Progress",
+							LayoutOrder = 2,
+							Size = UDim2.fromScale(0, 1),
+							AutomaticSize = Enum.AutomaticSize.X,
+							BackgroundTransparency = 1,
+							Text = e.progress,
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Small,
+							TextColor3 = if e.progress == QuestRows.DONE_MARK
+								then Theme.Iron.Success
+								else Theme.Brass.Bright,
+							TextStrokeTransparency = 0.5,
+						}) :: any
+						else nil,
+					if hasBody
+						then s:New("TextLabel")({
+							Name = "Fold",
+							LayoutOrder = 3,
+							Size = UDim2.new(0, 12, 1, 0),
+							BackgroundTransparency = 1,
+							Text = if isOpen then "▾" else "▸",
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Caption,
+							TextColor3 = Theme.Iron.TextMuted,
+						}) :: any
+						else nil,
+				},
+			}) :: TextButton
+			Tooltip.attach(s, row, e.tip)
+			table.insert(list, row)
+			if isOpen and e.body then
+				e.body()
+			end
+		end
+
 		-- S27: the tracked side quest first.
 		local level = use(State.Value({ "character", "level" })) or 1
 		local focus = use(QuestTrack.Focus)
 
-		-- S99: the hunting contract (active: title and objective; to take: "!" and where). S134k: up to
-		-- Config.Quest.trackerContracts active contracts in the tracker's order (the tracked one, the finished ones, the
-		-- nearest on this map; QuestText.contractOrder), "+N hunting contracts" under them; none active: how many to take
+		-- S99: the hunting contracts. S134k: up to Config.Quest.trackerContracts active contracts in the tracker's order
+		-- (the tracked one, the finished ones, the nearest on this map; QuestText.contractOrder), "+N" under them; none
+		-- active: how many to take. Owner 2026-10-21: one line each, the monster kind and the kills.
 		local contractState = Contracts.stateOf(q)
-		local function contractBlock(): boolean
+		local function contractBlock()
 			local map = use(State.Value({ "character", "location", "map" }))
 			-- the nearest-ground order follows the player: re-sorted on entering another monster area
 			use(AreaState.Current)
 			local x, z = QuestText.mapPosition()
 			local focusId = if focus and focus.kind == "contract" then focus.id else nil
-			local list = QuestText.contractOrder(contractState, focusId, map, x, z)
-			if #list > 0 then
-				local shown = math.min(#list, Config.Quest.trackerContracts)
+			local taken = QuestText.contractOrder(contractState, focusId, map, x, z)
+			if #taken > 0 then
+				local finished = 0
+				for _, t in taken do
+					if Contracts.isTakenComplete(t) then
+						finished += 1
+					end
+				end
+				if not group("contracts", Text.get(use, "tracker.group.contracts"), `{finished}/{#taken}`) then
+					return
+				end
+				local lookup = function(key: string, args: { [string]: any }?): string
+					return Text.get(use, key, args)
+				end
+				local shown = math.min(#taken, Config.Quest.trackerContracts)
 				for i = 1, shown do
-					local taken = list[i]
-					local target = QuestText.contractTarget(taken.contract, taken.entry, level, map)
+					local t = taken[i]
+					local target = QuestText.contractTarget(t.contract, t.entry, level, map)
 					local turnIn = if target and target.npc then target.npc else Contracts.BOARD
-					-- the kind, ground and progress are on the objective row below (one line)
-					line(
-						`◈ {Text.get(use, "contract.titleShort", { n = taken.contract.level })}`,
-						Theme.Iron.Heading,
-						Theme.TextSize.Small,
-						Theme.Fonts.BodyBold
-					)
-					objectives(
-						`contract:{taken.contract.id}`,
-						QuestText.rows(use, taken.contract.objectives, taken.entry.progress, turnIn),
-						target
-					)
+					local key = `contract:{t.contract.id}`
+					local rowList = QuestText.rows(use, t.contract.objectives, t.entry.progress, turnIn)
+					track(key, rowList)
+					local tip = { QuestText.contractTitle(lookup, t.contract) }
+					for _, row in rowList.rows do
+						table.insert(tip, QuestRows.line(row))
+					end
+					local back = if rowList.complete then QuestText.returnTo(use, rowList) else ""
+					table.insert(tip, if back ~= "" then back else Text.get(use, "contract.whereTurnIn.short"))
+					entry({
+						key = key,
+						text = `◈ {QuestText.contractMonster(lookup, t.contract)}`,
+						progress = QuestRows.compact(rowList),
+						color = if rowList.complete then Theme.Iron.Success else Theme.Iron.Text,
+						tip = table.concat(tip, "\n"),
+						pulse = if rowList.complete then `{key}#all` else nil,
+						body = function()
+							objectives(key, rowList, target)
+						end,
+					})
 				end
-				if #list > shown then
+				if #taken > shown then
 					line(
-						Text.get(use, "contract.trackerMore", { n = #list - shown }),
+						Text.get(use, "tracker.contracts.more", { n = #taken - shown }),
 						Theme.Iron.TextMuted,
-						Theme.TextSize.Small,
-						Theme.Fonts.Body
+						Theme.TextSize.Caption,
+						Theme.Fonts.Body,
+						INDENT
 					)
 				end
-				return true
+				return
 			end
 			local eligible = Contracts.eligible(contractState, level)
 			if #eligible > 0 then
-				line(
-					`! {Text.get(use, "contract.toTake", { n = #eligible })}`,
-					Theme.Brass.Bright,
-					Theme.TextSize.Small,
-					Theme.Fonts.BodyBold
-				)
-				line(
-					Text.get(use, "quest.tracker.from", { npc = npcName(Contracts.BOARD) }),
-					Theme.Iron.TextMuted,
-					Theme.TextSize.Small,
-					Theme.Fonts.Body
-				)
-				return true
+				if not group("contracts", Text.get(use, "tracker.group.contracts"), nil) then
+					return
+				end
+				local from = Text.get(use, "quest.tracker.from", { npc = npcName(Contracts.BOARD) })
+				entry({
+					key = "contract:toTake",
+					text = `! {Text.get(use, "tracker.contracts.toTake")}`,
+					progress = tostring(#eligible),
+					color = Theme.Brass.Bright,
+					tip = `{Text.get(use, "contract.toTake", { n = #eligible })}\n{from}`,
+				})
 			end
-			return false
 		end
 		local contractOnTop = focus ~= nil and focus.kind == "contract"
-		if contractOnTop and contractBlock() then
-			gap()
+		if contractOnTop then
+			contractBlock()
 		end
 
+		-- the story and the tracked side quest: one entry each, unfolded at first (their objectives say what to do)
+		local questEntries: { Entry } = {}
 		local sideQuest = if focus and focus.id then Quests.npcQuest(focus.id) else nil
 		local sideEntry = if focus and focus.id then SideQuests.activeOf(q)[focus.id] else nil
 		if sideQuest and type(sideEntry) == "table" then
-			line(
-				`◆ {Text.get(use, `quest.{sideQuest.id}.title`)}`,
-				Theme.Brass.Bright,
-				Theme.TextSize.Small,
-				Theme.Fonts.BodyBold
-			)
-			objectives(
-				`side:{sideQuest.id}`,
-				QuestText.rows(use, sideQuest.objectives, sideEntry.progress, sideQuest.turnIn),
-				QuestText.sideTarget(sideQuest, sideEntry, level, q)
-			)
-			companionLine(sideQuest.id)
-			gap()
+			local key = `side:{sideQuest.id}`
+			local rowList = QuestText.rows(use, sideQuest.objectives, sideEntry.progress, sideQuest.turnIn)
+			track(key, rowList)
+			local title = Text.get(use, `quest.{sideQuest.id}.title`)
+			local tip = { title }
+			for _, row in rowList.rows do
+				table.insert(tip, QuestRows.line(row))
+			end
+			local quest = sideQuest
+			table.insert(questEntries, {
+				key = key,
+				text = `◆ {title}`,
+				progress = QuestRows.compact(rowList),
+				color = if rowList.complete then Theme.Iron.Success else Theme.Brass.Bright,
+				tip = table.concat(tip, "\n"),
+				pulse = if rowList.complete then `{key}#all` else nil,
+				openFirst = true,
+				body = function()
+					objectives(key, rowList, QuestText.sideTarget(quest, sideEntry, level, q))
+					companionLine(quest.id)
+				end,
+			})
 		end
 
 		local main = q.main
 		local quest = if type(main) == "table" then Quests.Main.get(main.id) else nil
 		if quest and main and use(QuestTrack.Tracked) then
-			line(
-				Text.get(use, `quest.{quest.id}.title`),
-				Theme.Brass.Bright,
-				Theme.TextSize.Small,
-				Theme.Fonts.BodyBold
-			)
-			local rows = QuestText.rows(use, quest.objectives, main.progress, quest.turnIn)
-			if not rows.complete then
-				line(
-					Text.get(use, "quest.tracker.from", { npc = npcName(quest.giver) }),
-					Theme.Iron.TextMuted,
-					Theme.TextSize.Small,
-					Theme.Fonts.Body
-				)
+			local key = `main:{quest.id}`
+			local rowList = QuestText.rows(use, quest.objectives, main.progress, quest.turnIn)
+			track(key, rowList)
+			local title = Text.get(use, `quest.{quest.id}.title`)
+			local tip = { title, Text.get(use, "quest.tracker.from", { npc = npcName(quest.giver) }) }
+			for _, row in rowList.rows do
+				table.insert(tip, QuestRows.line(row))
 			end
-			objectives(`main:{quest.id}`, rows, QuestText.target(quest, main.progress or {}, level, q, main.used))
-			companionLine(quest.id)
+			table.insert(questEntries, {
+				key = key,
+				text = title,
+				progress = QuestRows.compact(rowList),
+				color = if rowList.complete then Theme.Iron.Success else Theme.Brass.Bright,
+				tip = table.concat(tip, "\n"),
+				pulse = if rowList.complete then `{key}#all` else nil,
+				openFirst = true,
+				body = function()
+					objectives(key, rowList, QuestText.target(quest, main.progress or {}, level, q, main.used))
+					companionLine(quest.id)
+				end,
+			})
 		elseif not quest then
 			local nextQuest, ready = QuestLogic.nextMain(q.mainDone or 0, level)
 			if nextQuest and ready then
-				line(
-					`! {Text.get(use, `quest.{nextQuest.id}.title`)}`,
-					Theme.Brass.Bright,
-					Theme.TextSize.Small,
-					Theme.Fonts.BodyBold
-				)
-				line(
-					Text.get(use, "quest.tracker.from", { npc = npcName(nextQuest.giver) }),
-					Theme.Iron.TextMuted,
-					Theme.TextSize.Small,
-					Theme.Fonts.Body
-				)
+				local title = Text.get(use, `quest.{nextQuest.id}.title`)
+				local from = Text.get(use, "quest.tracker.from", { npc = npcName(nextQuest.giver) })
+				table.insert(questEntries, {
+					key = `next:{nextQuest.id}`,
+					text = `! {title}`,
+					color = Theme.Brass.Bright,
+					tip = `{title}\n{from}`,
+					openFirst = true,
+					body = function()
+						line(from, Theme.Iron.TextMuted, Theme.TextSize.Small, Theme.Fonts.Body, INDENT)
+					end,
+				})
+			end
+		end
+		if #questEntries > 0 and group("quests", Text.get(use, "tracker.group.quests"), nil) then
+			for _, e in questEntries do
+				entry(e)
 			end
 		end
 
 		if not contractOnTop then
-			local before = order
-			if before > 0 then
-				gap()
-			end
-			if not contractBlock() and before > 0 then
-				-- nothing to show: drop the gap again
-				table.remove(list)
-				order -= 1
-			end
+			contractBlock()
 		end
 
-		-- S159: the daily set (progress, countdown, open contracts) and the weekly set's progress
-		local daily = q.daily
-		local dailyList = if type(daily) == "table" then daily.list else nil
-		local p = Dailies.progress(dailyList)
-		local weekly = q.weekly
-		local wp = Dailies.progress(if type(weekly) == "table" then weekly.list else nil)
-		if p.claimed < p.total or wp.claimed < wp.total then
-			if order > 0 then
-				gap()
-			end
-		end
-		if p.claimed < p.total then
-			local t = use(minute) * 60
-			local left = (Time.dayNumber(t) + 1) * 86400 - t
-			local hh = math.floor(left / 3600)
-			local mm = math.floor((left % 3600) / 60)
-			line(
-				Text.get(use, "quest.tracker.daily", {
-					done = p.complete,
-					total = p.total,
-					time = string.format("%d:%02d", hh, mm),
-				}),
-				Theme.Iron.Heading,
-				Theme.TextSize.Small,
-				Theme.Fonts.BodyBold
-			)
-			if p.complete >= p.total then
+		-- S159: the daily set (progress, countdown, open contracts) and the weekly set's progress; owner 2026-10-21: the
+		-- open contracts of a set one line each (the label without its count, the count on the right), the weekly ones
+		-- folded at first.
+		local function setEntries(prefix: string, setList: any, progress: Dailies.SetProgress)
+			if progress.complete >= progress.total then
 				line(
 					Text.get(use, "quest.tracker.collect"),
 					Theme.Brass.Bright,
 					Theme.TextSize.Small,
 					Theme.Fonts.BodyMedium,
-					4
+					INDENT
 				)
-			else
-				for _, entry in dailyList or {} do
-					if not entry.claimed then
-						local done = entry.progress >= entry.objective.n
-						line(
-							`{if done then "✔" else "◦"} {QuestText.objective(use, entry.objective, entry.progress)}`,
-							if done then Theme.Iron.Success else Theme.Iron.Text,
-							Theme.TextSize.Small,
-							Theme.Fonts.Body,
-							4
-						)
-					end
+				return
+			end
+			for i, setEntry in setList or {} do
+				if not setEntry.claimed then
+					local need = setEntry.objective.n
+					local have = math.min(setEntry.progress, need)
+					local done = have >= need
+					local full = QuestText.objective(use, setEntry.objective, setEntry.progress)
+					local label = QuestRows.withoutCount(full, have, need)
+					entry({
+						key = `{prefix}:{i}`,
+						text = `{if done then QuestRows.DONE_MARK else QuestRows.OPEN_MARK} {label}`,
+						progress = if done then QuestRows.DONE_MARK elseif need > 1 then `{have}/{need}` else "",
+						color = if done then Theme.Iron.Success else Theme.Iron.Text,
+						tip = full,
+					})
 				end
 			end
 		end
+		local daily = q.daily
+		local dailyList = if type(daily) == "table" then daily.list else nil
+		local p = Dailies.progress(dailyList)
+		if p.claimed < p.total then
+			local t = use(minute) * 60
+			local left = (Time.dayNumber(t) + 1) * 86400 - t
+			local hh = math.floor(left / 3600)
+			local mm = math.floor((left % 3600) / 60)
+			local summary = `{p.complete}/{p.total} · {string.format("%d:%02d", hh, mm)}`
+			if group("daily", Text.get(use, "tracker.group.daily"), summary) then
+				setEntries("daily", dailyList, p)
+			end
+		end
+		local weekly = q.weekly
+		local weeklyList = if type(weekly) == "table" then weekly.list else nil
+		local wp = Dailies.progress(weeklyList)
 		if wp.claimed < wp.total then
-			line(
-				Text.get(use, "quest.tracker.weekly", { done = wp.complete, total = wp.total }),
-				if wp.complete >= wp.total then Theme.Brass.Bright else Theme.Iron.TextMuted,
-				Theme.TextSize.Small,
-				Theme.Fonts.BodyMedium
-			)
+			if group("weekly", Text.get(use, "tracker.group.weekly"), `{wp.complete}/{wp.total}`) then
+				setEntries("weekly", weeklyList, wp)
+			end
 		end
 		return list
 	end)
 
 	-- S151b: the tracked achievements under the quests (the list from AchievementView.trackedRows: no unknown, done or
-	-- secret one; rebuilt when the track list changes, a row follows its own counter)
+	-- secret one; rebuilt when the track list changes, a row follows its own counter); owner 2026-10-21: under a folding
+	-- header like the quest groups.
 	local tracked = State.Value({ "character", "ach", "track" })
 	local achOpen = scope:Value(false)
 	local achLines = scope:Computed(function(use, s: Scope): { Instance }
@@ -602,27 +859,26 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		if #defs == 0 then
 			return out
 		end
-		local shown = #defs
-		local rowHeight = if use(Device.Touch) then Theme.Size.RowHeight else ACH_ROW
-		if use(Device.Touch) and not use(achOpen) then
-			shown = math.min(shown, Config.Achievements.trackPhone)
-		end
+		local touch = use(Device.Touch)
 		table.insert(
 			out,
-			s:New("TextLabel")({
-				Name = "AchievementsHeader",
-				LayoutOrder = ACH_ORDER,
-				Size = UDim2.new(1, 0, 0, 26),
+			s:New("Frame")({
+				Name = "AchievementsGap",
+				LayoutOrder = ACH_ORDER - 1,
+				Size = UDim2.new(1, 0, 0, 4),
 				BackgroundTransparency = 1,
-				Text = Text.get(use, "ach.tracker"),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Iron.Heading,
-				TextStrokeTransparency = 0.5,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextYAlignment = Enum.TextYAlignment.Bottom,
 			})
 		)
+		if
+			not groupHeader(s, out, ACH_ORDER, "ach", Text.get(use, "ach.tracker"), tostring(#defs), touch, use(fold))
+		then
+			return out
+		end
+		local shown = #defs
+		local rowHeight = if touch then Theme.Size.RowHeight else ACH_ROW
+		if touch and not use(achOpen) then
+			shown = math.min(shown, Config.Achievements.trackPhone)
+		end
 		for i = 1, shown do
 			table.insert(out, achievementRow(s, defs[i], ACH_ORDER + i, rowHeight, props))
 		end
@@ -739,14 +995,14 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						Size = UDim2.new(1, -(74 + GRIP), 1, 0),
 						BackgroundTransparency = 1,
 						Text = scope:Computed(function(use): string
-							return `{if use(collapsed) then "▸" else "▾"} {Text.get(use, "quest.tracker")}`
+							return `{if use(collapsed) then "▸" else "▾"} {Text.get(use, "tracker.title")}`
 						end),
 						FontFace = Theme.Fonts.Display,
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Iron.Heading,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						[OnEvent("Activated")] = function()
-							collapsed:set(not Fusion.peek(collapsed))
+							toggleFold("all")
 						end,
 					}),
 					scope:New("TextButton")({

@@ -4,6 +4,9 @@
 -- list of hotkeys. Every change is saved on the account through SetSetting / SetLanguage.
 -- S121: "VIP" (the VIP window) and, with VIP, "Return to the city (VIP)" with its countdown under "Switch character".
 -- S122: the Cloak of Luring switch with its time after the sound rows (only while the account has cloak time).
+-- Owner 2026-10-21 (too many detailed descriptions): the settings in sections with headings (Sound, Graphics and camera,
+-- Combat, Interface); the rare ones (Loot and trade, Social, Hotkeys) folded (Details); short row labels, what a
+-- setting does behind the "i" next to its control (`<label>.info`, InfoTip).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -11,9 +14,11 @@ local Workspace = game:GetService("Workspace")
 local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Details = require(script.Parent.Parent.Components.Details)
 local DamageNumbers = require(ReplicatedStorage.Shared.Data.DamageNumbers)
 local DamageText = require(ReplicatedStorage.Shared.Logic.DamageText)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
@@ -40,20 +45,79 @@ local FIXED_KEYS = {
 	{ "Esc", "menu.keys.close" },
 }
 
--- S135: a settings row is a ListRow (alternating parchment) with the control on the right.
+-- S135: a settings row is a ListRow (alternating parchment) with the control on the right. Owner 2026-10-21: with
+-- `infoKey` an "i" left of the control holds what the setting does (the label stays short).
+local INFO_W = 32
 local rowCount = 0
-local function row(scope: Scope, order: number, labelKey: string, control: Instance): Instance
+local function row(scope: Scope, order: number, labelKey: string, control: Instance, infoKey: string?): Instance
 	rowCount += 1
 	local width = if control:IsA("GuiObject") then control.Size.X.Offset else 0
 	local controlAny: any = control
 	controlAny.Position = UDim2.new(1, -4, 0, 3)
+	local right = (if width > 0 then width else 160) + 8
 	return ListRow(scope, {
 		LayoutOrder = order,
 		Index = rowCount,
 		Height = Theme.Size.MinTouch + 6,
 		Text = Text.T(scope, labelKey),
-		RightInset = (if width > 0 then width else 160) + 8,
-		[Children] = control,
+		RightInset = right + (if infoKey then INFO_W else 0),
+		[Children] = {
+			control,
+			if infoKey
+				then InfoTip.new(scope, {
+					Text = Text.T(scope, infoKey),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.new(1, -right - INFO_W / 2, 0.5, 0),
+				}) :: any
+				else nil,
+		},
+	})
+end
+
+-- Owner 2026-10-21: a section of settings: its heading and its rows in order.
+local function section(scope: Scope, order: number, titleKey: string, rows: { Instance }): Instance
+	return scope:New("Frame")({
+		Name = titleKey,
+		LayoutOrder = order,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		[Children] = {
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, Theme.Padding.Small),
+			}),
+			scope:New("TextLabel")({
+				Name = "Heading",
+				LayoutOrder = 0,
+				Size = UDim2.new(1, 0, 0, 34),
+				BackgroundTransparency = 1,
+				Text = Text.T(scope, titleKey),
+				FontFace = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Large,
+				TextColor3 = Theme.Paper.Heading,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextYAlignment = Enum.TextYAlignment.Bottom,
+			}),
+			rows :: any,
+		},
+	})
+end
+
+-- Owner 2026-10-21: a rarely changed section, folded under its title ("Loot and trade ▸"; Details remembers it).
+local function foldedSection(scope: Scope, order: number, titleKey: string, rows: { Instance }): Instance
+	return Details.new(scope, {
+		Key = `menu.{titleKey}`,
+		Name = titleKey,
+		LayoutOrder = order,
+		Padding = Theme.Padding.Small,
+		MoreText = scope:Computed(function(use): string
+			return `{Text.get(use, titleKey)} ▸`
+		end),
+		LessText = scope:Computed(function(use): string
+			return `{Text.get(use, titleKey)} ▾`
+		end),
+		Children = rows,
 	})
 end
 
@@ -114,33 +178,6 @@ local function toggle(scope: Scope, name: string, default: boolean): Instance
 		OnClick = function()
 			Net.Send("SetSetting", name, not Fusion.peek(on))
 		end,
-	})
-end
-
--- S132: "Show my Roblox avatar" with its hint under the row (the server writes the setting and changes the look).
-local function avatarRow(scope: Scope, order: number): Instance
-	return scope:New("Frame")({
-		Name = "RobloxAvatar",
-		LayoutOrder = order,
-		BackgroundTransparency = 1,
-		Size = UDim2.fromScale(1, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		[Children] = {
-			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
-			row(scope, 1, "menu.robloxAvatar", toggle(scope, "robloxAvatar", false)),
-			scope:New("TextLabel")({
-				LayoutOrder = 2,
-				BackgroundTransparency = 1,
-				Size = UDim2.fromScale(1, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				Text = Text.T(scope, "menu.robloxAvatar.hint"),
-				FontFace = Theme.Fonts.Body,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.TextMuted,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextWrapped = true,
-			}),
-		},
 	})
 end
 
@@ -237,7 +274,7 @@ local function codeRow(scope: Scope): Instance
 		end)
 	end
 	return scope:New("Frame")({
-		LayoutOrder = 15,
+		LayoutOrder = 8,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 46),
 		[Children] = {
@@ -380,7 +417,7 @@ local function lureRow(scope: Scope): Instance
 		return type(state) == "table" and state.on == true
 	end)
 	return scope:New("Frame")({
-		LayoutOrder = 6,
+		LayoutOrder = 0,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 46),
 		Visible = scope:Computed(function(use): boolean
@@ -515,19 +552,32 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 		)
 	end
 	order += 1
+	-- owner 2026-10-21: one short line, Esc and the swap behind the "i"
 	table.insert(
 		hotkeyRows,
-		scope:New("TextLabel")({
+		scope:New("Frame")({
 			LayoutOrder = order,
 			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
-			Text = Text.T(scope, "keys.hint"),
-			FontFace = Theme.Fonts.Body,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Paper.TextMuted,
-			TextWrapped = true,
-			TextXAlignment = Enum.TextXAlignment.Left,
+			[Children] = {
+				scope:New("TextLabel")({
+					Size = UDim2.new(1, -INFO_W, 0, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					Text = Text.T(scope, "keys.hint"),
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.TextMuted,
+					TextWrapped = true,
+					TextXAlignment = Enum.TextXAlignment.Left,
+				}),
+				InfoTip.new(scope, {
+					Text = Text.T(scope, "keys.hint.info"),
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.fromScale(1, 0),
+				}),
+			},
 		})
 	)
 	order += 1
@@ -642,140 +692,149 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 				"menu.language",
 				LanguageToggle(scope, { AnchorPoint = Vector2.new(1, 0), Position = UDim2.fromScale(1, 0) })
 			),
-			row(scope, 4, "menu.volume", stepper(scope, "volume", 0.8, 0.1, 0, 1)),
-			row(scope, 5, "menu.musicVolume", stepper(scope, "musicVolume", 0.6, 0.1, 0, 1)),
-			row(scope, 6, "menu.ambientVolume", stepper(scope, "ambientVolume", 0.7, 0.1, 0, 1)),
-			lureRow(scope), -- S122
-			row(scope, 7, "menu.cameraSens", stepper(scope, "cameraSens", 1, 0.1, 0.2, 3)),
-			row(scope, 7.5, "menu.shake", stepper(scope, "shake", 1, 0.1, 0, 1)),
-			-- W01: three graphics levels (Config.Graphics) and the camera mode (CameraController)
-			row(
-				scope,
-				8,
-				"menu.quality",
-				cycle(scope, "quality", "high", { "low", "medium", "high" }, function(use, value)
-					return Text.get(use, `menu.quality.{value}`)
-				end)
-			),
-			row(
-				scope,
-				8,
-				"menu.cameraMode",
-				cycle(scope, "cameraMode", "free", { "free", "top" }, function(use, value)
-					return Text.get(use, `menu.cameraMode.{value}`)
-				end)
-			),
-			row(scope, 9, "menu.damageNumbers", damageNumbers(scope)),
-			row(scope, 10, "menu.minimapRotate", toggle(scope, "minimapRotate", false)),
-			-- S156: the moved and sized HUD elements back to their places
-			row(
-				scope,
-				10,
-				"menu.hudLayout",
-				Button(scope, {
-					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.fromScale(1, 0),
-					Size = UDim2.fromOffset(150, 44),
-					Variant = "secondary",
-					Text = Text.T(scope, "menu.hudLayout.reset"),
-					OnClick = function()
-						Net.Send("SetSetting", "hud", {})
-					end,
-				})
-			),
-			row(scope, 11, "menu.quickCast", toggle(scope, "quickCast", false)),
-			row(scope, 12, "menu.bindConfirm", toggle(scope, "bindConfirm", true)),
-			row(scope, 13, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
-			row(scope, 14, "menu.autoTarget", toggle(scope, "autoTarget", true)),
-			row(scope, 14, "menu.groupRings", toggle(scope, "groupRings", true)),
-			row(scope, 14, "menu.mapCloseOnWalk", toggle(scope, "mapCloseOnWalk", true)),
-			row(scope, 14, "menu.betterItem", toggle(scope, "betterItem", true)),
-			row(scope, 14, "menu.barks", toggle(scope, "barks", true)), -- S101b: NPC comments during quests
-			row(scope, 14, "menu.lowHpWarn", toggle(scope, "lowHpWarn", true)), -- S134f: low health vignette and heartbeat
-			row(scope, 14, "menu.fightCard", toggle(scope, "fightCard", true)), -- S134f: the after-fight card
-			row(scope, 14, "menu.achToasts", toggle(scope, "achToasts", true)), -- S151: achievement toasts
-			-- S133: who may whisper, and the "<name> is in the game" toast
-			row(
-				scope,
-				14,
-				"menu.whispers",
-				cycle(scope, "whispers", "all", { "all", "friends" }, function(use, value)
-					return Text.get(use, `menu.whispers.{value}`)
-				end)
-			),
-			row(scope, 14, "menu.friendAlerts", toggle(scope, "friendAlerts", true)),
-			-- S150: appear offline and who may join my server (FriendService writes the presence entry by them)
-			row(scope, 14, "menu.appearOffline", toggle(scope, "appearOffline", false)),
-			row(
-				scope,
-				14,
-				"menu.friendJoin",
-				cycle(scope, "friendJoin", "friends", { "friends", "none" }, function(use, value)
-					return Text.get(use, `menu.friendJoin.{value}`)
-				end)
-			),
-			avatarRow(scope, 14), -- S132
-			row(
-				scope,
-				14,
-				"menu.lootHideBelow",
-				cycle(
-					scope,
-					"lootHideBelow",
-					0,
-					{ 0, Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY },
-					rarityLabel
-				)
-			),
-			row(
-				scope,
-				14,
-				"menu.lootAutoFrom",
-				cycle(
-					scope,
-					"lootAutoFrom",
-					0,
-					{ 0, Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY, Rarities.MYTHIC },
-					function(use, value)
-						return if value == 0 then Text.get(use, "menu.all") else rarityLabel(use, value)
-					end
-				)
-			),
-			row(
-				scope,
-				8,
-				"menu.decor",
-				cycle(scope, "decor", "mid", { "low", "mid", "high" }, function(use, value)
-					return Text.get(use, `menu.decor.{value}`)
-				end)
-			),
-			codeRow(scope),
-			scope:New("TextLabel")({
-				LayoutOrder = 16,
-				Size = UDim2.new(1, 0, 0, 34),
-				BackgroundTransparency = 1,
-				Text = Text.T(scope, "menu.hotkeys"),
-				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Paper.Heading,
-				TextXAlignment = Enum.TextXAlignment.Left,
+			-- owner 2026-10-21: sections with headings; the rare ones folded
+			section(scope, 4, "menu.section.sound", {
+				row(scope, 1, "menu.volume", stepper(scope, "volume", 0.8, 0.1, 0, 1)),
+				row(scope, 2, "menu.musicVolume", stepper(scope, "musicVolume", 0.6, 0.1, 0, 1)),
+				row(scope, 3, "menu.ambientVolume", stepper(scope, "ambientVolume", 0.7, 0.1, 0, 1)),
 			}),
-			scope:New("Frame")({
-				LayoutOrder = 17,
-				Size = UDim2.fromScale(1, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundTransparency = 1,
-				[Children] = {
-					scope:New("UIListLayout")({
-						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, 4),
+			section(scope, 5, "menu.section.graphics", {
+				-- W01: three graphics levels (Config.Graphics) and the camera mode (CameraController)
+				row(
+					scope,
+					1,
+					"menu.quality",
+					cycle(scope, "quality", "high", { "low", "medium", "high" }, function(use, value)
+						return Text.get(use, `menu.quality.{value}`)
+					end)
+				),
+				row(
+					scope,
+					2,
+					"menu.decor",
+					cycle(scope, "decor", "mid", { "low", "mid", "high" }, function(use, value)
+						return Text.get(use, `menu.decor.{value}`)
+					end)
+				),
+				row(
+					scope,
+					3,
+					"menu.cameraMode",
+					cycle(scope, "cameraMode", "free", { "free", "top" }, function(use, value)
+						return Text.get(use, `menu.cameraMode.{value}`)
+					end)
+				),
+				row(scope, 4, "menu.cameraSens", stepper(scope, "cameraSens", 1, 0.1, 0.2, 3)),
+				row(scope, 5, "menu.shake", stepper(scope, "shake", 1, 0.1, 0, 1), "menu.shake.info"),
+				row(scope, 6, "menu.minimapRotate", toggle(scope, "minimapRotate", false)),
+			}),
+			section(scope, 6, "menu.section.combat", {
+				lureRow(scope), -- S122 (order 0: only while the account has cloak time)
+				row(scope, 1, "menu.quickCast", toggle(scope, "quickCast", false), "menu.quickCast.info"),
+				row(scope, 2, "menu.autoTarget", toggle(scope, "autoTarget", true), "menu.autoTarget.info"),
+				row(scope, 3, "menu.groupRings", toggle(scope, "groupRings", true)),
+				row(scope, 4, "menu.damageNumbers", damageNumbers(scope)),
+				-- S134f: low health vignette and heartbeat; the after-fight card
+				row(scope, 5, "menu.lowHpWarn", toggle(scope, "lowHpWarn", true), "menu.lowHpWarn.info"),
+				row(scope, 6, "menu.fightCard", toggle(scope, "fightCard", true), "menu.fightCard.info"),
+			}),
+			section(scope, 7, "menu.section.interface", {
+				-- S156: the moved and sized HUD elements back to their places
+				row(
+					scope,
+					1,
+					"menu.hudLayout",
+					Button(scope, {
+						AnchorPoint = Vector2.new(1, 0),
+						Position = UDim2.fromScale(1, 0),
+						Size = UDim2.fromOffset(150, 44),
+						Variant = "secondary",
+						Text = Text.T(scope, "menu.hudLayout.reset"),
+						OnClick = function()
+							Net.Send("SetSetting", "hud", {})
+						end,
 					}),
-					hotkeyRows :: any,
-				},
+					"menu.hudLayout.info"
+				),
+				row(scope, 2, "menu.betterItem", toggle(scope, "betterItem", true)),
+				row(scope, 3, "menu.barks", toggle(scope, "barks", true)), -- S101b: NPC comments during quests
+				-- S151: achievement toasts
+				row(scope, 4, "menu.achToasts", toggle(scope, "achToasts", true), "menu.achToasts.info"),
+				row(scope, 5, "menu.mapCloseOnWalk", toggle(scope, "mapCloseOnWalk", true)),
+			}),
+			codeRow(scope),
+			foldedSection(scope, 9, "menu.section.loot", {
+				row(
+					scope,
+					1,
+					"menu.lootHideBelow",
+					cycle(
+						scope,
+						"lootHideBelow",
+						0,
+						{ 0, Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY },
+						rarityLabel
+					)
+				),
+				row(
+					scope,
+					2,
+					"menu.lootAutoFrom",
+					cycle(
+						scope,
+						"lootAutoFrom",
+						0,
+						{ 0, Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY, Rarities.MYTHIC },
+						function(use, value)
+							return if value == 0 then Text.get(use, "menu.all") else rarityLabel(use, value)
+						end
+					)
+				),
+				row(scope, 3, "menu.bindConfirm", toggle(scope, "bindConfirm", true)),
+				row(scope, 4, "menu.sellConfirm", toggle(scope, "sellConfirm", true)),
+			}),
+			foldedSection(scope, 10, "menu.section.social", {
+				-- S133: who may whisper, and the "<name> is in the game" toast
+				row(
+					scope,
+					1,
+					"menu.whispers",
+					cycle(scope, "whispers", "all", { "all", "friends" }, function(use, value)
+						return Text.get(use, `menu.whispers.{value}`)
+					end)
+				),
+				row(scope, 2, "menu.friendAlerts", toggle(scope, "friendAlerts", true)),
+				-- S150: appear offline and who may join my server (FriendService writes the presence entry by them)
+				row(scope, 3, "menu.appearOffline", toggle(scope, "appearOffline", false), "menu.appearOffline.info"),
+				row(
+					scope,
+					4,
+					"menu.friendJoin",
+					cycle(scope, "friendJoin", "friends", { "friends", "none" }, function(use, value)
+						return Text.get(use, `menu.friendJoin.{value}`)
+					end)
+				),
+				-- S132: the server writes the setting and changes the look
+				row(scope, 5, "menu.robloxAvatar", toggle(scope, "robloxAvatar", false), "menu.robloxAvatar.hint"),
+			}),
+			foldedSection(scope, 11, "menu.hotkeys", {
+				scope:New("Frame")({
+					LayoutOrder = 1,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					[Children] = {
+						scope:New("UIListLayout")({
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							Padding = UDim.new(0, 4),
+						}),
+						hotkeyRows :: any,
+					},
+				}),
 			}),
 			scope:New("TextLabel")({
 				Name = "MockWarning",
-				LayoutOrder = 18,
+				LayoutOrder = 12,
 				BackgroundTransparency = 1,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,

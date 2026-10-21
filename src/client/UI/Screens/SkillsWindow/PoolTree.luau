@@ -9,6 +9,8 @@
 -- a padlock with the level, a gold "!" for a breakpoint to choose or the chosen letters, a green "+" while a rank can
 -- be bought, the bar slot. No description on the tree: the PC hover shows the name and the short sentence, a click
 -- selects (details panel), a tap opens the phone sheet; a bought active of the worn pool drags onto the bar.
+-- Owner 2026-10-21 (too many detailed descriptions): the preview note of another pool in one short line with the rest
+-- behind its "i"; the "click / drag" hint only until a skill is selected.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +19,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Progression = require(ReplicatedStorage.Shared.Data.Progression)
@@ -165,10 +168,11 @@ function PoolTree.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 			(item :: any).LayoutOrder = #out + 1
 			table.insert(out, item)
 		end
-		local function note(text: string, color: Color3?)
-			add(s:New("TextLabel")({
+		-- a muted note; owner 2026-10-21: `info` puts the longer text behind an "i" on its right
+		local function note(text: string, color: Color3?, info: string?): Instance
+			local label = s:New("TextLabel")({
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1, -8, 0, 0),
+				Size = UDim2.new(1, if info then -40 else -8, 0, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				Text = text,
 				TextWrapped = true,
@@ -176,7 +180,24 @@ function PoolTree.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = color or Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
-			}))
+			})
+			local item = if info
+				then s:New("Frame")({
+					BackgroundTransparency = 1,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					[Children] = {
+						label,
+						InfoTip.new(s, {
+							Text = info,
+							AnchorPoint = Vector2.new(1, 0),
+							Position = UDim2.new(1, -8, 0, 0),
+						}),
+					},
+				})
+				else label
+			add(item)
+			return item
 		end
 
 		-- Toolbar: "Spend as the pool suggests", "Reset" (free below Progression.freeRespecLevel or with respecFree;
@@ -216,10 +237,15 @@ function PoolTree.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 			},
 		}))
 		if not view.active then
-			note(Text.get(use, "skills.pool.preview"))
+			note(Text.get(use, "skills.pool.preview.short"), nil, Text.get(use, "skills.pool.preview"))
 		end
 		if not touch then
-			note(Text.get(use, "skills.tree.hint"))
+			-- owner 2026-10-21: only until a skill is selected (a separate state: the tree is not rebuilt on a click)
+			s:Hydrate(note(Text.get(use, "skills.tree.hint")))({
+				Visible = s:Computed(function(use2): boolean
+					return use2(ctx.selected) == nil
+				end),
+			})
 		end
 
 		local function gridOf(name: string, tiles: { PathView.PoolTile }): Instance

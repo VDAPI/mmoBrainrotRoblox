@@ -9,6 +9,8 @@
 -- S159 (owner 2026-10-20): over the list the set's progress ("Today's contracts 2/4"), the time to the new set and the
 -- account's streak; "Swap" on an open daily contract while today's free reroll is left; under the contracts the set
 -- bonus card (EXP with the streak, blessings, Dragon Shards; why there are no shards: taken on this account, level).
+-- Owner 2026-10-21 (too many detailed descriptions): the board's rule and the streak rule behind an "i" (InfoTip), the
+-- hunting contract card without the empty hint line, the boss contract in one short line.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -22,6 +24,7 @@ local QuestTrack = require(script.Parent.Parent.QuestTrack)
 local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local Net = require(ReplicatedStorage.Shared.Net)
 local QuestRewards = require(script.Parent.Parent.Components.QuestRewards)
 local QuestText = require(script.Parent.Parent.QuestText)
@@ -46,6 +49,7 @@ export type Props = {
 }
 
 local CONTRACT_HEIGHT = 168 -- header 26 + card 134 + gap 8
+local CONTRACT_HINT = 40 -- the "next contract from level N" line (owner 2026-10-21: only while it says something)
 
 -- S99: the hunting contract section (nil when every contract is done or the list is empty). S134k: the counts of the
 -- contracts to take, active and finished, the Hunter's Marks and "Accept all" / "Hand in all" at this NPC.
@@ -67,11 +71,13 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 		ready = #Contracts.complete(state),
 	})
 	local nextOne = Contracts.upcoming(state, lvl, 1)[1]
+	-- owner 2026-10-21: the board's rule (contract.boardHint) moved behind the "i" at the title
 	local hint = if canTake == 0
 			and canHand == 0
 			and nextOne
 		then Text.get(use, "contract.waiting", { level = nextOne.level })
-		else Text.get(use, "contract.boardHint")
+		else nil
+	local cut = if hint then 0 else CONTRACT_HINT
 	local function button(order: number, key: string, n: number, act: () -> ()): Instance
 		return Button(s, {
 			LayoutOrder = order,
@@ -83,11 +89,11 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 		})
 	end
 	return s:New("Frame")({
-		Size = UDim2.new(1, 0, 0, CONTRACT_HEIGHT - 8),
+		Size = UDim2.new(1, 0, 0, CONTRACT_HEIGHT - 8 - cut),
 		BackgroundTransparency = 1,
 		[Children] = {
 			s:New("TextLabel")({
-				Size = UDim2.new(1, 0, 0, 24),
+				Size = UDim2.new(1, -32, 0, 24),
 				BackgroundTransparency = 1,
 				RichText = true,
 				Text = header,
@@ -96,9 +102,14 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
+			InfoTip.new(s, {
+				Text = Text.get(use, "contract.boardHint"),
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.new(1, -4, 0, 12),
+			}),
 			s:New("Frame")({
 				Position = UDim2.fromOffset(0, 26),
-				Size = UDim2.new(1, 0, 0, 134),
+				Size = UDim2.new(1, 0, 0, 134 - cut),
 				BackgroundColor3 = Theme.Paper.Raised,
 				BackgroundTransparency = 0.35,
 				[Children] = {
@@ -123,9 +134,10 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 					}),
 					s:New("TextLabel")({
 						Position = UDim2.fromOffset(0, 26),
-						Size = UDim2.new(1, 0, 0, 40),
+						Size = UDim2.new(1, 0, 0, CONTRACT_HINT),
+						Visible = hint ~= nil,
 						BackgroundTransparency = 1,
-						Text = hint,
+						Text = hint or "",
 						TextWrapped = true,
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Small,
@@ -134,7 +146,7 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 						TextYAlignment = Enum.TextYAlignment.Top,
 					}),
 					s:New("Frame")({
-						Position = UDim2.fromOffset(0, 70),
+						Position = UDim2.fromOffset(0, 70 - cut),
 						Size = UDim2.new(1, 0, 0, 48),
 						BackgroundTransparency = 1,
 						[Children] = {
@@ -167,6 +179,7 @@ type Card = {
 	reward: Quests.Reward,
 	claim: () -> (boolean, string?),
 	reroll: (() -> ())?, -- S159: "Swap" (nil = no button)
+	info: string?, -- owner 2026-10-21: the longer text behind an "i" after the title
 }
 
 -- S159: runs a board action and shows its error.
@@ -192,7 +205,7 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			s:New("UIPadding")({ PaddingLeft = UDim.new(0, 12), PaddingTop = UDim.new(0, 8) }),
 			s:New("TextLabel")({
-				Size = UDim2.new(1, -170, 0, 26),
+				Size = UDim2.new(1, if c.info then -200 else -170, 0, 26),
 				BackgroundTransparency = 1,
 				Text = c.title,
 				TextScaled = true,
@@ -219,6 +232,13 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 					MinTextSize = Theme.TextSize.Small,
 				}),
 			}),
+			if c.info
+				then InfoTip.new(s, {
+					Text = c.info,
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.new(1, -172, 0, 13),
+				}) :: any
+				else nil,
 			-- S31: rewards as icons and item slots with tooltips.
 			QuestRewards(s, {
 				Id = c.id,
@@ -262,7 +282,8 @@ local function bonusCard(
 	id: string,
 	reward: Quests.Reward,
 	lines: { string },
-	taken: boolean
+	taken: boolean,
+	info: string?
 )
 	local text = `<b>{Text.get(use, if taken then "quest.set.bonusTaken" else "quest.set.bonus")}</b>`
 	for _, line in lines do
@@ -288,18 +309,33 @@ local function bonusCard(
 				PaddingBottom = UDim.new(0, 8),
 			}),
 			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-			s:New("TextLabel")({
+			s:New("Frame")({
 				LayoutOrder = 1,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
-				RichText = true,
-				TextWrapped = true,
-				Text = text,
-				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.Heading,
-				TextXAlignment = Enum.TextXAlignment.Left,
+				[Children] = {
+					s:New("TextLabel")({
+						Size = UDim2.new(1, if info then -32 else 0, 0, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						BackgroundTransparency = 1,
+						RichText = true,
+						TextWrapped = true,
+						Text = text,
+						FontFace = Theme.Fonts.BodyMedium,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Heading,
+						TextXAlignment = Enum.TextXAlignment.Left,
+					}),
+					-- owner 2026-10-21: the streak rule
+					if info
+						then InfoTip.new(s, {
+							Text = info,
+							AnchorPoint = Vector2.new(1, 0),
+							Position = UDim2.fromScale(1, 0),
+						}) :: any
+						else nil,
+				},
 			}),
 			if taken
 				then nil :: any
@@ -308,14 +344,15 @@ local function bonusCard(
 	})
 end
 
--- S159: the lines under the bonus card's title (why there are no shards, the streak rule).
+-- S159: the lines under the bonus card's title (why there are no shards) and (daily) the streak rule, which owner
+-- 2026-10-21 put behind the card's "i".
 local function bonusLines(
 	use: Fusion.Use,
 	reward: Quests.Reward,
 	shardsDue: boolean,
 	level: number,
 	weekly: boolean
-): ({ string }, Quests.Reward)
+): ({ string }, Quests.Reward, string?)
 	local lines = {}
 	local shown = table.clone(reward)
 	if not shardsDue then
@@ -327,18 +364,16 @@ local function bonusLines(
 		end
 	end
 	table.insert(lines, Text.get(use, "quest.set.bonusHint"))
+	local info: string? = nil
 	if not weekly then
 		local b = Quests.Daily.BONUS
-		table.insert(
-			lines,
-			Text.get(
-				use,
-				"quest.set.streakHint",
-				{ cap = Quests.Daily.STREAK_CAP, from = b.streakShardsFrom, n = b.streakShards }
-			)
+		info = Text.get(
+			use,
+			"quest.set.streakHint",
+			{ cap = Quests.Daily.STREAK_CAP, from = b.streakShardsFrom, n = b.streakShards }
 		)
 	end
-	return lines, shown
+	return lines, shown, info
 end
 
 local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
@@ -408,10 +443,10 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 			local state = Dailies.sanitize(use(account))
 			local today = Time.dayNumber(use(now))
 			local streak = Dailies.nextStreak(state, today)
-			local lines, shown =
+			local lines, shown, info =
 				bonusLines(use, Quests.Daily.bonus(lvl, streak), Dailies.dayShardsDue(state, today, lvl), lvl, false)
 			if #(d.list or {}) > 0 then
-				table.insert(list, bonusCard(s, use, "dailyBonus", shown, lines, d.bonus == true))
+				table.insert(list, bonusCard(s, use, "dailyBonus", shown, lines, d.bonus == true, info))
 			end
 			return list
 		end
@@ -455,9 +490,10 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 					id = "bossContract",
 					order = 100,
 					title = `{Text.get(use, "quest.bossContract.title")}: {bossName}`,
-					line = Text.get(use, "quest.bossContract.text", { boss = bossName, n = n })
+					line = Text.get(use, "quest.bossContract.text.short", { boss = bossName, n = n })
 						.. "  "
 						.. `{math.min(contract.progress, n)}/{n}`,
+					info = Text.get(use, "quest.bossContract.text", { boss = bossName, n = n }),
 					done = contract.progress >= n,
 					claimed = contract.claimed == true,
 					reward = Quests.Weekly.bossReward(lvl),
@@ -475,7 +511,9 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 		return contractSection(s, use, use(quests), use(level) or 1, p)
 	end)
 	local top = scope:Computed(function(use): number
-		return if use(contract) then CONTRACT_HEIGHT else 0
+		-- the section's own height (owner 2026-10-21: lower without the hint line) and the gap under it
+		local section = use(contract) :: any
+		return if section then section.Size.Y.Offset + 8 else 0
 	end)
 
 	return {

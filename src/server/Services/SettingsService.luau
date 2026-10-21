@@ -10,6 +10,7 @@ local Locale = require(Shared.Util.Locale)
 local MapMarkers = require(Shared.Logic.MapMarkers)
 local Net = require(Shared.Net)
 local Rarities = require(Shared.Data.Rarities)
+local TrackerFold = require(Shared.Logic.TrackerFold)
 
 local SettingsService = {
 	Name = "SettingsService",
@@ -133,6 +134,10 @@ local SETTINGS: { [string]: (value: any, player: Player) -> boolean } = {
 	-- S156: the HUD layout (moved and sized elements; {} = the built-in places)
 	hud = function(value)
 		return HudLayout.valid(value)
+	end,
+	-- Owner 2026-10-21: the folded groups of the quest tracker (Logic/TrackerFold)
+	trackerFold = function(value)
+		return TrackerFold.valid(value)
 	end,
 	-- S30 ladder: hide below Unique (2) or Heroic (3); Legendary+ is always shown.
 	lootHideBelow = function(value)
