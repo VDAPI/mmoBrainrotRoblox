@@ -274,19 +274,30 @@ Kit.slots = {
 	["wall:gate"] = { fit = "width", size = 1, city = { fixed("city_gate_01", 0) } },
 	-- dead trees (WorldGen/Flora): the Duskwood's black dead trees, the Wastes' burnt trees and stumps, Frostpeak's
 	-- frost-killed trees (CC0 Quaternius or Tripo, docs TRIPO-KIT-MIASTO)
+	-- 2026-10-21: Quaternius Stylized Nature MegaKit dead trees (CC0, tools/kit/prepare_kit.py), painted per region
 	["tree:blackDead"] = {
 		fit = "height",
 		size = 12,
-		forest = { v("forest_deadtree_01", 1, 0.9, 1.15), v("forest_deadtree_02", 1, 0.9, 1.15) },
-		desert = { v("desert_deadtree_01", 1, 0.9, 1.1) },
+		forest = {
+			painted(v("forest_deadtree_01", 1, 0.9, 1.15), "#2E2824", "Wood"),
+			painted(v("forest_deadtree_02", 1, 0.9, 1.15), "#2A2420", "Wood"),
+		},
+		desert = { painted(v("desert_deadtree_01", 1, 0.9, 1.1), "#2A2220", "Wood") },
 	},
 	["tree:burntTree"] = {
 		fit = "height",
 		size = 11,
-		desert = { v("desert_deadtree_01", 1, 0.9, 1.15), v("desert_deadtree_02", 1, 0.9, 1.15) },
+		desert = {
+			painted(v("desert_deadtree_01", 1, 0.9, 1.15), "#241E1C", "Wood"),
+			painted(v("desert_deadtree_02", 1, 0.9, 1.15), "#2C2420", "Wood"),
+		},
 	},
 	["tree:charredStump"] = { fit = "height", size = 4, desert = { v("desert_stump_01", 1, 0.8, 1.2, 0.05) } },
-	["tree:frozenDead"] = { fit = "height", size = 10.5, snow = { v("snow_deadtree_01", 1, 0.9, 1.15) } },
+	["tree:frozenDead"] = {
+		fit = "height",
+		size = 10.5,
+		snow = { painted(v("snow_deadtree_01", 1, 0.9, 1.15), "#7E8A96", "Wood") },
+	},
 } :: { [string]: Entry }
 
 return Kit

@@ -619,3 +619,5 @@ Vaelgrath `frostBreath`, `wingBuffet`, `tailSwipe`, `blizzard`, `glacialRing`), 
 `cast`, generator dostaje pozy z `Data/BossMotions`).
 
 Puste ID usuń przed commitem: test `tests/anatomy.spec.luau` wymaga formatu `rbxassetid://<liczba>`. Brakujące klipy mają zastępstwa (`Logic/LookAnim`): `run` → `walk` → `idle`, `attack2` / `cast` → `attack1`, `spawn` → `idle`; bez `hit` i `death` model tylko błyska i zanika.
+
+| Quaternius Stylized Nature MegaKit + Medieval Village MegaKit (2026-10-21) | `forest_deadtree_01/02`, `desert_deadtree_01/02`, `snow_deadtree_01` (martwe drzewa, malowane per region); domy `city_cottage_01`, `city_house_01`–`04`, `city_workshop_01` złożone z modułów (`tools/kit/build_houses.py`, `tools/kit/prepare_kit.py`) | quaternius.com | Quaternius | CC0 | 2026-10-21 | jedna siatka na model, podstawa w początku, przód −Z; źródła w `Downloads\Graphics\props\quaternius` |
