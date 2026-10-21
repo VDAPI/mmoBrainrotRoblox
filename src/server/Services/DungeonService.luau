@@ -541,6 +541,9 @@ local function services(run: Run): Boss.Services
 		cancelMark = function(monster: any, ability: any, player: Player)
 			CombatService.MonsterTelegraphCancel(monster, ability, player)
 		end,
+		hazard = function(monster: any, patternId: string, opts: any): number?
+			return CombatService.MonsterHazard(monster, patternId, opts) -- S159
+		end,
 		fighters = function()
 			return fighters(run)
 		end,

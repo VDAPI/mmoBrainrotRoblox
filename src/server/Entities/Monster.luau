@@ -73,10 +73,14 @@ export type Context = {
 	rangedThrow: ((monster: any, player: Player, params: any) -> ())?,
 	-- S134f: a player's damage was booked in damageBy (CombatService.MonsterDamaged, the fight meter).
 	damaged: ((monster: any, player: Player, dealt: number) -> ())?,
+	-- S159: a regular blow winds up (the clients pose the draw; CombatService.MonsterWindup)
+	attackWind: ((monster: any, player: Player, seconds: number) -> ())?,
 }
 
 local Monster = {}
 Monster.__index = Monster
+
+local windUp: (self: any, target: Player) -> ()
 
 export type Monster = typeof(setmetatable(
 	{} :: {
@@ -117,6 +121,8 @@ export type Monster = typeof(setmetatable(
 		lastCast: number,
 		outOfReachSince: number,
 		nextThrow: number,
+		-- S159: the regular blow being wound up: a token that a stun or a cast cancels
+		windToken: number,
 		returnStarted: number,
 		random: Random,
 		entity: any, -- EntityService entity (set by MonsterService)
@@ -244,6 +250,7 @@ function Monster.new(
 		lastCast = -math.huge,
 		outOfReachSince = 0,
 		nextThrow = 0,
+		windToken = 0,
 		returnStarted = 0,
 		random = Random.new(),
 		entity = nil,
@@ -820,6 +827,35 @@ function Monster.DelayAttack(self: Monster, stunSeconds: number, share: number)
 	self.nextAttack = math.max(self.nextAttack, os.clock() + stunSeconds + attackInterval(self) * share)
 end
 
+-- S159: a regular blow: the draw (Data/Combat.basicWind) on the clients, then the blow lands if the target is still
+-- near (reach x windReach + windSlack; a step back dodges it), the monster still chasing and not stunned. A monster
+-- without the hook strikes at once.
+windUp = function(self: Monster, target: Player)
+	local wind = self.ctx.attackWind
+	local seconds = if self.def.attack == "ranged" then Combat.basicWind.ranged else Combat.basicWind.melee
+	if not wind or seconds <= 0 then
+		self.ctx.basicAttack(self, target)
+		return
+	end
+	self.windToken += 1
+	local token = self.windToken
+	wind(self, target, seconds)
+	task.delay(seconds, function()
+		if self.windToken ~= token or self.state ~= "chase" or self.ctx.isDisabled(self) then
+			return
+		end
+		self.windToken += 1
+		local at = self.ctx.playerPosition(target)
+		if not at or not self.ctx.canTarget(self, target) then
+			return
+		end
+		local reach = self.stats.range + self.root.Size.Z / 2
+		if distanceFlat(self.root.Position, at) <= reach * Combat.windReach + Combat.windSlack then
+			self.ctx.basicAttack(self, target)
+		end
+	end)
+end
+
 local function stepChase(self: Monster, now: number)
 	local position = self.root.Position
 	local target = pickTarget(self)
@@ -864,6 +900,7 @@ local function stepChase(self: Monster, now: number)
 		stop(self)
 		face(self, if ability.origin == "random" then area.Position else targetPosition)
 		self.state = "cast"
+		self.windToken += 1 -- S159: a cast cancels a blow being wound up
 		self.castArea = area
 		self.castAbility = ability
 		self.castEnd = now + ability.windup
@@ -883,7 +920,7 @@ local function stepChase(self: Monster, now: number)
 		face(self, targetPosition)
 		if now >= self.nextAttack then
 			self.nextAttack = now + attackInterval(self)
-			self.ctx.basicAttack(self, target)
+			windUp(self, target)
 		end
 		return
 	end
@@ -989,6 +1026,7 @@ function Monster.Step(self: Monster, now: number)
 			self.state = "chase"
 			self.castArea = nil
 		end
+		self.windToken += 1 -- S159: a stun breaks the draw
 		stop(self)
 		return
 	end

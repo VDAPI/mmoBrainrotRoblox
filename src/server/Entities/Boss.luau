@@ -15,6 +15,9 @@
 --     fighter is branded, the circle follows them and blasts at their position after `seconds`) and `channel` (the boss
 --     stands; `breakPct` of its max HP dealt in time staggers it, otherwise the spell hits every fighter). The server
 --     counts every hit at the blow; the clients only draw.
+--   * S159 (owner 2026-10-21): dodgeable hazards (Data/BossTuning.patterns, HazardService): an attack may deliver its
+--     damage by a pattern of projectiles / waves instead of its area (`replace`), be followed by one (`add`), and the
+--     later phases add patterns on their own timers (`ambient`); the shield and kiting casts may be patterns too.
 -- Services are injected (DungeonService), so the module never requires them.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,6 +27,8 @@ local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local BossSchedule = require(ReplicatedStorage.Shared.Logic.BossSchedule)
 local BossTuning = require(ReplicatedStorage.Shared.Data.BossTuning)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
+local HazardPatterns = require(ReplicatedStorage.Shared.Data.HazardPatterns)
+local Hazards = require(ReplicatedStorage.Shared.Logic.Hazards)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 
 local Boss = {}
@@ -40,6 +45,9 @@ export type Services = {
 	blow: (monster: any, ability: any, area: CFrame) -> (),
 	-- S134: a mark gone before its blast: its circle and glow stop on the clients (CombatService.MonsterTelegraphCancel)
 	cancelMark: (monster: any, ability: any, player: Player) -> (),
+	-- S159: a dodgeable hazard pattern (CombatService.MonsterHazard -> HazardService.Cast); nil = no hazards (the
+	-- attack falls back to its area)
+	hazard: ((monster: any, patternId: string, opts: any) -> number?)?,
 	-- Players currently fighting (alive, inside the arena).
 	fighters: () -> { Player },
 	position: (player: Player) -> Vector3?,
@@ -87,11 +95,18 @@ export type Boss = typeof(setmetatable(
 		marks: { Mark },
 		channel: Channel?,
 		staggerUntil: number,
+		-- S159: the next cast of each ambient pattern (index of BossTuning.patterns[id].ambient)
+		nextAmbient: { [number]: number },
 	},
 	Boss
 ))
 
 -- S87: the gap between two attacks of any kind lives in Data/BossTuning.globalGap (balance plan D3).
+
+-- S159: helpers defined further down (ambient patterns, the kiting punisher's target, the pattern pose).
+local hold: (self: any, seconds: number) -> ()
+local farthest: (self: any) -> { Player }
+local stepAmbient: (self: any, now: number) -> boolean
 
 -- S134: the same kind for every party (BossScaling.hpMultiplier() = Bosses.HP_BASE).
 local function kindFor(def: Bosses.BossDef): Monsters.MonsterDef
@@ -154,6 +169,7 @@ function Boss.new(def: Bosses.BossDef, centre: CFrame, services: Services): Boss
 		marks = {},
 		channel = nil,
 		staggerUntil = 0,
+		nextAmbient = {},
 	}, Boss)
 	for _, attack in def.attacks do
 		self.nextAttack[attack.id] = os.clock() + 3 + self.random:NextNumber() * 4
@@ -270,6 +286,92 @@ local function areaFor(self: Boss, attack: Bosses.Attack, targetPosition: Vector
 		return CFrame.lookAt(from, to)
 	end
 	return CFrame.new(to)
+end
+
+-- S159: the players an attack aims at (the same choice as targetsFor; `self` attacks aim at nobody).
+local function targetPlayersFor(self: Boss, target: string, count: number?): { Player }
+	local fighters = self.services.fighters()
+	if #fighters == 0 or target == "self" then
+		return {}
+	elseif target == "threat" then
+		local t = self.monster.target
+		return if t and table.find(fighters, t) then { t } else { fighters[1] }
+	elseif target == "all" then
+		return table.clone(fighters)
+	elseif target == "nearest" then
+		local root = self.monster.root :: BasePart
+		local best, bestDistance = nil, math.huge
+		for _, player in fighters do
+			local p = self.services.position(player)
+			if p and (p - root.Position).Magnitude < bestDistance then
+				best, bestDistance = player, (p - root.Position).Magnitude
+			end
+		end
+		return if best then { best } else {}
+	end
+	local pool = table.clone(fighters)
+	local list = {}
+	for _ = 1, math.min(count or 1, #pool) do
+		table.insert(list, table.remove(pool, self.random:NextInteger(1, #pool)) :: Player)
+	end
+	return list
+end
+
+-- S159: the boss's ground point (the origin of its patterns).
+local function groundOf(self: Boss): Vector3
+	local root = self.monster.root :: BasePart
+	local humanoid = self.monster.humanoid :: Humanoid
+	return Vector3.new(root.Position.X, root.Position.Y - humanoid.HipHeight - root.Size.Y / 2, root.Position.Z)
+end
+
+-- S159: the bounce circle of the boss's arena.
+local function arenaOf(self: Boss): { x: number, z: number, r: number }
+	local r = if self.def.world then BossTuning.arenaRadius.world else BossTuning.arenaRadius.dungeon
+	return { x = self.centre.Position.X, z = self.centre.Position.Z, r = r }
+end
+
+-- S159: casts a hazard pattern of the boss (HazardService). `targets` aim it, `origin` defaults to the boss's ground,
+-- `delay` = the least warning (the boss's pose lasts as long), `attackId` = the client's pose and sound. True when it
+-- went out.
+local function castPattern(
+	self: Boss,
+	patternId: string,
+	damage: number,
+	targets: { Player },
+	delay: number?,
+	attackId: string,
+	element: string?,
+	damageKind: string?,
+	origin: Vector3?
+): boolean
+	local hazard = self.services.hazard
+	if not hazard or not HazardPatterns.get(patternId) then
+		return false
+	end
+	local id = hazard(self.monster, patternId, {
+		origin = origin or groundOf(self),
+		targets = targets,
+		damage = damage,
+		element = element,
+		damageKind = damageKind,
+		delay = delay,
+		arena = arenaOf(self),
+		attackId = attackId,
+		windup = delay,
+	})
+	return id ~= nil
+end
+
+-- S159: the warning of a pattern's first emitter (an ambient cast's pose).
+local function patternWarn(patternId: string): number
+	local pattern = HazardPatterns.get(patternId)
+	local first = pattern and pattern.emitters[1]
+	return math.max(Hazards.MIN_WARN, if first and first.delay then first.delay else Hazards.MIN_WARN)
+end
+
+-- S159: this boss's BossTuning.patterns entry (nil = none).
+local function tuningOf(self: Boss): any
+	return (BossTuning.patterns :: any)[self.def.id]
 end
 
 local function targetsFor(self: Boss, attack: Bosses.Attack): { Vector3? }
@@ -532,6 +634,26 @@ local function cast(self: Boss, attack: Bosses.Attack, keepState: boolean?)
 		startChannel(self, attack, ability)
 		return
 	end
+	-- S159: an attack delivered by a dodgeable pattern instead of its area (same numbers, one hit per player)
+	local tuning = tuningOf(self)
+	local replaced = tuning and tuning.replace and tuning.replace[attack.id]
+	if replaced and attack.mechanic == nil then
+		local targets = targetPlayersFor(self, attack.target, attack.count)
+		if
+			castPattern(
+				self,
+				replaced,
+				attack.damage,
+				targets,
+				attack.windup,
+				attack.id,
+				attack.element,
+				attack.damageKind
+			)
+		then
+			return
+		end
+	end
 	local opts = teleOpts(attack)
 	if attack.mechanic == "split" then
 		self.services.announce("boss.mechanic.split.hint", nil)
@@ -541,6 +663,22 @@ local function cast(self: Boss, attack: Bosses.Attack, keepState: boolean?)
 		local area = areaFor(self, attack, position)
 		table.insert(areas, area)
 		self.services.telegraph(monster, ability, area, opts)
+	end
+	-- S159: a pattern that follows the blow (the leap's shock ring, the whirlwind's axes), live from the blow
+	local follow = tuning and tuning.add and tuning.add[attack.id]
+	if follow and areas[1] then
+		local origin = if follow.at == "area" then areas[1].Position else groundOf(self)
+		castPattern(
+			self,
+			follow.pattern,
+			follow.damage,
+			targetPlayersFor(self, "random", 1),
+			attack.windup,
+			follow.pattern,
+			attack.element,
+			attack.damageKind,
+			origin
+		)
 	end
 	task.delay(attack.windup, function()
 		if not monster:IsAlive() then
@@ -578,6 +716,81 @@ local function extraAttack(spec: any): Bosses.Attack
 		cooldown = spec.cooldown or spec.every or 5,
 		phases = { 1, 2, 3 },
 	} :: any
+end
+
+-- S159: the boss stands for `seconds` (a pattern's warning: the clients pose its cast).
+hold = function(self: Boss, seconds: number)
+	local monster = self.monster
+	monster.state = "cast"
+	monster.castEnd = os.clock() + seconds
+	monster.castArea = nil
+	monster.humanoid:MoveTo(monster.root.Position)
+end
+
+-- S159: the farthest fighter (the kiting punisher's target), as a list.
+farthest = function(self: Boss): { Player }
+	local root = self.monster.root :: BasePart
+	local best, bestDistance = nil, -1
+	for _, player in self.services.fighters() do
+		local p = self.services.position(player)
+		if p and (p - root.Position).Magnitude > bestDistance then
+			best, bestDistance = player, (p - root.Position).Magnitude
+		end
+	end
+	return if best then { best } else {}
+end
+
+-- S159: casts the first due ambient pattern of the phase (BossTuning.patterns[id].ambient); true when one went out.
+-- The first one of a phase waits half its timer after the phase starts.
+stepAmbient = function(self: Boss, now: number): boolean
+	local tuning = tuningOf(self)
+	local list = tuning and tuning.ambient
+	if not list then
+		return false
+	end
+	for i, entry in list do
+		if not table.find(entry.phases, self.phase) then
+			continue
+		end
+		local due = self.nextAmbient[i]
+		if not due then
+			self.nextAmbient[i] = now + entry.every * 0.5
+			continue
+		end
+		if now < due then
+			continue
+		end
+		self.nextAmbient[i] = now + entry.every
+		local warn = patternWarn(entry.pattern)
+		local targets = if entry.centre
+			then targetPlayersFor(self, "random", 1)
+			else targetPlayersFor(self, "random", entry.count or 1)
+		local origin = if entry.centre
+			then Vector3.new(self.centre.Position.X, groundOf(self).Y, self.centre.Position.Z)
+			else nil
+		local element = nil
+		for _, attack in self.def.attacks do
+			element = element or attack.element
+		end
+		hold(self, warn)
+		if
+			castPattern(
+				self,
+				entry.pattern,
+				entry.damage,
+				targets,
+				warn,
+				entry.pattern,
+				element,
+				self.def.damageKind,
+				origin
+			)
+		then
+			self.nextGlobal = now + warn + BossTuning.globalGap
+			return true
+		end
+	end
+	return false
 end
 
 -- Whether no fighter stands within BossTuning.farRange of the boss (kiting).
@@ -660,7 +873,23 @@ function Boss.Step(self: Boss, now: number)
 				self.nextShieldCast = now + 2 -- a breath after the shield goes up
 			else
 				self.nextShieldCast = now + extra.shield.every
-				cast(self, extraAttack(extra.shield), true)
+				-- S159: the shield cast as a dodgeable pattern when it has one
+				local spec = extra.shield
+				if
+					not spec.pattern
+					or not castPattern(
+						self,
+						spec.pattern,
+						spec.damage,
+						targetPlayersFor(self, "random", 1),
+						spec.windup,
+						spec.pattern,
+						nil,
+						nil
+					)
+				then
+					cast(self, extraAttack(spec), true)
+				end
 			end
 		end
 		return
@@ -683,7 +912,19 @@ function Boss.Step(self: Boss, now: number)
 		local attack = extraAttack(extra.far)
 		self.nextFar = now + attack.cooldown
 		self.nextGlobal = now + attack.windup + BossTuning.globalGap
+		-- S159: the kiting punisher as a dodgeable pattern at the farthest fighter
+		local spec = extra.far
+		if spec.pattern then
+			hold(self, attack.windup)
+			if castPattern(self, spec.pattern, spec.damage, farthest(self), attack.windup, spec.pattern, nil, nil) then
+				return
+			end
+		end
 		cast(self, attack)
+		return
+	end
+	-- S159: an ambient pattern of the phase that is due goes first (it shares the global gap)
+	if stepAmbient(self, now) then
 		return
 	end
 	-- S87 (balance plan D3, G11): the most overdue attack relative to its cooldown (Logic/BossSchedule, also the model).

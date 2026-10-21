@@ -60,6 +60,8 @@ local ItemTraits = require(Shared.Data.ItemTraits)
 local Items = require(Shared.Data.Items)
 local LevelLock = require(Shared.Logic.LevelLock)
 local Log = require(Shared.Util.Log)
+local HazardPatterns = require(Shared.Data.HazardPatterns)
+local Hazards = require(Shared.Logic.Hazards)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterCast = require(Shared.Logic.MonsterCast)
 local MonsterStats = require(Shared.Logic.MonsterStats)
@@ -98,6 +100,7 @@ local CombatService = {
 		"EquipmentService",
 		"StatusEffectService",
 		"PartyService",
+		"HazardService", -- S159: dodgeable projectiles and waves (it has no dependency on this service)
 	},
 	-- (info: KillInfo, credit: { Player }, killer: Player?) after a monster died.
 	MonsterKilled = Signal.new(),
@@ -150,6 +153,7 @@ local ZoneService: any
 local EquipmentService: any
 local StatusEffectService: any
 local PartyService: any
+local HazardService: any
 local Registry: any
 local PathService: any
 
@@ -221,7 +225,7 @@ local attackers: { [Player]: Attacker } = {}
 export type AutoGrindHooks = { active: (player: Player) -> boolean, manual: (player: Player) -> () }
 local autoGrindHooks: AutoGrindHooks? = nil
 local rng = Rng.new()
-local fxQueue: { { position: Vector3, event: FxEvent } } = {}
+local fxQueue: { { position: Vector3, event: FxEvent, radius: number? } } = {}
 
 -- S61: telegraphed areas until they resolve (see telegraph).
 -- S134f: `aimed` = living players inside the area when it was announced (the fight meter's dodges).
@@ -257,9 +261,11 @@ end
 
 -- Visual events --------------------------------------------------------------------------------------
 
-local function queueFx(position: Vector3?, event: FxEvent)
+-- S159: `radius` = studs round `position` whose players get it (default Combat.fxRadius; a boss's hazards reach
+-- the whole arena).
+local function queueFx(position: Vector3?, event: FxEvent, radius: number?)
 	if position then
-		table.insert(fxQueue, { position = position, event = event })
+		table.insert(fxQueue, { position = position, event = event, radius = radius })
 	end
 end
 
@@ -275,7 +281,7 @@ local function flushFx()
 		if root then
 			local batch = {}
 			for _, item in queue do
-				if (item.position - root.Position).Magnitude <= Combat.fxRadius then
+				if (item.position - root.Position).Magnitude <= (item.radius or Combat.fxRadius) then
 					table.insert(batch, item.event)
 				end
 			end
@@ -1834,7 +1840,8 @@ local function monsterHitsPlayer(
 	player: Player,
 	baseParams: Damage.Params,
 	style: string?,
-	delivery: string?
+	delivery: string?,
+	big: boolean?
 )
 	if not playerAlive(player) then
 		return
@@ -1881,10 +1888,12 @@ local function monsterHitsPlayer(
 		taken = filtered
 	end
 	if playerEntity then
-		queueFx(
-			position,
+		local event =
 			playerHitEvent(player, playerEntity.id, if monster.entity then monster.entity.id else nil, result, taken)
-		)
+		if big and taken > 0 then
+			event.bg = true -- S159: a heavy blow: the struck player's screen flashes and shakes
+		end
+		queueFx(position, event)
 	end
 	-- S64 (STATY 6): the counter answers every regular blow, also a blocked, missed or dodged one.
 	if regular and monster:IsAlive() and monster.entity then
@@ -1916,23 +1925,83 @@ local function monsterHitsPlayer(
 	end
 end
 
+-- S159: a regular ranged blow flies as a real projectile (Data/HazardPatterns `regular`): aimed at where the target
+-- will be a moment later (the pattern's `lead` share of its movement over the flight), it hits only the target and
+-- only when it reaches it (the hit handler runs monsterHitsPlayer with these params: dodge, block and ranged
+-- protection as before). Without the hazard service (never in the game) the old instant blow.
+local function shoot(monster: any, player: Player, patternId: string, params: Damage.Params): boolean
+	local pattern = HazardPatterns.get(patternId)
+	local from = monster.root and monster.root.Position
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not pattern or not from or not root or not root:IsA("BasePart") or not HazardService then
+		return false
+	end
+	local emitter = pattern.emitters[1]
+	local speed = math.max(1, emitter.speed or 40)
+	local ground = monster.humanoid and (from.Y - monster.humanoid.HipHeight - monster.root.Size.Y / 2) or from.Y
+	local origin = Vector3.new(from.X, ground, from.Z)
+	local at = root.Position
+	local velocity = root.AssemblyLinearVelocity
+	local flight = flatDistance(at, from) / speed
+	local lead = (pattern.lead or 0) * flight
+	local aim = Vector3.new(at.X + velocity.X * lead, at.Y - Hazards.ROOT_HEIGHT, at.Z + velocity.Z * lead)
+	-- the bolt flies at the shooter's ground height: aim it at the target's height difference too
+	local id = HazardService.Cast(monster, patternId, {
+		origin = Vector3.new(origin.X, at.Y - Hazards.ROOT_HEIGHT, origin.Z),
+		targets = { player },
+		points = { aim },
+		damage = params.multiplier or 1,
+		element = params.element,
+		damageKind = params.kind,
+		delivery = "ranged",
+		only = player,
+		params = params,
+		fxRadius = Combat.fxRadius,
+	})
+	return id ~= nil
+end
+
 local function monsterBasicAttack(monster: any, player: Player)
+	local params: Damage.Params = { kind = monster.stats.damageKind, element = monster.def.element }
+	if monster.def.attack == "ranged" then
+		local patternId = if monster.def.damageKind == "magic" then "mobBolt" else "mobArrow"
+		if shoot(monster, player, patternId, params) then
+			return
+		end
+	end
 	local style = if monster.def.attack == "ranged"
 		then (if monster.def.damageKind == "magic" then "bolt" else "arrow")
 		else "melee"
-	monsterHitsPlayer(
-		monster,
-		player,
-		{ kind = monster.stats.damageKind, element = monster.def.element },
-		style,
-		monster.def.attack
-	)
+	monsterHitsPlayer(monster, player, params, style, monster.def.attack)
 end
 
 -- S134e: an Elite II's throw at a fleeing target (Data/MonsterAbilities.KITS.elite2.throw): a regular ranged blow
--- through the same path as the basic attack (dodge, block, ranged protection; an arrow or a bolt on the clients).
+-- through the same path as the basic attack (dodge, block, ranged protection). S159: a real projectile (a rock or a
+-- dark bolt) that can be sidestepped.
 local function monsterThrow(monster: any, player: Player, params: Damage.Params)
+	if shoot(monster, player, if params.kind == "magic" then "eliteThrowMagic" else "eliteThrow", params) then
+		return
+	end
 	monsterHitsPlayer(monster, player, params, if params.kind == "magic" then "bolt" else "arrow", "ranged")
+end
+
+-- S159: the hit of a hazard (HazardService): a regular shot with its own params, a boss pattern as a telegraphed blow
+-- (no dodge stat: it was dodged by moving), x the instance's share.
+local function hazardHit(cast: any, inst: Hazards.Inst, player: Player)
+	local monster = cast.caster
+	local opts = cast.opts
+	if cast.pattern.regular and opts.params then
+		monsterHitsPlayer(monster, player, opts.params, nil, opts.delivery)
+		return
+	end
+	local params: Damage.Params = {
+		kind = (opts.damageKind or monster.stats.damageKind) :: any,
+		multiplier = Hazards.damageOf(inst, opts.damage),
+		element = opts.element :: any,
+		canDodge = false,
+	}
+	monsterHitsPlayer(monster, player, params, nil, opts.delivery, cast.pattern.big == true)
 end
 
 local function insideArea(ability: MonsterAbilities.Ability, area: CFrame, position: Vector3): boolean
@@ -2184,7 +2253,14 @@ local function resolveAbility(monster: any, ability: MonsterAbilities.Ability, a
 				hit.multiplier = (hit.multiplier or 1) * mul
 			end
 		end
-		monsterHitsPlayer(monster, player, hit, nil, ability.delivery)
+		monsterHitsPlayer(
+			monster,
+			player,
+			hit,
+			nil,
+			ability.delivery,
+			BossMechanics.isAvoidable(ability :: any) or ability.lethal == true or monster.isBoss == true
+		)
 	end
 	for i, zone in redZones do
 		if zone.monster == monster and zone.ability == ability and zone.area == area then
@@ -2257,9 +2333,27 @@ function CombatService.MonsterTelegraphCancel(monster: any, ability: MonsterAbil
 	})
 end
 
--- Lets skills draw damage numbers / heals / swings with the same batching.
-function CombatService.QueueFx(position: Vector3?, event: { [string]: any })
-	queueFx(position, event)
+-- Lets skills draw damage numbers / heals / swings with the same batching (S159: `radius` as queueFx).
+function CombatService.QueueFx(position: Vector3?, event: { [string]: any }, radius: number?)
+	queueFx(position, event, radius)
+end
+
+-- S159: a monster's (a boss's) dodgeable hazard pattern (HazardService.Cast; Data/HazardPatterns). Its id or nil.
+function CombatService.MonsterHazard(monster: any, patternId: string, opts: any): number?
+	return HazardService.Cast(monster, patternId, opts)
+end
+
+-- S159: a basic attack's windup on the clients ("aw": the monster draws back before the blow lands).
+function CombatService.MonsterWindup(monster: any, player: Player, seconds: number)
+	local target = EntityService.GetPlayerEntity(player)
+	if monster.entity then
+		queueFx(monster:Position(), {
+			k = "aw",
+			s = monster.entity.id,
+			t = if target then target.id else nil,
+			w = seconds,
+		})
+	end
 end
 
 -- Admin and queries --------------------------------------------------------------------------------------
@@ -2346,7 +2440,26 @@ function CombatService.Init(registry)
 	EquipmentService = registry.Get("EquipmentService")
 	StatusEffectService = registry.Get("StatusEffectService")
 	PartyService = registry.Get("PartyService")
+	HazardService = registry.Get("HazardService")
 	Registry = registry
+	-- S159: the hazards' damage, fx and targets go through this service
+	HazardService.SetHandlers({
+		hit = hazardHit,
+		-- alive and playing (as every monster blow: monsterHitsPlayer checks the rest)
+		canHit = playerAlive,
+		fx = queueFx,
+		entityId = function(caster: any): string?
+			return if type(caster) == "table" and caster.entity then caster.entity.id else nil
+		end,
+		playerEntityId = function(player: Player): string?
+			local entity = EntityService.GetPlayerEntity(player)
+			return if entity then entity.id else nil
+		end,
+		resolved = function(cast: any, aimed: { Player }, hit: { Player })
+			local id = cast.opts.attackId or cast.patternId
+			CombatService.TelegraphResolved:Fire(cast.caster, id, aimed, hit) -- the fight meter's dodges
+		end,
+	})
 
 	StatusEffectService.SetHookReader(hook)
 	ResourceService.SetSupportGuard(CombatService.SupportLocked) -- S157
@@ -2462,6 +2575,7 @@ function CombatService.Init(registry)
 		telegraph = telegraph,
 		resolveAbility = resolveAbility,
 		rangedThrow = monsterThrow,
+		attackWind = CombatService.MonsterWindup, -- S159
 		died = onMonsterDied,
 		damaged = function(monster: any, player: Player, dealt: number)
 			CombatService.MonsterDamaged:Fire(monster, player, dealt) -- S134f: the fight meter

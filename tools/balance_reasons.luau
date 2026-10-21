@@ -36,6 +36,8 @@ return {
 		{ path = "Data/BuffCategories" },
 		{ path = "Data/Classes", omit = LOOKS },
 		{ path = "Data/Combat" },
+		-- S159: the bosses' and ranged monsters' dodgeable projectile / wave patterns (speeds, counts, shares of damage)
+		{ path = "Data/HazardPatterns", omit = { "byId", "look", "color", "sound", "impactSound" } },
 		-- S94: the smith recipes (generated from Bases x tiers): only the materials (S94 K2 adds fur and scale)
 		{ path = "Data/Crafting", pick = { "materials" } },
 		{ path = "Data/Families", omit = LOOKS },
@@ -7347,6 +7349,48 @@ return {
 		},
 		["Stats:byId.potionDiscount.order"] = {
 			{ session = "S158", why = "display order only: the new energyRegenCombat stat sits after energyRegen" },
+		},
+		["HazardPatterns:*"] = {
+			{
+				session = "S159",
+				why = "new module: dodgeable hazard patterns of the bosses (projectiles, lobs, waves, rings, breath) and real arrows / bolts of ranged monsters and Elite II throws; owner COMBAT 2026-10-21; every pattern warns >= 0.6 s, flies <= 70 studs/s, per-hit share of a Mage's HP <= 0.45 (tests/hazards.spec)",
+			},
+		},
+		["BossTuning:patterns*"] = {
+			{
+				session = "S159",
+				why = "new: which boss attacks fly as dodgeable patterns (replace: same damage, one hit), extra patterns after area attacks and timed ambient patterns per phase (phase 2+ escalation); damage = x the boss attack per hit, capped by tests/hazards.spec (owner COMBAT 2026-10-21)",
+			},
+		},
+		["BossTuning:arenaRadius*"] = {
+			{
+				session = "S159",
+				why = "new: studs of the circle bouncing projectiles reflect off (dungeon floor 74 with nothing solid within 50; world boss spot 70)",
+			},
+		},
+		["BossTuning:extra.morvane.shield.every"] = {
+			{
+				session = "S159",
+				why = "the shield extra is now a 3-arm spiral of soul bolts (mv_spiral), longer than the old single area: every 6 s instead of 4 so the shield phase keeps the same pressure",
+			},
+		},
+		["Combat:basicWind*"] = {
+			{
+				session = "S159",
+				why = "new: a monster's basic attack draws back for this long before it lands (melee 0.45 s, ranged 0.35 s) so it can be read and stepped out of; the blow lands only if the target is still in reach",
+			},
+		},
+		["Combat:windReach"] = {
+			{
+				session = "S159",
+				why = "new: reach x this at the end of the windup (a target that stepped back escapes the blow)",
+			},
+		},
+		["Combat:windSlack"] = {
+			{
+				session = "S159",
+				why = "new: studs added to the reach at the end of the windup (latency slack)",
+			},
 		},
 		["WanderingMerchant:*"] = {
 			{
