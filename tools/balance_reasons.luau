@@ -169,6 +169,7 @@ return {
 		["Data/WeaponLooks"] = "wygląd",
 		["Data/SkillMotions"] = "wygląd",
 		["Data/SkillVfx"] = "wygląd",
+		["Data/LmVfxPieces"] = "wygląd", -- W30: the Hunter and Mage skill pieces (layer, phase, cost)
 		["Data/AttackMotions"] = "wygląd",
 		["Data/Ambience"] = "wygląd",
 		["Data/MapLooks"] = "wygląd", -- W01
