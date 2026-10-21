@@ -5,7 +5,9 @@
 -- breathing, weight shift and looks; while the player's dialogue (or a service window) with that NPC is open it turns
 -- to face the player and gestures and nods; the smith hammers (model attribute "Work": "hammer" for any NPC, "none"
 -- turns the smith's off). Only NPCs within the graphics level's `npcRadius` of the camera move, `npcRate` times a
--- second (Config.Graphics.levels, W29); farther ones keep their last pose.
+-- second (Config.Graphics.levels, W29), at most the `npcMax` nearest (W31); farther ones keep their last pose.
+-- W31 (owner 2026-10-21: "about 60 NPCs stand frozen"): the NPCs without the owner's model (R15 figures in their
+-- outfits, NpcService) move the same way through their Motor6Ds (Anim/NpcRig.newR15).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -46,8 +48,8 @@ type Entry = {
 local NpcController: any = nil
 local entries: { [Model]: Entry } = {}
 
-local function works(model: Model, npcId: string, asset: Model): boolean
-	local work = asset:GetAttribute("Work")
+local function works(model: Model, npcId: string, asset: Model?): boolean
+	local work = if asset then asset:GetAttribute("Work") else nil
 	if work == nil then
 		work = model:GetAttribute("Work")
 	end
@@ -69,19 +71,34 @@ local function seedOf(npcId: string): number
 	return h / 1000
 end
 
+-- The rig of an NPC model: the owner's model's bones (W30) or the R15 figure's joints (W31); nil for the quest board
+-- and a figure without arm joints. Yields while the model's parts arrive.
+local function rigOf(model: Model, seed: number): (NpcRig.Rig?, Model?)
+	if model:GetAttribute("NpcAsset") == true then
+		local asset = model:WaitForChild("Asset", 10)
+		if asset and asset:IsA("Model") then
+			return NpcRig.new(model, asset, seed), asset
+		end
+		return nil, nil
+	end
+	if not model:FindFirstChildOfClass("Humanoid") or not model:WaitForChild("RightHand", 10) then
+		return nil, nil
+	end
+	return NpcRig.newR15(model, seed), nil
+end
+
 local function track(model: Model)
-	if entries[model] or model:GetAttribute("NpcAsset") ~= true then
+	if entries[model] then
 		return
 	end
 	local npcId = model:GetAttribute("NpcId")
-	local asset = model:WaitForChild("Asset", 10)
 	local root = model:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if type(npcId) ~= "string" or not asset or not asset:IsA("Model") or not root or not model.Parent then
+	if type(npcId) ~= "string" or not root then
 		return
 	end
 	local seed = seedOf(npcId)
-	local rig = NpcRig.new(model, asset, seed)
-	if not rig or entries[model] then
+	local rig, asset = rigOf(model, seed)
+	if not rig or entries[model] or not model.Parent then
 		return
 	end
 	local entry: Entry = {
@@ -106,11 +123,25 @@ local function track(model: Model)
 	end)
 end
 
-local function cull(radius: number)
+-- Marks the NPCs that move: within `radius` studs of the camera, the `most` nearest of them.
+local function cull(radius: number, most: number)
 	local camera = Workspace.CurrentCamera
 	local at = if camera then camera.Focus.Position else Vector3.zero
+	local inside: { { entry: Entry, distance: number } } = {}
 	for _, entry in entries do
-		entry.near = (entry.root.Position - at).Magnitude <= radius
+		local distance = (entry.root.Position - at).Magnitude
+		entry.near = distance <= radius
+		if entry.near then
+			table.insert(inside, { entry = entry, distance = distance })
+		end
+	end
+	if #inside > most then
+		table.sort(inside, function(a, b)
+			return a.distance < b.distance
+		end)
+		for i = most + 1, #inside do
+			inside[i].entry.near = false
+		end
 	end
 end
 
@@ -174,7 +205,7 @@ function NpcAnimController.Start()
 		cullTimer += dt
 		if cullTimer >= CULL_EVERY then
 			cullTimer = 0
-			cull(level.npcRadius)
+			cull(level.npcRadius, level.npcMax)
 		end
 		local period = 1 / math.max(1, level.npcRate)
 		local talkingTo = NpcController.TalkingTo()

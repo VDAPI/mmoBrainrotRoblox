@@ -787,7 +787,8 @@ local Config = {
 		-- pointer; `plateEvery` = seconds between two distance checks of the nameplates; `fxRadius` = studs from the
 		-- camera within which TownFxController animates flags, flickering lights and water shimmer; `npcRadius` = studs
 		-- from the camera within which the owner's NPC models breathe and gesture (NpcAnimController; farther ones keep
-		-- their relaxed stance), `npcRate` = their pose updates per second.
+		-- their relaxed stance), `npcRate` = their pose updates per second; W31: every NPC figure moves (the R15 ones in
+		-- their outfits too), `npcMax` = at most this many of the nearest at once.
 		levels = {
 			low = {
 				bloom = 0,
@@ -807,6 +808,7 @@ local Config = {
 				fxRadius = 90,
 				npcRadius = 60,
 				npcRate = 15,
+				npcMax = 6,
 			},
 			medium = {
 				bloom = 0.6,
@@ -826,6 +828,7 @@ local Config = {
 				fxRadius = 150,
 				npcRadius = 100,
 				npcRate = 30,
+				npcMax = 12,
 			},
 			high = {
 				bloom = 1,
@@ -845,6 +848,7 @@ local Config = {
 				fxRadius = 200,
 				npcRadius = 140,
 				npcRate = 60,
+				npcMax = 20,
 			},
 		},
 		-- Seconds the post effects tween when the map or the level changes.

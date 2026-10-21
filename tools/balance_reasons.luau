@@ -198,6 +198,7 @@ return {
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",
 		["Data/ClassLooks"] = "wygląd", -- S132: class looks, creator choices, catalog hooks (DESIGN-17 §9a)
+		["Data/NpcLooks"] = "wygląd", -- W31: the outfits of the NPCs without the owner's model
 		["Data/Emotes"] = "wygląd", -- S123: emote motions (Data/SkillMotions format), aliases, cooldown
 		["Data/Titles"] = "wygląd",
 		["Data/GuildBanners"] = "wygląd", -- S159g: guild banner emblems and colours

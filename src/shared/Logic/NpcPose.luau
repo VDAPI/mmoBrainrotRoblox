@@ -54,6 +54,31 @@ NpcPose.ELBOW = math.rad(16)
 NpcPose.SPREAD_MIN = 0
 NpcPose.SPREAD_MAX = 40
 
+-- W31 (owner 2026-10-21: the NPCs without a model stood frozen): an R15 figure moves through its Motor6Ds, named here
+-- with the bone key whose offsets each one carries (Anim/NpcRig.newR15). It has fewer joints than the skeleton: the
+-- chest's and the clavicles' offsets fold onto the waist and the shoulders (NpcPose.fold).
+NpcPose.R15_JOINTS = table.freeze({
+	Root = "Hips",
+	Waist = "Spine",
+	Neck = "Neck",
+	RightShoulder = "RightArm",
+	LeftShoulder = "LeftArm",
+	RightElbow = "RightForeArm",
+	LeftElbow = "LeftForeArm",
+	RightWrist = "RightHand",
+	LeftWrist = "LeftHand",
+} :: { [string]: string })
+NpcPose.FOLD = table.freeze({
+	Spine1 = "Spine",
+	Spine2 = "Spine",
+	Head = "Neck",
+	RightShoulder = "RightArm",
+	LeftShoulder = "LeftArm",
+} :: { [string]: string })
+-- The R15 body's arms hang close to its sides already: a smaller spread and elbow bend than a model's T-pose needs.
+NpcPose.R15_SPREAD = math.rad(5)
+NpcPose.R15_ELBOW = math.rad(12)
+
 local IDENTITY: Mat = { 1, 0, 0, 0, 1, 0, 0, 0, 1 }
 NpcPose.IDENTITY = IDENTITY
 
@@ -383,6 +408,16 @@ function NpcPose.frame(t: number, seed: number, activity: Activity, blend: numbe
 		add(frame, "Hips", 0, facing, 0)
 	end
 	return frame
+end
+
+-- W31: a frame for an R15 figure: every offset on the joint that carries it (NpcPose.FOLD; the angles are small, so
+-- they add), the elbow bends as they are. A new frame; `frame` is not changed.
+function NpcPose.fold(frame: Frame): Frame
+	local out: Frame = {}
+	for key, e in frame do
+		add(out, NpcPose.FOLD[key] or key, e.rx, e.ry, e.rz)
+	end
+	return out
 end
 
 return NpcPose
