@@ -1350,7 +1350,7 @@ function BalanceTables.tablesBand(lo: number, hi: number): { Table }
 			"dzienne ÷ poziom",
 			"główne złoto",
 		},
-		"Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją `bosses`. Dzienne: 3 kontrakty × `Daily.reward` (15% poziomu), tylko raport."
+		"Zadania liczą się na poziomie zadania (bez rozkładania); boss tylko z opcją `bosses`. Dzienne: 4 kontrakty × `Daily.reward` (9% poziomu) i premia za komplet przy pełnej serii (S159), tylko raport."
 	)
 	for L = lo, hi - 1 do
 		local q = B.questsAt(L, { bosses = true })

@@ -232,6 +232,11 @@ function Quests.label(o: any, turnIn: string?, lang: string): string
 		if area and not o.region and not o.variant then
 			return Names.T("quest.obj.killArea", { area = textOf(area.nameKey, lang), count = count }, lang)
 		end
+		-- S159 (as UI/QuestText): the daily and weekly hunts in the level range
+		if o.lvMin and not o.region then
+			local key = if o.variant == "elite" then "quest.obj.killEliteLevel" else "quest.obj.killLevel"
+			return Names.T(key, { level = o.lvMin, count = count }, lang)
+		end
 		local map = Maps.get(Quests.REGION_MAPS[o.region or 1] or "")
 		local key = if o.variant == "elite2"
 			then "quest.obj.killElite2"

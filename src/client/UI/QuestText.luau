@@ -76,6 +76,11 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 		if area and not objective.region and not objective.variant then
 			return Text.get(use, "quest.obj.killArea", { area = Text.get(use, area.nameKey), count = count })
 		end
+		-- S159: the daily and weekly hunts in the level range ("Defeat monsters of level 25+ 3/37")
+		if objective.lvMin and not objective.region then
+			local key = if objective.variant == "elite" then "quest.obj.killEliteLevel" else "quest.obj.killLevel"
+			return Text.get(use, key, { level = objective.lvMin, count = count })
+		end
 		local map = Maps.get(REGION_MAPS[objective.region or 1] or "")
 		-- S98: "elite2" = Elite II only (weekly contracts)
 		local key = if objective.variant == "elite2"
@@ -140,7 +145,7 @@ function QuestText.objective(use: any, objective: Objective, have: number, turnI
 			place = Text.get(use, objective.place or "quest.tracker"),
 		})
 	end
-	-- fish, equip, loot, stats, learn, potion, duel, event (S98: world events, counted from S101)
+	-- fish, equip, loot, stats, learn, potion, duel, event (S98: world events, counted from S101); S159 handin, dismantle
 	return Text.get(use, `quest.obj.{t}`, { count = count })
 end
 

@@ -3558,10 +3558,24 @@ return {
 				why = "regenerated: chapter IV and the finale (15 new main quests, story budget 10% of band 70-99, the old frostpeak, giants and glacier on the rule); 72-98 0.75-0.91 (was 0.84-0.85), 99 0.546 (dragonsBrood and voiceOfWinter both at 99), no new clamp, 1-71 unchanged",
 			},
 		},
+		-- S159 (owner 2026-10-20): daily and weekly sets reworked
+		["Quests/Daily:*"] = {
+			{
+				session = "S159",
+				why = "owner 2026-10-20: 4 daily contracts by groups (combat, gather first; PvP half weight in the free slots), hunts in the level range (lvMin = L - 5), new templates event / dismantle / handin, 1 free reroll a day; a contract 0.09 of expToNext (was 0.15 for 3), gold 40 + 20 L, 2 dust; set bonus (0.04 + 0.01 x streak days, cap 7) of expToNext, 2 blessings one rarity above, shards 2 (+1 from day 5) once per account and day from level 10. A full day 0.41-0.47 of a level (was 0.45), a full week of sets 4.74 levels (was 4.55), shards <= 29 a week (tests/dailies.spec)",
+			},
+		},
+		["Seasons:POINTS.daily"] = {
+			{ session = "S159", why = "4 daily contracts a day (was 3): 60 a contract keeps 240 points a full day" },
+		},
 		["Quests/Weekly:*"] = {
 			{
 				session = "S98",
 				why = "new module: 3 weekly contracts (0.30 of expToNext = 2x the daily, gold 2x, a blessing one rarity above the daily, essences) and the boss contract (2 wins, 0.50 of expToNext, gold 5x the daily, a fortune blessing 3 / 4, essences; no Legend Cores or dungeon stones), outside the quest EXP budget",
+			},
+			{
+				session = "S159",
+				why = "owner 2026-10-20: a weekly contract 0.25 of expToNext (was 0.30), hunts in the level range, a hand-in template (8); set bonus 0.20 of expToNext, essence, 8 shards once per account and week from level 10, no gold (T-EC3); the boss contract unchanged",
 			},
 		},
 		-- S100 (docs/DESIGN-15.md §5): the login reward

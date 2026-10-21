@@ -298,10 +298,10 @@ describe("QuestLogic progress", function()
 end)
 
 describe("Daily contracts", function()
-	it("picks 3 different contracts, the same for the same day", function()
+	it("picks PER_DAY different contracts, the same for the same day", function()
 		local a = QuestLogic.dailyFor(123, "char-1", 20000, 30)
 		local b = QuestLogic.dailyFor(123, "char-1", 20000, 30)
-		expect(#a).toBe(3)
+		expect(#a).toBe(Quests.Daily.PER_DAY) -- S159: 4
 		local seen = {}
 		for i, entry in a do
 			expect(entry.template).toBe(b[i].template)
@@ -335,8 +335,9 @@ describe("Daily contracts", function()
 		end
 		local hunt = Quests.Daily.get("hunt")
 		assert(hunt, "hunt")
-		expect(hunt.objective(10).region).toBe(1)
-		expect(hunt.objective(90).region).toBe(4)
+		-- S159: the level range instead of the region
+		expect(hunt.objective(10).lvMin).toBe(5)
+		expect(hunt.objective(90).lvMin).toBe(85)
 		local reward = Quests.Daily.reward(50)
 		for _, item in reward.items or {} do
 			expect(Items.get(item.id) ~= nil).toBe(true)

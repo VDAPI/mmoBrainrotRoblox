@@ -13693,3 +13693,23 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   Piorunów i Ciężki Bełt z własną sylwetką.
 - **Dźwięki:** zastępcze ID z listy S111 dla S140–S142 i S144 (`Data/Sfx`, `docs/ASSETS.md`, DECYZJE).
 - **Testy:** `tests/lmvfx.spec.luau`; `SkillLooks` i `skillmotion.spec` znają składniki `lm*`.
+- **Bez przeglądu w Studio** (wygląd na PC i telefonie, skupiska w mieście, chipy filtrów). Minimapa nie ruszana.
+### S159: zlecenia dzienne i tygodniowe jako zestawy z premią, serią, zamianą i Smoczymi Odłamkami (właściciel 2026-10-20)
+
+- **Dzienne:** 4 na dzień z grup (`Daily.SLOTS`: walka, zbieranie, potem dowolne; wagi, PvP tylko w wolnych miejscach),
+  nowe szablony: wydarzenie świata, rozkładanie u kowala, oddane zadania; polowania i elity liczą potwory od poziomu
+  postaci − 5 (`Objective.lvMin`). Jedna darmowa zamiana otwartego zlecenia dziennie (`DailyReroll`, tablica i dziennik).
+- **Premie:** odebranie ostatniego zlecenia daje premię za komplet (`Daily.bonus` z kontową serią, `Weekly.bonus`); odłamki
+  raz na konto i dzień / tydzień, od 10. poziomu (`Logic/Dailies`, `account.dailies`). Sufit 29 odłamków na tydzień.
+- **Widok:** tablica (postęp „2/4”, czas, seria, zamiana, karta premii z powodem braku odłamków), dziennik (to samo w
+  zakładkach), śledzik HUD (wiersz postępu z czasem do nowego zestawu, otwarte zlecenia, „Gotowe: odbierz na tablicy”,
+  postęp tygodnia). Admin: `/daily complete`.
+- **Balans:** zlecenie dzienne 0,09 poziomu (było 0,15 przy 3), tygodniowe 0,25 (było 0,30); model dodatków
+  (`Balance.extrasPerHour` / `extrasExpPerHour`) liczy 4 zlecenia i premie; budżet questów bez zmian, audyt zielony.
+- **Testy:** nowy `tests/dailies.spec`, poprawione `quest.spec`, `questcategories.spec`; księga `tools/balance_reasons.luau`.
+- **Pliki:** `src/shared/Data/Quests/{Daily,Weekly,Types}.luau`, `src/shared/Logic/{Dailies,QuestLogic,AccountSchema}.luau`,
+  `src/shared/{Types,Net/Definitions}.luau`, `src/shared/Data/{Seasons,AdminCommands}.luau`, `src/server/Services/QuestService.luau`,
+  `src/server/Admin/Quests.luau`, `src/client/UI/{QuestText,Components/QuestRewards,Screens/QuestBoard,Screens/QuestJournal,Screens/Hud/QuestTracker}.luau`,
+  lokalizacja PL / EN, `tests/{Balance,BalanceTables}.luau`, `tools/{balance_report,balance_reasons}.luau`,
+  `tools/WikiData/Quests.luau`, `wiki/src/data/*`, `docs/{DESIGN,DECYZJE,SESJE,JAK-DODAC}.md`.
+- **Dla właściciela:** domyślne liczby wyżej; bez przeglądu w Studio (tablica i śledzik na telefonie).

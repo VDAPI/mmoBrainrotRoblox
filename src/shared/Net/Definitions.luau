@@ -219,6 +219,8 @@ local Definitions: { [string]: Definition } = {
 	QuestAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (npcId)
 	QuestTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (npcId)
 	DailyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (contract index)
+	-- S159: one free reroll of an open daily contract a day (contract index)
+	DailyReroll = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } },
 	-- S98: weekly contracts and the week's boss contract, collected at the board
 	WeeklyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (weekly contract index)
 	BossContractClaim = { kind = "function", dir = "c2s", rate = 2, args = {} }, -- () the week's boss contract

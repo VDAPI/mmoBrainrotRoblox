@@ -2659,7 +2659,7 @@ do
 		tableOut({ "pasmo", "fabuła", "poboczne", "bossowe", "zlecenia", "razem" }, rows)
 	end
 	add(
-		"Poza budżetem (w ułamku `expToNext` poziomu postaci, nagroda liczona przy odbiorze): dzienne 3 × 0,15 = 0,45 na dzień; tygodniowe 3 × 0,30 = 0,90 na tydzień i zlecenie na bossa 0,50 na tydzień (od 15. poziomu)."
+		"Poza budżetem (w ułamku `expToNext` poziomu postaci, nagroda liczona przy odbiorze): dzienne 4 × 0,09 = 0,36 i premia za komplet 0,05–0,11 (seria 1–7 dni) na dzień; tygodniowe 3 × 0,25 = 0,75 i premia za komplet 0,20 na tydzień oraz zlecenie na bossa 0,50 na tydzień (od 15. poziomu) (S159)."
 	)
 	add()
 	local rows: { { string } } = {}
@@ -2669,7 +2669,7 @@ do
 		table.insert(rows, {
 			tostring(L),
 			string.format("%.3f", QuestBudgetData.MONSTER_EXP_MUL[L]),
-			fmtValue(Quests.Daily.PER_DAY * (Quests.Daily.reward(L).exp or 0) / e, "2"),
+			fmtValue(q.daily / e, "2"),
 			fmtValue(q.weekly / e, "2"),
 		})
 	end
@@ -2944,10 +2944,7 @@ do
 		)} Elity II, po {fmtValue(S.quests.quest, "1")} oddania fabuły, pobocznego i zlecenia poniżej 100. poziomu, wydarzenie świata co {B.WORLD_EVENT_HOURS} h, {fmtValue(
 			S.bossPerHour,
 			"1"
-		)} wygranej z bossem lochu (od pierwszego bossa) i boss świata {fmtValue(
-			S.worldBossPerHour,
-			"2"
-		)} na godzinę gry (od jego poziomu); dzień daje dzienne zlecenia, tydzień tygodniowe (+ zlecenie na bossa), {S.bloodMoonPerWeek} Krwawy Księżyc i {S.achievementsPerWeek} osiągnięcia. Każdy punkt przechodzi przez \`Logic/Season.add\` (limit potworów {Seasons.LIMITS.killPerDay} pkt dziennie, limit narastający {Seasons.LIMITS.weekCap} × tydzień, nadrabianie ×{fmtValue(
+		)} wygranej z bossem lochu (od pierwszego bossa) i boss świata {fmtValue(S.worldBossPerHour, "2")} na godzinę gry (od jego poziomu); dzień daje dzienne zlecenia, tydzień tygodniowe (+ zlecenie na bossa), {S.bloodMoonPerWeek} Krwawy Księżyc i {S.achievementsPerWeek} osiągnięcia. Każdy punkt przechodzi przez \`Logic/Season.add\` (limit potworów {Seasons.LIMITS.killPerDay} pkt dziennie, limit narastający {Seasons.LIMITS.weekCap} × tydzień, nadrabianie ×{fmtValue(
 			Seasons.CATCHUP.mul,
 			"1"
 		)} pod linią {fmtValue(Seasons.CATCHUP.behind * 100, "0")}% stopni czasu sezonu), potwory pierwsze w dniu. Asertuje \`balance.spec\` („Balance: season pass (S152)”).`

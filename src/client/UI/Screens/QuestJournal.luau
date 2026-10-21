@@ -10,6 +10,8 @@
 -- done / 99, the backlog, the active or next contract with "Track" and where to hand it in, the next three. S134k: every
 -- active contract grouped by hunting ground ("Track" / "Abandon"), the Hunter's Marks, "Accept all" / "Hand in all" at
 -- a giver (UI/NpcPresence) and the Huntmaster's shop, the contracts to take (folded) and the next three.
+-- S159: the daily and weekly tabs show the set's progress and (daily) the streak, "Swap" on an open daily contract while
+-- today's free reroll is left, and the set bonus under the contracts.
 -- S102: the story tab names the chapter over the active or next quest (story.chapter.<n>), lets the player read the
 -- offer pages again ("Recall the conversation", variants by earlier answers) and groups the story so far by chapter,
 -- one row per quest with "▶" to watch its cutscenes again (only scenes already watched; props.Replay).
@@ -25,12 +27,14 @@ local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local ContractActions = require(script.Parent.Parent.ContractActions)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
+local Dailies = require(ReplicatedStorage.Shared.Logic.Dailies)
 local Cutscenes = require(ReplicatedStorage.Shared.Logic.Cutscenes)
 local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
 local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Modal = require(script.Parent.Parent.Components.Modal)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Toast = require(script.Parent.Parent.Components.Toast)
 local NpcPresence = require(script.Parent.Parent.NpcPresence)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
@@ -108,7 +112,8 @@ local function contractRows(
 	list: { any },
 	prefix: string,
 	reward: Quests.Reward,
-	into: { Instance }
+	into: { Instance },
+	reroll: ((index: number) -> ())? -- S159: "Swap" on the daily contracts that may be rerolled
 )
 	for i, entry in list do
 		local status = if entry.claimed
@@ -141,12 +146,84 @@ local function contractRows(
 			)
 		)
 		if not entry.claimed then
-			table.insert(
-				into,
-				QuestRewards(s, { Id = `{prefix}{i}`, Reward = reward, SlotSize = 34, LayoutOrder = i * 3 + 2 })
-			)
+			local rewards = QuestRewards(s, { Id = `{prefix}{i}`, Reward = reward, SlotSize = 34 })
+			if reroll and entry.progress < entry.objective.n then
+				-- S159: the rewards with "Swap" on the right
+				table.insert(
+					into,
+					s:New("Frame")({
+						LayoutOrder = i * 3 + 2,
+						Size = UDim2.fromScale(1, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
+						BackgroundTransparency = 1,
+						[Children] = {
+							s:New("Frame")({
+								Size = UDim2.new(1, -130, 0, 0),
+								AutomaticSize = Enum.AutomaticSize.Y,
+								BackgroundTransparency = 1,
+								[Children] = rewards,
+							}),
+							Button(s, {
+								AnchorPoint = Vector2.new(1, 0),
+								Position = UDim2.fromScale(1, 0),
+								Size = UDim2.fromOffset(120, 32),
+								Variant = "ghost",
+								TextSize = Theme.TextSize.Small,
+								Text = `⟳ {Text.get(use, "quest.reroll")}`,
+								OnClick = function()
+									reroll(i)
+								end,
+							}),
+						},
+					})
+				)
+			else
+				(rewards :: any).LayoutOrder = i * 3 + 2
+				table.insert(into, rewards)
+			end
 		end
 	end
+end
+
+-- S159: the set bonus under a daily / weekly list: its title, the rewards while not taken (shards only when still due
+-- on this account).
+local function setBonusRows(
+	s: Scope,
+	use: Fusion.Use,
+	id: string,
+	reward: Quests.Reward,
+	shardsDue: boolean,
+	taken: boolean,
+	into: { Instance }
+)
+	local shown = table.clone(reward)
+	if not shardsDue then
+		shown.shards = nil
+	end
+	table.insert(
+		into,
+		label(
+			s,
+			100,
+			`<b>{Text.get(use, if taken then "quest.set.bonusTaken" else "quest.set.bonus")}</b>`,
+			Theme.Fonts.BodyBold,
+			Theme.TextSize.Small,
+			if taken then Theme.Paper.TextMuted else Theme.Paper.Heading
+		)
+	)
+	if not taken then
+		table.insert(into, QuestRewards(s, { Id = id, Reward = shown, SlotSize = 34, LayoutOrder = 101 }))
+	end
+end
+
+-- S159: one daily reroll (errors as a toast).
+local function rerollDaily(index: number)
+	task.spawn(function()
+		local ok, err = Net.Invoke("DailyReroll", index)
+		if not ok then
+			Toast.push(Text.now(err or "error.internal"), "error")
+		end
+	end)
 end
 
 local function QuestJournal(scope: Scope, props: Props): Fusion.Child
@@ -720,6 +797,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			local weekly = q.weekly
 			local week = Time.weekNumber(use(now))
 			local days, hours = Time.split(Time.weekStart(week + 1) - use(now))
+			local p = Dailies.progress(if type(weekly) == "table" then weekly.list else nil)
 			table.insert(
 				list,
 				label(
@@ -728,6 +806,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					"<b>"
 						.. Text.get(use, "npc.questboard.name")
 						.. "</b>\n"
+						.. Text.get(use, "quest.set.weekly", { done = p.complete, total = p.total })
+						.. " · "
 						.. Text.get(use, "quest.weeklyReset", { days = days, hours = hours }),
 					Theme.Fonts.BodyMedium,
 					Theme.TextSize.Small,
@@ -742,6 +822,19 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				Quests.Weekly.reward(use(level) or 1),
 				list
 			)
+			if p.total > 0 then
+				local lvl = use(level) or 1
+				local state = Dailies.sanitize(use(State.Value({ "account", "dailies" })))
+				setBonusRows(
+					s,
+					use,
+					"weeklyBonus",
+					Quests.Weekly.bonus(lvl),
+					Dailies.weekShardsDue(state, (weekly :: any).week or 0, lvl),
+					(weekly :: any).bonus == true,
+					list
+				)
+			end
 		elseif use(tab) == "contract" then
 			-- S99 / S134k: the hunting contracts: done / 99, the Hunter's Marks, the active and finished counts; at a
 			-- giver "Accept all" / "Hand in all" (and the Huntmaster's shop), elsewhere where to go; the active contracts
@@ -1064,6 +1157,11 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			end
 		else
 			local daily = q.daily
+			local lvl = use(level) or 1
+			local today = Time.dayNumber(use(now))
+			local state = Dailies.sanitize(use(State.Value({ "account", "dailies" })))
+			local p = Dailies.progress(if type(daily) == "table" then daily.list else nil)
+			local streak = Dailies.streakNow(state, today)
 			table.insert(
 				list,
 				label(
@@ -1072,11 +1170,15 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					"<b>"
 						.. Text.get(use, "npc.questboard.name")
 						.. "</b>\n"
-						.. Text.get(
-							use,
-							"quest.dailyReset",
-							{ time = Time.format((Time.dayNumber(use(now)) + 1) * 86400 - use(now)) }
-						),
+						.. Text.get(use, "quest.set.daily", { done = p.complete, total = p.total })
+						.. " · "
+						.. Text.get(use, "quest.dailyReset", { time = Time.format((today + 1) * 86400 - use(now)) })
+						.. "\n"
+						.. (if streak > 0
+							then Text.get(use, "quest.set.streak", { n = streak })
+							else Text.get(use, "quest.set.streakNone"))
+						.. " · "
+						.. Text.get(use, "quest.reroll.hint"),
 					Theme.Fonts.BodyMedium,
 					Theme.TextSize.Small,
 					Theme.Paper.TextMuted
@@ -1087,9 +1189,25 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				use,
 				(if type(daily) == "table" then daily.list else {}) or {},
 				"daily",
-				Quests.Daily.reward(use(level) or 1),
-				list
+				Quests.Daily.reward(lvl),
+				list,
+				if type(daily) == "table" and (daily.swaps or 0) < Quests.Daily.REROLLS
+					then function(index: number)
+						rerollDaily(index)
+					end
+					else nil
 			)
+			if p.total > 0 then
+				setBonusRows(
+					s,
+					use,
+					"dailyBonus",
+					Quests.Daily.bonus(lvl, Dailies.nextStreak(state, today)),
+					Dailies.dayShardsDue(state, today, lvl),
+					(daily :: any).bonus == true,
+					list
+				)
+			end
 		end
 		return list
 	end)

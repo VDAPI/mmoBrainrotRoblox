@@ -53,14 +53,21 @@ commands.quest = function(player, args)
 	end)
 end
 
+-- /daily reroll | complete (S159: fills every daily contract)
 commands.daily = function(player, args)
-	if args[1] ~= "reroll" then
+	local action = args[1]
+	if action ~= "reroll" and action ~= "complete" then
 		reply(player, "admin.usage.daily")
 		return
 	end
 	withCharacter(player, function()
-		QuestService.RerollDaily(player)
-		reply(player, "admin.daily.reroll")
+		if action == "reroll" then
+			QuestService.RerollDaily(player)
+			reply(player, "admin.daily.reroll")
+		else
+			QuestService.CompleteDaily(player)
+			reply(player, "admin.weekly.done")
+		end
 	end)
 end
 

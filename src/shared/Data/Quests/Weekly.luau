@@ -4,6 +4,9 @@
 -- Bigger than the daily ones (Weekly.reward). Plus one boss contract per week and character (bossContract):
 -- defeat the highest boss the character may enter `n` times; only won dungeon runs count (Config.Boss.dailyRuns
 -- applies). Outside the quest EXP budget, like the daily contracts (Data/QuestBudget).
+-- S159 (owner 2026-10-20): the hunts count monsters in the character's level range (Daily.lvMin), a hand-in template,
+-- and the set bonus once the PER_WEEK contracts are collected (`bonus`: EXP, gold, essence and Dragon Shards, the shards
+-- once per account and week from Daily.SHARD_MIN_LEVEL; the boss contract is apart from the set).
 -- Texts: weekly.<id>.title.
 
 local Daily = require("./Daily")
@@ -17,14 +20,14 @@ local templates: { Types.DailyTemplate } = {
 		id = "hunt",
 		minLevel = 1,
 		objective = function(level)
-			return { type = "kill", n = 120 + level, region = region(level) }
+			return { type = "kill", n = 120 + level, lvMin = Daily.lvMin(level) }
 		end,
 	},
 	{
 		id = "elites",
 		minLevel = 14,
 		objective = function(level)
-			return { type = "kill", n = 20, region = region(level), variant = "elite" }
+			return { type = "kill", n = 20, variant = "elite", lvMin = Daily.lvMin(level) }
 		end,
 	},
 	{
@@ -64,6 +67,14 @@ local templates: { Types.DailyTemplate } = {
 		end,
 	},
 	{
+		-- S159: side quests, hunting contracts or story quests handed in
+		id = "handin",
+		minLevel = 3,
+		objective = function(_level)
+			return { type = "handin", n = 8 }
+		end,
+	},
+	{
 		-- S101: world events (WorldEventService fires QuestEvents "event")
 		id = "event",
 		minLevel = 1,
@@ -80,8 +91,8 @@ end
 
 local LINES = { "warrior", "hunter", "sage", "guardian", "fortune" }
 
--- Reward of one weekly contract for a character level: twice the daily EXP and gold, a blessing one rarity above the
--- daily one (rotating line like Daily.reward) and essences.
+-- Reward of one weekly contract for a character level: a quarter of the level's EXP (S159, was 0.30), the old daily
+-- gold x2, a blessing (rotating line like Daily.bonus) and essences.
 local function reward(level: number): Types.Reward
 	local blessing = if level >= 35 then 4 elseif level >= 15 then 3 else 2
 	local items = {
@@ -95,9 +106,22 @@ local function reward(level: number): Types.Reward
 		table.insert(items, { id = "essence_crystal", n = 1 })
 	end
 	return {
-		exp = math.floor(Exp.expToNext(level) * 0.30),
+		exp = math.floor(Exp.expToNext(level) * 0.25),
 		gold = 2 * (50 + level * 30),
 		items = items,
+	}
+end
+
+-- S159: the set bonus once every weekly contract is collected: EXP, essence and shards (once per account and week).
+local BONUS = table.freeze({ exp = 0.20, shards = 8 })
+local function bonus(level: number): Types.Reward
+	local items =
+		{ { id = if level >= 45 then "essence_shard" else "essence_dust", n = if level >= 45 then 3 else 10 } }
+	return {
+		exp = math.floor(Exp.expToNext(level) * BONUS.exp),
+		gold = 0, -- the extras' gold stays within T-EC3 (tests/Balance FULL_INCOME.extras)
+		items = items,
+		shards = BONUS.shards,
 	}
 end
 
@@ -130,5 +154,7 @@ return table.freeze({
 	reward = reward,
 	bossReward = bossReward,
 	bossContract = bossContract,
+	bonus = bonus,
+	BONUS = BONUS,
 	PER_WEEK = 3,
 })
