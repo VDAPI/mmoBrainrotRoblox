@@ -9,6 +9,11 @@
 -- node weapon, why it does not work or why its row is closed) and its text now and at the next rank (Paths.nodeArgs);
 -- a skill node shows its skill above. Details.actions lists the buttons ("+ rank", "- rank" with the gold price,
 -- "To bar"; Buy / Refund for a node) for the PC panel and the phone sheet. Same lines on PC (panel) and phone (sheet).
+-- Owner 2026-10-21 (too many detailed descriptions): a direction node shows one paragraph (the next rank, at the limit
+-- the current one; Logic/NodeText), a long one as its short line, with the full text and the rank bought now under
+-- "More" (Components/Details); the full skill description folds the same way; the direction's description, the leading
+-- rule, the adaptive element and the aiming / kind of blow / weapon speed part of the cost line (SkillInfo.costLine
+-- "extra") sit behind an "i" (Components/InfoTip).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -18,6 +23,9 @@ local Breakpoints = require(script.Parent.Breakpoints)
 local Context = require(script.Parent.Context)
 local Elements = require(ReplicatedStorage.Shared.Data.Elements)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
+local More = require(script.Parent.Parent.Parent.Components.Details) -- the shared "More ▸" (this module is Details too)
+local NodeText = require(ReplicatedStorage.Shared.Logic.NodeText)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
@@ -31,7 +39,7 @@ local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 
-local Children, OnEvent = Fusion.Children, Fusion.OnEvent
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 type SkillDef = SkillData.SkillDef
@@ -50,6 +58,7 @@ export type ActionSpec = { text: string, enabled: boolean, reason: string?, run:
 local Details = {}
 
 local NUMBER_W = 56 -- a number column of the rank table
+local INFO_W = 32 -- room for the "i" at the right of a line
 
 -- The selection as a skill and / or a node with its current view.
 function Details.resolve(use: Fusion.Use, ctx: Context.Ctx): Resolved
@@ -180,13 +189,13 @@ function Details.pathLines(
 	character: Paths.Char,
 	def: PathData.PathDef,
 	weapons: Paths.WeaponTypes,
-	line: (text: string, color: Color3?, size: number?, font: Font?) -> (),
-	heading: (text: string) -> ()
+	line: (text: string, color: Color3?, size: number?, font: Font?, info: string?) -> (),
+	heading: (text: string, info: string?) -> ()
 )
 	local view = PathView.path(character, def.id, weapons)
-	heading(Text.get(use, def.nameKey))
+	-- owner 2026-10-21: the description behind the "i" at the name; the role and the points stay
+	heading(Text.get(use, def.nameKey), Text.get(use, def.descKey))
 	line(Text.get(use, `paths.role.{def.role}`), Theme.Paper.Text, nil, Theme.Fonts.BodyBold)
-	line(Text.get(use, def.descKey))
 	if view then
 		line(Text.get(use, "skills.tree.points", { n = view.spent }), Theme.Paper.Text, nil, Theme.Fonts.BodyBold)
 	end
@@ -197,7 +206,13 @@ function Details.pathLines(
 	if view and view.leading then
 		line(Text.get(use, "paths.isMain"), Theme.Paper.Success, nil, Theme.Fonts.BodyBold)
 	else
-		line(Text.get(use, "skills.tree.leadingHint", { n = Paths.MAIN_MIN_POINTS }), Theme.Paper.TextMuted)
+		line(
+			Text.get(use, "skills.tree.leadingHint.short", { n = Paths.MAIN_MIN_POINTS }),
+			Theme.Paper.TextMuted,
+			nil,
+			nil,
+			Text.get(use, "skills.tree.leadingHint", { n = Paths.MAIN_MIN_POINTS })
+		)
 	end
 end
 
@@ -242,8 +257,8 @@ function Details.lines(
 		(item :: any).LayoutOrder = #out + 1
 		table.insert(out, item)
 	end
-	local function line(text: string, color: Color3?, size: number?, font: Font?)
-		add(s:New("TextLabel")({
+	local function label(text: string, color: Color3?, size: number?, font: Font?): Instance
+		return s:New("TextLabel")({
 			BackgroundTransparency = 1,
 			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
@@ -255,6 +270,29 @@ function Details.lines(
 			TextColor3 = color or Theme.Paper.Text,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			LineHeight = 1.15, -- S135
+		})
+	end
+	-- owner 2026-10-21: a line with its longer text behind an "i" at the right
+	local function line(text: string, color: Color3?, size: number?, font: Font?, info: string?, title: string?)
+		local item = label(text, color, size, font)
+		if not info then
+			add(item)
+			return
+		end
+		(item :: any).Size = UDim2.new(1, -INFO_W, 0, 0)
+		add(s:New("Frame")({
+			BackgroundTransparency = 1,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			[Children] = {
+				item,
+				InfoTip.new(s, {
+					Text = info,
+					Title = title,
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.fromScale(1, 0),
+				}),
+			},
 		}))
 	end
 	-- S119: a line with a picture in front (skill heading, element) only while that picture is loaded; the plain
@@ -296,8 +334,8 @@ function Details.lines(
 			},
 		}))
 	end
-	local function heading(text: string)
-		line(text, Theme.Paper.Heading, Theme.TextSize.Large, Theme.Fonts.Display)
+	local function heading(text: string, info: string?)
+		line(text, Theme.Paper.Heading, Theme.TextSize.Large, Theme.Fonts.Display, info, if info then text else nil)
 	end
 	-- S135: sections as upper-case labels with a rule
 	local function sub(text: string)
@@ -449,7 +487,15 @@ function Details.lines(
 			if shape ~= "" then
 				line(shape, Theme.Paper.Text)
 			end
-			line(SkillInfo.costLine(use, skill, shown), Theme.Paper.Text)
+			-- owner 2026-10-21: cost, cooldown and range; aiming, kind of blow and weapon speed behind the "i"
+			local extra = SkillInfo.costLine(use, skill, shown, "extra")
+			line(
+				SkillInfo.costLine(use, skill, shown, "main"),
+				Theme.Paper.Text,
+				nil,
+				nil,
+				if extra ~= "" then extra else nil
+			)
 			-- Weapon element (Mage, S18): requirement in red while the weapon does not fit, adaptive note.
 			local element = Skills.requiredElement(skill)
 			if element then
@@ -462,7 +508,7 @@ function Details.lines(
 					if fits then Theme.readable(Elements.COLORS[element], "paper") else Theme.Paper.Danger
 				)
 			elseif skill.adaptive then
-				line(Text.get(use, "skill.adaptive"), Theme.Paper.Text)
+				line(Text.get(use, "skill.adaptive.short"), Theme.Paper.Text, nil, nil, Text.get(use, "skill.adaptive"))
 			end
 			if skill.path and actual > 0 then
 				local usable, err = Paths.skillUsable(character, skill.id, weapons)
@@ -508,26 +554,15 @@ function Details.lines(
 				line(Text.get(use, "skills.item.line", { name = Text.get(use, nameKey) }), Theme.Paper.Success)
 			end
 		end
-		-- "Full description", folded
+		-- "Full description", folded (owner 2026-10-21: the shared "More ▸"; ctx.fullOpen resets on a new selection)
 		sub(Text.get(use, "skills.section.full"))
-		local open = use(ctx.fullOpen)
-		add(s:New("TextButton")({
+		add(More.new(s, {
 			Name = "FullToggle",
-			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, if touch then Theme.Size.MinTouch else Theme.TextSize.Small + 10),
-			AutoButtonColor = false,
-			Text = Text.get(use, if open then "skills.full.hide" else "skills.full.show"),
-			FontFace = Theme.Fonts.BodyBold,
-			TextSize = Theme.TextSize.Small,
-			TextColor3 = Theme.Paper.Link,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			[OnEvent("Activated")] = function()
-				ctx.fullOpen:set(not Fusion.peek(ctx.fullOpen))
-			end,
+			Open = ctx.fullOpen,
+			MoreText = Text.get(use, "skills.full.show"),
+			LessText = Text.get(use, "skills.full.hide"),
+			Children = { label(Details.boldNumbers(SkillInfo.full(use, skill, shown))) },
 		}))
-		if open then
-			line(Details.boldNumbers(SkillInfo.full(use, skill, shown)))
-		end
 	end
 
 	if node and view then
@@ -589,16 +624,42 @@ function Details.lines(
 			line(Text.get(use, row.closedKey, row.closedArgs), Theme.Paper.TextMuted)
 		end
 		if not skill then
-			if rank > 0 then
-				sub(Text.get(use, "paths.node.now"))
-				line(Text.get(use, node.descKey, Paths.nodeArgs(node, rank, view.scale)))
-				if rank < node.maxRank then
-					sub(Text.get(use, "paths.node.atRank", { rank = rank + 1 }))
-					line(Text.get(use, node.descKey, Paths.nodeArgs(node, rank + 1, view.scale)), Theme.Paper.Success)
-				end
-			else
-				sub(Text.get(use, "paths.node.atRank", { rank = 1 }))
-				line(Text.get(use, node.descKey, Paths.nodeArgs(node, 1, view.scale)), Theme.Paper.TextMuted)
+			-- owner 2026-10-21: one paragraph (NodeText.plan), a long one as its short line; under "More" its full
+			-- text and the rank bought now
+			local plan = NodeText.plan(rank, node.maxRank)
+			local shortKey = NodeText.shortKey(node.descKey, lang)
+			sub(
+				if plan.label == "now"
+					then Text.get(use, "paths.node.now")
+					else Text.get(use, "paths.node.atRank", { rank = plan.rank })
+			)
+			local args = Paths.nodeArgs(node, plan.rank, view.scale)
+			local color = if rank <= 0
+				then Theme.Paper.TextMuted
+				elseif plan.now then Theme.Paper.Success
+				else Theme.Paper.Text
+			line(Text.get(use, shortKey or node.descKey, args), color)
+			local more: { Instance } = {}
+			local function keep(item: Instance)
+				(item :: any).LayoutOrder = #more + 1
+				table.insert(more, item)
+			end
+			if shortKey then
+				keep(label(Text.get(use, node.descKey, args), color))
+			end
+			if plan.now then
+				keep(
+					label(
+						Text.get(use, "paths.node.now"),
+						Theme.Paper.Label,
+						Theme.TextSize.Caption,
+						Theme.Fonts.BodyBold
+					)
+				)
+				keep(label(Text.get(use, node.descKey, Paths.nodeArgs(node, plan.now, view.scale))))
+			end
+			if #more > 0 then
+				add(More.new(s, { Name = "NodeMore", Key = "SkillsWindow/nodeMore", Children = more }))
 			end
 		end
 	end
