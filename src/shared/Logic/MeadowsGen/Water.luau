@@ -196,12 +196,34 @@ function Water.fallGeometry(): FallGeometry
 	if glen > 1 then
 		dx, dz = -gx / glen, -gz / glen
 	end
-	-- the foot: where the pool below is first a little deep (past its rocky rim), half a stud into it
+	-- the foot (studio review 2026-10-21: before, it lay on the pool's shallow rim, which the voxels write as dry
+	-- ground, so the curtain and the foam ended on a bank short of the water): the nearest point where the voxels show
+	-- the pool's water there and a stud back toward the wall (TerrainLayers.voxelWater; the plunge pool of
+	-- Data/Terrain/meadows brings it to the foot of the wall) and the whole curtain clears the wall
+	local function wet(t: number): boolean
+		return TerrainLayers.voxelWater(MeadowsTerrain.height, MeadowsTerrain.water, ex + dx * t, ez + dz * t) ~= nil
+	end
+	local drop = top - pool
+	local reach = Water.FALL.sideAt + Water.FALL.side / 2
+	local function clears(horiz: number): boolean
+		for f = 0.05, 0.97, 0.02 do
+			local y = top - drop * f
+			if y > pool + 0.8 and y < top - 1.5 then
+				for u = -reach, reach, reach / 4 do
+					-- (the side sheets hang a little behind the middle one)
+					local t = horiz * f - (if math.abs(u) > Water.FALL.main / 2 then 0.5 else 0.2)
+					if MeadowsTerrain.height(ex + dx * t - dz * u, ez + dz * t + dx * u) > y - 0.3 then
+						return false
+					end
+				end
+			end
+		end
+		return true
+	end
 	local horiz = 10
-	for t = 1, 40, 0.5 do
-		local px, pz = ex + dx * t, ez + dz * t
-		if MeadowsTerrain.water(px, pz) ~= nil and MeadowsTerrain.height(px, pz) < pool - 0.4 then
-			horiz = t + 0.5
+	for t = 3, 30, 0.5 do
+		if wet(t) and wet(t - 1) and clears(t) then
+			horiz = t
 			break
 		end
 	end

@@ -196,7 +196,10 @@
   `Details.isOpen/setOpen`; `Build(s)` buduje treść dopiero po otwarciu) albo
   `Tooltip.attach(scope, obiekt, krótki, szczegóły?)` (dymek pokazuje krótki tekst i „Alt: szczegóły”; przytrzymany
   klawisz `item_details`, domyślnie Alt, bo Shift ma kamera, albo dłuższe przytrzymanie na telefonie dokłada szczegóły;
-  ze szczegółami oba teksty są rich text; skład w czystym `Logic/TipText`, test `tests/tiptext.spec`).
+  ze szczegółami oba teksty są rich text; skład w czystym `Logic/TipText`, test `tests/tiptext.spec`). Tooltip
+  przedmiotu: `TooltipModel.build(..., { view = "compact" | "full" })` (nowa rola pełnego widoku trafia do skróconego
+  tylko przez `COMPACT_KEEP` albo zwinięcie w `compactOf`; limit `COMPACT_MAX_LINES` pilnuje `tests/tooltip.spec`);
+  umiejętność na pasku: `SkillInfo.tooltip` → `{ short, details }`, rodzaj linii w `TipText.SKILL_COMPACT`.
 - **Walka z podsumowaniem** (S134f): `FightLogService.Begin/End` + `Logic/FightStats`; nowe źródło liczb przez sygnał, nie kopię.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i
   `Logic/Channel.stops`; stosy z licznikiem przez `StatusEffectService.Stacks` / `UseStack` i `ApplyOptions.stacks` (S76).

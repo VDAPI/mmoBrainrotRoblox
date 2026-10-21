@@ -560,3 +560,183 @@ T.describe("TooltipModel hint and comparison (S68)", function()
 		end
 	end)
 end)
+
+-- 2026-10-21 (owner: descriptions too long, the game unreadable): the compact item tooltip and the way to the full one.
+T.describe("TooltipModel compact view (2026-10-21)", function()
+	-- One level-60 definition per equipment type (generated, rolled items).
+	local function equipmentTypes(): { string }
+		local byType: { [string]: string } = {}
+		for id, def in Items.byId do
+			if def.category == "equipment" and def.level == 60 and def.tier and not def.fixedBonuses then
+				local known = byType[def.type or id]
+				if not known or id < known then
+					byType[def.type or id] = id
+				end
+			end
+		end
+		local out: { string } = {}
+		for _, id in byType do
+			table.insert(out, id)
+		end
+		table.sort(out)
+		return out
+	end
+
+	local function ctxFor(id: string, extra: { [string]: any }?): TooltipModel.Ctx
+		local def = Items.get(id) :: Items.ItemDef
+		local ctx: any = {
+			lang = "pl",
+			level = 60,
+			class = if def.classes and def.classes[1] then def.classes[1] else "Warrior",
+			input = "mouse",
+			detailsKey = "Alt",
+			view = "compact",
+		}
+		for k, v in extra or {} do
+			ctx[k] = v
+		end
+		return ctx
+	end
+
+	T.it(
+		"a legendary item of every type fits the cap with the hint line (a mythic one +1), shorter than in full",
+		function()
+			local types = equipmentTypes()
+			T.expect(#types >= 10).toBe(true)
+			for _, id in types do
+				for _, rarity in { Rarities.LEGENDARY, Rarities.MYTHIC } do
+					local item = sample(id, rarity, 3)
+					local lines = TooltipModel.build(item, nil, ctxFor(id)).lines
+					local cap = TooltipModel.COMPACT_MAX_LINES + (if rarity == Rarities.MYTHIC then 1 else 0)
+					T.expect({ id, rarity, #lines <= cap }).toEqual({ id, rarity, true })
+					local full = TooltipModel.build(item, nil, ctxFor(id, { view = "full" })).lines
+					T.expect({ id, rarity, #lines < #full }).toEqual({ id, rarity, true })
+				end
+			end
+		end
+	)
+
+	T.it("name, head and rarity first, the hint last; no details panels and no gaps in the short view", function()
+		for _, id in { "sword1h_60", "armor_heavy_60", "ring_60", "potion_hp_2", "spider_silk" } do
+			local lines = TooltipModel.build(sample(id, Rarities.LEGENDARY), nil, ctxFor(id)).lines
+			T.expect({ id, lines[1].role, lines[2].role, lines[3].role }).toEqual({ id, "name", "head", "rarity" })
+			T.expect({ id, lines[#lines].role, lines[#lines].text })
+				.toEqual({ id, "moreHint", Locale.T("tooltip.more.mouse", { key = "Alt" }, "pl") })
+			for _, line in lines do
+				T.expect({ id, line.role, line.detail == nil, line.role ~= "gap" })
+					.toEqual({ id, line.role, true, true })
+			end
+		end
+		-- without an input (admin dump, tests) there is no hint line
+		local plain =
+			TooltipModel.build(sample("sword1h_60", Rarities.LEGENDARY), nil, { lang = "pl", view = "compact" })
+		T.expect(firstOf(plain.lines).moreHint).toBeNil()
+	end)
+
+	T.it("folds the weapon's main value, the trait and each skill effect into one line each", function()
+		local sword = sample("sword1h_60", Rarities.MYTHIC)
+		local full = TooltipModel.build(sword, nil, { lang = "pl", class = "Warrior" }).lines
+		local short = TooltipModel.build(sword, nil, ctxFor("sword1h_60")).lines
+		local first = firstOf(short)
+		for _, role in { "speedDps", "element", "traitName", "trait", "fxTitle", "fx", "fxPool", "rarityBonus" } do
+			T.expect({ role, first[role] }).toEqual({ role, nil })
+		end
+		local stats = ItemRoll.itemStats(sword)
+		local weapon = stats.weapon :: any
+		local dps =
+			Locale.T("tooltip.compact.dps", { dps = TooltipModel.decimal(TooltipModel.dps(weapon), 1, "pl") }, "pl")
+		T.expect(short[first.mainShort].text).toBe(`{Locale.T("tooltip.damage", { dmg = weapon.dmg }, "pl")} · {dps}`)
+		-- every effect line and the trait line of the full view are inside the short lines
+		local shortText: { string } = {}
+		for _, line in short do
+			table.insert(shortText, line.text)
+		end
+		local joined = table.concat(shortText, "\n")
+		local effects = 0
+		for _, line in full do
+			if line.role == "fx" or line.role == "trait" then
+				T.expect({ line.role, string.find(joined, line.text, 1, true) ~= nil }).toEqual({ line.role, true })
+			end
+			if line.role == "fx" then
+				effects += 1
+			end
+		end
+		local fxShort = 0
+		for _, line in short do
+			if line.role == "fxShort" then
+				fxShort += 1
+			end
+		end
+		T.expect(fxShort).toBe(effects)
+	end)
+
+	T.it("stat rows over the line budget: the first ones in the full order and '+N more', the cap kept", function()
+		local bonuses = {
+			{ stat = "str", v = 5 },
+			{ stat = "vit", v = 4 },
+			{ stat = "critChance", v = 2 },
+			{ stat = "physAtk", v = 3 },
+			{ stat = "goldBonus", v = 5 },
+			{ stat = "dex", v = 3 },
+		}
+		local ring = made("ring_60", Rarities.HEROIC, bonuses)
+		local full = TooltipModel.build(ring, nil, { lang = "pl" }).lines
+		local rows: { string } = {}
+		for _, line in full do
+			if line.role == "bonus" or (line.role == "stat" and not line.main) then
+				table.insert(rows, line.text)
+			end
+		end
+		local short = TooltipModel.build(ring, nil, { lang = "pl", view = "compact", input = "mouse" }).lines
+		local shown: { string } = {}
+		local more: string? = nil
+		for _, line in short do
+			if line.role == "bonus" or line.role == "stat" then
+				table.insert(shown, line.text)
+			elseif line.role == "more" then
+				more = line.text
+			end
+		end
+		T.expect(#short).toBe(TooltipModel.COMPACT_MAX_LINES)
+		T.expect(#shown >= TooltipModel.COMPACT_MIN_STATS and #shown < #rows).toBe(true)
+		T.expect(shown).toEqual(table.move(rows, 1, #shown, 1, {}))
+		T.expect(more).toBe(Locale.T("tooltip.compact.more", { n = #rows - #shown }, "pl"))
+		-- few rows: all of them, no "more"
+		local plain = made("ring_60", Rarities.HEROIC, { { stat = "str", v = 5 } })
+		T.expect(firstOf(TooltipModel.build(plain, nil, { lang = "pl", view = "compact" }).lines).more).toBeNil()
+	end)
+
+	T.it("prices only where they matter: a shop price, a merchant's offer, 'cannot be sold' at a merchant", function()
+		local sword = sample("sword1h_60", Rarities.LEGENDARY)
+		local roles = firstOf(TooltipModel.build(sword, nil, ctxFor("sword1h_60")).lines)
+		T.expect({ roles.value, roles.sellFor, roles.bind, roles.ilvl, roles.hint }).toEqual({})
+		local merchant = firstOf(TooltipModel.build(sword, nil, ctxFor("sword1h_60", { merchantOpen = true })).lines)
+		T.expect(merchant.sellFor ~= nil).toBe(true)
+		local elixir = ItemRoll.makeStack("potion_full", 1, "compact")
+		local away = firstOf(TooltipModel.build(elixir, nil, { lang = "pl", view = "compact" }).lines)
+		T.expect(away.noSell).toBeNil()
+		local selling =
+			firstOf(TooltipModel.build(elixir, nil, { lang = "pl", view = "compact", merchantOpen = true }).lines)
+		T.expect(selling.noSell ~= nil).toBe(true)
+	end)
+
+	T.it(
+		"touch: 'More ▸' ends the short view, 'Less ▾' the full one; the full view is the same as before",
+		function()
+			local sword = sample("sword1h_60", Rarities.LEGENDARY)
+			for _, lang in { "pl", "en" } do
+				local short = TooltipModel.build(sword, nil, { lang = lang, input = "touch", view = "compact" }).lines
+				T.expect({ short[#short].role, short[#short].text })
+					.toEqual({ "moreHint", Locale.T("ui.details.more", nil, lang) })
+				local full = TooltipModel.build(sword, nil, { lang = lang, input = "touch", view = "full" }).lines
+				T.expect({ full[#full].role, full[#full].text })
+					.toEqual({ "lessHint", Locale.T("ui.details.less", nil, lang) })
+				local before = TooltipModel.build(sword, nil, { lang = lang, input = "touch" }).lines
+				T.expect(#full).toBe(#before + 1)
+				for index, line in before do
+					T.expect({ index, full[index].role, full[index].text }).toEqual({ index, line.role, line.text })
+				end
+			end
+		end
+	)
+end)

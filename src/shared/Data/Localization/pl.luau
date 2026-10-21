@@ -4167,13 +4167,15 @@ return {
 	["monsterDefence.agile.line"] = "Zwinny: unika {dodge}% ataków podstawowych (celność to zmniejsza)",
 
 	-- S68: item details panel, comparison in %, details key
-	["tooltip.detailsHint.mouse"] = "Przytrzymaj {key} i wskaż linię: szczegóły",
-	["tooltip.detailsHint.touch"] = "Dotknij linii albo ikony „i”: szczegóły",
+	["tooltip.detailsHint.mouse"] = "Wskaż linię: jej szczegóły",
+	["tooltip.detailsHint.touch"] = "Dotknij linii albo „i”: szczegóły",
 	-- 2026-10-21: short descriptions, details behind "i", "Więcej" and the details key (InfoTip, Details, Tooltip)
 	["ui.details.more"] = "Więcej ▸",
 	["ui.details.less"] = "Mniej ▾",
 	["tooltip.more.mouse"] = "{key}: szczegóły",
 	["tooltip.more.touch"] = "Przytrzymaj dłużej: szczegóły",
+	["tooltip.compact.dps"] = "DPS {dps}",
+	["tooltip.compact.more"] = "+{n} więcej",
 	["tooltip.detail.statAdd"] = "Dodaje {v} do statystyki „{stat}” (okno plecaka)",
 	["tooltip.detail.statPct"] = "Zwiększa „{stat}” o {v}%",
 	["tooltip.detail.range"] = "Zakres na tym przedmiocie: {min}–{max} (jakość {q}%)",

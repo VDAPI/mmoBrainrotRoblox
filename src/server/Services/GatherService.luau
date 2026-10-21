@@ -14,8 +14,9 @@ local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
-local MapTerrain = require(Shared.Logic.MapTerrain)
+local FishingSpots = require(Shared.Logic.FishingSpots)
 local GatherNodes = require(Shared.Data.GatherNodes)
+local MapTerrain = require(Shared.Logic.MapTerrain)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Maps = require(Shared.Data.Maps)
 local Net = require(Shared.Net)
@@ -91,7 +92,7 @@ local function part(model: Model, props: { [string]: any }): Part
 end
 
 -- Placeholder looks: rock with coloured ore chunks, bush with flowers, pond.
-local function buildModel(kind: GatherNodes.NodeKind, at: Vector3): Model
+local function buildModel(kind: GatherNodes.NodeKind, at: Vector3, buoys: { Vector3 }?): Model
 	local model = Instance.new("Model")
 	model.Name = kind.id
 	local color = Color3.fromHex(kind.look.color)
@@ -164,18 +165,22 @@ local function buildModel(kind: GatherNodes.NodeKind, at: Vector3): Model
 			Material = Enum.Material.WoodPlanks,
 			CanCollide = false,
 		})
-		for i = 1, 3 do
-			local angle = i * 2.1
+		local centre = Vector3.zero
+		local list: { Vector3 } = buoys or {}
+		for _, p in list do
 			part(model, {
 				Name = "Buoy",
 				Shape = Enum.PartType.Ball,
 				Size = Vector3.new(1, 1, 1),
-				CFrame = CFrame.new(at + Vector3.new(math.cos(angle) * 9, -0.2, 8 + math.sin(angle) * 5)),
+				CFrame = CFrame.new(p),
 				Color = accent,
 				Material = Enum.Material.Neon,
 				CanCollide = false,
 			})
+			centre += p / #list
 		end
+		-- the client lands the bobber here (Controllers/GatherController)
+		model:SetAttribute("Pond", centre)
 	end
 	return model
 end
@@ -194,6 +199,27 @@ local function groundAt(position: Vector3, planned: number?): Vector3
 	return if hit then hit.Position else position + Vector3.new(0, FLOOR_TOP, 0)
 end
 
+-- Studio review 2026-10-21: a fishing spot's buoys face the water (Logic/FishingSpots: +Z, or the nearest turn by 45
+-- degrees that puts all three on water the voxels show, the rule the generators placed the spot by) and float on its
+-- surface. Maps without a height function keep +Z at the spot's ground.
+local function fishingBuoys(map: Maps.MapDef, x: number, z: number, at: Vector3): { Vector3 }
+	local face = 0
+	if MapTerrain.has(map.id) then
+		face = FishingSpots.face(function(px: number, pz: number): number
+			return MapTerrain.height(map.id, px, pz) or 0
+		end, function(px: number, pz: number): number?
+			return MapTerrain.water(map.id, px, pz)
+		end, x, z) or 0
+	end
+	local out = {}
+	for _, b in FishingSpots.buoys(x, z, face) do
+		local level = MapTerrain.water(map.id, b[1], b[2])
+		local y = if level then map.offset.y + level - 0.2 else at.Y - 0.2
+		table.insert(out, Vector3.new(map.offset.x + b[1], y, map.offset.z + b[2]))
+	end
+	return out
+end
+
 function GatherService.Spawn(kindId: string, mapId: string, x: number, z: number): Node?
 	local kind = GatherNodes.get(kindId)
 	local map = Maps.get(mapId)
@@ -206,7 +232,7 @@ function GatherService.Spawn(kindId: string, mapId: string, x: number, z: number
 	end
 	local at = groundAt(Vector3.new(map.offset.x + x, map.offset.y, map.offset.z + z), MapTerrain.height(mapId, x, z))
 	local uid = HttpService:GenerateGUID(false)
-	local model = buildModel(kind, at)
+	local model = buildModel(kind, at, if kind.category == "fishing" then fishingBuoys(map, x, z, at) else nil)
 	model.ModelStreamingMode = Enum.ModelStreamingMode.Atomic
 	model:SetAttribute("Kind", kind.id)
 	model:SetAttribute("Uid", uid)

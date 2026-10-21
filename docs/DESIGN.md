@@ -1591,6 +1591,16 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   pancerz); statystyki mniejszą czcionką w stałych grupach (atrybuty, atak, obrona, zasoby i reszta) z jakością rzutu;
   cecha; efekty legendarny / mityczny; opis; „Zastąpi: …”; związany/niezwiązany; poziom przedmiotu; cena. Porównanie =
   drugi panel z założonym przedmiotem (ta sama kolejność, czyste statystyki), bez procentów i strzałek.
+- **Krótkie opisy, szczegóły na życzenie** (właściciel 2026-10-21: „za dużo szczegółowych opisów, gra nieczytelna”):
+  tooltip przedmiotu (oba panele) otwiera się skrócony, najwyżej 10 linii przy przedmiocie legendarnym: nazwa, linia
+  „Rodzaj · …”, rzadkość, główna wartość w jednej linii („Obrażenia 191 · DPS 229,2” albo pancerz), pierwsze statystyki
+  (ile zmieści limit, reszta „+N więcej”), cecha i każdy efekt w jednej linii, cena tylko w sklepie / u kupca, na końcu
+  „Alt: szczegóły” (PC) albo „Więcej ▸” (dotyk). Przytrzymany klawisz szczegółów (`item_details`, domyślnie Alt; Shift
+  ma kamera) pokazuje pełny tooltip jak wyżej i przypina go (wskazanie linii otwiera jej panel), na dotyku „Więcej ▸” /
+  „Mniej ▾” przełącza, nowy przedmiot zaczyna skrócony. Tooltip umiejętności na pasku: nazwa i ranga, jedno zdanie,
+  koszt · odnowienie · zasięg, wymagany żywioł; obszar, celowanie, rodzaj ciosu, mnożnik szybkości broni, leczenie na
+  tobie, osiągnięte przełomy i pełny opis to jego szczegóły (klawisz szczegółów, na dotyku dłuższe przytrzymanie). Okna
+  pokazują krótką linię, a długi tekst chowają za okrągłym „i” (`InfoTip`) albo pod „Więcej ▸” (`Details`).
 - Liczby obrażeń nad celami (S29): każde rozstrzygnięte trafienie ma liczbę. Moje duże białe, krytyk „KRYT! 1 234” pomarańczowo-złoty z wyskokiem, cudze mniejsze i przygaszone, otrzymane czerwone, „Pochłonięto” (tarcza), „Odporny”, „Unik”, leczenie i HoT zielone, ticki DoT małe w kolorze żywiołu. Liczby układają się w stos nad celem (maks. 6, powyżej 8/s łączą się w sumę), żyją ok. 1,2 s. Opcja: wszystkie / moje i otrzymane / wyłączone.
 - **Jedno główne okno naraz**: otwarcie okna zamyka poprzednie. Wyjątek: okna usług (sklep, kowal, alchemik, handel, aukcja, poczta, plecakarz) otwierają się razem z plecakiem-towarzyszem, który znika razem z ostatnią usługą (✕, Esc, odejście od NPC, koniec handlu, śmierć, zmiana mapy), chyba że gracz otworzył go sam wcześniej (S29). Depozyt ma własną siatkę plecaka.
 - **Mapa świata** (przebudowa po testach S17): duże okno (do 85% ekranu) ze **szczegółowym rysunkiem mapy** wygenerowanym z danych layoutu (teren i biomy kolorami, drogi, woda, lasy jako skupiska drzew, budynki, mosty, wzgórza), **obszary potworów** z nazwą i poziomami (§3.6, lista potworów po najechaniu), portale podpisane nazwą celu i poziomami, wejścia do jaskiń i lochów osobnymi ikonami, NPC w mieście z podpisami, węzły zbierackie, łowiska, członkowie grupy, cel questa; legenda z przełącznikami warstw, przybliżanie kółkiem/szczypaniem, przesuwanie, „wyśrodkuj na mnie”. Znacznik gracza porusza się na żywo i obraca w kierunku, w którym idzie postać.

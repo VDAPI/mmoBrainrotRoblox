@@ -49,6 +49,9 @@
 
 ## Niedokończone (kod)
 
+- **Opisy-1 krótkie opisy:** `InfoTip` („i”), `Details` („Więcej ▸”), `Tooltip` ze szczegółami, skrócone tooltipy
+  przedmiotów i paska umiejętności gotowe; okna jeszcze nie przerobione (kolejne sesje, przepis w `docs/JAK-DODAC.md`).
+  Bez przeglądu w Studio (dymek „i” przy krawędzi ekranu, wiersz „Więcej ▸” w tooltipie na telefonie).
 - **S160k kowal i Mistrz Portali:** Kamień Przemiany Efektu i wieczne kamienie teleportu nie mają własnych ikon PNG (rysowany kamień / zwój w kolorze); model Tripo Mistrza Portali do wygenerowania (`TRIPO-NPC.md` nr 68).
 - **W30 animacja NPC z Tripo:** postawa, oddech, rozglądanie, gesty rozmowy i kucie kowala proceduralnie
   (`NpcAnimController`); nieobejrzane na prawdziwym modelu (rozstaw rąk `ArmSpread`, kierunek przodu eksportu `Yaw`).
