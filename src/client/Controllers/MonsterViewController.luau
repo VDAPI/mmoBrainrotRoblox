@@ -18,13 +18,20 @@
 -- and breaks up in the light of Data/BossMotions death.light over its seconds: a flash, smoke and sparks of its glow, the
 -- parts fading. Low quality: no clone, a longer light on the original, which fades like any corpse. OnBossDeath(fn)
 -- tells CombatFxController to shake the camera.
+-- Studio review 2026-10-21 (Hrimvald stood 2-3 s as its pale egg-shaped silhouette before its model showed): the meshes
+-- and textures of a real model load on first use. Every boss's model loads in the background soon after joining and
+-- any other real model when the first of its monsters is tracked (ContentProvider:PreloadAsync); a cloned model whose
+-- content is still loading stays hidden behind the silhouette (no empty gap) and shows the moment it has loaded; the
+-- silhouette of a real boss is dark (a shadow in the snow, not a pale egg).
 
+local ContentProvider = game:GetService("ContentProvider")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local Anatomy = require(ReplicatedStorage.Shared.Logic.Anatomy)
 local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
+local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Library = require(script.Parent.Parent.Vfx.Library)
@@ -65,6 +72,7 @@ type View = {
 	phase: number,
 	connections: { RBXScriptConnection },
 	bossId: string?, -- S117: a boss look gets the long death (E7)
+	pending: string?, -- studio review 2026-10-21: the cloned model whose content still loads (hidden until then)
 }
 
 local views: { [Model]: View } = {}
@@ -74,6 +82,40 @@ local dying: { [View]: boolean } = {}
 local queue: { View } = {}
 local rigCache: { [string]: Anatomy.Rig } = {}
 local warned: { [string]: boolean } = {}
+-- Studio review 2026-10-21: real models (Assets.Monsters) whose meshes and textures are loading / loaded.
+local preloaded: { [string]: "loading" | "done" } = {}
+local BOSS_SHADOW = Color3.fromHex("#23272E") -- the silhouette of a real boss
+local BOSS_PRELOAD_DELAY = 4 -- seconds after the start: the bosses' models load in the background
+
+local function assetTemplate(name: string): Model?
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local folder = assets and assets:FindFirstChild("Monsters")
+	local template = folder and folder:FindFirstChild(name)
+	return if template and template:IsA("Model") then template else nil
+end
+
+-- Loads a real model's content in the background, once.
+local function preload(name: string)
+	if preloaded[name] then
+		return
+	end
+	local template = assetTemplate(name)
+	if not template then
+		preloaded[name] = "done"
+		return
+	end
+	preloaded[name] = "loading"
+	task.spawn(function()
+		local ok, err = pcall(function()
+			ContentProvider:PreloadAsync({ template })
+		end)
+		if not ok and not warned[`preload:{name}`] then
+			warned[`preload:{name}`] = true
+			warn(`[MonsterView] preload of Assets.Monsters.{name} failed: {err}`)
+		end
+		preloaded[name] = "done"
+	end)
+end
 
 local function rigFor(
 	lookId: string,
@@ -287,6 +329,8 @@ local function buildFull(view: View)
 		if model then
 			offset = groundOffset(view.body)
 			cloned = true
+			preload(view.assetName)
+			view.pending = if preloaded[view.assetName] == "done" then nil else view.assetName
 		end
 	end
 	if not model then
@@ -320,8 +364,14 @@ local function buildFull(view: View)
 	look.Parent = view.model
 	view.full = look
 	view.fullParts = partsOf(look)
-	view.fullShown = true
 	applyPhase(view)
+	if view.pending then
+		-- its content still loads: the silhouette stays until check() sees it loaded
+		view.fullShown = false
+		setShown(view.fullParts, false)
+		return
+	end
+	view.fullShown = true
 	changedEvent:Fire(view.model)
 end
 
@@ -351,6 +401,12 @@ local function buildFar(view: View)
 	view.far = far
 	view.farParts = partsOf(far)
 	view.farShown = true
+	if view.assetName and view.bossId then
+		for _, part in view.farParts do
+			part.Color = BOSS_SHADOW
+			part.Material = Enum.Material.SmoothPlastic
+		end
+	end
 end
 
 local function track(model: Instance)
@@ -379,6 +435,7 @@ local function track(model: Instance)
 			height = asset.height * k * (asset.visual or 1),
 		}
 		assetName = asset.model
+		preload(asset.model)
 	elseif look then
 		local rig = rigFor(lookId, look, v, s)
 		body = { rootHalf = rig.root.size[2] / 2, hipHeight = rig.hipHeight, height = rig.height }
@@ -498,9 +555,17 @@ local function check()
 		if view.deadAt then
 			continue
 		end
+		if view.pending and preloaded[view.pending] == "done" then
+			view.pending = nil
+			if view.full and d <= fullOut then
+				view.fullShown = true
+				setShown(view.fullParts, true)
+				changedEvent:Fire(model)
+			end
+		end
 		if d <= fullIn then
 			if view.full then
-				if not view.fullShown then
+				if not view.fullShown and not view.pending then
 					view.fullShown = true
 					setShown(view.fullParts, true)
 					changedEvent:Fire(model)
@@ -536,7 +601,7 @@ local function drainQueue()
 			local count = if view.rig then LookBuild.count(view.rig :: any) else 40
 			buildFull(view)
 			budget -= count
-			if view.far and view.farShown then
+			if view.far and view.farShown and not view.pending then
 				view.farShown = false
 				setShown(view.farParts, false)
 			end
@@ -771,6 +836,14 @@ function MonsterViewController.Stats(): {
 end
 
 function MonsterViewController.Start()
+	task.delay(BOSS_PRELOAD_DELAY, function()
+		for _, boss in Bosses.all do
+			local look = MonsterLooks.get(boss.id)
+			if look and look.asset then
+				preload(look.asset.model)
+			end
+		end
+	end)
 	task.spawn(function()
 		local folder = Workspace:WaitForChild("Monsters", 60)
 		if not folder then
