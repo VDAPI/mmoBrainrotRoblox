@@ -325,9 +325,12 @@ end
 -- same from both sides (the cave's own entrance is behind a curtain of water); no collision, the mouth stays where it is.
 -- Studio review 2026-10-21: the curtain stood 1.6-1.9 studs before the portal and was Glass, which Roblox draws over
 -- every transparent part behind it: the portal's glowing veil and core were gone. It hangs in the mouth now, behind
--- the veil (z 0) and before the dark hole (World/Prefabs.caveMouth, z 2.9), out of the portal's clearance box
--- (Data/Portals, half depth 1.25), and is SmoothPlastic (tests/portalglass.spec: no Glass before any portal).
-Water.CURTAIN_Z = 1.75 -- the middle sheet; the side ones 0.3 deeper
+-- the veil (z 0) and before the dark hole (World/Prefabs.caveMouth, Data/CaveMouth.HOLE), out of the portal's clearance
+-- box (Data/Portals, half depth 1.25), and is SmoothPlastic (tests/portalglass.spec: no Glass before any portal).
+-- Partia 6 (W31: the painted arch fills z -3.25..3.25 and the opening before the hole is kept free,
+-- Data/Portals.frameKeepOut): the sheets hang between that opening (3.6) and the hole's face (4.08).
+Water.CURTAIN_Z = 3.76 -- the middle sheet
+Water.CURTAIN_STEP = 0.14 -- the side ones this much deeper
 function Water.caveCurtain(out: { Build })
 	local m = { x = 745, z = 330, rot = 45 }
 	for _, mouth in (Areas :: any).caves or {} do
@@ -346,7 +349,7 @@ function Water.caveCurtain(out: { Build })
 			0.3,
 			k * 3,
 			gy + 8,
-			Water.CURTAIN_Z + math.abs(k) * 0.3, -- behind the veil (W28: never through the purple field)
+			Water.CURTAIN_Z + math.abs(k) * Water.CURTAIN_STEP, -- behind the arch (W28: never through the purple field)
 			o({ c = "#CFE6F2", m = "SmoothPlastic" }, "detail", {
 				col = false,
 				q = false,

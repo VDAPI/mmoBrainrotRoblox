@@ -13962,6 +13962,8 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Footing.liftFor`, `ground` w wyniku), `frameLook` z ciała, `refreshLabels`; `Config.AnimLab` (`rootInside`,
   `footTolerance`, `labelAbove`, `labelStagger`, `labelWidth`, `labelHeight`); `Logic/Footing.extent`.
 - **Pochodnie:** `Prefabs.torch` (czarka, żar i światło z tagiem `TownFx` / „fire”).
+- **Wejście do Jaskini Mchów a W31:** `Data/CaveMouth` (`BOULDERS.x` 12, `HOLE` za łukiem, tylna płyta z 9,8,
+  `TORCHES`), `MeadowsGen/Water` (`CURTAIN_Z` 3,76, `CURTAIN_STEP`), `cavemouth.spec` (pudełka `frameKeepOut`, reguła otworu).
 - **/ui:** `Data/AdminCommands` (`ui`, kategoria perf), `Admin/Perf.commands.ui`, nowy `Controllers/UiDevController`
   (`UiCall`), `WindowManager.Ids`, teksty `admin.usage.ui`, `admin.ui.*` (PL / EN).
 - **Testy:** `basicblow.spec` (boss: zamach 0,74 s, ścieżka świata, AnimLab na najniższym punkcie, etykiety),

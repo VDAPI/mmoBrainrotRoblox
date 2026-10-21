@@ -960,7 +960,7 @@ function Prefabs.caveMouth(
 	end
 	-- Torches and the sign in front (W31: the torches clear of the painted arch)
 	for _, side in { -1, 1 } do
-		local p = base * CFrame.new(side * 10, 0, -6)
+		local p = base * CFrame.new(side * CaveMouth.TORCHES.x, 0, CaveMouth.TORCHES.z)
 		Prefabs.torch(ctx, p.Position.X - ctx.origin.X, p.Position.Z - ctx.origin.Z)
 	end
 	local sign = SignSpots.caveSign({ x = x, z = z, rot = rot })
