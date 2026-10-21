@@ -1540,6 +1540,18 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   (`WORLD_BRIGHT`, śnieg). Paski (HP, mana, energia, EXP, rzucanie, Elita II): ciemny tor `Resource.track`, mosiężny
   brzeg, wypełnienia z `Resource`, liczby z obrysem. Sloty umiejętności i mikstur jak `ItemSlot` w wariancie żelaza
   (`Iron.Raised`, brzeg `Brass.Line`), odnowienie jako ciemna zasłona z liczbą, klawisz na plakietce w rogu.
+  Właściciel 2026-10-21: w lewym górnym rogu slotu (pasek i łuk przycisków na dotyku) koszt rzucenia teraz, mała
+  liczba z ciemnym obrysem: mana niebieska, energia żółta, zdrowie czerwone (`Logic/SkillCostBadge`, ten sam koszt co
+  serwer i tooltip: ranga, przełomy, węzły, oszczędność z przedmiotów, Ładunki Arkanów; wiązka: mana jednego tiku).
+- **Układ HUD gracza (S156, właściciel 2026-10-21).** Tropiciel zadań i panele wydarzeń (wydarzenie świata, w tym
+  Inwazja, boss świata, Krwawy Księżyc, turniej) gracz przesuwa po całym ekranie: tropiciel za „≡” w nagłówku i
+  rozmiar za ◢, panel za kartę „≡” z boku zwróconego do środka ekranu, a ◢ w rogu go skaluje (0,7–1,5). Układ
+  zapisuje się na koncie (`account.settings.hud`, `Logic/HudLayout`), „Przywróć” przy „Układ HUD” w menu gry. Domyślnie prawa
+  kolumna na PC zaczyna się pod minimapą i paskiem prowadzenia (`HudDrag.RIGHT_TOP`), przesunięty panel z niej
+  wychodzi, a reszta kolumny się podnosi.
+- **Poczta na HUD (właściciel 2026-10-21).** Gdy czekają przesyłki, w prawym dolnym rogu pod przyciskiem ataku (na PC
+  w tym samym miejscu) koperta z liczbą przesyłek („9+” powyżej 9); klik otwiera okno poczty. Na telefonie w poziomie
+  nad przyciskiem „Cel”, na lewo od łuku umiejętności (`PhoneHud` `mail`). Zastępuje kopertę przy minimapie (S156).
 - **Tabliczki potworów i NPC (S136)**: ten sam styl co tabliczki graczy (płytka żelaza, nazwa z obrysem, poziom `Small` na
   ciemnej plakietce w kolorze pasma); kolory rodzajów (`UiPalette.plate`: zwykły, Elita, Elita II, boss), liczebności
   grup (`group`) i znaków questów (`mark`) mają parę kontrastu; co pokazać decyduje `Logic/Nameplate` (`monster`, `npc`).

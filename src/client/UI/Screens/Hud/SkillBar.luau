@@ -4,12 +4,14 @@
 -- the target is out of range. The tooltip is UI/SkillInfo (shape, numbers, next level, breakpoints).
 -- Drag skills from the skill window or between slots; right-click clears a slot; click casts.
 -- S57: rank and numbers through Logic/Paths (skillRank, effectiveFor: chosen breakpoints, modify nodes).
+-- Owner 2026-10-21: the cost in the top-left corner (Components/CostBadge: blue mana, yellow energy).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
+local CostBadge = require(script.Parent.Parent.Parent.Components.CostBadge)
 local Crossbow = require(ReplicatedStorage.Shared.Logic.Crossbow)
 local DragDrop = require(script.Parent.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -34,6 +36,8 @@ export type Props = {
 	Clear: (slot: number) -> (),
 	Usable: (skillId: string) -> (boolean, boolean, boolean),
 	Color: (skillId: string) -> Color3,
+	-- owner 2026-10-21: the cost a cast takes now and its resource (SkillController.Cost; nil: no badge)
+	Cost: ((skillId: string) -> (number, string?))?,
 	SlotSize: number,
 }
 
@@ -268,6 +272,9 @@ local function SkillBar(scope: Scope, props: Props): { Instance }
 					TextStrokeTransparency = 0.2,
 					ZIndex = 4,
 				}),
+				if props.Cost
+					then CostBadge(scope, { SkillId = skillId, Cost = props.Cost, Tick = tick })
+					else nil :: any,
 				scope:New("TextLabel")({
 					Name = "Key",
 					AnchorPoint = Vector2.new(1, 1),

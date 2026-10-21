@@ -52,7 +52,6 @@ local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
-local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local QuestTrack = require(script.Parent.Parent.Parent.QuestTrack)
 local State = require(script.Parent.Parent.Parent.State)
 local ScoutRange = require(ReplicatedStorage.Shared.Logic.ScoutRange)
@@ -70,8 +69,6 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SIZE = 220
--- W29: the mail envelope on a phone in landscape (x MINIMAP_SCALE = MinTouch)
-local MAIL_PHONE = math.ceil(Theme.Size.MinTouch / PhoneHud.MINIMAP_SCALE)
 local ZOOMS = { 0.25, 0.4, 0.6, 0.9 }
 local MONSTER_RANGE = 140
 local MONSTER_DOTS = 60
@@ -825,66 +822,6 @@ local function Minimap(scope: Scope, props: Props): Instance
 		end)
 	)
 
-	local mailCount = scope:Computed(function(use): number
-		local mail = use(State.Value({ "mail" }))
-		return if type(mail) == "table" then mail.count or 0 else 0
-	end)
-	local function mailButton(): Instance
-		local art = UiArt.hud("mail")
-		local artShown = ArtIcon.Shown(scope, art)
-		return scope:New("TextButton")({
-			Name = "MailEnvelope",
-			Position = UDim2.fromOffset(0, 0),
-			-- W29: the minimap is scaled to MINIMAP_SCALE on a phone in landscape; the envelope grows so it stays a
-			-- MinTouch target there
-			Size = PhoneLayout.Pick(
-				scope,
-				UDim2.fromOffset(MAIL_PHONE, MAIL_PHONE),
-				UDim2.fromOffset(Theme.Size.MinTouch, Theme.Size.MinTouch)
-			),
-			BackgroundColor3 = Theme.Iron.Surface,
-			BackgroundTransparency = Theme.HudAlpha,
-			Visible = scope:Computed(function(use): boolean
-				return use(mailCount) > 0
-			end),
-			Text = scope:Computed(function(use): string
-				return if use(artShown) then "" else "✉"
-			end),
-			FontFace = Theme.Fonts.BodyBold,
-			TextSize = Theme.TextSize.Large,
-			TextColor3 = Theme.Brass.Bright,
-			[OnEvent("Activated")] = function()
-				props.ShowWindow("mail")
-			end,
-			[Children] = {
-				scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
-				scope:New("UIStroke")({ Color = Theme.Brass.Line, ApplyStrokeMode = Enum.ApplyStrokeMode.Border }),
-				ArtIcon.Image(scope, {
-					Key = art,
-					Tint = Theme.Brass.Bright,
-					Size = UDim2.fromOffset(28, 28),
-					Position = UDim2.fromScale(0.5, 0.5),
-					AnchorPoint = Vector2.new(0.5, 0.5),
-				}),
-				scope:New("TextLabel")({
-					Name = "Count",
-					AnchorPoint = Vector2.new(0.5, 0.5),
-					Position = UDim2.new(1, -4, 0, 4),
-					Size = UDim2.fromOffset(22, 22),
-					BackgroundColor3 = Theme.Iron.Danger,
-					Text = scope:Computed(function(use): string
-						local n = use(mailCount)
-						return if n > 9 then "9+" else tostring(n)
-					end),
-					FontFace = Theme.Fonts.BodyBold,
-					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Iron.Text,
-					[Children] = { scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }) },
-				}),
-			},
-		})
-	end
-
 	local function zoomButton(text: string, delta: number, order: number): Instance
 		return scope:New("TextButton")({
 			LayoutOrder = order,
@@ -999,9 +936,6 @@ local function Minimap(scope: Scope, props: Props): Instance
 					}),
 				},
 			}),
-			-- S156 (owner: the envelope floated in the middle of the top edge): unread parcels as a round button in the
-			-- free corner left of the disc, above the zoom buttons
-			mailButton(),
 			scope:New("Frame")({
 				Name = "Zoom",
 				-- W29: no zoom buttons on a phone in landscape (scaled they would be under MinTouch; the map window zooms)

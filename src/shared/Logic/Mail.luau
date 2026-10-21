@@ -240,6 +240,18 @@ function Mail.visible(box: Box, charId: string?, now: number): { Parcel }
 	return list
 end
 
+-- Owner 2026-10-21: the mail icon of the HUD (Hud/MailButton). The state branch `mail` ({ list, count }, MailService
+-- publish) gives the number of parcels waiting and the badge text ("9+" above 9); nil text: no icon.
+function Mail.badge(state: any): (number, string?)
+	local n = if type(state) == "table" and type(state.count) == "number"
+		then math.max(0, math.floor(state.count))
+		else 0
+	if n <= 0 then
+		return 0, nil
+	end
+	return n, if n > 9 then "9+" else tostring(n)
+end
+
 -- Removes and returns the parcel if the character may take it.
 function Mail.take(box: Box, id: string, charId: string?, now: number): Parcel?
 	local parcel = box.parcels[id]
