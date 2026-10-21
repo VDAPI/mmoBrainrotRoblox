@@ -23,6 +23,10 @@
 -- area stays in the world. The edges of cones and lines stand Config.Telegraph.edgeThick tall. A big blow (thick rim)
 -- lights the ground under it (Pool.takeLight, not on low quality). Over maxActive (`simple`) only the band goes: the
 -- area, the rim and the front (the warning itself) always stay, on low quality too.
+-- Studio review 2026-10-21 (Hrimvald's and Vaelgrath's pale telegraphs on snow, Azgor's orange meteor on lava): the
+-- colours follow the ground under the area (Vfx/Library.groundColor, Logic/BossCast.onGround): where the vivid rim
+-- would not stand out, it turns deep on a light ground (rim, front and area in the same hue towards black) and
+-- white-hot on a ground of its own hue, over a wider dark under-rim.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -99,6 +103,11 @@ type Active = {
 	ppu: number,
 	stopTexture: (() -> ())?,
 	rimColor: Color3, -- S160: the vivid rim colour
+	-- studio review 2026-10-21: the colours on the ground under it (Logic/BossCast.onGround): deep on snow, white-hot on
+	-- lava; the area's colour, the front's and the dark under-rim's width (studs)
+	areaColor: Color3,
+	frontColor: Color3,
+	underRim: number,
 	light: PointLight?, -- S160: a big blow's ground light
 	blown: boolean,
 	pulseCfg: Telegraph.Cfg, -- S134e: CFG, or a copy with the spec's pulseFast
@@ -290,15 +299,16 @@ end
 -- Builds the layers of a new telegraph.
 local function build(a: Active)
 	local spec = a.spec
-	local color = spec.color
+	local color = a.areaColor
 	local shape = spec.shape
 	local dims = spec.dims
+	local underRim = a.underRim
 	local reach = if shape == "line" then Telegraph.width(dims) / 2 else Telegraph.radius(spec.shape, dims)
 	local rimWidth = Telegraph.rimFor(spec.rimWidth or CFG.rimWidth, reach, CFG.rimShare)
 	local rimColor = a.rimColor
 	if shape == "circle" or shape == "ring" then
 		local r = Telegraph.radius(spec.shape, dims)
-		local outer = r + CFG.underRim + 0.5
+		local outer = r + underRim + 0.5
 		local ppu = math.clamp(MAX_CANVAS / (2 * outer), 4, 24)
 		a.ppu = ppu
 		local surface = takeSurface()
@@ -312,7 +322,7 @@ local function build(a: Active)
 		surface.area.BackgroundTransparency = CFG.areaAlpha -- S160: the area stays in `simple` too
 		px(surface.under, 2 * r * ppu)
 		surface.underStroke.Color = DARK
-		surface.underStroke.Thickness = CFG.underRim * ppu
+		surface.underStroke.Thickness = underRim * ppu
 		surface.underStroke.Transparency = CFG.underAlpha
 		px(surface.rim, 2 * (r - rimWidth) * ppu)
 		surface.rimStroke.Color = WHITE -- S160: the gradient carries the colour and the running light
@@ -326,7 +336,7 @@ local function build(a: Active)
 			ColorSequenceKeypoint.new(1, rimColor),
 		})
 		surface.chase.Rotation = 0
-		surface.frontStroke.Color = rimColor:Lerp(WHITE, 0.55)
+		surface.frontStroke.Color = a.frontColor
 		surface.frontStroke.Thickness = math.max(1.5, FRONT_WIDTH * ppu)
 		surface.frontStroke.Transparency = 0.2
 		px(surface.front, 2 * r * ppu)
@@ -361,7 +371,7 @@ local function build(a: Active)
 		-- the under-rim and the rim: the arc and both sides
 		for _, list in { a.underParts, a.rimParts } do
 			local isRim = list == a.rimParts
-			local width = if isRim then rimWidth else rimWidth + 2 * CFG.underRim
+			local width = if isRim then rimWidth else rimWidth + 2 * underRim
 			local height = CFG.lift + (if isRim then 0.07 else 0.05)
 			for i = 0, count - 1 do
 				local y0, y1 = -angle / 2 + slice * i, -angle / 2 + slice * (i + 1)
@@ -385,7 +395,7 @@ local function build(a: Active)
 			end
 		end
 		for _ = 1, count do
-			table.insert(a.frontParts, neon(rimColor:Lerp(WHITE, 0.55), 0.1))
+			table.insert(a.frontParts, neon(a.frontColor, 0.1))
 		end
 	else
 		local l, w = Telegraph.length(dims), Telegraph.width(dims)
@@ -396,7 +406,7 @@ local function build(a: Active)
 		local corners = { { -w / 2, 0 }, { w / 2, 0 }, { w / 2, -l }, { -w / 2, -l } }
 		for _, list in { a.underParts, a.rimParts } do
 			local isRim = list == a.rimParts
-			local width = if isRim then rimWidth else rimWidth + 2 * CFG.underRim
+			local width = if isRim then rimWidth else rimWidth + 2 * underRim
 			local height = CFG.lift + (if isRim then 0.07 else 0.05)
 			for i = 1, 4 do
 				local c0, c1 = corners[i], corners[i % 4 + 1]
@@ -406,7 +416,7 @@ local function build(a: Active)
 			end
 		end
 		for _ = 1, 2 do
-			table.insert(a.frontParts, neon(rimColor:Lerp(WHITE, 0.55), 0.1))
+			table.insert(a.frontParts, neon(a.frontColor, 0.1))
 		end
 	end
 	-- S160: a big blow lights the ground under it (dark dungeons, night), within the light budget
@@ -494,7 +504,7 @@ local function update(a: Active, now: number): boolean
 			task.spawn(spec.onBlow)
 		end
 	end
-	local color = spec.color
+	local color = a.areaColor
 	local lit = color:Lerp(WHITE, 0.7 * flash)
 	local rim = Telegraph.rimPulse(elapsed, w, a.pulseCfg)
 	local rimColor = a.rimColor
@@ -616,6 +626,8 @@ end
 -- Starts a telegraph (CombatFxController for "tele" events, AnimLab through PreviewTelegraph).
 function GroundTelegraph.start(spec: Spec)
 	local windup = Telegraph.windup(spec.windup)
+	-- studio review 2026-10-21: the colours follow the ground under the area (deep on snow, white-hot on lava)
+	local style = BossCast.onGround("#" .. spec.color:ToHex(), Library.groundColor(spec.area.Position))
 	local a: Active = {
 		spec = spec,
 		area = spec.area,
@@ -634,7 +646,10 @@ function GroundTelegraph.start(spec: Spec)
 		stopTexture = nil,
 		blown = false,
 		pulseCfg = CFG,
-		rimColor = Color3.fromHex(BossCast.vivid("#" .. spec.color:ToHex())),
+		rimColor = Color3.fromHex(style.rim),
+		areaColor = Color3.fromHex(style.area),
+		frontColor = Color3.fromHex(style.front),
+		underRim = CFG.underRim * style.underScale,
 		light = nil,
 	}
 	if spec.pulseFast then

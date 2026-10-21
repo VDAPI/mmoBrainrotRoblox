@@ -169,6 +169,7 @@ return {
 		["Data/Terrain/*"] = "wygląd",
 		["Data/Town/*"] = "wygląd",
 		["Data/CaveShapes"] = "wygląd",
+		["Data/CaveMouth"] = "wygląd", -- studio review 2026-10-21: the rock slabs of a cave mouth on a region map
 		["Data/MapMarks"] = "wygląd",
 		["Data/MonsterLooks"] = "wygląd",
 		["Data/MonsterAssets"] = "wygląd", -- W26: imported monster models (hitbox numbers copy the generator's)
@@ -7444,6 +7445,16 @@ return {
 			{
 				session = "S159a",
 				why = "new throw = 0.5: an Elite II's throw at a fleeing target is drawn back (a visible throw / spell pose) before the rock or bolt flies; the throw's interval, damage and reach are unchanged, it only leaves 0.5 s later",
+			},
+			{
+				session = "S160r",
+				why = "studio review 2026-10-21 (monsters struck with no visible wind-up): melee 0.45 -> 0.55, ranged 0.35 -> 0.5, throw 0.5 -> 0.6, so the draw before the strike (windup - Gait.STRIKE_SECONDS 0.14) lasts 0.41 / 0.36 / 0.46 s. DPS: the interval between blows is unchanged (sustained damage on a target that stands is the same); the first blow of a fight lands 0.1-0.15 s later and a target has that much longer to step out of reach (windReach), so damage taken by players who move drops a little",
+			},
+		},
+		["Combat:basicWindVariant*"] = {
+			{
+				session = "S160r",
+				why = "new: an Elite draws its regular blow 1.2x, an Elite II and a boss 1.35x as long (0.66 / 0.74 s melee): heavier monsters read heavier; intervals unchanged (same sustained DPS), the first blow a little later and easier to step out of",
 			},
 		},
 		["Combat:windReach"] = {

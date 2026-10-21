@@ -304,8 +304,8 @@ local function centre(model: Model): Vector3
 	return if root then root.Position else model:GetPivot().Position
 end
 
--- Ground height under a point (the point itself when nothing is found).
-local function ground(at: Vector3): Vector3
+-- The ground under a point: the world only (no effect, character or monster).
+local function groundHit(at: Vector3): RaycastResult?
 	local params = RaycastParams.new()
 	params.FilterType = Enum.RaycastFilterType.Exclude
 	local exclude: { Instance } = { Pool.folder() }
@@ -320,11 +320,35 @@ local function ground(at: Vector3): Vector3
 	end
 	params.FilterDescendantsInstances = exclude
 	params.IgnoreWater = false
-	local hit = workspace:Raycast(at + Vector3.new(0, 4, 0), Vector3.new(0, -14, 0), params)
+	return workspace:Raycast(at + Vector3.new(0, 4, 0), Vector3.new(0, -14, 0), params)
+end
+
+-- Ground height under a point (the point itself when nothing is found).
+local function ground(at: Vector3): Vector3
+	local hit = groundHit(at)
 	return if hit then hit.Position else at - Vector3.new(0, 2.8, 0)
 end
 Library.ground = ground
 Library.centre = centre
+
+-- Studio review 2026-10-21: the colour of the ground under a point ("#RRGGBB": the terrain material's colour on this
+-- map, a part's own colour), nil when nothing is found (Logic/BossCast.onGround then keeps the vivid rim).
+function Library.groundColor(at: Vector3): string?
+	local hit = groundHit(at)
+	if not hit then
+		return nil
+	end
+	local color: Color3? = nil
+	if hit.Instance:IsA("Terrain") then
+		local ok, c = pcall(function()
+			return workspace.Terrain:GetMaterialColor(hit.Material)
+		end)
+		color = if ok then c else nil
+	elseif hit.Instance:IsA("BasePart") then
+		color = (hit.Instance :: BasePart).Color
+	end
+	return if color then "#" .. color:ToHex() else nil
+end
 
 -- Flash -----------------------------------------------------------------------------------------------------
 

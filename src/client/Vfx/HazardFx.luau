@@ -21,11 +21,16 @@
 -- as its hit radius (never wider than what hits: inst.radius + Hazards.PLAYER_RADIUS), with a bigger glow, a longer
 -- trail and a stronger light; a lane is as wide as the band a bolt hits, shows from its first frame, glows (Neon) and
 -- lies on a dark under-lane for contrast; a shock ring carries a glowing band at its foot; axes and icicles are larger.
+-- Studio review 2026-10-21 (Hrimvald's stomp ring: "white dashes" on snow): what warns (a lane, a shock ring and its
+-- band, the blocks of a rising wall, a run of ice spikes) takes the cast's colour on the ground under its caster
+-- (Logic/BossCast.onGround through Vfx/Library.groundColor): deep on snow and ice, white-hot on lava, the pattern's
+-- own colour elsewhere; the bodies (orbs, rocks, meteors) keep the pattern's colour.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
+local BossCast = require(ReplicatedStorage.Shared.Logic.BossCast)
 local Clock = require(script.Parent.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local GroundTelegraph = require(script.Parent.GroundTelegraph)
@@ -68,6 +73,8 @@ type Live = {
 	started: { [number]: boolean },
 	t0: number,
 	color: Color3,
+	mark: Color3, -- studio review 2026-10-21: the warning's colour on this ground (BossCast.onGround)
+	deep: boolean, -- ... a light ground: the warning is deep, not whitened
 	targets: { Model? },
 	arena: { x: number, z: number, r: number }?,
 	ends: number,
@@ -255,7 +262,7 @@ local function laneFor(inst: Hazards.Inst, live: Live): BasePart?
 	local length = math.min(inst.range, inst.speed * inst.life, 60)
 	-- S160: as wide as the band it hits (radius + the player's), thicker and lifted out of grass
 	local width = 2 * (inst.radius + Hazards.PLAYER_RADIUS)
-	local lane = part("Block", live.color, v3(width, 0.25, length), Enum.Material.Neon, 1 - LANE_FIRST)
+	local lane = part("Block", live.mark, v3(width, 0.25, length), Enum.Material.Neon, 1 - LANE_FIRST)
 	lane.CFrame = facing(inst.x, inst.y + 0.2, inst.z, inst.a) * CFrame.new(0, 0, -length / 2)
 	return lane
 end
@@ -396,7 +403,7 @@ local function begin(live: Live, i: number, inst: Hazards.Inst, t: number)
 			while x < half do
 				local mid = x + step / 2
 				if inst.gap <= 0 or math.abs(mid - inst.gapAt) > inst.gap / 2 + step / 2 then
-					local block = part("Block", color, v3(step, 0.2, inst.thick), Enum.Material.Ice, 0.25)
+					local block = part("Block", live.mark, v3(step, 0.2, inst.thick), Enum.Material.Ice, 0.25)
 					table.insert(piece.parts, block)
 				end
 				x += step
@@ -405,9 +412,11 @@ local function begin(live: Live, i: number, inst: Hazards.Inst, t: number)
 	elseif inst.kind == "ring" then
 		local n = if live.low then 14 else 28
 		for _ = 1, n do
-			table.insert(piece.parts, part("Block", color:Lerp(DARK, 0.15), v3(1, 1.6, 1), Enum.Material.Slate))
-			-- S160: a glowing band at its foot (the edge to jump), on low quality too
-			table.insert(piece.strips, part("Block", color:Lerp(WHITE, 0.2), v3(1, 0.3, 1), Enum.Material.Neon, 0.15))
+			table.insert(piece.parts, part("Block", live.mark:Lerp(DARK, 0.15), v3(1, 1.6, 1), Enum.Material.Slate))
+			-- S160: a glowing band at its foot (the edge to jump), on low quality too; studio review 2026-10-21: deep
+			-- on snow (it was whitened: pale dashes on white)
+			local band = if live.deep then live.mark else live.mark:Lerp(WHITE, 0.2)
+			table.insert(piece.strips, part("Block", band, v3(1, 0.3, 1), Enum.Material.Neon, 0.15))
 		end
 		if live.full and not live.low then
 			Library.dangerMotes(v3(inst.x, inst.y, inst.z), 4, color, left, false)
@@ -550,7 +559,7 @@ local function draw(live: Live, i: number, inst: Hazards.Inst, st: Hazards.State
 						then part("Block", color, v3(1.6, 0.4, 1.6), Enum.Material.Neon, 0.15)
 						elseif look == "spikeWave" then part(
 							"Wedge",
-							color,
+							live.mark,
 							v3(1.2, 0.4, 1.4),
 							Enum.Material.Glass,
 							0.1
@@ -762,6 +771,7 @@ function HazardFx.spawn(event: { [string]: any }): { Hazards.Inst }?
 		targets[i] = c.findModel(if type(entityId) == "string" and entityId ~= "" then entityId else nil)
 	end
 	local at = v3(origin.x, origin.y, origin.z)
+	local style = BossCast.onGround(pattern.color, Library.groundColor(at))
 	local live: Live = {
 		id = id,
 		pattern = pattern,
@@ -771,6 +781,8 @@ function HazardFx.spawn(event: { [string]: any }): { Hazards.Inst }?
 		started = {},
 		t0 = tonumber(event.t0) or now(),
 		color = Color3.fromHex(pattern.color),
+		mark = if style.kind == "plain" then Color3.fromHex(pattern.color) else Color3.fromHex(style.rim),
+		deep = style.kind == "deep",
 		targets = targets,
 		arena = arena,
 		ends = Hazards.castEnds(insts),
