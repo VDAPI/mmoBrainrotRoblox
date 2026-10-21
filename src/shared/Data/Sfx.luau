@@ -337,13 +337,13 @@ local OWN: { [string]: Own } = {
 	falcon = { hint = "falcon screech bird call", roll = 110, ids = { WHISTLE_LOW }, pitch = { 1, 1.08 } },
 	huntersMark = { hint = "short hunter whistle", roll = 90, ids = { WHISTLE_LOW }, pitch = { 1.13, 1.15 } },
 	drive = { hint = "hunting horn and arrows whistle", roll = 120, ids = { WHOOSH_01, SWOOSH }, pitch = HEAVY },
-	-- S144 (DESIGN-18 §6.3): the Hunter pools' new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
-	-- fall back to the kind's default (Logic/SfxRules.skillKey)
-	heavyBolt = { hint = "heavy crossbow thunk bolt release", roll = 90 },
-	pinningShot = { hint = "bow release arrow thud into ground", roll = 90 },
-	windstep = { hint = "quick wind gust whoosh light steps", roll = 70 },
-	netShot = { hint = "crossbow thunk net whoosh rope slap", roll = 100 },
-	deadlyBolt = { hint = "deadly crossbow release hiss impact", roll = 100 },
+	-- S144 (DESIGN-18 §6.3): the Hunter pools' new skills; W30: ids from the S111 list at their own pitch (the owner may
+	-- swap them, docs/ASSETS.md)
+	heavyBolt = { hint = "heavy crossbow thunk bolt release", roll = 90, ids = { SNAP }, pitch = { 0.85, 0.87 } },
+	pinningShot = { hint = "bow release arrow thud into ground", roll = 90, ids = { SNAP }, pitch = { 0.95, 1 } },
+	windstep = { hint = "quick wind gust whoosh light steps", roll = 70, ids = { WHOOSH_02 }, pitch = { 1.05, 1.12 } },
+	netShot = { hint = "crossbow thunk net whoosh rope slap", roll = 100, ids = { SNAP, SWOOSH }, pitch = HEAVY },
+	deadlyBolt = { hint = "deadly crossbow release hiss impact", roll = 100, ids = { SNAP }, pitch = { 0.88, 0.92 } },
 	-- Mage (S115): the element is heard in the hit (hit.<material>); spells by their shape
 	firebolt = { hint = "magic bolt fsst short", roll = 90, ids = { SWEEP }, pitch = { 1.02, 1.1 } },
 	fireball = { hint = "fireball explosion impact", roll = 120, ids = { BASS }, pitch = HEAVY },
@@ -365,32 +365,32 @@ local OWN: { [string]: Own } = {
 	manaShield = { hint = "glass hum magic shield", roll = 80, ids = { SELECT_02 }, pitch = { 0.85, 0.9 } },
 	arcaneDischarge = { hint = "arcane discharge blast", roll = 110, ids = { BASS }, pitch = { 0.94, 1.02 } },
 	arcaneTorrent = { hint = "arcane beam start hum", roll = 100, ids = { SWEEP }, pitch = { 0.85, 0.87 } },
-	-- S140 (DESIGN-18 §6.1): the fire pool's new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
-	-- fall back to the kind's default (Logic/SfxRules.skillKey). Phoenix Heart plays at its save (VfxController).
-	flameWave = { hint = "fire whoosh wave roar burst", roll = 100 },
-	emberShield = { hint = "fire crackle shield ignite hum", roll = 80 },
-	pyroblast = { hint = "big fireball launch roar", roll = 120 },
-	combustion = { hint = "fire explosion burst pop", roll = 110 },
-	immolate = { hint = "intense fire burn sizzle impact", roll = 100 },
+	-- S140 (DESIGN-18 §6.1): the fire pool's new skills; W30: ids from the S111 list at their own pitch
+	-- (the owner may swap them, docs/ASSETS.md). Phoenix Heart plays at its save (VfxController).
+	flameWave = { hint = "fire whoosh wave roar burst", roll = 100, ids = { WHOOSH_03 }, pitch = LOW },
+	emberShield = { hint = "fire crackle shield ignite hum", roll = 80, ids = { WHOOSH_04 }, pitch = { 0.9, 0.98 } },
+	pyroblast = { hint = "big fireball launch roar", roll = 120, ids = { BASS }, pitch = { 0.9, 0.95 } },
+	combustion = { hint = "fire explosion burst pop", roll = 110, ids = { BASS }, pitch = { 1, 1.08 } },
+	immolate = { hint = "intense fire burn sizzle impact", roll = 100, ids = { SWEEP }, pitch = LOW },
 	phoenixHeart = { hint = "phoenix cry fire burst rising", roll = 120 },
-	-- S141 (DESIGN-18 §6.1): the ice pool's new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent keys
-	-- fall back to the kind's default (Logic/SfxRules.skillKey)
-	hailstorm = { hint = "hail ice pellets falling clatter", roll = 100 },
-	iceBarrier = { hint = "ice crystal shield forming crackle", roll = 80 },
-	glacialSpike = { hint = "ice spear launch crack", roll = 120 },
-	frozenOrb = { hint = "frost orb whoosh hum", roll = 100 },
-	deepFreeze = { hint = "deep ice freeze crackle", roll = 110 },
-	shatter = { hint = "ice shatter glass break", roll = 110 },
-	blizzard = { hint = "blizzard howling wind storm", roll = 120 },
-	-- S142 (DESIGN-18 §6.1): the lightning pool's new skills, no ids yet (the owner picks them, docs/ASSETS.md); silent
-	-- keys fall back to the kind's default (Logic/SfxRules.skillKey)
-	lightningBolt = { hint = "electric zap bolt crack short", roll = 100 },
-	staticShock = { hint = "static electric shock buzz", roll = 100 },
-	stormArmor = { hint = "electric crackle shield hum", roll = 80 },
-	thunderStrike = { hint = "thunder strike lightning boom", roll = 120 },
-	ballLightning = { hint = "ball lightning electric hum crackle", roll = 100 },
-	lightningLance = { hint = "lightning spear zap crack", roll = 110 },
-	tempest = { hint = "thunderstorm many lightning strikes", roll = 120 },
+	-- S141 (DESIGN-18 §6.1): the ice pool's new skills; W30: ids from the S111 list at their own pitch (the owner may
+	-- swap them, docs/ASSETS.md)
+	hailstorm = { hint = "hail ice pellets falling clatter", roll = 100, ids = { SNAP }, pitch = { 1.05, 1.15 } },
+	iceBarrier = { hint = "ice crystal shield forming crackle", roll = 80, ids = { SELECT_02 }, pitch = { 1, 1.08 } },
+	glacialSpike = { hint = "ice spear launch crack", roll = 120, ids = { SNAP }, pitch = { 0.9, 0.95 } },
+	frozenOrb = { hint = "frost orb whoosh hum", roll = 100, ids = { WHOOSH_04 }, pitch = { 1, 1.08 } },
+	deepFreeze = { hint = "deep ice freeze crackle", roll = 110, ids = { SNAP }, pitch = { 0.88, 0.92 } },
+	shatter = { hint = "ice shatter glass break", roll = 110, ids = { SNAP, COLLIDE }, pitch = { 1.1, 1.15 } },
+	blizzard = { hint = "blizzard howling wind storm", roll = 120, ids = { WHOOSH_03 }, pitch = { 0.85, 0.88 } },
+	-- S142 (DESIGN-18 §6.1): the lightning pool's new skills; W30: ids from the S111 list at their own pitch (the owner
+	-- may swap them, docs/ASSETS.md)
+	lightningBolt = { hint = "electric zap bolt crack short", roll = 100, ids = { PING }, pitch = { 1, 1.08 } },
+	staticShock = { hint = "static electric shock buzz", roll = 100, ids = { PING }, pitch = { 1.1, 1.15 } },
+	stormArmor = { hint = "electric crackle shield hum", roll = 80, ids = { SELECT_02 }, pitch = { 0.9, 0.95 } },
+	thunderStrike = { hint = "thunder strike lightning boom", roll = 120, ids = { BASS }, pitch = { 0.95, 1.02 } },
+	ballLightning = { hint = "ball lightning electric hum crackle", roll = 100, ids = { PING }, pitch = { 0.85, 0.88 } },
+	lightningLance = { hint = "lightning spear zap crack", roll = 110, ids = { SNAP, PING }, pitch = { 0.9, 0.98 } },
+	tempest = { hint = "thunderstorm many lightning strikes", roll = 120, ids = { BASS }, pitch = { 0.88, 0.92 } },
 }
 -- S114: the wind-up at the cast event (skills with a long wind-up), the Guardian Angel's save.
 local CAST: { [string]: Own } = {
@@ -407,8 +407,8 @@ local CAST: { [string]: Own } = {
 	meteor = { hint = "deep summoning rumble rising", roll = 110, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
 	meteorStorm = { hint = "deep summoning rumble rising", roll = 110, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
 	cataclysm = { hint = "deep earth rumble summoning", roll = 120, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } },
-	pyroblast = { hint = "rising fire roar focus", roll = 100 }, -- S140: the focus (castTime)
-	glacialSpike = { hint = "rising frost hum focus", roll = 100 }, -- S141: the focus (castTime)
+	pyroblast = { hint = "rising fire roar focus", roll = 100, ids = { WHOOSH_04 }, pitch = { 0.85, 0.87 } }, -- S140: the focus (castTime)
+	glacialSpike = { hint = "rising frost hum focus", roll = 100, ids = { WHOOSH_04 }, pitch = { 1, 1.05 } }, -- S141: the focus (castTime)
 }
 -- S115: phase sounds: a trap springing (.trigger), a later wave or a storm's strike (.wave), the falcon's strike.
 local PHASE: { [string]: Own } = {

@@ -74,6 +74,13 @@ export type Entry = {
 	leadStrike: boolean?, -- S115: the main sound and the shake wait the first strike instead of the event
 	toss: { from: number, to: number }?, -- S115: snares leave the hand between these seconds, land at the hit
 	rim: boolean?, -- S115: arrowRain lands on the rim of the circle (The Drive)
+	-- lm: W30 (Hunter and Mage, Data/LmVfxPieces, Vfx/LmHunterMage): pieces of the gathering (castFx, from the cast's
+	-- start until the release) and of the release (releaseFx, where the shot leaves), a projectile's own flight
+	-- (flight) and the options of each lm piece (lmOpts[piece])
+	castFx: { string }?,
+	releaseFx: { string }?,
+	flight: string?,
+	lmOpts: { [string]: { [string]: any } }?,
 }
 
 local function e(def: Entry): Entry
@@ -320,25 +327,30 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "l", dur = 0.55 },
 		projectile = "arrow",
 		launch = "l",
-		impact = { "impactFlash", "sparks", "dust" },
+		impact = { "impactFlash", "sparks", "dust", "lmStuckArrow", "lmSplinters" },
 		tex = { projectile = "trailStreak", impactFlash = "hitStar" },
 		flash = 1.8,
 		size = 0.6,
+		castFx = { "lmCharge" }, -- W30
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = { lmCharge = { count = 3, size = 0.7, reach = 1.4 }, lmMuzzle = { size = 1.2, puff = true } }, -- W30
 	}),
 	doubleShot = e({
 		color = "class",
 		sound = "",
 		projectile = "arrow",
 		launch = "l",
-		impact = { "impactFlash", "sparks" },
+		impact = { "impactFlash", "sparks", "lmSplinters" },
 		tex = { projectile = "trailStreak", impactFlash = "hitStar" },
 		flash = 1.2,
 		size = 0.4,
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = { lmMuzzle = { size = 0.8 }, lmSplinters = { count = 4 } }, -- W30
 	}),
 	disengage = e({
 		color = "class",
 		sound = "",
-		impact = { "dash", "impactFlash", "sparks", "leafBurst" }, -- W06: leaves whirled up where he leaps from
+		impact = { "dash", "impactFlash", "sparks", "leafBurst", "lmAfterimage" },
 		land = { "dust" },
 		tex = { dash = "trailStreak" },
 		sparks = "feather",
@@ -347,65 +359,73 @@ local SkillVfx: { [string]: Entry } = {
 	arrowRain = e({
 		color = "class",
 		sound = "",
-		impact = { "arrowRain", "impactFlash", "dust", "leafBurst" }, -- W06
+		impact = { "arrowRain", "impactFlash", "dust", "leafBurst", "lmRainShadow" },
 		tex = { impactFlash = "hitStar" },
 		coreDelay = 0.15, -- the first arrows reach the ground (Vfx/Library.projectile, ARROW_FALL)
 		telegraph = "circle",
 		flash = 2,
+		releaseFx = { "lmSkyVolley" }, -- W30
 	}),
 	venomArrow = e({
 		color = "element",
 		sound = "",
 		projectile = "arrow",
 		launch = "l",
-		impact = { "impactFlash", "cloud" },
+		impact = { "impactFlash", "cloud", "lmVenomSplash" },
 		tex = { projectile = "beamPoison" },
 		flash = 1.6,
 		size = 0.6,
+		releaseFx = { "lmMuzzle" }, -- W30
 	}),
 	frostTrap = e({
 		color = "element",
 		sound = "",
-		impact = { "impactFlash", "snare", "rune" },
-		trigger = { "impactFlash", "ringWave", "sparks", "groundDecal" },
+		impact = { "impactFlash", "snare", "rune", "lmTrapArm" },
+		trigger = { "impactFlash", "ringWave", "sparks", "groundDecal", "lmIceSpikes" },
 		tex = { snare = "iceShard" },
 		sparks = "iceShard",
 		flash = 1.5,
 		size = 0.5,
+		lmOpts = { lmIceSpikes = { mode = "cluster", size = 0.8 } }, -- W30
 	}),
 	piercingArrow = e({
 		color = "class",
 		sound = "",
 		glow = { hand = "l", dur = 0.4 },
-		impact = { "impactFlash", "lineBeam", "groundDecal", "sparks" },
+		impact = { "impactFlash", "lineBeam", "groundDecal", "sparks", "lmShockRings" },
 		tex = { lineBeam = "trailStreak", impactFlash = "hitStar" },
 		telegraph = "line",
 		markRadius = 2.5,
 		flash = 2,
 		shake = 0.2,
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = { lmMuzzle = { size = 1.3 } }, -- W30
 	}),
 	huntersMark = e({
 		color = "#E2483A",
 		sound = "",
-		impact = { "impactFlash", "pillar", "sparkle" },
+		impact = { "impactFlash", "pillar", "sparkle", "lmReticle" },
 		pillar = { radius = 0.5, height = 10 },
 		flash = 1.5,
 		size = 0.5,
+		lmOpts = { lmReticle = { seconds = 2.5 } }, -- W30
 	}),
 	volley = e({
 		color = "class",
 		sound = "",
-		impact = { "fan", "impactFlash", "sparks" },
+		impact = { "fan", "impactFlash", "sparks", "lmGust" },
 		tex = { impactFlash = "hitStar" },
 		coreDelay = 0.12, -- the first arrows reach the cone
 		telegraph = "cone",
 		flash = 1.6,
+		releaseFx = { "lmMuzzle" }, -- W30
 	}),
 	camouflage = e({
 		color = "#5F7A4A",
 		sound = "",
-		impact = { "smokePuff", "aura", "leafBurst" }, -- W06: he vanishes in smoke and falling leaves
+		impact = { "smokePuff", "aura", "leafBurst", "lmAfterimage" },
 		tex = { aura = "smoke" },
+		lmOpts = { lmAfterimage = { count = 1 } }, -- W30
 	}),
 	stormArrow = e({
 		color = "element",
@@ -413,18 +433,22 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "l", dur = 0.6 },
 		projectile = "bolt",
 		launch = "l",
-		impact = { "impactFlash", "skyBolt", "sparks" },
+		impact = { "impactFlash", "sparks", "lmForkBolt", "lmArcCrawl" },
 		tex = { projectile = "beamLightning" },
 		flash = 2.4,
 		shake = 0.35,
+		castFx = { "lmCharge" }, -- W30
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = { lmCharge = { crackle = true, size = 0.8 }, lmForkBolt = { mode = "sky", width = 0.32, forks = 3 } }, -- W30
 	}),
 	-- S77 (ROZWOJ 11.3-11.5): path skills of the Hunter
 	drawBead = e({
 		color = "#E2483A",
 		sound = "",
-		impact = { "impactFlash", "rune", "sparkle" },
+		impact = { "impactFlash", "rune", "sparkle", "lmReticle" },
 		flash = 1.2,
 		size = 0.5,
+		lmOpts = { lmReticle = { reach = 6, seconds = 1.2 } }, -- W30
 	}),
 	heartseeker = e({
 		color = "#E2483A",
@@ -432,19 +456,26 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "l", dur = 1.5 }, -- an aimed cast lasts the event's `ct` instead
 		projectile = "arrow",
 		launch = "l",
-		impact = { "impactFlash", "beam", "sparks" },
+		impact = { "impactFlash", "beam", "sparks", "lmStuckArrow", "lmShockRings" },
 		tex = { projectile = "trailStreak", beam = "trailStreak", impactFlash = "hitStar" },
 		sparks = "darkSpark",
 		flash = 3,
 		shake = 0.3,
 		size = 0.8,
+		castFx = { "lmCharge" }, -- W30
+		releaseFx = { "lmSpiral", "lmMuzzle" }, -- W30
+		lmOpts = {
+			lmCharge = { count = 5, reach = 2.2 },
+			lmMuzzle = { size = 1.4 },
+			lmStuckArrow = { size = 1.2, seconds = 1.6 },
+		}, -- W30
 	}),
 	venomSnare = e({
 		color = "element",
 		sound = "",
 		toss = { from = 0.14, to = 0.14 },
-		impact = { "impactFlash", "snare", "rune" },
-		trigger = { "impactFlash", "cloud", "sparks" },
+		impact = { "impactFlash", "snare", "rune", "lmTrapArm" },
+		trigger = { "impactFlash", "cloud", "sparks", "lmVenomSplash" },
 		flash = 1.4,
 		size = 0.5,
 	}),
@@ -452,29 +483,33 @@ local SkillVfx: { [string]: Entry } = {
 		color = "class",
 		sound = "",
 		toss = { from = 0.2, to = 0.4 },
-		impact = { "impactFlash", "snare", "rune" },
-		trigger = { "impactFlash", "groundDecal", "sparks", "leafBurst" },
+		impact = { "impactFlash", "snare", "rune", "lmTrapArm" },
+		trigger = { "impactFlash", "groundDecal", "sparks", "leafBurst", "lmSpringJaws" },
 		flash = 1.2,
 		size = 0.4,
+		lmOpts = { lmTrapArm = { reach = 2 } }, -- W30
 	}),
 	falcon = e({
 		color = "#C8A060",
 		sound = "",
-		impact = { "impactFlash", "falcon", "sparks", "leafBurst" }, -- W06: feathers and leaves where the falcon strikes
+		impact = { "impactFlash", "falcon", "sparks", "leafBurst", "lmWindRibbons" },
 		sparks = "feather",
 		flash = 1.2,
 		size = 0.6,
+		lmOpts = { lmWindRibbons = { feathers = true, height = 6 } }, -- W30
 	}),
 	drive = e({
 		color = "class",
 		sound = "",
 		rim = true,
-		impact = { "arrowRain", "impactFlash", "ringWave", "dust" },
+		impact = { "arrowRain", "impactFlash", "ringWave", "dust", "lmRainShadow" },
 		tex = { impactFlash = "hitStar" },
 		coreDelay = 0.15,
 		telegraph = "circle",
 		flash = 2.4,
 		shake = 0.25,
+		releaseFx = { "lmSkyVolley" }, -- W30
+		lmOpts = { lmSkyVolley = { count = 8 } }, -- W30
 	}),
 	-- S144 (DESIGN-18 §6.3): the Hunter pools' new skills from the existing pieces: the Bow's in the class colour and the
 	-- wind's pale green, the Crossbow's in iron brown and the poison's green
@@ -483,40 +518,50 @@ local SkillVfx: { [string]: Entry } = {
 		sound = "",
 		projectile = "arrow",
 		launch = "l",
-		impact = { "impactFlash", "sparks", "rockBurst" }, -- W06: a heavy bolt throws up earth
+		impact = { "impactFlash", "sparks", "rockBurst", "lmShockRings", "lmSplinters" },
 		tex = { projectile = "trailStreak", impactFlash = "hitStar" },
 		markRadius = 1.5,
 		flash = 2.2,
 		size = 0.7,
 		shake = 0.15,
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = {
+			lmMuzzle = { size = 1.4, puff = true },
+			lmShockRings = { count = 3, size = 0.8 },
+			lmSplinters = { metal = true },
+		}, -- W30
 	}),
 	pinningShot = e({
 		color = "class",
 		sound = "",
 		projectile = "arrow",
 		launch = "l",
-		impact = { "impactFlash", "groundDecal", "sparks", "leafBurst" }, -- W06
+		impact = { "impactFlash", "groundDecal", "sparks", "leafBurst", "lmPinRing", "lmStuckArrow" },
 		tex = { projectile = "trailStreak", impactFlash = "hitStar" },
 		markRadius = 1.5,
 		flash = 1.4,
 		size = 0.5,
+		releaseFx = { "lmMuzzle" }, -- W30
 	}),
 	windstep = e({
 		color = "#A8D8C0",
 		sound = "",
-		impact = { "impactFlash", "dash", "smokePuff", "leafBurst" }, -- W06
+		impact = { "impactFlash", "dash", "smokePuff", "leafBurst", "lmWindRibbons", "lmAfterimage" },
 		land = { "dust" },
 		tex = { dash = "trailStreak" },
 		flash = 1.2,
+		lmOpts = { lmAfterimage = { count = 2 } }, -- W30
 	}),
 	netShot = e({
 		color = "#7A5C3A",
 		sound = "",
-		impact = { "impactFlash", "ringWave", "groundDecal" },
+		impact = { "impactFlash", "ringWave", "groundDecal", "lmNet" },
 		tex = { impactFlash = "hitStar" },
 		telegraph = "circle",
 		flash = 1.6,
 		shake = 0.1,
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = { lmMuzzle = { puff = true } }, -- W30
 	}),
 	deadlyBolt = e({
 		color = "#5E8C2A",
@@ -524,12 +569,15 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "l", dur = 0.45 },
 		projectile = "arrow",
 		launch = "l",
-		impact = { "burst", "cloud", "sparks" },
+		impact = { "burst", "cloud", "sparks", "lmVenomSplash", "lmStuckArrow" },
 		tex = { projectile = "beamPoison" },
 		sparks = "darkSpark",
 		flash = 2.6,
 		size = 0.7,
 		shake = 0.3,
+		castFx = { "lmCharge" }, -- W30
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = { lmCharge = { count = 3, size = 0.8 }, lmStuckArrow = { bolt = true } }, -- W30
 	}),
 	-- Mage (S115): the weapon's element (adaptive) or the skill's, arcane violet and blue; energy gathers in the hands or
 	-- at the weapon's tip and the bolt leaves from there
@@ -539,9 +587,11 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "weapon", dur = 0.18 },
 		projectile = "orb",
 		launch = "weapon",
-		impact = { "impactFlash", "fireBlast", "sparks" }, -- W04: a small ball of flame (fireBlast at size 0.7)
+		impact = { "impactFlash", "fireBlast", "lmEmbers" },
 		flash = 2,
 		size = 0.7,
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = { lmEmbers = { count = 10 } }, -- W30
 	}),
 	iceShard = e({
 		color = "element",
@@ -549,16 +599,18 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "both", dur = 0.28 },
 		projectile = "shard",
 		launch = "both",
-		impact = { "impactFlash", "frostBlast", "groundDecal" }, -- W04: the frost burst carries the splinters
+		impact = { "impactFlash", "frostBlast", "groundDecal", "lmIceSpikes" },
 		sparks = "iceShard",
 		markRadius = 2,
 		flash = 2,
 		size = 0.7,
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = { lmIceSpikes = { mode = "cluster", size = 0.6, count = 5 } }, -- W30
 	}),
 	blink = e({
 		color = "#B07CFF",
 		sound = "",
-		impact = { "dash", "impactFlash", "sparks", "smokePuff" },
+		impact = { "dash", "impactFlash", "sparks", "smokePuff", "lmRift", "lmAfterimage" },
 		tex = { dash = "beamArcane" },
 		flash = 2,
 	}),
@@ -569,66 +621,94 @@ local SkillVfx: { [string]: Entry } = {
 		projectile = "orb",
 		launch = "both",
 		-- W03: the ball of flame (fireBlast) is the body of the blow, the smoke and the embers its trail
-		impact = { "impactFlash", "fireBlast", "ringWave", "groundDecal", "sparks" },
+		impact = { "impactFlash", "lmExplosion", "fireBlast", "ringWave", "groundDecal", "lmEmbers", "lmDebris" },
 		landsAfter = true, -- the orb flies the event's `d` (Offense.circleTarget, CIRCLE_PROJECTILE_SPEED)
 		telegraph = "circle",
 		flash = 4,
 		shake = 0.35,
 		size = 1.4,
+		castFx = { "lmCharge" }, -- W30
+		lmOpts = { lmCharge = { count = 4, size = 1.1 }, lmExplosion = { size = 0.8 }, lmDebris = { count = 6 } }, -- W30
 	}),
 	-- the body is the lightning of every link (VfxController chain branch); these pieces play on every target
 	chainLightning = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "r", dur = 0.27 },
-		impact = { "impactFlash", "sparks" },
+		impact = { "impactFlash", "sparks", "lmForkBolt", "lmArcCrawl" },
+		castFx = { "lmCharge" }, -- W30
+		lmOpts = { lmCharge = { crackle = true, count = 2, size = 0.7 }, lmForkBolt = { mode = "link", width = 0.18 } }, -- W30
 	}),
-	manaShield = e({ color = "#6FA8FF", sound = "", impact = { "impactFlash", "shield", "sparkle" }, flash = 2 }),
+	manaShield = e({
+		color = "#6FA8FF",
+		sound = "",
+		impact = { "impactFlash", "shield", "sparkle", "lmBubble" },
+		flash = 2,
+	}),
 	frostNova = e({
 		color = "element",
 		sound = "",
-		impact = { "impactFlash", "frostBlast", "ringWave", "groundDecal" }, -- W04: shards burst out with the ring
+		impact = { "impactFlash", "frostBlast", "ringWave", "groundDecal", "lmIceSpikes" },
 		sparks = "iceShard",
 		telegraph = "circle",
 		flash = 3,
 		shake = 0.3,
+		lmOpts = { lmIceSpikes = { mode = "ring" } }, -- W30
 	}),
 	meteor = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.9 },
-		impact = { "magicCircle", "meteor", "impactFlash", "fireBlast", "ringWave", "groundDecal" }, -- W04
+		impact = {
+			"magicCircle",
+			"lmSkyRift",
+			"meteor",
+			"lmExplosion",
+			"fireBlast",
+			"ringWave",
+			"groundDecal",
+			"lmDebris",
+		},
 		landsAfter = true, -- the rock falls the event's `d` (1 s, 0.5 s with 5A): the blow, the shake and the sound then
 		telegraph = "circle",
 		flash = 5,
 		shake = 0.8,
+		lmOpts = { lmExplosion = { size = 1.6 }, lmDebris = { count = 12, size = 1.3, molten = 0.5 } }, -- W30
 	}),
 	firewall = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.4 },
 		impact = { "stormCloud", "magicCircle" },
-		strike = { "impactFlash", "groundDecal", "sparks" },
+		strike = { "impactFlash", "groundDecal", "sparks", "lmForkBolt" },
 		telegraph = "circle",
 		markRadius = 2.5,
 		flash = 2,
+		castFx = { "lmCharge" }, -- W30
+		lmOpts = { lmCharge = { crackle = true }, lmForkBolt = { mode = "cloud", forks = 1 } }, -- W30
 	}),
 	evocation = e({
 		color = "#6FA8FF",
 		sound = "",
-		impact = { "impactFlash", "magicCircle", "aura", "sparkle" },
+		impact = { "impactFlash", "magicCircle", "aura", "sparkle", "lmRuneRings" },
 		flash = 1.5,
 	}),
 	meteorStorm = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.55 },
-		impact = { "magicCircle" },
-		strike = { "impactFlash", "fireBlast", "ringWave", "groundDecal" },
+		impact = { "magicCircle", "lmSkyRift" },
+		strike = { "lmExplosion", "fireBlast", "ringWave", "groundDecal", "lmDebris" },
 		leadStrike = true,
 		telegraph = "circle",
 		flash = 3,
 		shake = 0.5,
+		castFx = { "lmCharge" }, -- W30
+		lmOpts = {
+			lmSkyRift = { overhead = true, size = 1.6, seconds = 3 },
+			lmExplosion = { size = 0.8 },
+			lmDebris = { count = 5 },
+		}, -- W30
 	}),
 	-- S140 (DESIGN-18 §6.1, docs/WYGLAD.md §3): the fire pool's new skills from the existing pieces in the fire colour
 	-- (Elements.COLORS.fire through color "element"); a full review in W03-W07
@@ -636,7 +716,7 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "r", dur = 0.25 },
-		impact = { "impactFlash", "fan", "fireBlast", "groundDecal" }, -- W04
+		impact = { "impactFlash", "lmFlameJet", "groundDecal", "lmEmbers" },
 		telegraph = "cone",
 		flash = 2.5,
 		shake = 0.2,
@@ -644,7 +724,7 @@ local SkillVfx: { [string]: Entry } = {
 	emberShield = e({
 		color = "element",
 		sound = "",
-		impact = { "impactFlash", "shield", "aura", "sparks" },
+		impact = { "impactFlash", "shield", "aura", "sparks", "lmBubble" },
 		flash = 2,
 	}),
 	pyroblast = e({
@@ -653,24 +733,32 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "both", dur = 1 },
 		projectile = "orb",
 		launch = "both",
-		impact = { "impactFlash", "fireBlast", "ringWave", "groundDecal", "sparks" }, -- W04
+		impact = { "lmExplosion", "fireBlast", "ringWave", "groundDecal", "lmDebris", "lmEmbers" },
 		flash = 4.5,
 		shake = 0.4,
 		size = 1.7,
+		castFx = { "lmCharge" }, -- W30
+		releaseFx = { "lmMuzzle" }, -- W30
+		lmOpts = {
+			lmCharge = { count = 6, size = 1.6, reach = 2.4 },
+			lmMuzzle = { size = 1.6 },
+			lmExplosion = { size = 1.3 },
+		}, -- W30
 	}),
 	combustion = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.25 },
-		impact = { "fireBlast", "ringWave", "cracks", "impactFlash" }, -- W04: the burst becomes a ball of flame
+		impact = { "fireBlast", "ringWave", "cracks", "impactFlash", "lmExplosion" },
 		markRadius = 3,
 		shake = 0.3,
+		lmOpts = { lmExplosion = { size = 0.7 } }, -- W30
 	}),
 	immolate = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.16 },
-		impact = { "impactFlash", "pillar", "fireBlast", "groundDecal" }, -- W04
+		impact = { "impactFlash", "pillar", "fireBlast", "groundDecal", "lmEmbers" },
 		pillar = { radius = 1.4, height = 10 },
 		markRadius = 2.5,
 		flash = 2.5,
@@ -681,8 +769,8 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.42 },
-		impact = { "impactFlash", "frostBlast", "shockwave", "groundDecal", "sparks" }, -- W04
-		everyWave = { "shockwave", "sparks" },
+		impact = { "impactFlash", "frostBlast", "shockwave", "groundDecal", "sparks", "lmHail" },
+		everyWave = { "shockwave", "sparks", "lmHail" },
 		waves = true,
 		sparks = "iceShard",
 		telegraph = "circle",
@@ -692,8 +780,9 @@ local SkillVfx: { [string]: Entry } = {
 	iceBarrier = e({
 		color = "element",
 		sound = "",
-		impact = { "impactFlash", "shield", "aura", "sparkle" },
+		impact = { "impactFlash", "shield", "aura", "sparkle", "lmBubble", "lmIceSpikes" },
 		flash = 2,
+		lmOpts = { lmIceSpikes = { mode = "encase", size = 0.7, count = 6 } }, -- W30
 	}),
 	glacialSpike = e({
 		color = "element",
@@ -701,19 +790,21 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "both", dur = 0.8 },
 		projectile = "shard",
 		launch = "both",
-		impact = { "impactFlash", "frostBlast", "ringWave", "cracks" }, -- W04
+		impact = { "impactFlash", "frostBlast", "ringWave", "cracks", "lmIceSpikes" },
 		sparks = "iceShard",
 		markRadius = 2.5,
 		flash = 4,
 		shake = 0.35,
 		size = 1.6,
+		castFx = { "lmCharge" }, -- W30
+		lmOpts = { lmCharge = { count = 5, size = 1.4 }, lmIceSpikes = { mode = "cluster", size = 1.4, count = 9 } }, -- W30
 	}),
 	frozenOrb = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.38 },
-		impact = { "impactFlash", "frostBlast", "ringWave", "sparks" }, -- W04
-		everyWave = { "ringWave", "sparks" },
+		impact = { "impactFlash", "frostBlast", "ringWave", "sparks", "lmOrbPulse" },
+		everyWave = { "ringWave", "sparks", "lmOrbPulse" },
 		waves = true,
 		sparks = "iceShard",
 		telegraph = "circle",
@@ -724,34 +815,37 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.34 },
-		impact = { "impactFlash", "pillar", "frostBlast", "cracks" }, -- W04
+		impact = { "impactFlash", "pillar", "frostBlast", "cracks", "lmIceSpikes" },
 		pillar = { radius = 1.6, height = 7 },
 		sparks = "iceShard",
 		markRadius = 2.5,
 		flash = 3,
 		shake = 0.2,
+		lmOpts = { lmIceSpikes = { mode = "encase", hold = 0.9 } }, -- W30
 	}),
 	shatter = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "r", dur = 0.26 },
-		impact = { "frostBlast", "shockwave", "cracks", "impactFlash" }, -- W04
+		impact = { "frostBlast", "shockwave", "cracks", "impactFlash", "lmIceSpikes" },
 		sparks = "iceShard",
 		markRadius = 2.5,
 		flash = 3,
 		shake = 0.3,
+		lmOpts = { lmIceSpikes = { mode = "burst", count = 9 } }, -- W30
 	}),
 	blizzard = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.55 },
-		impact = { "magicCircle", "impactFlash", "frostBlast", "ringWave", "groundDecal", "sparks" }, -- W04
-		everyWave = { "ringWave", "sparks" },
+		impact = { "magicCircle", "impactFlash", "frostBlast", "ringWave", "groundDecal", "sparks", "lmHail" },
+		everyWave = { "ringWave", "sparks", "lmHail" },
 		waves = true,
 		sparks = "iceShard",
 		telegraph = "circle",
 		flash = 3,
 		shake = 0.4,
+		lmOpts = { lmHail = { count = 10 } }, -- W30
 	}),
 	-- S142 (DESIGN-18 §6.1, docs/WYGLAD.md §3): the lightning pool's new skills from the existing pieces in the lightning
 	-- colour (Elements.COLORS.lightning through color "element"); a full review in W03-W07
@@ -761,72 +855,80 @@ local SkillVfx: { [string]: Entry } = {
 		glow = { hand = "weapon", dur = 0.18 },
 		projectile = "bolt",
 		launch = "weapon",
-		impact = { "impactFlash", "arcBurst", "cracks" }, -- W04: arcs crackle out from the hit
+		impact = { "impactFlash", "arcBurst", "cracks", "lmArcCrawl" },
 		markRadius = 1.5,
 		flash = 2,
 		size = 0.6,
+		releaseFx = { "lmMuzzle" }, -- W30
 	}),
 	staticShock = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "r", dur = 0.26 },
-		impact = { "impactFlash", "tether", "arcBurst", "sparks" }, -- W04
+		impact = { "impactFlash", "tether", "arcBurst", "sparks", "lmArcCrawl", "lmForkBolt" },
 		tex = { tether = "beamLightning" },
 		flash = 2,
 		shake = 0.15,
+		lmOpts = { lmForkBolt = { mode = "link", width = 0.16, forks = 1 } }, -- W30
 	}),
 	stormArmor = e({
 		color = "element",
 		sound = "",
-		impact = { "impactFlash", "aura", "arcBurst", "sparks" }, -- W04
+		impact = { "impactFlash", "aura", "arcBurst", "sparks", "lmArcCrawl" },
 		flash = 2,
+		lmOpts = { lmArcCrawl = { seconds = 1.5, every = 0.1 } }, -- W30
 	}),
 	thunderStrike = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "weapon", dur = 0.42 },
-		impact = { "magicCircle", "skyBolt", "impactFlash", "arcBurst", "groundDecal" }, -- W04
+		impact = { "magicCircle", "lmForkBolt", "impactFlash", "arcBurst", "groundDecal" },
 		landsAfter = true, -- the bolt falls the event's `d` (0.5 s): the blow, the shake and the sound then
 		markRadius = 3,
 		flash = 4,
 		shake = 0.45,
+		castFx = { "lmCharge" }, -- W30
+		lmOpts = { lmCharge = { crackle = true }, lmForkBolt = { mode = "sky", width = 0.45, forks = 3 } }, -- W30
 	}),
 	ballLightning = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.38 },
-		impact = { "impactFlash", "arcBurst", "shockwave", "sparks" }, -- W04
-		everyWave = { "shockwave", "sparks" },
+		impact = { "impactFlash", "arcBurst", "shockwave", "sparks", "lmOrbPulse" },
+		everyWave = { "shockwave", "sparks", "lmOrbPulse" },
 		waves = true,
 		telegraph = "circle",
 		size = 0.7,
+		lmOpts = { lmOrbPulse = { arcs = true, size = 2.6 } }, -- W30
 	}),
 	lightningLance = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.26 },
-		impact = { "impactFlash", "lineBeam", "arcBurst", "cracks" }, -- W04
+		impact = { "impactFlash", "lmForkBolt", "lmShockRings", "arcBurst", "cracks" },
 		telegraph = "line",
 		flash = 3,
 		shake = 0.35,
+		lmOpts = { lmForkBolt = { mode = "line", width = 0.35, forks = 3 } }, -- W30
 	}),
 	tempest = e({
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.55 },
 		impact = { "stormCloud", "ringWave" },
-		strike = { "impactFlash", "skyBolt", "groundDecal", "sparks" },
+		strike = { "impactFlash", "lmForkBolt", "groundDecal", "sparks" },
 		leadStrike = true,
 		telegraph = "circle",
 		markRadius = 2.5,
 		flash = 2.5,
 		shake = 0.5,
+		lmOpts = { lmForkBolt = { mode = "cloud" } }, -- W30
 	}),
 	-- S80 (ROZWOJ 12.4, 12.5)
 	elementalVortex = e({
 		color = "element",
 		sound = "",
-		impact = { "impactFlash", "whirl", "aura", "sparks" },
+		impact = { "impactFlash", "whirl", "aura", "sparks", "lmVortex" },
 		everyWave = { "whirl", "sparks" },
 		tex = { whirl = "slashBold" },
 		flash = 2,
@@ -835,13 +937,14 @@ local SkillVfx: { [string]: Entry } = {
 		color = "element",
 		sound = "",
 		glow = { hand = "both", dur = 0.8 },
-		impact = { "magicCircle", "meteor", "impactFlash", "ringWave", "cracks", "smokePuff" },
-		everyWave = { "ringWave", "cracks" },
+		impact = { "magicCircle", "lmSkyRift", "meteor", "impactFlash", "ringWave", "cracks", "smokePuff", "lmDebris" },
+		everyWave = { "ringWave", "cracks", "lmDebris" },
 		telegraph = "circle",
 		waves = true,
 		landsAfter = true, -- every wave's rock falls the wave event's `d` (0.2 s)
 		flash = 5,
 		shake = 0.7,
+		lmOpts = { lmSkyRift = { low = true }, lmDebris = { count = 6 } }, -- W30
 	}),
 	arcaneDischarge = e({
 		color = "#B07CFF",
@@ -851,13 +954,16 @@ local SkillVfx: { [string]: Entry } = {
 		launch = "weapon",
 		size = 0.8,
 		chargeSize = 0.15,
-		impact = { "impactFlash", "ringWave", "sparks" },
+		impact = { "impactFlash", "ringWave", "sparks", "lmExplosion" },
 		flash = 2.4,
+		releaseFx = { "lmMuzzle" }, -- W30
+		flight = "lmMissiles", -- W30
+		lmOpts = { lmExplosion = { size = 0.6 } }, -- W30
 	}),
 	arcaneTorrent = e({
 		color = "#B07CFF",
 		sound = "",
-		impact = { "impactFlash", "beam", "sparkle", "sparks" },
+		impact = { "impactFlash", "beam", "sparkle", "sparks", "lmHelix" },
 		tex = { beam = "beamArcane" },
 		flash = 0.9,
 	}),

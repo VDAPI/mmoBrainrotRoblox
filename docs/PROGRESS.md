@@ -48,6 +48,14 @@
 
 ## Niedokończone (kod)
 
+- **Bestiariusz (S151c):** zakładka okna osiągnięć i przycisk ✪ na HUD gotowe. Bez przeglądu w grze (zakładka na PC i
+  telefonie, podgląd 3D wpisu, toast stopnia, miejsce przycisku pod przepustką; telefon w poziomie ma osiągnięcia w szufladzie menu W29). Wiki czeka na
+  odświeżenie (tytuły „Znawca …” z `wiki = false`). Ikona kategorii `hud/ach_bestiary` do dorobienia (dziś znak ❦).
+  Zabójstwa rodzajów liczą się od S151c (zapis wcześniej ich nie miał).
+- **Wędrowny kupiec (S159w):** wiki bez artykułu i bez barwników karawany (dane `Data/WanderingMerchant` poza eksportem);
+  wóz i muł proceduralne do czasu modelu `Assets.Npcs.wanderer_caravan`; bez przeglądu w Studio (punkty postoju
+  sprawdzone testem na otwartym terenie, nie w grze).
+
 - **Zgłoszenia właściciela 2026-10-20:** zrobione (S156): menu HUD w dwóch rzędach, limit przesuwania mapy, efekty broni
   z jej puli, Zwój Przemiany, kurhan bossa świata jako niecka z przedsionkiem bez PvP i dłuższe ogłoszenia, kolorowe
   stragany z NPC przed ladą, ranking czasu gry i podium, marmurowe posągi, przesuwany i skalowany tropiciel zadań.
@@ -101,13 +109,11 @@
 - **Seria „Umiejętności 2.0” (S137–S148, `docs/DESIGN-18.md`), co zostało w jednym miejscu:**
   - Bez przeglądu w grze: okno umiejętności 2.0 (S139: szerokości drzewka 484 / 468 px, podpisy ról, tabela rangi,
     przypięte „Zatwierdź”, napis puli nad paskiem HUD); nowe umiejętności pul (S140–S145): ruchy to warianty ruchów klas
-    i pozy `ShotRig` (dopracowanie W03–W07, kilka par z tą samą sylwetką), wygląd z istniejących składników.
-  - Dla właściciela: ID dźwięków nowych umiejętności (`docs/ASSETS.md`): S140 `skill.flameWave|emberShield|pyroblast|
-    combustion|immolate|phoenixHeart`, S141 `skill.hailstorm|iceBarrier|glacialSpike|frozenOrb|deepFreeze|shatter|
-    blizzard`, S142 `skill.lightningBolt|staticShock|stormArmor|thunderStrike|ballLightning|lightningLance|tempest`,
-    S143 `skill.shieldSweep|shieldBash|vindicate|brutalStrike|sunder|warStomp|execute`, S144 `skill.heavyBolt|
-    pinningShot|windstep|netShot|deadlyBolt`, S145 `skill.lightRay|blindingLight|miracle|consecrate|holyChains|holyNova|
-    rebuke`; ikony PNG nowych umiejętności i węzłów (dziś znaki), obrazki na wiki (`npm run art`).
+    i pozy `ShotRig` (dopracowanie W03–W07, kilka par z tą samą sylwetką), wygląd z istniejących składników; Łowca
+    i Mag mają od W30 własne ruchy i składniki `lm*` (`docs/ANIMACJE.md` §15), bez przeglądu w grze.
+  - Dla właściciela: ID dźwięków nowych umiejętności (`docs/ASSETS.md`; Łowca i Mag mają zastępcze z listy S111 od
+    W30, pusty `skill.phoenixHeart`), S143 `skill.shieldSweep|shieldBash|vindicate|brutalStrike|sunder|warStomp|
+    execute`, S145 `skill.lightRay|blindingLight|miracle|consecrate|holyChains|holyNova|rebuke`; ikony PNG nowych umiejętności i węzłów (dziś znaki), obrazki na wiki (`npm run art`).
   - Balans w trybie raportu z powodem (decyzje właściciela w `docs/SESJE.md` → S146, S147): T-SK6 berła na 45 / 70 /
     100 (2,8 / 8,6 / 14,4, cel 1–2) i R1 Inkwizytora 4,4–6,2 mimo zasady 5 S146; R9 Wojownika dwuręczna / jednoręczna
     (1,45–1,69 w jeden cel, 0,98–1,12 na 3 cele, cel 1,15–1,25); R1 Chorążego; R6 Strażnika, Uzdrowiciela, Fortuny,

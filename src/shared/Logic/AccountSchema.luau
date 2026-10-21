@@ -215,7 +215,8 @@ function AccountSchema.characterTemplate(): CharacterData
 		mounts = { owned = {}, active = nil, riding = false },
 		-- S151: character achievement counters, sets and done achievements (Logic/Achievements); no migration (reconcile)
 		-- S151b: `track` = the achievements followed in the HUD tracker (reconcile adds it)
-		ach = { c = {}, s = {}, done = {}, track = {} },
+		-- S151c: `b` / `bd` = the bestiary's kills and drops seen (Logic/Bestiary; reconcile adds them)
+		ach = { c = {}, s = {}, done = {}, track = {}, b = {}, bd = {} },
 		createdAt = 0,
 		playtime = 0,
 	}

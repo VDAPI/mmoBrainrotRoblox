@@ -219,6 +219,10 @@
   `counts` z aktywności, `perMember` / `min` / `step`) + `guild.goal.<id>.name/.desc` (PL, EN); nowe źródło = punkty w
   `POINTS` + mapowanie zdarzenia w `Logic/GuildProgress.activity` + `guild.source.<id>`; test `tests/guildprogress.spec`.
   Nowe uprawnienie rangi: `Guild.EDITABLE` + domyślne w `RANK_DEFAULTS` + `guild.right.<akcja>`.
+- **Wpis bestiariusza** (S151c): nowy rodzaj w `Data/Monsters` albo boss w `Data/Bosses` sam staje się wpisem
+  (`Data/Bestiary`, kraina z `region`); łupy z jego tabeli (`LootTables`). Stopnie, punkty i limit premii rodziny tylko
+  w `Data/Bestiary`; widok tylko z `Logic/Bestiary` (`view`, `rows`, `regions`). Nowa kraina = wpis w `REGIONS` +
+  osiągnięcie `bestiary_<kraina>` z tytułem.
 - **Funkcja między serwerami** (S124–S130): moduł serwera z `pcall`, ponowieniami (`Market/Retry`), atrapą w pamięci
   (`Logic/MemoryFake`, `Leaderboard/Stores`) i stanem „tylko ten serwer” w oknie; limity w `Config`; serwery `arena` /
   `tournament` przez `Arena/ServerMode` (strażnik `ServerMode.isWorld()`); ogłoszenie na wszystkie serwery przez

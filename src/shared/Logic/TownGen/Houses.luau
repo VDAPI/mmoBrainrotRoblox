@@ -305,7 +305,10 @@ local function logWalls(bp: BP, look: Look, w: number, d: number, h: number)
 end
 
 -- Builds one ordinary house. Returns its blueprint and where to put it (map-relative, rot in degrees).
-function Houses.build(lot: Lot, ground: Ground): (BP, Placement, Info)
+-- 2026-10-20: `slot` (the city's ordinary lots, TownGen.all) makes the whole house one asset kit slot
+-- `house:<style>:<floors>` (Data/Kit: a whole-house model fitted to the lot's longer side and stretched to its front,
+-- front to local -Z); special buildings and farms keep their pieces.
+function Houses.build(lot: Lot, ground: Ground, slot: boolean?): (BP, Placement, Info)
 	local bp = Blueprint.new(lot.seed)
 	local rng = bp.rng
 	local style = lot.style
@@ -320,6 +323,9 @@ function Houses.build(lot: Lot, ground: Ground): (BP, Placement, Info)
 	local detached = style == "craft" or style == "cottage"
 	local W = lot.w - (if detached then 0.6 else 0.3)
 	local floors = lot.floors
+	if slot then
+		bp:beginKit(`house:{style}:{floors}`, 0, 0, 0, math.max(W, lot.d - 0.6), "shell", W)
+	end
 	local G = if style == "patrician" then 10 elseif style == "cottage" then 7.5 elseif style == "craft" then 8.5 else 9
 	local U = if style == "patrician" then 8 else 7.5
 	local jetty = if style == "patrician" then 0.6 elseif style == "cottage" then 0.8 else 1
@@ -519,6 +525,9 @@ function Houses.build(lot: Lot, ground: Ground): (BP, Placement, Info)
 		local sx = bodyX + (bodyW / 2 - 1.2) * (if rng:chance(0.5) then 1 else -1)
 		bp:box(0.2, 0.2, 2.4, sx, G + 0.8, zf0 - 1.2, o(Palette.metal[1]))
 		bp:box(0.2, 1.6, 1.8, sx, G - 0.2, zf0 - 1.6, o(Palette.pick(rng, Palette.planks)))
+	end
+	if slot then
+		bp:endKit()
 	end
 	return bp,
 		{ x = lot.x, y = y0, z = lot.z, rot = lot.rot },

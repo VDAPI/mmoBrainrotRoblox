@@ -71,6 +71,7 @@ export type Obtain = {
 	-- of the week, kept for good after the season
 	season: string?,
 	tutorial: boolean?, -- S155: the tutorial reward at level 5 (Data/Tutorial.REWARD.title), never sold
+	merchant: boolean?, -- S159w: sold for gold by the wandering merchant (Data/WanderingMerchant.dyes), never for shards
 }
 
 -- S123 looks of the new kinds (all colours hex).
@@ -952,6 +953,34 @@ classOutfit("outfit_mage_ashen", "Mage", 0, "♨", {
 	wear("belt_book", "leather"),
 	wear("shoulder_mantle", "second"),
 }, { obtain = { bossWin = ASHEN_BOSS } })
+
+-- S159w (owner 2026-10-20): the caravan dyes of the wandering merchant (Data/WanderingMerchant.dyes), one a visit for gold,
+-- never for shards (price 0, obtain.merchant, never in the offer of the week). Warm trade-road colours of his canvas.
+-- Off the wiki until the merchant's article.
+add("dye_caravan_saffron", "dye", 0, "◐", "#D8A43A", {
+	color2 = "#5A3E26",
+	obtain = { merchant = true },
+	wiki = false,
+	dye = { main = "#D8A43A", second = "#5A3E26" },
+})
+add("dye_caravan_plum", "dye", 0, "◐", "#7A3E5A", {
+	color2 = "#E8D8B0",
+	obtain = { merchant = true },
+	wiki = false,
+	dye = { main = "#7A3E5A", second = "#E8D8B0" },
+})
+add("dye_caravan_teal", "dye", 0, "◐", "#2E6B6B", {
+	color2 = "#D8C08A",
+	obtain = { merchant = true },
+	wiki = false,
+	dye = { main = "#2E6B6B", second = "#D8C08A" },
+})
+add("dye_caravan_rust", "dye", 0, "◐", "#9A4A2A", {
+	color2 = "#3A3A3E",
+	obtain = { merchant = true },
+	wiki = false,
+	dye = { main = "#9A4A2A", second = "#3A3A3E" },
+})
 
 local byId: { [string]: Def } = {}
 for _, def in LIST do

@@ -356,7 +356,7 @@ T.describe("Achievement titles (S151)", function()
 				T.expect({ def.id, pl[def.nameKey] ~= nil, en[def.nameKey] ~= nil }).toEqual({ def.id, true, true })
 			end
 		end
-		T.expect(n).toBe(7)
+		T.expect(n).toBe(11) -- S151: 7, S151c: + 4 bestiary regions
 	end)
 
 	T.it("the old level, story, duel and PvP titles keep their requirements", function()
