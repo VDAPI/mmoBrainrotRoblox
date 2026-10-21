@@ -225,7 +225,7 @@ local function Goals(scope: Scope): Instance
 		-- The rally of all three goals
 		scope:New("Frame")({
 			LayoutOrder = 20,
-			Size = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.fromScale(1, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundColor3 = scope:Computed(function(use): Color3
 				local g = use(guild)

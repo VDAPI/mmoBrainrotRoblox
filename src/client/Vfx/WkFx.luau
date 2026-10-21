@@ -806,7 +806,7 @@ pieces.wkHealBurst = function(ctx: Ctx)
 	-- motes spiralling up around the body (plain neon balls: particles cannot orbit)
 	local count = if ctx.simple or low() then 4 else 9
 	local motes: { BasePart } = {}
-	for i = 1, count do
+	for _ = 1, count do
 		local mote = Pool.part("Ball", lerpWhite(color, 0.45), Vector3.one * 0.32, Enum.Material.Neon, 0)
 		table.insert(motes, mote)
 	end
