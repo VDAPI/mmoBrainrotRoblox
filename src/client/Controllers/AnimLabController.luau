@@ -27,6 +27,12 @@
 -- S159a: `boss <id> rage` the roar into the last phase, `boss <id> <pattern>` a dodgeable pattern's gesture (its own
 -- warning, the channel held, the follow-through);
 -- `floor <grass|snow|cave>` dresses the floor (telegraph readability, Config.AnimLab.floors).
+-- Studio review 2026-10-21: a look stands on the floor by the game's rule (a real model's feet at its pivot,
+-- MonsterView's groundOffset; a generated one's root at hip height), a look wider than the stage gets floor under it;
+-- with a monster or boss on the stage every camera frames it with the actor and the cast bar over it (the walls fade
+-- while a camera stands outside them); `mob <kind> attack1` is the kind's regular blow as the game plays it (the draw
+-- of Logic/BasicBlow, MotionKeys.basicBlow), and a real model with bone clips plays its clip (client/Anim/BoneClips,
+-- the blow fitted to the draw) instead of standing still.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -37,6 +43,8 @@ local Workspace = game:GetService("Workspace")
 local AnimLab = require(ReplicatedStorage.Shared.Logic.AnimLab)
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
+local BasicBlow = require(ReplicatedStorage.Shared.Logic.BasicBlow)
+local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
@@ -98,6 +106,9 @@ type Subject = {
 	keys: MotionKeys.Keys,
 	options: Gait.StateOptions?, -- S117: the game's style, gather, death, rise and roar of this motion
 	leap: { offset: Vector3, height: number }?, -- S117: a boss leap's arc (model frame)
+	-- studio review 2026-10-21: a real model's bone clip (client/Anim/BoneClips): the mixer, the track, its clip time
+	-- at motion time 0 and the clip seconds per motion second
+	bone: { mixer: BoneClips.Mixer, track: BoneClips.Track, t0: number, pace: number }?,
 }
 type Stressed = { model: Model, index: number, nextAt: number }
 
@@ -137,6 +148,11 @@ local actor: Model? = nil
 local actorWeapon: string? = nil
 local dummy: Model? = nil
 local subject: Subject? = nil
+-- studio review 2026-10-21: the box (world) the cameras frame round a subject (its look, the actor, its cast bar),
+-- the floor under a look wider than the stage, the camera last set
+local framed: { centre: Vector3, half: Vector3 }? = nil
+local subjectFloor: BasePart? = nil
+local cameraName: string? = nil
 local row: { Model } = {}
 local stressed: { Stressed } = {}
 local last: Command? = nil
@@ -359,6 +375,11 @@ local function clearSubject()
 		s.model:Destroy()
 		subject = nil
 	end
+	framed = nil
+	if subjectFloor then
+		subjectFloor:Destroy()
+		subjectFloor = nil
+	end
 	local d = dummy
 	if d and stage then
 		d.Parent = stage
@@ -372,6 +393,19 @@ local function clearStress()
 	table.clear(stressed)
 end
 
+-- Studio review 2026-10-21: the three walls hidden (a camera outside them) or shown.
+local function fadeWalls(hidden: boolean)
+	local folder = stage
+	if not folder then
+		return
+	end
+	for _, item in folder:GetChildren() do
+		if item:IsA("BasePart") and item.Name == "Backdrop" then
+			item.LocalTransparencyModifier = if hidden then 1 else 0
+		end
+	end
+end
+
 local function setCamera(name: string?): (Vector3?, Vector3?)
 	local camera = Workspace.CurrentCamera
 	if not camera then
@@ -382,14 +416,43 @@ local function setCamera(name: string?): (Vector3?, Vector3?)
 			camera.CameraType = Enum.CameraType.Custom
 			cameraOn = false
 		end
+		cameraName = nil
+		fadeWalls(false)
 		return nil, nil
 	end
 	local spec = (LAYOUT.cameras :: any)[name]
 	local pos, look = centre + vec(spec.pos), centre + vec(spec.look)
+	local box = framed
+	if box then
+		-- studio review 2026-10-21: the look, the actor and the cast bar in view, from the preset's direction; the
+		-- front and the three-quarter view look at the look's face (it faces +Z, the actor) instead of its back
+		local dir = vec(spec.pos) - vec(spec.look)
+		if name == "front" or name == "threequarter" then
+			dir = Vector3.new(dir.X, dir.Y, math.abs(dir.Z))
+		end
+		local viewport = camera.ViewportSize
+		local aspect = if viewport.Y > 0 then viewport.X / viewport.Y else 16 / 9
+		local half = math.rad(camera.FieldOfView) / 2
+		local fit = math.min(half, math.atan(math.tan(half) * aspect))
+		local radius = box.half.Magnitude
+		look = box.centre
+		pos = look + dir.Unit * (radius / math.sin(fit) * LAB.frameMargin)
+	end
+	cameraName = name
 	camera.CameraType = Enum.CameraType.Scriptable
 	camera.CFrame = CFrame.lookAt(pos, look)
 	cameraOn = true
+	-- the walls fade while the camera stands outside them (a big look needs a camera far back)
+	local floor = LAYOUT.floor
+	fadeWalls(math.abs(pos.X - centre.X) > floor.size[1] / 2 or pos.Z - centre.Z > floor.size[3] / 2)
 	return pos, look
+end
+
+-- studio review 2026-10-21: after a look comes or goes, the camera set last frames the stage again.
+local function reframe()
+	if cameraOn and cameraName then
+		setCamera(cameraName)
+	end
 end
 
 local step: (dt: number) -> ()
@@ -650,6 +713,38 @@ local function keysForSlot(slot: string, windup: number, strikeNow: boolean, tra
 	return MotionKeys.still()
 end
 
+-- Studio review 2026-10-21: floor under a look that pokes out of the stage (the same dress as the stage's floor, a
+-- hair lower so the two never flicker where they overlap) and the box the cameras frame: the look, the actor and the
+-- cast bar over the look.
+local function frameLook(model: Model)
+	local box, size = model:GetBoundingBox()
+	local floor = LAYOUT.floor
+	local main = (stage :: Folder):FindFirstChild("Floor") :: BasePart?
+	local reach = Vector3.new(size.X, 0, size.Z) / 2 + Vector3.one * LAB.floorPast
+	local rel = box.Position - centre
+	if main and (math.abs(rel.X) + reach.X > floor.size[1] / 2 or math.abs(rel.Z) + reach.Z > floor.size[3] / 2) then
+		local under = main:Clone()
+		under.Name = "SubjectFloor"
+		under.Size = Vector3.new(reach.X * 2, main.Size.Y, reach.Z * 2)
+		under.CFrame = CFrame.new(box.Position.X, main.Position.Y - 0.02, box.Position.Z)
+		under.Parent = stage
+		subjectFloor = under
+	end
+	local actorAt = centre + vec(LAYOUT.actor)
+	local top = box.Position.Y + size.Y / 2 + LAB.castBarAbove
+	local lo = Vector3.new(
+		math.min(box.Position.X - size.X / 2, actorAt.X - 2),
+		centre.Y,
+		math.min(box.Position.Z - size.Z / 2, actorAt.Z - 2)
+	)
+	local hi = Vector3.new(
+		math.max(box.Position.X + size.X / 2, actorAt.X + 2),
+		math.max(top, actorAt.Y + 7),
+		math.max(box.Position.Z + size.Z / 2, actorAt.Z + 2)
+	)
+	framed = { centre = (lo + hi) / 2, half = (hi - lo) / 2 }
+end
+
 -- Puts a monster / boss look in the target's place, facing the actor.
 local function placeLook(id: string, look: MonsterLooks.Look, variant: string, scale: number): Model
 	clearSubject()
@@ -659,9 +754,10 @@ local function placeLook(id: string, look: MonsterLooks.Look, variant: string, s
 		d.Parent = nil
 	end
 	local target = vec(LAYOUT.target)
-	-- the front of a big look stays where the dummy stood
-	local at = centre
-		+ Vector3.new(target.X, info.hipHeight + info.rootHalf, target.Z - math.max(0, info.width / 2 - 1))
+	-- the front of a big look stays where the dummy stood; studio review 2026-10-21: on the floor by the game's rule
+	-- (a real model's pivot is its feet, MonsterView groundOffset; a generated look's is its root, at hip height)
+	local lift = if info.real then 0 else info.hipHeight + info.rootHalf
+	local at = centre + Vector3.new(target.X, lift, target.Z - math.max(0, info.width / 2 - 1))
 	model:PivotTo(CFrame.lookAt(at, Vector3.new(centre.X, at.Y, centre.Z)))
 	model:SetAttribute("PreviewMonsterId", id) -- S111: SfxController.Mob (family, boss, hit material)
 	for _, item in model:GetDescendants() do
@@ -670,7 +766,35 @@ local function placeLook(id: string, look: MonsterLooks.Look, variant: string, s
 		end
 	end
 	model.Parent = stage
+	frameLook(model)
 	return model
+end
+
+-- Studio review 2026-10-21: a real model with bone clips (rig "bones") plays a slot's clip as in the game
+-- (client/Anim/BoneClips): an attack's blow fitted to land `lead` s after the start; the frame loop sets its time.
+local BONE_LOOPED: { [string]: boolean } = { idle = true, walk = true, run = true }
+local function boneOf(model: Model, look: MonsterLooks.Look, slot: string, lead: number?): any
+	local asset = look.asset
+	if not asset or asset.rig ~= "bones" then
+		return nil
+	end
+	local mixer = BoneClips.new(model, asset.model)
+	if not mixer then
+		return nil
+	end
+	local tracks = mixer.tracks
+	local track = tracks[slot]
+	if not track and (slot == "attack1" or slot == "attack2" or slot == "cast") then
+		track = tracks.attack2 or tracks.attack1
+	end
+	if not track then
+		return nil
+	end
+	track.Looped = BONE_LOOPED[slot] == true
+	track.lead = lead
+	track:Play(0)
+	track.weight = 1
+	return { mixer = mixer, track = track, t0 = track.time, pace = track.slot.rate * track.fit }
 end
 
 -- S117: the hover of a plan (studs at scale 1).
@@ -736,22 +860,41 @@ local function playMob(command: Command)
 			and (slot == "attack2" or slot == "cast")
 		then MonsterAbilities.get(monster.ability)
 		else nil
-	local windup = if ability then ability.windup elseif slot == "cast" then LAB.castWindup else Gait.DEFAULT_WINDUP
-	-- a basic monster attack (attack1) comes with its damage: the windup is mostly skipped (MonsterAttack strikeNow)
-	local strikeNow = slot == "attack1"
+	-- studio review 2026-10-21: attack1 is the kind's regular blow as the game plays it since S159 (the "aw" draw of
+	-- Logic/BasicBlow, then the blow; before, the strike-now pose with no draw: peak 0, hit 0 for every model)
+	local basicKeys, wind, basicSlot = nil, 0, slot
+	if monster and slot == "attack1" then
+		basicKeys, wind, basicSlot = MotionKeys.basicBlow(id)
+	end
+	local basic = basicKeys ~= nil
+	local shot = if monster then BasicBlow.shot(monster.attack, monster.damageKind) else "melee"
+	local windup = if ability
+		then ability.windup
+		elseif basic then wind
+		elseif slot == "cast" then LAB.castWindup
+		else Gait.DEFAULT_WINDUP
+	local strikeNow = false
+	local playSlot = if basic then basicSlot else slot -- the clip slot the game plays (BasicBlow.slot)
 	local asset = look.asset
 	local track, looped = nil, false
 	if asset and asset.rig == "animator" then
-		track, looped = clipOf(model, asset.anims :: any, slot)
+		track, looped = clipOf(model, asset.anims :: any, playSlot)
 	end
+	local lead = if playSlot == "attack1" or playSlot == "attack2" or playSlot == "cast" then windup else nil
+	local bone = boneOf(model, look, playSlot, lead)
 	local plan = look.plan
 	local bossDef = if boss then BossMotions.get(id) else nil
-	local style = if strikeNow
-		then MonsterMotions.styleFor(plan, look.weapon)
+	local style = if basic and shot ~= "melee"
+		then MonsterMotions.rangedFor(plan, look.weapon, shot)
+		elseif basic then MonsterMotions.styleFor(plan, look.weapon)
 		elseif ability then MonsterMotions.styleFor(plan, look.weapon, ability.id)
 		else MonsterMotions.styleFor(plan, look.weapon, "default")
 	local keys = keysForSlot(slot, windup, strikeNow, track)
-	if ability and not track then
+	if bone then
+		keys = MotionKeys.boneClip(bone.track.slot, lead)
+	elseif basic and not track then
+		keys = basicKeys :: MotionKeys.Keys
+	elseif ability and not track then
 		keys = MotionKeys.ability(ability.id) or keys
 	elseif slot == "spawn" and not track then
 		keys = MotionKeys.clip(Config.MonsterLook.summonRise)
@@ -761,13 +904,14 @@ local function playMob(command: Command)
 		joints = collect(model),
 		slot = slot,
 		windup = windup,
-		shift = if strikeNow then math.max(0, windup - Gait.STRIKE_NOW_LEAD) else 0,
+		shift = 0,
 		track = track,
 		looped = looped,
 		keys = keys,
+		bone = bone,
 		options = {
 			style = style,
-			charged = ability ~= nil,
+			charged = ability ~= nil or (basic and shot ~= "melee"),
 			deathStyle = if bossDef then bossDef.death.style else MonsterMotions.deathFor(plan),
 			deathSide = 1,
 			hover = hoverOf(plan),
@@ -802,6 +946,8 @@ local function playBoss(command: Command)
 	-- S117: the phase roar and the death of the boss (S159a: `rage` the roar into the last phase)
 	if attackId == "roar" or attackId == "rage" or attackId == "death" then
 		local roar = if def then def.roar.seconds else Config.MonsterLook.roarSeconds
+		local dying = attackId == "death"
+		local bone = boneOf(model, look, if dying then "death" else "idle", nil)
 		subject = {
 			model = model,
 			joints = collect(model),
@@ -810,7 +956,10 @@ local function playBoss(command: Command)
 			shift = 0,
 			track = nil,
 			looped = false,
-			keys = MotionKeys.clip(if attackId == "death" then Gait.DEATH_SECONDS else roar),
+			bone = bone,
+			keys = if bone and dying
+				then MotionKeys.boneClip(bone.track.slot, nil)
+				else MotionKeys.clip(if attackId == "death" then Gait.DEATH_SECONDS else roar),
 			options = {
 				deathStyle = if def then def.death.style else MonsterMotions.deathFor(plan),
 				deathSide = 1,
@@ -880,6 +1029,8 @@ local function playBoss(command: Command)
 		track, looped = clipOf(model, asset.anims :: any, slot)
 	end
 	local motion = if def then def.attacks[attackId] else nil
+	-- studio review 2026-10-21: a boss with bone clips plays the slot's clip, its blow at the attack's windup
+	local bone = if track then nil else boneOf(model, look, slot, attack.windup)
 	local played: Subject = {
 		model = model,
 		joints = collect(model),
@@ -888,7 +1039,10 @@ local function playBoss(command: Command)
 		shift = 0,
 		track = track,
 		looped = looped,
-		keys = MotionKeys.boss(bossId, attackId) or MotionKeys.monster(attack.windup),
+		bone = bone,
+		keys = if bone
+			then MotionKeys.boneClip(bone.track.slot, attack.windup)
+			else MotionKeys.boss(bossId, attackId) or MotionKeys.monster(attack.windup),
 		options = {
 			style = if motion then motion.style else nil,
 			charged = true,
@@ -986,6 +1140,7 @@ local function play(command: Command)
 	end
 	if action == "attack" then
 		clearSubject()
+		reframe()
 		local weaponType = command.id :: string
 		if actorWeapon ~= weaponType then
 			giveWeapon(a, weaponType, classColor(myClass()))
@@ -1050,6 +1205,7 @@ local function play(command: Command)
 		lastKeys = if run then MotionKeys.clip(run.length, run.marker, run.speed) else MotionKeys.still()
 	elseif action == "skill" then
 		clearSubject()
+		reframe()
 		local id = command.id :: string
 		local skill = Skills.get(id)
 		local weaponType = command.slot or AnimLab.weaponForSkill(id) -- S115: `skill <id> [weapon type]`
@@ -1067,12 +1223,15 @@ local function play(command: Command)
 	elseif action == "mob" then
 		playMob(command)
 		lastKeys = if subject then subject.keys else nil
+		reframe()
 	elseif action == "boss" then
 		playBoss(command)
 		lastKeys = if subject then subject.keys else nil
+		reframe()
 	elseif action == "npc" then
 		playNpc(command)
 		lastKeys = if subject then subject.keys else nil
+		reframe()
 	elseif action == "vfx" then
 		playVfx(command)
 		lastKeys = MotionKeys.still()
@@ -1111,6 +1270,12 @@ step = function(_dt: number)
 	if s then
 		if s.track then
 			s.track.TimePosition = LookAnim.clipTime(t, s.track.Length, s.looped)
+		end
+		local bone = s.bone
+		if bone then
+			-- studio review 2026-10-21: the bone clip at motion time t (BoneClips holds a clip's last frame)
+			bone.track.time = bone.t0 + math.max(0, t) * bone.pace
+			BoneClips.step(bone.mixer, 0)
 		end
 		if #s.joints > 0 then
 			-- S117: the game's choices (style, gather, death, rise, roar) on top of the slot's windup
@@ -1764,10 +1929,12 @@ local function run(command: Command): { [string]: any }
 	elseif action == "floor" then
 		-- S117: the floor as grass, snow or a cave (telegraph readability)
 		local spec = (LAB.floors :: any)[command.id :: string]
-		local floorPart = (stage :: Folder):FindFirstChild("Floor")
-		if spec and floorPart and floorPart:IsA("BasePart") then
-			floorPart.Material = (Enum.Material :: any)[spec.material]
-			floorPart.Color = Color3.fromHex(spec.color)
+		for _, name in { "Floor", "SubjectFloor" } do
+			local floorPart = (stage :: Folder):FindFirstChild(name)
+			if spec and floorPart and floorPart:IsA("BasePart") then
+				floorPart.Material = (Enum.Material :: any)[spec.material]
+				floorPart.Color = Color3.fromHex(spec.color)
+			end
 		end
 		notify("animlab.floor", { floor = command.id })
 		return { ok = true, floor = command.id }

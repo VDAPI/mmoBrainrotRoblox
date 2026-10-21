@@ -13859,3 +13859,22 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   występuje w repozytorium ani w historii (siedzi w pliku miejsca).
 - **Testy:** `fishingspots.spec` (wszystkie mapy), `waterfall.spec` (stopa i piana na wodzie wokseli, mokra skała),
   `meadowsterrain.spec` (`voxelWater` zgodne z `voxels`, niecka), sumy kontrolne węzłów Boru, Pustkowi i Szczytów.
+### Przegląd Studio 2026-10-21, partie 2–5: Jaskinia Mchów, telegrafy, zamach potworów, AnimLab, boss z daleka
+- **Jaskinia Mchów:** `MeadowsGen/Water` (`CURTAIN_Z`, zasłona za polem portalu, `SmoothPlastic`), `CaveDress/Moss`
+  (zasłona bez `Glass`), nowe `Data/CaveMouth` (płyty, głazy, otwór) i `Prefabs.caveMouth` na nich (`Rock`, trzy odcienie).
+- **Telegrafy na tle:** `Logic/BossCast.onGround` (styl `plain` / `deep` / `hot`), `Config.Telegraph.ground`,
+  `Vfx/Library.groundColor`, `Vfx/GroundTelegraph` (brzeg, obszar, front, obwódka ze stylu), `Vfx/HazardFx` (kolor znaku
+  wzoru na gruncie: pasy, ściany, pierścienie, kolce).
+- **Zamach potworów (S160r):** `Data/Combat.basicWind` / `basicWindVariant`, nowe `Logic/BasicBlow`, `Entities/Monster`
+  (zamach i rzut), `CombatFxController` (slot klipu), `Logic/MotionKeys` (`boneFit`, `boneClip`, `basicBlow`),
+  `tools/balance_reasons.luau`.
+- **AnimLab:** `AnimLabController` (modele na stopach, `SubjectFloor`, kadr na bossa, cele i pasek rzucania, klipy kości
+  bossów i potworów przez `Anim/BoneClips`, zwykły cios jak w świecie), `Config.AnimLab` (`frameMargin`, `castBarAbove`,
+  `floorPast`).
+- **Boss z daleka:** `MonsterViewController` (wczytywanie modeli z góry, pełny model dopiero po wczytaniu, ciemna
+  sylwetka bossa).
+- **Wiki:** `mechanics.json` z nowym `combat.basicWindVariant` (świadoma zmiana kształtu:
+  `WIKI_KEYS_ALLOW` z `mechanics:mechanics.combat.basicWindVariant` i jego czterema polami), dane odświeżone.
+- **Testy:** `portalglass.spec` (brak `Glass` przed polem portalu na wszystkich mapach i przy bramach miasta),
+  `cavemouth.spec`, `bosscast.spec` (kolory na gruncie: śnieg, lód, lodowiec, lawa i reszta `TERRAIN_COLORS`),
+  `basicblow.spec` (zamach, odstępy, klipy kości w chwili ciosu, jedna reguła, AnimLab). Bez przeglądu w Studio.

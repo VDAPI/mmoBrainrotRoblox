@@ -40,6 +40,7 @@ local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
+local BasicBlow = require(ReplicatedStorage.Shared.Logic.BasicBlow)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
@@ -1895,7 +1896,7 @@ local function rangedDraw(attacker: Model, shot: any): any
 	end
 	return {
 		style = MonsterMotions.rangedFor(look.plan, look.weapon, shot),
-		slot = if shot == "bolt" then "cast" else "attack2",
+		slot = BasicBlow.slot(shot),
 		charged = true,
 	}
 end
@@ -2143,7 +2144,9 @@ local function handle(event: { [string]: any })
 		local w = tonumber(event.w)
 		if attacker and w then
 			windUntil[attacker] = os.clock() + w
-			AnimationController.MonsterAttack(attacker, w, false, nil, nil, rangedDraw(attacker, event.st))
+			-- studio review 2026-10-21: a melee draw plays the slot of Logic/BasicBlow too (AnimLab shows the same)
+			local draw = rangedDraw(attacker, event.st) or { slot = BasicBlow.slot("melee") }
+			AnimationController.MonsterAttack(attacker, w, false, nil, nil, draw)
 		end
 	elseif kind == "teleCancel" then
 		cancelMark(event) -- S134

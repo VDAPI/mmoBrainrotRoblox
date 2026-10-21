@@ -67,7 +67,11 @@ return table.freeze({
 	-- (the clients pose the draw, "aw"); the interval between blows stays. A target that stepped farther than
 	-- reach x windReach + windSlack (flat studs) by then is missed. Ranged blows fly as projectiles after the draw.
 	-- S159a: an Elite II's throw at a fleeing target is drawn back too (a throw / a spell the target can see coming).
-	basicWind = table.freeze({ melee = 0.45, ranged = 0.35, throw = 0.5 }),
+	-- Studio review 2026-10-21 (owner: monsters strike without a wind-up): 0.45 / 0.35 / 0.5 -> 0.55 / 0.5 / 0.6, so the
+	-- draw (windup - Logic/Gait.STRIKE_SECONDS) lasts 0.41 s of a melee blow, 0.36 s of a shot; an Elite, an Elite II
+	-- and a boss draw longer (x basicWindVariant). The interval between blows stays (Logic/BasicBlow).
+	basicWind = table.freeze({ melee = 0.55, ranged = 0.5, throw = 0.6 }),
+	basicWindVariant = table.freeze({ normal = 1, elite = 1.2, elite2 = 1.35, boss = 1.35 }),
 	windReach = 1.5,
 	windSlack = 3,
 
