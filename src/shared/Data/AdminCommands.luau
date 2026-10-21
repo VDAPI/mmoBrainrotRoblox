@@ -168,8 +168,9 @@ cmd("character", "buildset", { enum("action", { "1", "2", "copy" }) }, { dangerA
 cmd("character", "timedtitle", { str("id"), int("days", 0, 365, true, "7") })
 -- S151: achievements of the caller or of a named player (the last argument): list, give <id>, reset <id|all>, counter
 -- <counter> <value>, backfill (the catch-up of old progress). Reset never takes paid Dragon Shards back.
+-- S151c: best <entry> <kills>: adds bestiary kills (a monster kind or a boss id), tiers and region achievements follow.
 cmd("character", "ach", {
-	enum("action", { "list", "give", "reset", "counter", "backfill" }),
+	enum("action", { "list", "give", "reset", "counter", "backfill", "best" }),
 	str("a", true),
 	str("b", true),
 	str("c", true),

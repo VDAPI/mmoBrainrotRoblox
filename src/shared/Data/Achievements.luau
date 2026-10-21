@@ -66,6 +66,7 @@ local COUNTERS: { [string]: CounterDef } = {
 	brewed = { scope = "character", mode = "add" },
 	gathered = { scope = "character", mode = "add" },
 	fish = { scope = "character", mode = "add" },
+	bestiaryRegions = { scope = "character", mode = "set" }, -- S151c: complete bestiary regions (Logic/Bestiary)
 	-- account
 	bosses = { scope = "account", mode = "set" },
 	bossKills = { scope = "account", mode = "add" },
@@ -133,6 +134,20 @@ ach("duel1", "combat", "duelsWon", 10, 5)
 ach("duel2", "combat", "duelsWon", 50, 10, { after = "duel1" })
 ach("arena1", "combat", "arenaWins", 25, 10)
 ach("arena2", "combat", "arenaWins", 200, 25, { after = "arena1" })
+-- S151c: a complete region of the bestiary (every monster and boss of it at the last tier, Data/Bestiary)
+ach("bestiary_meadows", "combat", "bestiaryRegions", 1, 50, {
+	key = "meadows",
+	reward = { title = "ach_lore_meadows" },
+})
+ach("bestiary_duskwood", "combat", "bestiaryRegions", 1, 50, {
+	key = "duskwood",
+	reward = { title = "ach_lore_duskwood" },
+})
+ach("bestiary_ashen", "combat", "bestiaryRegions", 1, 50, { key = "ashen", reward = { title = "ach_lore_ashen" } })
+ach("bestiary_frostpeak", "combat", "bestiaryRegions", 1, 50, {
+	key = "frostpeak",
+	reward = { title = "ach_lore_frostpeak" },
+})
 
 -- Bosses -------------------------------------------------------------------------------------------------------------
 ach("boss_grimrok", "bosses", "bosses", 1, 10, { key = "grimrok" })

@@ -244,6 +244,14 @@ local Definitions: { [string]: Definition } = {
 		args = { "string", "string", "integer" },
 		repeatable = true,
 	},
+	-- S159w: (offer key of the visit's stock, amount) a purchase at the wandering merchant (Logic/WanderingMerchant)
+	WanderingMerchantBuy = {
+		kind = "function",
+		dir = "c2s",
+		rate = 3,
+		args = { "string", "integer" },
+		repeatable = true,
+	},
 	-- Side quests (S27): (questId) / (questId, reward choice 1..3) / (questId) / (quest anchor id) / ()
 	SideAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } },
 	SideTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string", "integer?" } },

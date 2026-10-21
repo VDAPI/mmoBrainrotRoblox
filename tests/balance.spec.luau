@@ -3191,6 +3191,20 @@ T.describe("Achievements (S151)", function()
 	end)
 end)
 
+-- S151c: the bestiary's family bonus stays outside the pace model, so it must stay small: the cap per family below the
+-- smallest Common vs_<family> line at ilvl 20 (one item line beats a whole family mastered).
+T.describe("Bestiary (S151c)", function()
+	local BestiaryData = require("../src/shared/Data/Bestiary")
+	local ItemRoll = require("../src/shared/Logic/ItemRoll")
+
+	T.it("the family bonus cap stays below the smallest Common vs_<family> line", function()
+		local low = ItemRoll.bonusRange("vs_animal", 20, 1)
+		T.expect(BestiaryData.FAMILY_CAP < low).toBe(true)
+		T.expect(BestiaryData.FAMILY_CAP <= 3).toBe(true)
+		T.expect(BestiaryData.FAMILY_PCT <= BestiaryData.FAMILY_CAP).toBe(true)
+	end)
+end)
+
 -- S158 (owner 2026-10-20: slower regen so potions matter): an energy fighter without potions loses at least a fifth
 -- of its one-target 60 s damage at 45 and 100 (the targets assume the potion top-up, SkillModel.ASSUMPTIONS).
 T.describe("Energy potions matter (S158)", function()

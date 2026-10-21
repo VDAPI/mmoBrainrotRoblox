@@ -88,6 +88,11 @@ local function wallPiece(
 	local T = Structures.WALL_THICK
 	local top = math.max(hi, 0) + Structures.WALL_HEIGHT
 	local base = lo - 3
+	-- 2026-10-20: a dry piece is one asset kit slot "wall:segment" (Data/Kit): the model from the low ground to the
+	-- merlons' top, stretched to the piece's length (outer face to local -Z); the water gates keep their pieces
+	if not water then
+		bp:beginKit("wall:segment", 0, lo - 0.5, 0, top + 3.2 - (lo - 0.5), "shell", len)
+	end
 	if water then
 		-- water gate: the wall rests on an arch over the river, an iron grate closes the opening
 		local springY = water.level + 6.5
@@ -131,6 +136,9 @@ local function wallPiece(
 		local bh = top - lo - 3
 		bp:add("wedge", 2.6, bh, 3.4, 0, lo - 0.5 + bh / 2, T / 2 + 1.7, 0, 180, 0, o(WALL_STONE))
 	end
+	if not water then
+		bp:endKit()
+	end
 	if bp.rng:chance(0.4) then
 		local iv = Palette.pick(bp.rng, Palette.moss)
 		local ih = bp.rng:float(4, 9)
@@ -149,6 +157,8 @@ local function tower(x: number, z: number, ground: Ground, flag: boolean): Build
 	local top = math.max(hi, 0) + Structures.WALL_HEIGHT + 6
 	local base = lo - 3
 	local r = 7.5
+	-- 2026-10-20: asset kit slot "wall:tower" (Data/Kit), from the low ground to the merlons' top; the flag stays
+	bp:beginKit("wall:tower", 0, lo - 0.5, 0, top + 2.8 - (lo - 0.5), "shell")
 	-- vertical cylinder: Roblox cylinders run along local X, turn them up with rz = 90
 	bp:add("cyl", top - base, r * 2, r * 2, 0, (top + base) / 2, 0, 0, 0, 90, o(WALL_STONE, "shell", { q = true }))
 	bp:add("cyl", 0.8, r * 2 + 1, r * 2 + 1, 0, top - 0.4, 0, 0, 0, 90, o(WALL_CAP))
@@ -173,6 +183,7 @@ local function tower(x: number, z: number, ground: Ground, flag: boolean): Build
 			o(SLIT, "detail", { jitter = 0 })
 		)
 	end
+	bp:endKit()
 	if flag then
 		bp:add("cyl", 9, 0.35, 0.35, 0, top + 4.5, 0, 0, 0, 90, o(Palette.timber[1]))
 		bp:box(4.5, 2.6, 0.12, 2.3, top + 7.4, 0, { c = "#7A2A22", m = "Fabric", lod = "detail", tag = "flag" })
@@ -209,6 +220,9 @@ local function gatehouse(gate: any, ground: Ground): Build
 		stone = WALL_STONE,
 		roof = Palette.tiles[2],
 	}
+	-- 2026-10-20: asset kit slot "wall:gate" (Data/Kit): both towers, their roofs and the arch, fitted to the full
+	-- width (outer face to local -Z); the passage floor, the portcullis, the portal field and the torches stay
+	bp:beginKit("wall:gate", 0, floor - 0.5, 0, pw + 2 * tw, "shell")
 	for _, s in { -1, 1 } do
 		local cx = s * (pw / 2 + tw / 2)
 		bp:box(tw, towerTop - base, depth, cx, (towerTop + base) / 2, 0, o(WALL_STONE, "shell", { q = true }))
@@ -232,6 +246,18 @@ local function gatehouse(gate: any, ground: Ground): Build
 		for _, y in { towerTop - 6, towerTop - 13 } do
 			bp:box(0.6, 2.8, 0.3, cx, y, -depth / 2 - 0.1, o(SLIT, "detail", { jitter = 0 }))
 		end
+	end
+	-- block over the passage, the arch (two spandrels) and battlements
+	local arch = floor + 14
+	bp:box(pw, wallTop + 2 - arch, depth, 0, (wallTop + 2 + arch) / 2, 0, o(WALL_STONE, "shell", { q = true }))
+	for _, s in { -1, 1 } do
+		bp:add("wedge", depth, 3, 3, s * (pw / 2 - 1.5), arch - 1.5, 0, 0, s * 90, 180, o(WALL_STONE))
+	end
+	for i = 0, 3 do
+		bp:box(1.9, 2.6, 1.3, -pw / 2 + 1.75 + i * 3.5, wallTop + 3.3, -depth / 2 + 0.65, o(WALL_STONE))
+	end
+	bp:endKit()
+	for _, s in { -1, 1 } do
 		-- torches beside the inner mouth of the passage
 		bp:box(0.3, 1.2, 0.3, s * (pw / 2 + 1), floor + 7, depth / 2 + 0.6, o(Palette.metal[1]))
 		bp:box(
@@ -244,15 +270,6 @@ local function gatehouse(gate: any, ground: Ground): Build
 			{ c = "#FF9A3A", m = "Neon", lod = "detail", tag = "fire" }
 		)
 		bp:light(s * (pw / 2 + 1), floor + 8.2, depth / 2 + 1.2, "#FF9A50", 18, 1, "lamp")
-	end
-	-- block over the passage, the arch (two spandrels) and battlements
-	local arch = floor + 14
-	bp:box(pw, wallTop + 2 - arch, depth, 0, (wallTop + 2 + arch) / 2, 0, o(WALL_STONE, "shell", { q = true }))
-	for _, s in { -1, 1 } do
-		bp:add("wedge", depth, 3, 3, s * (pw / 2 - 1.5), arch - 1.5, 0, 0, s * 90, 180, o(WALL_STONE))
-	end
-	for i = 0, 3 do
-		bp:box(1.9, 2.6, 1.3, -pw / 2 + 1.75 + i * 3.5, wallTop + 3.3, -depth / 2 + 0.65, o(WALL_STONE))
 	end
 	-- passage floor and the raised portcullis
 	bp:box(pw, 0.6, depth + 2, 0, floor + 0.3 - 0.4, 0, o(Palette.rubble[1], "shell", { q = true }))

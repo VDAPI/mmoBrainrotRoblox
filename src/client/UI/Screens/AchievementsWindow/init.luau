@@ -5,9 +5,11 @@
 -- current step, the tracking star) and the details of the selection (PC a panel on the right, phone a sheet over the
 -- window). Everything comes from Logic/AchievementView over the replicated save (Context: read at most every
 -- Config.Achievements.listRefresh seconds); the server decides tracking (AchievementTrack).
+-- S151c: the bestiary is the last category (BestiaryTab: its own list and details in the same places).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local BestiaryTab = require(script.BestiaryTab)
 local Context = require(script.Context)
 local Details = require(script.Details)
 local Device = require(script.Parent.Parent.Device)
@@ -22,6 +24,19 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = Context.Props
 
 local GAP = 8
+
+-- A transparent full-size frame shown only while the bestiary tab is (`bestiary`) or is not open.
+local function only(scope: Scope, ctx: Context.Ctx, bestiary: boolean, name: string, child: Instance): Instance
+	return scope:New("Frame")({
+		Name = name,
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		Visible = scope:Computed(function(use): boolean
+			return (use(ctx.cat) == Context.BESTIARY) == bestiary
+		end),
+		[Children] = child,
+	})
+end
 
 local function desktop(scope: Scope, ctx: Context.Ctx): Instance
 	local top = Summary.HEIGHT + GAP
@@ -43,9 +58,13 @@ local function desktop(scope: Scope, ctx: Context.Ctx): Instance
 						Position = UDim2.fromOffset(List.CATEGORY_WIDTH + GAP, 0),
 						Size = UDim2.new(1, -(List.CATEGORY_WIDTH + Details.WIDTH + GAP * 2), 1, 0),
 						BackgroundTransparency = 1,
-						[Children] = List.rows(scope, ctx, false),
+						[Children] = {
+							only(scope, ctx, false, "Achievements", List.rows(scope, ctx, false)),
+							only(scope, ctx, true, "Bestiary", BestiaryTab.list(scope, ctx, false)),
+						},
 					}),
-					Details.panel(scope, ctx),
+					only(scope, ctx, false, "AchievementDetails", Details.panel(scope, ctx)),
+					BestiaryTab.panel(scope, ctx, Details.WIDTH),
 				},
 			}),
 		},
@@ -73,9 +92,13 @@ local function touchLayout(scope: Scope, ctx: Context.Ctx): Instance
 				Position = UDim2.fromOffset(0, listTop),
 				Size = UDim2.new(1, 0, 1, -listTop),
 				BackgroundTransparency = 1,
-				[Children] = List.rows(scope, ctx, true),
+				[Children] = {
+					only(scope, ctx, false, "Achievements", List.rows(scope, ctx, true)),
+					only(scope, ctx, true, "Bestiary", BestiaryTab.list(scope, ctx, true)),
+				},
 			}),
-			Details.sheet(scope, ctx),
+			only(scope, ctx, false, "AchievementSheet", Details.sheet(scope, ctx)),
+			BestiaryTab.sheet(scope, ctx),
 		},
 	})
 end

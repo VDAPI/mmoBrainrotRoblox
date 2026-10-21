@@ -370,6 +370,16 @@ local function onMonsterKilled(info: any, credit: { Player })
 		materialMul = area.materialMul,
 	})
 	LootService.DistributeToParty(credit, info.position, instancesFrom(loot), info.monsterId)
+	-- S151c: the bestiary's drops seen (the materials; equipment is not the kind's own), every credited player
+	if #loot.materials > 0 then
+		local ids: { string } = {}
+		for _, material in loot.materials do
+			table.insert(ids, material.id)
+		end
+		for _, player in credit do
+			QuestEvents.fire(player, "drop", { monsterId = info.monsterId, ids = ids })
+		end
+	end
 end
 
 -- Rolls items for a loot result (used by DungeonService for boss loot).

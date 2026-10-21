@@ -61,6 +61,42 @@ describe("Map looks (W01)", function()
 		expect(table.concat(cycling, ",")).toBe("city")
 	end)
 
+	it("names painted skies that exist, each with six image ids (0 = not uploaded)", function()
+		for id, look in MapLooks.byMap do
+			for _, key in { look.painted, look.paintedNight } do
+				expect(`{id} {key} {MapLooks.paintedSkies[key :: string] ~= nil}`).toBe(`{id} {key} true`)
+			end
+		end
+		for key, sky in MapLooks.paintedSkies do
+			local n = 0
+			for _, face in { "bk", "dn", "ft", "lf", "rt", "up" } do
+				local value = (sky.ids :: any)[face]
+				if type(value) == "number" and value >= 0 and value == math.floor(value) then
+					n += 1
+				end
+			end
+			expect(`{key} {n}`).toBe(`{key} 6`)
+		end
+	end)
+
+	it("shows a painted sky only once all six ids are in, the night one at night", function()
+		local skies = MapLooks.paintedSkies :: any
+		local saved = { day = skies.miastoDzien.ids, night = skies.miastoNoc.ids }
+		local full = { bk = 1, dn = 2, ft = 3, lf = 4, rt = 5, up = 6 }
+		local city = MapLooks.of("city")
+		skies.miastoDzien.ids = { bk = 1, dn = 2, ft = 3, lf = 4, rt = 5, up = 0 }
+		expect(MapLooks.paintedSky(city, 12) == nil).toBe(true)
+		skies.miastoDzien.ids = full
+		expect(MapLooks.paintedSky(city, 12)).toBe("miastoDzien")
+		-- night without its own sky: the place's sky, never the day one
+		expect(MapLooks.paintedSky(city, 22) == nil).toBe(true)
+		skies.miastoNoc.ids = full
+		expect(MapLooks.paintedSky(city, 22)).toBe("miastoNoc")
+		expect(MapLooks.paintedSky(city, 5)).toBe("miastoNoc")
+		expect(MapLooks.paintedSky(city, 6.5)).toBe("miastoDzien")
+		skies.miastoDzien.ids, skies.miastoNoc.ids = saved.day, saved.night
+	end)
+
 	it("only overrides maps that exist", function()
 		for id in MapLooks.byMap do
 			expect(`{id} {Maps.get(id) ~= nil}`).toBe(`{id} true`)
