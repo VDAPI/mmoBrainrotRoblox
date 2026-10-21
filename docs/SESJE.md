@@ -13538,6 +13538,33 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `src/shared/Data/Items/Consumables.luau`, `src/shared/Data/Localization/{pl,en}.luau`, `tests/SkillModel.luau`,
   `tests/{statcalc,balance}.spec.luau`, `tools/balance_reasons.luau`, `wiki/src/i18n/{pl,en}.ts`,
   `wiki/src/components/blocks/StatFormulaTable.astro`, `wiki/src/data/*` (wikidump), `docs/{DECYZJE,SESJE}.md`.
+### S159g: rozwój gildii (właściciel 2026-10-20: „Gildie to na pewno trzeba rozwinąć”)
+- **Audyt (było):** zakładanie, zaproszenia (ten sam serwer), 3 rangi, skarbiec złota (tylko wpłaty), 5 umiejętności za
+  złoto bez warunku, wiadomość dnia, czat gildii między serwerami, tag nad głową, ochrona PvP, ranking (suma 10 poziomów).
+  Brakowało: poziomu gildii, celów, wypłat i przedmiotów, konfigurowalnych uprawnień, kroniki, wyglądu gildii.
+- **Poziom gildii 1–20** (`Data/GuildProgress`, `Guild.levelOf`): EXP gildii z gry członków (`GuildProgress.activity`:
+  `CombatService.MonsterKilled` i `QuestEvents`), limit 400 na postać i dzień UTC (`character.guildWork`), zapis zbiorczy
+  co 60–90 s jednym `UpdateAsync` bez komunikatu (`Runtime.mutate(..., quiet)`), komunikat i linie czatu tylko przy
+  poziomie, celu lub Zrywie; zapis też przy wyjściu ostatniego gracza i `BindToClose`.
+- **Cele tygodnia** (`GuildProgress.goalsFor/apply/canClaim`): 3 cele z ziarna gildii i tygodnia, nagroda dla gildii
+  (EXP, złoto do skarbca) i 5 Odłamków dla członka z ≥ 60 EXP gildii w tygodniu (`GuildClaimGoal`), Zryw +3% EXP i złota.
+- **Skarbiec** (`Logic/GuildBank`): wypłaty złota i branie przedmiotów z limitami dziennymi rang, skarbiec przedmiotów
+  (`guild.vault`, sloty `gv:N` w `ItemController`), kronika 50 wpisów (`Guild.addLog`).
+- **Rangi**: Weteran, uprawnienia i limity ustawiane przez przywódcę (`Guild.setPerm/setLimit`, `Guild.can(rank, action,
+  guild)`), oficer zmienia rangi niższe, gdy przywódca pozwoli.
+- **Sztandar** (`Data/GuildBanners`, `Guild.setBanner`): godło i barwa przed tagiem nad głową (atrybuty `GuildEmblem`,
+  `GuildColor`) i w czacie gildii; ranking gildii pokazuje poziom (meta `v`).
+- **Okno gildii**: zakładki Przegląd (sztandar, pasek poziomu, kronika), Członkowie (4 rangi, EXP tygodnia), Cele, Skarbiec
+  (złoto, plecak i skarbiec przedmiotów), Umiejętności (blokada poziomem), Ustawienia (sztandar, tabela uprawnień).
+- **Admin:** `/guild exp n`, `/guild goals` (cele tygodnia od razu wykonane), `/guild info` z poziomem.
+- **Pytania do właściciela:** siedziba gildii (osobna mapa / budynek w stolicy z bonusem) i zaproszenia między serwerami
+  nie zrobione; liczby (limit 400, 5 Odłamków, Zryw 3%) do strojenia w `Data/GuildProgress`.
+- **Pliki:** `src/shared/Data/{GuildProgress,GuildBanners,AdminCommands,Localization/pl,Localization/en}.luau`,
+  `src/shared/Logic/{Guild,GuildBank,GuildProgress,Leaderboard,AccountSchema}.luau`, `src/shared/{Types,Net/Definitions}.luau`,
+  `src/server/Services/{GuildService,LeaderboardService}.luau`, `src/server/Guild/Runtime.luau`, `src/server/Admin/Guild.luau`,
+  `src/client/Controllers/{GuildController,ItemController,NameplateController}.luau`,
+  `src/client/UI/Screens/GuildWindow/*`, `src/client/UI/Screens/RankingsWindow.luau`,
+  `tests/{guild,guildprogress,localization}.spec.luau`, `tools/balance_reasons.luau`, `docs/{DESIGN,DECYZJE,SESJE,PROGRESS,JAK-DODAC}.md`.
 
 ### S159: walka z bossami do unikania (pociski, fale, pierścienie; właściciel 2026-10-21)
 - **Silnik:** `Logic/Hazards` (czysty, Lune): rodzaje `bolt` (pocisk: naprowadzanie, odbicia od brzegu areny,
@@ -13682,3 +13709,23 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `tests/bossgestures.spec.luau` (gest dla każdego wzoru, cios = wylot, zamach ≥ 0,6 s, kanały, obrót,
   dźwięki grające, ryki, naciągi dystansowych, krzywe Gait), `gait.spec` (zakres `follow`), `hazards.spec` (bez `pose`).
 - **Nieobejrzane w Studio:** znaki osi kości Mixamo, siła warstwy na klipach, ogólny wygląd gestów.
+- **Bez przeglądu w Studio** (wygląd na PC i telefonie, skupiska w mieście, chipy filtrów). Minimapa nie ruszana.
+### S159: zlecenia dzienne i tygodniowe jako zestawy z premią, serią, zamianą i Smoczymi Odłamkami (właściciel 2026-10-20)
+
+- **Dzienne:** 4 na dzień z grup (`Daily.SLOTS`: walka, zbieranie, potem dowolne; wagi, PvP tylko w wolnych miejscach),
+  nowe szablony: wydarzenie świata, rozkładanie u kowala, oddane zadania; polowania i elity liczą potwory od poziomu
+  postaci − 5 (`Objective.lvMin`). Jedna darmowa zamiana otwartego zlecenia dziennie (`DailyReroll`, tablica i dziennik).
+- **Premie:** odebranie ostatniego zlecenia daje premię za komplet (`Daily.bonus` z kontową serią, `Weekly.bonus`); odłamki
+  raz na konto i dzień / tydzień, od 10. poziomu (`Logic/Dailies`, `account.dailies`). Sufit 29 odłamków na tydzień.
+- **Widok:** tablica (postęp „2/4”, czas, seria, zamiana, karta premii z powodem braku odłamków), dziennik (to samo w
+  zakładkach), śledzik HUD (wiersz postępu z czasem do nowego zestawu, otwarte zlecenia, „Gotowe: odbierz na tablicy”,
+  postęp tygodnia). Admin: `/daily complete`.
+- **Balans:** zlecenie dzienne 0,09 poziomu (było 0,15 przy 3), tygodniowe 0,25 (było 0,30); model dodatków
+  (`Balance.extrasPerHour` / `extrasExpPerHour`) liczy 4 zlecenia i premie; budżet questów bez zmian, audyt zielony.
+- **Testy:** nowy `tests/dailies.spec`, poprawione `quest.spec`, `questcategories.spec`; księga `tools/balance_reasons.luau`.
+- **Pliki:** `src/shared/Data/Quests/{Daily,Weekly,Types}.luau`, `src/shared/Logic/{Dailies,QuestLogic,AccountSchema}.luau`,
+  `src/shared/{Types,Net/Definitions}.luau`, `src/shared/Data/{Seasons,AdminCommands}.luau`, `src/server/Services/QuestService.luau`,
+  `src/server/Admin/Quests.luau`, `src/client/UI/{QuestText,Components/QuestRewards,Screens/QuestBoard,Screens/QuestJournal,Screens/Hud/QuestTracker}.luau`,
+  lokalizacja PL / EN, `tests/{Balance,BalanceTables}.luau`, `tools/{balance_report,balance_reasons}.luau`,
+  `tools/WikiData/Quests.luau`, `wiki/src/data/*`, `docs/{DESIGN,DECYZJE,SESJE,JAK-DODAC}.md`.
+- **Dla właściciela:** domyślne liczby wyżej; bez przeglądu w Studio (tablica i śledzik na telefonie).

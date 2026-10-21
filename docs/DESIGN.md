@@ -1048,7 +1048,7 @@ nazw obcych) i tabelą własnej drużyny.
 
 - **Handel 1 na 1**: zaproszenie, okno z dwoma stronami (przedmioty + złoto), obaj klikają „Akceptuj”, każda zmiana resetuje akceptację, potem 3 s odliczania i „Potwierdź”. Tylko niezwiązane. Transakcja atomowa na serwerze (obaj na tym samym serwerze).
 - **Dom aukcyjny** (między serwerami): wystaw niezwiązany przedmiot za złoto (24/48 h), opłata 5% od sprzedaży + kaucja 1%. Wyszukiwanie: slot, klasa, poziom, rzadkość, nazwa; sortowanie po cenie. Zakup natychmiastowy (bez licytacji). Złoto/przedmioty trafiają do **Poczty** (odbiór w mieście, także offline).
-- Waluty: **Złoto** (grywalna, per postać), **Smocza Waluta / Dragon Shards** (premium, kontowa, tylko za Robux i rzadkie wydarzenia).
+- Waluty: **Złoto** (grywalna, per postać), **Smocza Waluta / Dragon Shards** (premium, kontowa, za Robux, rzadkie wydarzenia i małe kwoty z gry: osiągnięcia, komplety zleceń S159).
 - **Poczta (S125):** przesyłka od systemu albo admina może mieć Smocze Odłamki (na konto) i tytuł czasowy (dla
   postaci); gracz nie wyśle odłamków (`Logic/Mail.add`). Odbiór jak zawsze przy skrzynce, tytuł po terminie nic nie daje.
 - **Wartość przedmiotu** (S31, `Logic/ItemValue`, stałe w `Data/ItemValue`): ekwipunek `round(6 × ilvl × sellMul² × slotMul × (1 + 0,1 × ulepszenie))`, `slotMul` broń 1,0 / pancerz i druga ręka 0,8 / biżuteria 0,7; pozostałe `def.price × ilość` (każdy przedmiot ma cenę > 0). Kupiec płaci wartość; zakup u NPC = wartość × `shop.buyMul` (domyślnie 4), chyba że wpis ma stałą cenę (mikstury, kamienie, narzędzia, plecaki, ruda — nie niższą niż wartość). Ta sama funkcja liczy cenę na serwerze i w UI. Zablokowane i `noSell`: „Nie można sprzedać”.
@@ -1083,6 +1083,25 @@ nazw obcych) i tabelą własnej drużyny.
   - Szczęście: +1% szansy na drop / poziom
 - Czat gildii (między serwerami), lista członków z online/offline i serwerem, tag nad głową.
 - Dane gildii w osobnym DataStore (`UpdateAsync`), zmiany rozsyłane przez MessagingService.
+- **Rozwój gildii (S159g)**, liczby w `Data/GuildProgress`, reguły w `Logic/Guild`, `Logic/GuildBank`, `Logic/GuildProgress`:
+  - **Poziom gildii 1–20** z EXP gildii, które członkowie zdobywają grą: potwór 1 (najwyżej 10 poziomów niżej od postaci),
+    Elita 4, Elita II 10, boss lochu 25, boss świata 40, zadanie 10, zlecenie 4, wydarzenie świata 12, zbieranie / ryba /
+    ulepszenie / mikstura 1, kucie 2; jedna postać daje najwyżej 400 EXP gildii na dzień UTC. Próg poziomu n → n+1:
+    1500 × n^1,5 (zaokrąglone do 100). Serwer zbiera EXP członków i zapisuje rekord gildii co ~60–90 s.
+  - Poziom gildii otwiera poziomy umiejętności gildii (poziom umiejętności 1/2/3/4/5 od poziomu gildii 1/2/4/7/10;
+    kupione wcześniej zostają), miejsca w skarbcu przedmiotów (10 + 2 na poziom) i godła / barwy sztandaru.
+  - **Cele tygodnia**: trzy wspólne cele (walka, przygoda, rzemiosło) losowane z ziarna gildii i tygodnia, cele rosną z
+    liczbą członków. Wykonany cel: +1200 EXP gildii i 3000 + 1500 × poziom gildii złota do skarbca; każdy członek z co
+    najmniej 60 EXP gildii w tym tygodniu odbiera 5 Smoczych Odłamków za cel (najwyżej 15 na tydzień). Wszystkie trzy:
+    **Zryw gildii** +3% EXP i +3% złota dla członków do końca następnego tygodnia.
+  - **Skarbiec**: wpłata złota (każdy), wypłata złota i branie przedmiotów według uprawnień i dziennych limitów rangi,
+    odkładanie przedmiotów (bez związanych), skarbiec przedmiotów dostępny wszędzie poza walką. **Kronika**: ostatnie 50
+    zdarzeń (wpłaty, wypłaty, przedmioty, rangi, ulepszenia, cele, poziomy).
+  - **Rangi**: Przywódca, Oficer, Weteran, Członek. Przywódca ustawia uprawnienia niższych rang (zapraszanie, wyrzucanie,
+    zmiana rang niższych, ulepszanie, wiadomość dnia, wypłata złota, branie i odkładanie przedmiotów) i dzienne limity
+    (domyślnie oficer 50 000 złota i 10 przedmiotów, weteran 3 przedmioty, członek tylko odkłada).
+  - **Sztandar**: godło i barwa (więcej z poziomem gildii) przed tagiem nad głową i w czacie gildii.
+  - Ranking gildii dalej liczy sumę 10 najwyższych poziomów członków; kolumna „Poz.” pokazuje poziom gildii.
 
 ## 19a. Rankingi (S124, `docs/DESIGN-17.md` §5)
 
@@ -1250,9 +1269,25 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - **Bossowe (S98)**: zadanie „Pogromca” na każdego bossa i jego loch, u zwiadowcy krainy, od poziomu wejścia do lochu.
   Do tego **zlecenie tygodniowe na bossa**: raz w tygodniu pokonaj najwyższego dostępnego bossa 2 razy (od 15.
   poziomu). Liczą się tylko wygrane biegi, więc dzienny limit bossów (`Config.Boss.dailyRuns`) obowiązuje zawsze.
-- **Tygodniowe (S98, S101)**: 3 na tydzień z tablicy zleceń (nowy zestaw w poniedziałek 00:00 UTC), nagroda 2×
-  dzienna i błogosławieństwo o stopień wyższe; jeden z szablonów to udział w wydarzeniu świata. **Dzienne**: 3 losowe na
-  dzień z tablicy, dopasowane do poziomu (nagroda 0,15 EXP poziomu, złoto, błogosławieństwo, esencja).
+- **Dzienne (S159, właściciel 2026-10-20)**: 4 na dzień UTC z tablicy zleceń (`Data/Quests/Daily`), pierwsze z grupy
+  „walka” (polowanie na potwory od poziomu postaci − 5, elity, wygrany loch, wydarzenie świata), drugie z „zbieranie”
+  (zioła, ruda, ryby), reszta z dowolnej (też ulepszenie, rozkładanie u kowala, oddane zadania i zlecenia, pojedynki
+  albo arena; PvP tylko w wolnych miejscach i z połową wagi). Jedna darmowa zamiana otwartego zlecenia dziennie (tablica
+  albo dziennik). Nagroda zlecenia: 0,09 EXP poziomu, złoto 40 + 20 × L, 2 pyły esencji. **Premia za komplet** (razem z
+  ostatnim odebranym): EXP (0,04 + 0,01 × dni serii, seria liczona do 7) poziomu, 2 błogosławieństwa o stopień wyższe niż
+  dawne dzienne i **Smocze Odłamki: 2, od 5. dnia serii 3**. Seria jest kontowa (dzień z kompletem dowolnej postaci,
+  dzień przerwy zaczyna od 1); odłamki raz na konto i dzień UTC, od 10. poziomu postaci (`Logic/Dailies`).
+- **Tygodniowe (S98, S101, S159)**: 3 na tydzień z tablicy zleceń (nowy zestaw w poniedziałek 00:00 UTC), nagroda 0,25
+  EXP poziomu, złoto 2 × (50 + 30 × L), błogosławieństwo i esencja; szablony to też wydarzenia świata i oddane zadania,
+  polowania liczą potwory w przedziale poziomu. **Premia za komplet**: 0,20 EXP poziomu, esencja (bez złota: limit dodatków T-EC3) i **8 Smoczych
+  Odłamków** raz na konto i tydzień (od 10. poziomu). Zlecenie na bossa jest poza kompletem.
+- **Smocze Odłamki z zestawów (S159)**: najwyżej 7 × 3 + 8 = **29 na tydzień i konto** (pełna seria), pierwszy tydzień
+  serii 25; to ok. 28% tygodnia VIP (105), przepustka sezonu (800) to ok. 28 tygodni samych zestawów
+  (`tests/dailies.spec`). EXP pełnego tygodnia zestawów (dzienne przy pełnej serii, tygodniowe, premie, boss) ok. 4,7
+  poziomu na poziomie postaci, wcześniej 4,55 (+4%); tempo 1 → 100 bez zmian (zestawy są poza budżetem questów).
+- **Widok (S159)**: tablica i dziennik pokazują „Zlecenia dnia 2/4”, czas do nowego zestawu, serię, zamianę i kartę
+  premii (co da, czemu bez odłamków); śledzik w HUD ma wiersz „Zlecenia dnia 2/4 · 5:12”, otwarte zlecenia, „Gotowe:
+  odbierz na tablicy” i postęp tygodnia.
 - **Rozmowy (S101b, DESIGN-15 §3.5)**: odpowiedzi gracza na stronie dialogu (drobne skutki: podpowiedź na mapie,
   kolejność celów, mikstura), NPC pamięta wybór, komentarze NPC w trakcie (wyłączalne), towarzysz `follow` / `lead`.
 - **Budżet EXP (S98, audyt S109)**: questy jednorazowe dają ok. 30% EXP poziomu na 20–99 (zlecenie 12%, fabuła 10%,
@@ -1376,7 +1411,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   punktów. Po sezonie przerwa do następnego wpisu w `Data/Seasons` („Następny sezon wkrótce”); nowy sezon = nowe
   kosmetyki (decyzja właściciela).
 - **Punkty sezonu tylko za zwykłą grę** (konto, wszystkie postacie razem): potwór 2, Elita 10, Elita II 40, boss lochu
-  150, boss świata 200, zadanie fabuły 60, poboczne 40, zlecenie łowieckie 40, zlecenie dzienne 80, tygodniowe (i na
+  150, boss świata 200, zadanie fabuły 60, poboczne 40, zlecenie łowieckie 40, zlecenie dzienne 60 (S159: 4 dziennie, było 80 przy 3), tygodniowe (i na
   bossa) 250, wydarzenie świata 120, Krwawy Księżyc 150, mecz areny 20, osiągnięcie 50. Liczy się też postać na 100.
   poziomie i zadania bez EXP. Nic kupionego nie daje punktów ani stopni.
 - **Limity:** punkty z potworów (zwykłe i Elity) najwyżej 400 na dzień UTC; limit narastający: do końca tygodnia `w`

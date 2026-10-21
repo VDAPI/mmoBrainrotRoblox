@@ -5,7 +5,9 @@
 local Shared = game:GetService("ReplicatedStorage").Shared
 
 local GuildLogic = require(Shared.Logic.Guild)
+local GuildProgress = require(Shared.Logic.GuildProgress)
 local GuildSkills = require(Shared.Data.GuildSkills)
+local Time = require(Shared.Logic.Time)
 
 local Context = require(script.Parent.Context)
 
@@ -111,6 +113,8 @@ commands.guild = function(player, args)
 				tag = data.tag,
 				members = count,
 				treasury = data.treasury,
+				level = GuildLogic.level(data),
+				exp = data.exp or 0,
 				skills = if #skills > 0 then table.concat(skills, ", ") else "-",
 				version = data.version,
 				id = data.id,
@@ -155,6 +159,29 @@ commands.guild = function(player, args)
 							contributed = 0,
 						}
 					end
+				end)
+			then
+				reply(player, "admin.guild.done")
+			end
+		elseif sub == "exp" and parseAmount(args[2]) then
+			-- S159g: guild EXP added (levels follow)
+			local amount = math.max(0, parseAmount(args[2]) :: number)
+			if GuildService.AdminMutate(player, function(guild)
+				guild.exp = (guild.exp or 0) + amount
+			end) then
+				reply(player, "admin.guild.done")
+			end
+		elseif sub == "goals" then
+			-- S159g: this week's goals done at once (rewards and the rally like in play), pending guild EXP written
+			GuildService.AdminFlush()
+			if
+				GuildService.AdminMutate(player, function(guild)
+					local week = Time.weekNumber(os.time())
+					GuildProgress.ensureWeek(guild, week)
+					for _, goal in (guild.week :: any).goals do
+						goal.n = goal.target
+					end
+					GuildProgress.apply(guild, {}, week, os.time())
 				end)
 			then
 				reply(player, "admin.guild.done")

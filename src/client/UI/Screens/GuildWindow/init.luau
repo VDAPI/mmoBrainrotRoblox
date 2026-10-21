@@ -1,10 +1,12 @@
 --!strict
--- Guild window (G, DESIGN §19, §23): Overview / Members / Skills / Settings tabs. Without a guild it says
--- where to found one (the Guild Master in the capital) and how to join (an invitation from a member).
+-- Guild window (G, DESIGN §19, §23): Overview / Members / Goals / Bank / Skills / Settings tabs (Goals and Bank S159g).
+-- Without a guild it says where to found one (the Guild Master in the capital) and how to join (an invitation).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Bank = require(script.Bank)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Goals = require(script.Goals)
 local GuildSkills = require(ReplicatedStorage.Shared.Data.GuildSkills)
 local Members = require(script.Members)
 local Overview = require(script.Overview)
@@ -38,6 +40,10 @@ local function GuildWindow(scope: Scope, props: Props): Fusion.Child
 		local tab = use(props.Tab)
 		if tab == "members" then
 			return Members(s, props.ShowModal)
+		elseif tab == "goals" then
+			return Goals(s)
+		elseif tab == "bank" then
+			return Bank(s)
 		elseif tab == "skills" then
 			return Skills(s)
 		elseif tab == "settings" then
@@ -76,9 +82,12 @@ local function GuildWindow(scope: Scope, props: Props): Fusion.Child
 			Visible = hasGuild,
 			[Children] = Tabs(scope, {
 				Selected = props.Tab,
+				Scroll = true, -- S159g: six tabs (a phone scrolls the strip)
 				Tabs = {
 					{ id = "overview", label = Text.T(scope, "guild.tab.overview") },
 					{ id = "members", label = Text.T(scope, "guild.tab.members") },
+					{ id = "goals", label = Text.T(scope, "guild.tab.goals") },
+					{ id = "bank", label = Text.T(scope, "guild.tab.bank") },
 					{ id = "skills", label = Text.T(scope, "guild.tab.skills") },
 					{ id = "settings", label = Text.T(scope, "guild.tab.settings") },
 				},

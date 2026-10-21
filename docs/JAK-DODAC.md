@@ -144,6 +144,11 @@
 - **Łup Elity II** (S134h): `LootTables.ELITE2_SLOTS[kind]` (2–3 grupy, czytane tylko przez `LootTables.slotsFor`), pasma
   `ELITE2_BANDS` (test pokrycia `tests/elite2loot.spec`); jaskinia: `scale` w `CaveShapes`, plan i współrzędne przez
   `Logic/CavePlan` (ubiór: `Kit.at`).
+- **Zlecenie dzienne / tygodniowe** (S159): szablon w `Data/Quests/Daily` albo `Weekly` (`slot` z grup `Daily.SLOTS`
+  albo `craft` / `social`, `weight`, `pvp`; cel z typów `Data/Quests/Types`, nowy typ = gałąź w `QuestLogic.amount` i
+  zdarzenie `QuestEvents`) + tekst `daily.<id>.title` / `weekly.<id>.title` (PL, EN) i etykieta celu w `UI/QuestText` oraz
+  `tools/WikiData/Quests.label`. Premie, seria i odłamki tylko w `Logic/Dailies` (liczby `Daily.BONUS`, `Weekly.BONUS`);
+  sufit odłamków i tempo EXP pilnuje `tests/dailies.spec`, zmiana liczb idzie z powodem w `tools/balance_reasons.luau`.
 - **Zlecenia łowieckie** (S99): reguły w nagłówku `Data/Quests/Contracts` (`RULES`); po każdej zmianie `lv` / `groups`
   łowisk albo reguł `lune run tools/contracts_gen.luau`, potem `lune run tools/quest_budget.luau` (i powody w księdze);
   test `tests/contracts.spec`. Kolejka i biorący tylko w `Logic/Contracts`, serwer `ContractService`. S134k: rodzaj
@@ -222,6 +227,10 @@
   budżecie `Config.Achievements.shardBudget` (test). Okno, tracker i profil (S151b) tylko z `Logic/AchievementView`
   (seria zwinięta do bieżącego stopnia, sekretne „???”), śledzenie przez `Achievements.canTrack` / `setTracked`
   (`character.ach.track`, remote `AchievementTrack`).
+- **Cel tygodnia gildii / źródło EXP gildii** (S159g): cel = wpis w `Data/GuildProgress.GOALS` (grupa z `GROUPS`,
+  `counts` z aktywności, `perMember` / `min` / `step`) + `guild.goal.<id>.name/.desc` (PL, EN); nowe źródło = punkty w
+  `POINTS` + mapowanie zdarzenia w `Logic/GuildProgress.activity` + `guild.source.<id>`; test `tests/guildprogress.spec`.
+  Nowe uprawnienie rangi: `Guild.EDITABLE` + domyślne w `RANK_DEFAULTS` + `guild.right.<akcja>`.
 - **Wpis bestiariusza** (S151c): nowy rodzaj w `Data/Monsters` albo boss w `Data/Bosses` sam staje się wpisem
   (`Data/Bestiary`, kraina z `region`); łupy z jego tabeli (`LootTables`). Stopnie, punkty i limit premii rodziny tylko
   w `Data/Bestiary`; widok tylko z `Logic/Bestiary` (`view`, `rows`, `regions`). Nowa kraina = wpis w `REGIONS` +

@@ -9,6 +9,12 @@
 -- (model attribute GuildTag), a guild TextChannel whose lines are relayed to the other servers, and
 -- system lines (joined, promoted, upgraded) in it. Characters keep `guildId`; when entering the world the
 -- membership is checked against the record (kicked or disbanded while offline -> cleared).
+--
+-- S159g: guild EXP and weekly goals (Logic/GuildProgress): monster kills (CombatService.MonsterKilled) and QuestEvents of
+-- members become activities; the guild EXP of a character is capped per UTC day (character.guildWork); each server
+-- collects them per guild and writes them every Rules.flushSeconds (+ jitter) in one quiet UpdateAsync (no change
+-- notice unless a level, a goal or the rally came of it). The bank (Logic/GuildBank): gold out of the treasury and the
+-- item vault with rank rights and daily limits, the guild log, rank rights edited by the leader, the banner.
 
 local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
@@ -18,12 +24,18 @@ local TextService = game:GetService("TextService")
 
 local Shared = ReplicatedStorage.Shared
 
+local Analytics = require(script.Parent.Parent.Analytics)
 local Bus = require(script.Parent.Parent.Guild.Bus)
 local Runtime = require(script.Parent.Parent.Guild.Runtime)
 local Ignores = require(script.Parent.Parent.Social.Ignores) -- S133
+local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Config = require(Shared.Config)
 local Guild = require(Shared.Logic.Guild)
+local GuildBank = require(Shared.Logic.GuildBank)
+local GuildProgress = require(Shared.Logic.GuildProgress)
+local GuildProgressData = require(Shared.Data.GuildProgress)
 local GuildSkills = require(Shared.Data.GuildSkills)
+local Time = require(Shared.Logic.Time)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 local Store = require(script.Parent.Parent.Guild.Store)
@@ -35,7 +47,15 @@ type GuildData = Guild.GuildData
 
 local GuildService = {
 	Name = "GuildService",
-	Deps = { "DataService", "PlayerStateService", "CharacterService", "StatService", "LevelService", "NpcService" },
+	Deps = {
+		"DataService",
+		"PlayerStateService",
+		"CharacterService",
+		"StatService",
+		"LevelService",
+		"NpcService",
+		"InventoryService",
+	},
 }
 
 local Rules = GuildSkills.Rules
@@ -48,6 +68,7 @@ local CharacterService: any
 local StatService: any
 local LevelService: any
 local NpcService: any
+local InventoryService: any
 
 local cache = Runtime.cache
 local guildOf = Runtime.guildOf
@@ -381,9 +402,8 @@ local function setRank(player: Player, targetKey: string, rank: string): (boolea
 		return Guild.setRank(guild, key, targetKey, rank)
 	end)
 	if ok then
-		notify(guildId, if rank == "officer" then "guild.sys.promoted" else "guild.sys.demoted", {
-			name = memberName(guildId, targetKey),
-		})
+		-- S159g: four ranks, one line ("@" = localized by the viewer)
+		notify(guildId, "guild.sys.rank", { name = memberName(guildId, targetKey), rank = `@guild.rank.{rank}` })
 	end
 	return ok, err
 end
@@ -525,6 +545,316 @@ local function chat(player: Player, text: string)
 	end
 end
 
+-- S159g: bank, rights, banner, goals --------------------------------------------------------------------------------
+
+local ProgressRules = GuildProgressData.Rules
+
+local function lazy(name: string): any
+	if not Registry then
+		return nil
+	end
+	local ok, service = pcall(Registry.Get, name)
+	return if ok then service else nil
+end
+
+local function today(): number
+	return Time.dayNumber(os.time())
+end
+
+-- Gives an item back to the player: into `index` when it is still free, else anywhere in the backpack, else by mail
+-- (nothing is lost when the backpack filled up while the guild record was written).
+local function giveItem(player: Player, item: any, index: number?)
+	local char = character(player)
+	if
+		char
+		and index
+		and InventoryService.ValidTakeIndex(player, index)
+		and InventoryService.Get(player, index) == nil
+	then
+		InventoryService.SetSlot(player, index, item)
+		return
+	end
+	local leftover = if char then InventoryService.AddItem(player, item) else item.n
+	if leftover <= 0 then
+		return
+	end
+	local rest = table.clone(item)
+	rest.n = leftover
+	local mail = lazy("MailService")
+	if mail then
+		task.spawn(mail.Send, player.UserId, {
+			from = "system",
+			subjectKey = "mail.subject.returned",
+			items = { rest },
+			charId = if char then char.id else nil,
+		})
+	end
+	log:warn("guild vault item %s of %s went by mail (backpack full)", tostring(item.id), player.Name)
+end
+
+local function inCombat(player: Player): boolean
+	local resources = lazy("ResourceService")
+	return resources ~= nil and resources.InCombat(player)
+end
+
+local function withdrawGold(player: Player, amount: number): (boolean, string?)
+	local guildId, key = myGuild(player)
+	local char = character(player)
+	if not guildId or not key or not char then
+		return false, "guild.error.none"
+	end
+	local ok, err = mutate(guildId, function(guild)
+		return GuildBank.withdrawGold(guild, key, amount, os.time(), today())
+	end)
+	if not ok then
+		return false, err
+	end
+	local now = character(player)
+	if not now or now.id ~= char.id then
+		-- switched characters while the record was written: the gold goes back to the treasury
+		mutate(guildId, function(guild)
+			if not guild or guild.disbanded then
+				return false, "guild.error.gone"
+			end
+			guild.treasury += amount
+			guild.version += 1
+			return true, nil
+		end)
+		return false, "error.wrongPhase"
+	end
+	local balance = PlayerStateService.Update(player, { "character", "gold" }, function(gold: number)
+		return gold + amount
+	end)
+	Analytics.gold(player, amount, balance, "guildWithdraw")
+	DataService.Save(player)
+	notify(guildId, "guild.sys.withdraw", { name = char.name, amount = amount })
+	return true, nil
+end
+
+local function putItem(player: Player, invIndex: number, slot: number?): (boolean, string?)
+	local guildId, key = myGuild(player)
+	if not guildId or not key then
+		return false, "guild.error.none"
+	end
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
+	if inCombat(player) then
+		return false, "guild.error.combat"
+	end
+	local item = InventoryService.Get(player, invIndex)
+	if not item then
+		return false, "error.stale"
+	end
+	if item.bound then
+		return false, "trade.error.bound"
+	end
+	local data = cache[guildId].data
+	if not Guild.can(data.members[key] and data.members[key].rank, "putItem", data) then
+		return false, "guild.error.permission"
+	end
+	-- The item leaves first (no yield between the check and the change); back if the guild write fails.
+	InventoryService.SetSlot(player, invIndex, nil)
+	local ok, err = mutate(guildId, function(guild)
+		return GuildBank.putItem(guild, key, item, slot, os.time())
+	end)
+	if not ok then
+		giveItem(player, item, invIndex)
+		return false, err
+	end
+	DataService.Save(player)
+	return true, nil
+end
+
+local function takeItem(player: Player, slot: number, invIndex: number?): (boolean, string?)
+	local guildId, key = myGuild(player)
+	if not guildId or not key then
+		return false, "guild.error.none"
+	end
+	if InventoryService.IsTradeLocked(player) then
+		return false, "trade.error.locked"
+	end
+	if inCombat(player) then
+		return false, "guild.error.combat"
+	end
+	local vault = cache[guildId].data.vault or {}
+	local wanted = vault[tostring(slot)]
+	if type(wanted) ~= "table" then
+		return false, "error.stale"
+	end
+	if not InventoryService.CanFit(player, { wanted }) then
+		return false, "inventory.full"
+	end
+	local taken: any = nil
+	local ok, err = mutate(guildId, function(guild)
+		local done, reason, item = GuildBank.takeItem(guild, key, slot, wanted.uid, os.time(), today())
+		taken = item
+		return done, reason
+	end)
+	if not ok or not taken then
+		return false, err
+	end
+	giveItem(player, taken, invIndex)
+	DataService.Save(player)
+	return true, nil
+end
+
+local function moveVault(player: Player, from: number, to: number): (boolean, string?)
+	local guildId, key = myGuild(player)
+	if not guildId or not key then
+		return false, "guild.error.none"
+	end
+	return mutate(guildId, function(guild)
+		return GuildBank.move(guild, key, from, to)
+	end)
+end
+
+local function setPerm(player: Player, rank: string, action: string, value: any): (boolean, string?)
+	local guildId, key = myGuild(player)
+	if not guildId or not key then
+		return false, "guild.error.none"
+	end
+	return mutate(guildId, function(guild)
+		return Guild.setPerm(guild, key, rank, action, value)
+	end)
+end
+
+local function setLimit(player: Player, rank: string, kind: string, value: number): (boolean, string?)
+	local guildId, key = myGuild(player)
+	if not guildId or not key then
+		return false, "guild.error.none"
+	end
+	return mutate(guildId, function(guild)
+		return Guild.setLimit(guild, key, rank, kind, value)
+	end)
+end
+
+local function setBanner(player: Player, emblem: string, colour: string): (boolean, string?)
+	local guildId, key = myGuild(player)
+	if not guildId or not key then
+		return false, "guild.error.none"
+	end
+	return mutate(guildId, function(guild)
+		return Guild.setBanner(guild, key, emblem, colour)
+	end)
+end
+
+-- The Dragon Shards of a weekly goal done (Logic/GuildProgress.canClaim; once per goal, week and character).
+local function claimGoal(player: Player, index: number): (boolean, string?)
+	local guildId, key = myGuild(player)
+	local char = character(player)
+	if not guildId or not key or not char then
+		return false, "guild.error.none"
+	end
+	local data = cache[guildId].data
+	local week = Time.weekNumber(os.time())
+	local ok, err = GuildProgress.canClaim(data, key, index, week, char.guildWork)
+	if not ok then
+		return false, err
+	end
+	local goal = ((data.week :: any).goals :: { Guild.Goal })[index]
+	PlayerStateService.Set(
+		player,
+		{ "character", "guildWork" },
+		GuildProgress.markClaimed(char.guildWork, week, goal.id)
+	)
+	local shards = ProgressRules.claimShards
+	local total = PlayerStateService.Update(player, { "account", "dragonShards" }, function(value: number?)
+		return (value or 0) + shards
+	end)
+	Analytics.shards(player, shards, total, "guildGoal")
+	DataService.Save(player)
+	return true, nil
+end
+
+-- Activity -------------------------------------------------------------------------------------------------------------
+
+-- guild id -> member key -> the guild EXP and activities of members on this server not written yet
+local pending: { [string]: GuildProgress.Batch } = {}
+local flushing: { [string]: boolean } = {}
+
+local function record(player: Player, kind: string, data: { [string]: any }?)
+	local guildId = guildOf[player]
+	local key = memberKey(player)
+	local char = character(player)
+	if not guildId or not key or not char then
+		return
+	end
+	local act, n = GuildProgress.activity(kind, data, char.level)
+	if not act or n <= 0 then
+		return
+	end
+	local granted, work = GuildProgress.earn(char.guildWork, today(), GuildProgress.points(act, n))
+	if granted > 0 then
+		PlayerStateService.Set(player, { "character", "guildWork" }, work)
+	end
+	local batch = pending[guildId] or {}
+	pending[guildId] = batch
+	local part = batch[key] or { exp = 0, acts = {} }
+	batch[key] = part
+	part.exp += granted
+	part.acts[act] = (part.acts[act] or 0) + n
+end
+
+local function announce(guildId: string, notes: GuildProgress.Notes)
+	for _, level in notes.levels do
+		notify(guildId, "guild.sys.levelUp", { level = level })
+	end
+	for _, id in notes.goals do
+		local def = GuildProgressData.goalById[id]
+		notify(guildId, "guild.sys.goalDone", { goal = if def then "@" .. def.nameKey else id })
+	end
+	if notes.rally then
+		notify(guildId, "guild.sys.rally", nil)
+	end
+end
+
+-- Writes the pending activity of one guild (yields). A failed write keeps it for the next round.
+local function flush(guildId: string)
+	local batch = pending[guildId]
+	if not batch or flushing[guildId] then
+		return
+	end
+	pending[guildId] = nil
+	flushing[guildId] = true
+	local notes: GuildProgress.Notes? = nil
+	local week, now = Time.weekNumber(os.time()), os.time()
+	local ok, err, data = Runtime.mutate(guildId, function(guild: GuildData?)
+		if not guild or guild.disbanded then
+			return false, "guild.error.gone"
+		end
+		notes = GuildProgress.apply(guild, batch, week, now)
+		return true, nil
+	end, true)
+	flushing[guildId] = nil
+	if not ok then
+		if err ~= "guild.error.gone" then
+			local again = pending[guildId] or {}
+			GuildProgress.merge(again, batch)
+			pending[guildId] = again
+		end
+		return
+	end
+	local n = notes :: GuildProgress.Notes?
+	if n and (#n.levels > 0 or #n.goals > 0 or n.rally) then
+		-- something members should see on every server now: the usual change notice, chat lines, board entry
+		Bus.publish(guildId, { op = "changed", v = if data then data.version else 0 })
+		announce(guildId, n)
+		submitGuild(data)
+	end
+end
+
+local function flushAll()
+	for guildId in table.clone(pending) do
+		task.spawn(flush, guildId)
+	end
+end
+
+-- Admin (S159g): writes the pending guild EXP of every guild now.
+function GuildService.AdminFlush()
+	flushAll()
+end
+
 -- Admin: disbands the player's guild without confirmation. Yields.
 function GuildService.AdminDisband(player: Player): boolean
 	local guildId = guildOf[player]
@@ -617,6 +947,7 @@ function GuildService.Init(registry)
 	StatService = registry.Get("StatService")
 	LevelService = registry.Get("LevelService")
 	NpcService = registry.Get("NpcService")
+	InventoryService = registry.Get("InventoryService")
 	Store.init(DataService.HasDataStoreAccess)
 	Runtime.init(PlayerStateService, StatService)
 	Bus.init(Runtime.onMessage)
@@ -625,7 +956,12 @@ function GuildService.Init(registry)
 		if not entry then
 			return nil
 		end
-		return { key = "source.guild", flat = Guild.bonuses(entry.data.skills) }
+		local flat = Guild.bonuses(entry.data.skills)
+		-- S159g: the rally of a week with every goal done
+		for stat, value in GuildProgress.rallyBonus(entry.data, Time.weekNumber(os.time())) do
+			flat[stat] = (flat[stat] or 0) + value
+		end
+		return { key = "source.guild", flat = flat }
 	end)
 end
 
@@ -657,6 +993,40 @@ function GuildService.Start()
 	Net.Handle("GuildSetMotd", locked(setMotd))
 	Net.Handle("GuildSetting", locked(setSetting))
 	Net.On("GuildChatSend", chat)
+	-- S159g
+	Net.Handle("GuildWithdraw", locked(withdrawGold))
+	Net.Handle("GuildPutItem", locked(putItem))
+	Net.Handle("GuildTakeItem", locked(takeItem))
+	Net.Handle("GuildMoveVault", locked(moveVault))
+	Net.Handle("GuildSetPerm", locked(setPerm))
+	Net.Handle("GuildSetLimit", locked(setLimit))
+	Net.Handle("GuildSetBanner", locked(setBanner))
+	Net.Handle("GuildClaimGoal", locked(claimGoal))
+
+	-- S159g: guild EXP and goal progress from members' play
+	QuestEvents.Fired:Connect(function(player: Player, kind: string, data: { [string]: any })
+		if kind ~= "kill" then -- kills come from CombatService below (QuestEvents has no "kill" of its own)
+			record(player, kind, data)
+		end
+	end)
+	local combat = lazy("CombatService")
+	if combat then
+		combat.MonsterKilled:Connect(function(info: any, credit: { Player })
+			for _, player in credit do
+				record(player, "kill", info)
+			end
+		end)
+	end
+	task.spawn(function()
+		while true do
+			task.wait(ProgressRules.flushSeconds + math.random() * ProgressRules.flushJitter)
+			flushAll()
+		end
+	end)
+	game:BindToClose(function()
+		flushAll()
+		task.wait(2)
+	end)
 
 	-- Chat tabs (general / party / guild) in the default chat window.
 	pcall(function()
@@ -685,6 +1055,10 @@ function GuildService.Start()
 		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
+		local guildId = guildOf[player]
+		if guildId and pending[guildId] then
+			task.spawn(flush, guildId) -- the last member here may be leaving: write before the cache goes
+		end
 		invites[player] = nil
 		detach(player)
 		busy[player] = nil

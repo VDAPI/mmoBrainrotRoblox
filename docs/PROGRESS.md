@@ -26,8 +26,10 @@
   przemiana linii (S134j), transmog (S154), łup Elity II (S134h), rzemiosło u kowala.
 - Treść: fabuła z przerywnikami (S102–S105), questy poboczne regionów (S106–S108), rozmowy i towarzysze (S101b),
   zlecenia łowieckie i sklep Łowczego (S99, S134k), budżet EXP questów (S98, S109), wydarzenia świata i Inwazja (S101),
-  Krwawy Księżyc (S129), nagroda za logowanie (S100), osiągnięcia (S151), samouczek z działaniem (S155).
-- Społeczne: drużyna i tablica „Szukam drużyny”, gildie, poczta, aukcja, czat, znajomi 2.0 między serwerami (S150).
+  Krwawy Księżyc (S129), nagroda za logowanie (S100), osiągnięcia (S151), samouczek z działaniem (S155), zestawy zleceń
+  dziennych i tygodniowych z premią, serią, zamianą i Smoczymi Odłamkami (S159).
+- Społeczne: drużyna i tablica „Szukam drużyny”, gildie (S159g: poziomy, cele tygodnia, skarbiec przedmiotów, rangi z
+  uprawnieniami, kronika, sztandar), poczta, aukcja, czat, znajomi 2.0 między serwerami (S150).
 - PvP i rankingi: arena 1v1 / 3v3 na osobnych serwerach, turnieje, Sala Sław (S124–S130).
 - Monetyzacja bez pay2win: sklep Robux, VIP, kosmetyki, wierzchowce, przepustka sezonu (S152), premia powrotu i list
   „Co się zmieniło” (S153); płatne auto-leczenie / auto-EXP z limitami (S134d). Id produktów puste do uzupełnienia.
@@ -59,6 +61,8 @@
 - **Wędrowny kupiec (S159w):** wiki bez artykułu i bez barwników karawany (dane `Data/WanderingMerchant` poza eksportem);
   wóz i muł proceduralne do czasu modelu `Assets.Npcs.wanderer_caravan`; bez przeglądu w Studio (punkty postoju
   sprawdzone testem na otwartym terenie, nie w grze).
+- **Zestawy zleceń (S159):** wiki nie opisuje premii za komplet, serii, zamiany ani odłamków (dane wiki mają tylko
+  szablony i nagrody zleceń); bez przeglądu w Studio (tablica, dziennik i śledzik na PC i telefonie).
 
 - **Zgłoszenia właściciela 2026-10-20:** zrobione (S156): menu HUD w dwóch rzędach, limit przesuwania mapy, efekty broni
   z jej puli, Zwój Przemiany, kurhan bossa świata jako niecka z przedsionkiem bez PvP i dłuższe ogłoszenia, kolorowe
@@ -299,7 +303,8 @@
   Podgląd emotki i efektu awansu tylko na własnej postaci w świecie (nie w okienku garderoby).
 - **Wierzchowce (S97)**: wierzchowiec premium `mount_royal` wyłączony (`Data/Products.mounts`, `enabled = false`) do
   decyzji właściciela (cena w Robux, id produktu z Creator Hub).
-- **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami; aukcja bez podpowiedzi ceny, poczta bez
+- **Gildie / aukcja / poczta**: brak zaproszeń do gildii między serwerami i siedziby gildii (S159g: pytanie do
+  właściciela w `docs/SESJE.md`); aukcja bez podpowiedzi ceny, poczta bez
   pobrania.
 - **Przedmioty (S62–S68)**: krwawienie, trucizna i podpalenie z danych umiejętności przy odświeżeniu kasują resztę
   (`accumulate` ma od S79 tylko podpalenie z żywiołu broni).

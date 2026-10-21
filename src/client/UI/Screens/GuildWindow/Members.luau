@@ -1,7 +1,8 @@
 --!strict
 -- Guild window, "Members" tab: invite by name (with the permission), the member list (online first) with
 -- class, level, rank, online here / on another server / offline, contribution, and the actions the own
--- rank allows: promote/demote and hand over leadership (leader), kick (higher rank only).
+-- rank allows: promote/demote and hand over leadership (leader), kick (higher rank only). S159g: four ranks (a step up
+-- or down, only below the own rank; officers when the leader allows it), the guild EXP of the week per member.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -24,11 +25,11 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local RANK_COLORS: { [string]: Color3 } = {
-	leader = Theme.Paper.Heading,
-	officer = Theme.Paper.Link,
-	member = Theme.Paper.TextMuted,
-}
+local RANK_COLORS = Common.RANK_COLORS
+
+-- S159g: the rank one step up / down (leader excluded: only through "Leader").
+local UP: { [string]: string } = { member = "veteran", veteran = "officer" }
+local DOWN: { [string]: string } = { officer = "veteran", veteran = "member" }
 
 local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 	local guild = State.Value({ "guild" })
@@ -36,7 +37,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 
 	local canInvite = scope:Computed(function(use): boolean
 		local g = use(guild)
-		return type(g) == "table" and Guild.can(g.myRank, "invite")
+		return type(g) == "table" and Guild.can(g.myRank, "invite", g)
 	end)
 
 	local function confirm(
@@ -61,7 +62,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 	local function actionButton(s: Scope, order: number, key: string, variant: string?, onClick: () -> ()): Instance
 		return Button(s, {
 			LayoutOrder = order,
-			Size = UDim2.fromOffset(104, 38),
+			Size = UDim2.fromOffset(96, 38),
 			TextSize = Theme.TextSize.Small,
 			Variant = variant :: any,
 			Text = Text.T(s, key),
@@ -91,19 +92,25 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 			local isMe = member.key == g.myKey
 			local actions = {}
 			if not isMe then
-				if Guild.can(g.myRank, "promote") and member.rank ~= "leader" then
-					local promote = member.rank == "member"
+				local canRank = Guild.can(g.myRank, "promote", g) and Guild.outranks(g.myRank, member.rank)
+				local up, down = UP[member.rank], DOWN[member.rank]
+				if canRank and up and Guild.outranks(g.myRank, up) then
 					table.insert(
 						actions,
-						actionButton(s, 1, if promote then "guild.promote" else "guild.demote", nil, function()
-							task.spawn(
-								Common.invoke,
-								"GuildSetRank",
-								member.key,
-								if promote then "officer" else "member"
-							)
+						actionButton(s, 1, "guild.promote", nil, function()
+							task.spawn(Common.invoke, "GuildSetRank", member.key, up)
 						end)
 					)
+				end
+				if canRank and down then
+					table.insert(
+						actions,
+						actionButton(s, 1, "guild.demote", nil, function()
+							task.spawn(Common.invoke, "GuildSetRank", member.key, down)
+						end)
+					)
+				end
+				if g.myRank == "leader" then
 					table.insert(
 						actions,
 						actionButton(s, 2, "guild.transfer", nil, function()
@@ -113,7 +120,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 						end)
 					)
 				end
-				if Guild.can(g.myRank, "kick") and Guild.outranks(g.myRank, member.rank) then
+				if Guild.can(g.myRank, "kick", g) and Guild.outranks(g.myRank, member.rank) then
 					table.insert(
 						actions,
 						actionButton(s, 3, "guild.kick", "danger", function()
@@ -173,7 +180,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 						}),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(68, 6),
-							Size = UDim2.new(1, -420, 0, 26),
+							Size = UDim2.new(1, -490, 0, 26),
 							BackgroundTransparency = 1,
 							Text = `{if member.rank == "leader" then "♛ " else ""}{member.name}  ·  {Text.get(
 								use,
@@ -188,13 +195,17 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 						}),
 						s:New("TextLabel")({
 							Position = UDim2.fromOffset(68, 34),
-							Size = UDim2.new(1, -420, 0, 22),
+							Size = UDim2.new(1, -490, 0, 22),
 							BackgroundTransparency = 1,
 							RichText = true,
 							Text = `<font color="#{RANK_COLORS[member.rank]:ToHex()}">{Text.get(
 								use,
 								`guild.rank.{member.rank}`
-							)}</font>  ·  {status}  ·  ◉ {Format.number(member.contributed)}`,
+							)}</font>  ·  {status}  ·  ◉ {Format.number(member.contributed)}  ·  {Text.get(
+								use,
+								"guild.members.week",
+								{ n = Format.number(member.week or 0) }
+							)}`,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
 							TextColor3 = Theme.Paper.TextMuted,
@@ -204,7 +215,7 @@ local function Members(scope: Scope, showModal: (spec: any) -> ()): Instance
 						s:New("Frame")({
 							AnchorPoint = Vector2.new(1, 0.5),
 							Position = UDim2.new(1, -8, 0.5, 0),
-							Size = UDim2.fromOffset(330, 40),
+							Size = UDim2.fromOffset(410, 40),
 							BackgroundTransparency = 1,
 							[Children] = {
 								s:New("UIListLayout")({

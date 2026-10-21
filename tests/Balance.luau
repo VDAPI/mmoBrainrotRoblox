@@ -1625,7 +1625,7 @@ export type QuestsAt = {
 	side: number, -- SIDE_SHARE x EXP of the side quests
 	boss: number, -- EXP of the main quests with a boss objective (in `exp` only with opts.bosses)
 	bossGold: number,
-	daily: number, -- PER_DAY x Daily.reward EXP per day (report only)
+	daily: number, -- PER_DAY x Daily.reward EXP per day + the set bonus at the streak cap (S159; report only)
 	dailyGold: number,
 	-- S98: the boss quests of Data/Quests/Boss (category "boss", in `exp` and `gold`), the hunting contract of the level
 	-- (S99, in `exp` and `gold`) and the weekly contracts with the boss contract per week (report only)
@@ -1690,15 +1690,15 @@ function Balance.questsAt(level: number, opts: QuestOpts?): QuestsAt
 	return {
 		bossQuest = bossQuest,
 		contract = contract,
-		weekly = Quests.Weekly.PER_WEEK * (weekly.exp or 0) + bossWeekly,
+		weekly = Quests.Weekly.PER_WEEK * (weekly.exp or 0) + (Quests.Weekly.bonus(level).exp or 0) + bossWeekly,
 		exp = exp,
 		gold = gold,
 		main = main,
 		side = side,
 		boss = boss,
 		bossGold = bossGold,
-		daily = Quests.Daily.PER_DAY * (daily.exp or 0),
-		dailyGold = Quests.Daily.PER_DAY * (daily.gold or 0),
+		daily = Quests.Daily.dayExp(level, Quests.Daily.STREAK_CAP),
+		dailyGold = Quests.Daily.PER_DAY * (daily.gold or 0) + Quests.Daily.bonus(level, Quests.Daily.STREAK_CAP).gold,
 	}
 end
 
@@ -12360,7 +12360,7 @@ end
 -- S109 (E1): the assumed player profile of the report and of the full-income targets; it is not a game number.
 Balance.PLAY_PROFILE = table.freeze({
 	hoursPerDay = 2, -- hours of play a day
-	dailies = 3, -- daily contracts a day (Daily.PER_DAY)
+	dailies = Quests.Daily.PER_DAY, -- daily contracts a day (S159: 4; the full set adds the bonus at the streak cap)
 	weekly = true, -- the weekly contracts (Weekly.PER_WEEK)
 	bossContract = true, -- the weekly boss contract (from the first boss's entry level)
 	login = true, -- the 7-day login streak
@@ -12467,6 +12467,14 @@ local function profileOf(profile: PlayProfile?): PlayProfile
 	return profile or (Balance.PLAY_PROFILE :: any)
 end
 
+-- S159: the daily set bonus of a profile that collects the full set (at the streak cap: the steady state), else 0.
+local function setBonus(level: number, p: PlayProfile, value: (any) -> number): number
+	if p.dailies < Quests.Daily.PER_DAY then
+		return 0
+	end
+	return value(Quests.Daily.bonus(level, Quests.Daily.STREAK_CAP))
+end
+
 -- S109 (E1): gold per hour of play from the extras outside economyAt. Gold only: the reward items (blessings,
 -- essences, potions, stones, the chests) are consumables, not income, like the chest items of S100 / S101.
 function Balance.extrasPerHour(classId: string, level: number, profile: PlayProfile?): Extras
@@ -12475,8 +12483,10 @@ function Balance.extrasPerHour(classId: string, level: number, profile: PlayProf
 	local function value(r: any): number
 		return r.gold or 0
 	end
-	local daily = p.dailies * value(Quests.Daily.reward(level)) / hpd
-	local weekly = if p.weekly then Quests.Weekly.PER_WEEK * value(Quests.Weekly.reward(level)) / (7 * hpd) else 0
+	local daily = (p.dailies * value(Quests.Daily.reward(level)) + setBonus(level, p, value)) / hpd
+	local weekly = if p.weekly
+		then (Quests.Weekly.PER_WEEK * value(Quests.Weekly.reward(level)) + value(Quests.Weekly.bonus(level))) / (7 * hpd)
+		else 0
 	local boss = if p.bossContract and QuestLogic.bossContractFor(level) ~= nil
 		then value(Quests.Weekly.bossReward(level)) / (7 * hpd)
 		else 0
@@ -12497,8 +12507,13 @@ end
 function Balance.extrasExpPerHour(level: number, profile: PlayProfile?): Extras
 	local p = profileOf(profile)
 	local hpd = p.hoursPerDay
-	local daily = p.dailies * (Quests.Daily.reward(level).exp or 0) / hpd
-	local weekly = if p.weekly then Quests.Weekly.PER_WEEK * (Quests.Weekly.reward(level).exp or 0) / (7 * hpd) else 0
+	local function exp(r: any): number
+		return r.exp or 0
+	end
+	local daily = (p.dailies * exp(Quests.Daily.reward(level)) + setBonus(level, p, exp)) / hpd
+	local weekly = if p.weekly
+		then (Quests.Weekly.PER_WEEK * exp(Quests.Weekly.reward(level)) + exp(Quests.Weekly.bonus(level))) / (7 * hpd)
+		else 0
 	local boss = if p.bossContract and QuestLogic.bossContractFor(level) ~= nil
 		then (Quests.Weekly.bossReward(level).exp or 0) / (7 * hpd)
 		else 0

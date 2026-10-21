@@ -507,7 +507,7 @@ cmd(
 	{ enum("action", { "play", "list", "reset" }), str("id", true) },
 	{ dangerActions = { "reset" } }
 )
-cmd("quests", "daily", { enum("action", { "reroll" }) })
+cmd("quests", "daily", { enum("action", { "reroll", "complete" }) }) -- S159: complete
 cmd("quests", "questmarks", {})
 -- S98: weekly contracts and the boss contract; the quest EXP budget multiplier of a level (own level by default)
 cmd("quests", "weekly", { enum("action", { "reroll", "complete" }) })
@@ -605,7 +605,7 @@ cmd("economy", "tradetest", {}, { studioOnly = true })
 cmd(
 	"guild",
 	"guild",
-	{ enum("action", { "info", "treasury", "skills", "bots", "disband" }), str("value", true) },
+	{ enum("action", { "info", "treasury", "skills", "bots", "exp", "goals", "disband" }), str("value", true) },
 	{ dangerActions = { "disband" } }
 )
 -- S125: the guild board entry of the player's guild (score, place; push = write now)

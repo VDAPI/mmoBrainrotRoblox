@@ -415,7 +415,8 @@ describe("planner v3 on the game data", () => {
       const ctx = ctxFor(classId);
       expect(ctx.pools.length).toBeGreaterThan(0);
       expect(ctx.paths.length).toBeGreaterThan(0);
-      expect(ctx.rules.barSlots).toBe(8);
+      // S156 (owner 2026-10-20): 10 skill slots again (keys 1-9 and 0)
+      expect(ctx.rules.barSlots).toBe(10);
       expect(pathView(ctx, ctx.paths[0], emptyBuild(rules.maxLevel)).rows.length).toBe(ctx.paths[0].rows.length);
     }
   });

@@ -106,6 +106,9 @@ T.describe("Guild skills", function()
 		T.expect((Guild.upgrade(g, OFFICER, "wisdom"))).toBe(true)
 		T.expect(g.skills.wisdom).toBe(1)
 		T.expect(g.treasury).toBe(1e7 - (GuildSkills.get("wisdom") :: any).costs[1])
+		-- S159g: level 2 of a skill waits for guild level 2
+		T.expect({ Guild.upgrade(g, LEADER, "wisdom") }).toEqual({ false, "guild.error.guildLevel" })
+		g.exp = 1e9
 		for _ = 2, 5 do
 			assert(Guild.upgrade(g, LEADER, "wisdom"))
 		end

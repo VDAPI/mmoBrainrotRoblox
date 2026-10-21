@@ -198,7 +198,9 @@ export type CharacterData = {
 		-- S102: story cutscenes (Data/Cutscenes): false = queued to watch, true = watched or skipped; no key = never
 		-- triggered
 		scenes: { [string]: boolean },
-		daily: { day: number, list: { any }, rerolls: number },
+		-- S159: swaps = free rerolls used today (Data/Quests/Daily.REROLLS), bonus = the set bonus taken (both optional:
+		-- a list of an older day has neither)
+		daily: { day: number, list: { any }, rerolls: number, swaps: number?, bonus: boolean? },
 		-- S98: weekly contracts (week = Logic/Time.weekNumber, list like daily) and the week's boss contract (nil = no
 		-- boss open to the character or the week not rolled yet).
 		weekly: {
@@ -206,6 +208,7 @@ export type CharacterData = {
 			list: { any },
 			rerolls: number,
 			boss: { boss: string, progress: number, claimed: boolean }?,
+			bonus: boolean?, -- S159: the weekly set bonus taken
 		},
 		-- S99: hunting contracts (Data/Quests/Contracts). S134k (migration 11, Logic/Contracts.State): done = every
 		-- contract up to it handed in, extra = handed in out of order, active = taken ones (several at once), marks =
@@ -230,6 +233,9 @@ export type CharacterData = {
 		said: { [string]: string },
 	},
 	guildId: string?,
+	-- S159g: guild EXP earned on the UTC day `day` (`today`, capped by Data/GuildProgress.Rules.dailyCap) and the weekly
+	-- goal rewards taken in week `week` (goal id -> true). Logic/GuildProgress; no migration, reconcile
+	guildWork: { day: number, today: number, week: number, claimed: { [string]: boolean } },
 	-- S132 (DESIGN-17 §9a): face, skin and hair of the creator (Data/ClassLooks ids) and the one free look change
 	look: { face: string, skin: string, hair: string },
 	lookFree: boolean,
@@ -526,6 +532,8 @@ export type AccountData = {
 	returning: ReturningState,
 	-- S154: the collection of item looks (Logic/Transmog; read through Transmog.sanitize; reconcile, no migration)
 	transmog: { looks: { [string]: boolean }, scanned: boolean },
+	-- S159: the streak of full daily sets and the shards of the set bonuses (Logic/Dailies; read through sanitize)
+	dailies: { streak: number, last: number, shardDay: number, shardWeek: number },
 }
 
 -- Character summary shown on the selection screen.

@@ -30,7 +30,18 @@ export type Format = Leaderboards.Format
 -- Entry metadata (DataStore Config.Leaderboard.metaStore): name, class id, guild tag, level, userId, write time.
 -- `d` = the character was deleted (KeyStore cannot remove a key, so a marker stands for "no metadata").
 -- S125: `m` = members of a guild entry (the guild board; `n` = guild name, `g` = tag, `l` = highest member level).
-export type Meta = { n: string, c: string?, g: string?, l: number?, u: number?, t: number, d: boolean?, m: number? }
+-- S159g: `v` = the guild level of a guild entry.
+export type Meta = {
+	n: string,
+	c: string?,
+	g: string?,
+	l: number?,
+	u: number?,
+	t: number,
+	d: boolean?,
+	m: number?,
+	v: number?,
+}
 -- `value` = the metadata of a sorted entry; S125 `raw` = the whole stored value of a sorted entry ({ s, m, cid? }).
 export type Entry = { key: string, score: number, value: any?, raw: any? }
 -- A row for the client: rank, name, class text key ("@class.<Id>.name"), guild tag, level, percent of the level,
@@ -46,6 +57,7 @@ export type Row = {
 	at: number?,
 	mine: boolean?,
 	m: number?, -- S125: guild members
+	v: number?, -- S159g: guild level
 }
 -- The player's own line: rank, or level and percent outside the top, or below the minimum level, or hidden; for lists
 -- the free places left.
@@ -667,6 +679,7 @@ function Leaderboard.rows(
 			row.s = Leaderboard.decodeGuild(e.score)
 			row.l = if meta then meta.l else nil
 			row.m = if meta then meta.m else nil
+			row.v = if meta then meta.v else nil
 			row.c = nil
 		elseif def.format == "int" or def.format == "rating" or def.format == "time" then
 			-- S125: weekly EXP, the level at the last write; S126: the arena rating, the level at the last write; S156
@@ -1238,7 +1251,7 @@ function Leaderboard.fakeGuilds(n: number, now: number): { { key: string, score:
 		table.insert(out, {
 			key = Leaderboard.guildKey(`fake{i}`),
 			score = Leaderboard.encodeGuild(math.max(1, highest * counted - i), now - i * 86400),
-			meta = { n = `Guild {i}`, g = `T{i}`, l = highest, m = members, t = now },
+			meta = { n = `Guild {i}`, g = `T{i}`, l = highest, m = members, t = now, v = math.clamp(21 - i, 1, 20) },
 		})
 	end
 	return out

@@ -61,6 +61,8 @@ function ItemController.ItemAt(slotId: string): ItemInstance?
 		return State.Get({ "character", "equipment", rest })
 	elseif kind == "dep" then
 		return State.Get({ "account", "deposit", "items", rest })
+	elseif kind == "gv" then
+		return State.Get({ "guild", "vault", rest }) -- S159g: the guild vault
 	elseif kind == "pot" then
 		local id = State.Get({ "character", "potionBar", rest })
 		if not id then
@@ -278,6 +280,8 @@ function ItemController.Activate(slotId: string)
 		ItemController.UsePotion(rest)
 	elseif kind == "dep" then
 		invoke("WithdrawItem", tonumber(rest), nil)
+	elseif kind == "gv" then
+		invoke("GuildTakeItem", tonumber(rest), nil) -- S159g
 	end
 end
 
@@ -341,6 +345,12 @@ local function onDrop(from: string, to: string)
 		invoke("WithdrawItem", tonumber(fromRest), tonumber(toRest))
 	elseif fromKind == "dep" and toKind == "dep" then
 		invoke("MoveDeposit", tonumber(fromRest), tonumber(toRest))
+	elseif fromKind == "inv" and toKind == "gv" then
+		invoke("GuildPutItem", tonumber(fromRest), tonumber(toRest)) -- S159g: the guild vault
+	elseif fromKind == "gv" and toKind == "inv" then
+		invoke("GuildTakeItem", tonumber(fromRest), tonumber(toRest))
+	elseif fromKind == "gv" and toKind == "gv" then
+		invoke("GuildMoveVault", tonumber(fromRest), tonumber(toRest))
 	elseif fromKind == "inv" and toKind == "shopsell" then
 		local sell = DragDrop.SellHandler
 		if sell then
@@ -465,7 +475,13 @@ function ItemController.Init(registry)
 	DragDrop.AddHandlers({
 		owns = function(slotId: string): boolean
 			local kind = parse(slotId)
-			return kind == "inv" or kind == "eq" or kind == "pot" or kind == "dep" or kind == "smith" or kind == "trade"
+			return kind == "inv"
+				or kind == "eq"
+				or kind == "pot"
+				or kind == "dep"
+				or kind == "gv"
+				or kind == "smith"
+				or kind == "trade"
 		end,
 		drop = onDrop,
 		activate = ItemController.Activate,

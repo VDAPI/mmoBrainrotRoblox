@@ -1,6 +1,6 @@
 <script lang="ts">
   // Skill planner v3 of a class page (S148, DESIGN-18 §14): level slider and stepper, one tab per weapon pool (the
-  // ladder tree with columns of roles, skill points of the pool, the pool's bar of 8) and a "Directions" tab (talent
+  // ladder tree with columns of roles, skill points of the pool, the pool's bar of 10 since S156) and a "Directions" tab (talent
   // trees, one capstone per set, the leading direction), the details panel (short text, ranks, numbers at ranks 1 / 5 /
   // 10, breakpoints A/B, nodes that change the skill), build code v3. Rules and view models from src/lib/skills.ts
   // (parity with Logic/SkillPoints and Logic/Paths is tested); data only from props (one class, one language).

@@ -133,6 +133,10 @@ local function QuestRewards(scope: Scope, props: Props): Instance
 	if (reward.marks or 0) > 0 then
 		add(chip(scope, 0, "huntmarks", nil, Format.number(reward.marks or 0), size, surface))
 	end
+	-- S159: the Dragon Shards of a daily / weekly set bonus
+	if (reward.shards or 0) > 0 then
+		add(chip(scope, 0, "dragon", nil, Format.number(reward.shards or 0), size, surface))
+	end
 	for n, entry in (reward.items or {}) :: { { id: string, n: number } } do
 		if Items.get(entry.id) then
 			add(ItemSlot(scope, {

@@ -182,14 +182,13 @@ describe("Weeks (S98)", function()
 		expect(found).toBe(true)
 	end)
 
-	it("dailyFor keeps its lists after the S98 refactor", function()
-		-- pinned before the refactor (build/s98_daily_before.txt)
+	it("dailyFor keeps its lists (pinned in S159: groups and weights)", function()
 		local list = QuestLogic.dailyFor(8919, "char31", 20003, 8)
 		local ids = {}
 		for _, entry in list do
 			table.insert(ids, entry.template)
 		end
-		expect(ids).toEqual({ "upgrade", "herbs", "ore" })
+		expect(ids).toEqual({ "event", "ore", "fish", "handin" })
 	end)
 
 	it("the boss contract is the highest boss open to the level", function()
@@ -202,12 +201,13 @@ describe("Weeks (S98)", function()
 		expect(QuestLogic.bossContractFor(100)).toBe("vaelgrath")
 	end)
 
-	it("weekly rewards are twice the daily EXP, real items, no cores or stones", function()
+	it("weekly rewards are bigger than the daily ones, real items, no cores or stones", function()
+		-- S159: a weekly contract 0.25 of the level, a daily one 0.09 (4 a day)
 		for _, L in { 1, 20, 50, 99 } do
-			expect(math.abs(Quests.Weekly.reward(L).exp - 2 * Quests.Daily.reward(L).exp) <= 1).toBe(true)
+			expect(Quests.Weekly.reward(L).exp > 2.5 * Quests.Daily.reward(L).exp).toBe(true)
 		end
 		for _, L in { 1, 15, 20, 35, 45, 70, 100 } do
-			for _, reward in { Quests.Weekly.reward(L), Quests.Weekly.bossReward(L) } do
+			for _, reward in { Quests.Weekly.reward(L), Quests.Weekly.bossReward(L), Quests.Weekly.bonus(L) } do
 				for _, item in reward.items or {} do
 					expect(Items.get(item.id) ~= nil).toBe(true)
 					expect(item.id ~= "legend_core").toBe(true)

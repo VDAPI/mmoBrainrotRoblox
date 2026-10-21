@@ -122,6 +122,9 @@ function AccountSchema.accountTemplate(): AccountData
 		-- S154: the collection of item looks (Logic/Transmog; read through Transmog.sanitize); no migration
 		-- (reconcile). `scanned` false = the one-time scan of every character's items is still due (TransmogService)
 		transmog = { looks = {}, scanned = false },
+		-- S159: the streak of full daily sets and the account's bonus shards (Logic/Dailies; read through
+		-- Dailies.sanitize); no migration (reconcile)
+		dailies = { streak = 0, last = 0, shardDay = 0, shardWeek = 0 },
 	}
 end
 
@@ -178,6 +181,7 @@ function AccountSchema.characterTemplate(): CharacterData
 			scenes = {}, -- S102: story cutscenes (false = queued, true = watched); mainLast has no default (nil)
 		},
 		guildId = nil,
+		guildWork = { day = 0, today = 0, week = 0, claimed = {} }, -- S159g: Logic/GuildProgress (no migration, reconcile)
 		-- S132 (DESIGN-17 §9a): the creator's face, skin and hair; every character (old ones through reconcile, new ones
 		-- from CharacterFactory) has one free look change
 		look = {

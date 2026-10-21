@@ -219,6 +219,8 @@ local Definitions: { [string]: Definition } = {
 	QuestAccept = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (npcId)
 	QuestTurnIn = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (npcId)
 	DailyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (contract index)
+	-- S159: one free reroll of an open daily contract a day (contract index)
+	DailyReroll = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } },
 	-- S98: weekly contracts and the week's boss contract, collected at the board
 	WeeklyClaim = { kind = "function", dir = "c2s", rate = 2, args = { "integer" } }, -- (weekly contract index)
 	BossContractClaim = { kind = "function", dir = "c2s", rate = 2, args = {} }, -- () the week's boss contract
@@ -305,6 +307,15 @@ local Definitions: { [string]: Definition } = {
 	GuildSetting = { kind = "function", dir = "c2s", rate = 1, args = { "string", "any" } }, -- (name, value), whitelisted
 	GuildChatSend = { kind = "event", dir = "c2s", rate = 1, args = { "string" } }, -- relay of a guild channel line
 	GuildChatLine = { kind = "event", dir = "s2c" }, -- (name?, text | key, args?) from other servers / system
+	-- S159g: the guild bank (treasury gold, item vault), rank rights, banner, weekly goal rewards
+	GuildWithdraw = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (gold)
+	GuildPutItem = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer?" } }, -- (inv index, vault slot?)
+	GuildTakeItem = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer?" } }, -- (vault slot, inv index?)
+	GuildMoveVault = { kind = "function", dir = "c2s", rate = 1, args = { "integer", "integer" } }, -- (from, to)
+	GuildSetPerm = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string", "boolean" } }, -- (rank, action, on)
+	GuildSetLimit = { kind = "function", dir = "c2s", rate = 2, args = { "string", "string", "integer" } }, -- (rank, "gold"|"items", n)
+	GuildSetBanner = { kind = "function", dir = "c2s", rate = 1, args = { "string", "string" } }, -- (emblem id, colour id)
+	GuildClaimGoal = { kind = "function", dir = "c2s", rate = 1, args = { "integer" } }, -- (goal index 1..3)
 
 	-- Mail and auction house (S13)
 	MailClaim = { kind = "function", dir = "c2s", rate = 2, args = { "string" } }, -- (parcel id) at the mailbox
