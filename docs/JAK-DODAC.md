@@ -204,6 +204,9 @@
   TextSize?, Color?, Size?, LayoutOrder? })` (`UI/Components/InfoLine`: tekst zawija się przed „i”, więc mieści się w
   wąskiej karcie i na telefonie). „i” nie budować w `Computed` przebudowywanym co sekundę (zegar areny, karta mapy):
   sprzątnięcie zakresu zamyka dymek; „i” w stałym miejscu (tytuł karty), a tekst dymku jako stan.
+  Okno potwierdzenia (`Modal.Spec`): krótkie `Message` (1–2 zdania) i `Details` = dłuższy tekst pod „Więcej ▸”
+  (zwinięte, wspólne `Details`); powitanie NPC skrócone do pierwszego zdania: reszta w `npc.<id>.greeting.info`
+  („i” w oknie rozmowy, `NpcDialog`).
 - **Walka z podsumowaniem** (S134f): `FightLogService.Begin/End` + `Logic/FightStats`; nowe źródło liczb przez sygnał, nie kopię.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i
   `Logic/Channel.stops`; stosy z licznikiem przez `StatusEffectService.Stacks` / `UseStack` i `ApplyOptions.stacks` (S76).

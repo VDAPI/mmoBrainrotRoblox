@@ -11,6 +11,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Button = require(script.Parent.Parent.Components.Button)
 local CitySeasonState = require(script.Parent.Parent.CitySeasonState)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
+local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
 local Preview = require(script.Parent.WorldMap.Preview)
@@ -319,10 +321,24 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 			TextColor3 = Theme.Paper.TextMuted,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
+		-- owner 2026-10-21: a greeting shortened to its first sentence keeps the rest behind an "i" (`<key>.info`)
+		InfoTip.new(scope, {
+			Name = "LineInfo",
+			Text = scope:Computed(function(use): string
+				local l = use(line)
+				return if l then Text.get(use, `{l.key}.info`) else ""
+			end),
+			Visible = scope:Computed(function(use): boolean
+				local l = use(line)
+				return l ~= nil and Locale.has(`{l.key}.info`, use(Text.Lang))
+			end),
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 56),
+		}),
 		scope:New("TextLabel")({
 			Name = "Line",
 			Position = UDim2.fromOffset(PORTRAIT.X + 16, 56),
-			Size = UDim2.new(1, -PORTRAIT.X - 16, 0, PORTRAIT.Y - 56),
+			Size = UDim2.new(1, -PORTRAIT.X - 16 - 32, 0, PORTRAIT.Y - 56),
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				local l = use(line)

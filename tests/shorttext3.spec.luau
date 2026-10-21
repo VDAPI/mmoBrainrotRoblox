@@ -217,6 +217,54 @@ T.describe("Short texts, group 3 (owner 2026-10-21)", function()
 		T.expect(NodeText.shortKey("path.nope.nothing.desc", "pl")).toBeNil()
 	end)
 
+	T.it("the parts cut from shortened texts are kept behind the i or More (nothing removed)", function()
+		-- the shortened text -> where its cut part lives (NpcDialog "i", Modal `Details`)
+		local kept: { [string]: string } = {
+			["npc.huntmaster.greeting"] = "npc.huntmaster.greeting.info",
+			["npc.fence.greeting"] = "npc.fence.greeting.info",
+			["npc.portalmaster.greeting"] = "npc.portalmaster.greeting.info",
+			["npc.wanderer.greeting"] = "npc.wanderer.greeting.info",
+			["buildset.copy.message"] = "buildset.copy.message.info",
+			["rework2.body"] = "rework2.body.info",
+			["rework2.mage"] = "rework2.mage.info",
+			["skills.reset.confirm"] = "skills.reset.confirm.info",
+			["paths.confirm.reset.paid"] = "paths.confirm.reset.paid.info",
+			["paths.confirm.refund.message"] = "paths.confirm.refund.message.info",
+		}
+		for short, info in kept do
+			for lang, texts in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+				if not texts[info] then
+					error(`{lang} {info}: missing`)
+				end
+				if string.find(texts[info], "—", 1, true) then
+					error(`{lang} {info}: em dash`)
+				end
+			end
+			T.expect(table.concat(placeholders(pl[info]), ",")).toBe(table.concat(placeholders(en[info]), ","))
+			-- the dialog passes the same arguments to both
+			local have: { [string]: boolean } = {}
+			for _, name in placeholders(pl[short]) do
+				have[name] = true
+			end
+			if short == "rework2.body" then
+				have.slots, have.level = true, true
+			end
+			for _, name in placeholders(pl[info]) do
+				if not have[name] then
+					error(`{info}: {"{"}{name}{"}"} is not passed with {short}`)
+				end
+			end
+		end
+		-- the four bits the coordinator named
+		T.expect(string.find(pl["quest.set.shardsTaken"], "na tym koncie", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(pl["quest.set.shardsTakenWeek"], "na tym koncie", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(en["quest.set.shardsTaken"], "on this account", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(pl["npc.huntmaster.greeting.info"], "Znak", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(pl["buildset.copy.message.info"], "Darmowy reset", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(pl["rework2.body.info"], "{slots}", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(pl["rework2.body.info"], "{level}", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it(`modals, toasts, greetings and the tutorial tile stay within {MODAL} characters`, function()
 		for _, key in SENTENCES do
 			check(key, MODAL)
