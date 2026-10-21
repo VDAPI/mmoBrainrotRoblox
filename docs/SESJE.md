@@ -13834,3 +13834,18 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `WIKI_KEYS_ALLOW="upgrade:*,items:items.items[].use.keep,types.ts"`), poradnik Ulepszanie (PL / EN), dane odświeżone.
 - **Testy:** `effectreroll.spec`, `portalshop.spec`, `paywall.spec` (2b, 2d, 2e), `reroll.spec`, `data.spec` (+8 przedmiotów).
 - **Dla właściciela:** model Tripo Mistrza Portali (`TRIPO-NPC.md` nr 68); bez przeglądu w Studio.
+### Opisy-3: postać, umiejętności, zadania, menu, samouczek; zwijany tropiciel (2026-10-21)
+- **Tropiciel celów:** `Hud/QuestTracker` (tylko treść; pozycja i chwyty `HudLayout` / `HudDrag` bez zmian): nagłówek
+  „Cele”, grupy z „▾ / ▸” i podsumowaniem, wpis w jednej linii (`QuestRows.compact`, `QuestRows.withoutCount`), dymek
+  `Tooltip.attach` z celami, klik rozwija wpis (stan na sesję). Zwinięcie grup: `Logic/TrackerFold`,
+  `account.settings.trackerFold` (`AccountSchema`, `Types`, walidator w `SettingsService`), domyślnie tygodniowe.
+- **Okna:** `QuestJournal` (opowieść i postęp pobocznych pod „Więcej ▸”, zlecenie na bossa i „gdzie oddać” krótko z „i”,
+  zasada zamiany za „i”), `QuestBoard` („i” przy nagłówku, kartach i premii), `GameMenu` (sekcje, rzadkie zwinięte,
+  „i” przy przełącznikach), `CharacterWindow/StatAllocator` i `CharacterSelect/Creator` (krótki opis, pełny za „i”),
+  `SkillsWindow/{PoolTree,Breakpoints,PathTab}`.
+- **Teksty:** blok „Opisy, grupa 3” w `pl.luau` / `en.luau` (nowe `*.short`, `*.info`, `tracker.*`,
+  `menu.section.*`), skrócone w miejscu: samouczek (`tutorial.*`), `unlock.dungeon`, `rework2.*`, potwierdzenia
+  umiejętności i ścieżek, powitania NPC (Skupiec, Mistrz Portali, Łowczy, Wędrowny kupiec), `fish.hint`, `quest.*`.
+- **Testy:** `trackerfold.spec` (domyślne, zapis, walidator, `compact`, `withoutCount`), `shorttext3.spec` (linia ≤ 60
+  znaków w obu językach, te same placeholdery, długi tekst istnieje, modale ≤ 120, bez długiej pauzy).
+- **Dla właściciela:** bez przeglądu w Studio (wysokość tropiciela przy 3 zleceniach, dymek przytrzymania na telefonie).

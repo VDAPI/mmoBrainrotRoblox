@@ -6,6 +6,8 @@
 -- other on a phone); CreateCharacter sends the look.
 -- W10: the picker's tabs on the left (Face, Hair, Body, Paint), a larger preview on the right that turns with a drag and
 -- comes close to the face on the Face and Paint tabs; CreateCharacter sends every field of the look.
+-- Owner 2026-10-21 (too many detailed descriptions): a class card shows one short line (class.<id>.short), the full
+-- description behind the "i" in its corner.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +19,7 @@ local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local LookPicker = require(script.Parent.Parent.Parent.Components.LookPicker)
 local LookPreview = require(script.Parent.Parent.Parent.Components.LookPreview)
 local NameRules = require(ReplicatedStorage.Shared.Logic.NameRules)
@@ -161,7 +164,7 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 						LayoutOrder = 4,
 						BackgroundTransparency = 1,
 						Size = UDim2.new(1, 0, 0, 110),
-						Text = Text.T(scope, class.descKey),
+						Text = Text.T(scope, `class.{class.id}.short`),
 						FontFace = Theme.Fonts.Body,
 						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Paper.TextMuted,
@@ -169,6 +172,14 @@ local function classCard(scope: Scope, class: Classes.ClassDef, index: number, s
 						TextYAlignment = Enum.TextYAlignment.Top,
 					}),
 				},
+			}),
+			-- owner 2026-10-21: the full description of the class
+			InfoTip.new(scope, {
+				Name = "Info",
+				AnchorPoint = Vector2.new(1, 0),
+				Position = UDim2.new(1, -8, 0, 8),
+				Title = Text.T(scope, class.nameKey),
+				Text = Text.T(scope, class.descKey),
 			}),
 		},
 	})

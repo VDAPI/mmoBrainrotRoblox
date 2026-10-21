@@ -76,6 +76,7 @@ function AccountSchema.accountTemplate(): AccountData
 			achToasts = true, -- S151: achievement toasts (false = one line in the system chat; reconcile)
 			achHint = false, -- S151b: the one-time "star an achievement" hint of the achievements window was shown
 			hud = {}, -- S156: the player's HUD layout (Logic/HudLayout; reconcile)
+			trackerFold = {}, -- owner 2026-10-21: folded quest tracker groups (Logic/TrackerFold; reconcile)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
