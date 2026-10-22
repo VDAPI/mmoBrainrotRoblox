@@ -99,7 +99,9 @@ local function Elite2Timer(scope: Scope): Instance
 				return use(stacked)
 			end
 			local screen = use(Scale.HudSize)
-			return UDim2.fromOffset(screen.X - Theme.Padding.Large, HudStack.eliteBottom(screen.X, screen.Y))
+			-- over the corner's buttons where they really stand (UI/HudSlots.Measured, owner 2026-10-22)
+			local bottom = HudStack.eliteBottom(screen.X, screen.Y, use(HudSlots.Measured))
+			return UDim2.fromOffset(screen.X - Theme.Padding.Large, bottom)
 		end),
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,

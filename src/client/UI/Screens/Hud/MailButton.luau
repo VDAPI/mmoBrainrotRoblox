@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Mail = require(ReplicatedStorage.Shared.Logic.Mail)
 local Motion = require(script.Parent.Parent.Parent.Motion)
@@ -98,6 +99,7 @@ local function MailButton(scope: Scope, props: Props): Instance
 		},
 	})
 	Motion.feedback(scope, button :: GuiButton, nil)
+	HudSlots.corner(scope, button :: GuiObject) -- owner 2026-10-22: the HUD column stays above where it really stands
 	Tooltip.attach(
 		scope,
 		button :: GuiObject,

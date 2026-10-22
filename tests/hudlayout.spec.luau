@@ -362,6 +362,73 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		end
 	end)
 
+	T.it(
+		"measured corner (Studio 1462 x 793): the real toggle bounds the column whatever the computed height",
+		function()
+			-- owner 2026-10-22: the tracker's Body ran from y 361 to 621 px, the PvP toggle stood at (1403, 599), 46 x 46 px.
+			-- UI/HudSlots measures the corner's buttons (AbsolutePosition / AbsoluteSize, from the panels' frame) and
+			-- HudStack.layout keeps the column above them even when its own height of the layer is too tall.
+			local k = 46 / HudStack.PVP.w
+			local pvp = HudStack.fromScreen(1403, 599, 46, 46, 0, 0, k)
+			T.expect(math.abs((pvp.right - pvp.left) - HudStack.PVP.w) < 1e-6).toBe(true)
+			T.expect(math.abs(pvp.top - 599 / k) < 1e-6).toBe(true)
+			-- the frame's corner is the origin: the same button 30 px lower in a frame 30 px lower is the same rectangle
+			local shifted = HudStack.fromScreen(1403, 629, 46, 46, 0, 30, k)
+			T.expect(math.abs(shifted.top - pvp.top) < 1e-6).toBe(true)
+			local badge = HudStack.fromScreen(1352, 648, 97, 17, 0, 0, k)
+			local measured = { pvp, badge }
+			-- the column computed for a layer 46 virtual px taller than the real one: its corner (and floor) too low
+			local w = pvp.right + HudStack.PVP.right
+			local h = pvp.bottom + HudStack.PVP.bottom + 46
+			local unclamped = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w))
+			T.expect(HudStack.overlaps(unclamped.questTracker, pvp)).toBe(true) -- the Studio bug, reproduced
+			for _, name in SCENARIOS do
+				local boxes = scenario(name, false, w)
+				for id, r in HudStack.layout(false, false, w, h, 0, boxes, measured) do
+					for _, button in measured do
+						if HudStack.overlaps(r, button) then
+							error(`{name}: {id} {show(r)} / measured {show(button)}`)
+						end
+					end
+					if r.right > pvp.left and r.bottom > pvp.top - HudStack.GAP then
+						error(`{name}: {id} ends {r.bottom}, the real toggle at {pvp.top}`)
+					end
+				end
+				local elite = boxes.elite
+				if elite then
+					local timers = HudStack.elite(w, h, elite.h, measured)
+					T.expect(timers.bottom <= pvp.top - HudStack.GAP).toBe(true)
+				end
+			end
+			-- the tracker still takes the room down to just above the real toggle
+			local placed = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w), measured)
+			T.expect(math.abs(placed.questTracker.bottom - (pvp.top - HudStack.GAP)) < 1e-6).toBe(true)
+		end
+	)
+
+	T.it("floorAbove: only buttons under the column's top and in its lanes lower the floor, never raise it", function()
+		local column = HudStack.column(false, false, 1920, 1080, 0)
+		local floor = column.floor
+		local function rect(left: number, top: number): Rect
+			return { left = left, top = top, right = left + 64, bottom = top + 64 }
+		end
+		local lane = column.x - 100 -- inside the main column
+		T.expect(HudStack.floorAbove(column, HudStack.TRACKER, {})).toBe(floor)
+		T.expect(HudStack.floorAbove(column, HudStack.TRACKER, { rect(lane, floor - 40) })).toBe(floor - 48)
+		-- lower than the floor already: the computed floor stays
+		T.expect(HudStack.floorAbove(column, HudStack.TRACKER, { rect(lane, floor + 40) })).toBe(floor)
+		-- above the column's top (the minimap's row): not under the column
+		T.expect(HudStack.floorAbove(column, HudStack.TRACKER, { rect(lane, column.top - 10) })).toBe(floor)
+		-- left of every lane (the column and its two spares)
+		T.expect(HudStack.floorAbove(column, HudStack.TRACKER, { rect(400, floor - 40) })).toBe(floor)
+		-- in a spare lane
+		local spares = column.spares :: { number }
+		T.expect(HudStack.floorAbove(column, HudStack.TRACKER, { rect(spares[2] - 80, floor - 30) })).toBe(floor - 38)
+		-- a phone lays out without measured buttons; a tablet's column (left) ignores the right corner
+		local tablet = HudStack.column(true, false, 1280, 720, 0)
+		T.expect(HudStack.floorAbove(tablet, HudStack.TRACKER, { rect(1200, 300) })).toBe(tablet.floor)
+	end)
+
 	T.it("the PvP badge stays on the screen, right-aligned with the toggle", function()
 		local f = HudStack.fixed(false, 1920, 1080)
 		T.expect(f.pvpBadge.right).toBe(f.pvp.right)

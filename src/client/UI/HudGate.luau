@@ -7,6 +7,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudSlots = require(script.Parent.HudSlots)
 local State = require(script.Parent.State)
 
 local HudGate = {}
@@ -36,6 +37,7 @@ function HudGate.Layer(layer: Instance): Frame
 		Parent = layer,
 	}) :: Frame
 	frames[layer] = made
+	HudSlots.SetHost(made) -- the column's panels live here: the origin of the corner's measured buttons
 	return made
 end
 
