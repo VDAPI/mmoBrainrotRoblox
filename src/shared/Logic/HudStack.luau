@@ -11,7 +11,7 @@
 -- * The stack (`place`, `layout`): the arena queue's pill, the event panels (world boss, world event, Blood Moon,
 --   tournament), the Elite II timers on a touch screen and the quest tracker, in that order, top down. An element the
 --   player has moved (HudLayout) stays where it is and the others go round it: above it, under it or, when the column
---   has no room left, in the spare column beside it. The tracker takes the room left down to the floor (its list
+--   has no room left, in a spare column beside it. The tracker takes the room left down to the floor (its list
 --   scrolls), on a crowded screen down to its header and one line.
 -- All numbers are virtual pixels of UI/Scale; rectangles are measured from the top-left corner of the screen. Pure;
 -- tests/hudlayout.spec checks that nothing overlaps at the common screen sizes.
@@ -28,8 +28,8 @@ export type Column = {
 	right: boolean,
 	top: number,
 	floor: number, -- nothing of the stack goes below this
-	spare: number?, -- the edge of the spare column beside it (the same side as `x`), nil = none
-	spareTop: number?, -- where the spare column starts (default `top`)
+	spares: { number }?, -- the edges of the spare columns beside it, nearest first (the same side as `x`)
+	spareTop: number?, -- where the spare columns start (default `top`)
 }
 export type Item = {
 	id: string,
@@ -83,8 +83,8 @@ HudStack.TARGET = table.freeze({ x = -162, y = -202 - 120 - 56 })
 -- stands right of them.
 HudStack.EXTRAS = table.freeze({ x = 428, y = 108, w = 44, h = 3 * 44 + 2 * 8 })
 
--- The tracker's height before it moves to the spare column (its header and two lines) and the least it shrinks to
--- when there is no room for that in either (its header; the list scrolls in what is left).
+-- The tracker's height before it moves to a spare column (its header and two lines) and the least it shrinks to
+-- when there is no room for that in any column (its header; the list scrolls in what is left).
 HudStack.TRACKER_LEAST = 6 + 28 + 3 + 8
 HudStack.TRACKER_MIN = HudStack.TRACKER_LEAST + 2 * 22
 
@@ -171,7 +171,7 @@ function HudStack.column(touch: boolean, compact: boolean, w: number, h: number,
 			top = top,
 			floor = h - HudStack.TOUCH_ROW - HudStack.GAP,
 			-- right of the buttons right of the portrait (Cloak of Luring and the auto buttons end above TOUCH_TOP)
-			spare = HudStack.EXTRAS.x + HudStack.EXTRAS.w + HudStack.GAP,
+			spares = { HudStack.EXTRAS.x + HudStack.EXTRAS.w + HudStack.GAP },
 			spareTop = HudStack.TOUCH_TOP,
 		}
 	end
@@ -180,7 +180,11 @@ function HudStack.column(touch: boolean, compact: boolean, w: number, h: number,
 		right = true,
 		top = HudStack.RIGHT_TOP,
 		floor = HudStack.cornerTop(false, w, h) - HudStack.GAP,
-		spare = w - HudStack.MARGIN - HudStack.TRACKER - HudStack.GAP,
+		-- two: a short window at the 0.6 floor has little height under the minimap (owner 2026-10-22)
+		spares = {
+			w - HudStack.MARGIN - HudStack.TRACKER - HudStack.GAP,
+			w - HudStack.MARGIN - 2 * (HudStack.TRACKER + HudStack.GAP),
+		},
 	}
 end
 
@@ -191,9 +195,9 @@ HudStack.overlaps = overlaps
 
 -- The places of `items` (in order, top down) in `column`, round the `fixed` rectangles (moved elements, the corner's
 -- buttons, the PC Elite II timers), by id. An element goes at the first free place under the one before it; when it
--- would pass the floor, at the first free place of the spare column from its top; with no room in either a `least`
--- element shrinks, the others stand under the one before (past the floor). A `grow` element reaches down to the floor or to the first
--- rectangle under it.
+-- would pass the floor, at the first free place of a spare column from its top; with no room in any column a
+-- `least` element shrinks, the others stand under the one before (past the floor). A `grow` element reaches down to
+-- the floor or to the first rectangle under it.
 function HudStack.place(items: { Item }, column: Column, fixed: { Rect }): { [string]: Rect }
 	local out: { [string]: Rect } = {}
 	local taken: { Rect } = table.clone(fixed)
@@ -222,15 +226,15 @@ function HudStack.place(items: { Item }, column: Column, fixed: { Rect }): { [st
 		end
 		return y
 	end
-	-- the column, else the spare one, with room for a w x h box: found, its left, right and top, in the column
+	-- the column, else the first spare one, with room for a w x h box: found, its left, right and top, in the column
 	local function room(w: number, h: number, cursor: number): (boolean, number, number, number, boolean)
 		local left, right = span(column.x, w)
 		local y = free(left, right, cursor, h)
 		if y + h <= column.floor then
 			return true, left, right, y, true
 		end
-		local spare = column.spare
-		if spare then
+		local spares: { number } = column.spares or {}
+		for _, spare in spares do
 			local sl, sr = span(spare, w)
 			local sy = free(sl, sr, column.spareTop or column.top, h)
 			if sy + h <= column.floor then

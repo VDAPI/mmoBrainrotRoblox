@@ -8,14 +8,12 @@ local Workspace = game:GetService("Workspace")
 
 local Device = require(script.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local Theme = require(script.Parent.Theme)
+local UiScale = require(ReplicatedStorage.Shared.Logic.UiScale)
 
 local Scale = {}
 
--- Smallest scale per input type. Touch keeps buttons >= Theme.Size.MinTouch (44 / 52 ~ 0.85).
-local MIN_SCALE_TOUCH = Theme.Size.MinTouch / Theme.Size.ButtonHeight
-local MIN_SCALE_DESKTOP = 0.6
-local MAX_SCALE = 1.5
+-- The scale per input type (bases, the smallest: touch keeps buttons >= Theme.Size.MinTouch, 44 / 52 ~ 0.85, and the
+-- largest) is Logic/UiScale's, which the HUD tests lay out with.
 
 local scope = Fusion.scoped(Fusion)
 local viewport = scope:Value(Vector2.new(1920, 1080))
@@ -39,15 +37,30 @@ Scale.Viewport = viewport
 
 Scale.Value = scope:Computed(function(use): number
 	local size: Vector2 = use(viewport)
-	local touch = use(Device.Touch)
-	local base = if touch then Theme.BaseResolutionTouch else Theme.BaseResolution
-	local raw = math.min(size.X / base.X, size.Y / base.Y)
-	return math.clamp(raw, if touch then MIN_SCALE_TOUCH else MIN_SCALE_DESKTOP, MAX_SCALE)
+	return UiScale.factor(size.X, size.Y, use(Device.Touch) == true)
 end)
 
 -- Size of the screen in virtual pixels (what layouts inside a Root frame see).
 Scale.VirtualSize = scope:Computed(function(use): Vector2
 	return use(viewport) / use(Scale.Value)
+end)
+
+-- Owner 2026-10-22 (Studio: the quest tracker ran into the PvP toggle): the HUD's layer (Screens) keeps clear of
+-- Roblox's top bar, so it is shorter than the screen (Logic/UiScale.hud). UIController reports the layer's size in
+-- real pixels; HudSize is that in virtual pixels (the screen's until the layer is up): the size the HUD's elements
+-- anchored to its edges see, which UI/HudSlots, UI/HudDrag and the panels lay out in.
+local hudArea = scope:Value(nil :: Vector2?)
+
+function Scale.SetHudArea(size: Vector2)
+	hudArea:set(size)
+end
+
+Scale.HudSize = scope:Computed(function(use): Vector2
+	local area = use(hudArea)
+	if area and area.X > 0 and area.Y > 0 then
+		return area / use(Scale.Value)
+	end
+	return use(Scale.VirtualSize)
 end)
 
 function Scale.get(): number

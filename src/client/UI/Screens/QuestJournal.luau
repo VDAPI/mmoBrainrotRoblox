@@ -58,6 +58,10 @@ local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 
 local Children = Fusion.Children
 
+-- Owner 2026-10-22 (Studio: the 36 px "▶" did not hold its glyph): the story row's replay button, wide enough for
+-- its glyph with the button's padding (tests/uifit.spec)
+local REPLAY_WIDTH = 44
+
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
@@ -534,11 +538,12 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				local button = if #watched > 0 and replay
 					then Button(s, {
 						Name = "Replay",
-						Size = UDim2.fromOffset(36, 28),
+						Size = UDim2.fromOffset(REPLAY_WIDTH, 28),
 						Position = UDim2.fromScale(1, 0),
 						AnchorPoint = Vector2.new(1, 0),
 						Variant = "ghost",
 						Text = "▶",
+						TextSize = Theme.TextSize.Small,
 						OnClick = function()
 							-- several scenes of one quest play one after another (the controller queues replays)
 							for _, id in watched do
@@ -558,7 +563,7 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 						BackgroundTransparency = 1,
 						[Children] = {
 							s:New("TextLabel")({
-								Size = UDim2.new(1, if button then -44 else 0, 1, 0),
+								Size = UDim2.new(1, if button then -(REPLAY_WIDTH + 8) else 0, 1, 0),
 								BackgroundTransparency = 1,
 								Text = `✔ {Text.get(use, `quest.{finished.id}.title`)}`,
 								TextTruncate = Enum.TextTruncate.AtEnd,

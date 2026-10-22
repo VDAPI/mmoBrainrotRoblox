@@ -14010,6 +14010,25 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   progu (`GATE.sill`, wierzch 1,2 nad podłogą; w Jaskini Mchów próg tonął w podłodze).
 - **Testy:** `portals.spec` (skala 1 i zasłona dla zmierzonego obrysu, ramy poza obrysem 21 x 16,5, próg i krawędzie
   rogów).
+### Przegląd Studio 2026-10-22: tropiciel nad PvP, przyciski i napisy, które się nie mieściły (2026-10-22)
+- **Tropiciel a PvP:** warstwa ekranów HUD ma `ScreenInsets = CoreUISafeInsets` (bez paska Robloxa), a kolumna liczyła
+  wysokość z `Scale.VirtualSize` całego okna, więc jej podłoga wypadała niżej niż róg. Nowy `Logic/UiScale` (skala
+  `factor`, wymiar warstwy `hud`), `Scale.SetHudArea` / `Scale.HudSize` (ustawia `UIController` z rozmiaru warstwy);
+  `HudSlots`, `QuestTracker`, `Elite2Timer` i `HudDrag` czytają `HudSize`. `HudStack.Column.spares`: na PC dwie zapasowe
+  kolumny (potrzebne przy skali 0,6 na 1280 x 593).
+- **Mistrz Portali:** przyciski 176 px, tekst Small, „1× · {price} ◆” / „{n}× · {price} ◆” (pl i en).
+- **Drzewo umiejętności:** nagłówki ról bez `TextScaled`, jeden rozmiar Caption, na PC dwie linie na zmianę
+  (`PoolTree.HEAD_WIDTH` 120, kreska pod górnymi), na dotyku znaki w Body.
+- **Gildia:** `Components/Bar` pisze „cur / max” tylko w pasku od `NUMBERS_MIN` (Small + 2) wysokości albo z
+  `ShowNumbers = true`; poziom gildii (14 px) ma liczby w podpisie pod paskiem, jak cele gildii i osiągnięcia.
+- **Dziennik zadań:** `Components/Button` poniżej `NARROW` (64 px) ma marginesy `Padding.Tiny`; „▶” powtórki 44 x 28
+  w Small (`REPLAY_WIDTH`). Ten sam błąd miały „−” / „+” auto-mikstur (36 px).
+- **Nagroda za logowanie:** `login.chest.short` krótsze („Skrzynia dla klasy {class}”, „Chest for the {class} class”),
+  linia w Caption (`CHEST_TEXT`).
+- **Testy:** `hudlayout.spec` (okna Studio i przeglądarki 1280 x 593 do 2560 x 1305, z paskiem Robloxa 58 i 36 px:
+  kolumna nad przełącznikiem PvP, plakietką i pocztą), nowy `uifit.spec` (szacowana szerokość tekstu: przyciski ze
+  stałym rozmiarem i tekstem, przyciski Mistrza Portali w obu językach, nagłówki ról, słowa linii skrzyni). Bez
+  przeglądu w Studio.
 ### W31 poprawka 2: czarne otwory, rama Leża, próg bramy na gruncie (2026-10-22)
 - **Otwory (Studio po 45288e47):** każdy otwór jaskini to czarny `Neon` bez cienia (`Kit.HOLE_BLACK`,
   `Kit.portalHole`, otwory w ścianach Szczytów, Pustkowi i Krypty, `Prefabs.caveMouth`): ciepłe światło nie barwi go

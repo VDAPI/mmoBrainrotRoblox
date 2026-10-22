@@ -51,8 +51,20 @@ PoolTree.ROLE_GLYPH = table.freeze({
 
 type Geometry = { tile: number, column: number, level: number, row: number, empty: number, head: number }
 
-local PC: Geometry =
-	{ tile = Tile.SIZE, column = 64, level = 36, row = Tile.SIZE + Tile.CAPTION + 10, empty = 24, head = 22 }
+-- The PC column heads: one text size (Caption) for every role name. The names are wider than a column, so the heads
+-- take two lines in turn (odd columns on top, with a tick down to their column; even ones below), which gives each
+-- head two columns of room (HEAD_WIDTH; uifit.spec checks every role name fits it).
+local HEAD_LINE = 18
+PoolTree.HEAD_WIDTH = 120 -- two PC columns (2 x 64) less a gap
+
+local PC: Geometry = {
+	tile = Tile.SIZE,
+	column = 64,
+	level = 36,
+	row = Tile.SIZE + Tile.CAPTION + 10,
+	empty = 24,
+	head = 2 * HEAD_LINE,
+}
 local TOUCH: Geometry = {
 	tile = Tile.SIZE_TOUCH,
 	column = 62,
@@ -290,24 +302,42 @@ function PoolTree.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, 
 				table.insert(extra, row)
 			end
 		end
-		-- The column heads.
+		-- The column heads: one text size for all (no TextScaled per head); on the PC in two lines in turn (HEAD_LINE).
 		local heads: { Instance } = {}
 		for i, column in view.columns do
 			local roleName = Text.get(use, `skills.role.{column}`)
+			local x = geometry.level + (i - 0.5) * geometry.column
+			local lower = not touch and i % 2 == 0
 			local head = s:New("TextLabel")({
 				Name = column,
 				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.fromOffset(geometry.level + (i - 0.5) * geometry.column, 0),
-				Size = UDim2.fromOffset(geometry.column - 4, geometry.head),
+				Position = UDim2.fromOffset(x, if lower then HEAD_LINE else 0),
+				Size = if touch
+					then UDim2.fromOffset(geometry.column - 4, geometry.head)
+					else UDim2.fromOffset(PoolTree.HEAD_WIDTH, HEAD_LINE),
 				BackgroundTransparency = 1,
 				Text = if touch then PoolTree.ROLE_GLYPH[column] or column else roleName,
-				TextScaled = true,
+				TextSize = if touch then Theme.TextSize.Body else Theme.TextSize.Caption,
+				TextTruncate = Enum.TextTruncate.AtEnd,
 				FontFace = Theme.Fonts.BodyBold,
 				TextColor3 = Theme.Paper.Label,
-				[Children] = s:New("UITextSizeConstraint")({ MaxTextSize = Theme.TextSize.Caption }),
 			})
 			Tooltip.attach(s, head :: GuiObject, roleName)
 			table.insert(heads, head)
+			if not touch and not lower then
+				-- the top line's tick down past the lower heads, so the name reads as its column's
+				table.insert(
+					heads,
+					s:New("Frame")({
+						Name = `{column}Tick`,
+						AnchorPoint = Vector2.new(0.5, 0),
+						Position = UDim2.fromOffset(x, HEAD_LINE + 3),
+						Size = UDim2.fromOffset(1, HEAD_LINE - 6),
+						BackgroundColor3 = Theme.Paper.Rule,
+						BorderSizePixel = 0,
+					})
+				)
+			end
 		end
 		add(s:New("Frame")({
 			Name = "Columns",

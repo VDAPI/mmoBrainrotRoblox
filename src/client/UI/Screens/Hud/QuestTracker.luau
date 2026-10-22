@@ -927,7 +927,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	end
 	-- the floor of a moved tracker: the bottom of the screen (a phone: of its stack)
 	local function movedFloor(use: Fusion.Use): number
-		return use(Scale.VirtualSize).Y - (if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24)
+		return use(Scale.HudSize).Y - (if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24)
 	end
 	-- owner 2026-10-21: the built-in place in the HUD column (UI/HudSlots): under the event panels, over the corner's
 	-- buttons (PC) or the sprint row (touch); a moved tracker is in the panels' way instead (they go round it)

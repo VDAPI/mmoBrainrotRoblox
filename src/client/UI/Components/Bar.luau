@@ -32,6 +32,9 @@ export type Props = {
 }
 
 local GHOST_MIX = 0.55 -- how far the ghost goes from the bar colour towards bright brass
+-- The "cur / max" numbers need a bar at least this tall: a thinner strip (guild level, goals, achievements) clipped
+-- them, and its caller already writes them beside it. `ShowNumbers = true` still forces them.
+local NUMBERS_MIN = Theme.TextSize.Small + 2
 local PULSE_PEAK = 0.72 -- transparency of the light veil over the fill at the top of a breath
 
 local function Bar(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
@@ -159,7 +162,9 @@ local function Bar(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 				Size = UDim2.fromScale(1, 1),
 				Text = scope:Computed(function(use): string
 					local label = use(props.Label)
-					if props.ShowNumbers == false then
+					local size: UDim2? = use(props.Size)
+					local roomy = size == nil or size.Y.Scale > 0 or size.Y.Offset >= NUMBERS_MIN
+					if props.ShowNumbers == false or (props.ShowNumbers == nil and not roomy) then
 						return label or ""
 					end
 					local numbers = `{Format.number(use(props.Value))} / {Format.number(use(props.Max))}`

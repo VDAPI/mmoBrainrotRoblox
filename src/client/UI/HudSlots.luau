@@ -28,7 +28,7 @@ local boxes = scope:Value({} :: { [string]: Box })
 
 -- The built-in place of every shown element that has none of its own, by id.
 HudSlots.Places = scope:Computed(function(use): { [string]: HudStack.Rect }
-	local screen: Vector2 = use(Scale.VirtualSize)
+	local screen: Vector2 = use(Scale.HudSize)
 	return HudStack.layout(
 		use(Device.Touch) == true,
 		use(PhoneLayout.Compact),
