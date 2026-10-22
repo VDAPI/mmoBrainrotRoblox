@@ -98,7 +98,7 @@ local function Elite2Timer(scope: Scope): Instance
 			if use(Device.Touch) then
 				return use(stacked)
 			end
-			local screen = use(Scale.VirtualSize)
+			local screen = use(Scale.HudSize)
 			return UDim2.fromOffset(screen.X - Theme.Padding.Large, HudStack.eliteBottom(screen.X, screen.Y))
 		end),
 		Size = UDim2.fromOffset(WIDTH, 0),

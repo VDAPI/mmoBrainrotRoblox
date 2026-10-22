@@ -7,6 +7,7 @@ local HudLayout = require("../src/shared/Logic/HudLayout")
 local HudStack = require("../src/shared/Logic/HudStack")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
+local UiScale = require("../src/shared/Logic/UiScale")
 
 T.describe("HUD layout (S156)", function()
 	T.it("accepts known elements with fractions and sizes in range", function()
@@ -311,6 +312,49 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 					for name, place in PhoneHud.PLACES do
 						if name ~= "stack" and HudStack.overlaps(r, PhoneHud.rect(place, w, h)) then
 							error(`{d.name}: {id} {show(r)} / {name}`)
+						end
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("Studio and browser viewports: the column stops above the PvP toggle, its badge and the mail", function()
+		-- owner 2026-10-22 (Studio, a 1456 x 776 viewport): the tracker ran 26 px into the PvP toggle. The HUD's
+		-- layer keeps clear of the top bar (CoreUISafeInsets), so the column is laid out in the layer's size
+		-- (UiScale.hud, UI/Scale.HudSize), the size the corner buttons anchored to its bottom stand in.
+		local VIEWPORTS = {
+			{ 1456, 776 }, -- the Studio check
+			{ 1366, 768 },
+			{ 1366, 657 }, -- a browser-like window on a 1366 x 768 screen
+			{ 1280, 593 },
+			{ 1600, 787 },
+			{ 1920, 929 },
+			{ 1920, 1009 },
+			{ 1920, 1080 },
+			{ 2560, 1305 },
+		}
+		for _, v in VIEWPORTS do
+			for _, inset in { UiScale.TOP_BAR, 36 } do
+				local k = UiScale.factor(v[1], v[2], false)
+				local w, h = UiScale.hud(v[1], v[2], false, inset)
+				-- the layer is shorter than the screen in virtual pixels: laid out in the screen's size the column
+				-- would end `inset / k` lower than the buttons
+				T.expect(h < v[2] / k).toBe(true)
+				local corner = HudStack.fixed(false, w, h)
+				for _, name in SCENARIOS do
+					local boxes = scenario(name, false, w)
+					local places = HudStack.layout(false, false, w, h, 0, boxes)
+					for id, r in places do
+						for _, button in { "pvp", "pvpBadge", "mail" } do
+							if HudStack.overlaps(r, corner[button]) then
+								error(`{v[1]} x {v[2]} (top bar {inset}) {name}: {id} {show(r)} / {button}`)
+							end
+						end
+						if r.right > corner.pvp.left and r.bottom > corner.pvp.top - HudStack.GAP then
+							error(
+								`{v[1]} x {v[2]} (top bar {inset}) {name}: {id} ends {r.bottom}, the toggle at {corner.pvp.top}`
+							)
 						end
 					end
 				end

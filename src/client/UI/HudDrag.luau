@@ -69,7 +69,7 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 		if not e then
 			return nil
 		end
-		local screen = use(Scale.VirtualSize)
+		local screen = use(Scale.HudSize)
 		local x, y = HudLayout.place(e, width(use, e) * HudLayout.scaleOf(e), screen.X, screen.Y)
 		return Vector2.new(x, y)
 	end)
@@ -108,7 +108,7 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 				return
 			end
 			local delta = (Vector2.new(input.Position.X, input.Position.Y) - d.start) / Scale.get()
-			local screen = Fusion.peek(Scale.VirtualSize)
+			local screen = Fusion.peek(Scale.HudSize)
 			local e = Fusion.peek(entry)
 			if d.mode == "size" and scaled then
 				-- the panel grows with the corner: its new width over the width it had
@@ -167,7 +167,7 @@ function HudDrag.frame(scope: Scope, handle: Handle, props: FrameProps): Instanc
 	-- the tab faces the middle of the screen: left of a panel on the right half, right of one on the left half
 	local tabLeft = scope:Computed(function(use): boolean
 		local at = use(handle.corner)
-		local screen = use(Scale.VirtualSize)
+		local screen = use(Scale.HudSize)
 		if at then
 			return at.X > screen.X / 2
 		end

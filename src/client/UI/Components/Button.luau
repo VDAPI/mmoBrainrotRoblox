@@ -29,6 +29,10 @@ export type Props = {
 	Surface: Theme.SurfaceName?, -- S135: the background it stands on (default "paper"; HUD and overlays "iron")
 }
 
+-- Owner 2026-10-22 (Studio: the quest journal's 36 px "▶" left 8 px for its glyph): a button narrower than NARROW
+-- (a glyph: "▶", "+", "−") keeps a tiny side padding, so the glyph has the button's width (tests/uifit.spec).
+local NARROW = 64
+
 type Palette = {
 	base: Color3,
 	hover: Color3,
@@ -110,6 +114,12 @@ local function Button(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		return p.base
 	end)
 
+	local side = scope:Computed(function(use): UDim
+		local size: UDim2? = use(props.Size)
+		local narrow = size ~= nil and size.X.Scale == 0 and size.X.Offset < NARROW
+		return UDim.new(0, if narrow then Theme.Padding.Tiny else Theme.Padding.Medium)
+	end)
+
 	return scope:New("TextButton")({
 		Name = props.Name or "Button",
 		AutoButtonColor = false,
@@ -181,8 +191,8 @@ local function Button(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 				Color = ColorSequence.new(Theme.Plain, Theme.mix(Theme.Plain, Theme.Shade, 0.08)),
 			}),
 			scope:New("UIPadding")({
-				PaddingLeft = UDim.new(0, Theme.Padding.Medium),
-				PaddingRight = UDim.new(0, Theme.Padding.Medium),
+				PaddingLeft = side,
+				PaddingRight = side,
 			}),
 		},
 	})

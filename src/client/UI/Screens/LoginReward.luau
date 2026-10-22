@@ -45,6 +45,10 @@ local CARD_HEIGHT = 236
 local CARD_HEIGHT_TOUCH = 150
 local SLOT = 36
 local CHEST_GLYPH = "▣"
+-- Owner 2026-10-22 (Studio: "Skrzynia z przedmiotem dla klasy Mag" broke "przedmiot/em" in the PC's seventh-wide
+-- card): the chest line is short and in Caption, so its longest word fits the card beside the "i"
+-- (tests/uifit.spec: CHEST_ROOM)
+local CHEST_TEXT = Theme.TextSize.Caption
 
 local function label(scope: Scope, props: { [string]: any }): Instance
 	local base: { [string]: any } = {
@@ -181,7 +185,7 @@ local function card(
 							return `{CHEST_GLYPH} {Text.get(use, "login.chest.short", { class = className })}`
 						end),
 						TextColor3 = Theme.Paper.Heading,
-						TextSize = Theme.TextSize.Small,
+						TextSize = CHEST_TEXT,
 					},
 					scope:Computed(function(use): string
 						local className = if class then Text.get(use, class.nameKey) else classId

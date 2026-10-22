@@ -12,7 +12,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Button = require(script.Parent.Parent.Components.Button)
 local CurrencyIcon = require(script.Parent.Parent.Components.CurrencyIcon)
 local Data = require(ReplicatedStorage.Shared.Data.PortalShop)
-local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local ItemIcon = require(script.Parent.Parent.Components.ItemIcon)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
@@ -72,7 +71,6 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 	local portalStones = State.Value({ "account", "portalStones" })
 	local inventory = State.Value({ "character", "inventory" })
 	local busy = scope:Value(false)
-	local touch = Device.Touch
 
 	local function send(entry: Data.Entry, mode: string, n: number, name: string): (boolean, string?)
 		busy:set(true)
@@ -119,7 +117,6 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 		local account = { dragonShards = use(shards) or 0, portalStones = use(portalStones) }
 		local inv = use(inventory)
 		local here = use(props.NpcId) == Data.NPC
-		local isTouch = use(touch)
 		local locked = use(busy) or not here
 		local out: { Instance } = {}
 		if not here then
@@ -128,7 +125,10 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 				label(s, 0, Text.get(use, "portalshop.atMaster"), Theme.TextSize.Small, Theme.Paper.Warning)
 			)
 		end
-		local buttonWidth = if isTouch then 104 else 132
+		-- owner 2026-10-22 (Studio: "10 szt. · 100 ◆" wrapped, the ◆ alone on a second line): wide enough for the
+		-- longest label ("Na stałe · 600 ◆", "Take your copy") in Small with the button's padding, at every scale
+		-- (tests/uifit.spec); three of them (540 px) fit the 720 px window on every device
+		local buttonWidth = 176
 		for order, entry in Data.list do
 			local def = Items.get(entry.itemId)
 			local name = ItemText.get(use, entry.itemId)
@@ -155,6 +155,7 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 					Variant = variant :: any,
 					Disabled = not ok or locked,
 					Text = Text.get(use, textKey, { n = n, price = PortalShop.price(entry, mode, n) or 0 }),
+					TextSize = Theme.TextSize.Small,
 					OnClick = function()
 						buy(entry, mode, n, if mode == "piece" then name else permName)
 					end,

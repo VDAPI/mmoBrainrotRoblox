@@ -167,6 +167,17 @@ function UIController.Init()
 			Parent = playerGui,
 		})
 		roots[layer.name] = Scale.root(scope, gui)
+		if layer.name == "Screens" then
+			-- owner 2026-10-22: the HUD lays out in this layer's own size (under the top bar, Scale.HudSize)
+			local screens = gui :: ScreenGui
+			Scale.SetHudArea(screens.AbsoluteSize)
+			table.insert(
+				scope,
+				screens:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+					Scale.SetHudArea(screens.AbsoluteSize)
+				end)
+			)
+		end
 	end
 
 	Toast.mount(scope, roots.Toasts)
