@@ -6052,3 +6052,4 @@
 - **Przegląd Studio 2026-10-22 (wąskie przyciski)** Przycisk węższy niż 64 px („▶”, „+”, „−”) ma małe marginesy boczne, żeby znak się mieścił; „▶” powtórki scen w dzienniku zadań ma 44 x 28.
 - **Przegląd Studio 2026-10-22 (nagroda za logowanie)** Linia skrzyni na karcie dnia 7 jest krótka („▣ Skrzynia dla klasy Mag”, pełny opis pod „i”) i w Caption: słowa nie łamią się w wąskiej karcie PC.
 - **W31 poprawka 2** Otwory jaskiń są czarnym `Neon` (żadne światło ich nie barwi). Brama lochu siada na gruncie z promieni rzucanych przez serwer po terenie, nie na stałej wysokości z funkcji terenu.
+- **W31 poprawka 3** Brama lochu stoi na podłodze jaskini z danych (`Portals.gateBase`: podłoga `CaveTerrain` + 2 studa podłogi z wokseli + 0,15 progu), bez promieni. Wokół portali Łąk nie ma `Grass` (trawa dekoracyjna przerastała stopień łuku), tylko pobocze w kolorze trawy.

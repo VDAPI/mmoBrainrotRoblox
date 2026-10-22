@@ -4,7 +4,6 @@
 -- (buildMode = "asset"). Decorations are anchored, not queryable and small ones cast no shadow.
 
 local CollectionService = game:GetService("CollectionService")
-local Workspace = game:GetService("Workspace")
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local ArchFit = require(game:GetService("ReplicatedStorage").Shared.Logic.ArchFit)
@@ -1235,32 +1234,17 @@ end
 -- that breathes (client "glow", Controllers/TownFxController) with iron bands, a seam and a ring of glowing runes.
 -- The door stays the "E" prompt's part (PrimaryPart, DungeonController / DungeonService.gatePosition). W31 (Studio:
 -- the horns black on black in the dark caves, the sill half buried in the Moss Cave's floor): ember rims and runes on
--- the horns with a dim light each, the door on a raised sill (Data/Portals.GATE.sill, .rim).
+-- the horns with a dim light each, the door on a sill just over the voxel floor (Data/Portals.GATE.sill, .rim,
+-- .gateBase).
 local GATE_STONE = "#2A2428"
 local GATE_IRON = "#1E1A1C"
 local GATE_RUNE = "#FFB27A"
 
--- W31 (Studio: the sill 0.8 under the cave's voxel floor, which stands up to 2 studs over the cave's floor function):
--- the gate stands on the highest terrain surface under its footprint, from rays cast after the terrain is written
--- (the floor function where no ray hits).
-local SEAT_SPOTS = { { -6, -2 }, { 0, -2 }, { 6, -2 }, { -6, 1.5 }, { 0, 1.5 }, { 6, 1.5 }, { 0, 0 } }
-local SEAT_RISE = 5 -- how far over the floor function the rays start (the voxel floor is never higher)
-
+-- W31 (Studio 2026-10-22: rays cast for the floor missed it or hit something else): the gate stands on the cave's floor
+-- from data, the sill's top just over the voxel floor (Data/Portals.gateBase).
 local function seatedBase(ctx: Context, x: number, z: number, rot: number?): CFrame
-	local base = baseAt(ctx, x, z, rot)
-	local y = base.Position.Y
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Include
-	params.FilterDescendantsInstances = { Workspace.Terrain }
-	params.IgnoreWater = true
-	for _, spot in SEAT_SPOTS do
-		local from = (base * CFrame.new(spot[1], SEAT_RISE, spot[2])).Position
-		local hit = Workspace:Raycast(from, Vector3.new(0, -(SEAT_RISE + 4), 0), params)
-		if hit and hit.Position.Y > y then
-			y = hit.Position.Y
-		end
-	end
-	return base + Vector3.new(0, y - base.Position.Y, 0)
+	local y = Portals.gateBase(Build.groundY(ctx, x, z))
+	return CFrame.new(Build.at(ctx, x, y, z)) * CFrame.Angles(0, math.rad(rot or 0), 0)
 end
 
 function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number, rot: number?): Model

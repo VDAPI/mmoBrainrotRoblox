@@ -268,13 +268,26 @@ describe("Meadows terrain", function()
 		local colors = MapLooks.terrainColorsOf("meadows")
 		expect(colors[verge]).toBe(colors.Grass)
 		expect(colors.LeafyGrass ~= colors.Grass).toBe(true) -- the darker patches stay
-		-- the strip is the only place of the verge material: it lies by a road or ramp, and there is one
+		-- the strip is the only place of the verge material: it lies by a road or ramp (W31: or round a portal,
+		-- TerrainLayers.PORTAL_CLEAR), and there is one
+		local function nearPortal(x: number, z: number): boolean
+			for _, p in Portals.onMap("meadows") do
+				if (x - p.x) ^ 2 + (z - p.z) ^ 2 < TerrainLayers.PORTAL_CLEAR ^ 2 then
+					return true
+				end
+			end
+			return false
+		end
 		local strips, other = 0, 0
 		for x = -780, 780, 10 do
 			for z = -780, 780, 10 do
 				if MeadowsTerrain.material(x, z) == verge then
 					local _, info = MeadowsTerrain.sample(x, z)
-					if info.road < TerrainLayers.PATH_CLEAR or (info.rampD or math.huge) < TerrainLayers.PATH_CLEAR then
+					if
+						info.road < TerrainLayers.PATH_CLEAR
+						or (info.rampD or math.huge) < TerrainLayers.PATH_CLEAR
+						or nearPortal(x, z)
+					then
 						strips += 1
 					else
 						other += 1

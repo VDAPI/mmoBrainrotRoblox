@@ -34,6 +34,9 @@ local flats: { Flat } = {
 	{ x = 730, z = -720, r = 18, blend = 24 }, -- Duskwood portal
 	{ x = 60, z = 735, r = 24, blend = 22 }, -- Smugglers' Hideout
 	{ x = 420, z = -745, r = 24, blend = 22 }, -- Goblin Warren
+	-- Mosshollow Cave (W31, Studio: the bowl's wall stood up to 10 studs in front of the dark hole, a beige slope behind
+	-- the veil): level ground from the arch to past the hole, inside the mouth's slabs (Data/CaveMouth)
+	{ x = 745, z = 330, r = 16, blend = 8 },
 	{ x = -700, z = 30, r = 10, blend = 12 }, -- respawn points
 	{ x = -60, z = -250, r = 10, blend = 12 },
 	{ x = 120, z = 300, r = 10, blend = 12 },

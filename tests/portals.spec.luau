@@ -11,8 +11,11 @@ local ArchFit = require("../src/shared/Logic/ArchFit")
 local CaveMouth = require("../src/shared/Data/CaveMouth")
 local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
 local MapTerrain = require("../src/shared/Logic/MapTerrain")
+local MeadowsTerrain = require("../src/shared/Logic/MeadowsTerrain")
 local PortalClearance = require("./PortalClearance")
 local Portals = require("../src/shared/Data/Portals")
+local RegionTerrain = require("../src/shared/Logic/RegionTerrain")
+local TerrainLayers = require("../src/shared/Logic/TerrainLayers")
 local Test = require("./Test")
 local Town = require("../src/shared/Data/Town")
 local TownGen = require("../src/shared/Logic/TownGen")
@@ -504,37 +507,37 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 		end
 	)
 
-	it("keeps the terrain out of the way to every cave mouth's hole (W31, Studio: the lair's hill)", function()
-		local bad = {}
-		for _, p in Portals.list do
-			-- the Moss mouth is set into the wall of the waterfall's bowl on purpose (its own slabs, Data/CaveMouth)
-			local h0 = p.kind == "cave"
-				and not OWN_DRESSING[p.id]
-				and MapTerrain.has(p.map)
-				and MapTerrain.height(p.map, p.x, p.z)
-			if h0 then
-				local worst = 0
-				for a = -Portals.HOLE.w / 2, Portals.HOLE.w / 2, 0.5 do
-					for b = 0, Portals.HOLE.z + Portals.HOLE.d, 0.5 do
-						local x, z = onMap(p, a, b)
-						local h = MapTerrain.height(p.map, x, z)
-						if h then
-							worst = math.max(worst, h - h0)
+	it(
+		"keeps the terrain out of the way to every cave mouth's hole (W31, Studio: the lair's hill, the Moss Cave)",
+		function()
+			local bad = {}
+			for _, p in Portals.list do
+				local h0 = p.kind == "cave" and MapTerrain.has(p.map) and MapTerrain.height(p.map, p.x, p.z)
+				if h0 then
+					local worst = 0
+					for a = -Portals.HOLE.w / 2, Portals.HOLE.w / 2, 0.5 do
+						-- to a stud past the hole's back (Studio: the Moss Cave's voxels 1 stud before its face)
+						for b = 0, Portals.HOLE.z + Portals.HOLE.d + 1, 0.5 do
+							local x, z = onMap(p, a, b)
+							local h = MapTerrain.height(p.map, x, z)
+							if h then
+								worst = math.max(worst, h - h0)
+							end
 						end
 					end
-				end
-				if worst > 0.5 then
-					table.insert(
-						bad,
-						string.format("%s on %s: terrain rises %.1f in front of the hole", p.id, p.map, worst)
-					)
+					if worst > 0.5 then
+						table.insert(
+							bad,
+							string.format("%s on %s: terrain rises %.1f in front of the hole", p.id, p.map, worst)
+						)
+					end
 				end
 			end
+			if #bad > 0 then
+				error(table.concat(bad, "\n"))
+			end
 		end
-		if #bad > 0 then
-			error(table.concat(bad, "\n"))
-		end
-	end)
+	)
 
 	it("keeps the painted arch at full size and its veil in the opening down to the ground (W31 regression)", function()
 		-- the box of common_portal_02 measured in Studio at 18 studs tall: 16 across, 20.9 deep with its base slab,
@@ -639,37 +642,65 @@ describe("Portals: the boss door and the labels (W31)", function()
 		end
 	end)
 
-	it("lifts the door onto a sill over the cave floor and lights the horns' edges (W31, Studio)", function()
-		local g = Portals.GATE
-		local sillTop = g.sill.y + g.sill.h / 2
-		local doorBottom = g.door.y - g.door.h / 2
-		-- the sill stands a stud over the floor (the voxel floor bulged over the 0.45 stud sill) and under the ground
-		expect(sillTop >= 1).toBe(true)
-		expect(g.sill.y - g.sill.h / 2 < 0).toBe(true)
-		-- the door stands on it, not in the floor
-		expect(doorBottom >= sillTop - 0.2 and doorBottom <= sillTop).toBe(true)
-		expect(g.sill.w / 2 <= g.hornX + g.horn / 2).toBe(true)
-		-- a faint rim, a short-range light
-		expect(g.rim.t > 0 and g.rim.t < 1).toBe(true)
-		expect(g.rim.w <= 0.3 and g.rim.light <= 16).toBe(true)
-		local prefabs = read("src/server/World/Prefabs.luau")
-		-- seated on the highest voxel floor under it (the floor stood 2 studs over the floor function), deep enough
-		expect(g.sill.y - g.sill.h / 2 <= -1.5).toBe(true)
-		for _, needle in
-			{
-				'"HornRim"',
-				'"HornRune"',
-				"Portals.GATE.rim",
-				"Portals.GATE.sill",
-				"local base = seatedBase(ctx, x, z, rot)",
-				"Size = Vector3.new(G.horn, top + 3, G.horn)",
-			}
-		do
-			if not string.find(prefabs, needle, 1, true) then
-				error(`Prefabs.luau: missing {needle}`)
+	it(
+		"stands the door on a sill just over the boss caves' voxel floor and lights the horns' edges (W31, Studio)",
+		function()
+			local g = Portals.GATE
+			local sillTop = g.sill.y + g.sill.h / 2
+			local doorBottom = g.door.y - g.door.h / 2
+			-- the door stands on the sill, not in the floor; the sill reaches deep enough that no lower floor shows a gap
+			expect(doorBottom >= sillTop - 0.2 and doorBottom <= sillTop).toBe(true)
+			expect(sillTop - (g.sill.y - g.sill.h / 2) >= g.rise + 2).toBe(true)
+			expect(g.sill.w / 2 <= g.hornX + g.horn / 2).toBe(true)
+			expect(g.rise > 0 and g.rise <= 0.3).toBe(true)
+			-- Studio 2026-10-22: in every boss cave the floor is flat under the gate (data), the voxel floor 2 studs over it
+			-- and the sill's top `rise` over that, from data (no rays: they missed the floor or hit something else)
+			local caves = 0
+			for _, p in Portals.list do
+				if p.kind == "dungeon" then
+					caves += 1
+					local cave = assert(CaveTerrain.get(p.map), p.map)
+					local floor = assert(cave.floor(p.x, p.z), `{p.id}: no floor under the gate`)
+					for a = -g.sill.w / 2, g.sill.w / 2, 1 do
+						for b = -3, 3, 1 do
+							local x, z = onMap(p, a, b)
+							local f = cave.floor(x, z)
+							if f == nil or math.abs(f - floor) > 0.1 then
+								error(`{p.id}: the floor under the gate is not flat at ({a}, {b})`)
+							end
+						end
+					end
+					local base = Portals.gateBase(floor)
+					local ground = floor + g.ground
+					expect(math.abs(base + sillTop - (ground + g.rise)) < 1e-6).toBe(true)
+					expect(math.abs(base + doorBottom - ground) <= g.rise).toBe(true)
+				end
 			end
+			expect(caves).toBe(4)
+			-- a faint rim, a short-range light
+			expect(g.rim.t > 0 and g.rim.t < 1).toBe(true)
+			expect(g.rim.w <= 0.3 and g.rim.light <= 16).toBe(true)
+			local prefabs = read("src/server/World/Prefabs.luau")
+			for _, needle in
+				{
+					'"HornRim"',
+					'"HornRune"',
+					"Portals.GATE.rim",
+					"Portals.GATE.sill",
+					"local base = seatedBase(ctx, x, z, rot)",
+					"Portals.gateBase(Build.groundY(ctx, x, z))",
+					"Size = Vector3.new(G.horn, top + 3, G.horn)",
+				}
+			do
+				if not string.find(prefabs, needle, 1, true) then
+					error(`Prefabs.luau: missing {needle}`)
+				end
+			end
+			local from = assert(string.find(prefabs, "local function seatedBase(", 1, true))
+			local body = string.sub(prefabs, from, (string.find(prefabs, "\nend\n", from, true)))
+			expect(string.find(body, "Raycast", 1, true)).toBe(nil)
 		end
-	end)
+	)
 
 	it("draws the zone labels over portals and gates on a dark plate, always on top, over the arch", function()
 		local world = read("src/client/Controllers/WorldController.luau")
@@ -697,5 +728,37 @@ describe("Portals: the boss door and the labels (W31)", function()
 	it("keeps the client's pebbles and tufts out of every portal", function()
 		local decor = read("src/client/Controllers/DecorController.luau")
 		expect(string.find(decor, "Portals.onMap(map.id)", 1, true) ~= nil).toBe(true)
+		-- clear of the corners of the painted arch's real footprint, with room for a leaning tuft
+		local keep = tonumber(string.match(decor, "local PORTAL_KEEP = ([%d%.]+)"))
+		local m = Portals.ARCH.model
+		expect(keep ~= nil and keep >= math.sqrt((m.w / 2) ^ 2 + (m.d / 2) ^ 2) + 2).toBe(true)
+	end)
+
+	it("grows no decoration grass round the portals of the height-function maps (W31, Studio: the Hideout)", function()
+		local m = Portals.ARCH.model
+		expect(TerrainLayers.PORTAL_CLEAR >= math.sqrt((m.w / 2) ^ 2 + (m.d / 2) ^ 2) + 4).toBe(true)
+		local bad = {}
+		for _, p in Portals.list do
+			local material: ((number, number) -> string)? = nil
+			if p.map == "meadows" then
+				material = MeadowsTerrain.material
+			elseif RegionTerrain.has(p.map) then
+				local T = assert(RegionTerrain.get(p.map))
+				material = T.material
+			end
+			if material then
+				local r = TerrainLayers.PORTAL_CLEAR - 1
+				for a = -r, r, 2 do
+					for b = -r, r, 2 do
+						if a * a + b * b <= r * r and material(p.x + a, p.z + b) == "Grass" then
+							table.insert(bad, string.format("%s: Grass at (%d, %d)", p.id, a, b))
+						end
+					end
+				end
+			end
+		end
+		if #bad > 0 then
+			error(table.concat(bad, "\n"))
+		end
 	end)
 end)

@@ -14050,3 +14050,16 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `portals.spec` (teren nie wchodzi przed otwór żadnego wylotu z ramą, kamienie serwera poza pierścieniem
   łuku, żebra Leża w typach LOD), `portalglass.spec` (zasłona co najmniej 0,8 przezroczystości). Bez Studio: siedzenie
   bramy na promieniach sprawdzi tylko przegląd w grze.
+### W31 poprawka 3: otwór Jaskini Mchów odkopany, próg bramy z danych, trawa przy portalach (2026-10-22)
+- **Jaskinia Mchów (Studio po d6ef51e1):** ściana misy stała do 10 studów przed czarnym otworem (beżowy stok za
+  zasłoną portalu). Płaszczyzna w `Data/Terrain/meadows` (środek w osi portalu, r 16, przejście 8) wyrównuje grunt od
+  łuku do za otwór, wewnątrz płyt wylotu (`Data/CaveMouth`). Test terenu przed otworem obejmuje teraz także ten wylot
+  i sięga studa za tył otworu.
+- **Brama lochu:** bez promieni (chybiały podłogi albo trafiały w coś innego). Baza z danych: podłoga jaskini z
+  `CaveTerrain` (płaska pod każdą bramą), podłoga z wokseli `GATE.ground` = 2 nad nią (zmierzone 1,9 do 2,0 przy
+  wszystkich czterech bramach), wierzch progu `GATE.rise` = 0,15 nad nią (`Portals.gateBase`). Test dla wszystkich
+  czterech jaskiń: płaska podłoga pod progiem, wierzch progu = podłoga + 2 + 0,15, drzwi na progu.
+- **Kryjówka Przemytników:** wysoka trawa nad stopniem łuku to trawa dekoracyjna terenu Roblox (rośnie na `Grass`,
+  skrypt jej nie wyłączy). W promieniu `TerrainLayers.PORTAL_CLEAR` = 18 od każdego portalu Łąk `Grass` zamienia się
+  w pobocze (`MeadowsTerrain.VERGE`, kolor trawy); kępki klienta trzymają się 16 studów od portalu (było 14). Test:
+  żadnego `Grass` wokół portali map z funkcją wysokości.

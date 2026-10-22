@@ -20,6 +20,32 @@ TerrainLayers.NO_DECOR_GRASS = "LeafyGrass" -- the grass material without decora
 -- (Data/MapLooks `terrainColors`, tests/meadowsterrain.spec), so a map that paints LeafyGrass on purpose in its own
 -- darker colour (the Meadows' forest floor and patches) gives its painter another material here (`verge`).
 
+-- W31 (Studio: the waist-high decoration grass grew over the painted arch's base step at the Smugglers' Hideout): no
+-- Grass within PORTAL_CLEAR studs of a portal either (the arch's real footprint reaches 13.3 from its middle,
+-- Data/Portals.ARCH.model).
+TerrainLayers.PORTAL_CLEAR = 18
+
+-- `material` with Grass swapped for `verge` (default NO_DECOR_GRASS) when the column lies within PORTAL_CLEAR studs of
+-- one of `spots` ({x, z}).
+function TerrainLayers.clearPortals(
+	material: string,
+	x: number,
+	z: number,
+	spots: { { number } },
+	verge: string?
+): string
+	if material ~= "Grass" then
+		return material
+	end
+	local r2 = TerrainLayers.PORTAL_CLEAR * TerrainLayers.PORTAL_CLEAR
+	for _, s in spots do
+		if (x - s[1]) ^ 2 + (z - s[2]) ^ 2 < r2 then
+			return verge or TerrainLayers.NO_DECOR_GRASS
+		end
+	end
+	return material
+end
+
 -- `material` with Grass swapped for `verge` (default NO_DECOR_GRASS) when the column lies within PATH_CLEAR studs
 -- past the edge of a road (`roadD`) or ramp (`rampD`), both measured from the edge (negative on the road).
 function TerrainLayers.clearPaths(material: string, roadD: number, rampD: number?, verge: string?): string

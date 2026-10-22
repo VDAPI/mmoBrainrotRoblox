@@ -13,6 +13,7 @@
 
 local AreaTypes = require("../Data/Areas/Types")
 local Areas = require("../Data/Areas/meadows")
+local Portals = require("../Data/Portals")
 local Shape = require("../Data/Terrain/meadows")
 local TerrainLayers = require("./TerrainLayers")
 
@@ -58,6 +59,11 @@ MeadowsTerrain.MATERIALS = {
 -- Meadows' own darker forest floor and patches, so the strip is a material nothing else here uses, tinted like the
 -- Grass on this map (Data/MapLooks meadows `terrainColors`): no dark stripes along the roads.
 MeadowsTerrain.VERGE = "Limestone"
+-- W31: the portals, gates and cave mouths of the Meadows, kept free of decoration grass (TerrainLayers.clearPortals)
+local PORTAL_SPOTS: { { number } } = {}
+for _, p in Portals.onMap("meadows") do
+	table.insert(PORTAL_SPOTS, { p.x, p.z })
+end
 
 -- Spatial index of polyline segments ---------------------------------------------------------------------------
 
@@ -849,8 +855,10 @@ function MeadowsTerrain.materialAt(x: number, z: number, h: number, slope: numbe
 	end
 	local theme = MeadowsTerrain.themeAt(x, z)
 	local pick = THEME_GROUND[theme] or THEME_GROUND.meadow
-	-- no decoration grass beside the roads and ramps (TerrainLayers.PATH_CLEAR)
-	return TerrainLayers.clearPaths(pick(fbm(x, z, 31, SEED + 21, 3)), info.road, info.rampD, MeadowsTerrain.VERGE)
+	-- no decoration grass beside the roads and ramps (TerrainLayers.PATH_CLEAR) nor round the portals (PORTAL_CLEAR)
+	local ground =
+		TerrainLayers.clearPaths(pick(fbm(x, z, 31, SEED + 21, 3)), info.road, info.rampD, MeadowsTerrain.VERGE)
+	return TerrainLayers.clearPortals(ground, x, z, PORTAL_SPOTS, MeadowsTerrain.VERGE)
 end
 
 -- Material of the surface at a point (tools, admin).

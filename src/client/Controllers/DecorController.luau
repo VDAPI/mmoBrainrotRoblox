@@ -946,8 +946,10 @@ local function shore(map: Maps.MapDef, areas: any, x: number, z: number): boolea
 end
 
 -- W31 (Studio review: a pebble lay in a portal's opening): nothing within this many studs of a portal, gate or exit
--- (the painted arch's real footprint, 21 x 16.5 with its base slab, reaches 13.3 from its middle)
-local PORTAL_KEEP = 14
+-- (the painted arch's real footprint, 21 x 16.5 with its base slab, reaches 13.3 from its middle; Studio: tall grass
+-- leaning over the base step at the Smugglers' Hideout, so tufts keep 2.7 studs off its corners; the terrain's own
+-- decoration grass keeps off them too, Logic/TerrainLayers.clearPortals)
+local PORTAL_KEEP = 16
 
 local function nearPortal(portals: { Portals.Portal }, x: number, z: number): boolean
 	for _, p in portals do

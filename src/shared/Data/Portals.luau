@@ -208,9 +208,14 @@ local GATE = table.freeze({
 	-- sill half buried in the cave's floor in the Moss Cave): the door stands on a raised sill, its top under the lintel
 	door = table.freeze({ w = 9.2, h = 14, y = 8.1, d = 0.6 }),
 	lintel = table.freeze({ w = 15.6, h = 1.6, y = 15.9, d = 2.4 }),
-	-- (the gate stands on the highest voxel floor under it, Prefabs.dungeonGate; the sill and the horns reach 2-3 studs
-	-- down so a lower floor beside it shows no gap)
+	-- (the sill and the horns reach 2-3 studs down so a lower floor beside it shows no gap)
 	sill = table.freeze({ w = 13.6, h = 3.2, y = -0.4, d = 3.6, z = -0.4 }),
+	-- W31 (Studio 2026-10-22: the sill 0.8 under the floor in three boss caves, 1.2 over it in the fourth, the rays of
+	-- the server missed or hit something else): the gate stands on the cave's floor from data (Logic/CaveTerrain, flat
+	-- at every gate), the voxel floor `ground` studs over it (measured 1.9-2.0 at all four gates), the sill's top
+	-- `rise` over that floor (gateBase)
+	ground = 2,
+	rise = 0.15,
 	-- W31 (Studio: the basalt horns black on black in the dark caves): glowing rims on the horns' outer front edges,
 	-- three runes up each horn and a dim light from each
 	rim = table.freeze({ w = 0.22, d = 0.1, t = 0.35, light = 12, brightness = 0.7 }),
@@ -303,6 +308,11 @@ return table.freeze({
 	look = look,
 	palette = palette,
 	frameKeepOut = frameKeepOut,
+	-- Height of a dungeon gate's base (World/Prefabs.dungeonGate) over the cave's floor `floor` at the gate: the sill's
+	-- top GATE.rise over the voxel floor, which stands GATE.ground over the floor function.
+	gateBase = function(floor: number): number
+		return floor + GATE.ground + GATE.rise - (GATE.sill.y + GATE.sill.h / 2)
+	end,
 	PROMPT_RANGE = PROMPT_RANGE,
 	SERVER_RANGE = SERVER_RANGE,
 	-- The box (portal frame) a portal of `kind` keeps free of dressing (nil: city gates, drawn by the town plan).
