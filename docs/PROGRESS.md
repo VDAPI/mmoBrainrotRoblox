@@ -59,7 +59,8 @@
   modelu po zamianie stawów `AnimationConstraint` na `Motor6D` (`Util/RigJoints`) nieobejrzane w Studio. Na tablecie
   1280 x 720 przy wielu panelach naraz kolumna może zejść pod rząd sprintu (brak miejsca w obu kolumnach).
 - **Przegląd Studio 2026-10-22 (UI):** podłoga kolumny HUD z warstwy bez paska Robloxa (`Scale.HudSize`) i nad
-  zmierzonym rogiem (przełącznik PvP, plakietka, poczta: `HudSlots.corner`, `HudStack.floorAbove`), przyciski
+  zmierzonym rogiem (przełącznik PvP, plakietka, poczta: `HudSlots.corner`, `HudStack.floorAbove`; przesunięty
+  tropiciel też: `floorUnder`, `trackerBody`), przyciski
   Mistrza Portali, nagłówki ról umiejętności w dwóch liniach, cienkie paski bez liczb, wąskie przyciski, linia skrzyni
   nagrody za logowanie; nieobejrzane w Studio (szerokości tekstu szacowane w `uifit.spec`).
 - **W31 ramy portali i wyjść:** nieobejrzane w Studio (dopasowanie modelu łuku przez `fitModel`, ramy wejść i wyjść,

@@ -106,6 +106,20 @@ function HudSlots.corner(s: Scope, item: GuiObject)
 	task.defer(measure)
 end
 
+-- The corner's buttons a moved element stops above (HudStack.floorUnder): computed and measured; none on a phone
+-- (Logic/PhoneHud keeps its places apart).
+HudSlots.Corner = scope:Computed(function(use): { HudStack.Rect }
+	if use(PhoneLayout.Compact) then
+		return {}
+	end
+	local screen: Vector2 = use(Scale.HudSize)
+	local out: { HudStack.Rect } = table.clone(use(measured))
+	for _, rect in HudStack.fixed(use(Device.Touch) == true, screen.X, screen.Y) do
+		table.insert(out, rect)
+	end
+	return out
+end)
+
 -- The built-in place of every shown element that has none of its own, by id.
 HudSlots.Places = scope:Computed(function(use): { [string]: HudStack.Rect }
 	local screen: Vector2 = use(Scale.HudSize)

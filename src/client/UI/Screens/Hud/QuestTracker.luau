@@ -917,17 +917,18 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	local contentHeight = scope:Value(0)
 	local chrome = PAD_TOP + HEADER + GAP + PAD_BOTTOM
 	-- the body of a tracker at `top` whose list may reach down to `floor` (a sized one keeps its height, the list
-	-- scrolls inside)
+	-- scrolls inside; owner 2026-10-22: never past the floor, HudStack.trackerBody)
 	local function bodyTo(use: Fusion.Use, top: number, floor: number): number
 		local e = use(entry)
-		if e and e.h then
-			return math.max(0, e.h - chrome)
-		end
-		return math.min(use(contentHeight), math.max(0, floor - top - chrome))
+		return HudStack.trackerBody(top, floor, chrome, use(contentHeight), if e then e.h else nil)
 	end
-	-- the floor of a moved tracker: the bottom of the screen (a phone: of its stack)
-	local function movedFloor(use: Fusion.Use): number
-		return use(Scale.HudSize).Y - (if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24)
+	-- the floor of a tracker moved to `at`: the bottom of the screen (a phone: of its stack), at least a few lines
+	-- under its top, but above the corner's buttons in its lane (owner 2026-10-22: a tracker moved near its built-in
+	-- place ran into the PvP toggle; HudStack.floorUnder)
+	local function movedFloor(use: Fusion.Use, at: Vector2): number
+		local screen = use(Scale.HudSize).Y - (if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24)
+		local bottom = math.max(at.Y + 80 + chrome, screen)
+		return HudStack.floorUnder(at.X, at.X + use(width), at.Y, bottom, use(HudSlots.Corner))
 	end
 	-- owner 2026-10-21: the built-in place in the HUD column (UI/HudSlots): under the event panels, over the corner's
 	-- buttons (PC) or the sprint row (touch); a moved tracker is in the panels' way instead (they go round it)
@@ -939,7 +940,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			local folded = use(collapsed)
 			local at = use(corner)
 			if at then
-				local body = if folded then 0 else bodyTo(use, at.Y, math.max(at.Y + 80 + chrome, movedFloor(use)))
+				local body = if folded then 0 else bodyTo(use, at.Y, movedFloor(use, at))
 				local h = PAD_TOP + HEADER + PAD_BOTTOM + (if folded then 0 else GAP + body)
 				return { shown = true, w = w, h = h, custom = HudSlots.moved(at, w, h, 1) }
 			end
@@ -952,7 +953,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		end
 		local at = use(corner)
 		if at then
-			return bodyTo(use, at.Y, math.max(at.Y + 80 + chrome, movedFloor(use)))
+			return bodyTo(use, at.Y, movedFloor(use, at))
 		end
 		local place = use(slot)
 		return if place then bodyTo(use, place.top, place.bottom) else 0

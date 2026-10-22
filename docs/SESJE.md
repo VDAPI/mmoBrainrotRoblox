@@ -14077,3 +14077,16 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   skrypt jej nie wyłączy). W promieniu `TerrainLayers.PORTAL_CLEAR` = 18 od każdego portalu Łąk `Grass` zamienia się
   w pobocze (`MeadowsTerrain.VERGE`, kolor trawy); kępki klienta trzymają się 16 studów od portalu (było 14). Test:
   żadnego `Grass` wokół portali map z funkcją wysokości.
+### Przegląd Studio 2026-10-22, poprawka 2: przesunięty tropiciel nad rogiem (2026-10-22)
+- **Diagnoza (Studio 1462 x 793, Root 1991 x 1001 jednostek):** `QuestTracker` stał w (1675, 455), 300 x 400: to
+  miejsce zapisane w układzie gracza (wbudowana góra kolumny to 460), czyli tropiciel „przesunięty” o kilka pikseli.
+  Podłoga przesuniętego tropiciela była dołem ekranu (977), więc lista (355, cała treść) kończyła się na 855, a
+  przełącznik PvP zaczyna się na 817. Pomiar rogu i podłoga kolumny działały tylko dla miejsca wbudowanego.
+- **Poprawka:** `HudStack.floorUnder` (podłoga przesuniętego elementu: dół ekranu albo 8 px nad pierwszym przyciskiem
+  rogu pod jego górą w jego pasie), `HudSlots.Corner` (przyciski rogu liczone i zmierzone, bez telefonu),
+  `HudStack.trackerBody` (wysokość listy: treść albo zapisany rozmiar, nigdy poniżej podłogi; bez miejsca sam
+  nagłówek), `QuestTracker` liczy z nich ramkę i miejsce w kolumnie. `HudDrag`: uchwyt rusza element dopiero po 6 px
+  (`DEAD_ZONE`), więc kliknięcie nie zamienia tropiciela w przesunięty.
+- **Testy:** `hudlayout.spec` na liczbach z diagnozy: dawniej ramka do 855, teraz do 809 (8 nad przełącznikiem),
+  zapisany rozmiar obcięty tak samo, krótka treść zostaje, przyciski nad górą i poza pasem się nie liczą, zmierzony
+  przełącznik wyżej od wyliczonego wygrywa. Bez Studio.

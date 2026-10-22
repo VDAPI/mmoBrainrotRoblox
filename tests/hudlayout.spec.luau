@@ -429,6 +429,41 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		T.expect(HudStack.floorAbove(tablet, HudStack.TRACKER, { rect(1200, 300) })).toBe(tablet.floor)
 	end)
 
+	T.it("a moved tracker stops above the corner (Studio diagnostics 1462 x 793, Root 1991 x 1001 units)", function()
+		-- owner 2026-10-22: QuestTracker at (1675, 455) (moved by a few pixels from its built-in place), 300 x 400 with
+		-- a 355 unit list (its content: quests, 3 contracts, the daily set); the PvP toggle's top at 1001 - 120 - 64
+		local w, h = 1991, 1001
+		local chrome = HudStack.TRACKER_LEAST -- padding 6, header 28, gap 3, padding 8
+		local corner = HudStack.fixed(false, w, h)
+		T.expect(corner.pvp.top).toBe(817)
+		local left, top, content = 1675, 455, 355
+		local screenFloor = h - 24
+		-- before: the floor of a moved tracker was the screen's bottom, its frame ended at 855
+		T.expect(top + chrome + HudStack.trackerBody(top, screenFloor, chrome, content)).toBe(855)
+		-- now: GAP above the toggle in its lane
+		local corners: { Rect } = {}
+		for _, r in corner do
+			table.insert(corners, r)
+		end
+		local floor = HudStack.floorUnder(left, left + HudStack.TRACKER, top, screenFloor, corners)
+		T.expect(floor).toBe(corner.pvp.top - HudStack.GAP)
+		local body = HudStack.trackerBody(top, floor, chrome, content)
+		T.expect(top + chrome + body <= corner.pvp.top - HudStack.GAP).toBe(true)
+		T.expect(body).toBe(floor - top - chrome) -- the list scrolls in what is left
+		-- a resized tracker is capped the same way; a short one keeps its content's height
+		T.expect(HudStack.trackerBody(top, floor, chrome, content, 500)).toBe(body)
+		T.expect(HudStack.trackerBody(top, floor, chrome, 120)).toBe(120)
+		T.expect(HudStack.trackerBody(top, floor, chrome, 120, 200)).toBe(200 - chrome)
+		-- no room under the top (moved right over the toggle's row): the header stays, the list hides
+		T.expect(HudStack.trackerBody(810, floor, chrome, content)).toBe(0)
+		-- buttons above its top (the mail starts at 917) or outside its lane leave the screen's bottom
+		T.expect(HudStack.floorUnder(left, left + HudStack.TRACKER, 950, screenFloor, corners)).toBe(screenFloor)
+		T.expect(HudStack.floorUnder(400, 700, top, screenFloor, corners)).toBe(screenFloor)
+		-- the measured toggle counts like the computed one (it may stand higher than the formula says)
+		local measuredPvp = { left = 1911, top = 780, right = 1975, bottom = 844 }
+		T.expect(HudStack.floorUnder(left, left + HudStack.TRACKER, top, screenFloor, { measuredPvp })).toBe(772)
+	end)
+
 	T.it("the PvP badge stays on the screen, right-aligned with the toggle", function()
 		local f = HudStack.fixed(false, 1920, 1080)
 		T.expect(f.pvpBadge.right).toBe(f.pvp.right)

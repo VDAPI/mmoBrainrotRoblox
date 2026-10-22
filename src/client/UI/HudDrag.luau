@@ -32,6 +32,7 @@ HudDrag.RIGHT_TOP = HudStack.RIGHT_TOP
 local TAB_W, TAB_H = 20, 30
 local TAB_TOUCH_W, TAB_TOUCH_H = 30, 44
 local CORNER, CORNER_TOUCH = 18, 28
+local DEAD_ZONE = 6 -- screen pixels a grip's pointer moves before the element does
 
 export type Handle = {
 	id: string,
@@ -75,7 +76,17 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 	end)
 
 	local root: GuiObject? = nil
-	local drag: { mode: string, start: Vector2, x: number, y: number, w: number, h: number, s: number }? = nil
+	local drag: {
+		mode: string,
+		start: Vector2,
+		x: number,
+		y: number,
+		w: number,
+		h: number,
+		s: number,
+		moving: boolean,
+	}? =
+		nil
 	local function begin(mode: string, input: InputObject)
 		local kind = input.UserInputType
 		if kind ~= Enum.UserInputType.MouseButton1 and kind ~= Enum.UserInputType.Touch then
@@ -97,6 +108,7 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 			w = size.X,
 			h = size.Y,
 			s = Fusion.peek(scale),
+			moving = false,
 		}
 	end
 	table.insert(
@@ -107,7 +119,14 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 			if not d or (kind ~= Enum.UserInputType.MouseMovement and kind ~= Enum.UserInputType.Touch) then
 				return
 			end
-			local delta = (Vector2.new(input.Position.X, input.Position.Y) - d.start) / Scale.get()
+			local pointer = Vector2.new(input.Position.X, input.Position.Y)
+			-- owner 2026-10-22: a click on a grip (or a wobble of a few pixels) moves nothing: the element keeps its
+			-- built-in place in the column (a tracker "moved" 5 px up left its column and ran into the PvP toggle)
+			if not d.moving and (pointer - d.start).Magnitude < DEAD_ZONE then
+				return
+			end
+			d.moving = true
+			local delta = (pointer - d.start) / Scale.get()
 			local screen = Fusion.peek(Scale.HudSize)
 			local e = Fusion.peek(entry)
 			if d.mode == "size" and scaled then

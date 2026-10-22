@@ -233,6 +233,28 @@ function HudStack.floorAbove(column: Column, width: number, under: { Rect }): nu
 	return floor
 end
 
+-- Owner 2026-10-22 (Studio 1462 x 793: a tracker the player had moved, at 1675 x 455 near its built-in place, ran 38
+-- units into the PvP toggle, because a moved element only knew the screen's bottom): the floor of an element moved to
+-- [left, right] from `top`: `bottom`, or GAP above the first of `under` (the corner's buttons, computed and measured)
+-- that stands below its top in its lane.
+function HudStack.floorUnder(left: number, right: number, top: number, bottom: number, under: { Rect }): number
+	local floor = bottom
+	for _, r in under do
+		if r.top > top and r.left < right and left < r.right then
+			floor = math.min(floor, r.top - HudStack.GAP)
+		end
+	end
+	return floor
+end
+
+-- The quest tracker's list height at `top` with the floor `floor` (its column place's bottom, or `floorUnder` once
+-- moved); the frame adds `chrome` (padding, header, gap). As tall as its content (`content`), a resized tracker its
+-- saved height (`sized`, the whole frame), never past the floor: with no room the list hides and the header stays.
+function HudStack.trackerBody(top: number, floor: number, chrome: number, content: number, sized: number?): number
+	local wanted = if sized then sized - chrome else content
+	return math.max(0, math.min(wanted, floor - top - chrome))
+end
+
 local function overlaps(a: Rect, b: Rect): boolean
 	return a.left < b.right and b.left < a.right and a.top < b.bottom and b.top < a.bottom
 end
