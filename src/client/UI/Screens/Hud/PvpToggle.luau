@@ -9,6 +9,7 @@ local Workspace = game:GetService("Workspace")
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Net = require(ReplicatedStorage.Shared.Net)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
@@ -181,6 +182,12 @@ local function PvpToggle(scope: Scope): Instance
 		},
 	})
 
+	-- owner 2026-10-22: the HUD column stays above the toggle and its badge where they really stand (UI/HudSlots)
+	HudSlots.corner(scope, button :: GuiObject)
+	local badge = button:FindFirstChild("Badge")
+	if badge and badge:IsA("GuiObject") then
+		HudSlots.corner(scope, badge)
+	end
 	Tooltip.attach(
 		scope,
 		button :: GuiObject,

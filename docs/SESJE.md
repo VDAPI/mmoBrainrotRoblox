@@ -14050,3 +14050,17 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `portals.spec` (teren nie wchodzi przed otwór żadnego wylotu z ramą, kamienie serwera poza pierścieniem
   łuku, żebra Leża w typach LOD), `portalglass.spec` (zasłona co najmniej 0,8 przezroczystości). Bez Studio: siedzenie
   bramy na promieniach sprawdzi tylko przegląd w grze.
+### Przegląd Studio 2026-10-22, poprawka: kolumna HUD nad zmierzonym rogiem (2026-10-22)
+- **Regresja (Studio 1462 x 793 po 00ace7d9):** treść tropiciela kończyła się na 621 px, przełącznik PvP zaczynał na
+  599 px; wysokość warstwy z wzoru (`ScreenGui.AbsoluteSize`) nie zgadzała się z miejscem, w którym naprawdę stoi róg.
+- **Pomiar:** `UI/HudSlots.corner(s, obiekt)` (przełącznik PvP i jego plakietka w `PvpToggle`, koperta w `MailButton`)
+  mierzy `AbsolutePosition` / `AbsoluteSize` przy każdej zmianie (ich, ramki paneli `HudGate` przez
+  `HudSlots.SetHost`, skali UI) i podaje prostokąty w wirtualnych pikselach ramki paneli (`HudStack.fromScreen`) do
+  `HudStack.layout(…, measured)`: są przeszkodami, a podłoga kolumny schodzi do 8 px nad tymi, które stoją w jej pasach
+  (`HudStack.floorAbove`: kolumna i zapasowe, pod jej górą; nigdy nie podnosi podłogi). Liczniki Elity II na PC
+  (`eliteBottom`, `elite`) też stoją nad zmierzonym rogiem. Telefon bez zmian (własny stos).
+- **Rozmiar warstwy:** `Scale.SetHudArea` czyta `AbsoluteSize` ramki Root warstwy Screens (ramka, w której HUD
+  naprawdę stoi) zamiast samego `ScreenGui`.
+- **Testy:** `hudlayout.spec`: liczby ze Studio (przełącznik 46 x 46 px w (1403, 599)): bez pomiaru tropiciel wchodzi
+  na przełącznik, z pomiarem żaden element kolumny ani licznik Elity II nie sięga niżej niż 8 px nad nim, tropiciel
+  kończy się dokładnie tam; `floorAbove` (pasy, góra kolumny, zapasowa kolumna, tablet). Bez Studio.

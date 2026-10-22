@@ -143,15 +143,37 @@ function HudStack.cornerTop(touch: boolean, w: number, h: number): number
 	return top
 end
 
--- PC: the Elite II timers stand over the corner's buttons (their bottom edge); a touch screen stacks them in the
--- column (`place`, id "elite").
-function HudStack.eliteBottom(w: number, h: number): number
-	return HudStack.cornerTop(false, w, h) - HudStack.GAP
+-- Owner 2026-10-22 (Studio 1462 x 793: the tracker still ran 22 px into the PvP toggle, the layer's height from the
+-- formula did not match the screen): a rectangle a GUI object really takes, from its AbsolutePosition and
+-- AbsoluteSize (screen pixels: corner x, y, size w x h), in the virtual pixels of the frame whose corner is at
+-- (ox, oy) under UI scale `scale`. UI/HudSlots measures the corner's buttons with it (`measured` of `layout`).
+function HudStack.fromScreen(x: number, y: number, w: number, h: number, ox: number, oy: number, scale: number): Rect
+	local left = (x - ox) / scale
+	local top = (y - oy) / scale
+	return { left = left, top = top, right = left + w / scale, bottom = top + h / scale }
+end
+
+-- The highest top among `rects` that stand in the lane [left, right], or `top` when none is higher.
+local function topIn(rects: { Rect }, left: number, right: number, top: number): number
+	for _, r in rects do
+		if r.left < right and left < r.right then
+			top = math.min(top, r.top)
+		end
+	end
+	return top
+end
+
+-- PC: the Elite II timers stand over the corner's buttons (their bottom edge), the measured ones too (`measured`,
+-- see `fromScreen`); a touch screen stacks them in the column (`place`, id "elite").
+function HudStack.eliteBottom(w: number, h: number, measured: { Rect }?): number
+	local right = w - HudStack.MARGIN
+	local top = topIn(measured or {}, right - HudStack.ELITE, right, HudStack.cornerTop(false, w, h))
+	return top - HudStack.GAP
 end
 
 -- PC: the rectangle of the Elite II timers (`height` tall) over the corner's buttons.
-function HudStack.elite(w: number, h: number, height: number): Rect
-	local bottom = HudStack.eliteBottom(w, h)
+function HudStack.elite(w: number, h: number, height: number, measured: { Rect }?): Rect
+	local bottom = HudStack.eliteBottom(w, h, measured)
 	local right = w - HudStack.MARGIN
 	return { left = right - HudStack.ELITE, top = bottom - height, right = right, bottom = bottom }
 end
@@ -186,6 +208,29 @@ function HudStack.column(touch: boolean, compact: boolean, w: number, h: number,
 			w - HudStack.MARGIN - 2 * (HudStack.TRACKER + HudStack.GAP),
 		},
 	}
+end
+
+-- The floor of `column` kept GAP above every rectangle of `under` (the corner's buttons as measured on screen) that
+-- stands below the column's top in one of its lanes (the column and its spares, `width` wide): whatever the computed
+-- floor says, nothing of the stack reaches a button that is really there.
+function HudStack.floorAbove(column: Column, width: number, under: { Rect }): number
+	local floor = column.floor
+	local edges: { number } = { column.x }
+	local spares: { number } = column.spares or {}
+	for _, spare in spares do
+		table.insert(edges, spare)
+	end
+	local below: { Rect } = {}
+	for _, r in under do
+		if r.top > column.top then
+			table.insert(below, r)
+		end
+	end
+	for _, edge in edges do
+		local left = if column.right then edge - width else edge
+		floor = math.min(floor, topIn(below, left, left + width, floor + HudStack.GAP) - HudStack.GAP)
+	end
+	return floor
 end
 
 local function overlaps(a: Rect, b: Rect): boolean
@@ -278,16 +323,23 @@ end
 -- w x h screen: PC (`touch` false), a touch screen that is not a phone, a phone (`compact`); `others` = party members
 -- besides the player. Moved elements, the corner's buttons and the buttons right of the portrait (not on a phone:
 -- Logic/PhoneHud keeps the stack clear of them) and the PC Elite II timers are obstacles the others go round.
+-- `measured`: the corner's buttons as they really stand (`fromScreen`; not on a phone): obstacles too, and the column's
+-- floor stays above them (`floorAbove`) when the computed one is lower (owner 2026-10-22).
 function HudStack.layout(
 	touch: boolean,
 	compact: boolean,
 	w: number,
 	h: number,
 	others: number,
-	boxes: { [string]: Box }
+	boxes: { [string]: Box },
+	measured: { Rect }?
 ): { [string]: Rect }
 	local column = HudStack.column(touch, compact, w, h, others)
-	local fixed: { Rect } = {}
+	local under: { Rect } = if compact then {} else measured or {}
+	if #under > 0 then
+		column.floor = HudStack.floorAbove(column, math.max(HudStack.TRACKER, HudStack.PANEL_PC), under)
+	end
+	local fixed: { Rect } = table.clone(under)
 	if not compact then
 		for _, rect in HudStack.fixed(touch, w, h) do
 			table.insert(fixed, rect)
@@ -304,7 +356,7 @@ function HudStack.layout(
 		if box.custom then
 			table.insert(fixed, box.custom)
 		elseif id == "elite" and not touch then
-			table.insert(fixed, HudStack.elite(w, h, box.h)) -- PC: right over the corner's buttons
+			table.insert(fixed, HudStack.elite(w, h, box.h, under)) -- PC: right over the corner's buttons
 		else
 			local tracker = id == "questTracker"
 			local item: Item = {

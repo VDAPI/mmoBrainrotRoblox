@@ -1577,7 +1577,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   rzędu sprintu; telefon: lewy stos (`PhoneHud`). Przesunięty element zostaje na swoim miejscu, reszta go omija (nad,
   pod albo w zapasowej kolumnie obok); tropiciel bierze resztę miejsca do podłogi kolumny (w ciasnym układzie sam
   nagłówek z przewijaną listą), a podłoga stoi nad przełącznikiem PvP, jego plakietką i pocztą także pod paskiem
-  Robloxa (wysokość warstwy HUD, `Scale.HudSize`, przegląd 2026-10-22). Na PC liczniki Elity II stoją nad przyciskami
+  Robloxa (wysokość warstwy HUD, `Scale.HudSize`, i zmierzone położenie przycisków rogu, `HudSlots.corner`,
+  przegląd 2026-10-22). Na PC liczniki Elity II stoją nad przyciskami
   rogu. Nic z tego nie pokazuje się pod
   ekranem wczytywania i wyboru postaci (`UI/HudGate`).
 - **Poczta na HUD (właściciel 2026-10-21).** Gdy czekają przesyłki, w prawym dolnym rogu koperta z liczbą przesyłek

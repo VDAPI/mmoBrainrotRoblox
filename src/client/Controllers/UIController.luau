@@ -168,13 +168,14 @@ function UIController.Init()
 		})
 		roots[layer.name] = Scale.root(scope, gui)
 		if layer.name == "Screens" then
-			-- owner 2026-10-22: the HUD lays out in this layer's own size (under the top bar, Scale.HudSize)
-			local screens = gui :: ScreenGui
-			Scale.SetHudArea(screens.AbsoluteSize)
+			-- owner 2026-10-22: the HUD lays out in this layer's own size (under the top bar, Scale.HudSize), read
+			-- from its Root, the frame the HUD's elements really stand in (UI/HudSlots also measures the corner)
+			local root = roots[layer.name]
+			Scale.SetHudArea(root.AbsoluteSize)
 			table.insert(
 				scope,
-				screens:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-					Scale.SetHudArea(screens.AbsoluteSize)
+				root:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
+					Scale.SetHudArea(root.AbsoluteSize)
 				end)
 			)
 		end
