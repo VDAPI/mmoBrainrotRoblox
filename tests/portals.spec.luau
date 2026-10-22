@@ -8,6 +8,7 @@ local fs = require("@lune/fs")
 
 local Areas = require("../src/shared/Data/Areas")
 local ArchFit = require("../src/shared/Logic/ArchFit")
+local CaveMouth = require("../src/shared/Data/CaveMouth")
 local CaveTerrain = require("../src/shared/Logic/CaveTerrain")
 local MapTerrain = require("../src/shared/Logic/MapTerrain")
 local PortalClearance = require("./PortalClearance")
@@ -503,6 +504,38 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 		end
 	)
 
+	it("keeps the terrain out of the way to every cave mouth's hole (W31, Studio: the lair's hill)", function()
+		local bad = {}
+		for _, p in Portals.list do
+			-- the Moss mouth is set into the wall of the waterfall's bowl on purpose (its own slabs, Data/CaveMouth)
+			local h0 = p.kind == "cave"
+				and not OWN_DRESSING[p.id]
+				and MapTerrain.has(p.map)
+				and MapTerrain.height(p.map, p.x, p.z)
+			if h0 then
+				local worst = 0
+				for a = -Portals.HOLE.w / 2, Portals.HOLE.w / 2, 0.5 do
+					for b = 0, Portals.HOLE.z + Portals.HOLE.d, 0.5 do
+						local x, z = onMap(p, a, b)
+						local h = MapTerrain.height(p.map, x, z)
+						if h then
+							worst = math.max(worst, h - h0)
+						end
+					end
+				end
+				if worst > 0.5 then
+					table.insert(
+						bad,
+						string.format("%s on %s: terrain rises %.1f in front of the hole", p.id, p.map, worst)
+					)
+				end
+			end
+		end
+		if #bad > 0 then
+			error(table.concat(bad, "\n"))
+		end
+	end)
+
 	it("keeps the painted arch at full size and its veil in the opening down to the ground (W31 regression)", function()
 		-- the box of common_portal_02 measured in Studio at 18 studs tall: 16 across, 20.9 deep with its base slab,
 		-- the slab sunk 1.5 studs (the arch stood at a third of its size when it was fitted into 16 x 18 x 6)
@@ -531,7 +564,10 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 			end
 		end
 		-- nothing scales the painted model by a box any more
-		expect(string.find(prefabs, "Portals.ARCH.model", 1, true)).toBe(nil)
+		local from = assert(string.find(prefabs, "local function fitModel(", 1, true))
+		local body = string.sub(prefabs, from, (string.find(prefabs, "\nend\n", from, true)))
+		expect(string.find(body, "ARCH.model", 1, true)).toBe(nil)
+		expect(string.find(body, "fit.scale", 1, true) ~= nil).toBe(true)
 	end)
 
 	it("frames the cave exits too (light themed frames round the arch)", function()
@@ -617,7 +653,18 @@ describe("Portals: the boss door and the labels (W31)", function()
 		expect(g.rim.t > 0 and g.rim.t < 1).toBe(true)
 		expect(g.rim.w <= 0.3 and g.rim.light <= 16).toBe(true)
 		local prefabs = read("src/server/World/Prefabs.luau")
-		for _, needle in { '"HornRim"', '"HornRune"', "Portals.GATE.rim", "Portals.GATE.sill" } do
+		-- seated on the highest voxel floor under it (the floor stood 2 studs over the floor function), deep enough
+		expect(g.sill.y - g.sill.h / 2 <= -1.5).toBe(true)
+		for _, needle in
+			{
+				'"HornRim"',
+				'"HornRune"',
+				"Portals.GATE.rim",
+				"Portals.GATE.sill",
+				"local base = seatedBase(ctx, x, z, rot)",
+				"Size = Vector3.new(G.horn, top + 3, G.horn)",
+			}
+		do
 			if not string.find(prefabs, needle, 1, true) then
 				error(`Prefabs.luau: missing {needle}`)
 			end
@@ -633,6 +680,18 @@ describe("Portals: the boss door and the labels (W31)", function()
 		expect(string.find(world, "WorldLabel.new(", 1, true) ~= nil).toBe(true)
 		expect(string.find(dungeon, "WorldLabel.new(", 1, true) ~= nil).toBe(true)
 		expect(string.find(read("src/server/World/Prefabs.luau"), '"LabelHeight"', 1, true) ~= nil).toBe(true)
+	end)
+
+	it("keeps the server's rocks off every arch, the cave mouth's own rocks out of that ring (W31, Studio)", function()
+		local prefabs = read("src/server/World/Prefabs.luau")
+		local from = assert(string.find(prefabs, "function Prefabs.rock(", 1, true))
+		local body = string.sub(prefabs, from, (string.find(prefabs, "\nend\n", from, true)))
+		expect(string.find(body, "rockNearPortal(ctx, x, z", 1, true) ~= nil).toBe(true)
+		local m = Portals.ARCH.model
+		local ring = math.sqrt((m.w / 2) ^ 2 + (m.d / 2) ^ 2) + CaveMouth.ROCKS.reach
+		for _, at in CaveMouth.ROCKS.at do
+			expect(math.sqrt(at[1] ^ 2 + at[2] ^ 2) >= ring).toBe(true)
+		end
 	end)
 
 	it("keeps the client's pebbles and tufts out of every portal", function()

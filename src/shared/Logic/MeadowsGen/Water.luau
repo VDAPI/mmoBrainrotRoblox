@@ -329,8 +329,11 @@ end
 -- box (Data/Portals, half depth 1.25), and is SmoothPlastic (tests/portalglass.spec: no Glass before any portal).
 -- Partia 6 (W31: the painted arch fills z -3.25..3.25 and the opening before the hole is kept free,
 -- Data/Portals.frameKeepOut): the sheets hang between that opening (3.6) and the hole's face (4.08). W31 fix (the
--- painted arch at full size, its real footprint 16.5 deep): between the opening (8.7) and the hole's face (9.18).
+-- painted arch at full size, its real footprint 16.5 deep): between the opening (8.7) and the hole's face (9.18);
+-- Studio: a pale sheet over the black hole behind the purple, so the sheets are a faint shimmer (CURTAIN_T: mostly
+-- see-through, the dark of the hole shows behind the veil).
 Water.CURTAIN_Z = 8.86 -- the middle sheet
+Water.CURTAIN_T = 0.86 -- the middle sheet's transparency, the side ones a little more
 Water.CURTAIN_STEP = 0.14 -- the side ones this much deeper
 function Water.caveCurtain(out: { Build })
 	local m = { x = 745, z = 330, rot = 45 }
@@ -354,7 +357,7 @@ function Water.caveCurtain(out: { Build })
 			o({ c = "#CFE6F2", m = "SmoothPlastic" }, "detail", {
 				col = false,
 				q = false,
-				t = 0.5 + math.abs(k) * 0.12,
+				t = Water.CURTAIN_T + math.abs(k) * 0.05,
 				tag = if k == 0 then "waterfall" else nil,
 				jitter = 0,
 			})

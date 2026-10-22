@@ -45,7 +45,7 @@ local function grotto(env: Env.Env, out: { Build })
 	bp:rbox(14, 26, 12, -20.5, 8, 14, 0, 10, 0, o(Props.darkStone, "shell", { q = true }))
 	bp:rbox(14, 24, 12, 20.5, 7, 14, 0, -10, 0, o(Props.darkStone, "shell", { q = true }))
 	Kit.portalHole(bp)
-	bp:add("ball", 22, 24, 0.2, 0, 8, 9.45, 0, 0, 0, o(Kit.dark, "shell", { q = false }))
+	bp:add("ball", 22, 24, 0.2, 0, 8, 9.45, 0, 0, 0, o(Kit.HOLE_BLACK, "shell", { q = false, jitter = 0 }))
 	for _, side in { -1, 1 } do
 		Props.crystals(bp, side * 13, 0, 8, 0.7, "detail", false)
 	end
@@ -150,7 +150,12 @@ local function heart(env: Env.Env, out: { Build })
 		Props.icicles(bp, side * 14, 18, -2, 3, 4, 5)
 	end
 	Kit.portalHole(bp)
-	bp:box(22, 18, 1, 0, 8, 16, o(Kit.dark, "shell", { q = false }))
+	bp:box(22, 18, 1, 0, 8, 16, o(Kit.HOLE_BLACK, "shell", { q = false, jitter = 0 }))
+	-- W31 (Studio: a sliver of the ice walls showed between the painted pillar and the veil from the path): the dark
+	-- reaches from the hole's edges to the walls
+	for _, side in { -1, 1 } do
+		bp:box(2.8, 18, 7, side * 9.9, 7, 12.5, o(Kit.HOLE_BLACK, "shell", { col = false, q = false, jitter = 0 }))
+	end
 	Props.crystals(bp, 0, 0, 18, 2, "shell", false)
 	bp:light(0, 8, 7.5, Props.CRYSTAL, 30, 1.6, "crystal")
 	-- the threshold: scales and frozen bones, rime

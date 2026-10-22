@@ -54,7 +54,7 @@ local function cryptGate(env: Env.Env, out: { Build })
 	-- iron doors swung open along its sides (one of them half shut the gateway)
 	bp:box(56, 38, 28, 0, y0 + 19, face + 14, o(RED, "shell", { q = true }))
 	Kit.portalHole(bp, along)
-	bp:box(21.6, 20, 0.2, 0, y0 + 10, face - 0.05, o(Kit.dark, "shell", { q = false }))
+	bp:box(21.6, 20, 0.2, 0, y0 + 10, face - 0.05, o(Kit.HOLE_BLACK, "shell", { q = false, jitter = 0 }))
 	bp:box(29, 4, 4, 0, y0 + 22, face - 1.6, o(RED_DARK, "shell", { q = false }))
 	for _, side in { -1, 1 } do
 		bp:box(3, 24, 3, side * 12.4, y0 + 12, face - 1.4, o(RED_DARK, "detail", { col = false }))
@@ -65,11 +65,14 @@ local function cryptGate(env: Env.Env, out: { Build })
 			bp:box(8.1, 0.4, 0.7, -side * 4, 3 + k * 4.4, 0, o({ c = "#2A2826", m = "CorrodedMetal" }, "fine"))
 		end
 		bp:pop()
-		-- niches with skulls
+		-- niches with skulls (W31, Studio: the dark squares stood out of the facade like floating holes): a dark back
+		-- flush with the facade under a sill and a lintel of darker stone, the skull on the sill
 		for k = 0, 2 do
 			local nx, ny = side * 15, y0 + 9 + k * 7
-			bp:box(2.6, 2.6, 1, nx, ny, face - 0.2, o(Kit.dark, "detail", { col = false }))
-			Kit.skull(bp, nx, ny - 1, face - 0.4, 1.4)
+			bp:box(2.6, 2.6, 0.1, nx, ny, face - 0.04, o(Kit.dark, "detail", { col = false }))
+			bp:box(3.4, 0.5, 0.8, nx, ny - 1.55, face - 0.4, o(RED_DARK, "detail", { col = false }))
+			bp:box(3.4, 0.5, 0.6, nx, ny + 1.55, face - 0.3, o(RED_DARK, "detail", { col = false }))
+			Kit.skull(bp, nx, ny - 1.3, face - 0.5, 1.4)
 		end
 		-- the hooded figures on their plinths
 		local fx, fz = side * 21, -21
@@ -100,7 +103,8 @@ local function cryptGate(env: Env.Env, out: { Build })
 			0,
 			o({ c = "#3A3438", m = "Slate" }, "shell", { q = false })
 		)
-		bp:box(2.2, 2.4, 1, fx, y0 + 15.2, fz - 1.8, o(Kit.dark, "detail", { col = false }))
+		-- the dark under the hood: an oval sunk into it (W31, Studio: a square stood out of the hood like a hole)
+		bp:add("ball", 2.4, 2.8, 1, fx, y0 + 15.2, fz - 1.45, 0, 0, 0, o(Kit.dark, "detail", { col = false }))
 		bp:rbox(
 			0.8,
 			9,

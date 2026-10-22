@@ -208,7 +208,9 @@ local GATE = table.freeze({
 	-- sill half buried in the cave's floor in the Moss Cave): the door stands on a raised sill, its top under the lintel
 	door = table.freeze({ w = 9.2, h = 14, y = 8.1, d = 0.6 }),
 	lintel = table.freeze({ w = 15.6, h = 1.6, y = 15.9, d = 2.4 }),
-	sill = table.freeze({ w = 13.6, h = 1.6, y = 0.4, d = 3.6, z = -0.4 }),
+	-- (the gate stands on the highest voxel floor under it, Prefabs.dungeonGate; the sill and the horns reach 2-3 studs
+	-- down so a lower floor beside it shows no gap)
+	sill = table.freeze({ w = 13.6, h = 3.2, y = -0.4, d = 3.6, z = -0.4 }),
 	-- W31 (Studio: the basalt horns black on black in the dark caves): glowing rims on the horns' outer front edges,
 	-- three runes up each horn and a dim light from each
 	rim = table.freeze({ w = 0.22, d = 0.1, t = 0.35, light = 12, brightness = 0.7 }),

@@ -171,6 +171,8 @@ describe("Portals: no Glass before a veil (studio review 2026-10-21)", function(
 		end
 		expect(sheets).toBe(3)
 		expect(Water.CURTAIN_Z > 0).toBe(true)
+		-- W31 (Studio: a pale sheet over the black hole): a faint shimmer, the hole's dark shows through
+		expect(Water.CURTAIN_T >= 0.8).toBe(true)
 	end)
 end)
 

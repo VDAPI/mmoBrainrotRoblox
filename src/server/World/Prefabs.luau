@@ -4,6 +4,7 @@
 -- (buildMode = "asset"). Decorations are anchored, not queryable and small ones cast no shadow.
 
 local CollectionService = game:GetService("CollectionService")
+local Workspace = game:GetService("Workspace")
 
 local Areas = require(game:GetService("ReplicatedStorage").Shared.Data.Areas)
 local ArchFit = require(game:GetService("ReplicatedStorage").Shared.Logic.ArchFit)
@@ -145,10 +146,32 @@ function Prefabs.tree(ctx: Context, x: number, z: number, kind: TreeKind?, scale
 	return model
 end
 
+-- W31 (Studio: a decor stone sat on a painted portal's pillar): how far a rock of `scale` reaches from its point
+-- (stones up to 7 x 6 studs x 1.4, two of them 2.5 apart), and whether that reaches a portal's arch on this map
+-- (Data/Portals.ARCH.model, its real footprint, as a circle round the portal); such rocks are not built.
+local function rockReach(scale: number): number
+	return scale * 1.4 * (5 + 4.7)
+end
+
+local function rockNearPortal(ctx: Context, x: number, z: number, scale: number): boolean
+	local m = Portals.ARCH.model
+	local keep = math.sqrt((m.w / 2) ^ 2 + (m.d / 2) ^ 2) + rockReach(scale)
+	for _, p in Portals.onMap(ctx.map.id) do
+		if (x - p.x) ^ 2 + (z - p.z) ^ 2 < keep * keep then
+			return true
+		end
+	end
+	return false
+end
+
 function Prefabs.rock(ctx: Context, x: number, z: number, scale: number?, color: string?): Model
 	local s = (scale or 1) * ctx.rng:float(0.7, 1.4)
 	local base = baseAt(ctx, x, z, ctx.rng:float(0, 360))
 	local model = newModel(ctx, "Rock")
+	if rockNearPortal(ctx, x, z, scale or 1) then
+		model.Parent = nil
+		return model
+	end
 	for i = 1, ctx.rng:int(1, 3) do
 		local size = Vector3.new(ctx.rng:float(3, 7), ctx.rng:float(2, 5), ctx.rng:float(3, 6)) * s
 		part(ctx, model, {
@@ -926,8 +949,10 @@ function Prefabs.caveMouth(
 		Name = "Hole",
 		Size = Vector3.new(hole.size[1], hole.size[2], hole.size[3]),
 		CFrame = base * CFrame.new(hole.p[1], hole.p[2], hole.p[3]),
-		Color = hex("#050506"),
-		Material = Enum.Material.SmoothPlastic,
+		-- W31 (Studio: a hole read brown under warm light): black Neon, which no light tints
+		Color = Color3.new(0, 0, 0),
+		Material = Enum.Material.Neon,
+		CastShadow = false,
 	})
 	-- Arch: two pillars of stacked boulders
 	local B = CaveMouth.BOULDERS
@@ -944,10 +969,11 @@ function Prefabs.caveMouth(
 			})
 		end
 	end
-	-- Rocks around the mouth
-	for _, offset in { { -16, 6 }, { 16, 5 }, { -14, -4 }, { 15, -3 } } do
+	-- Rocks around the mouth (W31, Studio: a 9.6-stud stone sat on the painted pillar; Data/CaveMouth.ROCKS, clear of
+	-- the arch's real footprint)
+	for _, offset in CaveMouth.ROCKS.at do
 		local p = base * CFrame.new(offset[1], 0, offset[2])
-		Prefabs.rock(ctx, p.Position.X - ctx.origin.X, p.Position.Z - ctx.origin.Z, 1.6, rockColor)
+		Prefabs.rock(ctx, p.Position.X - ctx.origin.X, p.Position.Z - ctx.origin.Z, CaveMouth.ROCKS.scale, rockColor)
 	end
 	-- Torches and the sign in front (W31: the torches clear of the painted arch)
 	for _, side in { -1, 1 } do
@@ -1214,19 +1240,42 @@ local GATE_STONE = "#2A2428"
 local GATE_IRON = "#1E1A1C"
 local GATE_RUNE = "#FFB27A"
 
-function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number, rot: number?): Model
+-- W31 (Studio: the sill 0.8 under the cave's voxel floor, which stands up to 2 studs over the cave's floor function):
+-- the gate stands on the highest terrain surface under its footprint, from rays cast after the terrain is written
+-- (the floor function where no ray hits).
+local SEAT_SPOTS = { { -6, -2 }, { 0, -2 }, { 6, -2 }, { -6, 1.5 }, { 0, 1.5 }, { 6, 1.5 }, { 0, 0 } }
+local SEAT_RISE = 5 -- how far over the floor function the rays start (the voxel floor is never higher)
+
+local function seatedBase(ctx: Context, x: number, z: number, rot: number?): CFrame
 	local base = baseAt(ctx, x, z, rot)
+	local y = base.Position.Y
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = { Workspace.Terrain }
+	params.IgnoreWater = true
+	for _, spot in SEAT_SPOTS do
+		local from = (base * CFrame.new(spot[1], SEAT_RISE, spot[2])).Position
+		local hit = Workspace:Raycast(from, Vector3.new(0, -(SEAT_RISE + 4), 0), params)
+		if hit and hit.Position.Y > y then
+			y = hit.Position.Y
+		end
+	end
+	return base + Vector3.new(0, y - base.Position.Y, 0)
+end
+
+function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number, rot: number?): Model
+	local base = seatedBase(ctx, x, z, rot)
 	local model = newModel(ctx, `Dungeon_{region}`, ctx.folder)
 	local G = Portals.GATE
 	local door = G.door
-	-- the horns from a stud under the ground to just over the lintel, their caps sloping up towards the door, the gate
-	-- `height` tall in all (the frames of the boss caves hang their teeth and skulls over it)
+	-- the horns from three studs under the ground to just over the lintel, their caps sloping up towards the door, the
+	-- gate `height` tall in all (the frames of the boss caves hang their teeth and skulls over it)
 	local top = G.lintel.y + G.lintel.h / 2
 	for _, side in { -1, 1 } do
 		part(ctx, model, {
 			Name = "Horn",
-			Size = Vector3.new(G.horn, top + 1, G.horn),
-			CFrame = base * CFrame.new(side * Portals.GATE.hornX, (top - 1) / 2, 0),
+			Size = Vector3.new(G.horn, top + 3, G.horn),
+			CFrame = base * CFrame.new(side * Portals.GATE.hornX, (top - 3) / 2, 0),
 			Color = hex(GATE_STONE),
 			Material = Enum.Material.Basalt,
 			CanQuery = true,

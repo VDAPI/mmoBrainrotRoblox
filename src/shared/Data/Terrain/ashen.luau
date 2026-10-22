@@ -45,8 +45,10 @@ local flats: { Types.Flat } = {
 	{ x = -770, z = 160, r = 18, blend = 24 }, -- city portal
 	{ x = 740, z = -740, r = 18, blend = 24 }, -- Frost Peaks portal
 	{ x = 690, z = -690, r = 14, blend = 16 }, -- landing from the Frost Peaks
-	{ x = -560, z = -728, r = 18, blend = 14 }, -- Abandoned Mine (in front of the ridge)
-	{ x = 420, z = -728, r = 18, blend = 14 }, -- Wyvern Lair (in front of the mesa)
+	-- the Abandoned Mine and the Wyvern Lair in front of their walls; W31 (Studio: the walls' foot buried the lower
+	-- part of the dark hole 9 studs behind the portal): flat to the hole (tests/portals.spec)
+	{ x = -560, z = -735, r = 22, blend = 10 },
+	{ x = 420, z = -735, r = 22, blend = 10 },
 	{ x = 738, z = 0, r = 18, blend = 12 }, -- Deepforge (an alcove in the Forge Mountain)
 	{ x = -690, z = -36, r = 9, blend = 12 }, -- the scout
 	site("ribcage", 16, 18),

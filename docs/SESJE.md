@@ -14010,3 +14010,24 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   progu (`GATE.sill`, wierzch 1,2 nad podłogą; w Jaskini Mchów próg tonął w podłodze).
 - **Testy:** `portals.spec` (skala 1 i zasłona dla zmierzonego obrysu, ramy poza obrysem 21 x 16,5, próg i krawędzie
   rogów).
+### W31 poprawka 2: czarne otwory, rama Leża, próg bramy na gruncie (2026-10-22)
+- **Otwory (Studio po 45288e47):** każdy otwór jaskini to czarny `Neon` bez cienia (`Kit.HOLE_BLACK`,
+  `Kit.portalHole`, otwory w ścianach Szczytów, Pustkowi i Krypty, `Prefabs.caveMouth`): ciepłe światło nie barwi go
+  już na brązowo (Kuźnia Głębin).
+- **Krypta:** czarne kwadraty na nagrobkach po bokach były niszami w głąb; teraz płaska ciemna płytka z kamiennym
+  progiem i nadprożem, czaszka przed nią.
+- **Opuszczona Kopalnia:** ukośna czerwona smuga na nadprożu jest krótsza i stoi za obrysem łuku, nad nim (nie tnie
+  już prawego słupa); słupy, zastrzały i nadproże poza obrysem.
+- **Leże Wywerny:** wzgórze zasypywało dolne 40% otworu: płaszczyzny `Data/Terrain/ashen` pod Kopalnią i Leżem
+  sięgają za otwór (r 22, środek 10 studów za osią). Nowa rama: żebra martwej wywerny z obu stron łuku zbiegające się
+  nad nim, czaszka na szczycie (jak przy wyjściu).
+- **Kryjówka Przemytników:** kamienie `Prefabs.rock` (Decor serwera) nie stają w pierścieniu łuku (obrys 21 x 16,5
+  plus zasięg kamienia); głazy wylotu Jaskini Mchów są poza tym pierścieniem (`CaveMouth.ROCKS`).
+- **Jaskinia Mchów:** zasłona wody zostaje przed otworem (między nim a polem portalu), ale prawie przezroczysta
+  (`Water.CURTAIN_T` 0,86), bez `Glass`; czerń otworu widać przez nią.
+- **Brama lochu:** baza bramy siada na prawdziwym gruncie: serwer po terenie rzuca promienie w 7 punktach progu i
+  podnosi bazę do najwyższego trafienia (`seatedBase`); podłoga jaskini bywa 2 studa nad funkcją wysokości.
+- **Serce Lodowca:** ciemne płyty po bokach otworu zasłaniają lód widoczny między lewym słupem a zasłoną.
+- **Testy:** `portals.spec` (teren nie wchodzi przed otwór żadnego wylotu z ramą, kamienie serwera poza pierścieniem
+  łuku, żebra Leża w typach LOD), `portalglass.spec` (zasłona co najmniej 0,8 przezroczystości). Bez Studio: siedzenie
+  bramy na promieniach sprawdzi tylko przegląd w grze.

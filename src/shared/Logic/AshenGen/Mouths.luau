@@ -41,19 +41,21 @@ local function mine(env: Env.Env, out: { Build })
 	-- front of it (11 x 12 before, the arch 14.5 x 18 stood over it); W31 (Studio review: the painted arch is 16 studs
 	-- wide, the adit was 15): the adit is the portals' dark hole (Kit.portalHole), the posts and their braces beside
 	-- the painted pillars; W31 fix: round the painted arch's real footprint (21 x 16.5 with its base slab,
-	-- Data/Portals.ARCH.model)
-	bp:box(34, 24, 8, 0, 10, 13.4, o(Props.ash, "shell", { q = true }))
+	-- Data/Portals.ARCH.model). Studio: the ridge's foot buried the hole (Data/Terrain/ashen flattens it now), the rock
+	-- round the adit fills the notch that leaves in the ridge; the lintel with its smeared runes behind the arch's
+	-- footprint (its red streak cut across the painted pillar's top)
+	bp:box(34, 30, 14, 0, 13, 16.4, o(Props.ash, "shell", { q = true }))
 	Kit.portalHole(bp)
 	for _, side in { -1, 1 } do
-		bp:box(1.6, 19.4, 1.6, side * 11.6, 9, 8.9, o(wood, "shell", { q = false }))
-		bp:rbox(1, 9, 1, side * 12.8, 4, 7.9, 0, 0, side * 14, o(wood, "detail", { col = false }))
+		bp:box(1.6, 19.4, 1.6, side * 11.6, 9, 9.6, o(wood, "shell", { q = false }))
+		bp:rbox(1, 9, 1, side * 12.8, 4, 8.8, 0, 0, side * 14, o(wood, "detail", { col = false }))
 	end
-	bp:box(25, 1.8, 2, 0, 19.6, 8.9, o(wood, "shell", { q = false }))
+	bp:box(25, 1.8, 2, 0, 19.6, 9.8, o(wood, "shell", { q = false }))
 	-- dwarven runes on the lintel smeared with red orc paint
 	for k = -2, 2 do
-		bp:box(1, 1, 0.1, k * 2.2, 19.6, 7.85, o({ c = "#C9A45C", m = "SmoothPlastic" }, "fine"))
+		bp:box(1, 1, 0.1, k * 2.2, 19.6, 8.75, o({ c = "#C9A45C", m = "SmoothPlastic" }, "fine"))
 	end
-	bp:rbox(9, 1.2, 0.12, 0, 19.7, 7.8, 0, 0, 8, o({ c = "#8A2A1E", m = "SmoothPlastic" }, "fine", { t = 0.2 }))
+	bp:rbox(7, 1, 0.12, 0, 19.8, 8.62, 0, 0, 6, o({ c = "#8A2A1E", m = "SmoothPlastic" }, "fine", { t = 0.2 }))
 	-- rails out onto the slope, overturned carts
 	for _, side in { -1, 1 } do
 		bp:box(
@@ -157,13 +159,38 @@ local function lair(env: Env.Env, out: { Build })
 	local bp = b.bp
 	-- the huge scorched mouth in the wall and the fan of soot over it
 	-- (W31 fix: round the painted arch's real footprint, 21 x 16.5 with its base slab, Data/Portals.ARCH.model)
-	bp:box(36, 26, 8, 0, 11, 14.4, o({ c = "#6E2F2A", m = "Sandstone" }, "shell", { q = true }))
+	-- (Studio: the mesa's foot buried the hole; Data/Terrain/ashen flattens it now, the rock fills the notch that leaves)
+	bp:box(36, 34, 14, 0, 15, 17.4, o({ c = "#6E2F2A", m = "Sandstone" }, "shell", { q = true }))
 	-- W28: over the arch; W31: behind it, the portals' dark hole in its middle (Kit.portalHole)
-	bp:add("ball", 22, 24, 4, 0, 9, 11.4, 0, 0, 0, o(Kit.dark, "shell", { q = false }))
+	bp:add("ball", 22, 24, 4, 0, 9, 11.4, 0, 0, 0, o(Kit.HOLE_BLACK, "shell", { q = false, jitter = 0 }))
 	Kit.portalHole(bp)
 	for k = -2, 2 do
 		bp:rbox(5, 14, 0.2, k * 4.6, 20, 10.25, 0, 0, k * 14, o(Props.soot, "detail", { col = false, t = 0.1 }))
 	end
+	-- W31 (Studio: no frame round the arch, only the hill): the ribs of a dead wyvern meeting over the arch, beside
+	-- its real footprint, a skull at their crown (like the frame round the lair's exit, CaveDress/Lair)
+	local bone = { c = "#D8CDB4", m = "SmoothPlastic" }
+	for _, side in { -1, 1 } do
+		for k = 0, 1 do
+			local z = -1.2 + k * 2.4
+			local w = 1.8 - k * 0.3
+			local rib = if k == 0
+				then o(bone, "shell", { col = false, q = false })
+				else o(bone, "detail", { col = false, q = false })
+			bp:beam(side * (13.4 + k), -0.5, z, side * (12.8 + k), 19.2, z, w, rib)
+			bp:beam(
+				side * (12.8 + k),
+				19.2,
+				z,
+				side * (3.6 + k),
+				23 + k * 0.4,
+				z,
+				w * 0.9,
+				o(bone, "detail", { col = false })
+			)
+		end
+	end
+	Kit.skull(bp, 0, 22, -1.8, 2.4, 0)
 	-- claw furrows down the wall
 	for _, side in { -1, 1 } do
 		for k = 0, 3 do
@@ -189,15 +216,15 @@ local function lair(env: Env.Env, out: { Build })
 		end
 	end
 	-- W28: the egg beside the portal's arch (it stood in its pillar)
-	local ey = Kit.gy(ctx, b, 14, -3)
+	local ey = Kit.gy(ctx, b, 17, -5)
 	bp:add(
 		"ball",
 		4,
 		5.4,
 		4,
-		14,
+		17,
 		ey + 2.2,
-		-3,
+		-5,
 		0,
 		0,
 		0,
@@ -208,9 +235,9 @@ local function lair(env: Env.Env, out: { Build })
 			2.2,
 			0.3,
 			1.6,
-			17 + k * 0.8,
+			20 + k * 0.8,
 			ey + 0.2,
-			-5 + k,
+			-7 + k,
 			k * 30,
 			k * 40,
 			0,

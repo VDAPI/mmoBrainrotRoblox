@@ -43,6 +43,20 @@ local HOLE = table.freeze({ size = table.freeze({ 17, 17.5, 0.6 }), p = table.fr
 -- The two torches before the mouth: side * x across, z before the veil (W31: clear of the painted arch).
 local TORCHES = table.freeze({ x = 12.5, z = -6 })
 
+-- The loose rocks round the mouth (World/Prefabs.rock at `scale`: stones up to 7 x 6 studs x 1.4, two of them 2.5 x
+-- 1.4 apart, turned anyhow, so they reach 9.7 x 1.4 x scale from their point): beside the buttresses, clear of the
+-- painted arch's real footprint (W31, Studio: a 9.6-stud stone sat on the pillar of the Smugglers' Hideout).
+local ROCKS = table.freeze({
+	scale = 0.8,
+	reach = 0.8 * 1.4 * (5 + 4.7),
+	at = table.freeze({
+		table.freeze({ -24, 6 }),
+		table.freeze({ 24, 5 }),
+		table.freeze({ -24, -7 }),
+		table.freeze({ 24, -6 }),
+	}),
+})
+
 -- Rotation matrix (row-major 3 x 3) of CFrame.Angles(rx, ry, rz) in degrees: Rx * Ry * Rz.
 local function matrix(r: { number }): { number }
 	local ax, ay, az = math.rad(r[1]), math.rad(r[2]), math.rad(r[3])
@@ -69,5 +83,6 @@ return table.freeze({
 	BOULDERS = BOULDERS,
 	HOLE = HOLE,
 	TORCHES = TORCHES,
+	ROCKS = ROCKS,
 	matrix = matrix,
 })

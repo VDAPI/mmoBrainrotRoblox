@@ -244,7 +244,9 @@ end
 -- W31 (Studio review: the dark opening of a cave mouth stood off the purple veil, deep in the cleft or above it): the
 -- hole of a cave mouth straight behind its portal's arch (Data/Portals.HOLE), in a frame standing on the portal's
 -- axis `along` studs behind the portal (0 when the frame stands in the portal's own frame; +z into the rock): as wide
--- as the painted arch, from under the ground to over its opening, centred on the veil.
+-- as the painted arch, from under the ground to over its opening, centred on the veil. W31 (Studio: the hole read brown
+-- under the forge's warm light): black Neon, which no light tints, so the purple always stands on black.
+Kit.HOLE_BLACK = { c = "#000000", m = "Neon" }
 function Kit.portalHole(bp: BP, along: number?)
 	local h = Portals.HOLE
 	local bottom = -2
@@ -255,7 +257,7 @@ function Kit.portalHole(bp: BP, along: number?)
 		0,
 		(h.top + bottom) / 2,
 		(along or 0) + h.z + h.d / 2,
-		Kit.o(Kit.dark, "shell", { q = false })
+		Kit.o(Kit.HOLE_BLACK, "shell", { q = false, jitter = 0 })
 	)
 end
 
