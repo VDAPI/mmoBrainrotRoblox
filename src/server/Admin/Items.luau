@@ -494,7 +494,8 @@ commands.partyloot = function(player, args)
 	reply(player, "admin.partyloot.result", { list = table.concat(lines, "; ") })
 end
 
--- S23: /givex id rarity ilvl up el n equip
+-- S23: /givex id rarity ilvl up el n equip. Owner 2026-10-23: equipment rolls best for the character's class
+-- (Context.bestItem: top values, the class's best lines and effects; el "none" = the equipped weapon's element).
 commands.givex = function(player, args)
 	local itemId = args[1]
 	local def = itemId and Items.get(itemId)
@@ -522,19 +523,11 @@ commands.givex = function(player, args)
 		local given = 0
 		local lastIndex: number? = nil
 		for _ = 1, math.min(n, 50) do
-			local leftover, item = InventoryService.GiveNew(player, itemId, 1, rarity, ilvl)
-			if leftover > 0 or not item then
+			local item = Context.bestItem(character, itemId, ilvl, rarity, up, element)
+			if InventoryService.AddItem(player, item) > 0 then
 				break
 			end
-			item.up = up
-			if def.elemental and element and Elements.isWeaponElement(element) then
-				item.el = element
-			end
-			local index = InventoryService.IndexOf(player, item.uid)
-			if index then
-				InventoryService.SetSlot(player, index, item)
-				lastIndex = index
-			end
+			lastIndex = InventoryService.IndexOf(player, item.uid) or lastIndex
 			given += 1
 		end
 		if given == 0 then
@@ -599,9 +592,9 @@ commands.gearbag = function(player, _args)
 	end)
 end
 
--- S32: /gearset <level> [rarity]: the class's full set (Logic/DevPreset types) of item level `level`, rolled at
--- `rarity` (bonuses for the class), equipped through the normal Equip path (old pieces go to the backpack;
--- pieces above the character's level stay in the backpack).
+-- S32: /gearset <level> [rarity] [up]: the class's full set (Logic/DevPreset types) of item level `level`. Owner
+-- 2026-10-23: rolled best for the class (Context.giveBestSet), equipped through the normal Equip path (old pieces go to
+-- the backpack; pieces above the character's level stay in the backpack).
 commands.gearset = function(player, args)
 	local level = parseAmount(args[1])
 	local rarity = Rarities.parse(args[2] or "common")
@@ -610,27 +603,11 @@ commands.gearset = function(player, args)
 		return
 	end
 	withCharacter(player, function()
-		local character = PlayerStateService.GetCharacter(player)
 		local ilvl = math.clamp(level, 1, Config.MaxLevel)
-		local equipped = 0
-		for _, piece in DevPreset.pick(character.class, ilvl) do
-			local leftover, item =
-				InventoryService.GiveNew(player, piece.id, 1, rarity, ilvl, character.class :: string)
-			if leftover > 0 or not item then
-				reply(player, "inventory.full")
-				break
-			end
-			local def = Items.get(piece.id)
-			if def and def.elemental and item.el == nil then
-				item.el = Elements.DEFAULT
-			end
-			local index = InventoryService.IndexOf(player, item.uid)
-			if index then
-				InventoryService.SetSlot(player, index, item)
-				if EquipmentService.Equip(player, index, piece.slot) then
-					equipped += 1
-				end
-			end
+		local up = math.clamp(parseAmount(args[3]) or 0, 0, 9)
+		local equipped, full = Context.giveBestSet(player, ilvl, rarity, up)
+		if full then
+			reply(player, "inventory.full")
 		end
 		reply(player, "admin.gearset.ok", { ilvl = ilvl, rarity = `@rarity.{Rarities.get(rarity).key}`, n = equipped })
 	end)

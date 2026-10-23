@@ -7,6 +7,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 
 local Classes = require(Shared.Data.Classes)
+local DevPreset = require(Shared.Logic.DevPreset)
+local ItemBest = require(Shared.Logic.ItemBest)
+local ItemRoll = require(Shared.Logic.ItemRoll)
+local ItemScore = require(Shared.Logic.ItemScore)
+local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
 
@@ -67,6 +72,71 @@ function Context.simPlayer(player: Player, character: any): any
 		hooks = Context.services.EquipmentService.GetHooks(player),
 		magic = class ~= nil and class.basicAttack.kind == "magic",
 	}
+end
+
+-- Owner 2026-10-23: dev grants roll the best item for the character's class (Logic/ItemBest). The element of a Mage
+-- weapon: `element` when valid, else the equipped weapon's.
+local function elementFor(character: any, element: string?): string?
+	if element and element ~= "none" then
+		return element
+	end
+	local weapon = character.equipment and character.equipment.weapon
+	return if weapon then ItemRoll.elementOf(weapon) else nil
+end
+
+function Context.bestItem(
+	character: any,
+	defId: string,
+	ilvl: number,
+	rarity: number,
+	up: number,
+	element: string?
+): any
+	return ItemBest.roll(
+		defId,
+		ilvl,
+		rarity,
+		Context.services.InventoryService.NewUid(),
+		ItemScore.contextFor(character),
+		{ up = up, element = elementFor(character, element) }
+	)
+end
+
+-- The class's full set at `ilvl` (Logic/DevPreset, keeping the weapon and off-hand types the character uses) rolled
+-- best, added to the backpack and equipped through the normal Equip path (old pieces go to the backpack; pieces above
+-- the character's level stay there). Returns the number equipped and whether the backpack ran out of room.
+function Context.giveBestSet(player: Player, ilvl: number, rarity: number, up: number): (number, boolean)
+	local services = Context.services
+	local character = services.PlayerStateService.GetCharacter(player)
+	local equipment = character.equipment or {}
+	local function typeOf(item: any): string?
+		local def = if item then Items.get(item.id) else nil
+		return if def then def.type else nil
+	end
+	local pieces = DevPreset.pick(
+		character.class,
+		ilvl,
+		{ weapon = typeOf(equipment.weapon), offhand = typeOf(equipment.offhand) }
+	)
+	local items = ItemBest.set(
+		pieces,
+		ilvl,
+		rarity,
+		ItemScore.contextFor(character),
+		services.InventoryService.NewUid,
+		{ up = up, element = elementFor(character, nil) }
+	)
+	local equipped = 0
+	for i, item in items do
+		if services.InventoryService.AddItem(player, item) > 0 then
+			return equipped, true
+		end
+		local index = services.InventoryService.IndexOf(player, item.uid)
+		if index and services.EquipmentService.Equip(player, index, pieces[i].slot) then
+			equipped += 1
+		end
+	end
+	return equipped, false
 end
 
 -- Admin check (AdminService.IsAdmin), set by AdminService.Init.

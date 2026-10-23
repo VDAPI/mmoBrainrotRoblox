@@ -1,7 +1,8 @@
 --!strict
 -- Test gear set of a class at a level (S23, admin /preset): the class weapon type of its starting gear, the
 -- four armour pieces of its armour weight, necklace, two rings, talisman and an off-hand the class may use
--- next to a one-handed weapon, all from the highest generated tier <= level. Pure.
+-- next to a one-handed weapon, all from the highest generated tier <= level. Pure. `prefer` (dev panel best grants):
+-- the weapon / off-hand types the character uses now, kept when the class may use them.
 
 local Items = require("../Data/Items")
 
@@ -14,8 +15,10 @@ local function usable(defId: string, class: string): boolean
 	return def ~= nil and (def.classes == nil or table.find(def.classes, class) ~= nil)
 end
 
+export type Prefer = { weapon: string?, offhand: string? }
+
 -- Ordered list of { slot, defId } for the class at the level (slots: Items.equipmentSlots names).
-function DevPreset.pick(class: string, level: number): { { slot: string, id: string } }
+function DevPreset.pick(class: string, level: number, prefer: Prefer?): { { slot: string, id: string } }
 	local tier = Items.generate.tierFor(level)
 	local starting = Items.startingGear[class]
 	if not starting then
@@ -30,8 +33,12 @@ function DevPreset.pick(class: string, level: number): { { slot: string, id: str
 		end
 	end
 	local twoHanded = false
-	if weaponDef then
-		local id = `{weaponDef.type}_{tier}`
+	local weaponType = if weaponDef then weaponDef.type else nil
+	if prefer and prefer.weapon and usable(`{prefer.weapon}_{tier}`, class) then
+		weaponType = prefer.weapon
+	end
+	if weaponType then
+		local id = `{weaponType}_{tier}`
 		add("weapon", id)
 		local def = Items.get(id)
 		twoHanded = def ~= nil and def.weapon ~= nil and def.weapon.twoHanded == true
@@ -47,7 +54,11 @@ function DevPreset.pick(class: string, level: number): { { slot: string, id: str
 	add("ring2", `ring_{tier}`)
 	add("talisman", `talisman_{tier}`)
 	if not twoHanded then
-		for _, kind in OFFHANDS do
+		local kinds = OFFHANDS
+		if prefer and prefer.offhand and usable(`{prefer.offhand}_{tier}`, class) then
+			kinds = { prefer.offhand }
+		end
+		for _, kind in kinds do
 			local id = `{kind}_{tier}`
 			if usable(id, class) then
 				table.insert(out, { slot = "offhand", id = id })

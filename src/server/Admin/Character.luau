@@ -8,15 +8,13 @@ local CharacterLook = require(Shared.Logic.CharacterLook)
 local ClassLooks = require(Shared.Data.ClassLooks)
 local Clock = require(Shared.Util.Clock)
 local Config = require(Shared.Config)
-local DevPreset = require(Shared.Logic.DevPreset)
-local Elements = require(Shared.Data.Elements)
 local FullElixir = require(Shared.Logic.FullElixir)
-local Items = require(Shared.Data.Items)
 local Luck = require(Shared.Logic.Luck)
 local MountData = require(Shared.Data.Mounts)
 local Mounts = require(Shared.Logic.Mounts)
 local LuckData = require(Shared.Data.Luck)
 local PartyBonus = require(Shared.Logic.PartyBonus)
+local Rarities = require(Shared.Data.Rarities)
 local Time = require(Shared.Logic.Time)
 local TitleData = require(Shared.Data.Titles)
 local Tutorial = require(Shared.Logic.Tutorial)
@@ -33,8 +31,6 @@ local parseAmount = Context.parseAmount
 local PlayerStateService = Context.services.PlayerStateService
 local LevelService = Context.services.LevelService
 local ResourceService = Context.services.ResourceService
-local InventoryService = Context.services.InventoryService
-local EquipmentService = Context.services.EquipmentService
 local StatService = Context.services.StatService
 local SkillService = Context.services.SkillService
 local PathService = Context.services.PathService
@@ -353,41 +349,24 @@ commands.avatarmode = function(player, args)
 end
 
 -- Level + the full gear set of the character's class at that level (Logic/DevPreset), rolled at `rarity` with
--- upgrade `up`, equipped through the normal Equip path (old pieces go to the backpack).
+-- upgrade `up`, equipped through the normal Equip path (old pieces go to the backpack). Owner 2026-10-23: item level =
+-- the chosen level and every piece rolled best for the class (Context.giveBestSet).
 commands.preset = function(player, args)
 	local level = parseAmount(args[1])
-	local rarity = parseAmount(args[2])
+	local rarity = Rarities.parse(args[2])
 	local up = math.clamp(parseAmount(args[3]) or 0, 0, 9)
 	if not level or not rarity then
 		reply(player, "admin.usage.preset")
 		return
 	end
 	withCharacter(player, function()
-		local character = PlayerStateService.GetCharacter(player)
-		LevelService.SetLevel(player, math.clamp(level, 1, Config.MaxLevel))
-		local tier = Items.generate.tierFor(level)
-		local equipped = 0
-		for _, piece in DevPreset.pick(character.class, level) do
-			local leftover, item = InventoryService.GiveNew(player, piece.id, 1, math.clamp(rarity, 1, 5), tier)
-			if leftover > 0 or not item then
-				reply(player, "inventory.full")
-				break
-			end
-			local def = Items.get(piece.id)
-			item.up = up
-			if def and def.elemental and item.el == nil then
-				item.el = Elements.DEFAULT
-			end
-			local index = InventoryService.IndexOf(player, item.uid)
-			if index then
-				InventoryService.SetSlot(player, index, item)
-				local ok = EquipmentService.Equip(player, index, piece.slot)
-				if ok then
-					equipped += 1
-				end
-			end
+		local ilvl = math.clamp(level, 1, Config.MaxLevel)
+		LevelService.SetLevel(player, ilvl)
+		local equipped, full = Context.giveBestSet(player, ilvl, rarity, up)
+		if full then
+			reply(player, "inventory.full")
 		end
-		reply(player, "admin.preset.ok", { level = level, rarity = rarity, up = up, n = equipped })
+		reply(player, "admin.preset.ok", { level = ilvl, rarity = rarity, up = up, n = equipped })
 	end)
 end
 

@@ -253,8 +253,13 @@ cmd("items", "ilvl", { int("level", 1, MAX_LEVEL) })
 cmd("items", "element", { enum("element", { "fire", "ice", "lightning" }) })
 cmd("items", "partyloot", { int("n", 1, 5, true) })
 cmd("items", "gearbag", {}) -- S29: drag-to-equip test set in the backpack
--- S32: equips the class's full set (weapon, off-hand, armour, jewellery) of item level `level` at `rarity`.
-cmd("items", "gearset", { int("level", 1, MAX_LEVEL), enum("rarity", RARITY_NAMES, true, "common") })
+-- S32: equips the class's full set (weapon, off-hand, armour, jewellery) of item level `level` at `rarity`, rolled best
+-- for the class (owner 2026-10-23).
+cmd(
+	"items",
+	"gearset",
+	{ int("level", 1, MAX_LEVEL), enum("rarity", RARITY_NAMES, true, "common"), int("up", 0, 9, true, "0") }
+)
 -- S31: item value / buy / sell price and the tooltip lines of any item.
 cmd("items", "value", {
 	ref("item", "item"),
