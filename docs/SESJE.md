@@ -14094,3 +14094,5 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 ### S161: poprawki właściciela 2026-10-23 (quest plecaka, łowy na gatunek, menu gracza, dev panel)
 - Quest „Ekwipunek”: plecak przy przyjęciu, założenie plecaka zalicza cel. Pliki: `Data/Quests/Main.luau`, `Data/Quests/Types.luau`, `Services/QuestService.luau`, `Services/EquipmentService.luau`, Locale.
 - Łowy na gatunek (dzienne i tygodniowe `prey`): `Logic/Prey.luau`, `Data/Quests/Daily.luau`, `Data/Quests/Weekly.luau`, `Logic/QuestLogic.luau`, `tests/prey.spec.luau`.
+- Menu PPM na graczu: ScreenGui menu z `ZIndexBehavior = Sibling`, bez `ZIndex = 20` na ramce (tło przykrywało opcje), dokładniejsze trzymanie menu na ekranie. Pliki: `Controllers/PartyController.luau`, `UI/Screens/PlayerMenu.luau`.
+- Dev panel: „Daj” / „Daj i załóż” (`/givex`), „Zestaw testowy” (`/preset`) i `/gearset` dają przedmioty z najlepszymi liniami i efektami dla klasy (`Logic/ItemBest.luau`, wagi `ItemScore` / `Data/ItemWeights`), `tests/itembest.spec.luau`.
