@@ -386,7 +386,8 @@ local function accept(player: Player, npcId: string): (boolean, string?)
 		end
 	end
 	-- owner 2026-10-23: items the quest itself needs (gearUp's backpack) come on accept
-	for _, item in quest.start or {} do
+	local start: { { id: string, n: number } } = quest.start or {}
+	for _, item in start do
 		InventoryService.GiveNew(player, item.id, item.n)
 		Net.Fire(player, "Toast", "quest.say.gift", { item = `@item.{item.id}.name`, n = item.n }, "success")
 	end
