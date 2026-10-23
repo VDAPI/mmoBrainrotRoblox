@@ -267,6 +267,8 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 		end
 		InventoryService.SyncAll(player)
 		changed(player, { "backpack" })
+		-- owner 2026-10-23: a backpack counts for "equip an item" (gearUp hands one out on accept)
+		QuestEvents.fire(player, "equip", { rarity = item.rarity })
 		return true, nil
 	end
 

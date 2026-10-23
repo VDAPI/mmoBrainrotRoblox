@@ -61,6 +61,7 @@ type MainDef = {
 	recall: { [string]: string }?,
 	barks: Types.BarkSet?,
 	companion: Types.CompanionDef?,
+	start: { { id: string, n: number } }?,
 }
 
 local list: { MainQuest } = {}
@@ -91,6 +92,7 @@ local function q(def: MainDef)
 		recall = def.recall,
 		barks = def.barks,
 		companion = def.companion,
+		start = def.start,
 	})
 end
 
@@ -191,7 +193,10 @@ q({
 	turnIn = "scout_meadows",
 	pages = 2,
 	objectives = { { type = "equip", n = 1 }, { type = "stats", n = 1 } },
-	reward = { exp = exp(2, 0.4), gold = gold(2), items = { { id = "backpack_30", n = 1 } } },
+	-- owner 2026-10-23: the bigger backpack comes with the quest (it was the reward of "equip an item", read as
+	-- "equip the new backpack"); equipping it counts for the objective (EquipmentService)
+	start = { { id = "backpack_30", n = 1 } },
+	reward = { exp = exp(2, 0.4), gold = gold(2) },
 	barks = { accept = 1, half = 1, done = 1 },
 })
 q({

@@ -236,8 +236,8 @@ local function draw(pool: { Quests.DailyTemplate }, rng: Rng.Rng): Quests.DailyT
 	return table.remove(pool, index) :: Quests.DailyTemplate
 end
 
-local function entryOf(template: Quests.DailyTemplate, level: number): DailyEntry
-	return { template = template.id, objective = template.objective(level), progress = 0, claimed = false }
+local function entryOf(template: Quests.DailyTemplate, level: number, rng: Rng.Rng): DailyEntry
+	return { template = template.id, objective = template.objective(level, rng), progress = 0, claimed = false }
 end
 
 -- The templates open at `level` (`hidden` never), without the ids in `except`.
@@ -284,11 +284,11 @@ local function pickTemplates(
 		if #group > 0 then
 			local template = draw(group, rng)
 			table.remove(pool, indexOf[template])
-			table.insert(list, entryOf(template, level))
+			table.insert(list, entryOf(template, level, rng))
 		end
 	end
 	while #list < perPeriod and #pool > 0 do
-		table.insert(list, entryOf(draw(pool, rng), level))
+		table.insert(list, entryOf(draw(pool, rng), level, rng))
 	end
 	return list
 end
@@ -332,7 +332,7 @@ function QuestLogic.rerollDaily(
 	end
 	local seed = (userId * 7919 + day * 104729 + (index * 31 + n) * 1299709) % 2147483647
 	local rng = seeded(seed, characterId)
-	return entryOf(draw(if #same > 0 then same else pool, rng), level)
+	return entryOf(draw(if #same > 0 then same else pool, rng), level, rng)
 end
 
 -- S98: the week's contracts for a character (deterministic for the same user, character and week; another sequence

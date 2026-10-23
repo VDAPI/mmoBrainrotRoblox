@@ -125,6 +125,7 @@ export type MainQuest = {
 	recall: { [string]: string }?, -- page key ("p1".."pN", "text", "progress", "done") -> quest whose answer picks
 	barks: BarkSet?,
 	companion: CompanionDef?,
+	start: { { id: string, n: number } }?, -- items given on accept (owner 2026-10-23: gearUp's backpack)
 }
 
 -- S27: side quest (Data/Quests/Side). Several may be active at once (Config.SideQuest.maxActive); taken from
@@ -155,7 +156,9 @@ export type DailyTemplate = {
 	id: string,
 	minLevel: number,
 	-- Builds the objective for a character level (region and amounts scale with level).
-	objective: (level: number) -> Objective,
+	-- owner 2026-10-23: `rng` (Logic/Rng, the period's draw) picks the prey of the "kill N of monster X" hunts; nil
+	-- (the wiki) gives a fixed example
+	objective: (level: number, rng: any?) -> Objective,
 	hidden: boolean?, -- S98: in the data but never picked (Daily and Weekly templates)
 	-- S159: the template's group (Daily.SLOTS: every day has one "combat" and one "gather" task, the rest from any
 	-- group), its draw weight (default 1) and `pvp` (duels / arena: only in the free slots, lower weight)

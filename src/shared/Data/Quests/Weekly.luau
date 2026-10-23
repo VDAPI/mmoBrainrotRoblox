@@ -11,6 +11,8 @@
 
 local Daily = require("./Daily")
 local Exp = require("../../Logic/Exp")
+local Prey = require("../../Logic/Prey")
+local Rng = require("../../Logic/Rng")
 local Types = require("./Types")
 
 local region = Daily.region
@@ -21,6 +23,15 @@ local templates: { Types.DailyTemplate } = {
 		minLevel = 1,
 		objective = function(level)
 			return { type = "kill", n = 120 + level, lvMin = Daily.lvMin(level) }
+		end,
+	},
+	{
+		-- owner 2026-10-23: the weekly prey (Logic/Prey): kill N of one monster kind, the area's kills 90 + L scaled by
+		-- the kind's share, at least 30
+		id = "prey",
+		minLevel = 1,
+		objective = function(level, rng)
+			return Prey.objective(level, 90 + level, 30, rng or Rng.new(level))
 		end,
 	},
 	{

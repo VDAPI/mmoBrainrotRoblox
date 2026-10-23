@@ -9,6 +9,8 @@
 -- budget (Data/QuestBudget); the extras model of tests/Balance (extrasExpPerHour) reads `dayExp`.
 
 local Exp = require("../../Logic/Exp")
+local Prey = require("../../Logic/Prey")
+local Rng = require("../../Logic/Rng")
 local Types = require("./Types")
 
 local function region(level: number): number
@@ -29,6 +31,17 @@ local templates: { Types.DailyTemplate } = {
 		weight = 2,
 		objective = function(level)
 			return { type = "kill", n = 25 + math.floor(level / 4), lvMin = lvMin(level) }
+		end,
+	},
+	{
+		-- owner 2026-10-23: kill N of one monster kind on a hunting ground of the level (Logic/Prey); the kills of the
+		-- whole area (22 + L / 5, a bit under the open hunt) scaled by the kind's share, at least 8
+		id = "prey",
+		minLevel = 1,
+		slot = "combat",
+		weight = 2,
+		objective = function(level, rng)
+			return Prey.objective(level, 22 + math.floor(level / 5), 8, rng or Rng.new(level))
 		end,
 	},
 	{

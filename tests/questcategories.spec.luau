@@ -182,13 +182,14 @@ describe("Weeks (S98)", function()
 		expect(found).toBe(true)
 	end)
 
+	-- re-pinned 2026-10-23: the prey hunt joined the combat group (Logic/Prey)
 	it("dailyFor keeps its lists (pinned in S159: groups and weights)", function()
 		local list = QuestLogic.dailyFor(8919, "char31", 20003, 8)
 		local ids = {}
 		for _, entry in list do
 			table.insert(ids, entry.template)
 		end
-		expect(ids).toEqual({ "event", "ore", "fish", "handin" })
+		expect(ids).toEqual({ "event", "ore", "herbs", "handin" })
 	end)
 
 	it("the boss contract is the highest boss open to the level", function()

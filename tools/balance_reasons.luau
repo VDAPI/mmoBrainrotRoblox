@@ -7476,5 +7476,17 @@ return {
 				why = "new module (owner 2026-10-20): the wandering merchant every 3 h for 45 min; gear of the band's levels Unique 70 / Heroic 27 / Legendary 3 (never Mythic), Unique 360 x ilvl and Heroic 1080 x ilvl gold (about 120 / 360 kills of that level), Legendary 400 Hunter's Marks, 1 each a visit; 2 materials (essences 1 a visit, ores and herbs ~3-4x their value), a caravan dye 12000 gold, 3 consumables (potions at 80 % of the alchemist, a Heroic blessing 60 x level, stones, a Scroll of Protection 400 x level); everything bound and never sold back",
 			},
 		},
+		["Quests/Main:byId.gearUp.reward.items[backpack_30].n"] = {
+			{
+				session = "S161",
+				why = "1 -> none: owner 2026-10-23, the bigger backpack of gearUp comes on accept (start) instead of on hand-in; the same item, given earlier",
+			},
+		},
+		["Quests/Main:byId.gearUp.start[backpack_30].n"] = {
+			{
+				session = "S161",
+				why = "new: the gearUp backpack on accept (the quest asked to equip an item and players read it as the new backpack)",
+			},
+		},
 	} :: { [string]: { Reason } },
 }

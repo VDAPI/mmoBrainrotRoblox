@@ -371,6 +371,9 @@ local function accept(player: Player, npcId: string): (boolean, string?)
 	if not ready then
 		return false, "quest.error.level"
 	end
+	if not canFit(player, quest.start) then
+		return false, "quest.error.full"
+	end
 	PlayerStateService.Set(player, { "character", "quests", "main" }, {
 		id = quest.id,
 		progress = QuestLogic.emptyProgress(quest.objectives),
@@ -381,6 +384,11 @@ local function accept(player: Player, npcId: string): (boolean, string?)
 		if objective.type == "deliver" and objective.item then
 			Net.Fire(player, "Toast", "quest.deliverGot", { item = itemArg(objective.item) }, "info")
 		end
+	end
+	-- owner 2026-10-23: items the quest itself needs (gearUp's backpack) come on accept
+	for _, item in quest.start or {} do
+		InventoryService.GiveNew(player, item.id, item.n)
+		Net.Fire(player, "Toast", "quest.say.gift", { item = `@item.{item.id}.name`, n = item.n }, "success")
 	end
 	queueScenes(player, quest.id, "accept")
 	handle(player, "talk", { npc = npcId })

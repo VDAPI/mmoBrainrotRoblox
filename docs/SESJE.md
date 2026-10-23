@@ -14090,3 +14090,7 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Testy:** `hudlayout.spec` na liczbach z diagnozy: dawniej ramka do 855, teraz do 809 (8 nad przełącznikiem),
   zapisany rozmiar obcięty tak samo, krótka treść zostaje, przyciski nad górą i poza pasem się nie liczą, zmierzony
   przełącznik wyżej od wyliczonego wygrywa. Bez Studio.
+
+### S161: poprawki właściciela 2026-10-23 (quest plecaka, łowy na gatunek, menu gracza, dev panel)
+- Quest „Ekwipunek”: plecak przy przyjęciu, założenie plecaka zalicza cel. Pliki: `Data/Quests/Main.luau`, `Data/Quests/Types.luau`, `Services/QuestService.luau`, `Services/EquipmentService.luau`, Locale.
+- Łowy na gatunek (dzienne i tygodniowe `prey`): `Logic/Prey.luau`, `Data/Quests/Daily.luau`, `Data/Quests/Weekly.luau`, `Logic/QuestLogic.luau`, `tests/prey.spec.luau`.
