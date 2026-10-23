@@ -336,6 +336,9 @@ function PartyController.Init(registry)
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "Vaelthorn_PlayerMenu"
 	gui.DisplayOrder = 60
+	-- Sibling like every other layer: Instance.new defaults to Global, which drew the menu's own background over its
+	-- buttons and header (owner: "right click on a player shows invisible options").
+	gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 	gui.ResetOnSpawn = false
 	gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
 	PlayerMenu(scope, {

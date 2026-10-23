@@ -4,6 +4,7 @@
 -- greyed out, with one line saying why. On a PC it opens at the mouse (kept inside the screen); on a touch screen it is
 -- a bottom sheet with large buttons. Lives in an unscaled ScreenGui (PartyController), so pixels are screen pixels.
 
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -36,14 +37,31 @@ local PC_WIDTH = 260
 local SHEET_MAX_WIDTH = 520
 local ROW_PC = 38
 local ROW_TOUCH = Theme.Size.MinTouch + 6
+local HEADER = 50
+local REASON_LINE = 2 * Theme.TextSize.Small + 4 -- a reason may wrap to two lines
 
 local function escape(text: string): string
 	return (string.gsub(text, "[<>&]", { ["<"] = "&lt;", [">"] = "&gt;", ["&"] = "&amp;" }))
 end
 
+-- The menu's ScreenGui keeps the top bar inset (mouse positions are inset-relative), so its area is the viewport
+-- minus that inset.
 local function viewport(): Vector2
 	local camera = Workspace.CurrentCamera
-	return if camera then camera.ViewportSize else Vector2.new(1280, 720)
+	local size = if camera then camera.ViewportSize else Vector2.new(1280, 720)
+	return size - GuiService:GetGuiInset()
+end
+
+-- Height of the open PC menu: padding, header, rows and their reason lines; the list scrolls past 60% of the screen.
+local function menuHeight(entries: { Social.MenuEntry }, screenY: number): number
+	local list = 0
+	for _, e in entries do
+		list += ROW_PC + 4
+		if e.reasonKey then
+			list += REASON_LINE + 2
+		end
+	end
+	return 16 + HEADER + 6 + math.min(list, math.max(200, screenY * 0.6))
 end
 
 -- Character name, guild tag, level, class and PvP state from the target's character attributes.
@@ -176,9 +194,8 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 			end
 			local at = use(props.At)
 			local size = viewport()
-			local rowsHeight = #use(entries) * (ROW_PC + 6) + 80
 			local x = math.clamp(at.X, 8, math.max(8, size.X - PC_WIDTH - 8))
-			local y = math.clamp(at.Y, 8, math.max(8, size.Y - rowsHeight - 8))
+			local y = math.clamp(at.Y, 8, math.max(8, size.Y - menuHeight(use(entries), size.Y) - 8))
 			return UDim2.fromOffset(x, y)
 		end),
 		Size = scope:Computed(function(use): UDim2
@@ -187,7 +204,7 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Paper.Surface,
 		Visible = shown,
-		ZIndex = 20,
+		-- No ZIndex here: under a Global ZIndexBehavior a raised frame drew its paper over every row and the header.
 		[Children] = {
 			Motion.popWhen(scope, shown), -- W28: springs open like a window
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
@@ -202,7 +219,7 @@ local function PlayerMenu(scope: Scope, props: Props): Instance
 			scope:New("Frame")({
 				Name = "Header",
 				LayoutOrder = 0,
-				Size = UDim2.new(1, 0, 0, 50),
+				Size = UDim2.new(1, 0, 0, HEADER),
 				BackgroundTransparency = 1,
 				[Children] = {
 					PvpDot(scope, {
