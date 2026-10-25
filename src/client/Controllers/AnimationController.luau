@@ -52,8 +52,10 @@ local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
-local BipedMotion = require(ReplicatedStorage.Shared.Logic.BipedMotion)
 local BipedRig = require(script.Parent.Parent.Anim.BipedRig)
+local BipedStyles = require(ReplicatedStorage.Shared.Data.BipedStyles)
+local QuadRig = require(script.Parent.Parent.Anim.QuadRig)
+local QuadStyles = require(ReplicatedStorage.Shared.Data.QuadStyles)
 local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local BoneGait = require(script.Parent.Parent.Anim.BoneGait)
 local BoneOverlay = require(script.Parent.Parent.Anim.BoneOverlay)
@@ -155,9 +157,10 @@ type MonsterState = {
 	landedAt: number?,
 	phase: number,
 	connection: RBXScriptConnection?,
-	-- template animation (2026-10-25): an imported biped animated by Logic/BipedMotion (Data/MonsterAssets `motion`)
-	biped: BipedRig.Rig?,
-	bipedAction: BipedMotion.ActionRun?, -- the running keyed action
+	-- template animation (2026-10-25): an imported biped or quadruped animated by Logic/BipedMotion or Logic/QuadMotion
+	-- (Data/MonsterAssets `motion`; client/Anim/BipedRig, QuadRig)
+	biped: any,
+	bipedAction: any, -- the running keyed action ({ name, start, hit, reach?, mirror? })
 	bipedCount: number, -- regular blows so far (the style's blows take turns)
 	bipedDead: boolean,
 	combatUntil: number, -- the stance stays this long after the last blow given or taken
@@ -290,7 +293,14 @@ local function refresh(model: Model)
 	local lookId = model:GetAttribute("Look")
 	local look = if type(lookId) == "string" then MonsterLooks.get(lookId) else nil
 	local motionStyle = look and look.asset and look.asset.motion
-	s.biped = if motionStyle and holder and holder:IsA("Model") then BipedRig.new(holder, motionStyle, s.seed) else nil
+	s.biped = nil
+	if motionStyle and holder and holder:IsA("Model") and look and look.asset then
+		if BipedStyles.get(motionStyle) then
+			s.biped = BipedRig.new(holder, motionStyle, s.seed)
+		elseif QuadStyles.get(motionStyle) then
+			s.biped = QuadRig.new(holder, motionStyle, s.seed, look.asset.model)
+		end
+	end
 	if s.biped then
 		s.clips = nil
 		s.overlay = nil
@@ -383,7 +393,7 @@ local function onAttribute(s: MonsterState, name: string)
 			local now = Clock.now()
 			local run = s.bipedAction
 			local action = run and rig.motion.style.actions[run.name]
-			local busy = run ~= nil and action ~= nil and now - run.start < BipedMotion.length(action, run.hit)
+			local busy = run ~= nil and action ~= nil and now - run.start < rig.mod.length(action, run.hit)
 			if not busy then
 				s.bipedAction = { name = rig.motion.style.aggro :: string, start = now, hit = 0.45 }
 			end
@@ -761,7 +771,7 @@ local function bipedLook(s: MonsterState): { number }?
 end
 
 -- One frame of a biped (client/Anim/BipedRig, Logic/BipedMotion).
-local function bipedStep(s: MonsterState, rig: BipedRig.Rig, now: number, frame: number, speed: number)
+local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, speed: number)
 	local look = s.root.CFrame.LookVector
 	local yaw = math.atan2(-look.X, -look.Z)
 	if s.lastYaw and frame > 0 then
@@ -771,28 +781,36 @@ local function bipedStep(s: MonsterState, rig: BipedRig.Rig, now: number, frame:
 	s.lastYaw = yaw
 	if s.deadAt and not s.bipedDead then
 		s.bipedDead = true
-		local name = BipedMotion.death(rig.motion)
+		local name = rig.mod.death(rig.motion)
 		local action = rig.motion.style.actions[name]
 		s.bipedAction = { name = name, start = s.deadAt, hit = if action then action.strike else 0.2 }
 	end
 	local hitSide: string? = nil
 	if s.hitDir then
 		local d = s.root.CFrame:VectorToObjectSpace(s.hitDir)
-		hitSide = BipedMotion.side({ d.X, d.Y, d.Z })
+		hitSide = rig.mod.side({ d.X, d.Y, d.Z })
 	end
-	local fighting = s.model:GetAttribute("AggroUserId") ~= nil or now < s.combatUntil
-	local posed = BipedMotion.step(rig.motion, {
+	-- S162m: the server's gait intent ("run" = fighting) keeps the stance while it chases
+	local fighting = s.model:GetAttribute("AggroUserId") ~= nil
+		or s.model:GetAttribute("Gait") == "run"
+		or now < s.combatUntil
+	local posed = rig.mod.step(rig.motion, {
 		now = now,
 		dt = frame,
 		speed = speed,
 		yawRate = s.yawRate,
 		combat = fighting and s.deadAt == nil,
+		returning = s.model:GetAttribute("Returning") == true,
 		action = s.bipedAction,
 		hitAt = if s.deadAt then nil else s.hitAt,
 		hitSide = hitSide,
 		look = if s.deadAt then nil else bipedLook(s),
 	})
-	BipedRig.apply(rig, posed)
+	if rig.kind == "quad" then
+		QuadRig.apply(rig, posed)
+	else
+		BipedRig.apply(rig, posed)
+	end
 end
 
 local function step(dt: number)
@@ -947,13 +965,16 @@ function AnimationController.MonsterAttack(
 		if not ability then
 			s.bipedCount += 1
 		end
-		local name = BipedMotion.pick(rig.motion.style, ability, opts and opts.shot, s.bipedCount)
+		local name = rig.mod.pick(rig.motion.style, ability, opts and opts.shot, s.bipedCount)
 		local reach: { number }? = nil
-		if area then
+		-- S162m: a dash the server runs on the root itself ("move") needs no flight in the pose
+		local moves = s.model:GetAttribute("DashId") == attackId and s.model:GetAttribute("DashMode") == "move"
+		if area and not moves then
 			local offset = s.root.CFrame:PointToObjectSpace(area.Position)
 			reach = { offset.X, 0, offset.Z }
 		end
-		s.bipedAction = { name = name, start = s.attackStart, hit = w + s.hold, reach = reach }
+		local mirror = if rig.mod.mirror then rig.mod.mirror(s.bipedCount) else nil
+		s.bipedAction = { name = name, start = s.attackStart, hit = w + s.hold, reach = reach, mirror = mirror }
 		s.combatUntil = now + 6
 	end
 end

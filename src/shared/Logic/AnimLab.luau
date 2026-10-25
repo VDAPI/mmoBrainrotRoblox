@@ -5,6 +5,7 @@
 
 local AttackMotions = require("../Data/AttackMotions")
 local BipedStyles = require("../Data/BipedStyles")
+local QuadStyles = require("../Data/QuadStyles")
 local BossMotions = require("../Data/BossMotions")
 local Bosses = require("../Data/Bosses")
 local Classes = require("../Data/Classes")
@@ -266,8 +267,12 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 		local slot = b or "attack1"
 		-- template animation: a biped with a style (MonsterLooks asset `motion`) shows its states and actions too
 		local look = MonsterLooks.get(a)
-		local biped = look ~= nil and look.asset ~= nil and look.asset.motion ~= nil
-		if not table.find(LookAnim.SLOTS, slot) and not (biped and table.find(BipedStyles.LAB_STATES, slot)) then
+		local motion = if look and look.asset then look.asset.motion else nil
+		local states = if motion and BipedStyles.get(motion)
+			then BipedStyles.LAB_STATES
+			elseif motion and QuadStyles.get(motion) then QuadStyles.LAB_STATES
+			else nil
+		if not table.find(LookAnim.SLOTS, slot) and not (states and table.find(states, slot)) then
 			return nil, "animlab.error.slot"
 		end
 		return make("mob", a, slot), nil

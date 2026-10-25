@@ -12,9 +12,11 @@ local BipedPose = require(ReplicatedStorage.Shared.Logic.BipedPose)
 local BipedRig = {}
 
 export type Rig = {
+	kind: "biped",
 	skel: BipedPose.Skeleton,
 	motion: BipedMotion.Instance,
 	bones: { [string]: Bone },
+	mod: any, -- Logic/BipedMotion (the game calls its pick, death, side, length, step through the rig)
 }
 
 local function toMat(cf: CFrame): { number }
@@ -55,7 +57,7 @@ function BipedRig.new(look: Model, styleId: string, seed: number): Rig?
 	if not motion then
 		return nil
 	end
-	return { skel = skel, motion = motion, bones = byKey }
+	return { kind = "biped", skel = skel, motion = motion, bones = byKey, mod = BipedMotion }
 end
 
 -- Writes the Transforms of one frame (Logic/BipedMotion.step).
