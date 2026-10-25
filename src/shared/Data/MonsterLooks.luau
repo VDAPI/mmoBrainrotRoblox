@@ -20,6 +20,8 @@ export type AssetLook = {
 	color: string?, -- W26 variants (Data/MonsterAssetVariants): "#RRGGBB" multiply colour of the model's textures
 	variant: boolean?, -- W26: the model is another kind's; a missing model falls back to the generator silently
 	anims: { [string]: string }?, -- idle, walk, run, attack1, attack2, cast, hit, death, spawn -> "rbxassetid://..."
+	-- template animation (2026-10-25): the Data/BipedStyles style that animates the bones instead of the clips
+	motion: string?,
 }
 
 export type Phase = { tint: string, amount: number, glow: string? }
@@ -585,6 +587,7 @@ for id, entry in MonsterAssets do
 			tint = entry.from == nil,
 			color = entry.tint,
 			variant = if entry.from then true else nil,
+			motion = entry.motion,
 		}
 	end
 end

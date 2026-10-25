@@ -4,6 +4,7 @@
 -- parse. Every refusal is a key "animlab.error.<why>" (PL and EN).
 
 local AttackMotions = require("../Data/AttackMotions")
+local BipedStyles = require("../Data/BipedStyles")
 local BossMotions = require("../Data/BossMotions")
 local Bosses = require("../Data/Bosses")
 local Classes = require("../Data/Classes")
@@ -263,7 +264,10 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 			return nil, "animlab.error.mob"
 		end
 		local slot = b or "attack1"
-		if not table.find(LookAnim.SLOTS, slot) then
+		-- template animation: a biped with a style (MonsterLooks asset `motion`) shows its states and actions too
+		local look = MonsterLooks.get(a)
+		local biped = look ~= nil and look.asset ~= nil and look.asset.motion ~= nil
+		if not table.find(LookAnim.SLOTS, slot) and not (biped and table.find(BipedStyles.LAB_STATES, slot)) then
 			return nil, "animlab.error.slot"
 		end
 		return make("mob", a, slot), nil

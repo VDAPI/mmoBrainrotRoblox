@@ -41,6 +41,7 @@
 -- Everything runs locally on every client, so other players see the same motion.
 
 local CollectionService = game:GetService("CollectionService")
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -51,6 +52,8 @@ local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local BossMotions = require(ReplicatedStorage.Shared.Data.BossMotions)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
+local BipedMotion = require(ReplicatedStorage.Shared.Logic.BipedMotion)
+local BipedRig = require(script.Parent.Parent.Anim.BipedRig)
 local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local BoneGait = require(script.Parent.Parent.Anim.BoneGait)
 local BoneOverlay = require(script.Parent.Parent.Anim.BoneOverlay)
@@ -152,6 +155,14 @@ type MonsterState = {
 	landedAt: number?,
 	phase: number,
 	connection: RBXScriptConnection?,
+	-- template animation (2026-10-25): an imported biped animated by Logic/BipedMotion (Data/MonsterAssets `motion`)
+	biped: BipedRig.Rig?,
+	bipedAction: BipedMotion.ActionRun?, -- the running keyed action
+	bipedCount: number, -- regular blows so far (the style's blows take turns)
+	bipedDead: boolean,
+	combatUntil: number, -- the stance stays this long after the last blow given or taken
+	lastYaw: number?,
+	yawRate: number,
 }
 
 local monsters: { [Model]: MonsterState } = {}
@@ -274,8 +285,25 @@ local function refresh(model: Model)
 		return
 	end
 	s.joints = collectJoints(model)
-	s.clips = loadClips(model)
 	local holder = model:FindFirstChild("Look")
+	-- template animation: an imported biped with a style plays Logic/BipedMotion instead of its clips
+	local lookId = model:GetAttribute("Look")
+	local look = if type(lookId) == "string" then MonsterLooks.get(lookId) else nil
+	local motionStyle = look and look.asset and look.asset.motion
+	s.biped = if motionStyle and holder and holder:IsA("Model") then BipedRig.new(holder, motionStyle, s.seed) else nil
+	if s.biped then
+		s.clips = nil
+		s.overlay = nil
+		s.overlayOn = false
+		s.boneGait = nil
+		for _, j in s.joints do
+			if j.joint.role == "body" then
+				s.scale = j.scale
+			end
+		end
+		return
+	end
+	s.clips = loadClips(model)
 	local mixer = s.clips and s.clips.mixer
 	s.overlay = if mixer and holder and holder:IsA("Model") then BoneOverlay.new(holder, mixer) else nil
 	s.overlayOn = false
@@ -349,6 +377,17 @@ local function onAttribute(s: MonsterState, name: string)
 			startRoar(s)
 		end
 	elseif name == "AggroUserId" then
+		-- template animation: a biped shouts at its new target unless it is busy
+		local rig = s.biped
+		if rig and model:GetAttribute("AggroUserId") ~= nil and not s.bipedDead and rig.motion.style.aggro then
+			local now = Clock.now()
+			local run = s.bipedAction
+			local action = run and rig.motion.style.actions[run.name]
+			local busy = run ~= nil and action ~= nil and now - run.start < BipedMotion.length(action, run.hit)
+			if not busy then
+				s.bipedAction = { name = rig.motion.style.aggro :: string, start = now, hit = 0.45 }
+			end
+		end
 		-- S159a: a boss roars when it first turns on a fighter (BossMotions roar.intro)
 		if not s.introDone and model:GetAttribute("AggroUserId") ~= nil and model:GetAttribute("Dead") ~= true then
 			s.introDone = true
@@ -429,6 +468,13 @@ local function track(model: Instance)
 		landedAt = nil,
 		phase = tonumber(model:GetAttribute("Phase")) or 1,
 		connection = nil,
+		biped = nil,
+		bipedAction = nil,
+		bipedCount = 0,
+		bipedDead = false,
+		combatUntil = -math.huge,
+		lastYaw = nil,
+		yawRate = 0,
 	}
 	local bossDef = if s.bossId then BossMotions.get(s.bossId) else nil
 	s.deathStyle = if bossDef then bossDef.death.style elseif plan then MonsterMotions.deathFor(plan) else nil
@@ -440,6 +486,14 @@ local function track(model: Instance)
 	refresh(model)
 	if s.riseStart then
 		riseFx(s)
+	end
+	-- template animation: a biped that just came into the world (summoned, or spawned within the last second by the
+	-- server's SpawnedAt) rises into its guard
+	local rig = s.biped
+	local spawnedAt = model:GetAttribute("SpawnedAt")
+	local fresh = type(spawnedAt) == "number" and Workspace:GetServerTimeNow() - spawnedAt < 1
+	if rig and rig.motion.style.spawn and (s.riseStart or fresh) and model:GetAttribute("Dead") ~= true then
+		s.bipedAction = { name = rig.motion.style.spawn :: string, start = Clock.now(), hit = 0.5 }
 	end
 end
 
@@ -456,7 +510,7 @@ end
 local function pickAnimated()
 	local list: { MonsterState } = {}
 	for model, s in monsters do
-		if MonsterView.IsFull(model) and (#s.joints > 0 or s.clips ~= nil) then
+		if MonsterView.IsFull(model) and (#s.joints > 0 or s.clips ~= nil or s.biped ~= nil) then
 			table.insert(list, s)
 		end
 	end
@@ -689,6 +743,58 @@ local function overlayStep(s: MonsterState, mixer: BoneClips.Mixer, now: number)
 	end
 end
 
+-- Template animation: the target a biped looks at (its aggro player's character), root-space direction or nil.
+local function bipedLook(s: MonsterState): { number }?
+	local id = s.model:GetAttribute("AggroUserId")
+	if type(id) ~= "number" then
+		return nil
+	end
+	local who = Players:GetPlayerByUserId(id)
+	local character = who and who.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart")
+	if not root or not root:IsA("BasePart") then
+		return nil
+	end
+	local head = s.root.Position + Vector3.new(0, s.scale * 3, 0)
+	local dir = s.root.CFrame:VectorToObjectSpace(root.Position - head)
+	return { dir.X, dir.Y, dir.Z }
+end
+
+-- One frame of a biped (client/Anim/BipedRig, Logic/BipedMotion).
+local function bipedStep(s: MonsterState, rig: BipedRig.Rig, now: number, frame: number, speed: number)
+	local look = s.root.CFrame.LookVector
+	local yaw = math.atan2(-look.X, -look.Z)
+	if s.lastYaw and frame > 0 then
+		local d = (yaw - s.lastYaw + math.pi) % (2 * math.pi) - math.pi
+		s.yawRate += (d / frame - s.yawRate) * math.min(1, frame * 10)
+	end
+	s.lastYaw = yaw
+	if s.deadAt and not s.bipedDead then
+		s.bipedDead = true
+		local name = BipedMotion.death(rig.motion)
+		local action = rig.motion.style.actions[name]
+		s.bipedAction = { name = name, start = s.deadAt, hit = if action then action.strike else 0.2 }
+	end
+	local hitSide: string? = nil
+	if s.hitDir then
+		local d = s.root.CFrame:VectorToObjectSpace(s.hitDir)
+		hitSide = BipedMotion.side({ d.X, d.Y, d.Z })
+	end
+	local fighting = s.model:GetAttribute("AggroUserId") ~= nil or now < s.combatUntil
+	local posed = BipedMotion.step(rig.motion, {
+		now = now,
+		dt = frame,
+		speed = speed,
+		yawRate = s.yawRate,
+		combat = fighting and s.deadAt == nil,
+		action = s.bipedAction,
+		hitAt = if s.deadAt then nil else s.hitAt,
+		hitSide = hitSide,
+		look = if s.deadAt then nil else bipedLook(s),
+	})
+	BipedRig.apply(rig, posed)
+end
+
 local function step(dt: number)
 	local camera = Workspace.CurrentCamera
 	if not camera then
@@ -709,8 +815,13 @@ local function step(dt: number)
 		end
 		-- the server's teleport of a leaping boss: the visual arc ends where the root lands
 		local rootAt = s.root.Position
-		if s.leap and s.lastRoot and (rootAt - s.lastRoot).Magnitude > TELEPORT_JUMP then
+		if s.lastRoot and (rootAt - s.lastRoot).Magnitude > TELEPORT_JUMP then
 			s.leap = nil
+			-- template animation: a biped's flight to its target ends there too
+			local run = s.bipedAction
+			if run then
+				run.reach = nil
+			end
 		end
 		s.lastRoot = rootAt
 		if not animated[model] then
@@ -722,6 +833,11 @@ local function step(dt: number)
 		local frame = Clock.dt(dt)
 		s.move += (target - s.move) * math.min(1, frame * 8)
 		s.cycle = Gait.advance(s.cycle, frame, speed, s.scale)
+		local rig = s.biped
+		if rig then
+			bipedStep(s, rig, now, frame, speed)
+			continue
+		end
 		local clips = s.clips
 		if clips then
 			stepClips(s, clips, now, speed)
@@ -766,6 +882,7 @@ export type AttackOpts = {
 	turnTo: number?,
 	procedural: boolean?,
 	charged: boolean?,
+	shot: string?, -- template animation: the regular blow's kind ("melee", "arrow", "bolt", "throw")
 }
 
 function AnimationController.MonsterAttack(
@@ -823,6 +940,22 @@ function AnimationController.MonsterAttack(
 	else
 		s.style = nil
 	end
+	-- template animation: a biped keys its own action, the strike ending on the server's hit
+	local rig = s.biped
+	if rig and not s.bipedDead then
+		local ability = if attackId and not strikeNow then attackId else nil
+		if not ability then
+			s.bipedCount += 1
+		end
+		local name = BipedMotion.pick(rig.motion.style, ability, opts and opts.shot, s.bipedCount)
+		local reach: { number }? = nil
+		if area then
+			local offset = s.root.CFrame:PointToObjectSpace(area.Position)
+			reach = { offset.X, 0, offset.Z }
+		end
+		s.bipedAction = { name = name, start = s.attackStart, hit = w + s.hold, reach = reach }
+		s.combatUntil = now + 6
+	end
 end
 
 -- A monster was hit; `from` (the attacker's position) gives the direction of the blow (S113: MonsterState.hitDir).
@@ -836,6 +969,7 @@ function AnimationController.MonsterHit(model: Model, from: Vector3?)
 		end
 		s.flinchAt = now
 		s.hitAt = now
+		s.combatUntil = now + 6
 		local push = if from then s.root.Position - from else nil
 		local flat = if push then Vector3.new(push.X, 0, push.Z) else nil
 		s.hitDir = if flat and flat.Magnitude > 0.05 then flat.Unit else nil

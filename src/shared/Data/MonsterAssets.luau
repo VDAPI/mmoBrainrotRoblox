@@ -18,10 +18,20 @@ export type Entry = {
 	visual: number?, -- filled below: the drawn model's size over the hitbox (looks only)
 	from: string?, -- filled below for variants: the base kind whose model and clips this kind uses
 	tint: string?, -- filled below for variants: "#RRGGBB" multiply colour of the base model's textures
+	-- template animation (owner 2026-10-25): a Data/BipedStyles style that animates the bones (Logic/BipedMotion)
+	-- instead of the clips of Data/MonsterClips
+	motion: string?,
 }
 
 local MonsterAssets: { [string]: Entry } = {
-	bandit = { rig = "bones", rootSize = { 1.56, 1.77, 1.02 }, hipHeight = 1.94, height = 4.77, walkSpeed = 7.2 },
+	bandit = {
+		rig = "bones",
+		rootSize = { 1.56, 1.77, 1.02 },
+		hipHeight = 1.94,
+		height = 4.77,
+		walkSpeed = 7.2,
+		motion = "humanoid1h",
+	},
 	desertMummy = { rig = "bones", rootSize = { 1.34, 1.86, 0.88 }, hipHeight = 2.03, height = 5.33, walkSpeed = 8.0 },
 	dragonspawn = { rig = "bones", rootSize = { 1.70, 1.77, 1.11 }, hipHeight = 1.94, height = 5.18, walkSpeed = 7.8 },
 	flameSmith = { rig = "bones", rootSize = { 2.00, 1.86, 1.29 }, hipHeight = 2.03, height = 4.73, walkSpeed = 7.1 },

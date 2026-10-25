@@ -44,9 +44,12 @@ local AnimLab = require(ReplicatedStorage.Shared.Logic.AnimLab)
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local AttackPose = require(ReplicatedStorage.Shared.Logic.AttackPose)
 local BasicBlow = require(ReplicatedStorage.Shared.Logic.BasicBlow)
+local BipedMotion = require(ReplicatedStorage.Shared.Logic.BipedMotion)
+local BipedRig = require(script.Parent.Parent.Anim.BipedRig)
 local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
+local CombatData = require(ReplicatedStorage.Shared.Data.Combat)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Footing = require(ReplicatedStorage.Shared.Logic.Footing)
@@ -110,6 +113,15 @@ type Subject = {
 	-- studio review 2026-10-21: a real model's bone clip (client/Anim/BoneClips): the mixer, the track, its clip time
 	-- at motion time 0 and the clip seconds per motion second
 	bone: { mixer: BoneClips.Mixer, track: BoneClips.Track, t0: number, pace: number }?,
+	-- template animation (2026-10-25): a biped with a style, posed by Logic/BipedMotion from the state's plan
+	biped: BipedLab?,
+}
+-- A biped's AnimLab state: its rig and the input of each moment `t` of the shown motion.
+type BipedLab = {
+	rig: BipedRig.Rig,
+	length: number,
+	input: (t: number) -> BipedMotion.Input,
+	lastT: number?,
 }
 type Stressed = { model: Model, index: number, nextAt: number }
 
@@ -935,6 +947,161 @@ local function stageTelegraph(
 	return area
 end
 
+-- Template animation: the plan of a biped's AnimLab state (Data/BipedStyles.LAB_STATES; LookAnim's slots map onto
+-- them): each moment's input to Logic/BipedMotion, the motion's length and its keys.
+local LAB_ACTIONS: { [string]: boolean } = {
+	slash = true,
+	backhand = true,
+	thrust = true,
+	cleave = true,
+	heavy = true,
+	crush = true,
+	pounce = true,
+	charge = true,
+	throw = true,
+	aggro = true,
+	spawn = true,
+	deathBack = true,
+	deathFwd = true,
+}
+local function bipedLab(model: Model, styleId: string, monster: any, state: string): (BipedLab?, MotionKeys.Keys?)
+	local rig = BipedRig.new(model, styleId, 7.3)
+	if not rig then
+		return nil, nil
+	end
+	local style = rig.motion.style
+	local at = model:GetPivot()
+	local actorAt = centre + vec(LAYOUT.actor)
+	local function toActor(): { number }
+		local d = at:VectorToObjectSpace(actorAt + Vector3.new(0, 2.5, 0) - (at.Position + Vector3.new(0, 3, 0)))
+		return { d.X, d.Y, d.Z }
+	end
+	local reachV = at:PointToObjectSpace(actorAt)
+	local reach = { reachV.X, 0, reachV.Z }
+	local melee = CombatData.basicWind.melee
+	local function windupOf(name: string): number
+		if monster and monster.ability and style.abilities[monster.ability] == name then
+			local own = MonsterAbilities.get(monster.ability)
+			if own then
+				return own.windup
+			end
+		end
+		for abilityId, action in style.abilities do
+			local ability = MonsterAbilities.get(abilityId)
+			if action == name and ability then
+				return ability.windup
+			end
+		end
+		if name == "heavy" then
+			local heavy = MonsterAbilities.get("heavyBlow")
+			return if heavy then heavy.windup else 1.8
+		elseif name == "throw" then
+			return CombatData.basicWind.throw * CombatData.basicWindVariant.elite2
+		elseif name == "aggro" then
+			return 0.45
+		elseif name == "spawn" then
+			return 0.5
+		end
+		return melee
+	end
+	-- LookAnim's slots onto the style
+	local name = state
+	if state == "attack1" then
+		name = style.basic[1]
+	elseif state == "attack2" then
+		name = style.basic[2] or style.basic[1]
+	elseif state == "cast" then
+		name = (monster and monster.ability and style.abilities[monster.ability]) or "heavy"
+	elseif state == "death" then
+		name = BipedMotion.death(rig.motion)
+	end
+	local base: BipedMotion.Input = {
+		now = 0,
+		dt = 0,
+		speed = 0,
+		yawRate = 0,
+		combat = true,
+		action = nil,
+		hitAt = nil,
+		hitSide = nil,
+		look = toActor(),
+	}
+	local length = 3
+	local keys: MotionKeys.Keys
+	local input: (t: number) -> BipedMotion.Input
+	local hitSides: { [string]: string } = { hit = "front", hitBack = "back", hitLeft = "left", hitRight = "right" }
+	if LAB_ACTIONS[name] and style.actions[name] then
+		local action = style.actions[name]
+		local dying = string.sub(name, 1, 5) == "death"
+		local hit = if dying then action.strike else windupOf(name)
+		local run: BipedMotion.ActionRun = { name = name, start = 0, hit = hit, reach = reach }
+		length = BipedMotion.length(action, hit) + 0.4
+		keys = MotionKeys.clip(length, hit)
+		input = function(t)
+			local i = table.clone(base)
+			i.now, i.action = t, run
+			if dying then
+				i.look = nil
+			end
+			return i
+		end
+	elseif hitSides[state] then
+		length = 1.2
+		keys = MotionKeys.clip(length, 0.2)
+		input = function(t)
+			local i = table.clone(base)
+			i.now, i.hitAt, i.hitSide = t, 0.2, hitSides[state]
+			return i
+		end
+	elseif state == "fight" then
+		-- a short fight: the shout, three blows, a hit taken, the ability
+		local ability = (monster and monster.ability and style.abilities[monster.ability]) or "cleave"
+		local plan: { { at: number, name: string, hit: number } } = {
+			{ at = 0, name = style.aggro or "aggro", hit = 0.45 },
+			{ at = 1.6, name = style.basic[1], hit = melee },
+			{ at = 3.0, name = style.basic[2] or style.basic[1], hit = melee },
+			{ at = 4.5, name = style.basic[4] or style.basic[1], hit = melee },
+			{ at = 6.6, name = ability, hit = windupOf(ability) },
+		}
+		length = 9.5
+		keys = MotionKeys.clip(length)
+		input = function(t)
+			local i = table.clone(base)
+			i.now = t
+			for _, step in plan do
+				if t >= step.at then
+					i.action = { name = step.name, start = step.at, hit = step.hit, reach = reach }
+				end
+			end
+			if t >= 5.9 then
+				i.hitAt, i.hitSide = 5.9, "front"
+			end
+			return i
+		end
+	else
+		-- locomotion and stances
+		local moveSpeed = if monster and monster.moveSpeed then monster.moveSpeed else 13
+		length = 3
+		keys = MotionKeys.clip(length)
+		input = function(t)
+			local i = table.clone(base)
+			i.now = t
+			if state == "idle" then
+				i.combat = false
+				i.look = nil
+			elseif state == "walk" then
+				i.combat, i.look, i.speed = false, nil, moveSpeed * 0.45
+			elseif state == "run" then
+				i.speed = moveSpeed
+			elseif state == "turn" then
+				i.yawRate = 2.4
+			end
+			return i
+		end
+	end
+	return { rig = rig, length = length, input = input, lastT = nil }, keys
+end
+
 local function playMob(command: Command)
 	local id = command.id :: string
 	local slot = command.slot or "attack1"
@@ -950,6 +1117,46 @@ local function playMob(command: Command)
 		if monster then "normal" else "boss",
 		if monster then monster.size elseif boss then boss.look.size else 1
 	)
+	-- template animation: a biped with a style shows Logic/BipedMotion (its states and actions)
+	local motionStyle = look.asset and look.asset.motion
+	if motionStyle then
+		local lab, labKeys = bipedLab(model, motionStyle, monster, slot)
+		if lab and labKeys then
+			subject = {
+				model = model,
+				joints = {},
+				slot = slot,
+				windup = 0,
+				shift = 0,
+				track = nil,
+				looped = true,
+				keys = labKeys,
+				options = nil,
+				leap = nil,
+				bone = nil,
+				biped = lab,
+			}
+			local ability = monster and monster.ability and MonsterAbilities.get(monster.ability)
+			if ability and slot == "cast" then
+				stageTelegraph(
+					model,
+					ability.shape,
+					ability.origin == "self",
+					{
+						r = ability.radius,
+						ir = ability.inner,
+						an = ability.angle,
+						l = ability.length,
+						w = ability.width,
+					},
+					ability.windup,
+					ability.element,
+					ability.id
+				)
+			end
+			return
+		end
+	end
 	-- S117: an Elite II kind's attack2 / cast is its ability (the windup and the telegraph of the game)
 	local ability = if monster
 			and monster.ability
@@ -1370,6 +1577,17 @@ step = function(_dt: number)
 	if s then
 		if s.track then
 			s.track.TimePosition = LookAnim.clipTime(t, s.track.Length, s.looped)
+		end
+		local biped = s.biped
+		if biped then
+			-- template animation: the biped at motion time t (a jump back in time snaps its weights)
+			local tt = math.max(0, t)
+			local last = biped.lastT
+			local input = biped.input(tt)
+			input.dt = if last and tt >= last then tt - last else 0
+			input.snap = last == nil or tt < last
+			biped.lastT = tt
+			BipedRig.apply(biped.rig, BipedMotion.step(biped.rig.motion, input))
 		end
 		local bone = s.bone
 		if bone then

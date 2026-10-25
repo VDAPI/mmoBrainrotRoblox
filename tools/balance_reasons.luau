@@ -175,6 +175,8 @@ return {
 		["Data/MonsterAssets"] = "wygląd", -- W26: imported monster models (hitbox numbers copy the generator's)
 		["Data/MonsterAssetVariants"] = "wygląd", -- W26: variants drawn with their base's model in their own colour
 		["Data/MonsterClips/*"] = "generowane", -- W26: bone clips sampled from the imported models
+		["Data/BipedClips/*"] = "generowane", -- template animation: mocap baked by tools/anim/bake_biped.py
+		["Data/BipedStyles"] = "wygląd", -- template animation: poses and timelines of the biped styles
 		["Data/WeaponLooks"] = "wygląd",
 		["Data/SkillMotions"] = "wygląd",
 		["Data/SkillVfx"] = "wygląd",

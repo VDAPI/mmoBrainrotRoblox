@@ -2146,6 +2146,7 @@ local function handle(event: { [string]: any })
 			windUntil[attacker] = os.clock() + w
 			-- studio review 2026-10-21: a melee draw plays the slot of Logic/BasicBlow too (AnimLab shows the same)
 			local draw = rangedDraw(attacker, event.st) or { slot = BasicBlow.slot("melee") }
+			draw.shot = if type(event.st) == "string" then event.st else nil -- template animation: a biped's thrown blow
 			AnimationController.MonsterAttack(attacker, w, false, nil, nil, draw)
 		end
 	elseif kind == "teleCancel" then
