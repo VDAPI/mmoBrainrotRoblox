@@ -24,7 +24,9 @@
   `lune run tools/lookdump.luau out.json <id>` + `docs/miasto/tools/render3d.py`. Prawdziwy model: `docs/ASSETS.md`.
   Po zmianie wyglądu (`Data/MonsterLooks`, pety w `Data/Cosmetics`): `npm run renders` w `wiki/` i commit obrazków z
   `tools/wiki-renders/manifest.json` (S38). Rodzaj w `Data/Monsters` ma `family` (`Data/Families`) i opcjonalnie
-  `defence` z cech tej rodziny; boss ma `family` w `Data/Bosses` (S66; `data.spec` pilnuje).
+  `defence` z cech tej rodziny; boss ma `family` w `Data/Bosses` (S66; `data.spec` pilnuje). S162m: plan ciała w
+  `Data/MonsterRelease.KINDS` (skąd wylatują strzały, `Muzzle`; `monstermove.spec` pilnuje), umiejętność, która ma
+  przenieść potwora, dostaje `dash` w `Data/MonsterAbilities` (atrybuty `Dash*`, `docs/ANIM-WZORCE.md` §10).
 - **Efekt drużyny / osłabienie wroga** (S53): `category` w `SkillEffect` z `Data/BuffCategories` (`own` dla efektów
   na sobie), reguła łączenia w `Logic/EffectStack` (w kategorii najsilniejszy, `own` się sumuje, redukcja mnożnikowo z
   limitem 75%), klucz efektu `(kind, sourceKey, skillId, category)`; każde `Apply` z umiejętności podaje `skillId`.

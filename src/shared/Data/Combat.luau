@@ -138,6 +138,12 @@ return table.freeze({
 
 	-- AI (DESIGN §15.1).
 	wanderRadius = 8, -- around the group centre (S19)
+	-- S162m (owner 2026-10-25, docs/ANIM-WZORCE §9 R1 and R2; Logic/MonsterMove): the pace of a monster by what it does,
+	-- so a walk, a trot and a run read apart: wandering and patrolling walk at wanderSpeedMul x moveSpeed, going home
+	-- trots at returnSpeedMultiplier x, a fight runs at x1. A melee monster walks on to meleeApproach x its reach
+	-- before it stops (its blows meet the target instead of the air); the reach, the blow's start and its hit stay.
+	wanderSpeedMul = 0.4,
+	meleeApproach = 0.6,
 	passiveLevelGap = 15, -- monsters this many levels below the player do not attack first
 	aiTickRate = 5, -- per second
 	sleepRadius = 250, -- spawners without players this close stop working (S19: was 150)
@@ -146,6 +152,8 @@ return table.freeze({
 	-- (and not attacked) for stuckTime seconds goes home too. Going home: no healing, no invulnerability,
 	-- returnSpeedMultiplier x speed, teleported home after returnTimeout seconds. Back home (idle), it regains
 	-- idleRegenPct % of its max HP per second once idleRegenDelay seconds have passed since the last hit.
+	-- S162m: home at a trot (x1.25 -> x0.7: a calm trot instead of a sprint) and 12 -> 20 s before the teleport, so the
+	-- walk from the hard leash (150 studs, ~16.5 s at 13 x 0.7) still ends on foot.
 	leashRange = 70,
 	leashMax = 150,
 	leashGrace = 5,
@@ -155,8 +163,8 @@ return table.freeze({
 	steerLookAhead = 6,
 	steerAngles = table.freeze({ 35, 70, 105, 140 }),
 	steerHold = 0.8,
-	returnSpeedMultiplier = 1.25,
-	returnTimeout = 12,
+	returnSpeedMultiplier = 0.7,
+	returnTimeout = 20,
 	idleRegenDelay = 4,
 	idleRegenPct = 8,
 })

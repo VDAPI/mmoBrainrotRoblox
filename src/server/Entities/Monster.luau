@@ -15,6 +15,9 @@
 --   dead   : waiting for MonsterService to remove the model
 -- Chasing and going home steer around obstacles (FIX 2026-10-09, Logic/Steer): two short rays (knee and hip
 -- height) probe the way ahead; a blocked way takes the first clear angle to one side and keeps that side a while.
+-- S162m (owner 2026-10-25, docs/ANIM-WZORCE §9; Logic/MonsterMove): a walk while idle, a trot home, a run in the fight
+-- (the "Gait" attribute); a melee monster walks on to meleeApproach x its reach; an ability with `dash` really travels
+-- (Dash* attributes); "SpawnedAt" = server time of the spawn (the clients' appear animation).
 -- Damage resolution, telegraphs and rewards are delegated to the Context given by MonsterService, so this
 -- module never talks to other services directly.
 
@@ -32,6 +35,7 @@ local Leash = require(Shared.Logic.Leash)
 local LevelLock = require(Shared.Logic.LevelLock)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterCast = require(Shared.Logic.MonsterCast)
+local MonsterMove = require(Shared.Logic.MonsterMove)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Monsters = require(Shared.Data.Monsters)
 local RigBuilder = require(script.Parent.RigBuilder)
@@ -171,6 +175,13 @@ export type Monster = typeof(setmetatable(
 		patrolWaitUntil: number,
 		patrolPause: number,
 		nextPatrolMove: number,
+		-- S162m: the pace mirrored as "Gait"; a cast's token (a stun or a new cast drops its dash); the running dash's
+		-- speed and until when it runs (os.clock, 0 = none); whether Dash* attributes announce a flight now
+		gait: MonsterMove.Gait,
+		castToken: number,
+		dashSpeed: number,
+		dashUntil: number,
+		dashOn: boolean,
 	},
 	Monster
 ))
@@ -212,6 +223,11 @@ function Monster.new(
 	end
 	model:SetAttribute("MaxHp", stats.maxHp)
 	model:SetAttribute("Hp", stats.maxHp)
+	-- S162m: the spawn's server time (Workspace:GetServerTimeNow, the clients' clock too) for the appear animation, and
+	-- the idle pace (Logic/MonsterMove)
+	model:SetAttribute("SpawnedAt", Workspace:GetServerTimeNow())
+	model:SetAttribute("Gait", MonsterMove.gaitOf("idle"))
+	humanoid.WalkSpeed = def.moveSpeed * MonsterMove.speedMul(MonsterMove.gaitOf("idle"), Combat :: any)
 	model:PivotTo(spawnCFrame + Vector3.new(0, humanoid.HipHeight + root.Size.Y / 2, 0))
 	-- Group attributes (GroupId, GroupSize) must be there before the model replicates.
 	for name, value in (attributes or {}) :: { [string]: any } do
@@ -284,6 +300,11 @@ function Monster.new(
 		patrolWaitUntil = 0,
 		patrolPause = 0,
 		nextPatrolMove = 0,
+		gait = MonsterMove.gaitOf("idle"),
+		castToken = 0,
+		dashSpeed = 0,
+		dashUntil = 0,
+		dashOn = false,
 	}, Monster)
 	return self
 end
@@ -337,6 +358,20 @@ end
 
 local function stop(self: Monster)
 	self.humanoid:MoveTo(self.root.Position)
+end
+
+-- S162m: WalkSpeed = moveSpeed x the pace of the state (Logic/MonsterMove: walk, trot, run) x the status factor, or a
+-- running dash's own speed; the pace is mirrored as the attribute "Gait" (the clients' walk / trot / run).
+local function applyPace(self: Monster)
+	local gait: MonsterMove.Gait = MonsterMove.gaitOf(self.state)
+	if gait ~= self.gait then
+		self.gait = gait
+		self.model:SetAttribute("Gait", gait)
+	end
+	local speed = if self.dashUntil > os.clock()
+		then self.dashSpeed
+		else self.def.moveSpeed * MonsterMove.speedMul(gait, Combat :: any)
+	self.humanoid.WalkSpeed = speed * self.speedFactor
 end
 
 -- Rays of the steering probe ignore monsters and characters: only the world blocks the way.
@@ -407,8 +442,7 @@ end
 -- Applies the slow/root factor from status effects (1 = normal speed).
 function Monster.RefreshSpeed(self: Monster, factor: number)
 	self.speedFactor = factor
-	local base = self.def.moveSpeed * (if self.state == "return" then Combat.returnSpeedMultiplier else 1)
-	self.humanoid.WalkSpeed = base * factor
+	applyPace(self)
 	if factor <= 0 then
 		stop(self)
 	end
@@ -439,7 +473,7 @@ function Monster.StartReturn(self: Monster)
 		setHp(self, self.stats.maxHp)
 	end
 	self.model:SetAttribute("Returning", true)
-	self.humanoid.WalkSpeed = self.def.moveSpeed * Combat.returnSpeedMultiplier * self.speedFactor
+	applyPace(self)
 	self.returnStarted = os.clock()
 	steerTo(self, returnPoint(self))
 end
@@ -450,7 +484,7 @@ local function finishReturn(self: Monster)
 		self.invulnerable = false
 	end
 	self.model:SetAttribute("Returning", nil)
-	self.humanoid.WalkSpeed = self.def.moveSpeed * self.speedFactor
+	applyPace(self)
 	self.nextWander = os.clock() + 2 + self.random:NextNumber() * 4
 	-- Spread back to the own spot of the group. S101: a patrolling champion walks back to where the fight started,
 	-- then goes on to its next waypoint instead of the start of its route.
@@ -575,10 +609,11 @@ local function engage(self: Monster, player: Player)
 	then
 		self.state = "idle"
 		self.model:SetAttribute("Returning", nil)
-		self.humanoid.WalkSpeed = self.def.moveSpeed * self.speedFactor
+		applyPace(self)
 	end
 	if self.state == "idle" then
 		self.state = "chase"
+		applyPace(self)
 		setTarget(self, player)
 		local now = os.clock()
 		self.movedAt = now
@@ -890,6 +925,101 @@ windUp = function(self: Monster, target: Player)
 	end)
 end
 
+-- S162m: the root's place over a ground point, and the ground point under the root.
+local function rootOver(self: Monster, ground: Vector3): Vector3
+	return ground + Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0)
+end
+
+local function groundUnder(self: Monster): Vector3
+	return self.root.Position - Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0)
+end
+
+-- S162m: drops the flight of the cast being wound up (a stun or a new cast): the run stops at the next pace and the
+-- clients see DashAt cleared.
+local function cancelDash(self: Monster)
+	self.castToken += 1
+	if self.dashUntil > 0 then
+		self.dashUntil = 0
+		applyPace(self)
+	end
+	if self.dashOn then
+		self.dashOn = false
+		self.model:SetAttribute("DashAt", nil)
+	end
+end
+
+-- S162m (docs/ANIM-WZORCE §9 Q6): the flight of an ability with `dash` (Data/MonsterAbilities), announced with its
+-- telegraph. A running dash (no `leap`: the wolf's leap, the boar's charge) runs `seconds` before the blow lands to
+-- MonsterMove.stopDistance in front of where the target stood (a line: no farther than its length); skipped when the
+-- landing is a ledge or a drop, in a safe zone or past the hard leash. A `leap` one (Pounce, the commander's leap) is
+-- still moved at the blow (stepCast); its flight is announced only when it may land. The clients draw both from the
+-- model attributes DashId, DashMode ("move" | "jump"), DashFrom, DashTo (root positions), DashAt (server time the
+-- flight starts), DashTime (its seconds) and DashArc (studs of the apex over the straight line), DashAt set last.
+local function planDash(self: Monster, ability: MonsterAbilities.Ability, area: CFrame, targetPosition: Vector3)
+	local dash = ability.dash
+	if not dash then
+		return
+	end
+	local startsIn, seconds = MonsterMove.dashStart(dash, ability.windup)
+	local from = self.root.Position
+	local landing: Vector3
+	local travel: number
+	if ability.leap then
+		landing = area.Position
+		travel = distanceFlat(from, landing)
+	else
+		local halfDepth = self.root.Size.Z / 2
+		local stopAt = MonsterMove.stopDistance("melee", self.stats.range + halfDepth, halfDepth, Combat :: any)
+		local aim = if ability.origin == "self" then targetPosition else area.Position
+		local maxTravel = if ability.shape == "line" then ability.length or 0 else math.huge
+		local x, z, run = MonsterMove.dashLanding(from.X, from.Z, aim.X, aim.Z, stopAt, maxTravel)
+		if run <= 0 then
+			return
+		end
+		local ground = groundUnder(self)
+		landing = Vector3.new(x, ground.Y, z)
+		if self.ctx.groundAt then
+			local found = self.ctx.groundAt(landing)
+			if math.abs(found.Y - ground.Y) > MonsterMove.DASH_CLIMB then
+				return
+			end
+			landing = found
+		end
+		travel = run
+	end
+	if
+		not MonsterCast.canLand(self.ctx.isSafePosition(landing), distanceFlat(landing, homeOf(self)), leashMax(self))
+	then
+		return
+	end
+	local to = rootOver(self, landing)
+	if not ability.leap then
+		local token = self.castToken
+		task.delay(startsIn, function()
+			if self.castToken ~= token or self.state ~= "cast" then
+				return
+			end
+			if self.ctx.isDisabled(self) or self.ctx.isRooted(self) then
+				cancelDash(self) -- held in place: the clients do not draw a flight it never makes
+				return
+			end
+			self.dashSpeed = travel / math.max(0.05, seconds)
+			self.dashUntil = os.clock() + seconds + 0.25
+			applyPace(self)
+			self.humanoid:MoveTo(landing)
+		end)
+	end
+	local model = self.model
+	model:SetAttribute("DashId", ability.id)
+	model:SetAttribute("DashMode", if ability.leap then "jump" else "move")
+	model:SetAttribute("DashFrom", from)
+	model:SetAttribute("DashTo", to)
+	model:SetAttribute("DashTime", seconds)
+	model:SetAttribute("DashArc", MonsterMove.arcHeight(dash, travel, self.def.size * self.stats.scale))
+	model:SetAttribute("DashAt", Workspace:GetServerTimeNow() + startsIn)
+	self.dashOn = true
+end
+
 local function stepChase(self: Monster, now: number)
 	local position = self.root.Position
 	local target = pickTarget(self)
@@ -935,6 +1065,7 @@ local function stepChase(self: Monster, now: number)
 		face(self, if ability.origin == "random" then area.Position else targetPosition)
 		self.state = "cast"
 		self.windToken += 1 -- S159: a cast cancels a blow being wound up
+		cancelDash(self) -- S162m: a new cast drops the flight of the last one
 		self.castArea = area
 		self.castAbility = ability
 		self.castEnd = now + ability.windup
@@ -942,6 +1073,7 @@ local function stepChase(self: Monster, now: number)
 			self.nextGlobal = now + ability.windup + self.extraGap
 		end
 		self.ctx.telegraph(self, ability, area, teleOpts(ability, target))
+		planDash(self, ability, area, targetPosition)
 		if self.onCast then
 			self.onCast(ability, area)
 		end
@@ -949,12 +1081,25 @@ local function stepChase(self: Monster, now: number)
 	end
 
 	noteMovement(self, now, distance <= reach or threw)
+	-- S162m (docs/ANIM-WZORCE §9 R2): a melee monster walks on to MonsterMove.stopDistance (meleeApproach x its reach)
+	-- before it stands, so its blow meets the target; it starts a blow anywhere within its reach as before (the hit
+	-- rule at the blow stays). A ranged one stands at its reach.
+	local halfDepth = self.root.Size.Z / 2
+	local stopAt = MonsterMove.stopDistance(self.def.attack, reach, halfDepth, Combat :: any)
+	local melee = self.def.attack == "melee"
 	if distance <= reach then
-		stop(self)
-		face(self, targetPosition)
+		local closing = melee and distance > stopAt and not self.ctx.isRooted(self)
+		if not closing then
+			stop(self)
+			face(self, targetPosition)
+		end
 		if now >= self.nextAttack then
 			self.nextAttack = now + attackInterval(self)
 			windUp(self, target)
+		end
+		if closing then
+			local x, z = MonsterMove.approach(position.X, position.Z, targetPosition.X, targetPosition.Z, stopAt)
+			steerTo(self, Vector3.new(x, targetPosition.Y, z))
 		end
 		return
 	end
@@ -965,7 +1110,13 @@ local function stepChase(self: Monster, now: number)
 		return
 	end
 	if not self.ctx.isRooted(self) then
-		steerTo(self, targetPosition)
+		if melee then
+			-- S162m: to the point stopAt short of the target (MoveTo ends there instead of in the target's body)
+			local x, z = MonsterMove.approach(position.X, position.Z, targetPosition.X, targetPosition.Z, stopAt)
+			steerTo(self, Vector3.new(x, targetPosition.Y, z))
+		else
+			steerTo(self, targetPosition)
+		end
 	end
 end
 
@@ -978,6 +1129,12 @@ local function stepCast(self: Monster, now: number)
 	self.state = "chase"
 	self.castArea = nil
 	self.castAbility = nil
+	-- S162m: the dash is over (its run ends at the landing; the pace is the fight's again)
+	self.dashOn = false
+	if self.dashUntil > 0 then
+		self.dashUntil = 0
+		applyPace(self)
+	end
 	if ability and area then
 		local kit = self.kit
 		if ability == self.ability then
@@ -1061,6 +1218,7 @@ function Monster.Step(self: Monster, now: number)
 			self.castArea = nil
 		end
 		self.windToken += 1 -- S159: a stun breaks the draw
+		cancelDash(self) -- S162m: and the flight of a cast
 		stop(self)
 		return
 	end

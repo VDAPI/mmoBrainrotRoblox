@@ -75,6 +75,9 @@ return {
 		{ path = "Data/Market" },
 		{ path = "Data/MonsterAbilities", omit = LOOKS },
 		{ path = "Data/Monsters", omit = LOOKS },
+		-- S162m: where a monster's shot leaves its body; `fwd` and `side` move the server's start of the projectile (a
+		-- slightly shorter flight), `up` is drawn only
+		{ path = "Data/MonsterRelease", pick = { "fwd", "side" } },
 		-- S96: mount speed and start levels are pace numbers; the look, the riding rules, the rider pose and the real
 		-- model hook are not
 		-- S97: the look scale is geometry too
@@ -7488,6 +7491,60 @@ return {
 			{
 				session = "S161",
 				why = "new: the gearUp backpack on accept (the quest asked to equip an item and players read it as the new backpack)",
+			},
+		},
+		["Combat:wanderSpeedMul"] = {
+			{
+				session = "S162m",
+				why = "new (owner 2026-10-25, ANIM-WZORCE R1): wandering and patrolling walk at 0.4 x moveSpeed (wolf 5.6 studs/s) so the walk is seen; the chase runs at x1 as before. A world event champion walks its route at this pace too (it covers less of its loop in 15 min, the fight is the same); no damage or fight-time change",
+			},
+		},
+		["Combat:meleeApproach"] = {
+			{
+				session = "S162m",
+				why = "new (ANIM-WZORCE R2): a melee monster walks on to 0.6 x its reach (wolf 5.1 instead of 8.5 studs) before it stands, so blows meet the target; a blow still starts anywhere within the reach and its hit rule (reach x 1.5 + 3) stays: same DPS and first-hit time; stepping back out of a blow needs ~0.4 x reach more (the monster stands closer)",
+			},
+		},
+		["Combat:returnSpeedMultiplier"] = {
+			{
+				session = "S162m",
+				why = "1.25 -> 0.7 (ANIM-WZORCE R1): going home is a calm trot (wolf 9.8 studs/s) instead of a sprint; no healing on the way as before, a hit within the hard leash still turns it back. Players catch a leaving monster more easily; no damage change",
+			},
+		},
+		["Combat:returnTimeout"] = {
+			{
+				session = "S162m",
+				why = "12 -> 20 s: the slower trot home from the hard leash (150 studs, ~16.5 s at 13 x 0.7) still ends on foot instead of in a teleport",
+			},
+		},
+		["MonsterAbilities:byId.leap.dash*"] = {
+			{
+				session = "S162m",
+				why = "new (owner 2026-10-25, ANIM-WZORCE Q6): the Elite II wolf's (cat's, hyena's) leap really leaps the last 0.35 s of its windup, a short hop (1-4 studs) to 0.6 x reach in front of its circle; damage, area and windup unchanged, the next blow comes from where it landed (a few studs closer: no measurable DPS change)",
+			},
+		},
+		["MonsterAbilities:byId.charge.dash*"] = {
+			{
+				session = "S162m",
+				why = "new (ANIM-WZORCE Q6): the Elite II boar's charge really runs its line the last 0.4 s (up to 20 studs, ~37 studs/s, arc 0) to stand in front of where the target was; damage, line and windup unchanged. It then stands at its target, so its next blow (0.5 x interval after the cast) comes up to ~1 s sooner than walking back in: a little more Elite II boar DPS",
+			},
+		},
+		["MonsterAbilities:byId.pounce.dash*"] = {
+			{
+				session = "S162m",
+				why = "new: the flight the clients draw before Pounce's teleport (0.4 s, arc 0.25 x distance within 2-6 studs x scale); the server still moves it at the blow: no fight change",
+			},
+		},
+		["MonsterAbilities:byId.warlordLeap.dash*"] = {
+			{
+				session = "S162m",
+				why = "new: the flight the clients draw before the commander's leap lands (0.5 s, arc 0.25 x distance within 3-8 studs x scale); the server still moves it at the blow: no fight change",
+			},
+		},
+		["MonsterRelease:*"] = {
+			{
+				session = "S162m",
+				why = "new module (ANIM-WZORCE §1.3 rule 8): a ranged shot and the Elite II throw start at the mouth, beak or hand (`fwd` x the drawn height ahead, `side` to the right) instead of the root's centre: 0.6-2.9 studs closer to the target, at most ~15 % of a ranged kind's range (wyvern 2.9 of 22): the projectile lands ~0.02-0.07 s sooner, damage unchanged",
 			},
 		},
 	} :: { [string]: { Reason } },

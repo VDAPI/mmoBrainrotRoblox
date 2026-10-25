@@ -1940,6 +1940,13 @@ local function shoot(monster: any, player: Player, patternId: string, params: Da
 	local emitter = pattern.emitters[1]
 	local speed = math.max(1, emitter.speed or 40)
 	local ground = monster.humanoid and (from.Y - monster.humanoid.HipHeight - monster.root.Size.Y / 2) or from.Y
+	-- S162m (Data/MonsterRelease): the shot leaves the root's Muzzle (the mouth, the beak, the hand), not its centre;
+	-- the bolt flies at its flight height from there, the clients draw it dropping from the Muzzle's height
+	local muzzle = monster.root:FindFirstChild("Muzzle")
+	local release: Vector3? = if muzzle and muzzle:IsA("Attachment") then muzzle.WorldPosition else nil
+	if release then
+		from = Vector3.new(release.X, from.Y, release.Z)
+	end
 	local origin = Vector3.new(from.X, ground, from.Z)
 	local at = root.Position
 	local velocity = root.AssemblyLinearVelocity
@@ -1958,6 +1965,7 @@ local function shoot(monster: any, player: Player, patternId: string, params: Da
 		only = player,
 		params = params,
 		fxRadius = Combat.fxRadius,
+		release = release,
 	})
 	return id ~= nil
 end

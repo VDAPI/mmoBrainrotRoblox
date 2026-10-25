@@ -857,6 +857,10 @@ magicznego; leczenie i wzmocnienia działają tylko na Kapłana i jego drużynę
   - zawsze wraca dalej niż **150 st.**;
   - wraca **bez leczenia i bez nietykalności**, a trafiony w drodze zawraca;
   - leczy się dopiero w domu, stopniowo (8% HP/s po 4 s bez obrażeń).
+  - Tempo (S162m, właściciel 2026-10-25): spacer i patrol idą stępa (0,4 × szybkości), powrót do domu truchtem (0,7 ×,
+    teleport do domu dopiero po 20 s), pościg i walka biegiem (1 ×). Potwór walczący wręcz podchodzi na 0,6 swojego
+    zasięgu, zanim stanie (cios może zacząć już w zasięgu, zasada trafienia bez zmian). Skok wilka i szarża dzika Elity II
+    naprawdę przenoszą potwora przed cel; strzały wylatują z pyska, dzioba albo dłoni.
 - **Grupy potworów** (zmiana po testach S17, jak w Margonem):
   - Potwory stoją w **grupach po 1–4** (losowo przy tworzeniu mapy, deterministycznie z seedem), rozrzuconych gęsto po całej mapie: **45–60 grup na mapę terenową**, odstęp między grupami ok. 45–70 st., ścieżki, woda, portale i okolice miasta wolne.
   - Każda podstrefa ma 2–3 rodzaje potworów; grupy mogą być mieszane tylko w obrębie podstrefy.

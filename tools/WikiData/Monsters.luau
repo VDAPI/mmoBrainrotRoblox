@@ -469,6 +469,7 @@ function Monsters.build(ctx: any): any
 			local ability = nil
 			if abilityDef then
 				ability = Clean.clean(abilityDef)
+				ability.dash = nil -- S162m: the flight's timing for the animations, not a fight number
 				ability.name = Names.opt(`ability.{abilityDef.id}.name`)
 			end
 			local dodge = MonsterStats.compute(def, def.levels.min, "normal").dodge

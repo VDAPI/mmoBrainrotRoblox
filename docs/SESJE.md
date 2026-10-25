@@ -14096,3 +14096,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Łowy na gatunek (dzienne i tygodniowe `prey`): `Logic/Prey.luau`, `Data/Quests/Daily.luau`, `Data/Quests/Weekly.luau`, `Logic/QuestLogic.luau`, `tests/prey.spec.luau`.
 - Menu PPM na graczu: ScreenGui menu z `ZIndexBehavior = Sibling`, bez `ZIndex = 20` na ramce (tło przykrywało opcje), dokładniejsze trzymanie menu na ekranie. Pliki: `Controllers/PartyController.luau`, `UI/Screens/PlayerMenu.luau`.
 - Dev panel: „Daj” / „Daj i załóż” (`/givex`), „Zestaw testowy” (`/preset`) i `/gearset` dają przedmioty z najlepszymi liniami i efektami dla klasy (`Logic/ItemBest.luau`, wagi `ItemScore` / `Data/ItemWeights`), `tests/itembest.spec.luau`.
+
+### S162m: ruch potworów pod nowe animacje (2026-10-25)
+- Tempo: spacer 0,4 ×, powrót truchtem 0,7 × (teleport po 20 s), walka 1 ×, atrybut `Gait`; potwór wręcz podchodzi na
+  0,6 zasięgu (`MoveTo` kończy przed celem, cios zaczyna w zasięgu jak dotąd). Pliki: `Logic/MonsterMove.luau`,
+  `Data/Combat.luau`, `Entities/Monster.luau`.
+- `SpawnedAt` przy każdym pojawieniu się; `dash` w `Data/MonsterAbilities` (leap, charge biegną; pounce, warlordLeap
+  ogłaszają lot) z atrybutami `DashId`, `DashMode`, `DashFrom`, `DashTo`, `DashAt`, `DashTime`, `DashArc`.
+- Punkt wylotu strzałów: `Data/MonsterRelease.luau`, `Attachment` „Muzzle” w `Entities/RigBuilder.luau`, start pocisku w
+  `CombatService.shoot`, pole `rl` zdarzenia `hz` (`HazardService`), opadanie bełtu w `Vfx/HazardFx.luau`, zapasowe
+  pociski w `CombatFxController`.
+- Dokumentacja dla sesji animacji: `docs/ANIM-WZORCE.md` §10. Testy: `tests/monstermove.spec.luau`, `leash.spec`
+  (powrót truchtem). Balans: powody w `tools/balance_reasons.luau` (S162m).
