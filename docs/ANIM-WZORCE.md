@@ -64,14 +64,14 @@ Why these representatives:
 | Attack interval | 2.0 s / kind speed: wolf 1.74, lynx 1.67, bear 2.35, boar 2.0, mammoth 2.5, vulture 1.6, spider 1.67, dragon 2.0; after an ability the next blow may come 0.5 × interval later | `Combat.monsterAttackInterval`, `Monster.stepCast` |
 | Elite II own ability (charged, telegraph `tele`) | leap 1.2, charge 1.0, slam 1.4, poisonPool 1.3, wail 1.2, fireBreath 1.3, frostBreath 1.3, frostNova 1.4, emberNova 1.4 s | `Data/MonsterAbilities` |
 | Kit blows | Elite: heavyBlow 1.8 s (cone 10 studs / 90° in front). Elite II: crush 2.2 s (lethal circle under the target, up to 45 studs away), pounce 1.4 s (target 12-45 studs away, **the monster is teleported into the circle at W**), throw | `KITS`, `Monster.stepCast` (PivotTo when `leap`) |
-| Only these move the monster in an ability | `pounce`, `warlordLeap` (`leap = true`). The canine `leap` and the boar `charge` do **not** move it | `Data/MonsterAbilities` |
+| Only these move the monster in an ability | `pounce`, `warlordLeap` (`leap = true`, teleported at W). S162m: the canine `leap` and the boar `charge` now run there at the end of the windup (`dash`, §10) | `Data/MonsterAbilities` |
 | Hit flinch | `MonsterHit` at most once per 0.1 s; fades over 0.25 s; during a charged gather ×0.3 | `Config.MonsterLook.hitEvery`, `Gait.HIT_SECONDS` |
 | Death | attribute `Dead`; pose 0.8 s, corpse fades (t²) until 1.6 s, then removed | `MonsterLook.deathSeconds`, `Config.CorpseSeconds` |
-| Spawn | nothing for a regular respawn; a boss helper (`Summoned`) climbs out over 0.8 s | `AnimationController` riseStart |
-| Speeds | one speed: wander = chase = `moveSpeed` (9-14 studs/s; default 13, wolves and cats 14), going home ×1.25, slows scale it | `Entities/Monster` (RefreshSpeed, stepIdle) |
+| Spawn | a boss helper (`Summoned`) climbs out over 0.8 s; S162m: every spawn stamps `SpawnedAt` (server time, §10) | `AnimationController` riseStart |
+| Speeds | S162m: wander and patrol 0.4 ×, going home 0.7 ×, chase ×1 `moveSpeed` (9-14 studs/s; default 13, wolves and cats 14), attribute `Gait` (§10); slows scale it | `Logic/MonsterMove`, `Entities/Monster` |
 | Facing | `face()` snaps the root to the target on the 5 Hz AI tick; `MoveTo` turns the Humanoid while walking | `Entities/Monster` |
-| Melee stop distance | reach = range 7 + half the root depth: wolf 8.5, bear 9.6, dragon 9.6, spider 7.75 studs (normal) | `Monster.stepChase` |
-| Replicated state | `AggroUserId` (target, nil = none), `Returning`, `Dead`, `Effects` (EffectStack: stun, freeze, slow...), `Flying` (Vaelgrath only), `Summoned`, `Phase`, `Variant`, `LookScale`, `GroupSize` | `Entities/Monster`, `StatusEffectService` |
+| Melee stop distance | reach = range 7 + half the root depth: wolf 8.5, bear 9.6, dragon 9.6, spider 7.75 studs (normal); S162m: it walks on to 0.6 × reach (wolf 5.1) before it stands (§10) | `Monster.stepChase` |
+| Replicated state | `AggroUserId` (target, nil = none), `Returning`, `Dead`, `Effects` (EffectStack: stun, freeze, slow...), `Flying` (Vaelgrath only), `Summoned`, `Phase`, `Variant`, `LookScale`, `GroupSize`; S162m: `Gait`, `SpawnedAt`, `Dash*`, the root's `Muzzle` (§10) | `Entities/Monster`, `StatusEffectService` |
 | How many animate | the nearest 60 (desktop) / 25 (touch) monsters with a full look; the rest stand still | `Config.MonsterLook.maxAnimated` |
 
 No flee state exists (the hare is only passive: it never starts a fight). Bosses add their own attacks and roars
@@ -318,7 +318,7 @@ the same speed gives a slower cadence by itself (stride scales with L).
 
 Variant: 25 % a feint at 0.22-0.30 s (jaw 30 → 12 → 30°, head −6°) before the real strike.
 
-### 3.5 Elite II own ability: leap (W = 1.2, circle r 7 under the target; the server does not move the wolf)
+### 3.5 Elite II own ability: leap (W = 1.2, circle r 7 under the target; S162m: the server runs the wolf the last 0.35 s, `Dash*` §10)
 
 | Phase | t (s) | Motion |
 |---|---|---|
@@ -389,7 +389,7 @@ Bear, boar and mammoth blows (W as §1.2, contact at W, F + R ≤ 0.8 s):
 | Bear, Elite II "slam" (1.4, circle r 11 around it) | 0-0.6: up on the hind legs (pivot at the hind feet): pitch +70°, y +0.4 L; forelegs high (upper +80°, lower −30°, paws open); neck +20°, roar jaw 40°. 0.6-1.26: hold, sway roll ±3° at 0.8 Hz, tremble ∝ p² | 1.26-1.4: falls forward (+70° → −6°), both forepaws slam at W (0.5 L ahead), y −0.06 L, dust ring r 11 | head low, roar; R to 2.1 |
 | Bear kit | crush = the slam with A over 2.06 s (rear by 0.8); heavyBlow = a two-paw swipe (both forelegs, `alt` timing: right at W − 0.1, left at W); pounce = a low flat body-slam arc (height 1.5 studs) | | |
 | Boar, basic "gore" (0.55) | head dips −20°, body z +0.08 L, front legs brace | head hooks up +30° with a yaw twist 15° at W; lunge ≤ 4 studs | head shake; R |
-| Boar, Elite II "charge" (1.0, line 20 × 6; the boar stays) | 0.2-0.7: front-right hoof scrapes twice (upper −25° / +10° at 3 Hz); head −25°, rear up 0.03 L, tremble | 0.86-1.0: dash forward (≥ 3, ≤ 5 studs) with the gallop running at 2× rate so the feet keep up; head hooks at W | skid stop; trot back over 0.5 s |
+| Boar, Elite II "charge" (1.0, line 20 × 6; S162m: the boar runs the line the last 0.4 s, `Dash*` §10) | 0.2-0.7: front-right hoof scrapes twice (upper −25° / +10° at 3 Hz); head −25°, rear up 0.03 L, tremble | 0.86-1.0: dash forward (≥ 3, ≤ 5 studs) with the gallop running at 2× rate so the feet keep up; head hooks at W | skid stop; trot back over 0.5 s |
 | Mammoth, basic "tusk" (0.55) | head yaw +25°, trunk curled up, weight back | head sweeps to −30° (tusks across) at W, lunge ≤ 2 studs | trunk swings on; R |
 | Mammoth, Elite II "stomp" (1.4; also crush) | front rises ≤ 25° (pivot hind feet; elephants do not rear high), trunk up (trumpet), ears out | both front feet stomp at W, y −0.05 L, dust ring | trunk down; R |
 
@@ -650,21 +650,21 @@ At `LookScale` 1: `h` ≈ 3.4 studs (visual 1.45), body ≈ 2.2 studs; melee (in
 
 Owner decisions (recommended default first):
 
-- **R1 / Q1 wander speed** (gameplay-neutral): monsters wander at full chase speed (13-14 studs/s), so a walk or trot is
+- **R1 / Q1 wander speed** (done S162m, §10): monsters wander at full chase speed (13-14 studs/s), so a walk or trot is
   never seen and a resting pack sprints back and forth. Recommended: wandering at 0.4 × `moveSpeed` (a new
   `Combat.wanderSpeedMul`), full speed from the first aggro on.
-- **R2 / Q2 melee approach**: monsters stop at the edge of their reach (~8.5 studs), so blows hit the air. Recommended:
-  walk on to 0.6 × reach before stopping; the hit check stays as it is (reach × 1.5 + 3).
-- **R3 / Q3 respawn animation**: a regular respawn sends nothing the client can tell from a model streaming in.
-  Recommended: an attribute `SpawnedAt` (server time) and a 0.5 s appear (§3.8).
+- **R2 / Q2 melee approach** (done S162m, §10): monsters stop at the edge of their reach (~8.5 studs), so blows hit
+  the air. Recommended: walk on to 0.6 × reach before stopping; the hit check stays as it is (reach × 1.5 + 3).
+- **R3 / Q3 respawn animation** (done S162m, §10): a regular respawn sends nothing the client can tell from a model
+  streaming in. Recommended: an attribute `SpawnedAt` (server time) and a 0.5 s appear (§3.8).
 - **Q4 rigs for the rigid models**: no limb can bend on F5. Recommended: Tripo re-rigs (octopod for `caveSpider`, avian
   for `carrionCrow` and `bloodBat`, serpent for `bogSerpent` and `frostWyrm`, biped for `rotEnt`), or at least wings and
   legs exported as separate parts (Blender) so they swing as rigid joints. Spider and crow first (seen most).
 - **Q5 wyvern in the air**: its hitbox and hip height are on the ground; a permanent visual hover would float it over
   its own target ring. Recommended: ground monster with wing-assisted hops (§5.8).
-- **Q6 canine leap landing**: the wolf's own `leap` does not move it (only `pounce` does). Recommended: keep the server;
-  the visual leap and walk-back of §3.5. Alternative: `leap = true` on the ability (the wolf really lands, a fight
-  change).
+- **Q6 canine leap landing** (owner 2026-10-25: the server moves it; done S162m, §10): the wolf's own `leap` does not
+  move it (only `pounce` does). Recommended: keep the server; the visual leap and walk-back of §3.5. Alternative:
+  `leap = true` on the ability (the wolf really lands, a fight change).
 
 Blockers and checks for the Studio session:
 
@@ -675,8 +675,30 @@ Blockers and checks for the Studio session:
    and tails, and whether `desertScorpion`, `iceElemental`, `specter`, `frostWyrm`, `rabbit` have bones.
 3. F5 squash depends on a single MeshPart look; otherwise CFrame-only motion.
 4. Visual reach needs R2 to look like contact; without it, the lunges of §1.7 close at most ~4 of the ~5 studs.
-5. Pounce arcs need the leap arc of `AnimationController` enabled for non-boss `leap = true` abilities.
-6. The release point of shots needs a muzzle bone handed to `CombatFxController` (§1.3 item 8).
+5. Pounce arcs need the leap arc of `AnimationController` enabled for non-boss `leap = true` abilities (S162m: the
+   server publishes every non-boss flight as `Dash*`, §10).
+6. The release point of shots needs a muzzle bone handed to `CombatFxController` (§1.3 item 8) (S162m: the root's
+   `Muzzle` attachment, §10; move it to the bone on the client).
+
+## 10. Server data for animations (S162m)
+
+Done on the server for §9 R1, R2, R3, Q6 and §1.3 rule 8 (owner 2026-10-25: "decide yourself, best quality"). Everything
+sits on the monster's model in `workspace.Monsters` and replicates; times are server time (`Workspace:GetServerTimeNow()`
+on the client too). Rules in `Logic/MonsterMove` (Lune spec `tests/monstermove.spec.luau`).
+
+| Data | What the client gets |
+|---|---|
+| attribute `Gait` | `"walk"` idle (wandering, a champion's patrol, spreading back to its spot): `Combat.wanderSpeedMul` 0.4 × `moveSpeed`; `"trot"` going home (`Returning`): `returnSpeedMultiplier` 0.7 ×; `"run"` fighting (chase, cast): × 1. Wolf 5.6 / 9.8 / 14 studs/s, the usual kind 5.2 / 9.1 / 13, golems 3.6 / 6.3 / 9. There is no "idle" value: standing vs moving comes from the root's speed (a wanderer at its point stands with `Gait` "walk"). Slows scale the speed, not `Gait`; `Humanoid.WalkSpeed` (replicated) is the exact speed asked for |
+| melee approach | a melee monster walks on to `max(0.6 × reach, half its root depth + 1.5)` from the target's centre (wolf 5.1 instead of 8.5) and then stands facing it; it may start a blow (`aw`) anywhere within its reach, so a draw can start while it still closes in (at most ~0.25 s of walking). The hit rule is unchanged. Ranged monsters stand at their reach |
+| attribute `SpawnedAt` | server time of the spawn: every spawn (a respawn, a sleeping group woken by a player 250 studs away, world events, bosses and their helpers). Play the appear (§3.8) when the look is built within ~0.6 s of it; `Summoned` keeps its own climb |
+| attributes `Dash*` | a flight of an ability with `dash` (`Data/MonsterAbilities`), set with its telegraph (`tele`), `DashAt` last: `DashId` (ability id), `DashMode` (`"move"`: the root runs the path from `DashAt`; `"jump"`: the root stays and is teleported at `DashAt + DashTime` = W), `DashFrom`, `DashTo` (Vector3, root positions), `DashAt` (when the flight starts), `DashTime` (s), `DashArc` (studs of the apex over the straight line). `DashAt = nil` = cancelled (stun, root). Draw: `k = MonsterMove.flightProgress(now, DashAt, DashTime)` (nil outside the flight), the body at `Gait.leapArc(k, DashFrom, DashTo, DashArc)` as an offset from wherever the root is now: the same rule for both modes. The attributes stay after the landing (k = nil); none are set when the monster already stands at its landing or may not land (a ledge over 6 studs, a safe zone, past the hard leash) |
+| which flights | `leap` (Elite II wolves, cats, hyena): move, 0.35 s (flight 0.85-1.2), apex 0.35 × travel within 1.2-4 studs × LookScale, a short hop (usually 1-4 studs) to the melee approach distance in front of its circle; `charge` (Elite II boar): move, 0.4 s (0.6-1.0), apex 0, up to 20 studs along its line to stand in front of where the target stood (~37 studs/s; the feet need the gallop at ~3× rate); `pounce`: jump, 0.4 s (1.0-1.4), apex 0.25 × distance within 2-6 × LookScale; `warlordLeap` (Invasion commander): jump, 0.5 s, 3-8. Bosses keep their own leap (`Data/BossMotions` arc) without `Dash*` |
+| attachment `HumanoidRootPart.Muzzle` | where shots leave the drawn body (`Data/MonsterRelease`: shares of the drawn height per body plan, per kind where needed: biped hand, quadruped jaw, flyer beak, dragon jaw, crawler front, serpent head, spirit front). The server starts regular shots and the Elite II throw at it; `CombatFxController` starts its fallback projectiles there. The animation may set its `WorldCFrame` to the jaw / beak / hand bone each frame (client side only; the server's start is from its own copy) |
+| event `hz` field `rl` | a regular shot's release point (Vector3, the Muzzle at the shot); `Vfx/HazardFx` draws the bolt dropping from it to its flight height (`Hazards.BOLT_HEIGHT`) over its first 8 studs |
+
+Gameplay notes (`tools/balance_reasons`, S162m): damage, areas, windups and intervals are unchanged; a monster going
+home is easier to catch and teleports only after 20 s (was 12); an Elite II boar stands at its target after a charge
+(its next blow up to ~1 s sooner); shots start 0.6-2.9 studs closer to the target.
 
 ## Appendix A: formulas
 

@@ -6,16 +6,19 @@
 -- (MonsterViewController) inside the model, welded to the root. The server sizes the root and the hip
 -- height from the same rig the clients build (or from `asset` numbers), and tells clients what to build with
 -- the attributes Look (look id), LookScale and LookRegion, set before the model is parented.
+-- S162m: the root carries an Attachment "Muzzle" where the kind's shots leave the drawn body (Data/MonsterRelease).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Anatomy = require(ReplicatedStorage.Shared.Logic.Anatomy)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
+local MonsterRelease = require(ReplicatedStorage.Shared.Data.MonsterRelease)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 
 local RigBuilder = {}
 
-export type Body = { rootSize: Vector3, hipHeight: number, height: number }
+-- `drawn` (S162m): the height of the drawn look (an imported model grows by its `visual`, Data/MonsterAssets)
+export type Body = { rootSize: Vector3, hipHeight: number, height: number, drawn: number }
 
 local AURA = {
 	elite = { color = "#D64A3E", rate = 6 },
@@ -84,6 +87,7 @@ function RigBuilder.body(lookId: string, variant: string, scale: number, region:
 			rootSize = Vector3.new(asset.rootSize[1], asset.rootSize[2], asset.rootSize[3]) * k,
 			hipHeight = math.max(0.1, asset.hipHeight * k),
 			height = asset.height * k,
+			drawn = asset.height * k * (asset.visual or 1),
 		}
 	else
 		local rig = Anatomy.build(
@@ -91,7 +95,12 @@ function RigBuilder.body(lookId: string, variant: string, scale: number, region:
 			{ id = lookId, variant = variant, scale = scale }
 		)
 		local s = rig.root.size
-		body = { rootSize = Vector3.new(s[1], s[2], s[3]), hipHeight = rig.hipHeight, height = rig.height }
+		body = {
+			rootSize = Vector3.new(s[1], s[2], s[3]),
+			hipHeight = rig.hipHeight,
+			height = rig.height,
+			drawn = rig.height,
+		}
 	end
 	cache[key] = body
 	return body
@@ -121,6 +130,16 @@ function RigBuilder.build(def: Monsters.MonsterDef, variant: string, variantScal
 	root.CastShadow = false
 	root.Parent = model
 	model.PrimaryPart = root
+
+	-- S162m: where its shots leave (the mouth, the beak, the hand): shares of the drawn height from the feet, ahead of
+	-- the root (-Z) and to its right; the root's centre stands hipHeight + half its height over the feet
+	local release = MonsterRelease.of(def.id)
+	local h = body.drawn
+	local muzzle = Instance.new("Attachment")
+	muzzle.Name = "Muzzle"
+	muzzle.Position =
+		Vector3.new(release.side * h, release.up * h - body.hipHeight - body.rootSize.Y / 2, -release.fwd * h)
+	muzzle.Parent = root
 
 	local humanoid = Instance.new("Humanoid")
 	configureHumanoid(humanoid)

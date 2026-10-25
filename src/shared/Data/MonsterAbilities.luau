@@ -21,12 +21,20 @@
 --   firstAfter seconds after the fight starts it is ready first ({ min, max }; default 3-6 s)
 --   gapRamp    lethal only: +perLevel of the damage per level of the monster's advantage from `from`, up to maxSteps
 --              levels (Logic/MonsterCast.lethalMul; a player above the monster gets nothing)
+-- S162m (owner 2026-10-25, docs/ANIM-WZORCE §9 Q6): `dash` = the monster really travels at the end of the windup
+-- (Logic/MonsterMove, Entities/Monster). Without `leap` it runs there (the wolf's leap, the boar's charge): it starts
+-- `seconds` before the blow lands and stops in front of where its target stood when the blow was announced (the
+-- melee approach distance, Data/Combat.meleeApproach; a line no farther than its length). With `leap` it is still
+-- moved at the blow (Pounce, the commander's leap); `seconds` is then the visual flight before it. `arc` = studs of
+-- the jump's height per stud of travel, held within `arcMin`..`arcMax` studs x the monster's look scale (0 = a run on
+-- the ground). The clients read the flight from the model's Dash* attributes (docs/ANIM-WZORCE "Server data").
 
 export type SplitSpec = { missAll: number }
 export type GapRamp = { from: number, perLevel: number, maxSteps: number }
 -- S134e: the regular ranged attack of a kit at a fleeing target (x the monster's attack, every interval x intervalMul;
 -- gapRamp as a lethal blow's: the farther below the monster the fleeing player is, the harder it hits)
 export type ThrowSpec = { range: number, intervalMul: number, damage: number, gapRamp: GapRamp? }
+export type DashSpec = { seconds: number, arc: number, arcMin: number?, arcMax: number? }
 export type Kit = {
 	abilities: { string }, -- priority order; the monster's own ability comes after them
 	globalGap: number, -- seconds after every blow before the next ability (the throw is a regular attack)
@@ -64,10 +72,21 @@ export type Ability = {
 	kiteOnly: boolean?,
 	firstAfter: { number }?,
 	gapRamp: GapRamp?,
+	dash: DashSpec?, -- S162m (see the header)
 }
 
 local ABILITIES: { [string]: Ability } = {
-	leap = { id = "leap", shape = "circle", origin = "target", radius = 7, windup = 1.2, damage = 2.6, cooldown = 11 },
+	-- S162m: the wolf really leaps the last 0.35 s onto its circle, the boar runs its line the last 0.4 s
+	leap = {
+		id = "leap",
+		shape = "circle",
+		origin = "target",
+		radius = 7,
+		windup = 1.2,
+		damage = 2.6,
+		cooldown = 11,
+		dash = { seconds = 0.35, arc = 0.35, arcMin = 1.2, arcMax = 4 },
+	},
 	charge = {
 		id = "charge",
 		shape = "line",
@@ -77,6 +96,7 @@ local ABILITIES: { [string]: Ability } = {
 		windup = 1.0,
 		damage = 2.8,
 		cooldown = 12,
+		dash = { seconds = 0.4, arc = 0 },
 	},
 	cleave = {
 		id = "cleave",
@@ -199,6 +219,7 @@ local ABILITIES: { [string]: Ability } = {
 		cooldown = 16,
 		avoid = true,
 		leap = true,
+		dash = { seconds = 0.5, arc = 0.25, arcMin = 3, arcMax = 8 }, -- S162m: the flight the clients draw
 	},
 	warlordRally = {
 		id = "warlordRally",
@@ -244,6 +265,7 @@ local ABILITIES: { [string]: Ability } = {
 		minRange = 12,
 		kiteOnly = true,
 		leap = true,
+		dash = { seconds = 0.4, arc = 0.25, arcMin = 2, arcMax = 6 }, -- S162m: the flight the clients draw
 	},
 	-- The Elite kit: Heavy Blow, a cone in front of it to dodge (no leap, no throw: an Elite is solo content).
 	heavyBlow = {

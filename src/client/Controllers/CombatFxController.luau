@@ -845,9 +845,20 @@ local function stepFlights()
 	end
 end
 
--- Old monster projectiles (no weapon in hand): from the chest.
+-- S162m: where a monster's shot leaves its body: the root's Muzzle (Data/MonsterRelease, the server's RigBuilder), else
+-- `lift` studs over its centre (models streamed in before the attachment existed).
+local function muzzleOf(attacker: Model, lift: number): Vector3
+	local root = attacker:FindFirstChild("HumanoidRootPart")
+	local muzzle = root and root:FindFirstChild("Muzzle")
+	if muzzle and muzzle:IsA("Attachment") then
+		return muzzle.WorldPosition
+	end
+	return centre(attacker) + Vector3.new(0, lift, 0)
+end
+
+-- Old monster projectiles (no weapon in hand): from the mouth / beak / hand (S162m; was the chest).
 local function projectile(attacker: Model, target: Model, style: string)
-	local from = centre(attacker) + Vector3.new(0, 0.8, 0)
+	local from = muzzleOf(attacker, 0.8)
 	launch(if style == "arrow" then "arrow" else "magic", from, target, nil, nil)
 end
 
@@ -880,7 +891,7 @@ local function monsterShot(attacker: Model, target: Model, style: string)
 		return
 	end
 	local simple = lowQuality()
-	local from = centre(attacker) + Vector3.new(0, 1, 0)
+	local from = muzzleOf(attacker, 1)
 	Library.projectile(from, target, "orb", MONSTER_MAGIC, {
 		simple = simple,
 		size = 1.2,

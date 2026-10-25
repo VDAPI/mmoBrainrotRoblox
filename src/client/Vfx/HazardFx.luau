@@ -25,6 +25,8 @@
 -- band, the blocks of a rising wall, a run of ice spikes) takes the cast's colour on the ground under its caster
 -- (Logic/BossCast.onGround through Vfx/Library.groundColor): deep on snow and ice, white-hot on lava, the pattern's
 -- own colour elsewhere; the bodies (orbs, rocks, meteors) keep the pattern's colour.
+-- S162m: a monster's regular shot carries its release point (`rl`, the caster's Muzzle, Data/MonsterRelease): the bolt
+-- leaves the mouth, the beak or the hand and drops to its flight height over its first RELEASE_DROP studs.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -80,6 +82,7 @@ type Live = {
 	ends: number,
 	full: boolean,
 	low: boolean,
+	release: Vector3?, -- S162m: where a regular shot leaves its caster
 }
 
 local WHITE = Color3.new(1, 1, 1)
@@ -91,6 +94,7 @@ local LOB_HEIGHT = 0.35 -- arc height per stud of distance
 local SKY_HEIGHT = 46 -- studs a falling shard / meteor starts above its landing
 local ROW_STEP = 3 -- studs between two rows of spikes of a wave
 local BOLT_Y = Hazards.BOLT_HEIGHT
+local RELEASE_DROP = 8 -- S162m: studs over which a regular shot drops from its release height to BOLT_Y
 
 local ctx: Context? = nil
 local casts: { [number]: Live } = {}
@@ -469,6 +473,17 @@ local function draw(live: Live, i: number, inst: Hazards.Inst, st: Hazards.State
 			piece.laneUnder = nil
 		end
 		placeBolt(piece, inst, st.x, st.z, st.a, t)
+		local release = live.release
+		if release then
+			-- S162m: from the release height down to the flight height (smooth over RELEASE_DROP studs)
+			local k = math.clamp(st.travelled / RELEASE_DROP, 0, 1)
+			local dy = (release.Y - (inst.y + BOLT_Y)) * (1 - k * k * (3 - 2 * k))
+			if math.abs(dy) > 0.01 then
+				for _, p in piece.parts do
+					p.CFrame += v3(0, dy, 0)
+				end
+			end
+		end
 		return not st.done
 	elseif inst.kind == "lob" then
 		local k = math.clamp(1 - (start - t) / math.max(0.05, inst.delay), 0, 1)
@@ -788,6 +803,7 @@ function HazardFx.spawn(event: { [string]: any }): { Hazards.Inst }?
 		ends = Hazards.castEnds(insts),
 		full = c.near(at),
 		low = c.low(),
+		release = if regular and typeof(event.rl) == "Vector3" then event.rl else nil,
 	}
 	casts[id] = live
 	count += 1

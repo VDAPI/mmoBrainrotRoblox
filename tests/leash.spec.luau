@@ -70,8 +70,10 @@ describe("Leash", function()
 		expect(t).toBeNear(90 / cfg.idleRegenPct, 0.21)
 	end)
 
-	it("returns faster than it walks but slower than before S22", function()
-		expect(cfg.returnSpeedMultiplier > 1 and cfg.returnSpeedMultiplier < 1.6).toBe(true)
+	-- S162m (owner 2026-10-25): home at a trot, between the wandering walk and the fight's run (Logic/MonsterMove); was
+	-- x1.25 (S22: faster than the chase, slower than before S22)
+	it("returns at a trot: faster than it wanders, slower than it chases", function()
+		expect(cfg.returnSpeedMultiplier > cfg.wanderSpeedMul and cfg.returnSpeedMultiplier < 1).toBe(true)
 		expect(cfg.leashMax > cfg.leashRange).toBe(true)
 	end)
 end)

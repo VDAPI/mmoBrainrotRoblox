@@ -42,7 +42,7 @@ A Cleric can bring you back with the Resurrection skill. The timer is skipped an
 
 Monsters guard their place. When you get further than <Stat path="mechanics.combat.leashRange" /> studs from the centre of their group and nobody hits them for <Stat path="mechanics.combat.leashGrace" format="s" />, they go home. Beyond <Stat path="mechanics.combat.leashMax" /> studs they always go home.
 
-- A returning monster runs faster (<Stat path="mechanics.combat.returnSpeedMultiplier" format="x" />) and does not heal on the way.
+- A returning monster trots home (<Stat path="mechanics.combat.returnSpeedMultiplier" format="x" /> of its chase speed) and does not heal on the way. Hit it on the way and it turns back to fight.
 - If it does not get home in <Stat path="mechanics.combat.returnTimeout" format="s" />, it appears there.
 - At home it regains <Stat path="mechanics.combat.idleRegenPct" format="pct" /> of its health per second, but only <Stat path="mechanics.combat.idleRegenDelay" format="s" /> after the last hit. Come back quickly and you can finish the fight.
 - Monsters far below your level (<Stat path="mechanics.combat.passiveLevelGap" /> levels or more) do not attack first.

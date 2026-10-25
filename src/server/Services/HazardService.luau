@@ -40,6 +40,7 @@ export type CastOpts = {
 	only: Player?, -- only this player can be hit (regular shots)
 	fxRadius: number?, -- studs round the origin whose players see it (default from the pattern's reach)
 	params: any?, -- regular shots: the Damage.Params of the blow (CombatService)
+	release: Vector3?, -- S162m: regular shots: where the shot leaves the caster's body (its Muzzle; drawn only)
 }
 
 export type Cast = {
@@ -209,6 +210,7 @@ function HazardService.Cast(caster: any, patternId: string, opts: CastOpts): num
 		a = opts.attackId,
 		w = opts.windup,
 		el = opts.element,
+		rl = opts.release, -- S162m: the bolt is drawn dropping from here to its flight height (Vfx/HazardFx)
 	}, opts.fxRadius or (reach + FX_MARGIN))
 	return id
 end
