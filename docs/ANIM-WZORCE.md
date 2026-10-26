@@ -568,12 +568,13 @@ on `Logic/SpiritMotion` over `Logic/BipedMotion` (body float plus arms; styles `
   hand); wail (the specter's Elite II) rises and trembles, then screams forward at W; burst (frostNova and the novas)
   compresses shivering and flings open at W; `pool` (crush and the pools), `swoop` (pounce, leap, charge), the appear
   fades in (`spawnSpirit`). Deaths: the specter rises about 1.5 studs a scale, turns and fades out by 0.8 s
-  (`deathRise`); the elemental shivers and fades by 0.4 s (`deathShatter`; the shards would be VFX).
+  (`deathRise`); the elemental shivers and fades by 0.4 s (`deathShatter`; it bursts into ice shards at W, §11).
 
 Tests: `tests/flyermotion.spec.luau`, `tests/bipedrigs.spec.luau` (phase timing, the hit at W, no NaN, continuity: the
 change per frame compared at two steps, a continuous motion halves and a pop does not; feet planted in the stance).
 AnimLab: `/animlab mob <id> <state>`, the flyers' states `Data/FlyerStyles.LAB_STATES`, the bipeds'
-`Data/BipedStyles.LAB_STATES`, then every action of the style by name. Not done: VFX (feathers, wisps, ice shards).
+`Data/BipedStyles.LAB_STATES`, then every action of the style by name. The effects the actions release (feathers,
+wisps, ice shards, the breath, the harpy's lightning) are §11.
 
 ## 5. F4 Dragon: youngFrostDragon
 
@@ -777,10 +778,26 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
   (thrash, flop, the tail stills) 40 %; crow falls on its side 60 % / back 40 % (bat the other way round); toad flip
   70 % / curl 30 %; hare on its side 60 % / a last leap and roll 40 %; cats on the side 65 % / slump (legs give way)
   35 %; rot ent topples sideways 85° about its base edge 60 % / on its face 40 %, and fades.
+- **Legs that fold in a death** (owner 2026-10-26: "nogi się nie składają, jedynie postać przewraca się na bok"):
+  the spider and the scorpion bend their one mesh (no bones) through an `EditableMesh` (`client/Anim/MeshFold`, the
+  pure part `Logic/LegFold`, options per model `Data/RigidRigs` `fold`). Once per model (cached, spread over frames)
+  the vertices are sorted: the body is what a disc of half its inscribed radius fits in (top view, a morphological
+  opening), the legs are the pieces outside it that reach the ground and are long enough (the scorpion's raised tail
+  is not; seams welded, fused hips split by their far branches); along each leg the knee (the arch's top) and the
+  ankle. In a death (`deathFlip`, `deathCurl`: the `fold` control, 0 rest, 1 curled, −0.15 the jolt's splay) the
+  ankle and the knee lead, the hip lifts and then follows, each leg at its own pace (the seed), toward `targets`
+  (femur −35°, tibia −160°, tarsus −225° for the spider: in under the body; on its back they stand curled over the
+  belly); the scorpion's pincers (within 35° of forward) stay. The plan keeps the folded box at every eighth (the
+  union over the paces a seed can give), so `RigidMotion` lowers the body as far as the legs stop holding it up,
+  topples it about the folded flank and fades the squash that stood in for the legs. Only a dying monster within
+  150 studs, at most 3 at once, written at 30 Hz, released 0.5 s after the fold stops (the original mesh back);
+  living monsters cost nothing. Needs the experience setting "Allow Mesh / Image APIs" (Game Settings → Security)
+  and mesh assets the experience owner may load; otherwise (or on any failure, pcall) the rigid death plays as before.
+  Studio prints `[MeshFold] <model>: N legs …` once per model. Lune specs on synthetic meshes (tests/LegFoldMesh).
 - AnimLab: `/animlab mob <id> <state>`, states `Data/RigidStyles.labStates`: idle, alert, walk, trot, run, turn, home,
   attack1, attack2, cast, heavy, crush, pounce, throw, hit, hitBack, hitLeft, hitRight, stun, freeze, death, spawn,
   summon, fight, then every action of the style by name (e.g. `deathCurl`, `sting`, `sitUp`).
-- Not done: sounds and leaves on the ent's steps, the dust and venom VFX of §6.3 (the poses are timed for them).
+- The dust and venom of §6.3, the ent's splinters and leaves: §11. Not done: sounds and leaves on the ent's steps.
 
 ## 7. Ghosts, golems, brutes: which template covers them
 
@@ -858,7 +875,89 @@ Gameplay notes (`tools/balance_reasons`, S162m): damage, areas, windups and inte
 home is easier to catch and teleports only after 20 s (was 12); an Elite II boar stands at its target after a charge
 (its next blow up to ~1 s sooner); shots start 0.6-2.9 studs closer to the target.
 
-## 11. NPCs (2026-10-26)
+## 11. Effects the actions release (2026-10-26)
+
+Owner 2026-10-26 after the first `/animlab` pass: "wyvern oddech ... bierze wdech nie wypuszcza ognia", "iceElemental
+burst ... na koniec lodowe kolce". Every motion that lets something go now shows it, from the right bone at the right
+frame, in the game and in AnimLab alike.
+
+- Data: `Data/MotionFx` (per motion style and action name, a list of `{ kind, at, from, to?, size?, element? }`;
+  `from` / `to` are marks on the action's keyed timeline: "W" the server's hit, "A0.35" 35 % into the anticipation,
+  "F0.85" 85 % into the follow-through, "R1" the end) and `HIT` (the puff a hit knocks off: feathers, splinters, ice
+  chips, wisps; never blood). Timing, element and reach: `Logic/ActionFx` (a mark sits where `MotionTimeline` puts a
+  key; a one-shot fires once in the frame that crosses it or a first frame < 0.25 s after it; the element and the reach
+  are the action's ability's, else the kind's: the wyvern's regular spit is fire). Lune: `tests/actionfx.spec.luau`.
+- Drawing: `client/Vfx/MotionFx` (attached by `AnimationController.refresh` to every template rig, stepped after the
+  rig's pose; AnimLab steps the subject on its motion time, so `freeze` and scrubbing hold the effects too). Anchors
+  per family: the jaw (BipedRigs `muzzle` Head; else a point ahead of the head bone: 0.12 h for a dragon, 0.05 h for a
+  biped; a quadruped's and the frost wyrm's at the mesh front at the head's height), the casting hand (the muzzle
+  RightHand), wing tips, feet, front feet, chest, trunk tip; a flyer's beak from `FlyerMotion.muzzle`; a rigid model's
+  points on its PrimaryPart from its measured box (`Data/MonsterRelease` height).
+- Pieces: `breath` (a stream along the head's sweep for the whole window: fire flipbook from white-hot to deep red, a
+  core glow, embers, smoke rolling off the end, a faint warm haze, a flickering light; frost: pale mist, ice glints,
+  cold mist; venom: green mist and bubbles), `charge` (the element gathering in the throat or the hand, its light
+  growing to W), `smolder`, `arc` (lightning between the harpy's wing tips while it gathers), `spit`, `bolt`, `flare`,
+  `nova` (ice shards flung out of the body on ballistic arcs, the frost blast, ice spikes erupting from the ground in two
+  rings at 0.35 / 0.65 of the ability radius, held 0.5 s, shattering), `shatter`, `slam` (rock chips, the dust ring,
+  cracks), `dust`, `screech` (rings of force running out of the mouth), `wisps`, `feathers`, `splinters`, `leaves`,
+  `snow`.
+- Who shows what: the regular wyvern (`breath`: charge A0.35-W, fire W-F0.85, smoke to R0.8; `spit`: a fire puff at W;
+  `stomp`, `buffet`, `pounce`, `deathDragon` dust), Vaelgrath (the same breath in frost, its `frostBreath`; the roar's
+  rings), the ice elemental (`burst` nova, `deathShatter` shards, a frost bolt from the hand), the specter (a cold bolt
+  from the hand, the wail's rings, wisps), the bear, boar, mammoth and wolf (slams and stomps at the front feet, landing
+  and death dust; the mammoth's snow and trumpet), the spider, scorpion (the sting), toad, basilisk and bog serpent
+  (venom spit), the salamander (fire breath) and the frost wyrm (frost breath), the crow, vulture and harpy (feathers
+  on blows, hits and falls, the wail's rings; the harpy's lightning), the bat (rings, dust), the rot ent (splinters off
+  its branch blows, leaves out of the crown, the slam's cracks, the fall).
+- Doubling: the server's ground telegraph and its blow ring stay. When the animation draws an attack's gather
+  (`charge`, `arc`) `CombatFxController` leaves out `Library.charge` on the body, and when it draws the release
+  (`breath`, `nova`, `slam`, `spit`, `screech`, ...) the generic burst at the caster's own feet (fireBlast, frostBlast,
+  rockBurst, dust) and the boss breath's ice sparks; a blow area away from the caster keeps its burst. Only a monster
+  the client animates and draws (within 110 studs, 70 on a phone) claims them. A regular shot with an element
+  (`hz` `el`) is drawn as that element (`Vfx/HazardFx`: the wyvern's fireball instead of an arrow).
+- Budget: nothing past 110 / 70 studs, the simple version past `Config.Vfx.simpleBeyond` or on low quality, stream
+  rates x the graphics level's particle share (x 0.7 on a phone, no smoke or haze layers there), pooled holders within
+  the device limits, lights within the light budget, a model that drops out of the animated set stops its streams.
+- Studio tuning: Vaelgrath's jaw (no bone map: a point 0.12 h ahead of its head bone), the rigid models' mouths and
+  the scorpion's sting (box points), the flame's length (0.8 x the ability radius, at most 18 studs) and the particle
+  counts in `Vfx/MotionFx`.
+
+### 11.1 The humanoid styles (2026-10-26)
+
+- `humanoid1h` (bandit, orcs, knights, golems, the dragonspawn): a streak behind the blade on `cleave`, `heavy`,
+  `crush` and `pounce` (`trail`: a Trail between two attachments of a pooled beam holder moved onto the hilt and the
+  tip each frame, 0.16 s tail, steel white, the element's colours for an elemental kind); `crush` slams the blade
+  into the ground at W (`slam` under the tip) with the element's `nova` round the feet; the dragonspawn's `breath` (a new
+  keyed action: the chest swells and the head rears, then thrusts forward and sweeps across the cone; `fireBreath` /
+  `frostBreath` play it, `emberNova` / `frostNova` / `boneNova` play `crush`); `throw` holds a rock in the free hand
+  from A0.15 until W (`held`; an orb of the element, violet without one, for a magic kind), when the server's
+  projectile takes over; dust on `charge`, landings and both deaths.
+- `caster` (shaman, cultist, necromancer, witch, imp): `spell` gathers in the staff's head and flashes there at W as the
+  bolt leaves, `spellLeft` and `pool` gather in the free hand, `nova` gathers in the raised staff, the butt hits the
+  ground (`slam`) and the element bursts round the feet. `ghost` (the forest wraith): the same without the staff's
+  slam, wisps as it fades. `brute`: streaks behind the fists' `cleave` / `heavy`, the `crush` slam with its nova, a
+  bigger rock to throw, heavier dust.
+- The weapon (`weapon` anchor): the right hand along the style's or the model's `grip`, the tip where the blade leaves
+  the look's measured box (held within 0.12 .. 0.32 of the height: a staff's head, a sword's point), the hilt 0.3 of the
+  way out; without a grip (brute, ghost) the knuckles 0.07 h past the hand along the forearm.
+- The nova by element: ice (the ice elemental's shards and two rings of spikes), fire (a flash and a fire blast at the
+  feet, a ring of flame columns at half the radius, embers, the shock ring), shadow (a violet ring, dark smoke rolling
+  out low, bone shards for a bone nova, violet glass otherwise, pale motes), poison and nature (the ring, a low cloud,
+  bubbles or leaves), lightning (arcs over the ground). No element: no nova, the slam shows the blow.
+- The element: the ability's, else the kind's own (`Logic/ActionFx.bound`: the frozen knight's cleave is ice, the
+  witch's void pool poison), else the school (`Data/MotionFx.SCHOOLS`: the dark cultist and the necromancer violet
+  `shadow`, the goblin shaman green `nature`; a bone or void ability `shadow`). A magic bolt of a school caster leaves
+  in the same colour (`Vfx/HazardFx` takes the caster's school when the shot has no element).
+- AnimLab: `mob dragonspawn breath`, `mob fireImp nova`, `mob necromancer nova`, `mob goblinShaman spell`,
+  `mob marshWitch pool`, `mob darkCultist spellLeft`, `mob forestWraith nova`, `mob fireGolem crush`,
+  `mob magmaGolem crush`, `mob desertMummy crush`, `mob bandit heavy`, `mob frozenKnight cleave`, `mob ashOrc throw`,
+  `mob necromancer throw`, `mob yeti deathBack`.
+- Studio tuning: the weapon's tip (the box measure misses a short dagger and a staff below the head), the dragonspawn's
+  jaw (0.05 h ahead of its head bone), the throw's prop in the left hand while the server's projectile leaves the
+  right-side muzzle (`Data/MonsterRelease` biped `side`), the trail's width and life. The four humanoid bosses take
+  effects by their actions' names once they run on these styles.
+
+## 12. NPCs (2026-10-26)
 
 Owner 2026-10-26: "po animacjach przejdź do animacji NPCtów". The NPCs move on the biped template of the monsters
 (`Logic/BipedPose`: planted feet by leg IK, two-bone hand IK), at the same bar: alive, believable, varied, never
@@ -874,7 +973,7 @@ robotic. Nothing is keyframed by hand in Studio; every NPC of `Data/Npcs` has a 
 | `client/Anim/NpcRig` | the bones of the owner's model (or the 15 R15 joints of a figure without one), the finger curl, the props (anvil, hammer) |
 | `client/Controllers/NpcAnimController` | the live loop: the players near, the dialogue partner, the quest's way; the cull by `Config.Graphics.levels[*].npcRadius` / `npcRate` / `npcMax` (unchanged) |
 
-### 11.1 Layers (bottom to top)
+### 12.1 Layers (bottom to top)
 
 1. **Stance** per role: the feet square under the hip joints (a model exported in mid-stride or legs apart stands
    square), the role's width and toe-out, the pelvis raised so the legs stand almost straight, the role's pose (a
@@ -899,7 +998,7 @@ robotic. Nothing is keyframed by hand in Studio; every NPC of `Data/Npcs` has a 
 Hand IK: a target in the middle of a fade starts from where the arm's own pose holds the hand and travels on a path
 bowed a little forward (no arm swinging through the body), the elbow's bend turning out to the side on the way.
 
-### 11.2 Roles
+### 12.2 Roles
 
 | Role | NPCs | Work | Greeting |
 |---|---|---|---|
@@ -921,7 +1020,7 @@ bowed a little forward (no arm swinging through the body), the elbow's bend turn
 Model attributes (Studio, on the NPC's model or its `Asset`): `NpcRole` = another role for the whole NPC; `Work` =
 `none` (no work loop) or a role's work (`hammer`, `goods`, `wipe`, `channel`, `read`, or a role name).
 
-### 11.3 AnimLab
+### 12.3 AnimLab
 
 `/animlab npc <id> <state>`: the NPC's copy on the stage moves on the same motion, the actor standing in as the player.
 
@@ -937,7 +1036,7 @@ Model attributes (Studio, on the NPC's model or its `Asset`): `NpcRole` = anothe
 | `fidget` | one fidget after another |
 | `walk` | a few paces out and back |
 
-### 11.4 Studio checks
+### 12.4 Studio checks
 
 1. The guard's prop arm: `Data/NpcRigs` keeps the right arm (its bounds reach 2.7 studs each side: something long in
    its hands); if the spear is in the left, set `keep = { L = true }`.
@@ -946,7 +1045,6 @@ Model attributes (Studio, on the NPC's model or its `Asset`): `NpcRole` = anothe
 4. The anvil's place in front of the smith against the forge of the map.
 5. The innkeeper lacks two bones of the right little finger (the curl skips them); the caravan has no bones (static).
 6. Teodor's channelling and the healer's prayer against their robes.
-
 ## Appendix A: formulas
 
 Gait clock (per frame):

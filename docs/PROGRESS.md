@@ -69,9 +69,9 @@
 - **W31 ramy portali i wyjść:** nieobejrzane w Studio (dopasowanie modelu łuku przez `fitModel`, ramy wejść i wyjść,
   płomienie piecyków Krypty, napisy stref na śniegu, brama lochu).
 - **S160k kowal i Mistrz Portali:** Kamień Przemiany Efektu i wieczne kamienie teleportu nie mają własnych ikon PNG (rysowany kamień / zwój w kolorze); model Tripo Mistrza Portali do wygenerowania (`TRIPO-NPC.md` nr 68).
-- **Animacja NPC (2026-10-26, ANIM-WZORCE §11):** szablon dwunoga dla każdego NPC (postawa roli, praca, powitanie,
+- **Animacja NPC (2026-10-26, ANIM-WZORCE §12):** szablon dwunoga dla każdego NPC (postawa roli, praca, powitanie,
   rozmowa ze wskazaniem drogi, kroki przy obrocie, obchód strażnika), `/animlab npc <id> <stan>`; nieobejrzane w Studio
-  (lista w §11.4: ręka z bronią strażnika, młot kowala, zgięcie palców, miejsce kowadła). Klony NPC (towarzysz, podgląd
+  (lista w §12.4: ręka z bronią strażnika, młot kowala, zgięcie palców, miejsce kowadła). Klony NPC (towarzysz, podgląd
   mapy) zostają w pozie z pliku.
 - **S159 pociski bossów do unikania:** serwer, wzory i rysowanie gotowe, testy zielone; nic nieobejrzane w Studio
   (czytelność wzorów, wygląd ścian lodowca i oddechu Hrimvalda do przejrzenia w AnimLab).

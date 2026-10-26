@@ -74,6 +74,7 @@ local Hazards = require(ReplicatedStorage.Shared.Logic.Hazards)
 local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local LmShots = require(script.Parent.Parent.Vfx.LmShots)
+local MotionFx = require(script.Parent.Parent.Vfx.MotionFx)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
 local Textures = require(script.Parent.Parent.Vfx.Textures)
 local HazardFx = require(script.Parent.Parent.Vfx.HazardFx)
@@ -1257,11 +1258,13 @@ local function shakeNear(at: Vector3, strength: number)
 end
 
 -- The effect of a boss attack on one area at the blow (Data/BossMotions impact).
+-- `own`: the boss's animation draws the release itself (Vfx/MotionFx: a breath's stream), the extra burst is left out.
 local function bossImpact(
 	motion: BossMotions.BossAttackMotion,
 	event: { [string]: any },
 	color: Color3,
-	simple: boolean
+	simple: boolean,
+	own: boolean?
 )
 	local area = event.cf :: CFrame
 	local at = area.Position
@@ -1295,7 +1298,7 @@ local function bossImpact(
 		end
 	elseif impact == "breath" then
 		Library.cone(area, r, tonumber(event.an) or 60, color, simple)
-		if not simple then
+		if not simple and not own then
 			Library.sparks(at + area.LookVector * (r * 0.5) + Vector3.new(0, 1, 0), color, {
 				key = "iceShard",
 				dir = area.LookVector,
@@ -1651,7 +1654,10 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 	end
 	-- owner 2026-10-21: the blow gathers on the caster, the danger area comes alive and a spell or a thrown blow flies
 	-- in as a volley that lands with the flash
-	if first and caster and mechanic ~= "split" then
+	-- template animation: a monster whose action draws its own gather (the breath's glow in the throat) and release
+	-- (the stream, the nova, the slam's dust) keeps the ground telegraph and its blow ring, not the generic ones
+	local ownGather, ownRelease = MotionFx.claims(caster, attackId)
+	if first and caster and mechanic ~= "split" and not ownGather then
 		Library.charge(caster, color, windup, casterSize(caster), simpleFx)
 	end
 	local reach = tonumber(event.r) or tonumber(event.l) or 6
@@ -1697,14 +1703,17 @@ local function telegraph(event: { [string]: any }, caster: Model?)
 				blow.cf = CFrame.new(p.X, area.Position.Y, p.Z)
 			end
 			if motion then
-				bossImpact(motion, blow, color, simpleFx)
+				bossImpact(motion, blow, color, simpleFx, ownRelease)
 			else
 				eliteImpact(event, color, simpleFx)
 			end
 			-- owner 2026-10-21: every blow throws something up: debris and dust for a physical one, the element's blast
-			-- for a spell
-			if not simpleFx then
-				local blowAt = (blow.cf :: CFrame).Position
+			-- for a spell (not at the caster's own feet when its animation releases the blow itself)
+			local blowAt = (blow.cf :: CFrame).Position
+			local atCaster = ownRelease
+				and caster ~= nil
+				and Library.flat(blowAt - centre(caster)).Magnitude <= 3 + casterSize(caster)
+			if not simpleFx and not atCaster then
 				local big = math.clamp((tonumber(event.r) or 6) / 6, 0.6, 1.8)
 				if magic then
 					local el = event.el
@@ -2075,7 +2084,8 @@ local function hazardCast(event: { [string]: any })
 			AnimationController.MonsterAttack(caster, windup, false, a)
 		end
 	end
-	if not lowQuality() then
+	local ownGather = MotionFx.claims(caster, style)
+	if not lowQuality() and not ownGather then
 		Library.charge(caster, Color3.fromHex(pattern.color), windup, 2.5, false)
 	end
 	SfxController.Play((gesture and gesture.windSound) or "telegraph.warn", caster, "other")

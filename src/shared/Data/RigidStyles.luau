@@ -15,6 +15,8 @@
 --   ground settle   the box never under the ground / lowered onto it (deaths, flips)
 --   nP nY hP tC calmTail   bones of a serpent (Data/RigidRigs): neck pitch (+ forward) and yaw, head pitch, tail curl,
 --                   the tail's wave stilled
+--   fold            the legs curling in (deaths; 0 rest, 1 curled, -0.3 splayed): drawn only where client/Anim/MeshFold
+--                   bends the mesh (Data/RigidRigs `fold`: spider, scorpion), else nothing
 -- `gaits` by speed over body length (`thresholds`), each: stride (B per cycle, a cadence cap `maxRate` Hz makes it
 -- longer), the bob (bumps per cycle), sway, wiggle, rock, pitch and its wave, surge, crouch, hops, a flutter's `hz`.
 
@@ -461,7 +463,8 @@ end
 
 -- Deaths (started on Dead, the hit = the strike; held). Each falls to the side of `deathSide` (Logic/RigidMotion).
 
--- Onto its back: a jolt, a flip with an arc (the box never under the ground), a bounce, two twitches.
+-- Onto its back: a jolt (the legs stiffen out), a flip with an arc (the box never under the ground) while the legs
+-- draw in, a bounce, two twitches, the legs curled up over the belly (`fold`, where the mesh can bend them).
 local function deathFlip(o: { [string]: any }): Action
 	local up = o.arc or 0.3
 	return {
@@ -471,20 +474,21 @@ local function deathFlip(o: { [string]: any }): Action
 		hold = true,
 		sided = true,
 		keys = {
-			key("S", 1, "out", { y = 0.08, z = 0.03, rear = deg(5), ground = 1 }),
-			key("F", 0.5, "out", { roll = -deg(90), y = up, z = 0.02, ground = 1 }),
-			key("F", 1, "in", { roll = -deg(180), y = 0, ground = 1, settle = 1, sq = -0.12 }),
-			key("R", 0.2, "out", { roll = -deg(176), y = 0.04, ground = 1 }),
-			key("R", 0.4, "in", { roll = -deg(180), ground = 1, settle = 1 }),
-			key("R", 0.6, "inout", { roll = -deg(184), ground = 1, settle = 1 }),
-			key("R", 0.8, "inout", { roll = -deg(178), ground = 1, settle = 1 }),
-			key("R", 1, "inout", { roll = -deg(180), ground = 1, settle = 1 }),
+			key("S", 1, "out", { y = 0.08, z = 0.03, rear = deg(5), ground = 1, fold = -0.15 }),
+			key("F", 0.5, "out", { roll = -deg(90), y = up, z = 0.02, ground = 1, fold = 0.4 }),
+			key("F", 1, "in", { roll = -deg(180), y = 0, ground = 1, settle = 1, sq = -0.12, fold = 0.75 }),
+			key("R", 0.2, "out", { roll = -deg(176), y = 0.04, ground = 1, fold = 0.7 }),
+			key("R", 0.4, "in", { roll = -deg(180), ground = 1, settle = 1, fold = 0.86 }),
+			key("R", 0.6, "inout", { roll = -deg(184), ground = 1, settle = 1, fold = 0.8 }),
+			key("R", 0.8, "inout", { roll = -deg(178), ground = 1, settle = 1, fold = 0.92 }),
+			key("R", 1, "inout", { roll = -deg(180), ground = 1, settle = 1, fold = 1 }),
 		},
 	}
 end
 
--- Curled (studio review 2026-10-26: a clear event): a jolt up, the legs fold under (squash, the body drops), it
--- topples about the ground edge onto its side, bounces once and settles curled, one last twitch.
+-- Curled (studio review 2026-10-26: a clear event): a jolt up (the legs stiffen out), the legs fold under (where the
+-- mesh can bend them, `fold`; else the squash stands in: the body drops), it topples about the ground edge onto its
+-- side, bounces once and settles curled, one last twitch of the legs.
 local function deathCurl(o: { [string]: any }): Action
 	local tip = o.tip or deg(75)
 	return {
@@ -494,13 +498,18 @@ local function deathCurl(o: { [string]: any }): Action
 		hold = true,
 		sided = true,
 		keys = {
-			key("S", 1, "out", { y = 0.14, z = 0.03, rear = deg(8), sq = 0.06, ground = 1 }),
-			key("F", 0.35, "in", { y = -0.04, sq = -0.3, dip = deg(5), tip = deg(12), ground = 1 }),
-			key("F", 0.8, "in", { sq = -0.28, dip = deg(4), tip = tip, ground = 1, settle = 1 }),
-			key("F", 1, "out", { sq = -0.24, tip = tip - deg(8), y = 0.04, ground = 1 }),
-			key("R", 0.3, "in", { sq = -0.28, dip = deg(4), tip = tip, ground = 1, settle = 1 }),
-			key("R", 0.6, "inout", { sq = -0.32, dip = deg(4), tip = tip, shiver = deg(3), ground = 1, settle = 1 }),
-			key("R", 1, "inout", { sq = -0.3, dip = deg(4), tip = tip, ground = 1, settle = 1 }),
+			key("S", 1, "out", { y = 0.14, z = 0.03, rear = deg(8), sq = 0.06, ground = 1, fold = -0.15 }),
+			key("F", 0.35, "in", { y = -0.04, sq = -0.3, dip = deg(5), tip = deg(12), ground = 1, fold = 0.45 }),
+			key("F", 0.8, "in", { sq = -0.28, dip = deg(4), tip = tip, ground = 1, settle = 1, fold = 0.85 }),
+			key("F", 1, "out", { sq = -0.24, tip = tip - deg(8), y = 0.04, ground = 1, fold = 0.8 }),
+			key("R", 0.3, "in", { sq = -0.28, dip = deg(4), tip = tip, ground = 1, settle = 1, fold = 0.95 }),
+			key(
+				"R",
+				0.6,
+				"inout",
+				{ sq = -0.32, dip = deg(4), tip = tip, shiver = deg(3), ground = 1, settle = 1, fold = 0.88 }
+			),
+			key("R", 1, "inout", { sq = -0.3, dip = deg(4), tip = tip, ground = 1, settle = 1, fold = 1 }),
 		},
 	}
 end

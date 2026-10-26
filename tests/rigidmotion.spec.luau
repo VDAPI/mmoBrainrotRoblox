@@ -4,11 +4,14 @@
 -- rigid and continuous, deaths never sink and come to rest, a hop's feet stay planted, flights follow the Dash* arc,
 -- the serpent's wave grows to its tail, and AnimLab can show every state.
 local AnimLab = require("../src/shared/Logic/AnimLab")
+local LegFold = require("../src/shared/Logic/LegFold")
+local LegFoldMesh = require("./LegFoldMesh")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 local MonsterLooks = require("../src/shared/Data/MonsterLooks")
 local Monsters = require("../src/shared/Data/Monsters")
 local MotionTimeline = require("../src/shared/Logic/MotionTimeline")
 local RigidMotion = require("../src/shared/Logic/RigidMotion")
+local RigidRigs = require("../src/shared/Data/RigidRigs")
 local RigidStyles = require("../src/shared/Data/RigidStyles")
 local T = require("./Test")
 
@@ -35,6 +38,30 @@ local HITS = { 0.45, 0.5, 0.55, 0.74, 0.81, 1.2, 1.3, 1.4, 1.8, 2.2 }
 local function bodyOf(id: string): Body
 	local k = KINDS[id]
 	return { h = k.h, lift = k.lift, B = k.B, W = k.W, x0 = 0, z0 = 0, squash = true }
+end
+
+-- A kind whose legs fold in its deaths (client/Anim/MeshFold): tests/LegFoldMesh's model planned by Logic/LegFold,
+-- its boxes along the fold scaled to the look (as MeshFold does).
+local function foldedBody(id: string): Body
+	local k = KINDS[id]
+	local m = if id == "caveSpider" then LegFoldMesh.spider(true) else LegFoldMesh.scorpion()
+	local plan = LegFold.plan(m.pos, m.tris, RigidRigs.fold(id) :: LegFold.Options) :: LegFold.Plan
+	local rest = plan.boxes[1]
+	local s = k.h / (rest.y1 - rest.y0)
+	local cx, cz = (rest.x0 + rest.x1) / 2, (rest.z0 + rest.z1) / 2
+	local folds: { RigidMotion.Fold } = {}
+	for _, b in plan.boxes do
+		table.insert(folds, {
+			h = s * (b.y1 - rest.y0),
+			lift = s * (b.y0 - rest.y0),
+			B = s * (b.z1 - b.z0),
+			W = s * (b.x1 - b.x0),
+			x0 = s * ((b.x0 + b.x1) / 2 - cx),
+			z0 = s * ((b.z0 + b.z1) / 2 - cz),
+		})
+	end
+	local f = folds[1]
+	return { h = f.h, lift = 0, B = f.B, W = f.W, x0 = f.x0, z0 = f.z0, squash = true, folds = folds }
 end
 
 local function finite(x: number): boolean
@@ -327,6 +354,116 @@ T.describe("RigidMotion poses", function()
 				end
 				if math.abs(low) > 0.03 * hMesh + 0.02 then
 					error(`{id} {entry.name}: rests {low} studs off the ground`)
+				end
+			end
+		end
+	end)
+
+	T.it("folds the legs in a death: down onto them, never under the ground, no pops, at rest curled", function()
+		for _, id in { "caveSpider", "desertScorpion" } do
+			local k = KINDS[id]
+			local style = RigidStyles.get(k.style) :: RigidStyles.Style
+			for _, entry in style.death do
+				for _, seed in { 3, 8 } do
+					local action = style.actions[entry.name]
+					local body = foldedBody(id)
+					local inst = RigidMotion.new(body, k.style, seed) :: RigidMotion.Instance
+					-- the same death without the legs drawn folding: the fold adds no pops of its own
+					local stiff = table.clone(body)
+					stiff.folds = nil
+					local rigid = RigidMotion.new(stiff, k.style, seed) :: RigidMotion.Instance
+					local hMesh = body.h - body.lift
+					local cy = hMesh / 2
+					local run = { name = entry.name, start = 0, hit = action.strike }
+					local length = RigidMotion.length(action, action.strike)
+					local dt = 1 / 60
+					local low, fold, lastFold = 0, 0, 0
+					local sunk = 0
+					local last: { number }?, lastRigid: { number }? = nil, nil
+					local worst, worstRigid = 0, 0
+					for frame = 0, math.ceil((length + 0.5) / dt) do
+						local now = frame * dt
+						local posed =
+							RigidMotion.step(inst, input(now, dt, { action = run, snap = frame == 0, fold = 1 }))
+						local m = posed.m
+						fold = posed.fold
+						local f = math.clamp(fold, 0, 1)
+						local box = if f > 0 then inst.box else inst.body
+						local kb = style.footprint + (1 - style.footprint) * f
+						low = RigidMotion.lowest(m, box, posed.sx, posed.sy, posed.sz, kb)
+						if low < -0.06 * hMesh - 0.02 then
+							error(`{id} {entry.name} t {now}: the folded body {low} studs under the ground`)
+						end
+						-- how far the standing box would go under: the body sinks as the legs give way
+						sunk = math.min(
+							sunk,
+							RigidMotion.lowest(m, inst.body, posed.sx, posed.sy, posed.sz, style.footprint)
+						)
+						-- the legs give way with the drop (accelerating), but over several frames, never at once
+						if math.abs(fold - lastFold) > 0.15 then
+							error(`{id} {entry.name} t {now}: the fold jumps from {lastFold} to {fold}`)
+						end
+						lastFold = fold
+						local c = { m[2] * cy + m[10], m[5] * cy + m[11], m[8] * cy + m[12] }
+						if last then
+							worst = math.max(
+								worst,
+								math.sqrt((c[1] - last[1]) ^ 2 + (c[2] - last[2]) ^ 2 + (c[3] - last[3]) ^ 2)
+							)
+						end
+						last = c
+						local r = RigidMotion.step(rigid, input(now, dt, { action = run, snap = frame == 0 })).m
+						local cr = { r[2] * cy + r[10], r[5] * cy + r[11], r[8] * cy + r[12] }
+						if lastRigid then
+							worstRigid = math.max(
+								worstRigid,
+								math.sqrt(
+									(cr[1] - lastRigid[1]) ^ 2 + (cr[2] - lastRigid[2]) ^ 2 + (cr[3] - lastRigid[3]) ^ 2
+								)
+							)
+						end
+						lastRigid = cr
+					end
+					T.expect(fold).toBeNear(1, 1e-6)
+					if math.abs(low) > 0.03 * hMesh + 0.02 then
+						error(`{id} {entry.name}: rests {low} studs off the ground`)
+					end
+					if worst > worstRigid * 1.1 + 0.05 then
+						error(`{id} {entry.name}: the body moves {worst} studs in a frame (rigid: {worstRigid})`)
+					end
+					if id == "caveSpider" and entry.name == "deathCurl" then
+						T.expect(sunk < -0.05 * hMesh).toBe(true)
+					end
+				end
+			end
+		end
+	end)
+
+	T.it("plays the rigid death unchanged where the legs are not drawn folding", function()
+		for _, id in { "caveSpider", "desertScorpion" } do
+			local k = KINDS[id]
+			local style = RigidStyles.get(k.style) :: RigidStyles.Style
+			for _, entry in style.death do
+				local action = style.actions[entry.name]
+				local run = { name = entry.name, start = 0, hit = action.strike }
+				-- no folded boxes (MeshFold off), and the boxes with nothing drawn yet (share 0)
+				local plain = RigidMotion.new(bodyOf(id), k.style, 5) :: RigidMotion.Instance
+				local noBoxes = RigidMotion.new(bodyOf(id), k.style, 5) :: RigidMotion.Instance
+				local unshared = RigidMotion.new(foldedBody(id), k.style, 5) :: RigidMotion.Instance
+				local reference = RigidMotion.new(foldedBody(id), k.style, 5) :: RigidMotion.Instance
+				local dt = 1 / 60
+				for frame = 0, math.ceil((RigidMotion.length(action, action.strike) + 0.3) / dt) do
+					local now = frame * dt
+					local a = RigidMotion.step(plain, input(now, dt, { action = run, snap = frame == 0 }))
+					local b = RigidMotion.step(noBoxes, input(now, dt, { action = run, snap = frame == 0, fold = 1 }))
+					local c = RigidMotion.step(unshared, input(now, dt, { action = run, snap = frame == 0, fold = 0 }))
+					local d = RigidMotion.step(reference, input(now, dt, { action = run, snap = frame == 0 }))
+					for i = 1, 12 do
+						T.expect(b.m[i]).toBe(a.m[i])
+						T.expect(c.m[i]).toBe(d.m[i])
+					end
+					T.expect(b.sy).toBe(a.sy)
+					T.expect(c.fold).toBe(0)
 				end
 			end
 		end
