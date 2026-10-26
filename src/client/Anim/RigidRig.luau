@@ -6,13 +6,15 @@
 -- game it reads what the server publishes on the monster (§10): `Gait`, `Effects` (stun, freeze), `Dash*` (the pounce
 -- and leap flights), the root's turns, `SpawnedAt` / `Summoned` (the appear of a look built late), and it moves the
 -- root's `Muzzle` with the body while it acts. The rig has the shape of client/Anim/QuadRig's (`motion`, `mod`,
--- `kind`), so AnimationController and AnimLab drive it like the others.
+-- `kind`), so AnimationController and AnimLab drive it like the others. A model whose legs fold in its death
+-- (Data/RigidRigs `fold`: spider, scorpion) bends its mesh then through client/Anim/MeshFold (only while it dies).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
+local MeshFold = require(script.Parent.MeshFold)
 local MonsterMove = require(ReplicatedStorage.Shared.Logic.MonsterMove)
 local RigidMotion = require(ReplicatedStorage.Shared.Logic.RigidMotion)
 local RigidRigs = require(ReplicatedStorage.Shared.Data.RigidRigs)
@@ -66,6 +68,7 @@ export type Rig = {
 	appear: RigidMotion.ActionRun?,
 	flight: RigidMotion.Flight,
 	lab: boolean,
+	legs: MeshFold.Handle?, -- the legs curl in on its death (client/Anim/MeshFold)
 }
 
 -- Every live rig by its motion (weak: a look destroyed takes its rig along).
@@ -203,6 +206,7 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 	local size = Vector3.one
 	local axes = { 1, 2, 3 }
 	local skinned = next(bones) ~= nil or look:FindFirstChildWhichIsA("Bone", true) ~= nil
+	local legs: MeshFold.Handle? = nil
 	if #parts == 1 and parts[1]:IsA("MeshPart") and not skinned then
 		local part = parts[1] :: MeshPart
 		mesh = part
@@ -211,6 +215,7 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 		local rel = primary.CFrame:ToObjectSpace(part.CFrame)
 		axes = { axisOf(rel.XVector), axisOf(rel.YVector), axisOf(rel.ZVector) }
 		body.squash = true
+		legs = MeshFold.attach(model, part, rel, size, seed)
 	end
 	local opaque = {}
 	for i, part in parts do
@@ -260,6 +265,7 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 		appear = nil,
 		flight = { x = 0, y = 0, z = 0, pitch = 0 },
 		lab = monster == nil,
+		legs = legs,
 	}
 	rig.mod = RigidRig.Mod
 	if monster and monster:GetAttribute("Dead") ~= true then
@@ -325,8 +331,17 @@ local function flightOf(rig: Rig, monster: Model, root: BasePart, serverNow: num
 	return flight
 end
 
--- What the game's input lacks, read from the monster (AnimLab: only the squash).
+-- What the game's input lacks, read from the monster (AnimLab: only the squash and the legs).
 local function augment(rig: Rig, input: RigidMotion.Input)
+	local legs = rig.legs
+	if legs then
+		-- a death (a held action) folds the legs where the mesh can be bent; the body learns the folded boxes
+		local run = input.action
+		local action = if run then rig.motion.style.actions[run.name] else nil
+		local dying = run ~= nil and action ~= nil and action.hold == true and input.now >= run.start
+		input.fold = MeshFold.share(legs, dying)
+		rig.motion.body.folds = MeshFold.folds(legs)
+	end
 	local monster = rig.monster
 	local root = rig.root
 	if not monster or not root then
@@ -456,6 +471,9 @@ function RigidRig.apply(rig: Rig, posed: RigidMotion.Posed)
 			end
 		end
 	end
+	if rig.legs then
+		MeshFold.write(rig.legs, posed.fold)
+	end
 	local muzzle = rig.muzzle
 	if muzzle then
 		if posed.acting then
@@ -490,6 +508,9 @@ function RigidRig.clear(rig: Rig)
 	if rig.muzzle then
 		rig.muzzle.Position = rig.muzzleRest
 		rig.muzzleMoved = false
+	end
+	if rig.legs then
+		MeshFold.release(rig.legs)
 	end
 	live[rig.motion] = nil
 end

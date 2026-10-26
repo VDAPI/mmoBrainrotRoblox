@@ -778,6 +778,22 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
   (thrash, flop, the tail stills) 40 %; crow falls on its side 60 % / back 40 % (bat the other way round); toad flip
   70 % / curl 30 %; hare on its side 60 % / a last leap and roll 40 %; cats on the side 65 % / slump (legs give way)
   35 %; rot ent topples sideways 85° about its base edge 60 % / on its face 40 %, and fades.
+- **Legs that fold in a death** (owner 2026-10-26: "nogi się nie składają, jedynie postać przewraca się na bok"):
+  the spider and the scorpion bend their one mesh (no bones) through an `EditableMesh` (`client/Anim/MeshFold`, the
+  pure part `Logic/LegFold`, options per model `Data/RigidRigs` `fold`). Once per model (cached, spread over frames)
+  the vertices are sorted: the body is what a disc of half its inscribed radius fits in (top view, a morphological
+  opening), the legs are the pieces outside it that reach the ground and are long enough (the scorpion's raised tail
+  is not; seams welded, fused hips split by their far branches); along each leg the knee (the arch's top) and the
+  ankle. In a death (`deathFlip`, `deathCurl`: the `fold` control, 0 rest, 1 curled, −0.15 the jolt's splay) the
+  ankle and the knee lead, the hip lifts and then follows, each leg at its own pace (the seed), toward `targets`
+  (femur −35°, tibia −160°, tarsus −225° for the spider: in under the body; on its back they stand curled over the
+  belly); the scorpion's pincers (within 35° of forward) stay. The plan keeps the folded box at every eighth (the
+  union over the paces a seed can give), so `RigidMotion` lowers the body as far as the legs stop holding it up,
+  topples it about the folded flank and fades the squash that stood in for the legs. Only a dying monster within
+  150 studs, at most 3 at once, written at 30 Hz, released 0.5 s after the fold stops (the original mesh back);
+  living monsters cost nothing. Needs the experience setting "Allow Mesh / Image APIs" (Game Settings → Security)
+  and mesh assets the experience owner may load; otherwise (or on any failure, pcall) the rigid death plays as before.
+  Studio prints `[MeshFold] <model>: N legs …` once per model. Lune specs on synthetic meshes (tests/LegFoldMesh).
 - AnimLab: `/animlab mob <id> <state>`, states `Data/RigidStyles.labStates`: idle, alert, walk, trot, run, turn, home,
   attack1, attack2, cast, heavy, crush, pounce, throw, hit, hitBack, hitLeft, hitRight, stun, freeze, death, spawn,
   summon, fight, then every action of the style by name (e.g. `deathCurl`, `sting`, `sitUp`).
