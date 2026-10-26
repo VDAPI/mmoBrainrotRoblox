@@ -90,6 +90,16 @@ function BipedRig.new(look: Model, styleId: string, seed: number, grip: { number
 		fade = 0,
 	}
 	-- the shots leave the jaw / the casting hand: the monster's own root (the look hangs under the monster model)
+	-- bones the map folds once (outside the pose: nothing else writes them)
+	local tucks: { { bone: string, axis: { number }, angle: number } } = (map and map.tuck) or {}
+	for _, t in tucks do
+		local bone = byName[t.bone]
+		if bone then
+			local turn = CFrame.fromAxisAngle(Vector3.new(t.axis[1], t.axis[2], t.axis[3]).Unit, t.angle)
+			local at = space:ToObjectSpace(bone.WorldCFrame).Rotation
+			bone.Transform = at:Inverse() * turn * at
+		end
+	end
 	local muzzleSpec = map and map.muzzle
 	local muzzleBone = muzzleSpec and byKey[muzzleSpec.key]
 	local owner = look.Parent

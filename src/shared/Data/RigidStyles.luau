@@ -483,21 +483,24 @@ local function deathFlip(o: { [string]: any }): Action
 	}
 end
 
--- Curled: the legs fold under (squash), a slow roll to the side, one twitch.
+-- Curled (studio review 2026-10-26: a clear event): a jolt up, the legs fold under (squash, the body drops), it
+-- topples about the ground edge onto its side, bounces once and settles curled, one last twitch.
 local function deathCurl(o: { [string]: any }): Action
-	local roll = o.roll or deg(35)
+	local tip = o.tip or deg(75)
 	return {
 		strike = 0.12,
-		follow = 0.45,
-		recover = 0.25,
+		follow = 0.5,
+		recover = 0.35,
 		hold = true,
 		sided = true,
 		keys = {
-			key("S", 1, "out", { y = 0.05, z = 0.02, ground = 1 }),
-			key("F", 0.6, "in", { sq = -0.28, dip = deg(4), roll = -roll * 0.5, ground = 1, settle = 1 }),
-			key("F", 1, "inout", { sq = -0.28, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
-			key("R", 0.4, "inout", { sq = -0.28, dip = deg(4), roll = -roll + deg(4), ground = 1, settle = 1 }),
-			key("R", 1, "inout", { sq = -0.28, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
+			key("S", 1, "out", { y = 0.14, z = 0.03, rear = deg(8), sq = 0.06, ground = 1 }),
+			key("F", 0.35, "in", { y = -0.04, sq = -0.3, dip = deg(5), tip = deg(12), ground = 1 }),
+			key("F", 0.8, "in", { sq = -0.28, dip = deg(4), tip = tip, ground = 1, settle = 1 }),
+			key("F", 1, "out", { sq = -0.24, tip = tip - deg(8), y = 0.04, ground = 1 }),
+			key("R", 0.3, "in", { sq = -0.28, dip = deg(4), tip = tip, ground = 1, settle = 1 }),
+			key("R", 0.6, "inout", { sq = -0.32, dip = deg(4), tip = tip, shiver = deg(3), ground = 1, settle = 1 }),
+			key("R", 1, "inout", { sq = -0.3, dip = deg(4), tip = tip, ground = 1, settle = 1 }),
 		},
 	}
 end
@@ -867,7 +870,7 @@ local SCORPION: Style = {
 		spawn = spawn(SCORPION_STANCE, {}),
 		summon = summon(SCORPION_STANCE, {}),
 		deathFlip = deathFlip({ arc = 0.25 }),
-		deathCurl = deathCurl({ roll = deg(20) }),
+		deathCurl = deathCurl({ tip = deg(70) }),
 		twitch = fidget({ yaw = deg(4) }, 0.8),
 		settle = fidget({ y = -0.03, sq = -0.04 }, 0.2, { strike = 0.1, last = { y = 0.004 } }),
 		tail = fidget({ dip = deg(5), shiver = deg(0.6) }, 0.5, { strike = 0.2 }),
@@ -1400,7 +1403,7 @@ local TOAD: Style = {
 		spawn = spawn(TOAD_STANCE, {}),
 		summon = summon(TOAD_STANCE, {}),
 		deathFlip = deathFlip({ arc = 0.3 }),
-		deathCurl = deathCurl({ roll = deg(15) }),
+		deathCurl = deathCurl({ tip = deg(60) }),
 		settle = fidget(
 			{ roll = deg(3), y = -0.02 },
 			0.4,

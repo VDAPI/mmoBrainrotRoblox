@@ -11,7 +11,9 @@
 -- * `pivot`: the bone whose joint the body (Hips) turns about instead of its own (a Tripo root at the ground under
 --   the pelvis), moved by `pivotOffset` (dump units); `legPlane`: the knees keep the rest legs' own plane (splayed);
 -- * `muzzle`: the root's Muzzle attachment follows this key's bone (the point `offset` from its joint at rest, dump
---   units, root axes), so the shots drawn on the client leave the jaw or the casting hand (docs/ANIM-WZORCE §10).
+--   units, root axes), so the shots drawn on the client leave the jaw or the casting hand (docs/ANIM-WZORCE §10);
+-- * `tuck`: bones outside the pose turned once by `angle` (rad) about `axis` (root axes) at their rest and then left
+--   to follow their parents (the regular wyvern's small forearms folded against the chest).
 
 local BipedRigs = {}
 
@@ -58,6 +60,7 @@ export type Map = {
 	pivotOffset: { number }?,
 	legPlane: boolean?, -- the knees bend in the rest legs' own plane (splayed legs), Logic/BipedPose.Options
 	muzzle: { key: string, offset: { number } }?,
+	tuck: { { bone: string, axis: { number }, angle: number } }?,
 }
 
 local MAPS: { [string]: Map } = {
@@ -100,6 +103,14 @@ local MAPS: { [string]: Map } = {
 		legPlane = true,
 		-- the jaw, ahead of the head bone
 		muzzle = { key = "Head", offset = { 0, 0.05, -0.4 } },
+		-- the small forearms hang to the ground at rest (and sink into it when it lies on its side): folded forward and up
+		-- against the chest at the elbow, the claws curled
+		tuck = {
+			{ bone = "bone_33", axis = { 1, 0, 0 }, angle = math.rad(75) },
+			{ bone = "bone_35", axis = { 1, 0, 0 }, angle = math.rad(60) },
+			{ bone = "bone_41", axis = { 1, 0, 0 }, angle = math.rad(75) },
+			{ bone = "bone_43", axis = { 1, 0, 0 }, angle = math.rad(60) },
+		},
 	},
 	-- the specter (Mixamo, 48 bones; the look's root 2.5 under the robe's hem): no feet, the robe below the knees. Its
 	-- feet are points under the knees; the legs trail as the robe (Logic/SpiritMotion)
