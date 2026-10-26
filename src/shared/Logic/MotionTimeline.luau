@@ -21,6 +21,8 @@ export type Action = {
 	full: boolean?,
 	tremble: number?, -- rad of the gather's tremble at the end of the anticipation (grows with its square)
 	lag: { [string]: number }?,
+	gait: string?, -- Logic/QuadMotion: the gait the legs run while it plays (a charge: the gallop at the dash's speed)
+	sided: boolean?, -- Logic/QuadMotion: a blow with its own mirrored twin (left / right paw), never mirrored again
 }
 
 -- 0..1 eased: "in" accelerates, "out" decelerates, "lin" straight, otherwise smootherstep.

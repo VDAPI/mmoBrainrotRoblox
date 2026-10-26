@@ -998,7 +998,7 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 			return CombatData.basicWind.throw * CombatData.basicWindVariant.elite2
 		elseif name == style.aggro then
 			return 0.45
-		elseif name == style.spawn or name == "sniff" or name == "shake" then
+		elseif name == style.spawn or table.find(style.fidgets, name) then
 			return 0.5
 		end
 		return melee

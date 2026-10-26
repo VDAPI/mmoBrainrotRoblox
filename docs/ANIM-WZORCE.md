@@ -393,6 +393,51 @@ Bear, boar and mammoth blows (W as §1.2, contact at W, F + R ≤ 0.8 s):
 | Mammoth, basic "tusk" (0.55) | head yaw +25°, trunk curled up, weight back | head sweeps to −30° (tusks across) at W, lunge ≤ 2 studs | trunk swings on; R |
 | Mammoth, Elite II "stomp" (1.4; also crush) | front rises ≤ 25° (pivot hind feet; elephants do not rear high), trunk up (trumpet), ears out | both front feet stomp at W, y −0.05 L, dust ring | trunk down; R |
 
+#### As built: bear, boar, mammoth (2026-10-26)
+
+Data/QuadStyles `bear` (brownBear, blackBear through the brown bear's model), `boar`, `mammoth` on Logic/QuadMotion;
+the bone maps in Data/QuadRigs from the rig dump (tools/anim/rigs); Lune specs in tests/quadheavy.spec.luau (forward
+kinematics of the dump through tests/QuadRigFk). `/animlab mob <id> <state>` takes the generic states and every action
+of the style by name (`QuadStyles.labStates`). Deviations from the tables above:
+
+- **Planted feet.** Logic/QuadPose has a foot solver: control `<leg>k` puts the foot on a target `<leg>y` / `<leg>z`
+  (leg lengths from its rest point) by solving the leg's swing and fold (damped least squares over the map's joint
+  shares), `<leg>l` keeps a plantigrade foot flat. QuadMotion's foot planner drives it: in stance the foot sweeps back
+  linearly at exactly the ground speed, centred under the hip or shoulder; in swing it follows a lifted Hermite path to
+  the next touchdown; a plantigrade heel peels in the last 40 % of the stance. The wolf keeps its synthesised legs (none
+  of this runs for `canine`; its output is unchanged).
+- **Slow steps are short.** Below 0.6 L/s a planted style shortens its stride and keeps its cadence, so the feet do not
+  slide at a slow wander.
+- **Body carried lower** (`drop`): straight legs cannot reach the ends of a long stride from full height. Bear walk
+  0.05 L, trot and gallop 0.04; boar walk 0.03; mammoth 0.05.
+- **Gait thresholds on the server's paces** (wander 0.4x, home 0.7x, chase 1x `moveSpeed`): each pace sits on one gait,
+  not in a blend (a blend of two footfall orders slides). Bear trot from 2.5 L/s, gallop from 4.0 (walk, trot,
+  gallop); boar 2.8 and 4.9 (walk, trot, gallop); mammoth amble from 1.17 L/s, not 1.5 (its home pace is 1.49 L/s and
+  would sit half in the walk), walk k 1.1, amble k 1.3.
+- **Pivot controls** `bpx` / `bpy` / `bpz`: the body turns about a point, so the rear-up turns about the hind feet, the
+  death roll about the ground line under the flank, the rolling walk about the feet that bear the weight.
+- **Charge**: the gallop is forced from the strike (the dash) to the end of the follow-through and its cadence follows
+  the real dash speed (about 3x the chase cadence), not a fixed 2x. The scrape and the gather stand.
+- **Heavy actions blend in over 0.2 s** (the wolf's 0.08 s would snap planted legs out of a stride).
+- **Kits**: bear heavyBlow `maul` (half up on the hind legs, right paw at W - 0.1, left on W), pounce / leap `bodyslam`,
+  throw `hurl`; boar slam / crush `stomp` (rears, both fore hooves on W), heavyBlow `rake` (the head sweeps the cone),
+  pounce `leap`, throw `toss`; mammoth crush = the stomp with a longer hold, heavyBlow `gore` (tusks up and across),
+  pounce `lunge`, throw `fling` (the trunk throws a block of ice).
+
+Rig notes for the Studio pass:
+
+- The bear's skeleton sits off centre and yawed about 13° in its mesh (left bones out to x -0.71 L, right ones to
+  +0.36 L, the mesh +-0.98 L): the left hind foot lifts up to 0.08 L in the last tenth of a walk stance, and `deathR`
+  lies with its bones 0.3-0.5 L higher than `deathL` (the mesh's flank decides what touches). A re-rig would fix both.
+- The bear's forelegs end at the forearm (no paw bone): the foot is the map's guessed `tip` (0.51-0.57 L below the
+  elbow, 0.12 L forward).
+- The bear's and the boar's front fold shares have the opposite sign to the wolf's (the export's rest elbows), chosen so
+  a positive fold lifts every foot; the spec checks it per leg.
+- The mammoth has one ear bone (left, flaps about the vertical) and the trunk chain Head_3..Head_9 may also carry the
+  tusks: check in Studio whether the tusks swing with the trunk.
+- No other model joins this family: `lynx` and `rabbit` have no bones (they stay rigid), `snowLeopard` has no model of
+  its own, `youngFrostDragon` is a broken biped rig and waits for its new model.
+
 ## 4. F3 Flyer: ashVulture
 
 ### 4.1 Rig and sizes

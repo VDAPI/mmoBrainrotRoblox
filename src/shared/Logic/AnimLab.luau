@@ -270,7 +270,7 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 		local motion = if look and look.asset then look.asset.motion else nil
 		local states = if motion and BipedStyles.get(motion)
 			then BipedStyles.LAB_STATES
-			elseif motion and QuadStyles.get(motion) then QuadStyles.LAB_STATES
+			elseif motion and QuadStyles.get(motion) then QuadStyles.labStates(motion)
 			else nil
 		if not table.find(LookAnim.SLOTS, slot) and not (states and table.find(states, slot)) then
 			return nil, "animlab.error.slot"
