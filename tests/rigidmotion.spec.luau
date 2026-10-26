@@ -111,6 +111,8 @@ T.describe("RigidMotion kinds", function()
 				has(RigidMotion.pick(style, ability, nil, 1), ability)
 			end
 			has(RigidMotion.pick(style, nil, "throw", 1), "throw")
+			-- two deaths at least (by the seed)
+			T.expect(#style.death >= 2).toBe(true)
 			for _, entry in style.death do
 				has(entry.name, "death")
 			end
@@ -368,6 +370,25 @@ T.describe("RigidMotion poses", function()
 				if slide > 0.2 * travel then
 					error(`{id} at {speed}: the feet slide {slide} over {travel} studs of ground contact`)
 				end
+			end
+		end
+	end)
+
+	T.it("appears hidden (spawn) or under the ground (summon) from the first frame", function()
+		for id, k in KINDS do
+			local style = RigidStyles.get(k.style) :: RigidStyles.Style
+			local inst = RigidMotion.new(bodyOf(id), k.style, 3) :: RigidMotion.Instance
+			local run = { name = style.spawn :: string, start = 0, hit = 0.5 }
+			local posed = RigidMotion.step(inst, input(0, 0, { action = run, snap = true }))
+			T.expect(posed.alpha).toBe(1)
+			local climb = RigidMotion.new(bodyOf(id), k.style, 3) :: RigidMotion.Instance
+			local summon = { name = style.summon :: string, start = 0, hit = 0.5 }
+			local first = RigidMotion.step(climb, input(0, 0, { action = summon, snap = true }))
+			-- a walker wholly under the ground, a flyer down on it
+			if k.lift > 0 then
+				T.expect(first.m[5] * k.lift + first.m[11] < 0.1).toBe(true)
+			else
+				T.expect(first.m[5] * k.h + first.m[11] < 0.05 * k.h).toBe(true)
 			end
 		end
 	end)

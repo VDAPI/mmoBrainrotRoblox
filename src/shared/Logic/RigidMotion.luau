@@ -957,7 +957,10 @@ function RigidMotion.step(inst: Instance, input: Input): Posed
 					end
 				end
 			end
-			local w = math.min(1, t / (if charged then CHARGED_IN else ACTION_IN))
+			-- an action keyed from its own first pose (the appear: hidden, under the ground) starts in it at once
+			local first = played.keys[1]
+			local own = first ~= nil and first.seg == "A" and first.u == 0
+			local w = if own then 1 else math.min(1, t / (if charged then CHARGED_IN else ACTION_IN))
 			if not played.hold then
 				w = math.min(w, math.max(0, (length - t) / ACTION_OUT))
 			end

@@ -664,9 +664,11 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
   front / back twice, roll), trot, gallop (one suspension, pitch ±7°, surge), crouched stalk while fighting at a walk,
   hiss at the first aggro, swat-and-bite (weight back, rear-up 14°, a forward surge with the front coming down at W, a
   head toss), the leap on the `Dash*` arc (crouch, rear wiggle, stretch, landing squash at W), death on its side.
-- **Deaths per kind**: spider flip 60 % / curl 40 %; scorpion flip / curl 50 / 50; lizards flip 70 % / side 30 %; serpents
-  sink onto the side and fade; crow falls on its side 60 % / back 40 % (bat the other way round); toad flip 70 % / curl
-  30 %; hare and cats on the side; rot ent topples 85° about its base edge and fades.
+- **Deaths per kind** (two each, by the seed; the side away from the last blow from a side): spider flip 60 % / curl
+  40 %; scorpion flip / curl 50 / 50; lizards flip 70 % / side 30 %; serpents sink onto the side and fade 60 % / writhe
+  (thrash, flop, the tail stills) 40 %; crow falls on its side 60 % / back 40 % (bat the other way round); toad flip
+  70 % / curl 30 %; hare on its side 60 % / a last leap and roll 40 %; cats on the side 65 % / slump (legs give way)
+  35 %; rot ent topples sideways 85° about its base edge 60 % / on its face 40 %, and fades.
 - AnimLab: `/animlab mob <id> <state>`, states `Data/RigidStyles.labStates`: idle, alert, walk, trot, run, turn, home,
   attack1, attack2, cast, heavy, crush, pounce, throw, hit, hitBack, hitLeft, hitRight, stun, freeze, death, spawn,
   summon, fight, then every action of the style by name (e.g. `deathCurl`, `sting`, `sitUp`).
