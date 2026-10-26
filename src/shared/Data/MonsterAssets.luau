@@ -102,7 +102,14 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 9.5,
 		motion = "ghost",
 	},
-	hrimvald = { rig = "bones", rootSize = { 2.58, 2.95, 1.66 }, hipHeight = 3.29, height = 8.79, walkSpeed = 13.2 },
+	hrimvald = {
+		rig = "bones",
+		rootSize = { 2.58, 2.95, 1.66 },
+		hipHeight = 3.29,
+		height = 8.79,
+		walkSpeed = 13.2,
+		motion = "hrimvald", -- 2026-10-26: the boss on the biped template (Data/BossStyles)
+	},
 	frostGiant = {
 		rig = "bones",
 		rootSize = { 2.29, 2.78, 1.48 },
@@ -120,7 +127,14 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 7.0,
 		motion = "caster",
 	},
-	grimrok = { rig = "bones", rootSize = { 2.29, 1.61, 1.48 }, hipHeight = 1.75, height = 5.40, walkSpeed = 8.1 },
+	grimrok = {
+		rig = "bones",
+		rootSize = { 2.29, 1.61, 1.48 },
+		hipHeight = 1.75,
+		height = 5.40,
+		walkSpeed = 8.1,
+		motion = "grimrok", -- 2026-10-26: the boss on the biped template (Data/BossStyles)
+	},
 	frozenKnight = {
 		rig = "bones",
 		rootSize = { 1.78, 1.94, 1.16 },
@@ -155,7 +169,14 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 7.8,
 		motion = "caster",
 	},
-	azgor = { rig = "bones", rootSize = { 2.58, 3.00, 2.10 }, hipHeight = 1.42, height = 5.70, walkSpeed = 8.6 },
+	azgor = {
+		rig = "bones",
+		rootSize = { 2.58, 3.00, 2.10 },
+		hipHeight = 1.42,
+		height = 5.70,
+		walkSpeed = 8.6,
+		motion = "azgor", -- 2026-10-26: the boss on the biped template (Data/BossStyles)
+	},
 	ashOrc = {
 		rig = "bones",
 		rootSize = { 2.07, 1.97, 1.34 },
@@ -183,7 +204,14 @@ local MonsterAssets: { [string]: Entry } = {
 		motion = "humanoid1h",
 		grip = { 0.45, -0.85, 0 },
 	},
-	morvane = { rig = "bones", rootSize = { 1.49, 2.03, 0.97 }, hipHeight = 2.47, height = 6.79, walkSpeed = 10.2 },
+	morvane = {
+		rig = "bones",
+		rootSize = { 1.49, 2.03, 0.97 },
+		hipHeight = 2.47,
+		height = 6.79,
+		walkSpeed = 10.2,
+		motion = "morvane", -- 2026-10-26: the boss on the biped template (Data/BossStyles)
+	},
 	werewolf = {
 		rig = "bones",
 		rootSize = { 2.20, 2.85, 2.60 },
@@ -263,6 +291,8 @@ local MonsterAssets: { [string]: Entry } = {
 		hipHeight = 1.17,
 		height = 3.83,
 		walkSpeed = 5.7,
+		-- 2026-10-26: the regular wyvern's style until its new model (Data/BipedStyles frostDragon)
+		motion = "frostDragon",
 	},
 	wyvern = {
 		rig = "static",

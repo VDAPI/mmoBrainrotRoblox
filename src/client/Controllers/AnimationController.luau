@@ -38,6 +38,11 @@
 --     model with bone clips procedurally too: the attack clip is held back and client/Anim/BoneOverlay turns its arm
 --     and head bones while the Gait_Body motor moves the whole body; a regular ranged draw picks its own style and the
 --     "cast" clip for a spell.
+--   Template animation (2026-10-26): the humanoid bosses on the biped template (Data/BossStyles): their keyed actions
+--     strike at the server's blow (a channel's past the telegraph's clamp), hold a pattern's channel and turn with it,
+--     fly a leap on the boss's arc; a phase, the enrage and the first aggro roar once the running blow ends, a broken
+--     channel staggers at once, the enraged and shielded stances follow the attributes; the dead boss's look clone
+--     (MonsterViewController.OnBossClone) plays the rest of its long death.
 -- Everything runs locally on every client, so other players see the same motion.
 
 local CollectionService = game:GetService("CollectionService")
@@ -97,6 +102,11 @@ local SAME_ATTACK = 0.1 -- seconds: more telegraphs of one attack (count, target
 local CHARGE_HIT = 0.3 -- a hit during a gather leans the body this much (it never restarts the gather)
 local ROAR_YIELD = 0.15 -- seconds a roar takes to give way to an attack
 local TELEPORT_JUMP = 4 -- studs the root jumps in one frame when the server teleports a leaping boss
+-- template animation: a boss's roar waits this long at most for its running blow to end
+local ROAR_WAIT = 3
+-- template animation: the longest windup a boss's keyed action strikes after (the telegraph's fill stops at
+-- Telegraph.WINDUP_MAX; Hrimvald's endless winter lands at 6 s)
+local BOSS_WINDUP_MAX = 8
 local LEAP_WAIT = 0.3 -- seconds after the windup a leap waits for the teleport, then its arc returns
 local LEAP_BACK = 0.2 -- seconds the arc takes to return
 local LAND_WIDE = 0.5 -- seconds the wings stay wide after a flight
@@ -164,9 +174,11 @@ type MonsterState = {
 	-- template animation (2026-10-25): an imported biped or quadruped animated by Logic/BipedMotion or Logic/QuadMotion
 	-- (Data/MonsterAssets `motion`; client/Anim/BipedRig, QuadRig)
 	biped: any,
-	bipedAction: any, -- the running keyed action ({ name, start, hit, reach?, mirror? })
+	bipedAction: any, -- the running keyed action ({ name, start, hit, reach?, mirror?, hold?, turn?, arc? })
 	bipedCount: number, -- regular blows so far (the style's blows take turns)
 	bipedDead: boolean,
+	bipedRoar: { name: string, untilAt: number }?, -- a boss's roar waiting for its running blow to end
+	ghosted: boolean, -- a dead boss's look clone plays its death (the original's bones are left alone)
 	combatUntil: number, -- the stance stays this long after the last blow given or taken
 	lastYaw: number?,
 	yawRate: number,
@@ -385,6 +397,21 @@ local function riseFx(s: MonsterState)
 	end
 end
 
+-- template animation: the biped's keyed action still runs at `now`.
+local function bipedBusy(s: MonsterState, rig: any, now: number): boolean
+	local run = s.bipedAction
+	local action = run and rig.motion.style.actions[run.name]
+	return run ~= nil and action ~= nil and now - run.start < rig.mod.length(action, run.hit, run.hold)
+end
+
+-- template animation: a boss on the biped template roars `name` once its running blow ends (bipedStep).
+local function bossRoar(s: MonsterState, name: string?)
+	local rig = s.biped
+	if rig and name and not s.bipedDead and rig.motion.style.boss then
+		s.bipedRoar = { name = name, untilAt = Clock.now() + ROAR_WAIT }
+	end
+end
+
 local function onAttribute(s: MonsterState, name: string)
 	local model = s.model
 	if name == "Phase" then
@@ -393,16 +420,37 @@ local function onAttribute(s: MonsterState, name: string)
 		s.phase = phase
 		if roars then
 			startRoar(s)
+			-- template animation: the boss roars into its phase (the last one in rage)
+			local boss = s.biped and s.biped.motion.style.boss
+			if boss then
+				bossRoar(s, if phase >= 3 then boss.rageRoar else boss.roar)
+			end
+		end
+	elseif name == "Enraged" then
+		local boss = s.biped and s.biped.motion.style.boss
+		if boss and model:GetAttribute("Enraged") == true and model:GetAttribute("Dead") ~= true then
+			bossRoar(s, boss.rageRoar)
+		end
+	elseif name == "Staggered" then
+		-- template animation: a broken channel staggers the boss at once
+		local rig = s.biped
+		local boss = rig and rig.motion.style.boss
+		if boss and model:GetAttribute("Staggered") == true and not s.bipedDead then
+			local action = rig.motion.style.actions[boss.stagger]
+			s.bipedRoar = nil
+			s.bipedAction = { name = boss.stagger, start = Clock.now(), hit = if action then action.strike else 0.2 }
 		end
 	elseif name == "AggroUserId" then
-		-- template animation: a biped shouts at its new target unless it is busy
+		-- template animation: a biped shouts at its new target unless it is busy; a boss roars at its first fighter
 		local rig = s.biped
-		if rig and model:GetAttribute("AggroUserId") ~= nil and not s.bipedDead and rig.motion.style.aggro then
+		local boss = rig and rig.motion.style.boss
+		if boss then
+			if not s.introDone and model:GetAttribute("AggroUserId") ~= nil and model:GetAttribute("Dead") ~= true then
+				bossRoar(s, boss.roar)
+			end
+		elseif rig and model:GetAttribute("AggroUserId") ~= nil and not s.bipedDead and rig.motion.style.aggro then
 			local now = Clock.now()
-			local run = s.bipedAction
-			local action = run and rig.motion.style.actions[run.name]
-			local busy = run ~= nil and action ~= nil and now - run.start < rig.mod.length(action, run.hit)
-			if not busy then
+			if not bipedBusy(s, rig, now) then
 				s.bipedAction = { name = rig.motion.style.aggro :: string, start = now, hit = 0.45 }
 			end
 		end
@@ -490,6 +538,8 @@ local function track(model: Instance)
 		bipedAction = nil,
 		bipedCount = 0,
 		bipedDead = false,
+		bipedRoar = nil,
+		ghosted = false,
 		combatUntil = -math.huge,
 		lastYaw = nil,
 		yawRate = 0,
@@ -793,9 +843,21 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 	s.lastYaw = yaw
 	if s.deadAt and not s.bipedDead then
 		s.bipedDead = true
+		s.bipedRoar = nil
 		local name = rig.mod.death(rig.motion)
 		local action = rig.motion.style.actions[name]
 		s.bipedAction = { name = name, start = s.deadAt, hit = if action then action.strike else 0.2 }
+	end
+	-- a boss's roar once its running blow ends
+	local boss = rig.motion.style.boss
+	local roar = s.bipedRoar
+	if roar and boss then
+		if now > roar.untilAt then
+			s.bipedRoar = nil
+		elseif not bipedBusy(s, rig, now) then
+			s.bipedRoar = nil
+			s.bipedAction = { name = roar.name, start = now, hit = boss.roarHit }
+		end
 	end
 	local hitSide: string? = nil
 	if s.hitDir then
@@ -822,6 +884,9 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 		gait = s.model:GetAttribute("Gait"),
 		effects = s.model:GetAttribute("Effects"),
 		serverNow = Workspace:GetServerTimeNow(),
+		-- a boss's stances: enraged (the attribute, or its last phase) and shielded by its helpers
+		enraged = boss ~= nil and (s.phase >= 3 or s.model:GetAttribute("Enraged") == true),
+		shielded = boss ~= nil and s.model:GetAttribute("Shielded") == true,
 	})
 	if rig.kind == "quad" then
 		QuadRig.apply(rig, posed)
@@ -834,12 +899,47 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 	end
 end
 
+-- Template animation: the look clones of dead bosses playing the rest of their deaths (by the clone).
+local ghosts: { [Model]: { rig: any, input: { [string]: any } } } = {}
+
+-- A dead boss's look clone takes its rig over (MonsterViewController.OnBossClone): its death plays on.
+local function ghostOf(model: Model, copy: Model)
+	local s = monsters[model]
+	local rig = s and s.biped
+	if not s or not rig or rig.kind ~= "biped" or not s.bipedAction then
+		return
+	end
+	local ghost = BipedRig.rebind(rig, copy)
+	if ghost then
+		s.ghosted = true
+		ghosts[copy] = {
+			rig = ghost,
+			input = { now = 0, dt = 0, speed = 0, yawRate = 0, combat = false, action = s.bipedAction },
+		}
+	end
+end
+
+local function stepGhosts(now: number, frame: number)
+	for copy, ghost in ghosts do
+		if not copy.Parent then
+			ghosts[copy] = nil
+			continue
+		end
+		local input = ghost.input
+		input.now, input.dt = now, frame
+		BipedRig.apply(ghost.rig, ghost.rig.mod.step(ghost.rig.motion, input))
+	end
+end
+
 local function step(dt: number)
 	local camera = Workspace.CurrentCamera
 	if not camera then
 		return
 	end
 	local now = Clock.now()
+	if next(ghosts) then
+		stepGhosts(now, Clock.dt(dt))
+	end
 	if os.clock() - pickClock >= PICK_EVERY then
 		pickClock = os.clock()
 		pickAnimated()
@@ -863,7 +963,7 @@ local function step(dt: number)
 			end
 		end
 		s.lastRoot = rootAt
-		if not animated[model] then
+		if not animated[model] or s.ghosted then
 			continue
 		end
 		local velocity = s.root.AssemblyLinearVelocity
@@ -999,7 +1099,34 @@ function AnimationController.MonsterAttack(
 			reach = { offset.X, 0, offset.Z }
 		end
 		local mirror = if rig.mod.mirror then rig.mod.mirror(s.bipedCount) else nil
-		s.bipedAction = { name = name, start = s.attackStart, hit = w + s.hold, reach = reach, mirror = mirror }
+		local hit, hold, turn, arc = w + s.hold, nil, nil, nil
+		local style = rig.motion.style
+		local action = style.actions[name]
+		if style.boss and not strikeNow then
+			-- a boss strikes when the server's blow lands, a long channel too (past the telegraph's clamp); a pattern's
+			-- channel holds its blow and turns the body with it; a leap flies the boss's own arc
+			local raw = math.clamp(windup or w, Telegraph.WINDUP_MIN, BOSS_WINDUP_MAX)
+			hit = raw + s.hold
+			if action and action.channel then
+				hit, hold = raw, s.hold
+				if s.turnFrom and s.turnTo then
+					turn = { s.turnFrom, s.turnTo }
+				end
+			end
+			if action and action.leap and bossMotion and bossMotion.arc then
+				arc = { bossMotion.arc, LOOK.leapArc }
+			end
+		end
+		s.bipedAction = {
+			name = name,
+			start = s.attackStart,
+			hit = hit,
+			reach = reach,
+			mirror = mirror,
+			hold = hold,
+			turn = turn,
+			arc = arc,
+		}
 		s.combatUntil = now + 6
 	end
 end
@@ -1901,6 +2028,7 @@ function AnimationController.Start()
 			track(model)
 		end
 	end)
+	MonsterView.OnBossClone(ghostOf)
 	RunService.PreSimulation:Connect(function(dt: number)
 		step(dt)
 		stepMounts(dt)

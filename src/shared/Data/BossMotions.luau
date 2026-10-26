@@ -50,8 +50,10 @@ export type BossMotion = {
 	attacks: { [string]: BossAttackMotion }, -- every attack id of Data/Bosses
 	patterns: { [string]: Gesture }, -- S159a: every pattern id the boss casts (Data/BossTuning.patterns, extra)
 	roar: Roar,
-	-- light: hex colour of the death flash; seconds: the clone's break-up (default Config.MonsterLook.bossDeathSeconds)
-	death: { style: string, light: string, seconds: number? },
+	-- light: hex colour of the death flash; seconds: the clone's break-up (default Config.MonsterLook.bossDeathSeconds);
+	-- hold (2026-10-26): seconds the clone stays whole first, while a boss on the biped template (Data/BossStyles)
+	-- plays its long death on it
+	death: { style: string, light: string, seconds: number?, hold: number? },
 }
 
 -- Effects an attack may name (tests).
@@ -88,7 +90,7 @@ local BY_BOSS: { [string]: BossMotion } = {
 			sound = "skill.battleCry",
 			intro = true,
 		},
-		death = { style = "knees", light = "#FFB060" },
+		death = { style = "knees", light = "#FFB060", hold = 3, seconds = 2.5 },
 	}),
 	morvane = boss({
 		attacks = {
@@ -118,7 +120,7 @@ local BY_BOSS: { [string]: BossMotion } = {
 			sound = "skill.blizzard",
 			intro = true,
 		},
-		death = { style = "dissolve", light = "#B48CFF" },
+		death = { style = "dissolve", light = "#B48CFF", hold = 1.5, seconds = 3.5 },
 	}),
 	azgor = boss({
 		attacks = {
@@ -149,7 +151,7 @@ local BY_BOSS: { [string]: BossMotion } = {
 			sound = "skill.carnage",
 			intro = true,
 		},
-		death = { style = "crumble", light = "#FF7A1A" },
+		death = { style = "crumble", light = "#FF7A1A", hold = 3.4, seconds = 2.5 },
 	}),
 	vaelgrath = boss({
 		attacks = {
@@ -235,7 +237,7 @@ local BY_BOSS: { [string]: BossMotion } = {
 			sound = "skill.taunt",
 			intro = true,
 		},
-		death = { style = "knees", light = "#BFE6FF" },
+		death = { style = "knees", light = "#BFE6FF", hold = 4.6, seconds = 2.8 },
 	}),
 }
 

@@ -27,6 +27,10 @@
 -- S159a: `boss <id> rage` the roar into the last phase, `boss <id> <pattern>` a dodgeable pattern's gesture (its own
 -- warning, the channel held, the follow-through);
 -- `floor <grass|snow|cave>` dresses the floor (telegraph readability, Config.AnimLab.floors).
+-- Template animation (2026-10-26): a boss on the biped template (Data/BossStyles) plays its keyed actions here too:
+-- `boss <id> <attack|pattern>` at the server's timing (a pattern's channel held and turned, a leap on its arc to the
+-- actor, a pattern riding an attack as that attack), `boss <id> roar|rage|death`, and `mob <id> <state>` the rest (the
+-- regular blows, every action by its name, enraged, shielded, stagger, the fight).
 -- Studio review 2026-10-21: a look stands on the floor by the game's rule (a real model's feet at its pivot,
 -- MonsterView's groundOffset; a generated one's root at hip height), a look wider than the stage gets floor under it;
 -- with a monster or boss on the stage every camera frames it with the actor and the cast bar over it (the walls fade
@@ -954,8 +958,17 @@ local function stageTelegraph(
 end
 
 -- Template animation: the plan of a biped's or quadruped's AnimLab state (Data/BipedStyles / QuadStyles LAB_STATES;
--- LookAnim's slots map onto them): each moment's input to its motion, the motion's length and its keys.
-local function bipedLab(model: Model, look: any, monster: any, state: string, boss: any): (BipedLab?, MotionKeys.Keys?)
+-- LookAnim's slots map onto them): each moment's input to its motion, the motion's length and its keys. `planned` (a
+-- boss's attack or pattern: `boss <id> <attack|pattern>`) gives the action's run itself (name, hit, hold, turn, arc,
+-- reach).
+local function bipedLab(
+	model: Model,
+	look: any,
+	monster: any,
+	state: string,
+	boss: any,
+	planned: { [string]: any }?
+): (BipedLab?, MotionKeys.Keys?)
 	local styleId = look.asset.motion :: string
 	local rig: any = if BipedStyles.get(styleId)
 		then BipedRig.new(model, styleId, 7.3, look.asset.grip, look.asset.model)
@@ -977,12 +990,19 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 	local reach = { reachV.X, 0, reachV.Z }
 	local melee = CombatData.basicWind.melee
 	local function windupOf(name: string): number
-		-- a boss's attack with this action: its own windup (Data/Bosses)
+		-- a boss's attack with this action: its own windup (Data/Bosses); its roars peak at roarHit, its regular blow
+		-- is the "boss" variant's draw
 		if boss then
 			for _, attack in boss.attacks do
 				if style.abilities[attack.id] == name and attack.windup then
 					return attack.windup
 				end
+			end
+			local layer = style.boss
+			if layer and (name == layer.roar or name == layer.rageRoar) then
+				return layer.roarHit
+			elseif table.find(style.basic, name) then
+				return BasicBlow.wind(boss.attack, "boss")
 			end
 		end
 		if monster and monster.ability and style.abilities[monster.ability] == name then
@@ -1055,12 +1075,25 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 	local keys: MotionKeys.Keys
 	local input: (t: number) -> any
 	local hitSides: { [string]: string } = { hit = "front", hitBack = "back", hitLeft = "left", hitRight = "right" }
+	if planned then
+		name = planned.name
+	end
 	if style.actions[name] and not hitSides[state] then
 		local action = style.actions[name]
 		local dying = string.sub(name, 1, 5) == "death"
-		local hit = if dying then action.strike else windupOf(name)
-		local run = { name = name, start = 0, hit = hit, reach = reach }
-		length = rig.mod.length(action, hit) + 0.4
+		-- (a boss's stagger and appear start at their strike, like a death)
+		local struck = dying or (style.boss ~= nil and (name == style.boss.stagger or name == style.spawn))
+		local hit = if planned then planned.hit elseif struck then action.strike else windupOf(name)
+		local run = {
+			name = name,
+			start = 0,
+			hit = hit,
+			reach = if planned and planned.reach then planned.reach else reach,
+			hold = planned and planned.hold,
+			turn = planned and planned.turn,
+			arc = planned and planned.arc,
+		}
+		length = rig.mod.length(action, hit, run.hold) + 0.4
 		keys = MotionKeys.clip(length, hit)
 		input = function(t)
 			local i = table.clone(base)
@@ -1079,36 +1112,42 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 			return i
 		end
 	elseif state == "fight" then
-		-- a short fight: the shout, three blows, a hit taken, the ability
+		-- a short fight: the shout, three blows, a hit taken, the ability (a boss: its roar, its first attack)
 		local ability = (monster and monster.ability and style.abilities[monster.ability])
+			or (boss and boss.attacks[1] and style.abilities[boss.attacks[1].id])
 			or style.abilities.cleave
 			or style.basic[1]
+		local shout = style.aggro or style.basic[1]
+		local blow = if boss then windupOf(style.basic[1]) else melee
 		local plan: { { at: number, name: string, hit: number } } = {
-			{ at = 0, name = style.aggro or style.basic[1], hit = 0.45 },
-			{ at = 1.6, name = style.basic[1], hit = melee },
-			{ at = 3.0, name = style.basic[2] or style.basic[1], hit = melee },
-			{ at = 4.5, name = style.basic[4] or style.basic[1], hit = melee },
-			{ at = 6.6, name = ability, hit = windupOf(ability) },
+			{ at = 0, name = shout, hit = if style.boss then style.boss.roarHit else 0.45 },
+			{ at = 1.6 + (if style.boss then 1 else 0), name = style.basic[1], hit = blow },
+			{ at = 3.0 + (if style.boss then 1 else 0), name = style.basic[2] or style.basic[1], hit = blow },
+			{ at = 4.5 + (if style.boss then 1 else 0), name = style.basic[4] or style.basic[1], hit = blow },
+			{ at = 6.6 + (if style.boss then 1 else 0), name = ability, hit = windupOf(ability) },
 		}
-		length = 9.5
+		length = if style.boss then 11.5 else 9.5
+		local struckAt = if style.boss then 6.9 else 5.9
 		keys = MotionKeys.clip(length)
 		input = function(t)
 			local i = table.clone(base)
 			i.now = t
-			for _, step in plan do
+			for index, step in plan do
 				if t >= step.at then
-					i.action =
-						{ name = step.name, start = step.at, hit = step.hit, reach = reach, mirror = step.at == 3.0 }
+					i.action = { name = step.name, start = step.at, hit = step.hit, reach = reach, mirror = index == 3 }
 				end
 			end
-			if t >= 5.9 then
-				i.hitAt, i.hitSide = 5.9, "front"
+			if t >= struckAt then
+				i.hitAt, i.hitSide = struckAt, "front"
 			end
 			return i
 		end
 	else
 		-- locomotion and stances
-		local moveSpeed = if monster and monster.moveSpeed then monster.moveSpeed else 13
+		local moveSpeed = if monster and monster.moveSpeed
+			then monster.moveSpeed
+			elseif boss and boss.moveSpeed then boss.moveSpeed
+			else 13
 		length = 3
 		keys = MotionKeys.clip(length)
 		input = function(t)
@@ -1139,11 +1178,34 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 				i.stunned, i.stun = true, t >= 0.3
 			elseif state == "freeze" then
 				i.frozen = t > 0.8
+			elseif state == "enraged" then
+				-- a boss's stances (the attributes Enraged and Shielded in the game)
+				i.enraged = true
+			elseif state == "shielded" then
+				i.shielded = true
 			end
 			return i
 		end
 	end
 	return { rig = rig, length = length, input = input, lastT = nil }, keys
+end
+
+-- Template animation: the stage's subject playing a keyed plan of `bipedLab`.
+local function labSubject(model: Model, slot: string, lab: BipedLab, keys: MotionKeys.Keys)
+	subject = {
+		model = model,
+		joints = {},
+		slot = slot,
+		windup = 0,
+		shift = 0,
+		track = nil,
+		looped = true,
+		keys = keys,
+		options = nil,
+		leap = nil,
+		bone = nil,
+		biped = lab,
+	}
 end
 
 local function playMob(command: Command)
@@ -1170,20 +1232,7 @@ local function playMob(command: Command)
 			model:PivotTo(model:GetPivot() + Vector3.new(0, model:GetExtentsSize().Y * 0.45, 0))
 		end
 		if lab and labKeys then
-			subject = {
-				model = model,
-				joints = {},
-				slot = slot,
-				windup = 0,
-				shift = 0,
-				track = nil,
-				looped = true,
-				keys = labKeys,
-				options = nil,
-				leap = nil,
-				bone = nil,
-				biped = lab,
-			}
+			labSubject(model, slot, lab, labKeys)
 			local ability = monster and monster.ability and MonsterAbilities.get(monster.ability)
 			if ability and slot == "cast" then
 				stageTelegraph(model, ability.shape, ability.origin == "self", {
@@ -1280,6 +1329,118 @@ local function playMob(command: Command)
 	end
 end
 
+-- Template animation: `boss <id> <attack|pattern|roar|rage|death>` of a boss on the biped template (Data/BossStyles):
+-- its keyed action at the game's timing, the attack's telegraph staged, a pattern's channel held and turned like
+-- CombatFxController does, a leap flying its arc to the actor, a pattern riding an attack shown as that attack.
+local function templateBoss(model: Model, look: any, boss: any, attackId: string): boolean
+	local style = BipedStyles.get(look.asset.motion) :: BipedStyles.Style
+	local layer = style.boss
+	local def = BossMotions.get(boss.id)
+	if attackId == "roar" or attackId == "rage" or attackId == "death" then
+		local name = if attackId == "death"
+			then style.death[1]
+			elseif attackId == "rage" and layer then layer.rageRoar
+			else layer and layer.roar
+		local hit = if attackId == "death"
+			then style.actions[name :: string].strike
+			elseif layer then layer.roarHit
+			else 0.5
+		local lab, keys = bipedLab(model, look, nil, attackId, boss, { name = name, hit = hit })
+		if not lab or not keys then
+			return false
+		end
+		labSubject(model, attackId, lab, keys)
+		if attackId ~= "death" then
+			Animation.Roar(model)
+		end
+		return true
+	end
+	local gesture = if def then def.patterns[attackId] else nil
+	if gesture and gesture.rides then
+		attackId = gesture.rides
+		gesture = nil
+	end
+	local pattern = HazardPatterns.get(attackId)
+	if gesture and pattern then
+		-- the warning: the replaced attack's windup, a shield or kiting cast's, else the pattern's own
+		local warn: number? = nil
+		local tuning = (BossTuning.patterns :: any)[boss.id]
+		for replacedId, id in (if tuning and tuning.replace then tuning.replace else {}) :: { [string]: string } do
+			for _, a in boss.attacks do
+				if id == attackId and a.id == replacedId then
+					warn = a.windup
+				end
+			end
+		end
+		local extra = (BossTuning.extra :: any)[boss.id]
+		for _, cast in (if extra then { extra.shield, extra.far } else {}) :: { any } do
+			if cast and cast.pattern == attackId and not warn then
+				warn = cast.windup
+			end
+		end
+		local timing = HazardGesture.timing(pattern, warn)
+		local from, to = HazardGesture.turnOf(pattern, {}, 0)
+		if not from then
+			-- a breath sweeps from its emitter's start to its end, aimed at the actor
+			for _, e in pattern.emitters do
+				if e.kind == "sweep" and e.from and e.to then
+					local cap = HazardGesture.MAX_TURN
+					from = math.clamp(-math.rad(e.from), -cap, cap)
+					to = math.clamp(-math.rad(e.to), -cap, cap)
+					break
+				end
+			end
+		end
+		local name = style.abilities[attackId]
+		local lab, keys = bipedLab(model, look, nil, "cast", boss, {
+			name = name,
+			hit = timing.windup,
+			hold = timing.hold,
+			turn = if from and to then { from, to } else nil,
+		})
+		if not lab or not keys then
+			return false
+		end
+		labSubject(model, "cast", lab, keys)
+		return true
+	end
+	local attack: Bosses.Attack? = nil
+	for _, a in boss.attacks do
+		if a.id == attackId then
+			attack = a
+		end
+	end
+	if not attack then
+		return false
+	end
+	local area = stageTelegraph(
+		model,
+		attack.shape,
+		attack.target == "self",
+		{ r = attack.radius, ir = attack.inner, an = attack.angle, l = attack.length, w = attack.width },
+		attack.windup,
+		attack.element,
+		attack.id,
+		if attack.mechanic then attack.mechanic elseif attack.avoid then "avoid" else nil
+	)
+	local motion = if def then def.attacks[attack.id] else nil
+	local action = style.actions[style.abilities[attack.id]]
+	local arc = if attack.leap and action and action.leap and motion then motion.arc else nil
+	local leap = arc ~= nil
+	local offset = model:GetPivot():PointToObjectSpace(area.Position)
+	local lab, keys = bipedLab(model, look, nil, "cast", boss, {
+		name = style.abilities[attack.id],
+		hit = attack.windup,
+		arc = if arc then { arc, Config.MonsterLook.leapArc } else nil,
+		reach = if leap then { offset.X, 0, offset.Z } else nil,
+	})
+	if not lab or not keys then
+		return false
+	end
+	labSubject(model, "cast", lab, keys)
+	return true
+end
+
 local function playBoss(command: Command)
 	local bossId, attackId = command.id :: string, command.slot :: string
 	local boss = Bosses.get(bossId)
@@ -1290,6 +1451,15 @@ local function playBoss(command: Command)
 	end
 	local model = placeLook(bossId, look, "boss", boss.look.size)
 	local plan = look.plan
+	-- template animation: a boss on the biped template keys every attack, pattern, roar and its death
+	if
+		look.asset
+		and look.asset.motion
+		and BipedStyles.get(look.asset.motion)
+		and templateBoss(model, look, boss, attackId)
+	then
+		return
+	end
 	-- S117: the phase roar and the death of the boss (S159a: `rage` the roar into the last phase)
 	if attackId == "roar" or attackId == "rage" or attackId == "death" then
 		local roar = if def then def.roar.seconds else Config.MonsterLook.roarSeconds
@@ -1322,8 +1492,13 @@ local function playBoss(command: Command)
 		end
 		return
 	end
-	-- S159a: a pattern's gesture over its warning (the attack it replaces: that attack's windup)
+	-- S159a: a pattern's gesture over its warning (the attack it replaces: that attack's windup); a pattern riding an
+	-- attack plays that attack
 	local gesture = if def then def.patterns[attackId] else nil
+	if gesture and gesture.rides then
+		attackId = gesture.rides
+		gesture = nil
+	end
 	local pattern = HazardPatterns.get(attackId)
 	if gesture and gesture.style and pattern then
 		local warn = Hazards.MIN_WARN

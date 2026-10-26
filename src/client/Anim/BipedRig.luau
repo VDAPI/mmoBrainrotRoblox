@@ -7,7 +7,8 @@
 --   from the map over the name rules: virtual points for missing or misplaced bones, the body turned about a pivot;
 --   the root's `Muzzle` attachment then follows the map's jaw / casting hand (docs/ANIM-WZORCE §10);
 -- * a style the spirits' motion drives (Logic/SpiritMotion: the specter, the ice elemental) also fades the look's
---   visible parts (the specter's flicker, the deaths).
+--   visible parts (the specter's flicker, the deaths);
+-- * a boss's look clone (MonsterViewController's long death) takes the rig over with `rebind`: the death plays on.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -131,8 +132,11 @@ function BipedRig.apply(rig: Rig, posed: BipedPose.Posed)
 	for key, entry in posed do
 		local bone = rig.bones[key]
 		if bone then
-			local r = entry.rot
-			local o = entry.offset
+			local r, o = entry.rot, entry.offset
+			if key == "Hips" and rig.skel.fix then
+				-- an export turned off -Z or off its root (Data/BipedRigs `facing`, `centre`)
+				r, o = BipedPose.hipsFixed(rig.skel, entry)
+			end
 			if o then
 				bone.Transform = CFrame.new(o[1], o[2], o[3], r[1], r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9])
 			else
@@ -154,6 +158,27 @@ function BipedRig.apply(rig: Rig, posed: BipedPose.Posed)
 			end
 		end
 	end
+end
+
+-- The rig moved onto a clone of its look (a dead boss's, MonsterViewController's long death): the same skeleton and
+-- motion on the clone's bones of the same names, no muzzle and no fade (the clone breaks up by itself). nil when the
+-- clone lacks a bone.
+function BipedRig.rebind(rig: Rig, look: Instance): Rig?
+	local byName: { [string]: Bone } = {}
+	for _, item in look:GetDescendants() do
+		if item:IsA("Bone") and not byName[item.Name] then
+			byName[item.Name] = item
+		end
+	end
+	local bones: { [string]: Bone } = {}
+	for key, bone in rig.bones do
+		local twin = byName[bone.Name]
+		if not twin then
+			return nil
+		end
+		bones[key] = twin
+	end
+	return { kind = "biped", skel = rig.skel, motion = rig.motion, bones = bones, mod = rig.mod, fade = 0 }
 end
 
 -- Back to the export's own pose (and look).

@@ -293,8 +293,9 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 				return make("boss", a, b), nil
 			end
 		end
+		-- (a pattern riding an attack shows that attack)
 		local gesture = BossMotions.gesture(a, b)
-		if gesture and gesture.style then
+		if gesture and (gesture.style or gesture.rides) then
 			return make("boss", a, b), nil
 		end
 		return nil, "animlab.error.boss"

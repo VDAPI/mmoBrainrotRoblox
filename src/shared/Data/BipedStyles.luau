@@ -11,6 +11,8 @@
 -- * `flinch`: additive turns of a hit by side; `pick`: which action plays an attack.
 -- Distances in controls are leg lengths (hip joint over the ground), so a style fits every biped of its family.
 
+local BossStyles = require("./BossStyles")
+
 local BipedStyles = {}
 
 export type Key = { seg: string, u: number, ease: string?, pose: { [string]: number } }
@@ -24,6 +26,12 @@ export type Action = {
 	travel: boolean?, -- the pelvis and feet travel toward the target (Input.action.reach) by the key's `travel`
 	full: boolean?, -- weight 1 on the legs even while moving (death)
 	lag: { [string]: number }?, -- seconds the head / free arm trail the body (overlapping action)
+	-- the bosses (Data/BossStyles, 2026-10-26): a channel holds the blow for the run's `hold` (keys in segment "H"
+	-- between the hit and the follow-through) and turns the body by the run's `turn` (`turnFeet`: the share of the
+	-- turn the feet take, the rest twists the body); a leap flies the run's arc over its last `arc` seconds
+	channel: boolean?,
+	turnFeet: number?,
+	leap: boolean?,
 }
 export type Style = {
 	grip: { number }?, -- the blade's direction in the right hand at rest (root space): keys aim it with bRx bRy bRz
@@ -47,6 +55,25 @@ export type Style = {
 	-- at `speed` studs/s) and leanLag (s), flicker { mid, amplitude, Hz } of the look's fade, trail (the specter's robe:
 	-- pitch and roll gains, lag and lag2 of its halves, flutter)
 	spirit: { [string]: any }?,
+	boss: BossLayer?, -- a boss's weight, stances and roars (Data/BossStyles)
+}
+-- The boss layer (Data/BossStyles, 2026-10-26): the weight of its walk, its stance out of the fight and in its states,
+-- its roars.
+export type BossLayer = {
+	dip: number, -- leg lengths the pelvis drops after each footfall (the knees take it, the feet stay planted)
+	roll: number, -- rad the pelvis rolls over the standing leg
+	lean: number, -- rad the spine leans into the walk
+	wide: number, -- leg lengths each foot steps wider than the clip's
+	calm: number, -- the guard's weight out of the fight (a boss never idles like a passer-by)
+	scan: number, -- rad of the slow head scan out of the fight
+	breath: { number }, -- seconds and depth (rad of the chest) of a breath
+	castDamp: number, -- how much a running action damps the flinch (0..1: a big cast is not interrupted)
+	rage: { [string]: number }, -- the stance once enraged (attribute Enraged, the last phase)
+	shield: { [string]: number }?, -- the stance while its helpers shield it (attribute Shielded)
+	roar: string, -- the phase roar
+	rageRoar: string, -- the roar into the last phase and at the enrage
+	stagger: string, -- a broken channel (attribute Staggered)
+	roarHit: number, -- seconds from a roar's start to its peak
 }
 
 -- A pose: the base with `over` laid on (absolute values).
@@ -3633,9 +3660,16 @@ REGULAR_WYVERN.actions.pounce = {
 	},
 }
 
+-- The young frost dragon (2026-10-26, until its new model): today's model is a wyvern on four limbs with no forelegs to
+-- speak of (Data/BipedRigs youngFrostDragon: the arms rebuilt in the air under the chest), so it takes the regular
+-- wyvern's style; it fights in melee (bites and claws instead of the spit). Its colour is the frost of its element
+-- (Data/Monsters ice: the breath's cone and the blows' sparks), the style has none of its own.
+local FROST_DRAGON = variant(REGULAR_WYVERN, { basic = { "bite", "claw", "bite", "clawL" } })
+
 local STYLES: { [string]: Style } = {
 	wyvern = WYVERN,
 	wyvernRegular = REGULAR_WYVERN,
+	frostDragon = FROST_DRAGON,
 	specter = SPECTER,
 	iceElemental = ICE_ELEMENTAL,
 	humanoid1h = HUMANOID_1H,
@@ -3643,6 +3677,11 @@ local STYLES: { [string]: Style } = {
 	brute = BRUTE,
 	ghost = GHOST,
 }
+
+-- the humanoid bosses (Data/BossStyles), by the boss's id
+for id, style in BossStyles.STYLES do
+	STYLES[id] = style :: any
+end
 
 function BipedStyles.get(id: string): Style?
 	return STYLES[id]
@@ -3704,5 +3743,11 @@ BipedStyles.LAB_STATES = {
 	"spawn",
 	"fight",
 }
+-- and the bosses' (Data/BossStyles: their blows, casts, roars, stagger)
+for _, state in BossStyles.LAB_STATES do
+	if not table.find(BipedStyles.LAB_STATES, state) then
+		table.insert(BipedStyles.LAB_STATES, state)
+	end
+end
 
 return BipedStyles

@@ -219,10 +219,16 @@ export type Skeleton = {
 	-- the point (root space) the body turns about when it is not the Hips bone's own joint (Data/BipedRigs `pivot`: a
 	-- Tripo root at the ground under the pelvis); nil = the Hips joint
 	pivot: Vec?,
+	-- an export turned off -Z or standing off its root (Data/BipedRigs `facing`, `centre`): the pose is solved on the
+	-- corrected rest (every bone turned by `turn` about the Hips joint, the joint moved by `delta`, root space) and the
+	-- Hips' Transform carries the correction (`carry` = rest^-1 * turn * rest of the corrected Hips)
+	fix: Fix?,
 }
+export type Fix = { turn: Mat, delta: Vec, carry: Mat }
 -- How a model's skeleton differs from a Mixamo biped's (Data/BipedRigs): the body's pivot, and `legPlane`: the knees
--- bend in the rest legs' own plane (splayed legs: the wyvern's) instead of the plane through the front.
-export type Options = { pivot: Vec?, legPlane: boolean? }
+-- bend in the rest legs' own plane (splayed legs: the wyvern's) instead of the plane through the front; `fix`: the
+-- facing and centring correction (BipedPose.collect fills it).
+export type Options = { pivot: Vec?, legPlane: boolean?, fix: Fix? }
 
 -- The child joint whose direction retargets a bone (the extra end bones are read only for their positions).
 BipedPose.TIP = table.freeze({
@@ -281,11 +287,15 @@ function BipedPose.skeleton(bones: { [string]: Bone }, options: Options?): Skele
 			plane = unit(cross(line, front :: Vec))
 		end
 		local hinge = unit(cross(thigh, front or FRONT)) or { 1, 0, 0 }
+		-- (a rest knee bent out of that plane, the bosses' bowed legs: the shin's hinge square to the shin, so its frame
+		-- stays a rotation and the ankle lands on its target)
+		local shinDir = unit(shin) :: Vec
+		local shinHinge = unit(sub(hinge, scale(shinDir, dot(hinge, shinDir)))) or hinge
 		leg[s] = {
 			l1 = length(thigh),
 			l2 = length(shin),
 			thighRest = columns(hinge, unit(thigh) :: Vec, cross(hinge, unit(thigh) :: Vec)),
-			shinRest = columns(hinge, unit(shin) :: Vec, cross(hinge, unit(shin) :: Vec)),
+			shinRest = columns(shinHinge, shinDir, cross(shinHinge, shinDir)),
 			hip = hip,
 			ankle = ankle,
 			plane = plane,
@@ -311,6 +321,7 @@ function BipedPose.skeleton(bones: { [string]: Bone }, options: Options?): Skele
 		legLength = legLength,
 		dirs = dirs,
 		pivot = options and options.pivot,
+		fix = options and options.fix,
 	}
 end
 
@@ -367,7 +378,42 @@ function BipedPose.collect(
 			}
 		end
 	end
-	return bones, keyed, { pivot = pivot, legPlane = map and map.legPlane }, unit
+	-- an export turned off -Z or off its root: every bone turned about the Hips joint to face -Z, the joint moved over
+	-- the root; the Hips' Transform turns it back (BipedPose.hipsFixed)
+	local fix: Fix? = nil
+	local hips = bones.Hips
+	if map and hips and ((map.facing or 0) ~= 0 or map.centre) then
+		local turn = ry(-math.rad(map.facing or 0))
+		local h = hips.pos
+		local to: Vec = if map.centre then { 0, h[2], 0 } else h
+		local function moved(p: Vec): Vec
+			local d = apply(turn, sub(p, h))
+			return add(to, d)
+		end
+		local hipsRest = mul(turn, hips.rest)
+		for key, bone in bones do
+			bones[key] = { rest = mul(turn, bone.rest), pos = moved(bone.pos) }
+		end
+		if pivot then
+			pivot = moved(pivot)
+		end
+		fix = { turn = turn, delta = sub(to, h), carry = mul(mul(transpose(hipsRest), turn), hipsRest) }
+	end
+	return bones, keyed, { pivot = pivot, legPlane = map and map.legPlane, fix = fix }, unit
+end
+
+-- The Hips' Transform of a skeleton with a facing / centring correction (Data/BipedRigs `facing`, `centre`): the posed
+-- entry (solved on the corrected rest) carried back onto the export's own rest. Without a correction the entry itself.
+function BipedPose.hipsFixed(skel: Skeleton, entry: { rot: Mat, offset: Vec? }): (Mat, Vec?)
+	local fix = skel.fix
+	if not fix then
+		return entry.rot, entry.offset
+	end
+	local r = skel.bones.Hips.rest
+	local o = entry.offset or { 0, 0, 0 }
+	-- where the joint goes (the correction's move and the pose's, root space), in the export's own Hips frame
+	local d = add(fix.delta, apply(r, o))
+	return mul(fix.carry, entry.rot), apply(transpose(r), apply(fix.turn, d))
 end
 
 ---------------------------------------------------------------- the pose

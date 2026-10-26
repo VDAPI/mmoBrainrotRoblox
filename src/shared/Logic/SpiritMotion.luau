@@ -121,12 +121,12 @@ local function metaOf(inst: Instance, input: BipedMotion.Input): (number, number
 		return 0, 0
 	end
 	local action = inst.style.actions[run.name]
-	local length = BipedMotion.length(action, run.hit)
+	local length = BipedMotion.length(action, run.hit, run.hold)
 	local t = input.now - run.start
 	if t < 0 or (t > length and not action.hold) then
 		return 0, 0
 	end
-	local c = BipedMotion.controlsAt(inst.style, run.name, run.hit, math.min(t, length))
+	local c = BipedMotion.controlsAt(inst.style, run.name, run.hit, math.min(t, length), run.hold)
 	if not c then
 		return 0, 0
 	end
