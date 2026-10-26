@@ -43,6 +43,10 @@ export type Style = {
 	-- a procedural gait instead of mocap (Logic/BipedMotion): the rest pose, walk and run (stride k in leg lengths, duty,
 	-- foot lift, pelvis bob / sway / yaw, forward lean) and the wingbeat in the air
 	procedural: { [string]: any }?,
+	-- a floating spirit on its bones (Logic/SpiritMotion): bob (leg lengths) and bobHz, sway (rad) and swayHz, lean (rad
+	-- at `speed` studs/s) and leanLag (s), flicker { mid, amplitude, Hz } of the look's fade, trail (the specter's robe:
+	-- pitch and roll gains, lag and lag2 of its halves, flutter)
+	spirit: { [string]: any }?,
 }
 
 -- A pose: the base with `over` laid on (absolute values).
@@ -2836,8 +2840,804 @@ WYVERN.actions.clawL = (function(): Action
 end)()
 WYVERN.actions.heavy = WYVERN.actions.roar
 
+---------------------------------------------------------------- spirits on their bones (owner 2026-10-26)
+
+-- The specter (Mixamo rig) and the ice elemental (Tripo biped, only its body and arms usable: Data/BipedRigs): floating
+-- casters without mocap. Logic/SpiritMotion floats them (bob, sway, the lean into the drift with lag, the specter's
+-- trailing robe and flicker); these keys pose the arms and the body: the bolt thrown from both hands at W, the
+-- specter's wail (rise, arms wide, the head thrown back, thrust at W, the scream held), the burst (heavyBlow, the
+-- elemental's frostNova: compressed and shivering, then flung open at W), the pool on the target, a swoop for the
+-- pounce, the deaths (the specter rises, turns and fades; the elemental shivers and shatters) and the appear (fading
+-- in from below). `fade` and `shiver` are meta controls SpiritMotion reads from the keys.
+local SPIRIT_REST = { spitch = 0.06, hpitch = -0.04, aRp = 0.2, aRo = 0.3, eR = 0.5, aLp = 0.2, aLo = 0.3, eL = 0.5 }
+local SPIRIT_GUARD = {
+	spitch = 0.14,
+	hpitch = -0.1,
+	cRu = 0.08,
+	cLu = 0.08,
+	aRp = 0.6,
+	aRo = 0.4,
+	aRy = 0.15,
+	eR = 0.9,
+	wRp = -0.3,
+	aLp = 0.6,
+	aLo = 0.4,
+	aLy = 0.15,
+	eL = 0.9,
+	wLp = -0.3,
+}
+local function sg(over: { [string]: number }): { [string]: number }
+	return from(SPIRIT_GUARD, over)
+end
+-- arms flung wide and up (the wail, the burst)
+local SPIRIT_WIDE =
+	{ aRp = 0.7, aRo = 1.45, aRy = -0.1, eR = 0.2, wRp = 0.2, aLp = 0.7, aLo = 1.45, aLy = -0.1, eL = 0.2, wLp = 0.2 }
+
+local SPIRIT_ACTIONS: { [string]: Action } = {
+	-- the bolt (the regular shot and the throw): the right hand draws back and up while the left gathers in front, then
+	-- both thrust at the target; the shot leaves the right hand at W (the look dips solid)
+	bolt = {
+		strike = 0.12,
+		follow = 0.22,
+		recover = 0.35,
+		legs = true,
+		lag = { head = 0.05 },
+		keys = {
+			{
+				seg = "A",
+				u = 1,
+				ease = "inout",
+				pose = sg({
+					py = 0.03,
+					pz = 0.05,
+					pyaw = -0.25,
+					syaw = -0.25,
+					spitch = -0.1,
+					hpitch = -0.15,
+					aRp = 1.5,
+					aRo = 0.7,
+					aRy = -0.35,
+					eR = 1.5,
+					wRp = -0.6,
+					aLp = 1.0,
+					aLo = 0.35,
+					aLy = 0.6,
+					eL = 1.5,
+				}),
+			},
+			{
+				seg = "S",
+				u = 1,
+				ease = "in",
+				pose = sg({
+					py = -0.01,
+					pz = -0.06,
+					pyaw = 0.08,
+					syaw = 0.15,
+					spitch = 0.22,
+					hpitch = 0.05,
+					aRp = 1.45,
+					aRo = 0.25,
+					aRy = 0.2,
+					eR = 0.15,
+					wRp = 0.3,
+					aLp = 1.35,
+					aLo = 0.2,
+					aLy = 0.3,
+					eL = 0.2,
+					wLp = 0.3,
+					fade = -0.25,
+				}),
+			},
+			{
+				seg = "F",
+				u = 1,
+				ease = "out",
+				pose = sg({
+					pz = -0.05,
+					syaw = 0.15,
+					spitch = 0.2,
+					aRp = 1.35,
+					aRo = 0.25,
+					aRy = 0.25,
+					eR = 0.3,
+					aLp = 1.25,
+					aLo = 0.25,
+					eL = 0.3,
+				}),
+			},
+			{ seg = "R", u = 1, ease = "inout", pose = SPIRIT_GUARD },
+		},
+	},
+	-- the wail (the specter's Elite II, W 1.2, a cone 15 / 90): it rises with the arms flung wide and the head thrown
+	-- back, holds trembling, then thrusts forward into the scream at W and holds it shaking
+	wail = {
+		strike = 0.16,
+		follow = 0.35,
+		recover = 0.4,
+		legs = true,
+		lag = { head = 0.06 },
+		keys = {
+			{
+				seg = "A",
+				u = 0.3,
+				ease = "out",
+				pose = merge2(
+					sg({ py = 0.08, pz = 0.06, spitch = -0.28, hpitch = -0.5, cRu = 0.2, cLu = 0.2 }),
+					SPIRIT_WIDE
+				),
+			},
+			{
+				seg = "A",
+				u = 1,
+				ease = "inout",
+				pose = merge2(
+					sg({ py = 0.1, pz = 0.08, spitch = -0.32, hpitch = -0.55, cRu = 0.25, cLu = 0.25, shiver = 0.6 }),
+					SPIRIT_WIDE
+				),
+			},
+			{
+				seg = "S",
+				u = 1,
+				ease = "in",
+				pose = from(
+					sg({
+						py = 0.06,
+						pz = -0.06,
+						spitch = 0.3,
+						hpitch = 0.15,
+						aRo = 0.95,
+						aLo = 0.95,
+						eR = 0.25,
+						eL = 0.25,
+					}),
+					{ aRp = 1.2, aLp = 1.2, shiver = 0.3 }
+				),
+			},
+			{
+				seg = "F",
+				u = 1,
+				ease = "inout",
+				pose = from(
+					sg({ py = 0.06, pz = -0.05, spitch = 0.28, hpitch = 0.12, aRo = 1.0, aLo = 1.0, eR = 0.3, eL = 0.3 }),
+					{ aRp = 1.15, aLp = 1.15, shiver = 1 }
+				),
+			},
+			{ seg = "R", u = 1, ease = "inout", pose = SPIRIT_GUARD },
+		},
+	},
+	-- the burst (heavyBlow, frostNova: a circle round it): it folds in, the arms crossed over the chest, sinking and
+	-- shivering harder, then bursts open at W, arched back, rising
+	burst = {
+		strike = 0.12,
+		follow = 0.35,
+		recover = 0.45,
+		legs = true,
+		lag = { head = 0.05 },
+		keys = {
+			{
+				seg = "A",
+				u = 0.4,
+				ease = "inout",
+				pose = sg({
+					py = -0.04,
+					spitch = 0.35,
+					hpitch = 0.2,
+					cRu = -0.05,
+					cLu = -0.05,
+					aRp = 0.9,
+					aRo = 0.1,
+					aRy = 1.0,
+					eR = 2.0,
+					aLp = 0.9,
+					aLo = 0.1,
+					aLy = 1.0,
+					eL = 2.0,
+					shiver = 0.3,
+				}),
+			},
+			{
+				seg = "A",
+				u = 1,
+				ease = "in",
+				pose = sg({
+					py = -0.06,
+					spitch = 0.42,
+					hpitch = 0.25,
+					cRu = -0.08,
+					cLu = -0.08,
+					aRp = 0.85,
+					aRo = 0.05,
+					aRy = 1.1,
+					eR = 2.1,
+					aLp = 0.85,
+					aLo = 0.05,
+					aLy = 1.1,
+					eL = 2.1,
+					shiver = 1,
+				}),
+			},
+			{
+				seg = "S",
+				u = 1,
+				ease = "out",
+				pose = merge2(
+					sg({ py = 0.06, spitch = -0.3, hpitch = -0.3, cRu = 0.2, cLu = 0.2, shiver = 0 }),
+					SPIRIT_WIDE
+				),
+			},
+			{
+				seg = "F",
+				u = 1,
+				ease = "out",
+				pose = merge2(sg({ py = 0.05, spitch = -0.25, hpitch = -0.25, cRu = 0.15, cLu = 0.15 }), SPIRIT_WIDE),
+			},
+			{ seg = "R", u = 1, ease = "inout", pose = SPIRIT_GUARD },
+		},
+	},
+	-- the swoop (the Elite II pounce, the server lands it at W): it draws up and back with the arms raised, then
+	-- swoops along to the target reaching forward
+	swoop = {
+		strike = 0.4,
+		follow = 0.3,
+		recover = 0.45,
+		legs = true,
+		travel = true,
+		lag = { head = 0.06 },
+		keys = {
+			{
+				seg = "A",
+				u = 1,
+				ease = "inout",
+				pose = sg({
+					py = 0.08,
+					pz = 0.08,
+					spitch = -0.25,
+					hpitch = -0.3,
+					aRp = 2.2,
+					aRo = 0.6,
+					eR = 0.6,
+					aLp = 2.2,
+					aLo = 0.6,
+					eL = 0.6,
+				}),
+			},
+			{
+				seg = "S",
+				u = 1,
+				ease = "in",
+				pose = from(
+					sg({
+						py = -0.02,
+						pz = -0.06,
+						spitch = 0.4,
+						hpitch = 0.1,
+						aRp = 1.5,
+						aRo = 0.35,
+						eR = 0.2,
+						aLp = 1.5,
+						aLo = 0.35,
+						eL = 0.2,
+					}),
+					{ travel = 1 }
+				),
+			},
+			{
+				seg = "F",
+				u = 1,
+				ease = "out",
+				pose = from(sg({ spitch = 0.3, aRp = 1.2, aLp = 1.2, eR = 0.4, eL = 0.4 }), { travel = 1 }),
+			},
+			{ seg = "R", u = 1, ease = "inout", pose = from(SPIRIT_GUARD, { travel = 1 }) },
+		},
+	},
+	-- the specter's death: a jolt, then it rises 1.5 studs (scale 1) turning a quarter round, the arms drifting up, and
+	-- fades out by 0.8 s
+	deathRise = {
+		strike = 0.15,
+		follow = 0.65,
+		recover = 0.4,
+		legs = true,
+		hold = true,
+		full = true,
+		lag = { head = 0.1 },
+		keys = {
+			{
+				seg = "S",
+				u = 1,
+				ease = "out",
+				pose = merge2(sg({ py = 0.0, spitch = -0.25, hpitch = -0.4, fade = 0.1 }), SPIRIT_WIDE),
+			},
+			{
+				seg = "F",
+				u = 1,
+				ease = "inout",
+				pose = from(SPIRIT_WIDE, {
+					py = 0.33,
+					pyaw = 1.57,
+					spitch = -0.15,
+					hpitch = -0.5,
+					aRp = 1.4,
+					aLp = 1.4,
+					aRo = 1.1,
+					aLo = 1.1,
+					fade = 1,
+				}),
+			},
+			{
+				seg = "R",
+				u = 1,
+				ease = "out",
+				pose = from(SPIRIT_WIDE, {
+					py = 0.38,
+					pyaw = 1.7,
+					spitch = -0.15,
+					hpitch = -0.5,
+					aRp = 1.5,
+					aLp = 1.5,
+					aRo = 1.1,
+					aLo = 1.1,
+					fade = 1,
+				}),
+			},
+		},
+	},
+	-- the elemental's death: it seizes, shivering hard with the arms thrown out, then shatters, fading out by 0.4 s
+	deathShatter = {
+		strike = 0.25,
+		follow = 0.15,
+		recover = 0.3,
+		legs = true,
+		hold = true,
+		full = true,
+		keys = {
+			{
+				seg = "S",
+				u = 1,
+				ease = "out",
+				pose = merge2(sg({ py = 0.02, spitch = -0.2, hpitch = -0.2, shiver = 1, fade = 0.1 }), SPIRIT_WIDE),
+			},
+			{
+				seg = "F",
+				u = 1,
+				ease = "in",
+				pose = merge2(sg({ py = -0.05, spitch = 0.1, shiver = 1, fade = 1 }), SPIRIT_WIDE),
+			},
+			{
+				seg = "R",
+				u = 1,
+				ease = "lin",
+				pose = merge2(sg({ py = -0.08, spitch = 0.15, shiver = 0, fade = 1 }), SPIRIT_WIDE),
+			},
+		},
+	},
+	-- the appear (a spawn, a summon): it rises out of the ground fading in, the arms opening
+	spawnSpirit = {
+		strike = 0.3,
+		follow = 0.2,
+		recover = 0.3,
+		legs = true,
+		full = true,
+		keys = {
+			{
+				seg = "A",
+				u = 0,
+				ease = "lin",
+				pose = sg({
+					py = -0.25,
+					spitch = 0.4,
+					hpitch = 0.3,
+					aRp = 0.2,
+					aLp = 0.2,
+					eR = 1.6,
+					eL = 1.6,
+					fade = 1,
+				}),
+			},
+			{
+				seg = "S",
+				u = 1,
+				ease = "out",
+				pose = merge2(sg({ py = 0.04, spitch = -0.15, hpitch = -0.2, fade = 0 }), SPIRIT_WIDE),
+			},
+			{ seg = "F", u = 1, ease = "inout", pose = SPIRIT_GUARD },
+			{ seg = "R", u = 1, ease = "inout", pose = SPIRIT_GUARD },
+		},
+	},
+}
+
+-- The floating spirit made from the ghost: its own rest, stance and blows, the caster's pool kept.
+local function spirit(over: { [string]: any }): Style
+	local out = variant(GHOST, {
+		guard = SPIRIT_GUARD,
+		procedural = {
+			float = true,
+			rest = SPIRIT_REST,
+			runAt = 99,
+			walk = { k = 1, duty = 1, lift = 0, bob = 0, sway = 0, yaw = 0, lean = 0 },
+			run = { k = 1, duty = 1, lift = 0, bob = 0, sway = 0, yaw = 0, lean = 0 },
+		},
+		basic = { "bolt" },
+		throw = "bolt",
+		abilities = {
+			wail = "wail",
+			frostNova = "burst",
+			boneNova = "burst",
+			emberNova = "burst",
+			heavyBlow = "burst",
+			slam = "burst",
+			cleave = "burst",
+			crush = "pool",
+			voidPool = "pool",
+			poisonPool = "pool",
+			pounce = "swoop",
+			leap = "swoop",
+			charge = "swoop",
+		},
+		aggro = "wail",
+		spawn = "spawnSpirit",
+		actions = SPIRIT_ACTIONS,
+	})
+	for key, value in over do
+		(out :: any)[key] = value
+	end
+	out.clips = nil
+	out.float = nil
+	return out
+end
+
+local SPECTER = spirit({
+	death = { "deathRise" },
+	spirit = {
+		speed = 13,
+		bob = 0.033,
+		bobHz = 0.45,
+		sway = 0.05,
+		swayHz = 0.3,
+		lean = 0.21,
+		leanLag = 0.25,
+		flicker = { 0.25, 0.1, 0.5 },
+		trail = { pitch = 0.55, lag = 0.3, lag2 = 0.55, flutter = 0.06 },
+	},
+})
+local ICE_ELEMENTAL = spirit({
+	death = { "deathShatter" },
+	spirit = { speed = 13, bob = 0.035, bobHz = 0.4, sway = 0.035, swayHz = 0.25, lean = 0.15, leanLag = 0.3 },
+})
+
+---------------------------------------------------------------- the regular wyvern (owner 2026-10-26, docs/ANIM-WZORCE §5.8)
+
+-- The wyvern monster (Tripo Auto Rig, Data/BipedRigs `wyvern`) in Vaelgrath's wyvern style: the same choreography,
+-- turned onto its own rig. Its export already stands leaning forward with the neck up (Vaelgrath's rest pitches), so
+-- every key loses them; its wings are long fingers that rest half spread, so the wing controls of each key are read as
+-- how open, raised and swept Vaelgrath's wing is and laid on this rig's own wing poses (fitted to the dump: folded along
+-- the back, lifted in the guard, spread, the top and the bottom of a beat). A ground monster (§9 Q5): it walks on its
+-- hind legs with the wings folded, trots, and chases in wing-assisted bounds (one beat per bound); a fire spit from the
+-- jaw (release at W), the pounce a flapping leap onto its target.
+local WING_KEYS = { "p", "o", "y", "t", "e", "wp", "wy", "wr" }
+local function wingPose(r: { number }, l: { number }): { [string]: number }
+	local out: { [string]: number } = {}
+	for i, k in WING_KEYS do
+		local first = string.sub(k, 1, 1)
+		local rest = string.sub(k, 2)
+		local rKey = if first == "e" then "eR" elseif first == "w" then "wR" .. rest else "aR" .. k
+		local lKey = if first == "e" then "eL" elseif first == "w" then "wL" .. rest else "aL" .. k
+		out[rKey] = r[i]
+		out[lKey] = l[i]
+	end
+	return out
+end
+-- p o y t e wp wy wr per side (right, left)
+local RW_FOLD = wingPose(
+	{ -0.75, 2.14, -1.2, 0.91, 1.46, -0.12, 0.42, -1.32 },
+	{ -0.42, 2.28, -1.34, 1.15, 1.59, -0.35, 0.14, -1.23 }
+)
+local RW_HALF = wingPose(
+	{ -0.65, 1.99, -0.69, 0.78, 1.07, -0.11, 0.24, -1.26 },
+	{ -0.5, 2.3, -0.71, 1.27, 1.41, -0.31, 0.07, -1.1 }
+)
+local RW_SPREAD = wingPose(
+	{ -0.11, 1.76, -0.09, 0.09, -0.27, 0.13, -0.04, -0.46 },
+	{ -0.07, 1.84, -0.07, 0.11, -0.41, 0.21, -0.06, -0.84 }
+)
+local RW_UP = wingPose(
+	{ 0.16, 2.25, -0.64, 0.26, -0.17, 0.01, -0.23, -0.09 },
+	{ -0.14, 2.3, -0.18, 0.59, -0.25, -0.04, -0.08, -0.33 }
+)
+local RW_DOWN = wingPose(
+	{ -0.17, 0.87, 0.32, 0.1, -0.15, -0.3, 0.05, -0.51 },
+	{ -0.03, 0.92, 0.32, 0.04, -0.42, -0.27, 0.06, -0.77 }
+)
+-- Vaelgrath's rest pitches (WYVERN_REST), which this export has already
+local REBASE: { [string]: number } = { ppitch = -0.5, spitch = -0.3, hpitch = 0.5 }
+
+-- One side's wing of a Vaelgrath key on this rig: the openness from its out-lift (0 folded, 0.35 the guard, 1 spread),
+-- this rig's pose there, plus how much more it is raised, swept and bent than Vaelgrath's at that openness.
+local function wingFrom(pose: { [string]: number }, side: string, out: { [string]: number })
+	local o = pose["a" .. side .. "o"] or 0
+	local k = math.clamp((o - 0.3) / 1.3, 0, 1.3)
+	local base: { [string]: number }, to: { [string]: number }, u: number
+	local p0: number, y0: number, e0: number
+	if k <= 0.35 then
+		u = k / 0.35
+		base, to = RW_FOLD, RW_HALF
+		p0, y0, e0 = -0.15 + 0.3 * u, -0.35, 1.9 - 0.7 * u
+	else
+		u = (k - 0.35) / 0.65
+		base, to = RW_HALF, RW_SPREAD
+		p0, y0, e0 = 0.15 + 0.45 * u, -0.35 + 0.05 * u, 1.2 - 0.9 * u
+	end
+	for _, name in WING_KEYS do
+		local first = string.sub(name, 1, 1)
+		local key = if first == "e"
+			then "e" .. side
+			elseif first == "w" then "w" .. side .. string.sub(name, 2)
+			else "a" .. side .. name
+		out[key] = base[key] + (to[key] - base[key]) * u
+	end
+	out["a" .. side .. "p"] += (pose["a" .. side .. "p"] or 0) - p0
+	out["a" .. side .. "y"] += (pose["a" .. side .. "y"] or 0) - y0
+	out["e" .. side] += ((pose["e" .. side] or 0) - e0) * 0.6
+end
+
+-- How far back the pelvis of this rig may pitch (its long tail would sweep the ground); the spine bends back for it,
+-- softened past SPINE_BACK (the head stays over the feet when it rears).
+local PELVIS_BACK = -0.15
+local SPINE_BACK = -0.45
+
+-- A key of Vaelgrath's on this rig.
+local function regular(pose: { [string]: number }): { [string]: number }
+	local out = table.clone(pose)
+	for key, d in REBASE do
+		out[key] = (pose[key] or 0) + d
+	end
+	if out.ppitch < PELVIS_BACK then
+		out.spitch += out.ppitch - PELVIS_BACK
+		out.ppitch = PELVIS_BACK
+	end
+	if out.spitch < SPINE_BACK then
+		out.spitch = SPINE_BACK + (out.spitch - SPINE_BACK) * 0.6
+	end
+	wingFrom(pose, "R", out)
+	wingFrom(pose, "L", out)
+	return out
+end
+
+local function regularAction(action: Action): Action
+	local keys = {}
+	for _, key in action.keys do
+		table.insert(keys, { seg = key.seg, u = key.u, ease = key.ease, pose = regular(key.pose) })
+	end
+	local out = table.clone(action)
+	out.keys = keys
+	return out
+end
+
+-- Only the wings of Vaelgrath's spread(o, p, y, e) on this rig.
+local function rwing(o: number, p: number, y: number, e: number): { [string]: number }
+	local out: { [string]: number } = {}
+	local pose = spread(o, p, y, e)
+	wingFrom(pose, "R", out)
+	wingFrom(pose, "L", out)
+	return out
+end
+
+local RW_REST = from(RW_FOLD, {})
+local RW_GUARD = regular(WYVERN_GUARD)
+local function rg(over: { [string]: number }): { [string]: number }
+	return from(RW_GUARD, over)
+end
+
+local REGULAR_WYVERN: Style = {
+	guard = RW_GUARD,
+	procedural = {
+		rest = RW_REST,
+		runAt = 4.6,
+		-- its hock rests behind the hip: the feet step about a point a quarter leg ahead, strides it can reach
+		footZ = -0.25,
+		toeRoll = true,
+		-- its cadence differs a lot between the walk, the run and the bounds: they blend fast (a slow blend would step
+		-- the walk's short strides at the run's speed)
+		blend = 10,
+		walk = { k = 1.6, duty = 0.6, lift = 0.18, bob = 0.035, sway = 0.06, yaw = 0.1, lean = 0.05 },
+		run = { k = 2.2, duty = 0.42, lift = 0.3, bob = 0.06, sway = 0.05, yaw = 0.08, lean = 0.18 },
+		-- the chase: bounds of 4.5 leg lengths (about 1.7 a second at full speed), both feet together, the wings
+		-- beating once per bound
+		hop = {
+			at = 6.5,
+			k = 4.5,
+			duty = 0.25,
+			lift = 0.45,
+			height = 0.35,
+			crouch = 0.1,
+			lean = 0.22,
+			up = RW_UP,
+			down = RW_DOWN,
+		},
+		flap = { rate = 1.2, out = 1.6, amp = 0.65, pitch = 0.1, lean = 0.2 },
+	},
+	idleEvery = { 6, 10 },
+	rate = 0.05,
+	basic = { "spit" },
+	abilities = {
+		fireBreath = "breath",
+		frostBreath = "breath",
+		wingBuffet = "buffet",
+		tailSwipe = "tail",
+		heavyBlow = "claw",
+		crush = "stomp",
+		slam = "stomp",
+		pounce = "pounce",
+		leap = "pounce",
+		cleave = "claw",
+		charge = "buffet",
+	},
+	throw = "spit",
+	death = { "deathDragon" },
+	aggro = "roar",
+	spawn = "spawnDragon",
+	flinch = WYVERN.flinch,
+	actions = {},
+}
+for name, action in WYVERN.actions do
+	REGULAR_WYVERN.actions[name] = regularAction(action)
+end
+-- the death on this rig: after Vaelgrath's last rear and the buckling legs it lies on its left side, the lower wing
+-- spread on the ground, the upper one draped over the body, the head limp on the ground (fitted on the dump: nothing
+-- under the ground but the small forearms pressed under the chest)
+do
+	local keys = REGULAR_WYVERN.actions.deathDragon.keys
+	local lying = from(keys[#keys].pose, {
+		py = -0.69,
+		px = -0.24,
+		proll = 1.1,
+		ppitch = 0.18,
+		spitch = 0.39,
+		sroll = 0.01,
+		hpitch = 1.2,
+		hroll = 0.8,
+		hyaw = 0.6,
+		-- the legs reaching forward along the ground, the upper one bent over the lower (Vaelgrath's feet where they stood
+		-- would stretch the raised leg and turn the lower knee over)
+		fLx = -0.26,
+		fLy = -0.23,
+		fLz = -0.73,
+		fRx = -0.24,
+		fRy = -0.07,
+		fRz = -0.62,
+	})
+	for key, value in wingPose({ -0.01, 0, 0.21, 0.74, 0, 0, 0, 0 }, { 1.79, 0.1, 0.56, 1.18, 2.6, 0.14, -0.43, -0.78 }) do
+		lying[key] = value
+	end
+	-- the legs buckling: the pelvis tips forward so the tail stays off the ground
+	local buckle = keys[2].pose
+	keys[2].pose = from(buckle, { ppitch = buckle.ppitch + 0.25, spitch = buckle.spitch - 0.25 })
+	keys[#keys - 2].pose = from(lying, { py = -0.71, proll = 1.12, hpitch = 1.0, hroll = 0.6 })
+	keys[#keys - 1].pose = from(lying, { py = -0.66, hpitch = 1.1, hroll = 0.7 })
+	keys[#keys].pose = lying
+end
+-- the fire spit (the regular shot and the throw, W 0.5-0.81): the neck draws back and up with the chest swelling and
+-- the wings lifting, then the head thrusts forward and down, the shot leaving the jaw at W; a recoil after
+REGULAR_WYVERN.actions.spit = {
+	strike = 0.12,
+	follow = 0.2,
+	recover = 0.35,
+	legs = true,
+	lag = { head = 0.04 },
+	keys = {
+		{
+			seg = "A",
+			u = 1,
+			ease = "inout",
+			pose = merge2(
+				rg({ py = -0.02, pz = 0.08, ppitch = -0.05, spitch = -0.2, hpitch = -0.4, cRu = 0.15, cLu = 0.15 }),
+				rwing(1.0, 0.35, -0.4, 0.8)
+			),
+		},
+		{
+			seg = "S",
+			u = 1,
+			ease = "in",
+			pose = merge2(
+				rg({ py = -0.1, pz = -0.06, ppitch = 0.22, spitch = 0.25, hpitch = 0.3, fLz = -0.22 }),
+				rwing(0.85, 0.2, 0.0, 0.9)
+			),
+		},
+		{
+			seg = "F",
+			u = 1,
+			ease = "out",
+			pose = merge2(
+				rg({ py = -0.08, pz = 0.02, ppitch = 0.16, spitch = 0.15, hpitch = 0.12, fLz = -0.22 }),
+				rwing(0.8, 0.15, -0.1, 1.0)
+			),
+		},
+		{ seg = "R", u = 1, ease = "inout", pose = RW_GUARD },
+	},
+}
+-- the pounce (Elite II, W 1.4, the server lands it on its target at W): a crouch with the wings raised high, the
+-- spring with a great downbeat, the flight to the target (the body travels to it by W), landing on both feet
+REGULAR_WYVERN.actions.pounce = {
+	strike = 0.4,
+	follow = 0.3,
+	recover = 0.45,
+	legs = true,
+	travel = true,
+	lag = { head = 0.06 },
+	keys = {
+		{
+			seg = "A",
+			u = 1,
+			ease = "inout",
+			pose = merge2(
+				rg({ py = -0.3, pz = 0.1, ppitch = 0.3, spitch = 0.1, hpitch = -0.35, fLz = -0.05, fRz = 0.05 }),
+				RW_UP
+			),
+		},
+		{
+			seg = "S",
+			u = 0.45,
+			ease = "out",
+			pose = merge2(
+				from(
+					rg({
+						py = 0.5,
+						pz = -0.1,
+						ppitch = 0.2,
+						spitch = -0.05,
+						hpitch = -0.2,
+						fLy = 0.4,
+						fRy = 0.4,
+						fLz = -0.2,
+						fRz = -0.15,
+						tL = 0.8,
+						tR = 0.8,
+					}),
+					{ travel = 0.55 }
+				),
+				RW_DOWN
+			),
+		},
+		{
+			seg = "S",
+			u = 1,
+			ease = "in",
+			pose = merge2(
+				from(
+					rg({
+						py = -0.25,
+						pz = -0.05,
+						ppitch = 0.3,
+						spitch = 0.2,
+						hpitch = 0.1,
+						fLz = -0.2,
+						fRz = 0.1,
+						fLx = -0.08,
+						fRx = 0.08,
+					}),
+					{ travel = 1 }
+				),
+				RW_SPREAD
+			),
+		},
+		{
+			seg = "F",
+			u = 1,
+			ease = "out",
+			pose = from(
+				rg({ py = -0.2, ppitch = 0.25, spitch = 0.15, hpitch = 0.05, fLz = -0.2, fRz = 0.1 }),
+				{ travel = 1 }
+			),
+		},
+		{ seg = "R", u = 1, ease = "inout", pose = from(RW_GUARD, { travel = 1 }) },
+	},
+}
+
 local STYLES: { [string]: Style } = {
 	wyvern = WYVERN,
+	wyvernRegular = REGULAR_WYVERN,
+	specter = SPECTER,
+	iceElemental = ICE_ELEMENTAL,
 	humanoid1h = HUMANOID_1H,
 	caster = CASTER,
 	brute = BRUTE,
@@ -2850,6 +3650,15 @@ end
 
 -- The states AnimLab `mob <id> <state>` shows for a biped (besides Logic/LookAnim's slots).
 BipedStyles.LAB_STATES = {
+	"spit",
+	"bolt",
+	"wail",
+	"burst",
+	"swoop",
+	"deathRise",
+	"deathShatter",
+	"spawnSpirit",
+	"trot",
 	"bite",
 	"claw",
 	"clawL",

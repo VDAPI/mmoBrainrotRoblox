@@ -958,7 +958,7 @@ end
 local function bipedLab(model: Model, look: any, monster: any, state: string, boss: any): (BipedLab?, MotionKeys.Keys?)
 	local styleId = look.asset.motion :: string
 	local rig: any = if BipedStyles.get(styleId)
-		then BipedRig.new(model, styleId, 7.3, look.asset.grip)
+		then BipedRig.new(model, styleId, 7.3, look.asset.grip, look.asset.model)
 		elseif QuadStyles.get(styleId) then QuadRig.new(model, styleId, 7.3, look.asset.model)
 		elseif RigidStyles.get(styleId) then RigidRig.new(model, styleId, 7.3, look.asset.model, nil)
 		elseif FlyerStyles.get(styleId) then FlyerRig.new(model, styleId, 7.3, look.asset.model)
@@ -997,9 +997,12 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 				return ability.windup
 			end
 		end
+		local shooter = rig.kind == "flyer" or (monster and monster.attack == "ranged")
 		if name == style.abilities.heavyBlow then
 			local heavy = MonsterAbilities.get("heavyBlow")
 			return if heavy then heavy.windup else 1.8
+		elseif shooter and table.find(style.basic, name) then
+			return CombatData.basicWind.ranged -- a ranged kind's regular blow is a shot (a flyer's always)
 		elseif name == style.throw then
 			return CombatData.basicWind.throw * CombatData.basicWindVariant.elite2
 		elseif name == style.aggro then
@@ -1009,8 +1012,6 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 		elseif name == style.summon or (style.fidgets and table.find(style.fidgets, name)) then
 			-- a rigid kind's climb out of the ground and its idle fidgets (Data/RigidStyles)
 			return 0.5
-		elseif rig.kind == "flyer" and table.find(style.basic, name) then
-			return CombatData.basicWind.ranged -- a flyer's regular blow is a shot
 		end
 		return melee
 	end

@@ -80,6 +80,7 @@ export type Input = {
 	look: Vec?, -- root-space direction to the target (nil = none)
 	snap: boolean?, -- AnimLab: weights jump to their targets
 	flying: boolean?, -- a winged biped in the air (the attribute Flying): wingbeats, the legs tucked
+	gait: string?, -- the server's gait (attribute Gait: "walk" | "trot" | "run"); a style's `hop` bounds on "run"
 }
 export type Instance = {
 	skel: BipedPose.Skeleton,
@@ -91,6 +92,7 @@ export type Instance = {
 	phase: number,
 	move: number,
 	run: number,
+	hop: number, -- weight of a style's bounding gait (Data/BipedStyles procedural `hop`)
 	combat: number,
 	look: number,
 	lookYaw: number,
@@ -145,6 +147,7 @@ function BipedMotion.new(skel: BipedPose.Skeleton, styleId: string, seed: number
 		grip = grip or style.grip,
 		move = 0,
 		run = 0,
+		hop = 0,
 		combat = 0,
 		look = 0,
 		lookYaw = 0,
@@ -302,6 +305,30 @@ local function idleLayer(inst: Instance, now: number): (World, Vec)
 	return world or {}, shift or { 0, 0, 0 }
 end
 
+local SIDES = { "L", "R" }
+
+-- One bound of the hopping gait laid over `out` with weight `wgt` (phase `p`, stance until `duty`): the body crouches
+-- in the stance and flies an arc, leaning in, the head countering; the wings beat once per bound, from their top at
+-- mid-stance down through the push-off (`hop.up` / `hop.down`: full wing poses).
+local function hopControls(out: Controls, hop: any, p: number, duty: number, wgt: number)
+	local y: number
+	if p < duty then
+		y = -hop.crouch * math.sin(math.pi * p / duty)
+	else
+		y = hop.height * math.sin(math.pi * (p - duty) / (1 - duty))
+	end
+	out.py = (out.py or 0) + y * wgt
+	out.ppitch = (out.ppitch or 0) + hop.lean * wgt
+	out.spitch = (out.spitch or 0) - hop.lean * 0.3 * wgt
+	out.hpitch = (out.hpitch or 0) - hop.lean * 0.6 * wgt
+	local lift = 0.5 + 0.5 * math.cos(2 * math.pi * (p - duty * 0.5))
+	for key, down in hop.down do
+		local beat = down + (hop.up[key] - down) * lift
+		local base = out[key] or 0
+		out[key] = base + (beat - base) * wgt
+	end
+end
+
 -- A procedural walk and run for a biped without mocap that fits it (dragons on their hind legs): the feet planted in
 -- stance and swung in an arc by leg IK, the pelvis bobbing, swaying and turning with the stride, the chest and head
 -- countering it, the folded wings swinging a little; one phase advanced by distance.
@@ -316,17 +343,34 @@ local function proceduralControls(inst: Instance, input: Input): Controls
 	local moving = speed >= STAND_SPEED
 	local moveTarget = if moving then math.clamp(ratio / 0.5, 0, 1) elseif turning then 0.6 else 0
 	local runTarget = math.clamp((ratio - gaitDef.runAt + 0.4) / 0.8, 0, 1)
+	-- the rate the gaits blend at (a style whose gaits differ a lot in cadence blends faster: `blend` per second)
+	local blend = gaitDef.blend or RUN_RATE * 0.7
 	if input.snap then
 		inst.move, inst.run = moveTarget, runTarget
 	else
 		inst.move = approach(inst.move, moveTarget, MOVE_RATE * 0.7, dt)
-		inst.run = approach(inst.run, runTarget, RUN_RATE * 0.7, dt)
+		inst.run = approach(inst.run, runTarget, blend, dt)
 	end
 	local w, r = gaitDef.walk, gaitDef.run
 	local function mix(key: string): number
 		return w[key] + (r[key] - w[key]) * inst.run
 	end
-	local k = mix("k")
+	-- a bounding gait (the wyvern's wing-assisted hops): on the server's "run", else above `hop.at` leg lengths a second
+	local hopDef = gaitDef.hop
+	local h = 0
+	if hopDef then
+		local hopTarget = if not moving
+			then 0
+			elseif input.gait then (if input.gait == "run" then 1 else 0)
+			else math.clamp((ratio - hopDef.at) + 0.5, 0, 1)
+		inst.hop = if input.snap then hopTarget else approach(inst.hop, hopTarget, blend, dt)
+		h = inst.hop
+	end
+	local kGait = mix("k")
+	local k = kGait
+	if h > 0 then
+		k += (hopDef.k - k) * h
+	end
 	local ground = if moving then speed elseif turning then math.abs(input.yawRate) * L * 0.35 else 0
 	inst.phase = (inst.phase + dt * ground / math.max(0.2, k * L)) % 1
 	local out: Controls = table.clone(gaitDef.rest)
@@ -336,11 +380,21 @@ local function proceduralControls(inst: Instance, input: Input): Controls
 	out.aRo = (out.aRo or 0) + 0.04 * breath
 	out.aLo = (out.aLo or 0) + 0.04 * breath
 	local m = inst.move
-	if m > 0.005 then
+	if m > 0.005 and not gaitDef.float then
 		local duty, lift = mix("duty"), mix("lift")
 		local stride = k * 0.5 -- each foot covers half the cycle's distance
-		local feet: { [string]: number } = { L = 0, R = 0.5 }
-		for side, offset in feet do
+		if h > 0 then
+			-- bounding: both feet together, planted for the whole stance; the stride blends between the two gaits' own
+			-- (never longer than either while the cycle stretches)
+			duty += (hopDef.duty - duty) * h
+			lift += (hopDef.lift - lift) * h
+			stride = kGait * 0.5 + (hopDef.duty * hopDef.k - kGait * 0.5) * h
+		end
+		-- a style's feet may step about a point ahead of their rest (`footZ` leg lengths: a digitigrade leg whose ankle
+		-- rests behind the hip reaches back less) and roll the toes off into the swing (`toeRoll`)
+		local footZ = gaitDef.footZ or 0
+		for _, side in SIDES do
+			local offset = if side == "R" then 0.5 * (1 - h) else 0
 			local p = (inst.phase + offset) % 1
 			local z: number, y: number, toe: number
 			if p < duty then
@@ -354,22 +408,29 @@ local function proceduralControls(inst: Instance, input: Input): Controls
 				z = stride / 2 - stride * e
 				y = lift * math.sin(math.pi * q)
 				toe = 0.35 * math.sin(math.pi * q)
+				if gaitDef.toeRoll then
+					toe -= 0.25 * (1 - q) ^ 3
+				end
 			end
-			out["f" .. side .. "z"] = (out["f" .. side .. "z"] or 0) + z * m
+			out["f" .. side .. "z"] = (out["f" .. side .. "z"] or 0) + (z + footZ) * m
 			out["f" .. side .. "y"] = (out["f" .. side .. "y"] or 0) + y * m
 			out["t" .. side] = (out["t" .. side] or 0) + toe * m
 		end
 		local a = 2 * math.pi * inst.phase
-		out.py = (out.py or 0) - mix("bob") * math.cos(2 * a) * m
-		out.proll = (out.proll or 0) + mix("sway") * math.sin(a) * m
-		out.px = (out.px or 0) + mix("sway") * 0.4 * math.sin(a) * m
-		out.pyaw = (out.pyaw or 0) + mix("yaw") * math.sin(a) * m
-		out.syaw = (out.syaw or 0) - mix("yaw") * 0.8 * math.sin(a) * m
-		out.hyaw = (out.hyaw or 0) - mix("yaw") * 0.4 * math.sin(a) * m
-		out.ppitch = (out.ppitch or 0) + mix("lean") * m
-		out.hpitch = (out.hpitch or 0) - mix("lean") * 0.7 * m + 0.04 * math.cos(2 * a) * m
-		out.aRp = (out.aRp or 0) + 0.12 * math.sin(a) * m
-		out.aLp = (out.aLp or 0) - 0.12 * math.sin(a) * m
+		local g = m * (1 - h)
+		out.py = (out.py or 0) - mix("bob") * math.cos(2 * a) * g
+		out.proll = (out.proll or 0) + mix("sway") * math.sin(a) * g
+		out.px = (out.px or 0) + mix("sway") * 0.4 * math.sin(a) * g
+		out.pyaw = (out.pyaw or 0) + mix("yaw") * math.sin(a) * g
+		out.syaw = (out.syaw or 0) - mix("yaw") * 0.8 * math.sin(a) * g
+		out.hyaw = (out.hyaw or 0) - mix("yaw") * 0.4 * math.sin(a) * g
+		out.ppitch = (out.ppitch or 0) + mix("lean") * g
+		out.hpitch = (out.hpitch or 0) - mix("lean") * 0.7 * g + 0.04 * math.cos(2 * a) * g
+		out.aRp = (out.aRp or 0) + 0.12 * math.sin(a) * g
+		out.aLp = (out.aLp or 0) - 0.12 * math.sin(a) * g
+		if h > 0 then
+			hopControls(out, hopDef, inst.phase, duty, m * h)
+		end
 	end
 	if input.flying then
 		-- in the air: slow heavy wingbeats, the legs tucked under, the body riding each beat

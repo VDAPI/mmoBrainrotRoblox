@@ -14,6 +14,7 @@
 -- `p` > 0 raises it forward, `o` > 0 lifts it out sideways, `y` > 0 swings it in across the body, `t` > 0 twists it
 -- inward, elbow > 0 bends the forearm forward; a foot's `p` > 0 lifts its toes, the toe bend > 0 lifts the toes alone.
 
+local BipedRigs = require("../Data/BipedRigs")
 local NpcPose = require("./NpcPose")
 
 local BipedPose = {}
@@ -210,10 +211,18 @@ export type Skeleton = {
 	bones: { [string]: Bone },
 	armFit: { [string]: Mat }, -- "R" / "L": rest upper arm -> canonical (hanging down)
 	foreFit: { [string]: Mat }, -- rest forearm (and hand) -> canonical
-	leg: { [string]: { l1: number, l2: number, thighRest: Mat, shinRest: Mat, hip: Vec, ankle: Vec } },
+	leg: {
+		[string]: { l1: number, l2: number, thighRest: Mat, shinRest: Mat, hip: Vec, ankle: Vec, plane: Vec? },
+	},
 	legLength: number, -- hip joint over the ground (studs): the scale of every distance the motion uses
 	dirs: { [string]: Vec }, -- rest direction of each bone toward its child joint (root space)
+	-- the point (root space) the body turns about when it is not the Hips bone's own joint (Data/BipedRigs `pivot`: a
+	-- Tripo root at the ground under the pelvis); nil = the Hips joint
+	pivot: Vec?,
 }
+-- How a model's skeleton differs from a Mixamo biped's (Data/BipedRigs): the body's pivot, and `legPlane`: the knees
+-- bend in the rest legs' own plane (splayed legs: the wyvern's) instead of the plane through the front.
+export type Options = { pivot: Vec?, legPlane: boolean? }
 
 -- The child joint whose direction retargets a bone (the extra end bones are read only for their positions).
 BipedPose.TIP = table.freeze({
@@ -246,7 +255,7 @@ local FRONT: Vec = { 0, 0, -1 }
 
 -- The skeleton from the bones' rest rotations and positions in root space (`bones[key] = { rest, pos }`); nil when a
 -- REQUIRED bone is missing.
-function BipedPose.skeleton(bones: { [string]: Bone }): Skeleton?
+function BipedPose.skeleton(bones: { [string]: Bone }, options: Options?): Skeleton?
 	for _, key in BipedPose.REQUIRED do
 		if not bones[key] then
 			return nil
@@ -262,8 +271,16 @@ function BipedPose.skeleton(bones: { [string]: Bone }): Skeleton?
 		foreFit[s] = NpcPose.fromTo(sub(hand.pos, fore.pos), DOWN)
 		local hip, knee, ankle = bones[side .. "UpLeg"].pos, bones[side .. "Leg"].pos, bones[side .. "Foot"].pos
 		local thigh, shin = sub(knee, hip), sub(ankle, knee)
-		-- the knee's rest front: the bend of the rest leg, or straight ahead for a straight one
-		local hinge = unit(cross(thigh, FRONT)) or { 1, 0, 0 }
+		-- the knee's rest front: straight ahead, or the bend of the rest leg (its own plane) for a splayed one; `plane` is
+		-- that plane's normal, signed so that plane x (hip -> ankle) points where the knee bends
+		local front: Vec? = nil
+		local plane: Vec? = nil
+		if options and options.legPlane then
+			local line = unit(sub(ankle, hip)) or DOWN
+			front = unit(sub(thigh, scale(line, dot(thigh, line)))) or FRONT
+			plane = unit(cross(line, front :: Vec))
+		end
+		local hinge = unit(cross(thigh, front or FRONT)) or { 1, 0, 0 }
 		leg[s] = {
 			l1 = length(thigh),
 			l2 = length(shin),
@@ -271,6 +288,7 @@ function BipedPose.skeleton(bones: { [string]: Bone }): Skeleton?
 			shinRest = columns(hinge, unit(shin) :: Vec, cross(hinge, unit(shin) :: Vec)),
 			hip = hip,
 			ankle = ankle,
+			plane = plane,
 		}
 		legLength = math.max(legLength, hip[2])
 	end
@@ -285,7 +303,71 @@ function BipedPose.skeleton(bones: { [string]: Bone }): Skeleton?
 			end
 		end
 	end
-	return { bones = bones, armFit = armFit, foreFit = foreFit, leg = leg, legLength = legLength, dirs = dirs }
+	return {
+		bones = bones,
+		armFit = armFit,
+		foreFit = foreFit,
+		leg = leg,
+		legLength = legLength,
+		dirs = dirs,
+		pivot = options and options.pivot,
+	}
+end
+
+-- The bones of a model for `skeleton`: `names` (pose key -> bone name by the name rules, Data/BipedRigs.keyOf; the
+-- first bone of each key), `rest` (bone name -> its rest rotation and position, root space) and the model's
+-- Data/BipedRigs map: its bones over the name rules, its virtual points, its dropped keys. Returns the bones by key, the
+-- bone name of each key a Transform is written to, the skeleton's options (the pivot in root space) and the unit
+-- (studs of the clone per dump unit).
+function BipedPose.collect(
+	names: { [string]: string },
+	rest: { [string]: Bone },
+	map: BipedRigs.Map?
+): ({ [string]: Bone }, { [string]: string }, Options, number)
+	local keyed: { [string]: string } = table.clone(names)
+	local unit = 1
+	local pivot: Vec? = nil
+	local virtual: { [string]: BipedRigs.Virtual } = {}
+	if map then
+		local own: { [string]: string } = map.bones or {}
+		for key, name in own do
+			if rest[name] then
+				keyed[key] = name
+			end
+		end
+		local ref = rest[map.unit.bone]
+		if ref and map.unit.height > 0 then
+			unit = ref.pos[2] / map.unit.height
+		end
+		virtual = map.virtual or virtual
+		for key in virtual do
+			keyed[key] = nil
+		end
+		local drop: { string } = map.drop or {}
+		for _, key in drop do
+			keyed[key] = nil
+		end
+		local at = if map.pivot then rest[map.pivot] else nil
+		if at then
+			local o: Vec = map.pivotOffset or { 0, 0, 0 }
+			pivot = { at.pos[1] + o[1] * unit, at.pos[2] + o[2] * unit, at.pos[3] + o[3] * unit }
+		end
+	end
+	local bones: { [string]: Bone } = {}
+	for key, name in keyed do
+		bones[key] = rest[name]
+	end
+	for key, v in virtual do
+		local base = bones[v.from]
+		if base then
+			local p = base.pos
+			bones[key] = {
+				rest = base.rest,
+				pos = { p[1] + v.offset[1] * unit, p[2] + v.offset[2] * unit, p[3] + v.offset[3] * unit },
+			}
+		end
+	end
+	return bones, keyed, { pivot = pivot, legPlane = map and map.legPlane }, unit
 end
 
 ---------------------------------------------------------------- the pose
@@ -383,22 +465,30 @@ function BipedPose.world(skel: Skeleton, controls: Controls, grip: Vec?): (World
 			world.RightHand = if k >= 0.999 then aimed else BipedPose.slerp(hand, aimed, k)
 		end
 	end
-	-- legs: IK to the foot targets
-	local hipsPos = add(bones.Hips.pos, shift)
+	-- legs: IK to the foot targets (the hips turn about the pivot when the skeleton has one)
+	local centre = skel.pivot or bones.Hips.pos
+	local hipsPos = add(centre, shift)
 	local pelvisFront = apply(hips, FRONT)
 	for _, s in { "R", "L" } do
 		local side = if s == "R" then "Right" else "Left"
 		local leg = skel.leg[s]
-		local hip = add(hipsPos, apply(hips, sub(leg.hip, bones.Hips.pos)))
+		local hip = add(hipsPos, apply(hips, sub(leg.hip, centre)))
 		local target = add(
 			leg.ankle,
 			{ c(controls, "f" .. s .. "x") * L, c(controls, "f" .. s .. "y") * L, c(controls, "f" .. s .. "z") * L }
 		)
 		local footYaw = c(controls, "f" .. s .. "yaw")
-		-- the knee follows the pelvis and a little the foot's turn
-		local kneeFront = apply(ry(footYaw * 0.5), pelvisFront)
+		-- the knee follows the pelvis and a little the foot's turn (a splayed leg: square to its turned plane)
+		local kneeFront = pelvisFront
+		if leg.plane then
+			local normal = apply(ry(footYaw * 0.5), apply(hips, leg.plane))
+			kneeFront = unit(cross(normal, sub(target, hip))) or pelvisFront
+		else
+			kneeFront = apply(ry(footYaw * 0.5), pelvisFront)
+		end
 		local thigh, shin, f = BipedPose.solveLeg(hip, target, leg.l1, leg.l2, kneeFront)
-		local hinge = unit(cross(thigh, f)) or { 1, 0, 0 }
+		-- (a splayed leg's knee folds past square in a deep crouch: its hinge from the reach, which never turns over)
+		local hinge = unit(if leg.plane then cross(sub(target, hip), f) else cross(thigh, f)) or { 1, 0, 0 }
 		world[side .. "UpLeg"] = mul(columns(hinge, thigh, cross(hinge, thigh)), transpose(leg.thighRest))
 		world[side .. "Leg"] = mul(columns(hinge, shin, cross(hinge, shin)), transpose(leg.shinRest))
 		local foot = mul(
@@ -410,6 +500,19 @@ function BipedPose.world(skel: Skeleton, controls: Controls, grip: Vec?): (World
 	end
 	return world, shift
 end
+
+-- Where the Hips joint moves (root axes) for its world turn `w` and the offset `shift`: the shift alone, plus the swing
+-- of the joint about the skeleton's pivot when it has one.
+local function hipsMove(skel: Skeleton, w: Mat, shift: Vec): Vec
+	local pivot = skel.pivot
+	if not pivot then
+		return shift
+	end
+	local d = sub(pivot, skel.bones.Hips.pos)
+	local turned = apply(w, d)
+	return { shift[1] + d[1] - turned[1], shift[2] + d[2] - turned[2], shift[3] + d[3] - turned[3] }
+end
+BipedPose.hipsMove = hipsMove
 
 -- The bones' Transforms (each in its bone's own frame) for world turns and a Hips offset.
 function BipedPose.transforms(skel: Skeleton, world: World, shift: Vec): Posed
@@ -425,7 +528,7 @@ function BipedPose.transforms(skel: Skeleton, world: World, shift: Vec): Posed
 		local rest = bone.rest
 		local entry = { rot = mul(mul(transpose(rest), turn), rest), offset = nil :: Vec? }
 		if key == "Hips" then
-			entry.offset = apply(transpose(rest), shift)
+			entry.offset = apply(transpose(rest), hipsMove(skel, w, shift))
 		end
 		out[key] = entry
 	end
@@ -551,7 +654,7 @@ function BipedPose.positions(skel: Skeleton, world: World, shift: Vec): { [strin
 			return
 		end
 		if not parentKey then
-			out[key] = add(bone.pos, shift)
+			out[key] = add(bone.pos, hipsMove(skel, world[key] or IDENTITY, shift))
 		else
 			local pp, pw = out[parentKey], world[parentKey] or IDENTITY
 			local parentBone = bones[parentKey]
@@ -591,7 +694,7 @@ function BipedPose.fixLegs(skel: Skeleton, world: World, shift: Vec, targets: { 
 		local bend = sub(toKnee, scale(line, dot(toKnee, line)))
 		local front = unit(bend) or apply(world.Hips or IDENTITY, FRONT)
 		local thigh, shin, f = BipedPose.solveLeg(hip, target, leg.l1, leg.l2, front)
-		local hinge = unit(cross(thigh, f)) or { 1, 0, 0 }
+		local hinge = unit(if leg.plane then cross(sub(target, hip), f) else cross(thigh, f)) or { 1, 0, 0 }
 		world[side .. "UpLeg"] = mul(columns(hinge, thigh, cross(hinge, thigh)), transpose(leg.thighRest))
 		world[side .. "Leg"] = mul(columns(hinge, shin, cross(hinge, shin)), transpose(leg.shinRest))
 		if footTurn then

@@ -250,7 +250,14 @@ local MonsterAssets: { [string]: Entry } = {
 		height = 3.83,
 		walkSpeed = 5.7,
 	},
-	wyvern = { rig = "static", rootSize = { 1.86, 1.61, 3.23 }, hipHeight = 1.17, height = 3.63, walkSpeed = 5.4 },
+	wyvern = {
+		rig = "static",
+		rootSize = { 1.86, 1.61, 3.23 },
+		hipHeight = 1.17,
+		height = 3.63,
+		walkSpeed = 5.4,
+		motion = "wyvernRegular",
+	},
 	peakHarpy = {
 		rig = "static",
 		rootSize = { 1.40, 1.72, 1.18 },
@@ -267,7 +274,14 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 7.5,
 		motion = "vulture",
 	},
-	iceElemental = { rig = "static", rootSize = { 1.61, 1.94, 1.61 }, hipHeight = 2.78, height = 5.00, walkSpeed = 7.5 },
+	iceElemental = {
+		rig = "static",
+		rootSize = { 1.61, 1.94, 1.61 },
+		hipHeight = 2.78,
+		height = 5.00,
+		walkSpeed = 7.5,
+		motion = "iceElemental",
+	},
 	basilisk = {
 		rig = "static",
 		rootSize = { 1.94, 1.34, 3.56 },
@@ -376,7 +390,14 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 5.8,
 		motion = "brute",
 	},
-	specter = { rig = "static", rootSize = { 1.83, 2.91, 1.50 }, hipHeight = 2.75, height = 6.33, walkSpeed = 9.5 },
+	specter = {
+		rig = "static",
+		rootSize = { 1.83, 2.91, 1.50 },
+		hipHeight = 2.75,
+		height = 6.33,
+		walkSpeed = 9.5,
+		motion = "specter",
+	},
 	vaelgrath = {
 		rig = "static",
 		rootSize = { 1.94, 1.61, 3.23 },

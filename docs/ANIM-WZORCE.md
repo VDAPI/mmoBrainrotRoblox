@@ -465,7 +465,70 @@ Basic shot "feather volley" (W = 0.5; Elite 0.6, Elite II 0.675; also the Elite 
 |---|---|
 | `peakHarpy` | upright torso (pitch +55° from the vulture's), wing-arms; legs with talons dangle and grasp; the shot (lightning, `arrow`) is a forward fling of both wing-arms (sweep +30°) released from the wing tips; wail: wings wide, head thrown back, then forward; death: tumbles backwards |
 | `wyvern`, `vaelgrath` in the air | the hover / flight cycle at 1.1-1.3 Hz, legs tucked, tail as a rudder (yaw ±15° in turns); see §5.8 |
-| `carrionCrow`, `bloodBat` | rigid: §6.4 |
+| `carrionCrow`, `bloodBat` | rigid: §6.4 (2026-10-26: the rig dump has no bones in either) |
+
+### 4.6 As built (2026-10-26)
+
+Flyers: `Logic/FlyerMotion` + `Logic/FlyerPose` + `Data/FlyerStyles` + `Data/FlyerRigs` (bone roles from the rig dump) +
+`client/Anim/FlyerRig`, picked by `motion` in `Data/MonsterAssets`. Deviations from §4.1-4.5:
+
+- **The representative is `peakHarpy`**: its export (Tripo Auto Rig, 32 bones) has wing bones, so it carries the full
+  wingbeat of §4.2 on its wing-arms. The vulture's export (Tripo Auto Rig, 18 bones) has none (the wings are skinned to
+  the body bone): it gets everything but the wingbeat (the body's bob and pitch on the beat's phase, banks, the flare,
+  legs, head saccades, the tail fan, the shots, hit, stun, the gravity death). Its wing layer switches on by itself once
+  its `Data/FlyerRigs` entry lists `wings`.
+- **Vulture re-rig (owner)**: a Tripo **Avian** rig (or a hand rig) with, per side, a wing chain under the chest:
+  shoulder blade (optional) → humerus → forearm → hand → primaries (optional) → a leaf at the tip; the wing's skin on
+  those bones (the flight feathers on the hand and the primaries). Then only a `wings = { L = ..., R = ... }` entry in
+  `Data/FlyerRigs` (bone names and the `dorsal` direction) is needed.
+- **Facing and centre**: both exports are turned to the left of −Z (vulture 31°, harpy 39.5°); the body bone turns them
+  back (`facing`), so they fly the way the root faces. The harpy's mass centre is put over the root (`centre`).
+- **Harpy wings**: Tripo hung both wings from the head (the left shoulder blade is `Head_2`); they are pinned to the
+  chest (`pin`). Its tail is the `tail` chain (base out); the vulture's three tail feather leaves spread as a `fan`.
+- **Muzzle**: the root's `Muzzle` follows the beak (vulture) and the midpoint of the wing tips (harpy), §10.
+
+Regular `wyvern` (ground monster, §9 Q5): `Data/BipedStyles.wyvernRegular` on `client/Anim/BipedRig` with its own map
+in `Data/BipedRigs` (Tripo Auto Rig, 71 bones). Vaelgrath's `wyvern` style is unchanged.
+
+- **Rig map**: the root bone is the Hips, turned about the pelvis `bone_1` (`pivot`); the wings are the arms (shoulder
+  blade → humerus → wrist → long finger); the small forearms under the chest are not driven (they follow the chest and
+  press into the ground when it lies). The knees bend in the rest legs' own plane (`legPlane`: the legs are splayed),
+  the hinge taken from the reach so a deep crouch never turns the knee over (Vaelgrath keeps its own hinge).
+- **Choreography**: every action of Vaelgrath's style, rebased to this carriage (a pelvis pitch past −0.15 goes into the
+  spine, softened past −0.45, so the tail stays off the ground when it rears); the wing poses refitted on the dump
+  (folded, half open, spread, up and down of a beat: its wing chain differs from Vaelgrath's) and blended by Vaelgrath's
+  openness. Own death pose: on its left side, the lower wing spread on the ground, the upper one draped, the head limp,
+  the legs forward along the ground.
+- **Gaits**: walks on its hind legs with folded wings (the walk; the trot is the run gait); on the server's `run` (the
+  chase) it bounds, both feet together, crouching in the stance, the wings beating once per bound (`hop`). The feet step
+  about a point a quarter leg ahead of rest (`footZ`: the hock rests behind the hip, so the strides stay in reach) and
+  roll off the toes (`toeRoll`); the gaits blend at 10/s (`blend`: their cadences differ a lot).
+- **Kit**: the regular shot and the throw are a fire `spit` (the neck draws back, thrusts at W, the shot leaves the jaw:
+  the `Muzzle` follows the head bone); fireBreath → Vaelgrath's breath sweep, heavyBlow → wing claw, crush → stomp,
+  pounce / leap → `pounce`, aggro → roar, spawn → Vaelgrath's appear.
+
+Spirits: the dump found bones in `specter` (Mixamo, 48 bones) and `iceElemental` (Tripo biped, 55 bones), so they run
+on `Logic/SpiritMotion` over `Logic/BipedMotion` (body float plus arms; styles `specter` and `iceElemental` in
+`Data/BipedStyles`, maps in `Data/BipedRigs`), not on the F5 float recipe of §6.4 / §7.
+
+- **Float**: bob, sway, a lean into the drift and a bank into turns on springs (the lag of a body without feet), about
+  the skeleton's pivot (the elemental's middle); the drift eases the ground speed (it may step).
+- **Specter**: no feet (the robe below the knees): its feet are virtual points under the knees; the legs hang from the
+  hips as the robe and trail behind the drift and out of turns, the lower half later, with a slow flutter. Its look
+  flickers (the visible parts' `Transparency` 0.15-0.35 at 0.5 Hz, written on a change over 0.01) and goes solid at the
+  bolt's W.
+- **Ice elemental**: the auto rig set the legs sideways in the body and the neck and head under the chest: only the
+  body, the spine and the arms are driven (virtual points stand in for the rest, nothing written).
+- **Kit**: the regular shot and the throw are a `bolt` cast from the right hand (released at W; the `Muzzle` follows the
+  hand); wail (the specter's Elite II) rises and trembles, then screams forward at W; burst (frostNova and the novas)
+  compresses shivering and flings open at W; `pool` (crush and the pools), `swoop` (pounce, leap, charge), the appear
+  fades in (`spawnSpirit`). Deaths: the specter rises about 1.5 studs a scale, turns and fades out by 0.8 s
+  (`deathRise`); the elemental shivers and fades by 0.4 s (`deathShatter`; the shards would be VFX).
+
+Tests: `tests/flyermotion.spec.luau`, `tests/bipedrigs.spec.luau` (phase timing, the hit at W, no NaN, continuity: the
+change per frame compared at two steps, a continuous motion halves and a pop does not; feet planted in the stance).
+AnimLab: `/animlab mob <id> <state>`, the flyers' states `Data/FlyerStyles.LAB_STATES`, the bipeds'
+`Data/BipedStyles.LAB_STATES`, then every action of the style by name. Not done: VFX (feathers, wisps, ice shards).
 
 ## 5. F4 Dragon: youngFrostDragon
 
@@ -677,9 +740,9 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
 | Kind | Rig | Template |
 |---|---|---|
 | `forestWraith` | bones (Mixamo, clips) | F1, ghost subtype (§2) |
-| `specter` | static (bones not confirmed) | F5 float recipe (§6.4); if it has bones, F1 ghost subtype with procedural clips |
+| `specter` | bones (Mixamo, 48; dump 2026-10-26) | `Logic/SpiritMotion` (§4.6) |
 | `fireGolem`, `magmaGolem`, `crystalGuardian`, Azgor | bones (Mixamo, clips) | F1, golem subtype (§2) |
-| `iceElemental` | static (bones not confirmed) | F5 float recipe |
+| `iceElemental` | bones (Tripo biped, 55; dump 2026-10-26) | `Logic/SpiritMotion` (§4.6) |
 | `rotEnt` | static, no bones (Studio) | F5 heavy tree recipe |
 | `werewolf`, `swampTroll`, `yeti`, `ghoul` | bones (Mixamo, clips) | F1, brute subtype (§2) |
 

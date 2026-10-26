@@ -180,6 +180,7 @@ return {
 		["Data/MonsterClips/*"] = "generowane", -- W26: bone clips sampled from the imported models
 		["Data/BipedClips/*"] = "generowane", -- template animation: mocap baked by tools/anim/bake_biped.py
 		["Data/BipedStyles"] = "wygląd", -- template animation: poses and timelines of the biped styles
+		["Data/BipedRigs"] = "wygląd", -- template animation: bone maps of the bipeds the name rules miss
 		["Data/QuadStyles"] = "wygląd", -- template animation: gaits and keyed actions of the quadrupeds
 		["Data/QuadRigs"] = "wygląd", -- template animation: bone roles of the quadruped models
 		["Data/RigidStyles"] = "wygląd", -- template animation: gaits and keyed actions of the rigid (boneless) models

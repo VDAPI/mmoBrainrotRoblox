@@ -300,7 +300,7 @@ local function refresh(model: Model)
 	s.biped = nil
 	if motionStyle and holder and holder:IsA("Model") and look and look.asset then
 		if BipedStyles.get(motionStyle) then
-			s.biped = BipedRig.new(holder, motionStyle, s.seed, look.asset.grip)
+			s.biped = BipedRig.new(holder, motionStyle, s.seed, look.asset.grip, look.asset.model)
 		elseif QuadStyles.get(motionStyle) then
 			s.biped = QuadRig.new(holder, motionStyle, s.seed, look.asset.model)
 		elseif RigidStyles.get(motionStyle) then
