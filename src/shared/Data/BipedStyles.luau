@@ -2112,12 +2112,12 @@ end
 local function spread(o: number, p: number, y: number, e: number): { [string]: number }
 	return { aRo = o, aLo = o, aRp = p, aLp = p, aRy = y, aLy = y, eR = e, eL = e }
 end
-local WYVERN_REST = from(WING_FOLD, { ppitch = 0.12, spitch = 0.1, hpitch = -0.12, fLx = -0.06, fRx = 0.06 })
+local WYVERN_REST = from(WING_FOLD, { ppitch = 0.5, spitch = 0.3, hpitch = -0.5, fLx = -0.06, fRx = 0.06 })
 local WYVERN_GUARD = from(WYVERN_REST, {
 	py = -0.12,
-	ppitch = 0.28,
-	spitch = 0.2,
-	hpitch = -0.3,
+	ppitch = 0.62,
+	spitch = 0.36,
+	hpitch = -0.62,
 	aRo = 0.75,
 	aLo = 0.75,
 	aRp = 0.15,
@@ -2147,7 +2147,7 @@ local WYVERN: Style = {
 		runAt = 2.2,
 		walk = { k = 1.5, duty = 0.62, lift = 0.16, bob = 0.035, sway = 0.07, yaw = 0.12, lean = 0.05 },
 		run = { k = 2.4, duty = 0.42, lift = 0.28, bob = 0.06, sway = 0.05, yaw = 0.08, lean = 0.22 },
-		flap = { rate = 0.9, out = 1.25, amp = 0.75, pitch = 0.3 },
+		flap = { rate = 0.9, out = 1.25, amp = 0.75, pitch = 0.3, lean = 0.7 },
 	},
 	idleEvery = { 6, 10 },
 	rate = 0.04,

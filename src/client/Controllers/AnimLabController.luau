@@ -1129,6 +1129,10 @@ local function playMob(command: Command)
 	local motionStyle = look.asset and look.asset.motion
 	if motionStyle then
 		local lab, labKeys = bipedLab(model, look, monster, slot, boss)
+		if lab and labKeys and slot == "fly" then
+			-- in the air: lifted off the floor so the tucked legs and the wingbeats read
+			model:PivotTo(model:GetPivot() + Vector3.new(0, model:GetExtentsSize().Y * 0.45, 0))
+		end
 		if lab and labKeys then
 			subject = {
 				model = model,

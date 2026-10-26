@@ -381,13 +381,14 @@ local function proceduralControls(inst: Instance, input: Input): Controls
 			out["a" .. side .. "p"] = f.pitch + 0.35 * math.sin(b + 1.2)
 			out["a" .. side .. "y"] = -0.25
 			out["e" .. side] = 0.3 + 0.5 * math.max(0, -math.sin(b - 0.6))
-			out["f" .. side .. "z"] = 0.25
-			out["f" .. side .. "y"] = 0.35
-			out["t" .. side] = 0.6
+			out["f" .. side .. "z"] = 0.6
+			out["f" .. side .. "y"] = 0.75
+			out["t" .. side] = 1
 		end
 		out.py = (out.py or 0) + 0.06 * math.sin(b + math.pi)
-		out.ppitch = 0.18
+		out.ppitch = f.lean or 0.18
 		out.spitch = (out.spitch or 0) - 0.05 * beat
+		out.hpitch = (out.hpitch or 0) - (f.lean or 0.18) * 0.6
 	end
 	return out
 end
