@@ -50,11 +50,14 @@ local MotionFx = {}
 
 local CULL = { desktop = 110, touch = 70 } -- studs from the camera past which nothing is drawn
 local TOUCH_SHARE = 0.7 -- a phone's stream rates
+local BREATH_DIP = 0.2 -- sine of the steepest downward angle of a breath stream
+local BREATH_SHARE = 0.8 -- the least rate share of a breath stream (low quality, far, phone)
 local MAN = 5 -- studs: the drawn height of a man (size 1)
 local CLAIM_FRESH = 0.5 -- s: an owner stepped this recently is being animated (claims)
 local HIT_FRESH = 0.25 -- s: a flinch first seen this late shows no puff
 local WHITE = Color3.new(1, 1, 1)
 local ICE_PART = Color3.fromHex("#BFEFFF")
+local ICE_SPIKE = Color3.fromHex("#7FCBF5")
 local WOOD = Color3.fromHex("#6B4E32")
 local BARK = Color3.fromHex("#3B2A1C")
 local SNOW = Color3.fromHex("#EEF6FF")
@@ -636,6 +639,10 @@ local function addLayer(stream: Stream, spec: LayerSpec, frame: CFrame, rateShar
 		e.LightEmission = spec.emission or 0.8
 	end
 	local rate = spec.rate * rateShare
+	-- the rate already carries the graphics level (share): SettingsController must not scale it again (studio review
+	-- 2026-10-26: on low quality the breath ran at a ninth of its rate and showed no flame)
+	e:SetAttribute("OwnRate", true)
+	e:SetAttribute("VaelthornOriginalRate", nil)
 	e.Rate = rate
 	local layer: Layer = { holder = holder, e = e, rate = rate, life = spec.life[2] }
 	table.insert(stream.layers, layer)
@@ -663,25 +670,34 @@ end
 
 local function breathLayers(stream: Stream, frame: CFrame, element: string?, length: number, s: number, simple: boolean)
 	local p = stream.palette
-	local r = share(simple)
+	-- the breath is the fight's signature: never thinner than BREATH_SHARE of its rates, whatever the graphics level
+	local r = math.max(share(simple), BREATH_SHARE)
 	local touch = Pool.isTouch()
 	local v = launch(length, 0.6, 2.5)
 	local first: Layer? = nil
 	if element == "fire" then
 		first = addLayer(stream, {
 			key = "fire",
-			rate = 70,
+			rate = 130,
 			life = { 0.45, 0.65 },
 			speed = { v * 0.85, v * 1.1 },
 			spread = 10,
 			drag = 2.5,
 			accel = Vector3.new(0, 5, 0),
-			size = NumberSequence.new({ kp(0, 0.35 * s), kp(0.3, 0.18 * length), kp(1, 0.32 * length) }),
-			alpha = NumberSequence.new({ kp(0, 0.3), kp(0.12, 0.05), kp(0.6, 0.35), kp(1, 1) }),
-			color = colors(p.core, p.main, p.deep),
-			emission = 1,
+			size = NumberSequence.new({ kp(0, 0.35 * s), kp(0.3, 0.2 * length), kp(1, 0.36 * length) }),
+			alpha = NumberSequence.new({ kp(0, 0.3), kp(0.12, 0.02), kp(0.8, 0.3), kp(1, 1) }),
+			-- studio review 2026-10-26: orange from the mouth on (a white-hot core over the whole stream washed it out on
+			-- a bright day)
+			color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, p.core),
+				ColorSequenceKeypoint.new(0.12, p.main),
+				ColorSequenceKeypoint.new(0.7, p.main:Lerp(p.deep, 0.5)),
+				ColorSequenceKeypoint.new(1, p.deep),
+			}),
+			-- a low light emission keeps the flame's own orange on a bright day (additive light washed it white)
+			emission = 0.35,
 			spin = 120,
-			brightness = 1.3,
+			brightness = 1.6,
 		}, frame, r)
 		addLayer(stream, {
 			key = "spark",
@@ -699,19 +715,25 @@ local function breathLayers(stream: Stream, frame: CFrame, element: string?, len
 		}, frame, r)
 	else
 		local mist = element == "ice"
+		-- studio review 2026-10-26: denser and in its own colour (a pale additive mist vanished against a bright sky)
 		first = addLayer(stream, {
 			key = "smoke",
-			rate = 55,
+			rate = 130,
 			life = { 0.5, 0.7 },
 			speed = { v * 0.85, v * 1.1 },
 			spread = 11,
 			drag = 2.5,
 			accel = Vector3.new(0, if mist then -1 else 1, 0),
 			size = NumberSequence.new({ kp(0, 0.4 * s), kp(0.3, 0.19 * length), kp(1, 0.34 * length) }),
-			alpha = NumberSequence.new({ kp(0, 0.4), kp(0.15, 0.15), kp(0.7, 0.45), kp(1, 1) }),
-			color = colors(p.core, p.main, p.deep),
-			emission = 0.4,
+			alpha = NumberSequence.new({ kp(0, 0.3), kp(0.15, 0.05), kp(0.82, 0.3), kp(1, 1) }),
+			color = ColorSequence.new({
+				ColorSequenceKeypoint.new(0, p.core),
+				ColorSequenceKeypoint.new(0.15, p.main),
+				ColorSequenceKeypoint.new(1, p.main:Lerp(p.deep, 0.6)),
+			}),
+			emission = 0.15,
 			spin = 90,
+			brightness = 1.4,
 		}, frame, r)
 		addLayer(stream, {
 			key = if mist then "iceShard" else "poisonBubble",
@@ -957,6 +979,8 @@ local function stopStream(o: Owner, index: number)
 	o.streams[index] = nil
 	for _, layer in stream.layers do
 		layer.e.Rate = 0
+		-- back to the shared pool: other users of the emitter are scaled by SettingsController again
+		layer.e:SetAttribute("OwnRate", nil)
 		Pool.holderLater(layer.holder, layer.life + 0.1)
 	end
 	local l = stream.light
@@ -997,10 +1021,23 @@ local function elementOf(o: Owner, fx: MotionFxData.Fx): string?
 	return bound and bound.element
 end
 
+-- A breath's direction: the head's, but never steeper down than BREATH_DIP (studio review 2026-10-26: the head bows
+-- into the sweep and the stream went into the ground, where it is hidden, so the flame looked a few studs long).
+local function streamDir(kind: string, dir: Vector3): Vector3
+	if kind ~= "breath" or dir.Y >= -BREATH_DIP then
+		return dir
+	end
+	local flat = Vector3.new(dir.X, 0, dir.Z)
+	if flat.Magnitude < 1e-3 then
+		return dir
+	end
+	return (flat.Unit * math.sqrt(1 - BREATH_DIP * BREATH_DIP) - Vector3.new(0, BREATH_DIP, 0)).Unit
+end
+
 local function startStream(o: Owner, fx: MotionFxData.Fx, t0: number, t1: number, simple: boolean): Stream?
 	local anchor = resolve(o, fx.at)
 	local pos, dir = place(o, anchor)
-	local frame = kit.facingFrame(pos, dir)
+	local frame = kit.facingFrame(pos, streamDir(fx.kind, dir))
 	local element = elementOf(o, fx)
 	if fx.kind == "breath" and not element then
 		element = "fire"
@@ -1029,7 +1066,9 @@ local function startStream(o: Owner, fx: MotionFxData.Fx, t0: number, t1: number
 	if fx.kind == "breath" then
 		local bound = o.bound
 		local radius = (bound and bound.radius) or 12
-		local length = math.clamp(radius * 0.8, 3, 18) * math.clamp(fx.size or 1, 0.5, 1.5)
+		-- at least as long as the body is big (a giant's breath reaches far past its own head)
+		local length = math.min(36, math.max(math.clamp(radius * 0.8, 6, 24), 6 * s))
+			* math.clamp(fx.size or 1, 0.5, 1.5)
 		breathLayers(stream, frame, element, length, s, simple)
 	elseif fx.kind == "charge" then
 		chargeLayers(stream, frame, element, s, simple)
@@ -1062,7 +1101,7 @@ local function updateStream(o: Owner, stream: Stream, t: number, simple: boolean
 	if prop then
 		prop.CFrame = CFrame.new(pos) * stream.propTurn
 	end
-	local frame = kit.facingFrame(pos, dir)
+	local frame = kit.facingFrame(pos, streamDir(stream.kind, dir))
 	for _, layer in stream.layers do
 		layer.holder.CFrame = frame
 	end
@@ -1429,16 +1468,16 @@ local function iceRing(base: Vector3, radius: number, count: number, height: num
 			local a = turn0 + (i / count) * math.pi * 2 + rng:NextNumber(-0.12, 0.12)
 			local out = Vector3.new(math.cos(a), 0, math.sin(a))
 			local h = height * rng:NextNumber(0.75, 1.2)
-			local w = h * rng:NextNumber(0.3, 0.42)
+			local w = h * rng:NextNumber(0.42, 0.58)
 			local spot = kit.ground(base + out * radius * rng:NextNumber(0.9, 1.1))
 			-- the blade's profile lies along the ring (local Z the tangent, local -X outwards); a turn about Z leans it out
 			local tangent = Vector3.new(-out.Z, 0, out.X)
 			local frame = CFrame.lookAt(spot, spot + tangent) * CFrame.Angles(0, 0, math.rad(rng:NextNumber(10, 24)))
-			local tint = ICE_PART:Lerp(WHITE, rng:NextNumber(0, 0.3))
+			local tint = ICE_SPIKE:Lerp(WHITE, rng:NextNumber(0, 0.25))
 			local pieces: { BasePart } = {}
 			for side = 0, 1 do
 				local turn = CFrame.Angles(0, side * math.pi, 0)
-				local p = LmKit.part("Wedge", tint, Vector3.new(w * 0.3, h, w * 0.5), Enum.Material.Glass, 0.12)
+				local p = LmKit.part("Wedge", tint, Vector3.new(w * 0.45, h, w * 0.5), Enum.Material.Ice, 0.1)
 				local rest = frame * turn * CFrame.new(0, 0, -w * 0.25)
 				p.CFrame = rest * CFrame.new(0, -h * 0.6, 0)
 				tween(
@@ -1450,7 +1489,7 @@ local function iceRing(base: Vector3, radius: number, count: number, height: num
 				)
 				table.insert(pieces, p)
 			end
-			Clock.after(0.5 + rng:NextNumber(0, 0.15), function()
+			Clock.after(0.85 + rng:NextNumber(0, 0.2), function()
 				if not simple then
 					local mid = spot + Vector3.new(0, h * 0.5, 0)
 					burst("iceShard", CFrame.new(mid), WHITE, 4, {
@@ -1488,9 +1527,11 @@ local function nova(pos: Vector3, reach: number, s: number, simple: boolean)
 	local base = kit.ground(pos)
 	local inner = math.clamp(reach * 0.35, 2.5, 6)
 	local outer = math.clamp(reach * 0.65, 4, 10)
-	local height = math.clamp(1.6 * s, 1.4, 4)
-	iceRing(base, inner, LmKit.amount(7, simple), height, 0, simple)
-	iceRing(base, outer, LmKit.amount(10, simple), height * 1.3, 0.07, simple)
+	-- studio review 2026-10-26: tall, thick blades the owner can read from the camera's distance
+	local height = math.clamp(2.6 * s, 2.5, 6)
+	-- the owner's ask: the spikes are the attack, so the rings keep most of their blades when simple
+	iceRing(base, inner, if simple then 6 else 8, height, 0, simple)
+	iceRing(base, outer, if simple then 9 else 12, height * 1.35, 0.08, simple)
 end
 
 -- An ember nova (the golems, the imp): a flash and a fire blast at the feet, a ring of flame columns bursting up round
