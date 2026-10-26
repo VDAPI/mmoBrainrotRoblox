@@ -451,15 +451,22 @@ local function ringSurface(at: Vector3, radius: number, color: Color3, seconds: 
 end
 
 -- Shock wave: a ring of segments running outwards over the ground. S112: with the ring texture the textured ring and
--- 10 segments (none on low quality), no disc.
-function Library.shockwave(at: Vector3, radius: number, color: Color3, seconds: number?, simple: boolean?)
+-- 10 segments (none on low quality unless `always`: a blow whose area has to read), no disc.
+function Library.shockwave(
+	at: Vector3,
+	radius: number,
+	color: Color3,
+	seconds: number?,
+	simple: boolean?,
+	always: boolean?
+)
 	local s = seconds or 0.45
 	local ringed = ringSurface(at, radius, color, s)
-	if ringed and lowQuality() then
+	if ringed and lowQuality() and not always then
 		return
 	end
 	local base = ground(at) + Vector3.new(0, 0.25, 0)
-	local count = if simple or ringed then 10 else 20
+	local count = if (simple or ringed) and not always then 10 else 20
 	for i = 1, count do
 		local a = (i / count) * math.pi * 2
 		local dir = Vector3.new(math.cos(a), 0, math.sin(a))
