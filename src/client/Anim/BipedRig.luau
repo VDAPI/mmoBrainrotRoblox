@@ -105,9 +105,10 @@ function BipedRig.new(look: Model, styleId: string, seed: number, grip: { number
 	local owner = look.Parent
 	local ownerRoot = owner and owner:FindFirstChild("HumanoidRootPart")
 	local muzzle = ownerRoot and ownerRoot:FindFirstChild("Muzzle")
-	if muzzleSpec and muzzleBone and muzzle and muzzle:IsA("Attachment") then
+	-- (the point is kept without the attachment too: AnimLab's look and Vfx/MotionFx's breath read it)
+	if muzzleSpec and muzzleBone then
 		local o = muzzleSpec.offset
-		rig.muzzle = muzzle
+		rig.muzzle = if muzzle and muzzle:IsA("Attachment") then muzzle else nil
 		rig.muzzleBone = muzzleBone
 		rig.muzzleAt = muzzleBone.WorldCFrame:VectorToObjectSpace(
 			space:VectorToWorldSpace(Vector3.new(o[1] * unit, o[2] * unit, o[3] * unit))

@@ -568,12 +568,13 @@ on `Logic/SpiritMotion` over `Logic/BipedMotion` (body float plus arms; styles `
   hand); wail (the specter's Elite II) rises and trembles, then screams forward at W; burst (frostNova and the novas)
   compresses shivering and flings open at W; `pool` (crush and the pools), `swoop` (pounce, leap, charge), the appear
   fades in (`spawnSpirit`). Deaths: the specter rises about 1.5 studs a scale, turns and fades out by 0.8 s
-  (`deathRise`); the elemental shivers and fades by 0.4 s (`deathShatter`; the shards would be VFX).
+  (`deathRise`); the elemental shivers and fades by 0.4 s (`deathShatter`; it bursts into ice shards at W, §11).
 
 Tests: `tests/flyermotion.spec.luau`, `tests/bipedrigs.spec.luau` (phase timing, the hit at W, no NaN, continuity: the
 change per frame compared at two steps, a continuous motion halves and a pop does not; feet planted in the stance).
 AnimLab: `/animlab mob <id> <state>`, the flyers' states `Data/FlyerStyles.LAB_STATES`, the bipeds'
-`Data/BipedStyles.LAB_STATES`, then every action of the style by name. Not done: VFX (feathers, wisps, ice shards).
+`Data/BipedStyles.LAB_STATES`, then every action of the style by name. The effects the actions release (feathers,
+wisps, ice shards, the breath, the harpy's lightning) are §11.
 
 ## 5. F4 Dragon: youngFrostDragon
 
@@ -780,7 +781,7 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
 - AnimLab: `/animlab mob <id> <state>`, states `Data/RigidStyles.labStates`: idle, alert, walk, trot, run, turn, home,
   attack1, attack2, cast, heavy, crush, pounce, throw, hit, hitBack, hitLeft, hitRight, stun, freeze, death, spawn,
   summon, fight, then every action of the style by name (e.g. `deathCurl`, `sting`, `sitUp`).
-- Not done: sounds and leaves on the ent's steps, the dust and venom VFX of §6.3 (the poses are timed for them).
+- The dust and venom of §6.3, the ent's splinters and leaves: §11. Not done: sounds and leaves on the ent's steps.
 
 ## 7. Ghosts, golems, brutes: which template covers them
 
@@ -857,6 +858,54 @@ on the client too). Rules in `Logic/MonsterMove` (Lune spec `tests/monstermove.s
 Gameplay notes (`tools/balance_reasons`, S162m): damage, areas, windups and intervals are unchanged; a monster going
 home is easier to catch and teleports only after 20 s (was 12); an Elite II boar stands at its target after a charge
 (its next blow up to ~1 s sooner); shots start 0.6-2.9 studs closer to the target.
+
+## 11. Effects the actions release (2026-10-26)
+
+Owner 2026-10-26 after the first `/animlab` pass: "wyvern oddech ... bierze wdech nie wypuszcza ognia", "iceElemental
+burst ... na koniec lodowe kolce". Every motion that lets something go now shows it, from the right bone at the right
+frame, in the game and in AnimLab alike.
+
+- Data: `Data/MotionFx` (per motion style and action name, a list of `{ kind, at, from, to?, size?, element? }`;
+  `from` / `to` are marks on the action's keyed timeline: "W" the server's hit, "A0.35" 35 % into the anticipation,
+  "F0.85" 85 % into the follow-through, "R1" the end) and `HIT` (the puff a hit knocks off: feathers, splinters, ice
+  chips, wisps; never blood). Timing, element and reach: `Logic/ActionFx` (a mark sits where `MotionTimeline` puts a
+  key; a one-shot fires once in the frame that crosses it or a first frame < 0.25 s after it; the element and the reach
+  are the action's ability's, else the kind's: the wyvern's regular spit is fire). Lune: `tests/actionfx.spec.luau`.
+- Drawing: `client/Vfx/MotionFx` (attached by `AnimationController.refresh` to every template rig, stepped after the
+  rig's pose; AnimLab steps the subject on its motion time, so `freeze` and scrubbing hold the effects too). Anchors
+  per family: the jaw (BipedRigs `muzzle` Head; else a point ahead of the head bone: 0.12 h for a dragon, 0.05 h for a
+  biped; a quadruped's and the frost wyrm's at the mesh front at the head's height), the casting hand (the muzzle
+  RightHand), wing tips, feet, front feet, chest, trunk tip; a flyer's beak from `FlyerMotion.muzzle`; a rigid model's
+  points on its PrimaryPart from its measured box (`Data/MonsterRelease` height).
+- Pieces: `breath` (a stream along the head's sweep for the whole window: fire flipbook from white-hot to deep red, a
+  core glow, embers, smoke rolling off the end, a faint warm haze, a flickering light; frost: pale mist, ice glints,
+  cold mist; venom: green mist and bubbles), `charge` (the element gathering in the throat or the hand, its light
+  growing to W), `smolder`, `arc` (lightning between the harpy's wing tips while it gathers), `spit`, `bolt`, `flare`,
+  `nova` (ice shards flung out of the body on ballistic arcs, the frost blast, ice spikes erupting from the ground in two
+  rings at 0.35 / 0.65 of the ability radius, held 0.5 s, shattering), `shatter`, `slam` (rock chips, the dust ring,
+  cracks), `dust`, `screech` (rings of force running out of the mouth), `wisps`, `feathers`, `splinters`, `leaves`,
+  `snow`.
+- Who shows what: the regular wyvern (`breath`: charge A0.35-W, fire W-F0.85, smoke to R0.8; `spit`: a fire puff at W;
+  `stomp`, `buffet`, `pounce`, `deathDragon` dust), Vaelgrath (the same breath in frost, its `frostBreath`; the roar's
+  rings), the ice elemental (`burst` nova, `deathShatter` shards, a frost bolt from the hand), the specter (a cold bolt
+  from the hand, the wail's rings, wisps), the bear, boar, mammoth and wolf (slams and stomps at the front feet, landing
+  and death dust; the mammoth's snow and trumpet), the spider, scorpion (the sting), toad, basilisk and bog serpent
+  (venom spit), the salamander (fire breath) and the frost wyrm (frost breath), the crow, vulture and harpy (feathers
+  on blows, hits and falls, the wail's rings; the harpy's lightning), the bat (rings, dust), the rot ent (splinters off
+  its branch blows, leaves out of the crown, the slam's cracks, the fall).
+- Doubling: the server's ground telegraph and its blow ring stay. When the animation draws an attack's gather
+  (`charge`, `arc`) `CombatFxController` leaves out `Library.charge` on the body, and when it draws the release
+  (`breath`, `nova`, `slam`, `spit`, `screech`, ...) the generic burst at the caster's own feet (fireBlast, frostBlast,
+  rockBurst, dust) and the boss breath's ice sparks; a blow area away from the caster keeps its burst. Only a monster
+  the client animates and draws (within 110 studs, 70 on a phone) claims them. A regular shot with an element
+  (`hz` `el`) is drawn as that element (`Vfx/HazardFx`: the wyvern's fireball instead of an arrow).
+- Budget: nothing past 110 / 70 studs, the simple version past `Config.Vfx.simpleBeyond` or on low quality, stream
+  rates x the graphics level's particle share (x 0.7 on a phone, no smoke or haze layers there), pooled holders within
+  the device limits, lights within the light budget, a model that drops out of the animated set stops its streams.
+- Studio tuning: Vaelgrath's jaw (no bone map: a point 0.12 h ahead of its head bone), the rigid models' mouths and
+  the scorpion's sting (box points), the flame's length (0.8 x the ability radius, at most 18 studs) and the particle
+  counts in `Vfx/MotionFx`. The humanoid styles (`humanoid1h`, `caster`, `brute`, `ghost`: the dragonspawn's fire
+  breath, the forest wraith's frost nova) carry no effects yet.
 
 ## Appendix A: formulas
 

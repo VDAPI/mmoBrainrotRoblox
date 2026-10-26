@@ -186,6 +186,7 @@ return {
 		["Data/RigidStyles"] = "wygląd", -- template animation: gaits and keyed actions of the rigid (boneless) models
 		["Data/RigidRigs"] = "wygląd", -- template animation: bone chains of a rigid kind with a skeleton
 		["Data/FlyerStyles"] = "wygląd", -- template animation: wingbeats and keyed actions of the flyers
+		["Data/MotionFx"] = "wygląd", -- template animation: the effects the actions release (breath, nova, dust)
 		["Data/FlyerRigs"] = "wygląd", -- template animation: bone roles of the flyer models
 		["Data/WeaponLooks"] = "wygląd",
 		["Data/SkillMotions"] = "wygląd",
