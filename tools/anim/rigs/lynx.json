@@ -1,0 +1,62 @@
+{
+ "visibleMeshParts": 1,
+ "parts": [
+  {
+   "transparency": 0,
+   "name": "tripo_node_6ebab7f7-ca16-4b5c-bb16-929e35c453a0",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "class": "MeshPart",
+   "pos": [
+    0,
+    1.8,
+    0
+   ],
+   "size": [
+    4.07,
+    3.61,
+    1.83
+   ]
+  },
+  {
+   "transparency": 1,
+   "name": "HumanoidRootPart",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "Part",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "size": [
+    1,
+    1,
+    1
+   ]
+  }
+ ],
+ "model": "lynx",
+ "height": 3.61,
+ "depth": 4.07,
+ "bones": [],
+ "width": 1.83,
+ "frame": "model pivot shifted so the lowest point of the visible parts is y = 0; front -Z (Logic/BoneRoles convention); look/up are the bone's or part's rest axes in that frame",
+ "skinned": "no bones: rigid model, animate the whole part"
+}

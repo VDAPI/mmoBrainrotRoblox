@@ -1,0 +1,787 @@
+{
+ "visibleMeshParts": 1,
+ "parts": [
+  {
+   "transparency": 0,
+   "name": "tripo_node_2970e182-db57-4d2b-a852-3efbd37ca9aa",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "MeshPart",
+   "pos": [
+    0,
+    1.92,
+    0
+   ],
+   "size": [
+    6.2,
+    3.83,
+    5.68
+   ]
+  },
+  {
+   "transparency": 1,
+   "name": "RootPart",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "Part",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "size": [
+    0.12,
+    0.12,
+    0.06
+   ]
+  },
+  {
+   "transparency": 1,
+   "name": "HumanoidRootPart",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "Part",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "size": [
+    1,
+    1,
+    1
+   ]
+  }
+ ],
+ "model": "youngFrostDragon",
+ "height": 3.83,
+ "depth": 5.68,
+ "bones": [
+  {
+   "name": "BoneRoot",
+   "up": [
+    0.48,
+    0.82,
+    -0.33
+   ],
+   "look": [
+    0.82,
+    -0.27,
+    0.51
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.21,
+    1.06,
+    -1.22
+   ]
+  },
+  {
+   "name": "Hip",
+   "up": [
+    -0.27,
+    0.91,
+    -0.33
+   ],
+   "parent": "BoneRoot",
+   "look": [
+    0.91,
+    0.35,
+    0.23
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.21,
+    1.07,
+    -1.23
+   ]
+  },
+  {
+   "name": "Pelvis",
+   "up": [
+    0.92,
+    -0.38,
+    0.07
+   ],
+   "parent": "Hip",
+   "look": [
+    -0.38,
+    -0.86,
+    0.34
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.2,
+    1.13,
+    -1.25
+   ]
+  },
+  {
+   "name": "L_Thigh",
+   "up": [
+    -0.97,
+    -0.05,
+    -0.22
+   ],
+   "parent": "Pelvis",
+   "look": [
+    -0.05,
+    1,
+    -0.01
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.01,
+    0.96,
+    -1.17
+   ]
+  },
+  {
+   "name": "L_Calf",
+   "up": [
+    -0.26,
+    -0.7,
+    0.66
+   ],
+   "parent": "L_Thigh",
+   "look": [
+    -0.7,
+    0.61,
+    0.37
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.45,
+    0.93,
+    -1.27
+   ]
+  },
+  {
+   "name": "L_Foot",
+   "up": [
+    -0.63,
+    -0.58,
+    -0.52
+   ],
+   "parent": "L_Calf",
+   "look": [
+    -0.58,
+    0.8,
+    -0.19
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.62,
+    0.47,
+    -0.84
+   ]
+  },
+  {
+   "name": "L_ToeBase",
+   "up": [
+    -0.63,
+    -0.58,
+    -0.52
+   ],
+   "parent": "L_Foot",
+   "look": [
+    -0.58,
+    0.8,
+    -0.19
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.91,
+    0.21,
+    -1.08
+   ]
+  },
+  {
+   "name": "R_Thigh",
+   "up": [
+    0.66,
+    -0.25,
+    -0.71
+   ],
+   "parent": "Pelvis",
+   "look": [
+    -0.25,
+    0.82,
+    -0.52
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.45,
+    1.08,
+    -1.25
+   ]
+  },
+  {
+   "name": "R_Calf",
+   "up": [
+    -0.12,
+    -0.7,
+    0.7
+   ],
+   "parent": "R_Thigh",
+   "look": [
+    -0.7,
+    0.56,
+    0.44
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.84,
+    0.93,
+    -1.66
+   ]
+  },
+  {
+   "name": "R_Foot",
+   "up": [
+    0.45,
+    -0.58,
+    -0.67
+   ],
+   "parent": "R_Calf",
+   "look": [
+    -0.58,
+    0.38,
+    -0.72
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.76,
+    0.52,
+    -1.25
+   ]
+  },
+  {
+   "name": "R_ToeBase",
+   "up": [
+    0.45,
+    -0.58,
+    -0.67
+   ],
+   "parent": "R_Foot",
+   "look": [
+    -0.58,
+    0.38,
+    -0.72
+   ],
+   "part": "RootPart",
+   "pos": [
+    1,
+    0.21,
+    -1.61
+   ]
+  },
+  {
+   "name": "Waist",
+   "up": [
+    -0.09,
+    0.96,
+    -0.26
+   ],
+   "parent": "Hip",
+   "look": [
+    0.96,
+    0.15,
+    0.23
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.13,
+    1.3,
+    -1.32
+   ]
+  },
+  {
+   "name": "Spine01",
+   "up": [
+    0,
+    0.95,
+    -0.32
+   ],
+   "parent": "Waist",
+   "look": [
+    0.95,
+    0.1,
+    0.3
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.11,
+    1.56,
+    -1.39
+   ]
+  },
+  {
+   "name": "Spine02",
+   "up": [
+    0,
+    0.94,
+    -0.33
+   ],
+   "parent": "Spine01",
+   "look": [
+    0.94,
+    0.11,
+    0.31
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.11,
+    1.78,
+    -1.46
+   ]
+  },
+  {
+   "name": "NeckTwist01",
+   "up": [
+    -0.25,
+    0.96,
+    -0.11
+   ],
+   "parent": "Spine02",
+   "look": [
+    0.96,
+    0.26,
+    0.08
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.11,
+    2.12,
+    -1.56
+   ]
+  },
+  {
+   "name": "NeckTwist02",
+   "up": [
+    -0.25,
+    0.96,
+    -0.11
+   ],
+   "parent": "NeckTwist01",
+   "look": [
+    0.96,
+    0.26,
+    0.08
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.02,
+    2.45,
+    -1.6
+   ]
+  },
+  {
+   "name": "Head",
+   "up": [
+    -0.42,
+    0.5,
+    -0.76
+   ],
+   "parent": "NeckTwist02",
+   "look": [
+    0.5,
+    0.82,
+    0.27
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.06,
+    2.77,
+    -1.63
+   ]
+  },
+  {
+   "name": "L_Clavicle",
+   "up": [
+    -0.91,
+    -0.42,
+    -0.07
+   ],
+   "parent": "Spine02",
+   "look": [
+    -0.42,
+    0.91,
+    -0.02
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    2.05,
+    -1.61
+   ]
+  },
+  {
+   "name": "L_Upperarm",
+   "up": [
+    -0.75,
+    -0.4,
+    0.53
+   ],
+   "parent": "L_Clavicle",
+   "look": [
+    -0.4,
+    0.91,
+    0.12
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.3,
+    1.9,
+    -1.63
+   ]
+  },
+  {
+   "name": "L_Forearm",
+   "up": [
+    -0.53,
+    -0.77,
+    -0.37
+   ],
+   "parent": "L_Upperarm",
+   "look": [
+    -0.77,
+    0.62,
+    -0.19
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.88,
+    1.59,
+    -1.22
+   ]
+  },
+  {
+   "name": "L_Hand",
+   "up": [
+    -0.54,
+    -0.45,
+    -0.71
+   ],
+   "parent": "L_Forearm",
+   "look": [
+    -0.45,
+    0.87,
+    -0.21
+   ],
+   "part": "RootPart",
+   "pos": [
+    -1.3,
+    0.98,
+    -1.51
+   ]
+  },
+  {
+   "name": "L_Pinky1",
+   "up": [
+    -0.43,
+    -0.29,
+    -0.86
+   ],
+   "parent": "L_Hand",
+   "look": [
+    -0.29,
+    0.94,
+    -0.17
+   ],
+   "part": "RootPart",
+   "pos": [
+    -1.59,
+    0.79,
+    -1.68
+   ]
+  },
+  {
+   "name": "L_Ring1",
+   "up": [
+    -0.62,
+    -0.25,
+    -0.74
+   ],
+   "parent": "L_Hand",
+   "look": [
+    -0.25,
+    0.96,
+    -0.11
+   ],
+   "part": "RootPart",
+   "pos": [
+    -1.54,
+    0.81,
+    -1.78
+   ]
+  },
+  {
+   "name": "L_Mid1",
+   "up": [
+    -0.11,
+    -0.53,
+    -0.84
+   ],
+   "parent": "L_Hand",
+   "look": [
+    -0.53,
+    0.75,
+    -0.4
+   ],
+   "part": "RootPart",
+   "pos": [
+    -1.46,
+    0.84,
+    -1.85
+   ]
+  },
+  {
+   "name": "L_Mid2",
+   "up": [
+    0.2,
+    -0.78,
+    -0.59
+   ],
+   "parent": "L_Mid1",
+   "look": [
+    -0.78,
+    0.23,
+    -0.57
+   ],
+   "part": "RootPart",
+   "pos": [
+    -1.49,
+    0.72,
+    -2.05
+   ]
+  },
+  {
+   "name": "L_Mid3",
+   "up": [
+    0.2,
+    -0.78,
+    -0.59
+   ],
+   "parent": "L_Mid2",
+   "look": [
+    -0.78,
+    0.23,
+    -0.57
+   ],
+   "part": "RootPart",
+   "pos": [
+    -1.46,
+    0.62,
+    -2.12
+   ]
+  },
+  {
+   "name": "L_Thumb1",
+   "up": [
+    0.16,
+    -0.41,
+    -0.9
+   ],
+   "parent": "L_Hand",
+   "look": [
+    -0.41,
+    0.8,
+    -0.44
+   ],
+   "part": "RootPart",
+   "pos": [
+    -1.15,
+    0.93,
+    -1.61
+   ]
+  },
+  {
+   "name": "L_Thumb2",
+   "up": [
+    -0.12,
+    -0.24,
+    -0.96
+   ],
+   "parent": "L_Thumb1",
+   "look": [
+    -0.24,
+    0.95,
+    -0.21
+   ],
+   "part": "RootPart",
+   "pos": [
+    -1.1,
+    0.81,
+    -1.88
+   ]
+  },
+  {
+   "name": "L_Thumb3",
+   "up": [
+    -0.12,
+    -0.24,
+    -0.96
+   ],
+   "parent": "L_Thumb2",
+   "look": [
+    -0.24,
+    0.95,
+    -0.21
+   ],
+   "part": "RootPart",
+   "pos": [
+    -1.13,
+    0.77,
+    -2.07
+   ]
+  },
+  {
+   "name": "R_Clavicle",
+   "up": [
+    0.97,
+    -0.22,
+    -0.07
+   ],
+   "parent": "Spine02",
+   "look": [
+    -0.22,
+    -0.77,
+    -0.59
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.21,
+    2.05,
+    -1.61
+   ]
+  },
+  {
+   "name": "R_Upperarm",
+   "up": [
+    0.78,
+    0.36,
+    0.51
+   ],
+   "parent": "R_Clavicle",
+   "look": [
+    0.36,
+    0.41,
+    -0.84
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.52,
+    1.98,
+    -1.63
+   ]
+  },
+  {
+   "name": "R_Forearm",
+   "up": [
+    -0.06,
+    0.91,
+    -0.42
+   ],
+   "parent": "R_Upperarm",
+   "look": [
+    0.91,
+    0.22,
+    0.36
+   ],
+   "part": "RootPart",
+   "pos": [
+    1.15,
+    2.27,
+    -1.22
+   ]
+  },
+  {
+   "name": "R_Hand",
+   "up": [
+    -0.57,
+    0.59,
+    -0.58
+   ],
+   "parent": "R_Forearm",
+   "look": [
+    0.59,
+    0.78,
+    0.22
+   ],
+   "part": "RootPart",
+   "pos": [
+    1.06,
+    3.89,
+    -2.01
+   ]
+  },
+  {
+   "name": "R_Ring1",
+   "up": [
+    0.49,
+    -0.86,
+    -0.1
+   ],
+   "parent": "R_Hand",
+   "look": [
+    -0.86,
+    -0.47,
+    -0.18
+   ],
+   "part": "RootPart",
+   "pos": [
+    1.05,
+    3.89,
+    -2.01
+   ]
+  },
+  {
+   "name": "R_Ring2",
+   "up": [
+    0.23,
+    -0.79,
+    0.57
+   ],
+   "parent": "R_Ring1",
+   "look": [
+    -0.79,
+    0.19,
+    0.58
+   ],
+   "part": "RootPart",
+   "pos": [
+    1.06,
+    3.89,
+    -2.01
+   ]
+  }
+ ],
+ "width": 6.2,
+ "frame": "model pivot shifted so the lowest point of the visible parts is y = 0; front -Z (Logic/BoneRoles convention); look/up are the bone's or part's rest axes in that frame",
+ "skinned": "bones listed are all Bone instances; owner part is the Part/MeshPart they are parented under (Tripo exports parent bones to RootPart, the single visible MeshPart is skinned)"
+}

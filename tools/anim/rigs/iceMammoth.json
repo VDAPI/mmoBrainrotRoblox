@@ -1,0 +1,747 @@
+{
+ "visibleMeshParts": 1,
+ "parts": [
+  {
+   "transparency": 0,
+   "name": "tripo_node_3739e4bf-5b83-4502-82a9-64620b2fcf2f",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "MeshPart",
+   "pos": [
+    0,
+    2.48,
+    0
+   ],
+   "size": [
+    3.87,
+    4.97,
+    5.97
+   ]
+  },
+  {
+   "transparency": 1,
+   "name": "RootPart",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "Part",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "size": [
+    0.12,
+    0.12,
+    0.06
+   ]
+  },
+  {
+   "transparency": 1,
+   "name": "HumanoidRootPart",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "Part",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "size": [
+    1,
+    1,
+    1
+   ]
+  }
+ ],
+ "model": "iceMammoth",
+ "height": 4.97,
+ "depth": 5.97,
+ "bones": [
+  {
+   "name": "tripo::Root",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0,
+    0.1,
+    0
+   ]
+  },
+  {
+   "name": "tripo::Spine_0",
+   "up": [
+    0,
+    0.43,
+    -0.9
+   ],
+   "parent": "tripo::Root",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    3.07,
+    1.24
+   ]
+  },
+  {
+   "name": "tripo::Spine_1",
+   "up": [
+    0,
+    0.26,
+    -0.97
+   ],
+   "parent": "tripo::Spine_0",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    3.37,
+    0.61
+   ]
+  },
+  {
+   "name": "tripo::Head_0",
+   "up": [
+    0,
+    -0.37,
+    -0.93
+   ],
+   "parent": "tripo::Spine_1",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    3.74,
+    -0.17
+   ]
+  },
+  {
+   "name": "tripo::Head_1",
+   "up": [
+    0,
+    0.14,
+    -0.99
+   ],
+   "parent": "tripo::Head_0",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    3.65,
+    -0.86
+   ]
+  },
+  {
+   "name": "tripo::Head_2",
+   "up": [
+    -0.09,
+    -0.41,
+    -0.91
+   ],
+   "parent": "tripo::Head_1",
+   "look": [
+    -1,
+    0.04,
+    0.08
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    3.72,
+    -1.35
+   ]
+  },
+  {
+   "name": "tripo::Head_3",
+   "up": [
+    0,
+    -0.99,
+    0.12
+   ],
+   "parent": "tripo::Head_2",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    3.21,
+    -2.38
+   ]
+  },
+  {
+   "name": "tripo::Head_4",
+   "up": [
+    0,
+    -0.99,
+    0.11
+   ],
+   "parent": "tripo::Head_3",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    2.84,
+    -2.34
+   ]
+  },
+  {
+   "name": "tripo::Head_5",
+   "up": [
+    0,
+    -1,
+    0.06
+   ],
+   "parent": "tripo::Head_4",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    2.43,
+    -2.29
+   ]
+  },
+  {
+   "name": "tripo::Head_6",
+   "up": [
+    0,
+    -1,
+    0.06
+   ],
+   "parent": "tripo::Head_5",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    2.06,
+    -2.27
+   ]
+  },
+  {
+   "name": "tripo::Head_7",
+   "up": [
+    0,
+    -0.99,
+    -0.16
+   ],
+   "parent": "tripo::Head_6",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    1.69,
+    -2.25
+   ]
+  },
+  {
+   "name": "tripo::Head_8",
+   "up": [
+    -0.09,
+    -0.09,
+    -0.99
+   ],
+   "parent": "tripo::Head_7",
+   "look": [
+    -1,
+    0.01,
+    0.09
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    1.41,
+    -2.29
+   ]
+  },
+  {
+   "name": "tripo::Head_9",
+   "up": [
+    -0.09,
+    -0.09,
+    -0.99
+   ],
+   "parent": "tripo::Head_8",
+   "look": [
+    -1,
+    0.01,
+    0.09
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.01,
+    1.39,
+    -2.55
+   ]
+  },
+  {
+   "name": "bone_13",
+   "up": [
+    -0.93,
+    0.28,
+    -0.22
+   ],
+   "parent": "tripo::Head_2",
+   "look": [
+    0.28,
+    0.96,
+    0.03
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.68,
+    3.93,
+    -1.51
+   ]
+  },
+  {
+   "name": "tripo::0_Left_Limb_0",
+   "up": [
+    -0.08,
+    -0.97,
+    -0.22
+   ],
+   "parent": "tripo::Head_0",
+   "look": [
+    1,
+    -0.08,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.7,
+    2.87,
+    -0.59
+   ]
+  },
+  {
+   "name": "tripo::0_Left_Limb_1",
+   "up": [
+    0.11,
+    -0.99,
+    0.09
+   ],
+   "parent": "tripo::0_Left_Limb_0",
+   "look": [
+    0.99,
+    0.11,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.8,
+    1.74,
+    -0.84
+   ]
+  },
+  {
+   "name": "tripo::0_Left_Limb_2",
+   "up": [
+    -0.05,
+    -0.99,
+    0.09
+   ],
+   "parent": "tripo::0_Left_Limb_1",
+   "look": [
+    1,
+    -0.05,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.68,
+    0.72,
+    -0.75
+   ]
+  },
+  {
+   "name": "tripo::0_Left_Limb_3",
+   "up": [
+    -0.05,
+    -0.99,
+    0.09
+   ],
+   "parent": "tripo::0_Left_Limb_2",
+   "look": [
+    1,
+    -0.05,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.7,
+    0.24,
+    -0.7
+   ]
+  },
+  {
+   "name": "tripo::0_Right_Limb_0",
+   "up": [
+    0.08,
+    -0.97,
+    -0.22
+   ],
+   "parent": "tripo::Head_0",
+   "look": [
+    1,
+    0.08,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.73,
+    2.87,
+    -0.59
+   ]
+  },
+  {
+   "name": "tripo::0_Right_Limb_1",
+   "up": [
+    -0.11,
+    -0.99,
+    0.11
+   ],
+   "parent": "tripo::0_Right_Limb_0",
+   "look": [
+    0.99,
+    -0.11,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.82,
+    1.74,
+    -0.84
+   ]
+  },
+  {
+   "name": "tripo::0_Right_Limb_2",
+   "up": [
+    0,
+    -1,
+    0.09
+   ],
+   "parent": "tripo::0_Right_Limb_1",
+   "look": [
+    1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.7,
+    0.72,
+    -0.72
+   ]
+  },
+  {
+   "name": "tripo::0_Right_Limb_3",
+   "up": [
+    0,
+    -1,
+    0.09
+   ],
+   "parent": "tripo::0_Right_Limb_2",
+   "look": [
+    1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.7,
+    0.24,
+    -0.68
+   ]
+  },
+  {
+   "name": "tripo::Spine_2",
+   "up": [
+    0,
+    -0.98,
+    -0.21
+   ],
+   "parent": "tripo::Spine_1",
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    2.29,
+    0.38
+   ]
+  },
+  {
+   "name": "bone_23",
+   "up": [
+    0,
+    -0.54,
+    0.84
+   ],
+   "parent": "tripo::Root",
+   "look": [
+    -0.54,
+    0.7,
+    0.46
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    2.38,
+    2.23
+   ]
+  },
+  {
+   "name": "tripo::1_Left_Limb_0",
+   "up": [
+    0.07,
+    -0.92,
+    -0.39
+   ],
+   "parent": "tripo::Root",
+   "look": [
+    1,
+    0.08,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.77,
+    2.47,
+    1.7
+   ]
+  },
+  {
+   "name": "tripo::1_Left_Limb_1",
+   "up": [
+    0.02,
+    -0.82,
+    0.58
+   ],
+   "parent": "tripo::1_Left_Limb_0",
+   "look": [
+    1,
+    0.03,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.68,
+    1.34,
+    1.21
+   ]
+  },
+  {
+   "name": "tripo::1_Left_Limb_2",
+   "up": [
+    -0.11,
+    -0.76,
+    -0.64
+   ],
+   "parent": "tripo::1_Left_Limb_1",
+   "look": [
+    0.99,
+    -0.15,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.66,
+    0.56,
+    1.77
+   ]
+  },
+  {
+   "name": "tripo::1_Left_Limb_3",
+   "up": [
+    -0.11,
+    -0.76,
+    -0.64
+   ],
+   "parent": "tripo::1_Left_Limb_2",
+   "look": [
+    0.99,
+    -0.15,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.73,
+    0.1,
+    1.37
+   ]
+  },
+  {
+   "name": "tripo::1_Right_Limb_0",
+   "up": [
+    -0.02,
+    -0.92,
+    -0.39
+   ],
+   "parent": "tripo::Root",
+   "look": [
+    1,
+    -0.02,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.75,
+    2.47,
+    1.7
+   ]
+  },
+  {
+   "name": "tripo::1_Right_Limb_1",
+   "up": [
+    0,
+    -0.82,
+    0.58
+   ],
+   "parent": "tripo::1_Right_Limb_0",
+   "look": [
+    1,
+    0,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.73,
+    1.34,
+    1.21
+   ]
+  },
+  {
+   "name": "tripo::1_Right_Limb_2",
+   "up": [
+    0.04,
+    -0.76,
+    -0.65
+   ],
+   "parent": "tripo::1_Right_Limb_1",
+   "look": [
+    1,
+    0.05,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.73,
+    0.56,
+    1.77
+   ]
+  },
+  {
+   "name": "tripo::1_Right_Limb_3",
+   "up": [
+    0.04,
+    -0.76,
+    -0.65
+   ],
+   "parent": "tripo::1_Right_Limb_2",
+   "look": [
+    1,
+    0.05,
+    0
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.75,
+    0.1,
+    1.37
+   ]
+  },
+  {
+   "name": "bone_32",
+   "up": [
+    0,
+    -0.37,
+    0.93
+   ],
+   "parent": "tripo::Root",
+   "look": [
+    -0.37,
+    0.86,
+    0.34
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.01,
+    2.5,
+    2.18
+   ]
+  }
+ ],
+ "width": 3.87,
+ "frame": "model pivot shifted so the lowest point of the visible parts is y = 0; front -Z (Logic/BoneRoles convention); look/up are the bone's or part's rest axes in that frame",
+ "skinned": "bones listed are all Bone instances; owner part is the Part/MeshPart they are parented under (Tripo exports parent bones to RootPart, the single visible MeshPart is skinned)"
+}

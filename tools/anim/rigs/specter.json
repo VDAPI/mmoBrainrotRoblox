@@ -1,0 +1,1022 @@
+{
+ "visibleMeshParts": 1,
+ "parts": [
+  {
+   "transparency": 0,
+   "name": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "MeshPart",
+   "pos": [
+    0,
+    1.92,
+    0
+   ],
+   "size": [
+    2.54,
+    3.83,
+    2.57
+   ]
+  },
+  {
+   "transparency": 1,
+   "name": "HumanoidRootPart",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "Part",
+   "pos": [
+    0,
+    -2.5,
+    0
+   ],
+   "size": [
+    1,
+    1,
+    1
+   ]
+  }
+ ],
+ "model": "specter",
+ "height": 3.83,
+ "depth": 2.57,
+ "bones": [
+  {
+   "name": "mixamorig:Hips",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    -1,
+    0,
+    0
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.31,
+    2.19,
+    -0.88
+   ]
+  },
+  {
+   "name": "mixamorig:LeftUpLeg",
+   "up": [
+    -0.04,
+    -0.98,
+    -0.18
+   ],
+   "parent": "mixamorig:Hips",
+   "look": [
+    0.98,
+    -0.07,
+    0.17
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.5,
+    2.07,
+    -0.85
+   ]
+  },
+  {
+   "name": "mixamorig:LeftLeg",
+   "up": [
+    0.09,
+    -0.99,
+    -0.08
+   ],
+   "parent": "mixamorig:LeftUpLeg",
+   "look": [
+    0.99,
+    0.09,
+    0.09
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.53,
+    1.26,
+    -0.99
+   ]
+  },
+  {
+   "name": "mixamorig:RightUpLeg",
+   "up": [
+    0.05,
+    -0.98,
+    -0.18
+   ],
+   "parent": "mixamorig:Hips",
+   "look": [
+    0.98,
+    0.02,
+    0.19
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.1,
+    2.07,
+    -0.85
+   ]
+  },
+  {
+   "name": "mixamorig:RightLeg",
+   "up": [
+    0.26,
+    -0.96,
+    -0.08
+   ],
+   "parent": "mixamorig:RightUpLeg",
+   "look": [
+    0.96,
+    0.25,
+    0.1
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.05,
+    1.26,
+    -0.99
+   ]
+  },
+  {
+   "name": "mixamorig:Spine",
+   "up": [
+    0,
+    1,
+    0.07
+   ],
+   "parent": "mixamorig:Hips",
+   "look": [
+    -1,
+    0,
+    0.07
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.31,
+    2.4,
+    -0.88
+   ]
+  },
+  {
+   "name": "mixamorig:Spine1",
+   "up": [
+    0,
+    0.98,
+    0.18
+   ],
+   "parent": "mixamorig:Spine",
+   "look": [
+    -0.98,
+    -0.03,
+    0.18
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.31,
+    2.63,
+    -0.86
+   ]
+  },
+  {
+   "name": "mixamorig:Spine2",
+   "up": [
+    0,
+    0.95,
+    0.31
+   ],
+   "parent": "mixamorig:Spine1",
+   "look": [
+    -0.95,
+    -0.1,
+    0.29
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.31,
+    2.87,
+    -0.82
+   ]
+  },
+  {
+   "name": "mixamorig:LeftShoulder",
+   "up": [
+    -0.89,
+    -0.45,
+    -0.04
+   ],
+   "parent": "mixamorig:Spine2",
+   "look": [
+    0.45,
+    -0.89,
+    0.01
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.44,
+    3,
+    -0.71
+   ]
+  },
+  {
+   "name": "mixamorig:LeftArm",
+   "up": [
+    -0.29,
+    -0.96,
+    -0.03
+   ],
+   "parent": "mixamorig:LeftShoulder",
+   "look": [
+    0.96,
+    -0.29,
+    0.02
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.74,
+    2.85,
+    -0.73
+   ]
+  },
+  {
+   "name": "mixamorig:LeftForeArm",
+   "up": [
+    -0.35,
+    -0.81,
+    -0.47
+   ],
+   "parent": "mixamorig:LeftArm",
+   "look": [
+    0.81,
+    -0.51,
+    0.28
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.91,
+    2.31,
+    -0.74
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHand",
+   "up": [
+    -0.19,
+    -0.94,
+    -0.27
+   ],
+   "parent": "mixamorig:LeftForeArm",
+   "look": [
+    0.94,
+    -0.26,
+    0.21
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.08,
+    1.91,
+    -0.97
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandIndex1",
+   "up": [
+    -0.02,
+    -0.98,
+    -0.19
+   ],
+   "parent": "mixamorig:LeftHand",
+   "look": [
+    0.98,
+    -0.05,
+    0.18
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.1,
+    1.66,
+    -1.09
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandIndex2",
+   "up": [
+    0.24,
+    -0.96,
+    0.13
+   ],
+   "parent": "mixamorig:LeftHandIndex1",
+   "look": [
+    0.96,
+    0.22,
+    -0.17
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.1,
+    1.5,
+    -1.12
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandIndex3",
+   "up": [
+    0.24,
+    -0.96,
+    0.13
+   ],
+   "parent": "mixamorig:LeftHandIndex2",
+   "look": [
+    0.96,
+    0.22,
+    -0.17
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.08,
+    1.4,
+    -1.1
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandMiddle1",
+   "up": [
+    0.09,
+    -0.93,
+    -0.35
+   ],
+   "parent": "mixamorig:LeftHand",
+   "look": [
+    0.93,
+    -0.04,
+    0.36
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.12,
+    1.65,
+    -1.06
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandMiddle2",
+   "up": [
+    0.25,
+    -0.96,
+    0.13
+   ],
+   "parent": "mixamorig:LeftHandMiddle1",
+   "look": [
+    0.96,
+    0.23,
+    -0.16
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.11,
+    1.5,
+    -1.12
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandMiddle3",
+   "up": [
+    0.25,
+    -0.96,
+    0.13
+   ],
+   "parent": "mixamorig:LeftHandMiddle2",
+   "look": [
+    0.96,
+    0.23,
+    -0.16
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.08,
+    1.39,
+    -1.1
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandPinky1",
+   "up": [
+    -0.02,
+    -1,
+    0.06
+   ],
+   "parent": "mixamorig:LeftHand",
+   "look": [
+    1,
+    -0.02,
+    -0.06
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.19,
+    1.65,
+    -0.92
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandPinky2",
+   "up": [
+    0.36,
+    -0.89,
+    0.28
+   ],
+   "parent": "mixamorig:LeftHandPinky1",
+   "look": [
+    0.89,
+    0.23,
+    -0.39
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.19,
+    1.51,
+    -0.91
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandPinky3",
+   "up": [
+    0.36,
+    -0.89,
+    0.28
+   ],
+   "parent": "mixamorig:LeftHandPinky2",
+   "look": [
+    0.89,
+    0.23,
+    -0.39
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.16,
+    1.43,
+    -0.89
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandRing1",
+   "up": [
+    -0.16,
+    -0.99,
+    0.06
+   ],
+   "parent": "mixamorig:LeftHand",
+   "look": [
+    0.99,
+    -0.16,
+    -0.05
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.18,
+    1.65,
+    -1
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandRing2",
+   "up": [
+    0.4,
+    -0.87,
+    0.3
+   ],
+   "parent": "mixamorig:LeftHandRing1",
+   "look": [
+    0.87,
+    0.25,
+    -0.43
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.2,
+    1.51,
+    -0.99
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandRing3",
+   "up": [
+    0.4,
+    -0.87,
+    0.3
+   ],
+   "parent": "mixamorig:LeftHandRing2",
+   "look": [
+    0.87,
+    0.25,
+    -0.43
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.16,
+    1.43,
+    -0.96
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandThumb1",
+   "up": [
+    0.5,
+    -0.79,
+    -0.37
+   ],
+   "parent": "mixamorig:LeftHand",
+   "look": [
+    0.79,
+    0.23,
+    0.57
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -1.03,
+    1.82,
+    -1.03
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandThumb2",
+   "up": [
+    0.38,
+    -0.89,
+    -0.24
+   ],
+   "parent": "mixamorig:LeftHandThumb1",
+   "look": [
+    0.89,
+    0.29,
+    0.34
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.97,
+    1.73,
+    -1.07
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandThumb3",
+   "up": [
+    0.38,
+    -0.89,
+    -0.24
+   ],
+   "parent": "mixamorig:LeftHandThumb2",
+   "look": [
+    0.89,
+    0.29,
+    0.34
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.91,
+    1.6,
+    -1.11
+   ]
+  },
+  {
+   "name": "mixamorig:Neck",
+   "up": [
+    0.07,
+    1,
+    -0.07
+   ],
+   "parent": "mixamorig:Spine2",
+   "look": [
+    -1,
+    0.06,
+    -0.07
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.31,
+    3.15,
+    -0.74
+   ]
+  },
+  {
+   "name": "mixamorig:Head",
+   "up": [
+    0.07,
+    1,
+    -0.07
+   ],
+   "parent": "mixamorig:Neck",
+   "look": [
+    -1,
+    0.06,
+    -0.07
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.29,
+    3.37,
+    -0.76
+   ]
+  },
+  {
+   "name": "mixamorig:RightShoulder",
+   "up": [
+    0.88,
+    -0.47,
+    -0.05
+   ],
+   "parent": "mixamorig:Spine2",
+   "look": [
+    0.47,
+    0.87,
+    0.19
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    -0.16,
+    3,
+    -0.71
+   ]
+  },
+  {
+   "name": "mixamorig:RightArm",
+   "up": [
+    0.28,
+    -0.96,
+    0
+   ],
+   "parent": "mixamorig:RightShoulder",
+   "look": [
+    0.96,
+    0.28,
+    0
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.13,
+    2.85,
+    -0.73
+   ]
+  },
+  {
+   "name": "mixamorig:RightForeArm",
+   "up": [
+    0.32,
+    -0.86,
+    -0.39
+   ],
+   "parent": "mixamorig:RightArm",
+   "look": [
+    0.86,
+    0.1,
+    0.49
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.29,
+    2.28,
+    -0.73
+   ]
+  },
+  {
+   "name": "mixamorig:RightHand",
+   "up": [
+    0.37,
+    -0.87,
+    -0.31
+   ],
+   "parent": "mixamorig:RightForeArm",
+   "look": [
+    0.87,
+    0.22,
+    0.43
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.47,
+    1.8,
+    -0.94
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandIndex1",
+   "up": [
+    -0.04,
+    -0.94,
+    -0.33
+   ],
+   "parent": "mixamorig:RightHand",
+   "look": [
+    0.94,
+    -0.14,
+    0.3
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.54,
+    1.59,
+    -1.1
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandIndex2",
+   "up": [
+    -0.17,
+    -0.97,
+    -0.14
+   ],
+   "parent": "mixamorig:RightHandIndex1",
+   "look": [
+    0.97,
+    -0.19,
+    0.12
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.53,
+    1.5,
+    -1.14
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandIndex3",
+   "up": [
+    -0.17,
+    -0.97,
+    -0.14
+   ],
+   "parent": "mixamorig:RightHandIndex2",
+   "look": [
+    0.97,
+    -0.19,
+    0.12
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.51,
+    1.39,
+    -1.15
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandMiddle1",
+   "up": [
+    0,
+    -0.99,
+    -0.16
+   ],
+   "parent": "mixamorig:RightHand",
+   "look": [
+    0.99,
+    -0.03,
+    0.16
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.59,
+    1.55,
+    -1.03
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandMiddle2",
+   "up": [
+    -0.29,
+    -0.96,
+    -0.04
+   ],
+   "parent": "mixamorig:RightHandMiddle1",
+   "look": [
+    0.96,
+    -0.29,
+    0.03
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.59,
+    1.44,
+    -1.05
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandMiddle3",
+   "up": [
+    -0.29,
+    -0.96,
+    -0.04
+   ],
+   "parent": "mixamorig:RightHandMiddle2",
+   "look": [
+    0.96,
+    -0.29,
+    0.03
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.56,
+    1.34,
+    -1.05
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandPinky1",
+   "up": [
+    -0.22,
+    -0.97,
+    -0.07
+   ],
+   "parent": "mixamorig:RightHand",
+   "look": [
+    0.97,
+    -0.23,
+    0.06
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.59,
+    1.55,
+    -0.83
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandPinky2",
+   "up": [
+    -0.39,
+    -0.92,
+    -0.05
+   ],
+   "parent": "mixamorig:RightHandPinky1",
+   "look": [
+    0.92,
+    -0.39,
+    0.03
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.57,
+    1.46,
+    -0.84
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandPinky3",
+   "up": [
+    -0.39,
+    -0.92,
+    -0.05
+   ],
+   "parent": "mixamorig:RightHandPinky2",
+   "look": [
+    0.92,
+    -0.39,
+    0.03
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.54,
+    1.38,
+    -0.84
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandRing1",
+   "up": [
+    0,
+    -0.98,
+    -0.18
+   ],
+   "parent": "mixamorig:RightHand",
+   "look": [
+    0.98,
+    -0.03,
+    0.18
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.59,
+    1.55,
+    -0.94
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandRing2",
+   "up": [
+    -0.36,
+    -0.93,
+    0
+   ],
+   "parent": "mixamorig:RightHandRing1",
+   "look": [
+    0.93,
+    -0.36,
+    0
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.59,
+    1.43,
+    -0.96
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandRing3",
+   "up": [
+    -0.36,
+    -0.93,
+    0
+   ],
+   "parent": "mixamorig:RightHandRing2",
+   "look": [
+    0.93,
+    -0.36,
+    0
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.56,
+    1.34,
+    -0.96
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandThumb1",
+   "up": [
+    -0.23,
+    -0.61,
+    -0.76
+   ],
+   "parent": "mixamorig:RightHand",
+   "look": [
+    0.61,
+    -0.7,
+    0.38
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.43,
+    1.74,
+    -1.02
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandThumb2",
+   "up": [
+    -0.2,
+    -0.77,
+    -0.6
+   ],
+   "parent": "mixamorig:RightHandThumb1",
+   "look": [
+    0.77,
+    -0.5,
+    0.39
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.4,
+    1.68,
+    -1.09
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandThumb3",
+   "up": [
+    -0.2,
+    -0.77,
+    -0.6
+   ],
+   "parent": "mixamorig:RightHandThumb2",
+   "look": [
+    0.77,
+    -0.5,
+    0.39
+   ],
+   "part": "tripo_mesh_c4d9f0f5-5e80-455f-95d1-36ab51289364",
+   "pos": [
+    0.38,
+    1.59,
+    -1.16
+   ]
+  }
+ ],
+ "width": 2.54,
+ "frame": "model pivot shifted so the lowest point of the visible parts is y = 0; front -Z (Logic/BoneRoles convention); look/up are the bone's or part's rest axes in that frame",
+ "skinned": "bones listed are all Bone instances; owner part is the Part/MeshPart they are parented under (Tripo exports parent bones to RootPart, the single visible MeshPart is skinned)"
+}

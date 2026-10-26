@@ -1,0 +1,467 @@
+{
+ "visibleMeshParts": 1,
+ "parts": [
+  {
+   "transparency": 0,
+   "name": "tripo_node_d7108c67-63fc-454a-9587-ba51736d7c1e",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "MeshPart",
+   "pos": [
+    0,
+    1.7,
+    0
+   ],
+   "size": [
+    2.72,
+    3.4,
+    5.19
+   ]
+  },
+  {
+   "transparency": 1,
+   "name": "RootPart",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "Part",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "size": [
+    0.1,
+    0.1,
+    0.05
+   ]
+  },
+  {
+   "transparency": 1,
+   "name": "HumanoidRootPart",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    0,
+    0,
+    -1
+   ],
+   "class": "Part",
+   "pos": [
+    0,
+    0,
+    0
+   ],
+   "size": [
+    1,
+    1,
+    1
+   ]
+  }
+ ],
+ "model": "brownBear",
+ "height": 3.4,
+ "depth": 5.19,
+ "bones": [
+  {
+   "name": "tripo::Root",
+   "up": [
+    0,
+    1,
+    0
+   ],
+   "look": [
+    -0.97,
+    0,
+    0.22
+   ],
+   "part": "RootPart",
+   "pos": [
+    0,
+    0.08,
+    0
+   ]
+  },
+  {
+   "name": "bone_1",
+   "up": [
+    0.32,
+    0.19,
+    0.93
+   ],
+   "parent": "tripo::Root",
+   "look": [
+    0.19,
+    0.94,
+    -0.26
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.15,
+    1.96,
+    0.55
+   ]
+  },
+  {
+   "name": "tripo::1_Left_Limb_0",
+   "up": [
+    -0.36,
+    -0.92,
+    0.14
+   ],
+   "parent": "bone_1",
+   "look": [
+    0.9,
+    -0.38,
+    -0.21
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.35,
+    1.39,
+    1.18
+   ]
+  },
+  {
+   "name": "tripo::1_Left_Limb_1",
+   "up": [
+    -0.21,
+    -0.81,
+    0.54
+   ],
+   "parent": "tripo::1_Left_Limb_0",
+   "look": [
+    0.9,
+    -0.37,
+    -0.21
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.55,
+    0.87,
+    1.26
+   ]
+  },
+  {
+   "name": "tripo::1_Left_Limb_2",
+   "up": [
+    -0.44,
+    -0.53,
+    -0.73
+   ],
+   "parent": "tripo::1_Left_Limb_1",
+   "look": [
+    0.87,
+    -0.44,
+    -0.2
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.7,
+    0.32,
+    1.62
+   ]
+  },
+  {
+   "name": "tripo::1_Left_Limb_3",
+   "up": [
+    -0.44,
+    -0.53,
+    -0.73
+   ],
+   "parent": "tripo::1_Left_Limb_2",
+   "look": [
+    0.87,
+    -0.44,
+    -0.2
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.88,
+    0.1,
+    1.32
+   ]
+  },
+  {
+   "name": "tripo::1_Right_Limb_0",
+   "up": [
+    0.07,
+    -0.97,
+    0.25
+   ],
+   "parent": "bone_1",
+   "look": [
+    0.97,
+    0.01,
+    -0.22
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.36,
+    1.35,
+    0.97
+   ]
+  },
+  {
+   "name": "tripo::1_Right_Limb_1",
+   "up": [
+    0.15,
+    -0.7,
+    0.7
+   ],
+   "parent": "tripo::1_Right_Limb_0",
+   "look": [
+    0.97,
+    -0.02,
+    -0.22
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.4,
+    0.81,
+    1.12
+   ]
+  },
+  {
+   "name": "tripo::1_Right_Limb_2",
+   "up": [
+    -0.05,
+    -0.58,
+    -0.82
+   ],
+   "parent": "tripo::1_Right_Limb_1",
+   "look": [
+    0.95,
+    0.23,
+    -0.22
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.5,
+    0.32,
+    1.6
+   ]
+  },
+  {
+   "name": "tripo::1_Right_Limb_3",
+   "up": [
+    -0.05,
+    -0.58,
+    -0.82
+   ],
+   "parent": "tripo::1_Right_Limb_2",
+   "look": [
+    0.95,
+    0.23,
+    -0.22
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.48,
+    0.08,
+    1.26
+   ]
+  },
+  {
+   "name": "bone_10",
+   "up": [
+    0.3,
+    0.36,
+    0.88
+   ],
+   "parent": "bone_1",
+   "look": [
+    0.36,
+    0.81,
+    -0.46
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.16,
+    2.33,
+    1.44
+   ]
+  },
+  {
+   "name": "tripo::Spine_0",
+   "up": [
+    -0.22,
+    0.08,
+    -0.97
+   ],
+   "parent": "tripo::Root",
+   "look": [
+    -0.97,
+    0,
+    0.22
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.15,
+    1.96,
+    0.55
+   ]
+  },
+  {
+   "name": "tripo::Head_0",
+   "up": [
+    -0.47,
+    -0.02,
+    -0.88
+   ],
+   "parent": "tripo::Spine_0",
+   "look": [
+    -0.88,
+    0,
+    0.47
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.37,
+    2.04,
+    -0.43
+   ]
+  },
+  {
+   "name": "bone_13",
+   "up": [
+    -0.4,
+    0.08,
+    -0.91
+   ],
+   "parent": "tripo::Head_0",
+   "look": [
+    0.08,
+    1,
+    0.05
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.7,
+    2.1,
+    -1.16
+   ]
+  },
+  {
+   "name": "bone_14",
+   "up": [
+    0.06,
+    -0.87,
+    0.5
+   ],
+   "parent": "tripo::Head_0",
+   "look": [
+    -0.87,
+    0.2,
+    0.46
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.98,
+    1.33,
+    -0.41
+   ]
+  },
+  {
+   "name": "tripo::0_Left_Limb_0",
+   "up": [
+    0.06,
+    -0.87,
+    0.5
+   ],
+   "parent": "bone_14",
+   "look": [
+    0.97,
+    -0.06,
+    -0.22
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.94,
+    0.77,
+    -0.08
+   ]
+  },
+  {
+   "name": "tripo::Head_1",
+   "up": [
+    0.58,
+    -0.72,
+    -0.37
+   ],
+   "parent": "tripo::Head_0",
+   "look": [
+    -0.78,
+    -0.62,
+    -0.02
+   ],
+   "part": "RootPart",
+   "pos": [
+    -0.36,
+    2.05,
+    -0.43
+   ]
+  },
+  {
+   "name": "tripo::Head_2",
+   "up": [
+    0.31,
+    -0.74,
+    0.6
+   ],
+   "parent": "tripo::Head_1",
+   "look": [
+    -0.93,
+    -0.13,
+    0.33
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.18,
+    1.37,
+    -0.77
+   ]
+  },
+  {
+   "name": "tripo::0_Right_Limb_0",
+   "up": [
+    0.31,
+    -0.74,
+    0.6
+   ],
+   "parent": "tripo::Head_2",
+   "look": [
+    0.95,
+    0.23,
+    -0.22
+   ],
+   "part": "RootPart",
+   "pos": [
+    0.4,
+    0.85,
+    -0.35
+   ]
+  }
+ ],
+ "width": 2.72,
+ "frame": "model pivot shifted so the lowest point of the visible parts is y = 0; front -Z (Logic/BoneRoles convention); look/up are the bone's or part's rest axes in that frame",
+ "skinned": "bones listed are all Bone instances; owner part is the Part/MeshPart they are parented under (Tripo exports parent bones to RootPart, the single visible MeshPart is skinned)"
+}
