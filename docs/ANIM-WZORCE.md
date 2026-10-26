@@ -255,6 +255,55 @@ Studio builds the bandit template now. What §1 means for it, and what the other
 | Golem | `fireGolem`, `magmaGolem`, `crystalGuardian` (+ Azgor) | wide stance, shoulders up 5°, head sunk | slower cadence: rate ≤ 0.8 of a humanoid's at the same speed (longer strides); each footfall: body dip 0.05 h, pitch 2°, dust | S 0.18 s; F holds the impact pose 0.25 s; impact VFX at W; `emberNova` gather trembles and glows | ×0.4 | knees, forward collapse, debris, fade |
 | Ghost on bones | `forestWraith` | arms forward 10°, slight hunch | no leg cycle: the idle clip on the legs while moving, body float bob ±0.12 h at 0.5 Hz, lean 10° into the move, drift lag 0.2 s | cast clip warped; ranged release at the hands | ×0.8 + transparency flicker | rise 1.5 studs and fade by 0.8 s |
 
+### 2.1 As built: the bosses (2026-10-26)
+
+Grimrok, Morvane, Azgor and Hrimvald run on the biped template: one style per boss id in `Data/BossStyles`
+(registered by `Data/BipedStyles`), picked by `motion = "<boss id>"` in `Data/MonsterAssets`, driven by
+`Logic/BipedMotion` (Morvane by `Logic/SpiritMotion`). Deviations from §1-2 and what the boss layer adds:
+
+- **Locomotion is the bandit's mocap** (`Data/BipedClips`: walk, run, idle and its variants) under a boss weight layer
+  (`boss` in the style): the pelvis drops after each footfall and rolls over the standing leg, the feet step wider and
+  the legs are solved again onto the planted feet (`heavyStep`), the spine leans into the walk. Out of the fight the
+  guard stays at `calm` weight with a slow head scan and a deep breath. The Tripo clips of the bosses
+  (`Data/MonsterClips/<boss>`) are no longer played: on the template the mocap reads heavier and cleaner. Morvane
+  never walks: she floats (pelvis +0.06 L, slow bob, sway and lean) and her gown, skinned to the leg bones, trails the
+  drift (`spirit.trail`).
+- **Stances**: `enraged` (attribute `Enraged`, or phase 3 and later) and `shielded` (attribute `Shielded`) ease into
+  `boss.rage` / `boss.shield` (Hrimvald has no shield phase).
+- **Roars**: the intro roar (the first `AggroUserId`), each phase roar (`roar`; the last phase `rageRoar`) and the
+  enrage (`rageRoar`) wait in `client/Controllers/AnimationController` until the running blow ends (at most 3 s); peak
+  at `roarHit`.
+- **Timing**: an attack plays on the server's raw windup (clamped 0.2-8 s, not the telegraph's 5 s cap); a pattern on
+  `Logic/HazardGesture.timing` (windup, hold), a pattern riding an attack plays that attack. A channel (`channel`)
+  holds its blow over the hold (keys in segment `H`; a hold of 0 skips them) and turns the body with a sweeping
+  emitter (`turn`; `turnFeet` is the share the feet step round, the rest twists the body). A leap (`leap`) flies the
+  last `Config.MonsterLook.leapArc` s before the hit on the boss's `Data/BossMotions` arc toward the target and keeps
+  that offset until the server's teleport.
+- **Meta keys**: `tremble` (the strain of a gathering cast), `air` (a hop), `spin` (the posed body turned rigidly about
+  the pelvis, feet and all: the whirlwind's two turns).
+- **Hits**: the flinch is damped by `castDamp` x the action's weight (a big cast barely stirs); attribute `Staggered`
+  (a broken channel) plays `stagger` at once. Any biped's interrupted action now fades out from its last pose over
+  0.2 s (`ACTION_CUT`) instead of snapping.
+- **Death**: 4.5-6.5 s (Grimrok kneels, then falls on his face; Morvane rises and sags; Azgor kneels on his
+  sword, then falls forward; Hrimvald topples like a landslide). `Data/BossMotions` death `hold`: the look's clone
+  stays whole that long and the rig moves onto it (`BipedRig.rebind`, `MonsterViewController.OnBossClone`), so the
+  death plays to the end before the break-up.
+- **Facing and centre**: Grimrok's export stands turned 40 degrees to its left and ahead of its root, Azgor's 18
+  degrees to its right and off centre (the greatsword widens his box). `Data/BipedRigs` `facing` / `centre`: the pose
+  is solved on the corrected rest and the Hips' Transform carries the correction (`BipedPose.hipsFixed`). To confirm
+  in Studio.
+- **IK on bowed legs**: `BipedPose.skeleton` squares the shin's hinge to the shin; with a rest knee bent out of the
+  leg's plane (the boss rigs) the ankle missed its target by up to 0.19 L.
+- **Weapons** are part of each mesh and no grip or tip is known: the blade aims (`bR*`) stay unused, the hand and wrist
+  keys carry the cleaver, the sceptre, the greatsword. A dump of the weapons' tips would let the keys aim them.
+- **Characters**: Grimrok hunched and brutal, short chopping blows, axes thrown from the free hand; Morvane regal and
+  slow, both hands gathering her casts, a banshee wail; Azgor planted wide, two-handed greatsword hews, calls of fire
+  raised to the sky; Hrimvald enormous and slow, fists hauled with the whole body, chest beats and stamps.
+- **AnimLab**: `/animlab boss <id> <attack|pattern|roar|rage|death>` (the server's timing, area and hazard),
+  `/animlab mob <id> <action|enraged|shielded|stagger|fight|walk|run|idle>`.
+- **Cost**: as every biped (the nearest `maxAnimated` move); no tier B yet (§1.10). Tests:
+  `tests/bossstyles.spec.luau`. Tuning in Studio: the keys and the `boss` layer in `Data/BossStyles`.
+
 ## 3. F2 Quadruped: wolf
 
 ### 3.1 Rig and sizes
@@ -652,6 +701,16 @@ Turning: heavy, turn smoothing ω 6, feet re-plant (§1.5); the tail swings out 
 |---|---|
 | `wyvern` | the wings are its forelegs: on the ground it walks on the hind legs and the wing wrists (the hand bones are the front feet; lateral sequence; wings folded along the arm); the run is wing-assisted bounding (a half beat on each bound). Ranged fire (`aw` st `arrow`, 0.5): "spit shot", neck back +20°, jaw 25°, throat glow, release at the jaw at W with a neck thrust. Elite II `fireBreath`: §5.5 with fire. Stays a ground monster (its hitbox and hip height are on the ground; §9 Q5) |
 | `vaelgrath` (boss) | the dragon template for idle, ground locomotion, hit and death; `Flying` (true from its boss script): the flyer cycle at 1.1 Hz (§4.2), legs tucked, neck forward, tail rudder; take-off (false → true): 0.6 s crouch and two huge flaps; landing (true → false): flare (pitch +25°, wings forward), legs out, impact squash 0.05 L. Its attacks keep their `Data/BossMotions` gestures on top |
+
+#### As built: youngFrostDragon (2026-10-26)
+
+Until its new model the young frost dragon takes the regular wyvern's biped style (`frostDragon` in
+`Data/BipedStyles`, `Data/BipedRigs` `youngFrostDragon`), not this section's template: today's export is a Tripo biped
+auto rig on a winged dragon whose arm chains run into the wings (the right one broken). The legs, spine, neck and head
+are driven (splayed legs: `legPlane`); the arms are virtual points under the chest and the wings stay as modelled,
+carried by the chest. It fights in melee (bites and claws), `frostBreath` plays the wyvern's breath; the frost is in
+the element's effects, the style has no colour of its own. Needs a re-rig (wing chains as in §4.6) for the wings to
+move.
 
 ## 6. F5 Rigid models: caveSpider
 
