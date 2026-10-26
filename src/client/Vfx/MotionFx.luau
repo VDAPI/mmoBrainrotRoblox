@@ -58,6 +58,10 @@ local HIT_FRESH = 0.25 -- s: a flinch first seen this late shows no puff
 local WHITE = Color3.new(1, 1, 1)
 local ICE_PART = Color3.fromHex("#BFEFFF")
 local ICE_SPIKE = Color3.fromHex("#7FCBF5")
+local EARTH = Color3.fromHex("#7A5F45")
+local EARTH_DARK = Color3.fromHex("#4E3B2B")
+local DUST_FLASH = Color3.fromHex("#F2E2C4")
+local DUST_RING = Color3.fromHex("#D9C3A0")
 local WOOD = Color3.fromHex("#6B4E32")
 local BARK = Color3.fromHex("#3B2A1C")
 local SNOW = Color3.fromHex("#EEF6FF")
@@ -1391,17 +1395,54 @@ local function snow(pos: Vector3, s: number, simple: boolean)
 	})
 end
 
-local function slam(pos: Vector3, s: number, simple: boolean)
+-- Chunks of earth kicked up by a ground impact: brown blocks on ballistic arcs that bounce and fade.
+local function clods(base: Vector3, count: number, s: number, reach: number)
+	local floor = base.Y
+	local bodies: { LmKit.Body } = {}
+	local turn0 = rng:NextNumber(0, math.pi * 2)
+	for i = 1, count do
+		local a = turn0 + (i / count) * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local out = Vector3.new(math.cos(a), 0, math.sin(a))
+		local size = rng:NextNumber(0.35, 0.75) * math.clamp(s, 0.6, 2.2)
+		local p = LmKit.part(
+			"Block",
+			EARTH:Lerp(EARTH_DARK, rng:NextNumber(0, 1)),
+			Vector3.new(size, size * rng:NextNumber(0.6, 1), size * rng:NextNumber(0.8, 1.3)),
+			Enum.Material.Slate,
+			0
+		)
+		local start = base + out * rng:NextNumber(0.3, 0.8) * reach * 0.4 + Vector3.new(0, size, 0)
+		local vel = out * rng:NextNumber(6, 12) * math.sqrt(reach / 3)
+			+ Vector3.new(0, rng:NextNumber(12, 22) * math.clamp(math.sqrt(s), 0.8, 1.4), 0)
+		local rot = CFrame.lookAt(Vector3.zero, vel).Rotation
+		p.CFrame = CFrame.new(start) * rot
+		table.insert(bodies, {
+			p = p,
+			pos = start,
+			vel = vel,
+			rot = rot,
+			spin = LmKit.spinVec(7),
+			floor = floor + size * 0.5,
+			life = rng:NextNumber(0.9, 1.3),
+			bounce = 0.2,
+		})
+	end
+	LmKit.ballistic(bodies, 60)
+end
+
+-- A heavy blow into the ground (studio review 2026-10-26: it has to read from the camera's distance): a flash of dust
+-- at the contact, a fast dust ring out to the blow's area, chunks of earth kicked up, cracks that fade over about a
+-- second, the rock spray and a rolling cloud. `area`: the ability's radius (studs), else by the monster's size.
+local function slam(pos: Vector3, s: number, area: number?, simple: boolean)
 	local base = kit.ground(pos)
-	Library.rockBurst(
-		base,
-		math.clamp(3.2 * s, 2, 9),
-		math.clamp(0.8 * s, 0.5, 1.8),
-		kit.DUST_COLOR,
-		{ simple = simple }
-	)
-	Library.cracks(base, math.clamp(1.8 * s, 1.2, 6), Library.crackTint(kit.DUST_COLOR), 1.4, simple)
-	Library.dust(base, math.clamp(1.1 * s, 0.6, 3), simple)
+	local reach = math.clamp(area or 3.5 * s, 2.5, 16)
+	Library.impactFlash(base + Vector3.new(0, 0.6 * math.min(s, 2), 0), 1.3 * s, DUST_FLASH, { simple = simple })
+	-- the ring always (low quality too): it is where the blow lands
+	Library.shockwave(base, reach, DUST_RING, 0.4, simple, true)
+	Library.rockBurst(base, reach * 0.8, math.clamp(0.9 * s, 0.6, 2.2), kit.DUST_COLOR, { simple = simple })
+	Library.cracks(base, math.clamp(reach * 0.55, 1.5, 8), Library.crackTint(kit.DUST_COLOR), 1.1, simple)
+	Library.dust(base, math.clamp(1.4 * s, 0.8, 3.5), simple)
+	clods(base, math.clamp(math.floor((if simple then 4 else 6) + 3 * s), 6, 14), s, reach)
 end
 
 -- Shards flung out of `pos` on ballistic arcs: plain pooled blocks that tumble, hit the ground and fade (`look`: ice
@@ -1727,7 +1768,8 @@ local function fireOnce(o: Owner, fx: MotionFxData.Fx, simple: boolean)
 	elseif kind == "shatter" then
 		shatter(pos, s, simple)
 	elseif kind == "slam" then
-		slam(pos, s, simple)
+		local bound = o.bound
+		slam(pos, s, bound and bound.radius, simple)
 	elseif kind == "dust" then
 		Library.dust(pos, math.clamp(s, 0.4, 3), simple)
 	elseif kind == "screech" then
