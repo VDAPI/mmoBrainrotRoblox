@@ -63,6 +63,7 @@ local Log = require(Shared.Util.Log)
 local HazardPatterns = require(Shared.Data.HazardPatterns)
 local Hazards = require(Shared.Logic.Hazards)
 local MonsterAbilities = require(Shared.Data.MonsterAbilities)
+local MonsterRelease = require(Shared.Data.MonsterRelease)
 local MonsterCast = require(Shared.Logic.MonsterCast)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local QuestBudget = require(Shared.Logic.QuestBudget)
@@ -1929,7 +1930,13 @@ end
 -- will be a moment later (the pattern's `lead` share of its movement over the flight), it hits only the target and
 -- only when it reaches it (the hit handler runs monsterHitsPlayer with these params: dodge, block and ranged
 -- protection as before). Without the hazard service (never in the game) the old instant blow.
-local function shoot(monster: any, player: Player, patternId: string, params: Damage.Params): boolean
+local function shoot(
+	monster: any,
+	player: Player,
+	patternId: string,
+	params: Damage.Params,
+	leftHand: boolean?
+): boolean
 	local pattern = HazardPatterns.get(patternId)
 	local from = monster.root and monster.root.Position
 	local character = player.Character
@@ -1944,6 +1951,11 @@ local function shoot(monster: any, player: Player, patternId: string, params: Da
 	-- the bolt flies at its flight height from there, the clients draw it dropping from the Muzzle's height
 	local muzzle = monster.root:FindFirstChild("Muzzle")
 	local release: Vector3? = if muzzle and muzzle:IsA("Attachment") then muzzle.WorldPosition else nil
+	if release and leftHand and muzzle and muzzle:IsA("Attachment") then
+		-- a biped throws with its free left hand (Data/BipedStyles `throw`): the Muzzle mirrored to the root's left
+		local p = muzzle.Position
+		release = monster.root.CFrame:PointToWorldSpace(Vector3.new(-p.X, p.Y, p.Z))
+	end
 	if release then
 		from = Vector3.new(release.X, from.Y, release.Z)
 	end
@@ -1988,7 +2000,8 @@ end
 -- through the same path as the basic attack (dodge, block, ranged protection). S159: a real projectile (a rock or a
 -- dark bolt) that can be sidestepped.
 local function monsterThrow(monster: any, player: Player, params: Damage.Params)
-	if shoot(monster, player, if params.kind == "magic" then "eliteThrowMagic" else "eliteThrow", params) then
+	local biped = MonsterRelease.planOf(monster.def.id) == "biped"
+	if shoot(monster, player, if params.kind == "magic" then "eliteThrowMagic" else "eliteThrow", params, biped) then
 		return
 	end
 	monsterHitsPlayer(monster, player, params, if params.kind == "magic" then "bolt" else "arrow", "ranged")
