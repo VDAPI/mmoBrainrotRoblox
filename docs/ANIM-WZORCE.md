@@ -920,8 +920,42 @@ frame, in the game and in AnimLab alike.
   the device limits, lights within the light budget, a model that drops out of the animated set stops its streams.
 - Studio tuning: Vaelgrath's jaw (no bone map: a point 0.12 h ahead of its head bone), the rigid models' mouths and
   the scorpion's sting (box points), the flame's length (0.8 x the ability radius, at most 18 studs) and the particle
-  counts in `Vfx/MotionFx`. The humanoid styles (`humanoid1h`, `caster`, `brute`, `ghost`: the dragonspawn's fire
-  breath, the forest wraith's frost nova) carry no effects yet.
+  counts in `Vfx/MotionFx`.
+
+### 11.1 The humanoid styles (2026-10-26)
+
+- `humanoid1h` (bandit, orcs, knights, golems, the dragonspawn): a streak behind the blade on `cleave`, `heavy`,
+  `crush` and `pounce` (`trail`: a Trail between two attachments of a pooled beam holder moved onto the hilt and the
+  tip each frame, 0.16 s tail, steel white, the element's colours for an elemental kind); `crush` slams the blade
+  into the ground at W (`slam` under the tip) with the element's `nova` round the feet; the dragonspawn's `breath` (a new
+  keyed action: the chest swells and the head rears, then thrusts forward and sweeps across the cone; `fireBreath` /
+  `frostBreath` play it, `emberNova` / `frostNova` / `boneNova` play `crush`); `throw` holds a rock in the free hand
+  from A0.15 until W (`held`; an orb of the element, violet without one, for a magic kind), when the server's
+  projectile takes over; dust on `charge`, landings and both deaths.
+- `caster` (shaman, cultist, necromancer, witch, imp): `spell` gathers in the staff's head and flashes there at W as the
+  bolt leaves, `spellLeft` and `pool` gather in the free hand, `nova` gathers in the raised staff, the butt hits the
+  ground (`slam`) and the element bursts round the feet. `ghost` (the forest wraith): the same without the staff's
+  slam, wisps as it fades. `brute`: streaks behind the fists' `cleave` / `heavy`, the `crush` slam with its nova, a
+  bigger rock to throw, heavier dust.
+- The weapon (`weapon` anchor): the right hand along the style's or the model's `grip`, the tip where the blade leaves
+  the look's measured box (held within 0.12 .. 0.32 of the height: a staff's head, a sword's point), the hilt 0.3 of the
+  way out; without a grip (brute, ghost) the knuckles 0.07 h past the hand along the forearm.
+- The nova by element: ice (the ice elemental's shards and two rings of spikes), fire (a flash and a fire blast at the
+  feet, a ring of flame columns at half the radius, embers, the shock ring), shadow (a violet ring, dark smoke rolling
+  out low, bone shards for a bone nova, violet glass otherwise, pale motes), poison and nature (the ring, a low cloud,
+  bubbles or leaves), lightning (arcs over the ground). No element: no nova, the slam shows the blow.
+- The element: the ability's, else the kind's own (`Logic/ActionFx.bound`: the frozen knight's cleave is ice, the
+  witch's void pool poison), else the school (`Data/MotionFx.SCHOOLS`: the dark cultist and the necromancer violet
+  `shadow`, the goblin shaman green `nature`; a bone or void ability `shadow`). A magic bolt of a school caster leaves
+  in the same colour (`Vfx/HazardFx` takes the caster's school when the shot has no element).
+- AnimLab: `mob dragonspawn breath`, `mob fireImp nova`, `mob necromancer nova`, `mob goblinShaman spell`,
+  `mob marshWitch pool`, `mob darkCultist spellLeft`, `mob forestWraith nova`, `mob fireGolem crush`,
+  `mob magmaGolem crush`, `mob desertMummy crush`, `mob bandit heavy`, `mob frozenKnight cleave`, `mob ashOrc throw`,
+  `mob necromancer throw`, `mob yeti deathBack`.
+- Studio tuning: the weapon's tip (the box measure misses a short dagger and a staff below the head), the dragonspawn's
+  jaw (0.05 h ahead of its head bone), the throw's prop in the left hand while the server's projectile leaves the
+  right-side muzzle (`Data/MonsterRelease` biped `side`), the trail's width and life. The four humanoid bosses take
+  effects by their actions' names once they run on these styles.
 
 ## Appendix A: formulas
 

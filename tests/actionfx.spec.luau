@@ -3,8 +3,9 @@
 -- effects the actions release (Data/MotionFx, Logic/ActionFx): every entry names a real style, action, anchor and piece,
 -- a release lands exactly on the server's hit W, a gather ends by W, a stream starts and ends inside its action, the
 -- marks sit on the keyed timeline (Logic/MotionTimeline), a one-shot fires once (never stale), every breather breathes
--- and the frost nova erupts, the element and reach come from the ability (else the kind), and an attack's animation
--- claims the gather and the release it draws.
+-- and the frost nova erupts, the element and reach come from the ability (else the kind, else its school), and an
+-- attack's animation claims the gather and the release it draws. The humanoid styles (2026-10-26): every caster's
+-- spell gathers and leaves from the staff or the hand at W, every nova, pool and breath of a humanoid kind releases.
 local ActionFx = require("../src/shared/Logic/ActionFx")
 local BipedStyles = require("../src/shared/Data/BipedStyles")
 local Bosses = require("../src/shared/Data/Bosses")
@@ -18,7 +19,7 @@ local RigidStyles = require("../src/shared/Data/RigidStyles")
 local T = require("./Test")
 
 local HITS = { 0.45, 0.5, 0.74, 1.2, 1.3, 1.4, 1.8, 2.2 }
-local ELEMENTS = { fire = true, ice = true, poison = true, lightning = true }
+local ELEMENTS = MotionFx.ELEMENTS
 
 local function styleOf(id: string): any
 	return BipedStyles.get(id) or QuadStyles.get(id) or RigidStyles.get(id) or FlyerStyles.get(id)
@@ -202,7 +203,7 @@ T.describe("ActionFx elements and claims", function()
 	T.it("lets every breathing kind and boss breathe and every frost nova erupt", function()
 		local function check(id: string, ability: string, styleId: string?, kind: string)
 			if not styleId or not styleOf(styleId) or not MotionFx.STYLES[styleId] then
-				return -- not on a template monster style (the humanoid styles carry no release effects yet)
+				return -- not on a template monster style
 			end
 			local action = styleOf(styleId).abilities[ability]
 			T.expect(action ~= nil).toBe(true)
@@ -211,7 +212,8 @@ T.describe("ActionFx elements and claims", function()
 			local bound = ActionFx.bound(id, styleOf(styleId).abilities, action, nil)
 			T.expect(bound.element ~= nil).toBe(true)
 		end
-		local wants: { [string]: string } = { fireBreath = "breath", frostBreath = "breath", frostNova = "nova" }
+		local wants: { [string]: string } =
+			{ fireBreath = "breath", frostBreath = "breath", frostNova = "nova", emberNova = "nova", boneNova = "nova" }
 		for _, def in Monsters.list do
 			local kind = def.ability and wants[def.ability]
 			if kind then
@@ -226,6 +228,63 @@ T.describe("ActionFx elements and claims", function()
 				end
 			end
 		end
+	end)
+
+	T.it("gives the humanoids' casts the kind's element, else its school, and knows a magic kind", function()
+		local caster = (BipedStyles.get("caster") :: any).abilities
+		local imp = ActionFx.bound("fireImp", caster, "nova", nil)
+		T.expect(imp.element).toBe("fire")
+		T.expect(imp.radius).toBe(12)
+		T.expect(ActionFx.bound("fireImp", caster, "spell", nil).element).toBe("fire")
+		-- the witch's void pool has no element: the kind's poison
+		T.expect(ActionFx.bound("marshWitch", caster, "pool", "voidPool").element).toBe("poison")
+		local necro = ActionFx.bound("necromancer", caster, "nova", nil)
+		T.expect(necro.element).toBe("shadow")
+		T.expect(necro.ability).toBe("boneNova")
+		T.expect(necro.magic).toBe(true)
+		T.expect(ActionFx.bound("goblinShaman", caster, "spell", nil).element).toBe("nature")
+		T.expect(ActionFx.bound("darkCultist", caster, "spellLeft", nil).element).toBe("shadow")
+		-- the mummy's bone nova: the ability's school
+		T.expect(ActionFx.bound("desertMummy", (BipedStyles.get("brute") :: any).abilities, "crush", nil).element)
+			.toBe("shadow")
+		local sword = (BipedStyles.get("humanoid1h") :: any).abilities
+		local bandit = ActionFx.bound("bandit", sword, "crush", "crush")
+		T.expect(bandit.element).toBeNil()
+		T.expect(bandit.magic).toBe(false)
+		local spawn = ActionFx.bound("dragonspawn", sword, "breath", nil)
+		T.expect(spawn.element).toBe("fire")
+		T.expect(spawn.radius).toBe(17)
+		T.expect(ActionFx.bound("frozenKnight", sword, "cleave", "cleave").element).toBe("ice")
+		T.expect(ActionFx.bound("forestWraith", caster, "nova", nil).element).toBe("ice")
+	end)
+
+	T.it("lets every caster's spell leave the staff or the hand at W and every humanoid cast release", function()
+		for _, styleId in { "caster", "ghost" } do
+			for _, name in { "spell", "spellLeft", "pool", "nova" } do
+				local list = MotionFx.get(styleId, name) :: { MotionFx.Fx }
+				T.expect(list ~= nil).toBe(true)
+				T.expect(#kindsOf(list, "charge")).toBe(1)
+				T.expect(#kindsOf(list, "bolt") + #kindsOf(list, "nova")).toBe(1)
+			end
+		end
+		-- every humanoid kind's own ability (a nova, a pool, a breath) plays an action that releases something
+		local casts = { emberNova = true, frostNova = true, boneNova = true, voidPool = true, fireBreath = true }
+		for _, def in Monsters.list do
+			local styleId = lookStyle(def.id, def.region)
+			local style = styleId and BipedStyles.get(styleId)
+			if style and def.ability and casts[def.ability] and MotionFx.STYLES[styleId :: string] then
+				local action = style.abilities[def.ability]
+				T.expect(action ~= nil).toBe(true)
+				local _, release = ActionFx.claims(styleId :: string, style.abilities, def.ability)
+				T.expect(release).toBe(true)
+			end
+		end
+		-- a throw holds its rock until W; a heavy swing leaves a streak
+		local held = kindsOf(MotionFx.get("humanoid1h", "throw") :: { MotionFx.Fx }, "held")[1]
+		local throw = (BipedStyles.get("humanoid1h") :: any).actions.throw
+		local _, t1 = ActionFx.window(throw, 0.74, held)
+		T.expect(t1).toBeNear(0.74, 1e-9)
+		T.expect(#kindsOf(MotionFx.get("humanoid1h", "heavy") :: { MotionFx.Fx }, "trail")).toBe(1)
 	end)
 
 	T.it("claims the gather and the release an attack's animation draws", function()
@@ -248,5 +307,13 @@ T.describe("ActionFx elements and claims", function()
 		T.expect(gather or release).toBe(false)
 		gather, release = ActionFx.claims("hare", {}, "bite")
 		T.expect(gather or release).toBe(false)
+		local sword = (BipedStyles.get("humanoid1h") :: any).abilities
+		gather, release = ActionFx.claims("humanoid1h", sword, "fireBreath")
+		T.expect(gather and release).toBe(true)
+		-- a cleave's streak is neither: the generic glow and burst stay
+		gather, release = ActionFx.claims("humanoid1h", sword, "cleave")
+		T.expect(gather or release).toBe(false)
+		gather, release = ActionFx.claims("caster", (BipedStyles.get("caster") :: any).abilities, "boneNova")
+		T.expect(gather and release).toBe(true)
 	end)
 end)

@@ -9,8 +9,9 @@
 -- * `from` / `to`: places on the action's timeline (Logic/MotionTimeline): "W" is the server's hit (the strike's end),
 --   "A0.35" 35 % into the anticipation, "F0.85" 85 % into the follow-through, "R1" the end of the recovery;
 -- * `size`: x the monster's size (its drawn height over a man's); `element`: a fixed element (else the action's
---   ability's, else the kind's own: Logic/ActionFx.bound).
+--   ability's, else the kind's own, else its school: Logic/ActionFx.bound).
 -- HIT: the puff a hit knocks off a kind (feathers, splinters, ice chips; never blood).
+-- SCHOOLS: the look of a kind or an ability with no element of its own (a caster's violet shadow, a shaman's green).
 -- The server's telegraph and its blow ring stay (Controllers/CombatFxController); a release piece of an action replaces
 -- only the generic burst at the caster (KINDS `release`) and a gather piece the generic glow on its body (`gather`).
 -- Data only (Lune: tests/actionfx.spec.luau checks every style, action and anchor exists and the timing rules).
@@ -51,7 +52,19 @@ MotionFx.KINDS = table.freeze({
 	splinters = {}, -- wood chips and bark
 	leaves = {}, -- leaves shaken off and fluttering down
 	snow = {}, -- a puff of snow and ice chips
+	trail = { stream = true }, -- the weapon's streak through a heavy swing (hilt to tip, the element's tint)
+	held = { stream = true }, -- a rock (an orb for a magic kind) in the hand until the throw lets it go
 } :: { [string]: Kind })
+
+-- The elements an effect can take: the game's four and the two looks of SCHOOLS.
+MotionFx.ELEMENTS = table.freeze({
+	fire = true,
+	ice = true,
+	poison = true,
+	lightning = true,
+	shadow = true, -- violet, the dark casters' bolt (Data/HazardPatterns mobBolt's colour)
+	nature = true, -- green and leaves
+} :: { [string]: boolean })
 
 -- The anchors (client/Vfx/MotionFx resolves each per family; a missing bone falls back to the body).
 MotionFx.ANCHORS = table.freeze({
@@ -69,6 +82,8 @@ MotionFx.ANCHORS = table.freeze({
 	top = true, -- the top of the body (a tree's crown)
 	tail = true, -- a scorpion's sting over its back
 	trunk = true, -- the tip of a mammoth's trunk
+	weapon = true, -- the tip of the weapon in the right hand (a staff's head, a blade's point, a brute's knuckles); a
+	-- trail runs from the hilt to it
 } :: { [string]: boolean })
 
 local SEGMENTS: { [string]: boolean } = { A = true, S = true, F = true, R = true }
@@ -336,6 +351,77 @@ local HARPY: { [string]: { Fx } } = {
 	deathBackR = { fx("feathers", "body", "A1"), fx("dust", "body", "W", nil, { size = 0.8 }) },
 }
 
+---------------------------------------------------------------- humanoids (Data/BipedStyles humanoid1h, caster, brute, ghost)
+
+-- The one-handed fighters (bandit, orcs, knights, golems, the dragonspawn): a streak behind the blade on the heavy
+-- swings, the blade slammed into the ground (chips, cracks, dust and, for an elemental kind or ability, its nova round
+-- the feet: the golems' ember nova), the dragonspawn's breath from the mouth along the head's sweep, the Elite II's rock
+-- in the free hand until the throw, the dust of a landing and a fall.
+local HUMANOID: { [string]: { Fx } } = {
+	cleave = { fx("trail", "weapon", "S0", "F0.5") },
+	heavy = { fx("trail", "weapon", "S0", "F0.45", { size = 1.2 }) },
+	crush = {
+		fx("trail", "weapon", "S0.45", "F0.2", { size = 1.2 }),
+		fx("slam", "weapon", "W", nil, { size = 0.9 }),
+		fx("nova", "feet", "W"),
+	},
+	pounce = { fx("trail", "weapon", "S0.55", "F0.3"), fx("dust", "feet", "W", nil, { size = 0.8 }) },
+	charge = { fx("dust", "feet", "S0.3", nil, { size = 0.6 }), fx("dust", "front", "W", nil, { size = 0.7 }) },
+	breath = {
+		fx("charge", "mouth", "A0.4", "W", { size = 0.6 }),
+		fx("breath", "mouth", "W", "F0.85", { size = 0.9 }),
+		fx("smolder", "mouth", "F0.85", "R0.8", { size = 0.6 }),
+	},
+	throw = { fx("held", "handL", "A0.15", "W") },
+	deathBack = { fx("dust", "body", "F1", nil, { size = 0.8 }) },
+	deathFwd = { fx("dust", "body", "F1", nil, { size = 0.8 }) },
+}
+
+-- The casters (shaman, cultist, necromancer, witch, imp): the spell gathers in the staff's head (the free hand's for
+-- spellLeft and the pool) and flashes there as the bolt leaves; the nova gathers in the raised staff, the butt hits the
+-- ground and the element bursts round the feet (embers, ice spikes, a violet ring with bone shards, a green ring
+-- with leaves); an orb in the free hand until the throw. Fire, frost, poison by the kind, else its school.
+local CASTER: { [string]: { Fx } } = {
+	spell = { fx("charge", "weapon", "A0.3", "W", { size = 0.5 }), fx("bolt", "weapon", "W") },
+	spellLeft = { fx("charge", "handL", "A0.3", "W", { size = 0.5 }), fx("bolt", "handL", "W") },
+	nova = {
+		fx("charge", "weapon", "A0.5", "W", { size = 0.7 }),
+		fx("slam", "front", "W", nil, { size = 0.5 }),
+		fx("nova", "feet", "W"),
+	},
+	pool = { fx("charge", "handL", "A0.3", "W", { size = 0.6 }), fx("bolt", "weapon", "W") },
+	pounce = { fx("dust", "feet", "W", nil, { size = 0.7 }) },
+	charge = { fx("dust", "feet", "S0.3", nil, { size = 0.5 }), fx("dust", "front", "W", nil, { size = 0.6 }) },
+	throw = { fx("held", "handL", "A0.15", "W") },
+	deathBack = { fx("dust", "body", "F1", nil, { size = 0.7 }) },
+	deathFwd = { fx("dust", "body", "F1", nil, { size = 0.7 }) },
+}
+
+-- The ghosts (the forest wraith): the caster's spells without a staff or a floor to hit (the frost nova's spikes
+-- still rise round it), wisps as it fades.
+local GHOST: { [string]: { Fx } } = {
+	spell = CASTER.spell,
+	spellLeft = CASTER.spellLeft,
+	nova = { fx("charge", "weapon", "A0.5", "W", { size = 0.7 }), fx("nova", "feet", "W") },
+	pool = CASTER.pool,
+	throw = CASTER.throw,
+	deathBack = { fx("wisps", "chest", "F0.5", nil, { size = 1.2 }) },
+	deathFwd = { fx("wisps", "chest", "F0.5", nil, { size = 1.2 }) },
+}
+
+-- The brutes (troll-like, golems, mummy, yeti, werewolf): streaks behind the fists' heavy swings, the slam into the
+-- ground with its nova (the magma golem's fire, the mummy's bones), dust.
+local BRUTE: { [string]: { Fx } } = {
+	cleave = { fx("trail", "weapon", "S0", "F0.5", { size = 0.8 }) },
+	heavy = { fx("trail", "weapon", "S0", "F0.45") },
+	crush = { fx("slam", "weapon", "W", nil, { size = 1.1 }), fx("nova", "feet", "W") },
+	pounce = { fx("dust", "feet", "W") },
+	charge = { fx("dust", "feet", "S0.3", nil, { size = 0.8 }), fx("dust", "front", "W") },
+	throw = { fx("held", "handL", "A0.15", "W", { size = 1.2 }) },
+	deathBack = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
+	deathFwd = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
+}
+
 local function freezeAll(list: { [string]: { Fx } }): { [string]: { Fx } }
 	for _, items in list do
 		if not table.isfrozen(items) then
@@ -367,7 +453,18 @@ MotionFx.STYLES = table.freeze({
 	cat = freezeAll(CAT),
 	vulture = freezeAll(VULTURE),
 	harpy = freezeAll(HARPY),
+	humanoid1h = freezeAll(HUMANOID),
+	caster = freezeAll(CASTER),
+	ghost = freezeAll(GHOST),
+	brute = freezeAll(BRUTE),
 } :: { [string]: { [string]: { Fx } } })
+
+-- The look of a kind (or, after it, of an ability) with no element of its own: the dark casters' violet (matching the
+-- regular magic bolt), the shaman's green. Kind ids and ability ids.
+MotionFx.SCHOOLS = table.freeze({
+	kinds = table.freeze({ darkCultist = "shadow", necromancer = "shadow", goblinShaman = "nature" }),
+	abilities = table.freeze({ boneNova = "shadow", voidPool = "shadow" }),
+})
 
 -- Style id -> the puff a hit knocks off (at the hit's flinch; Fx `from` / `to` unused).
 MotionFx.HIT = table.freeze({
