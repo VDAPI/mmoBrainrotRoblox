@@ -5,6 +5,7 @@
 
 local AttackMotions = require("../Data/AttackMotions")
 local BipedStyles = require("../Data/BipedStyles")
+local FlyerStyles = require("../Data/FlyerStyles")
 local QuadStyles = require("../Data/QuadStyles")
 local BossMotions = require("../Data/BossMotions")
 local Bosses = require("../Data/Bosses")
@@ -271,6 +272,7 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 		local states = if motion and BipedStyles.get(motion)
 			then BipedStyles.LAB_STATES
 			elseif motion and QuadStyles.get(motion) then QuadStyles.LAB_STATES
+			elseif motion and FlyerStyles.get(motion) then FlyerStyles.LAB_STATES
 			else nil
 		if not table.find(LookAnim.SLOTS, slot) and not (states and table.find(states, slot)) then
 			return nil, "animlab.error.slot"
