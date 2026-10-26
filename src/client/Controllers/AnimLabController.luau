@@ -50,6 +50,8 @@ local QuadRig = require(script.Parent.Parent.Anim.QuadRig)
 local QuadStyles = require(ReplicatedStorage.Shared.Data.QuadStyles)
 local RigidRig = require(script.Parent.Parent.Anim.RigidRig)
 local RigidStyles = require(ReplicatedStorage.Shared.Data.RigidStyles)
+local FlyerRig = require(script.Parent.Parent.Anim.FlyerRig)
+local FlyerStyles = require(ReplicatedStorage.Shared.Data.FlyerStyles)
 local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
@@ -959,6 +961,7 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 		then BipedRig.new(model, styleId, 7.3, look.asset.grip)
 		elseif QuadStyles.get(styleId) then QuadRig.new(model, styleId, 7.3, look.asset.model)
 		elseif RigidStyles.get(styleId) then RigidRig.new(model, styleId, 7.3, look.asset.model, nil)
+		elseif FlyerStyles.get(styleId) then FlyerRig.new(model, styleId, 7.3, look.asset.model)
 		else nil
 	if not rig then
 		return nil, nil
@@ -1006,6 +1009,8 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 		elseif name == style.summon or (style.fidgets and table.find(style.fidgets, name)) then
 			-- a rigid kind's climb out of the ground and its idle fidgets (Data/RigidStyles)
 			return 0.5
+		elseif rig.kind == "flyer" and table.find(style.basic, name) then
+			return CombatData.basicWind.ranged -- a flyer's regular blow is a shot
 		end
 		return melee
 	end
@@ -1031,6 +1036,8 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 			summon = style.summon,
 		}
 		name = slots[state] or state
+	elseif state == "alert" and rig.kind == "flyer" and style.aggro then
+		name = style.aggro
 	end
 	local base: any = {
 		now = 0,
@@ -1126,6 +1133,15 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 				i.yawRate = 2.4
 			elseif state == "fly" then
 				i.flying = true
+			elseif state == "glide" then
+				-- a flyer: a straight flight that glides, braking into a flare, stunned, frozen in the air
+				i.combat, i.look, i.speed, i.glide = false, nil, moveSpeed * 0.7, true
+			elseif state == "brake" then
+				i.combat, i.look, i.speed = false, nil, if t < 1.2 then moveSpeed else 0
+			elseif state == "stun" then
+				i.stunned = true
+			elseif state == "freeze" then
+				i.frozen = t > 0.8
 			end
 			return i
 		end
@@ -1619,6 +1635,8 @@ step = function(_dt: number)
 				QuadRig.apply(biped.rig, posed)
 			elseif biped.rig.kind == "rigid" then
 				RigidRig.apply(biped.rig, posed)
+			elseif biped.rig.kind == "flyer" then
+				FlyerRig.apply(biped.rig, posed)
 			else
 				BipedRig.apply(biped.rig, posed)
 			end

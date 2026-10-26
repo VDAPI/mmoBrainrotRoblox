@@ -19,8 +19,8 @@ export type Entry = {
 	from: string?, -- filled below for variants: the base kind whose model and clips this kind uses
 	tint: string?, -- filled below for variants: "#RRGGBB" multiply colour of the base model's textures
 	-- template animation (owner 2026-10-25): a Data/BipedStyles style that animates the bones (Logic/BipedMotion)
-	-- instead of the clips of Data/MonsterClips; Data/QuadStyles for the quadrupeds, Data/RigidStyles for the models
-	-- without bones moved whole (Logic/RigidMotion, owner 2026-10-26)
+	-- instead of the clips of Data/MonsterClips (a Data/QuadStyles one: Logic/QuadMotion; Data/FlyerStyles:
+	-- Logic/FlyerMotion; Data/RigidStyles: the models without bones moved whole by Logic/RigidMotion, 2026-10-26)
 	motion: string?,
 	grip: { number }?, -- template animation: the weapon's direction in the right hand at rest (root space)
 }
@@ -251,8 +251,22 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 5.7,
 	},
 	wyvern = { rig = "static", rootSize = { 1.86, 1.61, 3.23 }, hipHeight = 1.17, height = 3.63, walkSpeed = 5.4 },
-	peakHarpy = { rig = "static", rootSize = { 1.40, 1.72, 1.18 }, hipHeight = 3.54, height = 6.20, walkSpeed = 9.3 },
-	ashVulture = { rig = "static", rootSize = { 1.23, 1.18, 1.83 }, hipHeight = 2.88, height = 5.02, walkSpeed = 7.5 },
+	peakHarpy = {
+		rig = "static",
+		rootSize = { 1.40, 1.72, 1.18 },
+		hipHeight = 3.54,
+		height = 6.20,
+		walkSpeed = 9.3,
+		motion = "harpy",
+	},
+	ashVulture = {
+		rig = "static",
+		rootSize = { 1.23, 1.18, 1.83 },
+		hipHeight = 2.88,
+		height = 5.02,
+		walkSpeed = 7.5,
+		motion = "vulture",
+	},
 	iceElemental = { rig = "static", rootSize = { 1.61, 1.94, 1.61 }, hipHeight = 2.78, height = 5.00, walkSpeed = 7.5 },
 	basilisk = {
 		rig = "static",
