@@ -95,6 +95,7 @@ export type Instance = {
 	lookYaw: number,
 	lookPitch: number,
 	lastAction: ActionRun?,
+	grip: { number }?, -- the model's own blade direction (Data/MonsterAssets `grip`), else the style's
 }
 
 local function hash01(n: number, seed: number): number
@@ -106,7 +107,7 @@ local function approach(current: number, target: number, rate: number, dt: numbe
 end
 
 -- An animated biped of `style` on skeleton `skel`; `seed` makes each instance its own.
-function BipedMotion.new(skel: BipedPose.Skeleton, styleId: string, seed: number): Instance?
+function BipedMotion.new(skel: BipedPose.Skeleton, styleId: string, seed: number, grip: { number }?): Instance?
 	local style = BipedStyles.get(styleId)
 	if not style then
 		return nil
@@ -136,6 +137,7 @@ function BipedMotion.new(skel: BipedPose.Skeleton, styleId: string, seed: number
 		clips = clips,
 		idle = { name = first, from = nil, at = -math.huge, next = 0 },
 		phase = hash01(3, seed),
+		grip = grip or style.grip,
 		move = 0,
 		run = 0,
 		combat = 0,
@@ -313,6 +315,12 @@ local function locomotion(inst: Instance, input: Input): (World, Vec)
 	local ground = if moving then speed elseif turning then math.abs(input.yawRate) * inst.skel.legLength * 0.5 else 0
 	inst.phase = (inst.phase + dt * ground / math.max(0.1, stride)) % 1
 	local idleWorld, idleShift = idleLayer(inst, input.now)
+	if style.float then
+		-- a floating body drifts: no steps, a slow bob and a lean into the way it goes
+		local t = input.now + inst.seed * 2.3
+		local bob = 0.04 * math.sin(t * 2 * math.pi / 2.6) * inst.skel.legLength
+		return idleWorld, { idleShift[1], idleShift[2] + bob, idleShift[3] }
+	end
 	if inst.move < 0.01 then
 		return idleWorld, idleShift
 	end
@@ -376,7 +384,7 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 	inst.combat = if input.snap then combatTarget else approach(inst.combat, combatTarget, COMBAT_RATE, dt)
 	local guard = guardControls(inst, now)
 	if inst.combat > 0.01 then
-		local gw, gs = BipedPose.world(skel, guard, style.grip)
+		local gw, gs = BipedPose.world(skel, guard, inst.grip)
 		local upper = inst.combat * (1 - 0.65 * inst.run)
 		local legs = inst.combat * (1 - inst.move)
 		world = BipedPose.blend(world, gw, 1, maskWith(upper, legs))
@@ -419,7 +427,7 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 				end
 				w = ease("inout", w)
 				actionW = w
-				local aw, as = BipedPose.world(skel, controls, style.grip)
+				local aw, as = BipedPose.world(skel, controls, inst.grip)
 				local legs = if action.full then w elseif action.legs then w * (1 - inst.move) else 0
 				world = BipedPose.blend(world, aw, 1, maskWith(w, legs))
 				shift = lerpVec(shift, as, legs)

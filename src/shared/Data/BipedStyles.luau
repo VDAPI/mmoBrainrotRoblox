@@ -39,6 +39,7 @@ export type Style = {
 	spawn: string?,
 	idleEvery: { number }, -- seconds between idle variants (min, max)
 	rate: number, -- spread of the playback rate between instances (+-)
+	float: boolean?, -- a floating body (ghosts): no steps, a drifting bob instead of walk and run
 }
 
 -- A pose: the base with `over` laid on (absolute values).
@@ -1555,8 +1556,551 @@ local HUMANOID_1H: Style = {
 	},
 }
 
+---------------------------------------------------------------- variants of the humanoid template (owner 2026-10-26)
+
+-- A style made from another: the same clips, reactions and abilities, its own stance, blows and the rest given.
+local function variant(base: Style, over: { [string]: any }): Style
+	local out = table.clone(base) :: any
+	out.actions = table.clone(base.actions)
+	for key, value in over do
+		if key == "actions" then
+			for name, action in value do
+				out.actions[name] = action
+			end
+		else
+			out[key] = value
+		end
+	end
+	return out :: Style
+end
+
+-- Caster (a staff or a wand in the right hand, the free hand casting): the regular blow is a bolt cast from the staff
+-- head, the abilities a nova slammed into the ground or a pool called onto the target.
+local CASTER_GUARD = {
+	py = -0.06,
+	pyaw = -0.15,
+	syaw = 0.1,
+	spitch = 0.08,
+	hpitch = -0.06,
+	aRp = 0.45,
+	aRo = 0.28,
+	aRy = 0.15,
+	eR = 1.25,
+	bRx = 0.0,
+	bRy = 1,
+	bRz = -0.15,
+	aLp = 0.55,
+	aLo = 0.4,
+	aLy = 0.35,
+	eL = 1.1,
+	wLp = 0.3,
+	fLz = -0.12,
+	fRz = 0.1,
+	fRyaw = -0.3,
+}
+local function cg(over: { [string]: number }): { [string]: number }
+	return from(CASTER_GUARD, over)
+end
+
+local CASTER: Style = variant(HUMANOID_1H, {
+	grip = { 0, 1, 0 },
+	guard = CASTER_GUARD,
+	basic = { "spell", "spellLeft" },
+	abilities = {
+		boneNova = "nova",
+		frostNova = "nova",
+		emberNova = "nova",
+		voidPool = "pool",
+		poisonPool = "pool",
+		heavyBlow = "nova",
+		crush = "pool",
+		pounce = "pounce",
+		slam = "nova",
+		cleave = "nova",
+		leap = "pounce",
+		charge = "charge",
+	},
+	actions = {
+		-- the bolt: the staff draws back and up while the free hand gathers the spell, then both thrust at the target
+		spell = {
+			strike = 0.12,
+			follow = 0.25,
+			recover = 0.35,
+			legs = true,
+			lag = { head = 0.05, free = 0.05 },
+			keys = {
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = cg({
+						pz = 0.06,
+						pyaw = -0.35,
+						syaw = -0.3,
+						spitch = -0.08,
+						hpitch = -0.12,
+						aRp = 1.5,
+						aRo = 0.55,
+						aRy = -0.2,
+						eR = 1.4,
+						bRx = 0.2,
+						bRy = 0.9,
+						bRz = 0.4,
+						aLp = 0.9,
+						aLo = 0.55,
+						aLy = 0.6,
+						eL = 1.6,
+						wLp = -0.4,
+					}),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = cg({
+						py = -0.1,
+						pz = -0.08,
+						pyaw = 0.05,
+						syaw = 0.25,
+						spitch = 0.2,
+						aRp = 1.35,
+						aRo = 0.2,
+						aRy = 0.25,
+						eR = 0.25,
+						bRx = 0,
+						bRy = 0.35,
+						bRz = -0.95,
+						aLp = 1.4,
+						aLo = 0.15,
+						aLy = 0.25,
+						eL = 0.1,
+						wLp = 0.5,
+						fLz = -0.24,
+					}),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "out",
+					pose = cg({
+						py = -0.1,
+						pz = -0.08,
+						syaw = 0.28,
+						spitch = 0.22,
+						aRp = 1.3,
+						aRo = 0.2,
+						aRy = 0.3,
+						eR = 0.3,
+						bRx = 0,
+						bRy = 0.3,
+						bRz = -0.95,
+						aLp = 1.3,
+						aLo = 0.2,
+						eL = 0.2,
+						fLz = -0.24,
+					}),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = CASTER_GUARD },
+			},
+		},
+		-- the same bolt thrown from the free hand, the staff held back
+		spellLeft = {
+			strike = 0.12,
+			follow = 0.25,
+			recover = 0.35,
+			legs = true,
+			lag = { head = 0.05 },
+			keys = {
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = cg({
+						pz = 0.05,
+						pyaw = 0.25,
+						syaw = 0.35,
+						hyaw = -0.2,
+						aLp = 0.5,
+						aLo = 0.9,
+						aLy = -0.4,
+						eL = 1.7,
+						wLp = -0.6,
+					}),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = cg({
+						py = -0.1,
+						pz = -0.08,
+						pyaw = -0.2,
+						syaw = -0.3,
+						spitch = 0.2,
+						hyaw = 0.15,
+						aLp = 1.45,
+						aLo = 0.1,
+						aLy = 0.4,
+						eL = 0.05,
+						wLp = 0.6,
+						fLz = -0.24,
+					}),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "out",
+					pose = cg({
+						py = -0.1,
+						pz = -0.08,
+						syaw = -0.32,
+						spitch = 0.22,
+						aLp = 1.4,
+						aLy = 0.4,
+						eL = 0.1,
+						fLz = -0.24,
+					}),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = CASTER_GUARD },
+			},
+		},
+		-- a nova (a circle around the caster): the staff rises in both hands over the head, the body arches, then the
+		-- staff butt slams the ground in a crouch
+		nova = {
+			strike = 0.16,
+			follow = 0.45,
+			recover = 0.45,
+			legs = true,
+			lag = { head = 0.06, free = 0.04 },
+			keys = {
+				{
+					seg = "A",
+					u = 0.5,
+					ease = "inout",
+					pose = cg({
+						py = -0.02,
+						spitch = -0.2,
+						hpitch = -0.3,
+						cRu = 0.35,
+						cLu = 0.35,
+						aRp = 2.6,
+						aRo = 0.3,
+						eR = 0.6,
+						bRx = 0,
+						bRy = 1,
+						bRz = 0.1,
+						aLp = 2.5,
+						aLo = 0.4,
+						aLy = 0.3,
+						eL = 0.5,
+						fLz = -0.14,
+						fRz = 0.14,
+						fLx = -0.05,
+						fRx = 0.05,
+					}),
+				},
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = cg({
+						py = 0.0,
+						spitch = -0.28,
+						hpitch = -0.38,
+						cRu = 0.42,
+						cLu = 0.42,
+						aRp = 2.8,
+						aRo = 0.3,
+						eR = 0.4,
+						bRx = 0,
+						bRy = 1,
+						bRz = 0.15,
+						aLp = 2.7,
+						aLo = 0.45,
+						aLy = 0.3,
+						eL = 0.35,
+						fLz = -0.14,
+						fRz = 0.14,
+						fLx = -0.05,
+						fRx = 0.05,
+					}),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = cg({
+						py = -0.32,
+						pz = -0.05,
+						ppitch = 0.2,
+						spitch = 0.5,
+						hpitch = 0.1,
+						aRp = 0.9,
+						aRo = 0.2,
+						aRy = 0.3,
+						eR = 0.5,
+						bRx = 0,
+						bRy = -1,
+						bRz = -0.1,
+						aLp = 0.8,
+						aLo = 0.3,
+						aLy = 0.4,
+						eL = 0.6,
+						fLz = -0.2,
+						fRz = 0.16,
+						fLx = -0.08,
+						fRx = 0.08,
+					}),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "out",
+					pose = cg({
+						py = -0.3,
+						ppitch = 0.18,
+						spitch = 0.45,
+						aRp = 0.9,
+						aRy = 0.3,
+						eR = 0.55,
+						bRx = 0,
+						bRy = -1,
+						bRz = -0.1,
+						aLp = 0.5,
+						aLo = 0.7,
+						eL = 0.5,
+						fLz = -0.2,
+						fRz = 0.16,
+						fLx = -0.08,
+						fRx = 0.08,
+					}),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = CASTER_GUARD },
+			},
+		},
+		-- a pool on the target: the staff swings high and back, then points down at the target while the free hand claws
+		pool = {
+			strike = 0.16,
+			follow = 0.4,
+			recover = 0.4,
+			legs = true,
+			lag = { head = 0.05, free = 0.06 },
+			keys = {
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = cg({
+						pz = 0.05,
+						spitch = -0.15,
+						hpitch = -0.2,
+						cRu = 0.3,
+						aRp = 2.7,
+						aRo = 0.35,
+						aRy = -0.1,
+						eR = 0.5,
+						bRx = 0.1,
+						bRy = 0.8,
+						bRz = 0.55,
+						aLp = 1.0,
+						aLo = 0.9,
+						eL = 1.2,
+						wLp = -0.5,
+					}),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = cg({
+						py = -0.12,
+						pz = -0.1,
+						spitch = 0.3,
+						hpitch = 0.12,
+						aRp = 1.45,
+						aRo = 0.2,
+						aRy = 0.15,
+						eR = 0.15,
+						bRx = 0,
+						bRy = -0.45,
+						bRz = -0.9,
+						aLp = 1.2,
+						aLo = 0.6,
+						aLy = 0.3,
+						eL = 0.4,
+						wLp = 0.6,
+						fLz = -0.25,
+					}),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "out",
+					pose = cg({
+						py = -0.12,
+						pz = -0.1,
+						spitch = 0.32,
+						hpitch = 0.12,
+						aRp = 1.4,
+						aRy = 0.15,
+						eR = 0.2,
+						bRx = 0,
+						bRy = -0.5,
+						bRz = -0.87,
+						aLp = 1.1,
+						aLo = 0.7,
+						eL = 0.5,
+						fLz = -0.25,
+					}),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = CASTER_GUARD },
+			},
+		},
+	},
+})
+
+-- Brute (unarmed: claws and fists; beasts, golems, trolls): a hunched wide stance with the arms ready, the regular blow a
+-- right and a left swipe in turn, the abilities the humanoid's heavy moves done with bare hands.
+local BRUTE_GUARD = {
+	py = -0.16,
+	pz = 0.03,
+	ppitch = 0.12,
+	spitch = 0.3,
+	hpitch = -0.28,
+	cRu = 0.12,
+	cLu = 0.12,
+	aRp = 0.55,
+	aRo = 0.55,
+	aRy = 0.1,
+	eR = 1.0,
+	aLp = 0.55,
+	aLo = 0.55,
+	aLy = 0.1,
+	eL = 1.0,
+	fLz = -0.12,
+	fRz = 0.1,
+	fLx = -0.1,
+	fRx = 0.1,
+	fRyaw = -0.25,
+	fLyaw = 0.15,
+}
+local function bg(over: { [string]: number }): { [string]: number }
+	return from(BRUTE_GUARD, over)
+end
+-- The swiping arm's controls written for the right side, laid on side `m` (-1: the left arm, the body turns mirrored).
+local function onSide(r: { [string]: number }, m: number): { [string]: number }
+	local out: { [string]: number } = {}
+	for key, v in r do
+		local k = key
+		if m < 0 then
+			local first, second = string.sub(key, 1, 1), string.sub(key, 2, 2)
+			if (first == "a" or first == "e" or first == "w" or first == "c") and second == "R" then
+				k = first .. "L" .. string.sub(key, 3)
+			elseif key == "syaw" or key == "pyaw" or key == "hyaw" or key == "sroll" then
+				v = -v
+			end
+		end
+		out[k] = v
+	end
+	return out
+end
+local function swipe(m: number): Action
+	return {
+		strike = 0.12,
+		follow = 0.2,
+		recover = 0.32,
+		legs = true,
+		lag = { head = 0.05, free = 0.07 },
+		keys = {
+			{
+				seg = "A",
+				u = 1,
+				ease = "inout",
+				pose = bg(onSide({
+					pz = 0.08,
+					pyaw = -0.35,
+					syaw = -0.55,
+					spitch = 0.2,
+					hyaw = 0.45,
+					cRu = 0.3,
+					aRp = 1.9,
+					aRo = 0.95,
+					aRy = -0.45,
+					eR = 1.3,
+				}, m)),
+			},
+			{
+				seg = "S",
+				u = 1,
+				ease = "in",
+				pose = bg(onSide({
+					py = -0.22,
+					pz = -0.14,
+					pyaw = 0.2,
+					syaw = 0.55,
+					spitch = 0.42,
+					hyaw = -0.3,
+					cRf = 0.25,
+					aRp = 0.95,
+					aRo = 0.15,
+					aRy = 1.1,
+					eR = 0.35,
+					fLz = -0.32,
+				}, m)),
+			},
+			{
+				seg = "F",
+				u = 1,
+				ease = "out",
+				pose = bg(onSide({
+					py = -0.22,
+					pz = -0.15,
+					pyaw = 0.28,
+					syaw = 0.7,
+					spitch = 0.45,
+					hyaw = -0.35,
+					aRp = 0.7,
+					aRo = 0.2,
+					aRy = 1.35,
+					eR = 0.45,
+					fLz = -0.32,
+				}, m)),
+			},
+			{ seg = "R", u = 1, ease = "inout", pose = BRUTE_GUARD },
+		},
+	}
+end
+
+local BRUTE: Style = variant(HUMANOID_1H, {
+	guard = BRUTE_GUARD,
+	basic = { "clawR", "clawL" },
+	actions = { clawR = swipe(1), clawL = swipe(-1) },
+	abilities = {
+		cleave = "cleave",
+		heavyBlow = "heavy",
+		crush = "crush",
+		pounce = "pounce",
+		slam = "crush",
+		leap = "pounce",
+		charge = "charge",
+		boneNova = "crush",
+		emberNova = "crush",
+		frostNova = "crush",
+		fireBreath = "heavy",
+		frostBreath = "heavy",
+	},
+})
+BRUTE.grip = nil
+
+-- Ghost (a floating caster: wraiths): the caster without steps, drifting.
+local GHOST: Style = variant(CASTER, { float = true })
+GHOST.grip = nil
+
 local STYLES: { [string]: Style } = {
 	humanoid1h = HUMANOID_1H,
+	caster = CASTER,
+	brute = BRUTE,
+	ghost = GHOST,
 }
 
 function BipedStyles.get(id: string): Style?
@@ -1565,6 +2109,12 @@ end
 
 -- The states AnimLab `mob <id> <state>` shows for a biped (besides Logic/LookAnim's slots).
 BipedStyles.LAB_STATES = {
+	"spell",
+	"spellLeft",
+	"nova",
+	"pool",
+	"clawR",
+	"clawL",
 	"idle",
 	"alert",
 	"walk",

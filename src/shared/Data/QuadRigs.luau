@@ -64,6 +64,51 @@ local RIGS: { [string]: Rig } = {
 			},
 		},
 	},
+	-- waste hyena: the export named the bones oddly (the chest chain is 0_Right_Limb_0..3, the rear chain Spine_0..1);
+	-- front legs from the neck's base, hind legs from the rear spine, the right hind leg without its paw bone
+	wasteHyena = {
+		body = "tripo::Root",
+		spine = {
+			{ bone = "tripo::0_Right_Limb_0", share = 0.25 },
+			{ bone = "tripo::0_Right_Limb_1", share = 0.25 },
+			{ bone = "tripo::0_Right_Limb_2", share = 0.25 },
+			{ bone = "tripo::0_Right_Limb_3", share = 0.25 },
+		},
+		neck = { { bone = "tripo::Head_0", share = 0.5 }, { bone = "tripo::Head_1", share = 0.5 } },
+		head = "tripo::Head_2",
+		jaw = { bone = "tripo::Head_3", sign = 1 },
+		ears = { L = "bone_9", R = "bone_10" },
+		tail = { "tripo::Tail_0", "tripo::Tail_1", "tripo::Tail_2", "tripo::Tail_3" },
+		legs = {
+			FL = {
+				{ bone = "bone_11", swing = 0.25 },
+				{ bone = "bone_12", swing = 0.75, fold = 0.35, spread = 1 },
+				{ bone = "bone_13", fold = -1 },
+				{ bone = "bone_14", fold = 0.85 },
+				{ bone = "bone_15", paw = 1 },
+			},
+			FR = {
+				{ bone = "bone_16", swing = 0.25 },
+				{ bone = "bone_17", swing = 0.75, fold = 0.35, spread = 1 },
+				{ bone = "bone_18", fold = -1 },
+				{ bone = "bone_19", fold = 0.85 },
+				{ bone = "bone_20", paw = 1 },
+			},
+			HL = {
+				{ bone = "bone_27", swing = 0.3 },
+				{ bone = "tripo::0_Left_Limb_0", swing = 0.7, fold = 0.3, spread = 1 },
+				{ bone = "tripo::0_Left_Limb_1", fold = -1 },
+				{ bone = "tripo::0_Left_Limb_2", fold = 0.9 },
+				{ bone = "tripo::0_Left_Limb_3", paw = 1 },
+			},
+			HR = {
+				{ bone = "bone_32", swing = 0.3 },
+				{ bone = "tripo::1_Left_Limb_0", swing = 0.7, fold = 0.3, spread = 1 },
+				{ bone = "tripo::1_Left_Limb_1", fold = -1 },
+				{ bone = "tripo::1_Left_Limb_2", fold = 0.9, paw = 0.5 },
+			},
+		},
+	},
 }
 
 local QuadRigs = {}

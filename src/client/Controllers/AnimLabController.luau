@@ -954,7 +954,7 @@ end
 local function bipedLab(model: Model, look: any, monster: any, state: string): (BipedLab?, MotionKeys.Keys?)
 	local styleId = look.asset.motion :: string
 	local rig: any = if BipedStyles.get(styleId)
-		then BipedRig.new(model, styleId, 7.3)
+		then BipedRig.new(model, styleId, 7.3, look.asset.grip)
 		elseif QuadStyles.get(styleId) then QuadRig.new(model, styleId, 7.3, look.asset.model)
 		else nil
 	if not rig then

@@ -25,7 +25,7 @@ local function toMat(cf: CFrame): { number }
 end
 
 -- The rig of `look` (the cloned model) in `styleId` (Data/BipedStyles), nil without the bones a biped needs.
-function BipedRig.new(look: Model, styleId: string, seed: number): Rig?
+function BipedRig.new(look: Model, styleId: string, seed: number, grip: { number }?): Rig?
 	local root = look:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root then
 		root = look.PrimaryPart
@@ -53,7 +53,7 @@ function BipedRig.new(look: Model, styleId: string, seed: number): Rig?
 	if not skel then
 		return nil
 	end
-	local motion = BipedMotion.new(skel, styleId, seed)
+	local motion = BipedMotion.new(skel, styleId, seed, grip)
 	if not motion then
 		return nil
 	end

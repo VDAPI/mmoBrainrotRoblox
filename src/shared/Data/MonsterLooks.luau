@@ -22,6 +22,7 @@ export type AssetLook = {
 	anims: { [string]: string }?, -- idle, walk, run, attack1, attack2, cast, hit, death, spawn -> "rbxassetid://..."
 	-- template animation (2026-10-25): the Data/BipedStyles style that animates the bones instead of the clips
 	motion: string?,
+	grip: { number }?, -- the blade's direction in the right hand at rest (root space), for a weapon style
 }
 
 export type Phase = { tint: string, amount: number, glow: string? }
@@ -588,6 +589,7 @@ for id, entry in MonsterAssets do
 			color = entry.tint,
 			variant = if entry.from then true else nil,
 			motion = entry.motion,
+			grip = entry.grip,
 		}
 	end
 end
