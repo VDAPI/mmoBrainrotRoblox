@@ -17,7 +17,11 @@
 --    with the feet kept on the ground, transparency, and a no-sink pass that lifts the body so its box never goes
 --    under the ground in deaths and flips;
 -- 6. a serpent with bones (frostWyrm): a travelling wave along the tail and the coil (amplitude growing to the tail,
---    the head steady), the neck's sway and strikes (Data/RigidRigs chains).
+--    the head steady), the neck's sway and strikes (Data/RigidRigs chains);
+-- 7. the legs folding in a death (`fold`, owner 2026-10-26): client/Anim/MeshFold bends the mesh's legs
+--    (Logic/LegFold) and says how much of it it really draws (`input.fold`); the body's contacts and its lowest point
+--    then come from the folded mesh's box (`body.folds`), so the body sinks as far as the legs stop holding it up and
+--    topples over its own flank, and the squash that stood in for the legs fades out.
 -- Pure: client/Anim/RigidRig writes the motor, the mesh and the bones; AnimLab evaluates it at a fixed time. The
 -- functions the game calls have the names of Logic/QuadMotion's (step, pick, death, side, length, mirror).
 
@@ -44,7 +48,10 @@ export type Body = {
 	x0: number, -- centre of the box (horizontal)
 	z0: number,
 	squash: boolean, -- one visible MeshPart: its Size may be written (§6.1)
+	folds: { Fold }?, -- the box with the legs folded at 0, 1/8 .. 1 (client/Anim/MeshFold, while it draws them)
 }
+-- The drawn box at one step of the leg fold (studs, the frame of Body).
+export type Fold = { h: number, lift: number, B: number, W: number, x0: number, z0: number }
 -- A bone chain of a rigid kind with bones (Data/RigidRigs): its bones' rest rotations in the look's frame.
 export type Chain = { names: { string }, rest: { Mat } }
 export type Chains = { tail: Chain?, coil: Chain?, neck: Chain?, head: Chain? }
@@ -72,6 +79,7 @@ export type Input = {
 	flight: Flight?,
 	squash: boolean?, -- the rig writes the mesh's Size this frame
 	flying: boolean?,
+	fold: number?, -- the share (0..1) of the keyed leg fold the rig really draws (client/Anim/MeshFold)
 }
 -- The pose of one frame (reused): the body's transform (rotation row-major 1..9, translation 10..12) in the motor's
 -- frame, the mesh's scale per model axis, its transparency, the bones' Transform rotations.
@@ -83,6 +91,7 @@ export type Posed = {
 	alpha: number,
 	acting: boolean, -- a keyed action plays (the rig moves the muzzle with the body)
 	bones: { [string]: Mat }?,
+	fold: number, -- the legs' fold drawn this frame (-0.3 splayed .. 1 curled; 0 without input.fold)
 }
 export type Instance = {
 	body: Body,
@@ -126,6 +135,7 @@ export type Instance = {
 	loco: Controls,
 	keyed: Controls,
 	posed: Posed,
+	box: Body, -- the box of the folded legs this frame
 }
 
 local TAU = 2 * math.pi
@@ -143,6 +153,8 @@ local HANDOVER = 0.12
 local SQUASH_MIN, SQUASH_MAX = 0.85, 1.15
 -- The turn lag never more than this (rad).
 local TURN_MAX = math.rad(70)
+-- The share of the squash that fades as the legs really fold (it stood in for them).
+local FOLD_SQUASH = 0.8
 
 local function approach(current: number, target: number, rate: number, dt: number): number
 	return current + (target - current) * (1 - math.exp(-rate * dt))
@@ -186,6 +198,7 @@ function RigidMotion.new(body: Body, styleId: string, seed: number, chains: Chai
 		alpha = 0,
 		acting = false,
 		bones = if chains then {} else nil,
+		fold = 0,
 	}
 	return {
 		body = body,
@@ -227,6 +240,7 @@ function RigidMotion.new(body: Body, styleId: string, seed: number, chains: Chai
 		loco = {},
 		keyed = {},
 		posed = posed,
+		box = table.clone(body),
 	}
 end
 
@@ -594,19 +608,54 @@ local function lowest(m: { number }, body: Body, sx: number, sy: number, sz: num
 end
 RigidMotion.lowest = lowest
 
--- The pose from the controls (and the action's extra translation in studs, the flight's pitch).
-local function solve(inst: Instance, c: Controls, tx: number, ty: number, tz: number, squash: boolean): Posed
+-- The pose from the controls (and the action's extra translation in studs, the flight's pitch); `share` the part of
+-- the keyed leg fold the rig really draws.
+local function solve(
+	inst: Instance,
+	c: Controls,
+	tx: number,
+	ty: number,
+	tz: number,
+	squash: boolean,
+	share: number
+): Posed
 	local body = inst.body
 	local style = inst.style
 	local posed = inst.posed
 	local m = posed.m
 	local B, W = body.B, body.W
 	local hMesh = body.h - body.lift
-	local cy = body.lift + hMesh / 2
-	local x0, z0 = body.x0, body.z0
 	local kf = style.footprint
+	-- the legs folded: the contacts and the lowest point are the folded mesh's (its box at this fold)
+	local fold = (c.fold or 0) * share
+	posed.fold = fold
+	local box: Body = body
+	local kb = kf
+	local folds = body.folds
+	local k = math.clamp(fold, 0, 1)
+	if folds and #folds >= 2 and k > 0 then
+		box = inst.box
+		local at = 1 + k * (#folds - 1)
+		local i = math.min(#folds - 1, math.floor(at))
+		local f = at - i
+		local a, b = folds[i], folds[i + 1]
+		box.h = a.h + (b.h - a.h) * f
+		box.lift = a.lift + (b.lift - a.lift) * f
+		box.B = a.B + (b.B - a.B) * f
+		box.W = a.W + (b.W - a.W) * f
+		box.x0 = a.x0 + (b.x0 - a.x0) * f
+		box.z0 = a.z0 + (b.z0 - a.z0) * f
+		-- a curled body touches the ground with its own flank, not with the spread feet
+		kb = kf + (1 - kf) * k
+	end
+	local lift = box.lift
+	local cy = lift + (box.h - lift) / 2
+	local x0, z0 = box.x0, box.z0
 	-- squash and stretch (volume kept): sq vertical, sl along the body, gr every axis
 	local sq, sl, gr = c.sq or 0, c.sl or 0, c.gr or 0
+	if box ~= body then
+		sq *= 1 - FOLD_SQUASH * k
+	end
 	local sx, sy, sz = 1, 1, 1
 	if squash then
 		local q, l = math.max(0.5, 1 + sq), math.max(0.5, 1 + sl)
@@ -630,12 +679,12 @@ local function solve(inst: Instance, c: Controls, tx: number, ty: number, tz: nu
 	local tip = c.tip or 0
 	if tip ~= 0 then
 		local side = if tip > 0 then 1 else -1
-		rotateAbout(m, 3, -tip, x0 + side * W * kf / 2, body.lift, z0)
+		rotateAbout(m, 3, -tip, x0 + side * box.W * kb / 2, lift, z0)
 	end
-	rotateAbout(m, 1, c.bow or 0, x0, body.lift, z0)
-	rotateAbout(m, 3, c.lean or 0, x0, body.lift, z0)
-	rotateAbout(m, 1, c.rear or 0, x0, body.lift, z0 + B * kf / 2)
-	rotateAbout(m, 1, -(c.dip or 0), x0, body.lift, z0 - B * kf / 2)
+	rotateAbout(m, 1, c.bow or 0, x0, lift, z0)
+	rotateAbout(m, 3, c.lean or 0, x0, lift, z0)
+	rotateAbout(m, 1, c.rear or 0, x0, lift, z0 + box.B * kb / 2)
+	rotateAbout(m, 1, -(c.dip or 0), x0, lift, z0 - box.B * kb / 2)
 	rotateAbout(m, 1, c.pitch or 0, x0, cy, z0)
 	rotateAbout(m, 3, c.roll or 0, x0, cy, z0)
 	-- the squashed mesh keeps its bottom where it was
@@ -644,10 +693,17 @@ local function solve(inst: Instance, c: Controls, tx: number, ty: number, tz: nu
 		m[11] += m[5] * (sy - 1) * hMesh / 2
 		m[12] += m[8] * (sy - 1) * hMesh / 2
 	end
+	-- the legs folded: the body comes down as far as they stop holding it up
+	if box ~= body then
+		local drop = lowest(m, box, sx, sy, sz, kb) - lowest(m, body, sx, sy, sz, kf)
+		if drop > 0 then
+			m[11] -= drop
+		end
+	end
 	-- never under the ground (deaths, flips: `ground`), resting on it (`settle`)
 	local groundW, settle = c.ground or 0, c.settle or 0
 	if groundW > 0 or settle > 0 then
-		local low = lowest(m, body, sx, sy, sz, kf)
+		local low = lowest(m, box, sx, sy, sz, kb)
 		if low < 0 then
 			m[11] -= low * math.min(1, math.max(groundW, settle))
 		elseif settle > 0 then
@@ -1076,7 +1132,7 @@ function RigidMotion.step(inst: Instance, input: Input): Posed
 	end
 	-- 5. the bones (a serpent with a skeleton) and the body
 	bonesLayer(inst, c, now, dt)
-	local posed = solve(inst, c, tx, ty, tz, input.squash == true and body.squash)
+	local posed = solve(inst, c, tx, ty, tz, input.squash == true and body.squash, input.fold or 0)
 	posed.acting = actionW > 0.01
 	return posed
 end

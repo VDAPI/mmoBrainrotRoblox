@@ -80,6 +80,7 @@ local LookAnim = require(ReplicatedStorage.Shared.Logic.LookAnim)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
 local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
 local MountData = require(ReplicatedStorage.Shared.Data.Mounts)
+local MotionFx = require(script.Parent.Parent.Vfx.MotionFx)
 local Telegraph = require(ReplicatedStorage.Shared.Logic.Telegraph)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local State = require(script.Parent.Parent.UI.State)
@@ -174,7 +175,7 @@ type MonsterState = {
 	-- template animation (2026-10-25): an imported biped or quadruped animated by Logic/BipedMotion or Logic/QuadMotion
 	-- (Data/MonsterAssets `motion`; client/Anim/BipedRig, QuadRig)
 	biped: any,
-	bipedAction: any, -- the running keyed action ({ name, start, hit, reach?, mirror?, hold?, turn?, arc? })
+	bipedAction: any, -- the running keyed action ({ name, start, hit, reach?, mirror?, hold?, turn?, arc?, ability? })
 	bipedCount: number, -- regular blows so far (the style's blows take turns)
 	bipedDead: boolean,
 	bipedRoar: { name: string, untilAt: number }?, -- a boss's roar waiting for its running blow to end
@@ -320,6 +321,20 @@ local function refresh(model: Model)
 		elseif FlyerStyles.get(motionStyle) then
 			s.biped = FlyerRig.new(holder, motionStyle, s.seed, look.asset.model)
 		end
+	end
+	-- the effects its actions release (Vfx/MotionFx: the breath from the jaw, the nova, the dust of a slam)
+	if s.biped and motionStyle and holder and holder:IsA("Model") and look and look.asset then
+		local kindId = model:GetAttribute("MonsterId")
+		MotionFx.attach(
+			model,
+			holder,
+			s.biped,
+			motionStyle,
+			look.asset.model,
+			if type(kindId) == "string" then kindId elseif type(lookId) == "string" then lookId else nil
+		)
+	else
+		MotionFx.detach(model)
 	end
 	if s.biped then
 		s.clips = nil
@@ -576,6 +591,7 @@ local function untrack(model: Model)
 	end
 	monsters[model] = nil
 	animated[model] = nil
+	MotionFx.detach(model)
 end
 
 -- The nearest monsters with a full look shown animate (Config.MonsterLook.maxAnimated).
@@ -897,6 +913,7 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 	else
 		BipedRig.apply(rig, posed)
 	end
+	MotionFx.step(s.model, s.bipedAction, now, if s.deadAt then nil else s.hitAt)
 end
 
 -- Template animation: the look clones of dead bosses playing the rest of their deaths (by the clone).
@@ -964,6 +981,7 @@ local function step(dt: number)
 		end
 		s.lastRoot = rootAt
 		if not animated[model] or s.ghosted then
+			MotionFx.pause(model)
 			continue
 		end
 		local velocity = s.root.AssemblyLinearVelocity
@@ -1126,6 +1144,7 @@ function AnimationController.MonsterAttack(
 			hold = hold,
 			turn = turn,
 			arc = arc,
+			ability = ability, -- Vfx/MotionFx: the element and reach of the effect it releases
 		}
 		s.combatUntil = now + 6
 	end

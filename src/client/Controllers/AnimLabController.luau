@@ -79,6 +79,7 @@ local Hazards = require(ReplicatedStorage.Shared.Logic.Hazards)
 local MonsterAbilities = require(ReplicatedStorage.Shared.Data.MonsterAbilities)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
 local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
+local MotionFx = require(script.Parent.Parent.Vfx.MotionFx)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local MotionKeys = require(ReplicatedStorage.Shared.Logic.MotionKeys)
 local MountLook = require(ReplicatedStorage.Shared.Util.MountLook)
@@ -171,6 +172,7 @@ local actor: Model? = nil
 local actorWeapon: string? = nil
 local dummy: Model? = nil
 local subject: Subject? = nil
+local fxModel: Model? = nil -- template animation: the subject whose action effects Vfx/MotionFx draws
 -- studio review 2026-10-21: the box (world) the cameras frame round a subject (its look, the actor, its cast bar),
 -- the floor under a look wider than the stage, the camera last set
 local framed: { centre: Vector3, half: Vector3 }? = nil
@@ -399,6 +401,7 @@ local function clearSubject()
 		if s.track then
 			s.track:Stop(0)
 		end
+		MotionFx.detach(s.model)
 		s.model:Destroy()
 		subject = nil
 	end
@@ -957,6 +960,29 @@ local function stageTelegraph(
 	return area
 end
 
+-- Template animation: Vfx/MotionFx draws the effects of the subject's actions (once per subject; the game's
+-- CombatFxController asks it whether the subject draws a staged telegraph's gather and release).
+local function attachFx(model: Model, rig: any)
+	if fxModel == model then
+		return
+	end
+	if fxModel then
+		MotionFx.detach(fxModel)
+	end
+	fxModel = model
+	local id = model:GetAttribute("PreviewMonsterId")
+	local kind = if type(id) == "string" then Monsters.get(id) else nil
+	local look = if kind
+		then MonsterLooks.get(kind.id, kind.region)
+		elseif type(id) == "string" then MonsterLooks.get(id)
+		else nil
+	local asset = look and look.asset
+	if asset and asset.motion and type(id) == "string" then
+		MotionFx.attach(model, model, rig, asset.motion, asset.model, id)
+		MotionFx.step(model, nil, 0, nil)
+	end
+end
+
 -- Template animation: the plan of a biped's or quadruped's AnimLab state (Data/BipedStyles / QuadStyles LAB_STATES;
 -- LookAnim's slots map onto them): each moment's input to its motion, the motion's length and its keys. `planned` (a
 -- boss's attack or pattern: `boss <id> <attack|pattern>`) gives the action's run itself (name, hit, hold, turn, arc,
@@ -1190,7 +1216,7 @@ local function bipedLab(
 	return { rig = rig, length = length, input = input, lastT = nil }, keys
 end
 
--- Template animation: the stage's subject playing a keyed plan of `bipedLab`.
+-- Template animation: the stage's subject playing a keyed plan of `bipedLab` (and the effects its actions release).
 local function labSubject(model: Model, slot: string, lab: BipedLab, keys: MotionKeys.Keys)
 	subject = {
 		model = model,
@@ -1206,6 +1232,7 @@ local function labSubject(model: Model, slot: string, lab: BipedLab, keys: Motio
 		bone = nil,
 		biped = lab,
 	}
+	attachFx(model, lab.rig)
 end
 
 local function playMob(command: Command)
@@ -1812,6 +1839,9 @@ step = function(_dt: number)
 			else
 				BipedRig.apply(biped.rig, posed)
 			end
+			-- the effects the action releases (the breath, the nova, the dust), on the same motion time
+			attachFx(s.model, biped.rig)
+			MotionFx.step(s.model, input.action, tt, input.hitAt)
 		end
 		local bone = s.bone
 		if bone then
