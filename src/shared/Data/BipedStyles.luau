@@ -27,7 +27,7 @@ export type Action = {
 }
 export type Style = {
 	grip: { number }?, -- the blade's direction in the right hand at rest (root space): keys aim it with bRx bRy bRz
-	clips: { idle: { string }, walk: string, run: string },
+	clips: { idle: { string }, walk: string, run: string }?, -- nil: the procedural gait of `procedural`
 	guard: { [string]: number },
 	actions: { [string]: Action },
 	flinch: { [string]: { [string]: number } },
@@ -40,6 +40,9 @@ export type Style = {
 	idleEvery: { number }, -- seconds between idle variants (min, max)
 	rate: number, -- spread of the playback rate between instances (+-)
 	float: boolean?, -- a floating body (ghosts): no steps, a drifting bob instead of walk and run
+	-- a procedural gait instead of mocap (Logic/BipedMotion): the rest pose, walk and run (stride k in leg lengths, duty,
+	-- foot lift, pelvis bob / sway / yaw, forward lean) and the wingbeat in the air
+	procedural: { [string]: any }?,
 }
 
 -- A pose: the base with `over` laid on (absolute values).
@@ -2096,7 +2099,745 @@ BRUTE.grip = nil
 local GHOST: Style = variant(CASTER, { float = true })
 GHOST.grip = nil
 
+---------------------------------------------------------------- wyvern (owner 2026-10-26: Vaelgrath, the wyvern)
+
+-- A winged dragon on its hind legs, the wings its arms (Vaelgrath: Tripo biped rig, the wing fingers on the hands): a
+-- heavy procedural walk (Logic/BipedMotion.procedural), the wings folded at the sides, spread for the roar, the breath,
+-- the buffet and in the air. Wing controls are the arm's: out (a?o) spreads, pitch (a?p) raises forward, yaw (a?y)
+-- sweeps back (-) and forward (+), the elbow (e?) folds the wing's forearm.
+local WING_FOLD = { aRp = -0.15, aRo = 0.3, aRy = -0.35, eR = 1.9, aLp = -0.15, aLo = 0.3, aLy = -0.35, eL = 1.9 }
+local function wings(over: { [string]: number }): { [string]: number }
+	return from(WING_FOLD, over)
+end
+local function spread(o: number, p: number, y: number, e: number): { [string]: number }
+	return { aRo = o, aLo = o, aRp = p, aLp = p, aRy = y, aLy = y, eR = e, eL = e }
+end
+local WYVERN_REST = from(WING_FOLD, { ppitch = 0.12, spitch = 0.1, hpitch = -0.12, fLx = -0.06, fRx = 0.06 })
+local WYVERN_GUARD = from(WYVERN_REST, {
+	py = -0.12,
+	ppitch = 0.28,
+	spitch = 0.2,
+	hpitch = -0.3,
+	aRo = 0.75,
+	aLo = 0.75,
+	aRp = 0.15,
+	aLp = 0.15,
+	eR = 1.2,
+	eL = 1.2,
+	fLz = -0.15,
+	fRz = 0.12,
+	fLx = -0.1,
+	fRx = 0.1,
+})
+local function wg(over: { [string]: number }): { [string]: number }
+	return from(WYVERN_GUARD, over)
+end
+local function merge2(a: { [string]: number }, b: { [string]: number }): { [string]: number }
+	local out = table.clone(a)
+	for k, v in b do
+		out[k] = v
+	end
+	return out
+end
+
+local WYVERN: Style = {
+	guard = WYVERN_GUARD,
+	procedural = {
+		rest = WYVERN_REST,
+		runAt = 2.2,
+		walk = { k = 1.5, duty = 0.62, lift = 0.16, bob = 0.035, sway = 0.07, yaw = 0.12, lean = 0.05 },
+		run = { k = 2.4, duty = 0.42, lift = 0.28, bob = 0.06, sway = 0.05, yaw = 0.08, lean = 0.22 },
+		flap = { rate = 0.9, out = 1.25, amp = 0.75, pitch = 0.3 },
+	},
+	idleEvery = { 6, 10 },
+	rate = 0.04,
+	basic = { "bite", "claw", "bite", "clawL" },
+	abilities = {
+		frostBreath = "breath",
+		fireBreath = "breath",
+		wingBuffet = "buffet",
+		tailSwipe = "tail",
+		blizzard = "roar",
+		glacialRing = "stomp",
+		avalanche = "stomp",
+		iceComet = "roar",
+		frostTomb = "roar",
+		absoluteZero = "roar",
+		cleave = "claw",
+		slam = "stomp",
+		leap = "stomp",
+		pounce = "stomp",
+		crush = "stomp",
+		heavyBlow = "claw",
+		charge = "buffet",
+	},
+	death = { "deathDragon" },
+	aggro = "roar",
+	spawn = "spawnDragon",
+	flinch = {
+		front = { spitch = -0.18, hpitch = -0.2, pz = 0.03, aRo = 0.2, aLo = 0.2 },
+		back = { spitch = 0.18, hpitch = 0.15, pz = -0.03 },
+		left = { sroll = -0.15, hroll = -0.15, syaw = 0.1, px = 0.03 },
+		right = { sroll = 0.15, hroll = 0.15, syaw = -0.1, px = -0.03 },
+	},
+	actions = {
+		-- the bite: the neck coils back with the weight, then the head strikes forward and down, a shake after
+		bite = {
+			strike = 0.16,
+			follow = 0.25,
+			recover = 0.45,
+			legs = true,
+			lag = { head = 0.06, free = 0.08 },
+			keys = {
+				{
+					seg = "A",
+					u = 1,
+					ease = "out",
+					pose = wg({
+						pz = 0.12,
+						py = -0.08,
+						ppitch = 0.1,
+						spitch = -0.15,
+						hpitch = -0.45,
+						hyaw = 0.1,
+						aRo = 0.95,
+						aLo = 0.95,
+					}),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = wg({
+						pz = -0.18,
+						py = -0.18,
+						ppitch = 0.42,
+						spitch = 0.5,
+						hpitch = 0.35,
+						aRo = 0.85,
+						aLo = 0.85,
+						fLz = -0.3,
+					}),
+				},
+				{
+					seg = "F",
+					u = 0.5,
+					ease = "inout",
+					pose = wg({
+						pz = -0.17,
+						py = -0.17,
+						ppitch = 0.4,
+						spitch = 0.45,
+						hpitch = 0.3,
+						hyaw = 0.3,
+						hroll = 0.2,
+						fLz = -0.3,
+					}),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "inout",
+					pose = wg({
+						pz = -0.16,
+						py = -0.16,
+						ppitch = 0.38,
+						spitch = 0.42,
+						hpitch = 0.28,
+						hyaw = -0.25,
+						hroll = -0.15,
+						fLz = -0.3,
+					}),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = WYVERN_GUARD },
+			},
+		},
+		-- the claw: the right wing's wrist rises high and back, then rakes down and across with the body
+		claw = {
+			strike = 0.14,
+			follow = 0.25,
+			recover = 0.45,
+			legs = true,
+			lag = { head = 0.06, free = 0.08 },
+			keys = {
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = wg({
+						pyaw = -0.3,
+						syaw = -0.35,
+						spitch = 0.0,
+						hyaw = 0.3,
+						aRp = 1.6,
+						aRo = 1.1,
+						aRy = -0.5,
+						eR = 1.0,
+					}),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = wg({
+						py = -0.2,
+						pz = -0.12,
+						pyaw = 0.25,
+						syaw = 0.45,
+						spitch = 0.45,
+						hyaw = -0.2,
+						aRp = 0.6,
+						aRo = 0.5,
+						aRy = 0.9,
+						eR = 0.6,
+						fLz = -0.3,
+					}),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "out",
+					pose = wg({
+						py = -0.2,
+						pz = -0.12,
+						pyaw = 0.32,
+						syaw = 0.55,
+						spitch = 0.45,
+						aRp = 0.4,
+						aRo = 0.5,
+						aRy = 1.1,
+						eR = 0.8,
+						fLz = -0.3,
+					}),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = WYVERN_GUARD },
+			},
+		},
+		-- the frost breath (a cone in front): the dragon rears with the wings spread and the chest swelling, then thrusts
+		-- the neck forward and sweeps the head across the cone while it breathes
+		breath = {
+			strike = 0.2,
+			follow = 1.2,
+			recover = 0.55,
+			legs = true,
+			lag = { head = 0.05 },
+			keys = {
+				{
+					seg = "A",
+					u = 0.6,
+					ease = "inout",
+					pose = merge2(
+						wg({ py = 0.0, pz = 0.08, ppitch = 0.0, spitch = -0.3, hpitch = -0.55, cRu = 0.2, cLu = 0.2 }),
+						spread(1.5, 0.55, -0.35, 0.35)
+					),
+				},
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = merge2(
+						wg({
+							py = 0.02,
+							pz = 0.1,
+							ppitch = -0.05,
+							spitch = -0.38,
+							hpitch = -0.6,
+							cRu = 0.25,
+							cLu = 0.25,
+						}),
+						spread(1.6, 0.6, -0.4, 0.3)
+					),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = merge2(
+						wg({
+							py = -0.15,
+							pz = -0.12,
+							ppitch = 0.35,
+							spitch = 0.35,
+							hpitch = 0.15,
+							hyaw = 0.45,
+							syaw = 0.2,
+							fLz = -0.3,
+						}),
+						spread(1.3, 0.2, -0.2, 0.5)
+					),
+				},
+				{
+					seg = "F",
+					u = 0.85,
+					ease = "inout",
+					pose = merge2(
+						wg({
+							py = -0.15,
+							pz = -0.12,
+							ppitch = 0.35,
+							spitch = 0.35,
+							hpitch = 0.15,
+							hyaw = -0.45,
+							syaw = -0.2,
+							fLz = -0.3,
+						}),
+						spread(1.3, 0.2, -0.2, 0.5)
+					),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "out",
+					pose = merge2(
+						wg({
+							py = -0.12,
+							pz = -0.1,
+							ppitch = 0.3,
+							spitch = 0.25,
+							hpitch = 0.05,
+							hyaw = -0.4,
+							fLz = -0.3,
+						}),
+						spread(1.1, 0.15, -0.2, 0.7)
+					),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = WYVERN_GUARD },
+			},
+		},
+		-- the wing buffet: the wings open wide and back, then beat forward hard (the wind), a second smaller beat
+		buffet = {
+			strike = 0.16,
+			follow = 0.45,
+			recover = 0.5,
+			legs = true,
+			lag = { head = 0.05 },
+			keys = {
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = merge2(
+						wg({ py = 0.02, pz = 0.08, ppitch = 0.05, spitch = -0.25, hpitch = -0.35 }),
+						spread(1.6, 0.75, -0.75, 0.25)
+					),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = merge2(
+						wg({ py = -0.1, pz = -0.05, ppitch = 0.3, spitch = 0.3, hpitch = -0.05 }),
+						spread(1.05, 0.55, 0.9, 0.6)
+					),
+				},
+				{
+					seg = "F",
+					u = 0.5,
+					ease = "out",
+					pose = merge2(wg({ py = -0.05, ppitch = 0.15, spitch = 0.05 }), spread(1.5, 0.6, -0.5, 0.3)),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "in",
+					pose = merge2(wg({ py = -0.1, ppitch = 0.28, spitch = 0.25 }), spread(1.15, 0.5, 0.6, 0.6)),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = WYVERN_GUARD },
+			},
+		},
+		-- the tail swipe: the body winds up, then whips round so the tail sweeps the side behind it
+		tail = {
+			strike = 0.18,
+			follow = 0.3,
+			recover = 0.5,
+			legs = true,
+			lag = { head = 0.08, free = 0.08 },
+			keys = {
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = wg({ pyaw = 0.55, syaw = 0.35, hyaw = -0.5, py = -0.15, aRo = 1.0, aLo = 0.5 }),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = wg({
+						pyaw = -0.9,
+						syaw = -0.55,
+						hyaw = 0.7,
+						py = -0.18,
+						ppitch = 0.35,
+						aRo = 0.5,
+						aLo = 1.2,
+						fLz = -0.25,
+						fRz = 0.2,
+					}),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "out",
+					pose = wg({
+						pyaw = -1.05,
+						syaw = -0.6,
+						hyaw = 0.75,
+						py = -0.16,
+						aRo = 0.55,
+						aLo = 1.1,
+						fLz = -0.25,
+						fRz = 0.2,
+					}),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = WYVERN_GUARD },
+			},
+		},
+		-- the stomp (glacialRing, avalanche: a ring round it): it rears up with the wings high, then crashes down
+		stomp = {
+			strike = 0.16,
+			follow = 0.4,
+			recover = 0.55,
+			legs = true,
+			lag = { head = 0.07 },
+			keys = {
+				{
+					seg = "A",
+					u = 0.55,
+					ease = "inout",
+					pose = merge2(
+						wg({
+							py = 0.08,
+							pz = 0.12,
+							ppitch = -0.25,
+							spitch = -0.3,
+							hpitch = -0.4,
+							fLz = 0.02,
+							fRz = 0.02,
+						}),
+						spread(1.6, 1.0, -0.3, 0.3)
+					),
+				},
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = merge2(
+						wg({
+							py = 0.12,
+							pz = 0.14,
+							ppitch = -0.35,
+							spitch = -0.38,
+							hpitch = -0.45,
+							fLz = 0.02,
+							fRz = 0.02,
+						}),
+						spread(1.7, 1.15, -0.35, 0.25)
+					),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "in",
+					pose = merge2(
+						wg({
+							py = -0.32,
+							pz = -0.08,
+							ppitch = 0.45,
+							spitch = 0.45,
+							hpitch = 0.1,
+							fLz = -0.25,
+							fRz = 0.2,
+							fLx = -0.15,
+							fRx = 0.15,
+						}),
+						spread(1.0, 0.1, 0.2, 0.8)
+					),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "out",
+					pose = merge2(
+						wg({
+							py = -0.28,
+							pz = -0.06,
+							ppitch = 0.4,
+							spitch = 0.38,
+							hpitch = 0.0,
+							fLz = -0.25,
+							fRz = 0.2,
+							fLx = -0.15,
+							fRx = 0.15,
+						}),
+						spread(1.05, 0.15, 0.1, 0.9)
+					),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = WYVERN_GUARD },
+			},
+		},
+		-- the roar (the first aggro, the spells: blizzard, iceComet, frostTomb, absoluteZero): rearing back with the wings
+		-- spread high and the head up, then the roar thrust forward, held
+		roar = {
+			strike = 0.2,
+			follow = 0.7,
+			recover = 0.5,
+			legs = true,
+			lag = { head = 0.07 },
+			keys = {
+				{
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = merge2(
+						wg({ py = 0.05, pz = 0.1, ppitch = -0.1, spitch = -0.4, hpitch = -0.7, cRu = 0.3, cLu = 0.3 }),
+						spread(1.7, 0.9, -0.45, 0.3)
+					),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "out",
+					pose = merge2(
+						wg({ py = -0.05, pz = -0.05, ppitch = 0.22, spitch = 0.15, hpitch = -0.3, cRu = 0.1, cLu = 0.1 }),
+						spread(1.75, 0.7, -0.25, 0.35)
+					),
+				},
+				{
+					seg = "F",
+					u = 0.5,
+					ease = "inout",
+					pose = merge2(
+						wg({ py = -0.06, pz = -0.06, ppitch = 0.24, spitch = 0.18, hpitch = -0.25, hyaw = 0.12 }),
+						spread(1.72, 0.65, -0.25, 0.35)
+					),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "inout",
+					pose = merge2(
+						wg({ py = -0.06, pz = -0.06, ppitch = 0.24, spitch = 0.18, hpitch = -0.25, hyaw = -0.12 }),
+						spread(1.65, 0.6, -0.25, 0.4)
+					),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = WYVERN_GUARD },
+			},
+		},
+		-- a summoned or new dragon: from a low crouch wrapped in its wings it rises and opens them
+		spawnDragon = {
+			strike = 0.4,
+			follow = 0.4,
+			recover = 0.3,
+			legs = true,
+			full = true,
+			keys = {
+				{
+					seg = "A",
+					u = 0,
+					ease = "lin",
+					pose = wings({
+						py = -0.4,
+						ppitch = 0.5,
+						spitch = 0.5,
+						hpitch = 0.4,
+						fLx = -0.1,
+						fRx = 0.1,
+						aRp = 0.5,
+						aLp = 0.5,
+						aRy = 0.6,
+						aLy = 0.6,
+					}),
+				},
+				{
+					seg = "S",
+					u = 1,
+					ease = "out",
+					pose = merge2(
+						wg({ py = 0.0, ppitch = 0.0, spitch = -0.2, hpitch = -0.4 }),
+						spread(1.6, 0.6, -0.3, 0.3)
+					),
+				},
+				{ seg = "F", u = 1, ease = "inout", pose = WYVERN_GUARD },
+				{ seg = "R", u = 1, ease = "inout", pose = WYVERN_GUARD },
+			},
+		},
+		-- the death: a last rear with the wings flaring, the legs buckle, it crashes onto its side, one wing spread on the
+		-- ground, the head falling last
+		deathDragon = {
+			strike = 0.25,
+			follow = 0.9,
+			recover = 0.5,
+			legs = true,
+			hold = true,
+			full = true,
+			lag = { head = 0.12, free = 0.1 },
+			keys = {
+				{
+					seg = "S",
+					u = 1,
+					ease = "out",
+					pose = merge2(
+						wg({ py = 0.05, pz = 0.1, ppitch = -0.2, spitch = -0.4, hpitch = -0.6 }),
+						spread(1.6, 0.8, -0.3, 0.4)
+					),
+				},
+				{
+					seg = "F",
+					u = 0.4,
+					ease = "in",
+					pose = merge2(
+						wg({
+							py = -0.45,
+							pz = 0.05,
+							ppitch = 0.35,
+							spitch = 0.3,
+							hpitch = 0.2,
+							fLz = -0.1,
+							fRz = 0.15,
+							fLp = 0.3,
+							fRp = 0.3,
+						}),
+						spread(1.2, 0.3, 0.0, 0.8)
+					),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "in",
+					pose = {
+						py = -0.68,
+						px = -0.35,
+						proll = 1.25,
+						ppitch = 0.2,
+						spitch = 0.1,
+						sroll = 0.15,
+						hpitch = 0.4,
+						hroll = 0.3,
+						aRo = 1.6,
+						aRp = 0.3,
+						aRy = -0.2,
+						eR = 0.3,
+						aLo = 0.4,
+						aLp = 1.0,
+						aLy = 0.5,
+						eL = 1.6,
+						fLz = -0.3,
+						fRz = 0.1,
+						fLx = -0.2,
+						fRx = 0.1,
+						fLy = 0.05,
+						fRy = 0.2,
+						fLp = 0.6,
+						fRp = 0.8,
+					},
+				},
+				{
+					seg = "R",
+					u = 0.4,
+					ease = "out",
+					pose = {
+						py = -0.64,
+						px = -0.35,
+						proll = 1.2,
+						ppitch = 0.2,
+						spitch = 0.12,
+						sroll = 0.15,
+						hpitch = 0.45,
+						hroll = 0.3,
+						aRo = 1.55,
+						aRp = 0.3,
+						aRy = -0.2,
+						eR = 0.35,
+						aLo = 0.45,
+						aLp = 1.0,
+						aLy = 0.5,
+						eL = 1.6,
+						fLz = -0.3,
+						fRz = 0.1,
+						fLx = -0.2,
+						fRx = 0.1,
+						fLy = 0.05,
+						fRy = 0.2,
+						fLp = 0.6,
+						fRp = 0.8,
+					},
+				},
+				{
+					seg = "R",
+					u = 1,
+					ease = "inout",
+					pose = {
+						py = -0.69,
+						px = -0.35,
+						proll = 1.27,
+						ppitch = 0.2,
+						spitch = 0.1,
+						sroll = 0.15,
+						hpitch = 0.5,
+						hroll = 0.35,
+						aRo = 1.62,
+						aRp = 0.3,
+						aRy = -0.2,
+						eR = 0.3,
+						aLo = 0.4,
+						aLp = 1.0,
+						aLy = 0.5,
+						eL = 1.65,
+						fLz = -0.3,
+						fRz = 0.1,
+						fLx = -0.2,
+						fRx = 0.1,
+						fLy = 0.05,
+						fRy = 0.2,
+						fLp = 0.6,
+						fRp = 0.8,
+					},
+				},
+			},
+		},
+	},
+}
+WYVERN.actions.clawL = (function(): Action
+	-- the claw of the left wing: the right one mirrored
+	local right = WYVERN.actions.claw
+	local keys = {}
+	for _, key in right.keys do
+		local pose = table.clone(key.pose)
+		local swapped: { [string]: number } = {}
+		for k, v in pose do
+			local first, second = string.sub(k, 1, 1), string.sub(k, 2, 2)
+			if (first == "a" or first == "e" or first == "w" or first == "c") and (second == "R" or second == "L") then
+				swapped[first .. (if second == "R" then "L" else "R") .. string.sub(k, 3)] = v
+			elseif
+				k == "pyaw"
+				or k == "syaw"
+				or k == "hyaw"
+				or k == "sroll"
+				or k == "hroll"
+				or k == "proll"
+				or k == "px"
+			then
+				swapped[k] = -v
+			else
+				swapped[k] = v
+			end
+		end
+		table.insert(keys, { seg = key.seg, u = key.u, ease = key.ease, pose = swapped })
+	end
+	return {
+		strike = right.strike,
+		follow = right.follow,
+		recover = right.recover,
+		legs = true,
+		lag = right.lag,
+		keys = keys,
+	}
+end)()
+WYVERN.actions.heavy = WYVERN.actions.roar
+
 local STYLES: { [string]: Style } = {
+	wyvern = WYVERN,
 	humanoid1h = HUMANOID_1H,
 	caster = CASTER,
 	brute = BRUTE,
@@ -2109,6 +2850,17 @@ end
 
 -- The states AnimLab `mob <id> <state>` shows for a biped (besides Logic/LookAnim's slots).
 BipedStyles.LAB_STATES = {
+	"bite",
+	"claw",
+	"clawL",
+	"breath",
+	"buffet",
+	"tail",
+	"stomp",
+	"roar",
+	"fly",
+	"spawnDragon",
+	"deathDragon",
 	"spell",
 	"spellLeft",
 	"nova",

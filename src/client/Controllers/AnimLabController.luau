@@ -951,7 +951,7 @@ end
 
 -- Template animation: the plan of a biped's or quadruped's AnimLab state (Data/BipedStyles / QuadStyles LAB_STATES;
 -- LookAnim's slots map onto them): each moment's input to its motion, the motion's length and its keys.
-local function bipedLab(model: Model, look: any, monster: any, state: string): (BipedLab?, MotionKeys.Keys?)
+local function bipedLab(model: Model, look: any, monster: any, state: string, boss: any): (BipedLab?, MotionKeys.Keys?)
 	local styleId = look.asset.motion :: string
 	local rig: any = if BipedStyles.get(styleId)
 		then BipedRig.new(model, styleId, 7.3, look.asset.grip)
@@ -971,6 +971,14 @@ local function bipedLab(model: Model, look: any, monster: any, state: string): (
 	local reach = { reachV.X, 0, reachV.Z }
 	local melee = CombatData.basicWind.melee
 	local function windupOf(name: string): number
+		-- a boss's attack with this action: its own windup (Data/Bosses)
+		if boss then
+			for _, attack in boss.attacks do
+				if style.abilities[attack.id] == name and attack.windup then
+					return attack.windup
+				end
+			end
+		end
 		if monster and monster.ability and style.abilities[monster.ability] == name then
 			local own = MonsterAbilities.get(monster.ability)
 			if own then
@@ -1093,6 +1101,8 @@ local function bipedLab(model: Model, look: any, monster: any, state: string): (
 				i.speed = moveSpeed
 			elseif state == "turn" then
 				i.yawRate = 2.4
+			elseif state == "fly" then
+				i.flying = true
 			end
 			return i
 		end
@@ -1118,7 +1128,7 @@ local function playMob(command: Command)
 	-- template animation: a biped with a style shows Logic/BipedMotion (its states and actions)
 	local motionStyle = look.asset and look.asset.motion
 	if motionStyle then
-		local lab, labKeys = bipedLab(model, look, monster, slot)
+		local lab, labKeys = bipedLab(model, look, monster, slot, boss)
 		if lab and labKeys then
 			subject = {
 				model = model,

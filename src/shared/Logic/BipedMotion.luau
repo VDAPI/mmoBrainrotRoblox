@@ -79,6 +79,7 @@ export type Input = {
 	hitSide: string?, -- "front" | "back" | "left" | "right"
 	look: Vec?, -- root-space direction to the target (nil = none)
 	snap: boolean?, -- AnimLab: weights jump to their targets
+	flying: boolean?, -- a winged biped in the air (the attribute Flying): wingbeats, the legs tucked
 }
 export type Instance = {
 	skel: BipedPose.Skeleton,
@@ -123,12 +124,16 @@ function BipedMotion.new(skel: BipedPose.Skeleton, styleId: string, seed: number
 			clips[name] = { clip = clip, fit = BipedClip.fit(source, skel.dirs), speed = source.speed }
 		end
 	end
-	for _, name in style.clips.idle do
-		load(name)
+	local first = ""
+	local list = style.clips
+	if list then
+		for _, name in list.idle do
+			load(name)
+		end
+		load(list.walk)
+		load(list.run)
+		first = list.idle[1 + math.floor(hash01(1, seed) * #list.idle) % #list.idle]
 	end
-	load(style.clips.walk)
-	load(style.clips.run)
-	local first = style.clips.idle[1 + math.floor(hash01(1, seed) * #style.clips.idle) % #style.clips.idle]
 	return {
 		skel = skel,
 		style = style,
@@ -268,8 +273,11 @@ end
 local function idleLayer(inst: Instance, now: number): (World, Vec)
 	local idle = inst.idle
 	local style = inst.style
+	if not style.clips then
+		return {}, { 0, 0, 0 }
+	end
 	if now >= idle.next then
-		local list = style.clips.idle
+		local list = (style.clips :: any).idle
 		local n = math.floor(now)
 		local pick = list[1 + math.floor(hash01(n, inst.seed) * #list) % #list]
 		if pick ~= idle.name then
@@ -294,12 +302,106 @@ local function idleLayer(inst: Instance, now: number): (World, Vec)
 	return world or {}, shift or { 0, 0, 0 }
 end
 
-local function locomotion(inst: Instance, input: Input): (World, Vec)
+-- A procedural walk and run for a biped without mocap that fits it (dragons on their hind legs): the feet planted in
+-- stance and swung in an arc by leg IK, the pelvis bobbing, swaying and turning with the stride, the chest and head
+-- countering it, the folded wings swinging a little; one phase advanced by distance.
+local function proceduralControls(inst: Instance, input: Input): Controls
 	local style = inst.style
+	local gaitDef = style.procedural :: any
 	local dt = input.dt
 	local speed = input.speed
-	local walkSpeed, walkLen = gait(inst, style.clips.walk)
-	local runSpeed, runLen = gait(inst, style.clips.run)
+	local L = inst.skel.legLength
+	local ratio = speed / L
+	local turning = speed < STAND_SPEED and math.abs(input.yawRate) > TURN_STEP * 0.6
+	local moving = speed >= STAND_SPEED
+	local moveTarget = if moving then math.clamp(ratio / 0.5, 0, 1) elseif turning then 0.6 else 0
+	local runTarget = math.clamp((ratio - gaitDef.runAt + 0.4) / 0.8, 0, 1)
+	if input.snap then
+		inst.move, inst.run = moveTarget, runTarget
+	else
+		inst.move = approach(inst.move, moveTarget, MOVE_RATE * 0.7, dt)
+		inst.run = approach(inst.run, runTarget, RUN_RATE * 0.7, dt)
+	end
+	local w, r = gaitDef.walk, gaitDef.run
+	local function mix(key: string): number
+		return w[key] + (r[key] - w[key]) * inst.run
+	end
+	local k = mix("k")
+	local ground = if moving then speed elseif turning then math.abs(input.yawRate) * L * 0.35 else 0
+	inst.phase = (inst.phase + dt * ground / math.max(0.2, k * L)) % 1
+	local out: Controls = table.clone(gaitDef.rest)
+	local t = input.now + inst.seed * 3.7
+	local breath = math.sin(t * 2 * math.pi / 3.6)
+	out.spitch = (out.spitch or 0) + 0.03 * breath
+	out.aRo = (out.aRo or 0) + 0.04 * breath
+	out.aLo = (out.aLo or 0) + 0.04 * breath
+	local m = inst.move
+	if m > 0.005 then
+		local duty, lift = mix("duty"), mix("lift")
+		local stride = k * 0.5 -- each foot covers half the cycle's distance
+		local feet: { [string]: number } = { L = 0, R = 0.5 }
+		for side, offset in feet do
+			local p = (inst.phase + offset) % 1
+			local z: number, y: number, toe: number
+			if p < duty then
+				local q = p / duty
+				z = -stride / 2 + stride * q
+				y = 0
+				toe = -0.25 * math.max(0, q - 0.7) / 0.3
+			else
+				local q = (p - duty) / (1 - duty)
+				local e = q * q * (3 - 2 * q)
+				z = stride / 2 - stride * e
+				y = lift * math.sin(math.pi * q)
+				toe = 0.35 * math.sin(math.pi * q)
+			end
+			out["f" .. side .. "z"] = (out["f" .. side .. "z"] or 0) + z * m
+			out["f" .. side .. "y"] = (out["f" .. side .. "y"] or 0) + y * m
+			out["t" .. side] = (out["t" .. side] or 0) + toe * m
+		end
+		local a = 2 * math.pi * inst.phase
+		out.py = (out.py or 0) - mix("bob") * math.cos(2 * a) * m
+		out.proll = (out.proll or 0) + mix("sway") * math.sin(a) * m
+		out.px = (out.px or 0) + mix("sway") * 0.4 * math.sin(a) * m
+		out.pyaw = (out.pyaw or 0) + mix("yaw") * math.sin(a) * m
+		out.syaw = (out.syaw or 0) - mix("yaw") * 0.8 * math.sin(a) * m
+		out.hyaw = (out.hyaw or 0) - mix("yaw") * 0.4 * math.sin(a) * m
+		out.ppitch = (out.ppitch or 0) + mix("lean") * m
+		out.hpitch = (out.hpitch or 0) - mix("lean") * 0.7 * m + 0.04 * math.cos(2 * a) * m
+		out.aRp = (out.aRp or 0) + 0.12 * math.sin(a) * m
+		out.aLp = (out.aLp or 0) - 0.12 * math.sin(a) * m
+	end
+	if input.flying then
+		-- in the air: slow heavy wingbeats, the legs tucked under, the body riding each beat
+		local f = gaitDef.flap
+		local b = 2 * math.pi * f.rate * t
+		local beat = math.sin(b)
+		for _, side in { "R", "L" } do
+			out["a" .. side .. "o"] = f.out + f.amp * beat
+			out["a" .. side .. "p"] = f.pitch + 0.35 * math.sin(b + 1.2)
+			out["a" .. side .. "y"] = -0.25
+			out["e" .. side] = 0.3 + 0.5 * math.max(0, -math.sin(b - 0.6))
+			out["f" .. side .. "z"] = 0.25
+			out["f" .. side .. "y"] = 0.35
+			out["t" .. side] = 0.6
+		end
+		out.py = (out.py or 0) + 0.06 * math.sin(b + math.pi)
+		out.ppitch = 0.18
+		out.spitch = (out.spitch or 0) - 0.05 * beat
+	end
+	return out
+end
+
+local function locomotion(inst: Instance, input: Input): (World, Vec)
+	local style = inst.style
+	if style.procedural then
+		return BipedPose.world(inst.skel, proceduralControls(inst, input), inst.grip)
+	end
+	local clips = style.clips :: any
+	local dt = input.dt
+	local speed = input.speed
+	local walkSpeed, walkLen = gait(inst, clips.walk)
+	local runSpeed, runLen = gait(inst, clips.run)
 	local turning = speed < STAND_SPEED and math.abs(input.yawRate) > TURN_STEP
 	local moving = speed >= STAND_SPEED
 	local moveTarget = if moving then math.clamp(speed / (walkSpeed * 0.5), 0, 1) elseif turning then 0.65 else 0
@@ -324,12 +426,12 @@ local function locomotion(inst: Instance, input: Input): (World, Vec)
 	if inst.move < 0.01 then
 		return idleWorld, idleShift
 	end
-	local walkW, walkS = clipPose(inst, style.clips.walk, inst.phase * walkLen)
+	local walkW, walkS = clipPose(inst, clips.walk, inst.phase * walkLen)
 	local world, shift = walkW, walkS
 	if inst.run > 0.01 then
-		local wl, rl = inst.clips[style.clips.walk], inst.clips[style.clips.run]
+		local wl, rl = inst.clips[clips.walk], inst.clips[clips.run]
 		local offset = if wl and rl then (rl.clip.source.contact or 0) - (wl.clip.source.contact or 0) else 0
-		local runW, runS = clipPose(inst, style.clips.run, ((inst.phase + offset) % 1) * runLen)
+		local runW, runS = clipPose(inst, clips.run, ((inst.phase + offset) % 1) * runLen)
 		if world and runW and shift and runS then
 			world = BipedPose.blend(world, runW, inst.run)
 			shift = lerpVec(shift, runS, inst.run)

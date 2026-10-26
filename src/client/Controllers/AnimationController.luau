@@ -801,6 +801,7 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 		yawRate = s.yawRate,
 		combat = fighting and s.deadAt == nil,
 		returning = s.model:GetAttribute("Returning") == true,
+		flying = s.flying,
 		action = s.bipedAction,
 		hitAt = if s.deadAt then nil else s.hitAt,
 		hitSide = hitSide,
@@ -961,7 +962,11 @@ function AnimationController.MonsterAttack(
 	-- template animation: a biped keys its own action, the strike ending on the server's hit
 	local rig = s.biped
 	if rig and not s.bipedDead then
-		local ability = if attackId and not strikeNow then attackId else nil
+		-- a boss pattern's gesture (opts.style) picks the action of that name when the style has one
+		local ability = if attackId and not strikeNow
+			then attackId
+			elseif opts and opts.procedural then opts.style
+			else nil
 		if not ability then
 			s.bipedCount += 1
 		end

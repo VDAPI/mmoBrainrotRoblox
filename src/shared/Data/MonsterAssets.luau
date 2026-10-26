@@ -284,7 +284,14 @@ local MonsterAssets: { [string]: Entry } = {
 		motion = "brute",
 	},
 	specter = { rig = "static", rootSize = { 1.83, 2.91, 1.50 }, hipHeight = 2.75, height = 6.33, walkSpeed = 9.5 },
-	vaelgrath = { rig = "static", rootSize = { 1.94, 1.61, 3.23 }, hipHeight = 1.17, height = 4.70, walkSpeed = 7.0 },
+	vaelgrath = {
+		rig = "static",
+		rootSize = { 1.94, 1.61, 3.23 },
+		hipHeight = 1.17,
+		height = 4.70,
+		walkSpeed = 7.0,
+		motion = "wyvern",
+	},
 }
 
 -- Owner 2026-10-20: the models looked too small next to the players. Only the drawn model grows (the hitbox, the hip

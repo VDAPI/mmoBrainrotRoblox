@@ -11,6 +11,32 @@ local BipedPose = require(ReplicatedStorage.Shared.Logic.BipedPose)
 
 local BipedRig = {}
 
+-- Bone names of other biped exports (Tripo Auto Rig Biped on dragons: Vaelgrath) onto the Mixamo keys the pose drives;
+-- the bones between them (Pelvis, NeckTwist02) keep their rest and follow their parents.
+local ALIASES: { [string]: string } = {
+	Hip = "Hips",
+	Waist = "Spine",
+	Spine01 = "Spine1",
+	Spine02 = "Spine2",
+	NeckTwist01 = "Neck",
+	L_Thigh = "LeftUpLeg",
+	L_Calf = "LeftLeg",
+	L_Foot = "LeftFoot",
+	L_ToeBase = "LeftToeBase",
+	R_Thigh = "RightUpLeg",
+	R_Calf = "RightLeg",
+	R_Foot = "RightFoot",
+	R_ToeBase = "RightToeBase",
+	L_Clavicle = "LeftShoulder",
+	L_Upperarm = "LeftArm",
+	L_Forearm = "LeftForeArm",
+	L_Hand = "LeftHand",
+	R_Clavicle = "RightShoulder",
+	R_Upperarm = "RightArm",
+	R_Forearm = "RightForeArm",
+	R_Hand = "RightHand",
+}
+
 export type Rig = {
 	kind: "biped",
 	skel: BipedPose.Skeleton,
@@ -36,7 +62,8 @@ function BipedRig.new(look: Model, styleId: string, seed: number, grip: { number
 	local byKey: { [string]: Bone } = {}
 	for _, item in look:GetDescendants() do
 		if item:IsA("Bone") then
-			local key = string.match(item.Name, "[^:]*$") or item.Name
+			local bare = string.match(item.Name, "[^:]*$") or item.Name
+			local key = ALIASES[bare] or bare
 			if not byKey[key] then
 				byKey[key] = item
 				item.Transform = CFrame.identity
