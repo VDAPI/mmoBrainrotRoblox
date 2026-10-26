@@ -950,14 +950,18 @@ function RigidMotion.step(inst: Instance, input: Input): Posed
 						ty += H * 4 * tr * (1 - tr)
 						-- the body pitches along the arc while it flies (k of the travel 0 < tr < 1)
 						if tr > 0 and tr < 1 and d * k > 1e-3 then
-							local slope = math.atan2(H * 4 * (1 - 2 * tr), d * k)
+							-- levelled toward the take-off and the landing (the nose never digs into the ground)
+							local slope = math.atan2(H * 4 * (1 - 2 * tr), d * k) * math.sin(math.pi * tr)
 							local tilt = style.flightPitch
 							add(keyed, "pitch", math.clamp(slope, -tilt[2], tilt[1]))
 						end
 					end
 				end
 			end
-			local w = math.min(1, t / (if charged then CHARGED_IN else ACTION_IN))
+			-- an action keyed from its own first pose (the appear: hidden, under the ground) starts in it at once
+			local first = played.keys[1]
+			local own = first ~= nil and first.seg == "A" and first.u == 0
+			local w = if own then 1 else math.min(1, t / (if charged then CHARGED_IN else ACTION_IN))
 			if not played.hold then
 				w = math.min(w, math.max(0, (length - t) / ACTION_OUT))
 			end

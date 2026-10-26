@@ -485,7 +485,7 @@ end
 
 -- Curled: the legs fold under (squash), a slow roll to the side, one twitch.
 local function deathCurl(o: { [string]: any }): Action
-	local roll = o.roll or deg(25)
+	local roll = o.roll or deg(35)
 	return {
 		strike = 0.12,
 		follow = 0.45,
@@ -494,10 +494,10 @@ local function deathCurl(o: { [string]: any }): Action
 		sided = true,
 		keys = {
 			key("S", 1, "out", { y = 0.05, z = 0.02, ground = 1 }),
-			key("F", 0.6, "in", { sq = -0.2, dip = deg(4), roll = -roll * 0.5, ground = 1, settle = 1 }),
-			key("F", 1, "inout", { sq = -0.2, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
-			key("R", 0.4, "inout", { sq = -0.2, dip = deg(4), roll = -roll + deg(4), ground = 1, settle = 1 }),
-			key("R", 1, "inout", { sq = -0.2, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
+			key("F", 0.6, "in", { sq = -0.28, dip = deg(4), roll = -roll * 0.5, ground = 1, settle = 1 }),
+			key("F", 1, "inout", { sq = -0.28, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
+			key("R", 0.4, "inout", { sq = -0.28, dip = deg(4), roll = -roll + deg(4), ground = 1, settle = 1 }),
+			key("R", 1, "inout", { sq = -0.28, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
 		},
 	}
 end
@@ -592,6 +592,93 @@ local function deathSink(o: { [string]: any }): Action
 				"inout",
 				{ tip = o.tip or deg(80), nP = deg(60), calmTail = 1, ground = 1, settle = 1, alpha = 0.3 }
 			),
+		},
+	}
+end
+
+-- A serpent's death throes: it rears, thrashes from side to side (the tail curling), flops onto its side, stills.
+local function deathWrithe(o: { [string]: any }): Action
+	local tip = o.tip or deg(70)
+	return {
+		strike = 0.12,
+		follow = 0.5,
+		recover = 0.35,
+		hold = true,
+		sided = true,
+		keys = {
+			key("S", 1, "out", { rear = deg(14), y = 0.03, nP = -deg(25), tC = deg(20) }),
+			key("F", 0.25, "inout", { rear = deg(8), wig = deg(18), tC = deg(30), nY = deg(20) }),
+			key("F", 0.5, "inout", { rear = deg(5), wig = -deg(14), tC = -deg(20), nY = -deg(15) }),
+			key("F", 0.75, "inout", { rear = deg(3), wig = deg(9), tC = deg(15), nY = deg(10), calmTail = 0.5 }),
+			key("F", 1, "in", { wig = deg(3), tip = tip, nP = deg(50), calmTail = 1, ground = 1, settle = 1 }),
+			key("R", 0.3, "out", { wig = deg(3), tip = tip - deg(6), nP = deg(45), calmTail = 1, ground = 1 }),
+			key(
+				"R",
+				1,
+				"inout",
+				{ wig = deg(3), tip = tip, nP = deg(55), calmTail = 1, ground = 1, settle = 1, alpha = 0.25 }
+			),
+		},
+	}
+end
+
+-- A last leap: it springs up, lands nose first, rolls onto its side, the hind legs kick (shivers).
+local function deathHop(o: { [string]: any }): Action
+	local tip = o.tip or deg(85)
+	return {
+		strike = 0.15,
+		follow = 0.45,
+		recover = 0.5,
+		hold = true,
+		sided = true,
+		keys = {
+			key("S", 1, "out", { y = o.up or 0.3, rear = deg(15), sq = 0.08 }),
+			key("F", 0.45, "in", { dip = deg(10), sq = -0.12, tip = deg(20), ground = 1 }),
+			key("F", 1, "in", { tip = tip, sq = -0.04, ground = 1, settle = 1 }),
+			key("R", 0.25, "inout", { tip = tip, shiver = deg(4), ground = 1, settle = 1 }),
+			key("R", 0.5, "inout", { tip = tip, ground = 1, settle = 1 }),
+			key("R", 0.7, "inout", { tip = tip, shiver = deg(3), ground = 1, settle = 1 }),
+			key("R", 1, "inout", { tip = tip, ground = 1, settle = 1 }),
+		},
+	}
+end
+
+-- A tree falling on its face: a jolt back, it topples forward about the front of its roots with gravity, a twist, a
+-- bounce, it starts to fade.
+local function deathFallForward(o: { [string]: any }): Action
+	local dip = o.dip or deg(82)
+	return {
+		strike = 0.12,
+		follow = 0.55,
+		recover = 0.25,
+		hold = true,
+		sided = true,
+		keys = {
+			key("S", 1, "out", { rear = deg(4), y = 0.005 }),
+			key("F", 0.15, "out", { rear = deg(2), dip = deg(3), yaw = deg(3) }),
+			key("F", 0.75, "in", { dip = dip, yaw = deg(8), ground = 1, settle = 1 }),
+			key("F", 0.88, "out", { dip = dip - deg(4), yaw = deg(8), ground = 1 }),
+			key("F", 1, "in", { dip = dip, yaw = deg(8), ground = 1, settle = 1 }),
+			key("R", 1, "inout", { dip = dip, yaw = deg(8), ground = 1, settle = 1, alpha = 0.35 }),
+		},
+	}
+end
+
+-- The legs give way: a jolt, it sinks flat (squash), the head end drops, it slumps onto a flank.
+local function deathSlump(o: { [string]: any }): Action
+	local tip = o.tip or deg(20)
+	return {
+		strike = 0.12,
+		follow = 0.5,
+		recover = 0.4,
+		hold = true,
+		sided = true,
+		keys = {
+			key("S", 1, "out", { rear = deg(6), y = 0.03, z = 0.03 }),
+			key("F", 0.5, "in", { sq = -0.15, dip = deg(5), tip = deg(5), ground = 1 }),
+			key("F", 1, "inout", { sq = -0.13, dip = deg(7), tip = tip, ground = 1, settle = 1 }),
+			key("R", 0.4, "inout", { sq = -0.13, dip = deg(6), tip = tip - deg(3), ground = 1, settle = 1 }),
+			key("R", 1, "inout", { sq = -0.13, dip = deg(8), tip = tip, ground = 1, settle = 1 }),
 		},
 	}
 end
@@ -932,7 +1019,7 @@ local SERPENT: Style = {
 		pounce = "pounce",
 	},
 	throw = "spitShot",
-	death = { { name = "deathSink", weight = 1 } },
+	death = { { name = "deathSink", weight = 0.6 }, { name = "deathWrithe", weight = 0.4 } },
 	aggro = "alert",
 	spawn = "spawn",
 	summon = "summon",
@@ -973,6 +1060,7 @@ local SERPENT: Style = {
 		spawn = spawn(SERPENT_STANCE, {}),
 		summon = summon(SERPENT_STANCE, {}),
 		deathSink = deathSink({}),
+		deathWrithe = deathWrithe({}),
 		coil = fidget({ tC = deg(25), wig = deg(5), rear = deg(3) }, 1.0, { strike = 0.3 }),
 		taste = fidget({ rear = deg(10), nP = -deg(15), shiver = deg(0.6) }, 0.6, { strike = 0.2 }),
 	},
@@ -1360,7 +1448,7 @@ local HARE: Style = {
 	basic = { "bite" },
 	abilities = {},
 	throw = nil,
-	death = { { name = "deathSide", weight = 1 } },
+	death = { { name = "deathSide", weight = 0.6 }, { name = "deathHop", weight = 0.4 } },
 	aggro = "alert",
 	spawn = "spawn",
 	summon = "summon",
@@ -1378,6 +1466,7 @@ local HARE: Style = {
 		spawn = spawn(HARE_STANCE, {}),
 		summon = summon(HARE_STANCE, {}),
 		deathSide = deathSide({ tip = deg(85), buckle = -0.04 }),
+		deathHop = deathHop({}),
 		-- nose twitch bursts, sitting up on the haunches, grooming
 		nose = fidget({ shiver = deg(1.5) }, 0.3, { strike = 0.05 }),
 		sitUp = fidget(
@@ -1469,7 +1558,7 @@ local ENT: Style = {
 	basic = { "branch" },
 	abilities = { slam = "slam", heavyBlow = "sweep", crush = "crush", pounce = "pounce" },
 	throw = "fling",
-	death = { { name = "deathTopple", weight = 1 } },
+	death = { { name = "deathTopple", weight = 0.6 }, { name = "deathFallForward", weight = 0.4 } },
 	aggro = "alert",
 	spawn = "spawn",
 	summon = "summon",
@@ -1491,6 +1580,7 @@ local ENT: Style = {
 		spawn = spawn(ENT_STANCE, { y = -0.08, shake = deg(2) }),
 		summon = summon(ENT_STANCE, {}),
 		deathTopple = deathTopple({}),
+		deathFallForward = deathFallForward({}),
 		rustle = fidget({ shiver = deg(0.8), lean = deg(1.5) }, 0.8, { strike = 0.2 }),
 		creak = fidget({ bow = deg(2), yaw = deg(4) }, 1.0, { strike = 0.4 }),
 	},
@@ -1600,7 +1690,7 @@ local CAT: Style = {
 	basic = { "swat" },
 	abilities = { leap = "leap", heavyBlow = "heavy", crush = "crush", pounce = "pounce" },
 	throw = "fling",
-	death = { { name = "deathSide", weight = 1 } },
+	death = { { name = "deathSide", weight = 0.65 }, { name = "deathSlump", weight = 0.35 } },
 	aggro = "hiss",
 	spawn = "spawn",
 	summon = "summon",
@@ -1623,6 +1713,7 @@ local CAT: Style = {
 		spawn = spawn(CAT_STANCE, {}),
 		summon = summon(CAT_STANCE, {}),
 		deathSide = deathSide({}),
+		deathSlump = deathSlump({}),
 		lick = fidget({ dip = deg(6), roll = deg(3), shiver = deg(0.5) }, 1.0, { strike = 0.25 }),
 		stretch = fidget(
 			{ dip = deg(10), z = 0.03 },

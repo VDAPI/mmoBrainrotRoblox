@@ -233,7 +233,14 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 5.1,
 		motion = "canine",
 	},
-	boar = { rig = "static", rootSize = { 1.94, 1.77, 3.02 }, hipHeight = 0.70, height = 2.74, walkSpeed = 4.1 },
+	boar = {
+		rig = "static",
+		rootSize = { 1.94, 1.77, 3.02 },
+		hipHeight = 0.70,
+		height = 2.74,
+		walkSpeed = 4.1,
+		motion = "boar",
+	},
 	wasteHyena = {
 		rig = "static",
 		rootSize = { 1.56, 1.72, 3.05 },
@@ -242,7 +249,14 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 5.6,
 		motion = "canine",
 	},
-	iceMammoth = { rig = "static", rootSize = { 2.91, 2.69, 3.99 }, hipHeight = 1.72, height = 4.97, walkSpeed = 7.5 },
+	iceMammoth = {
+		rig = "static",
+		rootSize = { 2.91, 2.69, 3.99 },
+		hipHeight = 1.72,
+		height = 4.97,
+		walkSpeed = 7.5,
+		motion = "mammoth",
+	},
 	youngFrostDragon = {
 		rig = "static",
 		rootSize = { 1.82, 1.61, 3.23 },
@@ -381,7 +395,14 @@ local MonsterAssets: { [string]: Entry } = {
 	},
 	-- owner 2026-10-20: the bear (blackBear inherits it with its tint) and the frost dragon boss; the young frost dragon
 	-- above got its own small dragon model the same day
-	brownBear = { rig = "static", rootSize = { 2.37, 1.99, 3.45 }, hipHeight = 1.05, height = 3.40, walkSpeed = 5.1 },
+	brownBear = {
+		rig = "static",
+		rootSize = { 2.37, 1.99, 3.45 },
+		hipHeight = 1.05,
+		height = 3.40,
+		walkSpeed = 5.1,
+		motion = "bear",
+	},
 	ghoul = {
 		rig = "bones",
 		rootSize = { 1.25, 2.52, 2.24 },

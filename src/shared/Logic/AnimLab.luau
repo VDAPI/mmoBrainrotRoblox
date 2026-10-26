@@ -272,7 +272,7 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 		local motion = if look and look.asset then look.asset.motion else nil
 		local states = if motion and BipedStyles.get(motion)
 			then BipedStyles.LAB_STATES
-			elseif motion and QuadStyles.get(motion) then QuadStyles.LAB_STATES
+			elseif motion and QuadStyles.get(motion) then QuadStyles.labStates(motion)
 			elseif motion and RigidStyles.get(motion) then RigidStyles.labStates(motion)
 			elseif motion and FlyerStyles.get(motion) then FlyerStyles.LAB_STATES
 			else nil
