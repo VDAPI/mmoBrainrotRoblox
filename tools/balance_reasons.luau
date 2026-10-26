@@ -182,6 +182,8 @@ return {
 		["Data/BipedStyles"] = "wygląd", -- template animation: poses and timelines of the biped styles
 		["Data/QuadStyles"] = "wygląd", -- template animation: gaits and keyed actions of the quadrupeds
 		["Data/QuadRigs"] = "wygląd", -- template animation: bone roles of the quadruped models
+		["Data/RigidStyles"] = "wygląd", -- template animation: gaits and keyed actions of the rigid (boneless) models
+		["Data/RigidRigs"] = "wygląd", -- template animation: bone chains of a rigid kind with a skeleton
 		["Data/WeaponLooks"] = "wygląd",
 		["Data/SkillMotions"] = "wygląd",
 		["Data/SkillVfx"] = "wygląd",
