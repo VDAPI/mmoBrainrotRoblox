@@ -485,7 +485,7 @@ end
 
 -- Curled: the legs fold under (squash), a slow roll to the side, one twitch.
 local function deathCurl(o: { [string]: any }): Action
-	local roll = o.roll or deg(25)
+	local roll = o.roll or deg(35)
 	return {
 		strike = 0.12,
 		follow = 0.45,
@@ -494,10 +494,10 @@ local function deathCurl(o: { [string]: any }): Action
 		sided = true,
 		keys = {
 			key("S", 1, "out", { y = 0.05, z = 0.02, ground = 1 }),
-			key("F", 0.6, "in", { sq = -0.2, dip = deg(4), roll = -roll * 0.5, ground = 1, settle = 1 }),
-			key("F", 1, "inout", { sq = -0.2, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
-			key("R", 0.4, "inout", { sq = -0.2, dip = deg(4), roll = -roll + deg(4), ground = 1, settle = 1 }),
-			key("R", 1, "inout", { sq = -0.2, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
+			key("F", 0.6, "in", { sq = -0.28, dip = deg(4), roll = -roll * 0.5, ground = 1, settle = 1 }),
+			key("F", 1, "inout", { sq = -0.28, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
+			key("R", 0.4, "inout", { sq = -0.28, dip = deg(4), roll = -roll + deg(4), ground = 1, settle = 1 }),
+			key("R", 1, "inout", { sq = -0.28, dip = deg(4), roll = -roll, ground = 1, settle = 1 }),
 		},
 	}
 end

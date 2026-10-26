@@ -950,7 +950,8 @@ function RigidMotion.step(inst: Instance, input: Input): Posed
 						ty += H * 4 * tr * (1 - tr)
 						-- the body pitches along the arc while it flies (k of the travel 0 < tr < 1)
 						if tr > 0 and tr < 1 and d * k > 1e-3 then
-							local slope = math.atan2(H * 4 * (1 - 2 * tr), d * k)
+							-- levelled toward the take-off and the landing (the nose never digs into the ground)
+							local slope = math.atan2(H * 4 * (1 - 2 * tr), d * k) * math.sin(math.pi * tr)
 							local tilt = style.flightPitch
 							add(keyed, "pitch", math.clamp(slope, -tilt[2], tilt[1]))
 						end

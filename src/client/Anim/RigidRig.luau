@@ -320,7 +320,8 @@ local function flightOf(rig: Rig, monster: Model, root: BasePart, serverNow: num
 	local rise = (b.Y - a.Y) + 4 * arc * (1 - 2 * k)
 	local flight = rig.flight
 	flight.x, flight.y, flight.z = offset.X, offset.Y, offset.Z
-	flight.pitch = if k < 1 and flat > 0.05 then math.atan2(rise, flat) else 0
+	-- levelled toward the take-off and the landing, so the nose never digs into the ground
+	flight.pitch = if k < 1 and flat > 0.05 then math.atan2(rise, flat) * math.sin(math.pi * k) else 0
 	return flight
 end
 

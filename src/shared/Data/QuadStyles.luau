@@ -2034,6 +2034,13 @@ local BEAR: Style = {
 	},
 }
 BEAR.actions.deathR = mirrored(BEAR.actions.deathL)
+-- Studio review: the bear's skeleton sits twisted in its mesh, so on its right flank the mirrored fall lies about
+-- 0.6 studs above the ground; lowered once it is on its side
+for _, key in BEAR.actions.deathR.keys do
+	if math.abs(key.pose.broll or 0) > deg(45) then
+		key.pose.by = (key.pose.by or 0) - 0.24
+	end
+end
 
 ---------------------------------------------------------------- boar
 
