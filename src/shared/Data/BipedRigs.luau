@@ -13,7 +13,11 @@
 -- * `muzzle`: the root's Muzzle attachment follows this key's bone (the point `offset` from its joint at rest, dump
 --   units, root axes), so the shots drawn on the client leave the jaw or the casting hand (docs/ANIM-WZORCE §10);
 -- * `tuck`: bones outside the pose turned once by `angle` (rad) about `axis` (root axes) at their rest and then left
---   to follow their parents (the regular wyvern's small forearms folded against the chest).
+--   to follow their parents (the regular wyvern's small forearms folded against the chest);
+-- * `facing`: degrees the export stands turned to its left of -Z (Grimrok 40, Azgor -18: their hips, shoulders and feet
+--   all turned alike), `centre`: its body stands off the root (Azgor's sword widens the box it was centred by). The
+--   pose is solved on the model turned to face -Z with its Hips joint over the root, and the Hips' Transform carries
+--   the correction (Logic/BipedPose.hipsFixed).
 
 local BipedRigs = {}
 
@@ -61,6 +65,8 @@ export type Map = {
 	legPlane: boolean?, -- the knees bend in the rest legs' own plane (splayed legs), Logic/BipedPose.Options
 	muzzle: { key: string, offset: { number } }?,
 	tuck: { { bone: string, axis: { number }, angle: number } }?,
+	facing: number?,
+	centre: boolean?,
 }
 
 local MAPS: { [string]: Map } = {
@@ -140,6 +146,42 @@ local MAPS: { [string]: Map } = {
 		pivot = "Hip",
 		pivotOffset = { -0.37, -0.53, -0.13 },
 		muzzle = { key = "RightHand", offset = { 0.05, -0.2, -0.05 } },
+	},
+	-- the bosses (Mixamo, 52 bones each; dumps 2026-10-26). Grimrok's export stands turned 40 degrees to its left (the
+	-- hips, the shoulders and the feet alike) and 0.47 ahead of its root; Azgor's 18 degrees to its right and 1.07 to
+	-- the left of its root (its greatsword reaches far to the right)
+	grimrok = {
+		unit = { bone = "mixamorig:Hips", height = 1.78 },
+		facing = 40,
+		centre = true,
+	},
+	azgor = {
+		unit = { bone = "mixamorig:Hips", height = 2.98 },
+		facing = -18,
+		centre = true,
+	},
+	-- Morvane's bolts leave her right hand
+	morvane = {
+		unit = { bone = "mixamorig:Hips", height = 3.89 },
+		muzzle = { key = "RightHand", offset = { 0.05, -0.25, -0.1 } },
+	},
+	-- the young frost dragon (Tripo biped auto rig on a winged dragon, 35 bones; a new model is coming): the legs, the
+	-- spine, the neck and the head are usable (the legs splayed); the arm chains run into the wings and the right one is
+	-- broken (its hand above the head, its fingers on one point), so the wings stay as modelled, carried by the chest
+	youngFrostDragon = {
+		virtual = {
+			LeftArm = { from = "Spine2", offset = { -0.35, 0.1, 0 } },
+			LeftForeArm = { from = "Spine2", offset = { -0.4, -0.35, 0 } },
+			LeftHand = { from = "Spine2", offset = { -0.4, -0.75, -0.1 } },
+			RightArm = { from = "Spine2", offset = { 0.35, 0.1, 0 } },
+			RightForeArm = { from = "Spine2", offset = { 0.4, -0.35, 0 } },
+			RightHand = { from = "Spine2", offset = { 0.4, -0.75, -0.1 } },
+		},
+		drop = { "LeftShoulder", "RightShoulder" },
+		unit = { bone = "Hip", height = 1.07 },
+		legPlane = true,
+		-- the jaw, ahead of the head bone
+		muzzle = { key = "Head", offset = { 0, -0.1, -0.7 } },
 	},
 }
 

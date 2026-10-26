@@ -78,6 +78,9 @@ type View = {
 local views: { [Model]: View } = {}
 -- S117: who hears of a boss's death (CombatFxController: the camera shake).
 local bossDeathListeners: { (model: Model, bossId: string) -> () } = {}
+-- Template animation (2026-10-26): who takes a dead boss's look clone over (AnimationController plays the rest of the
+-- boss's death on its bones).
+local bossCloneListeners: { (model: Model, copy: Model) -> () } = {}
 local dying: { [View]: boolean } = {}
 local queue: { View } = {}
 local rigCache: { [string]: Anatomy.Rig } = {}
@@ -622,7 +625,10 @@ local function bossClone(view: View)
 	local parts: { BasePart } = {}
 	for i, item in into do
 		local source = from[i]
-		if item:IsA("BasePart") and source and source:IsA("BasePart") then
+		if item:IsA("Bone") and source and source:IsA("Bone") then
+			-- a skinned look keeps the pose it died in (a clone drops the bones' Transforms)
+			item.Transform = source.Transform
+		elseif item:IsA("BasePart") and source and source:IsA("BasePart") then
 			item.Anchored = true
 			item.CanCollide = false
 			item.CanQuery = false
@@ -640,7 +646,12 @@ local function bossClone(view: View)
 	copy.Parent = Pool.folder()
 	setShown(view.fullParts, false)
 	setShown(view.farParts, false)
+	for _, fn in bossCloneListeners do
+		fn(view.model, copy)
+	end
 	local seconds = def.death.seconds or LOOK.bossDeathSeconds
+	-- (a boss on the biped template plays its long death on: the clone stays whole for `hold` s, then breaks up)
+	local hold = def.death.hold or 0
 	local color = Color3.fromHex(def.death.light)
 	local primary = copy.PrimaryPart or parts[1]
 	if primary and Pool.takeLight() then
@@ -661,15 +672,16 @@ local function bossClone(view: View)
 	local centre = if primary then primary.Position else view.root.Position
 	local size = math.clamp(view.body.height * 0.3, 1.5, 4)
 	for i = 0, 2 do
-		Clock.after(seconds * 0.25 * i, function()
+		Clock.after(hold + seconds * 0.25 * i, function()
 			Library.smokePuff(centre, size, color)
 			Library.sparks(centre + Vector3.new(0, size * 0.5, 0), color, { count = 14, dir = Vector3.yAxis })
 		end)
 	end
+	local fade = TweenInfo.new(seconds, Enum.EasingStyle.Quad, Enum.EasingDirection.In, 0, false, hold)
 	for _, part in parts do
-		Clock.tween(part, TweenInfo.new(seconds, Enum.EasingStyle.Quad, Enum.EasingDirection.In), { Transparency = 1 })
+		Clock.tween(part, fade, { Transparency = 1 })
 	end
-	Clock.after(seconds + 0.1, function()
+	Clock.after(hold + seconds + 0.1, function()
 		copy:Destroy()
 	end)
 end
@@ -788,6 +800,12 @@ end
 -- S117: `fn(model, bossId)` runs when a boss dies (the start of its long death).
 function MonsterViewController.OnBossDeath(fn: (model: Model, bossId: string) -> ())
 	table.insert(bossDeathListeners, fn)
+end
+
+-- Template animation (2026-10-26): `fn(model, copy)` runs when a dead boss's look clone takes its place (the copy is
+-- in the pose the boss died in, parented, its parts anchored; it is destroyed when it has broken up).
+function MonsterViewController.OnBossClone(fn: (model: Model, copy: Model) -> ())
+	table.insert(bossCloneListeners, fn)
 end
 
 function MonsterViewController.IsFull(model: Model): boolean
