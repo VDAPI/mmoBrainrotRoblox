@@ -82,7 +82,7 @@ sprawdza wywołanie (`Logic/AnimLab.parse`) i wysyła je przez `AdminClient` do 
 | `/animlab skill <id> [typ broni]` | aktor dostaje broń ścieżki albo startową broń klasy (S115: albo podany typ, np. `crossbow`, `staff`) i gra umiejętność (`VfxController.Preview`) |
 | `/animlab mob <id> [slot]` | wygląd potwora (albo bossa) w miejscu celu i stan `slot` (`idle`, `walk`, `run`, `attack1`, `attack2`, `cast`, `hit`, `death`, `spawn`; domyślnie `attack1` jak zwykły atak) |
 | `/animlab boss <boss> <atak>` | boss w miejscu celu, telegraf ataku wycelowany w aktora i zamach (`windup > 1` → `cast`, inaczej `attack2`) |
-| `/animlab npc <id> [idle\|talk\|wave\|work]` | kopia NPC z `Workspace.Npcs`; klipy NPC od S116, do tego czasu stoi |
+| `/animlab npc <id> [idle\|work\|talk\|point\|greet\|wave\|look\|turn\|fidget\|walk]` | kopia NPC z `Workspace.Npcs` w ruchu Logic/NpcMotion (stany: docs/ANIM-WZORCE.md, NPC) |
 | `/animlab sfx <klucz> [n]`, `sfx list [prefiks]`, `sfx all [prefiks]`, `sfx try <id>` | dźwięki `Data/Sfx` (S111, §7); działa też bez sceny |
 | `/animlab loop` | powtarza ostatni ruch co koniec + 0,6 s |
 | `/animlab freeze <t>` | odgrywa ostatni ruch od nowa i zatrzymuje pozę i efekty w chwili `t` |

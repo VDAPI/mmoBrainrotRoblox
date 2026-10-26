@@ -29,9 +29,9 @@ właściciel (`docs/GRAFIKA.md` 6).
   `NpcService` dopasowuje go do wysokości figury, przyspawa i chowa figurę R15; atrybuty modelu `Scale` 0,5–2 i `Yaw`
   w stopniach; `guard` służy obu strażnikom; prompty `wyglad/TRIPO-NPC.md`).
   Rig bez klipów (Tripo Auto Rig Biped, kości Mixamo z `mixamorig:` lub bez) rusza się proceduralnie u gracza
-  (`NpcAnimController`, `Logic/NpcPose`): luźna postawa zamiast T-pozy, oddech, przenoszenie ciężaru, rozglądanie się,
-  w rozmowie zwrot do gracza, gesty i kiwanie głową; atrybuty `ArmSpread` (stopnie, 0–40, rozstaw rąk) i `Work`
-  (`hammer` / `none`, kowal domyślnie kuje).
+  (`NpcAnimController`, `Logic/NpcMotion` na szablonie dwunoga, ANIM-WZORCE §11): postawa roli, oddech, przenoszenie
+  ciężaru na stojących stopach, spojrzenia na graczy, praca roli, powitanie, gesty rozmowy i wskazanie drogi questa;
+  atrybuty `NpcRole` (inna rola) i `Work` (`none` albo praca roli: `hammer`, `goods`, `wipe`, `channel`, `read`).
 - `assets/Kit/<folder>.rbxm` (albo zapis miejsca) → `ReplicatedStorage.Assets.Kit.<folder>` (W02: modele zestawu,
   `Data/Kit`, sekcja „Zestaw (W02)”).
 - `assets/Weapons/<paczka>.rbxm` → `ReplicatedStorage.Assets.Weapons.<paczka>` (folder MeshPartów broni nazwanych jak

@@ -52,6 +52,8 @@ local RigidRig = require(script.Parent.Parent.Anim.RigidRig)
 local RigidStyles = require(ReplicatedStorage.Shared.Data.RigidStyles)
 local FlyerRig = require(script.Parent.Parent.Anim.FlyerRig)
 local FlyerStyles = require(ReplicatedStorage.Shared.Data.FlyerStyles)
+local NpcRig = require(script.Parent.Parent.Anim.NpcRig)
+local NpcStyles = require(ReplicatedStorage.Shared.Data.NpcStyles)
 local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
@@ -1416,6 +1418,87 @@ local function playBoss(command: Command)
 	end
 end
 
+-- NPC animation (2026-10-26): the plan of an NPC copy's AnimLab state on Logic/NpcMotion (Anim/NpcRig): the input of
+-- each moment (the actor as the player it greets, looks at and talks to) and the loop's length. idle: its stance and
+-- fidgets without work; work: its role's work; talk: the dialogue with the actor; point: the dialogue pointing the way
+-- (to the stage's left); greet / wave: the actor walking up to it; fidget: one fidget after another; look: the actor
+-- passing before it; turn: the dialogue with the actor behind it (the turn on stepping feet); walk: a few paces out
+-- and back.
+local function npcLab(copy: Model, id: string, slot: string): (BipedLab?, number)
+	local def = Npcs.get(id)
+	if not def then
+		return nil, 0
+	end
+	local found = copy:FindFirstChild("Asset")
+	local asset: Model? = if copy:GetAttribute("NpcAsset") == true and found and found:IsA("Model") then found else nil
+	-- the role and work the live NPC takes (its model's attributes over its server model's)
+	local function attribute(name: string): string?
+		local value = if asset then asset:GetAttribute(name) else nil
+		if value == nil then
+			value = copy:GetAttribute(name)
+		end
+		return if type(value) == "string" then value else nil
+	end
+	local style = NpcStyles.withWork(NpcStyles.of(id, def.services :: any, attribute("NpcRole")), attribute("Work"))
+	local rig = if asset then NpcRig.new(copy, asset, id, style, 0.73) else NpcRig.newR15(copy, id, style, 0.73)
+	if not rig then
+		return nil, 0
+	end
+	NpcRig.addProps(rig, copy, id)
+	local function at(offset: Vector3): { number }
+		local p = NpcRig.toSpace(rig, centre + offset)
+		return { p.X, p.Y, p.Z }
+	end
+	local eyes = 4.8
+	local partner = at(Vector3.new(0, eyes, 0))
+	local function person(p: { number }): { any }
+		return { { id = 1, x = p[1], y = p[2], z = p[3], me = true } }
+	end
+	local lengths: { [string]: number } = {
+		idle = 24,
+		work = 24,
+		talk = 16,
+		point = 10,
+		greet = 7,
+		wave = 7,
+		fidget = 30,
+		look = 10,
+		turn = 10,
+		walk = 16,
+	}
+	local length = lengths[slot] or 16
+	local behind = { 1.2, eyes, rig.motion.centre[3] + 5 }
+	local input = function(t: number): any
+		local i: any = { now = t, dt = 0 }
+		if slot == "idle" or slot == "fidget" or slot == "walk" then
+			i.work = false
+		end
+		if slot == "fidget" then
+			i.force = "fidget"
+		elseif slot == "walk" then
+			i.force = "pace"
+		elseif slot == "talk" or slot == "point" then
+			i.talk, i.partner, i.people = true, partner, person(partner)
+			if slot == "point" then
+				local left = NpcRig.toSpace(rig, centre + Vector3.new(-40, 0, -6))
+				local d = math.max(1e-3, math.sqrt(left.X * left.X + left.Z * left.Z))
+				i.point, i.force = { left.X / d, 0, left.Z / d }, "point"
+			end
+		elseif slot == "turn" then
+			i.talk, i.partner, i.people = t > 0.6, behind, person(behind)
+		elseif slot == "greet" or slot == "wave" then
+			local k = math.min(1, t / 3.2)
+			i.people = person(at(Vector3.new(-6 + 6 * k, eyes, 10 - 10 * k)))
+		elseif slot == "look" then
+			local k = (t % 10) / 10
+			local x = if k < 0.5 then -9 + 36 * k else 27 - 36 * k
+			i.people = person(at(Vector3.new(x, eyes, -2)))
+		end
+		return i
+	end
+	return { rig = rig, length = length, input = input, lastT = nil }, length
+end
+
 local function playNpc(command: Command)
 	local id, slot = command.id :: string, command.slot or "idle"
 	local folder = Workspace:FindFirstChild("Npcs")
@@ -1452,6 +1535,31 @@ local function playNpc(command: Command)
 		d.Parent = nil
 	end
 	stand(copy, vec(LAYOUT.target), true)
+	-- NPC animation (2026-10-26): the copy moves on Logic/NpcMotion (its live props stay with the original)
+	for _, name in { "NpcAnvil", "NpcHammer" } do
+		local prop = copy:FindFirstChild(name)
+		if prop then
+			prop:Destroy()
+		end
+	end
+	local lab, length = npcLab(copy, id, slot)
+	if lab then
+		subject = {
+			model = copy,
+			joints = {},
+			slot = slot,
+			windup = 0,
+			shift = 0,
+			track = nil,
+			looped = true,
+			keys = MotionKeys.clip(length),
+			options = nil,
+			leap = nil,
+			bone = nil,
+			biped = lab,
+		}
+		return
+	end
 	-- clips of NPCs come with S116 (Data/Npcs `asset.anims`); until then the copy stands
 	local def = Npcs.get(id) :: any
 	local anims = def and def.asset and def.asset.anims
@@ -1634,6 +1742,8 @@ step = function(_dt: number)
 				RigidRig.apply(biped.rig, posed)
 			elseif biped.rig.kind == "flyer" then
 				FlyerRig.apply(biped.rig, posed)
+			elseif biped.rig.kind == "npc" then
+				NpcRig.apply(biped.rig, posed)
 			else
 				BipedRig.apply(biped.rig, posed)
 			end

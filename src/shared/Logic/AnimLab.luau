@@ -72,7 +72,8 @@ AnimLab.ACTIONS = {
 	"floor", -- S117
 } :: { Action }
 AnimLab.CAMERAS = { "front", "side", "threequarter", "top", "game" }
-AnimLab.NPC_SLOTS = { "idle", "talk", "wave", "work" }
+-- NPC animation (2026-10-26): the states of Logic/NpcMotion (docs/ANIM-WZORCE.md)
+AnimLab.NPC_SLOTS = { "idle", "work", "talk", "point", "greet", "wave", "look", "turn", "fidget", "walk" }
 -- Motions a freeze / loop / keys can replay (the others are tools).
 AnimLab.MOTIONS = { "attack", "skill", "mob", "boss", "npc", "vfx", "hit", "flinch", "clip" } :: { Action }
 -- S117: the floors of `floor <name>` (telegraphs on light grass, snow and a dark cave; Config.AnimLab.floors).

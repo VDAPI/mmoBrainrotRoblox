@@ -858,6 +858,95 @@ Gameplay notes (`tools/balance_reasons`, S162m): damage, areas, windups and inte
 home is easier to catch and teleports only after 20 s (was 12); an Elite II boar stands at its target after a charge
 (its next blow up to ~1 s sooner); shots start 0.6-2.9 studs closer to the target.
 
+## 11. NPCs (2026-10-26)
+
+Owner 2026-10-26: "po animacjach przejdź do animacji NPCtów". The NPCs move on the biped template of the monsters
+(`Logic/BipedPose`: planted feet by leg IK, two-bone hand IK), at the same bar: alive, believable, varied, never
+robotic. Nothing is keyframed by hand in Studio; every NPC of `Data/Npcs` has a style.
+
+| File | What it holds |
+|---|---|
+| `Data/NpcStyles` | the moves (keys of controls and hand targets on landmarks: `chest`, `head`, `hips`, `ground`), the roles (stance, breath, weight shifts, glances, look, greeting, fidgets, work loop, talk, walk) and per-NPC overrides (`NPCS`); `of(id, services, role?)`, `withWork(style, work?)` |
+| `Data/NpcRigs` | what a model needs beyond the bone names, from its rig dump: `keep` (an arm modelled holding a prop keeps its pose; the moves of that arm go to the other one), `hammer`, `palms` |
+| `Logic/NpcMotion` | the layers below, pure; `new(skel, style, seed, keep)`, `step(inst, input)`, `fitPalms` |
+| `Logic/NpcSteps` | the feet: planted spots, steps on the spot, the walk's stride clock |
+| `Logic/NpcPose` | the rotation math every rig shares, the R15 joint map |
+| `client/Anim/NpcRig` | the bones of the owner's model (or the 15 R15 joints of a figure without one), the finger curl, the props (anvil, hammer) |
+| `client/Controllers/NpcAnimController` | the live loop: the players near, the dialogue partner, the quest's way; the cull by `Config.Graphics.levels[*].npcRadius` / `npcRate` / `npcMax` (unchanged) |
+
+### 11.1 Layers (bottom to top)
+
+1. **Stance** per role: the feet square under the hip joints (a model exported in mid-stride or legs apart stands
+   square), the role's width and toe-out, the pelvis raised so the legs stand almost straight, the role's pose (a
+   guard upright, a merchant's belly forward, an elder bent). Palms turned to face the thighs whatever the export
+   (`fitPalms`, from the finger bones).
+2. **Breath** on an irregular rhythm (deeper after the smith's blows), **weight shifts** every few seconds onto one
+   foot (the pelvis over it, the free foot on its toes; the feet never slide), a slow **sway**.
+3. **Glances**: the head looks about on the seed's own clock (down at the work, aside, ahead).
+4. **Look at players** within `look.range`: the head turns first (quick spring), the chest follows slowly; a player
+   staying near turns the body part of the way (on stepping feet); one close behind is noticed too.
+5. **Work loop** (`work`): weighted phrases picked by the seed; repeated phrases run on one another (only the first
+   fades in, the last out); a base pose holds the tools between them (the smith's hammer rests on the piece).
+6. **Fidgets** between the work: weighted, never the same twice running.
+7. **Greeting** once per approach of a player (the local one always, others now and then): a wave, a raised hand, a
+   nod, a salute, a bow by role; again only after the player was away.
+8. **Talk** (the dialogue or a service window open on this client): turn to the player on stepping feet, a listening
+   pose, gestures in beats with pauses, nods, pointing along the quest's way (`point`: the tracked quest's target, the
+   next exit of the map on the way, or the target NPC), back to the work after.
+9. **Walk**: a sentry's beat (`pace`: guards, captains, the wandering merchant), a merchant stepping up to his stall
+   (`work.stand`); any goal farther than a sidle is walked to facing it.
+
+Hand IK: a target in the middle of a fade starts from where the arm's own pose holds the hand and travels on a path
+bowed a little forward (no arm swinging through the body), the elbow's bend turning out to the side on the way.
+
+### 11.2 Roles
+
+| Role | NPCs | Work | Greeting |
+|---|---|---|---|
+| smith | blacksmith, runesmith_brokk | hammer blows in runs of 3-6 with rests, light taps, the piece lifted in the tongs and turned, a rest on the hammer, the brow wiped; anvil prop | raised hand |
+| merchant | merchant, backpacker, wanderer, merchant_lucjan, fishwife | turned to the stall behind: arranging goods, looking them over, counting coins | wave |
+| vendor | vendor_warrior, fence | coins counted and pocketed, goods looked over | raised hand |
+| innkeeper | innkeeper | the counter wiped in circles and long strokes, the shine checked | wave |
+| stablemaster | stablemaster, wagoner_bogna | tack cleaned (no horse model: a pantomime) | raised hand |
+| guard | guard1, guard2, squire_asmund, warden_zbyszko | watch scans, a regrip; a beat now and then | curt nod |
+| captain | captain, sergeant, arenamaster, defector_jorund | hands behind, arms crossed; a beat | salute |
+| mage | portalmaster (Teodor), vendor_mage | channelling with surges | bow |
+| priest | healer, brother_anzelm, vendor_cleric, exorcist_kalina | hands folded in prayer | bow |
+| scholar | teacher, scholar_vigdis | reading, turning pages | nod |
+| fisher | fisher_wit, icefisher_torvi | waiting, casting, reeling | nod |
+| witch | alchemist, herbalist_dobrawa, shaman_ghasha, witch_ragna | stirring, herbs | nod |
+| noble | banker, auctioneer, guildmaster, granary_keeper | a ledger, coins | bow |
+| hunter, laborer, elder, bard, barber, ghost, townsfolk | the rest | their own fidgets (a ghost floats) | by role |
+
+Model attributes (Studio, on the NPC's model or its `Asset`): `NpcRole` = another role for the whole NPC; `Work` =
+`none` (no work loop) or a role's work (`hammer`, `goods`, `wipe`, `channel`, `read`, or a role name).
+
+### 11.3 AnimLab
+
+`/animlab npc <id> <state>`: the NPC's copy on the stage moves on the same motion, the actor standing in as the player.
+
+| State | Shows |
+|---|---|
+| `idle` | the stance, breath, shifts, glances, fidgets (no work) |
+| `work` | the role's work loop |
+| `talk` | the dialogue with the actor: turn, listening, gestures, nods |
+| `point` | the dialogue pointing the way (to the stage's left) |
+| `greet`, `wave` | the actor walking up from the side: the look, then the greeting |
+| `look` | the actor passing before it: head first, chest after |
+| `turn` | the dialogue with the actor behind it: the turn on stepping feet |
+| `fidget` | one fidget after another |
+| `walk` | a few paces out and back |
+
+### 11.4 Studio checks
+
+1. The guard's prop arm: `Data/NpcRigs` keeps the right arm (its bounds reach 2.7 studs each side: something long in
+   its hands); if the spear is in the left, set `keep = { L = true }`.
+2. Whether the blacksmith's model holds a hammer of its own: if not, set `hammer = true` in `Data/NpcRigs`.
+3. The fingers' curl direction and the grip (a fist must close toward the palm).
+4. The anvil's place in front of the smith against the forge of the map.
+5. The innkeeper lacks two bones of the right little finger (the curl skips them); the caravan has no bones (static).
+6. Teodor's channelling and the healer's prayer against their robes.
+
 ## Appendix A: formulas
 
 Gait clock (per frame):

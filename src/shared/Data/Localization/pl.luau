@@ -3220,7 +3220,7 @@ return {
 	["admin.usage.anim"] = "/anim <typ broni>|unarmed|off: animacja ataku na sobie co 1 s (np. sword1h, bow, staff)",
 	["admin.anim.ok"] = "Animacja ataku: {kind}.",
 	-- S110: AnimLab (docs/ANIMACJE.md)
-	["admin.usage.animlab"] = "/animlab [on|off|attack <typ broni> [krok|combo]|skill <id> [typ broni]|mob <id> [slot]|boss <boss> <atak|roar|death>|npc <id> [idle|talk|wave|work]|sfx <klucz> [n]|sfx list [prefiks]|sfx all [prefiks]|sfx try <id>|vfx <składnik> [#RRGGBB|class:<klasa>]|vfx all [stress]|vfx tex [on|off]|vfx stats|hit <materiał> [crit]|flinch <front|back|left|right> [crit]|clip <id> [attack <typ broni> [krok]|skill <id>]|loop|freeze <t>|step <dt>|play|keys|cam <front|side|threequarter|top|game|off>|stress <n>|state|floor <grass|snow|cave>]: scena oglądania ruchu (tylko Studio, docs/ANIMACJE.md)",
+	["admin.usage.animlab"] = "/animlab [on|off|attack <typ broni> [krok|combo]|skill <id> [typ broni]|mob <id> [slot]|boss <boss> <atak|roar|death>|npc <id> [idle|work|talk|point|greet|wave|look|turn|fidget|walk]|sfx <klucz> [n]|sfx list [prefiks]|sfx all [prefiks]|sfx try <id>|vfx <składnik> [#RRGGBB|class:<klasa>]|vfx all [stress]|vfx tex [on|off]|vfx stats|hit <materiał> [crit]|flinch <front|back|left|right> [crit]|clip <id> [attack <typ broni> [krok]|skill <id>]|loop|freeze <t>|step <dt>|play|keys|cam <front|side|threequarter|top|game|off>|stress <n>|state|floor <grass|snow|cave>]: scena oglądania ruchu (tylko Studio, docs/ANIMACJE.md)",
 	["admin.animlab.ok"] = "AnimLab: {action}.",
 	["admin.animlab.bad"] = "AnimLab: {why}",
 	["admin.usage.ui"] = "/ui list|open <okno>|close [okno]|tooltip <przedmiot> [rzadkość 1–5]: okna i dymek przedmiotu (skrócony i pełny) bez myszy i klawiatury, do przeglądu w Studio",
@@ -3234,7 +3234,7 @@ return {
 	["animlab.error.mob"] = "podaj id potwora albo bossa z wyglądem.",
 	["animlab.error.slot"] = "nieznany stan (idle, walk, run, attack1, attack2, cast, hit, death, spawn).",
 	["animlab.error.boss"] = "podaj bossa i id jego ataku albo wzoru, albo roar / rage / death (np. grimrok sweep, grimrok gr_axeThrow).",
-	["animlab.error.npc"] = "podaj id NPC i stan (idle, talk, wave, work).",
+	["animlab.error.npc"] = "podaj id NPC i stan (idle, work, talk, point, greet, wave, look, turn, fidget, walk).",
 	["animlab.error.sfx"] = "sfx <klucz> [wariant], sfx list [prefiks], sfx all [prefiks] albo sfx try <id>.",
 	["animlab.error.sfxId"] = "sfx try: podaj liczbowe ID dźwięku z Creator Store.",
 	["animlab.error.vfx"] = "vfx <składnik> [kolor], vfx all [stress], vfx tex [on|off] albo vfx stats (składniki: impactFlash, sparks, groundDecal, smokePuff, magicCircle, ringWave, burst, shockwave, cracks, slash, projectile, lightning, pillar, rune, sparkle, aura, glow, weaponTrail, falcon, beam, dust, meteor, lingering:burn|frost|poison, shieldArc, wings).",
