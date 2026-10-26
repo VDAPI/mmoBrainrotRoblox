@@ -40,6 +40,7 @@ local HazardGesture = require(ReplicatedStorage.Shared.Logic.HazardGesture)
 local HazardPatterns = require(ReplicatedStorage.Shared.Data.HazardPatterns)
 local Hazards = require(ReplicatedStorage.Shared.Logic.Hazards)
 local Library = require(script.Parent.Library)
+local MotionFx = require(ReplicatedStorage.Shared.Data.MotionFx)
 local Pool = require(script.Parent.Pool)
 local Textures = require(script.Parent.Textures)
 
@@ -87,12 +88,16 @@ type Live = {
 }
 
 -- Template animation (owner 2026-10-26): a monster's regular shot with an element is drawn as that element (the
--- wyvern's fire spit a fireball, not an arrow; the ice elemental's bolt a frost orb; the harpy's lightning).
+-- wyvern's fire spit a fireball, not an arrow; the ice elemental's bolt a frost orb; the harpy's lightning). A magic bolt
+-- of a kind without an element takes the kind's school (Data/MotionFx.SCHOOLS: the shaman's green), so it leaves the
+-- staff in the colour its animation gathers.
 local ELEMENT_SHOTS: { [string]: { look: string, color: string } } = {
 	fire = { look = "fireball", color = "#FF7A1A" },
 	ice = { look = "frostOrb", color = "#7FD4FF" },
 	lightning = { look = "magicBolt", color = "#E8E25A" },
 	poison = { look = "magicBolt", color = "#7ACB3A" },
+	shadow = { look = "magicBolt", color = "#8F7BFF" },
+	nature = { look = "magicBolt", color = "#7CCB4A" },
 }
 
 local WHITE = Color3.new(1, 1, 1)
@@ -788,6 +793,12 @@ function HazardFx.spawn(event: { [string]: any }): { Hazards.Inst }?
 	}
 	local insts = Hazards.expand(pattern, hz)
 	local elementShot = if regular and type(event.el) == "string" then ELEMENT_SHOTS[event.el] else nil
+	if regular and not elementShot and pattern.look == "magicBolt" then
+		local caster = c.findModel(if type(event.e) == "string" then event.e else nil)
+		local kindId = if caster then caster:GetAttribute("MonsterId") else nil
+		local school = if type(kindId) == "string" then MotionFx.SCHOOLS.kinds[kindId] else nil
+		elementShot = if school then ELEMENT_SHOTS[school] else nil
+	end
 	if elementShot then
 		for _, inst in insts do
 			inst.look = elementShot.look

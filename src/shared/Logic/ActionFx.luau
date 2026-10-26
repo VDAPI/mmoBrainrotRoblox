@@ -16,7 +16,7 @@ local ActionFx = {}
 ActionFx.LATE = 0.25
 
 export type Timed = { strike: number, follow: number, recover: number }
-export type Bound = { element: string?, radius: number? }
+export type Bound = { element: string?, radius: number?, ability: string?, magic: boolean? }
 
 -- Seconds from the action's start to `mark` (hit at `hit`): the segments of Logic/MotionTimeline.segments.
 function ActionFx.time(action: Timed, hit: number, mark: MotionFx.Mark): number
@@ -77,33 +77,40 @@ local function abilityOf(id: string?, bossId: string?): (string?, number?)
 end
 
 -- The element and reach an action of a kind carries: `ability` (the attack the server sent) when it has them, else
--- the boss attack or the kind's ability the style plays with this action, else the kind's own element (a regular
--- shot: the wyvern's fire spit). `abilities` is the style's ability -> action map.
+-- the boss attack or the kind's ability the style plays with this action; a monster's action without an element takes
+-- the kind's own (a regular shot: the wyvern's fire spit; a fire golem's slam), else its school (Data/MotionFx.SCHOOLS:
+-- the dark casters' violet). `abilities` is the style's ability -> action map. Also the ability it found (a bone nova
+-- throws bones) and whether the kind's blows are magic (an orb to throw, not a rock).
 function ActionFx.bound(kindId: string?, abilities: { [string]: string }, actionName: string, ability: string?): Bound
 	local bossId = if kindId and Bosses.get(kindId) then kindId else nil
 	local element, radius = abilityOf(ability, bossId)
-	if element or radius then
-		return { element = element, radius = radius }
-	end
+	local used = if element or radius then ability else nil
 	local boss = if bossId then Bosses.get(bossId) else nil
-	if boss then
+	local def = if kindId and not boss then Monsters.get(kindId) else nil
+	if not used and boss then
 		for _, attack in boss.attacks do
 			if abilities[attack.id] == actionName and (attack.element or attack.radius) then
-				return { element = attack.element, radius = attack.radius }
+				element, radius, used = attack.element, attack.radius, attack.id
+				break
 			end
 		end
-		return { element = nil, radius = nil }
-	end
-	local def = if kindId then Monsters.get(kindId) else nil
-	if def then
+	elseif not used and def then
 		local own = def.ability
 		if own and abilities[own] == actionName then
-			local e, r = abilityOf(own, nil)
-			return { element = e or def.element, radius = r }
+			element, radius = abilityOf(own, nil)
+			used = own
 		end
-		return { element = def.element, radius = nil }
 	end
-	return { element = nil, radius = nil }
+	if not boss then
+		element = element or (def and def.element) or (kindId and MotionFx.SCHOOLS.kinds[kindId])
+		element = element or (used and MotionFx.SCHOOLS.abilities[used])
+	end
+	return {
+		element = element,
+		radius = radius,
+		ability = used or ability,
+		magic = def ~= nil and def.damageKind == "magic",
+	}
 end
 
 -- Whether the animation of attack `attackId` (an ability id, or an action name: a boss pattern's gesture) of a style

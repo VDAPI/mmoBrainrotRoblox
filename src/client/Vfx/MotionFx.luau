@@ -8,9 +8,12 @@
 --              a white-hot core, embers or ice glints, smoke or mist rolling off its end, a faint warm haze, a
 --              flickering light), charge (the element gathering in the throat or the hand, its light growing), arc
 --              (lightning crackling between the wing tips), smolder (smoke trickling from the mouth after a fire breath)
---   one-shots  spit, bolt, flare, nova (ice shards flung out of the body on ballistic arcs and ice spikes erupting from
---              the ground in two rings, then shattering), shatter (a body bursting into ice shards), slam, dust,
---              screech (rings of force running out of the mouth), wisps, feathers, splinters, leaves, snow
+--              trail (a streak behind the weapon through a heavy swing), held (the rock or orb in the hand until the throw)
+--   one-shots  spit, bolt, flare, nova (by element: ice shards flung out of the body on ballistic arcs and ice spikes
+--              erupting from the ground in two rings, then shattering; embers and flame columns in a ring; a violet ring
+--              with bone or void shards; a green ring with leaves or venom; arcs), shatter (a body bursting into ice
+--              shards), slam, dust, screech (rings of force running out of the mouth), wisps, feathers, splinters,
+--              leaves, snow
 -- Anchors (Data/MotionFx.ANCHORS) are resolved once per rig: a point in a bone's rest frame (it follows the animated
 -- bone through TransformedWorldCFrame), or in a part's frame for the rigid models (their PrimaryPart moves whole).
 -- Budget (phones too): nothing beyond CULL studs from the camera, the simple version beyond Config.Vfx.simpleBeyond or on
@@ -60,6 +63,11 @@ local BARK = Color3.fromHex("#3B2A1C")
 local SNOW = Color3.fromHex("#EEF6FF")
 local LEAF = Color3.fromHex("#6F7F3A")
 local LEAF_DRY = Color3.fromHex("#8A6A3A")
+local ROCK = Color3.fromHex("#6E655A")
+local BONE = Color3.fromHex("#E6DCC0")
+local VOID = Color3.fromHex("#6A4FC0")
+local STEEL = Color3.fromHex("#DCE6F0")
+local TRAIL_LIFE = 0.16 -- s: a weapon streak's tail
 local FEATHERS: { [string]: Color3 } = {
 	crow = Color3.fromHex("#26262C"),
 	vulture = Color3.fromHex("#4A3B30"),
@@ -82,17 +90,21 @@ local PALETTES: { [string]: Palette } = {
 	ice = palette("#F4FCFF", "#9EDCFF", "#3A7FB8", "#DDF3FF"),
 	poison = palette("#E8FFA0", "#7ACB3A", "#2E5A12", "#4A6A2A"),
 	lightning = palette("#FFFFFF", "#E8E25A", "#8A7A20", "#6A6A80"),
+	shadow = palette("#EFE6FF", "#8F7BFF", "#2E1A5C", "#231C30"),
+	nature = palette("#F2FFD6", "#7CCB4A", "#2F5A1A", "#3E5A2E"),
 	none = palette("#FFFFFF", "#D8D2F0", "#5A5470", "#6A625C"),
 }
 
 -- An anchor: a point (and a forward direction) in a bone's rest frame, followed through its TransformedWorldCFrame, or
 -- in a part's frame; `bone2` makes it the middle of two bones (the wing tips); `dirPart` takes the direction from a
--- part instead (the look's root); `flyer` reads the flyer's solved muzzle (root space) each frame.
+-- part instead (the look's root); `flyer` reads the flyer's solved muzzle (root space) each frame; `at2` is a second
+-- point on the same bone (the weapon's hilt: a trail runs from it to `at`).
 type Anchor = {
 	bone: Bone?,
 	bone2: Bone?,
 	part: BasePart?,
 	at: Vector3,
+	at2: Vector3?,
 	fwd: Vector3,
 	dirPart: BasePart?,
 	flyer: boolean?,
@@ -112,6 +124,12 @@ type Stream = {
 	size: number,
 	nextArc: number,
 	seed: number,
+	trail: Trail?, -- a weapon streak between the hilt (a0) and the tip (a1) of a beam holder
+	trailHolder: BasePart?,
+	a0: Attachment?,
+	a1: Attachment?,
+	prop: BasePart?, -- the rock or orb held until the throw
+	propTurn: CFrame,
 }
 
 type Owner = {
@@ -245,6 +263,49 @@ local function legEnd(o: Owner, map: any, leg: string): Bone?
 	return o.rig.bones[rows[#rows].bone]
 end
 
+-- How far a ray from `from` along `dir` (world, at rest) runs inside the look's box.
+local function boxReach(o: Owner, from: Vector3, dir: Vector3): number
+	local p = o.space:PointToObjectSpace(from)
+	local d = o.space:VectorToObjectSpace(dir)
+	local best = math.huge
+	local function slab(pv: number, dv: number, lo: number, hi: number)
+		if math.abs(dv) > 1e-4 then
+			best = math.min(best, ((if dv > 0 then hi else lo) - pv) / dv)
+		end
+	end
+	slab(p.X, d.X, o.lo.X, o.hi.X)
+	slab(p.Y, d.Y, o.lo.Y, o.hi.Y)
+	slab(p.Z, d.Z, o.lo.Z, o.hi.Z)
+	return if best == math.huge then 0 else math.max(0, best)
+end
+
+-- The weapon in the right hand: along `grip` (the blade's rest direction in the look's root space, Data/MonsterAssets
+-- or the style: Logic/BipedMotion keeps it) its tip where the blade leaves the look's box (a staff's head, a sword's
+-- point; held within 0.12..0.32 of the height), the hilt 0.3 of the way out; no weapon (a brute, a ghost): the
+-- knuckles a little past the hand along the forearm.
+local function weaponAnchor(o: Owner, hand: Bone, fore: Bone?): Anchor
+	local rest = hand.WorldCFrame
+	local motion = o.rig.motion
+	local grip: { number }? = if motion then motion.grip else nil
+	local h = o.height
+	local front = o.space.LookVector
+	local dir: Vector3
+	local reach: number
+	if grip then
+		dir = LmKit.unitOr(o.space:VectorToWorldSpace(Vector3.new(grip[1], grip[2], grip[3])), front)
+		reach = math.clamp(boxReach(o, rest.Position, dir) * 0.92, 0.12 * h, 0.32 * h)
+	else
+		dir = if fore then LmKit.unitOr(rest.Position - fore.WorldCFrame.Position, front) else front
+		reach = 0.07 * h
+	end
+	return {
+		bone = hand,
+		at = rest:PointToObjectSpace(rest.Position + dir * reach),
+		at2 = rest:PointToObjectSpace(rest.Position + dir * (if grip then reach * 0.3 else 0)),
+		fwd = rest:VectorToObjectSpace(front),
+	}
+end
+
 local function bipedAnchor(o: Owner, name: string): Anchor?
 	local rig = o.rig
 	local b: { [string]: Bone } = rig.bones
@@ -278,6 +339,10 @@ local function bipedAnchor(o: Owner, name: string): Anchor?
 	elseif name == "wings" then
 		if b.LeftHand and b.RightHand then
 			return between(o, b.LeftHand, b.RightHand)
+		end
+	elseif name == "weapon" then
+		if b.RightHand then
+			return weaponAnchor(o, b.RightHand, b.RightForeArm)
 		end
 	elseif name == "chest" or name == "top" then
 		if chest then
@@ -489,11 +554,16 @@ local function place(o: Owner, a: Anchor): (Vector3, Vector3)
 	return pos, LmKit.unitOr(dir, o.root.CFrame.LookVector)
 end
 
--- The two ends of a paired anchor (the wing tips), else a short span across the anchor.
+-- The two ends of a paired anchor (the wing tips; the weapon's hilt and tip), else a short span across the anchor.
 local function ends(o: Owner, a: Anchor): (Vector3, Vector3)
 	local bone, bone2 = a.bone, a.bone2
 	if bone and bone2 then
 		return bone.TransformedWorldCFrame.Position, bone2.TransformedWorldCFrame.Position
+	end
+	local at2 = a.at2
+	if bone and at2 then
+		local cf = bone.TransformedWorldCFrame
+		return cf:PointToWorldSpace(at2), cf:PointToWorldSpace(a.at)
 	end
 	local pos = place(o, a)
 	local side = o.root.CFrame.RightVector * (0.4 * o.height)
@@ -750,6 +820,7 @@ local function chargeLayers(stream: Stream, frame: CFrame, element: string?, s: 
 	local key = if element == "ice"
 		then "iceShard"
 		elseif element == "poison" then "poisonBubble"
+		elseif element == "nature" then "leaf"
 		elseif element == "fire" or element == "lightning" then "spark"
 		else "glow"
 	local crackle = element == "lightning"
@@ -764,9 +835,9 @@ local function chargeLayers(stream: Stream, frame: CFrame, element: string?, s: 
 		size = NumberSequence.new({ kp(0, 0.18 * s), kp(1, 0.05 * s) }),
 		alpha = NumberSequence.new({ kp(0, 0.1), kp(1, 1) }),
 		color = colors(p.core, p.main),
-		emission = 1,
+		emission = if key == "leaf" then 0.2 else 1,
 		parallel = crackle,
-		spin = if key == "iceShard" then 200 else nil,
+		spin = if key == "iceShard" or key == "leaf" then 200 else nil,
 	}, frame, r)
 	local glow = stream.glow
 	if glow and not simple then
@@ -832,6 +903,74 @@ local function arcLayers(stream: Stream, frame: CFrame, s: number, simple: boole
 	end
 end
 
+-- A streak behind the weapon: a Trail between two attachments of a pooled beam holder, moved onto the hilt and the
+-- tip every frame (the beam itself stays hidden); the element's colours, else steel.
+local function trailStart(o: Owner, stream: Stream, element: string?, size: number)
+	local holder = Pool.holder("beam", "trailStreak")
+	if not holder then
+		return
+	end
+	local a0 = holder:FindFirstChild("A0")
+	local a1 = holder:FindFirstChild("A1")
+	if not a0 or not a1 or not a0:IsA("Attachment") or not a1:IsA("Attachment") then
+		Pool.releaseHolder(holder)
+		return
+	end
+	local hilt, tip = ends(o, stream.anchor)
+	holder.CFrame = CFrame.new(tip)
+	a0.WorldPosition = hilt
+	a1.WorldPosition = tip
+	local p = stream.palette
+	local t = Instance.new("Trail")
+	t.Attachment0 = a0
+	t.Attachment1 = a1
+	t.FaceCamera = false
+	t.MinLength = 0.05
+	t.Lifetime = TRAIL_LIFE * math.clamp(size, 0.7, 1.4)
+	t.LightEmission = 0.8
+	t.Color = if element then colors(p.core, p.main) else colors(WHITE, STEEL)
+	t.Transparency = NumberSequence.new(if element then 0.2 else 0.35, 1)
+	t.WidthScale = NumberSequence.new(1, 0.35)
+	if not Textures.trail(t, "trailStreak") then
+		t.Texture = ""
+	end
+	t.LightInfluence = 0.15
+	t.Enabled = false
+	t.Parent = holder
+	Clock.track(t)
+	t:Clear()
+	t.Enabled = true
+	stream.trail, stream.trailHolder, stream.a0, stream.a1 = t, holder, a0, a1
+end
+
+-- The rock (an orb of the element, violet without one, for a magic kind) in the throwing hand.
+local function heldStart(o: Owner, stream: Stream, frame: CFrame, element: string?, s: number, simple: boolean)
+	local bound = o.bound
+	local magic = bound ~= nil and bound.magic == true
+	local size = 0.5 * s
+	local prop: BasePart
+	if magic then
+		local p = if element then stream.palette else PALETTES.shadow
+		prop = LmKit.part("Ball", p.main, Vector3.one * size, Enum.Material.Neon, 0.15)
+		addLayer(stream, {
+			key = "glow",
+			rate = 10,
+			life = { 0.2, 0.35 },
+			speed = { 0, 0.5 },
+			spread = 180,
+			size = NumberSequence.new({ kp(0, size * 1.6), kp(1, size * 2.4) }),
+			alpha = NumberSequence.new({ kp(0, 0.4), kp(1, 1) }),
+			color = colors(p.core, p.main),
+			emission = 1,
+		}, frame, share(simple))
+	else
+		prop = LmKit.part("Block", ROCK, Vector3.new(1.1, 0.9, 1) * size, Enum.Material.Slate, 0)
+		stream.propTurn = CFrame.Angles(rng:NextNumber(0, 6.28), rng:NextNumber(0, 6.28), 0)
+	end
+	prop.CFrame = CFrame.new(frame.Position) * stream.propTurn
+	stream.prop = prop
+end
+
 local function stopStream(o: Owner, index: number)
 	local stream = o.streams[index]
 	if not stream then
@@ -849,6 +988,17 @@ local function stopStream(o: Owner, index: number)
 		l:Destroy()
 		Pool.dropLight()
 		stream.light = nil
+	end
+	local trail, holder = stream.trail, stream.trailHolder
+	if trail and holder then
+		trail.Enabled = false
+		Pool.holderLater(holder, trail.Lifetime + 0.1)
+		stream.trail = nil
+	end
+	local prop = stream.prop
+	if prop then
+		Pool.release(prop)
+		stream.prop = nil
 	end
 end
 
@@ -906,6 +1056,12 @@ local function startStream(o: Owner, fx: MotionFxData.Fx, t0: number, t1: number
 		size = s,
 		nextArc = t0,
 		seed = rng:NextNumber(0, 100),
+		trail = nil,
+		trailHolder = nil,
+		a0 = nil,
+		a1 = nil,
+		prop = nil,
+		propTurn = CFrame.identity,
 	}
 	if fx.kind == "breath" then
 		local bound = o.bound
@@ -920,8 +1076,12 @@ local function startStream(o: Owner, fx: MotionFxData.Fx, t0: number, t1: number
 		smolderLayers(stream, frame, element, s, simple)
 	elseif fx.kind == "arc" then
 		arcLayers(stream, frame, s, simple)
+	elseif fx.kind == "trail" then
+		trailStart(o, stream, element, fx.size or 1)
+	elseif fx.kind == "held" then
+		heldStart(o, stream, frame, element, s, simple)
 	end
-	if #stream.layers == 0 and fx.kind ~= "arc" then
+	if #stream.layers == 0 and fx.kind ~= "arc" and not stream.trail and not stream.prop then
 		return nil
 	end
 	return stream
@@ -929,7 +1089,18 @@ end
 
 -- One frame of a running stream: its layers follow the anchor, the build-up and the flicker.
 local function updateStream(o: Owner, stream: Stream, t: number, simple: boolean)
+	local a0, a1 = stream.a0, stream.a1
+	if a0 and a1 then
+		local hilt, tip = ends(o, stream.anchor)
+		a0.WorldPosition = hilt
+		a1.WorldPosition = tip
+		return
+	end
 	local pos, dir = place(o, stream.anchor)
+	local prop = stream.prop
+	if prop then
+		prop.CFrame = CFrame.new(pos) * stream.propTurn
+	end
 	local frame = kit.facingFrame(pos, streamDir(stream.kind, dir))
 	for _, layer in stream.layers do
 		layer.holder.CFrame = frame
@@ -1055,12 +1226,20 @@ local function bolt(pos: Vector3, dir: Vector3, element: string?, s: number, sim
 	Library.impactFlash(pos, 1.4 * s, p.main, { simple = simple })
 	Library.sparks(pos, p.core:Lerp(p.main, 0.4), {
 		simple = simple,
-		key = if element == "ice" then "iceShard" else "spark",
+		key = if element == "ice"
+			then "iceShard"
+			elseif element == "poison" then "poisonBubble"
+			elseif element == "nature" then "leaf"
+			elseif element == "shadow" then "darkSpark"
+			else "spark",
 		dir = dir,
 		count = 8,
 		speed = { 6, 14 },
 		gravity = 8,
 	})
+	if element == "shadow" and not simple then
+		Library.smokePuff(pos, 0.5 * s, p.deep, { count = 2 })
+	end
 end
 
 local function flare(o: Owner, anchor: Anchor, element: string?, s: number, simple: boolean)
@@ -1220,8 +1399,17 @@ local function slam(pos: Vector3, s: number, simple: boolean)
 	Library.dust(base, math.clamp(1.1 * s, 0.6, 3), simple)
 end
 
--- Ice shards flung out of `pos` on ballistic arcs: plain pooled glass blocks that tumble, hit the ground and fade.
-local function shards(pos: Vector3, count: number, s: number, power: number, life: { number }, spread: number)
+-- Shards flung out of `pos` on ballistic arcs: plain pooled blocks that tumble, hit the ground and fade (`look`: ice
+-- glass, bones, violet void glass).
+local function shards(
+	pos: Vector3,
+	count: number,
+	s: number,
+	power: number,
+	life: { number },
+	spread: number,
+	look: string?
+)
 	local floor = kit.ground(pos).Y
 	local bodies: { LmKit.Body } = {}
 	local turn0 = rng:NextNumber(0, math.pi * 2)
@@ -1230,13 +1418,28 @@ local function shards(pos: Vector3, count: number, s: number, power: number, lif
 		local out = Vector3.new(math.cos(a), 0, math.sin(a))
 		local length = rng:NextNumber(0.7, 1.5) * s
 		local width = length * rng:NextNumber(0.22, 0.32)
-		local p = LmKit.part(
-			"Block",
-			ICE_PART:Lerp(WHITE, rng:NextNumber(0, 0.4)),
-			Vector3.new(width, width, length),
-			Enum.Material.Glass,
-			0.15
-		)
+		local p = if look == "bone"
+			then LmKit.part(
+				"Block",
+				BONE:Lerp(WHITE, rng:NextNumber(0, 0.2)),
+				Vector3.new(width, width, length),
+				Enum.Material.SmoothPlastic,
+				0
+			)
+			elseif look == "void" then LmKit.part(
+				"Block",
+				VOID:Lerp(WHITE, rng:NextNumber(0, 0.25)),
+				Vector3.new(width, width, length),
+				Enum.Material.Glass,
+				0.2
+			)
+			else LmKit.part(
+				"Block",
+				ICE_PART:Lerp(WHITE, rng:NextNumber(0, 0.4)),
+				Vector3.new(width, width, length),
+				Enum.Material.Glass,
+				0.15
+			)
 		local start = pos + out * (rng:NextNumber(0.2, spread) * s) + Vector3.new(0, rng:NextNumber(-0.4, 0.6) * s, 0)
 		local vel = out * rng:NextNumber(14, 24) * power + Vector3.new(0, rng:NextNumber(6, 14) * power, 0)
 		local rot = CFrame.lookAt(Vector3.zero, vel).Rotation
@@ -1331,6 +1534,169 @@ local function nova(pos: Vector3, reach: number, s: number, simple: boolean)
 	iceRing(base, outer, if simple then 9 else 12, height * 1.35, 0.08, simple)
 end
 
+-- An ember nova (the golems, the imp): a flash and a fire blast at the feet, a ring of flame columns bursting up round
+-- them, embers thrown out and the shock running over the ground.
+local function fireNova(pos: Vector3, reach: number, s: number, simple: boolean)
+	local p = PALETTES.fire
+	local base = kit.ground(pos)
+	Library.impactFlash(base + Vector3.new(0, 0.8 * s, 0), 2.2 * s, p.main, { simple = simple })
+	Library.fireBlast(base + Vector3.new(0, 0.5 * s, 0), 1.1 * s, p.main, { simple = simple })
+	Library.shockwave(base, math.clamp(reach * 0.8, 4, 14), p.main, 0.45, simple)
+	local ring = math.clamp(reach * 0.5, 2.5, 8)
+	local count = LmKit.amount(8, simple)
+	local turn0 = rng:NextNumber(0, math.pi * 2)
+	for i = 1, count do
+		local a = turn0 + (i / count) * math.pi * 2
+		local spot = kit.ground(base + Vector3.new(math.cos(a), 0, math.sin(a)) * ring)
+		Clock.after(0.03 + 0.05 * (i % 2), function()
+			burst("fire", kit.facingFrame(spot, Vector3.yAxis), p.core:Lerp(p.main, 0.4), 6, {
+				simple = simple,
+				to = p.deep,
+				direction = Enum.NormalId.Front,
+				spread = 12,
+				speedMin = 6 * s,
+				speedMax = 11 * s,
+				drag = 3,
+				accel = Vector3.new(0, 4, 0),
+				lifeMin = 0.35,
+				lifeMax = 0.6,
+				rotation = NumberRange.new(0, 360),
+				rotSpeed = NumberRange.new(-120, 120),
+				sizeSeq = NumberSequence.new({ kp(0, 0.6 * s), kp(0.4, 1.5 * s), kp(1, 1.9 * s) }),
+				transparency = NumberSequence.new({ kp(0, 0.1), kp(0.6, 0.35), kp(1, 1) }),
+				emission = 1,
+			})
+		end)
+	end
+	burst("spark", kit.facingFrame(base + Vector3.new(0, 0.5, 0), Vector3.yAxis), p.core, 14, {
+		simple = simple,
+		to = p.main,
+		direction = Enum.NormalId.Front,
+		spread = 70,
+		speedMin = 10,
+		speedMax = 22,
+		drag = 1,
+		accel = Vector3.new(0, -30, 0),
+		lifeMin = 0.5,
+		lifeMax = 0.9,
+		orient = "parallel",
+		sizeSeq = NumberSequence.new({ kp(0, 0.22), kp(1, 0.05) }),
+	})
+end
+
+-- A dark nova (the bone nova, the void): a violet flash and ring, dark smoke rolling out low, bones (or void glass)
+-- flung out, pale motes rising.
+local function shadowNova(pos: Vector3, reach: number, s: number, bones: boolean, simple: boolean)
+	local p = PALETTES.shadow
+	local base = kit.ground(pos)
+	Library.impactFlash(base + Vector3.new(0, 0.8 * s, 0), 2 * s, p.main, { simple = simple })
+	Library.ringWave(base, math.clamp(reach * 0.8, 4, 14), p.main, { simple = simple })
+	burst("smoke", kit.facingFrame(base + Vector3.new(0, 0.3, 0), Vector3.yAxis), p.main, 10, {
+		simple = simple,
+		to = p.smoke,
+		direction = Enum.NormalId.Front,
+		spread = 80,
+		speedMin = 6 * s,
+		speedMax = 12 * s,
+		drag = 3,
+		accel = Vector3.new(0, 1, 0),
+		lifeMin = 0.7,
+		lifeMax = 1.1,
+		rotation = NumberRange.new(0, 360),
+		rotSpeed = NumberRange.new(-60, 60),
+		sizeSeq = NumberSequence.new({ kp(0, 0.8 * s), kp(1, 2.6 * s) }),
+		transparency = NumberSequence.new({ kp(0, 0.4), kp(1, 1) }),
+		emission = 0.4,
+	})
+	shards(
+		base + Vector3.new(0, 0.6 * s, 0),
+		LmKit.amount(10, simple),
+		s * 0.8,
+		0.8,
+		{ 0.8, 1.2 },
+		0.5,
+		if bones then "bone" else "void"
+	)
+	if not simple then
+		wisps(base + Vector3.new(0, 0.8 * s, 0), "shadow", s, simple)
+	end
+end
+
+-- A green nova (venom, nature): the ring, a low cloud rolling out, bubbles or leaves thrown up.
+local function greenNova(pos: Vector3, reach: number, s: number, element: string, simple: boolean)
+	local p = paletteOf(element)
+	local base = kit.ground(pos)
+	Library.impactFlash(base + Vector3.new(0, 0.8 * s, 0), 1.8 * s, p.main, { simple = simple })
+	Library.ringWave(base, math.clamp(reach * 0.8, 4, 14), p.main, { simple = simple })
+	burst("smoke", kit.facingFrame(base + Vector3.new(0, 0.3, 0), Vector3.yAxis), p.main:Lerp(WHITE, 0.2), 9, {
+		simple = simple,
+		to = p.deep,
+		direction = Enum.NormalId.Front,
+		spread = 80,
+		speedMin = 5 * s,
+		speedMax = 10 * s,
+		drag = 3,
+		lifeMin = 0.8,
+		lifeMax = 1.2,
+		rotation = NumberRange.new(0, 360),
+		rotSpeed = NumberRange.new(-60, 60),
+		sizeSeq = NumberSequence.new({ kp(0, 0.8 * s), kp(1, 2.4 * s) }),
+		transparency = NumberSequence.new({ kp(0, 0.45), kp(1, 1) }),
+		emission = 0.3,
+	})
+	if element == "nature" then
+		Library.leafBurst(base, 1.2 * s, p.main, { simple = simple })
+	else
+		burst("poisonBubble", kit.facingFrame(base + Vector3.new(0, 0.4, 0), Vector3.yAxis), p.core, 12, {
+			simple = simple,
+			to = p.main,
+			direction = Enum.NormalId.Front,
+			spread = 60,
+			speedMin = 6,
+			speedMax = 12,
+			drag = 1.5,
+			accel = Vector3.new(0, -12, 0),
+			lifeMin = 0.6,
+			lifeMax = 1,
+			sizeSeq = NumberSequence.new({ kp(0, 0.35 * s), kp(1, 0.2 * s) }),
+			emission = 0.5,
+		})
+	end
+end
+
+-- A storm nova: arcs running out over the ground from the body, the ring, the crackle.
+local function stormNova(pos: Vector3, reach: number, s: number, simple: boolean)
+	local p = PALETTES.lightning
+	local base = kit.ground(pos)
+	Library.arcBurst(pos, 1.2 * s, p.main, { simple = simple })
+	Library.ringWave(base, math.clamp(reach * 0.8, 4, 14), p.main, { simple = simple })
+	local count = if simple then 2 else 4
+	local turn0 = rng:NextNumber(0, math.pi * 2)
+	for i = 1, count do
+		local a = turn0 + (i / count) * math.pi * 2
+		local to = kit.ground(base + Vector3.new(math.cos(a), 0, math.sin(a)) * math.clamp(reach * 0.6, 3, 10))
+		LmKit.forkBolt(pos, to, p.core:Lerp(p.main, 0.3), 0.12 * s, simple, 1)
+	end
+end
+
+-- The nova of an element (the ice elemental's and the frost casters' spikes; nothing without an element: the slam
+-- that goes with it shows the blow).
+local function novaOf(o: Owner, pos: Vector3, element: string?, s: number, simple: boolean)
+	local bound = o.bound
+	local reach = (bound and bound.radius) or 10
+	if element == "ice" then
+		nova(pos, reach, s, simple)
+	elseif element == "fire" then
+		fireNova(pos, reach, s, simple)
+	elseif element == "shadow" then
+		shadowNova(pos, reach, s, bound ~= nil and bound.ability == "boneNova", simple)
+	elseif element == "poison" or element == "nature" then
+		greenNova(pos, reach, s, element, simple)
+	elseif element == "lightning" then
+		stormNova(pos, reach, s, simple)
+	end
+end
+
 -- The ice elemental's death: the body bursts into ice shards (more, bigger, longer), mist and glints.
 local function shatter(pos: Vector3, s: number, simple: boolean)
 	local p = PALETTES.ice
@@ -1352,8 +1718,7 @@ local function fireOnce(o: Owner, fx: MotionFxData.Fx, simple: boolean)
 	elseif kind == "flare" then
 		flare(o, anchor, element, s, simple)
 	elseif kind == "nova" then
-		local bound = o.bound
-		nova(pos, (bound and bound.radius) or 10, s, simple)
+		novaOf(o, pos, element, s, simple)
 	elseif kind == "shatter" then
 		shatter(pos, s, simple)
 	elseif kind == "slam" then
