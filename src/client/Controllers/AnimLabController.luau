@@ -1124,11 +1124,6 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 				i.returning = state == "home"
 			elseif state == "run" then
 				i.speed, i.gait = moveSpeed, "run"
-			elseif state == "stun" then
-				-- a rigid kind: stunned after a moment, frozen mid-idle (Effects stun / freeze in the game)
-				i.stun = t >= 0.3
-			elseif state == "freeze" then
-				i.frozen = t >= 1.2
 			elseif state == "turn" then
 				i.yawRate = 2.4
 			elseif state == "fly" then
@@ -1139,7 +1134,8 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 			elseif state == "brake" then
 				i.combat, i.look, i.speed = false, nil, if t < 1.2 then moveSpeed else 0
 			elseif state == "stun" then
-				i.stunned = true
+				-- (a rigid kind reads `stun`: stunned after a moment, Effects stun in the game)
+				i.stunned, i.stun = true, t >= 0.3
 			elseif state == "freeze" then
 				i.frozen = t > 0.8
 			end
