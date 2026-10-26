@@ -669,6 +669,54 @@ At `LookScale` 1: `h` ≈ 3.4 studs (visual 1.45), body ≈ 2.2 studs; melee (in
 | `iceElemental` if rigid (1.2, 13, ranged bolt, frostNova) | float as the specter without the flicker; separate crystal parts (if any) orbit slowly; nova: compress (s 0.9) and shiver in A, burst to s 1.1 at W with a flash; death: shatter (fade by 0.4 s with ice shards) |
 | `desertScorpion` if rigid (1.3, 13, melee, poisonPool) | spider skitter with 1.5 bumps per cycle and a heavier bob; pincer blow = a front rise and a forward surge at W; sting = pitch nose-down 10° in A (the tail goes up), a jab forward at W |
 
+### 6.5 As built (2026-10-26)
+
+`Logic/RigidMotion` + `Data/RigidStyles` (recipes) + `Data/RigidRigs` (bone chains) + `client/Anim/RigidRig`, picked by
+`motion` in `Data/MonsterAssets` like the other families. The rig dump (`tools/anim/rigs`, fcde9b38) has no bones in any
+rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may squash. Deviations from §6.1-6.4:
+
+- **Units**: a recipe's x is in body widths `W`, y in mesh heights `hMesh` (a flyer's hover `lift` below it), z in body
+  lengths `B` of the drawn box (the spider's `B` is the leg span, 6.7 studs drawn: stride 0.3 B is the spec's ≈ 2 studs).
+  The box is measured on the clone at runtime (the visible parts in the PrimaryPart's frame).
+- **Driver**: the `Gait_Body` motor when the template has `Hover`, else the look's `LookWeld` (`C0 · T`); AnimLab's
+  anchored preview directly. **Transparency** writes `Transparency`: `LocalTransparencyModifier` stays MonsterView's (the
+  hidden look, the corpse fade).
+- **Squash**: three volume-kept controls (`sq` vertical, `sl` along the body, `gr` grow), each axis clamped to
+  [0.85, 1.15], the bottom kept on the ground; only the 8 rigid looks nearest to the camera (re-picked every 0.25 s),
+  Size written only when it changes by > 0.3 %. A look that may not squash sinks by 35 % of a squash instead.
+- **Pivots**: `rear` about the hind contact, `dip` about the front contact, `tip` about the ground edge under a flank
+  (rocks, deaths), `bow` / `lean` about the ground centre, `wig` about `wigPivot` (a snake's head stays); the contacts lie
+  at the style's `footprint` share of the box. Deaths and flips never put the box under the ground (`ground`) and come
+  to rest on it (`settle`).
+- **Gaits by the server's intent**: a style with several gaits takes them from `Gait` (cat: walk / trot / gallop;
+  lizard: waddle / sprint), not from speed over body length (a big snow leopard would trot at its walk speed).
+- **Hops** (toad, hare): the body pitches about its feet (nose down about the fore feet as it lands, up about the hind
+  feet as they push) and stays put on the ground, catching up in the air: no sliding (Lune spec).
+- **Flights**: the pounce and the cat's leap fly on the server's `Dash*` arc (offset from the root, the body pitched
+  along the tangent within +25° / −30°), held 0.5 s on the landing point until the teleport arrives; with no flight
+  announced the body stays where it is (AnimLab, without a server, flies its own arc to the actor).
+- **Appear**: `spawn` (fade in out of a crouch, rise, shake off) when the look is built within 0.6 s of `SpawnedAt`,
+  `summon` (climbs out of the ground; a flyer drops in) for `Summoned`; a look built late still plays it.
+- **Handover**: an action cut short by another (or by the death) blends its pose over 0.12 s; fidgets are added over
+  the idle.
+- **Muzzle**: while an action plays, the root's `Muzzle` moves with the body (client side), so shots leave the drawn
+  beak or jaws.
+- **frostWyrm** (23 Tripo bones): the serpent recipe drives its chains: a travelling wave down the tail (`Tail_0..8`) and
+  the coil (`bone_1..5`, half), amplitude growing to the end (5° a bone in place, 16° moving, phase by distance), the
+  neck (`bone_6`, `Head_0..4`) takes the cobra sway and the strike's pull back / lunge, the head (`Head_5`) keeps level;
+  the whole body wiggles at a quarter. Without the bones it falls back to the rigid slither.
+- **Cats** (`lynx`, `snowLeopard` on the lynx model): rigid `cat` recipe: a 4-beat walk (4 dips a cycle, pitch rocking
+  front / back twice, roll), trot, gallop (one suspension, pitch ±7°, surge), crouched stalk while fighting at a walk,
+  hiss at the first aggro, swat-and-bite (weight back, rear-up 14°, a forward surge with the front coming down at W, a
+  head toss), the leap on the `Dash*` arc (crouch, rear wiggle, stretch, landing squash at W), death on its side.
+- **Deaths per kind**: spider flip 60 % / curl 40 %; scorpion flip / curl 50 / 50; lizards flip 70 % / side 30 %; serpents
+  sink onto the side and fade; crow falls on its side 60 % / back 40 % (bat the other way round); toad flip 70 % / curl
+  30 %; hare and cats on the side; rot ent topples 85° about its base edge and fades.
+- AnimLab: `/animlab mob <id> <state>`, states `Data/RigidStyles.labStates`: idle, alert, walk, trot, run, turn, home,
+  attack1, attack2, cast, heavy, crush, pounce, throw, hit, hitBack, hitLeft, hitRight, stun, freeze, death, spawn,
+  summon, fight, then every action of the style by name (e.g. `deathCurl`, `sting`, `sitUp`).
+- Not done: sounds and leaves on the ent's steps, the dust and venom VFX of §6.3 (the poses are timed for them).
+
 ## 7. Ghosts, golems, brutes: which template covers them
 
 | Kind | Rig | Template |
@@ -683,7 +731,7 @@ At `LookScale` 1: `h` ≈ 3.4 studs (visual 1.45), body ≈ 2.2 studs; melee (in
 ## 8. Small critters: hare, toad
 
 - `rabbit` (passive, no Elites, 11 studs/s, `LookScale` 0.5, `h` ≈ 1.9 studs): if the audit finds a quadruped skeleton,
-  use the F2 code with a **bound** gait set only: hind pair together then fore pair (LH 0, RH 0.02, LF 0.45, RF 0.50),
+  use the F2 code with a **bound** gait set only (2026-10-26: the dump found no bones: F5 `hare` recipe, §6.5): hind pair together then fore pair (LH 0, RH 0.02, LF 0.45, RF 0.50),
   duty 0.25, hop rate ≤ 4 Hz, hop length = v / rate, a body arc of 0.3 × hop length (≤ 0.8 studs × scale). States:
   idle (nose twitch bursts: head pitch ±2° at 8 Hz for 0.3 s; ears swivel; sit up now and then: pitch +35° about the
   hind feet, 1.5 s), bound, bite (the wolf's bite at 60 % amplitude), hit, death (side roll). No kit, no ability, no

@@ -56,6 +56,10 @@ local BipedRig = require(script.Parent.Parent.Anim.BipedRig)
 local BipedStyles = require(ReplicatedStorage.Shared.Data.BipedStyles)
 local QuadRig = require(script.Parent.Parent.Anim.QuadRig)
 local QuadStyles = require(ReplicatedStorage.Shared.Data.QuadStyles)
+local RigidRig = require(script.Parent.Parent.Anim.RigidRig)
+local RigidStyles = require(ReplicatedStorage.Shared.Data.RigidStyles)
+local FlyerRig = require(script.Parent.Parent.Anim.FlyerRig)
+local FlyerStyles = require(ReplicatedStorage.Shared.Data.FlyerStyles)
 local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local BoneGait = require(script.Parent.Parent.Anim.BoneGait)
 local BoneOverlay = require(script.Parent.Parent.Anim.BoneOverlay)
@@ -299,6 +303,10 @@ local function refresh(model: Model)
 			s.biped = BipedRig.new(holder, motionStyle, s.seed, look.asset.grip)
 		elseif QuadStyles.get(motionStyle) then
 			s.biped = QuadRig.new(holder, motionStyle, s.seed, look.asset.model)
+		elseif RigidStyles.get(motionStyle) then
+			s.biped = RigidRig.new(holder, motionStyle, s.seed, look.asset.model, model)
+		elseif FlyerStyles.get(motionStyle) then
+			s.biped = FlyerRig.new(holder, motionStyle, s.seed, look.asset.model)
 		end
 	end
 	if s.biped then
@@ -503,7 +511,11 @@ local function track(model: Instance)
 	local spawnedAt = model:GetAttribute("SpawnedAt")
 	local fresh = type(spawnedAt) == "number" and Workspace:GetServerTimeNow() - spawnedAt < 1
 	if rig and rig.motion.style.spawn and (s.riseStart or fresh) and model:GetAttribute("Dead") ~= true then
-		s.bipedAction = { name = rig.motion.style.spawn :: string, start = Clock.now(), hit = 0.5 }
+		-- (a rigid kind's summoned helper climbs out with its own `summon`)
+		local appear = if s.riseStart and rig.motion.style.summon
+			then rig.motion.style.summon
+			else rig.motion.style.spawn
+		s.bipedAction = { name = appear :: string, start = Clock.now(), hit = 0.5 }
 	end
 end
 
@@ -806,9 +818,17 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 		hitAt = if s.deadAt then nil else s.hitAt,
 		hitSide = hitSide,
 		look = if s.deadAt then nil else bipedLook(s),
+		-- a flyer paces its wings by the server's gait and flutters stunned / holds frozen (Logic/FlyerMotion)
+		gait = s.model:GetAttribute("Gait"),
+		effects = s.model:GetAttribute("Effects"),
+		serverNow = Workspace:GetServerTimeNow(),
 	})
 	if rig.kind == "quad" then
 		QuadRig.apply(rig, posed)
+	elseif rig.kind == "rigid" then
+		RigidRig.apply(rig, posed)
+	elseif rig.kind == "flyer" then
+		FlyerRig.apply(rig, posed)
 	else
 		BipedRig.apply(rig, posed)
 	end

@@ -48,6 +48,10 @@ local BipedRig = require(script.Parent.Parent.Anim.BipedRig)
 local BipedStyles = require(ReplicatedStorage.Shared.Data.BipedStyles)
 local QuadRig = require(script.Parent.Parent.Anim.QuadRig)
 local QuadStyles = require(ReplicatedStorage.Shared.Data.QuadStyles)
+local RigidRig = require(script.Parent.Parent.Anim.RigidRig)
+local RigidStyles = require(ReplicatedStorage.Shared.Data.RigidStyles)
+local FlyerRig = require(script.Parent.Parent.Anim.FlyerRig)
+local FlyerStyles = require(ReplicatedStorage.Shared.Data.FlyerStyles)
 local BoneClips = require(script.Parent.Parent.Anim.BoneClips)
 local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
@@ -956,6 +960,8 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 	local rig: any = if BipedStyles.get(styleId)
 		then BipedRig.new(model, styleId, 7.3, look.asset.grip)
 		elseif QuadStyles.get(styleId) then QuadRig.new(model, styleId, 7.3, look.asset.model)
+		elseif RigidStyles.get(styleId) then RigidRig.new(model, styleId, 7.3, look.asset.model, nil)
+		elseif FlyerStyles.get(styleId) then FlyerRig.new(model, styleId, 7.3, look.asset.model)
 		else nil
 	if not rig then
 		return nil, nil
@@ -998,8 +1004,13 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 			return CombatData.basicWind.throw * CombatData.basicWindVariant.elite2
 		elseif name == style.aggro then
 			return 0.45
-		elseif name == style.spawn or table.find(style.fidgets, name) then
+		elseif name == style.spawn or name == "sniff" or name == "shake" then
 			return 0.5
+		elseif name == style.summon or (style.fidgets and table.find(style.fidgets, name)) then
+			-- a rigid kind's climb out of the ground and its idle fidgets (Data/RigidStyles)
+			return 0.5
+		elseif rig.kind == "flyer" and table.find(style.basic, name) then
+			return CombatData.basicWind.ranged -- a flyer's regular blow is a shot
 		end
 		return melee
 	end
@@ -1013,6 +1024,20 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 		name = (monster and monster.ability and style.abilities[monster.ability]) or style.abilities.heavyBlow
 	elseif state == "death" then
 		name = rig.mod.death(rig.motion)
+	elseif rig.kind == "rigid" and not style.actions[state] then
+		-- a rigid kind (Data/RigidStyles LAB_STATES): the kit's blows by their slot
+		local slots: { [string]: string? } = {
+			alert = style.aggro,
+			heavy = style.abilities.heavyBlow,
+			crush = style.abilities.crush,
+			pounce = style.abilities.pounce,
+			throw = style.throw,
+			spawn = style.spawn,
+			summon = style.summon,
+		}
+		name = slots[state] or state
+	elseif state == "alert" and rig.kind == "flyer" and style.aggro then
+		name = style.aggro
 	end
 	local base: any = {
 		now = 0,
@@ -1093,16 +1118,26 @@ local function bipedLab(model: Model, look: any, monster: any, state: string, bo
 				i.look = nil
 			elseif state == "walk" then
 				-- S162m: the server's gaits: wander 0.4x, going home 0.7x, the chase 1x moveSpeed
-				i.combat, i.look, i.speed = false, nil, moveSpeed * 0.4
+				i.combat, i.look, i.speed, i.gait = false, nil, moveSpeed * 0.4, "walk"
 			elseif state == "trot" or state == "home" then
-				i.combat, i.look, i.speed = false, nil, moveSpeed * 0.7
+				i.combat, i.look, i.speed, i.gait = false, nil, moveSpeed * 0.7, "trot"
 				i.returning = state == "home"
 			elseif state == "run" then
-				i.speed = moveSpeed
+				i.speed, i.gait = moveSpeed, "run"
 			elseif state == "turn" then
 				i.yawRate = 2.4
 			elseif state == "fly" then
 				i.flying = true
+			elseif state == "glide" then
+				-- a flyer: a straight flight that glides, braking into a flare, stunned, frozen in the air
+				i.combat, i.look, i.speed, i.glide = false, nil, moveSpeed * 0.7, true
+			elseif state == "brake" then
+				i.combat, i.look, i.speed = false, nil, if t < 1.2 then moveSpeed else 0
+			elseif state == "stun" then
+				-- (a rigid kind reads `stun`: stunned after a moment, Effects stun in the game)
+				i.stunned, i.stun = true, t >= 0.3
+			elseif state == "freeze" then
+				i.frozen = t > 0.8
 			end
 			return i
 		end
@@ -1129,6 +1164,10 @@ local function playMob(command: Command)
 	local motionStyle = look.asset and look.asset.motion
 	if motionStyle then
 		local lab, labKeys = bipedLab(model, look, monster, slot, boss)
+		if lab and labKeys and slot == "fly" then
+			-- in the air: lifted off the floor so the tucked legs and the wingbeats read
+			model:PivotTo(model:GetPivot() + Vector3.new(0, model:GetExtentsSize().Y * 0.45, 0))
+		end
 		if lab and labKeys then
 			subject = {
 				model = model,
@@ -1590,6 +1629,10 @@ step = function(_dt: number)
 			local posed = biped.rig.mod.step(biped.rig.motion, input)
 			if biped.rig.kind == "quad" then
 				QuadRig.apply(biped.rig, posed)
+			elseif biped.rig.kind == "rigid" then
+				RigidRig.apply(biped.rig, posed)
+			elseif biped.rig.kind == "flyer" then
+				FlyerRig.apply(biped.rig, posed)
 			else
 				BipedRig.apply(biped.rig, posed)
 			end

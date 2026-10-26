@@ -19,7 +19,8 @@ export type Entry = {
 	from: string?, -- filled below for variants: the base kind whose model and clips this kind uses
 	tint: string?, -- filled below for variants: "#RRGGBB" multiply colour of the base model's textures
 	-- template animation (owner 2026-10-25): a Data/BipedStyles style that animates the bones (Logic/BipedMotion)
-	-- instead of the clips of Data/MonsterClips
+	-- instead of the clips of Data/MonsterClips (a Data/QuadStyles one: Logic/QuadMotion; Data/FlyerStyles:
+	-- Logic/FlyerMotion; Data/RigidStyles: the models without bones moved whole by Logic/RigidMotion, 2026-10-26)
 	motion: string?,
 	grip: { number }?, -- template animation: the weapon's direction in the right hand at rest (root space)
 }
@@ -264,28 +265,120 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 5.7,
 	},
 	wyvern = { rig = "static", rootSize = { 1.86, 1.61, 3.23 }, hipHeight = 1.17, height = 3.63, walkSpeed = 5.4 },
-	peakHarpy = { rig = "static", rootSize = { 1.40, 1.72, 1.18 }, hipHeight = 3.54, height = 6.20, walkSpeed = 9.3 },
-	ashVulture = { rig = "static", rootSize = { 1.23, 1.18, 1.83 }, hipHeight = 2.88, height = 5.02, walkSpeed = 7.5 },
+	peakHarpy = {
+		rig = "static",
+		rootSize = { 1.40, 1.72, 1.18 },
+		hipHeight = 3.54,
+		height = 6.20,
+		walkSpeed = 9.3,
+		motion = "harpy",
+	},
+	ashVulture = {
+		rig = "static",
+		rootSize = { 1.23, 1.18, 1.83 },
+		hipHeight = 2.88,
+		height = 5.02,
+		walkSpeed = 7.5,
+		motion = "vulture",
+	},
 	iceElemental = { rig = "static", rootSize = { 1.61, 1.94, 1.61 }, hipHeight = 2.78, height = 5.00, walkSpeed = 7.5 },
-	basilisk = { rig = "static", rootSize = { 1.94, 1.34, 3.56 }, hipHeight = 0.38, height = 2.04, walkSpeed = 3.1 },
+	basilisk = {
+		rig = "static",
+		rootSize = { 1.94, 1.34, 3.56 },
+		hipHeight = 0.38,
+		height = 2.04,
+		walkSpeed = 3.1,
+		motion = "lizard",
+	},
 	desertScorpion = {
 		rig = "static",
 		rootSize = { 1.94, 0.96, 2.15 },
 		hipHeight = 0.33,
 		height = 3.14,
 		walkSpeed = 4.7,
+		motion = "scorpion",
 	},
-	bloodBat = { rig = "static", rootSize = { 1.07, 1.29, 1.07 }, hipHeight = 2.76, height = 5.13, walkSpeed = 7.7 },
-	carrionCrow = { rig = "static", rootSize = { 1.23, 1.18, 1.83 }, hipHeight = 2.88, height = 4.33, walkSpeed = 6.5 },
-	bogSerpent = { rig = "static", rootSize = { 1.40, 1.04, 1.72 }, hipHeight = 0.10, height = 1.60, walkSpeed = 2.4 },
-	swampToad = { rig = "static", rootSize = { 2.26, 1.56, 2.15 }, hipHeight = 0.17, height = 2.02, walkSpeed = 3.0 },
-	rotEnt = { rig = "static", rootSize = { 1.94, 4.64, 1.94 }, hipHeight = 0.61, height = 6.88, walkSpeed = 10.3 },
-	salamander = { rig = "static", rootSize = { 1.40, 1.02, 2.91 }, hipHeight = 0.36, height = 1.71, walkSpeed = 2.6 },
-	caveSpider = { rig = "static", rootSize = { 1.50, 1.02, 1.50 }, hipHeight = 0.54, height = 2.35, walkSpeed = 3.5 },
-	lynx = { rig = "static", rootSize = { 1.56, 1.34, 2.91 }, hipHeight = 1.06, height = 3.61, walkSpeed = 5.4 },
-	rabbit = { rig = "static", rootSize = { 1.50, 1.34, 1.94 }, hipHeight = 0.28, height = 2.96, walkSpeed = 4.4 },
+	bloodBat = {
+		rig = "static",
+		rootSize = { 1.07, 1.29, 1.07 },
+		hipHeight = 2.76,
+		height = 5.13,
+		walkSpeed = 7.7,
+		motion = "bat",
+	},
+	carrionCrow = {
+		rig = "static",
+		rootSize = { 1.23, 1.18, 1.83 },
+		hipHeight = 2.88,
+		height = 4.33,
+		walkSpeed = 6.5,
+		motion = "crow",
+	},
+	bogSerpent = {
+		rig = "static",
+		rootSize = { 1.40, 1.04, 1.72 },
+		hipHeight = 0.10,
+		height = 1.60,
+		walkSpeed = 2.4,
+		motion = "serpent",
+	},
+	swampToad = {
+		rig = "static",
+		rootSize = { 2.26, 1.56, 2.15 },
+		hipHeight = 0.17,
+		height = 2.02,
+		walkSpeed = 3.0,
+		motion = "toad",
+	},
+	rotEnt = {
+		rig = "static",
+		rootSize = { 1.94, 4.64, 1.94 },
+		hipHeight = 0.61,
+		height = 6.88,
+		walkSpeed = 10.3,
+		motion = "ent",
+	},
+	salamander = {
+		rig = "static",
+		rootSize = { 1.40, 1.02, 2.91 },
+		hipHeight = 0.36,
+		height = 1.71,
+		walkSpeed = 2.6,
+		motion = "lizard",
+	},
+	caveSpider = {
+		rig = "static",
+		rootSize = { 1.50, 1.02, 1.50 },
+		hipHeight = 0.54,
+		height = 2.35,
+		walkSpeed = 3.5,
+		motion = "spider",
+	},
+	lynx = {
+		rig = "static",
+		rootSize = { 1.56, 1.34, 2.91 },
+		hipHeight = 1.06,
+		height = 3.61,
+		walkSpeed = 5.4,
+		motion = "cat",
+	},
+	rabbit = {
+		rig = "static",
+		rootSize = { 1.50, 1.34, 1.94 },
+		hipHeight = 0.28,
+		height = 2.96,
+		walkSpeed = 4.4,
+		motion = "hare",
+	},
 	-- owner 2026-10-20: the serpent model (first imported as youngFrostDragon) is the Frost Wyrm
-	frostWyrm = { rig = "static", rootSize = { 1.66, 1.53, 1.72 }, hipHeight = 0.20, height = 2.00, walkSpeed = 3.0 },
+	frostWyrm = {
+		rig = "static",
+		rootSize = { 1.66, 1.53, 1.72 },
+		hipHeight = 0.20,
+		height = 2.00,
+		walkSpeed = 3.0,
+		motion = "serpent",
+	},
 	-- owner 2026-10-20: the bear (blackBear inherits it with its tint) and the frost dragon boss; the young frost dragon
 	-- above got its own small dragon model the same day
 	brownBear = {
