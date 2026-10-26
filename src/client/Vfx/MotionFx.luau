@@ -281,7 +281,7 @@ end
 
 -- The weapon in the right hand: along `grip` (the blade's rest direction in the look's root space, Data/MonsterAssets
 -- or the style: Logic/BipedMotion keeps it) its tip where the blade leaves the look's box (a staff's head, a sword's
--- point; held within 0.12..0.32 of the height), the hilt 0.3 of the way out; no weapon (a brute, a ghost): the
+-- point; held within 0.12..0.7 of the height), the streak's inner end 0.55 of the way out; no weapon (a brute, a ghost): the
 -- knuckles a little past the hand along the forearm.
 local function weaponAnchor(o: Owner, hand: Bone, fore: Bone?): Anchor
 	local rest = hand.WorldCFrame
@@ -293,7 +293,9 @@ local function weaponAnchor(o: Owner, hand: Bone, fore: Bone?): Anchor
 	local reach: number
 	if grip then
 		dir = LmKit.unitOr(o.space:VectorToWorldSpace(Vector3.new(grip[1], grip[2], grip[3])), front)
-		reach = math.clamp(boxReach(o, rest.Position, dir) * 0.92, 0.12 * h, 0.32 * h)
+		-- studio review 2026-10-26: up to 0.7 of the height (a knight's long sword, a staff over the head); 0.32 cut
+		-- the streak to the first third of the blade
+		reach = math.clamp(boxReach(o, rest.Position, dir) * 0.95, 0.12 * h, 0.7 * h)
 	else
 		dir = if fore then LmKit.unitOr(rest.Position - fore.WorldCFrame.Position, front) else front
 		reach = 0.07 * h
@@ -301,7 +303,8 @@ local function weaponAnchor(o: Owner, hand: Bone, fore: Bone?): Anchor
 	return {
 		bone = hand,
 		at = rest:PointToObjectSpace(rest.Position + dir * reach),
-		at2 = rest:PointToObjectSpace(rest.Position + dir * (if grip then reach * 0.3 else 0)),
+		-- the streak's inner end well out along the blade, so it never sweeps through the body
+		at2 = rest:PointToObjectSpace(rest.Position + dir * (if grip then reach * 0.55 else 0)),
 		fwd = rest:VectorToObjectSpace(front),
 	}
 end
@@ -927,14 +930,16 @@ local function trailStart(o: Owner, stream: Stream, element: string?, size: numb
 	t.FaceCamera = false
 	t.MinLength = 0.05
 	t.Lifetime = TRAIL_LIFE * math.clamp(size, 0.7, 1.4)
-	t.LightEmission = 0.8
+	-- studio review 2026-10-26: a bright, glowing streak that fades fast (a dimly lit one read as a dark smear)
+	t.LightEmission = 1
+	t.Brightness = 2
 	t.Color = if element then colors(p.core, p.main) else colors(WHITE, STEEL)
-	t.Transparency = NumberSequence.new(if element then 0.2 else 0.35, 1)
-	t.WidthScale = NumberSequence.new(1, 0.35)
+	t.Transparency = NumberSequence.new({ kp(0, if element then 0.15 else 0.25), kp(0.5, 0.7), kp(1, 1) })
+	t.WidthScale = NumberSequence.new(1, 0.2)
 	if not Textures.trail(t, "trailStreak") then
 		t.Texture = ""
 	end
-	t.LightInfluence = 0.15
+	t.LightInfluence = 0
 	t.Enabled = false
 	t.Parent = holder
 	Clock.track(t)
