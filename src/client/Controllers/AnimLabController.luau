@@ -1703,7 +1703,9 @@ end
 
 local function playNpc(command: Command)
 	local id, slot = command.id :: string, command.slot or "idle"
-	local folder = Workspace:FindFirstChild("Npcs")
+	-- the live NPCs stand in World/Npcs (Controllers/NpcController)
+	local world = Workspace:FindFirstChild("World")
+	local folder = world and world:FindFirstChild("Npcs")
 	local source: Model? = nil
 	if folder then
 		for _, child in folder:GetChildren() do

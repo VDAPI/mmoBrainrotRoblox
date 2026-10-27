@@ -1429,9 +1429,15 @@ function NpcMotion.step(inst: Instance, input: Input): Posed
 		world = world,
 		shift = shift,
 		offset = { inst.bx - cx, 0, inst.bz - cz },
+		-- a hand that holds the model's prop keeps its fingers as modelled (the prop is skinned to them: a curl tore
+		-- the guard's spear apart, studio review 2026-10-27)
 		hands = {
-			R = { grip = math.clamp(c.gR or 0.3, 0, 1), index = math.clamp(c.iR or 0, 0, 1) },
-			L = { grip = math.clamp(c.gL or 0.3, 0, 1), index = math.clamp(c.iL or 0, 0, 1) },
+			R = if inst.keep.R
+				then { grip = 0, index = 0 }
+				else { grip = math.clamp(c.gR or 0.3, 0, 1), index = math.clamp(c.iR or 0, 0, 1) },
+			L = if inst.keep.L
+				then { grip = 0, index = 0 }
+				else { grip = math.clamp(c.gL or 0.3, 0, 1), index = math.clamp(c.iL or 0, 0, 1) },
 		},
 	}
 end
