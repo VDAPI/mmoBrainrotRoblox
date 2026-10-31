@@ -49,10 +49,12 @@ local ScreenController = {
 		"MountController",
 		"LoginRewardController", -- S100: the HUD button's status and badge, the tile's "!"
 		"EmoteController", -- S123: the emote wheel (UI plan phase 1: a tile of the game menu)
+		"CameraController", -- Studio review 2026-10-31: the select shot is a camera claim ("select")
 	},
 }
 
 local UIController: any
+local CameraController: any
 local WindowManager: any
 local TargetController: any
 local ItemController: any
@@ -292,7 +294,7 @@ local function selectCamera()
 	local shot = Town.city.selectCamera
 	local centre = origin + Vector3.new(shot.look[1], shot.look[2], shot.look[3])
 	local eye = origin + Vector3.new(shot.eye[1], shot.eye[2], shot.eye[3])
-	camera.CameraType = Enum.CameraType.Scriptable
+	CameraController.Claim("select")
 	camera.CFrame = CFrame.lookAt(eye, centre)
 	blur.Size = SELECT_BLUR
 	blur.Enabled = true
@@ -304,23 +306,10 @@ local function selectCamera()
 	end)
 end
 
+-- The select shot lets go; with no other owner the player's camera comes back (CameraController).
 local function gameCamera()
 	blur.Enabled = false
-	local camera = Workspace.CurrentCamera
-	if not camera then
-		return
-	end
-	camera.CameraType = Enum.CameraType.Custom
-	local character = Players.LocalPlayer.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-	if humanoid then
-		camera.CameraSubject = humanoid
-	end
-end
-
--- S102: for CutsceneController: the game camera back on the character after a cutscene.
-function ScreenController.RestoreCamera()
-	gameCamera()
+	CameraController.Release("select")
 end
 
 local function show(screen: "select" | "hud")
@@ -395,6 +384,7 @@ end
 
 function ScreenController.Init(registry)
 	UIController = registry.Get("UIController")
+	CameraController = registry.Get("CameraController")
 	WindowManager = registry.Get("WindowManager")
 	TargetController = registry.Get("TargetController")
 	ItemController = registry.Get("ItemController")

@@ -774,6 +774,7 @@ sekcja wyglądu w kreatorze, filtr klas i strój klasy w garderobie, wiersz „P
 | `/readycheck` | monsters | <skip> | S134f: wszyscy pytani w twoim sprawdzeniu gotowości przy bramie odpowiadają „tak” |
 | `/phase` | monsters | <phase> | wymuś fazę bossa |
 | `/leash` | monsters |  | stan AI zaznaczonego potwora (smycz, powrót, regeneracja) |
+| `/chasetest` | monsters | <monster\|stop> [corner\|perch\|los\|load] [level] | S162e: test pościgu bez myszy przy najbliższym budynku (`Admin/ChaseRun`); wynik w logu, na czacie i w `Workspace.ChaseTest` |
 | `/mobviz` | monsters | <id\|1-4\|bosses\|pets\|all\|clear> [wariant] [anim] | lokalny podgląd wyglądów w rzędzie przed adminem (S24) |
 | `/look` | monsters | <id> | plan, części, root, hipHeight, model w Assets, brakujące klipy (S24) |
 | `/lookstats` | monsters |  | wyglądy potworów na kliencie admina: pełne, schowane, sylwetki, części, animowane (S24) |

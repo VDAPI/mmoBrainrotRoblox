@@ -271,3 +271,8 @@
   `Binding.apply(przedmiot, "<źródło>")` (`drop`, `craft`, `gold`, `boss`, `quest`, `reward`, `currency`, `shop`, `premium`; reguły w
   `Data/Binding.SOURCES`), nigdy `bound = true` ręcznie (`binding.spec` to sprawdza); przedmiot z własną regułą: pole
   `bind = "pickup"` albo `"equip"` w definicji; nowa kategoria przedmiotów: wpis w `Data/Binding.CATEGORY`.
+- **Własna kamera skryptowa** (2026-10-31): nigdy `CameraType = Scriptable` wprost; `CameraController.Claim("<właściciel>",
+  { lockMovement?, ttl?, travel?, onLost?, onRegain? })`, potem własne `CFrame`, a na każdej drodze wyjścia
+  `CameraController.Release("<właściciel>")` (gracz dostaje kamerę z powrotem, gdy nikt jej nie trzyma). Bez właściciela
+  strażnik oddaje kamerę po 0,5 s; `cameralease.spec` pilnuje, że `Scriptable` pisze tylko `CameraController` (i pisarz
+  przerywnika).
