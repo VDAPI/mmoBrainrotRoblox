@@ -10,6 +10,9 @@
 --               evades when it can neither reach nor hit its target: no progress for `pursuitEvade` seconds, or a path
 --               answer "no way" and no progress for `pursuitRepath` seconds. Standing where its blow, shot or throw
 --               reaches the target is never stalling (a ranged monster needs no path to its target)
+--               S162e Studio 2026-10-31: also `pathFailEvade` path answers in a row with no way
+--   meleeReaches whether a melee blow reaches up or down to the target: the flat reach alone let a wolf under a roof
+--               count as "in reach" and never give up (and its blows hit through 34 studs of air)
 --   take        the server's path budget: a token bucket (`pathPerSecond`, at most `pathBurst` at once)
 --   agent       the PathfindingService agent of a body, rounded up to a few sizes (one navmesh per size)
 --   stepHeight  how high a step a body walks onto without turning (only its root collides and the humanoid keeps the
@@ -23,6 +26,9 @@ export type Config = {
 	pursuitEvade: number,
 	pathPerSecond: number,
 	pathBurst: number,
+	pathFailEvade: number,
+	meleeUp: number,
+	meleeDown: number,
 }
 
 export type Action = "chase" | "repath" | "evade"
@@ -33,14 +39,19 @@ export type Situation = {
 	asked: boolean, -- a path was asked for since the last progress
 	pending: boolean, -- a path is being computed
 	noPath: boolean, -- a path answer since the last progress found no way
+	failStreak: number, -- path answers in a row with no way (since the last path found or the last time it could hit)
 	mayEvade: boolean, -- false for bosses and their helpers (their arenas have their own rules)
 }
 
 export type Bucket = { tokens: number, at: number }
 
 -- Agent sizes (studs): the radius is half the root's wider side + a gap, the height the hip height + the root's.
-Pursuit.RADII = table.freeze({ 1.5, 2.5, 4, 6 })
-Pursuit.HEIGHTS = table.freeze({ 4, 6, 9, 13, 20 })
+-- S162e Studio 2026-10-31: few sizes, the smallest Roblox's default agent (2 x 5): every new size is a navmesh of its
+-- own to build, and the first build in an area is the slow path call.
+Pursuit.RADII = table.freeze({ 2, 4, 6 })
+Pursuit.HEIGHTS = table.freeze({ 5, 9, 13, 20 })
+-- A melee body reaches up at least cfg.meleeUp studs over its feet, a tall one this share of its height.
+Pursuit.MELEE_BODY_SHARE = 0.5
 Pursuit.RADIUS_GAP = 0.5
 -- Shortest step the probes treat as walkable (studs), and the share of the hip height a step may reach.
 Pursuit.STEP_MIN = 0.5
@@ -71,7 +82,14 @@ function Pursuit.decide(s: Situation, cfg: Config): Action
 	if s.canHit then
 		return "chase"
 	end
-	if s.mayEvade and (s.stalled >= cfg.pursuitEvade or (s.noPath and s.stalled >= cfg.pursuitRepath)) then
+	if
+		s.mayEvade
+		and (
+			s.stalled >= cfg.pursuitEvade
+			or (s.noPath and s.stalled >= cfg.pursuitRepath)
+			or s.failStreak >= cfg.pathFailEvade
+		)
+	then
 		return "evade"
 	end
 	if s.stalled >= cfg.pursuitRepath and not s.asked and not s.pending then
@@ -109,6 +127,14 @@ function Pursuit.agent(x: number, y: number, z: number, hipHeight: number): (num
 	local radius = roundUp(math.max(x, z) / 2 + Pursuit.RADIUS_GAP, Pursuit.RADII)
 	local height = roundUp(hipHeight + y, Pursuit.HEIGHTS)
 	return radius, height
+end
+
+-- Whether a melee blow of a body `bodyHeight` studs tall (feet to the top of its root) reaches a target whose feet stand
+-- `gap` studs over its own feet (negative: below): up to max(meleeUp, its height x MELEE_BODY_SHARE), down to meleeDown.
+-- The flat reach is checked apart (Entities/Monster).
+function Pursuit.meleeReaches(gap: number, bodyHeight: number, cfg: Config): boolean
+	local up = math.max(cfg.meleeUp, bodyHeight * Pursuit.MELEE_BODY_SHARE)
+	return gap <= up and gap >= -cfg.meleeDown
 end
 
 -- Studs over its feet below which an obstacle is walked over (the steering probes cast their low ray there).

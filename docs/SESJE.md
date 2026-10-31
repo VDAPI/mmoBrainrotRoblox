@@ -14133,6 +14133,21 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   „Automatyczny cel”, łuk z „Jadowitymi grotami” dał truciznę i wolniejsze ataki), a `Humanoid:MoveTo` z klienta w walce
   zatrzymuje `TargetController` (podejście do celu po kliknięciu: w zasięgu co 0,1 s `MoveTo` w miejscu). Oba działają
   zgodnie z projektem, nie są błędem.
+- Studio 2026-10-31, wyniki `/chasetest`: `perch` nie dawał odwrotu (wilk pod celem na 34 st. liczył się jako „w
+  zasięgu”, bo zasięg ciosu był płaski; jego ciosy trafiały przez powietrze). Teraz `Pursuit.meleeReaches`: cios sięga
+  `Combat.meleeUp` 2,5 st. w górę (wysoki potwór: połowa wzrostu) i `meleeDown` 4 st. w dół, licząc od ziemi pod graczem
+  (skok nie chroni), także przy lądowaniu ciosu; strzały i rzuty liczą zasięg w 3D; `pathFailEvade` 3 odpowiedzi „brak
+  drogi” z rzędu = odwrót. Wilk pod celem idzie pod jego miejsce, utyka i robi odwrót po ok. 2 s.
+- Klatka serwera 1,7 s przy pierwszej ścieżce: `requestPath` robił `task.spawn`, więc `CreatePath` i początek
+  `ComputeAsync` szły wewnątrz ticku AI. Teraz tick tylko kolejkuje (`Logic/PathQueue`), `Entities/PathWorker` startuje
+  najwyżej `Combat.pathPerFrame` 1 wywołanie na klatkę w osobnym wątku (`task.defer`), loguje klatkę > 250 ms tuż po
+  wywołaniu (agent, dystans), a `MonsterService` loguje przebieg AI > 50 ms. Mniej rozmiarów agenta (najmniejszy to
+  domyślny 2 × 5 Robloxa): każdy nowy rozmiar to osobny navmesh do zbudowania. Test: `tests/pathqueue.spec.luau`.
+- „path 19.07s” przy „caught 5.92s” to był czas pierwszej ZNALEZIONEJ ścieżki (dwie pierwsze odpowiedzi „brak drogi”,
+  wilk złapał cel bez ścieżki). Wynik pokazuje teraz pierwsze zapytanie, pierwszą znalezioną ścieżkę, najwolniejszą
+  odpowiedź i listę odpowiedzi (`f@0.20+0.00/1650`), a przy `hb max` czas klatki i czy tuż przed nią ruszyła ścieżka.
+  „Caught” liczy zasięg tak jak potwór (z wysokością). Koniec testu odstawia admina tam, gdzie stał; blok testowy stoi na
+  terenie (start na dachu stodoły postawił go w powietrzu).
 
 ### Wiązanie przedmiotów (właściciel 2026-10-31)
 - Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od

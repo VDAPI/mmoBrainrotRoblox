@@ -700,8 +700,16 @@ function MonsterService.Stats(): (number, number, number, number)
 	return active, sleeping, #spawners, awake
 end
 
+-- S162e (Studio 2026-10-31, a 1.7 s server frame): an AI pass longer than SLOW_TICK seconds is logged (at most every
+-- SLOW_LOG_GAP s) with the slowest monster, so a slow frame shows whether the AI loop itself took the time. The path
+-- calls are not in it: Entities/PathWorker runs them outside the AI tick.
+local SLOW_TICK = 0.05
+local SLOW_LOG_GAP = 10
+local slowLoggedAt = -math.huge
+
 local function tick()
 	local now = os.clock()
+	local slowest, slowestTime, stepped = nil, 0, 0
 	for _, monster in table.clone(monsters) do
 		local due = nextTick[monster]
 		if due and now >= due then
@@ -715,14 +723,31 @@ local function tick()
 				continue
 			end
 			if spawner == nil or spawner.awake or monster.state ~= "idle" then
+				local began = os.clock()
 				local ok, err = pcall(function()
 					monster:Step(now)
 				end)
 				if not ok then
 					log:error("%s AI error: %s", monster.def.id, tostring(err))
 				end
+				local took = os.clock() - began
+				stepped += 1
+				if took > slowestTime then
+					slowest, slowestTime = monster, took
+				end
 			end
 		end
+	end
+	local total = os.clock() - now
+	if total > SLOW_TICK and now - slowLoggedAt > SLOW_LOG_GAP then
+		slowLoggedAt = now
+		log:warn(
+			"AI pass of %d ms (%d monsters, slowest %s %d ms)",
+			math.floor(total * 1000),
+			stepped,
+			if slowest then slowest.def.id else "-",
+			math.floor(slowestTime * 1000)
+		)
 	end
 end
 

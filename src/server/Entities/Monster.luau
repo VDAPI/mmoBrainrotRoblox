@@ -32,7 +32,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
-local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 
@@ -47,6 +46,7 @@ local MonsterAbilities = require(Shared.Data.MonsterAbilities)
 local MonsterCast = require(Shared.Logic.MonsterCast)
 local MonsterMove = require(Shared.Logic.MonsterMove)
 local MonsterStats = require(Shared.Logic.MonsterStats)
+local PathWorker = require(script.Parent.PathWorker)
 local Monsters = require(Shared.Data.Monsters)
 local Pursuit = require(Shared.Logic.Pursuit)
 local RigBuilder = require(script.Parent.RigBuilder)
@@ -192,6 +192,8 @@ export type Monster = typeof(setmetatable(
 		pathFailedAt: number,
 		pathToken: number,
 		pathSticky: boolean, -- keep to the path even where the way looks clear (a stalled monster's new path)
+		-- path answers in a row with no way (Combat.pathFailEvade of them = evade), since a path found or a blow in reach
+		pathFailStreak: number,
 		-- S162e: evading (immune, going home) and until when it ignores players by sight after an evade (os.clock)
 		evading: boolean,
 		calmUntil: number,
@@ -336,6 +338,7 @@ function Monster.new(
 		pathFailedAt = 0,
 		pathToken = 0,
 		pathSticky = false,
+		pathFailStreak = 0,
 		evading = false,
 		calmUntil = 0,
 		probe = nil,
@@ -526,6 +529,34 @@ local function sightTo(self: Monster, targetPosition: Vector3): boolean
 	return Workspace:Raycast(from, targetPosition - from, probeParams) == nil
 end
 
+-- S162e (Studio test 2026-10-31: a wolf under a target on a roof counted as in reach by the flat distance, never gave
+-- up and its blows landed through 34 studs of air): whether a melee blow reaches up (or down) to a target standing on
+-- the ground height `groundY` (Logic/Pursuit.meleeReaches: Combat.meleeUp, a tall body half its height; meleeDown).
+local function meleeHeightOk(self: Monster, groundY: number): boolean
+	local hip = self.humanoid.HipHeight
+	return Pursuit.meleeReaches(groundY - feetY(self), hip + self.root.Size.Y, Combat :: any)
+end
+
+-- S162e: the ground a player stands on: the surface under the root (a jumping player still stands on the ground it left,
+-- so a hop does not dodge a blow), or the root's height less PLAYER_ROOT_UP with nothing within TARGET_GROUND_PROBE.
+local TARGET_GROUND_PROBE = 12
+local function targetGround(targetPosition: Vector3): number
+	refreshProbeFilter()
+	local standing = targetPosition.Y - PLAYER_ROOT_UP
+	local hit = Workspace:Raycast(targetPosition, Vector3.new(0, -TARGET_GROUND_PROBE, 0), probeParams)
+	return if hit then math.min(standing, hit.Position.Y) else standing
+end
+
+-- S162e: whether the monster's blow or shot reaches a target whose root is at `targetPosition`, `flat` studs away on
+-- the flat: a blow by the flat reach and the height, a shot by the reach in 3D and a clear line (`seen`, asked last).
+local function reaches(self: Monster, targetPosition: Vector3, flat: number, seen: () -> boolean): boolean
+	local reach = self.stats.range + self.root.Size.Z / 2
+	if self.def.attack == "melee" then
+		return flat <= reach and meleeHeightOk(self, targetGround(targetPosition))
+	end
+	return (targetPosition - self.root.Position).Magnitude <= reach and seen()
+end
+
 -- S162e: PathfindingService agents by size (Logic/Pursuit.agent rounds a body up to a few, one navmesh per size).
 -- Monsters cannot jump, climb or swim (RigBuilder), so their paths neither: water costs extra and is walked only when
 -- there is no other way.
@@ -560,11 +591,14 @@ local function dropPath(self: Monster)
 	self.pathPending = false
 	self.pathSticky = false
 	self.pathToken += 1
+	self.pathFailStreak = 0
+	PathWorker.cancel(self)
 end
 
--- S162e: asks PathfindingService for a path to the ground point `goal` (in its own thread: ComputeAsync yields), at most
--- every Combat.pathGap seconds per monster and within the server's budget (Logic/Pursuit.take); a refused ask is
--- simply tried again on a later tick. A success replaces the path, "no way" is remembered as pathFailedAt.
+-- S162e: asks for a path to the ground point `goal` (queued: Entities/PathWorker calls PathfindingService outside the AI
+-- tick), at most every Combat.pathGap seconds per monster and within the server's budget (Logic/Pursuit.take); a refused
+-- ask is simply tried again on a later tick. A success replaces the path, "no way" is remembered as pathFailedAt and
+-- counted in pathFailStreak.
 local function requestPath(self: Monster, goal: Vector3, now: number)
 	if self.pathPending or now - self.pathAskedAt < Combat.pathGap then
 		return
@@ -578,44 +612,42 @@ local function requestPath(self: Monster, goal: Vector3, now: number)
 	end
 	if probe then
 		probe.pathAsks += 1
+		probe.firstAskAt = probe.firstAskAt or os.clock()
 	end
 	self.pathPending = true
 	self.pathAskedAt = now
 	self.pathToken += 1
 	local token = self.pathToken
-	local from = self.root.Position
-	local agent = agentOf(self)
-	task.spawn(function()
-		local path = PathfindingService:CreatePath(agent)
-		local ok = pcall(function()
-			path:ComputeAsync(from, goal)
-		end)
-		if self.pathToken ~= token or self.state == "dead" then
-			return
-		end
-		self.pathPending = false
-		if ok and path.Status == Enum.PathStatus.Success then
-			local points: { Vector3 } = {}
-			for _, waypoint in path:GetWaypoints() do
-				table.insert(points, waypoint.Position)
-			end
-			self.path = points
-			self.pathIndex = 2 -- the first point is where it stood
-			self.pathGoal = goal
-			self.pathFailedAt = 0
+	local askedAt = os.clock()
+	-- S162e (Studio 2026-10-31: a 1.7 s frame at a first path): the AI tick only queues; Entities/PathWorker calls the
+	-- engine in a thread of its own, at most Combat.pathPerFrame calls per server frame
+	PathWorker.request(self, {
+		agent = agentOf(self),
+		from = self.root.Position,
+		goal = goal,
+		done = function(answer: PathWorker.Answer)
+			local points = answer.points
 			if probe then
-				probe.pathOk += 1
-				probe.firstPathAt = probe.firstPathAt or os.clock()
+				ChaseTest.noteAnswer(probe, askedAt, answer.waited, answer.seconds, points ~= nil)
 			end
-		else
-			self.path = nil
-			self.pathGoal = nil
-			self.pathFailedAt = os.clock()
-			if probe then
-				probe.pathFails += 1
+			if self.pathToken ~= token or self.state == "dead" then
+				return
 			end
-		end
-	end)
+			self.pathPending = false
+			if points then
+				self.path = points
+				self.pathIndex = 2 -- the first point is where it stood
+				self.pathGoal = goal
+				self.pathFailedAt = 0
+				self.pathFailStreak = 0
+			else
+				self.path = nil
+				self.pathGoal = nil
+				self.pathFailedAt = os.clock()
+				self.pathFailStreak += 1
+			end
+		end,
+	})
 end
 
 -- S162e: walks to the path's next point: points it stands at (within a tick's walk) or has passed (the one after is
@@ -702,6 +734,9 @@ local function notePursuit(self: Monster, now: number, canHit: boolean, mayEvade
 	if canHit or goal == nil or self.ctx.isRooted(self) then
 		self.progressAt = now
 		self.progressAcc = 0
+		if canHit then
+			self.pathFailStreak = 0
+		end
 		return "chase"
 	end
 	local advance = Pursuit.advance(last.X, last.Z, position.X, position.Z, goal.X, goal.Z)
@@ -716,6 +751,7 @@ local function notePursuit(self: Monster, now: number, canHit: boolean, mayEvade
 		asked = self.pathAskedAt > self.progressAt,
 		pending = self.pathPending,
 		noPath = self.pathFailedAt > self.progressAt,
+		failStreak = self.pathFailStreak,
 		mayEvade = mayEvade,
 	}, Combat :: any)
 end
@@ -1247,7 +1283,9 @@ windUp = function(self: Monster, target: Player)
 			return
 		end
 		local reach = self.stats.range + self.root.Size.Z / 2
-		if distanceFlat(self.root.Position, at) <= reach * Combat.windReach + Combat.windSlack then
+		-- S162e: a blow lands only within the height a melee blow reaches (no hits through the air to a roof)
+		local high = self.def.attack == "melee" and not meleeHeightOk(self, targetGround(at))
+		if distanceFlat(self.root.Position, at) <= reach * Combat.windReach + Combat.windSlack and not high then
 			probeAttack(self, target, "blow")
 			self.ctx.basicAttack(self, target)
 		end
@@ -1366,7 +1404,8 @@ local function stepChase(self: Monster, now: number)
 	local reach = self.stats.range + self.root.Size.Z / 2
 	local melee = self.def.attack == "melee"
 	-- S162e: a shot or a throw needs a clear line to the target (no arrows through rocks and walls); one sight ray per
-	-- tick at most. A melee blow keeps its hit rule (flat reach).
+	-- tick at most. Studio 2026-10-31: a blow needs the height too (a target on a roof is out of a wolf's reach), a shot
+	-- or a throw measures its reach in 3D.
 	local sight: boolean? = nil
 	local aim: Vector3 = targetPosition
 	local function seen(): boolean
@@ -1375,7 +1414,10 @@ local function stepChase(self: Monster, now: number)
 		end
 		return sight == true
 	end
-	local inReach = distance <= reach and (melee or seen())
+	local ground = targetPosition.Y - PLAYER_ROOT_UP
+	local inReach = reaches(self, targetPosition, distance, seen)
+	-- a melee monster within its flat reach of a target it cannot reach up to (a roof, a rock, a ledge)
+	local below = melee and distance <= reach and not inReach
 	-- S134e: since when the target keeps out of reach (the kit's fleeing rule)
 	if inReach then
 		self.outOfReachSince = 0
@@ -1427,7 +1469,12 @@ local function stepChase(self: Monster, now: number)
 	local throw = self.kit and self.kit.throw
 	local canHit = inReach
 		or threw
-		or (throw ~= nil and self.ctx.rangedThrow ~= nil and distance <= throw.range and seen())
+		or (
+			throw ~= nil
+			and self.ctx.rangedThrow ~= nil
+			and (targetPosition - position).Magnitude <= throw.range
+			and seen()
+		)
 	local action = notePursuit(self, now, canHit, not self.isBoss and not self.summoned)
 	if action == "evade" then
 		evade(self)
@@ -1439,7 +1486,6 @@ local function stepChase(self: Monster, now: number)
 	-- rule at the blow stays). A ranged one stands at its reach. S162e: the goals are ground points (the paths' ends).
 	local halfDepth = self.root.Size.Z / 2
 	local stopAt = MonsterMove.stopDistance(self.def.attack, reach, halfDepth, Combat :: any)
-	local ground = targetPosition.Y - PLAYER_ROOT_UP
 	if inReach then
 		local closing = melee and distance > stopAt and not self.ctx.isRooted(self)
 		if not closing then
@@ -1468,7 +1514,9 @@ local function stepChase(self: Monster, now: number)
 		-- target's feet.
 		local feet = Vector3.new(targetPosition.X, ground, targetPosition.Z)
 		local goal = feet
-		if melee then
+		-- S162e: under a target it cannot reach up to, it walks to the target's spot itself (up a slope it gets there;
+		-- under a roof or a rock it stalls and gives up)
+		if melee and not below then
 			local x, z = MonsterMove.approach(position.X, position.Z, targetPosition.X, targetPosition.Z, stopAt)
 			goal = Vector3.new(x, ground, z)
 		end
@@ -1606,6 +1654,13 @@ function Monster.Step(self: Monster, now: number)
 	self.ctx.moved(self)
 end
 
+-- S162e: whether its blow or shot reaches a target whose root is at `targetPosition` now (the chase test's "caught").
+function Monster.CanReach(self: Monster, targetPosition: Vector3): boolean
+	return reaches(self, targetPosition, distanceFlat(self.root.Position, targetPosition), function()
+		return sightTo(self, targetPosition)
+	end)
+end
+
 -- S157: sets the over-level cap (Logic/LevelLock; nil = none), also as the model attribute CapLevel for the clients.
 function Monster.SetCap(self: Monster, cap: number?)
 	self.capLevel = cap
@@ -1679,6 +1734,7 @@ end
 
 function Monster.Destroy(self: Monster)
 	self.state = "dead"
+	PathWorker.cancel(self) -- S162e: a path still waiting is not computed for nobody
 	self.model:Destroy()
 end
 

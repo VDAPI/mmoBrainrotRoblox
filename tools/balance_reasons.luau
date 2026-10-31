@@ -7613,5 +7613,29 @@ return {
 				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): new: a new path once the target moved 8 studs from the old path's end; no fight change",
 			},
 		},
+		["Combat:meleeUp"] = {
+			{
+				session = "S162e",
+				why = "S162e (Studio test 2026-10-31: a wolf under a perched target never evaded; Logic/Pursuit): new: a melee blow reaches a target at most 2.5 studs over the monster's feet (a tall body: half its height); before, any height within the flat reach was hit (a wolf under a roof hit a player 34 studs up). Fights on even ground are unchanged; a player on a roof, rock or ledge 3+ studs up is out of a small monster's reach and it evades",
+			},
+		},
+		["Combat:meleeDown"] = {
+			{
+				session = "S162e",
+				why = "S162e (Studio test 2026-10-31: a wolf under a perched target never evaded; Logic/Pursuit): new: a melee blow reaches a target at most 4 studs below the monster's feet; fights on even ground are unchanged",
+			},
+		},
+		["Combat:pathFailEvade"] = {
+			{
+				session = "S162e",
+				why = "S162e (Studio test 2026-10-31: a wolf under a perched target never evaded; Logic/Pursuit): new: 3 path answers in a row with no way make a monster that cannot hit its target evade; fights it can reach are unchanged",
+			},
+		},
+		["Combat:pathPerFrame"] = {
+			{
+				session = "S162e",
+				why = "S162e (Studio test 2026-10-31: a wolf under a perched target never evaded; Logic/Pursuit): new: at most 1 path computation started per server frame (performance only); no fight change",
+			},
+		},
 	} :: { [string]: { Reason } },
 }
