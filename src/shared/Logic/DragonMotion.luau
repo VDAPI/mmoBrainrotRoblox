@@ -1,10 +1,11 @@
 --!strict
 -- Template animation (docs/ANIM-WZORCE.md F4, 2026-10-31): a dragon's wings and its reptile's extras over
 -- Logic/QuadMotion (the legs, the gaits, the neck and the tail are the quadruped's, Data/QuadStyles `dragon`).
--- The wings (Logic/QuadPose's wing controls, the Logic/FlyerPose letters) rest folded along the body. The model's wings
--- rest spread, so the fold is computed once from the wing's own rest joints (Data/QuadStyles `wings.fold`: the elbow
--- and wrist folds, then the shoulder turn that lays the humerus back along the flank with the membrane's top side out),
--- and the rig map needs no hand-tuned angles. The styles key the wings by
+-- The wings (Logic/QuadPose's wing controls, the Logic/FlyerPose letters) rest folded high along the back (the wrists
+-- up by the shoulders, the fingers swept back toward the tail). The model's wings rest spread, so the fold is computed
+-- once from the wing's own rest joints (Data/QuadStyles `wings.fold`: the elbow and wrist folds, then the shoulder
+-- turn that lays the humerus back and up over the flank with the membrane's top side out), and the rig map needs no
+-- hand-tuned angles. The styles key the wings by
 --   wo (both) / wLo / wRo   openness: 0 folded, 1 spread as modelled, 2 flat and straight out (a flight wing); the
 --                           poses between are blended per joint;
 --   we ws wt wf wh wb ww wp wq   both wings' offsets on top of the openness (rad, the Logic/FlyerPose letters: lift,
@@ -13,9 +14,9 @@
 --   flap, beat              a wingbeat of size `flap` (0..1) at phase `beat` (cycles: keyed, so the strokes land on the
 --                           action's timeline; the downstroke runs from a whole number to + 0.45, Logic/FlyerMotion's
 --                           stroke);
--- and adds the gallop's pump (the wings half open, one beat a stride, its downstroke as the hind feet push off), the
--- folded wings' breath, the tail's spring (its tip trails the body's turns and swings past), the tail tip's flicks and
--- the neck's slow sway. Pure; no allocation per frame.
+-- and adds the gallop's pump (the wings half open and held up, one beat a stride, its downstroke as the hind feet
+-- push off), the folded wings' breath, the tail's spring (its tip trails the body's turns and swings past), the tail
+-- tip's flicks and the neck's slow sway. Pure; no allocation per frame.
 
 local NpcPose = require("./NpcPose")
 local QuadPose = require("./QuadPose")
@@ -48,6 +49,8 @@ export type State = {
 	tailS: number,
 	tailV: number,
 	tailReady: boolean,
+	-- each wing's openness as drawn (by side index), following the keyed one at a bounded pace (nil: not drawn yet)
+	open: { number },
 }
 
 local LETTERS = { "e", "s", "t", "f", "h", "b", "w", "p", "q" }
@@ -58,6 +61,9 @@ for _, letter in LETTERS do
 end
 local TAIL_Y = { "tY1", "tY2", "tY3", "tY4", "tY5", "tY6", "tY7", "tY8" }
 local TAU = 2 * math.pi
+-- the fastest a wing opens or folds (openness per second; studio review 2026-10-31: no joint turning more than ~12
+-- degrees a frame): the elbow and the wrist unfold between 0 and 1, the shoulder alone turns on to flat beyond it
+local OPEN_RATE, SPREAD_RATE = 4.2, 9
 
 local mul, transpose, apply = NpcPose.mul, NpcPose.transpose, NpcPose.apply
 
@@ -155,6 +161,7 @@ function DragonMotion.new(skel: QuadPose.Skeleton, spec: QuadStyles.Wings?, seed
 		tailS = 0,
 		tailV = 0,
 		tailReady = false,
+		open = {},
 	}
 end
 
@@ -210,6 +217,9 @@ function DragonMotion.base(
 	local pump = style.pump
 	if gallop > 0.005 then
 		controls.wo = (controls.wo or 0) + pump.open * gallop
+		controls.we = (controls.we or 0) + pump.lift * gallop
+		controls.ww = (controls.ww or 0) + pump.hand * gallop
+		controls.wp = (controls.wp or 0) + pump.tips * gallop
 		beatInto(d, controls, phase - pump.at, pump.amp * gallop)
 	end
 	local t = now + d.seed * 3.7
@@ -264,15 +274,25 @@ function DragonMotion.tail(d: State, controls: Controls, yawRate: number, dt: nu
 end
 
 -- The wing controls keyed and layered (openness, offsets, the beat) turned into the raw ones Logic/QuadPose reads,
--- right before the solve.
-function DragonMotion.resolve(d: State, controls: Controls)
+-- right before the solve. With the frame's `dt` each wing's openness follows the keyed one at a bounded pace (a blow
+-- that throws the wings open, a new rig's first frame), `snap` takes it at once; without `dt` (a pose on its own) it
+-- is the keyed one.
+function DragonMotion.resolve(d: State, controls: Controls, dt: number?, snap: boolean?)
 	local flap = controls.flap
 	if flap and flap > 0.001 then
 		beatInto(d, controls, controls.beat or 0, math.min(flap, 1.5))
 	end
 	local open = controls.wo or 0
-	for _, side in d.sides do
+	for index, side in d.sides do
 		local o = math.clamp(open + (controls[side.open] or 0), 0, 2.3)
+		local drawn = d.open[index]
+		if dt and drawn and not snap then
+			local rate = if math.min(o, drawn) < 1 then OPEN_RATE else SPREAD_RATE
+			o = drawn + math.clamp(o - drawn, -rate * dt, rate * dt)
+		end
+		if dt then
+			d.open[index] = o
+		end
 		local a, b, k = side.fold, side.spread, o
 		if o > 1 then
 			a, b, k = side.spread, side.flat, o - 1

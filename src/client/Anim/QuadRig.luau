@@ -24,6 +24,9 @@ export type Rig = {
 	muzzleAt: Vector3?, -- the shots' point in the bone's own frame
 }
 
+-- the standing pose a new rig shows before its first frame
+local STILL: QuadMotion.Input = { now = 0, dt = 0, speed = 0, yawRate = 0, combat = false, snap = true }
+
 local function toMat(cf: CFrame): { number }
 	local _, _, _, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
 	return { r00, r01, r02, r10, r11, r12, r20, r21, r22 }
@@ -83,6 +86,13 @@ function QuadRig.new(look: Model, styleId: string, seed: number, model: string):
 		rig.muzzleAt = muzzleBone.WorldCFrame:VectorToObjectSpace(
 			space:VectorToWorldSpace(Vector3.new(at[1] * L, at[2] * L, at[3] * L))
 		)
+	end
+	-- studio review 2026-10-31: the bones were just read at their bind pose (a dragon's wings spread); stand the rig
+	-- at once so a new rig (AnimLab's loop, a refreshed look) never shows that frame. A throwaway instance keeps the
+	-- live one's clocks.
+	local still = QuadMotion.new(skel, styleId, seed)
+	if still then
+		QuadRig.apply(rig, QuadMotion.step(still, STILL))
 	end
 	return rig
 end
