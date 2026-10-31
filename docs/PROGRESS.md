@@ -263,8 +263,7 @@
   `/animlab sfx list`, `docs/SESJE.md` → S111; twórca Roblox nie ma takich dźwięków, biblioteka Pro Sound Effects to
   decyzja właściciela); muzyka `music = ""` w `Data/Maps`; kosmetyki (stroje, aury, ślady) to Party.
 - **Grafika (S52), czeka na właściciela**: Import 3D 121 modeli broni i `assets/Weapons/Meadows.rbxm` (lista w
-  `docs/ASSETS.md` → „Broń”); `IMPORT_YAW` niesprawdzony (jak Studio czyta osie `.glb`). Stary test `art/weapons/sword1`
-  do usunięcia.
+  `docs/ASSETS.md` → „Broń”); `IMPORT_YAW` niesprawdzony (jak Studio czyta osie `.glb`).
 - **Grafika (S52), kod**: potwory trzymają broń z brył (modele w `Anatomy/Weapons` nie podpięte); księgi stoją pochylone
   jak w pliku Tripo, kolby kusz `crossbow_1` i `_10` lekko ukośnie (oś z PCA, dłoń na kolbie przez `hold`).
 - **Walka**: zwykłe ataki potworów zaliczają się od razu (zamach tylko w wyglądzie, szczyt 0,03 s po zdarzeniu; gracze
