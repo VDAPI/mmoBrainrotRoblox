@@ -10,6 +10,11 @@
 local TerrainLayers = {}
 
 TerrainLayers.VOXEL = 4
+-- Studio 2026-10-31 (raycasts on the written terrain): Roblox draws the surface of a filled column half a voxel above
+-- the top its occupancies fill (each map stood 2.00 studs over its height function, so everything placed on the
+-- function was 2 studs in the ground: house doors, stalls, lamps, landmarks). `voxels` fills the cells LIFT under the
+-- heights and the water levels, so the drawn ground and water are the functions' own.
+TerrainLayers.LIFT = TerrainLayers.VOXEL / 2
 
 -- Terrain grass: Roblox grows its decoration grass (Terrain.Decoration, waist high, scripts cannot turn it off) on
 -- Enum.Material.Grass only. Every height-function map keeps PATH_CLEAR studs beside its roads and ramps free of it,
@@ -233,10 +238,35 @@ function TerrainLayers.atSegment(values: { number }, i: number, t: number): numb
 	return a + (b - a) * t
 end
 
+-- Whether the cells of a column with ground `h` and water `level` show the water when filled `lift` under them: the
+-- cell the surface cuts is water when the ground fills less than half of it (and the water at least an eighth), else
+-- the full cell under it, when that one is water.
+local function shows(h: number, level: number, lift: number): boolean
+	local V = TerrainLayers.VOXEL
+	local top, wet = h - lift, level - lift
+	local bottom = V * math.floor(wet / V)
+	return (top < bottom + V / 2 and wet - bottom >= V / 8) or top < bottom - V / 2
+end
+
+-- 2026-10-31: the ground fill of a wet column (drawn heights `h`, `level`), LIFT under the ground or lower. The lift
+-- moved every water surface half a cell against the grid; a column whose water the cells showed before the lift (a
+-- pond's shallow rim) keeps it: its ground stops at the cell that carries the water.
+local function wetTop(h: number, level: number): number
+	local V, LIFT = TerrainLayers.VOXEL, TerrainLayers.LIFT
+	local top = h - LIFT
+	if shows(h, level, LIFT) or not shows(h, level, 0) then
+		return top
+	end
+	local wet = level - LIFT
+	local bottom = V * math.floor(wet / V)
+	return math.min(top, if wet - bottom >= V / 8 then bottom else bottom - V)
+end
+
 -- Studio review 2026-10-21: the water surface that the voxels of `voxels` below show at a point, or nil. A 4-stud cell
 -- is water only where the ground fills less than half of it, so the shallow rim of a pond or a pool (ground less than
 -- about 2 studs under the surface, depending on where the surface cuts the cell) is written as ground: things that
 -- must stand in water (a waterfall's foot and foam, fishing buoys) ask this rather than the height function's water.
+-- 2026-10-31: with the lift, a rim the cells showed before still shows (`wetTop`).
 -- Every writer starts its blocks and its bottom layer on multiples of VOXEL (map-relative), as World/TerrainWriter does
 -- for the Meadows and the shaped regions; the cell takes the height and water of its centre column.
 function TerrainLayers.voxelWater(
@@ -252,10 +282,7 @@ function TerrainLayers.voxelWater(
 		return nil
 	end
 	local h = height(cx, cz)
-	-- the cell the surface cuts: water over the ground when the ground fills less than half of it (and the water at
-	-- least an eighth); else the full cell under it, when that one is water
-	local bottom = V * math.floor(level / V)
-	if (h < bottom + V / 2 and level - bottom >= V / 8) or h < bottom - V / 2 then
+	if shows(h, level, TerrainLayers.LIFT) or shows(h, level, 0) then
 		return level
 	end
 	return nil
@@ -271,8 +298,9 @@ export type WaterFn = (x: number, z: number, h: number, info: any) -> number?
 
 -- Voxel block for Terrain:WriteVoxels (resolution 4): nx * ny * nz cells, cell [i][j][k] covers
 -- x0 + 4(i-1) .. x0 + 4i, yBottom + 4(j-1) .. yBottom + 4j, z0 + 4(k-1) .. z0 + 4k (map-relative studs).
--- Ground fills each cell up to the height at its centre column; cells between the ground and the water surface
--- are water. Material names are strings; the writer converts them to Enum.Material.
+-- Ground fills each cell up to LIFT under the height at its centre column (drawn at the height); cells between the
+-- ground and the water surface are water, filled the same way. Material names are strings; the writer converts them
+-- to Enum.Material.
 function TerrainLayers.voxels(
 	sample: SampleFn,
 	material: MaterialFn,
@@ -285,6 +313,7 @@ function TerrainLayers.voxels(
 	ny: number
 ): Voxels
 	local V = TerrainLayers.VOXEL
+	local LIFT = TerrainLayers.LIFT
 	-- heights at cell centres, with a one-cell ring for the slope
 	local heights: { { number } } = {}
 	local infos: { { any } } = {}
@@ -310,26 +339,32 @@ function TerrainLayers.voxels(
 			local gz = (heights[i][k + 1] - heights[i][k - 1]) / (2 * V)
 			local mat = material(x, z, h, math.sqrt(gx * gx + gz * gz), info)
 			local level = water(x, z, h, info)
+			-- 2026-10-31: the filled tops, LIFT under the drawn ground, water and ice bed
+			local top = h - LIFT
+			local wet = if level then level - LIFT else nil
 			-- S47: ice over water (frozen lakes and streams): the bed, water up to the ice, at least one full voxel
 			-- of ice under the top
-			local bed = if type(info) == "table" then info.iceBed else nil
+			local bed = if type(info) == "table" and info.iceBed then info.iceBed - LIFT else nil
+			if level and not bed then
+				top = wetTop(h, level)
+			end
 			for j = 1, ny do
 				local y = yBottom + V * (j - 1)
-				local solid = math.clamp((h - y) / V, 0, 1)
-				if bed and bed < h - V * 1.5 then
+				local solid = math.clamp((top - y) / V, 0, 1)
+				if bed and bed < top - V * 1.5 then
 					if solid <= 0 then
 						continue
-					elseif y >= h - V * 1.5 then
+					elseif y >= top - V * 1.5 then
 						mi[j][k], oi[j][k] = mat, solid
 					elseif bed - y >= V * 0.5 then
 						mi[j][k], oi[j][k] = info.bedMat or "Ground", math.clamp((bed - y) / V, 0, 1)
 					else
 						mi[j][k], oi[j][k] = "Water", 1
 					end
-				elseif solid >= 0.5 or (solid > 0 and level == nil) then
+				elseif solid >= 0.5 or (solid > 0 and wet == nil) then
 					mi[j][k], oi[j][k] = mat, solid
-				elseif level and y < level then
-					mi[j][k], oi[j][k] = "Water", math.clamp((level - y) / V, 0, 1)
+				elseif wet and y < wet then
+					mi[j][k], oi[j][k] = "Water", math.clamp((wet - y) / V, 0, 1)
 				end
 			end
 		end

@@ -11,12 +11,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Config = require(ReplicatedStorage.Shared.Config)
+local Kit = require(ReplicatedStorage.Shared.Data.Kit)
 local KitPick = require(ReplicatedStorage.Shared.Logic.KitPick)
+local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 
 local KitAssets = {}
 
-export type Slot = { key: string, p: { number }, s: number, lod: string, x: number? }
+export type Slot = { key: string, p: { number }, s: number, lod: string, x: number?, skirt: number? }
 export type Placement = {
 	template: Model,
 	cframe: CFrame,
@@ -28,11 +30,18 @@ export type Placement = {
 	stretch: number?,
 	axis: Vector3?,
 	extent: number, -- W29: the template's larger side (height or width) before scaling
+	skirt: number?, -- 2026-10-31: depth of the stone skirt under the foot (a house on a slope)
 }
 -- (slot, frame of the Build) -> where the slot's model stands, or nil (keep the pieces)
 export type Resolver = (slot: Slot, base: CFrame) -> Placement?
 
 type Template = { model: Model, height: number, width: number, sizeX: number, sizeZ: number }
+
+-- 2026-10-31: the part of a rock's / a tree's widest side (a rock's whole base, a trunk) that must stand in the ground:
+-- on a slope the model sinks to the lowest drawn ground there (the terrain is drawn at the height function since the
+-- half-voxel lift, Logic/TerrainLayers, so a downhill edge no longer hides 2 studs in the ground)
+local BASE: { [string]: number } = { rock = 0.5, tree = 0.1 }
+local UNDERGROUND: { [string]: boolean } = { cave = true, crypt = true, dungeon = true }
 
 local templates: { [string]: Template | false } = {}
 local warned: { [string]: boolean } = {}
@@ -116,6 +125,15 @@ function KitAssets.resolver(mapId: string): Resolver?
 		return nil
 	end
 	local biome = map.biome :: string
+	local offset = map.offset
+	-- the drawn ground (world y) of a map with a height function above ground, else nil
+	local ground: ((x: number, z: number) -> number?)? = nil
+	if MapTerrain.has(mapId) and not UNDERGROUND[biome] then
+		ground = function(x: number, z: number): number?
+			local h = MapTerrain.height(mapId, x - offset.x, z - offset.z)
+			return if h then offset.y + h else nil
+		end
+	end
 	return function(slot: Slot, base: CFrame): Placement?
 		local foot = base * Vector3.new(slot.p[1], slot.p[2], slot.p[3])
 		local choice = KitPick.pick(slot.key, biome, foot.X, foot.Z, slot.s)
@@ -132,6 +150,19 @@ function KitAssets.resolver(mapId: string): Resolver?
 		end
 		local scale = choice.size / native
 		local drop = choice.sink * t.height * scale
+		local reach = BASE[(string.split(slot.key, ":"))[1]]
+		if reach and ground then
+			local r = t.width * scale * reach
+			local low = foot.Y - drop
+			for i = 0, 6 do
+				local a = i * math.pi / 3
+				local h = ground(foot.X + math.cos(a) * r * math.min(i, 1), foot.Z + math.sin(a) * r * math.min(i, 1))
+				if h then
+					low = math.min(low, h - 0.1)
+				end
+			end
+			drop = foot.Y - low
+		end
 		local tint = choice.variant.tint
 		local paint = choice.variant.paint
 		local material: Enum.Material? = nil
@@ -169,6 +200,7 @@ function KitAssets.resolver(mapId: string): Resolver?
 			stretch = stretch,
 			axis = if stretch then base.XVector else nil,
 			extent = math.max(t.height, t.width),
+			skirt = slot.skirt,
 		}
 	end
 end
@@ -181,6 +213,81 @@ function KitAssets.model(name: string): (Model?, number)
 		return nil, 0
 	end
 	return t.model, t.height
+end
+
+-- Box of a part in the frame `pivot` (yaw only): centre and half sizes.
+local function boxIn(pivot: CFrame, part: BasePart): (Vector3, Vector3)
+	local rel = pivot:ToObjectSpace(part.CFrame)
+	local h = part.Size / 2
+	local x, y, z = rel.RightVector, rel.UpVector, rel.LookVector
+	return rel.Position,
+		Vector3.new(
+			math.abs(x.X) * h.X + math.abs(y.X) * h.Y + math.abs(z.X) * h.Z,
+			math.abs(x.Y) * h.X + math.abs(y.Y) * h.Y + math.abs(z.Y) * h.Z,
+			math.abs(x.Z) * h.X + math.abs(y.Z) * h.Y + math.abs(z.Z) * h.Z
+		)
+end
+
+-- 2026-10-31: the stone skirt of a house on a slope, from its foot `depth` studs down (Logic/TownGen/Houses). The
+-- model's plinth (the lowest part as wide and deep as everything that stands on the ground, at most a third of the
+-- model's height) is copied downward, so the skirt is the same stone; a model without one gets a stone block
+-- (Data/Kit.skirt) under the parts on the ground.
+local function addSkirt(model: Model, pivot: CFrame, depth: number)
+	local ground: { { part: BasePart, lo: Vector3, hi: Vector3 } } = {}
+	local lo, hi = Vector3.new(math.huge, 0, math.huge), Vector3.new(-math.huge, 0, -math.huge)
+	local top = 0
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			local c, h = boxIn(pivot, d)
+			top = math.max(top, c.Y + h.Y)
+			if c.Y - h.Y < 0.25 then
+				table.insert(ground, { part = d, lo = c - h, hi = c + h })
+				lo = Vector3.new(math.min(lo.X, c.X - h.X), 0, math.min(lo.Z, c.Z - h.Z))
+				hi = Vector3.new(math.max(hi.X, c.X + h.X), 0, math.max(hi.Z, c.Z + h.Z))
+			end
+		end
+	end
+	if #ground == 0 then
+		return
+	end
+	local span = hi - lo
+	local band: { part: BasePart, lo: Vector3, hi: Vector3 }? = nil
+	for _, g in ground do
+		local size = g.hi - g.lo
+		if
+			size.X >= span.X * 0.85
+			and size.Z >= span.Z * 0.85
+			and size.Y <= top / 3
+			and (band == nil or size.Y < (band.hi - band.lo).Y)
+		then
+			band = g
+		end
+	end
+	if band then
+		local step = (band.hi - band.lo).Y - 0.02
+		for k = 1, math.min(math.ceil(depth / step), 12) do
+			local copy = band.part:Clone()
+			copy.Name = "Skirt"
+			copy.CFrame = band.part.CFrame - Vector3.new(0, k * step, 0)
+			copy.Parent = model
+		end
+		return
+	end
+	local look = Kit.skirt
+	local block = Instance.new("Part")
+	block.Name = "Skirt"
+	block.Anchored = true
+	block.CanCollide = false
+	block.CanQuery = false
+	block.CanTouch = false
+	block.Locked = true
+	block.TopSurface = Enum.SurfaceType.Smooth
+	block.BottomSurface = Enum.SurfaceType.Smooth
+	block.Color = Color3.fromHex(look.color)
+	block.Material = (Enum.Material :: any)[look.material]
+	block.Size = Vector3.new(span.X - 0.1, depth + 0.1, span.Z - 0.1)
+	block.CFrame = pivot * CFrame.new((lo.X + hi.X) / 2, 0.05 - depth / 2, (lo.Z + hi.Z) / 2)
+	block.Parent = model
 end
 
 -- A placed copy of a placement's model.
@@ -246,6 +353,10 @@ function KitAssets.place(placement: Placement, parent: Instance): Model
 				d:Destroy()
 			end
 		end
+	end
+	local skirt = placement.skirt
+	if skirt and skirt > 0.05 then
+		addSkirt(model, placement.cframe, skirt)
 	end
 	if placement.persistent then
 		model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
