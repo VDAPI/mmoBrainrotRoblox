@@ -16,7 +16,9 @@ local FlyerMotion = require("../src/shared/Logic/FlyerMotion")
 local FlyerPose = require("../src/shared/Logic/FlyerPose")
 local FlyerRigs = require("../src/shared/Data/FlyerRigs")
 local FlyerStyles = require("../src/shared/Data/FlyerStyles")
+local MotionFx = require("../src/shared/Data/MotionFx")
 local MotionTimeline = require("../src/shared/Logic/MotionTimeline")
+local RigidStyles = require("../src/shared/Data/RigidStyles")
 local T = require("./Test")
 
 type Vec = { number }
@@ -506,9 +508,18 @@ T.describe("FlyerPose on the rig dumps", function()
 end)
 
 T.describe("FlyerMotion", function()
-	local function newInst(model: string, style: string, seed: number): FlyerMotion.Instance
-		local skel = skeletonOf(model)
-		return FlyerMotion.new(skel, style, seed) :: FlyerMotion.Instance
+	local function newInst(
+		model: string,
+		style: string,
+		seed: number
+	): (FlyerMotion.Instance, { [string]: FlyerPose.Bone })
+		local skel, bones = skeletonOf(model)
+		return FlyerMotion.new(skel, style, seed) :: FlyerMotion.Instance, bones
+	end
+	-- every dump on its style (the old vulture and the harpy, the new exports)
+	local FLIGHTS: { { string } } = {}
+	for _, id in ALL do
+		table.insert(FLIGHTS, { id, CASES[id].style })
 	end
 
 	T.it("the hover's wingbeat swings between the table's top and bottom at its rate", function()
@@ -535,7 +546,7 @@ T.describe("FlyerMotion", function()
 	end)
 
 	T.it("nothing turns NaN through flight, turns, a glide, the flare, blows, a hit, stun and death", function()
-		for _, pair in { { "ashVulture", "vulture" }, { "peakHarpy", "harpy" } } do
+		for _, pair in FLIGHTS do
 			local inst = newInst(pair[1], pair[2], 11)
 			local style = inst.style
 			local plan = {
@@ -582,7 +593,7 @@ T.describe("FlyerMotion", function()
 	end)
 
 	T.it("every blow's strike ends on the server's hit (W) and lasts at most 0.7 W", function()
-		for _, id in { "vulture", "harpy" } do
+		for _, id in { "vulture", "harpy", "crow", "bat" } do
 			local style = FlyerStyles.get(id) :: FlyerStyles.Style
 			for name, action in style.actions do
 				local strikeEnd = false
@@ -605,7 +616,10 @@ T.describe("FlyerMotion", function()
 	T.it(
 		"the volley's downstroke and the fling land on W, the shot leaving at the beak / between the wing tips",
 		function()
-			for _, pair in { { "ashVulture", "vulture" }, { "peakHarpy", "harpy" } } do
+			local shooters = { { "ashVulture", "vulture" }, { "peakHarpy", "harpy" } }
+			table.insert(shooters, { "ashVulture_v2", "vulture" })
+			table.insert(shooters, { "carrionCrow_v2", "crow" })
+			for _, pair in shooters do
 				local inst = newInst(pair[1], pair[2], 5)
 				local name = inst.style.basic[1]
 				local w = 0.5
@@ -635,8 +649,8 @@ T.describe("FlyerMotion", function()
 				local m = muzzleAtW :: Vec
 				-- in front of the chest
 				T.expect(m[3] < (chestAtW :: Vec)[3]).toBe(true)
-				if pair[1] == "ashVulture" then
-					T.expect(len(sub(m, headAtW :: Vec))).toBeBetween(0.2 * SCALE, 0.5 * SCALE)
+				if pair[1] ~= "peakHarpy" then
+					T.expect(len(sub(m, headAtW :: Vec))).toBeBetween(0.05 * SCALE, 0.5 * SCALE)
 				end
 			end
 		end
@@ -674,9 +688,9 @@ T.describe("FlyerMotion", function()
 	end)
 
 	T.it("the death falls under gravity and lies on the ground, nothing deep under it", function()
-		for _, pair in { { "ashVulture", "vulture" }, { "peakHarpy", "harpy" } } do
+		for _, pair in FLIGHTS do
 			for _, seed in { 1, 2, 3, 4 } do
-				local inst = newInst(pair[1], pair[2], seed)
+				local inst, bones = newInst(pair[1], pair[2], seed)
 				local name = FlyerMotion.death(inst)
 				local action = inst.style.actions[name]
 				local skel = inst.skel
@@ -684,7 +698,7 @@ T.describe("FlyerMotion", function()
 				local function centre(): number
 					local y = 0
 					for _, bone in skel.rig.centre do
-						y += at(skel, bone)[2]
+						y += pos(skel, bones, bone)[2]
 					end
 					return y / #skel.rig.centre
 				end
@@ -830,11 +844,173 @@ T.describe("FlyerMotion", function()
 		T.expect(FlyerMotion.side({ 1, 0, 0 })).toBe("left")
 	end)
 
-	T.it("/animlab mob takes every flyer state", function()
+	T.it("the crow lands after hovering still, stands on its feet, hops about and flies up into a fight", function()
+		for _, seed in { 1, 2, 3 } do
+			local inst = newInst("carrionCrow_v2", "crow", seed)
+			local skel = inst.skel
+			local perch = inst.style.perch :: FlyerStyles.Perch
+			T.expect(inst.perchDrop ~= nil and (inst.perchDrop :: number) > 1).toBe(true)
+			local landed: number? = nil
+			local lowest, standing = math.huge, math.huge
+			local hops = 0
+			run(inst, 0, 24, function(t)
+				return hover({ combat = t > 22, look = if t > 22 then { 0, 0, -8 } else nil })
+			end, function(t)
+				if inst.perch >= 1 and not landed then
+					landed = t
+				end
+				if inst.perch >= 1 and t < 22 then
+					hops = inst.hopCount
+					local low = math.huge
+					for _, leg in skel.rig.legs do
+						for _, joint in leg do
+							low = math.min(low, at(skel, joint.bone)[2])
+						end
+					end
+					lowest = math.min(lowest, low)
+					-- between hops, the toes on the ground
+					if t > inst.hop[7] + perch.hop.length + 0.05 then
+						standing = math.min(standing, math.abs(low - perch.toe * skel.unit))
+					end
+				end
+			end)
+			-- it lands within its wait and the landing, never before it has hovered still a while
+			T.expect(landed ~= nil).toBe(true)
+			T.expect(landed :: number)
+				.toBeBetween(perch.after[1] + perch.land - 0.05, perch.after[2] + perch.land + 0.1)
+			T.expect(standing).toBeBetween(0, 0.05 * SCALE)
+			T.expect(lowest).toBeBetween(-0.02 * SCALE, 0.3 * SCALE)
+			T.expect(hops).toBeBetween(1, 12)
+			-- the fight lifts it off at once
+			T.expect(inst.perch).toBe(0)
+		end
+		-- never down in a fight, nor soon after a hit; the bat (no legs) and the vulture (no perch) never land
+		for _, pair in { { "carrionCrow_v2", "crow" }, { "bloodBat_v2", "bat" }, { "ashVulture_v2", "vulture" } } do
+			local inst = newInst(pair[1], pair[2], 4)
+			run(inst, 0, 14, function(t)
+				return hover({
+					combat = pair[2] == "crow" and t < 7,
+					hitAt = if pair[2] == "crow" and t > 7 then 6.9 else nil,
+				})
+			end, function()
+				T.expect(inst.perch).toBe(0)
+			end)
+		end
+		-- /animlab perch: down at once
+		local lab = newInst("carrionCrow_v2", "crow", 5)
+		run(lab, 0, 2, function()
+			return hover({ perch = true })
+		end)
+		T.expect(lab.perch).toBe(1)
+	end)
+
+	T.it("the bat's dive flies at its target until the strike, then holds its line", function()
+		local function diveTo(look: Vec, swerve: boolean): (number, number)
+			local inst = newInst("bloodBat_v2", "bat", 2)
+			local w = 0.6
+			local struck: { number }? = nil
+			run(inst, 0, 0.5 + w + 0.01, function(t)
+				-- the target slips aside once the strike starts
+				local aim = if swerve and t > 0.5 + w - 0.15 then { -look[1], look[2], look[3] } else look
+				return hover({ combat = true, look = aim, action = { name = "dive", start = 0.5, hit = w } })
+			end, function(t)
+				if math.abs(t - (0.5 + w)) < 1 / 120 then
+					struck = { inst.controls.bx * inst.skel.unit, inst.controls.bz * inst.skel.unit }
+				end
+			end)
+			local s = struck :: { number }
+			return s[1], s[2]
+		end
+		local x, z = diveTo({ 3, 0, -4 }, false)
+		-- toward the target on the hit: as far as it lies less a strike's length, aimed at it
+		T.expect(x > 0.5 * SCALE and z < -0.5 * SCALE).toBe(true)
+		T.expect(math.atan2(x, -z)).toBeNear(math.atan2(3, 4), 0.25)
+		T.expect(math.sqrt(x * x + z * z)).toBeBetween(1 * SCALE, 4.5 * SCALE)
+		-- locked when the strike starts: the same line though the target moved
+		local x2, z2 = diveTo({ 3, 0, -4 }, true)
+		T.expect(x2).toBeNear(x, 0.05 * SCALE)
+		T.expect(z2).toBeNear(z, 0.05 * SCALE)
+	end)
+
+	T.it(
+		"the bat flutters: an uneven drift, wings faster than the vulture's, fingers fanned on the downstroke",
+		function()
+			local inst = newInst("bloodBat_v2", "bat", 6)
+			local lo, hi = math.huge, -math.huge
+			local spreadDown, spreadUp = -math.huge, math.huge
+			local beats: { number } = {}
+			local last = inst.phase
+			run(inst, 0, 8, function()
+				return hover()
+			end, function(t)
+				if t > 1 then
+					lo, hi = math.min(lo, inst.controls.bx), math.max(hi, inst.controls.bx)
+					local n = inst.controls.wLn or 0
+					spreadDown, spreadUp = math.max(spreadDown, n), math.min(spreadUp, n)
+					if inst.phase < last then
+						table.insert(beats, t)
+					end
+				end
+				last = inst.phase
+			end)
+			T.expect(hi - lo).toBeBetween(0.05, 0.8)
+			-- the beat's rate wanders: some beats longer than others
+			local short, long = math.huge, 0
+			for i = 2, #beats do
+				short, long = math.min(short, beats[i] - beats[i - 1]), math.max(long, beats[i] - beats[i - 1])
+			end
+			T.expect(long / short > 1.15).toBe(true)
+			T.expect(spreadDown > math.rad(5) and spreadUp < 0).toBe(true)
+			local bat = (FlyerStyles.get("bat") :: FlyerStyles.Style).modes.hover.hz
+			local vulture = (FlyerStyles.get("vulture") :: FlyerStyles.Style).modes.hover.hz
+			T.expect(bat > 2 * vulture).toBe(true)
+		end
+	)
+
+	T.it("the crow and the bat keep their rigid kit: blows, slots, the effects' action names", function()
+		for _, id in { "crow", "bat" } do
+			local flyer = FlyerStyles.get(id) :: FlyerStyles.Style
+			local rigid = RigidStyles.get(id) :: any
+			for slot, name in rigid.abilities do
+				T.expect(flyer.abilities[slot]).toBe(name)
+				T.expect(flyer.actions[name] ~= nil).toBe(true)
+			end
+			T.expect(flyer.basic[1]).toBe(rigid.basic[1])
+			T.expect(flyer.throw).toBe(rigid.throw)
+			for _, entry in rigid.death do
+				local name = if type(entry) == "table" then entry.name else entry
+				T.expect(flyer.actions[name] ~= nil).toBe(true)
+			end
+			for name in MotionFx.STYLES[id] do
+				T.expect(flyer.actions[name] ~= nil).toBe(true)
+			end
+			for _, list in { flyer.death, flyer.fidgets, (flyer.perch and flyer.perch.fidgets) or {} } do
+				for _, name in list do
+					T.expect(flyer.actions[name] ~= nil).toBe(true)
+				end
+			end
+			for _, name in { flyer.aggro, flyer.spawn, flyer.summon } do
+				T.expect(flyer.actions[name :: string] ~= nil).toBe(true)
+			end
+		end
+	end)
+
+	T.it("/animlab mob takes every flyer state, the crow's and the bat's rigid ones too", function()
 		for _, state in FlyerStyles.LAB_STATES do
 			local command = AnimLab.parse({ "mob", "ashVulture", state })
 			T.expect(command ~= nil and (command :: any).slot == state).toBe(true)
 		end
+		for _, pair in { { "ashVulture", "vulture" }, { "carrionCrow", "crow" }, { "bloodBat", "bat" } } do
+			for _, state in FlyerStyles.labStates(pair[2]) do
+				local command = AnimLab.parse({ "mob", pair[1], state })
+				T.expect(command ~= nil and (command :: any).slot == state).toBe(true)
+			end
+		end
+		for _, state in RigidStyles.labStates("crow") do
+			T.expect(AnimLab.parse({ "mob", "carrionCrow", state }) ~= nil).toBe(true)
+		end
+		T.expect(AnimLab.parse({ "mob", "carrionCrow", "perch" }) ~= nil).toBe(true)
+		T.expect(AnimLab.parse({ "mob", "bloodBat", "perch" })).toBe(nil)
 	end)
 
 	T.it("the timeline's length is the hit plus follow and recover", function()

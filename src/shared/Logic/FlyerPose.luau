@@ -754,14 +754,22 @@ function FlyerPose.world(skel: Skeleton, controls: Controls)
 			eulerInto(L, 0, -c(controls, "jaw"), 0)
 			mulInto(world, (node.base :: Node).world, L)
 		elseif role == "follow" then
-			-- the turn of the bone it copies, part of the way from its parent's
+			-- the turn of the bone it copies, part of the way from its parent's; a feather row on a wing segment
+			-- (the secondaries on the forearm) keeps its spread lie to the segment it copies, so it trails behind the
+			-- folded wing instead of fanning out sideways with the forearm
 			local like = node.base :: Node
 			local sp = node.sp
+			local goal = like.world
+			if sp and sp.role == "wing" and like.role == "wing" then
+				mulInto(M2, (like.base :: Node).world, like.chain)
+				mulInto(M1, M2, sp.fit :: Mat)
+				goal = M1
+			end
 			if node.share >= 0.999 or not sp then
-				copyMat(world, like.world)
+				copyMat(world, goal)
 			else
-				tmulInto(M1, sp.world, like.world)
-				partialInto(L, M1, node.share)
+				tmulInto(M2, sp.world, goal)
+				partialInto(L, M2, node.share)
 				mulInto(world, sp.world, L)
 			end
 		elseif role == "leaf" and node.sp then

@@ -354,6 +354,22 @@ local META: { [string]: boolean } = {
 	lunge = true,
 }
 
+-- Whether an action keys a lunge anywhere (cached per action table: the styles never change).
+local LUNGES: { [MotionTimeline.Action]: boolean } = setmetatable({}, { __mode = "k" }) :: any
+local function lunges(action: MotionTimeline.Action): boolean
+	local known = LUNGES[action]
+	if known == nil then
+		known = false
+		for _, key in action.keys do
+			if key.pose.lunge then
+				known = true
+			end
+		end
+		LUNGES[action] = known
+	end
+	return known :: boolean
+end
+
 -- The keyed controls of `run` at `t` s, blending from `from` (the pose it started from, mirrored like the run; the
 -- stance when nil) unless its first key is at its very start.
 local function actionControls(style: FlyerStyles.Style, run: ActionRun, t: number, from: Controls?): Controls?
@@ -758,8 +774,7 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 				end
 			end
 			-- a melee dive with no area to fly to: toward the target, aimed until the strike starts, then locked
-			local lunge = keyed.lunge
-			if lunge and lunge > 0 then
+			if lunges(action) then
 				if playing.name ~= inst.lockName or playing.start ~= inst.lockStart then
 					inst.lockName, inst.lockStart = playing.name, playing.start
 					inst.lockX, inst.lockZ, inst.lockD = 0, -1, 0.6 * unit
@@ -775,6 +790,7 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 						inst.lockD = math.clamp(dist - 1.2 * unit, 0.3 * unit, cap)
 					end
 				end
+				local lunge = keyed.lunge or 0
 				local k = inst.lockD * lunge * w / unit
 				add(controls, "bx", inst.lockX * k)
 				add(controls, "bz", inst.lockZ * k)

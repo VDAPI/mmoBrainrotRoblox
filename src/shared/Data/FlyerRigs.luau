@@ -245,8 +245,8 @@ local VULTURE_V2: Rig = {
 -- neck) -> Head_2 / Head_3 (the head and the beak). Both wings hang from the neck: shoulder blade (Spine_0 / bone_6),
 -- humerus (bone_22 / bone_7), forearm (bone_23 / bone_8), hand (bone_24 / bone_9), primaries (bone_25..27 /
 -- bone_10..12) with more primaries off the hand (bone_28..29 / bone_13..14) and the secondaries off the forearm
--- (bone_32..34 / bone_18..20); the coverts of the inner wing hang from the body (bone_43, bone_53 / bone_35, bone_38,
--- bone_50) and follow the humerus part of the way. Legs Left_Limb_0..3 / Right_Limb_0..2 (short, the toes forward);
+-- (bone_32..34 / bone_18..20, kept trailing behind the humerus when the wing folds); the coverts of the inner wing hang
+-- from the body (bone_43, bone_53 / bone_35, bone_38, bone_50) and follow the humerus part of the way. Legs Left_Limb_0..3 / Right_Limb_0..2 (short, the toes forward);
 -- the tail Tail_0..2 with the side feathers bone_1 (centre), bone_56 / bone_65 (left), bone_59 (right).
 local CROW_V2: Rig = {
 	id = "carrionCrow_v2",
@@ -303,6 +303,8 @@ local CROW_V2: Rig = {
 		{ bone = "bone_50", like = "bone_7", share = 0.6 },
 		{ bone = "bone_38", like = "bone_7", share = 0.3 },
 		{ bone = "bone_65", like = "bone_56", share = 1 },
+		{ bone = "bone_32", like = "bone_22", share = 0.85 },
+		{ bone = "bone_18", like = "bone_7", share = 0.85 },
 	},
 	-- the beak's tip
 	muzzle = { at = { "tripo::Head_3" }, ahead = 0.12, up = 0 },

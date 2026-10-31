@@ -640,8 +640,8 @@ local VULTURE: Style = {
 -- bounces, and lies on its side with the lower wing spread on the ground (raised toward the back as the body rolls
 -- onto it, so it lies flat instead of digging in), the upper one folded over, the neck limp.
 local function deathFlyer(side: number): MotionTimeline.Action
-	local up = if side > 0 then "L" else "R" -- the wing that ends on top (the side that goes up)
-	local down = if side > 0 then "R" else "L"
+	local up = if side > 0 then "R" else "L" -- the wing that ends on top (roll + raises the right side)
+	local down = if side > 0 then "L" else "R"
 	return {
 		strike = 0.5,
 		follow = 0.3,
@@ -684,7 +684,7 @@ local function deathFlyer(side: number): MotionTimeline.Action
 						hpitch = deg(-18),
 						fall = 1,
 					},
-					wings({ e = deg(70), f = deg(75), h = deg(60) }, up),
+					wings({ e = deg(70), s = deg(-30), f = deg(110), h = deg(100) }, up),
 					wings({ e = deg(60), f = deg(5) }, down),
 					legs({ s = deg(-10), f = deg(35), c = deg(55) })
 				)
@@ -702,8 +702,8 @@ local function deathFlyer(side: number): MotionTimeline.Action
 						tpitch = deg(-10),
 						fall = 1,
 					},
-					wings({ e = deg(80), f = deg(80), h = deg(65) }, up),
-					wings({ e = deg(88), s = deg(-5), f = 0, h = 0 }, down),
+					wings({ e = deg(75), s = deg(-50), f = deg(150), h = deg(150) }, up),
+					wings({ e = deg(96), s = deg(-5), f = 0, h = 0 }, down),
 					legs({ s = deg(-20), f = deg(30), c = deg(60) })
 				)
 			),
@@ -1019,10 +1019,10 @@ local function cs(...: Controls): Controls
 end
 local C_MID = wings({ e = deg(12), s = 0, f = deg(10) })
 -- folded on the ground: swept back along the body, the elbow and the wrist closed, the primaries drawn in
-local C_FOLD = wings({ e = deg(-15), s = deg(-55), f = deg(95), h = deg(95), n = deg(-20) })
+local C_FOLD = wings({ e = deg(-5), s = deg(-80), f = deg(165), h = deg(165), n = deg(-25) })
 -- standing: the body up on its legs (straight under it), the head level, the tail lifted clear of the ground
 local C_PERCH: Controls = merge(
-	{ bpitch = deg(22), npitch = deg(-5), hpitch = deg(-18), tpitch = deg(14), fan = deg(-4) },
+	{ bpitch = deg(22), npitch = deg(-5), hpitch = deg(-18), tpitch = deg(24), fan = deg(-4) },
 	legs({ s = deg(-22), c = deg(-10) }),
 	C_FOLD
 )
@@ -1033,30 +1033,40 @@ end
 -- Death of a small flyer (the crow, the bat; started on Dead, the hit = the strike): a jolt on the strike, the wings
 -- stop; it falls under gravity through the follow-through (the ground at its end, where Data/MotionFx raises the
 -- dust), bounces and lies on its side (the lower wing spread flat on the ground, the upper one folded over it) or, with
--- `back`, on its back (the wings out to the sides, the legs up).
-local function deathDrop(side: number, back: boolean): MotionTimeline.Action
-	local up = if side > 0 then "L" else "R"
-	local down = if side > 0 then "R" else "L"
+-- `back`, flipped over backwards onto its back (the wings out to the sides, the legs up); `over` replaces controls of the
+-- lying pose (a body carried at another pitch).
+local function deathDrop(side: number, back: boolean, over: Controls?): MotionTimeline.Action
+	local up = if side > 0 then "R" else "L"
+	local down = if side > 0 then "L" else "R"
 	local tumble: Controls
 	local contact: Controls
 	local lie: Controls
 	if back then
 		tumble = merge(
-			{ bpitch = deg(45), broll = side * deg(8), npitch = deg(15), hpitch = deg(15), fall = 0.5 },
+			{ bpitch = deg(80), broll = side * deg(10), npitch = deg(15), hpitch = deg(15), fall = 0.5 },
 			wings({ e = deg(50), s = deg(-15), f = deg(15) }),
 			legs({ s = deg(30), c = deg(30) })
 		)
 		contact = merge({
-			bpitch = deg(88),
-			broll = side * deg(10),
-			npitch = deg(25),
-			hpitch = deg(10),
-			tpitch = deg(-35),
+			bpitch = deg(160),
+			broll = side * deg(12),
+			npitch = deg(-5),
+			hpitch = deg(-5),
+			tpitch = deg(15),
 			fall = 1,
-		}, wings({ e = deg(5), s = deg(5), f = deg(15) }), legs({ s = deg(45), c = deg(50) }))
+		}, wings({ e = deg(10), s = deg(5), f = deg(15) }), legs({ s = deg(45), c = deg(50) }))
 		lie = merge(
-			{ bpitch = deg(95), broll = side * deg(6), npitch = deg(30), hpitch = deg(5), tpitch = deg(-40), fall = 1 },
-			wings({ e = deg(-8), s = deg(6), f = deg(10), h = deg(10), n = deg(-10) }),
+			-- (the body upside down: a negative pitch lifts the head off the ground)
+			{
+				bpitch = deg(172),
+				broll = side * deg(8),
+				npitch = deg(-18),
+				hpitch = deg(-12),
+				tpitch = deg(10),
+				fall = 1,
+			},
+			over or {},
+			wings({ e = deg(0), s = deg(6), f = deg(10), h = deg(10), n = deg(-10) }),
 			legs({ s = deg(30), c = deg(60) })
 		)
 	else
@@ -1068,8 +1078,8 @@ local function deathDrop(side: number, back: boolean): MotionTimeline.Action
 		)
 		contact = merge(
 			{ bpitch = deg(-15), broll = side * deg(88), npitch = deg(-30), hpitch = deg(-18), fall = 1 },
-			wings({ e = deg(65), f = deg(70), h = deg(55) }, up),
-			wings({ e = deg(70), s = deg(-5), f = deg(5) }, down),
+			wings({ e = deg(65), s = deg(-40), f = deg(120), h = deg(110) }, up),
+			wings({ e = deg(85), s = deg(-5), f = deg(5) }, down),
 			legs({ s = deg(-10), c = deg(50) })
 		)
 		lie = merge(
@@ -1081,8 +1091,8 @@ local function deathDrop(side: number, back: boolean): MotionTimeline.Action
 				tpitch = deg(-8),
 				fall = 1,
 			},
-			wings({ e = deg(70), f = deg(80), h = deg(65), n = deg(-15) }, up),
-			wings({ e = deg(88), s = deg(-5), f = 0, h = 0 }, down),
+			wings({ e = deg(70), s = deg(-70), f = deg(160), h = deg(160), n = deg(-20) }, up),
+			wings({ e = deg(100), s = deg(-5), f = 0, h = 0 }, down),
 			legs({ s = deg(-20), c = deg(60) })
 		)
 	end
@@ -1684,10 +1694,10 @@ local CROW: Style = {
 			follow = 0.45,
 			recover = 0.25,
 			keys = {
-				key("S", 1, "in", cp({ bpitch = deg(-2), npitch = deg(-40), hpitch = deg(-28), tpitch = deg(30) })),
-				key("F", 0.3, "out", cp({ bpitch = deg(6), npitch = deg(-25), hpitch = deg(-18), tpitch = deg(24) })),
-				key("F", 0.55, "in", cp({ bpitch = deg(-4), npitch = deg(-42), hpitch = deg(-30), tpitch = deg(32) })),
-				key("F", 1, "out", cp({ bpitch = deg(8), npitch = deg(-20), hpitch = deg(-12), tpitch = deg(22) })),
+				key("S", 1, "in", cp({ bpitch = deg(-12), npitch = deg(-48), hpitch = deg(-30), tpitch = deg(38) })),
+				key("F", 0.3, "out", cp({ bpitch = deg(-2), npitch = deg(-35), hpitch = deg(-22), tpitch = deg(32) })),
+				key("F", 0.55, "in", cp({ bpitch = deg(-13), npitch = deg(-50), hpitch = deg(-32), tpitch = deg(40) })),
+				key("F", 1, "out", cp({ bpitch = deg(6), npitch = deg(-25), hpitch = deg(-15), tpitch = deg(28) })),
 				key("R", 1, "inout", C_PERCH),
 			},
 		},
@@ -1998,7 +2008,15 @@ local BAT: Style = variant(CROW, {
 			},
 		},
 		deathFall = deathDrop(1, false),
-		deathFallBack = deathDrop(-1, true),
+		-- (its body hangs nose-up in the air: less of a flip lays it flat, the tail membrane drawn up off the ground)
+		deathFallBack = deathDrop(
+			-1,
+			true,
+			merge(
+				{ bpitch = deg(145), tpitch = deg(-70) },
+				wings({ e = deg(12), s = deg(6), f = deg(10), h = deg(10) })
+			)
+		),
 	},
 })
 -- (it never perches)
