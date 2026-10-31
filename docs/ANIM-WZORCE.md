@@ -930,6 +930,9 @@ on the client too). Rules in `Logic/MonsterMove` (Lune spec `tests/monstermove.s
 | attachment `HumanoidRootPart.Muzzle` | where shots leave the drawn body (`Data/MonsterRelease`: shares of the drawn height per body plan, per kind where needed: biped hand, quadruped jaw, flyer beak, dragon jaw, crawler front, serpent head, spirit front). The server starts regular shots and the Elite II throw at it; `CombatFxController` starts its fallback projectiles there. The animation may set its `WorldCFrame` to the jaw / beak / hand bone each frame (client side only; the server's start is from its own copy) |
 | event `hz` field `rl` | a regular shot's release point (Vector3, the Muzzle at the shot); `Vfx/HazardFx` draws the bolt dropping from it to its flight height (`Hazards.BOLT_HEIGHT`) over its first 8 studs |
 
+S162e (2026-10-31, `Logic/Pursuit`): paths and the evade keep all of the above. A path only changes where `MoveTo` points
+(its next point); an evading monster is an ordinary return (`Returning`, `Gait` = `"trot"`); no new attribute.
+
 Gameplay notes (`tools/balance_reasons`, S162m): damage, areas, windups and intervals are unchanged; a monster going
 home is easier to catch and teleports only after 20 s (was 12); an Elite II boar stands at its target after a charge
 (its next blow up to ~1 s sooner); shots start 0.6-2.9 studs closer to the target.

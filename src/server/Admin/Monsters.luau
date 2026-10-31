@@ -389,7 +389,7 @@ commands.leash = function(player)
 	local offset = monster.root.Position - home
 	local since = os.clock() - monster.lastHit
 	reply(player, "admin.leash.info", {
-		state = monster.state,
+		state = if monster.evading then "return (evade)" else monster.state, -- S162e: an evade walks home immune
 		distance = math.floor(Vector3.new(offset.X, 0, offset.Z).Magnitude),
 		since = if monster.lastHit > 0 then string.format("%.1f", since) else "-",
 		hp = math.ceil(monster.hp),

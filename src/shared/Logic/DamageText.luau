@@ -5,7 +5,8 @@
 --
 -- Event fields (CombatService): k ("dmg" | "heal"), e (target entity), s (attacker / healer entity), a (amount),
 -- c (crit), d (dodged), ab (absorbed by a shield in full), im (immune), dot + el (damage over time and its
--- element), hot (heal over time), sk (skill id), mi (missed, S61), bl (blocked, S64; d is true too).
+-- element), hot (heal over time), sk (skill id), mi (missed, S61), bl (blocked, S64; d is true too), ev (S162e: the
+-- monster evades, Logic/Pursuit: immune on its way home).
 
 local DamageNumbers = require("../Data/DamageNumbers")
 local Format = require("../Util/Format")
@@ -75,6 +76,9 @@ function DamageText.format(event: { [string]: any }, myEntityId: string?, lang: 
 	end
 	if event.d then
 		return { text = Locale.T("combat.dodge", nil, lang), style = "dodge", crit = false, amount = 0 }
+	end
+	if event.ev then
+		return { text = Locale.T("combat.evade", nil, lang), style = "immune", crit = false, amount = 0 }
 	end
 	if event.im then
 		return { text = Locale.T("combat.immune", nil, lang), style = "immune", crit = false, amount = 0 }

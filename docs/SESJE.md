@@ -14109,6 +14109,23 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Dokumentacja dla sesji animacji: `docs/ANIM-WZORCE.md` §10. Testy: `tests/monstermove.spec.luau`, `leash.spec`
   (powrót truchtem). Balans: powody w `tools/balance_reasons.luau` (S162m).
 
+### S162e: potwory nie dają się przechytrzyć przeszkodami (2026-10-31)
+- Zgłoszenie testera: potwory blokują się na przeszkodach, gracz bije je zza skały, z półki albo z dachu. Było: dwa
+  krótkie promienie omijania (`Logic/Steer`), „utknięcie” S22 liczone z każdego ruchu o 1,5 st. (ślizganie po ścianie i
+  drganie je kasowały), po 5 s powrót bez leczenia, trafiony zawracał i znów utykał.
+- Teraz (`Logic/Pursuit.luau`, `Entities/Monster.luau`): dwa długie promienie sprawdzają prostą drogę do celu; zablokowana
+  = ścieżka `PathfindingService` (agent z rozmiaru ciała, bez skoków i wspinania, woda droższa; budżet serwera i przerwa na
+  potwora w `Data/Combat`), potwór idzie po jej punktach. Postęp = studa w stronę celu albo punktu ścieżki; 1,75 s bez
+  postępu = nowa ścieżka, brak ścieżki albo 4,5 s = odwrót (nietykalny, pełne HP, odporny na osłabienia, do domu, napis
+  „Odwrót” / „Evade”, 6 s bez aggro z widzenia). Stojąc w zasięgu ciosu, strzału z czystą linią albo rzutu Elity II nie
+  utyka. Niski promień omijania na wysokości stopnia (`Pursuit.stepHeight`), więc niskie progi nie zawracają potworów.
+- Strzały i rzuty potworów tylko przy czystej linii do celu. W drodze do domu utknięcie = teleport do domu od razu.
+  Bossowie i ich pomocnicy bez odwrotu (dostają ścieżki). `Gait`, podejście wręcz, `Dash*`, `SpawnedAt` bez zmian.
+- Pliki: `Logic/Pursuit`, `Logic/Leash` (bez powodu „stuck”), `Data/Combat` (`pursuit*`, `evadeCalm`, `path*`, bez
+  `stuckTime`), `Entities/Monster`, `MonsterService` / `CombatService` (zdarzenie `ev`), `StatusEffectService`,
+  `Logic/DamageText`, `CombatFxController`, `Admin/Monsters` (`/leash` pokazuje odwrót), teksty `combat.evade`, wiki
+  „Jak uciec przed potworem”. Testy: `tests/pursuit.spec.luau`, `leash.spec`, `damagetext.spec`. Balans: powody S162e.
+
 ### Wiązanie przedmiotów (właściciel 2026-10-31)
 - Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
   wędrownego kupca, każdy założony plecak; sprzęt bossów był wolny (poza Mitykiem z worka, a Mityk bossa świata pocztą
