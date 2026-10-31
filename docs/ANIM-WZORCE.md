@@ -306,17 +306,20 @@ Grimrok, Morvane, Azgor and Hrimvald run on the biped template: one style per bo
 
 ### 2.2 As built: the mocap actions (2026-10-31)
 
-The owner's Mixamo download (42 clips on the Y Bot, 30 fps) baked into `Data/BipedClips`: 30 new clips, about 340 KB
+The owner's Mixamo download (42 clips on the Y Bot, 30 fps) baked into `Data/BipedClips`: 29 new clips, about 330 KB
 of source. The raw FBX never enter the repo (licence): `tools/anim/clips.csv` lists each clip's source file, name,
 loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_biped.py --batch tools/anim/clips.csv
 --src <folder with the FBX> [--only name,...]` bakes them again (missing sources are skipped).
 
 - **Bake**: root modes `keep` (the leaps: the travel stays in the clip, the template replaces it), `inplace` (loops:
   every bone shifted by the hips' ground drift), `end` (getting up: drift removed, the end over the start), `plant`
-  (blows with a step: the body's drift removed, each standing foot pinned and the leg solved onto it). Each clip also
-  keeps `knuckles` (the rest index -> little finger line of both hands), `hit` (the contact or the release, seconds
-  from its first frame) and `strike` (the fast part before it, from the crouch for a leap). Hit frames picked by the
-  fastest hand or foot and read in the numbers.
+  (every blow that stands its ground, the throw, the cast, the shout, the swipe: the body's lunge, its smoothed ground
+  path, taken out, each standing foot pinned and the leg solved onto it). Each clip also keeps `knuckles` (the rest
+  index -> little finger line of both hands), `hit` (the contact or the release, seconds from its first frame) and
+  `strike` (the fast part before it, from the crouch for a leap). The hit (2026-10-31 Studio review: the fastest hand
+  ran a frame or two ahead of the blade, which still trailed behind the body) is the frame the blade (the knuckle
+  line) points at the target farthest ahead of the body; a claw or a cast hand reaching farthest; a slam's fists
+  meeting the ground (`tools/anim/clips.csv` notes each).
 - **An action on a clip** (`Data/BipedStyles` `clip`: a `ClipRef`, the keyed `keys` kept as the fallback when the clip
   is missing): `mirror` (left and right swapped at no cost), `blade` (the model's `grip` laid along the clip's fist
   line, so a sword follows the swing), `travel` (the clip's ground travel to its hit replaced by the server's reach:
@@ -334,7 +337,18 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
 - **Blends**: in 0.15 s, out over `out` (0.3 s); a clip action and its cut blend bone by bone in the parent's space
   (`BipedPose.blendLocal`): a world-space slerp between a mocap hand and the keyed guard flipped the wrist half a turn.
 - **Stance**: `clips.combat` (humanoid1h, humanoid2h: the sword-and-shield idle and walk) eases in with the combat
-  weight over the locomotion; the brute walks and idles on the mutant clips all the time.
+  weight over the locomotion; the brute walks and idles on the mutant clips all the time. A blow plays on until the
+  clip's stance is back (its `follow` + `recover` cover the clip to where it settles).
+- **Planted feet** (`BipedMotion` `plantFeet`, 2026-10-31 Studio review: the toes slid 0.8 stud and the hips travelled
+  1.7 studs through `mob bandit slash`): while a non-boss biped stands (under 0.6 studs/s, turning under 1.2 rad/s,
+  not floating, not in a fall, a leap or a keyed travel), the ball of each foot on the ground (within 0.06 L of its
+  rest height) stays where it landed, turned back by the root's own turn so it holds in the world; the leg is moved
+  onto it with the least turn of thigh and shin (`BipedPose.nudgeLegs`: a target on the pose's own foot leaves the leg
+  exactly as it was, so holding and letting go never jump). A foot the pose carries 0.12 L away (0.05 L once no
+  action runs: the feet settle back under the stance), or out of the leg's reach, steps there in 0.24 s lifted 0.07 L,
+  the other foot following from half way; a foot the pose lifts lets go, its correction easing away at 16 /s. The
+  blends into and out of an action, a clip on a model of other proportions and the push of a hit no longer slide the
+  feet. A boss keeps its own stance under its clip blows (`upper`) and is not planted.
 - **Hits by side**: `style.hits` (front / back / left / right): the reaction clip's turn of each upper bone from its
   first frame laid over the running pose (spine, neck, head whole, shoulders 0.5, arms 0.4-0.5), held 0.28 s and
   faded over 0.3 s, the body pushed by 0.35 of the clip's travel (at most 0.12 L), scaled by `hitScale` and the cast
@@ -345,24 +359,26 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
 
 | Style | Clip actions |
 |---|---|
-| `humanoid1h` (bandit, dragonspawn, fireGolem, flameSmith, frozenKnight, goblinScout, koboldMiner, skeletonGuard, swampTroll) | basic `slash` (Slash 1), `backhand` (Slash 3), `chop` (Melee Downward), `thrust` (Attack 4); `cleave` (Melee Horizontal), `heavy` (Melee Downward), `crush` (Attack 1 with its step planted), `pounce` (Attack 1, the leap), `throw` (Throw Object, mirrored), `aggro` (Battlecry), `spawn` (Standing Up at 1.7x), deaths `deathBack` / `deathBack2` / `deathFwd`, hits by side, the sword-and-shield stance |
+| `humanoid1h` (bandit, dragonspawn, fireGolem, flameSmith, frozenKnight, goblinScout, koboldMiner, skeletonGuard, swampTroll) | basic `slash` (Slash 1), `backhand` (Slash 3), `chop` (Melee Downward), `thrust` (keyed: the pack's Attack 4 strikes with the hilt, the blade behind); `cleave` (Melee Horizontal), `heavy` (Melee Downward), `crush` (Attack 1 with its step planted), `pounce` (Attack 1, the leap), `throw` (Throw Object, mirrored), `aggro` (Battlecry), `spawn` (Standing Up at 1.7x), deaths `deathBack` / `deathBack2` / `deathFwd`, hits by side, the sword-and-shield stance |
 | `humanoid2h` (ashOrc, renegadeDwarf, frostGiant; new) | as humanoid1h, basic `hew` (Great Sword Slash), `chop`, `slash`; `cleave` (Great Sword High Spin), `pounce` (Great Sword Jump) |
 | `caster` | `spell` (1H Magic), `spellLeft` (mirrored); the rest as humanoid1h but `nova`, `pool` |
-| `brute` (werewolf, yeti, ghoul, crystalGuardian, magmaGolem, desertMummy) | idle and walk (Mutant Idle, Mutant Walking), `clawR` / `clawL` (Mutant Swiping), `crush` / `pounce` (Mutant Jumping, the leap in its air window), `deathMutant` (Mutant Dying) when struck in front; `cleave`, `heavy`, `throw`, `aggro`, `spawn` as humanoid1h (no blade) |
+| `brute` (werewolf, yeti, ghoul, crystalGuardian, magmaGolem, desertMummy) | idle and walk (Mutant Idle, Mutant Walking), `clawR` / `clawL` (Mutant Swiping), `cleave` (the swipe from the right), `heavy` / `crush` / `pounce` (Mutant Jumping, the pounce's leap in its air window), `deathMutant` (Mutant Dying) when struck in front; `throw`, `aggro`, `spawn` as humanoid1h (no blade) |
 | `ghost` | `spell`, `spellLeft` on the upper body; its own floating falls, shout, rise and throw stay keyed |
-| Grimrok | `chop`, `hack`, `overhead`, `sweep` (the sword slashes), `roar` (Battlecry on `roarHit`) |
-| Azgor | `hew`, `cleave` (Great Sword), `roar` |
-| Hrimvald | `fist`, `backfist` (Mutant Swiping), `roar` |
+| Grimrok | `chop`, `hack`, `overhead`, `sweep` (the sword slashes), `roar` (Battlecry on `roarHit`); above the hips |
+| Azgor | `hew`, `cleave` (Great Sword), `roar`; above the hips |
+| Hrimvald | `fist`, `backfist` (Mutant Swiping), `roar`; above the hips |
 | Morvane | `bolt`, `boltLeft` (1H Magic, upper body) |
 
 Kept keyed (no clip fits yet): the casters' `nova` and `pool`, `charge`, the dragonspawn's `breath`, the ghost's
-falls, the bosses' leaps, channels, throws, stomps, rages, staggers and deaths. Tests: `tests/bipedclips.spec.luau`.
+falls, the bosses' leaps, channels, throws, stomps, rages, staggers and deaths. Tests: `tests/bipedclips.spec.luau`
+(also: the blade ahead of the body at every blade blow's hit; a held foot's ball moving under 0.04 L over a whole blow,
+the hips under 0.45 L, the feet back under the stance after it; a held foot staying put while the root turns).
 AnimLab: `mob bandit <slash|backhand|chop|thrust|cleave|heavy|crush|pounce|throw|aggro|spawn|hit|deathBack|deathFwd|deathBack2|fight>`,
 `mob ashOrc <hew|cleave|pounce>`, `mob yeti <clawR|clawL|crush|pounce|deathMutant|walk|idle>`, `mob darkCultist spell`,
 `mob grimrok <chop|hack|overhead|sweep|roar>`, `mob azgor <hew|cleave>`, `mob hrimvald <fist|backfist>`, `mob morvane bolt`.
 Studio tuning: the blade's lie in the fist (`grip`), `hitScale`, the falls' and getting up's `rate`, the
 sword-and-shield stance's empty shield arm, the one-handed clips on the two-handed kinds (the left hand leaves the
-handle), the battlecry on the bosses, Hrimvald's swipe step at his scale.
+handle), the battlecry on the bosses, the planted feet's thresholds (`PLANT_*` in `Logic/BipedMotion`).
 
 ## 3. F2 Quadruped: wolf
 
