@@ -112,7 +112,7 @@ function KitSeat.cliff(
 		return true
 	end
 	-- the model's own foot: the lowest ground on a ring round it (Util/KitAssets), then the deepest it stands
-	local ring = size * KitSeat.BASE[kind] * (if rock then 1 else KitSeat.TREE_WIDTH)
+	local ring = if rock then size * KitSeat.BASE.rock else size * KitSeat.BASE.tree * KitSeat.TREE_WIDTH
 	local foot = y
 	for i = 0, 6 do
 		local a = i * math.pi / 3
