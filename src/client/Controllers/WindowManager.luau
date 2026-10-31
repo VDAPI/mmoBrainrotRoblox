@@ -325,8 +325,8 @@ openWindow = function(id: string, offset: Vector2?)
 	Sounds.play("open")
 end
 
--- Toggle with the backpack alias (S29): B / C toggle the character window; on touch, pressing the other
--- one while it is open switches its tab instead of closing it.
+-- Toggle with the backpack alias (S29): B toggles the character window; pressing it while another tab of that window
+-- is open switches to its tab instead of closing it (touch since S29, every device since the UI plan phase 3 tabs).
 function WindowManager.Toggle(id: string)
 	if isOverlay(id) then
 		if open[id] then
@@ -338,7 +338,7 @@ function WindowManager.Toggle(id: string)
 	end
 	local target, focus = WindowRules.resolve(rules, id)
 	if open[target] then
-		if focus and Fusion.peek(Device.Touch) and Fusion.peek(WindowManager.FocusHint) ~= focus then
+		if focus and Fusion.peek(WindowManager.FocusHint) ~= focus then
 			WindowManager.FocusHint:set(focus)
 			bringToFront(target)
 			return

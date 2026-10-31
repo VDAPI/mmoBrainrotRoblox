@@ -14296,6 +14296,17 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   (`opts.element = "ice"` Kostura Wiecznej Zimy), `ItemRoll` (`el` przy tworzeniu, `elementOf`), `ItemEffects`, `ItemIcons`,
   `ItemName` (bez przyrostka), `/element` odmawia (`admin.element.fixed`). Test: `tests/namedelement.spec.luau`.
 
+### Plan UI, faza 3: okno plecaka w zakładkach (2026-10-31)
+- Z przeglądu Studio: okno plecaka (B, id `character`) robiło trzy rzeczy na 67% ekranu. Teraz zakładki na górze
+  (`Components/Tabs`, na PC i na dotyku): „Ekwipunek” (portret, klasa i poziom, ekwipunek; obok plecak), „Statystyki”
+  (rozdawanie po lewej, statystyki pochodne po prawej; w nazwie liczba wolnych punktów) i trzecia „Zestawy i tytuły”
+  (`BuildSetSwitch` z jednym zdaniem objaśnienia, `TitleChooser.Picker`).
+- `Logic/CharacterTabs` (czyste): zestawy od `Progression.freeRespecLevel` (20) albo przy aktywnym zestawie 2, tytuły
+  z pierwszym odblokowanym, etykieta trzeciej zakładki według zawartości, `pick` (zakładka, która znikła, oddaje
+  miejsce Ekwipunkowi), `suggestShown`.
+- `StatAllocator`: rząd przycisków tylko z wolnymi punktami, „Rozdaj jak zaleca ścieżka” i linia planu tylko z planem.
+- Okno 826×752 (było 1240×700). `WindowManager.Toggle`: B na innej zakładce wraca na Ekwipunek na każdym urządzeniu.
+- Test: `tests/charactertabs.spec.luau`. Nieobejrzane w Studio.
 ### Kamera zablokowana w trybie skryptowym (przegląd Studio 2026-10-31, druga część)
 - Zgłoszenie (postać poziomu 1): po `tp city` kamera stała 10+ s w starym miejscu na Łąkach; w mieście zamrożona 75 studów
   od postaci, potem 0,9 studa przed twarzą, a postać nie ruszała się (MoveTo bez skutku); ręczne Custom pomagało do
@@ -14317,3 +14328,17 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `ScreenController`: ujęcie wyboru jako `Claim("select")`, `RestoreCamera` usunięte.
 - Testy: `tests/cameralease.spec.luau` (w tym skan: `CameraType.Scriptable` tylko w `CameraController` i w pisarzu
   przerywnika). Nieobejrzane w Studio.
+
+### Plan UI, faza 2: poprawki po przeglądzie Studio (2026-10-31)
+- Rząd „coś czeka” stał w tropicielu (1108×576): `HudStack.column` dostaje `menuBottom`, zmierzony dół ramki menu nad
+  minimapą (`HudSlots.SetMenu`, `HudSlots.MenuBottom`), i kolumna PC nigdy nie zaczyna się wyżej. Flaga rzędu idzie przez
+  `HudSlots.SetWaiting(owner, on)` (sprzątanie przebudowanego rzędu nie gasi nowego). Test w `hudlayout.spec`.
+- Rząd „coś czeka” chowa się pod oknem razem z przyciskami menu (`WaitingRow` `Covered`).
+- Toast osiągnięcia (warstwa Toasts, nad oknami) stał na pasku tytułu sklepu: `AchievementController` czeka, póki jest
+  otwarte okno (`HudCover.HeaderBottom`), a `AchievementToast` zjeżdża pod pasek tytułu okna otwartego w trakcie.
+- `UI/SoftRequire`: `Toast`, `Announcement` i `TopBandState` wczytują `TopBand`, `TopBandState` i `HudCover` przez
+  `pcall` z zastępstwem (stare miejsca), bo brak niezsynchronizowanego modułu wywracał ok. 25 kontrolerów.
+- Bez zmian, bo to zamierzone: plecak sam (826×752, wcześniej 1240×700) nie zachodzi na prawą kolumnę przy 1108×576,
+  więc nic nie chowa; „Auto” pokazuje się dopiero z Płaszczem, bankiem Samodzielnych Łowów albo Samoczynnymi
+  Miksturami (`/lure add`, `/autogrind add`, `/autopotion grant`); niewidoczny przycisk w rzędzie (✧ albo ❖) nie
+  bierze udziału w układzie i Studio podaje mu to samo miejsce co widocznemu.
