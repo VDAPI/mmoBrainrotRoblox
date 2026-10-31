@@ -1297,7 +1297,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   (wolne od 2026-10-31, §5.6), bez EXP i złota (`Data/Tutorial`). Lejek onboardingu: kroki samouczka, zadania fabuły 1–10, 5. poziom.
   S155b: pierwszy potwór nowej postaci zostawia raz osobny worek z Heroiczną, związaną kopią trzymanej broni (ten sam
   rodzaj i żywioł, więc pula umiejętności się nie zmienia; słup światła, toast i okno odsłonięcia z „Załóż”). Nagroda za
-  logowanie nie otwiera się sama w trakcie samouczka (tylko „!” na przycisku). Konto z postacią na 5.+ poziomie widzi
+  logowanie nie pokazuje toastu w trakcie samouczka (tylko „!” na przycisku). Konto z postacią na 5.+ poziomie widzi
   „Znam grę, pomiń samouczek”. HUD sam się tłumaczy: „!” na plecaku przy nierozdanych punktach statystyk, a awans na
   poziom nowej funkcji (pierwszy loch, wierzchowce, arena; `Logic/Unlocks`) pokazuje toast i „!” na jej przycisku do
   pierwszego otwarcia.
@@ -1342,7 +1342,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   („1/3”), Osiągnięcia. Wpis to jedna linia „nazwa · postęp” („◈ Wilk 3/15”), szczegóły (cele, obszar, gdzie oddać)
   w dymku po najechaniu (dotyk: przytrzymanie), klik / tap rozwija wpis pod spodem (stan na sesję). Fabuła i poboczne
   zaczynają rozwinięte (widać bieżący krok). Zwinięte grupy zapisują się na koncie (`account.settings.trackerFold`,
-  `Logic/TrackerFold`, ustawienie `SetSetting`); domyślnie zwinięte tylko tygodniowe. Pozycja i rozmiar jak w S156.
+  `Logic/TrackerFold`, ustawienie `SetSetting`); domyślnie zwinięte zlecenia łowieckie, dnia, tygodnia i osiągnięcia
+  (plan UI, faza 1; zapisany wybór gracza zostaje). Pozycja i rozmiar jak w S156.
 - **Rozmowy (S101b, DESIGN-15 §3.5)**: odpowiedzi gracza na stronie dialogu (drobne skutki: podpowiedź na mapie,
   kolejność celów, mikstura), NPC pamięta wybór, komentarze NPC w trakcie (wyłączalne), towarzysz `follow` / `lead`.
 - **Budżet EXP (S98, audyt S109)**: questy jednorazowe dają ok. 30% EXP poziomu na 20–99 (zlecenie 12%, fabuła 10%,
@@ -1358,8 +1359,9 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 ## 20a. Nagroda za logowanie (S100, DESIGN-15 §5)
 
 - **Seria 7 dni na konto** w dniach UTC (`account.login = { day, last }`: ostatni odebrany dzień serii 0–7 i dzień
-  UTC tego odbioru). Pierwsze wejście danego dnia dowolną postacią (po przewodniku nowej postaci) otwiera okno nagrody
-  samo, raz dziennie; potem otwiera je przycisk ✧ przy portrecie (z „!”, gdy nagroda czeka).
+  UTC tego odbioru). Pierwsze wejście danego dnia dowolną postacią (po przewodniku nowej postaci) pokazuje raz dziennie
+  toast „Nagroda dnia czeka” (plan UI, faza 1: wcześniej okno otwierało się samo i zasłaniało pierwszy widok świata);
+  okno otwiera przycisk ✧ przy portrecie (z „!”, gdy nagroda czeka) albo kafelek w menu gry.
 - **Odbiera postać, która jest w świecie**, a nagroda skaluje się jej poziomem (okno pokazuje „Odbierze: imię, poziom”).
   Inna postać tego samego dnia widzi „Odebrano dziś”.
 - **Dzień liczy się w chwili odbioru**: dzień bez odbioru (wejście bez kliknięcia „Odbierz”) przerywa serię. Opuszczenie
@@ -1426,8 +1428,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 
 ## 20c. Bestiariusz (S151c)
 
-- **Zakładka okna osiągnięć** (ostatnia kategoria „Bestiariusz”, klawisz `N`, przycisk ✪ na HUD pod przepustką sezonu
-  i wpis w menu HUD). Każdy rodzaj potwora (50) i każdy boss (lochy i boss świata) to jeden wpis w swojej krainie
+- **Zakładka okna osiągnięć** (ostatnia kategoria „Bestiariusz”, klawisz `N`, kafelek „Osiągnięcia” w menu gry z „!”
+  po nowym osiągnięciu; przycisk ✪ zszedł z HUD w fazie 1 planu UI). Każdy rodzaj potwora (50) i każdy boss (lochy i boss świata) to jeden wpis w swojej krainie
   (Łąki, Bór, Pustkowia, Szczyty); u góry cztery krainy z paskiem postępu (zdobyte stopnie / wszystkie), pod nimi wpisy
   wybranej krainy, po prawej szczegóły (telefon: arkusz).
 - **Stopnie:** potwory 10 / 100 / 1000 pokonanych (każdy wariant się liczy, przyzwani pomocnicy bossów nie), bossowie
@@ -1493,7 +1495,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 
 - **Tempo (model `Balance.seasonPace`):** 1 h dziennie kończy przepustkę w 8. tygodniu, 2 h dziennie w 7. (limit),
   start w 5. tygodniu przy 2 h dziennie daje ok. 35 stopni; potwory to ok. 27% punktów.
-- **Okno (S152b):** pergamin, klawisz C, ❖ pod ✧ na HUD (kropka „!”, gdy jest co odebrać), menu gry; nagłówek z czasem
+- **Okno (S152b):** pergamin, klawisz C, ❖ pod ✧ na HUD tylko wtedy, gdy jest co odebrać (z kropką „!”), kafelek w menu gry; nagłówek z czasem
   do końca, stopniem, paskiem stopnia i limitem; PC pas kolumn stopni (darmowa nad premium), telefon lista stopni;
   „Odbierz wszystko”, „Odblokuj premium” (potwierdzenie jak w sklepie), zakładka „Jak zdobywać punkty”; karta w sklepie
   nad VIP ze zdaniem „a VIP”. Strona wiki czeka na odświeżenie wiki.
@@ -1634,7 +1636,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - **Tytuł w oknie Plecaka** (właściciel 2026-10-21): pod klasą obecny tytuł w swoim kolorze i wyraźny przycisk „Zmień
   tytuł”; otwiera listę nad całym oknem: „Brak tytułu” i wszystkie odblokowane tytuły (kolor, skąd pochodzi, „Noszony”
   przy obecnym, czas do końca tytułu czasowego). Wybór idzie przez `SetTitle`, serwer odrzuca tytuł nieodblokowany.
-- **HUD** (płytki żelaza, S136): lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim pasek 8 slotów umiejętności aktywnej puli broni (DESIGN-18 §4.1, S137) + 3 mikstury. Prawy górny: minimapa w mosiężnej ramie z pierścieniem w kolorze strefy i nazwą mapy na plakietce, przyciski menu (Postać C, Plecak B, Umiejętności K, Mapa M, Questy L, Gildia G, Grupa P, Opcje Esc). Prawy dolny: przełącznik PvP z plakietką odliczania pod nim i koperta poczty pod nimi (`Logic/HudStack`). Lewy dolny: czat. Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
+- **HUD** (płytki żelaza, S136): lewy górny: portret, poziom, paski HP / Mana / Energia, ikona błogosławieństwa. Dół: pasek EXP na całej szerokości, nad nim pasek 8 slotów umiejętności aktywnej puli broni (DESIGN-18 §4.1, S137) + 3 mikstury. Prawy górny: minimapa w mosiężnej ramie z pierścieniem w kolorze strefy i nazwą mapy na plakietce, nad nią jeden rząd sześciu przycisków (Plecak B, Umiejętności K, Mapa M, Questy L, Sklep, ☰ menu gry Esc; `Logic/HudMenu.BAR`), pod minimapą tropiciel celów (`Logic/HudStack.RIGHT_TOP`). Prawy dolny: przełącznik PvP z plakietką odliczania pod nim i koperta poczty pod nimi (`Logic/HudStack`); przełącznik tylko w żółtej i czerwonej strefie albo w trakcie przełączania (`PvpRules.toggleShown`). Lewy dolny: czat (na PC zwężony tak, by kończył się przed paskiem akcji; na dotyku zostaje u góry, bo dół zajmuje joystick). Nad celem: ramka celu (nazwa, poziom, HP, typ elity).
 - **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×700; B i C otwierają to samo okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na dotyku ekwipunek + zakładki „Plecak | Statystyki”, tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (S139, DESIGN-18 §12: zakładki pul broni i „Kierunki”, drzewko według wspólnej drabiny, szczegóły po kliknięciu, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Ikony przedmiotów (S118): obrazek właściciela (PNG), gdy jego atlas jest wgrany i wczytany, inaczej ikona rysowana kodem, a bez niej symbol; przedmioty questowe z obrazkiem w dzienniku questów (§5.3b).
 - Tooltip przedmiotu (S134g, owner 2026-10-15): nazwa w kolorze rzadkości; „Rodzaj · Kategoria z chwytem · Poziom N · Klasy”
@@ -1667,10 +1669,17 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - **Mapa interaktywna** (S25, jak w Margonem: mapa jest głównym narzędziem nawigacji): każda ikona na mapie jest klikalna. Na PC najechanie pokazuje dymek (nazwa + 1 linia), kliknięcie przypina **kartę szczegółów** po prawej (zostaje do ✕, kliknięcia w puste miejsce albo innej ikony; zaznaczona ikona ma pulsującą złotą obwódkę); na dotyku tap otwiera kartę jako dolny panel z dużymi przyciskami, a przeciąganie mapy jej nie zamyka. Karta: nagłówek (ikona, nazwa, poziomy / rola, kolor strefy lub pasma) → **obracający się podgląd 3D** (NPC, potwór w wariantach Zwykły / Elita / Elita II, Elita II jaskini, boss) → treść → przyciski. Rodzaje: **NPC** (powitanie, usługi, 6 pierwszych rzeczy ze sklepu dla poziomu gracza z cenami, quest do wzięcia / oddania / w trakcie, zlecenia dzienne przy tablicy, odległość albo trasa przez mapy), **portal** (mapa docelowa, poziomy, strefa, polecany obszar, „Pokaż mapę”; nieotwarta kraina: szara karta „Wkrótce”), **obszar** (rodzaje jako klikalne wiersze → karta potwora z „← wróć”: poziomy, HP i atak dla środka zakresu, żywioł, gdzie występuje, ciekawy łup słowami „często / czasem / rzadko / bardzo rzadko”), **jaskinia** (zwykłe, Elity, Elita II z timerem, komnaty), **loch** (boss 3D, wymagany poziom, czy dziś dostępny, zasada grupy, unikaty z tooltipem), **węzeł / łowisko**, **członek grupy** (klasa, poziom, HP/mana, Profil), **własny znacznik**. Akcje: **Prowadź** (ścieżka na ziemi z kropek co 6 st. na pierwszych 120 st., belka „➤ Kowal Dorgan · 84 m ✕” pod minimapą, cel na innej mapie prowadzi do właściwego portalu i przelicza się po teleporcie, dojście czyści cel), **Idź** (tylko ta sama mapa: postać idzie sama; przerywa ją WASD / joystick, skok, wybranie celu ataku, rozmowa z NPC, śmierć, teleport; walka trwa normalnie; mapa się zamyka, opcja w ustawieniach; dojście do NPC kończy się obrotem do niego i „Rozmawiaj [E]”), **Wyśrodkuj**, **Pokaż mapę**. Podwójny klik / długie przytrzymanie na ziemi mapy: „Idź tutaj”, „Prowadź tutaj”, „Postaw znacznik” (punkt w wodzie albo w ścianie → najbliższe osiągalne miejsce). **Własne znaczniki**: do 8 na postać, bez własnego tekstu (ikona z 6: ⚑ ★ ✖ ⛏ 💰 ☠, nazwa z najbliższego NPC albo obszaru), zapisane w postaci, widoczne na mapie i minimapie. **Wyszukiwarka** nad listą map (NPC także po roli i usłudze: „kowal”, „sklep”, „poczta”; mapy, obszary, potwory po każdej nazwie wariantu, bossowie, węzły; bez wielkości liter i polskich znaków: „laki” → Łąki; max 12 wyników; Enter = pierwszy). **Chipy usług** w mieście (Sklepy, Kowal, Alchemik, Questy, Bank) podświetlają pasujących NPC. Znaczniki questów **!** (quest do wzięcia), **?** złoty (do oddania), **?** szary (w trakcie) nad NPC na mapie, minimapie i nad głowami. Przy najmniejszym zoomie nakładające się ikony: zostaje ważniejsza (NPC z questem > portal > loch > NPC > węzeł), reszta jest dostępna z wyszukiwarki.
 - **Minimapa**: ten sam rysunek co mapa (wycinek), obszary potworów, strzałka gracza zgodna z kierunkiem postaci, kropki grup w kolorze liczebności. S25: klik / tap otwiera mapę świata na graczu; pokazuje cel prowadzenia (poza widokiem albo na innej mapie: strzałka na krawędzi w stronę celu lub portalu po drodze), własne znaczniki i **!** / **?** nad NPC. Strzałka questu w trackerze wskazuje portal z trasy, a przycisk **➤** w trackerze włącza prowadzenie do celu questu.
 - Mobile: joystick Roblox, przycisk ataku duży w prawym dolnym, skille wokół, mikstury nad nimi, menu jako ikony na górze.
-- **Nagroda za logowanie (S100)**: przycisk ✧ (44 × 44) na prawo od portretu, wyrównany do jego dołu, na PC i telefonie
-  tak samo; „!” i pulsująca złota ramka, gdy nagroda czeka, podpowiedź z dniem serii. Okno (860 × 520; na telefonie
-  pełny ekran, karty w dwóch rzędach po 4): siedem kart dni z nagrodą na poziom postaci, dzisiejsza w mosiężnej ramce,
-  odebrane z ✓, stopka „Odbierz” albo „Odebrano dziś” z odliczaniem do następnej nagrody (§20a).
+- **Nagroda za logowanie (S100)**: przycisk ✧ (44 × 44) na prawo od portretu, wyrównany do jego dołu (telefon: w
+  szufladzie ☰), widoczny tylko wtedy, gdy nagroda czeka (plan UI, faza 1; zawsze jest kafelek w menu gry); „!” i
+  pulsująca złota ramka, podpowiedź z dniem serii. Okno (860 × 520; na telefonie pełny ekran, karty w dwóch rzędach po
+  4): siedem kart dni z nagrodą na poziom postaci, dzisiejsza w mosiężnej ramce, odebrane z ✓, stopka „Odbierz” albo
+  „Odebrano dziś” z odliczaniem do następnej nagrody (§20a).
+- **Kafelki menu gry** (plan UI, faza 1; właściciel 2026-10-31: „UI słabo przejrzyste, zbyt dużo informacji i możliwości
+  na jednym ekranie”): wszystko, co zeszło z HUD, jest kafelkiem na górze menu gry (Esc / ☰), po 4 w rzędzie: Gildia,
+  Grupa, Znajomi, Poczta, Arena, Rankingi, Krwawy Księżyc, Osiągnięcia, Wierzchowce (gdy dostępne), Garderoba, Emotki,
+  Przepustka, Nagroda dnia, VIP, Co nowego (`Logic/HudMenu.TILES`). Kafelek ma ikonę, krótką nazwę, plakietkę klawisza i
+  „!”, gdy coś czeka; „!” któregokolwiek kafelka zapala „!” na ☰. Klawisze okien działają jak wcześniej. Telefon:
+  szuflada ☰ ma te same sześć przycisków oraz ✧ i ❖ tylko z „!”; slot emotek zszedł z paska akcji (klawisz T zostaje).
 - **Menu gry (Opisy-3, 2026-10-21)**: ustawienia w sekcjach z nagłówkami (Dźwięk, Grafika i kamera, Walka,
   Interfejs), rzadziej zmieniane (Łup i handel, Społeczność, Skróty klawiszowe) zwinięte pod „nazwa ▸” (`Details`,
   stan na sesję). Etykiety krótkie, dłuższe wyjaśnienia za „i” obok przełącznika. Okna postaci, umiejętności, dziennika
