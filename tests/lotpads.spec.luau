@@ -6,6 +6,7 @@
 
 local Kit = require("../src/shared/Data/Kit")
 local KitPick = require("../src/shared/Logic/KitPick")
+local KitSeat = require("../src/shared/Logic/KitSeat")
 local LotPads = require("../src/shared/Logic/LotPads")
 local T = require("./Test")
 local TerrainLayers = require("../src/shared/Logic/TerrainLayers")
@@ -165,17 +166,59 @@ T.describe("Level house pads (2026-10-31)", function()
 		T.expect(skirts > 20).toBe(true)
 	end)
 
-	T.it("stands the lamps and the wells on the low side of a slope", function()
-		for _, b in TownGen.all(city, TownTerrain.heightAt) :: { Item } do
-			if b.tag == "lamp" or b.tag == "well" then
-				for i = 0, 7 do
-					local a = i * math.pi / 4
-					local g = drawn(b.at.x + math.cos(a) * 0.7, b.at.z + math.sin(a) * 0.7)
-					if g < b.at.y - 0.35 then
-						error(`{b.name} at {b.at.x},{b.at.z} floats {b.at.y - g}`)
+	T.it("keeps the ground round a house under its plinth's top (nothing touches its walls)", function()
+		local worst = { -math.huge, -math.huge }
+		for _, lot in city.lots do
+			local b = assert(houses[lot.id], lot.id)
+			local foot = b.at.y + b.bp.kits[1].p[2]
+			local W, D = LotPads.footprint(lot)
+			local r = math.rad(lot.rot)
+			local c, s = math.cos(r), math.sin(r)
+			for _, out in { 1, 2 } do
+				for t = -10, 10 do
+					for _, p in { { t / 10, -1 }, { t / 10, 1 }, { -1, t / 10 }, { 1, t / 10 } } do
+						local lx, lz = p[1] * (W / 2 + out), p[2] * (D / 2 + out)
+						local g = drawn(lot.x + lx * c + lz * s, lot.z - lx * s + lz * c)
+						worst[out] = math.max(worst[out], g - foot)
 					end
 				end
 			end
 		end
+		-- a stud out at most half a stud over the plinth's foot (the plinth is 1.5 studs and more), two studs out the
+		-- drawn slope of the next voxel
+		T.expect(worst[1] <= 0.5).toBe(true)
+		T.expect(worst[2] <= 1.1).toBe(true)
 	end)
+
+	-- Studio 2026-11-01: a lamp's post on a river bank stood 1.4 studs in the ground on one side, a farm well 2.6
+	T.it(
+		"stands every lamp's post and every well on the drawn ground: at most half a stud in it, never over it",
+		function()
+			local spots = #TownTerrain.pads().spots
+			T.expect(spots > 5).toBe(true)
+			local n = 0
+			for _, b in TownGen.all(city, TownTerrain.heightAt) :: { Item } do
+				for _, slot in b.bp.kits do
+					if slot.key == "prop:lamp" or slot.key == "prop:well" then
+						n += 1
+						local r = if slot.key == "prop:lamp" then KitSeat.LAMP else KitSeat.WELL
+						local rot = math.rad(b.at.rot)
+						local c, s = math.cos(rot), math.sin(rot)
+						local x, z = b.at.x + slot.p[1] * c + slot.p[3] * s, b.at.z - slot.p[1] * s + slot.p[3] * c
+						local y = b.at.y + slot.p[2]
+						for ring = 0, 4 do
+							for i = 0, 15 do
+								local a = i * math.pi / 8
+								local g = drawn(x + math.cos(a) * r * ring / 4, z + math.sin(a) * r * ring / 4)
+								if g > y + 0.6 or g < y - 0.35 then
+									error(`{b.name} {slot.key} at {x},{z}: ground {g - y} against its foot`)
+								end
+							end
+						end
+					end
+				end
+			end
+			T.expect(n > 200).toBe(true)
+		end
+	)
 end)

@@ -8,6 +8,7 @@
 -- (outside only), ramps (override: the road height at the nearest point of the ramp polyline) and the river
 -- (together `planHeight`), then the level pads of the ordinary houses (2026-10-31, Logic/LotPads).
 
+local KitSeat = require("./KitSeat")
 local LotPads = require("./LotPads")
 local TerrainLayers = require("./TerrainLayers")
 local Town = require("../Data/Town")
@@ -43,11 +44,13 @@ function TownTerrain.insideWalls(x: number, z: number): boolean
 	return TownGeom.inPoly(city.wall, x, z)
 end
 
--- The plan's ground height (map-relative y) at x/z, without the house pads, and whether the pads may raise it (not a
--- ramp's road, not the river and its banks).
-local function plan(x: number, z: number, noRamps: boolean?): (number, boolean)
+-- The plan's ground height (map-relative y) at x/z, without the house pads, whether the pads may raise it (not a
+-- ramp's road, not the river and its banks) and whether a prop's spot must keep it (a ramp's road, the moat:
+-- Logic/LotPads).
+local function plan(x: number, z: number, noRamps: boolean?): (number, boolean, boolean)
 	local h = 0
 	local free = true
+	local wet = false
 	local dWall = TownGeom.edgeDist(city.wall, x, z)
 	local inside = TownGeom.inPoly(city.wall, x, z)
 	if not inside then
@@ -77,6 +80,7 @@ local function plan(x: number, z: number, noRamps: boolean?): (number, boolean)
 		if rampY then
 			h = rampY
 			free = false
+			wet = true
 		end
 	end
 	local river = T.river
@@ -91,7 +95,7 @@ local function plan(x: number, z: number, noRamps: boolean?): (number, boolean)
 		h = math.min(h, brim + (h - brim) * t)
 		free = false
 	end
-	return h, free
+	return h, free, wet or (not inside and h < river.water - 1)
 end
 
 -- The plan's ground (the Python reference, docs/miasto/tools/plan.py): no house pads. `noRamps` skips the ramp layer.
@@ -99,22 +103,49 @@ function TownTerrain.planHeight(x: number, z: number, noRamps: boolean?): number
 	return (plan(x, z, noRamps))
 end
 
--- The level pads of the city's ordinary houses (Logic/LotPads), built on first use.
+-- The bases of the city's small props that stand on the ground (each { x, z, radius }): the street lamps' posts, the
+-- wells and the farmyards' wells (Logic/TownGen/Structures, Props, Outside seat them with Logic/KitSeat).
+function TownTerrain.propBases(): { { number } }
+	local out: { { number } } = {}
+	for _, l in city.lamps do
+		table.insert(out, { l.x, l.z, KitSeat.LAMP })
+	end
+	for _, p in city.wells do
+		table.insert(out, { p[1], p[2], KitSeat.WELL })
+	end
+	for _, f in city.outside.farms do
+		-- the farmyard's well, 6 studs in front of its middle (Logic/TownGen/Outside)
+		local r = math.rad(f.rot)
+		table.insert(out, { f.x + math.sin(r) * 6, f.z + math.cos(r) * 6, KitSeat.WELL })
+	end
+	return out
+end
+
+-- The level pads of the city's ordinary houses and the level spots of its small props on uneven ground
+-- (Logic/LotPads), built on first use.
 local pads: LotPads.Pads? = nil
 function TownTerrain.pads(): LotPads.Pads
 	local built = pads
 	if not built then
-		built = LotPads.new(city.lots, TownTerrain.planHeight)
-		pads = built
+		local made = LotPads.new(city.lots, TownTerrain.planHeight)
+		LotPads.addSpots(made, TownTerrain.propBases(), function(x: number, z: number): number
+			local h, free, wet = plan(x, z)
+			return LotPads.at(made, x, z, h, free, wet)
+		end, function(x: number, z: number): boolean
+			local _, _, wet = plan(x, z)
+			return wet
+		end, T.river.water + 0.5)
+		built = made
+		pads = made
 	end
 	return built :: LotPads.Pads
 end
 
--- Ground height (map-relative y) at x/z: the plan with the house pads (a ramp's road and the river keep their height
--- outside the houses). `noRamps` skips the ramp layer (used to fit ramp ends).
+-- Ground height (map-relative y) at x/z: the plan with the house pads and the props' spots (a ramp's road and the
+-- river keep their height outside the houses). `noRamps` skips the ramp layer (used to fit ramp ends).
 function TownTerrain.heightAt(x: number, z: number, noRamps: boolean?): number
-	local h, free = plan(x, z, noRamps)
-	return LotPads.at(TownTerrain.pads(), x, z, h, free)
+	local h, free, wet = plan(x, z, noRamps)
+	return LotPads.at(TownTerrain.pads(), x, z, h, free, wet)
 end
 
 -- Open walkable ground for placing a character (S21): inside the walls, not in the river, not inside a house,
@@ -125,7 +156,9 @@ function TownTerrain.isOpen(x: number, z: number, margin: number?): boolean
 	if not TownGeom.inPoly(city.wall, x, z) or TownGeom.edgeDist(city.wall, x, z) < 8 then
 		return false
 	end
-	if TownTerrain.heightAt(x, z) < T.river.water + 0.5 then
+	-- (the ground without the props' spots: the street lamps are placed with this, Logic/TownLamps)
+	local h, free = plan(x, z)
+	if LotPads.at(TownTerrain.pads(), x, z, h, free, true) < T.river.water + 0.5 then
 		return false
 	end
 	local function blocked(cx: number, cz: number, w: number, d: number, rot: number): boolean
