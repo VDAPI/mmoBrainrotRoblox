@@ -5,8 +5,9 @@
 -- would take off (`replaced`, the same choice as the equip action and the "Better item" card) and sums those items
 -- into the numbers the tooltip compares with (`worn`). Pure, tested in tests/itemcompare.spec.
 --
--- Rules: only an item the character can equip now (class, level; not an off-hand under a two-hander) is compared, and
--- never a worn one; nothing worn in the slot = nothing to compare. Rings: the weaker ring by ItemScore (nil while a ring
+-- Rules: only an item of the character's class (not an off-hand under a two-hander) is compared, and never a worn one;
+-- nothing worn in the slot = nothing to compare. 2026-10-31 (Studio check): a too high level is still compared (the
+-- level in the head line is red), so a find for later shows what it will give. Rings: the weaker ring by ItemScore (nil while a ring
 -- slot is free, the new ring goes there); a two-hander also takes the off-hand. Backpacks compare their capacity.
 
 local ItemRoll = require("./ItemRoll")
@@ -38,16 +39,14 @@ local function isTwoHanded(item: ItemInstance?): boolean
 	return weapon ~= nil and weapon.twoHanded
 end
 
--- True when the character could equip `item` now (the server's EquipmentService rules without the backpack fit).
-function ItemCompare.canEquip(item: ItemInstance, equipment: { [string]: any }, context: ItemScore.Context): boolean
+-- True when `item` is compared for this character: equipment of its class (EquipmentService rules without the level
+-- and the backpack fit), never an off-hand while a two-hander is worn.
+function ItemCompare.comparable(item: ItemInstance, equipment: { [string]: any }, context: ItemScore.Context): boolean
 	local def = Items.get(item.id)
 	if not def or not def.slot then
 		return false
 	end
 	if def.classes and not table.find(def.classes, context.classId) then
-		return false
-	end
-	if context.level ~= nil and ItemRoll.requiredLevel(item) > context.level then
 		return false
 	end
 	if def.slot == "offhand" and isTwoHanded(equipment.weapon) then
@@ -70,14 +69,14 @@ function ItemCompare.targetSlot(def: Items.ItemDef, equipment: { [string]: any }
 end
 
 -- What equipping `item` takes off (main slot first, a two-hander then the off-hand); nil when the item is not compared:
--- it cannot be equipped now, it is worn, or nothing it would replace is worn.
+-- another class, an off-hand under a two-hander, a worn item, or nothing it would replace is worn.
 function ItemCompare.replaced(
 	item: ItemInstance,
 	equipment: { [string]: any },
 	context: ItemScore.Context
 ): { ItemInstance }?
 	local def = Items.get(item.id)
-	if not def or not def.slot or not ItemCompare.canEquip(item, equipment, context) then
+	if not def or not def.slot or not ItemCompare.comparable(item, equipment, context) then
 		return nil
 	end
 	for _, worn in equipment do

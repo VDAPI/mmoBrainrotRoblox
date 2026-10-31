@@ -14264,3 +14264,11 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   z planu (`Town.city.spawn.facing`, jak `SpawnPoint`), `CharacterService.spawnModel` obraca tylko pozycję wyliczoną
   przez serwer (bez areny i odrodzeń w punktach). Na danych miasta zasłoniętych startów zostaje 25 z 916 (wąskie
   zaułki, tam kamera wsuwa się przed ścianę). Test: `tests/cameraclear.spec.luau`. Nieobejrzane w Studio.
+
+### Porównanie w tooltipie: poprawki po sprawdzeniu w Studio (2026-10-31)
+- Przedmiot innej klasy: bez zmian i bez „Zastąpi” (`TooltipModel` `classFits`); za wysoki poziom porównywany
+  (`ItemCompare.comparable` zamiast `canEquip`). Skrócony widok: efekty jedną linią nazw (`compactOf`). Testy:
+  `itemcompare.spec` (inna klasa, poziom, identyczna kopia: same „(=)”), `tooltip.spec`.
+- Stały żywioł broni nazwanej: `Data/Elements.weaponElement`, `ItemDef.element`, `Data/Items/Uniques`
+  (`opts.element = "ice"` Kostura Wiecznej Zimy), `ItemRoll` (`el` przy tworzeniu, `elementOf`), `ItemEffects`, `ItemIcons`,
+  `ItemName` (bez przyrostka), `/element` odmawia (`admin.element.fixed`). Test: `tests/namedelement.spec.luau`.

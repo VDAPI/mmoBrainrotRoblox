@@ -2840,6 +2840,7 @@ return {
 	["admin.ilvl.ok"] = "Poziom przedmiotu broni: {ilvl}.",
 	["admin.element.ok"] = "Żywioł broni: {element}.",
 	["admin.element.notMage"] = "To nie jest broń maga.",
+	["admin.element.fixed"] = "Ta broń ma stały żywioł: {element}.",
 	["admin.mstats.info"] = "Potwór poz. {level}: {hp} HP, atak {atk} (trafia cię za ~{hit} co {interval} s). Zabijesz go w ~{seconds} s.",
 	["admin.sprint.info"] = "Sprint: {on}, szybkość ruchu {speed}.",
 
