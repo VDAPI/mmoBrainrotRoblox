@@ -14109,6 +14109,25 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Dokumentacja dla sesji animacji: `docs/ANIM-WZORCE.md` §10. Testy: `tests/monstermove.spec.luau`, `leash.spec`
   (powrót truchtem). Balans: powody w `tools/balance_reasons.luau` (S162m).
 
+### Wiązanie przedmiotów (właściciel 2026-10-31)
+- Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
+  wędrownego kupca, każdy założony plecak; sprzęt bossów był wolny (poza Mitykiem z worka, a Mityk bossa świata pocztą
+  w ogóle się nie wiązał), zwoje i plecaki za Smoczą Walutę były wolne. Decyzja i tabela: `docs/DECYZJE.md`,
+  `docs/DESIGN.md` §5.6, `wyglad/WIAZANIE-PRZEDMIOTOW.md`.
+- Kod: `Data/Binding.luau` (kategorie, źródła), `Logic/Binding.luau` (reguły, `apply`, `onEquip`, `tooltipKey`,
+  migracja); pole definicji `bind` zamiast `bindOnPickup`; źródła w `LootService`, `DungeonService`, `WorldBossService`,
+  `WorldEventService`, `LoginRewardService`, `TutorialService` / `Logic/Tutorial`, `SideQuestService`, `HuntShopService`,
+  `WanderingMerchantService`, `ArenaService`, `SeasonService`, `PortalShopService`, `PremiumShopService`,
+  `InventoryService.GiveNew`, `ShopService` (plecak), `EquipmentService` / `Logic/StarterGear` (`onEquip`); odmowy w
+  `Logic/Trade`, `Auction`, `Social`, `GuildBank`, `GuildService`; `Inventory.canMerge` (brak pola = wolny).
+- Migracja: `AccountSchema` 13 (plecak, slot plecaka, depozyt), paczki bez `bv` przy odbiorze (`MailService`,
+  `Logic/Mail.Parcel.bv`).
+- UI: `TooltipModel` jedna linia `bind` (także w widoku skróconym), `ItemController.Equip` pyta tylko, gdy przedmiot się
+  zwiąże, `Components/Modal` z opcjonalnym przełącznikiem `Check` („Nie pytaj więcej w tej sesji”), teksty potwierdzeń
+  areny i wędrownego kupca zależne od reguły.
+- Testy: `tests/binding.spec.luau` (reguły kategorii i źródeł, zakładanie, stosy, odmowy, migracja, podpowiedź, brak
+  ręcznego `bound = true`), wersja schematu w testach migracji.
+
 ### Fryzury kreatora: nowy zestaw i barwienie tekstur we własnym kolorze (2026-10-31)
 - Zgłoszenie testera: „poza 7, 9 i 12 fryzury są słabe i nie pasują”. Przegląd w Play (ciało Dawson, skala 0,9): cała
   darmowa pula Roblox ma ok. 22 fryzury, wszystkie siedzą na głowie; problemem był styl (nowoczesne, anime) i płaski
@@ -14147,6 +14166,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   żelaza), `Controllers/ItemController.luau` („Załóż” pierścienia bez slotu zastępuje ten sam słabszy pierścień),
   `Admin/Items.luau` (`/tooltip` z liczbami porównania). Klucz `tooltip.equipped` usunięty. Testy:
   `tests/itemcompare.spec.luau`.
+
+### Fryzury kreatora, poprawki po przeglądzie w Studio (2026-10-31)
+- Klasyczne fryzury przychodzą jako `MeshPart` z `TextureID` (bez `SpecialMesh` i `SurfaceAppearance`), więc się nie
+  barwiły. `AvatarBuild.hairShell`: część z `SpecialMesh` (ta sama siatka i tekstura, skala `Size / MeshSize`)
+  przyspawana do uchwytu, uchwyt niewidoczny; serwer robi to raz przy wczytaniu (`CosmeticService`, czeka na `MeshSize`),
+  `wear` ustawia przyspawane części za uchwytem w podglądach.
+- `hair_straight` ma ton (złoty `#D8BE45`), nowe tony: `hair_charmer`, `hair_sidetail`, `hair_braid`, `hair_bun`.
+  `hair_swept` wypada (ta sama siatka co `hair_short`, `LEGACY_HAIRS`). `HairTint.plan`: rozjaśnienie jasnych tekstur
+  maleje poniżej `DARK`. Testy `bodylooks`, `classlooks`, `wikidump`; dane wiki przegenerowane.
 
 ### Porównanie w tooltipie: poprawki po sprawdzeniu w Studio (2026-10-31)
 - Przedmiot innej klasy: bez zmian i bez „Zastąpi” (`TooltipModel` `classFits`); za wysoki poziom porównywany

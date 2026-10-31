@@ -10,7 +10,7 @@ local HairTint = {}
 
 -- Colours with a luminance below this keep a black texture.
 HairTint.DARK = 0.22
--- How far the tint of a light texture moves toward white.
+-- How far the tint of a light texture moves toward white (less for a colour darker than DARK).
 HairTint.LIFT = 0.3
 -- A toned hair offers a colour when the colour is at most this many times brighter than its texture in any channel
 -- (the nudged hair then has at least 1 / REACH of the colour's brightness, in its hue).
@@ -87,7 +87,8 @@ function HairTint.plan(hex: string, light: boolean, tone: string?): ("texture" |
 	end
 	local r, g, b = channels(hex)
 	if light then
-		local t = HairTint.LIFT
+		-- Studio review 2026-10-31: the lift fades out below DARK, so black reads black and not dark grey
+		local t = HairTint.LIFT * math.min(1, HairTint.luminance(hex) / HairTint.DARK)
 		return "texture", { r + (1 - r) * t, g + (1 - g) * t, b + (1 - b) * t }
 	end
 	if HairTint.luminance(hex) < HairTint.DARK then

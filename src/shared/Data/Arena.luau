@@ -169,7 +169,7 @@ local TOKENS = { win1v1 = 10, loss1v1 = 4, win3v3 = 12, loss3v3 = 5, firstMatche
 local tokensWeekCap = 600
 
 -- S128: the arena shop (DESIGN-17 §6). Blessings of every line up to Heroic, the Return Stone and the arena
--- cosmetics; nothing with bonuses. Items bought here are bound (no gold through trade or auction).
+-- cosmetics; nothing with bonuses. Owner 2026-10-31 (Data/Binding "currency"): the stones and blessings stay free.
 local SHOP_MAX_BLESSING_RARITY = 3 -- Heroic, DESIGN-17 §6
 local BLESSING_PRICE = { 15, 35, 70 } -- by rarity 1..SHOP_MAX_BLESSING_RARITY
 local SHOP: { ArenaShopEntry } = {

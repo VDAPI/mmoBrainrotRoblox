@@ -38,6 +38,7 @@ local Arena = require(Shared.Data.Arena)
 local ArenaHost = require(script.Parent.Parent.Arena.ArenaHost)
 local Cosmetics = require(Shared.Data.Cosmetics)
 local HallOfFame = require(script.Parent.Parent.Arena.HallOfFame)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local ArenaRules = require(Shared.Logic.ArenaRules)
@@ -1836,7 +1837,7 @@ end
 -- S128: the arena shop (DESIGN-17 §6) ----------------------------------------------------------------------------------
 
 -- One purchase: at the Arena Master, Logic/ArenaRules.canBuyShop, room in the backpack; then, without a yield, the
--- tokens go and the item (bound) or the cosmetic comes.
+-- tokens go and the item or the cosmetic comes.
 local function buyShop(player: Player, key: string): (boolean, string?)
 	if type(key) ~= "string" then
 		return false, "error.badRequest"
@@ -1867,7 +1868,8 @@ local function buyShop(player: Player, key: string): (boolean, string?)
 			return false, "error.badRequest"
 		end
 		local stack = ItemRoll.makeStack(entry.id, entry.n or 1, InventoryService.NewUid())
-		stack.bound = true -- tokens never turn into gold through trade or the auction house
+		-- owner 2026-10-31 (Data/Binding "currency"): the stones and blessings sold here stay free
+		Binding.apply(stack, "currency")
 		if not InventoryService.CanFit(player, { stack }) then
 			return false, "inventory.full"
 		end

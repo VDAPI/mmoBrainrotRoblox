@@ -787,6 +787,12 @@ local function wear(ctx: Ctx, accessory: Accessory, layered: string?): boolean
 				end
 			end
 		end
+		-- a part welded to the handle (the tint shell of a classic hair) follows it: nothing solves a weld in a preview
+		for _, weld in accessory:GetDescendants() do
+			if weld:IsA("Weld") and weld.Part0 == handle and weld.Part1 then
+				weld.Part1.CFrame = handle.CFrame * weld.C0 * weld.C1:Inverse()
+			end
+		end
 	end
 	local ok = pcall(function()
 		humanoid:AddAccessory(accessory)
@@ -795,6 +801,49 @@ local function wear(ctx: Ctx, accessory: Accessory, layered: string?): boolean
 		accessory:Destroy()
 	end
 	return ok
+end
+
+-- Studio review 2026-10-31: Roblox now delivers every classic hair as a MeshPart handle with a TextureID and nothing
+-- that tints it (MeshPart.Color does not tint a TextureID). The texture moves to a SpecialMesh (its VertexColor tints)
+-- on a part welded to the handle, the handle hides. The server does it once on the loaded hair (CosmeticService,
+-- MeshSize known there); a hair that has its shell, a layered one or one without a texture is left as it is. False
+-- when nothing was made.
+local HAIR_SHELL = "VaelthornHairShell"
+function AvatarBuild.hairShell(accessory: Instance): boolean
+	local handle = accessory:FindFirstChild("Handle")
+	if not handle or not handle:IsA("MeshPart") or handle.TextureID == "" or handle:FindFirstChild(HAIR_SHELL) then
+		return false
+	end
+	if handle:FindFirstChildWhichIsA("WrapLayer") or handle:FindFirstChildWhichIsA("SurfaceAppearance") then
+		return false
+	end
+	local size = handle.MeshSize
+	if size.X <= 0 or size.Y <= 0 or size.Z <= 0 then
+		return false
+	end
+	local shell = Instance.new("Part")
+	shell.Name = HAIR_SHELL
+	shell.Size = handle.Size
+	shell.CFrame = handle.CFrame
+	shell.CanCollide = false
+	shell.CanQuery = false
+	shell.CanTouch = false
+	shell.Massless = true
+	shell.CastShadow = handle.CastShadow
+	local mesh = Instance.new("SpecialMesh")
+	mesh.MeshType = Enum.MeshType.FileMesh
+	mesh.MeshId = handle.MeshId
+	mesh.TextureId = handle.TextureID
+	mesh.Scale = handle.Size / size
+	mesh.Parent = shell
+	local weld = Instance.new("Weld")
+	weld.Part0 = handle
+	weld.Part1 = shell
+	weld.Parent = shell
+	shell.Parent = handle
+	handle.Transparency = 1
+	handle.TextureID = ""
+	return true
 end
 
 -- Tints the textures of an accessory with a hair colour (Logic/HairTint): SurfaceAppearance.Color on a light texture,
@@ -972,6 +1021,7 @@ local function placeHair(ctx: Ctx, hairId: string, hex: string, preview: boolean
 	end
 	local clone = template:Clone()
 	LookBuild.stripScripts(clone)
+	AvatarBuild.hairShell(clone) -- already there on a hair the server loaded; nothing when the mesh size is unknown
 	tint(clone, hex, def.light, def.tone)
 	return wear(ctx, clone, if preview then "hair" else nil)
 end

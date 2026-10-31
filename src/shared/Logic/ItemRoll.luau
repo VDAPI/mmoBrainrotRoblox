@@ -1,6 +1,7 @@
 --!strict
 -- Item rolling and item statistics (DESIGN §5.2–§5.4). Pure; randomness from Logic/Rng, uids injected.
 
+local Binding = require("./Binding")
 local Bonuses = require("../Data/Bonuses")
 local Classes = require("../Data/Classes")
 local Elements = require("../Data/Elements")
@@ -149,8 +150,9 @@ function ItemRoll.makeStack(defId: string, n: number, uid: string): ItemInstance
 		ilvl = def.level,
 		bonuses = {},
 		up = 0,
-		-- S122: stackables with bindOnPickup are bound from creation (potion_full); boss uniques are not stackable
-		bound = def.stackable == true and def.bindOnPickup == true,
+		-- S122: stacks with their own "pickup" rule are bound from creation (potion_full); owner 2026-10-31
+		-- (Logic/Binding): premium backpacks too. Boss uniques are equipment (rollItem), never stacks.
+		bound = Binding.ofDef(def) == "pickup",
 		n = math.clamp(math.floor(n), 1, def.maxStack),
 		rv = Rarities.RV,
 	}

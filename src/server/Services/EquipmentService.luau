@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
+local Binding = require(Shared.Logic.Binding)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
@@ -249,7 +250,7 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 		local old = equipment.backpack
 		inventory[key] = nil
 		equipment.backpack = item
-		item.bound = true
+		Binding.onEquip(item, def) -- owner 2026-10-31: ordinary backpacks never bind (Logic/Binding)
 		if old then
 			inventory[key] = old
 			-- S121: a backpack equipped from an overflow slot never leaves the old one in the overflow (the used
@@ -307,7 +308,7 @@ function EquipmentService.Equip(player: Player, index: number, requested: string
 		table.insert(touched, "offhand")
 		InventoryService.SetSlot(player, free, offhandToStore)
 	end
-	item.bound = true
+	Binding.onEquip(item, def) -- bind on equip (DESIGN §5.6, Logic/Binding)
 	equipment[slot] = item
 	InventoryService.SetSlot(player, index, inventory[key])
 	changed(player, touched)

@@ -19,6 +19,8 @@ local TextService = game:GetService("TextService")
 local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
+local Binding = require(Shared.Logic.Binding)
+local BindingData = require(Shared.Data.Binding)
 local Config = require(Shared.Config)
 local Inventory = require(Shared.Logic.Inventory)
 local KeyStore = require(script.Parent.Parent.Market.KeyStore)
@@ -252,6 +254,7 @@ function MailService.Send(userId: number, outgoing: Outgoing): (boolean, string?
 		fromId = outgoing.fromId,
 		fromChar = outgoing.fromChar,
 		worldBoss = if outgoing.from == "system" and outgoing.charId then outgoing.worldBoss else nil,
+		bv = BindingData.VERSION,
 	}
 	local ok, _, err = store:update(key(userId), function(current: any?)
 		local box = Mail.box(current)
@@ -373,6 +376,9 @@ local function claim(player: Player, id: string): (boolean, string?)
 	end
 	boxes[player] = Mail.box(newBox, classOf(player))
 	local parcel = taken :: Mail.Parcel
+	if (parcel.bv or 0) < BindingData.VERSION then
+		Binding.migrateAll(parcel.items) -- owner 2026-10-31: sent under the old rules (a bound potion comes free)
+	end
 	-- The character may have switched while the store yielded: deliver to whoever is active, else re-mail (S125: the
 	-- shards and the title go back in the same parcel).
 	local same = character(player) == char

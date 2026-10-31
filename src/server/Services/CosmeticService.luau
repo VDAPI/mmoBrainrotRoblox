@@ -667,9 +667,9 @@ end
 local function loadLookParts()
 	local folder = Instance.new("Folder")
 	folder.Name = BodyLooks.PARTS_FOLDER
-	local jobs: { { name: string, id: number, class: string } } = {}
+	local jobs: { { name: string, id: number, class: string, hair: boolean? } } = {}
 	for hairId, def in BodyLooks.hairs do
-		table.insert(jobs, { name = `hair_{hairId}`, id = def.id, class = "Accessory" })
+		table.insert(jobs, { name = `hair_{hairId}`, id = def.id, class = "Accessory", hair = true })
 	end
 	for browsId, id in BodyLooks.brows do
 		table.insert(jobs, { name = `brows_{browsId}`, id = id, class = "Accessory" })
@@ -691,6 +691,16 @@ local function loadLookParts()
 				end
 			end
 			item.Name = job.name
+			if job.hair then
+				-- Studio review 2026-10-31: a classic hair (MeshPart handle with a texture) gets the tint shell
+				-- (AvatarBuild.hairShell), once its mesh size is known
+				local handle = item:FindFirstChild("Handle")
+				local waited = 0
+				while handle and handle:IsA("MeshPart") and handle.MeshSize.Magnitude == 0 and waited < 5 do
+					waited += task.wait(0.1)
+				end
+				AvatarBuild.hairShell(item)
+			end
 			item.Parent = folder
 		else
 			log:warn("look part %s (%d) did not load", job.name, job.id)

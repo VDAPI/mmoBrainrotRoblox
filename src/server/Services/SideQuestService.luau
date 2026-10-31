@@ -22,6 +22,7 @@ local Workspace = game:GetService("Workspace")
 local Shared = ReplicatedStorage.Shared
 
 local Config = require(Shared.Config)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
@@ -286,7 +287,8 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 		InventoryService.GiveNew(player, item.id, item.n)
 	end
 	if chosen then
-		InventoryService.AddItem(player, chosen)
+		-- owner 2026-10-31: a quest reward binds on pickup (Data/Binding "reward")
+		InventoryService.AddItem(player, Binding.apply(chosen, "reward"))
 	end
 	-- S96: the stable arc's last quest gives a mount (once per character; a repeated hand-in after /side reset does
 	-- nothing, Logic/Mounts.grant)

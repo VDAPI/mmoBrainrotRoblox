@@ -19,6 +19,7 @@ local Analytics = require(script.Parent.Parent.Analytics)
 local Products = require(Shared.Data.Products)
 
 local AreaProfiles = require(Shared.Data.AreaProfiles)
+local Binding = require(Shared.Logic.Binding)
 local Config = require(Shared.Config)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
@@ -281,10 +282,8 @@ function LootService.Pickup(
 			table.insert(remaining, item)
 			continue
 		end
-		local def = Items.get(item.id)
-		if def and (def.bindOnPickup or (def.category == "equipment" and Rarities.get(item.rarity).bindOnPickup)) then
-			item.bound = true
-		end
+		-- named boss items and Mythics bind on pickup (Logic/Binding; boss and reward items came bound already)
+		Binding.apply(item, "drop")
 		local leftover = InventoryService.AddItem(player, item)
 		if leftover <= 0 then
 			table.insert(picked, item)
