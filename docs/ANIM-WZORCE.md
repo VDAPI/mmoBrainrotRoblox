@@ -858,6 +858,65 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
   summon, fight, then every action of the style by name (e.g. `deathCurl`, `sting`, `sitUp`).
 - The dust and venom of §6.3, the ent's splinters and leaves: §11. Not done: sounds and leaves on the ent's steps.
 
+### 6.6 Octopod template: the rigged caveSpider (as built 2026-10-31)
+
+The Tripo model of 2026-10-31 (`tools/anim/rigs/caveSpider_v2.json`, 65 bones, Studio keeps the FBX names
+`tripo::Root`, `tripo::<n>_<Left|Right>_Limb_<i>`, `bone_N`) has real leg chains. It does **not** get a new family:
+it keeps the `spider` recipe of §6.5 (same action names, times, `Data/MotionFx` effects, Muzzle, deaths) and
+`client/Anim/RigidRig` walks its legs on top through `Logic/OctoMotion` when `Data/OctoRigs` has a map whose bones the
+look all has. The old rigid model (no bones) matches no map and keeps everything of §6.5, its `MeshFold` death
+included; AnimationController and AnimLab need no change.
+
+- **The mesh has seven legs, not eight**: no third leg on the creature's right (Tripo's labels are mirrored: its
+  `Right_Limb` chains are the creature's left). Map (`Data/OctoRigs`): PL `2_Right_Limb_0..4`, L1 `1_Right_Limb`, L2
+  `0_Right_Limb`, L3 `3_Left_Limb`, L4 `3_Right_Limb`, PR `1_Left_Limb_0..4`, R1 `2_Left_Limb`, R2 `Spine_0` +
+  `bone_13..17`, R4 `bone_18..23`; fangs `bone_55..56` (left), `bone_58`, `bone_60..61`; abdomen `bone_54`. Tetrads L1
+  R2 L3 R4 / R1 L2 L4: one of them stands on three legs. A rig map for `desertScorpion` (Octopod or Hexapod with
+  `arms` = pincers and `tail`) is all its new model needs; its recipe already keys the legs.
+- **Legs** (`Logic/OctoPose`): each leg turns about the vertical through its hip (yaw) and bends in its own plane by two
+  numbers: `a` lifts it from the hip, `b` folds it at the knee (the joint highest at rest; femur +0.45, the joints
+  below −0.55, −0.25, −0.15, −0.05). Damped least squares from last frame's pair (4 steps, 2 for far rigs), the yaw
+  exact; the answer followed at most 22 rad/s (bend) and 24 rad/s (yaw), so a target swept through a leg's reach never
+  flips it in one frame. Bones are written `rest^-1 · R(axis, angle) · rest` as `CFrame.fromAxisAngle` about the axis
+  turned into the bone's own frame (rest frames read from the model at runtime: the Studio import has non-identity
+  ones), only when a turn changed by > 0.1°.
+- **Gait** (`Logic/OctoMotion`): the recipe's phase (by distance) runs both tetrads half a cycle apart with a ripple of
+  0.035 cycle per rank back through each; duty 0.68 walk, 0.62 trot, 0.55 run (from `Gait`); a tetrad's mid-stance on
+  the recipe's bob peak. A foot lands ahead of its rest point by half the stance's travel along the root's velocity
+  and turned on by half the stance's turn (so a turn in place is stepped too), lifted 0.16 hip heights at a walk,
+  0.30 at a run. Planted feet keep their world point every frame (the root's move and turn taken back), so nothing
+  slides under the bob, the sway, the lunge or the turn lag. A foot left behind (lunge, spin, lag spike) or out of
+  reach steps on its own and joins its tetrad's next swing; standing, the legs settle back one by one; a teleport
+  puts them down at once.
+- **Palps** are too short for the stride: on the move they are carried up in front and feel the air; standing they tap
+  the ground now and then; the fangs chew in the idle; the abdomen breathes and pumps with `gr`.
+- **Recipe keys** (only styles built with `legs = true`: spider, scorpion; a rigid look ignores them): `raise` / `wave`
+  (front pair and palps up and waving: alert, bite's gather, heavy, crush, cast, throw, taste fidget), `stab` (struck
+  forward and down onto the ground ahead and planted there: on the hit of bite, heavy, crush), `tuck` (every leg drawn
+  in: pounce flight, spawn, summon), `splay` (feet set wider: landings, slams; a splayed foot is not settled back
+  until the splay fades), `palp`, `fang` (open 1, snapped shut −0.3 on the bite's hit). The pounce adds two leg-only
+  keys on the flight's straight line (tucked at S0.6, reaching for the ground at S0.85), so the body's path is the
+  same with or without legs.
+- **Stun** trembles the knees (`shiver` + stun weight), **freeze** holds every leg, a **hit** flinches the legs on the
+  struck side.
+- **Deaths**: from the pose it had, the jolt straightens the legs, then each leg curls in under / over the belly at its
+  own pace as `fold` grows (above the knee +55°, below it −70 .. −270°). `OctoMotion.folds` gives RigidMotion the box of
+  the curled legs at every eighth, so the body sinks and topples over them (as with MeshFold); the flip ends on its
+  back with the legs curled up.
+- **Ground**: the nearest 12 crawlers (6 on touch) ray the ground once per footfall (`Workspace:Raycast`, monsters and
+  players skipped) and tilt the body to the plane of the planted feet (60 %, at most 20°); the rest walk on flat ground
+  with 2 solver steps (§1.10: a cheap tier B instead of no IK, the feet would slide). Cost in Lune ≈ 15 µs a frame for
+  the legs (+ 4 µs the recipe).
+- **No size numbers to re-measure**: the rig reads the bones, the box and the ground at runtime. Scaled to the old
+  model's height (2.35 studs, `Data/MonsterAssets` unchanged), the new model has the old box (5.06 × 2.35 × 4.61).
+- Lune: `tests/octomotion.spec.luau` (`tests/OctoSim.luau` walks the dump frame by frame): the map only on the new
+  bones (not the old dump, not the old Tripo bear), the Roblox bone chain with random rest frames, IK, planted feet
+  (no slide, ≥ 3 down) at walk / trot / run / arcs, tetrads alternating, turn in place by steps, settle, idle shift,
+  stun, freeze, slope, every action finite with the stab on the ground at W, rear-ups, pounce tuck and splay, deaths
+  curled and never under the ground, the folded boxes, no joint jumping > 0.6 rad a frame, every AnimLab state.
+- AnimLab: `/animlab mob caveSpider <state>` (states of §6.5) shows the legs once the new model is in
+  `Assets.Monsters`; before that it shows the rigid one.
+
 ## 7. Ghosts, golems, brutes: which template covers them
 
 | Kind | Rig | Template |

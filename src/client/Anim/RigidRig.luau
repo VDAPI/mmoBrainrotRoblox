@@ -8,14 +8,22 @@
 -- root's `Muzzle` with the body while it acts. The rig has the shape of client/Anim/QuadRig's (`motion`, `mod`,
 -- `kind`), so AnimationController and AnimLab drive it like the others. A model whose legs fold in its death
 -- (Data/RigidRigs `fold`: spider, scorpion) bends its mesh then through client/Anim/MeshFold (only while it dies).
+-- A crawler whose model has leg bones (Data/OctoRigs: the rigged caveSpider, picked by the bones present, so the old
+-- rigid model of the same id keeps the paths above) walks them through Logic/OctoMotion over the same recipe: the
+-- root's move each frame plants the feet in the world, a ray finds the ground under a foot as it steps (the nearest
+-- few only, §1.10), the legs curl in its death instead of the mesh fold.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local EffectStack = require(ReplicatedStorage.Shared.Logic.EffectStack)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
 local MeshFold = require(script.Parent.MeshFold)
 local MonsterMove = require(ReplicatedStorage.Shared.Logic.MonsterMove)
+local OctoMotion = require(ReplicatedStorage.Shared.Logic.OctoMotion)
+local OctoPose = require(ReplicatedStorage.Shared.Logic.OctoPose)
+local OctoRigs = require(ReplicatedStorage.Shared.Data.OctoRigs)
 local RigidMotion = require(ReplicatedStorage.Shared.Logic.RigidMotion)
 local RigidRigs = require(ReplicatedStorage.Shared.Data.RigidRigs)
 
@@ -32,6 +40,29 @@ local SUMMON_WITHIN = 1.0
 -- Size and transparency are written only when they change by more than this.
 local SIZE_STEP = 0.003
 local ALPHA_STEP = 0.01
+-- The crawlers with leg bones nearest the camera that probe the ground and solve their legs fully (§1.10 tier A:
+-- desktop, touch); a leg bone's turn is written only when it changed by more than this (rad).
+local LEGS_NEAREST, LEGS_NEAREST_TOUCH = 12, 6
+local TURN_STEP = math.rad(0.1)
+
+-- One leg bone the rig turns: about the model's vertical (`y`, the first joint of a leg: its yaw) and its bend axis
+-- `n`, both in the bone's own axes (rest^-1 * R * rest is a turn about rest^-1 * axis), by `share` of the angle; the
+-- angles written last.
+type Joint = { bone: Bone, y: Vector3?, n: Vector3, share: number, a: number, b: number }
+-- The legs of a crawler with bones (Logic/OctoMotion) and how the rig writes them.
+type Legs = {
+	motion: OctoMotion.Instance,
+	input: OctoMotion.Input,
+	legs: { { Joint } },
+	arms: { { Joint } },
+	fangs: { { Joint } },
+	abdomen: { Joint },
+	tail: { Joint },
+	frame: CFrame, -- the ground frame (the look's rest under the root) in the world this frame
+	lastRoot: CFrame?,
+	full: boolean, -- among the nearest: the ground probe and the full solver
+	probe: (x: number, z: number) -> number?,
+}
 
 export type Rig = {
 	kind: "rigid",
@@ -69,11 +100,16 @@ export type Rig = {
 	flight: RigidMotion.Flight,
 	lab: boolean,
 	legs: MeshFold.Handle?, -- the legs curl in on its death (client/Anim/MeshFold)
+	octo: Legs?, -- the legs walk on their bones (Data/OctoRigs)
 }
 
 -- Every live rig by its motion (weak: a look destroyed takes its rig along).
 local live: { [RigidMotion.Instance]: Rig } = setmetatable({} :: any, { __mode = "kv" })
 local pickAt = -math.huge
+-- The legs' ground probe skips the monsters and the players (the list renewed with the nearest pick).
+local groundParams = RaycastParams.new()
+groundParams.FilterType = Enum.RaycastFilterType.Exclude
+groundParams.IgnoreWater = false
 
 local function toMat(cf: CFrame): { number }
 	local _, _, _, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
@@ -181,6 +217,125 @@ local function rest(item: Instance, name: string, now: any): any
 	return kept
 end
 
+-- The joints of the bones `names` (rest frames by name) turning about `axis` (model frame), each by its share.
+local function jointsOf(
+	names: { string },
+	bones: { [string]: Bone },
+	frames: { [string]: CFrame },
+	axis: { Vector3 },
+	share: { number }?,
+	yaw: boolean
+): { Joint }
+	local out: { Joint } = {}
+	for j, name in names do
+		local rest = frames[name]
+		out[j] = {
+			bone = bones[name] :: Bone,
+			y = if yaw and j == 1 then rest:VectorToObjectSpace(Vector3.yAxis) else nil,
+			n = rest:VectorToObjectSpace(axis[math.min(j, #axis)]),
+			share = if share then share[j] else 1,
+			a = 0,
+			b = 0,
+		}
+	end
+	return out
+end
+
+-- The legs of `look` when Data/OctoRigs has a map of `model` whose bones it all has (the rigged model; the old rigid
+-- one has none): the skeleton from the bones' rest frames in the PrimaryPart's frame, the ground the mesh's lowest
+-- point. Also every bone by name (the rig clears them, Vfx/MotionFx finds its anchors on them).
+local function legsOf(
+	model: string,
+	look: Model,
+	primary: BasePart,
+	body: RigidMotion.Body,
+	seed: number,
+	bones: { [string]: Bone }
+): Legs?
+	for _, item in look:GetDescendants() do
+		if item:IsA("Bone") and not bones[item.Name] then
+			bones[item.Name] = item
+		end
+	end
+	local found: { [string]: Bone? } = bones
+	local map = OctoRigs.find(model, function(name: string): boolean
+		return found[name] ~= nil
+	end)
+	if not map then
+		return nil
+	end
+	-- the rest frames from the bones' own offsets up to their part (never the animated frames: a look the rig moved
+	-- before keeps its Transforms until the next render)
+	local function restOf(item: Instance): CFrame?
+		if item:IsA("Bone") then
+			local parent = item.Parent
+			local base = if parent then restOf(parent) else nil
+			return if base then base * item.CFrame else nil
+		elseif item:IsA("BasePart") then
+			return item.CFrame
+		end
+		return nil
+	end
+	local space = primary.CFrame
+	local rest: { [string]: OctoPose.Bone } = {}
+	local frames: { [string]: CFrame } = {}
+	for name, bone in bones do
+		bone.Transform = CFrame.identity
+		local cf = space:ToObjectSpace(restOf(bone) or bone.WorldCFrame)
+		local p = cf.Position
+		frames[name] = cf.Rotation
+		rest[name] = { rest = toMat(cf), pos = { p.X, p.Y, p.Z }, parent = nil }
+	end
+	local skel = OctoPose.skeleton(rest, map, body.lift)
+	if not skel then
+		return nil
+	end
+	local function limbs(list: { OctoPose.Leg }): { { Joint } }
+		local out = {}
+		for i, leg in list do
+			out[i] = jointsOf(leg.bones, bones, frames, { Vector3.new(leg.ax, 0, leg.az) }, nil, true)
+		end
+		return out
+	end
+	local function turn(t: OctoPose.Turn?): { Joint }
+		if not t then
+			return {}
+		end
+		local axis = {}
+		for j, v in t.axis do
+			axis[j] = Vector3.new(v[1], v[2], v[3])
+		end
+		return jointsOf(t.bones, bones, frames, axis, t.share, false)
+	end
+	local fangs = {}
+	for i, t in skel.fangs do
+		fangs[i] = turn(t)
+	end
+	local legs: Legs = {
+		motion = OctoMotion.new(skel, seed),
+		input = {},
+		legs = limbs(skel.legs),
+		arms = limbs(skel.arms),
+		fangs = fangs,
+		abdomen = turn(skel.abdomen),
+		tail = turn(skel.tail),
+		frame = space,
+		lastRoot = nil,
+		full = true,
+		probe = function(_x: number, _z: number): number?
+			return nil
+		end,
+	}
+	-- the ground under a point of the ground frame (once per footfall: Logic/OctoMotion asks as a foot sets off)
+	local up, down = skel.ground + 2 * skel.hipH, Vector3.new(0, -5 * skel.hipH, 0)
+	legs.probe = function(x: number, z: number): number?
+		local frame = legs.frame
+		local hit = Workspace:Raycast(frame:PointToWorldSpace(Vector3.new(x, up, z)), down, groundParams)
+		return if hit then frame:PointToObjectSpace(hit.Position).Y else nil
+	end
+	return legs
+end
+
 -- The rig of `look` (the cloned model of Assets.Monsters `model`) in `styleId` (Data/RigidStyles); `monster` is the
 -- server's monster in the game, nil in AnimLab (the anchored preview).
 function RigidRig.new(look: Model, styleId: string, seed: number, model: string, monster: Model?): Rig?
@@ -202,6 +357,7 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 	end
 	local chains, bones = chainsOf(model, look, primary)
 	local body, parts = measure(look, primary)
+	local octo = legsOf(model, look, primary, body, seed, bones)
 	local mesh: MeshPart? = nil
 	local size = Vector3.one
 	local axes = { 1, 2, 3 }
@@ -225,6 +381,10 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 	local motion = RigidMotion.new(body, styleId, seed, chains)
 	if not motion then
 		return nil
+	end
+	if octo then
+		-- the body sinks and topples over the curled legs in its death
+		body.folds = OctoMotion.folds(octo.motion, body)
 	end
 	local root = if monster then monster:FindFirstChild("HumanoidRootPart") else nil
 	local serverRoot: BasePart? = if root and root:IsA("BasePart") then root else nil
@@ -266,6 +426,7 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 		flight = { x = 0, y = 0, z = 0, pitch = 0 },
 		lab = monster == nil,
 		legs = legs,
+		octo = octo,
 	}
 	rig.mod = RigidRig.Mod
 	if monster and monster:GetAttribute("Dead") ~= true then
@@ -283,7 +444,7 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 	return rig
 end
 
--- The nearest few rigs (to the camera) may squash.
+-- The nearest few rigs (to the camera) may squash; the nearest crawlers with leg bones probe the ground.
 local function pickNear()
 	local camera = Workspace.CurrentCamera
 	if not camera then
@@ -293,8 +454,12 @@ local function pickNear()
 	local list: { Rig } = {}
 	for _, rig in live do
 		rig.near = false
+		local legs = rig.octo
+		if legs then
+			legs.full = rig.root == nil
+		end
 		local root = rig.root
-		if rig.mesh and root and rig.look.Parent then
+		if (rig.mesh or legs) and root and rig.look.Parent then
 			rig.distance = (root.Position - eye).Magnitude
 			table.insert(list, rig)
 		end
@@ -302,8 +467,33 @@ local function pickNear()
 	table.sort(list, function(a: Rig, b: Rig)
 		return a.distance < b.distance
 	end)
-	for i = 1, math.min(SQUASH_NEAREST, #list) do
-		list[i].near = true
+	local squash, walk = 0, 0
+	local most = if UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+		then LEGS_NEAREST_TOUCH
+		else LEGS_NEAREST
+	for _, rig in list do
+		if rig.mesh and squash < SQUASH_NEAREST then
+			squash += 1
+			rig.near = true
+		end
+		local legs = rig.octo
+		if legs and walk < most then
+			walk += 1
+			legs.full = true
+		end
+	end
+	if walk > 0 then
+		local skip: { Instance } = {}
+		local monsters = Workspace:FindFirstChild("Monsters")
+		if monsters then
+			table.insert(skip, monsters)
+		end
+		for _, player in game:GetService("Players"):GetPlayers() do
+			if player.Character then
+				table.insert(skip, player.Character)
+			end
+		end
+		groundParams.FilterDescendantsInstances = skip
 	end
 end
 
@@ -341,6 +531,9 @@ local function augment(rig: Rig, input: RigidMotion.Input)
 		local dying = run ~= nil and action ~= nil and action.hold == true and input.now >= run.start
 		input.fold = MeshFold.share(legs, dying)
 		rig.motion.body.folds = MeshFold.folds(legs)
+	elseif rig.octo then
+		-- the leg bones draw the whole fold
+		input.fold = 1
 	end
 	local monster = rig.monster
 	local root = rig.root
@@ -406,6 +599,75 @@ local function augment(rig: Rig, input: RigidMotion.Input)
 	end
 end
 
+-- The legs of a crawler with bones for the frame RigidMotion just posed: the root's move since the last frame (its own
+-- frame before the turn; AnimLab: none, the ground runs under the look at its speed), the probe of the nearest.
+local function walk(rig: Rig, legs: Legs, input: RigidMotion.Input, posed: RigidMotion.Posed)
+	local into = legs.input
+	local root = rig.root
+	if root then
+		local now = root.CFrame
+		local last = legs.lastRoot
+		if last and not input.snap then
+			local d = last:PointToObjectSpace(now.Position)
+			into.dx, into.dz = d.X, d.Z
+		else
+			into.dx, into.dz = 0, 0
+		end
+		into.dyaw = input.yawDelta or 0
+		legs.lastRoot = now
+		-- (the look hangs at c0 under the root: the ground frame is the look's rest)
+		legs.frame = now * rig.c0
+	else
+		into.dx, into.dz, into.dyaw = nil, nil, nil
+		legs.frame = rig.base
+	end
+	into.coarse = not legs.full
+	into.ground = if legs.full and root then legs.probe else nil
+	OctoMotion.step(legs.motion, rig.motion, input, posed, into)
+end
+
+-- The turns of one leg (the yaw on its first joint) where they changed.
+local function writeLeg(joints: { Joint }, f: OctoMotion.Foot)
+	local c = f.c
+	for j, joint in joints do
+		local a = c[j]
+		local b = if j == 1 then f.psi else 0
+		if math.abs(a - joint.a) > TURN_STEP or math.abs(b - joint.b) > TURN_STEP then
+			joint.a, joint.b = a, b
+			local y = joint.y
+			joint.bone.Transform = if y
+				then CFrame.fromAxisAngle(y, b) * CFrame.fromAxisAngle(joint.n, a)
+				else CFrame.fromAxisAngle(joint.n, a)
+		end
+	end
+end
+
+-- The turns of a chain about its axes by `angle` (each bone its share) where they changed.
+local function writeTurn(joints: { Joint }, angle: number)
+	for _, joint in joints do
+		local a = angle * joint.share
+		if math.abs(a - joint.a) > TURN_STEP then
+			joint.a = a
+			joint.bone.Transform = CFrame.fromAxisAngle(joint.n, a)
+		end
+	end
+end
+
+local function writeLegs(legs: Legs)
+	local motion = legs.motion
+	for i, joints in legs.legs do
+		writeLeg(joints, motion.feet[i])
+	end
+	for i, joints in legs.arms do
+		writeLeg(joints, motion.arms[i])
+	end
+	for _, joints in legs.fangs do
+		writeTurn(joints, motion.fang)
+	end
+	writeTurn(legs.abdomen, motion.pump)
+	writeTurn(legs.tail, motion.tail)
+end
+
 -- The functions the game and AnimLab call on `rig.mod` (Logic/RigidMotion's, the step reading the monster first).
 RigidRig.Mod = {
 	length = RigidMotion.length,
@@ -418,7 +680,12 @@ RigidRig.Mod = {
 		if rig then
 			augment(rig, input)
 		end
-		return RigidMotion.step(motion, input)
+		local posed = RigidMotion.step(motion, input)
+		local legs = rig and rig.octo
+		if rig and legs then
+			walk(rig, legs, input, posed)
+		end
+		return posed
 	end,
 }
 
@@ -474,6 +741,9 @@ function RigidRig.apply(rig: Rig, posed: RigidMotion.Posed)
 	if rig.legs then
 		MeshFold.write(rig.legs, posed.fold)
 	end
+	if rig.octo then
+		writeLegs(rig.octo)
+	end
 	local muzzle = rig.muzzle
 	if muzzle then
 		if posed.acting then
@@ -504,6 +774,17 @@ function RigidRig.clear(rig: Rig)
 	rig.alpha = 0
 	for _, bone in rig.bones do
 		bone.Transform = CFrame.identity
+	end
+	local octo = rig.octo
+	if octo then
+		for _, list in { octo.legs, octo.arms, octo.fangs, { octo.abdomen, octo.tail } } do
+			for _, joints in list do
+				for _, joint in joints do
+					joint.a, joint.b = 0, 0
+				end
+			end
+		end
+		octo.motion.ready = false
 	end
 	if rig.muzzle then
 		rig.muzzle.Position = rig.muzzleRest

@@ -16,7 +16,14 @@
 --   nP nY hP tC calmTail   bones of a serpent (Data/RigidRigs): neck pitch (+ forward) and yaw, head pitch, tail curl,
 --                   the tail's wave stilled
 --   fold            the legs curling in (deaths; 0 rest, 1 curled, -0.3 splayed): drawn only where client/Anim/MeshFold
---                   bends the mesh (Data/RigidRigs `fold`: spider, scorpion), else nothing
+--                   bends the mesh (Data/RigidRigs `fold`: spider, scorpion) or the legs have bones, else nothing
+-- Legs with bones (Data/OctoRigs, Logic/OctoMotion; keyed only by a style built with `legs = true`: spider, scorpion;
+-- a rigid look ignores them):
+--   raise wave      the front legs and the palps lift and reach forward and up / wave (a rear-up, a bite's gather)
+--   stab            the raised legs strike forward and down onto the ground ahead (and stay planted there)
+--   tuck splay      every leg drawn in under the body (flights, the spawn) / the feet set down wider (landings, slams)
+--   palp fang       the palps held up; the fangs open (1) or shut (below 0); `gr` also pumps the abdomen, `shiver`
+--                   trembles the legs
 -- `gaits` by speed over body length (`thresholds`), each: stride (B per cycle, a cadence cap `maxRate` Hz makes it
 -- longer), the bob (bumps per cycle), sway, wiggle, rock, pitch and its wave, surge, crouch, hops, a flutter's `hz`.
 
@@ -146,6 +153,16 @@ local function with(pose: Pose, k: string, v: number): Pose
 	return pose
 end
 
+-- `pose` with the leg keys `legs` laid over it when the style has legs (`o.legs`: Logic/OctoMotion reads them).
+local function lg(o: { [string]: any }, pose: Pose, legs: Pose): Pose
+	if o.legs then
+		for k, v in legs do
+			pose[k] = v
+		end
+	end
+	return pose
+end
+
 local function key(seg: string, u: number, ease: string?, pose: Pose): Key
 	return { seg = seg, u = u, ease = ease, pose = pose }
 end
@@ -190,10 +207,43 @@ local function alert(st: Pose, o: { [string]: any }): Action
 		follow = 0.15,
 		recover = 0.3,
 		keys = {
-			key("A", 0.43, "out", s({ [pivot] = o.rear, y = o.up or 0.02, shiver = o.shiver or deg(1) })),
-			key("A", 1, "lin", s({ [pivot] = o.rear, y = o.up or 0.02, shiver = o.shiver or deg(1) })),
-			key("S", 1, "in", s({ [pivot] = 0, y = o.thump or -0.03, sq = o.squash or -0.08 })),
-			key("F", 1, "out", s({ y = (o.thump or -0.03) * 0.3 })),
+			key(
+				"A",
+				0.43,
+				"out",
+				s(
+					lg(
+						o,
+						{ [pivot] = o.rear, y = o.up or 0.02, shiver = o.shiver or deg(1) },
+						{ raise = 1, wave = 0.4, fang = 0.8, palp = 1 }
+					)
+				)
+			),
+			key(
+				"A",
+				1,
+				"lin",
+				s(
+					lg(
+						o,
+						{ [pivot] = o.rear, y = o.up or 0.02, shiver = o.shiver or deg(1) },
+						{ raise = 1, wave = 1, fang = 1, palp = 1 }
+					)
+				)
+			),
+			key(
+				"S",
+				1,
+				"in",
+				s(
+					lg(
+						o,
+						{ [pivot] = 0, y = o.thump or -0.03, sq = o.squash or -0.08 },
+						{ raise = 0, wave = 0, splay = 0.4, fang = 0.2 }
+					)
+				)
+			),
+			key("F", 1, "out", s(lg(o, { y = (o.thump or -0.03) * 0.3 }, { splay = 0.2 }))),
 			key("R", 1, "inout", st),
 		},
 	}
@@ -216,15 +266,68 @@ local function bite(st: Pose, o: { [string]: any }): Action
 				"A",
 				0.6,
 				"out",
-				s({ rear = rear * 0.85, y = up * 0.8, z = back, shiver = (o.shiver or deg(1.5)) * 0.35 })
+				s(
+					lg(
+						o,
+						{ rear = rear * 0.85, y = up * 0.8, z = back, shiver = (o.shiver or deg(1.5)) * 0.35 },
+						{ raise = 0.75, fang = 0.6, palp = 0.8 }
+					)
+				)
 			),
-			key("A", 1, "inout", s({ rear = rear, y = up, z = back, shiver = o.shiver or deg(1.5) })),
-			key("S", 0.5, "in", s({ rear = 0, dip = slam * 0.4, y = hop, lunge = 0.6 })),
-			key("S", 1, "in", s({ rear = 0, dip = slam, y = 0, lunge = 1, sq = o.squash or -0.1 })),
-			key("F", 0.35, "out", s({ rear = 0, dip = slam * 0.85, lunge = 1, yaw = shake })),
-			key("F", 0.7, "inout", s({ rear = 0, dip = slam * 0.7, lunge = 1, yaw = -shake })),
-			key("F", 1, "inout", s({ rear = 0, dip = slam * 0.5, lunge = 0.95, yaw = shake * 0.3 })),
-			key("R", 0.45, "out", s({ lunge = 0.3, y = o.recoil or 0.05, z = back * 0.5 })),
+			key(
+				"A",
+				1,
+				"inout",
+				s(
+					lg(
+						o,
+						{ rear = rear, y = up, z = back, shiver = o.shiver or deg(1.5) },
+						{ raise = 1, wave = 0.15, fang = 1, palp = 1 }
+					)
+				)
+			),
+			key(
+				"S",
+				0.5,
+				"in",
+				s(lg(o, { rear = 0, dip = slam * 0.4, y = hop, lunge = 0.6 }, { raise = 0.55, stab = 0.45, fang = 1 }))
+			),
+			key(
+				"S",
+				1,
+				"in",
+				s(
+					lg(
+						o,
+						{ rear = 0, dip = slam, y = 0, lunge = 1, sq = o.squash or -0.1 },
+						{ raise = 0, stab = 1, fang = -0.3, palp = 0.3 }
+					)
+				)
+			),
+			key(
+				"F",
+				0.35,
+				"out",
+				s(lg(o, { rear = 0, dip = slam * 0.85, lunge = 1, yaw = shake }, { stab = 1, fang = -0.3 }))
+			),
+			key(
+				"F",
+				0.7,
+				"inout",
+				s(lg(o, { rear = 0, dip = slam * 0.7, lunge = 1, yaw = -shake }, { stab = 1, fang = -0.25 }))
+			),
+			key(
+				"F",
+				1,
+				"inout",
+				s(lg(o, { rear = 0, dip = slam * 0.5, lunge = 0.95, yaw = shake * 0.3 }, { stab = 0.6, fang = 0 }))
+			),
+			key(
+				"R",
+				0.45,
+				"out",
+				s(lg(o, { lunge = 0.3, y = o.recoil or 0.05, z = back * 0.5 }, { stab = 0, fang = 0.1 }))
+			),
 			key("R", 1, "inout", st),
 		},
 	}
@@ -282,7 +385,9 @@ local function cast(st: Pose, o: { [string]: any }): Action
 	local rear, up, pump, grow = o.rear or deg(22), o.up or 0.08, o.pump or deg(3), o.grow or 0.05
 	local neck = o.neck or deg(25)
 	local pumps = o.pumps or 3
-	local keys = { key("A", 0.3, "out", s({ [pivot] = rear, y = up, nP = -neck })) }
+	local keys = {
+		key("A", 0.3, "out", s(lg(o, { [pivot] = rear, y = up, nP = -neck }, { raise = 0.6, palp = 1, fang = 0.5 }))),
+	}
 	for i = 1, pumps do
 		table.insert(
 			keys,
@@ -290,26 +395,59 @@ local function cast(st: Pose, o: { [string]: any }): Action
 				"A",
 				0.3 + 0.7 * (i - 0.5) / pumps,
 				"inout",
-				s({ [pivot] = rear - pump, y = up, gr = grow, nP = -neck * 1.1 })
+				s(
+					lg(
+						o,
+						{ [pivot] = rear - pump, y = up, gr = grow, nP = -neck * 1.1 },
+						{ raise = 0.6, palp = 1, fang = 0.6 }
+					)
+				)
 			)
 		)
 		table.insert(
 			keys,
-			key("A", 0.3 + 0.7 * i / pumps, "inout", s({ [pivot] = rear + pump * 0.3, y = up, gr = 0, nP = -neck }))
+			key(
+				"A",
+				0.3 + 0.7 * i / pumps,
+				"inout",
+				s(
+					lg(
+						o,
+						{ [pivot] = rear + pump * 0.3, y = up, gr = 0, nP = -neck },
+						{ raise = 0.55, palp = 1, fang = 0.4 }
+					)
+				)
+			)
 		)
 	end
 	local snapTo = o.snap or deg(8)
 	local recoil = o.recoil or 0.04
 	table.insert(
 		keys,
-		key("S", 1, "in", s(with({ dip = snapTo, z = recoil, y = 0, nP = neck * 0.6, lunge = o.lunge or 0 }, pivot, 0)))
+		key(
+			"S",
+			1,
+			"in",
+			s(
+				lg(
+					o,
+					with({ dip = snapTo, z = recoil, y = 0, nP = neck * 0.6, lunge = o.lunge or 0 }, pivot, 0),
+					{ raise = 0, splay = 0.3, fang = 1 }
+				)
+			)
+		)
 	)
 	local held =
 		{ dip = snapTo * 0.85, z = recoil * 0.8, nP = neck * 0.5, shiver = deg(0.6), lunge = (o.lunge or 0) * 0.8 }
-	table.insert(keys, key("F", 0.5, "out", s(with(held, pivot, 0))))
+	table.insert(keys, key("F", 0.5, "out", s(lg(o, with(held, pivot, 0), { splay = 0.3, fang = 0.8 }))))
 	table.insert(
 		keys,
-		key("F", 1, "inout", s(with({ dip = snapTo * 0.4, z = recoil * 0.4, nP = neck * 0.2 }, pivot, 0)))
+		key(
+			"F",
+			1,
+			"inout",
+			s(lg(o, with({ dip = snapTo * 0.4, z = recoil * 0.4, nP = neck * 0.2 }, pivot, 0), { fang = 0.3 }))
+		)
 	)
 	table.insert(keys, key("R", 1, "inout", st))
 	return {
@@ -335,12 +473,60 @@ local function heavy(st: Pose, o: { [string]: any }): Action
 		recover = 0.5,
 		tremble = deg(1),
 		keys = {
-			key("A", 0.35, "out", s({ [pivot] = rear * 0.8, y = 0.05, wig = weave })),
-			key("A", 0.55, "inout", s({ [pivot] = rear * 0.9, y = 0.06, wig = -weave })),
-			key("A", 0.75, "inout", s({ [pivot] = rear, y = 0.06, wig = weave })),
-			key("A", 1, "inout", s({ [pivot] = rear, y = 0.06, wig = -sweep * 0.5, shiver = deg(1) })),
-			key("S", 1, "in", s(with({ dip = slam, y = 0, lunge = 1, wig = sweep * 0.5, sq = -0.1 }, pivot, 0))),
-			key("F", 1, "out", s(with({ dip = slam * 0.6, lunge = 0.9, wig = sweep * 0.55 }, pivot, 0))),
+			key(
+				"A",
+				0.35,
+				"out",
+				s(lg(o, { [pivot] = rear * 0.8, y = 0.05, wig = weave }, { raise = 1, wave = 0.7, fang = 0.8 }))
+			),
+			key(
+				"A",
+				0.55,
+				"inout",
+				s(lg(o, { [pivot] = rear * 0.9, y = 0.06, wig = -weave }, { raise = 1, wave = 0.7, fang = 0.8 }))
+			),
+			key(
+				"A",
+				0.75,
+				"inout",
+				s(lg(o, { [pivot] = rear, y = 0.06, wig = weave }, { raise = 1, wave = 0.6, fang = 0.9 }))
+			),
+			key(
+				"A",
+				1,
+				"inout",
+				s(
+					lg(
+						o,
+						{ [pivot] = rear, y = 0.06, wig = -sweep * 0.5, shiver = deg(1) },
+						{ raise = 1, wave = 0.3, fang = 1 }
+					)
+				)
+			),
+			key(
+				"S",
+				1,
+				"in",
+				s(
+					lg(
+						o,
+						with({ dip = slam, y = 0, lunge = 1, wig = sweep * 0.5, sq = -0.1 }, pivot, 0),
+						{ raise = 0, wave = 0, stab = 1, fang = -0.3 }
+					)
+				)
+			),
+			key(
+				"F",
+				1,
+				"out",
+				s(
+					lg(
+						o,
+						with({ dip = slam * 0.6, lunge = 0.9, wig = sweep * 0.55 }, pivot, 0),
+						{ stab = 0.8, fang = -0.2 }
+					)
+				)
+			),
 			key("R", 1, "inout", st),
 		},
 	}
@@ -353,16 +539,47 @@ local function crush(st: Pose, o: { [string]: any }): Action
 	end
 	local pivot = o.pivot or "rear"
 	local rear, slam = o.rear or deg(30), o.slam or deg(12)
-	local keys = { key("A", 0.25, "out", s({ [pivot] = rear, y = 0.08 })) }
+	local up = { raise = 1, wave = 0.4, fang = 0.6 }
+	local keys = { key("A", 0.25, "out", s(lg(o, { [pivot] = rear, y = 0.08 }, up))) }
 	for i = 1, 3 do
 		table.insert(
 			keys,
-			key("A", 0.25 + 0.75 * (i - 0.5) / 3, "inout", s({ [pivot] = rear - deg(4), y = 0.08, gr = 0.05 }))
+			key(
+				"A",
+				0.25 + 0.75 * (i - 0.5) / 3,
+				"inout",
+				s(lg(o, { [pivot] = rear - deg(4), y = 0.08, gr = 0.05 }, up))
+			)
 		)
-		table.insert(keys, key("A", 0.25 + 0.75 * i / 3, "inout", s({ [pivot] = rear + deg(1), y = 0.08, gr = 0 })))
+		table.insert(
+			keys,
+			key("A", 0.25 + 0.75 * i / 3, "inout", s(lg(o, { [pivot] = rear + deg(1), y = 0.08, gr = 0 }, up)))
+		)
 	end
-	table.insert(keys, key("S", 1, "in", s(with({ dip = slam, y = -0.02, lunge = 0.5, sq = -0.15 }, pivot, 0))))
-	table.insert(keys, key("F", 1, "out", s(with({ dip = slam * 0.7, y = -0.01, lunge = 0.5 }, pivot, 0))))
+	table.insert(
+		keys,
+		key(
+			"S",
+			1,
+			"in",
+			s(
+				lg(
+					o,
+					with({ dip = slam, y = -0.02, lunge = 0.5, sq = -0.15 }, pivot, 0),
+					{ raise = 0, wave = 0, stab = 1, splay = 0.6, fang = -0.3 }
+				)
+			)
+		)
+	)
+	table.insert(
+		keys,
+		key(
+			"F",
+			1,
+			"out",
+			s(lg(o, with({ dip = slam * 0.7, y = -0.01, lunge = 0.5 }, pivot, 0), { stab = 0.7, splay = 0.4 }))
+		)
+	)
 	table.insert(keys, key("R", 1, "inout", st))
 	return { strike = 0.14, follow = 0.2, recover = 0.5, tremble = deg(2), keys = keys }
 end
@@ -374,17 +591,83 @@ local function pounce(st: Pose, o: { [string]: any }): Action
 		return from(st, p)
 	end
 	local crouch, dip, wiggle = o.crouch or -0.08, o.dip or deg(6), o.wiggle or deg(4)
-	local cocked = { y = crouch, dip = dip, sq = -0.06, rear = 0 }
+	local cocked = lg(o, { y = crouch, dip = dip, sq = -0.06, rear = 0 }, { splay = 0.2, palp = 0.6, fang = 0.5 })
 	local keys = { key("A", 0.2, "out", s(cocked)) }
 	for i, u in { 0.4, 0.55, 0.7, 0.85 } do
 		table.insert(keys, key("A", u, "inout", s(from(cocked, { wig = if i % 2 == 1 then wiggle else -wiggle }))))
 	end
-	table.insert(keys, key("A", 1, "inout", s(from(cocked, { y = crouch * 1.1, sq = -0.08, shiver = deg(0.8) }))))
-	table.insert(keys, key("S", 0, "lin", s(from(cocked, { y = crouch * 1.1, sq = -0.08, travel = 0 }))))
-	table.insert(keys, key("S", 0.15, "out", s({ travel = 0.12, sq = 0.1, rear = 0, dip = 0 })))
-	table.insert(keys, key("S", 1, "lin", s({ travel = 1, sq = -0.15, rear = 0, dip = 0 })))
-	table.insert(keys, key("F", 0.4, "out", s({ travel = 1, y = 0.03, sq = 0.03, shiver = deg(1) })))
-	table.insert(keys, key("F", 1, "inout", s({ travel = 1, shiver = deg(0.4) })))
+	table.insert(
+		keys,
+		key(
+			"A",
+			1,
+			"inout",
+			s(from(cocked, lg(o, { y = crouch * 1.1, sq = -0.08, shiver = deg(0.8) }, { fang = 0.8 })))
+		)
+	)
+	table.insert(
+		keys,
+		key(
+			"S",
+			0,
+			"lin",
+			s(from(cocked, lg(o, { y = crouch * 1.1, sq = -0.08, travel = 0 }, { fang = 0.8, tuck = 0 })))
+		)
+	)
+	-- (legs: drawn in as it leaves the ground, reaching out for it before the landing, splayed on it)
+	table.insert(
+		keys,
+		key(
+			"S",
+			0.15,
+			"out",
+			s(lg(o, { travel = 0.12, sq = 0.1, rear = 0, dip = 0 }, { tuck = 0.9, raise = 0.5, palp = 0, fang = 1 }))
+		)
+	)
+	if o.legs then
+		-- (on the flight's straight line, so the body's path is the same with or without these keys: drawn in, then
+		-- reaching down for the ground before it lands)
+		for _, k in { { 0.6, 1, 0.4 }, { 0.85, 0, 0.1 } } do
+			local u = (k[1] - 0.15) / 0.85
+			table.insert(
+				keys,
+				key(
+					"S",
+					k[1],
+					"lin",
+					s({
+						travel = 0.12 + 0.88 * u,
+						sq = 0.1 - 0.25 * u,
+						rear = 0,
+						dip = 0,
+						tuck = k[2],
+						raise = k[3],
+						splay = 0.6 * (1 - k[2]),
+						fang = 1,
+					})
+				)
+			)
+		end
+	end
+	table.insert(
+		keys,
+		key(
+			"S",
+			1,
+			"lin",
+			s(lg(o, { travel = 1, sq = -0.15, rear = 0, dip = 0 }, { tuck = 0, raise = 0, splay = 1, fang = -0.3 }))
+		)
+	)
+	table.insert(
+		keys,
+		key(
+			"F",
+			0.4,
+			"out",
+			s(lg(o, { travel = 1, y = 0.03, sq = 0.03, shiver = deg(1) }, { splay = 0.8, fang = -0.2 }))
+		)
+	)
+	table.insert(keys, key("F", 1, "inout", s(lg(o, { travel = 1, shiver = deg(0.4) }, { splay = 0.5, fang = 0 }))))
 	table.insert(keys, key("R", 1, "inout", st))
 	return {
 		strike = o.strike or 0.4,
@@ -409,11 +692,48 @@ local function throw(st: Pose, o: { [string]: any }): Action
 		follow = 0.12,
 		recover = 0.3,
 		keys = {
-			key("A", 0.5, "out", s({ [pivot] = rear, y = 0.04, nP = -deg(20) })),
-			key("A", 0.8, "inout", s({ [pivot] = rear * 0.85, y = 0.04, gr = 0.04, nP = -deg(22) })),
-			key("A", 1, "inout", s({ [pivot] = rear, y = 0.04, gr = 0, nP = -deg(20) })),
-			key("S", 1, "in", s(with({ dip = o.snap or deg(6), z = 0.03, y = 0, nP = deg(15) }, pivot, 0))),
-			key("F", 1, "out", s(with({ dip = (o.snap or deg(6)) * 0.5, z = 0.015, nP = deg(6) }, pivot, 0))),
+			key(
+				"A",
+				0.5,
+				"out",
+				s(lg(o, { [pivot] = rear, y = 0.04, nP = -deg(20) }, { raise = 0.4, palp = 1, fang = 0.5 }))
+			),
+			key(
+				"A",
+				0.8,
+				"inout",
+				s(
+					lg(
+						o,
+						{ [pivot] = rear * 0.85, y = 0.04, gr = 0.04, nP = -deg(22) },
+						{ raise = 0.4, palp = 1, fang = 0.7 }
+					)
+				)
+			),
+			key(
+				"A",
+				1,
+				"inout",
+				s(lg(o, { [pivot] = rear, y = 0.04, gr = 0, nP = -deg(20) }, { raise = 0.4, palp = 1, fang = 1 }))
+			),
+			key(
+				"S",
+				1,
+				"in",
+				s(
+					lg(
+						o,
+						with({ dip = o.snap or deg(6), z = 0.03, y = 0, nP = deg(15) }, pivot, 0),
+						{ raise = 0, splay = 0.2, fang = 1 }
+					)
+				)
+			),
+			key(
+				"F",
+				1,
+				"out",
+				s(lg(o, with({ dip = (o.snap or deg(6)) * 0.5, z = 0.015, nP = deg(6) }, pivot, 0), { fang = 0.4 }))
+			),
 			key("R", 1, "inout", st),
 		},
 	}
@@ -430,10 +750,10 @@ local function spawn(st: Pose, o: { [string]: any }): Action
 		follow = 0.4,
 		recover = 0.2,
 		keys = {
-			key("A", 0, "lin", s({ y = y0, sq = -0.1, alpha = 1 })),
-			key("A", 0.8, "out", s({ y = y0 * 0.75, sq = -0.08, alpha = 0 })),
-			key("S", 1, "out", s({ y = 0, sq = 0.04 })),
-			key("F", 0.15, "inout", s({ shake = o.shake or deg(6) })),
+			key("A", 0, "lin", s(lg(o, { y = y0, sq = -0.1, alpha = 1 }, { tuck = 1 }))),
+			key("A", 0.8, "out", s(lg(o, { y = y0 * 0.75, sq = -0.08, alpha = 0 }, { tuck = 0.8 }))),
+			key("S", 1, "out", s(lg(o, { y = 0, sq = 0.04 }, { tuck = 0, splay = 0.3 }))),
+			key("F", 0.15, "inout", s(lg(o, { shake = o.shake or deg(6) }, { splay = 0.2 }))),
 			key("F", 0.8, "inout", s({ shake = o.shake or deg(6) })),
 			key("F", 1, "inout", st),
 			key("R", 1, "inout", st),
@@ -452,10 +772,10 @@ local function summon(st: Pose, o: { [string]: any }): Action
 		follow = 0.3,
 		recover = 0.3,
 		keys = {
-			key("A", 0, "lin", s({ [way] = 1, shiver = deg(2), sq = -0.06 })),
-			key("S", 1, "out", s({ [way] = 0.05, shiver = deg(2) })),
-			key("F", 0.4, "out", s({ [way] = 0, y = 0.1, sq = 0.08 })),
-			key("F", 1, "in", s({ y = 0, sq = -0.08 })),
+			key("A", 0, "lin", s(lg(o, { [way] = 1, shiver = deg(2), sq = -0.06 }, { tuck = 1 }))),
+			key("S", 1, "out", s(lg(o, { [way] = 0.05, shiver = deg(2) }, { tuck = 0.2, raise = 0.8, stab = 0.5 }))),
+			key("F", 0.4, "out", s(lg(o, { [way] = 0, y = 0.1, sq = 0.08 }, { tuck = 0, raise = 0, stab = 1 }))),
+			key("F", 1, "in", s(lg(o, { y = 0, sq = -0.08 }, { splay = 0.3 }))),
 			key("R", 1, "inout", st),
 		},
 	}
@@ -474,8 +794,8 @@ local function deathFlip(o: { [string]: any }): Action
 		hold = true,
 		sided = true,
 		keys = {
-			key("S", 1, "out", { y = 0.08, z = 0.03, rear = deg(5), ground = 1, fold = -0.15 }),
-			key("F", 0.5, "out", { roll = -deg(90), y = up, z = 0.02, ground = 1, fold = 0.4 }),
+			key("S", 1, "out", lg(o, { y = 0.08, z = 0.03, rear = deg(5), ground = 1, fold = -0.15 }, { fang = 1 })),
+			key("F", 0.5, "out", lg(o, { roll = -deg(90), y = up, z = 0.02, ground = 1, fold = 0.4 }, { fang = 0.6 })),
 			key("F", 1, "in", { roll = -deg(180), y = 0, ground = 1, settle = 1, sq = -0.12, fold = 0.75 }),
 			key("R", 0.2, "out", { roll = -deg(176), y = 0.04, ground = 1, fold = 0.7 }),
 			key("R", 0.4, "in", { roll = -deg(180), ground = 1, settle = 1, fold = 0.86 }),
@@ -498,8 +818,18 @@ local function deathCurl(o: { [string]: any }): Action
 		hold = true,
 		sided = true,
 		keys = {
-			key("S", 1, "out", { y = 0.14, z = 0.03, rear = deg(8), sq = 0.06, ground = 1, fold = -0.15 }),
-			key("F", 0.35, "in", { y = -0.04, sq = -0.3, dip = deg(5), tip = deg(12), ground = 1, fold = 0.45 }),
+			key(
+				"S",
+				1,
+				"out",
+				lg(o, { y = 0.14, z = 0.03, rear = deg(8), sq = 0.06, ground = 1, fold = -0.15 }, { fang = 1 })
+			),
+			key(
+				"F",
+				0.35,
+				"in",
+				lg(o, { y = -0.04, sq = -0.3, dip = deg(5), tip = deg(12), ground = 1, fold = 0.45 }, { fang = 0.6 })
+			),
 			key("F", 0.8, "in", { sq = -0.28, dip = deg(4), tip = tip, ground = 1, settle = 1, fold = 0.85 }),
 			key("F", 1, "out", { sq = -0.24, tip = tip - deg(8), y = 0.04, ground = 1, fold = 0.8 }),
 			key("R", 0.3, "in", { sq = -0.28, dip = deg(4), tip = tip, ground = 1, settle = 1, fold = 0.95 }),
@@ -762,20 +1092,24 @@ local SPIDER: Style = {
 	footprint = 0.85,
 	wigPivot = 0,
 	actions = {
-		alert = alert(SPIDER_STANCE, { rear = deg(18), shiver = deg(1), thump = -0.03, squash = -0.08 }),
-		bite = bite(SPIDER_STANCE, { rear = deg(14), up = 0.05, back = 0.03, slam = deg(10), hop = 0.1 }),
-		pool = cast(SPIDER_STANCE, { rear = deg(22), up = 0.1, pump = deg(3), snap = deg(8), recoil = 0.04 }),
-		heavy = heavy(SPIDER_STANCE, { rear = deg(25), weave = deg(8), slam = deg(12), sweep = deg(30) }),
-		crush = crush(SPIDER_STANCE, { rear = deg(30), slam = deg(12) }),
-		pounce = pounce(SPIDER_STANCE, { crouch = -0.08, dip = deg(6), wiggle = deg(4) }),
-		spit = throw(SPIDER_STANCE, { rear = deg(15) }),
-		spawn = spawn(SPIDER_STANCE, {}),
-		summon = summon(SPIDER_STANCE, {}),
-		deathFlip = deathFlip({}),
-		deathCurl = deathCurl({}),
+		alert = alert(SPIDER_STANCE, { rear = deg(18), shiver = deg(1), thump = -0.03, squash = -0.08, legs = true }),
+		bite = bite(SPIDER_STANCE, { rear = deg(14), up = 0.05, back = 0.03, slam = deg(10), hop = 0.1, legs = true }),
+		pool = cast(
+			SPIDER_STANCE,
+			{ rear = deg(22), up = 0.1, pump = deg(3), snap = deg(8), recoil = 0.04, legs = true }
+		),
+		heavy = heavy(SPIDER_STANCE, { rear = deg(25), weave = deg(8), slam = deg(12), sweep = deg(30), legs = true }),
+		crush = crush(SPIDER_STANCE, { rear = deg(30), slam = deg(12), legs = true }),
+		pounce = pounce(SPIDER_STANCE, { crouch = -0.08, dip = deg(6), wiggle = deg(4), legs = true }),
+		spit = throw(SPIDER_STANCE, { rear = deg(15), legs = true }),
+		spawn = spawn(SPIDER_STANCE, { legs = true }),
+		summon = summon(SPIDER_STANCE, { legs = true }),
+		deathFlip = deathFlip({ legs = true }),
+		deathCurl = deathCurl({ legs = true }),
 		twitch = fidget({ yaw = deg(5) }, 0.8),
 		settle = fidget({ y = -0.03, sq = -0.04 }, 0.2, { strike = 0.1, last = { y = 0.004 } }),
-		taste = fidget({ rear = deg(6), y = 0.01 }, 0.6, { strike = 0.2 }),
+		-- (legs: the front pair lifts and feels the air, the palps up)
+		taste = fidget({ rear = deg(6), y = 0.01, raise = 0.3, wave = 0.5, palp = 1 }, 0.6, { strike = 0.2 }),
 	},
 }
 
@@ -793,10 +1127,11 @@ local function pincer(st: Pose): Action
 		follow = 0.18,
 		recover = 0.28,
 		keys = {
-			key("A", 1, "out", s({ dip = 0, rear = deg(10), z = 0.03, y = 0.03, shiver = deg(0.8) })),
-			key("S", 1, "in", s({ dip = deg(4), rear = 0, lunge = 1, y = 0, sq = -0.06 })),
-			key("F", 0.5, "out", s({ dip = deg(4), lunge = 1, shiver = deg(1.2) })),
-			key("F", 1, "inout", s({ dip = deg(3), lunge = 0.85 })),
+			-- (with bones: the pincers raised and opened, snapped forward and down on the hit)
+			key("A", 1, "out", s({ dip = 0, rear = deg(10), z = 0.03, y = 0.03, shiver = deg(0.8), raise = 1 })),
+			key("S", 1, "in", s({ dip = deg(4), rear = 0, lunge = 1, y = 0, sq = -0.06, raise = 0, stab = 1 })),
+			key("F", 0.5, "out", s({ dip = deg(4), lunge = 1, shiver = deg(1.2), stab = 1 })),
+			key("F", 1, "inout", s({ dip = deg(3), lunge = 0.85, stab = 0.5 })),
 			key("R", 1, "inout", st),
 		},
 	}
@@ -864,22 +1199,28 @@ local SCORPION: Style = {
 	footprint = 0.85,
 	wigPivot = 0,
 	actions = {
-		alert = alert(SCORPION_STANCE, { pivot = "dip", rear = deg(12), shiver = deg(1.2), thump = -0.02 }),
+		alert = alert(
+			SCORPION_STANCE,
+			{ pivot = "dip", rear = deg(12), shiver = deg(1.2), thump = -0.02, legs = true }
+		),
 		pincer = pincer(SCORPION_STANCE),
 		sting = sting(SCORPION_STANCE),
 		-- venom from the sting: the tail high over the back (nose down), pumps, a squirt on the hit
 		pool = cast(
 			SCORPION_STANCE,
-			{ pivot = "dip", rear = deg(12), up = 0.04, pump = deg(3), snap = deg(16), lunge = 0.3 }
+			{ pivot = "dip", rear = deg(12), up = 0.04, pump = deg(3), snap = deg(16), lunge = 0.3, legs = true }
 		),
-		heavy = heavy(SCORPION_STANCE, { rear = deg(18), weave = deg(6), slam = deg(10), sweep = deg(30) }),
-		crush = crush(SCORPION_STANCE, { rear = deg(22), slam = deg(12) }),
-		pounce = pounce(SCORPION_STANCE, { crouch = -0.06, dip = deg(4), wiggle = deg(3), arc = 0.8 }),
-		spit = throw(SCORPION_STANCE, { pivot = "dip", rear = deg(12), snap = deg(14) }),
-		spawn = spawn(SCORPION_STANCE, {}),
-		summon = summon(SCORPION_STANCE, {}),
-		deathFlip = deathFlip({ arc = 0.25 }),
-		deathCurl = deathCurl({ tip = deg(70) }),
+		heavy = heavy(
+			SCORPION_STANCE,
+			{ rear = deg(18), weave = deg(6), slam = deg(10), sweep = deg(30), legs = true }
+		),
+		crush = crush(SCORPION_STANCE, { rear = deg(22), slam = deg(12), legs = true }),
+		pounce = pounce(SCORPION_STANCE, { crouch = -0.06, dip = deg(4), wiggle = deg(3), arc = 0.8, legs = true }),
+		spit = throw(SCORPION_STANCE, { pivot = "dip", rear = deg(12), snap = deg(14), legs = true }),
+		spawn = spawn(SCORPION_STANCE, { legs = true }),
+		summon = summon(SCORPION_STANCE, { legs = true }),
+		deathFlip = deathFlip({ arc = 0.25, legs = true }),
+		deathCurl = deathCurl({ tip = deg(70), legs = true }),
 		twitch = fidget({ yaw = deg(4) }, 0.8),
 		settle = fidget({ y = -0.03, sq = -0.04 }, 0.2, { strike = 0.1, last = { y = 0.004 } }),
 		tail = fidget({ dip = deg(5), shiver = deg(0.6) }, 0.5, { strike = 0.2 }),
