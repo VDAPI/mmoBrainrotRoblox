@@ -11,10 +11,10 @@
 
 export type Rule = "none" | "equip" | "pickup"
 -- Where an item comes from (Logic/Binding.apply); every item grant of the server names one.
-export type Source = "drop" | "craft" | "gold" | "boss" | "reward" | "currency" | "premium"
--- What a source adds: `gear` for equipment and backpacks (from rarity `gearFrom` up), `goods` for materials and tools,
--- `consumable` for what is used up (potions, elixirs, blessings, scrolls, stones). nil = the item's own rule.
-export type SourceRule = { gear: Rule?, gearFrom: number?, goods: Rule?, consumable: Rule? }
+export type Source = "drop" | "craft" | "gold" | "boss" | "quest" | "reward" | "currency" | "shop" | "premium"
+-- What a source adds: `gear` for equipment and backpacks, `goods` for materials and tools, `consumable` for what is
+-- used up (potions, elixirs, blessings, scrolls, stones). nil = the item's own rule.
+export type SourceRule = { gear: Rule?, goods: Rule?, consumable: Rule? }
 
 -- The rule of an item by its category; a definition's own `bind` wins (named boss items, premium consumables).
 local CATEGORY: { [string]: Rule } = {
@@ -37,16 +37,21 @@ local SOURCES: { [Source]: SourceRule } = {
 	craft = {},
 	-- bought for gold: the class vendors, the alchemist, the general store, the wandering merchant's gold offers
 	gold = {},
-	-- the personal roll of a dungeon boss (with Fortune's second item) and of the world boss: Legendary and Mythic
-	-- bind on pickup, Unique and Heroic on equip (Data/Rarities numbers: 4 = Legendary)
-	boss = { gear = "pickup", gearFrom = 4 },
-	-- quests, contracts, the login chest, the first drop, event chests (Invasion, Champion), Blood Moon, codes: gear
-	-- binds on pickup (no alt-account farming for the market); potions, stones, blessings and materials stay free
+	-- the personal roll of a dungeon boss (with Fortune's second item) and of the world boss: the item's own rule,
+	-- Unique, Heroic and Legendary on equip (S149), Mythic on pickup by its rarity (owner 2026-10-31: less binding)
+	boss = {},
+	-- the reward chosen for a side quest: the item's own rule, gear binds on equip (owner 2026-10-31: less binding)
+	quest = {},
+	-- the login chest, the first drop, event chests (Invasion, Champion), the tutorial reward: gear binds on pickup
+	-- (no alt-account farming for the market); potions, stones, blessings and materials stay free
 	reward = { gear = "pickup" },
 	-- Hunter's Marks and Arena Tokens (earned, never sold): gear and materials bind, consumables stay free
 	currency = { gear = "pickup", goods = "pickup" },
-	-- Dragon Shards and Robux (the premium shop, the Portal Master, the season pass, whose premium track is bought for
-	-- shards): everything binds (no Robux turned into gold through trade)
+	-- the premium shop (Dragon Shards): the item's own rule (owner 2026-10-31: less binding): the scrolls stay free,
+	-- the premium backpacks bind on equip, the Full Elixir, the stones and the Transmutation Scroll on pickup
+	shop = {},
+	-- the Portal Master and the season pass (whose premium track is bought for shards and comes merged with the free
+	-- one): everything binds on pickup, as before
 	premium = { gear = "pickup", goods = "pickup", consumable = "pickup" },
 }
 

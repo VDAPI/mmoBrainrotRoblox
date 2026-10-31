@@ -377,7 +377,7 @@ function Bosses.worldBoss(def: BossData.BossDef, ctx: any): any
 			factorLo = D.reward.factor.lo,
 			factorHi = D.reward.factor.hi,
 			factorSlope = D.reward.factor.slope,
-			-- owner 2026-10-31: whether the lowest rarity (Heroic) binds on pickup; Legendary and Mythic always do
+			-- owner 2026-10-31: whether a Heroic binds on pickup (it binds on equip, Legendary too; Mythic on pickup)
 			itemBound = Binding.bindsFrom("sword1h_1", "boss", Rarities.HEROIC),
 			named = {
 				chance = D.reward.named.chance,
