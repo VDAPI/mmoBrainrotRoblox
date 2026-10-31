@@ -14342,3 +14342,19 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   więc nic nie chowa; „Auto” pokazuje się dopiero z Płaszczem, bankiem Samodzielnych Łowów albo Samoczynnymi
   Miksturami (`/lure add`, `/autogrind add`, `/autopotion grant`); niewidoczny przycisk w rzędzie (✧ albo ❖) nie
   bierze udziału w układzie i Studio podaje mu to samo miejsce co widocznemu.
+
+### Plan UI, faza 3, krok 2: huby okien, Ustawienia, Elity II w tropicielu (2026-10-31)
+- `Data/UiHubs` (czyste): pięć hubów (przycisk, ikona, podpowiedź, zakładki), `tabOf` (okno plecaka to zakładka
+  `inventory`), `hubOf`, `byButton`, `tabLabel` (`hub.tab.<id>` dla dawnych przycisków paska, inaczej `menu.tile.<id>`),
+  `visibleTabs`, `entry` (pierwsza widoczna zakładka). Test `tests/uihubs.spec.luau`.
+- `Components/Window`: `Tabs`, `Current`, `OnTab`: zakładki w pasku tytułu (przewijany rząd, bieżąca jasna z mosiężną
+  kreską). `WindowManager`: zakładki dla okien huba (bez plecaka obok usługi), `SetTabRule` / `TabShown`, zakładka
+  otwiera okno w miejscu poprzedniego (`fitOffset` trzyma je w całości na ekranie), `ToggleHub`.
+- `ScreenController`: `MENU` z `hubEntry` (przycisk Postaci zostaje `inventory`, kotwica samouczka), „!” huba z
+  `TAB_BADGES`, widoczność huba od jego zakładek; reguły zakładek z kafelków i `worldOnly`; okno `settings`.
+  `Hud/init` `MenuEntry`: `windows`, `open`, `key`, `art`. `Logic/HudMenu.BAR` i `attention` (tylko kafelki spoza hubów).
+- `GameMenu` z `Extra.Settings`: menu ma „Wróć do gry”, kafelki, „Ustawienia”, „Zmień postać” i wiersz VIP; okno
+  Ustawień ma język, sekcje, kod i zwinięte sekcje (`Data/UiWindows` `settings`).
+- Elity II: `Hud/Elite2Timer` daje `state` i `row`; `QuestTracker` ma grupę „e2” na końcu (`TrackerFold.GROUPS`, domyślnie
+  otwarta); `QuestController` nie stawia już panelu. Krótki tekst `e2timer.anyShort`.
+- Testy: `uihubs` (nowy), `hudmenu`, `uiart`, `trackerfold`. Nieobejrzane w Studio.

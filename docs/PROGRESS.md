@@ -49,6 +49,7 @@
 
 ## Niedokończone (kod)
 
+- **Plan UI, faza 3, krok 2 (2026-10-31):** pięć hubów i ☰ na pasku, zakładki hubów w pasku tytułu okna, osobne okno Ustawień, timery Elit II w tropicielu; nieobejrzane w Studio (zakładki w wąskich oknach, przejście zakładką z poczty, szuflada telefonu). Z planu zostaje: boczne zakładki Ustawień, „!” na samych zakładkach, odsłanianie hubów z samouczkiem i poziomem (faza 4).
 - **Plan UI, faza 3, krok 1 (2026-10-31):** okno plecaka w zakładkach Ekwipunek / Statystyki / Zestawy i tytuły (`Logic/CharacterTabs`), ok. 826×752; nieobejrzane w Studio (przeciąganie z plecaka na ekwipunek, zakładki na telefonie, panel tytułów nad oknem).
 - **Plan UI, faza 2, poprawki po Studio (2026-10-31):** kolumna pod zmierzonym dołem menu, rząd „coś czeka” znika z menu pod oknem, toast osiągnięcia nie na pasku tytułu okna, miękkie wczytanie modułów pasa wiadomości; nieobejrzane w Studio.
 - **Plan UI, faza 2 (2026-10-31):** rząd „coś czeka”, rząd wzmocnień, „Auto”, kropka PvP jako przełącznik, pas wiadomości, chowanie HUD pod oknem; nieobejrzane w Studio (rząd pod minimapą z belką i bez, panel „Auto” na tablecie nad zapasową kolumną, trafienie w kropkę PvP myszą, toasty pod banerami). Nie zrobione z fazy 2: karty „Lepszy przedmiot”, walki i oferty areny jako jedna karta naraz (odblokowania idą toastem, więc są w pasie); róg PC zostaje zarezerwowany w `HudStack.fixed`.

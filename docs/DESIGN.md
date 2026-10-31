@@ -945,7 +945,7 @@ Po testach S17: **więcej rodzajów na każdej mapie (min. 8–10 na mapę teren
 
 ### 15.3 Timery Elit II (dodatek po testach S17, jak w Margonem)
 
-- Po zabiciu Elity II gracze, którzy zadali jej obrażenia, dostają **timer**: nazwa, jaskinia, okno odrodzenia „za 10–20 min” (od minimum do maksimum). Lista timerów w małym panelu (rozwijanym z HUD) i na mapie jaskini.
+- Po zabiciu Elity II gracze, którzy zadali jej obrażenia, dostają **timer**: nazwa, jaskinia, okno odrodzenia „za 10–20 min” (od minimum do maksimum). Lista timerów jako ostatnia grupa tropiciela „Timery Elit II” (plan UI, faza 3; wcześniej osobny panel nad przyciskami rogu) i na mapie jaskini.
 - Timer jest per serwer (odrodzenie dzieje się na tym serwerze), znika po pojawieniu się Elity II (wtedy ogłoszenie na mapie).
 
 ### 15.4 Wydarzenia świata (S101, DESIGN-15 §4)
@@ -1691,6 +1691,14 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   Przepustka, Nagroda dnia, VIP, Co nowego (`Logic/HudMenu.TILES`). Kafelek ma ikonę, krótką nazwę, plakietkę klawisza i
   „!”, gdy coś czeka; „!” któregokolwiek kafelka zapala „!” na ☰. Klawisze okien działają jak wcześniej. Telefon:
   szuflada ☰ ma te same sześć przycisków oraz ✧ i ❖ tylko z „!”; slot emotek zszedł z paska akcji (klawisz T zostaje).
+- **Huby okien** (plan UI, faza 3, `Data/UiHubs`): pasek HUD to pięć hubów i ☰: Postać (Plecak, Umiejętności,
+  Wierzchowce, Garderoba), Świat (Mapa, Questy, Osiągnięcia), Społeczność (Grupa, Gildia, Znajomi, Poczta),
+  Rywalizacja (Arena, Rankingi, Krwawy Księżyc), Sklep i nagrody (Smoczy Sklep, Przepustka, VIP, Nagroda dnia). Okno huba
+  ma zamiast tytułu zakładki z oknami huba; zakładka otwiera sąsiednie okno w tym samym miejscu (jedno okno naraz
+  zostaje). Przycisk huba otwiera pierwszą widoczną zakładkę albo zamyka otwarte okno huba; „!” huba zbiera „!” jego
+  okien, ☰ świeci tylko od kafelków spoza hubów. Każdy klawisz okna działa jak wcześniej. Zakładka pokazuje się jak jej
+  kafelek (Wierzchowce od odblokowania, Mapa i Questy tylko na serwerze świata). Okna usług u NPC i plecak obok usługi
+  nie mają zakładek. Kafelki w menu gry zostają. Ustawienia są osobnym oknem (przycisk „Ustawienia” w menu gry).
 - **Menu gry (Opisy-3, 2026-10-21)**: ustawienia w sekcjach z nagłówkami (Dźwięk, Grafika i kamera, Walka,
   Interfejs), rzadziej zmieniane (Łup i handel, Społeczność, Skróty klawiszowe) zwinięte pod „nazwa ▸” (`Details`,
   stan na sesję). Etykiety krótkie, dłuższe wyjaśnienia za „i” obok przełącznika. Okna postaci, umiejętności, dziennika

@@ -1,7 +1,8 @@
 --!strict
 -- Quest tracker (DESIGN §20, right side under the minimap): the tracked side quest (S27, QuestTrack.Focus) and the
 -- main quest with their objectives and an arrow towards the tracked one's target (an NPC or a place on this map, or the portal leading to the target map), plus the
--- daily contracts. The header collapses it. Elite II timers moved to Hud/Elite2Timer (FIX 2026-10-09). S99: the hunting
+-- daily contracts. The header collapses it. Elite II timers moved to Hud/Elite2Timer (FIX 2026-10-09); UI plan phase 3:
+-- they are back as the tracker's last group ("e2", Hud/Elite2Timer lines). S99: the hunting
 -- contract between the story and the daily contracts (on top with the arrow when tracked; the next one to take with
 -- "From: Contract board"; nothing while waiting for a level or after the 99th; S134k: up to three active ones and "+N").
 -- S101b: targets follow the saved
@@ -34,6 +35,7 @@ local AreaState = require(script.Parent.Parent.Parent.AreaState)
 local Bar = require(script.Parent.Parent.Parent.Components.Bar)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Parent.Device)
+local Elite2Timer = require(script.Parent.Elite2Timer)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
 local Dailies = require(ReplicatedStorage.Shared.Logic.Dailies)
@@ -118,6 +120,8 @@ export type Props = {
 
 -- S151b: the layout order of the achievement section (after every quest line).
 local ACH_ORDER = 100000
+local E2_ORDER = 200000 -- UI plan phase 3: the Elite II timers under the achievements
+local E2_ROW = 24
 local ACH_ROW = 40 -- PC; a phone row is Theme.Size.RowHeight (a tap target)
 
 -- S151b: one tracked achievement: the name and "value / goal" over a thin bar; the numbers follow only its counter.
@@ -838,6 +842,36 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		return list
 	end)
 
+	-- UI plan phase 3 (plan §3 row 17): the Elite II timers are a group of the tracker (Hud/Elite2Timer), under the
+	-- achievements and only while a timer runs; they had a panel of their own over the corner's buttons.
+	local e2 = Elite2Timer.state(scope)
+	local e2Lines = scope:Computed(function(use, s: Scope): { Instance }
+		local out: { Instance } = {}
+		local list = use(e2.list)
+		if use(collapsed) or #list == 0 then
+			return out
+		end
+		local touch = use(Device.Touch)
+		table.insert(
+			out,
+			s:New("Frame")({
+				Name = "Elite2Gap",
+				LayoutOrder = E2_ORDER - 1,
+				Size = UDim2.new(1, 0, 0, 4),
+				BackgroundTransparency = 1,
+			})
+		)
+		if
+			not groupHeader(s, out, E2_ORDER, "e2", Text.get(use, "e2timer.header"), tostring(#list), touch, use(fold))
+		then
+			return out
+		end
+		for i, timer in list do
+			table.insert(out, Elite2Timer.row(s, timer, e2.now, E2_ORDER + i, E2_ROW))
+		end
+		return out
+	end)
+
 	-- S151b: the tracked achievements under the quests (the list from AchievementView.trackedRows: no unknown, done or
 	-- secret one; rebuilt when the track list changes, a row follows its own counter); owner 2026-10-21: under a folding
 	-- header like the quest groups.
@@ -1086,6 +1120,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					}),
 					lines :: any,
 					achLines :: any,
+					e2Lines :: any,
 				},
 			}),
 			scope:New("TextButton")({

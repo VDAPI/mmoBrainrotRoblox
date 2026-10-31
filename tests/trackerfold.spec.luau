@@ -10,7 +10,8 @@ local TrackerFold = require("../src/shared/Logic/TrackerFold")
 
 T.describe("TrackerFold", function()
 	T.it("without a setting only the quests (and the tracker itself) stand open (UI plan phase 1)", function()
-		local open = { all = true, quests = true }
+		-- UI plan phase 3: the Elite II timers ("e2") stand open too (the group shows only while a timer runs)
+		local open = { all = true, quests = true, e2 = true }
 		for _, id in TrackerFold.GROUPS do
 			T.expect(TrackerFold.isFolded(nil, id)).toBe(not open[id])
 			T.expect(TrackerFold.isFolded({}, id)).toBe(not open[id])
