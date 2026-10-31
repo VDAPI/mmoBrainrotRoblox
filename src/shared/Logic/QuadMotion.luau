@@ -29,7 +29,8 @@ local QuadMotion = {}
 type Vec = { number }
 type Controls = QuadPose.Controls
 
-export type ActionRun = { name: string, start: number, hit: number, reach: Vec?, mirror: boolean? }
+-- `hold` keeps the end pose (AnimLab's stage, which has no server teleport, holds a leap where it landed)
+export type ActionRun = { name: string, start: number, hit: number, reach: Vec?, mirror: boolean?, hold: boolean? }
 export type Input = {
 	now: number,
 	dt: number,
@@ -220,11 +221,11 @@ local function gaitControls(
 	-- body: bob twice a cycle (walk / trot) or the gallop's rise and pitch; carried lower by `drop`
 	if name == "gallop" then
 		out.by = g.bob * math.cos(2 * math.pi * (phase - 0.9)) - (g.drop or 0)
-		out.bpitch = g.pitch * math.cos(2 * math.pi * (phase - 0.15))
+		out.bpitch = g.pitch * math.cos(2 * math.pi * (phase - 0.15)) - (g.stoop or 0)
 		out.sflex = g.flex * math.cos(2 * math.pi * (phase - 0.9)) - g.flex * 0.25
 	else
 		out.by = -g.bob * math.cos(2 * w) - (g.drop or 0)
-		out.bpitch = 0
+		out.bpitch = -(g.stoop or 0)
 		out.broll = g.roll * math.sin(w)
 		out.syaw = g.spineYaw * math.sin(w)
 	end
@@ -255,12 +256,15 @@ local function gaitControls(
 						+ (q3 - 2 * q2 + q) * m
 						+ (-2 * q3 + 3 * q2) * (-D / 2)
 						+ (q3 - q2) * m
-					out[keys.y], out[keys.z] = lift * math.sin(math.pi * q ^ 0.76), c0 + z
+					local ease = if g.liftIn then smooth(q / g.liftIn) else 1
+					out[keys.y], out[keys.z] = lift * math.sin(math.pi * q ^ 0.76) * ease, c0 + z
 				end
 				out[keys.k] = 1
 			end
 			if g.level then
-				out[keys.l] = g.level * (if stance then 1 - smooth((s - 0.6) / 0.4) else smooth((q - 0.6) / 0.4))
+				local into = g.levelIn or 0.4
+				out[keys.l] = g.level
+					* (if stance then 1 - smooth((s - 0.6) / 0.4) else smooth((q - (1 - into)) / into))
 			end
 		end
 	end
@@ -305,13 +309,19 @@ local function locomotion(inst: Instance, input: Input, forced: string?, extra: 
 	local L = inst.skel.L
 	local dt = input.dt
 	local speed = input.speed + extra
-	local turning = speed < 0.3 * L and math.abs(input.yawRate) > 1
-	local moving = speed >= 0.3 * L
+	-- (a style's `stepFrom`: a dragon steps at any crawl rather than glide on its planted feet)
+	local stepFrom = (style.stepFrom or 0.3) * L
+	local turning = speed < stepFrom and math.abs(input.yawRate) > 1
+	local moving = speed >= stepFrom
 	local ratio = speed / L
 	local force = if forced and style.gaits[forced] then FORCED[forced] else nil
 	local intent = if style.serverGait and moving and not force then serverGait(style, input.gait, ratio) else nil
 	local targetW = force or intent or gaitWeights(style, if turning then 0.8 else ratio)
-	local moveTarget = if moving then math.clamp(ratio / 0.6, 0, 1) elseif turning then 0.7 else 0
+	-- (planted feet step at least half a stride: the cadence below makes their stance keep the ground's pace)
+	local moveTarget = if moving
+		then math.max(math.clamp(ratio / 0.6, 0, 1), if inst.planted then 0.5 else 0)
+		elseif turning then 0.7
+		else 0
 	if input.snap then
 		inst.weights = table.clone(targetW)
 		inst.move = moveTarget
@@ -578,12 +588,16 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 		local action = style.actions[playing.name]
 		local t = now - playing.start
 		local length = MotionTimeline.length(action, playing.hit)
-		if t >= 0 and (t <= length or action.hold) then
+		local hold = action.hold or (run ~= nil and playing == run and run.hold == true)
+		if t >= 0 and (t <= length or hold) then
 			local keyed = actionControls(style, playing, math.min(t, length)) :: Controls
 			-- the gather trembles more and more toward the strike
 			if action.tremble and action.tremble > 0 then
 				local p = MotionTimeline.gather(action, playing.hit, t)
-				local amp = action.tremble * p * p
+				-- (only the gather: it settles over the first 0.08 s of the strike instead of shaking on through the
+				-- blow and the recovery, which shook a planted heavy body's legs; studio review 2026-10-31)
+				local gatherEnd = playing.hit - math.min(action.strike, playing.hit * 0.7)
+				local amp = action.tremble * p * p * math.clamp(1 - (t - gatherEnd) / 0.08, 0, 1)
 				keyed = table.clone(keyed)
 				keyed.bpitch = (keyed.bpitch or 0) + amp * math.sin(now * 2 * math.pi * 18)
 				keyed.broll = (keyed.broll or 0) + amp * 0.7 * math.sin(now * 2 * math.pi * 15 + 1.3)
@@ -619,7 +633,7 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 			end
 			-- a heavy body (planted feet) takes a little longer to leave its gait
 			local w = math.min(1, t / (if inst.planted then 0.2 else 0.08))
-			if not action.hold then
+			if not hold then
 				w = math.min(w, math.max(0, (length - t) / 0.18))
 			end
 			w = MotionTimeline.ease("inout", w)
@@ -735,7 +749,7 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 	-- 6. a dragon: the tail's spring, the wings' controls turned into their joints'
 	if dragon then
 		DragonMotion.tail(dragon, controls, input.yawRate, dt, input.snap)
-		DragonMotion.resolve(dragon, controls)
+		DragonMotion.resolve(dragon, controls, dt, input.snap)
 	end
 	local posed = QuadPose.solve(skel, controls)
 	inst.posed = posed
@@ -775,8 +789,11 @@ function QuadMotion.mirror(count: number): boolean
 	return count % 2 == 0
 end
 
-function QuadMotion.death(inst: Instance): string
-	local list = inst.style.death
+-- The death of an instance (one of the style's, by its seed): by the side the killing blow came from (`side`,
+-- QuadMotion.side) where the style has deaths for it (the dragon's, 2026-10-31).
+function QuadMotion.death(inst: Instance, side: string?): string
+	local deaths = inst.style.deaths
+	local list = if deaths and side and deaths[side] then deaths[side] else inst.style.death
 	return list[1 + math.floor(hash01(5, inst.seed) * #list) % #list]
 end
 

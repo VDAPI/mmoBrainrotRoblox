@@ -56,6 +56,10 @@ export type Rig = {
 	legs: { [string]: { Joint } },
 	wings: { [string]: Wing }?,
 	muzzle: { bone: string, at: { number } }?,
+	-- steady planted feet (Logic/QuadPose; the dragon, 2026-10-31): the leg also swings out about its top joint
+	-- (`spread`) to keep the foot put when the body shifts sideways, and a foot partly planted aims between its keyed
+	-- and planted points
+	steady: boolean?,
 }
 
 local RIGS: { [string]: Rig } = {
@@ -283,6 +287,7 @@ local RIGS: { [string]: Rig } = {
 	-- spread and raised, the membrane hanging below the arm (its top side faces back and up).
 	youngFrostDragon = {
 		body = "tripo::Root",
+		steady = true,
 		spine = {
 			{ bone = "tripo::Spine_0", share = 0.2 },
 			{ bone = "tripo::Spine_1", share = 0.3 },

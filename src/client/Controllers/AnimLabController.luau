@@ -1130,7 +1130,8 @@ local function bipedLab(
 			start = 0,
 			hit = hit,
 			reach = if planned and planned.reach then planned.reach else reach,
-			hold = planned and planned.hold,
+			-- (a quadruped's leap: the stage has no server teleport, it stays where it landed; studio review 2026-10-31)
+			hold = (planned and planned.hold) or (rig.kind == "quad" and action.travel == true) or nil,
 			turn = planned and planned.turn,
 			arc = planned and planned.arc,
 		}

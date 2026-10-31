@@ -845,13 +845,44 @@ tests/dragon.spec.luau. Deviations from the tables above:
   both claws drag down on W), crush `stomp` (rears, two flaps, both forefeet and a wingbeat on W), pounce `pounce`
   (crouch, a downstroke, flies the `Dash*` arc a quarter of the flight high, 1-3 L, lands on W with a wing flare),
   frostBreath `breath` (rears with the wings mantled, thrusts on W, the head sweeps right to left over the cone until
-  F 0.85; Data/MotionFx `dragon`: charge, breath stream from the muzzle, smolder), throw `spit`, aggro `roar` (wings
-  spread wide and high), spawn, fidgets `resettle` and `stretch`.
+  F 0.85; Data/MotionFx `dragon`: charge, breath stream from the muzzle, smolder), throw `spit`, aggro `alert` (a short roar,
+  §5.3; the full `roar` stays in the kit), spawn, fidgets `resettle` and `stretch`.
 - **Hit, stun, freeze, death**: the flinch by side twitches the near wing; Effects `stun:` hangs the head and slips
   the wings half open with a wobble, `freeze:` holds the pose (the only quadruped style with these: `stun`); death
-  falls on the seed's side (`deathL` / `deathR`, held) with both wings fanned out on the ground.
+  by the side of the killing blow (`deaths`, `QuadMotion.death(inst, side)`): from the front or behind `death` (onto
+  the belly), from a side onto the far flank (`deathR` / `deathL`, held) with both wings fanned out on the ground.
 - AnimLab: `/animlab mob youngFrostDragon <state>` takes the generic states, every action above, `stun` and `freeze`
   once the new model is in Assets (the old model keeps the wyvern's states).
+
+#### Studio review of the new model (2026-10-31, second round)
+
+- **Wings carried high.** The fold sits over the back: the elbow and the wrist above the shoulder joint, the fingers
+  and the membrane laid back along the body with the tips toward the tail, nothing below the belly line, in idle, walk
+  and trot. The bound's pump and the roar hold the half-open wings up (`pump` `lift` / `hand` / `tips`).
+- **No bone turns more than ~12° a frame (1/60 s)** in any AnimLab state but the deliberate whips (the tail's whole
+  blow; the strike of the claws, the rake, the stomp and the buffet, up to 32°). How: a new rig stands in its first
+  pose at once (client/Anim/QuadRig: the lab's loop no longer shows the bind pose's spread wings); the wings' openness
+  follows its keys at most 4.2/s folded (9/s once spread); the tremble only in the gather; the swing of a lifted foot
+  eases in and out (`liftIn`, `levelIn`) and the body stoops a little in the gaits (`stoop`); eases and keys of the
+  deaths, the spit, the spawn, the pounce, the claw and the stomp's wingbeats spread.
+- **Planted feet stay within 0.15 stud** (Data/QuadRigs `steady`, Logic/QuadPose): a planted foot that has to move
+  the leg sideways swings it out about its top joint; a partly planted foot aims between its keyed and planted points
+  in space (not in joint angles, which flipped the knee); a foot nearly let go eases onto its keyed angles; a target
+  the leg reaches only nearly straight is held a little short (the soft reach, 0.88-0.97 of the reach). Touchdowns
+  come straight down over their spots; the tail's whirl hops round on its hind feet; the claw, the rake and the stomp
+  plant their feet; the pounce pushes off from its footprints, tucks the legs in the air, reaches down over the
+  landing and absorbs it. AnimLab holds a quadruped's leap where it landed (the stage has no server teleport; the
+  run's `hold`).
+- **rake / stomp** raise the fore feet to 1.3-1.4× the withers' height (was about 2×).
+- **death** (front / back) sinks onto the belly: a jolt, a stagger onto the fore feet, the knees give, the neck slumps
+  aside, the wings slide down; `deathL` / `deathR` for blows from the sides; the lab's `death` is the front one.
+- **alert** is its own action (the aggro): the neck up and toward the target, the wings half open and taut, a short
+  roar on the hit (Data/MotionFx `alert`).
+- **A creep still walks** (`stepFrom` 0.08 L/s, default 0.3): the wander's slow stretches step short and slow instead
+  of gliding on planted feet (a real spawn's report).
+- Specs: tests/dragon.spec.luau "AnimLab's states frame by frame" (every state and action: the per-frame turn, the
+  planted feet's slide, the wings' carry, the rake's and the stomp's height, the alert, the deaths by side) and the
+  creep and crawl paces.
 
 ## 6. F5 Rigid models: caveSpider
 
