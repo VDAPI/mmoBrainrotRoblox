@@ -19,6 +19,7 @@ export type Rig = {
 	motion: QuadMotion.Instance,
 	bones: { [string]: Bone },
 	mod: any,
+	root: BasePart, -- the look's root: the skeleton's space, whose place in the world pins the feet (`rootAt`)
 	muzzle: Attachment?, -- the monster root's Muzzle, moved onto `muzzleBone` each frame
 	muzzleBone: Bone?,
 	muzzleAt: Vector3?, -- the shots' point in the bone's own frame
@@ -72,7 +73,7 @@ function QuadRig.new(look: Model, styleId: string, seed: number, model: string):
 	if not motion then
 		return nil
 	end
-	local rig: Rig = { kind = "quad", skel = skel, motion = motion, bones = byName, mod = QuadMotion }
+	local rig: Rig = { kind = "quad", skel = skel, motion = motion, bones = byName, mod = QuadMotion, root = root }
 	-- the mouth: the point is kept without the monster's root too (AnimLab's look, Vfx/MotionFx's breath read it)
 	local spec = map.muzzle
 	local muzzleBone = spec and byName[spec.bone]
@@ -95,6 +96,18 @@ function QuadRig.new(look: Model, styleId: string, seed: number, model: string):
 		QuadRig.apply(rig, QuadMotion.step(still, STILL))
 	end
 	return rig
+end
+
+-- The root's place on the ground for QuadMotion's `rootAt` ({x, z, yaw}): a style with pinned feet holds them where
+-- they came down in the world by it, however the replicated root moves (in network steps, with no velocity).
+function QuadRig.rootAt(rig: Rig): { number }?
+	local root = rig.root
+	if not root.Parent then
+		return nil
+	end
+	local cf = root.CFrame
+	local look = cf.LookVector
+	return { cf.X, cf.Z, math.atan2(-look.X, -look.Z) }
 end
 
 -- Writes the Transforms of one frame.

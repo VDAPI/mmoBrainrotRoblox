@@ -14,7 +14,8 @@
 -- fanning, a gait forced by an action (a charge gallops at the dash's speed).
 -- The dragon (2026-10-31, Data/QuadStyles `dragon`) adds Logic/DragonMotion's wings (folded at rest, keyed open, a
 -- wingbeat on the timeline, the gallop's pump), the tail's spring, the gait taken from the server's `Gait`, a flight's
--- height on the server's `Dash*` arc (`arc`), the server's stun (a dazed pose) and freeze (the pose held).
+-- height on the server's `Dash*` arc (`arc`), the server's stun (a dazed pose) and freeze (the pose held), and feet
+-- pinned in the world (`pinFeet`, by the root's place the client passes: `rootAt`).
 -- Pure: client/Anim/QuadRig writes the bones, AnimLab evaluates it at a fixed time. The functions the game calls have
 -- the names and arguments of Logic/BipedMotion's (step, pick, death, side, length, controlsAt, times).
 
@@ -50,6 +51,9 @@ export type Input = {
 	serverNow: number?,
 	stunned: boolean?,
 	frozen: boolean?,
+	-- (a style with `pinFeet`) where the root stands in the world: { x, z, yaw } (the skeleton's units; yaw + turns the
+	-- front, -Z, toward -X), from the client each frame; without it the root goes where `speed` and `yawRate` take it
+	rootAt: { number }?,
 }
 export type Instance = {
 	skel: QuadPose.Skeleton,
@@ -59,6 +63,9 @@ export type Instance = {
 	phase: number,
 	weights: { [string]: number }, -- gait weights
 	move: number,
+	spin: number, -- 0..1: how much it steps in place (eased, so a turn that starts or stops does not snap the feet)
+	turn: number, -- the eased yaw over a cycle (see `locomotion`)
+	yawEase: number, -- the yaw rate the lean into a turn follows (a turn that stops at once does not snap the body)
 	combat: number,
 	calm: number,
 	look: number,
@@ -81,6 +88,16 @@ export type Instance = {
 	stunEnds: number,
 	freezeEnds: number,
 	posed: QuadPose.Posed?, -- the last pose (held while frozen)
+	-- (a style with `pinFeet`) the root's place on the ground, its recent track (time, x, z) for the pace, and per leg
+	-- the foot's pin in the world ({ x, z }) and the ease off a pin it let go ({ x, z } where it left, since)
+	rootReady: boolean,
+	rootX: number,
+	rootZ: number,
+	rootYaw: number,
+	track: { { number } },
+	pins: { [string]: { number } },
+	slips: { [string]: { number } },
+	steps: { [string]: { number } }, -- a foot stepping back under the pose: from ({ x, z } in the world) and since
 }
 
 local function hash01(n: number, seed: number): number
@@ -126,6 +143,9 @@ function QuadMotion.new(skel: QuadPose.Skeleton, styleId: string, seed: number):
 		phase = hash01(3, seed),
 		weights = { walk = 1 },
 		move = 0,
+		spin = 0,
+		turn = 0,
+		yawEase = 0,
 		combat = 0,
 		calm = 0,
 		look = 0,
@@ -148,6 +168,14 @@ function QuadMotion.new(skel: QuadPose.Skeleton, styleId: string, seed: number):
 		stunEnds = 0,
 		freezeEnds = 0,
 		posed = nil,
+		rootReady = false,
+		rootX = 0,
+		rootZ = 0,
+		rootYaw = 0,
+		track = {},
+		pins = {},
+		slips = {},
+		steps = {},
 	}
 end
 
@@ -206,14 +234,16 @@ end
 -- One gait's controls at `phase` (0..1).
 -- `center`: per leg, where its stance is centred (leg lengths behind the foot's rest point: under the hip or shoulder).
 -- `turn`: the body's yaw over one cycle (radians, + to the left), which an `onPrint` gait's planted feet turn against
--- about the root (`skel`: their rest points), so they stay on their prints while the body steers.
+-- about the root (`skel`: their rest points), so they stay on their prints while the body steers; `still`: it turns on
+-- the spot (0..1), so an `onPrint` gait steps in place (the feet lifted and set down, carried round by `turn` alone).
 local function gaitControls(
 	style: QuadStyles.Style,
 	name: string,
 	phase: number,
 	center: { [string]: number },
 	turn: number,
-	skel: QuadPose.Skeleton
+	skel: QuadPose.Skeleton,
+	still: number
 ): Controls
 	local g = style.gaits[name]
 	local out: Controls = {}
@@ -267,7 +297,8 @@ local function gaitControls(
 				local D = duty * g.k
 				local c0 = center[leg] or 0
 				if stance then
-					out[keys.y], out[keys.z] = 0, c0 - D / 2 + D * s
+					local go = if g.onPrint then 1 - still else 1
+					out[keys.y], out[keys.z] = 0, c0 + (-D / 2 + D * s) * go
 				else
 					local lift = if front then (g.liftFront or g.lift or 0.12) else (g.lift or 0.12)
 					if g.onPrint then
@@ -275,7 +306,7 @@ local function gaitControls(
 						-- swing), so it lifts and lands without skimming; between, it overtakes the body by the whole
 						-- stride (D + R)
 						local R = D * (1 - duty) / duty
-						local z = D / 2 + R * q - (D + R) * swingShare(q)
+						local z = (D / 2 + R * q - (D + R) * swingShare(q)) * (1 - still)
 						out[keys.y], out[keys.z] = lift * math.sin(math.pi * q), c0 + z
 					else
 						-- Hermite from the lift-off point to the touchdown point, leaving and landing with part of
@@ -324,6 +355,231 @@ local function gaitControls(
 		out[TAIL_Y[i]] = g.tailSway * math.sin(w - i * 0.95)
 	end
 	return out
+end
+
+---------------------------------------------------------------- pinned feet
+
+-- (a style with `pinFeet`; a real spawn's chase, 2026-10-31: the server moves the root in hops at the chase's speed,
+-- which the client sees in network steps, so a stance drawn from the velocity slid the feet a stud or more) a foot the
+-- pose holds on the ground is pinned where it came down in the world, whatever the root does; lifted, it eases back
+-- onto its gait's path; held down but left more than STEP_FROM off its place (a hop the gait did not keep up with, a
+-- stop), it steps there, a couple at a time. The gait's pace is the root's own travel over PACE_WINDOW s (or the given
+-- speed, the larger).
+local SPIN_STEP = 1.2 -- radians a cycle of a turn on the spot
+local SPIN_RATE = 1.5 -- cycles a second at most (a faster turn is held by the pins and settled by steps)
+local PACE_WINDOW = 0.2 -- s of the root's track its pace is read over
+local SLIP_TIME = 0.2 -- s a foot let go takes to ease onto its gait's path
+local SLIP_FAR = 0.1 -- leg lengths off its path from which a foot let go lifts off its print before it follows it
+local STEP_FROM = 0.2 -- leg lengths off its place a pinned foot steps from
+local STEP_TIME = 0.24 -- s a step takes
+local STEP_LIFT = 0.1 -- leg lengths a step lifts the foot
+local STEP_AT_ONCE = 2
+local SETTLE_TIME = 0.1 -- s a foot the pose sets down while its ease still lifts it takes to come down onto its pin
+local JUMP = 3 -- leg lengths the root moves in one frame that are a teleport, not a pace
+local DOWN = 0.03 -- leg lengths over the ground a foot the pose holds still counts as down (a gait fading in or out
+-- lifts its feet only that little)
+
+-- Follows the root on the ground; returns the pace (the skeleton's units a second).
+local function trackRoot(inst: Instance, input: Input): number
+	local L = inst.skel.L
+	local at = input.rootAt
+	if input.snap or not inst.rootReady then
+		inst.rootReady = true
+		inst.rootX, inst.rootZ, inst.rootYaw = if at then at[1] else 0, if at then at[2] else 0, if at then at[3] else 0
+		inst.track = {}
+		inst.pins = {}
+		inst.slips = {}
+		inst.steps = {}
+	end
+	if not at then
+		inst.rootYaw += input.yawRate * input.dt
+		inst.rootX -= math.sin(inst.rootYaw) * input.speed * input.dt
+		inst.rootZ -= math.cos(inst.rootYaw) * input.speed * input.dt
+		return input.speed
+	end
+	local track = inst.track
+	if (at[1] - inst.rootX) ^ 2 + (at[2] - inst.rootZ) ^ 2 > (JUMP * L) ^ 2 then
+		table.clear(track)
+	end
+	inst.rootX, inst.rootZ, inst.rootYaw = at[1], at[2], at[3]
+	table.insert(track, { input.now, at[1], at[2] })
+	while #track > 2 and input.now - track[2][1] >= PACE_WINDOW do
+		table.remove(track, 1)
+	end
+	local first, last = track[1], track[#track]
+	local span = last[1] - first[1]
+	if span < 0.05 then
+		return input.speed
+	end
+	local travelled = math.sqrt((last[2] - first[2]) ^ 2 + (last[3] - first[3]) ^ 2) / span
+	return math.max(input.speed, travelled)
+end
+
+-- Pins the feet the controls hold on the ground (plant 1, no lift) where they came down in the world. `blow`: the
+-- weight of a keyed action, which owns the feet as it keys them (no step of the pins' own starts; the pins follow it,
+-- so its feet stay where it leaves them).
+local function pinFeet(inst: Instance, controls: Controls, now: number, blow: number)
+	local skel = inst.skel
+	local L = skel.L
+	local c, s = math.cos(inst.rootYaw), math.sin(inst.rootYaw)
+	local function toModel(x: number, z: number): (number, number)
+		local dx, dz = x - inst.rootX, z - inst.rootZ
+		return dx * c - dz * s, dx * s + dz * c
+	end
+	local function toWorld(x: number, z: number): (number, number)
+		return inst.rootX + x * c + z * s, inst.rootZ - x * s + z * c
+	end
+	-- the ease of a foot let go at (x, z) in the world off its path's point (px, pz) in the root's frame
+	local function letGo(x: number, z: number, px: number, pz: number): { number }
+		local tx, tz = toWorld(px, pz)
+		if (x - tx) ^ 2 + (z - tz) ^ 2 > (SLIP_FAR * L) ^ 2 then
+			return { x, z, now, 1 }
+		end
+		return { x - tx, z - tz, now, 0 }
+	end
+	-- where the pose puts each foot (the action's or the gait's place, `keyed`; with the ease off a pin it let go,
+	-- `place`) and whether it holds it down
+	local keyed: { [string]: { number } } = {}
+	local place: { [string]: { number } } = {}
+	local down: { [string]: boolean } = {}
+	local lifts: { [string]: number } = {}
+	local stepping = 0
+	for leg, keys in LEG_KEYS do
+		local chain = skel.chains[leg]
+		if chain then
+			local px = chain.foot[1] + (controls[keys.x] or 0) * L
+			local pz = chain.foot[3] + (controls[keys.z] or 0) * L
+			keyed[leg] = { px, pz }
+			down[leg] = (controls[keys.k] or 0) > 0.98 and (controls[keys.y] or 0) < DOWN
+			local lift = 0
+			local slip = inst.slips[leg]
+			if slip then
+				local k = (now - slip[3]) / SLIP_TIME
+				if k < 1 and slip[5] then
+					lift = slip[5] * (1 - smooth(k))
+				end
+				if k >= 1 then
+					inst.slips[leg] = nil
+				elseif slip[4] == 0 then
+					-- a little off its path: the offset (in the world) fades over the gait's own swing
+					local w = 1 - smooth(k)
+					local ox, oz = slip[1] * w, slip[2] * w
+					px += ox * c - oz * s
+					pz += ox * s + oz * c
+				else
+					-- far off it (a hop, a stop): from where it left the ground onto its path in the world, so it
+					-- lifts off its print first whatever the root does, carried as high as a step for one as long (a
+					-- gait barely under way lifts a foot only a little)
+					local tx, tz = toWorld(px, pz)
+					local e = smooth(k)
+					px, pz = toModel(slip[1] + (tx - slip[1]) * e, slip[2] + (tz - slip[2]) * e)
+					local far = math.clamp(math.sqrt((tx - slip[1]) ^ 2 + (tz - slip[2]) ^ 2) / (STEP_FROM * L), 0, 1)
+					lift = math.max(lift, STEP_LIFT * far * math.sin(math.pi * math.max(k, 0)))
+				end
+			end
+			place[leg] = { px, pz }
+			lifts[leg] = lift
+			if inst.steps[leg] then
+				stepping += 1
+			end
+		end
+	end
+	-- the pinned feet left furthest off their places step first (not in a blow)
+	if blow < 0.02 then
+		local behind: { { leg: string, off: number } } = {}
+		for leg, p in place do
+			local pin = inst.pins[leg]
+			if pin and down[leg] and not inst.steps[leg] then
+				local hx, hz = toModel(pin[1], pin[2])
+				local off = math.sqrt((hx - p[1]) ^ 2 + (hz - p[2]) ^ 2)
+				if off > STEP_FROM * L then
+					table.insert(behind, { leg = leg, off = off })
+				end
+			end
+		end
+		table.sort(behind, function(a, b)
+			return a.off > b.off
+		end)
+		for _, item in behind do
+			if stepping >= STEP_AT_ONCE then
+				break
+			end
+			local leg = item.leg
+			local pin = inst.pins[leg]
+			inst.steps[leg] = { pin[1], pin[2], now }
+			inst.pins[leg] = nil
+			stepping += 1
+		end
+	end
+	for leg, p in place do
+		local keys = LEG_KEYS[leg]
+		local foot = skel.chains[leg].foot
+		local px, pz = p[1], p[2]
+		local lift = lifts[leg]
+		local pin, step = inst.pins[leg], inst.steps[leg]
+		if step then
+			local k = math.min((now - step[3]) / STEP_TIME, 1)
+			local tx, tz = toWorld(px, pz)
+			-- over the spot by four fifths of the step, then straight down onto it
+			local e = smooth(k / 0.8)
+			local wx, wz = step[1] + (tx - step[1]) * e, step[2] + (tz - step[2]) * e
+			local mx, mz = toModel(wx, wz)
+			if not down[leg] then
+				-- the pose lifts it itself: from here onto its path, the step's lift easing out
+				local slip = letGo(wx, wz, px, pz)
+				slip[5] = STEP_LIFT * math.sin(math.pi * k)
+				inst.slips[leg] = slip
+				inst.steps[leg] = nil
+				lift = math.max(lift, slip[5])
+			elseif k >= 1 then
+				inst.pins[leg] = { tx, tz }
+				inst.steps[leg] = nil
+			else
+				lift = math.max(lift, STEP_LIFT * math.sin(math.pi * k))
+			end
+			px, pz = mx, mz
+		elseif pin then
+			local hx, hz = toModel(pin[1], pin[2])
+			if pin[3] then
+				local k = (now - pin[4]) / SETTLE_TIME
+				if k < 1 then
+					lift = math.max(lift, pin[3] * (1 - smooth(k)))
+				end
+			end
+			if not down[leg] and blow < 0.02 then
+				-- lifted: from the pin onto the gait's path (in a blow, the blow takes it off the pin)
+				inst.slips[leg] = letGo(pin[1], pin[2], px, pz)
+				inst.pins[leg] = nil
+			end
+			px, pz = hx, hz
+		elseif down[leg] then
+			-- (a foot set down while its ease still lifts it settles onto the pin, not in one frame)
+			local x, z = toWorld(px, pz)
+			inst.pins[leg] = if lift > 0.005 then { x, z, lift, now } else { x, z }
+			inst.slips[leg] = nil
+		end
+		if blow > 0 then
+			-- a blow keys its feet: they go from their pins to its places as it takes over (early in its blend, so the
+			-- blow's own first moves are not crowded into its end), and once it has, the pins move there (its feet
+			-- stay where it leaves them)
+			local a = keyed[leg]
+			local f = math.sqrt(blow)
+			px, pz = px + (a[1] - px) * f, pz + (a[2] - pz) * f
+			lift *= 1 - blow
+			if blow > 0.999 and inst.pins[leg] then
+				if down[leg] then
+					inst.pins[leg] = { toWorld(a[1], a[2]) }
+				else
+					inst.pins[leg] = nil
+				end
+			end
+		end
+		if lift > 0 then
+			controls[keys.y] = math.max(controls[keys.y] or 0, lift)
+		end
+		controls[keys.x] = (px - foot[1]) / L
+		controls[keys.z] = (pz - foot[3]) / L
+	end
 end
 
 -- The gait the server's intent asks for (weights), a step down when the speed is too slow for it (a slowed chase
@@ -376,19 +632,35 @@ local function locomotion(inst: Instance, input: Input, forced: string?, extra: 
 	for name, w in inst.weights do
 		k += style.gaits[name].k * w
 	end
-	local ground = if moving then speed elseif turning then math.abs(input.yawRate) * L * 0.4 else 0
 	-- planted feet: the stride shrinks with `move` (slow steps are short ones), so the cadence makes up for it and the
 	-- foot in stance still goes back at the ground speed
 	local stride = if inst.planted then math.max(inst.move, 0.5) else 1
+	-- (pinned feet, 2026-10-31) a turn on the spot steps in place, SPIN_STEP radians a cycle
+	local spin = turning and style.pinFeet == true
+	local ground = if moving then speed elseif turning then math.abs(input.yawRate) * L * 0.4 else 0
+	if spin then
+		ground = math.min(math.abs(input.yawRate) / SPIN_STEP, SPIN_RATE) * k * L * stride
+	end
 	local cadence = ground / math.max(0.2, k * L * stride)
 	inst.phase = (inst.phase + dt * cadence) % 1
-	-- the yaw over a cycle while it runs on (a chase steers; a turn on the spot keeps its own steps)
-	local turn = if moving and cadence > 0.05 then math.clamp(input.yawRate / cadence, -1.2, 1.2) else 0
+	-- the yaw over a cycle while it runs on (a chase steers) or turns on the spot with pinned feet
+	local turnTarget = if (moving or spin) and cadence > 0.05 then math.clamp(input.yawRate / cadence, -1.2, 1.2) else 0
+	if input.snap then
+		inst.spin, inst.turn = if spin then 1 else 0, turnTarget
+	else
+		inst.spin = approach(inst.spin, if spin then 1 else 0, 8, dt)
+		inst.turn = approach(inst.turn, turnTarget, 8, dt)
+	end
+	local turn = inst.turn
 	local out: Controls = {}
 	if inst.move > 0.005 then
 		for name, w in inst.weights do
 			if w > 0.005 then
-				addAll(out, gaitControls(style, name, inst.phase, inst.center, turn, inst.skel), w * inst.move)
+				addAll(
+					out,
+					gaitControls(style, name, inst.phase, inst.center, turn, inst.skel, inst.spin),
+					w * inst.move
+				)
 			end
 		end
 	end
@@ -548,6 +820,14 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 		end
 		stunned = input.stunned == true or serverNow < inst.stunEnds
 	end
+	-- (pinned feet) the root's place, and the pace from its own travel
+	if style.pinFeet then
+		local pace = trackRoot(inst, input)
+		if pace ~= input.speed then
+			input = table.clone(input)
+			input.speed = pace
+		end
+	end
 	-- 1. locomotion (an action may run a gait: a charge gallops; a flight the pose draws itself is ground speed)
 	local run = input.action
 	local forced: string? = nil
@@ -566,7 +846,7 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 				local b = actionControls(style, run, math.max(0, t - dt))
 				local da = if a then a.travel or 0 else 0
 				local db = if b then b.travel or 0 else 0
-				extra = math.abs(da - db) * math.max(0, d - 1.1 * L) / dt
+				extra = math.abs(da - db) * d / dt
 			end
 		end
 	end
@@ -647,17 +927,18 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 			end
 			local travel = keyed.travel
 			if travel and playing.reach and action.travel then
-				-- the flight ends with the jaws at the target, not the body in it (a body length short)
+				-- the flight ends where the server's teleport puts the root: in the ability's circle
+				-- (Entities/Monster.stepCast; studio review 2026-10-31: a landing a body length short of it popped the
+				-- body forward by that much at the teleport, the planted hind feet skidding 3.5 studs)
 				local rx, rz = playing.reach[1], playing.reach[3]
-				local d = math.sqrt(rx * rx + rz * rz)
-				local k = if d > 1e-3 then math.max(0, d - 1.1 * L) / d else 0
 				keyed = table.clone(keyed)
-				keyed.bx = (keyed.bx or 0) + rx * k * travel / L
-				keyed.bz = (keyed.bz or 0) + rz * k * travel / L
+				keyed.bx = (keyed.bx or 0) + rx * travel / L
+				keyed.bz = (keyed.bz or 0) + rz * travel / L
 				-- planted feet land with the body
 				for _, keys in LEG_KEYS do
 					if keyed[keys.k] then
-						keyed[keys.z] = (keyed[keys.z] or 0) + rz * k * travel / L
+						keyed[keys.x] = (keyed[keys.x] or 0) + rx * travel / L
+						keyed[keys.z] = (keyed[keys.z] or 0) + rz * travel / L
 					end
 				end
 			end
@@ -668,11 +949,22 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 				local flight = 0
 				if playing.reach then
 					local rx, rz = playing.reach[1], playing.reach[3]
-					flight = math.max(0, math.sqrt(rx * rx + rz * rz) - 1.1 * L) / L
+					flight = math.sqrt(rx * rx + rz * rz) / L
 				end
 				local height = if flight > 0 then math.clamp(0.25 * flight, 1, 3) else 0.3
 				keyed = table.clone(keyed)
 				keyed.by = (keyed.by or 0) + arc * height
+				-- the feet the action holds on targets ride the height over a leg length with the body, so a long
+				-- flight's legs keep their keyed tuck and reach instead of hanging straight under it (studio review
+				-- 2026-10-31: the hind legs snapped out of and back into reach at the take-off and the landing)
+				local over = height - 1
+				if over > 0 then
+					for _, keys in LEG_KEYS do
+						if keyed[keys.k] then
+							keyed[keys.y] = (keyed[keys.y] or 0) + arc * over
+						end
+					end
+				end
 			end
 			-- a heavy body (planted feet) takes a little longer to leave its gait
 			local w = math.min(1, t / (if inst.planted then 0.2 else 0.08))
@@ -742,9 +1034,10 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 		end
 	end
 	-- the lean into turns
-	local lean = math.clamp(input.yawRate * 0.25, -0.17, 0.17) * inst.move
+	inst.yawEase = if input.snap then input.yawRate else approach(inst.yawEase, input.yawRate, 10, dt)
+	local lean = math.clamp(inst.yawEase * 0.25, -0.17, 0.17) * inst.move
 	add(controls, "broll", -lean)
-	add(controls, "syaw", math.clamp(input.yawRate * 0.12, -0.14, 0.14) * inst.move)
+	add(controls, "syaw", math.clamp(inst.yawEase * 0.12, -0.14, 0.14) * inst.move)
 	-- the head toward the target
 	local look = input.look
 	local lookTarget = if look and inst.combat > 0.2 then 1 else 0
@@ -793,6 +1086,9 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 	if dragon then
 		DragonMotion.tail(dragon, controls, input.yawRate, dt, input.snap)
 		DragonMotion.resolve(dragon, controls, dt, input.snap)
+	end
+	if style.pinFeet then
+		pinFeet(inst, controls, now, actionW)
 	end
 	local posed = QuadPose.solve(skel, controls)
 	inst.posed = posed

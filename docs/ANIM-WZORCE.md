@@ -953,6 +953,31 @@ tests/dragon.spec.luau. Deviations from the tables above:
   planted feet's slide, the wings' carry, the rake's and the stomp's height, the alert, the deaths by side) and the
   creep and crawl paces.
 
+#### Studio check of the new model (2026-10-31, third round)
+
+- **The pounce lands in the circle** (every quadruped). The server moves the root into the circle on W
+  (`Monster.stepCast`), so the pose's travel now runs the whole way there (the reach, not a share of it), done before
+  the hind feet come down (pounce key S 0.88); held feet ride the arc above 1 L, so the hind legs no longer hang
+  straight at the soft reach and snap. Studio: the hind feet slid 3.5 studs as they landed; now 0.06 at 12-45 studs.
+- **The tail: the tail whips, not the body.** The spin is spread evenly over the flight (S 0.3 → F 0.3: 6°, 26°, 86° on
+  W, 114°; straight through the hit), at most 12° a frame (was 32°, 92° in a 15 fps frame); the feet stay up until it
+  ends. The tail's own yaw on W (`tyaw` 110°, `tY5` 16°, `tY6` 22°) still takes its tip through the front (41° off on
+  W). The frame-by-frame spec caps the body bone at 12.5° in the tail.
+- **Pinned feet** (style `pinFeet`; a real spawn's chase at 60 fps slid 0.7-1.6 studs: the client sees the server's
+  root in network steps, its velocity 0 or noisy). The client passes where the look's root stands (`rootAt`:
+  client/Anim/QuadRig.rootAt, x, z and yaw). A foot the pose holds down (plant 1, under 0.03 L) is pinned where it
+  came down in the world, whatever the root does; lifted, it eases onto its gait's path over 0.2 s (from more than
+  0.1 L off it, it lifts off its print first); held down but more than 0.2 L off its place (a hop, a stop), it steps
+  there (0.24 s, 0.1 L high, the furthest first, two at a time); a foot set down while its ease still lifts it settles
+  over 0.1 s. A keyed blow owns its feet: no step starts, the pins go to its places as it blends in. The gait's pace
+  is the larger of the given speed and the root's own travel over 0.2 s (a jump of 3 L in a frame is a teleport and
+  clears it). On the spot it steps round 1.2 rad a cycle, at most 1.5 cycles a second; the turn and the lean into it
+  are eased. Without `rootAt` (AnimLab) the root is carried on by the speed and the yaw rate.
+- Sims with Studio's measure (a foot bone's head, while within 0.1 stud of its lowest, its longest horizontal travel):
+  the chase on a root in network steps (20 or 10 Hz, interpolated, its velocity or none) at most 0.29 stud (was
+  0.8-3.3, 23 with no velocity); a turn on the spot (1.2-4 rad/s) at most 0.34; the game's pounce (12-45 studs) 0.06.
+  Specs: tests/dragon.spec.luau "its feet on a real spawn's root".
+
 ## 6. F5 Rigid models: caveSpider
 
 ### 6.1 What a rigid model can do

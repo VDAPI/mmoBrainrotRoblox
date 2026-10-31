@@ -925,6 +925,8 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 		-- a boss's stances: enraged (the attribute, or its last phase) and shielded by its helpers
 		enraged = boss ~= nil and (s.phase >= 3 or s.model:GetAttribute("Enraged") == true),
 		shielded = boss ~= nil and s.model:GetAttribute("Shielded") == true,
+		-- a quadruped's pinned feet: where its look stands in the world (Anim/QuadRig.rootAt)
+		rootAt = if rig.kind == "quad" then QuadRig.rootAt(rig) else nil,
 	})
 	if rig.kind == "quad" then
 		QuadRig.apply(rig, posed)
