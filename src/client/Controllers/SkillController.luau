@@ -3,7 +3,8 @@
 --   enemy skills use the current target (or pick the nearest enemy in range),
 --   ally skills target the selected ally or yourself,
 --   area skills on a point: PC aims at the cursor — hold the key to see the area, release to cast
---   (or cast on key press with "quick cast"); touch aims at the target or in front of the character.
+--   (or cast on key press with "quick cast"); touch aims at the target or in front of the character, except Blink,
+--   which goes the way the joystick points (owner 2026-10-31: an escape never lands in the monster).
 -- S28: the held-key preview shows the real shape (circle at the cursor, circle around you, cone, line) and cones /
 --   lines turn towards the cursor; on touch, dragging a skill button aims like a MOBA (release casts, back on the
 --   button cancels); a skill pressed during the global cooldown or the end of a cooldown waits in a one-skill queue
@@ -23,6 +24,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
+local SkillAim = require(ReplicatedStorage.Shared.Logic.SkillAim)
 local SkillData = require(ReplicatedStorage.Shared.Data.Skills)
 local Skills = require(ReplicatedStorage.Shared.Logic.Skills)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
@@ -103,32 +105,30 @@ function SkillController.TargetDistance(): number
 	return (model:GetPivot().Position - root.Position).Magnitude
 end
 
+-- Logic/SkillAim picks the source (cursor, target, walking direction, feet, front).
 local function aimPoint(skill: SkillData.SkillDef): Vector3?
 	local root = myRoot()
 	if not root then
 		return nil
 	end
-	if not Fusion.peek(Device.Touch) then
-		local point = mouseGround()
-		if point then
-			return point
-		end
-	end
+	local touch = Fusion.peek(Device.Touch) == true
+	local point = if touch then nil else mouseGround()
 	local model = targetModel()
-	if model and model:GetAttribute("MonsterId") then
+	local monster = model ~= nil and model:GetAttribute("MonsterId") ~= nil
+	local source = SkillAim.source(skill.type, touch, point ~= nil, monster)
+	if source == "cursor" then
+		return point
+	elseif source == "target" and model then
 		return model:GetPivot().Position
-	end
-	local forward = math.min(skill.range or 10, 12)
-	if skill.type == "blink" then
+	elseif source == "move" then
 		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 		local move = if humanoid then humanoid.MoveDirection else Vector3.zero
 		local direction = if move.Magnitude > 0.1 then move.Unit else root.CFrame.LookVector
 		return root.Position + direction * (skill.length or 15)
-	end
-	if skill.type == "banner" then
+	elseif source == "feet" then
 		return root.Position -- S74 (ROZWOJ 10.5): no target, the banner stands at the feet
 	end
-	return root.Position + root.CFrame.LookVector * forward
+	return root.Position + root.CFrame.LookVector * math.min(skill.range or 10, 12)
 end
 
 local function report(err: string?)
