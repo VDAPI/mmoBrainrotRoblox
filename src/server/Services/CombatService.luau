@@ -1364,7 +1364,9 @@ function CombatService.DealDamage(
 				{ k = "atk", s = selfEntity.id, t = targetEntity.id, st = style, w = weaponType, el = element }
 			)
 		end
-		-- S29: every resolved hit shows a number; an untouchable boss shows "Immune".
+		-- S29: every resolved hit shows a number; an untouchable boss shows "Immune". S162e: an evading monster
+		-- (Logic/Pursuit) shows "Evade" instead.
+		local untouched = monster.invulnerable and not result.dodged
 		queueFx(targetPosition, {
 			k = "dmg",
 			e = targetEntity.id,
@@ -1372,7 +1374,8 @@ function CombatService.DealDamage(
 			a = result.amount,
 			c = result.crit,
 			d = result.dodged,
-			im = if monster.invulnerable and not result.dodged then true else nil,
+			im = if untouched and not monster.evading then true else nil,
+			ev = if untouched and monster.evading then true else nil,
 			sk = options and options.skill,
 		})
 		if result.amount > 0 then
@@ -2603,6 +2606,16 @@ function CombatService.Init(registry)
 		damaged = function(monster: any, player: Player, dealt: number)
 			CombatService.MonsterDamaged:Fire(monster, player, dealt) -- S134f: the fight meter
 		end,
+		-- S162e: a monster gives up a target it cannot reach (Logic/Pursuit): "Evade" over it, from the target's view
+		-- (the setting "mine" shows it to that player)
+		evaded = function(monster: any, player: Player?)
+			local entity = monster.entity
+			if not entity then
+				return
+			end
+			local source = if player then EntityService.GetPlayerEntity(player) else nil
+			queueFx(monster:Position(), { k = "dmg", e = entity.id, s = source and source.id, a = 0, ev = true })
+		end,
 		-- S72 Menace (ROZWOJ 10.3): the threat hook raises the threat of every damage of the player (not the credit).
 		threatMultiplier = function(_monster: any, player: Player): number
 			-- a DoT tick can outlive its source (logout, character switch): no hook reads then
@@ -2643,6 +2656,8 @@ function CombatService.Start()
 		if shown <= 0 then
 			if entity.kind == "player" and entity.player then
 				event[blockedFlag(entity.player)] = true
+			elseif entity.kind == "monster" and entity.monster and entity.monster.evading then
+				event.ev = true -- S162e
 			elseif entity.kind == "monster" and entity.monster and entity.monster.invulnerable then
 				event.im = true
 			else

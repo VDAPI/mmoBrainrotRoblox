@@ -3,7 +3,7 @@
 --   idle   : wander within Combat.wanderRadius of the group centre, look for players in aggro range; out of
 --            combat it slowly regains HP (S22, Logic/Leash.regen)
 --   chase  : follow the highest-threat valid target; goes home by Logic/Leash.shouldReturn (S22: soft leash
---            while nobody hits the group, hard leash, lost target, stuck)
+--            while nobody hits the group, hard leash, lost target); S162e: evades when it cannot reach its target
 --   cast   : Elite II special: telegraph for `windup` seconds, then resolve. S134c: a world event commander also has
 --            extra abilities (SetExtraAbilities: big blows to dodge and a shared blow, the bosses 2.0 telegraph and
 --            resolve options of Logic/BossMechanics). S134e: an Elite / Elite II has a kit (Data/MonsterAbilities.KITS:
@@ -11,10 +11,18 @@
 --            together with its own ability; a target-centred area is frozen on the ground under the target
 --   return : walk back to the group centre (S22: no healing, no invulnerability; a hit within the hard leash
 --            turns it back into the fight), then to its own spot and idle. Bosses keep the old return: their
---            arena centre, full HP and invulnerable on the way.
+--            arena centre, full HP and invulnerable on the way. S162e evade (`evading`): the same walk home, but
+--            immune, at full HP, with its damage record cleared, and no aggro by sight for a while once home.
 --   dead   : waiting for MonsterService to remove the model
--- Chasing and going home steer around obstacles (FIX 2026-10-09, Logic/Steer): two short rays (knee and hip
+-- Chasing and going home steer around obstacles (FIX 2026-10-09, Logic/Steer): two short rays (step and hip
 -- height) probe the way ahead; a blocked way takes the first clear angle to one side and keeps that side a while.
+-- S162e (owner's tester 2026-10-31: monsters stuck on rocks, trees, houses and ledges were cheesed with ranged
+-- attacks; Logic/Pursuit): while two long rays say the straight way to the goal is blocked, the monster asks
+-- PathfindingService for a path (its agent size from its body, within the server's budget, at most every
+-- Combat.pathGap seconds) and walks its points; no progress towards where it walks for Combat.pursuitRepath s = a new
+-- path; no path, or still no progress after Combat.pursuitEvade s, while its blow, shot or throw cannot reach the
+-- target = it evades (bosses and their helpers never do). The low probe ray sits at Pursuit.stepHeight: what lies
+-- lower is walked over (only the root collides), so a monster no longer turns at small ledges.
 -- S162m (owner 2026-10-25, docs/ANIM-WZORCE §9; Logic/MonsterMove): a walk while idle, a trot home, a run in the fight
 -- (the "Gait" attribute); a melee monster walks on to meleeApproach x its reach; an ability with `dash` really travels
 -- (Dash* attributes); "SpawnedAt" = server time of the spawn (the clients' appear animation).
@@ -24,6 +32,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
+local PathfindingService = game:GetService("PathfindingService")
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
 
@@ -38,6 +47,7 @@ local MonsterCast = require(Shared.Logic.MonsterCast)
 local MonsterMove = require(Shared.Logic.MonsterMove)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Monsters = require(Shared.Data.Monsters)
+local Pursuit = require(Shared.Logic.Pursuit)
 local RigBuilder = require(script.Parent.RigBuilder)
 local Steer = require(Shared.Logic.Steer)
 local Traits = require(Shared.Logic.Traits)
@@ -81,6 +91,9 @@ export type Context = {
 	-- S159: a regular blow winds up (the clients pose the draw; CombatService.MonsterWindup); S159a `shot` says what
 	-- (melee / arrow / bolt / throw) for the draw's pose
 	attackWind: ((monster: any, player: Player, seconds: number, shot: string?) -> ())?,
+	-- S162e: the monster evades (its target cannot be reached): debuffs off, the clients show "Evade" over it to
+	-- `player` (the target it gave up on)
+	evaded: ((monster: any, player: Player?) -> ())?,
 }
 
 local Monster = {}
@@ -157,13 +170,30 @@ export type Monster = typeof(setmetatable(
 		levelCap: number?,
 		-- S157 (Logic/LevelLock): the highest player level that may fight this monster (nil = everyone).
 		capLevel: number?,
-		-- S22 leash: last hit by a player, last time the monster moved (or attacked) while chasing and where.
+		-- S22 leash: last hit by a player.
 		lastHit: number,
 		-- S72: the player whose damage brought HP to 0; nil for the environment.
 		killedBy: Player?,
-		movedAt: number,
-		movedFrom: Vector3,
 		lastStep: number,
+		-- S162e (Logic/Pursuit): the last progress towards where it walks (os.clock), the studs gained since, the root's
+		-- position at the last tick and the point it walked to (the goal or the path's next point)
+		progressAt: number,
+		progressAcc: number,
+		lastPos: Vector3,
+		walkGoal: Vector3?,
+		-- S162e: the path (PathfindingService points, the next one, the goal it leads to), whether one is being computed,
+		-- when the last one was asked, when an answer last found no way (0 = never) and a token that drops late answers
+		path: { Vector3 }?,
+		pathIndex: number,
+		pathGoal: Vector3?,
+		pathPending: boolean,
+		pathAskedAt: number,
+		pathFailedAt: number,
+		pathToken: number,
+		pathSticky: boolean, -- keep to the path even where the way looks clear (a stalled monster's new path)
+		-- S162e: evading (immune, going home) and until when it ignores players by sight after an evade (os.clock)
+		evading: boolean,
+		calmUntil: number,
 		-- Obstacle steering: the side of the current detour (-1, 0, 1) and until when it is kept.
 		detourSide: number,
 		detourUntil: number,
@@ -290,9 +320,21 @@ function Monster.new(
 		levelCap = nil,
 		capLevel = nil,
 		lastHit = 0,
-		movedAt = 0,
-		movedFrom = spawnCFrame.Position,
 		lastStep = os.clock(),
+		progressAt = 0,
+		progressAcc = 0,
+		lastPos = spawnCFrame.Position,
+		walkGoal = nil,
+		path = nil,
+		pathIndex = 1,
+		pathGoal = nil,
+		pathPending = false,
+		pathAskedAt = -math.huge,
+		pathFailedAt = 0,
+		pathToken = 0,
+		pathSticky = false,
+		evading = false,
+		calmUntil = 0,
 		detourSide = 0,
 		detourUntil = 0,
 		patrol = nil,
@@ -400,12 +442,18 @@ local function refreshProbeFilter()
 	probeParams.FilterDescendantsInstances = ignore
 end
 
--- Whether something solid (not a walkable slope) is within `reach` studs of `self` in the flat direction.
+-- The ground under the root (the feet), from the hip height.
+local function feetY(self: Monster): number
+	return self.root.Position.Y - self.root.Size.Y / 2 - self.humanoid.HipHeight
+end
+
+-- Whether something solid (not a walkable slope) is within `reach` studs of `self` in the flat direction. S162e: the low
+-- ray at Pursuit.stepHeight (was 1.5 studs for every body): a lower obstacle passes under the root.
 local function probeBlocked(self: Monster, dx: number, dz: number, reach: number): boolean
 	local root = self.root
 	local direction = Vector3.new(dx, 0, dz) * reach
-	local feet = root.Position.Y - root.Size.Y / 2 - self.humanoid.HipHeight
-	for _, y in { feet + 1.5, root.Position.Y } do
+	local feet = feetY(self)
+	for _, y in { feet + Pursuit.stepHeight(self.humanoid.HipHeight), root.Position.Y } do
 		local hit = Workspace:Raycast(Vector3.new(root.Position.X, y, root.Position.Z), direction, probeParams)
 		if hit and hit.Normal.Y < 0.6 then
 			return true
@@ -437,6 +485,216 @@ local function steerTo(self: Monster, goal: Vector3)
 	self.detourSide = side
 	self.detourUntil = now + Combat.steerHold
 	self.humanoid:MoveTo(from + Vector3.new(dx, 0, dz) * (reach + 2))
+end
+
+-- S162e: a player's root stands this high over the ground (R15: hip height 2 + half the root); chase goals are ground
+-- points under the target.
+local PLAYER_ROOT_UP = 3
+
+-- S162e: whether the straight way to the ground point `goal` is blocked: a ray at step height and one at the root's
+-- height, both rising or falling with the ground between the two ends; a hit on a walkable slope (a hill) is no block.
+local function wayBlocked(self: Monster, goal: Vector3): boolean
+	local from = self.root.Position
+	local offset = Vector3.new(goal.X - from.X, 0, goal.Z - from.Z)
+	if offset.Magnitude < 1 then
+		return false
+	end
+	refreshProbeFilter()
+	local feet = feetY(self)
+	for _, up in { Pursuit.stepHeight(self.humanoid.HipHeight), from.Y - feet } do
+		local start = Vector3.new(from.X, feet + up, from.Z)
+		local hit = Workspace:Raycast(start, Vector3.new(goal.X, goal.Y + up, goal.Z) - start, probeParams)
+		if hit and hit.Normal.Y < 0.6 then
+			return true
+		end
+	end
+	return false
+end
+
+-- S162e: whether a shot or a throw from the monster's mouth height meets nothing solid on its way to the target's root
+-- (a ranged monster no longer shoots through walls and rocks).
+local function sightTo(self: Monster, targetPosition: Vector3): boolean
+	refreshProbeFilter()
+	local root = self.root
+	local muzzle = root:FindFirstChild("Muzzle")
+	local y = if muzzle and muzzle:IsA("Attachment") then muzzle.WorldPosition.Y else root.Position.Y
+	local from = Vector3.new(root.Position.X, y, root.Position.Z)
+	return Workspace:Raycast(from, targetPosition - from, probeParams) == nil
+end
+
+-- S162e: PathfindingService agents by size (Logic/Pursuit.agent rounds a body up to a few, one navmesh per size).
+-- Monsters cannot jump, climb or swim (RigBuilder), so their paths neither: water costs extra and is walked only when
+-- there is no other way.
+local agents: { [string]: { [string]: any } } = {}
+local pathBucket = Pursuit.newBucket(Combat :: any, os.clock())
+local WATER_COST = 10
+local WAYPOINT_SPACING = 6
+
+local function agentOf(self: Monster): { [string]: any }
+	local size = self.root.Size
+	local radius, height = Pursuit.agent(size.X, size.Y, size.Z, self.humanoid.HipHeight)
+	local key = `{radius}|{height}`
+	local agent = agents[key]
+	if not agent then
+		agent = {
+			AgentRadius = radius,
+			AgentHeight = height,
+			AgentCanJump = false,
+			AgentCanClimb = false,
+			WaypointSpacing = WAYPOINT_SPACING,
+			Costs = { Water = WATER_COST },
+		}
+		agents[key] = agent
+	end
+	return agent
+end
+
+-- S162e: drops the path and any answer still on its way.
+local function dropPath(self: Monster)
+	self.path = nil
+	self.pathGoal = nil
+	self.pathPending = false
+	self.pathSticky = false
+	self.pathToken += 1
+end
+
+-- S162e: asks PathfindingService for a path to the ground point `goal` (in its own thread: ComputeAsync yields), at most
+-- every Combat.pathGap seconds per monster and within the server's budget (Logic/Pursuit.take); a refused ask is
+-- simply tried again on a later tick. A success replaces the path, "no way" is remembered as pathFailedAt.
+local function requestPath(self: Monster, goal: Vector3, now: number)
+	if self.pathPending or now - self.pathAskedAt < Combat.pathGap then
+		return
+	end
+	if not Pursuit.take(pathBucket, now, Combat :: any) then
+		return
+	end
+	self.pathPending = true
+	self.pathAskedAt = now
+	self.pathToken += 1
+	local token = self.pathToken
+	local from = self.root.Position
+	local agent = agentOf(self)
+	task.spawn(function()
+		local path = PathfindingService:CreatePath(agent)
+		local ok = pcall(function()
+			path:ComputeAsync(from, goal)
+		end)
+		if self.pathToken ~= token or self.state == "dead" then
+			return
+		end
+		self.pathPending = false
+		if ok and path.Status == Enum.PathStatus.Success then
+			local points: { Vector3 } = {}
+			for _, waypoint in path:GetWaypoints() do
+				table.insert(points, waypoint.Position)
+			end
+			self.path = points
+			self.pathIndex = 2 -- the first point is where it stood
+			self.pathGoal = goal
+			self.pathFailedAt = 0
+		else
+			self.path = nil
+			self.pathGoal = nil
+			self.pathFailedAt = os.clock()
+		end
+	end)
+end
+
+-- S162e: walks to the path's next point: points it stands at (within a tick's walk) or has passed (the one after is
+-- nearer) are skipped. Returns the point, or nil when the path is used up.
+local function followPath(self: Monster): Vector3?
+	local points = self.path
+	if not points then
+		return nil
+	end
+	local position = self.root.Position
+	local near = math.max(2.5, self.humanoid.WalkSpeed / Combat.aiTickRate * 1.2)
+	local i = self.pathIndex
+	while i <= #points do
+		local here = distanceFlat(position, points[i])
+		local nextPoint = points[i + 1]
+		if here <= near or (nextPoint and distanceFlat(position, nextPoint) <= here) then
+			i += 1
+		else
+			break
+		end
+	end
+	self.pathIndex = i
+	local point = points[i]
+	if not point then
+		self.path = nil
+		return nil
+	end
+	self.humanoid:MoveTo(point)
+	return point
+end
+
+-- S162e: walks towards the ground point `goal`: straight on (steering around what the short probes find) while the
+-- straight way is clear, along a path while it is blocked (asked for when there is none or its end lies
+-- Combat.pathMove studs from `pathTo`; the old path leads on meanwhile). `pathTo` = where a path should end (a melee
+-- chase: the target's feet, which move less than its approach point; nil = `goal`). `walkGoal` = where it walks
+-- (progress counts towards it): the path's next point or the goal, never a steering detour.
+local function travel(self: Monster, goal: Vector3, now: number, pathTo: Vector3?)
+	if not self.pathSticky and not wayBlocked(self, goal) then
+		self.walkGoal = goal
+		steerTo(self, goal)
+		return
+	end
+	local pathGoal = self.pathGoal
+	local destination = pathTo or goal
+	if not self.path or not pathGoal or distanceFlat(pathGoal, destination) > Combat.pathMove then
+		requestPath(self, destination, now)
+	end
+	local point = followPath(self)
+	self.walkGoal = point or goal
+	if not point then
+		if not self.pathPending then
+			self.pathSticky = false -- no path to keep to (none found, or walked to its end)
+		end
+		steerTo(self, goal)
+	end
+end
+
+-- S162e: a stalled monster's new path (Pursuit.decide "repath"): it keeps to that path even where the long rays see the
+-- way clear (whatever stopped it, a post, a fence gap or a water edge, they missed).
+local function repath(self: Monster, goal: Vector3, now: number)
+	self.pathSticky = true
+	requestPath(self, goal, now)
+end
+
+-- S162e: starts a fresh progress record (a new chase, the way home, after a stun or a cast).
+local function resetProgress(self: Monster, now: number)
+	self.progressAt = now
+	self.progressAcc = 0
+	self.lastPos = self.root.Position
+end
+
+-- S162e (Logic/Pursuit): books the last tick's walk towards `walkGoal` and decides: chase on, a new path, or give up.
+-- Standing where it can hit (or held by a root) is progress.
+local function notePursuit(self: Monster, now: number, canHit: boolean, mayEvade: boolean): Pursuit.Action
+	local position = self.root.Position
+	local last = self.lastPos
+	local goal = self.walkGoal
+	self.lastPos = position
+	if canHit or goal == nil or self.ctx.isRooted(self) then
+		self.progressAt = now
+		self.progressAcc = 0
+		return "chase"
+	end
+	local advance = Pursuit.advance(last.X, last.Z, position.X, position.Z, goal.X, goal.Z)
+	local acc, progressed = Pursuit.track(self.progressAcc, advance, Combat :: any)
+	self.progressAcc = acc
+	if progressed then
+		self.progressAt = now
+	end
+	return Pursuit.decide({
+		stalled = now - self.progressAt,
+		canHit = false,
+		asked = self.pathAskedAt > self.progressAt,
+		pending = self.pathPending,
+		noPath = self.pathFailedAt > self.progressAt,
+		mayEvade = mayEvade,
+	}, Combat :: any)
 end
 
 -- Applies the slow/root factor from status effects (1 = normal speed).
@@ -475,7 +733,25 @@ function Monster.StartReturn(self: Monster)
 	self.model:SetAttribute("Returning", true)
 	applyPace(self)
 	self.returnStarted = os.clock()
-	steerTo(self, returnPoint(self))
+	-- S162e: a fresh way home (the chase's path led to its target)
+	dropPath(self)
+	resetProgress(self, self.returnStarted)
+	travel(self, returnPoint(self), self.returnStarted)
+end
+
+-- S162e (Logic/Pursuit): gives up on a target it can neither reach nor hit (WoW's evade): immune to damage and debuffs,
+-- full HP with a clean damage record (the cheese earns no kill), aggro reset, home at a trot; the clients show "Evade"
+-- over it to the target (Context.evaded). Never bosses or their helpers (Pursuit.decide gets mayEvade = false).
+local function evade(self: Monster)
+	local target = self.target
+	self.evading = true
+	self.invulnerable = true
+	table.clear(self.damageBy)
+	setHp(self, self.stats.maxHp)
+	self:StartReturn()
+	if self.ctx.evaded then
+		self.ctx.evaded(self, target)
+	end
 end
 
 local function finishReturn(self: Monster)
@@ -483,6 +759,14 @@ local function finishReturn(self: Monster)
 	if self.isBoss then
 		self.invulnerable = false
 	end
+	-- S162e: the evade ends at home: hittable again and blind to players by sight for Combat.evadeCalm seconds (a hit
+	-- still starts a fight), so a player on an unreachable spot next to its home does not pull it again at once
+	if self.evading then
+		self.evading = false
+		self.invulnerable = false
+		self.calmUntil = os.clock() + Combat.evadeCalm
+	end
+	dropPath(self)
 	self.model:SetAttribute("Returning", nil)
 	applyPace(self)
 	self.nextWander = os.clock() + 2 + self.random:NextNumber() * 4
@@ -563,6 +847,10 @@ local function lockedFor(self: Monster, player: Player?): boolean
 end
 
 local function lookForAggro(self: Monster): Player?
+	-- S162e: just back from an evade it ignores players by sight a while
+	if os.clock() < self.calmUntil then
+		return nil
+	end
 	-- S160: an Invasion zone monster attacks every player inside the zone (its own pick, no level rule)
 	local picker = self.aggroPicker
 	if picker then
@@ -605,6 +893,7 @@ local function engage(self: Monster, player: Player)
 	if
 		self.state == "return"
 		and not self.isBoss
+		and not self.evading -- S162e: an evading monster goes home whatever happens
 		and Leash.canReengage(distanceFlat(self.root.Position, homeOf(self)), Combat :: any)
 	then
 		self.state = "idle"
@@ -616,8 +905,9 @@ local function engage(self: Monster, player: Player)
 		applyPace(self)
 		setTarget(self, player)
 		local now = os.clock()
-		self.movedAt = now
-		self.movedFrom = self.root.Position
+		resetProgress(self, now) -- S162e
+		self.walkGoal = nil
+		dropPath(self)
 		self.nextAttack = math.max(self.nextAttack, now + 0.4)
 		if self.ability then
 			self.nextAbility = now + 3 + self.random:NextNumber() * 3
@@ -849,23 +1139,12 @@ local function leashed(self: Monster, now: number, hasTarget: boolean): boolean
 		cfg.leashRange = self.leashRange or Combat.leashRange
 		cfg.leashMax = leashMax(self)
 	end
-	local stuckFor = if self.ctx.isRooted(self) then 0 else now - self.movedAt
 	local back = Leash.shouldReturn({
 		distHome = distHome,
 		sinceHit = sinceHit(self, now),
 		hasTarget = hasTarget,
-		stuckFor = stuckFor,
 	}, cfg)
 	return back
-end
-
--- Progress for the stuck check: moving at least 1.5 studs (or attacking, or being rooted) counts.
-local function noteMovement(self: Monster, now: number, attacking: boolean)
-	local position = self.root.Position
-	if attacking or self.ctx.isRooted(self) or distanceFlat(position, self.movedFrom) >= 1.5 then
-		self.movedAt = now
-		self.movedFrom = position
-	end
 end
 
 -- S134c: extra abilities of a world event commander (Data/MonsterAbilities with the bosses 2.0 fields): tried in list
@@ -1035,8 +1314,20 @@ local function stepChase(self: Monster, now: number)
 	end
 	local distance = distanceFlat(position, targetPosition)
 	local reach = self.stats.range + self.root.Size.Z / 2
+	local melee = self.def.attack == "melee"
+	-- S162e: a shot or a throw needs a clear line to the target (no arrows through rocks and walls); one sight ray per
+	-- tick at most. A melee blow keeps its hit rule (flat reach).
+	local sight: boolean? = nil
+	local aim: Vector3 = targetPosition
+	local function seen(): boolean
+		if sight == nil then
+			sight = sightTo(self, aim)
+		end
+		return sight == true
+	end
+	local inReach = distance <= reach and (melee or seen())
 	-- S134e: since when the target keeps out of reach (the kit's fleeing rule)
-	if distance <= reach then
+	if inReach then
 		self.outOfReachSince = 0
 	elseif self.outOfReachSince == 0 then
 		self.outOfReachSince = now
@@ -1049,7 +1340,7 @@ local function stepChase(self: Monster, now: number)
 	if self.kit then
 		local choice = kitPick(self, now, distance, reach)
 		if choice == "throw" then
-			threw = throwAt(self, now, target, targetPosition)
+			threw = seen() and throwAt(self, now, target, targetPosition) -- S162e: along a clear line only
 		elseif choice then
 			local own = self.ability
 			ability = if own and own.id == choice then own else MonsterAbilities.get(choice)
@@ -1080,14 +1371,26 @@ local function stepChase(self: Monster, now: number)
 		return
 	end
 
-	noteMovement(self, now, distance <= reach or threw)
+	-- S162e (Logic/Pursuit): progress towards where it walked since the last tick; standing where its blow, its shot or
+	-- its Elite II throw reaches the target is never stalling. It evades when it can neither reach nor hit the target
+	-- (bosses and their helpers never: their arenas have walls by design and the bosses their own answer to kiting).
+	local throw = self.kit and self.kit.throw
+	local canHit = inReach
+		or threw
+		or (throw ~= nil and self.ctx.rangedThrow ~= nil and distance <= throw.range and seen())
+	local action = notePursuit(self, now, canHit, not self.isBoss and not self.summoned)
+	if action == "evade" then
+		evade(self)
+		return
+	end
+
 	-- S162m (docs/ANIM-WZORCE §9 R2): a melee monster walks on to MonsterMove.stopDistance (meleeApproach x its reach)
 	-- before it stands, so its blow meets the target; it starts a blow anywhere within its reach as before (the hit
-	-- rule at the blow stays). A ranged one stands at its reach.
+	-- rule at the blow stays). A ranged one stands at its reach. S162e: the goals are ground points (the paths' ends).
 	local halfDepth = self.root.Size.Z / 2
 	local stopAt = MonsterMove.stopDistance(self.def.attack, reach, halfDepth, Combat :: any)
-	local melee = self.def.attack == "melee"
-	if distance <= reach then
+	local ground = targetPosition.Y - PLAYER_ROOT_UP
+	if inReach then
 		local closing = melee and distance > stopAt and not self.ctx.isRooted(self)
 		if not closing then
 			stop(self)
@@ -1099,7 +1402,7 @@ local function stepChase(self: Monster, now: number)
 		end
 		if closing then
 			local x, z = MonsterMove.approach(position.X, position.Z, targetPosition.X, targetPosition.Z, stopAt)
-			steerTo(self, Vector3.new(x, targetPosition.Y, z))
+			travel(self, Vector3.new(x, ground, z), now, Vector3.new(targetPosition.X, ground, targetPosition.Z))
 		end
 		return
 	end
@@ -1110,13 +1413,19 @@ local function stepChase(self: Monster, now: number)
 		return
 	end
 	if not self.ctx.isRooted(self) then
+		-- S162m: a melee monster to the point stopAt short of the target (MoveTo ends there instead of in the target's
+		-- body); a ranged one to the target until it is within its reach with a clear line. S162e: a path to the
+		-- target's feet.
+		local feet = Vector3.new(targetPosition.X, ground, targetPosition.Z)
+		local goal = feet
 		if melee then
-			-- S162m: to the point stopAt short of the target (MoveTo ends there instead of in the target's body)
 			local x, z = MonsterMove.approach(position.X, position.Z, targetPosition.X, targetPosition.Z, stopAt)
-			steerTo(self, Vector3.new(x, targetPosition.Y, z))
-		else
-			steerTo(self, targetPosition)
+			goal = Vector3.new(x, ground, z)
 		end
+		if action == "repath" then
+			repath(self, feet, now)
+		end
+		travel(self, goal, now, feet)
 	end
 end
 
@@ -1129,6 +1438,7 @@ local function stepCast(self: Monster, now: number)
 	self.state = "chase"
 	self.castArea = nil
 	self.castAbility = nil
+	resetProgress(self, now) -- S162e: the windup was no stalling
 	-- S162m: the dash is over (its run ends at the landing; the pace is the fight's again)
 	self.dashOn = false
 	if self.dashUntil > 0 then
@@ -1167,8 +1477,8 @@ local function stepCast(self: Monster, now: number)
 				CFrame.new(point + Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0))
 					* self.root.CFrame.Rotation
 			)
-			self.movedAt = now
-			self.movedFrom = self.root.Position
+			resetProgress(self, now)
+			dropPath(self) -- S162e: it landed elsewhere
 			self.outOfReachSince = 0
 		end
 	end
@@ -1181,13 +1491,18 @@ local function stepReturn(self: Monster, now: number)
 		finishReturn(self)
 		return
 	end
-	if now - self.returnStarted > Combat.returnTimeout then
+	-- S162e (Logic/Pursuit): stalled on the way home, with no path or for pursuitEvade seconds = the timeout's teleport
+	local action = notePursuit(self, now, false, true)
+	if now - self.returnStarted > Combat.returnTimeout or action == "evade" then
 		-- Teleport home (no healing, S22).
 		self.model:PivotTo(CFrame.new(point) + Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0))
 		finishReturn(self)
 		return
 	end
-	steerTo(self, point)
+	if action == "repath" then
+		repath(self, point, now)
+	end
+	travel(self, point, now)
 end
 
 -- Out-of-combat regeneration at home (S22). Back at full HP the damage record is cleared, so a later kill
@@ -1219,6 +1534,7 @@ function Monster.Step(self: Monster, now: number)
 		end
 		self.windToken += 1 -- S159: a stun breaks the draw
 		cancelDash(self) -- S162m: and the flight of a cast
+		resetProgress(self, now) -- S162e: held in place is no stalling
 		stop(self)
 		return
 	end

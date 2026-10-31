@@ -1,0 +1,206 @@
+--!strict
+-- S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed): progress, repath and evade of a chasing
+-- monster (Logic/Pursuit).
+
+local Combat = require("../src/shared/Data/Combat")
+local Pursuit = require("../src/shared/Logic/Pursuit")
+local T = require("./Test")
+
+local cfg = Combat :: any
+local TICK = 1 / Combat.aiTickRate
+
+local function situation(over: { [string]: any }?): Pursuit.Situation
+	local s: { [string]: any } = {
+		stalled = 0,
+		canHit = false,
+		asked = false,
+		pending = false,
+		noPath = false,
+		mayEvade = true,
+	}
+	for key, value in over or {} do
+		s[key] = value
+	end
+	return s :: any
+end
+
+-- Runs a chase tick by tick: `step(i)` returns the flat move (dx, dz) of tick i while the goal stays `goalX` studs
+-- ahead on +x; the monster asks for a path when told to (the answer comes `answerAfter` ticks later, with `noPath`).
+-- Returns the seconds of the first "repath" and the first "evade" (nil = never).
+local function run(
+	ticks: number,
+	step: (i: number) -> (number, number),
+	answer: { after: number, noPath: boolean }?
+): (number?, number?)
+	local x, z = 0, 0
+	local acc, progressAt = 0, 0
+	local askedAt: number? = nil
+	local failedAt: number? = nil
+	local repathAt, evadeAt = nil, nil
+	for i = 1, ticks do
+		local now = i * TICK
+		local dx, dz = step(i)
+		local advance = Pursuit.advance(x, z, x + dx, z + dz, x + 50, z)
+		x, z = x + dx, z + dz
+		local progressed
+		acc, progressed = Pursuit.track(acc, advance, cfg)
+		if progressed then
+			progressAt = now
+		end
+		if askedAt and answer and failedAt == nil and now >= askedAt + answer.after * TICK and answer.noPath then
+			failedAt = now
+		end
+		local pending = askedAt ~= nil and answer ~= nil and now < askedAt + answer.after * TICK
+		local action = Pursuit.decide({
+			stalled = now - progressAt,
+			canHit = false,
+			asked = askedAt ~= nil and askedAt > progressAt,
+			pending = pending,
+			noPath = failedAt ~= nil and failedAt > progressAt,
+			mayEvade = true,
+		}, cfg)
+		if action == "repath" and repathAt == nil then
+			repathAt = now
+			askedAt = now
+		elseif action == "evade" then
+			evadeAt = now
+			break
+		end
+	end
+	return repathAt, evadeAt
+end
+
+T.describe("Pursuit (S162e)", function()
+	T.it("counts only the studs walked towards the goal", function()
+		T.expect(Pursuit.advance(0, 0, 3, 0, 10, 0)).toBeNear(3)
+		T.expect(Pursuit.advance(0, 0, 0, 3, 10, 0)).toBeNear(0) -- sliding along a wall across the way
+		T.expect(Pursuit.advance(0, 0, -2, 0, 10, 0)).toBeNear(-2) -- pushed back
+		T.expect(Pursuit.advance(0, 0, 3, 4, 10, 0)).toBeNear(3)
+		T.expect(Pursuit.advance(5, 5, 6, 6, 5, 5)).toBe(0) -- standing on the goal
+	end)
+
+	T.it("books progress once pursuitProgress studs are gained; jittering gains nothing", function()
+		local acc, progressed = Pursuit.track(0, cfg.pursuitProgress - 0.1, cfg)
+		T.expect(progressed).toBe(false)
+		acc, progressed = Pursuit.track(acc, 0.2, cfg)
+		T.expect(progressed).toBe(true)
+		T.expect(acc).toBe(0)
+		local sum = 0
+		for i = 1, 100 do
+			local hit
+			sum, hit = Pursuit.track(sum, if i % 2 == 0 then 0.8 else -0.8, cfg)
+			T.expect(hit).toBe(false)
+		end
+		-- a long step back is forgotten soon (never below -pursuitProgress)
+		T.expect((Pursuit.track(0, -40, cfg))).toBe(-cfg.pursuitProgress)
+	end)
+
+	T.it("chases on while it can hit, whatever the stall, and bosses never evade", function()
+		T.expect(Pursuit.decide(situation({ stalled = 60, canHit = true, noPath = true }), cfg)).toBe("chase")
+		T.expect(Pursuit.decide(situation({ stalled = 60, noPath = true, mayEvade = false, asked = true }), cfg))
+			.toBe("chase")
+		T.expect(Pursuit.decide(situation({ stalled = 60, mayEvade = false }), cfg)).toBe("repath")
+	end)
+
+	T.it("asks for a new path after pursuitRepath s, evades on no path or after pursuitEvade s", function()
+		T.expect(Pursuit.decide(situation({ stalled = cfg.pursuitRepath - 0.05 }), cfg)).toBe("chase")
+		T.expect(Pursuit.decide(situation({ stalled = cfg.pursuitRepath }), cfg)).toBe("repath")
+		T.expect(Pursuit.decide(situation({ stalled = cfg.pursuitRepath, asked = true }), cfg)).toBe("chase")
+		T.expect(Pursuit.decide(situation({ stalled = cfg.pursuitRepath, pending = true }), cfg)).toBe("chase")
+		-- no path found: it does not stand there taking hits
+		T.expect(Pursuit.decide(situation({ stalled = cfg.pursuitRepath - 0.05, noPath = true }), cfg)).toBe("chase")
+		T.expect(Pursuit.decide(situation({ stalled = cfg.pursuitRepath, noPath = true }), cfg)).toBe("evade")
+		-- a path that does not help either
+		T.expect(Pursuit.decide(situation({ stalled = cfg.pursuitEvade, asked = true }), cfg)).toBe("evade")
+		T.expect(Pursuit.decide(situation({ stalled = cfg.pursuitEvade, pending = true }), cfg)).toBe("evade")
+	end)
+
+	T.it("never stalls chasing a kiting target across open ground (S22: running away does not win)", function()
+		local speed = 13 * TICK -- the usual chase speed, the target as fast
+		local repathAt, evadeAt = run(30 * Combat.aiTickRate, function()
+			return speed, 0
+		end)
+		T.expect(repathAt).toBeNil()
+		T.expect(evadeAt).toBeNil()
+		-- slowed to 30 % it still gains a step's worth well within the repath time
+		local slowRepath, slowEvade = run(30 * Combat.aiTickRate, function()
+			return speed * 0.3, 0
+		end)
+		T.expect(slowRepath).toBeNil()
+		T.expect(slowEvade).toBeNil()
+	end)
+
+	T.it("pressed against a wall (sliding, jittering): a new path within ~2 s, an evade by pursuitEvade", function()
+		local function jitter(i: number): (number, number)
+			return if i % 2 == 0 then 0.4 else -0.4, if i % 4 < 2 then 1.2 else -1.2
+		end
+		local repathAt, evadeAt = run(20 * Combat.aiTickRate, jitter, { after = 2, noPath = false })
+		T.expect(repathAt).toBeBetween(cfg.pursuitRepath, 2.05)
+		T.expect(evadeAt).toBeBetween(cfg.pursuitEvade, cfg.pursuitEvade + TICK + 1e-6)
+		-- no path at all: the evade comes right with the answer
+		local _, noWay = run(20 * Combat.aiTickRate, jitter, { after = 2, noPath = true })
+		T.expect(noWay).toBeBetween(cfg.pursuitRepath, 2.05 + 3 * TICK)
+	end)
+
+	T.it("a path around the obstacle is progress (it walks towards the path's points)", function()
+		local repathAt, evadeAt = run(20 * Combat.aiTickRate, function(i)
+			-- first stuck 2 s, then the path leads sideways and on: walking to each point counts
+			if i <= 10 then
+				return 0, 0
+			end
+			return 13 * TICK, 0
+		end, { after = 2, noPath = false })
+		T.expect(repathAt).toBeBetween(cfg.pursuitRepath, 2.05)
+		T.expect(evadeAt).toBeNil()
+	end)
+
+	T.it("keeps the stall rules inside the owner's 1.5-2 s and before the old 5 s stuck rule", function()
+		T.expect(cfg.pursuitRepath).toBeBetween(1.5, 2)
+		T.expect(cfg.pursuitEvade > cfg.pursuitRepath).toBe(true)
+		T.expect(cfg.pursuitEvade < 5).toBe(true)
+		T.expect(cfg.returnTimeout > cfg.pursuitEvade).toBe(true)
+		-- a chasing monster at 13 studs/s gains pursuitProgress in well under a second
+		T.expect(cfg.pursuitProgress / 13 < cfg.pursuitRepath / 2).toBe(true)
+	end)
+
+	T.it("budgets paths for the whole server (no per-frame pathfinding)", function()
+		local bucket = Pursuit.newBucket(cfg, 0)
+		local granted = 0
+		-- 100 monsters asking on every tick for 10 s
+		for i = 1, 10 * Combat.aiTickRate do
+			for _ = 1, 100 do
+				if Pursuit.take(bucket, i * TICK, cfg) then
+					granted += 1
+				end
+			end
+		end
+		T.expect(granted <= cfg.pathBurst + 10 * cfg.pathPerSecond).toBe(true)
+		T.expect(granted >= 10 * cfg.pathPerSecond - 1).toBe(true)
+		-- a quiet server saves at most pathBurst
+		local idle = Pursuit.newBucket(cfg, 0)
+		local burst = 0
+		while Pursuit.take(idle, 1000, cfg) do
+			burst += 1
+		end
+		T.expect(burst).toBe(cfg.pathBurst)
+		T.expect(cfg.pathGap >= 1).toBe(true)
+	end)
+
+	T.it("rounds a body up to a few agent sizes", function()
+		local radius, height = Pursuit.agent(1.5, 1.8, 1, 1.9)
+		T.expect(radius).toBe(1.5)
+		T.expect(height).toBe(4)
+		radius, height = Pursuit.agent(4, 3, 6, 4.5)
+		T.expect(radius).toBe(4)
+		T.expect(height).toBe(9)
+		radius, height = Pursuit.agent(30, 30, 30, 30)
+		T.expect(radius).toBe(Pursuit.RADII[#Pursuit.RADII])
+		T.expect(height).toBe(Pursuit.HEIGHTS[#Pursuit.HEIGHTS])
+	end)
+
+	T.it("walks over what lies below its root (step height from the hip height)", function()
+		T.expect(Pursuit.stepHeight(0.1)).toBe(Pursuit.STEP_MIN)
+		T.expect(Pursuit.stepHeight(2)).toBeNear(1.6)
+		T.expect(Pursuit.stepHeight(4.5) < 4.5).toBe(true)
+	end)
+end)

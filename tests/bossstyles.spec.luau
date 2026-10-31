@@ -812,6 +812,61 @@ T.describe("BossStyles: on the boss rigs", function()
 			end
 		end
 	)
+
+	T.it(
+		"a giant's blow reaches down to a player at the hit, ahead of its body (2026-10-31 Studio re-review)",
+		function()
+			local tested = 0
+			for _, id in BOSSES do
+				local rig = rigOf(id)
+				local style = styleOf(id)
+				local L = rig.skel.legLength
+				local rest = BipedPose.positions(rig.skel, {}, { 0, 0, 0 })
+				local floor = math.min(rest.LeftToeBase[2], rest.RightToeBase[2])
+				for name, action in style.actions do
+					local ref = action.clip
+					local low = ref and ref.low
+					if not low then
+						continue
+					end
+					local hits: { number } = {}
+					if table.find(style.basic, name) then
+						table.insert(hits, 0.7425)
+					end
+					for _, cast in castsOf(id) do
+						if cast.name == name then
+							table.insert(hits, cast.hit)
+						end
+					end
+					for _, hit in hits do
+						local tag = `{id}.{name} at {hit}`
+						local inst = motionOf(id).new(rig.skel, id, 3.1, nil)
+						local run = { name = name, start = 0.5, hit = hit }
+						local dt = 1 / 60
+						local t, at = 0, nil
+						while t < 0.5 + hit - dt / 2 do
+							at = joints(
+								rig.skel,
+								motionOf(id).step(
+									inst,
+									input({ now = t, dt = dt, combat = true, action = run, snap = t == 0 })
+								)
+							)
+							t += dt
+						end
+						local j = at :: { [string]: Vec }
+						-- the striking hand: the one farther ahead
+						local hand = if j.RightHand[3] < j.LeftHand[3] then j.RightHand else j.LeftHand
+						local over = hand[2] - floor
+						-- (the review measured the blades 10-15 studs up at the hit, a giant's fist 64)
+						T.expect({ tag, over < low + 0.15 * L, hand[3] < j.Hips[3] }).toEqual({ tag, true, true })
+						tested += 1
+					end
+				end
+			end
+			T.expect(tested >= 8).toBe(true)
+		end
+	)
 end)
 
 T.describe("The young frost dragon (the regular wyvern's style on its rig)", function()

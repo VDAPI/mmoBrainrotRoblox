@@ -1967,7 +1967,7 @@ local function onDamage(event: { [string]: any })
 		elseif isMe and event.c then
 			shake(0.35)
 		end
-	elseif event.ab or event.im then
+	elseif event.ab or event.im or event.ev then
 		flash(model, SHIELD_FLASH)
 	end
 	if result.style == "none" or type(event.e) ~= "string" then

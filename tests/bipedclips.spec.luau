@@ -172,9 +172,10 @@ T.describe("BipedClips: the baked mocap", function()
 			if ref.fly then
 				T.expect({ tag, ref.fly[1] < ref.fly[2] and ref.fly[2] <= (hit :: number) }).toEqual({ tag, true })
 			end
-			-- the clip still plays (and fades) to the action's end, not held at its last frame
+			-- the clip still plays to the action's end, not held at its last frame (a clip cut short, as the great
+			-- sword's slash before it whirls on, reaches its last frame as its slow fade back (`out`) begins)
 			if not ref.free and not entry.action.hold then
-				local after = entry.action.follow + entry.action.recover
+				local after = entry.action.follow + entry.action.recover - (ref.out or 0)
 				T.expect({ tag, (hit :: number) + after <= length + 0.05 }).toEqual({ tag, true })
 			end
 		end
@@ -655,7 +656,13 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 					if math.abs(t - (0.2 + hit)) < 1 / 120 then
 						local blade = NpcPose.apply(world.RightHand, unitV({ 0.42, -0.87, -0.22 }))
 						local ahead = (at.Hips[3] - at.RightHand[3]) / SKEL.legLength
-						T.expect({ tag, blade[3] < -0.6, ahead > 0.3 }).toEqual({ tag, true, true })
+						-- (the backhand's contact sweeps the blade across the body, ahead and to the side, and the
+						-- hand is down from overhead by then: 2026-10-31 Studio re-review, it hit with the hand
+						-- over the head)
+						local across = name == "backhand"
+						local pointing = blade[3] < (if across then -0.3 else -0.6)
+						local under = not across or at.RightHand[2] < at.RightArm[2]
+						T.expect({ tag, pointing, ahead > 0.3, under }).toEqual({ tag, true, true, true })
 					end
 				end)
 			end
@@ -739,6 +746,145 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 		end)
 		T.expect(held ~= nil).toBe(true)
 		T.expect(drift < 0.01 * L).toBe(true)
+	end)
+end)
+
+-- The turn (degrees) between two world turns of a bone.
+local function turnOf(a: Mat, b: Mat): number
+	local trace = 0
+	for i = 1, 9 do
+		trace += a[i] * b[i]
+	end
+	return math.deg(math.acos(math.clamp((trace - 1) / 2, -1, 1)))
+end
+
+T.describe("BipedMotion: the 2026-10-31 Studio re-review", function()
+	T.it(
+		"every action blends in from the pose it finds: no bone turns 70 degrees in its first tenth of a second",
+		function()
+			for _, id in HUMANOIDS do
+				local style = styleOf(id)
+				for name in style.actions do
+					-- (a fall gives way to the killing blow at once)
+					if string.sub(name, 1, 5) == "death" then
+						continue
+					end
+					local hit = hitsOf(style, name)[1]
+					local tag = `{id}.{name}`
+					local before: BipedPose.World? = nil
+					local most, bone = 0, ""
+					joints(id, name, hit, 0.32, nil, function(t, _, world)
+						if t < 0.2 - 1 / 120 then
+							before = world
+						elseif t > 0.3 - 1 / 120 and t < 0.3 + 1 / 120 then
+							local from = before :: BipedPose.World
+							for key, m in world do
+								local p = from[key]
+								if p then
+									local a = turnOf(p, m)
+									if a > most then
+										most, bone = a, key
+									end
+								end
+							end
+						end
+					end)
+					if DEBUG then
+						print(string.format("%s first 0.1 s: %s %.0f deg", tag, bone, most))
+					end
+					T.expect({ tag, bone, most < 70 }).toEqual({ tag, bone, true })
+				end
+			end
+		end
+	)
+
+	T.it("a body standing through a blow keeps the balls of its feet on the floor", function()
+		local rest = BipedPose.positions(SKEL, {}, { 0, 0, 0 })
+		local L = SKEL.legLength
+		for _, id in { "humanoid1h", "humanoid2h", "caster", "brute" } do
+			local style = styleOf(id)
+			for name, action in style.actions do
+				local ref = action.clip
+				if not ref or ref.free or ref.travel or ref.fly then
+					continue
+				end
+				local tag = `{id}.{name}`
+				local hit = hitsOf(style, name)[1]
+				local under = 0
+				joints(id, name, hit, 0.2 + BipedMotion.length(action, hit), nil, function(_, at)
+					for _, key in TOE do
+						under = math.max(under, rest[key][2] - at[key][2])
+					end
+				end)
+				-- (the review measured the yeti's toes 0.12-0.38 stud under the floor)
+				T.expect({ tag, under < 0.02 * L }).toEqual({ tag, true })
+			end
+		end
+	end)
+
+	T.it("turns on the spot on stepping feet, the balls of the feet over the floor", function()
+		local rest = BipedPose.positions(SKEL, {}, { 0, 0, 0 })
+		local L = SKEL.legLength
+		local steps: { [string]: number } = { L = 0, R = 0 }
+		local stepping: { [string]: boolean } = {}
+		local under = 0
+		joints("humanoid1h", "", 0, 2.7, function(t, input)
+			input.yawRate = if t > 0.2 then 2.4 else 0
+		end, function(_, at, _, inst)
+			for side, key in TOE do
+				local now = inst.feet[side].stepAt ~= nil
+				if now and not stepping[side] then
+					steps[side] += 1
+				end
+				stepping[side] = now
+				under = math.max(under, rest[key][2] - at[key][2])
+			end
+		end)
+		T.expect({ steps.L >= 2, steps.R >= 2, under < 0.02 * L }).toEqual({ true, true, true })
+	end)
+
+	T.it("the brute's heavy blow is not its crush; the great sword's hew does not whirl on after the hit", function()
+		local brute = styleOf("brute")
+		local heavy, crush = brute.actions.heavy.clip, brute.actions.crush.clip
+		T.expect(heavy ~= nil and crush ~= nil and heavy.name ~= crush.name).toBe(true)
+		local style = styleOf("humanoid2h")
+		local action = style.actions.hew
+		local hit = hitsOf(style, "hew")[1]
+		local first: number? = nil
+		local last: number? = nil
+		local most, fastest = 0, 0
+		joints("humanoid2h", "hew", hit, 0.2 + BipedMotion.length(action, hit), nil, function(t, at)
+			if t >= 0.2 + hit then
+				local across = { at.RightUpLeg[1] - at.LeftUpLeg[1], at.RightUpLeg[3] - at.LeftUpLeg[3] }
+				local heading = math.deg(math.atan2(-across[2], across[1]))
+				local h0 = first or heading
+				first = h0
+				most = math.max(most, math.abs((heading - h0 + 180) % 360 - 180))
+				local before = last or heading
+				fastest = math.max(fastest, math.abs((heading - before + 180) % 360 - 180))
+				last = heading
+			end
+		end)
+		-- (the review measured the hips spinning ~150 degrees after the hit, up to 18 degrees a frame; what is left is
+		-- the slash's own follow-through, then the turn back into the stance over the slow fade)
+		if DEBUG then
+			print(string.format("humanoid2h.hew: the hips turn %.0f deg after the hit, %.1f a frame", most, fastest))
+		end
+		T.expect({ most < 75, fastest < 8 }).toEqual({ true, true })
+	end)
+
+	T.it("the walk and run cycles wrap without a jump of the hips", function()
+		for _, name in BipedClips.names() do
+			local source = BipedClips.get(name) :: BipedClip.Source
+			if not source.loop then
+				continue
+			end
+			local clip = BipedClip.decode(source)
+			local x0, y0, z0 = BipedClip.hipsAt(clip, 0, false)
+			local x1, y1, z1 = BipedClip.hipsAt(clip, clip.length, false)
+			local jump = math.max(math.abs(x1 - x0), math.abs(y1 - y0), math.abs(z1 - z0))
+			T.expect({ name, jump < 0.02 }).toEqual({ name, true })
+		end
 	end)
 end)
 

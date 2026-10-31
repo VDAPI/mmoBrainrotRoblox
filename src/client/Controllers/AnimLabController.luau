@@ -81,6 +81,7 @@ local Hazards = require(ReplicatedStorage.Shared.Logic.Hazards)
 local MonsterAbilities = require(ReplicatedStorage.Shared.Data.MonsterAbilities)
 local MonsterLooks = require(ReplicatedStorage.Shared.Data.MonsterLooks)
 local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
+local MonsterMove = require(ReplicatedStorage.Shared.Logic.MonsterMove)
 local MotionFx = require(script.Parent.Parent.Vfx.MotionFx)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local MotionKeys = require(ReplicatedStorage.Shared.Logic.MotionKeys)
@@ -135,6 +136,7 @@ type BipedLab = {
 	length: number,
 	input: (t: number) -> any,
 	lastT: number?,
+	pivot: ((t: number) -> CFrame)?, -- where the subject's root stands at motion time t (a turn, a leap's landing)
 }
 type Stressed = { model: Model, index: number, nextAt: number }
 
@@ -994,6 +996,9 @@ end
 -- LookAnim's slots map onto them): each moment's input to its motion, the motion's length and its keys. `planned` (a
 -- boss's attack or pattern: `boss <id> <attack|pattern>`) gives the action's run itself (name, hit, hold, turn, arc,
 -- reach).
+-- The turn rate (rad/s) of AnimLab's turn on the spot.
+local TURN_RATE = 2.4
+
 local function bipedLab(
 	model: Model,
 	look: any,
@@ -1099,6 +1104,47 @@ local function bipedLab(
 		}
 		name = slots[state] or state
 	end
+	if planned then
+		name = planned.name
+	end
+	-- 2026-10-31 Studio re-review (the orc's hew cut the air 3 studs short of the dummy): a melee kind's blow from where
+	-- the server stands it (Logic/MonsterMove.stopDistance: its reach x meleeApproach, its body clear of the target),
+	-- not from the stage's line-up
+	local blowAction = style.actions[name]
+	local leaps = blowAction ~= nil
+		and (
+			blowAction.travel == true
+			or (blowAction.clip ~= nil and (blowAction.clip.travel or blowAction.clip.fly) ~= nil)
+		)
+	local struckBy = name == "hit" or name == "hitBack" or name == "hitLeft" or name == "hitRight"
+	if
+		blowAction
+		and not leaps
+		and not struckBy
+		and monster
+		and monster.attack == "melee"
+		and string.sub(name, 1, 5) ~= "death"
+		and name ~= style.throw
+		and name ~= style.aggro
+		and name ~= style.spawn
+	then
+		local root = model.PrimaryPart
+		local stop = MonsterMove.stopDistance(
+			"melee",
+			monster.range or CombatData.meleeRange,
+			if root then root.Size.Z / 2 else 1,
+			CombatData :: any
+		)
+		local flat = Vector3.new(at.Position.X - actorAt.X, 0, at.Position.Z - actorAt.Z)
+		if flat.Magnitude > stop + 0.05 then
+			local p = actorAt + flat.Unit * stop
+			local pos = Vector3.new(p.X, at.Position.Y, p.Z)
+			model:PivotTo(CFrame.lookAt(pos, Vector3.new(actorAt.X, pos.Y, actorAt.Z)))
+			at = model:GetPivot()
+			reachV = at:PointToObjectSpace(actorAt)
+			reach = { reachV.X, 0, reachV.Z }
+		end
+	end
 	local base: any = {
 		now = 0,
 		dt = 0,
@@ -1114,9 +1160,7 @@ local function bipedLab(
 	local keys: MotionKeys.Keys
 	local input: (t: number) -> any
 	local hitSides: { [string]: string } = { hit = "front", hitBack = "back", hitLeft = "left", hitRight = "right" }
-	if planned then
-		name = planned.name
-	end
+	local pivot: ((t: number) -> CFrame)? = nil
 	if style.actions[name] and not hitSides[state] then
 		local action = style.actions[name]
 		local dying = string.sub(name, 1, 5) == "death"
@@ -1130,15 +1174,28 @@ local function bipedLab(
 			start = 0,
 			hit = hit,
 			reach = if planned and planned.reach then planned.reach else reach,
-			hold = planned and planned.hold,
+			-- (a quadruped's leap: the stage has no server teleport, it stays where it landed; studio review 2026-10-31)
+			hold = (planned and planned.hold) or (rig.kind == "quad" and action.travel == true) or nil,
 			turn = planned and planned.turn,
 			arc = planned and planned.arc,
 		}
 		length = rig.mod.length(action, hit, run.hold) + 0.4
 		keys = MotionKeys.clip(length, hit)
+		-- a leap lands its root on the target at the hit, as the server's teleport does in the game
+		-- (client/Controllers/AnimationController drops the flight's reach there): no glide back as it fades
+		local landed: any = nil
+		if leaps and not boss then
+			local r = run.reach
+			local landAt = at * CFrame.new(r[1], 0, r[3])
+			landed = table.clone(run)
+			landed.reach = nil
+			pivot = function(t: number): CFrame
+				return if t >= hit then landAt else at
+			end
+		end
 		input = function(t)
 			local i = table.clone(base)
-			i.now, i.action = t, run
+			i.now, i.action = t, if landed and t >= hit then landed else run
 			if dying then
 				i.look = nil
 			end
@@ -1206,7 +1263,7 @@ local function bipedLab(
 			elseif state == "run" then
 				i.speed, i.gait = moveSpeed, "run"
 			elseif state == "turn" then
-				i.yawRate = 2.4
+				i.yawRate = TURN_RATE
 			elseif state == "fly" then
 				i.flying = true
 			elseif state == "glide" then
@@ -1231,7 +1288,13 @@ local function bipedLab(
 			return i
 		end
 	end
-	return { rig = rig, length = length, input = input, lastT = nil }, keys
+	if state == "turn" and not style.actions[name] then
+		-- a turn on the spot turns the root, as the game's does (2026-10-31 Studio re-review: the yaw stayed 0)
+		pivot = function(t: number): CFrame
+			return at * CFrame.Angles(0, TURN_RATE * math.max(0, t), 0)
+		end
+	end
+	return { rig = rig, length = length, input = input, lastT = nil, pivot = pivot }, keys
 end
 
 -- Template animation: the stage's subject playing a keyed plan of `bipedLab` (and the effects its actions release).
@@ -1955,6 +2018,10 @@ step = function(_dt: number)
 			input.dt = if last and tt >= last then tt - last else 0
 			input.snap = last == nil or tt < last
 			biped.lastT = tt
+			local place = biped.pivot
+			if place then
+				s.model:PivotTo(place(tt))
+			end
 			local posed = biped.rig.mod.step(biped.rig.motion, input)
 			if biped.rig.kind == "quad" then
 				QuadRig.apply(biped.rig, posed)

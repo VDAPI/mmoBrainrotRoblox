@@ -20,9 +20,10 @@ left foot plants); actions their `hit` (seconds to the contact or release; given
 from the range's start) and `strike` (seconds of the fast part before it, played at the clip's own speed).
 
 Root handling (`--root`): `keep` the Hips path as captured (a lunge that steps back, a fall); `inplace` takes the
-straight drift from the first frame to the last away (a walk or run cycle, like Mixamo's "In Place"); `end` moves the
-whole clip so it ends over the origin (getting up from the ground); `plant` takes the ground travel away (the Hips'
-smoothed path) and plants each foot where it lands, the legs solved again by two-bone IK (a stride or a spin in place).
+straight drift from the first frame to the last away (a walk or run cycle, like Mixamo's "In Place"; a loop's height
+drift too, so the cycle wraps without a jump); `end` moves the whole clip so it ends over the origin (getting up from
+the ground); `plant` takes the ground travel away (the Hips' smoothed path) and plants each foot where it lands, the
+legs solved again by two-bone IK (a stride or a spin in place).
 A skinned download whose bind pose lies down has only its rest stood up (the frames stand already).
 """
 import sys, os, math, argparse, base64, struct, csv
@@ -286,7 +287,10 @@ def bake(path, name, loop=False, hit=None, start=None, end=None, root="keep", fp
     n = len(frames)
     if root == "inplace" and n > 1:
         d = frames[-1]["Hips"][1] - frames[0]["Hips"][1]
-        d[1] = 0
+        if not loop:
+            # (a loop's height drifts away too: Walking/Running/Jogging sink a little each cycle and popped back up
+            # at the wrap; 2026-10-31)
+            d[1] = 0
         for i, fr in enumerate(frames):
             for k in fr:
                 fr[k] = (fr[k][0], fr[k][1] - d * i / (n - 1))

@@ -372,7 +372,7 @@ local function reward(run: Run, position: Vector3): { [Player]: { any } }
 							char.class :: string,
 							{ family = def.family :: string? } -- S67: family lines take the boss's family
 						)
-						-- owner 2026-10-31: the personal roll's Legendary and Mythic bind on pickup (Logic/Binding)
+						-- owner 2026-10-31: the personal roll binds on equip, a Mythic on pickup (Logic/Binding)
 						table.insert(items, Binding.apply(item, "boss"))
 					end
 				end

@@ -312,7 +312,9 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
 --src <folder with the FBX> [--only name,...]` bakes them again (missing sources are skipped).
 
 - **Bake**: root modes `keep` (the leaps: the travel stays in the clip, the template replaces it), `inplace` (loops:
-  every bone shifted by the hips' ground drift), `end` (getting up: drift removed, the end over the start), `plant`
+  every bone shifted by the hips' drift, its height too, so the cycle wraps without a jump; 2026-10-31 re-review: walk,
+  run and jog had been baked `keep`, the body ran 1.9 hip heights ahead and sank a little each cycle, then jumped back),
+  `end` (getting up: drift removed, the end over the start), `plant`
   (every blow that stands its ground, the throw, the cast, the shout, the swipe: the body's lunge, its smoothed ground
   path, taken out, each standing foot pinned and the leg solved onto it). Each clip also keeps `knuckles` (the rest
   index -> little finger line of both hands), `hit` (the contact or the release, seconds from its first frame) and
@@ -334,8 +336,12 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   their hit is their own (`BipedMotion.ownHit`), the game and AnimLab use it instead of the server's.
 - **Retargeting**: each bone turns onto the clip's rest direction; the arms also keep their roll by the knuckle lines
   where the model has finger bones (Mixamo rigs; others fall back to the direction only).
-- **Blends**: in 0.15 s, out over `out` (0.3 s); a clip action and its cut blend bone by bone in the parent's space
+- **Blends**: in from the pose it finds over 0.55 of the time to its hit, 0.12-0.3 s (`FADE_IN_*`; 2026-10-31 Studio
+  re-review: the thrust, the pounce, the throw and the yeti's blows turned 70-110 deg in their first 0.1 s; a boss's
+  keyed blows 0.1 s), out over `out` (0.3 s); a clip action and its cut blend bone by bone in the parent's space
   (`BipedPose.blendLocal`): a world-space slerp between a mocap hand and the keyed guard flipped the wrist half a turn.
+  An `upper` clip takes the clip's chest turn in the root's axes (the blow keeps its way where the clip's hips turned
+  with it), the joints above it still one by one. What is left fast in a lead-in is the clip's own (the high spin's).
 - **Stance**: `clips.combat` (humanoid1h, humanoid2h: the sword-and-shield idle and walk) eases in with the combat
   weight over the locomotion; the brute walks and idles on the mutant clips all the time. A blow plays on until the
   clip's stance is back (its `follow` + `recover` cover the clip to where it settles).
@@ -344,11 +350,24 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   not floating, not in a fall, a leap or a keyed travel), the ball of each foot on the ground (within 0.06 L of its
   rest height) stays where it landed, turned back by the root's own turn so it holds in the world; the leg is moved
   onto it with the least turn of thigh and shin (`BipedPose.nudgeLegs`: a target on the pose's own foot leaves the leg
-  exactly as it was, so holding and letting go never jump). A foot the pose carries 0.12 L away (0.05 L once no
-  action runs: the feet settle back under the stance), or out of the leg's reach, steps there in 0.24 s lifted 0.07 L,
-  the other foot following from half way; a foot the pose lifts lets go, its correction easing away at 16 /s. The
-  blends into and out of an action, a clip on a model of other proportions and the push of a hit no longer slide the
-  feet. A boss keeps its own stance under its clip blows (`upper`) and is not planted.
+  exactly as it was, so holding and letting go never jump; a target near the leg's full length is drawn in softly,
+  the knee does not snap from straight). A foot the pose carries 0.12 L away (0.05 L once no action runs: the feet
+  settle back under the stance), or out of the leg's reach, steps there in 0.24 s lifted 0.09 L, up first and carried
+  across the last 0.85 of the step, the other foot following from half way; a foot the pose lifts over 0.09 L lets go,
+  its correction easing away at 16 /s. The blends into and out of an action, a clip on a model of other proportions and
+  the push of a hit no longer slide the feet. A boss keeps its own stance under its clip blows (`upper`) and is not
+  planted. 2026-10-31 re-review: on the floor a standing body's ball of the foot never goes under its rest height and
+  the ankle at most 0.05 L under its own (the yeti's toes were 0.12-0.38 stud under the floor); turning on the spot
+  (over 1.2 rad/s) each step lands where the turn will have carried the stance's foot by its end, up to 0.7 rad ahead
+  (`turnLanding`): a planted turn of steps, not a shuffle.
+- **A giant's blow reaches down** (`ClipRef.low`, 2026-10-31 Studio re-review: Grimrok's and Azgor's blades passed
+  6-10 studs over a player's head at the hit, Hrimvald's fist 64 studs up): the upper-body clip is sampled at its hit
+  once per run, and the striking hand (the one farther ahead) is brought to `low` studs over the feet by a bow at the
+  waist (up to `LOW_BOW` 1.1 rad, never nearer straight down than `LOW_AHEAD`) and the rest by a crouch (up to 0.3 L,
+  the ankles kept where they are), eased in over the strike and `LOW_LEAD` before the hit, held for half the follow
+  and eased back over the recovery; a cut fades out of the bow and the crouch too. Grimrok and Azgor 3.5 studs (a
+  player's chest), Hrimvald 1.5 (along the ground). The feet the review read as floating (+0.32, +0.63, +1.21) are the
+  rigs' ankle joints over the soles, not a gap.
 - **Hits by side**: `style.hits` (front / back / left / right): the reaction clip's turn of each upper bone from its
   first frame laid over the running pose (spine, neck, head whole, shoulders 0.5, arms 0.4-0.5), held 0.28 s and
   faded over 0.3 s, the body pushed by 0.35 of the clip's travel (at most 0.12 L), scaled by `hitScale` and the cast
@@ -360,9 +379,9 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
 | Style | Clip actions |
 |---|---|
 | `humanoid1h` (bandit, dragonspawn, fireGolem, flameSmith, frozenKnight, goblinScout, koboldMiner, skeletonGuard, swampTroll) | basic `slash` (Slash 1), `backhand` (Slash 3), `chop` (Melee Downward), `thrust` (keyed: the pack's Attack 4 strikes with the hilt, the blade behind); `cleave` (Melee Horizontal), `heavy` (Melee Downward), `crush` (Attack 1 with its step planted), `pounce` (Attack 1, the leap), `throw` (Throw Object, mirrored), `aggro` (Battlecry), `spawn` (Standing Up at 1.7x), deaths `deathBack` / `deathBack2` / `deathFwd`, hits by side, the sword-and-shield stance |
-| `humanoid2h` (ashOrc, renegadeDwarf, frostGiant; new) | as humanoid1h, basic `hew` (Great Sword Slash), `chop`, `slash`; `cleave` (Great Sword High Spin), `pounce` (Great Sword Jump) |
+| `humanoid2h` (ashOrc, renegadeDwarf, frostGiant; new) | as humanoid1h, basic `hew` (Great Sword Slash cut at 1.03 s where the body whirls on into a second swing, faded back over 0.45 s), `chop`, `slash`; `cleave` (Great Sword High Spin), `pounce` (Great Sword Jump) |
 | `caster` | `spell` (1H Magic), `spellLeft` (mirrored); the rest as humanoid1h but `nova`, `pool` |
-| `brute` (werewolf, yeti, ghoul, crystalGuardian, magmaGolem, desertMummy) | idle and walk (Mutant Idle, Mutant Walking), `clawR` / `clawL` (Mutant Swiping), `cleave` (the swipe from the right), `heavy` / `crush` / `pounce` (Mutant Jumping, the pounce's leap in its air window), `deathMutant` (Mutant Dying) when struck in front; `throw`, `aggro`, `spawn` as humanoid1h (no blade) |
+| `brute` (werewolf, yeti, ghoul, crystalGuardian, magmaGolem, desertMummy) | idle and walk (Mutant Idle, Mutant Walking), `clawR` / `clawL` (Mutant Swiping), `cleave` (the swipe from the right), `heavy` (Melee Downward, the fist from overhead: it and the crush read the same, re-review), `crush` / `pounce` (Mutant Jumping, the pounce's leap in its air window), `deathMutant` (Mutant Dying) when struck in front; `throw`, `aggro`, `spawn` as humanoid1h (no blade) |
 | `ghost` | `spell`, `spellLeft` on the upper body; its own floating falls, shout, rise and throw stay keyed |
 | Grimrok | `chop`, `hack`, `overhead`, `sweep` (the sword slashes), `roar` (Battlecry on `roarHit`); above the hips |
 | Azgor | `hew`, `cleave` (Great Sword), `roar`; above the hips |
@@ -371,8 +390,18 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
 
 Kept keyed (no clip fits yet): the casters' `nova` and `pool`, `charge`, the dragonspawn's `breath`, the ghost's
 falls, the bosses' leaps, channels, throws, stomps, rages, staggers and deaths. Tests: `tests/bipedclips.spec.luau`
-(also: the blade ahead of the body at every blade blow's hit; a held foot's ball moving under 0.04 L over a whole blow,
-the hips under 0.45 L, the feet back under the stance after it; a held foot staying put while the root turns).
+(also: the blade ahead of the body at every blade blow's hit, the backhand's across the body with the hand under the
+shoulder; a held foot's ball moving under 0.04 L over a whole blow, the hips under 0.45 L, the feet back under the
+stance after it; a held foot staying put while the root turns; no bone turning 70 deg in an action's first 0.1 s; the
+balls of the feet never under the floor through a standing blow; a turn on the spot on steps; the brute's heavy blow
+not its crush; the hew not whirling on; the loops wrapping without a jump) and `tests/bossstyles.spec.luau` (a giant's
+striking hand at its `low` and ahead of its body at the hit). The backhand's hit is its contact (0.80 s of the clip:
+the review saw the hand still overhead, 5.4 studs up on a 5.3-stud bandit).
+
+AnimLab (2026-10-31 re-review) plays a melee blow at the game's own distance (`MonsterMove.stopDistance`: the orc's
+hew had hit air 3 studs short from AnimLab's line-up, not the game's), lands a leap's root on the target at its hit as
+the server's teleport does (the pounce had glided 7.5 studs back to the root: AnimLab, not the clip) and turns the
+root at 2.4 rad/s in `turn` (it had not yawed at all).
 AnimLab: `mob bandit <slash|backhand|chop|thrust|cleave|heavy|crush|pounce|throw|aggro|spawn|hit|deathBack|deathFwd|deathBack2|fight>`,
 `mob ashOrc <hew|cleave|pounce>`, `mob yeti <clawR|clawL|crush|pounce|deathMutant|walk|idle>`, `mob darkCultist spell`,
 `mob grimrok <chop|hack|overhead|sweep|roar>`, `mob azgor <hew|cleave>`, `mob hrimvald <fist|backfist>`, `mob morvane bolt`.
@@ -878,13 +907,44 @@ tests/dragon.spec.luau. Deviations from the tables above:
   both claws drag down on W), crush `stomp` (rears, two flaps, both forefeet and a wingbeat on W), pounce `pounce`
   (crouch, a downstroke, flies the `Dash*` arc a quarter of the flight high, 1-3 L, lands on W with a wing flare),
   frostBreath `breath` (rears with the wings mantled, thrusts on W, the head sweeps right to left over the cone until
-  F 0.85; Data/MotionFx `dragon`: charge, breath stream from the muzzle, smolder), throw `spit`, aggro `roar` (wings
-  spread wide and high), spawn, fidgets `resettle` and `stretch`.
+  F 0.85; Data/MotionFx `dragon`: charge, breath stream from the muzzle, smolder), throw `spit`, aggro `alert` (a short roar,
+  §5.3; the full `roar` stays in the kit), spawn, fidgets `resettle` and `stretch`.
 - **Hit, stun, freeze, death**: the flinch by side twitches the near wing; Effects `stun:` hangs the head and slips
   the wings half open with a wobble, `freeze:` holds the pose (the only quadruped style with these: `stun`); death
-  falls on the seed's side (`deathL` / `deathR`, held) with both wings fanned out on the ground.
+  by the side of the killing blow (`deaths`, `QuadMotion.death(inst, side)`): from the front or behind `death` (onto
+  the belly), from a side onto the far flank (`deathR` / `deathL`, held) with both wings fanned out on the ground.
 - AnimLab: `/animlab mob youngFrostDragon <state>` takes the generic states, every action above, `stun` and `freeze`
   once the new model is in Assets (the old model keeps the wyvern's states).
+
+#### Studio review of the new model (2026-10-31, second round)
+
+- **Wings carried high.** The fold sits over the back: the elbow and the wrist above the shoulder joint, the fingers
+  and the membrane laid back along the body with the tips toward the tail, nothing below the belly line, in idle, walk
+  and trot. The bound's pump and the roar hold the half-open wings up (`pump` `lift` / `hand` / `tips`).
+- **No bone turns more than ~12° a frame (1/60 s)** in any AnimLab state but the deliberate whips (the tail's whole
+  blow; the strike of the claws, the rake, the stomp and the buffet, up to 32°). How: a new rig stands in its first
+  pose at once (client/Anim/QuadRig: the lab's loop no longer shows the bind pose's spread wings); the wings' openness
+  follows its keys at most 4.2/s folded (9/s once spread); the tremble only in the gather; the swing of a lifted foot
+  eases in and out (`liftIn`, `levelIn`) and the body stoops a little in the gaits (`stoop`); eases and keys of the
+  deaths, the spit, the spawn, the pounce, the claw and the stomp's wingbeats spread.
+- **Planted feet stay within 0.15 stud** (Data/QuadRigs `steady`, Logic/QuadPose): a planted foot that has to move
+  the leg sideways swings it out about its top joint; a partly planted foot aims between its keyed and planted points
+  in space (not in joint angles, which flipped the knee); a foot nearly let go eases onto its keyed angles; a target
+  the leg reaches only nearly straight is held a little short (the soft reach, 0.88-0.97 of the reach). Touchdowns
+  come straight down over their spots; the tail's whirl hops round on its hind feet; the claw, the rake and the stomp
+  plant their feet; the pounce pushes off from its footprints, tucks the legs in the air, reaches down over the
+  landing and absorbs it. AnimLab holds a quadruped's leap where it landed (the stage has no server teleport; the
+  run's `hold`).
+- **rake / stomp** raise the fore feet to 1.3-1.4× the withers' height (was about 2×).
+- **death** (front / back) sinks onto the belly: a jolt, a stagger onto the fore feet, the knees give, the neck slumps
+  aside, the wings slide down; `deathL` / `deathR` for blows from the sides; the lab's `death` is the front one.
+- **alert** is its own action (the aggro): the neck up and toward the target, the wings half open and taut, a short
+  roar on the hit (Data/MotionFx `alert`).
+- **A creep still walks** (`stepFrom` 0.08 L/s, default 0.3): the wander's slow stretches step short and slow instead
+  of gliding on planted feet (a real spawn's report).
+- Specs: tests/dragon.spec.luau "AnimLab's states frame by frame" (every state and action: the per-frame turn, the
+  planted feet's slide, the wings' carry, the rake's and the stomp's height, the alert, the deaths by side) and the
+  creep and crawl paces.
 
 ## 6. F5 Rigid models: caveSpider
 
@@ -1218,6 +1278,9 @@ on the client too). Rules in `Logic/MonsterMove` (Lune spec `tests/monstermove.s
 | which flights | `leap` (Elite II wolves, cats, hyena): move, 0.35 s (flight 0.85-1.2), apex 0.35 × travel within 1.2-4 studs × LookScale, a short hop (usually 1-4 studs) to the melee approach distance in front of its circle; `charge` (Elite II boar): move, 0.4 s (0.6-1.0), apex 0, up to 20 studs along its line to stand in front of where the target stood (~37 studs/s; the feet need the gallop at ~3× rate); `pounce`: jump, 0.4 s (1.0-1.4), apex 0.25 × distance within 2-6 × LookScale; `warlordLeap` (Invasion commander): jump, 0.5 s, 3-8. Bosses keep their own leap (`Data/BossMotions` arc) without `Dash*` |
 | attachment `HumanoidRootPart.Muzzle` | where shots leave the drawn body (`Data/MonsterRelease`: shares of the drawn height per body plan, per kind where needed: biped hand, quadruped jaw, flyer beak, dragon jaw, crawler front, serpent head, spirit front). The server starts regular shots and the Elite II throw at it; `CombatFxController` starts its fallback projectiles there. The animation may set its `WorldCFrame` to the jaw / beak / hand bone each frame (client side only; the server's start is from its own copy) |
 | event `hz` field `rl` | a regular shot's release point (Vector3, the Muzzle at the shot); `Vfx/HazardFx` draws the bolt dropping from it to its flight height (`Hazards.BOLT_HEIGHT`) over its first 8 studs |
+
+S162e (2026-10-31, `Logic/Pursuit`): paths and the evade keep all of the above. A path only changes where `MoveTo` points
+(its next point); an evading monster is an ordinary return (`Returning`, `Gait` = `"trot"`); no new attribute.
 
 Gameplay notes (`tools/balance_reasons`, S162m): damage, areas, windups and intervals are unchanged; a monster going
 home is easier to catch and teleports only after 20 s (was 12); an Elite II boar stands at its target after a charge
