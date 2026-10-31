@@ -1,0 +1,184 @@
+--!strict
+-- UI plan phase 1 (owner 2026-10-31, "too much information and too many options on one screen"): Logic/HudMenu, the six
+-- buttons of the HUD bar and the tiles at the top of the game menu. Nothing becomes unreachable: every window key of
+-- Data/Keybinds belongs to a button or a tile and keeps its key, everything the HUD menu, the old game menu rows and
+-- the buttons by the portrait opened has a place, the tutorial's backpack button stays on the bar, a tile's "!" lights
+-- the ☰ and every tile's name fits the tile in both languages.
+
+local fs = require("@lune/fs")
+
+local HudMenu = require("../src/shared/Logic/HudMenu")
+local KeybindData = require("../src/shared/Data/Keybinds")
+local T = require("./Test")
+local en = require("../src/shared/Data/Localization/en")
+local pl = require("../src/shared/Data/Localization/pl")
+
+local describe, it, expect = T.describe, T.it, T.expect
+
+-- tests/uifit's generous width estimate (Builder Sans): a letter or digit LETTER of the text size, a space SPACE, a
+-- symbol beyond Latin a full em.
+local LETTER = 0.56
+local SPACE = 0.3
+local SYMBOL = 1.0
+local function width(text: string, size: number): number
+	local em = 0
+	for _, code in utf8.codes(text) do
+		em += if code == 32 then SPACE elseif code >= 0x2000 then SYMBOL else LETTER
+	end
+	return em * size
+end
+
+-- Theme.TextSize.Small (the tile's name).
+local function smallText(): number
+	local source = fs.readFile("src/client/UI/Theme.luau")
+	local start = assert(string.find(source, "Theme.TextSize = {", 1, true))
+	local value = string.match(source, "Small = (%d+)", start)
+	return tonumber(value) :: number
+end
+
+describe("HUD bar and game menu tiles (UI plan phase 1)", function()
+	it("the bar holds six buttons: the backpack first, the menu last", function()
+		expect(HudMenu.BAR).toEqual({ "inventory", "skills", "map", "quests", "premium", "menu" })
+		-- S155: the tutorial's "backpack" step points at the bar's backpack button (UI/HudAnchors)
+		local anchors = fs.readFile("src/client/UI/HudAnchors.luau")
+		expect(string.find(anchors, 'backpackButton = { pc = "inventory", touch = "inventory"', 1, true) ~= nil).toBe(
+			true
+		)
+		expect(HudMenu.onBar("inventory")).toBe(true)
+	end)
+
+	it("no window is on the bar and a tile at once, and none twice", function()
+		local seen: { [string]: boolean } = {}
+		for _, list in { HudMenu.BAR, HudMenu.TILES } do
+			for _, id in list do
+				if seen[id] then
+					error(`{id} twice`)
+				end
+				seen[id] = true
+			end
+		end
+		for _, id in HudMenu.TILES do
+			expect(HudMenu.isTile(id)).toBe(true)
+			expect(HudMenu.onBar(id)).toBe(false)
+		end
+	end)
+
+	it("every window key of Data/Keybinds opens a button of the bar or a tile, and that one shows it", function()
+		for _, action in KeybindData.actions do
+			local id = string.match(action.id, "^win_(.+)$")
+			if not id then
+				continue
+			end
+			if not (HudMenu.onBar(id) or HudMenu.isTile(id)) then
+				error(`{action.id}: no button and no tile`)
+			end
+			expect(HudMenu.KEYS[id]).toBe(action.id)
+		end
+		-- T opens the emote wheel, its tile shows the key
+		expect(HudMenu.KEYS.emotes).toBe("emote_wheel")
+		for id, action in HudMenu.KEYS do
+			if not KeybindData.get(action) then
+				error(`{id}: unknown key action {action}`)
+			end
+			expect(HudMenu.onBar(id) or HudMenu.isTile(id)).toBe(true)
+		end
+	end)
+
+	it("everything the HUD and the game menu opened before has a button or a tile", function()
+		local before = {
+			-- the 14 buttons of the HUD menu (and the Blood Moon one around its event)
+			"inventory",
+			"skills",
+			"map",
+			"quests",
+			"guild",
+			"party",
+			"friends",
+			"mounts",
+			"rankings",
+			"arena",
+			"bloodmoon",
+			"achievements",
+			"wardrobe",
+			"premium",
+			"menu",
+			-- the buttons by the portrait, the game menu's rows and the action bar's emote slot
+			"login",
+			"season",
+			"whatsnew",
+			"vip",
+			"emotes",
+		}
+		for _, id in before do
+			if not (HudMenu.onBar(id) or HudMenu.isTile(id)) then
+				error(`{id} has no place`)
+			end
+		end
+	end)
+
+	it("the ☰ shows a tile's \"!\", not the bar's own", function()
+		expect(HudMenu.attention({})).toBe(false)
+		expect(HudMenu.attention({ mail = true })).toBe(true)
+		expect(HudMenu.attention({ achievements = false, login = true })).toBe(true)
+		expect(HudMenu.attention({ achievements = false, season = false })).toBe(false)
+		-- stat points (the backpack) and new skill points have their own "!" on the bar
+		expect(HudMenu.attention({ inventory = true, skills = true })).toBe(false)
+	end)
+
+	it("every tile has a short name in both languages that fits the tile in two lines", function()
+		local size = smallText()
+		local room = HudMenu.TILE.label
+		for _, id in HudMenu.TILES do
+			for lang, strings in { pl = pl, en = en } do
+				local text = (strings :: any)[`menu.tile.{id}`]
+				if type(text) ~= "string" or text == "" then
+					error(`{lang} menu.tile.{id} missing`)
+				end
+				if string.find(text, "—", 1, true) then
+					error(`{lang} menu.tile.{id}: an em-dash`)
+				end
+				-- greedy wrap: no word wider than a line, two lines at most
+				local lines, line = 1, ""
+				for word in string.gmatch(text, "%S+") do
+					if width(word, size) > room then
+						error(`{lang} menu.tile.{id}: "{word}" is wider than the tile`)
+					end
+					local joined = if line == "" then word else `{line} {word}`
+					if width(joined, size) > room then
+						lines += 1
+						line = word
+					else
+						line = joined
+					end
+				end
+				if lines > 2 then
+					error(`{lang} menu.tile.{id}: "{text}" needs {lines} lines`)
+				end
+			end
+		end
+	end)
+
+	it("the client lays out exactly these: the bar's entries and a tile for every id", function()
+		local screen = fs.readFile("src/client/Controllers/ScreenController.luau")
+		local menuStart = assert(string.find(screen, "local MENU: { Hud.MenuEntry } = {", 1, true))
+		local menuEnd = assert(string.find(screen, "\n}", menuStart, true))
+		local bar = {}
+		for id in string.gmatch(string.sub(screen, menuStart, menuEnd), 'id = "([%w_]+)"') do
+			table.insert(bar, id)
+		end
+		expect(bar).toEqual(HudMenu.BAR)
+		local tilesStart = assert(string.find(screen, "local TILE_DEFS", 1, true))
+		local tilesEnd = assert(string.find(screen, "\n}", tilesStart, true))
+		local defs = string.sub(screen, tilesStart, tilesEnd)
+		for _, id in HudMenu.TILES do
+			if not string.find(defs, `id = "{id}"`, 1, true) then
+				error(`ScreenController: no tile {id}`)
+			end
+			if not string.find(defs, `labelKey = "menu.tile.{id}"`, 1, true) then
+				error(`ScreenController: tile {id} without its name menu.tile.{id}`)
+			end
+		end
+	end)
+end)
+
+return nil

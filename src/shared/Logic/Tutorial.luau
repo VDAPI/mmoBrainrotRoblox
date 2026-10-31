@@ -11,6 +11,7 @@
 -- The onboarding funnel (one per game in Roblox: LogOnboardingFunnelStepEvent): the action steps 1-6, then the first
 -- ten story quests as 7-16, then level 5 as 17; funnelStep is the only source of these numbers.
 
+local Binding = require("./Binding")
 local Elements = require("../Data/Elements")
 local ItemRoll = require("./ItemRoll")
 local Items = require("../Data/Items")
@@ -317,8 +318,7 @@ function Tutorial.firstDrop(
 	if def.elemental then
 		item.el = if weapon and weapon.el then weapon.el else Elements.DEFAULT
 	end
-	item.bound = true
-	return item
+	return Binding.apply(item, "reward") -- binds on pickup (Data/Binding)
 end
 
 -- S155b: the state with the first drop given.

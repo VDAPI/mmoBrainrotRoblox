@@ -5,7 +5,8 @@
 -- between servers). He sells a few rare things that reroll every visit: equipment of the region's levels (Unique /
 -- Heroic for gold, rarely a Legendary for Hunter's Marks, never Mythic), rare materials, one caravan dye (an
 -- account cosmetic for gold) and consumables. Every offer has a per-character limit per visit; whatever he sells is
--- bound and never sold back for gold (no gold or mark laundering). No Robux, no Dragon Shards.
+-- never sold back for gold (`ns`, no gold or mark laundering); owner 2026-10-31 (Data/Binding): goods for gold are
+-- free and gear for gold binds on equip, everything for marks binds on pickup. No Robux, no Dragon Shards.
 -- Balance numbers: tools/balance_reasons.luau (BALANCE_MODULES, session S159w); the checks in
 -- tests/wanderingmerchant.spec.luau.
 

@@ -28,6 +28,7 @@ local AutoGrind = require(Shared.Logic.AutoGrind)
 local AutoPotion = require(Shared.Logic.AutoPotion)
 local Clock = require(Shared.Util.Clock)
 local Cosmetics = require(Shared.Data.Cosmetics)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Lure = require(Shared.Logic.Lure)
@@ -97,7 +98,8 @@ local function buyItem(player: Player, key: string): (boolean, string?)
 	if not ok then
 		return false, err
 	end
-	local item = ItemRoll.makeStack(entry.itemId, entry.n or 1, InventoryService.NewUid())
+	-- owner 2026-10-31: everything bought for Dragon Shards binds on pickup (Data/Binding "premium")
+	local item = Binding.apply(ItemRoll.makeStack(entry.itemId, entry.n or 1, InventoryService.NewUid()), "premium")
 	if not InventoryService.CanFit(player, { item }) then
 		return false, "inventory.full"
 	end

@@ -202,12 +202,11 @@ local function hair(id: string, style: string): Hair
 	return { id = id, catalog = 0, style = style }
 end
 
--- W10: the hairstyles; the Roblox hair of each in Data/BodyLooks.hairs. Hair fixes 2026-10-31: thirteen, short cuts
+-- W10: the hairstyles; the Roblox hair of each in Data/BodyLooks.hairs. Hair fixes 2026-10-31: twelve, short cuts
 -- first, then long and tied ones, the bare head last (the creator's order).
 local HAIRS: { Hair } = {
 	hair("hair_short", "swept"),
 	hair("hair_fringe", "short"),
-	hair("hair_swept", "swept"),
 	hair("hair_charmer", "short"),
 	hair("hair_slicked", "short"),
 	hair("hair_bob", "long"),
@@ -299,6 +298,7 @@ local LEGACY_HAIRS: { [string]: { string } } = {
 	hair_swept_white = { "hair_short", "hc_white" },
 	hair_curly = { "hair_fringe" }, -- Short Curls (a curly cap) -> the short fringe
 	hair_bangs = { "hair_bob" }, -- Straight Bangs (an anime bob) -> the shoulder-length cut, renamed
+	hair_swept = { "hair_short" }, -- Side Part - Black: the same mesh as hair_short, whose light texture goes black too
 }
 
 local function index(list: { any }): { [string]: any }

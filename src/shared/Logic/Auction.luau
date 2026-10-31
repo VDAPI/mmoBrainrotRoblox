@@ -3,6 +3,7 @@
 -- listing checks, deposit/fee/payout, the MemoryStore index key and summary, search filtering and the
 -- listing state machine active -> sold | cancelled | expired (each transition only from "active").
 
+local Binding = require("./Binding")
 local Config = require("../Config")
 local Market = require("../Data/Market")
 local Rarities = require("../Data/Rarities")
@@ -119,7 +120,7 @@ function Auction.validateListing(
 	if item.locked then
 		return false, "item.error.locked"
 	end
-	if item.bound then
+	if Binding.isBound(item) then
 		return false, "auction.error.bound"
 	end
 	if not Auction.validPrice(price) then

@@ -36,6 +36,15 @@ T.describe("Phone HUD (W29)", function()
 		end
 	end)
 
+	T.it("UI plan phase 1: the emote button left the sprint row (a tile of the game menu now)", function()
+		T.expect(PhoneHud.place("emote")).toBeNil()
+		T.expect(PhoneHud.place("sprint") ~= nil).toBe(true)
+		T.expect(PhoneHud.place("mount") ~= nil).toBe(true)
+		-- the drawer button and the PvP toggle under it keep their places by the minimap
+		T.expect(PhoneHud.place("menuToggle") ~= nil).toBe(true)
+		T.expect(PhoneHud.place("pvp") ~= nil).toBe(true)
+	end)
+
 	T.it("the skill arc keeps its buttons apart and clear of the attack button", function()
 		local attack = PhoneHud.rect(PhoneHud.PLACES.attack, 800, 440)
 		for i = 1, #PhoneHud.ANGLES do

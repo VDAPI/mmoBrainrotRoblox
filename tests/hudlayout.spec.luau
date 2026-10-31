@@ -2,6 +2,8 @@
 -- S156: the player's HUD layout (Logic/HudLayout): what a client may save and where a moved element lands.
 -- Owner 2026-10-21: the HUD column and the bottom-right corner (Logic/HudStack): at the common screen sizes the quest
 -- tracker, the event panels, the arena pill, the Elite II timers, the mail, PvP and attack buttons never overlap.
+-- UI plan phase 1 (owner 2026-10-31): one row of menu buttons, so the PC column starts under the minimap's area line
+-- (under the guide bar while one shows), and the chat window in the lower left corner ends left of the action bar.
 
 local HudLayout = require("../src/shared/Logic/HudLayout")
 local HudStack = require("../src/shared/Logic/HudStack")
@@ -134,6 +136,12 @@ local function scenario(name: string, touch: boolean, w: number): { [string]: Bo
 	error(name)
 end
 local SCENARIOS = { "tracker", "bossLine", "bossAndEvent", "busy", "movedTracker", "movedBoss" }
+-- every scenario without and with the guide bar under the minimap (UI plan phase 1)
+local SCENARIOS_GUIDE: { { name: string, guide: boolean } } = {}
+for _, name in SCENARIOS do
+	table.insert(SCENARIOS_GUIDE, { name = name, guide = false })
+	table.insert(SCENARIOS_GUIDE, { name = name, guide = true })
+end
 
 local function show(r: Rect): string
 	return `({r.left}, {r.top})-({r.right}, {r.bottom})`
@@ -141,7 +149,13 @@ end
 
 -- Every rectangle on the screen: the corner's buttons, the buttons right of the portrait, the moved elements, the PC
 -- Elite II timers and the column's places, by name.
-local function screen(touch: boolean, w: number, h: number, boxes: { [string]: Box }): { [string]: Rect }
+local function screen(
+	touch: boolean,
+	w: number,
+	h: number,
+	boxes: { [string]: Box },
+	guide: boolean?
+): { [string]: Rect }
 	local all: { [string]: Rect } = table.clone(HudStack.fixed(touch, w, h))
 	local e = HudStack.EXTRAS
 	all.extras = { left = e.x, top = e.y, right = e.x + e.w, bottom = e.y + e.h }
@@ -152,7 +166,7 @@ local function screen(touch: boolean, w: number, h: number, boxes: { [string]: B
 			all.elite = HudStack.elite(w, h, b.h)
 		end
 	end
-	for id, r in HudStack.layout(touch, false, w, h, 0, boxes) do
+	for id, r in HudStack.layout(touch, false, w, h, 0, boxes, nil, guide) do
 		all[id] = r
 	end
 	return all
@@ -209,10 +223,11 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		local function check(touch: boolean, sizes: { { number } })
 			for _, size in sizes do
 				local w, h = size[1], size[2]
-				for _, name in SCENARIOS do
+				for _, check in SCENARIOS_GUIDE do
+					local name, guide = check.name, check.guide
 					local boxes = scenario(name, touch, w)
-					local all = screen(touch, w, h, boxes)
-					local where = `{if touch then "touch" else "PC"} {w} x {h} {name}`
+					local all = screen(touch, w, h, boxes, guide)
+					local where = `{if touch then "touch" else "PC"} {w} x {h} {name}{if guide then " (guide)" else ""}`
 					local bad = clashes(all)
 					if #bad > 0 then
 						error(`{where}: {table.concat(bad, "; ")}`)
@@ -462,6 +477,47 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		-- the measured toggle counts like the computed one (it may stand higher than the formula says)
 		local measuredPvp = { left = 1911, top = 780, right = 1975, bottom = 844 }
 		T.expect(HudStack.floorUnder(left, left + HudStack.TRACKER, top, screenFloor, { measuredPvp })).toBe(772)
+	end)
+
+	T.it("UI plan phase 1: one row of menu buttons, the column starts under the minimap or the guide bar", function()
+		-- Hud menu: Theme.Padding.Large 22, one row of 52 px buttons, 8, the minimap frame (266) and its area line
+		-- under it (2 + 22); the guide bar (44) stands 8 under the minimap frame
+		T.expect(HudStack.RIGHT_TOP).toBe(22 + 52 + 8 + 266 + 24 + HudStack.GAP)
+		T.expect(HudStack.RIGHT_TOP_GUIDE).toBe(22 + 52 + 8 + 266 + 8 + 44 + HudStack.GAP)
+		T.expect(HudStack.RIGHT_TOP_GUIDE > HudStack.RIGHT_TOP).toBe(true)
+		-- 80 px higher than the two rows of 14 buttons (460) without a guide, 52 with one
+		T.expect(460 - HudStack.RIGHT_TOP).toBe(80)
+		for _, size in PC do
+			local w, h = size[1], size[2]
+			local free = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w))
+			local guided = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w), nil, true)
+			T.expect(free.questTracker.top).toBe(HudStack.RIGHT_TOP)
+			T.expect(guided.questTracker.top).toBe(HudStack.RIGHT_TOP_GUIDE)
+			-- both reach down to the corner: the tracker is taller without the guide bar
+			T.expect(free.questTracker.bottom).toBe(guided.questTracker.bottom)
+		end
+		-- the guide bar is a PC thing: a tablet's and a phone's column start where they did
+		local tablet = HudStack.column(true, false, 1280, 720, 0, true)
+		T.expect(tablet.top).toBe(HudStack.TOUCH_TOP)
+		local phone = HudStack.column(true, true, 886, 435, 0, true)
+		T.expect(phone.top).toBe(PhoneHud.stackTop(0))
+		-- the buttons right of the portrait: the login reward and the season pass only (the achievements left the HUD)
+		T.expect(HudStack.EXTRAS.h).toBe(2 * 44 + 8)
+	end)
+
+	T.it("UI plan phase 1: the chat window ends left of the action bar, within its width range", function()
+		local gap, min = HudStack.CHAT_GAP, HudStack.CHAT_MIN
+		-- 1920 wide: room to spare, Roblox's own width
+		T.expect(HudStack.chatWidthScale(8, 400, 1, 501)).toBe(1)
+		-- 1280 x 720 (UI scale 2/3): the bar starts at 334, a 400 px chat narrows to end `gap` left of it
+		local scale = HudStack.chatWidthScale(8, 400, 1, 334)
+		T.expect(math.abs(8 + 400 * scale - (334 - gap)) < 1e-6).toBe(true)
+		-- already narrowed: the same answer from the narrowed size (no back and forth)
+		T.expect(math.abs(HudStack.chatWidthScale(8, 400 * scale, scale, 334) - scale) < 1e-6).toBe(true)
+		-- a very narrow screen: never under the minimum
+		T.expect(HudStack.chatWidthScale(8, 400, 1, 100)).toBe(min)
+		-- a hidden window keeps its scale
+		T.expect(HudStack.chatWidthScale(8, 0, 0.8, 334)).toBe(0.8)
 	end)
 
 	T.it("the PvP badge stays on the screen, right-aligned with the toggle", function()
