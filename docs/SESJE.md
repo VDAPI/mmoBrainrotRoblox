@@ -14108,3 +14108,22 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   pociski w `CombatFxController`.
 - Dokumentacja dla sesji animacji: `docs/ANIM-WZORCE.md` §10. Testy: `tests/monstermove.spec.luau`, `leash.spec`
   (powrót truchtem). Balans: powody w `tools/balance_reasons.luau` (S162m).
+
+### Wiązanie przedmiotów (właściciel 2026-10-31)
+- Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
+  wędrownego kupca, każdy założony plecak; sprzęt bossów był wolny (poza Mitykiem z worka, a Mityk bossa świata pocztą
+  w ogóle się nie wiązał), zwoje i plecaki za Smoczą Walutę były wolne. Decyzja i tabela: `docs/DECYZJE.md`,
+  `docs/DESIGN.md` §5.6, `wyglad/WIAZANIE-PRZEDMIOTOW.md`.
+- Kod: `Data/Binding.luau` (kategorie, źródła), `Logic/Binding.luau` (reguły, `apply`, `onEquip`, `tooltipKey`,
+  migracja); pole definicji `bind` zamiast `bindOnPickup`; źródła w `LootService`, `DungeonService`, `WorldBossService`,
+  `WorldEventService`, `LoginRewardService`, `TutorialService` / `Logic/Tutorial`, `SideQuestService`, `HuntShopService`,
+  `WanderingMerchantService`, `ArenaService`, `SeasonService`, `PortalShopService`, `PremiumShopService`,
+  `InventoryService.GiveNew`, `ShopService` (plecak), `EquipmentService` / `Logic/StarterGear` (`onEquip`); odmowy w
+  `Logic/Trade`, `Auction`, `Social`, `GuildBank`, `GuildService`; `Inventory.canMerge` (brak pola = wolny).
+- Migracja: `AccountSchema` 13 (plecak, slot plecaka, depozyt), paczki bez `bv` przy odbiorze (`MailService`,
+  `Logic/Mail.Parcel.bv`).
+- UI: `TooltipModel` jedna linia `bind` (także w widoku skróconym), `ItemController.Equip` pyta tylko, gdy przedmiot się
+  zwiąże, `Components/Modal` z opcjonalnym przełącznikiem `Check` („Nie pytaj więcej w tej sesji”), teksty potwierdzeń
+  areny i wędrownego kupca zależne od reguły.
+- Testy: `tests/binding.spec.luau` (reguły kategorii i źródeł, zakładanie, stosy, odmowy, migracja, podpowiedź, brak
+  ręcznego `bound = true`), wersja schematu w testach migracji.

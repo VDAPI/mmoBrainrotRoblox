@@ -341,8 +341,7 @@ commands.bag = function(player, args)
 			reply(player, "equip.error.backpackFit")
 			return
 		end
-		local backpack = ItemRoll.makeStack(id, 1, InventoryService.NewUid())
-		backpack.bound = true
+		local backpack = ItemRoll.makeStack(id, 1, InventoryService.NewUid()) -- never binds (Logic/Binding)
 		PlayerStateService.Set(player, { "character", "equipment", "backpack" }, backpack)
 		InventoryService.SyncAll(player)
 		StatService.Invalidate(player)

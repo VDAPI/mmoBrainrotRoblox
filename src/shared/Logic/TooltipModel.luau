@@ -37,6 +37,7 @@
 -- Every bonus, trait and effect row carries a `detail` reference that `TooltipModel.details` turns into the details
 -- panel (S68).
 
+local Binding = require("./Binding")
 local Blessings = require("../Data/Blessings")
 local Bonuses = require("../Data/Bonuses")
 local Classes = require("../Data/Classes")
@@ -908,18 +909,11 @@ local function buildFull(item: ItemInstance, def: ItemDef?, c: Ctx, lang: string
 		replaceNotes(b, item, d, c, lang)
 	end
 
-	-- Binding
-	if d.category == "equipment" then
-		if item.bound then
-			b.add("bind", Locale.T("tooltip.bound", nil, lang), "bad")
-		elseif d.bindOnPickup or rarity.bindOnPickup then
-			b.add("bind", Locale.T("tooltip.bindOnPickup", nil, lang), "muted")
-		else
-			b.add("bind", Locale.T("tooltip.bindOnEquip", nil, lang), "muted")
-		end
-	elseif item.bound then
-		-- S122: bound stacks too (the Elixir of Wholeness is bound from creation; worn backpacks)
-		b.add("bind", Locale.T("tooltip.bound", nil, lang), "bad")
+	-- Binding (owner 2026-10-31, Logic/Binding): one short line, "bound" or "binds when equipped"; nothing for what
+	-- trades freely (potions, materials, backpacks). Bound stacks too (S122: the Elixir of Wholeness).
+	local bindKey = Binding.tooltipKey(item, d)
+	if bindKey then
+		b.add("bind", Locale.T(bindKey, nil, lang), if bindKey == "tooltip.bound" then "bad" else "muted")
 	end
 	if item.n > 1 then
 		b.add("stack", Locale.T("tooltip.stack", { n = item.n }, lang), "muted")
@@ -1038,6 +1032,22 @@ function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang
 		-- "cannot be sold" only matters at a merchant or in a shop (red)
 		if COMPACT_KEEP[role] or (role == "noSell" and (c.merchantOpen or c.shopEntry ~= nil)) then
 			table.insert(b.lines, line)
+		elseif role == "bind" then
+			-- owner 2026-10-31: bound / binds when equipped joins the rarity line ("Heroiczny · +3 · Wiąże się po
+			-- założeniu"), so the short view keeps its line count
+			local merged = false
+			for n = #b.lines, 1, -1 do
+				if b.lines[n].role == "rarity" then
+					local copy = table.clone(b.lines[n])
+					copy.text ..= ` · {line.text}`
+					b.lines[n] = copy
+					merged = true
+					break
+				end
+			end
+			if not merged then
+				table.insert(b.lines, line)
+			end
 		elseif line.main or role == "speedDps" then
 			-- weapon: "Damage 191 · DPS 229.2" in one line; armour: its armour line as it is
 			local weapon = ItemRoll.itemStats(item).weapon
