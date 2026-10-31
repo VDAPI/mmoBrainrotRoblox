@@ -706,7 +706,7 @@ T.describe("World boss: contribution factor, named items and pity (S149c)", func
 		T.expect(n).toBe(8)
 		-- the Mage staff is an ice weapon (its fixed effects are ice ones)
 		local staff = Items.get("unique_hrimvald_staff") :: any
-		T.expect({ staff.elemental, Data.reward.named.element }).toEqual({ true, "ice" })
+		T.expect({ staff.elemental, staff.element, Data.reward.named.element }).toEqual({ true, "ice", "ice" })
 	end)
 
 	-- the owner: rare and better than the dungeon bosses' named items

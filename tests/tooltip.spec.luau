@@ -4,6 +4,7 @@
 -- (2026-10-31: the numbers come with ctx.compare, tests/itemcompare.spec).
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Combat = require("../src/shared/Data/Combat")
+local ItemEffects = require("../src/shared/Logic/ItemEffects")
 local ItemName = require("../src/shared/Logic/ItemName")
 local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local ItemTraits = require("../src/shared/Data/ItemTraits")
@@ -634,42 +635,53 @@ T.describe("TooltipModel compact view (2026-10-21)", function()
 		T.expect(firstOf(plain.lines).moreHint).toBeNil()
 	end)
 
-	T.it("folds the weapon's main value, the trait and each skill effect into one line each", function()
-		local sword = sample("sword1h_60", Rarities.MYTHIC)
-		local full = TooltipModel.build(sword, nil, { lang = "pl", class = "Warrior" }).lines
-		local short = TooltipModel.build(sword, nil, ctxFor("sword1h_60")).lines
-		local first = firstOf(short)
-		for _, role in { "speedDps", "element", "traitName", "trait", "fxTitle", "fx", "fxPool", "rarityBonus" } do
-			T.expect({ role, first[role] }).toEqual({ role, nil })
-		end
-		local stats = ItemRoll.itemStats(sword)
-		local weapon = stats.weapon :: any
-		local dps =
-			Locale.T("tooltip.compact.dps", { dps = TooltipModel.decimal(TooltipModel.dps(weapon), 1, "pl") }, "pl")
-		T.expect(short[first.mainShort].text).toBe(`{Locale.T("tooltip.damage", { dmg = weapon.dmg }, "pl")} · {dps}`)
-		-- every effect line and the trait line of the full view are inside the short lines
-		local shortText: { string } = {}
-		for _, line in short do
-			table.insert(shortText, line.text)
-		end
-		local joined = table.concat(shortText, "\n")
-		local effects = 0
-		for _, line in full do
-			if line.role == "fx" or line.role == "trait" then
-				T.expect({ line.role, string.find(joined, line.text, 1, true) ~= nil }).toEqual({ line.role, true })
+	T.it(
+		"folds the weapon's main value and the trait into one line each, the skill effects into one of names",
+		function()
+			local sword = sample("sword1h_60", Rarities.MYTHIC)
+			local full = TooltipModel.build(sword, nil, { lang = "pl", class = "Warrior" }).lines
+			local short = TooltipModel.build(sword, nil, ctxFor("sword1h_60")).lines
+			local first = firstOf(short)
+			for _, role in { "speedDps", "element", "traitName", "trait", "fxTitle", "fx", "fxPool", "rarityBonus" } do
+				T.expect({ role, first[role] }).toEqual({ role, nil })
 			end
-			if line.role == "fx" then
-				effects += 1
+			local stats = ItemRoll.itemStats(sword)
+			local weapon = stats.weapon :: any
+			local dps =
+				Locale.T("tooltip.compact.dps", { dps = TooltipModel.decimal(TooltipModel.dps(weapon), 1, "pl") }, "pl")
+			T.expect(short[first.mainShort].text)
+				.toBe(`{Locale.T("tooltip.damage", { dmg = weapon.dmg }, "pl")} · {dps}`)
+			-- the trait line of the full view is inside the short lines; 2026-10-31 (Studio check: a mythic tooltip ran past
+			-- 14 lines) the skill effects are one line of their names, what they do is in the full view
+			local shortText: { string } = {}
+			for _, line in short do
+				table.insert(shortText, line.text)
 			end
-		end
-		local fxShort = 0
-		for _, line in short do
-			if line.role == "fxShort" then
-				fxShort += 1
+			local joined = table.concat(shortText, "\n")
+			local effects = 0
+			for _, line in full do
+				if line.role == "trait" then
+					T.expect(string.find(joined, line.text, 1, true) ~= nil).toBe(true)
+				elseif line.role == "fx" then
+					T.expect(string.find(joined, line.text, 1, true)).toBeNil()
+				elseif line.role == "fxTitle" then
+					effects += 1
+					local ref = line.detail :: any
+					local name = Locale.T((ItemEffects.resolve(ref.id) :: any).nameKey, nil, "pl")
+					T.expect({ name, string.find(short[first.fxShort].text, `<b>{name}</b>`, 1, true) ~= nil })
+						.toEqual({ name, true })
+				end
 			end
+			T.expect(effects >= 2).toBe(true)
+			local fxShort = 0
+			for _, line in short do
+				if line.role == "fxShort" then
+					fxShort += 1
+				end
+			end
+			T.expect(fxShort).toBe(1)
 		end
-		T.expect(fxShort).toBe(effects)
-	end)
+	)
 
 	T.it("stat rows over the line budget: the first ones in the full order and '+N more', the cap kept", function()
 		local bonuses = {

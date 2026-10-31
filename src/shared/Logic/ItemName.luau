@@ -1,7 +1,8 @@
 --!strict
 -- Item display names in a given language (pure; shared by the client UI and the auction search index).
 -- Generated equipment combines a tier prefix agreeing with the noun's Polish gender with the base noun;
--- upgrades add "+N", mage weapons their element ("Stalowa Różdżka Ognia", S18).
+-- upgrades add "+N", mage weapons their element ("Stalowa Różdżka Ognia", S18); 2026-10-31: not a named weapon with its
+-- own element (ItemDef.element: "Kostur Wiecznej Zimy" says it already).
 
 local Items = require("../Data/Items")
 local Locale = require("../Util/Locale")
@@ -21,7 +22,7 @@ function ItemName.get(lang: string, itemId: string, up: number?, element: string
 		local prefix = Locale.T(`{def.namePrefix}.{def.gender or "m"}`, nil, lang)
 		name = `{prefix} {Locale.T(def.nameBase or "", nil, lang)}`
 	end
-	if element and def.elemental then
+	if element and def.elemental and not def.element then
 		name ..= ` {Locale.T(`element.suffix.{element}`, nil, lang)}`
 	end
 	if up and up > 0 then

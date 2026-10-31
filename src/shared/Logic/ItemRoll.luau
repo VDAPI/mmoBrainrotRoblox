@@ -310,6 +310,7 @@ function ItemRoll.rollItem(
 			up = 0,
 			bound = false,
 			n = 1,
+			el = def.element, -- 2026-10-31: a named elemental weapon keeps its own element
 			rv = Rarities.RV,
 		}
 	end
@@ -357,11 +358,7 @@ end
 
 -- Element of a mage weapon instance; weapons from before S18 count as fire. nil for everything else.
 function ItemRoll.elementOf(item: ItemInstance): string?
-	local def = Items.get(item.id)
-	if not def or not def.elemental then
-		return nil
-	end
-	return if Elements.isWeaponElement(item.el) then item.el else Elements.DEFAULT
+	return Elements.weaponElement(Items.get(item.id), item.el)
 end
 
 -- S62 (STATY 2A, 10): trait strength = rarity baseMul (named boss items too) x (1 + 0.06 x upgrade level).

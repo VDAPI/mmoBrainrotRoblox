@@ -117,10 +117,7 @@ end
 
 -- Element of a Mage weapon instance (fire before S18), nil for everything else (same rule as ItemRoll.elementOf).
 local function elementOf(item: any, def: ItemDef?): string?
-	if not def or not def.elemental then
-		return nil
-	end
-	return if Elements.isWeaponElement(item.el) then item.el else Elements.DEFAULT
+	return Elements.weaponElement(def, item.el)
 end
 
 -- Draws `count` effects of `tier` not in `taken` (ids), without repeats; appends to `out`.
