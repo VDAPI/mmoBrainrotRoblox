@@ -16,7 +16,9 @@
 -- 5. the perch (a style with `perch`, a map with legs): after hovering still for a while out of a fight it flies down
 --    to the ground (hard beats), folds its wings, hops about now and then and pecks (its `perch.fidgets`); a move, a
 --    fight, a hit or a stun lifts it off again. Only the look lands: the server's monster hovers on.
--- Last the map's own `pose` (FlyerRigs: an upright export's head, tail and legs turned to a flying carriage).
+-- Last the map's own `pose` (FlyerRigs: an upright export's head, tail and legs turned to a flying carriage); no bone
+-- goes under the ground (the pose is lifted onto it: a dive, a stoop, a body lying on its wing), and a jump in time
+-- (AnimLab looping or scrubbing back) fades from the pose it showed into the new one.
 -- Pure: client/Anim/FlyerRig writes the bones, AnimLab evaluates it at a fixed time. The functions the game calls have
 -- the names and arguments of Logic/QuadMotion's (step, pick, death, side, length, controlsAt, times, mirror).
 -- Allocation-light: the controls live in tables of the instance, rewritten every frame.
@@ -110,9 +112,13 @@ export type Instance = {
 	lockX: number,
 	lockZ: number,
 	lockD: number,
+	fadeFrom: Controls, -- the pose shown before a jump in time, faded out of
+	fadeAt: number,
 }
 
 local TAU = 2 * math.pi
+-- Seconds a jump in time (a snap after the first frame) fades from the pose shown before it.
+local FADE = 0.4
 
 -- The wing controls by side (built once: no strings are made per frame).
 local WING: { { [string]: string } } = {}
@@ -248,6 +254,8 @@ function FlyerMotion.new(skel: FlyerPose.Skeleton, styleId: string, seed: number
 		lockX = 0,
 		lockZ = -1,
 		lockD = 0,
+		fadeFrom = {},
+		fadeAt = -math.huge,
 	}
 end
 
@@ -438,6 +446,15 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 		inst.lastTime = now
 		return skel.posed
 	end
+	if snap and inst.solved then
+		-- a jump in time: the pose shown so far (the last frame's controls) fades into the new one
+		local from = inst.fadeFrom
+		table.clear(from)
+		for key, v in inst.controls do
+			from[key] = v
+		end
+		inst.fadeAt = now
+	end
 	if now < inst.lastTime then
 		inst.fidget = nil
 		inst.nextFidget = now + 4
@@ -543,6 +560,8 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 	---------------------------------------------------------------- the perch
 	local perch = style.perch
 	local dying = run ~= nil and runAction ~= nil and runAction.hold == true
+	-- one of the perch's idles played as an action (AnimLab) stands on the ground like the perch
+	local perchRun = perch ~= nil and run ~= nil and runAction ~= nil and table.find(perch.fidgets, run.name) ~= nil
 	if perch and inst.perchDrop and not dying then
 		local still = not input.combat
 			and not input.returning
@@ -551,7 +570,7 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 			and not busy
 			and not (hit and now - hit < 3)
 		inst.perchStill = if still then inst.perchStill + dt else 0
-		local target = if input.perch or (still and inst.perchStill >= inst.perchAfter) then 1 else 0
+		local target = if input.perch or perchRun or (still and inst.perchStill >= inst.perchAfter) then 1 else 0
 		if snap then
 			inst.perch = target
 		elseif inst.perch < target then
@@ -874,8 +893,28 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 	if rigPose then
 		addAll(controls, rigPose, 1)
 	end
+	-- out of a jump in time
+	local fadeT = now - inst.fadeAt
+	if fadeT >= 0 and fadeT < FADE then
+		local k = MotionTimeline.ease("inout", fadeT / FADE)
+		local from = inst.fadeFrom
+		for key, v in controls do
+			local was = from[key] or 0
+			controls[key] = was + (v - was) * k
+		end
+		for key, v in from do
+			if controls[key] == nil then
+				controls[key] = v * (1 - k)
+			end
+		end
+	end
 	inst.solved = true
 	local posed = FlyerPose.solve(skel, controls)
+	-- never under the ground: lifted onto it
+	local low = FlyerPose.lowest(skel)
+	if low < 0 then
+		FlyerPose.lift(skel, -low)
+	end
 	FlyerPose.muzzle(skel, inst.muzzle)
 	return posed
 end

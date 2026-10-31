@@ -7,7 +7,9 @@
 -- `kind`), so AnimationController and AnimLab drive either.
 -- * A Transform is written only when it moved by more than about 0.1 degree (docs/ANIM-WZORCE §1.10);
 -- * the monster root's `Muzzle` attachment follows the beak / the wing tips (FlyerRigs `muzzle`), so the shots drawn
---   on this client leave from there (docs/ANIM-WZORCE §10).
+--   on this client leave from there (docs/ANIM-WZORCE §10);
+-- * the rig is posed (a calm hover) as soon as it is made: the export's rest pose is never shown, and the first frames
+--   of the game or of AnimLab blend in from that pose (Logic/FlyerMotion fades a snap out of the pose shown).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -92,7 +94,7 @@ function FlyerRig.new(look: Model, styleId: string, seed: number, model: string)
 	for name in skel.posed do
 		last[name] = { 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0 }
 	end
-	return {
+	local rig: Rig = {
 		kind = "flyer",
 		skel = skel,
 		motion = motion,
@@ -102,6 +104,11 @@ function FlyerRig.new(look: Model, styleId: string, seed: number, model: string)
 		muzzle = if muzzle and muzzle:IsA("Attachment") then muzzle else nil,
 		last = last,
 	}
+	FlyerRig.apply(
+		rig,
+		FlyerMotion.step(motion, { now = 0, dt = 0, speed = 0, yawRate = 0, combat = false, snap = true })
+	)
+	return rig
 end
 
 -- Writes the Transforms of one frame that moved, and puts the muzzle where the shots leave.
