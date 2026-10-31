@@ -28,6 +28,7 @@ local RunService = game:GetService("RunService")
 local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
+local Binding = require(Shared.Logic.Binding)
 local Boss = require(script.Parent.Parent.Entities.Boss)
 local Clock = require(Shared.Util.Clock)
 local Contribution = require(Shared.Logic.Contribution)
@@ -356,10 +357,8 @@ local function rollItems(level: number, classId: string, share: Share, pity: num
 			drop.forClass,
 			{ family = WorldBoss.def().family :: string? }
 		)
-		if Data.reward.bound then
-			rolled.bound = true
-		end
-		table.insert(items, rolled)
+		-- owner 2026-10-31: Heroic binds on equip, Legendary and Mythic on pickup, also by mail (Logic/Binding)
+		table.insert(items, Binding.apply(rolled, "boss"))
 	else
 		log:warn("no world boss item at level %d for %s", level, classId)
 	end
@@ -369,7 +368,7 @@ local function rollItems(level: number, classId: string, share: Share, pity: num
 		if def then
 			local named =
 				ItemRoll.rollItem(namedId, def.level or 100, Rarities.MYTHIC, rng, InventoryService.NewUid(), classId)
-			named.bound = true -- bind on pickup
+			Binding.apply(named, "boss") -- a named item binds on pickup (its definition's rule)
 			if def.elemental then
 				named.el = Data.reward.named.element
 			end

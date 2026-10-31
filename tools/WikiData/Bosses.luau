@@ -9,6 +9,7 @@
 -- (rarities for a token / even / top contribution factor, the named items with their pity); never Data/Products.
 
 local Areas = require("../../src/shared/Data/Areas")
+local Binding = require("../../src/shared/Logic/Binding")
 local WorldBossData = require("../../src/shared/Data/WorldBoss")
 local WorldBossLogic = require("../../src/shared/Logic/WorldBoss")
 local BossData = require("../../src/shared/Data/Bosses")
@@ -376,7 +377,8 @@ function Bosses.worldBoss(def: BossData.BossDef, ctx: any): any
 			factorLo = D.reward.factor.lo,
 			factorHi = D.reward.factor.hi,
 			factorSlope = D.reward.factor.slope,
-			itemBound = D.reward.bound == true,
+			-- owner 2026-10-31: whether the lowest rarity (Heroic) binds on pickup; Legendary and Mythic always do
+			itemBound = Binding.bindsFrom("sword1h_1", "boss", Rarities.HEROIC),
 			named = {
 				chance = D.reward.named.chance,
 				step = D.reward.named.step,

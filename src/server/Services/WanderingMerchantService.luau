@@ -6,7 +6,8 @@
 -- chat and the banner announce him 10 and 1 min before, on arrival, 5 min before he leaves and when he is gone. The
 -- map and the window compute the same visit themselves. One purchase: the visit runs, near him, Logic.canBuy (the
 -- window's rule), room in the backpack; then, without a yield, the gold or the marks and the visit's counter go and the
--- goods come. Everything is bound and never sold back (`ns`), a dye goes to the account's wardrobe.
+-- goods come. Owner 2026-10-31 (Data/Binding): gold buys free goods and gear that binds on equip, marks buy materials
+-- and gear that bind on pickup; nothing is ever sold back (`ns`), a dye goes to the account's wardrobe.
 --   WanderingMerchantBuy(key, amount) -> (ok, errorKey?)
 
 local Players = game:GetService("Players")
@@ -22,6 +23,7 @@ local Clock = require(Shared.Util.Clock)
 local Contracts = require(Shared.Logic.Contracts)
 local Cosmetics = require(Shared.Data.Cosmetics)
 local Data = require(Shared.Data.WanderingMerchant)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
@@ -384,6 +386,7 @@ local function buy(player: Player, key: string, amount: number): (boolean, strin
 		return false, err
 	end
 	local items: { Types.ItemInstance } = {}
+	local source: Binding.Source = if offer.currency == "marks" then "currency" else "gold"
 	local grant = WanderingMerchant.grant(offer, char.level, char.class)
 	if grant then
 		local total = grant.n * amount
@@ -391,8 +394,8 @@ local function buy(player: Player, key: string, amount: number): (boolean, strin
 			return false, "error.badRequest"
 		end
 		local stack = ItemRoll.makeStack(grant.id, total, InventoryService.NewUid())
-		stack.bound = true -- bought goods never turn into gold through trade or the auction house
-		stack.ns = true -- nor through a merchant (ItemValue.canSell)
+		Binding.apply(stack, source) -- owner 2026-10-31: free for gold, bound for marks (Data/Binding)
+		stack.ns = true -- bought goods never turn into gold through a merchant (ItemValue.canSell)
 		table.insert(items, stack)
 	elseif offer.kind == "gear" then
 		local ilvl = WanderingMerchant.ilvlOf(visit.band, char.level)
@@ -402,7 +405,7 @@ local function buy(player: Player, key: string, amount: number): (boolean, strin
 			return false, "wanderer.error.unavailable"
 		end
 		local item = ItemRoll.rollItem(defId, ilvl, offer.rarity or 2, rng, InventoryService.NewUid(), char.class)
-		item.bound = true
+		Binding.apply(item, source) -- owner 2026-10-31: binds on equip for gold, on pickup for marks
 		item.ns = true
 		table.insert(items, item)
 	elseif offer.kind ~= "dye" or not offer.id or not Cosmetics.get(offer.id) then

@@ -1,8 +1,9 @@
 --!strict
 -- Season pass button (S152b, docs/DESIGN.md §21b): ❖ under the login reward button ✧ (right of the portrait), the same
--- on PC and touch. The "!" badge and a slowly pulsing brass frame while a reward waits (Logic/SeasonView.claimCount);
--- the tooltip names the tier with the points of the current tier. Shown while a season runs or an ended one still has
--- rewards to claim in its grace days. Opens the season pass window (SeasonController).
+-- on PC and touch; a phone in landscape has it in the menu drawer. UI plan phase 1 (owner 2026-10-31, too much on one
+-- screen): shown only while a reward waits (Logic/SeasonView.claimCount, also in an ended season's grace days), with
+-- the "!" badge and a slowly pulsing brass frame; the tooltip names the tier with the points of the current tier. Opens
+-- the season pass window (SeasonController); C and the game menu's tile open it at any time.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -34,9 +35,6 @@ local function SeasonButton(scope: Scope, props: Props): Instance
 	local view = SeasonState.View
 	local badge = scope:Computed(function(use): boolean
 		return SeasonView.claimCount(use(view)) > 0
-	end)
-	local shown = scope:Computed(function(use): boolean
-		return SeasonView.shown(use(view))
 	end)
 	local pulse = scope:Value(0)
 	table.insert(
@@ -78,7 +76,7 @@ local function SeasonButton(scope: Scope, props: Props): Instance
 		Position = props.Position,
 		Size = UDim2.fromOffset(SIZE, SIZE),
 		BackgroundTransparency = 1,
-		Visible = shown,
+		Visible = badge,
 		[Children] = {
 			IconButton(scope, {
 				Name = "SeasonPassButton",
