@@ -1077,6 +1077,13 @@ included; AnimationController and AnimLab need no change.
   front tips about 2 studs); the standing feet catch up by the steps above and keep their points (drift ≤ 0.09 stud
   in every action and reaction); the pounce's bounce eases `inout` over a 0.4 s follow. AnimLab `attack1` = bite,
   `attack2` = grab (`/animlab mob caveSpider grab` too).
+- **Which code runs** (Studio re-sample 2026-10-31 on a67b822d matched the *old* legs with the new recipe: alert
+  tips 4.0–5.4 against the sim's 4.0–5.6 for the old `Logic/OctoMotion` and 3.3–3.8 for the new one, grab tips 3.40
+  against 3.38): `client/Anim/RigidRig` stamps the look with `OctoVersion` (`OctoMotion.VERSION`, bumped with every
+  change of the legs), `OctoHipH`, `OctoSpan` (OctoSim at the game's scale: 1.89, 2.44), `OctoLegs` (9) and
+  `OctoOverwritten`: the bone turns it found written by something else between two frames (an Animator, a script
+  resetting `Bone.Transform`); it writes such a bone again, since a rig writing only the turns that changed shows the
+  rest pose on the frames it skips (Studio's 0 / 47° flips on alternate frames, the feet riding with the lunge).
 - **The asset** in `Assets.Monsters` (as the wolf and the peakHarpy): a Model with `HumanoidRootPart` (Anchored false,
   CanCollide false, CanQuery and CanTouch true, Massless false, Transparency 1, size 1) as its `PrimaryPart`, the
   MeshPart with the bones (Anchored false, CanCollide, CanQuery and CanTouch true, Massless false) welded to it by a
