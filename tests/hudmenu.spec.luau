@@ -8,6 +8,7 @@
 local fs = require("@lune/fs")
 
 local HudMenu = require("../src/shared/Logic/HudMenu")
+local UiHubs = require("../src/shared/Data/UiHubs")
 local KeybindData = require("../src/shared/Data/Keybinds")
 local T = require("./Test")
 local en = require("../src/shared/Data/Localization/en")
@@ -36,9 +37,15 @@ local function smallText(): number
 	return tonumber(value) :: number
 end
 
+-- UI plan phase 3: a window has a place when it has a bar button, a tile or a hub's tab (Data/UiHubs).
+local function placed(id: string): boolean
+	return HudMenu.onBar(id) or HudMenu.isTile(id) or UiHubs.hubOf(id) ~= nil
+end
+
 describe("HUD bar and game menu tiles (UI plan phase 1)", function()
 	it("the bar holds six buttons: the backpack first, the menu last", function()
-		expect(HudMenu.BAR).toEqual({ "inventory", "skills", "map", "quests", "premium", "menu" })
+		-- UI plan phase 3: the five hubs and the ☰ (the Character hub keeps the backpack's id)
+		expect(HudMenu.BAR).toEqual({ "inventory", "world", "social", "rivalry", "premium", "menu" })
 		-- S155: the tutorial's "backpack" step points at the bar's backpack button (UI/HudAnchors)
 		local anchors = fs.readFile("src/client/UI/HudAnchors.luau")
 		expect(string.find(anchors, 'backpackButton = { pc = "inventory", touch = "inventory"', 1, true) ~= nil).toBe(
@@ -69,8 +76,8 @@ describe("HUD bar and game menu tiles (UI plan phase 1)", function()
 			if not id then
 				continue
 			end
-			if not (HudMenu.onBar(id) or HudMenu.isTile(id)) then
-				error(`{action.id}: no button and no tile`)
+			if not placed(id) then
+				error(`{action.id}: no button, no tile and no hub tab`)
 			end
 			expect(HudMenu.KEYS[id]).toBe(action.id)
 		end
@@ -80,7 +87,7 @@ describe("HUD bar and game menu tiles (UI plan phase 1)", function()
 			if not KeybindData.get(action) then
 				error(`{id}: unknown key action {action}`)
 			end
-			expect(HudMenu.onBar(id) or HudMenu.isTile(id)).toBe(true)
+			expect(placed(id)).toBe(true)
 		end
 	end)
 
@@ -110,7 +117,7 @@ describe("HUD bar and game menu tiles (UI plan phase 1)", function()
 			"emotes",
 		}
 		for _, id in before do
-			if not (HudMenu.onBar(id) or HudMenu.isTile(id)) then
+			if not placed(id) then
 				error(`{id} has no place`)
 			end
 		end
@@ -118,9 +125,10 @@ describe("HUD bar and game menu tiles (UI plan phase 1)", function()
 
 	it("the ☰ shows a tile's \"!\", not the bar's own", function()
 		expect(HudMenu.attention({})).toBe(false)
-		expect(HudMenu.attention({ mail = true })).toBe(true)
-		expect(HudMenu.attention({ achievements = false, login = true })).toBe(true)
-		expect(HudMenu.attention({ achievements = false, season = false })).toBe(false)
+		-- UI plan phase 3: a tile outside the hubs lights it; a tile in a hub lights the hub's button instead
+		expect(HudMenu.attention({ whatsnew = true })).toBe(true)
+		expect(HudMenu.attention({ emotes = true, login = false })).toBe(true)
+		expect(HudMenu.attention({ mail = true, login = true, achievements = true })).toBe(false)
 		-- stat points (the backpack) and new skill points have their own "!" on the bar
 		expect(HudMenu.attention({ inventory = true, skills = true })).toBe(false)
 	end)
@@ -163,8 +171,16 @@ describe("HUD bar and game menu tiles (UI plan phase 1)", function()
 		local menuStart = assert(string.find(screen, "local MENU: { Hud.MenuEntry } = {", 1, true))
 		local menuEnd = assert(string.find(screen, "\n}", menuStart, true))
 		local bar = {}
-		for id in string.gmatch(string.sub(screen, menuStart, menuEnd), 'id = "([%w_]+)"') do
-			table.insert(bar, id)
+		local menu = string.sub(screen, menuStart, menuEnd)
+		-- UI plan phase 3: hubEntry("<hub>") puts the hub's button, `id = "menu"` the ☰
+		for line in string.gmatch(menu, "[^\n]+") do
+			local hub = string.match(line, 'hubEntry%("([%w_]+)"')
+			local id = string.match(line, 'id = "([%w_]+)"')
+			if hub then
+				table.insert(bar, (assert(UiHubs.get(hub), hub)).button)
+			elseif id then
+				table.insert(bar, id)
+			end
 		end
 		expect(bar).toEqual(HudMenu.BAR)
 		local tilesStart = assert(string.find(screen, "local TILE_DEFS", 1, true))

@@ -7,7 +7,8 @@
 
 local TrackerFold = {}
 
-TrackerFold.GROUPS = table.freeze({ "all", "quests", "contracts", "daily", "weekly", "ach" })
+-- UI plan phase 3: "e2", the Elite II timers (Hud/Elite2Timer), open by default (it shows only while a timer runs)
+TrackerFold.GROUPS = table.freeze({ "all", "quests", "contracts", "daily", "weekly", "ach", "e2" })
 
 -- Folded until the player opens them (each header carries its progress): UI plan phase 1 (owner 2026-10-31, too much
 -- on one screen) folds the hunting contracts, the daily and weekly sets and the tracked achievements, so only the

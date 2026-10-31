@@ -23,7 +23,6 @@ local NpcQuests = require(script.Parent.Parent.UI.NpcQuests)
 local NpcMarkState = require(script.Parent.Parent.UI.NpcMarkState)
 local BloodMoonPanel = require(script.Parent.Parent.UI.Screens.Hud.BloodMoonPanel)
 local TourneyPanel = require(script.Parent.Parent.UI.Screens.Hud.TourneyPanel)
-local Elite2Timer = require(script.Parent.Parent.UI.Screens.Hud.Elite2Timer)
 local QuestTracker = require(script.Parent.Parent.UI.Screens.Hud.QuestTracker)
 local WorldBossPanel = require(script.Parent.Parent.UI.Screens.Hud.WorldBossPanel)
 local WorldEventPanel = require(script.Parent.Parent.UI.Screens.Hud.WorldEventPanel)
@@ -247,7 +246,7 @@ function QuestController.Init(registry)
 		end,
 	}).Parent =
 		hud
-	Elite2Timer(scope).Parent = hud
+	-- UI plan phase 3: the Elite II timers are a group of the quest tracker (Hud/Elite2Timer)
 	WorldBossPanel(scope, {
 		Guide = function(target)
 			Nav.Guide({ map = target.map, x = target.x, z = target.z, labelKey = target.labelKey })

@@ -82,6 +82,12 @@ export type MenuEntry = {
 	tooltipKey: string,
 	badge: ((scope: Scope) -> Fusion.UsedAs<boolean>)?, -- S59: "!" on the button (skills window)
 	visible: ((use: Fusion.Use) -> boolean)?, -- S97: the button shows only while this is true (nil: always)
+	-- UI plan phase 3 (Data/UiHubs): a hub's button is lit while any of `windows` is open, `open` replaces opening the
+	-- window `id`, `key` names the key action on its plaque (default win_<id>), `art` its picture (default by id)
+	windows: { string }?,
+	open: (() -> ())?,
+	key: string?,
+	art: string?,
 }
 
 export type Props = {
@@ -384,19 +390,32 @@ local function menuButtons(scope: Scope, props: Props, after: (() -> ())?): { In
 				Name = entry.id,
 				LayoutOrder = index,
 				Icon = entry.icon,
-				ArtKey = UiArt.menu(entry.id), -- S119
-				Hotkey = if entry.hotkey then Keybinds.Label(scope, `win_{entry.id}`) else nil,
+				ArtKey = entry.art or UiArt.menu(entry.id), -- S119
+				Hotkey = if entry.hotkey then Keybinds.Label(scope, entry.key or `win_{entry.id}`) else nil,
 				Tooltip = Text.T(scope, entry.tooltipKey),
 				-- FIX 2026-10-14: B's button stays lit for the backpack window itself (window id "character").
-				Active = if entry.id == "inventory"
+				Active = if entry.windows
 					then scope:Computed(function(use): boolean
+						for _, id in entry.windows :: { string } do
+							if use(props.IsOpen(id)) then
+								return true
+							end
+						end
+						return false
+					end)
+					elseif entry.id == "inventory" then scope:Computed(function(use): boolean
 						return use(props.IsOpen("inventory")) or use(props.IsOpen("character"))
 					end)
 					else props.IsOpen(entry.id),
 				Badge = if entry.badge then entry.badge(scope) else nil,
 				Visible = if entry.visible then scope:Computed(entry.visible) else nil,
 				OnClick = function()
-					props.OpenWindow(entry.id)
+					local open = entry.open
+					if open then
+						open()
+					else
+						props.OpenWindow(entry.id)
+					end
 					if after then
 						after()
 					end
