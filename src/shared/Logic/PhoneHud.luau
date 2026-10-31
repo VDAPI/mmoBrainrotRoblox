@@ -5,11 +5,12 @@
 --   left    portrait (scaled), the Cloak / Auto Hunt / Auto Potion toggles, own effect icons, blessings, then the
 --           "stack" (party frames, world boss / event / Blood Moon panels, quest tracker) down to the EXP bar;
 --   centre  target frame, its effect icons, the cast bar and the "Actions" button under it;
---   right   minimap (scaled), the menu drawer button (the 14 menu buttons open as a drawer), the PvP toggle, the
---           guide bar under the minimap;
+--   right   minimap (scaled), the menu drawer button (UI plan phase 1: the drawer holds the PC bar's six buttons,
+--           Logic/HudMenu, and the login reward and season pass while a reward waits), the PvP toggle (only where PvP
+--           is in play), the guide bar under the minimap;
 --   bottom  attack button in the corner, five skill buttons on an arc around it, page and target buttons, potions,
---           sprint, mount and emote (the bottom skill bar is hidden: the arc holds the same ten slots), the mail
---           icon over the target button.
+--           sprint and mount (the bottom skill bar is hidden: the arc holds the same ten slots; the emote wheel is a
+--           tile of the game menu since UI plan phase 1), the mail icon over the target button.
 -- A place is a rectangle measured from one corner of the UI area (`edge` "tl" / "tr" / "bl" / "br", `x`, `y` = the
 -- distance of the rectangle's corner on that side from the screen's corner) or, for the stack, from the top-left
 -- down to `bottom` pixels above the screen's bottom. Pure; tests/phonehud.spec checks that nothing overlaps on the
@@ -102,7 +103,6 @@ local PLACES: { [string]: Place } = {
 	potions = { edge = "br", x = 298, y = 28, w = 180, h = 56, touch = true },
 	sprint = { edge = "br", x = 298, y = 92, w = 64, h = 64, touch = true, round = true },
 	mount = { edge = "br", x = 368, y = 92, w = 64, h = 64, touch = true },
-	emote = { edge = "br", x = 438, y = 92, w = 56, h = 56, touch = true },
 }
 
 -- The centre of skill button `i` (1..5) of the arc, as offsets from the bottom-right corner (negative = left / up).
