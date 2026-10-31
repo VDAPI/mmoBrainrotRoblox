@@ -577,7 +577,7 @@ function Items.build(ctx: any): any
 				iconKey = iconKey,
 				layers = layers,
 				layersByElement = layersByElement,
-				bind = def.bindOnPickup == true,
+				bind = def.bind == "pickup", -- owner 2026-10-31: the definition's own rule (Data/Binding)
 				stackable = def.stackable,
 				maxStack = def.maxStack,
 				elemental = def.elemental == true,

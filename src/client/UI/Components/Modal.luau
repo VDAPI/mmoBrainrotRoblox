@@ -3,7 +3,8 @@
 -- delete"). OnConfirm may yield (server call); returning false keeps the dialog open and shows the error.
 -- Shown through WindowManager.ShowModal, which guarantees one modal at a time.
 -- Owner 2026-10-21 (descriptions: nothing removed, only hidden): `Details` is the longer text of a short message,
--- under the shared "More ▸" (Components/Details), closed.
+-- under the shared "More ▸" (Components/Details), closed. Owner 2026-10-31: `Check` = one switch above the buttons
+-- (off at first, e.g. "do not ask again"), its state reported through OnChange.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,6 +14,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Motion)
 local Theme = require(script.Parent.Parent.Theme)
 local TextInput = require(script.Parent.TextInput)
+local Toggle = require(script.Parent.Toggle)
 
 local Children = Fusion.Children
 
@@ -25,10 +27,16 @@ export type InputSpec = {
 	MaxLength: number?,
 }
 
+export type CheckSpec = {
+	Label: UsedAs<string>,
+	OnChange: (checked: boolean) -> (),
+}
+
 export type Spec = {
 	Title: UsedAs<string>,
 	Message: UsedAs<string>?,
 	Details: UsedAs<string>?, -- the longer text under "More ▸" (closed)
+	Check: CheckSpec?, -- a switch above the buttons, off at first
 	ConfirmText: UsedAs<string>,
 	CancelText: UsedAs<string>?, -- nil = no cancel button (info dialog)
 	Variant: ("primary" | "danger")?,
@@ -214,9 +222,18 @@ local function Modal(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instanc
 							TextColor3 = Theme.Paper.Danger,
 							TextWrapped = true,
 						}),
+					if props.Check
+						then Toggle(scope, {
+							LayoutOrder = 5,
+							Value = scope:Value(false),
+							Label = props.Check.Label,
+							OnChange = props.Check.OnChange,
+							Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+						}) :: any
+						else nil,
 					scope:New("Frame")({
 						Name = "Buttons",
-						LayoutOrder = 5,
+						LayoutOrder = 6,
 						BackgroundTransparency = 1,
 						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 						[Children] = {
