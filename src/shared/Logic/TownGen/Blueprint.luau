@@ -38,7 +38,9 @@ export type Piece = {
 -- keeps only their collision. `p` is the foot of the prop in building-local space, `s` the generator's scale, `lod`
 -- the level that builds it (shell: server, detail: client near the camera). 2026-10-20: `x` (optional) the length in
 -- studs the model is stretched to along the slot's local X (a wall piece's length, a house's front), Util/KitAssets.
-export type KitSlot = { key: string, p: { number }, s: number, lod: Lod, x: number? }
+-- 2026-10-31: `skirt` (optional) the depth in studs of a stone skirt under the model's foot, down to the lowest
+-- ground round it (a house on a slope, Logic/TownGen/Houses).
+export type KitSlot = { key: string, p: { number }, s: number, lod: Lod, x: number?, skirt: number? }
 
 export type Light = { p: { number }, color: string, range: number, brightness: number, tag: string? }
 
@@ -252,7 +254,8 @@ function Blueprint.beginKit(
 	z: number,
 	s: number,
 	lod: Lod,
-	stretch: number?
+	stretch: number?,
+	skirt: number?
 )
 	self.kitDepth += 1
 	if self.kitDepth > 1 then
@@ -262,7 +265,7 @@ function Blueprint.beginKit(
 	local dx, dy, dz = apply(top.r, x, y, z)
 	table.insert(
 		self.kits,
-		{ key = key, p = { top.o[1] + dx, top.o[2] + dy, top.o[3] + dz }, s = s, lod = lod, x = stretch }
+		{ key = key, p = { top.o[1] + dx, top.o[2] + dy, top.o[3] + dz }, s = s, lod = lod, x = stretch, skirt = skirt }
 	)
 	self.slot = #self.kits
 end

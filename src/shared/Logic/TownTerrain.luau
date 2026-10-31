@@ -5,8 +5,10 @@
 --
 -- Layers, in order: base (gentle noise inside the walls, rolling fields outside), plateaus (max; "soft" edges
 -- fall off over `blend` studs, "wall"/"cliff" edges are sharp; outside the walls every edge is soft), the moat
--- (outside only), ramps (override: the road height at the nearest point of the ramp polyline) and the river.
+-- (outside only), ramps (override: the road height at the nearest point of the ramp polyline) and the river
+-- (together `planHeight`), then the level pads of the ordinary houses (2026-10-31, Logic/LotPads).
 
+local LotPads = require("./LotPads")
 local TerrainLayers = require("./TerrainLayers")
 local Town = require("../Data/Town")
 local TownGeom = require("./TownGeom")
@@ -41,9 +43,11 @@ function TownTerrain.insideWalls(x: number, z: number): boolean
 	return TownGeom.inPoly(city.wall, x, z)
 end
 
--- Ground height (map-relative y) at x/z. `noRamps` skips the ramp layer (used to fit ramp ends).
-function TownTerrain.heightAt(x: number, z: number, noRamps: boolean?): number
+-- The plan's ground height (map-relative y) at x/z, without the house pads, and whether the pads may raise it (not a
+-- ramp's road, not the river and its banks).
+local function plan(x: number, z: number, noRamps: boolean?): (number, boolean)
 	local h = 0
+	local free = true
 	local dWall = TownGeom.edgeDist(city.wall, x, z)
 	local inside = TownGeom.inPoly(city.wall, x, z)
 	if not inside then
@@ -72,6 +76,7 @@ function TownTerrain.heightAt(x: number, z: number, noRamps: boolean?): number
 		local rampY = TownTerrain.rampAt(x, z)
 		if rampY then
 			h = rampY
+			free = false
 		end
 	end
 	local river = T.river
@@ -80,11 +85,36 @@ function TownTerrain.heightAt(x: number, z: number, noRamps: boolean?): number
 	local brim = river.water + 0.5
 	if d < half then
 		h = river.bed + (brim - river.bed) * (d / half) ^ 4
+		free = false
 	elseif d < half + river.bank then
 		local t = smoothstep((d - half) / river.bank)
 		h = math.min(h, brim + (h - brim) * t)
+		free = false
 	end
-	return h
+	return h, free
+end
+
+-- The plan's ground (the Python reference, docs/miasto/tools/plan.py): no house pads. `noRamps` skips the ramp layer.
+function TownTerrain.planHeight(x: number, z: number, noRamps: boolean?): number
+	return (plan(x, z, noRamps))
+end
+
+-- The level pads of the city's ordinary houses (Logic/LotPads), built on first use.
+local pads: LotPads.Pads? = nil
+function TownTerrain.pads(): LotPads.Pads
+	local built = pads
+	if not built then
+		built = LotPads.new(city.lots, TownTerrain.planHeight)
+		pads = built
+	end
+	return built :: LotPads.Pads
+end
+
+-- Ground height (map-relative y) at x/z: the plan with the house pads (a ramp's road and the river keep their height
+-- outside the houses). `noRamps` skips the ramp layer (used to fit ramp ends).
+function TownTerrain.heightAt(x: number, z: number, noRamps: boolean?): number
+	local h, free = plan(x, z, noRamps)
+	return LotPads.at(TownTerrain.pads(), x, z, h, free)
 end
 
 -- Open walkable ground for placing a character (S21): inside the walls, not in the river, not inside a house,
