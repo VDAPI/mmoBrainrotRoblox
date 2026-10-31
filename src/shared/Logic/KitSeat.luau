@@ -8,7 +8,8 @@
 --     city the ground under every base is even),
 --   * `cliff` / `prune`: a rock or a tree that cannot stand on its spot is left out of the generator's Builds (the
 --     same on the server and every client): a rock on a ravine's lip (Util/KitAssets would sink it to the ravine's
---     foot) and a tree whose crown would reach into a wall above it.
+--     foot), a tree whose crown would reach into a wall above it, and (Studio 2026-11-01: a ravine pine 12.6 studs
+--     deep, a rock at a cliff's foot 7.9) anything whose footprint's ground rises more than DEEP over its model's foot.
 
 local Kit = require("../Data/Kit")
 local TerrainLayers = require("./TerrainLayers")
@@ -28,6 +29,14 @@ KitSeat.RISE = 0.6
 -- a tree is left out where the drawn ground within CROWN of its height rises more than WALL of its height over its foot
 KitSeat.CROWN = 0.4
 KitSeat.WALL = 0.35
+-- the part of a model's width round its foot whose lowest ground it sinks to (Util/KitAssets: a rock's base, a
+-- trunk), and a tree model's width against its height (the assets' crowns, Studio 2026-11-01)
+KitSeat.BASE = { rock = 0.5, tree = 0.1 } :: { [string]: number }
+KitSeat.TREE_WIDTH = 0.6
+-- a rock's footprint reaches FOOTPRINT of its width from its middle (a turned box's corners), a tree's CROWN of its
+-- height; nothing stands where the drawn ground under it rises more than DEEP over its model's foot
+KitSeat.FOOTPRINT = 0.7
+KitSeat.DEEP = 4.5
 
 export type Height = (x: number, z: number) -> number
 
@@ -65,8 +74,8 @@ function KitSeat.seat(height: Height, x: number, z: number, r: number): number
 end
 
 -- Whether the kit slot `key` (scale `s`, Data/Kit) with its foot at (x, y, z) cannot stand there: a rock on a cliff's
--- lip or foot, a tree with a wall in its crown. Other slots always can. `columns` (optional) is `height` at the
--- columns' centres only, cached (KitSeat.prune).
+-- lip, a tree with a wall in its crown, either deeper than DEEP under its footprint. Other slots always can. `columns`
+-- (optional) is `height` at the columns' centres only, cached (KitSeat.prune).
 function KitSeat.cliff(
 	height: Height,
 	key: string,
@@ -81,21 +90,37 @@ function KitSeat.cliff(
 	if not entry then
 		return false
 	end
+	local rock = kind == "rock"
 	local size = entry.size * s
-	local r = size * (if kind == "rock" then KitSeat.ROCK else KitSeat.CROWN)
-	local limit = if kind == "rock" then math.max(1.5, size * KitSeat.RISE) else size * KitSeat.WALL
-	-- a first look at the function itself four ways round: most spots are nowhere near a cliff
+	local r = size * (if rock then KitSeat.ROCK else KitSeat.CROWN)
+	local reach = if rock then size * KitSeat.FOOTPRINT else r
+	local limit = if rock then math.max(1.5, size * KitSeat.RISE) else size * KitSeat.WALL
+	-- a first look at the function itself four ways round the footprint: most spots are nowhere near a cliff (the
+	-- model's foot is never under the lowest of them)
 	local lo, hi = y, y
 	for i = 0, 3 do
 		local a = i * math.pi / 2
-		local g = height(x + math.cos(a) * r, z + math.sin(a) * r)
+		local g = height(x + math.cos(a) * reach, z + math.sin(a) * reach)
 		lo, hi = math.min(lo, g), math.max(hi, g)
 	end
-	if (if kind == "rock" then hi - lo else hi - y) < limit / 2 then
+	if (if rock then hi - lo else hi - y) < limit / 2 and hi - lo < KitSeat.DEEP / 2 then
 		return false
 	end
-	lo, hi = KitSeat.range(columns or height, x, z, r)
-	return (if kind == "rock" then hi - lo else hi - y) > limit
+	local ground = columns or height
+	lo, hi = KitSeat.range(ground, x, z, r)
+	if (if rock then hi - lo else hi - y) > limit then
+		return true
+	end
+	-- the model's own foot: the lowest ground on a ring round it (Util/KitAssets), then the deepest it stands
+	local ring = if rock then size * KitSeat.BASE.rock else size * KitSeat.BASE.tree * KitSeat.TREE_WIDTH
+	local foot = y
+	for i = 0, 6 do
+		local a = i * math.pi / 3
+		local m = math.min(i, 1)
+		foot = math.min(foot, height(x + math.cos(a) * ring * m, z + math.sin(a) * ring * m) - 0.1)
+	end
+	local _, top = KitSeat.range(ground, x, z, reach)
+	return top - foot > KitSeat.DEEP
 end
 
 -- Leaves out of `builds` (a height-field map's, map-relative) the rock and tree slots that cannot stand on the ground
