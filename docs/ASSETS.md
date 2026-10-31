@@ -13,7 +13,6 @@ właściciel (`docs/GRAFIKA.md` 6).
 | `art/icons/items_*.png` | własne, wygenerowane (`tools/icons`) | własne | 2026-10-07 | — | przebudowa: `tools/icons/README.md` |
 | `wiki/public/img/mobs/*`, `wiki/public/img/og/*` | własne, wygenerowane (`tools/wiki-renders`) | własne | 2026-10-07 | — | przebudowa: `npm run renders` |
 | `wiki/public/img/items/*` | własne, z atlasów S35 (`wiki/scripts/item-icons.mjs`) | własne | 2026-10-07 | — | przebudowa: `npm run icons` |
-| `art/weapons/sword1/*` (z `assets/Weapons/sword1.glb`) | własne, wygenerowane w Tripo AI (właściciel) | własne (warunki Tripo) | 2026-10-09 | — | test, zastąpiony przez `sword1h_1` (S52), do usunięcia; 1,78 mln → 9 tys. trójkątów (pymeshlab), tekstury 4096 → 1024; `.glb` 64 MB poza repo |
 | `assets/Weapons/*.glb` (121 modeli broni, progi 1–20 i `unique_grimrok_cleaver`) | własne, Tripo AI, konto Pro (właściciel, folder Graphics) | własne (Tripo Pro: prywatne, komercyjne) | 2026-10-12 | — | 2,6–4,1 tys. trójkątów, tekstury w pliku; `.glb` tylko lokalnie (gitignore), w repo dane `WeaponLooks.assets` |
 | `art/icons/src/**`, `art/icons/items_4..8.png` (287 ikon: 269 przedmiotów, 18 przedmiotów questowych) | własne, ChatGPT / Codex (właściciel, folder Graphics) | własne (warunki OpenAI) | 2026-10-12, S118 2026-10-14 | — | kopie 128 px (`tools/icons/import_graphics.py`), oryginały 1024 px poza repo |
 | `Data/Sfx` (dźwięki) | Creator Store, twórca Roblox | warunki Creator Store | S111, 2026-10-14 | — | lista w „Dźwięki (S111)” |
@@ -458,8 +457,9 @@ Bez modelu gra stawia klocki generatora (jedno ostrzeżenie `[Kit]` na nazwę).
 
 ## Ciało postaci (W09)
 
-Nic w miejscu ani w repo: serwer zakłada części przez `HumanoidDescription`, fryzury ładuje przy starcie
-(`InsertService`, folder `ReplicatedStorage.VaelthornLookParts`). Dane `src/shared/Data/BodyLooks.luau`.
+Nic w miejscu ani w repo: serwer zakłada części przez `HumanoidDescription`, a fryzury, brwi, rzęsy i głowy kreatora
+ładuje przy starcie (`InsertService`, folder `ReplicatedStorage.VaelthornLookParts`, `BodyLooks.PARTS_FOLDER`). Dane
+`src/shared/Data/BodyLooks.luau`.
 
 | Co | Id | Źródło | Twórca | Licencja | Data |
 |---|---|---|---|---|---|
@@ -547,6 +547,9 @@ Creator Hub): stare items_7 `72500852503959`, wcześniejsze items_8 `12608604183
 (unikaty Grimroka), items_8 `71572013880956` (`quest_ledger`, `quest_boarHaunch`); starsze osierocone items_7 i items_8
 z S118 mogą zawierać te same obrazki. Osierocone wgrane i nieużyte: items_8 `90606440144439`.
 
+**Podmienione później (sprawdzone 2026-10-31):** items_8 wgrany od nowa (id w `Data/ItemIconSheets.luau`). Osierocone
+(nieużywane, brak w `src/` i `assets/`, do archiwizacji w Creator Hub): items_8 `95455488074028`.
+
 ## Grafiki interfejsu (S119)
 
 | Folder (`tylko_2d/`) | Klucz w kodzie (`Logic/UiArt`) | Styl | Atlas |
@@ -582,6 +585,11 @@ i loch Grimroka oraz portret Wojownika wyłączone (bez ID, zapas). Osierocone z
 archiwizacji w Creator Hub): `ui_skills_01` `98255153969390`, `ui_status_01` `127300661693271`, `ui_emblems_01`
 `90219814652043`, `boss_grimrok` `75784782133691`, `portrait_warrior` `74869214071320`, `dungeon_grimrok`
 `84950642299826`. Osierocone wgrane i nieużyte: `ui_emblems_01` `128765112822669`.
+
+**Podmienione później (sprawdzone 2026-10-31):** atlasy wgrane od nowa (id w `Data/UiArtSheets.luau`). Osierocone
+(nieużywane, brak w `src/` i `assets/`, do archiwizacji w Creator Hub): `ui_hud_01` `137020428772073`, `ui_shop_01`
+`106308221751331`, `ui_map_01` `128368350205709`, `ui_skills_02` `115263029666505`, `ui_emblems_01` `136603127325634`,
+`ui_status_01` `97149632090877`.
 
 ## Ikona gry i miniatury
 
