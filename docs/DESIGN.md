@@ -1618,10 +1618,18 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - Tooltip przedmiotu (S134g, owner 2026-10-15): nazwa w kolorze rzadkości; „Rodzaj · Kategoria z chwytem · Poziom N · Klasy”
   pogrubione (niespełniona część na czerwono); rzadkość i ulepszenie małym; główna wartość (obrażenia, szybkość i DPS albo
   pancerz); statystyki mniejszą czcionką w stałych grupach (atrybuty, atak, obrona, zasoby i reszta) z jakością rzutu;
-  cecha; efekty legendarny / mityczny; opis; „Zastąpi: …”; związany/niezwiązany; poziom przedmiotu; cena. Porównanie =
-  drugi panel z założonym przedmiotem (ta sama kolejność, czyste statystyki), bez procentów i strzałek.
+  cecha; efekty legendarny / mityczny; opis; „Zastąpi: …”; związany/niezwiązany; poziom przedmiotu; cena.
+- **Porównanie w tooltipie** (właściciel 2026-10-31, zastępuje drugi panel z założonym): tooltip wskazanego przedmiotu
+  sam pokazuje zmianę każdej liczby względem tego, co zdejmie założenie (`Logic/ItemCompare`): zaraz po wartości
+  zielone „(+N)”, czerwone „(-N)”, szare „(=)”, w tym samym zapisie co wartość (obrażenia, szybkość, DPS, pancerz,
+  statystyki, linie, poziom przedmiotu, pojemność plecaka). Linia porównywana z linią o tym samym id (n-ta z n-tą);
+  statystyka albo linia, którą ma tylko założony przedmiot, to czerwony wiersz straty w swojej grupie („-5 Siły”,
+  „Obrona: -83”). Pierścień: słabszy z dwóch (i ten właśnie zastępuje „Załóż” bez wskazanego slotu), przy wolnym slocie
+  brak porównania; broń dwuręczna: broń i druga ręka. Tylko przedmiot, który postać może teraz założyć (klasa, poziom,
+  nie druga ręka pod dwuręczną), nigdy założony; nic założonego = bez dopisków. Działa w każdym oknie (plecak, sklep,
+  aukcja, poczta, depozyt, handel, kowal, nagrody) i na dotyku; założony przedmiot ma swój tooltip na slocie ekwipunku.
 - **Krótkie opisy, szczegóły na życzenie** (właściciel 2026-10-21: „za dużo szczegółowych opisów, gra nieczytelna”):
-  tooltip przedmiotu (oba panele) otwiera się skrócony, najwyżej 10 linii przy przedmiocie legendarnym: nazwa, linia
+  tooltip przedmiotu otwiera się skrócony, najwyżej 10 linii przy przedmiocie legendarnym: nazwa, linia
   „Rodzaj · …”, rzadkość, główna wartość w jednej linii („Obrażenia 191 · DPS 229,2” albo pancerz), pierwsze statystyki
   (ile zmieści limit, reszta „+N więcej”), cecha i każdy efekt w jednej linii, cena tylko w sklepie / u kupca, na końcu
   „Alt: szczegóły” (PC) albo „Więcej ▸” (dotyk). Przytrzymany klawisz szczegółów (`item_details`, domyślnie Alt; Shift

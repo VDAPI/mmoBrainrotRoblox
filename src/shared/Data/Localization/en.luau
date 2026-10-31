@@ -862,7 +862,6 @@ return {
 	["tooltip.restores.hp"] = "Restores {amount} health",
 	["tooltip.restores.mana"] = "Restores {amount} mana",
 	["tooltip.restores.energy"] = "Restores {amount} energy",
-	["tooltip.equipped"] = "Currently equipped",
 	["tooltip.hintEquip"] = "Double-click or hold: equip",
 	["tooltip.hintUse"] = "Double-click or hold: use",
 	-- S31: item categories, value, effects, material usage, shop row line

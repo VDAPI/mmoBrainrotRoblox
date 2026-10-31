@@ -862,7 +862,6 @@ return {
 	["tooltip.restores.hp"] = "Przywraca {amount} życia",
 	["tooltip.restores.mana"] = "Przywraca {amount} many",
 	["tooltip.restores.energy"] = "Przywraca {amount} energii",
-	["tooltip.equipped"] = "Założone teraz",
 	["tooltip.hintEquip"] = "Podwójny klik lub przytrzymanie: załóż",
 	["tooltip.hintUse"] = "Podwójny klik lub przytrzymanie: użyj",
 	-- S31: item categories, value, effects, material usage, shop row line

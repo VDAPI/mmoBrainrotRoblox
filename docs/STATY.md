@@ -503,8 +503,9 @@ Nowe pole `family` w `Data/Monsters.luau` i `Data/Bosses.luau`, lista i nazwy w 
   przedmiotu” (`item_details`, domyślnie Alt, zmieniany w opcjach) zatrzymuje opis, a wskazanie linii otwiera szczegóły
   obok. Na telefonie ikona „i” jest rysowana kształtem (koło z literą), nie znakiem ⓘ, a stuknięcie w otwarty opis
   nigdy nie trafia w slot pod nim (`DragDrop.SetBlocker`).
-- Porównanie z założonym (S134g, owner 2026-10-15): drugi panel z opisem założonego przedmiotu, ta sama kolejność, czyste
-  statystyki; bez procentów i strzałek (`ItemScore.percentDelta` zostaje dla admina i modelu).
+- Porównanie z założonym (właściciel 2026-10-31, zastępuje drugi panel z S134g): zmiana każdej liczby zaraz po wartości w
+  opisie wskazanego przedmiotu („(+N)” zielone, „(-N)” czerwone, „(=)” szare), straty jako czerwone wiersze w grupach
+  (`Logic/ItemCompare`, DESIGN §23); bez procentów osi (`ItemScore.percentDelta` zostaje dla admina i modelu).
 - Każda liczba widoczna; żadnych ukrytych premii.
 
 Linia cechy (`trait.<id>.line`, liczby z przedmiotu, tu Zwykły +0; szczegóły Naciągu podają premię dla założonej
