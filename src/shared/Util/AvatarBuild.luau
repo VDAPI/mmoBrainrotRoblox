@@ -799,8 +799,9 @@ end
 
 -- Tints the textures of an accessory with a hair colour (Logic/HairTint): SurfaceAppearance.Color on a light texture,
 -- the plain colour for a light colour on a black one; a classic SpecialMesh takes the colour as its vertex colour.
-local function tint(accessory: Instance, hex: string, light: boolean)
-	local mode, rgb = HairTint.plan(hex, light)
+-- Hair fixes 2026-10-31: a texture of known colour (`tone`) keeps its strands and only has its hue nudged.
+local function tint(accessory: Instance, hex: string, light: boolean, tone: string?)
+	local mode, rgb = HairTint.plan(hex, light, tone)
 	local color = Color3.new(rgb[1], rgb[2], rgb[3])
 	for _, item in accessory:GetDescendants() do
 		if item:IsA("SurfaceAppearance") then
@@ -971,7 +972,7 @@ local function placeHair(ctx: Ctx, hairId: string, hex: string, preview: boolean
 	end
 	local clone = template:Clone()
 	LookBuild.stripScripts(clone)
-	tint(clone, hex, def.light)
+	tint(clone, hex, def.light, def.tone)
 	return wear(ctx, clone, if preview then "hair" else nil)
 end
 

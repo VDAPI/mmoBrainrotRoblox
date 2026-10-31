@@ -49,6 +49,10 @@
 
 ## Niedokończone (kod)
 
+- **Fryzury kreatora (2026-10-31):** tony tekstur czarnych, brązowej, rudej (Belle Of Belfast) i różowej (Lavender
+  Updo) w `Data/BodyLooks.hairs` są szacowane (tekstury niezmierzone), nieobejrzane w Studio (odcień po barwieniu,
+  zakresy kolorów); nie wiadomo, czy Side Part - Black (`hair_swept`) to ta sama siatka co Side Part - Blond
+  (`hair_short`).
 - **S162m ruch potworów pod animacje:** serwer daje tempo (`Gait`), podejście wręcz, `SpawnedAt`, lot `Dash*` i
   `Muzzle` (`docs/ANIM-WZORCE.md` §10); klient jeszcze nie rysuje łuku skoku z `Dash*` ani pojawienia się z `SpawnedAt`
   (sesja animacji potworów). Nieobejrzane w Studio (bieg szarży dzika po linii, skok wilka, start strzałów z pyska).
@@ -263,8 +267,7 @@
   `/animlab sfx list`, `docs/SESJE.md` → S111; twórca Roblox nie ma takich dźwięków, biblioteka Pro Sound Effects to
   decyzja właściciela); muzyka `music = ""` w `Data/Maps`; kosmetyki (stroje, aury, ślady) to Party.
 - **Grafika (S52), czeka na właściciela**: Import 3D 121 modeli broni i `assets/Weapons/Meadows.rbxm` (lista w
-  `docs/ASSETS.md` → „Broń”); `IMPORT_YAW` niesprawdzony (jak Studio czyta osie `.glb`). Stary test `art/weapons/sword1`
-  do usunięcia.
+  `docs/ASSETS.md` → „Broń”); `IMPORT_YAW` niesprawdzony (jak Studio czyta osie `.glb`).
 - **Grafika (S52), kod**: potwory trzymają broń z brył (modele w `Anatomy/Weapons` nie podpięte); księgi stoją pochylone
   jak w pliku Tripo, kolby kusz `crossbow_1` i `_10` lekko ukośnie (oś z PCA, dłoń na kolbie przez `hold`).
 - **Walka**: zwykłe ataki potworów zaliczają się od razu (zamach tylko w wyglądzie, szczyt 0,03 s po zdarzeniu; gracze

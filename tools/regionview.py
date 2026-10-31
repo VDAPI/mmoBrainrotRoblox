@@ -1,4 +1,4 @@
-"""3D preview of a shaped map (S45, generalised from the S26 meadowsview): the export of tools/regionview.luau
+"""3D preview of a shaped map (S45; replaced the S26 meadowsview): the export of tools/regionview.luau
 (world-space pieces and the terrain grid) rendered with the z-buffer of docs/miasto/tools/render3d.py.
 python tools/regionview.py view.json out.png --eye x y z --look x y z [--fov 50] [--size 1400x900] [--dusk]
 --dusk: a dark dusk sky and fog, lamps and fires glowing (Duskwood).
@@ -100,7 +100,7 @@ for p in data["pieces"]:
         glow = p["m"] == "Neon" or (args.dusk and p.get("tag") in ("lamp", "fire", "candle"))
         allc.append((col * (1.6 if glow and args.dusk else 1.0), glow))
 
-# terrain grid from the export (tools/meadowsview.luau)
+# terrain grid from the export (tools/regionview.luau)
 COL = {
     "Grass": (0.36, 0.48, 0.23), "LeafyGrass": (0.20, 0.27, 0.16), "Ground": (0.48, 0.42, 0.31),
     "Mud": (0.25, 0.23, 0.18), "Rock": (0.35, 0.34, 0.31), "Slate": (0.29, 0.28, 0.27), "Sand": (0.76, 0.66, 0.47),
