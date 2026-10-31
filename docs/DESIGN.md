@@ -1548,7 +1548,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   S105 / S106 od S109).
 
 - **Wygląd klas (S132, DESIGN-17 §9a):** postać gracza to zawsze standardowe R15 (skale domyślne, standardowe części
-  ciała, bez animacji awatara). Wygląd daje klasa, kreator dodaje twarz (8), kolor skóry (10) i fryzurę (13)
+  ciała, bez animacji awatara). Wygląd daje klasa, kreator dodaje twarz (8), kolor skóry (10) i fryzurę (12)
   (`character.look`; jedna darmowa zmiana na postać, potem u Cyrulika na rynku za `max(300, 15 × poziom)` złota, nigdy
   za odłamki ani Robux). Stroje z garderoby **podmieniają** strój klasy (`account.cosmetics.classOutfits[klasa]`);
   wspólne pasują do każdej klasy, klasowe tylko do swojej (kupić może każde konto). Opcja „Pokaż mój awatar Roblox”:
