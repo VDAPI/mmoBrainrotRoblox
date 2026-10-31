@@ -304,6 +304,66 @@ Grimrok, Morvane, Azgor and Hrimvald run on the biped template: one style per bo
 - **Cost**: as every biped (the nearest `maxAnimated` move); no tier B yet (§1.10). Tests:
   `tests/bossstyles.spec.luau`. Tuning in Studio: the keys and the `boss` layer in `Data/BossStyles`.
 
+### 2.2 As built: the mocap actions (2026-10-31)
+
+The owner's Mixamo download (42 clips on the Y Bot, 30 fps) baked into `Data/BipedClips`: 30 new clips, about 340 KB
+of source. The raw FBX never enter the repo (licence): `tools/anim/clips.csv` lists each clip's source file, name,
+loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_biped.py --batch tools/anim/clips.csv
+--src <folder with the FBX> [--only name,...]` bakes them again (missing sources are skipped).
+
+- **Bake**: root modes `keep` (the leaps: the travel stays in the clip, the template replaces it), `inplace` (loops:
+  every bone shifted by the hips' ground drift), `end` (getting up: drift removed, the end over the start), `plant`
+  (blows with a step: the body's drift removed, each standing foot pinned and the leg solved onto it). Each clip also
+  keeps `knuckles` (the rest index -> little finger line of both hands), `hit` (the contact or the release, seconds
+  from its first frame) and `strike` (the fast part before it, from the crouch for a leap). Hit frames picked by the
+  fastest hand or foot and read in the numbers.
+- **An action on a clip** (`Data/BipedStyles` `clip`: a `ClipRef`, the keyed `keys` kept as the fallback when the clip
+  is missing): `mirror` (left and right swapped at no cost), `blade` (the model's `grip` laid along the clip's fist
+  line, so a sword follows the swing), `travel` (the clip's ground travel to its hit replaced by the server's reach:
+  the leap lands on the target; without a reach none), `fly` (the air window of an in-place clip that the reach rides
+  instead), `upper` (above the hips only: the floating casters), `moving` (how much of the walk keeps the legs during a
+  standing clip), `out` (its fade).
+- **Time** (`BipedMotion.clipTime`): the clip's lead-in up to its coil (`hit - strike`) plays over the anticipation
+  `W - S` (S = the action's strike, at most 0.7 W): stretched with an ease (at most 3x) or squeezed at most 2.5x
+  (beyond it the lead-in starts later); the strike at the clip's pace (faster only when W is very short); after the
+  hit at 1x. The contact lands exactly on W at every timing the server sends (tests: 0.55, 0.66, 0.7425, every
+  ability windup, the throw, the roars). `free` clips (the falls, getting up) play at their own `rate` from `from`:
+  their hit is their own (`BipedMotion.ownHit`), the game and AnimLab use it instead of the server's.
+- **Retargeting**: each bone turns onto the clip's rest direction; the arms also keep their roll by the knuckle lines
+  where the model has finger bones (Mixamo rigs; others fall back to the direction only).
+- **Blends**: in 0.15 s, out over `out` (0.3 s); a clip action and its cut blend bone by bone in the parent's space
+  (`BipedPose.blendLocal`): a world-space slerp between a mocap hand and the keyed guard flipped the wrist half a turn.
+- **Stance**: `clips.combat` (humanoid1h, humanoid2h: the sword-and-shield idle and walk) eases in with the combat
+  weight over the locomotion; the brute walks and idles on the mutant clips all the time.
+- **Hits by side**: `style.hits` (front / back / left / right): the reaction clip's turn of each upper bone from its
+  first frame laid over the running pose (spine, neck, head whole, shoulders 0.5, arms 0.4-0.5), held 0.28 s and
+  faded over 0.3 s, the body pushed by 0.35 of the clip's travel (at most 0.12 L), scaled by `hitScale` and the cast
+  damping. Styles without hits keep the keyed flinch.
+- **Deaths by side**: `style.deaths[side]` for the side of the killing blow (the last hit within 1.5 s of the death):
+  struck in front the body falls backward, from behind forward; otherwise `style.death` at random.
+- **Variety**: the regular blows rotate from a place of each instance's own (`BipedMotion.pick` with the seed).
+
+| Style | Clip actions |
+|---|---|
+| `humanoid1h` (bandit, dragonspawn, fireGolem, flameSmith, frozenKnight, goblinScout, koboldMiner, skeletonGuard, swampTroll) | basic `slash` (Slash 1), `backhand` (Slash 3), `chop` (Melee Downward), `thrust` (Attack 4); `cleave` (Melee Horizontal), `heavy` (Melee Downward), `crush` (Attack 1 with its step planted), `pounce` (Attack 1, the leap), `throw` (Throw Object, mirrored), `aggro` (Battlecry), `spawn` (Standing Up at 1.7x), deaths `deathBack` / `deathBack2` / `deathFwd`, hits by side, the sword-and-shield stance |
+| `humanoid2h` (ashOrc, renegadeDwarf, frostGiant; new) | as humanoid1h, basic `hew` (Great Sword Slash), `chop`, `slash`; `cleave` (Great Sword High Spin), `pounce` (Great Sword Jump) |
+| `caster` | `spell` (1H Magic), `spellLeft` (mirrored); the rest as humanoid1h but `nova`, `pool` |
+| `brute` (werewolf, yeti, ghoul, crystalGuardian, magmaGolem, desertMummy) | idle and walk (Mutant Idle, Mutant Walking), `clawR` / `clawL` (Mutant Swiping), `crush` / `pounce` (Mutant Jumping, the leap in its air window), `deathMutant` (Mutant Dying) when struck in front; `cleave`, `heavy`, `throw`, `aggro`, `spawn` as humanoid1h (no blade) |
+| `ghost` | `spell`, `spellLeft` on the upper body; its own floating falls, shout, rise and throw stay keyed |
+| Grimrok | `chop`, `hack`, `overhead`, `sweep` (the sword slashes), `roar` (Battlecry on `roarHit`) |
+| Azgor | `hew`, `cleave` (Great Sword), `roar` |
+| Hrimvald | `fist`, `backfist` (Mutant Swiping), `roar` |
+| Morvane | `bolt`, `boltLeft` (1H Magic, upper body) |
+
+Kept keyed (no clip fits yet): the casters' `nova` and `pool`, `charge`, the dragonspawn's `breath`, the ghost's
+falls, the bosses' leaps, channels, throws, stomps, rages, staggers and deaths. Tests: `tests/bipedclips.spec.luau`.
+AnimLab: `mob bandit <slash|backhand|chop|thrust|cleave|heavy|crush|pounce|throw|aggro|spawn|hit|deathBack|deathFwd|deathBack2|fight>`,
+`mob ashOrc <hew|cleave|pounce>`, `mob yeti <clawR|clawL|crush|pounce|deathMutant|walk|idle>`, `mob darkCultist spell`,
+`mob grimrok <chop|hack|overhead|sweep|roar>`, `mob azgor <hew|cleave>`, `mob hrimvald <fist|backfist>`, `mob morvane bolt`.
+Studio tuning: the blade's lie in the fist (`grip`), `hitScale`, the falls' and getting up's `rate`, the
+sword-and-shield stance's empty shield arm, the one-handed clips on the two-handed kinds (the left hand leaves the
+handle), the battlecry on the bosses, Hrimvald's swipe step at his scale.
+
 ## 3. F2 Quadruped: wolf
 
 ### 3.1 Rig and sizes
@@ -896,6 +956,65 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
   attack1, attack2, cast, heavy, crush, pounce, throw, hit, hitBack, hitLeft, hitRight, stun, freeze, death, spawn,
   summon, fight, then every action of the style by name (e.g. `deathCurl`, `sting`, `sitUp`).
 - The dust and venom of §6.3, the ent's splinters and leaves: §11. Not done: sounds and leaves on the ent's steps.
+
+### 6.6 Octopod template: the rigged caveSpider (as built 2026-10-31)
+
+The Tripo model of 2026-10-31 (`tools/anim/rigs/caveSpider_v2.json`, 65 bones, Studio keeps the FBX names
+`tripo::Root`, `tripo::<n>_<Left|Right>_Limb_<i>`, `bone_N`) has real leg chains. It does **not** get a new family:
+it keeps the `spider` recipe of §6.5 (same action names, times, `Data/MotionFx` effects, Muzzle, deaths) and
+`client/Anim/RigidRig` walks its legs on top through `Logic/OctoMotion` when `Data/OctoRigs` has a map whose bones the
+look all has. The old rigid model (no bones) matches no map and keeps everything of §6.5, its `MeshFold` death
+included; AnimationController and AnimLab need no change.
+
+- **The mesh has seven legs, not eight**: no third leg on the creature's right (Tripo's labels are mirrored: its
+  `Right_Limb` chains are the creature's left). Map (`Data/OctoRigs`): PL `2_Right_Limb_0..4`, L1 `1_Right_Limb`, L2
+  `0_Right_Limb`, L3 `3_Left_Limb`, L4 `3_Right_Limb`, PR `1_Left_Limb_0..4`, R1 `2_Left_Limb`, R2 `Spine_0` +
+  `bone_13..17`, R4 `bone_18..23`; fangs `bone_55..56` (left), `bone_58`, `bone_60..61`; abdomen `bone_54`. Tetrads L1
+  R2 L3 R4 / R1 L2 L4: one of them stands on three legs. A rig map for `desertScorpion` (Octopod or Hexapod with
+  `arms` = pincers and `tail`) is all its new model needs; its recipe already keys the legs.
+- **Legs** (`Logic/OctoPose`): each leg turns about the vertical through its hip (yaw) and bends in its own plane by two
+  numbers: `a` lifts it from the hip, `b` folds it at the knee (the joint highest at rest; femur +0.45, the joints
+  below −0.55, −0.25, −0.15, −0.05). Damped least squares from last frame's pair (4 steps, 2 for far rigs), the yaw
+  exact; the answer followed at most 22 rad/s (bend) and 24 rad/s (yaw), so a target swept through a leg's reach never
+  flips it in one frame. Bones are written `rest^-1 · R(axis, angle) · rest` as `CFrame.fromAxisAngle` about the axis
+  turned into the bone's own frame (rest frames read from the model at runtime: the Studio import has non-identity
+  ones), only when a turn changed by > 0.1°.
+- **Gait** (`Logic/OctoMotion`): the recipe's phase (by distance) runs both tetrads half a cycle apart with a ripple of
+  0.035 cycle per rank back through each; duty 0.68 walk, 0.62 trot, 0.55 run (from `Gait`); a tetrad's mid-stance on
+  the recipe's bob peak. A foot lands ahead of its rest point by half the stance's travel along the root's velocity
+  and turned on by half the stance's turn (so a turn in place is stepped too), lifted 0.16 hip heights at a walk,
+  0.30 at a run. Planted feet keep their world point every frame (the root's move and turn taken back), so nothing
+  slides under the bob, the sway, the lunge or the turn lag. A foot left behind (lunge, spin, lag spike) or out of
+  reach steps on its own and joins its tetrad's next swing; standing, the legs settle back one by one; a teleport
+  puts them down at once.
+- **Palps** are too short for the stride: on the move they are carried up in front and feel the air; standing they tap
+  the ground now and then; the fangs chew in the idle; the abdomen breathes and pumps with `gr`.
+- **Recipe keys** (only styles built with `legs = true`: spider, scorpion; a rigid look ignores them): `raise` / `wave`
+  (front pair and palps up and waving: alert, bite's gather, heavy, crush, cast, throw, taste fidget), `stab` (struck
+  forward and down onto the ground ahead and planted there: on the hit of bite, heavy, crush), `tuck` (every leg drawn
+  in: pounce flight, spawn, summon), `splay` (feet set wider: landings, slams; a splayed foot is not settled back
+  until the splay fades), `palp`, `fang` (open 1, snapped shut −0.3 on the bite's hit). The pounce adds two leg-only
+  keys on the flight's straight line (tucked at S0.6, reaching for the ground at S0.85), so the body's path is the
+  same with or without legs.
+- **Stun** trembles the knees (`shiver` + stun weight), **freeze** holds every leg, a **hit** flinches the legs on the
+  struck side.
+- **Deaths**: from the pose it had, the jolt straightens the legs, then each leg curls in under / over the belly at its
+  own pace as `fold` grows (above the knee +55°, below it −70 .. −270°). `OctoMotion.folds` gives RigidMotion the box of
+  the curled legs at every eighth, so the body sinks and topples over them (as with MeshFold); the flip ends on its
+  back with the legs curled up.
+- **Ground**: the nearest 12 crawlers (6 on touch) ray the ground once per footfall (`Workspace:Raycast`, monsters and
+  players skipped) and tilt the body to the plane of the planted feet (60 %, at most 20°); the rest walk on flat ground
+  with 2 solver steps (§1.10: a cheap tier B instead of no IK, the feet would slide). Cost in Lune ≈ 15 µs a frame for
+  the legs (+ 4 µs the recipe).
+- **No size numbers to re-measure**: the rig reads the bones, the box and the ground at runtime. Scaled to the old
+  model's height (2.35 studs, `Data/MonsterAssets` unchanged), the new model has the old box (5.06 × 2.35 × 4.61).
+- Lune: `tests/octomotion.spec.luau` (`tests/OctoSim.luau` walks the dump frame by frame): the map only on the new
+  bones (not the old dump, not the old Tripo bear), the Roblox bone chain with random rest frames, IK, planted feet
+  (no slide, ≥ 3 down) at walk / trot / run / arcs, tetrads alternating, turn in place by steps, settle, idle shift,
+  stun, freeze, slope, every action finite with the stab on the ground at W, rear-ups, pounce tuck and splay, deaths
+  curled and never under the ground, the folded boxes, no joint jumping > 0.6 rad a frame, every AnimLab state.
+- AnimLab: `/animlab mob caveSpider <state>` (states of §6.5) shows the legs once the new model is in
+  `Assets.Monsters`; before that it shows the rigid one.
 
 ## 7. Ghosts, golems, brutes: which template covers them
 

@@ -77,7 +77,7 @@ local MonsterAssets: { [string]: Entry } = {
 		hipHeight = 1.45,
 		height = 4.12,
 		walkSpeed = 6.2,
-		motion = "humanoid1h",
+		motion = "humanoid2h", -- 2026-10-31: a two-handed weapon (the great sword mocap)
 		grip = { 0.97, -0.15, 0 },
 	},
 	koboldMiner = {
@@ -119,7 +119,7 @@ local MonsterAssets: { [string]: Entry } = {
 		hipHeight = 3.10,
 		height = 6.91,
 		walkSpeed = 10.4,
-		motion = "humanoid1h",
+		motion = "humanoid2h", -- 2026-10-31: a two-handed weapon (the great sword mocap)
 		grip = { 0, 1, 0 },
 	},
 	goblinShaman = {
@@ -186,7 +186,7 @@ local MonsterAssets: { [string]: Entry } = {
 		hipHeight = 2.17,
 		height = 5.01,
 		walkSpeed = 7.5,
-		motion = "humanoid1h",
+		motion = "humanoid2h", -- 2026-10-31: a two-handed weapon (the great sword mocap)
 		grip = { 0.95, -0.25, 0 },
 	},
 	skeletonGuard = {

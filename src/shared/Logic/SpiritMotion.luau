@@ -239,13 +239,14 @@ end
 
 -- The rest of the rig interface is BipedMotion's.
 SpiritMotion.length = BipedMotion.length
+SpiritMotion.ownHit = BipedMotion.ownHit
 SpiritMotion.times = BipedMotion.times
 SpiritMotion.controlsAt = BipedMotion.controlsAt
 SpiritMotion.pick = BipedMotion.pick
 SpiritMotion.side = BipedMotion.side
 
-function SpiritMotion.death(inst: Instance): string
-	return BipedMotion.death(inst.base)
+function SpiritMotion.death(inst: Instance, side: string?): string
+	return BipedMotion.death(inst.base, side)
 end
 
 return SpiritMotion
