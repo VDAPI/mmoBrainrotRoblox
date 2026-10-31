@@ -1,10 +1,10 @@
 --!strict
 -- The Huntmaster's shop (S134k, DESIGN-15 §3.3): what Hunter's Marks (character.quests.contract.marks, paid by the
 -- hunting contracts, Logic/Contracts.marksFor) buy at the Huntmaster by the contract board. Rules in Logic/HuntShop
--- (the same check on the server and in the window). Everything bought here is bound (no gold through trade or the
--- auction house) and nothing is above the loot: potions of the character's quality, stones, Fortune blessings up to
--- Heroic, essence with a weekly limit, chests with one Unique or Heroic item for the class (never Legendary or
--- Mythic) and two cosmetics. Marks are never sold (tests/paywall.spec, tests/huntshop.spec). Prices and limits only
+-- (the same check on the server and in the window). Owner 2026-10-31 (Data/Binding "currency"): chests and essence
+-- bought here bind on pickup, potions, stones and blessings stay free; merchants pay nothing for any of it (`ns`).
+-- Nothing is above the loot: potions of the character's quality, stones, Fortune blessings up to Heroic, essence with a
+-- weekly limit, chests with one Unique or Heroic item for the class (never Legendary or Mythic) and two cosmetics. Marks are never sold (tests/paywall.spec, tests/huntshop.spec). Prices and limits only
 -- here; balance numbers (tools/balance_reasons.luau, Balance.targetsS134k).
 
 export type Kind =
@@ -106,7 +106,7 @@ local ENTRIES: { Entry } = {
 		minLevel = 70,
 		weeklyLimit = 1,
 	}),
-	-- chests: one item for the character's class and level, bound
+	-- chests: one item for the character's class and level, bound on pickup
 	entry({ key = "hunt_chest", kind = "chest", id = "unique", price = 60, group = "chest", minLevel = 10 }),
 	entry({
 		key = "hunt_chest_heroic",
@@ -135,5 +135,4 @@ return table.freeze({
 	byKey = byKey,
 	-- the chest rarities (Data/Rarities numbers: Data stays free of Data/Rarities for two constants)
 	CHEST_RARITY = table.freeze({ unique = 2, heroic = 3 }),
-	CHEST_BOUND = true, -- bound to the character (no alt-account farming for the market)
 })

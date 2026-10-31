@@ -275,8 +275,8 @@ local function buyBackpack(player: Player, npcId: string, itemId: string): (bool
 		return false, "equip.error.backpackFit"
 	end
 	addGold(player, -price)
+	-- owner 2026-10-31: a backpack bought for gold is worn at once and never binds (Logic/Binding)
 	local backpack = ItemRoll.makeStack(itemId, 1, InventoryService.NewUid())
-	backpack.bound = true
 	Inventory.compact(char.inventory, capacity)
 	PlayerStateService.Set(player, { "character", "equipment", "backpack" }, backpack)
 	InventoryService.SyncAll(player)

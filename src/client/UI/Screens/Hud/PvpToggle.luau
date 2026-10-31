@@ -1,6 +1,8 @@
 --!strict
--- PvP switch in the bottom-right corner (DESIGN §3.3). Red glow when enabled, countdown while switching,
--- greyed out in green zones and "forced" in red zones. Clicking during a countdown cancels it.
+-- PvP switch in the bottom-right corner (DESIGN §3.3). Red glow when enabled, countdown while switching and "forced"
+-- in red zones. Clicking during a countdown cancels it. UI plan phase 1 (owner 2026-10-31, too much on one screen):
+-- shown only in yellow and red zones and while a switch counts down (Logic/PvpRules.toggleShown); the dot on the
+-- portrait tells the state everywhere.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -12,6 +14,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PvpRules = require(ReplicatedStorage.Shared.Logic.PvpRules)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
@@ -104,6 +107,14 @@ local function PvpToggle(scope: Scope): Instance
 		AnchorPoint = PhoneLayout.Anchor(scope, "pvp", Vector2.new(1, 1)),
 		Position = PhoneLayout.Position(scope, "pvp", UDim2.new(1, -SPOT.right, 1, -SPOT.bottom)),
 		Size = UDim2.fromOffset(SIZE, SIZE),
+		Visible = scope:Computed(function(use): boolean
+			local state = use(pvp)
+			local z = use(zone)
+			return PvpRules.toggleShown(
+				if type(z) == "table" then z.pvp else nil,
+				if type(state) == "table" then state.pendingTarget else nil
+			)
+		end),
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
 			if use(isOn) then

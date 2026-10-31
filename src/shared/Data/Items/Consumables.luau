@@ -45,8 +45,8 @@ for _, potion in POTIONS do
 end
 
 -- S122 (DESIGN-17 §3): Elixir of Wholeness, sold only in the premium shop (Data/Products potion_full_5 / _20).
--- Account-bound from the moment it is created (ItemRoll.makeStack binds `bindOnPickup` stacks), never sold, traded
--- or listed. Rules: Config.FullElixir, Logic/FullElixir, Logic/UseBlocks.
+-- Account-bound from the moment it is created (ItemRoll.makeStack binds `bind = "pickup"` stacks), never sold,
+-- traded or listed. Rules: Config.FullElixir, Logic/FullElixir, Logic/UseBlocks.
 table.insert(LIST, {
 	id = "potion_full",
 	category = "consumable",
@@ -59,7 +59,7 @@ table.insert(LIST, {
 	descKey = "item.potion_full.desc",
 	icon = { glyph = "⚗", color = "#E8C25A" },
 	price = 1,
-	bindOnPickup = true,
+	bind = "pickup",
 	noSell = true,
 	use = { kind = "fullElixir" },
 })
@@ -129,7 +129,7 @@ do
 		keep = true,
 	})
 	local stone = LIST[#LIST] :: any
-	stone.bindOnPickup = true
+	stone.bind = "pickup"
 	stone.noSell = true
 end
 -- Scrolls (S06–S07)
@@ -143,18 +143,18 @@ other("scroll_unbind", "scroll", "scroll", "📜", "#E8C25A", 500, nil, { kind =
 other("scroll_hunt", "scroll", "scroll", "📜", "#B5452E", 1, nil, { kind = "autoGrind" })
 do
 	local hunt = LIST[#LIST] :: any
-	hunt.bindOnPickup = true
+	hunt.bind = "pickup"
 	hunt.noSell = true
 end
 -- S134j: Stone of Transmutation, sold only in the premium shop (Data/Products reroll_stone). S160k (owner 2026-10-21):
 -- the Stone of Bonus Transmutation, 10 a day: every bonus reroll at the smith takes one together with the gold and
--- the essence (Logic/Reroll.payment). Account-bound from creation (ItemRoll.makeStack binds `bindOnPickup` stacks),
--- never sold, traded, mailed or listed; no material (no dismantling, transmutation or upgrade use). Using it from the
+-- the essence (Logic/Reroll.payment). Account-bound from creation (ItemRoll.makeStack binds `bind = "pickup"`
+-- stacks), never sold, traded, mailed or listed; no material (no dismantling, transmutation or upgrade use). Using it from the
 -- backpack only explains it (ScrollService).
 other("reroll_stone", "scroll", "scroll", "◈", "#E8C25A", 1, nil, { kind = "scroll", target = "transmute" })
 do
 	local stone = LIST[#LIST] :: any
-	stone.bindOnPickup = true
+	stone.bind = "pickup"
 	stone.noSell = true
 end
 -- S160k (owner 2026-10-21): Stone of Effect Transmutation, sold only in the premium shop (Data/Products effect_stone,
@@ -163,7 +163,7 @@ end
 other("effect_stone", "scroll", "scroll", "◈", "#FF9F1C", 1, nil, { kind = "scroll", target = "transmuteFx" })
 do
 	local stone = LIST[#LIST] :: any
-	stone.bindOnPickup = true
+	stone.bind = "pickup"
 	stone.noSell = true
 end
 -- S156 (owner 2026-10-20): Scroll of Transformation, sold only in the premium shop (Data/Products transmute_scroll, 1 a
@@ -172,7 +172,7 @@ end
 other("transmute_scroll", "scroll", "scroll", "📜", "#B07CFF", 1, nil, { kind = "scroll", target = "transmuteAll" })
 do
 	local scroll = LIST[#LIST] :: any
-	scroll.bindOnPickup = true
+	scroll.bind = "pickup"
 	scroll.noSell = true
 end
 -- Gathering tools (S07)

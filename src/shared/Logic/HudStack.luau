@@ -5,9 +5,9 @@
 -- * The corner (`fixed`): the PvP toggle with its countdown badge under it, the mail envelope in its own slot under
 --   both, and on a touch screen the attack button, the skill arc around it and its page / target buttons
 --   (Hud/PvpToggle, MailButton, AttackButton, MobileSkills read their places here).
--- * The column (`column`): PC the right side under the menu, the minimap and the guide bar down to the corner's
---   buttons; a touch screen that is not a phone the left side under the portrait (and the party frames) down to the
---   sprint / mount / emote row; a phone in landscape the left stack of Logic/PhoneHud.
+-- * The column (`column`): PC the right side under the menu, the minimap (and the guide bar while it shows) down to
+--   the corner's buttons; a touch screen that is not a phone the left side under the portrait (and the party frames)
+--   down to the sprint / mount row; a phone in landscape the left stack of Logic/PhoneHud.
 -- * The stack (`place`, `layout`): the arena queue's pill, the event panels (world boss, world event, Blood Moon,
 --   tournament), the Elite II timers on a touch screen and the quest tracker, in that order, top down. An element the
 --   player has moved (HudLayout) stays where it is and the others go round it: above it, under it or, when the column
@@ -47,14 +47,17 @@ HudStack.ORDER = table.freeze({ "arena", "worldBoss", "worldEvent", "bloodMoon",
 
 HudStack.GAP = 8
 HudStack.MARGIN = 16 -- Theme.Padding.Large
--- PC: the column starts under two rows of menu buttons, the minimap and the guide bar (UI/HudDrag.RIGHT_TOP).
-HudStack.RIGHT_TOP = 460
+-- PC: the column starts under the menu's one row of buttons, the minimap and the area line under it (UI plan phase 1,
+-- owner 2026-10-31: six buttons in one row instead of 14 in two: 22 + 52 + 8 + 266 + 24, then GAP; it was 460), and
+-- under the guide bar while one shows (Hud/NavBar, 44 tall 8 under the minimap: 22 + 52 + 8 + 266 + 8 + 44, then GAP).
+HudStack.RIGHT_TOP = 380
+HudStack.RIGHT_TOP_GUIDE = 408
 -- A touch screen (not a phone): under the portrait and its effect icons (16 + 136 + 6 + 44), the party frames push
 -- it down (16 + 136 + 70, then one row per member).
 HudStack.TOUCH_TOP = 202
 HudStack.PARTY_TOP = 222
 HudStack.PARTY_ROW = 64
--- A touch screen: the sprint, mount and emote buttons stand this high over the bottom (Hud/SprintButton: 260 + 64).
+-- A touch screen: the sprint and mount buttons stand this high over the bottom (Hud/SprintButton: 260 + 64).
 HudStack.TOUCH_ROW = 324
 
 -- Widths of the column's elements (Hud/WorldBossPanel and the other panels, Hud/QuestTracker, Hud/Elite2Timer,
@@ -78,10 +81,10 @@ HudStack.SMALL = table.freeze({ w = 84, h = 44 })
 HudStack.PAGE = table.freeze({ x = -162 - 120 - 76, y = -202 + 40 }) -- left of the arc's first button, clear of it
 HudStack.TARGET = table.freeze({ x = -162, y = -202 - 120 - 56 })
 
--- The login reward, season pass and achievements buttons right of the portrait (Hud: x 16 + 400 + 12, three 44 px
--- buttons 8 apart from y 16 + 136 - 44); a phone has them in its menu drawer. The spare column of a touch screen
--- stands right of them.
-HudStack.EXTRAS = table.freeze({ x = 428, y = 108, w = 44, h = 3 * 44 + 2 * 8 })
+-- The login reward and season pass buttons right of the portrait (Hud: x 22 + 400 + 12, two 44 px buttons 8 apart from
+-- y 22 + 136 - 44; each only while its reward waits, UI plan phase 1: the achievements button left the HUD); a phone
+-- has them in its menu drawer. The spare column of a touch screen stands right of them.
+HudStack.EXTRAS = table.freeze({ x = 434, y = 114, w = 44, h = 2 * 44 + 8 })
 
 -- The tracker's height before it moves to a spare column (its header and two lines) and the least it shrinks to
 -- when there is no room for that in any column (its header; the list scrolls in what is left).
@@ -179,8 +182,15 @@ function HudStack.elite(w: number, h: number, height: number, measured: { Rect }
 end
 
 -- The column of a w x h screen: PC (`touch` false), a touch screen that is not a phone, a phone (`compact`).
--- `others` = party members besides the player.
-function HudStack.column(touch: boolean, compact: boolean, w: number, h: number, others: number): Column
+-- `others` = party members besides the player; `guide`: the guide bar shows under the minimap (PC).
+function HudStack.column(
+	touch: boolean,
+	compact: boolean,
+	w: number,
+	h: number,
+	others: number,
+	guide: boolean?
+): Column
 	if compact then
 		local stack = PhoneHud.PLACES.stack
 		return { x = stack.x, right = false, top = PhoneHud.stackTop(others), floor = h - (stack.bottom or 0) }
@@ -200,7 +210,7 @@ function HudStack.column(touch: boolean, compact: boolean, w: number, h: number,
 	return {
 		x = w - HudStack.MARGIN,
 		right = true,
-		top = HudStack.RIGHT_TOP,
+		top = if guide then HudStack.RIGHT_TOP_GUIDE else HudStack.RIGHT_TOP,
 		floor = HudStack.cornerTop(false, w, h) - HudStack.GAP,
 		-- two: a short window at the 0.6 floor has little height under the minimap (owner 2026-10-22)
 		spares = {
@@ -253,6 +263,20 @@ end
 function HudStack.trackerBody(top: number, floor: number, chrome: number, content: number, sized: number?): number
 	local wanted = if sized then sized - chrome else content
 	return math.max(0, math.min(wanted, floor - top - chrome))
+end
+
+-- UI plan phase 1 (owner 2026-10-31; DESIGN §23 "lower left: chat"): on PC the Roblox chat window stands in the lower
+-- left corner (Hud/ChatDock) and ends CHAT_GAP screen px left of the action bar: the WidthScale for a window standing
+-- at `left`, `width` wide at WidthScale `scale`, with the bar starting at `barLeft` (screen px); never wider than
+-- Roblox's own width (1) nor narrower than CHAT_MIN. A hidden window (no width) keeps `scale`.
+HudStack.CHAT_GAP = 12
+HudStack.CHAT_MIN = 0.6
+function HudStack.chatWidthScale(left: number, width: number, scale: number, barLeft: number): number
+	if width <= 0 or scale <= 0 then
+		return scale
+	end
+	local base = width / scale
+	return math.clamp((barLeft - HudStack.CHAT_GAP - left) / base, HudStack.CHAT_MIN, 1)
 end
 
 local function overlaps(a: Rect, b: Rect): boolean
@@ -346,7 +370,8 @@ end
 -- besides the player. Moved elements, the corner's buttons and the buttons right of the portrait (not on a phone:
 -- Logic/PhoneHud keeps the stack clear of them) and the PC Elite II timers are obstacles the others go round.
 -- `measured`: the corner's buttons as they really stand (`fromScreen`; not on a phone): obstacles too, and the column's
--- floor stays above them (`floorAbove`) when the computed one is lower (owner 2026-10-22).
+-- floor stays above them (`floorAbove`) when the computed one is lower (owner 2026-10-22). `guide`: the guide bar shows
+-- under the minimap (PC: the column starts under it).
 function HudStack.layout(
 	touch: boolean,
 	compact: boolean,
@@ -354,9 +379,10 @@ function HudStack.layout(
 	h: number,
 	others: number,
 	boxes: { [string]: Box },
-	measured: { Rect }?
+	measured: { Rect }?,
+	guide: boolean?
 ): { [string]: Rect }
-	local column = HudStack.column(touch, compact, w, h, others)
+	local column = HudStack.column(touch, compact, w, h, others, guide)
 	local under: { Rect } = if compact then {} else measured or {}
 	if #under > 0 then
 		column.floor = HudStack.floorAbove(column, math.max(HudStack.TRACKER, HudStack.PANEL_PC), under)

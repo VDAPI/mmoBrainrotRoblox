@@ -86,7 +86,6 @@ T.describe("Bestiary data (S151c)", function()
 				"best.attack.ranged",
 				"best.damage.phys",
 				"best.damage.magic",
-				"hud.achButton",
 			}
 		do
 			T.expect({ key, pl[key] ~= nil, en[key] ~= nil }).toEqual({ key, true, true })

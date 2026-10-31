@@ -56,6 +56,6 @@ return table.freeze({
 		-- Rarities.UNIQUE / HEROIC weights (numeric keys: Data stays free of Data/Rarities for two constants). 0.15
 		-- Heroics a week = 4.3% of the D5 floor over 7 h of play (0.5 / h; T-LR5 <= 5%; 35% would be 10%).
 		rarity = table.freeze({ [2] = 85, [3] = 15 }),
-		bound = true, -- bound to the character (no alt-account farming for the market)
+		-- the item binds on pickup: the "reward" source of Data/Binding (no alt-account farming for the market)
 	}),
 })

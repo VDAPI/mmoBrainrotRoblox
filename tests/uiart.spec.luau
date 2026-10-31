@@ -178,11 +178,16 @@ T.describe("Logic/UiArt keys (S119)", function()
 		end
 	end)
 
-	T.it("the menu ids match the HUD menu of ScreenController", function()
+	T.it("the menu ids match the HUD bar and the game menu's tiles of ScreenController", function()
 		local source = fs.readFile("src/client/Controllers/ScreenController.luau")
 		local block = string.match(source, "local MENU: [^\n]*\n(.-)\n}") or ""
 		local found = {}
 		for id in string.gmatch(block, '%f[%w]id = "([%w_]+)"') do
+			table.insert(found, id)
+		end
+		-- UI plan phase 1: the windows that left the bar keep their pictures on the game menu's tiles
+		local tiles = string.match(source, "local TILE_DEFS: [^\n]*\n(.-)\n}") or ""
+		for id in string.gmatch(tiles, 'UiArt%.menu%("([%w_]+)"%)') do
 			table.insert(found, id)
 		end
 		table.sort(found)

@@ -7,10 +7,14 @@
 -- Owner 2026-10-21 (too many detailed descriptions): the settings in sections with headings (Sound, Graphics and camera,
 -- Combat, Interface); the rare ones (Loot and trade, Social, Hotkeys) folded (Details); short row labels, what a
 -- setting does behind the "i" next to its control (`<label>.info`, InfoTip).
+-- UI plan phase 1 (owner 2026-10-31, "too much information and too many options on one screen"): every window the HUD
+-- bar has no button for is a tile at the top (Logic/HudMenu.TILES: picture or glyph, name, key on a plaque, "!"), in
+-- place of the S129 / S151b / S152b / S153 rows and the S121 "VIP" button; "Return to the city (VIP)" stays a row.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -18,12 +22,14 @@ local Details = require(script.Parent.Parent.Components.Details)
 local DamageNumbers = require(ReplicatedStorage.Shared.Data.DamageNumbers)
 local DamageText = require(ReplicatedStorage.Shared.Logic.DamageText)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudMenu = require(ReplicatedStorage.Shared.Logic.HudMenu)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
 local ListRow = require(script.Parent.Parent.Components.ListRow)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
+local Motion = require(script.Parent.Parent.Motion)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Sounds = require(script.Parent.Parent.Sounds)
@@ -35,7 +41,7 @@ local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local Vip = require(ReplicatedStorage.Shared.Logic.Vip)
 
-local Children = Fusion.Children
+local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -311,11 +317,148 @@ local function codeRow(scope: Scope): Instance
 	})
 end
 
--- S121: what the menu may open (ScreenController passes WindowManager.Open).
-export type Extra = { OpenWindow: ((id: string) -> ())? }
+-- UI plan phase 1: a window the HUD bar has no button for, as a tile of the menu (ScreenController builds them in the
+-- order of Logic/HudMenu.TILES; the key on the tile is HudMenu.KEYS[id]).
+export type Tile = {
+	id: string,
+	icon: string, -- the glyph while there is no picture
+	art: string?, -- the picture (Logic/UiArt key)
+	labelKey: string,
+	badge: ((scope: Scope) -> Fusion.UsedAs<boolean>)?, -- "!" on the tile (it lights the HUD's ☰ too)
+	visible: ((use: Fusion.Use) -> boolean)?, -- shown only while true (nil: always)
+	open: (() -> ())?, -- what a click does (nil: opens the window `id`)
+}
 
--- S121: the VIP row: "VIP" always, "Return to the city (VIP)" only with VIP (disabled with the countdown or in town).
-local function vipRow(scope: Scope, close: () -> (), extra: Extra?): Instance
+-- S121: what the menu may open (ScreenController passes WindowManager.Open); UI plan phase 1: the tiles.
+export type Extra = { OpenWindow: ((id: string) -> ())?, Tiles: { Tile }? }
+
+local TILE = HudMenu.TILE
+local TILE_ICON = 34
+
+-- UI plan phase 1: one tile: the picture or glyph, the name under it (two lines at most), the key on a plaque in the
+-- top-right corner, the "!" in the top-left one. A click closes the menu and opens the window.
+local function tile(scope: Scope, order: number, entry: Tile, close: () -> (), extra: Extra?): Instance
+	local action = HudMenu.KEYS[entry.id]
+	local button = scope:New("TextButton")({
+		Name = `Tile_{entry.id}`,
+		LayoutOrder = order,
+		AutoButtonColor = false,
+		Text = "",
+		BackgroundColor3 = Theme.Paper.Raised,
+		Visible = if entry.visible then scope:Computed(entry.visible) else true,
+		[OnEvent("Activated")] = function()
+			Sounds.play("click")
+			close()
+			if entry.open then
+				entry.open()
+			elseif extra and extra.OpenWindow then
+				extra.OpenWindow(entry.id)
+			end
+		end,
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			scope:New("UIStroke")({
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Thickness = Theme.Stroke.Thin,
+				Color = Theme.Paper.Border,
+			}),
+			ArtIcon(scope, {
+				Key = entry.art,
+				Glyph = entry.icon,
+				GlyphColor = Theme.Paper.Heading,
+				ImageScale = 0.9,
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.new(0.5, 0, 0, Theme.Padding.Small),
+				Size = UDim2.fromOffset(TILE_ICON, TILE_ICON),
+				Label = { FontFace = Theme.Fonts.BodyBold, TextSize = Theme.TextSize.Title },
+			}),
+			scope:New("TextLabel")({
+				Name = "Label",
+				AnchorPoint = Vector2.new(0.5, 0),
+				Position = UDim2.new(0.5, 0, 0, Theme.Padding.Small + TILE_ICON + 2),
+				Size = UDim2.new(1, -2 * Theme.Padding.Tiny, 1, -(Theme.Padding.Small + TILE_ICON + 2)),
+				BackgroundTransparency = 1,
+				Text = Text.T(scope, entry.labelKey),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.Text,
+				TextWrapped = true,
+				TextYAlignment = Enum.TextYAlignment.Top,
+			}),
+			if action
+				then scope:New("TextLabel")({
+					Name = "Key",
+					AnchorPoint = Vector2.new(1, 0),
+					Position = UDim2.new(1, -Theme.Padding.Tiny, 0, Theme.Padding.Tiny),
+					Size = UDim2.fromOffset(18, 18),
+					AutomaticSize = Enum.AutomaticSize.X,
+					BackgroundColor3 = Theme.Paper.Sunken,
+					Text = Keybinds.Label(scope, action),
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Paper.Text,
+					[Children] = {
+						scope:New("UICorner")({ CornerRadius = UDim.new(0, 3) }),
+						scope:New("UIPadding")({
+							PaddingLeft = UDim.new(0, 3),
+							PaddingRight = UDim.new(0, 3),
+						}),
+					},
+				}) :: any
+				else nil,
+			if entry.badge
+				then scope:New("TextLabel")({
+					Name = "Badge",
+					Position = UDim2.fromOffset(-4, -4),
+					Size = UDim2.fromOffset(20, 20),
+					BackgroundColor3 = Theme.Paper.Danger,
+					Text = "!",
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Caption,
+					TextColor3 = Theme.Paper.DangerText,
+					ZIndex = 3,
+					Visible = entry.badge(scope),
+					[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+				}) :: any
+				else nil,
+		},
+	})
+	Motion.feedback(scope, button :: GuiButton, Theme.Corner.Small) -- W28: hover sheen and a sink while held
+	return button
+end
+
+-- UI plan phase 1: the tiles, TILE.perRow to a row across the menu's width (a hidden tile leaves no hole).
+local function tiles(scope: Scope, close: () -> (), extra: Extra?): Instance
+	local list: { Instance } = {}
+	local entries: { Tile } = (extra and extra.Tiles) or {}
+	for index, entry in entries do
+		table.insert(list, tile(scope, index, entry, close, extra))
+	end
+	local gap = TILE.gap
+	return scope:New("Frame")({
+		Name = "Tiles",
+		LayoutOrder = 1,
+		Size = UDim2.fromScale(1, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		[Children] = {
+			scope:New("UIGridLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				FillDirectionMaxCells = TILE.perRow,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				CellSize = UDim2.new(1 / TILE.perRow, -gap * (TILE.perRow - 1) / TILE.perRow, 0, TILE.h),
+				CellPadding = UDim2.fromOffset(gap, gap),
+			}),
+			-- room for the "!" over the first row's corners
+			scope:New("UIPadding")({ PaddingTop = UDim.new(0, 4), PaddingLeft = UDim.new(0, 4) }),
+			list :: any,
+		},
+	})
+end
+
+-- S121: "Return to the city (VIP)" only with VIP (disabled with the countdown or in town); UI plan phase 1: the "VIP"
+-- button beside it is a tile now.
+local function vipRow(scope: Scope, close: () -> ()): Instance
 	local active = State.Value({ "vip", "active" })
 	local vipState = State.Value({ "account", "vip" })
 	local map = State.Value({ "character", "location", "map" })
@@ -338,32 +481,15 @@ local function vipRow(scope: Scope, close: () -> (), extra: Extra?): Instance
 	local isVip = scope:Computed(function(use): boolean
 		return use(active) == true
 	end)
-	local openWindow = extra and extra.OpenWindow
 	return scope:New("Frame")({
 		LayoutOrder = 2,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+		Visible = isVip,
 		[Children] = {
 			Button(scope, {
-				Text = Text.T(scope, "menu.vip"),
+				Size = UDim2.fromScale(1, 1),
 				Variant = "secondary",
-				Size = scope:Computed(function(use): UDim2
-					return if use(isVip) then UDim2.new(0.4, -4, 1, 0) else UDim2.fromScale(1, 1)
-				end),
-				Disabled = openWindow == nil,
-				OnClick = function()
-					if openWindow then
-						close()
-						openWindow("vip")
-					end
-				end,
-			}),
-			Button(scope, {
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.fromScale(1, 0),
-				Size = UDim2.new(0.6, -4, 1, 0),
-				Variant = "secondary",
-				Visible = isVip,
 				Disabled = scope:Computed(function(use): boolean
 					return use(left) > 0 or use(map) == Config.StartingMap
 				end),
@@ -617,75 +743,18 @@ local function GameMenu(scope: Scope, close: () -> (), extra: Extra?): Fusion.Ch
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 				OnClick = close,
 			}),
+			-- UI plan phase 1: the windows without a HUD button (the Blood Moon, achievements, season pass and "What's
+			-- new" rows and the VIP button among them)
+			tiles(scope, close, extra),
 			Button(scope, {
-				LayoutOrder = 1,
+				LayoutOrder = 1.5,
 				Text = Text.T(scope, "menu.switchCharacter"),
 				Variant = "secondary",
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 				Disabled = busy,
 				OnClick = switchCharacter,
 			}),
-			vipRow(scope, close, extra),
-			-- S129: the Blood Moon window (always: it shows when the next one starts)
-			Button(scope, {
-				LayoutOrder = 2.5,
-				Text = Text.T(scope, "menu.bloodmoon"),
-				Variant = "secondary",
-				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-				Disabled = extra == nil or extra.OpenWindow == nil,
-				OnClick = function()
-					local open = extra and extra.OpenWindow
-					if open then
-						close()
-						open("bloodmoon")
-					end
-				end,
-			}),
-			-- S151b: the achievements window (the phone has no N key)
-			Button(scope, {
-				LayoutOrder = 2.6,
-				Text = Text.T(scope, "menu.achievements"),
-				Variant = "secondary",
-				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-				Disabled = extra == nil or extra.OpenWindow == nil,
-				OnClick = function()
-					local open = extra and extra.OpenWindow
-					if open then
-						close()
-						open("achievements")
-					end
-				end,
-			}),
-			-- S152b: the season pass window (the phone has no C key)
-			Button(scope, {
-				LayoutOrder = 2.7,
-				Text = Text.T(scope, "menu.season"),
-				Variant = "secondary",
-				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-				Disabled = extra == nil or extra.OpenWindow == nil,
-				OnClick = function()
-					local open = extra and extra.OpenWindow
-					if open then
-						close()
-						open("season")
-					end
-				end,
-			}),
-			-- S153: the "What has changed" letter again (the latest entries)
-			Button(scope, {
-				LayoutOrder = 2.8,
-				Text = Text.T(scope, "menu.whatsnew"),
-				Variant = "secondary",
-				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-				Disabled = extra == nil or extra.OpenWindow == nil,
-				OnClick = function()
-					local open = extra and extra.OpenWindow
-					if open then
-						close()
-						open("whatsnew")
-					end
-				end,
-			}),
+			vipRow(scope, close),
 			row(
 				scope,
 				3,

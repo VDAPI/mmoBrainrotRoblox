@@ -267,3 +267,7 @@
   `AnnounceService.Global` (kolejka). Wymuszenie wydarzeń: `/bloodmoon start`, `/tourney force`, terminy `/sched`;
   obecność gracza: `FriendService`/`Friends/Presence` (jeden zapis na gracza, budżet odczytów `Config.Friends`).
 
+- **Wiązanie przedmiotu** (2026-10-31): nowe źródło przedmiotów na serwerze nadaje je przez
+  `Binding.apply(przedmiot, "<źródło>")` (`drop`, `craft`, `gold`, `boss`, `reward`, `currency`, `premium`; reguły w
+  `Data/Binding.SOURCES`), nigdy `bound = true` ręcznie (`binding.spec` to sprawdza); przedmiot z własną regułą: pole
+  `bind = "pickup"` w definicji; nowa kategoria przedmiotów: wpis w `Data/Binding.CATEGORY`.
