@@ -26,6 +26,7 @@ local Flora = require("./WorldGen/Flora")
 local Fortress = require("@self/Fortress")
 local Harpy = require("@self/Harpy")
 local Kit = require("./WorldGen/Kit")
+local KitSeat = require("./KitSeat")
 local Lairs = require("./WorldGen/Lairs")
 local Lake = require("@self/Lake")
 local Maps = require("../Data/Maps")
@@ -336,6 +337,8 @@ function FrostpeakGen.all(): { Build }
 	Details.all(e, out)
 	-- W19-20: the plan's warmth at the respawn points, the saddle's cairn and the pilgrims' trail, the same way
 	Scenery.all(e, out)
+	-- 2026-11-01: no rock on a cliff's lip, no tree with a wall in its crown (Logic/KitSeat)
+	KitSeat.prune(out, e.T.height, trees)
 	treeCache = trees
 	cache = out
 	return out

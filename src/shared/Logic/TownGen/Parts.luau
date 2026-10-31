@@ -31,18 +31,6 @@ local function o(s: Swatch, lod: Blueprint.Lod?, extra: { [string]: any }?): Blu
 end
 Parts.o = o
 
--- 2026-10-31: the lowest ground under a small prop's base of radius `r` (its middle and 8 points round it), so a
--- well or a lamp on a slope stands in the low side instead of over it (the 4-stud voxels draw the ground between
--- their column centres, so a slope shows up to a voxel away).
-function Parts.lowest(ground: (x: number, z: number) -> number, x: number, z: number, r: number): number
-	local low = ground(x, z)
-	for i = 0, 7 do
-		local a = i * math.pi / 4
-		low = math.min(low, ground(x + math.cos(a) * r, z + math.sin(a) * r))
-	end
-	return low
-end
-
 -- Window on a wall plane facing -Z at z = zf (the wall surface), centred at (x, y). `ww` x `wh` glass.
 function Parts.window(
 	bp: BP,

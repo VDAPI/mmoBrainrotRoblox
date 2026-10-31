@@ -5,6 +5,7 @@
 local Blueprint = require("./Blueprint")
 local Classes = require("../../Data/Classes")
 local Fill = require("./Fill")
+local KitSeat = require("../KitSeat")
 local Leaderboards = require("../../Data/Leaderboards")
 local Palette = require("./Palette")
 local Parts = require("./Parts")
@@ -332,7 +333,7 @@ end
 
 local function well(p: { number }, i: number, ground: Ground): Build
 	local bp = Blueprint.new(700 + i)
-	local y0 = Parts.lowest(ground, p[1], p[2], 4) -- 2026-10-31: the low side of a slope
+	local y0 = KitSeat.seat(ground, p[1], p[2], KitSeat.WELL) -- 2026-11-01: on the drawn ground (Logic/KitSeat)
 	Props.well(bp, 0, 0, 0, bp.rng:float(0, 90))
 	return { name = "Well" .. i, bp = bp, at = { x = p[1], y = y0, z = p[2], rot = 0 }, tag = "well" }
 end
