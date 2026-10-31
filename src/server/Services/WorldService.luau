@@ -3,9 +3,11 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CameraClear = require(ReplicatedStorage.Shared.Logic.CameraClear)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
 local Respawn = require(ReplicatedStorage.Shared.Logic.Respawn)
+local Town = require(ReplicatedStorage.Shared.Data.Town)
 local TownTerrain = require(ReplicatedStorage.Shared.Logic.TownTerrain)
 local ServerMode = require(script.Parent.Parent.Arena.ServerMode)
 local WorldBuilder = require(script.Parent.Parent.World.WorldBuilder)
@@ -36,6 +38,10 @@ function WorldService.GetSpawnCFrame(mapId: string): CFrame
 	local map = Maps.get(mapId) or Maps.get(ServerMode.homeMap()) or Maps.get("city")
 	assert(map, "WorldService: city map missing")
 	local ground = WorldService.GroundCFrame(map.id, map.spawn.x, map.spawn.z).Position
+	if map.id == "city" then
+		-- Studio review 2026-10-31: the plan's way (through the fountain to the stairs), like the city's SpawnPoint
+		return CFrame.new(ground) * CFrame.Angles(0, math.rad(Town.city.spawn.facing), 0)
+	end
 	-- Face the map centre.
 	return CFrame.lookAt(ground, Vector3.new(map.offset.x, ground.Y, map.offset.z + 0.001))
 end
@@ -145,6 +151,28 @@ local function castDown(from: Vector3, length: number, include: { Instance }, wa
 	params.IgnoreWater = not water
 	params.RespectCanCollide = true
 	return workspace:Raycast(from, Vector3.new(0, -length, 0), params)
+end
+
+-- Studio review 2026-10-31 (the first view in a roof): `at` (a standing CFrame on `mapId`) turned to the facing
+-- nearest its own whose start view is clear (Logic/CameraClear.pick): the Roblox camera's first line behind the
+-- head and the view ahead hit nothing collidable of the map. A saved spot always faced north, and the city's kit
+-- houses keep only invisible collision, which the Roblox camera does not see. At most 2 x CameraClear.COUNT rays.
+function WorldService.OpenFacing(mapId: string, at: CFrame): CFrame
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Include
+	params.FilterDescendantsInstances = mapGeometry(mapId)
+	params.IgnoreWater = true
+	params.RespectCanCollide = true
+	local head = at.Position + Vector3.new(0, CameraClear.HEAD, 0)
+	local look = at.LookVector
+	local yaw = CameraClear.pick(CameraClear.yawOf(look.X, look.Z), function(candidate: number): (number, number)
+		local bx, by, bz = CameraClear.behind(candidate, CameraClear.START_PITCH)
+		local back = workspace:Raycast(head, Vector3.new(bx, by, bz) * CameraClear.REACH, params)
+		local r = math.rad(candidate)
+		local ahead = workspace:Raycast(head, Vector3.new(-math.sin(r), 0, -math.cos(r)) * CameraClear.FRONT, params)
+		return if back then back.Distance else CameraClear.REACH, if ahead then ahead.Distance else CameraClear.FRONT
+	end)
+	return CFrame.new(at.Position) * CFrame.Angles(0, math.rad(yaw), 0)
 end
 
 -- World point where a figure's feet rest at a map-relative (x, z): the top surface of the terrain or of the
