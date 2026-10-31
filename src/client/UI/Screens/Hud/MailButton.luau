@@ -7,6 +7,8 @@
 -- Owner 2026-10-21 ("it touches the quest tracker and sits right by the attack button"): PC and tablet in its own slot
 -- in the corner under the PvP toggle and its badge, over the EXP bar, clear of the attack button, the skill arc and the
 -- column of panels above (Logic/HudStack.MAIL).
+-- UI plan phase 2 (one place for "something waits"): PC and tablet in the row under the minimap (Hud/WaitingRow,
+-- `InRow`); the corner's envelope is the phone's only (its own place by the skill arc).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -30,10 +32,12 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	Open: () -> (),
+	InRow: boolean?, -- UI plan phase 2: a button of Hud/WaitingRow (PC and tablet), else the phone's envelope
 }
 
 local ART = UiArt.hud("mail")
 local SPOT = HudStack.MAIL
+local ROW = HudStack.WAITING
 
 local function MailButton(scope: Scope, props: Props): Instance
 	local state = State.Value({ "mail" })
@@ -45,13 +49,19 @@ local function MailButton(scope: Scope, props: Props): Instance
 		return text or ""
 	end)
 	local artShown = ArtIcon.Shown(scope, ART)
+	local inRow = props.InRow == true
 	local button = scope:New("TextButton")({
 		Name = "MailButton",
-		AnchorPoint = PhoneLayout.Anchor(scope, "mail", Vector2.new(1, 1)),
-		Position = PhoneLayout.Position(scope, "mail", UDim2.new(1, -SPOT.right, 1, -SPOT.bottom)),
-		Size = PhoneLayout.Size(scope, "mail", UDim2.fromOffset(SPOT.w, SPOT.h)),
+		LayoutOrder = 1,
+		AnchorPoint = if inRow then Vector2.zero else PhoneLayout.Anchor(scope, "mail", Vector2.new(1, 1)),
+		Position = if inRow
+			then UDim2.new()
+			else PhoneLayout.Position(scope, "mail", UDim2.new(1, -SPOT.right, 1, -SPOT.bottom)),
+		Size = if inRow
+			then UDim2.fromOffset(ROW, ROW)
+			else PhoneLayout.Size(scope, "mail", UDim2.fromOffset(SPOT.w, SPOT.h)),
 		Visible = scope:Computed(function(use): boolean
-			return use(count) > 0
+			return use(count) > 0 and use(PhoneLayout.Compact) ~= inRow
 		end),
 		AutoButtonColor = false,
 		BackgroundColor3 = Theme.Iron.Surface,
@@ -99,7 +109,9 @@ local function MailButton(scope: Scope, props: Props): Instance
 		},
 	})
 	Motion.feedback(scope, button :: GuiButton, nil)
-	HudSlots.corner(scope, button :: GuiObject) -- owner 2026-10-22: the HUD column stays above where it really stands
+	if not inRow then
+		HudSlots.corner(scope, button :: GuiObject) -- owner 2026-10-22: the HUD column stays above where it really stands
+	end
 	Tooltip.attach(
 		scope,
 		button :: GuiObject,

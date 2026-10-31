@@ -12,6 +12,7 @@ local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local TopBandState = require(script.Parent.Parent.Parent.TopBandState)
 
 local Children = Fusion.Children
 
@@ -22,6 +23,13 @@ local HOLD_SECONDS = 2.5
 local function AreaBanner(scope: Scope): Instance
 	local transparency = scope:Value(1)
 	local animated = scope:Tween(transparency, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
+	-- UI plan phase 2: the toasts start under this banner while it shows (UI/TopBandState, Logic/TopBand)
+	scope:Observer(transparency):onBind(function()
+		TopBandState.set("area", Fusion.peek(transparency) < 1)
+	end)
+	table.insert(scope, function()
+		TopBandState.set("area", false)
+	end)
 	local level = State.Value({ "character", "level" })
 	scope:Observer(AreaState.Banner):onChange(function()
 		local banner = Fusion.peek(AreaState.Banner)

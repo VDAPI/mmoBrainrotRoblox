@@ -37,6 +37,7 @@ local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupColors = require(script.Parent.Parent.Parent.GroupColors)
+local HudCover = require(script.Parent.Parent.Parent.HudCover)
 local IconState = require(script.Parent.Parent.Parent.IconState)
 local MapSketch = require(script.Parent.Parent.Parent.MapSketch)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
@@ -188,6 +189,7 @@ end
 export type Props = { ShowWindow: (id: string) -> () }
 
 local function Minimap(scope: Scope, props: Props): Instance
+	local labelsCovered = scope:Value(false) -- UI plan phase 2: an open window covers the minimap
 	local zone = State.Value({ "zone" })
 	local mapId = State.Value({ "character", "location", "map" })
 	local zoomIndex = scope:Value(2)
@@ -842,7 +844,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 		})
 	end
 
-	return scope:New("Frame")({
+	local root = scope:New("Frame")({
 		Name = "Minimap",
 		LayoutOrder = 2,
 		Size = UDim2.fromOffset(SIZE + 44, SIZE + 46),
@@ -959,7 +961,7 @@ local function Minimap(scope: Scope, props: Props): Instance
 				Size = UDim2.fromOffset(SIZE + 30, 22),
 				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
-					return use(AreaState.Current) ~= nil
+					return use(AreaState.Current) ~= nil and not use(labelsCovered)
 				end),
 				Text = scope:Computed(function(use): string
 					local area = use(AreaState.Current)
@@ -988,6 +990,9 @@ local function Minimap(scope: Scope, props: Props): Instance
 			}),
 			scope:New("TextLabel")({
 				Name = "MapName",
+				Visible = scope:Computed(function(use): boolean
+					return not use(labelsCovered)
+				end),
 				AnchorPoint = Vector2.new(1, 1),
 				Position = UDim2.fromScale(1, 1),
 				Size = UDim2.fromOffset(SIZE + 30, 36),
@@ -1015,7 +1020,14 @@ local function Minimap(scope: Scope, props: Props): Instance
 				},
 			}),
 		},
-	})
+	}) :: Frame
+	-- UI plan phase 2 (Studio audit 2026-10-31): the map's and the area's names step out of sight while an open window
+	-- covers the minimap (UI/HudCover; the disc stays, the labels follow it)
+	local covered = HudCover.covered(scope, root)
+	scope:Observer(covered):onBind(function()
+		labelsCovered:set(Fusion.peek(covered))
+	end)
+	return root
 end
 
 return Minimap

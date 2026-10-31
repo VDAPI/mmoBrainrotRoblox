@@ -52,6 +52,10 @@ HudStack.MARGIN = 16 -- Theme.Padding.Large
 -- under the guide bar while one shows (Hud/NavBar, 44 tall 8 under the minimap: 22 + 52 + 8 + 266 + 8 + 44, then GAP).
 HudStack.RIGHT_TOP = 380
 HudStack.RIGHT_TOP_GUIDE = 408
+-- UI plan phase 2: the row of "something waits" buttons (Hud/WaitingRow: mail, login reward, season pass, Blood Moon
+-- results), 44 tall, under the minimap's area line (or under the guide bar), pushes the column down by its height and
+-- GAP while it shows.
+HudStack.WAITING = 44
 -- A touch screen (not a phone): under the portrait and its effect icons (16 + 136 + 6 + 44), the party frames push
 -- it down (16 + 136 + 70, then one row per member).
 HudStack.TOUCH_TOP = 202
@@ -81,10 +85,11 @@ HudStack.SMALL = table.freeze({ w = 84, h = 44 })
 HudStack.PAGE = table.freeze({ x = -162 - 120 - 76, y = -202 + 40 }) -- left of the arc's first button, clear of it
 HudStack.TARGET = table.freeze({ x = -162, y = -202 - 120 - 56 })
 
--- The login reward and season pass buttons right of the portrait (Hud: x 22 + 400 + 12, two 44 px buttons 8 apart from
--- y 22 + 136 - 44; each only while its reward waits, UI plan phase 1: the achievements button left the HUD); a phone
--- has them in its menu drawer. The spare column of a touch screen stands right of them.
-HudStack.EXTRAS = table.freeze({ x = 434, y = 114, w = 44, h = 2 * 44 + 8 })
+-- The "Auto" button right of the portrait (Hud/AutoGroup: x 22 + 400 + 12, 44 px, aligned to the portrait's bottom;
+-- UI plan phase 2: it holds the Cloak of Luring, Auto Hunt and Auto Potions, the login reward and the season pass
+-- moved under the minimap); a phone keeps the three at their own places. The spare column of a touch screen stands
+-- right of it.
+HudStack.EXTRAS = table.freeze({ x = 434, y = 114, w = 44, h = 44 })
 
 -- The tracker's height before it moves to a spare column (its header and two lines) and the least it shrinks to
 -- when there is no room for that in any column (its header; the list scrolls in what is left).
@@ -137,6 +142,14 @@ function HudStack.fixed(touch: boolean, w: number, h: number): { [string]: Rect 
 	return out
 end
 
+-- UI plan phase 2 (Studio audit 2026-10-31: windows never hid the HUD under them): whether an open window's rectangle
+-- `by` covers HUD element `item` by more than `margin` on both axes (a window edge that only touches it does not).
+function HudStack.covers(item: Rect, by: Rect, margin: number): boolean
+	local w = math.min(item.right, by.right) - math.max(item.left, by.left)
+	local h = math.min(item.bottom, by.bottom) - math.max(item.top, by.top)
+	return w > margin and h > margin
+end
+
 -- The top of the corner's buttons.
 function HudStack.cornerTop(touch: boolean, w: number, h: number): number
 	local top = h
@@ -182,14 +195,16 @@ function HudStack.elite(w: number, h: number, height: number, measured: { Rect }
 end
 
 -- The column of a w x h screen: PC (`touch` false), a touch screen that is not a phone, a phone (`compact`).
--- `others` = party members besides the player; `guide`: the guide bar shows under the minimap (PC).
+-- `others` = party members besides the player; `guide`: the guide bar shows under the minimap (PC); `waiting`: the
+-- row of "something waits" buttons shows under them (PC).
 function HudStack.column(
 	touch: boolean,
 	compact: boolean,
 	w: number,
 	h: number,
 	others: number,
-	guide: boolean?
+	guide: boolean?,
+	waiting: boolean?
 ): Column
 	if compact then
 		local stack = PhoneHud.PLACES.stack
@@ -210,7 +225,8 @@ function HudStack.column(
 	return {
 		x = w - HudStack.MARGIN,
 		right = true,
-		top = if guide then HudStack.RIGHT_TOP_GUIDE else HudStack.RIGHT_TOP,
+		top = (if guide then HudStack.RIGHT_TOP_GUIDE else HudStack.RIGHT_TOP)
+			+ (if waiting then HudStack.WAITING + HudStack.GAP else 0),
 		floor = HudStack.cornerTop(false, w, h) - HudStack.GAP,
 		-- two: a short window at the 0.6 floor has little height under the minimap (owner 2026-10-22)
 		spares = {
@@ -380,9 +396,10 @@ function HudStack.layout(
 	others: number,
 	boxes: { [string]: Box },
 	measured: { Rect }?,
-	guide: boolean?
+	guide: boolean?,
+	waiting: boolean?
 ): { [string]: Rect }
-	local column = HudStack.column(touch, compact, w, h, others, guide)
+	local column = HudStack.column(touch, compact, w, h, others, guide, waiting)
 	local under: { Rect } = if compact then {} else measured or {}
 	if #under > 0 then
 		column.floor = HudStack.floorAbove(column, math.max(HudStack.TRACKER, HudStack.PANEL_PC), under)

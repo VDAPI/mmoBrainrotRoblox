@@ -27,6 +27,8 @@ local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
+local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
+local TopBandState = require(script.Parent.Parent.UI.TopBandState)
 
 local AchievementController = {
 	Name = "AchievementController",
@@ -46,6 +48,7 @@ local MAX_QUEUE = 8
 
 local queue: { AchievementToast.View } = {}
 local showing = false
+local BAND_RETRY = 0.5 -- seconds between looks at the top band while a banner shows
 
 local function num(value: any): number?
 	return if type(value) == "number" and value == value and value > 0 and value < 1e9 then math.floor(value) else nil
@@ -126,8 +129,24 @@ local function viewOf(payload: any): AchievementToast.View?
 	}
 end
 
+local waiting = false
+
 local function pump()
 	if showing or not toast then
+		return
+	end
+	if #queue == 0 then
+		return
+	end
+	-- UI plan phase 2 (one band of messages, Logic/TopBand): not over the zone or the area banner; again once they fade
+	if TopBand.achievementWaits(Fusion.peek(TopBandState.Shown)) then
+		if not waiting then
+			waiting = true
+			task.delay(BAND_RETRY, function()
+				waiting = false
+				pump()
+			end)
+		end
 		return
 	end
 	local nextView = table.remove(queue, 1)
