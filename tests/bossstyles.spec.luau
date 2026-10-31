@@ -860,6 +860,12 @@ T.describe("BossStyles: on the boss rigs", function()
 						local over = hand[2] - floor
 						-- (the review measured the blades 10-15 studs up at the hit, a giant's fist 64)
 						T.expect({ tag, over < low + 0.15 * L, hand[3] < j.Hips[3] }).toEqual({ tag, true, true })
+						if ref.ahead then
+							-- (onto the spot ahead of the root where a player stands: 2026-10-31 Studio round 3,
+							-- Hrimvald's fist came down 20 studs beyond it)
+							local off = math.sqrt(hand[1] ^ 2 + (hand[3] + ref.ahead * L) ^ 2)
+							T.expect({ tag, off < 0.1 * L }).toEqual({ tag, true })
+						end
 						tested += 1
 					end
 				end

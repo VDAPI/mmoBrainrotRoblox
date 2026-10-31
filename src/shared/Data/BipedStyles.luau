@@ -37,6 +37,10 @@ export type ClipRef = {
 	-- at the hit the striking hand (the one farther ahead) this many studs over the feet, the body bowed at the waist
 	-- and crouched as far as it takes (Logic/BipedMotion LOW_*), then eased back over the recovery
 	low: number?,
+	-- and over a spot this many leg lengths ahead of the root (where a player stands when the boss stops for its blow:
+	-- Logic/MonsterMove.stopDistance), the hand swung down past level onto it (2026-10-31 Studio round 3: Hrimvald's
+	-- fist came down 20 studs ahead of the hips, far beyond the player)
+	ahead: number?,
 }
 export type Action = {
 	keys: { Key },
@@ -65,6 +69,7 @@ export type Style = {
 		walk: string,
 		run: string,
 		combat: { idle: string, walk: string, blade: boolean? }?,
+		lift: number?, -- the walk's swinging feet lifted this many times as high as its clip lifts them
 	}?,
 	guard: { [string]: number },
 	actions: { [string]: Action },
@@ -2321,7 +2326,7 @@ end
 -- the right), the jumping two-fisted slam for the crush and, carried onto the target, the pounce; a fall of its own);
 -- the heavy blow the overhead chop's fist.
 local BRUTE: Style = variant(HUMANOID_1H, {
-	clips = { idle = { "mutantIdle" }, walk = "mutantWalk", run = "run" },
+	clips = { idle = { "mutantIdle" }, walk = "mutantWalk", run = "run", lift = 2 },
 	guard = BRUTE_GUARD,
 	basic = { "clawR", "clawL" },
 	actions = {

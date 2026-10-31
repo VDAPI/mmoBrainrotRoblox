@@ -137,6 +137,9 @@ type BipedLab = {
 	input: (t: number) -> any,
 	lastT: number?,
 	pivot: ((t: number) -> CFrame)?, -- where the subject's root stands at motion time t (a turn, a leap's landing)
+	-- motion seconds before this loop's start (a loop carries on the time of the one before: 2026-10-31 Studio round
+	-- 3, a fresh model's stance at 0 s against the last loop's stance two seconds on read as a pop of the arm)
+	epoch: number?,
 }
 type Stressed = { model: Model, index: number, nextAt: number }
 
@@ -1108,8 +1111,9 @@ local function bipedLab(
 		name = planned.name
 	end
 	-- 2026-10-31 Studio re-review (the orc's hew cut the air 3 studs short of the dummy): a melee kind's blow from where
-	-- the server stands it (Logic/MonsterMove.stopDistance: its reach x meleeApproach, its body clear of the target),
-	-- not from the stage's line-up
+	-- the server stands it (Logic/MonsterMove.stopDistance: its reach, the range and half its root's depth, x
+	-- meleeApproach, its body clear of the target), not from the stage's line-up; a boss's too (round 3: Hrimvald's fist
+	-- landed 20 studs ahead of the hips, far past where a player stands)
 	local blowAction = style.actions[name]
 	local leaps = blowAction ~= nil
 		and (
@@ -1117,22 +1121,27 @@ local function bipedLab(
 			or (blowAction.clip ~= nil and (blowAction.clip.travel or blowAction.clip.fly) ~= nil)
 		)
 	local struckBy = name == "hit" or name == "hitBack" or name == "hitLeft" or name == "hitRight"
+	local fighter = monster or boss
+	-- (not a planned boss attack: its telegraph is staged around where the boss stands)
 	if
 		blowAction
+		and not planned
 		and not leaps
 		and not struckBy
-		and monster
-		and monster.attack == "melee"
+		and fighter
+		and fighter.attack == "melee"
 		and string.sub(name, 1, 5) ~= "death"
 		and name ~= style.throw
 		and name ~= style.aggro
 		and name ~= style.spawn
+		and not (style.boss and (name == style.boss.roar or name == style.boss.rageRoar))
 	then
 		local root = model.PrimaryPart
+		local halfDepth = if root then root.Size.Z / 2 else 1
 		local stop = MonsterMove.stopDistance(
 			"melee",
-			monster.range or CombatData.meleeRange,
-			if root then root.Size.Z / 2 else 1,
+			(fighter.range or CombatData.meleeRange) + halfDepth,
+			halfDepth,
 			CombatData :: any
 		)
 		local flat = Vector3.new(at.Position.X - actorAt.X, 0, at.Position.Z - actorAt.Z)
@@ -2018,6 +2027,19 @@ step = function(_dt: number)
 			input.dt = if last and tt >= last then tt - last else 0
 			input.snap = last == nil or tt < last
 			biped.lastT = tt
+			local epoch = biped.epoch or 0
+			local fxAction, fxHit = input.action, input.hitAt
+			if epoch > 0 then
+				input.now += epoch
+				if fxAction then
+					local shifted: { start: number } = table.clone(fxAction)
+					shifted.start += epoch
+					input.action = shifted
+				end
+				if fxHit then
+					input.hitAt = fxHit + epoch
+				end
+			end
 			local place = biped.pivot
 			if place then
 				s.model:PivotTo(place(tt))
@@ -2036,7 +2058,7 @@ step = function(_dt: number)
 			end
 			-- the effects the action releases (the breath, the nova, the dust), on the same motion time
 			attachFx(s.model, biped.rig)
-			MotionFx.step(s.model, input.action, tt, input.hitAt)
+			MotionFx.step(s.model, fxAction, tt, fxHit)
 		end
 		local bone = s.bone
 		if bone then
@@ -2074,7 +2096,14 @@ step = function(_dt: number)
 	end
 	local command = last
 	if loopOn and command and not heldT and not pendingT and now - startedAt >= motionLength() + LAB.loopGap then
+		-- (a template's motion time runs on from the loop before: its stance where the last one left it)
+		local before = s and s.biped
+		local epoch = if before then (before.epoch or 0) + (before.lastT or 0) else 0
 		play(command)
+		local after = subject and subject.biped
+		if after and before then
+			after.epoch = epoch
+		end
 	end
 	if not Clock.frozen() then
 		local skills = AnimLab.activeSkills()
