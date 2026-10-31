@@ -7560,5 +7560,59 @@ return {
 				why = "new module (ANIM-WZORCE §1.3 rule 8): a ranged shot and the Elite II throw start at the mouth, beak or hand (`fwd` x the drawn height ahead, `side` to the right) instead of the root's centre: 0.6-2.9 studs closer to the target, at most ~15 % of a ranged kind's range (wyvern 2.9 of 22): the projectile lands ~0.02-0.07 s sooner, damage unchanged",
 			},
 		},
+		["Combat:stuckTime"] = {
+			{
+				session = "S162e",
+				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): removed: the S22 stuck rule (5 s without moving or attacking = home, still hittable, and a hit turned it back into the fight) became the evade (pursuit*): a monster that cannot reach a target hitting it heals to full and goes home immune; fights a monster can win are unchanged",
+			},
+		},
+		["Combat:pursuitProgress"] = {
+			{
+				session = "S162e",
+				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): new: studs towards where it walks (its target or its path's next point) that count as progress; sliding along a wall or jittering counts nothing, a chase at 13 studs/s gains it in ~0.1 s; no fight change",
+			},
+		},
+		["Combat:pursuitRepath"] = {
+			{
+				session = "S162e",
+				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): new: 1.75 s without progress = a new path (owner's ~1.5-2 s); no fight change",
+			},
+		},
+		["Combat:pursuitEvade"] = {
+			{
+				session = "S162e",
+				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): new: 4.5 s without progress (or no path after 1.75 s) while its blow, shot or Elite II throw cannot reach = evade (immune, full HP, damage record cleared, home); a cheesing player loses the kill and its EXP, fights in the open are unchanged (standing in reach is progress)",
+			},
+		},
+		["Combat:evadeCalm"] = {
+			{
+				session = "S162e",
+				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): new: 6 s after an evade the monster takes no aggro by sight (a hit still starts a fight): no ping-pong with a player on an unreachable spot next to its home; no fight change",
+			},
+		},
+		["Combat:pathPerSecond"] = {
+			{
+				session = "S162e",
+				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): new: the server's PathfindingService budget, 8 paths a second (server cost only; phones are clients); no fight change",
+			},
+		},
+		["Combat:pathBurst"] = {
+			{
+				session = "S162e",
+				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): new: at most 4 saved paths of that budget at once; no fight change",
+			},
+		},
+		["Combat:pathGap"] = {
+			{
+				session = "S162e",
+				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): new: one path per monster every 1.5 s at most; no fight change",
+			},
+		},
+		["Combat:pathMove"] = {
+			{
+				session = "S162e",
+				why = "S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit): new: a new path once the target moved 8 studs from the old path's end; no fight change",
+			},
+		},
 	} :: { [string]: { Reason } },
 }
