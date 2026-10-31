@@ -317,7 +317,9 @@ local function refresh(model: Model)
 		elseif QuadStyles.get(motionStyle) then
 			s.biped = QuadRig.new(holder, motionStyle, s.seed, look.asset.model)
 		elseif RigidStyles.get(motionStyle) then
-			s.biped = RigidRig.new(holder, motionStyle, s.seed, look.asset.model, model)
+			-- (a kind on both: the flyer template with its new export's wing bones, else the rigid recipe)
+			s.biped = (FlyerStyles.get(motionStyle) and FlyerRig.new(holder, motionStyle, s.seed, look.asset.model))
+				or RigidRig.new(holder, motionStyle, s.seed, look.asset.model, model)
 		elseif FlyerStyles.get(motionStyle) then
 			s.biped = FlyerRig.new(holder, motionStyle, s.seed, look.asset.model)
 		end

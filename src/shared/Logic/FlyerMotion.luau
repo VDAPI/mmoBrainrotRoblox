@@ -2,16 +2,21 @@
 -- Template animation (docs/ANIM-WZORCE.md F3): the motion of an imported flyer in layers, from the bottom:
 -- 1. the wingbeat: one phase (downstroke 0 -> 0.45, upstroke -> 1) at the blended mode's rate (hover, forward flight,
 --    hard flapping; Data/FlyerStyles `modes`), the humerus elevation fastest mid-stroke, the sweep's loop, the forearm
---    folding on the upstroke, the hand whipping behind the humerus and twisting on the upstroke; the body rises,
---    pitches and the tail counters with it. Glides in long straight flights (entered at the end of a downstroke, left
---    with a downstroke from the top); the outer wing beats wider while it turns in place;
+--    folding on the upstroke, the hand whipping behind the humerus and twisting on the upstroke, the fingers fanned on
+--    the downstroke and drawn in on the upstroke (`spread`); the body rises, pitches and the tail counters with it.
+--    Glides in long straight flights (entered at the end of a downstroke, left with a downstroke from the top); the
+--    outer wing beats wider while it turns in place; an erratic flyer's beat rate and hover wander (`jitter`);
 -- 2. flight: the forward lean by speed, the bank into turns (a spring), the tail as a rudder, the brake's flare, the
 --    legs hanging in a hover and tucked in flight; the hover's slow figure 8 and yaw drift; the head held still against
 --    the body's bob, pitch and bank, with bird saccades (it jumps to a new look and holds) or locked on its target;
 -- 3. keyed actions (Logic/MotionTimeline: anticipation stretched to the server's windup, the strike ending on its hit)
 --    with their own controls (Data/FlyerStyles header: flap, hard, travel, drop, fall, shake) and the gather's tremble;
 -- 4. reactions: the flinch by side with two hard beats after it, the stun's irregular flutter and sinking wobble, the
---    freeze holding the pose.
+--    freeze holding the pose;
+-- 5. the perch (a style with `perch`, a map with legs): after hovering still for a while out of a fight it flies down
+--    to the ground (hard beats), folds its wings, hops about now and then and pecks (its `perch.fidgets`); a move, a
+--    fight, a hit or a stun lifts it off again. Only the look lands: the server's monster hovers on.
+-- Last the map's own `pose` (FlyerRigs: an upright export's head, tail and legs turned to a flying carriage).
 -- Pure: client/Anim/FlyerRig writes the bones, AnimLab evaluates it at a fixed time. The functions the game calls have
 -- the names and arguments of Logic/QuadMotion's (step, pick, death, side, length, controlsAt, times, mirror).
 -- Allocation-light: the controls live in tables of the instance, rewritten every frame.
@@ -45,6 +50,7 @@ export type Input = {
 	stunned: boolean?, -- AnimLab: stunned / frozen without the attribute, a glide now
 	frozen: boolean?,
 	glide: boolean?,
+	perch: boolean?, -- AnimLab: on the ground now
 }
 export type Instance = {
 	skel: FlyerPose.Skeleton,
@@ -92,6 +98,18 @@ export type Instance = {
 	fromStart: number?,
 	mode: FlyerStyles.Mode,
 	muzzle: Vec,
+	perch: number, -- 0 in the air .. 1 on the ground
+	perchStill: number, -- s it has hovered still
+	perchAfter: number, -- s of stillness before this bird lands
+	perchDrop: number?, -- dump units from the hover down to standing (nil: it cannot perch)
+	fidgetPerch: boolean, -- the running fidget is one of the perch's
+	hop: { number }, -- the hop: from x, z, yaw, to x, z, yaw (dump units, rad), its start and the next one's
+	hopCount: number,
+	lockName: string?, -- a lunge's aim (the action it belongs to), direction and distance (studs)
+	lockStart: number,
+	lockX: number,
+	lockZ: number,
+	lockD: number,
 }
 
 local TAU = 2 * math.pi
@@ -101,7 +119,7 @@ local WING: { { [string]: string } } = {}
 local WING_KEYS: { string } = {}
 for _, side in { "L", "R" } do
 	local names: { [string]: string } = {}
-	for letter in string.gmatch("estfhbwpq", ".") do
+	for letter in string.gmatch("estfhbwpqn", ".") do
 		names[letter] = "w" .. side .. letter
 		table.insert(WING_KEYS, "w" .. side .. letter)
 	end
@@ -139,11 +157,37 @@ local function newMode(): FlyerStyles.Mode
 	return { hz = 0, top = 0, bottom = 0, fore = 0, back = 0, fold = 0, twist = 0, bob = 0, pitch = 0, tail = 0 }
 end
 
+-- How far (dump units) the body comes down from its hover to stand on its feet in the perch's pose: the lowest leg
+-- pivot of that pose less the toes' depth; nil without a perch or legs.
+local function perchDrop(skel: FlyerPose.Skeleton, style: FlyerStyles.Style): number?
+	local perch = style.perch
+	if not perch then
+		return nil
+	end
+	local controls: Controls = table.clone(perch.pose)
+	local pose: { [string]: number } = skel.rig.pose or {}
+	for key, v in pose do
+		controls[key] = (controls[key] or 0) + v
+	end
+	FlyerPose.world(skel, controls)
+	local low = math.huge
+	for _, node in skel.nodes do
+		if node.role == "leg" then
+			low = math.min(low, node.at[2])
+		end
+	end
+	if low == math.huge then
+		return nil
+	end
+	return math.max(0, low / skel.unit - perch.toe)
+end
+
 function FlyerMotion.new(skel: FlyerPose.Skeleton, styleId: string, seed: number): Instance?
 	local style = FlyerStyles.get(styleId)
 	if not style then
 		return nil
 	end
+	local perch = style.perch
 	-- bigger birds beat slower (docs/ANIM-WZORCE §4.2: the rate over the square root of the scale)
 	local scale = math.clamp(skel.unit, 0.3, 4)
 	return {
@@ -192,6 +236,18 @@ function FlyerMotion.new(skel: FlyerPose.Skeleton, styleId: string, seed: number
 		fromStart = nil,
 		mode = newMode(),
 		muzzle = { 0, 0, 0 },
+		perch = 0,
+		perchStill = 0,
+		perchAfter = if perch then perch.after[1] + hash01(6, seed) * (perch.after[2] - perch.after[1]) else 0,
+		perchDrop = perchDrop(skel, style),
+		fidgetPerch = false,
+		hop = { 0, 0, 0, 0, 0, 0, -math.huge, 0 },
+		hopCount = 0,
+		lockName = nil,
+		lockStart = 0,
+		lockX = 0,
+		lockZ = -1,
+		lockD = 0,
 	}
 end
 
@@ -217,8 +273,9 @@ local function elevation(mode: FlyerStyles.Mode, p: number): number
 end
 
 -- The wingbeat at phase `p` into `out`: per wing `e` as the swing about the stroke's middle (the middle itself is
--- `mid`), with `amp` per side (L, R) on the swing; the body's rise, pitch and the tail's counter.
-local function beatInto(out: Controls, mode: FlyerStyles.Mode, p: number, ampL: number, ampR: number)
+-- `mid`), with `amp` per side (L, R) on the swing, the fingers fanned by `spread`; the body's rise, pitch and the tail's
+-- counter.
+local function beatInto(out: Controls, mode: FlyerStyles.Mode, p: number, ampL: number, ampR: number, spread: number)
 	local mid = (mode.top + mode.bottom) / 2
 	local e = elevation(mode, p) - mid
 	local lagHand = elevation(mode, p - 0.06) - mid
@@ -239,6 +296,7 @@ local function beatInto(out: Controls, mode: FlyerStyles.Mode, p: number, ampL: 
 		out[k.p] = (lagTip - e) * 0.6 * amp
 		out[k.q] = twist
 		out[k.t] = if down then -0.08 * arch else 0
+		out[k.n] = if down then spread * arch else -0.5 * spread * arch
 	end
 	local wave = math.cos(TAU * (p - 0.4))
 	out.by = mode.bob * wave
@@ -284,8 +342,17 @@ local MIRRORED: { [string]: boolean } = {
 }
 
 -- Controls a key may set that drive the motion instead of a bone (Data/FlyerStyles header).
-local META: { [string]: boolean } =
-	{ flap = true, hard = true, travel = true, reachMax = true, arc = true, drop = true, fall = true, shake = true }
+local META: { [string]: boolean } = {
+	flap = true,
+	hard = true,
+	travel = true,
+	reachMax = true,
+	arc = true,
+	drop = true,
+	fall = true,
+	shake = true,
+	lunge = true,
+}
 
 -- The keyed controls of `run` at `t` s, blending from `from` (the pose it started from, mirrored like the run; the
 -- stance when nil) unless its first key is at its very start.
@@ -362,6 +429,9 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 		inst.hardUntil = -math.huge
 		inst.lastHit = nil
 		inst.gliding, inst.glidePending, inst.glide, inst.glideSlot = false, false, 0, -1
+		inst.perch, inst.perchStill, inst.hopCount = 0, 0, 0
+		inst.hop[7], inst.hop[8] = -math.huge, 0
+		inst.lockName = nil
 	end
 	inst.lastTime = now
 	local speed = input.speed
@@ -374,6 +444,9 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 		inst.hardUntil = hit + 0.6 -- two hard beats after a hit
 	end
 	local hardTarget = math.max(inst.hardKey, if now < inst.hardUntil and now >= (hit or now) then 1 else 0)
+	if inst.perch > 0.02 and inst.perch < 0.98 then
+		hardTarget = 1 -- flying down to the ground or up from it
+	end
 	local stunTarget = if stunned then 1 else 0
 	if snap then
 		inst.flight, inst.hard, inst.stun = flightTarget, hardTarget, stunTarget
@@ -386,6 +459,11 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 	blendModes(mode, style, inst.flight, inst.hard)
 	local gaitRate = if input.gait == "run" then 1.08 elseif input.gait == "walk" then 0.92 else 1
 	local hz = mode.hz * inst.rate * gaitRate
+	local jitter = style.jitter
+	if jitter then
+		-- an erratic flyer: the beat quickens and slows all the time
+		hz *= 1 + jitter.rate * noise(now * jitter.hz, inst.seed + 41)
+	end
 	if inst.stun > 0.01 then
 		-- an irregular flutter between 2 and 4 beats a second
 		hz += (2 + noise(now * 1.7, inst.seed + 9) - hz) * inst.stun
@@ -446,6 +524,28 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 		inst.glide = math.max(glideTarget, inst.glide - dt / 0.15)
 	end
 	local glide = inst.glide
+	---------------------------------------------------------------- the perch
+	local perch = style.perch
+	local dying = run ~= nil and runAction ~= nil and runAction.hold == true
+	if perch and inst.perchDrop and not dying then
+		local still = not input.combat
+			and not input.returning
+			and not stunned
+			and speed < 0.4
+			and not busy
+			and not (hit and now - hit < 3)
+		inst.perchStill = if still then inst.perchStill + dt else 0
+		local target = if input.perch or (still and inst.perchStill >= inst.perchAfter) then 1 else 0
+		if snap then
+			inst.perch = target
+		elseif inst.perch < target then
+			inst.perch = math.min(target, inst.perch + dt / perch.land)
+		else
+			inst.perch = math.max(target, inst.perch - dt / perch.rise)
+		end
+	end
+	local pw = MotionTimeline.ease("inout", inst.perch)
+	local air = 1 - pw
 	-- the phase (held in a glide)
 	if not inst.gliding then
 		inst.phase = (inst.phase + hz * dt * (1 - glide)) % 1
@@ -468,12 +568,12 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 	local ampL = wide * (1 + (if input.yawRate < 0 then 0.22 * turnInPlace else 0))
 	local ampR = wide * (1 + (if input.yawRate > 0 then 0.22 * turnInPlace else 0))
 	local beat = inst.beat
-	beatInto(beat, mode, inst.phase, ampL, ampR)
+	beatInto(beat, mode, inst.phase, ampL, ampR, style.spread or 0)
 	local mid = (mode.top + mode.bottom) / 2
-	local flapping = (1 - glide) * (1 - flare * 0.7)
+	local flapping = (1 - glide) * (1 - flare * 0.7) * air
 	addAll(controls, beat, flapping)
 	for _, k in WING do
-		add(controls, k.e, mid * (1 - glide))
+		add(controls, k.e, mid * (1 - glide) * air)
 	end
 	if glide > 0.001 then
 		local g = style.glide
@@ -488,14 +588,24 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 	-- the forward lean, the legs, the hover's drift
 	local f = inst.flight
 	add(controls, "bpitch", style.lean * math.clamp(speed / cruise, 0, 1.2) * f)
-	addAll(controls, style.hang, 1 - f)
+	addAll(controls, style.hang, (1 - f) * air)
 	addAll(controls, style.tuck, f)
 	local t = now + inst.seed * 3.7
-	local still = 1 - f
+	local still = (1 - f) * air
 	local d = style.drift
 	add(controls, "bx", d.x * math.sin(TAU * d.hz * t) * still)
 	add(controls, "bz", d.z * math.sin(TAU * 2 * d.hz * t) * still)
 	add(controls, "byaw", d.yaw * math.sin(TAU * 0.13 * t + 1.1) * still)
+	if jitter then
+		-- it never holds still: darts about its place
+		local j = air * (1 - 0.5 * f)
+		add(controls, "bx", jitter.x * noise(t * jitter.hz * 1.3, inst.seed + 43) * j)
+		add(controls, "by", jitter.y * noise(t * jitter.hz * 1.7, inst.seed + 47) * j)
+		add(controls, "broll", jitter.roll * noise(t * jitter.hz * 1.1, inst.seed + 53) * j)
+	end
+	if perch and pw > 0.001 then
+		addAll(controls, perch.pose, pw)
+	end
 	-- the bank into turns (a spring of 0.2 s), the tail as a rudder
 	local bankTarget = math.clamp(0.35 * input.yawRate, -style.bank, style.bank) * (0.35 + 0.65 * f)
 	inst.bank = if snap then bankTarget else approach(inst.bank, bankTarget, 5, dt)
@@ -541,10 +651,15 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 		inst.fidget = nil
 	end
 	local fidget = inst.fidget
-	if fidget and (input.combat or inst.flight > 0.2 or stunned) then
+	local perched = perch ~= nil and inst.perch >= 1
+	if fidget and (input.combat or inst.flight > 0.2 or stunned or inst.fidgetPerch ~= perched) then
 		inst.fidget = nil
 		fidget = nil
 	end
+	-- (on the ground: the perch's idles, between its hops)
+	local hops = inst.hop
+	local list = if perch and perched then perch.fidgets else style.fidgets
+	local every = if perch and perched then perch.every else style.fidgetEvery
 	if
 		not fidget
 		and not busy
@@ -552,17 +667,18 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 		and not stunned
 		and inst.flight < 0.05
 		and now >= inst.nextFidget
-		and #style.fidgets > 0
+		and #list > 0
+		and (inst.perch <= 0 or perched)
+		and now >= hops[7] + (if perch then perch.hop.length else 0)
 	then
 		local n = math.floor(now)
-		local name = style.fidgets[1 + math.floor(hash01(n, inst.seed) * #style.fidgets) % #style.fidgets]
+		local name = list[1 + math.floor(hash01(n, inst.seed) * #list) % #list]
 		if style.actions[name] then
 			inst.fidget = { name = name, start = now, hit = 0.5 }
+			inst.fidgetPerch = perched
 			fidget = inst.fidget
 		end
-		inst.nextFidget = now
-			+ style.fidgetEvery[1]
-			+ hash01(n + 3, inst.seed) * (style.fidgetEvery[2] - style.fidgetEvery[1])
+		inst.nextFidget = now + every[1] + hash01(n + 3, inst.seed) * (every[2] - every[1])
 	end
 	---------------------------------------------------------------- the keyed action
 	local actionW = 0
@@ -641,8 +757,30 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 					end
 				end
 			end
-			-- down toward the ground (straight, or falling under gravity)
-			local height = math.max(0, skel.pivot[2] / unit - skel.rig.half)
+			-- a melee dive with no area to fly to: toward the target, aimed until the strike starts, then locked
+			local lunge = keyed.lunge
+			if lunge and lunge > 0 then
+				if playing.name ~= inst.lockName or playing.start ~= inst.lockStart then
+					inst.lockName, inst.lockStart = playing.name, playing.start
+					inst.lockX, inst.lockZ, inst.lockD = 0, -1, 0.6 * unit
+				end
+				local aimed = playing.hit - math.min(action.strike, playing.hit * 0.7)
+				local target = input.look
+				if target and (at < aimed or snap) then
+					local fx, fz = target[1], target[3]
+					local dist = math.sqrt(fx * fx + fz * fz)
+					if dist > 1e-3 then
+						local cap = (keyed.reachMax or 3) * unit
+						inst.lockX, inst.lockZ = fx / dist, fz / dist
+						inst.lockD = math.clamp(dist - 1.2 * unit, 0.3 * unit, cap)
+					end
+				end
+				local k = inst.lockD * lunge * w / unit
+				add(controls, "bx", inst.lockX * k)
+				add(controls, "bz", inst.lockZ * k)
+			end
+			-- down toward the ground (straight, or falling under gravity; from where it stands when perched)
+			local height = math.max(0, skel.pivot[2] / unit - skel.rig.half - (inst.perchDrop or 0) * pw)
 			local drop = (keyed.drop or 0) + (keyed.fall or 0) ^ 2
 			if drop > 0 then
 				add(controls, "by", -drop * height * w)
@@ -681,6 +819,44 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 		add(controls, "nyaw", inst.lookYaw * 0.45 * lw)
 		add(controls, "hyaw", inst.lookYaw * 0.45 * lw)
 		add(controls, "hpitch", inst.lookPitch * 0.6 * lw)
+	end
+	---------------------------------------------------------------- on the ground
+	if perch and inst.perch <= 0 then
+		-- (it lands where it hovers: the hops start again from there)
+		hops[1], hops[2], hops[3], hops[4], hops[5], hops[6] = 0, 0, 0, 0, 0, 0
+	end
+	if perch and pw > 0.001 then
+		local hop = perch.hop
+		local h = hops
+		if inst.perch < 1 then
+			h[8] = math.max(h[8], now + 0.8) -- the first hop a moment after it stands
+		elseif not fidget and not busy and now >= h[8] and now >= h[7] + hop.length then
+			-- a new hop: from where it stands to a spot near where it landed, turning a little
+			local n = inst.hopCount + 1
+			inst.hopCount = n
+			h[1], h[2], h[3] = h[4], h[5], h[6]
+			local a = hash01(n * 5 + 1, inst.seed) * TAU
+			local r = hop.reach * math.sqrt(hash01(n * 5 + 2, inst.seed))
+			h[4], h[5] = r * math.sin(a), r * math.cos(a)
+			h[6] = math.clamp(h[3] + (hash01(n * 5 + 3, inst.seed) * 2 - 1) * hop.turn, -1, 1)
+			h[7] = now
+			h[8] = now + hop.length + hop.every[1] + hash01(n * 5 + 4, inst.seed) * (hop.every[2] - hop.every[1])
+		end
+		local u = math.clamp((now - h[7]) / hop.length, 0, 1)
+		local e = MotionTimeline.ease("inout", u)
+		local lift = math.sin(math.pi * u)
+		add(controls, "bx", (h[1] + (h[4] - h[1]) * e) * pw)
+		add(controls, "bz", (h[2] + (h[5] - h[2]) * e) * pw)
+		add(controls, "byaw", (h[3] + (h[6] - h[3]) * e) * pw)
+		add(controls, "by", (4 * hop.height * u * (1 - u) - (inst.perchDrop or 0)) * pw)
+		if lift > 0.001 then
+			addAll(controls, hop.air, lift * pw)
+		end
+	end
+	-- the map's own carriage (an upright export laid into flight)
+	local rigPose = skel.rig.pose
+	if rigPose then
+		addAll(controls, rigPose, 1)
 	end
 	inst.solved = true
 	local posed = FlyerPose.solve(skel, controls)

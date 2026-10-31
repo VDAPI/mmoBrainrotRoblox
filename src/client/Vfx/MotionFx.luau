@@ -418,7 +418,9 @@ local function quadAnchor(o: Owner, name: string): Anchor?
 end
 
 local function flyerAnchor(o: Owner, name: string): Anchor?
-	local map = if o.assetModel then FlyerRigs.get(o.assetModel) else nil
+	-- the map the rig picked (a model's new export or its old one)
+	local skel = o.rig.skel
+	local map: FlyerRigs.Rig? = if skel then skel.rig else nil
 	if not map then
 		return nil
 	end

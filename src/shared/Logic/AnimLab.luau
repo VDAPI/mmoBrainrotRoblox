@@ -275,8 +275,12 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 			then BipedStyles.LAB_STATES
 			elseif motion and QuadStyles.get(motion) then QuadStyles.labStates(motion)
 			elseif motion and RigidStyles.get(motion) then RigidStyles.labStates(motion)
-			elseif motion and FlyerStyles.get(motion) then FlyerStyles.LAB_STATES
+			elseif motion and FlyerStyles.get(motion) then FlyerStyles.labStates(motion)
 			else nil
+		-- a kind on both templates (the crow, the bat: rigid with the old model, a flyer with the new one) shows both
+		if states and motion and RigidStyles.get(motion) and FlyerStyles.get(motion) then
+			states = FlyerStyles.labStates(motion, states)
+		end
 		if not table.find(LookAnim.SLOTS, slot) and not (states and table.find(states, slot)) then
 			return nil, "animlab.error.slot"
 		end
