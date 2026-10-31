@@ -3,7 +3,9 @@
 -- Hair (hairstyle, hair colour), Body (skin, build), Paint (face paint, its colour); a list choice is "◀ name ▶", a
 -- colour choice a grid of tiles (they wrap on a narrow frame). "Random" (Logic/CharacterLook.random) and "Default"
 -- under the tabs. It only sets props.Look (and props.Tab, which the preview follows); the creator and the look window
--- send the look to the server. Every target is at least 44 px.
+-- send the look to the server. Every target is at least 44 px. Hair fixes 2026-10-31: a hairstyle with its own colour
+-- range (Logic/CharacterLook.hairColors) dims the colours it does not offer and shows the nearest one it does; the
+-- colour picked last comes back on the next hairstyle that has it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -47,10 +49,30 @@ local function indexOf(list: { any }, id: string): number
 	return 1
 end
 
-local function with(look: Look, field: string, id: string): Look
+-- What one picker remembers between clicks: the hair colour the player picked last.
+type Memory = { hairColor: string? }
+
+-- The look with `field` set to `id`. A new hairstyle takes the remembered hair colour, or the nearest one it offers.
+local function with(look: Look, field: string, id: string, memory: Memory): Look
 	local out = table.clone(CharacterLook.normalize(look)) :: any
+	if field == "hair" then
+		-- the remembered colour holds while the look still shows it (Random, Default or a reset replace it)
+		local wanted = memory.hairColor
+		if not wanted or CharacterLook.fitHairColor(out.hair, wanted) ~= out.hairColor then
+			wanted = out.hairColor
+		end
+		memory.hairColor = wanted
+		out.hairColor = CharacterLook.fitHairColor(id, wanted :: string)
+	elseif field == "hairColor" then
+		memory.hairColor = id
+	end
 	out[field] = id
 	return out
+end
+
+-- Whether the look's hairstyle offers the hair colour `id`.
+local function offered(look: Look, id: string): boolean
+	return table.find(CharacterLook.hairColors(CharacterLook.normalize(look).hair), id) ~= nil
 end
 
 local function label(scope: Scope, key: string): Instance
@@ -68,13 +90,20 @@ local function label(scope: Scope, key: string): Instance
 end
 
 -- "◀ name ▶" over a list of ids.
-local function stepper(scope: Scope, order: number, props: Props, field: string, list: { any }): Instance
+local function stepper(
+	scope: Scope,
+	order: number,
+	props: Props,
+	memory: Memory,
+	field: string,
+	list: { any }
+): Instance
 	local function step(delta: number)
 		Sounds.play("click")
 		local look = Fusion.peek(props.Look)
 		local i = indexOf(list, (CharacterLook.normalize(look) :: any)[field])
 		local n = #list
-		props.Look:set(with(look, field, list[(i - 1 + delta) % n + 1].id))
+		props.Look:set(with(look, field, list[(i - 1 + delta) % n + 1].id, memory))
 	end
 	return scope:New("Frame")({
 		Name = field,
@@ -121,8 +150,9 @@ local function stepper(scope: Scope, order: number, props: Props, field: string,
 	})
 end
 
--- A grid of colour tiles over a list of { id, color }; the tooltip names the colour.
-local function tiles(scope: Scope, order: number, props: Props, field: string, list: { any }): Instance
+-- A grid of colour tiles over a list of { id, color }; the tooltip names the colour. Hair colours the hairstyle does
+-- not offer are dimmed and say so.
+local function tiles(scope: Scope, order: number, props: Props, memory: Memory, field: string, list: { any }): Instance
 	local cells: { any } = {
 		scope:New("UIGridLayout")({
 			CellSize = UDim2.fromOffset(TILE, TILE),
@@ -134,15 +164,25 @@ local function tiles(scope: Scope, order: number, props: Props, field: string, l
 		local selected = scope:Computed(function(use): boolean
 			return (CharacterLook.normalize(use(props.Look)) :: any)[field] == entry.id
 		end)
+		local available = scope:Computed(function(use): boolean
+			return field ~= "hairColor" or offered(use(props.Look), entry.id)
+		end)
 		local tile = scope:New("TextButton")({
 			Name = entry.id,
 			LayoutOrder = i,
 			AutoButtonColor = false,
 			Text = "",
 			BackgroundColor3 = Theme.tint(entry.color),
+			BackgroundTransparency = scope:Computed(function(use): number
+				return if use(available) then 0 else 0.7
+			end),
 			[OnEvent("Activated")] = function()
+				if not Fusion.peek(available) then
+					Sounds.play("error")
+					return
+				end
 				Sounds.play("click")
-				props.Look:set(with(Fusion.peek(props.Look), field, entry.id))
+				props.Look:set(with(Fusion.peek(props.Look), field, entry.id, memory))
 			end,
 			[Children] = {
 				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
@@ -160,6 +200,10 @@ local function tiles(scope: Scope, order: number, props: Props, field: string, l
 		-- natural skin tones are numbered, every other colour has a name
 		local name = if field == "skin" and i <= CharacterLook.NATURAL_SKINS
 			then Text.T(scope, "look.skin.n", { n = i })
+			elseif field == "hairColor" then scope:Computed(function(use): string
+				local own = Text.get(use, `look.hairColor.{entry.id}`)
+				return if use(available) then own else `{own} ({Text.get(use, "look.hairColor.notOffered")})`
+			end)
 			else Text.T(scope, `look.{field}.{entry.id}`)
 		Tooltip.attach(scope, tile, name)
 		table.insert(cells, tile)
@@ -209,6 +253,7 @@ end
 
 local function LookPicker(scope: Scope, props: Props): Instance
 	local tab: Fusion.Value<string> = props.Tab or scope:Value("face")
+	local memory: Memory = {}
 	local tabButtons: { any } = {
 		scope:New("UIListLayout")({
 			FillDirection = Enum.FillDirection.Horizontal,
@@ -255,21 +300,21 @@ local function LookPicker(scope: Scope, props: Props): Instance
 				[Children] = tabButtons :: any,
 			}),
 			page(scope, tab, "face", {
-				stepper(scope, 1, props, "face", ClassLooks.FACES),
-				stepper(scope, 2, props, "brows", ClassLooks.BROWS),
-				stepper(scope, 3, props, "beard", ClassLooks.BEARDS),
+				stepper(scope, 1, props, memory, "face", ClassLooks.FACES),
+				stepper(scope, 2, props, memory, "brows", ClassLooks.BROWS),
+				stepper(scope, 3, props, memory, "beard", ClassLooks.BEARDS),
 			}),
 			page(scope, tab, "hair", {
-				stepper(scope, 1, props, "hair", ClassLooks.HAIRS),
-				tiles(scope, 2, props, "hairColor", ClassLooks.HAIR_COLORS),
+				stepper(scope, 1, props, memory, "hair", ClassLooks.HAIRS),
+				tiles(scope, 2, props, memory, "hairColor", ClassLooks.HAIR_COLORS),
 			}),
 			page(scope, tab, "body", {
-				tiles(scope, 1, props, "skin", ClassLooks.SKINS),
-				stepper(scope, 2, props, "build", ClassLooks.BUILDS),
+				tiles(scope, 1, props, memory, "skin", ClassLooks.SKINS),
+				stepper(scope, 2, props, memory, "build", ClassLooks.BUILDS),
 			}),
 			page(scope, tab, "paint", {
-				stepper(scope, 1, props, "paint", ClassLooks.PAINTS),
-				tiles(scope, 2, props, "paintColor", ClassLooks.PAINT_COLORS),
+				stepper(scope, 1, props, memory, "paint", ClassLooks.PAINTS),
+				tiles(scope, 2, props, memory, "paintColor", ClassLooks.PAINT_COLORS),
 			}),
 			scope:New("Frame")({
 				Name = "Buttons",
@@ -286,6 +331,7 @@ local function LookPicker(scope: Scope, props: Props): Instance
 						OnClick = function()
 							Sounds.play("click")
 							local rng = Rng.new(math.floor(os.clock() * 1000) % 2147483647)
+							memory.hairColor = nil
 							props.Look:set(CharacterLook.random(function()
 								return rng:next()
 							end))
@@ -300,6 +346,7 @@ local function LookPicker(scope: Scope, props: Props): Instance
 						TextSize = Theme.TextSize.Small,
 						Text = Text.T(scope, "look.default"),
 						OnClick = function()
+							memory.hairColor = nil
 							props.Look:set(CharacterLook.normalize(ClassLooks.DEFAULT_LOOK))
 						end,
 					}),

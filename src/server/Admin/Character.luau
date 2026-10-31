@@ -317,6 +317,8 @@ commands.charlook = function(player, args)
 					return
 				end
 			end
+			-- hair fixes 2026-10-31: a hairstyle with its own colour range takes the nearest colour it offers
+			look = CharacterLook.normalize(look)
 		end
 		if not CosmeticService.AdminSetLook(player, look) then
 			reply(player, "admin.usage.charlook")

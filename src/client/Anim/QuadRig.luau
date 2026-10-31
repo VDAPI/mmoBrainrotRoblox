@@ -2,7 +2,8 @@
 -- Template animation (docs/ANIM-WZORCE.md F2): the bones of an imported quadruped (Tripo, Data/QuadRigs role map of
 -- its model) driven by Logic/QuadMotion. Rest frames are read once with every Transform at identity, in the space of
 -- the look's HumanoidRootPart (front -Z, feet at its origin). The rig has the shape of client/Anim/BipedRig's (`motion`,
--- `bones`, `mod`, `kind`), so AnimationController and AnimLab drive either.
+-- `bones`, `mod`, `kind`), so AnimationController and AnimLab drive either. A map with a `muzzle` (the dragon's mouth,
+-- 2026-10-31) moves the monster root's `Muzzle` onto it every frame, so the shots and the breath leave the drawn jaws.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -18,6 +19,9 @@ export type Rig = {
 	motion: QuadMotion.Instance,
 	bones: { [string]: Bone },
 	mod: any,
+	muzzle: Attachment?, -- the monster root's Muzzle, moved onto `muzzleBone` each frame
+	muzzleBone: Bone?,
+	muzzleAt: Vector3?, -- the shots' point in the bone's own frame
 }
 
 local function toMat(cf: CFrame): { number }
@@ -65,7 +69,22 @@ function QuadRig.new(look: Model, styleId: string, seed: number, model: string):
 	if not motion then
 		return nil
 	end
-	return { kind = "quad", skel = skel, motion = motion, bones = byName, mod = QuadMotion }
+	local rig: Rig = { kind = "quad", skel = skel, motion = motion, bones = byName, mod = QuadMotion }
+	-- the mouth: the point is kept without the monster's root too (AnimLab's look, Vfx/MotionFx's breath read it)
+	local spec = map.muzzle
+	local muzzleBone = spec and byName[spec.bone]
+	if spec and muzzleBone then
+		local owner = look.Parent
+		local ownerRoot = owner and owner:FindFirstChild("HumanoidRootPart")
+		local muzzle = ownerRoot and ownerRoot:FindFirstChild("Muzzle")
+		local at, L = spec.at, skel.L
+		rig.muzzle = if muzzle and muzzle:IsA("Attachment") then muzzle else nil
+		rig.muzzleBone = muzzleBone
+		rig.muzzleAt = muzzleBone.WorldCFrame:VectorToObjectSpace(
+			space:VectorToWorldSpace(Vector3.new(at[1] * L, at[2] * L, at[3] * L))
+		)
+	end
+	return rig
 end
 
 -- Writes the Transforms of one frame.
@@ -81,6 +100,10 @@ function QuadRig.apply(rig: Rig, posed: QuadPose.Posed)
 			end
 			bone.Transform = cf
 		end
+	end
+	local muzzle, bone, at = rig.muzzle, rig.muzzleBone, rig.muzzleAt
+	if muzzle and bone and at and muzzle.Parent then
+		muzzle.WorldPosition = bone.TransformedWorldCFrame:PointToWorldSpace(at)
 	end
 end
 

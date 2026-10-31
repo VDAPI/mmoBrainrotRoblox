@@ -32,6 +32,8 @@ local MODELS: { { string } } = {
 	{ "npc_captain", "captain" },
 	{ "npc_wanderer", "wanderer" },
 	{ "npc_vendor_hunter", "vendor_hunter" },
+	-- Teodor's new export (2026-10-31: Mixamo, a T-pose, read from its FBX)
+	{ "portalmaster_v2", "portalmaster" },
 }
 local HEIGHT = 5.5 -- studs: the models are scaled to about a player's height
 local DT = 1 / 30
@@ -55,9 +57,30 @@ end
 
 type Rig = { skel: BipedPose.Skeleton, keep: { [string]: boolean } }
 
+-- A new export's dump (FBX units, bone heads and tails, the lowest vertex at y = 0) as Studio imports it: without the
+-- leaf bones no vertex weighs on (the toe and head ends, the fingers' fourth bones), a rest frame along each bone rolled
+-- a little more each (nothing may lean on them being tidy), in the Studio dump's shape.
+local function fromExport(model: string): any
+	local dump = serde.decode("json", fs.readFile(`tools/anim/rigs/{model}.json`))
+	local bones = {}
+	for i, b in dump.bones do
+		if string.match(b.name, "_End$") or string.match(b.name, "%a4$") then
+			continue
+		end
+		local d = unitV({ b.tail[1] - b.head[1], b.tail[2] - b.head[2], b.tail[3] - b.head[3] })
+		local a = i * 0.7
+		local ref = if math.abs(d[1]) < 0.9 then { math.cos(a), 0, -math.sin(a) } else { 0, math.cos(a), math.sin(a) }
+		local up = unitV(cross(ref, d))
+		table.insert(bones, { name = b.name, pos = b.head, look = d, up = up })
+	end
+	return { height = dump.size[2], bones = bones }
+end
+
 -- A dump's skeleton as client/Anim/NpcRig reads the model (root space, ground at its feet), its palms fitted.
 local function rigOf(model: string): Rig
-	local dump = serde.decode("json", fs.readFile(`tools/anim/rigs/{model}.json`))
+	local dump = if string.match(model, "_v2$")
+		then fromExport(model)
+		else serde.decode("json", fs.readFile(`tools/anim/rigs/{model}.json`))
 	local scale = HEIGHT / dump.height
 	local rest: { [string]: BipedPose.Bone } = {}
 	local names: { [string]: string } = {}
@@ -91,7 +114,7 @@ local function rigOf(model: string): Rig
 		end
 	end
 	NpcMotion.fitPalms(skel, palms)
-	local id = string.gsub(model, "^npc_", "")
+	local id = string.gsub(string.gsub(model, "^npc_", ""), "_v2$", "")
 	return { skel = skel, keep = NpcRigs.keep(NpcRigs.of(id)) }
 end
 
@@ -298,6 +321,34 @@ T.describe("NpcMotion on the NPC rig dumps (2026-10-26)", function()
 		end
 	end)
 
+	T.it("Teodor's T-pose export: the arms hang at his sides, his work holds the glow before his chest", function()
+		-- the same as on an A-pose model (the banker's), in leg lengths
+		local function hands(model: string): (Vec, Vec, Vec)
+			local inst = new(model, "portalmaster")
+			local L = inst.L
+			local idle: { [string]: Vec } = {}
+			run(inst, 4, STATES.idle, function(f)
+				idle = f.pos
+			end)
+			local work: { [string]: Vec } = {}
+			run(inst, 6, STATES.work, function(f)
+				work = f.pos
+			end)
+			local function rel(p: Vec): Vec
+				return { p[1] / L, p[2] / L, p[3] / L }
+			end
+			return rel(idle.RightHand), rel(work.RightHand), rel(work.LeftHand)
+		end
+		local idle, workR, workL = hands("portalmaster_v2")
+		local idle0, workR0, workL0 = hands("npc_banker")
+		for _, pair in { { idle, idle0 }, { workR, workR0 }, { workL, workL0 } } do
+			T.expect(dist(pair[1], pair[2])).toBeBetween(0, 0.2)
+		end
+		-- hanging below the chest at his side; at work before it, apart
+		T.expect(idle[2]).toBeBetween(0.8, 1.25)
+		T.expect(workR[3] < -0.25 and workL[3] < -0.25 and workR[1] - workL[1] > 0.3).toBe(true)
+	end)
+
 	T.it("brings the smith's hammer down onto the anvil, again and again", function()
 		local inst = new("npc_blacksmith", "blacksmith")
 		local L = inst.L
@@ -479,5 +530,13 @@ T.describe("AnimLab NPC states (2026-10-26)", function()
 		end
 		local _, err = AnimLab.parse({ "npc", "blacksmith", "dance" })
 		T.expect(err).toBe("animlab.error.npc")
+		-- Teodor: every state, his work the mage's channel
+		for _, slot in AnimLab.NPC_SLOTS do
+			T.expect(AnimLab.parse({ "npc", "portalmaster", slot }) ~= nil).toBe(true)
+		end
+		local def = Npcs.get("portalmaster")
+		local style = NpcStyles.of("portalmaster", if def then def.services :: any else nil)
+		T.expect(style.id).toBe("mage")
+		T.expect(style.work ~= nil and style.work.phrases[1].name == "channelHold").toBe(true)
 	end)
 end)

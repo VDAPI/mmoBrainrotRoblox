@@ -979,8 +979,13 @@ local function attachFx(model: Model, rig: any)
 		elseif type(id) == "string" then MonsterLooks.get(id)
 		else nil
 	local asset = look and look.asset
-	if asset and asset.motion and type(id) == "string" then
-		MotionFx.attach(model, model, rig, asset.motion, asset.model, id)
+	-- (a kind's new model takes its own style by its bones: Data/MonsterAssets `remodel`)
+	local styleId = asset
+		and MonsterLooks.motionOf(asset, function(bone: string): boolean
+			return model:FindFirstChild(bone, true) ~= nil
+		end)
+	if asset and styleId and type(id) == "string" then
+		MotionFx.attach(model, model, rig, styleId, asset.model, id)
 		MotionFx.step(model, nil, 0, nil)
 	end
 end
@@ -997,11 +1002,18 @@ local function bipedLab(
 	boss: any,
 	planned: { [string]: any }?
 ): (BipedLab?, MotionKeys.Keys?)
-	local styleId = look.asset.motion :: string
+	local styleId = MonsterLooks.motionOf(look.asset, function(bone: string): boolean
+		return model:FindFirstChild(bone, true) ~= nil
+	end) :: string
 	local rig: any = if BipedStyles.get(styleId)
 		then BipedRig.new(model, styleId, 7.3, look.asset.grip, look.asset.model)
 		elseif QuadStyles.get(styleId) then QuadRig.new(model, styleId, 7.3, look.asset.model)
-		elseif RigidStyles.get(styleId) then RigidRig.new(model, styleId, 7.3, look.asset.model, nil)
+		elseif RigidStyles.get(styleId) then (FlyerStyles.get(styleId) and FlyerRig.new(
+			model,
+			styleId,
+			7.3,
+			look.asset.model
+		)) or RigidRig.new(model, styleId, 7.3, look.asset.model, nil)
 		elseif FlyerStyles.get(styleId) then FlyerRig.new(model, styleId, 7.3, look.asset.model)
 		else nil
 	if not rig then
@@ -1045,7 +1057,7 @@ local function bipedLab(
 				return ability.windup
 			end
 		end
-		local shooter = rig.kind == "flyer" or (monster and monster.attack == "ranged")
+		local shooter = (rig.kind == "flyer" and not monster) or (monster and monster.attack == "ranged")
 		if name == style.abilities.heavyBlow then
 			local heavy = MonsterAbilities.get("heavyBlow")
 			return if heavy then heavy.windup else 1.8
@@ -1074,8 +1086,8 @@ local function bipedLab(
 	elseif state == "death" then
 		-- (by the side of the blow: a blow from the front, a fall on the back)
 		name = rig.mod.death(rig.motion, "front")
-	elseif rig.kind == "rigid" and not style.actions[state] then
-		-- a rigid kind (Data/RigidStyles LAB_STATES): the kit's blows by their slot
+	elseif (rig.kind == "rigid" or rig.kind == "flyer") and not style.actions[state] then
+		-- a rigid kind or a flyer (Data/RigidStyles LAB_STATES, FlyerStyles.labStates): the kit's blows by their slot
 		local slots: { [string]: string? } = {
 			alert = style.aggro,
 			heavy = style.abilities.heavyBlow,
@@ -1086,8 +1098,6 @@ local function bipedLab(
 			summon = style.summon,
 		}
 		name = slots[state] or state
-	elseif state == "alert" and rig.kind == "flyer" and style.aggro then
-		name = style.aggro
 	end
 	local base: any = {
 		now = 0,
@@ -1202,6 +1212,9 @@ local function bipedLab(
 			elseif state == "glide" then
 				-- a flyer: a straight flight that glides, braking into a flare, stunned, frozen in the air
 				i.combat, i.look, i.speed, i.glide = false, nil, moveSpeed * 0.7, true
+			elseif state == "perch" then
+				-- a flyer that lands when it hovers still (Data/FlyerStyles `perch`): on the ground, hopping
+				i.combat, i.look, i.perch = false, nil, true
 			elseif state == "brake" then
 				i.combat, i.look, i.speed = false, nil, if t < 1.2 then moveSpeed else 0
 			elseif state == "stun" then

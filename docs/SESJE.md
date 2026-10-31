@@ -14108,3 +14108,19 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   pociski w `CombatFxController`.
 - Dokumentacja dla sesji animacji: `docs/ANIM-WZORCE.md` §10. Testy: `tests/monstermove.spec.luau`, `leash.spec`
   (powrót truchtem). Balans: powody w `tools/balance_reasons.luau` (S162m).
+
+### Fryzury kreatora: nowy zestaw i barwienie tekstur we własnym kolorze (2026-10-31)
+- Zgłoszenie testera: „poza 7, 9 i 12 fryzury są słabe i nie pasują”. Przegląd w Play (ciało Dawson, skala 0,9): cała
+  darmowa pula Roblox ma ok. 22 fryzury, wszystkie siedzą na głowie; problemem był styl (nowoczesne, anime) i płaski
+  kolor. Nowy zestaw 13 fryzur (lista i odrzucone w `docs/ASSETS.md` → „Ciało postaci”): `Data/BodyLooks.hairs`,
+  `Data/ClassLooks.HAIRS` (krótkie, długie i związane, łysa), nowe `hair_bob` (dawne `hair_bangs`), `hair_sidetail`,
+  `hair_bun`; nazwy PL / EN.
+- Barwienie: tekstura z własnym kolorem ma `tone`; `Logic/HairTint.nudge` przesuwa jej odcień (tylko przyciemnia),
+  `CharacterLook.hairColors` daje kolory, do których sięga (`HairTint.REACH` = 1,5), `fitHairColor` najbliższy z zakresu
+  (odległość L*a*b*), `normalize` / `isValid` / `random` go pilnują; `AvatarBuild.tint` nie robi już płaskiego koloru na
+  włosach (brwi bez zmian). `LookPicker`: przygaszone kafelki spoza zakresu, kolor wybrany ostatnio wraca na kolejnej
+  fryzurze.
+- Stare zapisy: `LEGACY_HAIRS` (+`hair_curly`, `hair_bangs`; S132 `hair_topknot_black` → kok, `hair_braid_grey` → kucyk,
+  `hair_swept_white` → `hair_short`, `hair_curly_brown` → grzywka). NPC: `NpcLooks.HAIRS*`, `NpcLook.look` losuje kolor,
+  potem fryzurę, która go ma. Admin `/charlook` dopasowuje kolor.
+- Testy: `bodylooks.spec` (zakresy, stare id, odcień), `classlooks`, `character`, `wikidump`. Dane wiki przegenerowane.

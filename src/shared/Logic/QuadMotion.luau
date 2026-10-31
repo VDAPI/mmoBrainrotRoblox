@@ -12,9 +12,13 @@
 -- (stance: the foot slides back at exactly the ground speed; swing: a lifted path to the next touchdown), plantigrade
 -- feet kept flat, a roll about the feet that bear the weight, a trunk swinging like a pendulum behind the head, ears
 -- fanning, a gait forced by an action (a charge gallops at the dash's speed).
+-- The dragon (2026-10-31, Data/QuadStyles `dragon`) adds Logic/DragonMotion's wings (folded at rest, keyed open, a
+-- wingbeat on the timeline, the gallop's pump), the tail's spring, the gait taken from the server's `Gait`, a flight's
+-- height on the server's `Dash*` arc (`arc`), the server's stun (a dazed pose) and freeze (the pose held).
 -- Pure: client/Anim/QuadRig writes the bones, AnimLab evaluates it at a fixed time. The functions the game calls have
 -- the names and arguments of Logic/BipedMotion's (step, pick, death, side, length, controlsAt, times).
 
+local DragonMotion = require("./DragonMotion")
 local MotionTimeline = require("./MotionTimeline")
 local NpcPose = require("./NpcPose")
 local QuadPose = require("./QuadPose")
@@ -38,6 +42,13 @@ export type Input = {
 	hitSide: string?,
 	look: Vec?,
 	snap: boolean?,
+	-- the server's gait intent (walk / trot / run) and Effects (Logic/EffectStack text at server time `serverNow`);
+	-- AnimLab's stun and freeze without the attribute (read by a style with `stun`)
+	gait: string?,
+	effects: string?,
+	serverNow: number?,
+	stunned: boolean?,
+	frozen: boolean?,
 }
 export type Instance = {
 	skel: QuadPose.Skeleton,
@@ -63,6 +74,12 @@ export type Instance = {
 	trunkSV: number,
 	trunkF: number,
 	trunkFV: number,
+	dragon: DragonMotion.State?, -- the wings and the tail's spring (a style with `wings` on a rig with wing bones)
+	stun: number, -- the dazed pose's weight
+	effects: string?, -- the Effects text last parsed and the stun / freeze ends in it (server time)
+	stunEnds: number,
+	freezeEnds: number,
+	posed: QuadPose.Posed?, -- the last pose (held while frozen)
 }
 
 local function hash01(n: number, seed: number): number
@@ -124,6 +141,12 @@ function QuadMotion.new(skel: QuadPose.Skeleton, styleId: string, seed: number):
 		trunkSV = 0,
 		trunkF = 0,
 		trunkFV = 0,
+		dragon = DragonMotion.new(skel, style.wings, seed),
+		stun = 0,
+		effects = nil,
+		stunEnds = 0,
+		freezeEnds = 0,
+		posed = nil,
 	}
 end
 
@@ -147,6 +170,10 @@ local FORCED: { [string]: { [string]: number } } = {
 }
 -- The body's own motion in a gait, kept under an action that runs the gait (a charge).
 local GAIT_BODY = { "by", "bpitch", "broll", "sflex", "syaw" }
+-- The tail's per-bone yaw (no string building per frame).
+local TAIL_Y = { "tY1", "tY2", "tY3", "tY4", "tY5", "tY6", "tY7", "tY8" }
+-- The server's gait intents (Logic/MonsterMove: wander, going home, the chase).
+local SERVER_GAIT: { [string]: string } = { walk = "walk", trot = "trot", run = "gallop" }
 
 -- The gait weights at `ratio` (speed over leg length): a crossfade band around each threshold.
 local function gaitWeights(style: QuadStyles.Style, ratio: number): { [string]: number }
@@ -249,10 +276,27 @@ local function gaitControls(
 	-- the head keeps level against the body's pitch; the tail
 	out.npitch = (out.bpitch or 0) * 0.8 + g.neck
 	out.tpitch = g.tail
-	for i = 1, 4 do
-		out["tY" .. i] = g.tailSway * math.sin(w - i * 0.95)
+	for i = 1, math.min(style.tailBones or 4, #TAIL_Y) do
+		out[TAIL_Y[i]] = g.tailSway * math.sin(w - i * 0.95)
 	end
 	return out
+end
+
+-- The gait the server's intent asks for (weights), a step down when the speed is too slow for it (a slowed chase
+-- trots); nil without an intent the style has.
+local function serverGait(style: QuadStyles.Style, gait: string?, ratio: number): { [string]: number }?
+	local name = if gait then SERVER_GAIT[gait] else nil
+	if not name or not style.gaits[name] then
+		return nil
+	end
+	local t = style.thresholds
+	if name == "gallop" and ratio < 0.7 * t.gallop then
+		name = "trot"
+	end
+	if name == "trot" and ratio < 0.6 * t.trot then
+		name = "walk"
+	end
+	return FORCED[name]
 end
 
 -- `forced`: the gait an action runs (blended in fast); `extra`: ground speed of a flight the pose draws itself.
@@ -265,7 +309,8 @@ local function locomotion(inst: Instance, input: Input, forced: string?, extra: 
 	local moving = speed >= 0.3 * L
 	local ratio = speed / L
 	local force = if forced and style.gaits[forced] then FORCED[forced] else nil
-	local targetW = force or gaitWeights(style, if turning then 0.8 else ratio)
+	local intent = if style.serverGait and moving and not force then serverGait(style, input.gait, ratio) else nil
+	local targetW = force or intent or gaitWeights(style, if turning then 0.8 else ratio)
 	local moveTarget = if moving then math.clamp(ratio / 0.6, 0, 1) elseif turning then 0.7 else 0
 	if input.snap then
 		inst.weights = table.clone(targetW)
@@ -314,8 +359,8 @@ local function idleLayer(inst: Instance, now: number, out: Controls)
 	end
 	-- the tail
 	add(out, "tpitch", style.idle.tail * still)
-	for i = 1, 4 do
-		add(out, "tY" .. i, 0.14 * math.sin(t * 2 * math.pi * 0.25 - i * 0.7) * still)
+	for i = 1, math.min(style.tailBones or 4, #TAIL_Y) do
+		add(out, TAIL_Y[i], 0.14 * math.sin(t * 2 * math.pi * 0.25 - i * 0.7) * still)
 	end
 	-- looks around every few seconds (with no target)
 	local slot = math.floor(t / 4.2)
@@ -381,6 +426,11 @@ local MIRRORED: { [string]: boolean } = {
 	bpx = true,
 	kside = true,
 }
+-- A dragon's wings swap sides on a mirrored run (Logic/DragonMotion: the left wing's keys become the right one's).
+local WING_SWAP: { { string } } = {}
+for letter in string.gmatch("estfhbwpqo", ".") do
+	table.insert(WING_SWAP, { "wL" .. letter, "wR" .. letter })
+end
 
 local function actionControls(style: QuadStyles.Style, run: ActionRun, t: number): Controls?
 	local action = style.actions[run.name]
@@ -397,8 +447,35 @@ local function actionControls(style: QuadStyles.Style, run: ActionRun, t: number
 				controls[key] = -controls[key]
 			end
 		end
+		for _, pair in WING_SWAP do
+			local l, r = controls[pair[1]], controls[pair[2]]
+			if l or r then
+				-- (a side without the key keeps none: 0)
+				controls[pair[1]], controls[pair[2]] = r or 0, l or 0
+			end
+		end
 	end
 	return controls
+end
+
+-- Stun and freeze ends (server time) from the Effects text, parsed only when it changed (Logic/FlyerMotion's rule).
+local function readEffects(inst: Instance, raw: string?)
+	if raw == inst.effects then
+		return
+	end
+	inst.effects = raw
+	inst.stunEnds, inst.freezeEnds = 0, 0
+	if type(raw) ~= "string" then
+		return
+	end
+	for kind, ends in string.gmatch(raw, "(%a+):([%d%.]+)") do
+		local t = tonumber(ends) or 0
+		if kind == "stun" then
+			inst.stunEnds = math.max(inst.stunEnds, t)
+		elseif kind == "freeze" then
+			inst.freezeEnds = math.max(inst.freezeEnds, t)
+		end
+	end
 end
 
 function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
@@ -407,6 +484,17 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 	local now = input.now
 	local dt = input.dt
 	local L = skel.L
+	-- the server's stun and freeze (a style with a dazed pose): frozen, the pose holds
+	local stunned = false
+	if style.stun then
+		readEffects(inst, input.effects)
+		local serverNow = input.serverNow or 0
+		if (input.frozen == true or serverNow < inst.freezeEnds) and inst.posed then
+			inst.lastTime = now
+			return inst.posed :: QuadPose.Posed
+		end
+		stunned = input.stunned == true or serverNow < inst.stunEnds
+	end
 	-- 1. locomotion (an action may run a gait: a charge gallops; a flight the pose draws itself is ground speed)
 	local run = input.action
 	local forced: string? = nil
@@ -442,6 +530,12 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 	if inst.calm > 0.005 then
 		addAll(controls, style.calm, inst.calm)
 	end
+	-- a dragon's wings at rest, the gallop's wingbeat, the tail tip's flicks
+	local dragon = inst.dragon
+	if dragon then
+		local gallop = (inst.weights.gallop or 0) * inst.move
+		DragonMotion.base(dragon, controls, now, gallop, inst.phase, 1 - inst.move, 1 - inst.combat)
+	end
 	-- fidgets when idle, alone and still
 	local busy = run ~= nil
 		and style.actions[run.name] ~= nil
@@ -457,6 +551,7 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 	if
 		not fidget
 		and not busy
+		and not stunned
 		and not input.combat
 		and inst.move < 0.05
 		and now >= inst.nextFidget
@@ -509,6 +604,19 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 					end
 				end
 			end
+			local arc = keyed.arc
+			if arc and action.travel then
+				-- the flight's height on the server's Dash arc: a quarter of its length, within 1-3 leg lengths (a hop
+				-- in place without a flight)
+				local flight = 0
+				if playing.reach then
+					local rx, rz = playing.reach[1], playing.reach[3]
+					flight = math.max(0, math.sqrt(rx * rx + rz * rz) - 1.1 * L) / L
+				end
+				local height = if flight > 0 then math.clamp(0.25 * flight, 1, 3) else 0.3
+				keyed = table.clone(keyed)
+				keyed.by = (keyed.by or 0) + arc * height
+			end
 			-- a heavy body (planted feet) takes a little longer to leave its gait
 			local w = math.min(1, t / (if inst.planted then 0.2 else 0.08))
 			if not action.hold then
@@ -545,6 +653,7 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 			end
 			controls = blended
 			controls.travel = nil :: any
+			controls.arc = nil :: any
 		end
 	end
 	-- 4. reactions: the flinch
@@ -560,6 +669,19 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 			if f then
 				addAll(controls, f, e)
 			end
+		end
+	end
+	-- the server's stun: the dazed pose, the head wobbling
+	if style.stun then
+		local target = if stunned then 1 else 0
+		inst.stun = if input.snap then target else approach(inst.stun, target, 5, dt)
+		if inst.stun > 0.005 then
+			local k = inst.stun * (1 - 0.6 * actionW)
+			addAll(controls, style.stun, k)
+			local t = now + inst.seed * 2.3
+			add(controls, "nyaw", 0.14 * math.sin(t * 2 * math.pi * 0.42) * k)
+			add(controls, "hroll", 0.12 * math.sin(t * 2 * math.pi * 0.55 + 1) * k)
+			add(controls, "broll", 0.025 * math.sin(t * 2 * math.pi * 0.42 + 0.5) * k)
 		end
 	end
 	-- the lean into turns
@@ -610,7 +732,14 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 		add(controls, "kside", math.clamp((inst.trunkS - side) * trunk.gain, -0.6, 0.6))
 		add(controls, "kpitch", math.clamp((inst.trunkF - fwd) * trunk.gain, -0.6, 0.6))
 	end
-	return QuadPose.solve(skel, controls)
+	-- 6. a dragon: the tail's spring, the wings' controls turned into their joints'
+	if dragon then
+		DragonMotion.tail(dragon, controls, input.yawRate, dt, input.snap)
+		DragonMotion.resolve(dragon, controls)
+	end
+	local posed = QuadPose.solve(skel, controls)
+	inst.posed = posed
+	return posed
 end
 
 ---------------------------------------------------------------- the game's choices

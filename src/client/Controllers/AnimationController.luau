@@ -309,7 +309,12 @@ local function refresh(model: Model)
 	-- template animation: an imported biped with a style plays Logic/BipedMotion instead of its clips
 	local lookId = model:GetAttribute("Look")
 	local look = if type(lookId) == "string" then MonsterLooks.get(lookId) else nil
-	local motionStyle = look and look.asset and look.asset.motion
+	-- (a kind's new model takes its own style by its bones: Data/MonsterAssets `remodel`)
+	local motionStyle = look
+		and look.asset
+		and MonsterLooks.motionOf(look.asset, function(bone: string): boolean
+			return holder ~= nil and holder:FindFirstChild(bone, true) ~= nil
+		end)
 	s.biped = nil
 	if motionStyle and holder and holder:IsA("Model") and look and look.asset then
 		if BipedStyles.get(motionStyle) then
@@ -317,7 +322,9 @@ local function refresh(model: Model)
 		elseif QuadStyles.get(motionStyle) then
 			s.biped = QuadRig.new(holder, motionStyle, s.seed, look.asset.model)
 		elseif RigidStyles.get(motionStyle) then
-			s.biped = RigidRig.new(holder, motionStyle, s.seed, look.asset.model, model)
+			-- (a kind on both: the flyer template with its new export's wing bones, else the rigid recipe)
+			s.biped = (FlyerStyles.get(motionStyle) and FlyerRig.new(holder, motionStyle, s.seed, look.asset.model))
+				or RigidRig.new(holder, motionStyle, s.seed, look.asset.model, model)
 		elseif FlyerStyles.get(motionStyle) then
 			s.biped = FlyerRig.new(holder, motionStyle, s.seed, look.asset.model)
 		end

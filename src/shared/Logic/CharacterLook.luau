@@ -11,6 +11,7 @@ local ClassLooks = require("../Data/ClassLooks")
 local Config = require("../Config")
 local CosmeticRules = require("./CosmeticRules")
 local Cosmetics = require("../Data/Cosmetics")
+local HairTint = require("./HairTint")
 
 type Def = Cosmetics.Def
 type OutfitSpec = ClassLooks.OutfitSpec
@@ -110,9 +111,51 @@ local function known(field: { key: string, list: { any } }, value: any): boolean
 	return false
 end
 
+-- Hair fixes 2026-10-31: the hair colours (Data/ClassLooks.HAIR_COLORS ids, in their order) each hairstyle offers. A
+-- Roblox hair whose texture has its own colour (Data/BodyLooks.hairs `tone`: dark, red, pink) is only nudged toward
+-- the colour, and a tint only darkens: it offers the colours its texture reaches (Logic/HairTint.REACH). Every other
+-- hairstyle offers them all.
+local hairColorIds: { [string]: { string } } = {}
+for _, hair in ClassLooks.HAIRS do
+	local def = BodyLooks.hairs[hair.id]
+	local ids: { string } = {}
+	for _, c in ClassLooks.HAIR_COLORS do
+		if not (def and def.tone) or HairTint.reach(c.color :: string, def.tone) <= HairTint.REACH then
+			table.insert(ids, c.id)
+		end
+	end
+	hairColorIds[hair.id] = table.freeze(ids)
+end
+
+function CharacterLook.hairColors(hairId: string): { string }
+	return hairColorIds[hairId] or hairColorIds[ClassLooks.DEFAULT_LOOK.hair]
+end
+
+-- The hair colour `colorId` when the hairstyle offers it, else the offered one that looks nearest (HairTint.distance).
+function CharacterLook.fitHairColor(hairId: string, colorId: string): string
+	local offered = CharacterLook.hairColors(hairId)
+	if table.find(offered, colorId) then
+		return colorId
+	end
+	local want = ClassLooks.hairColorById[colorId]
+	if not want then
+		return offered[1]
+	end
+	local best, bestDistance = offered[1], math.huge
+	for _, id in offered do
+		local distance = HairTint.distance(want.color, ClassLooks.hairColorById[id].color)
+		if distance < bestDistance then
+			best, bestDistance = id, distance
+		end
+	end
+	return best
+end
+
 -- A valid look: every field an existing id of Data/ClassLooks, else the default one. Always a new table, every field
 -- set. W10: a save from before W10 has an S132 hair id (style and colour, Data/ClassLooks.LEGACY_HAIRS) and no
--- beard / paint: the beard and the freckles of its face become those choices; nothing else changes.
+-- beard / paint: the beard and the freckles of its face become those choices; nothing else changes. Hair fixes
+-- 2026-10-31: a removed or renamed hairstyle becomes its nearest one (LEGACY_HAIRS), and a hair colour the
+-- hairstyle does not offer the nearest offered one (brows and beard follow it).
 function CharacterLook.normalize(look: any): Look
 	local d = ClassLooks.DEFAULT_LOOK :: any
 	local src: any = if type(look) == "table" then look else {}
@@ -123,10 +166,11 @@ function CharacterLook.normalize(look: any): Look
 	local legacy = if type(src.hair) == "string" then ClassLooks.LEGACY_HAIRS[src.hair] else nil
 	if legacy then
 		out.hair = legacy[1]
-		if src.hairColor == nil then
+		if src.hairColor == nil and legacy[2] then
 			out.hairColor = legacy[2]
 		end
 	end
+	out.hairColor = CharacterLook.fitHairColor(out.hair, out.hairColor)
 	local face = ClassLooks.faceById[out.face]
 	if face and src.beard == nil and face.legacyBeard then
 		out.beard = face.legacyBeard
@@ -137,7 +181,8 @@ function CharacterLook.normalize(look: any): Look
 	return out :: Look
 end
 
--- Whether a look sent by a client is valid: a table whose every field (CharacterLook.FIELDS) names an existing entry.
+-- Whether a look sent by a client is valid: a table whose every field (CharacterLook.FIELDS) names an existing entry,
+-- the hair colour one its hairstyle offers.
 function CharacterLook.isValid(look: any): (boolean, string?)
 	if type(look) ~= "table" then
 		return false, "look.error.bad"
@@ -146,6 +191,9 @@ function CharacterLook.isValid(look: any): (boolean, string?)
 		if not known(field, look[field.key]) then
 			return false, "look.error.bad"
 		end
+	end
+	if not table.find(CharacterLook.hairColors(look.hair), look.hairColor) then
+		return false, "look.error.bad"
 	end
 	return true, nil
 end
@@ -173,6 +221,7 @@ function CharacterLook.random(roll: () -> number): Look
 	if roll() >= 1 / 3 then
 		out.paint = "paint_none"
 	end
+	out.hairColor = CharacterLook.fitHairColor(out.hair, out.hairColor)
 	return out :: Look
 end
 

@@ -23,6 +23,8 @@ export type AssetLook = {
 	-- template animation (2026-10-25): the Data/BipedStyles style that animates the bones instead of the clips
 	motion: string?,
 	grip: { number }?, -- the blade's direction in the right hand at rest (root space), for a weapon style
+	-- 2026-10-31: the style of the kind's new model, taken by a look with every bone of `marker` (Data/MonsterAssets)
+	remodel: { marker: { string }, motion: string }?,
 }
 
 export type Phase = { tint: string, amount: number, glow: string? }
@@ -590,11 +592,31 @@ for id, entry in MonsterAssets do
 			variant = if entry.from then true else nil,
 			motion = entry.motion,
 			grip = entry.grip,
+			remodel = entry.remodel,
 		}
 	end
 end
 
 local MonsterLooks = {}
+
+-- Template animation (2026-10-31): the motion style of an asset look whose model has the bones `has` names (a new model
+-- of the kind with its own style: Data/MonsterAssets `remodel`), else its own `motion`.
+function MonsterLooks.motionOf(asset: AssetLook, has: (string) -> boolean): string?
+	local remodel = asset.remodel
+	if remodel then
+		local all = true
+		for _, bone in remodel.marker do
+			if not has(bone) then
+				all = false
+				break
+			end
+		end
+		if all then
+			return remodel.motion
+		end
+	end
+	return asset.motion
+end
 
 MonsterLooks.REGIONS = REGIONS
 MonsterLooks.REGION_BY_NUMBER = REGION_BY_NUMBER

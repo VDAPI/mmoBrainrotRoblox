@@ -635,7 +635,7 @@ Basic shot "feather volley" (W = 0.5; Elite 0.6, Elite II 0.675; also the Elite 
 |---|---|
 | `peakHarpy` | upright torso (pitch +55° from the vulture's), wing-arms; legs with talons dangle and grasp; the shot (lightning, `arrow`) is a forward fling of both wing-arms (sweep +30°) released from the wing tips; wail: wings wide, head thrown back, then forward; death: tumbles backwards |
 | `wyvern`, `vaelgrath` in the air | the hover / flight cycle at 1.1-1.3 Hz, legs tucked, tail as a rudder (yaw ±15° in turns); see §5.8 |
-| `carrionCrow`, `bloodBat` | rigid: §6.4 (2026-10-26: the rig dump has no bones in either) |
+| `carrionCrow`, `bloodBat` | rigid: §6.4 (2026-10-26: the rig dump has no bones in either); their new exports with wing chains fly on this template (§4.7, 2026-10-31) |
 
 ### 4.6 As built (2026-10-26)
 
@@ -700,6 +700,47 @@ change per frame compared at two steps, a continuous motion halves and a pop doe
 AnimLab: `/animlab mob <id> <state>`, the flyers' states `Data/FlyerStyles.LAB_STATES`, the bipeds'
 `Data/BipedStyles.LAB_STATES`, then every action of the style by name. The effects the actions release (feathers,
 wisps, ice shards, the breath, the harpy's lightning) are §11.
+
+### 4.7 New exports with wing chains (2026-10-31): ashVulture, carrionCrow, bloodBat
+
+The owner's new Tripo exports (rig dumps `tools/anim/rigs/<id>_v2.json`, read from the FBX) have wing chains: the
+vulture's map finally gets `wings`, and the crow and the bat leave the rigid recipes (§6.4) for the flyer template.
+Both models of an id work: `Data/FlyerRigs` keeps a list of maps per model (new first) and `pick` takes the first whose
+**every** named bone the model has (the old vulture's 18 bones fail the new map: it needs `bone_20`, `bone_21`, `bone_35`
+and the other wing bones; the new one lacks the old map's `0_Right_Limb_*`). A kind on both templates (`crow`, `bat`)
+tries `FlyerRig.new` first (nil without a matching map) and falls back to `RigidRig` (the hook in
+`client/Controllers/AnimationController`, the same in AnimLab).
+
+- **Laid level, faced, sized**: the exports stand upright (wings raised); `level` (degrees about X) lays the body into
+  flight, the facing comes from the wings (`facing` nil: the right shoulder minus the left is +X). Units come from a
+  bone distance (`measure`: two bones and their distance in old-template studs), so the swap's scale does not matter;
+  the centre floats at `hover` (the old model's centre height) times the clone's scale. `pose` adds the map's own
+  carriage (neck, head, tail, legs) to every frame.
+- **Wing plane**: the canonical wing (§4.6) takes its plane from `surface` (the normal of the skinned feathers in the
+  levelled frame, from the FBX) where the shoulder-wrist-tip plane is bent (the vulture's gull wing).
+- **Fingers, followers, jaw**: `fingers` (the bat's membrane fingers, the crow's extra primaries) fan about the wing's
+  normal by `spread` × the style's `spread` on the downstroke (control `wSn`), drawn in half on the upstroke;
+  `follow` bones copy a wing bone's turn part of the way (coverts on the body; the crow's secondaries on the forearm
+  keep their spread lie to the humerus, so they trail behind the folded wing); `jaw` opens the bat's mouth (`jaw`).
+- **Perch** (`Data/FlyerStyles` `perch`, the crow): after hovering still out of a fight for 4-9 s it flies down and
+  stands (the body dropped by the perch pose's leg length, wings folded along the back, tail lifted), hops now and
+  then (a short arc to a spot near where it landed, turning a little, the wings flicking open), pecks, looks about,
+  preens. A fight, a hit or a stun lifts it off in 0.35 s. Only the look lands: the server's monster hovers on.
+- **Lunge** (key control): the bat's melee `dive` flies at `look` (the target) by its distance less 1.2 units (at most
+  `reachMax`), aimed until the strike starts, then locked on its line.
+- **Jitter** (`jitter`): the bat's beat rate wanders (±25 % on a 2.2 Hz noise) and it darts about its place (x, y,
+  roll), never holding still.
+- **Kit**: the crow and the bat keep their rigid recipes' action names and slots (shot, wail, rake, stoop, pounce,
+  alert, spawn, summon, deathFall, deathFallBack; the bat's dive and flutter), so `Data/MotionFx` releases the same
+  effects (feathers for the crow, never blood for the bat: dust and rings). Deaths: a jolt on the strike, the gravity
+  fall to the ground at F1 with a bounce; on its side (the lower wing flat on the ground, the upper one folded over) or
+  flipped onto its back (the bat at its own pitch, the tail membrane drawn up). The bat does not hang upside down: there
+  is no ceiling where it fights and the server keeps it hovering.
+- **What is not driven**: the bat's legs (they ride the body), the vulture's right leg below its single bone.
+
+AnimLab: `mob ashVulture <state>`, `mob carrionCrow <state>`, `mob bloodBat <state>` (with a new model: the flyer's
+states, the kit's slots `heavy`, `crush`, `pounce`, `throw`, `summon`, `perch` and every action by name; the rigid
+states stay for the old model). Swap: `tools/studio/swap_v2_flyers.luau`.
 
 ## 5. F4 Dragon: youngFrostDragon
 
@@ -788,6 +829,45 @@ are driven (splayed legs: `legPlane`); the arms are virtual points under the che
 carried by the chest. It fights in melee (bites and claws), `frostBreath` plays the wyvern's breath; the frost is in
 the element's effects, the style has no colour of its own. Needs a re-rig (wing chains as in §4.6) for the wings to
 move.
+
+#### As built: the new youngFrostDragon model (2026-10-31)
+
+The new Tripo model (`youngFrostDragon.fbx`, dump `tools/anim/rigs/youngFrostDragon_v2.json`: four legs, spread wings
+as `bone_N` chains, a six-bone tail, no jaw bone) takes this section's template: Data/QuadStyles `dragon` on
+Logic/QuadMotion with Logic/DragonMotion's wing layer, the bone map `youngFrostDragon` in Data/QuadRigs, Lune specs in
+tests/dragon.spec.luau. Deviations from the tables above:
+
+- **Old or new model by its bones.** `MonsterAssets.youngFrostDragon.motion` stays `frostDragon` (the old export keeps
+  the wyvern's biped style); `remodel = { marker = { "tripo::Spine_4", "bone_21" }, motion = "dragon" }` switches to
+  this template when the model in Assets has both marker bones (`MonsterLooks.motionOf`, read by
+  AnimationController, AnimLabController and AnimLab). The old export's bear-style names (`BoneRoot`, `Hip`,
+  `L_Thigh`) cannot match. MonsterAssets' `height` / `hipHeight` / `rootSize` stay: the import is scaled to the old
+  model's height (3.83).
+- **Wings folded procedurally.** The model rests with the wings spread and raised. DragonMotion folds each wing from
+  the map's chain: the elbow 118°, the wrist 88°, the humerus laid back along the flank with the membrane's top side
+  out (`wings.fold` `hum` / `nrm`, solved once per instance). One control `wo` (and `wLo` / `wRo` per side) blends
+  folded 0, as modelled 1, flat out 2; offsets `we ws wt wf wh` on top; `flap` and `beat` (keyed on the timeline, a
+  whole number = the top) beat the wings with Logic/FlyerMotion's elevation curve; the shoulder blade lifts and swings
+  with the wing (`w<S>u`, `w<S>v`). Unfolding in a blow takes 0.2-0.4 s (the windups are short), not 0.5 s.
+- **Gaits from the server's `Gait`** (walk, trot, run = bound), stepped down when the speed is too slow for it; the
+  speed thresholds (trot 2.3, bound 3.6 L/s) only without the attribute. Walk lateral k 1.25, trot k 1.7, bound k 2.8
+  with the planted-feet solver of §3.9. In the bound the wings open half way and beat once a stride, the downstroke
+  from the hind push-off to the fore landing (phase 0.45-0.9).
+- **Tail**: six bones; a spring (1.1 Hz) swings it out of turns, a tip flick every few seconds, the idle wave.
+- **No jaw**: the bite, the spit, the breath and the roar open nothing; the head and the neck carry them. The muzzle
+  (`HumanoidRootPart.Muzzle` when present, else a point on `Head_4`, Data/QuadRigs `muzzle`) follows the snout.
+- **Kit** (each lands on W): regular blows rotate bite, claw, bite, buffet (wings up, then down and forward on W),
+  bite, clawL, bite, tail (a hop round, the tail tip through the front on W). heavyBlow `rake` (rears about the hips,
+  both claws drag down on W), crush `stomp` (rears, two flaps, both forefeet and a wingbeat on W), pounce `pounce`
+  (crouch, a downstroke, flies the `Dash*` arc a quarter of the flight high, 1-3 L, lands on W with a wing flare),
+  frostBreath `breath` (rears with the wings mantled, thrusts on W, the head sweeps right to left over the cone until
+  F 0.85; Data/MotionFx `dragon`: charge, breath stream from the muzzle, smolder), throw `spit`, aggro `roar` (wings
+  spread wide and high), spawn, fidgets `resettle` and `stretch`.
+- **Hit, stun, freeze, death**: the flinch by side twitches the near wing; Effects `stun:` hangs the head and slips
+  the wings half open with a wobble, `freeze:` holds the pose (the only quadruped style with these: `stun`); death
+  falls on the seed's side (`deathL` / `deathR`, held) with both wings fanned out on the ground.
+- AnimLab: `/animlab mob youngFrostDragon <state>` takes the generic states, every action above, `stun` and `freeze`
+  once the new model is in Assets (the old model keeps the wyvern's states).
 
 ## 6. F5 Rigid models: caveSpider
 
@@ -900,6 +980,8 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
   the idle.
 - **Muzzle**: while an action plays, the root's `Muzzle` moves with the body (client side), so shots leave the drawn
   beak or jaws.
+- **carrionCrow, bloodBat** (2026-10-31): their new exports have wing chains and fly on the flyer template (§4.7);
+  these recipes stay for the old models.
 - **frostWyrm** (23 Tripo bones): the serpent recipe drives its chains: a travelling wave down the tail (`Tail_0..8`) and
   the coil (`bone_1..5`, half), amplitude growing to the end (5° a bone in place, 16° moving, phase by distance), the
   neck (`bone_6`, `Head_0..4`) takes the cobra sway and the strike's pull back / lunge, the head (`Head_5`) keeps level;
@@ -933,6 +1015,65 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
   attack1, attack2, cast, heavy, crush, pounce, throw, hit, hitBack, hitLeft, hitRight, stun, freeze, death, spawn,
   summon, fight, then every action of the style by name (e.g. `deathCurl`, `sting`, `sitUp`).
 - The dust and venom of §6.3, the ent's splinters and leaves: §11. Not done: sounds and leaves on the ent's steps.
+
+### 6.6 Octopod template: the rigged caveSpider (as built 2026-10-31)
+
+The Tripo model of 2026-10-31 (`tools/anim/rigs/caveSpider_v2.json`, 65 bones, Studio keeps the FBX names
+`tripo::Root`, `tripo::<n>_<Left|Right>_Limb_<i>`, `bone_N`) has real leg chains. It does **not** get a new family:
+it keeps the `spider` recipe of §6.5 (same action names, times, `Data/MotionFx` effects, Muzzle, deaths) and
+`client/Anim/RigidRig` walks its legs on top through `Logic/OctoMotion` when `Data/OctoRigs` has a map whose bones the
+look all has. The old rigid model (no bones) matches no map and keeps everything of §6.5, its `MeshFold` death
+included; AnimationController and AnimLab need no change.
+
+- **The mesh has seven legs, not eight**: no third leg on the creature's right (Tripo's labels are mirrored: its
+  `Right_Limb` chains are the creature's left). Map (`Data/OctoRigs`): PL `2_Right_Limb_0..4`, L1 `1_Right_Limb`, L2
+  `0_Right_Limb`, L3 `3_Left_Limb`, L4 `3_Right_Limb`, PR `1_Left_Limb_0..4`, R1 `2_Left_Limb`, R2 `Spine_0` +
+  `bone_13..17`, R4 `bone_18..23`; fangs `bone_55..56` (left), `bone_58`, `bone_60..61`; abdomen `bone_54`. Tetrads L1
+  R2 L3 R4 / R1 L2 L4: one of them stands on three legs. A rig map for `desertScorpion` (Octopod or Hexapod with
+  `arms` = pincers and `tail`) is all its new model needs; its recipe already keys the legs.
+- **Legs** (`Logic/OctoPose`): each leg turns about the vertical through its hip (yaw) and bends in its own plane by two
+  numbers: `a` lifts it from the hip, `b` folds it at the knee (the joint highest at rest; femur +0.45, the joints
+  below −0.55, −0.25, −0.15, −0.05). Damped least squares from last frame's pair (4 steps, 2 for far rigs), the yaw
+  exact; the answer followed at most 22 rad/s (bend) and 24 rad/s (yaw), so a target swept through a leg's reach never
+  flips it in one frame. Bones are written `rest^-1 · R(axis, angle) · rest` as `CFrame.fromAxisAngle` about the axis
+  turned into the bone's own frame (rest frames read from the model at runtime: the Studio import has non-identity
+  ones), only when a turn changed by > 0.1°.
+- **Gait** (`Logic/OctoMotion`): the recipe's phase (by distance) runs both tetrads half a cycle apart with a ripple of
+  0.035 cycle per rank back through each; duty 0.68 walk, 0.62 trot, 0.55 run (from `Gait`); a tetrad's mid-stance on
+  the recipe's bob peak. A foot lands ahead of its rest point by half the stance's travel along the root's velocity
+  and turned on by half the stance's turn (so a turn in place is stepped too), lifted 0.16 hip heights at a walk,
+  0.30 at a run. Planted feet keep their world point every frame (the root's move and turn taken back), so nothing
+  slides under the bob, the sway, the lunge or the turn lag. A foot left behind (lunge, spin, lag spike) or out of
+  reach steps on its own and joins its tetrad's next swing; standing, the legs settle back one by one; a teleport
+  puts them down at once.
+- **Palps** are too short for the stride: on the move they are carried up in front and feel the air; standing they tap
+  the ground now and then; the fangs chew in the idle; the abdomen breathes and pumps with `gr`.
+- **Recipe keys** (only styles built with `legs = true`: spider, scorpion; a rigid look ignores them): `raise` / `wave`
+  (front pair and palps up and waving: alert, bite's gather, heavy, crush, cast, throw, taste fidget), `stab` (struck
+  forward and down onto the ground ahead and planted there: on the hit of bite, heavy, crush), `tuck` (every leg drawn
+  in: pounce flight, spawn, summon), `splay` (feet set wider: landings, slams; a splayed foot is not settled back
+  until the splay fades), `palp`, `fang` (open 1, snapped shut −0.3 on the bite's hit). The pounce adds two leg-only
+  keys on the flight's straight line (tucked at S0.6, reaching for the ground at S0.85), so the body's path is the
+  same with or without legs.
+- **Stun** trembles the knees (`shiver` + stun weight), **freeze** holds every leg, a **hit** flinches the legs on the
+  struck side.
+- **Deaths**: from the pose it had, the jolt straightens the legs, then each leg curls in under / over the belly at its
+  own pace as `fold` grows (above the knee +55°, below it −70 .. −270°). `OctoMotion.folds` gives RigidMotion the box of
+  the curled legs at every eighth, so the body sinks and topples over them (as with MeshFold); the flip ends on its
+  back with the legs curled up.
+- **Ground**: the nearest 12 crawlers (6 on touch) ray the ground once per footfall (`Workspace:Raycast`, monsters and
+  players skipped) and tilt the body to the plane of the planted feet (60 %, at most 20°); the rest walk on flat ground
+  with 2 solver steps (§1.10: a cheap tier B instead of no IK, the feet would slide). Cost in Lune ≈ 15 µs a frame for
+  the legs (+ 4 µs the recipe).
+- **No size numbers to re-measure**: the rig reads the bones, the box and the ground at runtime. Scaled to the old
+  model's height (2.35 studs, `Data/MonsterAssets` unchanged), the new model has the old box (5.06 × 2.35 × 4.61).
+- Lune: `tests/octomotion.spec.luau` (`tests/OctoSim.luau` walks the dump frame by frame): the map only on the new
+  bones (not the old dump, not the old Tripo bear), the Roblox bone chain with random rest frames, IK, planted feet
+  (no slide, ≥ 3 down) at walk / trot / run / arcs, tetrads alternating, turn in place by steps, settle, idle shift,
+  stun, freeze, slope, every action finite with the stab on the ground at W, rear-ups, pounce tuck and splay, deaths
+  curled and never under the ground, the folded boxes, no joint jumping > 0.6 rad a frame, every AnimLab state.
+- AnimLab: `/animlab mob caveSpider <state>` (states of §6.5) shows the legs once the new model is in
+  `Assets.Monsters`; before that it shows the rigid one.
 
 ## 7. Ghosts, golems, brutes: which template covers them
 
@@ -1180,6 +1321,10 @@ Model attributes (Studio, on the NPC's model or its `Asset`): `NpcRole` = anothe
 4. The anvil's place in front of the smith against the forge of the map.
 5. The innkeeper lacks two bones of the right little finger (the curl skips them); the caravan has no bones (static).
 6. Teodor's channelling and the healer's prayer against their robes.
+7. Teodor's new model (2026-10-31, Mixamo, a T-pose, 52 bones in Studio): no entry beyond the defaults
+   (`Data/NpcRigs.portalmaster`); NpcService takes `ReplicatedStorage.Assets.Npcs.portalmaster` (the NPC id of
+   `Data/Npcs`) as imported and fits it to the figure's height. `Yaw` (degrees) only if he faces away from his
+   counter, `Scale` (0.5-2) if he should stand taller than the figure.
 ## Appendix A: formulas
 
 Gait clock (per frame):

@@ -99,6 +99,7 @@ export type Instance = {
 	seed: number,
 	rate: number,
 	phase: number,
+	stride: number, -- studs one gait cycle covers this frame (Logic/OctoMotion plants the feet by it)
 	wave: number,
 	v: number,
 	weights: { [string]: number },
@@ -206,6 +207,7 @@ function RigidMotion.new(body: Body, styleId: string, seed: number, chains: Chai
 		seed = seed,
 		rate = 1 + (hash01(2, seed) * 2 - 1) * style.rate,
 		phase = hash01(3, seed),
+		stride = 1,
 		wave = hash01(6, seed),
 		v = 0,
 		weights = { [style.order[1]] = 1 },
@@ -467,6 +469,7 @@ local function locomotion(inst: Instance, input: Input, dt: number, t: number)
 		hz += (g.hz or 0) * w
 	end
 	stride = math.max(stride, if cap > 0 then ground / cap else 0, 0.05) * inst.rate
+	inst.stride = stride
 	if hz > 0 then
 		-- a flutter beats in time, a little faster when it flies
 		inst.phase = (inst.phase + dt * hz * (1 + 0.25 * inst.move) / inst.rate) % 1
