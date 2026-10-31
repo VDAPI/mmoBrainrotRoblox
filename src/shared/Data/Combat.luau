@@ -174,6 +174,16 @@ return table.freeze({
 	pathBurst = 4,
 	pathGap = 1.5,
 	pathMove = 8,
+	-- S162e (Studio test 2026-10-31: a wolf under a target on a roof counted as "in reach" by the flat distance, never
+	-- gave up and its blows landed through 34 studs of air; Logic/Pursuit.meleeReaches): a melee blow reaches a target
+	-- whose feet stand at most meleeUp studs over the monster's feet (a tall body: half its height) and at most meleeDown
+	-- below them, so a player on a roof, a rock or a ledge 3+ studs up is out of a wolf's reach and it evades. Ranged
+	-- shots and throws measure their reach in 3D. pathFailEvade path answers in a row with no way = evade as well.
+	-- pathPerFrame: path computations started per server frame at most (Entities/PathWorker; the AI tick only queues).
+	meleeUp = 2.5,
+	meleeDown = 4,
+	pathFailEvade = 3,
+	pathPerFrame = 1,
 	-- Obstacle steering (FIX 2026-10-09, Logic/Steer + Entities/Monster): probes this far ahead (plus the
 	-- monster's half size), tries these angles to both sides, keeps a detour side this long (seconds).
 	steerLookAhead = 6,
