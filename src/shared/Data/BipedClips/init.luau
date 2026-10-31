@@ -37,7 +37,6 @@ local ALL: { [string]: any } = {
 	swordHop = require("@self/swordHop"),
 	swordLeap = require("@self/swordLeap"),
 	swordSlash = require("@self/swordSlash"),
-	swordStab = require("@self/swordStab"),
 	swordSweep = require("@self/swordSweep"),
 	throw = require("@self/throw"),
 	walk = require("@self/walk"),

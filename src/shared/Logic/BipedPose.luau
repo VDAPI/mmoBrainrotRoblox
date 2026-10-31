@@ -767,6 +767,51 @@ function BipedPose.positions(skel: Skeleton, world: World, shift: Vec): { [strin
 	return out
 end
 
+-- The root-space position of joint `key` alone (BipedPose.positions' value for it, without the rest of the body).
+function BipedPose.jointAt(skel: Skeleton, world: World, shift: Vec, key: string): Vec?
+	local bone = skel.bones[key]
+	if not bone then
+		return nil
+	end
+	local parentKey = BipedPose.PARENT[key]
+	if not parentKey then
+		return add(bone.pos, hipsMove(skel, world[key] or IDENTITY, shift))
+	end
+	local parentBone = skel.bones[parentKey]
+	local pp = if parentBone then BipedPose.jointAt(skel, world, shift, parentKey) else nil
+	if not pp or not parentBone then
+		return nil
+	end
+	return add(pp, apply(world[parentKey] or IDENTITY, sub(bone.pos, parentBone.pos)))
+end
+
+-- Moves each ankle of a pose onto `targets[S]` (root space; S = "R" / "L", nil keeps the leg) with the least turn of
+-- the thigh and the shin: the knee stays in its own plane and the bones keep their roll, so a target on the pose's own
+-- ankle leaves the leg exactly as it was (planted feet easing in and out without a jump); the foot keeps its world turn.
+function BipedPose.nudgeLegs(skel: Skeleton, world: World, shift: Vec, targets: { [string]: Vec? })
+	for _, s in { "R", "L" } do
+		local target = targets[s]
+		local leg = skel.leg[s]
+		if not target or not leg then
+			continue
+		end
+		local side = if s == "R" then "Right" else "Left"
+		local hip = BipedPose.jointAt(skel, world, shift, side .. "UpLeg")
+		local knee = BipedPose.jointAt(skel, world, shift, side .. "Leg")
+		local ankle = BipedPose.jointAt(skel, world, shift, side .. "Foot")
+		if not hip or not knee or not ankle then
+			continue
+		end
+		local line = unit(sub(ankle, hip)) or DOWN
+		local toKnee = sub(knee, hip)
+		local front = unit(sub(toKnee, scale(line, dot(toKnee, line)))) or apply(world.Hips or IDENTITY, FRONT)
+		local thigh, shin = BipedPose.solveLeg(hip, target, leg.l1, leg.l2, front)
+		local upKey, kneeKey = side .. "UpLeg", side .. "Leg"
+		world[upKey] = mul(NpcPose.fromTo(toKnee, thigh), world[upKey] or IDENTITY)
+		world[kneeKey] = mul(NpcPose.fromTo(sub(ankle, knee), shin), world[kneeKey] or IDENTITY)
+	end
+end
+
 -- Re-solves the legs of a pose by IK so each ankle reaches `targets[S]` (root space; S = "R" / "L", nil keeps the
 -- leg), the knee along its current bend and the foot keeping its world turn (planted feet, ground contact).
 function BipedPose.fixLegs(skel: Skeleton, world: World, shift: Vec, targets: { [string]: Vec? })
