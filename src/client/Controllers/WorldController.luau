@@ -430,14 +430,22 @@ local function buildLoading()
 	loadingTip = label(120, Theme.TextSize.Body, Theme.Fonts.Body, Theme.Iron.TextMuted)
 end
 
+local loadingToken = 0 -- the latest showLoading call: an older fade never switches off a newer screen
+
 local function showLoading(mapId: string?)
+	loadingToken += 1
+	local token = loadingToken
 	if not mapId then
-		TweenService:Create(loadingFrame, TweenInfo.new(FADE), { GroupTransparency = 1 }):Play()
-		task.delay(FADE, function()
-			if loadingFrame.GroupTransparency >= 0.99 then
+		-- Studio check 2026-10-31 (the map's name, its levels and the tip stood over an open window): the screen is
+		-- switched off once its fade ends. The old check after FADE seconds could find it at 0.98 and leave it on,
+		-- invisible but drawn over every window (DisplayOrder 100).
+		local fade = TweenService:Create(loadingFrame, TweenInfo.new(FADE), { GroupTransparency = 1 })
+		fade.Completed:Connect(function()
+			if token == loadingToken then
 				loadingGui.Enabled = false
 			end
 		end)
+		fade:Play()
 		return
 	end
 	local map = Maps.get(mapId)
@@ -456,7 +464,7 @@ local function showLoading(mapId: string?)
 	TweenService:Create(loadingFrame, TweenInfo.new(FADE), { GroupTransparency = 0 }):Play()
 	-- Safety: never stay stuck behind the loading screen.
 	task.delay(8, function()
-		if loadingGui.Enabled and loadingFrame.GroupTransparency < 0.5 then
+		if token == loadingToken and loadingGui.Enabled then
 			showLoading(nil)
 		end
 	end)

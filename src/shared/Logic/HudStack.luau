@@ -169,6 +169,17 @@ function HudStack.fromScreen(x: number, y: number, w: number, h: number, ox: num
 	return { left = left, top = top, right = left + w / scale, bottom = top + h / scale }
 end
 
+-- Studio check 2026-10-31 (a quest tracker the player had moved near its built-in place stood under the row of
+-- "something waits" buttons): the top of an element moved to [left, right] at `top`, kept GAP under the menu over the
+-- minimap (`menu`, as measured: its buttons, the minimap, the guide bar and the row) when it would stand in its lane;
+-- `top` otherwise.
+function HudStack.belowMenu(left: number, right: number, top: number, menu: Rect?): number
+	if not menu or right <= menu.left or left >= menu.right or top >= menu.bottom + HudStack.GAP then
+		return top
+	end
+	return menu.bottom + HudStack.GAP
+end
+
 -- The highest top among `rects` that stand in the lane [left, right], or `top` when none is higher.
 local function topIn(rects: { Rect }, left: number, right: number, top: number): number
 	for _, r in rects do
