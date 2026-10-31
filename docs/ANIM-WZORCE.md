@@ -1101,6 +1101,24 @@ included; AnimationController and AnimLab need no change.
   `OctoOverwritten`: the bone turns it found written by something else between two frames (an Animator, a script
   resetting `Bone.Transform`); it writes such a bone again, since a rig writing only the turns that changed shows the
   rest pose on the frames it skips (Studio's 0 / 47° flips on alternate frames, the feet riding with the lunge).
+- **A phone's 15 fps** (Studio live capture on 28bf8563, client at a median 0.067 s a frame: `2_Right_Limb_0`, our PL,
+  at the 12°-a-frame cap with 9 back-and-forth flips in the bite; the hind feet slid 0.44–0.71 stud under its lunge;
+  OctoSim reproduces both at `dt` 1/15). `OctoMotion.VERSION` "2026-10-31d". A palp raised, striking or under a body
+  darting on its own (a lunge, its recoil) **rides with the body**: its pose is fixed in the body's frame (its rest
+  point, its strike point 0.2 hip heights over the ground), kept 0.08 hip heights over the ground under a squash or a
+  nose-down, and let down onto its point over 0.3 s once the body is still (no step after the strike, no IK fighting
+  the lunge: monotonic in the bite). A **step of its own** is evaluated on the frame it starts and began a frame ago
+  (the frame shows it off the ground, never dragged along it), lasts 4 frames at least standing (0.27 s at 15 fps, no
+  more than 0.3 s; on the move it keeps to the gait's swing), is over its goal by 0.8 of the way and comes straight
+  down on where the goal was then; a step well under way (0.3) lands instead of joining its tetrad's swing. A **stab**
+  is over its point by 0.8 of the way and keeps up to 0.3 hip heights off the ground on its way (none as it starts or
+  lands), so a strike from a foot standing far behind never runs along the floor; a foot the stab planted lets go
+  when the body darts back off it (the recoil), before the leg is dragged off it. A leg **drawn in** from the ground
+  (the pounce's take-off) lifts its foot 0.5 hip heights in under its hip by half the tuck, never curling through the
+  ground. At 15 fps (OctoSim, AnimLab windups): alert, bite (= attack1: AnimLab plays the same blow, by design) and
+  grab under 38° a frame (cap 45.8°), the palps never back and forth, at most 4 joint flips over 10° (the hind legs'
+  catch-up steps under the lunge and back), no tip sliding on the floor (was 0.17–0.84); 60 fps keeps 11.5°. The
+  lab's hop home after a pounce (no server Dash arc in AnimLab) is not the game's.
 - **The asset** in `Assets.Monsters` (as the wolf and the peakHarpy): a Model with `HumanoidRootPart` (Anchored false,
   CanCollide false, CanQuery and CanTouch true, Massless false, Transparency 1, size 1) as its `PrimaryPart`, the
   MeshPart with the bones (Anchored false, CanCollide, CanQuery and CanTouch true, Massless false) welded to it by a

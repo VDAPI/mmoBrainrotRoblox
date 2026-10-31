@@ -5,7 +5,8 @@
 -- runs and turns, the tetrads alternate, every action stays finite and strikes the ground on the server's hit, the
 -- pounce tucks and splays, the deaths curl the legs in without sinking, and AnimLab shows every state. Studio's review
 -- (2026-10-31): no joint turns over 12 degrees a frame nor chatters, the standing feet never drag under a lunge, the
--- alert's raise reaches about the body's height in spider arcs, and attack1 and attack2 are two different blows.
+-- alert's raise reaches about the body's height in spider arcs, and attack1 and attack2 are two different blows; at a
+-- phone's 15 fps (Studio's live capture) the palps never swing back and forth and no foot slides on the floor.
 local AnimLab = require("../src/shared/Logic/AnimLab")
 local Combat = require("../src/shared/Data/Combat")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
@@ -600,8 +601,9 @@ end
 
 -- Plays AnimLab's `state` of the spider (the look standing, the ground running under it, the player 6 studs ahead as
 -- Config.AnimLab.layout puts it), blows struck `hit` after their start (nil: AnimLab's own windup), calling `each` after
--- every frame.
-local function lab(state: string, frames: number, hit: number?, each: (sim: OctoSim.Sim, k: number) -> ())
+-- every frame (`dt` long: 60 fps unless given).
+local function lab(state: string, frames: number, hit: number?, each: (sim: OctoSim.Sim, k: number) -> (), dt: number?)
+	local step = dt or DT
 	local style = RigidStyles.get("spider") :: RigidStyles.Style
 	local slots: { [string]: string? } = {
 		attack1 = style.basic[1],
@@ -620,7 +622,7 @@ local function lab(state: string, frames: number, hit: number?, each: (sim: Octo
 	local action = style.actions[name]
 	local sim = OctoSim.new()
 	for k = 1, frames do
-		local t = k * DT
+		local t = k * step
 		local i: { [string]: any } = { combat = true, snap = k == 1, look = { 0, -0.5, -6 } }
 		if action then
 			local at = if action.hold then action.strike else hit or labHit(style, name)
@@ -642,7 +644,7 @@ local function lab(state: string, frames: number, hit: number?, each: (sim: Octo
 		elseif state == "idle" then
 			i.combat = false
 		end
-		OctoSim.step(sim, DT, i, false)
+		OctoSim.step(sim, step, i, false)
 		each(sim, k)
 	end
 end
@@ -803,6 +805,79 @@ T.describe("OctoMotion Studio review", function()
 				end
 			end
 			T.expect(pitch < 13).toBe(true)
+		end
+	)
+
+	T.it(
+		"at a phone's 15 fps: no joint over the safe rate a frame, none back and forth, no tip slid on the floor",
+		function()
+			-- (Studio, the client at 15 fps: the base of 2_Right_Limb, our PL, swung 55 degrees and back in the bite as the
+			-- lunge left its point; the hind feet slid 0.4 to 0.7 studs. attack1 is the bite: AnimLab plays the same blow)
+			local dt = 1 / 15
+			local safe, flip = math.rad(12 * 15 + 0.5), math.rad(10)
+			for _, state in { "alert", "attack1", "attack2" } do
+				local last: { { number } } = {}
+				local d1: { { number } } = {}
+				local from: { { number }? } = {}
+				local flips = 0
+				lab(state, math.ceil(2.2 / dt), nil, function(sim, k)
+					for i, f in sim.octo.feet do
+						local leg = sim.skel.legs[i]
+						local now = table.clone(f.c)
+						table.insert(now, f.psi)
+						local prev = last[i]
+						if prev and k > 2 then
+							local d = {}
+							for j, v in now do
+								local turn = v - prev[j]
+								if j == #now then
+									turn = (turn + math.pi) % (2 * math.pi) - math.pi
+								end
+								d[j] = turn
+								if math.abs(turn) > safe then
+									error(
+										`{state} at 15 fps: {leg.name} joint {j} turned {math.deg(turn)} deg in frame {k}`
+									)
+								end
+								local before = d1[i] and d1[i][j]
+								if
+									before
+									and before * turn < 0
+									and math.abs(before) > flip
+									and math.abs(turn) > flip
+								then
+									if leg.palp then
+										error(
+											`{state} at 15 fps: {leg.name} joint {j} swung back and forth at frame {k}`
+										)
+									end
+									flips += 1
+								end
+							end
+							d1[i] = d
+						end
+						last[i] = now
+						local x, y, z = OctoSim.foot(sim, i)
+						local at = from[i]
+						if y < 0.06 then
+							if at then
+								local slid = math.sqrt((x - at[1]) ^ 2 + (z - at[2]) ^ 2)
+								if slid > 0.1 then
+									error(`{state} at 15 fps: {leg.name} slid {slid} studs on the floor at frame {k}`)
+								end
+							else
+								from[i] = { x, z }
+							end
+						else
+							from[i] = nil
+						end
+					end
+				end, dt)
+				-- (a hind leg's catch-up step under the lunge and back: up and down in a frame or two each)
+				if flips > 6 then
+					error(`{state} at 15 fps: {flips} joints back and forth`)
+				end
+			end
 		end
 	)
 
