@@ -889,6 +889,61 @@ T.describe("Dragon: gaits at the server's paces", function()
 		end)
 	end
 
+	-- (a real spawn's chase, 2026-10-31: the feet skimmed a stud each step as they lifted and landed, and slid when it
+	-- steered; captured at 15 fps) a foot on the ground keeps its print in the world: the root carried on along its
+	-- heading, at 60 and 15 frames a second, straight on and steering
+	T.it(
+		"keeps each foot on its print in the world while it is down, at 60 and 15 fps, straight and steering",
+		function()
+			local rest = QuadRigFk.feetAt(skel, {})
+			for _, pace in { { "walk", 0.4 }, { "trot", 0.7 }, { "run", 1 }, { "run", 0.7 } } do
+				local speed = MONSTER.moveSpeed * pace[2] / SCALE
+				for _, dt in { 1 / 60, 1 / 15 } do
+					for _, yawRate in { 0, 0.5, -0.5 } do
+						local inst = assert(QuadMotion.new(skel, "dragon", 5))
+						local now, yaw, px, pz = 0, 0, 0, 0
+						local down: { [string]: { number } } = {}
+						local slide = 0
+						for _ = 1, math.floor(6 / dt) do
+							now += dt
+							yaw += yawRate * dt
+							px -= math.sin(yaw) * speed * dt
+							pz -= math.cos(yaw) * speed * dt
+							local posed = QuadMotion.step(inst, {
+								now = now,
+								dt = dt,
+								speed = speed,
+								gait = pace[1],
+								yawRate = yawRate,
+								combat = pace[1] == "run",
+							})
+							if now > 2 then
+								local at, turns = QuadRigFk.posed(skel, posed)
+								local c, sn = math.cos(yaw), math.sin(yaw)
+								for leg, foot in QuadRigFk.feetOf(skel, at, turns) do
+									local wx = px + foot[1] * c + foot[3] * sn
+									local wz = pz - foot[1] * sn + foot[3] * c
+									if foot[2] - rest[leg][2] < 0.03 * L then
+										local from = down[leg]
+										if not from then
+											from = { wx, wz }
+											down[leg] = from
+										end
+										slide =
+											math.max(slide, math.sqrt((wx - from[1]) ^ 2 + (wz - from[2]) ^ 2) * SCALE)
+									else
+										down[leg] = nil
+									end
+								end
+							end
+						end
+						T.expect(slide <= 0.15).toBe(true)
+					end
+				end
+			end
+		end
+	)
+
 	T.it("steps down from the gallop when the chase is too slow for it", function()
 		local inst = assert(QuadMotion.new(skel, "dragon", 3))
 		settle(inst, 0, 2, { speed = MONSTER.moveSpeed * 0.45 / SCALE, gait = "run", yawRate = 0, combat = true })

@@ -942,6 +942,13 @@ tests/dragon.spec.luau. Deviations from the tables above:
   roar on the hit (Data/MotionFx `alert`).
 - **A creep still walks** (`stepFrom` 0.08 L/s, default 0.3): the wander's slow stretches step short and slow instead
   of gliding on planted feet (a real spawn's report).
+- **Feet on their prints in a chase** (a real spawn at the run: the feet skimmed about a stud each step): the swing of
+  an `onPrint` gait keeps the foot still on the ground as it lifts and as it lands (its ground speed 0 there, the lift
+  `sin`-shaped, the speed eased over the swing's first and last quarter), so a foot down never slides; while the body
+  steers, the planted feet turn against its yaw about the root (`<leg>x`, the side target of Logic/QuadPose, and the
+  yaw over a cycle from the root's yaw rate). The gallop's hind stance 0.3, its lift 0.2 L; the walk lifts 0.15 L. The
+  phase runs on the root's real velocity and `dt`, so it holds at 15 fps (spec: walk, trot, run and a 0.7x run, at 60
+  and 15 fps, straight and steering 0.5 rad/s: a foot within 0.03 L of the ground moves at most 0.15 stud).
 - Specs: tests/dragon.spec.luau "AnimLab's states frame by frame" (every state and action: the per-frame turn, the
   planted feet's slide, the wings' carry, the rake's and the stomp's height, the alert, the deaths by side) and the
   creep and crawl paces.
