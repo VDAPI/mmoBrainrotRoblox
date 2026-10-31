@@ -1,5 +1,6 @@
 --!strict
 local T = require("./Test")
+local TerrainLayers = require("../src/shared/Logic/TerrainLayers")
 local TownTerrain = require("../src/shared/Logic/TownTerrain")
 local Town = require("../src/shared/Data/Town")
 local vectors = require("./fixtures/cityHeights")
@@ -8,7 +9,7 @@ T.describe("TownTerrain", function()
 	T.it("matches the Python reference heights", function()
 		local worst, at = 0, ""
 		for _, v in vectors do
-			local h = TownTerrain.heightAt(v[1], v[2])
+			local h = TownTerrain.planHeight(v[1], v[2])
 			local diff = math.abs(h - v[3])
 			if diff > worst then
 				worst, at = diff, `{v[1]},{v[2]} lua {h} py {v[3]}`
@@ -68,18 +69,24 @@ T.describe("TownTerrain", function()
 		T.expect(#block.materials).toBe(2)
 		T.expect(#block.materials[1]).toBe(10)
 		T.expect(#block.materials[1][1]).toBe(3)
-		local h = TownTerrain.heightAt(x0 + 2, z0 + 2)
+		-- 2026-10-31: the cells are filled half a voxel under the height (Roblox draws the surface that much higher)
+		local top = TownTerrain.heightAt(x0 + 2, z0 + 2) - TerrainLayers.LIFT
+		local drawn = nil
 		for j = 1, 10 do
 			local y = -12 + 4 * (j - 1)
 			local o = block.occupancy[1][j][1]
 			T.expect(o >= 0 and o <= 1).toBe(true)
-			if y + 4 <= h then
+			if y + 4 <= top then
 				T.expect(o).toBe(1)
-			elseif y >= h then
+			elseif y >= top then
 				T.expect(o).toBe(0)
 				T.expect(block.materials[1][j][1]).toBe("Air")
 			end
+			if o > 0 then
+				drawn = y + 2 + 4 * o -- the top filled cell's centre plus its occupancy
+			end
 		end
+		T.expect(math.abs((drawn :: number) - TownTerrain.heightAt(x0 + 2, z0 + 2)) < 1e-6).toBe(true)
 		-- the river is water up to the water level
 		local p = Town.city.terrain.river.pts[2]
 		local rx, rz = math.floor(p[1] / 4) * 4, math.floor(p[2] / 4) * 4
