@@ -10,7 +10,9 @@
 --   Transforms from the same world turns (Logic/NpcPose.R15_JOINTS / R15_PARENT), its skeleton read off the joints
 --   (the chest bends at the waist only); no fingers.
 -- * Props the work needs: the smith's anvil before him (Data/NpcStyles.ANVIL) with a glowing piece on it, a hammer in
---   the hand of a figure that holds none of its own (R15 smiths, Data/NpcRigs `hammer`). Client only, no collisions.
+--   the hand of a figure that holds none of its own (R15 smiths, Data/NpcRigs `hammer`); the portal's glow on a
+--   channelling NPC's palms (Teodor: sparks and a light on the middle finger's first bone, else the hand's bone or
+--   part, as strong as the moves' `channel` control, written only when it changes). Client only, no collisions.
 -- Rest frames are read once with every Transform at identity.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -47,6 +49,7 @@ export type Rig = {
 	follow: { joint: RigJoints.Joint, rest: CFrame, at: Vector3 }?, -- the hidden figure's Root under a model
 	props: { Instance },
 	hammer: { part: BasePart, bone: Bone, offset: CFrame }?, -- a hammer carried by a hand bone (the owner's model)
+	glow: { emitters: { ParticleEmitter }, lights: { PointLight }, level: number }?, -- the channel's glow on the palms
 }
 
 -- Curl (rad) of each finger segment at a full grip, and the thumb's; how much more each finger closes than the index.
@@ -61,6 +64,11 @@ local FOLLOW_EPS = 0.02
 local IRON = Color3.fromRGB(58, 58, 64)
 local WOOD = Color3.fromRGB(110, 78, 50)
 local HOT = Color3.fromRGB(255, 120, 40)
+-- the portal's glow (Teodor's accent, Data/Npcs) and its sparks' bright core
+local CHANNEL = Color3.fromRGB(127, 184, 255)
+local CHANNEL_CORE = Color3.fromRGB(205, 232, 255)
+-- the light's brightness at a full channel
+local CHANNEL_LIGHT = 1.4
 
 local function toMat(cf: CFrame): Mat
 	local _, _, _, r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
@@ -261,6 +269,7 @@ function NpcRig.new(npc: Model, asset: Model, npcId: string, style: NpcStyles.St
 		follow = followOf(npc),
 		props = {},
 		hammer = nil,
+		glow = nil,
 	}
 	return rig
 end
@@ -359,13 +368,95 @@ function NpcRig.newR15(npc: Model, npcId: string, style: NpcStyles.Style, seed: 
 		follow = nil,
 		props = {},
 		hammer = nil,
+		glow = nil,
 	}
 	return rig
 end
 
--- The props the NPC's work needs (the smith's anvil, a hammer for a hand without one); `npc` holds them.
+-- The channel's glow on both palms: sparks and a light on the middle finger's first bone (else the hand's bone; an R15
+-- figure's hand part), off until the moves channel.
+local function addChannel(rig: Rig)
+	local L = rig.skel.legLength
+	local glow = { emitters = {} :: { ParticleEmitter }, lights = {} :: { PointLight }, level = 0 }
+	for _, side in { "Right", "Left" } do
+		local s = string.sub(side, 1, 1)
+		local anchor: Instance? = nil
+		if rig.r15 then
+			for _, j in rig.joints do
+				if j.key == side .. "Hand" then
+					anchor = j.joint.part1
+				end
+			end
+		else
+			for _, f in rig.fingers do
+				if f.side == s and f.seg == 1 and f.finger == "Middle" then
+					anchor = f.bone
+				end
+			end
+			anchor = anchor or rig.bones[side .. "Hand"]
+		end
+		if not anchor then
+			continue
+		end
+		local sparks = Instance.new("ParticleEmitter")
+		sparks.Name = "NpcChannel"
+		sparks.Color = ColorSequence.new(CHANNEL_CORE, CHANNEL)
+		sparks.LightEmission = 1
+		sparks.LightInfluence = 0
+		sparks.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.12 * L), NumberSequenceKeypoint.new(1, 0) })
+		sparks.Transparency = NumberSequence.new(0.15, 1)
+		sparks.Lifetime = NumberRange.new(0.4, 0.8)
+		sparks.Rate = 14
+		sparks.Speed = NumberRange.new(0.2 * L, 0.45 * L)
+		sparks.SpreadAngle = Vector2.new(180, 180)
+		sparks.Drag = 3
+		sparks.Acceleration = Vector3.new(0, 0.25 * L, 0)
+		sparks.RotSpeed = NumberRange.new(-90, 90)
+		sparks.Enabled = false
+		sparks.Parent = anchor
+		local light = Instance.new("PointLight")
+		light.Name = "NpcChannel"
+		light.Color = CHANNEL
+		light.Range = 2.4 * L
+		light.Brightness = 0
+		light.Shadows = false
+		light.Parent = anchor
+		table.insert(rig.props, sparks)
+		table.insert(rig.props, light)
+		table.insert(glow.emitters, sparks)
+		table.insert(glow.lights, light)
+	end
+	rig.glow = glow
+end
+
+-- The channel's glow as strong as the frame's `channel` control (in steps of 0.05: written only when it changes).
+local function updateGlow(rig: Rig)
+	local glow = rig.glow
+	if not glow then
+		return
+	end
+	local w = math.clamp(rig.motion.layered.controls.channel or 0, 0, 1)
+	local level = math.floor(w * 20 + 0.5) / 20
+	if level == glow.level then
+		return
+	end
+	glow.level = level
+	for _, sparks in glow.emitters do
+		sparks.Enabled = level >= 0.3
+	end
+	for _, light in glow.lights do
+		light.Brightness = CHANNEL_LIGHT * level
+	end
+end
+
+-- The props the NPC's work needs (the smith's anvil, a hammer for a hand without one, the channel's glow); `npc` holds
+-- them.
 function NpcRig.addProps(rig: Rig, npc: Model, npcId: string)
 	local work = rig.motion.style.work
+	if work and work.prop == "channel" then
+		addChannel(rig)
+		return
+	end
 	if not work or work.prop ~= "anvil" then
 		return
 	end
@@ -550,6 +641,7 @@ function NpcRig.apply(rig: Rig, posed: NpcMotion.Posed)
 			hammer.part.CFrame = hammer.bone.TransformedWorldCFrame * hammer.offset
 		end
 	end
+	updateGlow(rig)
 end
 
 -- The fingers' curl for the hands' shapes (only when one changed).
@@ -604,6 +696,7 @@ function NpcRig.clear(rig: Rig)
 	end
 	table.clear(rig.props)
 	rig.hammer = nil
+	rig.glow = nil
 	table.clear(rig.grip)
 end
 

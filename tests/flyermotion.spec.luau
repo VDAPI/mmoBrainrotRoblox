@@ -6,7 +6,9 @@
 -- says (forward kinematics of the real hierarchy, wings pinned to the chest), the canonical wing spread flat and its
 -- controls' signs (the fingers, the followers, the jaw), the wingbeat's range and rate, glides, the flare, freeze and
 -- stun, every blow landing on the server's hit, poses continuous across blends, the death lying on the ground, the
--- muzzle at the beak / between the wing tips, the crow's perch and hops, the bat's aimed dive and erratic flutter.
+-- muzzle at the beak / between the wing tips, the crow's perch and hops (its idles on the ground as actions too), the
+-- bat's aimed dive down to its target and erratic flutter, no bone under the ground, AnimLab's loop fading out of the
+-- pose shown.
 
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
@@ -727,6 +729,122 @@ T.describe("FlyerMotion", function()
 		end
 	end)
 
+	-- studio review 2026-10-31: the vulture's stoop and deaths, the crow's and the bat's deaths dug bones into the floor
+	T.it(
+		"no bone goes under the ground: the deaths, the stoop, the dive, the summon (FlyerPose.lowest = the bones)",
+		function()
+			for _, id in NEW do
+				local case = CASES[id]
+				local style = FlyerStyles.get(case.style) :: FlyerStyles.Style
+				local names: { string } = table.clone(style.death)
+				for _, name in { style.abilities.crush, style.summon, style.spawn, style.basic[1] } do
+					if name then
+						table.insert(names, name)
+					end
+				end
+				for _, name in names do
+					local inst, bones = newInst(id, case.style, 3)
+					local action = inst.style.actions[name]
+					local dying = action.hold == true
+					local hit = if dying then action.strike elseif name == style.abilities.crush then 2.2 else 0.55
+					local low, lowName = math.huge, ""
+					local mismatch = 0
+					local n = 0
+					run(inst, 0, 2.6 + hit, function()
+						return hover({
+							combat = not dying,
+							look = if dying then nil else { 0, -0.5, -6 },
+							action = { name = name, start = 0, hit = hit, reach = { 0, 0, -6 } },
+						})
+					end, function()
+						n += 1
+						if n % 4 ~= 0 then
+							return
+						end
+						local world = forward(bones, inst.skel.posed)
+						local own = math.huge
+						for bone, e in world do
+							if bone ~= inst.skel.rig.body then
+								own = math.min(own, e.pos[2])
+								if e.pos[2] < low then
+									low, lowName = e.pos[2], bone
+								end
+							end
+						end
+						mismatch = math.max(mismatch, math.abs(own - FlyerPose.lowest(inst.skel)))
+					end)
+					if low < -1e-3 then
+						print(id, name, "under the ground:", lowName, low)
+					end
+					T.expect(low).toBeBetween(-1e-3, math.huge)
+					T.expect(mismatch).toBeBetween(0, 1e-6)
+				end
+			end
+		end
+	)
+
+	-- studio review 2026-10-31: AnimLab loops a death back to the hover and starts every state from the rig's first pose
+	T.it("a jump back in time fades out of the pose it showed (AnimLab's loop): no pop on the first frame", function()
+		for _, id in NEW do
+			local case = CASES[id]
+			local inst = newInst(id, case.style, 4)
+			local name = FlyerMotion.death(inst)
+			local strike = inst.style.actions[name].strike
+			run(inst, 0, 2, function()
+				return hover({ action = { name = name, start = 0, hit = strike } })
+			end)
+			local before = table.clone(inst.controls)
+			local lowBefore = FlyerPose.lowest(inst.skel)
+			-- the loop starts again: the same pose on its first frame, the new one after the fade
+			FlyerMotion.step(inst, hover({ now = 0, snap = true, action = { name = name, start = 0, hit = strike } }))
+			local worst = 0
+			for key, v in before do
+				worst = math.max(worst, math.abs((inst.controls[key] or 0) - v))
+			end
+			T.expect(worst).toBeBetween(0, 1e-6)
+			T.expect(FlyerPose.lowest(inst.skel)).toBeNear(lowBefore, 1e-3)
+			local t = 0
+			while t < 0.6 do
+				t += 1 / 60
+				FlyerMotion.step(inst, hover({ now = t }))
+			end
+			local fresh = newInst(id, case.style, 4)
+			run(fresh, 0, t, function()
+				return hover()
+			end)
+			T.expect(FlyerPose.lowest(inst.skel)).toBeNear(FlyerPose.lowest(fresh.skel), 0.35 * SCALE)
+		end
+	end)
+
+	T.it("the vulture's death keeps the lower wing level as it rolls (no wing swung down into the ground)", function()
+		for _, name in { "deathL", "deathR" } do
+			local inst = newInst("ashVulture_v2", "vulture", 1)
+			local down = if name == "deathL" then "wLe" else "wRe"
+			local worstStep, worstT, prev = 0, 0, nil :: number?
+			run(inst, 0, 1, function()
+				return hover({ action = { name = name, start = 0, hit = 0.5 } })
+			end, function(t)
+				local c = inst.controls
+				-- the lower wing's elevation against the body's roll: about level from the jolt to the ground
+				if t > 0.2 and t < 0.5 then
+					local roll = math.abs(c.broll or 0)
+					T.expect((c[down] or 0) - roll).toBeBetween(math.rad(-40), math.rad(45))
+				end
+				-- (its elevation against the ground: the control less the body's roll toward that side)
+				local e = (c[down] or 0) - math.abs(c.broll or 0)
+				if prev and math.abs(e - prev) > worstStep then
+					worstStep, worstT = math.abs(e - prev), t
+				end
+				prev = e
+			end)
+			if worstStep > math.rad(9) then
+				print(name, "wing step", math.deg(worstStep), "at", worstT)
+			end
+			-- no snap of the wing on the jolt (the old key swung it 75 degrees down in 0.07 s), none on the ground
+			T.expect(worstStep).toBeBetween(0, math.rad(9))
+		end
+	end)
+
 	T.it("glides on a long straight flight, never in a fight", function()
 		local glided = 0
 		for seed = 1, 6 do
@@ -902,6 +1020,28 @@ T.describe("FlyerMotion", function()
 			return hover({ perch = true })
 		end)
 		T.expect(lab.perch).toBe(1)
+		-- /animlab perchLook, perchPreen, peck (a perch's idle as an action, with a fight's input): standing on the
+		-- ground like the perch, the toes on it all through (studio review 2026-10-31: they hovered)
+		local crow = FlyerStyles.get("crow") :: FlyerStyles.Style
+		for _, name in (crow.perch :: FlyerStyles.Perch).fidgets do
+			local idle = newInst("carrionCrow_v2", "crow", 6)
+			local skel = idle.skel
+			local length = MotionTimeline.length(crow.actions[name], 0.55)
+			local off = 0
+			run(idle, 0, length, function()
+				return hover({ combat = true, look = { 0, -0.5, -6 }, action = { name = name, start = 0, hit = 0.55 } })
+			end, function()
+				T.expect(idle.perch).toBe(1)
+				local low = math.huge
+				for _, leg in skel.rig.legs do
+					for _, joint in leg do
+						low = math.min(low, at(skel, joint.bone)[2])
+					end
+				end
+				off = math.max(off, math.abs(low - (crow.perch :: FlyerStyles.Perch).toe * skel.unit))
+			end)
+			T.expect(off).toBeBetween(0, 0.12 * SCALE)
+		end
 	end)
 
 	T.it("the bat's dive flies at its target until the strike, then holds its line", function()
@@ -921,6 +1061,26 @@ T.describe("FlyerMotion", function()
 			local s = struck :: { number }
 			return s[1], s[2]
 		end
+		-- down toward the target's chest: the centre most of two studs (at scale 1) under its hover on the hit
+		local inst, bones = newInst("bloodBat_v2", "bat", 2)
+		local hover0, atHit = 0, 0
+		local function centreY(): number
+			local y = 0
+			for _, bone in inst.skel.rig.centre do
+				y += pos(inst.skel, bones, bone)[2]
+			end
+			return y / #inst.skel.rig.centre
+		end
+		run(inst, 0, 1.1, function()
+			return hover({ combat = true, look = { 0, -0.5, -4 }, action = { name = "dive", start = 0.5, hit = 0.55 } })
+		end, function(t)
+			if math.abs(t - 0.5) < 1 / 120 then
+				hover0 = centreY()
+			elseif math.abs(t - 1.05) < 1 / 120 then
+				atHit = centreY()
+			end
+		end)
+		T.expect(hover0 - atHit).toBeBetween(1.2 * SCALE, 2.6 * SCALE)
 		local x, z = diveTo({ 3, 0, -4 }, false)
 		-- toward the target on the hit: as far as it lies less a strike's length, aimed at it
 		T.expect(x > 0.5 * SCALE and z < -0.5 * SCALE).toBe(true)
