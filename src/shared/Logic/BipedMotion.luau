@@ -38,8 +38,16 @@ local MOVE_RATE = 9
 local RUN_RATE = 6
 local COMBAT_RATE = 4
 local LOOK_RATE = 5
-local ACTION_IN = 0.1
 local ACTION_OUT = 0.18
+-- seconds a boss's keyed action fades in (blended in root axes over its stances, a longer fade lets a turn far from
+-- the stance's take the long way round)
+local BOSS_IN = 0.1
+-- An action fades in from the pose it finds over FADE_IN_SHARE of the time to its hit, within these (s): no bone whips
+-- round in its first frames (2026-10-31 Studio re-review: 70-110 deg in the first 0.1 s), and it is whole well before
+-- the hit, so the blow lands on it.
+local FADE_IN_SHARE = 0.55
+local FADE_IN_MIN = 0.12
+local FADE_IN_MAX = 0.3
 -- seconds an interrupted action (a stagger breaking a cast, a death in mid-blow) fades out from its last pose
 local ACTION_CUT = 0.2
 -- Ground speed (studs/s) under which the monster stands, and the turn rate (rad/s) at which it steps on the spot.
@@ -58,10 +66,17 @@ local LOOK_MAX = 1.1
 local STANCE_RATE = 1.5
 -- A clip action's fade in and (by default) out (s); how much a blow's lead-in may be squeezed onto a short windup
 -- (more starts the clip later) and how hard a long windup's ease into the coil may get.
-local CLIP_IN = 0.15
 local CLIP_OUT = 0.3
-local SQUEEZE_MAX = 2.5
+local SQUEEZE_MAX = 1.5
 local STRETCH_MAX = 3
+-- A giant's blow reaching down (a clip action's `low`): the most it bows at the waist (rad) and crouches (leg lengths),
+-- the least angle (rad) the striking hand stays ahead of straight down from the waist (it reaches out, not under the
+-- body), how long before the strike the bow starts (s), and the share of the follow-through it is held.
+local LOW_BOW = 1.1
+local LOW_CROUCH = 0.3
+local LOW_AHEAD = 0.6
+local LOW_LEAD = 0.2
+local LOW_HOLD = 0.5
 -- A mocap hit reaction: held for HIT_HOLD s, gone after HIT_FADE more; the push of its step (share of the clip's,
 -- leg lengths at most).
 local HIT_HOLD = 0.28
@@ -69,15 +84,22 @@ local HIT_FADE = 0.3
 local HIT_PUSH = 0.35
 local HIT_PUSH_MAX = 0.12
 -- Planted feet (2026-10-31, the Studio review of the mocap): while the biped stands, a foot within PLANT_HIGH (leg
--- lengths) over its rest height stays where it landed; carried farther than PLANT_SLIP by the pose (PLANT_SETTLE once
--- no action runs: the feet settle back under the stance) it steps there over PLANT_STEP s, lifted PLANT_LIFT at the
--- top, the other foot following from half way; let go it eases back onto the pose at PLANT_EASE /s.
-local PLANT_HIGH = 0.06
+-- lengths) over its rest height stays where it landed, turned back by the root's turn (a turn on the spot steps round
+-- on it); carried farther than PLANT_SLIP by the pose or the turn (PLANT_SETTLE once no action runs: the feet settle
+-- back under the stance) it steps there over PLANT_STEP s, lifted PLANT_LIFT at the top and carried across the last
+-- PLANT_CARRY of the step, the other foot following from half way; let go it eases back onto the pose at PLANT_EASE
+-- /s. No foot goes under the floor (2026-10-31 Studio re-review: toes 0.1-0.4 stud under it): the ball stays over its
+-- rest height, the ankle no more than PLANT_HEEL under its own (a clip's flat foot sits its heel a little lower).
+local PLANT_HIGH = 0.09
 local PLANT_SLIP = 0.12
 local PLANT_SETTLE = 0.05
 local PLANT_STEP = 0.24
-local PLANT_LIFT = 0.07
+local PLANT_LIFT = 0.09
+local PLANT_CARRY = 0.85
+-- (a turn on the spot: a step lands this far (rad, at most; PLANT_SLIP's worth at the foot) ahead of the turn)
+local PLANT_LEAD = 0.7
 local PLANT_EASE = 16
+local PLANT_HEEL = 0.05
 -- The bones a mocap hit reaction turns (the arms less: one may be swinging a blow).
 local HIT_BONES: { [string]: number } = {
 	Spine = 1,
@@ -160,6 +182,10 @@ type Plant = {
 	stepAt: number?,
 	sx: number,
 	sz: number,
+	-- a step of a turn on the spot lands on a spot of the floor (root space, turned with the root): lx, lz
+	turn: boolean,
+	lx: number,
+	lz: number,
 }
 
 export type Instance = {
@@ -180,12 +206,33 @@ export type Instance = {
 	lookPitch: number,
 	lastAction: ActionRun?, -- the action of the last frame and its pose (world, shift and weights), kept for a cut
 	-- (`joints`: a mocap action's, blended joint by joint: BipedPose.blendLocal)
-	lastPose: { world: BipedPose.World?, shift: Vec, upper: number, legs: number, joints: boolean? },
-	cut: { world: BipedPose.World, shift: Vec, upper: number, legs: number, at: number, joints: boolean? }?,
+	-- (`bow`, `crouch`: a giant's reach down laid over it: reachDown)
+	lastPose: {
+		world: BipedPose.World?,
+		shift: Vec,
+		upper: number,
+		legs: number,
+		joints: boolean?,
+		bow: number?,
+		crouch: number?,
+	},
+	cut: {
+		world: BipedPose.World,
+		shift: Vec,
+		upper: number,
+		legs: number,
+		at: number,
+		joints: boolean?,
+		bow: number?,
+		crouch: number?,
+	}?,
 	grip: { number }?, -- the model's own blade direction (Data/MonsterAssets `grip`), else the style's
 	rage: number, -- weights of a boss's enraged and shielded stances
 	shield: number,
 	feet: { [string]: Plant }, -- the planted feet by side ("R", "L")
+	-- a giant's blow reaching down (a clip action's `low`): the bow (rad) and the crouch (studs) of its run, worked out
+	-- once from the clip's pose at the hit
+	low: { name: string, start: number, bow: number, crouch: number }?,
 }
 
 local function hash01(n: number, seed: number): number
@@ -259,8 +306,34 @@ function BipedMotion.new(skel: BipedPose.Skeleton, styleId: string, seed: number
 		lastAction = nil,
 		lastPose = { world = nil, shift = { 0, 0, 0 }, upper = 0, legs = 0 },
 		feet = {
-			R = { held = false, x = 0, z = 0, cx = 0, cy = 0, cz = 0, stepAt = nil, sx = 0, sz = 0 },
-			L = { held = false, x = 0, z = 0, cx = 0, cy = 0, cz = 0, stepAt = nil, sx = 0, sz = 0 },
+			R = {
+				held = false,
+				x = 0,
+				z = 0,
+				cx = 0,
+				cy = 0,
+				cz = 0,
+				stepAt = nil,
+				sx = 0,
+				sz = 0,
+				turn = false,
+				lx = 0,
+				lz = 0,
+			},
+			L = {
+				held = false,
+				x = 0,
+				z = 0,
+				cx = 0,
+				cy = 0,
+				cz = 0,
+				stepAt = nil,
+				sx = 0,
+				sz = 0,
+				turn = false,
+				lx = 0,
+				lz = 0,
+			},
 		},
 		cut = nil,
 		rage = 0,
@@ -358,6 +431,11 @@ function BipedMotion.clipTime(action: BipedStyles.Action, source: BipedClip.Sour
 	end
 	local p = math.min(a / span, STRETCH_MAX)
 	return from + span * (1 - (1 - x) ^ p)
+end
+
+-- Seconds an action fades in over (`hit`: its hit, a free clip's own).
+local function fadeIn(hit: number): number
+	return math.clamp(hit * FADE_IN_SHARE, FADE_IN_MIN, FADE_IN_MAX)
 end
 
 -- Seconds an action lasts (to the end of its recovery; `hold`: a channel's; a free clip's own hit).
@@ -719,7 +797,8 @@ local function locomotion(inst: Instance, input: Input): (World, Vec)
 	local moving = speed >= STAND_SPEED
 	-- a boss walks at full weight however slow its stride (a giant's cadence is slow; a half blend would slide)
 	local walkWeight = if style.boss then 1 else math.clamp(speed / (walkSpeed * 0.5), 0, 1)
-	local moveTarget = if moving then walkWeight elseif turning then 0.65 else 0
+	-- (a turn on the spot: a boss treads round on its walk, the others stand and step round on their planted feet)
+	local moveTarget = if moving then walkWeight elseif turning and style.boss then 0.65 else 0
 	local runTarget = math.clamp((speed - walkSpeed * 1.1) / math.max(0.5, runSpeed * 0.75 - walkSpeed * 1.1), 0, 1)
 	if input.snap then
 		inst.move, inst.run = moveTarget, runTarget
@@ -1019,10 +1098,54 @@ end
 -- held is the ball of the foot where the skeleton has a toe (a heel the pose lifts or turns pivots on it), else the
 -- ankle. The blends into and out of an action, a clip on a model of other proportions and the push of a hit no longer
 -- slide the feet.
-local function plantFeet(inst: Instance, input: Input, world: World, shift: Vec, hold: boolean, acting: boolean)
+-- Where a foot stepping in a turn on the spot (`at` the stance's ball of the foot, `ankle` its ankle) lands, root space
+-- now: where the turn will have carried the stance's foot by the end of the step and PLANT_LEAD ahead of it (as far
+-- as the leg reaches), so the next step waits; a spot of the floor meanwhile.
+local function turnLanding(
+	inst: Instance,
+	input: Input,
+	world: World,
+	shift: Vec,
+	side: string,
+	ankle: Vec,
+	at: Vec,
+	slip: number
+): (number, number)
 	local skel = inst.skel
 	local L = skel.legLength
-	local slip = (if acting then PLANT_SLIP else PLANT_SETTLE) * L
+	local sign = if input.yawRate > 0 then 1 else -1
+	local x, z = at[1], at[3]
+	local r = math.sqrt(x * x + z * z)
+	local lead = math.min(PLANT_LEAD, PLANT_LEAD * slip / math.max(r, 0.1 * L)) * sign
+	local lc, ls = math.cos(lead), math.sin(lead)
+	local ox, oz = x * lc + z * ls - x, z * lc - x * ls - z
+	local hip = BipedPose.jointAt(skel, world, shift, (if side == "R" then "Right" else "Left") .. "UpLeg")
+	if hip then
+		local leg = skel.leg[side]
+		local px, py, pz = ankle[1] - hip[1], ankle[2] - hip[2], ankle[3] - hip[3]
+		local d0 = math.sqrt(px * px + py * py + pz * pz)
+		local d1 = math.sqrt((px + ox) ^ 2 + py * py + (pz + oz) ^ 2)
+		local reach = math.max(0.97 * (leg.l1 + leg.l2), d0)
+		local k = if d1 <= reach then 1 else math.clamp((reach - d0) / math.max(d1 - d0, 1e-6), 0, 1)
+		x, z = x + ox * k, z + oz * k
+	end
+	local ahead = input.yawRate * PLANT_STEP
+	local ac, as = math.cos(ahead), math.sin(ahead)
+	return x * ac + z * as, z * ac - x * as
+end
+
+local function plantFeet(
+	inst: Instance,
+	input: Input,
+	world: World,
+	shift: Vec,
+	ground: boolean,
+	hold: boolean,
+	acting: boolean
+)
+	local skel = inst.skel
+	local L = skel.legLength
+	local slip = (if acting or math.abs(input.yawRate) > TURN_STEP then PLANT_SLIP else PLANT_SETTLE) * L
 	local now, dt = input.now, input.dt
 	local turn = -input.yawRate * dt
 	local c, s = math.cos(turn), math.sin(turn)
@@ -1039,19 +1162,23 @@ local function plantFeet(inst: Instance, input: Input, world: World, shift: Vec,
 		end
 		-- the ball of the foot: the toe's joint as the pose turns the foot
 		local toe = skel.bones[TOES[side]]
-		local at, ground = ankle, bone.pos[2]
+		local at, ball = ankle, bone.pos[2]
 		if toe then
 			local o = NpcPose.apply(world[key] or NpcPose.IDENTITY, {
 				toe.pos[1] - bone.pos[1],
 				toe.pos[2] - bone.pos[2],
 				toe.pos[3] - bone.pos[3],
 			})
-			at, ground = { ankle[1] + o[1], ankle[2] + o[2], ankle[3] + o[3] }, toe.pos[2]
+			at, ball = { ankle[1] + o[1], ankle[2] + o[2], ankle[3] + o[3] }, toe.pos[2]
 		end
 		local lift = 0
-		if hold and at[2] < ground + PLANT_HIGH * L then
+		if hold and at[2] < ball + PLANT_HIGH * L then
 			if foot.held then
 				foot.x, foot.z = foot.x * c + foot.z * s, foot.z * c - foot.x * s
+				if foot.stepAt then
+					foot.sx, foot.sz = foot.sx * c + foot.sz * s, foot.sz * c - foot.sx * s
+					foot.lx, foot.lz = foot.lx * c + foot.lz * s, foot.lz * c - foot.lx * s
+				end
 			else
 				-- (from where it is: a correction still easing away is kept)
 				foot.held, foot.x, foot.z = true, at[1] + foot.cx, at[3] + foot.cz
@@ -1059,13 +1186,18 @@ local function plantFeet(inst: Instance, input: Input, world: World, shift: Vec,
 			local x, z = foot.x, foot.z
 			local stepAt = foot.stepAt
 			if stepAt then
+				local lx, lz = at[1], at[3]
+				if foot.turn then
+					lx, lz = foot.lx, foot.lz
+				end
 				local u = math.max(0, (now - stepAt) / PLANT_STEP)
 				if u >= 1 then
-					foot.stepAt, foot.x, foot.z = nil, at[1], at[3]
-					x, z = at[1], at[3]
+					foot.stepAt, foot.x, foot.z = nil, lx, lz
+					x, z = lx, lz
 				else
-					local k = ease("inout", u)
-					x, z = foot.sx + (at[1] - foot.sx) * k, foot.sz + (at[3] - foot.sz) * k
+					-- (up first, then across: the foot leaves the floor before it moves, sets down as it arrives)
+					local k = ease("inout", math.clamp((u - (1 - PLANT_CARRY)) / PLANT_CARRY, 0, 1))
+					x, z = foot.sx + (lx - foot.sx) * k, foot.sz + (lz - foot.sz) * k
 					lift = PLANT_LIFT * L * math.sin(math.pi * u)
 				end
 			else
@@ -1092,6 +1224,10 @@ local function plantFeet(inst: Instance, input: Input, world: World, shift: Vec,
 				end
 				if far then
 					foot.stepAt, foot.sx, foot.sz = now, x, z
+					foot.turn = math.abs(input.yawRate) > TURN_STEP * 0.5
+					if foot.turn then
+						foot.lx, foot.lz = turnLanding(inst, input, world, shift, side, ankle, at, slip)
+					end
 				end
 			end
 			foot.cx, foot.cy, foot.cz = x - at[1], lift, z - at[3]
@@ -1103,15 +1239,113 @@ local function plantFeet(inst: Instance, input: Input, world: World, shift: Vec,
 			foot.cy *= k
 			foot.cz *= k
 		end
-		if math.abs(foot.cx) + math.abs(foot.cy) + math.abs(foot.cz) > 1e-4 * L then
+		-- (over the floor: the ball no lower than it stands at rest, the ankle within PLANT_HEEL of its rest height)
+		local sink = if ground then math.max(0, ball - at[2], bone.pos[2] - PLANT_HEEL * L - ankle[2]) else 0
+		if math.abs(foot.cx) + math.abs(foot.cy) + math.abs(foot.cz) + sink > 1e-4 * L then
 			local list: { [string]: Vec? } = targets or {}
-			list[side] = { ankle[1] + foot.cx, ankle[2] + foot.cy, ankle[3] + foot.cz }
+			list[side] = { ankle[1] + foot.cx, ankle[2] + foot.cy + sink, ankle[3] + foot.cz }
 			targets = list
 		end
 	end
 	if targets then
 		BipedPose.nudgeLegs(skel, world, shift, targets)
 	end
+end
+
+-- The bow and the crouch that bring the striking hand of clip action `ref` (its clip `loaded`, hit at clip time `hc`)
+-- down to `ref.low` studs over the feet, from the pose it is laid over (`world`, `shift`): the hand farther ahead at
+-- the hit turned about the waist (the Spine's joint) in the body's own plane, as far as LOW_BOW and no nearer straight
+-- down than LOW_AHEAD, the rest crouched.
+local function lowPlan(
+	inst: Instance,
+	ref: BipedStyles.ClipRef,
+	loaded: LoadedClip,
+	world: World,
+	shift: Vec,
+	hc: number
+): (number, number)
+	local skel = inst.skel
+	local aw = BipedClip.sample(loaded.clip, hc, false, loaded.fit, ref.mirror)
+	local at = BipedPose.positions(skel, BipedPose.blend(world, aw, 1, UPPER_MASK), shift)
+	local spine, right, left = at.Spine, at.RightHand, at.LeftHand
+	if not spine or not right or not left then
+		return 0, 0
+	end
+	local hand = if left[3] < right[3] then left else right
+	local floor = math.huge
+	for _, key in TOES do
+		local bone = skel.bones[key]
+		floor = math.min(floor, if bone then bone.pos[2] else math.huge)
+	end
+	if floor == math.huge then
+		floor = math.min(skel.bones.RightFoot.pos[2], skel.bones.LeftFoot.pos[2])
+	end
+	local f, u = spine[3] - hand[3], hand[2] - spine[2]
+	local h = floor + (ref.low or 0) - spine[2]
+	if u <= h then
+		return 0, 0
+	end
+	local r = math.sqrt(f * f + u * u)
+	local a = math.atan2(f, u)
+	local most = math.min(LOW_BOW, math.pi - LOW_AHEAD - a)
+	local bow = math.clamp(math.acos(math.clamp(h / math.max(r, 1e-6), -1, 1)) - a, 0, math.max(0, most))
+	return bow, math.clamp(r * math.cos(a + bow) - h, 0, LOW_CROUCH * skel.legLength)
+end
+
+-- Clip action `ref`'s reach down onto its target `t` s into its run (`hit`, `length`, weight `w`): the body bowed and
+-- crouched over the feet where they stand. Returns the shift.
+-- `world` (in place) bowed at the waist by `bow` rad and `shift` crouched by `crouch` studs over the ankles where they
+-- are; returns the shift.
+local function lower(inst: Instance, world: World, shift: Vec, bow: number, crouch: number): Vec
+	if bow > 1e-4 then
+		BipedPose.turnSubtree(world, "Spine", BipedPose.rx(-bow))
+	end
+	if crouch <= 1e-4 then
+		return shift
+	end
+	local skel = inst.skel
+	local targets: { [string]: Vec? } = {}
+	for side, key in FEET do
+		targets[side] = BipedPose.jointAt(skel, world, shift, key)
+	end
+	local low = { shift[1], shift[2] - crouch, shift[3] }
+	BipedPose.nudgeLegs(skel, world, low, targets)
+	return low
+end
+
+local function reachDown(
+	inst: Instance,
+	action: BipedStyles.Action,
+	ref: BipedStyles.ClipRef,
+	loaded: LoadedClip,
+	run: ActionRun,
+	world: World,
+	shift: Vec,
+	hit: number,
+	hc: number,
+	t: number,
+	length: number,
+	w: number
+): Vec
+	local plan = inst.low
+	if not plan or plan.name ~= run.name or plan.start ~= run.start then
+		local bow, crouch = lowPlan(inst, ref, loaded, world, shift, hc)
+		plan = { name = run.name, start = run.start, bow = bow, crouch = crouch }
+		inst.low = plan
+	end
+	local p = plan :: { name: string, start: number, bow: number, crouch: number }
+	local s = math.min(action.strike, hit * 0.7)
+	local from = math.max(0, hit - s - LOW_LEAD)
+	local hold = hit + action.follow * LOW_HOLD
+	local e = if t < hit
+		then ease("inout", math.clamp((t - from) / math.max(hit - from, 1e-3), 0, 1))
+		elseif t <= hold then 1
+		else 1 - ease("inout", math.clamp((t - hold) / math.max(length - hold, 1e-3), 0, 1))
+	e *= w
+	-- (kept for a cut: the next action fades out of the bow, not out of the clip alone)
+	local kept = inst.lastPose
+	kept.bow, kept.crouch = p.bow * e, p.crouch * e
+	return lower(inst, world, shift, p.bow * e, p.crouch * e)
 end
 
 ---------------------------------------------------------------- evaluation
@@ -1160,11 +1394,13 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 				legs = kept.legs,
 				at = now,
 				joints = kept.joints,
+				bow = kept.bow,
+				crouch = kept.crouch,
 			}
 			else nil
 	end
 	inst.lastAction = run
-	kept.world, kept.upper, kept.legs, kept.joints = nil, 0, 0, nil
+	kept.world, kept.upper, kept.legs, kept.joints, kept.bow, kept.crouch = nil, 0, 0, nil, nil, nil
 	-- (the weight of the actions: the look, the scan and the lean give way to it)
 	local actionW = 0
 	local cut = inst.cut
@@ -1179,6 +1415,7 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 				then BipedPose.blendLocal(world, cut.world, 1, mask)
 				else BipedPose.blend(world, cut.world, 1, mask)
 			shift = lerpVec(shift, cut.shift, cut.legs * fade)
+			shift = lower(inst, world, shift, (cut.bow or 0) * fade, (cut.crouch or 0) * fade)
 			actionW = cut.upper * fade
 		end
 	end
@@ -1199,16 +1436,25 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 			local aw, off = BipedClip.sample(loaded.clip, tc, false, loaded.fit, ref.mirror)
 			local hc = clipHit(ref, source)
 			local as = clipShift(inst, ref, loaded, run, off, tc, BipedMotion.clipTime(action, source, hit, 0), hc)
-			local w = math.min(1, t / CLIP_IN)
+			local w = math.min(1, t / fadeIn(hit))
 			if not action.hold then
 				w = math.min(w, math.max(0, (length - t) / (ref.out or CLIP_OUT)))
 			end
 			w = ease("inout", w) * (1 - (1 - (ref.moving or 1)) * inst.move)
 			actionW = math.max(actionW, w)
 			local legs = if ref.upper then 0 elseif action.full then w elseif action.legs then w * (1 - inst.move) else 0
+			if ref.upper then
+				-- (above the hips alone: the chest takes the clip's turn in the root's axes, so the blow keeps its way
+				-- where the clip's hips turned with it (2026-10-31 Studio re-review: a boss's swipe went out to the
+				-- side); the joints above it still blend one by one, an arm far from the guard's not the long way round)
+				aw.Hips = world.Hips
+			end
 			world = BipedPose.blendLocal(world, aw, 1, maskWith(w, legs))
 			shift = lerpVec(shift, as, legs)
 			kept.world, kept.shift, kept.upper, kept.legs, kept.joints = aw, as, w, legs, true
+			if ref.low then
+				shift = reachDown(inst, action, ref, loaded, run, world, shift, hit, hc, t, length, w)
+			end
 		end
 	elseif run and action then
 		local t = now - run.start
@@ -1247,7 +1493,7 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 			then
 				controls, spin = bossMeta(inst, action, run, controls, math.min(t, length), now)
 			end
-			local w = math.min(1, t / ACTION_IN)
+			local w = math.min(1, t / (if boss then BOSS_IN else fadeIn(run.hit)))
 			if not action.hold then
 				w = math.min(w, math.max(0, (length - t) / ACTION_OUT))
 			end
@@ -1304,16 +1550,11 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 			end
 		end
 	end
-	-- 5. planted feet while it stands (a boss's blows keep its own stance: Data/BossStyles)
-	local hold = plantable
-		and not boss
-		and not style.float
-		and not style.procedural
-		and not input.flying
-		and input.speed < STAND_SPEED
-		and math.abs(input.yawRate) < TURN_STEP
-		and inst.move < 0.3
-	plantFeet(inst, input, world, shift, hold, actionW > 0.01)
+	-- 5. feet on the floor, planted while it stands or turns on the spot (a boss's blows keep its own stance:
+	-- Data/BossStyles)
+	local ground = plantable and not boss and not style.float and not style.procedural and not input.flying
+	local hold = ground and input.speed < STAND_SPEED and inst.move < 0.3
+	plantFeet(inst, input, world, shift, ground, hold, actionW > 0.01)
 	-- the lean into turns while moving
 	local lean = math.clamp(input.yawRate * input.speed * LEAN, -LEAN_MAX, LEAN_MAX) * inst.move
 	if math.abs(lean) > 1e-3 then

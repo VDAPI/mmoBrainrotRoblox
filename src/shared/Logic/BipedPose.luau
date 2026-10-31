@@ -180,6 +180,12 @@ local function length(a: Vec): number
 	return math.sqrt(dot(a, a))
 end
 
+-- 0..1 eased (smoothstep) of x clamped to 0..1.
+local function smooth01(x: number): number
+	local k = math.clamp(x, 0, 1)
+	return k * k * (3 - 2 * k)
+end
+
 local function rx(a: number): Mat
 	return if a == 0 then IDENTITY else axisAngle({ 1, 0, 0 }, a)
 end
@@ -785,6 +791,9 @@ function BipedPose.jointAt(skel: Skeleton, world: World, shift: Vec, key: string
 	return add(pp, apply(world[parentKey] or IDENTITY, sub(bone.pos, parentBone.pos)))
 end
 
+-- The share of a leg's length over which nudgeLegs draws a far target in.
+local SOFT_REACH = 0.04
+
 -- Moves each ankle of a pose onto `targets[S]` (root space; S = "R" / "L", nil keeps the leg) with the least turn of
 -- the thigh and the shin: the knee stays in its own plane and the bones keep their roll, so a target on the pose's own
 -- ankle leaves the leg exactly as it was (planted feet easing in and out without a jump); the foot keeps its world turn.
@@ -804,7 +813,26 @@ function BipedPose.nudgeLegs(skel: Skeleton, world: World, shift: Vec, targets: 
 		end
 		local line = unit(sub(ankle, hip)) or DOWN
 		local toKnee = sub(knee, hip)
-		local front = unit(sub(toKnee, scale(line, dot(toKnee, line)))) or apply(world.Hips or IDENTITY, FRONT)
+		-- (the knee along its own bend; a leg near straight, or bent back, along the pelvis' front: the bend's way is
+		-- lost there and would flip from frame to frame)
+		local pelvis = apply(world.Hips or IDENTITY, FRONT)
+		local bend = sub(toKnee, scale(line, dot(toKnee, line)))
+		local own = unit(bend)
+		local front = pelvis
+		if own then
+			local w = smooth01((length(bend) / leg.l1 - 0.02) / 0.08) * smooth01((dot(own, pelvis) + 0.3) / 0.6)
+			front = unit(add(scale(own, w), scale(pelvis, 1 - w))) or pelvis
+		end
+		-- (a soft reach: a target past the pose's own ankle and near the leg's full length is drawn in a little, so
+		-- the knee does not snap from straight as a held foot comes back within reach)
+		local full = leg.l1 + leg.l2
+		local reach = sub(target, hip)
+		local d = length(reach)
+		local soft = math.max(full * (1 - SOFT_REACH), length(sub(ankle, hip)))
+		if d > soft then
+			local band = math.max(full - soft, 1e-3)
+			target = add(hip, scale(reach, (soft + band * (1 - math.exp((soft - d) / band))) / d))
+		end
 		local thigh, shin = BipedPose.solveLeg(hip, target, leg.l1, leg.l2, front)
 		local upKey, kneeKey = side .. "UpLeg", side .. "Leg"
 		world[upKey] = mul(NpcPose.fromTo(toKnee, thigh), world[upKey] or IDENTITY)
