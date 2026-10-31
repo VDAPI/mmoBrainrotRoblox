@@ -196,11 +196,13 @@ local ARCH = table.freeze({
 -- off the box's centre (of its width, + along the portal's +x), `foot` the field's bottom over the model's foot and
 -- `h` its height (of the box's height), `w` its width (of the box's width); never over ARCH.field. Logic/ArchFit.field
 -- uses it; a model without an entry keeps the field centred on its box.
---   common_portal_02 (20.9 x 18 turned): an uneven ruin, a thick left pillar, a thin right one ending 3 studs lower,
---   no lintel, a base slab 2.75 studs high; its opening runs from 3.75 studs left of the box's centre to 8.5 right
+--   common_portal_02 (20.9 x 18 turned): an uneven ruin, a thick left pillar, a thin right one ending 3 studs lower
+--   (14.25 over the foot), no lintel; its opening runs from 3.75 studs left of the box's centre to 8.5 right. Its base
+--   slab reaches 3.8 over the foot (Studio check of the first fit, foot 0.16 and h 0.6: the field's bottom edge and
+--   the veil's 0.6-0.9 studs in it), so the field starts 4.05 over the foot, its top (13.7) where it was
 export type Opening = { x: number, foot: number, w: number, h: number }
 local MODEL_OPENING: { [string]: Opening } = {
-	common_portal_02 = table.freeze({ x = 0.114, foot = 0.16, w = 0.587, h = 0.6 }),
+	common_portal_02 = table.freeze({ x = 0.114, foot = 0.225, w = 0.587, h = 0.535 }),
 }
 table.freeze(MODEL_OPENING)
 -- W31: what a frame round a cave mouth keeps free (tests/portals.spec "cave mouths"): the painted arch (`model` and a

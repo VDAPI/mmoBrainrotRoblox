@@ -14144,6 +14144,25 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   potem fryzurę, która go ma. Admin `/charlook` dopasowuje kolor.
 - Testy: `bodylooks.spec` (zakresy, stare id, odcień), `classlooks`, `character`, `wikidump`. Dane wiki przegenerowane.
 
+### Plan UI, faza 1: mniej na ekranie gry (2026-10-31)
+- Zgłoszenie właściciela: „UI słabo przejrzyste, zbyt dużo informacji i możliwości na jednym ekranie” (plan
+  `wyglad/UI-PLAN.md` w plikach projektu). Nowy `Logic/HudMenu`: `BAR` (Plecak, Umiejętności, Mapa, Questy, Sklep, ☰),
+  `TILES` (15 kafelków menu gry), `KEYS` (klawisz każdego okna), `attention` („!” kafelka zapala ☰).
+- HUD: menu w jednym rzędzie (`Hud/init` `menu()`), `ScreenController` `MENU` + `TILE_DEFS` (odznaki kafelków: poczta,
+  arena, osiągnięcia `MenuAttention.Achievements`, wierzchowce, przepustka, nagroda dnia), `GameMenu` z siatką kafelków
+  (ikona, nazwa `menu.tile.<id>`, plakietka klawisza, „!”) nad ustawieniami; stare wiersze menu usunięte (VIP do
+  miasta zostaje). Usunięte `Hud/AchievementButton` i `Hud/EmoteButton`; ✧ i ❖ tylko z nagrodą, PvP przez
+  `PvpRules.toggleShown`, emotka zeszła z `PhoneHud.PLACES`, szuflada telefonu: sześć przycisków paska + ✧ ❖ z „!”.
+- Kolumna: `HudStack.RIGHT_TOP` 460 → 380 (z belką prowadzenia `RIGHT_TOP_GUIDE` 408; plan liczył 356 bez podpisów
+  minimapy), `EXTRAS` na dwa przyciski, `HudSlots` przekazuje belkę. Czat: `Hud/ChatDock` (PC lewy dolny róg, szerokość
+  z `HudStack.chatWidthScale` przed paskiem akcji; dotyk bez zmian). Tropiciel: `TrackerFold.DEFAULTS` zwija zlecenia
+  łowieckie, dnia, tygodnia i osiągnięcia (zapisany wybór zostaje).
+- Z przeglądu Studio: okno nagrody za logowanie nie otwiera się samo, zamiast niego toast `login.toast`
+  (`LoginRewardController`). DEV już tylko dla adminów (w Studio każdy jest adminem). Teksty odblokowania wierzchowców i
+  areny wskazują menu ☰.
+- Testy: nowy `hudmenu.spec`, `hudlayout` (rząd, belka, szerokość czatu), `phonehud`, `trackerfold`, `pvp`, `uiart`
+  (ikony kafelków), `bestiary`.
+
 ### Światło portali w otworze ruiny `common_portal_02` (właściciel 2026-10-31)
 - Zgłoszenie: w jaskiniach, leżach i lochach światło teleportu źle osadzone w drugim modelu łuku. Pomiar właściciela
   (Studio Play, promienie serwera, układ starego pola): otwór między filarami x -3,75..+8,5, płyta do 2,75 nad stopą,
@@ -14153,7 +14172,11 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Logic/ArchFit.field` / `fit(lo, hi, model?)` (bez wpisu: dawne pole na środku), `Prefabs.fitModel` dostaje nazwę
   modelu i zwraca wierzch modelu nad polem; napis strefy 2,5 nad wierzchem modelu (nie wędruje w górę z polem).
 - Test: `portals.spec` „puts the field into the uneven ruin's own opening” (liczby z pomiaru; pole, zasłona i rdzeń
-  między filarami, nad płytą, pod szczytem prawego filara). Nieobejrzane w Studio.
+  między filarami, co najmniej 0,2 nad płytą, pod szczytem prawego filara).
+- Sprawdzenie w Studio (Play, 5 portali z tym modelem): pole i zasłona wyśrodkowane w otworze (ok. 1,5 studa luzu z
+  obu stron), ale dolna krawędź pola i zasłony 0,6–0,9 studa w płycie (jej wierzch 3,8 nad stopą). Poprawka: `foot`
+  0,225 (pole od 4,05 nad stopą, o stud wyżej), `h` 0,535 (9,6, wierzch 13,7 nad stopą jak wcześniej); zasłona
+  8,55 x 9,05 stoi 0,56 nad płytą.
 
 ### Porównanie w tooltipie przedmiotu (właściciel 2026-10-31)
 - Prośba: „Zrób żeby pod itemkiem na który najeżdżasz pokazywało staty do porównania a nie ten który masz na sobie”.

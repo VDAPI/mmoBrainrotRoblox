@@ -4,16 +4,16 @@
 -- Hud/AchievementToast (Config.Achievements.toastSeconds each, sound ui.achievement); with the setting off
 -- (account.settings.achToasts) every notice is one line in the system chat instead. The server is the authority:
 -- nothing here reports progress.
--- S151b: registers the achievements window (N, the game menu, the HUD menu) and opens it on an achievement (the
+-- S151b: registers the achievements window (N, the game menu's tile) and opens it on an achievement (the
 -- toast's "View", the tracker): AchievementController.Open(id?). Tracking goes to the server (AchievementTrack); the
 -- window's first opening shows the tracking hint once (account.settings.achHint).
 -- S151c: a bestiary tier ({ bestiary, tier, points }) is a notice too ("View" opens the bestiary tab on the entry:
--- focus "best:<id>"); anything earned lights the HUD button (Hud/AchievementButton.Unseen) until the window opens.
+-- focus "best:<id>"); anything earned lights the "!" (UI plan phase 1: the game menu's tile and the HUD's ☰,
+-- MenuAttention.Achievements) until the window opens.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AchData = require(ReplicatedStorage.Shared.Data.Achievements)
-local AchievementButton = require(script.Parent.Parent.UI.Screens.Hud.AchievementButton)
 local BestiaryData = require(ReplicatedStorage.Shared.Data.Bestiary)
 local Families = require(ReplicatedStorage.Shared.Data.Families)
 local AchievementToast = require(script.Parent.Parent.UI.Screens.Hud.AchievementToast)
@@ -21,6 +21,7 @@ local AchievementsWindow = require(script.Parent.Parent.UI.Screens.AchievementsW
 local Config = require(ReplicatedStorage.Shared.Config)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local MenuAttention = require(script.Parent.Parent.UI.MenuAttention)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -149,7 +150,7 @@ local function onDone(payload: any)
 		return
 	end
 	if not Fusion.peek(WindowManager.IsOpen("achievements")) then
-		AchievementButton.Unseen:set(true)
+		MenuAttention.Achievements:set(true)
 	end
 	if State.Get({ "account", "settings", "achToasts" }) == false then
 		local line = if view.reward ~= "" then `{view.name} ({view.reward})` else view.name
@@ -248,7 +249,7 @@ function AchievementController.Start()
 			focus:set(nil)
 			return
 		end
-		AchievementButton.Unseen:set(false)
+		MenuAttention.Achievements:set(false)
 		if State.Get({ "account", "settings", "achHint" }) ~= true then
 			Toast.push(Text.now("ach.hint"), "info", 8)
 			Net.Send("SetSetting", "achHint", true)

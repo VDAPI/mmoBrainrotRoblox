@@ -49,6 +49,7 @@
 
 ## Niedokończone (kod)
 
+- **Plan UI, faza 1 (2026-10-31):** jeden rząd przycisków HUD, kafelki menu gry, czat w lewym dolnym rogu (`Hud/ChatDock`), toast zamiast okna nagrody za logowanie; nieobejrzane w Studio (szerokość czatu przy 1366 i 1280 px, zawijanie nazw kafelków, tropiciel od y 380 / 408 z belką prowadzenia, szuflada ☰ na telefonie). Kolejne fazy w `wyglad/UI-PLAN.md`; z przeglądu Studio zostaje przygaszanie tropiciela i przycisków pod dużym oknem.
 - **Kamera po wejściu do świata (2026-10-31):** promień kamery po kolizji mapy, obrót postaci w czystą stronę i kamera
   za plecami świeżej postaci (`Logic/CameraClear`, `CameraController`, `WorldService.OpenFacing`); nieobejrzane w Studio
   (pierwszy widok na spawnie i na zapisanym miejscu przy domu, przejście obok latarni, kamera „z góry” pod okapem).
