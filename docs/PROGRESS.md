@@ -60,6 +60,9 @@
 - **Opisy-1 krótkie opisy:** `InfoTip` („i”), `Details` („Więcej ▸”), `Tooltip` ze szczegółami, skrócone tooltipy
   przedmiotów i paska umiejętności gotowe; okna jeszcze nie przerobione (kolejne sesje, przepis w `docs/JAK-DODAC.md`).
   Bez przeglądu w Studio (dymek „i” przy krawędzi ekranu, wiersz „Więcej ▸” w tooltipie na telefonie).
+- **Porównanie w tooltipie (2026-10-31):** zmiany „(+N)” / „(-N)” / „(=)” i wiersze straty w tooltipie wskazanego
+  przedmiotu (`Logic/ItemCompare`), bez drugiego panelu; nieobejrzane w Studio (zawijanie długich linii z dopiskiem,
+  kolory na żelazie, tooltip na telefonie).
 - **Opisy-3 (postać, umiejętności, zadania, menu, tropiciel):** zwijany tropiciel celów (`Logic/TrackerFold`), krótkie
   linie z „i” / „Więcej ▸” w oknach grupy 3; bez przeglądu w Studio (wysokość tropiciela, dymek przytrzymania na telefonie).
 - **Przegląd Studio 2026-10-21 (HUD, NPC):** kolumna HUD (`Logic/HudStack`), róg (poczta, plakietka PvP pod

@@ -674,7 +674,7 @@ local LAMP_BRIGHTNESS = 1.15
 function Structures.lamps(city: any, ground: Ground): { Build }
 	local out: { Build } = {}
 	for _, l in city.lamps do
-		local y = ground(l.x, l.z)
+		local y = Parts.lowest(ground, l.x, l.z, 1.5) -- 2026-10-31: the post's foot on the low side of a slope
 		local bp = Blueprint.new(hash(l.x, l.z))
 		local hgt = if l.kind == "rampLantern" then 7 else LAMP_HEIGHT
 		-- W12: the post, the arm and the lantern are one asset kit slot (Data/Kit "prop:lamp": the painted street lamp);
