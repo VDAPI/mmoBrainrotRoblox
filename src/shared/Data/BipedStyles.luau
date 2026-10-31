@@ -26,13 +26,17 @@ export type ClipRef = {
 	free: boolean?,
 	rate: number?,
 	from: number?, -- clip seconds it starts at (the lead-in before is skipped)
-	hit: number?, -- clip seconds of the action's hit when the clip has no `hit` of its own (a fall's landing)
+	hit: number?, -- clip seconds of the action's hit, over the clip's own (a fall's landing, a giant's lowest swing)
 	travel: boolean?, -- the clip's ground travel up to its hit is laid onto the run's reach (a leap onto the target)
 	fly: { number }?, -- an in-place clip's flight (clip seconds, from / to): the reach is covered over it
 	blade: boolean?, -- the model's blade (`grip`) laid along the clip's, the line its fist closes round (a sword's)
 	upper: boolean?, -- the upper body only (the legs stay the locomotion's: a floating body)
 	out: number?, -- seconds of the fade back into the layers under it (default 0.3)
 	moving: number?, -- the share of its weight kept on a body that moves (a shout while it runs: default 1)
+	-- a giant's blow reaching down to a player (2026-10-31 Studio re-review: the bosses' blows passed over the head):
+	-- at the hit the striking hand (the one farther ahead) this many studs over the feet, the body bowed at the waist
+	-- and crouched as far as it takes (Logic/BipedMotion LOW_*), then eased back over the recovery
+	low: number?,
 }
 export type Action = {
 	keys: { Key },
@@ -2314,7 +2318,8 @@ local function swipe(m: number): Action
 end
 
 -- 2026-10-31: on the mutant set (a hunched breathing idle and a lumbering walk, the swipe (the left's own, mirrored for
--- the right), the jumping two-fisted slam for the crush and, carried onto the target, the pounce; a fall of its own).
+-- the right), the jumping two-fisted slam for the crush and, carried onto the target, the pounce; a fall of its own);
+-- the heavy blow the overhead chop's fist.
 local BRUTE: Style = variant(HUMANOID_1H, {
 	clips = { idle = { "mutantIdle" }, walk = "mutantWalk", run = "run" },
 	guard = BRUTE_GUARD,
@@ -2322,9 +2327,10 @@ local BRUTE: Style = variant(HUMANOID_1H, {
 	actions = {
 		clawR = mocap(swipe(1), { name = "mutantSwipe", mirror = true }, 0.36, 0.4, 0.6),
 		clawL = mocap(swipe(-1), { name = "mutantSwipe" }, 0.36, 0.4, 0.6),
-		-- the wide blow a swipe across from the right, the heavy one the jumping slam
+		-- the wide blow a swipe across from the right, the heavy one a fist brought down from overhead (the crush keeps
+		-- the jumping slam: 2026-10-31 Studio re-review, the two read the same)
 		cleave = mocap(KEYED.cleave, { name = "mutantSwipe", mirror = true }, 0.36, 0.4, 0.6),
-		heavy = mocap(KEYED.heavy, { name = "mutantSlam" }, 1.13, 0.4, 0.5),
+		heavy = mocap(KEYED.heavy, { name = "swordChop" }, 0.25, 0.45, 0.65),
 		crush = mocap(KEYED.crush, { name = "mutantSlam" }, 1.13, 0.4, 0.5),
 		pounce = mocap(KEYED.pounce, { name = "mutantSlam", fly = { 1.27, 1.87 } }, 1.13, 0.4, 0.5),
 		deathMutant = mocap(
@@ -2380,7 +2386,8 @@ GHOST.deaths = nil
 local HUMANOID_2H: Style = variant(HUMANOID_1H, {
 	basic = { "hew", "chop", "hew", "slash" },
 	actions = {
-		hew = mocap(KEYED.heavy, { name = "greatSlash", blade = true }, 0.25, 0.25, 0.33),
+		-- (the slash cut where the body turns on into a second swing, faded back slowly: no whirl, 2026-10-31 review)
+		hew = mocap(KEYED.heavy, { name = "greatSlash", blade = true, out = 0.45 }, 0.25, 0.13, 0.45),
 		cleave = mocap(KEYED.cleave, { name = "greatSpin", blade = true }, 0.2, 0.3, 0.38),
 		pounce = mocap(KEYED.pounce, { name = "greatJump", blade = true, travel = true }, 1.03, 0.45, 0.55),
 	},

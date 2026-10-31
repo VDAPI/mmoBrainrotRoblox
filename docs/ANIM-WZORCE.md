@@ -312,7 +312,9 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
 --src <folder with the FBX> [--only name,...]` bakes them again (missing sources are skipped).
 
 - **Bake**: root modes `keep` (the leaps: the travel stays in the clip, the template replaces it), `inplace` (loops:
-  every bone shifted by the hips' ground drift), `end` (getting up: drift removed, the end over the start), `plant`
+  every bone shifted by the hips' drift, its height too, so the cycle wraps without a jump; 2026-10-31 re-review: walk,
+  run and jog had been baked `keep`, the body ran 1.9 hip heights ahead and sank a little each cycle, then jumped back),
+  `end` (getting up: drift removed, the end over the start), `plant`
   (every blow that stands its ground, the throw, the cast, the shout, the swipe: the body's lunge, its smoothed ground
   path, taken out, each standing foot pinned and the leg solved onto it). Each clip also keeps `knuckles` (the rest
   index -> little finger line of both hands), `hit` (the contact or the release, seconds from its first frame) and
@@ -334,8 +336,12 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   their hit is their own (`BipedMotion.ownHit`), the game and AnimLab use it instead of the server's.
 - **Retargeting**: each bone turns onto the clip's rest direction; the arms also keep their roll by the knuckle lines
   where the model has finger bones (Mixamo rigs; others fall back to the direction only).
-- **Blends**: in 0.15 s, out over `out` (0.3 s); a clip action and its cut blend bone by bone in the parent's space
+- **Blends**: in from the pose it finds over 0.55 of the time to its hit, 0.12-0.3 s (`FADE_IN_*`; 2026-10-31 Studio
+  re-review: the thrust, the pounce, the throw and the yeti's blows turned 70-110 deg in their first 0.1 s; a boss's
+  keyed blows 0.1 s), out over `out` (0.3 s); a clip action and its cut blend bone by bone in the parent's space
   (`BipedPose.blendLocal`): a world-space slerp between a mocap hand and the keyed guard flipped the wrist half a turn.
+  An `upper` clip takes the clip's chest turn in the root's axes (the blow keeps its way where the clip's hips turned
+  with it), the joints above it still one by one. What is left fast in a lead-in is the clip's own (the high spin's).
 - **Stance**: `clips.combat` (humanoid1h, humanoid2h: the sword-and-shield idle and walk) eases in with the combat
   weight over the locomotion; the brute walks and idles on the mutant clips all the time. A blow plays on until the
   clip's stance is back (its `follow` + `recover` cover the clip to where it settles).
@@ -344,11 +350,24 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   not floating, not in a fall, a leap or a keyed travel), the ball of each foot on the ground (within 0.06 L of its
   rest height) stays where it landed, turned back by the root's own turn so it holds in the world; the leg is moved
   onto it with the least turn of thigh and shin (`BipedPose.nudgeLegs`: a target on the pose's own foot leaves the leg
-  exactly as it was, so holding and letting go never jump). A foot the pose carries 0.12 L away (0.05 L once no
-  action runs: the feet settle back under the stance), or out of the leg's reach, steps there in 0.24 s lifted 0.07 L,
-  the other foot following from half way; a foot the pose lifts lets go, its correction easing away at 16 /s. The
-  blends into and out of an action, a clip on a model of other proportions and the push of a hit no longer slide the
-  feet. A boss keeps its own stance under its clip blows (`upper`) and is not planted.
+  exactly as it was, so holding and letting go never jump; a target near the leg's full length is drawn in softly,
+  the knee does not snap from straight). A foot the pose carries 0.12 L away (0.05 L once no action runs: the feet
+  settle back under the stance), or out of the leg's reach, steps there in 0.24 s lifted 0.09 L, up first and carried
+  across the last 0.85 of the step, the other foot following from half way; a foot the pose lifts over 0.09 L lets go,
+  its correction easing away at 16 /s. The blends into and out of an action, a clip on a model of other proportions and
+  the push of a hit no longer slide the feet. A boss keeps its own stance under its clip blows (`upper`) and is not
+  planted. 2026-10-31 re-review: on the floor a standing body's ball of the foot never goes under its rest height and
+  the ankle at most 0.05 L under its own (the yeti's toes were 0.12-0.38 stud under the floor); turning on the spot
+  (over 1.2 rad/s) each step lands where the turn will have carried the stance's foot by its end, up to 0.7 rad ahead
+  (`turnLanding`): a planted turn of steps, not a shuffle.
+- **A giant's blow reaches down** (`ClipRef.low`, 2026-10-31 Studio re-review: Grimrok's and Azgor's blades passed
+  6-10 studs over a player's head at the hit, Hrimvald's fist 64 studs up): the upper-body clip is sampled at its hit
+  once per run, and the striking hand (the one farther ahead) is brought to `low` studs over the feet by a bow at the
+  waist (up to `LOW_BOW` 1.1 rad, never nearer straight down than `LOW_AHEAD`) and the rest by a crouch (up to 0.3 L,
+  the ankles kept where they are), eased in over the strike and `LOW_LEAD` before the hit, held for half the follow
+  and eased back over the recovery; a cut fades out of the bow and the crouch too. Grimrok and Azgor 3.5 studs (a
+  player's chest), Hrimvald 1.5 (along the ground). The feet the review read as floating (+0.32, +0.63, +1.21) are the
+  rigs' ankle joints over the soles, not a gap.
 - **Hits by side**: `style.hits` (front / back / left / right): the reaction clip's turn of each upper bone from its
   first frame laid over the running pose (spine, neck, head whole, shoulders 0.5, arms 0.4-0.5), held 0.28 s and
   faded over 0.3 s, the body pushed by 0.35 of the clip's travel (at most 0.12 L), scaled by `hitScale` and the cast
@@ -360,9 +379,9 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
 | Style | Clip actions |
 |---|---|
 | `humanoid1h` (bandit, dragonspawn, fireGolem, flameSmith, frozenKnight, goblinScout, koboldMiner, skeletonGuard, swampTroll) | basic `slash` (Slash 1), `backhand` (Slash 3), `chop` (Melee Downward), `thrust` (keyed: the pack's Attack 4 strikes with the hilt, the blade behind); `cleave` (Melee Horizontal), `heavy` (Melee Downward), `crush` (Attack 1 with its step planted), `pounce` (Attack 1, the leap), `throw` (Throw Object, mirrored), `aggro` (Battlecry), `spawn` (Standing Up at 1.7x), deaths `deathBack` / `deathBack2` / `deathFwd`, hits by side, the sword-and-shield stance |
-| `humanoid2h` (ashOrc, renegadeDwarf, frostGiant; new) | as humanoid1h, basic `hew` (Great Sword Slash), `chop`, `slash`; `cleave` (Great Sword High Spin), `pounce` (Great Sword Jump) |
+| `humanoid2h` (ashOrc, renegadeDwarf, frostGiant; new) | as humanoid1h, basic `hew` (Great Sword Slash cut at 1.03 s where the body whirls on into a second swing, faded back over 0.45 s), `chop`, `slash`; `cleave` (Great Sword High Spin), `pounce` (Great Sword Jump) |
 | `caster` | `spell` (1H Magic), `spellLeft` (mirrored); the rest as humanoid1h but `nova`, `pool` |
-| `brute` (werewolf, yeti, ghoul, crystalGuardian, magmaGolem, desertMummy) | idle and walk (Mutant Idle, Mutant Walking), `clawR` / `clawL` (Mutant Swiping), `cleave` (the swipe from the right), `heavy` / `crush` / `pounce` (Mutant Jumping, the pounce's leap in its air window), `deathMutant` (Mutant Dying) when struck in front; `throw`, `aggro`, `spawn` as humanoid1h (no blade) |
+| `brute` (werewolf, yeti, ghoul, crystalGuardian, magmaGolem, desertMummy) | idle and walk (Mutant Idle, Mutant Walking), `clawR` / `clawL` (Mutant Swiping), `cleave` (the swipe from the right), `heavy` (Melee Downward, the fist from overhead: it and the crush read the same, re-review), `crush` / `pounce` (Mutant Jumping, the pounce's leap in its air window), `deathMutant` (Mutant Dying) when struck in front; `throw`, `aggro`, `spawn` as humanoid1h (no blade) |
 | `ghost` | `spell`, `spellLeft` on the upper body; its own floating falls, shout, rise and throw stay keyed |
 | Grimrok | `chop`, `hack`, `overhead`, `sweep` (the sword slashes), `roar` (Battlecry on `roarHit`); above the hips |
 | Azgor | `hew`, `cleave` (Great Sword), `roar`; above the hips |
@@ -371,8 +390,18 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
 
 Kept keyed (no clip fits yet): the casters' `nova` and `pool`, `charge`, the dragonspawn's `breath`, the ghost's
 falls, the bosses' leaps, channels, throws, stomps, rages, staggers and deaths. Tests: `tests/bipedclips.spec.luau`
-(also: the blade ahead of the body at every blade blow's hit; a held foot's ball moving under 0.04 L over a whole blow,
-the hips under 0.45 L, the feet back under the stance after it; a held foot staying put while the root turns).
+(also: the blade ahead of the body at every blade blow's hit, the backhand's across the body with the hand under the
+shoulder; a held foot's ball moving under 0.04 L over a whole blow, the hips under 0.45 L, the feet back under the
+stance after it; a held foot staying put while the root turns; no bone turning 70 deg in an action's first 0.1 s; the
+balls of the feet never under the floor through a standing blow; a turn on the spot on steps; the brute's heavy blow
+not its crush; the hew not whirling on; the loops wrapping without a jump) and `tests/bossstyles.spec.luau` (a giant's
+striking hand at its `low` and ahead of its body at the hit). The backhand's hit is its contact (0.80 s of the clip:
+the review saw the hand still overhead, 5.4 studs up on a 5.3-stud bandit).
+
+AnimLab (2026-10-31 re-review) plays a melee blow at the game's own distance (`MonsterMove.stopDistance`: the orc's
+hew had hit air 3 studs short from AnimLab's line-up, not the game's), lands a leap's root on the target at its hit as
+the server's teleport does (the pounce had glided 7.5 studs back to the root: AnimLab, not the clip) and turns the
+root at 2.4 rad/s in `turn` (it had not yawed at all).
 AnimLab: `mob bandit <slash|backhand|chop|thrust|cleave|heavy|crush|pounce|throw|aggro|spawn|hit|deathBack|deathFwd|deathBack2|fight>`,
 `mob ashOrc <hew|cleave|pounce>`, `mob yeti <clawR|clawL|crush|pounce|deathMutant|walk|idle>`, `mob darkCultist spell`,
 `mob grimrok <chop|hack|overhead|sweep|roar>`, `mob azgor <hew|cleave>`, `mob hrimvald <fist|backfist>`, `mob morvane bolt`.
