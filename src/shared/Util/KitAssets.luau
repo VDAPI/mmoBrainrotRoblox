@@ -13,6 +13,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Kit = require(ReplicatedStorage.Shared.Data.Kit)
 local KitPick = require(ReplicatedStorage.Shared.Logic.KitPick)
+local KitSeat = require(ReplicatedStorage.Shared.Logic.KitSeat)
 local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 
@@ -40,7 +41,7 @@ type Template = { model: Model, height: number, width: number, sizeX: number, si
 -- 2026-10-31: the part of a rock's / a tree's widest side (a rock's whole base, a trunk) that must stand in the ground:
 -- on a slope the model sinks to the lowest drawn ground there (the terrain is drawn at the height function since the
 -- half-voxel lift, Logic/TerrainLayers, so a downhill edge no longer hides 2 studs in the ground)
-local BASE: { [string]: number } = { rock = 0.5, tree = 0.1 }
+local BASE = KitSeat.BASE -- (Logic/KitSeat prunes what this would sink deeper than KitSeat.DEEP)
 local UNDERGROUND: { [string]: boolean } = { cave = true, crypt = true, dungeon = true }
 
 local templates: { [string]: Template | false } = {}
