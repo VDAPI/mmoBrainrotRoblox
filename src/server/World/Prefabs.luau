@@ -752,28 +752,31 @@ end
 -- across the portal like the field (its thin side along the frame's z) and the field is fitted into its opening:
 -- centred on the model, never wider or taller than the opening's share of it. The field, the pillars, the lintel and
 -- the model share the portal's one frame `base`. W31 regression fix: the model keeps its size (Logic/ArchFit; it was
--- scaled into a 16 x 18 x 6 box, a third of its size with its base slab 16 deep).
-local function fitModel(arch: Model, base: CFrame, field: BasePart)
+-- scaled into a 16 x 18 x 6 box, a third of its size with its base slab 16 deep). Owner 2026-10-31: `modelId` (its
+-- Assets.Kit name) puts the field into that model's own opening (Data/Portals.MODEL_OPENING). Returns how far the
+-- model's top stands over the field's centre (nil: no parts, the field left as it was).
+local function fitModel(arch: Model, base: CFrame, field: BasePart, modelId: string): number?
 	local lo, hi = boxIn(arch, base)
 	if not lo or not hi then
-		return
+		return nil
 	end
-	local fit = ArchFit.fit({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z })
+	local fit = ArchFit.fit({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z }, modelId)
 	local f = fit.field
 	if fit.turn then
 		arch:PivotTo(arch:GetPivot() * CFrame.Angles(0, math.rad(90), 0))
 		-- measured again on the turned parts (the pivot need not be the box's middle)
 		lo, hi = boxIn(arch, base)
 		if not lo or not hi then
-			return
+			return nil
 		end
-		f = ArchFit.field({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z })
+		f = ArchFit.field({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z }, modelId)
 	end
 	if fit.scale ~= 1 then
 		arch:ScaleTo(arch:GetScale() * fit.scale)
 	end
 	field.Size = Vector3.new(f.w, f.h, Portals.ARCH.field.d)
 	field.CFrame = base * CFrame.new(f.x, f.y, f.z)
+	return hi.Y - f.y
 end
 
 function Prefabs.portal(
@@ -821,11 +824,15 @@ function Prefabs.portal(
 	})
 	field.CanQuery = true
 	light(field, "#8A6CFF", 20, 1.2)
+	-- W31: the zone label 2.5 studs over the arch's top; owner 2026-10-31: over the painted model's own top, so it
+	-- does not rise with a field moved up into the model's opening (fitModel)
+	local labelHeight = arch.height - arch.field.y + 2.5
 	-- W12: the owner's painted portal (Assets.Kit common_portal_01) over the stone arch: the pillars and the lintel keep
 	-- their collision unseen, the field stays as the travel trigger, fainter inside the model's opening
+	local modelId = if ctx.map.id == "city" then PORTAL_MODEL else PORTAL_MODEL_WILD
 	local template: Model?, height = nil, 0
 	if KitAssets.enabled() then
-		template, height = KitAssets.model(if ctx.map.id == "city" then PORTAL_MODEL else PORTAL_MODEL_WILD)
+		template, height = KitAssets.model(modelId)
 	end
 	if template and height > 0 then
 		local painted = template:Clone()
@@ -833,14 +840,17 @@ function Prefabs.portal(
 		painted:ScaleTo(arch.height / height)
 		painted:PivotTo(base * CFrame.Angles(0, math.rad(PORTAL_TURN), 0))
 		painted.Parent = model
-		fitModel(painted, base, field)
+		local top = fitModel(painted, base, field, modelId)
+		if top then
+			labelHeight = top + 2.5
+		end
 		for _, item in model:GetChildren() do
 			if item:IsA("BasePart") and (item.Name == "Pillar" or item.Name == "Lintel") then
 				item.Transparency = 1
 			end
 		end
 	end
-	Prefabs.makePortal(ctx, model, field, id, target, x, z, arrive, arch.height - arch.field.y + 2.5)
+	Prefabs.makePortal(ctx, model, field, id, target, x, z, arrive, labelHeight)
 	return model
 end
 

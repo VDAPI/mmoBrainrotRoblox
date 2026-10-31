@@ -122,7 +122,7 @@ describe("Portals: frames and fields (W28)", function()
 			expect(box.center[2] + box.half[2] >= arch.height).toBe(true)
 		end
 		local prefabs = read("src/server/World/Prefabs.luau")
-		expect(string.find(prefabs, "fitModel(painted, base, field)", 1, true) ~= nil).toBe(true)
+		expect(string.find(prefabs, "fitModel(painted, base, field, modelId)", 1, true) ~= nil).toBe(true)
 		expect(string.find(prefabs, "Portals.GATE.door.w", 1, true) ~= nil).toBe(true)
 	end)
 end)
@@ -541,7 +541,8 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 
 	it("keeps the painted arch at full size and its veil in the opening down to the ground (W31 regression)", function()
 		-- the box of common_portal_02 measured in Studio at 18 studs tall: 16 across, 20.9 deep with its base slab,
-		-- the slab sunk 1.5 studs (the arch stood at a third of its size when it was fitted into 16 x 18 x 6)
+		-- the slab sunk 1.5 studs (the arch stood at a third of its size when it was fitted into 16 x 18 x 6); the
+		-- box-centred fit of a model without its own opening (Data/Portals.MODEL_OPENING, next test)
 		local lo, hi = { -8, -1.5, -10.45 }, { 8, 16.5, 10.45 }
 		local fit = ArchFit.fit(lo, hi)
 		expect(fit.turn).toBe(true)
@@ -571,6 +572,67 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 		local body = string.sub(prefabs, from, (string.find(prefabs, "\nend\n", from, true)))
 		expect(string.find(body, "ARCH.model", 1, true)).toBe(nil)
 		expect(string.find(body, "fit.scale", 1, true) ~= nil).toBe(true)
+	end)
+
+	it("puts the field into the uneven ruin's own opening, not into its pillars or slab (owner 2026-10-31)", function()
+		-- common_portal_02 as the server's rays met it in Studio Play: 16 x 18 x 20.88 at scale 0.9, turned 90 degrees
+		-- (its long local z, the opening's way, across the portal), measured in the frame of the box-centred field
+		-- (x across, y from that field's centre): every cave, lair and dungeon exit stands on it
+		local lo, hi = { -8, -1.5, -10.44 }, { 8, 16.5, 10.44 }
+		local old = ArchFit.fit(lo, hi).field
+		local ox, oy = old.x, old.y
+		local foot, top = lo[2] - oy, hi[2] - oy
+		expect(math.abs(foot + 7.25) < 1e-6 and math.abs(top - 10.75) < 1e-6).toBe(true)
+		local opening = { x0 = -3.75, x1 = 8.5 } -- clear between the thick left and the thin right pillar (y -2..+6)
+		local slab, rightTop = -4.5, 7 -- the base slab's top, the right pillar's top (the left one 10, no lintel)
+		-- the reported fault: the box-centred field a stud inside the left pillar, its lowest 2.25 studs in the slab
+		expect(old.x - ox - old.w / 2 < opening.x0).toBe(true)
+		expect(old.y - oy - old.h / 2 < slab).toBe(true)
+
+		expect(Portals.MODEL_OPENING.common_portal_02 ~= nil).toBe(true)
+		local fit = ArchFit.fit(lo, hi, "common_portal_02")
+		expect(fit.turn).toBe(true)
+		expect(fit.scale).toBe(1)
+		local f = fit.field
+		local cx, cy = f.x - ox, f.y - oy
+		-- the measured fit: 9.5 wide (ARCH.field), its centre 2.38 right of the box's, 2.88 over the foot, 10.8 tall
+		expect(math.abs(f.w - Portals.ARCH.field.w) < 1e-6).toBe(true)
+		expect(math.abs(cx - 2.38) < 0.01).toBe(true)
+		expect(math.abs(cy - f.h / 2 - foot - 2.88) < 0.01).toBe(true)
+		expect(math.abs(f.h - 10.8) < 0.01).toBe(true)
+		expect(math.abs(f.z) < 1e-6).toBe(true)
+		-- the field, the veil and the core (Portals.look, from the field) between the pillars, over the slab, under
+		-- the right pillar's top
+		local look = Portals.look(f.w, f.h)
+		for _, size in { { w = f.w, h = f.h }, look.veil, look.core } do
+			expect(cx - size.w / 2 >= opening.x0 and cx + size.w / 2 <= opening.x1).toBe(true)
+			expect(cy - size.h / 2 > slab).toBe(true)
+			expect(cy + size.h / 2 < rightTop).toBe(true)
+		end
+		-- a model without its own opening keeps the box-centred field
+		local generic = ArchFit.fit(lo, hi, "common_portal_01").field
+		expect(generic.x == old.x and generic.y == old.y and generic.w == old.w and generic.h == old.h).toBe(true)
+		-- every opening stays inside its model's box
+		for name, o in Portals.MODEL_OPENING do
+			if math.abs(o.x) + o.w / 2 > 0.5 or o.foot < 0 or o.foot + o.h > 1 then
+				error(`Data/Portals.MODEL_OPENING.{name} reaches out of its model's box`)
+			end
+		end
+		-- the arches outside the city (every exit) stand on common_portal_02 and pass its name to the fit; the
+		-- light, the sparkles, the "E" prompt and the server's range hang on the field, the zone label over the model
+		local prefabs = read("src/server/World/Prefabs.luau")
+		for _, needle in
+			{
+				'PORTAL_MODEL_WILD = "common_portal_02"',
+				"ArchFit.fit({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z }, modelId)",
+				"ArchFit.field({ lo.X, lo.Y, lo.Z }, { hi.X, hi.Y, hi.Z }, modelId)",
+				"labelHeight = top + 2.5",
+			}
+		do
+			if not string.find(prefabs, needle, 1, true) then
+				error(`Prefabs.luau: missing {needle}`)
+			end
+		end
 	end)
 
 	it("frames the cave exits too (light themed frames round the arch)", function()

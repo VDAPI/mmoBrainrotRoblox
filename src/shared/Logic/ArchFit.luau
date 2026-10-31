@@ -8,7 +8,11 @@
 --     a 16 x 18 x 6 box, its base slab making it 16 deep,
 --   * the field fills the model's opening (W28 shares of its width and height, never over Data/Portals.ARCH.field)
 --     and stands half a stud over the model's foot, centred on the model's box (the veil reaches about a stud under
---     the ground when the base slab is sunk 1.5 studs).
+--     the ground when the base slab is sunk 1.5 studs),
+--   * owner 2026-10-31 (Studio Play: the light of the cave and dungeon exits half in the thick left pillar of the
+--     uneven common_portal_02 ruin, its lowest 2.25 studs in the base slab, the top over the shorter right pillar): a
+--     model with its own opening (Data/Portals.MODEL_OPENING) gets the field there instead; the veil, the core, the
+--     sparkles, the light, the "E" prompt, the server's range and the zone label all hang on the field.
 
 local Portals = require("../Data/Portals")
 
@@ -35,12 +39,30 @@ function ArchFit.turned(lo: { number }, hi: { number }): ({ number }, { number }
 	return { lo[3], lo[2], -hi[1] }, { hi[3], hi[2], -lo[1] }
 end
 
--- The fit of a model whose box (already standing across the portal) is `lo` .. `hi`: `scale` is the factor on top
--- of the height scaling (always 1: the arch keeps its size), `field` the field's size and centre.
-function ArchFit.field(lo: { number }, hi: { number }): { w: number, h: number, x: number, y: number, z: number }
+-- The field of a model whose box (already standing across the portal) is `lo` .. `hi`: its size and centre. `model`
+-- is the painted model's name (Assets.Kit); one with an entry in Data/Portals.MODEL_OPENING has its field in that
+-- opening, any other one centred on its box.
+function ArchFit.field(
+	lo: { number },
+	hi: { number },
+	model: string?
+): { w: number, h: number, x: number, y: number, z: number }
 	local spec = Portals.ARCH.field
-	local w = math.min(spec.w, (hi[1] - lo[1]) * ArchFit.OPENING_WIDTH)
-	local h = math.min(spec.h, (hi[2] - lo[2]) * ArchFit.OPENING_HEIGHT)
+	local width, height = hi[1] - lo[1], hi[2] - lo[2]
+	local opening = if model then Portals.MODEL_OPENING[model] else nil
+	if opening then
+		local w = math.min(spec.w, width * opening.w)
+		local h = math.min(spec.h, height * opening.h)
+		return {
+			w = w,
+			h = h,
+			x = (lo[1] + hi[1]) / 2 + width * opening.x,
+			y = lo[2] + height * opening.foot + h / 2,
+			z = (lo[3] + hi[3]) / 2,
+		}
+	end
+	local w = math.min(spec.w, width * ArchFit.OPENING_WIDTH)
+	local h = math.min(spec.h, height * ArchFit.OPENING_HEIGHT)
 	return {
 		w = w,
 		h = h,
@@ -50,13 +72,14 @@ function ArchFit.field(lo: { number }, hi: { number }): { w: number, h: number, 
 	}
 end
 
--- The whole fit from the box measured right after the model is placed (before any turn).
-function ArchFit.fit(lo: { number }, hi: { number }): Fit
+-- The whole fit from the box measured right after the model `model` is placed (before any turn): `scale` is the
+-- factor on top of the height scaling (always 1: the arch keeps its size), `field` the field's size and centre.
+function ArchFit.fit(lo: { number }, hi: { number }, model: string?): Fit
 	local turn = ArchFit.sideways(lo, hi)
 	if turn then
 		lo, hi = ArchFit.turned(lo, hi)
 	end
-	return { turn = turn, scale = 1, field = ArchFit.field(lo, hi) }
+	return { turn = turn, scale = 1, field = ArchFit.field(lo, hi, model) }
 end
 
 return ArchFit

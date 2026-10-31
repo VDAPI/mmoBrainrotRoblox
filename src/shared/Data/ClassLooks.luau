@@ -202,19 +202,21 @@ local function hair(id: string, style: string): Hair
 	return { id = id, catalog = 0, style = style }
 end
 
--- W10: twelve hairstyles (short, long, tied, bald); the Roblox hair of each in Data/BodyLooks.hairs.
+-- W10: the hairstyles; the Roblox hair of each in Data/BodyLooks.hairs. Hair fixes 2026-10-31: thirteen, short cuts
+-- first, then long and tied ones, the bare head last (the creator's order).
 local HAIRS: { Hair } = {
-	hair("hair_short", "short"),
+	hair("hair_short", "swept"),
 	hair("hair_fringe", "short"),
-	hair("hair_curly", "curly"),
 	hair("hair_swept", "swept"),
-	hair("hair_slicked", "swept"),
-	hair("hair_bangs", "short"),
 	hair("hair_charmer", "short"),
+	hair("hair_slicked", "short"),
+	hair("hair_bob", "long"),
 	hair("hair_long", "long"),
 	hair("hair_straight", "long"),
 	hair("hair_ponytail", "ponytail"),
+	hair("hair_sidetail", "ponytail"),
 	hair("hair_braid", "braid"),
+	hair("hair_bun", "topknot"),
 	hair("hair_shaved", "shaved"),
 }
 
@@ -280,7 +282,9 @@ local PAINT_COLORS: { Choice } = {
 	{ id = "pc_moss", color = "#4E6A34" },
 }
 
--- S132 hair ids (style and colour in one) -> W10 hairstyle and hair colour.
+-- Old hair ids -> hairstyle and hair colour. S132 ids (style and colour in one) give both; hair fixes 2026-10-31: a
+-- removed or renamed W10 id gives the nearest hairstyle and keeps the save's own colour (no second entry), and an S132
+-- id whose colour the new hairstyle no longer offers (Logic/CharacterLook.hairColors) points at a near one that has it.
 local LEGACY_HAIRS: { [string]: { string } } = {
 	hair_short_dark = { "hair_short", "hc_dark" },
 	hair_short_light = { "hair_short", "hc_blond" },
@@ -289,10 +293,12 @@ local LEGACY_HAIRS: { [string]: { string } } = {
 	hair_ponytail_brown = { "hair_ponytail", "hc_chestnut" },
 	hair_ponytail_blond = { "hair_ponytail", "hc_paleblond" },
 	hair_braid_dark = { "hair_braid", "hc_dark" },
-	hair_braid_grey = { "hair_braid", "hc_grey" },
-	hair_topknot_black = { "hair_slicked", "hc_black" },
-	hair_curly_brown = { "hair_curly", "hc_brown" },
-	hair_swept_white = { "hair_swept", "hc_white" },
+	hair_braid_grey = { "hair_ponytail", "hc_grey" },
+	hair_topknot_black = { "hair_bun", "hc_black" },
+	hair_curly_brown = { "hair_fringe", "hc_brown" },
+	hair_swept_white = { "hair_short", "hc_white" },
+	hair_curly = { "hair_fringe" }, -- Short Curls (a curly cap) -> the short fringe
+	hair_bangs = { "hair_bob" }, -- Straight Bangs (an anime bob) -> the shoulder-length cut, renamed
 }
 
 local function index(list: { any }): { [string]: any }
