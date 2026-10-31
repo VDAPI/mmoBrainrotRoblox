@@ -1673,6 +1673,9 @@ Napisy złożone (nazwa obszaru z profilem, linia profilu gracza, czat) zostają
 ## 24. Sterowanie i kamera
 
 - Klasyczna kamera Roblox (3. osoba, zoom 8–30).
+- Kamera (swobodna i „z góry”) nigdy nie stoi w ścianie ani za dachem: wsuwa się przed kolidującą geometrię mapy, także
+  przed niewidzialną kolizję modeli zestawu (przegląd Studio 2026-10-31). Po wejściu do świata postać patrzy w stronę z
+  czystym widokiem (na spawnie stolicy przez fontannę), kamera stoi za jej plecami.
 - **LPM / tap na wroga = cel i atak** już przy wciśnięciu (nie przy puszczeniu); wróg ma pierwszeństwo przed graczem pod kursorem. Każde kliknięcie wroga wznawia auto-atak, także gdy był już celem. Gdy atak jest niemożliwy (strefa bezpieczna, za daleko, ogłuszenie), krótki komunikat. Przytrzymanie LPM = po śmierci celu następny wróg przy kursorze. Opcja „automatyczny cel”: po zabiciu cel przechodzi na potwora, który nas atakuje (nie w ciągu 1.5 s po ręcznym ruchu); S134d: stojąca postać bez ataku sama bierze najbliższego bijącego ją potwora i oddaje mu **w miejscu, bez gonienia** (odwet; tylko potwory, nigdy PvP; ruch, kliknięcie, Tab albo umiejętność oddają sterowanie). Tab = następny najbliższy cel. **Q (zmienialne) lub klik w pustą ziemię = brak celu.**
 - Atak podstawowy: automatyczny, gdy cel wybrany i w zasięgu (wręcz 7 st., dystans 35 st.); jeśli poza zasięgiem, postać idzie do celu i go śledzi (MoveTo), stojąc przy celu obraca się do niego. **Ruch WASD/joystickiem przerywa podchodzenie i auto-atak** (cel zostaje zaznaczony, ale nie jest atakowany, dopóki gracz znów go nie kliknie albo nie użyje umiejętności), więc da się uciec.
 - **Sprint: przytrzymanie Ctrl** (zmienialne; na telefonie przycisk przełączający) = szybkość ruchu ×1.35. Bez kosztu; wyłącza się przy śmierci i przy rzucaniu kanałowanych umiejętności.

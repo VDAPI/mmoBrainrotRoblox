@@ -49,6 +49,9 @@
 
 ## Niedokończone (kod)
 
+- **Kamera po wejściu do świata (2026-10-31):** promień kamery po kolizji mapy, obrót postaci w czystą stronę i kamera
+  za plecami świeżej postaci (`Logic/CameraClear`, `CameraController`, `WorldService.OpenFacing`); nieobejrzane w Studio
+  (pierwszy widok na spawnie i na zapisanym miejscu przy domu, przejście obok latarni, kamera „z góry” pod okapem).
 - **Fryzury kreatora (2026-10-31):** tony tekstur czarnych, brązowej, rudej (Belle Of Belfast) i różowej (Lavender
   Updo) w `Data/BodyLooks.hairs` są szacowane (tekstury niezmierzone), nieobejrzane w Studio (odcień po barwieniu,
   zakresy kolorów); nie wiadomo, czy Side Part - Black (`hair_swept`) to ta sama siatka co Side Part - Blond
