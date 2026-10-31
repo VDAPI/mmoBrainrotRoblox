@@ -1072,7 +1072,8 @@ local function bipedLab(
 	elseif state == "cast" then
 		name = (monster and monster.ability and style.abilities[monster.ability]) or style.abilities.heavyBlow
 	elseif state == "death" then
-		name = rig.mod.death(rig.motion)
+		-- (by the side of the blow: a blow from the front, a fall on the back)
+		name = rig.mod.death(rig.motion, "front")
 	elseif rig.kind == "rigid" and not style.actions[state] then
 		-- a rigid kind (Data/RigidStyles LAB_STATES): the kit's blows by their slot
 		local slots: { [string]: string? } = {
@@ -1111,7 +1112,9 @@ local function bipedLab(
 		local dying = string.sub(name, 1, 5) == "death"
 		-- (a boss's stagger and appear start at their strike, like a death)
 		local struck = dying or (style.boss ~= nil and (name == style.boss.stagger or name == style.spawn))
-		local hit = if planned then planned.hit elseif struck then action.strike else windupOf(name)
+		-- (a fall, getting up on mocap: at the clip's own pace, Logic/BipedMotion.ownHit)
+		local own = if rig.mod.ownHit then rig.mod.ownHit(action) else nil
+		local hit = if planned then planned.hit elseif own then own elseif struck then action.strike else windupOf(name)
 		local run = {
 			name = name,
 			start = 0,

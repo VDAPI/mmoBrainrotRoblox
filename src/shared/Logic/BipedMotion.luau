@@ -8,6 +8,10 @@
 -- 3. keyed actions (attacks, abilities, the aggro shout, spawn, death) on a timeline whose anticipation stretches to
 --    the server's windup and whose strike ends exactly on the server's hit; the head and the free arm trail the body;
 -- 4. additive reactions: the flinch of a hit by its side, the lean into turns, the head looking at the target.
+-- 2026-10-31 (the owner's Mixamo download): actions, hit reactions and the armed stance on mocap where a style names a
+-- clip (Data/BipedStyles ClipRef): a blow's clip time-warped so its contact lands exactly on the server's hit (the
+-- lead-in squeezed or stretched onto the windup, the strike and the follow-through at the clip's own pace), a leap's
+-- ground travel laid onto the target, falls, shouts and getting up at their own pace; the keys stay the fallback.
 -- The bosses (Data/BossStyles, 2026-10-26) add a layer of their own (a style's `boss`): the walk at full weight however
 -- slow a giant's stride, the pelvis dropping after each footfall onto planted feet, the stance never quite let go out
 -- of the fight, the enraged and shielded stances; their actions hold a channel ("H" keys), turn the body with a sweeping
@@ -52,6 +56,34 @@ local LOOK_CHEST = 0.25
 local LOOK_MAX = 1.1
 -- How fast a boss's enraged and shielded stances ease in and out (1/s).
 local STANCE_RATE = 1.5
+-- A clip action's fade in and (by default) out (s); how much a blow's lead-in may be squeezed onto a short windup
+-- (more starts the clip later) and how hard a long windup's ease into the coil may get.
+local CLIP_IN = 0.15
+local CLIP_OUT = 0.3
+local SQUEEZE_MAX = 2.5
+local STRETCH_MAX = 3
+-- A mocap hit reaction: held for HIT_HOLD s, gone after HIT_FADE more; the push of its step (share of the clip's,
+-- leg lengths at most).
+local HIT_HOLD = 0.28
+local HIT_FADE = 0.3
+local HIT_PUSH = 0.35
+local HIT_PUSH_MAX = 0.12
+-- The bones a mocap hit reaction turns (the arms less: one may be swinging a blow).
+local HIT_BONES: { [string]: number } = {
+	Spine = 1,
+	Spine1 = 1,
+	Spine2 = 1,
+	Neck = 1,
+	Head = 1,
+	RightShoulder = 0.5,
+	RightArm = 0.4,
+	RightForeArm = 0.4,
+	RightHand = 0.4,
+	LeftShoulder = 0.5,
+	LeftArm = 0.5,
+	LeftForeArm = 0.5,
+	LeftHand = 0.5,
+}
 
 local FREE_ARM: { [string]: boolean } = {}
 for _, key in { "aLp", "aLo", "aLy", "aLt", "eL", "wLp", "wLy", "wLr", "cLu", "cLf" } do
@@ -70,7 +102,15 @@ for _, key in BipedPose.KEYS do
 	end
 end
 
-export type LoadedClip = { clip: BipedClip.Clip, fit: { [string]: NpcPose.Mat }, speed: number? }
+-- A clip ready to sample on this skeleton: its fit (played mirrored: `mirror`), its baked ground speed, and the pose of
+-- its first frame (a hit reaction's base, filled on first use).
+export type LoadedClip = {
+	clip: BipedClip.Clip,
+	fit: { [string]: NpcPose.Mat },
+	speed: number?,
+	mirror: boolean?,
+	first: World?,
+}
 export type ActionRun = {
 	name: string,
 	start: number, -- the motion clock when it started
@@ -104,6 +144,7 @@ export type Instance = {
 	seed: number,
 	rate: number,
 	clips: { [string]: LoadedClip },
+	acts: { [string]: LoadedClip | false }, -- the actions' clips, loaded on first use (false: none of that name)
 	idle: { name: string, from: string?, at: number, next: number },
 	phase: number,
 	move: number,
@@ -114,8 +155,9 @@ export type Instance = {
 	lookYaw: number,
 	lookPitch: number,
 	lastAction: ActionRun?, -- the action of the last frame and its pose (world, shift and weights), kept for a cut
-	lastPose: { world: BipedPose.World?, shift: Vec, upper: number, legs: number },
-	cut: { world: BipedPose.World, shift: Vec, upper: number, legs: number, at: number }?,
+	-- (`joints`: a mocap action's, blended joint by joint: BipedPose.blendLocal)
+	lastPose: { world: BipedPose.World?, shift: Vec, upper: number, legs: number, joints: boolean? },
+	cut: { world: BipedPose.World, shift: Vec, upper: number, legs: number, at: number, joints: boolean? }?,
 	grip: { number }?, -- the model's own blade direction (Data/MonsterAssets `grip`), else the style's
 	rage: number, -- weights of a boss's enraged and shielded stances
 	shield: number,
@@ -129,21 +171,32 @@ local function approach(current: number, target: number, rate: number, dt: numbe
 	return current + (target - current) * (1 - math.exp(-rate * dt))
 end
 
+-- Clip `name` fitted to `skel` (mirrored; `blade`: the model's blade `grip` laid along the clip's), nil without it.
+local function loadClip(skel: BipedPose.Skeleton, name: string, mirror: boolean?, grip: { number }?): LoadedClip?
+	local source = BipedClips.get(name)
+	if not source then
+		return nil
+	end
+	local clip = BipedClip.decode(source)
+	local fit = BipedClip.fit(source, skel.dirs, { mirror = mirror, knuckles = skel.knuckles, grip = grip })
+	return { clip = clip, fit = fit, speed = source.speed, mirror = mirror }
+end
+
 -- An animated biped of `style` on skeleton `skel`; `seed` makes each instance its own.
 function BipedMotion.new(skel: BipedPose.Skeleton, styleId: string, seed: number, grip: { number }?): Instance?
 	local style = BipedStyles.get(styleId)
 	if not style then
 		return nil
 	end
+	local blade = grip or style.grip
 	local clips: { [string]: LoadedClip } = {}
-	local function load(name: string)
+	local function load(name: string, withBlade: boolean?)
 		if clips[name] then
 			return
 		end
-		local source = BipedClips.get(name)
-		if source then
-			local clip = BipedClip.decode(source)
-			clips[name] = { clip = clip, fit = BipedClip.fit(source, skel.dirs), speed = source.speed }
+		local loaded = loadClip(skel, name, nil, if withBlade then blade else nil)
+		if loaded then
+			clips[name] = loaded
 		end
 	end
 	local first = ""
@@ -154,6 +207,11 @@ function BipedMotion.new(skel: BipedPose.Skeleton, styleId: string, seed: number
 		end
 		load(list.walk)
 		load(list.run)
+		local combat = list.combat
+		if combat then
+			load(combat.idle, combat.blade)
+			load(combat.walk, combat.blade)
+		end
 		first = list.idle[1 + math.floor(hash01(1, seed) * #list.idle) % #list.idle]
 	end
 	return {
@@ -162,6 +220,7 @@ function BipedMotion.new(skel: BipedPose.Skeleton, styleId: string, seed: number
 		seed = seed,
 		rate = 1 + (hash01(2, seed) * 2 - 1) * style.rate,
 		clips = clips,
+		acts = {},
 		idle = { name = first, from = nil, at = -math.huge, next = 0 },
 		phase = hash01(3, seed),
 		grip = grip or style.grip,
@@ -214,9 +273,67 @@ local function segments(action: BipedStyles.Action, hit: number, hold: number?):
 	}
 end
 
--- Seconds an action lasts (to the end of its recovery; `hold`: a channel's).
+---------------------------------------------------------------- mocap actions (2026-10-31)
+
+-- The hit of a clip action's clip and the strike before it (clip seconds): the style's `hit` over the clip's own.
+local function clipHit(ref: BipedStyles.ClipRef, source: BipedClip.Source): (number, number)
+	local hc = ref.hit or source.hit or 0
+	local sc = source.strike or 0.2
+	return hc, math.min(sc, math.max(0, hc - (ref.from or 0)))
+end
+
+-- Seconds from the start of an action played at its clip's own pace (`free`: a fall, a shout, getting up) to its hit;
+-- nil for any other action (its hit is the server's).
+function BipedMotion.ownHit(action: BipedStyles.Action): number?
+	local ref = action.clip
+	if not ref or not ref.free then
+		return nil
+	end
+	local source = BipedClips.get(ref.name)
+	if not source then
+		return nil
+	end
+	local hc = clipHit(ref, source)
+	return math.max(0, hc - (ref.from or 0)) / (ref.rate or 1)
+end
+
+-- The clip time of clip action `action` (its clip `source`) `t` s into a run whose hit is at `hit`. A free clip plays
+-- at its rate. A blow: the lead-in (the clip from `from` to its coil, the strike before its hit) laid onto the
+-- anticipation, squeezed at most SQUEEZE_MAX times (a longer lead-in starts later) or stretched (the clip's pace at
+-- first, easing into the coil, which it holds); the strike at the clip's pace (faster only when the windup is too short
+-- for it), so the clip's contact lands exactly on the hit; after it the clip's own pace.
+function BipedMotion.clipTime(action: BipedStyles.Action, source: BipedClip.Source, hit: number, t: number): number
+	local ref = action.clip :: BipedStyles.ClipRef
+	local from = ref.from or 0
+	if ref.free then
+		return from + math.max(0, t) * (ref.rate or 1)
+	end
+	local hc, sc = clipHit(ref, source)
+	if t >= hit then
+		return hc + (t - hit)
+	end
+	local s = math.min(action.strike, hit * 0.7)
+	local a = hit - s
+	local coil = hc - sc
+	if t >= a then
+		return coil + (t - a) * sc / math.max(s, 1e-3)
+	end
+	local span = coil - from
+	if a <= 1e-4 or span <= 1e-4 then
+		return math.max(from, coil)
+	end
+	local x = math.max(0, t) / a
+	if span >= a then
+		local used = math.min(span, a * SQUEEZE_MAX)
+		return coil - used + used * x
+	end
+	local p = math.min(a / span, STRETCH_MAX)
+	return from + span * (1 - (1 - x) ^ p)
+end
+
+-- Seconds an action lasts (to the end of its recovery; `hold`: a channel's; a free clip's own hit).
 function BipedMotion.length(action: BipedStyles.Action, hit: number, hold: number?): number
-	return hit + held(action, hold) + action.follow + action.recover
+	return (BipedMotion.ownHit(action) or hit) + held(action, hold) + action.follow + action.recover
 end
 
 -- The controls of `action` at `t` seconds (hit at `hit`), starting from `startPose`.
@@ -287,8 +404,9 @@ end
 
 -- The times of an action's segments: the end of the anticipation (the peak), the hit, the end.
 function BipedMotion.times(action: BipedStyles.Action, hit: number, hold: number?): (number, number, number)
-	local seg = segments(action, hit, hold)
-	return seg.A[2], hit, BipedMotion.length(action, hit, hold)
+	local own = BipedMotion.ownHit(action) or hit
+	local seg = segments(action, own, hold)
+	return seg.A[2], own, BipedMotion.length(action, own, hold)
 end
 
 ---------------------------------------------------------------- layers
@@ -305,6 +423,20 @@ end
 
 local function lerpVec(a: Vec, b: Vec, k: number): Vec
 	return { a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k, a[3] + (b[3] - a[3]) * k }
+end
+
+-- An action's (or a hit reaction's) clip, loaded on first use; nil without it (the keys play).
+local function actionClip(inst: Instance, name: string, mirror: boolean?, blade: boolean?): LoadedClip?
+	local key = name .. (if mirror then "|m" else "") .. (if blade then "|b" else "")
+	local loaded = inst.acts[key]
+	if loaded == nil then
+		local fresh = loadClip(inst.skel, name, mirror, if blade then inst.grip else nil)
+		inst.acts[key] = if fresh then fresh else false
+		return fresh
+	elseif loaded == false then
+		return nil
+	end
+	return loaded :: LoadedClip
 end
 
 -- Ground speed (studs/s) of a locomotion clip at rate 1, and its cycle length (s).
@@ -566,11 +698,26 @@ local function locomotion(inst: Instance, input: Input): (World, Vec)
 		inst.move = approach(inst.move, moveTarget, MOVE_RATE, dt)
 		inst.run = approach(inst.run, runTarget, RUN_RATE, dt)
 	end
+	-- the armed stance's own idle and walk while it fights (2026-10-31: Data/BipedStyles clips.combat)
+	local combat = clips.combat
+	local armed = if combat then inst.combat else 0
+	local walkStride = walkSpeed * walkLen
+	if armed > 0.01 then
+		local guardSpeed, guardLen = gait(inst, combat.walk)
+		walkStride += (guardSpeed * guardLen - walkStride) * armed
+	end
 	-- one phase for both cycles: the cycle covers this many studs at the blend
-	local stride = walkSpeed * walkLen + (runSpeed * runLen - walkSpeed * walkLen) * inst.run
+	local stride = walkStride + (runSpeed * runLen - walkStride) * inst.run
 	local ground = if moving then speed elseif turning then math.abs(input.yawRate) * inst.skel.legLength * 0.5 else 0
 	inst.phase = (inst.phase + dt * ground / math.max(0.1, stride)) % 1
 	local idleWorld, idleShift = idleLayer(inst, input.now)
+	if armed > 0.01 then
+		local gw, gs = clipPose(inst, combat.idle, (input.now + inst.seed * 5.1) * inst.rate)
+		if gw and gs then
+			idleWorld = BipedPose.blend(idleWorld, gw, armed)
+			idleShift = lerpVec(idleShift, gs, armed)
+		end
+	end
 	if style.float then
 		-- a floating body drifts: no steps, a slow bob and a lean into the way it goes
 		local t = input.now + inst.seed * 2.3
@@ -581,6 +728,17 @@ local function locomotion(inst: Instance, input: Input): (World, Vec)
 		return idleWorld, idleShift
 	end
 	local walkW, walkS = clipPose(inst, clips.walk, inst.phase * walkLen)
+	if armed > 0.01 and walkW and walkS then
+		local wl, gl = inst.clips[clips.walk], inst.clips[combat.walk]
+		if wl and gl then
+			local offset = (gl.clip.source.contact or 0) - (wl.clip.source.contact or 0)
+			local gw, gs = clipPose(inst, combat.walk, ((inst.phase + offset) % 1) * gl.clip.length)
+			if gw and gs then
+				walkW = BipedPose.blend(walkW, gw, armed)
+				walkS = lerpVec(walkS, gs, armed)
+			end
+		end
+	end
 	local world, shift = walkW, walkS
 	if inst.run > 0.01 then
 		local wl, rl = inst.clips[clips.walk], inst.clips[clips.run]
@@ -757,6 +915,75 @@ local function bossMeta(
 	return out, whole
 end
 
+---------------------------------------------------------------- mocap layers (2026-10-31)
+
+-- The Hips offset (studs) of a clip action at clip time `tc` (`off`: the clip's, hip heights): a travelling clip's
+-- ground travel from its start (`c0`) to its hit (`hc`) replaced by the run's reach (none once the server has moved the
+-- root there: the controller drops the reach), an in-place clip carried there over its flight (`fly`).
+local function clipShift(
+	inst: Instance,
+	ref: BipedStyles.ClipRef,
+	loaded: LoadedClip,
+	run: ActionRun,
+	off: Vec,
+	tc: number,
+	c0: number,
+	hc: number
+): Vec
+	local L = inst.skel.legLength
+	local x, y, z = off[1] * L, off[2] * L, off[3] * L
+	local reach = run.reach
+	local rx = if reach then reach[1] else 0
+	local rz = if reach then reach[3] else 0
+	if ref.travel then
+		local m = if ref.mirror then -1 else 1
+		local x0, _, z0 = BipedClip.hipsAt(loaded.clip, c0, false)
+		local xh, _, zh = BipedClip.hipsAt(loaded.clip, hc, false)
+		x0, xh = x0 * m, xh * m
+		local vx, vz = xh - x0, zh - z0
+		local d2 = vx * vx + vz * vz
+		if d2 > 0.01 then
+			local p = if tc >= hc then 1 else math.clamp(((off[1] - x0) * vx + (off[3] - z0) * vz) / d2, 0, 1)
+			x += p * (rx - vx * L)
+			z += p * (rz - vz * L)
+		end
+	elseif ref.fly and reach then
+		local f = ref.fly
+		local k = if tc >= hc then 1 else ease("inout", (tc - f[1]) / math.max(0.05, f[2] - f[1]))
+		x += rx * k
+		z += rz * k
+	end
+	return { x, y, z }
+end
+
+-- A mocap hit reaction (the style's `hits` by side) laid over `world` (in place) `t` s after the hit with strength `e`:
+-- the upper body turns as the clip's does from its first frame (the arms less), the body pushed by a little of its
+-- step. Returns the shift with the push, nil without the clip.
+local function hitClip(inst: Instance, world: World, shift: Vec, name: string, t: number, e: number): Vec?
+	local loaded = actionClip(inst, name)
+	if not loaded then
+		return nil
+	end
+	local first = loaded.first
+	if not first then
+		first = (BipedClip.sample(loaded.clip, 0, false, loaded.fit))
+		loaded.first = first
+	end
+	local now, off = BipedClip.sample(loaded.clip, t, false, loaded.fit)
+	for key, share in HIT_BONES do
+		local w, a, b = world[key], now[key], (first :: World)[key]
+		if w and a and b then
+			local delta = NpcPose.mul(a, NpcPose.transpose(b))
+			world[key] = NpcPose.mul(BipedPose.slerp(NpcPose.IDENTITY, delta, e * share), w)
+		end
+	end
+	local x0, _, z0 = BipedClip.hipsAt(loaded.clip, 0, false)
+	local L = inst.skel.legLength
+	local px = math.clamp((off[1] - x0) * HIT_PUSH, -HIT_PUSH_MAX, HIT_PUSH_MAX) * L * e
+	local pz = math.clamp((off[3] - z0) * HIT_PUSH, -HIT_PUSH_MAX, HIT_PUSH_MAX) * L * e
+	return { shift[1] + px, shift[2], shift[3] + pz }
+end
+
 ---------------------------------------------------------------- evaluation
 
 -- One frame: the bones' Transforms of the biped for `input` (and the weights it keeps between frames).
@@ -765,12 +992,13 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 	local style = inst.style
 	local now = input.now
 	local dt = input.dt
-	-- 1. locomotion
-	local world, shift = locomotion(inst, input)
-	-- 2. combat stance (a boss keeps some of it out of the fight; its enraged and shielded stances ease in)
+	-- (the combat weight first: the armed stance's clips ride on it in the locomotion)
 	local boss = style.boss
 	local combatTarget = if input.combat then 1 elseif boss then boss.calm else 0
 	inst.combat = if input.snap then combatTarget else approach(inst.combat, combatTarget, COMBAT_RATE, dt)
+	-- 1. locomotion
+	local world, shift = locomotion(inst, input)
+	-- 2. combat stance (a boss keeps some of it out of the fight; its enraged and shielded stances ease in)
 	if boss then
 		local rage = if input.enraged then 1 else 0
 		local shield = if input.shielded then 1 else 0
@@ -778,7 +1006,8 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 		inst.shield = if input.snap then shield else approach(inst.shield, shield, STANCE_RATE, dt)
 	end
 	local guard = guardControls(inst, now)
-	if inst.combat > 0.01 then
+	local armedClips = style.clips and style.clips.combat
+	if inst.combat > 0.01 and not armedClips then
 		local gw, gs = BipedPose.world(skel, guard, inst.grip)
 		local upper = inst.combat * (1 - 0.65 * inst.run)
 		local legs = inst.combat * (1 - inst.move)
@@ -794,11 +1023,18 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 		inst.cut = if from
 				and kept.upper > 0.02
 				and not input.snap
-			then { world = from, shift = kept.shift, upper = kept.upper, legs = kept.legs, at = now }
+			then {
+				world = from,
+				shift = kept.shift,
+				upper = kept.upper,
+				legs = kept.legs,
+				at = now,
+				joints = kept.joints,
+			}
 			else nil
 	end
 	inst.lastAction = run
-	kept.world, kept.upper, kept.legs = nil, 0, 0
+	kept.world, kept.upper, kept.legs, kept.joints = nil, 0, 0, nil
 	-- (the weight of the actions: the look, the scan and the lean give way to it)
 	local actionW = 0
 	local cut = inst.cut
@@ -808,69 +1044,112 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 			inst.cut = nil
 		else
 			local fade = 1 - ease("inout", k)
-			world = BipedPose.blend(world, cut.world, 1, maskWith(cut.upper * fade, cut.legs * fade))
+			local mask = maskWith(cut.upper * fade, cut.legs * fade)
+			world = if cut.joints
+				then BipedPose.blendLocal(world, cut.world, 1, mask)
+				else BipedPose.blend(world, cut.world, 1, mask)
 			shift = lerpVec(shift, cut.shift, cut.legs * fade)
 			actionW = cut.upper * fade
 		end
 	end
-	if run then
-		local action = style.actions[run.name]
-		if action then
-			local t = now - run.start
-			local length = BipedMotion.length(action, run.hit, run.hold)
-			if t >= 0 and (t <= length or action.hold) then
-				local startPose = action.keys[1]
-						and action.keys[1].u == 0
-						and action.keys[1].seg == "A"
-						and action.keys[1].pose
-					or guard
-				local controls = sampleAction(action, run, math.min(t, length), startPose)
-				local travel = controls.travel
-				if travel and run.reach and action.travel then
-					local L = skel.legLength
-					local dx, dz = run.reach[1] * travel / L, run.reach[3] * travel / L
-					controls = table.clone(controls)
-					for _, key in { "px", "fLx", "fRx" } do
-						controls[key] = (controls[key] or 0) + dx
-					end
-					for _, key in { "pz", "fLz", "fRz" } do
-						controls[key] = (controls[key] or 0) + dz
-					end
-				end
-				if controls.travel ~= nil then
-					controls = table.clone(controls)
-					controls.travel = nil :: any
-				end
-				local spin = 0
-				if
-					action.channel
-					or action.leap
-					or controls.tremble ~= nil
-					or controls.air ~= nil
-					or controls.spin ~= nil
-				then
-					controls, spin = bossMeta(inst, action, run, controls, math.min(t, length), now)
-				end
-				local w = math.min(1, t / ACTION_IN)
-				if not action.hold then
-					w = math.min(w, math.max(0, (length - t) / ACTION_OUT))
-				end
-				w = ease("inout", w)
-				actionW = math.max(actionW, w)
-				local aw, as = BipedPose.world(skel, controls, inst.grip)
-				if math.abs(spin) > 1e-5 then
-					BipedPose.turnSubtree(aw, "Hips", BipedPose.ry(spin))
-				end
-				local legs = if action.full then w elseif action.legs then w * (1 - inst.move) else 0
-				world = BipedPose.blend(world, aw, 1, maskWith(w, legs))
-				shift = lerpVec(shift, as, legs)
-				kept.world, kept.shift, kept.upper, kept.legs = aw, as, w, legs
+	local action = if run then style.actions[run.name] else nil
+	local ref = action and action.clip
+	local loaded = if ref then actionClip(inst, ref.name, ref.mirror, ref.blade) else nil
+	if run and action and ref and loaded then
+		-- a mocap action: the clip time-warped onto the run (its contact on the hit), faded in and out
+		local source = loaded.clip.source
+		local hit = BipedMotion.ownHit(action) or run.hit
+		local t = now - run.start
+		local length = BipedMotion.length(action, hit, run.hold)
+		if t >= 0 and (t <= length or action.hold) then
+			local tc = BipedMotion.clipTime(action, source, hit, if action.hold then t else math.min(t, length))
+			local aw, off = BipedClip.sample(loaded.clip, tc, false, loaded.fit, ref.mirror)
+			local hc = clipHit(ref, source)
+			local as = clipShift(inst, ref, loaded, run, off, tc, BipedMotion.clipTime(action, source, hit, 0), hc)
+			local w = math.min(1, t / CLIP_IN)
+			if not action.hold then
+				w = math.min(w, math.max(0, (length - t) / (ref.out or CLIP_OUT)))
 			end
+			w = ease("inout", w) * (1 - (1 - (ref.moving or 1)) * inst.move)
+			actionW = math.max(actionW, w)
+			local legs = if ref.upper then 0 elseif action.full then w elseif action.legs then w * (1 - inst.move) else 0
+			world = BipedPose.blendLocal(world, aw, 1, maskWith(w, legs))
+			shift = lerpVec(shift, as, legs)
+			kept.world, kept.shift, kept.upper, kept.legs, kept.joints = aw, as, w, legs, true
+		end
+	elseif run and action then
+		local t = now - run.start
+		local length = BipedMotion.length(action, run.hit, run.hold)
+		if t >= 0 and (t <= length or action.hold) then
+			local startPose = action.keys[1]
+					and action.keys[1].u == 0
+					and action.keys[1].seg == "A"
+					and action.keys[1].pose
+				or guard
+			local controls = sampleAction(action, run, math.min(t, length), startPose)
+			local travel = controls.travel
+			if travel and run.reach and action.travel then
+				local L = skel.legLength
+				local dx, dz = run.reach[1] * travel / L, run.reach[3] * travel / L
+				controls = table.clone(controls)
+				for _, key in { "px", "fLx", "fRx" } do
+					controls[key] = (controls[key] or 0) + dx
+				end
+				for _, key in { "pz", "fLz", "fRz" } do
+					controls[key] = (controls[key] or 0) + dz
+				end
+			end
+			if controls.travel ~= nil then
+				controls = table.clone(controls)
+				controls.travel = nil :: any
+			end
+			local spin = 0
+			if
+				action.channel
+				or action.leap
+				or controls.tremble ~= nil
+				or controls.air ~= nil
+				or controls.spin ~= nil
+			then
+				controls, spin = bossMeta(inst, action, run, controls, math.min(t, length), now)
+			end
+			local w = math.min(1, t / ACTION_IN)
+			if not action.hold then
+				w = math.min(w, math.max(0, (length - t) / ACTION_OUT))
+			end
+			w = ease("inout", w)
+			actionW = math.max(actionW, w)
+			local aw, as = BipedPose.world(skel, controls, inst.grip)
+			if math.abs(spin) > 1e-5 then
+				BipedPose.turnSubtree(aw, "Hips", BipedPose.ry(spin))
+			end
+			local legs = if action.full then w elseif action.legs then w * (1 - inst.move) else 0
+			world = BipedPose.blend(world, aw, 1, maskWith(w, legs))
+			shift = lerpVec(shift, as, legs)
+			kept.world, kept.shift, kept.upper, kept.legs = aw, as, w, legs
 		end
 	end
 	-- 4. reactions
 	local hitAt = input.hitAt
-	if hitAt and input.hitSide then
+	local hitSide = input.hitSide
+	-- (a style with mocap reactions: one of its clips for that side, by the blow and the instance)
+	local hits = style.hits
+	local hitList = if hits and hitSide then hits[hitSide] else nil
+	local mocapHit = false
+	if hitAt and hitList and #hitList > 0 then
+		local t = now - hitAt
+		if t >= 0 and t < HIT_HOLD + HIT_FADE then
+			local e = if t < HIT_HOLD then 1 else 1 - ease("inout", (t - HIT_HOLD) / HIT_FADE)
+			e *= (style.hitScale or 1) * (1 - (if boss then boss.castDamp else 0.5) * actionW)
+			local name = hitList[1 + math.floor(hash01(math.floor(hitAt * 7), inst.seed) * #hitList) % #hitList]
+			local pushed = hitClip(inst, world, shift, name, t, e)
+			if pushed then
+				shift = pushed
+				mocapHit = true
+			end
+		end
+	end
+	if hitAt and hitSide and not mocapHit then
 		local t = now - hitAt
 		if t >= 0 and t < FLINCH_RISE + FLINCH_FALL then
 			local e = if t < FLINCH_RISE
@@ -878,7 +1157,7 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 				else (1 - ease("inout", (t - FLINCH_RISE) / FLINCH_FALL)) * (1 + 0.15 * math.sin(t * 25))
 			-- an action keeps going: the flinch is lighter on a body that swings (a boss's big cast barely stirs)
 			e *= 1 - (if boss then boss.castDamp else 0.5) * actionW
-			local f = style.flinch[input.hitSide]
+			local f = style.flinch[hitSide]
 			if f then
 				BipedPose.turnSubtree(
 					world,
@@ -937,8 +1216,15 @@ end
 
 ---------------------------------------------------------------- choosing the action
 
--- The action of an attack: an ability by its id, the thrown blow, else the regular blows in turn (`count`).
-function BipedMotion.pick(style: BipedStyles.Style, attackId: string?, shot: string?, count: number): string
+-- The action of an attack: an ability by its id, the thrown blow, else the regular blows in turn (`count`), each
+-- instance (`seed`) starting at a place of its own in the turn.
+function BipedMotion.pick(
+	style: BipedStyles.Style,
+	attackId: string?,
+	shot: string?,
+	count: number,
+	seed: number?
+): string
 	if attackId and style.abilities[attackId] then
 		return style.abilities[attackId]
 	end
@@ -949,12 +1235,16 @@ function BipedMotion.pick(style: BipedStyles.Style, attackId: string?, shot: str
 	if shot == "throw" and style.throw then
 		return style.throw
 	end
-	return style.basic[1 + (count - 1) % #style.basic]
+	local n = #style.basic
+	local from = if seed then math.floor(hash01(9, seed) * n) else 0
+	return style.basic[1 + (count - 1 + from) % n]
 end
 
--- The death of an instance (one of the style's, by its seed).
-function BipedMotion.death(inst: Instance): string
-	local list = inst.style.death
+-- The death of an instance (one of the style's, by its seed): by the side the killing blow came from (`side`,
+-- BipedMotion.side) where the style has deaths for it.
+function BipedMotion.death(inst: Instance, side: string?): string
+	local deaths = inst.style.deaths
+	local list = if deaths and side and deaths[side] then deaths[side] else inst.style.death
 	return list[1 + math.floor(hash01(5, inst.seed) * #list) % #list]
 end
 
