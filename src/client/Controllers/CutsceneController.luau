@@ -13,6 +13,11 @@
 -- Logic/CaveTerrain (a ray from the sky would land on the rock over the cave); ghost figures (Data/Cutscenes).
 -- S105: figures in ice and the "freeze" fade (every figure's fade stops with the scene), story props of the shot
 -- (Util/StoryProps: the Thorn of Vael, a lantern).
+-- Studio review 2026-10-31 (2): the camera stayed Scriptable at a shot and the player could not move. The scene owns
+-- the camera and the movement lock through CameraController (Claim "cutscene": first the lock only, the camera when the
+-- shot is ready, with a deadline of the scene's length + SAFETY that the watchdog enforces), the shot's frame writer
+-- stops itself once the scene is finished, an error anywhere in the scene ends it, and every cleanup step runs on its
+-- own (one failing never leaves the camera, the movement or the HUD taken).
 
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
@@ -45,7 +50,7 @@ local log = Log.new("CutsceneController")
 
 local CutsceneController = {
 	Name = "CutsceneController",
-	Deps = { "UIController", "WindowManager", "WorldController", "DungeonController" },
+	Deps = { "UIController", "WindowManager", "WorldController", "DungeonController", "CameraController" },
 }
 
 type Scene = CutsceneData.Scene
@@ -56,12 +61,14 @@ local SKIP_ACTION = "VaelthornCutsceneSkip"
 local NEXT_ACTION = "VaelthornCutsceneNext"
 local STREAM_DISTANCE = 400
 local SAFETY = 30 -- seconds over the planned length after which a scene ends anyway
+local LEASE = "cutscene" -- CameraController owner name
 
 local scope = Fusion.scoped(Fusion)
 local UIController: any
 local WindowManager: any
 local WorldController: any
 local DungeonController: any
+local CameraController: any
 local Registry: any
 
 local title = scope:Value(nil :: string?)
@@ -82,27 +89,6 @@ local finishedHere: { [string]: boolean } = {}
 
 local function lazy(name: string): any
 	return Registry and Registry.Get(name)
-end
-
-local function controls(): any
-	local ok, result = pcall(function()
-		local module = Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule", 5)
-		return (require :: any)(module):GetControls()
-	end)
-	return if ok then result else nil
-end
-
-local function setControls(enabled: boolean)
-	local c = controls()
-	if c then
-		pcall(function()
-			if enabled then
-				c:Enable()
-			else
-				c:Disable()
-			end
-		end)
-	end
 end
 
 local function root(): BasePart?
@@ -365,6 +351,13 @@ local function play(scene: Scene, replay: boolean)
 	local finished = false
 	local skipToNext = false
 	local characterId = State.Get({ "character", "id" })
+	local steps = stepsOf(scene)
+	local total = 0
+	for _, step in steps do
+		total += step.seconds
+	end
+	-- the watchdog ends a scene that outlives its lines, fades, streaming and SAFETY
+	local ttl = total + SAFETY + c.fade * 3 + c.streamWait + 5
 
 	local function finish(reason: string)
 		if finished then
@@ -373,44 +366,63 @@ local function play(scene: Scene, replay: boolean)
 		finished = true
 		log:info("scene %s ended (%s)", scene.id, reason)
 		task.spawn(function()
-			if reason ~= "interrupted" then
-				fade(1, c.fade * 0.5)
+			local function try(label: string, fn: () -> ())
+				local ok: boolean, err: any = pcall(fn)
+				if not ok then
+					log:warn("scene %s: cleanup %s failed: %s", scene.id, label, tostring(err))
+				end
 			end
-			for _, connection in connections do
-				connection:Disconnect()
+			if reason == "done" or reason == "skipped" then
+				try("fade out", function()
+					fade(1, c.fade * 0.5)
+				end)
 			end
-			for _, stop in stopFades do
-				stop()
-			end
-			folder:Destroy()
-			pcall(function()
+			-- the camera and the movement first
+			try("camera", function()
+				for _, connection in connections do
+					connection:Disconnect()
+				end
+				CameraController.Release(LEASE)
+			end)
+			try("figures", function()
+				for _, stop in stopFades do
+					stop()
+				end
+				folder:Destroy()
+			end)
+			try("input", function()
 				ContextActionService:UnbindAction(SKIP_ACTION)
 				ContextActionService:UnbindAction(NEXT_ACTION)
+				WindowManager.SetEscapeOverride(nil)
 			end)
-			WindowManager.SetEscapeOverride(nil)
-			WorldController.PreviewEnvironment(nil)
-			local screens = lazy("ScreenController")
-			if screens and screens.RestoreCamera then
-				screens.RestoreCamera()
-			end
-			setControls(true)
-			UIController.SetHudHidden(false)
-			WindowManager.SetHotkeysEnabled(hotkeys)
-			local barks = lazy("BarkController")
-			if barks then
-				barks.SetQuiet("cutscene", false)
-			end
-			title:set(nil)
-			subtitle:set(nil)
-			speaker:set(nil)
-			lineText:set(nil)
-			card:set(false)
-			fade(0, c.fade * 0.5)
-			Fusion.doCleanup(overlayScope)
+			try("lighting", function()
+				WorldController.PreviewEnvironment(nil)
+			end)
+			try("hud", function()
+				UIController.SetHudHidden(false)
+				WindowManager.SetHotkeysEnabled(hotkeys)
+			end)
+			try("barks", function()
+				local barks = lazy("BarkController")
+				if barks then
+					barks.SetQuiet("cutscene", false)
+				end
+			end)
+			try("overlay", function()
+				title:set(nil)
+				subtitle:set(nil)
+				speaker:set(nil)
+				lineText:set(nil)
+				card:set(false)
+				fade(0, c.fade * 0.5)
+				Fusion.doCleanup(overlayScope)
+			end)
 			-- a scene cut by a character switch stays queued for its own character
-			if not replay and State.Get({ "character", "id" }) == characterId then
-				report(scene.id)
-			end
+			try("report", function()
+				if not replay and State.Get({ "character", "id" }) == characterId then
+					report(scene.id)
+				end
+			end)
 			if playing and playing.token == myToken then
 				playing = nil
 			end
@@ -427,177 +439,203 @@ local function play(scene: Scene, replay: boolean)
 		end,
 	}
 
-	-- quiet world, no input, no HUD
-	local barks = lazy("BarkController")
-	if barks then
-		barks.SetQuiet("cutscene", true)
-	end
-	WindowManager.CloseAll()
-	WindowManager.SetHotkeysEnabled(false)
-	setControls(false)
-	CutsceneScreen(overlayScope, {
-		Title = title,
-		Subtitle = subtitle,
-		Speaker = speaker,
-		Line = lineText,
-		Card = card,
-		CardDim = c.cardDim,
-		Black = black,
-		OnSkip = function()
+	-- an error anywhere in the scene ends it (the cleanup gives the camera and the movement back)
+	local function run()
+		-- quiet world, no input, no HUD
+		local barks = lazy("BarkController")
+		if barks then
+			barks.SetQuiet("cutscene", true)
+		end
+		WindowManager.CloseAll()
+		WindowManager.SetHotkeysEnabled(false)
+		-- the movement lock now, the camera once the shot is ready (card mode keeps the player's camera)
+		CameraController.Claim(LEASE, {
+			camera = false,
+			lockMovement = true,
+			ttl = ttl,
+			onLost = function()
+				finish("lost")
+			end,
+		})
+		CutsceneScreen(overlayScope, {
+			Title = title,
+			Subtitle = subtitle,
+			Speaker = speaker,
+			Line = lineText,
+			Card = card,
+			CardDim = c.cardDim,
+			Black = black,
+			OnSkip = function()
+				finish("skipped")
+			end,
+			OnNext = function()
+				skipToNext = true
+			end,
+		}).Parent =
+			UIController.GetLayer("Modals")
+		WindowManager.SetEscapeOverride(function()
 			finish("skipped")
-		end,
-		OnNext = function()
-			skipToNext = true
-		end,
-	}).Parent =
-		UIController.GetLayer("Modals")
-	WindowManager.SetEscapeOverride(function()
-		finish("skipped")
-	end)
-	ContextActionService:BindActionAtPriority(SKIP_ACTION, function(_, inputState): Enum.ContextActionResult
-		if inputState == Enum.UserInputState.Begin then
-			finish("skipped")
-		end
-		return Enum.ContextActionResult.Sink
-	end, false, 3000, Enum.KeyCode.ButtonB)
-	ContextActionService:BindActionAtPriority(NEXT_ACTION, function(_, inputState): Enum.ContextActionResult
-		if inputState == Enum.UserInputState.Begin then
-			skipToNext = true
-		end
-		return Enum.ContextActionResult.Sink
-	end, false, 3000, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
-	-- damage, death or a new map end the scene at once
-	local hp = State.Value({ "character", "hp" })
-	local lastHp = Fusion.peek(hp)
-	overlayScope:Observer(hp):onChange(function()
-		local now = Fusion.peek(hp)
-		if type(now) == "number" and type(lastHp) == "number" and now < lastHp then
-			finish("interrupted")
-		end
-		lastHp = now
-	end)
-	local map = State.Get({ "character", "location", "map" })
-	overlayScope:Observer(State.Value({ "character", "location", "map" })):onChange(function()
-		if State.Get({ "character", "location", "map" }) ~= map then
-			finish("interrupted")
-		end
-	end)
-	overlayScope:Observer(State.Value({ "death" })):onChange(function()
-		if State.Get({ "death" }) ~= nil then
-			finish("interrupted")
-		end
-	end)
-	Sounds.play("open")
+		end)
+		ContextActionService:BindActionAtPriority(SKIP_ACTION, function(_, inputState): Enum.ContextActionResult
+			if inputState == Enum.UserInputState.Begin then
+				finish("skipped")
+			end
+			return Enum.ContextActionResult.Sink
+		end, false, 3000, Enum.KeyCode.ButtonB)
+		ContextActionService:BindActionAtPriority(NEXT_ACTION, function(_, inputState): Enum.ContextActionResult
+			if inputState == Enum.UserInputState.Begin then
+				skipToNext = true
+			end
+			return Enum.ContextActionResult.Sink
+		end, false, 3000, Enum.KeyCode.Space, Enum.KeyCode.ButtonA)
+		-- damage, death or a new map end the scene at once
+		local hp = State.Value({ "character", "hp" })
+		local lastHp = Fusion.peek(hp)
+		overlayScope:Observer(hp):onChange(function()
+			local now = Fusion.peek(hp)
+			if type(now) == "number" and type(lastHp) == "number" and now < lastHp then
+				finish("interrupted")
+			end
+			lastHp = now
+		end)
+		local map = State.Get({ "character", "location", "map" })
+		overlayScope:Observer(State.Value({ "character", "location", "map" })):onChange(function()
+			if State.Get({ "character", "location", "map" }) ~= map then
+				finish("interrupted")
+			end
+		end)
+		overlayScope:Observer(State.Value({ "death" })):onChange(function()
+			if State.Get({ "death" }) ~= nil then
+				finish("interrupted")
+			end
+		end)
+		Sounds.play("open")
 
-	fade(1, c.fade)
-	if finished then
-		return
-	end
-	UIController.SetHudHidden(true)
-
-	-- the shot
-	local shot = scene.shot
-	local rough, shotMap, facing = roughFocus(shot)
-	local focus: Vector3? = nil
-	if rough then
-		stream(rough)
+		fade(1, c.fade)
 		if finished then
 			return
 		end
-		focus = settleFocus(shot, rough, folder, shotMap)
-	end
-	local steps = stepsOf(scene)
-	local total = 0
-	for _, step in steps do
-		total += step.seconds
-	end
-	if focus and camera then
-		camera.CameraType = Enum.CameraType.Scriptable
-		if shotMap and (shotMap ~= map or scene.clock) then
-			WorldController.PreviewEnvironment(shotMap, scene.clock)
+		UIController.SetHudHidden(true)
+
+		-- the shot
+		local shot = scene.shot
+		local rough, shotMap, facing = roughFocus(shot)
+		local focus: Vector3? = nil
+		if rough then
+			stream(rough)
+			if finished then
+				return
+			end
+			focus = settleFocus(shot, rough, folder, shotMap)
 		end
-		local offset = offsetOf(shotMap) or Vector3.zero
-		local figures: { CutsceneData.Figure } = scene.figures or {}
-		for _, figure in figures do
-			local base = offset + Vector3.new(figure.x, 0, figure.z)
-			local y = ground(base, folder, shotMap) or focus.Y
-			local model = CutsceneFigure.build(
-				figure.look,
-				CFrame.new(base.X, y, base.Z) * CFrame.Angles(0, math.rad(figure.facing), 0),
-				figure.ghost,
-				figure.ice
-			)
-			model.Parent = folder
-			local lastStep = steps[#steps]
-			local fadeIn = math.max(0, total - (if lastStep then lastStep.seconds else 0) - 2)
-			table.insert(stopFades, CutsceneFigure.fade(model, figure.fade, fadeIn, 2))
-		end
-		-- S105: story props of the shot (on the ground under them, like the figures)
-		local props: { CutsceneData.Prop } = scene.props or {}
-		for _, item in props do
-			local base = offset + Vector3.new(item.x, 0, item.z)
-			local y = ground(base, folder, shotMap) or focus.Y
-			StoryProps.build(
-				item.kind,
-				CFrame.new(base.X, y + (item.y or 0), base.Z) * CFrame.Angles(0, math.rad(item.yaw or 0), 0),
-				item.lit,
-				folder
-			)
-		end
-		if scene.light then
-			local holder = Instance.new("Part")
-			holder.Anchored = true
-			holder.CanCollide = false
-			holder.CanQuery = false
-			holder.CanTouch = false
-			holder.Transparency = 1
-			holder.Size = Vector3.new(0.2, 0.2, 0.2)
-			holder.CFrame = CFrame.new(focus + Vector3.new(0, 0.5, 0))
-			holder.Parent = folder
-			local light = Instance.new("PointLight")
-			light.Color = Color3.fromHex(scene.light.color)
-			light.Range = scene.light.range
-			light.Brightness = 2
-			light.Shadows = true
-			light.Parent = holder
-		end
-		local started = os.clock()
-		local finalFocus = focus
-		camera.CFrame = cameraAt(shot, finalFocus, facing, 0)
-		table.insert(
-			connections,
-			RunService.RenderStepped:Connect(function()
-				local t = (os.clock() - started) / math.max(total, 0.1)
+		if focus and camera then
+			if shotMap and (shotMap ~= map or scene.clock) then
+				WorldController.PreviewEnvironment(shotMap, scene.clock)
+			end
+			local offset = offsetOf(shotMap) or Vector3.zero
+			local figures: { CutsceneData.Figure } = scene.figures or {}
+			for _, figure in figures do
+				local base = offset + Vector3.new(figure.x, 0, figure.z)
+				local y = ground(base, folder, shotMap) or focus.Y
+				local model = CutsceneFigure.build(
+					figure.look,
+					CFrame.new(base.X, y, base.Z) * CFrame.Angles(0, math.rad(figure.facing), 0),
+					figure.ghost,
+					figure.ice
+				)
+				model.Parent = folder
+				local lastStep = steps[#steps]
+				local fadeIn = math.max(0, total - (if lastStep then lastStep.seconds else 0) - 2)
+				table.insert(stopFades, CutsceneFigure.fade(model, figure.fade, fadeIn, 2))
+			end
+			-- S105: story props of the shot (on the ground under them, like the figures)
+			local props: { CutsceneData.Prop } = scene.props or {}
+			for _, item in props do
+				local base = offset + Vector3.new(item.x, 0, item.z)
+				local y = ground(base, folder, shotMap) or focus.Y
+				StoryProps.build(
+					item.kind,
+					CFrame.new(base.X, y + (item.y or 0), base.Z) * CFrame.Angles(0, math.rad(item.yaw or 0), 0),
+					item.lit,
+					folder
+				)
+			end
+			if scene.light then
+				local holder = Instance.new("Part")
+				holder.Anchored = true
+				holder.CanCollide = false
+				holder.CanQuery = false
+				holder.CanTouch = false
+				holder.Transparency = 1
+				holder.Size = Vector3.new(0.2, 0.2, 0.2)
+				holder.CFrame = CFrame.new(focus + Vector3.new(0, 0.5, 0))
+				holder.Parent = folder
+				local light = Instance.new("PointLight")
+				light.Color = Color3.fromHex(scene.light.color)
+				light.Range = scene.light.range
+				light.Brightness = 2
+				light.Shadows = true
+				light.Parent = holder
+			end
+			if finished then
+				return
+			end
+			-- the camera from here on (set to the first frame at once, never left at the player's old view)
+			local started = os.clock()
+			local finalFocus = focus
+			CameraController.Claim(LEASE, {
+				lockMovement = true,
+				ttl = ttl,
+				onLost = function()
+					finish("lost")
+				end,
+			})
+			camera.CFrame = cameraAt(shot, finalFocus, facing, 0)
+			local writer: RBXScriptConnection? = nil
+			writer = RunService.RenderStepped:Connect(function()
+				if finished then
+					if writer then
+						writer:Disconnect()
+					end
+					return
+				end
 				local cam = Workspace.CurrentCamera
-				if cam then
+				if cam and CameraController.Holder() == LEASE then
+					local t = (os.clock() - started) / math.max(total, 0.1)
 					cam.CameraType = Enum.CameraType.Scriptable
 					cam.CFrame = cameraAt(shot, finalFocus, facing, t)
 				end
 			end)
-		)
-	else
-		-- card mode (DESIGN-15 §0.7): the texts over the dimmed view, the camera stays with the player
-		card:set(true)
-	end
-	fade(0, c.fade)
+			table.insert(connections, writer :: RBXScriptConnection)
+		else
+			-- card mode (DESIGN-15 §0.7): the texts over the dimmed view, the camera stays with the player
+			card:set(true)
+		end
+		fade(0, c.fade)
 
-	-- the lines
-	local deadline = os.clock() + total + SAFETY
-	for _, step in steps do
-		if finished then
-			return
+		-- the lines
+		local deadline = os.clock() + total + SAFETY
+		for _, step in steps do
+			if finished then
+				return
+			end
+			title:set(step.title)
+			subtitle:set(step.subtitle)
+			speaker:set(step.speaker)
+			lineText:set(step.line)
+			skipToNext = false
+			local stepEnd = os.clock() + step.seconds
+			while not finished and not skipToNext and os.clock() < stepEnd and os.clock() < deadline do
+				task.wait(0.05)
+			end
 		end
-		title:set(step.title)
-		subtitle:set(step.subtitle)
-		speaker:set(step.speaker)
-		lineText:set(step.line)
-		skipToNext = false
-		local stepEnd = os.clock() + step.seconds
-		while not finished and not skipToNext and os.clock() < stepEnd and os.clock() < deadline do
-			task.wait(0.05)
-		end
+		finish("done")
 	end
-	finish("done")
+	local ok: boolean, err: any = pcall(run)
+	if not ok then
+		log:warn("scene %s failed: %s", scene.id, tostring(err))
+		finish("error")
+	end
 end
 
 local function sceneOf(id: string): Scene?
@@ -656,6 +694,7 @@ function CutsceneController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
 	WorldController = registry.Get("WorldController")
 	DungeonController = registry.Get("DungeonController")
+	CameraController = registry.Get("CameraController")
 end
 
 function CutsceneController.Start()

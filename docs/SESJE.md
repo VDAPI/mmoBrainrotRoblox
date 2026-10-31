@@ -14284,3 +14284,24 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - `StatAllocator`: rząd przycisków tylko z wolnymi punktami, „Rozdaj jak zaleca ścieżka” i linia planu tylko z planem.
 - Okno 826×752 (było 1240×700). `WindowManager.Toggle`: B na innej zakładce wraca na Ekwipunek na każdym urządzeniu.
 - Test: `tests/charactertabs.spec.luau`. Nieobejrzane w Studio.
+### Kamera zablokowana w trybie skryptowym (przegląd Studio 2026-10-31, druga część)
+- Zgłoszenie (postać poziomu 1): po `tp city` kamera stała 10+ s w starym miejscu na Łąkach; w mieście zamrożona 75 studów
+  od postaci, potem 0,9 studa przed twarzą, a postać nie ruszała się (MoveTo bez skutku); ręczne Custom pomagało do
+  następnego razu.
+- Kto ustawia `Scriptable` (grep): tylko ekran wyboru, przerywnik i AnimLab (okna, rozmowy, śmierć i ekran ładowania nie
+  ruszają kamery). Dziury: kamera AnimLab zostawała przy scenie po teleporcie (zmienia tylko `CharacterRemoving`), a
+  przerywnik oddawał kamerę i ruch na końcu jednego ciągu sprzątania bez ochrony (błąd w środku zostawiał `Scriptable` i
+  wyłączone sterowanie), jego pisarz klatek co klatkę wymuszał `Scriptable`, a blokada ruchu (`ControlModule:Disable`)
+  wracała tylko tą drogą.
+- `Logic/CameraLease.luau` (czyste): właściciele po kolei (ostatni z kamerą ją ma), termin, puszczanie przy podróży,
+  blokada ruchu, wykrycie teleportu (ponad 60 studów na klatkę), strażnik (`GRACE` 0,5 s, liczone zegarem, nie
+  klatkami: Studio w tle ma ok. 15 kl./s).
+- `CameraController`: `Claim(owner, { camera?, lockMovement?, ttl?, travel?, onLost?, onRegain? })`, `Release`, `Holder`,
+  strażnik na początku kroku kamery, blokada ruchu przez `PlayerModule:GetControls()`, atrybuty kamery
+  `VaelthornCameraOwner` / `VaelthornMoveLock`.
+- `CutsceneController`: blokada ruchu od startu sceny, kamera dopiero przy gotowym ujęciu (od razu w pierwszej klatce
+  ujęcia), termin `długość + SAFETY + zanikania + strumień + 5 s`, `pcall` wokół sceny (`finish("error")`), sprzątanie
+  krok po kroku (najpierw kamera i ruch). `AnimLabController`: kamera jako `Claim("animlab", travel)`;
+  `ScreenController`: ujęcie wyboru jako `Claim("select")`, `RestoreCamera` usunięte.
+- Testy: `tests/cameralease.spec.luau` (w tym skan: `CameraType.Scriptable` tylko w `CameraController` i w pisarzu
+  przerywnika). Nieobejrzane w Studio.
