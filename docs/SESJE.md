@@ -14125,6 +14125,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `stuckTime`), `Entities/Monster`, `MonsterService` / `CombatService` (zdarzenie `ev`), `StatusEffectService`,
   `Logic/DamageText`, `CombatFxController`, `Admin/Monsters` (`/leash` pokazuje odwrót), teksty `combat.evade`, wiki
   „Jak uciec przed potworem”. Testy: `tests/pursuit.spec.luau`, `leash.spec`, `damagetext.spec`. Balans: powody S162e.
+- Test w Studio bez myszy: `/chasetest <potwór|stop> [corner|perch|los|load] [poziom]` (`Admin/ChaseRun`,
+  `Logic/ChaseTest`, `tests/chasetest.spec.luau`). Cel to admin: kotwiczony i przesuwany przez serwer (kod ruchu klienta
+  nic nie zmienia), w trybie boga; potwór testu ma `probe` (nie do zranienia, bez osłabień) i liczy ścieżki, nowe
+  ścieżki, odwrót, HP, powrót, aggro, ciosy i rzuty; wynik w jednej linii w logu (`[ChaseTest]`), na czacie i w atrybucie
+  `Workspace.ChaseTest`. Studio 2026-10-31: wilki ginęły same, bo Łowca oddaje napastnikowi w miejscu (S134d,
+  „Automatyczny cel”, łuk z „Jadowitymi grotami” dał truciznę i wolniejsze ataki), a `Humanoid:MoveTo` z klienta w walce
+  zatrzymuje `TargetController` (podejście do celu po kliknięciu: w zasięgu co 0,1 s `MoveTo` w miejscu). Oba działają
+  zgodnie z projektem, nie są błędem.
 
 ### Wiązanie przedmiotów (właściciel 2026-10-31)
 - Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od

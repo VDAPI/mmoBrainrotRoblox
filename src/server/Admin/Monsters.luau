@@ -24,6 +24,7 @@ local MonsterStats = require(Shared.Logic.MonsterStats)
 local MountData = require(Shared.Data.Mounts)
 local Mounts = require(Shared.Logic.Mounts)
 
+local ChaseRun = require(script.Parent.ChaseRun)
 local Context = require(script.Parent.Context)
 
 local reply = Context.reply
@@ -396,6 +397,23 @@ commands.leash = function(player)
 		max = monster.stats.maxHp,
 		boss = tostring(monster.isBoss == true),
 	})
+end
+
+-- S162e follow-up: /chasetest <monster|stop> [corner|perch|los|load] [level]: a scripted chase that measures the
+-- pursuit (paths, wall presses, the evade, the way home, the calm after it, shots without a clear line, the server's
+-- frame time) with no mouse input; the admin is the target (Admin/ChaseRun).
+commands.chasetest = function(player, args)
+	if args[1] == "stop" then
+		ChaseRun.Stop(player)
+		return
+	end
+	if not Monsters.get(args[1]) then
+		reply(player, "admin.spawn.unknown", { id = args[1] })
+		return
+	end
+	withCharacter(player, function()
+		ChaseRun.Start(player, args[1], args[2] or "corner", parseAmount(args[3]))
+	end)
 end
 
 -- Looks (S24) -------------------------------------------------------------------------------------------

@@ -438,6 +438,12 @@ cmd("monsters", "bosssim", { ref("boss", "boss"), int("n", 1, 100000, true, "100
 -- S97: the personal mount / mount skin roll of a boss on a fresh character (Logic/Mounts.rollBossDrop)
 cmd("monsters", "mountsim", { ref("boss", "boss"), int("n", 1, 100000, true, "1000") })
 cmd("monsters", "leash", {})
+-- S162e: a scripted chase with the admin as the target (Admin/ChaseRun): first arg a monster id or "stop"
+cmd("monsters", "chasetest", {
+	str("monster"),
+	enum("scenario", { "corner", "perch", "los", "load" }, true, "corner"),
+	int("level", 1, MAX_LEVEL, true),
+})
 -- S24: looks. mobviz: <monster|boss|pet id | 1-4 (region) | bosses | pets | all | clear> [normal|elite|elite2] [anim]
 cmd("monsters", "mobviz", { str("target"), str("option", true), str("option2", true) })
 cmd("monsters", "look", { str("id") })
