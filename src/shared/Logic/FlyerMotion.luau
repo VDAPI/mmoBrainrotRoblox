@@ -894,13 +894,13 @@ function FlyerMotion.step(inst: Instance, input: Input): FlyerPose.Posed
 		addAll(controls, rigPose, 1)
 	end
 	-- out of a jump in time
-	local ft = now - inst.fadeAt
-	if ft >= 0 and ft < FADE then
-		local k = MotionTimeline.ease("inout", ft / FADE)
+	local fadeT = now - inst.fadeAt
+	if fadeT >= 0 and fadeT < FADE then
+		local k = MotionTimeline.ease("inout", fadeT / FADE)
 		local from = inst.fadeFrom
 		for key, v in controls do
-			local f = from[key] or 0
-			controls[key] = f + (v - f) * k
+			local was = from[key] or 0
+			controls[key] = was + (v - was) * k
 		end
 		for key, v in from do
 			if controls[key] == nil then
