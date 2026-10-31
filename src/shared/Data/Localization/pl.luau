@@ -394,6 +394,8 @@ return {
 	["combat.crit"] = "KRYT! {amount}",
 	["combat.absorbed"] = "Pochłonięto",
 	["combat.immune"] = "Odporny",
+	-- S162e: a monster that cannot reach its target goes home immune ("Unik" is the dodge already)
+	["combat.evade"] = "Odwrót",
 	["combat.distance"] = "{distance} m",
 	["combat.reward"] = "+{exp} EXP · +{gold} złota",
 	["combat.rewardGold"] = "+{gold} złota",

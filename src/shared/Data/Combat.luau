@@ -148,16 +148,32 @@ return table.freeze({
 	aiTickRate = 5, -- per second
 	sleepRadius = 250, -- spawners without players this close stop working (S19: was 150)
 	-- Leash (S22, Logic/Leash): past leashRange from the group centre a monster goes home once no player has hit
-	-- its group for leashGrace seconds; past leashMax it always goes home. A chasing monster that has not moved
-	-- (and not attacked) for stuckTime seconds goes home too. Going home: no healing, no invulnerability,
+	-- its group for leashGrace seconds; past leashMax it always goes home. Going home: no healing, no invulnerability,
 	-- returnSpeedMultiplier x speed, teleported home after returnTimeout seconds. Back home (idle), it regains
 	-- idleRegenPct % of its max HP per second once idleRegenDelay seconds have passed since the last hit.
 	-- S162m: home at a trot (x1.25 -> x0.7: a calm trot instead of a sprint) and 12 -> 20 s before the teleport, so the
 	-- walk from the hard leash (150 studs, ~16.5 s at 13 x 0.7) still ends on foot.
+	-- S162e: the S22 stuck rule (stuckTime 5 s without moving or attacking = home, still hittable) became the evade below.
 	leashRange = 70,
 	leashMax = 150,
 	leashGrace = 5,
-	stuckTime = 5,
+	-- S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed from behind rocks and ledges; Logic/Pursuit,
+	-- Entities/Monster): a chasing monster that gained less than pursuitProgress studs towards where it walks (its target,
+	-- or the next point of its path) for pursuitRepath seconds asks for a new path; with no path, or still stalled after
+	-- pursuitEvade seconds, it evades (WoW style): immune to damage and debuffs, full HP, its damage record and aggro reset,
+	-- back home at a trot (teleported once it stalls on the way for pursuitEvade seconds) and no aggro by sight for
+	-- evadeCalm seconds once home (a hit still starts a fight). Standing where its blow, shot (a clear line) or Elite II
+	-- throw reaches the target is never stalling. Bosses and their helpers never evade (their arenas, their own leash).
+	-- Paths: PathfindingService only while the straight way is blocked, at most pathPerSecond on a server (pathBurst saved),
+	-- one per monster every pathGap seconds, and a new one once the target has moved pathMove studs from its end.
+	pursuitProgress = 1.5,
+	pursuitRepath = 1.75,
+	pursuitEvade = 4.5,
+	evadeCalm = 6,
+	pathPerSecond = 8,
+	pathBurst = 4,
+	pathGap = 1.5,
+	pathMove = 8,
 	-- Obstacle steering (FIX 2026-10-09, Logic/Steer + Entities/Monster): probes this far ahead (plus the
 	-- monster's half size), tries these angles to both sides, keeps a detour side this long (seconds).
 	steerLookAhead = 6,

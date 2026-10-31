@@ -9,12 +9,11 @@ local describe, it, expect = Test.describe, Test.it, Test.expect
 
 local cfg = Combat :: any
 
-local function situation(distHome: number, sinceHit: number, hasTarget: boolean?, stuckFor: number?): Leash.Situation
+local function situation(distHome: number, sinceHit: number, hasTarget: boolean?): Leash.Situation
 	return {
 		distHome = distHome,
 		sinceHit = sinceHit,
 		hasTarget = if hasTarget == nil then true else hasTarget,
-		stuckFor = stuckFor or 0,
 	}
 end
 
@@ -41,14 +40,13 @@ describe("Leash", function()
 		expect(reason).toBe("hard")
 	end)
 
-	it("goes home without a target or when stuck", function()
+	-- S162e: a stalled chase no longer walks home hittable (the S22 "stuck" reason): it evades (Logic/Pursuit)
+	it("goes home without a target", function()
 		local back, reason = Leash.shouldReturn(situation(5, 0, false), cfg)
 		expect(back).toBe(true)
 		expect(reason).toBe("target")
-		back, reason = Leash.shouldReturn(situation(5, 0, true, cfg.stuckTime), cfg)
-		expect(back).toBe(true)
-		expect(reason).toBe("stuck")
-		expect((Leash.shouldReturn(situation(5, 0, true, cfg.stuckTime - 0.5), cfg))).toBe(false)
+		expect((Leash.shouldReturn(situation(5, 0, true), cfg))).toBe(false)
+		expect(cfg.stuckTime).toBeNil()
 	end)
 
 	it("turns back only within the hard leash", function()

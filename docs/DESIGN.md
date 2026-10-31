@@ -857,6 +857,11 @@ magicznego; leczenie i wzmocnienia działają tylko na Kapłana i jego drużynę
   - zawsze wraca dalej niż **150 st.**;
   - wraca **bez leczenia i bez nietykalności**, a trafiony w drodze zawraca;
   - leczy się dopiero w domu, stopniowo (8% HP/s po 4 s bez obrażeń).
+  - **Odwrót** (S162e, tester właściciela 2026-10-31): potwór, który nie dojdzie do celu (skała, drzewo, dom, płot,
+    półka, woda, ściana jaskini) i nie sięga go ciosem, strzałem z czystą linią ani rzutem Elity II, po 1,75 s bez
+    postępu szuka nowej drogi (ścieżka `PathfindingService`), a bez drogi albo po 4,5 s robi odwrót: nietykalny, pełne
+    HP, bez aggro, truchtem do domu z napisem „Odwrót”, potem 6 s nie atakuje sam (trafiony walczy). Zastępuje utknięcie
+    z S22. Bossowie i ich pomocnicy bez odwrotu (areny mają ściany, bossowie własną odpowiedź na kiting).
   - Tempo (S162m, właściciel 2026-10-25): spacer i patrol idą stępa (0,4 × szybkości), powrót do domu truchtem (0,7 ×,
     teleport do domu dopiero po 20 s), pościg i walka biegiem (1 ×). Potwór walczący wręcz podchodzi na 0,6 swojego
     zasięgu, zanim stanie (cios może zacząć już w zasięgu, zasada trafienia bez zmian). Skok wilka i szarża dzika Elity II

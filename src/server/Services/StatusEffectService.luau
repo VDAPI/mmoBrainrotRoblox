@@ -291,10 +291,14 @@ function StatusEffectService.Apply(entity: any, kind: string, options: ApplyOpti
 	if options.notBoss and StatusEffectService.IsBossLike(entity) then
 		return false
 	end
-	-- Invulnerable (or freshly respawned, S22) targets ignore debuffs.
+	-- Invulnerable (or freshly respawned, S22) targets ignore debuffs. S162e: so does an evading monster.
 	if
 		DEBUFFS[kind]
-		and (StatusEffectService.Has(entity, "invuln") or StatusEffectService.Has(entity, "respawnShield"))
+		and (
+			StatusEffectService.Has(entity, "invuln")
+			or StatusEffectService.Has(entity, "respawnShield")
+			or (entity.kind == "monster" and entity.monster and entity.monster.evading == true)
+		)
 	then
 		return false
 	end
