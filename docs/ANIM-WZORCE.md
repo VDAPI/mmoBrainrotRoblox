@@ -721,10 +721,27 @@ tries `FlyerRig.new` first (nil without a matching map) and falls back to `Rigid
   flipped onto its back (the bat at its own pitch, the tail membrane drawn up). The bat does not hang upside down: there
   is no ceiling where it fights and the server keeps it hovering.
 - **What is not driven**: the bat's legs (they ride the body), the vulture's right leg below its single bone.
+- **The ground** (studio review 2026-10-31): after the solve no bone goes under y = 0: `FlyerPose.lowest` takes every
+  driven bone but the body (its pivot is the export's root, under the body where the export stood) and every bone they
+  carry (`probes`: the wing tips, the feet, the feathers), and `FlyerPose.lift` raises the whole pose onto the ground
+  (only the body's offset changes). So a stoop, a dive and a body lying on its wing touch the ground and stop there.
+- **Starts and loops** (the same review): `FlyerRig.new` poses the rig at once (a calm hover), so the export's rest pose
+  is never shown; a snap after the first frame (AnimLab looping or scrubbing back, a new state) fades the controls out
+  of the pose shown before it over 0.4 s (`FADE`). The game never snaps. The perch's idles (`peck`, `perchLook`,
+  `perchPreen`) played as actions (AnimLab) stand on the ground like the perch. The keys that snapped are softened:
+  the vulture's death keeps the lower wing level with the roll (it hung 45 degrees down and swung through the ground),
+  the crow's summon climbs out half folded and opens on the way up, the talons swing through the rake and the stoop
+  less far. The bat's dive drops almost half its height (`drop` 0.45 on the hit) to its target's chest and climbs back.
 
 AnimLab: `mob ashVulture <state>`, `mob carrionCrow <state>`, `mob bloodBat <state>` (with a new model: the flyer's
 states, the kit's slots `heavy`, `crush`, `pounce`, `throw`, `summon`, `perch` and every action by name; the rigid
-states stay for the old model). Swap: `tools/studio/swap_v2_flyers.luau`.
+states stay for the old model). Swap: `tools/studio/swap_v2_flyers.luau` (run again safely): a monster built like wolf
+and peakHarpy (a 1x1x1 HumanoidRootPart unanchored, CanCollide false, CanQuery / CanTouch true, not massless; the mesh
+unanchored, CanCollide / CanQuery / CanTouch true, welded to it, its bottom 2.5 studs over the root's centre;
+PrimaryPart and WorldPivot the root, `Hover` 2.5; no AnimationController, no InitialPoses), scaled by
+`ScaleTo(GetScale() * k)` to ashVulture 4.19 x 1.58 x 2.08, carrionCrow 3.19 x 1.86 x 1.43, bloodBat 3.39 x 2.58 x 2.33
+studs; an NPC (Teodor) built like guard and banker (its AnimationController and InitialPoses kept, the mesh anchored,
+CanCollide false).
 
 ## 5. F4 Dragon: youngFrostDragon
 
@@ -1309,6 +1326,12 @@ Model attributes (Studio, on the NPC's model or its `Asset`): `NpcRole` = anothe
    (`Data/NpcRigs.portalmaster`); NpcService takes `ReplicatedStorage.Assets.Npcs.portalmaster` (the NPC id of
    `Data/Npcs`) as imported and fits it to the figure's height. `Yaw` (degrees) only if he faces away from his
    counter, `Scale` (0.5-2) if he should stand taller than the figure.
+8. Teodor's channel (studio review 2026-10-31: his hands hung before him, palms down, no glow): `channelHold` raises the
+   hands to the chest's height a forearm out (`T("chest", 0.2, -0.05, -0.45)`, the elbows down and out), the wrists
+   bent back (`wSy` 1.0, `wSr` 0.8) so the palms face the portal (front) and the fingers point up; `channelSurge` pushes
+   them up and apart. The moves' `channel` control (no joint) weighs the glow `client/Anim/NpcRig` puts on his palms
+   (the mage's work prop `channel`: sparks and a blue light on the middle finger's first bone, else the hand's bone or
+   an R15 hand part), written only when it changes by 0.05.
 ## Appendix A: formulas
 
 Gait clock (per frame):

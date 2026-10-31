@@ -1876,18 +1876,15 @@ local BAT: Style = variant(CROW, {
 					"S",
 					0.5,
 					"in",
-					bs(
-						{
-							by = 0.05,
-							bpitch = deg(-25),
-							npitch = deg(-6),
-							jaw = deg(25),
-							lunge = 0.55,
-							reachMax = 2.5,
-							drop = 0.2,
-						},
-						wings({ e = deg(10), s = deg(10), f = deg(10) })
-					)
+					bs({
+						by = 0.05,
+						bpitch = deg(-25),
+						npitch = deg(-6),
+						jaw = deg(25),
+						lunge = 0.55,
+						reachMax = 2.5,
+						drop = 0.2,
+					}, wings({ e = deg(10), s = deg(10), f = deg(10) }))
 				),
 				key(
 					"S",

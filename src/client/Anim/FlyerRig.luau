@@ -104,7 +104,10 @@ function FlyerRig.new(look: Model, styleId: string, seed: number, model: string)
 		muzzle = if muzzle and muzzle:IsA("Attachment") then muzzle else nil,
 		last = last,
 	}
-	FlyerRig.apply(rig, FlyerMotion.step(motion, { now = 0, dt = 0, speed = 0, yawRate = 0, combat = false, snap = true }))
+	FlyerRig.apply(
+		rig,
+		FlyerMotion.step(motion, { now = 0, dt = 0, speed = 0, yawRate = 0, combat = false, snap = true })
+	)
 	return rig
 end
 
