@@ -713,6 +713,45 @@ carried by the chest. It fights in melee (bites and claws), `frostBreath` plays 
 the element's effects, the style has no colour of its own. Needs a re-rig (wing chains as in §4.6) for the wings to
 move.
 
+#### As built: the new youngFrostDragon model (2026-10-31)
+
+The new Tripo model (`youngFrostDragon.fbx`, dump `tools/anim/rigs/youngFrostDragon_v2.json`: four legs, spread wings
+as `bone_N` chains, a six-bone tail, no jaw bone) takes this section's template: Data/QuadStyles `dragon` on
+Logic/QuadMotion with Logic/DragonMotion's wing layer, the bone map `youngFrostDragon` in Data/QuadRigs, Lune specs in
+tests/dragon.spec.luau. Deviations from the tables above:
+
+- **Old or new model by its bones.** `MonsterAssets.youngFrostDragon.motion` stays `frostDragon` (the old export keeps
+  the wyvern's biped style); `remodel = { marker = { "tripo::Spine_4", "bone_21" }, motion = "dragon" }` switches to
+  this template when the model in Assets has both marker bones (`MonsterLooks.motionOf`, read by
+  AnimationController, AnimLabController and AnimLab). The old export's bear-style names (`BoneRoot`, `Hip`,
+  `L_Thigh`) cannot match. MonsterAssets' `height` / `hipHeight` / `rootSize` stay: the import is scaled to the old
+  model's height (3.83).
+- **Wings folded procedurally.** The model rests with the wings spread and raised. DragonMotion folds each wing from
+  the map's chain: the elbow 118°, the wrist 88°, the humerus laid back along the flank with the membrane's top side
+  out (`wings.fold` `hum` / `nrm`, solved once per instance). One control `wo` (and `wLo` / `wRo` per side) blends
+  folded 0, as modelled 1, flat out 2; offsets `we ws wt wf wh` on top; `flap` and `beat` (keyed on the timeline, a
+  whole number = the top) beat the wings with Logic/FlyerMotion's elevation curve; the shoulder blade lifts and swings
+  with the wing (`w<S>u`, `w<S>v`). Unfolding in a blow takes 0.2-0.4 s (the windups are short), not 0.5 s.
+- **Gaits from the server's `Gait`** (walk, trot, run = bound), stepped down when the speed is too slow for it; the
+  speed thresholds (trot 2.3, bound 3.6 L/s) only without the attribute. Walk lateral k 1.25, trot k 1.7, bound k 2.8
+  with the planted-feet solver of §3.9. In the bound the wings open half way and beat once a stride, the downstroke
+  from the hind push-off to the fore landing (phase 0.45-0.9).
+- **Tail**: six bones; a spring (1.1 Hz) swings it out of turns, a tip flick every few seconds, the idle wave.
+- **No jaw**: the bite, the spit, the breath and the roar open nothing; the head and the neck carry them. The muzzle
+  (`HumanoidRootPart.Muzzle` when present, else a point on `Head_4`, Data/QuadRigs `muzzle`) follows the snout.
+- **Kit** (each lands on W): regular blows rotate bite, claw, bite, buffet (wings up, then down and forward on W),
+  bite, clawL, bite, tail (a hop round, the tail tip through the front on W). heavyBlow `rake` (rears about the hips,
+  both claws drag down on W), crush `stomp` (rears, two flaps, both forefeet and a wingbeat on W), pounce `pounce`
+  (crouch, a downstroke, flies the `Dash*` arc a quarter of the flight high, 1-3 L, lands on W with a wing flare),
+  frostBreath `breath` (rears with the wings mantled, thrusts on W, the head sweeps right to left over the cone until
+  F 0.85; Data/MotionFx `dragon`: charge, breath stream from the muzzle, smolder), throw `spit`, aggro `roar` (wings
+  spread wide and high), spawn, fidgets `resettle` and `stretch`.
+- **Hit, stun, freeze, death**: the flinch by side twitches the near wing; Effects `stun:` hangs the head and slips
+  the wings half open with a wobble, `freeze:` holds the pose (the only quadruped style with these: `stun`); death
+  falls on the seed's side (`deathL` / `deathR`, held) with both wings fanned out on the ground.
+- AnimLab: `/animlab mob youngFrostDragon <state>` takes the generic states, every action above, `stun` and `freeze`
+  once the new model is in Assets (the old model keeps the wyvern's states).
+
 ## 6. F5 Rigid models: caveSpider
 
 ### 6.1 What a rigid model can do
