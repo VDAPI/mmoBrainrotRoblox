@@ -53,10 +53,7 @@ function Binding.ruleFrom(item: ItemInstance, source: Source, def: ItemDef?): Ru
 		return rule
 	end
 	if d.slot then
-		if spec.gear and (item.rarity or 0) >= (spec.gearFrom or 0) then
-			return stronger(rule, spec.gear)
-		end
-		return rule
+		return stronger(rule, spec.gear)
 	end
 	return stronger(rule, if Data.CONSUMABLE[d.category] then spec.consumable else spec.goods)
 end

@@ -1316,7 +1316,7 @@ export const pl = {
   "worldboss.rewardWhat": "Doświadczenie to {exp}-krotność, a złoto {gold}-krotność nagrody za zwykłego potwora twojego poziomu. Do tego materiały i jeden przedmiot:",
   "worldboss.itemTitle": "Przedmiot z nagrody",
   "worldboss.itemBound": "Przedmiot jest związany z postacią.",
-  "worldboss.itemFree": "Heroiczny wiąże się po założeniu, Legendarny i Mityczny po podniesieniu.",
+  "worldboss.itemFree": "Heroiczny i Legendarny wiążą się po założeniu, Mityczny po podniesieniu.",
   "worldboss.factorText": "Szansę na legendę i Mityka mnoży współczynnik wkładu: od ×{lo} za symboliczny udział, przez ×1 przy wkładzie równym średniej walczących, do ×{hi} dla najlepszych.",
   "worldboss.factor": "Wkład",
   "worldboss.factor.low": "Symboliczny",
