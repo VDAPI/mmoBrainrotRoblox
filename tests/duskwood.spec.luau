@@ -411,8 +411,9 @@ describe("Duskwood story places (S103)", function()
 			ns += n.x + 3 * n.z
 		end
 		expect(#nodes).toBe(50)
-		-- (studio review 2026-10-21: only the two fishing spots moved, Logic/FishingSpots: 12269 before)
-		expect(string.format("%.3f", ns)).toBe("12328.000")
+		-- (studio review 2026-10-21: only the two fishing spots moved, Logic/FishingSpots: 12269 before; 2026-10-31: the
+		-- terrain drawn at the height function shows more of the marsh's water, the two spots moved again: 12328 before)
+		expect(string.format("%.3f", ns)).toBe("12296.000")
 	end)
 end)
 
