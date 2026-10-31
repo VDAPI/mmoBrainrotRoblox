@@ -309,7 +309,12 @@ local function refresh(model: Model)
 	-- template animation: an imported biped with a style plays Logic/BipedMotion instead of its clips
 	local lookId = model:GetAttribute("Look")
 	local look = if type(lookId) == "string" then MonsterLooks.get(lookId) else nil
-	local motionStyle = look and look.asset and look.asset.motion
+	-- (a kind's new model takes its own style by its bones: Data/MonsterAssets `remodel`)
+	local motionStyle = look
+		and look.asset
+		and MonsterLooks.motionOf(look.asset, function(bone: string): boolean
+			return holder ~= nil and holder:FindFirstChild(bone, true) ~= nil
+		end)
 	s.biped = nil
 	if motionStyle and holder and holder:IsA("Model") and look and look.asset then
 		if BipedStyles.get(motionStyle) then

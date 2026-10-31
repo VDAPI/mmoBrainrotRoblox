@@ -377,7 +377,11 @@ local function quadAnchor(o: Owner, name: string): Anchor?
 	local head = b[map.head]
 	local spine = map.spine
 	local mid = if spine and #spine > 0 then b[spine[math.ceil(#spine / 2)].bone] else nil
-	if name == "mouth" and head then
+	local rig = o.rig
+	if name == "mouth" and rig.muzzleBone and rig.muzzleAt then
+		-- a map with a mouth (the dragon): the root's Muzzle point on its snout
+		return onBone(o, rig.muzzleBone, rig.muzzleBone.WorldCFrame:PointToWorldSpace(rig.muzzleAt))
+	elseif name == "mouth" and head then
 		return onBone(o, head, mouthPoint(o, head, 0.08, true))
 	elseif name == "head" and head then
 		return onBone(o, head, head.WorldCFrame.Position)
@@ -413,6 +417,17 @@ local function quadAnchor(o: Owner, name: string): Anchor?
 	elseif (name == "body" or name == "top") and mid then
 		local up = if name == "top" then o.space.UpVector * (0.3 * o.height) else Vector3.zero
 		return onBone(o, mid, mid.WorldCFrame.Position + up)
+	elseif (name == "wingL" or name == "wingR" or name == "wings") and map.wings then
+		-- a dragon's wing tips
+		local l, r = map.wings.L, map.wings.R
+		local tipL, tipR = if l then b[l.tip] else nil, if r then b[r.tip] else nil
+		if name == "wings" and tipL and tipR then
+			return between(o, tipL, tipR)
+		end
+		local tip = if name == "wingL" then tipL else tipR
+		if tip then
+			return onBone(o, tip, tip.WorldCFrame.Position)
+		end
 	end
 	return nil
 end

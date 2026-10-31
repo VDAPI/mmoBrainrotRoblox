@@ -979,8 +979,13 @@ local function attachFx(model: Model, rig: any)
 		elseif type(id) == "string" then MonsterLooks.get(id)
 		else nil
 	local asset = look and look.asset
-	if asset and asset.motion and type(id) == "string" then
-		MotionFx.attach(model, model, rig, asset.motion, asset.model, id)
+	-- (a kind's new model takes its own style by its bones: Data/MonsterAssets `remodel`)
+	local styleId = asset
+		and MonsterLooks.motionOf(asset, function(bone: string): boolean
+			return model:FindFirstChild(bone, true) ~= nil
+		end)
+	if asset and styleId and type(id) == "string" then
+		MotionFx.attach(model, model, rig, styleId, asset.model, id)
 		MotionFx.step(model, nil, 0, nil)
 	end
 end
@@ -997,7 +1002,9 @@ local function bipedLab(
 	boss: any,
 	planned: { [string]: any }?
 ): (BipedLab?, MotionKeys.Keys?)
-	local styleId = look.asset.motion :: string
+	local styleId = MonsterLooks.motionOf(look.asset, function(bone: string): boolean
+		return model:FindFirstChild(bone, true) ~= nil
+	end) :: string
 	local rig: any = if BipedStyles.get(styleId)
 		then BipedRig.new(model, styleId, 7.3, look.asset.grip, look.asset.model)
 		elseif QuadStyles.get(styleId) then QuadRig.new(model, styleId, 7.3, look.asset.model)

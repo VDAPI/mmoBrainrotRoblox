@@ -136,6 +136,30 @@ WYVERN_REGULAR.spit = {
 }
 WYVERN_REGULAR.pounce = { fx("dust", "feet", "W") }
 
+-- The young frost dragon on its new model (Data/QuadStyles `dragon`, 2026-10-31): the frost breath on the action names
+-- of the wyvern's (the charge in the throat, the stream from the snout along the head's sweep, the cold breath after
+-- it), its spit, the roar, the crash of the stomp and the claw rake, the wing buffet's and the landing's dust.
+local DRAGON: { [string]: { Fx } } = {
+	breath = {
+		fx("charge", "mouth", "A0.35", "W"),
+		fx("breath", "mouth", "W", "F0.85"),
+		fx("smolder", "mouth", "F0.85", "R0.8"),
+	},
+	spit = {
+		fx("charge", "mouth", "A0.5", "W", { size = 0.6 }),
+		fx("spit", "mouth", "W"),
+	},
+	roar = { fx("screech", "mouth", "W", nil, { size = 1.1 }) },
+	stomp = { fx("slam", "front", "W", nil, { size = 1.1 }) },
+	rake = { fx("slam", "front", "W", nil, { size = 0.9 }) },
+	buffet = { fx("dust", "feet", "W", nil, { size = 1.4 }) },
+	pounce = { fx("dust", "feet", "W") },
+	tail = { fx("dust", "feet", "F0.4", nil, { size = 0.8 }) },
+	spawn = { fx("dust", "feet", "W", nil, { size = 1 }) },
+	deathL = { fx("dust", "body", "F1", nil, { size = 1.5 }) },
+	deathR = { fx("dust", "body", "F1", nil, { size = 1.5 }) },
+}
+
 ---------------------------------------------------------------- spirits (Data/BipedStyles SPIRIT_ACTIONS)
 
 -- The specter: a cold bolt from the hand, the wail's rings, wisps bursting and rising.
@@ -435,6 +459,7 @@ end
 MotionFx.STYLES = table.freeze({
 	wyvern = freezeAll(WYVERN),
 	wyvernRegular = freezeAll(WYVERN_REGULAR),
+	dragon = freezeAll(DRAGON),
 	specter = freezeAll(SPECTER),
 	iceElemental = freezeAll(ICE_ELEMENTAL),
 	canine = freezeAll(CANINE),
