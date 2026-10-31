@@ -688,6 +688,11 @@ local function watchJoints(sim: OctoSim.Sim, label: string): (k: number) -> ()
 end
 
 T.describe("OctoMotion Studio review", function()
+	T.it("names the leg code it is (RigidRig stamps it on the look for the Studio session)", function()
+		T.expect(type(OctoMotion.VERSION)).toBe("string")
+		T.expect(#OctoMotion.VERSION > 8).toBe(true)
+	end)
+
 	T.it("turns no joint more than 12 degrees a frame, nor back and forth, in any AnimLab state or gait", function()
 		-- (12 degrees at 60 fps: a standing foot follows the body under a lunge, a chase step swings the leg through its
 		-- stride in a few frames; the 50-degree flips Studio saw are far over it)

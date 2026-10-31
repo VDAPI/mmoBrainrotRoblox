@@ -35,6 +35,10 @@ local RigidMotion = require("./RigidMotion")
 
 local OctoMotion = {}
 
+-- Which leg code runs (client/Anim/RigidRig stamps it on the look as the attribute `OctoVersion`; the Studio session
+-- compares it with the commit it synced). Bumped with every change of the legs' behaviour.
+OctoMotion.VERSION = "2026-10-31c joint-space raise, grab, catch-up steps, 12 deg a frame"
+
 type Vec = { number }
 
 -- Foot modes.

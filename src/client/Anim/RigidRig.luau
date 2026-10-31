@@ -41,14 +41,17 @@ local SUMMON_WITHIN = 1.0
 local SIZE_STEP = 0.003
 local ALPHA_STEP = 0.01
 -- The crawlers with leg bones nearest the camera that probe the ground and solve their legs fully (§1.10 tier A:
--- desktop, touch); a leg bone's turn is written only when it changed by more than this (rad).
+-- desktop, touch); a leg bone's turn is written only when it changed by more than this (rad), or when something else
+-- wrote the bone since (an Animator, a script: the bone would show its rest pose on the frames the rig skips).
 local LEGS_NEAREST, LEGS_NEAREST_TOUCH = 12, 6
 local TURN_STEP = math.rad(0.1)
+local OVERWRITE_EPS = 1e-4
 
 -- One leg bone the rig turns: about the model's vertical (`y`, the first joint of a leg: its yaw) and its bend axis
 -- `n`, both in the bone's own axes (rest^-1 * R * rest is a turn about rest^-1 * axis), by `share` of the angle; the
 -- angles written last.
-type Joint = { bone: Bone, y: Vector3?, n: Vector3, share: number, a: number, b: number }
+-- (`cf`: the Transform last written, so a bone something else turned in between is written again)
+type Joint = { bone: Bone, y: Vector3?, n: Vector3, share: number, a: number, b: number, cf: CFrame? }
 -- The legs of a crawler with bones (Logic/OctoMotion) and how the rig writes them.
 type Legs = {
 	motion: OctoMotion.Instance,
@@ -62,6 +65,10 @@ type Legs = {
 	lastRoot: CFrame?,
 	full: boolean, -- among the nearest: the ground probe and the full solver
 	probe: (x: number, z: number) -> number?,
+	-- Studio checks (attributes on the look): the bone turns another writer changed between two frames
+	look: Model,
+	overwritten: number,
+	shownAt: number,
 }
 
 export type Rig = {
@@ -236,6 +243,7 @@ local function jointsOf(
 			share = if share then share[j] else 1,
 			a = 0,
 			b = 0,
+			cf = CFrame.identity, -- (the rig sets every bone to rest first)
 		}
 	end
 	return out
@@ -325,7 +333,16 @@ local function legsOf(
 		probe = function(_x: number, _z: number): number?
 			return nil
 		end,
+		look = look,
+		overwritten = 0,
+		shownAt = 0,
 	}
+	-- what the Studio session reads to know the code and the skeleton it runs (docs/ANIM-WZORCE.md §6.6)
+	look:SetAttribute("OctoVersion", OctoMotion.VERSION)
+	look:SetAttribute("OctoHipH", math.round(skel.hipH * 100) / 100)
+	look:SetAttribute("OctoSpan", math.round(skel.span * 100) / 100)
+	look:SetAttribute("OctoLegs", #skel.legs)
+	look:SetAttribute("OctoOverwritten", 0)
 	-- the ground under a point of the ground frame (once per footfall: Logic/OctoMotion asks as a foot sets off)
 	local up, down = skel.ground + 2 * skel.hipH, Vector3.new(0, -5 * skel.hipH, 0)
 	legs.probe = function(x: number, z: number): number?
@@ -626,46 +643,82 @@ local function walk(rig: Rig, legs: Legs, input: RigidMotion.Input, posed: Rigid
 	OctoMotion.step(legs.motion, rig.motion, input, posed, into)
 end
 
--- The turns of one leg (the yaw on its first joint) where they changed.
-local function writeLeg(joints: { Joint }, f: OctoMotion.Foot)
+-- Whether something else wrote the joint's bone since the rig did (it shows another pose: written again).
+local function overwritten(joint: Joint): boolean
+	local cf = joint.cf
+	return cf ~= nil and not joint.bone.Transform:FuzzyEq(cf, OVERWRITE_EPS)
+end
+
+-- The turns of one leg (the yaw on its first joint) where they changed or something else wrote them; the number of
+-- bones found written by another.
+local function writeLeg(joints: { Joint }, f: OctoMotion.Foot): number
 	local c = f.c
+	local other = 0
 	for j, joint in joints do
 		local a = c[j]
 		local b = if j == 1 then f.psi else 0
-		if math.abs(a - joint.a) > TURN_STEP or math.abs(b - joint.b) > TURN_STEP then
+		local moved = math.abs(a - joint.a) > TURN_STEP or math.abs(b - joint.b) > TURN_STEP
+		if not moved and overwritten(joint) then
+			other += 1
+			moved = true
+		end
+		if moved then
 			joint.a, joint.b = a, b
 			local y = joint.y
-			joint.bone.Transform = if y
+			local cf = if y
 				then CFrame.fromAxisAngle(y, b) * CFrame.fromAxisAngle(joint.n, a)
 				else CFrame.fromAxisAngle(joint.n, a)
+			joint.bone.Transform = cf
+			joint.cf = cf
 		end
 	end
+	return other
 end
 
--- The turns of a chain about its axes by `angle` (each bone its share) where they changed.
-local function writeTurn(joints: { Joint }, angle: number)
+-- The turns of a chain about its axes by `angle` (each bone its share) where they changed (or were written by
+-- another).
+local function writeTurn(joints: { Joint }, angle: number): number
+	local other = 0
 	for _, joint in joints do
 		local a = angle * joint.share
-		if math.abs(a - joint.a) > TURN_STEP then
+		local moved = math.abs(a - joint.a) > TURN_STEP
+		if not moved and overwritten(joint) then
+			other += 1
+			moved = true
+		end
+		if moved then
 			joint.a = a
-			joint.bone.Transform = CFrame.fromAxisAngle(joint.n, a)
+			local cf = CFrame.fromAxisAngle(joint.n, a)
+			joint.bone.Transform = cf
+			joint.cf = cf
 		end
 	end
+	return other
 end
 
 local function writeLegs(legs: Legs)
 	local motion = legs.motion
+	local other = 0
 	for i, joints in legs.legs do
-		writeLeg(joints, motion.feet[i])
+		other += writeLeg(joints, motion.feet[i])
 	end
 	for i, joints in legs.arms do
-		writeLeg(joints, motion.arms[i])
+		other += writeLeg(joints, motion.arms[i])
 	end
 	for _, joints in legs.fangs do
-		writeTurn(joints, motion.fang)
+		other += writeTurn(joints, motion.fang)
 	end
-	writeTurn(legs.abdomen, motion.pump)
-	writeTurn(legs.tail, motion.tail)
+	other += writeTurn(legs.abdomen, motion.pump)
+	other += writeTurn(legs.tail, motion.tail)
+	if other > 0 then
+		-- (a Studio check: shown at most once a second)
+		legs.overwritten += other
+		local clock = os.clock()
+		if clock - legs.shownAt >= 1 then
+			legs.shownAt = clock
+			legs.look:SetAttribute("OctoOverwritten", legs.overwritten)
+		end
+	end
 end
 
 -- The functions the game and AnimLab call on `rig.mod` (Logic/RigidMotion's, the step reading the monster first).
@@ -780,7 +833,7 @@ function RigidRig.clear(rig: Rig)
 		for _, list in { octo.legs, octo.arms, octo.fangs, { octo.abdomen, octo.tail } } do
 			for _, joints in list do
 				for _, joint in joints do
-					joint.a, joint.b = 0, 0
+					joint.a, joint.b, joint.cf = 0, 0, nil
 				end
 			end
 		end
