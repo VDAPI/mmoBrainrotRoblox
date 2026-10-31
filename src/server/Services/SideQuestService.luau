@@ -287,8 +287,8 @@ local function turnIn(player: Player, questId: string, choiceIndex: number?): (b
 		InventoryService.GiveNew(player, item.id, item.n)
 	end
 	if chosen then
-		-- owner 2026-10-31: a quest reward binds on pickup (Data/Binding "reward")
-		InventoryService.AddItem(player, Binding.apply(chosen, "reward"))
+		-- owner 2026-10-31: the chosen reward binds on equip (Data/Binding "quest"), Mythic on pickup
+		InventoryService.AddItem(player, Binding.apply(chosen, "quest"))
 	end
 	-- S96: the stable arc's last quest gives a mount (once per character; a repeated hand-in after /side reset does
 	-- nothing, Logic/Mounts.grant)
