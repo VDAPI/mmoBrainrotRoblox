@@ -106,6 +106,7 @@ local AnimLabController = {
 		"MonsterViewController",
 		"NotificationController",
 		"SfxController",
+		"CameraController",
 	},
 }
 
@@ -166,6 +167,7 @@ local Combat: any
 local MonsterView: any
 local Notifications: any
 local SfxCtl: any
+local CameraCtl: any
 local player = Players.LocalPlayer
 
 local stage: Folder? = nil
@@ -466,15 +468,26 @@ local function fadeWalls(hidden: boolean)
 	end
 end
 
-local function setCamera(name: string?): (Vector3?, Vector3?)
+-- Studio review 2026-10-31 (2): the lab's camera is a CameraController claim ("animlab") that ends with a teleport,
+-- a map change or a new character (the camera stayed at the stage while the player was elsewhere); the stage stays.
+local setCamera: (name: string?) -> (Vector3?, Vector3?)
+
+local function cameraLost()
+	cameraOn = false
+	cameraName = nil
+	fadeWalls(false)
+	refreshLabels()
+end
+
+setCamera = function(name: string?): (Vector3?, Vector3?)
 	local camera = Workspace.CurrentCamera
 	if not camera then
 		return nil, nil
 	end
 	if not name or name == "off" then
 		if cameraOn then
-			camera.CameraType = Enum.CameraType.Custom
 			cameraOn = false
+			CameraCtl.Release("animlab")
 		end
 		cameraName = nil
 		fadeWalls(false)
@@ -500,7 +513,16 @@ local function setCamera(name: string?): (Vector3?, Vector3?)
 		pos = look + dir.Unit * (radius / math.sin(fit) * LAB.frameMargin)
 	end
 	cameraName = name
-	camera.CameraType = Enum.CameraType.Scriptable
+	CameraCtl.Claim("animlab", {
+		travel = true,
+		onLost = cameraLost,
+		onRegain = function()
+			local again = cameraName
+			if again then
+				setCamera(again)
+			end
+		end,
+	})
 	camera.CFrame = CFrame.lookAt(pos, look)
 	cameraOn = true
 	-- the walls fade while the camera stands outside them (a big look needs a camera far back)
@@ -2720,6 +2742,7 @@ function AnimLabController.Init(registry: any)
 	MonsterView = registry.Get("MonsterViewController")
 	Notifications = registry.Get("NotificationController")
 	SfxCtl = registry.Get("SfxController")
+	CameraCtl = registry.Get("CameraController")
 end
 
 function AnimLabController.Start()
