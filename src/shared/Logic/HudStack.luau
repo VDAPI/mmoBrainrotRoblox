@@ -196,7 +196,9 @@ end
 
 -- The column of a w x h screen: PC (`touch` false), a touch screen that is not a phone, a phone (`compact`).
 -- `others` = party members besides the player; `guide`: the guide bar shows under the minimap (PC); `waiting`: the
--- row of "something waits" buttons shows under them (PC).
+-- row of "something waits" buttons shows under them (PC). `menuBottom` (PC): where the menu over the minimap really
+-- ends, as measured on screen (UI/HudSlots.MenuBottom): the column never starts above it (Studio check 2026-10-31: the
+-- row stood in the tracker).
 function HudStack.column(
 	touch: boolean,
 	compact: boolean,
@@ -204,7 +206,8 @@ function HudStack.column(
 	h: number,
 	others: number,
 	guide: boolean?,
-	waiting: boolean?
+	waiting: boolean?,
+	menuBottom: number?
 ): Column
 	if compact then
 		local stack = PhoneHud.PLACES.stack
@@ -225,8 +228,11 @@ function HudStack.column(
 	return {
 		x = w - HudStack.MARGIN,
 		right = true,
-		top = (if guide then HudStack.RIGHT_TOP_GUIDE else HudStack.RIGHT_TOP)
-			+ (if waiting then HudStack.WAITING + HudStack.GAP else 0),
+		top = math.max(
+			(if guide then HudStack.RIGHT_TOP_GUIDE else HudStack.RIGHT_TOP)
+				+ (if waiting then HudStack.WAITING + HudStack.GAP else 0),
+			if menuBottom and menuBottom > 0 then menuBottom + HudStack.GAP else 0
+		),
 		floor = HudStack.cornerTop(false, w, h) - HudStack.GAP,
 		-- two: a short window at the 0.6 floor has little height under the minimap (owner 2026-10-22)
 		spares = {
@@ -387,7 +393,7 @@ end
 -- Logic/PhoneHud keeps the stack clear of them) and the PC Elite II timers are obstacles the others go round.
 -- `measured`: the corner's buttons as they really stand (`fromScreen`; not on a phone): obstacles too, and the column's
 -- floor stays above them (`floorAbove`) when the computed one is lower (owner 2026-10-22). `guide`: the guide bar shows
--- under the minimap (PC: the column starts under it).
+-- under the minimap (PC: the column starts under it); `waiting` and `menuBottom`: HudStack.column.
 function HudStack.layout(
 	touch: boolean,
 	compact: boolean,
@@ -397,9 +403,10 @@ function HudStack.layout(
 	boxes: { [string]: Box },
 	measured: { Rect }?,
 	guide: boolean?,
-	waiting: boolean?
+	waiting: boolean?,
+	menuBottom: number?
 ): { [string]: Rect }
-	local column = HudStack.column(touch, compact, w, h, others, guide, waiting)
+	local column = HudStack.column(touch, compact, w, h, others, guide, waiting, menuBottom)
 	local under: { Rect } = if compact then {} else measured or {}
 	if #under > 0 then
 		column.floor = HudStack.floorAbove(column, math.max(HudStack.TRACKER, HudStack.PANEL_PC), under)

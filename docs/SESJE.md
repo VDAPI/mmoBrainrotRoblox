@@ -14305,3 +14305,17 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `ScreenController`: ujęcie wyboru jako `Claim("select")`, `RestoreCamera` usunięte.
 - Testy: `tests/cameralease.spec.luau` (w tym skan: `CameraType.Scriptable` tylko w `CameraController` i w pisarzu
   przerywnika). Nieobejrzane w Studio.
+
+### Plan UI, faza 2: poprawki po przeglądzie Studio (2026-10-31)
+- Rząd „coś czeka” stał w tropicielu (1108×576): `HudStack.column` dostaje `menuBottom`, zmierzony dół ramki menu nad
+  minimapą (`HudSlots.SetMenu`, `HudSlots.MenuBottom`), i kolumna PC nigdy nie zaczyna się wyżej. Flaga rzędu idzie przez
+  `HudSlots.SetWaiting(owner, on)` (sprzątanie przebudowanego rzędu nie gasi nowego). Test w `hudlayout.spec`.
+- Rząd „coś czeka” chowa się pod oknem razem z przyciskami menu (`WaitingRow` `Covered`).
+- Toast osiągnięcia (warstwa Toasts, nad oknami) stał na pasku tytułu sklepu: `AchievementController` czeka, póki jest
+  otwarte okno (`HudCover.HeaderBottom`), a `AchievementToast` zjeżdża pod pasek tytułu okna otwartego w trakcie.
+- `UI/SoftRequire`: `Toast`, `Announcement` i `TopBandState` wczytują `TopBand`, `TopBandState` i `HudCover` przez
+  `pcall` z zastępstwem (stare miejsca), bo brak niezsynchronizowanego modułu wywracał ok. 25 kontrolerów.
+- Bez zmian, bo to zamierzone: plecak sam (826×752, wcześniej 1240×700) nie zachodzi na prawą kolumnę przy 1108×576,
+  więc nic nie chowa; „Auto” pokazuje się dopiero z Płaszczem, bankiem Samodzielnych Łowów albo Samoczynnymi
+  Miksturami (`/lure add`, `/autogrind add`, `/autopotion grant`); niewidoczny przycisk w rzędzie (✧ albo ❖) nie
+  bierze udziału w układzie i Studio podaje mu to samo miejsce co widocznemu.

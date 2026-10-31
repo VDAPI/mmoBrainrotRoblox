@@ -12,10 +12,28 @@ local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
-local HudCover = require(script.Parent.Parent.HudCover)
 local Scale = require(script.Parent.Parent.Scale)
-local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
-local TopBandState = require(script.Parent.Parent.TopBandState)
+local SoftRequire = require(script.Parent.Parent.SoftRequire)
+-- Studio check 2026-10-31: the UI plan's newer modules are soft here, so a module Rojo has not synced yet cannot take
+-- the toasts (and every controller that requires them) down: they keep the old fixed place then.
+local HudCover = SoftRequire(function()
+	return require(script.Parent.Parent.HudCover)
+end, { HeaderBottom = nil } :: any, "UI/HudCover")
+local TopBand = SoftRequire(
+	function()
+		return require(ReplicatedStorage.Shared.Logic.TopBand)
+	end,
+	{
+		MAX_TOASTS = 2,
+		underHeader = function(top: number): number
+			return top
+		end,
+	} :: any,
+	"Logic/TopBand"
+)
+local TopBandState = SoftRequire(function()
+	return require(script.Parent.Parent.TopBandState)
+end, { ToastTop = 90 } :: any, "UI/TopBandState")
 
 local Children = Fusion.Children
 

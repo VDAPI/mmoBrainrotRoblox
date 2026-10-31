@@ -40,6 +40,8 @@ export type Props = {
 	OpenLogin: () -> (),
 	OpenWindow: (id: string) -> (),
 	ShowWindow: (id: string) -> (),
+	-- Studio check 2026-10-31: the menu's buttons above are under a window; the row goes with them (one group)
+	Covered: Fusion.UsedAs<boolean>?,
 }
 
 local SIZE = HudStack.WAITING
@@ -61,12 +63,14 @@ local function WaitingRow(scope: Scope, props: Props): Instance
 	local shown = scope:Computed(function(use): boolean
 		return use(any) and not use(PhoneLayout.Compact)
 	end)
-	-- the quest tracker's column starts under the row while it shows
+	-- the quest tracker's column starts under the row while it shows (one entry per row: a rebuilt row's cleanup
+	-- never switches off the new one's)
+	local owner = {}
 	scope:Observer(shown):onBind(function()
-		HudSlots.Waiting:set(Fusion.peek(shown))
+		HudSlots.SetWaiting(owner, Fusion.peek(shown))
 	end)
 	table.insert(scope, function()
-		HudSlots.Waiting:set(false)
+		HudSlots.SetWaiting(owner, nil)
 	end)
 	local pad = scope:Computed(function(use): number
 		return if use(NavTarget.Target) ~= nil then 0 else UNDER_AREA_LINE
@@ -124,7 +128,10 @@ local function WaitingRow(scope: Scope, props: Props): Instance
 	}) :: Frame
 	-- UI plan phase 2: out of sight while an open window covers it (UI/HudCover); the row keeps its height, so the
 	-- minimap and the guide bar above never move
-	local covered = HudCover.covered(scope, buttons)
+	local own = HudCover.covered(scope, buttons)
+	local covered = scope:Computed(function(use): boolean
+		return use(own) or use(props.Covered or false) == true
+	end)
 	scope:Observer(covered):onBind(function()
 		buttons.Visible = not Fusion.peek(covered)
 	end)

@@ -5,6 +5,8 @@
 -- UI plan phase 1 (owner 2026-10-31): one row of menu buttons, so the PC column starts under the minimap's area line
 -- (under the guide bar while one shows), and the chat window in the lower left corner ends left of the action bar.
 
+local fs = require("@lune/fs")
+
 local HudLayout = require("../src/shared/Logic/HudLayout")
 local HudStack = require("../src/shared/Logic/HudStack")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
@@ -548,6 +550,40 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		-- a tablet's and a phone's column do not move (the row is in the PC menu; a phone keeps its drawer)
 		T.expect(HudStack.column(true, false, 1280, 720, 0, false, true).top).toBe(HudStack.TOUCH_TOP)
 		T.expect(HudStack.column(true, true, 886, 435, 0, false, true).top).toBe(PhoneHud.stackTop(0))
+	end)
+
+	T.it("Studio check 2026-10-31: the PC column never starts above the menu's measured bottom", function()
+		-- the row stood inside the tracker (the column had not stepped down): the column also follows where the menu
+		-- over the minimap really ends (UI/HudSlots.MenuBottom), whatever the flags say
+		for _, size in PC do
+			local w, h = size[1], size[2]
+			local flagged = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w), nil, false, true)
+			local measured = HudStack.layout(
+				false,
+				false,
+				w,
+				h,
+				0,
+				scenario("tracker", false, w),
+				nil,
+				false,
+				false,
+				waitingRow(w, false).bottom
+			)
+			T.expect(measured.questTracker.top).toBe(flagged.questTracker.top)
+			-- a menu that ends higher (nothing under the minimap) never lifts the column above its place
+			local high = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w), nil, false, false, 100)
+			T.expect(high.questTracker.top).toBe(HudStack.RIGHT_TOP)
+		end
+		-- a phone's and a tablet's column do not follow it
+		T.expect(HudStack.column(true, false, 1280, 720, 0, false, false, 600).top).toBe(HudStack.TOUCH_TOP)
+		-- the row says it shows per row (a rebuilt row's cleanup cannot switch the new one off), and it steps out of
+		-- sight with the menu's buttons above it
+		local row = fs.readFile("src/client/UI/Screens/Hud/WaitingRow.luau")
+		T.expect(string.find(row, "HudSlots.SetWaiting(owner", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(row, "props.Covered", 1, true) ~= nil).toBe(true)
+		local hud = fs.readFile("src/client/UI/Screens/Hud/init.luau")
+		T.expect(string.find(hud, "HudSlots.SetMenu(scope, root)", 1, true) ~= nil).toBe(true)
 	end)
 
 	T.it("UI plan phase 2: a window covers a HUD part only when it overlaps it by more than the margin", function()

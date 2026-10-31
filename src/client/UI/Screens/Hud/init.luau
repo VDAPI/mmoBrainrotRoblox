@@ -30,6 +30,7 @@ local Exp = require(ReplicatedStorage.Shared.Logic.Exp)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudCover = require(script.Parent.Parent.HudCover)
+local HudSlots = require(script.Parent.Parent.HudSlots)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LoginButton = require(script.LoginButton)
@@ -429,7 +430,7 @@ local function menu(scope: Scope, props: Props): Instance
 	scope:Observer(covered):onBind(function()
 		row.Visible = not Fusion.peek(covered)
 	end)
-	return scope:New("Frame")({
+	local root = scope:New("Frame")({
 		Name = "Menu",
 		AnchorPoint = Vector2.new(1, 0),
 		-- W29: on a phone in landscape only the scaled minimap and the guide bar (the buttons are in the drawer)
@@ -471,9 +472,13 @@ local function menu(scope: Scope, props: Props): Instance
 				OpenLogin = props.OpenLogin,
 				OpenWindow = props.OpenWindow,
 				ShowWindow = props.ShowWindow,
+				Covered = covered,
 			}),
 		},
-	})
+	}) :: Frame
+	-- Studio check 2026-10-31: the PC column starts under the menu's real bottom edge (UI/HudSlots.MenuBottom)
+	HudSlots.SetMenu(scope, root)
+	return root
 end
 
 local function actionBar(scope: Scope, props: Props): Instance
