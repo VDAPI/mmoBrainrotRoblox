@@ -12,6 +12,13 @@
 -- once and back out eased (Logic/CameraClear). The free camera keeps its turn and zoom: only its position moves along
 -- its own line. A fresh character also gets the camera behind it once the server has placed it (the Roblox camera
 -- turns behind a new character before the server pivots it to its spot and facing).
+-- Studio review 2026-10-31 (2): the camera stayed Scriptable at an AnimLab stage after a teleport and at a scene's
+-- shot while the player walked on, and the character could not move. The camera has one owner at a time
+-- (Logic/CameraLease): `Claim` / `Release` (the select screen, a scene, AnimLab); the last owner has it, and when none
+-- is left the player's camera comes back (Custom on the character). A claim may lock the movement input (a scene) and
+-- may end with a teleport, a map change or a new character (AnimLab). A watchdog every frame takes back leases past
+-- their deadline and gives the player an ownerless Scriptable camera after CameraLease.GRACE seconds. The camera's
+-- attributes VaelthornCameraOwner / VaelthornMoveLock name the holders (for a look in Studio).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -20,7 +27,9 @@ local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
 local CameraClear = require(ReplicatedStorage.Shared.Logic.CameraClear)
+local CameraLease = require(ReplicatedStorage.Shared.Logic.CameraLease)
 local Config = require(ReplicatedStorage.Shared.Config)
+local Log = require(ReplicatedStorage.Shared.Util.Log)
 local MapLooks = require(ReplicatedStorage.Shared.Data.MapLooks)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -61,6 +70,25 @@ local resetFrames = 0
 local groundTarget: Vector3? = nil
 local groundAt = 0
 local armedAt = 0
+
+local log = Log.new("CameraController")
+
+-- Camera ownership (Logic/CameraLease) and what each owner wants called when it loses or gets back the camera.
+export type ClaimOptions = {
+	camera: boolean?, -- takes the camera (Scriptable); false: only the movement lock (default true)
+	lockMovement: boolean?, -- the player's movement input is off while it holds
+	ttl: number?, -- seconds until the watchdog takes it back (and calls onLost)
+	travel: boolean?, -- let go when the character teleports, changes map or is replaced (and call onLost)
+	onLost: (() -> ())?, -- taken back by the watchdog (deadline, travel)
+	onRegain: (() -> ())?, -- the camera is this owner's again after a later owner let go
+}
+type Hooks = { onLost: (() -> ())?, onRegain: (() -> ())? }
+local lease = CameraLease.new()
+local hooks: { [string]: Hooks } = {}
+local controlsOff = false
+local seenCharacter: Model? = nil
+local seenMap: string? = nil
+local seenRoot: { number }? = nil
 
 local function topMode(): boolean
 	return State.Get({ "account", "settings", "cameraMode" }) == "top"
@@ -149,6 +177,140 @@ local function checkReset(camera: Camera, root: BasePart)
 	end
 end
 
+-- The PlayerModule's controls (movement input), nil when they cannot be had.
+local function controls(): any
+	local ok, result = pcall(function()
+		local module = player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule", 5)
+		return (require :: any)(module):GetControls()
+	end)
+	return if ok then result else nil
+end
+
+-- The player's own camera: Custom on the character's humanoid.
+local function gameCamera()
+	local camera = Workspace.CurrentCamera
+	if not camera then
+		return
+	end
+	camera.CameraType = Enum.CameraType.Custom
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		camera.CameraSubject = humanoid
+	end
+end
+
+-- After any change of the leases: the movement lock follows them, the camera goes to its holder or the player.
+local function settle(regain: boolean)
+	local locked = CameraLease.locked(lease)
+	if locked ~= controlsOff then
+		controlsOff = locked
+		task.spawn(function()
+			local c = controls()
+			if c then
+				pcall(function()
+					if controlsOff then
+						c:Disable()
+					else
+						c:Enable()
+					end
+				end)
+			end
+		end)
+	end
+	local holder = CameraLease.holder(lease)
+	local camera = Workspace.CurrentCamera
+	if camera then
+		camera:SetAttribute("VaelthornCameraOwner", holder)
+		local lockers: { string } = {}
+		for _, item in lease.leases do
+			if item.lock then
+				table.insert(lockers, item.owner)
+			end
+		end
+		camera:SetAttribute("VaelthornMoveLock", if #lockers > 0 then table.concat(lockers, ",") else nil)
+	end
+	if holder == nil then
+		gameCamera()
+	elseif regain then
+		local hook = hooks[holder]
+		if hook and hook.onRegain then
+			local ok: boolean, err: any = pcall(hook.onRegain)
+			if not ok then
+				log:warn("%s onRegain failed: %s", holder, tostring(err))
+			end
+		end
+	end
+end
+
+-- Owners taken back by the watchdog: their onLost, then the camera and the lock settle.
+local function dropped(owners: { string }, why: string)
+	if #owners == 0 then
+		return
+	end
+	for _, owner in owners do
+		log:info("camera owner %s let go (%s)", owner, why)
+		local hook = hooks[owner]
+		hooks[owner] = nil
+		if hook and hook.onLost then
+			local ok: boolean, err: any = pcall(hook.onLost)
+			if not ok then
+				log:warn("%s onLost failed: %s", owner, tostring(err))
+			end
+		end
+	end
+	settle(true)
+end
+
+-- `owner` takes the camera (Scriptable; it moves the camera itself) or, with camera = false, only the movement lock.
+-- Taking it again refreshes the options. Pair every Claim with a Release on every way out.
+function CameraController.Claim(owner: string, options: ClaimOptions?)
+	local o: ClaimOptions = options or {}
+	CameraLease.claim(lease, owner, os.clock(), {
+		camera = o.camera,
+		lock = o.lockMovement,
+		ttl = o.ttl,
+		travel = o.travel,
+	})
+	hooks[owner] = { onLost = o.onLost, onRegain = o.onRegain }
+	local camera = Workspace.CurrentCamera
+	if camera and o.camera ~= false then
+		camera.CameraType = Enum.CameraType.Scriptable
+	end
+	settle(false)
+end
+
+-- `owner` lets go (safe to call when it holds nothing): the camera goes to the previous owner or to the player.
+function CameraController.Release(owner: string)
+	local wasHolder = CameraLease.holder(lease) == owner
+	CameraLease.release(lease, owner)
+	hooks[owner] = nil
+	settle(wasHolder)
+end
+
+-- The owner of the camera now (nil: the player's camera).
+function CameraController.Holder(): string?
+	return CameraLease.holder(lease)
+end
+
+-- Every frame: deadlines, travel (teleport, map change, new character) and an ownerless Scriptable camera.
+local function watchdog(camera: Camera)
+	local now = os.clock()
+	dropped(CameraLease.expired(lease, now), "deadline")
+	local character = player.Character
+	local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local mapId = currentMap()
+	local at: { number }? = if root then { root.Position.X, root.Position.Y, root.Position.Z } else nil
+	if character ~= seenCharacter or mapId ~= seenMap or CameraLease.teleported(seenRoot, at) then
+		dropped(CameraLease.travelled(lease), "travel")
+	end
+	seenCharacter, seenMap, seenRoot = character, mapId, at
+	if CameraLease.watch(lease, camera.CameraType == Enum.CameraType.Scriptable, now) then
+		log:warn("Scriptable camera with no owner: back to the player")
+		gameCamera()
+	end
+end
+
 local function topStep(camera: Camera, root: BasePart, humanoid: Humanoid, dt: number)
 	local pitch, minD, maxD = limits()
 	distance = math.clamp(distance, minD, maxD)
@@ -181,7 +343,11 @@ end
 
 local function step(dt: number)
 	local camera = Workspace.CurrentCamera
-	if not camera or camera.CameraType ~= Enum.CameraType.Custom then
+	if not camera then
+		return
+	end
+	watchdog(camera)
+	if camera.CameraType ~= Enum.CameraType.Custom then
 		return
 	end
 	local character = player.Character

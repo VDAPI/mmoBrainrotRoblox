@@ -14125,6 +14125,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `stuckTime`), `Entities/Monster`, `MonsterService` / `CombatService` (zdarzenie `ev`), `StatusEffectService`,
   `Logic/DamageText`, `CombatFxController`, `Admin/Monsters` (`/leash` pokazuje odwrót), teksty `combat.evade`, wiki
   „Jak uciec przed potworem”. Testy: `tests/pursuit.spec.luau`, `leash.spec`, `damagetext.spec`. Balans: powody S162e.
+- Test w Studio bez myszy: `/chasetest <potwór|stop> [corner|perch|los|load] [poziom]` (`Admin/ChaseRun`,
+  `Logic/ChaseTest`, `tests/chasetest.spec.luau`). Cel to admin: kotwiczony i przesuwany przez serwer (kod ruchu klienta
+  nic nie zmienia), w trybie boga; potwór testu ma `probe` (nie do zranienia, bez osłabień) i liczy ścieżki, nowe
+  ścieżki, odwrót, HP, powrót, aggro, ciosy i rzuty; wynik w jednej linii w logu (`[ChaseTest]`), na czacie i w atrybucie
+  `Workspace.ChaseTest`. Studio 2026-10-31: wilki ginęły same, bo Łowca oddaje napastnikowi w miejscu (S134d,
+  „Automatyczny cel”, łuk z „Jadowitymi grotami” dał truciznę i wolniejsze ataki), a `Humanoid:MoveTo` z klienta w walce
+  zatrzymuje `TargetController` (podejście do celu po kliknięciu: w zasięgu co 0,1 s `MoveTo` w miejscu). Oba działają
+  zgodnie z projektem, nie są błędem.
 
 ### Wiązanie przedmiotów (właściciel 2026-10-31)
 - Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
@@ -14272,3 +14280,25 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Stały żywioł broni nazwanej: `Data/Elements.weaponElement`, `ItemDef.element`, `Data/Items/Uniques`
   (`opts.element = "ice"` Kostura Wiecznej Zimy), `ItemRoll` (`el` przy tworzeniu, `elementOf`), `ItemEffects`, `ItemIcons`,
   `ItemName` (bez przyrostka), `/element` odmawia (`admin.element.fixed`). Test: `tests/namedelement.spec.luau`.
+
+### Kamera zablokowana w trybie skryptowym (przegląd Studio 2026-10-31, druga część)
+- Zgłoszenie (postać poziomu 1): po `tp city` kamera stała 10+ s w starym miejscu na Łąkach; w mieście zamrożona 75 studów
+  od postaci, potem 0,9 studa przed twarzą, a postać nie ruszała się (MoveTo bez skutku); ręczne Custom pomagało do
+  następnego razu.
+- Kto ustawia `Scriptable` (grep): tylko ekran wyboru, przerywnik i AnimLab (okna, rozmowy, śmierć i ekran ładowania nie
+  ruszają kamery). Dziury: kamera AnimLab zostawała przy scenie po teleporcie (zmienia tylko `CharacterRemoving`), a
+  przerywnik oddawał kamerę i ruch na końcu jednego ciągu sprzątania bez ochrony (błąd w środku zostawiał `Scriptable` i
+  wyłączone sterowanie), jego pisarz klatek co klatkę wymuszał `Scriptable`, a blokada ruchu (`ControlModule:Disable`)
+  wracała tylko tą drogą.
+- `Logic/CameraLease.luau` (czyste): właściciele po kolei (ostatni z kamerą ją ma), termin, puszczanie przy podróży,
+  blokada ruchu, wykrycie teleportu (ponad 60 studów na klatkę), strażnik (`GRACE` 0,5 s, liczone zegarem, nie
+  klatkami: Studio w tle ma ok. 15 kl./s).
+- `CameraController`: `Claim(owner, { camera?, lockMovement?, ttl?, travel?, onLost?, onRegain? })`, `Release`, `Holder`,
+  strażnik na początku kroku kamery, blokada ruchu przez `PlayerModule:GetControls()`, atrybuty kamery
+  `VaelthornCameraOwner` / `VaelthornMoveLock`.
+- `CutsceneController`: blokada ruchu od startu sceny, kamera dopiero przy gotowym ujęciu (od razu w pierwszej klatce
+  ujęcia), termin `długość + SAFETY + zanikania + strumień + 5 s`, `pcall` wokół sceny (`finish("error")`), sprzątanie
+  krok po kroku (najpierw kamera i ruch). `AnimLabController`: kamera jako `Claim("animlab", travel)`;
+  `ScreenController`: ujęcie wyboru jako `Claim("select")`, `RestoreCamera` usunięte.
+- Testy: `tests/cameralease.spec.luau` (w tym skan: `CameraType.Scriptable` tylko w `CameraController` i w pisarzu
+  przerywnika). Nieobejrzane w Studio.

@@ -840,6 +840,39 @@ function BipedPose.nudgeLegs(skel: Skeleton, world: World, shift: Vec, targets: 
 	end
 end
 
+-- Draws the hand of arm `side` ("Right" / "Left") of a pose `k` of the way onto `target` (root space) with the least
+-- turn of the upper arm and the forearm: the elbow in its own bend (an arm near straight bends out to its side, up and
+-- back), the hand and the fingers turned with the forearm.
+function BipedPose.reachArm(skel: Skeleton, world: World, shift: Vec, side: string, target: Vec, k: number)
+	local upKey, foreKey, handKey = side .. "Arm", side .. "ForeArm", side .. "Hand"
+	local rest = skel.bones[upKey]
+	local hips = skel.bones.Hips
+	local shoulder = BipedPose.jointAt(skel, world, shift, upKey)
+	local elbow = BipedPose.jointAt(skel, world, shift, foreKey)
+	local hand = BipedPose.jointAt(skel, world, shift, handKey)
+	if k <= 1e-4 or not rest or not hips or not shoulder or not elbow or not hand then
+		return
+	end
+	local goal = add(hand, scale(sub(target, hand), math.min(k, 1)))
+	local toElbow, toHand = sub(elbow, shoulder), sub(hand, elbow)
+	local l1, l2 = length(toElbow), length(toHand)
+	local line = unit(sub(hand, shoulder)) or DOWN
+	local bend = sub(toElbow, scale(line, dot(toElbow, line)))
+	local outward = if rest.pos[1] < hips.pos[1] then -1 else 1
+	local spread = apply(world.Spine2 or IDENTITY, { outward, 0.6, 0.6 })
+	local own = unit(bend)
+	local front = unit(spread) or FRONT
+	if own then
+		local w = smooth01((length(bend) / math.max(l1, 1e-3) - 0.02) / 0.08)
+		front = unit(add(scale(own, w), scale(front, 1 - w))) or front
+	end
+	local upper, fore = BipedPose.solveLeg(shoulder, goal, l1, l2, front)
+	world[upKey] = mul(NpcPose.fromTo(toElbow, upper), world[upKey] or IDENTITY)
+	local turn = NpcPose.fromTo(toHand, fore)
+	world[foreKey] = mul(turn, world[foreKey] or IDENTITY)
+	BipedPose.turnSubtree(world, handKey, turn)
+end
+
 -- Re-solves the legs of a pose by IK so each ankle reaches `targets[S]` (root space; S = "R" / "L", nil keeps the
 -- leg), the knee along its current bend and the foot keeping its world turn (planted feet, ground contact).
 function BipedPose.fixLegs(skel: Skeleton, world: World, shift: Vec, targets: { [string]: Vec? })

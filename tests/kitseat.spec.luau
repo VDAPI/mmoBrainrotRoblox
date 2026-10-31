@@ -1,6 +1,7 @@
 --!strict
 -- Studio re-measure 2026-11-01: kit models on the ground Roblox draws (Logic/KitSeat). Rocks on a ravine's lip sank
--- 19 studs to its foot and pines under its wall had the wall in their crowns: the generators leave those slots out.
+-- 19 studs to its foot, pines under its wall had the wall in their crowns, and (KitFoot) a pine and a rock stood 12.6
+-- and 7.9 studs deep: the generators leave those slots out.
 
 local Blueprint = require("../src/shared/Logic/TownGen/Blueprint")
 local KitSeat = require("../src/shared/Logic/KitSeat")
@@ -84,6 +85,22 @@ T.describe("Kit models on the drawn ground (2026-11-01)", function()
 			-- the generators keep their rocks and their forests (the cliffs take a handful)
 			T.expect(rocks > 250).toBe(true)
 			T.expect(trees > 300).toBe(true)
+		end
+	end)
+
+	-- Studio 2026-11-01 (KitFoot): a ravine pine 12.6 studs deep, a rock at the cliff's foot 7.9
+	T.it("leaves out the Meadows ravine's pine and rock that stood deep in the ground", function()
+		for _, b in assert(WorldGen.get("meadows")).all() do
+			local r = math.rad(b.at.rot or 0)
+			local c, s = math.cos(r), math.sin(r)
+			for _, slot in b.bp.kits do
+				local x, z = b.at.x + slot.p[1] * c + slot.p[3] * s, b.at.z - slot.p[1] * s + slot.p[3] * c
+				for _, p in { { 616, 328, "tree:pine" }, { 737, 264, "rock" } } do
+					if slot.key == p[3] and math.abs(x - p[1]) < 1 and math.abs(z - p[2]) < 1 then
+						error(`{slot.key} at {x},{z} is still there`)
+					end
+				end
+			end
 		end
 	end)
 end)
