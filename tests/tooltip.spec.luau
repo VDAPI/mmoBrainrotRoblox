@@ -1,6 +1,7 @@
 --!strict
 -- S68: item tooltip order (STATY 11), the details panel model (TooltipModel.details, traitNodes, capValue), the
--- details hint; S134g: the head line, the stat groups, the skill effects and no comparison numbers.
+-- details hint; S134g: the head line, the stat groups, the skill effects; without ctx.compare no comparison numbers
+-- (2026-10-31: the numbers come with ctx.compare, tests/itemcompare.spec).
 local Bonuses = require("../src/shared/Data/Bonuses")
 local Combat = require("../src/shared/Data/Combat")
 local ItemName = require("../src/shared/Logic/ItemName")
@@ -523,9 +524,9 @@ T.describe("TooltipModel hint and comparison (S68)", function()
 		T.expect(count(mouse, "detailsHint")).toBe(1)
 	end)
 
-	-- S134g (F2, owner 2026-10-15): no comparison numbers in the tooltip (the second panel shows the equipped item's own
-	-- stats); only "Zastąpi: <name>" without numbers and the two-hander note. Was: % and ↑↓ lines (S68).
-	T.it("an upgraded sword shows no comparison numbers, only what it replaces", function()
+	-- S134g (F2, owner 2026-10-15): `equipped` alone gives "Zastąpi: <name>" without numbers and the two-hander note
+	-- (was: % and ↑↓ lines, S68); 2026-10-31: the changes next to the numbers need ctx.compare (tests/itemcompare.spec).
+	T.it("without ctx.compare an upgraded sword shows no comparison numbers, only what it replaces", function()
 		local better = made("sword1h_30", Rarities.COMMON, {}, 5)
 		local worn = made("sword1h_30", Rarities.COMMON, {}, 0)
 		worn.uid = "worn"

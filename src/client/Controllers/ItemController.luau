@@ -18,7 +18,9 @@ local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local EquipFit = require(ReplicatedStorage.Shared.Logic.EquipFit)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
+local ItemCompare = require(ReplicatedStorage.Shared.Logic.ItemCompare)
 local ItemIcons = require(ReplicatedStorage.Shared.Logic.ItemIcons)
+local ItemScore = require(ReplicatedStorage.Shared.Logic.ItemScore)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Potions = require(ReplicatedStorage.Shared.Logic.Potions)
@@ -98,12 +100,18 @@ local skipBindQuestion = false
 
 -- Equip with the "equipping binds it" confirmation (DESIGN §5.6) when the item binds now (Logic/Binding: free gear;
 -- never potions, backpacks or what is bound already), unless switched off in the menu or for this session.
+-- 2026-10-31: a ring equipped without a named slot replaces the ring its tooltip compares with
+-- (ItemCompare.targetSlot: the weaker of two worn rings; the server alone took ring1).
 function ItemController.Equip(index: number, slot: string?)
 	local item = State.Get({ "character", "inventory", tostring(index) })
 	if not item then
 		return
 	end
 	local def = Items.get(item.id)
+	local equipment = State.Get({ "character", "equipment" })
+	if slot == nil and def and type(equipment) == "table" then
+		slot = ItemCompare.targetSlot(def, equipment, ItemScore.contextFor(State.Get({ "character" })))
+	end
 	local ask = State.Get({ "account", "settings", "bindConfirm" }) ~= false and not skipBindQuestion
 	if not ask or not Binding.bindsOnEquip(item, def) then
 		invoke("EquipItem", index, slot)

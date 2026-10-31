@@ -14127,3 +14127,42 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   areny i wędrownego kupca zależne od reguły.
 - Testy: `tests/binding.spec.luau` (reguły kategorii i źródeł, zakładanie, stosy, odmowy, migracja, podpowiedź, brak
   ręcznego `bound = true`), wersja schematu w testach migracji.
+
+### Fryzury kreatora: nowy zestaw i barwienie tekstur we własnym kolorze (2026-10-31)
+- Zgłoszenie testera: „poza 7, 9 i 12 fryzury są słabe i nie pasują”. Przegląd w Play (ciało Dawson, skala 0,9): cała
+  darmowa pula Roblox ma ok. 22 fryzury, wszystkie siedzą na głowie; problemem był styl (nowoczesne, anime) i płaski
+  kolor. Nowy zestaw 13 fryzur (lista i odrzucone w `docs/ASSETS.md` → „Ciało postaci”): `Data/BodyLooks.hairs`,
+  `Data/ClassLooks.HAIRS` (krótkie, długie i związane, łysa), nowe `hair_bob` (dawne `hair_bangs`), `hair_sidetail`,
+  `hair_bun`; nazwy PL / EN.
+- Barwienie: tekstura z własnym kolorem ma `tone`; `Logic/HairTint.nudge` przesuwa jej odcień (tylko przyciemnia),
+  `CharacterLook.hairColors` daje kolory, do których sięga (`HairTint.REACH` = 1,5), `fitHairColor` najbliższy z zakresu
+  (odległość L*a*b*), `normalize` / `isValid` / `random` go pilnują; `AvatarBuild.tint` nie robi już płaskiego koloru na
+  włosach (brwi bez zmian). `LookPicker`: przygaszone kafelki spoza zakresu, kolor wybrany ostatnio wraca na kolejnej
+  fryzurze.
+- Stare zapisy: `LEGACY_HAIRS` (+`hair_curly`, `hair_bangs`; S132 `hair_topknot_black` → kok, `hair_braid_grey` → kucyk,
+  `hair_swept_white` → `hair_short`, `hair_curly_brown` → grzywka). NPC: `NpcLooks.HAIRS*`, `NpcLook.look` losuje kolor,
+  potem fryzurę, która go ma. Admin `/charlook` dopasowuje kolor.
+- Testy: `bodylooks.spec` (zakresy, stare id, odcień), `classlooks`, `character`, `wikidump`. Dane wiki przegenerowane.
+
+### Światło portali w otworze ruiny `common_portal_02` (właściciel 2026-10-31)
+- Zgłoszenie: w jaskiniach, leżach i lochach światło teleportu źle osadzone w drugim modelu łuku. Pomiar właściciela
+  (Studio Play, promienie serwera, układ starego pola): otwór między filarami x -3,75..+8,5, płyta do 2,75 nad stopą,
+  prawy filar do +7, lewy do +10, bez nadproża; stare pole (środek pudełka, 0,5 nad stopą) stało 1 stud w lewym filarze
+  i 2,25 w płycie, 3,75 otworu z prawej puste.
+- `Data/Portals.MODEL_OPENING.common_portal_02` (`x` 0,114, `foot` 0,16, `w` 0,587, `h` 0,6 pudełka po obrocie),
+  `Logic/ArchFit.field` / `fit(lo, hi, model?)` (bez wpisu: dawne pole na środku), `Prefabs.fitModel` dostaje nazwę
+  modelu i zwraca wierzch modelu nad polem; napis strefy 2,5 nad wierzchem modelu (nie wędruje w górę z polem).
+- Test: `portals.spec` „puts the field into the uneven ruin's own opening” (liczby z pomiaru; pole, zasłona i rdzeń
+  między filarami, nad płytą, pod szczytem prawego filara). Nieobejrzane w Studio.
+
+### Porównanie w tooltipie przedmiotu (właściciel 2026-10-31)
+- Prośba: „Zrób żeby pod itemkiem na który najeżdżasz pokazywało staty do porównania a nie ten który masz na sobie”.
+  Wcześniej obok tooltipu stał drugi panel z opisem założonego przedmiotu (FIX 2026-10-09, S134g). Teraz tooltip
+  wskazanego przedmiotu dopisuje zmianę przy każdej liczbie („(+N)” zielone, „(-N)” czerwone, „(=)” szare), a statystyki
+  i linie, które ma tylko założony przedmiot, są czerwonymi wierszami straty w swoich grupach; drugiego panelu nie ma.
+- `Logic/ItemCompare.luau` (co zdejmie założenie: pierścień słabszy, dwuręczna z drugą ręką, tylko przedmiot do
+  założenia teraz; sumy liczb; zaokrąglona zmiana), `Logic/TooltipModel.luau` (`ctx.compare`, rola `lost`,
+  `DELTA_HEX`), `UI/Components/ItemTooltip.luau` (bez panelu „Equipped”, linie premii w rich text, kolory zmian w rolach
+  żelaza), `Controllers/ItemController.luau` („Załóż” pierścienia bez slotu zastępuje ten sam słabszy pierścień),
+  `Admin/Items.luau` (`/tooltip` z liczbami porównania). Klucz `tooltip.equipped` usunięty. Testy:
+  `tests/itemcompare.spec.luau`.

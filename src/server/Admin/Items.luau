@@ -15,6 +15,7 @@ local Elements = require(Shared.Data.Elements)
 local Families = require(Shared.Data.Families)
 local Inventory = require(Shared.Logic.Inventory)
 local ItemIcons = require(Shared.Logic.ItemIcons)
+local ItemCompare = require(Shared.Logic.ItemCompare)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local ItemScore = require(Shared.Logic.ItemScore)
 local ItemValue = require(Shared.Logic.ItemValue)
@@ -672,8 +673,8 @@ commands.value = function(player, args)
 end
 
 -- S31: /tooltip <id> [lang] [rarity] [lines|details]: the TooltipModel lines (rich text removed) in the panel
--- console, compared like the game does (S68: ItemScore.replaced; S134g: only the "replaces" note, no numbers); "details"
--- prints every row's details.
+-- console, compared like the game does (S68: ItemScore.replaced for "replaces"; 2026-10-31: the changes against
+-- ItemCompare.replaced next to the numbers); "details" prints every row's details.
 commands.tooltip = function(player, args)
 	local def = Items.get(args[1] or "")
 	if not def then
@@ -696,7 +697,9 @@ commands.tooltip = function(player, args)
 		offhand = equipment.offhand,
 	}
 	if character then
-		ctx.equipped = ItemScore.replaced(def, equipment, ItemScore.contextFor(character))
+		local context = ItemScore.contextFor(character)
+		ctx.equipped = ItemScore.replaced(def, equipment, context)
+		ctx.compare = ItemCompare.replaced(item, equipment, context)
 	end
 	local model = TooltipModel.build(item, def, ctx)
 	if args[4] == "details" then
