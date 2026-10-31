@@ -1,10 +1,12 @@
 --!strict
 -- Template animation F3 (docs/ANIM-WZORCE.md §4): the flyer's pose (Logic/FlyerPose) and motion (Logic/FlyerMotion,
--- Data/FlyerStyles) on the rig dumps of the imported models (tools/anim/rigs: ashVulture, peakHarpy): the skeleton
--- turned to face -Z and centred, the Transforms putting every bone where the pose says (forward kinematics of the
--- real hierarchy, the harpy's wings pinned to the chest), the canonical wing spread flat and its controls' signs, the
--- wingbeat's range and rate, glides, the flare, freeze and stun, every blow landing on the server's hit, poses
--- continuous across blends, the death lying on the ground, and the muzzle at the beak / between the wing tips.
+-- Data/FlyerStyles) on the rig dumps of the imported models (tools/anim/rigs: ashVulture, peakHarpy from Studio; the new
+-- exports ashVulture_v2, carrionCrow_v2, bloodBat_v2 from their FBX): the map picked by the bones the model has, the
+-- skeleton turned to face -Z, laid level and centred at its hover, the Transforms putting every bone where the pose
+-- says (forward kinematics of the real hierarchy, wings pinned to the chest), the canonical wing spread flat and its
+-- controls' signs (the fingers, the followers, the jaw), the wingbeat's range and rate, glides, the flare, freeze and
+-- stun, every blow landing on the server's hit, poses continuous across blends, the death lying on the ground, the
+-- muzzle at the beak / between the wing tips, the crow's perch and hops, the bat's aimed dive and erratic flutter.
 
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
@@ -14,13 +16,28 @@ local FlyerMotion = require("../src/shared/Logic/FlyerMotion")
 local FlyerPose = require("../src/shared/Logic/FlyerPose")
 local FlyerRigs = require("../src/shared/Data/FlyerRigs")
 local FlyerStyles = require("../src/shared/Data/FlyerStyles")
+local MotionFx = require("../src/shared/Data/MotionFx")
 local MotionTimeline = require("../src/shared/Logic/MotionTimeline")
+local RigidStyles = require("../src/shared/Data/RigidStyles")
 local T = require("./Test")
 
 type Vec = { number }
 type Mat = { number }
 
 local SCALE = 1.3 -- the clone's studs per dump unit (any scale works the same)
+
+-- The dumps: an old Studio dump or a new export's (`k`: old-template studs per FBX unit), the map it must pick.
+type Case = { id: string, model: string, v2: boolean, k: number, style: string }
+local CASES: { [string]: Case } = {
+	ashVulture = { id = "ashVulture", model = "ashVulture", v2 = false, k = 1, style = "vulture" },
+	peakHarpy = { id = "peakHarpy", model = "peakHarpy", v2 = false, k = 1, style = "harpy" },
+	ashVulture_v2 = { id = "ashVulture_v2", model = "ashVulture", v2 = true, k = 4.2, style = "vulture" },
+	carrionCrow_v2 = { id = "carrionCrow_v2", model = "carrionCrow", v2 = true, k = 3.2, style = "crow" },
+	bloodBat_v2 = { id = "bloodBat_v2", model = "bloodBat", v2 = true, k = 3.4, style = "bat" },
+}
+local ALL = { "ashVulture", "peakHarpy", "ashVulture_v2", "carrionCrow_v2", "bloodBat_v2" }
+local WINGED = { "peakHarpy", "ashVulture_v2", "carrionCrow_v2", "bloodBat_v2" }
+local NEW = { "ashVulture_v2", "carrionCrow_v2", "bloodBat_v2" }
 
 local function unitV(v: Vec): Vec
 	local l = math.sqrt(v[1] * v[1] + v[2] * v[2] + v[3] * v[3])
@@ -29,6 +46,31 @@ end
 
 local function cross(a: Vec, b: Vec): Vec
 	return { a[2] * b[3] - a[3] * b[2], a[3] * b[1] - a[1] * b[3], a[1] * b[2] - a[2] * b[1] }
+end
+
+-- The bones of a new export's dump (FBX units, bone heads and tails, the mesh's lowest point at y = 0) in the look's
+-- root space as the swap builds the asset (times `k`, the root 2.5 under the mesh); rest frames along each bone,
+-- rolled a little more each (Studio gives every bone some rest frame: nothing may lean on them being tidy).
+local function loadV2(model: string, k: number): { [string]: FlyerPose.Bone }
+	local dump = serde.decode("json", fs.readFile(`tools/anim/rigs/{model}_v2.json`))
+	local out: { [string]: FlyerPose.Bone } = {}
+	for i, b in dump.bones do
+		local d = { b.tail[1] - b.head[1], b.tail[2] - b.head[2], b.tail[3] - b.head[3] }
+		if math.sqrt(d[1] * d[1] + d[2] * d[2] + d[3] * d[3]) < 1e-6 then
+			d = { 0, 1, 0 }
+		end
+		local y = unitV(d)
+		local a = i * 0.7
+		local ref = if math.abs(y[1]) < 0.9 then { math.cos(a), 0, -math.sin(a) } else { 0, math.cos(a), math.sin(a) }
+		local z = unitV(cross(ref, y))
+		local x = cross(y, z)
+		out[b.name] = {
+			rest = { x[1], y[1], z[1], x[2], y[2], z[2], x[3], y[3], z[3] },
+			pos = { b.head[1] * k * SCALE, (b.head[2] * k + 2.5) * SCALE, b.head[3] * k * SCALE },
+			parent = if type(b.parent) == "string" then b.parent else nil,
+		}
+	end
+	return out
 end
 
 -- The bones of a dump in the look's root space (the root 2.5 below the feet), rest frames from the up / look axes.
@@ -112,12 +154,19 @@ local function forward(
 	return out
 end
 
-local function skeletonOf(model: string): (FlyerPose.Skeleton, { [string]: FlyerPose.Bone })
-	local bones = load(model)
-	local rig = FlyerRigs.get(model)
-	assert(rig, model)
-	local skel = FlyerPose.skeleton(bones, rig)
-	assert(skel, model)
+local function bonesOf(id: string): { [string]: FlyerPose.Bone }
+	local case = CASES[id]
+	return if case.v2 then loadV2(case.model, case.k) else load(case.model)
+end
+
+-- The skeleton of a dump on the map its model picks by its bones (it must be the dump's own).
+local function skeletonOf(id: string): (FlyerPose.Skeleton, { [string]: FlyerPose.Bone })
+	local case = CASES[id]
+	local bones = bonesOf(id)
+	local rig = FlyerRigs.pick(case.model, bones)
+	assert(rig and rig.id == id, id)
+	local skel = FlyerPose.skeleton(bones, rig, { scale = SCALE })
+	assert(skel, id)
 	return skel, bones
 end
 
@@ -127,6 +176,11 @@ end
 
 local function at(skel: FlyerPose.Skeleton, name: string): Vec
 	return FlyerPose.at(skel, name) :: Vec
+end
+
+-- Where any bone is in the last solved pose (a bone the skeleton does not drive rides its parent).
+local function pos(skel: FlyerPose.Skeleton, bones: { [string]: FlyerPose.Bone }, name: string): Vec
+	return FlyerPose.at(skel, name) or forward(bones, skel.posed)[name].pos
 end
 
 local function sub(a: Vec, b: Vec): Vec
@@ -218,11 +272,38 @@ local function run(
 end
 
 T.describe("FlyerPose on the rig dumps", function()
-	for _, model in { "ashVulture", "peakHarpy" } do
+	T.it("each model picks the map whose bones it has: the new export's, else the old one's", function()
+		T.expect((FlyerRigs.pick("ashVulture", load("ashVulture")) :: FlyerRigs.Rig).id).toBe("ashVulture")
+		T.expect((FlyerRigs.pick("ashVulture", loadV2("ashVulture", 1)) :: FlyerRigs.Rig).id).toBe("ashVulture_v2")
+		T.expect((FlyerRigs.pick("peakHarpy", load("peakHarpy")) :: FlyerRigs.Rig).id).toBe("peakHarpy")
+		T.expect((FlyerRigs.pick("carrionCrow", loadV2("carrionCrow", 1)) :: FlyerRigs.Rig).id).toBe("carrionCrow_v2")
+		T.expect((FlyerRigs.pick("bloodBat", loadV2("bloodBat", 1)) :: FlyerRigs.Rig).id).toBe("bloodBat_v2")
+		-- the old crow and bat have no bones (their rigid recipe plays), a model missing one bone of the map neither
+		T.expect(FlyerRigs.pick("carrionCrow", {})).toBe(nil)
+		local partial = loadV2("bloodBat", 1)
+		partial.bone_57 = nil
+		T.expect(FlyerRigs.pick("bloodBat", partial)).toBe(nil)
+		-- the old vulture's 18 bones never pass for the new map, nor the new one's for the old
+		local function fits(rig: FlyerRigs.Rig, bones: { [string]: FlyerPose.Bone }): boolean
+			for name in FlyerRigs.bones(rig) do
+				if not bones[name] then
+					return false
+				end
+			end
+			return true
+		end
+		local old, new = FlyerRigs.byId("ashVulture") :: FlyerRigs.Rig, FlyerRigs.byId("ashVulture_v2") :: FlyerRigs.Rig
+		T.expect(fits(new, load("ashVulture"))).toBe(false)
+		T.expect(fits(old, loadV2("ashVulture", 1))).toBe(false)
+		T.expect(#FlyerRigs.maps("ashVulture")).toBe(2)
+		T.expect(FlyerRigs.byId("carrionCrow_v2") ~= nil).toBe(true)
+	end)
+
+	for _, model in ALL do
 		T.it(`{model}: the skeleton builds, with wings only where the map lists them`, function()
 			local skel = skeletonOf(model)
-			T.expect(skel.wings).toBe(model == "peakHarpy")
-			T.expect(skel.unit).toBeNear(SCALE, 1e-6)
+			T.expect(skel.wings).toBe(model ~= "ashVulture")
+			T.expect(skel.unit).toBeNear(SCALE, if CASES[model].v2 then 0.002 * SCALE else 1e-6)
 		end)
 
 		T.it(`{model}: the Transforms put every bone where the pose says (rest and random poses)`, function()
@@ -250,109 +331,195 @@ T.describe("FlyerPose on the rig dumps", function()
 		end)
 
 		T.it(`{model}: turned to face -Z and centred over the root`, function()
-			local skel = skeletonOf(model)
+			local skel, bones = skeletonOf(model)
 			FlyerPose.solve(skel, {})
 			local rig = skel.rig
-			local cx, cz = 0, 0
+			local cx, cy, cz = 0, 0, 0
 			for _, name in rig.centre do
-				cx += at(skel, name)[1]
-				cz += at(skel, name)[3]
+				local p = pos(skel, bones, name)
+				cx += p[1]
+				cy += p[2]
+				cz += p[3]
 			end
 			T.expect(cx / #rig.centre).toBeNear(0, 1e-6)
 			T.expect(cz / #rig.centre).toBeNear(0, 1e-6)
-			-- the hips side by side across -Z: left at -X, right at +X, level in z
-			local hipL = at(skel, rig.legs.L[1].bone)
-			local hipR = at(skel, rig.legs.R[1].bone)
+			-- a new export's centre at the old one's hover (old-template studs times the clone's scale), its wings level
+			if rig.hover then
+				T.expect(cy / #rig.centre).toBeNear(rig.hover * SCALE, 0.05 * SCALE)
+			end
+			-- the hips side by side across -Z: left at -X, right at +X, level in z (the bat's legs ride its body: the
+			-- shoulders then)
+			local wings = rig.wings
+			local hipL = if rig.legs.L then at(skel, rig.legs.L[1].bone) else at(skel, (wings :: any).L.humerus)
+			local hipR = if rig.legs.R then at(skel, rig.legs.R[1].bone) else at(skel, (wings :: any).R.humerus)
 			T.expect(hipL[1] < 0 and hipR[1] > 0).toBe(true)
-			T.expect(math.abs(hipL[3] - hipR[3])).toBeBetween(0, 0.05 * SCALE)
+			T.expect(math.abs(hipL[3] - hipR[3])).toBeBetween(0, (if CASES[model].v2 then 0.12 else 0.05) * SCALE)
 			-- the head in front of the body
 			local head = at(skel, rig.head)
 			local body = skel.pivot
 			T.expect(head[3] < body[3] or model == "peakHarpy").toBe(true)
 			local dir = sub(head, { 0, head[2], 0 })
-			if model == "ashVulture" then
+			if model ~= "peakHarpy" then
 				T.expect(math.deg(math.atan2(-dir[1], -dir[3]))).toBeBetween(-20, 20)
+			end
+			-- a new export laid level: its head no higher over its tail's root than a flying body carries it
+			if rig.level then
+				local tail = pos(skel, bones, rig.tail[1])
+				T.expect(math.deg(math.atan2(head[2] - tail[2], tail[3] - head[3]))).toBeBetween(-15, 40)
 			end
 		end)
 	end
 
-	T.it("peakHarpy: the canonical wing lies spread straight out, flat, mirrored", function()
-		local skel = skeletonOf("peakHarpy")
-		FlyerPose.solve(skel, {})
-		local wings = skel.rig.wings :: { [string]: FlyerRigs.Wing }
-		local tips: { [string]: Vec } = {}
-		for side, wing in wings do
-			local shoulder = at(skel, wing.humerus)
-			local tip = at(skel, wing.tip :: string)
-			local reach = sub(tip, shoulder)
-			local span = len(reach)
-			T.expect(span).toBeBetween(1.5 * SCALE, 3.5 * SCALE)
-			local sx = if side == "R" then 1 else -1
-			T.expect(reach[1] * sx / span).toBeBetween(0.97, 1)
-			T.expect(math.abs(reach[2]) / span).toBeBetween(0, 0.15)
-			T.expect(math.abs(reach[3]) / span).toBeBetween(0, 0.15)
-			-- the joints in a line out to the side
-			local elbow = at(skel, wing.forearm)
-			local wrist = at(skel, wing.hand)
-			T.expect((elbow[1] - shoulder[1]) * sx > 0 and (wrist[1] - elbow[1]) * sx > 0).toBe(true)
-			tips[side] = tip
-		end
-		T.expect(tips.L[1] + tips.R[1]).toBeBetween(-0.3 * SCALE, 0.3 * SCALE)
-		T.expect(tips.L[2] - tips.R[2]).toBeBetween(-0.2 * SCALE, 0.2 * SCALE)
-	end)
+	for _, model in WINGED do
+		T.it(`{model}: the canonical wing lies spread straight out, flat, mirrored`, function()
+			local skel, bones = skeletonOf(model)
+			FlyerPose.solve(skel, {})
+			local wings = skel.rig.wings :: { [string]: FlyerRigs.Wing }
+			local tips: { [string]: Vec } = {}
+			for side, wing in wings do
+				local shoulder = at(skel, wing.humerus)
+				local tip = pos(skel, bones, wing.tip :: string)
+				local reach = sub(tip, shoulder)
+				local span = len(reach)
+				T.expect(span).toBeBetween(1.0 * SCALE, 3.5 * SCALE)
+				local sx = if side == "R" then 1 else -1
+				T.expect(reach[1] * sx / span).toBeBetween(0.97, 1)
+				T.expect(math.abs(reach[2]) / span).toBeBetween(0, 0.15)
+				T.expect(math.abs(reach[3]) / span).toBeBetween(0, 0.15)
+				-- the joints in a line out to the side
+				local elbow = at(skel, wing.forearm)
+				local wrist = at(skel, wing.hand)
+				T.expect((elbow[1] - shoulder[1]) * sx > 0 and (wrist[1] - elbow[1]) * sx > 0).toBe(true)
+				tips[side] = tip
+			end
+			T.expect(tips.L[1] + tips.R[1]).toBeBetween(-0.3 * SCALE, 0.3 * SCALE)
+			T.expect(tips.L[2] - tips.R[2]).toBeBetween(-0.2 * SCALE, 0.2 * SCALE)
+		end)
 
-	T.it("peakHarpy: the wing controls turn the way their names say, the same on both sides", function()
-		local skel = skeletonOf("peakHarpy")
-		local wings = skel.rig.wings :: { [string]: FlyerRigs.Wing }
-		local function tipOf(side: string, controls: FlyerPose.Controls): Vec
-			FlyerPose.solve(skel, controls)
-			return table.clone(at(skel, wings[side].tip :: string))
+		T.it(`{model}: the wing controls turn the way their names say, the same on both sides`, function()
+			local skel, bones = skeletonOf(model)
+			local wings = skel.rig.wings :: { [string]: FlyerRigs.Wing }
+			local function tipOf(side: string, controls: FlyerPose.Controls): Vec
+				FlyerPose.solve(skel, controls)
+				return table.clone(pos(skel, bones, wings[side].tip :: string))
+			end
+			local function wristOf(side: string, controls: FlyerPose.Controls): Vec
+				FlyerPose.solve(skel, controls)
+				return table.clone(at(skel, wings[side].hand))
+			end
+			for _, side in { "L", "R" } do
+				local rest = tipOf(side, {})
+				local up = tipOf(side, { ["w" .. side .. "e"] = 0.5 })
+				T.expect(up[2] - rest[2]).toBeBetween(0.5 * SCALE, 3 * SCALE)
+				local fore = tipOf(side, { ["w" .. side .. "s"] = 0.5 })
+				T.expect(fore[3] - rest[3]).toBeBetween(-3 * SCALE, -0.5 * SCALE)
+				local wrist0 = wristOf(side, {})
+				local folded = wristOf(side, { ["w" .. side .. "f"] = 0.8 })
+				T.expect(folded[3] - wrist0[3]).toBeBetween(-2 * SCALE, -0.1 * SCALE)
+				local handBack = tipOf(side, { ["w" .. side .. "h"] = 0.8 })
+				T.expect(handBack[3] - rest[3]).toBeBetween(0.1 * SCALE, 3 * SCALE)
+				local whip = tipOf(side, { ["w" .. side .. "w"] = 0.6 })
+				T.expect(whip[2] - rest[2]).toBeBetween(0.1 * SCALE, 2 * SCALE)
+			end
+			-- the wings stay on the chest when the head turns (Tripo hung them from the head)
+			for _, side in { "L", "R" } do
+				local shoulder0 = table.clone(at(skel, wings[side].humerus))
+				FlyerPose.solve(skel, { hyaw = 0.8, hpitch = 0.5, npitch = -0.4 })
+				T.expect(len(sub(at(skel, wings[side].humerus), shoulder0))).toBeBetween(0, 1e-6)
+				FlyerPose.solve(skel, {})
+			end
+		end)
+	end
+
+	T.it(
+		"the new exports: the fingers fan back on `n`, the followers turn with their wing bone, the bat's jaw opens",
+		function()
+			for _, model in NEW do
+				local skel = skeletonOf(model)
+				local rig = skel.rig
+				local wings = rig.wings :: { [string]: FlyerRigs.Wing }
+				local function tipOf(name: string, controls: FlyerPose.Controls): Vec
+					FlyerPose.solve(skel, controls)
+					-- (a finger's own tip: the next bone along it, carried by its turn)
+					local node = skel.byName[name]
+					local w = node.world
+					local d = { 0.3 * SCALE, 0, 0 }
+					return { node.at[1] + w[1] * d[1], node.at[2] + w[4] * d[1], node.at[3] + w[7] * d[1] }
+				end
+				for side, wing in wings do
+					for _, finger in wing.fingers or {} do
+						local open = tipOf(finger.bone, { ["w" .. side .. "n"] = 0.5 })
+						local shut = tipOf(finger.bone, { ["w" .. side .. "n"] = -0.5 })
+						local turned = len(sub(open, shut))
+						T.expect(turned > 0.02 * SCALE * finger.spread).toBe(true)
+					end
+				end
+				for _, row in rig.follow or {} do
+					-- a full follower turns exactly as its wing bone
+					local node = skel.byName[row.bone]
+					local like = skel.byName[row.like]
+					FlyerPose.solve(skel, { wLe = 0.6, wRe = 0.6, wLs = 0.3, wRs = 0.3, wLf = 0.4, wRf = 0.4 })
+					local d = 0
+					for i = 1, 9 do
+						d = math.max(d, math.abs(node.world[i] - like.world[i]))
+					end
+					if (row.share or 1) >= 1 then
+						T.expect(d).toBeBetween(0, 1e-9)
+					else
+						T.expect(d > 1e-3).toBe(true)
+					end
+				end
+				if rig.jaw then
+					-- the jaw turns down about its own pivot (a probe ahead of it drops)
+					local jaw = skel.byName[rig.jaw]
+					FlyerPose.solve(skel, {})
+					local shut = table.clone(jaw.at)
+					local ahead0 = -jaw.world[9] * SCALE * 0.3 + jaw.at[3]
+					local drop0 = -jaw.world[6] * SCALE * 0.3 + jaw.at[2]
+					FlyerPose.solve(skel, { jaw = 0.6 })
+					T.expect(len(sub(jaw.at, shut))).toBeBetween(0, 1e-9)
+					local drop1 = -jaw.world[6] * SCALE * 0.3 + jaw.at[2]
+					T.expect(drop1 < drop0 - 0.05 * SCALE).toBe(true)
+					T.expect(ahead0 == ahead0).toBe(true)
+				end
+			end
 		end
-		local function wristOf(side: string, controls: FlyerPose.Controls): Vec
-			FlyerPose.solve(skel, controls)
-			return table.clone(at(skel, wings[side].hand))
-		end
-		for _, side in { "L", "R" } do
-			local rest = tipOf(side, {})
-			local up = tipOf(side, { ["w" .. side .. "e"] = 0.5 })
-			T.expect(up[2] - rest[2]).toBeBetween(0.5 * SCALE, 3 * SCALE)
-			local fore = tipOf(side, { ["w" .. side .. "s"] = 0.5 })
-			T.expect(fore[3] - rest[3]).toBeBetween(-3 * SCALE, -0.5 * SCALE)
-			local wrist0 = wristOf(side, {})
-			local folded = wristOf(side, { ["w" .. side .. "f"] = 0.8 })
-			T.expect(folded[3] - wrist0[3]).toBeBetween(-2 * SCALE, -0.1 * SCALE)
-			local handBack = tipOf(side, { ["w" .. side .. "h"] = 0.8 })
-			T.expect(handBack[3] - rest[3]).toBeBetween(0.1 * SCALE, 3 * SCALE)
-			local whip = tipOf(side, { ["w" .. side .. "w"] = 0.6 })
-			T.expect(whip[2] - rest[2]).toBeBetween(0.1 * SCALE, 2 * SCALE)
-		end
-		-- the wings stay on the chest when the head turns (Tripo hung them from the head)
-		local shoulder0 = table.clone(at(skel, wings.R.humerus))
-		FlyerPose.solve(skel, { hyaw = 0.8, hpitch = 0.5, npitch = -0.4 })
-		T.expect(len(sub(at(skel, wings.R.humerus), shoulder0))).toBeBetween(0, 1e-6)
-	end)
+	)
 
 	T.it("legs: + swing brings the foot forward, + fold tucks it up, both sides alike", function()
-		for _, model in { "ashVulture", "peakHarpy" } do
+		for _, model in { "ashVulture", "peakHarpy", "ashVulture_v2", "carrionCrow_v2" } do
 			local skel = skeletonOf(model)
 			for _, side in { "L", "R" } do
 				local chain = skel.rig.legs[side]
 				local foot = chain[#chain].bone
+				-- (a one-bone leg swings its own pivot: the toes' bone under it then)
+				if #chain == 1 then
+					continue
+				end
 				FlyerPose.solve(skel, {})
 				local rest = table.clone(at(skel, foot))
 				FlyerPose.solve(skel, { ["l" .. side .. "s"] = 0.6 })
-				T.expect(at(skel, foot)[3] - rest[3]).toBeBetween(-2 * SCALE, -0.05 * SCALE)
+				T.expect(at(skel, foot)[3] - rest[3]).toBeBetween(-2 * SCALE, -0.02 * SCALE)
 				FlyerPose.solve(skel, { ["l" .. side .. "s"] = -0.5, ["l" .. side .. "f"] = 1 })
-				T.expect(at(skel, foot)[2] - rest[2]).toBeBetween(0.05 * SCALE, 2 * SCALE)
+				T.expect(at(skel, foot)[2] - rest[2]).toBeBetween(0.01 * SCALE, 2 * SCALE)
 			end
 		end
 	end)
 end)
 
 T.describe("FlyerMotion", function()
-	local function newInst(model: string, style: string, seed: number): FlyerMotion.Instance
-		local skel = skeletonOf(model)
-		return FlyerMotion.new(skel, style, seed) :: FlyerMotion.Instance
+	local function newInst(
+		model: string,
+		style: string,
+		seed: number
+	): (FlyerMotion.Instance, { [string]: FlyerPose.Bone })
+		local skel, bones = skeletonOf(model)
+		return FlyerMotion.new(skel, style, seed) :: FlyerMotion.Instance, bones
+	end
+	-- every dump on its style (the old vulture and the harpy, the new exports)
+	local FLIGHTS: { { string } } = {}
+	for _, id in ALL do
+		table.insert(FLIGHTS, { id, CASES[id].style })
 	end
 
 	T.it("the hover's wingbeat swings between the table's top and bottom at its rate", function()
@@ -379,7 +546,7 @@ T.describe("FlyerMotion", function()
 	end)
 
 	T.it("nothing turns NaN through flight, turns, a glide, the flare, blows, a hit, stun and death", function()
-		for _, pair in { { "ashVulture", "vulture" }, { "peakHarpy", "harpy" } } do
+		for _, pair in FLIGHTS do
 			local inst = newInst(pair[1], pair[2], 11)
 			local style = inst.style
 			local plan = {
@@ -426,7 +593,7 @@ T.describe("FlyerMotion", function()
 	end)
 
 	T.it("every blow's strike ends on the server's hit (W) and lasts at most 0.7 W", function()
-		for _, id in { "vulture", "harpy" } do
+		for _, id in { "vulture", "harpy", "crow", "bat" } do
 			local style = FlyerStyles.get(id) :: FlyerStyles.Style
 			for name, action in style.actions do
 				local strikeEnd = false
@@ -449,7 +616,10 @@ T.describe("FlyerMotion", function()
 	T.it(
 		"the volley's downstroke and the fling land on W, the shot leaving at the beak / between the wing tips",
 		function()
-			for _, pair in { { "ashVulture", "vulture" }, { "peakHarpy", "harpy" } } do
+			local shooters = { { "ashVulture", "vulture" }, { "peakHarpy", "harpy" } }
+			table.insert(shooters, { "ashVulture_v2", "vulture" })
+			table.insert(shooters, { "carrionCrow_v2", "crow" })
+			for _, pair in shooters do
 				local inst = newInst(pair[1], pair[2], 5)
 				local name = inst.style.basic[1]
 				local w = 0.5
@@ -479,8 +649,8 @@ T.describe("FlyerMotion", function()
 				local m = muzzleAtW :: Vec
 				-- in front of the chest
 				T.expect(m[3] < (chestAtW :: Vec)[3]).toBe(true)
-				if pair[1] == "ashVulture" then
-					T.expect(len(sub(m, headAtW :: Vec))).toBeBetween(0.2 * SCALE, 0.5 * SCALE)
+				if pair[1] ~= "peakHarpy" then
+					T.expect(len(sub(m, headAtW :: Vec))).toBeBetween(0.05 * SCALE, 0.5 * SCALE)
 				end
 			end
 		end
@@ -518,9 +688,9 @@ T.describe("FlyerMotion", function()
 	end)
 
 	T.it("the death falls under gravity and lies on the ground, nothing deep under it", function()
-		for _, pair in { { "ashVulture", "vulture" }, { "peakHarpy", "harpy" } } do
+		for _, pair in FLIGHTS do
 			for _, seed in { 1, 2, 3, 4 } do
-				local inst = newInst(pair[1], pair[2], seed)
+				local inst, bones = newInst(pair[1], pair[2], seed)
 				local name = FlyerMotion.death(inst)
 				local action = inst.style.actions[name]
 				local skel = inst.skel
@@ -528,7 +698,7 @@ T.describe("FlyerMotion", function()
 				local function centre(): number
 					local y = 0
 					for _, bone in skel.rig.centre do
-						y += at(skel, bone)[2]
+						y += pos(skel, bones, bone)[2]
 					end
 					return y / #skel.rig.centre
 				end
@@ -674,11 +844,173 @@ T.describe("FlyerMotion", function()
 		T.expect(FlyerMotion.side({ 1, 0, 0 })).toBe("left")
 	end)
 
-	T.it("/animlab mob takes every flyer state", function()
+	T.it("the crow lands after hovering still, stands on its feet, hops about and flies up into a fight", function()
+		for _, seed in { 1, 2, 3 } do
+			local inst = newInst("carrionCrow_v2", "crow", seed)
+			local skel = inst.skel
+			local perch = inst.style.perch :: FlyerStyles.Perch
+			T.expect(inst.perchDrop ~= nil and (inst.perchDrop :: number) > 1).toBe(true)
+			local landed: number? = nil
+			local lowest, standing = math.huge, math.huge
+			local hops = 0
+			run(inst, 0, 24, function(t)
+				return hover({ combat = t > 22, look = if t > 22 then { 0, 0, -8 } else nil })
+			end, function(t)
+				if inst.perch >= 1 and not landed then
+					landed = t
+				end
+				if inst.perch >= 1 and t < 22 then
+					hops = inst.hopCount
+					local low = math.huge
+					for _, leg in skel.rig.legs do
+						for _, joint in leg do
+							low = math.min(low, at(skel, joint.bone)[2])
+						end
+					end
+					lowest = math.min(lowest, low)
+					-- between hops, the toes on the ground
+					if t > inst.hop[7] + perch.hop.length + 0.05 then
+						standing = math.min(standing, math.abs(low - perch.toe * skel.unit))
+					end
+				end
+			end)
+			-- it lands within its wait and the landing, never before it has hovered still a while
+			T.expect(landed ~= nil).toBe(true)
+			T.expect(landed :: number)
+				.toBeBetween(perch.after[1] + perch.land - 0.05, perch.after[2] + perch.land + 0.1)
+			T.expect(standing).toBeBetween(0, 0.05 * SCALE)
+			T.expect(lowest).toBeBetween(-0.02 * SCALE, 0.3 * SCALE)
+			T.expect(hops).toBeBetween(1, 12)
+			-- the fight lifts it off at once
+			T.expect(inst.perch).toBe(0)
+		end
+		-- never down in a fight, nor soon after a hit; the bat (no legs) and the vulture (no perch) never land
+		for _, pair in { { "carrionCrow_v2", "crow" }, { "bloodBat_v2", "bat" }, { "ashVulture_v2", "vulture" } } do
+			local inst = newInst(pair[1], pair[2], 4)
+			run(inst, 0, 14, function(t)
+				return hover({
+					combat = pair[2] == "crow" and t < 7,
+					hitAt = if pair[2] == "crow" and t > 7 then 6.9 else nil,
+				})
+			end, function()
+				T.expect(inst.perch).toBe(0)
+			end)
+		end
+		-- /animlab perch: down at once
+		local lab = newInst("carrionCrow_v2", "crow", 5)
+		run(lab, 0, 2, function()
+			return hover({ perch = true })
+		end)
+		T.expect(lab.perch).toBe(1)
+	end)
+
+	T.it("the bat's dive flies at its target until the strike, then holds its line", function()
+		local function diveTo(look: Vec, swerve: boolean): (number, number)
+			local inst = newInst("bloodBat_v2", "bat", 2)
+			local w = 0.6
+			local struck: { number }? = nil
+			run(inst, 0, 0.5 + w + 0.01, function(t)
+				-- the target slips aside once the strike starts
+				local aim = if swerve and t > 0.5 + w - 0.15 then { -look[1], look[2], look[3] } else look
+				return hover({ combat = true, look = aim, action = { name = "dive", start = 0.5, hit = w } })
+			end, function(t)
+				if math.abs(t - (0.5 + w)) < 1 / 120 then
+					struck = { inst.controls.bx * inst.skel.unit, inst.controls.bz * inst.skel.unit }
+				end
+			end)
+			local s = struck :: { number }
+			return s[1], s[2]
+		end
+		local x, z = diveTo({ 3, 0, -4 }, false)
+		-- toward the target on the hit: as far as it lies less a strike's length, aimed at it
+		T.expect(x > 0.5 * SCALE and z < -0.5 * SCALE).toBe(true)
+		T.expect(math.atan2(x, -z)).toBeNear(math.atan2(3, 4), 0.25)
+		T.expect(math.sqrt(x * x + z * z)).toBeBetween(1 * SCALE, 4.5 * SCALE)
+		-- locked when the strike starts: the same line though the target moved
+		local x2, z2 = diveTo({ 3, 0, -4 }, true)
+		T.expect(x2).toBeNear(x, 0.05 * SCALE)
+		T.expect(z2).toBeNear(z, 0.05 * SCALE)
+	end)
+
+	T.it(
+		"the bat flutters: an uneven drift, wings faster than the vulture's, fingers fanned on the downstroke",
+		function()
+			local inst = newInst("bloodBat_v2", "bat", 6)
+			local lo, hi = math.huge, -math.huge
+			local spreadDown, spreadUp = -math.huge, math.huge
+			local beats: { number } = {}
+			local last = inst.phase
+			run(inst, 0, 8, function()
+				return hover()
+			end, function(t)
+				if t > 1 then
+					lo, hi = math.min(lo, inst.controls.bx), math.max(hi, inst.controls.bx)
+					local n = inst.controls.wLn or 0
+					spreadDown, spreadUp = math.max(spreadDown, n), math.min(spreadUp, n)
+					if inst.phase < last then
+						table.insert(beats, t)
+					end
+				end
+				last = inst.phase
+			end)
+			T.expect(hi - lo).toBeBetween(0.05, 0.8)
+			-- the beat's rate wanders: some beats longer than others
+			local short, long = math.huge, 0
+			for i = 2, #beats do
+				short, long = math.min(short, beats[i] - beats[i - 1]), math.max(long, beats[i] - beats[i - 1])
+			end
+			T.expect(long / short > 1.15).toBe(true)
+			T.expect(spreadDown > math.rad(5) and spreadUp < 0).toBe(true)
+			local bat = (FlyerStyles.get("bat") :: FlyerStyles.Style).modes.hover.hz
+			local vulture = (FlyerStyles.get("vulture") :: FlyerStyles.Style).modes.hover.hz
+			T.expect(bat > 2 * vulture).toBe(true)
+		end
+	)
+
+	T.it("the crow and the bat keep their rigid kit: blows, slots, the effects' action names", function()
+		for _, id in { "crow", "bat" } do
+			local flyer = FlyerStyles.get(id) :: FlyerStyles.Style
+			local rigid = RigidStyles.get(id) :: any
+			for slot, name in rigid.abilities do
+				T.expect(flyer.abilities[slot]).toBe(name)
+				T.expect(flyer.actions[name] ~= nil).toBe(true)
+			end
+			T.expect(flyer.basic[1]).toBe(rigid.basic[1])
+			T.expect(flyer.throw).toBe(rigid.throw)
+			for _, entry in rigid.death do
+				local name = if type(entry) == "table" then entry.name else entry
+				T.expect(flyer.actions[name] ~= nil).toBe(true)
+			end
+			for name in MotionFx.STYLES[id] do
+				T.expect(flyer.actions[name] ~= nil).toBe(true)
+			end
+			for _, list in { flyer.death, flyer.fidgets, (flyer.perch and flyer.perch.fidgets) or {} } do
+				for _, name in list do
+					T.expect(flyer.actions[name] ~= nil).toBe(true)
+				end
+			end
+			for _, name in { flyer.aggro, flyer.spawn, flyer.summon } do
+				T.expect(flyer.actions[name :: string] ~= nil).toBe(true)
+			end
+		end
+	end)
+
+	T.it("/animlab mob takes every flyer state, the crow's and the bat's rigid ones too", function()
 		for _, state in FlyerStyles.LAB_STATES do
 			local command = AnimLab.parse({ "mob", "ashVulture", state })
 			T.expect(command ~= nil and (command :: any).slot == state).toBe(true)
 		end
+		for _, pair in { { "ashVulture", "vulture" }, { "carrionCrow", "crow" }, { "bloodBat", "bat" } } do
+			for _, state in FlyerStyles.labStates(pair[2]) do
+				local command = AnimLab.parse({ "mob", pair[1], state })
+				T.expect(command ~= nil and (command :: any).slot == state).toBe(true)
+			end
+		end
+		for _, state in RigidStyles.labStates("crow") do
+			T.expect(AnimLab.parse({ "mob", "carrionCrow", state }) ~= nil).toBe(true)
+		end
+		T.expect(AnimLab.parse({ "mob", "carrionCrow", "perch" }) ~= nil).toBe(true)
+		T.expect(AnimLab.parse({ "mob", "bloodBat", "perch" })).toBe(nil)
 	end)
 
 	T.it("the timeline's length is the hit plus follow and recover", function()

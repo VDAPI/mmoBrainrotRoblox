@@ -190,6 +190,19 @@ local ARCH = table.freeze({
 	-- frames keep out of it, tests/portals.spec)
 	model = table.freeze({ w = 21, h = 18, d = 16.5 }),
 })
+-- Owner (Studio Play 2026-10-31, server raycasts against the painted model: the light of every cave, lair and dungeon
+-- exit stood beside the opening): where the opening of a painted model (Assets.Kit) is when it is not the middle of
+-- its box. Shares of the box once it stands across the portal (after Logic/ArchFit's turn): `x` the opening's centre
+-- off the box's centre (of its width, + along the portal's +x), `foot` the field's bottom over the model's foot and
+-- `h` its height (of the box's height), `w` its width (of the box's width); never over ARCH.field. Logic/ArchFit.field
+-- uses it; a model without an entry keeps the field centred on its box.
+--   common_portal_02 (20.9 x 18 turned): an uneven ruin, a thick left pillar, a thin right one ending 3 studs lower,
+--   no lintel, a base slab 2.75 studs high; its opening runs from 3.75 studs left of the box's centre to 8.5 right
+export type Opening = { x: number, foot: number, w: number, h: number }
+local MODEL_OPENING: { [string]: Opening } = {
+	common_portal_02 = table.freeze({ x = 0.114, foot = 0.16, w = 0.587, h = 0.6 }),
+}
+table.freeze(MODEL_OPENING)
 -- W31: what a frame round a cave mouth keeps free (tests/portals.spec "cave mouths"): the painted arch (`model` and a
 -- quarter stud), the view of it `front` studs down the path above `ground` (rubble, tracks and bones may lie lower),
 -- and the opening between the arch and its dark hole. The hole stands straight behind the arch, fills its opening
@@ -301,6 +314,7 @@ end
 
 return table.freeze({
 	ARCH = ARCH,
+	MODEL_OPENING = MODEL_OPENING,
 	GATE = GATE,
 	LOOK = LOOK,
 	HOLE = HOLE,

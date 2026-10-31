@@ -1,8 +1,10 @@
 --!strict
--- Template animation (docs/ANIM-WZORCE.md F3): the bones of an imported flyer (Tripo, Data/FlyerRigs role map of its
--- model) driven by Logic/FlyerMotion. Rest frames are read once with every Transform at identity, in the space of the
--- look's HumanoidRootPart (front -Z, the ground at its origin). The rig has the shape of client/Anim/QuadRig's (`motion`,
--- `bones`, `mod`, `kind`), so AnimationController and AnimLab drive either.
+-- Template animation (docs/ANIM-WZORCE.md F3): the bones of an imported flyer (Tripo, the Data/FlyerRigs role map of
+-- its model whose bones it has: the new export's or the old one's) driven by Logic/FlyerMotion. Rest frames are read
+-- once with every Transform at identity, in the space of the look's HumanoidRootPart (else its PrimaryPart) at its
+-- pivot: MonsterView stands that pivot on the ground (front -Z). The clone's scale over its template's places a new
+-- export at the old one's hover height. The rig has the shape of client/Anim/QuadRig's (`motion`, `bones`, `mod`,
+-- `kind`), so AnimationController and AnimLab drive either.
 -- * A Transform is written only when it moved by more than about 0.1 degree (docs/ANIM-WZORCE §1.10);
 -- * the monster root's `Muzzle` attachment follows the beak / the wing tips (FlyerRigs `muzzle`), so the shots drawn
 --   on this client leave from there (docs/ANIM-WZORCE §10).
@@ -21,7 +23,7 @@ export type Rig = {
 	motion: FlyerMotion.Instance,
 	bones: { [string]: Bone },
 	mod: any,
-	root: BasePart,
+	root: BasePart, -- its pivot is the space of the pose (the ground under the look)
 	muzzle: Attachment?,
 	last: { [string]: { number } }, -- the last written rotation (9) and offset (3) of each bone
 }
@@ -35,10 +37,9 @@ local function toMat(cf: CFrame): { number }
 end
 
 -- The rig of `look` (the cloned model of Assets.Monsters `model`) in `styleId` (Data/FlyerStyles), nil without a role
--- map or its bones.
+-- map whose bones it has.
 function FlyerRig.new(look: Model, styleId: string, seed: number, model: string): Rig?
-	local map = FlyerRigs.get(model)
-	if not map then
+	if #FlyerRigs.maps(model) == 0 then
 		return nil
 	end
 	local root = look:FindFirstChild("HumanoidRootPart") :: BasePart?
@@ -55,7 +56,11 @@ function FlyerRig.new(look: Model, styleId: string, seed: number, model: string)
 			item.Transform = CFrame.identity
 		end
 	end
-	local space = (root :: BasePart).CFrame
+	local map = FlyerRigs.pick(model, byName)
+	if not map then
+		return nil
+	end
+	local space = (root :: BasePart):GetPivot()
 	local data: { [string]: FlyerPose.Bone } = {}
 	for name, bone in byName do
 		local rel = space:ToObjectSpace(bone.WorldCFrame)
@@ -66,7 +71,12 @@ function FlyerRig.new(look: Model, styleId: string, seed: number, model: string)
 			parent = if parent and parent:IsA("Bone") then parent.Name else nil,
 		}
 	end
-	local skel = FlyerPose.skeleton(data, map)
+	-- the clone's size over its template's (MonsterView scales the clone once)
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
+	local folder = assets and assets:FindFirstChild("Monsters")
+	local template = folder and folder:FindFirstChild(model)
+	local scale = if template and template:IsA("Model") then look:GetScale() / template:GetScale() else nil
+	local skel = FlyerPose.skeleton(data, map, { scale = scale })
 	if not skel then
 		return nil
 	end
@@ -129,7 +139,7 @@ function FlyerRig.apply(rig: Rig, posed: FlyerPose.Posed)
 	local muzzle = rig.muzzle
 	local at = FlyerMotion.muzzle(rig.motion)
 	if muzzle and at and muzzle.Parent then
-		muzzle.WorldPosition = rig.root.CFrame:PointToWorldSpace(Vector3.new(at[1], at[2], at[3]))
+		muzzle.WorldPosition = rig.root:GetPivot():PointToWorldSpace(Vector3.new(at[1], at[2], at[3]))
 	end
 end
 
