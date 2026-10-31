@@ -76,11 +76,22 @@ function NpcLook.look(def: Def): ClassLooks.Look?
 	if not female and (entry.old or NpcLook.roll(id, "bearded") < NpcLooks.BEARDED) then
 		beard = pick(NpcLooks.BEARDS, NpcLook.roll(id, "beard"))
 	end
+	-- hair fixes 2026-10-31: the colour first, then a hairstyle that offers it (CharacterLook.hairColors: a red or
+	-- black hair is not tinted grey); a fixed hairstyle takes the offered colour nearest to the picked one
+	local hairColor = fixed.hairColor or pick(colors, NpcLook.roll(id, "hairColor"))
+	local all: { string } = if female then NpcLooks.HAIRS_FEMALE else NpcLooks.HAIRS
+	local hairs: { string } = {}
+	for _, hairId in all do
+		if table.find(CharacterLook.hairColors(hairId), hairColor) then
+			table.insert(hairs, hairId)
+		end
+	end
+	local hair = fixed.hair or pick(if #hairs > 0 then hairs else all, NpcLook.roll(id, "hair"))
 	return {
 		face = fixed.face or pick(if female then NpcLooks.FACES_FEMALE else NpcLooks.FACES, NpcLook.roll(id, "face")),
 		skin = fixed.skin or pick(skins, NpcLook.roll(id, "skin")),
-		hair = fixed.hair or pick(if female then NpcLooks.HAIRS_FEMALE else NpcLooks.HAIRS, NpcLook.roll(id, "hair")),
-		hairColor = fixed.hairColor or pick(colors, NpcLook.roll(id, "hairColor")),
+		hair = hair,
+		hairColor = CharacterLook.fitHairColor(hair, hairColor),
 		brows = fixed.brows or pick(brows, NpcLook.roll(id, "brows")),
 		beard = if female then "beard_none" else fixed.beard or beard,
 		build = fixed.build or role.build or "build_medium",
