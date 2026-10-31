@@ -64,10 +64,15 @@ type Node = {
 	offset: Vec,
 }
 
+-- A bone the pose does not drive (a wing tip, a foot, a feather): it rides its nearest driven ancestor `node` at
+-- `off` (corrected rest, studs), so the floor check sees it.
+type Probe = { node: Node, off: Vec }
+
 export type Skeleton = {
 	rig: FlyerRigs.Rig,
 	nodes: { Node },
 	byName: { [string]: Node },
+	probes: { Probe },
 	fix: Mat, -- the export's correction: Rx(-level) * Ry(-facing)
 	pivot: Vec, -- the body's centre (corrected rest, root space)
 	unit: number, -- studs per dump unit (the clone's scale)
@@ -651,10 +656,27 @@ function FlyerPose.skeleton(bones: { [string]: Bone }, rig: FlyerRigs.Rig, opts:
 	for _, name in rig.muzzle.at do
 		table.insert(muzzleAt, byName[name])
 	end
+	-- the bones it does not drive, on the driven bone they ride (the export's root above the body has none: it stays)
+	local probes: { Probe } = {}
+	for name, bone in bones do
+		if drive[name] then
+			continue
+		end
+		local p = bone.parent
+		while p and not drive[p] do
+			local b = bones[p]
+			p = if b then b.parent else nil
+		end
+		local node = if p then byName[p] else nil
+		if node then
+			table.insert(probes, { node = node, off = vsub(placed(bone.pos), node.pos) })
+		end
+	end
 	return {
 		rig = rig,
 		nodes = nodes,
 		byName = byName,
+		probes = probes,
 		fix = fix,
 		pivot = { 0, cy + lift, 0 },
 		unit = unit,
@@ -861,6 +883,41 @@ function FlyerPose.muzzle(skel: Skeleton, out: Vec)
 	local o = skel.muzzleOffset
 	local ox, oy, oz = apply(list[1].world, o[1], o[2], o[3])
 	out[1], out[2], out[3] = x / n + ox, y / n + oy, z / n + oz
+end
+
+-- The height (studs, root space) of the lowest bone in the last solved pose: every driven bone but the body (its
+-- pivot is the export's root, under the body where the export stood, not a point of the mesh) and every bone they
+-- carry (the wing tips, the feet, the feathers).
+function FlyerPose.lowest(skel: Skeleton): number
+	local low = math.huge
+	for _, node in skel.nodes do
+		if node.role ~= "body" and node.at[2] < low then
+			low = node.at[2]
+		end
+	end
+	for _, probe in skel.probes do
+		local node, o = probe.node, probe.off
+		local w = node.world
+		local y = node.at[2] + w[4] * o[1] + w[5] * o[2] + w[6] * o[3]
+		if y < low then
+			low = y
+		end
+	end
+	return low
+end
+
+-- Lifts the last solved pose by `dy` studs (every pivot; the Transforms in `posed` follow: only the body's offset
+-- changes, the pinned bones keep theirs).
+function FlyerPose.lift(skel: Skeleton, dy: number)
+	for _, node in skel.nodes do
+		node.at[2] += dy
+		if node.role == "body" then
+			local o = node.offset
+			o[1], o[2], o[3] =
+				tapply(node.rest, node.at[1] - node.origin[1], node.at[2] - node.origin[2], node.at[3] - node.origin[3])
+			node.entry.offset = o
+		end
+	end
 end
 
 -- Where a bone's pivot is in the last solved pose (root space), nil for a bone the skeleton does not drive.

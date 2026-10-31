@@ -391,7 +391,7 @@ local VULTURE: Style = {
 						hpitch = deg(-14),
 						fan = deg(32),
 						tpitch = deg(-8),
-					}, legs({ s = deg(72), f = deg(-12), c = deg(-35) }), MID, { flap = 0.7, hard = 1 })
+					}, legs({ s = deg(62), f = deg(-8), c = deg(-25) }), MID, { flap = 0.7, hard = 1 })
 				),
 				key(
 					"S",
@@ -399,7 +399,7 @@ local VULTURE: Style = {
 					"in",
 					s(
 						{ by = 0, bz = -1.5, bpitch = deg(5), npitch = deg(-6), hpitch = deg(-6), fan = deg(20) },
-						legs({ s = deg(-20), f = deg(20), c = deg(45) }),
+						legs({ s = deg(-8), f = deg(15), c = deg(35) }),
 						wings({ e = deg(5), s = deg(8), f = 0, w = deg(14) })
 					)
 				),
@@ -461,9 +461,9 @@ local VULTURE: Style = {
 							tpitch = deg(-12),
 							travel = 1,
 							reachMax = 6,
-							drop = 1,
+							drop = 0.9,
 						},
-						legs({ s = deg(65), f = deg(-10), c = deg(-30) }),
+						legs({ s = deg(55), f = deg(-8), c = deg(-20) }),
 						wings({ e = deg(60), s = deg(20), f = 0, h = 0 })
 					)
 				),
@@ -473,7 +473,7 @@ local VULTURE: Style = {
 					"out",
 					s(
 						{ by = 0.6, bpitch = deg(20), fan = deg(24), travel = 0.8, reachMax = 6, drop = 0.5 },
-						legs({ s = deg(-20), f = deg(40), c = deg(50) }),
+						legs({ s = deg(-10), f = deg(35), c = deg(40) }),
 						MID,
 						{ flap = 1, hard = 1 }
 					)
@@ -636,9 +636,10 @@ local VULTURE: Style = {
 }
 
 -- Death to one side (`side` 1: the right side goes up, it falls on its left): a jolt, the wings stop (the upper one
--- folds up, the lower one hangs), nose down; it falls under gravity rolling 60 degrees, hits the ground on the hit and
--- bounces, and lies on its side with the lower wing spread on the ground (raised toward the back as the body rolls
--- onto it, so it lies flat instead of digging in), the upper one folded over, the neck limp.
+-- folds up at once, the lower one stays level), nose down; it falls under gravity rolling 60 degrees, the lower wing
+-- raised with the roll so it stays about level (never hanging under the body into the ground), hits the ground on the
+-- hit and bounces, and lies on its side with the lower wing spread on the ground (raised toward the back as the body
+-- rolls onto it, so it lies flat instead of digging in), the upper one folded over, the neck limp.
 local function deathFlyer(side: number): MotionTimeline.Action
 	local up = if side > 0 then "R" else "L" -- the wing that ends on top (roll + raises the right side)
 	local down = if side > 0 then "L" else "R"
@@ -651,13 +652,13 @@ local function deathFlyer(side: number): MotionTimeline.Action
 			key("A", 1, "out", merge({ bz = 0.1, bpitch = deg(10), npitch = deg(12) }, wings({ e = deg(30), f = 0 }))),
 			key(
 				"S",
-				0.2,
+				0.35,
 				"inout",
 				merge(
-					{ bpitch = deg(-25), broll = side * deg(15), npitch = deg(-10), hpitch = deg(-10), fall = 0.12 },
-					wings({ e = deg(60), f = deg(30), h = deg(30) }, up),
-					wings({ e = deg(-45), f = deg(15) }, down),
-					legs({ s = deg(-20), f = deg(20), c = deg(30) })
+					{ bpitch = deg(-15), broll = side * deg(15), npitch = deg(-5), hpitch = deg(-8), fall = 0.12 },
+					wings({ e = deg(50), f = deg(35), h = deg(30) }, up),
+					wings({ e = deg(20), f = deg(10) }, down),
+					legs({ s = deg(-15), f = deg(20), c = deg(25) })
 				)
 			),
 			key(
@@ -666,8 +667,8 @@ local function deathFlyer(side: number): MotionTimeline.Action
 				"lin",
 				merge(
 					{ bpitch = deg(-30), broll = side * deg(60), npitch = deg(-25), hpitch = deg(-15), fall = 1 },
-					wings({ e = deg(70), f = deg(70), h = deg(55) }, up),
-					wings({ e = deg(-20), f = deg(10) }, down),
+					wings({ e = deg(70), f = deg(90), h = deg(75) }, up),
+					wings({ e = deg(55), f = deg(10) }, down),
 					legs({ s = deg(-10), f = deg(30), c = deg(45) })
 				)
 			),
@@ -685,7 +686,7 @@ local function deathFlyer(side: number): MotionTimeline.Action
 						fall = 1,
 					},
 					wings({ e = deg(70), s = deg(-30), f = deg(110), h = deg(100) }, up),
-					wings({ e = deg(60), f = deg(5) }, down),
+					wings({ e = deg(80), f = deg(5) }, down),
 					legs({ s = deg(-10), f = deg(35), c = deg(55) })
 				)
 			),
@@ -1020,6 +1021,8 @@ end
 local C_MID = wings({ e = deg(12), s = 0, f = deg(10) })
 -- folded on the ground: swept back along the body, the elbow and the wrist closed, the primaries drawn in
 local C_FOLD = wings({ e = deg(-5), s = deg(-80), f = deg(165), h = deg(165), n = deg(-25) })
+-- half folded (out of the ground: the summon)
+local C_HALF = wings({ e = deg(0), s = deg(-45), f = deg(90), h = deg(90), n = deg(-15) })
 -- standing: the body up on its legs (straight under it), the head level, the tail lifted clear of the ground
 local C_PERCH: Controls = merge(
 	{ bpitch = deg(22), npitch = deg(-5), hpitch = deg(-18), tpitch = deg(24), fan = deg(-4) },
@@ -1382,15 +1385,15 @@ local CROW: Style = {
 						hpitch = deg(-14),
 						fan = deg(32),
 						tpitch = deg(-8),
-					}, legs({ s = deg(72), c = deg(-40) }), C_MID, { flap = 0.7, hard = 1 })
+					}, legs({ s = deg(52), c = deg(-25) }), C_MID, { flap = 0.7, hard = 1 })
 				),
 				key(
 					"S",
 					1,
 					"in",
 					cs(
-						{ by = -0.35, bz = -1.2, bpitch = deg(-8), npitch = deg(-6), hpitch = deg(-6), fan = deg(20) },
-						legs({ s = deg(-20), c = deg(50) }),
+						{ by = -0.35, bz = -1.2, bpitch = deg(-2), npitch = deg(-6), hpitch = deg(-6), fan = deg(20) },
+						legs({ s = deg(22), c = deg(30) }),
 						wings({ e = deg(5), s = deg(8), f = 0, w = deg(14) })
 					)
 				),
@@ -1400,7 +1403,7 @@ local CROW: Style = {
 					"out",
 					cs(
 						{ by = -0.1, bz = -0.9, bpitch = deg(12), npitch = deg(-4), fan = deg(24) },
-						legs({ s = deg(-40), c = deg(50) }),
+						legs({ s = deg(-25), c = deg(50) }),
 						C_MID,
 						{ flap = 1, hard = 1 }
 					)
@@ -1603,13 +1606,24 @@ local CROW: Style = {
 				key("R", 1, "inout", merge(C_HANG, C_MID, { flap = 1, hard = 0.3 })),
 			},
 		},
-		-- a boss's helper: it bursts up out of the ground (wings folded, then hard beats), a last bob into the hover
+		-- a boss's helper: it bursts up out of the ground (wings half folded, opening into hard beats on the way up), a
+		-- last bob into the hover
 		summon = {
 			strike = 0.2,
 			follow = 0.3,
 			recover = 0.3,
 			keys = {
-				key("A", 0, "lin", merge({ drop = 1, bpitch = deg(20), npitch = deg(-10), shake = deg(4) }, C_FOLD)),
+				key("A", 0, "lin", merge({ drop = 1, bpitch = deg(20), npitch = deg(-10), shake = deg(4) }, C_HALF)),
+				key(
+					"A",
+					1,
+					"inout",
+					merge(
+						{ drop = 0.8, bpitch = deg(24), npitch = deg(0) },
+						wings({ e = deg(25), s = deg(-15), f = deg(40), h = deg(35), n = deg(-5) }),
+						{ flap = 0.4, hard = 1 }
+					)
+				),
 				key(
 					"S",
 					1,
@@ -1841,7 +1855,8 @@ local BAT: Style = variant(CROW, {
 	jitter = { rate = 0.25, hz = 2.2, x = 0.12, y = 0.1, roll = deg(7) },
 	actions = {
 		-- the dive bite (the basic melee blow): up with the wings high, a swoop forward and down at the target (aimed
-		-- until the strike, then locked; 2.5 studs at most) with the jaw opening, the bite on the hit, back up
+		-- until the strike, then locked; 2.5 studs at most) dropping almost half its height to the target's chest
+		-- with the jaw opening, the bite on the hit, back up
 		dive = {
 			strike = 0.18,
 			follow = 0.12,
@@ -1862,7 +1877,15 @@ local BAT: Style = variant(CROW, {
 					0.5,
 					"in",
 					bs(
-						{ by = 0.05, bpitch = deg(-25), npitch = deg(-6), jaw = deg(25), lunge = 0.55, reachMax = 2.5 },
+						{
+							by = 0.05,
+							bpitch = deg(-25),
+							npitch = deg(-6),
+							jaw = deg(25),
+							lunge = 0.55,
+							reachMax = 2.5,
+							drop = 0.2,
+						},
 						wings({ e = deg(10), s = deg(10), f = deg(10) })
 					)
 				),
@@ -1871,13 +1894,14 @@ local BAT: Style = variant(CROW, {
 					1,
 					"in",
 					bs({
-						by = -0.25,
+						by = -0.1,
 						bpitch = deg(-15),
 						npitch = deg(-12),
 						hpitch = deg(-10),
 						jaw = deg(45),
 						lunge = 1,
 						reachMax = 2.5,
+						drop = 0.45,
 					}, wings({ e = deg(-40), s = deg(20), n = deg(25) }))
 				),
 				key(
@@ -1885,7 +1909,7 @@ local BAT: Style = variant(CROW, {
 					1,
 					"out",
 					bs(
-						{ by = -0.1, bpitch = deg(5), jaw = deg(5), lunge = 0.9, reachMax = 2.5 },
+						{ by = -0.05, bpitch = deg(5), jaw = deg(5), lunge = 0.9, reachMax = 2.5, drop = 0.35 },
 						wings({ e = deg(-20), s = deg(10) }),
 						{ flap = 0.5 }
 					)
@@ -1894,7 +1918,7 @@ local BAT: Style = variant(CROW, {
 					"R",
 					0.5,
 					"out",
-					bs({ by = 0.15, bpitch = deg(8), lunge = 0.3, reachMax = 2.5 }, B_MID, { flap = 1 })
+					bs({ by = 0.15, bpitch = deg(8), lunge = 0.3, reachMax = 2.5, drop = 0.1 }, B_MID, { flap = 1 })
 				),
 				key("R", 1, "inout", merge(bs(B_MID), { flap = 1 })),
 			},
