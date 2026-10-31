@@ -3,14 +3,17 @@
 -- `UI/Components/ItemTooltip` only draws the lines. S134g (owner 2026-10-15): every item gets the same header (name in
 -- the rarity colour, the head line "Kind · Category · Level N · Classes" with the unmet part in red, the rarity and
 -- upgrade in small type), then its main value, the statistics in small type in fixed groups, the trait, the skill
--- effects, the description and the value line ("Value: X gold") with the context price. No comparison numbers: the
--- comparison is the second panel with the equipped item (ItemTooltip); only "Replaces: <name>" and the two-hander note.
+-- effects, the description and the value line ("Value: X gold") with the context price. Owner 2026-10-31 (replaces the
+-- S134g second panel with the worn item): with ctx.compare the tooltip writes the change against what the equip takes
+-- off right after each number it shows (green "(+2)", red "(-2)", grey "(=)"), and every base stat or line only the worn
+-- item has comes as a red "lost" row ("-5 Siły") in its group; "Replaces: <name>" and the two-hander note stay.
 --
 -- ctx (every field optional):
 --   lang: string           -- "pl" | "en" (default: Locale's current language)
 --   level: number          -- character level (the level in the head line turns red when higher; nil = met)
 --   class: string          -- character class id (classes in the head line; effects of another class say so)
 --   equipped: ItemInstance -- the equipped item it would replace ("Replaces: <name>")
+--   compare: {ItemInstance} -- 2026-10-31: what equipping it takes off (Logic/ItemCompare.replaced): the changes
 --   shop: Shops.ShopDef    -- shop the item is offered in
 --   shopEntry: Shops.Entry -- the offered entry: adds "Price: X gold" (ShopPrice.unit, the same as the row)
 --   potionDiscount: number -- guild potion discount (derived stat), for the shop price
@@ -33,7 +36,8 @@
 -- (colour role), `hex` (explicit colour, overrides tone), `size`, `font`; bonus rows have `kind = "bonus"`,
 -- `quality` 0..1, `tier` (Data/Bonuses) and `legendary` / `mythic` from it. S62: weapons and off-hands get a "Trait"
 -- section (name + line, Data/ItemTraits colour), only for live traits. S134g roles: `head`, `rarity`, `speedDps`,
--- `gap` (a thin space between stat groups), `fxTitle` / `fx` / `fxClass` (skill effects), `replaces`, `compareNote`.
+-- `gap` (a thin space between stat groups), `fxTitle` / `fx` / `fxClass` (skill effects), `replaces`, `compareNote`;
+-- 2026-10-31: `lost` (a stat or line of the worn item this one lacks, red, among the statistics).
 -- Every bonus, trait and effect row carries a `detail` reference that `TooltipModel.details` turns into the details
 -- panel (S68).
 
@@ -49,6 +53,7 @@ local GatherNodes = require("../Data/GatherNodes")
 local ItemName = require("./ItemName")
 local BuffCategories = require("../Data/BuffCategories")
 local ItemRoll = require("./ItemRoll")
+local ItemCompare = require("./ItemCompare")
 local ItemEffects = require("./ItemEffects")
 local ItemTraits = require("../Data/ItemTraits")
 local ItemValue = require("./ItemValue")
@@ -69,6 +74,7 @@ local Stats = require("../Data/Stats")
 local Traits = require("./Traits")
 local Transmog = require("./Transmog")
 local Types = require("../Types")
+local UiPalette = require("../Data/UiPalette")
 local Upgrade = require("./Upgrade")
 
 type ItemInstance = Types.ItemInstance
@@ -109,6 +115,7 @@ export type Ctx = {
 	level: number?,
 	class: string?,
 	equipped: ItemInstance?,
+	compare: { ItemInstance }?,
 	shop: Shops.ShopDef?,
 	shopEntry: Shops.Entry?,
 	potionDiscount: number?,
@@ -257,6 +264,135 @@ end
 
 local function gold(n: number): string
 	return Format.number(n)
+end
+
+-- Comparison (owner 2026-10-31) ------------------------------------------------------------------------------
+
+-- Colours of the change next to a value: parchment roles, ItemTooltip draws each in the iron role of the same name.
+TooltipModel.DELTA_HEX = table.freeze({
+	good = UiPalette.paper.success,
+	bad = UiPalette.paper.danger,
+	same = UiPalette.paper.textMuted,
+})
+
+-- What the tooltip compares with (ctx.compare summed, Logic/ItemCompare); nil without a comparison, for items that are
+-- neither equipment nor a backpack, and for an item compared with itself.
+local function wornOf(item: ItemInstance, d: ItemDef, c: Ctx): ItemCompare.Worn?
+	local list = c.compare
+	if not list or #list == 0 or (d.category ~= "equipment" and d.category ~= "backpack") then
+		return nil
+	end
+	for _, other in list do
+		if other.uid == item.uid then
+			return nil
+		end
+	end
+	return ItemCompare.worn(list)
+end
+
+-- " (+2)" green, " (-2)" red or " (=)" grey after a value: `value` against `worn`, both written with `places` decimals;
+-- `write` writes the size of the change the way the value is written (decimals, "%"). A change too small to show is "=".
+local function changeText(value: number, worn: number, places: number, write: (number) -> string): string
+	local change = ItemCompare.change(value, worn, places)
+	local size = write(math.abs(change))
+	if change == 0 or string.find(size, "[1-9]") == nil then
+		return ` <font color="{TooltipModel.DELTA_HEX.same}">(=)</font>`
+	end
+	local hex = if change > 0 then TooltipModel.DELTA_HEX.good else TooltipModel.DELTA_HEX.bad
+	return ` <font color="{hex}">({if change > 0 then "+" else "-"}{size})</font>`
+end
+
+local function wholeNumber(value: number): string
+	return tostring(math.floor(value + 0.5))
+end
+
+-- A line's number the way its text writes it ("5", "2,5", "4%").
+local function lineNumber(id: string, value: number, lang: string): string
+	local def = Bonuses.get(id)
+	local places = if def then def.decimals else 0
+	local text = if places == 0 then wholeNumber(value) else decimal(value, places, lang)
+	return if def and def.percent then text .. "%" else text
+end
+
+local function lineChange(id: string, value: number, worn: number, lang: string): string
+	local def = Bonuses.get(id)
+	return changeText(value, worn, if def then def.decimals else 0, function(n: number): string
+		return lineNumber(id, n, lang)
+	end)
+end
+
+-- Base statistics are whole or have one decimal (ItemRoll.itemStats), written by formatStat.
+local function statChange(key: string, value: number, worn: number, lang: string): string
+	return changeText(value, worn, 1, function(n: number): string
+		return formatStat(key, n, lang)
+	end)
+end
+
+-- A line only the worn item has, written as the loss: "+{v} Siły" -> "-5 Siły", "Przebicie pancerza {v}%" -> "...
+-- -3%", a reduction "-{v}% kosztu" -> "+4% kosztu" (losing it costs that much).
+local LOST_MARK = "\1"
+local function lostLineText(lang: string, id: string, value: number): string
+	local def = Bonuses.get(id)
+	local places = if def then def.decimals else 0
+	local v = if places == 0 then wholeNumber(value) else decimal(value, places, lang)
+	local text = Locale.T(`bonus.{id}`, { v = LOST_MARK }, lang)
+	text = (string.gsub(text, "%+" .. LOST_MARK, function(): string
+		return "-" .. v
+	end))
+	text = (string.gsub(text, "%-" .. LOST_MARK, function(): string
+		return "+" .. v
+	end))
+	text = (string.gsub(text, LOST_MARK, function(): string
+		return "-" .. v
+	end))
+	return text
+end
+
+-- The weapon's damage parts ("Damage 191 (+12)", "Magic damage 40 (=)"), each with its change; a kind of damage only
+-- the worn weapon deals is a lost part ("Damage -30").
+type DamagePart = { text: string, lost: boolean }
+local function damageParts(w: { dmg: number, mdmg: number }, worn: ItemCompare.Worn?, lang: string): { DamagePart }
+	local was = if worn then worn.weapon else nil
+	local parts: { DamagePart } = {}
+	for _, kind in { { key = "dmg", text = "tooltip.damage" }, { key = "mdmg", text = "tooltip.magicDamage" } } do
+		local value: number = (w :: any)[kind.key]
+		local old: number = if was then (was :: any)[kind.key] else 0
+		if value > 0 then
+			local text = Locale.T(kind.text, { [kind.key] = value }, lang)
+			if was then
+				text ..= changeText(value, old, 0, wholeNumber)
+			end
+			table.insert(parts, { text = text, lost = false })
+		elseif old > 0 then
+			table.insert(parts, { text = Locale.T(kind.text, { [kind.key] = -old }, lang), lost = true })
+		end
+	end
+	return parts
+end
+
+-- " (+0,10)" after the attack speed and " (+12,5)" after the DPS, or "" without a worn weapon.
+local function speedChange(w: { speed: number }, worn: ItemCompare.Worn?, lang: string): string
+	local was = if worn then worn.weapon else nil
+	if not was then
+		return ""
+	end
+	return changeText(w.speed, was.speed, 2, function(n: number): string
+		return decimal(n, 2, lang)
+	end)
+end
+
+local function dpsChange(dps: number, worn: ItemCompare.Worn?, lang: string): string
+	local was = if worn then worn.weapon else nil
+	if not was then
+		return ""
+	end
+	-- both rounded to the one decimal the tooltip writes, so the change matches the two numbers on screen
+	local function one(value: number): number
+		return math.floor(value * 10 + 0.5) / 10
+	end
+	return changeText(one(dps), one(was.dps), 1, function(n: number): string
+		return decimal(n, 1, lang)
+	end)
 end
 
 -- Category ------------------------------------------------------------------------------------------------
@@ -492,7 +628,14 @@ local MAIN_BASE = "armor"
 
 -- Equipment main block: element, then weapon damage with speed and DPS in one line, or the armour of the base (FIX
 -- 2026-10-15: the item level is in the footer; S134g: the grip, level and classes are in the head line).
-local function mainValue(b: Builder, item: ItemInstance, stats: ItemRoll.ItemStats, lang: string)
+-- 2026-10-31: with `worn` every number carries its change (a damage kind only the worn weapon deals: a red part).
+local function mainValue(
+	b: Builder,
+	item: ItemInstance,
+	stats: ItemRoll.ItemStats,
+	lang: string,
+	worn: ItemCompare.Worn?
+)
 	local element = ItemRoll.elementOf(item)
 	if element then
 		b.add(
@@ -504,32 +647,22 @@ local function mainValue(b: Builder, item: ItemInstance, stats: ItemRoll.ItemSta
 	end
 	local w = stats.weapon
 	if w then
-		if w.dmg > 0 then
-			b.add(
-				"stat",
-				Locale.T("tooltip.damage", { dmg = w.dmg }, lang),
-				"dark",
-				{ size = "body", font = "bold", main = true }
-			)
+		for _, part in damageParts(w, worn, lang) do
+			b.add("stat", part.text, if part.lost then "bad" else "dark", { size = "body", font = "bold", main = true })
 		end
-		if w.mdmg > 0 then
-			b.add(
-				"stat",
-				Locale.T("tooltip.magicDamage", { mdmg = w.mdmg }, lang),
-				"dark",
-				{ size = "body", font = "bold", main = true }
-			)
-		end
+		local dpsValue = TooltipModel.dps(w)
 		local speed = Locale.T("tooltip.speed", { speed = decimal(w.speed, 2, lang) }, lang)
-		local dps = Locale.T("tooltip.dps", { dps = decimal(TooltipModel.dps(w), 1, lang) }, lang)
+			.. speedChange(w, worn, lang)
+		local dps = Locale.T("tooltip.dps", { dps = decimal(dpsValue, 1, lang) }, lang)
+			.. dpsChange(dpsValue, worn, lang)
 		b.add("speedDps", `{speed} · {dps}`, "dark")
 	elseif stats.base[MAIN_BASE] then
-		b.add(
-			"stat",
-			`{statName(lang, MAIN_BASE)}: <b>{formatStat(MAIN_BASE, stats.base[MAIN_BASE], lang)}</b>`,
-			"dark",
-			{ size = "body", main = true }
-		)
+		local value = stats.base[MAIN_BASE]
+		local text = `{statName(lang, MAIN_BASE)}: <b>{formatStat(MAIN_BASE, value, lang)}</b>`
+		if worn then
+			text ..= statChange(MAIN_BASE, value, worn.base[MAIN_BASE] or 0, lang)
+		end
+		b.add("stat", text, "dark", { size = "body", main = true })
 	end
 end
 
@@ -541,7 +674,15 @@ end
 -- S134g (F1): the statistics in small type, in the fixed groups (TooltipModel.STAT_GROUPS) with a thin gap between
 -- groups: the base stats besides the main value, then every line of the item (in a group the list's order, never the
 -- roll's; a base stat before a line of the same stat). The quality bar stays on the lines; the rarity bonus last.
-local function groupedStats(b: Builder, item: ItemInstance, stats: ItemRoll.ItemStats, lang: string)
+-- 2026-10-31: with `worn` each row ends with its change (a line against the worn line of the same id, the n-th against
+-- the n-th), and what only the worn items have comes as red `lost` rows in its group after this item's rows.
+local function groupedStats(
+	b: Builder,
+	item: ItemInstance,
+	stats: ItemRoll.ItemStats,
+	lang: string,
+	worn: ItemCompare.Worn?
+)
 	type Row = { group: number, place: number, base: boolean, index: number, line: Line }
 	local rows: { Row } = {}
 	local others = #TooltipModel.STAT_GROUPS + 1
@@ -557,6 +698,10 @@ local function groupedStats(b: Builder, item: ItemInstance, stats: ItemRoll.Item
 	table.sort(keys)
 	for index, stat in keys do
 		local group, place = TooltipModel.groupOf(stat)
+		local text = `{statName(lang, stat)}: <b>{formatStat(stat, stats.base[stat], lang)}</b>`
+		if worn then
+			text ..= statChange(stat, stats.base[stat], worn.base[stat] or 0, lang)
+		end
 		table.insert(rows, {
 			group = group or others,
 			place = place or 0,
@@ -565,16 +710,24 @@ local function groupedStats(b: Builder, item: ItemInstance, stats: ItemRoll.Item
 			line = {
 				kind = "text",
 				role = "stat",
-				text = `{statName(lang, stat)}: <b>{formatStat(stat, stats.base[stat], lang)}</b>`,
+				text = text,
 				tone = "dark",
 				size = "small",
 			},
 		})
 	end
+	local seen: { [string]: number } = {}
 	for index, bonus in stats.bonuses do
 		local group, place = TooltipModel.groupOf(bonus.id)
 		local tier: Tier = tierOf(bonus.id)
 		local rerolled = rerolledAt ~= nil and bonus.at == rerolledAt
+		local text = bonusText(lang, bonus.id, bonus.v)
+		if worn then
+			local n = (seen[bonus.id] or 0) + 1
+			seen[bonus.id] = n
+			local list = worn.lines[bonus.id]
+			text ..= lineChange(bonus.id, bonus.v, if list then list[n] or 0 else 0, lang)
+		end
 		table.insert(rows, {
 			group = group or others,
 			place = place or 0,
@@ -583,7 +736,7 @@ local function groupedStats(b: Builder, item: ItemInstance, stats: ItemRoll.Item
 			line = {
 				kind = "bonus",
 				role = "bonus",
-				text = bonusText(lang, bonus.id, bonus.v),
+				text = text,
 				tone = "bonus",
 				size = "small",
 				quality = bonus.quality,
@@ -600,6 +753,53 @@ local function groupedStats(b: Builder, item: ItemInstance, stats: ItemRoll.Item
 				rerolled = if rerolled then true else nil,
 			},
 		})
+	end
+	if worn then
+		-- what only the worn items have: their base stats (sorted) and lines (in their order), as the loss
+		local lost: { string } = {}
+		for stat in worn.base do
+			if stats.base[stat] == nil then
+				table.insert(lost, stat)
+			end
+		end
+		table.sort(lost)
+		for index, stat in lost do
+			local group, place = TooltipModel.groupOf(stat)
+			table.insert(rows, {
+				group = group or others,
+				place = place or 0,
+				base = true,
+				index = #keys + index,
+				line = {
+					kind = "text",
+					role = "lost",
+					text = `{statName(lang, stat)}: <b>-{formatStat(stat, worn.base[stat], lang)}</b>`,
+					tone = "bad",
+					size = "small",
+				},
+			})
+		end
+		local index = #stats.bonuses
+		for _, id in worn.lineOrder do
+			local list = worn.lines[id]
+			for n = (seen[id] or 0) + 1, #list do
+				local group, place = TooltipModel.groupOf(id)
+				index += 1
+				table.insert(rows, {
+					group = group or others,
+					place = place or 0,
+					base = false,
+					index = index,
+					line = {
+						kind = "text",
+						role = "lost",
+						text = lostLineText(lang, id, list[n]),
+						tone = "bad",
+						size = "small",
+					},
+				})
+			end
+		end
 	end
 	table.sort(rows, function(x: Row, y: Row): boolean
 		if x.group ~= y.group then
@@ -807,9 +1007,9 @@ local function isTwoHanded(item: ItemInstance): boolean
 	return weapon ~= nil and weapon.twoHanded
 end
 
--- S134g (F2, owner 2026-10-15): the comparison is the second panel with the equipped item's own tooltip (ItemTooltip),
--- so the tooltip says no numbers about it: only that an off-hand cannot go next to a two-hander (red) and what the item
--- would replace ("Replaces: <name>", a two-hander also the off-hand).
+-- S134g (F2, owner 2026-10-15): that an off-hand cannot go next to a two-hander (red) and what the item would replace
+-- ("Replaces: <name>", a two-hander also the off-hand). 2026-10-31: the numbers of the comparison stand next to the
+-- values above (ctx.compare); this line says what they are compared with.
 local function replaceNotes(b: Builder, item: ItemInstance, d: ItemDef, c: Ctx, lang: string)
 	local equipped = c.equipped
 	if equipped and equipped.uid == item.uid then
@@ -844,6 +1044,7 @@ local function buildFull(item: ItemInstance, def: ItemDef?, c: Ctx, lang: string
 		return { lines = b.lines }
 	end
 	local d = itemDef :: ItemDef
+	local worn = wornOf(item, d, c) -- 2026-10-31: the changes against what the equip takes off
 
 	-- Header
 	local rarity = Rarities.get(item.rarity)
@@ -862,12 +1063,17 @@ local function buildFull(item: ItemInstance, def: ItemDef?, c: Ctx, lang: string
 	local use = d.use
 	if d.category == "equipment" then
 		local stats = ItemRoll.itemStats(item)
-		mainValue(b, item, stats, lang)
-		groupedStats(b, item, stats, lang)
+		mainValue(b, item, stats, lang, worn)
+		groupedStats(b, item, stats, lang, worn)
 		traitLines(b, stats, lang)
 		effectLines(b, item, c, lang)
 	elseif d.category == "backpack" then
-		b.add("effect", Locale.T("tooltip.capacity", { capacity = d.capacity or 0 }, lang), "dark", { font = "bold" })
+		local capacity = d.capacity or 0
+		local text = Locale.T("tooltip.capacity", { capacity = capacity }, lang)
+		if worn and worn.capacity then
+			text ..= changeText(capacity, worn.capacity, 0, wholeNumber)
+		end
+		b.add("effect", text, "dark", { font = "bold" })
 	elseif d.category == "material" then
 		materialLines(b, d, lang)
 		described = true
@@ -926,7 +1132,11 @@ local function buildFull(item: ItemInstance, def: ItemDef?, c: Ctx, lang: string
 	end
 	-- FIX 2026-10-15: the item level is a detail (the requirement above says what matters): footer, small.
 	if d.category == "equipment" then
-		b.add("ilvl", Locale.T("tooltip.ilvl", { ilvl = item.ilvl }, lang), "muted", { size = "small" })
+		local ilvl = Locale.T("tooltip.ilvl", { ilvl = item.ilvl }, lang)
+		if worn then
+			ilvl ..= changeText(item.ilvl, worn.ilvl, 0, wholeNumber)
+		end
+		b.add("ilvl", ilvl, "muted", { size = "small" })
 		-- S134j: how many times the item was rerolled at the smith (the cost of the next one grows with it)
 		local rerolls = Reroll.state(item).n
 		if rerolls > 0 then
@@ -1015,7 +1225,7 @@ local COMPACT_KEEP: { [string]: boolean } = {
 }
 
 -- Roles folded into one compact line (mainShort, traitShort, fxShort) or counted in "+N more".
-local STAT_ROLES: { [string]: boolean } = { stat = true, bonus = true, gap = true }
+local STAT_ROLES: { [string]: boolean } = { stat = true, bonus = true, gap = true, lost = true }
 
 local function moreLine(b: Builder, n: number, lang: string)
 	b.add("more", Locale.T("tooltip.compact.more", { n = n }, lang), "muted", { size = "small" })
@@ -1031,6 +1241,8 @@ function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang
 	local mainDone = false
 	local statRows: { Line } = {}
 	local statsAt: number? = nil
+	local itemDef = Items.get(item.id)
+	local worn = if itemDef then wornOf(item, itemDef, c) else nil
 	local i = 1
 	while i <= #full do
 		local line = full[i]
@@ -1039,21 +1251,22 @@ function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang
 		if COMPACT_KEEP[role] or (role == "noSell" and (c.merchantOpen or c.shopEntry ~= nil)) then
 			table.insert(b.lines, line)
 		elseif line.main or role == "speedDps" then
-			-- weapon: "Damage 191 · DPS 229.2" in one line; armour: its armour line as it is
+			-- weapon: "Damage 191 · DPS 229.2" in one line (2026-10-31: with the changes); armour: its line as it is
 			local weapon = ItemRoll.itemStats(item).weapon
 			if not weapon then
 				table.insert(b.lines, line)
 			elseif not mainDone then
 				local parts: { string } = {}
-				if weapon.dmg > 0 then
-					table.insert(parts, Locale.T("tooltip.damage", { dmg = weapon.dmg }, lang))
+				for _, part in damageParts(weapon, worn, lang) do
+					table.insert(
+						parts,
+						if part.lost then `<font color="{TooltipModel.DELTA_HEX.bad}">{part.text}</font>` else part.text
+					)
 				end
-				if weapon.mdmg > 0 then
-					table.insert(parts, Locale.T("tooltip.magicDamage", { mdmg = weapon.mdmg }, lang))
-				end
+				local dps = TooltipModel.dps(weapon)
 				table.insert(
 					parts,
-					Locale.T("tooltip.compact.dps", { dps = decimal(TooltipModel.dps(weapon), 1, lang) }, lang)
+					Locale.T("tooltip.compact.dps", { dps = decimal(dps, 1, lang) }, lang) .. dpsChange(dps, worn, lang)
 				)
 				b.add("mainShort", table.concat(parts, " · "), "dark", { size = "body", font = "bold" })
 			end

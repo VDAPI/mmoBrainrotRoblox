@@ -14135,3 +14135,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   modelu i zwraca wierzch modelu nad polem; napis strefy 2,5 nad wierzchem modelu (nie wędruje w górę z polem).
 - Test: `portals.spec` „puts the field into the uneven ruin's own opening” (liczby z pomiaru; pole, zasłona i rdzeń
   między filarami, nad płytą, pod szczytem prawego filara). Nieobejrzane w Studio.
+
+### Porównanie w tooltipie przedmiotu (właściciel 2026-10-31)
+- Prośba: „Zrób żeby pod itemkiem na który najeżdżasz pokazywało staty do porównania a nie ten który masz na sobie”.
+  Wcześniej obok tooltipu stał drugi panel z opisem założonego przedmiotu (FIX 2026-10-09, S134g). Teraz tooltip
+  wskazanego przedmiotu dopisuje zmianę przy każdej liczbie („(+N)” zielone, „(-N)” czerwone, „(=)” szare), a statystyki
+  i linie, które ma tylko założony przedmiot, są czerwonymi wierszami straty w swoich grupach; drugiego panelu nie ma.
+- `Logic/ItemCompare.luau` (co zdejmie założenie: pierścień słabszy, dwuręczna z drugą ręką, tylko przedmiot do
+  założenia teraz; sumy liczb; zaokrąglona zmiana), `Logic/TooltipModel.luau` (`ctx.compare`, rola `lost`,
+  `DELTA_HEX`), `UI/Components/ItemTooltip.luau` (bez panelu „Equipped”, linie premii w rich text, kolory zmian w rolach
+  żelaza), `Controllers/ItemController.luau` („Załóż” pierścienia bez slotu zastępuje ten sam słabszy pierścień),
+  `Admin/Items.luau` (`/tooltip` z liczbami porównania). Klucz `tooltip.equipped` usunięty. Testy:
+  `tests/itemcompare.spec.luau`.
