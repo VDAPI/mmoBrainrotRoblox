@@ -1,13 +1,13 @@
 --!strict
 -- The first minutes (S155, docs/DESIGN.md §20 "Samouczek"): the numbers of the hands-on tutorial and its reward at
 -- level 5. Pure data; the steps, their order and the onboarding funnel live in Logic/Tutorial. The reward is comfort
--- only (a cosmetic title and bound convenience items): no EXP and no gold, so the pace of levels 1-20 stays as it is.
+-- only (a cosmetic title and convenience items): no EXP and no gold, so the pace of levels 1-20 stays as it is.
 -- Balance numbers: tools/balance_reasons.luau (BALANCE_MODULES, pick REWARD / REWARD_LEVEL).
 
 export type RewardItem = { id: string, n: number }
 export type Reward = {
 	title: string, -- Data/Cosmetics id of the title cosmetic (obtain.tutorial)
-	items: { RewardItem }, -- stacks given bound to the character (a full backpack sends them by mail)
+	items: { RewardItem }, -- free stacks (owner 2026-10-31; a full backpack sends them by mail)
 }
 
 local Tutorial = {}

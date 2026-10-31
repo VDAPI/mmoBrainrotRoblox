@@ -14126,6 +14126,25 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Logic/DamageText`, `CombatFxController`, `Admin/Monsters` (`/leash` pokazuje odwrót), teksty `combat.evade`, wiki
   „Jak uciec przed potworem”. Testy: `tests/pursuit.spec.luau`, `leash.spec`, `damagetext.spec`. Balans: powody S162e.
 
+### Wiązanie przedmiotów (właściciel 2026-10-31)
+- Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
+  wędrownego kupca, każdy założony plecak; sprzęt bossów był wolny (poza Mitykiem z worka, a Mityk bossa świata pocztą
+  w ogóle się nie wiązał), zwoje i plecaki za Smoczą Walutę były wolne. Decyzja i tabela: `docs/DECYZJE.md`,
+  `docs/DESIGN.md` §5.6, `wyglad/WIAZANIE-PRZEDMIOTOW.md`.
+- Kod: `Data/Binding.luau` (kategorie, źródła), `Logic/Binding.luau` (reguły, `apply`, `onEquip`, `tooltipKey`,
+  migracja); pole definicji `bind` zamiast `bindOnPickup`; źródła w `LootService`, `DungeonService`, `WorldBossService`,
+  `WorldEventService`, `LoginRewardService`, `TutorialService` / `Logic/Tutorial`, `SideQuestService`, `HuntShopService`,
+  `WanderingMerchantService`, `ArenaService`, `SeasonService`, `PortalShopService`, `PremiumShopService`,
+  `InventoryService.GiveNew`, `ShopService` (plecak), `EquipmentService` / `Logic/StarterGear` (`onEquip`); odmowy w
+  `Logic/Trade`, `Auction`, `Social`, `GuildBank`, `GuildService`; `Inventory.canMerge` (brak pola = wolny).
+- Migracja: `AccountSchema` 13 (plecak, slot plecaka, depozyt), paczki bez `bv` przy odbiorze (`MailService`,
+  `Logic/Mail.Parcel.bv`).
+- UI: `TooltipModel` jedna linia `bind` (także w widoku skróconym), `ItemController.Equip` pyta tylko, gdy przedmiot się
+  zwiąże, `Components/Modal` z opcjonalnym przełącznikiem `Check` („Nie pytaj więcej w tej sesji”), teksty potwierdzeń
+  areny i wędrownego kupca zależne od reguły.
+- Testy: `tests/binding.spec.luau` (reguły kategorii i źródeł, zakładanie, stosy, odmowy, migracja, podpowiedź, brak
+  ręcznego `bound = true`), wersja schematu w testach migracji.
+
 ### Fryzury kreatora: nowy zestaw i barwienie tekstur we własnym kolorze (2026-10-31)
 - Zgłoszenie testera: „poza 7, 9 i 12 fryzury są słabe i nie pasują”. Przegląd w Play (ciało Dawson, skala 0,9): cała
   darmowa pula Roblox ma ok. 22 fryzury, wszystkie siedzą na głowie; problemem był styl (nowoczesne, anime) i płaski

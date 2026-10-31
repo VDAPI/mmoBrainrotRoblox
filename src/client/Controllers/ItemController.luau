@@ -12,6 +12,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local ActionMenu = require(script.Parent.Parent.UI.Components.ActionMenu)
+local Binding = require(ReplicatedStorage.Shared.Logic.Binding)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local DragDrop = require(script.Parent.Parent.UI.DragDrop)
 local EquipFit = require(ReplicatedStorage.Shared.Logic.EquipFit)
@@ -93,9 +94,14 @@ local function invoke(name: string, ...: any)
 	end)
 end
 
--- Equip with the "this item will bind" confirmation (DESIGN §5.6) unless disabled in the menu. 2026-10-31: a ring
--- equipped without a named slot replaces the ring its tooltip compares with (ItemCompare.targetSlot: the weaker of two
--- worn rings; the server alone took ring1).
+-- Owner 2026-10-31: "do not ask again" in the bind question holds until the game is closed (the menu switch
+-- "Ask before binding" turns it off for good).
+local skipBindQuestion = false
+
+-- Equip with the "equipping binds it" confirmation (DESIGN §5.6) when the item binds now (Logic/Binding: free gear;
+-- never potions, backpacks or what is bound already), unless switched off in the menu or for this session.
+-- 2026-10-31: a ring equipped without a named slot replaces the ring its tooltip compares with
+-- (ItemCompare.targetSlot: the weaker of two worn rings; the server alone took ring1).
 function ItemController.Equip(index: number, slot: string?)
 	local item = State.Get({ "character", "inventory", tostring(index) })
 	if not item then
@@ -106,19 +112,28 @@ function ItemController.Equip(index: number, slot: string?)
 	if slot == nil and def and type(equipment) == "table" then
 		slot = ItemCompare.targetSlot(def, equipment, ItemScore.contextFor(State.Get({ "character" })))
 	end
-	local ask = State.Get({ "account", "settings", "bindConfirm" }) ~= false
-	if item.bound or not ask or (def and def.category == "backpack") then
+	local ask = State.Get({ "account", "settings", "bindConfirm" }) ~= false and not skipBindQuestion
+	if not ask or not Binding.bindsOnEquip(item, def) then
 		invoke("EquipItem", index, slot)
 		return
 	end
+	local dontAsk = false
 	WindowManager.ShowModal({
 		Title = Text.now("equip.bind.title"),
 		Message = Text.now("equip.bind.message", { name = ItemText.name(item.id, item.up, item.el) }),
+		Details = Text.now("equip.bind.details"),
+		Check = {
+			Label = Text.now("equip.bind.session"),
+			OnChange = function(checked: boolean)
+				dontAsk = checked
+			end,
+		},
 		ConfirmText = Text.now("equip.bind.confirm"),
 		CancelText = Text.now("common.cancel"),
 		OnConfirm = function(): (boolean, string?)
 			local ok, err = Net.Invoke("EquipItem", index, slot)
 			if ok then
+				skipBindQuestion = skipBindQuestion or dontAsk
 				return true, nil
 			end
 			return false, Text.now(err or "error.internal")

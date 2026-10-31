@@ -187,8 +187,9 @@ local function WanderingMerchantWindow(scope: Scope, props: Props): Fusion.Child
 					price = price,
 				})
 			if offer.kind == "gear" then
+				-- owner 2026-10-31 (Data/Binding): gear for gold binds on equip, for marks on pickup
 				message ..= "\n" .. Text.now(
-					"wanderer.confirmGear",
+					if offer.currency == "marks" then "wanderer.confirmGearBound" else "wanderer.confirmGear",
 					{ level = WanderingMerchant.ilvlOf(visit.band, lvl) }
 				)
 			end

@@ -482,10 +482,31 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
 
 ### 5.6 Wiązanie
 
-- Każdy przedmiot **założony** choć raz staje się związany (`bound = true`): nie można go wymienić ani wystawić na aukcję. Można go natomiast włożyć do depozytu (depozyt jest kontowy, więc związany przedmiot może przejść do innej postaci tego samego konta).
-- Mityczne przedmioty (ręczne i losowane) wiążą się przy podniesieniu (S30), żeby grindu bossów nie obchodzić handlem.
+Właściciel 2026-10-31 („nie wszystko powinno być związane, niektóre itemki dopiero po założeniu”). Każdy przedmiot ma
+jedną regułę: **wolny** (handel, aukcja, poczta, skarbiec gildii), **wiąże się po założeniu** albo **wiąże się po
+podniesieniu**. Wygrywa najsilniejsza z: definicji (`bind`, inaczej kategoria), rzadkości (Mityczny) i źródła. Dane:
+`Data/Binding` (kategorie i źródła), reguły: `Logic/Binding` (każde nadanie przedmiotu na serwerze przez
+`Binding.apply(przedmiot, źródło)`, zakładanie przez `Binding.onEquip`). Pełna tabela dla właściciela:
+`wyglad/WIAZANIE-PRZEDMIOTOW.md` w plikach projektu.
+
+- **Zawsze wolne:** mikstury, eliksiry, błogosławieństwa, zwoje i kamienie teleportu (z dropu, za złoto, z nagród, za
+  Znaki Łowcy i Żetony Areny), materiały, zioła, ryby, rudy, narzędzia, zwykłe plecaki (także założone).
+- **Wiąże się po założeniu:** ekwipunek z potworów, Elit i Elit II, z kuźni, od kupców za złoto (także wędrownego),
+  Unikatowy i Heroiczny z osobistego rzutu bossa lochu i z bossa świata.
+- **Wiąże się po podniesieniu:** Legendarny i Mityczny z osobistego rzutu bossa (lochu i świata), każdy Mityczny (S30),
+  nazwane przedmioty bossów, ekwipunek z nagród (questy, skrzynia logowania, pierwszy łup, skrzynie wydarzeń), ekwipunek i
+  esencja za Znaki Łowcy, wszystko za Smoczą Walutę i Robux (sklep premium, Mistrz Portali, przepustka sezonu).
+- Związany przedmiot: bez handlu, aukcji, poczty i skarbca gildii; można go sprzedać kupcowi (o ile nie `noSell` / `ns`),
+  zniszczyć i włożyć do depozytu (depozyt jest kontowy, więc przejdzie do innej postaci tego samego konta).
+- Stosy związane i wolne nigdy się nie łączą (`Inventory.canMerge`).
 - **Zwój Rozwiązania** odwiązuje 1 przedmiot (Smocza Waluta albo rzadki drop z bossów / nagroda z questów).
-- UI: przed założeniem niezwiązanego przedmiotu potwierdzenie „Przedmiot zostanie związany”.
+- UI: podpowiedź ma jedną krótką linię („Związany z postacią” / „Wiąże się po założeniu” / nic przy wolnych). Przed
+  pierwszym założeniem przedmiotu, który się zwiąże, pytanie „Założenie zwiąże przedmiot z postacią” (szczegóły pod
+  „Więcej ▸”) z przełącznikiem „Nie pytaj więcej w tej sesji”; w menu „Pytaj przed wiązaniem” wyłącza je na stałe.
+- Migracja (schemat 13): stosy związane tylko starą regułą (mikstury z 5. poziomu, zapasy Łowczego, areny i wędrownego
+  kupca, jego materiały za złoto) i zwykłe plecaki stają się wolne w plecaku, slocie plecaka i depozycie, a paczki
+  pocztowe wysłane wcześniej przy odbiorze; ekwipunek zostaje, jak był (założony jest związany, a związany w plecaku
+  mógł być noszony); esencja zostaje związana (mogła być kupiona za Znaki).
 
 ### 5.7 Plecak i depozyt
 
@@ -642,7 +663,8 @@ Każdy przedmiot ma w tooltipie (S134g) linię „Rodzaj · Kategoria · Poziom 
   - 3 × zapasy: 10 mikstur jakości poziomu za 80% ceny alchemika, Heroiczne błogosławieństwo wylosowanej linii
     (60 × poziom), Kamienie Mapy, Kamień Lochu, rzadko Zwój Ochrony (400 × poziom).
 - **Limity:** każda oferta ma limit na postać na wizytę (sprzęt, esencje, rdzeń, Zwój Ochrony 1; reszta 2–3). Wszystko
-  kupione jest związane z postacią i nie do sprzedania kupcowi (`bound`, `ns`). Bez Robux i Smoczych Łusek.
+  kupione jest nie do sprzedania kupcowi (`ns`); od 2026-10-31 (§5.6) towar za złoto jest wolny, sprzęt za złoto wiąże
+  się po założeniu, wszystko za Znaki Łowcy po podniesieniu. Bez Robux i Smoczych Łusek.
 
 ## 9. Mikstury (lekarz)
 
@@ -944,7 +966,8 @@ Szczyty) budzi się Hrimvald, Praojciec Olbrzymów. Ogłoszenia 10 i 2 minuty pr
 otwartym świecie dla 10–20 graczy z ciosami do unikania, wspólnym ciosem, trzema piętnami naraz i zaklęciem do
 przerwania (zasady §16); boss nie zależy od liczby graczy (więcej graczy = krócej, pięciu nie wygrywa), nie ma tarczy,
 pomocnicy faz 2–3 nie dają łupu ani EXP. Po 60 minutach walki wpada w szał, po 2 godzinach bez zabicia odchodzi. Nagroda (EXP, złoto, materiały i jeden
-przedmiot Heroiczny, Legendarny albo Mityczny, niezwiązany) dla każdego z poziomem od progu i udziałem jak w
+przedmiot Heroiczny, Legendarny albo Mityczny; od 2026-10-31 Heroiczny wiąże się po założeniu, Legendarny i Mityczny po
+podniesieniu, §5.6) dla każdego z poziomem od progu i udziałem jak w
 wydarzeniach świata (obrażenia, leczenie, tarcze, przejęte ciosy), **raz na konto na termin**: przejście na inny
 serwer w trakcie nie daje drugiej nagrody. W oknie bossa nie startuje Inwazja ani Czempion, w kole walki nie ma PvP,
 póki boss żyje; Fortuna nie działa na jego łup. Liczby: `Data/WorldBoss`, `Data/Bosses` (`hrimvald`), `docs/BALANS.md`
@@ -1219,7 +1242,7 @@ nazw obcych) i tabelą własnej drużyny.
   | tytuł „Żelazna Wola” / „Weteran Ristalle” | 400 / 600 |
   | Aura Gladiatora | 1200 |
 
-  Przedmioty ze sklepu są związane (bez handlu i aukcji), kosmetyki kontowe. Nic z bonusami.
+  Kamienie i błogosławieństwa ze sklepu są wolne (§5.6, od 2026-10-31), kosmetyki kontowe. Nic z bonusami.
 - **Nagrody sezonu (S128):** przy pierwszym wejściu w nowym sezonie, według lepszego szczytu sezonu z 1 na 1 i 3 na 3,
   gdy postać rozegrała co najmniej 5 meczów rankingowych sezonu, raz: Brąz tytuł „Gladiator Brązu <sezon>”; Srebro
   tytuł + Laur Areny (ramka); Złoto + Aura Zwycięzcy Sezonu; Diament + 150 Smoczych Odłamków; Mistrz + 300 SO i tytuł
@@ -1271,8 +1294,8 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   mieście „idź za strzałką zadania na Łąki”), umiejętność, na końcu „Gotowe” na 6 s. Każdy krok kończy czynność, nie
   „Dalej”; zrobione wcześniej kroki liczą się z góry. Jedna wskazówka na żelazie przy prawdziwym elemencie HUD (PC:
   klawisze gracza, telefon: przyciski), do pominięcia w każdej chwili („Pomiń samouczek” → „Na pewno?”). Na 5. poziomie
-  każda nowa postać (także po pominięciu) dostaje tytuł „Pierwsze Kroki”, 3 Kamienie Powrotu i 10 Małych Mikstur Życia,
-  związane, bez EXP i złota (`Data/Tutorial`). Lejek onboardingu: kroki samouczka, zadania fabuły 1–10, 5. poziom.
+  każda nowa postać (także po pominięciu) dostaje tytuł „Pierwsze Kroki”, 3 Kamienie Powrotu i 10 Małych Mikstur Życia
+  (wolne od 2026-10-31, §5.6), bez EXP i złota (`Data/Tutorial`). Lejek onboardingu: kroki samouczka, zadania fabuły 1–10, 5. poziom.
   S155b: pierwszy potwór nowej postaci zostawia raz osobny worek z Heroiczną, związaną kopią trzymanej broni (ten sam
   rodzaj i żywioł, więc pula umiejętności się nie zmienia; słup światła, toast i okno odsłonięcia z „Załóż”). Nagroda za
   logowanie nie otwiera się sama w trakcie samouczka (tylko „!” na przycisku). Konto z postacią na 5.+ poziomie widzi

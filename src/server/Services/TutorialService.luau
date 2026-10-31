@@ -6,9 +6,10 @@
 -- backpack) from the TutorialEvent remote. TutorialSkip skips the rest. Every step counted is an onboarding funnel step
 -- (Tutorial.funnelStep), a skip a custom event "TutorialSkip" with the step it happened at.
 -- The level reward (Data/Tutorial.REWARD, Tutorial.rewardDue): at level 5 every character made from S155 on (skipped or
--- not) gets the title cosmetic and the bound stacks; a full backpack sends the stacks by mail (once key
--- tutorial_<character id>). The mark is written first and undone when the mail fails (like LoginRewardService), on
--- that character even after a switch during the mail; the check runs on every level up and on entering the world.
+-- not) gets the title cosmetic and the stacks (free since owner 2026-10-31); a full backpack sends the stacks by mail
+-- (once key tutorial_<character id>). The mark is written first and undone when the mail fails (like
+-- LoginRewardService), on that character even after a switch during the mail; the check runs on every level up and on
+-- entering the world.
 -- Characters made before S155 have reward = true.
 -- The potion step: while it is the current step an ordinary potion can be drunk at full (PotionService.AddFullDrink),
 -- since a new character stands in the city at full HP.
@@ -26,6 +27,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
@@ -155,13 +157,12 @@ local function firstPicked(player: Player)
 	Analytics.custom(player, "FirstDrop", char.level)
 end
 
--- The reward stacks, bound to the character (Data/Tutorial.REWARD.items).
+-- The reward stacks (Data/Tutorial.REWARD.items); owner 2026-10-31: potions and stones are free (Data/Binding).
 local function rewardItems(): { ItemInstance }
 	local items: { ItemInstance } = {}
 	for _, entry in TutorialData.REWARD.items do
 		local item = ItemRoll.makeStack(entry.id, entry.n, InventoryService.NewUid())
-		item.bound = true
-		table.insert(items, item)
+		table.insert(items, Binding.apply(item, "reward"))
 	end
 	return items
 end
