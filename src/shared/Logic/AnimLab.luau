@@ -281,7 +281,16 @@ function AnimLab.parse(args: { string }): (Command?, string?)
 		if states and motion and RigidStyles.get(motion) and FlyerStyles.get(motion) then
 			states = FlyerStyles.labStates(motion, states)
 		end
-		if not table.find(LookAnim.SLOTS, slot) and not (states and table.find(states, slot)) then
+		-- (the states of a kind's new model too: which model Assets holds is known on the client only)
+		local remodel = if look and look.asset then look.asset.remodel else nil
+		local newStates = if remodel and QuadStyles.get(remodel.motion)
+			then QuadStyles.labStates(remodel.motion)
+			else nil
+		if
+			not table.find(LookAnim.SLOTS, slot)
+			and not (states and table.find(states, slot))
+			and not (newStates and table.find(newStates, slot))
+		then
 			return nil, "animlab.error.slot"
 		end
 		return make("mob", a, slot), nil

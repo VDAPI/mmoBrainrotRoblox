@@ -23,6 +23,9 @@ export type Entry = {
 	-- Logic/FlyerMotion; Data/RigidStyles: the models without bones moved whole by Logic/RigidMotion, 2026-10-26)
 	motion: string?,
 	grip: { number }?, -- template animation: the weapon's direction in the right hand at rest (root space)
+	-- template animation (2026-10-31): the kind's new model, animated by the style `motion` once it replaces the old one
+	-- in Assets: a look with every bone named in `marker` takes it (the old model keeps the entry's own `motion`)
+	remodel: { marker: { string }, motion: string }?,
 }
 
 local MonsterAssets: { [string]: Entry } = {
@@ -74,7 +77,7 @@ local MonsterAssets: { [string]: Entry } = {
 		hipHeight = 1.45,
 		height = 4.12,
 		walkSpeed = 6.2,
-		motion = "humanoid1h",
+		motion = "humanoid2h", -- 2026-10-31: a two-handed weapon (the great sword mocap)
 		grip = { 0.97, -0.15, 0 },
 	},
 	koboldMiner = {
@@ -116,7 +119,7 @@ local MonsterAssets: { [string]: Entry } = {
 		hipHeight = 3.10,
 		height = 6.91,
 		walkSpeed = 10.4,
-		motion = "humanoid1h",
+		motion = "humanoid2h", -- 2026-10-31: a two-handed weapon (the great sword mocap)
 		grip = { 0, 1, 0 },
 	},
 	goblinShaman = {
@@ -183,7 +186,7 @@ local MonsterAssets: { [string]: Entry } = {
 		hipHeight = 2.17,
 		height = 5.01,
 		walkSpeed = 7.5,
-		motion = "humanoid1h",
+		motion = "humanoid2h", -- 2026-10-31: a two-handed weapon (the great sword mocap)
 		grip = { 0.95, -0.25, 0 },
 	},
 	skeletonGuard = {
@@ -293,6 +296,9 @@ local MonsterAssets: { [string]: Entry } = {
 		walkSpeed = 5.7,
 		-- 2026-10-26: the regular wyvern's style until its new model (Data/BipedStyles frostDragon)
 		motion = "frostDragon",
+		-- 2026-10-31: the new Tripo model (four legs, wing chains) on Data/QuadStyles dragon, picked by its bones (the
+		-- old model's are BoneRoot, Hip, L_Thigh ...)
+		remodel = { marker = { "tripo::Spine_4", "bone_21" }, motion = "dragon" },
 	},
 	wyvern = {
 		rig = "static",
@@ -482,6 +488,7 @@ for id, variant in MonsterAssetVariants do
 			visual = base.visual,
 			motion = base.motion,
 			grip = base.grip,
+			remodel = base.remodel,
 			from = variant.from,
 			tint = variant.tint,
 		}

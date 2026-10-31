@@ -16,6 +16,12 @@
 --   for planted feet;
 -- * `trunk` (a mammoth's): from the root to the tip; `ears.axis` "yaw": ears that flap out instead of folding back;
 -- * no `neck` rows: the head bone takes the neck's turn too.
+-- * `wings` L / R (a dragon's, 2026-10-31): `clav` (optional shoulder blade), `humerus`, `forearm`, `hand`, `primaries`
+--   (optional), `tip` (the wing's last joint: the span runs from the shoulder to it) and `dorsal` (the top side of the
+--   membrane at rest, root axes, from the mesh): Logic/QuadPose fits each wing's plane once, so the wing poses
+--   (folded, spread, the beat) read the same whatever pose the export rests in;
+-- * `muzzle` (optional): the mouth, a point `at` (leg lengths, model axes at rest) from the joint of `bone`: the root's
+--   Muzzle and Vfx/MotionFx's breath leave from it.
 -- Pitch is a turn about the model's side axis, + swings a limb forward (its lower end toward the front).
 -- The models after the wolf were mapped from the Studio rig dump (tools/anim/rigs/<model>.json, 2026-10-26; positions
 -- in the model frame, feet at y = 0) and checked by forward kinematics in tests/quadheavy.spec.luau.
@@ -29,6 +35,15 @@ export type Joint = {
 	level: boolean?,
 	tip: { number }?, -- the last bone only: where its tip (the foot) is from its joint, in leg lengths
 }
+export type Wing = {
+	clav: string?,
+	humerus: string,
+	forearm: string,
+	hand: string,
+	primaries: string?,
+	tip: string,
+	dorsal: { number },
+}
 export type Rig = {
 	body: string,
 	spine: { { bone: string, share: number } },
@@ -39,6 +54,8 @@ export type Rig = {
 	tail: { string },
 	trunk: { string }?,
 	legs: { [string]: { Joint } },
+	wings: { [string]: Wing }?,
+	muzzle: { bone: string, at: { number } }?,
 }
 
 local RIGS: { [string]: Rig } = {
@@ -254,6 +271,79 @@ local RIGS: { [string]: Rig } = {
 				{ bone = "tripo::1_Right_Limb_3", paw = 1 },
 			},
 		},
+	},
+	-- young frost dragon, the new model (2026-10-31, Tripo export with wing chains; dump tools/anim/rigs/
+	-- youngFrostDragon_v2.json from its FBX): the root carries the hind legs, the tail chain (bone_31, bone_32,
+	-- Tail_0..3) and a pelvis leaf (bone_46, still); Spine_0..2 run to the withers (Spine_2 carries the fore legs),
+	-- Spine_3 is the chest with the neck Head_0..2, the head Head_3 (its snout Head_4 follows: no jaw bone) and both
+	-- wings. Fore legs upper arm / forearm / wrist / toes, hind legs thigh / shin (it runs back to the hock) /
+	-- metatarsus / toes (the right toes in two bones); the feet are planted at the balls, the toes kept flat. Wings:
+	-- shoulder blade (the left one named Spine_4) / humerus / forearm (up to the wrist, the wing's high point) / three
+	-- finger bones out to the tip; bone_22 hangs from the right hand into the membrane (it follows). The wings rest
+	-- spread and raised, the membrane hanging below the arm (its top side faces back and up).
+	youngFrostDragon = {
+		body = "tripo::Root",
+		spine = {
+			{ bone = "tripo::Spine_0", share = 0.2 },
+			{ bone = "tripo::Spine_1", share = 0.3 },
+			{ bone = "tripo::Spine_2", share = 0.3 },
+			{ bone = "tripo::Spine_3", share = 0.2 },
+		},
+		neck = {
+			{ bone = "tripo::Head_0", share = 0.3 },
+			{ bone = "tripo::Head_1", share = 0.35 },
+			{ bone = "tripo::Head_2", share = 0.35 },
+		},
+		head = "tripo::Head_3",
+		tail = { "bone_31", "bone_32", "tripo::Tail_0", "tripo::Tail_1", "tripo::Tail_2", "tripo::Tail_3" },
+		legs = {
+			FL = {
+				{ bone = "bone_23", swing = 1, fold = 0.35, spread = 1 },
+				{ bone = "bone_24", fold = -1 },
+				{ bone = "bone_25", fold = 0.85 },
+				{ bone = "bone_26", paw = 1, level = true },
+			},
+			FR = {
+				{ bone = "bone_27", swing = 1, fold = 0.35, spread = 1 },
+				{ bone = "bone_28", fold = -1 },
+				{ bone = "bone_29", fold = 0.85 },
+				{ bone = "bone_30", paw = 1, level = true },
+			},
+			HL = {
+				{ bone = "bone_37", swing = 1, fold = 0.3, spread = 1 },
+				{ bone = "bone_38", fold = -1 },
+				{ bone = "bone_39", fold = 0.9 },
+				{ bone = "bone_40", paw = 1, level = true },
+			},
+			HR = {
+				{ bone = "bone_41", swing = 1, fold = 0.3, spread = 1 },
+				{ bone = "bone_42", fold = -1 },
+				{ bone = "bone_43", fold = 0.9 },
+				{ bone = "bone_44", paw = 1, level = true },
+			},
+		},
+		wings = {
+			L = {
+				clav = "tripo::Spine_4",
+				humerus = "bone_11",
+				forearm = "bone_12",
+				hand = "bone_13",
+				primaries = "bone_14",
+				tip = "bone_15",
+				dorsal = { 0.27, 0.47, 0.84 },
+			},
+			R = {
+				clav = "bone_16",
+				humerus = "bone_17",
+				forearm = "bone_18",
+				hand = "bone_19",
+				primaries = "bone_20",
+				tip = "bone_21",
+				dorsal = { -0.27, 0.47, 0.84 },
+			},
+		},
+		-- the front of the jaws, under and ahead of the snout bone
+		muzzle = { bone = "tripo::Head_4", at = { 0, -0.17, -0.16 } },
 	},
 }
 

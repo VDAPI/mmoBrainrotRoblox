@@ -47,12 +47,35 @@ local function apply(m: Mat, v: Vec): Vec
 	}
 end
 
--- The dump of `model` (positions scaled by `scale`).
+-- The dump of `model` (positions scaled by `scale`). A dump read from the FBX (`<model>_v2`, 2026-10-31: bone heads
+-- and tails, no rest axes) gets rest axes along each bone (up from the head to the tail, a roll made up from the bone's
+-- name: the pose must not depend on them), and its box from `size`.
 function QuadRigFk.load(model: string, scale: number?): Dump
 	local k = scale or 1
 	local raw = serde.decode("json", fs.readFile(`tools/anim/rigs/{model}.json`))
 	local bones: { [string]: QuadPose.Bone } = {}
 	local names: { string } = {}
+	if raw.size then
+		for _, b in raw.bones do
+			local up = unit(sub(b.tail, b.head))
+			local roll = (#b.name * 0.37) % 1 * 2 * math.pi
+			local side = unit(cross(up, { math.cos(roll), 0.31, math.sin(roll) }))
+			local back = cross(side, up)
+			bones[b.name] = {
+				rest = { side[1], up[1], back[1], side[2], up[2], back[2], side[3], up[3], back[3] },
+				pos = { b.head[1] * k, b.head[2] * k, b.head[3] * k },
+				parent = b.parent,
+			}
+			table.insert(names, b.name)
+		end
+		return {
+			bones = bones,
+			names = names,
+			height = raw.size[2] * k,
+			width = raw.size[1] * k,
+			depth = raw.size[3] * k,
+		}
+	end
 	for _, b in raw.bones do
 		-- rest axes: up (+Y) and look (-Z) of the bone, made orthonormal (the dump rounds them)
 		local up = unit(b.up)
@@ -69,9 +92,9 @@ function QuadRigFk.load(model: string, scale: number?): Dump
 	return { bones = bones, names = names, height = raw.height * k, width = raw.width * k, depth = raw.depth * k }
 end
 
--- The skeleton of `model`'s role map on its dump.
-function QuadRigFk.skeleton(model: string, scale: number?): (QuadPose.Skeleton?, Dump)
-	local dump = QuadRigFk.load(model, scale)
+-- The skeleton of `model`'s role map on its dump (`source`: another dump of the model, e.g. its `_v2`).
+function QuadRigFk.skeleton(model: string, scale: number?, source: string?): (QuadPose.Skeleton?, Dump)
+	local dump = QuadRigFk.load(source or model, scale)
 	local rig = QuadRigs.get(model)
 	return if rig then QuadPose.skeleton(dump.bones, rig) else nil, dump
 end

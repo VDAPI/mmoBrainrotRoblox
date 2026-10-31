@@ -979,8 +979,13 @@ local function attachFx(model: Model, rig: any)
 		elseif type(id) == "string" then MonsterLooks.get(id)
 		else nil
 	local asset = look and look.asset
-	if asset and asset.motion and type(id) == "string" then
-		MotionFx.attach(model, model, rig, asset.motion, asset.model, id)
+	-- (a kind's new model takes its own style by its bones: Data/MonsterAssets `remodel`)
+	local styleId = asset
+		and MonsterLooks.motionOf(asset, function(bone: string): boolean
+			return model:FindFirstChild(bone, true) ~= nil
+		end)
+	if asset and styleId and type(id) == "string" then
+		MotionFx.attach(model, model, rig, styleId, asset.model, id)
 		MotionFx.step(model, nil, 0, nil)
 	end
 end
@@ -997,7 +1002,9 @@ local function bipedLab(
 	boss: any,
 	planned: { [string]: any }?
 ): (BipedLab?, MotionKeys.Keys?)
-	local styleId = look.asset.motion :: string
+	local styleId = MonsterLooks.motionOf(look.asset, function(bone: string): boolean
+		return model:FindFirstChild(bone, true) ~= nil
+	end) :: string
 	local rig: any = if BipedStyles.get(styleId)
 		then BipedRig.new(model, styleId, 7.3, look.asset.grip, look.asset.model)
 		elseif QuadStyles.get(styleId) then QuadRig.new(model, styleId, 7.3, look.asset.model)
@@ -1077,7 +1084,8 @@ local function bipedLab(
 	elseif state == "cast" then
 		name = (monster and monster.ability and style.abilities[monster.ability]) or style.abilities.heavyBlow
 	elseif state == "death" then
-		name = rig.mod.death(rig.motion)
+		-- (by the side of the blow: a blow from the front, a fall on the back)
+		name = rig.mod.death(rig.motion, "front")
 	elseif (rig.kind == "rigid" or rig.kind == "flyer") and not style.actions[state] then
 		-- a rigid kind or a flyer (Data/RigidStyles LAB_STATES, FlyerStyles.labStates): the kit's blows by their slot
 		local slots: { [string]: string? } = {
@@ -1114,7 +1122,9 @@ local function bipedLab(
 		local dying = string.sub(name, 1, 5) == "death"
 		-- (a boss's stagger and appear start at their strike, like a death)
 		local struck = dying or (style.boss ~= nil and (name == style.boss.stagger or name == style.spawn))
-		local hit = if planned then planned.hit elseif struck then action.strike else windupOf(name)
+		-- (a fall, getting up on mocap: at the clip's own pace, Logic/BipedMotion.ownHit)
+		local own = if rig.mod.ownHit then rig.mod.ownHit(action) else nil
+		local hit = if planned then planned.hit elseif own then own elseif struck then action.strike else windupOf(name)
 		local run = {
 			name = name,
 			start = 0,

@@ -19,6 +19,13 @@
 --         point in leg lengths (model frame, + up, + back); the leg's swing and fold are solved for it in the plane of
 --         the leg (a two-parameter IK over the map's joint shares), so a body that bobs, pitches or rears does not move
 --         a planted foot
+--   wings (a dragon's, 2026-10-31; the controls of Logic/FlyerPose) w<S>e elevation (+ up), w<S>s sweep (+ forward),
+--         w<S>t twist (+ leading edge up), w<S>f elbow fold (the wrist toward the leading edge), w<S>h wrist fold (the
+--         fingers back), w<S>b w<S>w w<S>p the forearm, the hand and the fingers bent up, w<S>q the hand's twist;
+--         S = L / R. All 0 is the wing as modelled turned flat and straight out to the side (its membrane level, the
+--         top up): the wing's plane is fitted once from its rest joints and the map's `dorsal`, so any rest pose
+--         (spread, raised, folded) takes the same poses; the shoulder blade lifts by w<S>u and swings forward by w<S>v
+--         from its rest (Logic/DragonMotion sets them as shares of the wing's own turn)
 
 local NpcPose = require("./NpcPose")
 local QuadRigs = require("../Data/QuadRigs")
@@ -40,6 +47,16 @@ export type Bone = { rest: Mat, pos: Vec, parent: string? }
 -- A leg for the foot solver: its joints' rest segments (to the next joint; the last one to the foot's tip) and the
 -- foot's rest point (model frame).
 export type Chain = { top: string, segs: { Vec }, foot: Vec, reach: number }
+-- A wing bone: its side, its place in the chain (0 the shoulder blade, 1 humerus .. 4 fingers), the turn its turns
+-- compose on (`anchor`: the bone the shoulder hangs from), the wing's fit (rest -> flat and straight out) and its
+-- control names.
+export type WingBone = {
+	side: number,
+	seg: number,
+	anchor: string,
+	fit: Mat,
+	keys: { [string]: string },
+}
 export type Skeleton = {
 	rig: QuadRigs.Rig,
 	bones: { [string]: Bone },
@@ -48,6 +65,7 @@ export type Skeleton = {
 	L: number, -- hind hip height over the ground
 	chains: { [string]: Chain }, -- by leg (FL FR HL HR)
 	tops: { [string]: string }, -- the top joint of each leg -> the leg
+	wings: { [string]: WingBone }, -- by bone name (empty without wings)
 }
 export type Posed = { [string]: { rot: Mat, offset: Vec? } }
 
@@ -66,6 +84,57 @@ end
 QuadPose.rx, QuadPose.ry, QuadPose.rz = rx, ry, rz
 
 QuadPose.LEGS = { "FL", "FR", "HL", "HR" }
+
+-- The wing control names by side (no strings built per frame).
+local WING_KEYS: { [string]: { [string]: string } } = {}
+for _, side in { "L", "R" } do
+	local keys: { [string]: string } = {}
+	for _, letter in { "e", "s", "t", "f", "h", "b", "w", "p", "q", "u", "v" } do
+		keys[letter] = "w" .. side .. letter
+	end
+	WING_KEYS[side] = keys
+end
+QuadPose.WING_KEYS = WING_KEYS
+
+local function vsub(a: Vec, b: Vec): Vec
+	return { a[1] - b[1], a[2] - b[2], a[3] - b[3] }
+end
+local function vdot(a: Vec, b: Vec): number
+	return a[1] * b[1] + a[2] * b[2] + a[3] * b[3]
+end
+local function vcross(a: Vec, b: Vec): Vec
+	return { a[2] * b[3] - a[3] * b[2], a[3] * b[1] - a[1] * b[3], a[1] * b[2] - a[2] * b[1] }
+end
+local function vunit(a: Vec): Vec?
+	local n = math.sqrt(vdot(a, a))
+	return if n > 1e-9 then { a[1] / n, a[2] / n, a[3] / n } else nil
+end
+-- The rotation whose columns are x, y, z.
+local function columns(x: Vec, y: Vec, z: Vec): Mat
+	return { x[1], y[1], z[1], x[2], y[2], z[2], x[3], y[3], z[3] }
+end
+
+-- The turn taking a wing's rest frame (span from the shoulder to the tip, the membrane's top side, the chord) onto
+-- the flat one straight out to side `m` (top up): Logic/FlyerPose's canonical frame.
+local function wingFit(bones: { [string]: Bone }, wing: QuadRigs.Wing, m: number): Mat
+	local span = vunit(vsub(bones[wing.tip].pos, bones[wing.humerus].pos)) or { m, 0, 0 }
+	local d = vunit(wing.dorsal) or { 0, 1, 0 }
+	local k = vdot(d, span)
+	local normal = vunit({ d[1] - span[1] * k, d[2] - span[2] * k, d[3] - span[3] * k }) or { 0, 1, 0 }
+	local rest = columns(span, normal, vcross(span, normal))
+	local canon = columns({ m, 0, 0 }, { 0, 1, 0 }, { 0, 0, m })
+	return mul(canon, transpose(rest))
+end
+
+-- Rz(a) * Ry(b) * Rx(c): a wing's elevation, sweep and twist at its shoulder (canonical axes).
+local function zyx(a: number, b: number, c_: number): Mat
+	return mul(mul(rz(a), ry(b)), rx(c_))
+end
+-- Ry(b) * Rz(a) * Rx(c): a wing joint's fold (in the wing's plane), bend (up) and twist.
+local function yzx(b: number, a: number, c_: number): Mat
+	return mul(mul(ry(b), rz(a)), rx(c_))
+end
+QuadPose.zyx, QuadPose.yzx = zyx, yzx
 
 -- The skeleton from the bones in root space (every bone of the model by name: rest, pos, parent name) and the role
 -- map; nil when a mapped bone is missing.
@@ -99,6 +168,19 @@ function QuadPose.skeleton(bones: { [string]: Bone }, rig: QuadRigs.Rig): Skelet
 	for _, leg in rig.legs do
 		for _, joint in leg do
 			driven[joint.bone] = true
+		end
+	end
+	if rig.wings then
+		for _, wing in rig.wings do
+			for _, name in { wing.humerus, wing.forearm, wing.hand } do
+				driven[name] = true
+			end
+			if wing.clav then
+				driven[wing.clav] = true
+			end
+			if wing.primaries then
+				driven[wing.primaries] = true
+			end
 		end
 	end
 	for name in driven do
@@ -173,7 +255,57 @@ function QuadPose.skeleton(bones: { [string]: Bone }, rig: QuadRigs.Rig): Skelet
 		chains[side] = { top = leg[1].bone, segs = segs, foot = foot, reach = math.max(reach, 1e-3) }
 		tops[leg[1].bone] = side
 	end
-	return { rig = rig, bones = bones, order = order, parent = parent, L = L, chains = chains, tops = tops }
+	local wings: { [string]: WingBone } = {}
+	if rig.wings then
+		for sideName, wing in rig.wings do
+			if not bones[wing.tip] then
+				return nil
+			end
+			local m = if sideName == "R" then 1 else -1
+			local fit = wingFit(bones, wing, m)
+			local first = wing.clav or wing.humerus
+			local anchor = parent[first]
+			if not anchor then
+				return nil
+			end
+			local keys = WING_KEYS[sideName]
+			local chain = { wing.humerus, wing.forearm, wing.hand }
+			if wing.primaries then
+				table.insert(chain, wing.primaries)
+			end
+			if wing.clav then
+				wings[wing.clav] = { side = m, seg = 0, anchor = anchor, fit = fit, keys = keys }
+			end
+			for i, name in chain do
+				wings[name] = { side = m, seg = i, anchor = anchor, fit = fit, keys = keys }
+			end
+		end
+	end
+	return {
+		rig = rig,
+		bones = bones,
+		order = order,
+		parent = parent,
+		L = L,
+		chains = chains,
+		tops = tops,
+		wings = wings,
+	}
+end
+
+-- The turn of a wing's chain up to its segment `seg` in the flat frame (the shoulder, then each joint), from the turn
+-- of the segment before it (`prev`, nil at the shoulder).
+local function wingChain(controls: Controls, w: WingBone, prev: Mat?): Mat
+	local m, k = w.side, w.keys
+	local seg = w.seg
+	if seg == 1 or not prev then
+		return zyx(m * (controls[k.e] or 0), m * (controls[k.s] or 0), controls[k.t] or 0)
+	elseif seg == 2 then
+		return mul(prev, yzx(m * (controls[k.f] or 0), m * (controls[k.b] or 0), 0))
+	elseif seg == 3 then
+		return mul(prev, yzx(-m * (controls[k.h] or 0), m * (controls[k.w] or 0), controls[k.q] or 0))
+	end
+	return mul(prev, yzx(-m * (controls[k.h] or 0) * 0.35, m * (controls[k.p] or 0), 0))
 end
 
 -- The leg's pitches (model axes, about +X, each on the one above it) for swing `u`, fold `f`, paw curl `p` and level
@@ -333,6 +465,7 @@ function QuadPose.world(skel: Skeleton, controls: Controls): ({ [string]: Mat },
 	end
 	local bones = skel.bones
 	local world: { [string]: Mat } = {}
+	local wingTurn: { [number]: Mat } = {} -- the flat-frame chain so far, by side
 	-- the turn a bone moves with (its own when driven, else its nearest driven ancestor's), from the world so far
 	local function carried(name: string?): Mat
 		while name do
@@ -383,7 +516,20 @@ function QuadPose.world(skel: Skeleton, controls: Controls): ({ [string]: Mat },
 			local k = math.min(plant, 1)
 			legTurns(side, leg, u0 + (u - u0) * k, f0 + (f - f0) * k)
 		end
-		world[name] = mul(base, localTurn[name] or IDENTITY)
+		local wing = skel.wings[name]
+		if wing and wing.seg == 0 then
+			-- the shoulder blade lifts and swings a little with the wing
+			local k = wing.keys
+			local m = wing.side
+			world[name] = mul(base, zyx(m * c(controls, k.u), m * c(controls, k.v), 0))
+		elseif wing then
+			-- a wing segment: its turn composes on the bone the shoulder hangs from, not on the bone above it
+			local g = wingChain(controls, wing, wingTurn[wing.side])
+			wingTurn[wing.side] = g
+			world[name] = mul(mul(world[wing.anchor] or IDENTITY, g), wing.fit)
+		else
+			world[name] = mul(base, localTurn[name] or IDENTITY)
+		end
 	end
 	return world, shift, nil
 end

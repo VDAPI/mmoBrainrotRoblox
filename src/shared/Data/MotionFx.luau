@@ -136,6 +136,30 @@ WYVERN_REGULAR.spit = {
 }
 WYVERN_REGULAR.pounce = { fx("dust", "feet", "W") }
 
+-- The young frost dragon on its new model (Data/QuadStyles `dragon`, 2026-10-31): the frost breath on the action names
+-- of the wyvern's (the charge in the throat, the stream from the snout along the head's sweep, the cold breath after
+-- it), its spit, the roar, the crash of the stomp and the claw rake, the wing buffet's and the landing's dust.
+local DRAGON: { [string]: { Fx } } = {
+	breath = {
+		fx("charge", "mouth", "A0.35", "W"),
+		fx("breath", "mouth", "W", "F0.85"),
+		fx("smolder", "mouth", "F0.85", "R0.8"),
+	},
+	spit = {
+		fx("charge", "mouth", "A0.5", "W", { size = 0.6 }),
+		fx("spit", "mouth", "W"),
+	},
+	roar = { fx("screech", "mouth", "W", nil, { size = 1.1 }) },
+	stomp = { fx("slam", "front", "W", nil, { size = 1.1 }) },
+	rake = { fx("slam", "front", "W", nil, { size = 0.9 }) },
+	buffet = { fx("dust", "feet", "W", nil, { size = 1.4 }) },
+	pounce = { fx("dust", "feet", "W") },
+	tail = { fx("dust", "feet", "F0.4", nil, { size = 0.8 }) },
+	spawn = { fx("dust", "feet", "W", nil, { size = 1 }) },
+	deathL = { fx("dust", "body", "F1", nil, { size = 1.5 }) },
+	deathR = { fx("dust", "body", "F1", nil, { size = 1.5 }) },
+}
+
 ---------------------------------------------------------------- spirits (Data/BipedStyles SPIRIT_ACTIONS)
 
 -- The specter: a cold bolt from the hand, the wail's rings, wisps bursting and rising.
@@ -375,7 +399,11 @@ local HUMANOID: { [string]: { Fx } } = {
 	throw = { fx("held", "handL", "A0.15", "W") },
 	deathBack = { fx("dust", "body", "F1", nil, { size = 0.8 }) },
 	deathFwd = { fx("dust", "body", "F1", nil, { size = 0.8 }) },
+	deathBack2 = { fx("dust", "body", "F1", nil, { size = 0.8 }) },
 }
+-- The two-handed fighters (humanoid2h, 2026-10-31): the same, and a streak behind the hauled hew.
+local HUMANOID_2H: { [string]: { Fx } } = table.clone(HUMANOID)
+HUMANOID_2H.hew = { fx("trail", "weapon", "S0", "F0.4") }
 
 -- The casters (shaman, cultist, necromancer, witch, imp): the spell gathers in the staff's head (the free hand's for
 -- spellLeft and the pool) and flashes there as the bolt leaves; the nova gathers in the raised staff, the butt hits the
@@ -395,6 +423,7 @@ local CASTER: { [string]: { Fx } } = {
 	throw = { fx("held", "handL", "A0.15", "W") },
 	deathBack = { fx("dust", "body", "F1", nil, { size = 0.7 }) },
 	deathFwd = { fx("dust", "body", "F1", nil, { size = 0.7 }) },
+	deathBack2 = { fx("dust", "body", "F1", nil, { size = 0.7 }) },
 }
 
 -- The ghosts (the forest wraith): the caster's spells without a staff or a floor to hit (the frost nova's spikes
@@ -420,6 +449,8 @@ local BRUTE: { [string]: { Fx } } = {
 	throw = { fx("held", "handL", "A0.15", "W", { size = 1.2 }) },
 	deathBack = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
 	deathFwd = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
+	deathBack2 = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
+	deathMutant = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
 }
 
 local function freezeAll(list: { [string]: { Fx } }): { [string]: { Fx } }
@@ -435,6 +466,7 @@ end
 MotionFx.STYLES = table.freeze({
 	wyvern = freezeAll(WYVERN),
 	wyvernRegular = freezeAll(WYVERN_REGULAR),
+	dragon = freezeAll(DRAGON),
 	specter = freezeAll(SPECTER),
 	iceElemental = freezeAll(ICE_ELEMENTAL),
 	canine = freezeAll(CANINE),
@@ -454,6 +486,7 @@ MotionFx.STYLES = table.freeze({
 	vulture = freezeAll(VULTURE),
 	harpy = freezeAll(HARPY),
 	humanoid1h = freezeAll(HUMANOID),
+	humanoid2h = freezeAll(HUMANOID_2H),
 	caster = freezeAll(CASTER),
 	ghost = freezeAll(GHOST),
 	brute = freezeAll(BRUTE),

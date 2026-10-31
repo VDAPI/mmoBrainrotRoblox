@@ -31,6 +31,7 @@ type Action = {
 	channel: boolean?,
 	turnFeet: number?,
 	leap: boolean?,
+	clip: { [string]: any }?, -- Data/BipedStyles ClipRef: played from a mocap clip (2026-10-31)
 }
 
 local BossStyles = {}
@@ -6176,6 +6177,38 @@ HA.death = {
 		}),
 	},
 }
+
+---------------------------------------------------------------- mocap (2026-10-31: the owner's Mixamo download)
+
+-- `action` played from a mocap clip (Data/BipedStyles ClipRef, Logic/BipedMotion: the clip's contact on the server's
+-- hit), `strike` the clip's part before its hit at its own pace, `follow` and `recover` how much of it plays after the
+-- hit. The keys stay (the fallback, AnimLab's pose sheets). Where the clips fit the bosses' own blows:
+local function mocap(action: Action, clip: { [string]: any }, strike: number, follow: number, recover: number): Action
+	local out = table.clone(action)
+	out.clip = clip
+	out.strike, out.follow, out.recover = strike, follow, recover
+	return out
+end
+
+-- Grimrok's cleaver: the diagonal chop, the rising backhand hack and the overhead on the sword set, the sweep the wide
+-- horizontal one; his roar a battle cry (the breath before it held to its peak). The leap, the whirlwind, the throws,
+-- the bombs, the rage, the stagger and his long death stay keyed.
+GA.chop = mocap(GA.chop, { name = "swordSlash" }, 0.2, 0.3, 0.4)
+GA.hack = mocap(GA.hack, { name = "swordBackhand" }, 0.23, 0.3, 0.4)
+GA.overhead = mocap(GA.overhead, { name = "swordChop" }, 0.25, 0.35, 0.45)
+GA.sweep = mocap(GA.sweep, { name = "swordSweep" }, 0.27, 0.45, 0.55)
+GA.roar = mocap(GA.roar, { name = "battlecry" }, 0.2, 1.0, 0.7)
+-- Azgor's greatsword: the hew a hauled two-handed diagonal, the flame cleave a full spin through the front; his roar.
+ZA.hew = mocap(ZA.hew, { name = "greatSlash" }, 0.2, 0.22, 0.26)
+ZA.cleave = mocap(ZA.cleave, { name = "greatSpin" }, 0.2, 0.4, 0.45)
+ZA.roar = mocap(ZA.roar, { name = "battlecry" }, 0.2, 1.0, 0.7)
+-- Hrimvald's fists: the hook and the backfist the mutant's swipe (mirrored for the right hand); his roar.
+HA.fist = mocap(HA.fist, { name = "mutantSwipe", mirror = true }, 0.33, 0.4, 0.5)
+HA.backfist = mocap(HA.backfist, { name = "mutantSwipe" }, 0.33, 0.4, 0.5)
+HA.roar = mocap(HA.roar, { name = "battlecry" }, 0.2, 1.0, 0.7)
+-- Morvane's bolt from the sceptre and from the free hand: the one-handed cast, her body above the waist (she floats).
+MA.bolt = mocap(MA.bolt, { name = "magic1h", upper = true }, 0.3, 0.35, 0.45)
+MA.boltLeft = mocap(MA.boltLeft, { name = "magic1h", mirror = true, upper = true }, 0.3, 0.35, 0.45)
 
 ---------------------------------------------------------------- the registry
 
