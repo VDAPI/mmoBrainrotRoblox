@@ -30,6 +30,9 @@ export type Variant = {
 	-- W17: a painted look instead of the model's texture (models without a SurfaceAppearance, e.g. the rocks): the
 	-- texture is dropped and the mesh takes `color` and the terrain `material`
 	paint: { color: string, material: string }?,
+	-- 2026-10-31: a house's door: its middle off the front's middle (either way) and its half width, as fractions of
+	-- the front's width (Logic/LotPads levels the ground before it)
+	door: { number }?,
 }
 
 export type Entry = {
@@ -50,10 +53,16 @@ local function fixed(model: string, turn: number): Variant
 	return { model = model, weight = 1, scale = { 1, 1 }, yaw = false, turn = turn }
 end
 
--- 2026-10-20: a whole house, front to local -Z; the foot sits a little into the ground (the plinth hides a slope)
-local function house(model: string): Variant
-	return { model = model, weight = 1, scale = { 1, 1 }, yaw = false, turn = 0, sink = 0.04 }
+-- 2026-10-20: a whole house, front to local -Z. 2026-10-31: no sink (it buried the plinth and the door sill): the slot
+-- stands just under the lot's level pad and a stone skirt meets a slope (Logic/LotPads, Logic/TownGen/Houses). `w`
+-- the front's wall modules in kit units and `door` the door module's middle off the front's middle
+-- (tools/kit/build_houses.py: the module `w // 4` of 2 units from the left).
+local function house(model: string, w: number, door: number): Variant
+	return { model = model, weight = 1, scale = { 1, 1 }, yaw = false, turn = 0, door = { door / w, 1 / w } }
 end
+
+-- 2026-10-31: the stone block under a house model without a plinth part on a slope (Util/KitAssets)
+Kit.skirt = { color = "#8A8378", material = "Cobblestone" }
 
 local OAK = "#3A5A22"
 local PINE = "#22381C"
@@ -259,14 +268,22 @@ Kit.slots = {
 	-- houses, one slot per house (TownGen/Houses): fitted to the lot's longer side (the slot's scale, size 1) and
 	-- stretched to its front; the front faces local -Z. A style shares its model across floor counts until a taller
 	-- one comes; the patrician houses take the tall townhouse. Without the model the generator's house stays.
-	["house:burgher:3"] = { fit = "width", size = 1, city = { house("city_house_01"), house("city_house_02") } },
-	["house:burgher:2"] = { fit = "width", size = 1, city = { house("city_house_03"), house("city_house_02") } },
-	["house:cottage:1"] = { fit = "width", size = 1, city = { house("city_cottage_01") } },
-	["house:cottage:2"] = { fit = "width", size = 1, city = { house("city_cottage_01") } },
-	["house:craft:1"] = { fit = "width", size = 1, city = { house("city_workshop_01") } },
-	["house:craft:2"] = { fit = "width", size = 1, city = { house("city_workshop_01") } },
-	["house:patrician:2"] = { fit = "width", size = 1, city = { house("city_house_04") } },
-	["house:patrician:3"] = { fit = "width", size = 1, city = { house("city_house_04") } },
+	["house:burgher:3"] = {
+		fit = "width",
+		size = 1,
+		city = { house("city_house_01", 6, 0), house("city_house_02", 6, 0) },
+	},
+	["house:burgher:2"] = {
+		fit = "width",
+		size = 1,
+		city = { house("city_house_03", 4, 1), house("city_house_02", 6, 0) },
+	},
+	["house:cottage:1"] = { fit = "width", size = 1, city = { house("city_cottage_01", 4, 1) } },
+	["house:cottage:2"] = { fit = "width", size = 1, city = { house("city_cottage_01", 4, 1) } },
+	["house:craft:1"] = { fit = "width", size = 1, city = { house("city_workshop_01", 8, 1) } },
+	["house:craft:2"] = { fit = "width", size = 1, city = { house("city_workshop_01", 8, 1) } },
+	["house:patrician:2"] = { fit = "width", size = 1, city = { house("city_house_04", 8, 1) } },
+	["house:patrician:3"] = { fit = "width", size = 1, city = { house("city_house_04", 8, 1) } },
 	-- the town wall (TownGen/Structures): a dry piece from the low ground to the merlons (the slot's scale is that
 	-- height) stretched to its length, a corner tower to its merlons, the gatehouse to its full width (34)
 	["wall:segment"] = { fit = "height", size = 1, city = { fixed("city_wall_01", 0) } },

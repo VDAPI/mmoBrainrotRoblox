@@ -332,7 +332,7 @@ end
 
 local function well(p: { number }, i: number, ground: Ground): Build
 	local bp = Blueprint.new(700 + i)
-	local y0 = ground(p[1], p[2])
+	local y0 = Parts.lowest(ground, p[1], p[2], 4) -- 2026-10-31: the low side of a slope
 	Props.well(bp, 0, 0, 0, bp.rng:float(0, 90))
 	return { name = "Well" .. i, bp = bp, at = { x = p[1], y = y0, z = p[2], rot = 0 }, tag = "well" }
 end

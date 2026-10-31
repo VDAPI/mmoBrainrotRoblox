@@ -4,6 +4,7 @@
 -- (same lot + same ground = same pieces), so the server (shell) and every client (detail) agree.
 
 local Blueprint = require("./Blueprint")
+local LotPads = require("../LotPads")
 local Palette = require("./Palette")
 local Parts = require("./Parts")
 
@@ -304,16 +305,53 @@ local function logWalls(bp: BP, look: Look, w: number, d: number, h: number)
 	end
 end
 
+-- Lowest ground round a house's model footprint (W x D, Logic/LotPads.footprint): its outline and RING studs out,
+-- where the 4-stud voxels drawn at the outline take their height from.
+local RING = 3
+function Houses.lowestAround(lot: Lot, ground: Ground): number
+	local W, D = LotPads.footprint(lot)
+	local r = math.rad(lot.rot)
+	local c, s = math.cos(r), math.sin(r)
+	local low = math.huge
+	for _, out in { 0, RING } do
+		local hw, hd = W / 2 + out, D / 2 + out
+		local nx, nz = math.ceil(hw), math.ceil(hd)
+		for i = -nx, nx do
+			for _, e in { -1, 1 } do
+				local lx, lz = hw * i / nx, e * hd
+				low = math.min(low, ground(lot.x + lx * c + lz * s, lot.z - lx * s + lz * c))
+			end
+		end
+		for k = -nz, nz do
+			for _, e in { -1, 1 } do
+				local lx, lz = e * hw, hd * k / nz
+				low = math.min(low, ground(lot.x + lx * c + lz * s, lot.z - lx * s + lz * c))
+			end
+		end
+	end
+	return low
+end
+
 -- Builds one ordinary house. Returns its blueprint and where to put it (map-relative, rot in degrees).
 -- 2026-10-20: `slot` (the city's ordinary lots, TownGen.all) makes the whole house one asset kit slot
 -- `house:<style>:<floors>` (Data/Kit: a whole-house model fitted to the lot's longer side and stretched to its front,
 -- front to local -Z); special buildings and farms keep their pieces.
+-- 2026-10-31: the lot's ground is its level pad (Logic/LotPads through TownTerrain.heightAt); the slot's model stands
+-- LotPads.SEAT under it (no sink, Data/Kit) and its stone skirt reaches the lowest ground round it.
 function Houses.build(lot: Lot, ground: Ground, slot: boolean?): (BP, Placement, Info)
 	local bp = Blueprint.new(lot.seed)
 	local rng = bp.rng
 	local style = lot.style
 	local look = pickLook(bp, style)
-	local lo, hi = Houses.groundRange(lot.x, lot.z, lot.w, lot.d, lot.rot, ground)
+	local lo, hi
+	if slot then
+		-- the model's footprint (its pad) and the lowest ground round it
+		local fw, fd = LotPads.footprint(lot)
+		lo, hi = Houses.groundRange(lot.x, lot.z, fw, fd, lot.rot, ground)
+		lo = math.min(lo, Houses.lowestAround(lot, ground))
+	else
+		lo, hi = Houses.groundRange(lot.x, lot.z, lot.w, lot.d, lot.rot, ground)
+	end
 	local y0 = hi + 0.2
 	local depthBelow = y0 - lo + 1.5
 	local fx, fz = -math.sin(math.rad(lot.rot)), -math.cos(math.rad(lot.rot))
@@ -324,7 +362,10 @@ function Houses.build(lot: Lot, ground: Ground, slot: boolean?): (BP, Placement,
 	local W = lot.w - (if detached then 0.6 else 0.3)
 	local floors = lot.floors
 	if slot then
-		bp:beginKit(`house:{style}:{floors}`, 0, 0, 0, math.max(W, lot.d - 0.6), "shell", W)
+		local _, D = LotPads.footprint(lot)
+		local foot = -0.2 - LotPads.SEAT
+		local gap = hi - LotPads.SEAT - lo
+		bp:beginKit(`house:{style}:{floors}`, 0, foot, 0, D, "shell", W, if gap > 0 then gap + 0.5 else nil)
 	end
 	local G = if style == "patrician" then 10 elseif style == "cottage" then 7.5 elseif style == "craft" then 8.5 else 9
 	local U = if style == "patrician" then 8 else 7.5
