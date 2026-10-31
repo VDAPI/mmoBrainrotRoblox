@@ -10,21 +10,21 @@ fbx;name;loop;hit;strike;start;end;root;fps
 Breathing Idle.fbx;idle;1;;;;;keep;30
 Looking Around.fbx;idleLook;1;;;;;keep;30
 Weight Shift.fbx;idleShift;1;;;;;keep;30
-Jogging.fbx;jog;1;;;;;keep;30
-Running.fbx;run;1;;;;;keep;30
-Walking (1).fbx;walk;1;;;;;keep;30
+Jogging.fbx;jog;1;;;;;inplace;30
+Running.fbx;run;1;;;;;inplace;30
+Walking (1).fbx;walk;1;;;;;inplace;30
 # armed guard (sword and shield pack)
 Sword And Shield Idle.fbx;guardIdle;1;;;;;inplace;15
 Sword And Shield Walk 1.fbx;guardWalk;1;;;;;inplace;30
 # one-handed blows
 Sword And Shield Slash 1.fbx;swordSlash;0;0.63;0.23;0;1.50;plant;30
-Sword And Shield Slash 3.fbx;swordBackhand;0;0.83;0.23;0;1.67;plant;30
+Sword And Shield Slash 3.fbx;swordBackhand;0;0.80;0.23;0;1.67;plant;30
 Standing Melee Attack Horizontal.fbx;swordSweep;0;0.97;0.27;0;2.37;plant;30
 Standing Melee Attack Downward.fbx;swordChop;0;0.87;0.25;0;2.13;plant;30
 Sword And Shield Attack 1.fbx;swordLeap;0;1.20;0.82;0;2.33;keep;30
 Sword And Shield Attack 1.fbx;swordHop;0;1.20;0.82;0;2.33;plant;30
 # two-handed blows (great sword pack)
-Great Sword Slash.fbx;greatSlash;0;0.90;0.25;0;1.50;plant;30
+Great Sword Slash.fbx;greatSlash;0;0.90;0.25;0;1.03;plant;30
 Great Sword High Spin Attack.fbx;greatSpin;0;1.20;0.20;0;1.90;plant;30
 Great Sword Jump Attack.fbx;greatJump;0;1.13;1.03;0;2.17;keep;30
 # throwing, casting, shouting, getting up
