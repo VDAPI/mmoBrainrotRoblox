@@ -8909,7 +8909,6 @@ return {
 	["look.face.face_sharp"] = "Twarz Adelis",
 	["look.hair.hair_short"] = "Krótkie zaczesane",
 	["look.hair.hair_fringe"] = "Krótka grzywka",
-	["look.hair.hair_swept"] = "Przedziałek z boku",
 	["look.hair.hair_charmer"] = "Rozwiane",
 	["look.hair.hair_slicked"] = "Cieniowane do brody",
 	["look.hair.hair_bob"] = "Do ramion",
