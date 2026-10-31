@@ -67,11 +67,11 @@ local ALLOWED_SCROLLS: { [string]: string } = {
 	protection = "EXCEPTION: keeps the upgrade level on a failure; dailyLimit must be 1 (DESIGN-17 §1)",
 	-- S134j: the Stone of Transmutation (test 2b); S160k (owner 2026-10-21): a ticket taken on top of the gold and the
 	-- essence of one bonus reroll (never instead of them), 10 a day
-	transmute = "EXCEPTION (S134j, S160k owner 2026-10-21): one is taken by every bonus reroll at the smith TOGETHER with the gold and the essence (it pays nothing of them); dailyLimit must be 10; bindOnPickup",
+	transmute = "EXCEPTION (S134j, S160k owner 2026-10-21): one is taken by every bonus reroll at the smith TOGETHER with the gold and the essence (it pays nothing of them); dailyLimit must be 10; bind = pickup",
 	-- S160k (owner 2026-10-21): the Stone of Effect Transmutation (test 2d)
-	transmuteFx = "EXCEPTION (S160k, owner 2026-10-21): one is taken by every change of a skill effect at the smith TOGETHER with the gold and the essence; the new effect comes from the drop pool of the same tier; dailyLimit must be 10; bindOnPickup",
+	transmuteFx = "EXCEPTION (S160k, owner 2026-10-21): one is taken by every change of a skill effect at the smith TOGETHER with the gold and the essence; the new effect comes from the drop pool of the same tier; dailyLimit must be 10; bind = pickup",
 	-- S156 (owner 2026-10-20): the Scroll of Transformation (test 2c)
-	transmuteAll = "EXCEPTION (S156, owner 2026-10-20): rerolls every regular line of one item at the smith (gold x3 always, the same pools and values as a drop); dailyLimit must be 1; bindOnPickup",
+	transmuteAll = "EXCEPTION (S156, owner 2026-10-20): rerolls every regular line of one item at the smith (gold x3 always, the same pools and values as a drop); dailyLimit must be 1; bind = pickup",
 }
 -- item id -> reason (DESIGN-17 §3). Never add "fullElixir" to ALLOWED_USE_KINDS: every future item of that kind
 -- would pass without an exception.
@@ -282,7 +282,7 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 				if def and def.use and def.use.target == "transmute" then
 					found += 1
 					T.expect({ entry.key, entry.dailyLimit }).toEqual({ entry.key, 10 })
-					T.expect({ entry.key, def.bindOnPickup }).toEqual({ entry.key, true })
+					T.expect({ entry.key, def.bind }).toEqual({ entry.key, "pickup" })
 					T.expect({ entry.key, ItemValue.canSell(ItemRoll.makeStack(def.id, 1, "s"), def) })
 						.toEqual({ entry.key, false })
 				end
@@ -337,7 +337,7 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 				if def and def.use and def.use.target == "transmuteAll" then
 					found += 1
 					T.expect({ entry.key, entry.dailyLimit }).toEqual({ entry.key, 1 })
-					T.expect({ entry.key, def.bindOnPickup }).toEqual({ entry.key, true })
+					T.expect({ entry.key, def.bind }).toEqual({ entry.key, "pickup" })
 					T.expect({ entry.key, ItemValue.canSell(ItemRoll.makeStack(def.id, 1, "s"), def) })
 						.toEqual({ entry.key, false })
 				end
@@ -381,7 +381,7 @@ T.describe("Paywall (S120, DESIGN-17 §0.2)", function()
 				found += 1
 				T.expect({ entry.key, entry.itemId }).toEqual({ entry.key, EffectReroll.STONE })
 				T.expect({ entry.key, entry.dailyLimit }).toEqual({ entry.key, 10 })
-				T.expect({ entry.key, def.bindOnPickup }).toEqual({ entry.key, true })
+				T.expect({ entry.key, def.bind }).toEqual({ entry.key, "pickup" })
 				T.expect({ entry.key, ItemValue.canSell(ItemRoll.makeStack(def.id, 1, "s"), def) })
 					.toEqual({ entry.key, false })
 			end
@@ -567,7 +567,7 @@ T.describe("S122 premium consumables", function()
 		assert(def, "potion_full")
 		local raw = def :: any
 		T.expect(def.use and def.use.kind).toBe("fullElixir")
-		T.expect(def.bindOnPickup).toBe(true)
+		T.expect(def.bind).toBe("pickup")
 		T.expect(def.noSell).toBe(true)
 		for _, field in { "fixedBonuses", "bonusGroup", "base", "weapon", "trait" } do
 			T.expect({ field, raw[field] }).toEqual({ field, nil })
@@ -1886,7 +1886,7 @@ T.describe("S134d auto services", function()
 		local def = Items.get("scroll_hunt")
 		assert(def, "scroll_hunt")
 		T.expect(def.use and def.use.kind).toBe("autoGrind")
-		T.expect(def.bindOnPickup).toBe(true)
+		T.expect(def.bind).toBe("pickup")
 		T.expect(def.noSell).toBe(true)
 		T.expect(ALLOWED_USE_KINDS.autoGrind).toBeNil()
 		for _, entry in Products.shop do

@@ -680,8 +680,8 @@ T.describe("World boss: contribution factor, named items and pity (S149c)", func
 				local def = Items.get(id) :: any
 				T.expect({ id, def ~= nil }).toEqual({ id, true })
 				all[id] = true
-				T.expect({ id, def.rarity, def.bossId, def.bindOnPickup, def.level })
-					.toEqual({ id, Rarities.MYTHIC, Data.boss, true, 100 })
+				T.expect({ id, def.rarity, def.bossId, def.bind, def.level })
+					.toEqual({ id, Rarities.MYTHIC, Data.boss, "pickup", 100 })
 				T.expect({ id, table.find(def.classes, classId) ~= nil }).toEqual({ id, true })
 				T.expect({
 					id,

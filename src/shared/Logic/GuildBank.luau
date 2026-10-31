@@ -5,6 +5,7 @@
 -- The vault is `guild.vault`: slot ("1".."N") -> ItemInstance; N = GuildBank.vaultSize (grows with the guild level).
 -- Bound items never go in (like trading); a smaller vault never loses items (the slots above N can only be emptied).
 
+local Binding = require("./Binding")
 local GuildProgressData = require("../Data/GuildProgress")
 local GuildSkills = require("../Data/GuildSkills")
 local Guild = require("./Guild")
@@ -130,7 +131,7 @@ function GuildBank.putItem(guild: GuildData?, key: string, item: any, slot: numb
 	if item.locked then
 		return false, "guild.error.itemLocked" -- audit 2026-10-21: a padlocked item stays with its owner (Trade.canOffer)
 	end
-	if item.bound then
+	if Binding.isBound(item) then
 		return false, "trade.error.bound"
 	end
 	local vault = g.vault or {}

@@ -3,6 +3,7 @@
 -- When the shape changes: bump CURRENT, add MIGRATIONS[CURRENT], extend the templates.
 
 local ArenaRules = require("./ArenaRules")
+local Binding = require("./Binding")
 local CharacterLook = require("./CharacterLook")
 local ClassLooks = require("../Data/ClassLooks")
 local Classes = require("../Data/Classes")
@@ -28,7 +29,7 @@ type CharacterData = Types.CharacterData
 
 local AccountSchema = {}
 
-AccountSchema.CURRENT = 12
+AccountSchema.CURRENT = 13
 
 function AccountSchema.accountTemplate(): AccountData
 	return {
@@ -616,6 +617,27 @@ MIGRATIONS[12] = function(data, _newId)
 		if fresh then
 			character.reworkNotice = true
 		end
+	end
+end
+
+-- 13 (owner 2026-10-31, Logic/Binding): binding by rule ("none" / "equip" / "pickup"). Stacks bound only by the old
+-- rules (the level 5 potions and stones, the Huntmaster's, the arena's and the wandering merchant's consumables, the
+-- merchant's gold materials) and every ordinary backpack, worn or not, come free in the backpack, the worn backpack
+-- slot and the account deposit (Binding.migrateItem). Equipment keeps its state: equipped stays bound, and a bound
+-- piece in the backpack may have been worn. Parcels sent before go through the same rule when claimed (Mail `bv`).
+MIGRATIONS[13] = function(data, _newId)
+	if type(data.characters) == "table" then
+		for _, character in data.characters do
+			if type(character) == "table" then
+				Binding.migrateAll(character.inventory)
+				if type(character.equipment) == "table" then
+					Binding.migrateItem(character.equipment.backpack)
+				end
+			end
+		end
+	end
+	if type(data.deposit) == "table" then
+		Binding.migrateAll(data.deposit.items)
 	end
 end
 

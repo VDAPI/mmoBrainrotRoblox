@@ -12,6 +12,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
 local Data = require(Shared.Data.PortalShop)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Net = require(Shared.Net)
@@ -50,7 +51,7 @@ local function buy(player: Player, itemId: string, mode: string, n: number): (bo
 	local price = PortalShop.price(entry, mode, n) :: number
 	local give = if mode == "piece" then entry.itemId else entry.permId
 	local item = ItemRoll.makeStack(give, if mode == "piece" then n else 1, InventoryService.NewUid())
-	item.bound = true
+	Binding.apply(item, "premium") -- bought for Dragon Shards (Data/Binding)
 	-- Buying forever with a full backpack still counts: the copy waits at the Portal Master (a free claim later).
 	local fits = InventoryService.CanFit(player, { item })
 	if mode ~= "perm" and not fits then

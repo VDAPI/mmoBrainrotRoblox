@@ -3,7 +3,8 @@
 -- (potions and stones, essence, chests, cosmetics), every entry with its icon, name, price, the weekly limit "n/max"
 -- and why it cannot be bought now (Logic/HuntShop.canBuy: the server's own rule, `huntshop.error.*`). Buying works
 -- only at the Huntmaster (the window opens from his dialog and closes when the player walks away); a chest asks first.
--- Everything bought here is bound to the character. Built like the arena shop tab (S128), scrolling on a phone.
+-- Chests and essence come bound, potions, stones and blessings free (owner 2026-10-31, Data/Binding). Built like the
+-- arena shop tab (S128), scrolling on a phone.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

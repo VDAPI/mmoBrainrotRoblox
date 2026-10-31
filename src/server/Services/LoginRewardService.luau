@@ -11,7 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 local Analytics = require(script.Parent.Parent.Analytics)
 local Clock = require(Shared.Util.Clock)
-local Data = require(Shared.Data.LoginReward)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local LoginReward = require(Shared.Logic.LoginReward)
@@ -66,7 +66,7 @@ function LoginRewardService.SetState(player: Player, state: LoginReward.State)
 	PlayerStateService.Set(player, { "account", "login" }, LoginReward.sanitize(state))
 end
 
--- The reward of `day` for `char` as item instances (stacks, the rolled chest item bound to the character).
+-- The reward of `day` for `char` as item instances (free stacks, the rolled chest item bound to the character).
 local function build(char: Types.CharacterData, day: number): (number, { ItemInstance })
 	local contents = LoginReward.contents(day, char.level, char.class)
 	local items: { ItemInstance } = {}
@@ -78,7 +78,7 @@ local function build(char: Types.CharacterData, day: number): (number, { ItemIns
 		if drop then
 			local item =
 				ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, InventoryService.NewUid(), drop.forClass)
-			item.bound = Data.chest.bound
+			Binding.apply(item, "reward") -- binds on pickup (Data/Binding: no alt-account farming for the market)
 			table.insert(items, item)
 		else
 			local fallback = LoginReward.chestFallback(char.level)

@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Shared = ReplicatedStorage.Shared
 
 local Inventory = require(Shared.Logic.Inventory)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
@@ -191,6 +192,8 @@ function InventoryService.GiveNew(
 	else
 		item = ItemRoll.makeStack(defId, n or 1, InventoryService.NewUid())
 	end
+	-- owner 2026-10-31: the item's own rule (quest stacks, gathering, crafting stay free; a Mythic binds, Logic/Binding)
+	Binding.apply(item, "drop")
 	return InventoryService.AddItem(player, item), item
 end
 

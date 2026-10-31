@@ -327,7 +327,7 @@ T.describe("S122 data and save", function()
 		assert(def, "potion_full")
 		T.expect(def.category).toBe("consumable")
 		T.expect(def.use and def.use.kind).toBe("fullElixir")
-		T.expect(def.bindOnPickup).toBe(true)
+		T.expect(def.bind).toBe("pickup")
 		T.expect(def.noSell).toBe(true)
 		T.expect(def.buyPrice).toBeNil()
 		for id, shop in Shops.byId do
@@ -372,10 +372,10 @@ T.describe("S122 data and save", function()
 
 	T.it("save fields from the templates, no migration", function()
 		-- S122 adds no migration: the schema stays at S121's version (S132: 9 = class outfits)
-		T.expect(AccountSchema.CURRENT).toBe(12) -- S134g: 10 = item effects; S134k: 11 = contracts; S137: 12 = skill points
+		T.expect(AccountSchema.CURRENT).toBe(13) -- S134g: 10 = item effects; S134k: 11 = contracts; S137: 12; 13 = binding
 		T.expect(AccountSchema.accountTemplate().lure).toEqual({ untilTs = 0, on = false })
 		T.expect(AccountSchema.characterTemplate().fullElixir).toEqual({ day = 0, used = 0, readyAt = 0 })
-		local old: any = { schema = 12, characters = { ["1"] = { name = "Old", class = "Warrior" } } } -- S134k: 11; S137: 12
+		local old: any = { schema = 13, characters = { ["1"] = { name = "Old", class = "Warrior" } } } -- S137: 12; 13 = binding
 		local applied = AccountSchema.migrate(old)
 		T.expect(#applied).toBe(0)
 		T.expect(old.lure).toEqual({ untilTs = 0, on = false })

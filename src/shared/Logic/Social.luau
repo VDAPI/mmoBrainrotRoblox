@@ -4,6 +4,7 @@
 -- rules of letters between players (Config.PlayerMail: lengths, items, fee, daily limit reset at 00:00 UTC).
 -- The server (SocialService, MailService) and the client (PartyController, FriendsWindow, MailCompose) both use it.
 
+local Binding = require("./Binding")
 local Config = require("../Config")
 local FriendJoin = require("./FriendJoin")
 local Types = require("../Types")
@@ -328,10 +329,7 @@ function Social.mailableItem(item: ItemInstance?): (boolean, string?)
 	if item.locked then
 		return false, "item.error.locked"
 	end
-	if item.bound then
-		return false, "mail.error.bound"
-	end
-	return true, nil
+	return Binding.canTransfer(item, "mail.error.bound")
 end
 
 local function dayOf(now: number): number
