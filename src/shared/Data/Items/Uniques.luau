@@ -76,7 +76,7 @@ local function unique(
 		fixedBonuses = bonuses,
 		fx = fx,
 		bossId = bossId,
-		bindOnPickup = true,
+		bind = "pickup",
 		rarity = Rarities.MYTHIC,
 	})
 end

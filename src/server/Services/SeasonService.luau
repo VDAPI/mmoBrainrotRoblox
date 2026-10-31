@@ -24,6 +24,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
 local Clock = require(Shared.Util.Clock)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Lure = require(Shared.Logic.Lure)
@@ -174,7 +175,9 @@ end
 
 local function stackOf(count: Season.ItemCount): Types.ItemInstance
 	local stack = ItemRoll.makeStack(count.id, count.n, InventoryService.NewUid())
-	stack.bound = true -- a reward never turns into gold through trade or the auction house
+	-- the premium track is bought for Dragon Shards and both tracks come merged: bound (Data/Binding "premium"), so a
+	-- reward never turns into gold through trade or the auction house
+	Binding.apply(stack, "premium")
 	stack.ns = true -- nor through the merchant
 	return stack
 end
