@@ -14,8 +14,15 @@
 --   * a lip FRONT studs deep before its door (the model's door from Data/Kit, Logic/KitPick) is flat at the level,
 --     and the ground falls from it to the street at GRADE (only raised, never cut; no steeper than a street may be),
 --     never on a ramp's road or in the river, and within NEAR studs of a footprint never over that house's level.
+--
+-- Spots (Studio 2026-11-01: a lamp on a river bank stood 1.4 studs in the ground on one side, a farm well 2.6): a
+-- small prop whose base would stand on uneven ground gets a level spot of its own, cut and filled to the ground at
+-- its middle within SPOT studs round its base (the 4-stud voxels then draw it flat under the whole base) and falling
+-- back to the ground round it at BANK. Never on a ramp's road or in water, never under a house, and within NEAR studs
+-- of a house never lower than the ground there nor over that house's level.
 
 local KitPick = require("./KitPick")
+local KitSeat = require("./KitSeat")
 
 local LotPads = {}
 
@@ -28,6 +35,11 @@ LotPads.DOOR = 1
 LotPads.NEAR = 4
 -- the model's foot stands this far under its pad (the plinth's lower edge in the ground, no seam of light under it)
 LotPads.SEAT = 0.25
+-- a spot is levelled this far round its base (a voxel and a little: every column the drawn base reads from)
+LotPads.SPOT = 3
+-- the most the ground under a base may vary before it gets a spot
+LotPads.UNEVEN = 0.5
+LotPads.BANK = 1
 
 type Lot = { x: number, z: number, w: number, d: number, rot: number, style: string, floors: number }
 
@@ -42,12 +54,18 @@ type Pad = {
 	level: number,
 }
 
+type Spot = { x: number, z: number, flat: number, reach: number, level: number }
+
 export type Pads = {
 	pads: { Pad },
 	cells: { [number]: { number } },
+	spots: { Spot },
+	spotCells: { [number]: { number } },
 }
 
 local CELL = 32
+-- the farthest a spot's bank reaches past its level ground
+local REACH = 24
 
 -- The house's width (the generator's front, the model's stretch) and the most its model can reach front to back: the
 -- model's widest side is the larger of the two (Data/Kit `fit = "width"`), its width at most that.
@@ -83,7 +101,7 @@ end
 -- The pads of `lots` (the city plan's, Data/Town) over the plan ground `height` (built once; the level samples the
 -- plan every 2 studs).
 function LotPads.new(lots: { any }, height: (x: number, z: number) -> number): Pads
-	local out: Pads = { pads = {}, cells = {} }
+	local out: Pads = { pads = {}, cells = {}, spots = {}, spotCells = {} }
 	for _, lot in lots do
 		local W, D = LotPads.footprint(lot)
 		local r = math.rad(lot.rot)
@@ -132,12 +150,113 @@ function LotPads.level(pads: Pads, i: number): number
 	return pads.pads[i].level
 end
 
--- Ground at (x, z) with the pads over the plan ground `h` there. `free` false (a ramp's road, the river) keeps the
--- plan ground outside the footprints.
-function LotPads.at(pads: Pads, x: number, z: number, h: number, free: boolean?): number
+-- Whether (x, z) is within NEAR + `extra` studs of a house's footprint.
+local function nearHouse(pads: Pads, x: number, z: number, extra: number): boolean
 	local list = pads.cells[key(math.floor(x / CELL), math.floor(z / CELL))]
 	if not list then
-		return h
+		return false
+	end
+	for _, index in list do
+		local pad = pads.pads[index]
+		local lx, lz = toLocal(pad, x, z)
+		local ox, oz = math.max(math.abs(lx) - pad.hw, 0), math.max(math.abs(lz) - pad.hd, 0)
+		if ox * ox + oz * oz < (LotPads.NEAR + extra) ^ 2 then
+			return true
+		end
+	end
+	return false
+end
+
+-- Adds the spots of small props (each { x, z, r }: the middle and the radius of its base) over the ground `ground`
+-- (the plan with these pads; `wet` true where no spot may change it: a ramp's road, the moat). Only a base on uneven
+-- drawn ground (more than UNEVEN under it and a little round it, Logic/KitSeat) gets one, never under `floor` (dry: a
+-- lamp at a river's edge stands on a little shore). Returns how many it added.
+function LotPads.addSpots(
+	pads: Pads,
+	props: { { number } },
+	ground: (x: number, z: number) -> number,
+	wet: (x: number, z: number) -> boolean,
+	floor: number
+): number
+	local added = 0
+	for _, p in props do
+		local x, z, r = p[1], p[2], p[3]
+		local flat = r + LotPads.SPOT
+		local lo, hi = KitSeat.range(ground, x, z, r * 1.4)
+		-- by a house the spot only fills (the ground there is the house's: its door's lip, its plinth), to the highest
+		-- ground under the base; elsewhere it is cut and filled to the ground at its middle
+		local level = math.max(if nearHouse(pads, x, z, flat) then hi else ground(x, z), floor)
+		lo, hi = math.min(lo, level), math.max(hi, level)
+		-- the bank reaches as far as the ground strays from the level more than it may (a slope steeper than BANK
+		-- never meets it: no spot)
+		local reach: number? = nil
+		if hi - lo > LotPads.UNEVEN and not wet(x, z) then
+			for d = flat + 1, flat + REACH do
+				local fits = true
+				for i = 0, 23 do
+					local a = i * math.pi / 12
+					if
+						math.abs(ground(x + math.cos(a) * d, z + math.sin(a) * d) - level)
+						> LotPads.BANK * (d - flat)
+					then
+						fits = false
+						break
+					end
+				end
+				if fits then
+					reach = d + 1
+					break
+				end
+			end
+		end
+		if reach then
+			local spot: Spot = { x = x, z = z, flat = flat, reach = reach, level = level }
+			table.insert(pads.spots, spot)
+			local index = #pads.spots
+			for i = math.floor((x - spot.reach) / CELL), math.floor((x + spot.reach) / CELL) do
+				for k = math.floor((z - spot.reach) / CELL), math.floor((z + spot.reach) / CELL) do
+					local list = pads.spotCells[key(i, k)]
+					if not list then
+						list = {}
+						pads.spotCells[key(i, k)] = list
+					end
+					table.insert(list, index)
+				end
+			end
+			added += 1
+		end
+	end
+	return added
+end
+
+-- The spots over the ground `g` at (x, z); near a house (`own`: the level of the lowest footprint within NEAR) only
+-- filled up to that level.
+local function spotsAt(pads: Pads, x: number, z: number, g: number, own: number): number
+	local list = pads.spotCells[key(math.floor(x / CELL), math.floor(z / CELL))]
+	if not list then
+		return g
+	end
+	local out = g
+	for _, index in list do
+		local spot = pads.spots[index]
+		local d = math.sqrt((x - spot.x) ^ 2 + (z - spot.z) ^ 2)
+		if d < spot.reach then
+			local bank = LotPads.BANK * math.max(d - spot.flat, 0)
+			out = math.clamp(out, spot.level - bank, spot.level + bank)
+		end
+	end
+	if own < math.huge then
+		out = math.clamp(out, g, math.max(g, own))
+	end
+	return out
+end
+
+-- Ground at (x, z) with the pads over the plan ground `h` there. `free` false (a ramp's road, the river) keeps the
+-- plan ground outside the footprints; `wet` (a ramp's road, water) keeps it from the spots too.
+function LotPads.at(pads: Pads, x: number, z: number, h: number, free: boolean?, wet: boolean?): number
+	local list = pads.cells[key(math.floor(x / CELL), math.floor(z / CELL))]
+	if not list then
+		return if wet then h else spotsAt(pads, x, z, h, math.huge)
 	end
 	local inside = false
 	local own = math.huge
@@ -164,7 +283,8 @@ function LotPads.at(pads: Pads, x: number, z: number, h: number, free: boolean?)
 		return own
 	end
 	-- by a house the fall from a neighbour's lip stays under its floor
-	return math.max(h, math.min(best, own))
+	local g = math.max(h, math.min(best, own))
+	return if wet then g else spotsAt(pads, x, z, g, own)
 end
 
 return LotPads
