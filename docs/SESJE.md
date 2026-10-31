@@ -14203,6 +14203,26 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `hair_swept` wypada (ta sama siatka co `hair_short`, `LEGACY_HAIRS`). `HairTint.plan`: rozjaśnienie jasnych tekstur
   maleje poniżej `DARK`. Testy `bodylooks`, `classlooks`, `wikidump`; dane wiki przegenerowane.
 
+### Kamera w dachu po wejściu do świata (przegląd Studio 2026-10-31)
+- Zgłoszenie: po wejściu postaci (poziom 1 i 100, stolica) kamera startowała wciśnięta w dach domu i latarnię.
+- Przyczyna: od W02/W12 domy, mury, latarnie i drzewa miasta to modele zestawu (`CanCollide` i `CanQuery` wyłączone),
+  a ich kolizja to niewidzialne części generatora (przezroczystość 1, bez promieni). Popper kamery Roblox bierze tylko
+  nieprzezroczyste kolidujące części, więc nie widział niczego z miasta; promień kamery „z góry” też nie (domyślne
+  `CanQuery`). Do tego zapisane miejsce wracało zawsze twarzą na północ (`CFrame.new(x, y, z)`), spawn stolicy patrzył
+  na środek mapy zamiast w stronę z planu, a kamera Roblox obraca się za nową postacią, zanim serwer ją obróci i
+  przestawi. Pomiar na obecnych danych (działki `LotPads`): sam spawn ma czysto we wszystkich kierunkach (najbliższy
+  dom 46 studów), ale na 916 otwartych punktach miasta widok startowy twarzą na północ był zasłonięty w 185.
+- `Logic/CameraClear.luau` (czyste): kierunek kamery za postacią, kolejność kierunków od preferowanego, wybór obrotu
+  z czystą linią kamery (14 studów, 15 st. w dół) i widokiem przed sobą (8 studów), odległość przed ścianą (margines
+  `Config.Camera.wallMargin`, najmniej 1 stud) i powrót 40 studów na sekundę.
+- `CameraController`: jeden promień na klatkę (teren i `World.<mapa>`, `RespectCanCollide`) w obu trybach; kamera
+  swobodna przesuwa się tylko po własnej linii (obrót i zoom zostają Robloxa); po `CharacterAdded` i `GroundCheck`
+  świeżej postaci kamera za plecami w kierunku nadanym przez serwer.
+- `WorldService.OpenFacing` (najwyżej 24 promienie raz przy wejściu do świata), `GetSpawnCFrame("city")` z kierunkiem
+  z planu (`Town.city.spawn.facing`, jak `SpawnPoint`), `CharacterService.spawnModel` obraca tylko pozycję wyliczoną
+  przez serwer (bez areny i odrodzeń w punktach). Na danych miasta zasłoniętych startów zostaje 25 z 916 (wąskie
+  zaułki, tam kamera wsuwa się przed ścianę). Test: `tests/cameraclear.spec.luau`. Nieobejrzane w Studio.
+
 ### Porównanie w tooltipie: poprawki po sprawdzeniu w Studio (2026-10-31)
 - Przedmiot innej klasy: bez zmian i bez „Zastąpi” (`TooltipModel` `classFits`); za wysoki poziom porównywany
   (`ItemCompare.comparable` zamiast `canEquip`). Skrócony widok: efekty jedną linią nazw (`compactOf`). Testy:

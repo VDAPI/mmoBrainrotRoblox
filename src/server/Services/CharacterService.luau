@@ -236,6 +236,11 @@ local function spawnModel(player: Player, at: CFrame?, mapId: string?)
 		map = ServerMode.homeMap() -- ResolveLocation sends a character on an unbuilt map to the capital (S127: the pit)
 	end
 	local cframe = at or WorldService.ResolveLocation(map, loc.x, loc.y, loc.z)
+	if not at then
+		-- Studio review 2026-10-31: entering the world, face a way the first camera view is clear (a saved spot
+		-- faced north, often with a house right behind)
+		cframe = WorldService.OpenFacing(map, cframe)
+	end
 	if map ~= loc.map then
 		PlayerStateService.Set(player, { "character", "location", "map" }, map)
 	end
