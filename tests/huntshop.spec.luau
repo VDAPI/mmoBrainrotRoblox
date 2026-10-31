@@ -76,7 +76,12 @@ describe("Hunt shop: data (S134k)", function()
 				expect({ where, entry.kind }).toEqual({ where, "potion" })
 			end
 		end
-		expect(Data.CHEST_BOUND).toBe(true)
+		-- owner 2026-10-31 (Data/Binding "currency"): a chest's item and the essence bind, potions and stones stay free
+		local Binding = require("../src/shared/Logic/Binding")
+		expect(Binding.bindsFrom("sword1h_30", "currency", Data.CHEST_RARITY.heroic)).toBe(true)
+		expect(Binding.bindsFrom("essence_crystal", "currency")).toBe(true)
+		expect(Binding.bindsFrom("potion_hp_3", "currency")).toBe(false)
+		expect(Binding.bindsFrom("stone_return", "currency")).toBe(false)
 		-- every hunt cosmetic is sold here (and only here)
 		for _, def in Cosmetics.list do
 			if def.obtain and def.obtain.hunt then

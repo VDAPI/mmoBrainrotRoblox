@@ -144,7 +144,7 @@ return table.freeze({
 			-- base 6 % since an event comes every hour without a daily limit; S101: Unique 80 / Heroic 20)
 			rarity = table.freeze({ [2] = 60, [3] = 37, [4] = 3 }),
 			classBias = 0.8, -- share of items picked among the ones the character's class can use
-			bound = true, -- like the S100 chest: no alt-account farming for the market
+			-- binds on pickup like the S100 chest: the "reward" source of Data/Binding (no alt-account farming)
 		}),
 	}),
 })

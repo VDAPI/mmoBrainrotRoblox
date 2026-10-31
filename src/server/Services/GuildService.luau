@@ -30,6 +30,7 @@ local Runtime = require(script.Parent.Parent.Guild.Runtime)
 local Ignores = require(script.Parent.Parent.Social.Ignores) -- S133
 local QuestEvents = require(script.Parent.Parent.QuestEvents)
 local Config = require(Shared.Config)
+local Binding = require(Shared.Logic.Binding)
 local Guild = require(Shared.Logic.Guild)
 local GuildBank = require(Shared.Logic.GuildBank)
 local GuildProgress = require(Shared.Logic.GuildProgress)
@@ -649,7 +650,7 @@ local function putItem(player: Player, invIndex: number, slot: number?): (boolea
 	if (item :: any).locked then
 		return false, "guild.error.itemLocked"
 	end
-	if item.bound then
+	if Binding.isBound(item) then
 		return false, "trade.error.bound"
 	end
 	local data = cache[guildId].data

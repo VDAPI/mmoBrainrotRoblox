@@ -10,8 +10,8 @@ export type Hair = {
 	id: number, -- Roblox catalog accessory (layered or classic hair, Roblox, free)
 	-- true: the texture is light (blond), the hair colour tints it (Logic/HairTint.plan); false: see `tone`
 	light: boolean,
-	-- hair fixes 2026-10-31, every hair that is not light: the average colour of its texture (dark, red, pink),
-	-- estimated, not measured. The hair colour only nudges its hue (Logic/HairTint.nudge), so the creator offers such a
+	-- hair fixes 2026-10-31, every hair that is not light: the average colour of its texture (dark, red, pink, golden),
+	-- read off Studio screenshots. The hair colour only nudges its hue (Logic/HairTint.nudge), so the creator offers such a
 	-- hair in the colours its texture reaches (Logic/CharacterLook.hairColors).
 	tone: string?,
 }
@@ -72,20 +72,20 @@ BodyLooks.brows = table.freeze({
 -- Hairstyle (Data/ClassLooks.HAIRS id) -> the free Roblox hair drawn for it; a hairstyle without an entry is drawn from
 -- parts ("hair_shaved" is the bare head). Hair fixes 2026-10-31 (tester: "most hairstyles are poorly made"): the
 -- modern / anime ones gave way to the plainer cuts of the same free pool, light textures wherever Roblox has one (they
--- keep their strands in every colour); a tone is a guess until seen in Studio (a colour cast = adjust the tone).
+-- keep their strands in every colour). Tones read off Studio screenshots (review 2026-10-31); a colour cast = adjust
+-- the tone. Side Part - Black was the same mesh as hair_short and left (hair_swept -> hair_short).
 BodyLooks.hairs = table.freeze({
 	hair_short = { id = 7193386173, light = true }, -- Side Part - Blond (short, swept back)
 	hair_fringe = { id = 7193397693, light = true }, -- Short Fringe - Blonde
-	hair_swept = { id = 9244021842, light = false, tone = "#2B2724" }, -- Side Part - Black
-	hair_charmer = { id = 376548738, light = false, tone = "#5E3E26" }, -- Brown Charmer Hair (classic)
+	hair_charmer = { id = 376548738, light = false, tone = "#7A3A22" }, -- Brown Charmer Hair (classic, red-brown)
 	hair_slicked = { id = 9244029916, light = true }, -- Surfer - Blond (chin-length shag)
 	hair_bob = { id = 7193424874, light = true }, -- Medium Middle Part - Blond (shoulder length)
 	hair_long = { id = 7193445686, light = true }, -- Wavy Middle Part - Blond
-	hair_straight = { id = 376526888, light = true }, -- Straight Blonde Hair (classic)
+	hair_straight = { id = 376526888, light = false, tone = "#D8BE45" }, -- Straight Blonde Hair (classic, golden)
 	hair_ponytail = { id = 9244095135, light = true }, -- Pony Tail - Blonde
-	hair_sidetail = { id = 376527350, light = false, tone = "#2B2724" }, -- Black Side Ponytail (classic, low)
-	hair_braid = { id = 2956239660, light = false, tone = "#9A4526" }, -- Belle Of Belfast (long red hair, braided crown)
-	hair_bun = { id = 451220849, light = false, tone = "#C8A0C8" }, -- Lavender Updo (classic messy bun)
+	hair_sidetail = { id = 376527350, light = false, tone = "#1E1F2A" }, -- Black Side Ponytail (classic, blue-black)
+	hair_braid = { id = 2956239660, light = false, tone = "#C23A1C" }, -- Belle Of Belfast (red, braided crown)
+	hair_bun = { id = 451220849, light = false, tone = "#E2A6DC" }, -- Lavender Updo (classic messy bun, pink)
 } :: { [string]: Hair })
 
 -- W10: build (Data/ClassLooks.BUILDS id) -> width and depth scale of the body (height and hitbox unchanged, within 5%).

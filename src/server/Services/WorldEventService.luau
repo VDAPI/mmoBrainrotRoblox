@@ -30,6 +30,7 @@ local Shared = ReplicatedStorage.Shared
 local Analytics = require(script.Parent.Parent.Analytics)
 local Areas = require(Shared.Data.Areas)
 local Clock = require(Shared.Util.Clock)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Log = require(Shared.Util.Log)
 local Maps = require(Shared.Data.Maps)
@@ -904,7 +905,7 @@ local function giveReward(player: Player, char: Types.CharacterData, e: Event, s
 		if drop then
 			local rolled =
 				ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, InventoryService.NewUid(), drop.forClass)
-			rolled.bound = Data.reward.chest.bound
+			Binding.apply(rolled, "reward") -- binds on pickup like the S100 chest (Data/Binding)
 			item = rolled
 		else
 			log:warn("no world event chest item at level %d for %s", e.level, char.class)

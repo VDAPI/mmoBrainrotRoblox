@@ -21,6 +21,7 @@ local ArenaOffer = require(script.Parent.Parent.UI.Screens.ArenaOffer)
 local ArenaPanel = require(script.Parent.Parent.UI.Screens.Hud.ArenaPanel)
 local ArenaTeams = require(script.Parent.Parent.UI.Screens.Hud.ArenaTeams)
 local ArenaWindow = require(script.Parent.Parent.UI.Screens.ArenaWindow)
+local Binding = require(ReplicatedStorage.Shared.Logic.Binding)
 local Tourney = require(ReplicatedStorage.Shared.Logic.Tourney)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -103,12 +104,13 @@ function ArenaController.OpenAtMaster(tab: string)
 	WindowManager.Open("arena")
 end
 
--- S128: buys an arena shop entry after a confirmation (name, price, the balance after, bound items).
+-- S128: buys an arena shop entry after a confirmation (name, price, the balance after, whether the item comes bound:
+-- owner 2026-10-31, Data/Binding "currency" binds no stone or blessing).
 function ArenaController.Buy(entry: Arena.ArenaShopEntry, name: string)
 	local value = State.Get({ "character", "arena" })
 	local tokens = if type(value) == "table" then tonumber(value.tokens) or 0 else 0
 	local message = Text.now("arena.shop.confirm", { name = name, price = entry.price, left = tokens - entry.price })
-	if entry.kind == "item" then
+	if entry.kind == "item" and Binding.bindsFrom(entry.id, "currency") then
 		message ..= "\n" .. Text.now("arena.shop.bound")
 	end
 	WindowManager.ShowModal({

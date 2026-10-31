@@ -52,10 +52,9 @@
 - **Kamera po wejściu do świata (2026-10-31):** promień kamery po kolizji mapy, obrót postaci w czystą stronę i kamera
   za plecami świeżej postaci (`Logic/CameraClear`, `CameraController`, `WorldService.OpenFacing`); nieobejrzane w Studio
   (pierwszy widok na spawnie i na zapisanym miejscu przy domu, przejście obok latarni, kamera „z góry” pod okapem).
-- **Fryzury kreatora (2026-10-31):** tony tekstur czarnych, brązowej, rudej (Belle Of Belfast) i różowej (Lavender
-  Updo) w `Data/BodyLooks.hairs` są szacowane (tekstury niezmierzone), nieobejrzane w Studio (odcień po barwieniu,
-  zakresy kolorów); nie wiadomo, czy Side Part - Black (`hair_swept`) to ta sama siatka co Side Part - Blond
-  (`hair_short`).
+- **Fryzury kreatora (2026-10-31):** tony tekstur w `Data/BodyLooks.hairs` odczytane ze zrzutów Studio; nieobejrzane po
+  poprawce: kopia siatki klasycznych fryzur (`AvatarBuild.hairShell`) w podglądach kreatora i u innych graczy, czerń na
+  jasnych teksturach.
 - **S162m ruch potworów pod animacje:** serwer daje tempo (`Gait`), podejście wręcz, `SpawnedAt`, lot `Dash*` i
   `Muzzle` (`docs/ANIM-WZORCE.md` §10); klient jeszcze nie rysuje łuku skoku z `Dash*` ani pojawienia się z `SpawnedAt`
   (sesja animacji potworów). Nieobejrzane w Studio (bieg szarży dzika po linii, skok wilka, start strzałów z pyska).
