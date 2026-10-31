@@ -2,13 +2,18 @@
 -- Server-wide announcement banner (DESIGN §5.5 legendary drops): golden text sliding in at the top of the
 -- screen, one at a time from a queue. Announcement.push(text, style?) anywhere; Announcement.mount(scope, root)
 -- once. S30: style "mythic" (a mythic drop) is red, bigger, stays longer and pulses with a rotating frame.
+-- UI plan phase 2 (Studio 2026-10-31: the world boss's banner sat on an open window's title bar): while a window is open
+-- the banner stands under its title bar (UI/HudCover.HeaderBottom, Logic/TopBand.underHeader).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudCover = require(script.Parent.Parent.HudCover)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
+local Scale = require(script.Parent.Parent.Scale)
 local Theme = require(script.Parent.Parent.Theme)
+local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
 
 local Children = Fusion.Children
 
@@ -47,8 +52,22 @@ type Entry = { text: string, style: Style, seconds: number? } -- seconds: how lo
 local moduleScope = Fusion.scoped(Fusion)
 local current = moduleScope:Value(nil :: string?)
 local style = moduleScope:Value("legendary" :: Style)
-local offset = moduleScope:Value(-80)
-local animated = moduleScope:Spring(offset, 22, 0.75)
+local HIDDEN = -80
+local shown = moduleScope:Value(false)
+local layerTop = moduleScope:Value(0) -- the layer's top edge on the screen (Announcement.mount)
+-- The banner's centre: its own place, or under the title bar of an open window; above the screen while hidden.
+local target = moduleScope:Computed(function(use): number
+	if not use(shown) then
+		return HIDDEN
+	end
+	local mythic = use(style) == "mythic"
+	local centre = if mythic then 150 else 130
+	local half = (if mythic then 84 else 64) / 2
+	local header = use(HudCover.HeaderBottom)
+	local top = TopBand.underHeader(centre - half, if header then header - use(layerTop) else nil, use(Scale.Value))
+	return top + half
+end)
+local animated = moduleScope:Spring(target, 22, 0.75)
 local spin = moduleScope:Value(0)
 local pulse = moduleScope:Value(0)
 local queue: { Entry } = {}
@@ -80,9 +99,9 @@ local function nextAnnouncement()
 	current:set(entry.text)
 	style:set(entry.style)
 	animate(entry.style == "mythic")
-	offset:set(if entry.style == "mythic" then 150 else 130)
+	shown:set(true)
 	task.delay(entry.seconds or (if entry.style == "mythic" then MYTHIC_SECONDS else SHOW_SECONDS), function()
-		offset:set(-80)
+		shown:set(false)
 		task.delay(0.6, function()
 			showing = false
 			current:set(nil)
@@ -108,6 +127,14 @@ function Announcement.push(text: string, kind: Style?, seconds: number?)
 end
 
 function Announcement.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
+	if parent:IsA("GuiObject") then
+		local layer = parent
+		local function track()
+			layerTop:set(layer.AbsolutePosition.Y)
+		end
+		track()
+		table.insert(scope, layer:GetPropertyChangedSignal("AbsolutePosition"):Connect(track))
+	end
 	scope:New("Frame")({
 		Name = "Announcement",
 		Parent = parent,

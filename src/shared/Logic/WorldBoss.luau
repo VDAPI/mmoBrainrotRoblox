@@ -520,12 +520,17 @@ end
 -- How the HUD panel shows the branch for a player on `mapId`: "full" on the boss's map from the warning to the end of
 -- the marker, "line" (one line: the countdown, then "fights, mm:ss left", with the barrow's name; a tap opens the map at
 -- it) on any other map from the first warning to the end of the fight (S149c: the fight too), nil otherwise.
-function WorldBoss.panelOf(branch: any, mapId: string?): ("full" | "line")?
+function WorldBoss.panelOf(branch: any, mapId: string?, level: number?): ("full" | "line")?
 	if not isPublic(branch) then
 		return nil
 	end
 	if mapId == branch.map then
 		return "full"
+	end
+	-- UI plan phase 2 (owner 2026-10-31, too much on one screen): the line on other maps only from the reward's level
+	-- (a character under minLevel sees the panel on the boss's map only)
+	if level ~= nil and level < WorldBoss.minLevel() then
+		return nil
 	end
 	return if branch.phase == "warn" or branch.phase == "active" then "line" else nil
 end

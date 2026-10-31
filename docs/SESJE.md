@@ -14198,3 +14198,29 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - `hair_straight` ma ton (złoty `#D8BE45`), nowe tony: `hair_charmer`, `hair_sidetail`, `hair_braid`, `hair_bun`.
   `hair_swept` wypada (ta sama siatka co `hair_short`, `LEGACY_HAIRS`). `HairTint.plan`: rozjaśnienie jasnych tekstur
   maleje poniżej `DARK`. Testy `bodylooks`, `classlooks`, `wikidump`; dane wiki przegenerowane.
+
+### Plan UI, faza 2: jedno miejsce na rodzaj rzeczy (2026-10-31)
+- Rząd „coś czeka” pod minimapą: `Hud/WaitingRow` (poczta `MailButton` z `InRow`, ✧ `LoginButton`, ❖ `SeasonButton`,
+  ☾ wyniki Krwawego Księżyca przy `BloodMoonView.Phase == "ended"`), `HudSlots.Waiting`, `HudStack.WAITING` (kolumna PC
+  niżej o 44 + 8). Telefon: szuflada i koperta przy łuku bez zmian. Róg PC (`HudStack.fixed`) zostaje zarezerwowany.
+- Jeden rząd wzmocnień pod portretem (`EffectsRow` w `Hud/init`: `BlessingBadge`, `BlessingIcon` z rozmiarem 30, potem
+  `EffectIcons`); telefon: eliksiry i ✶ na dawnych miejscach.
+- „Auto”: `Hud/AutoGroup` (⚙ w `HudStack.EXTRAS`, panel z trzema dawnymi przyciskami pod nim, złota ramka, gdy coś
+  działa); telefon: trzy przyciski na miejscach `PhoneHud`.
+- PvP: `UI/PvpSwitch.request` (wspólne z `Hud/PvpToggle`), kropka w portrecie to przycisk z tooltipem i odliczaniem;
+  `PvpToggle` tylko na dotyku.
+- Boss świata: `WorldBoss.panelOf(branch, mapId, level)` bez linii poniżej `minLevel`.
+- Pas wiadomości: `Logic/TopBand` + `UI/TopBandState` (banery strefy, obszaru i toast osiągnięcia zgłaszają się,
+  `Toast` stoi pod nimi i pokazuje 2 naraz, `AchievementController` czeka na banery). Lista zabójstw tylko w strefie
+  żółtej i czerwonej (`SocialController`).
+- Z przeglądu Studio: `UI/HudCover` (WindowManager zgłasza otwarte okna, `HudStack.covers`): tropiciel, rząd przycisków
+  menu, podpisy minimapy i rząd „coś czeka” znikają pod oknem; pasek EXP pokazuje procent tylko po najechaniu.
+- Po przeglądzie Studio fazy 1: pasek EXP 10 px i 2 px od dołu (czat kończy się kilka pikseli nad nim; okna czatu
+  Robloxa nie da się przesunąć), toasty i ogłoszenia (`Announcement`) stoją pod paskiem tytułu otwartego okna
+  (`HudCover.HeaderBottom`, `TopBand.underHeader`), ogłoszenie serwera tylko w banerze (bez kopii w czacie,
+  `NotificationController`), boss świata „{boss} stoi {at}” z kluczem `map.frostpeak.at` („na Lodowych Szczytach”,
+  `WorldBossService.atArg`), zdania z nazwą obszaru po przyimku przepisane na mianownik po dwukropku (`contract.text`,
+  `contract.progress`, `event.*`). ❖ przy nowej postaci: przepustka jest na konto, więc pokazuje się, gdy konto ma
+  nieodebrany stopień (warunek bez zmian).
+- Testy: `topband.spec` (nowy), `hudlayout` (rząd „coś czeka”, `covers`, scenariusze z rzędem), `worldboss` (próg,
+  `at`).

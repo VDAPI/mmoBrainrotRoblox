@@ -49,7 +49,8 @@
 
 ## Niedokończone (kod)
 
-- **Plan UI, faza 1 (2026-10-31):** jeden rząd przycisków HUD, kafelki menu gry, czat w lewym dolnym rogu (`Hud/ChatDock`), toast zamiast okna nagrody za logowanie; nieobejrzane w Studio (szerokość czatu przy 1366 i 1280 px, zawijanie nazw kafelków, tropiciel od y 380 / 408 z belką prowadzenia, szuflada ☰ na telefonie). Kolejne fazy w `wyglad/UI-PLAN.md`; z przeglądu Studio zostaje przygaszanie tropiciela i przycisków pod dużym oknem.
+- **Plan UI, faza 2 (2026-10-31):** rząd „coś czeka”, rząd wzmocnień, „Auto”, kropka PvP jako przełącznik, pas wiadomości, chowanie HUD pod oknem; nieobejrzane w Studio (rząd pod minimapą z belką i bez, panel „Auto” na tablecie nad zapasową kolumną, trafienie w kropkę PvP myszą, toasty pod banerami). Nie zrobione z fazy 2: karty „Lepszy przedmiot”, walki i oferty areny jako jedna karta naraz (odblokowania idą toastem, więc są w pasie); róg PC zostaje zarezerwowany w `HudStack.fixed`.
+- **Plan UI, faza 1 (2026-10-31):** jeden rząd przycisków HUD, kafelki menu gry, czat w lewym dolnym rogu (`Hud/ChatDock`), toast zamiast okna nagrody za logowanie; nieobejrzane w Studio (szerokość czatu przy 1366 i 1280 px, zawijanie nazw kafelków, tropiciel od y 380 / 408 z belką prowadzenia, szuflada ☰ na telefonie). Kolejne fazy w `wyglad/UI-PLAN.md`.
 - **Fryzury kreatora (2026-10-31):** tony tekstur w `Data/BodyLooks.hairs` odczytane ze zrzutów Studio; nieobejrzane po
   poprawce: kopia siatki klasycznych fryzur (`AvatarBuild.hairShell`) w podglądach kreatora i u innych graczy, czerń na
   jasnych teksturach.

@@ -136,11 +136,24 @@ local function scenario(name: string, touch: boolean, w: number): { [string]: Bo
 	error(name)
 end
 local SCENARIOS = { "tracker", "bossLine", "bossAndEvent", "busy", "movedTracker", "movedBoss" }
--- every scenario without and with the guide bar under the minimap (UI plan phase 1)
-local SCENARIOS_GUIDE: { { name: string, guide: boolean } } = {}
+-- every scenario without and with the guide bar under the minimap (UI plan phase 1) and the row of "something
+-- waits" buttons under them (phase 2)
+local SCENARIOS_GUIDE: { { name: string, guide: boolean, waiting: boolean } } = {}
 for _, name in SCENARIOS do
-	table.insert(SCENARIOS_GUIDE, { name = name, guide = false })
-	table.insert(SCENARIOS_GUIDE, { name = name, guide = true })
+	for _, guide in { false, true } do
+		for _, waiting in { false, true } do
+			table.insert(SCENARIOS_GUIDE, { name = name, guide = guide, waiting = waiting })
+		end
+	end
+end
+
+-- UI plan phase 2: the row of "something waits" buttons on PC (Hud/WaitingRow): right-aligned under the minimap's area
+-- line or under the guide bar, at most four buttons
+local function waitingRow(w: number, guide: boolean): Rect
+	local top = if guide then HudStack.RIGHT_TOP_GUIDE else HudStack.RIGHT_TOP
+	local right = w - 22
+	local width = 4 * HudStack.WAITING + 3 * 8
+	return { left = right - width, top = top, right = right, bottom = top + HudStack.WAITING }
 end
 
 local function show(r: Rect): string
@@ -154,9 +167,19 @@ local function screen(
 	w: number,
 	h: number,
 	boxes: { [string]: Box },
-	guide: boolean?
+	guide: boolean?,
+	waiting: boolean?
 ): { [string]: Rect }
 	local all: { [string]: Rect } = table.clone(HudStack.fixed(touch, w, h))
+	-- the row stands in the menu: an element the player moved there may lie under it (their choice), the column's own
+	-- places never do
+	local moved = false
+	for _, b in boxes do
+		moved = moved or b.custom ~= nil
+	end
+	if waiting and not touch and not moved then
+		all.waiting = waitingRow(w, guide == true)
+	end
 	local e = HudStack.EXTRAS
 	all.extras = { left = e.x, top = e.y, right = e.x + e.w, bottom = e.y + e.h }
 	for id, b in boxes do
@@ -166,7 +189,7 @@ local function screen(
 			all.elite = HudStack.elite(w, h, b.h)
 		end
 	end
-	for id, r in HudStack.layout(touch, false, w, h, 0, boxes, nil, guide) do
+	for id, r in HudStack.layout(touch, false, w, h, 0, boxes, nil, guide, waiting) do
 		all[id] = r
 	end
 	return all
@@ -224,10 +247,13 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 			for _, size in sizes do
 				local w, h = size[1], size[2]
 				for _, check in SCENARIOS_GUIDE do
-					local name, guide = check.name, check.guide
+					local name, guide, waiting = check.name, check.guide, check.waiting
 					local boxes = scenario(name, touch, w)
-					local all = screen(touch, w, h, boxes, guide)
-					local where = `{if touch then "touch" else "PC"} {w} x {h} {name}{if guide then " (guide)" else ""}`
+					local all = screen(touch, w, h, boxes, guide, waiting)
+					local where =
+						`{if touch then "touch" else "PC"} {w} x {h} {name}{if guide then " (guide)" else ""}{if waiting
+							then " (waiting)"
+							else ""}`
 					local bad = clashes(all)
 					if #bad > 0 then
 						error(`{where}: {table.concat(bad, "; ")}`)
@@ -501,8 +527,40 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		T.expect(tablet.top).toBe(HudStack.TOUCH_TOP)
 		local phone = HudStack.column(true, true, 886, 435, 0, true)
 		T.expect(phone.top).toBe(PhoneHud.stackTop(0))
-		-- the buttons right of the portrait: the login reward and the season pass only (the achievements left the HUD)
-		T.expect(HudStack.EXTRAS.h).toBe(2 * 44 + 8)
+		-- phase 2: right of the portrait only the "Auto" button (the login reward and the season pass moved under the
+		-- minimap)
+		T.expect(HudStack.EXTRAS.h).toBe(44)
+	end)
+
+	T.it('UI plan phase 2: the row of "something waits" buttons pushes the PC column down by its height', function()
+		-- Hud/WaitingRow: under the area line it starts where the column did (RIGHT_TOP), under the guide bar too
+		T.expect(HudStack.WAITING).toBe(44)
+		for _, size in PC do
+			local w, h = size[1], size[2]
+			for _, guide in { false, true } do
+				local without = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w), nil, guide)
+				local with = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w), nil, guide, true)
+				T.expect(with.questTracker.top - without.questTracker.top).toBe(HudStack.WAITING + HudStack.GAP)
+				T.expect(with.questTracker.top).toBe(waitingRow(w, guide).bottom + HudStack.GAP)
+				T.expect(with.questTracker.bottom).toBe(without.questTracker.bottom)
+			end
+		end
+		-- a tablet's and a phone's column do not move (the row is in the PC menu; a phone keeps its drawer)
+		T.expect(HudStack.column(true, false, 1280, 720, 0, false, true).top).toBe(HudStack.TOUCH_TOP)
+		T.expect(HudStack.column(true, true, 886, 435, 0, false, true).top).toBe(PhoneHud.stackTop(0))
+	end)
+
+	T.it("UI plan phase 2: a window covers a HUD part only when it overlaps it by more than the margin", function()
+		local tracker = { left = 1600, top = 380, right = 1900, bottom = 700 }
+		-- a 1240 wide window in the middle of 1920 ends at 1580: clear
+		T.expect(HudStack.covers(tracker, { left = 340, top = 190, right = 1580, bottom = 890 }, 4)).toBe(false)
+		-- a window dragged over it
+		T.expect(HudStack.covers(tracker, { left = 900, top = 190, right = 1700, bottom = 890 }, 4)).toBe(true)
+		-- an edge that only touches it, or a sliver under the margin, does not count
+		T.expect(HudStack.covers(tracker, { left = 300, top = 100, right = 1603, bottom = 900 }, 4)).toBe(false)
+		T.expect(HudStack.covers(tracker, { left = 300, top = 100, right = 1610, bottom = 900 }, 4)).toBe(true)
+		-- a full-screen window (touch) covers everything
+		T.expect(HudStack.covers(tracker, { left = 0, top = 0, right = 1920, bottom = 1080 }, 4)).toBe(true)
 	end)
 
 	T.it("UI plan phase 1: the chat window ends left of the action bar, within its width range", function()
