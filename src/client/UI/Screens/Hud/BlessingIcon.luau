@@ -3,6 +3,8 @@
 -- tooltip with the stat. The active blessing sits next to the character name since S29 (Hud/BlessingBadge).
 -- S153: the returning bonus first in the row (»: minutes of play left from account.returning, counted down by the
 -- server only in the world, so the caption is whole minutes, not a clock).
+-- UI plan phase 2 (one row of effects): PC and tablet show them in the effects row under the portrait (Hud/init), at
+-- the effect icons' size; a phone keeps them at their own place.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -30,6 +32,7 @@ local SIZE = 48
 
 local function icon(
 	scope: Scope,
+	size: number,
 	order: number,
 	glyph: string,
 	color: Color3,
@@ -45,14 +48,14 @@ local function icon(
 	end)
 	local frame = scope:New("Frame")({
 		LayoutOrder = order,
-		Size = UDim2.fromOffset(SIZE, SIZE + 16),
+		Size = UDim2.fromOffset(size, size + 16),
 		BackgroundTransparency = 1,
 		Visible = scope:Computed(function(use): boolean
 			return use(left) > 0
 		end),
 		[Children] = {
 			scope:New("TextLabel")({
-				Size = UDim2.fromOffset(SIZE, SIZE),
+				Size = UDim2.fromOffset(size, size),
 				BackgroundColor3 = Theme.Iron.Surface,
 				BackgroundTransparency = Theme.HudAlpha,
 				Text = scope:Computed(function(use): string
@@ -74,8 +77,8 @@ local function icon(
 				},
 			}),
 			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(-8, SIZE),
-				Size = UDim2.fromOffset(SIZE + 16, 16),
+				Position = UDim2.fromOffset(-8, size),
+				Size = UDim2.fromOffset(size + 16, 16),
 				BackgroundTransparency = 1,
 				Text = caption or scope:Computed(function(use): string
 					return Time.format(use(left))
@@ -91,7 +94,10 @@ local function icon(
 	return frame
 end
 
-local function BlessingIcon(scope: Scope, position: Fusion.UsedAs<UDim2>): Instance
+-- `size`: the icons' side (default SIZE; UI plan phase 2: the effects row under the portrait passes its own icons'
+-- size, Hud/init).
+local function BlessingIcon(scope: Scope, position: Fusion.UsedAs<UDim2>, size: number?): Instance
+	local side = size or SIZE
 	local elixirs = State.Value({ "character", "elixirs" })
 	local now = scope:Value(Clock.now())
 	local accumulator = 0
@@ -117,6 +123,7 @@ local function BlessingIcon(scope: Scope, position: Fusion.UsedAs<UDim2>): Insta
 	end)
 	local bonus = icon(
 		scope,
+		side,
 		0,
 		"»",
 		Theme.Brass.Bright,
@@ -144,6 +151,7 @@ local function BlessingIcon(scope: Scope, position: Fusion.UsedAs<UDim2>): Insta
 					list,
 					icon(
 						s,
+						side,
 						order,
 						"⚱",
 						Theme.Iron.Link,
@@ -162,7 +170,8 @@ local function BlessingIcon(scope: Scope, position: Fusion.UsedAs<UDim2>): Insta
 	return scope:New("Frame")({
 		Name = "Blessings",
 		Position = position,
-		Size = UDim2.fromOffset(SIZE * 5 + 40, SIZE + 16),
+		Size = UDim2.fromOffset(0, side + 16),
+		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
 		[Children] = {
 			scope:New("UIListLayout")({

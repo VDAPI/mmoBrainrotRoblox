@@ -16,6 +16,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudCover = require(script.Parent.Parent.UI.HudCover)
 local ItemTooltip = require(script.Parent.Parent.UI.Components.ItemTooltip)
 local KeybindData = require(ReplicatedStorage.Shared.Data.Keybinds)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
@@ -94,6 +95,18 @@ local function isOverlay(id: string): boolean
 	return def ~= nil and def.overlay == true
 end
 
+-- UI plan phase 2: the HUD parts under the open normal windows step out of sight (UI/HudCover).
+local function reportCover()
+	local roots: { GuiObject } = {}
+	for _, id in stack do
+		local window = open[id]
+		if window and window.root and not isOverlay(id) then
+			table.insert(roots, window.root)
+		end
+	end
+	HudCover.SetWindows(roots)
+end
+
 local function bringToFront(id: string)
 	local window = open[id]
 	if not window then
@@ -163,6 +176,7 @@ local function destroyWindow(id: string, instant: boolean?)
 		closeLater(window.scope, window.closing, window.root)
 	end
 	openValue(id):set(false)
+	reportCover()
 end
 
 local function destroyAll(ids: { string })
@@ -307,6 +321,7 @@ openWindow = function(id: string, offset: Vector2?)
 	root.Parent = UIController.GetLayer("Windows")
 	bringToFront(id)
 	openValue(id):set(true)
+	reportCover()
 	Sounds.play("open")
 end
 

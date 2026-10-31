@@ -14,6 +14,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local TopBandState = require(script.Parent.Parent.Parent.TopBandState)
 local Types = require(ReplicatedStorage.Shared.Types)
 local WorldBoss = require(ReplicatedStorage.Shared.Logic.WorldBoss)
 
@@ -35,6 +36,13 @@ local function ZoneBanner(scope: Scope): Instance
 	local shown = scope:Value(nil :: Types.ZoneState?)
 	local transparency = scope:Value(1)
 	local animated = scope:Tween(transparency, TweenInfo.new(0.6, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
+	-- UI plan phase 2: the toasts start under this banner while it shows (UI/TopBandState, Logic/TopBand)
+	scope:Observer(transparency):onBind(function()
+		TopBandState.set("zone", Fusion.peek(transparency) < 1)
+	end)
+	table.insert(scope, function()
+		TopBandState.set("zone", false)
+	end)
 	local lastKey = ""
 	local token = 0
 	-- S149b: the world boss circle's note (a key) while its banner shows, else nil (the zone banner)

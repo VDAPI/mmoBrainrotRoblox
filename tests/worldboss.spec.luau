@@ -506,6 +506,33 @@ T.describe("World boss: the view (S149b)", function()
 		T.expect(WorldBoss.panelOf(public("slain"), "city")).toBeNil()
 	end)
 
+	T.it("UI plan phase 2: the line on other maps only from the reward's level, the boss's map always", function()
+		local min = WorldBoss.minLevel()
+		T.expect(WorldBoss.panelOf(public("warn"), "meadows", min - 1)).toBeNil()
+		T.expect(WorldBoss.panelOf(public("active"), "meadows", min - 1)).toBeNil()
+		T.expect(WorldBoss.panelOf(public("warn"), "meadows", min)).toBe("line")
+		T.expect(WorldBoss.panelOf(public("active"), "meadows", min + 10)).toBe("line")
+		T.expect(WorldBoss.panelOf(public("warn"), Data.map, 1)).toBe("full")
+	end)
+
+	T.it(
+		"UI plan phase 2: the announcements name the boss's map as a place, in its case (Studio 2026-10-31)",
+		function()
+			-- WorldBossService's `at`: the map's name key with .at for .name ("na Lodowych Szczytach", not "na Lodowe Szczyty")
+			local nameKey = `map.{Data.map}.name`
+			local at = string.gsub(nameKey, "%.name$", "") .. ".at"
+			for lang, strings in { pl = pl, en = en } do
+				local s = strings :: any
+				T.expect({ lang, type(s[nameKey]) == "string", type(s[at]) == "string" }).toEqual({ lang, true, true })
+				for _, key in { "worldboss.warn", "worldboss.spawn" } do
+					T.expect({ lang, key, string.find(s[key], "{at}", 1, true) ~= nil }).toEqual({ lang, key, true })
+					T.expect({ lang, key, string.find(s[key], "{map}", 1, true) ~= nil }).toEqual({ lang, key, false })
+				end
+			end
+			T.expect(string.sub((pl :: any)[at], 1, 3)).toBe("na ")
+		end
+	)
+
 	T.it("lineOf: the countdown to the start, then the time left of the fight (S149c)", function()
 		T.expect({ WorldBoss.lineOf(public("warn"), occ.startsAt - 125) }).toEqual({ "hud.worldboss.line", 125 })
 		T.expect({ WorldBoss.lineOf(public("active"), occ.startsAt + 60) }).toEqual({
@@ -706,7 +733,7 @@ T.describe("World boss: contribution factor, named items and pity (S149c)", func
 		T.expect(n).toBe(8)
 		-- the Mage staff is an ice weapon (its fixed effects are ice ones)
 		local staff = Items.get("unique_hrimvald_staff") :: any
-		T.expect({ staff.elemental, Data.reward.named.element }).toEqual({ true, "ice" })
+		T.expect({ staff.elemental, staff.element, Data.reward.named.element }).toEqual({ true, "ice", "ice" })
 	end)
 
 	-- the owner: rare and better than the dungeon bosses' named items

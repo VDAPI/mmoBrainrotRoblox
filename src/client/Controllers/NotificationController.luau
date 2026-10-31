@@ -96,7 +96,7 @@ function NotificationController.Start()
 			if mythic or worldBoss then "mythic" else nil,
 			if worldBoss then WORLD_BOSS_SECONDS else nil
 		)
-		NotificationController.System(text)
+		-- UI plan phase 2 (Studio 2026-10-31: the same announcement in the banner and in the chat): the banner only
 	end)
 end
 

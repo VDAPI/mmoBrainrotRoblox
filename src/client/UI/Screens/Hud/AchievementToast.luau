@@ -14,6 +14,7 @@ local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local TopBandState = require(script.Parent.Parent.Parent.TopBandState)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -60,6 +61,7 @@ function AchievementToast.new(scope: Scope, onView: ((id: string) -> ())?): Api
 			task.delay(0.25, function()
 				if token == mine then
 					box.Visible = false
+					TopBandState.set("achievement", false) -- UI plan phase 2: the toasts move back up
 				end
 				if done then
 					done()
@@ -208,6 +210,7 @@ function AchievementToast.new(scope: Scope, onView: ((id: string) -> ())?): Api
 		view:set(nextView)
 		box.Position = Fusion.peek(hidden)
 		box.Visible = true
+		TopBandState.set("achievement", true) -- UI plan phase 2: the toasts start under it (Logic/TopBand)
 		TweenService:Create(box, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
 			Position = shown,
 		}):Play()

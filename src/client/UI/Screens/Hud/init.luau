@@ -6,11 +6,18 @@
 -- of six buttons (Logic/HudMenu.BAR; the other windows are tiles of the game menu), the login reward and the season
 -- pass show only while a reward waits, the achievements button and the emote slot left the HUD (N, T and the menu's
 -- tiles open them).
+-- UI plan phase 2: "something waits" in one row under the minimap (Hud/WaitingRow), the buffs in one row under the
+-- portrait (the blessing, the elixirs and the effects), the cloak and the auto services behind one "Auto" button
+-- (Hud/AutoGroup), the dot on the portrait is the PvP switch on PC, the menu bar, the tracker and the minimap's labels
+-- step out of sight under an open window (UI/HudCover) and the EXP bar shows its percentage on hover only.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local AreaBanner = require(script.AreaBanner)
 local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
+local AutoGroup = require(script.AutoGroup)
 local AttackButton = require(script.AttackButton)
 local Bar = require(script.Parent.Parent.Components.Bar)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
@@ -22,6 +29,7 @@ local Device = require(script.Parent.Parent.Device)
 local Exp = require(ReplicatedStorage.Shared.Logic.Exp)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudCover = require(script.Parent.Parent.HudCover)
 local IconButton = require(script.Parent.Parent.Components.IconButton)
 local Keybinds = require(script.Parent.Parent.Keybinds)
 local LoginButton = require(script.LoginButton)
@@ -38,6 +46,7 @@ local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local PotionBar = require(script.PotionBar)
 local PvpDot = require(script.Parent.Parent.Components.PvpDot)
 local PvpState = require(script.Parent.Parent.PvpState)
+local PvpSwitch = require(script.Parent.Parent.PvpSwitch)
 local SkillBar = require(script.SkillBar)
 local SprintButton = require(script.SprintButton)
 local BlessingBadge = require(script.BlessingBadge)
@@ -58,9 +67,10 @@ local Theme = require(script.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 local TargetFrame = require(script.TargetFrame)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local WaitingRow = require(script.WaitingRow)
 local ZoneBanner = require(script.ZoneBanner)
 
-local Children = Fusion.Children
+local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -108,6 +118,7 @@ export type Props = {
 
 local SKILL_SLOTS = 10
 local SLOT_SIZE = 56
+local EFFECT_ICON = 30 -- UI plan phase 2: the effects row's icons (Hud/EffectIcons' default), the elixirs too
 
 local function number(scope: Scope, path: { string }): Fusion.Computed<number>
 	local value = State.Value(path)
@@ -135,6 +146,69 @@ local function lowHpPulse(
 	return scope:Computed(function(use): boolean
 		return use(on) and use(enabled) ~= false
 	end)
+end
+
+-- UI plan phase 2 (plan §3 #2): the PvP dot on the portrait is the switch (a click in a yellow zone; UI/PvpSwitch, the
+-- same request as the touch screens' toggle); its tooltip tells the state, the countdown and that it can be clicked.
+local function pvpSwitch(scope: Scope): Instance
+	local state = PvpState.indicator(scope)
+	local zone = State.Value({ "zone" })
+	local pvp = State.Value({ "pvp" })
+	local now = scope:Value(Workspace:GetServerTimeNow())
+	local accumulator = 0
+	table.insert(
+		scope,
+		RunService.Heartbeat:Connect(function(dt)
+			accumulator += dt
+			if accumulator >= 0.25 and Fusion.peek(state) == "switching" then
+				accumulator = 0
+				now:set(Workspace:GetServerTimeNow())
+			end
+		end)
+	)
+	local zoneType = scope:Computed(function(use): string
+		local z = use(zone)
+		return if type(z) == "table" and type(z.pvp) == "string" then z.pvp else "green"
+	end)
+	local button = scope:New("TextButton")({
+		Name = "PvpSwitch",
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.fromOffset(117, 22),
+		Size = UDim2.fromOffset(28, 28),
+		BackgroundTransparency = 1,
+		Text = "",
+		AutoButtonColor = false,
+		ZIndex = 2,
+		[OnEvent("Activated")] = function()
+			if Fusion.peek(zoneType) == "yellow" then
+				PvpSwitch.request()
+			end
+		end,
+		[Children] = PvpDot(scope, {
+			State = state,
+			Position = UDim2.fromScale(0.5, 0.5),
+			AnchorPoint = Vector2.new(0.5, 0.5),
+			Size = 14,
+			Tooltip = false,
+		}),
+	})
+	Tooltip.attach(
+		scope,
+		button :: GuiObject,
+		scope:Computed(function(use): string
+			local lines = { Text.get(use, `pvp.dot.{use(state)}`) }
+			local p = use(pvp)
+			if type(p) == "table" and type(p.switchAt) == "number" and p.pendingTarget ~= nil then
+				local left = math.ceil(math.max(0, p.switchAt - use(now)))
+				table.insert(lines, Text.get(use, "pvp.countdown", { seconds = left }))
+			end
+			if use(zoneType) == "yellow" then
+				table.insert(lines, Text.get(use, "pvp.dot.click"))
+			end
+			return table.concat(lines, "\n")
+		end)
+	)
+	return button
 end
 
 local function portrait(scope: Scope): Instance
@@ -211,11 +285,7 @@ local function portrait(scope: Scope): Instance
 					}),
 				},
 			}),
-			PvpDot(scope, {
-				State = PvpState.indicator(scope),
-				Position = UDim2.fromOffset(110, 22),
-				Size = 14,
-			}),
+			pvpSwitch(scope),
 			-- Name row (S29): the name, then the active blessing's ✶ with its countdown.
 			scope:New("Frame")({
 				Name = "NameRow",
@@ -245,7 +315,16 @@ local function portrait(scope: Scope): Instance
 						TextTruncate = Enum.TextTruncate.AtEnd,
 						[Children] = scope:New("UISizeConstraint")({ MaxSize = Vector2.new(170, 28) }),
 					}),
-					BlessingBadge.new(scope, 2),
+					-- UI plan phase 2: a phone keeps the blessing by the name; PC and tablet show it first in the effects row
+					scope:New("Frame")({
+						Name = "BlessingSlot",
+						LayoutOrder = 2,
+						Size = UDim2.fromOffset(0, 26),
+						AutomaticSize = Enum.AutomaticSize.X,
+						BackgroundTransparency = 1,
+						Visible = PhoneLayout.Compact,
+						[Children] = BlessingBadge.new(scope, 1),
+					}),
 				},
 			}),
 			scope:New("Frame")({
@@ -329,6 +408,27 @@ end
 
 local function menu(scope: Scope, props: Props): Instance
 	local buttons = menuButtons(scope, props)
+	-- UI plan phase 2: the buttons step out of sight under an open window (UI/HudCover); their frame keeps its height,
+	-- so the minimap under it never moves
+	local row = scope:New("Frame")({
+		Name = "Row",
+		Size = UDim2.fromOffset(0, Theme.Size.IconButton),
+		AutomaticSize = Enum.AutomaticSize.X,
+		BackgroundTransparency = 1,
+		[Children] = {
+			scope:New("UIListLayout")({
+				FillDirection = Enum.FillDirection.Horizontal,
+				HorizontalAlignment = Enum.HorizontalAlignment.Right,
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, Theme.Padding.Small),
+			}),
+			buttons :: any,
+		},
+	}) :: Frame
+	local covered = HudCover.covered(scope, row)
+	scope:Observer(covered):onBind(function()
+		row.Visible = not Fusion.peek(covered)
+	end)
 	return scope:New("Frame")({
 		Name = "Menu",
 		AnchorPoint = Vector2.new(1, 0),
@@ -357,14 +457,21 @@ local function menu(scope: Scope, props: Props): Instance
 					scope:New("UIListLayout")({
 						FillDirection = Enum.FillDirection.Horizontal,
 						HorizontalAlignment = Enum.HorizontalAlignment.Right,
-						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, Theme.Padding.Small),
 					}),
-					buttons :: any,
+					row,
 				},
 			}),
 			Minimap(scope, { ShowWindow = props.ShowWindow }),
 			NavBar(scope, { ShowWindow = props.ShowWindow, StopGuide = props.StopGuide }),
+			-- UI plan phase 2: "something waits" under the minimap (and the guide bar)
+			WaitingRow(scope, {
+				LayoutOrder = 4,
+				LoginStatus = props.LoginStatus,
+				LoginBadge = props.LoginBadge,
+				OpenLogin = props.OpenLogin,
+				OpenWindow = props.OpenWindow,
+				ShowWindow = props.ShowWindow,
+			}),
 		},
 	})
 end
@@ -467,16 +574,24 @@ local function expBar(scope: Scope): Instance
 		local l = use(level)
 		return if l >= Config.MaxLevel then 0 else Exp.expToNext(math.max(1, l))
 	end)
+	-- UI plan phase 2 (Studio audit 2026-10-31, too many numbers at rest): the percentage only while the pointer is over
+	-- the bar (the tooltip adds the points); a touch screen shows it in the tooltip of a long press
+	local hovered = scope:Value(false)
 	local bar = Bar(scope, {
 		Name = "Exp",
 		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -4),
-		Size = UDim2.new(1, -8, 0, 16),
+		-- UI plan phase 2: thinner and 2 lower (was 16 tall, 4 up): the chat in the lower left corner ends a few pixels
+		-- above it (Studio 2026-10-31: they touched)
+		Position = UDim2.new(0.5, 0, 1, -2),
+		Size = UDim2.new(1, -8, 0, 10),
 		Value = exp,
 		Max = need,
 		Color = Theme.Resource.Exp,
 		ShowNumbers = false,
 		Label = scope:Computed(function(use): string
+			if not use(hovered) then
+				return ""
+			end
 			if use(level) >= Config.MaxLevel then
 				return Text.get(use, "hud.expMax")
 			end
@@ -484,6 +599,19 @@ local function expBar(scope: Scope): Instance
 			return Text.get(use, "hud.expPct", { pct = string.format("%.1f", pct) })
 		end),
 	})
+	local strip = bar :: GuiObject
+	table.insert(
+		scope,
+		strip.MouseEnter:Connect(function()
+			hovered:set(true)
+		end)
+	)
+	table.insert(
+		scope,
+		strip.MouseLeave:Connect(function()
+			hovered:set(false)
+		end)
+	)
 	Tooltip.attach(
 		scope,
 		bar :: GuiObject,
@@ -623,74 +751,94 @@ local function Hud(scope: Scope, props: Props): Instance
 		[Children] = {
 			LowHpVignette(scope), -- S134f: under every other HUD element
 			portrait(scope),
-			BlessingIcon(
-				scope,
-				PhoneLayout.Position(
+			-- UI plan phase 2 (one row of effects): PC and tablet show the blessing (✶ and its time), the elixirs and the
+			-- returning bonus first in the effects row under the portrait; a phone keeps the elixirs at their own place and
+			-- the blessing by the name
+			scope:Hydrate(
+				BlessingIcon(
 					scope,
-					"blessing",
-					UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 4)
+					PhoneLayout.Position(
+						scope,
+						"blessing",
+						UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 4)
+					)
 				)
-			),
-			-- W29: on a phone in landscape the login reward and the season pass are in the menu drawer. UI plan phase 1:
-			-- each only while its reward waits (Logic/HudStack.EXTRAS); the S151c achievements button left the HUD (N,
-			-- the game menu's tile, the "!" on ☰)
+			)({ Visible = PhoneLayout.Compact }),
 			scope:New("Frame")({
-				Name = "HudExtras",
-				Size = UDim2.fromScale(1, 1),
-				BackgroundTransparency = 1,
-				Visible = PhoneLayout.Pick(scope, false, true),
-				[Children] = {
-					-- S100: right of the portrait, aligned to its bottom (the elixirs end at ~90, the effect icons start at 164)
-					LoginButton(scope, {
-						Status = props.LoginStatus,
-						Badge = props.LoginBadge,
-						Open = props.OpenLogin,
-						Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 - 44),
-					}),
-					-- S152b: the season pass under the login button (the effect icons end at x 268, the cloak row at y 140)
-					SeasonButton(scope, {
-						Open = function()
-							props.OpenWindow("season")
-						end,
-						Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 + 8),
-					}),
-				},
-			}),
-			-- S122: the Cloak of Luring right of the login button, below the elixirs (only while it has time)
-			LureButton(
-				scope,
-				PhoneLayout.Position(
-					scope,
-					"lure",
-					UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8, Theme.Padding.Large + 136 - 64)
-				)
-			),
-			-- S134d: Auto Hunt and Auto Potions right of the cloak (each only while the account has it)
-			AutoGrindButton(
-				scope,
-				PhoneLayout.Position(
-					scope,
-					"autoGrind",
-					UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8 + 56, Theme.Padding.Large + 136 - 64)
-				)
-			),
-			AutoPotionButton(
-				scope,
-				PhoneLayout.Position(
-					scope,
-					"autoPotion",
-					UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8 + 112, Theme.Padding.Large + 136 - 64)
-				)
-			),
-			CastBar(scope),
-			EffectIcons(scope, {
-				Model = myModel,
+				Name = "EffectsRow",
 				Position = PhoneLayout.Position(
 					scope,
 					"effects",
 					UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large + 136 + 6)
 				),
+				Size = UDim2.fromOffset(0, 0),
+				AutomaticSize = Enum.AutomaticSize.XY,
+				BackgroundTransparency = 1,
+				[Children] = {
+					scope:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, 6),
+					}),
+					scope:New("Frame")({
+						Name = "Blessing",
+						LayoutOrder = 1,
+						Size = UDim2.fromOffset(0, 26),
+						AutomaticSize = Enum.AutomaticSize.X,
+						BackgroundTransparency = 1,
+						Visible = PhoneLayout.Pick(scope, false, true),
+						[Children] = BlessingBadge.new(scope, 1),
+					}),
+					scope:Hydrate(BlessingIcon(scope, UDim2.new(), EFFECT_ICON))({
+						LayoutOrder = 2,
+						Visible = PhoneLayout.Pick(scope, false, true),
+					}),
+					scope:Hydrate(EffectIcons(scope, { Model = myModel, Size = EFFECT_ICON }))({ LayoutOrder = 3 }),
+				},
 			}),
+			-- UI plan phase 2: the Cloak of Luring, Auto Hunt and Auto Potions behind one "Auto" button right of the
+			-- portrait (PC and tablet, Hud/AutoGroup); a phone keeps the three at their places (Logic/PhoneHud). The login
+			-- reward and the season pass moved to the row under the minimap (Hud/WaitingRow).
+			AutoGroup(scope) :: any,
+			scope:New("Frame")({
+				Name = "PhoneAuto",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundTransparency = 1,
+				Visible = PhoneLayout.Compact,
+				[Children] = {
+					LureButton(
+						scope,
+						PhoneLayout.Position(
+							scope,
+							"lure",
+							UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8, Theme.Padding.Large + 136 - 64)
+						)
+					),
+					AutoGrindButton(
+						scope,
+						PhoneLayout.Position(
+							scope,
+							"autoGrind",
+							UDim2.fromOffset(
+								Theme.Padding.Large + 400 + 12 + 44 + 8 + 56,
+								Theme.Padding.Large + 136 - 64
+							)
+						)
+					),
+					AutoPotionButton(
+						scope,
+						PhoneLayout.Position(
+							scope,
+							"autoPotion",
+							UDim2.fromOffset(
+								Theme.Padding.Large + 400 + 12 + 44 + 8 + 112,
+								Theme.Padding.Large + 136 - 64
+							)
+						)
+					),
+				},
+			}),
+			CastBar(scope),
 			MobileSkills(scope, {
 				Cast = props.CastSlot,
 				Color = props.SkillColor,
@@ -723,7 +871,8 @@ local function Hud(scope: Scope, props: Props): Instance
 			ZoneBanner(scope),
 			AreaBanner(scope),
 			AttackButton(scope, { OnAttack = props.OnAttack }),
-			-- owner 2026-10-21: parcels waiting, under the attack button (over the target button on a phone)
+			-- owner 2026-10-21: parcels waiting, over the target button on a phone; UI plan phase 2: PC and tablet in the
+			-- row under the minimap (Hud/WaitingRow)
 			MailButton(scope, {
 				Open = function()
 					props.ShowWindow("mail")

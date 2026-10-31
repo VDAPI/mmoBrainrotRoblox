@@ -71,7 +71,7 @@ local WARRIOR = { classId = "Warrior", level = 60 }
 
 T.describe("ItemCompare.replaced (owner 2026-10-31)", function()
 	T.it(
-		"the worn item of the slot; nothing for an empty slot, a worn item, another class or a too high level",
+		"the worn item of the slot; nothing for an empty slot, a worn item or another class; a too high level is compared",
 		function()
 			local sword = made("sword1h_30", "new")
 			local worn = made("sword1h_30", "worn")
@@ -80,8 +80,8 @@ T.describe("ItemCompare.replaced (owner 2026-10-31)", function()
 			T.expect(ItemCompare.replaced(sword, {}, WARRIOR)).toBeNil()
 			T.expect(ItemCompare.replaced(worn, gear, WARRIOR)).toBeNil()
 			T.expect(ItemCompare.replaced(sword, gear, { classId = "Mage", level = 60 })).toBeNil()
-			T.expect(ItemCompare.replaced(sword, gear, { classId = "Warrior", level = 29 })).toBeNil()
-			T.expect(uids(ItemCompare.replaced(sword, gear, { classId = "Warrior", level = 30 }))).toEqual({ "worn" })
+			-- 2026-10-31 (Studio check): a find for later is compared too (its level is red in the head line)
+			T.expect(uids(ItemCompare.replaced(sword, gear, { classId = "Warrior", level = 29 }))).toEqual({ "worn" })
 			-- a potion or a material is never compared
 			T.expect(ItemCompare.replaced(ItemRoll.makeStack("potion_hp_2", 1, "p"), gear, WARRIOR)).toBeNil()
 		end
@@ -114,7 +114,7 @@ T.describe("ItemCompare.replaced (owner 2026-10-31)", function()
 			.toEqual({ "sword", "shield" })
 		T.expect(uids(ItemCompare.replaced(axe, { offhand = shield }, WARRIOR))).toEqual({ "shield" })
 		local other = made("shield_50", "other")
-		T.expect(ItemCompare.canEquip(other, { weapon = axe }, WARRIOR)).toBe(false)
+		T.expect(ItemCompare.comparable(other, { weapon = axe }, WARRIOR)).toBe(false)
 		T.expect(ItemCompare.replaced(other, { weapon = axe, offhand = shield }, WARRIOR)).toBeNil()
 		T.expect(uids(ItemCompare.replaced(made("sword1h_30", "new"), { weapon = axe }, WARRIOR))).toEqual({ "axe" })
 	end)
@@ -300,6 +300,54 @@ T.describe("TooltipModel with the comparison (owner 2026-10-31)", function()
 			.toEqual(texts(TooltipModel.build(potion, nil, ctx(nil)).lines))
 		for _, line in TooltipModel.build(sword, nil, ctx(nil)).lines do
 			T.expect(string.find(line.text, GOOD, 1, true)).toBeNil()
+		end
+	end)
+
+	-- 2026-10-31 (Studio check: a Warrior's sword shown to a Mage said "Zastąpi: <the Mage's staff>")
+	T.it("another class: no changes and no 'Replaces'; a too high level: compared, its level red", function()
+		local sword = made("sword1h_30", "new", { { stat = "str", v = 3 } }, 2)
+		local staff = made("staff_30", "staff")
+		local shield = made("shield_50", "shield")
+		local mage = TooltipModel.build(sword, nil, ctx({ staff }, { class = "Mage", equipped = staff })).lines
+		T.expect(texts(mage)).toEqual(texts(TooltipModel.build(sword, nil, ctx(nil, { class = "Mage" })).lines))
+		T.expect(#withRole(mage, "replaces")).toBe(0)
+		local offhand = TooltipModel.build(shield, nil, ctx(nil, { class = "Mage", mainHand = staff })).lines
+		T.expect(#withRole(offhand, "compareNote")).toBe(0)
+		-- level 20 against a level 30 sword: the changes are there and the level part of the head line is red
+		local worn = made("sword1h_30", "worn")
+		local low = TooltipModel.build(sword, nil, ctx({ worn }, { level = 20, equipped = worn })).lines
+		T.expect(#withRole(low, "replaces")).toBe(1)
+		T.expect(string.find(withRole(low, "stat")[1].text, GOOD, 1, true) ~= nil).toBe(true)
+		T.expect(string.find(withRole(low, "head")[1].text, TooltipModel.BAD_HEX, 1, true) ~= nil).toBe(true)
+	end)
+
+	T.it("an identical copy: every number grey '(=)', nothing green or red, no loss rows", function()
+		for _, id in { "sword1h_30", "ring_60", "shield_50", "armor_heavy_60", "staff_30" } do
+			local bonuses = { { stat = "str", v = 4 }, { stat = "critChance", v = 1.5 } }
+			local item = made(id, "new", bonuses, 3, Rarities.HEROIC)
+			local copy = made(id, "copy", bonuses, 3, Rarities.HEROIC)
+			local def = Items.get(id) :: Items.ItemDef
+			local class = if def.classes then def.classes[1] else "Warrior"
+			for _, view in { "full", "compact" } do
+				local lines = TooltipModel.build(item, nil, ctx({ copy }, { class = class, view = view })).lines
+				local same = 0
+				for _, line in lines do
+					T.expect({ id, view, line.role, string.find(line.text, GOOD, 1, true) })
+						.toEqual({ id, view, line.role, nil })
+					T.expect({ id, view, line.role, string.find(line.text, BAD, 1, true) })
+						.toEqual({ id, view, line.role, nil })
+					local at = string.find(line.text, SAME_TEXT, 1, true)
+					while at do
+						same += 1
+						at = string.find(line.text, SAME_TEXT, at + 1, true)
+					end
+					if line.role == "bonus" or (line.role == "stat" and not line.main) then
+						T.expect({ id, view, string.sub(line.text, -#SAME_TEXT) }).toEqual({ id, view, SAME_TEXT })
+					end
+				end
+				T.expect({ id, view, #withRole(lines, "lost") }).toEqual({ id, view, 0 })
+				T.expect({ id, view, same >= 2 }).toEqual({ id, view, true })
+			end
 		end
 	end)
 

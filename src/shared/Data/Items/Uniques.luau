@@ -18,9 +18,9 @@ local LIST: { Types.ItemDef } = {}
 local UNIQUE_MUL = 1.26
 local HRIMVALD_MUL = 1.40
 
--- S149c: `opts.mul` replaces UNIQUE_MUL; `opts.elemental` keeps a Mage weapon elemental (the world boss sets the
--- element of the instance, Data/WorldBoss.reward.named[].el)
-type Opts = { mul: number?, elemental: boolean? }
+-- S149c: `opts.mul` replaces UNIQUE_MUL; 2026-10-31: `opts.element` makes a Mage weapon elemental with that fixed
+-- element (ItemDef.element: every copy, from any source, has the element of its name and effects; no element suffix)
+type Opts = { mul: number?, element: string? }
 
 local function unique(
 	id: string,
@@ -67,7 +67,8 @@ local function unique(
 		maxStack = 1,
 		base = stats,
 		weapon = weapon,
-		elemental = if opts and opts.elemental then base.elemental else nil,
+		elemental = if opts and opts.element then base.elemental else nil,
+		element = if opts and opts.element and base.elemental then opts.element else nil,
 		trait = base.trait, -- S62: named weapons carry their type's trait (STATY 9)
 		nameKey = `item.{id}.name`,
 		descKey = `item.{id}.desc`,
@@ -228,7 +229,7 @@ unique("unique_hrimvald_staff", "staff", "hrimvald", 100, "⚕", {
 	{ stat = "magAtk", v = 10 },
 	{ stat = "int", v = 32 },
 	{ stat = "magicPierce", v = 11 },
-}, { "iceShard_shatter", "frostNova_maelstrom" }, { mul = HRIMVALD_MUL, elemental = true })
+}, { "iceShard_shatter", "frostNova_maelstrom" }, { mul = HRIMVALD_MUL, element = "ice" })
 unique("unique_hrimvald_robe", "armor_light", "hrimvald", 100, "♜", {
 	{ stat = "int", v = 28 },
 	{ stat = "mana", v = 200 },

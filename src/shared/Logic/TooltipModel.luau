@@ -28,7 +28,8 @@
 --   view: "compact"|"full" -- 2026-10-21: "compact" = the short tooltip (TooltipModel.compactOf); nil = the full one
 --
 -- 2026-10-21 (owner: descriptions too long, the game unreadable): the item tooltip opens compact (name, head, rarity,
--- the main value in one line, at most COMPACT_STATS + 1 stat rows, the trait and each skill effect in one line, a price
+-- the main value in one line, at most COMPACT_STATS + 1 stat rows, the trait in one line, the skill effects by name in
+-- one line (2026-10-31; what they do is in the full view), a price
 -- only in a shop or at a merchant, the "Alt: details" / "More ▸" line). Holding the details key (PC) or "More ▸"
 -- (touch) shows the full tooltip below; the compact one only leaves lines out, every one stays in the full view.
 --
@@ -276,11 +277,17 @@ TooltipModel.DELTA_HEX = table.freeze({
 	same = UiPalette.paper.textMuted,
 })
 
+-- 2026-10-31 (Studio check): an item of another class than the viewer's (ctx.class) is compared with nothing: no
+-- changes, no "Replaces", no two-hander note. A too high level is red in the head line and still compared.
+local function classFits(d: ItemDef, c: Ctx): boolean
+	return c.class == nil or d.classes == nil or table.find(d.classes, c.class) ~= nil
+end
+
 -- What the tooltip compares with (ctx.compare summed, Logic/ItemCompare); nil without a comparison, for items that are
--- neither equipment nor a backpack, and for an item compared with itself.
+-- neither equipment nor a backpack, of another class, and for an item compared with itself.
 local function wornOf(item: ItemInstance, d: ItemDef, c: Ctx): ItemCompare.Worn?
 	local list = c.compare
-	if not list or #list == 0 or (d.category ~= "equipment" and d.category ~= "backpack") then
+	if not list or #list == 0 or (d.category ~= "equipment" and d.category ~= "backpack") or not classFits(d, c) then
 		return nil
 	end
 	for _, other in list do
@@ -1013,7 +1020,7 @@ end
 -- values above (ctx.compare); this line says what they are compared with.
 local function replaceNotes(b: Builder, item: ItemInstance, d: ItemDef, c: Ctx, lang: string)
 	local equipped = c.equipped
-	if equipped and equipped.uid == item.uid then
+	if (equipped and equipped.uid == item.uid) or not classFits(d, c) then
 		return
 	end
 	if d.slot == "offhand" and c.mainHand and isTwoHanded(c.mainHand) then
@@ -1220,13 +1227,16 @@ local COMPACT_KEEP: { [string]: boolean } = {
 
 -- Roles folded into one compact line (mainShort, traitShort, fxShort) or counted in "+N more".
 local STAT_ROLES: { [string]: boolean } = { stat = true, bonus = true, gap = true, lost = true }
+-- The skill effect lines of the full view (folded into one compact line of names).
+local STAT_FX: { [string]: boolean } = { fxTitle = true, fx = true, fxPool = true, fxClass = true }
 
 local function moreLine(b: Builder, n: number, lang: string)
 	b.add("more", Locale.T("tooltip.compact.more", { n = n }, lang), "muted", { size = "small" })
 end
 
 -- The compact tooltip made from the full one (`full` = buildFull's lines): it keeps COMPACT_KEEP, folds the weapon's
--- main value, the trait and each skill effect into one line, cuts the stat rows to the line budget and the material
+-- main value and the trait into one line each and the skill effects into one line of names, cuts the stat rows to the
+-- line budget and the material
 -- uses, and ends with the details hint when the caller says the input ("moreHint"). Every line it leaves out stays in
 -- the full view.
 function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang: string): { Line }
@@ -1312,31 +1322,41 @@ function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang
 			end
 			hidden = true
 		elseif role == "fxTitle" then
-			-- "<name> · <what it does>", muted with "(works for: Mage)" for another class
-			local ref = line.detail
-			local def = if ref and ref.kind == "effect" then ItemEffects.resolve(ref.id) else nil
-			local name = if def then Locale.T(def.nameKey, nil, lang) else TooltipModel.plain(line.text)
-			local text = ""
-			local other: string? = nil
-			local j = i + 1
-			while j <= #full and (full[j].role == "fx" or full[j].role == "fxPool" or full[j].role == "fxClass") do
-				if full[j].role == "fx" then
-					text = full[j].text
-				elseif full[j].role == "fxClass" then
-					other = full[j].text
+			-- 2026-10-31 (Studio check: a mythic tooltip ran past 14 lines): every skill effect in one line, by name in
+			-- its tier's colour ("Lodowe Odpryski · Lodowy Wir"), another class's muted with "(works for: Mage)"; what
+			-- each does is in the full view (Alt / "More ▸")
+			local parts: { string } = {}
+			local tier: Tier? = nil
+			while i <= #full and STAT_FX[full[i].role] do
+				local title = full[i]
+				if title.role == "fxTitle" then
+					local ref = title.detail
+					local def = if ref and ref.kind == "effect" then ItemEffects.resolve(ref.id) else nil
+					local name = if def then Locale.T(def.nameKey, nil, lang) else TooltipModel.plain(title.text)
+					local hex = title.hex or Rarities.get(Rarities.LEGENDARY).textHex
+					local other: string? = nil
+					local j = i + 1
+					while
+						j <= #full and (full[j].role == "fx" or full[j].role == "fxPool" or full[j].role == "fxClass")
+					do
+						if full[j].role == "fxClass" then
+							other = full[j].text
+						end
+						j += 1
+					end
+					i = j - 1
+					table.insert(
+						parts,
+						if other
+							then `<font color="{UiPalette.paper.textMuted}"><b>{name}</b> {other}</font>`
+							else `<font color="{hex}"><b>{name}</b></font>`
+					)
+					tier = if title.tier == "mythic" or tier == "mythic" then "mythic" else title.tier :: Tier?
 				end
-				j += 1
+				i += 1
 			end
-			i = j - 1
-			local hex = line.hex or Rarities.get(Rarities.LEGENDARY).textHex
-			local short = `<font color="{hex}"><b>{name}</b></font>`
-			if text ~= "" then
-				short ..= ` · {text}`
-			end
-			if other then
-				short ..= ` {other}`
-			end
-			b.add("fxShort", short, if other then "muted" else "dark", { tier = line.tier })
+			i -= 1
+			b.add("fxShort", table.concat(parts, " · "), "dark", { tier = tier })
 			hidden = true
 		elseif role == "use" then
 			-- material uses: the first ones, the rest counted
