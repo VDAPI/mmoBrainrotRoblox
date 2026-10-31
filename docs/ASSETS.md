@@ -465,29 +465,31 @@ Nic w miejscu ani w repo: serwer zakłada części przez `HumanoidDescription`, 
 |---|---|---|---|---|---|
 | ciało i dynamiczna głowa, brwi, rzęsy | pakiet `991` „Base Body - Dawson” (części `11709862883`–`11709884954`) | katalog Roblox, darmowy | Roblox | darmowy przedmiot Roblox | 2026-10-17 |
 | W10: głowy, rzęsy, brwi kreatora | 8 dynamicznych głów z pakietów „Base Body” (Dawson, Jordan, Billie, Rene, Andi, Robin, Harper, Addison), ich rzęsy, brwi 6 z nich (`Data/BodyLooks.heads`, `.brows`) | katalog Roblox, darmowe | Roblox | darmowy przedmiot Roblox | 2026-10-17 |
-| fryzury kreatora | 12 darmowych fryzur Roblox (`Data/BodyLooks.hairs`, lista niżej) | katalog Roblox, darmowe | Roblox | darmowy przedmiot Roblox | 2026-10-31 |
+| fryzury kreatora | 11 darmowych fryzur Roblox (`Data/BodyLooks.hairs`, lista niżej) | katalog Roblox, darmowe | Roblox | darmowy przedmiot Roblox | 2026-10-31 |
 | W10: malunki twarzy | `art/paint/*.png` (5), wgrane przez MCP Studio (`Data/BodyLooks.paints`) | własne, `tools/paint/make_paints.py` | własne | własne | 2026-10-17 |
 
-**Fryzury kreatora** (kolejność kreatora; wymiana 2026-10-31 po zgłoszeniu testera „fryzury poza 7, 9 i 12 są słabe”).
-Jasna tekstura bierze każdy kolor włosów; tekstura z własnym kolorem (ciemna, ruda, różowa) ma w danych `tone` i
-kreator daje ją tylko w kolorach, do których da się ją przyciemnić (`Logic/CharacterLook.hairColors`):
+**Fryzury kreatora** (kolejność kreatora; wymiana 2026-10-31 po zgłoszeniu testera „fryzury poza 7, 9 i 12 są słabe”,
+poprawki po przeglądzie w Studio tego dnia). Jasna tekstura bierze każdy kolor włosów; tekstura z własnym kolorem ma w
+danych `tone` (odczytany ze zrzutów Studio) i kreator daje ją tylko w kolorach, do których da się ją przyciemnić
+(`Logic/CharacterLook.hairColors`). Klasyczne fryzury Roblox podaje dziś jako `MeshPart` z teksturą, której nic nie
+barwi: serwer przenosi teksturę na przyspawaną `SpecialMesh` (`AvatarBuild.hairShell`).
 
 1. `hair_short` Krótkie zaczesane: Side Part - Blond `7193386173`, jasna.
 2. `hair_fringe` Krótka grzywka: Short Fringe - Blonde `7193397693`, jasna.
-3. `hair_swept` Przedziałek z boku: Side Part - Black `9244021842`, czarna (czarne, ciemnobrązowe).
-4. `hair_charmer` Rozwiane: Brown Charmer Hair `376548738` (klasyczna), brązowa (od czarnych do rudych).
-5. `hair_slicked` Cieniowane do brody: Surfer - Blond `9244029916`, jasna.
-6. `hair_bob` Do ramion (dawniej `hair_bangs`): Medium Middle Part - Blond `7193424874`, jasna.
-7. `hair_long` Długie faliste: Wavy Middle Part - Blond `7193445686`, jasna.
-8. `hair_straight` Długie proste: Straight Blonde Hair `376526888` (klasyczna), jasna.
-9. `hair_ponytail` Kucyk: Pony Tail - Blonde `9244095135`, jasna.
-10. `hair_sidetail` Kucyk na boku: Black Side Ponytail `376527350` (klasyczna), czarna (czarne, ciemnobrązowe).
-11. `hair_braid` Długie z warkoczem: Belle Of Belfast `2956239660` (klasyczna), ruda (od czarnych do miedzianych).
-12. `hair_bun` Luźny kok: Lavender Updo `451220849` (klasyczna), pastelowa (wszystkie kolory).
-13. `hair_shaved` Łysa głowa: bez fryzury.
+3. `hair_charmer` Rozwiane: Brown Charmer Hair `376548738` (klasyczna), rudobrązowa (od czarnych do rudych).
+4. `hair_slicked` Cieniowane do brody: Surfer - Blond `9244029916`, jasna.
+5. `hair_bob` Do ramion (dawniej `hair_bangs`): Medium Middle Part - Blond `7193424874`, jasna.
+6. `hair_long` Długie faliste: Wavy Middle Part - Blond `7193445686`, jasna.
+7. `hair_straight` Długie proste: Straight Blonde Hair `376526888` (klasyczna), złota (od czarnych do ciemnego blondu).
+8. `hair_ponytail` Kucyk: Pony Tail - Blonde `9244095135`, jasna.
+9. `hair_sidetail` Kucyk na boku: Black Side Ponytail `376527350` (klasyczna), granatowoczarna (tylko czarne).
+10. `hair_braid` Długie z warkoczem: Belle Of Belfast `2956239660` (klasyczna), ruda (od czarnych do rudych).
+11. `hair_bun` Luźny kok: Lavender Updo `451220849` (klasyczna), różowa (wszystkie kolory).
+12. `hair_shaved` Łysa głowa: bez fryzury.
 
 Zdjęte z kreatora 2026-10-31: Short Curls `9244134513`, Straight Bangs `6993754725`, Braided Hair `9244148336`, Short
-and Sleek `9243987340`; czarne Surfer `9174353649` i Wavy Middle Part `9244111257` ustąpiły jasnym wersjom. Odrzucone na
+and Sleek `9243987340`, Side Part - Black `9244021842` (ta sama siatka co `hair_short`); czarne Surfer `9174353649` i
+Wavy Middle Part `9244111257` ustąpiły jasnym wersjom. Odrzucone na
 zrzutach z Play na ciele gry: Top Knot `9244057408`, Dreads `9244067444`, Curly Waves `9244014391`, Brown Hair
 `62234425`, Pal Hair, True Blue, Blond Spiked (cała darmowa pula Roblox to ok. 22 fryzury).
 

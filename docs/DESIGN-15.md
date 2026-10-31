@@ -79,7 +79,7 @@ Ten plik trafia do repo jako `docs/DESIGN-15.md`. Odejście od niego = linia w `
     738 za 1–99; na postaci, retro w migracji 11) + tytuł „Mistrz Łowów” za 99.;
   - **sklep Łowczego** (`Data/HuntShop`): mikstury jakości poziomu, kamienie, błogosławieństwa Fortuny do Heroicznych,
     esencja z limitem tygodnia (≤ 10% esencji expienia), Skrzynia Łowcy (Unikat dla klasy, 60) i Heroiczna (200,
-    1 / tydzień), kosmetyki; wszystko związane, nic ponad łup, Znaki poza premium. Model: `Balance.targetsS134k`.
+    1 / tydzień), kosmetyki; skrzynie i esencja związane, mikstury, kamienie i błogosławieństwa wolne (od 2026-10-31, DESIGN §5.6), nic ponad łup, Znaki poza premium. Model: `Balance.targetsS134k`.
 
 ### 3.4 Fabuła (S102–S105) i poboczne (S106–S108)
 - Główny quest co ok. 2–3 poziomy do 100, w **rozdziałach po regionach** (Łąki 1–20, Duskwood 20–45, Spalone Pustkowia 45–70, Lodowe Szczyty 70–100), z dialogami (strony jak `pages` w pobocznych) i przerywnikami (krótkie sceny: kamera, napis rozdziału). Obecne 32 questy zostają i wchodzą w rozdziały (id bez zmian, postęp graczy zachowany). Ok. 40 nowych. Zarys: `docs/FABULA.md` (akceptuje właściciel przed S102).

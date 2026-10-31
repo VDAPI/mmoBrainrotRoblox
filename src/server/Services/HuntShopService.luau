@@ -3,8 +3,8 @@
 -- .marks, paid by the hunting contracts) buy potions, stones, Fortune blessings, essence with a weekly limit, chests with
 -- one Unique / Heroic item for the class and cosmetics. One purchase: near the Huntmaster, Logic/HuntShop.canBuy (the
 -- window's rule), room in the backpack (a full backpack refuses before anything is paid); then, without a yield, the
--- marks and the weekly counter go and the bound items (or the cosmetic) come. A chest rolls its item at once, like the
--- day 7 chest of the login reward (Logic/LoginReward.rollItem).
+-- marks and the weekly counter go and the items (Data/Binding "currency": chests and essence bound) or the cosmetic
+-- come. A chest rolls its item at once, like the day 7 chest of the login reward (Logic/LoginReward.rollItem).
 --   HuntShopBuy(npcId, key, amount)
 
 local Players = game:GetService("Players")
@@ -19,6 +19,7 @@ local Contracts = require(Shared.Logic.Contracts)
 local Cosmetics = require(Shared.Data.Cosmetics)
 local Data = require(Shared.Data.HuntShop)
 local HuntShop = require(Shared.Logic.HuntShop)
+local Binding = require(Shared.Logic.Binding)
 local ItemRoll = require(Shared.Logic.ItemRoll)
 local Items = require(Shared.Data.Items)
 local Log = require(Shared.Util.Log)
@@ -79,8 +80,9 @@ local function buy(player: Player, npcId: string, key: string, amount: number): 
 			return false, "error.badRequest"
 		end
 		local stack = ItemRoll.makeStack(grant.id, total, InventoryService.NewUid())
-		stack.bound = true -- marks never turn into gold through trade or the auction house
-		stack.ns = true -- nor through the merchant (ItemValue.canSell)
+		-- owner 2026-10-31 (Data/Binding "currency"): essence binds, potions, stones and blessings stay free
+		Binding.apply(stack, "currency")
+		stack.ns = true -- marks never turn into gold through the merchant (ItemValue.canSell)
 		table.insert(items, stack)
 	elseif entry.kind == "chest" then
 		local rarity = HuntShop.chestRarity(entry)
@@ -91,7 +93,7 @@ local function buy(player: Player, npcId: string, key: string, amount: number): 
 		end
 		local item =
 			ItemRoll.rollItem(drop.defId, drop.ilvl, drop.rarity, rng, InventoryService.NewUid(), drop.forClass)
-		item.bound = Data.CHEST_BOUND
+		Binding.apply(item, "currency") -- binds on pickup (no alt-account farming for the market)
 		item.ns = true
 		table.insert(items, item)
 	elseif not Cosmetics.get(entry.id) then

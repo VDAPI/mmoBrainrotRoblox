@@ -46,10 +46,11 @@ local function maxStack(item: ItemInstance): number
 	return if def and def.stackable then def.maxStack else 1
 end
 
--- Two stacks can merge when they are the same stackable item with the same binding (S134k: and the same `ns`).
+-- Two stacks can merge when they are the same stackable item with the same binding (S134k: and the same `ns`). Owner
+-- 2026-10-31 (Logic/Binding): a bound and a free stack never merge, also when an old save lacks the field.
 function Inventory.canMerge(a: ItemInstance, b: ItemInstance): boolean
 	return a.id == b.id
-		and a.bound == b.bound
+		and (a.bound == true) == (b.bound == true)
 		and (a.ns == true) == (b.ns == true)
 		and maxStack(a) > 1
 		and a.up == 0

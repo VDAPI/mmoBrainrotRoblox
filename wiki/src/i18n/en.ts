@@ -1318,7 +1318,7 @@ export const en: Record<Key, string> = {
   "worldboss.rewardWhat": "Experience is {exp} times and gold {gold} times the reward for a normal monster of your level. On top come materials and one item:",
   "worldboss.itemTitle": "The reward item",
   "worldboss.itemBound": "The item is bound to the character.",
-  "worldboss.itemFree": "The item is not bound: you can trade it.",
+  "worldboss.itemFree": "A Heroic binds when equipped, a Legendary or Mythic when picked up.",
   "worldboss.factorText": "The Legendary and Mythic chances are multiplied by the contribution factor: from ×{lo} for a token share, ×1 for a share equal to the fighters' average, up to ×{hi} for the best.",
   "worldboss.factor": "Contribution",
   "worldboss.factor.low": "Token",

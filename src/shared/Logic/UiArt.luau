@@ -62,7 +62,8 @@ UiArt.FIXED = table.freeze({
 	}),
 })
 
--- Ids of the HUD menu (Controllers/ScreenController MENU; tests/uiart.spec checks they match).
+-- Ids of the HUD bar and the game menu's tiles (Controllers/ScreenController MENU and TILE_DEFS; tests/uiart.spec
+-- checks they match).
 UiArt.MENUS = table.freeze({
 	"inventory",
 	"skills",
