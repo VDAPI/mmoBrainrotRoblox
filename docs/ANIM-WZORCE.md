@@ -559,7 +559,7 @@ Basic shot "feather volley" (W = 0.5; Elite 0.6, Elite II 0.675; also the Elite 
 |---|---|
 | `peakHarpy` | upright torso (pitch +55° from the vulture's), wing-arms; legs with talons dangle and grasp; the shot (lightning, `arrow`) is a forward fling of both wing-arms (sweep +30°) released from the wing tips; wail: wings wide, head thrown back, then forward; death: tumbles backwards |
 | `wyvern`, `vaelgrath` in the air | the hover / flight cycle at 1.1-1.3 Hz, legs tucked, tail as a rudder (yaw ±15° in turns); see §5.8 |
-| `carrionCrow`, `bloodBat` | rigid: §6.4 (2026-10-26: the rig dump has no bones in either) |
+| `carrionCrow`, `bloodBat` | rigid: §6.4 (2026-10-26: the rig dump has no bones in either); their new exports with wing chains fly on this template (§4.7, 2026-10-31) |
 
 ### 4.6 As built (2026-10-26)
 
@@ -624,6 +624,47 @@ change per frame compared at two steps, a continuous motion halves and a pop doe
 AnimLab: `/animlab mob <id> <state>`, the flyers' states `Data/FlyerStyles.LAB_STATES`, the bipeds'
 `Data/BipedStyles.LAB_STATES`, then every action of the style by name. The effects the actions release (feathers,
 wisps, ice shards, the breath, the harpy's lightning) are §11.
+
+### 4.7 New exports with wing chains (2026-10-31): ashVulture, carrionCrow, bloodBat
+
+The owner's new Tripo exports (rig dumps `tools/anim/rigs/<id>_v2.json`, read from the FBX) have wing chains: the
+vulture's map finally gets `wings`, and the crow and the bat leave the rigid recipes (§6.4) for the flyer template.
+Both models of an id work: `Data/FlyerRigs` keeps a list of maps per model (new first) and `pick` takes the first whose
+**every** named bone the model has (the old vulture's 18 bones fail the new map: it needs `bone_20`, `bone_21`, `bone_35`
+and the other wing bones; the new one lacks the old map's `0_Right_Limb_*`). A kind on both templates (`crow`, `bat`)
+tries `FlyerRig.new` first (nil without a matching map) and falls back to `RigidRig` (the hook in
+`client/Controllers/AnimationController`, the same in AnimLab).
+
+- **Laid level, faced, sized**: the exports stand upright (wings raised); `level` (degrees about X) lays the body into
+  flight, the facing comes from the wings (`facing` nil: the right shoulder minus the left is +X). Units come from a
+  bone distance (`measure`: two bones and their distance in old-template studs), so the swap's scale does not matter;
+  the centre floats at `hover` (the old model's centre height) times the clone's scale. `pose` adds the map's own
+  carriage (neck, head, tail, legs) to every frame.
+- **Wing plane**: the canonical wing (§4.6) takes its plane from `surface` (the normal of the skinned feathers in the
+  levelled frame, from the FBX) where the shoulder-wrist-tip plane is bent (the vulture's gull wing).
+- **Fingers, followers, jaw**: `fingers` (the bat's membrane fingers, the crow's extra primaries) fan about the wing's
+  normal by `spread` × the style's `spread` on the downstroke (control `wSn`), drawn in half on the upstroke;
+  `follow` bones copy a wing bone's turn part of the way (coverts on the body; the crow's secondaries on the forearm
+  keep their spread lie to the humerus, so they trail behind the folded wing); `jaw` opens the bat's mouth (`jaw`).
+- **Perch** (`Data/FlyerStyles` `perch`, the crow): after hovering still out of a fight for 4-9 s it flies down and
+  stands (the body dropped by the perch pose's leg length, wings folded along the back, tail lifted), hops now and
+  then (a short arc to a spot near where it landed, turning a little, the wings flicking open), pecks, looks about,
+  preens. A fight, a hit or a stun lifts it off in 0.35 s. Only the look lands: the server's monster hovers on.
+- **Lunge** (key control): the bat's melee `dive` flies at `look` (the target) by its distance less 1.2 units (at most
+  `reachMax`), aimed until the strike starts, then locked on its line.
+- **Jitter** (`jitter`): the bat's beat rate wanders (±25 % on a 2.2 Hz noise) and it darts about its place (x, y,
+  roll), never holding still.
+- **Kit**: the crow and the bat keep their rigid recipes' action names and slots (shot, wail, rake, stoop, pounce,
+  alert, spawn, summon, deathFall, deathFallBack; the bat's dive and flutter), so `Data/MotionFx` releases the same
+  effects (feathers for the crow, never blood for the bat: dust and rings). Deaths: a jolt on the strike, the gravity
+  fall to the ground at F1 with a bounce; on its side (the lower wing flat on the ground, the upper one folded over) or
+  flipped onto its back (the bat at its own pitch, the tail membrane drawn up). The bat does not hang upside down: there
+  is no ceiling where it fights and the server keeps it hovering.
+- **What is not driven**: the bat's legs (they ride the body), the vulture's right leg below its single bone.
+
+AnimLab: `mob ashVulture <state>`, `mob carrionCrow <state>`, `mob bloodBat <state>` (with a new model: the flyer's
+states, the kit's slots `heavy`, `crush`, `pounce`, `throw`, `summon`, `perch` and every action by name; the rigid
+states stay for the old model). Swap: `tools/studio/swap_v2_flyers.luau`.
 
 ## 5. F4 Dragon: youngFrostDragon
 
@@ -824,6 +865,8 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
   the idle.
 - **Muzzle**: while an action plays, the root's `Muzzle` moves with the body (client side), so shots leave the drawn
   beak or jaws.
+- **carrionCrow, bloodBat** (2026-10-31): their new exports have wing chains and fly on the flyer template (§4.7);
+  these recipes stay for the old models.
 - **frostWyrm** (23 Tripo bones): the serpent recipe drives its chains: a travelling wave down the tail (`Tail_0..8`) and
   the coil (`bone_1..5`, half), amplitude growing to the end (5° a bone in place, 16° moving, phase by distance), the
   neck (`bone_6`, `Head_0..4`) takes the cobra sway and the strike's pull back / lunge, the head (`Head_5`) keeps level;
@@ -1104,6 +1147,10 @@ Model attributes (Studio, on the NPC's model or its `Asset`): `NpcRole` = anothe
 4. The anvil's place in front of the smith against the forge of the map.
 5. The innkeeper lacks two bones of the right little finger (the curl skips them); the caravan has no bones (static).
 6. Teodor's channelling and the healer's prayer against their robes.
+7. Teodor's new model (2026-10-31, Mixamo, a T-pose, 52 bones in Studio): no entry beyond the defaults
+   (`Data/NpcRigs.portalmaster`); NpcService takes `ReplicatedStorage.Assets.Npcs.portalmaster` (the NPC id of
+   `Data/Npcs`) as imported and fits it to the figure's height. `Yaw` (degrees) only if he faces away from his
+   counter, `Scale` (0.5-2) if he should stand taller than the figure.
 ## Appendix A: formulas
 
 Gait clock (per frame):

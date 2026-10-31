@@ -14,6 +14,10 @@
 -- guard's body stands 1.3 studs behind its root and its bounds reach 2.7 studs to each side (something long in its
 -- hands); the captain's body stands 1.1 studs ahead of its root (a cloak or a weapon on the back); the innkeeper lacks
 -- two bones of the right little finger (the curl skips them).
+-- 2026-10-31: Teodor (portalmaster, Mixamo rig from its FBX, tools/anim/rigs/portalmaster_v2.json) stands in a T-pose
+-- (the arms straight out, the hands at shoulder height); Studio keeps 52 of its 65 bones (the toe and head ends and
+-- the fingers' fourth bones carry no skin). Nothing in his hands: the defaults (the arms hang from their own rest,
+-- whatever its pose; the mage's channel holds the glow before his chest).
 
 local NpcRigs = {}
 
@@ -26,6 +30,8 @@ export type Rig = {
 local RIGS: { [string]: Rig } = {
 	-- the long thing in its hands is most likely held in the right one: that arm stays as modelled (Studio check)
 	guard = { keep = { R = true } },
+	-- Teodor: empty hands, the palms fitted like the others' (the header)
+	portalmaster = {},
 }
 NpcRigs.RIGS = RIGS
 
