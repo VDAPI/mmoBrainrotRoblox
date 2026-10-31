@@ -3,18 +3,20 @@
 -- "Kind · Category · Level N · Classes", the rarity in small type, the main value, the statistics in small type in
 -- fixed groups with thin gaps, trait, skill effects, description, "Replaces", binding, value and the context price);
 -- this module only draws the lines on a parchment panel that follows the mouse, with the S30 rarity border. On touch
--- it appears for the selected slot. S134g: no comparison numbers; the comparison is the second panel below.
+-- it appears for the selected slot.
 --
 -- Context: `attach(..., getCtx)` may pass a function returning TooltipModel.Ctx fields (`shop`, `shopEntry`,
--- `potionDiscount`, `merchantOpen`, `hints`); language, character level/class and the equipped item are filled
--- in here. `ItemTooltip.setMerchantOpen(true)` while a merchant window is open adds "Sells for" everywhere.
--- FIX 2026-10-09: any slot except the equipment itself also shows the equipped item of that slot in a second
--- panel next to the first one, so the stats can be compared side by side.
+-- `potionDiscount`, `merchantOpen`, `hints`); language, character level/class, the equipped item and the comparison
+-- are filled in here. `ItemTooltip.setMerchantOpen(true)` while a merchant window is open adds "Sells for" everywhere.
+-- Owner 2026-10-31 (replaces the FIX 2026-10-09 second panel with the worn item): the hovered item's own tooltip
+-- shows the change of each number against what equipping it takes off (Logic/ItemCompare: rings the weaker one, a
+-- two-hander also the off-hand; only items the character can equip now, never a worn one), in every window and on
+-- touch. The worn item's own tooltip shows when its equipment slot is pointed at.
 -- S68 (STATY 11): every bonus line and the trait section open a details panel (TooltipModel.details). Touch: a tap
 -- on the line or its "i" icon in the open tooltip (holding a slot stays the action menu; DragDrop.SetBlocker keeps
 -- taps on the panels away from the slots below). PC: holding the "item_details" key (default Alt) pins the tooltip,
 -- then pointing at a line opens its details next to it.
--- 2026-10-21 (owner: descriptions too long): both panels open compact (TooltipModel view "compact": name, head, rarity,
+-- 2026-10-21 (owner: descriptions too long): the tooltip opens compact (TooltipModel view "compact": name, head, rarity,
 -- main value, the first stat rows, trait and effects in one line each, a price only where it matters). Holding the
 -- details key shows the full tooltip (and pins it, as above); on touch the "More ▸" / "Less ▾" row switches, and every
 -- new item starts compact again.
@@ -28,6 +30,7 @@ local Device = require(script.Parent.Parent.Device)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local IconState = require(script.Parent.Parent.IconState)
+local ItemCompare = require(ReplicatedStorage.Shared.Logic.ItemCompare)
 local ItemIcon = require(script.Parent.ItemIcon)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemScore = require(ReplicatedStorage.Shared.Logic.ItemScore)
@@ -44,6 +47,7 @@ local TooltipModel = require(ReplicatedStorage.Shared.Logic.TooltipModel)
 local Types = require(ReplicatedStorage.Shared.Types)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
+local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
 
 local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
 
@@ -69,6 +73,10 @@ for _, r in Rarities.list do
 	NIGHT_OF[string.upper(r.textHex)] = r.nightHex
 	NIGHT_OF[string.upper(r.hex)] = r.nightHex
 end
+-- 2026-10-31: the comparison's changes (TooltipModel.DELTA_HEX, parchment roles) in the iron roles of the same name.
+for _, role in { "success", "danger", "textMuted" } do
+	NIGHT_OF[string.upper((UiPalette.paper :: any)[role])] = (UiPalette.iron :: any)[role]
+end
 local function nightHex(hex: string): string
 	return NIGHT_OF[string.upper(hex)] or Theme.readableHex(hex, "iron")
 end
@@ -90,7 +98,6 @@ local emptyText = moduleScope:Value(nil :: string?)
 local position = moduleScope:Value(Vector2.zero)
 local shownCtx = moduleScope:Value(nil :: TooltipModel.Ctx?)
 local merchantOpen = moduleScope:Value(false)
-local shownSlot = moduleScope:Value(nil :: string?)
 local GAP = 8
 local GROUP_GAP = 4 -- S134g: the thin space between two stat groups (role "gap")
 local owner: GuiObject? = nil
@@ -138,7 +145,7 @@ local function scoreContext(): ItemScore.Context
 	return ItemScore.contextFor(State.Get({ "character" }))
 end
 
--- Equipped item to compare with: the one the item would replace (S68: ItemScore.replaced, rings the weaker one, the
+-- Equipped item the item would replace, for "Replaces: <name>" (S68: ItemScore.replaced, rings the weaker one, the
 -- same as the "Better item" card; nil while a ring slot is free).
 local function equippedFor(def: Items.ItemDef): ItemInstance?
 	local equipment = State.Get({ "character", "equipment" })
@@ -146,6 +153,15 @@ local function equippedFor(def: Items.ItemDef): ItemInstance?
 		return nil
 	end
 	return ItemScore.replaced(def, equipment, scoreContext())
+end
+
+-- 2026-10-31: what equipping the item takes off, to compare its numbers with (nil = no changes shown).
+local function compareFor(item: ItemInstance): { ItemInstance }?
+	local equipment = State.Get({ "character", "equipment" })
+	if type(equipment) ~= "table" then
+		return nil
+	end
+	return ItemCompare.replaced(item, equipment, scoreContext())
 end
 
 -- Content ---------------------------------------------------------------------------------------------------
@@ -179,16 +195,20 @@ local function bonusRow(
 	mythic: boolean,
 	icon: Instance?
 ): Instance
+	-- 2026-10-31: a line with the comparison's change may wrap, so the row grows (the bar and "i" stay by line one)
 	return s:New("Frame")({
 		LayoutOrder = order,
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 20),
+		AutomaticSize = Enum.AutomaticSize.Y,
 		[Children] = {
 			icon,
 			s:New("TextLabel")({
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1, if icon then -54 - ICON - 4 else -54, 1, 0),
-				Text = text,
+				Size = UDim2.new(1, if icon then -54 - ICON - 4 else -54, 0, 20),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				Text = nightText(text), -- the comparison's change is rich text
+				RichText = true,
 				TextWrapped = true,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
@@ -198,7 +218,7 @@ local function bonusRow(
 			s:New("Frame")({
 				Name = "Quality",
 				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.fromScale(1, 0.5),
+				Position = UDim2.new(1, 0, 0, 10),
 				Size = UDim2.fromOffset(46, 6),
 				BackgroundColor3 = Theme.Iron.Raised,
 				[Children] = {
@@ -259,11 +279,11 @@ local function infoIcon(s: Scope, anchor: Vector2, position: UDim2): Instance
 	})
 end
 
--- The tooltip panel ("Item" or "Equipped") a row belongs to.
+-- The tooltip panel ("Item") a row belongs to.
 local function panelOf(object: GuiObject): GuiObject?
 	local node: Instance? = object
 	while node do
-		if node:IsA("GuiObject") and (node.Name == "Item" or node.Name == "Equipped") then
+		if node:IsA("GuiObject") and node.Name == "Item" then
 			return node
 		end
 		node = node.Parent
@@ -366,8 +386,7 @@ local function build(
 	lang: string,
 	extra: TooltipModel.Ctx?,
 	merchant: boolean,
-	full: boolean,
-	compare: boolean?
+	full: boolean
 ): { Instance }
 	local def = Items.get(item.id)
 	local equipment = State.Get({ "character", "equipment" })
@@ -385,6 +404,7 @@ local function build(
 		level = State.Get({ "character", "level" }) or 1,
 		class = State.Get({ "character", "class" }),
 		equipped = if def and not worn then equippedFor(def) else nil,
+		compare = if worn then nil else compareFor(item),
 		merchantOpen = merchant,
 		pathId = scoreContext().pathId,
 		nodes = State.Get({ "character", "path", "nodes" }),
@@ -414,10 +434,8 @@ local function build(
 			)
 			continue
 		elseif entry.role == "moreHint" or entry.role == "lessHint" then
-			-- the compare panel follows the main one; touch gets the switch, PC the plain hint
-			if not compare then
-				table.insert(out, if touch then viewToggle(s, order, entry.text) else line(s, order, entry.text, MUTED))
-			end
+			-- touch gets the switch, PC the plain hint
+			table.insert(out, if touch then viewToggle(s, order, entry.text) else line(s, order, entry.text, MUTED))
 			continue
 		end
 		local ref = entry.detail
@@ -425,7 +443,7 @@ local function build(
 		local icon: Instance? = nil
 		if ref and touch then
 			icon = if bonus
-				then infoIcon(s, Vector2.new(1, 0.5), UDim2.new(1, -52, 0.5, 0))
+				then infoIcon(s, Vector2.new(1, 0.5), UDim2.new(1, -52, 0, 10))
 				else infoIcon(s, Vector2.new(1, 0), UDim2.fromScale(1, 0))
 		end
 		local row: Instance
@@ -473,16 +491,8 @@ end
 
 -- Show / hide -----------------------------------------------------------------------------------------------
 
-local function show(
-	object: GuiObject,
-	item: ItemInstance?,
-	text: string?,
-	at: Vector2,
-	ctx: TooltipModel.Ctx?,
-	slotId: string
-)
+local function show(object: GuiObject, item: ItemInstance?, text: string?, at: Vector2, ctx: TooltipModel.Ctx?)
 	owner = object
-	shownSlot:set(slotId)
 	shownCtx:set(ctx)
 	shown:set(item)
 	emptyText:set(if item then nil else text)
@@ -532,7 +542,7 @@ function ItemTooltip.attach(
 				local item = getItem()
 				if item or text then
 					local at = Scale.toVirtual(Vector2.new(x, y))
-					show(object, item, text, at, if getCtx then getCtx() else nil, slotId)
+					show(object, item, text, at, if getCtx then getCtx() else nil)
 					overOwner = true
 				end
 			end
@@ -599,7 +609,6 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		if item and not blocked then
 			local screen = Fusion.peek(Scale.VirtualSize)
 			owner = nil
-			shownSlot:set(selected)
 			local ctxGetter = selected and ctxGetters[selected]
 			shownCtx:set(if ctxGetter then ctxGetter() else nil)
 			shown:set(item)
@@ -617,17 +626,6 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 	local showIcon = scope:Computed(function(use): boolean
 		local item = use(shown)
 		return IconState.picture(use, use(shownDef), if item then ItemRoll.elementOf(item) else nil) ~= nil
-	end)
-	-- The equipped item of the hovered item's slot (not for the equipment slots themselves).
-	local compared = scope:Computed(function(use): ItemInstance?
-		local item = use(shown)
-		local def = use(shownDef)
-		local slot = use(shownSlot)
-		if not item or not def or (slot and string.sub(slot, 1, 3) == "eq:") then
-			return nil
-		end
-		local equipped = equippedFor(def)
-		return if equipped and equipped.uid ~= item.uid then equipped else nil
 	end)
 	local mainPanel = scope:New("Frame")({
 		Name = "Item",
@@ -693,49 +691,6 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 			end) :: any,
 		},
 	})
-	local comparePanel = scope:New("Frame")({
-		Name = "Equipped",
-		LayoutOrder = 1,
-		Size = UDim2.fromOffset(WIDTH, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		BackgroundColor3 = Theme.Iron.Surface,
-		ZIndex = 200,
-		Visible = scope:Computed(function(use): boolean
-			return use(compared) ~= nil
-		end),
-		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-			-- W28: the rarity border (3 px from Unique, gradient for Legendary / Mythic)
-			RarityFrame.panelStroke(
-				scope,
-				scope:Computed(function(use): number?
-					local item = use(compared)
-					return if item then Rarities.get(item.rarity).id else nil
-				end),
-				Theme.Brass.Line
-			),
-			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, 10),
-				PaddingBottom = UDim.new(0, 10),
-				PaddingLeft = UDim.new(0, 12),
-				PaddingRight = UDim.new(0, 12),
-			}),
-			scope:New("UIListLayout")({
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				Padding = UDim.new(0, 3),
-			}),
-			scope:Computed(function(use, s: Scope): { Instance }
-				local item = use(compared)
-				if not item then
-					return {}
-				end
-				local lang = use(Text.Lang)
-				local lines = build(s, item, lang, { hints = false }, use(merchantOpen), use(fullView), true)
-				table.insert(lines, 1, line(s, 0, Text.get(use, "tooltip.equipped"), MUTED, nil, Theme.Fonts.BodyBold))
-				return lines
-			end) :: any,
-		},
-	})
 	local root = scope:New("Frame")({
 		Name = "ItemTooltip",
 		Parent = parent,
@@ -749,10 +704,9 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		Position = scope:Computed(function(use): UDim2
 			local p: Vector2 = use(position)
 			local screen: Vector2 = use(Scale.VirtualSize)
-			local width = if use(compared) then 2 * WIDTH + GAP else WIDTH
 			local x = p.X + OFFSET.X
-			if x + width > screen.X - 8 then
-				x = p.X - OFFSET.X - width
+			if x + WIDTH > screen.X - 8 then
+				x = p.X - OFFSET.X - WIDTH
 			end
 			return UDim2.fromOffset(math.max(8, x), math.max(8, math.min(p.Y + OFFSET.Y, screen.Y - 200)))
 		end),
@@ -763,7 +717,6 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 				VerticalAlignment = Enum.VerticalAlignment.Top,
 				Padding = UDim.new(0, GAP),
 			}),
-			comparePanel,
 			mainPanel,
 		},
 	})

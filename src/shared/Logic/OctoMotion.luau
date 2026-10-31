@@ -11,17 +11,22 @@
 --    turn), lifted along an arc whose height grows with the server's `Gait`; a tetrad's middle of stance is the top of
 --    the recipe's step bob. Standing, the legs settle back under the body one after another; any foot left too far
 --    behind (a lunge, a spin in place, a lag spike) or out of the leg's reach steps on its own (joining its tetrad's
---    swing when that comes); a teleport puts them all down at once; the solver's answer is followed at a capped rate,
---    so a target swept across a leg's reach never snaps it to its other bend;
+--    swing when that comes; as many at once as leave three on the ground), lifted higher the farther it goes and
+--    landing ahead of a body that keeps moving (a lunge); a teleport puts them all down at once;
 -- 3. the idle: a leg shifts its footing now and then, the palps tap, the fangs chew, the abdomen breathes; on the move
 --    the palps are carried up in front, feeling the way (too short to keep up with the stride);
--- 4. what the recipe keys: `raise` (the front legs and the palps lift and reach forward and up), `wave`, `stab` (they
---    strike forward and down onto the ground ahead and plant there), `tuck` (every leg drawn in under the body: a
---    flight, the spawn), `splay` (the feet set down wider: landings, slams), `palp`, `fang`, the abdomen's pump (`gr`),
---    the legs' tremble (`shiver`, stun) and the flinch of the legs on the struck side;
+-- 4. what the recipe keys: `raise` (the front pair and the palps lift into their raised pose: the foot out in front a
+--    little over the hip, the knee up; blended from the standing pose joint by joint, so the foot rises on an arc),
+--    `wave`, `stab` (they strike forward and down onto the ground ahead, `grip` closer in, and plant there), `tuck`
+--    (every leg drawn in under the body: a flight, the spawn), `splay` (the feet set down wider: landings, slams),
+--    `palp`, `fang`, the abdomen's pump (`gr`), the legs' tremble (`shiver`, stun) and the flinch of the legs on the
+--    struck side (a standing foot trembles and flinches by lifting a touch on its point: it never slides);
 -- 5. deaths: from the pose they had, the legs straighten in the jolt and curl in over the belly as the recipe's `fold`
 --    grows (each leg at its own pace); RigidMotion lowers and topples the body over the folded box (OctoMotion.folds);
--- 6. on a ground that is not flat (the rig's ground probe, once per footfall) the body tilts with the plane of its feet.
+-- 6. on a ground that is not flat (the rig's ground probe, once per footfall) the body tilts with the plane of its feet;
+-- 7. every drawn joint (and the yaw) turns at most JOINT_RATE (SAFE_RATE walking or striking, STAND_RATE standing on
+--    its point under the body's own smooth move): whatever the solver or a key does, a joint never jumps between two
+--    frames nor flips back and forth (tests/octomotion: under 12 degrees a frame in every AnimLab state and gait).
 -- Pure: client/Anim/RigidRig feeds the root's move and the ground probe and writes the bones.
 
 local NpcPose = require("./NpcPose")
@@ -58,20 +63,27 @@ export type Foot = {
 	x: number,
 	y: number,
 	z: number,
-	-- the pose written (yaw, joint turns) and the solver's pair for the next frame
+	-- the pose drawn (yaw, joint turns), the solver's pair standing on its point and striking (the next frame's guesses)
 	psi: number,
 	c: { number },
 	a: number,
 	b: number,
+	sa: number,
+	sb: number,
+	want: { number }, -- scratch: the turns wanted this frame
 	-- a death starts from this pose
 	hold: { number },
 	holdPsi: number,
 	pace: number, -- the curl's exponent (its own pace)
 	wave: number, -- its phase in a wave
 	stabbed: boolean, -- the stab planted it (the key's rest is ignored until it falls)
+	striking: boolean, -- a stab is on its way down (its own solver pair: sa, sb)
 	airborne: boolean, -- drawn in for a flight: its rest point follows the body until it lands
 	down: boolean, -- standing on the ground this frame (planted, nothing lifting it)
-	miss: number, -- how far the drawn foot missed its target last frame (out of reach: it steps)
+	miss: number, -- how far the solver's foot missed its target last frame (out of reach: it steps)
+	rw: number, -- the raise and the stab on this leg (the keys followed at RAISE_RATE / STAB_RATE)
+	sw: number,
+	lag: number, -- how far the drawn pose trails the wanted one (rad, the most of its joints)
 }
 export type Input = {
 	dx: number?, -- the root's move this frame in its own frame before the turn (studs); nil: forward at the speed
@@ -107,6 +119,12 @@ export type Instance = {
 	tail: number, -- a tail's curl
 	carry: number, -- the palps carried up on the move (0..1, smoothed)
 	tuck: number, -- the legs drawn in (the recipe's `tuck`, smoothed)
+	up: { { number }? }, -- each leg's raised pose (yaw, a, b), nil for a leg that takes no raise
+	bx: number, -- the body's centre in the root's frame last frame, its velocity there (a lunge, smoothed)
+	bz: number,
+	ubx: number,
+	ubz: number,
+	walkers: number, -- the legs that carry it (not the palps)
 	-- scratch
 	m: { number },
 }
@@ -121,11 +139,22 @@ local DUTY = { walk = 0.68, trot = 0.62, run = 0.55 }
 local LAG = 0.035
 -- Step height (hip heights) at a walk and a run; a catch-up step's, an idle shift's, a palp's tap.
 local LIFT_WALK, LIFT_RUN, LIFT_STEP, LIFT_SHIFT, LIFT_TAP = 0.16, 0.3, 0.16, 0.1, 0.12
--- Seconds of a catch-up step, a settling step, an idle shift, a tap; the gap between two settling steps.
-local STEP_FAST, STEP_SETTLE, STEP_SHIFT, STEP_TAP, SETTLE_GAP = 0.1, 0.13, 0.17, 0.15, 0.05
--- A raised leg: its foot's elevation and reach, how far it swings toward the front; a wave's amplitude and rate.
-local RAISE_ELEV, RAISE_REACH, RAISE_TURN = math.rad(38), 0.72, 0.45
-local WAVE_ELEV, WAVE_YAW, WAVE_HZ = math.rad(18), math.rad(10), 3.2
+-- Seconds of a settling step, an idle shift, a tap; the gap between two settling steps (a catch-up step: STEP_BASE on).
+local STEP_SETTLE, STEP_SHIFT, STEP_TAP, SETTLE_GAP = 0.13, 0.17, 0.15, 0.05
+-- A raised leg (the front pair, the palps; Studio review 2026-10-31: the tips at about the body's height, never a pole):
+-- its foot this share of its length out in front, this many hip heights over the hip (times the leg's `front`), its
+-- heading turned this share toward the front; a wave's lift (rad of `a`), yaw and rate.
+local RAISE_OUT, RAISE_UP, RAISE_TURN = 0.6, 0.05, 0.45
+-- How high over the ground a palp's stab stops (hip heights).
+local PALP_HOVER = 0.2
+-- The share of the body's pitch a raised leg takes back (a rear-up lifts the body, not the raised legs on top of it).
+local PITCH_HOLD = 0.7
+local WAVE_LIFT, WAVE_YAW, WAVE_HZ = 0.12, math.rad(8), 3.2
+-- A catch-up step: its lift per stud it travels (hip heights), the most; its seconds, plus per span it travels; how much
+-- of the body's own move (a lunge) over the step it lands ahead by.
+local STEP_ARC, LIFT_MAX, STEP_BASE, STEP_PER_SPAN, STEP_LONG, LEAD_BODY = 0.3, 0.45, 0.09, 0.06, 0.2, 0.6
+-- The body's own move (spans a second) past which it hops (a lunge, a recoil): its legs all step together.
+local DASH = 1.5
 -- The fangs' full opening, the abdomen's pump per unit of the recipe's `gr`.
 local FANG, PUMP = math.rad(24), 2.4
 -- How deep a flight's tuck curls the legs; how much wider a splay sets them.
@@ -136,11 +165,18 @@ local TILT, TILT_MAX = 0.6, math.rad(20)
 local CARRY, CARRY_WAVE = 0.45, 0.35
 -- A planted foot the leg misses by more than this (hip heights) steps to a point it reaches.
 local MISS = 0.05
--- How fast the legs follow the recipe's `tuck` (1/s): drawn in over a few frames, never in one (out twice as fast).
-local TUCK_RATE = 22
--- A leg's yaw never turns faster than this (rad/s): a target passing right under its hip would spin it; its lift and
--- fold neither (a target swept across the chain's reach could make the solver jump to the other bend).
-local PSI_RATE, BEND_RATE = 24, 22
+-- How fast the legs follow the recipe's `tuck` (share per second): drawn in over a few frames, never in one.
+local TUCK_IN, TUCK_OUT = 6, 9
+-- No drawn joint (nor a leg's yaw) turns faster than this (rad/s, about 9.5 degrees a frame at 60 fps): a target passing
+-- right under a hip, a solver jumping to the other bend, a key or a death's jolt are followed, never snapped.
+local JOINT_RATE = 10
+-- How fast a leg takes up and lets go of the raise and the stab (share per second): a raise rises over a sixth of a
+-- second at the least and lets go over a fifth; a stab strikes as keyed (on the hit), the raise giving way to it.
+local RAISE_RATE, LET_GO = 6, 5
+-- A leg that only walks or strikes (nothing else keyed on it, nothing trailing) follows its solver at up to this
+-- (rad/s); one standing on its point follows the body at up to STAND_RATE (a planted foot never trails the body; the
+-- body's own moves are smooth, so it never jumps), a solver jumping to the other bend still never snaps.
+local SAFE_RATE, STAND_RATE = 12, 30
 
 local function smooth(x: number): number
 	local t = math.clamp(x, 0, 1)
@@ -174,21 +210,49 @@ local function newFoot(n: number, seed: number, i: number): Foot
 		c = table.create(n, 0),
 		a = 0,
 		b = 0,
+		sa = 0,
+		sb = 0,
+		want = table.create(n, 0),
 		hold = table.create(n, 0),
 		holdPsi = 0,
 		pace = 0.75 + 0.55 * hash01(40 + i, seed),
 		wave = hash01(60 + i, seed) * TAU,
 		stabbed = false,
+		striking = false,
 		airborne = false,
 		down = true,
 		miss = 0,
+		rw = 0,
+		sw = 0,
+		lag = 0,
 	}
+end
+
+-- The raised pose of a leg that takes a raise (its `front` > 0): the foot out in front of the hip and a little over it,
+-- turned toward the front; the pair the solver finds from a bent knee (yaw, a, b).
+local function raised(leg: OctoPose.Leg, hipH: number): { number }?
+	if leg.front <= 0 then
+		return nil
+	end
+	local heading = leg.yaw0 * (1 - RAISE_TURN)
+	local out = RAISE_OUT * leg.reach
+	local hip = leg.hip
+	local tx, tz = hip[1] - math.sin(heading) * out, hip[3] - math.cos(heading) * out
+	local psi, a, b = OctoPose.solve(leg, tx, hip[2] + RAISE_UP * hipH * leg.front, tz, 0.4, 0.4, 40)
+	-- (and how much of the body's pitch its lift feels: a leg reaching forward rises with a rearing body)
+	return { psi, a, b, math.cos(heading) }
 end
 
 function OctoMotion.new(skel: OctoPose.Skeleton, seed: number): Instance
 	local feet: { Foot } = {}
+	local up: { { number }? } = {}
+	local walkers = 0
 	for i, leg in skel.legs do
 		feet[i] = newFoot(leg.n, seed, i)
+		up[i] = raised(leg, skel.hipH)
+		if not leg.palp then
+			walkers += 1
+		end
 	end
 	local arms: { Foot } = {}
 	for i, arm in skel.arms do
@@ -221,6 +285,12 @@ function OctoMotion.new(skel: OctoPose.Skeleton, seed: number): Instance
 		tail = 0,
 		carry = 0,
 		tuck = 0,
+		up = up,
+		bx = 0,
+		bz = 0,
+		ubx = 0,
+		ubz = 0,
+		walkers = walkers,
 		m = table.create(12, 0),
 	}
 end
@@ -305,10 +375,11 @@ local function land(f: Foot, x: number, y: number, z: number)
 	f.ox, f.oz = 0, 0
 end
 
--- The foot along a step's arc at `q` (0..1) from its start to (gx, gy, gz).
+-- The foot along a step's arc at `q` (0..1) from its start to (gx, gy, gz): it lifts and sets down gently (no jolt in
+-- the joints as a step starts), rising before it travels.
 local function arc(f: Foot, q: number, gx: number, gz: number, hipH: number, outX: number, outZ: number)
 	local e = q * q * (3 - 2 * q)
-	local up = math.sin(math.pi * math.clamp(q, 0, 1) ^ 0.85)
+	local up = math.sin(math.pi * math.clamp(q, 0, 1) ^ 0.8) ^ 2
 	local bulge = 0.06 * up
 	f.x = f.sx + (gx - f.sx) * e + outX * bulge
 	f.z = f.sz + (gz - f.sz) * e + outZ * bulge
@@ -437,6 +508,16 @@ function OctoMotion.step(
 	end
 	tilt(m, inst.m, inst.tiltP, inst.tiltR, inst.rise, bx0, skel.ground, bz0)
 	bodyFrame(skel, m)
+	-- (the body's own move under the root: a lunge, a recoil)
+	if snap or dt <= 0 then
+		if snap then
+			inst.ubx, inst.ubz = 0, 0
+		end
+	else
+		inst.ubx = approach(inst.ubx, (BCX - inst.bx) / dt, 25, dt)
+		inst.ubz = approach(inst.ubz, (BCZ - inst.bz) / dt, 25, dt)
+	end
+	inst.bx, inst.bz = BCX, BCZ
 	-- 1. the root's move: the planted points stay where they are in the world
 	-- (AnimLab: the look stands still while the ground runs under it at the speed)
 	local dx, dz = 0, -input.speed * dt
@@ -503,9 +584,7 @@ function OctoMotion.step(
 	local raiseK = c.raise or 0
 	local stabK = c.stab or 0
 	local tuckT = math.clamp(c.tuck or 0, 0, 1)
-	inst.tuck = if snap
-		then tuckT
-		else approach(inst.tuck, tuckT, if tuckT < inst.tuck then 2 * TUCK_RATE else TUCK_RATE, dt)
+	inst.tuck = if snap then tuckT else inst.tuck + math.clamp(tuckT - inst.tuck, -TUCK_OUT * dt, TUCK_IN * dt)
 	local tuckW = inst.tuck
 	local palpK = c.palp or 0
 	local waveK = c.wave or 0
@@ -523,7 +602,8 @@ function OctoMotion.step(
 			-- standing on it (the pose a death that starts now begins from)
 			local lx, ly, lz = toLook(m, nx, gy, nz)
 			local psi, a, b = OctoPose.solve(leg, lx, ly, lz, 0, 0, 12)
-			f.a, f.b, f.psi = a, b, psi
+			f.a, f.b, f.sa, f.sb, f.psi = a, b, a, b, psi
+			f.striking = false
 			OctoPose.turns(leg, a, b, f.c)
 		end
 	end
@@ -552,217 +632,323 @@ function OctoMotion.step(
 		end
 	end
 	local shiver = math.abs(c.shiver or 0) * 1.5 + 0.07 * rigid.stunW
+	local grip = math.clamp(c.grip or 0, 0, 1)
+	local maxTurn = JOINT_RATE * dt
+	-- the legs off the ground (not the palps): a step of its own waits while it would leave fewer than three standing
+	local lifted = 0
+	for i, f in feet do
+		if not legs[i].palp and not f.down then
+			lifted += 1
+		end
+	end
+	local liftMost = math.max(1, inst.walkers - 3)
+	-- (where the body's own move takes it over a step: a step lands ahead of a lunge; a body darting faster than
+	-- DASH spans a second hops: every leg may step at once)
+	local ubx, ubz = inst.ubx * LEAD_BODY, inst.ubz * LEAD_BODY
+	local ub = math.sqrt(inst.ubx * inst.ubx + inst.ubz * inst.ubz)
+	local ahead = ub * STEP_BASE
+	local dash = ub > DASH * skel.span
+	local leadCap = 0.5 * skel.span
+	-- (the body's pitch, + nose up)
+	local pitch = math.asin(math.clamp(-m[6], -1, 1))
 	for i, leg in legs do
 		local f = feet[i]
-		local fc = f.c
+		local want = f.want
+		local psiW = f.psi
+		local rate = maxTurn
 		if dying then
 			-- the death: from the pose it had, straightened by the jolt, then curled in at its own pace
 			local depth = if fold >= 0 then fold ^ f.pace else fold
 			for j = 1, leg.n do
-				local want = leg.curl[j] * depth
-				fc[j] = f.hold[j] + (want - f.hold[j]) * deathW
+				local curl = leg.curl[j] * depth
+				want[j] = f.hold[j] + (curl - f.hold[j]) * deathW
 			end
-			f.psi = f.holdPsi * (1 - deathW * math.clamp(fold, 0, 1))
+			psiW = f.holdPsi * (1 - deathW * math.clamp(fold, 0, 1))
 			local tw = math.abs(c.shiver or 0)
 			if tw > 0 then
-				fc[leg.knee] += tw * 2 * noise(now * 14, seed, 80 + i)
+				want[leg.knee] += tw * 2 * noise(now * 14, seed, 80 + i)
 			end
 			f.mode = PLANT
 			f.airborne = true
 			f.down = false
-			continue
-		end
-		-- the overlays the recipe keys (the front legs and the palps)
-		local front = leg.front
-		local raiseW =
-			smooth(math.clamp(raiseK * front + (if leg.palp then math.max(palpK * 0.6, CARRY * carry) else 0), 0, 1))
-		if f.stabbed and stabK < 0.05 then
-			f.stabbed = false
-		end
-		local stabW = if f.stabbed then 0 else smooth(math.clamp(stabK * front, 0, 1))
-		local overlay = math.max(raiseW, stabW)
-		local busy = overlay > 0.02 or tuckW > 0.02
-		-- a flight: drawn in, its rest point follows the body; down again on the ground under it
-		if tuckW >= 0.85 and not f.airborne then
-			f.airborne = true
-		elseif f.airborne and tuckW < 0.5 then
-			f.airborne = false
-			local nx, nz = neutral(skel, leg, splay, 0, 0)
-			land(f, nx, groundAt(skel, octo, nx, nz), nz)
-		end
-		local nx, nz = neutral(skel, leg, splay, f.ox, f.oz)
-		local follow = f.airborne or (leg.palp and carry > 0.02)
-		if follow then
-			-- (up in the air, its foot point goes with the body)
-			f.mode = PLANT
-			f.px, f.pz = nx, nz
-			f.py = skel.ground
-		end
-		-- the gait
-		local offset = 0.25 + 0.5 * leg.group + LAG * leg.rank - duty / 2
-		local p = (phase - offset) % 1
-		local inSwing = p >= duty
-		local q = if inSwing then (p - duty) / (1 - duty) else 0
-		if moving and not busy and not f.airborne then
-			-- (a foot still on a step of its own joins its tetrad's swing from where it is)
-			if f.mode ~= GAIT and inSwing and not f.swung then
-				f.swung = true
-				if q < 0.5 then
-					f.mode = GAIT
-					f.sx, f.sy, f.sz = f.x, f.y, f.z
-					f.lift = liftGait * (if leg.palp then 0.7 else 1)
-					f.ox, f.oz = 0, 0
-					-- the ground where it will land (once per footfall)
-					local gx_, gz_ = neutral(skel, leg, splay, 0, 0)
-					f.gy = groundAt(skel, octo, gx_ + leadX, gz_ + leadZ)
+		else
+			-- the overlays the recipe keys, on the legs that take a raise (the front pair, the palps)
+			local up = inst.up[i]
+			local raiseT, stabT = 0, 0
+			if up then
+				local palpUp = if leg.palp then math.max(palpK * 0.6, CARRY * carry) else 0
+				raiseT = math.clamp(raiseK + palpUp, 0, 1)
+				if f.stabbed and stabK < 0.05 then
+					f.stabbed = false
+				end
+				stabT = if f.stabbed then 0 else math.clamp(stabK, 0, 1)
+			end
+			if snap then
+				f.rw, f.sw = raiseT, stabT
+			else
+				local striking = stabT > f.sw
+				f.rw = if striking and raiseT < f.rw
+					then raiseT
+					else f.rw + math.clamp(raiseT - f.rw, -LET_GO * dt, RAISE_RATE * dt)
+				-- (a stab that landed lets go at once: the foot stands where it struck)
+				f.sw = if f.stabbed then 0 elseif striking then stabT else math.max(stabT, f.sw - LET_GO * dt)
+			end
+			local raiseW, stabW = smooth(f.rw), smooth(f.sw)
+			local overlay = math.max(raiseW, stabW)
+			local busy = overlay > 0.02 or tuckW > 0.02
+			-- a flight: drawn in, its rest point follows the body; down again on the ground under it
+			if tuckW >= 0.85 and not f.airborne then
+				f.airborne = true
+			elseif f.airborne and tuckW < 0.5 then
+				f.airborne = false
+				local nx, nz = neutral(skel, leg, splay, 0, 0)
+				land(f, nx, groundAt(skel, octo, nx, nz), nz)
+			end
+			local nx, nz = neutral(skel, leg, splay, f.ox, f.oz)
+			local follow = f.airborne or (leg.palp and carry > 0.02)
+			if follow then
+				-- (up in the air, its foot point goes with the body)
+				f.mode = PLANT
+				f.px, f.pz = nx, nz
+				f.py = skel.ground
+			end
+			-- the gait
+			local offset = 0.25 + 0.5 * leg.group + LAG * leg.rank - duty / 2
+			local p = (phase - offset) % 1
+			local inSwing = p >= duty
+			local q = if inSwing then (p - duty) / (1 - duty) else 0
+			if moving and not busy and not f.airborne then
+				-- (a foot still on a step of its own joins its tetrad's swing from where it is)
+				if f.mode ~= GAIT and inSwing and not f.swung then
+					f.swung = true
+					if q < 0.5 then
+						f.mode = GAIT
+						f.sx, f.sy, f.sz = f.x, f.y, f.z
+						f.lift = liftGait * (if leg.palp then 0.7 else 1)
+						f.ox, f.oz = 0, 0
+						-- the ground where it will land (once per footfall)
+						local gx_, gz_ = neutral(skel, leg, splay, 0, 0)
+						f.gy = groundAt(skel, octo, gx_ + leadX, gz_ + leadZ)
+					end
 				end
 			end
-		end
-		if not inSwing then
-			f.swung = false
-		end
-		local outX, outZ = (nx - bodyX), (nz - bodyZ)
-		local outL = math.sqrt(outX * outX + outZ * outZ)
-		if outL > 1e-4 then
-			outX, outZ = outX / outL * skel.span, outZ / outL * skel.span
-		end
-		if f.mode == GAIT then
-			if not moving or busy then
-				-- the gait stopped under it: finish the step in a moment
-				startStep(f, now, 0.08, f.lift * 0.6, 0, 0, f.gy)
-			else
-				-- the goal: ahead by the lead, turned on about the body's centre
-				local rx, rz = nx - bodyX, nz - bodyZ
-				local gx2 = bodyX + rx * lcs + rz * lsn + leadX
-				local gz2 = bodyZ - rx * lsn + rz * lcs + leadZ
-				if not inSwing then
+			if not inSwing then
+				f.swung = false
+			end
+			local outX, outZ = (nx - bodyX), (nz - bodyZ)
+			local outL = math.sqrt(outX * outX + outZ * outZ)
+			if outL > 1e-4 then
+				outX, outZ = outX / outL * skel.span, outZ / outL * skel.span
+			end
+			if f.mode == GAIT then
+				if not moving or busy then
+					-- the gait stopped under it: finish the step in a moment
+					startStep(f, now, 0.08, f.lift * 0.6, 0, 0, f.gy)
+				else
+					-- the goal: ahead by the lead, turned on about the body's centre
+					local rx, rz = nx - bodyX, nz - bodyZ
+					local gx2 = bodyX + rx * lcs + rz * lsn + leadX
+					local gz2 = bodyZ - rx * lsn + rz * lcs + leadZ
+					if not inSwing then
+						land(f, gx2, f.gy, gz2)
+					else
+						arc(f, q, gx2, gz2, hipH, outX, outZ)
+					end
+				end
+			end
+			if f.mode == STEP then
+				-- (on the move it lands ahead by the lead, like the gait's steps; ahead of a lunge by where the body
+				-- goes over the rest of the step)
+				local remain = math.max(0, f.t0 + f.dur - now)
+				local bx_ = math.clamp(ubx * remain, -leadCap, leadCap)
+				local bz_ = math.clamp(ubz * remain, -leadCap, leadCap)
+				local gx2, gz2 = nx + bx_, nz + bz_
+				if moving then
+					gx2, gz2 = gx2 + leadX, gz2 + leadZ
+				end
+				local u = if f.dur > 0 then (now - f.t0) / f.dur else 1
+				if u >= 1 or snap then
 					land(f, gx2, f.gy, gz2)
 				else
-					arc(f, q, gx2, gz2, hipH, outX, outZ)
+					arc(f, math.max(u, 0), gx2, gz2, hipH, outX, outZ)
 				end
 			end
-		end
-		if f.mode == STEP then
-			-- (on the move it lands ahead by the lead, like the gait's steps)
-			local gx2, gz2 = nx, nz
-			if moving then
-				gx2, gz2 = nx + leadX, nz + leadZ
-			end
-			local u = if f.dur > 0 then (now - f.t0) / f.dur else 1
-			if u >= 1 or snap then
-				land(f, gx2, f.gy, gz2)
-			else
-				arc(f, math.max(u, 0), gx2, gz2, hipH, outX, outZ)
-			end
-		end
-		if f.mode == PLANT then
-			f.x, f.y, f.z = f.px, f.py, f.pz
-			if not busy and not f.airborne then
-				local ex, ez = f.px - nx, f.pz - nz
-				local drift = math.sqrt(ex * ex + ez * ez)
-				-- (a stance of the gait carries it back from the lead it landed with to as far behind)
-				local limit = math.max(maxDrift, 1.5 * (leadLen + math.abs(leadYaw) * outL))
-				-- (never as far as under its own hip)
-				limit = math.min(limit, math.max(maxDrift, 0.9 * leg.span))
-				if drift > 3 * skel.span then
-					-- a teleport: down at once
-					land(f, nx, groundAt(skel, octo, nx, nz), nz)
-				elseif
-					(drift > limit or f.miss > MISS * hipH) and (now - inst.lastStep > 0.03 or drift > 1.5 * limit)
-				then
-					-- left behind (a lunge, a spin, a lag spike): a quick step of its own (no longer than the gait's)
-					local seconds = if moving
-						then math.clamp((1 - duty) / math.max(inst.rateHz, 0.1), 0.06, STEP_FAST)
-						else STEP_FAST
-					startStep(f, now, seconds, LIFT_STEP, 0, 0, groundAt(skel, octo, nx, nz))
-					inst.lastStep = now
-				elseif
-					standing
-					and splay < 0.1
-					and now - inst.stopAt > 0.12
-					and now - inst.lastStep > SETTLE_GAP
-					and drift > 0.16 * skel.span
-				then
-					-- standing: the legs settle back under the body one after another (a splayed landing holds its
-					-- feet until the splay is gone, then gathers them)
-					startStep(f, now, STEP_SETTLE, LIFT_STEP * 0.8, 0, 0, groundAt(skel, octo, nx, nz))
-					inst.lastStep = now
+			if f.mode == PLANT then
+				f.x, f.y, f.z = f.px, f.py, f.pz
+				-- (a foot the stab planted stays while the stab holds, unless the leg cannot reach it)
+				local held = f.stabbed and f.miss <= MISS * hipH
+				if not busy and not f.airborne and not held then
+					local ex, ez = f.px - nx, f.pz - nz
+					local drift = math.sqrt(ex * ex + ez * ez)
+					-- (a stance of the gait carries it back from the lead it landed with to as far behind)
+					local limit = math.max(maxDrift, 1.5 * (leadLen + math.abs(leadYaw) * outL))
+					-- (never as far as under its own hip)
+					limit = math.min(limit, math.max(maxDrift, 0.9 * leg.span))
+					local free = leg.palp or dash or lifted < liftMost
+					if drift > 3 * skel.span then
+						-- a teleport: down at once
+						land(f, nx, groundAt(skel, octo, nx, nz), nz)
+					elseif
+						(
+							drift + ahead > (if dash then 0.5 * limit else limit)
+							or (f.miss > MISS * hipH and drift > 0.1 * skel.span)
+						) and (free or f.miss > 4 * MISS * hipH)
+					then
+						-- left behind (a lunge, a spin, a lag spike) or out of reach: a step of its own, longer and
+						-- higher the farther it goes (no longer than the gait's swing on the move)
+						local gx2 = nx + math.clamp(ubx * STEP_BASE, -leadCap, leadCap)
+						local gz2 = nz + math.clamp(ubz * STEP_BASE, -leadCap, leadCap)
+						-- (the way it goes: to its point and on with the body)
+						local dist = math.sqrt((gx2 - f.x) ^ 2 + (gz2 - f.z) ^ 2) + 2 * ahead
+						local seconds = math.clamp(STEP_BASE + STEP_PER_SPAN * dist / skel.span, STEP_BASE, STEP_LONG)
+						if moving then
+							seconds = math.min(seconds, math.max((1 - duty) / math.max(inst.rateHz, 0.1), 0.06))
+						end
+						local lift = math.clamp(STEP_ARC * dist / hipH, LIFT_STEP, LIFT_MAX)
+						startStep(f, now, seconds, lift, 0, 0, groundAt(skel, octo, nx, nz))
+						inst.lastStep = now
+						if not leg.palp then
+							lifted += 1
+						end
+					elseif
+						standing
+						and free
+						and splay < 0.1
+						and now - inst.stopAt > 0.12
+						and now - inst.lastStep > SETTLE_GAP
+						and drift > 0.16 * skel.span
+					then
+						-- standing: the legs settle back under the body one after another (a splayed landing holds
+						-- its feet until the splay is gone, then gathers them)
+						startStep(f, now, STEP_SETTLE, LIFT_STEP * 0.8, 0, 0, groundAt(skel, octo, nx, nz))
+						inst.lastStep = now
+						if not leg.palp then
+							lifted += 1
+						end
+					end
 				end
 			end
-		end
-		-- the target in the look frame: the foot, lifted toward the raised point and down onto the stab point
-		local lx, ly, lz = toLook(m, f.x, f.y, f.z)
-		if overlay > 0.001 then
-			local yawR = leg.yaw0 * (1 - RAISE_TURN * math.min(front, 1))
-			local wk = if leg.palp then math.max(waveK, CARRY_WAVE * carry) else waveK
-			local wv = wk * math.sin(TAU * WAVE_HZ * now + f.wave)
-			local elev = RAISE_ELEV + WAVE_ELEV * wv
-			yawR += WAVE_YAW * wk * math.sin(TAU * WAVE_HZ * 0.7 * now + f.wave * 1.7)
-			local reach = RAISE_REACH * leg.reach
-			local hip = leg.hip
-			local rx_ = hip[1] - math.sin(yawR) * math.cos(elev) * reach
-			local ry_ = hip[2] + math.sin(elev) * reach
-			local rz_ = hip[3] - math.cos(yawR) * math.cos(elev) * reach
-			local qx, qy, qz = rx_, ry_, rz_
+			-- standing on its point: the solver's pair (how far it falls short: a foot it cannot reach steps); a foot that
+			-- stands trembles (stun, a shiver) and flinches by lifting a touch, its leg keeping the point (no slide)
+			local kn = leg.knee
+			local near = hitE > 0
+				and (
+					if hitSide == "left"
+						then leg.side < 0
+						elseif hitSide == "right" then leg.side > 0
+						elseif hitSide == "front" then leg.rank <= 1.5
+						else leg.rank >= 3
+				)
+			local onPoint = f.mode == PLANT and not follow and overlay <= 0.02 and tuckW <= 0.02
+			local rise = 0
+			if onPoint then
+				rise = shiver * math.max(0, noise(now * 17, seed, 30 + i)) + hitE * (if near then 0.15 else 0.04)
+			end
+			local lx, ly, lz = toLook(m, f.x, f.y + rise * hipH, f.z)
+			local psi, a, b = OctoPose.solve(leg, lx, ly, lz, f.a, f.b, if snap then 12 else iters)
+			f.a, f.b = a, b
+			OctoPose.turns(leg, a, b, want)
+			local fx, fy, fz = OctoPose.foot(leg, psi, want)
+			f.miss = math.sqrt((fx - lx) ^ 2 + (fy - ly) ^ 2 + (fz - lz) ^ 2)
+			-- raised: blended joint by joint toward its raised pose (the foot rises on an arc), waving
+			if up and raiseW > 0.001 then
+				local wk = if leg.palp then math.max(waveK, CARRY_WAVE * carry) else waveK
+				local psiU, aU, bU = up[1], up[2] - pitch * PITCH_HOLD * up[4], up[3]
+				if wk > 0 then
+					aU += WAVE_LIFT * wk * math.sin(TAU * WAVE_HZ * now + f.wave)
+					psiU += WAVE_YAW * wk * math.sin(TAU * WAVE_HZ * 0.7 * now + f.wave * 1.7)
+				end
+				psi += ((psiU - psi + math.pi) % TAU - math.pi) * raiseW
+				a += (aU - a) * raiseW
+				b += (bU - b) * raiseW
+			end
+			-- the stab: from where the foot is, straight down onto the ground ahead of the hip (closer in with a grip),
+			-- planted there as it lands (a straight way: it never dips under the ground); a palp only reaches down
+			-- over the ground (it feels, it does not stand)
 			if stabW > 0.001 then
-				-- the stab: forward and down to the ground ahead (ground frame)
-				local yawS = leg.yaw0 * 0.5
-				local d = leg.span * 1.05
-				local sx_ = hip[1] - math.sin(yawS) * d
-				local sz_ = hip[3] - math.cos(yawS) * d
-				local gxs, _, gzs = toGround(m, sx_, 0, sz_)
-				local tx, ty, tz = toLook(m, gxs, skel.ground, gzs)
-				local k = stabW / (raiseW + stabW)
-				qx, qy, qz = qx + (tx - qx) * k, qy + (ty - qy) * k, qz + (tz - qz) * k
+				local heading = leg.yaw0 * (0.5 - 0.3 * grip)
+				local d = leg.span * (1.05 - 0.2 * grip)
+				local hip = leg.hip
+				local gxs, _, gzs = toGround(m, hip[1] - math.sin(heading) * d, 0, hip[3] - math.cos(heading) * d)
+				local tx, ty, tz = toLook(m, gxs, skel.ground + (if leg.palp then PALP_HOVER * hipH else 0), gzs)
+				OctoPose.turns(leg, a, b, want)
+				local ux, uy, uz = OctoPose.foot(leg, psi, want)
+				tx, ty, tz = ux + (tx - ux) * stabW, uy + (ty - uy) * stabW, uz + (tz - uz) * stabW
+				if not f.striking then
+					-- (the strike's solver starts from the pose it strikes from)
+					f.striking = true
+					f.sa, f.sb = a, b
+				end
+				local psiS, aS, bS = OctoPose.solve(leg, tx, ty, tz, f.sa, f.sb, if snap then 12 else iters)
+				f.sa, f.sb = aS, bS
+				psi, a, b = psiS, aS, bS
+				if f.sw >= 0.92 and stabK >= 0.92 and not f.stabbed and not leg.palp then
+					-- the stab lands: the foot is planted where it struck, the pair it struck with standing on it
+					f.stabbed = true
+					land(f, gxs, skel.ground, gzs)
+					f.a, f.b = aS, bS
+					f.swung = true
+				end
+			else
+				f.striking = false
 			end
-			lx, ly, lz = lx + (qx - lx) * overlay, ly + (qy - ly) * overlay, lz + (qz - lz) * overlay
-			if stabW >= 0.92 and not f.stabbed then
-				-- the stab lands: the foot is planted where it struck
-				f.stabbed = true
-				local gx3, _, gz3 = toGround(m, lx, ly, lz)
-				land(f, gx3, skel.ground, gz3)
-				f.swung = true
+			OctoPose.turns(leg, a, b, want)
+			-- drawn in for a flight or the spawn (the turns of a part curl)
+			if tuckW > 0.001 then
+				local tw = smooth(tuckW)
+				for j = 1, leg.n do
+					want[j] += (leg.curl[j] * TUCK - want[j]) * tw
+				end
+				psi *= 1 - 0.5 * tw
+			end
+			-- the tremble and the flinch of a leg off the ground
+			if not onPoint and shiver > 0.001 then
+				want[kn] += shiver * noise(now * 17, seed, 30 + i)
+				want[math.max(1, kn - 1)] += shiver * 0.7 * noise(now * 19, seed, 50 + i)
+			end
+			if not onPoint and hitE > 0 then
+				local k = hitE * (if near then 0.28 else 0.08)
+				want[math.max(1, kn - 1)] += k
+				want[kn] -= k * 0.6
+			end
+			psiW = psi
+			-- (a foot its leg cannot bring down to its point hangs: not standing)
+			f.down = f.mode == PLANT
+				and not follow
+				and overlay <= 0.02
+				and tuckW <= 0.02
+				and f.miss <= MISS * hipH
+				and f.lag < 0.05
+			-- only standing, walking or striking down the straight way: the solver's pose as it is
+			if tuckW <= 0.001 and ((overlay <= 0.001 and f.lag < 0.03) or stabW > 0.001 or f.stabbed) then
+				local still = f.mode == PLANT and not follow and (overlay <= 0.001 or f.stabbed)
+				rate = (if still then STAND_RATE else SAFE_RATE) * dt
 			end
 		end
-		local psi, a, b = OctoPose.solve(leg, lx, ly, lz, f.a, f.b, if snap then 12 else iters)
-		-- (how far it falls short: a foot that cannot be reached steps)
-		OctoPose.turns(leg, a, b, fc)
-		local fx, fy, fz = OctoPose.foot(leg, psi, fc)
-		f.miss = math.sqrt((fx - lx) ^ 2 + (fy - ly) ^ 2 + (fz - lz) ^ 2)
-		if not snap then
-			local turn = (psi - f.psi + math.pi) % TAU - math.pi
-			psi = f.psi + math.clamp(turn, -PSI_RATE * dt, PSI_RATE * dt)
-			a = f.a + math.clamp(a - f.a, -BEND_RATE * dt, BEND_RATE * dt)
-			b = f.b + math.clamp(b - f.b, -BEND_RATE * dt, BEND_RATE * dt)
-		end
-		f.a, f.b = a, b
-		OctoPose.turns(leg, a, b, fc)
-		-- drawn in for a flight or the spawn (the turns of a part curl)
-		if tuckW > 0.001 then
-			local tw = smooth(tuckW)
+		-- drawn: no joint turns faster than JOINT_RATE, a leg that only walks or strikes than SAFE_RATE, one standing than
+		-- STAND_RATE (a snap draws the pose at once)
+		local fc = f.c
+		if snap then
 			for j = 1, leg.n do
-				fc[j] += (leg.curl[j] * TUCK - fc[j]) * tw
+				fc[j] = want[j]
 			end
-			psi *= 1 - 0.5 * tw
+			f.psi = psiW
+			f.lag = 0
+		else
+			-- (the whole pose moves toward the wanted one at the pace of its fastest joint: slowed, never bent off its
+			-- way)
+			local dPsi = (psiW - f.psi + math.pi) % TAU - math.pi
+			local most = math.abs(dPsi)
+			for j = 1, leg.n do
+				most = math.max(most, math.abs(want[j] - fc[j]))
+			end
+			local k = if most > rate then rate / most else 1
+			for j = 1, leg.n do
+				fc[j] += (want[j] - fc[j]) * k
+			end
+			f.psi += dPsi * k
+			f.lag = most * (1 - k)
 		end
-		-- the tremble (stun, a shiver) and the flinch
-		local kn = leg.knee
-		if shiver > 0.001 then
-			fc[kn] += shiver * noise(now * 17, seed, 30 + i)
-			fc[math.max(1, kn - 1)] += shiver * 0.7 * noise(now * 19, seed, 50 + i)
-		end
-		if hitE > 0 then
-			local near = if hitSide == "left"
-				then leg.side < 0
-				elseif hitSide == "right" then leg.side > 0
-				elseif hitSide == "front" then leg.rank <= 1.5
-				else leg.rank >= 3
-			local k = hitE * (if near then 0.28 else 0.08)
-			fc[math.max(1, kn - 1)] += k
-			fc[kn] -= k * 0.6
-		end
-		f.psi = psi
-		f.down = f.mode == PLANT and not follow and overlay <= 0.02 and tuckW <= 0.02
 	end
 	-- the pincers of a scorpion: held forward, raised and struck like the front legs (never planted)
 	for i, arm in skel.arms do

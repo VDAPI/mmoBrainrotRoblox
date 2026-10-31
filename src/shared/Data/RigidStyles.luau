@@ -20,7 +20,8 @@
 -- Legs with bones (Data/OctoRigs, Logic/OctoMotion; keyed only by a style built with `legs = true`: spider, scorpion;
 -- a rigid look ignores them):
 --   raise wave      the front legs and the palps lift and reach forward and up / wave (a rear-up, a bite's gather)
---   stab            the raised legs strike forward and down onto the ground ahead (and stay planted there)
+--   stab grip       the raised legs strike forward and down onto the ground ahead (and stay planted there) / closer
+--                   in, clasping what is in front (a grab)
 --   tuck splay      every leg drawn in under the body (flights, the spawn) / the feet set down wider (landings, slams)
 --   palp fang       the palps held up; the fangs open (1) or shut (below 0); `gr` also pumps the abdomen, `shiver`
 --                   trembles the legs
@@ -289,7 +290,7 @@ local function bite(st: Pose, o: { [string]: any }): Action
 			key(
 				"S",
 				0.5,
-				"in",
+				o.lungeEase or "in",
 				s(lg(o, { rear = 0, dip = slam * 0.4, y = hop, lunge = 0.6 }, { raise = 0.55, stab = 0.45, fang = 1 }))
 			),
 			key(
@@ -325,8 +326,79 @@ local function bite(st: Pose, o: { [string]: any }): Action
 			key(
 				"R",
 				0.45,
-				"out",
+				o.recoilEase or "out",
 				s(lg(o, { lunge = 0.3, y = o.recoil or 0.05, z = back * 0.5 }, { stab = 0, fang = 0.1 }))
+			),
+			key("R", 1, "inout", st),
+		},
+	}
+end
+
+-- A crawler's grab (with legs, `o.legs`): low and drawn back, the front pair a little up and open, then a short dart
+-- with the front legs closing in over the target on the hit (`grip`), the fangs snapping twice while it holds, let go.
+local function grab(st: Pose, o: { [string]: any }): Action
+	local function s(p: Pose): Pose
+		return from(st, p)
+	end
+	local crouch, dip, reach, shake = o.crouch or -0.05, o.dip or deg(5), o.reach or 0.5, o.shake or deg(3)
+	return {
+		strike = o.strike or 0.16,
+		follow = o.follow or 0.32,
+		recover = o.recover or 0.3,
+		keys = {
+			key(
+				"A",
+				0.5,
+				"out",
+				s(lg(o, { y = crouch * 0.8, z = 0.02, dip = dip * 0.8 }, { raise = 0.3, palp = 1, fang = 0.6 }))
+			),
+			key(
+				"A",
+				1,
+				"inout",
+				s(
+					lg(
+						o,
+						{ y = crouch, z = 0.03, dip = dip, shiver = o.shiver or deg(0.8) },
+						{ raise = 0.45, wave = 0.2, palp = 1, fang = 1 }
+					)
+				)
+			),
+			key(
+				"S",
+				1,
+				"inout",
+				s(
+					lg(
+						o,
+						{ y = 0, dip = dip * 0.4, lunge = reach, sq = o.squash or -0.05 },
+						{ stab = 1, grip = 1, fang = -0.3, palp = 0.5 }
+					)
+				)
+			),
+			key(
+				"F",
+				0.3,
+				"out",
+				s(lg(o, { dip = dip * 0.6, lunge = reach, yaw = shake }, { stab = 1, grip = 1, fang = 0.7 }))
+			),
+			key(
+				"F",
+				0.6,
+				"in",
+				s(
+					lg(
+						o,
+						{ dip = dip * 0.8, lunge = reach, yaw = -shake, sq = -0.03 },
+						{ stab = 1, grip = 1, fang = -0.3 }
+					)
+				)
+			),
+			key(
+				"F",
+				1,
+				"inout",
+				s(lg(o, { dip = dip * 0.4, lunge = reach * 0.8 }, { stab = 0.6, grip = 1, fang = 0 }))
 			),
 			key("R", 1, "inout", st),
 		},
@@ -506,7 +578,7 @@ local function heavy(st: Pose, o: { [string]: any }): Action
 			key(
 				"S",
 				1,
-				"in",
+				o.strikeEase or "in",
 				s(
 					lg(
 						o,
@@ -561,7 +633,7 @@ local function crush(st: Pose, o: { [string]: any }): Action
 		key(
 			"S",
 			1,
-			"in",
+			o.strikeEase or "in",
 			s(
 				lg(
 					o,
@@ -663,7 +735,7 @@ local function pounce(st: Pose, o: { [string]: any }): Action
 		key(
 			"F",
 			0.4,
-			"out",
+			o.bounceEase or "out",
 			s(lg(o, { travel = 1, y = 0.03, sq = 0.03, shiver = deg(1) }, { splay = 0.8, fang = -0.2 }))
 		)
 	)
@@ -671,7 +743,7 @@ local function pounce(st: Pose, o: { [string]: any }): Action
 	table.insert(keys, key("R", 1, "inout", st))
 	return {
 		strike = o.strike or 0.4,
-		follow = 0.25,
+		follow = o.follow or 0.25,
 		recover = 0.45,
 		tremble = deg(1),
 		flight = true,
@@ -1077,7 +1149,8 @@ local SPIDER: Style = {
 	calm = { pitch = deg(-2) },
 	flinch = { push = 0.03, tilt = deg(10), drop = -0.03, squash = -0.05 },
 	stun = { roll = deg(6), pitch = deg(3), hz = 1.1, drop = -0.04, twitch = deg(6) },
-	basic = { "bite" },
+	-- (two blows in turn, Studio review 2026-10-31: the rearing bite and the low grab)
+	basic = { "bite", "grab" },
 	abilities = { poisonPool = "pool", heavyBlow = "heavy", crush = "crush", pounce = "pounce" },
 	throw = "spit",
 	death = { { name = "deathFlip", weight = 0.6 }, { name = "deathCurl", weight = 0.4 } },
@@ -1087,21 +1160,41 @@ local SPIDER: Style = {
 	fidgets = { "twitch", "settle", "taste" },
 	fidgetEvery = { 2, 6 },
 	rate = 0.04,
-	lunge = { min = 0.09, max = 0.45 },
+	-- (the legs step after the body: a lunge of at most 0.3 of its length, the feet keep up)
+	lunge = { min = 0.09, max = 0.3 },
 	flightPitch = { deg(25), deg(30) },
 	footprint = 0.85,
 	wigPivot = 0,
 	actions = {
-		alert = alert(SPIDER_STANCE, { rear = deg(18), shiver = deg(1), thump = -0.03, squash = -0.08, legs = true }),
-		bite = bite(SPIDER_STANCE, { rear = deg(14), up = 0.05, back = 0.03, slam = deg(10), hop = 0.1, legs = true }),
+		alert = alert(SPIDER_STANCE, { rear = deg(12), shiver = deg(1), thump = -0.03, squash = -0.08, legs = true }),
+		bite = bite(SPIDER_STANCE, {
+			rear = deg(12),
+			up = 0.04,
+			back = 0.03,
+			slam = deg(9),
+			hop = 0.1,
+			strike = 0.2,
+			recover = 0.4,
+			lungeEase = "inout",
+			recoilEase = "inout",
+			legs = true,
+		}),
+		grab = grab(SPIDER_STANCE, { legs = true }),
 		pool = cast(
 			SPIDER_STANCE,
-			{ rear = deg(22), up = 0.1, pump = deg(3), snap = deg(8), recoil = 0.04, legs = true }
+			{ rear = deg(16), up = 0.08, pump = deg(3), snap = deg(8), recoil = 0.04, legs = true }
 		),
-		heavy = heavy(SPIDER_STANCE, { rear = deg(25), weave = deg(8), slam = deg(12), sweep = deg(30), legs = true }),
-		crush = crush(SPIDER_STANCE, { rear = deg(30), slam = deg(12), legs = true }),
-		pounce = pounce(SPIDER_STANCE, { crouch = -0.08, dip = deg(6), wiggle = deg(4), legs = true }),
-		spit = throw(SPIDER_STANCE, { rear = deg(15), legs = true }),
+		-- (the strikes at an even pace: the planted legs take the slam without a jolt)
+		heavy = heavy(
+			SPIDER_STANCE,
+			{ rear = deg(17), weave = deg(8), slam = deg(10), sweep = deg(30), strikeEase = "lin", legs = true }
+		),
+		crush = crush(SPIDER_STANCE, { rear = deg(20), slam = deg(10), strikeEase = "lin", legs = true }),
+		pounce = pounce(
+			SPIDER_STANCE,
+			{ crouch = -0.08, dip = deg(6), wiggle = deg(4), legs = true, bounceEase = "inout", follow = 0.4 }
+		),
+		spit = throw(SPIDER_STANCE, { rear = deg(12), legs = true }),
 		spawn = spawn(SPIDER_STANCE, { legs = true }),
 		summon = summon(SPIDER_STANCE, { legs = true }),
 		deathFlip = deathFlip({ legs = true }),

@@ -11,7 +11,8 @@
 --   segment, carried on, meets the ground);
 -- * `group`: the tetrad (0 or 1: L1 R2 L3 R4 step together, R1 L2 R3 L4 half a cycle later), `rank` the leg's place
 --   from the front (a ripple runs back through the tetrad: each rank lifts a little later);
--- * `front`: how much the leg takes of a raise (the front legs held up and waving in a rear-up, a bite);
+-- * `front`: how high the leg is raised (0: it never is, it stands; the front pair and the palps are held up and wave
+--   in a rear-up and strike in a bite);
 -- * `palp`: a pedipalp (taps the ground in the idle, held up in a fight);
 -- * `fangs`: chelicerae chains (the joint first) with the side they open to (-1 left, 1 right, 0 forward);
 -- * `abdomen`: bones that pump with the venom (the `gr` control of the recipe) and breathe;
@@ -59,7 +60,7 @@ local RIGS: { [string]: { Rig } } = {
 			legs = {
 				{ name = "PL", bones = limb("tripo::2_Right_Limb_", 5), group = 1, rank = 0, front = 0.8, palp = true },
 				{ name = "L1", bones = limb("tripo::1_Right_Limb_", 6), group = 0, rank = 1, front = 1 },
-				{ name = "L2", bones = limb("tripo::0_Right_Limb_", 6), group = 1, rank = 2, front = 0.35 },
+				{ name = "L2", bones = limb("tripo::0_Right_Limb_", 6), group = 1, rank = 2, front = 0 },
 				{ name = "L3", bones = limb("tripo::3_Left_Limb_", 6), group = 0, rank = 3, front = 0 },
 				{ name = "L4", bones = limb("tripo::3_Right_Limb_", 6), group = 1, rank = 4, front = 0 },
 				{ name = "PR", bones = limb("tripo::1_Left_Limb_", 5), group = 0, rank = 0, front = 0.8, palp = true },
@@ -69,7 +70,7 @@ local RIGS: { [string]: { Rig } } = {
 					bones = { "tripo::Spine_0", "bone_13", "bone_14", "bone_15", "bone_16", "bone_17" },
 					group = 0,
 					rank = 2.5,
-					front = 0.2,
+					front = 0,
 				},
 				{
 					name = "R4",
