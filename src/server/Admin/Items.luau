@@ -464,6 +464,11 @@ commands.element = function(player, args)
 			reply(player, "admin.element.notMage")
 			return
 		end
+		-- 2026-10-31: a named weapon's own element (Staff of Endless Winter: ice) never changes
+		if def and def.element then
+			reply(player, "admin.element.fixed", { element = def.element })
+			return
+		end
 		if editWeapon(player, function(weapon)
 			weapon.el = element
 		end) then

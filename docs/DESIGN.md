@@ -1620,13 +1620,15 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   statystyki, linie, poziom przedmiotu, pojemność plecaka). Linia porównywana z linią o tym samym id (n-ta z n-tą);
   statystyka albo linia, którą ma tylko założony przedmiot, to czerwony wiersz straty w swojej grupie („-5 Siły”,
   „Obrona: -83”). Pierścień: słabszy z dwóch (i ten właśnie zastępuje „Załóż” bez wskazanego slotu), przy wolnym slocie
-  brak porównania; broń dwuręczna: broń i druga ręka. Tylko przedmiot, który postać może teraz założyć (klasa, poziom,
-  nie druga ręka pod dwuręczną), nigdy założony; nic założonego = bez dopisków. Działa w każdym oknie (plecak, sklep,
+  brak porównania; broń dwuręczna: broń i druga ręka. Tylko przedmiot klasy postaci (nie druga ręka pod dwuręczną),
+  nigdy założony; nic założonego = bez dopisków; przedmiot innej klasy nie ma też „Zastąpi: …”. Za wysoki poziom:
+  porównanie zostaje, poziom w linii „Rodzaj · …” jest czerwony (znalezisko na później). Działa w każdym oknie (plecak, sklep,
   aukcja, poczta, depozyt, handel, kowal, nagrody) i na dotyku; założony przedmiot ma swój tooltip na slocie ekwipunku.
 - **Krótkie opisy, szczegóły na życzenie** (właściciel 2026-10-21: „za dużo szczegółowych opisów, gra nieczytelna”):
   tooltip przedmiotu otwiera się skrócony, najwyżej 10 linii przy przedmiocie legendarnym: nazwa, linia
   „Rodzaj · …”, rzadkość, główna wartość w jednej linii („Obrażenia 191 · DPS 229,2” albo pancerz), pierwsze statystyki
-  (ile zmieści limit, reszta „+N więcej”), cecha i każdy efekt w jednej linii, cena tylko w sklepie / u kupca, na końcu
+  (ile zmieści limit, reszta „+N więcej”), cecha w jednej linii, efekty jedną linią samych nazw w kolorze stopnia (co robią:
+  pełny widok; 2026-10-31), cena tylko w sklepie / u kupca, na końcu
   „Alt: szczegóły” (PC) albo „Więcej ▸” (dotyk). Przytrzymany klawisz szczegółów (`item_details`, domyślnie Alt; Shift
   ma kamera) pokazuje pełny tooltip jak wyżej i przypina go (wskazanie linii otwiera jej panel), na dotyku „Więcej ▸” /
   „Mniej ▾” przełącza, nowy przedmiot zaczyna skrócony. Tooltip umiejętności na pasku: nazwa i ranga, jedno zdanie,

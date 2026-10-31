@@ -2835,6 +2835,7 @@ return {
 	["admin.ilvl.ok"] = "Weapon item level: {ilvl}.",
 	["admin.element.ok"] = "Weapon element: {element}.",
 	["admin.element.notMage"] = "That is not a mage weapon.",
+	["admin.element.fixed"] = "This weapon has a fixed element: {element}.",
 	["admin.mstats.info"] = "Level {level} monster: {hp} HP, attack {atk} (hits you for ~{hit} every {interval} s). You kill it in ~{seconds} s.",
 	["admin.sprint.info"] = "Sprint: {on}, walk speed {speed}.",
 

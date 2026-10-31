@@ -48,6 +48,7 @@ export type ItemDef = {
 	base: { [string]: number }?, -- base stats of a common +0 item (non-weapon stats)
 	weapon: WeaponStats?,
 	elemental: boolean?, -- mage weapon: instances carry an element (S18)
+	element: string?, -- 2026-10-31: a named elemental weapon's own element (its name and effects), never rolled
 	bonusGroup: string?, -- Data/Bonuses pool
 	trait: string?, -- S62: weapon / off-hand trait (Data/ItemTraits), from the base type
 	-- Name: a fixed key, or a generated prefix + base noun with Polish gender agreement.

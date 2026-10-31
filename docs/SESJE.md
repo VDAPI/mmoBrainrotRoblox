@@ -14147,3 +14147,11 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   żelaza), `Controllers/ItemController.luau` („Załóż” pierścienia bez slotu zastępuje ten sam słabszy pierścień),
   `Admin/Items.luau` (`/tooltip` z liczbami porównania). Klucz `tooltip.equipped` usunięty. Testy:
   `tests/itemcompare.spec.luau`.
+
+### Porównanie w tooltipie: poprawki po sprawdzeniu w Studio (2026-10-31)
+- Przedmiot innej klasy: bez zmian i bez „Zastąpi” (`TooltipModel` `classFits`); za wysoki poziom porównywany
+  (`ItemCompare.comparable` zamiast `canEquip`). Skrócony widok: efekty jedną linią nazw (`compactOf`). Testy:
+  `itemcompare.spec` (inna klasa, poziom, identyczna kopia: same „(=)”), `tooltip.spec`.
+- Stały żywioł broni nazwanej: `Data/Elements.weaponElement`, `ItemDef.element`, `Data/Items/Uniques`
+  (`opts.element = "ice"` Kostura Wiecznej Zimy), `ItemRoll` (`el` przy tworzeniu, `elementOf`), `ItemEffects`, `ItemIcons`,
+  `ItemName` (bez przyrostka), `/element` odmawia (`admin.element.fixed`). Test: `tests/namedelement.spec.luau`.
