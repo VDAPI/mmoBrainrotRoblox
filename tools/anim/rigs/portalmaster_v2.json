@@ -1,0 +1,1329 @@
+{
+ "model": "portalmaster",
+ "source": "portalmaster.fbx",
+ "units": "FBX scene units after Blender import",
+ "frame": "Blender->Roblox axes (Y up, Blender -Y front -> -Z); x,z centred on the mesh bounds, y = 0 at the lowest vertex",
+ "size": [
+  0.998,
+  0.943,
+  0.264
+ ],
+ "vertices": 5054,
+ "meshes": 1,
+ "armatures": 1,
+ "bones": [
+  {
+   "name": "mixamorig:Hips",
+   "parent": null,
+   "head": [
+    -0.002,
+    0.493,
+    -0.021
+   ],
+   "tail": [
+    -0.002,
+    0.55,
+    -0.021
+   ],
+   "children": 3,
+   "skinVerts": 390,
+   "skinCentroid": [
+    -0.008,
+    0.536,
+    -0.079
+   ]
+  },
+  {
+   "name": "mixamorig:LeftUpLeg",
+   "parent": "mixamorig:Hips",
+   "head": [
+    -0.06,
+    0.497,
+    -0.021
+   ],
+   "tail": [
+    -0.084,
+    0.267,
+    -0.01
+   ],
+   "children": 1,
+   "skinVerts": 811,
+   "skinCentroid": [
+    -0.098,
+    0.48,
+    -0.044
+   ]
+  },
+  {
+   "name": "mixamorig:LeftLeg",
+   "parent": "mixamorig:LeftUpLeg",
+   "head": [
+    -0.084,
+    0.267,
+    -0.01
+   ],
+   "tail": [
+    -0.107,
+    0.068,
+    0.033
+   ],
+   "children": 1,
+   "skinVerts": 291,
+   "skinCentroid": [
+    -0.092,
+    0.146,
+    0.01
+   ]
+  },
+  {
+   "name": "mixamorig:LeftFoot",
+   "parent": "mixamorig:LeftLeg",
+   "head": [
+    -0.107,
+    0.068,
+    0.033
+   ],
+   "tail": [
+    -0.131,
+    0.025,
+    -0.021
+   ],
+   "children": 1,
+   "skinVerts": 133,
+   "skinCentroid": [
+    -0.112,
+    0.029,
+    0.031
+   ]
+  },
+  {
+   "name": "mixamorig:LeftToeBase",
+   "parent": "mixamorig:LeftFoot",
+   "head": [
+    -0.131,
+    0.025,
+    -0.021
+   ],
+   "tail": [
+    -0.146,
+    0.025,
+    -0.058
+   ],
+   "children": 1,
+   "skinVerts": 100,
+   "skinCentroid": [
+    -0.149,
+    0.023,
+    -0.046
+   ]
+  },
+  {
+   "name": "mixamorig:LeftToe_End",
+   "parent": "mixamorig:LeftToeBase",
+   "head": [
+    -0.146,
+    0.025,
+    -0.058
+   ],
+   "tail": [
+    -0.162,
+    0.025,
+    -0.095
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:Spine",
+   "parent": "mixamorig:Hips",
+   "head": [
+    -0.002,
+    0.548,
+    -0.021
+   ],
+   "tail": [
+    -0.002,
+    0.618,
+    -0.014
+   ],
+   "children": 1,
+   "skinVerts": 447,
+   "skinCentroid": [
+    -0.001,
+    0.547,
+    -0.057
+   ]
+  },
+  {
+   "name": "mixamorig:Spine1",
+   "parent": "mixamorig:Spine",
+   "head": [
+    -0.002,
+    0.618,
+    -0.014
+   ],
+   "tail": [
+    -0.002,
+    0.684,
+    0.002
+   ],
+   "children": 1,
+   "skinVerts": 270,
+   "skinCentroid": [
+    0.009,
+    0.654,
+    -0.029
+   ]
+  },
+  {
+   "name": "mixamorig:Spine2",
+   "parent": "mixamorig:Spine1",
+   "head": [
+    -0.002,
+    0.684,
+    0.002
+   ],
+   "tail": [
+    -0.002,
+    0.768,
+    0.018
+   ],
+   "children": 3,
+   "skinVerts": 266,
+   "skinCentroid": [
+    0.001,
+    0.721,
+    -0.031
+   ]
+  },
+  {
+   "name": "mixamorig:LeftShoulder",
+   "parent": "mixamorig:Spine2",
+   "head": [
+    -0.029,
+    0.762,
+    0.018
+   ],
+   "tail": [
+    -0.103,
+    0.77,
+    0.018
+   ],
+   "children": 1,
+   "skinVerts": 234,
+   "skinCentroid": [
+    -0.087,
+    0.765,
+    0.012
+   ]
+  },
+  {
+   "name": "mixamorig:LeftArm",
+   "parent": "mixamorig:LeftShoulder",
+   "head": [
+    -0.103,
+    0.77,
+    0.018
+   ],
+   "tail": [
+    -0.251,
+    0.719,
+    0.006
+   ],
+   "children": 1,
+   "skinVerts": 333,
+   "skinCentroid": [
+    -0.188,
+    0.735,
+    0.004
+   ]
+  },
+  {
+   "name": "mixamorig:LeftForeArm",
+   "parent": "mixamorig:LeftArm",
+   "head": [
+    -0.251,
+    0.719,
+    0.006
+   ],
+   "tail": [
+    -0.372,
+    0.738,
+    -0.015
+   ],
+   "children": 1,
+   "skinVerts": 243,
+   "skinCentroid": [
+    -0.336,
+    0.704,
+    -0.016
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHand",
+   "parent": "mixamorig:LeftForeArm",
+   "head": [
+    -0.372,
+    0.738,
+    -0.015
+   ],
+   "tail": [
+    -0.438,
+    0.739,
+    -0.03
+   ],
+   "children": 5,
+   "skinVerts": 162,
+   "skinCentroid": [
+    -0.401,
+    0.733,
+    -0.018
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandIndex1",
+   "parent": "mixamorig:LeftHand",
+   "head": [
+    -0.443,
+    0.749,
+    -0.045
+   ],
+   "tail": [
+    -0.462,
+    0.748,
+    -0.05
+   ],
+   "children": 1,
+   "skinVerts": 64,
+   "skinCentroid": [
+    -0.449,
+    0.751,
+    -0.047
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandIndex2",
+   "parent": "mixamorig:LeftHandIndex1",
+   "head": [
+    -0.462,
+    0.748,
+    -0.05
+   ],
+   "tail": [
+    -0.478,
+    0.747,
+    -0.056
+   ],
+   "children": 1,
+   "skinVerts": 52,
+   "skinCentroid": [
+    -0.472,
+    0.749,
+    -0.053
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandIndex3",
+   "parent": "mixamorig:LeftHandIndex2",
+   "head": [
+    -0.478,
+    0.747,
+    -0.056
+   ],
+   "tail": [
+    -0.494,
+    0.746,
+    -0.061
+   ],
+   "children": 1,
+   "skinVerts": 29,
+   "skinCentroid": [
+    -0.487,
+    0.747,
+    -0.058
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandIndex4",
+   "parent": "mixamorig:LeftHandIndex3",
+   "head": [
+    -0.494,
+    0.746,
+    -0.061
+   ],
+   "tail": [
+    -0.511,
+    0.744,
+    -0.067
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:LeftHandMiddle1",
+   "parent": "mixamorig:LeftHand",
+   "head": [
+    -0.447,
+    0.74,
+    -0.034
+   ],
+   "tail": [
+    -0.466,
+    0.74,
+    -0.037
+   ],
+   "children": 1,
+   "skinVerts": 50,
+   "skinCentroid": [
+    -0.458,
+    0.741,
+    -0.035
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandMiddle2",
+   "parent": "mixamorig:LeftHandMiddle1",
+   "head": [
+    -0.466,
+    0.74,
+    -0.037
+   ],
+   "tail": [
+    -0.485,
+    0.739,
+    -0.043
+   ],
+   "children": 1,
+   "skinVerts": 50,
+   "skinCentroid": [
+    -0.478,
+    0.74,
+    -0.04
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandMiddle3",
+   "parent": "mixamorig:LeftHandMiddle2",
+   "head": [
+    -0.485,
+    0.739,
+    -0.043
+   ],
+   "tail": [
+    -0.503,
+    0.738,
+    -0.049
+   ],
+   "children": 1,
+   "skinVerts": 30,
+   "skinCentroid": [
+    -0.494,
+    0.738,
+    -0.046
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandMiddle4",
+   "parent": "mixamorig:LeftHandMiddle3",
+   "head": [
+    -0.503,
+    0.738,
+    -0.049
+   ],
+   "tail": [
+    -0.522,
+    0.737,
+    -0.054
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:LeftHandPinky1",
+   "parent": "mixamorig:LeftHand",
+   "head": [
+    -0.445,
+    0.721,
+    -0.011
+   ],
+   "tail": [
+    -0.46,
+    0.723,
+    -0.013
+   ],
+   "children": 1,
+   "skinVerts": 65,
+   "skinCentroid": [
+    -0.448,
+    0.722,
+    -0.011
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandPinky2",
+   "parent": "mixamorig:LeftHandPinky1",
+   "head": [
+    -0.46,
+    0.723,
+    -0.013
+   ],
+   "tail": [
+    -0.474,
+    0.725,
+    -0.017
+   ],
+   "children": 1,
+   "skinVerts": 54,
+   "skinCentroid": [
+    -0.468,
+    0.724,
+    -0.014
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandPinky3",
+   "parent": "mixamorig:LeftHandPinky2",
+   "head": [
+    -0.474,
+    0.725,
+    -0.017
+   ],
+   "tail": [
+    -0.487,
+    0.727,
+    -0.021
+   ],
+   "children": 1,
+   "skinVerts": 46,
+   "skinCentroid": [
+    -0.479,
+    0.726,
+    -0.018
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandPinky4",
+   "parent": "mixamorig:LeftHandPinky3",
+   "head": [
+    -0.487,
+    0.727,
+    -0.021
+   ],
+   "tail": [
+    -0.501,
+    0.729,
+    -0.025
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:LeftHandRing1",
+   "parent": "mixamorig:LeftHand",
+   "head": [
+    -0.449,
+    0.731,
+    -0.022
+   ],
+   "tail": [
+    -0.467,
+    0.732,
+    -0.025
+   ],
+   "children": 1,
+   "skinVerts": 59,
+   "skinCentroid": [
+    -0.457,
+    0.733,
+    -0.022
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandRing2",
+   "parent": "mixamorig:LeftHandRing1",
+   "head": [
+    -0.467,
+    0.732,
+    -0.025
+   ],
+   "tail": [
+    -0.485,
+    0.732,
+    -0.029
+   ],
+   "children": 1,
+   "skinVerts": 49,
+   "skinCentroid": [
+    -0.478,
+    0.733,
+    -0.026
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandRing3",
+   "parent": "mixamorig:LeftHandRing2",
+   "head": [
+    -0.485,
+    0.732,
+    -0.029
+   ],
+   "tail": [
+    -0.501,
+    0.732,
+    -0.033
+   ],
+   "children": 1,
+   "skinVerts": 33,
+   "skinCentroid": [
+    -0.492,
+    0.732,
+    -0.03
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandRing4",
+   "parent": "mixamorig:LeftHandRing3",
+   "head": [
+    -0.501,
+    0.732,
+    -0.033
+   ],
+   "tail": [
+    -0.517,
+    0.732,
+    -0.036
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:LeftHandThumb1",
+   "parent": "mixamorig:LeftHand",
+   "head": [
+    -0.392,
+    0.747,
+    -0.035
+   ],
+   "tail": [
+    -0.41,
+    0.756,
+    -0.052
+   ],
+   "children": 1,
+   "skinVerts": 142,
+   "skinCentroid": [
+    -0.392,
+    0.749,
+    -0.044
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandThumb2",
+   "parent": "mixamorig:LeftHandThumb1",
+   "head": [
+    -0.41,
+    0.756,
+    -0.052
+   ],
+   "tail": [
+    -0.423,
+    0.762,
+    -0.072
+   ],
+   "children": 1,
+   "skinVerts": 64,
+   "skinCentroid": [
+    -0.419,
+    0.76,
+    -0.064
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandThumb3",
+   "parent": "mixamorig:LeftHandThumb2",
+   "head": [
+    -0.423,
+    0.762,
+    -0.072
+   ],
+   "tail": [
+    -0.433,
+    0.765,
+    -0.087
+   ],
+   "children": 1,
+   "skinVerts": 42,
+   "skinCentroid": [
+    -0.429,
+    0.763,
+    -0.081
+   ]
+  },
+  {
+   "name": "mixamorig:LeftHandThumb4",
+   "parent": "mixamorig:LeftHandThumb3",
+   "head": [
+    -0.433,
+    0.765,
+    -0.087
+   ],
+   "tail": [
+    -0.443,
+    0.769,
+    -0.102
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:Neck",
+   "parent": "mixamorig:Spine2",
+   "head": [
+    -0.002,
+    0.77,
+    0.018
+   ],
+   "tail": [
+    -0.002,
+    0.832,
+    0.006
+   ],
+   "children": 1,
+   "skinVerts": 1705,
+   "skinCentroid": [
+    0.001,
+    0.803,
+    -0.05
+   ]
+  },
+  {
+   "name": "mixamorig:Head",
+   "parent": "mixamorig:Neck",
+   "head": [
+    -0.002,
+    0.832,
+    0.006
+   ],
+   "tail": [
+    -0.002,
+    0.981,
+    -0.022
+   ],
+   "children": 1,
+   "skinVerts": 1989,
+   "skinCentroid": [
+    0.001,
+    0.853,
+    -0.035
+   ]
+  },
+  {
+   "name": "mixamorig:HeadTop_End",
+   "parent": "mixamorig:Head",
+   "head": [
+    -0.002,
+    0.981,
+    -0.022
+   ],
+   "tail": [
+    -0.002,
+    1.13,
+    -0.05
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:RightShoulder",
+   "parent": "mixamorig:Spine2",
+   "head": [
+    0.025,
+    0.762,
+    0.018
+   ],
+   "tail": [
+    0.099,
+    0.77,
+    0.018
+   ],
+   "children": 1,
+   "skinVerts": 256,
+   "skinCentroid": [
+    0.082,
+    0.767,
+    0.007
+   ]
+  },
+  {
+   "name": "mixamorig:RightArm",
+   "parent": "mixamorig:RightShoulder",
+   "head": [
+    0.099,
+    0.77,
+    0.018
+   ],
+   "tail": [
+    0.248,
+    0.719,
+    0.006
+   ],
+   "children": 1,
+   "skinVerts": 331,
+   "skinCentroid": [
+    0.183,
+    0.731,
+    -0.001
+   ]
+  },
+  {
+   "name": "mixamorig:RightForeArm",
+   "parent": "mixamorig:RightArm",
+   "head": [
+    0.248,
+    0.719,
+    0.006
+   ],
+   "tail": [
+    0.361,
+    0.737,
+    -0.022
+   ],
+   "children": 1,
+   "skinVerts": 222,
+   "skinCentroid": [
+    0.336,
+    0.699,
+    -0.021
+   ]
+  },
+  {
+   "name": "mixamorig:RightHand",
+   "parent": "mixamorig:RightForeArm",
+   "head": [
+    0.361,
+    0.737,
+    -0.022
+   ],
+   "tail": [
+    0.434,
+    0.74,
+    -0.036
+   ],
+   "children": 5,
+   "skinVerts": 172,
+   "skinCentroid": [
+    0.395,
+    0.734,
+    -0.022
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandIndex1",
+   "parent": "mixamorig:RightHand",
+   "head": [
+    0.442,
+    0.747,
+    -0.047
+   ],
+   "tail": [
+    0.46,
+    0.746,
+    -0.05
+   ],
+   "children": 1,
+   "skinVerts": 59,
+   "skinCentroid": [
+    0.446,
+    0.749,
+    -0.049
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandIndex2",
+   "parent": "mixamorig:RightHandIndex1",
+   "head": [
+    0.46,
+    0.746,
+    -0.05
+   ],
+   "tail": [
+    0.477,
+    0.746,
+    -0.055
+   ],
+   "children": 1,
+   "skinVerts": 44,
+   "skinCentroid": [
+    0.47,
+    0.746,
+    -0.053
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandIndex3",
+   "parent": "mixamorig:RightHandIndex2",
+   "head": [
+    0.477,
+    0.746,
+    -0.055
+   ],
+   "tail": [
+    0.494,
+    0.745,
+    -0.06
+   ],
+   "children": 1,
+   "skinVerts": 36,
+   "skinCentroid": [
+    0.486,
+    0.746,
+    -0.056
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandIndex4",
+   "parent": "mixamorig:RightHandIndex3",
+   "head": [
+    0.494,
+    0.745,
+    -0.06
+   ],
+   "tail": [
+    0.511,
+    0.744,
+    -0.064
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:RightHandMiddle1",
+   "parent": "mixamorig:RightHand",
+   "head": [
+    0.445,
+    0.738,
+    -0.034
+   ],
+   "tail": [
+    0.465,
+    0.738,
+    -0.038
+   ],
+   "children": 1,
+   "skinVerts": 48,
+   "skinCentroid": [
+    0.456,
+    0.74,
+    -0.035
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandMiddle2",
+   "parent": "mixamorig:RightHandMiddle1",
+   "head": [
+    0.465,
+    0.738,
+    -0.038
+   ],
+   "tail": [
+    0.484,
+    0.736,
+    -0.042
+   ],
+   "children": 1,
+   "skinVerts": 44,
+   "skinCentroid": [
+    0.475,
+    0.737,
+    -0.04
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandMiddle3",
+   "parent": "mixamorig:RightHandMiddle2",
+   "head": [
+    0.484,
+    0.736,
+    -0.042
+   ],
+   "tail": [
+    0.503,
+    0.735,
+    -0.046
+   ],
+   "children": 1,
+   "skinVerts": 30,
+   "skinCentroid": [
+    0.494,
+    0.736,
+    -0.043
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandMiddle4",
+   "parent": "mixamorig:RightHandMiddle3",
+   "head": [
+    0.503,
+    0.735,
+    -0.046
+   ],
+   "tail": [
+    0.523,
+    0.734,
+    -0.05
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:RightHandPinky1",
+   "parent": "mixamorig:RightHand",
+   "head": [
+    0.442,
+    0.72,
+    -0.013
+   ],
+   "tail": [
+    0.458,
+    0.722,
+    -0.014
+   ],
+   "children": 1,
+   "skinVerts": 71,
+   "skinCentroid": [
+    0.445,
+    0.72,
+    -0.012
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandPinky2",
+   "parent": "mixamorig:RightHandPinky1",
+   "head": [
+    0.458,
+    0.722,
+    -0.014
+   ],
+   "tail": [
+    0.472,
+    0.724,
+    -0.015
+   ],
+   "children": 1,
+   "skinVerts": 56,
+   "skinCentroid": [
+    0.466,
+    0.722,
+    -0.014
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandPinky3",
+   "parent": "mixamorig:RightHandPinky2",
+   "head": [
+    0.472,
+    0.724,
+    -0.015
+   ],
+   "tail": [
+    0.486,
+    0.726,
+    -0.017
+   ],
+   "children": 1,
+   "skinVerts": 37,
+   "skinCentroid": [
+    0.478,
+    0.723,
+    -0.016
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandPinky4",
+   "parent": "mixamorig:RightHandPinky3",
+   "head": [
+    0.486,
+    0.726,
+    -0.017
+   ],
+   "tail": [
+    0.5,
+    0.728,
+    -0.018
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:RightHandRing1",
+   "parent": "mixamorig:RightHand",
+   "head": [
+    0.448,
+    0.73,
+    -0.023
+   ],
+   "tail": [
+    0.466,
+    0.73,
+    -0.026
+   ],
+   "children": 1,
+   "skinVerts": 58,
+   "skinCentroid": [
+    0.456,
+    0.73,
+    -0.023
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandRing2",
+   "parent": "mixamorig:RightHandRing1",
+   "head": [
+    0.466,
+    0.73,
+    -0.026
+   ],
+   "tail": [
+    0.482,
+    0.73,
+    -0.028
+   ],
+   "children": 1,
+   "skinVerts": 44,
+   "skinCentroid": [
+    0.476,
+    0.73,
+    -0.025
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandRing3",
+   "parent": "mixamorig:RightHandRing2",
+   "head": [
+    0.482,
+    0.73,
+    -0.028
+   ],
+   "tail": [
+    0.497,
+    0.73,
+    -0.03
+   ],
+   "children": 1,
+   "skinVerts": 35,
+   "skinCentroid": [
+    0.49,
+    0.73,
+    -0.027
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandRing4",
+   "parent": "mixamorig:RightHandRing3",
+   "head": [
+    0.497,
+    0.73,
+    -0.03
+   ],
+   "tail": [
+    0.512,
+    0.73,
+    -0.031
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:RightHandThumb1",
+   "parent": "mixamorig:RightHand",
+   "head": [
+    0.388,
+    0.748,
+    -0.042
+   ],
+   "tail": [
+    0.41,
+    0.757,
+    -0.058
+   ],
+   "children": 1,
+   "skinVerts": 90,
+   "skinCentroid": [
+    0.393,
+    0.752,
+    -0.051
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandThumb2",
+   "parent": "mixamorig:RightHandThumb1",
+   "head": [
+    0.41,
+    0.757,
+    -0.058
+   ],
+   "tail": [
+    0.426,
+    0.76,
+    -0.076
+   ],
+   "children": 1,
+   "skinVerts": 63,
+   "skinCentroid": [
+    0.421,
+    0.759,
+    -0.068
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandThumb3",
+   "parent": "mixamorig:RightHandThumb2",
+   "head": [
+    0.426,
+    0.76,
+    -0.076
+   ],
+   "tail": [
+    0.437,
+    0.763,
+    -0.09
+   ],
+   "children": 1,
+   "skinVerts": 40,
+   "skinCentroid": [
+    0.433,
+    0.762,
+    -0.084
+   ]
+  },
+  {
+   "name": "mixamorig:RightHandThumb4",
+   "parent": "mixamorig:RightHandThumb3",
+   "head": [
+    0.437,
+    0.763,
+    -0.09
+   ],
+   "tail": [
+    0.449,
+    0.765,
+    -0.104
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "mixamorig:RightUpLeg",
+   "parent": "mixamorig:Hips",
+   "head": [
+    0.057,
+    0.497,
+    -0.021
+   ],
+   "tail": [
+    0.08,
+    0.267,
+    -0.01
+   ],
+   "children": 1,
+   "skinVerts": 486,
+   "skinCentroid": [
+    0.065,
+    0.426,
+    -0.032
+   ]
+  },
+  {
+   "name": "mixamorig:RightLeg",
+   "parent": "mixamorig:RightUpLeg",
+   "head": [
+    0.08,
+    0.267,
+    -0.01
+   ],
+   "tail": [
+    0.103,
+    0.068,
+    0.033
+   ],
+   "children": 1,
+   "skinVerts": 323,
+   "skinCentroid": [
+    0.091,
+    0.146,
+    0.015
+   ]
+  },
+  {
+   "name": "mixamorig:RightFoot",
+   "parent": "mixamorig:RightLeg",
+   "head": [
+    0.103,
+    0.068,
+    0.033
+   ],
+   "tail": [
+    0.134,
+    0.025,
+    -0.021
+   ],
+   "children": 1,
+   "skinVerts": 142,
+   "skinCentroid": [
+    0.117,
+    0.028,
+    0.029
+   ]
+  },
+  {
+   "name": "mixamorig:RightToeBase",
+   "parent": "mixamorig:RightFoot",
+   "head": [
+    0.135,
+    0.025,
+    -0.021
+   ],
+   "tail": [
+    0.155,
+    0.025,
+    -0.058
+   ],
+   "children": 1,
+   "skinVerts": 92,
+   "skinCentroid": [
+    0.162,
+    0.026,
+    -0.04
+   ]
+  },
+  {
+   "name": "mixamorig:RightToe_End",
+   "parent": "mixamorig:RightToeBase",
+   "head": [
+    0.155,
+    0.025,
+    -0.058
+   ],
+   "tail": [
+    0.176,
+    0.025,
+    -0.095
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  }
+ ]
+}

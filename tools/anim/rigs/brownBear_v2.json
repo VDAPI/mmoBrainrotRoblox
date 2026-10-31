@@ -1,0 +1,1546 @@
+{
+ "model": "brownBear",
+ "source": "brownBear.fbx",
+ "units": "FBX scene units after Blender import",
+ "frame": "Blender->Roblox axes (Y up, Blender -Y front -> -Z); x,z centred on the mesh bounds, y = 0 at the lowest vertex",
+ "size": [
+  0.643,
+  0.967,
+  0.998
+ ],
+ "vertices": 2523,
+ "meshes": 1,
+ "armatures": 1,
+ "bones": [
+  {
+   "name": "BoneRoot",
+   "parent": null,
+   "head": [
+    -0.002,
+    0.368,
+    0.248
+   ],
+   "tail": [
+    -0.004,
+    0.369,
+    0.247
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "Hip",
+   "parent": "BoneRoot",
+   "head": [
+    -0.004,
+    0.369,
+    0.247
+   ],
+   "tail": [
+    -0.002,
+    0.413,
+    0.206
+   ],
+   "children": 2,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "Pelvis",
+   "parent": "Hip",
+   "head": [
+    -0.002,
+    0.397,
+    0.224
+   ],
+   "tail": [
+    0.131,
+    0.272,
+    0.155
+   ],
+   "children": 2,
+   "skinVerts": 434,
+   "skinCentroid": [
+    -0.0,
+    0.39,
+    0.38
+   ]
+  },
+  {
+   "name": "R_Thigh",
+   "parent": "Pelvis",
+   "head": [
+    0.158,
+    0.298,
+    0.17
+   ],
+   "tail": [
+    0.19,
+    0.187,
+    0.096
+   ],
+   "children": 2,
+   "skinVerts": 355,
+   "skinCentroid": [
+    0.207,
+    0.259,
+    0.264
+   ]
+  },
+  {
+   "name": "R_Calf",
+   "parent": "R_Thigh",
+   "head": [
+    0.201,
+    0.15,
+    0.072
+   ],
+   "tail": [
+    0.205,
+    0.095,
+    0.121
+   ],
+   "children": 3,
+   "skinVerts": 186,
+   "skinCentroid": [
+    0.227,
+    0.112,
+    0.169
+   ]
+  },
+  {
+   "name": "R_KneeShareBone",
+   "parent": "R_Calf",
+   "head": [
+    0.201,
+    0.149,
+    0.074
+   ],
+   "tail": [
+    0.219,
+    0.119,
+    0.139
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_Foot",
+   "parent": "R_Calf",
+   "head": [
+    0.209,
+    0.041,
+    0.17
+   ],
+   "tail": [
+    0.216,
+    0.018,
+    0.072
+   ],
+   "children": 1,
+   "skinVerts": 191,
+   "skinCentroid": [
+    0.233,
+    0.052,
+    0.163
+   ]
+  },
+  {
+   "name": "R_ToeBase",
+   "parent": "R_Foot",
+   "head": [
+    0.216,
+    0.018,
+    0.072
+   ],
+   "tail": [
+    0.224,
+    -0.006,
+    -0.025
+   ],
+   "children": 0,
+   "skinVerts": 47,
+   "skinCentroid": [
+    0.221,
+    0.018,
+    0.041
+   ]
+  },
+  {
+   "name": "R_CalfTwist01",
+   "parent": "R_Calf",
+   "head": [
+    0.205,
+    0.095,
+    0.121
+   ],
+   "tail": [
+    0.209,
+    0.041,
+    0.17
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_CalfTwist02",
+   "parent": "R_CalfTwist01",
+   "head": [
+    0.209,
+    0.041,
+    0.17
+   ],
+   "tail": [
+    0.212,
+    -0.014,
+    0.218
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_ThighTwist01",
+   "parent": "R_Thigh",
+   "head": [
+    0.179,
+    0.224,
+    0.121
+   ],
+   "tail": [
+    0.201,
+    0.15,
+    0.072
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_ThighTwist02",
+   "parent": "R_ThighTwist01",
+   "head": [
+    0.201,
+    0.15,
+    0.072
+   ],
+   "tail": [
+    0.222,
+    0.076,
+    0.023
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_Thigh",
+   "parent": "Pelvis",
+   "head": [
+    -0.162,
+    0.298,
+    0.17
+   ],
+   "tail": [
+    -0.194,
+    0.187,
+    0.17
+   ],
+   "children": 2,
+   "skinVerts": 344,
+   "skinCentroid": [
+    -0.207,
+    0.271,
+    0.26
+   ]
+  },
+  {
+   "name": "L_ThighTwist01",
+   "parent": "L_Thigh",
+   "head": [
+    -0.183,
+    0.224,
+    0.17
+   ],
+   "tail": [
+    -0.205,
+    0.15,
+    0.17
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_ThighTwist02",
+   "parent": "L_ThighTwist01",
+   "head": [
+    -0.205,
+    0.15,
+    0.17
+   ],
+   "tail": [
+    -0.226,
+    0.076,
+    0.17
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_Calf",
+   "parent": "L_Thigh",
+   "head": [
+    -0.205,
+    0.15,
+    0.17
+   ],
+   "tail": [
+    -0.209,
+    0.095,
+    0.17
+   ],
+   "children": 3,
+   "skinVerts": 215,
+   "skinCentroid": [
+    -0.232,
+    0.122,
+    0.201
+   ]
+  },
+  {
+   "name": "L_Foot",
+   "parent": "L_Calf",
+   "head": [
+    -0.212,
+    0.041,
+    0.17
+   ],
+   "tail": [
+    -0.22,
+    0.018,
+    0.072
+   ],
+   "children": 1,
+   "skinVerts": 159,
+   "skinCentroid": [
+    -0.24,
+    0.04,
+    0.144
+   ]
+  },
+  {
+   "name": "L_ToeBase",
+   "parent": "L_Foot",
+   "head": [
+    -0.22,
+    0.018,
+    0.072
+   ],
+   "tail": [
+    -0.228,
+    -0.006,
+    -0.025
+   ],
+   "children": 0,
+   "skinVerts": 52,
+   "skinCentroid": [
+    -0.225,
+    0.022,
+    0.036
+   ]
+  },
+  {
+   "name": "L_CalfTwist01",
+   "parent": "L_Calf",
+   "head": [
+    -0.209,
+    0.095,
+    0.17
+   ],
+   "tail": [
+    -0.212,
+    0.041,
+    0.17
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_CalfTwist02",
+   "parent": "L_CalfTwist01",
+   "head": [
+    -0.212,
+    0.041,
+    0.17
+   ],
+   "tail": [
+    -0.216,
+    -0.014,
+    0.17
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_KneeShareBone",
+   "parent": "L_Calf",
+   "head": [
+    -0.203,
+    0.151,
+    0.17
+   ],
+   "tail": [
+    -0.158,
+    0.182,
+    0.177
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "Waist",
+   "parent": "Hip",
+   "head": [
+    -0.002,
+    0.431,
+    0.189
+   ],
+   "tail": [
+    -0.002,
+    0.567,
+    0.076
+   ],
+   "children": 1,
+   "skinVerts": 382,
+   "skinCentroid": [
+    -0.004,
+    0.611,
+    0.275
+   ]
+  },
+  {
+   "name": "Spine01",
+   "parent": "Waist",
+   "head": [
+    -0.002,
+    0.567,
+    0.076
+   ],
+   "tail": [
+    -0.002,
+    0.653,
+    0.014
+   ],
+   "children": 1,
+   "skinVerts": 211,
+   "skinCentroid": [
+    -0.004,
+    0.742,
+    0.184
+   ]
+  },
+  {
+   "name": "Spine02",
+   "parent": "Spine01",
+   "head": [
+    -0.002,
+    0.653,
+    0.014
+   ],
+   "tail": [
+    -0.002,
+    0.73,
+    -0.069
+   ],
+   "children": 3,
+   "skinVerts": 349,
+   "skinCentroid": [
+    -0.002,
+    0.817,
+    0.045
+   ]
+  },
+  {
+   "name": "NeckTwist01",
+   "parent": "Spine02",
+   "head": [
+    -0.002,
+    0.754,
+    -0.096
+   ],
+   "tail": [
+    -0.002,
+    0.772,
+    -0.131
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "NeckTwist02",
+   "parent": "NeckTwist01",
+   "head": [
+    -0.002,
+    0.772,
+    -0.131
+   ],
+   "tail": [
+    -0.002,
+    0.789,
+    -0.166
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "Head",
+   "parent": "NeckTwist02",
+   "head": [
+    -0.002,
+    0.789,
+    -0.166
+   ],
+   "tail": [
+    -0.002,
+    0.708,
+    -0.306
+   ],
+   "children": 1,
+   "skinVerts": 1086,
+   "skinCentroid": [
+    -0.003,
+    0.779,
+    -0.334
+   ]
+  },
+  {
+   "name": "FacialBone",
+   "parent": "Head",
+   "head": [
+    -0.002,
+    0.708,
+    -0.306
+   ],
+   "tail": [
+    -0.002,
+    0.684,
+    -0.346
+   ],
+   "children": 2,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_Eye",
+   "parent": "FacialBone",
+   "head": [
+    0.045,
+    0.708,
+    -0.306
+   ],
+   "tail": [
+    0.092,
+    0.708,
+    -0.306
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_Eye",
+   "parent": "FacialBone",
+   "head": [
+    -0.049,
+    0.708,
+    -0.306
+   ],
+   "tail": [
+    -0.096,
+    0.708,
+    -0.306
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_Clavicle",
+   "parent": "Spine02",
+   "head": [
+    -0.057,
+    0.708,
+    -0.041
+   ],
+   "tail": [
+    -0.189,
+    0.602,
+    -0.025
+   ],
+   "children": 1,
+   "skinVerts": 335,
+   "skinCentroid": [
+    -0.144,
+    0.779,
+    0.024
+   ]
+  },
+  {
+   "name": "L_Upperarm",
+   "parent": "L_Clavicle",
+   "head": [
+    -0.189,
+    0.602,
+    -0.025
+   ],
+   "tail": [
+    -0.215,
+    0.5,
+    -0.049
+   ],
+   "children": 2,
+   "skinVerts": 141,
+   "skinCentroid": [
+    -0.234,
+    0.559,
+    -0.015
+   ]
+  },
+  {
+   "name": "L_Forearm",
+   "parent": "L_Upperarm",
+   "head": [
+    -0.224,
+    0.466,
+    -0.057
+   ],
+   "tail": [
+    -0.205,
+    0.409,
+    -0.099
+   ],
+   "children": 3,
+   "skinVerts": 115,
+   "skinCentroid": [
+    -0.224,
+    0.408,
+    -0.057
+   ]
+  },
+  {
+   "name": "L_ForearmTwist01",
+   "parent": "L_Forearm",
+   "head": [
+    -0.205,
+    0.41,
+    -0.099
+   ],
+   "tail": [
+    -0.185,
+    0.353,
+    -0.141
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_ForearmTwist02",
+   "parent": "L_ForearmTwist01",
+   "head": [
+    -0.185,
+    0.353,
+    -0.141
+   ],
+   "tail": [
+    -0.166,
+    0.297,
+    -0.184
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_ElbowShareBone",
+   "parent": "L_Forearm",
+   "head": [
+    -0.224,
+    0.467,
+    -0.056
+   ],
+   "tail": [
+    -0.184,
+    0.525,
+    -0.035
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_Hand",
+   "parent": "L_Forearm",
+   "head": [
+    -0.185,
+    0.353,
+    -0.141
+   ],
+   "tail": [
+    -0.158,
+    0.281,
+    -0.17
+   ],
+   "children": 5,
+   "skinVerts": 85,
+   "skinCentroid": [
+    -0.183,
+    0.335,
+    -0.138
+   ]
+  },
+  {
+   "name": "L_Pinky1",
+   "parent": "L_Hand",
+   "head": [
+    -0.213,
+    0.278,
+    -0.152
+   ],
+   "tail": [
+    -0.204,
+    0.262,
+    -0.145
+   ],
+   "children": 1,
+   "skinVerts": 40,
+   "skinCentroid": [
+    -0.219,
+    0.287,
+    -0.122
+   ]
+  },
+  {
+   "name": "L_Pinky2",
+   "parent": "L_Pinky1",
+   "head": [
+    -0.204,
+    0.262,
+    -0.145
+   ],
+   "tail": [
+    -0.196,
+    0.258,
+    -0.132
+   ],
+   "children": 1,
+   "skinVerts": 9,
+   "skinCentroid": [
+    -0.201,
+    0.258,
+    -0.14
+   ]
+  },
+  {
+   "name": "L_Pinky3",
+   "parent": "L_Pinky2",
+   "head": [
+    -0.196,
+    0.258,
+    -0.132
+   ],
+   "tail": [
+    -0.188,
+    0.253,
+    -0.118
+   ],
+   "children": 0,
+   "skinVerts": 12,
+   "skinCentroid": [
+    -0.194,
+    0.264,
+    -0.115
+   ]
+  },
+  {
+   "name": "L_Ring1",
+   "parent": "L_Hand",
+   "head": [
+    -0.189,
+    0.282,
+    -0.164
+   ],
+   "tail": [
+    -0.177,
+    0.259,
+    -0.161
+   ],
+   "children": 1,
+   "skinVerts": 13,
+   "skinCentroid": [
+    -0.191,
+    0.274,
+    -0.172
+   ]
+  },
+  {
+   "name": "L_Ring2",
+   "parent": "L_Ring1",
+   "head": [
+    -0.177,
+    0.259,
+    -0.161
+   ],
+   "tail": [
+    -0.169,
+    0.248,
+    -0.146
+   ],
+   "children": 1,
+   "skinVerts": 9,
+   "skinCentroid": [
+    -0.172,
+    0.253,
+    -0.155
+   ]
+  },
+  {
+   "name": "L_Ring3",
+   "parent": "L_Ring2",
+   "head": [
+    -0.169,
+    0.248,
+    -0.146
+   ],
+   "tail": [
+    -0.161,
+    0.237,
+    -0.131
+   ],
+   "children": 0,
+   "skinVerts": 5,
+   "skinCentroid": [
+    -0.163,
+    0.24,
+    -0.133
+   ]
+  },
+  {
+   "name": "L_Mid1",
+   "parent": "L_Hand",
+   "head": [
+    -0.158,
+    0.288,
+    -0.171
+   ],
+   "tail": [
+    -0.147,
+    0.261,
+    -0.165
+   ],
+   "children": 1,
+   "skinVerts": 21,
+   "skinCentroid": [
+    -0.154,
+    0.281,
+    -0.181
+   ]
+  },
+  {
+   "name": "L_Mid2",
+   "parent": "L_Mid1",
+   "head": [
+    -0.147,
+    0.261,
+    -0.165
+   ],
+   "tail": [
+    -0.139,
+    0.254,
+    -0.146
+   ],
+   "children": 1,
+   "skinVerts": 7,
+   "skinCentroid": [
+    -0.142,
+    0.256,
+    -0.158
+   ]
+  },
+  {
+   "name": "L_Mid3",
+   "parent": "L_Mid2",
+   "head": [
+    -0.139,
+    0.254,
+    -0.146
+   ],
+   "tail": [
+    -0.131,
+    0.247,
+    -0.127
+   ],
+   "children": 0,
+   "skinVerts": 9,
+   "skinCentroid": [
+    -0.131,
+    0.251,
+    -0.132
+   ]
+  },
+  {
+   "name": "L_Index1",
+   "parent": "L_Hand",
+   "head": [
+    -0.111,
+    0.301,
+    -0.171
+   ],
+   "tail": [
+    -0.104,
+    0.277,
+    -0.161
+   ],
+   "children": 1,
+   "skinVerts": 33,
+   "skinCentroid": [
+    -0.115,
+    0.291,
+    -0.173
+   ]
+  },
+  {
+   "name": "L_Index2",
+   "parent": "L_Index1",
+   "head": [
+    -0.104,
+    0.277,
+    -0.161
+   ],
+   "tail": [
+    -0.1,
+    0.263,
+    -0.148
+   ],
+   "children": 1,
+   "skinVerts": 22,
+   "skinCentroid": [
+    -0.107,
+    0.267,
+    -0.146
+   ]
+  },
+  {
+   "name": "L_Index3",
+   "parent": "L_Index2",
+   "head": [
+    -0.1,
+    0.263,
+    -0.148
+   ],
+   "tail": [
+    -0.096,
+    0.249,
+    -0.135
+   ],
+   "children": 0,
+   "skinVerts": 14,
+   "skinCentroid": [
+    -0.108,
+    0.262,
+    -0.136
+   ]
+  },
+  {
+   "name": "L_Thumb1",
+   "parent": "L_Hand",
+   "head": [
+    -0.108,
+    0.316,
+    -0.156
+   ],
+   "tail": [
+    -0.101,
+    0.306,
+    -0.146
+   ],
+   "children": 1,
+   "skinVerts": 34,
+   "skinCentroid": [
+    -0.109,
+    0.32,
+    -0.14
+   ]
+  },
+  {
+   "name": "L_Thumb2",
+   "parent": "L_Thumb1",
+   "head": [
+    -0.101,
+    0.306,
+    -0.146
+   ],
+   "tail": [
+    -0.099,
+    0.299,
+    -0.141
+   ],
+   "children": 1,
+   "skinVerts": 20,
+   "skinCentroid": [
+    -0.098,
+    0.308,
+    -0.128
+   ]
+  },
+  {
+   "name": "L_Thumb3",
+   "parent": "L_Thumb2",
+   "head": [
+    -0.099,
+    0.299,
+    -0.141
+   ],
+   "tail": [
+    -0.096,
+    0.291,
+    -0.137
+   ],
+   "children": 0,
+   "skinVerts": 9,
+   "skinCentroid": [
+    -0.097,
+    0.297,
+    -0.118
+   ]
+  },
+  {
+   "name": "L_UpperarmTwist01",
+   "parent": "L_Upperarm",
+   "head": [
+    -0.207,
+    0.534,
+    -0.041
+   ],
+   "tail": [
+    -0.224,
+    0.466,
+    -0.057
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "L_UpperarmTwist02",
+   "parent": "L_UpperarmTwist01",
+   "head": [
+    -0.224,
+    0.466,
+    -0.057
+   ],
+   "tail": [
+    -0.242,
+    0.398,
+    -0.072
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_Clavicle",
+   "parent": "Spine02",
+   "head": [
+    0.053,
+    0.708,
+    -0.041
+   ],
+   "tail": [
+    0.185,
+    0.602,
+    -0.025
+   ],
+   "children": 1,
+   "skinVerts": 352,
+   "skinCentroid": [
+    0.14,
+    0.78,
+    0.034
+   ]
+  },
+  {
+   "name": "R_Upperarm",
+   "parent": "R_Clavicle",
+   "head": [
+    0.185,
+    0.602,
+    -0.025
+   ],
+   "tail": [
+    0.212,
+    0.5,
+    -0.049
+   ],
+   "children": 2,
+   "skinVerts": 131,
+   "skinCentroid": [
+    0.23,
+    0.556,
+    -0.018
+   ]
+  },
+  {
+   "name": "R_Forearm",
+   "parent": "R_Upperarm",
+   "head": [
+    0.22,
+    0.466,
+    -0.057
+   ],
+   "tail": [
+    0.196,
+    0.42,
+    -0.094
+   ],
+   "children": 3,
+   "skinVerts": 104,
+   "skinCentroid": [
+    0.227,
+    0.417,
+    -0.049
+   ]
+  },
+  {
+   "name": "R_ElbowShareBone",
+   "parent": "R_Forearm",
+   "head": [
+    0.221,
+    0.466,
+    -0.057
+   ],
+   "tail": [
+    0.28,
+    0.473,
+    -0.083
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_ForearmTwist01",
+   "parent": "R_Forearm",
+   "head": [
+    0.196,
+    0.42,
+    -0.094
+   ],
+   "tail": [
+    0.172,
+    0.374,
+    -0.131
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_ForearmTwist02",
+   "parent": "R_ForearmTwist01",
+   "head": [
+    0.172,
+    0.374,
+    -0.131
+   ],
+   "tail": [
+    0.148,
+    0.328,
+    -0.168
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_Hand",
+   "parent": "R_Forearm",
+   "head": [
+    0.172,
+    0.374,
+    -0.131
+   ],
+   "tail": [
+    0.158,
+    0.298,
+    -0.164
+   ],
+   "children": 5,
+   "skinVerts": 81,
+   "skinCentroid": [
+    0.188,
+    0.349,
+    -0.136
+   ]
+  },
+  {
+   "name": "R_Ring1",
+   "parent": "R_Hand",
+   "head": [
+    0.217,
+    0.291,
+    -0.156
+   ],
+   "tail": [
+    0.21,
+    0.264,
+    -0.149
+   ],
+   "children": 1,
+   "skinVerts": 17,
+   "skinCentroid": [
+    0.217,
+    0.292,
+    -0.154
+   ]
+  },
+  {
+   "name": "R_Ring2",
+   "parent": "R_Ring1",
+   "head": [
+    0.21,
+    0.264,
+    -0.149
+   ],
+   "tail": [
+    0.201,
+    0.261,
+    -0.131
+   ],
+   "children": 1,
+   "skinVerts": 11,
+   "skinCentroid": [
+    0.202,
+    0.268,
+    -0.132
+   ]
+  },
+  {
+   "name": "R_Ring3",
+   "parent": "R_Ring2",
+   "head": [
+    0.201,
+    0.261,
+    -0.131
+   ],
+   "tail": [
+    0.192,
+    0.258,
+    -0.112
+   ],
+   "children": 0,
+   "skinVerts": 7,
+   "skinCentroid": [
+    0.193,
+    0.267,
+    -0.115
+   ]
+  },
+  {
+   "name": "R_Mid1",
+   "parent": "R_Hand",
+   "head": [
+    0.188,
+    0.291,
+    -0.165
+   ],
+   "tail": [
+    0.183,
+    0.266,
+    -0.156
+   ],
+   "children": 1,
+   "skinVerts": 11,
+   "skinCentroid": [
+    0.186,
+    0.282,
+    -0.168
+   ]
+  },
+  {
+   "name": "R_Mid2",
+   "parent": "R_Mid1",
+   "head": [
+    0.183,
+    0.266,
+    -0.156
+   ],
+   "tail": [
+    0.173,
+    0.26,
+    -0.139
+   ],
+   "children": 1,
+   "skinVerts": 8,
+   "skinCentroid": [
+    0.175,
+    0.262,
+    -0.147
+   ]
+  },
+  {
+   "name": "R_Mid3",
+   "parent": "R_Mid2",
+   "head": [
+    0.173,
+    0.26,
+    -0.139
+   ],
+   "tail": [
+    0.163,
+    0.254,
+    -0.123
+   ],
+   "children": 0,
+   "skinVerts": 5,
+   "skinCentroid": [
+    0.166,
+    0.259,
+    -0.129
+   ]
+  },
+  {
+   "name": "R_Thumb1",
+   "parent": "R_Hand",
+   "head": [
+    0.128,
+    0.341,
+    -0.136
+   ],
+   "tail": [
+    0.102,
+    0.327,
+    -0.131
+   ],
+   "children": 1,
+   "skinVerts": 45,
+   "skinCentroid": [
+    0.118,
+    0.328,
+    -0.134
+   ]
+  },
+  {
+   "name": "R_Thumb2",
+   "parent": "R_Thumb1",
+   "head": [
+    0.102,
+    0.327,
+    -0.131
+   ],
+   "tail": [
+    0.099,
+    0.312,
+    -0.123
+   ],
+   "children": 1,
+   "skinVerts": 26,
+   "skinCentroid": [
+    0.099,
+    0.316,
+    -0.131
+   ]
+  },
+  {
+   "name": "R_Thumb3",
+   "parent": "R_Thumb2",
+   "head": [
+    0.099,
+    0.312,
+    -0.123
+   ],
+   "tail": [
+    0.095,
+    0.297,
+    -0.116
+   ],
+   "children": 0,
+   "skinVerts": 11,
+   "skinCentroid": [
+    0.099,
+    0.303,
+    -0.116
+   ]
+  },
+  {
+   "name": "R_Index1",
+   "parent": "R_Hand",
+   "head": [
+    0.148,
+    0.31,
+    -0.165
+   ],
+   "tail": [
+    0.142,
+    0.282,
+    -0.159
+   ],
+   "children": 1,
+   "skinVerts": 47,
+   "skinCentroid": [
+    0.123,
+    0.288,
+    -0.16
+   ]
+  },
+  {
+   "name": "R_Index2",
+   "parent": "R_Index1",
+   "head": [
+    0.142,
+    0.282,
+    -0.159
+   ],
+   "tail": [
+    0.136,
+    0.268,
+    -0.145
+   ],
+   "children": 1,
+   "skinVerts": 30,
+   "skinCentroid": [
+    0.128,
+    0.269,
+    -0.147
+   ]
+  },
+  {
+   "name": "R_Index3",
+   "parent": "R_Index2",
+   "head": [
+    0.136,
+    0.268,
+    -0.145
+   ],
+   "tail": [
+    0.13,
+    0.255,
+    -0.13
+   ],
+   "children": 0,
+   "skinVerts": 20,
+   "skinCentroid": [
+    0.127,
+    0.262,
+    -0.13
+   ]
+  },
+  {
+   "name": "R_Pinky1",
+   "parent": "R_Hand",
+   "head": [
+    0.226,
+    0.291,
+    -0.139
+   ],
+   "tail": [
+    0.222,
+    0.276,
+    -0.131
+   ],
+   "children": 1,
+   "skinVerts": 35,
+   "skinCentroid": [
+    0.222,
+    0.299,
+    -0.108
+   ]
+  },
+  {
+   "name": "R_Pinky2",
+   "parent": "R_Pinky1",
+   "head": [
+    0.222,
+    0.276,
+    -0.131
+   ],
+   "tail": [
+    0.216,
+    0.264,
+    -0.123
+   ],
+   "children": 1,
+   "skinVerts": 15,
+   "skinCentroid": [
+    0.215,
+    0.299,
+    -0.092
+   ]
+  },
+  {
+   "name": "R_Pinky3",
+   "parent": "R_Pinky2",
+   "head": [
+    0.216,
+    0.264,
+    -0.123
+   ],
+   "tail": [
+    0.21,
+    0.253,
+    -0.114
+   ],
+   "children": 0,
+   "skinVerts": 10,
+   "skinCentroid": [
+    0.214,
+    0.302,
+    -0.085
+   ]
+  },
+  {
+   "name": "R_UpperarmTwist01",
+   "parent": "R_Upperarm",
+   "head": [
+    0.203,
+    0.534,
+    -0.041
+   ],
+   "tail": [
+    0.22,
+    0.466,
+    -0.057
+   ],
+   "children": 1,
+   "skinVerts": 0,
+   "skinCentroid": null
+  },
+  {
+   "name": "R_UpperarmTwist02",
+   "parent": "R_UpperarmTwist01",
+   "head": [
+    0.22,
+    0.466,
+    -0.057
+   ],
+   "tail": [
+    0.238,
+    0.398,
+    -0.072
+   ],
+   "children": 0,
+   "skinVerts": 0,
+   "skinCentroid": null
+  }
+ ]
+}

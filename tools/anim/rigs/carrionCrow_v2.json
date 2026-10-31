@@ -1,0 +1,1423 @@
+{
+ "model": "carrionCrow",
+ "source": "carrionCrow.fbx",
+ "units": "FBX scene units after Blender import",
+ "frame": "Blender->Roblox axes (Y up, Blender -Y front -> -Z); x,z centred on the mesh bounds, y = 0 at the lowest vertex",
+ "size": [
+  0.998,
+  0.58,
+  0.447
+ ],
+ "vertices": 4979,
+ "meshes": 1,
+ "armatures": 1,
+ "bones": [
+  {
+   "name": "tripo::Root",
+   "parent": null,
+   "head": [
+    -0.0,
+    0.047,
+    0.0
+   ],
+   "tail": [
+    -0.0,
+    0.219,
+    0.0
+   ],
+   "children": 12,
+   "skinVerts": 738,
+   "skinCentroid": [
+    -0.024,
+    0.147,
+    -0.036
+   ]
+  },
+  {
+   "name": "bone_1",
+   "parent": "tripo::Root",
+   "head": [
+    -0.011,
+    0.147,
+    0.074
+   ],
+   "tail": [
+    -0.011,
+    0.05,
+    0.216
+   ],
+   "children": 0,
+   "skinVerts": 103,
+   "skinCentroid": [
+    -0.027,
+    0.139,
+    0.059
+   ]
+  },
+  {
+   "name": "tripo::Head_0",
+   "parent": "tripo::Root",
+   "head": [
+    -0.011,
+    0.244,
+    -0.071
+   ],
+   "tail": [
+    -0.008,
+    0.318,
+    -0.074
+   ],
+   "children": 1,
+   "skinVerts": 918,
+   "skinCentroid": [
+    -0.006,
+    0.263,
+    -0.087
+   ]
+  },
+  {
+   "name": "tripo::Head_1",
+   "parent": "tripo::Head_0",
+   "head": [
+    -0.008,
+    0.318,
+    -0.074
+   ],
+   "tail": [
+    -0.009,
+    0.355,
+    -0.108
+   ],
+   "children": 3,
+   "skinVerts": 789,
+   "skinCentroid": [
+    -0.004,
+    0.321,
+    -0.087
+   ]
+  },
+  {
+   "name": "tripo::Spine_0",
+   "parent": "tripo::Head_1",
+   "head": [
+    -0.056,
+    0.318,
+    -0.056
+   ],
+   "tail": [
+    -0.108,
+    0.325,
+    -0.022
+   ],
+   "children": 1,
+   "skinVerts": 264,
+   "skinCentroid": [
+    -0.073,
+    0.314,
+    -0.066
+   ]
+  },
+  {
+   "name": "bone_22",
+   "parent": "tripo::Spine_0",
+   "head": [
+    -0.108,
+    0.325,
+    -0.022
+   ],
+   "tail": [
+    -0.178,
+    0.403,
+    -0.059
+   ],
+   "children": 1,
+   "skinVerts": 465,
+   "skinCentroid": [
+    -0.156,
+    0.346,
+    -0.033
+   ]
+  },
+  {
+   "name": "bone_23",
+   "parent": "bone_22",
+   "head": [
+    -0.178,
+    0.403,
+    -0.059
+   ],
+   "tail": [
+    -0.265,
+    0.435,
+    -0.046
+   ],
+   "children": 2,
+   "skinVerts": 430,
+   "skinCentroid": [
+    -0.231,
+    0.418,
+    -0.067
+   ]
+  },
+  {
+   "name": "bone_24",
+   "parent": "bone_23",
+   "head": [
+    -0.286,
+    0.448,
+    -0.048
+   ],
+   "tail": [
+    -0.363,
+    0.488,
+    -0.035
+   ],
+   "children": 3,
+   "skinVerts": 257,
+   "skinCentroid": [
+    -0.314,
+    0.448,
+    -0.046
+   ]
+  },
+  {
+   "name": "bone_25",
+   "parent": "bone_24",
+   "head": [
+    -0.353,
+    0.489,
+    -0.03
+   ],
+   "tail": [
+    -0.39,
+    0.5,
+    -0.045
+   ],
+   "children": 1,
+   "skinVerts": 10,
+   "skinCentroid": [
+    -0.371,
+    0.489,
+    -0.048
+   ]
+  },
+  {
+   "name": "bone_26",
+   "parent": "bone_25",
+   "head": [
+    -0.39,
+    0.5,
+    -0.045
+   ],
+   "tail": [
+    -0.434,
+    0.537,
+    -0.048
+   ],
+   "children": 1,
+   "skinVerts": 24,
+   "skinCentroid": [
+    -0.396,
+    0.529,
+    -0.069
+   ]
+  },
+  {
+   "name": "bone_27",
+   "parent": "bone_26",
+   "head": [
+    -0.434,
+    0.537,
+    -0.048
+   ],
+   "tail": [
+    -0.479,
+    0.574,
+    -0.052
+   ],
+   "children": 0,
+   "skinVerts": 70,
+   "skinCentroid": [
+    -0.266,
+    0.559,
+    -0.076
+   ]
+  },
+  {
+   "name": "bone_28",
+   "parent": "bone_24",
+   "head": [
+    -0.401,
+    0.444,
+    -0.0
+   ],
+   "tail": [
+    -0.46,
+    0.481,
+    0.018
+   ],
+   "children": 1,
+   "skinVerts": 107,
+   "skinCentroid": [
+    -0.423,
+    0.451,
+    0.008
+   ]
+  },
+  {
+   "name": "bone_29",
+   "parent": "bone_28",
+   "head": [
+    -0.46,
+    0.481,
+    0.018
+   ],
+   "tail": [
+    -0.52,
+    0.518,
+    0.037
+   ],
+   "children": 0,
+   "skinVerts": 3,
+   "skinCentroid": [
+    -0.433,
+    0.362,
+    0.085
+   ]
+  },
+  {
+   "name": "bone_30",
+   "parent": "bone_24",
+   "head": [
+    -0.334,
+    0.477,
+    -0.059
+   ],
+   "tail": [
+    -0.353,
+    0.503,
+    -0.067
+   ],
+   "children": 1,
+   "skinVerts": 28,
+   "skinCentroid": [
+    -0.331,
+    0.478,
+    -0.065
+   ]
+  },
+  {
+   "name": "bone_31",
+   "parent": "bone_30",
+   "head": [
+    -0.353,
+    0.503,
+    -0.067
+   ],
+   "tail": [
+    -0.371,
+    0.529,
+    -0.074
+   ],
+   "children": 0,
+   "skinVerts": 7,
+   "skinCentroid": [
+    -0.364,
+    0.513,
+    -0.076
+   ]
+  },
+  {
+   "name": "bone_32",
+   "parent": "bone_23",
+   "head": [
+    -0.227,
+    0.381,
+    -0.015
+   ],
+   "tail": [
+    -0.252,
+    0.337,
+    0.03
+   ],
+   "children": 1,
+   "skinVerts": 340,
+   "skinCentroid": [
+    -0.224,
+    0.354,
+    0.003
+   ]
+  },
+  {
+   "name": "bone_33",
+   "parent": "bone_32",
+   "head": [
+    -0.252,
+    0.337,
+    0.03
+   ],
+   "tail": [
+    -0.282,
+    0.27,
+    0.085
+   ],
+   "children": 1,
+   "skinVerts": 339,
+   "skinCentroid": [
+    -0.312,
+    0.323,
+    0.062
+   ]
+  },
+  {
+   "name": "bone_34",
+   "parent": "bone_33",
+   "head": [
+    -0.282,
+    0.27,
+    0.085
+   ],
+   "tail": [
+    -0.312,
+    0.203,
+    0.141
+   ],
+   "children": 0,
+   "skinVerts": 117,
+   "skinCentroid": [
+    -0.331,
+    0.299,
+    0.088
+   ]
+  },
+  {
+   "name": "tripo::Head_2",
+   "parent": "tripo::Head_1",
+   "head": [
+    -0.008,
+    0.351,
+    -0.108
+   ],
+   "tail": [
+    0.003,
+    0.333,
+    -0.148
+   ],
+   "children": 1,
+   "skinVerts": 1264,
+   "skinCentroid": [
+    -0.003,
+    0.366,
+    -0.141
+   ]
+  },
+  {
+   "name": "tripo::Head_3",
+   "parent": "tripo::Head_2",
+   "head": [
+    0.003,
+    0.333,
+    -0.148
+   ],
+   "tail": [
+    0.015,
+    0.314,
+    -0.189
+   ],
+   "children": 0,
+   "skinVerts": 1199,
+   "skinCentroid": [
+    -0.006,
+    0.368,
+    -0.134
+   ]
+  },
+  {
+   "name": "bone_6",
+   "parent": "tripo::Head_1",
+   "head": [
+    0.041,
+    0.311,
+    -0.059
+   ],
+   "tail": [
+    0.092,
+    0.314,
+    -0.026
+   ],
+   "children": 1,
+   "skinVerts": 164,
+   "skinCentroid": [
+    0.09,
+    0.311,
+    -0.051
+   ]
+  },
+  {
+   "name": "bone_7",
+   "parent": "bone_6",
+   "head": [
+    0.092,
+    0.314,
+    -0.026
+   ],
+   "tail": [
+    0.174,
+    0.392,
+    -0.063
+   ],
+   "children": 1,
+   "skinVerts": 380,
+   "skinCentroid": [
+    0.145,
+    0.339,
+    -0.044
+   ]
+  },
+  {
+   "name": "bone_8",
+   "parent": "bone_7",
+   "head": [
+    0.174,
+    0.392,
+    -0.063
+   ],
+   "tail": [
+    0.258,
+    0.42,
+    -0.053
+   ],
+   "children": 2,
+   "skinVerts": 412,
+   "skinCentroid": [
+    0.221,
+    0.403,
+    -0.077
+   ]
+  },
+  {
+   "name": "bone_18",
+   "parent": "bone_8",
+   "head": [
+    0.211,
+    0.366,
+    -0.019
+   ],
+   "tail": [
+    0.23,
+    0.318,
+    0.018
+   ],
+   "children": 1,
+   "skinVerts": 275,
+   "skinCentroid": [
+    0.231,
+    0.348,
+    -0.003
+   ]
+  },
+  {
+   "name": "bone_19",
+   "parent": "bone_18",
+   "head": [
+    0.23,
+    0.318,
+    0.018
+   ],
+   "tail": [
+    0.256,
+    0.255,
+    0.074
+   ],
+   "children": 1,
+   "skinVerts": 297,
+   "skinCentroid": [
+    0.306,
+    0.305,
+    0.058
+   ]
+  },
+  {
+   "name": "bone_20",
+   "parent": "bone_19",
+   "head": [
+    0.256,
+    0.255,
+    0.074
+   ],
+   "tail": [
+    0.282,
+    0.192,
+    0.13
+   ],
+   "children": 0,
+   "skinVerts": 141,
+   "skinCentroid": [
+    0.308,
+    0.274,
+    0.083
+   ]
+  },
+  {
+   "name": "bone_9",
+   "parent": "bone_8",
+   "head": [
+    0.282,
+    0.433,
+    -0.056
+   ],
+   "tail": [
+    0.36,
+    0.466,
+    -0.058
+   ],
+   "children": 4,
+   "skinVerts": 298,
+   "skinCentroid": [
+    0.314,
+    0.426,
+    -0.046
+   ]
+  },
+  {
+   "name": "bone_10",
+   "parent": "bone_9",
+   "head": [
+    0.356,
+    0.463,
+    -0.052
+   ],
+   "tail": [
+    0.397,
+    0.481,
+    -0.052
+   ],
+   "children": 1,
+   "skinVerts": 18,
+   "skinCentroid": [
+    0.379,
+    0.465,
+    -0.049
+   ]
+  },
+  {
+   "name": "bone_11",
+   "parent": "bone_10",
+   "head": [
+    0.397,
+    0.481,
+    -0.052
+   ],
+   "tail": [
+    0.441,
+    0.522,
+    -0.059
+   ],
+   "children": 1,
+   "skinVerts": 43,
+   "skinCentroid": [
+    0.433,
+    0.525,
+    -0.073
+   ]
+  },
+  {
+   "name": "bone_12",
+   "parent": "bone_11",
+   "head": [
+    0.441,
+    0.522,
+    -0.059
+   ],
+   "tail": [
+    0.486,
+    0.563,
+    -0.067
+   ],
+   "children": 0,
+   "skinVerts": 67,
+   "skinCentroid": [
+    0.272,
+    0.533,
+    -0.063
+   ]
+  },
+  {
+   "name": "bone_13",
+   "parent": "bone_9",
+   "head": [
+    0.389,
+    0.403,
+    0.007
+   ],
+   "tail": [
+    0.456,
+    0.414,
+    0.03
+   ],
+   "children": 1,
+   "skinVerts": 73,
+   "skinCentroid": [
+    0.407,
+    0.4,
+    0.018
+   ]
+  },
+  {
+   "name": "bone_14",
+   "parent": "bone_13",
+   "head": [
+    0.456,
+    0.414,
+    0.03
+   ],
+   "tail": [
+    0.523,
+    0.426,
+    0.052
+   ],
+   "children": 0,
+   "skinVerts": 19,
+   "skinCentroid": [
+    0.481,
+    0.457,
+    0.007
+   ]
+  },
+  {
+   "name": "bone_15",
+   "parent": "bone_9",
+   "head": [
+    0.345,
+    0.466,
+    -0.067
+   ],
+   "tail": [
+    0.356,
+    0.485,
+    -0.071
+   ],
+   "children": 1,
+   "skinVerts": 3,
+   "skinCentroid": [
+    0.352,
+    0.472,
+    -0.069
+   ]
+  },
+  {
+   "name": "bone_16",
+   "parent": "bone_15",
+   "head": [
+    0.356,
+    0.485,
+    -0.071
+   ],
+   "tail": [
+    0.367,
+    0.503,
+    -0.074
+   ],
+   "children": 0,
+   "skinVerts": 6,
+   "skinCentroid": [
+    0.368,
+    0.491,
+    -0.076
+   ]
+  },
+  {
+   "name": "bone_17",
+   "parent": "bone_9",
+   "head": [
+    0.322,
+    0.466,
+    -0.082
+   ],
+   "tail": [
+    0.381,
+    0.515,
+    -0.119
+   ],
+   "children": 0,
+   "skinVerts": 50,
+   "skinCentroid": [
+    0.322,
+    0.461,
+    -0.078
+   ]
+  },
+  {
+   "name": "bone_35",
+   "parent": "tripo::Root",
+   "head": [
+    0.022,
+    0.281,
+    -0.033
+   ],
+   "tail": [
+    0.069,
+    0.263,
+    0.016
+   ],
+   "children": 2,
+   "skinVerts": 25,
+   "skinCentroid": [
+    0.042,
+    0.29,
+    0.018
+   ]
+  },
+  {
+   "name": "bone_36",
+   "parent": "bone_35",
+   "head": [
+    0.078,
+    0.262,
+    0.03
+   ],
+   "tail": [
+    0.141,
+    0.222,
+    0.074
+   ],
+   "children": 1,
+   "skinVerts": 166,
+   "skinCentroid": [
+    0.105,
+    0.224,
+    0.044
+   ]
+  },
+  {
+   "name": "bone_37",
+   "parent": "bone_36",
+   "head": [
+    0.141,
+    0.222,
+    0.074
+   ],
+   "tail": [
+    0.204,
+    0.181,
+    0.119
+   ],
+   "children": 0,
+   "skinVerts": 78,
+   "skinCentroid": [
+    0.19,
+    0.199,
+    0.094
+   ]
+  },
+  {
+   "name": "bone_38",
+   "parent": "bone_35",
+   "head": [
+    0.063,
+    0.248,
+    -0.015
+   ],
+   "tail": [
+    0.096,
+    0.188,
+    0.037
+   ],
+   "children": 1,
+   "skinVerts": 77,
+   "skinCentroid": [
+    0.066,
+    0.218,
+    0.025
+   ]
+  },
+  {
+   "name": "bone_39",
+   "parent": "bone_38",
+   "head": [
+    0.096,
+    0.188,
+    0.037
+   ],
+   "tail": [
+    0.13,
+    0.129,
+    0.089
+   ],
+   "children": 0,
+   "skinVerts": 32,
+   "skinCentroid": [
+    0.105,
+    0.171,
+    0.085
+   ]
+  },
+  {
+   "name": "tripo::0_Right_Limb_0",
+   "parent": "tripo::Root",
+   "head": [
+    0.007,
+    0.166,
+    0.022
+   ],
+   "tail": [
+    0.022,
+    0.144,
+    0.018
+   ],
+   "children": 1,
+   "skinVerts": 279,
+   "skinCentroid": [
+    0.02,
+    0.126,
+    0.004
+   ]
+  },
+  {
+   "name": "tripo::0_Right_Limb_1",
+   "parent": "tripo::0_Right_Limb_0",
+   "head": [
+    0.022,
+    0.144,
+    0.018
+   ],
+   "tail": [
+    0.029,
+    0.121,
+    0.007
+   ],
+   "children": 1,
+   "skinVerts": 198,
+   "skinCentroid": [
+    0.022,
+    0.123,
+    0.021
+   ]
+  },
+  {
+   "name": "tripo::0_Right_Limb_2",
+   "parent": "tripo::0_Right_Limb_1",
+   "head": [
+    0.029,
+    0.121,
+    0.007
+   ],
+   "tail": [
+    0.037,
+    0.099,
+    -0.004
+   ],
+   "children": 0,
+   "skinVerts": 271,
+   "skinCentroid": [
+    0.025,
+    0.108,
+    -0.038
+   ]
+  },
+  {
+   "name": "bone_43",
+   "parent": "tripo::Root",
+   "head": [
+    -0.052,
+    0.296,
+    -0.026
+   ],
+   "tail": [
+    -0.119,
+    0.296,
+    0.041
+   ],
+   "children": 1,
+   "skinVerts": 162,
+   "skinCentroid": [
+    -0.088,
+    0.296,
+    -0.008
+   ]
+  },
+  {
+   "name": "bone_44",
+   "parent": "bone_43",
+   "head": [
+    -0.119,
+    0.296,
+    0.041
+   ],
+   "tail": [
+    -0.186,
+    0.259,
+    0.081
+   ],
+   "children": 1,
+   "skinVerts": 203,
+   "skinCentroid": [
+    -0.148,
+    0.261,
+    0.035
+   ]
+  },
+  {
+   "name": "bone_45",
+   "parent": "bone_44",
+   "head": [
+    -0.186,
+    0.259,
+    0.081
+   ],
+   "tail": [
+    -0.252,
+    0.222,
+    0.122
+   ],
+   "children": 0,
+   "skinVerts": 101,
+   "skinCentroid": [
+    -0.224,
+    0.224,
+    0.096
+   ]
+  },
+  {
+   "name": "tripo::0_Left_Limb_0",
+   "parent": "tripo::Root",
+   "head": [
+    -0.037,
+    0.177,
+    0.026
+   ],
+   "tail": [
+    -0.048,
+    0.155,
+    0.022
+   ],
+   "children": 1,
+   "skinVerts": 161,
+   "skinCentroid": [
+    -0.051,
+    0.115,
+    -0.048
+   ]
+  },
+  {
+   "name": "tripo::0_Left_Limb_1",
+   "parent": "tripo::0_Left_Limb_0",
+   "head": [
+    -0.048,
+    0.155,
+    0.022
+   ],
+   "tail": [
+    -0.052,
+    0.125,
+    0.018
+   ],
+   "children": 1,
+   "skinVerts": 208,
+   "skinCentroid": [
+    -0.045,
+    0.128,
+    0.021
+   ]
+  },
+  {
+   "name": "tripo::0_Left_Limb_2",
+   "parent": "tripo::0_Left_Limb_1",
+   "head": [
+    -0.052,
+    0.125,
+    0.018
+   ],
+   "tail": [
+    -0.045,
+    0.121,
+    -0.004
+   ],
+   "children": 1,
+   "skinVerts": 273,
+   "skinCentroid": [
+    -0.049,
+    0.12,
+    0.003
+   ]
+  },
+  {
+   "name": "tripo::0_Left_Limb_3",
+   "parent": "tripo::0_Left_Limb_2",
+   "head": [
+    -0.045,
+    0.121,
+    -0.004
+   ],
+   "tail": [
+    -0.037,
+    0.118,
+    -0.026
+   ],
+   "children": 0,
+   "skinVerts": 158,
+   "skinCentroid": [
+    -0.048,
+    0.111,
+    -0.044
+   ]
+  },
+  {
+   "name": "bone_50",
+   "parent": "tripo::Root",
+   "head": [
+    0.022,
+    0.281,
+    -0.052
+   ],
+   "tail": [
+    0.081,
+    0.288,
+    0.015
+   ],
+   "children": 1,
+   "skinVerts": 111,
+   "skinCentroid": [
+    0.072,
+    0.299,
+    -0.036
+   ]
+  },
+  {
+   "name": "bone_51",
+   "parent": "bone_50",
+   "head": [
+    0.081,
+    0.288,
+    0.015
+   ],
+   "tail": [
+    0.148,
+    0.27,
+    0.059
+   ],
+   "children": 1,
+   "skinVerts": 167,
+   "skinCentroid": [
+    0.142,
+    0.283,
+    0.013
+   ]
+  },
+  {
+   "name": "bone_52",
+   "parent": "bone_51",
+   "head": [
+    0.148,
+    0.27,
+    0.059
+   ],
+   "tail": [
+    0.215,
+    0.251,
+    0.104
+   ],
+   "children": 0,
+   "skinVerts": 106,
+   "skinCentroid": [
+    0.211,
+    0.225,
+    0.084
+   ]
+  },
+  {
+   "name": "bone_53",
+   "parent": "tripo::Root",
+   "head": [
+    -0.045,
+    0.277,
+    0.011
+   ],
+   "tail": [
+    -0.093,
+    0.244,
+    0.07
+   ],
+   "children": 1,
+   "skinVerts": 74,
+   "skinCentroid": [
+    -0.06,
+    0.256,
+    0.025
+   ]
+  },
+  {
+   "name": "bone_54",
+   "parent": "bone_53",
+   "head": [
+    -0.093,
+    0.244,
+    0.07
+   ],
+   "tail": [
+    -0.126,
+    0.225,
+    0.093
+   ],
+   "children": 1,
+   "skinVerts": 89,
+   "skinCentroid": [
+    -0.105,
+    0.209,
+    0.059
+   ]
+  },
+  {
+   "name": "bone_55",
+   "parent": "bone_54",
+   "head": [
+    -0.126,
+    0.225,
+    0.093
+   ],
+   "tail": [
+    -0.16,
+    0.207,
+    0.115
+   ],
+   "children": 0,
+   "skinVerts": 75,
+   "skinCentroid": [
+    -0.141,
+    0.191,
+    0.086
+   ]
+  },
+  {
+   "name": "bone_56",
+   "parent": "tripo::Root",
+   "head": [
+    -0.052,
+    0.114,
+    0.096
+   ],
+   "tail": [
+    -0.082,
+    0.088,
+    0.13
+   ],
+   "children": 1,
+   "skinVerts": 23,
+   "skinCentroid": [
+    -0.066,
+    0.106,
+    0.101
+   ]
+  },
+  {
+   "name": "bone_57",
+   "parent": "bone_56",
+   "head": [
+    -0.082,
+    0.088,
+    0.13
+   ],
+   "tail": [
+    -0.097,
+    0.058,
+    0.163
+   ],
+   "children": 1,
+   "skinVerts": 54,
+   "skinCentroid": [
+    -0.102,
+    0.067,
+    0.142
+   ]
+  },
+  {
+   "name": "bone_58",
+   "parent": "bone_57",
+   "head": [
+    -0.097,
+    0.058,
+    0.163
+   ],
+   "tail": [
+    -0.112,
+    0.029,
+    0.196
+   ],
+   "children": 0,
+   "skinVerts": 55,
+   "skinCentroid": [
+    -0.086,
+    0.044,
+    0.173
+   ]
+  },
+  {
+   "name": "bone_59",
+   "parent": "tripo::Root",
+   "head": [
+    0.059,
+    0.129,
+    0.078
+   ],
+   "tail": [
+    0.07,
+    0.095,
+    0.115
+   ],
+   "children": 1,
+   "skinVerts": 32,
+   "skinCentroid": [
+    0.041,
+    0.114,
+    0.083
+   ]
+  },
+  {
+   "name": "bone_60",
+   "parent": "bone_59",
+   "head": [
+    0.07,
+    0.095,
+    0.115
+   ],
+   "tail": [
+    0.07,
+    0.062,
+    0.148
+   ],
+   "children": 1,
+   "skinVerts": 50,
+   "skinCentroid": [
+    0.076,
+    0.063,
+    0.139
+   ]
+  },
+  {
+   "name": "bone_61",
+   "parent": "bone_60",
+   "head": [
+    0.07,
+    0.062,
+    0.148
+   ],
+   "tail": [
+    0.07,
+    0.029,
+    0.182
+   ],
+   "children": 0,
+   "skinVerts": 56,
+   "skinCentroid": [
+    0.066,
+    0.041,
+    0.166
+   ]
+  },
+  {
+   "name": "tripo::Tail_0",
+   "parent": "tripo::Root",
+   "head": [
+    0.007,
+    0.14,
+    0.078
+   ],
+   "tail": [
+    0.015,
+    0.099,
+    0.122
+   ],
+   "children": 1,
+   "skinVerts": 39,
+   "skinCentroid": [
+    0.01,
+    0.116,
+    0.095
+   ]
+  },
+  {
+   "name": "tripo::Tail_1",
+   "parent": "tripo::Tail_0",
+   "head": [
+    0.015,
+    0.099,
+    0.122
+   ],
+   "tail": [
+    0.011,
+    0.047,
+    0.17
+   ],
+   "children": 1,
+   "skinVerts": 92,
+   "skinCentroid": [
+    0.044,
+    0.047,
+    0.165
+   ]
+  },
+  {
+   "name": "tripo::Tail_2",
+   "parent": "tripo::Tail_1",
+   "head": [
+    0.011,
+    0.047,
+    0.17
+   ],
+   "tail": [
+    0.007,
+    -0.005,
+    0.219
+   ],
+   "children": 0,
+   "skinVerts": 65,
+   "skinCentroid": [
+    -0.006,
+    0.014,
+    0.21
+   ]
+  },
+  {
+   "name": "bone_65",
+   "parent": "tripo::Root",
+   "head": [
+    -0.052,
+    0.114,
+    0.093
+   ],
+   "tail": [
+    -0.056,
+    0.073,
+    0.119
+   ],
+   "children": 1,
+   "skinVerts": 33,
+   "skinCentroid": [
+    -0.055,
+    0.12,
+    0.083
+   ]
+  },
+  {
+   "name": "bone_66",
+   "parent": "bone_65",
+   "head": [
+    -0.056,
+    0.073,
+    0.119
+   ],
+   "tail": [
+    -0.06,
+    0.032,
+    0.145
+   ],
+   "children": 0,
+   "skinVerts": 93,
+   "skinCentroid": [
+    -0.061,
+    0.039,
+    0.18
+   ]
+  }
+ ]
+}
