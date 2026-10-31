@@ -28,6 +28,7 @@ local Shared = ReplicatedStorage.Shared
 
 local Analytics = require(script.Parent.Parent.Analytics)
 
+local Binding = require(Shared.Logic.Binding)
 local Blessings = require(Shared.Data.Blessings)
 local Boss = require(script.Parent.Parent.Entities.Boss)
 local BossScaling = require(Shared.Logic.BossScaling)
@@ -362,18 +363,17 @@ local function reward(run: Run, position: Vector3): { [Player]: { any } }
 				gotExtra = extraDrop ~= nil
 				for _, rolled in { drop, extraDrop } :: { Loot.ItemDrop? } do
 					if rolled then
-						table.insert(
-							items,
-							ItemRoll.rollItem(
-								rolled.defId,
-								rolled.ilvl,
-								rolled.rarity,
-								rng,
-								HttpService:GenerateGUID(false),
-								char.class :: string,
-								{ family = def.family :: string? } -- S67: family lines take the boss's family
-							)
+						local item = ItemRoll.rollItem(
+							rolled.defId,
+							rolled.ilvl,
+							rolled.rarity,
+							rng,
+							HttpService:GenerateGUID(false),
+							char.class :: string,
+							{ family = def.family :: string? } -- S67: family lines take the boss's family
 						)
+						-- owner 2026-10-31: the personal roll binds on equip, a Mythic on pickup (Logic/Binding)
+						table.insert(items, Binding.apply(item, "boss"))
 					end
 				end
 				local extra = Loot.rollBossLoot(def.id, n, rng)

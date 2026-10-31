@@ -9,8 +9,11 @@ local TrackerFold = {}
 
 TrackerFold.GROUPS = table.freeze({ "all", "quests", "contracts", "daily", "weekly", "ach" })
 
--- Folded until the player opens them: the weekly set (its header carries the progress, as before).
-TrackerFold.DEFAULTS = table.freeze({ weekly = true } :: { [string]: boolean })
+-- Folded until the player opens them (each header carries its progress): UI plan phase 1 (owner 2026-10-31, too much
+-- on one screen) folds the hunting contracts, the daily and weekly sets and the tracked achievements, so only the
+-- quests stand open; a group the player once folded or opened keeps the saved choice.
+TrackerFold.DEFAULTS =
+	table.freeze({ contracts = true, daily = true, weekly = true, ach = true } :: { [string]: boolean })
 
 local KNOWN: { [string]: boolean } = {}
 for _, id in TrackerFold.GROUPS do

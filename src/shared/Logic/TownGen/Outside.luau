@@ -6,6 +6,7 @@
 local Blueprint = require("./Blueprint")
 local Fill = require("./Fill")
 local Houses = require("./Houses")
+local KitSeat = require("../KitSeat")
 local Palette = require("./Palette")
 local Parts = require("./Parts")
 local Props = require("./Props")
@@ -254,7 +255,9 @@ local function farm(f: any, i: number, ground: Ground, out: { Build })
 	Parts.haystack(bp, 15, gy(15, -8), -8, 2.2, "shell")
 	Parts.haystack(bp, 15.5, gy(15.5, 7.5), 7.5, 1.8, "shell")
 	Parts.cart(bp, 3, gy(3, -7), -7, bp.rng:float(0, 360))
-	Props.well(bp, 0, Parts.lowest(gy, 0, 6, 4), 6, 20) -- 2026-10-31: the low side of the farmyard's slope
+	-- 2026-11-01: the well on the drawn ground (Logic/KitSeat; its spot, Logic/TownTerrain.propBases)
+	local wx, wz = toWorld(f.x, f.z, f.rot, 0, 6)
+	Props.well(bp, 0, KitSeat.seat(ground, wx, wz, KitSeat.WELL) - y0, 6, 20)
 	Parts.woodpile(bp, -10, gy(-10, 6.5), 6.5, 0, 5)
 	for _, p in { { -14, -9 }, { 8, 9 } } do
 		Parts.tree(bp, p[1], gy(p[1], p[2]), p[2], if i % 2 == 0 then "apple" else "oak", 1.1, "shell")

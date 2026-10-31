@@ -36,7 +36,8 @@ export type Work = {
 	gaze: { number }?, -- where it looks while working
 	behind: boolean?, -- the work is behind its back (a stall): it turns round to work, and back to a player near
 	stand: { number }?, -- where it stands to work: { x, z } leg lengths from its spot (root axes)
-	prop: string?, -- a client prop the work needs (Anim/NpcRig: "anvil")
+	prop: string?, -- a client prop the work needs (Anim/NpcRig: "anvil"; "channel": the glow on the hands, as strong
+	-- as the moves' `channel` control)
 }
 export type Style = {
 	id: string,
@@ -1013,7 +1014,14 @@ MOVES.watchRegrip = move({
 	},
 })
 
--- Teodor channelling the portal: the hands forward, palms toward each other, slow circles around a held glow, a surge.
+-- Teodor channelling the portal (studio review 2026-10-31: the hands raised before him, the palms toward the portal,
+-- the glow on them): the hands up at the height of his chest, a forearm's length out, the wrists bent back so the
+-- palms face forward and the fingers point up, slow circles; a surge pushes them up and apart and draws them back.
+-- `channel` (no joint) weighs the glow client/Anim/NpcRig shows on the palms.
+local CHANNEL_POLE = { 0.6, -1, 0.1 }
+local CHANNEL_R = T("chest", 0.2, -0.05, -0.45, CHANNEL_POLE)
+local CHANNEL_L = T("chest", -0.2, -0.05, -0.45, CHANNEL_POLE)
+local CHANNEL_WRIST = { gR = 0.15, gL = 0.15, wRy = 1.0, wLy = 1.0, wRr = 0.8, wLr = 0.8, channel = 1 }
 MOVES.channelBase = move({
 	hold = true,
 	keys = { key(0, { spitch = -0.04, hpitch = 0.04 }), key(1, {}) },
@@ -1023,10 +1031,7 @@ MOVES.channelHold = move({
 	fadeOut = 0.8,
 	gaze = { 0, 0.15 },
 	keys = {
-		key(0, { gR = 0.15, gL = 0.15, wRy = 0.9, wLy = 0.9 }, {
-			R = T("chest", 0.17, -0.38, -0.38, { 1, -0.6, 0.3 }),
-			L = T("chest", -0.17, -0.38, -0.38, { 1, -0.6, 0.3 }),
-		}),
+		key(0, CHANNEL_WRIST, { R = CHANNEL_R, L = CHANNEL_L }),
 		key(4.5, {}),
 	},
 	osc = {
@@ -1041,23 +1046,20 @@ MOVES.channelSurge = move({
 	fadeOut = 0.7,
 	gaze = { 0, -0.05 },
 	keys = {
-		key(0, { gR = 0.15, gL = 0.15, wRy = 0.9, wLy = 0.9 }, {
-			R = T("chest", 0.17, -0.38, -0.38, { 1, -0.6, 0.3 }),
-			L = T("chest", -0.17, -0.38, -0.38, { 1, -0.6, 0.3 }),
-		}),
-		key(0.9, { spitch = -0.08, hpitch = -0.06, cRu = 0.08, cLu = 0.08 }, {
+		key(0, CHANNEL_WRIST, { R = CHANNEL_R, L = CHANNEL_L }),
+		key(0.9, { spitch = -0.08, hpitch = -0.06, cRu = 0.08, cLu = 0.08, wRr = 0.95, wLr = 0.95 }, {
 			ease = "inout",
-			R = T("chest", 0.24, -0.1, -0.44, { 1, -0.3, 0.2 }),
-			L = T("chest", -0.24, -0.1, -0.44, { 1, -0.3, 0.2 }),
+			R = T("chest", 0.26, 0.06, -0.5, CHANNEL_POLE),
+			L = T("chest", -0.26, 0.06, -0.5, CHANNEL_POLE),
 		}),
-		key(1.8, { spitch = -0.1, gR = 0.0, gL = 0.0 }, {
-			R = T("chest", 0.3, 0.02, -0.46, { 1, -0.2, 0.2 }),
-			L = T("chest", -0.3, 0.02, -0.46, { 1, -0.2, 0.2 }),
+		key(1.8, { spitch = -0.1, gR = 0.0, gL = 0.0, wRr = 1.05, wLr = 1.05 }, {
+			R = T("chest", 0.32, 0.14, -0.5, CHANNEL_POLE),
+			L = T("chest", -0.32, 0.14, -0.5, CHANNEL_POLE),
 		}),
-		key(2.8, { spitch = 0, hpitch = 0, cRu = 0, cLu = 0, gR = 0.15, gL = 0.15 }, {
+		key(2.8, { spitch = 0, hpitch = 0, cRu = 0, cLu = 0, gR = 0.15, gL = 0.15, wRr = 0.8, wLr = 0.8 }, {
 			ease = "inout",
-			R = T("chest", 0.17, -0.38, -0.38, { 1, -0.6, 0.3 }),
-			L = T("chest", -0.17, -0.38, -0.38, { 1, -0.6, 0.3 }),
+			R = CHANNEL_R,
+			L = CHANNEL_L,
 		}),
 	},
 	osc = {
@@ -1559,6 +1561,7 @@ ROLES.mage = style("mage", {
 		base = MOVES.channelBase,
 		gaze = { 0, 0.12 },
 		phrases = { W("channelHold", 2.5), W("channelSurge", 1) },
+		prop = "channel",
 	},
 	look = { range = 12, hold = { 1.5, 3 }, away = { 3, 8 }, weight = 1, atWork = 0.55 },
 	talk = talk({

@@ -24,8 +24,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local HudDrag = {}
 
--- The top of the right column on PC (the quest tracker and the event panels): under the two rows of menu buttons,
--- the minimap and the guide bar (Hud menu: 16 + 2 x 52 + 8, then 8 + 220 + 8 + 44 = 408; one more row: 460).
+-- The top of the right column on PC (the quest tracker and the event panels): under the one row of menu buttons, the
+-- minimap and its area line (UI plan phase 1; the guide bar pushes it to HudStack.RIGHT_TOP_GUIDE while it shows).
 -- Owner 2026-10-21: the column itself is Logic/HudStack (UI/HudSlots).
 HudDrag.RIGHT_TOP = HudStack.RIGHT_TOP
 

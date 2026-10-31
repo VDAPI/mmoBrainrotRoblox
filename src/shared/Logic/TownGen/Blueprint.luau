@@ -277,6 +277,31 @@ function Blueprint.endKit(self: Blueprint)
 	end
 end
 
+-- 2026-11-01: leaves out kit slot `index` and its pieces (Logic/KitSeat.prune: a rock or a tree that cannot stand on
+-- its spot); the later slots move down by one.
+function Blueprint.dropKit(self: Blueprint, index: number)
+	local kept: { Piece } = {}
+	for _, piece in self.pieces do
+		local k = piece.k
+		if k == index then
+			if piece.lod == "shell" then
+				self.shell -= 1
+			elseif piece.lod == "fine" then
+				self.fine -= 1
+			else
+				self.detail -= 1
+			end
+		else
+			if k and k > index then
+				piece.k = k - 1
+			end
+			table.insert(kept, piece)
+		end
+	end
+	self.pieces = kept
+	table.remove(self.kits, index)
+end
+
 function Blueprint.light(
 	self: Blueprint,
 	x: number,

@@ -1,6 +1,8 @@
 --!strict
 -- Switches the main screen with the session phase: CharacterSelect ("loading"/"select") or Hud
 -- ("playing"). Handles the selection camera (blurred city view) and registers the HUD menu windows.
+-- UI plan phase 1 (owner 2026-10-31, "too much information and too many options on one screen"; Logic/HudMenu): the
+-- HUD bar keeps six buttons (MENU), every other window is a tile of the game menu (TILES), its "!" lights the bar's ☰.
 
 local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
@@ -10,21 +12,24 @@ local Workspace = game:GetService("Workspace")
 local CharacterSelect = require(script.Parent.Parent.UI.Screens.CharacterSelect)
 local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
 local CharacterWindow = require(script.Parent.Parent.UI.Screens.CharacterWindow)
-local ComingSoon = require(script.Parent.Parent.UI.Screens.ComingSoon)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GameMenu = require(script.Parent.Parent.UI.Screens.GameMenu)
 local BackpackPanel = require(script.Parent.Parent.UI.Screens.BackpackPanel)
-local BloodMoonView = require(script.Parent.Parent.UI.BloodMoonView)
+local HudMenu = require(ReplicatedStorage.Shared.Logic.HudMenu)
+local Mail = require(ReplicatedStorage.Shared.Logic.Mail)
 local MenuAttention = require(script.Parent.Parent.UI.MenuAttention) -- S155b
 local SkillsAttention = require(script.Parent.Parent.UI.SkillsAttention)
 local SkillsWindow = require(script.Parent.Parent.UI.Screens.SkillsWindow)
 local Hud = require(script.Parent.Parent.UI.Screens.Hud)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local SeasonState = require(script.Parent.Parent.UI.SeasonState)
+local SeasonView = require(ReplicatedStorage.Shared.Logic.SeasonView)
 local Town = require(ReplicatedStorage.Shared.Data.Town)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
+local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -42,8 +47,8 @@ local ScreenController = {
 		"NavController",
 		"VfxController",
 		"MountController",
-		"LoginRewardController", -- S100: the HUD button's status and badge
-		"EmoteController", -- S123: the emote wheel button
+		"LoginRewardController", -- S100: the HUD button's status and badge, the tile's "!"
+		"EmoteController", -- S123: the emote wheel (UI plan phase 1: a tile of the game menu)
 	},
 }
 
@@ -65,7 +70,122 @@ local function worldOnly(_use: Fusion.Use): boolean
 	return ServerModeView.isWorld()
 end
 
--- HUD menu (DESIGN §23). Windows without their system yet show a "coming soon" body.
+-- UI plan phase 1: the game menu's tiles (UI/Screens/GameMenu) by id, laid out in the order of HudMenu.TILES. Their
+-- windows are registered by GuildController, PartyController, SocialController (friends, S133), MarketController
+-- (mail), ArenaController (S126), RankingsController (S124), BloodMoonController (S129), AchievementController
+-- (S151b), MountController (S97), PremiumController (wardrobe, VIP), SeasonController (S152b), LoginRewardController
+-- (S100) and ReturningController ("What's new", S153); the emote wheel is EmoteController's (S123).
+local TILE_DEFS: { [string]: GameMenu.Tile } = {
+	guild = { id = "guild", icon = "⚑", art = UiArt.menu("guild"), labelKey = "menu.tile.guild" },
+	party = { id = "party", icon = "☍", art = UiArt.menu("party"), labelKey = "menu.tile.party" },
+	friends = { id = "friends", icon = "☺", art = UiArt.menu("friends"), labelKey = "menu.tile.friends" },
+	-- "!" while parcels wait (the envelope in the corner shows their number)
+	mail = {
+		id = "mail",
+		icon = "✉",
+		art = UiArt.hud("mail"),
+		labelKey = "menu.tile.mail",
+		badge = function(s: Scope): Fusion.UsedAs<boolean>
+			local mail = State.Value({ "mail" })
+			return s:Computed(function(use): boolean
+				return (Mail.badge(use(mail))) > 0
+			end)
+		end,
+	},
+	-- S155b: "!" after the level up that unlocks it
+	arena = {
+		id = "arena",
+		icon = "⚔",
+		art = UiArt.menu("arena"),
+		labelKey = "menu.tile.arena",
+		badge = MenuAttention.unlocked("arena"),
+	},
+	rankings = { id = "rankings", icon = "♔", art = UiArt.menu("rankings"), labelKey = "menu.tile.rankings" },
+	-- always (the window tells when the next one rises; the event has its own panel on the HUD)
+	bloodmoon = { id = "bloodmoon", icon = "☾", art = UiArt.menu("bloodmoon"), labelKey = "menu.tile.bloodmoon" },
+	-- S151c: "!" after an achievement or a bestiary tier earned since the window was last open
+	achievements = {
+		id = "achievements",
+		icon = "✪",
+		art = UiArt.menu("achievements"),
+		labelKey = "menu.tile.achievements",
+		badge = MenuAttention.achievements,
+	},
+	-- S97: from the mount level, or earlier with a mount (MountController.Access); S155b: "!" after the unlock
+	mounts = {
+		id = "mounts",
+		icon = "♞",
+		art = UiArt.menu("mounts"),
+		labelKey = "menu.tile.mounts",
+		badge = MenuAttention.unlocked("mounts"),
+		visible = function(use: Fusion.Use): boolean
+			return use(MountController.Access) == true and ServerModeView.isWorld()
+		end,
+	},
+	wardrobe = { id = "wardrobe", icon = "♛", art = UiArt.menu("wardrobe"), labelKey = "menu.tile.wardrobe" },
+	-- S123: the emote wheel (T; a touch screen has only this tile)
+	emotes = {
+		id = "emotes",
+		icon = "✋",
+		labelKey = "menu.tile.emotes",
+		open = function()
+			EmoteController.Toggle()
+		end,
+	},
+	-- S152b: "!" while a reward waits (the ❖ by the portrait shows then too)
+	season = {
+		id = "season",
+		icon = "❖",
+		art = UiArt.hud("season"),
+		labelKey = "menu.tile.season",
+		badge = function(s: Scope): Fusion.UsedAs<boolean>
+			return s:Computed(function(use): boolean
+				return SeasonView.claimCount(use(SeasonState.View)) > 0
+			end)
+		end,
+	},
+	-- S100: "!" while today's reward waits (the ✧ by the portrait shows then too)
+	login = {
+		id = "login",
+		icon = "✧",
+		labelKey = "menu.tile.login",
+		badge = function(_s: Scope): Fusion.UsedAs<boolean>
+			return LoginRewardController.Badge
+		end,
+	},
+	vip = { id = "vip", icon = "★", art = UiArt.hud("vip"), labelKey = "menu.tile.vip" },
+	whatsnew = { id = "whatsnew", icon = "✷", labelKey = "menu.tile.whatsnew" },
+}
+
+local TILES: { GameMenu.Tile } = {}
+for _, id in HudMenu.TILES do
+	local def = TILE_DEFS[id]
+	assert(def, `no menu tile {id}`)
+	table.insert(TILES, def)
+end
+
+type Lit = { id: string, badge: Fusion.UsedAs<boolean>, visible: ((use: Fusion.Use) -> boolean)? }
+
+-- The ☰'s "!": a shown tile's own is lit (Logic/HudMenu.attention).
+local function tilesBadge(s: Scope): Fusion.Computed<boolean>
+	local lit: { Lit } = {}
+	for _, entry in TILES do
+		local badge = entry.badge
+		if badge then
+			table.insert(lit, { id = entry.id, badge = badge(s), visible = entry.visible })
+		end
+	end
+	return s:Computed(function(use): boolean
+		local now: { [string]: boolean } = {}
+		for _, t in lit do
+			local visible = t.visible
+			now[t.id] = use(t.badge) == true and (visible == nil or visible(use))
+		end
+		return HudMenu.attention(now)
+	end)
+end
+
+-- The HUD bar (DESIGN §23): Logic/HudMenu.BAR in that order.
 local MENU: { Hud.MenuEntry } = {
 	-- S155b: "!" while stat points wait (MenuAttention)
 	{
@@ -79,54 +199,15 @@ local MENU: { Hud.MenuEntry } = {
 	-- S127: the world map and the journal need the world (hidden on an arena server)
 	{ id = "map", icon = "⌖", hotkey = "M", tooltipKey = "hud.menu.map", visible = worldOnly },
 	{ id = "quests", icon = "✎", hotkey = "L", tooltipKey = "hud.menu.quests", visible = worldOnly },
-	{ id = "guild", icon = "⚑", hotkey = "G", tooltipKey = "hud.menu.guild" },
-	{ id = "party", icon = "☍", hotkey = "P", tooltipKey = "hud.menu.party" },
-	-- S133: friends and ignored players (SocialController registers the window; key win_friends)
-	{ id = "friends", icon = "☺", hotkey = "Y", tooltipKey = "hud.menu.friends" },
-	-- S97: shown from the mount level, or earlier with a mount (MountController.Access)
-	{
-		id = "mounts",
-		icon = "♞",
-		hotkey = "J",
-		tooltipKey = "hud.menu.mounts",
-		badge = MenuAttention.unlocked("mounts"), -- S155b: "!" after the level up that unlocks it
-		visible = function(use: Fusion.Use): boolean
-			return use(MountController.Access) == true and ServerModeView.isWorld()
-		end,
-	},
-	-- S124: rankings (RankingsController registers the window; key win_rankings)
-	{ id = "rankings", icon = "♔", hotkey = "R", tooltipKey = "hud.menu.rankings" },
-	-- S126: the ranked arena next to the rankings (ArenaController registers the window; key win_arena)
-	{
-		id = "arena",
-		icon = "⚔",
-		hotkey = "U",
-		tooltipKey = "hud.menu.arena",
-		badge = MenuAttention.unlocked("arena"), -- S155b
-	},
-	-- S129: the Blood Moon results, from 10 min before the start until the results go (BloodMoonController registers
-	-- the window; no key)
-	{
-		id = "bloodmoon",
-		icon = "☾",
-		hotkey = nil,
-		tooltipKey = "hud.menu.bloodmoon",
-		visible = BloodMoonView.menuVisible,
-	},
-	-- S151b: achievements (AchievementController registers the window; key win_achievements)
-	{ id = "achievements", icon = "✪", hotkey = "N", tooltipKey = "hud.menu.achievements" },
-	{ id = "wardrobe", icon = "♛", hotkey = nil, tooltipKey = "hud.menu.wardrobe" },
 	{ id = "premium", icon = "◆", hotkey = nil, tooltipKey = "hud.menu.shop" },
-	{ id = "menu", icon = "☰", hotkey = nil, tooltipKey = "hud.menu.menu" },
+	-- UI plan phase 1: "!" while a tile of the game menu has one
+	{ id = "menu", icon = "☰", hotkey = nil, tooltipKey = "hud.menu.menu", badge = tilesBadge },
 }
 
+-- The default keys of the windows registered here (Data/Keybinds `win_<id>` decides; WindowManager).
 local HOTKEYS: { [string]: Enum.KeyCode } = {
 	inventory = Enum.KeyCode.B,
 	skills = Enum.KeyCode.K,
-	map = Enum.KeyCode.M,
-	quests = Enum.KeyCode.L,
-	guild = Enum.KeyCode.G,
-	party = Enum.KeyCode.P,
 }
 
 local SELECT_BLUR = 14
@@ -150,85 +231,53 @@ local function registerWindows()
 			WindowManager.Open("lootlog")
 		end,
 	}
-	for _, entry in MENU do
-		if entry.id == "skills" then
-			WindowManager.Register({
-				id = "skills",
-				titleKey = "window.skills.title",
-				size = Vector2.new(920, 640),
-				hotkey = HOTKEYS.skills,
-				build = function(scope: Scope)
-					return SkillsWindow(scope, { ShowModal = WindowManager.ShowModal, Preview = VfxController.Preview })
+	-- The bar's windows but the world map, the journal and the Dragon Shop (WorldController, QuestController,
+	-- PremiumController); the tiles' windows are their controllers' (TILE_DEFS).
+	WindowManager.Register({
+		id = "skills",
+		titleKey = "window.skills.title",
+		size = Vector2.new(920, 640),
+		hotkey = HOTKEYS.skills,
+		build = function(scope: Scope)
+			return SkillsWindow(scope, { ShowModal = WindowManager.ShowModal, Preview = VfxController.Preview })
+		end,
+	})
+	-- S29: the backpack window: equipment + backpack + statistics in one (WindowRules.MAIN, opened by B without a
+	-- service). FIX 2026-10-14: the separate "Character" button and its C key are gone; the window has the backpack's
+	-- title.
+	WindowManager.Register({
+		id = "character",
+		titleKey = "window.inventory.title",
+		size = Vector2.new(1240, 700),
+		build = function(scope: Scope)
+			return CharacterWindow(scope, {
+				Focus = WindowManager.FocusHint,
+				Backpack = backpackActions,
+				Unequip = function(slot: string)
+					ItemController.Unequip(slot, nil)
 				end,
 			})
-		elseif entry.id == "inventory" then
-			-- S29: the backpack window: equipment + backpack + statistics in one (WindowRules.MAIN, opened by B
-			-- without a service). FIX 2026-10-14: the separate "Character" button and its C key are gone; the
-			-- window has the backpack's title.
-			WindowManager.Register({
-				id = "character",
-				titleKey = "window.inventory.title",
-				size = Vector2.new(1240, 700),
-				build = function(scope: Scope)
-					return CharacterWindow(scope, {
-						Focus = WindowManager.FocusHint,
-						Backpack = backpackActions,
-						Unequip = function(slot: string)
-							ItemController.Unequip(slot, nil)
-						end,
-					})
-				end,
-			})
-			-- The companion backpack next to service windows.
-			WindowManager.Register({
-				id = "inventory",
-				titleKey = "window.inventory.title",
-				size = Vector2.new(560, 640),
-				hotkey = HOTKEYS.inventory,
-				build = function(scope: Scope)
-					return BackpackPanel(scope, { Actions = backpackActions })
-				end,
-			})
-		elseif
-			entry.id == "map"
-			or entry.id == "party"
-			or entry.id == "friends"
-			or entry.id == "quests"
-			or entry.id == "guild"
-			or entry.id == "premium"
-			or entry.id == "wardrobe"
-			or entry.id == "mounts"
-			or entry.id == "rankings"
-			or entry.id == "arena"
-			or entry.id == "bloodmoon"
-			or entry.id == "achievements"
-		then
-			-- Registered by WorldController / PartyController / QuestController / GuildController / PremiumController /
-			-- MountController (S97) / RankingsController (S124) / ArenaController (S126) / BloodMoonController (S129) /
-			-- AchievementController (S151b).
-			continue
-		elseif entry.id == "menu" then
-			WindowManager.Register({
-				id = "menu",
-				titleKey = "window.menu.title",
-				size = Vector2.new(640, 700),
-				-- S121: the menu opens the VIP window
-				build = function(s, close)
-					return GameMenu(s, close, { OpenWindow = WindowManager.Open })
-				end,
-			})
-		else
-			WindowManager.Register({
-				id = entry.id,
-				titleKey = `window.{entry.id}.title`,
-				size = Vector2.new(560, 420),
-				hotkey = HOTKEYS[entry.id],
-				build = function(scope: Scope)
-					return ComingSoon(scope, entry.icon)
-				end,
-			})
-		end
-	end
+		end,
+	})
+	-- The companion backpack next to service windows.
+	WindowManager.Register({
+		id = "inventory",
+		titleKey = "window.inventory.title",
+		size = Vector2.new(560, 640),
+		hotkey = HOTKEYS.inventory,
+		build = function(scope: Scope)
+			return BackpackPanel(scope, { Actions = backpackActions })
+		end,
+	})
+	WindowManager.Register({
+		id = "menu",
+		titleKey = "window.menu.title",
+		size = Vector2.new(640, 700),
+		-- S121: the menu opens the VIP window; UI plan phase 1: and every tile's
+		build = function(s, close)
+			return GameMenu(s, close, { OpenWindow = WindowManager.Open, Tiles = TILES })
+		end,
+	})
 end
 
 local function selectCamera()
@@ -319,7 +368,6 @@ local function show(screen: "select" | "hud")
 			LoginStatus = LoginRewardController.Status,
 			LoginBadge = LoginRewardController.Badge,
 			OpenLogin = LoginRewardController.Open,
-			OpenEmotes = EmoteController.Toggle,
 			UsePotion = ItemController.UsePotion,
 			AssignPotion = ItemController.SetPotion,
 			CastSlot = SkillController.CastSlot,

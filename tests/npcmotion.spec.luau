@@ -4,7 +4,7 @@
 -- it stands, works and talks; a turn to a partner behind it made on stepping feet, never both feet up; the paced walk
 -- with planted feet and back to its spot; the smith's hammer coming down onto the anvil; one greeting per approach;
 -- talk gestures and the work resumed after; no joint jumps; the seed's variety; every NPC of Data/Npcs with a style
--- whose moves exist; Data/NpcRigs; the AnimLab states.
+-- whose moves exist; Data/NpcRigs; the AnimLab states; Teodor's channel (hands raised, palms forward, the glow on).
 
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
@@ -55,7 +55,7 @@ local function finite(x: number): boolean
 	return x == x and x > -math.huge and x < math.huge
 end
 
-type Rig = { skel: BipedPose.Skeleton, keep: { [string]: boolean } }
+type Rig = { skel: BipedPose.Skeleton, keep: { [string]: boolean }, palms: { [string]: Vec } }
 
 -- A new export's dump (FBX units, bone heads and tails, the lowest vertex at y = 0) as Studio imports it: without the
 -- leaf bones no vertex weighs on (the toe and head ends, the fingers' fourth bones), a rest frame along each bone rolled
@@ -115,7 +115,7 @@ local function rigOf(model: string): Rig
 	end
 	NpcMotion.fitPalms(skel, palms)
 	local id = string.gsub(string.gsub(model, "^npc_", ""), "_v2$", "")
-	return { skel = skel, keep = NpcRigs.keep(NpcRigs.of(id)) }
+	return { skel = skel, keep = NpcRigs.keep(NpcRigs.of(id)), palms = palms }
 end
 
 local rigs: { [string]: Rig } = {}
@@ -347,6 +347,40 @@ T.describe("NpcMotion on the NPC rig dumps (2026-10-26)", function()
 		-- hanging below the chest at his side; at work before it, apart
 		T.expect(idle[2]).toBeBetween(0.8, 1.25)
 		T.expect(workR[3] < -0.25 and workL[3] < -0.25 and workR[1] - workL[1] > 0.3).toBe(true)
+	end)
+
+	-- studio review 2026-10-31: his hands hung limp before him, the palms down, and no glow showed
+	T.it("Teodor channels the portal: the hands raised before his chest, the palms forward, the glow on", function()
+		for _, model in { "portalmaster_v2", "npc_banker" } do
+			local inst = new(model, "portalmaster")
+			local L = inst.L
+			local palms = rig(model).palms
+			local held = 0
+			run(inst, 3, STATES.work, function(f)
+				if f.t < 1.5 then
+					return
+				end
+				local chest = f.pos.Spine2 or f.pos.Spine1
+				for _, s in { "R", "L" } do
+					local side = if s == "R" then "Right" else "Left"
+					local hand = f.pos[side .. "Hand"]
+					-- up at the chest's height and a forearm out before it, apart
+					T.expect((hand[2] - chest[2]) / L).toBeBetween(0, 0.35)
+					T.expect((hand[3] - chest[3]) / L).toBeBetween(-0.6, -0.3)
+					local palm = palms[s]
+					if palm then
+						local m = f.posed.world[side .. "Hand"]
+						local z = m[7] * palm[1] + m[8] * palm[2] + m[9] * palm[3]
+						-- the palm toward the portal (front -Z)
+						T.expect(z).toBeBetween(-1, -0.6)
+					end
+				end
+				held = math.min(1, f.inst.layered.controls.channel or 0)
+			end)
+			T.expect(held).toBeBetween(0.9, 1)
+		end
+		local style = NpcStyles.of("portalmaster", nil)
+		T.expect((style.work :: NpcStyles.Work).prop).toBe("channel")
 	end)
 
 	T.it("brings the smith's hammer down onto the anvil, again and again", function()

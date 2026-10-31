@@ -67,7 +67,9 @@ export type ItemDef = {
 	-- class (Classes.order form) for a shared one; read from the definition like fixedBonuses (Logic/ItemEffects.idsOf)
 	fx: ({ string } | { [string]: { string } })?,
 	bossId: string?,
-	bindOnPickup: boolean?,
+	-- owner 2026-10-31 (Data/Binding, Logic/Binding): the item's own binding rule, over its category's; "pickup" =
+	-- bound from creation (named boss items, premium consumables and backpacks)
+	bind: ("none" | "equip" | "pickup")?,
 	noSell: boolean?, -- S31: merchants refuse it (the tooltip says "Cannot be sold"; its value still shows)
 	-- Fixed rarity of stackable items (blessings) and of named boss items; other equipment rolls its rarity.
 	rarity: number?,

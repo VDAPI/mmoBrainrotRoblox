@@ -3,6 +3,7 @@
 -- Each function returns a list of Builds (one Model each, so streaming works per piece). Pure.
 
 local Blueprint = require("./Blueprint")
+local KitSeat = require("../KitSeat")
 local Palette = require("./Palette")
 local Parts = require("./Parts")
 
@@ -674,7 +675,8 @@ local LAMP_BRIGHTNESS = 1.15
 function Structures.lamps(city: any, ground: Ground): { Build }
 	local out: { Build } = {}
 	for _, l in city.lamps do
-		local y = Parts.lowest(ground, l.x, l.z, 1.5) -- 2026-10-31: the post's foot on the low side of a slope
+		-- 2026-11-01: the post's base on the drawn ground (a level spot where it is uneven, Logic/LotPads)
+		local y = KitSeat.seat(ground, l.x, l.z, KitSeat.LAMP)
 		local bp = Blueprint.new(hash(l.x, l.z))
 		local hgt = if l.kind == "rampLantern" then 7 else LAMP_HEIGHT
 		-- W12: the post, the arm and the lantern are one asset kit slot (Data/Kit "prop:lamp": the painted street lamp);

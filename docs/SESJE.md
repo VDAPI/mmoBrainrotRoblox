@@ -14109,6 +14109,29 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Dokumentacja dla sesji animacji: `docs/ANIM-WZORCE.md` §10. Testy: `tests/monstermove.spec.luau`, `leash.spec`
   (powrót truchtem). Balans: powody w `tools/balance_reasons.luau` (S162m).
 
+### Wiązanie przedmiotów (właściciel 2026-10-31)
+- Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
+  wędrownego kupca, każdy założony plecak; sprzęt bossów był wolny (poza Mitykiem z worka, a Mityk bossa świata pocztą
+  w ogóle się nie wiązał), zwoje i plecaki za Smoczą Walutę były wolne. Decyzja i tabela: `docs/DECYZJE.md`,
+  `docs/DESIGN.md` §5.6, `wyglad/WIAZANIE-PRZEDMIOTOW.md`.
+- Kod: `Data/Binding.luau` (kategorie, źródła), `Logic/Binding.luau` (reguły, `apply`, `onEquip`, `tooltipKey`,
+  migracja); pole definicji `bind` zamiast `bindOnPickup`; źródła w `LootService`, `DungeonService`, `WorldBossService`,
+  `WorldEventService`, `LoginRewardService`, `TutorialService` / `Logic/Tutorial`, `SideQuestService`, `HuntShopService`,
+  `WanderingMerchantService`, `ArenaService`, `SeasonService`, `PortalShopService`, `PremiumShopService`,
+  `InventoryService.GiveNew`, `ShopService` (plecak), `EquipmentService` / `Logic/StarterGear` (`onEquip`); odmowy w
+  `Logic/Trade`, `Auction`, `Social`, `GuildBank`, `GuildService`; `Inventory.canMerge` (brak pola = wolny).
+- Migracja: `AccountSchema` 13 (plecak, slot plecaka, depozyt), paczki bez `bv` przy odbiorze (`MailService`,
+  `Logic/Mail.Parcel.bv`).
+- UI: `TooltipModel` jedna linia `bind` (także w widoku skróconym), `ItemController.Equip` pyta tylko, gdy przedmiot się
+  zwiąże, `Components/Modal` z opcjonalnym przełącznikiem `Check` („Nie pytaj więcej w tej sesji”), teksty potwierdzeń
+  areny i wędrownego kupca zależne od reguły.
+- Testy: `tests/binding.spec.luau` (reguły kategorii i źródeł, zakładanie, stosy, odmowy, migracja, podpowiedź, brak
+  ręcznego `bound = true`), wersja schematu w testach migracji.
+- Mniej wiązania (właściciel, ten sam dzień): źródło `boss` bez dodatku (Legendarny po założeniu, Mityczny po
+  podniesieniu z rzadkości), nowe `quest` (`SideQuestService`, nagroda do wyboru po założeniu) i `shop`
+  (`PremiumShopService`: zwoje wolne, plecaki premium `bind = "equip"`, reszta z definicji); `premium` zostaje dla
+  Mistrza Portali i przepustki sezonu. Migracja bez zmian (tylko uwalnia). Test sklepu premium w `binding.spec`.
+
 ### Fryzury kreatora: nowy zestaw i barwienie tekstur we własnym kolorze (2026-10-31)
 - Zgłoszenie testera: „poza 7, 9 i 12 fryzury są słabe i nie pasują”. Przegląd w Play (ciało Dawson, skala 0,9): cała
   darmowa pula Roblox ma ok. 22 fryzury, wszystkie siedzą na głowie; problemem był styl (nowoczesne, anime) i płaski
@@ -14125,6 +14148,25 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   potem fryzurę, która go ma. Admin `/charlook` dopasowuje kolor.
 - Testy: `bodylooks.spec` (zakresy, stare id, odcień), `classlooks`, `character`, `wikidump`. Dane wiki przegenerowane.
 
+### Plan UI, faza 1: mniej na ekranie gry (2026-10-31)
+- Zgłoszenie właściciela: „UI słabo przejrzyste, zbyt dużo informacji i możliwości na jednym ekranie” (plan
+  `wyglad/UI-PLAN.md` w plikach projektu). Nowy `Logic/HudMenu`: `BAR` (Plecak, Umiejętności, Mapa, Questy, Sklep, ☰),
+  `TILES` (15 kafelków menu gry), `KEYS` (klawisz każdego okna), `attention` („!” kafelka zapala ☰).
+- HUD: menu w jednym rzędzie (`Hud/init` `menu()`), `ScreenController` `MENU` + `TILE_DEFS` (odznaki kafelków: poczta,
+  arena, osiągnięcia `MenuAttention.Achievements`, wierzchowce, przepustka, nagroda dnia), `GameMenu` z siatką kafelków
+  (ikona, nazwa `menu.tile.<id>`, plakietka klawisza, „!”) nad ustawieniami; stare wiersze menu usunięte (VIP do
+  miasta zostaje). Usunięte `Hud/AchievementButton` i `Hud/EmoteButton`; ✧ i ❖ tylko z nagrodą, PvP przez
+  `PvpRules.toggleShown`, emotka zeszła z `PhoneHud.PLACES`, szuflada telefonu: sześć przycisków paska + ✧ ❖ z „!”.
+- Kolumna: `HudStack.RIGHT_TOP` 460 → 380 (z belką prowadzenia `RIGHT_TOP_GUIDE` 408; plan liczył 356 bez podpisów
+  minimapy), `EXTRAS` na dwa przyciski, `HudSlots` przekazuje belkę. Czat: `Hud/ChatDock` (PC lewy dolny róg, szerokość
+  z `HudStack.chatWidthScale` przed paskiem akcji; dotyk bez zmian). Tropiciel: `TrackerFold.DEFAULTS` zwija zlecenia
+  łowieckie, dnia, tygodnia i osiągnięcia (zapisany wybór zostaje).
+- Z przeglądu Studio: okno nagrody za logowanie nie otwiera się samo, zamiast niego toast `login.toast`
+  (`LoginRewardController`). DEV już tylko dla adminów (w Studio każdy jest adminem). Teksty odblokowania wierzchowców i
+  areny wskazują menu ☰.
+- Testy: nowy `hudmenu.spec`, `hudlayout` (rząd, belka, szerokość czatu), `phonehud`, `trackerfold`, `pvp`, `uiart`
+  (ikony kafelków), `bestiary`.
+
 ### Światło portali w otworze ruiny `common_portal_02` (właściciel 2026-10-31)
 - Zgłoszenie: w jaskiniach, leżach i lochach światło teleportu źle osadzone w drugim modelu łuku. Pomiar właściciela
   (Studio Play, promienie serwera, układ starego pola): otwór między filarami x -3,75..+8,5, płyta do 2,75 nad stopą,
@@ -14134,7 +14176,11 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Logic/ArchFit.field` / `fit(lo, hi, model?)` (bez wpisu: dawne pole na środku), `Prefabs.fitModel` dostaje nazwę
   modelu i zwraca wierzch modelu nad polem; napis strefy 2,5 nad wierzchem modelu (nie wędruje w górę z polem).
 - Test: `portals.spec` „puts the field into the uneven ruin's own opening” (liczby z pomiaru; pole, zasłona i rdzeń
-  między filarami, nad płytą, pod szczytem prawego filara). Nieobejrzane w Studio.
+  między filarami, co najmniej 0,2 nad płytą, pod szczytem prawego filara).
+- Sprawdzenie w Studio (Play, 5 portali z tym modelem): pole i zasłona wyśrodkowane w otworze (ok. 1,5 studa luzu z
+  obu stron), ale dolna krawędź pola i zasłony 0,6–0,9 studa w płycie (jej wierzch 3,8 nad stopą). Poprawka: `foot`
+  0,225 (pole od 4,05 nad stopą, o stud wyżej), `h` 0,535 (9,6, wierzch 13,7 nad stopą jak wcześniej); zasłona
+  8,55 x 9,05 stoi 0,56 nad płytą.
 
 ### Porównanie w tooltipie przedmiotu (właściciel 2026-10-31)
 - Prośba: „Zrób żeby pod itemkiem na który najeżdżasz pokazywało staty do porównania a nie ten który masz na sobie”.
@@ -14147,3 +14193,32 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   żelaza), `Controllers/ItemController.luau` („Załóż” pierścienia bez slotu zastępuje ten sam słabszy pierścień),
   `Admin/Items.luau` (`/tooltip` z liczbami porównania). Klucz `tooltip.equipped` usunięty. Testy:
   `tests/itemcompare.spec.luau`.
+
+### Fryzury kreatora, poprawki po przeglądzie w Studio (2026-10-31)
+- Klasyczne fryzury przychodzą jako `MeshPart` z `TextureID` (bez `SpecialMesh` i `SurfaceAppearance`), więc się nie
+  barwiły. `AvatarBuild.hairShell`: część z `SpecialMesh` (ta sama siatka i tekstura, skala `Size / MeshSize`)
+  przyspawana do uchwytu, uchwyt niewidoczny; serwer robi to raz przy wczytaniu (`CosmeticService`, czeka na `MeshSize`),
+  `wear` ustawia przyspawane części za uchwytem w podglądach.
+- `hair_straight` ma ton (złoty `#D8BE45`), nowe tony: `hair_charmer`, `hair_sidetail`, `hair_braid`, `hair_bun`.
+  `hair_swept` wypada (ta sama siatka co `hair_short`, `LEGACY_HAIRS`). `HairTint.plan`: rozjaśnienie jasnych tekstur
+  maleje poniżej `DARK`. Testy `bodylooks`, `classlooks`, `wikidump`; dane wiki przegenerowane.
+
+### Kamera w dachu po wejściu do świata (przegląd Studio 2026-10-31)
+- Zgłoszenie: po wejściu postaci (poziom 1 i 100, stolica) kamera startowała wciśnięta w dach domu i latarnię.
+- Przyczyna: od W02/W12 domy, mury, latarnie i drzewa miasta to modele zestawu (`CanCollide` i `CanQuery` wyłączone),
+  a ich kolizja to niewidzialne części generatora (przezroczystość 1, bez promieni). Popper kamery Roblox bierze tylko
+  nieprzezroczyste kolidujące części, więc nie widział niczego z miasta; promień kamery „z góry” też nie (domyślne
+  `CanQuery`). Do tego zapisane miejsce wracało zawsze twarzą na północ (`CFrame.new(x, y, z)`), spawn stolicy patrzył
+  na środek mapy zamiast w stronę z planu, a kamera Roblox obraca się za nową postacią, zanim serwer ją obróci i
+  przestawi. Pomiar na obecnych danych (działki `LotPads`): sam spawn ma czysto we wszystkich kierunkach (najbliższy
+  dom 46 studów), ale na 916 otwartych punktach miasta widok startowy twarzą na północ był zasłonięty w 185.
+- `Logic/CameraClear.luau` (czyste): kierunek kamery za postacią, kolejność kierunków od preferowanego, wybór obrotu
+  z czystą linią kamery (14 studów, 15 st. w dół) i widokiem przed sobą (8 studów), odległość przed ścianą (margines
+  `Config.Camera.wallMargin`, najmniej 1 stud) i powrót 40 studów na sekundę.
+- `CameraController`: jeden promień na klatkę (teren i `World.<mapa>`, `RespectCanCollide`) w obu trybach; kamera
+  swobodna przesuwa się tylko po własnej linii (obrót i zoom zostają Robloxa); po `CharacterAdded` i `GroundCheck`
+  świeżej postaci kamera za plecami w kierunku nadanym przez serwer.
+- `WorldService.OpenFacing` (najwyżej 24 promienie raz przy wejściu do świata), `GetSpawnCFrame("city")` z kierunkiem
+  z planu (`Town.city.spawn.facing`, jak `SpawnPoint`), `CharacterService.spawnModel` obraca tylko pozycję wyliczoną
+  przez serwer (bez areny i odrodzeń w punktach). Na danych miasta zasłoniętych startów zostaje 25 z 916 (wąskie
+  zaułki, tam kamera wsuwa się przed ścianę). Test: `tests/cameraclear.spec.luau`. Nieobejrzane w Studio.

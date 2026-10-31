@@ -7,6 +7,7 @@
 --   * after removing what they give, each backpack must fit what they receive.
 -- On success the new backpacks are returned (the caller swaps them in without yielding).
 
+local Binding = require("./Binding")
 local Inventory = require("./Inventory")
 local Types = require("../Types")
 
@@ -65,8 +66,9 @@ local function take(inv: Inventory, uids: { string }): ({ ItemInstance }?, strin
 			return nil, "trade.error.changed"
 		end
 		local item = inv[foundKey]
-		if item.bound then
-			return nil, "trade.error.bound"
+		local free, why = Binding.canTransfer(item, "trade.error.bound")
+		if not free then
+			return nil, why
 		end
 		inv[foundKey] = nil
 		table.insert(taken, item)
@@ -82,10 +84,7 @@ function Trade.canOffer(item: ItemInstance?): (boolean, string?)
 	if not item then
 		return false, "error.badRequest"
 	end
-	if item.bound then
-		return false, "trade.error.bound"
-	end
-	return true, nil
+	return Binding.canTransfer(item, "trade.error.bound")
 end
 
 function Trade.exchange(a: Side, b: Side, newUid: () -> string): (Result?, string?)

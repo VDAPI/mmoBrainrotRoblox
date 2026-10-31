@@ -64,6 +64,8 @@ for _, def in PREMIUM do
 		buyPrice = 0,
 		capacity = def.capacity,
 		noSell = true,
+		-- owner 2026-10-31: binds when equipped, as before (Data/Binding); other backpacks never bind
+		bind = "equip",
 	})
 end
 

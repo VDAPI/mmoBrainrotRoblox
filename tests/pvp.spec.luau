@@ -61,6 +61,16 @@ T.describe("PvpRules.canToggle", function()
 		T.expect(PvpRules.toggleMatters("yellow")).toBe(true)
 		T.expect(PvpRules.toggleMatters("red")).toBe(false)
 	end)
+
+	T.it("the HUD toggle shows only in yellow and red zones or while a switch counts down (UI plan phase 1)", function()
+		T.expect(PvpRules.toggleShown("yellow", nil)).toBe(true)
+		T.expect(PvpRules.toggleShown("red", nil)).toBe(true)
+		T.expect(PvpRules.toggleShown("green", nil)).toBe(false)
+		T.expect(PvpRules.toggleShown(nil, nil)).toBe(false)
+		-- a countdown started in a yellow zone stays visible after a step into a green one
+		T.expect(PvpRules.toggleShown("green", true)).toBe(true)
+		T.expect(PvpRules.toggleShown("green", false)).toBe(true)
+	end)
 end)
 
 T.describe("PvP indicator", function()

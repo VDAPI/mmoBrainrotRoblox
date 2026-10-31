@@ -463,7 +463,7 @@ T.describe("Skill points: save (S137, migration 12)", function()
 			for _, classId in Classes.order do
 				for _, L in { 1, 20, 60, 100 } do
 					local data = oldAccount(classId, L)
-					T.expect(AccountSchema.migrate(data)).toEqual({ 12 })
+					T.expect(AccountSchema.migrate(data)).toEqual({ 12, 13 })
 					local c = data.characters["1"]
 					T.expect(c.reworkNotice).toBe(true)
 					for _, set in { c, c.buildOther } do
@@ -508,7 +508,7 @@ T.describe("Skill points: save (S137, migration 12)", function()
 					-- idempotent
 					local before = TableUtil.deepCopy(data)
 					data.schema = 11
-					T.expect(AccountSchema.migrate(data)).toEqual({ 12 })
+					T.expect(AccountSchema.migrate(data)).toEqual({ 12, 13 })
 					T.expect(data).toEqual(before)
 				end
 			end
@@ -594,7 +594,7 @@ T.describe("Skill points: save (S137, migration 12)", function()
 			local template = AccountSchema.characterTemplate()
 			T.expect({ template.ranks, template.bars, template.barPool, template.respecFree, template.poolsVersion })
 				.toEqual({ {}, {}, "", false, 0 })
-			T.expect(AccountSchema.CURRENT).toBe(12)
+			T.expect(AccountSchema.CURRENT).toBe(13)
 		end
 	)
 

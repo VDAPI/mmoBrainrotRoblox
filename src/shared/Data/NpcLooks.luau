@@ -300,9 +300,9 @@ NpcLooks.npcs = table.freeze({
 -- What the id picks from (Data/ClassLooks ids): faces, hairstyles, hair colours and beards.
 NpcLooks.FACES = { "face_calm", "face_stern", "face_young", "face_weary", "face_scarred", "face_bearded", "face_sharp" }
 NpcLooks.FACES_FEMALE = { "face_calm", "face_young", "face_freckled", "face_sharp", "face_weary" }
--- Hair fixes 2026-10-31: Short Curls and Straight Bangs left the creator (the bangs became the shoulder-length bob),
--- the side ponytail and the bun joined it.
-NpcLooks.HAIRS = { "hair_short", "hair_fringe", "hair_swept", "hair_charmer", "hair_slicked", "hair_shaved" }
+-- Hair fixes 2026-10-31: Short Curls, Straight Bangs (now the shoulder-length bob) and the black Side Part (the same
+-- cut as hair_short) left the creator, the side ponytail and the bun joined it.
+NpcLooks.HAIRS = { "hair_short", "hair_fringe", "hair_charmer", "hair_slicked", "hair_shaved" }
 NpcLooks.HAIRS_FEMALE =
 	{ "hair_bob", "hair_long", "hair_straight", "hair_ponytail", "hair_sidetail", "hair_braid", "hair_bun" }
 NpcLooks.HAIR_COLORS =

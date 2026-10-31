@@ -41,6 +41,9 @@ export type Parcel = {
 	-- S149c: the world boss reward of an absent winner (system only, with `charId`): the EXP and whether the named
 	-- item came, applied once (`applied`) when that character's mailbox is next read (WorldBossService.ApplyPending)
 	worldBoss: WorldBossPart?,
+	-- owner 2026-10-31: the binding version (Data/Binding.VERSION) the parcel was sent under; without it the stacks go
+	-- through Logic/Binding.migrateItem when claimed (sent before the binding rules)
+	bv: number?,
 }
 export type WorldBossPart = { occ: string, exp: number, named: boolean, applied: boolean? }
 
