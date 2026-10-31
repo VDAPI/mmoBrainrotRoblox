@@ -14147,3 +14147,12 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   żelaza), `Controllers/ItemController.luau` („Załóż” pierścienia bez slotu zastępuje ten sam słabszy pierścień),
   `Admin/Items.luau` (`/tooltip` z liczbami porównania). Klucz `tooltip.equipped` usunięty. Testy:
   `tests/itemcompare.spec.luau`.
+
+### Fryzury kreatora, poprawki po przeglądzie w Studio (2026-10-31)
+- Klasyczne fryzury przychodzą jako `MeshPart` z `TextureID` (bez `SpecialMesh` i `SurfaceAppearance`), więc się nie
+  barwiły. `AvatarBuild.hairShell`: część z `SpecialMesh` (ta sama siatka i tekstura, skala `Size / MeshSize`)
+  przyspawana do uchwytu, uchwyt niewidoczny; serwer robi to raz przy wczytaniu (`CosmeticService`, czeka na `MeshSize`),
+  `wear` ustawia przyspawane części za uchwytem w podglądach.
+- `hair_straight` ma ton (złoty `#D8BE45`), nowe tony: `hair_charmer`, `hair_sidetail`, `hair_braid`, `hair_bun`.
+  `hair_swept` wypada (ta sama siatka co `hair_short`, `LEGACY_HAIRS`). `HairTint.plan`: rozjaśnienie jasnych tekstur
+  maleje poniżej `DARK`. Testy `bodylooks`, `classlooks`, `wikidump`; dane wiki przegenerowane.

@@ -8913,7 +8913,6 @@ return {
 	["look.face.face_sharp"] = "Adelis's face",
 	["look.hair.hair_short"] = "Short swept back",
 	["look.hair.hair_fringe"] = "Short fringe",
-	["look.hair.hair_swept"] = "Side part",
 	["look.hair.hair_charmer"] = "Tousled",
 	["look.hair.hair_slicked"] = "Chin-length shag",
 	["look.hair.hair_bob"] = "Shoulder length",
