@@ -1766,10 +1766,12 @@ local function mocap(action: Action, ref: ClipRef, strike: number, follow: numbe
 end
 
 -- The one-handed fighters on the sword-and-shield set: the armed stance's idle (a twirl of the blade now and then) and
--- walk while they fight, the four blows taking turns from a place of each instance's own (a diagonal slash, a rising
--- backhand, an overhead chop, a quick stab), a wide horizontal sweep for the cleave, the chop held high for the heavy
--- blow, the leaping slam onto the target for the pounce and in place for the crush, a throw from the free hand, a
--- battle cry, getting up off the ground, big hit reactions by side and falls by the killing blow's side.
+-- walk while they fight, the four blows taking turns from a place of each instance's own (a slash whipped round from
+-- behind the head, a rising backhand, an overhead chop, the keyed stab: the pack's "stab" strikes with the hilt, the
+-- blade behind), a wide horizontal sweep for the cleave, the chop held high for the heavy blow, the leaping slam onto
+-- the target for the pounce and in place for the crush, a throw from the free hand, a battle cry, getting up off the
+-- ground, big hit reactions by side and falls by the killing blow's side. The blows stand their ground (baked planted:
+-- the clip's lunge taken out, the feet pinned) and play on until the stance is back (2026-10-31 Studio review).
 HUMANOID_1H.clips = {
 	idle = { "idle", "idleShift", "idleLook" },
 	walk = "walk",
@@ -1788,15 +1790,14 @@ HUMANOID_1H.death = { "deathBack", "deathFwd", "deathBack2" }
 HUMANOID_1H.deaths = { front = { "deathBack", "deathBack2" }, back = { "deathFwd" } }
 do
 	local A = HUMANOID_1H.actions
-	A.slash = mocap(KEYED.slash, { name = "swordSlash", blade = true }, 0.2, 0.3, 0.4)
-	A.backhand = mocap(KEYED.backhand, { name = "swordBackhand", blade = true }, 0.23, 0.3, 0.4)
-	A.chop = mocap(KEYED.slash, { name = "swordChop", blade = true }, 0.25, 0.35, 0.45)
-	A.thrust = mocap(KEYED.thrust, { name = "swordStab", blade = true }, 0.2, 0.25, 0.3)
-	A.cleave = mocap(KEYED.cleave, { name = "swordSweep", blade = true }, 0.27, 0.4, 0.5)
-	A.heavy = mocap(KEYED.heavy, { name = "swordChop", blade = true }, 0.25, 0.4, 0.5)
-	A.crush = mocap(KEYED.crush, { name = "swordHop", blade = true }, 0.79, 0.45, 0.55)
-	A.pounce = mocap(KEYED.pounce, { name = "swordLeap", blade = true, travel = true }, 0.79, 0.4, 0.5)
-	A.throw = mocap(KEYED.throw, { name = "throw", mirror = true }, 0.4, 0.35, 0.45)
+	A.slash = mocap(KEYED.slash, { name = "swordSlash", blade = true }, 0.23, 0.35, 0.5)
+	A.backhand = mocap(KEYED.backhand, { name = "swordBackhand", blade = true }, 0.23, 0.35, 0.47)
+	A.chop = mocap(KEYED.slash, { name = "swordChop", blade = true }, 0.25, 0.4, 0.7)
+	A.cleave = mocap(KEYED.cleave, { name = "swordSweep", blade = true }, 0.27, 0.45, 0.65)
+	A.heavy = mocap(KEYED.heavy, { name = "swordChop", blade = true }, 0.25, 0.45, 0.65)
+	A.crush = mocap(KEYED.crush, { name = "swordHop", blade = true }, 0.82, 0.45, 0.55)
+	A.pounce = mocap(KEYED.pounce, { name = "swordLeap", blade = true, travel = true }, 0.82, 0.4, 0.5)
+	A.throw = mocap(KEYED.throw, { name = "throw", mirror = true }, 0.4, 0.45, 0.6)
 	-- the shout peaks on the hit, half of it kept on a body that already runs
 	A.aggro = mocap(KEYED.aggro, { name = "battlecry", moving = 0.5 }, 0.2, 0.7, 0.6)
 	A.aggro.legs = true
@@ -2197,8 +2198,8 @@ local CASTER: Style = variant(HUMANOID_1H, {
 
 -- 2026-10-31: the bolts on mocap (a one-handed cast thrust at the target from the staff hand, mirrored for the free
 -- hand's); the nova and the pool stay keyed (no two-handed cast in the download yet).
-CASTER.actions.spell = mocap(CASTER.actions.spell, { name = "magic1h" }, 0.3, 0.35, 0.45)
-CASTER.actions.spellLeft = mocap(CASTER.actions.spellLeft, { name = "magic1h", mirror = true }, 0.3, 0.35, 0.45)
+CASTER.actions.spell = mocap(CASTER.actions.spell, { name = "magic1h" }, 0.3, 0.4, 0.6)
+CASTER.actions.spellLeft = mocap(CASTER.actions.spellLeft, { name = "magic1h", mirror = true }, 0.3, 0.4, 0.6)
 
 -- Brute (unarmed: claws and fists; beasts, golems, trolls): a hunched wide stance with the arms ready, the regular blow a
 -- right and a left swipe in turn, the abilities the humanoid's heavy moves done with bare hands.
@@ -2319,10 +2320,13 @@ local BRUTE: Style = variant(HUMANOID_1H, {
 	guard = BRUTE_GUARD,
 	basic = { "clawR", "clawL" },
 	actions = {
-		clawR = mocap(swipe(1), { name = "mutantSwipe", mirror = true }, 0.33, 0.35, 0.45),
-		clawL = mocap(swipe(-1), { name = "mutantSwipe" }, 0.33, 0.35, 0.45),
-		crush = mocap(KEYED.crush, { name = "mutantSlam" }, 1.03, 0.5, 0.6),
-		pounce = mocap(KEYED.pounce, { name = "mutantSlam", fly = { 1.27, 1.87 } }, 1.03, 0.5, 0.6),
+		clawR = mocap(swipe(1), { name = "mutantSwipe", mirror = true }, 0.36, 0.4, 0.6),
+		clawL = mocap(swipe(-1), { name = "mutantSwipe" }, 0.36, 0.4, 0.6),
+		-- the wide blow a swipe across from the right, the heavy one the jumping slam
+		cleave = mocap(KEYED.cleave, { name = "mutantSwipe", mirror = true }, 0.36, 0.4, 0.6),
+		heavy = mocap(KEYED.heavy, { name = "mutantSlam" }, 1.13, 0.4, 0.5),
+		crush = mocap(KEYED.crush, { name = "mutantSlam" }, 1.13, 0.4, 0.5),
+		pounce = mocap(KEYED.pounce, { name = "mutantSlam", fly = { 1.27, 1.87 } }, 1.13, 0.4, 0.5),
 		deathMutant = mocap(
 			KEYED.deathBack,
 			{ name = "mutantDeath", free = true, rate = 1.5, from = 0.3, hit = 1.1 },
@@ -2363,8 +2367,8 @@ local GHOST: Style = variant(CASTER, {
 		aggro = KEYED.aggro,
 		throw = KEYED.throw,
 		pounce = KEYED.pounce,
-		spell = mocap(CASTER.actions.spell, { name = "magic1h", upper = true }, 0.3, 0.35, 0.45),
-		spellLeft = mocap(CASTER.actions.spellLeft, { name = "magic1h", mirror = true, upper = true }, 0.3, 0.35, 0.45),
+		spell = mocap(CASTER.actions.spell, { name = "magic1h", upper = true }, 0.3, 0.4, 0.6),
+		spellLeft = mocap(CASTER.actions.spellLeft, { name = "magic1h", mirror = true, upper = true }, 0.3, 0.4, 0.6),
 	},
 })
 GHOST.grip = nil
@@ -2376,8 +2380,8 @@ GHOST.deaths = nil
 local HUMANOID_2H: Style = variant(HUMANOID_1H, {
 	basic = { "hew", "chop", "hew", "slash" },
 	actions = {
-		hew = mocap(KEYED.heavy, { name = "greatSlash", blade = true }, 0.2, 0.2, 0.28),
-		cleave = mocap(KEYED.cleave, { name = "greatSpin", blade = true }, 0.2, 0.35, 0.45),
+		hew = mocap(KEYED.heavy, { name = "greatSlash", blade = true }, 0.25, 0.25, 0.33),
+		cleave = mocap(KEYED.cleave, { name = "greatSpin", blade = true }, 0.2, 0.3, 0.38),
 		pounce = mocap(KEYED.pounce, { name = "greatJump", blade = true, travel = true }, 1.03, 0.45, 0.55),
 	},
 })

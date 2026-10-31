@@ -1692,7 +1692,7 @@ T.describe("Wiki export: class looks (S132)", function()
 			T.expect(type(look.name.pl) == "string" and type(look.name.en) == "string").toBe(true)
 		end
 		T.expect(looks.faces).toBe(8)
-		T.expect(looks.hairs).toBe(12)
+		T.expect(looks.hairs).toBe(13)
 		T.expect(#looks.skins).toBe(12)
 		local classOf: { [string]: string } = {}
 		for _, c in d.cosmetics.cosmetics do

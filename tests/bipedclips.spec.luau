@@ -596,6 +596,152 @@ T.describe("BipedMotion: mocap actions on a Mixamo skeleton", function()
 	end)
 end)
 
+-- Steps a fresh instance of `id` standing in its fight through `action` (started at 0.2 s, hit at `hit`) for `finish` s
+-- and hands every frame's final pose (root-space joints, BipedPose.positions) to `sink` with the instance.
+local function joints(
+	id: string,
+	name: string,
+	hit: number,
+	finish: number,
+	over: ((t: number, input: { [string]: any }) -> ())?,
+	sink: (t: number, at: { [string]: Vec }, world: BipedPose.World, inst: BipedMotion.Instance) -> ()
+)
+	local captured: { world: BipedPose.World, shift: Vec }? = nil
+	local transforms = BipedPose.transforms
+	local module: any = BipedPose
+	-- (the final pose as the motion writes it)
+	module.transforms = function(skel, world, shift)
+		captured = { world = world, shift = shift }
+		return transforms(skel, world, shift)
+	end
+	local ok, err = pcall(function()
+		local inst = BipedMotion.new(SKEL, id, 3, { 0.42, -0.87, -0.22 }) :: BipedMotion.Instance
+		local t, dt = 0, 1 / 60
+		while t <= finish do
+			local input: { [string]: any } = { now = t, dt = dt, speed = 0, yawRate = 0, combat = true, snap = t == 0 }
+			if t >= 0.2 and name ~= "" then
+				input.action = { name = name, start = 0.2, hit = hit }
+			end
+			if over then
+				over(t, input)
+			end
+			BipedMotion.step(inst, input :: any)
+			local pose = captured :: { world: BipedPose.World, shift: Vec }
+			sink(t, BipedPose.positions(SKEL, pose.world, pose.shift), pose.world, inst)
+			t += dt
+		end
+	end)
+	module.transforms = transforms
+	if not ok then
+		error(err, 0)
+	end
+end
+
+local TOE: { [string]: string } = { R = "RightToeBase", L = "LeftToeBase" }
+local DEBUG = false
+
+T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio review)", function()
+	T.it("lays the blade on the target at the hit: pointing ahead, the hand in front of the body", function()
+		for _, id in { "humanoid1h", "humanoid2h" } do
+			local style = styleOf(id)
+			for name, action in style.actions do
+				local ref = action.clip
+				if not ref or not ref.blade then
+					continue
+				end
+				local hit = hitsOf(style, name)[1]
+				local tag = `{id}.{name}`
+				joints(id, name, hit, 0.2 + hit, nil, function(t, at, world)
+					if math.abs(t - (0.2 + hit)) < 1 / 120 then
+						local blade = NpcPose.apply(world.RightHand, unitV({ 0.42, -0.87, -0.22 }))
+						local ahead = (at.Hips[3] - at.RightHand[3]) / SKEL.legLength
+						T.expect({ tag, blade[3] < -0.6, ahead > 0.3 }).toEqual({ tag, true, true })
+					end
+				end)
+			end
+		end
+	end)
+
+	T.it("keeps a planted foot where it stands, the body over its root, and the stance back after the blow", function()
+		for _, id in { "humanoid1h", "humanoid2h", "caster", "brute" } do
+			local style = styleOf(id)
+			for name, action in style.actions do
+				local ref = action.clip
+				if not ref or ref.free or ref.travel or ref.fly or ref.upper then
+					continue
+				end
+				local tag = `{id}.{name}`
+				local hit = hitsOf(style, name)[1]
+				local L = SKEL.legLength
+				local start: { [string]: Vec }? = nil
+				local last: { [string]: Vec }? = nil
+				local wasHeld: { [string]: boolean } = {}
+				local travel, slide = 0, 0
+				local final: { [string]: Vec }? = nil
+				joints(id, name, hit, 0.2 + BipedMotion.length(action, hit) + 1.2, nil, function(_, at, _, inst)
+					local first = start or at
+					start = first
+					travel =
+						math.max(travel, math.sqrt((at.Hips[1] - first.Hips[1]) ^ 2 + (at.Hips[3] - first.Hips[3]) ^ 2))
+					for side, key in TOE do
+						local foot = inst.feet[side]
+						local held = foot.held and foot.stepAt == nil
+						local before = last
+						if held and wasHeld[side] and before then
+							local a, b = at[key], before[key]
+							slide += math.sqrt((a[1] - b[1]) ^ 2 + (a[3] - b[3]) ^ 2)
+						end
+						wasHeld[side] = held
+					end
+					last = at
+					final = at
+				end)
+				local a, b = start :: { [string]: Vec }, final :: { [string]: Vec }
+				local back = 0
+				for _, key in TOE do
+					back = math.max(back, math.sqrt((a[key][1] - b[key][1]) ^ 2 + (a[key][3] - b[key][3]) ^ 2))
+				end
+				-- (the slide: all a held ball of the foot moves over the run, both feet; the review measured 0.8 stud)
+				if DEBUG then
+					print(
+						string.format("%s slide %.3f L travel %.2f L back %.3f L", tag, slide / L, travel / L, back / L)
+					)
+				end
+				T.expect({ tag, slide < 0.04 * L, travel < 0.45 * L, back < 0.08 * L })
+					.toEqual({ tag, true, true, true })
+			end
+		end
+	end)
+
+	T.it("a planted foot stays put in the world while the root turns under it", function()
+		local L = SKEL.legLength
+		local yaw = 0
+		local held: Vec? = nil
+		local drift = 0
+		joints("humanoid1h", "", 0, 1.2, function(t, input)
+			input.yawRate = if t > 0.6 then 0.6 else 0
+		end, function(t, at, _, inst)
+			local foot = inst.feet.L
+			if t > 0.6 then
+				yaw += 0.6 / 60
+			end
+			-- the toe in the world (the root turned by `yaw`, left positive)
+			local p = at.LeftToeBase
+			local c, s = math.cos(yaw), math.sin(yaw)
+			local w: Vec = { p[1] * c + p[3] * s, p[2], p[3] * c - p[1] * s }
+			if t > 0.55 and foot.held and not foot.stepAt then
+				local h = held or w
+				held = h
+				drift = math.max(drift, math.sqrt((w[1] - h[1]) ^ 2 + (w[3] - h[3]) ^ 2))
+			elseif foot.stepAt then
+				held = nil
+			end
+		end)
+		T.expect(held ~= nil).toBe(true)
+		T.expect(drift < 0.01 * L).toBe(true)
+	end)
+end)
+
 T.describe("Mocap: the kinds, the effects and AnimLab", function()
 	T.it("the two-handed kinds on humanoid2h; every style's actions with effects exist", function()
 		for _, id in { "ashOrc", "renegadeDwarf", "frostGiant" } do

@@ -10,7 +10,7 @@
   `Logic/MeadowsTerrain`), drogi, woda, `sites`, `npcSpots`, `questAnchors` w `Data/Areas/meadows`; budowla to builder w
   `Logic/MeadowsGen/<moduł>` (`Kit.build`, LOD `shell`/`detail`/`fine`, kształt do mapy przez `Kit.rect`); nastrój i
   dźwięki obszaru w `Data/Ambience`. Po zmianie dróg/wody/terenu: `python tools/arrivals_apply.py`. Podgląd bez Studio:
-  `lune run tools/meadowsview.luau out.json x1 z1 x2 z2` + `python tools/meadowsview.py out.json out.png --eye … --look …`.
+  `lune run tools/regionview.luau meadows out.json x1 z1 x2 z2` + `python tools/regionview.py out.json out.png --eye … --look …`.
 
 - **Teren / budowla / nastrój krainy** (S45, wspólny silnik; pierwsza: Mroczny Bór): kształt w `Data/Terrain/<mapa>`
   (typy `Data/Terrain/Types`, rejestr `Data/Terrain/init`; czysta funkcja `Logic/RegionTerrain.get(mapa)`), drogi,
