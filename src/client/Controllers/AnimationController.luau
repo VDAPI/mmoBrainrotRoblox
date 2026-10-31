@@ -466,7 +466,11 @@ local function onAttribute(s: MonsterState, name: string)
 		elseif rig and model:GetAttribute("AggroUserId") ~= nil and not s.bipedDead and rig.motion.style.aggro then
 			local now = Clock.now()
 			if not bipedBusy(s, rig, now) then
-				s.bipedAction = { name = rig.motion.style.aggro :: string, start = now, hit = 0.45 }
+				-- (a shout on mocap peaks at its own time: BipedMotion.ownHit)
+				local name = rig.motion.style.aggro :: string
+				local action = rig.motion.style.actions[name]
+				local own = action and rig.mod.ownHit and rig.mod.ownHit(action)
+				s.bipedAction = { name = name, start = now, hit = own or 0.45 }
 			end
 		end
 		-- S159a: a boss roars when it first turns on a fighter (BossMotions roar.intro)
@@ -580,7 +584,9 @@ local function track(model: Instance)
 		local appear = if s.riseStart and rig.motion.style.summon
 			then rig.motion.style.summon
 			else rig.motion.style.spawn
-		s.bipedAction = { name = appear :: string, start = Clock.now(), hit = 0.5 }
+		local action = rig.motion.style.actions[appear :: string]
+		local own = action and rig.mod.ownHit and rig.mod.ownHit(action)
+		s.bipedAction = { name = appear :: string, start = Clock.now(), hit = own or 0.5 }
 	end
 end
 
@@ -860,9 +866,16 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 	if s.deadAt and not s.bipedDead then
 		s.bipedDead = true
 		s.bipedRoar = nil
-		local name = rig.mod.death(rig.motion)
+		-- the fall by the side the killing blow came from (a blow from the front throws it on its back)
+		local side: string? = nil
+		if s.hitDir and s.deadAt - s.hitAt < 1.5 then
+			local d = s.root.CFrame:VectorToObjectSpace(s.hitDir)
+			side = rig.mod.side({ d.X, d.Y, d.Z })
+		end
+		local name = rig.mod.death(rig.motion, side)
 		local action = rig.motion.style.actions[name]
-		s.bipedAction = { name = name, start = s.deadAt, hit = if action then action.strike else 0.2 }
+		local own = action and rig.mod.ownHit and rig.mod.ownHit(action)
+		s.bipedAction = { name = name, start = s.deadAt, hit = own or (if action then action.strike else 0.2) }
 	end
 	-- a boss's roar once its running blow ends
 	local boss = rig.motion.style.boss
@@ -872,7 +885,9 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 			s.bipedRoar = nil
 		elseif not bipedBusy(s, rig, now) then
 			s.bipedRoar = nil
-			s.bipedAction = { name = roar.name, start = now, hit = boss.roarHit }
+			local action = rig.motion.style.actions[roar.name]
+			local own = action and rig.mod.ownHit and rig.mod.ownHit(action)
+			s.bipedAction = { name = roar.name, start = now, hit = own or boss.roarHit }
 		end
 	end
 	local hitSide: string? = nil
@@ -1108,7 +1123,7 @@ function AnimationController.MonsterAttack(
 		if not ability then
 			s.bipedCount += 1
 		end
-		local name = rig.mod.pick(rig.motion.style, ability, opts and opts.shot, s.bipedCount)
+		local name = rig.mod.pick(rig.motion.style, ability, opts and opts.shot, s.bipedCount, s.seed)
 		local reach: { number }? = nil
 		-- S162m: a dash the server runs on the root itself ("move") needs no flight in the pose
 		local moves = s.model:GetAttribute("DashId") == attackId and s.model:GetAttribute("DashMode") == "move"

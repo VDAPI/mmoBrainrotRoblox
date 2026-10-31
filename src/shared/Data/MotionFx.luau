@@ -375,7 +375,11 @@ local HUMANOID: { [string]: { Fx } } = {
 	throw = { fx("held", "handL", "A0.15", "W") },
 	deathBack = { fx("dust", "body", "F1", nil, { size = 0.8 }) },
 	deathFwd = { fx("dust", "body", "F1", nil, { size = 0.8 }) },
+	deathBack2 = { fx("dust", "body", "F1", nil, { size = 0.8 }) },
 }
+-- The two-handed fighters (humanoid2h, 2026-10-31): the same, and a streak behind the hauled hew.
+local HUMANOID_2H: { [string]: { Fx } } = table.clone(HUMANOID)
+HUMANOID_2H.hew = { fx("trail", "weapon", "S0", "F0.4") }
 
 -- The casters (shaman, cultist, necromancer, witch, imp): the spell gathers in the staff's head (the free hand's for
 -- spellLeft and the pool) and flashes there as the bolt leaves; the nova gathers in the raised staff, the butt hits the
@@ -395,6 +399,7 @@ local CASTER: { [string]: { Fx } } = {
 	throw = { fx("held", "handL", "A0.15", "W") },
 	deathBack = { fx("dust", "body", "F1", nil, { size = 0.7 }) },
 	deathFwd = { fx("dust", "body", "F1", nil, { size = 0.7 }) },
+	deathBack2 = { fx("dust", "body", "F1", nil, { size = 0.7 }) },
 }
 
 -- The ghosts (the forest wraith): the caster's spells without a staff or a floor to hit (the frost nova's spikes
@@ -420,6 +425,8 @@ local BRUTE: { [string]: { Fx } } = {
 	throw = { fx("held", "handL", "A0.15", "W", { size = 1.2 }) },
 	deathBack = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
 	deathFwd = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
+	deathBack2 = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
+	deathMutant = { fx("dust", "body", "F1", nil, { size = 1.1 }) },
 }
 
 local function freezeAll(list: { [string]: { Fx } }): { [string]: { Fx } }
@@ -454,6 +461,7 @@ MotionFx.STYLES = table.freeze({
 	vulture = freezeAll(VULTURE),
 	harpy = freezeAll(HARPY),
 	humanoid1h = freezeAll(HUMANOID),
+	humanoid2h = freezeAll(HUMANOID_2H),
 	caster = freezeAll(CASTER),
 	ghost = freezeAll(GHOST),
 	brute = freezeAll(BRUTE),

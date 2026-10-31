@@ -216,6 +216,9 @@ export type Skeleton = {
 	},
 	legLength: number, -- hip joint over the ground (studs): the scale of every distance the motion uses
 	dirs: { [string]: Vec }, -- rest direction of each bone toward its child joint (root space)
+	-- "R" / "L": the rest knuckle line of a hand with finger bones (index -> little finger root, root space): the mocap
+	-- keeps the arms' roll by it (Logic/BipedClip.fit)
+	knuckles: { [string]: Vec }?,
 	-- the point (root space) the body turns about when it is not the Hips bone's own joint (Data/BipedRigs `pivot`: a
 	-- Tripo root at the ground under the pelvis); nil = the Hips joint
 	pivot: Vec?,
@@ -313,6 +316,16 @@ function BipedPose.skeleton(bones: { [string]: Bone }, options: Options?): Skele
 			end
 		end
 	end
+	local knuckles: { [string]: Vec }? = nil
+	for _, s in { "R", "L" } do
+		local side = if s == "R" then "Right" else "Left"
+		local index, little = bones[side .. "HandIndex1"], bones[side .. "HandPinky1"]
+		local d = if index and little then unit(sub(index.pos, little.pos)) else nil
+		if d then
+			knuckles = knuckles or {}
+			(knuckles :: { [string]: Vec })[s] = d
+		end
+	end
 	return {
 		bones = bones,
 		armFit = armFit,
@@ -320,6 +333,7 @@ function BipedPose.skeleton(bones: { [string]: Bone }, options: Options?): Skele
 		leg = leg,
 		legLength = legLength,
 		dirs = dirs,
+		knuckles = knuckles,
 		pivot = options and options.pivot,
 		fix = options and options.fix,
 	}
@@ -657,6 +671,43 @@ function BipedPose.blend(a: World, b: World, k: number, mask: { [string]: number
 		local w = if mask then k * (mask[key] or 0) else k
 		local other = b[key]
 		out[key] = if other and w > 0 then BipedPose.slerp(m, other, w) else m
+	end
+	for key, m in b do
+		if out[key] == nil then
+			out[key] = m
+		end
+	end
+	return out
+end
+
+-- Per bone, `a` toward `b` by `k` (times `mask[key]`, as `blend`) in each bone's turn from its parent instead of in root
+-- axes (2026-10-31: a mocap action over the keyed layers): two poses far apart (a clip's arm against the keyed guard's)
+-- blend joint by joint without a turn taking the long way round, and an upper body over the locomotion's hips (`mask`
+-- 0 on the legs) rides them.
+function BipedPose.blendLocal(a: World, b: World, k: number, mask: { [string]: number }?): World
+	local out: World = {}
+	for _, key in BipedPose.KEYS do
+		local wa, wb = a[key], b[key]
+		local w = if mask then k * (mask[key] or 0) else k
+		local parentKey = BipedPose.PARENT[key]
+		local pa = if parentKey then a[parentKey] else nil
+		local pb = if parentKey then b[parentKey] else nil
+		local po = if parentKey then out[parentKey] else nil
+		if not wa then
+			out[key] = wb
+		elseif not wb or w <= 0 then
+			-- a's own turn from its parent, under the blended parent
+			out[key] = if pa and po then mul(po, mul(transpose(pa), wa)) else wa
+		elseif pa and pb and po then
+			out[key] = mul(po, BipedPose.slerp(mul(transpose(pa), wa), mul(transpose(pb), wb), w))
+		else
+			out[key] = BipedPose.slerp(wa, wb, w)
+		end
+	end
+	for key, m in a do
+		if out[key] == nil then
+			out[key] = m
+		end
 	end
 	for key, m in b do
 		if out[key] == nil then

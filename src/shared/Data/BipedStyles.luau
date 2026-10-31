@@ -16,8 +16,27 @@ local BossStyles = require("./BossStyles")
 local BipedStyles = {}
 
 export type Key = { seg: string, u: number, ease: string?, pose: { [string]: number } }
+-- 2026-10-31: an action played from a mocap clip (Data/BipedClips, Logic/BipedMotion) instead of its keys (kept: the
+-- fallback, AnimLab's pose sheets). A blow's clip keeps its contact exactly on the server's hit: its lead-in squeezed or
+-- stretched onto the windup, its strike (the clip's `strike` before its `hit`) at its own pace, the rest at its pace.
+export type ClipRef = {
+	name: string,
+	mirror: boolean?, -- played with left and right swapped (a right-handed clip as the left hand's)
+	-- at its own pace (`rate`) from `from`: the action's hit is the clip's, not the server's (a fall, a shout, getting up)
+	free: boolean?,
+	rate: number?,
+	from: number?, -- clip seconds it starts at (the lead-in before is skipped)
+	hit: number?, -- clip seconds of the action's hit when the clip has no `hit` of its own (a fall's landing)
+	travel: boolean?, -- the clip's ground travel up to its hit is laid onto the run's reach (a leap onto the target)
+	fly: { number }?, -- an in-place clip's flight (clip seconds, from / to): the reach is covered over it
+	blade: boolean?, -- the model's blade (`grip`) laid along the clip's, the line its fist closes round (a sword's)
+	upper: boolean?, -- the upper body only (the legs stay the locomotion's: a floating body)
+	out: number?, -- seconds of the fade back into the layers under it (default 0.3)
+	moving: number?, -- the share of its weight kept on a body that moves (a shout while it runs: default 1)
+}
 export type Action = {
 	keys: { Key },
+	clip: ClipRef?,
 	strike: number, -- seconds of the strike segment (shorter when the windup is short)
 	follow: number,
 	recover: number,
@@ -35,14 +54,28 @@ export type Action = {
 }
 export type Style = {
 	grip: { number }?, -- the blade's direction in the right hand at rest (root space): keys aim it with bRx bRy bRz
-	clips: { idle: { string }, walk: string, run: string }?, -- nil: the procedural gait of `procedural`
+	-- nil: the procedural gait of `procedural`; `combat` (2026-10-31): the armed stance's idle and walk crossfaded in
+	-- while it fights, instead of the keyed guard (`blade`: the model's blade laid along the clip's)
+	clips: {
+		idle: { string },
+		walk: string,
+		run: string,
+		combat: { idle: string, walk: string, blade: boolean? }?,
+	}?,
 	guard: { [string]: number },
 	actions: { [string]: Action },
 	flinch: { [string]: { [string]: number } },
-	basic: { string }, -- the regular blow cycles through these
+	-- 2026-10-31: mocap hit reactions by side (Data/BipedClips: the upper body's turns laid over the pose for a moment),
+	-- `hitScale` their strength; the keyed `flinch` without them
+	hits: { [string]: { string } }?,
+	hitScale: number?,
+	basic: { string }, -- the regular blow cycles through these (from a place of its own for each instance)
 	abilities: { [string]: string }, -- ability id (Data/MonsterAbilities) -> action
 	throw: string?,
 	death: { string },
+	-- 2026-10-31: the deaths by the side the killing blow came from (a blow from the front throws it on its back); the
+	-- other sides and an unknown blow take `death`
+	deaths: { [string]: { string } }?,
 	aggro: string?,
 	spawn: string?,
 	idleEvery: { number }, -- seconds between idle variants (min, max)
@@ -1717,6 +1750,65 @@ local function variant(base: Style, over: { [string]: any }): Style
 	return out :: Style
 end
 
+---------------------------------------------------------------- mocap (2026-10-31: the owner's Mixamo download)
+
+-- The humanoid's keyed actions as they were: the fallback of every clip action, and the ghost's own (it floats).
+local KEYED = table.clone(HUMANOID_1H.actions)
+
+-- `action` played from clip `ref` (Data/BipedClips, Logic/BipedMotion): `strike` the clip's part before its hit at its
+-- own pace (its `strike`), `follow` and `recover` how much of it plays after the hit (its last 0.3 s fading back).
+-- The keys stay for the fallback and AnimLab's pose sheets.
+local function mocap(action: Action, ref: ClipRef, strike: number, follow: number, recover: number): Action
+	local out = table.clone(action)
+	out.clip = ref
+	out.strike, out.follow, out.recover = strike, follow, recover
+	return out
+end
+
+-- The one-handed fighters on the sword-and-shield set: the armed stance's idle (a twirl of the blade now and then) and
+-- walk while they fight, the four blows taking turns from a place of each instance's own (a diagonal slash, a rising
+-- backhand, an overhead chop, a quick stab), a wide horizontal sweep for the cleave, the chop held high for the heavy
+-- blow, the leaping slam onto the target for the pounce and in place for the crush, a throw from the free hand, a
+-- battle cry, getting up off the ground, big hit reactions by side and falls by the killing blow's side.
+HUMANOID_1H.clips = {
+	idle = { "idle", "idleShift", "idleLook" },
+	walk = "walk",
+	run = "run",
+	combat = { idle = "guardIdle", walk = "guardWalk", blade = true },
+}
+HUMANOID_1H.basic = { "slash", "backhand", "chop", "thrust" }
+HUMANOID_1H.hits = {
+	front = { "hitFront", "impact2", "impact3" },
+	back = { "hitBack" },
+	left = { "hitLeft" },
+	right = { "hitRight" },
+}
+HUMANOID_1H.hitScale = 0.75
+HUMANOID_1H.death = { "deathBack", "deathFwd", "deathBack2" }
+HUMANOID_1H.deaths = { front = { "deathBack", "deathBack2" }, back = { "deathFwd" } }
+do
+	local A = HUMANOID_1H.actions
+	A.slash = mocap(KEYED.slash, { name = "swordSlash", blade = true }, 0.2, 0.3, 0.4)
+	A.backhand = mocap(KEYED.backhand, { name = "swordBackhand", blade = true }, 0.23, 0.3, 0.4)
+	A.chop = mocap(KEYED.slash, { name = "swordChop", blade = true }, 0.25, 0.35, 0.45)
+	A.thrust = mocap(KEYED.thrust, { name = "swordStab", blade = true }, 0.2, 0.25, 0.3)
+	A.cleave = mocap(KEYED.cleave, { name = "swordSweep", blade = true }, 0.27, 0.4, 0.5)
+	A.heavy = mocap(KEYED.heavy, { name = "swordChop", blade = true }, 0.25, 0.4, 0.5)
+	A.crush = mocap(KEYED.crush, { name = "swordHop", blade = true }, 0.79, 0.45, 0.55)
+	A.pounce = mocap(KEYED.pounce, { name = "swordLeap", blade = true, travel = true }, 0.79, 0.4, 0.5)
+	A.throw = mocap(KEYED.throw, { name = "throw", mirror = true }, 0.4, 0.35, 0.45)
+	-- the shout peaks on the hit, half of it kept on a body that already runs
+	A.aggro = mocap(KEYED.aggro, { name = "battlecry", moving = 0.5 }, 0.2, 0.7, 0.6)
+	A.aggro.legs = true
+	-- getting up off the ground (on its hands and knees, then standing) at 1.7 times its pace: 2.5 s
+	A.spawn = mocap(KEYED.spawn, { name = "standUp", free = true, rate = 1.7, hit = 2 }, 0.3, 0.6, 0.69)
+	-- the falls at a pace that lands them well inside the corpse's fade (Config.CorpseSeconds): the hit where the body
+	-- gives, the follow-through to the floor (the dust)
+	A.deathBack = mocap(KEYED.deathBack, { name = "fallBack", free = true, rate = 1.25, hit = 0.4 }, 0.18, 0.32, 0.8)
+	A.deathFwd = mocap(KEYED.deathFwd, { name = "fallFwd", free = true, rate = 1.4, hit = 0.2 }, 0.14, 0.86, 0.36)
+	A.deathBack2 = mocap(KEYED.deathBack, { name = "fallBack2", free = true, rate = 1.2, hit = 0.3 }, 0.18, 0.33, 0.58)
+end
+
 -- Caster (a staff or a wand in the right hand, the free hand casting): the regular blow is a bolt cast from the staff
 -- head, the abilities a nova slammed into the ground or a pool called onto the target.
 local CASTER_GUARD = {
@@ -1747,6 +1839,7 @@ end
 
 local CASTER: Style = variant(HUMANOID_1H, {
 	grip = { 0, 1, 0 },
+	clips = { idle = { "idle", "idleShift", "idleLook" }, walk = "walk", run = "run" },
 	guard = CASTER_GUARD,
 	basic = { "spell", "spellLeft" },
 	abilities = {
@@ -2102,6 +2195,11 @@ local CASTER: Style = variant(HUMANOID_1H, {
 	},
 })
 
+-- 2026-10-31: the bolts on mocap (a one-handed cast thrust at the target from the staff hand, mirrored for the free
+-- hand's); the nova and the pool stay keyed (no two-handed cast in the download yet).
+CASTER.actions.spell = mocap(CASTER.actions.spell, { name = "magic1h" }, 0.3, 0.35, 0.45)
+CASTER.actions.spellLeft = mocap(CASTER.actions.spellLeft, { name = "magic1h", mirror = true }, 0.3, 0.35, 0.45)
+
 -- Brute (unarmed: claws and fists; beasts, golems, trolls): a hunched wide stance with the arms ready, the regular blow a
 -- right and a left swipe in turn, the abilities the humanoid's heavy moves done with bare hands.
 local BRUTE_GUARD = {
@@ -2214,10 +2312,28 @@ local function swipe(m: number): Action
 	}
 end
 
+-- 2026-10-31: on the mutant set (a hunched breathing idle and a lumbering walk, the swipe (the left's own, mirrored for
+-- the right), the jumping two-fisted slam for the crush and, carried onto the target, the pounce; a fall of its own).
 local BRUTE: Style = variant(HUMANOID_1H, {
+	clips = { idle = { "mutantIdle" }, walk = "mutantWalk", run = "run" },
 	guard = BRUTE_GUARD,
 	basic = { "clawR", "clawL" },
-	actions = { clawR = swipe(1), clawL = swipe(-1) },
+	actions = {
+		clawR = mocap(swipe(1), { name = "mutantSwipe", mirror = true }, 0.33, 0.35, 0.45),
+		clawL = mocap(swipe(-1), { name = "mutantSwipe" }, 0.33, 0.35, 0.45),
+		crush = mocap(KEYED.crush, { name = "mutantSlam" }, 1.03, 0.5, 0.6),
+		pounce = mocap(KEYED.pounce, { name = "mutantSlam", fly = { 1.27, 1.87 } }, 1.03, 0.5, 0.6),
+		deathMutant = mocap(
+			KEYED.deathBack,
+			{ name = "mutantDeath", free = true, rate = 1.5, from = 0.3, hit = 1.1 },
+			0.2,
+			0.27,
+			0.6
+		),
+	},
+	death = { "deathMutant", "deathFwd" },
+	deaths = { front = { "deathMutant" }, back = { "deathFwd" } },
+	hitScale = 0.6,
 	abilities = {
 		cleave = "cleave",
 		heavyBlow = "heavy",
@@ -2235,9 +2351,36 @@ local BRUTE: Style = variant(HUMANOID_1H, {
 })
 BRUTE.grip = nil
 
--- Ghost (a floating caster: wraiths): the caster without steps, drifting.
-local GHOST: Style = variant(CASTER, { float = true })
+-- Ghost (a floating caster: wraiths): the caster without steps, drifting. 2026-10-31: its bolts on mocap with the
+-- upper body only; its falls (fading to wisps), its appear, its shout, its throw and its pounce stay keyed.
+local GHOST: Style = variant(CASTER, {
+	float = true,
+	death = { "deathBack", "deathFwd" },
+	actions = {
+		deathBack = KEYED.deathBack,
+		deathFwd = KEYED.deathFwd,
+		spawn = KEYED.spawn,
+		aggro = KEYED.aggro,
+		throw = KEYED.throw,
+		pounce = KEYED.pounce,
+		spell = mocap(CASTER.actions.spell, { name = "magic1h", upper = true }, 0.3, 0.35, 0.45),
+		spellLeft = mocap(CASTER.actions.spellLeft, { name = "magic1h", mirror = true, upper = true }, 0.3, 0.35, 0.45),
+	},
+})
 GHOST.grip = nil
+GHOST.deaths = nil
+
+-- Two-handed fighters (2026-10-31: the orc's axe, the dwarf's hammer, the frost giant's club) on the great sword set:
+-- a hauled diagonal hew in turn with the one-handed chop and slash, a spinning cleave, a jump forward onto the target
+-- for the pounce; the rest the one-handed fighters'.
+local HUMANOID_2H: Style = variant(HUMANOID_1H, {
+	basic = { "hew", "chop", "hew", "slash" },
+	actions = {
+		hew = mocap(KEYED.heavy, { name = "greatSlash", blade = true }, 0.2, 0.2, 0.28),
+		cleave = mocap(KEYED.cleave, { name = "greatSpin", blade = true }, 0.2, 0.35, 0.45),
+		pounce = mocap(KEYED.pounce, { name = "greatJump", blade = true, travel = true }, 1.03, 0.45, 0.55),
+	},
+})
 
 ---------------------------------------------------------------- wyvern (owner 2026-10-26: Vaelgrath, the wyvern)
 
@@ -3782,6 +3925,7 @@ local STYLES: { [string]: Style } = {
 	specter = SPECTER,
 	iceElemental = ICE_ELEMENTAL,
 	humanoid1h = HUMANOID_1H,
+	humanoid2h = HUMANOID_2H,
 	caster = CASTER,
 	brute = BRUTE,
 	ghost = GHOST,
@@ -3834,6 +3978,8 @@ BipedStyles.LAB_STATES = {
 	"cast",
 	"slash",
 	"backhand",
+	"chop",
+	"hew",
 	"thrust",
 	"cleave",
 	"heavy",
@@ -3849,6 +3995,8 @@ BipedStyles.LAB_STATES = {
 	"death",
 	"deathBack",
 	"deathFwd",
+	"deathBack2",
+	"deathMutant",
 	"spawn",
 	"fight",
 }
