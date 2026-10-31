@@ -14172,7 +14172,11 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Logic/ArchFit.field` / `fit(lo, hi, model?)` (bez wpisu: dawne pole na środku), `Prefabs.fitModel` dostaje nazwę
   modelu i zwraca wierzch modelu nad polem; napis strefy 2,5 nad wierzchem modelu (nie wędruje w górę z polem).
 - Test: `portals.spec` „puts the field into the uneven ruin's own opening” (liczby z pomiaru; pole, zasłona i rdzeń
-  między filarami, nad płytą, pod szczytem prawego filara). Nieobejrzane w Studio.
+  między filarami, co najmniej 0,2 nad płytą, pod szczytem prawego filara).
+- Sprawdzenie w Studio (Play, 5 portali z tym modelem): pole i zasłona wyśrodkowane w otworze (ok. 1,5 studa luzu z
+  obu stron), ale dolna krawędź pola i zasłony 0,6–0,9 studa w płycie (jej wierzch 3,8 nad stopą). Poprawka: `foot`
+  0,225 (pole od 4,05 nad stopą, o stud wyżej), `h` 0,535 (9,6, wierzch 13,7 nad stopą jak wcześniej); zasłona
+  8,55 x 9,05 stoi 0,56 nad płytą.
 
 ### Porównanie w tooltipie przedmiotu (właściciel 2026-10-31)
 - Prośba: „Zrób żeby pod itemkiem na który najeżdżasz pokazywało staty do porównania a nie ten który masz na sobie”.

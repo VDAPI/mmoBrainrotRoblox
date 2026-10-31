@@ -584,8 +584,10 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 		local foot, top = lo[2] - oy, hi[2] - oy
 		expect(math.abs(foot + 7.25) < 1e-6 and math.abs(top - 10.75) < 1e-6).toBe(true)
 		local opening = { x0 = -3.75, x1 = 8.5 } -- clear between the thick left and the thin right pillar (y -2..+6)
-		local slab, rightTop = -4.5, 7 -- the base slab's top, the right pillar's top (the left one 10, no lintel)
-		-- the reported fault: the box-centred field a stud inside the left pillar, its lowest 2.25 studs in the slab
+		-- the right pillar's top (the left one 10, no lintel); the base slab's top, 3.78 over the foot (the Studio check
+		-- of the first fit: -4.5 under the centre of its field, which stood 2.88 + 5.4 over the foot)
+		local rightTop, slab = 7, foot + 3.78
+		-- the reported fault: the box-centred field a stud inside the left pillar, its lowest studs in the slab
 		expect(old.x - ox - old.w / 2 < opening.x0).toBe(true)
 		expect(old.y - oy - old.h / 2 < slab).toBe(true)
 
@@ -595,18 +597,20 @@ describe("Portals: cave mouths round the painted arch (W31)", function()
 		expect(fit.scale).toBe(1)
 		local f = fit.field
 		local cx, cy = f.x - ox, f.y - oy
-		-- the measured fit: 9.5 wide (ARCH.field), its centre 2.38 right of the box's, 2.88 over the foot, 10.8 tall
+		-- the measured fit: 9.5 wide (ARCH.field), its centre 2.38 right of the box's, from 4.05 over the foot (a stud
+		-- higher than the first fit's 2.88), 9.63 tall (its top 13.68 over the foot, where the first fit had it)
 		expect(math.abs(f.w - Portals.ARCH.field.w) < 1e-6).toBe(true)
 		expect(math.abs(cx - 2.38) < 0.01).toBe(true)
-		expect(math.abs(cy - f.h / 2 - foot - 2.88) < 0.01).toBe(true)
-		expect(math.abs(f.h - 10.8) < 0.01).toBe(true)
+		expect(math.abs(cy - f.h / 2 - foot - 4.05) < 0.01).toBe(true)
+		expect(math.abs(f.h - 9.63) < 0.01).toBe(true)
+		expect(math.abs(cy + f.h / 2 - foot - 13.68) < 0.01).toBe(true)
 		expect(math.abs(f.z) < 1e-6).toBe(true)
-		-- the field, the veil and the core (Portals.look, from the field) between the pillars, over the slab, under
-		-- the right pillar's top
+		-- the field, the veil and the core (Portals.look, from the field) between the pillars, at least 0.2 over the
+		-- slab, under the right pillar's top
 		local look = Portals.look(f.w, f.h)
 		for _, size in { { w = f.w, h = f.h }, look.veil, look.core } do
 			expect(cx - size.w / 2 >= opening.x0 and cx + size.w / 2 <= opening.x1).toBe(true)
-			expect(cy - size.h / 2 > slab).toBe(true)
+			expect(cy - size.h / 2 >= slab + 0.2).toBe(true)
 			expect(cy + size.h / 2 < rightTop).toBe(true)
 		end
 		-- a model without its own opening keeps the box-centred field
