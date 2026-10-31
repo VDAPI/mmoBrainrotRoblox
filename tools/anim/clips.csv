@@ -1,0 +1,49 @@
+# Every clip in src/shared/Data/BipedClips: its Mixamo source (Y Bot, 30 fps), range and timing, in seconds of the
+# source file. Bake: python tools/anim/bake_biped.py --batch tools/anim/clips.csv --src FOLDER_WITH_THE_FBX [--only a,b]
+# root: keep | inplace | end | plant (tools/anim/bake_biped.py). hit: the contact or release (the fastest hand or the
+# blade meeting the ground), strike: the part before it played at the clip's own pace (the blow from its coil; a
+# leap's spring and flight from the crouch).
+fbx;name;loop;hit;strike;start;end;root;fps
+# locomotion and idles (2026-10-26 download)
+Breathing Idle.fbx;idle;1;;;;;keep;30
+Looking Around.fbx;idleLook;1;;;;;keep;30
+Weight Shift.fbx;idleShift;1;;;;;keep;30
+Jogging.fbx;jog;1;;;;;keep;30
+Running.fbx;run;1;;;;;keep;30
+Walking (1).fbx;walk;1;;;;;keep;30
+# armed guard (sword and shield pack)
+Sword And Shield Idle.fbx;guardIdle;1;;;;;inplace;15
+Sword And Shield Walk 1.fbx;guardWalk;1;;;;;inplace;30
+# one-handed blows
+Sword And Shield Slash 1.fbx;swordSlash;0;0.60;0.20;0;1.50;keep;30
+Sword And Shield Slash 3.fbx;swordBackhand;0;0.83;0.23;0;1.67;keep;30
+Sword And Shield Attack 4.fbx;swordStab;0;0.40;0.20;0;1.00;keep;30
+Standing Melee Attack Horizontal.fbx;swordSweep;0;0.97;0.27;0;2.37;keep;30
+Standing Melee Attack Downward.fbx;swordChop;0;0.85;0.25;0;2.13;keep;30
+Sword And Shield Attack 1.fbx;swordLeap;0;1.17;0.79;0;2.33;keep;30
+Sword And Shield Attack 1.fbx;swordHop;0;1.17;0.79;0;2.33;plant;30
+# two-handed blows (great sword pack)
+Great Sword Slash.fbx;greatSlash;0;0.72;0.20;0;1.20;plant;30
+Great Sword High Spin Attack.fbx;greatSpin;0;1.05;0.20;0;1.90;plant;30
+Great Sword Jump Attack.fbx;greatJump;0;1.13;1.03;0;2.17;keep;30
+# throwing, casting, shouting, getting up
+Throw Object.fbx;throw;0;2.40;0.40;1.30;3.60;keep;30
+Standing 1H Magic Attack 01.fbx;magic1h;0;0.80;0.30;0.10;2.20;keep;30
+Standing Taunt Battlecry.fbx;battlecry;0;0.50;0.20;0;2.80;keep;20
+Standing Up.fbx;standUp;0;;;4.40;8.60;end;20
+# hit reactions (the first stagger only) and falls
+Standing React Large From Front.fbx;hitFront;0;;;0;0.80;keep;30
+Standing React Large From Back.fbx;hitBack;0;;;0;0.80;keep;30
+Standing React Large From Left.fbx;hitLeft;0;;;0;0.80;keep;30
+Standing React Large From Right.fbx;hitRight;0;;;0;0.80;keep;30
+Sword And Shield Impact 2.fbx;impact2;0;;;0;0.97;keep;30
+Sword And Shield Impact 3.fbx;impact3;0;;;0;0.70;keep;30
+Standing Death Backward 01.fbx;fallBack;0;;;0.80;2.60;keep;20
+Standing Death Forward 01.fbx;fallFwd;0;;;0.80;2.70;keep;20
+Sword And Shield Death 1.fbx;fallBack2;0;;;0.90;2.30;keep;20
+# mutant (brutes)
+Mutant Breathing Idle.fbx;mutantIdle;1;;;;;inplace;15
+Mutant Walking.fbx;mutantWalk;1;;;;;inplace;30
+Mutant Swiping.fbx;mutantSwipe;0;1.27;0.33;0;2.47;keep;30
+Mutant Jumping.fbx;mutantSlam;0;1.90;1.03;0;3.10;keep;30
+Mutant Dying.fbx;mutantDeath;0;;;0.50;2.90;keep;20
