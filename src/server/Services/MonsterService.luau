@@ -55,6 +55,8 @@ export type Handlers = {
 	attackWind: ((monster: Monster.Monster, player: Player, seconds: number, shot: string?) -> ())?,
 	-- S134f: a player's damage booked on the monster (CombatService.MonsterDamaged)
 	damaged: ((monster: Monster.Monster, player: Player, dealt: number) -> ())?,
+	-- S162e: the monster evades (Logic/Pursuit: it cannot reach `player`): the "Evade" text over it
+	evaded: ((monster: Monster.Monster, player: Player?) -> ())?,
 }
 
 type SpawnerRuntime = {
@@ -308,6 +310,17 @@ local context: Monster.Context = {
 		end
 	end,
 	groundAt = groundAt,
+	-- S162e: an evading monster sheds its debuffs (and takes no new ones, StatusEffectService.Apply); the clients show
+	-- "Evade" over it
+	evaded = function(monster, player)
+		if monster.entity then
+			StatusEffectService.Cleanse(monster.entity)
+		end
+		local evaded = handlers and handlers.evaded
+		if evaded then
+			evaded(monster, player)
+		end
+	end,
 }
 
 -- S122 (LureService): whether the monster may go after the player (the rule the AI uses: alive and playing, no
