@@ -15,6 +15,7 @@ local ItemRoll = require("../src/shared/Logic/ItemRoll")
 local ItemValue = require("../src/shared/Logic/ItemValue")
 local Items = require("../src/shared/Data/Items")
 local Locale = require("../src/shared/Util/Locale")
+local Products = require("../src/shared/Data/Products")
 local Rarities = require("../src/shared/Data/Rarities")
 local Rng = require("../src/shared/Logic/Rng")
 local Social = require("../src/shared/Logic/Social")
@@ -37,7 +38,8 @@ local function gear(id: string, rarity: number): any
 	return ItemRoll.rollItem(id, Items.get(id).level, rarity, Rng.new(7), uid())
 end
 
-local SOURCES: { Binding.Source } = { "drop", "craft", "gold", "boss", "reward", "currency", "premium" }
+local SOURCES: { Binding.Source } =
+	{ "drop", "craft", "gold", "boss", "quest", "reward", "currency", "shop", "premium" }
 
 -- what (item, rarity) gets from every source, in SOURCES order
 local function rules(item: any): { string }
@@ -49,34 +51,38 @@ local function rules(item: any): { string }
 end
 
 T.describe("Binding: the rule of every category and source (owner 2026-10-31)", function()
-	T.it("potions, scrolls, stones, blessings, elixirs: free unless bought for Dragon Shards", function()
-		for _, id in
-			{
-				"potion_hp_1",
-				"potion_mana_3",
-				"potion_energy_5",
-				"elixir_resFire",
-				"blessing_fortune_2",
-				"stone_return",
-				"stone_map",
-				"stone_dungeon_meadows",
-				"scroll_unbind",
-				"scroll_protection",
-				"scroll_oblivion",
-			}
-		do
-			T.expect({ id, rules(stack(id)) })
-				.toEqual({ id, { "none", "none", "none", "none", "none", "none", "pickup" } })
-			T.expect({ id, stack(id).bound }).toEqual({ id, false })
+	T.it(
+		"potions, scrolls, stones, blessings, elixirs: free unless from the Portal Master or the season pass",
+		function()
+			for _, id in
+				{
+					"potion_hp_1",
+					"potion_mana_3",
+					"potion_energy_5",
+					"elixir_resFire",
+					"blessing_fortune_2",
+					"stone_return",
+					"stone_map",
+					"stone_dungeon_meadows",
+					"scroll_unbind",
+					"scroll_protection",
+					"scroll_oblivion",
+				}
+			do
+				T.expect({ id, rules(stack(id)) })
+					.toEqual({ id, { "none", "none", "none", "none", "none", "none", "none", "none", "pickup" } })
+				T.expect({ id, stack(id).bound }).toEqual({ id, false })
+			end
 		end
-	end)
+	)
 
 	T.it("materials, herbs, fish, ore, tools: free; a currency shop binds what it sells", function()
 		for _, id in { "essence_dust", "essence_crystal", "legend_core", "herb_moonpetal", "fish_goldfin", "ore_iron" } do
 			T.expect({ id, rules(stack(id)) })
-				.toEqual({ id, { "none", "none", "none", "none", "none", "pickup", "pickup" } })
+				.toEqual({ id, { "none", "none", "none", "none", "none", "none", "pickup", "none", "pickup" } })
 		end
-		T.expect(rules(stack("pickaxe"))).toEqual({ "none", "none", "none", "none", "none", "pickup", "pickup" })
+		T.expect(rules(stack("pickaxe")))
+			.toEqual({ "none", "none", "none", "none", "none", "none", "pickup", "none", "pickup" })
 	end)
 
 	T.it("premium things carry their own rule: bound from creation, whatever the source", function()
@@ -88,7 +94,6 @@ T.describe("Binding: the rule of every category and source (owner 2026-10-31)", 
 				"transmute_scroll",
 				"scroll_hunt",
 				"stone_return_perm",
-				"backpack_premium_100",
 			}
 		do
 			local made = stack(id)
@@ -96,30 +101,57 @@ T.describe("Binding: the rule of every category and source (owner 2026-10-31)", 
 		end
 	end)
 
-	T.it("equipment: on equip from drops, crafts, vendors; on pickup from rewards, currencies, shards", function()
-		for _, rarity in { Rarities.COMMON, Rarities.UNIQUE, Rarities.HEROIC } do
-			T.expect({ rarity, rules(gear("sword1h_30", rarity)) }).toEqual({
-				rarity,
-				{ "equip", "equip", "equip", "equip", "pickup", "pickup", "pickup" },
-			})
+	T.it(
+		"equipment: on equip from drops, crafts, vendors, bosses, side quests; on pickup from rewards, currencies",
+		function()
+			-- owner 2026-10-31 (less binding): a boss's Legendary and a side quest's chosen reward bind on equip (S149)
+			for _, rarity in { Rarities.COMMON, Rarities.UNIQUE, Rarities.HEROIC, Rarities.LEGENDARY } do
+				T.expect({ rarity, rules(gear("sword1h_30", rarity)) }).toEqual({
+					rarity,
+					{ "equip", "equip", "equip", "equip", "equip", "pickup", "pickup", "equip", "pickup" },
+				})
+			end
+			-- Mythic binds on pickup everywhere (S30), the named boss items too
+			local all = table.create(#SOURCES, "pickup")
+			T.expect(rules(gear("sword1h_30", Rarities.MYTHIC))).toEqual(all)
+			T.expect(rules(gear("unique_grimrok_cleaver", Rarities.MYTHIC))).toEqual(all)
 		end
-		-- a boss's personal roll: Legendary binds on pickup there, on equip elsewhere
-		T.expect(rules(gear("sword1h_30", Rarities.LEGENDARY)))
-			.toEqual({ "equip", "equip", "equip", "pickup", "pickup", "pickup", "pickup" })
-		-- Mythic binds on pickup everywhere (S30), the named boss items too
-		T.expect(rules(gear("sword1h_30", Rarities.MYTHIC)))
-			.toEqual({ "pickup", "pickup", "pickup", "pickup", "pickup", "pickup", "pickup" })
-		T.expect(rules(gear("unique_grimrok_cleaver", Rarities.MYTHIC)))
-			.toEqual({ "pickup", "pickup", "pickup", "pickup", "pickup", "pickup", "pickup" })
-	end)
+	)
 
-	T.it("ordinary backpacks never bind; premium ones always", function()
+	T.it("ordinary backpacks never bind; premium ones bind on equip", function()
 		local bag = stack("backpack_30")
-		T.expect(rules(bag)).toEqual({ "none", "none", "none", "none", "pickup", "pickup", "pickup" })
+		T.expect(rules(bag)).toEqual({ "none", "none", "none", "none", "none", "pickup", "pickup", "none", "pickup" })
 		T.expect(Binding.bindsOnEquip(bag)).toBe(false)
 		Binding.onEquip(bag)
 		T.expect(bag.bound).toBe(false)
-		T.expect(Binding.bindsFrom("backpack_premium_150", "gold")).toBe(true)
+		local premium = stack("backpack_premium_150")
+		T.expect(premium.bound).toBe(false)
+		T.expect(Binding.ruleFrom(premium, "shop")).toBe("equip")
+		T.expect(Binding.bindsOnEquip(premium)).toBe(true)
+		T.expect(Binding.tooltipKey(premium)).toBe("tooltip.bindOnEquip")
+		Binding.onEquip(premium)
+		T.expect(premium.bound).toBe(true)
+	end)
+
+	-- Protection, Unbinding, Oblivion and Renewal were free before 2026-10-31 and stay so (owner: less binding)
+	local FREE_IN_SHOP =
+		{ scroll_protection = true, scroll_unbind = true, scroll_oblivion = true, scroll_skillreset = true }
+
+	T.it("the premium shop: scrolls free, backpacks on equip, the elixir, stones, Transmutation on pickup", function()
+		local seen = 0
+		for _, entry in Products.shop do
+			local def = entry.kind == "item" and entry.itemId and Items.get(entry.itemId)
+			if def then
+				seen += 1
+				local item = Binding.apply(ItemRoll.makeStack(def.id, entry.n or 1, uid()), "shop")
+				local want = if FREE_IN_SHOP[def.id]
+					then { false, "none" }
+					elseif def.category == "backpack" then { false, "equip" }
+					else { true, "pickup" }
+				T.expect({ def.id, item.bound, Binding.ruleOf(item) }).toEqual({ def.id, want[1], want[2] })
+			end
+		end
+		T.expect(seen >= 10).toBe(true)
 	end)
 
 	T.it("every category has a rule, every definition resolves to one, the sources are the documented ones", function()
@@ -150,12 +182,14 @@ T.describe("Binding: the rule of every category and source (owner 2026-10-31)", 
 		local sword = Binding.apply(gear("sword1h_30", Rarities.HEROIC), "boss")
 		T.expect(sword.bound).toBe(false)
 		local legend = Binding.apply(gear("sword1h_30", Rarities.LEGENDARY), "boss")
-		T.expect(legend.bound).toBe(true)
+		T.expect(legend.bound).toBe(false)
+		local mythic = Binding.apply(gear("sword1h_30", Rarities.MYTHIC), "boss")
+		T.expect(mythic.bound).toBe(true)
 		local worn = gear("sword1h_30", Rarities.UNIQUE)
 		worn.bound = true
 		T.expect(Binding.apply(worn, "drop").bound).toBe(true)
-		local scroll = Binding.apply(stack("scroll_unbind"), "premium")
-		T.expect(scroll.bound).toBe(true)
+		T.expect(Binding.apply(stack("scroll_unbind"), "shop").bound).toBe(false)
+		T.expect(Binding.apply(stack("stone_return"), "premium").bound).toBe(true)
 	end)
 
 	T.it("the first drop of a new character binds on pickup", function()
@@ -253,7 +287,7 @@ T.describe("Binding: migration of old saves (schema 13)", function()
 				["6"] = oldItem("sword1h_30", true), -- maybe worn: stays
 				["7"] = oldItem("potion_full", true), -- premium: stays
 				["8"] = oldItem("backpack_45", true), -- a backpack worn before: free
-				["9"] = oldItem("backpack_premium_100", true), -- premium: stays
+				["9"] = oldItem("backpack_premium_100", true), -- binds on equip, worn before: stays
 				["10"] = oldItem("potion_mana_1", false),
 			},
 			equipment = {

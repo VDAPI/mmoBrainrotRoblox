@@ -70,8 +70,8 @@ return table.freeze({
 		-- Mythic weights times the contribution factor (Logic/WorldBoss.rarityWeights)
 		rarity = table.freeze({ [3] = 60, [4] = 34, [5] = 6 }),
 		classBias = 0.8, -- share of items picked among the ones the character's class can use (a Mythic always fits)
-		-- binding (owner 2026-10-31): the "boss" source of Data/Binding (Heroic on equip, Legendary and Mythic on pickup,
-		-- the named items on pickup)
+		-- binding (owner 2026-10-31): the "boss" source of Data/Binding (Heroic and Legendary on equip, Mythic and the
+		-- named items on pickup)
 		failMul = 0, -- the boss left: nothing
 		-- S149c: the contribution factor f = clamp(lo + slope x s, lo, hi), s = own points / (all points / fighters
 		-- with points): x0.5 for a token share, x1 for an even one, x2 at most (Logic/WorldBoss.factor)
