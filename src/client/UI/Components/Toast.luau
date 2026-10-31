@@ -1,6 +1,9 @@
 --!strict
 -- Toast notifications: a short stack at the top centre of the screen. Toast.push(text, kind) from
 -- anywhere; at most MAX_VISIBLE are shown, the rest wait in a queue. Toast.mount(scope, root) once.
+-- UI plan phase 2 (one band of messages at the top, Logic/TopBand): two at once instead of four, and the stack starts
+-- under the achievement toast, the area banner or the zone banner while one shows (UI/TopBandState), and under the
+-- title bar of an open window (UI/HudCover.HeaderBottom).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -9,6 +12,10 @@ local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local HudCover = require(script.Parent.Parent.HudCover)
+local Scale = require(script.Parent.Parent.Scale)
+local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
+local TopBandState = require(script.Parent.Parent.TopBandState)
 
 local Children = Fusion.Children
 
@@ -19,7 +26,7 @@ type Entry = { id: number, text: string, kind: Kind, duration: number, leave: ((
 
 local Toast = {}
 
-local MAX_VISIBLE = 4
+local MAX_VISIBLE = TopBand.MAX_TOASTS
 local DEFAULT_DURATION = 3.5
 local WIDTH = 520
 
@@ -104,7 +111,17 @@ function Toast.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 		Name = "Toasts",
 		Parent = parent,
 		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 90),
+		Position = scope:Computed(function(use): UDim2
+			-- and under the title bar of an open window (they stand over the windows)
+			local header = use(HudCover.HeaderBottom)
+			local origin = if parent:IsA("GuiObject") then parent.AbsolutePosition.Y else 0
+			local top = TopBand.underHeader(
+				use(TopBandState.ToastTop),
+				if header then header - origin else nil,
+				use(Scale.Value)
+			)
+			return UDim2.new(0.5, 0, 0, top)
+		end),
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,

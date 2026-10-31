@@ -14109,6 +14109,23 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Dokumentacja dla sesji animacji: `docs/ANIM-WZORCE.md` §10. Testy: `tests/monstermove.spec.luau`, `leash.spec`
   (powrót truchtem). Balans: powody w `tools/balance_reasons.luau` (S162m).
 
+### S162e: potwory nie dają się przechytrzyć przeszkodami (2026-10-31)
+- Zgłoszenie testera: potwory blokują się na przeszkodach, gracz bije je zza skały, z półki albo z dachu. Było: dwa
+  krótkie promienie omijania (`Logic/Steer`), „utknięcie” S22 liczone z każdego ruchu o 1,5 st. (ślizganie po ścianie i
+  drganie je kasowały), po 5 s powrót bez leczenia, trafiony zawracał i znów utykał.
+- Teraz (`Logic/Pursuit.luau`, `Entities/Monster.luau`): dwa długie promienie sprawdzają prostą drogę do celu; zablokowana
+  = ścieżka `PathfindingService` (agent z rozmiaru ciała, bez skoków i wspinania, woda droższa; budżet serwera i przerwa na
+  potwora w `Data/Combat`), potwór idzie po jej punktach. Postęp = studa w stronę celu albo punktu ścieżki; 1,75 s bez
+  postępu = nowa ścieżka, brak ścieżki albo 4,5 s = odwrót (nietykalny, pełne HP, odporny na osłabienia, do domu, napis
+  „Odwrót” / „Evade”, 6 s bez aggro z widzenia). Stojąc w zasięgu ciosu, strzału z czystą linią albo rzutu Elity II nie
+  utyka. Niski promień omijania na wysokości stopnia (`Pursuit.stepHeight`), więc niskie progi nie zawracają potworów.
+- Strzały i rzuty potworów tylko przy czystej linii do celu. W drodze do domu utknięcie = teleport do domu od razu.
+  Bossowie i ich pomocnicy bez odwrotu (dostają ścieżki). `Gait`, podejście wręcz, `Dash*`, `SpawnedAt` bez zmian.
+- Pliki: `Logic/Pursuit`, `Logic/Leash` (bez powodu „stuck”), `Data/Combat` (`pursuit*`, `evadeCalm`, `path*`, bez
+  `stuckTime`), `Entities/Monster`, `MonsterService` / `CombatService` (zdarzenie `ev`), `StatusEffectService`,
+  `Logic/DamageText`, `CombatFxController`, `Admin/Monsters` (`/leash` pokazuje odwrót), teksty `combat.evade`, wiki
+  „Jak uciec przed potworem”. Testy: `tests/pursuit.spec.luau`, `leash.spec`, `damagetext.spec`. Balans: powody S162e.
+
 ### Wiązanie przedmiotów (właściciel 2026-10-31)
 - Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
   wędrownego kupca, każdy założony plecak; sprzęt bossów był wolny (poza Mitykiem z worka, a Mityk bossa świata pocztą
@@ -14203,6 +14220,31 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `hair_swept` wypada (ta sama siatka co `hair_short`, `LEGACY_HAIRS`). `HairTint.plan`: rozjaśnienie jasnych tekstur
   maleje poniżej `DARK`. Testy `bodylooks`, `classlooks`, `wikidump`; dane wiki przegenerowane.
 
+### Plan UI, faza 2: jedno miejsce na rodzaj rzeczy (2026-10-31)
+- Rząd „coś czeka” pod minimapą: `Hud/WaitingRow` (poczta `MailButton` z `InRow`, ✧ `LoginButton`, ❖ `SeasonButton`,
+  ☾ wyniki Krwawego Księżyca przy `BloodMoonView.Phase == "ended"`), `HudSlots.Waiting`, `HudStack.WAITING` (kolumna PC
+  niżej o 44 + 8). Telefon: szuflada i koperta przy łuku bez zmian. Róg PC (`HudStack.fixed`) zostaje zarezerwowany.
+- Jeden rząd wzmocnień pod portretem (`EffectsRow` w `Hud/init`: `BlessingBadge`, `BlessingIcon` z rozmiarem 30, potem
+  `EffectIcons`); telefon: eliksiry i ✶ na dawnych miejscach.
+- „Auto”: `Hud/AutoGroup` (⚙ w `HudStack.EXTRAS`, panel z trzema dawnymi przyciskami pod nim, złota ramka, gdy coś
+  działa); telefon: trzy przyciski na miejscach `PhoneHud`.
+- PvP: `UI/PvpSwitch.request` (wspólne z `Hud/PvpToggle`), kropka w portrecie to przycisk z tooltipem i odliczaniem;
+  `PvpToggle` tylko na dotyku.
+- Boss świata: `WorldBoss.panelOf(branch, mapId, level)` bez linii poniżej `minLevel`.
+- Pas wiadomości: `Logic/TopBand` + `UI/TopBandState` (banery strefy, obszaru i toast osiągnięcia zgłaszają się,
+  `Toast` stoi pod nimi i pokazuje 2 naraz, `AchievementController` czeka na banery). Lista zabójstw tylko w strefie
+  żółtej i czerwonej (`SocialController`).
+- Z przeglądu Studio: `UI/HudCover` (WindowManager zgłasza otwarte okna, `HudStack.covers`): tropiciel, rząd przycisków
+  menu, podpisy minimapy i rząd „coś czeka” znikają pod oknem; pasek EXP pokazuje procent tylko po najechaniu.
+- Po przeglądzie Studio fazy 1: pasek EXP 10 px i 2 px od dołu (czat kończy się kilka pikseli nad nim; okna czatu
+  Robloxa nie da się przesunąć), toasty i ogłoszenia (`Announcement`) stoją pod paskiem tytułu otwartego okna
+  (`HudCover.HeaderBottom`, `TopBand.underHeader`), ogłoszenie serwera tylko w banerze (bez kopii w czacie,
+  `NotificationController`), boss świata „{boss} stoi {at}” z kluczem `map.frostpeak.at` („na Lodowych Szczytach”,
+  `WorldBossService.atArg`), zdania z nazwą obszaru po przyimku przepisane na mianownik po dwukropku (`contract.text`,
+  `contract.progress`, `event.*`). ❖ przy nowej postaci: przepustka jest na konto, więc pokazuje się, gdy konto ma
+  nieodebrany stopień (warunek bez zmian).
+- Testy: `topband.spec` (nowy), `hudlayout` (rząd „coś czeka”, `covers`, scenariusze z rzędem), `worldboss` (próg,
+  `at`).
 ### Kamera w dachu po wejściu do świata (przegląd Studio 2026-10-31)
 - Zgłoszenie: po wejściu postaci (poziom 1 i 100, stolica) kamera startowała wciśnięta w dach domu i latarnię.
 - Przyczyna: od W02/W12 domy, mury, latarnie i drzewa miasta to modele zestawu (`CanCollide` i `CanQuery` wyłączone),
@@ -14222,6 +14264,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   z planu (`Town.city.spawn.facing`, jak `SpawnPoint`), `CharacterService.spawnModel` obraca tylko pozycję wyliczoną
   przez serwer (bez areny i odrodzeń w punktach). Na danych miasta zasłoniętych startów zostaje 25 z 916 (wąskie
   zaułki, tam kamera wsuwa się przed ścianę). Test: `tests/cameraclear.spec.luau`. Nieobejrzane w Studio.
+
+### Porównanie w tooltipie: poprawki po sprawdzeniu w Studio (2026-10-31)
+- Przedmiot innej klasy: bez zmian i bez „Zastąpi” (`TooltipModel` `classFits`); za wysoki poziom porównywany
+  (`ItemCompare.comparable` zamiast `canEquip`). Skrócony widok: efekty jedną linią nazw (`compactOf`). Testy:
+  `itemcompare.spec` (inna klasa, poziom, identyczna kopia: same „(=)”), `tooltip.spec`.
+- Stały żywioł broni nazwanej: `Data/Elements.weaponElement`, `ItemDef.element`, `Data/Items/Uniques`
+  (`opts.element = "ice"` Kostura Wiecznej Zimy), `ItemRoll` (`el` przy tworzeniu, `elementOf`), `ItemEffects`, `ItemIcons`,
+  `ItemName` (bez przyrostka), `/element` odmawia (`admin.element.fixed`). Test: `tests/namedelement.spec.luau`.
 
 ### Kamera zablokowana w trybie skryptowym (przegląd Studio 2026-10-31, druga część)
 - Zgłoszenie (postać poziomu 1): po `tp city` kamera stała 10+ s w starym miejscu na Łąkach; w mieście zamrożona 75 studów

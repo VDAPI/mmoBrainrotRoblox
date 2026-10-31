@@ -308,9 +308,7 @@ function ItemIcons.visualOf(
 	if not item or not def then
 		return nil
 	end
-	local element = if def.elemental
-		then (if Elements.isWeaponElement(item.el) then item.el else Elements.DEFAULT)
-		else nil
+	local element = Elements.weaponElement(def, item.el)
 	return { glyph = def.icon.glyph, color = def.icon.color, def = def, element = element }
 end
 

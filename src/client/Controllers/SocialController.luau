@@ -448,12 +448,19 @@ local function killFeed(): Instance
 		end
 		return list
 	end)
+	-- UI plan phase 2 (owner 2026-10-31, too much on one screen): only in a PvP zone (yellow or red), where a kill can
+	-- concern the player; elsewhere the lines wait unseen and age out as before
+	local zone = State.Value({ "zone", "pvp" })
 	return scope:New("Frame")({
 		Name = "KillFeed",
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -Theme.Padding.Large - 320, 0, 300),
 		Size = UDim2.fromOffset(340, FEED_MAX * 30),
 		BackgroundTransparency = 1,
+		Visible = scope:Computed(function(use): boolean
+			local pvp = use(zone)
+			return pvp == "yellow" or pvp == "red"
+		end),
 		[Children] = {
 			scope:New("UIListLayout")({
 				SortOrder = Enum.SortOrder.LayoutOrder,

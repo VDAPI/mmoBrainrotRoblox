@@ -8,7 +8,6 @@ export type Config = {
 	leashRange: number,
 	leashMax: number,
 	leashGrace: number,
-	stuckTime: number,
 	idleRegenDelay: number,
 	idleRegenPct: number,
 }
@@ -17,16 +16,15 @@ export type Situation = {
 	distHome: number, -- flat distance from the group centre
 	sinceHit: number, -- seconds since a player last hit the monster (or its group)
 	hasTarget: boolean, -- a valid target remains (alive, present, not hidden, not in a safe zone)
-	stuckFor: number, -- seconds without moving or attacking while chasing
 }
 
-export type Reason = "target" | "hard" | "soft" | "stuck"
+-- S162e: the S22 "stuck" reason (5 s without moving or attacking) is gone: a stalled chase evades (Logic/Pursuit).
+export type Reason = "target" | "hard" | "soft"
 
 -- Whether a chasing monster gives up and goes home, and why.
 --   * no valid target: home;
 --   * past leashMax: always home (no dragging monsters across the map);
---   * past leashRange: home only once nobody has hit it for leashGrace seconds (it fights while beaten);
---   * stuck (no movement and no attack) for stuckTime seconds: home.
+--   * past leashRange: home only once nobody has hit it for leashGrace seconds (it fights while beaten).
 function Leash.shouldReturn(s: Situation, cfg: Config): (boolean, Reason?)
 	if not s.hasTarget then
 		return true, "target"
@@ -36,9 +34,6 @@ function Leash.shouldReturn(s: Situation, cfg: Config): (boolean, Reason?)
 	end
 	if s.distHome > cfg.leashRange and s.sinceHit >= cfg.leashGrace then
 		return true, "soft"
-	end
-	if s.stuckFor >= cfg.stuckTime then
-		return true, "stuck"
 	end
 	return false, nil
 end

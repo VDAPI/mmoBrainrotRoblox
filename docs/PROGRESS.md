@@ -49,7 +49,8 @@
 
 ## Niedokończone (kod)
 
-- **Plan UI, faza 1 (2026-10-31):** jeden rząd przycisków HUD, kafelki menu gry, czat w lewym dolnym rogu (`Hud/ChatDock`), toast zamiast okna nagrody za logowanie; nieobejrzane w Studio (szerokość czatu przy 1366 i 1280 px, zawijanie nazw kafelków, tropiciel od y 380 / 408 z belką prowadzenia, szuflada ☰ na telefonie). Kolejne fazy w `wyglad/UI-PLAN.md`; z przeglądu Studio zostaje przygaszanie tropiciela i przycisków pod dużym oknem.
+- **Plan UI, faza 2 (2026-10-31):** rząd „coś czeka”, rząd wzmocnień, „Auto”, kropka PvP jako przełącznik, pas wiadomości, chowanie HUD pod oknem; nieobejrzane w Studio (rząd pod minimapą z belką i bez, panel „Auto” na tablecie nad zapasową kolumną, trafienie w kropkę PvP myszą, toasty pod banerami). Nie zrobione z fazy 2: karty „Lepszy przedmiot”, walki i oferty areny jako jedna karta naraz (odblokowania idą toastem, więc są w pasie); róg PC zostaje zarezerwowany w `HudStack.fixed`.
+- **Plan UI, faza 1 (2026-10-31):** jeden rząd przycisków HUD, kafelki menu gry, czat w lewym dolnym rogu (`Hud/ChatDock`), toast zamiast okna nagrody za logowanie; nieobejrzane w Studio (szerokość czatu przy 1366 i 1280 px, zawijanie nazw kafelków, tropiciel od y 380 / 408 z belką prowadzenia, szuflada ☰ na telefonie). Kolejne fazy w `wyglad/UI-PLAN.md`.
 - **Kamera po wejściu do świata (2026-10-31):** promień kamery po kolizji mapy, obrót postaci w czystą stronę i kamera
   za plecami świeżej postaci (`Logic/CameraClear`, `CameraController`, `WorldService.OpenFacing`); w Studio dobrze
   (pierwszy widok na poziomie 1 i 100, odrodzenie w stolicy, wejście przy ścianie domu, przejście obok latarni),
@@ -62,6 +63,8 @@
 - **S162m ruch potworów pod animacje:** serwer daje tempo (`Gait`), podejście wręcz, `SpawnedAt`, lot `Dash*` i
   `Muzzle` (`docs/ANIM-WZORCE.md` §10); klient jeszcze nie rysuje łuku skoku z `Dash*` ani pojawienia się z `SpawnedAt`
   (sesja animacji potworów). Nieobejrzane w Studio (bieg szarży dzika po linii, skok wilka, start strzałów z pyska).
+- **S162e odwrót i ścieżki potworów:** nieobejrzane w Studio (ścieżki `PathfindingService` wokół domów, płotów i skał,
+  odwrót spod skały i półki, napis „Odwrót”, koszt ścieżek przy wielu potworach w Inwazji).
 - **Opisy-1 krótkie opisy:** `InfoTip` („i”), `Details` („Więcej ▸”), `Tooltip` ze szczegółami, skrócone tooltipy
   przedmiotów i paska umiejętności gotowe; okna jeszcze nie przerobione (kolejne sesje, przepis w `docs/JAK-DODAC.md`).
   Bez przeglądu w Studio (dymek „i” przy krawędzi ekranu, wiersz „Więcej ▸” w tooltipie na telefonie).
