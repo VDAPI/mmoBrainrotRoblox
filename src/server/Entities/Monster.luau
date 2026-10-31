@@ -39,6 +39,7 @@ local Workspace = game:GetService("Workspace")
 local AreaProfiles = require(Shared.Data.AreaProfiles)
 local BasicBlow = require(Shared.Logic.BasicBlow)
 local BossMechanics = require(Shared.Logic.BossMechanics)
+local ChaseTest = require(Shared.Logic.ChaseTest)
 local Combat = require(Shared.Data.Combat)
 local Leash = require(Shared.Logic.Leash)
 local LevelLock = require(Shared.Logic.LevelLock)
@@ -194,6 +195,8 @@ export type Monster = typeof(setmetatable(
 		-- S162e: evading (immune, going home) and until when it ignores players by sight after an evade (os.clock)
 		evading: boolean,
 		calmUntil: number,
+		-- S162e: the admin chase test's record (Logic/ChaseTest; /chasetest), nil on every other monster
+		probe: ChaseTest.Probe?,
 		-- Obstacle steering: the side of the current detour (-1, 0, 1) and until when it is kept.
 		detourSide: number,
 		detourUntil: number,
@@ -335,6 +338,7 @@ function Monster.new(
 		pathSticky = false,
 		evading = false,
 		calmUntil = 0,
+		probe = nil,
 		detourSide = 0,
 		detourUntil = 0,
 		patrol = nil,
@@ -565,8 +569,15 @@ local function requestPath(self: Monster, goal: Vector3, now: number)
 	if self.pathPending or now - self.pathAskedAt < Combat.pathGap then
 		return
 	end
+	local probe = self.probe
 	if not Pursuit.take(pathBucket, now, Combat :: any) then
+		if probe then
+			probe.pathDenied += 1
+		end
 		return
+	end
+	if probe then
+		probe.pathAsks += 1
 	end
 	self.pathPending = true
 	self.pathAskedAt = now
@@ -592,10 +603,17 @@ local function requestPath(self: Monster, goal: Vector3, now: number)
 			self.pathIndex = 2 -- the first point is where it stood
 			self.pathGoal = goal
 			self.pathFailedAt = 0
+			if probe then
+				probe.pathOk += 1
+				probe.firstPathAt = probe.firstPathAt or os.clock()
+			end
 		else
 			self.path = nil
 			self.pathGoal = nil
 			self.pathFailedAt = os.clock()
+			if probe then
+				probe.pathFails += 1
+			end
 		end
 	end)
 end
@@ -659,7 +677,12 @@ end
 -- way clear (whatever stopped it, a post, a fence gap or a water edge, they missed).
 local function repath(self: Monster, goal: Vector3, now: number)
 	self.pathSticky = true
+	local asked = self.pathAskedAt
 	requestPath(self, goal, now)
+	local probe = self.probe
+	if probe and self.pathAskedAt ~= asked then
+		probe.repaths += 1
+	end
 end
 
 -- S162e: starts a fresh progress record (a new chase, the way home, after a stun or a cast).
@@ -744,10 +767,18 @@ end
 -- over it to the target (Context.evaded). Never bosses or their helpers (Pursuit.decide gets mayEvade = false).
 local function evade(self: Monster)
 	local target = self.target
+	local probe = self.probe
+	if probe then
+		probe.evadeAt = os.clock()
+		probe.hpAtEvade = self.hp
+	end
 	self.evading = true
 	self.invulnerable = true
 	table.clear(self.damageBy)
 	setHp(self, self.stats.maxHp)
+	if probe then
+		probe.hpAfterEvade = self.hp
+	end
 	self:StartReturn()
 	if self.ctx.evaded then
 		self.ctx.evaded(self, target)
@@ -765,6 +796,9 @@ local function finishReturn(self: Monster)
 		self.evading = false
 		self.invulnerable = false
 		self.calmUntil = os.clock() + Combat.evadeCalm
+		if self.probe then
+			self.probe.homeAt = os.clock()
+		end
 	end
 	dropPath(self)
 	self.model:SetAttribute("Returning", nil)
@@ -905,6 +939,9 @@ local function engage(self: Monster, player: Player)
 		applyPace(self)
 		setTarget(self, player)
 		local now = os.clock()
+		if self.probe then
+			self.probe.engagedAt = now
+		end
 		resetProgress(self, now) -- S162e
 		self.walkGoal = nil
 		dropPath(self)
@@ -1054,6 +1091,15 @@ local function attackInterval(self: Monster): number
 	return Traits.slowedInterval(self.stats.attackInterval, slow)
 end
 
+-- S162e: tells the chase test (Logic/ChaseTest) that a blow or a throw leaves now.
+local function probeAttack(self: Monster, target: Player, kind: string)
+	local probe = self.probe
+	local attack = probe and probe.attack
+	if attack then
+		attack(self, target, kind)
+	end
+end
+
 -- S134e: the kit's throw at a fleeing target: a regular ranged blow (dodge, block and ranged protection count), every
 -- attack interval x intervalMul, harder the farther below the monster the target is (MonsterCast.throwMul). Returns
 -- whether it threw. S159a: the throw is drawn back first (Data/Combat.basicWind.throw, the clients pose the throw or
@@ -1072,6 +1118,7 @@ local function throwAt(self: Monster, now: number, target: Player, targetPositio
 	local wind = self.ctx.attackWind
 	local seconds = BasicBlow.throwWind(self.variant)
 	if not wind or seconds <= 0 then
+		probeAttack(self, target, "throw")
 		send(self, target, params)
 		return true
 	end
@@ -1084,6 +1131,7 @@ local function throwAt(self: Monster, now: number, target: Player, targetPositio
 		end
 		self.windToken += 1
 		if self.ctx.canTarget(self, target) then
+			probeAttack(self, target, "throw")
 			send(self, target, params)
 		end
 	end)
@@ -1182,6 +1230,7 @@ windUp = function(self: Monster, target: Player)
 	local wind = self.ctx.attackWind
 	local seconds = BasicBlow.wind(self.def.attack, self.variant)
 	if not wind or seconds <= 0 then
+		probeAttack(self, target, "blow")
 		self.ctx.basicAttack(self, target)
 		return
 	end
@@ -1199,6 +1248,7 @@ windUp = function(self: Monster, target: Player)
 		end
 		local reach = self.stats.range + self.root.Size.Z / 2
 		if distanceFlat(self.root.Position, at) <= reach * Combat.windReach + Combat.windSlack then
+			probeAttack(self, target, "blow")
 			self.ctx.basicAttack(self, target)
 		end
 	end)
@@ -1495,6 +1545,9 @@ local function stepReturn(self: Monster, now: number)
 	local action = notePursuit(self, now, false, true)
 	if now - self.returnStarted > Combat.returnTimeout or action == "evade" then
 		-- Teleport home (no healing, S22).
+		if self.probe and self.evading then
+			self.probe.homeTeleport = true
+		end
 		self.model:PivotTo(CFrame.new(point) + Vector3.new(0, self.humanoid.HipHeight + self.root.Size.Y / 2, 0))
 		finishReturn(self)
 		return
@@ -1568,6 +1621,10 @@ end
 -- removes nothing (damage over time, reflections and every other source end here).
 function Monster.TakeDamage(self: Monster, amount: number, source: Player?): number
 	if self.state == "dead" or self.invulnerable or amount <= 0 then
+		return 0
+	end
+	-- S162e: a chase test's monster cannot be hurt (nor pulled by hits): the test drives the fight
+	if self.probe and self.probe.immortal then
 		return 0
 	end
 	if source and lockedFor(self, source) then

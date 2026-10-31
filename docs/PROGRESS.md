@@ -60,7 +60,8 @@
   `Muzzle` (`docs/ANIM-WZORCE.md` §10); klient jeszcze nie rysuje łuku skoku z `Dash*` ani pojawienia się z `SpawnedAt`
   (sesja animacji potworów). Nieobejrzane w Studio (bieg szarży dzika po linii, skok wilka, start strzałów z pyska).
 - **S162e odwrót i ścieżki potworów:** nieobejrzane w Studio (ścieżki `PathfindingService` wokół domów, płotów i skał,
-  odwrót spod skały i półki, napis „Odwrót”, koszt ścieżek przy wielu potworach w Inwazji).
+  odwrót spod skały i półki, napis „Odwrót”, koszt ścieżek przy wielu potworach w Inwazji). Do sprawdzenia bez myszy:
+  `/chasetest wolf corner|perch|load`, `/chasetest goblinShaman los`.
 - **Opisy-1 krótkie opisy:** `InfoTip` („i”), `Details` („Więcej ▸”), `Tooltip` ze szczegółami, skrócone tooltipy
   przedmiotów i paska umiejętności gotowe; okna jeszcze nie przerobione (kolejne sesje, przepis w `docs/JAK-DODAC.md`).
   Bez przeglądu w Studio (dymek „i” przy krawędzi ekranu, wiersz „Więcej ▸” w tooltipie na telefonie).
