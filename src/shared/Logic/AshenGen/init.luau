@@ -28,6 +28,7 @@ local FishingSpots = require("./FishingSpots")
 local Flats = require("@self/Flats")
 local Flora = require("./WorldGen/Flora")
 local Kit = require("./WorldGen/Kit")
+local KitSeat = require("./KitSeat")
 local Lairs = require("./WorldGen/Lairs")
 local Lava = require("@self/Lava")
 local Maps = require("../Data/Maps")
@@ -291,6 +292,8 @@ function AshenGen.all(): { Build }
 	Details.all(e, out)
 	-- W17-W18 part 2: the plan's remaining props (caravan stop, dwarven pier, crest palm, cart ruts, river embers)
 	Finish.all(e, out)
+	-- 2026-11-01: no rock on a cliff's lip, no tree with a wall in its crown (Logic/KitSeat)
+	KitSeat.prune(out, e.T.height, trees)
 	treeCache = trees
 	cache = out
 	return out

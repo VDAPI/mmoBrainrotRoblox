@@ -26,6 +26,7 @@ local Flora = require("./WorldGen/Flora")
 local Heart = require("@self/Heart")
 local Hollow = require("@self/Hollow")
 local Kit = require("./WorldGen/Kit")
+local KitSeat = require("./KitSeat")
 local Lairs = require("./WorldGen/Lairs")
 local Maps = require("../Data/Maps")
 local _Nature = require("@self/Nature") -- W15: registers the Duskwood's dead trees and undergrowth into Flora
@@ -279,6 +280,8 @@ function DuskwoodGen.all(): { Build }
 		table.insert(out, b :: any)
 	end
 	Dress.shafts(e, out, trees) -- W15 (bor.md A10.4): light through the gaps of the Heart's crowns
+	-- 2026-11-01: no rock on a cliff's lip, no tree with a wall in its crown (Logic/KitSeat)
+	KitSeat.prune(out, e.T.height, trees)
 	treeCache = trees
 	cache = out
 	return out
