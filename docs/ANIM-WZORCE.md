@@ -975,8 +975,10 @@ included; AnimationController and AnimLab need no change.
 - **Legs** (`Logic/OctoPose`): each leg turns about the vertical through its hip (yaw) and bends in its own plane by two
   numbers: `a` lifts it from the hip, `b` folds it at the knee (the joint highest at rest; femur +0.45, the joints
   below −0.55, −0.25, −0.15, −0.05). Damped least squares from last frame's pair (4 steps, 2 for far rigs), the yaw
-  exact; the answer followed at most 22 rad/s (bend) and 24 rad/s (yaw), so a target swept through a leg's reach never
-  flips it in one frame. Bones are written `rest^-1 · R(axis, angle) · rest` as `CFrame.fromAxisAngle` about the axis
+  exact. The drawn pose follows the wanted one as a whole (scaled by its fastest joint, so it never bends off its way)
+  at most 10 rad/s (`JOINT_RATE`: keys, tuck, deaths, a leg still trailing), 12 rad/s for a leg that only walks or
+  strikes (`SAFE_RATE`), 30 rad/s for a foot standing on its point (`STAND_RATE`: it never trails the body, whose own
+  moves are smooth): a target swept through a leg's reach or a solver jumping to the other bend never flips it. Bones are written `rest^-1 · R(axis, angle) · rest` as `CFrame.fromAxisAngle` about the axis
   turned into the bone's own frame (rest frames read from the model at runtime: the Studio import has non-identity
   ones), only when a turn changed by > 0.1°.
 - **Gait** (`Logic/OctoMotion`): the recipe's phase (by distance) runs both tetrads half a cycle apart with a ripple of
@@ -985,19 +987,42 @@ included; AnimationController and AnimLab need no change.
   and turned on by half the stance's turn (so a turn in place is stepped too), lifted 0.16 hip heights at a walk,
   0.30 at a run. Planted feet keep their world point every frame (the root's move and turn taken back), so nothing
   slides under the bob, the sway, the lunge or the turn lag. A foot left behind (lunge, spin, lag spike) or out of
-  reach steps on its own and joins its tetrad's next swing; standing, the legs settle back one by one; a teleport
-  puts them down at once.
+  reach steps on its own and joins its tetrad's next swing (as many at once as leave three down), lifted higher the
+  farther it goes (0.3 hip heights per stud, at most 0.45) and landing ahead of a body that keeps moving (0.6 of the
+  body's own velocity over the rest of the step); a body moving over 1.5 spans a second (a lunge, a recoil) hops: every
+  leg left behind steps at once; standing, the legs settle back one by one; a teleport puts them down at once.
 - **Palps** are too short for the stride: on the move they are carried up in front and feel the air; standing they tap
   the ground now and then; the fangs chew in the idle; the abdomen breathes and pumps with `gr`.
 - **Recipe keys** (only styles built with `legs = true`: spider, scorpion; a rigid look ignores them): `raise` / `wave`
-  (front pair and palps up and waving: alert, bite's gather, heavy, crush, cast, throw, taste fidget), `stab` (struck
-  forward and down onto the ground ahead and planted there: on the hit of bite, heavy, crush), `tuck` (every leg drawn
+  (front pair and palps up and waving: alert, bite's gather, heavy, crush, cast, throw, taste fidget; a joint-space
+  pose blended from the standing one joint by joint, so the tip rises on an arc: the foot 0.6 of the leg out in front,
+  level with the hip, its heading turned 0.45 toward the front, 0.7 of the body's pitch taken back; only legs with
+  `front > 0` in `Data/OctoRigs` raise: PL, PR, L1, R1; L2 and R2 stand), `stab` (struck forward and down onto the
+  ground ahead along a straight line and planted there: on the hit of bite, heavy, crush; `grip` strikes closer in, a
+  clasp; the palps stop 0.2 hip heights over the ground and never plant), `tuck` (every leg drawn
   in: pounce flight, spawn, summon), `splay` (feet set wider: landings, slams; a splayed foot is not settled back
   until the splay fades), `palp`, `fang` (open 1, snapped shut −0.3 on the bite's hit). The pounce adds two leg-only
   keys on the flight's straight line (tucked at S0.6, reaching for the ground at S0.85), so the body's path is the
   same with or without legs.
-- **Stun** trembles the knees (`shiver` + stun weight), **freeze** holds every leg, a **hit** flinches the legs on the
-  struck side.
+- **Stun** trembles the knees (`shiver` + stun weight), **freeze** holds every leg (the ice's 0.5° tremble shakes the
+  frozen body whole), a **hit** flinches the legs on the struck side; a foot standing on its point trembles and
+  flinches by lifting a touch, the leg keeping the point (it never slides).
+- **Studio review 2026-10-31** (AnimLab frame by frame on the swapped model): the alert raised the four front legs to
+  4.5–6 studs (one upright like a pole, one bent back) on an 18° rear; the bite, attack1 and attack2 were the same
+  action (3.06-stud lunge); the standing legs dragged 3–4 studs under the lunge; `2_Right_Limb_0` (PL) flipped
+  ~50° and back every frame. Now: the raise is the joint-space pose above (tips 2.96–3.36 studs at OctoSim's scale,
+  ahead of their hips, hip-to-tip under 30° from level), the spider's rear-ups lower (alert / bite / spit 12°, pool 16°,
+  heavy 17°, crush 20°; the heavy and crush strike `lin`), `lunge.max` 0.3·B (≈ 2 studs), the bite strikes in 0.2 s
+  with an `inout` lunge and recoil; `basic = { "bite", "grab" }` (attack2 = the **grab**: a gather with the palps up,
+  a short lunge, the front legs clasping close with `grip`, the fangs snapping twice; lunge about half the bite's,
+  front tips about 2 studs); the standing feet catch up by the steps above and keep their points (drift ≤ 0.09 stud
+  in every action and reaction); the pounce's bounce eases `inout` over a 0.4 s follow. AnimLab `attack1` = bite,
+  `attack2` = grab (`/animlab mob caveSpider grab` too).
+- **The asset** in `Assets.Monsters` (as the wolf and the peakHarpy): a Model with `HumanoidRootPart` (Anchored false,
+  CanCollide false, CanQuery and CanTouch true, Massless false, Transparency 1, size 1) as its `PrimaryPart`, the
+  MeshPart with the bones (Anchored false, CanCollide, CanQuery and CanTouch true, Massless false) welded to it by a
+  `WeldConstraint` (HRP → mesh), `WorldPivot` = the HRP's CFrame (not the import's origin), the attribute `Hover` (0
+  for the spider), no `InitialPoses` (the rig reads the rest frames itself).
 - **Deaths**: from the pose it had, the jolt straightens the legs, then each leg curls in under / over the belly at its
   own pace as `fold` grows (above the knee +55°, below it −70 .. −270°). `OctoMotion.folds` gives RigidMotion the box of
   the curled legs at every eighth, so the body sinks and topples over them (as with MeshFold); the flip ends on its
@@ -1012,7 +1037,12 @@ included; AnimationController and AnimLab need no change.
   bones (not the old dump, not the old Tripo bear), the Roblox bone chain with random rest frames, IK, planted feet
   (no slide, ≥ 3 down) at walk / trot / run / arcs, tetrads alternating, turn in place by steps, settle, idle shift,
   stun, freeze, slope, every action finite with the stab on the ground at W, rear-ups, pounce tuck and splay, deaths
-  curled and never under the ground, the folded boxes, no joint jumping > 0.6 rad a frame, every AnimLab state.
+  curled and never under the ground, the folded boxes, every AnimLab state; the review's limits in every AnimLab state
+  (AnimLab's windups, the player 6 studs ahead; the regular blows and the alert also at 0.45 and 0.81) and every gait
+  with turns: no joint or yaw turning more than 12° in a 1/60 s frame, none back and forth by more than 2.5° three
+  frames running, no standing foot drifting more than 0.12 stud from its point, the alert's tips at most 1.05× the
+  body's height (ahead of their hips, never upright) on a rear under 13°, attack1 ≠ attack2 (the grab's lunge under
+  0.6 of the bite's, its tips under 0.8 of the bite's).
 - AnimLab: `/animlab mob caveSpider <state>` (states of §6.5) shows the legs once the new model is in
   `Assets.Monsters`; before that it shows the rigid one.
 

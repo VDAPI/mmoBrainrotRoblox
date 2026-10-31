@@ -3,8 +3,12 @@
 -- Logic/OctoPose, Logic/OctoMotion over its Data/RigidStyles recipe). The map is picked only by the new model's bones,
 -- the bones turn the way client/Anim/RigidRig writes them, the feet stay planted in the world while it walks, trots,
 -- runs and turns, the tetrads alternate, every action stays finite and strikes the ground on the server's hit, the
--- pounce tucks and splays, the deaths curl the legs in without sinking, nothing pops, and AnimLab shows every state.
+-- pounce tucks and splays, the deaths curl the legs in without sinking, and AnimLab shows every state. Studio's review
+-- (2026-10-31): no joint turns over 12 degrees a frame nor chatters, the standing feet never drag under a lunge, the
+-- alert's raise reaches about the body's height in spider arcs, and attack1 and attack2 are two different blows.
 local AnimLab = require("../src/shared/Logic/AnimLab")
+local Combat = require("../src/shared/Data/Combat")
+local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
 local MonsterLooks = require("../src/shared/Data/MonsterLooks")
 local NpcPose = require("../src/shared/Logic/NpcPose")
 local OctoMotion = require("../src/shared/Logic/OctoMotion")
@@ -567,48 +571,258 @@ T.describe("OctoMotion actions", function()
 		T.expect(folds[9].W < folds[1].W).toBe(true)
 		T.expect(folds[9].lift > folds[1].lift).toBe(true)
 	end)
+end)
 
-	T.it("moves every joint smoothly (no pops) through the gaits and the actions", function()
-		local function watch(sim: OctoSim.Sim, label: string): (number) -> ()
-			local last: { { number } } = {}
-			return function(k: number)
-				for i, f in sim.octo.feet do
-					local prev = last[i]
-					if prev and k > 3 then
-						for j = 1, #f.c do
-							local d = math.abs(f.c[j] - prev[j])
-							if d > 0.6 then
-								error(`{label}: {sim.skel.legs[i].name} joint {j} jumped {d} at frame {k}`)
-							end
-						end
-						if math.abs(f.psi - prev[#f.c + 1]) > 0.6 then
-							error(`{label}: {sim.skel.legs[i].name} yaw jumped at frame {k}`)
+-- Studio review of the rigged caveSpider (2026-10-31, AnimLab frame by frame): no joint jumps or chatters, the standing
+-- feet never drag under a lunge, the alert's raise reaches the body's height in spider arcs, attack1 and attack2 differ.
+
+-- The windup AnimLab gives each of the spider's actions (AnimLabController.windupOf: the kit's own, the alert's 0.45, a
+-- spawn's or a fidget's 0.5, the throw's Elite II draw, else the regular melee blow).
+local function labHit(style: RigidStyles.Style, name: string): number
+	local action = style.actions[name]
+	if action.hold then
+		return action.strike
+	elseif name == style.aggro then
+		return 0.45
+	elseif name == style.throw then
+		return Combat.basicWind.throw * Combat.basicWindVariant.elite2
+	elseif name == style.spawn or name == style.summon or (style.fidgets and table.find(style.fidgets, name)) then
+		return 0.5
+	end
+	for id, own in style.abilities do
+		local ability = MonsterAbilities.get(id)
+		if own == name and ability then
+			return ability.windup
+		end
+	end
+	return Combat.basicWind.melee
+end
+
+-- Plays AnimLab's `state` of the spider (the look standing, the ground running under it, the player 6 studs ahead as
+-- Config.AnimLab.layout puts it), blows struck `hit` after their start (nil: AnimLab's own windup), calling `each` after
+-- every frame.
+local function lab(state: string, frames: number, hit: number?, each: (sim: OctoSim.Sim, k: number) -> ())
+	local style = RigidStyles.get("spider") :: RigidStyles.Style
+	local slots: { [string]: string? } = {
+		attack1 = style.basic[1],
+		attack2 = style.basic[2] or style.basic[1],
+		cast = style.abilities.poisonPool,
+		alert = style.aggro,
+		heavy = style.abilities.heavyBlow,
+		crush = style.abilities.crush,
+		pounce = style.abilities.pounce,
+		throw = style.throw,
+		spawn = style.spawn,
+		summon = style.summon,
+		death = style.death[1].name,
+	}
+	local name = slots[state] or state
+	local action = style.actions[name]
+	local sim = OctoSim.new()
+	for k = 1, frames do
+		local t = k * DT
+		local i: { [string]: any } = { combat = true, snap = k == 1, look = { 0, -0.5, -6 } }
+		if action then
+			local at = if action.hold then action.strike else hit or labHit(style, name)
+			i.action = { name = name, start = 0, hit = at, reach = { 0, 0, -6 } }
+		elseif state == "walk" then
+			i.speed, i.gait, i.combat = WALK, "walk", false
+		elseif state == "trot" or state == "home" then
+			i.speed, i.gait, i.combat = TROT, "trot", false
+		elseif state == "run" then
+			i.speed, i.gait = RUN, "run"
+		elseif state == "turn" then
+			i.yawRate = 2.4
+		elseif state == "stun" then
+			i.stun = t >= 0.3
+		elseif state == "freeze" then
+			i.frozen = t > 0.8
+		elseif string.sub(state, 1, 3) == "hit" then
+			i.hitAt, i.hitSide = 0.2, ({ hit = "front", hitBack = "back", hitLeft = "left", hitRight = "right" })[state]
+		elseif state == "idle" then
+			i.combat = false
+		end
+		OctoSim.step(sim, DT, i, false)
+		each(sim, k)
+	end
+end
+
+-- A frame's turn of a drawn joint (or a leg's yaw) and the two before it: no more than JUMP, and never back and forth
+-- by more than CHATTER three frames running (the jitter Studio saw: a joint flipping 50 degrees and back every frame).
+local JUMP, CHATTER = math.rad(12), math.rad(2.5)
+local function watchJoints(sim: OctoSim.Sim, label: string): (k: number) -> ()
+	local last: { { number } } = {}
+	local d1: { { number } } = {}
+	local d2: { { number } } = {}
+	return function(k: number)
+		for i, f in sim.octo.feet do
+			local name = sim.skel.legs[i].name
+			local now = table.clone(f.c)
+			table.insert(now, f.psi)
+			local prev = last[i]
+			if prev and k > 2 then
+				local d = {}
+				for j, v in now do
+					local turn = v - prev[j]
+					if j == #now then
+						turn = (turn + math.pi) % (2 * math.pi) - math.pi
+					end
+					d[j] = turn
+					if math.abs(turn) > JUMP then
+						error(`{label}: {name} joint {j} turned {math.deg(turn)} deg in frame {k}`)
+					end
+					local a, b = d1[i] and d1[i][j], d2[i] and d2[i][j]
+					if a and b and turn * a < 0 and a * b < 0 then
+						local least = math.min(math.abs(turn), math.abs(a), math.abs(b))
+						if least > CHATTER then
+							error(`{label}: {name} joint {j} chattered {math.deg(least)} deg at frame {k}`)
 						end
 					end
-					local copy = table.clone(f.c)
-					table.insert(copy, f.psi)
-					last[i] = copy
 				end
+				d2[i] = d1[i]
+				d1[i] = d
 			end
+			last[i] = now
 		end
-		for _, case in { { WALK, "walk", 0 }, { RUN, "run", 0 }, { 0, nil, 2.4 }, { TROT, "trot", 1.5 } } do
-			local sim = OctoSim.new()
-			drive(sim, 240, { speed = case[1], gait = case[2], yawRate = case[3] }, watch(sim, `{case[2]} {case[3]}`))
-		end
-		local style = RigidStyles.get("spider") :: RigidStyles.Style
-		for name, action in style.actions do
-			if name ~= "spawn" and name ~= "summon" then
-				local k = 0
+	end
+end
+
+T.describe("OctoMotion Studio review", function()
+	T.it("turns no joint more than 12 degrees a frame, nor back and forth, in any AnimLab state or gait", function()
+		-- (12 degrees at 60 fps: a standing foot follows the body under a lunge, a chase step swings the leg through its
+		-- stride in a few frames; the 50-degree flips Studio saw are far over it)
+		for _, state in RigidStyles.labStates("spider") do
+			-- (the regular blows and the alert also struck sooner and later, as an Elite's and a boss's draw; the kit's
+			-- blows keep their own windups)
+			local quick = state == "attack1"
+				or state == "attack2"
+				or state == "alert"
+				or state == "bite"
+				or state == "grab"
+			for _, hit in if quick then { nil :: number?, 0.45, W } else { nil :: number? } do
 				local check: ((number) -> ())? = nil
-				play(name, if action.hold then action.strike else W, function(sim)
-					k += 1
+				lab(state, 300, hit, function(sim, k)
 					if not check then
-						check = watch(sim, name)
+						check = watchJoints(sim, `{state} (hit {hit or "lab"})`)
 					end
 					(check :: (number) -> ())(k)
 				end)
 			end
 		end
+		for _, case in
+			{
+				{ WALK, "walk", 0 },
+				{ TROT, "trot", 0 },
+				{ RUN, "run", 0 },
+				{ 0, nil, 2.4 },
+				{ TROT, "trot", 1.5 },
+				{ RUN, "run", 2 },
+			}
+		do
+			local sim = OctoSim.new()
+			drive(
+				sim,
+				300,
+				{ speed = case[1], gait = case[2], yawRate = case[3], combat = case[2] == "run" },
+				watchJoints(sim, `{case[2]} turning {case[3]}`)
+			)
+		end
+	end)
+
+	T.it("keeps every standing foot on its point while the body lunges, rears and flinches over it", function()
+		for _, state in RigidStyles.labStates("spider") do
+			-- (AnimLab runs the ground under a gait: the feet go with it; the ice's tremble shakes the frozen body whole)
+			local moving = state == "walk" or state == "trot" or state == "run" or state == "turn" or state == "home"
+			local quick = state == "attack1"
+				or state == "attack2"
+				or state == "alert"
+				or state == "bite"
+				or state == "grab"
+			if not moving and state ~= "freeze" then
+				for _, hit in if quick then { nil :: number?, 0.45, W } else { nil :: number? } do
+					local from: { { number }? } = {}
+					lab(state, 300, hit, function(sim, k)
+						for i, f in sim.octo.feet do
+							local x, _, z = OctoSim.foot(sim, i)
+							local at = from[i]
+							if f.down and k > 1 and not sim.octo.deathAt then
+								if at then
+									local d = math.sqrt((x - at[1]) ^ 2 + (z - at[2]) ^ 2)
+									if d > 0.12 then
+										error(`{state}: {sim.skel.legs[i].name} dragged {d} studs at frame {k}`)
+									end
+								else
+									from[i] = { x, z }
+								end
+							else
+								from[i] = nil
+							end
+						end
+					end)
+				end
+			end
+		end
+	end)
+
+	T.it(
+		"raises the front legs in the alert to about the body's height, reaching ahead (no pole, none bent back)",
+		function()
+			local pitch = 0
+			local tip: { [string]: number } = {}
+			local h, hipH = 0, 0
+			lab("alert", 120, nil, function(sim, k)
+				local m = (sim.posed :: RigidMotion.Posed).m
+				pitch = math.max(pitch, math.deg(math.asin(math.clamp(-m[6], -1, 1))))
+				h, hipH = sim.rigid.body.h, sim.skel.hipH
+				for i, leg in sim.skel.legs do
+					if leg.name == "PR" or leg.name == "R1" or leg.name == "L1" or leg.name == "PL" then
+						local f = sim.octo.feet[i]
+						local _, y = OctoSim.foot(sim, i)
+						tip[leg.name] = math.max(tip[leg.name] or 0, y)
+						-- in the body's frame: ahead of its hip, and the hip-to-tip line far from upright
+						local x, ly, z = OctoPose.foot(leg, f.psi, f.c)
+						local reach = math.sqrt((x - leg.hip[1]) ^ 2 + (z - leg.hip[3]) ^ 2)
+						if z > leg.hip[3] - 0.3 * leg.span then
+							error(`alert: {leg.name} tip not ahead of its hip at frame {k}`)
+						end
+						if math.deg(math.atan2(ly - leg.hip[2], reach)) > 30 then
+							error(`alert: {leg.name} stands up like a pole at frame {k}`)
+						end
+					end
+				end
+			end)
+			for name, y in tip do
+				-- (Studio: 4.5 to 6 studs on a 2.35-stud body before; now about the body's height, still raised)
+				if y > 1.05 * h or y < 1.4 * hipH then
+					error(`alert: {name} tip peaks at {y} (body {h}, hip {hipH})`)
+				end
+			end
+			T.expect(pitch < 13).toBe(true)
+		end
+	)
+
+	T.it("plays attack1 and attack2 as two blows: the bite rears and lunges, the grab clasps close", function()
+		local style = RigidStyles.get("spider") :: RigidStyles.Style
+		T.expect(#style.basic).toBe(2)
+		T.expect(style.basic[1] ~= style.basic[2]).toBe(true)
+		local function measure(state: string): (number, number)
+			local lunge, high = 0, 0
+			lab(state, 120, nil, function(sim)
+				lunge = math.max(lunge, -(sim.posed :: RigidMotion.Posed).m[12])
+				for i, leg in sim.skel.legs do
+					if leg.rank <= 1.5 then
+						local _, y = OctoSim.foot(sim, i)
+						high = math.max(high, y)
+					end
+				end
+			end)
+			return lunge, high
+		end
+		local biteLunge, biteHigh = measure("attack1")
+		local grabLunge, grabHigh = measure("attack2")
+		T.expect(biteLunge > 1).toBe(true)
+		T.expect(grabLunge < 0.6 * biteLunge).toBe(true)
+		T.expect(grabHigh < 0.8 * biteHigh).toBe(true)
 	end)
 end)
 
