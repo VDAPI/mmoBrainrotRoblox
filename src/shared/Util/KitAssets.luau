@@ -231,7 +231,8 @@ end
 -- 2026-10-31: the stone skirt of a house on a slope, from its foot `depth` studs down (Logic/TownGen/Houses). The
 -- model's plinth (the lowest part as wide and deep as everything that stands on the ground, at most a third of the
 -- model's height) is copied downward, so the skirt is the same stone; a model without one gets a stone block
--- (Data/Kit.skirt) under the parts on the ground.
+-- (Data/Kit.skirt) under the parts on the ground. Every skirt part is named "Skirt" (the model's attribute KitSkirt is
+-- its depth, KitFoot the model's own foot: a measure of the model against the ground skips them).
 local function addSkirt(model: Model, pivot: CFrame, depth: number)
 	local ground: { { part: BasePart, lo: Vector3, hi: Vector3 } } = {}
 	local lo, hi = Vector3.new(math.huge, 0, math.huge), Vector3.new(-math.huge, 0, -math.huge)
@@ -357,7 +358,10 @@ function KitAssets.place(placement: Placement, parent: Instance): Model
 	local skirt = placement.skirt
 	if skirt and skirt > 0.05 then
 		addSkirt(model, placement.cframe, skirt)
+		model:SetAttribute("KitSkirt", skirt)
 	end
+	-- 2026-11-01: the model's own foot (world y, the stone skirt not counted) for measuring it against the ground
+	model:SetAttribute("KitFoot", placement.cframe.Position.Y)
 	if placement.persistent then
 		model.ModelStreamingMode = Enum.ModelStreamingMode.Persistent
 	end

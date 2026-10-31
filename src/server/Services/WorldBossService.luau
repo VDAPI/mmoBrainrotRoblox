@@ -364,7 +364,7 @@ local function rollItems(level: number, classId: string, share: Share, pity: num
 			drop.forClass,
 			{ family = WorldBoss.def().family :: string? }
 		)
-		-- owner 2026-10-31: Heroic binds on equip, Legendary and Mythic on pickup, also by mail (Logic/Binding)
+		-- owner 2026-10-31: Heroic and Legendary bind on equip, Mythic on pickup, also by mail (Logic/Binding)
 		table.insert(items, Binding.apply(rolled, "boss"))
 	else
 		log:warn("no world boss item at level %d for %s", level, classId)

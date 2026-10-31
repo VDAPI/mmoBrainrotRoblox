@@ -396,6 +396,8 @@ return {
 	["combat.crit"] = "CRIT! {amount}",
 	["combat.absorbed"] = "Absorbed",
 	["combat.immune"] = "Immune",
+	-- S162e: a monster that cannot reach its target goes home immune
+	["combat.evade"] = "Evade",
 	["combat.distance"] = "{distance} m",
 	["combat.reward"] = "+{exp} EXP · +{gold} gold",
 	["combat.rewardGold"] = "+{gold} gold",

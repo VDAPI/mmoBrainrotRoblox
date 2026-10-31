@@ -21,6 +21,7 @@ local Dressing = require("@self/Dressing")
 local FishingSpots = require("./FishingSpots")
 local Homes = require("@self/Homes")
 local Kit = require("@self/Kit")
+local KitSeat = require("./KitSeat")
 local Lairs = require("./WorldGen/Lairs")
 local Landmarks = require("@self/Landmarks")
 local MeadowsTerrain = require("./MeadowsTerrain")
@@ -76,6 +77,8 @@ function MeadowsGen.all(): { Build }
 	for _, b in tiles do
 		table.insert(out, b :: any)
 	end
+	-- 2026-11-01: no rock on a cliff's lip, no tree with a wall in its crown (Logic/KitSeat)
+	KitSeat.prune(out, MeadowsTerrain.height, trees)
 	treeCache = trees
 	cache = out
 	return out

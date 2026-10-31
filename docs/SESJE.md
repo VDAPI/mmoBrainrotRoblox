@@ -14109,6 +14109,23 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Dokumentacja dla sesji animacji: `docs/ANIM-WZORCE.md` §10. Testy: `tests/monstermove.spec.luau`, `leash.spec`
   (powrót truchtem). Balans: powody w `tools/balance_reasons.luau` (S162m).
 
+### S162e: potwory nie dają się przechytrzyć przeszkodami (2026-10-31)
+- Zgłoszenie testera: potwory blokują się na przeszkodach, gracz bije je zza skały, z półki albo z dachu. Było: dwa
+  krótkie promienie omijania (`Logic/Steer`), „utknięcie” S22 liczone z każdego ruchu o 1,5 st. (ślizganie po ścianie i
+  drganie je kasowały), po 5 s powrót bez leczenia, trafiony zawracał i znów utykał.
+- Teraz (`Logic/Pursuit.luau`, `Entities/Monster.luau`): dwa długie promienie sprawdzają prostą drogę do celu; zablokowana
+  = ścieżka `PathfindingService` (agent z rozmiaru ciała, bez skoków i wspinania, woda droższa; budżet serwera i przerwa na
+  potwora w `Data/Combat`), potwór idzie po jej punktach. Postęp = studa w stronę celu albo punktu ścieżki; 1,75 s bez
+  postępu = nowa ścieżka, brak ścieżki albo 4,5 s = odwrót (nietykalny, pełne HP, odporny na osłabienia, do domu, napis
+  „Odwrót” / „Evade”, 6 s bez aggro z widzenia). Stojąc w zasięgu ciosu, strzału z czystą linią albo rzutu Elity II nie
+  utyka. Niski promień omijania na wysokości stopnia (`Pursuit.stepHeight`), więc niskie progi nie zawracają potworów.
+- Strzały i rzuty potworów tylko przy czystej linii do celu. W drodze do domu utknięcie = teleport do domu od razu.
+  Bossowie i ich pomocnicy bez odwrotu (dostają ścieżki). `Gait`, podejście wręcz, `Dash*`, `SpawnedAt` bez zmian.
+- Pliki: `Logic/Pursuit`, `Logic/Leash` (bez powodu „stuck”), `Data/Combat` (`pursuit*`, `evadeCalm`, `path*`, bez
+  `stuckTime`), `Entities/Monster`, `MonsterService` / `CombatService` (zdarzenie `ev`), `StatusEffectService`,
+  `Logic/DamageText`, `CombatFxController`, `Admin/Monsters` (`/leash` pokazuje odwrót), teksty `combat.evade`, wiki
+  „Jak uciec przed potworem”. Testy: `tests/pursuit.spec.luau`, `leash.spec`, `damagetext.spec`. Balans: powody S162e.
+
 ### Wiązanie przedmiotów (właściciel 2026-10-31)
 - Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
   wędrownego kupca, każdy założony plecak; sprzęt bossów był wolny (poza Mitykiem z worka, a Mityk bossa świata pocztą
@@ -14127,6 +14144,10 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   areny i wędrownego kupca zależne od reguły.
 - Testy: `tests/binding.spec.luau` (reguły kategorii i źródeł, zakładanie, stosy, odmowy, migracja, podpowiedź, brak
   ręcznego `bound = true`), wersja schematu w testach migracji.
+- Mniej wiązania (właściciel, ten sam dzień): źródło `boss` bez dodatku (Legendarny po założeniu, Mityczny po
+  podniesieniu z rzadkości), nowe `quest` (`SideQuestService`, nagroda do wyboru po założeniu) i `shop`
+  (`PremiumShopService`: zwoje wolne, plecaki premium `bind = "equip"`, reszta z definicji); `premium` zostaje dla
+  Mistrza Portali i przepustki sezonu. Migracja bez zmian (tylko uwalnia). Test sklepu premium w `binding.spec`.
 
 ### Fryzury kreatora: nowy zestaw i barwienie tekstur we własnym kolorze (2026-10-31)
 - Zgłoszenie testera: „poza 7, 9 i 12 fryzury są słabe i nie pasują”. Przegląd w Play (ciało Dawson, skala 0,9): cała
@@ -14224,3 +14245,22 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   nieodebrany stopień (warunek bez zmian).
 - Testy: `topband.spec` (nowy), `hudlayout` (rząd „coś czeka”, `covers`, scenariusze z rzędem), `worldboss` (próg,
   `at`).
+### Kamera w dachu po wejściu do świata (przegląd Studio 2026-10-31)
+- Zgłoszenie: po wejściu postaci (poziom 1 i 100, stolica) kamera startowała wciśnięta w dach domu i latarnię.
+- Przyczyna: od W02/W12 domy, mury, latarnie i drzewa miasta to modele zestawu (`CanCollide` i `CanQuery` wyłączone),
+  a ich kolizja to niewidzialne części generatora (przezroczystość 1, bez promieni). Popper kamery Roblox bierze tylko
+  nieprzezroczyste kolidujące części, więc nie widział niczego z miasta; promień kamery „z góry” też nie (domyślne
+  `CanQuery`). Do tego zapisane miejsce wracało zawsze twarzą na północ (`CFrame.new(x, y, z)`), spawn stolicy patrzył
+  na środek mapy zamiast w stronę z planu, a kamera Roblox obraca się za nową postacią, zanim serwer ją obróci i
+  przestawi. Pomiar na obecnych danych (działki `LotPads`): sam spawn ma czysto we wszystkich kierunkach (najbliższy
+  dom 46 studów), ale na 916 otwartych punktach miasta widok startowy twarzą na północ był zasłonięty w 185.
+- `Logic/CameraClear.luau` (czyste): kierunek kamery za postacią, kolejność kierunków od preferowanego, wybór obrotu
+  z czystą linią kamery (14 studów, 15 st. w dół) i widokiem przed sobą (8 studów), odległość przed ścianą (margines
+  `Config.Camera.wallMargin`, najmniej 1 stud) i powrót 40 studów na sekundę.
+- `CameraController`: jeden promień na klatkę (teren i `World.<mapa>`, `RespectCanCollide`) w obu trybach; kamera
+  swobodna przesuwa się tylko po własnej linii (obrót i zoom zostają Robloxa); po `CharacterAdded` i `GroundCheck`
+  świeżej postaci kamera za plecami w kierunku nadanym przez serwer.
+- `WorldService.OpenFacing` (najwyżej 24 promienie raz przy wejściu do świata), `GetSpawnCFrame("city")` z kierunkiem
+  z planu (`Town.city.spawn.facing`, jak `SpawnPoint`), `CharacterService.spawnModel` obraca tylko pozycję wyliczoną
+  przez serwer (bez areny i odrodzeń w punktach). Na danych miasta zasłoniętych startów zostaje 25 z 916 (wąskie
+  zaułki, tam kamera wsuwa się przed ścianę). Test: `tests/cameraclear.spec.luau`. Nieobejrzane w Studio.

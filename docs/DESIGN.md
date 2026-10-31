@@ -490,12 +490,16 @@ podniesieniu**. Wygrywa najsilniejsza z: definicji (`bind`, inaczej kategoria), 
 `wyglad/WIAZANIE-PRZEDMIOTOW.md` w plikach projektu.
 
 - **Zawsze wolne:** mikstury, eliksiry, błogosławieństwa, zwoje i kamienie teleportu (z dropu, za złoto, z nagród, za
-  Znaki Łowcy i Żetony Areny), materiały, zioła, ryby, rudy, narzędzia, zwykłe plecaki (także założone).
+  Znaki Łowcy i Żetony Areny), zwoje Ochrony, Rozwiązania, Zapomnienia i Odnowy ze sklepu premium, materiały, zioła,
+  ryby, rudy, narzędzia, zwykłe plecaki (także założone).
 - **Wiąże się po założeniu:** ekwipunek z potworów, Elit i Elit II, z kuźni, od kupców za złoto (także wędrownego),
-  Unikatowy i Heroiczny z osobistego rzutu bossa lochu i z bossa świata.
-- **Wiąże się po podniesieniu:** Legendarny i Mityczny z osobistego rzutu bossa (lochu i świata), każdy Mityczny (S30),
-  nazwane przedmioty bossów, ekwipunek z nagród (questy, skrzynia logowania, pierwszy łup, skrzynie wydarzeń), ekwipunek i
-  esencja za Znaki Łowcy, wszystko za Smoczą Walutę i Robux (sklep premium, Mistrz Portali, przepustka sezonu).
+  Unikatowy, Heroiczny i Legendarny z osobistego rzutu bossa lochu i z bossa świata (S149), nagroda zadania pobocznego
+  do wyboru, plecaki premium.
+- **Wiąże się po podniesieniu:** każdy Mityczny (S30), nazwane przedmioty bossów, ekwipunek z nagród (skrzynia
+  logowania, pierwszy łup, skrzynie wydarzeń), ekwipunek i esencja za Znaki Łowcy, Eliksir Pełni, Kamień Przemiany,
+  Kamień Zmiany Efektu, Zwój Przemiany, Zwój Łowów, kamienie Mistrza Portali i nagrody przepustki sezonu.
+- Właściciel 2026-10-31 (później tego dnia, „mniej wiązania”): Legendarny z bossów, nagroda zadania pobocznego, zwoje i
+  plecaki ze sklepu premium wracają do reguł sprzed zmiany.
 - Związany przedmiot: bez handlu, aukcji, poczty i skarbca gildii; można go sprzedać kupcowi (o ile nie `noSell` / `ns`),
   zniszczyć i włożyć do depozytu (depozyt jest kontowy, więc przejdzie do innej postaci tego samego konta).
 - Stosy związane i wolne nigdy się nie łączą (`Inventory.canMerge`).
@@ -879,6 +883,11 @@ magicznego; leczenie i wzmocnienia działają tylko na Kapłana i jego drużynę
   - zawsze wraca dalej niż **150 st.**;
   - wraca **bez leczenia i bez nietykalności**, a trafiony w drodze zawraca;
   - leczy się dopiero w domu, stopniowo (8% HP/s po 4 s bez obrażeń).
+  - **Odwrót** (S162e, tester właściciela 2026-10-31): potwór, który nie dojdzie do celu (skała, drzewo, dom, płot,
+    półka, woda, ściana jaskini) i nie sięga go ciosem, strzałem z czystą linią ani rzutem Elity II, po 1,75 s bez
+    postępu szuka nowej drogi (ścieżka `PathfindingService`), a bez drogi albo po 4,5 s robi odwrót: nietykalny, pełne
+    HP, bez aggro, truchtem do domu z napisem „Odwrót”, potem 6 s nie atakuje sam (trafiony walczy). Zastępuje utknięcie
+    z S22. Bossowie i ich pomocnicy bez odwrotu (areny mają ściany, bossowie własną odpowiedź na kiting).
   - Tempo (S162m, właściciel 2026-10-25): spacer i patrol idą stępa (0,4 × szybkości), powrót do domu truchtem (0,7 ×,
     teleport do domu dopiero po 20 s), pościg i walka biegiem (1 ×). Potwór walczący wręcz podchodzi na 0,6 swojego
     zasięgu, zanim stanie (cios może zacząć już w zasięgu, zasada trafienia bez zmian). Skok wilka i szarża dzika Elity II
@@ -961,8 +970,8 @@ Szczyty) budzi się Hrimvald, Praojciec Olbrzymów. Ogłoszenia 10 i 2 minuty pr
 otwartym świecie dla 10–20 graczy z ciosami do unikania, wspólnym ciosem, trzema piętnami naraz i zaklęciem do
 przerwania (zasady §16); boss nie zależy od liczby graczy (więcej graczy = krócej, pięciu nie wygrywa), nie ma tarczy,
 pomocnicy faz 2–3 nie dają łupu ani EXP. Po 60 minutach walki wpada w szał, po 2 godzinach bez zabicia odchodzi. Nagroda (EXP, złoto, materiały i jeden
-przedmiot Heroiczny, Legendarny albo Mityczny; od 2026-10-31 Heroiczny wiąże się po założeniu, Legendarny i Mityczny po
-podniesieniu, §5.6) dla każdego z poziomem od progu i udziałem jak w
+przedmiot Heroiczny, Legendarny albo Mityczny; Heroiczny i Legendarny wiążą się po założeniu, Mityczny po podniesieniu,
+§5.6) dla każdego z poziomem od progu i udziałem jak w
 wydarzeniach świata (obrażenia, leczenie, tarcze, przejęte ciosy), **raz na konto na termin**: przejście na inny
 serwer w trakcie nie daje drugiej nagrody. W oknie bossa nie startuje Inwazja ani Czempion, w kole walki nie ma PvP,
 póki boss żyje; Fortuna nie działa na jego łup. Liczby: `Data/WorldBoss`, `Data/Bosses` (`hrimvald`), `docs/BALANS.md`
@@ -1705,6 +1714,9 @@ Napisy złożone (nazwa obszaru z profilem, linia profilu gracza, czat) zostają
 ## 24. Sterowanie i kamera
 
 - Klasyczna kamera Roblox (3. osoba, zoom 8–30).
+- Kamera (swobodna i „z góry”) nigdy nie stoi w ścianie ani za dachem: wsuwa się przed kolidującą geometrię mapy, także
+  przed niewidzialną kolizję modeli zestawu (przegląd Studio 2026-10-31). Po wejściu do świata postać patrzy w stronę z
+  czystym widokiem (na spawnie stolicy przez fontannę), kamera stoi za jej plecami.
 - **LPM / tap na wroga = cel i atak** już przy wciśnięciu (nie przy puszczeniu); wróg ma pierwszeństwo przed graczem pod kursorem. Każde kliknięcie wroga wznawia auto-atak, także gdy był już celem. Gdy atak jest niemożliwy (strefa bezpieczna, za daleko, ogłuszenie), krótki komunikat. Przytrzymanie LPM = po śmierci celu następny wróg przy kursorze. Opcja „automatyczny cel”: po zabiciu cel przechodzi na potwora, który nas atakuje (nie w ciągu 1.5 s po ręcznym ruchu); S134d: stojąca postać bez ataku sama bierze najbliższego bijącego ją potwora i oddaje mu **w miejscu, bez gonienia** (odwet; tylko potwory, nigdy PvP; ruch, kliknięcie, Tab albo umiejętność oddają sterowanie). Tab = następny najbliższy cel. **Q (zmienialne) lub klik w pustą ziemię = brak celu.**
 - Atak podstawowy: automatyczny, gdy cel wybrany i w zasięgu (wręcz 7 st., dystans 35 st.); jeśli poza zasięgiem, postać idzie do celu i go śledzi (MoveTo), stojąc przy celu obraca się do niego. **Ruch WASD/joystickiem przerywa podchodzenie i auto-atak** (cel zostaje zaznaczony, ale nie jest atakowany, dopóki gracz znów go nie kliknie albo nie użyje umiejętności), więc da się uciec.
 - **Sprint: przytrzymanie Ctrl** (zmienialne; na telefonie przycisk przełączający) = szybkość ruchu ×1.35. Bez kosztu; wyłącza się przy śmierci i przy rzucaniu kanałowanych umiejętności.
