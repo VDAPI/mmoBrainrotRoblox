@@ -5,6 +5,9 @@
 -- and goes on a click / touch. PC: 440 x 104 under the top edge; phone (Device.Touch): 340 x 96 at the top, far from the
 -- skill buttons. AchievementController shows one at a time. S151b: "View" (for a single achievement) opens the
 -- achievements window on it.
+-- Studio check 2026-10-31 (it stood over the shop's title bar): AchievementController holds it while a window is open;
+-- a window that opens while it shows moves it under the window's title bar (UI/HudCover.HeaderBottom,
+-- Logic/TopBand.underHeader).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -12,8 +15,11 @@ local TweenService = game:GetService("TweenService")
 local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudCover = require(script.Parent.Parent.Parent.HudCover)
+local Scale = require(script.Parent.Parent.Parent.Scale)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
 local TopBandState = require(script.Parent.Parent.Parent.TopBandState)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
@@ -47,11 +53,23 @@ function AchievementToast.new(scope: Scope, onView: ((id: string) -> ())?): Api
 	local hidden = scope:Computed(function(use): UDim2
 		return UDim2.new(0.5, 0, 0, -use(size).Y - 8)
 	end)
-	local shown = UDim2.new(0.5, 0, 0, TOP)
-
 	local box: Frame
+	local inPlace = false -- slid in and not on its way out
+	-- its place: under the top edge, or under the title bar of an open window
+	local shown = scope:Computed(function(use): UDim2
+		local header = use(HudCover.HeaderBottom)
+		local parent = if box then box.Parent else nil
+		local origin = if parent and parent:IsA("GuiObject") then parent.AbsolutePosition.Y else 0
+		return UDim2.new(0.5, 0, 0, TopBand.underHeader(TOP, if header then header - origin else nil, use(Scale.Value)))
+	end)
+	scope:Observer(shown):onChange(function()
+		if inPlace and box then
+			TweenService:Create(box, TweenInfo.new(0.2), { Position = Fusion.peek(shown) }):Play()
+		end
+	end)
 
 	local function hide()
+		inPlace = false
 		token += 1
 		local done = finished
 		finished = nil
@@ -211,8 +229,9 @@ function AchievementToast.new(scope: Scope, onView: ((id: string) -> ())?): Api
 		box.Position = Fusion.peek(hidden)
 		box.Visible = true
 		TopBandState.set("achievement", true) -- UI plan phase 2: the toasts start under it (Logic/TopBand)
+		inPlace = true
 		TweenService:Create(box, TweenInfo.new(0.3, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-			Position = shown,
+			Position = Fusion.peek(shown),
 		}):Play()
 		task.delay(Config.Achievements.toastSeconds, function()
 			if token == mine then
