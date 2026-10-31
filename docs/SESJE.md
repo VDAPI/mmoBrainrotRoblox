@@ -14124,3 +14124,22 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `hair_swept_white` → `hair_short`, `hair_curly_brown` → grzywka). NPC: `NpcLooks.HAIRS*`, `NpcLook.look` losuje kolor,
   potem fryzurę, która go ma. Admin `/charlook` dopasowuje kolor.
 - Testy: `bodylooks.spec` (zakresy, stare id, odcień), `classlooks`, `character`, `wikidump`. Dane wiki przegenerowane.
+
+### Plan UI, faza 1: mniej na ekranie gry (2026-10-31)
+- Zgłoszenie właściciela: „UI słabo przejrzyste, zbyt dużo informacji i możliwości na jednym ekranie” (plan
+  `wyglad/UI-PLAN.md` w plikach projektu). Nowy `Logic/HudMenu`: `BAR` (Plecak, Umiejętności, Mapa, Questy, Sklep, ☰),
+  `TILES` (15 kafelków menu gry), `KEYS` (klawisz każdego okna), `attention` („!” kafelka zapala ☰).
+- HUD: menu w jednym rzędzie (`Hud/init` `menu()`), `ScreenController` `MENU` + `TILE_DEFS` (odznaki kafelków: poczta,
+  arena, osiągnięcia `MenuAttention.Achievements`, wierzchowce, przepustka, nagroda dnia), `GameMenu` z siatką kafelków
+  (ikona, nazwa `menu.tile.<id>`, plakietka klawisza, „!”) nad ustawieniami; stare wiersze menu usunięte (VIP do
+  miasta zostaje). Usunięte `Hud/AchievementButton` i `Hud/EmoteButton`; ✧ i ❖ tylko z nagrodą, PvP przez
+  `PvpRules.toggleShown`, emotka zeszła z `PhoneHud.PLACES`, szuflada telefonu: sześć przycisków paska + ✧ ❖ z „!”.
+- Kolumna: `HudStack.RIGHT_TOP` 460 → 380 (z belką prowadzenia `RIGHT_TOP_GUIDE` 408; plan liczył 356 bez podpisów
+  minimapy), `EXTRAS` na dwa przyciski, `HudSlots` przekazuje belkę. Czat: `Hud/ChatDock` (PC lewy dolny róg, szerokość
+  z `HudStack.chatWidthScale` przed paskiem akcji; dotyk bez zmian). Tropiciel: `TrackerFold.DEFAULTS` zwija zlecenia
+  łowieckie, dnia, tygodnia i osiągnięcia (zapisany wybór zostaje).
+- Z przeglądu Studio: okno nagrody za logowanie nie otwiera się samo, zamiast niego toast `login.toast`
+  (`LoginRewardController`). DEV już tylko dla adminów (w Studio każdy jest adminem). Teksty odblokowania wierzchowców i
+  areny wskazują menu ☰.
+- Testy: nowy `hudmenu.spec`, `hudlayout` (rząd, belka, szerokość czatu), `phonehud`, `trackerfold`, `pvp`, `uiart`
+  (ikony kafelków), `bestiary`.

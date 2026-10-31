@@ -46,6 +46,13 @@ function PvpRules.toggleMatters(zone: Zone): boolean
 	return zone == "yellow"
 end
 
+-- UI plan phase 1 (owner 2026-10-31, too much on one screen): the HUD's PvP toggle shows only where PvP is in play: a
+-- yellow zone (the toggle matters), PvP on (a red zone forces it; in a green zone it is off whatever the switch says)
+-- or a switch counting down (`pendingTarget`). The dot on the portrait always tells the state.
+function PvpRules.toggleShown(zone: Zone?, pendingTarget: boolean?): boolean
+	return zone == "yellow" or zone == "red" or pendingTarget ~= nil
+end
+
 -- Whether the toggle may switch now. Turning PvP off is blocked for `combatLock` seconds after PvP combat.
 function PvpRules.canToggle(
 	zone: Zone,

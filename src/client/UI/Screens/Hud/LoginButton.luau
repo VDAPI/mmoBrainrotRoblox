@@ -1,7 +1,9 @@
 --!strict
 -- Login reward button (S100, docs/DESIGN-15.md §5): ✧ right of the portrait, aligned to its bottom (below the elixir
--- icons, above the effect icons), the same on PC and touch. While a reward waits: the "!" badge and a slowly
--- pulsing gold frame; the tooltip names the streak day. Opens the login window (LoginRewardController).
+-- icons, above the effect icons), the same on PC and touch; a phone in landscape has it in the menu drawer. UI plan
+-- phase 1 (owner 2026-10-31, too much on one screen): shown only while a reward waits, with the "!" badge and a slowly
+-- pulsing gold frame; the tooltip names the streak day. Opens the login window (LoginRewardController); the game
+-- menu's tile opens it at any time.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -50,6 +52,7 @@ local function LoginButton(scope: Scope, props: Props): Instance
 		Position = props.Position,
 		Size = UDim2.fromOffset(SIZE, SIZE),
 		BackgroundTransparency = 1,
+		Visible = props.Badge,
 		[Children] = {
 			IconButton(scope, {
 				Name = "LoginRewardButton",

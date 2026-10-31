@@ -49,6 +49,7 @@
 
 ## Niedokończone (kod)
 
+- **Plan UI, faza 1 (2026-10-31):** jeden rząd przycisków HUD, kafelki menu gry, czat w lewym dolnym rogu (`Hud/ChatDock`), toast zamiast okna nagrody za logowanie; nieobejrzane w Studio (szerokość czatu przy 1366 i 1280 px, zawijanie nazw kafelków, tropiciel od y 380 / 408 z belką prowadzenia, szuflada ☰ na telefonie). Kolejne fazy w `wyglad/UI-PLAN.md`; z przeglądu Studio zostaje przygaszanie tropiciela i przycisków pod dużym oknem.
 - **Fryzury kreatora (2026-10-31):** tony tekstur czarnych, brązowej, rudej (Belle Of Belfast) i różowej (Lavender
   Updo) w `Data/BodyLooks.hairs` są szacowane (tekstury niezmierzone), nieobejrzane w Studio (odcień po barwieniu,
   zakresy kolorów); nie wiadomo, czy Side Part - Black (`hair_swept`) to ta sama siatka co Side Part - Blond

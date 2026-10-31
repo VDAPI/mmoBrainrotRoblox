@@ -9,6 +9,9 @@
 -- open it again. Midnight UTC during play only lights the badge.
 -- S155b: not while the character's tutorial runs (a new player's first sight is the "move" hint, not a window); the
 -- badge on the HUD button still lights, and the window opens on its own once the tutorial is finished or skipped.
+-- UI plan phase 1 (Studio audit 2026-10-31: the window blocked the first view of the world): instead of the window a
+-- toast says where the reward waits; the ✧ by the portrait (phone: in the ☰ drawer) shows with its "!" while it does,
+-- and the window opens from it or from the game menu's tile. The timing rules above stay, for the toast.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -19,7 +22,9 @@ local LoginRewardWindow = require(script.Parent.Parent.UI.Screens.LoginReward)
 local Net = require(ReplicatedStorage.Shared.Net)
 local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
 local State = require(script.Parent.Parent.UI.State)
+local Text = require(script.Parent.Parent.UI.Text)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local Toast = require(script.Parent.Parent.UI.Components.Toast)
 local Tutorial = require(ReplicatedStorage.Shared.Logic.Tutorial)
 
 local LoginRewardController = {
@@ -32,6 +37,7 @@ local WindowManager: any
 local ENTER_DELAY = 2 -- seconds after entering the world (the map loads)
 local RETRY = 1 -- seconds between checks while a window or a modal is open
 local DAY_CHECK = 30 -- seconds between checks of the UTC day (the badge lights at midnight)
+local TOAST_SECONDS = 6
 
 local scope = Fusion.scoped(Fusion)
 local login = State.Value({ "account", "login" })
@@ -95,7 +101,7 @@ local function check()
 			end
 			if not WindowManager.HasModal() and not WindowManager.AnyOpen() then
 				shownKey = keyNow()
-				WindowManager.Open("login")
+				Toast.push(Text.now("login.toast"), "info", TOAST_SECONDS) -- UI plan phase 1: no window on entry
 				break
 			end
 			task.wait(RETRY)
@@ -108,7 +114,7 @@ function LoginRewardController.Open()
 	WindowManager.Open("login")
 end
 
--- S155: whether the window waits to open on its own (the tutorial hint waits for it).
+-- S155: whether the reward's toast waits to show (the tutorial hint waits for it).
 function LoginRewardController.Pending(): boolean
 	return pending
 end

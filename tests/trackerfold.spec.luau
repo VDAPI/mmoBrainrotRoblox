@@ -1,6 +1,7 @@
 --!strict
 -- Owner 2026-10-21 (the quest tracker took ~40 % of the screen): Logic/TrackerFold, the folded groups of the tracker
--- (account.settings.trackerFold), and the one-line progress of QuestRows.compact / withoutCount.
+-- (account.settings.trackerFold), and the one-line progress of QuestRows.compact / withoutCount. UI plan phase 1
+-- (owner 2026-10-31): only the quests stand open by default.
 
 local QuestRows = require("../src/shared/Logic/QuestRows")
 local Quests = require("../src/shared/Data/Quests")
@@ -8,29 +9,37 @@ local T = require("./Test")
 local TrackerFold = require("../src/shared/Logic/TrackerFold")
 
 T.describe("TrackerFold", function()
-	T.it("without a setting only the weekly set is folded", function()
+	T.it("without a setting only the quests (and the tracker itself) stand open (UI plan phase 1)", function()
+		local open = { all = true, quests = true }
 		for _, id in TrackerFold.GROUPS do
-			T.expect(TrackerFold.isFolded(nil, id)).toBe(id == "weekly")
-			T.expect(TrackerFold.isFolded({}, id)).toBe(id == "weekly")
+			T.expect(TrackerFold.isFolded(nil, id)).toBe(not open[id])
+			T.expect(TrackerFold.isFolded({}, id)).toBe(not open[id])
 		end
 	end)
 
-	T.it("a saved value wins over the default", function()
+	T.it("a saved value wins over the default: a player who opened a group keeps it open", function()
 		T.expect(TrackerFold.isFolded({ weekly = false }, "weekly")).toBe(false)
-		T.expect(TrackerFold.isFolded({ contracts = true }, "contracts")).toBe(true)
-		T.expect(TrackerFold.isFolded({ contracts = "yes" }, "contracts")).toBe(false)
+		T.expect(TrackerFold.isFolded({ contracts = false }, "contracts")).toBe(false)
+		T.expect(TrackerFold.isFolded({ daily = false, ach = false }, "ach")).toBe(false)
+		T.expect(TrackerFold.isFolded({ quests = true }, "quests")).toBe(true)
+		-- anything but a boolean reads as no choice
+		T.expect(TrackerFold.isFolded({ contracts = "yes" }, "contracts")).toBe(true)
+		T.expect(TrackerFold.isFolded({ quests = "yes" }, "quests")).toBe(false)
 	end)
 
 	T.it("with() toggles one group and keeps only the differences from the defaults", function()
-		local a = TrackerFold.with({}, "daily", true)
-		T.expect(a.daily).toBe(true)
+		local a = TrackerFold.with({}, "daily", false)
+		T.expect(a.daily).toBe(false)
 		T.expect(a.weekly).toBeNil()
-		local b = TrackerFold.with(a, "weekly", false)
-		T.expect(b.daily).toBe(true)
-		T.expect(b.weekly).toBe(false)
-		local c = TrackerFold.with(b, "daily", false)
+		local b = TrackerFold.with(a, "quests", true)
+		T.expect(b.daily).toBe(false)
+		T.expect(b.quests).toBe(true)
+		local c = TrackerFold.with(b, "daily", true)
 		T.expect(c.daily).toBeNil()
-		T.expect(TrackerFold.isFolded(c, "weekly")).toBe(false)
+		T.expect(TrackerFold.isFolded(c, "quests")).toBe(true)
+		-- an old save (weekly opened before the phase 1 defaults) stays as it was, the rest takes the new defaults
+		local old = TrackerFold.with({ weekly = false }, "all", false)
+		T.expect(old).toEqual({ weekly = false })
 		-- unknown groups are dropped
 		local d = TrackerFold.with({ nope = true } :: any, "all", true)
 		T.expect((d :: any).nope).toBeNil()
@@ -38,8 +47,8 @@ T.describe("TrackerFold", function()
 	end)
 
 	T.it("same() compares what is folded, not the shape", function()
-		T.expect(TrackerFold.same({}, { weekly = true })).toBe(true)
-		T.expect(TrackerFold.same({ daily = true }, {})).toBe(false)
+		T.expect(TrackerFold.same({}, { weekly = true, contracts = true })).toBe(true)
+		T.expect(TrackerFold.same({ daily = false }, {})).toBe(false)
 		T.expect(TrackerFold.same(nil, {})).toBe(true)
 	end)
 
