@@ -10,6 +10,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Device = require(script.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
+local NavTarget = require(script.Parent.NavTarget)
 local PhoneLayout = require(script.Parent.PhoneLayout)
 local Scale = require(script.Parent.Scale)
 
@@ -120,7 +121,8 @@ HudSlots.Corner = scope:Computed(function(use): { HudStack.Rect }
 	return out
 end)
 
--- The built-in place of every shown element that has none of its own, by id.
+-- The built-in place of every shown element that has none of its own, by id. UI plan phase 1: on PC the column starts
+-- under the guide bar while one shows (Hud/NavBar), else right under the minimap's area line.
 HudSlots.Places = scope:Computed(function(use): { [string]: HudStack.Rect }
 	local screen: Vector2 = use(Scale.HudSize)
 	return HudStack.layout(
@@ -130,7 +132,8 @@ HudSlots.Places = scope:Computed(function(use): { [string]: HudStack.Rect }
 		screen.Y,
 		use(PhoneLayout.Others),
 		use(boxes),
-		use(measured)
+		use(measured),
+		use(NavTarget.Target) ~= nil
 	)
 end)
 

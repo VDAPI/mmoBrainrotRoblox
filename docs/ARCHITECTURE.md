@@ -208,7 +208,7 @@ type CharacterData = {
   `RevokeProfilePass` (`account.grantedPasses` scalane z przepustkami przy `PlayerStateService.Ready`), paczki w
   `keyOfProduct` i `buyProduct` (`Premium.canBuyPack`). `Titles.contextOf(account, vip)` w `TitleService` i
   `ProfileService` (`Deps` += `DataService`; profil ma pole `frame`). Klient: `EmoteController` (koło `UI/Screens/
-  EmoteWheel`, klawisz `emote_wheel`, `Hud/EmoteButton`), `AnimationController.Emote` / `EndEmote` / `StopEmote`,
+  EmoteWheel`, klawisz `emote_wheel`, kafelek „Emotki” w menu gry od fazy 1 planu UI), `AnimationController.Emote` / `EndEmote` / `StopEmote`,
   `EffectsController.PlayLevelUp` (style efektu awansu), `UI/Components/PortraitFrame`, `UI/WeeklyClock`,
   `CosmeticLook.applyDye`, ramka czatu w `ChatController` (`OnBubbleAdded`).
 - **Rankingi (S124, DESIGN-17 §5):** `LeaderboardService` (`Deps`: `DataService`, `PlayerStateService`,

@@ -2,6 +2,10 @@
 -- In-game HUD skeleton (DESIGN §23): portrait with name/level and HP/Mana/Energy bars (top left), menu
 -- buttons and map name (top right), skill + potion slots and the EXP bar (bottom).
 -- Also hosts the zone banner, PvP toggle and death screen (sub-modules of this folder).
+-- UI plan phase 1 (owner 2026-10-31, "too much information and too many options on one screen"): the menu is one row
+-- of six buttons (Logic/HudMenu.BAR; the other windows are tiles of the game menu), the login reward and the season
+-- pass show only while a reward waits, the achievements button and the emote slot left the HUD (N, T and the menu's
+-- tiles open them).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -42,13 +46,12 @@ local Minimap = require(script.Minimap)
 local MountButton = require(script.MountButton)
 local NavBar = require(script.NavBar)
 local CastBar = require(script.CastBar)
+local ChatDock = require(script.ChatDock)
 local EffectIcons = require(script.EffectIcons)
-local EmoteButton = require(script.EmoteButton)
 local MobileSkills = require(script.MobileSkills)
 local PoolLabel = require(script.PoolLabel)
 local PvpToggle = require(script.PvpToggle)
 local SeasonButton = require(script.SeasonButton) -- S152b
-local AchievementButton = require(script.AchievementButton) -- S151c
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -88,8 +91,6 @@ export type Props = {
 	LoginStatus: Fusion.UsedAs<LoginReward.Status?>,
 	LoginBadge: Fusion.UsedAs<boolean>,
 	OpenLogin: () -> (),
-	-- S123: the emote wheel (EmoteController.Toggle)
-	OpenEmotes: () -> (),
 	UsePotion: (kind: string) -> (),
 	AssignPotion: (kind: string, itemId: string?) -> (),
 	CastSlot: (slot: number) -> (),
@@ -328,7 +329,6 @@ end
 
 local function menu(scope: Scope, props: Props): Instance
 	local buttons = menuButtons(scope, props)
-	local MENU_PER_ROW = 7
 	return scope:New("Frame")({
 		Name = "Menu",
 		AnchorPoint = Vector2.new(1, 0),
@@ -343,26 +343,22 @@ local function menu(scope: Scope, props: Props): Instance
 				HorizontalAlignment = Enum.HorizontalAlignment.Right,
 				Padding = UDim.new(0, Theme.Padding.Small),
 			}),
-			-- owner 2026-10-20: one long row reached the middle of the screen and covered the target's / boss's health
-			-- bar: two rows of MENU_PER_ROW buttons right-aligned over the minimap instead
+			-- owner 2026-10-20: one long row of 14 reached the middle of the screen and covered the target's / boss's
+			-- health bar, so two rows; UI plan phase 1: six buttons (Logic/HudMenu.BAR) in one row right-aligned over the
+			-- minimap (Logic/HudStack.RIGHT_TOP counts one row)
 			scope:New("Frame")({
 				Name = "Buttons",
 				LayoutOrder = 1,
 				Visible = PhoneLayout.Pick(scope, false, true),
-				Size = UDim2.fromOffset(
-					MENU_PER_ROW * (Theme.Size.IconButton + Theme.Padding.Small) - Theme.Padding.Small,
-					Theme.Size.IconButton
-				),
-				AutomaticSize = Enum.AutomaticSize.Y,
+				Size = UDim2.fromOffset(0, Theme.Size.IconButton),
+				AutomaticSize = Enum.AutomaticSize.X,
 				BackgroundTransparency = 1,
 				[Children] = {
-					scope:New("UIGridLayout")({
+					scope:New("UIListLayout")({
 						FillDirection = Enum.FillDirection.Horizontal,
-						FillDirectionMaxCells = MENU_PER_ROW,
 						HorizontalAlignment = Enum.HorizontalAlignment.Right,
 						SortOrder = Enum.SortOrder.LayoutOrder,
-						CellSize = UDim2.fromOffset(Theme.Size.IconButton, Theme.Size.IconButton),
-						CellPadding = UDim2.fromOffset(Theme.Padding.Small, Theme.Padding.Small),
+						Padding = UDim.new(0, Theme.Padding.Small),
 					}),
 					buttons :: any,
 				},
@@ -442,13 +438,9 @@ local function actionBar(scope: Scope, props: Props): Instance
 			SlotSize = SLOT_SIZE,
 		})
 	)
-	-- S123: the emote wheel slot at the end (PC)
-	table.insert(
-		slots,
-		EmoteButton.Slot(scope, { OnOpen = props.OpenEmotes, LayoutOrder = SKILL_SLOTS + 5, SlotSize = SLOT_SIZE })
-	)
+	-- UI plan phase 1: the S123 emote wheel slot left the bar (T and the game menu's tile open the wheel)
 
-	return scope:New("Frame")({
+	local bar = scope:New("Frame")({
 		Name = "ActionBar",
 		AnchorPoint = PhoneLayout.Anchor(scope, "potions", Vector2.new(0.5, 1)),
 		Position = PhoneLayout.Position(scope, "potions", UDim2.new(0.5, 0, 1, -(14 + Theme.Padding.Medium))),
@@ -464,6 +456,8 @@ local function actionBar(scope: Scope, props: Props): Instance
 			slots :: any,
 		},
 	})
+	ChatDock(scope, bar :: GuiObject) -- UI plan phase 1: the chat in the lower left corner on PC, clear of the bar
+	return bar
 end
 
 local function expBar(scope: Scope): Instance
@@ -504,8 +498,11 @@ local function expBar(scope: Scope): Instance
 end
 
 -- W29: the menu on a phone in landscape: a button left of the minimap opens the menu's buttons (and the login reward
--- and the season pass, which have no room on the HUD there) as a drawer under it.
-local DRAWER_PER_ROW = 5
+-- and the season pass, which have no room on the HUD there) as a drawer under it. UI plan phase 1: the same six
+-- buttons as the PC bar (the other windows are tiles behind its ☰), the login reward and the season pass only while a
+-- reward waits; the drawer's button shows "!" while any of its buttons does.
+local DRAWER_PER_ROW = 3
+local DRAWER_EXTRA = 100 -- LayoutOrder of the reward buttons: after the bar's
 local POOL = PhoneHud.PLACES.pool -- W29: the weapon pool label on a phone in landscape
 
 local function drawer(scope: Scope, props: Props): { Instance }
@@ -520,28 +517,33 @@ local function drawer(scope: Scope, props: Props): { Instance }
 		open:set(false)
 	end
 	local cells: { Instance } = menuButtons(scope, props, close)
-	table.insert(
-		cells,
-		LoginButton(scope, {
-			Status = props.LoginStatus,
-			Badge = props.LoginBadge,
-			Open = function()
-				close()
-				props.OpenLogin()
-			end,
-			Position = UDim2.new(),
-		})
-	)
-	table.insert(
-		cells,
-		SeasonButton(scope, {
-			Open = function()
-				close()
-				props.OpenWindow("season")
-			end,
-			Position = UDim2.new(),
-		})
-	)
+	local login: any = LoginButton(scope, {
+		Status = props.LoginStatus,
+		Badge = props.LoginBadge,
+		Open = function()
+			close()
+			props.OpenLogin()
+		end,
+		Position = UDim2.new(),
+	})
+	login.LayoutOrder = DRAWER_EXTRA
+	table.insert(cells, login)
+	local season: any = SeasonButton(scope, {
+		Open = function()
+			close()
+			props.OpenWindow("season")
+		end,
+		Position = UDim2.new(),
+	})
+	season.LayoutOrder = DRAWER_EXTRA + 1
+	table.insert(cells, season)
+	-- the "!" of the drawer's buttons (the ☰'s own covers every tile, the login reward and the season pass among them)
+	local badges: { Fusion.UsedAs<boolean> } = {}
+	for _, entry in props.Menu do
+		if entry.badge then
+			table.insert(badges, entry.badge(scope))
+		end
+	end
 	local cell = Theme.Size.IconButton
 	local toggle = PhoneHud.PLACES.menuToggle
 	local xs, xo, ys, yo, ax, ay = PhoneHud.udim(toggle)
@@ -555,8 +557,15 @@ local function drawer(scope: Scope, props: Props): { Instance }
 			Size = UDim2.fromOffset(toggle.w, toggle.h),
 			Active = open,
 			Badge = scope:Computed(function(use): boolean
-				-- S151c: also something new in the achievements window
-				return use(props.LoginBadge) == true or use(AchievementButton.Unseen) == true
+				if use(props.LoginBadge) == true then
+					return true
+				end
+				for _, badge in badges do
+					if use(badge) == true then
+						return true
+					end
+				end
+				return false
 			end),
 			Visible = compact,
 			OnClick = function()
@@ -622,7 +631,9 @@ local function Hud(scope: Scope, props: Props): Instance
 					UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 4)
 				)
 			),
-			-- W29: on a phone in landscape the login reward and the season pass are in the menu drawer
+			-- W29: on a phone in landscape the login reward and the season pass are in the menu drawer. UI plan phase 1:
+			-- each only while its reward waits (Logic/HudStack.EXTRAS); the S151c achievements button left the HUD (N,
+			-- the game menu's tile, the "!" on ☰)
 			scope:New("Frame")({
 				Name = "HudExtras",
 				Size = UDim2.fromScale(1, 1),
@@ -642,17 +653,6 @@ local function Hud(scope: Scope, props: Props): Instance
 							props.OpenWindow("season")
 						end,
 						Position = UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 136 + 8),
-					}),
-					-- S151c: the achievements and the bestiary under the season pass, always shown (easy to find;
-					-- a phone in landscape has them in the menu drawer, its toggle shows the same "!")
-					AchievementButton.new(scope, {
-						Open = function()
-							props.OpenWindow("achievements")
-						end,
-						Position = UDim2.fromOffset(
-							Theme.Padding.Large + 400 + 12,
-							Theme.Padding.Large + 136 + 8 + 44 + 8
-						),
 					}),
 				},
 			}),
@@ -731,7 +731,6 @@ local function Hud(scope: Scope, props: Props): Instance
 			}),
 			SprintButton(scope, { Sprinting = props.Sprinting, OnToggle = props.OnSprint, Riding = props.Riding }),
 			MountButton.Touch(scope, { Riding = props.Riding, Has = props.HasMount, OnToggle = props.OnMount }),
-			EmoteButton.Touch(scope, { OnOpen = props.OpenEmotes }),
 			PvpToggle(scope),
 			DeathScreen(scope, {
 				-- W28: "Top up" on the death screen opens the Dragon Shop on the currency tab
