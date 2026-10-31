@@ -98,8 +98,8 @@ local function buyItem(player: Player, key: string): (boolean, string?)
 	if not ok then
 		return false, err
 	end
-	-- owner 2026-10-31: everything bought for Dragon Shards binds on pickup (Data/Binding "premium")
-	local item = Binding.apply(ItemRoll.makeStack(entry.itemId, entry.n or 1, InventoryService.NewUid()), "premium")
+	-- owner 2026-10-31: the item's own rule (Data/Binding "shop"): scrolls free, backpacks on equip, stones on pickup
+	local item = Binding.apply(ItemRoll.makeStack(entry.itemId, entry.n or 1, InventoryService.NewUid()), "shop")
 	if not InventoryService.CanFit(player, { item }) then
 		return false, "inventory.full"
 	end

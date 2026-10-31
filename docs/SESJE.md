@@ -14127,6 +14127,10 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   areny i wędrownego kupca zależne od reguły.
 - Testy: `tests/binding.spec.luau` (reguły kategorii i źródeł, zakładanie, stosy, odmowy, migracja, podpowiedź, brak
   ręcznego `bound = true`), wersja schematu w testach migracji.
+- Mniej wiązania (właściciel, ten sam dzień): źródło `boss` bez dodatku (Legendarny po założeniu, Mityczny po
+  podniesieniu z rzadkości), nowe `quest` (`SideQuestService`, nagroda do wyboru po założeniu) i `shop`
+  (`PremiumShopService`: zwoje wolne, plecaki premium `bind = "equip"`, reszta z definicji); `premium` zostaje dla
+  Mistrza Portali i przepustki sezonu. Migracja bez zmian (tylko uwalnia). Test sklepu premium w `binding.spec`.
 
 ### Fryzury kreatora: nowy zestaw i barwienie tekstur we własnym kolorze (2026-10-31)
 - Zgłoszenie testera: „poza 7, 9 i 12 fryzury są słabe i nie pasują”. Przegląd w Play (ciało Dawson, skala 0,9): cała
