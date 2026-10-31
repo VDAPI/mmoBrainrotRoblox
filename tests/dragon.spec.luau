@@ -178,7 +178,10 @@ T.describe("Dragon: the new model's role map", function()
 					local c: QuadPose.Controls = table.clone(body) :: any
 					c[leg .. "k"], c[leg .. "y"], c[leg .. "z"] = 1, target[1], target[2]
 					local foot = QuadRigFk.feetAt(skel, c)[leg]
-					T.expect((foot[2] - rest[leg][2]) / L).toBeNear(target[1], 0.012)
+					-- (a fore foot reaching ahead of the lowered body is held a little short of the straight leg, off
+					-- the ground and never through it: QuadPose's soft reach on the rig's steady feet)
+					local lifted = (foot[2] - rest[leg][2]) / L - target[1]
+					T.expect(lifted).toBeBetween(-0.012, 0.045)
 					T.expect((foot[3] - rest[leg][3]) / L).toBeNear(target[2], 0.012)
 				end
 			end
@@ -460,18 +463,22 @@ T.describe("Dragon: what the model shows", function()
 		T.expect(span > 1.6).toBe(true)
 	end)
 
-	T.it("roar: the wings spread wide and high on the hit", function()
-		local span, high = 0, 0
+	T.it("roar: the wings raised and held up, spread to both sides on the hit", function()
+		local left, right, high = 0, 0, 0
 		local shoulder = 0
 		play("roar", 0.45, function(t, at)
 			if math.abs(t - 0.45) < 1e-6 then
-				span = (at[WING_TIPS.R][1] - at[WING_TIPS.L][1]) / L
+				local middle = at["tripo::Spine_3"][1]
+				left = (middle - at[WING_TIPS.L][1]) / L
+				right = (at[WING_TIPS.R][1] - middle) / L
 				high = math.min(at[WING_TIPS.R][2], at[WING_TIPS.L][2]) / L
 				shoulder = at["tripo::Spine_3"][2] / L
 			end
 		end)
-		T.expect(span > 2.4).toBe(true)
-		T.expect(high > shoulder + 0.3).toBe(true)
+		-- (the owner, 2026-10-31: half-open wings held up with tension, not hanging) high over the back, out to the sides
+		T.expect(left > 0.9).toBe(true)
+		T.expect(right > 0.9).toBe(true)
+		T.expect(high > shoulder + 0.6).toBe(true)
 	end)
 
 	for _, name in { "deathL", "deathR" } do
@@ -583,12 +590,253 @@ T.describe("Dragon: what the model shows", function()
 	end
 end)
 
+-- Studio review 2026-10-31: AnimLab's states as the lab plays them (a new instance standing still at once, the
+-- target 5 leg lengths ahead), frame by frame at 60 Hz: no bone turns more than about 12 degrees a frame but the
+-- deliberate whips (the tail's whole blow; the strike of the claws, the rake, the stomp and the buffet, up to 32),
+-- a foot on the ground stays within 0.15 stud of where it came down, the folded wings ride high.
+T.describe("Dragon: AnimLab's states frame by frame", function()
+	local STEP_CAP, WHIP_CAP, SLIDE_CAP = 12.5, 32, 0.15
+	local WHIPS: { [string]: string } =
+		{ tail = "all", claw = "strike", clawL = "strike", rake = "strike", stomp = "strike", buffet = "strike" }
+	local LOOK = { 0, 0, -5 * L }
+	local HIT_SIDES: { [string]: string } = { hit = "front", hitBack = "back", hitLeft = "left", hitRight = "right" }
+	local PACES: { [string]: { number } } = { walk = { 0.4 }, trot = { 0.7 }, run = { 1 } }
+
+	-- The turn (degrees) between two rotation matrices.
+	local function turned(a: { number }, b: { number }): number
+		local trace = 0
+		for i = 1, 9 do
+			trace += a[i] * b[i]
+		end
+		return math.deg(math.acos(math.clamp((trace - 1) / 2, -1, 1)))
+	end
+
+	-- Plays a lab state and calls `each(t, posed, at, turns)` every frame (the first one snapped).
+	local function lab(
+		state: string,
+		each: (t: number, posed: QuadPose.Posed, at: { [string]: Vec }, turns: { [string]: any }) -> ()
+	): (number?, number?)
+		local inst = assert(QuadMotion.new(skel, "dragon", 7))
+		local action = STYLE.actions[state]
+		local hit = if action then windupOf(state) else nil
+		local length = if action then MotionTimeline.length(action, hit :: number) + 0.4 else 3
+		-- (the stage holds a leap where it landed: AnimLab has no server teleport)
+		local run = if action then { name = state, start = 0, hit = hit, reach = LOOK, hold = action.travel } else nil
+		local dying = string.sub(state, 1, 5) == "death"
+		local t = 0
+		while t <= length do
+			local input: { [string]: any } = {
+				now = t,
+				dt = if t > 0 then DT else 0,
+				snap = t == 0,
+				speed = 0,
+				yawRate = 0,
+				combat = true,
+				look = if dying then nil else LOOK,
+				action = run,
+			}
+			if state == "idle" then
+				input.combat, input.look = false, nil
+			elseif PACES[state] then
+				input.speed, input.gait = MONSTER.moveSpeed * PACES[state][1] / SCALE, state
+				input.combat = state == "run"
+				input.look = if state == "run" then LOOK else nil
+			elseif HIT_SIDES[state] then
+				input.hitAt, input.hitSide = 0.2, HIT_SIDES[state]
+			end
+			local posed = QuadMotion.step(inst, input :: any)
+			local at, turns = QuadRigFk.posed(skel, posed)
+			each(t, posed, at, turns)
+			t += DT
+		end
+		return hit, if action then MotionTimeline.segments(action, hit :: number).S[1] else nil
+	end
+
+	local states = { "idle", "walk", "trot", "run", "hit", "hitBack", "hitLeft", "hitRight" }
+	local names: { string } = {}
+	for name in STYLE.actions do
+		table.insert(names, name)
+	end
+	table.sort(names)
+	for _, name in names do
+		table.insert(states, name)
+	end
+
+	for _, state in states do
+		T.it(`{state}: no bone turns more than ~12 degrees a frame (but a deliberate whip)`, function()
+			local prev: QuadPose.Posed? = nil
+			local frames: { { t: number, worst: number } } = {}
+			local hit, strike = lab(state, function(t, posed)
+				local worst = 0
+				if prev then
+					for bone, entry in posed do
+						worst = math.max(worst, turned(prev[bone].rot, entry.rot))
+					end
+				end
+				table.insert(frames, { t = t, worst = worst })
+				local copy: QuadPose.Posed = {}
+				for bone, entry in posed do
+					copy[bone] = { rot = table.clone(entry.rot), offset = nil }
+				end
+				prev = copy
+			end)
+			local whip = WHIPS[state]
+			for _, frame in frames do
+				local inWhip = whip == "all"
+					or (
+						whip == "strike"
+						and hit ~= nil
+						and strike ~= nil
+						and frame.t >= strike - DT
+						and frame.t <= hit + 2 * DT
+					)
+				T.expect(frame.worst <= (if inWhip then WHIP_CAP else STEP_CAP)).toBe(true)
+			end
+		end)
+	end
+
+	for _, state in states do
+		if not PACES[state] then
+			T.it(`{state}: a foot on the ground stays within 0.15 stud of where it came down`, function()
+				local rest = QuadRigFk.feetAt(skel, {})
+				local down: { [string]: Vec } = {}
+				local slide = 0
+				lab(state, function(_, _, at, turns)
+					for leg, foot in QuadRigFk.feetOf(skel, at, turns) do
+						if foot[2] - rest[leg][2] < 0.03 * L then
+							local from = down[leg]
+							if not from then
+								from = foot
+								down[leg] = foot
+							end
+							slide =
+								math.max(slide, math.sqrt((foot[1] - from[1]) ^ 2 + (foot[3] - from[3]) ^ 2) * SCALE)
+						else
+							down[leg] = nil
+						end
+					end
+				end)
+				T.expect(slide <= SLIDE_CAP).toBe(true)
+			end)
+		end
+	end
+
+	for _, state in { "idle", "walk" } do
+		T.it(
+			`{state}: the folded wings ride high, wrist and elbow over the shoulder, the tips back toward the tail`,
+			function()
+				local chains = {
+					{ "bone_11", "bone_12", "bone_13", WING_TIPS.L },
+					{ "bone_17", "bone_18", "bone_19", WING_TIPS.R },
+				}
+				local wingBones: { string } = {}
+				for name in DUMP.bones do
+					local b: string? = name
+					while b do
+						if skel.wings[b] then
+							table.insert(wingBones, name)
+							break
+						end
+						b = DUMP.bones[b].parent
+					end
+				end
+				lab(state, function(t, _, at)
+					if t < 1 then
+						return
+					end
+					for _, chain in chains do
+						local shoulder = at[chain[1]]
+						T.expect((at[chain[2]][2] - shoulder[2]) / L > 0.15).toBe(true)
+						T.expect((at[chain[3]][2] - shoulder[2]) / L > 0.12).toBe(true)
+						T.expect((at[chain[4]][2] - shoulder[2]) / L > 0.1).toBe(true)
+						T.expect((at[chain[4]][3] - shoulder[3]) / L > 0.4).toBe(true)
+					end
+					-- nothing of a wing below the belly line (the back's lowest joint)
+					local belly = at["tripo::Spine_0"][2]
+					for _, name in wingBones do
+						T.expect((at[name][2] - belly) / L > 0.2).toBe(true)
+					end
+				end)
+			end
+		)
+	end
+
+	for _, name in { "rake", "stomp" } do
+		T.it(`{name}: the fore feet rise about 1.2-1.4 times the height of the withers, no higher`, function()
+			local withers = QuadRigFk.positions(skel, {})["tripo::Spine_2"][2]
+			local top = 0
+			lab(name, function(_, _, at, turns)
+				local feet = QuadRigFk.feetOf(skel, at, turns)
+				top = math.max(top, feet.FL[2], feet.FR[2])
+			end)
+			T.expect(top / withers).toBeBetween(1.0, 1.45)
+		end)
+	end
+
+	T.it(
+		"alert: its own short roar on sighting a fighter, the head up and the wings half open (not the idle)",
+		function()
+			T.expect(STYLE.aggro).toBe("alert")
+			local idleAt: { [string]: Vec }? = nil
+			lab("idle", function(t, _, at)
+				if math.abs(t - 1) < DT / 2 then
+					idleAt = at
+				end
+			end)
+			local alertAt: { [string]: Vec }? = nil
+			local hit = windupOf("alert")
+			lab("alert", function(t, _, at)
+				if math.abs(t - hit) < DT / 2 then
+					alertAt = at
+				end
+			end)
+			local a, i = assert(alertAt, "the alert's hit"), assert(idleAt, "the idle")
+			T.expect((a["tripo::Head_3"][2] - i["tripo::Head_3"][2]) / L > 0.08).toBe(true)
+			T.expect((a[WING_TIPS.R][1] - a[WING_TIPS.L][1]) / L > 1.8).toBe(true)
+			T.expect((i[WING_TIPS.R][1] - i[WING_TIPS.L][1]) / L < 1).toBe(true)
+		end
+	)
+
+	T.it("dies by the side of the killing blow: onto the belly from the front or behind, onto the far flank", function()
+		local inst = assert(QuadMotion.new(skel, "dragon", 7))
+		T.expect(QuadMotion.death(inst, "front")).toBe("death")
+		T.expect(QuadMotion.death(inst, "back")).toBe("death")
+		T.expect(QuadMotion.death(inst, "left")).toBe("deathR")
+		T.expect(QuadMotion.death(inst, "right")).toBe("deathL")
+		T.expect(table.find(STYLE.death, QuadMotion.death(inst)) ~= nil).toBe(true)
+	end)
+
+	T.it("death: sinks onto its belly, level, the legs folded under it, nothing through the ground", function()
+		local final: { [string]: Vec }? = nil
+		local low = math.huge
+		lab("death", function(_, _, at)
+			final = at
+			low = math.min(low, (lowest(at)))
+		end)
+		local at = assert(final, "the last frame")
+		T.expect(at["tripo::Spine_0"][2] / L < 0.5).toBe(true)
+		-- level, not on a flank (deathL's shoulders are 0.6 leg lengths apart in height)
+		T.expect(math.abs(at.bone_23[2] - at.bone_27[2]) / L < 0.05).toBe(true)
+		T.expect(math.abs(at.bone_37[2] - at.bone_41[2]) / L < 0.05).toBe(true)
+		T.expect(low > -0.02).toBe(true)
+	end)
+end)
+
 T.describe("Dragon: gaits at the server's paces", function()
 	local rest = QuadRigFk.feetAt(skel, {})
 	-- the server's intent: wander 0.4x, home 0.7x, the chase 1x moveSpeed (dump units: the game's model scale)
-	for _, pace in { { "walk", 0.4, "walk" }, { "trot", 0.7, "trot" }, { "run", 1, "gallop" } } do
+	-- (a real spawn, 2026-10-31: the wander's slow stretches, a tenth and a twentieth of its pace, glided) it steps
+	for _, pace in
+		{
+			{ "walk", 0.4, "walk" },
+			{ "trot", 0.7, "trot" },
+			{ "run", 1, "gallop" },
+			{ "walk", 0.04, "walk", "a creep" },
+			{ "walk", 0.02, "walk", "a crawl" },
+		}
+	do
 		local speed = MONSTER.moveSpeed * pace[2] / SCALE
-		T.it(`{pace[1]}: the {pace[3]}, feet planted in stance, nothing through the ground`, function()
+		T.it(`{pace[4] or pace[1]}: the {pace[3]}, feet planted in stance, nothing through the ground`, function()
 			local inst = assert(QuadMotion.new(skel, "dragon", 9))
 			local fighting = pace[1] == "run"
 			local input = { speed = speed, gait = pace[1], yawRate = 0, combat = fighting }

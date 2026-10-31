@@ -43,17 +43,24 @@ export type Gait = {
 	rollPivot: number?,
 	headSway: number?,
 	drop: number?,
+	-- the dragon (studio review 2026-10-31): the shoulders carried lower than the hips by a nose-down pitch (`stoop`,
+	-- rad) so the long fore legs are not straight at the ends of the stride, and the swing's lift eased in over the
+	-- first `liftIn` of the swing (no snap of the leg as the foot leaves the ground)
+	stoop: number?,
+	liftIn: number?,
+	levelIn: number?, -- the share of the swing the paw takes to level before the touchdown (0.4)
 }
 -- A dragon's wings (Logic/DragonMotion, 2026-10-31): the procedural fold (`fold`: the elbow and wrist folds and the
 -- other joints' bends, rad; the humerus' direction and the membrane's top side wanted, the right wing's, model frame),
 -- one wingbeat (`beat`: Data/FlyerStyles Mode's stroke on the flat wing: elevation at the top and the bottom, sweep
 -- forward on the downstroke and back on the upstroke, the upstroke's fold and twist), the gallop's pump (`pump`: the
--- wings opened by `open`, a beat of `amp` a stride, its downstroke starting at gait phase `at`) and the tail's spring
--- (`tail`: Hz, damping ratio, gain).
+-- wings opened by `open` and held up with tension: lifted by `lift`, the hand and the fingers bent up by `hand` and
+-- `tips`, rad; a beat of `amp` a stride, its downstroke starting at gait phase `at`) and the tail's spring (`tail`: Hz,
+-- damping ratio, gain).
 export type Wings = {
 	fold: { f: number, h: number, b: number?, w: number?, p: number?, q: number?, hum: { number }, nrm: { number } },
 	beat: { top: number, bottom: number, fore: number, back: number, fold: number, twist: number },
-	pump: { open: number, amp: number, at: number },
+	pump: { open: number, amp: number, at: number, lift: number, hand: number, tips: number },
 	tail: { hz: number, damp: number, gain: number },
 }
 export type Style = {
@@ -68,6 +75,8 @@ export type Style = {
 	abilities: { [string]: string },
 	throw: string?,
 	death: { string },
+	-- (the dragon, 2026-10-31) the deaths by the side the killing blow came from (QuadMotion.side), as BipedStyles
+	deaths: { [string]: { string } }?,
 	aggro: string?,
 	spawn: string?,
 	fidgets: { string },
@@ -84,6 +93,9 @@ export type Style = {
 	wings: Wings?,
 	tailBones: number?,
 	serverGait: boolean?,
+	-- (the dragon, 2026-10-31) the ground speed (leg lengths a second) from which it steps (default 0.3): below it the
+	-- planted feet stand still while the root moves on, a glide; a creep as slow as this still walks, short and slow
+	stepFrom: number?,
 	stun: { [string]: number }?,
 	labExtra: { string }?,
 }
@@ -3735,7 +3747,7 @@ local DRAGON_REST = merge(PLANTED, { FLl = 1, FRl = 1, HLl = 1, HRl = 1 })
 local DRAGON_CLAW: MotionTimeline.Action = {
 	strike = 0.16,
 	follow = 0.18,
-	recover = 0.42,
+	recover = 0.55,
 	legs = true,
 	full = true,
 	sided = true,
@@ -3772,8 +3784,8 @@ local DRAGON_CLAW: MotionTimeline.Action = {
 				byaw = deg(-8),
 				syaw = deg(-5),
 				FRk = 0,
-				FRu = deg(95),
-				FRf = deg(80),
+				FRu = deg(86),
+				FRf = deg(72),
 				FRp = deg(20),
 				FRo = deg(18),
 				hyaw = deg(12),
@@ -3838,7 +3850,10 @@ local DRAGON_CLAW: MotionTimeline.Action = {
 				npitch = deg(18),
 			}),
 		},
-		{ seg = "R", u = 0.5, ease = "inout", pose = ds({ bz = -0.1, byaw = deg(3), FRz = -0.2, FRy = 0.1 }) },
+		-- the paw steps back under the shoulder: up, over, straight down (studio review 2026-10-31: it slid)
+		{ seg = "R", u = 0.3, ease = "inout", pose = ds({ bz = -0.1, byaw = deg(3), FRz = -0.3, FRy = 0.09 }) },
+		{ seg = "R", u = 0.6, ease = "inout", pose = ds({ bz = -0.05, byaw = deg(1), FRz = -0.02, FRy = 0.06 }) },
+		{ seg = "R", u = 0.78, ease = "inout", pose = ds({ bz = -0.02 }) },
 		{ seg = "R", u = 1, ease = "inout", pose = DRAGON_STANCE },
 	},
 }
@@ -3847,6 +3862,9 @@ local DRAGON_CLAW: MotionTimeline.Action = {
 -- trembling hold, then both fore feet crash down 0.4 leg lengths ahead on the hit with the wings beating down: the
 -- crush (W 2.2, rearing high and flapping) and the Elite's claw rake (W 1.8, a lower rear, the claws drawn back
 -- through the ground after it).
+-- (studio review 2026-10-31: the fore feet rose to twice the withers' height; a lower rear with the fore legs drawn up
+-- and tucked keeps them at about 1.3 times it)
+local LIFT, TUCK = 50, 72
 local function dragonRear(rise: number, pitch: number, flaps: number, rake: boolean): MotionTimeline.Action
 	local up = ds(merge(DRAGON_HIPS, {
 		by = 0.03,
@@ -3855,10 +3873,10 @@ local function dragonRear(rise: number, pitch: number, flaps: number, rake: bool
 		HRl = 1,
 		FLk = 0,
 		FRk = 0,
-		FLu = deg(70),
-		FRu = deg(70),
-		FLf = deg(60),
-		FRf = deg(60),
+		FLu = deg(LIFT),
+		FRu = deg(LIFT),
+		FLf = deg(TUCK),
+		FRf = deg(TUCK),
 		FLp = deg(-10),
 		FRp = deg(-10),
 		npitch = deg(-14 - pitch * 0.3),
@@ -3877,8 +3895,8 @@ local function dragonRear(rise: number, pitch: number, flaps: number, rake: bool
 		pose.bpitch = deg(pitch + 3)
 		pose.tpitch = deg((pitch + 3) * 1.2)
 		pose.tP1 = deg((pitch + 3) * 0.25)
-		pose.FLu, pose.FRu = deg(85 + high), deg(85 + high)
-		pose.FLf, pose.FRf = deg(70 + high), deg(70 + high)
+		pose.FLu, pose.FRu = deg(LIFT + 10 + high), deg(LIFT + 10 + high)
+		pose.FLf, pose.FRf = deg(TUCK + 10 + high), deg(TUCK + 10 + high)
 		pose.beat, pose.flap = beat, flap
 		return pose
 	end
@@ -3891,11 +3909,12 @@ local function dragonRear(rise: number, pitch: number, flaps: number, rake: bool
 		},
 	}
 	if flaps > 0 then
-		-- up, then `flaps` beats between the rise and the end of the gather (the wings at the top on its end)
+		-- up, then `flaps` beats between the rise and the end of the gather (the wings at the top on its end); the
+		-- strokes kept within the per-frame turn of docs/ANIM-WZORCE.md 5.8
 		local upFlap = table.clone(up)
-		upFlap.beat, upFlap.flap = 0, 1
+		upFlap.beat, upFlap.flap = 0, 0.8
 		table.insert(keys, { seg = "A", u = rise, ease = "inout", pose = upFlap })
-		table.insert(keys, { seg = "A", u = rise + (1 - rise) * 0.85, ease = "lin", pose = cocked(2, 6, flaps, 1) })
+		table.insert(keys, { seg = "A", u = rise + (1 - rise) * 0.85, ease = "lin", pose = cocked(2, 6, flaps, 0.8) })
 		table.insert(keys, { seg = "A", u = 1, ease = "inout", pose = cocked(-1, 12, flaps, 0) })
 	else
 		table.insert(keys, { seg = "A", u = rise, ease = "inout", pose = up })
@@ -3927,16 +3946,16 @@ local function dragonRear(rise: number, pitch: number, flaps: number, rake: bool
 		})),
 	})
 	if rake then
-		-- the claws dragged back through the ground
+		-- the claws dragged back through the ground: the toes curl back under the planted feet as the body pulls back
 		table.insert(keys, {
 			seg = "F",
 			u = 0.55,
 			ease = "inout",
 			pose = ds({
 				by = -0.08,
-				bz = -0.06,
-				FLz = -0.12,
-				FRz = -0.12,
+				bz = -0.02,
+				FLz = -0.4,
+				FRz = -0.4,
 				FLp = deg(25),
 				FRp = deg(25),
 				npitch = deg(24),
@@ -3971,8 +3990,8 @@ local function dragonRear(rise: number, pitch: number, flaps: number, rake: bool
 		pose = ds({
 			by = -0.05,
 			bz = -0.05,
-			FLz = if rake then -0.12 else -0.4,
-			FRz = if rake then -0.12 else -0.4,
+			FLz = -0.4,
+			FRz = -0.4,
 			npitch = deg(20),
 			hpitch = deg(-10),
 			hyaw = deg(8),
@@ -3981,17 +4000,35 @@ local function dragonRear(rise: number, pitch: number, flaps: number, rake: bool
 			beat = flaps,
 		}),
 	})
-	table.insert(keys, {
-		seg = "R",
-		u = 0.55,
-		ease = "inout",
-		pose = ds({ bz = -0.02, FLz = -0.15, FLy = 0.08, FRz = if rake then -0.1 else -0.3, wo = 0.15 }),
-	})
+	-- the fore feet step back under the shoulders one after the other: up, over, straight down (no sliding)
+	local function step(u: number, fl: { number }, fr: { number }, wo: number)
+		table.insert(keys, {
+			seg = "R",
+			u = u,
+			ease = "inout",
+			pose = ds({
+				by = -0.04,
+				bz = -0.03,
+				FLy = fl[1],
+				FLz = fl[2],
+				FRy = fr[1],
+				FRz = fr[2],
+				npitch = deg(15),
+				wo = wo,
+			}),
+		})
+	end
+	step(0.16, { 0.09, -0.34 }, { 0, -0.4 }, 0.3)
+	step(0.32, { 0.06, -0.02 }, { 0, -0.4 }, 0.25)
+	step(0.42, { 0, 0 }, { 0, -0.4 }, 0.2)
+	step(0.58, { 0, 0 }, { 0.09, -0.34 }, 0.15)
+	step(0.74, { 0, 0 }, { 0.06, -0.02 }, 0.1)
+	step(0.84, { 0, 0 }, { 0, 0 }, 0.05)
 	table.insert(keys, { seg = "R", u = 1, ease = "inout", pose = DRAGON_STANCE })
 	return {
 		strike = 0.18,
 		follow = if rake then 0.5 else 0.45,
-		recover = 0.5,
+		recover = 1.05,
 		legs = true,
 		full = true,
 		tremble = deg(if flaps > 0 then 0.8 else 1.6),
@@ -3999,8 +4036,10 @@ local function dragonRear(rise: number, pitch: number, flaps: number, rake: bool
 	}
 end
 
--- The tail's whip (a regular blow): the body winds the other way, then hops round 125 degrees on its toes with the
--- tail swinging through the target on the hit, lands and hops back round onto its feet.
+-- The tail's whip (a regular blow): the spine and the tail wind the other way over the planted feet, it springs off
+-- them and spins 125 degrees in the air with the tail swinging through the target on the hit, lands, and hops back
+-- round onto its feet (studio review 2026-10-31: the body turns only while the feet are off the ground, so they never
+-- slide; the spin stays a whip).
 local TAIL_SPIN = deg(125)
 local function tailHop(yaw: number, by: number, tuck: number, extra: { [string]: number }): { [string]: number }
 	return merge({
@@ -4021,9 +4060,9 @@ local function tailHop(yaw: number, by: number, tuck: number, extra: { [string]:
 	}, extra)
 end
 local DRAGON_TAIL: MotionTimeline.Action = {
-	strike = 0.2,
-	follow = 0.36,
-	recover = 0.46,
+	strike = 0.24,
+	follow = 0.4,
+	recover = 0.5,
 	legs = true,
 	full = true,
 	sided = true,
@@ -4031,15 +4070,14 @@ local DRAGON_TAIL: MotionTimeline.Action = {
 		{
 			seg = "A",
 			u = 0.5,
-			ease = "out",
+			ease = "inout",
 			pose = ds({
 				by = -0.06,
-				bx = 0.03,
-				byaw = deg(-12),
-				syaw = deg(-8),
-				tyaw = deg(-30),
+				bx = 0.02,
+				syaw = deg(-12),
+				tyaw = deg(-35),
 				tpitch = deg(12),
-				nyaw = deg(8),
+				nyaw = deg(10),
 				hyaw = deg(8),
 			}),
 		},
@@ -4048,30 +4086,36 @@ local DRAGON_TAIL: MotionTimeline.Action = {
 			u = 1,
 			ease = "inout",
 			pose = ds({
-				by = -0.09,
-				bx = 0.04,
-				byaw = deg(-20),
-				syaw = deg(-12),
-				tyaw = deg(-55),
+				by = -0.11,
+				bx = 0.03,
+				syaw = deg(-16),
+				tyaw = deg(-60),
 				tpitch = deg(16),
-				nyaw = deg(12),
+				nyaw = deg(14),
 				hyaw = deg(12),
 				wo = 0.3,
 			}),
 		},
-		-- off the ground, the spin half way
+		-- the spring: off the ground before it turns
 		{
 			seg = "S",
-			u = 0.4,
-			ease = "in",
-			pose = tailHop(deg(30), 0.1, 25, { syaw = deg(8), tyaw = deg(-40), nyaw = deg(-10), wo = 0.55, we = 0.2 }),
+			u = 0.3,
+			ease = "out",
+			pose = tailHop(deg(6), 0.16, 32, { syaw = deg(-8), tyaw = deg(-55), nyaw = deg(4), wo = 0.5, we = 0.2 }),
 		},
-		-- the hit: the tail's tip sweeps through the front
+		-- in the air, the spin half way
+		{
+			seg = "S",
+			u = 0.65,
+			ease = "in",
+			pose = tailHop(deg(58), 0.19, 30, { syaw = deg(8), tyaw = deg(-30), nyaw = deg(-12), wo = 0.6, we = 0.25 }),
+		},
+		-- the hit, still in the air: the tail's tip sweeps through the front
 		{
 			seg = "S",
 			u = 1,
 			ease = "out",
-			pose = tailHop(TAIL_SPIN, 0.04, 15, {
+			pose = tailHop(TAIL_SPIN, 0.11, 24, {
 				syaw = deg(14),
 				tyaw = deg(70),
 				tY5 = deg(10),
@@ -4083,12 +4127,15 @@ local DRAGON_TAIL: MotionTimeline.Action = {
 				we = 0.25,
 			}),
 		},
+		-- down on its feet, the turn spent (the legs held as they land: the feet stay where they touch)
 		{
 			seg = "F",
-			u = 0.4,
+			u = 0.3,
 			ease = "out",
-			pose = tailHop(TAIL_SPIN + deg(8), -0.05, 18, {
-				syaw = deg(8),
+			pose = tailHop(TAIL_SPIN + deg(6), -0.06, 18, {
+				HLf = deg(6),
+				HRf = deg(6),
+				syaw = deg(6),
 				tyaw = deg(40),
 				nyaw = deg(-24),
 				hyaw = deg(-14),
@@ -4096,14 +4143,47 @@ local DRAGON_TAIL: MotionTimeline.Action = {
 				we = 0.1,
 			}),
 		},
-		-- the hop back round
 		{
 			seg = "F",
-			u = 1,
+			u = 0.5,
 			ease = "inout",
-			pose = tailHop(deg(55), 0.06, 22, { tyaw = deg(-10), nyaw = deg(-8), wo = 0.25 }),
+			pose = tailHop(
+				TAIL_SPIN + deg(6),
+				-0.06,
+				18,
+				{ HLf = deg(6), HRf = deg(6), syaw = deg(6), tyaw = deg(20), nyaw = deg(-14), wo = 0.3 }
+			),
 		},
-		{ seg = "R", u = 0.45, ease = "out", pose = tailHop(deg(8), -0.05, 12, { tyaw = deg(-12) }) },
+		-- the hop back round, the feet up while it turns
+		{
+			seg = "F",
+			u = 0.8,
+			ease = "out",
+			pose = tailHop(TAIL_SPIN, 0.15, 32, { tyaw = deg(-4), nyaw = deg(-8), wo = 0.3 }),
+		},
+		{
+			seg = "R",
+			u = 0.4,
+			ease = "inout",
+			pose = tailHop(deg(14), 0.13, 30, { tyaw = deg(-14), nyaw = deg(4), wo = 0.2 }),
+		},
+		-- the feet over their own footprints, then straight down onto them
+		{
+			seg = "R",
+			u = 0.6,
+			ease = "inout",
+			pose = ds({
+				by = 0.02,
+				FLy = 0.1,
+				FRy = 0.1,
+				HLy = 0.08,
+				HRy = 0.08,
+				tyaw = deg(-12),
+				npitch = deg(10),
+				wo = 0.15,
+			}),
+		},
+		{ seg = "R", u = 0.8, ease = "in", pose = ds({ by = -0.07, tyaw = deg(-8), npitch = deg(12) }) },
 		{ seg = "R", u = 1, ease = "inout", pose = DRAGON_STANCE },
 	},
 }
@@ -4145,10 +4225,14 @@ local DRAGON_SIDE = {
 local DRAGON: Style = {
 	gaits = {
 		-- a lateral walk: the spine and the tail swing in one wave, the head held steady over it
+		-- (studio review 2026-10-31: the swing took 0.23 s and the long fore legs went straight at the ends of the
+		-- stride, so a leg snapped 30 degrees in a frame at the lift-off: a slower cadence with the same stride, the fore
+		-- feet a shorter stance, the shoulders carried lower, the lift and the paw's levelling eased in)
 		walk = {
 			foot = { HL = 0, FL = 0.25, HR = 0.5, FR = 0.75 },
-			duty = 0.7,
-			k = 1.25,
+			duty = 0.6,
+			dutyFront = 0.5,
+			k = 1.5,
 			foldStance = deg(4),
 			foldFront = deg(38),
 			foldHind = deg(34),
@@ -4163,16 +4247,20 @@ local DRAGON: Style = {
 			tail = 0,
 			tailSway = deg(4),
 			plant = true,
-			lift = 0.12,
-			liftFront = 0.14,
+			lift = 0.1,
+			liftFront = 0.13,
 			level = 0.8,
 			rollPivot = 0.25,
 			headSway = deg(-3),
 			drop = 0.05,
+			stoop = 0.1,
+			liftIn = 0.5,
+			levelIn = 0.6,
 		},
 		trot = {
 			foot = { HL = 0, FR = 0.02, HR = 0.5, FL = 0.52 },
 			duty = 0.5,
+			dutyFront = 0.45,
 			k = 1.7,
 			foldStance = deg(6),
 			foldFront = deg(55),
@@ -4194,20 +4282,23 @@ local DRAGON: Style = {
 			rollPivot = 0.15,
 			headSway = deg(-2),
 			drop = 0.05,
+			stoop = 0.1,
+			liftIn = 0.5,
+			levelIn = 0.6,
 		},
 		-- a heavy bound: the hind feet together, then the fore feet; the wings half open beat down as the fore feet
 		-- push it up into the gathered flight (Data/QuadStyles Wings `pump`)
 		gallop = {
 			foot = { HL = 0, HR = 0.05, FL = 0.45, FR = 0.5 },
 			duty = 0.35,
-			dutyFront = 0.33,
+			dutyFront = 0.28,
 			k = 2.8,
 			foldStance = deg(8),
 			foldFront = deg(80),
 			foldHind = deg(60),
 			pawFront = deg(40),
 			pawHind = deg(30),
-			bob = 0.08,
+			bob = 0.05,
 			pitch = deg(6),
 			flex = deg(12),
 			roll = 0,
@@ -4220,14 +4311,21 @@ local DRAGON: Style = {
 			liftFront = 0.3,
 			level = 0.4,
 			drop = 0.05,
+			stoop = 0.1,
+			liftIn = 0.5,
+			levelIn = 0.6,
 		},
 	},
 	thresholds = { trot = 2.3, gallop = 3.6 },
 	serverGait = true,
+	-- (a real spawn, 2026-10-31: the wander's slow stretches glided on planted feet) it steps at any crawl
+	stepFrom = 0.08,
 	tailBones = 6,
 	wings = {
-		-- folded: the elbow and the wrist closed, the humerus laid back along the flank, the membrane's top side out
-		fold = { f = deg(118), h = deg(88), hum = { 0.18, 0.12, 1 }, nrm = { -1, 0.6, 0 } },
+		-- folded and carried high (owner 2026-10-31: "te skrzydła takie opadnięte są"): the humerus back and up from
+		-- the shoulder, the elbow over the back, the wrist up by the shoulder, the fingers swept back toward the tail,
+		-- the membrane folded along the top of the flank, its top side out
+		fold = { f = deg(100), h = deg(75), hum = { 0.12, 0.6, 1 }, nrm = { -1, 0.6, 0 } },
 		beat = {
 			top = deg(60),
 			bottom = deg(-40),
@@ -4236,7 +4334,8 @@ local DRAGON: Style = {
 			fold = deg(45),
 			twist = deg(20),
 		},
-		pump = { open = 1.25, amp = 0.45, at = 0.45 },
+		-- half open as modelled (the wrists high), held up, the fingers spread level, not hanging
+		pump = { open = 1, amp = 0.45, at = 0.45, lift = 0.15, hand = 0.15, tips = 0.25 },
 		tail = { hz = 1.1, damp = 0.45, gain = 0.6 },
 	},
 	stance = DRAGON_STANCE,
@@ -4244,7 +4343,7 @@ local DRAGON: Style = {
 	idle = { tail = 0 },
 	ground = DRAGON_REST,
 	-- dazed: the head hanging and wobbling, the wings slipping half open, the tail down
-	stun = { by = -0.05, npitch = deg(26), hpitch = deg(12), tpitch = deg(-10), wo = 0.55, we = -0.2 },
+	stun = { by = -0.05, npitch = deg(26), hpitch = deg(12), tpitch = deg(-10), wo = 0.3, we = -0.12 },
 	labExtra = { "stun", "freeze" },
 	-- bites with a claw, the wings' buffet and the tail's whip between them
 	basic = { "bite", "claw", "bite", "buffet", "bite", "clawL", "bite", "tail" },
@@ -4262,16 +4361,22 @@ local DRAGON: Style = {
 	},
 	throw = "spit",
 	death = { "deathL", "deathR" },
-	aggro = "roar",
+	-- (studio review 2026-10-31) a blow from the front or behind drops it onto its belly, one from a side throws it
+	-- onto the other flank
+	deaths = { front = { "death" }, back = { "death" }, left = { "deathR" }, right = { "deathL" } },
+	-- (studio review 2026-10-31: the lab's alert showed the idle) the first sight of a fighter: the short roar of
+	-- docs/ANIM-WZORCE.md 5.3; the full roar stays in the kit
+	aggro = "alert",
 	spawn = "spawn",
 	fidgets = { "resettle", "stretch", "resettle" },
 	fidgetEvery = { 7, 13 },
 	rate = 0.05,
 	flinch = {
-		front = { bz = 0.06, bpitch = deg(5), npitch = deg(-10), hpitch = deg(-6), wo = 0.25 },
-		back = { bz = -0.05, bpitch = deg(-3), npitch = deg(8), wo = 0.2 },
-		left = { broll = deg(-5), bx = 0.05, syaw = deg(-6), hyaw = deg(12), wLo = 0.35 },
-		right = { broll = deg(5), bx = -0.05, syaw = deg(6), hyaw = deg(-12), wRo = 0.35 },
+		-- (studio review 2026-10-31: the blow sinks it onto its fore legs instead of lifting the shoulders off them)
+		front = { bz = 0.05, by = -0.03, bpitch = deg(-2), npitch = deg(-10), hpitch = deg(-6), wo = 0.15 },
+		back = { bz = -0.03, by = -0.03, bpitch = deg(-1), npitch = deg(8), wo = 0.12 },
+		left = { broll = deg(-4), bx = 0.04, by = -0.02, syaw = deg(-6), hyaw = deg(12), wLo = 0.2 },
+		right = { broll = deg(4), bx = -0.04, by = -0.02, syaw = deg(6), hyaw = deg(-12), wRo = 0.2 },
 	},
 	actions = {
 		-- the bite (W 0.55): the neck coils back and up, then strikes forward and down with the body behind it, a
@@ -4420,20 +4525,24 @@ local DRAGON: Style = {
 		tail = DRAGON_TAIL,
 		-- the Elite's claw rake (W 1.8): reared on the hind legs with the wings half open, both fore claws crash
 		-- down ahead on the hit and are dragged back through the ground
-		rake = dragonRear(0.45, 32, 0, true),
+		rake = dragonRear(0.45, 14, 0, true),
 		-- the Elite II's crush (W 2.2): reared high, two flaps of the open wings, the crash on the hit
-		stomp = dragonRear(0.3, 50, 2, false),
+		stomp = dragonRear(0.4, 16, 2, false),
 		-- the pounce (Elite II, W 1.4; the server's jump of 0.4 s, teleported onto the circle at the hit): a crouch
 		-- with the wings cocked high, the downstroke launches it on the Dash arc, the wings held out in the flight,
 		-- the landing flared on the hit
 		pounce = {
 			strike = 0.4,
 			follow = 0.35,
-			recover = 0.5,
+			recover = 0.9,
 			legs = true,
 			full = true,
 			travel = true,
-			tremble = deg(1.2),
+			tremble = deg(0.6),
+			-- (studio review 2026-10-31: the feet skated 8 studs at the take-off and the landing) it pushes off with
+			-- the hind feet on their footprints and lifts them straight up before the flight carries it forward; in
+			-- the air the legs tuck, then reach down over the spots they land on and come straight down onto them,
+			-- the body sinking to absorb it; the fore feet step back under it one after the other
 			keys = {
 				{
 					seg = "A",
@@ -4451,7 +4560,7 @@ local DRAGON: Style = {
 				},
 				{
 					seg = "A",
-					u = 1,
+					u = 0.65,
 					ease = "inout",
 					pose = ds({
 						by = -0.15,
@@ -4465,62 +4574,133 @@ local DRAGON: Style = {
 						ws = -0.1,
 					}),
 				},
+				-- the push: the hind legs drive it up and forward over their planted feet, the fore feet leave
 				{
-					seg = "S",
-					u = 0.15,
-					ease = "out",
-					pose = {
-						by = -0.02,
-						bpitch = deg(14),
-						FLu = deg(45),
-						FRu = deg(45),
-						HLu = deg(-30),
-						HRu = deg(-30),
+					seg = "A",
+					u = 1,
+					ease = "inout",
+					pose = ds({
+						by = 0.02,
+						bz = 0.02,
+						bpitch = deg(8),
+						FLy = 0.3,
+						FRy = 0.3,
+						FLz = -0.08,
+						FRz = -0.08,
 						npitch = deg(4),
 						tpitch = deg(4),
 						wo = 2,
-						we = 0.25,
+						we = 0.6,
+						flap = 0.5,
+						beat = 0,
+					}),
+				},
+				-- off: the hind feet straight up from their footprints, then the flight (in the air the feet are held
+				-- under the body on targets that travel with it: the legs tuck and reach without a jump between poses)
+				{
+					seg = "S",
+					u = 0.14,
+					ease = "inout",
+					pose = ds({
+						by = 0.03,
+						bpitch = deg(8),
+						FLy = 0.38,
+						FRy = 0.38,
+						FLz = -0.14,
+						FRz = -0.14,
+						HLy = 0.14,
+						HRy = 0.14,
+						npitch = deg(4),
+						wo = 2,
+						we = 0.3,
 						flap = 1,
 						beat = 0,
-						travel = 0.06,
 						arc = 0.3,
-					},
+					}),
 				},
 				{
 					seg = "S",
-					u = 0.55,
+					u = 0.35,
 					ease = "lin",
-					pose = {
-						bpitch = deg(3),
+					pose = ds({
+						by = 0.02,
+						bpitch = deg(5),
+						FLy = 0.62,
+						FRy = 0.62,
+						FLz = -0.25,
+						FRz = -0.25,
+						HLy = 0.58,
+						HRy = 0.58,
+						HLz = 0.12,
+						HRz = 0.12,
+						npitch = deg(6),
+						tpitch = deg(2),
+						wo = 2,
+						flap = 0.8,
+						beat = 0.18,
+						travel = 0.25,
+						arc = 0.8,
+					}),
+				},
+				{
+					seg = "S",
+					u = 0.62,
+					ease = "lin",
+					pose = ds({
+						by = 0,
+						bpitch = deg(1),
 						sflex = deg(-6),
-						FLu = deg(60),
-						FRu = deg(60),
-						FLf = deg(20),
-						FRf = deg(20),
-						HLu = deg(-35),
-						HRu = deg(-35),
-						HLf = deg(15),
-						HRf = deg(15),
+						FLy = 0.62,
+						FRy = 0.62,
+						FLz = -0.32,
+						FRz = -0.32,
+						HLy = 0.6,
+						HRy = 0.6,
+						HLz = 0.05,
+						HRz = 0.05,
 						npitch = deg(10),
 						tpitch = deg(-4),
 						wo = 2,
 						flap = 0.3,
 						beat = 0.3,
-						travel = 0.55,
-						arc = 1,
-					},
+						travel = 0.66,
+						arc = 0.95,
+					}),
 				},
+				-- over the landing: the feet reach down above the spots they land on
+				{
+					seg = "S",
+					u = 0.74,
+					ease = "lin",
+					pose = ds({
+						by = -0.02,
+						bpitch = deg(-4),
+						FLz = -0.3,
+						FRz = -0.3,
+						FLy = 0.2,
+						FRy = 0.2,
+						HLy = 0.18,
+						HRy = 0.18,
+						npitch = deg(16),
+						hpitch = deg(-6),
+						wo = 1.9,
+						we = 0.6,
+						ws = 0.3,
+						beat = 0.3,
+						travel = 0.95,
+						arc = 0.3,
+					}),
+				},
+				-- down: the jaws at the target, the feet on the ground, the body sinking on into the legs
 				{
 					seg = "S",
 					u = 1,
-					ease = "in",
+					ease = "inout",
 					pose = ds({
-						by = -0.1,
+						by = -0.06,
 						bpitch = deg(-6),
 						FLz = -0.3,
 						FRz = -0.3,
-						HLz = 0.1,
-						HRz = 0.1,
 						npitch = deg(22),
 						hpitch = deg(-8),
 						wo = 1.9,
@@ -4532,15 +4712,33 @@ local DRAGON: Style = {
 				},
 				{
 					seg = "F",
-					u = 0.5,
-					ease = "out",
+					u = 0.3,
+					ease = "inout",
 					pose = ds({
-						by = -0.07,
-						bz = -0.05,
+						by = -0.12,
+						bz = -0.03,
+						bpitch = deg(-6),
+						FLz = -0.3,
+						FRz = -0.3,
+						npitch = deg(22),
+						hpitch = deg(-8),
+						wo = 1.7,
+						we = 0.45,
+						ws = 0.3,
+						travel = 1,
+					}),
+				},
+				{
+					seg = "F",
+					u = 0.6,
+					ease = "inout",
+					pose = ds({
+						by = -0.08,
+						bz = -0.04,
 						FLz = -0.3,
 						FRz = -0.3,
 						npitch = deg(18),
-						wo = 1.4,
+						wo = 1.2,
 						we = 0.3,
 						travel = 1,
 					}),
@@ -4551,14 +4749,47 @@ local DRAGON: Style = {
 					ease = "inout",
 					pose = ds({
 						by = -0.05,
-						FLz = -0.2,
-						FRz = -0.2,
+						bz = -0.03,
+						FLz = -0.3,
+						FRz = -0.3,
 						npitch = deg(14),
 						hyaw = deg(8),
 						wo = 0.6,
 						travel = 1,
 					}),
 				},
+				-- the fore feet step back under the shoulders: up, over, straight down
+				{
+					seg = "R",
+					u = 0.18,
+					ease = "inout",
+					pose = ds({ by = -0.04, bz = -0.03, FLz = -0.24, FLy = 0.09, FRz = -0.3, wo = 0.4, travel = 1 }),
+				},
+				{
+					seg = "R",
+					u = 0.34,
+					ease = "inout",
+					pose = ds({ by = -0.04, bz = -0.02, FLz = -0.02, FLy = 0.06, FRz = -0.3, wo = 0.3, travel = 1 }),
+				},
+				{
+					seg = "R",
+					u = 0.44,
+					ease = "inout",
+					pose = ds({ by = -0.04, bz = -0.02, FRz = -0.3, wo = 0.25, travel = 1 }),
+				},
+				{
+					seg = "R",
+					u = 0.6,
+					ease = "inout",
+					pose = ds({ by = -0.04, bz = -0.01, FRz = -0.24, FRy = 0.09, wo = 0.2, travel = 1 }),
+				},
+				{
+					seg = "R",
+					u = 0.76,
+					ease = "inout",
+					pose = ds({ by = -0.04, FRz = -0.02, FRy = 0.06, wo = 0.1, travel = 1 }),
+				},
+				{ seg = "R", u = 0.86, ease = "inout", pose = ds({ by = -0.04, travel = 1 }) },
 				{ seg = "R", u = 1, ease = "inout", pose = from(DRAGON_STANCE, { travel = 1 }) },
 			},
 		},
@@ -4709,8 +4940,8 @@ local DRAGON: Style = {
 				{
 					seg = "S",
 					u = 1,
-					ease = "in",
-					pose = ds({ bz = -0.08, bpitch = deg(-3), npitch = deg(28), hpitch = deg(-16), we = 0.05 }),
+					ease = "inout",
+					pose = ds({ bz = -0.06, bpitch = deg(-3), npitch = deg(28), hpitch = deg(-16), we = 0.05 }),
 				},
 				{ seg = "F", u = 1, ease = "out", pose = ds({ bz = -0.04, npitch = deg(20), hpitch = deg(-8) }) },
 				{ seg = "R", u = 1, ease = "inout", pose = DRAGON_STANCE },
@@ -4742,9 +4973,11 @@ local DRAGON: Style = {
 						hpitch = deg(14),
 						tpitch = deg(17),
 						tP1 = deg(3.5),
-						wo = 1.8,
-						we = 0.6,
+						wo = 1.5,
+						we = 0.65,
 						ws = 0.15,
+						ww = 0.1,
+						wp = 0.15,
 					})),
 				},
 				{
@@ -4757,10 +4990,11 @@ local DRAGON: Style = {
 						npitch = deg(18),
 						hpitch = deg(-20),
 						tpitch = deg(10),
-						wo = 2.1,
-						we = 0.45,
-						ws = 0.25,
-						wt = 0.15,
+						wo = 1.6,
+						we = 0.7,
+						ws = 0.2,
+						ww = 0.15,
+						wp = 0.25,
 					})),
 				},
 				{
@@ -4774,10 +5008,11 @@ local DRAGON: Style = {
 						hpitch = deg(-18),
 						hroll = deg(7),
 						nyaw = deg(-5),
-						wo = 2.1,
-						we = 0.5,
-						ws = 0.25,
-						wt = 0.15,
+						wo = 1.6,
+						we = 0.75,
+						ws = 0.2,
+						ww = 0.15,
+						wp = 0.25,
 					})),
 				},
 				{
@@ -4791,17 +5026,18 @@ local DRAGON: Style = {
 						hpitch = deg(-18),
 						hroll = deg(-7),
 						nyaw = deg(6),
-						wo = 2.05,
-						we = 0.45,
+						wo = 1.55,
+						we = 0.7,
 						ws = 0.2,
-						wt = 0.15,
+						ww = 0.15,
+						wp = 0.25,
 					})),
 				},
 				{
 					seg = "F",
 					u = 1,
 					ease = "inout",
-					pose = ds({ npitch = deg(14), hpitch = deg(-6), wo = 1.5, we = 0.3 }),
+					pose = ds({ npitch = deg(14), hpitch = deg(-6), wo = 1.1, we = 0.3 }),
 				},
 				{ seg = "R", u = 1, ease = "inout", pose = DRAGON_STANCE },
 			},
@@ -4835,7 +5071,7 @@ local DRAGON: Style = {
 				{
 					seg = "S",
 					u = 1,
-					ease = "out",
+					ease = "inout",
 					pose = ds({
 						by = 0,
 						bpitch = deg(6),
@@ -4940,7 +5176,7 @@ local DRAGON: Style = {
 		},
 		deathL = {
 			strike = 0.12,
-			follow = 0.75,
+			follow = 1.0,
 			recover = 0.4,
 			legs = true,
 			full = true,
@@ -4955,7 +5191,7 @@ local DRAGON: Style = {
 				{
 					seg = "F",
 					u = 0.4,
-					ease = "in",
+					ease = "inout",
 					pose = merge(DRAGON_REST, {
 						by = -0.32,
 						bpitch = deg(-6),
@@ -4991,6 +5227,15 @@ local DRAGON: Style = {
 						HRf = 0.9,
 						FLo = deg(-25),
 						HLo = deg(-25),
+						-- (the upper feet lift straight off their prints as it rolls)
+						FRk = 1,
+						HRk = 1,
+						FRl = 1,
+						HRl = 1,
+						FRy = 0.08,
+						FRz = 0.04,
+						HRy = 0.2,
+						HRz = -0.15,
 						tpitch = deg(8),
 						npitch = deg(18),
 						hpitch = deg(2),
@@ -5014,6 +5259,191 @@ local DRAGON: Style = {
 }
 DRAGON.actions.clawL = mirrored(DRAGON_CLAW)
 DRAGON.actions.deathR = mirrored(DRAGON.actions.deathL)
+
+-- (studio review 2026-10-31: the lab's death was deathL's twin) death by a blow from the front or behind: the jolt
+-- rears it back off its fore feet, it staggers a step forward onto them, the knees buckle under the weight and it
+-- sinks onto its belly with the fore legs out ahead, the neck slumping aside, the wings sliding down over its flanks
+-- and the tail laid out behind; every foot stays on its print once it is down
+local DRAGON_BELLY = merge(DRAGON_REST, {
+	by = -0.45,
+	bpitch = deg(-10),
+	FLz = -0.45,
+	FRz = -0.45,
+	FLf = deg(90),
+	FRf = deg(90),
+	HLf = deg(40),
+	HRf = deg(40),
+	npitch = deg(95),
+	nyaw = deg(30),
+	hroll = deg(6),
+	tpitch = deg(30),
+	tP1 = deg(3),
+	tY4 = deg(10),
+	tY5 = deg(12),
+	tY6 = deg(12),
+	wo = 0.5,
+	we = -0.6,
+})
+DRAGON.actions.death = {
+	strike = 0.12,
+	follow = 1.0,
+	recover = 0.6,
+	legs = true,
+	full = true,
+	hold = true,
+	keys = {
+		{
+			seg = "S",
+			u = 1,
+			ease = "out",
+			pose = ds({
+				bz = 0.06,
+				by = 0.02,
+				bpitch = deg(8),
+				FLy = 0.08,
+				FRy = 0.08,
+				FLz = -0.06,
+				FRz = -0.06,
+				npitch = deg(-16),
+				hpitch = deg(-8),
+				wo = 0.6,
+				we = 0.25,
+			}),
+		},
+		-- the stagger: the fore feet over the spots ahead, then straight down onto them
+		{
+			seg = "F",
+			u = 0.22,
+			ease = "inout",
+			pose = merge(DRAGON_REST, {
+				by = -0.1,
+				bpitch = deg(0),
+				FLy = 0.07,
+				FRy = 0.07,
+				FLz = -0.45,
+				FRz = -0.45,
+				npitch = deg(4),
+				hpitch = deg(2),
+				tpitch = deg(8),
+				wo = 0.55,
+				we = 0.15,
+			}),
+		},
+		{
+			seg = "F",
+			u = 0.4,
+			ease = "inout",
+			pose = merge(DRAGON_REST, {
+				by = -0.24,
+				bpitch = deg(-4),
+				FLz = -0.45,
+				FRz = -0.45,
+				npitch = deg(22),
+				hpitch = deg(6),
+				nyaw = deg(6),
+				tpitch = deg(12),
+				wo = 0.5,
+				we = 0,
+			}),
+		},
+		-- the knees give
+		{
+			seg = "F",
+			u = 0.72,
+			ease = "inout",
+			pose = from(DRAGON_BELLY, {
+				by = -0.36,
+				bpitch = deg(-7),
+				npitch = deg(55),
+				nyaw = deg(16),
+				hroll = deg(2),
+				tpitch = deg(20),
+				tY4 = deg(4),
+				tY5 = deg(5),
+				tY6 = deg(5),
+				we = -0.3,
+			}),
+		},
+		{ seg = "F", u = 1, ease = "out", pose = DRAGON_BELLY },
+		-- the last breath out: the body settles, the head rolls a little further, the wings slip down
+		{
+			seg = "R",
+			u = 1,
+			ease = "inout",
+			pose = from(DRAGON_BELLY, { by = -0.46, npitch = deg(100), nyaw = deg(34), hroll = deg(10), we = -0.7 }),
+		},
+	},
+}
+
+-- (studio review 2026-10-31: the lab's alert showed the idle) the first sight of a fighter (docs/ANIM-WZORCE.md
+-- 5.3): the neck snaps up and toward it, the wings half open and held taut, a short roar on the hit, then back down
+-- into the fighting stance
+DRAGON.actions.alert = {
+	strike = 0.12,
+	follow = 0.35,
+	recover = 0.45,
+	legs = true,
+	keys = {
+		{
+			seg = "A",
+			u = 0.6,
+			ease = "inout",
+			pose = ds({ bpitch = deg(2), npitch = deg(0), hpitch = deg(-2), tpitch = deg(10), wo = 0.5, we = 0.15 }),
+		},
+		{
+			seg = "A",
+			u = 1,
+			ease = "inout",
+			pose = ds(merge(DRAGON_HIPS, {
+				bpitch = deg(5),
+				npitch = deg(-16),
+				hpitch = deg(-4),
+				tpitch = deg(15),
+				wo = 0.8,
+				we = 0.3,
+				ws = 0.05,
+			})),
+		},
+		{
+			seg = "S",
+			u = 1,
+			ease = "out",
+			pose = ds(merge(DRAGON_HIPS, {
+				bpitch = deg(6),
+				bz = -0.02,
+				npitch = deg(-12),
+				hpitch = deg(-14),
+				tpitch = deg(16),
+				wo = 0.85,
+				we = 0.35,
+				ws = 0.08,
+			})),
+		},
+		{
+			seg = "F",
+			u = 0.5,
+			ease = "inout",
+			pose = ds(merge(DRAGON_HIPS, {
+				bpitch = deg(5),
+				bz = -0.02,
+				npitch = deg(-10),
+				hpitch = deg(-12),
+				hroll = deg(5),
+				tpitch = deg(14),
+				wo = 0.85,
+				we = 0.35,
+				ws = 0.08,
+			})),
+		},
+		{
+			seg = "F",
+			u = 1,
+			ease = "inout",
+			pose = ds({ npitch = deg(8), hpitch = deg(-8), tpitch = deg(8), wo = 0.45, we = 0.12 }),
+		},
+		{ seg = "R", u = 1, ease = "inout", pose = DRAGON_STANCE },
+	},
+}
 
 local STYLES: { [string]: Style } = {
 	canine = CANINE,

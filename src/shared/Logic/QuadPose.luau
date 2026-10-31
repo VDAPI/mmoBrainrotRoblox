@@ -318,6 +318,26 @@ local function jointPitch(joint: QuadRigs.Joint, u: number, f: number, p: number
 	return pitch
 end
 
+-- The foot of `leg` (its plane, from its top joint) at swing `u` and fold `f`.
+local function legFoot(
+	leg: { QuadRigs.Joint },
+	chain: Chain,
+	u: number,
+	f: number,
+	p: number,
+	level: number
+): (number, number)
+	local y, z, cum = 0, 0, 0
+	for i, joint in leg do
+		cum += jointPitch(joint, u, f, p, level, cum)
+		local seg = chain.segs[i]
+		local cs, sn = math.cos(cum), math.sin(cum)
+		y += cs * seg[2] - sn * seg[3]
+		z += sn * seg[2] + cs * seg[3]
+	end
+	return y, z
+end
+
 -- The swing and fold that put the foot of `leg` at (ty, tz) (the plane of the leg, from its top joint), from the
 -- guess (u, f): damped least-squares steps on the planar chain with its analytic Jacobian (a target out of reach, or
 -- a leg near straight, leaves the foot as close as it gets instead of throwing the leg about).
@@ -438,8 +458,8 @@ function QuadPose.world(skel: Skeleton, controls: Controls): ({ [string]: Mat },
 		local pitch = c(controls, "tpitch") * share + c(controls, "tP" .. i)
 		localTurn[name] = mul(ry(yaw), rx(-pitch))
 	end
-	local function legTurns(side: string, leg: { QuadRigs.Joint }, u: number, f: number)
-		local p, o = c(controls, side .. "p"), c(controls, side .. "o")
+	local function legTurns(side: string, leg: { QuadRigs.Joint }, u: number, f: number, spreadTo: number?)
+		local p, o = c(controls, side .. "p"), spreadTo or c(controls, side .. "o")
 		local level = math.min(c(controls, LEVEL[side] or ""), 1)
 		local out = if string.sub(side, 2, 2) == "R" then 1 else -1
 		local above = 0
@@ -508,13 +528,74 @@ function QuadPose.world(skel: Skeleton, controls: Controls): ({ [string]: Mat },
 				foot[2] + c(controls, TARGET_Y[side]) * L - hip[2],
 				foot[3] + c(controls, TARGET_Z[side]) * L - hip[3],
 			}
+			if rig.steady and target[2] < 0 then
+				-- (steady feet) a target the leg would reach only nearly straight is lifted toward it (the paw comes
+				-- off the ground as the shoulders rise over it) and never out of reach: the solve stays clear of the
+				-- straight leg, where a small move of the body swings the knee a long way
+				local soft0, soft1 = 0.88 * chain.reach, 0.97 * chain.reach
+				local flat = target[1] * target[1] + target[3] * target[3]
+				local d = math.sqrt(flat + target[2] * target[2])
+				if d > soft0 then
+					local dd = soft0 + (soft1 - soft0) * math.tanh((d - soft0) / (soft1 - soft0))
+					-- (a target far out to the side or ahead, where the lift would climb steeply to the joint's
+					-- level, is drawn in toward the joint instead)
+					local w = math.clamp((flat / (dd * dd) - 0.6) / 0.4, 0, 1)
+					w = w * w * (3 - 2 * w)
+					local lift = -math.sqrt(math.max(dd * dd - flat, 0))
+					local scale = dd / d
+					target[1] *= 1 + (scale - 1) * w
+					target[2] = lift + (target[2] * scale - lift) * w
+					target[3] *= 1 + (scale - 1) * w
+				end
+			end
 			local inLeg = apply(transpose(base), target)
 			local u0, f0 = c(controls, side .. "u"), c(controls, side .. "f")
 			local leg = rig.legs[side]
 			local level = math.min(c(controls, LEVEL[side]), 1)
-			local u, f = solveLeg(leg, chain, u0, f0, c(controls, side .. "p"), level, inLeg[2], inLeg[3])
 			local k = math.min(plant, 1)
-			legTurns(side, leg, u0 + (u - u0) * k, f0 + (f - f0) * k)
+			local p = c(controls, side .. "p")
+			local spread = leg[1].spread
+			if rig.steady and spread and spread ~= 0 then
+				-- (a rig with `steady` feet) a foot partly planted aims between where its keyed angles put it and its
+				-- target, so it leaves and lands along a path (no snap of the leg as the target goes out of reach);
+				-- the leg also swings out about its top joint to keep the foot on it when the body shifts, rolls or
+				-- turns sideways: the turn `a` about the forward axis that brings the aim into the leg's plane (its
+				-- rest offset to the side, x0), the plane's solve after it
+				local x0 = chain.foot[1] - skel.bones[name].pos[1]
+				local out = if string.sub(side, 2, 2) == "R" then 1 else -1
+				local o0 = c(controls, side .. "o")
+				local a0 = out * o0 * spread
+				local fy, fz = legFoot(leg, chain, u0, f0, p, level)
+				local cs0, sn0 = math.cos(a0), math.sin(a0)
+				local free = { x0 * cs0 - fy * sn0, x0 * sn0 + fy * cs0, fz }
+				local aim = {
+					free[1] + (inLeg[1] - free[1]) * k,
+					free[2] + (inLeg[2] - free[2]) * k,
+					free[3] + (inLeg[3] - free[3]) * k,
+				}
+				local a = a0
+				local r = math.sqrt(aim[1] * aim[1] + aim[2] * aim[2])
+				if r > 1e-6 then
+					local phi = math.atan2(aim[2], aim[1])
+					local off = math.acos(math.clamp(x0 / r, -1, 1))
+					local a1 = (phi + off - a0 + math.pi) % (2 * math.pi) - math.pi + a0
+					local a2 = (phi - off - a0 + math.pi) % (2 * math.pi) - math.pi + a0
+					a = if math.abs(a1 - a0) < math.abs(a2 - a0) then a1 else a2
+				end
+				local cs, sn = math.cos(a), math.sin(a)
+				local u, f = solveLeg(leg, chain, u0, f0, p, level, -aim[1] * sn + aim[2] * cs, aim[3])
+				-- (a foot nearly let go eases onto its keyed angles: a leg near straight would answer the last bit
+				-- of its aim with a long swing of the knee)
+				if k < 0.3 then
+					local w = k / 0.3
+					w = w * w * (3 - 2 * w)
+					u, f, a = u0 + (u - u0) * w, f0 + (f - f0) * w, a0 + (a - a0) * w
+				end
+				legTurns(side, leg, u, f, a / (out * spread))
+			else
+				local u, f = solveLeg(leg, chain, u0, f0, p, level, inLeg[2], inLeg[3])
+				legTurns(side, leg, u0 + (u - u0) * k, f0 + (f - f0) * k)
+			end
 		end
 		local wing = skel.wings[name]
 		if wing and wing.seg == 0 then

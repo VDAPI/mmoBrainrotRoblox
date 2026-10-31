@@ -138,7 +138,7 @@ WYVERN_REGULAR.pounce = { fx("dust", "feet", "W") }
 
 -- The young frost dragon on its new model (Data/QuadStyles `dragon`, 2026-10-31): the frost breath on the action names
 -- of the wyvern's (the charge in the throat, the stream from the snout along the head's sweep, the cold breath after
--- it), its spit, the roar, the crash of the stomp and the claw rake, the wing buffet's and the landing's dust.
+-- it), its spit, the roar and the alert's short one, the crash of the stomp and the claw rake, the wing buffet's and the landing's dust.
 local DRAGON: { [string]: { Fx } } = {
 	breath = {
 		fx("charge", "mouth", "A0.35", "W"),
@@ -150,6 +150,7 @@ local DRAGON: { [string]: { Fx } } = {
 		fx("spit", "mouth", "W"),
 	},
 	roar = { fx("screech", "mouth", "W", nil, { size = 1.1 }) },
+	alert = { fx("screech", "mouth", "W", nil, { size = 0.7 }) },
 	stomp = { fx("slam", "front", "W", nil, { size = 1.1 }) },
 	rake = { fx("slam", "front", "W", nil, { size = 0.9 }) },
 	buffet = { fx("dust", "feet", "W", nil, { size = 1.4 }) },
@@ -158,6 +159,7 @@ local DRAGON: { [string]: { Fx } } = {
 	spawn = { fx("dust", "feet", "W", nil, { size = 1 }) },
 	deathL = { fx("dust", "body", "F1", nil, { size = 1.5 }) },
 	deathR = { fx("dust", "body", "F1", nil, { size = 1.5 }) },
+	death = { fx("dust", "body", "F0.9", nil, { size = 1.5 }) },
 }
 
 ---------------------------------------------------------------- spirits (Data/BipedStyles SPIRIT_ACTIONS)
