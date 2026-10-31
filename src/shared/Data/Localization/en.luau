@@ -222,6 +222,8 @@ return {
 	["hud.expPct"] = "EXP {pct}%",
 	["hud.expMax"] = "Maximum level",
 	["hud.expTooltip"] = "Experience: {exp} / {need}",
+	["hud.auto"] = "Auto: Cloak of Luring, Auto Hunt, Auto Potions",
+	["hud.waiting.bloodmoon"] = "Blood Moon: results",
 	["toast.levelUp"] = "Level {level}! +{stat} stat points",
 
 	-- Zones and PvP (DESIGN §3.3)
@@ -1611,6 +1613,7 @@ return {
 	["map.duskwood_cave.name"] = "Crypt of the Forgotten",
 	["map.ashen.name"] = "Ashen Wastes",
 	["map.ashen_cave.name"] = "Deepforge",
+	["map.frostpeak.at"] = "in Frostpeak", -- UI plan phase 2: "where" after a verb (worldboss.warn / spawn)
 	["map.frostpeak.name"] = "Frostpeak",
 	["map.frostpeak_cave.name"] = "Glacier Heart",
 	["map.dungeon_meadows.name"] = "Grimrok's Chamber",
@@ -2743,6 +2746,7 @@ return {
 	["pvp.dot.forced"] = "Red zone: PvP is always on.",
 	["pvp.dot.switching"] = "PvP is switching.",
 	["pvp.dot.locked"] = "PvP cannot change right now (safe zone or recent fight).",
+	["pvp.dot.click"] = "Click the dot to turn PvP on or off.",
 
 	-- S18: new weapon types
 	["itemBase.saber1h"] = "Sabre",
@@ -10137,8 +10141,8 @@ return {
 	["boss.hrimvald.attack.frostBrand"] = "Frost Brand",
 	["boss.hrimvald.attack.endlessWinter"] = "Endless Winter",
 	["worldboss.name"] = "World boss",
-	["worldboss.warn"] = "{boss} wakes on {map} in {minutes} min. Reward from level {level}.",
-	["worldboss.spawn"] = "{boss} stands on {map}. Gather at least ten.",
+	["worldboss.warn"] = "{boss} wakes {at} in {minutes} min. Reward from level {level}.",
+	["worldboss.spawn"] = "{boss} stands {at}. Gather at least ten.",
 	["worldboss.slain"] = "{boss} defeated after {time}. {players} fought.",
 	["worldboss.left"] = "{boss} walks off into the blizzard. Next time.",
 	["worldboss.reward"] = "Reward for {boss}: {exp} EXP, {gold} gold and {item}.",

@@ -41,6 +41,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local GuidePointer = require(ReplicatedStorage.Shared.Logic.GuidePointer)
+local HudCover = require(script.Parent.Parent.Parent.HudCover)
 local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
@@ -1108,6 +1109,11 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		},
 	}) :: Frame
 	handle.bind(frame)
+	-- UI plan phase 2 (Studio audit 2026-10-31): out of sight while an open window covers it (UI/HudCover)
+	local covered = HudCover.covered(scope, frame)
+	scope:Observer(covered):onBind(function()
+		frame.Visible = not Fusion.peek(covered)
+	end)
 	return frame
 end
 

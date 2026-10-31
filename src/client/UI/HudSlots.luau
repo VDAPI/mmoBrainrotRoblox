@@ -37,6 +37,10 @@ local watched: { [GuiObject]: boolean } = {}
 local measured = scope:Value({} :: { HudStack.Rect })
 HudSlots.Measured = measured
 
+-- UI plan phase 2: the row of "something waits" buttons under the minimap shows (Hud/WaitingRow sets it); on PC the
+-- column starts under it (Logic/HudStack.WAITING).
+HudSlots.Waiting = scope:Value(false)
+
 local function same(a: { HudStack.Rect }, b: { HudStack.Rect }): boolean
 	if #a ~= #b then
 		return false
@@ -122,7 +126,8 @@ HudSlots.Corner = scope:Computed(function(use): { HudStack.Rect }
 end)
 
 -- The built-in place of every shown element that has none of its own, by id. UI plan phase 1: on PC the column starts
--- under the guide bar while one shows (Hud/NavBar), else right under the minimap's area line.
+-- under the guide bar while one shows (Hud/NavBar), else right under the minimap's area line; phase 2: under the row
+-- of "something waits" buttons while it shows.
 HudSlots.Places = scope:Computed(function(use): { [string]: HudStack.Rect }
 	local screen: Vector2 = use(Scale.HudSize)
 	return HudStack.layout(
@@ -133,7 +138,8 @@ HudSlots.Places = scope:Computed(function(use): { [string]: HudStack.Rect }
 		use(PhoneLayout.Others),
 		use(boxes),
 		use(measured),
-		use(NavTarget.Target) ~= nil
+		use(NavTarget.Target) ~= nil,
+		use(HudSlots.Waiting)
 	)
 end)
 

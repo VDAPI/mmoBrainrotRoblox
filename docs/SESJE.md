@@ -14228,6 +14228,31 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `hair_swept` wypada (ta sama siatka co `hair_short`, `LEGACY_HAIRS`). `HairTint.plan`: rozjaśnienie jasnych tekstur
   maleje poniżej `DARK`. Testy `bodylooks`, `classlooks`, `wikidump`; dane wiki przegenerowane.
 
+### Plan UI, faza 2: jedno miejsce na rodzaj rzeczy (2026-10-31)
+- Rząd „coś czeka” pod minimapą: `Hud/WaitingRow` (poczta `MailButton` z `InRow`, ✧ `LoginButton`, ❖ `SeasonButton`,
+  ☾ wyniki Krwawego Księżyca przy `BloodMoonView.Phase == "ended"`), `HudSlots.Waiting`, `HudStack.WAITING` (kolumna PC
+  niżej o 44 + 8). Telefon: szuflada i koperta przy łuku bez zmian. Róg PC (`HudStack.fixed`) zostaje zarezerwowany.
+- Jeden rząd wzmocnień pod portretem (`EffectsRow` w `Hud/init`: `BlessingBadge`, `BlessingIcon` z rozmiarem 30, potem
+  `EffectIcons`); telefon: eliksiry i ✶ na dawnych miejscach.
+- „Auto”: `Hud/AutoGroup` (⚙ w `HudStack.EXTRAS`, panel z trzema dawnymi przyciskami pod nim, złota ramka, gdy coś
+  działa); telefon: trzy przyciski na miejscach `PhoneHud`.
+- PvP: `UI/PvpSwitch.request` (wspólne z `Hud/PvpToggle`), kropka w portrecie to przycisk z tooltipem i odliczaniem;
+  `PvpToggle` tylko na dotyku.
+- Boss świata: `WorldBoss.panelOf(branch, mapId, level)` bez linii poniżej `minLevel`.
+- Pas wiadomości: `Logic/TopBand` + `UI/TopBandState` (banery strefy, obszaru i toast osiągnięcia zgłaszają się,
+  `Toast` stoi pod nimi i pokazuje 2 naraz, `AchievementController` czeka na banery). Lista zabójstw tylko w strefie
+  żółtej i czerwonej (`SocialController`).
+- Z przeglądu Studio: `UI/HudCover` (WindowManager zgłasza otwarte okna, `HudStack.covers`): tropiciel, rząd przycisków
+  menu, podpisy minimapy i rząd „coś czeka” znikają pod oknem; pasek EXP pokazuje procent tylko po najechaniu.
+- Po przeglądzie Studio fazy 1: pasek EXP 10 px i 2 px od dołu (czat kończy się kilka pikseli nad nim; okna czatu
+  Robloxa nie da się przesunąć), toasty i ogłoszenia (`Announcement`) stoją pod paskiem tytułu otwartego okna
+  (`HudCover.HeaderBottom`, `TopBand.underHeader`), ogłoszenie serwera tylko w banerze (bez kopii w czacie,
+  `NotificationController`), boss świata „{boss} stoi {at}” z kluczem `map.frostpeak.at` („na Lodowych Szczytach”,
+  `WorldBossService.atArg`), zdania z nazwą obszaru po przyimku przepisane na mianownik po dwukropku (`contract.text`,
+  `contract.progress`, `event.*`). ❖ przy nowej postaci: przepustka jest na konto, więc pokazuje się, gdy konto ma
+  nieodebrany stopień (warunek bez zmian).
+- Testy: `topband.spec` (nowy), `hudlayout` (rząd „coś czeka”, `covers`, scenariusze z rzędem), `worldboss` (próg,
+  `at`).
 ### Kamera w dachu po wejściu do świata (przegląd Studio 2026-10-31)
 - Zgłoszenie: po wejściu postaci (poziom 1 i 100, stolica) kamera startowała wciśnięta w dach domu i latarnię.
 - Przyczyna: od W02/W12 domy, mury, latarnie i drzewa miasta to modele zestawu (`CanCollide` i `CanQuery` wyłączone),
@@ -14255,3 +14280,25 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Stały żywioł broni nazwanej: `Data/Elements.weaponElement`, `ItemDef.element`, `Data/Items/Uniques`
   (`opts.element = "ice"` Kostura Wiecznej Zimy), `ItemRoll` (`el` przy tworzeniu, `elementOf`), `ItemEffects`, `ItemIcons`,
   `ItemName` (bez przyrostka), `/element` odmawia (`admin.element.fixed`). Test: `tests/namedelement.spec.luau`.
+
+### Kamera zablokowana w trybie skryptowym (przegląd Studio 2026-10-31, druga część)
+- Zgłoszenie (postać poziomu 1): po `tp city` kamera stała 10+ s w starym miejscu na Łąkach; w mieście zamrożona 75 studów
+  od postaci, potem 0,9 studa przed twarzą, a postać nie ruszała się (MoveTo bez skutku); ręczne Custom pomagało do
+  następnego razu.
+- Kto ustawia `Scriptable` (grep): tylko ekran wyboru, przerywnik i AnimLab (okna, rozmowy, śmierć i ekran ładowania nie
+  ruszają kamery). Dziury: kamera AnimLab zostawała przy scenie po teleporcie (zmienia tylko `CharacterRemoving`), a
+  przerywnik oddawał kamerę i ruch na końcu jednego ciągu sprzątania bez ochrony (błąd w środku zostawiał `Scriptable` i
+  wyłączone sterowanie), jego pisarz klatek co klatkę wymuszał `Scriptable`, a blokada ruchu (`ControlModule:Disable`)
+  wracała tylko tą drogą.
+- `Logic/CameraLease.luau` (czyste): właściciele po kolei (ostatni z kamerą ją ma), termin, puszczanie przy podróży,
+  blokada ruchu, wykrycie teleportu (ponad 60 studów na klatkę), strażnik (`GRACE` 0,5 s, liczone zegarem, nie
+  klatkami: Studio w tle ma ok. 15 kl./s).
+- `CameraController`: `Claim(owner, { camera?, lockMovement?, ttl?, travel?, onLost?, onRegain? })`, `Release`, `Holder`,
+  strażnik na początku kroku kamery, blokada ruchu przez `PlayerModule:GetControls()`, atrybuty kamery
+  `VaelthornCameraOwner` / `VaelthornMoveLock`.
+- `CutsceneController`: blokada ruchu od startu sceny, kamera dopiero przy gotowym ujęciu (od razu w pierwszej klatce
+  ujęcia), termin `długość + SAFETY + zanikania + strumień + 5 s`, `pcall` wokół sceny (`finish("error")`), sprzątanie
+  krok po kroku (najpierw kamera i ruch). `AnimLabController`: kamera jako `Claim("animlab", travel)`;
+  `ScreenController`: ujęcie wyboru jako `Claim("select")`, `RestoreCamera` usunięte.
+- Testy: `tests/cameralease.spec.luau` (w tym skan: `CameraType.Scriptable` tylko w `CameraController` i w pisarzu
+  przerywnika). Nieobejrzane w Studio.

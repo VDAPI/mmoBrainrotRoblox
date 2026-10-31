@@ -1,0 +1,92 @@
+--!strict
+-- UI plan phase 2 (Studio audit 2026-10-31: "windows never hide or dim the HUD: the auction, the shop, the mail, the
+-- blacksmith and the alchemist overlap the tracker and the icon grid"): the HUD parts an open window covers step out of
+-- sight until it closes. WindowManager reports the open windows (overlays such as the dev panel do not count); a HUD
+-- part asks `covered` for its own rectangle and hides itself while any of them covers it by more than MARGIN
+-- (Logic/HudStack.covers). Used by the quest tracker, the menu bar, the minimap's two labels and the row of "something
+-- waits" buttons; never by the action bar, the portrait's bars or the chat. A hidden part keeps the rectangle where it
+-- last showed, so hiding it never changes the answer.
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
+local Scale = require(script.Parent.Scale)
+local Theme = require(script.Parent.Theme)
+
+type Scope = Fusion.Scope<typeof(Fusion)>
+
+local HudCover = {}
+
+local MARGIN = 4 -- screen pixels
+
+local scope = Fusion.scoped(Fusion)
+local windows = scope:Value({} :: { GuiObject })
+local moved = scope:Value(0) -- bumped whenever an open window moves or resizes
+local links: { RBXScriptConnection } = {}
+
+local function rectOf(item: GuiObject): HudStack.Rect
+	local at, size = item.AbsolutePosition, item.AbsoluteSize
+	return { left = at.X, top = at.Y, right = at.X + size.X, bottom = at.Y + size.Y }
+end
+
+-- WindowManager: the roots of the open normal windows, after every opening and closing.
+function HudCover.SetWindows(list: { GuiObject })
+	for _, link in links do
+		link:Disconnect()
+	end
+	table.clear(links)
+	local function bump()
+		moved:set(Fusion.peek(moved) + 1)
+	end
+	for _, root in list do
+		for _, property in { "AbsolutePosition", "AbsoluteSize" } do
+			table.insert(links, root:GetPropertyChangedSignal(property):Connect(bump))
+		end
+	end
+	windows:set(table.clone(list))
+end
+
+-- The lowest bottom edge of the open windows' title bars (screen pixels), nil with no window open: the messages of the
+-- Toasts layer stand under it (Components/Toast, Components/Announcement; Logic/TopBand.underHeader).
+HudCover.HeaderBottom = scope:Computed(function(use): number?
+	use(moved)
+	local bottom: number? = nil
+	for _, root in use(windows) do
+		if root.Parent ~= nil then
+			local edge = root.AbsolutePosition.Y + Theme.Size.WindowHeader * Scale.get()
+			bottom = if bottom then math.max(bottom, edge) else edge
+		end
+	end
+	return bottom
+end)
+
+-- Whether an open window covers `item` now (for the life of `s`). Bind the item's Visible to `not covered`.
+function HudCover.covered(s: Scope, item: GuiObject): Fusion.Computed<boolean>
+	local last = s:Value(nil :: HudStack.Rect?)
+	local function measure()
+		local size = item.AbsoluteSize
+		if item.Visible and size.X > 0 and size.Y > 0 then
+			last:set(rectOf(item))
+		end
+	end
+	for _, property in { "AbsolutePosition", "AbsoluteSize" } do
+		table.insert(s, item:GetPropertyChangedSignal(property):Connect(measure))
+	end
+	task.defer(measure)
+	return s:Computed(function(use): boolean
+		use(moved)
+		local rect = use(last)
+		if not rect then
+			return false
+		end
+		for _, root in use(windows) do
+			if root.Parent ~= nil and HudStack.covers(rect, rectOf(root), MARGIN) then
+				return true
+			end
+		end
+		return false
+	end)
+end
+
+return HudCover
