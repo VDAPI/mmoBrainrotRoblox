@@ -244,11 +244,12 @@ local function registerWindows()
 	})
 	-- S29: the backpack window: equipment + backpack + statistics in one (WindowRules.MAIN, opened by B without a
 	-- service). FIX 2026-10-14: the separate "Character" button and its C key are gone; the window has the backpack's
-	-- title.
+	-- title. UI plan phase 3: one job per tab (Logic/CharacterTabs), so the window is the backpack tab's width
+	-- (260 + 22 + 500 and the padding) instead of 1240 x 700.
 	WindowManager.Register({
 		id = "character",
 		titleKey = "window.inventory.title",
-		size = Vector2.new(1240, 700),
+		size = Vector2.new(826, 752),
 		build = function(scope: Scope)
 			return CharacterWindow(scope, {
 				Focus = WindowManager.FocusHint,

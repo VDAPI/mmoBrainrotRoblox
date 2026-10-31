@@ -14272,3 +14272,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Stały żywioł broni nazwanej: `Data/Elements.weaponElement`, `ItemDef.element`, `Data/Items/Uniques`
   (`opts.element = "ice"` Kostura Wiecznej Zimy), `ItemRoll` (`el` przy tworzeniu, `elementOf`), `ItemEffects`, `ItemIcons`,
   `ItemName` (bez przyrostka), `/element` odmawia (`admin.element.fixed`). Test: `tests/namedelement.spec.luau`.
+
+### Plan UI, faza 3: okno plecaka w zakładkach (2026-10-31)
+- Z przeglądu Studio: okno plecaka (B, id `character`) robiło trzy rzeczy na 67% ekranu. Teraz zakładki na górze
+  (`Components/Tabs`, na PC i na dotyku): „Ekwipunek” (portret, klasa i poziom, ekwipunek; obok plecak), „Statystyki”
+  (rozdawanie po lewej, statystyki pochodne po prawej; w nazwie liczba wolnych punktów) i trzecia „Zestawy i tytuły”
+  (`BuildSetSwitch` z jednym zdaniem objaśnienia, `TitleChooser.Picker`).
+- `Logic/CharacterTabs` (czyste): zestawy od `Progression.freeRespecLevel` (20) albo przy aktywnym zestawie 2, tytuły
+  z pierwszym odblokowanym, etykieta trzeciej zakładki według zawartości, `pick` (zakładka, która znikła, oddaje
+  miejsce Ekwipunkowi), `suggestShown`.
+- `StatAllocator`: rząd przycisków tylko z wolnymi punktami, „Rozdaj jak zaleca ścieżka” i linia planu tylko z planem.
+- Okno 826×752 (było 1240×700). `WindowManager.Toggle`: B na innej zakładce wraca na Ekwipunek na każdym urządzeniu.
+- Test: `tests/charactertabs.spec.luau`. Nieobejrzane w Studio.

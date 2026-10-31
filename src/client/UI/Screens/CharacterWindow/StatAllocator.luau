@@ -8,10 +8,13 @@
 -- player confirms as usual. A line below the buttons names the plan.
 -- Owner 2026-10-21 (too many detailed descriptions): under a stat one short line of what it raises (stat.<id>.short),
 -- the numbers per point behind the "i" next to its name.
+-- UI plan phase 3 (Studio review 2026-10-31): the buttons show only with free points, "Spend as the path suggests" and
+-- its plan line only with a plan to follow (Logic/CharacterTabs.suggestShown).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
+local CharacterTabs = require(ReplicatedStorage.Shared.Logic.CharacterTabs)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
@@ -169,6 +172,21 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 		speed = ratedDex(F.atkSpeedPerDex * 100),
 		dodge = ratedDex(F.dodgePerDex),
 	}
+
+	local hasPoints = scope:Computed(function(use): boolean
+		local n = use(statPoints)
+		return type(n) == "number" and n > 0
+	end)
+	local suggestOn = scope:Computed(function(use): boolean
+		local n = use(statPoints)
+		return CharacterTabs.suggestShown(if type(n) == "number" then n else nil, use(planInfo) ~= nil)
+	end)
+	-- the share of the row: Cancel, the suggestion, Confirm (without the suggestion Cancel and Confirm take it all)
+	local function share(withSuggest: number, without: number): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			return UDim2.new(if use(suggestOn) then withSuggest else without, -Theme.Padding.Small * 2 / 3, 1, 0)
+		end)
+	end
 
 	local available = scope:Computed(function(use): number
 		local points = use(statPoints)
@@ -382,6 +400,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 				LayoutOrder = 11,
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
 				BackgroundTransparency = 1,
+				Visible = hasPoints,
 				[Children] = {
 					scope:New("UIListLayout")({
 						FillDirection = Enum.FillDirection.Horizontal,
@@ -392,7 +411,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 						LayoutOrder = 1,
 						Text = Text.T(scope, "common.cancel"),
 						Variant = "ghost",
-						Size = UDim2.new(0.24, -Theme.Padding.Small * 2 / 3, 1, 0),
+						Size = share(0.24, 0.4),
 						Disabled = scope:Computed(function(use): boolean
 							return total(use(pending)) == 0 or use(busy)
 						end),
@@ -406,6 +425,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 						Variant = "secondary",
 						TextSize = Theme.TextSize.Small,
 						Size = UDim2.new(0.42, -Theme.Padding.Small * 2 / 3, 1, 0),
+						Visible = suggestOn,
 						Disabled = scope:Computed(function(use): boolean
 							return use(planInfo) == nil or use(available) <= 0 or use(busy)
 						end),
@@ -415,7 +435,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 						LayoutOrder = 3,
 						Text = Text.T(scope, "common.confirm"),
 						Variant = "primary",
-						Size = UDim2.new(0.34, -Theme.Padding.Small * 2 / 3, 1, 0),
+						Size = share(0.34, 0.6),
 						Disabled = scope:Computed(function(use): boolean
 							return total(use(pending)) == 0 or use(busy)
 						end),
@@ -428,6 +448,7 @@ local function StatAllocator(scope: Scope, props: Props): Instance
 				LayoutOrder = 12,
 				Size = UDim2.new(1, 0, 0, 20),
 				BackgroundTransparency = 1,
+				Visible = suggestOn,
 				Text = scope:Computed(function(use): string
 					local info = use(planInfo)
 					if info == nil then
