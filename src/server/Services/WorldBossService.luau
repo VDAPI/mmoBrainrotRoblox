@@ -138,6 +138,13 @@ local function mapArg(): string
 	return if map then "@" .. map.nameKey else Data.map
 end
 
+-- UI plan phase 2 (Studio 2026-10-31: "stoi na Lodowe Szczyty"): the map as "where" after a verb, with its preposition
+-- and case ("na Lodowych Szczytach", "in the Frost Peaks"): the key `<nameKey minus .name>.at` (tests/worldboss.spec).
+local function atArg(): string
+	local map = mapDef()
+	return if map then "@" .. string.gsub(map.nameKey, "%.name$", "") .. ".at" else Data.map
+end
+
 local function bossArg(): string
 	return "@" .. WorldBoss.def().nameKey
 end
@@ -658,7 +665,7 @@ local function spawnBoss(f: Fight): boolean
 	f.boss = boss
 	f.spawnedAt = now()
 	FightLogService.Bind(f.fightId, monster)
-	AnnounceService.Server("worldboss.spawn", { boss = bossArg(), map = mapArg() })
+	AnnounceService.Server("worldboss.spawn", { boss = bossArg(), map = mapArg(), at = atArg() })
 	log:info(
 		"%s up for %s (%s), %d s to its leave",
 		def.id,
@@ -780,6 +787,7 @@ local function stepSchedule()
 				boss = bossArg(),
 				minutes = math.floor(before / 60 + 0.5),
 				map = mapArg(),
+				at = atArg(),
 				level = WorldBoss.minLevel(),
 			})
 		end
@@ -921,6 +929,7 @@ function WorldBossService.Force(immediate: boolean): (boolean, string?)
 			boss = bossArg(),
 			minutes = math.floor((s.warn[#s.warn] or 0) / 60 + 0.5),
 			map = mapArg(),
+			at = atArg(),
 			level = WorldBoss.minLevel(),
 		})
 	end

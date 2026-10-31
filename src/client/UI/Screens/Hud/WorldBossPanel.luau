@@ -93,8 +93,11 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 		end)
 	)
 
+	-- UI plan phase 2: the line on other maps only for a character that can get the reward (Logic/WorldBoss.panelOf)
+	local level = State.Value({ "character", "level" })
 	local mode = scope:Computed(function(use): string?
-		return WorldBoss.panelOf(use(branch), use(zoneMap))
+		local lv = use(level)
+		return WorldBoss.panelOf(use(branch), use(zoneMap), if type(lv) == "number" then lv else nil)
 	end)
 	local current = scope:Computed(function(use): any
 		return if use(mode) ~= nil then use(branch) else nil

@@ -2,25 +2,24 @@
 -- PvP switch in the bottom-right corner (DESIGN §3.3). Red glow when enabled, countdown while switching and "forced"
 -- in red zones. Clicking during a countdown cancels it. UI plan phase 1 (owner 2026-10-31, too much on one screen):
 -- shown only in yellow and red zones and while a switch counts down (Logic/PvpRules.toggleShown); the dot on the
--- portrait tells the state everywhere.
+-- portrait tells the state everywhere. UI plan phase 2: a touch screen's only; on PC the dot on the portrait is the
+-- switch (the same request, UI/PvpSwitch).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
-local Config = require(ReplicatedStorage.Shared.Config)
+local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
-local Net = require(ReplicatedStorage.Shared.Net)
-local PvpRules = require(ReplicatedStorage.Shared.Logic.PvpRules)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
-local Sounds = require(script.Parent.Parent.Parent.Sounds)
+local PvpRules = require(ReplicatedStorage.Shared.Logic.PvpRules)
+local PvpSwitch = require(script.Parent.Parent.Parent.PvpSwitch)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
-local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 
@@ -38,7 +37,6 @@ local function PvpToggle(scope: Scope): Instance
 	local pvp = State.Value({ "pvp" })
 	local zone = State.Value({ "zone" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
-	local busy = false
 
 	local accumulator = 0
 	table.insert(
@@ -74,24 +72,7 @@ local function PvpToggle(scope: Scope): Instance
 	end)
 
 	local function click()
-		if busy or Fusion.peek(zoneType) ~= "yellow" then
-			Sounds.play("error")
-			Toast.push(Text.now("pvp.error.zone"), "warning")
-			return
-		end
-		local state = Fusion.peek(pvp)
-		local target = if state and state.pendingTarget ~= nil
-			then not state.pendingTarget
-			else not Fusion.peek(enabled)
-		busy = true
-		Sounds.play("click")
-		task.spawn(function()
-			local ok, err = Net.Invoke("SetPvp", target)
-			busy = false
-			if not ok then
-				Toast.push(Text.now(err or "error.internal", { seconds = Config.PvpCombatLock }), "error")
-			end
-		end)
+		PvpSwitch.request() -- UI plan phase 2: the same request as the portrait's dot (UI/PvpSwitch)
 	end
 
 	local glyphColor = scope:Computed(function(use): Color3
@@ -107,13 +88,15 @@ local function PvpToggle(scope: Scope): Instance
 		AnchorPoint = PhoneLayout.Anchor(scope, "pvp", Vector2.new(1, 1)),
 		Position = PhoneLayout.Position(scope, "pvp", UDim2.new(1, -SPOT.right, 1, -SPOT.bottom)),
 		Size = UDim2.fromOffset(SIZE, SIZE),
+		-- UI plan phase 2: a touch screen's only (PC clicks the dot on the portrait, Hud/init)
 		Visible = scope:Computed(function(use): boolean
 			local state = use(pvp)
 			local z = use(zone)
-			return PvpRules.toggleShown(
-				if type(z) == "table" then z.pvp else nil,
-				if type(state) == "table" then state.pendingTarget else nil
-			)
+			return use(Device.Touch) == true
+				and PvpRules.toggleShown(
+					if type(z) == "table" then z.pvp else nil,
+					if type(state) == "table" then state.pendingTarget else nil
+				)
 		end),
 		AutoButtonColor = false,
 		BackgroundColor3 = scope:Computed(function(use): Color3
