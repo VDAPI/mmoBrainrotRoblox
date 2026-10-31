@@ -720,6 +720,44 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 		end
 	end)
 
+	T.it(
+		"a leap stands on its feet until they leave the ground and again once it has landed (Studio round 3)",
+		function()
+			local L = SKEL.legLength
+			local rest = BipedPose.positions(SKEL, {}, { 0, 0, 0 })
+			for _, id in { "humanoid1h", "humanoid2h", "brute" } do
+				local hit = 1.4
+				local last: { [string]: Vec }? = nil
+				local slide = 0
+				joints(id, "pounce", hit, 0.2 + hit + 1.2, function(t, input)
+					-- (the server moves the root onto the target at the hit: the reach is dropped then)
+					local action = input.action
+					if action and t < 0.2 + hit then
+						action.reach = { 0, 0, -10 }
+					end
+				end, function(t, at)
+					local before = last
+					-- (not across the landing: the root itself moves there)
+					if before and math.abs(t - (0.2 + hit)) > 1 / 120 then
+						for _, key in TOE do
+							local a, b = at[key], before[key]
+							local floor = rest[key][2] + 0.03 * L
+							if a[2] < floor and b[2] < floor then
+								slide += math.sqrt((a[1] - b[1]) ^ 2 + (a[3] - b[3]) ^ 2)
+							end
+						end
+					end
+					last = at
+				end)
+				-- (all the balls of the feet move on the ground over the leap: the review measured a stud)
+				if DEBUG then
+					print(string.format("%s.pounce slide %.4f L", id, slide / L))
+				end
+				T.expect({ id, slide < 0.04 * L }).toEqual({ id, true })
+			end
+		end
+	)
+
 	T.it("a planted foot stays put in the world while the root turns under it", function()
 		local L = SKEL.legLength
 		local yaw = 0

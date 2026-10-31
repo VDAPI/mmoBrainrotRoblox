@@ -6208,9 +6208,17 @@ ZA.hew = mocap(ZA.hew, { name = "greatSlash", upper = true, low = 3.5, out = 0.4
 ZA.cleave = mocap(ZA.cleave, { name = "greatSpin", upper = true, low = 3.5 }, 0.2, 0.3, 0.38)
 ZA.roar = mocap(ZA.roar, { name = "battlecry", upper = true }, 0.2, 1.0, 0.7)
 -- Hrimvald's fists: the hook and the backfist the mutant's swipe (mirrored for the right hand) swept low along the
--- ground; his roar.
-HA.fist = mocap(HA.fist, { name = "mutantSwipe", mirror = true, upper = true, low = 1.5, hit = 1.35 }, 0.36, 0.4, 0.6)
-HA.backfist = mocap(HA.backfist, { name = "mutantSwipe", upper = true, low = 1.5, hit = 1.35 }, 0.36, 0.4, 0.6)
+-- ground, coming down where a player stands as he stops for the blow (his reach, 7 + half his root's depth, x
+-- meleeApproach: about 8 studs ahead of the root at his clone's scale, 0.3 leg lengths); his roar.
+HA.fist = mocap(
+	HA.fist,
+	{ name = "mutantSwipe", mirror = true, upper = true, low = 1.5, ahead = 0.3, hit = 1.35 },
+	0.36,
+	0.4,
+	0.6
+)
+HA.backfist =
+	mocap(HA.backfist, { name = "mutantSwipe", upper = true, low = 1.5, ahead = 0.3, hit = 1.35 }, 0.36, 0.4, 0.6)
 HA.roar = mocap(HA.roar, { name = "battlecry", upper = true }, 0.2, 1.0, 0.7)
 -- Morvane's bolt from the sceptre and from the free hand: the one-handed cast, her body above the waist (she floats).
 MA.bolt = mocap(MA.bolt, { name = "magic1h", upper = true }, 0.3, 0.4, 0.6)
