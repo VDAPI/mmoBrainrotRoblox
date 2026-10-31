@@ -44,10 +44,11 @@ export type Gait = {
 	headSway: number?,
 	drop: number?,
 	-- the dragon (studio review 2026-10-31): the shoulders carried lower than the hips by a nose-down pitch (`stoop`,
-	-- rad) so the long fore legs are not straight at the ends of the stride, and the swing's lift eased in over the
-	-- first `liftIn` of the swing (no snap of the leg as the foot leaves the ground)
+	-- rad) so the long fore legs are not straight at the ends of the stride, and a swing that keeps the foot on its
+	-- print as it leaves and lands (`onPrint`: its ground speed 0 at the lift-off and the touchdown, the lift rising
+	-- and falling gently; a real spawn's run skimmed the ground a stud each step)
 	stoop: number?,
-	liftIn: number?,
+	onPrint: boolean?,
 	levelIn: number?, -- the share of the swing the paw takes to level before the touchdown (0.4)
 }
 -- A dragon's wings (Logic/DragonMotion, 2026-10-31): the procedural fold (`fold`: the elbow and wrist folds and the
@@ -4247,14 +4248,14 @@ local DRAGON: Style = {
 			tail = 0,
 			tailSway = deg(4),
 			plant = true,
-			lift = 0.1,
-			liftFront = 0.13,
+			lift = 0.15,
+			liftFront = 0.15,
 			level = 0.8,
 			rollPivot = 0.25,
 			headSway = deg(-3),
 			drop = 0.05,
 			stoop = 0.1,
-			liftIn = 0.5,
+			onPrint = true,
 			levelIn = 0.6,
 		},
 		trot = {
@@ -4283,14 +4284,14 @@ local DRAGON: Style = {
 			headSway = deg(-2),
 			drop = 0.05,
 			stoop = 0.1,
-			liftIn = 0.5,
+			onPrint = true,
 			levelIn = 0.6,
 		},
 		-- a heavy bound: the hind feet together, then the fore feet; the wings half open beat down as the fore feet
 		-- push it up into the gathered flight (Data/QuadStyles Wings `pump`)
 		gallop = {
 			foot = { HL = 0, HR = 0.05, FL = 0.45, FR = 0.5 },
-			duty = 0.35,
+			duty = 0.3,
 			dutyFront = 0.28,
 			k = 2.8,
 			foldStance = deg(8),
@@ -4307,12 +4308,12 @@ local DRAGON: Style = {
 			tail = deg(6),
 			tailSway = deg(3),
 			plant = true,
-			lift = 0.24,
+			lift = 0.2,
 			liftFront = 0.3,
 			level = 0.4,
 			drop = 0.05,
 			stoop = 0.1,
-			liftIn = 0.5,
+			onPrint = true,
 			levelIn = 0.6,
 		},
 	},

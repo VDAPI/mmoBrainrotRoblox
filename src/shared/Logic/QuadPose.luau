@@ -18,7 +18,8 @@
 --   feet  <leg>k 0..1 puts the foot on a target instead (planted feet): <leg>y <leg>z the target from the foot's rest
 --         point in leg lengths (model frame, + up, + back); the leg's swing and fold are solved for it in the plane of
 --         the leg (a two-parameter IK over the map's joint shares), so a body that bobs, pitches or rears does not move
---         a planted foot
+--         a planted foot; <leg>x moves the target to the side (+ right: a rig with `steady` feet swings the leg out
+--         about its top joint for it, e.g. the dragon's feet kept on their prints while the body turns)
 --   wings (a dragon's, 2026-10-31; the controls of Logic/FlyerPose) w<S>e elevation (+ up), w<S>s sweep (+ forward),
 --         w<S>t twist (+ leading edge up), w<S>f elbow fold (the wrist toward the leading edge), w<S>h wrist fold (the
 --         fingers back), w<S>b w<S>w w<S>p the forearm, the hand and the fingers bent up, w<S>q the hand's twist;
@@ -39,6 +40,7 @@ local LEVEL = { FL = "FLl", FR = "FRl", HL = "HLl", HR = "HRl" }
 local PLANT = { FL = "FLk", FR = "FRk", HL = "HLk", HR = "HRk" }
 local TARGET_Y = { FL = "FLy", FR = "FRy", HL = "HLy", HR = "HRy" }
 local TARGET_Z = { FL = "FLz", FR = "FRz", HL = "HLz", HR = "HRz" }
+local TARGET_X = { FL = "FLx", FR = "FRx", HL = "HLx", HR = "HRx" }
 
 type Vec = { number }
 type Mat = { number }
@@ -524,7 +526,7 @@ function QuadPose.world(skel: Skeleton, controls: Controls): ({ [string]: Mat },
 			local hip = jointAt(name)
 			local foot = chain.foot
 			local target = {
-				foot[1] - hip[1],
+				foot[1] + c(controls, TARGET_X[side]) * L - hip[1],
 				foot[2] + c(controls, TARGET_Y[side]) * L - hip[2],
 				foot[3] + c(controls, TARGET_Z[side]) * L - hip[3],
 			}

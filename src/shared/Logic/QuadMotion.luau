@@ -158,10 +158,28 @@ local function smooth(x: number): number
 	return t * t * (3 - 2 * t)
 end
 
+-- The share of a swing's ground covered at `q` (0..1): the foot starts and stops at rest, its speed eased up over the
+-- first quarter and down over the last (the integral of that speed, so the swing's peak speed is only 4/3 of its mean).
+local function swingShare(q: number): number
+	local a = 0.25
+	local x = math.clamp(q, 0, 1)
+	local w
+	if x < a then
+		local u = x / a
+		w = a * (u * u * u - u * u * u * u / 2)
+	elseif x <= 1 - a then
+		w = a / 2 + (x - a)
+	else
+		local u = (1 - x) / a
+		w = (1 - a) - a * (u * u * u - u * u * u * u / 2)
+	end
+	return w / (1 - a)
+end
+
 -- Control names per leg (no string building per frame).
-local LEG_KEYS: { [string]: { k: string, y: string, z: string, l: string } } = {}
+local LEG_KEYS: { [string]: { k: string, x: string, y: string, z: string, l: string } } = {}
 for _, leg in { "FL", "FR", "HL", "HR" } do
-	LEG_KEYS[leg] = { k = leg .. "k", y = leg .. "y", z = leg .. "z", l = leg .. "l" }
+	LEG_KEYS[leg] = { k = leg .. "k", x = leg .. "x", y = leg .. "y", z = leg .. "z", l = leg .. "l" }
 end
 -- A gait forced by an action, as weights.
 local FORCED: { [string]: { [string]: number } } = {
@@ -187,11 +205,15 @@ end
 
 -- One gait's controls at `phase` (0..1).
 -- `center`: per leg, where its stance is centred (leg lengths behind the foot's rest point: under the hip or shoulder).
+-- `turn`: the body's yaw over one cycle (radians, + to the left), which an `onPrint` gait's planted feet turn against
+-- about the root (`skel`: their rest points), so they stay on their prints while the body steers.
 local function gaitControls(
 	style: QuadStyles.Style,
 	name: string,
 	phase: number,
-	center: { [string]: number }
+	center: { [string]: number },
+	turn: number,
+	skel: QuadPose.Skeleton
 ): Controls
 	local g = style.gaits[name]
 	local out: Controls = {}
@@ -248,18 +270,36 @@ local function gaitControls(
 					out[keys.y], out[keys.z] = 0, c0 - D / 2 + D * s
 				else
 					local lift = if front then (g.liftFront or g.lift or 0.12) else (g.lift or 0.12)
-					-- Hermite from the lift-off point to the touchdown point, leaving and landing with part of the
-					-- stance's speed
-					local m = D * math.min((1 - duty) / duty, 1) * 0.6
-					local q2, q3 = q * q, q * q * q
-					local z = (2 * q3 - 3 * q2 + 1) * (D / 2)
-						+ (q3 - 2 * q2 + q) * m
-						+ (-2 * q3 + 3 * q2) * (-D / 2)
-						+ (q3 - q2) * m
-					local ease = if g.liftIn then smooth(q / g.liftIn) else 1
-					out[keys.y], out[keys.z] = lift * math.sin(math.pi * q ^ 0.76) * ease, c0 + z
+					if g.onPrint then
+						-- on the ground the foot keeps still while the body goes on (R: the body's travel over the
+						-- swing), so it lifts and lands without skimming; between, it overtakes the body by the whole
+						-- stride (D + R)
+						local R = D * (1 - duty) / duty
+						local z = D / 2 + R * q - (D + R) * swingShare(q)
+						out[keys.y], out[keys.z] = lift * math.sin(math.pi * q), c0 + z
+					else
+						-- Hermite from the lift-off point to the touchdown point, leaving and landing with part of
+						-- the stance's speed
+						local m = D * math.min((1 - duty) / duty, 1) * 0.6
+						local q2, q3 = q * q, q * q * q
+						local z = (2 * q3 - 3 * q2 + 1) * (D / 2)
+							+ (q3 - 2 * q2 + q) * m
+							+ (-2 * q3 + 3 * q2) * (-D / 2)
+							+ (q3 - q2) * m
+						out[keys.y], out[keys.z] = lift * math.sin(math.pi * q ^ 0.76), c0 + z
+					end
 				end
 				out[keys.k] = 1
+				if g.onPrint and turn ~= 0 then
+					-- the yaw since mid-stance (the feet land turned ahead into the turn, leave turned behind it):
+					-- a point on the ground turns by -yaw about the root in the body's frame
+					local yaw = turn * duty * (if stance then s - 0.5 else 0.5 - swingShare(q))
+					local foot = skel.chains[leg].foot
+					local L = skel.L
+					local fx, fz = foot[1] / L, foot[3] / L + out[keys.z]
+					out[keys.x] = -fz * yaw
+					out[keys.z] += fx * yaw
+				end
 			end
 			if g.level then
 				local into = g.levelIn or 0.4
@@ -340,12 +380,15 @@ local function locomotion(inst: Instance, input: Input, forced: string?, extra: 
 	-- planted feet: the stride shrinks with `move` (slow steps are short ones), so the cadence makes up for it and the
 	-- foot in stance still goes back at the ground speed
 	local stride = if inst.planted then math.max(inst.move, 0.5) else 1
-	inst.phase = (inst.phase + dt * ground / math.max(0.2, k * L * stride)) % 1
+	local cadence = ground / math.max(0.2, k * L * stride)
+	inst.phase = (inst.phase + dt * cadence) % 1
+	-- the yaw over a cycle while it runs on (a chase steers; a turn on the spot keeps its own steps)
+	local turn = if moving and cadence > 0.05 then math.clamp(input.yawRate / cadence, -1.2, 1.2) else 0
 	local out: Controls = {}
 	if inst.move > 0.005 then
 		for name, w in inst.weights do
 			if w > 0.005 then
-				addAll(out, gaitControls(style, name, inst.phase, inst.center), w * inst.move)
+				addAll(out, gaitControls(style, name, inst.phase, inst.center, turn, inst.skel), w * inst.move)
 			end
 		end
 	end
@@ -642,7 +685,7 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 			local legW = if action.full then w else w * (1 - inst.move)
 			local blended = lerpControls(controls, keyed, w)
 			for key, v in keyed do
-				local leg = string.match(key, "^[FH][LR][ufpolkyz]$")
+				local leg = string.match(key, "^[FH][LR][ufpolkxyz]$")
 				if leg then
 					blended[key] = (controls[key] or 0) + (v - (controls[key] or 0)) * legW
 				end
@@ -651,7 +694,7 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 				-- the gait's legs and planted feet leave with the legs' weight, not the whole action's (a charge
 				-- gallops under its keyed head and body)
 				for key, v in controls do
-					if keyed[key] == nil and string.match(key, "^[FH][LR][ufpolkyz]$") then
+					if keyed[key] == nil and string.match(key, "^[FH][LR][ufpolkxyz]$") then
 						blended[key] = v * (1 - legW)
 					end
 				end
