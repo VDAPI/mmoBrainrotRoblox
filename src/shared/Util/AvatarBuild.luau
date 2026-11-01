@@ -81,7 +81,8 @@ end
 -- no animations.
 function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDescription?): HumanoidDescription
 	local desc: any = if base and spec.mode == "avatar" then base:Clone() else Instance.new("HumanoidDescription")
-	local scales: { [string]: number } = BodyLooks.scales :: any
+	local style = BodyLooks.current() -- Studio test 2026-11-01 (Data/BodyLooks.styles)
+	local scales: { [string]: number } = style.scales :: any
 	if spec.mode == "avatar" and base then
 		scales = CharacterLook.clampScales({
 			height = base.HeightScale,
@@ -92,7 +93,7 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 			proportion = base.ProportionScale,
 		})
 		scales = table.clone(scales)
-		scales.height *= BodyLooks.scales.height
+		scales.height *= style.scales.height
 	end
 	desc.HeightScale = scales.height
 	desc.WidthScale = scales.width * spec.build.width
@@ -101,9 +102,9 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 	desc.BodyTypeScale = scales.bodyType
 	desc.ProportionScale = scales.proportion
 	for _, field in BODY_FIELDS do
-		desc[field] = BodyLooks.parts[field] or 0
+		desc[field] = if style.blocky then 0 else BodyLooks.parts[field] or 0
 	end
-	if spec.mode == "class" and spec.face then
+	if spec.mode == "class" and spec.face and not style.blocky then
 		desc.Head = spec.face.head -- W10: the face is a dynamic head
 	end
 	for _, field in ANIMATIONS do
@@ -114,7 +115,8 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 		for _, field in COLOR_FIELDS do
 			desc[field] = skin
 		end
-		desc.Face = 0 -- a dynamic head draws its own face (a face decal would not show on it)
+		-- a dynamic head draws its own face (a face decal would not show on it); a block head wears the style's decal
+		desc.Face = style.face
 		desc.Shirt = spec.shirt
 		desc.Pants = spec.pants
 		desc.GraphicTShirt = 0
@@ -124,7 +126,7 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 		pcall(function()
 			-- layered clothing of a copied description never in the class look; the face's brows and lashes (W10)
 			local list = {}
-			local face = spec.face
+			local face = if style.blocky then nil else spec.face
 			if face and face.browsId ~= 0 then
 				table.insert(
 					list,
@@ -1086,8 +1088,9 @@ end
 -- the procedural garment for them.
 function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec, preview: boolean?)
 	AvatarBuild.clearProcedural(model)
+	local blocky = BodyLooks.current().blocky -- Studio test 2026-11-01: a block head keeps its decal face
 	if preview == true and spec.mode == "class" then
-		if spec.face then
+		if spec.face and not blocky then
 			swapHead(model, spec.face.id)
 		end
 		scaleBuild(model, spec.build)
@@ -1174,11 +1177,11 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 	local head = ctx.head
 	if face and head then
 		for _, child in head:GetChildren() do
-			if child:IsA("Decal") and child.Name == "face" then
+			if child:IsA("Decal") and child.Name == "face" and not blocky then
 				park(model, child)
 			end
 		end
-		if preview == true then
+		if preview == true and not blocky then
 			for _, child in model:GetChildren() do
 				if child:IsA("Accessory") and FACE_ACCESSORY[child.Name] then
 					park(model, child)

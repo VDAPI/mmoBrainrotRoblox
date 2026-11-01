@@ -216,7 +216,7 @@ local function specOf(player: Player, char: Types.CharacterData?): CharacterLook
 end
 
 local function keyOf(spec: CharacterLook.LookSpec): string
-	return `{spec.mode}|{spec.catalogKey}`
+	return `{spec.mode}|{spec.catalogKey}|{BodyLooks.current().id}` -- the body style: Studio test 2026-11-01
 end
 
 -- S132: the description of the active character (fetches the avatar's first when the switch is on; may yield).
@@ -743,6 +743,10 @@ local function buildMannequin()
 		humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	end
 	mannequin:PivotTo(CFrame.new())
+	local old = ReplicatedStorage:FindFirstChild(AvatarBuild.MANNEQUIN)
+	if old then
+		old:Destroy()
+	end
 	mannequin.Parent = ReplicatedStorage
 end
 
@@ -802,6 +806,13 @@ function CosmeticService.Start()
 	end)
 	task.spawn(loadLookParts)
 	task.spawn(buildMannequin)
+	-- Studio test 2026-11-01 (Data/BodyLooks.styles): a body style set during Play dresses the mannequin and everybody again
+	ReplicatedStorage:GetAttributeChangedSignal(BodyLooks.STYLE_ATTRIBUTE):Connect(function()
+		task.spawn(buildMannequin)
+		for _, player in Players:GetPlayers() do
+			task.spawn(pcall, CosmeticService.RefreshAppearance, player)
+		end
+	end)
 	Players.PlayerRemoving:Connect(function(player)
 		removePet(player)
 		local watch = modelWatch[player]
