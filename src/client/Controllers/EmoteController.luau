@@ -1,7 +1,9 @@
 --!strict
 -- Emotes (S123, DESIGN-17 §4), client side. Every client watches the attribute Emote = "<emoteId>:<n>" on the models
 -- of all players (EmoteService sets it) and plays the motion (AnimationController.Emote); a cleared attribute stops it.
--- A looping emote ends when its character moves or jumps (the root's horizontal speed, the same on every client);
+-- A looping emote ends when its character moves or jumps (the root's speed, Logic/EmoteClip.moving, the same on every
+-- client); so does an emote playing a clip (2026-11-01: Roblox's R15 wave, point, cheer), whose tracks every
+-- character loads ahead (AnimationController.WarmEmotes);
 -- a new value of the attribute plays again even for the same emote (the counter n); a value present when a model is
 -- first seen plays nothing (it may be long over). The emote wheel
 -- (UI/Screens/EmoteWheel) opens with the key of Data/Keybinds "emote_wheel" (T) and the HUD button (Toggle); a
@@ -13,6 +15,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
+local EmoteClip = require(ReplicatedStorage.Shared.Logic.EmoteClip)
 local Emotes = require(ReplicatedStorage.Shared.Data.Emotes)
 local EmoteWheel = require(script.Parent.Parent.UI.Screens.EmoteWheel)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -29,7 +32,6 @@ local EmoteController = {
 }
 
 local ATTRIBUTE = "Emote"
-local MOVE_SPEED = 2 -- studs/s of the root, horizontally: the character walks
 local CHECK_EVERY = 0.1
 
 local UIController: any
@@ -88,6 +90,7 @@ local function watch(model: Model)
 	watched[model] = model:GetAttributeChangedSignal(ATTRIBUTE):Connect(function()
 		onAttribute(model)
 	end)
+	AnimationController.WarmEmotes(model)
 	model.Destroying:Connect(function()
 		local connection = watched[model]
 		watched[model] = nil
@@ -112,7 +115,7 @@ local function onPlayer(player: Player)
 	player.CharacterAdded:Connect(watch)
 end
 
--- A looping emote ends when its character walks away; a finished one is forgotten.
+-- A looping emote (and an emote clip) ends when its character walks away; a finished one is forgotten.
 local function checkMoving()
 	for model in playing do
 		if not AnimationController.IsEmoting(model) then
@@ -122,7 +125,7 @@ local function checkMoving()
 		local root = model:FindFirstChild("HumanoidRootPart")
 		if root and root:IsA("BasePart") then
 			local v = root.AssemblyLinearVelocity
-			if Vector3.new(v.X, 0, v.Z).Magnitude > MOVE_SPEED or math.abs(v.Y) > 8 then
+			if EmoteClip.moving(v.X, v.Y, v.Z) then
 				playing[model] = nil
 				AnimationController.EndEmote(model)
 			end

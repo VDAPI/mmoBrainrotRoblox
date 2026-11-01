@@ -49,6 +49,10 @@
 
 ## Niedokończone (kod)
 
+- **Gesty na animacjach Roblox (2026-11-01):** Pozdrowienie, Wskazanie i Wiwat grają klipy R15 Roblox
+  (`Data/Emotes` `clip`, `Logic/EmoteClip`, `CharacterClips.gesture`, `tests/emoteclip.spec`); nieobejrzane w Studio
+  (czy klipy się wczytują, czy płynnie wchodzą i schodzą, czy ruch, atak i umiejętność je przerywają, czy inny gracz
+  widzi ten sam klip, wygląd na postaci z blokowym ciałem).
 - **Szczęka Vaelgratha (2026-11-01):** kość `MeshJaw` dodawana w EditableMesh (`client/Anim/MeshJaw`,
   `Logic/JawHinge`, `Data/BipedRigs.jaw`); nieobejrzane w Studio (czy silnik doda kość do importowanej siatki ze
   skórą, zawias i kąt zamknięcia na prawdziwym pysku, kolec pod brodą, tekstura, `/animlab mob vaelgrath roar`).

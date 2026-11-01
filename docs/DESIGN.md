@@ -1520,6 +1520,12 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   na wierzchowcu ani w trakcie umiejętności; ruch kończy gest), efekt awansu (pięć stylów, widzą go wszyscy w pobliżu),
   barwnik (zmienia kolory założonego stroju; bez stroju nic). Garderoba ma zakładki dwupoziomowe: Wygląd, Towarzysze,
   Wyróżnienia, Gesty i efekty.
+- **Gesty na animacjach Roblox (2026-11-01):** Pozdrowienie, Wskazanie i Wiwat grają animacje R15 samego Roblox (te
+  z domyślnego skryptu Animate: wave, point, cheer; `Data/Emotes` `clip`, `Logic/EmoteClip`). Każdy klient wczytuje
+  je z wyprzedzeniem na postaciach graczy i gra na Animatorze postaci, a ruch z kodu w tym czasie nie rusza stawów.
+  Taki gest kończy się sam albo wcześniej, gdy postać ruszy, zaatakuje lub rzuci umiejętność. Gdy postać idzie, klip
+  jeszcze się nie wczytał albo nie wczyta się wcale, gra ruch z kodu, bez komunikatu. Pozostałe gesty zostają z kodu:
+  Roblox nie ma do nich pasujących animacji. Śmiechu i tańców z Roblox gra nie ma, bo nie pasują do jej poważnego tonu.
 - **Oferta tygodnia (S123):** zakładka „Kosmetyki” sklepu pokazuje cztery kosmetyki z puli `weekly`, jeden 30% taniej,
   z licznikiem do poniedziałku 00:00 UTC; ten sam wynik na każdym serwerze (`Logic/WeeklyOffer`, ziarno z numeru
   tygodnia), bez powtórek z poprzedniego tygodnia. Serwer liczy tę samą cenę i odmawia, gdy w oknie była inna.

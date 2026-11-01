@@ -1,8 +1,10 @@
 --!strict
 -- Emotes (S123, DESIGN-17 §4): procedural gestures in the format of Data/SkillMotions (Motion: keys, recover,
 -- loop?), played by AnimationController.Emote on every client. `aliases` are what "/e <alias>" accepts (ASCII,
--- lower case, unique across emotes). `loop` emotes hold until the character moves, attacks or casts. `clip` is a
--- reserved hook for an animation id (0 = procedural), same idea as the S113 attack clips.
+-- lower case, unique across emotes). `loop` emotes hold until the character moves, attacks or casts. `clip` (2026-11-01,
+-- Logic/EmoteClip) is an R15 animation id played instead of the motion when it loaded (nil / 0 = procedural); the
+-- motion stays the fallback. wave, point and cheer play Roblox's own R15 emotes of the default Animate script (owned
+-- by Roblox, so every experience may play them); the other emotes have no matching Roblox emote.
 -- Joint angles follow the header of Data/SkillMotions (degrees in the torso frame; root = { pitch, yaw, roll, lift }).
 -- An emote never has combat events (hit, release, land) nor `lock`: it does not hold the character in place.
 -- Cosmetics of kind "emote" point at these ids (Data/Cosmetics `emote`); one cosmetic per emote (tests/cosmetics2).
@@ -67,6 +69,7 @@ local list: { Emote } = {
 	{
 		-- A greeting with the raised right hand.
 		id = "wave",
+		clip = 507770239, -- Roblox's R15 "wave" (default Animate emote)
 		aliases = { "wave", "machaj" },
 		motion = {
 			keys = {
@@ -82,6 +85,7 @@ local list: { Emote } = {
 	{
 		-- Pointing the way with the right arm.
 		id = "point",
+		clip = 507770453, -- Roblox's R15 "point" (default Animate emote)
 		aliases = { "point", "wskaz" },
 		motion = {
 			keys = {
@@ -171,6 +175,7 @@ local list: { Emote } = {
 	{
 		-- A raised fist, twice (no sound).
 		id = "cheer",
+		clip = 507770677, -- Roblox's R15 "cheer" (default Animate emote)
 		aliases = { "cheer", "wiwat" },
 		motion = {
 			keys = {

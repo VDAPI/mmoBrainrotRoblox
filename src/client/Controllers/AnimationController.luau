@@ -33,6 +33,9 @@
 --     by plan over Config.MonsterLook.deathSeconds; a hit pushes the body away from the attacker (Gait.hitLean, bosses
 --     less). Real models keep their clips (S116 adds attack / roar clips); the new poses are the generator's.
 --   S123: emotes (Data/Emotes) play through the skill motion path with a lower priority (Emote, EndEmote, StopEmote).
+--     2026-11-01: an emote with a clip (Logic/EmoteClip: Roblox's R15 wave, point, cheer) plays its track on the
+--     Animator instead (CharacterClips.gesture, loaded ahead by WarmEmotes); the joints are left to it while it plays,
+--     and it ends when the character moves. Not loaded yet, failed, R6 or walking: the motion as before.
 --   S159a: a boss pattern's gesture (MonsterAttack opts: its own style, a held blow for a channel, the follow-through,
 --     a body turn with a breath or a spiral) and the roars (a style per phase, an intro roar at the first aggro) pose a
 --     model with bone clips procedurally too: the attack clip is held back and client/Anim/BoneOverlay turns its arm
@@ -73,6 +76,7 @@ local CharacterClips = require(script.Parent.Parent.Anim.CharacterClips)
 local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local EmoteClip = require(ReplicatedStorage.Shared.Logic.EmoteClip)
 local Emotes = require(ReplicatedStorage.Shared.Data.Emotes)
 local Gait = require(ReplicatedStorage.Shared.Logic.Gait)
 local SkillMotions = require(ReplicatedStorage.Shared.Data.SkillMotions)
@@ -1482,11 +1486,13 @@ type SkillPlay = {
 	frozenAt: number?,
 	clip: CharacterClips.Play?, -- S113: a real clip plays instead of the keys
 	emote: boolean?, -- S123: an emote (any attack or skill replaces it; it never replaces a skill)
+	fadeOut: number?, -- 2026-11-01: an emote clip's blend out (EmoteClip.plan)
 }
 
 local rigs: { [Model]: Rig } = {}
 local attacks: { [Model]: Attack } = {}
 local skills: { [Model]: SkillPlay } = {}
+local EMOTE_CLIPS = EmoteClip.ids() -- 2026-11-01: the emote clips' asset ids (Data/Emotes `clip`)
 local flinches: { [Model]: Flinch } = {}
 -- S113: the last basic attack of every character as its combo remembers it (each client counts what it sees).
 local combos: { [Model]: AttackPose.ComboState } = {}
@@ -1578,6 +1584,19 @@ local function holdClip(play: CharacterClips.Play, t: number?)
 	end
 end
 
+-- 2026-11-01: whether an emote's clip should blend out now: a short one its blend-out before the end of the track, a
+-- looping one at Emotes.MAX_SECONDS (the motion's loopUntil).
+local function emoteClipOver(play: SkillPlay, clip: CharacterClips.Play, now: number): boolean
+	local track = clip.track
+	if not track.IsPlaying then
+		return false
+	end
+	if track.Looped then
+		return play.loopUntil ~= nil and now - play.start >= play.loopUntil
+	end
+	return track.Length > 0 and track.TimePosition >= track.Length - (play.fadeOut or 0)
+end
+
 local function poseCharacter(model: Model, rig: Rig, now: number, ride: AttackPose.Pose?)
 	-- A skill motion owns its joints; the basic attack the rest of the arms (S28).
 	local skillPose: AttackPose.Pose? = nil
@@ -1592,7 +1611,11 @@ local function poseCharacter(model: Model, rig: Rig, now: number, ride: AttackPo
 			if hold then
 				holdClip(clip, hold)
 			end
-			if clip.track.IsPlaying then
+			if play.emote and not hold and emoteClipOver(play, clip, now) then
+				-- 2026-11-01: an emote clip blends out into the idle (nothing poses the joints meanwhile)
+				clip.stop(play.fadeOut)
+				skills[model] = nil
+			elseif clip.track.IsPlaying then
 				skillClip = true
 			elseif not hold then
 				skills[model] = nil
@@ -1808,6 +1831,9 @@ function AnimationController.Attack(
 	-- S123: an attack ends an emote (the joints go straight to the attack pose)
 	local gesture = skills[model]
 	if gesture and gesture.emote then
+		if gesture.clip then
+			gesture.clip.stop(0.08)
+		end
 		skills[model] = nil
 	end
 	local play: CharacterClips.Play? = nil
@@ -1933,6 +1959,8 @@ end
 -- S123: plays an emote (Data/Emotes) on a character through the skill motion path, with a lower priority: a running
 -- skill motion skips it (false), an attack or a skill replaces it. A looping emote holds for Emotes.MAX_SECONDS unless
 -- EndEmote ends it earlier (the character moved). Characters too far away do not animate (like skills).
+-- 2026-11-01: an emote with a clip (Logic/EmoteClip) plays the clip when its track has loaded on this character, the
+-- rig is R15, the character is near and stands still (EmoteClip.useClip); otherwise the motion, as before.
 function AnimationController.Emote(model: Model, emoteId: string): boolean
 	local emote = Emotes.get(emoteId)
 	if not emote or monsters[model] then
@@ -1946,23 +1974,50 @@ function AnimationController.Emote(model: Model, emoteId: string): boolean
 	if running and not running.emote then
 		return false
 	end
+	if running and running.clip then
+		running.clip.stop(0.1)
+	end
 	local attack = attacks[model]
 	if attack and attack.clip then
 		attack.clip.stop(0.08)
 	end
 	attacks[model] = nil
+	local plan = EmoteClip.plan(emote)
+	local play: CharacterClips.Play? = nil
+	if plan then
+		local root = model:FindFirstChild("HumanoidRootPart")
+		local v = if root and root:IsA("BasePart") then root.AssemblyLinearVelocity else Vector3.zero
+		if
+			EmoteClip.useClip(
+				plan,
+				{ r15 = not rig.r6, near = nearCamera(model), moving = EmoteClip.moving(v.X, v.Y, v.Z) }
+			)
+		then
+			play = CharacterClips.gesture(model, plan.id, Enum.AnimationPriority.Action, plan.looped, plan.fadeIn)
+		end
+	end
 	skills[model] = {
 		motion = emote.motion,
 		start = os.clock(),
 		loopUntil = if emote.motion.loop then Emotes.MAX_SECONDS else nil,
-		from = if running then running.pose elseif attack and not attack.clip then attack.pose else nil,
+		from = if running and not running.clip
+			then running.pose
+			elseif attack and not attack.clip then attack.pose
+			else nil,
 		pose = nil,
 		frozenUntil = 0,
 		frozenAt = nil,
-		clip = nil,
+		clip = play,
 		emote = true,
+		fadeOut = if play and plan then plan.fadeOut else nil,
 	}
 	return true
+end
+
+-- 2026-11-01: loads the emote clips' tracks on a character's Animator ahead of its first emote (EmoteController, for
+-- every player's character), so even the first one plays the clip.
+function AnimationController.WarmEmotes(model: Model)
+	CharacterClips.warm(model, EMOTE_CLIPS)
 end
 
 -- S123: whether `model` is playing an emote now.
@@ -1972,9 +2027,16 @@ function AnimationController.IsEmoting(model: Model): boolean
 end
 
 -- S123: a looping emote ends now (the motion runs out of its loop and recovers); a short one is left to finish.
+-- 2026-11-01: an emote clip blends out now, short or looping (Roblox's own emotes end when the character moves; the
+-- clip poses the whole body, the walk takes over).
 function AnimationController.EndEmote(model: Model)
 	local play = skills[model]
 	if play and play.emote then
+		if play.clip then
+			play.clip.stop(play.fadeOut)
+			skills[model] = nil
+			return
+		end
 		local loop = play.motion.loop
 		if loop then
 			play.loopUntil = math.max(os.clock() - play.start, loop.to)
@@ -2158,6 +2220,8 @@ function AnimationController.Start()
 		end
 	end
 	CharacterClips.preload(ClipFit.allIds(skillClips))
+	-- 2026-11-01: the emote clips (Roblox's R15 emotes; a failure falls back to the motion without a warning)
+	CharacterClips.preload(EMOTE_CLIPS, true)
 	MonsterView.Changed:Connect(function(model: Model)
 		if monsters[model] then
 			refresh(model)

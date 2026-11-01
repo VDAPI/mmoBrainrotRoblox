@@ -14491,3 +14491,19 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   szew tekstury). Nieobejrzane w Studio.
 - **Pliki:** `client/Anim/MeshJaw`, `client/Anim/BipedRig`, `client/Anim/MeshFold`, `Logic/JawHinge`, `Logic/LegFold`,
   `Data/BipedRigs`, `AnimationController`, `AnimLabController`, `tests/jawhinge.spec.luau`, `tests/JawHingeMesh.luau`.
+
+### Gesty na animacjach Roblox (2026-11-01)
+
+- `Data/Emotes`: `clip` dla Pozdrowienia (507770239), Wskazania (507770453) i Wiwatu (507770677), animacji R15 Roblox
+  z domyślnego skryptu Animate (ta sama seria co `Locomotion.fallback`; w repo i w `rbxdocs` tych ID wcześniej nie
+  było). Śmiechu i tańców nie ma: gra nie ma takich gestów, ton jest poważny.
+- `Logic/EmoteClip` (czyste): ID klipu gestu, plan (raz albo w pętli, płynne wejście i zejście), `moving`, `useClip`
+  (klip tylko na R15, blisko kamery, gdy postać stoi), lista ID do wczytania.
+- `CharacterClips.gesture` (klip na Animatorze bez znacznika, cichy przy błędzie) i `warm` (ścieżki wczytane z
+  wyprzedzeniem na każdej postaci gracza); `AnimationController.Emote` gra klip zamiast ruchu z kodu, `EndEmote`
+  wygasza go przy ruchu, atak i umiejętność go zatrzymują, gest w pętli kończy się po `Emotes.MAX_SECONDS`;
+  `EmoteController` wczytuje ścieżki każdej postaci (`WarmEmotes`) i liczy ruch przez `EmoteClip.moving`.
+- Test `emoteclip.spec`: które gesty mają klip i jakie ID, ID poprawne i inne niż lokomocji, ruch z kodu zostaje,
+  odczyt złych wartości, plan, lista ID, ruch postaci, wybór klipu albo ruchu z kodu.
+- **Pliki:** `Data/Emotes`, `Logic/EmoteClip`, `client/Anim/CharacterClips`, `AnimationController`,
+  `EmoteController`, `tests/emoteclip.spec.luau`, `docs/DESIGN.md` §22, `docs/ANIMACJE.md` §6.

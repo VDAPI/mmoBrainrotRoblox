@@ -7,6 +7,8 @@
 -- ClipFit.LOAD_SECONDS the id is marked failed with one warning, otherwise it plays from the next attack on.
 -- A clip played by a player's own client on their character also replicates to the others, who play it locally from
 -- the same event: on other characters a replicated track of a clip id we play is stopped (no double animation).
+-- 2026-11-01: gestures (emote clips, Logic/EmoteClip) play through `gesture` (no marker, no fitted speed); their
+-- tracks load ahead on every character (`warm`), and a failed one is quiet: the emote's motion takes over unseen.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +18,8 @@ local ClipFit = require(ReplicatedStorage.Shared.Logic.ClipFit)
 local Clock = require(script.Parent.Parent.Vfx.Clock)
 
 local CharacterClips = {}
+
+local WARM_WAIT = 10 -- seconds `warm` waits for a character's Humanoid and Animator
 
 export type Play = { track: AnimationTrack, speed: number, stop: (fade: number?) -> () }
 export type Status = "ok" | "loading" | "failed"
@@ -30,6 +34,7 @@ local markers: { [string]: number | false } = {}
 local measuring: { [string]: boolean } = {}
 local warnedFit: { [string]: boolean } = {}
 local localTracks: { [AnimationTrack]: boolean } = setmetatable({} :: any, { __mode = "k" })
+local quiet: { [string]: boolean } = {} -- gesture ids: a failure falls back without a warning
 
 local function animationOf(id: string): Animation
 	local animation = animations[id]
@@ -73,7 +78,9 @@ local function trackOf(animator: Animator, id: string): AnimationTrack?
 	if not ok or not track then
 		if not failed[id] then
 			failed[id] = true
-			warn(`[CharacterClips] clip {id} did not load ({tostring(track)}); the procedural pose stays`)
+			if not quiet[id] then
+				warn(`[CharacterClips] clip {id} did not load ({tostring(track)}); the procedural pose stays`)
+			end
 		end
 		return nil
 	end
@@ -99,9 +106,11 @@ local function watchLoad(id: string, track: AnimationTrack)
 			loaded[id] = true
 		else
 			failed[id] = true
-			warn(
-				`[CharacterClips] clip {id} did not load (no permission, moderation or a wrong id); the procedural pose stays`
-			)
+			if not quiet[id] then
+				warn(
+					`[CharacterClips] clip {id} did not load (no permission, moderation or a wrong id); the procedural pose stays`
+				)
+			end
 		end
 	end)
 end
@@ -238,11 +247,96 @@ function CharacterClips.play(
 	}
 end
 
--- At Start: Animation objects for every clip id in the data (AttackMotions, SkillMotions).
-function CharacterClips.preload(ids: { string })
+-- At Start: Animation objects for every clip id in the data (AttackMotions, SkillMotions; `gestures` for the emote
+-- clips, which fail quietly).
+function CharacterClips.preload(ids: { string }, gestures: boolean?)
 	for _, id in ids do
 		animationOf(id)
+		if gestures then
+			quiet[id] = true
+		end
 	end
+end
+
+-- 2026-11-01: plays a gesture clip (an emote, Logic/EmoteClip) on the character's Animator at `priority`, from its
+-- start, once or looped, blending in over `fadeIn` seconds. Returns nil (the caller plays the procedural motion) when:
+-- not R15, no Animator, a copy outside the Workspace, the id failed, or the track has not loaded yet (loading goes on;
+-- a later use plays it).
+function CharacterClips.gesture(
+	model: Model,
+	id: string,
+	priority: Enum.AnimationPriority,
+	looped: boolean,
+	fadeIn: number
+): Play?
+	quiet[id] = true
+	animationOf(id)
+	if failed[id] or not model:IsDescendantOf(Workspace) then
+		return nil
+	end
+	local animator = animatorOf(model)
+	if not animator then
+		return nil
+	end
+	watchDuplicates(animator, model)
+	local track = trackOf(animator, id)
+	if not track then
+		return nil
+	end
+	if track.Length <= 0 then
+		watchLoad(id, track)
+		return nil
+	end
+	loaded[id] = true
+	track.Priority = priority
+	track.Looped = looped
+	if track.IsPlaying then
+		track:Stop(0)
+	end
+	track:Play(fadeIn, 1, 1)
+	return {
+		track = track,
+		speed = 1,
+		stop = function(fade: number?)
+			if track.IsPlaying then
+				track:Stop(fade or 0.1)
+			end
+		end,
+	}
+end
+
+-- 2026-11-01: loads the tracks of gesture `ids` on a character's Animator ahead of their first use, so its first emote
+-- already plays the clip (an id that fails is quiet, like `gesture`). Waits for the Humanoid and its Animator in the
+-- background (a character just added may not have them yet).
+function CharacterClips.warm(model: Model, ids: { string })
+	if #ids == 0 then
+		return
+	end
+	task.spawn(function()
+		local humanoid = model:WaitForChild("Humanoid", WARM_WAIT)
+		if not humanoid or not humanoid:IsA("Humanoid") then
+			return
+		end
+		humanoid:WaitForChild("Animator", WARM_WAIT)
+		if not model:IsDescendantOf(Workspace) then
+			return
+		end
+		local animator = animatorOf(model)
+		if not animator then
+			return
+		end
+		watchDuplicates(animator, model)
+		for _, id in ids do
+			quiet[id] = true
+			animationOf(id)
+			if not failed[id] then
+				local track = trackOf(animator, id)
+				if track and track.Length <= 0 then
+					watchLoad(id, track)
+				end
+			end
+		end
+	end)
 end
 
 function CharacterClips.failed(id: string): boolean
