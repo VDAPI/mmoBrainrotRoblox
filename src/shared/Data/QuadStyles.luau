@@ -97,6 +97,9 @@ export type Style = {
 	-- (the dragon, 2026-10-31) the ground speed (leg lengths a second) from which it steps (default 0.3): below it the
 	-- planted feet stand still while the root moves on, a glide; a creep as slow as this still walks, short and slow
 	stepFrom: number?,
+	-- (the dragon, 2026-10-31) the feet the pose holds on the ground stay where they came down in the world, whatever
+	-- the root does (Logic/QuadMotion: the root's place from the client, the pace from its own travel)
+	pinFeet: boolean?,
 	stun: { [string]: number }?,
 	labExtra: { string }?,
 }
@@ -4038,10 +4041,11 @@ local function dragonRear(rise: number, pitch: number, flaps: number, rake: bool
 end
 
 -- The tail's whip (a regular blow): the spine and the tail wind the other way over the planted feet, it springs off
--- them and spins 125 degrees in the air with the tail swinging through the target on the hit, lands, and hops back
+-- them and spins some 115 degrees in the air with the tail swinging through the target on the hit, lands, and hops back
 -- round onto its feet (studio review 2026-10-31: the body turns only while the feet are off the ground, so they never
--- slide; the spin stays a whip).
-local TAIL_SPIN = deg(125)
+-- slide; studio check 2026-10-31: the body spun 23 degrees a frame, so the spin is spread evenly over the whole flight,
+-- under 12 a frame, and the tail does the whip).
+local TAIL_SPIN = deg(108)
 local function tailHop(yaw: number, by: number, tuck: number, extra: { [string]: number }): { [string]: number }
 	return merge({
 		by = by,
@@ -4109,18 +4113,18 @@ local DRAGON_TAIL: MotionTimeline.Action = {
 			seg = "S",
 			u = 0.65,
 			ease = "in",
-			pose = tailHop(deg(58), 0.19, 30, { syaw = deg(8), tyaw = deg(-30), nyaw = deg(-12), wo = 0.6, we = 0.25 }),
+			pose = tailHop(deg(26), 0.19, 30, { syaw = deg(8), tyaw = deg(-30), nyaw = deg(-12), wo = 0.6, we = 0.25 }),
 		},
 		-- the hit, still in the air: the tail's tip sweeps through the front
 		{
 			seg = "S",
 			u = 1,
-			ease = "out",
-			pose = tailHop(TAIL_SPIN, 0.11, 24, {
+			ease = "lin",
+			pose = tailHop(deg(86), 0.11, 24, {
 				syaw = deg(14),
-				tyaw = deg(70),
-				tY5 = deg(10),
-				tY6 = deg(14),
+				tyaw = deg(95),
+				tY5 = deg(20),
+				tY6 = deg(26),
 				tpitch = deg(14),
 				nyaw = deg(-28),
 				hyaw = deg(-18),
@@ -4133,7 +4137,7 @@ local DRAGON_TAIL: MotionTimeline.Action = {
 			seg = "F",
 			u = 0.3,
 			ease = "out",
-			pose = tailHop(TAIL_SPIN + deg(6), -0.06, 18, {
+			pose = tailHop(TAIL_SPIN + deg(6), -0.04, 18, {
 				HLf = deg(6),
 				HRf = deg(6),
 				syaw = deg(6),
@@ -4321,6 +4325,8 @@ local DRAGON: Style = {
 	serverGait = true,
 	-- (a real spawn, 2026-10-31: the wander's slow stretches glided on planted feet) it steps at any crawl
 	stepFrom = 0.08,
+	-- (a real spawn's melee chase: the server's hops slid the feet up to 1.5 studs) the feet pinned in the world
+	pinFeet = true,
 	tailBones = 6,
 	wings = {
 		-- folded and carried high (owner 2026-10-31: "te skrzydła takie opadnięte są"): the humerus back and up from
@@ -4630,8 +4636,8 @@ local DRAGON: Style = {
 						FRy = 0.62,
 						FLz = -0.25,
 						FRz = -0.25,
-						HLy = 0.58,
-						HRy = 0.58,
+						HLy = 0.9,
+						HRy = 0.9,
 						HLz = 0.12,
 						HRz = 0.12,
 						npitch = deg(6),
@@ -4655,8 +4661,8 @@ local DRAGON: Style = {
 						FRy = 0.62,
 						FLz = -0.32,
 						FRz = -0.32,
-						HLy = 0.6,
-						HRy = 0.6,
+						HLy = 0.95,
+						HRy = 0.95,
 						HLz = 0.05,
 						HRz = 0.05,
 						npitch = deg(10),
@@ -4664,7 +4670,7 @@ local DRAGON: Style = {
 						wo = 2,
 						flap = 0.3,
 						beat = 0.3,
-						travel = 0.66,
+						travel = 0.7,
 						arc = 0.95,
 					}),
 				},
@@ -4680,16 +4686,42 @@ local DRAGON: Style = {
 						FRz = -0.3,
 						FLy = 0.2,
 						FRy = 0.2,
-						HLy = 0.18,
-						HRy = 0.18,
+						HLy = 0.3,
+						HRy = 0.3,
 						npitch = deg(16),
 						hpitch = deg(-6),
 						wo = 1.9,
 						we = 0.6,
 						ws = 0.3,
 						beat = 0.3,
-						travel = 0.95,
+						travel = 0.9,
 						arc = 0.3,
+					}),
+				},
+				-- (a real spawn, 2026-10-31: a long pounce's hind feet touched down while the flight still carried
+				-- the body on, a skid of half a stud at 45 studs) the flight is over before the feet are down: the last
+				-- of it eases out above the spots, and they drop straight onto them
+				{
+					seg = "S",
+					u = 0.88,
+					ease = "out",
+					pose = ds({
+						by = -0.04,
+						bpitch = deg(-5),
+						FLz = -0.3,
+						FRz = -0.3,
+						FLy = 0.08,
+						FRy = 0.08,
+						HLy = 0.1,
+						HRy = 0.1,
+						npitch = deg(19),
+						hpitch = deg(-7),
+						wo = 1.9,
+						we = 0.57,
+						ws = 0.33,
+						beat = 0.3,
+						travel = 1,
+						arc = 0.1,
 					}),
 				},
 				-- down: the jaws at the target, the feet on the ground, the body sinking on into the legs

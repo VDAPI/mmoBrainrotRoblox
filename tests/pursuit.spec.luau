@@ -16,6 +16,7 @@ local function situation(over: { [string]: any }?): Pursuit.Situation
 		asked = false,
 		pending = false,
 		noPath = false,
+		failStreak = 0,
 		mayEvade = true,
 	}
 	for key, value in over or {} do
@@ -57,6 +58,7 @@ local function run(
 			asked = askedAt ~= nil and askedAt > progressAt,
 			pending = pending,
 			noPath = failedAt ~= nil and failedAt > progressAt,
+			failStreak = 0,
 			mayEvade = true,
 		}, cfg)
 		if action == "repath" and repathAt == nil then
@@ -187,9 +189,10 @@ T.describe("Pursuit (S162e)", function()
 	end)
 
 	T.it("rounds a body up to a few agent sizes", function()
+		-- a small body gets Roblox's default agent (2 x 5): no navmesh of its own to build (Studio 2026-10-31)
 		local radius, height = Pursuit.agent(1.5, 1.8, 1, 1.9)
-		T.expect(radius).toBe(1.5)
-		T.expect(height).toBe(4)
+		T.expect(radius).toBe(2)
+		T.expect(height).toBe(5)
 		radius, height = Pursuit.agent(4, 3, 6, 4.5)
 		T.expect(radius).toBe(4)
 		T.expect(height).toBe(9)
@@ -202,5 +205,59 @@ T.describe("Pursuit (S162e)", function()
 		T.expect(Pursuit.stepHeight(0.1)).toBe(Pursuit.STEP_MIN)
 		T.expect(Pursuit.stepHeight(2)).toBeNear(1.6)
 		T.expect(Pursuit.stepHeight(4.5) < 4.5).toBe(true)
+	end)
+
+	-- Studio test 2026-10-31: a wolf under a target on a 34 studs high block counted as in reach (flat distance 4), never
+	-- gave up and its blows landed through the air
+	T.it("a melee blow reaches only so high: roofs, rocks and ledges 3+ studs up are out of a wolf's reach", function()
+		local wolf = 3.5 -- feet to the top of its root
+		T.expect(Pursuit.meleeReaches(0, wolf, cfg)).toBe(true)
+		T.expect(Pursuit.meleeReaches(cfg.meleeUp - 0.1, wolf, cfg)).toBe(true)
+		T.expect(Pursuit.meleeReaches(3, wolf, cfg)).toBe(false)
+		T.expect(Pursuit.meleeReaches(6, wolf, cfg)).toBe(false)
+		T.expect(Pursuit.meleeReaches(34, wolf, cfg)).toBe(false)
+		-- below it: a short drop is fine, a cliff is not
+		T.expect(Pursuit.meleeReaches(-cfg.meleeDown + 0.1, wolf, cfg)).toBe(true)
+		T.expect(Pursuit.meleeReaches(-cfg.meleeDown - 1, wolf, cfg)).toBe(false)
+		-- a tall body reaches half its height up
+		T.expect(Pursuit.meleeReaches(5, 12, cfg)).toBe(true)
+		T.expect(Pursuit.meleeReaches(7, 12, cfg)).toBe(false)
+		T.expect(cfg.meleeUp < 3).toBe(true)
+	end)
+
+	T.it("path answers with no way in a row make it evade, unless it can hit or is a boss", function()
+		T.expect(Pursuit.decide(situation({ failStreak = cfg.pathFailEvade }), cfg)).toBe("evade")
+		T.expect(Pursuit.decide(situation({ failStreak = cfg.pathFailEvade - 1 }), cfg)).toBe("chase")
+		T.expect(Pursuit.decide(situation({ failStreak = cfg.pathFailEvade, canHit = true }), cfg)).toBe("chase")
+		T.expect(Pursuit.decide(situation({ failStreak = 10, mayEvade = false }), cfg)).toBe("chase")
+	end)
+
+	T.it("under a perched target (cannot hit, no way up) it evades in about 2 s, not never", function()
+		-- it stands under the target: no progress; every answer is "no way"
+		local stalledAt, evadeAt = 0, nil
+		local asked, failedAt, streak = nil :: number?, nil :: number?, 0
+		for i = 1, 30 * Combat.aiTickRate do
+			local now = i * TICK
+			if asked and failedAt == nil and now >= asked + 2 * TICK then
+				failedAt = now
+				streak += 1
+			end
+			local action = Pursuit.decide({
+				stalled = now - stalledAt,
+				canHit = false,
+				asked = asked ~= nil,
+				pending = asked ~= nil and failedAt == nil,
+				noPath = failedAt ~= nil,
+				failStreak = streak,
+				mayEvade = true,
+			}, cfg)
+			if action == "repath" then
+				asked = now
+			elseif action == "evade" then
+				evadeAt = now
+				break
+			end
+		end
+		T.expect(evadeAt).toBeBetween(cfg.pursuitRepath, cfg.pursuitRepath + 3 * TICK + 1e-6)
 	end)
 end)

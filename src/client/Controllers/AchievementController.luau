@@ -21,6 +21,7 @@ local AchievementsWindow = require(script.Parent.Parent.UI.Screens.AchievementsW
 local Config = require(ReplicatedStorage.Shared.Config)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudCover = require(script.Parent.Parent.UI.HudCover)
 local MenuAttention = require(script.Parent.Parent.UI.MenuAttention)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
@@ -138,8 +139,9 @@ local function pump()
 	if #queue == 0 then
 		return
 	end
-	-- UI plan phase 2 (one band of messages, Logic/TopBand): not over the zone or the area banner; again once they fade
-	if TopBand.achievementWaits(Fusion.peek(TopBandState.Shown)) then
+	-- UI plan phase 2 (one band of messages, Logic/TopBand): not over the zone or the area banner; again once they fade.
+	-- Studio check 2026-10-31: nor over an open window's title bar (it waits until the window closes)
+	if TopBand.achievementWaits(Fusion.peek(TopBandState.Shown)) or Fusion.peek(HudCover.HeaderBottom) ~= nil then
 		if not waiting then
 			waiting = true
 			task.delay(BAND_RETRY, function()

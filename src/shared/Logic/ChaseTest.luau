@@ -11,6 +11,11 @@ export type Scenario = "corner" | "perch" | "los" | "load"
 
 ChaseTest.SCENARIOS = { "corner", "perch", "los", "load" } :: { Scenario }
 
+-- One path answer: when it was asked (os.clock), seconds queued, seconds computed, whether a path was found.
+export type PathAnswer = { at: number, waited: number, seconds: number, ok: boolean }
+
+ChaseTest.ANSWERS_KEPT = 8
+
 -- What Entities/Monster records on a monster under test (nil on every other monster).
 export type Probe = {
 	immortal: boolean, -- TakeDamage removes nothing, debuffs do not land (the test's target cannot kill it)
@@ -19,7 +24,12 @@ export type Probe = {
 	pathFails: number, -- answers with no way
 	pathDenied: number, -- asks the server's budget refused (tried again on a later tick)
 	repaths: number, -- new paths after a stall (Pursuit "repath")
-	firstPathAt: number?, -- os.clock of the first path found
+	-- Studio 2026-10-31 ("path 19.07s" next to "caught 5.92s" was the first path FOUND, after two answers with no way):
+	-- the first ask, the first path found and every answer (the first ANSWERS_KEPT) are kept apart
+	firstAskAt: number?, -- os.clock of the first ask
+	firstOkAt: number?, -- os.clock of the first path found
+	answers: { PathAnswer },
+	slowest: number, -- seconds, the slowest answer
 	engagedAt: number?, -- os.clock of the last time it started a fight
 	evadeAt: number?,
 	hpAtEvade: number?,
@@ -37,7 +47,10 @@ function ChaseTest.newProbe(immortal: boolean): Probe
 		pathFails = 0,
 		pathDenied = 0,
 		repaths = 0,
-		firstPathAt = nil,
+		firstAskAt = nil,
+		firstOkAt = nil,
+		answers = {},
+		slowest = 0,
 		engagedAt = nil,
 		evadeAt = nil,
 		hpAtEvade = nil,
@@ -46,6 +59,43 @@ function ChaseTest.newProbe(immortal: boolean): Probe
 		homeTeleport = false,
 		attack = nil,
 	}
+end
+
+-- Books a path answer on the probe (Entities/Monster, from the path worker's callback).
+function ChaseTest.noteAnswer(probe: Probe, at: number, waited: number, seconds: number, ok: boolean)
+	if ok then
+		probe.pathOk += 1
+		local now = at + waited + seconds
+		probe.firstOkAt = if probe.firstOkAt then math.min(probe.firstOkAt, now) else now
+	else
+		probe.pathFails += 1
+	end
+	probe.slowest = math.max(probe.slowest, seconds)
+	if #probe.answers < ChaseTest.ANSWERS_KEPT then
+		table.insert(probe.answers, { at = at, waited = waited, seconds = seconds, ok = ok })
+	end
+end
+
+-- The answers as "o@1.20+0/35" (o found, f no way; @ asked at s from `start`; + s queued; / ms computed), in ask order.
+function ChaseTest.answerLine(answers: { PathAnswer }, start: number): string
+	local sorted = table.clone(answers)
+	table.sort(sorted, function(a, b)
+		return a.at < b.at
+	end)
+	local parts = {}
+	for _, answer in sorted do
+		table.insert(
+			parts,
+			string.format(
+				"%s@%.2f+%.2f/%d",
+				if answer.ok then "o" else "f",
+				answer.at - start,
+				answer.waited,
+				math.floor(answer.seconds * 1000 + 0.5)
+			)
+		)
+	end
+	return table.concat(parts, " ")
 end
 
 -- A building's footprint: centre, the unit vector of its local x axis (flat) and half sizes along local x and z.
@@ -159,7 +209,10 @@ export type Result = {
 	level: number,
 	count: number, -- monsters under test
 	ranged: boolean,
-	pathAt: number?,
+	askAt: number?, -- the first path asked
+	okAt: number?, -- the first path found
+	slowest: number, -- ms, the slowest path answer
+	answers: string, -- ChaseTest.answerLine
 	asks: number,
 	ok: number,
 	fails: number,
@@ -181,6 +234,8 @@ export type Result = {
 	blind: number, -- of them without a clear line to the target
 	losAt: number?, -- first AI tick with a clear line
 	hbMax: number, -- ms, the longest server frame
+	hbAt: number?, -- when it was
+	hbAfterPath: boolean, -- a path call started in the frame before it
 	hbAvg: number, -- ms
 	notes: { string },
 }
@@ -244,7 +299,9 @@ function ChaseTest.summary(r: Result, cfg: Config): string
 	local ok, fails = ChaseTest.verdict(r, cfg)
 	local parts = {
 		`{r.scenario} {r.monster} L{r.level}` .. (if r.count > 1 then ` x{r.count}` else ""),
-		`path {seconds(r.pathAt)} asks {r.asks} ok {r.ok} fail {r.fails} denied {r.denied} repath {r.repaths}`,
+		`path ask {seconds(r.askAt)} found {seconds(r.okAt)} asks {r.asks} ok {r.ok} fail {r.fails} denied {r.denied} `
+			.. `repath {r.repaths} slowest {math.floor(r.slowest + 0.5)}ms`
+			.. (if r.answers ~= "" then ` [{r.answers}]` else ""),
 		`press max {r.pressMax}t total {r.pressTotal}t`,
 		`caught {seconds(r.caughtAt)}`,
 	}
@@ -263,7 +320,12 @@ function ChaseTest.summary(r: Result, cfg: Config): string
 	if r.scenario == "los" or r.shots > 0 then
 		table.insert(parts, `shots {r.shots} blind {r.blind} los {seconds(r.losAt)}`)
 	end
-	table.insert(parts, string.format("hb max %dms avg %dms", math.floor(r.hbMax + 0.5), math.floor(r.hbAvg + 0.5)))
+	local at = if r.hbAt then string.format(" @%.2fs", r.hbAt) else ""
+	local after = if r.hbAfterPath then " after a path call" else ""
+	table.insert(
+		parts,
+		string.format("hb max %dms%s%s avg %dms", math.floor(r.hbMax + 0.5), at, after, math.floor(r.hbAvg + 0.5))
+	)
 	table.insert(parts, if ok then "PASS" else "FAIL " .. table.concat(fails, ", "))
 	for _, note in r.notes do
 		table.insert(parts, note)

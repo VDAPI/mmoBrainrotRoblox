@@ -14133,6 +14133,21 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   „Automatyczny cel”, łuk z „Jadowitymi grotami” dał truciznę i wolniejsze ataki), a `Humanoid:MoveTo` z klienta w walce
   zatrzymuje `TargetController` (podejście do celu po kliknięciu: w zasięgu co 0,1 s `MoveTo` w miejscu). Oba działają
   zgodnie z projektem, nie są błędem.
+- Studio 2026-10-31, wyniki `/chasetest`: `perch` nie dawał odwrotu (wilk pod celem na 34 st. liczył się jako „w
+  zasięgu”, bo zasięg ciosu był płaski; jego ciosy trafiały przez powietrze). Teraz `Pursuit.meleeReaches`: cios sięga
+  `Combat.meleeUp` 2,5 st. w górę (wysoki potwór: połowa wzrostu) i `meleeDown` 4 st. w dół, licząc od ziemi pod graczem
+  (skok nie chroni), także przy lądowaniu ciosu; strzały i rzuty liczą zasięg w 3D; `pathFailEvade` 3 odpowiedzi „brak
+  drogi” z rzędu = odwrót. Wilk pod celem idzie pod jego miejsce, utyka i robi odwrót po ok. 2 s.
+- Klatka serwera 1,7 s przy pierwszej ścieżce: `requestPath` robił `task.spawn`, więc `CreatePath` i początek
+  `ComputeAsync` szły wewnątrz ticku AI. Teraz tick tylko kolejkuje (`Logic/PathQueue`), `Entities/PathWorker` startuje
+  najwyżej `Combat.pathPerFrame` 1 wywołanie na klatkę w osobnym wątku (`task.defer`), loguje klatkę > 250 ms tuż po
+  wywołaniu (agent, dystans), a `MonsterService` loguje przebieg AI > 50 ms. Mniej rozmiarów agenta (najmniejszy to
+  domyślny 2 × 5 Robloxa): każdy nowy rozmiar to osobny navmesh do zbudowania. Test: `tests/pathqueue.spec.luau`.
+- „path 19.07s” przy „caught 5.92s” to był czas pierwszej ZNALEZIONEJ ścieżki (dwie pierwsze odpowiedzi „brak drogi”,
+  wilk złapał cel bez ścieżki). Wynik pokazuje teraz pierwsze zapytanie, pierwszą znalezioną ścieżkę, najwolniejszą
+  odpowiedź i listę odpowiedzi (`f@0.20+0.00/1650`), a przy `hb max` czas klatki i czy tuż przed nią ruszyła ścieżka.
+  „Caught” liczy zasięg tak jak potwór (z wysokością). Koniec testu odstawia admina tam, gdzie stał; blok testowy stoi na
+  terenie (start na dachu stodoły postawił go w powietrzu).
 
 ### Wiązanie przedmiotów (właściciel 2026-10-31)
 - Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
@@ -14281,6 +14296,17 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   (`opts.element = "ice"` Kostura Wiecznej Zimy), `ItemRoll` (`el` przy tworzeniu, `elementOf`), `ItemEffects`, `ItemIcons`,
   `ItemName` (bez przyrostka), `/element` odmawia (`admin.element.fixed`). Test: `tests/namedelement.spec.luau`.
 
+### Plan UI, faza 3: okno plecaka w zakładkach (2026-10-31)
+- Z przeglądu Studio: okno plecaka (B, id `character`) robiło trzy rzeczy na 67% ekranu. Teraz zakładki na górze
+  (`Components/Tabs`, na PC i na dotyku): „Ekwipunek” (portret, klasa i poziom, ekwipunek; obok plecak), „Statystyki”
+  (rozdawanie po lewej, statystyki pochodne po prawej; w nazwie liczba wolnych punktów) i trzecia „Zestawy i tytuły”
+  (`BuildSetSwitch` z jednym zdaniem objaśnienia, `TitleChooser.Picker`).
+- `Logic/CharacterTabs` (czyste): zestawy od `Progression.freeRespecLevel` (20) albo przy aktywnym zestawie 2, tytuły
+  z pierwszym odblokowanym, etykieta trzeciej zakładki według zawartości, `pick` (zakładka, która znikła, oddaje
+  miejsce Ekwipunkowi), `suggestShown`.
+- `StatAllocator`: rząd przycisków tylko z wolnymi punktami, „Rozdaj jak zaleca ścieżka” i linia planu tylko z planem.
+- Okno 826×752 (było 1240×700). `WindowManager.Toggle`: B na innej zakładce wraca na Ekwipunek na każdym urządzeniu.
+- Test: `tests/charactertabs.spec.luau`. Nieobejrzane w Studio.
 ### Kamera zablokowana w trybie skryptowym (przegląd Studio 2026-10-31, druga część)
 - Zgłoszenie (postać poziomu 1): po `tp city` kamera stała 10+ s w starym miejscu na Łąkach; w mieście zamrożona 75 studów
   od postaci, potem 0,9 studa przed twarzą, a postać nie ruszała się (MoveTo bez skutku); ręczne Custom pomagało do
@@ -14302,3 +14328,45 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `ScreenController`: ujęcie wyboru jako `Claim("select")`, `RestoreCamera` usunięte.
 - Testy: `tests/cameralease.spec.luau` (w tym skan: `CameraType.Scriptable` tylko w `CameraController` i w pisarzu
   przerywnika). Nieobejrzane w Studio.
+
+### Plan UI, faza 2: poprawki po przeglądzie Studio (2026-10-31)
+- Rząd „coś czeka” stał w tropicielu (1108×576): `HudStack.column` dostaje `menuBottom`, zmierzony dół ramki menu nad
+  minimapą (`HudSlots.SetMenu`, `HudSlots.MenuBottom`), i kolumna PC nigdy nie zaczyna się wyżej. Flaga rzędu idzie przez
+  `HudSlots.SetWaiting(owner, on)` (sprzątanie przebudowanego rzędu nie gasi nowego). Test w `hudlayout.spec`.
+- Rząd „coś czeka” chowa się pod oknem razem z przyciskami menu (`WaitingRow` `Covered`).
+- Toast osiągnięcia (warstwa Toasts, nad oknami) stał na pasku tytułu sklepu: `AchievementController` czeka, póki jest
+  otwarte okno (`HudCover.HeaderBottom`), a `AchievementToast` zjeżdża pod pasek tytułu okna otwartego w trakcie.
+- `UI/SoftRequire`: `Toast`, `Announcement` i `TopBandState` wczytują `TopBand`, `TopBandState` i `HudCover` przez
+  `pcall` z zastępstwem (stare miejsca), bo brak niezsynchronizowanego modułu wywracał ok. 25 kontrolerów.
+- Bez zmian, bo to zamierzone: plecak sam (826×752, wcześniej 1240×700) nie zachodzi na prawą kolumnę przy 1108×576,
+  więc nic nie chowa; „Auto” pokazuje się dopiero z Płaszczem, bankiem Samodzielnych Łowów albo Samoczynnymi
+  Miksturami (`/lure add`, `/autogrind add`, `/autopotion grant`); niewidoczny przycisk w rzędzie (✧ albo ❖) nie
+  bierze udziału w układzie i Studio podaje mu to samo miejsce co widocznemu.
+
+### Plan UI, faza 3, krok 2: huby okien, Ustawienia, Elity II w tropicielu (2026-10-31)
+- `Data/UiHubs` (czyste): pięć hubów (przycisk, ikona, podpowiedź, zakładki), `tabOf` (okno plecaka to zakładka
+  `inventory`), `hubOf`, `byButton`, `tabLabel` (`hub.tab.<id>` dla dawnych przycisków paska, inaczej `menu.tile.<id>`),
+  `visibleTabs`, `entry` (pierwsza widoczna zakładka). Test `tests/uihubs.spec.luau`.
+- `Components/Window`: `Tabs`, `Current`, `OnTab`: zakładki w pasku tytułu (przewijany rząd, bieżąca jasna z mosiężną
+  kreską). `WindowManager`: zakładki dla okien huba (bez plecaka obok usługi), `SetTabRule` / `TabShown`, zakładka
+  otwiera okno w miejscu poprzedniego (`fitOffset` trzyma je w całości na ekranie), `ToggleHub`.
+- `ScreenController`: `MENU` z `hubEntry` (przycisk Postaci zostaje `inventory`, kotwica samouczka), „!” huba z
+  `TAB_BADGES`, widoczność huba od jego zakładek; reguły zakładek z kafelków i `worldOnly`; okno `settings`.
+  `Hud/init` `MenuEntry`: `windows`, `open`, `key`, `art`. `Logic/HudMenu.BAR` i `attention` (tylko kafelki spoza hubów).
+- `GameMenu` z `Extra.Settings`: menu ma „Wróć do gry”, kafelki, „Ustawienia”, „Zmień postać” i wiersz VIP; okno
+  Ustawień ma język, sekcje, kod i zwinięte sekcje (`Data/UiWindows` `settings`).
+- Elity II: `Hud/Elite2Timer` daje `state` i `row`; `QuestTracker` ma grupę „e2” na końcu (`TrackerFold.GROUPS`, domyślnie
+  otwarta); `QuestController` nie stawia już panelu. Krótki tekst `e2timer.anyShort`.
+- Testy: `uihubs` (nowy), `hudmenu`, `uiart`, `trackerfold`. Nieobejrzane w Studio.
+
+### Plan UI: poprawki po przeglądzie Studio fazy 3 (2026-10-31)
+- Rząd „coś czeka” wchodził na tropiciel (1108×576, tropiciel od y 235, rząd do 253). Kolumna liczy już zmierzony dół
+  menu, więc najpewniej tropiciel na koncie miał zapisane miejsce (S156), a przesunięty element nie szedł za kolumną. `HudStack.belowMenu` trzyma przesunięty element
+  `GAP` pod zmierzonym prostokątem menu (`HudSlots.Menu`: przyciski, minimapa, belka prowadzenia, rząd), gdy stoi w
+  jego pasie; `HudDrag` stosuje to do każdego przesuwanego elementu poza telefonem. Pomiar menu rusza też przy zmianie
+  ramki kolumny (`SetHost`).
+- `HudCover.Open`: tropiciel chowa się pod każdym otwartym oknem (plecak stał obok niego i go nie zasłaniał).
+- Ekran podróży (`WorldController`, DisplayOrder 100): wyłącza się na `Completed` zanikania z żetonem ostatniego
+  wywołania; wcześniej sprawdzenie po `FADE` sekundach mogło zastać przezroczystość 0,98 i zostawić go włączonym nad
+  oknami. Bezpiecznik po 8 s też patrzy na żeton.
+- Test w `hudlayout.spec`. Nieobejrzane w Studio.

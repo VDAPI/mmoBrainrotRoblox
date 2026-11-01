@@ -35,7 +35,10 @@ local function result(over: { [string]: any }, drop: { string }?): ChaseTest.Res
 		aggressive = true,
 		shots = 0,
 		blind = 0,
+		slowest = 30,
+		answers = "",
 		hbMax = 18,
+		hbAfterPath = false,
 		hbAvg = 16,
 		notes = {},
 	}
@@ -127,6 +130,30 @@ T.describe("ChaseTest measures and verdicts (S162e)", function()
 		T.expect(probe.homeTeleport).toBe(false)
 	end)
 
+	-- Studio 2026-10-31: "path 19.07s" next to "caught 5.92s" was the first path FOUND after two answers with no way
+	T.it("keeps the first ask, the first path found and every answer apart", function()
+		local probe = ChaseTest.newProbe(true)
+		probe.firstAskAt = 100.2
+		ChaseTest.noteAnswer(probe, 100.2, 0, 1.65, false)
+		ChaseTest.noteAnswer(probe, 101.9, 0.02, 0.04, false)
+		ChaseTest.noteAnswer(probe, 119.0, 0, 0.03, true)
+		T.expect(probe.pathFails).toBe(2)
+		T.expect(probe.pathOk).toBe(1)
+		T.expect(probe.firstOkAt).toBeNear(119.03)
+		T.expect(probe.slowest).toBeNear(1.65)
+		T.expect(ChaseTest.answerLine(probe.answers, 100)).toBe("f@0.20+0.00/1650 f@1.90+0.02/40 o@19.00+0.00/30")
+		for i = 1, 20 do
+			ChaseTest.noteAnswer(probe, 120 + i, 0, 0.01, true)
+		end
+		T.expect(#probe.answers).toBe(ChaseTest.ANSWERS_KEPT)
+		local line = ChaseTest.summary(
+			result({ askAt = 0.2, okAt = 19.03, answers = "f@0.20+0.00/1650", hbAt = 0.21, hbAfterPath = true }),
+			cfg
+		)
+		T.expect(string.find(line, "path ask 0.20s found 19.03s", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(line, "@0.21s after a path call", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it("allows a press only as long as the repath takes", function()
 		T.expect(ChaseTest.pressLimit(cfg)).toBe(math.ceil(cfg.pursuitRepath * cfg.aiTickRate) + 1)
 		local ok = ChaseTest.verdict(result({ pressMax = ChaseTest.pressLimit(cfg) }), cfg)
@@ -188,7 +215,8 @@ T.describe("ChaseTest measures and verdicts (S162e)", function()
 				hpAfter = 100,
 				homeAt = 5.25,
 				calmFor = 6.4,
-				pathAt = 0.4,
+				askAt = 0.2,
+				okAt = 0.4,
 			}, { "caughtAt" }),
 			cfg
 		)

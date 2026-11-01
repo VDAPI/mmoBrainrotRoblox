@@ -5,6 +5,8 @@
 -- UI plan phase 1 (owner 2026-10-31): one row of menu buttons, so the PC column starts under the minimap's area line
 -- (under the guide bar while one shows), and the chat window in the lower left corner ends left of the action bar.
 
+local fs = require("@lune/fs")
+
 local HudLayout = require("../src/shared/Logic/HudLayout")
 local HudStack = require("../src/shared/Logic/HudStack")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
@@ -550,6 +552,40 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		T.expect(HudStack.column(true, true, 886, 435, 0, false, true).top).toBe(PhoneHud.stackTop(0))
 	end)
 
+	T.it("Studio check 2026-10-31: the PC column never starts above the menu's measured bottom", function()
+		-- the row stood inside the tracker (the column had not stepped down): the column also follows where the menu
+		-- over the minimap really ends (UI/HudSlots.MenuBottom), whatever the flags say
+		for _, size in PC do
+			local w, h = size[1], size[2]
+			local flagged = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w), nil, false, true)
+			local measured = HudStack.layout(
+				false,
+				false,
+				w,
+				h,
+				0,
+				scenario("tracker", false, w),
+				nil,
+				false,
+				false,
+				waitingRow(w, false).bottom
+			)
+			T.expect(measured.questTracker.top).toBe(flagged.questTracker.top)
+			-- a menu that ends higher (nothing under the minimap) never lifts the column above its place
+			local high = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w), nil, false, false, 100)
+			T.expect(high.questTracker.top).toBe(HudStack.RIGHT_TOP)
+		end
+		-- a phone's and a tablet's column do not follow it
+		T.expect(HudStack.column(true, false, 1280, 720, 0, false, false, 600).top).toBe(HudStack.TOUCH_TOP)
+		-- the row says it shows per row (a rebuilt row's cleanup cannot switch the new one off), and it steps out of
+		-- sight with the menu's buttons above it
+		local row = fs.readFile("src/client/UI/Screens/Hud/WaitingRow.luau")
+		T.expect(string.find(row, "HudSlots.SetWaiting(owner", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(row, "props.Covered", 1, true) ~= nil).toBe(true)
+		local hud = fs.readFile("src/client/UI/Screens/Hud/init.luau")
+		T.expect(string.find(hud, "HudSlots.SetMenu(scope, root)", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it("UI plan phase 2: a window covers a HUD part only when it overlaps it by more than the margin", function()
 		local tracker = { left = 1600, top = 380, right = 1900, bottom = 700 }
 		-- a 1240 wide window in the middle of 1920 ends at 1580: clear
@@ -576,6 +612,26 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		T.expect(HudStack.chatWidthScale(8, 400, 1, 100)).toBe(min)
 		-- a hidden window keeps its scale
 		T.expect(HudStack.chatWidthScale(8, 0, 0.8, 334)).toBe(0.8)
+	end)
+
+	T.it("Studio check 2026-10-31: moved elements stay under the menu, windows hide the tracker", function()
+		-- 1108 x 576 (scale 0.6): the menu with the row of "something waits" buttons ends at 423, a tracker the player
+		-- had moved near its built-in place started at 392 (under the row's icons)
+		local menu = { left = 1847 - 22 - 352, top = 22, right = 1847 - 22, bottom = 423 }
+		local tracker = { left = 1847 - 22 - 300, right = 1847 - 22 }
+		T.expect(HudStack.belowMenu(tracker.left, tracker.right, 392, menu)).toBe(423 + HudStack.GAP)
+		-- already under it, or beside it (the left half of the screen), or no menu measured: where the player put it
+		T.expect(HudStack.belowMenu(tracker.left, tracker.right, 500, menu)).toBe(500)
+		T.expect(HudStack.belowMenu(20, 320, 100, menu)).toBe(100)
+		T.expect(HudStack.belowMenu(tracker.left, tracker.right, 392, nil)).toBe(392)
+		local drag = fs.readFile("src/client/UI/HudDrag.luau")
+		T.expect(string.find(drag, "HudStack.belowMenu(", 1, true) ~= nil).toBe(true)
+		-- the tracker steps out of sight under any open window (the backpack stood beside it)
+		local source = fs.readFile("src/client/UI/Screens/Hud/QuestTracker.luau")
+		T.expect(string.find(source, "use(HudCover.Open)", 1, true) ~= nil).toBe(true)
+		-- the travel screen switches itself off when its fade ends (it stayed on, drawn over every window)
+		local world = fs.readFile("src/client/Controllers/WorldController.luau")
+		T.expect(string.find(world, "fade.Completed:Connect", 1, true) ~= nil).toBe(true)
 	end)
 
 	T.it("the PvP badge stays on the screen, right-aligned with the toggle", function()

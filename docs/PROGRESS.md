@@ -49,6 +49,9 @@
 
 ## Niedokończone (kod)
 
+- **Plan UI, faza 3, krok 2 (2026-10-31):** pięć hubów i ☰ na pasku, zakładki hubów w pasku tytułu okna, osobne okno Ustawień, timery Elit II w tropicielu; nieobejrzane w Studio (zakładki w wąskich oknach, przejście zakładką z poczty, szuflada telefonu). Z planu zostaje: boczne zakładki Ustawień, „!” na samych zakładkach, odsłanianie hubów z samouczkiem i poziomem (faza 4).
+- **Plan UI, faza 3, krok 1 (2026-10-31):** okno plecaka w zakładkach Ekwipunek / Statystyki / Zestawy i tytuły (`Logic/CharacterTabs`), ok. 826×752; nieobejrzane w Studio (przeciąganie z plecaka na ekwipunek, zakładki na telefonie, panel tytułów nad oknem).
+- **Plan UI, faza 2, poprawki po Studio (2026-10-31):** kolumna pod zmierzonym dołem menu, rząd „coś czeka” znika z menu pod oknem, toast osiągnięcia nie na pasku tytułu okna, miękkie wczytanie modułów pasa wiadomości; nieobejrzane w Studio.
 - **Plan UI, faza 2 (2026-10-31):** rząd „coś czeka”, rząd wzmocnień, „Auto”, kropka PvP jako przełącznik, pas wiadomości, chowanie HUD pod oknem; nieobejrzane w Studio (rząd pod minimapą z belką i bez, panel „Auto” na tablecie nad zapasową kolumną, trafienie w kropkę PvP myszą, toasty pod banerami). Nie zrobione z fazy 2: karty „Lepszy przedmiot”, walki i oferty areny jako jedna karta naraz (odblokowania idą toastem, więc są w pasie); róg PC zostaje zarezerwowany w `HudStack.fixed`.
 - **Plan UI, faza 1 (2026-10-31):** jeden rząd przycisków HUD, kafelki menu gry, czat w lewym dolnym rogu (`Hud/ChatDock`), toast zamiast okna nagrody za logowanie; nieobejrzane w Studio (szerokość czatu przy 1366 i 1280 px, zawijanie nazw kafelków, tropiciel od y 380 / 408 z belką prowadzenia, szuflada ☰ na telefonie). Kolejne fazy w `wyglad/UI-PLAN.md`.
 - **Kamera po wejściu do świata (2026-10-31):** promień kamery po kolizji mapy, obrót postaci w czystą stronę i kamera

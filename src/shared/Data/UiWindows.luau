@@ -22,6 +22,7 @@ UiWindows.list = table.freeze({
 	character = win("S135", "paper", { "UI/Screens/CharacterWindow", "UI/Screens/BackpackPanel.luau" }),
 	inventory = win("S135", "paper", { "UI/Screens/BackpackPanel.luau" }),
 	menu = win("S135", "paper", { "UI/Screens/GameMenu.luau" }),
+	settings = win("S135", "paper", { "UI/Screens/GameMenu.luau" }), -- UI plan phase 3: the settings of the menu
 	npc = win("S135", "paper", { "UI/Screens/NpcDialog.luau" }),
 	shop = win("S135", "paper", { "UI/Screens/ShopWindow.luau" }),
 	questnpc = win("S135", "paper", { "UI/Screens/QuestDialog.luau" }),

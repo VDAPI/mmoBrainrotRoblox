@@ -28,6 +28,8 @@ local Log = require(Shared.Util.Log)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Pursuit = require(Shared.Logic.Pursuit)
 
+local PathWorker = require(script.Parent.Parent.Entities.PathWorker)
+
 local Context = require(script.Parent.Context)
 
 local log = Log.new("ChaseTest")
@@ -79,6 +81,9 @@ type Run = {
 	heartbeat: RBXScriptConnection?,
 	measuring: boolean, -- frame times count from the engage on (not the search, not the spawn)
 	hbMax: number,
+	hbAt: number?, -- s from the start to the longest frame
+	hbAfterPath: boolean, -- a path call started in the frame before it
+	pathCalls: number, -- PathWorker.stats.started at the last frame
 	hbSum: number,
 	hbCount: number,
 	top: number, -- the last resort start of a ground ray
@@ -88,6 +93,7 @@ type Run = {
 	-- perch: seconds from home to the next fight (nil = none while watched), how long it was watched, and whether
 	-- the monster starts fights by sight with this target at all
 	calm: { calmFor: number?, watched: number, aggressive: boolean }?,
+	home: CFrame, -- where the admin stood: put back there at the end (not left on a roof)
 }
 
 local current: Run? = nil
@@ -120,15 +126,23 @@ local function groundAt(x: number, z: number, top: number): Vector3?
 	return if hit then hit.Position else nil
 end
 
+-- The terrain under (x, z) when there is some within 200 studs below `fromY` (an admin standing on a roof or a rock
+-- still gets the real ground: Studio 2026-10-31 a run started on the barn's roof put its test block in the air), else
+-- the first surface.
+local terrainParams = RaycastParams.new()
+terrainParams.FilterType = Enum.RaycastFilterType.Include
+terrainParams.FilterDescendantsInstances = { Workspace.Terrain }
+terrainParams.IgnoreWater = true
+local function realGround(x: number, z: number, fromY: number): Vector3?
+	local hit = Workspace:Raycast(Vector3.new(x, fromY, z), Vector3.new(0, -200, 0), terrainParams)
+	return if hit then hit.Position else groundAt(x, z, fromY)
+end
+
 -- The ground at (x, z) near the run's ground level: a ray from GROUND_UP studs over it (under roofs and tree crowns
 -- around), from high above when it starts inside a hill.
 local GROUND_UP = 10
 local function groundNear(run: Run, x: number, z: number): Vector3?
 	return groundAt(x, z, run.groundY + GROUND_UP) or groundAt(x, z, run.top)
-end
-
-local function flatDistance(a: Vector3, b: Vector3): number
-	return Vector3.new(a.X - b.X, 0, a.Z - b.Z).Magnitude
 end
 
 local function rootOf(player: Player): (Model?, BasePart?, Humanoid?)
@@ -255,11 +269,13 @@ local function findBuilding(origin: Vector3, ground: number, kind: string, roof:
 end
 
 -- A grey test block 24 studs in front of the admin (no building around): a house-sized box, or a wall across the way.
-local function makeBlock(run: Run, origin: Vector3, look: Vector3, ground: number, kind: string): Found
+local function makeBlock(run: Run, origin: Vector3, look: Vector3, groundY: number, kind: string): Found
 	local size = if kind == "wall" then Vector3.new(24, 10, 1) else Vector3.new(16, 12, 16)
 	local flatLook = Vector3.new(look.X, 0, look.Z)
 	flatLook = if flatLook.Magnitude > 0.1 then flatLook.Unit else Vector3.new(0, 0, -1)
 	local at = origin + flatLook * 24
+	local under = realGround(at.X, at.Z, groundY + 20)
+	local ground = if under then under.Y else groundY
 	local block = Instance.new("Part")
 	block.Name = "ChaseTestBlock"
 	block.Anchored = true
@@ -369,9 +385,9 @@ local function sample(run: Run, subject: Subject, now: number)
 	if not to then
 		return
 	end
-	local reach = monster.stats.range + monster.root.Size.Z / 2
-	local distance = flatDistance(position, to)
-	if distance <= reach + 0.5 and subject.caughtAt == nil and monster.state == "chase" then
+	-- Studio 2026-10-31: "caught" = its blow or shot really reaches (the height counts), as the monster itself decides
+	local reachable = monster:CanReach(to)
+	if reachable and subject.caughtAt == nil and monster.state == "chase" then
 		subject.caughtAt = now - run.startedAt
 	end
 	if subject.losAt == nil and monster.state == "chase" and clearLine(monster, to) then
@@ -379,7 +395,7 @@ local function sample(run: Run, subject: Subject, now: number)
 	end
 	local pressed = false
 	local goal: Vector3? = monster.walkGoal
-	if monster.state == "chase" and goal and distance > reach then
+	if monster.state == "chase" and goal and not reachable then
 		local way = Vector3.new(goal.X - last.X, 0, goal.Z - last.Z)
 		if way.Magnitude > 1 then
 			local direction = way.Unit
@@ -457,7 +473,10 @@ local function collect(run: Run): ChaseTest.Result
 		level = run.level,
 		count = #run.subjects,
 		ranged = false,
-		pathAt = nil,
+		askAt = nil,
+		okAt = nil,
+		slowest = 0,
+		answers = "",
 		asks = 0,
 		ok = 0,
 		fails = 0,
@@ -479,6 +498,8 @@ local function collect(run: Run): ChaseTest.Result
 		blind = 0,
 		losAt = nil,
 		hbMax = run.hbMax,
+		hbAt = run.hbAt,
+		hbAfterPath = run.hbAfterPath,
 		hbAvg = if run.hbCount > 0 then run.hbSum / run.hbCount else 0,
 		notes = run.notes,
 	}
@@ -487,6 +508,10 @@ local function collect(run: Run): ChaseTest.Result
 			return b
 		end
 		return if b == nil then a else math.min(a, b)
+	end
+	local first = run.subjects[1]
+	if first then
+		r.answers = ChaseTest.answerLine(first.probe.answers, run.startedAt) -- the first monster's (a group's would not fit)
 	end
 	for _, subject in run.subjects do
 		local probe = subject.probe
@@ -499,7 +524,9 @@ local function collect(run: Run): ChaseTest.Result
 		r.repaths += probe.repaths
 		r.pressMax = math.max(r.pressMax, subject.press.max)
 		r.pressTotal += subject.press.total
-		r.pathAt = earliest(r.pathAt, if probe.firstPathAt then probe.firstPathAt - run.startedAt else nil)
+		r.askAt = earliest(r.askAt, if probe.firstAskAt then probe.firstAskAt - run.startedAt else nil)
+		r.okAt = earliest(r.okAt, if probe.firstOkAt then probe.firstOkAt - run.startedAt else nil)
+		r.slowest = math.max(r.slowest, probe.slowest * 1000)
 		r.caughtAt = earliest(r.caughtAt, subject.caughtAt)
 		r.losAt = earliest(r.losAt, subject.losAt)
 		r.shots += subject.shots
@@ -535,8 +562,9 @@ local function finish(run: Run, line: string?)
 		run.block:Destroy()
 		run.block = nil
 	end
-	local _, root = rootOf(run.player)
-	if root then
+	local character, root = rootOf(run.player)
+	if character and root then
+		character:PivotTo(run.home)
 		root.Anchored = false
 	end
 	if run.player.Parent then
@@ -693,7 +721,7 @@ function ChaseRun.Start(player: Player, monsterId: string, scenario: string, lev
 	end
 	refreshFilter()
 	local origin = root.Position
-	local ground = groundAt(origin.X, origin.Z, origin.Y + 2)
+	local ground = realGround(origin.X, origin.Z, origin.Y + 2)
 	local groundY = if ground then ground.Y else origin.Y - 3
 	local run: Run = {
 		player = player,
@@ -707,6 +735,9 @@ function ChaseRun.Start(player: Player, monsterId: string, scenario: string, lev
 		heartbeat = nil,
 		measuring = false,
 		hbMax = 0,
+		hbAt = nil,
+		hbAfterPath = false,
+		pathCalls = PathWorker.stats.started,
 		hbSum = 0,
 		hbCount = 0,
 		top = root.Position.Y + 150,
@@ -714,16 +745,25 @@ function ChaseRun.Start(player: Player, monsterId: string, scenario: string, lev
 		startedAt = os.clock(),
 		notes = {},
 		calm = nil,
+		home = root.CFrame,
 	}
 	current = run
 	-- the target: immortal and held by the server (the clients' movement code cannot stop or move it)
 	ResourceService.SetGod(player, true)
 	root.Anchored = true
 	run.heartbeat = RunService.Heartbeat:Connect(function(dt: number)
+		-- a path call started since the last frame (its engine work, if any, is in this frame's time)
+		local calls = PathWorker.stats.started
+		local afterPath = calls ~= run.pathCalls
+		run.pathCalls = calls
 		if not run.measuring then
 			return
 		end
 		local ms = dt * 1000
+		if ms > run.hbMax then
+			run.hbAt = os.clock() - run.startedAt
+			run.hbAfterPath = afterPath
+		end
 		run.hbMax = math.max(run.hbMax, ms)
 		run.hbSum += ms
 		run.hbCount += 1

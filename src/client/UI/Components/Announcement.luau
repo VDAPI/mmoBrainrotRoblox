@@ -9,11 +9,25 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local HudCover = require(script.Parent.Parent.HudCover)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local Scale = require(script.Parent.Parent.Scale)
+local SoftRequire = require(script.Parent.Parent.SoftRequire)
 local Theme = require(script.Parent.Parent.Theme)
-local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
+-- Studio check 2026-10-31: soft, like Components/Toast (a module not synced yet keeps the banner at its old place)
+local HudCover = SoftRequire(function()
+	return require(script.Parent.Parent.HudCover)
+end, { HeaderBottom = nil } :: any, "UI/HudCover")
+local TopBand = SoftRequire(
+	function()
+		return require(ReplicatedStorage.Shared.Logic.TopBand)
+	end,
+	{
+		underHeader = function(top: number): number
+			return top
+		end,
+	} :: any,
+	"Logic/TopBand"
+)
 
 local Children = Fusion.Children
 

@@ -343,17 +343,25 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   An `upper` clip takes the clip's chest turn in the root's axes (the blow keeps its way where the clip's hips turned
   with it), the joints above it still one by one. What is left fast in a lead-in is the clip's own (the high spin's).
 - **Stance**: `clips.combat` (humanoid1h, humanoid2h: the sword-and-shield idle and walk) eases in with the combat
-  weight over the locomotion; the brute walks and idles on the mutant clips all the time. A blow plays on until the
+  weight over the locomotion; the brute walks and idles on the mutant clips all the time, its swinging feet lifted
+  five times as high as the clip lifts them, the ankle at most 0.85 L up (`clips.lift`, `WALK_LIFT_MAX`; 2026-10-31
+  Studio round 3: the yeti's toes rose 0.25 stud, a shuffle for its size; round 4: 0.5-0.7 at twice, the review asked
+  1.2-1.6; round 5: 1.04-1.08 at four times and 0.7 L, now about 1.3 expected on the yeti, 0.8 L at the wander's
+  pace on the test rig). A blow plays on until the
   clip's stance is back (its `follow` + `recover` cover the clip to where it settles).
 - **Planted feet** (`BipedMotion` `plantFeet`, 2026-10-31 Studio review: the toes slid 0.8 stud and the hips travelled
   1.7 studs through `mob bandit slash`): while a non-boss biped stands (under 0.6 studs/s, turning under 1.2 rad/s,
-  not floating, not in a fall, a leap or a keyed travel), the ball of each foot on the ground (within 0.06 L of its
+  not floating, not in a fall or a keyed travel; a leap until its feet leave the ground and again once it has landed
+  where the server put it, 2026-10-31 Studio round 3: the pounce's feet slid as it crouched to spring and as it
+  recovered), the ball of each foot on the ground (within 0.06 L of its
   rest height) stays where it landed, turned back by the root's own turn so it holds in the world; the leg is moved
   onto it with the least turn of thigh and shin (`BipedPose.nudgeLegs`: a target on the pose's own foot leaves the leg
   exactly as it was, so holding and letting go never jump; a target near the leg's full length is drawn in softly,
   the knee does not snap from straight). A foot the pose carries 0.12 L away (0.05 L once no action runs: the feet
-  settle back under the stance), or out of the leg's reach, steps there in 0.24 s lifted 0.09 L, up first and carried
-  across the last 0.85 of the step, the other foot following from half way; a foot the pose lifts over 0.09 L lets go,
+  settle back under the stance), or out of the leg's reach, steps there in 0.24 s, lifted 0.4 of the step's length at
+  the top (0.12-0.25 L) and carried across between 0.15 and 0.8 of the step, in the air, its spot fixed as it comes
+  down (2026-10-31 Studio round 3: the backhand's step travelled low and read as a 1.5-1.9 stud slide), the other foot
+  following from half way; a foot the pose lifts over 0.09 L lets go,
   its correction easing away at 16 /s. The blends into and out of an action, a clip on a model of other proportions and
   the push of a hit no longer slide the feet. A boss keeps its own stance under its clip blows (`upper`) and is not
   planted. 2026-10-31 re-review: on the floor a standing body's ball of the foot never goes under its rest height and
@@ -367,7 +375,23 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   the ankles kept where they are), eased in over the strike and `LOW_LEAD` before the hit, held for half the follow
   and eased back over the recovery; a cut fades out of the bow and the crouch too. Grimrok and Azgor 3.5 studs (a
   player's chest), Hrimvald 1.5 (along the ground). The feet the review read as floating (+0.32, +0.63, +1.21) are the
-  rigs' ankle joints over the soles, not a gap.
+  joints of the balls of the feet (ToeBase) over the soles, not a gap: in the rig dumps (`tools/anim/rigs`, the lowest
+  visible point at y 0) they stand 0.07-0.09, 0.17 and 0.16 units up, 0.24-0.30, 0.62 and 1.25 studs at the clones'
+  scales (3.38, 3.64, 7.8), and the stance keeps them at that height.
+- **Onto a spot ahead** (`ClipRef.ahead`, 2026-10-31 Studio round 3: Hrimvald's fist came down 24 studs ahead of his
+  hips, beyond the player; his arm, 27 studs, is longer than his waist is high, so no bow of a straight arm meets the
+  ground where a player stands): the striking hand goes onto the spot `ahead` L ahead of the root on its centre line,
+  `low` over the floor. Once per run the least bow (in `LOW_BOW` / 22 steps, interpolated between them so it changes
+  smoothly with the pose) that brings the shoulder within 0.9 of the arm's length of the spot crouched by at most
+  0.15 L, the rest crouched (up to 0.3 L); the arm is bent onto it by IK (`BipedPose.reachArm`: the least turn of the
+  upper arm and the forearm, the elbow in its own bend, the hand turned with the forearm) over the last `LOW_DRAW`
+  0.1 s of the strike (drawn sooner, the arm swung through the body and turned over), held and eased back with the
+  bow; a cut fades it out with the bow. Hrimvald's `fist` and `backfist`: 0.3 L (where a player stands as he stops
+  for the blow: his reach, 7 + half his root's depth, x 0.6, about 8 studs at his clone's scale): bow 31-32 deg,
+  crouch 4 studs, the fist 0.04 stud from the spot. The striking hand of the backfist is the left (the swipe
+  unmirrored), the right is the one high behind; the fist's the right (mirrored), the left high behind. Both land on
+  the same spot, so the striking hand measures the same in both (round 4 read it as the same clip): the other hand
+  tells them apart.
 - **Hits by side**: `style.hits` (front / back / left / right): the reaction clip's turn of each upper bone from its
   first frame laid over the running pose (spine, neck, head whole, shoulders 0.5, arms 0.4-0.5), held 0.28 s and
   faded over 0.3 s, the body pushed by 0.35 of the clip's travel (at most 0.12 L), scaled by `hitScale` and the cast
@@ -392,16 +416,25 @@ Kept keyed (no clip fits yet): the casters' `nova` and `pool`, `charge`, the dra
 falls, the bosses' leaps, channels, throws, stomps, rages, staggers and deaths. Tests: `tests/bipedclips.spec.luau`
 (also: the blade ahead of the body at every blade blow's hit, the backhand's across the body with the hand under the
 shoulder; a held foot's ball moving under 0.04 L over a whole blow, the hips under 0.45 L, the feet back under the
-stance after it; a held foot staying put while the root turns; no bone turning 70 deg in an action's first 0.1 s; the
+stance after it; a leap's balls of the feet on the ground moving under 0.04 L in all before it springs and after it
+lands; a held foot staying put while the root turns; no bone turning 70 deg in an action's first 0.1 s; the
 balls of the feet never under the floor through a standing blow; a turn on the spot on steps; the brute's heavy blow
 not its crush; the hew not whirling on; the loops wrapping without a jump) and `tests/bossstyles.spec.luau` (a giant's
-striking hand at its `low` and ahead of its body at the hit). The backhand's hit is its contact (0.80 s of the clip:
+striking hand at its `low` and ahead of its body at the hit, within 0.1 L of its `ahead` spot). The backhand's hit is its contact (0.80 s of the clip:
 the review saw the hand still overhead, 5.4 studs up on a 5.3-stud bandit).
 
 AnimLab (2026-10-31 re-review) plays a melee blow at the game's own distance (`MonsterMove.stopDistance`: the orc's
 hew had hit air 3 studs short from AnimLab's line-up, not the game's), lands a leap's root on the target at its hit as
 the server's teleport does (the pounce had glided 7.5 studs back to the root: AnimLab, not the clip) and turns the
-root at 2.4 rad/s in `turn` (it had not yawed at all).
+root at 2.4 rad/s in `turn` (it had not yawed at all). 2026-10-31 Studio round 3: the stop distance is worked out from
+the server's own reach (the range plus half the root's depth, `Monster`), for a boss's melee blows too (Hrimvald now
+stands about 8 studs from the dummy, as in the game); each loop of a motion carries on the time of the one before
+(`epoch`), so a rebuilt model starts where the last loop's left the idle and the guard (the backhand's forearm had
+jumped 107 deg in the first frame of a loop: the fresh model's idle 2+ s behind the last one's). Round 4: a subject
+is posed in the frame it is built (`poseBiped` from `labSubject`): a rebuilt model had shown its export's own pose for
+one frame (Grimrok's and Azgor's turned by their `facing` and off centre), and its feet and hips jumped 3-6 studs
+from it into the stance at every loop and every command (the bosses' "slides", the pounce's 106 deg, the yeti's and
+the cultist's 0.5 stud: the root never moved and the feet stayed planted after it).
 AnimLab: `mob bandit <slash|backhand|chop|thrust|cleave|heavy|crush|pounce|throw|aggro|spawn|hit|deathBack|deathFwd|deathBack2|fight>`,
 `mob ashOrc <hew|cleave|pounce>`, `mob yeti <clawR|clawL|crush|pounce|deathMutant|walk|idle>`, `mob darkCultist spell`,
 `mob grimrok <chop|hack|overhead|sweep|roar>`, `mob azgor <hew|cleave>`, `mob hrimvald <fist|backfist>`, `mob morvane bolt`.
@@ -952,6 +985,31 @@ tests/dragon.spec.luau. Deviations from the tables above:
 - Specs: tests/dragon.spec.luau "AnimLab's states frame by frame" (every state and action: the per-frame turn, the
   planted feet's slide, the wings' carry, the rake's and the stomp's height, the alert, the deaths by side) and the
   creep and crawl paces.
+
+#### Studio check of the new model (2026-10-31, third round)
+
+- **The pounce lands in the circle** (every quadruped). The server moves the root into the circle on W
+  (`Monster.stepCast`), so the pose's travel now runs the whole way there (the reach, not a share of it), done before
+  the hind feet come down (pounce key S 0.88); held feet ride the arc above 1 L, so the hind legs no longer hang
+  straight at the soft reach and snap. Studio: the hind feet slid 3.5 studs as they landed; now 0.06 at 12-45 studs.
+- **The tail: the tail whips, not the body.** The spin is spread evenly over the flight (S 0.3 → F 0.3: 6°, 26°, 86° on
+  W, 114°; straight through the hit), at most 12° a frame (was 32°, 92° in a 15 fps frame); the feet stay up until it
+  ends. The tail's own yaw on W (`tyaw` 110°, `tY5` 16°, `tY6` 22°) still takes its tip through the front (41° off on
+  W). The frame-by-frame spec caps the body bone at 12.5° in the tail.
+- **Pinned feet** (style `pinFeet`; a real spawn's chase at 60 fps slid 0.7-1.6 studs: the client sees the server's
+  root in network steps, its velocity 0 or noisy). The client passes where the look's root stands (`rootAt`:
+  client/Anim/QuadRig.rootAt, x, z and yaw). A foot the pose holds down (plant 1, under 0.03 L) is pinned where it
+  came down in the world, whatever the root does; lifted, it eases onto its gait's path over 0.2 s (from more than
+  0.1 L off it, it lifts off its print first); held down but more than 0.2 L off its place (a hop, a stop), it steps
+  there (0.24 s, 0.1 L high, the furthest first, two at a time); a foot set down while its ease still lifts it settles
+  over 0.1 s. A keyed blow owns its feet: no step starts, the pins go to its places as it blends in. The gait's pace
+  is the larger of the given speed and the root's own travel over 0.2 s (a jump of 3 L in a frame is a teleport and
+  clears it). On the spot it steps round 1.2 rad a cycle, at most 1.5 cycles a second; the turn and the lean into it
+  are eased. Without `rootAt` (AnimLab) the root is carried on by the speed and the yaw rate.
+- Sims with Studio's measure (a foot bone's head, while within 0.1 stud of its lowest, its longest horizontal travel):
+  the chase on a root in network steps (20 or 10 Hz, interpolated, its velocity or none) at most 0.29 stud (was
+  0.8-3.3, 23 with no velocity); a turn on the spot (1.2-4 rad/s) at most 0.34; the game's pounce (12-45 studs) 0.06.
+  Specs: tests/dragon.spec.luau "its feet on a real spawn's root".
 
 ## 6. F5 Rigid models: caveSpider
 

@@ -404,7 +404,7 @@ T.describe("Dragon: what the model shows", function()
 		T.expect(math.abs(assert(heading, "the frame of the hit")) < 50).toBe(true)
 	end)
 
-	T.it("pounce: flies on its arc with the wings out and lands short of the target on W", function()
+	T.it("pounce: flies on its arc with the wings out and lands in the circle on W", function()
 		local hit = 1.4
 		local reach = 5 * L
 		local action = STYLE.actions.pounce
@@ -425,8 +425,9 @@ T.describe("Dragon: what the model shows", function()
 		-- the server's arc: a quarter of the flight, at least a leg length over the stance
 		T.expect(top > 0.138 + 0.9).toBe(true)
 		T.expect(span > 2.5).toBe(true)
-		-- the jaws at the target: the body a little more than a leg length short of it
-		T.expect(-root[3] / L).toBeNear((reach - 1.1 * L) / L, 0.25)
+		-- where the server's teleport puts the root (Entities/Monster.stepCast: the circle's centre), so nothing pops
+		-- when it arrives (studio review 2026-10-31: a landing a leg length short skidded the hind feet 3.5 studs)
+		T.expect(-root[3] / L).toBeNear(reach / L, 0.25)
 	end)
 
 	-- The head's heading (degrees, + to its left) from the head bone's joint to the snout's.
@@ -592,8 +593,9 @@ end)
 
 -- Studio review 2026-10-31: AnimLab's states as the lab plays them (a new instance standing still at once, the
 -- target 5 leg lengths ahead), frame by frame at 60 Hz: no bone turns more than about 12 degrees a frame but the
--- deliberate whips (the tail's whole blow; the strike of the claws, the rake, the stomp and the buffet, up to 32),
--- a foot on the ground stays within 0.15 stud of where it came down, the folded wings ride high.
+-- deliberate whips (the tail's whole blow, though its body turns no faster than the rest; the strike of the claws, the
+-- rake, the stomp and the buffet, up to 32), a foot on the ground stays within 0.15 stud of where it came down, the
+-- folded wings ride high.
 T.describe("Dragon: AnimLab's states frame by frame", function()
 	local STEP_CAP, WHIP_CAP, SLIDE_CAP = 12.5, 32, 0.15
 	local WHIPS: { [string]: string } =
@@ -665,15 +667,16 @@ T.describe("Dragon: AnimLab's states frame by frame", function()
 	for _, state in states do
 		T.it(`{state}: no bone turns more than ~12 degrees a frame (but a deliberate whip)`, function()
 			local prev: QuadPose.Posed? = nil
-			local frames: { { t: number, worst: number } } = {}
+			local frames: { { t: number, worst: number, body: number } } = {}
 			local hit, strike = lab(state, function(t, posed)
-				local worst = 0
+				local worst, body = 0, 0
 				if prev then
 					for bone, entry in posed do
 						worst = math.max(worst, turned(prev[bone].rot, entry.rot))
 					end
+					body = turned(prev[skel.rig.body].rot, posed[skel.rig.body].rot)
 				end
-				table.insert(frames, { t = t, worst = worst })
+				table.insert(frames, { t = t, worst = worst, body = body })
 				local copy: QuadPose.Posed = {}
 				for bone, entry in posed do
 					copy[bone] = { rot = table.clone(entry.rot), offset = nil }
@@ -691,6 +694,10 @@ T.describe("Dragon: AnimLab's states frame by frame", function()
 						and frame.t <= hit + 2 * DT
 					)
 				T.expect(frame.worst <= (if inWhip then WHIP_CAP else STEP_CAP)).toBe(true)
+				-- (studio check 2026-10-31: the tail whips, not the body; its spin was 23 degrees a frame)
+				if whip == "all" then
+					T.expect(frame.body <= STEP_CAP).toBe(true)
+				end
 			end
 		end)
 	end
@@ -948,6 +955,181 @@ T.describe("Dragon: gaits at the server's paces", function()
 		local inst = assert(QuadMotion.new(skel, "dragon", 3))
 		settle(inst, 0, 2, { speed = MONSTER.moveSpeed * 0.45 / SCALE, gait = "run", yawRate = 0, combat = true })
 		T.expect((inst.weights.gallop or 0) < 0.03).toBe(true)
+	end)
+end)
+
+-- (a real spawn's chase at 60 fps, 2026-10-31: the feet still slid up to 1.6 studs) the client sees the server's root in
+-- network steps, interpolated, with a velocity that may be 0; the look's root passes its place (`rootAt`), and a foot
+-- the pose holds down stays where it came down in the world. Studio's measure: a foot bone's head, while within 0.1
+-- stud of its own lowest height over the capture, its longest horizontal travel (studs).
+T.describe("Dragon: its feet on a real spawn's root", function()
+	local FOOT: { [string]: string } = {}
+	for side, leg in skel.rig.legs do
+		FOOT[side] = leg[#leg].bone
+	end
+
+	-- the feet's heads in the world (studs) with the root at (x, z) turned `yaw` (dump units)
+	local function feetInWorld(posed: QuadPose.Posed, x: number, z: number, yaw: number): { [string]: Vec }
+		local at = QuadRigFk.posed(skel, posed)
+		local c, sn = math.cos(yaw), math.sin(yaw)
+		local out: { [string]: Vec } = {}
+		for side, bone in FOOT do
+			local p = at[bone]
+			out[side] = { (x + p[1] * c + p[3] * sn) * SCALE, p[2] * SCALE, (z - p[1] * sn + p[3] * c) * SCALE }
+		end
+		return out
+	end
+
+	local function studioSlide(frames: { { [string]: Vec } }): number
+		local worst = 0
+		for _, side in LEGS do
+			local low = math.huge
+			for _, f in frames do
+				low = math.min(low, f[side][2])
+			end
+			local from: Vec? = nil
+			for _, f in frames do
+				local p = f[side]
+				if p[2] <= low + 0.1 then
+					local a = from or p
+					from = a
+					worst = math.max(worst, math.sqrt((p[1] - a[1]) ^ 2 + (p[3] - a[3]) ^ 2))
+				else
+					from = nil
+				end
+			end
+		end
+		return worst
+	end
+
+	T.it("chases on a root seen in network steps (20 and 10 Hz, its velocity or none): no foot slides", function()
+		-- the server's chase in hops: { start, seconds, studs, turn }
+		local hops = {
+			{ 1.0, 0.15, 1.8, 0.05 },
+			{ 2.2, 0.1, 1.2, -0.08 },
+			{ 3.0, 0.3, 3.5, 0.1 },
+			{ 4.1, 0.08, 0.9, 0 },
+			{ 5.0, 0.2, 2.4, -0.12 },
+			{ 6.3, 1.2, 14, 0.3 },
+		}
+		local function server(t: number): (number, number, number, number)
+			local x, z, yaw, v = 0, 0, 0, 0
+			for _, h in hops do
+				local k = math.clamp((t - h[1]) / h[2], 0, 1)
+				local d = h[3] * k
+				x -= math.sin(yaw + h[4] * k) * d
+				z -= math.cos(yaw + h[4] * k) * d
+				yaw += h[4] * k
+				if t >= h[1] and t < h[1] + h[2] then
+					v = h[3] / h[2]
+				end
+			end
+			return x, z, yaw, v
+		end
+		for _, case in { { 20, true }, { 20, false }, { 10, true }, { 10, false } } do
+			local hz, replicated = case[1], case[2]
+			local inst = assert(QuadMotion.new(skel, "dragon", 5))
+			local frames: { { [string]: Vec } } = {}
+			local t, lastYaw, yawRate = 0, nil :: number?, 0
+			while t < 8 do
+				t += DT
+				-- the snapshot before t - 0.1 s, interpolated to the next
+				local ts = t - 0.1
+				local s0 = math.floor(ts * hz) / hz
+				local ax, az, ayaw, v = server(s0)
+				local bx, bz, byaw = server(s0 + 1 / hz)
+				local k = (ts - s0) * hz
+				local x, z, yaw = ax + (bx - ax) * k, az + (bz - az) * k, ayaw + (byaw - ayaw) * k
+				if lastYaw then
+					yawRate += ((yaw - lastYaw) / DT - yawRate) * math.min(1, DT * 10)
+				end
+				lastYaw = yaw
+				local posed = QuadMotion.step(inst, {
+					now = t,
+					dt = DT,
+					speed = if replicated then v / SCALE else 0,
+					gait = "run",
+					yawRate = yawRate,
+					combat = true,
+					look = { 0, 0, -5 * L },
+					rootAt = { x / SCALE, z / SCALE, yaw },
+				})
+				table.insert(frames, feetInWorld(posed, x / SCALE, z / SCALE, yaw))
+			end
+			T.expect(studioSlide(frames) <= 0.35).toBe(true)
+		end
+	end)
+
+	T.it("turns on the spot on its root: the feet step round, none slides, no bone jerks", function()
+		for _, rate in { 1.2, 2.4, -2.4 } do
+			local inst = assert(QuadMotion.new(skel, "dragon", 5))
+			local frames: { { [string]: Vec } } = {}
+			local t, yaw, jerk = 0, 0, 0
+			local prev: QuadPose.Posed? = nil
+			while t < 6 do
+				t += DT
+				local r = if t > 1 and t < 4 then rate else 0
+				yaw += r * DT
+				local posed = QuadMotion.step(
+					inst,
+					{ now = t, dt = DT, speed = 0, yawRate = r, combat = true, rootAt = { 0, 0, yaw } }
+				)
+				if prev then
+					for bone, entry in posed do
+						local a = prev[bone].rot
+						local trace = 0
+						for i = 1, 9 do
+							trace += a[i] * entry.rot[i]
+						end
+						jerk = math.max(jerk, math.deg(math.acos(math.clamp((trace - 1) / 2, -1, 1))))
+					end
+				end
+				local copy: QuadPose.Posed = {}
+				for bone, entry in posed do
+					copy[bone] = { rot = table.clone(entry.rot), offset = nil }
+				end
+				prev = copy
+				table.insert(frames, feetInWorld(posed, 0, 0, yaw))
+			end
+			T.expect(studioSlide(frames) <= 0.35).toBe(true)
+			T.expect(jerk <= 12.5).toBe(true)
+		end
+	end)
+
+	-- (studio check 2026-10-31: the hind feet slid 3.5 studs as it landed; the pose came down short of the circle the
+	-- server puts the root in at W) the game's pounce: the root teleported into the circle just after W
+	T.it("pounces 12 and 45 studs with the root teleported into the circle: no foot slides", function()
+		local hit = windupOf("pounce")
+		local length = MotionTimeline.length(STYLE.actions.pounce, hit)
+		for _, studs in { 12, 45 } do
+			local reach = studs / SCALE
+			local inst = assert(QuadMotion.new(skel, "dragon", 5))
+			local now = settle(inst, 0, 1, { speed = 0, yawRate = 0, combat = true, look = { 0, 0, -reach } })
+			local run = { name = "pounce", start = now, hit = hit, reach = { 0, 0, -reach } }
+			local frames: { { [string]: Vec } } = {}
+			local z = 0
+			while now - run.start < length + 0.5 do
+				now += DT
+				if run.reach and now - run.start >= hit + 0.05 then
+					z, run.reach = -reach, nil
+				end
+				local posed = QuadMotion.step(
+					inst,
+					{
+						now = now,
+						dt = DT,
+						speed = 0,
+						yawRate = 0,
+						combat = true,
+						action = run,
+						look = { 0, 0, -reach - z },
+						rootAt = { 0, z, 0 },
+					} :: any
+				)
+				table.insert(frames, feetInWorld(posed, 0, z, 0))
+			end
+			T.expect(studioSlide(frames) <= 0.15).toBe(true)
+		end
 	end)
 end)
 
