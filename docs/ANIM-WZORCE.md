@@ -346,30 +346,43 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   weight over the locomotion; the brute walks and idles on the mutant clips all the time, each swinging ankle lifted
   half a leg (thigh and shin) over its stance at the top of its swing (`clips.lift = 0.5`). The swing is where the
   clip's ankle goes forward (the in-place walk carries the planted foot back), the stance the foot's lowest as
-  `plantFeet` holds it (no lower than PLANT_HEEL L under its rest, the ball no lower than at rest), both from the
-  clip on the model's own bones, so a rig crouched at rest or a short leg under high hips gets the same lift. Where the
+  `plantFeet` holds it (no lower than PLANT_HEEL L under its rest, the ball no lower than at rest), both from the clip
+  on the model's own bones, so a rig crouched at rest or a short leg under high hips gets the same lift. Where the
   clip's own swing falls short the ankle is raised by what it lacks, up by 40 % of the swing (`WALK_LIFT_PEAK`), down
   over the rest along a quarter cosine, the foot back on the clip's path at the strike; where it is over, the clip's
   swing is scaled down. The swinging foot is carried in its standing attitude, the toes 20 deg up (`WALK_TOE_UP`),
-  along the same bell. While it walks: the layer's own turn of each thigh and shin eases toward the frame's at 12 deg
-  a frame at 60 fps at most (`WALK_LIFT_TURN`, scaled by the frame's time), the whole turn of each no faster than that
-  or the clip's own, each foot 15 deg a frame at most (`WALK_FOOT_TURN`), whatever the rig. History: 2026-10-31 Studio
-  round 3: the yeti's toes rose 0.25 stud, a shuffle for its size; rounds 4-6 multiplied the clip's own lift (twice,
-  four, five, seven times) under a cap, 1.04-1.43 studs, but the cap held one foot flat at the top and the thigh
-  snapped 23 deg a frame coming off it; 2026-11-01 round 7 on the yeti's own rig (Studio's bone data): the knee and
-  the thigh snapped 16-31 deg a frame at every heel strike, the lift, a function of the clip's height, falling with
-  the clip's last drop onto the ground; on the yeti's long foot (0.96 stud ahead of the ankle) the mutant walk's
-  swinging foot curls its toes down and back under the ankle, below the ground, so the toes were held on it
-  (`plantFeet`) and dragged; fixed in Studio (thighs 6.4 deg, shins 9.2, feet 15.3, toes 1.53/1.42, ankles 0.49 L).
-  Round 8, the other brutes on the same walk: the height counted in hip heights over the rest lifted the mummy's short
-  legs 0.75 of their length and its shins snapped 20 deg at the strike; a swing looked for over the rest height was
-  never found on the werewolf, crouched at rest (its ankles 0.07 L up, a shuffle); the crystal guardian's feet turned
-  24 deg a frame. A test rig bent 80 deg at the knees on legs 0.8 as long gives the werewolf's numbers on the old lift
-  (0.07 L, thighs 4 deg) and one bent 40 deg on legs 0.8 the mummy's (0.75 L, shins 18); now on these and the yeti's
-  bones at the wander pace: ankles 0.43-0.50 L, thighs under 9.5 deg a frame at 60 fps, shins under 11, feet under
-  14 (the yeti's toes 1.06/1.13 studs, ankles 0.45/0.43 L). The lift keeps no state over the cycle's wrap: the swing
-  is a share of the walk's phase, the eased turns carry on. A blow plays on until the clip's stance is back (its
-  `follow` + `recover` cover the clip to where it settles).
+  along the same bell. The swing (the bell and the carry) ends at its strike: the lowest `plantFeet` holds the foot at
+  after the top (the latest of equal lows in the forward run, on past it while the hold still falls). From the top
+  until the hold has risen to where the stance keeps the foot (its landing, at most 15 % of the cycle, `WALK_LAND`) the
+  ankle comes down no lower than that height, let go over another 15 % (whole from half the walk's weight,
+  `WALK_HOLD`): the foot lands where it stays. While it walks: the layer's own turn of each thigh and shin eases toward
+  the frame's at 12 deg a frame at 60 fps at most (`WALK_LIFT_TURN`, scaled by the frame's time), the whole turn of
+  each no faster than that or the clip's own, each foot 15 deg a frame at most (`WALK_FOOT_TURN`) in the root and in
+  its shin (the ankle's own bend), whatever the rig. History: 2026-10-31 Studio round 3: the yeti's toes rose 0.25
+  stud, a shuffle for its size; rounds 4-6 multiplied the clip's own lift (twice, four, five, seven times) under a cap,
+  1.04-1.43 studs, but the cap held one foot flat at the top and the thigh snapped 23 deg a frame coming off it;
+  2026-11-01 round 7 on the yeti's own rig (Studio's bone data): the knee and the thigh snapped 16-31 deg a frame at
+  every heel strike, the lift, a function of the clip's height, falling with the clip's last drop onto the ground; on
+  the yeti's long foot (0.96 stud ahead of the ankle) the mutant walk's swinging foot curls its toes down and back
+  under the ankle, below the ground, so the toes were held on it (`plantFeet`) and dragged; fixed in Studio (thighs 6.4
+  deg, shins 9.2, feet 15.3, toes 1.53/1.42, ankles 0.49 L). Round 8, the other brutes on the same walk: the height
+  counted in hip heights over the rest lifted the mummy's short legs 0.75 of their length and its shins snapped 20 deg
+  at the strike; a swing looked for over the rest height was never found on the werewolf, crouched at rest (its ankles
+  0.07 L up, a shuffle); the crystal guardian's feet turned 24 deg a frame. A test rig bent 80 deg at the knees on legs
+  0.8 as long gives the werewolf's numbers on the old lift (0.07 L, thighs 4 deg) and one bent 40 deg on legs 0.8 the
+  mummy's (0.75 L, shins 18); now on these and the yeti's bones at the wander pace: ankles 0.43-0.50 L, thighs under
+  9.5 deg a frame at 60 fps, shins under 11, feet under 14 (the yeti's toes 1.06/1.13 studs, ankles 0.45/0.43 L). Round
+  9 (Studio fixed the werewolf, the guardian and the golem): the yeti's and the mummy's stance feet tip their toes
+  down, so `plantFeet` holds the ankle high over them (the yeti's 0.4 stud over its rest) and lower at the heel strike;
+  the swing, still lifting past the strike, came down into that dip and the ankle bounced up 0.30 stud (yeti) and 0.17
+  (mummy) in 3-4 frames, the shins turning 20-22 deg a frame in the knee, the thighs 12; on the werewolf's own bones a
+  sample stalled at the clip's loop split its swing in two. Proxies built from Studio's rest bones (mummy, werewolf,
+  guardian; the yeti's from round 7) at their wander pace (0.4 × `moveSpeed`): no bounce (the ankle lands at its
+  planted height and stays), in the parent bone thighs under 9.5 deg a frame, knees under 11, ankles 15, ankles lifted
+  0.41-0.50 L; a test rig bent 40 deg on feet 2.2 times as long bounces 0.05 L with its legs turning 12.9 deg a frame on the round-8 lift,
+  none now. The lift keeps no state over the cycle's wrap: the swing is a share of the walk's phase, the eased turns
+  carry on. A blow plays on until the clip's stance is back (its `follow` + `recover` cover the clip to where it
+  settles).
 - **Planted feet** (`BipedMotion` `plantFeet`, 2026-10-31 Studio review: the toes slid 0.8 stud and the hips travelled
   1.7 studs through `mob bandit slash`): while a non-boss biped stands (under 0.6 studs/s, turning under 1.2 rad/s,
   not floating, not in a fall or a keyed travel; a leap until its feet leave the ground and again once it has landed

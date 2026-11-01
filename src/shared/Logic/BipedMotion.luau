@@ -203,10 +203,20 @@ type Plant = {
 -- and the crouch (studs) of its run and, onto a spot ahead (`ahead`), the striking hand's side and the spot (root
 -- space) it is drawn onto.
 type LowPlan = { name: string, start: number, bow: number, crouch: number, side: string?, spot: Vec? }
--- A foot's swing in the walk clip (shares of its cycle: where its ankle starts forward and how long it goes), the
--- extra lift (studs) that brings it to the style's height at the top, its stance (studs over the ankle's rest) and the
--- share of the clip's own swing kept.
-type Swing = { off: number, len: number, extra: number, base: number, keep: number }
+-- A foot's swing in the walk clip (shares of its cycle: where its ankle starts forward and how long it goes to the
+-- strike), the extra lift (studs) that brings it to the style's height at the top, its stance (studs over the ankle's
+-- rest), the share of the clip's own swing kept, and its landing: from the top (`from`, a share of the cycle) for
+-- `land` of the cycle the ankle no lower than `floor` (studs over its rest), where the stance holds it after.
+type Swing = {
+	off: number,
+	len: number,
+	extra: number,
+	base: number,
+	keep: number,
+	from: number,
+	land: number,
+	floor: number,
+}
 -- The walk's lift on the last frame: its own turn of each thigh and shin, each thigh's, shin's and foot's turn as
 -- written and each thigh's and shin's in the clip (root axes).
 type LiftState = { turn: { [string]: Mat }, pose: { [string]: Mat }, clip: { [string]: Mat } }
@@ -774,25 +784,33 @@ end
 
 local FEET: { [string]: string } = { R = "RightFoot", L = "LeftFoot" }
 local TOES: { [string]: string } = { R = "RightToeBase", L = "LeftToeBase" }
+local SHINS: { [string]: string } = { R = "RightLeg", L = "LeftLeg" }
 
 -- A walk's swinging feet lifted to `height` legs (thigh and shin) at the top of their swing (`clips.lift`), over the
 -- stance as plantFeet holds it: each foot's swing in the walk clip is where its ankle goes forward (found once over
 -- WALK_SAMPLES of the cycle); where the clip's own swing falls short the ankle is raised by what it lacks along the
 -- square of liftBell (up by WALK_LIFT_PEAK of the swing, down over the rest, the foot back on the clip's path at the
 -- strike), where it is over the height it is scaled down; the swinging foot is carried in its standing attitude, its
--- toes WALK_TOE_UP up, along the same. In place on the walk's pose, the run left as it is. While it walks the
--- layer's own turn of each thigh and shin eases toward the frame's at WALK_LIFT_TURN rad/s at most, the whole turn
--- of each no faster than that or the clip's own, each foot WALK_FOOT_TURN at most, whatever the rig; a snap takes them
--- at once. (2026-10-31 Studio round 3: the yeti's lumbering walk lifted its toes a quarter of a stud and read as a
--- shuffle; rounds 4-6 multiplied the clip's own lift, capped: the cap held a foot flat at the top and the thigh
--- snapped off it; 2026-11-01 round 7, the yeti's own rig: the lift, a function of the clip's height, fell with the
--- clip's last drop onto the ground, and the knee and the thigh snapped 16-31 deg a frame at every heel strike; the
--- walk's swinging foot curls its toes down and back under the ankle, on the yeti's long foot below the ground, so the
--- toes were held on it and dragged; round 8, the other brutes: the height in hip heights over the rest lifted the
--- mummy's short legs 0.75 of their length and its shins snapped 20 deg at the strike, a swing found over the rest
--- height missed the werewolf's, crouched at rest (it shuffled, 0.07 of its leg), the crystal guardian's feet turned
--- 24 deg a frame.)
+-- toes WALK_TOE_UP up, along the same. The swing ends at its strike, the lowest plantFeet holds the foot at after the
+-- top; from the top until the hold has risen to where the stance keeps the foot (its landing, WALK_LAND of the cycle at
+-- most) the ankle comes down no lower than that, so it lands where it stays. In place on the walk's pose, the run left
+-- as it is. While it walks the layer's own turn of each thigh and shin eases toward the frame's at WALK_LIFT_TURN rad/s
+-- at most, the whole turn of each no faster than that or the clip's own, each foot WALK_FOOT_TURN at most, in the root
+-- and in its shin, whatever the rig; a snap takes them at once. (2026-10-31 Studio round 3: the yeti's lumbering walk
+-- lifted its toes a quarter of a stud and read as a shuffle; rounds 4-6 multiplied the clip's own lift, capped: the cap
+-- held a foot flat at the top and the thigh snapped off it; 2026-11-01 round 7, the yeti's own rig: the lift, a
+-- function of the clip's height, fell with the clip's last drop onto the ground, and the knee and the thigh snapped
+-- 16-31 deg a frame at every heel strike; the walk's swinging foot curls its toes down and back under the ankle, on the
+-- yeti's long foot below the ground, so the toes were held on it and dragged; round 8, the other brutes: the height in
+-- hip heights over the rest lifted the mummy's short legs 0.75 of their length and its shins snapped 20 deg at the
+-- strike, a swing found over the rest height missed the werewolf's, crouched at rest (it shuffled, 0.07 of its leg),
+-- the crystal guardian's feet turned 24 deg a frame; round 9: the yeti's and the mummy's stance feet tip their toes
+-- down, plantFeet holds the ankle high over them, lower at the heel strike: the swing came down into that dip and the
+-- ankle bounced up 0.17-0.30 studs in 3-4 frames, the shins snapping 20-22 deg; a sample stalled at the clip's loop
+-- split the werewolf's swing in two.)
 local WALK_SAMPLES = 60
+local WALK_LAND = 0.15
+local WALK_HOLD = 0.5
 local WALK_LIFT_PEAK = 0.4
 local WALK_LIFT_TURN = math.rad(12) * 60
 local WALK_FOOT_TURN = math.rad(15) * 60
@@ -862,8 +880,9 @@ local function swingsOf(inst: Instance, walk: string, height: number): { [string
 		for side, list in ups do
 			local z = fronts[side]
 			local n = #list
+			-- (a step back of a hundredth of the leg still counts: the loop's seam can stall a sample)
 			local function ahead(i: number): boolean
-				return z[i % n + 1] < z[(i - 1) % n + 1]
+				return z[i % n + 1] < z[(i - 1) % n + 1] + 0.01 * span
 			end
 			local first, longest = 0, 0
 			for i = 1, n do
@@ -878,24 +897,51 @@ local function swingsOf(inst: Instance, walk: string, height: number): { [string
 				end
 			end
 			if longest > 0 then
-				-- (the stance: the foot's lowest as it is held; the top: the clip's own, the toes carried in the swing)
-				local ground, top = math.huge, -math.huge
-				for i, v in list do
-					ground = math.min(ground, held[side][i])
-					local into = (i - first) % n
-					if into <= longest then
-						top = math.max(top, v)
+				local hold = held[side]
+				local function at(i: number): number
+					return hold[(i - 1) % n + 1]
+				end
+				-- (the top of the swing: the clip's own, the toes carried; the strike: the lowest the foot is held at
+				-- from there to a little past the forward run; the landing: where the hold rises to after it, the
+				-- foot rolled onto its stance)
+				local peak, top = first, -math.huge
+				for k = 0, longest do
+					local v = list[(first - 1 + k) % n + 1]
+					if v > top then
+						peak, top = first + k, v
 					end
 				end
-				local base = ground
-				local rise = top - base
+				local strike = peak
+				for i = peak, first + longest do
+					if at(i) <= at(strike) then
+						strike = i
+					end
+				end
+				while strike < first + longest + WALK_LAND * n and at(strike + 1) < at(strike) do
+					strike += 1
+				end
+				local landed = strike
+				while landed < strike + WALK_LAND * n and at(landed + 1) > at(landed) do
+					landed += 1
+				end
+				-- (the stance: the lowest the foot is held at outside the landing)
+				local ground = math.huge
+				for i, v in hold do
+					if (i - peak) % n > landed - peak then
+						ground = math.min(ground, v)
+					end
+				end
+				local rise = top - ground
 				local want = height * span
 				out[side] = {
 					off = (first - 1) / n,
-					len = longest / n,
+					len = math.max(1, strike - first) / n,
 					extra = math.max(0, want - rise),
-					base = base,
+					base = ground,
 					keep = if rise > want then want / rise else 1,
+					from = (peak - 1) / n,
+					land = (landed - peak) / n,
+					floor = at(landed),
 				}
 			end
 		end
@@ -939,10 +985,18 @@ local function liftSteps(
 		if swing and bone and ankle then
 			-- (raised by the bell where the clip's swing falls short; the clip's own swing scaled down where it is over)
 			local raise = if x < 1 then swing.extra * liftBell(x) ^ 2 else 0
+			local up = ankle[2] - bone.pos[2]
 			if swing.keep < 1 then
-				raise -= (1 - swing.keep) * math.max(0, ankle[2] - bone.pos[2] - swing.base)
+				raise -= (1 - swing.keep) * math.max(0, up - swing.base)
 			end
 			raise *= m
+			-- (from the top of the swing to the landing no lower than where the stance will hold it, let go over
+			-- WALK_LAND of the cycle after; held whole from WALK_HOLD of the walk's weight)
+			local held = (inst.phase - swing.from) % 1 - swing.land
+			if held < WALK_LAND then
+				local k = math.min(1, m / WALK_HOLD) * (1 - ease("inout", math.max(0, held) / WALK_LAND))
+				raise = math.max(raise, (swing.floor - up) * k)
+			end
 			if math.abs(raise) > 1e-4 then
 				local list: { [string]: Vec? } = targets or {}
 				list[side] = { ankle[1], ankle[2] + raise, ankle[3] }
@@ -1002,6 +1056,13 @@ local function liftSteps(
 		end
 		local was = if last then last.pose[key] else nil
 		local pose = if was then capTurn(was, want, footStep) else want
+		local shin, wasShin = world[SHINS[side]], if last then last.pose[SHINS[side]] else nil
+		if was and shin and wasShin then
+			-- (and in its shin: the ankle's own bend no faster either)
+			local held = NpcPose.mul(NpcPose.transpose(wasShin), was)
+			local bend = capTurn(held, NpcPose.mul(NpcPose.transpose(shin), pose), footStep)
+			pose = NpcPose.mul(shin, bend)
+		end
 		local turn = NpcPose.mul(pose, NpcPose.transpose(foot))
 		if turnAngle(turn) > 1e-4 then
 			BipedPose.turnSubtree(world, key, turn)

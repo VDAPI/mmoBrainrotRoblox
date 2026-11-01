@@ -53,14 +53,15 @@ local function styleOf(id: string): BipedStyles.Style
 end
 
 -- The guard NPC's rig dump (Mixamo bones with fingers) as client/Anim/BipedRig reads it, 6 studs tall.
--- The test rig; `short` and `bend` (deg) pull its knees and ankles up toward the hips and bend its knees forward
--- (the hips, the feet's toes and every bone's rest axes kept), a rig standing crouched at rest.
-local function skeleton(short: number?, bend: number?): BipedPose.Skeleton
+-- The test rig; `short` and `bend` (deg) pull its knees and ankles up toward the hips and bend its knees forward, a
+-- rig standing crouched at rest, and `foot` makes its feet that many times as long (the hips and every bone's rest
+-- axes kept, the toes moved with the ankles).
+local function skeleton(short: number?, bend: number?, foot: number?): BipedPose.Skeleton
 	local dump = serde.decode("json", fs.readFile("tools/anim/rigs/npc_guard.json"))
 	local scale = 6 / dump.height
 	local rest: { [string]: BipedPose.Bone } = {}
 	local names: { [string]: string } = {}
-	if short or bend then
+	if short or bend or foot then
 		local by: { [string]: any } = {}
 		for _, b in dump.bones do
 			by[BipedRigs.keyOf(b.name)] = b
@@ -83,7 +84,21 @@ local function skeleton(short: number?, bend: number?): BipedPose.Skeleton
 				hip[2] + l1 * (math.cos(at) * line[2] + math.sin(at) * front[2]),
 				hip[3] + l1 * (math.cos(at) * line[3] + math.sin(at) * front[3]),
 			}
-			by[side .. "Foot"].pos = { hip[1] + line[1] * reach, hip[2] + line[2] * reach, hip[3] + line[3] * reach }
+			local was = ankle
+			ankle = { hip[1] + line[1] * reach, hip[2] + line[2] * reach, hip[3] + line[3] * reach }
+			by[side .. "Foot"].pos = ankle
+			-- (the toes with the ankle, `foot` times as far from it)
+			for _, key in { side .. "ToeBase", side .. "Toe_End" } do
+				local toe = by[key]
+				if toe then
+					local f2 = foot or 1
+					toe.pos = {
+						ankle[1] + f2 * (toe.pos[1] - was[1]),
+						ankle[2] + f2 * (toe.pos[2] - was[2]),
+						ankle[3] + f2 * (toe.pos[3] - was[3]),
+					}
+				end
+			end
 		end
 	end
 	for _, b in dump.bones do
@@ -790,11 +805,12 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 	)
 
 	T.it(
-		"the brute's walk lifts its feet half a leg, not a shuffle, smoothly, on any rig (Studio rounds 3-8)",
+		"the brute's walk lifts its feet half a leg, not a shuffle, smoothly, on any rig (Studio rounds 3-9)",
 		function()
-			-- (the test rig, and one standing crouched at rest, its knees bent 80 deg on legs 0.8 as long: the werewolf's
-			-- swings were not found and it shuffled, 2026-11-01 round 8)
-			for _, rig in { SKEL, skeleton(0.8, 80) } do
+			-- (the test rig, one standing crouched at rest, its knees bent 80 deg on legs 0.8 as long: the werewolf's
+			-- swings were not found and it shuffled, 2026-11-01 round 8; and one with the knees bent 40 deg on feet 2.2
+			-- times as long, the yeti's and the mummy's: their ankles bounced up off the strike, round 9)
+			for _, rig in { SKEL, skeleton(0.8, 80), skeleton(1, 40, 2.2) } do
 				local span = 0
 				for _, leg in rig.leg do
 					span += (leg.l1 + leg.l2) / 2
@@ -802,12 +818,27 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 				local low, high = { R = math.huge, L = math.huge }, { R = -math.huge, L = -math.huge }
 				local legs, feet = 0, 0
 				local before: BipedPose.World? = nil
+				local heights: { [string]: { number } } = { R = {}, L = {} }
 				local function turn(a: { number }, b: { number }): number
 					local inner = 0
 					for i = 1, 9 do
 						inner += a[i] * b[i]
 					end
 					return math.deg(math.acos(math.clamp((inner - 1) / 2, -1, 1)))
+				end
+				-- (a bone's own turn in its parent's: transpose(parent) * bone)
+				local function within(parent: { number }, bone: { number }): { number }
+					local out = table.create(9, 0)
+					for r = 0, 2 do
+						for c = 0, 2 do
+							local v = 0
+							for k = 0, 2 do
+								v += parent[k * 3 + r + 1] * bone[k * 3 + c + 1]
+							end
+							out[r * 3 + c + 1] = v
+						end
+					end
+					return out
 				end
 				joints("brute", "", 0, 3, function(_, input)
 					-- (the wander's pace, 0.4 of a yeti's speed at this size)
@@ -817,6 +848,7 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 						for side, key in FEET do
 							low[side] = math.min(low[side], at[key][2])
 							high[side] = math.max(high[side], at[key][2])
+							table.insert(heights[side], at[key][2])
 						end
 						local prev = before
 						if prev then
@@ -829,27 +861,58 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 							for _, key in FEET do
 								feet = math.max(feet, turn(prev[key], world[key]))
 							end
+							-- (and in their parents, as the rig's joints turn: the knee, the ankle)
+							for _, pair in { { "LeftUpLeg", "LeftLeg" }, { "RightUpLeg", "RightLeg" } } do
+								local a, b =
+									within(prev[pair[1]], prev[pair[2]]), within(world[pair[1]], world[pair[2]])
+								legs = math.max(legs, turn(a, b))
+							end
+							for _, pair in { { "LeftLeg", "LeftFoot" }, { "RightLeg", "RightFoot" } } do
+								local a, b =
+									within(prev[pair[1]], prev[pair[2]]), within(world[pair[1]], world[pair[2]])
+								feet = math.max(feet, turn(a, b))
+							end
 						end
 					end
 					before = table.clone(world)
 				end, rig)
 				local lift = { R = (high.R - low.R) / span, L = (high.L - low.L) / span }
+				-- (a bounce at the strike: the ankle down onto a low and straight back up off it within 4 frames, in
+				-- legs)
+				local bounce = 0
+				for _, list in heights do
+					for i = 5, #list - 4 do
+						local h = list[i]
+						if h <= list[i - 1] and h <= list[i + 1] then
+							bounce = math.max(bounce, math.min(list[i - 4] - h, list[i + 4] - h) / span)
+						end
+					end
+				end
 				if DEBUG then
 					print(
 						string.format(
-							"brute walk ankle lift R %.3f L %.3f legs, legs %.1f feet %.1f deg",
+							"brute walk ankle lift R %.3f L %.3f legs, legs %.1f feet %.1f deg, bounce %.3f legs",
 							lift.R,
 							lift.L,
 							legs,
-							feet
+							feet,
+							bounce
 						)
 					)
 				end
 				-- (the review measured the yeti's toes a quarter of a stud up, then 0.5-0.7, then 1.04-1.08: it asked for
 				-- 1.2-1.6, about half the yeti's leg; then no more than 12-14 deg a frame; then the mummy's ankles 0.75 of
-				-- its leg up, the werewolf's 0.07: at most 0.55)
-				T.expect({ lift.R > 0.4, lift.L > 0.4, lift.R < 0.55, lift.L < 0.55, legs < 12, feet < 16 })
-					.toEqual({ true, true, true, true, true, true })
+				-- its leg up, the werewolf's 0.07: at most 0.55; then the ankles bounced 0.07-0.12 of the leg off the
+				-- strike, the shins turning 20-22 deg in the knee)
+				T.expect({
+					lift.R > 0.4,
+					lift.L > 0.4,
+					lift.R < 0.55,
+					lift.L < 0.55,
+					legs < 12,
+					feet < 16,
+					bounce < 0.03,
+				}).toEqual({ true, true, true, true, true, true, true })
 			end
 		end
 	)
