@@ -275,7 +275,7 @@ Przedmioty z katalogu na żywej postaci, bez zmiany kodu (`Logic/TryLook`, `Cosm
 - `-<element>` zdejmuje element stroju (nazwa `g`, np. `-breastplate`), `-all` wszystkie (i zwykłe buty), `-hair`
   fryzurę.
 - `body <nazwa>`: ciała z `BodyLooks.trialBodies` (`addison`, `jordan`, `robin`, `rene` z id części; `billie`,
-  `harper`, `glenn`, `andi` przez pakiet; `dawson` i `off` = ciało gry); `body <id pakietu>` (serwer pyta Roblox o
+  `harper`, `glenn`, `andi` przez pakiet; `blocky` = klasyczny kwadratowy ludek Roblox z klasyczną głową i twarzą, we własnych proporcjach; `dawson` i `off` = ciało gry); `body <id pakietu>` (serwer pyta Roblox o
   części pakietu); `body <tułów> <l. ramię> <p. ramię> <l. noga> <p. noga>` (z szóstym id na początku: także głowa).
   Bez szóstego id głowa zostaje twarzą postaci. Skala ciała jak dla Dawsona.
 - Samo `/trylook` mówi, co jest przymierzane; `clear` wraca do zwykłego wyglądu. Nowe przedmioty zastępują poprzednie,

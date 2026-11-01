@@ -147,7 +147,8 @@ cmd(
 cmd("character", "lookfree", {})
 cmd("character", "avatarmode", { enum("mode", { "on", "off" }) })
 -- Catalog clothing 2026-11-01 (docs/WYGLAD-KLAS.md §3): catalog items tried on over the look (Logic/TryLook parses
--- every word: <id>[:<Type>[:<Order>]], -<garment>, -all, -hair; body <name | bundle | ids>; clear)
+-- every word: <id>[:<Type>[:<Order>]], -<garment>, -all, -hair; body <name | bundle | ids>; scale <name | numbers>;
+-- clear)
 cmd("character", "trylook", {
 	str("what", true),
 	str("a", true),

@@ -98,6 +98,13 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 		scales = table.clone(scales)
 		scales.height *= BodyLooks.scales.height
 	end
+	local classic = BodyLooks.isClassic(spec.bodyParts)
+	if classic then
+		scales = BodyLooks.classicScales :: any -- the blocky figure in its own proportions (trial body `blocky`)
+	end
+	if spec.bodyScales then
+		scales = spec.bodyScales -- a dev trial's proportions (/trylook scale)
+	end
 	desc.HeightScale = scales.height
 	desc.WidthScale = scales.width * spec.build.width
 	desc.DepthScale = scales.depth * spec.build.depth
@@ -137,7 +144,8 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 		pcall(function()
 			-- layered clothing of a copied description never in the class look; the face's brows and lashes (W10)
 			local list = {}
-			local face = spec.face
+			-- the classic head draws the default face decal; brows and lashes fit only the dynamic head
+			local face = if classic then nil else spec.face
 			if face and face.browsId ~= 0 then
 				table.insert(
 					list,
@@ -1190,8 +1198,9 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 		end
 	end
 	-- (e) face (W10): brows and lashes (a preview puts on the chosen ones, the server has them from the description),
-	-- the brows in the hair colour, the beard and the face paint
-	local face = spec.face
+	-- the brows in the hair colour, the beard and the face paint; the classic blocky head (trial body `blocky`) keeps
+	-- its face decal and wears none of it
+	local face = if BodyLooks.isClassic(spec.bodyParts) then nil else spec.face
 	local head = ctx.head
 	if face and head then
 		for _, child in head:GetChildren() do

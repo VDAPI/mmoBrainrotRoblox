@@ -5,6 +5,7 @@
 -- the look. Every refusal is a key "admin.trylook.<why>" (PL and EN).
 --   /trylook <id>[:<Type>[:<Order>]] ... [-<garment>] [-all] [-hair]   items over the look (layered when the type is)
 --   /trylook body <name> | <bundle id> | [<head>] <torso> <leftArm> <rightArm> <leftLeg> <rightLeg> | off
+--   /trylook scale <a|b|c|f|d> | <head> [<height> [<width> [<depth> [<bodyType> [<proportion>]]]]] | off
 --   /trylook clear                                                       the normal look again
 --   /trylook                                                             what is tried now
 
@@ -14,7 +15,7 @@ local CharacterLook = require("./CharacterLook")
 local TryLook = {}
 
 export type Parsed = {
-	kind: "show" | "clear" | "items" | "body",
+	kind: "show" | "clear" | "items" | "body" | "scale",
 	-- kind "items": the trial's items and what it takes off (replaces the tried items, keeps a tried body)
 	pieces: { CharacterLook.CatalogPiece }?,
 	hide: { string }?,
@@ -24,7 +25,12 @@ export type Parsed = {
 	-- looks up (bodyFromBundle)
 	body: { [string]: number }?,
 	bundle: number?,
+	-- kind "scale": the scales (nil = the game's own again); a preset may bring its body (`body`)
+	scales: { [string]: number }?,
 }
+
+-- The scale fields in the order they are typed after `scale`.
+local SCALE_FIELDS = { "head", "height", "width", "depth", "bodyType", "proportion" }
 
 -- Body part fields of the five ids after `body` (the head stays the face's), and of six (the head first).
 local FIVE = { "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg" }
@@ -75,6 +81,41 @@ local function parseBody(args: { string }): (Parsed?, string?, { [string]: any }
 	return { kind = "body", body = body }, nil, nil
 end
 
+local function parseScale(args: { string }): (Parsed?, string?, { [string]: any }?)
+	local rest = table.move(args, 2, #args, 1, {})
+	if #rest == 1 then
+		local word = string.lower(rest[1])
+		if word == "off" then
+			return { kind = "scale" }, nil, nil
+		end
+		local preset = BodyLooks.trialScales[word]
+		if preset then
+			local scales: { [string]: number } = {}
+			for _, field in SCALE_FIELDS do
+				scales[field] = preset[field]
+			end
+			local out: Parsed = { kind = "scale", scales = scales }
+			local body = if preset.body then BodyLooks.trialBodies[preset.body] else nil
+			if body and body.parts then
+				out.body = table.clone(body.parts)
+			end
+			return out, nil, nil
+		end
+	end
+	if #rest < 1 or #rest > #SCALE_FIELDS then
+		return nil, "admin.trylook.scale", { value = table.concat(rest, " ") }
+	end
+	local scales: { [string]: number } = table.clone(BodyLooks.scales) :: any
+	for i, text in rest do
+		local n = tonumber(text)
+		if n == nil or n ~= n or n < 0 or n > 2 then
+			return nil, "admin.trylook.scale", { value = text }
+		end
+		scales[SCALE_FIELDS[i]] = n
+	end
+	return { kind = "scale", scales = scales }, nil, nil
+end
+
 -- (parsed, errorKey, errorArgs) for the arguments of /trylook.
 function TryLook.parse(args: { string }): (Parsed?, string?, { [string]: any }?)
 	local first = args[1]
@@ -89,6 +130,8 @@ function TryLook.parse(args: { string }): (Parsed?, string?, { [string]: any }?)
 		return { kind = "clear" }, nil, nil
 	elseif word == "body" then
 		return parseBody(args)
+	elseif word == "scale" then
+		return parseScale(args)
 	end
 	local pieces: { CharacterLook.CatalogPiece } = {}
 	local hide: { string } = {}
@@ -167,13 +210,25 @@ function TryLook.merge(trial: CharacterLook.Trial?, parsed: Parsed): CharacterLo
 	local out: CharacterLook.Trial = if trial then table.clone(trial) else {}
 	if parsed.kind == "body" then
 		out.body = if parsed.body then table.clone(parsed.body) else nil
+	elseif parsed.kind == "scale" then
+		out.scales = if parsed.scales then table.clone(parsed.scales) else nil
+		if parsed.body then
+			out.body = table.clone(parsed.body)
+		end
 	elseif parsed.kind == "items" then
 		out.pieces = if parsed.pieces and #parsed.pieces > 0 then parsed.pieces else nil
 		out.hide = if parsed.hide and #parsed.hide > 0 then parsed.hide else nil
 		out.bare = if parsed.bare then true else nil
 		out.hideHair = if parsed.hideHair then true else nil
 	end
-	if out.pieces == nil and out.hide == nil and out.bare == nil and out.hideHair == nil and out.body == nil then
+	if
+		out.pieces == nil
+		and out.hide == nil
+		and out.bare == nil
+		and out.hideHair == nil
+		and out.body == nil
+		and out.scales == nil
+	then
 		return nil
 	end
 	return out
@@ -214,6 +269,13 @@ function TryLook.describe(trial: CharacterLook.Trial?): string
 			end
 		end
 		table.insert(parts, `body {table.concat(ids, " ")}`)
+	end
+	if trial.scales then
+		local values = {}
+		for _, field in SCALE_FIELDS do
+			table.insert(values, `{field}={trial.scales[field]}`)
+		end
+		table.insert(parts, `scale {table.concat(values, " ")}`)
 	end
 	return table.concat(parts, "; ")
 end

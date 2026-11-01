@@ -38,6 +38,12 @@ T.describe("Try-on of catalog items (/trylook, 2026-11-01)", function()
 		T.expect(parse("clear")).toEqual({ kind = "clear" })
 		T.expect(select(2, parse("clear now"))).toBe("admin.usage.trylook")
 		T.expect(parse("body addison")).toEqual({ kind = "body", body = BodyLooks.trialBodies.addison.parts })
+		local blocky = parse("body Blocky")
+		T.expect(blocky.kind).toBe("body")
+		T.expect(BodyLooks.isClassic(blocky.body)).toBe(true)
+		T.expect(BodyLooks.isClassic(BodyLooks.trialBodies.addison.parts)).toBe(false)
+		T.expect(BodyLooks.isClassic(nil)).toBe(false)
+		T.expect(BodyLooks.classicScales.bodyType).toBe(0)
 		T.expect(parse("body Billie")).toEqual({ kind = "body", bundle = 995 })
 		T.expect(parse("body 988")).toEqual({ kind = "body", bundle = 988 })
 		T.expect(parse("body dawson")).toEqual({ kind = "body" })
@@ -52,13 +58,50 @@ T.describe("Try-on of catalog items (/trylook, 2026-11-01)", function()
 		T.expect(select(2, parse("body 1 2 x 4 5"))).toBe("admin.trylook.body")
 		T.expect(select(2, parse("body nobody"))).toBe("admin.trylook.body")
 		for name, preset in BodyLooks.trialBodies do
-			T.expect({ name, preset.bundle > 0, name == string.lower(name) }).toEqual({ name, true, true })
-			for field in preset.parts or {} do
+			-- the classic blocky figure has no bundle and sets every part to 0, the head too
+			local classic = BodyLooks.isClassic(preset.parts)
+			T.expect({ name, preset.bundle > 0 or classic, name == string.lower(name) }).toEqual({ name, true, true })
+			for field in if classic then {} else preset.parts or {} do
 				T.expect({ name, field, table.find(BodyLooks.PART_FIELDS, field) ~= nil and field ~= "Head" })
 					.toEqual({ name, field, true })
 			end
 		end
 	end)
+
+	T.it(
+		"2b. proportions: presets (f brings the Jordan body), numbers over the game's scales, off, the merge",
+		function()
+			local c = parse("scale C")
+			T.expect(c).toEqual({
+				kind = "scale",
+				scales = { head = 0.75, height = 1.05, width = 0.95, depth = 1, bodyType = 0, proportion = 0 },
+			})
+			local f = parse("scale f")
+			T.expect(f.body).toEqual(BodyLooks.trialBodies.jordan.parts)
+			T.expect(f.scales.bodyType).toBe(0.5)
+			local typed = parse("scale 0.7 1.1")
+			T.expect(typed.scales.head).toBe(0.7)
+			T.expect(typed.scales.height).toBe(1.1)
+			T.expect(typed.scales.width).toBe(BodyLooks.scales.width)
+			T.expect(parse("scale off")).toEqual({ kind = "scale" })
+			T.expect(select(2, parse("scale"))).toBe("admin.trylook.scale")
+			T.expect(select(2, parse("scale x"))).toBe("admin.trylook.scale")
+			T.expect(select(2, parse("scale 3"))).toBe("admin.trylook.scale")
+			T.expect(select(2, parse("scale 1 1 1 1 1 1 1"))).toBe("admin.trylook.scale")
+			local trial = TryLook.merge(nil, f)
+			T.expect(trial and trial.scales and trial.scales.head).toBe(0.8)
+			T.expect(trial and trial.body).toEqual(BodyLooks.trialBodies.jordan.parts)
+			T.expect(string.find(TryLook.describe(trial), "scale head=0.8", 1, true) ~= nil).toBe(true)
+			local off = TryLook.merge(trial, parse("scale off"))
+			T.expect(off and off.scales).toBeNil()
+			T.expect(TryLook.merge({ scales = { head = 1 } }, parse("scale off"))).toBeNil()
+			for name, preset in BodyLooks.trialScales do
+				for _, field in { "head", "height", "width", "depth", "bodyType", "proportion" } do
+					T.expect({ name, field, type(preset[field]) }).toEqual({ name, field, "number" })
+				end
+			end
+		end
+	)
 
 	T.it("3. the body parts of a bundle's items (the head stays the face's)", function()
 		local items = {
@@ -109,6 +152,7 @@ T.describe("Try-on of catalog items (/trylook, 2026-11-01)", function()
 				"admin.trylook.garment",
 				"admin.trylook.body",
 				"admin.trylook.bundle",
+				"admin.trylook.scale",
 			}
 		do
 			T.expect({ key, pl[key] ~= nil, en[key] ~= nil }).toEqual({ key, true, true })

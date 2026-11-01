@@ -79,6 +79,12 @@ BodyLooks.trialBodies = table.freeze({
 			RightLeg = 11714039415,
 		},
 	},
+	-- owner 2026-11-01: the classic blocky Roblox figure (every part id 0 = Roblox's own R15 blocks, the classic head
+	-- with a face decal) in its own proportions (BodyLooks.classicScales, BodyLooks.isClassic)
+	blocky = {
+		bundle = 0,
+		parts = { Head = 0, Torso = 0, LeftArm = 0, RightArm = 0, LeftLeg = 0, RightLeg = 0 },
+	},
 	billie = { bundle = 995 },
 	harper = { bundle = 989 },
 	glenn = { bundle = 984 },
@@ -99,6 +105,42 @@ BodyLooks.scales = table.freeze({
 	bodyType = 0,
 	proportion = 0,
 } :: { [string]: number })
+
+-- owner 2026-11-01: proportions to compare on the live character (dev /trylook scale <name>), from the Studio
+-- comparison of 1.11 (the same body and face in the same armour): a = today (3.2 heads tall, doll-like), b = a smaller
+-- head (3.9), c = a smaller head, taller and slimmer (4.5, a stylised game hero), f = the Jordan body (`body`) with a
+-- smaller head and half the body type (5.1), d = the full body type (about 6.5, nearly realistic). Values of b, f and d
+-- are close to the compared ones, not measured again.
+BodyLooks.trialScales = table.freeze({
+	a = { height = 0.9, width = 1, depth = 1, head = 1, bodyType = 0, proportion = 0 },
+	b = { height = 0.9, width = 1, depth = 1, head = 0.8, bodyType = 0, proportion = 0 },
+	c = { height = 1.05, width = 0.95, depth = 1, head = 0.75, bodyType = 0, proportion = 0 },
+	f = { height = 0.9, width = 1, depth = 1, head = 0.8, bodyType = 0.5, proportion = 0, body = "jordan" },
+	d = { height = 0.9, width = 1, depth = 1, head = 0.8, bodyType = 1, proportion = 0 },
+} :: { [string]: { [string]: any } })
+
+-- The scales of the classic blocky figure (trial body `blocky`): the standard R15 height, classic proportions.
+BodyLooks.classicScales = table.freeze({
+	height = 1,
+	width = 1,
+	depth = 1,
+	head = 1,
+	bodyType = 0,
+	proportion = 0,
+})
+
+-- True when a trial body is the classic blocky figure (every part id 0).
+function BodyLooks.isClassic(parts: { [string]: number }?): boolean
+	if not parts then
+		return false
+	end
+	for _, field in BodyLooks.PART_FIELDS do
+		if parts[field] ~= 0 then
+			return false
+		end
+	end
+	return true
+end
 
 -- W10: the face choices (Data/ClassLooks.FACES id) -> the dynamic head and its lashes, from the free Roblox base body
 -- bundles (Dawson, Jordan, Billie, Rene, Andi, Robin, Harper, Addison). Every head fits the neck of the body above.

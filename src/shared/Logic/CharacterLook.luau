@@ -301,6 +301,8 @@ export type Trial = {
 	bare: boolean?, -- no garment of the outfit is worn (nor the plain shoes)
 	hideHair: boolean?, -- no hairstyle
 	body: { [string]: number }?, -- HumanoidDescription body part fields -> ids (a Head goes over the face's head)
+	-- the body's scales (height, width, depth, head, bodyType, proportion) instead of Data/BodyLooks.scales
+	scales: { [string]: number }?,
 }
 
 export type LookInput = {
@@ -348,6 +350,7 @@ export type LookSpec = {
 	build: { width: number, depth: number }, -- W10: width and depth of the body (Data/BodyLooks.builds)
 	shoes: boolean, -- plain shoes drawn (owner 2026-10-21: a class look without boots or catalog shoes)
 	bodyParts: { [string]: number }?, -- a trial's body (nil = the game's body, Data/BodyLooks.parts)
+	bodyScales: { [string]: number }?, -- a trial's scales (nil = Data/BodyLooks.scales)
 }
 
 local function int(n: any): number
@@ -434,6 +437,10 @@ function CharacterLook.catalogKey(spec: LookSpec): string
 			table.insert(ids, tostring(body[field] or 0))
 		end
 		key ..= `|b{table.concat(ids, ".")}`
+	end
+	local scales = spec.bodyScales
+	if scales then
+		key ..= `|z{scales.height},{scales.width},{scales.depth},{scales.head},{scales.bodyType},{scales.proportion}`
 	end
 	return key
 end
@@ -668,7 +675,9 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 		pieces += CharacterLook.LURE_PIECES
 	end
 	local bodyParts: { [string]: number }? = nil
+	local bodyScales: { [string]: number }? = nil
 	if trial then
+		bodyScales = if trial.scales then table.clone(trial.scales) else nil
 		for _, piece in (trial.pieces or {}) :: { CatalogPiece } do
 			table.insert(accessories, table.clone(piece))
 		end
@@ -694,6 +703,7 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 		build = { width = build.width, depth = build.depth },
 		shoes = not avatar and not shod and not bare,
 		bodyParts = bodyParts,
+		bodyScales = bodyScales,
 	}
 	-- the head, lashes and brows come from the description too: a change re-applies it
 	out.catalogKey = CharacterLook.catalogKey(out)
