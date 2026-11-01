@@ -45,12 +45,17 @@ local ALPHA_STEP = 0.01
 -- wrote the bone since (an Animator, a script: the bone would show its rest pose on the frames the rig skips).
 local LEGS_NEAREST, LEGS_NEAREST_TOUCH = 12, 6
 local TURN_STEP = math.rad(0.1)
+-- A leg is written whole once any of its joints moved LEG_STEP (rad): written joint by joint, each as it passed
+-- TURN_STEP, a standing leg's foot wandered a few hundredths of a stud about its point every frame as the body moved
+-- (Studio review 2026-10-31: the planted tips' slide).
+local LEG_STEP = math.rad(0.03)
 local OVERWRITE_EPS = 1e-4
 
 -- One leg bone the rig turns: about the model's vertical (`y`, the first joint of a leg: its yaw) and its bend axis
 -- `n`, both in the bone's own axes (rest^-1 * R * rest is a turn about rest^-1 * axis), by `share` of the angle; the
 -- angles written last.
 -- (`cf`: the Transform last written, so a bone something else turned in between is written again)
+-- (a bone turns `a` about `n` and then `b` about `y`, its own second axis: a leg's yaw or its last bone's roll)
 type Joint = { bone: Bone, y: Vector3?, n: Vector3, share: number, a: number, b: number, cf: CFrame? }
 -- The legs of a crawler with bones (Logic/OctoMotion) and how the rig writes them.
 type Legs = {
@@ -224,21 +229,25 @@ local function rest(item: Instance, name: string, now: any): any
 	return kept
 end
 
--- The joints of the bones `names` (rest frames by name) turning about `axis` (model frame), each by its share.
+-- The joints of the bones `names` (rest frames by name) turning about `axis` (model frame), each by its share; a leg's
+-- first also yaws about the up, its last rolls its bone about `roll` (the leg's rest direction: Logic/OctoPose.pinned).
 local function jointsOf(
 	names: { string },
 	bones: { [string]: Bone },
 	frames: { [string]: CFrame },
 	axis: { Vector3 },
 	share: { number }?,
-	yaw: boolean
+	roll: Vector3?
 ): { Joint }
 	local out: { Joint } = {}
 	for j, name in names do
 		local rest = frames[name]
 		out[j] = {
 			bone = bones[name] :: Bone,
-			y = if yaw and j == 1 then rest:VectorToObjectSpace(Vector3.yAxis) else nil,
+			y = if roll and j == 1
+				then rest:VectorToObjectSpace(Vector3.yAxis)
+				elseif roll and j == #names then rest:VectorToObjectSpace(roll)
+				else nil,
 			n = rest:VectorToObjectSpace(axis[math.min(j, #axis)]),
 			share = if share then share[j] else 1,
 			a = 0,
@@ -301,7 +310,14 @@ local function legsOf(
 	local function limbs(list: { OctoPose.Leg }): { { Joint } }
 		local out = {}
 		for i, leg in list do
-			out[i] = jointsOf(leg.bones, bones, frames, { Vector3.new(leg.ax, 0, leg.az) }, nil, true)
+			out[i] = jointsOf(
+				leg.bones,
+				bones,
+				frames,
+				{ Vector3.new(leg.ax, 0, leg.az) },
+				nil,
+				Vector3.new(leg.rx, 0, leg.rz)
+			)
 		end
 		return out
 	end
@@ -313,7 +329,7 @@ local function legsOf(
 		for j, v in t.axis do
 			axis[j] = Vector3.new(v[1], v[2], v[3])
 		end
-		return jointsOf(t.bones, bones, frames, axis, t.share, false)
+		return jointsOf(t.bones, bones, frames, axis, t.share, nil)
 	end
 	local fangs = {}
 	for i, t in skel.fangs do
@@ -649,15 +665,24 @@ local function overwritten(joint: Joint): boolean
 	return cf ~= nil and not joint.bone.Transform:FuzzyEq(cf, OVERWRITE_EPS)
 end
 
--- The turns of one leg (the yaw on its first joint) where they changed or something else wrote them; the number of
--- bones found written by another.
+-- The turns of one leg (the yaw on its first joint, the roll on its last), the whole leg once one moved LEG_STEP, and
+-- the bones something else wrote; the number of bones found written by another.
 local function writeLeg(joints: { Joint }, f: OctoMotion.Foot): number
 	local c = f.c
 	local other = 0
+	local last = #joints
+	local whole = false
+	for j, joint in joints do
+		local b = if j == 1 then f.psi elseif j == last then c[last + 1] or 0 else 0
+		if math.abs(c[j] - joint.a) > LEG_STEP or math.abs(b - joint.b) > LEG_STEP then
+			whole = true
+			break
+		end
+	end
 	for j, joint in joints do
 		local a = c[j]
-		local b = if j == 1 then f.psi else 0
-		local moved = math.abs(a - joint.a) > TURN_STEP or math.abs(b - joint.b) > TURN_STEP
+		local b = if j == 1 then f.psi elseif j == last then c[last + 1] or 0 else 0
+		local moved = whole and (a ~= joint.a or b ~= joint.b)
 		if not moved and overwritten(joint) then
 			other += 1
 			moved = true

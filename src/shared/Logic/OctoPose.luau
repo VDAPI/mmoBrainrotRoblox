@@ -299,7 +299,8 @@ end
 
 -- The yaw and the pair (a, b) that put the foot of `leg` on (tx, ty, tz) (look frame), from the guess (a, b): the yaw
 -- exactly, the pair by damped least-squares steps in the leg's plane (out of reach, the foot gets as close as it can;
--- the knee never flips). `iters` steps at most.
+-- the knee never flips). `iters` steps at most. `ankle` turns the last joint on top of the pair (OctoPose.ankle);
+-- `upto` < n puts the head of bone upto + 1 there instead of the foot (the joints below it left out).
 function OctoPose.solve(
 	leg: Leg,
 	tx: number,
@@ -307,12 +308,16 @@ function OctoPose.solve(
 	tz: number,
 	a: number,
 	b: number,
-	iters: number
+	iters: number,
+	ankle: number?,
+	upto: number?
 ): (number, number, number)
 	local hip = leg.hip
 	local dx, dy, dz = tx - hip[1], ty - hip[2], tz - hip[3]
 	local flat2 = dx * dx + dz * dz
-	local sw = leg.sw
+	local n = math.clamp(upto or leg.n, 1, leg.n)
+	local extra = if n == leg.n then ankle or 0 else 0
+	local sw = if n == leg.n then leg.sw else leg.sw - leg.sws[leg.n]
 	-- the foot's flat distance in the plane (the part across it stays)
 	local R = math.sqrt(math.max(flat2 - sw * sw, 1e-6))
 	local psi = 0
@@ -327,8 +332,11 @@ function OctoPose.solve(
 		local r, y = 0, 0
 		local ar, ay, br, by = 0, 0, 0, 0
 		local cum, da, db = 0, 0, 0
-		for i = 1, leg.n do
+		for i = 1, n do
 			cum += lift[i] * a + bend[i] * b
+			if i == leg.n then
+				cum += extra
+			end
 			da += lift[i]
 			db += bend[i]
 			local cs, sn = math.cos(cum), math.sin(cum)
@@ -359,13 +367,114 @@ function OctoPose.solve(
 	return psi, a, b
 end
 
--- Where the foot of `leg` is (look frame) for yaw `psi` and joint turns `c`.
-function OctoPose.foot(leg: Leg, psi: number, c: { number }): (number, number, number)
-	local r, y = planar(leg, c)
-	local vx, vz = r * leg.rx + leg.sw * leg.ax, r * leg.rz + leg.sw * leg.az
+-- The last segment (its head to the foot) in the leg's own frame (along its rest direction, across it along the bend
+-- axis, up) after the joints above turned `C` in all, its own joint `cn` and its roll `ro` (about the leg's rest
+-- direction: the last bone tilted out of the leg's plane, sideways).
+local function lastSegment(leg: Leg, C: number, cn: number, ro: number): (number, number, number)
+	local n = leg.n
+	local sr, sy, sw = leg.sr[n], leg.sy[n], leg.sws[n]
+	local ur, uy = sr * math.cos(cn) - sy * math.sin(cn), sr * math.sin(cn) + sy * math.cos(cn)
+	local cr, rs = math.cos(ro), math.sin(ro)
+	local vw, vy = sw * cr + uy * rs, -sw * rs + uy * cr
+	return ur * math.cos(C) - vy * math.sin(C), vw, ur * math.sin(C) + vy * math.cos(C)
+end
+
+-- A foot standing on its point keeps the head of its last bone where it stood too (Studio review 2026-10-31: the
+-- mesh's last bone stands over the claw; a bone pivoting on its point slid its head along the ground): the yaw and the
+-- pair that put that head on (hx, hy, hz), then the last joint's turn on top of the pair and its roll that point the
+-- last bone at the point (tx, ty, tz) (look frame): (psi, a, b, ankle, roll). Of the two ways to get there, the one
+-- nearer last frame's (ankle0, roll0): the bone never swings round.
+function OctoPose.pinned(
+	leg: Leg,
+	hx: number,
+	hy: number,
+	hz: number,
+	tx: number,
+	ty: number,
+	tz: number,
+	a: number,
+	b: number,
+	iters: number,
+	ankle0: number,
+	roll0: number
+): (number, number, number, number, number)
+	local n = leg.n
+	local psi, a2, b2 = OctoPose.solve(leg, hx, hy, hz, a, b, iters, 0, n - 1)
+	local sr, sy, lift, bend = leg.sr, leg.sy, leg.lift, leg.bend
+	-- the head in the leg's own frame
+	local r, y, w, C = 0, 0, 0, 0
+	for i = 1, n - 1 do
+		C += lift[i] * a2 + bend[i] * b2
+		local cs, sn = math.cos(C), math.sin(C)
+		r += sr[i] * cs - sy[i] * sn
+		y += sr[i] * sn + sy[i] * cs
+		w += leg.sws[i]
+	end
+	-- the point there (the yaw taken back)
+	local hip = leg.hip
+	local dx, dz = tx - hip[1], tz - hip[3]
+	local cs, sn = math.cos(psi), math.sin(psi)
+	local vx, vz = dx * cs - dz * sn, dx * sn + dz * cs
+	local er = vx * leg.rx + vz * leg.rz - r
+	local ew = vx * leg.ax + vz * leg.az - w
+	local ey = ty - hip[2] - y
+	-- (the way to it before the joints above turned it)
+	local cc, sc = math.cos(C), math.sin(C)
+	local qr, qy = er * cc + ey * sc, -er * sc + ey * cc
+	local len = math.sqrt(qr * qr + ew * ew + qy * qy)
+	local own = lift[n] * a2 + bend[n] * b2
+	if len < 1e-6 then
+		return psi, a2, b2, 0, 0
+	end
+	-- its own turn gives the way's part along the leg (the nearer of the two), the roll its tilt across
+	local A = math.sqrt(sr[n] * sr[n] + sy[n] * sy[n])
+	local S = math.sqrt(A * A + leg.sws[n] * leg.sws[n])
+	local phi = math.atan2(sy[n], sr[n])
+	local alpha = math.acos(math.clamp(S * qr / len / math.max(A, 1e-6), -1, 1))
+	local bestTurn, bestRoll, bestCost = 0, roll0, math.huge
+	for pass = 1, 2 do
+		local k = if pass == 1 then alpha - phi else -alpha - phi
+		local uy = A * math.sin(k + phi)
+		local ro = (math.atan2(uy, leg.sws[n]) - math.atan2(qy, ew) + math.pi) % TAU - math.pi
+		local turn = (k - own + math.pi) % TAU - math.pi
+		local cost = math.abs((ro - roll0 + math.pi) % TAU - math.pi) + math.abs(turn - ankle0)
+		if cost < bestCost then
+			bestTurn, bestRoll, bestCost = turn, ro, cost
+		end
+	end
+	return psi, a2, b2, bestTurn, bestRoll
+end
+
+-- Where joint `k` of `leg` is (look frame: 1 the hip, n the head of its last bone, n + 1 the foot) for yaw `psi` and
+-- joint turns `c` (no tables: the hot path).
+function OctoPose.joint(leg: Leg, psi: number, c: { number }, k: number): (number, number, number)
+	local r, y, w, cum = 0, 0, 0, 0
+	local n = leg.n
+	for i = 1, math.min(k - 1, n) do
+		local ro = if i == n then c[n + 1] or 0 else 0
+		if ro ~= 0 then
+			local dr, dw, dy = lastSegment(leg, cum, c[i], ro)
+			r += dr
+			y += dy
+			w += dw
+			cum += c[i]
+		else
+			cum += c[i]
+			local ci, si = math.cos(cum), math.sin(cum)
+			r += leg.sr[i] * ci - leg.sy[i] * si
+			y += leg.sr[i] * si + leg.sy[i] * ci
+			w += leg.sws[i]
+		end
+	end
+	local vx, vz = r * leg.rx + w * leg.ax, r * leg.rz + w * leg.az
 	local cs, sn = math.cos(psi), math.sin(psi)
 	local hip = leg.hip
 	return hip[1] + vx * cs + vz * sn, hip[2] + y, hip[3] - vx * sn + vz * cs
+end
+
+-- Where the foot of `leg` is (look frame) for yaw `psi` and joint turns `c`.
+function OctoPose.foot(leg: Leg, psi: number, c: { number }): (number, number, number)
+	return OctoPose.joint(leg, psi, c, leg.n + 1)
 end
 
 -- Every joint of `leg` and its foot (look frame), for yaw `psi` and turns `c`: n + 1 points into `out` (the specs, the
@@ -375,12 +484,22 @@ function OctoPose.joints(leg: Leg, psi: number, c: { number }, out: { Vec }): { 
 	local hip = leg.hip
 	local r, y, w, cum = 0, 0, 0, 0
 	out[1] = { hip[1], hip[2], hip[3] }
-	for i = 1, leg.n do
-		cum += c[i]
-		local ci, si = math.cos(cum), math.sin(cum)
-		r += leg.sr[i] * ci - leg.sy[i] * si
-		y += leg.sr[i] * si + leg.sy[i] * ci
-		w += leg.sws[i]
+	local n = leg.n
+	for i = 1, n do
+		local ro = if i == n then c[n + 1] or 0 else 0
+		if ro ~= 0 then
+			local dr, dw, dy = lastSegment(leg, cum, c[i], ro)
+			r += dr
+			y += dy
+			w += dw
+			cum += c[i]
+		else
+			cum += c[i]
+			local ci, si = math.cos(cum), math.sin(cum)
+			r += leg.sr[i] * ci - leg.sy[i] * si
+			y += leg.sr[i] * si + leg.sy[i] * ci
+			w += leg.sws[i]
+		end
 		local vx, vz = r * leg.rx + w * leg.ax, r * leg.rz + w * leg.az
 		out[i + 1] = { hip[1] + vx * cs + vz * sn, hip[2] + y, hip[3] - vx * sn + vz * cs }
 	end

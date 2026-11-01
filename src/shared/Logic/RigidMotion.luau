@@ -1006,11 +1006,20 @@ function RigidMotion.step(inst: Instance, input: Input): Posed
 						local tr = math.clamp(travel, 0, 1)
 						tx += rx_ * k * tr
 						tz += rz_ * k * tr
-						ty += H * 4 * tr * (1 - tr)
+						-- (only on the way there: landed, the way back to the root a stage without the server's teleport
+						-- keys (AnimLab) is a glide, never a hop back over the ground the legs stand on; Studio review
+						-- 2026-10-31)
+						local out = tc < playing.hit
+						if out then
+							ty += H * 4 * tr * (1 - tr)
+						end
 						-- the body pitches along the arc while it flies (k of the travel 0 < tr < 1)
-						if tr > 0 and tr < 1 and d * k > 1e-3 then
-							-- levelled toward the take-off and the landing (the nose never digs into the ground)
-							local slope = math.atan2(H * 4 * (1 - 2 * tr), d * k) * math.sin(math.pi * tr)
+						if out and tr > 0 and tr < 1 and d * k > 1e-3 then
+							-- levelled toward the take-off and the landing (the nose never digs into the ground); a hop
+							-- about as high as it is long pitches as one three times longer would (Studio review
+							-- 2026-10-31: a short hop flipped nose-up to nose-down in a frame at its top)
+							local slope = math.atan2(H * 4 * (1 - 2 * tr), math.max(d * k, 3 * H))
+								* math.sin(math.pi * tr)
 							local tilt = style.flightPitch
 							add(keyed, "pitch", math.clamp(slope, -tilt[2], tilt[1]))
 						end

@@ -1269,6 +1269,31 @@ included; AnimationController and AnimLab need no change.
   grab under 38° a frame (cap 45.8°), the palps never back and forth, at most 4 joint flips over 10° (the hind legs'
   catch-up steps under the lunge and back), no tip sliding on the floor (was 0.17–0.84); 60 fps keeps 11.5°. The
   lab's hop home after a pounce (no server Dash arc in AnimLab) is not the game's.
+- **Studio at 60 fps** (2026-11-01, live on 31d, `OctoOverwritten` 0). Studio measures the *planted slide* on the head
+  of each leg's last bone (`3_Left_Limb_5` …, not the IK tip): the longest way it travels across the ground while
+  within 0.08 stud of its own lowest height over the action. 31d: alert 0.72, bite 0.63, attack1 0.66, grab 0.62,
+  pounce 0.91 (OctoSim on the same bones: 0.20, 0.41, 0.29, 1.34; Roblox's bone writes added the rest), plus single-frame
+  jumps of `2_Right_Limb_0` (PL) after a hitch: 56° in the grab at 0.72, 37° in the alert at 0.10 (the 0.1 s and
+  0.065 s frames times `JOINT_RATE`). Now (`OctoMotion.VERSION` "2026-11-01a last bone held on its point, straight up
+  and down, legs written whole"):
+  - a leg standing on its point **holds the head of its last bone** where it stood (`f.pin`, its offset from the
+    point): only that bone turns (`f.ankle`, ≤ 0.7 rad off the solver's) and rolls about the leg's rest direction
+    (`f.roll`, ≤ 1.2 rad; `OctoPose.pinned`, RigidRig writes it as the last bone's second turn) to put the tip on the
+    point; a head out of reach (a body reared off it) hangs straight over its place, a foot out of reach hangs over its
+    point; a head the leg cannot hold with the tip within 0.06 stud is let go of and pinned again;
+  - a **step** standing rises straight up off its point for its first 0.15 (the head held), travels, keeps over
+    0.05 hip heights till it is over its goal (0.8) and comes straight down on it, most of the way from 0.4 on; on its
+    way the last bone lets go as it travels (a phone's few frames never swing it there and back); a **stab** and a
+    **tuck** also start straight up off the point (the stab aims where the body's own move takes it by its landing,
+    ≤ 0.15 s ahead, frozen once it is over it);
+  - a frame over 1.5 usual ones (a hitch) turns a joint no further than 1.5 usual frames would (a leg standing on its
+    point still keeps up with the body); RigidRig writes a **leg whole** once any of its joints moved 0.03° (joint by
+    joint at 0.1° the head wandered 0.1–0.4 stud about its point).
+  OctoSim, Studio's measure at 60 fps: alert, bite, grab (also at W 0.81) and pounce ≤ 0.07 stud on every leg
+  (tests/octomotion), jittered frames ±30 % ≤ 0.07, 30 fps ≤ 0.05 (the palps' hover in the bite aside); heavy and crush
+  ≤ 0.15 (the heavy's quick catch-up steps under its lunge). No joint over 12° a frame at 60 fps; no lifted joint over
+  18° across a 0.1 s stall (31d: 37°); 15 fps at most 6 flips (the hind legs' catch-up steps). The pounce's legs swing
+  up to 34° a frame in the world as the tuck lets go on the landing (the body's own turn).
 - **The asset** in `Assets.Monsters` (as the wolf and the peakHarpy): a Model with `HumanoidRootPart` (Anchored false,
   CanCollide false, CanQuery and CanTouch true, Massless false, Transparency 1, size 1) as its `PrimaryPart`, the
   MeshPart with the bones (Anchored false, CanCollide, CanQuery and CanTouch true, Massless false) welded to it by a
