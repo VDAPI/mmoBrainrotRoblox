@@ -41,6 +41,8 @@ local reply = Context.reply
 local MonsterService = Context.services.MonsterService
 local ResourceService = Context.services.ResourceService
 local PlayerStateService = Context.services.PlayerStateService
+local WorldService = Context.services.WorldService
+local ZoneService = Context.services.ZoneService
 
 local SEARCH = 90 -- studs around the admin searched for a building
 local MAX_SIZE = 60 -- a building's longest side at most (anything longer is a cliff or the map itself)
@@ -805,6 +807,17 @@ function ChaseRun.Start(player: Player, monsterId: string, scenario: string, lev
 	local data = PlayerStateService.GetCharacter(player)
 	if not character or not root or not humanoid or not data then
 		reply(player, "admin.needCharacter")
+		return
+	end
+	-- Studio 2026-11-01: started in the city it ran on and said "never caught": monsters fight nobody in a safe zone,
+	-- and a map that is not built has no buildings, ground or navmesh to test against
+	local zone = ZoneService.ZoneAt(root.Position, Config.StartingMap)
+	if zone.pvp == "green" then
+		reply(player, "admin.chasetest.safe", { map = zone.map })
+		return
+	end
+	if not WorldService.IsBuilt(zone.map) then
+		reply(player, "admin.maps.notBuilt", { map = zone.map })
 		return
 	end
 	refreshFilter()
