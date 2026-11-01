@@ -1290,6 +1290,16 @@ T.describe("Dragon: its feet on a real spawn's root", function()
 				T.expect(#stances >= 4).toBe(true)
 				T.expect(stances[math.ceil(#stances / 2)] <= 0.1).toBe(true)
 				T.expect(stances[#stances] <= 0.35).toBe(true)
+				-- (a real spawn's chase, 2026-11-01: a fore paw planted once in 20 s, the server's bursts flipping
+				-- the gait between trot and gallop, their feet half up, and a blow's weight left by rounding holding
+				-- the pins off their steps while the body ran on) every foot is down a fifth of the time at least
+				local down = 0
+				for _, f in frames do
+					if f[side][2] <= low + 0.08 then
+						down += 1
+					end
+				end
+				T.expect(down >= 0.2 * #frames).toBe(true)
 			end
 			T.expect(worstTurn <= 12.5).toBe(true)
 		end
