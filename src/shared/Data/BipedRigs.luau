@@ -197,7 +197,8 @@ end
 -- * `headWeight`: a vertex is the head's with at least this share of its skin on the head bone and the bones under it;
 --   `grow`: a vertex hanging off the lower jaw (a chin spike, a beard) joins it with at least this share;
 -- * `from`: the mouth is looked for in the side view (`cells` cells along the snout) ahead of this share; it is an
---   opening between the upper and the lower jaw at least `gapMin` high over at least `minColumns` cells;
+--   opening between the upper and the lower jaw at least `gapMin` high over at least `minColumns` cells (a tooth over
+--   at most `bridge` cells does not split it; Studio prints the side view when the mouth is not found);
 -- * `below`: what hangs off the lower jaw reaches at most this far under its lowest point;
 -- * `hinge`: the hinge from the back corner of the mouth: `back` along the snout, `down`;
 -- * `blend`: the cheek between the jaws stretches instead of tearing: a vertex's share of the jaw grows from `back`
@@ -218,6 +219,7 @@ export type Jaw = {
 	cells: number,
 	gapMin: number,
 	minColumns: number,
+	bridge: number?,
 	below: number,
 	hinge: { back: number, down: number },
 	blend: { back: number, front: number, seam: number },

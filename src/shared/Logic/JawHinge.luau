@@ -115,13 +115,16 @@ end
 
 -- The plan of a head: `pos` the vertices (H, flat x y z), `head` each one's skin on the head bone and the bones under
 -- it (0..1), `tris` the triangles (flat, 1-based indices; nil: the side view by the vertices alone and the mesh by
--- nearness), `o` the model's jaw; `yield` (if given) is called now and then. Nil and why when the mouth is not found.
+-- nearness), `o` the model's jaw; `yield` (if given) is called now and then. Nil and why when the mouth is not found;
+-- then `view` (if given) gets the side view, a line per row from the top, the snout's tip on the left: `#` a face,
+-- `o` the opening taken for the mouth, `.` another enclosed gap, `|` the `from` line (MeshJaw prints it in Studio).
 function JawHinge.plan(
 	pos: { number },
 	head: { number },
 	tris: { number }?,
 	o: Options,
-	yield: (() -> ())?
+	yield: (() -> ())?,
+	view: { string }?
 ): (Plan?, string)
 	local n = #pos // 3
 	if n < 8 or #head < n then
@@ -137,6 +140,7 @@ function JawHinge.plan(
 			end
 		end
 	end
+	local bridge = o.bridge or BRIDGE
 	-- 1. the head and its snout
 	local isHead = table.create(n, false)
 	local count = 0
@@ -270,7 +274,7 @@ function JawHinge.plan(
 				cMin, cMax = math.min(cMin, c), math.max(cMax, c)
 				visit(c, r - 1, id)
 				visit(c, r + 1, id)
-				for j = 1, BRIDGE + 1 do
+				for j = 1, bridge + 1 do
 					visit(c - j, r, id)
 					visit(c + j, r, id)
 				end
@@ -283,7 +287,27 @@ function JawHinge.plan(
 		end
 	end
 	step(gz * gy)
+	local function render()
+		if not view then
+			return
+		end
+		local fromCol = math.floor((-o.from * L - z0) / cs)
+		for r = gy - 1, 0, -1 do
+			local row = table.create(gz, " ")
+			for c = 0, gz - 1 do
+				local j = c * gy + r + 1
+				row[c + 1] = if occ[j] == 1
+					then "#"
+					elseif label[j] ~= 0 and label[j] == best then "o"
+					elseif enclosed[j] == 1 then "."
+					elseif c == fromCol then "|"
+					else " "
+			end
+			table.insert(view, table.concat(row))
+		end
+	end
 	if best == 0 then
+		render()
 		return nil, `no opening between the jaws in the side view ({pieces} enclosed gaps, none at the front)`
 	end
 	-- the opening per column: its bottom (the lower jaw's top) and top (the upper jaw's underside)
@@ -308,6 +332,7 @@ function JawHinge.plan(
 		end
 	end
 	if cMax - cMin + 1 < o.minColumns or tallest * cs < o.gapMin * L then
+		render()
 		return nil,
 			`the opening is too small ({cMax - cMin + 1} columns, {math.floor(tallest * cs / L * 1000 + 0.5) / 10}% of the snout high)`
 	end

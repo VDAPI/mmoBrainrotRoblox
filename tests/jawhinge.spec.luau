@@ -247,6 +247,39 @@ T.describe("JawHinge plan", function()
 		T.expect((JawHinge.plan({ 0, 0, 0 }, { 1 }, nil, O))).toBeNil()
 	end)
 
+	T.it("draws the side view when it gives up (Studio prints it), and only then", function()
+		local closed = Mesh.build({ closed = true })
+		local view: { string } = {}
+		T.expect((JawHinge.plan(closed.pos, closed.head, closed.tris, O, nil, view))).toBeNil()
+		T.expect(#view > 4).toBe(true)
+		local width = #view[1]
+		local faces = 0
+		for _, line in view do
+			T.expect(#line).toBe(width)
+			T.expect(string.match(line, "^[#o.| ]*$") ~= nil).toBe(true)
+			faces += #string.gsub(line, "[^#]", "")
+		end
+		T.expect(faces > 0).toBe(true)
+		local open = Mesh.build()
+		local fine: { string } = {}
+		T.expect(JawHinge.plan(open.pos, open.head, open.tris, O, nil, fine) ~= nil).toBe(true)
+		T.expect(#fine).toBe(0)
+	end)
+
+	T.it("a tooth wider than `bridge` splits the mouth, a wider `bridge` joins it again", function()
+		local m = Mesh.build({ nearTooth = true })
+		local narrow = table.clone(O)
+		narrow.bridge = 0
+		local wide = table.clone(O)
+		wide.bridge = 6
+		local a = JawHinge.plan(m.pos, m.head, m.tris, narrow)
+		local b = JawHinge.plan(m.pos, m.head, m.tris, wide)
+		T.expect(b ~= nil).toBe(true)
+		if a and b then
+			T.expect(b.columns >= a.columns).toBe(true)
+		end
+	end)
+
 	T.it("never errors without faces (the side view and the mesh by the vertices alone)", function()
 		local m = Mesh.build()
 		local ok = pcall(function()

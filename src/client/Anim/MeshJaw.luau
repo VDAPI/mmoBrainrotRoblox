@@ -267,8 +267,13 @@ local function build(shared: Shared, mesh: MeshPart, head: Bone, root: BasePart,
 			faces = list
 		end
 		yield()
-		local plan, why = JawHinge.plan(pos, skin, faces, o, yield)
+		local view: { string }? = if STUDIO then {} else nil
+		local plan, why = JawHinge.plan(pos, skin, faces, o, yield, view)
 		if not plan then
+			if view and #view > 0 then
+				-- (the head's side view, the snout's tip on the left: `#` faces, `o` the opening taken, `.` other gaps)
+				note(`{shared.name}: the side view\n{table.concat(view, "\n")}`)
+			end
 			error(`the mouth was not found: {why}`)
 		end
 		shared.plan = plan
