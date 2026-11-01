@@ -43,6 +43,7 @@ local AutoPotionButton = require(script.AutoPotionButton) -- S134d
 local LoginReward = require(ReplicatedStorage.Shared.Logic.LoginReward)
 local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local PotionBar = require(script.PotionBar)
 local PvpDot = require(script.Parent.Parent.Components.PvpDot)
@@ -126,6 +127,21 @@ export type Props = {
 local SKILL_SLOTS = 10
 local SLOT_SIZE = 56
 local EFFECT_ICON = 30 -- UI plan phase 2: the effects row's icons (Hud/EffectIcons' default), the elixirs too
+-- UI plan phase 4 (one spacing grid): the HUD's margin from the screen's edges and the room between its elements
+-- (Logic/HudStack.MARGIN, GAP: Theme.Padding.Large, Small)
+local MARGIN = HudStack.MARGIN
+local GAP = HudStack.GAP
+-- UI plan phase 4: the portrait is 340 x 110 (Logic/HudStack.PORTRAIT; it was 400 x 136): the emblem (68) with the
+-- level on its lower edge, the PvP dot and the name in the top row, the three bars (20 tall, 4 apart) under the name.
+local PORTRAIT = HudStack.PORTRAIT
+local P = table.freeze({
+	pad = 10,
+	emblem = 68,
+	level = { x = 44, y = 88, w = 56, h = 22 },
+	dot = { x = 96, y = 18 },
+	name = { x = 114, y = 4, h = 28 },
+	bars = { x = 88, y = 36, h = 20, gap = 4 },
+})
 
 local function number(scope: Scope, path: { string }): Fusion.Computed<number>
 	local value = State.Value(path)
@@ -180,7 +196,7 @@ local function pvpSwitch(scope: Scope): Instance
 	local button = scope:New("TextButton")({
 		Name = "PvpSwitch",
 		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromOffset(117, 22),
+		Position = UDim2.fromOffset(P.dot.x, P.dot.y),
 		Size = UDim2.fromOffset(28, 28),
 		BackgroundTransparency = 1,
 		Text = "",
@@ -231,8 +247,8 @@ local function portrait(scope: Scope): Instance
 	return scope:New("Frame")({
 		Name = "Portrait",
 		-- W29: scaled down in the corner on a phone in landscape (Logic/PhoneHud)
-		Position = PhoneLayout.Position(scope, "portrait", UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large)),
-		Size = UDim2.fromOffset(400, 136),
+		Position = PhoneLayout.Position(scope, "portrait", UDim2.fromOffset(MARGIN, MARGIN)),
+		Size = UDim2.fromOffset(PORTRAIT.w, PORTRAIT.h),
 		-- S136: an iron HUD tile with a 1 px brass edge
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
@@ -247,8 +263,8 @@ local function portrait(scope: Scope): Instance
 			-- S123: the portrait frame cosmetic (UI/Components/PortraitFrame; the class stroke without one)
 			PortraitFrame(scope, {
 				Name = "Emblem",
-				Position = UDim2.fromOffset(12, 12),
-				Size = 84,
+				Position = UDim2.fromOffset(P.pad, P.pad),
+				Size = P.emblem,
 				FrameId = State.Value({ "account", "cosmetics", "equipped", "frame" }),
 				ClassColor = scope:Computed(function(use): Color3
 					local c = use(class)
@@ -276,8 +292,8 @@ local function portrait(scope: Scope): Instance
 			scope:New("TextLabel")({
 				Name = "Level",
 				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromOffset(54, 106),
-				Size = UDim2.fromOffset(60, 24),
+				Position = UDim2.fromOffset(P.level.x, P.level.y),
+				Size = UDim2.fromOffset(P.level.w, P.level.h),
 				BackgroundColor3 = Theme.Iron.Raised,
 				Text = Text.T(scope, "hud.level", { level = level }),
 				FontFace = Theme.Fonts.BodyBold,
@@ -296,8 +312,8 @@ local function portrait(scope: Scope): Instance
 			-- Name row (S29): the name, then the active blessing's ✶ with its countdown.
 			scope:New("Frame")({
 				Name = "NameRow",
-				Position = UDim2.fromOffset(130, 8),
-				Size = UDim2.new(1, -142, 0, 28),
+				Position = UDim2.fromOffset(P.name.x, P.name.y),
+				Size = UDim2.new(1, -P.name.x - P.pad, 0, P.name.h),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("UIListLayout")({
@@ -336,16 +352,17 @@ local function portrait(scope: Scope): Instance
 			}),
 			scope:New("Frame")({
 				Name = "Bars",
-				Position = UDim2.fromOffset(110, 42),
-				Size = UDim2.new(1, -122, 0, 3 * Theme.Size.BarHeight + 2 * 6),
+				Position = UDim2.fromOffset(P.bars.x, P.bars.y),
+				Size = UDim2.new(1, -P.bars.x - P.pad, 0, 3 * P.bars.h + 2 * P.bars.gap),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("UIListLayout")({
 						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, 6),
+						Padding = UDim.new(0, P.bars.gap),
 					}),
 					Bar(scope, {
 						Name = "Hp",
+						Size = UDim2.new(1, 0, 0, P.bars.h),
 						LayoutOrder = 1,
 						Value = hp,
 						Max = maxHp,
@@ -357,6 +374,7 @@ local function portrait(scope: Scope): Instance
 					}),
 					Bar(scope, {
 						Name = "Mana",
+						Size = UDim2.new(1, 0, 0, P.bars.h),
 						LayoutOrder = 2,
 						Value = number(scope, { "character", "mana" }),
 						Max = number(scope, { "derived", "values", "maxMana" }),
@@ -366,6 +384,7 @@ local function portrait(scope: Scope): Instance
 					}),
 					Bar(scope, {
 						Name = "Energy",
+						Size = UDim2.new(1, 0, 0, P.bars.h),
 						LayoutOrder = 3,
 						Value = number(scope, { "character", "energy" }),
 						Max = number(scope, { "derived", "values", "maxEnergy" }),
@@ -453,7 +472,7 @@ local function menu(scope: Scope, props: Props): Instance
 		Name = "Menu",
 		AnchorPoint = Vector2.new(1, 0),
 		-- W29: on a phone in landscape only the scaled minimap and the guide bar (the buttons are in the drawer)
-		Position = PhoneLayout.Position(scope, "minimap", UDim2.new(1, -Theme.Padding.Large, 0, Theme.Padding.Large)),
+		Position = PhoneLayout.Position(scope, "minimap", UDim2.new(1, -MARGIN, 0, MARGIN)),
 		Size = UDim2.fromOffset(0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		BackgroundTransparency = 1,
@@ -781,20 +800,12 @@ local function Hud(scope: Scope, props: Props): Instance
 			scope:Hydrate(
 				BlessingIcon(
 					scope,
-					PhoneLayout.Position(
-						scope,
-						"blessing",
-						UDim2.fromOffset(Theme.Padding.Large + 400 + 12, Theme.Padding.Large + 4)
-					)
+					PhoneLayout.Position(scope, "blessing", UDim2.fromOffset(HudStack.EXTRAS.x, MARGIN + 4))
 				)
 			)({ Visible = PhoneLayout.Compact }),
 			scope:New("Frame")({
 				Name = "EffectsRow",
-				Position = PhoneLayout.Position(
-					scope,
-					"effects",
-					UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large + 136 + 6)
-				),
+				Position = PhoneLayout.Position(scope, "effects", UDim2.fromOffset(MARGIN, MARGIN + PORTRAIT.h + GAP)),
 				Size = UDim2.fromOffset(0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				BackgroundTransparency = 1,
@@ -835,7 +846,7 @@ local function Hud(scope: Scope, props: Props): Instance
 						PhoneLayout.Position(
 							scope,
 							"lure",
-							UDim2.fromOffset(Theme.Padding.Large + 400 + 12 + 44 + 8, Theme.Padding.Large + 136 - 64)
+							UDim2.fromOffset(HudStack.EXTRAS.x + 44 + GAP, MARGIN + PORTRAIT.h - 64)
 						)
 					),
 					AutoGrindButton(
@@ -843,10 +854,7 @@ local function Hud(scope: Scope, props: Props): Instance
 						PhoneLayout.Position(
 							scope,
 							"autoGrind",
-							UDim2.fromOffset(
-								Theme.Padding.Large + 400 + 12 + 44 + 8 + 56,
-								Theme.Padding.Large + 136 - 64
-							)
+							UDim2.fromOffset(HudStack.EXTRAS.x + 44 + GAP + 56, MARGIN + PORTRAIT.h - 64)
 						)
 					),
 					AutoPotionButton(
@@ -854,10 +862,7 @@ local function Hud(scope: Scope, props: Props): Instance
 						PhoneLayout.Position(
 							scope,
 							"autoPotion",
-							UDim2.fromOffset(
-								Theme.Padding.Large + 400 + 12 + 44 + 8 + 112,
-								Theme.Padding.Large + 136 - 64
-							)
+							UDim2.fromOffset(HudStack.EXTRAS.x + 44 + GAP + 112, MARGIN + PORTRAIT.h - 64)
 						)
 					),
 				},
