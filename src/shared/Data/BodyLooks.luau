@@ -164,4 +164,43 @@ BodyLooks.paints = table.freeze({
 -- `hair_<id>` / `brows_<id>` / `lashes_<face>` accessories and `head_<face>` heads.
 BodyLooks.PARTS_FOLDER = "VaelthornLookParts"
 
+export type Style = {
+	id: string,
+	scales: { [string]: number },
+	blocky: boolean, -- the classic block R15 (no body parts, no dynamic head): a decal face, classic shirts and pants show
+	face: number, -- the decal face of a blocky body (the one tried in Studio 2026-11-01)
+}
+
+-- Studio test 2026-11-01 (owner: "the mannequin itself looks bad"): the body style every character and the creator's
+-- mannequin wear, read from the ReplicatedStorage attribute STYLE_ATTRIBUTE when a look is built ("dynamic" when it is
+-- unset or unknown). "slim": the same body at grown-up proportions (about 4.5 heads instead of 3.2, the height of
+-- today's figure); "blocky": the classic block R15. Set it in Studio before Play to compare in the creator and in game.
+BodyLooks.STYLE_ATTRIBUTE = "VaelthornBodyStyle"
+BodyLooks.styles = table.freeze({
+	dynamic = table.freeze({ id = "dynamic", scales = BodyLooks.scales, blocky = false, face = 0 }),
+	slim = table.freeze({
+		id = "slim",
+		scales = table.freeze({ height = 0.95, width = 0.95, depth = 1, head = 0.75, bodyType = 0, proportion = 0 }),
+		blocky = false,
+		face = 0,
+	}),
+	blocky = table.freeze({
+		id = "blocky",
+		scales = table.freeze({ height = 1, width = 1, depth = 1, head = 1, bodyType = 0, proportion = 0 }),
+		blocky = true,
+		face = 86487700,
+	}),
+} :: { [string]: Style })
+
+function BodyLooks.current(): Style
+	-- outside Roblox (the Lune tests) there is no `game`: the default body
+	local ok, id = pcall(function(): any
+		return game:GetService("ReplicatedStorage"):GetAttribute(BodyLooks.STYLE_ATTRIBUTE)
+	end)
+	if not ok then
+		id = nil
+	end
+	return BodyLooks.styles[if type(id) == "string" then id else "dynamic"] or BodyLooks.styles.dynamic
+end
+
 return table.freeze(BodyLooks)

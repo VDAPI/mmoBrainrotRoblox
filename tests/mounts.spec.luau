@@ -15,6 +15,8 @@ local Maps = require("../src/shared/Data/Maps")
 local MountData = require("../src/shared/Data/Mounts")
 local Mounts = require("../src/shared/Logic/Mounts")
 local Products = require("../src/shared/Data/Products")
+local QuadRigs = require("../src/shared/Data/QuadRigs")
+local QuadStyles = require("../src/shared/Data/QuadStyles")
 local Quests = require("../src/shared/Data/Quests")
 local RiderPose = require("../src/shared/Logic/RiderPose")
 local Rng = require("../src/shared/Logic/Rng")
@@ -29,7 +31,7 @@ local describe, it, expect = Test.describe, Test.it, Test.expect
 local SCHEMA_BEFORE_S96 = 6
 
 local SOURCES = { quest = true, boss = true, premium = true, event = true }
-local RIGS = { animator = true, gait = true, static = true }
+local RIGS = { animator = true, gait = true, static = true, quad = true }
 local BIOMES = { "city", "grass", "forest", "desert", "snow", "cave", "crypt", "dungeon" }
 
 local function hasKey(key: string): boolean
@@ -94,6 +96,13 @@ describe("Mounts: data", function()
 				expect(finite(n)).toBe(true)
 			end
 			expect(RIGS[asset.rig]).toBe(true)
+			if asset.rig == "quad" then
+				-- 2026-11-01 Tripo mounts: a walk style and a bone map for the model (its new bones: QuadRigs.find)
+				expect(asset.style ~= nil and QuadStyles.get(asset.style :: string) ~= nil).toBe(true)
+				expect(QuadRigs.find(asset.model, function()
+					return true
+				end) ~= nil).toBe(true)
+			end
 		end
 		for _, biome in MountData.RULES.noBiomes do
 			expect(table.find(BIOMES, biome) ~= nil).toBe(true)

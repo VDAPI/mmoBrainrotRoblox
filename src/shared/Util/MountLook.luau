@@ -117,7 +117,7 @@ local function fromAsset(id: string, rootHalf: number): (Model?, Mounts.Seat?)
 		clone:SetAttribute("MountWalkSpeed", asset.walkSpeed)
 	end
 	-- The pivot is on the ground: the saddle is given from it.
-	return clone, Mounts.seatAt(0, asset.saddle, rootHalf)
+	return clone, Mounts.seatAt(0, asset.saddle, rootHalf, asset.rider and asset.rider.seatLift)
 end
 
 -- Model and seat of mount `id` for a rider whose HumanoidRootPart is `rootHalf` studs above its bottom (R6: plus

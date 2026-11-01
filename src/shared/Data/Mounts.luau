@@ -43,9 +43,22 @@ export type MountDef = {
 export type MountAsset = {
 	model: string,
 	saddle: { number },
-	rig: "animator" | "gait" | "static",
+	rig: "animator" | "gait" | "static" | "quad",
 	walkSpeed: number?,
 	anims: { [string]: string }?,
+	style: string?, -- rig "quad": the Data/QuadStyles walk (bones driven by Logic/QuadMotion, map in Data/QuadRigs)
+	rider: RiderFit?, -- the rider's own fit on this model (Logic/RiderPose.rider)
+}
+
+-- A model's own fit over RIDER (Logic/RiderPose.Over): any field of Rider but `stride`. On the quadruped template the
+-- saddle's own motion carries the rider (Logic/QuadMotion.saddle), so its `bob` is 0.
+export type RiderFit = {
+	rHip: { number }?,
+	lHip: { number }?,
+	rKnee: { number }?,
+	lKnee: { number }?,
+	bob: number?,
+	seatLift: number?,
 }
 
 export type Rules = { noBiomes: { string }, noZones: { string } }
@@ -202,7 +215,44 @@ Mounts.RIDER = table.freeze({
 -- Real models (docs/ASSETS.md "Wierzchowce"), e.g.
 --   mount_horse = { model = "BayHorse", saddle = { 0, 4.4, 0.4 }, rig = "animator", walkSpeed = 26,
 --       anims = { idle = "rbxassetid://...", walk = "rbxassetid://...", run = "rbxassetid://..." } },
-Mounts.assets = table.freeze({}) :: { [string]: MountAsset }
+-- owner 2026-11-01: Tripo models without clips, walked by their bones
+-- Styles 2026-11-01: the horse and the stag on the horse's walk (Data/QuadStyles horse: a nod, a level trot), the lion,
+-- the griffin and the wingless frost drake on the lion's (a steady head, a lagging tail), the warg on the approved wolf.
+local QUAD_RIDE: RiderFit = table.freeze({ bob = 0 })
+local BROAD_RIDE: RiderFit = table.freeze({ rHip = { 70, 0, 30 }, lHip = { 70, 0, -30 }, bob = 0 })
+local ASSETS: { [string]: MountAsset } = {
+	mount_horse = {
+		model = "mount_horse",
+		saddle = { 0, 3.7, -0.35 },
+		rig = "quad",
+		style = "horse",
+		rider = QUAD_RIDE,
+	},
+	mount_azgor = { model = "mount_azgor", saddle = { 0, 3.6, 0.55 }, rig = "quad", style = "lion", rider = BROAD_RIDE },
+	mount_grimrok = {
+		model = "mount_grimrok",
+		saddle = { 0, 3.15, 0.4 },
+		rig = "quad",
+		style = "canine",
+		rider = QUAD_RIDE,
+	},
+	mount_morvane = {
+		model = "mount_morvane",
+		saddle = { 0, 3.6, 0.2 },
+		rig = "quad",
+		style = "horse",
+		rider = QUAD_RIDE,
+	},
+	mount_vaelgrath = {
+		model = "mount_vaelgrath",
+		saddle = { 0, 3.35, 0.3 },
+		rig = "quad",
+		style = "lion",
+		rider = BROAD_RIDE,
+	},
+	mount_royal = { model = "mount_royal", saddle = { 0, 3.9, 0.45 }, rig = "quad", style = "lion", rider = BROAD_RIDE },
+}
+Mounts.assets = table.freeze(ASSETS)
 
 -- Upgrade to mount level n (DESIGN-15 §2, S97): character level needed, gold and monster parts. The same for every
 -- mount (a boss mount starts higher, so it skips the first steps). Gold priced against the level income of the S84
