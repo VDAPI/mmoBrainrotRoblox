@@ -2,9 +2,13 @@
 -- S162e follow-up (Studio test 2026-10-31): the pure half of /chasetest (Logic/ChaseTest): the route around a
 -- building, the press counter, the verdicts and the result line.
 
+local fs = require("@lune/fs")
+
 local AdminCommands = require("../src/shared/Data/AdminCommands")
 local ChaseTest = require("../src/shared/Logic/ChaseTest")
 local Combat = require("../src/shared/Data/Combat")
+local en = require("../src/shared/Data/Localization/en")
+local pl = require("../src/shared/Data/Localization/pl")
 local T = require("./Test")
 
 local cfg = Combat :: any
@@ -240,5 +244,25 @@ T.describe("ChaseTest measures and verdicts (S162e)", function()
 		local scenario = (def :: any).args[2]
 		T.expect(table.concat(scenario.options, ",")).toBe(table.concat(ChaseTest.SCENARIOS, ","))
 		T.expect(scenario.default).toBe("corner")
+	end)
+
+	-- Studio 2026-11-01: started in the city it ran and said "never caught" (monsters fight nobody in a safe zone)
+	T.it("refuses to start in a safe zone or on a map that is not built", function()
+		local run = fs.readFile("src/server/Admin/ChaseRun.luau")
+		local start = string.find(run, "function ChaseRun.Start(", 1, true)
+		local safe = string.find(run, 'reply(player, "admin.chasetest.safe"', 1, true)
+		local built = string.find(run, 'reply(player, "admin.maps.notBuilt"', 1, true)
+		local first = string.find(run, "current = run", 1, true)
+		T.expect(start ~= nil and safe ~= nil and built ~= nil and first ~= nil).toBe(true)
+		-- both before the run takes the target (god mode, anchoring) or spawns anything
+		T.expect(safe > (start :: number) and safe < (first :: number)).toBe(true)
+		T.expect(built > (start :: number) and built < (first :: number)).toBe(true)
+		T.expect(string.find(run, 'zone.pvp == "green"', 1, true) ~= nil).toBe(true)
+		local strings = { (pl :: any)["admin.chasetest.safe"], (en :: any)["admin.chasetest.safe"] }
+		for _, text in strings do
+			T.expect(type(text)).toBe("string")
+			T.expect(string.find(text, "{map}", 1, true) ~= nil).toBe(true)
+			T.expect(string.find(text, "/tp meadows", 1, true) ~= nil).toBe(true)
+		end
 	end)
 end)
