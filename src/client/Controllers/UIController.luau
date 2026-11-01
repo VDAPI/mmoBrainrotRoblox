@@ -199,6 +199,15 @@ function UIController.Init()
 		end
 	end
 
+	-- Studio check of phase 4: Roblox's top bar, as far as the HUD's layer starts under the whole-screen ones
+	local function reportBar()
+		Scale.SetTopBar(roots.Screens.AbsolutePosition.Y - roots.Toasts.AbsolutePosition.Y)
+	end
+	reportBar()
+	for _, layer in { roots.Screens, roots.Toasts } do
+		table.insert(scope, layer:GetPropertyChangedSignal("AbsolutePosition"):Connect(reportBar))
+	end
+
 	Toast.mount(scope, roots.Toasts)
 	Announcement.mount(scope, roots.Toasts)
 	Tooltip.mount(scope, roots.Tooltip)

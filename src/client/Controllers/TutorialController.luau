@@ -99,6 +99,7 @@ local current: Tutorial.State? = nil -- the state of the character in the world 
 local currentId: string? = nil -- its character id (a character switch is no transition)
 local finaleUntil = 0 -- os.clock() until which the closing hint shows
 local skipSent = false -- hides the hint between TutorialSkip and the server's answer
+local waited = false -- the hidden tile skipped one tick to take its new text's height
 local sentAt: { [string]: number } = {} -- client step -> os.clock() of the last report
 local lastAt: Vector3? = nil -- the root's position at the last sample
 local lastModel: Model? = nil
@@ -433,9 +434,17 @@ local function tick()
 		finale = finale,
 		veteran = Tutorial.veteran(State.Get({ "slots" })),
 	}
-	if not sameView(Fusion.peek(view), nextView) then
+	local fresh = not sameView(Fusion.peek(view), nextView)
+	if fresh then
 		view:set(nextView)
 	end
+	-- Studio check of phase 4 (the closing tile stood ~100 px too high for a tick, placed by the height of the step
+	-- before it): a hidden tile with new text waits one tick, so it shows placed by its own height
+	if fresh and not Fusion.peek(visible) and not waited then
+		waited = true
+		return
+	end
+	waited = false
 
 	local factor = Scale.get()
 	local size = Fusion.peek(Scale.HudSize) -- the HUD's area (the layer's part on the screen)

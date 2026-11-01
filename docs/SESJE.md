@@ -14432,3 +14432,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   prawy koniec toastu „Nagroda dnia czeka…”. Przy ekranie 16:9 kolumna toastów (520 px na środku) i karta zachodzą na siebie o ok. 60 px.
   `TutorialController` podaje prostokąt karty (`TopBandState.Keep`), a `Toast` przesuwa kolumnę w bok, 8 px od karty
   i nie bliżej niż 16 px od krawędzi (`TopBand.toastShift`), tylko gdy karta stoi w pasie toastów. Test w `topband.spec`.
+- Trzeci przegląd (`28d4ae8d` potwierdzone: tropiciel 14 px od krawędzi, toast 14 px od karty, po samouczku toasty
+  na środku). Karta końcowa samouczka znika sama po `DONE_SECONDS` (6 s) albo po kliknięciu, a przy oczekującej
+  nagrodzie dnia czeka, aż ta pokaże swój toast. Studio czytało `Visible` samej karty (`TutorialHint`), które zawsze
+  było `true`, choć ukryta była ramka nad nią. Teraz karta ukrywa się razem z ramką. Ukryta karta z nowym tekstem
+  czeka też jeden takt, żeby stanąć według swojej wysokości (karta końcowa stała przez takt ok. 100 px za wysoko,
+  liczona wysokością kroku „plecak”).
+- Warstwa `Toasts` (DeviceSafeInsets, `IgnoreGuiInset`) zaczyna się na górze ekranu, a HUD (`CoreUISafeInsets`) pod
+  paskiem Robloxa. Miejsca toastów są w skali, a pasek nie, więc przy 0,6 toast (90 → 54 px) wchodził 3 px w pasek 58 px.
+  `UIController` mierzy pasek jako różnicę góry obu warstw (`Scale.TopBar`). Toast, toast osiągnięcia i ogłoszenie
+  stoją co najmniej GAP pod nim (`TopBand.underBars`). `TopBand.toastTop` dolicza pasek do banerów strefy i obszaru,
+  które stoją w warstwie HUD, oraz przesunięcie toastu osiągnięcia. Przy skali 1 i pasku 58 toasty zostają na 90. Test
+  w `topband.spec`.

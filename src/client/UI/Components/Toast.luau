@@ -31,6 +31,9 @@ local TopBand = SoftRequire(
 		toastShift = function(): number
 			return 0
 		end,
+		underBars = function(top: number): number
+			return top
+		end,
 	} :: any,
 	"Logic/TopBand"
 )
@@ -137,7 +140,13 @@ function Toast.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 			local header = use(HudCover.HeaderBottom)
 			local origin = if parent:IsA("GuiObject") then parent.AbsolutePosition.Y else 0
 			local k = use(Scale.Value)
-			local top = TopBand.underHeader(use(TopBandState.ToastTop), if header then header - origin else nil, k)
+			-- under Roblox's top bar too, whatever its height (Studio check of phase 4)
+			local top = TopBand.underBars(
+				use(TopBandState.ToastTop),
+				use(Scale.TopBar),
+				if header then header - origin else nil,
+				k
+			)
 			-- Studio check of phase 4: beside the tutorial's tile, not under it (Logic/TopBand.toastShift)
 			local keep = if TopBandState.Keep then use(TopBandState.Keep) else nil
 			local shift = 0
