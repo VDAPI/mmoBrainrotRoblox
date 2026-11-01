@@ -39,6 +39,17 @@ local function deepCopy(v: any): any
 	return out
 end
 
+-- A class's outfit with its procedural garments only: no catalog item, no classic clothes (the classes wear catalog
+-- sets since the block body, 2026-11-01; the catalog specs start from the bare garments).
+local function procedural(classId: string): any
+	local spec: any = deepCopy((ClassLooks.get(classId) :: any).outfit)
+	for _, g in spec.garments do
+		g.catalog, g.type, g.order, g.also, g.hides = 0, nil, nil, nil, nil
+	end
+	spec.shirt, spec.pants = 0, 0
+	return spec
+end
+
 local function names(spec: CharacterLook.LookSpec): { [string]: boolean }
 	local out = {}
 	for _, g in spec.garments do
@@ -312,11 +323,14 @@ T.describe("Class looks: resolve (S132)", function()
 	end)
 
 	T.it("5f. the catalog key: stable with every id 0, changed by a catalog id; the input is never changed", function()
-		local class = CharacterLook.resolve(input("Warrior"))
+		local class = CharacterLook.resolve(input("Warrior", { spec = procedural("Warrior") }))
 		-- W10: the same look on another class (no catalog ids either) gives the same key
-		T.expect(class.catalogKey).toBe(CharacterLook.resolve(input("Cleric")).catalogKey)
+		T.expect(class.catalogKey)
+			.toBe(CharacterLook.resolve(input("Cleric", { spec = procedural("Cleric") })).catalogKey)
 		T.expect(#class.accessories).toBe(0)
-		local spec: any = deepCopy((ClassLooks.get("Warrior") :: any).outfit)
+		-- (the classes' own catalog sets give each class its key)
+		T.expect(CharacterLook.resolve(input("Warrior")).catalogKey ~= class.catalogKey).toBe(true)
+		local spec: any = procedural("Warrior")
 		spec.garments[1].catalog = 12345
 		spec.shirt = 777
 		local withIds = CharacterLook.resolve(input("Warrior", { spec = spec }))
@@ -520,7 +534,7 @@ end)
 -- Catalog clothing 2026-11-01 (docs/WYGLAD-KLAS.md §3): a catalog item says its accessory type and layer order, may
 -- cover more garments than its own and bring a second item; classic clothing per class; the dev trial.
 local function warriorWith(fields: { [number]: { [string]: any } }): any
-	local spec: any = deepCopy((ClassLooks.get("Warrior") :: any).outfit)
+	local spec: any = procedural("Warrior")
 	for i, item in fields do
 		for k, v in item do
 			spec.garments[i][k] = v
@@ -609,7 +623,7 @@ T.describe("Class looks: catalog clothing (2026-11-01)", function()
 	end)
 
 	T.it("12. a layered jacket worn for the breastplate covers the belt and the pauldrons", function()
-		local plain = CharacterLook.resolve(input("Warrior"))
+		local plain = CharacterLook.resolve(input("Warrior", { spec = procedural("Warrior") }))
 		local spec = warriorWith({
 			[1] = { catalog = 9001, type = "Jacket", hides = { "belt", "plate_pauldrons" } },
 		})
@@ -638,7 +652,7 @@ T.describe("Class looks: catalog clothing (2026-11-01)", function()
 		"13. a hood's catalog item hides the hair, a covered hood does not; catalog shoes need no plain shoes",
 		function()
 			local look = { face = "face_calm", skin = "skin_3", hair = "hair_long" }
-			local hunter: any = deepCopy((ClassLooks.get("Hunter") :: any).outfit)
+			local hunter: any = procedural("Hunter")
 			T.expect(CharacterLook.resolve(input("Hunter", { look = look, spec = hunter })).hair).toBeNil()
 			hunter.garments[2].catalog = 617605556 -- the hood as a catalog hat
 			T.expect(CharacterLook.resolve(input("Hunter", { look = look, spec = hunter })).hair).toBeNil()
@@ -646,8 +660,8 @@ T.describe("Class looks: catalog clothing (2026-11-01)", function()
 			hunter.garments[1].catalog = 9002 -- a vest that covers the hood
 			hunter.garments[1].hides = { "hood" }
 			T.expect(CharacterLook.resolve(input("Hunter", { look = look, spec = hunter })).hair ~= nil).toBe(true)
-			T.expect(CharacterLook.resolve(input("Warrior")).shoes).toBe(true)
-			T.expect(CharacterLook.resolve(input("Hunter")).shoes).toBe(false) -- boots
+			T.expect(CharacterLook.resolve(input("Warrior", { spec = procedural("Warrior") })).shoes).toBe(true)
+			T.expect(CharacterLook.resolve(input("Hunter", { spec = procedural("Hunter") })).shoes).toBe(false) -- boots
 			T.expect(CharacterLook.resolve(input("Warrior", { robloxAvatar = true })).shoes).toBe(false)
 			local shod = warriorWith({
 				[4] = { catalog = 31, type = "LeftShoe", also = { { catalog = 32, type = "RightShoe" } } },
@@ -746,12 +760,13 @@ T.describe("Class looks: catalog clothing (2026-11-01)", function()
 		"16. a trial: items over the look, garments off, bare, no hair, another body; the input never changes",
 		function()
 			local look = { face = "face_calm", skin = "skin_3", hair = "hair_long" }
-			local plain = CharacterLook.resolve(input("Warrior", { look = look }))
+			local warrior = procedural("Warrior")
+			local plain = CharacterLook.resolve(input("Warrior", { look = look, spec = warrior }))
 			local jacket = CharacterLook.catalogPiece(9001, "Jacket") :: CharacterLook.CatalogPiece
 			local trial: CharacterLook.Trial =
 				{ pieces = { jacket }, hide = { "breastplate" }, body = { Torso = 11702287641 } }
 			local before = deepCopy(trial)
-			local tried = CharacterLook.resolve(input("Warrior", { look = look, trial = trial }))
+			local tried = CharacterLook.resolve(input("Warrior", { look = look, spec = warrior, trial = trial }))
 			T.expect(trial).toEqual(before)
 			T.expect(tried.accessories).toEqual({ jacket })
 			T.expect(garmentOf(tried, "breastplate").hidden).toBe(true)
@@ -760,8 +775,9 @@ T.describe("Class looks: catalog clothing (2026-11-01)", function()
 			T.expect(tried.pieces).toBe(plain.pieces - pieceCount("breastplate"))
 			T.expect(tried.catalogKey ~= plain.catalogKey).toBe(true)
 			T.expect(tried.hair ~= nil).toBe(true)
-			local bare =
-				CharacterLook.resolve(input("Warrior", { look = look, trial = { bare = true, hideHair = true } }))
+			local bare = CharacterLook.resolve(
+				input("Warrior", { look = look, spec = warrior, trial = { bare = true, hideHair = true } })
+			)
 			for _, g in bare.garments do
 				T.expect({ g.g, g.hidden }).toEqual({ g.g, true })
 			end

@@ -60,7 +60,9 @@ describe("Creator looks (W10)", function()
 			expect(`{legacy} {ClassLooks.hairById[legacy] == nil} {ClassLooks.hairById[pair[1]] ~= nil}`).toBe(
 				`{legacy} true true`
 			)
-			local color = pair[2] or ClassLooks.DEFAULT_LOOK.hairColor :: string
+			-- (block body 2026-11-01: every hairstyle is a rigid classic one with its own colour, a save's colour it does
+			-- not reach becomes the nearest it offers)
+			local color = CharacterLook.fitHairColor(pair[1], pair[2] or ClassLooks.DEFAULT_LOOK.hairColor :: string)
 			expect(`{legacy} {table.find(CharacterLook.hairColors(pair[1]), color) ~= nil}`).toBe(`{legacy} true`)
 			for _, face in ClassLooks.FACES do
 				local look = CharacterLook.normalize({ face = face.id, skin = "skin_3", hair = legacy }) :: any
@@ -80,21 +82,35 @@ describe("Creator looks (W10)", function()
 		expect((own :: any).beard).toBe("beard_none")
 	end)
 
-	it("hair fixes 2026-10-31: a removed or renamed hairstyle keeps the save's own colour", function()
-		for old, now in { hair_curly = "hair_fringe", hair_bangs = "hair_bob", hair_swept = "hair_short" } do
-			for _, c in ClassLooks.HAIR_COLORS do
-				local look =
-					CharacterLook.normalize({ face = "face_calm", skin = "skin_2", hair = old, hairColor = c.id })
-				expect(`{old} {c.id} {look.hair} {look.hairColor}`).toBe(`{old} {c.id} {now} {c.id}`)
+	it(
+		"hair fixes 2026-10-31: a removed or renamed hairstyle keeps the save's colour, or the nearest it offers",
+		function()
+			for old, now in { hair_curly = "hair_fringe", hair_bangs = "hair_bob", hair_swept = "hair_short" } do
+				for _, c in ClassLooks.HAIR_COLORS do
+					local look =
+						CharacterLook.normalize({ face = "face_calm", skin = "skin_2", hair = old, hairColor = c.id })
+					local kept = CharacterLook.fitHairColor(now, c.id)
+					expect(`{old} {c.id} {look.hair} {look.hairColor}`).toBe(`{old} {c.id} {now} {kept}`)
+					if table.find(CharacterLook.hairColors(now), c.id) then
+						expect(kept).toBe(c.id)
+					end
+				end
 			end
 		end
-	end)
+	)
 
 	it("hair fixes 2026-10-31: toned hairs offer the colours they reach, a save gets the nearest", function()
-		-- light textures take every colour
-		for _, id in { "hair_short", "hair_fringe", "hair_slicked", "hair_bob", "hair_long", "hair_ponytail" } do
-			expect(`{id} {#CharacterLook.hairColors(id)}`).toBe(`{id} {#ClassLooks.HAIR_COLORS}`)
+		-- a light texture takes every colour (block body 2026-11-01: every hairstyle is a toned classic one, the brown
+		-- ones offer the browns and reds, the golden ones reach dark blond)
+		for id, def in BodyLooks.hairs do
+			if def.light then
+				expect(`{id} {#CharacterLook.hairColors(id)}`).toBe(`{id} {#ClassLooks.HAIR_COLORS}`)
+			end
 		end
+		for _, id in { "hair_short", "hair_fringe", "hair_bob", "hair_long", "hair_ponytail" } do
+			expect(`{id} {table.find(CharacterLook.hairColors(id), "hc_chestnut") ~= nil}`).toBe(`{id} true`)
+		end
+		expect(table.find(CharacterLook.hairColors("hair_slicked"), "hc_darkblond") ~= nil).toBe(true)
 		expect(#CharacterLook.hairColors("hair_shaved")).toBe(#ClassLooks.HAIR_COLORS)
 		-- every range keeps black and is in the palette's order
 		for _, hair in ClassLooks.HAIRS do
