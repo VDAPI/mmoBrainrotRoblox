@@ -219,6 +219,18 @@ standardowymi częściami ciała i skalami), więc klipy robi się na standardow
    2,5×: przesuń znacznik albo skróć / wydłuż klip.
 10. **Rejestr.** Wiersz w `docs/ASSETS.md` (własny klip, narzędzie, data) i commit.
 
+**Gesty na klipach (2026-11-01).** Gest z `Data/Emotes` może mieć pole `clip` (sam numer ID animacji R15; `nil`
+albo 0 to gest z kodu). Dziś mają je Pozdrowienie (507770239), Wskazanie (507770453) i Wiwat (507770677): animacje
+Roblox z domyślnego skryptu Animate, z tej samej serii co zapasowa lokomocja (`Data/Locomotion.fallback`), więc gra je
+każde doświadczenie. Klip gra przez `CharacterClips.gesture` z priorytetem `Action`, bez znacznika i bez dopasowania
+prędkości, raz albo w pętli, gdy ruch gestu ma `loop` (`Logic/EmoteClip.plan`). Ścieżki wczytują się z wyprzedzeniem
+na każdej postaci gracza (`AnimationController.WarmEmotes`), a powtórzona ścieżka z cudzego klienta jest zatrzymywana
+jak przy klipach ataków. W czasie klipu kod nie pisze stawów (tylko odchylenie pasa przy trafieniu). Gest z klipem
+kończy się płynnie przed końcem ścieżki (w czasie `recover` ruchu), gdy postać ruszy (`EmoteClip.moving`), zaatakuje
+albo rzuci umiejętność, a gest w pętli po `Emotes.MAX_SECONDS`. Gest zaczęty w ruchu, na R6, daleko od kamery, przed
+wczytaniem ścieżki albo z klipem, który się nie wczytał, gra ruch z kodu; ostrzeżenia w Output wtedy nie ma (stan
+klipów: `CharacterClips.status`).
+
 **Serie ciosów ataku podstawowego (S113).** Kolejne ataki w ciągu 1,5 s (`AttackMotions.COMBO_WINDOW`, liczone od
 startu poprzedniego) grają następny cios; po przerwie, zmianie broni albo ruchu seria zaczyna się od 1. Każdy klient
 liczy serię sam z kolejnych zdarzeń ataku (to tylko wygląd), każdy cios trafia w tym samym czasie serwera.
