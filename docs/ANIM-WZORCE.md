@@ -1294,6 +1294,27 @@ included; AnimationController and AnimLab need no change.
   ≤ 0.15 (the heavy's quick catch-up steps under its lunge). No joint over 12° a frame at 60 fps; no lifted joint over
   18° across a 0.1 s stall (31d: 37°); 15 fps at most 6 flips (the hind legs' catch-up steps). The pounce's legs swing
   up to 34° a frame in the world as the tuck lets go on the landing (the body's own turn).
+- **Studio on 01a** (2026-11-01, the last-bone heads of 11 chains, planted = within 0.08 of their own lowest; part of
+  the session at about 35 fps): alert ≤ 0.05, crush ≤ 0.07, the grab's 56° hitch jump gone. Then
+  (`OctoMotion.VERSION` "2026-11-01b palps capped a frame, soft hop landing"):
+  - **bone_57 and bone_63** (bite 0.75 / 0.61, grab 0.27 / 0.23, heavy 0.41 / 0.42, pounce 1.50 / 1.33) are the ends of
+    the **chelicerae** (bone_55→57 and bone_60→63 under `0_Left_Limb_0`, the head; our `fangs`), not legs: they hang
+    under the face and ride with the head, 0.46 stud over the ground at the lowest in any AnimLab state (0.53 in the
+    pounce, 0.77 in the bite). Their "slide" is the head's own lunge at its lowest (OctoSim on the same bones: bite
+    0.85 / 0.70, grab 0.25 / 0.23, heavy 0.40 / 0.41, pounce 1.51 / 1.31): they never touch the ground, so Studio's
+    planted measure leaves them out (tests/octomotion: over 0.4 stud in the alert, both blows, heavy, crush, pounce).
+  - **The pounce's landing** (`3_Right_Limb_1`, our L4's second bone, 37° local / 50° world in one frame at about
+    35 fps): AnimLab's own hop (no server Dash arc) came down at the parabola's full speed and levelled its 24°
+    nose-down pitch in the last 0.1 s, so the hind legs folded in a frame or two. Now the descent eases (it lands at
+    half the parabola's speed: `H·(1 − x²(2 − x))` past the top) and the pitch follows `sin²` (no pitch rate at the
+    take-off and the landing): at 4.2 studs the landing turns no joint over 11.7° at 60 fps (was 17.8°), 19° at 35 fps
+    (was 30.6°; L4's second bone 21° in the world, was 34°). OctoSim does not reproduce 3_Left5's 0.72 (≤ 0.05 at 35 and
+    60 fps, ±50 % frame jitter included).
+  - **A palp off the ground** turns no joint more than 11.5° in a frame however long the frame, its base's yaw and lift
+    counted together (Roblox turns `2_Right_Limb_0` by both; it was 18–30° a frame at about 35 fps: the rate is per
+    second, 12 rad/s on a strike, so a 35-fps frame allowed 19.6° on each). A palp never bears the body, so it may
+    trail a little at a low frame rate. The other legs keep their rates per second (steps and strikes 19.6° a frame at
+    35 fps, 11.5° at 60): a cap per frame would make a 15-fps step lag its foot off its point.
 - **The asset** in `Assets.Monsters` (as the wolf and the peakHarpy): a Model with `HumanoidRootPart` (Anchored false,
   CanCollide false, CanQuery and CanTouch true, Massless false, Transparency 1, size 1) as its `PrimaryPart`, the
   MeshPart with the bones (Anchored false, CanCollide, CanQuery and CanTouch true, Massless false) welded to it by a
