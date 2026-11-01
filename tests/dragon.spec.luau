@@ -1131,6 +1131,207 @@ T.describe("Dragon: its feet on a real spawn's root", function()
 			T.expect(studioSlide(frames) <= 0.15).toBe(true)
 		end
 	end)
+
+	-- The Root bone's turn in the world (degrees) between two frames: its pose about the root's yaw.
+	local function rootTurn(a: QuadPose.Posed, yawA: number, b: QuadPose.Posed, yawB: number): number
+		local function inWorld(posed: QuadPose.Posed, yaw: number): { number }
+			local r = posed[skel.rig.body].rot
+			local c, sn = math.cos(yaw), math.sin(yaw)
+			local ry = { c, 0, sn, 0, 1, 0, -sn, 0, c }
+			local w = table.create(9, 0)
+			for i = 0, 2 do
+				for j = 0, 2 do
+					for m = 0, 2 do
+						w[i * 3 + j + 1] += ry[i * 3 + m + 1] * r[m * 3 + j + 1]
+					end
+				end
+			end
+			return w
+		end
+		local wa, wb = inWorld(a, yawA), inWorld(b, yawB)
+		local trace = 0
+		for i = 1, 9 do
+			trace += wa[i] * wb[i]
+		end
+		return math.deg(math.acos(math.clamp((trace - 1) / 2, -1, 1)))
+	end
+
+	-- (a real spawn's chase, 2026-10-31, after the round above: a player on a circle of 16 studs, then straight on; the
+	-- stances slid a median 0.2-0.9 stud, up to 11, and the Root bone turned 136 degrees in a frame) the server's AI
+	-- (5 ticks a second): out of reach it runs to a point short of the target at 13 st/s, the Humanoid turning to its
+	-- way; in reach it closes in while it winds up a blow (every 1.6 s), or stands and faces the target in one snap.
+	-- Studio's measure: a foot within 0.08 stud of its lowest is planted; per stance, its longest travel.
+	T.it(
+		"chases a target round a circle, striking on the server's AI: its stances hold, the Root bone never snaps",
+		function()
+			local RUN, REACH, EVERY, TURN, HZ = 13, 9, 1.6, 8, 20
+			local function target(t: number): (number, number)
+				local a = math.min(t, 8) * 6 / 16
+				local x, z = 16 * math.sin(a), -16 * math.cos(a)
+				local on = math.max(0, t - 8) * 6
+				return x + math.cos(a) * on, z + math.sin(a) * on
+			end
+			-- the server, 60 Hz: x, z, yaw (studs)
+			local server: { { number } } = {}
+			local starts: { number } = {}
+			do
+				local x, z, yaw = 0, 12, 0
+				local goal: { number }? = nil
+				local tick, nextBlow = 0, 1
+				for i = 0, math.ceil(12.5 / DT) do
+					local t = i * DT
+					if t >= tick then
+						tick += 0.2
+						local tx, tz = target(t)
+						local dx, dz = tx - x, tz - z
+						local d = math.sqrt(dx * dx + dz * dz)
+						local k = math.max(0, d - REACH * 0.6) / d
+						goal = { x + dx * k, z + dz * k }
+						if d <= REACH then
+							if d <= REACH * 0.6 then
+								goal = nil
+								yaw = math.atan2(-dx, -dz)
+							end
+							if t >= nextBlow then
+								nextBlow = t + EVERY
+								table.insert(starts, t)
+							end
+						end
+					end
+					if goal then
+						local gx, gz = goal[1] - x, goal[2] - z
+						local gd = math.sqrt(gx * gx + gz * gz)
+						if gd > 0.3 then
+							x += gx / gd * math.min(RUN * DT, gd)
+							z += gz / gd * math.min(RUN * DT, gd)
+							local turn = (math.atan2(-gx, -gz) - yaw + math.pi) % (2 * math.pi) - math.pi
+							yaw += math.clamp(turn, -TURN * DT, TURN * DT)
+						else
+							goal = nil
+						end
+					end
+					table.insert(server, { x, z, yaw })
+				end
+			end
+			local function at(t: number): { number }
+				return server[math.clamp(math.floor(t / DT) + 1, 1, #server)]
+			end
+			local inst = assert(QuadMotion.new(skel, "dragon", 5))
+			local frames: { { [string]: Vec } } = {}
+			local worstTurn = 0
+			local prev: QuadPose.Posed?, prevYaw = nil, 0
+			local blow, count, run = 1, 0, nil :: any
+			local t, lastYaw, yawRate = 0, nil :: number?, 0
+			while t < 12 do
+				t += DT
+				-- the client: 0.1 s late, between the snapshots (a snap shows as it comes)
+				local ts = t - 0.1
+				local s0 = math.floor(ts * HZ) / HZ
+				local a, b = at(s0), at(s0 + 1 / HZ)
+				local k = (ts - s0) * HZ
+				local x, z = a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k
+				local yaw = at(ts)[3]
+				if lastYaw then
+					local d = (yaw - lastYaw + math.pi) % (2 * math.pi) - math.pi
+					yawRate += (d / DT - yawRate) * math.min(1, DT * 10)
+				end
+				lastYaw = yaw
+				if starts[blow] and ts >= starts[blow] then
+					blow += 1
+					count += 1
+					run = { name = QuadMotion.pick(STYLE, nil, nil, count), start = t, hit = 0.55 * 1.35 }
+				end
+				local tx, tz = target(ts)
+				local c, sn = math.cos(yaw), math.sin(yaw)
+				local dx, dz = tx - x, tz - z
+				local posed = QuadMotion.step(
+					inst,
+					{
+						now = t,
+						dt = DT,
+						speed = math.sqrt((b[1] - a[1]) ^ 2 + (b[2] - a[2]) ^ 2) * HZ / SCALE,
+						gait = "run",
+						yawRate = yawRate,
+						combat = true,
+						look = { (dx * c - dz * sn) / SCALE, 0, (dx * sn + dz * c) / SCALE },
+						action = run,
+						rootAt = { x / SCALE, z / SCALE, yaw },
+					} :: any
+				)
+				if prev then
+					worstTurn = math.max(worstTurn, rootTurn(prev, prevYaw, posed, yaw))
+				end
+				prev, prevYaw = posed, yaw
+				table.insert(frames, feetInWorld(posed, x / SCALE, z / SCALE, yaw))
+			end
+			T.expect(count >= 5).toBe(true)
+			for _, side in LEGS do
+				local low = math.huge
+				for _, f in frames do
+					low = math.min(low, f[side][2])
+				end
+				local stances: { number } = {}
+				local from: Vec? = nil
+				for _, f in frames do
+					local p = f[side]
+					if p[2] <= low + 0.08 then
+						if not from then
+							from = p
+							table.insert(stances, 0)
+						end
+						local a = from :: Vec
+						stances[#stances] =
+							math.max(stances[#stances], math.sqrt((p[1] - a[1]) ^ 2 + (p[3] - a[3]) ^ 2))
+					else
+						from = nil
+					end
+				end
+				table.sort(stances)
+				T.expect(#stances >= 4).toBe(true)
+				T.expect(stances[math.ceil(#stances / 2)] <= 0.1).toBe(true)
+				T.expect(stances[#stances] <= 0.35).toBe(true)
+			end
+			T.expect(worstTurn <= 12.5).toBe(true)
+		end
+	)
+
+	-- the server faces the target in one snap as a blow starts: the body turns round over a few frames on steps
+	T.it("turns round a snap of the root's heading at a blow's start over frames, on steps", function()
+		for _, case in { { "bite", 135 }, { "claw", -135 }, { "tail", 170 } } do
+			local inst = assert(QuadMotion.new(skel, "dragon", 5))
+			local frames: { { [string]: Vec } } = {}
+			local prev: QuadPose.Posed?, prevYaw = nil, 0
+			local worstTurn, yaw, t = 0, 0, 0
+			local run: any = nil
+			while t < 3.5 do
+				t += DT
+				if t >= 1 and not run then
+					yaw = math.rad(case[2])
+					run = { name = case[1], start = t, hit = 0.55 * 1.35 }
+				end
+				local posed = QuadMotion.step(
+					inst,
+					{
+						now = t,
+						dt = DT,
+						speed = 0,
+						yawRate = 0,
+						combat = true,
+						look = { 0, 0, -5 * L },
+						action = run,
+						rootAt = { 0, 0, yaw },
+					} :: any
+				)
+				if prev then
+					worstTurn = math.max(worstTurn, rootTurn(prev, prevYaw, posed, yaw))
+				end
+				prev, prevYaw = posed, yaw
+				table.insert(frames, feetInWorld(posed, 0, 0, yaw))
+			end
+			T.expect(worstTurn <= 12.5).toBe(true)
+			T.expect(studioSlide(frames) <= 0.35).toBe(true)
+		end
+	end)
 end)
 
 T.describe("Dragon: stun and freeze", function()
