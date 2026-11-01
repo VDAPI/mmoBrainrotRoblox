@@ -67,6 +67,7 @@ local list: { Emote } = {
 	{
 		-- A greeting with the raised right hand.
 		id = "wave",
+		clip = 507770239, -- Roblox's own R15 emote (owner 2026-11-01); the motion stays while it loads
 		aliases = { "wave", "machaj" },
 		motion = {
 			keys = {
@@ -82,6 +83,7 @@ local list: { Emote } = {
 	{
 		-- Pointing the way with the right arm.
 		id = "point",
+		clip = 507770453, -- Roblox's own R15 emote (owner 2026-11-01); the motion stays while it loads
 		aliases = { "point", "wskaz" },
 		motion = {
 			keys = {
@@ -171,6 +173,7 @@ local list: { Emote } = {
 	{
 		-- A raised fist, twice (no sound).
 		id = "cheer",
+		clip = 507770677, -- Roblox's own R15 emote (owner 2026-11-01); the motion stays while it loads
 		aliases = { "cheer", "wiwat" },
 		motion = {
 			keys = {

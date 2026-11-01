@@ -1940,6 +1940,10 @@ function AnimationController.Emote(model: Model, emoteId: string): boolean
 	if attack and attack.clip then
 		attack.clip.stop(0.08)
 	end
+	local clip: CharacterClips.Play? = nil
+	if emote.clip and emote.clip ~= 0 and not rig.r6 then
+		clip = CharacterClips.play(model, ClipFit.normalize(`rbxassetid://{emote.clip}`), 0, Enum.AnimationPriority.Action2, nil)
+	end
 	attacks[model] = nil
 	skills[model] = {
 		motion = emote.motion,
@@ -1949,7 +1953,7 @@ function AnimationController.Emote(model: Model, emoteId: string): boolean
 		pose = nil,
 		frozenUntil = 0,
 		frozenAt = nil,
-		clip = nil,
+		clip = clip,
 		emote = true,
 	}
 	return true
