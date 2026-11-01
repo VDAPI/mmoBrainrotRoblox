@@ -14386,3 +14386,6 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   dymek „Mapa · Obszar”), bez linii pod ramką; + i − po najechaniu (dotyk: zawsze). `WaitingRow` stoi tuż pod minimapą.
 - Teksty `unlock.mounts` i `unlock.arena` mówią o przyciskach Postać i Rywalizacja. Pasek EXP już ma 10 px (faza 2).
 - Testy: `hudreveal` (nowy), `hudlayout` (siatka, portret, `RIGHT_TOP`). Nieobejrzane w Studio.
+- Z przeglądu Studio (po potwierdzeniu `3d6f1042`): ekran podróży (nazwa mapy, strefa, porada) stał nad kartami wyboru
+  postaci po zmianie postaci. `WorldController` zdejmuje go od razu, gdy faza sesji przestaje być „playing”, a ekran,
+  który przyjdzie bez grającej postaci, znika po sekundzie, chyba że wejście postaci zaraz go potwierdzi.

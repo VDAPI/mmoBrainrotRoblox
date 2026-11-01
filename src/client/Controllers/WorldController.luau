@@ -901,6 +901,23 @@ function WorldController.Start()
 
 	Net.On("MapTransition", function(mapId: string?)
 		showLoading(mapId)
+		-- Studio check 2026-10-31 (the map's name and the tip stood over the character select's slot cards): a screen
+		-- that comes while no character plays (a spawn cut short by a character switch never sends its "done") goes
+		-- after a moment, unless the character's entry follows it (its phase may land just after this message)
+		if mapId and State.Get({ "session", "phase" }) ~= "playing" then
+			local token = loadingToken
+			task.delay(1, function()
+				if token == loadingToken and State.Get({ "session", "phase" }) ~= "playing" then
+					showLoading(nil)
+				end
+			end)
+		end
+	end)
+	-- ...and leaving the world for the character select takes it down at once
+	scope:Observer(State.Value({ "session", "phase" })):onChange(function()
+		if State.Get({ "session", "phase" }) ~= "playing" and loadingGui and loadingGui.Enabled then
+			showLoading(nil)
+		end
 	end)
 	-- Enter confirms the area picker (S22).
 	UserInputService.InputBegan:Connect(function(input: InputObject, processed: boolean)

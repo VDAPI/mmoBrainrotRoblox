@@ -634,6 +634,8 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		-- the travel screen switches itself off when its fade ends (it stayed on, drawn over every window)
 		local world = fs.readFile("src/client/Controllers/WorldController.luau")
 		T.expect(string.find(world, "fade.Completed:Connect", 1, true) ~= nil).toBe(true)
+		-- and never stays over the character select (Studio check 2026-10-31, after a character switch)
+		T.expect(string.find(world, '~= "playing" and loadingGui and loadingGui.Enabled', 1, true) ~= nil).toBe(true)
 	end)
 
 	T.it("UI plan phase 4: one spacing grid, a smaller portrait", function()
