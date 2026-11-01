@@ -53,11 +53,39 @@ local function styleOf(id: string): BipedStyles.Style
 end
 
 -- The guard NPC's rig dump (Mixamo bones with fingers) as client/Anim/BipedRig reads it, 6 studs tall.
-local function skeleton(): BipedPose.Skeleton
+-- The test rig; `short` and `bend` (deg) pull its knees and ankles up toward the hips and bend its knees forward
+-- (the hips, the feet's toes and every bone's rest axes kept), a rig standing crouched at rest.
+local function skeleton(short: number?, bend: number?): BipedPose.Skeleton
 	local dump = serde.decode("json", fs.readFile("tools/anim/rigs/npc_guard.json"))
 	local scale = 6 / dump.height
 	local rest: { [string]: BipedPose.Bone } = {}
 	local names: { [string]: string } = {}
+	if short or bend then
+		local by: { [string]: any } = {}
+		for _, b in dump.bones do
+			by[BipedRigs.keyOf(b.name)] = b
+		end
+		for _, side in { "Left", "Right" } do
+			local hip, knee, ankle = by[side .. "UpLeg"].pos, by[side .. "Leg"].pos, by[side .. "Foot"].pos
+			local f = short or 1
+			local nk =
+				{ hip[1] + f * (knee[1] - hip[1]), hip[2] + f * (knee[2] - hip[2]), hip[3] + f * (knee[3] - hip[3]) }
+			local l1 = math.sqrt((nk[1] - hip[1]) ^ 2 + (nk[2] - hip[2]) ^ 2 + (nk[3] - hip[3]) ^ 2)
+			local l2 = f * math.sqrt((ankle[1] - knee[1]) ^ 2 + (ankle[2] - knee[2]) ^ 2 + (ankle[3] - knee[3]) ^ 2)
+			local line = unitV({ ankle[1] - hip[1], ankle[2] - hip[2], ankle[3] - hip[3] })
+			local a = math.rad(bend or 0)
+			local reach = math.sqrt(l1 * l1 + l2 * l2 + 2 * l1 * l2 * math.cos(a))
+			local at = math.acos(math.clamp((l1 * l1 + reach * reach - l2 * l2) / (2 * l1 * reach), -1, 1))
+			local k = -line[3]
+			local front = unitV({ -line[1] * k, -line[2] * k, -1 - line[3] * k })
+			by[side .. "Leg"].pos = {
+				hip[1] + l1 * (math.cos(at) * line[1] + math.sin(at) * front[1]),
+				hip[2] + l1 * (math.cos(at) * line[2] + math.sin(at) * front[2]),
+				hip[3] + l1 * (math.cos(at) * line[3] + math.sin(at) * front[3]),
+			}
+			by[side .. "Foot"].pos = { hip[1] + line[1] * reach, hip[2] + line[2] * reach, hip[3] + line[3] * reach }
+		end
+	end
 	for _, b in dump.bones do
 		local back = unitV({ -b.look[1], -b.look[2], -b.look[3] })
 		local up0 = b.up
@@ -605,8 +633,10 @@ local function joints(
 	hit: number,
 	finish: number,
 	over: ((t: number, input: { [string]: any }) -> ())?,
-	sink: (t: number, at: { [string]: Vec }, world: BipedPose.World, inst: BipedMotion.Instance) -> ()
+	sink: (t: number, at: { [string]: Vec }, world: BipedPose.World, inst: BipedMotion.Instance) -> (),
+	rig: BipedPose.Skeleton?
 )
+	local skel = rig or SKEL
 	local captured: { world: BipedPose.World, shift: Vec }? = nil
 	local transforms = BipedPose.transforms
 	local module: any = BipedPose
@@ -616,7 +646,7 @@ local function joints(
 		return transforms(skel, world, shift)
 	end
 	local ok, err = pcall(function()
-		local inst = BipedMotion.new(SKEL, id, 3, { 0.42, -0.87, -0.22 }) :: BipedMotion.Instance
+		local inst = BipedMotion.new(skel, id, 3, { 0.42, -0.87, -0.22 }) :: BipedMotion.Instance
 		local t, dt = 0, 1 / 60
 		while t <= finish do
 			local input: { [string]: any } = { now = t, dt = dt, speed = 0, yawRate = 0, combat = true, snap = t == 0 }
@@ -628,7 +658,7 @@ local function joints(
 			end
 			BipedMotion.step(inst, input :: any)
 			local pose = captured :: { world: BipedPose.World, shift: Vec }
-			sink(t, BipedPose.positions(SKEL, pose.world, pose.shift), pose.world, inst)
+			sink(t, BipedPose.positions(skel, pose.world, pose.shift), pose.world, inst)
 			t += dt
 		end
 	end)
@@ -639,6 +669,7 @@ local function joints(
 end
 
 local TOE: { [string]: string } = { R = "RightToeBase", L = "LeftToeBase" }
+local FEET: { [string]: string } = { R = "RightFoot", L = "LeftFoot" }
 local DEBUG = false
 
 T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio review)", function()
@@ -758,44 +789,70 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 		end
 	)
 
-	T.it("the brute's walk lifts its feet clear of the ground, not a shuffle, smoothly (Studio rounds 3-7)", function()
-		local L = SKEL.legLength
-		local rest = BipedPose.positions(SKEL, {}, { 0, 0, 0 })
-		local high = { R = 0, L = 0 }
-		local snap = 0
-		local before: BipedPose.World? = nil
-		joints("brute", "", 0, 3, function(_, input)
-			-- (the wander's pace, 0.4 of a yeti's speed at this size)
-			input.combat, input.look, input.speed, input.gait = false, nil, 3.6, "walk"
-		end, function(t, at, world)
-			if t > 1 then
-				for side, key in TOE do
-					high[side] = math.max(high[side], at[key][2] - rest[key][2])
+	T.it(
+		"the brute's walk lifts its feet half a leg, not a shuffle, smoothly, on any rig (Studio rounds 3-8)",
+		function()
+			-- (the test rig, and one standing crouched at rest, its knees bent 80 deg on legs 0.8 as long: the werewolf's
+			-- swings were not found and it shuffled, 2026-11-01 round 8)
+			for _, rig in { SKEL, skeleton(0.8, 80) } do
+				local span = 0
+				for _, leg in rig.leg do
+					span += (leg.l1 + leg.l2) / 2
 				end
-				local prev = before
-				if prev then
-					-- (the thighs' and the shins' turn in a frame, degrees: the review measured 23 against a hard cap on the
-					-- lift, then 16-31 at the strikes on the yeti's own rig)
-					for _, key in { "LeftUpLeg", "RightUpLeg", "LeftLeg", "RightLeg" } do
-						local a, b = prev[key], world[key]
-						local inner = 0
-						for i = 1, 9 do
-							inner += a[i] * b[i]
-						end
-						snap = math.max(snap, math.deg(math.acos(math.clamp((inner - 1) / 2, -1, 1))))
+				local low, high = { R = math.huge, L = math.huge }, { R = -math.huge, L = -math.huge }
+				local legs, feet = 0, 0
+				local before: BipedPose.World? = nil
+				local function turn(a: { number }, b: { number }): number
+					local inner = 0
+					for i = 1, 9 do
+						inner += a[i] * b[i]
 					end
+					return math.deg(math.acos(math.clamp((inner - 1) / 2, -1, 1)))
 				end
+				joints("brute", "", 0, 3, function(_, input)
+					-- (the wander's pace, 0.4 of a yeti's speed at this size)
+					input.combat, input.look, input.speed, input.gait = false, nil, 3.6, "walk"
+				end, function(t, at, world)
+					if t > 1 then
+						for side, key in FEET do
+							low[side] = math.min(low[side], at[key][2])
+							high[side] = math.max(high[side], at[key][2])
+						end
+						local prev = before
+						if prev then
+							-- (each bone's turn in a frame, degrees: the review measured 23 against a hard cap on the lift,
+							-- then 16-31 at the strikes on the yeti's own rig, 20 on the mummy's shins and 24 on the crystal
+							-- guardian's feet)
+							for _, key in { "LeftUpLeg", "RightUpLeg", "LeftLeg", "RightLeg" } do
+								legs = math.max(legs, turn(prev[key], world[key]))
+							end
+							for _, key in FEET do
+								feet = math.max(feet, turn(prev[key], world[key]))
+							end
+						end
+					end
+					before = table.clone(world)
+				end, rig)
+				local lift = { R = (high.R - low.R) / span, L = (high.L - low.L) / span }
+				if DEBUG then
+					print(
+						string.format(
+							"brute walk ankle lift R %.3f L %.3f legs, legs %.1f feet %.1f deg",
+							lift.R,
+							lift.L,
+							legs,
+							feet
+						)
+					)
+				end
+				-- (the review measured the yeti's toes a quarter of a stud up, then 0.5-0.7, then 1.04-1.08: it asked for
+				-- 1.2-1.6, about half the yeti's leg; then no more than 12-14 deg a frame; then the mummy's ankles 0.75 of
+				-- its leg up, the werewolf's 0.07: at most 0.55)
+				T.expect({ lift.R > 0.4, lift.L > 0.4, lift.R < 0.55, lift.L < 0.55, legs < 12, feet < 16 })
+					.toEqual({ true, true, true, true, true, true })
 			end
-			before = table.clone(world)
-		end)
-		if DEBUG then
-			print(string.format("brute walk toe lift R %.3f L %.3f L, leg %.1f deg", high.R / L, high.L / L, snap))
 		end
-		-- (the review measured a quarter of a stud on the yeti, then 0.5-0.7, then 1.04-1.08: it asked for 1.2-1.6,
-		-- about half the yeti's leg; then no more than 12-14 deg a frame)
-		T.expect({ high.R > 0.45 * L, high.L > 0.45 * L, high.R < 0.75 * L, high.L < 0.75 * L, snap < 11 })
-			.toEqual({ true, true, true, true, true })
-	end)
+	)
 
 	T.it("a planted foot stays put in the world while the root turns under it", function()
 		local L = SKEL.legLength
