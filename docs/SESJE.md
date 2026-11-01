@@ -14415,3 +14415,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Karta samouczka w kroku „plecak” zasłaniała lewą część minimapy: w rzędzie menu są wtedy tylko Postać i ☰, tuż nad
   minimapą. Karta przy przycisku menu staje na lewo od całego menu (`HudSlots.Menu`), a `TutorialController` liczy
   miejsce w `Scale.HudSize`.
+
+### Plan UI, faza 4: druga poprawka po przeglądzie Studio (2026-11-01)
+- Dane ze Studio przy 1108×576 (warstwa `Screens` 1108×518 od (0, 0), `GuiInset` (0, 58)) wykluczyły szerszą warstwę:
+  tropiciel stał w zapisanym miejscu gracza (`account.settings.hud.questTracker`, x ≈ 0,84 szerokości, przesunięty
+  przez właściciela 2026-10-22 przy 1462×793). `HudLayout.place` zostawia na ekranie tylko 60 px, więc przy skali 0,6
+  tropiciel kończył się 3 px za krawędzią. `HudDrag` mieści teraz każdy przesunięty element w marginesach ekranu
+  (`HudStack.insideX`: od 22 do szerokości − 22), zanim odsunie go spod menu. Test w `hudlayout.spec`.
+- W kroku „plecak” karta samouczka (na lewo od menu, 16 px od góry warstwy HUD) zachodziła lewym górnym rogiem na
+  prawy koniec toastu „Nagroda dnia czeka…”. Przy ekranie 16:9 kolumna toastów (520 px na środku) i karta zachodzą na siebie o ok. 60 px.
+  `TutorialController` podaje prostokąt karty (`TopBandState.Keep`), a `Toast` przesuwa kolumnę w bok, 8 px od karty
+  i nie bliżej niż 16 px od krawędzi (`TopBand.toastShift`), tylko gdy karta stoi w pasie toastów. Test w `topband.spec`.
