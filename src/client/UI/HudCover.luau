@@ -3,8 +3,8 @@
 -- blacksmith and the alchemist overlap the tracker and the icon grid"): the HUD parts an open window covers step out of
 -- sight until it closes. WindowManager reports the open windows (overlays such as the dev panel do not count); a HUD
 -- part asks `covered` for its own rectangle and hides itself while any of them covers it by more than MARGIN
--- (Logic/HudStack.covers). Used by the quest tracker, the menu bar, the minimap's two labels and the row of "something
--- waits" buttons; never by the action bar, the portrait's bars or the chat. A hidden part keeps the rectangle where it
+-- (Logic/HudStack.covers). Used by the quest tracker (any open window hides it, `Open`), the menu bar, the minimap's
+-- caption and the row of "something waits" buttons; never by the action bar, the portrait's bars or the chat. A hidden part keeps the rectangle where it
 -- last showed, so hiding it never changes the answer.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -59,6 +59,18 @@ HudCover.HeaderBottom = scope:Computed(function(use): number?
 		end
 	end
 	return bottom
+end)
+
+-- Studio check 2026-10-31 (the quest tracker stayed beside the backpack window): a normal window is open. The quest
+-- tracker steps out of sight under any of them, wherever it stands; the other parts only when one covers them.
+HudCover.Open = scope:Computed(function(use): boolean
+	use(moved)
+	for _, root in use(windows) do
+		if root.Parent ~= nil then
+			return true
+		end
+	end
+	return false
 end)
 
 -- Whether an open window covers `item` now (for the life of `s`). Bind the item's Visible to `not covered`.
