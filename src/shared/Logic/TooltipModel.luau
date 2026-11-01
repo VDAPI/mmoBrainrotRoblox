@@ -72,6 +72,7 @@ local ShopPrice = require("./ShopPrice")
 local Shops = require("../Data/Shops")
 local SkillData = require("../Data/Skills")
 local StatGroups = require("./StatGroups")
+local TeleportStone = require("./TeleportStone")
 local Stats = require("../Data/Stats")
 local Traits = require("./Traits")
 local Transmog = require("./Transmog")
@@ -130,6 +131,7 @@ export type Ctx = {
 	input: ("mouse" | "touch")?,
 	detailsKey: string?,
 	view: ("compact" | "full")?,
+	now: number?, -- owner 2026-11-01: server time (os.time seconds) for the rest of an everlasting stone
 }
 
 export type Model = { lines: { Line } }
@@ -1124,6 +1126,16 @@ local function buildFull(item: ItemInstance, def: ItemDef?, c: Ctx, lang: string
 
 	-- Binding (owner 2026-10-31, Logic/Binding): one short line, "bound" or "binds when equipped"; nothing for what
 	-- trades freely (potions, materials, backpacks). Bound stacks too (S122: the Elixir of Wholeness).
+	-- (owner 2026-11-01, Logic/TeleportStone) an everlasting stone: the place it is set to (a map or a boss dungeon), the
+	-- rest left at `c.now` (without it, os.time); both stay in the compact view
+	local placeKey = item.at and TeleportStone.placeKey(d, item.at)
+	if placeKey then
+		b.add("stoneAt", Locale.T("tooltip.stoneAt", { map = Locale.T(placeKey, nil, lang) }, lang), "muted")
+	end
+	local restMinutes = TeleportStone.minutesLeft(item, c.now or os.time())
+	if restMinutes > 0 then
+		b.add("stoneRest", Locale.T("tooltip.stoneRest", { minutes = restMinutes }, lang), "bad")
+	end
 	local bindKey = Binding.tooltipKey(item, d)
 	if bindKey then
 		b.add("bind", Locale.T(bindKey, nil, lang), if bindKey == "tooltip.bound" then "bad" else "muted")
@@ -1223,6 +1235,8 @@ local COMPACT_KEEP: { [string]: boolean } = {
 	compareNote = true, -- red: an off-hand next to a two-hander
 	price = true, -- shop price
 	sellFor = true, -- a merchant is open
+	stoneAt = true, -- owner 2026-11-01: the place an everlasting stone is set to
+	stoneRest = true, -- and the minutes it still rests
 }
 
 -- Roles folded into one compact line (mainShort, traitShort, fxShort) or counted in "+N more".

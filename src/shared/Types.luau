@@ -42,6 +42,10 @@ export type ItemInstance = {
 	-- S154: the look worn (Logic/Transmog key; absent = the item's own look). Only the look: read through
 	-- Transmog.current / displayDef, never by stats, requirements or the weapon pool
 	tm: string?,
+	-- Owner 2026-11-01, an everlasting stone: the map it is set to for good (the Everlasting Map Stone, TravelService) and
+	-- when it is ready again (os.time, 30 minutes after each use, each stone its own)
+	at: string?,
+	cd: number?,
 }
 
 export type Stats = { str: number, dex: number, int: number, vit: number }

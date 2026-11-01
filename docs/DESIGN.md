@@ -726,14 +726,41 @@ podniesieniu**. Wygrywa najsilniejsza z: definicji (`bind`, inaczej kategoria), 
 ## 13. Kamienie teleportu i zwoje
 
 - **Kamień Powrotu**: teleport do miasta (kanałowanie 5 s, przerywane obrażeniami). Tani u kupca.
-- **Kamień Mapy (X)**: teleport na wybraną mapę (do jej punktu odrodzenia).
+- **Kamień Mapy (X)**: teleport na wybraną odwiedzoną mapę (region z wyborem obszaru, jaskinia, krypta, stolica; bez
+  lochów bossów i map trybów serwera), cel wybierany przy każdym użyciu.
 - **Kamień Lochu (X)**: teleport przed wejście do konkretnego lochu bossa.
 - **Mistrz Portali Teodor** (S160k, właściciel 2026-10-21; przy wschodniej bramie stolicy, `Data/PortalShop`,
   `PortalShopService`): każdy kamień teleportu gry za Smoczą Walutę, na sztuki (1 lub 10, do 50 naraz) albo **na stałe**
   (raz na konto, `account.portalStones`): wieczny kamień (`<kamień>_perm`, `use.keep`) działa jak zwykły i nigdy się nie
   zużywa; każda postać konta odbiera u Mistrza swoją kopię za darmo (jedną naraz). Ceny: Powrotu 5 / 300, Mapy 10 / 600,
   Lochu 15 / 600, Lochu regionu 10 / 250. Wygoda: te same kamienie są za złoto u alchemika i kupców (bez pay2win).
+  Wieczne kamienie odpoczywają po teleporcie, a Wieczny Kamień Mapy kupuje się wiele razy (§13a).
 - **Zwój Zapomnienia** (reset statów), **Zwój Odnowy Umiejętności** (pełny reset rang pul i węzłów kierunków, S138), **Zwój Rozwiązania**, **Zwój Ochrony**.
+
+### 13a. Wieczne kamienie: odpoczynek i stałe miejsce (właściciel 2026-11-01)
+
+Reguły w `Logic/TeleportStone` (serwer `TravelService`, plecak, wybór celu, podpowiedź i `tests/teleportstone.spec`
+czytają jedną regułę), liczba w `Data/PortalShop.COOLDOWN`.
+
+- **Odpoczynek.** Każdy wieczny kamień po udanym teleporcie odpoczywa 30 minut, każdy osobno (nie wspólnie dla rodzaju
+  ani miejsca). Przerwany kanał nic nie kosztuje. Czas biegnie naprawdę, także gdy gracz nie gra: kamień zapisuje
+  chwilę, w której znów działa (pole `cd` przedmiotu, czas serwera). Kamień, który odpoczywa, odmawia od razu krótkim
+  komunikatem z minutami („Ten kamień odpoczywa. Gotowy za 12 min.”), a jego podpowiedź w plecaku (także krótka)
+  pokazuje „Odpoczywa jeszcze N min”. Kamienie kupione wcześniej zaczynają odpoczywać od pierwszego teleportu.
+- **Stałe miejsce.** Wieczny Kamień Mapy i Wieczny Kamień Lochu przy pierwszym użyciu otwierają wybór celu (Mapa:
+  odwiedzone mapy regionów, jaskinie, krypty i stolica, bez lochów bossów i map trybów serwera; Loch: wejścia do
+  lochów bossów). Przed zapisaniem gracz potwierdza („Tego wyboru nie da się zmienić”). Potem kamień zawsze prowadzi
+  tam bez pytania (Mapa: do najniższego obszaru regionu), a podpowiedź pokazuje „Ustawiony na: …”. Mapa, na której
+  postać stoi, zapisuje się bez teleportu i bez odpoczynku. Wieczny kamień bez miejsca (kupiony przed zmianą) wybiera je
+  przy następnym użyciu. Miejsce zapisuje każda postać w swoim kamieniu (pole `at` przedmiotu: mapa albo region lochu).
+- **Wiele kamieni.** Postać może mieć kilka Wiecznych Kamieni Mapy z różnymi miejscami, każdy z własnym odpoczynkiem.
+  Wieczne kamienie nigdy się nie łączą w stos i nie trafiają do depozytu (zostają przy postaci, inaczej darmowe kopie
+  od Mistrza omijałyby odpoczynek). Wieczny Kamień Mapy kupuje się u Mistrza Portali wiele razy (600 Smoczej Waluty za
+  każdy; kolejny trafia do plecaka kupującej postaci, pytanie o zakup to mówi; pierwszy zakup daje też darmową kopię
+  każdej postaci konta), pozostałe wieczne kamienie raz na konto jak dotąd.
+- **Nagroda.** Zadanie główne „Gniazda harpii” (`harpyRocks`, poziom 78) daje jeden Wieczny Kamień Mapy bez miejsca.
+  Produktu za Robux nie ma: sklep nie ma rodzaju produktu z przedmiotem.
+- Zwykłe kamienie bez zmian: zużywają się, cel wybiera się przy każdym użyciu, bez odpoczynku.
 
 ## 14. Umiejętności
 

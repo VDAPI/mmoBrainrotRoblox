@@ -7639,5 +7639,11 @@ return {
 				why = "S162e (Studio test 2026-10-31: a wolf under a perched target never evaded; Logic/Pursuit): new: at most 1 path computation started per server frame (performance only); no fight change",
 			},
 		},
+		["Quests/Main:byId.harpyRocks.reward.items[stone_map_perm].n"] = {
+			{
+				session = "S162t",
+				why = "S162t (owner 2026-11-01, DESIGN §13a): the level 78 main quest also gives one Everlasting Map Stone (unset, set by the character on its first use, rests 30 min after a teleport); travel comfort, no EXP, gold or power",
+			},
+		},
 	} :: { [string]: { Reason } },
 }

@@ -14529,3 +14529,21 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `Logic/TownGen/Blueprint`, `Logic/MeadowsGen/{init,Kit,Nature,Dressing}`, `Logic/WorldGen/{Kit,Flora}`,
   `Logic/DuskwoodGen/{init,Nature,Thicket,Swamp,Witch}`, `Logic/AshenGen/{init,Props,Oasis,Crags}`,
   `Logic/FrostpeakGen/init`, `MeadowsLifeController` (opis), `tests/perches.spec.luau`.
+
+### Wieczne kamienie: odpoczynek i stałe miejsce (2026-11-01)
+
+- Podstawa: commit z laptopa „Teleport stones: a 30 minute rest per stone, the map stone set for good” (przeniesiony
+  na main): `cd` i `at` przedmiotu, odpoczynek 30 min, Wieczny Kamień Mapy ustawiany przy pierwszym użyciu z
+  potwierdzeniem, `many` w `Data/PortalShop`, wieczne kamienie bez stosów, nagroda `harpyRocks`, linie podpowiedzi.
+- Dodane: `Logic/TeleportStone` (czyste reguły: odpoczynek, minuty, miejsca Kamienia Mapy, ustawienie, nazwa miejsca);
+  Wieczny Kamień Lochu ustawiany przy pierwszym użyciu jak Mapy (wybór, potwierdzenie, potem prosto przed loch);
+  odmowa z minutami na kliencie przed zapytaniem (serwer dalej odmawia krótko, bez drugiego komunikatu); wybór celu i
+  serwer z jedną regułą miejsc; linie „Ustawiony na” (także nazwa lochu) i „Odpoczywa jeszcze” w krótkiej podpowiedzi,
+  z czasem serwera; wieczne kamienie nie wchodzą do depozytu; pytanie o kolejny Wieczny Kamień Mapy; poprawka typu w
+  `PortalShopService`; teksty PL/EN; wpis w `tools/balance_reasons.luau`.
+- Test `teleportstone.spec`: odpoczynek każdego kamienia osobno i po wylogowaniu, minuty odmowy, ustawienie raz (Mapa i
+  Loch), tylko odwiedzone miejsca, jaskinie i krypty tak, lochy bossów i arena nie, kilka ustawionych kamieni bez stosu,
+  wielokrotny zakup Mapy, stare kamienie, podpowiedź, depozyt, nagroda zadania, odpoczynek dopiero po przybyciu.
+- **Pliki:** `Logic/TeleportStone`, `TravelService`, `DepositService`, `PortalShopService`, `ItemController`,
+  `StonePicker`, `ItemTooltip`, `TooltipModel`, `PortalShopWindow`, `Localization/pl|en`, `tests/teleportstone.spec`,
+  `tests/arenaqueue.spec`, `tests/shopshort.spec`, `docs/DESIGN.md` §13 i §13a.

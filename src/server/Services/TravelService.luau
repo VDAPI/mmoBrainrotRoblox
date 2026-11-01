@@ -10,6 +10,8 @@
 -- return) and portals; teleports of the server (TeleportToMap) never ask them.
 -- S160k: the Portal Master's everlasting stones (`use.keep`, Data/PortalShop) work like their stones and are never
 -- used up.
+-- Owner 2026-11-01 (DESIGN §13a, Logic/TeleportStone): an everlasting stone rests 30 minutes after a teleport (`cd`,
+-- refused before the channel); the Everlasting Map and Dungeon Stone are set for good on their first use (`at`).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -27,6 +29,7 @@ local Mounts = require(Shared.Logic.Mounts)
 local Net = require(Shared.Net)
 local Portals = require(Shared.Data.Portals)
 local Placement = require(script.Parent.Parent.Placement)
+local TeleportStone = require(Shared.Logic.TeleportStone)
 local Types = require(Shared.Types)
 
 local TravelService = {
@@ -220,16 +223,6 @@ function TravelService.MarkVisited(player: Player, mapId: string)
 	end
 end
 
--- The cave map that holds a dungeon region's entrance, if it exists yet (S08/S09).
-local function dungeonMap(region: string): Maps.MapDef?
-	for _, map in Maps.byId do
-		if map.dungeonRegion == region and map.dungeonEntrance then
-			return map
-		end
-	end
-	return nil
-end
-
 -- 5 s channel; on success consumes one `itemId` and runs `arrive`.
 -- `itemId` nil (S121, the VIP free return): nothing is consumed; every other rule is the stone's.
 local function channel(player: Player, itemId: string?, label: string, arrive: () -> ()): (boolean, string?)
@@ -299,13 +292,35 @@ function TravelService.FreeRecall(player: Player, onArrive: () -> ()): (boolean,
 	end)
 end
 
-local function toMap(player: Player, itemId: string?, mapId: string, areaId: string?): (boolean, string?)
+-- Owner 2026-11-01: an everlasting stone rests 30 minutes after a teleport, each stone its own, also over a logout
+-- (os.time, as the Elixir of Wholeness). The client says the minutes left before it asks (ItemController); this is
+-- the server's word for a stale client.
+local function restRefusal(item: Types.ItemInstance): string?
+	return if TeleportStone.restLeft(item, os.time()) > 0 then "teleport.cooldownShort" else nil
+end
+
+-- The kept stone `uid` starts its rest after the teleport (it may have moved during the channel).
+local function startRest(player: Player, uid: string?)
+	local index = uid and InventoryService.IndexOf(player, uid)
+	local item = index and InventoryService.Get(player, index)
+	if index and item then
+		InventoryService.SetSlot(player, index, TeleportStone.rested(item, os.time()))
+	end
+end
+
+local function toMap(
+	player: Player,
+	itemId: string?,
+	mapId: string,
+	areaId: string?,
+	keptUid: string?
+): (boolean, string?)
 	local map = Maps.get(mapId)
 	local char = PlayerStateService.GetCharacter(player)
 	if not map or not char then
 		return false, "error.badRequest"
 	end
-	if not (char.visitedMaps or {})[mapId] or map.biome == "dungeon" or map.serverModes ~= nil then
+	if not TeleportStone.isMapPlace(mapId, char.visitedMaps) then
 		return false, "teleport.notVisited"
 	end
 	if char.location.map == mapId and mapId ~= Config.StartingMap and not areaId then
@@ -317,13 +332,14 @@ local function toMap(player: Player, itemId: string?, mapId: string, areaId: str
 		return false, err
 	end
 	return channel(player, itemId, "teleport.channelMap", function()
+		startRest(player, keptUid)
 		TravelService.TeleportToMap(player, mapId, at)
 		Net.Fire(player, "Toast", "teleport.arrived", { map = `@{map.nameKey}` }, "success")
 	end)
 end
 
-local function toDungeon(player: Player, itemId: string?, region: string): (boolean, string?)
-	local map = dungeonMap(region)
+local function toDungeon(player: Player, itemId: string?, region: string, keptUid: string?): (boolean, string?)
+	local map = TeleportStone.dungeonMap(region)
 	local entrance = map and map.dungeonEntrance
 	if not map or not entrance then
 		return false, "teleport.soon"
@@ -331,6 +347,7 @@ local function toDungeon(player: Player, itemId: string?, region: string): (bool
 	local origin = Vector3.new(map.offset.x, map.offset.y, map.offset.z)
 	local at = CFrame.new(origin + Vector3.new(entrance.x, entrance.y + 4, entrance.z))
 	return channel(player, itemId, "teleport.channelDungeon", function()
+		startRest(player, keptUid)
 		TravelService.TeleportToMap(player, map.id, at)
 		Net.Fire(player, "Toast", "teleport.arrived", { map = `@{map.nameKey}` }, "success")
 	end)
@@ -345,16 +362,28 @@ local function useStone(player: Player, _index: number, item: Types.ItemInstance
 	local def = Items.get(item.id)
 	local target = def and def.use and def.use.target
 	local itemId = spent(def, item.id)
+	local keptUid = if itemId == nil then item.uid else nil
+	if keptUid then
+		local refused = restRefusal(item)
+		if refused then
+			return false, refused
+		end
+	end
 	if target == "city" then
 		return channel(player, itemId, "teleport.channel", function()
+			startRest(player, keptUid)
 			TravelService.TeleportToMap(player, Config.StartingMap)
 			Net.Fire(player, "Toast", "teleport.done", nil, "success")
 		end)
+	elseif target == "map" and keptUid and item.at then
+		return toMap(player, nil, item.at, nil, keptUid)
+	elseif target == "dungeon" and keptUid and item.at then
+		return toDungeon(player, nil, item.at, keptUid)
 	elseif target == "map" or target == "dungeon" then
 		-- Needs a destination: the client opens the picker and calls UseMapStone.
 		return false, "teleport.pick"
 	elseif target and string.sub(target, 1, 8) == "dungeon:" then
-		return toDungeon(player, itemId, string.sub(target, 9))
+		return toDungeon(player, itemId, string.sub(target, 9), keptUid)
 	end
 	return false, "teleport.soon"
 end
@@ -368,7 +397,39 @@ local function useMapStone(player: Player, index: number, target: string, areaId
 		return false, "error.badRequest"
 	end
 	local itemId = spent(def, item.id)
-	if kind == "map" then
+	local keptUid = if itemId == nil then item.uid else nil
+	if keptUid then
+		local refused = restRefusal(item)
+		if refused then
+			return false, refused
+		end
+	end
+	if keptUid and item.at then
+		-- set for good: always its own place, whatever a stale picker sent
+		return if kind == "dungeon"
+			then toDungeon(player, nil, item.at, keptUid)
+			else toMap(player, nil, item.at, nil, keptUid)
+	elseif keptUid then
+		-- Owner 2026-11-01: the first choice sets the Everlasting Map or Dungeon Stone for good, on this character's
+		-- copy (the picker asked first). It travels right away; a Map Stone set to the map the player stands on does not.
+		local char = PlayerStateService.GetCharacter(player)
+		local refused = if char
+			then TeleportStone.setRefusal(item, def, target, char.visitedMaps)
+			else "error.badRequest"
+		if refused or not char then
+			return false, refused
+		end
+		local copy = table.clone(item)
+		copy.at = target
+		InventoryService.SetSlot(player, index, copy)
+		Net.Fire(player, "Toast", "teleport.attuned", { map = `@{TeleportStone.placeKey(def, target)}` }, "success")
+		if kind == "dungeon" then
+			return toDungeon(player, nil, target, keptUid)
+		elseif char.location.map == target and target ~= Config.StartingMap then
+			return true, nil -- set here, nothing to travel: the stone does not rest
+		end
+		return toMap(player, nil, target, nil, keptUid)
+	elseif kind == "map" then
 		return toMap(player, itemId, target, areaId)
 	elseif kind == "dungeon" then
 		return toDungeon(player, itemId, target)

@@ -6,6 +6,8 @@
 -- Portal Master (the window opens from his dialog and closes when the player walks away); forever asks first.
 -- 2026-10-21 (owner: too many detailed descriptions): one short line on top (the rules behind its "i"); a row says only
 -- how many the character carries, where the stone leads is behind the "i" after its name.
+-- Owner 2026-11-01: the Everlasting Map Stone (`many`) is bought again by an account that owns it: the question says it
+-- goes to this character's backpack (no free copy of a second one), to be set to another place (Logic/TeleportStone).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -94,9 +96,13 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 			return
 		end
 		if mode == "perm" then
+			local again = PortalShop.owned({ portalStones = Fusion.peek(portalStones) }, entry.itemId)
 			props.ShowModal({
 				Title = Text.now("portalshop.permTitle"),
-				Message = Text.now("portalshop.permConfirm", { name = name, price = entry.perm }),
+				Message = Text.now(
+					if again then "portalshop.againConfirm" else "portalshop.permConfirm",
+					{ name = name, price = entry.perm }
+				),
 				ConfirmText = Text.now("portalshop.buyPerm"),
 				CancelText = Text.now("common.cancel"),
 				OnConfirm = function(): (boolean, string?)
@@ -162,10 +168,10 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 				})
 			end
 			local permAction: Instance
-			if not owned then
-				permAction = priceButton(3, "perm", 1, "portalshop.perm", "primary")
-			elseif held == 0 then
+			if owned and held == 0 then
 				permAction = priceButton(3, "claim", 1, "portalshop.claim", "primary")
+			elseif not owned or entry.many then
+				permAction = priceButton(3, "perm", 1, "portalshop.perm", "primary")
 			else
 				permAction = s:New("TextLabel")({
 					LayoutOrder = 3,

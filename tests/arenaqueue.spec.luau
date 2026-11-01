@@ -781,8 +781,12 @@ T.describe("ArenaQueue H7: wiring of the server modules", function()
 	T.it("a server-mode map is never visited nor a map stone target", function()
 		local travel = fs.readFile("src/server/Services/TravelService.luau")
 		local _, count = string.gsub(travel, 'map%.biome == "dungeon" or map%.serverModes ~= nil then', "")
-		T.expect(count).toBe(2) -- MarkVisited and the map stone (toMap)
-		has("src/client/UI/Screens/StonePicker.luau", "map.serverModes == nil")
+		T.expect(count).toBe(1) -- MarkVisited
+		-- owner 2026-11-01: the map stone's places are one rule (Logic/TeleportStone.isMapPlace) for the server's trip,
+		-- the binding of the everlasting stone and the picker
+		has("src/shared/Logic/TeleportStone.luau", 'map.biome == "dungeon" or map.serverModes ~= nil then')
+		has("src/server/Services/TravelService.luau", "TeleportStone.isMapPlace(mapId, char.visitedMaps)")
+		has("src/client/UI/Screens/StonePicker.luau", "TeleportStone.mapPlaces(use(visited))")
 	end)
 
 	T.it("one offer card on the client, one ArenaRespond remote", function()
