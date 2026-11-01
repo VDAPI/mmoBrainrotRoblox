@@ -1046,6 +1046,37 @@ feet were dragged round with it; a blow taking the feet over slid them onto its 
   `bone_40`); the toe tips 0.06-0.08 stud lower than its stance as the heel peels, so few frames are within 0.08 of its
   lowest. Measure `bone_44` for the hind right.
 
+#### The same chase, second capture (2026-11-01)
+
+Studio on `bc8bb891` (1319 frames at 60 fps, 1003 at the run): the Root bone at most 12.2° a frame, but the left
+stances slid a median 0.40 / 0.59 stud (up to 1.02) and the front-right paw was down in one stance in 20 s. Three
+causes, none of which the sim had shown:
+
+- **The pose was a frame behind the root it is drawn on.** AnimationController posed in `PreSimulation`, pinning the
+  feet by the root as the last frame's simulation left it; that frame's simulation then moves the root (and the look
+  welded to it) on before it renders, so every planted foot is drawn off its pin by one frame's travel and turn of the
+  root (0.1-0.2 stud at the chase's speeds, more as the server turns it; the sim with a root one frame late: stances a
+  median 0.17-0.22, up to 0.43). A quadruped with pinned feet is now posed in `PreRender`, by where its look stands as
+  the frame renders (the rest still in `PreSimulation`).
+- **The gait flipped between trot and gallop a few times a second.** The server's chase runs in bursts (MoveTo short
+  of the target at 13 st/s, 5 ticks a second), the replicated velocity reads 13 or 0, and the pace took the larger of it
+  and the root's travel: the intent's step down to a trot came and went each burst, and the two gaits' weights sat at
+  about 0.4 / 0.6 the whole chase. Their footfalls differ, so a foot down in one is up in the other: the blend held the
+  front-right paw 0.07 stud up (never within 0.08 of its lowest) or kept it from being down at all. Now the pace is the
+  root's travel over 0.2 s (the velocity only while the track is shorter), the step down reads that pace eased (rate 3)
+  and holds the gait it gave until the pace is 15% past its edge.
+- **A blow's leg weight left by rounding** (its weight times `1 - roam`, the roam a hair under 1) counted as a blow
+  taking the feet over: no pin stepped or let go for the whole blow while the body ran on, the feet dragged out of reach
+  and hung in the air. A weight under 0.001 is none, and a blow that no longer gains on the gait (one a roam shares the
+  legs with tops out short of all of them) hands its feet over as one that has them all.
+- Sim of the same chase, Studio's measure (within 0.08 of the lowest, per stance its longest travel): every foot down
+  28-49% of the frames (before: 4-22%, the front right 4%), stances a median 0.00-0.03, at most 0.11 (with the pose a
+  frame late, as before the move to `PreRender`: medians 0.17-0.22). The spec "chases a target round a circle" also
+  asks every foot to be down a fifth of the time.
+- **Studio's measure** should read the bones where they are drawn: in `PreSimulation` (or `PreAnimation`), when the
+  root still stands where it rendered and the pose is the one `PreRender` set; a read in `Heartbeat` pairs that pose
+  with the root the next frame renders. `bone_44` for the hind right.
+
 ## 6. F5 Rigid models: caveSpider
 
 ### 6.1 What a rigid model can do
@@ -1304,6 +1335,27 @@ included; AnimationController and AnimLab need no change.
   ≤ 0.15 (the heavy's quick catch-up steps under its lunge). No joint over 12° a frame at 60 fps; no lifted joint over
   18° across a 0.1 s stall (31d: 37°); 15 fps at most 6 flips (the hind legs' catch-up steps). The pounce's legs swing
   up to 34° a frame in the world as the tuck lets go on the landing (the body's own turn).
+- **Studio on 01a** (2026-11-01, the last-bone heads of 11 chains, planted = within 0.08 of their own lowest; part of
+  the session at about 35 fps): alert ≤ 0.05, crush ≤ 0.07, the grab's 56° hitch jump gone. Then
+  (`OctoMotion.VERSION` "2026-11-01b palps capped a frame, soft hop landing"):
+  - **bone_57 and bone_63** (bite 0.75 / 0.61, grab 0.27 / 0.23, heavy 0.41 / 0.42, pounce 1.50 / 1.33) are the ends of
+    the **chelicerae** (bone_55→57 and bone_60→63 under `0_Left_Limb_0`, the head; our `fangs`), not legs: they hang
+    under the face and ride with the head, 0.46 stud over the ground at the lowest in any AnimLab state (0.53 in the
+    pounce, 0.77 in the bite). Their "slide" is the head's own lunge at its lowest (OctoSim on the same bones: bite
+    0.85 / 0.70, grab 0.25 / 0.23, heavy 0.40 / 0.41, pounce 1.51 / 1.31): they never touch the ground, so Studio's
+    planted measure leaves them out (tests/octomotion: over 0.4 stud in the alert, both blows, heavy, crush, pounce).
+  - **The pounce's landing** (`3_Right_Limb_1`, our L4's second bone, 37° local / 50° world in one frame at about
+    35 fps): AnimLab's own hop (no server Dash arc) came down at the parabola's full speed and levelled its 24°
+    nose-down pitch in the last 0.1 s, so the hind legs folded in a frame or two. Now the descent eases (it lands at
+    half the parabola's speed: `H·(1 − x²(2 − x))` past the top) and the pitch follows `sin²` (no pitch rate at the
+    take-off and the landing): at 4.2 studs the landing turns no joint over 11.7° at 60 fps (was 17.8°), 19° at 35 fps
+    (was 30.6°; L4's second bone 21° in the world, was 34°). OctoSim does not reproduce 3_Left5's 0.72 (≤ 0.05 at 35 and
+    60 fps, ±50 % frame jitter included).
+  - **A palp off the ground** turns no joint more than 11.5° in a frame however long the frame, its base's yaw and lift
+    counted together (Roblox turns `2_Right_Limb_0` by both; it was 18–30° a frame at about 35 fps: the rate is per
+    second, 12 rad/s on a strike, so a 35-fps frame allowed 19.6° on each). A palp never bears the body, so it may
+    trail a little at a low frame rate. The other legs keep their rates per second (steps and strikes 19.6° a frame at
+    35 fps, 11.5° at 60): a cap per frame would make a 15-fps step lag its foot off its point.
 - **The asset** in `Assets.Monsters` (as the wolf and the peakHarpy): a Model with `HumanoidRootPart` (Anchored false,
   CanCollide false, CanQuery and CanTouch true, Massless false, Transparency 1, size 1) as its `PrimaryPart`, the
   MeshPart with the bones (Anchored false, CanCollide, CanQuery and CanTouch true, Massless false) welded to it by a

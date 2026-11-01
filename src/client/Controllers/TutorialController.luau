@@ -40,6 +40,7 @@ local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
+local TopBandState = require(script.Parent.Parent.UI.TopBandState)
 local Tutorial = require(ReplicatedStorage.Shared.Logic.Tutorial)
 local TutorialData = require(ReplicatedStorage.Shared.Data.Tutorial)
 local TutorialHint = require(script.Parent.Parent.UI.Screens.Hud.TutorialHint)
@@ -209,8 +210,8 @@ local function plaque(args: { [string]: string }): string?
 	return if #names > 0 then args[names[1]] else nil
 end
 
--- Top left corner of the tile and its arrow for an element at `rect` (nil: the default place). `menu`: the menu over the
--- minimap as measured (UI/HudSlots.Menu), which a tile left of one of its buttons keeps clear of.
+-- Top left corner of the tile and its arrow for an element at `rect` (nil: the default place). `menu`: the menu over
+-- the minimap as measured (UI/HudSlots.Menu), which a tile left of one of its buttons keeps clear of.
 local function place(
 	rect: HudAnchors.Rect?,
 	w: number,
@@ -306,6 +307,7 @@ end
 local function hide()
 	GuidePointerController.Set("tutorial", nil)
 	visible:set(false)
+	TopBandState.keep(nil)
 	if Fusion.peek(outline) ~= nil then
 		outline:set(nil)
 	end
@@ -445,6 +447,14 @@ local function tick()
 	if Fusion.peek(position) ~= at then
 		position:set(at)
 	end
+	-- Studio check of phase 4: the toasts keep clear of the tile (UI/TopBandState.Keep, in screen pixels)
+	local origin = root.AbsolutePosition
+	TopBandState.keep({
+		left = origin.X + math.floor(x) * factor,
+		top = origin.Y + math.floor(y) * factor,
+		right = origin.X + (math.floor(x) + bw) * factor,
+		bottom = origin.Y + (math.floor(y) + bh) * factor,
+	})
 	if not sameArrow(Fusion.peek(arrow), a) then
 		arrow:set(a)
 	end

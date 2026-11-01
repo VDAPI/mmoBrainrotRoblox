@@ -1011,15 +1011,19 @@ function RigidMotion.step(inst: Instance, input: Input): Posed
 						-- 2026-10-31)
 						local out = tc < playing.hit
 						if out then
-							ty += H * 4 * tr * (1 - tr)
+							-- (coming down it eases: it lands at half the parabola's speed, its legs taking it up over a
+							-- few frames, never folding in one; Studio review 2026-11-01)
+							local x = 2 * tr - 1
+							ty += if x <= 0 then H * (1 - x * x) else H * (1 - x * x * (2 - x))
 						end
 						-- the body pitches along the arc while it flies (k of the travel 0 < tr < 1)
 						if out and tr > 0 and tr < 1 and d * k > 1e-3 then
 							-- levelled toward the take-off and the landing (the nose never digs into the ground); a hop
 							-- about as high as it is long pitches as one three times longer would (Studio review
-							-- 2026-10-31: a short hop flipped nose-up to nose-down in a frame at its top)
+							-- 2026-10-31: a short hop flipped nose-up to nose-down in a frame at its top); it levels off
+							-- smoothly into the landing (2026-11-01: the hind legs folded 37 degrees in its last frame)
 							local slope = math.atan2(H * 4 * (1 - 2 * tr), math.max(d * k, 3 * H))
-								* math.sin(math.pi * tr)
+								* math.sin(math.pi * tr) ^ 2
 							local tilt = style.flightPitch
 							add(keyed, "pitch", math.clamp(slope, -tilt[2], tilt[1]))
 						end

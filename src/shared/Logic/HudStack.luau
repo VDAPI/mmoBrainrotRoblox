@@ -196,6 +196,18 @@ function HudStack.belowMenu(left: number, right: number, top: number, menu: Rect
 	return menu.bottom + HudStack.GAP
 end
 
+-- Studio check of phase 4 (1108 x 576: a quest tracker the player had moved at a larger window, saved as a share of
+-- the screen's width, ran 3 px past the right edge at the 0.6 scale, Logic/HudLayout.place keeps only KEEP px on
+-- the screen): the left of an element moved to `x`, `w` wide, kept MARGIN inside a screen `screenW` wide on both sides
+-- like the built-in column; `x` when the element is wider than the room between the margins.
+function HudStack.insideX(x: number, w: number, screenW: number): number
+	local high = screenW - HudStack.MARGIN - w
+	if high < HudStack.MARGIN then
+		return x
+	end
+	return math.clamp(x, HudStack.MARGIN, high)
+end
+
 -- The highest top among `rects` that stand in the lane [left, right], or `top` when none is higher.
 local function topIn(rects: { Rect }, left: number, right: number, top: number): number
 	for _, r in rects do

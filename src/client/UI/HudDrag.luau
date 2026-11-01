@@ -75,6 +75,9 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 		local screen = use(Scale.HudSize)
 		local w = width(use, e) * HudLayout.scaleOf(e)
 		local x, y = HudLayout.place(e, w, screen.X, screen.Y)
+		-- Studio check of phase 4: whole on the screen, MARGIN from its edges (a place saved at a larger window ran
+		-- past the right edge of a smaller one)
+		x = HudStack.insideX(x, w, screen.X)
 		-- Studio check 2026-10-31: never under the menu over the minimap (a phone keeps its own stack)
 		if not use(PhoneLayout.Compact) then
 			y = HudStack.belowMenu(x, x + w, y, use(HudSlots.Menu))

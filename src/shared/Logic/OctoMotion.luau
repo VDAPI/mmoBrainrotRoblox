@@ -41,7 +41,7 @@ local OctoMotion = {}
 
 -- Which leg code runs (client/Anim/RigidRig stamps it on the look as the attribute `OctoVersion`; the Studio session
 -- compares it with the commit it synced). Bumped with every change of the legs' behaviour.
-OctoMotion.VERSION = "2026-11-01a last bone held on its point, straight up and down, legs written whole"
+OctoMotion.VERSION = "2026-11-01b palps capped a frame, soft hop landing"
 
 type Vec = { number }
 
@@ -237,6 +237,10 @@ local SAFE_RATE, STAND_RATE = 12, 30
 -- further than the usual frame would at the rates above (a leg standing on its point keeps up with the body: it never
 -- slides off its point after a stall). The usual frame follows the frame time at FRAME_RATE a frame.
 local HITCH, FRAME_RATE = 1.5, 0.3
+-- A palp off the ground turns no joint more than FRAME_TURN (rad) in a frame however long the frame, its first joint's
+-- yaw and lift counted together (Roblox turns the bone by both; Studio review 2026-11-01 at about 35 fps: the base of
+-- PL 18 to 30 degrees a frame). It never bears the body, so it may trail a little at a low frame rate.
+local FRAME_TURN = math.rad(11.5)
 -- The last joint of a leg standing on its point turns at most ANKLE_MAX from the solver's and rolls its bone at most
 -- ROLL_MAX out of the leg's plane (rad): beyond it the head lets go. On a step both let go at ANKLE_LET a second (off the
 -- ground, where nothing shows it).
@@ -1323,10 +1327,15 @@ function OctoMotion.step(
 		else
 			-- (the whole pose moves toward the wanted one at the pace of its fastest joint: slowed, never bent off its
 			-- way)
+			-- (a palp off the ground: its base's yaw and lift together, at most FRAME_TURN a frame)
 			local dPsi = (psiW - f.psi + math.pi) % TAU - math.pi
-			local most = math.abs(dPsi)
-			for j = 1, leg.n do
+			local d1 = want[1] - fc[1]
+			local most = if leg.palp then math.sqrt(dPsi * dPsi + d1 * d1) else math.max(math.abs(dPsi), math.abs(d1))
+			for j = 2, leg.n do
 				most = math.max(most, math.abs(want[j] - fc[j]))
+			end
+			if leg.palp and not f.down then
+				rate = math.min(rate, FRAME_TURN)
 			end
 			local k = if most > rate then rate / most else 1
 			for j = 1, leg.n do
