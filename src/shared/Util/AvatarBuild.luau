@@ -19,6 +19,7 @@ local AvatarBuild = {}
 
 -- ReplicatedStorage child the server builds (a standard R15 figure, anchored, no scripts) for the client previews.
 AvatarBuild.MANNEQUIN = "VaelthornMannequin"
+AvatarBuild.CLOTHES = "VaelthornClothes" -- the classes' Shirt / Pants (s<id>, p<id>) for the previews, from the server
 -- Model attribute: the look key (Logic/CharacterLook.lookKey) of the description the character wears (the server sets
 -- it, the wardrobe compares it).
 AvatarBuild.LOOK_KEY = "VaelthornLookKey"
@@ -1153,6 +1154,21 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 			end
 		end
 	end
+	-- owner 2026-11-01: a preview wears the classic clothes the server published (AvatarBuild.CLOTHES), and over them
+	-- no stand-ins from parts for its catalog pieces (the mantle in the wrong colour over the robe)
+	local clothed = false
+	if preview == true then
+		local clothes = ReplicatedStorage:FindFirstChild(AvatarBuild.CLOTHES)
+		for _, item in { `s{spec.shirt}`, `p{spec.pants}` } do
+			local template = clothes and clothes:FindFirstChild(item)
+			if template then
+				local worn = template:Clone()
+				worn:SetAttribute(ASSET_ATTRIBUTE, true)
+				worn.Parent = model
+				clothed = true
+			end
+		end
+	end
 	local ctx: Ctx = {
 		model = model,
 		folder = folder,
@@ -1167,7 +1183,8 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 	for _, item in spec.garments do
 		local draw = DRAW[item.g]
 		local worn = item.catalog == 0 and item.hidden ~= true
-		if (worn or preview == true) and draw and not (quiver and QUIVER_GARMENTS[item.g]) then
+		local stand = preview == true and not clothed
+		if (worn or stand) and draw and not (quiver and QUIVER_GARMENTS[item.g]) then
 			ctx.color = Color3.fromHex(item.color)
 			if not (item.asset and placeAsset(ctx, item.asset, ctx.color)) then
 				draw(ctx)

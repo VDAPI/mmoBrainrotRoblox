@@ -734,6 +734,41 @@ end
 
 -- S132: the standard figure of the client previews (creator, wardrobe, look window). Catalog clothing 2026-11-01: the
 -- body and face only (an empty outfit), so no class's catalog item sits under every preview's procedural garments.
+-- Owner 2026-11-01: the classes' classic clothes for the client previews (only the server can turn a catalog id into
+-- its texture: the Shirt / Pants of a figure built with them).
+local function loadClothes()
+	local folder = Instance.new("Folder")
+	folder.Name = AvatarBuild.CLOTHES
+	for _, classId in { "Warrior", "Cleric", "Hunter", "Mage" } do
+		local classLook = ClassLooks.get(classId)
+		local outfit = classLook and classLook.outfit
+		if outfit and (outfit.shirt or 0) ~= 0 then
+			local ok, model = pcall(function()
+				local description = Instance.new("HumanoidDescription")
+				description.Shirt = outfit.shirt or 0
+				description.Pants = outfit.pants or 0
+				return Players:CreateHumanoidModelFromDescription(description, Enum.HumanoidRigType.R15)
+			end)
+			if ok and model then
+				local shirt = model:FindFirstChildOfClass("Shirt")
+				if shirt then
+					shirt.Name = `s{outfit.shirt}`
+					shirt.Parent = folder
+				end
+				local pants = model:FindFirstChildOfClass("Pants")
+				if pants then
+					pants.Name = `p{outfit.pants}`
+					pants.Parent = folder
+				end
+				model:Destroy()
+			else
+				log:warn("no clothes of %s for the previews (%s)", classId, tostring(model))
+			end
+		end
+	end
+	folder.Parent = ReplicatedStorage
+end
+
 local function buildMannequin()
 	local spec = CharacterLook.resolve({
 		classId = "Warrior",
@@ -827,6 +862,7 @@ function CosmeticService.Start()
 		end
 	end)
 	task.spawn(loadLookParts)
+	task.spawn(loadClothes)
 	task.spawn(buildMannequin)
 	Players.PlayerRemoving:Connect(function(player)
 		removePet(player)
