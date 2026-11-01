@@ -11,6 +11,7 @@
 -- Registered into WorldGen/Flora's registries when this module is required (DuskwoodGen requires it before the
 -- forest). Client undergrowth only, no collision. Pure.
 
+local Blueprint = require("../TownGen/Blueprint")
 local Flora = require("../WorldGen/Flora")
 local Kit = require("../WorldGen/Kit")
 
@@ -155,7 +156,10 @@ local function deadTree(bp: Kit.BP, x: number, y: number, z: number, s: number, 
 		o(IVY, "fine", { col = false, q = false })
 	)
 	if big then
-		Kit.life(ctx, ctx.perch or "perch", tipX, y + h * 0.98 + 0.6, tipZ)
+		-- a crow on the main branch, marked in the tree's frame as Flora's blackDead (Kit.lifeOfMarks)
+		local kind = ctx.perch or "perch"
+		local px, py, pz = Blueprint.beamTop(x, y + h * 0.62, z, tipX, y + h * 0.98, tipZ, 0.6 * s, Kit.PERCH_AT)
+		bp:mark(kind, px, py + (Kit.SIT[kind] or 0), pz)
 	end
 end
 

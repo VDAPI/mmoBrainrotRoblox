@@ -19,8 +19,9 @@ local TerrainLayers = require("../TerrainLayers")
 
 local o = Kit.o
 
--- Owner 2026-11-01: no crows perched on the dead trees of Crow Field (a crowd hanging in the air that flew off on
--- approach); its monster crows and the contracts on them stay.
+-- Owner 2026-11-01: no decorative crows on Crow Field (a crowd hanging in the air that flew off on approach); its
+-- monster crows and the contracts on them stay. A world point (MeadowsGen.all checks every perch once it is in the
+-- world: a tree's own x, z are in its forest tile's frame).
 local function inCrowField(x: number, z: number): boolean
 	for _, area in Areas.areas do
 		if area.id == "meadows_crowfield" then
@@ -32,6 +33,8 @@ local function inCrowField(x: number, z: number): boolean
 end
 
 local Nature = {}
+
+Nature.inCrowField = inCrowField
 
 export type TreeKind = "oak" | "giantOak" | "birch" | "pine" | "willow" | "dead"
 
@@ -102,9 +105,13 @@ function Nature.tree(bp: Kit.BP, kind: TreeKind, x: number, y: number, z: number
 				o(Kit.deadBark, "detail", { col = false, q = false })
 			)
 		end
-		if not inCrowField(x, z) then
-			Kit.life("perch", x + 4 * s, y + h * 0.95 + 0.6, z + 1 * s)
-		end
+		-- a crow on the main branch near its tip, marked in the frame the tree is drawn in (a forest tile's or a
+		-- Build's); MeadowsGen.all puts it in the world and leaves it out on Crow Field (inCrowField). 2026-11-01:
+		-- it was a life point in that frame's own coordinates, so every dead tree's crow hung in the air round the
+		-- map's middle, on Crow Field, and x, z here are not the world's.
+		local px, py, pz =
+			Blueprint.beamTop(x, y + h * 0.6, z, x + 4 * s, y + h * 0.95, z + 1 * s, 0.6 * s, Kit.PERCH_AT)
+		bp:mark("perch", px, py + Kit.SIT, pz)
 	elseif kind == "willow" then
 		local h = 4.5 * s
 		bp:add("cyl", h, 1.8 * s, 1.8 * s, x, y + h / 2 - 0.5, z, 0, 0, 90 + rng:float(-6, 6), trunkOpt(Kit.bark))

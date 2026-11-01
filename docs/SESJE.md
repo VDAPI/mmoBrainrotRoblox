@@ -14508,6 +14508,28 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `Data/Emotes`, `Logic/EmoteClip`, `client/Anim/CharacterClips`, `AnimationController`,
   `EmoteController`, `tests/emoteclip.spec.luau`, `docs/DESIGN.md` §22, `docs/ANIMACJE.md` §6.
 
+### Ozdobne ptaki na grzędach, Krucze Pole w świecie (2026-11-01)
+
+- Na poprawce z laptopa (6e543ba2: bez wron na młynie i strachach, wrony martwych drzew pomijane na Kruczym Polu).
+  Jej sprawdzenie szło na współrzędnych drzewa w kaflu lasu, więc 13 z 14 wron, które zostały na Łąkach, dalej wisiało
+  nad środkiem mapy, a w Borze (183 z 194) i na Pustkowiach (38 z 38) nic się nie zmieniło.
+- Przyczyna „wiszących” wron: `Nature.tree` (Łąki), `Flora.species.blackDead` i `duskDead` (Bór, Pustkowia) dodawały
+  punkt życia w ramce kafla lasu albo budowli (współrzędne lokalne, wysokość z terenu) jak w świecie. Poprawka terenu
+  z 2026-10-31 nie miała z tym związku.
+- `Blueprint.mark` (punkt w przestrzeni budowli przez ramki, ze slotem zestawu; `dropKit` go usuwa),
+  `Blueprint.beamTop` (wierzch belki), `WorldGen/Kit.lifeOfMarks`, `SIT` / `PERCH_AT`; generatory Łąk, Boru,
+  Pustkowi i Szczytów przenoszą znaczniki do świata po `KitSeat.prune`.
+- Krucze Pole: `Nature.inCrowField` z poprawki laptopa sprawdza teraz w `MeadowsGen.all` każdą grzędę już w świecie.
+- Ptaki stawiane ręcznie obok grzędy: wieża na Łąkach (segment 4 na śniegu), legowisko wilków (na gałęzi),
+  zatopiona wieża (na gnieździe, w ramce przechylonej wieży), chata wiedźmy (kalenica), łódź (szczyt masztu), palmy
+  oazy (szczyt pnia mimo losowego przechyłu), gniazda na turniach (dno gniazda).
+- Test `perches.spec`: znaczniki i `dropKit`, wierzch belki, brak wron na Kruczym Polu, każdy ptak Łąk (72), Boru
+  (194) i Pustkowi (38) leży na tym, na czym siedzi (poza wroną na Starym Drzewie i sępem na żebrach: modele z
+  zestawu).
+- **Pliki:** `Logic/TownGen/Blueprint`, `Logic/MeadowsGen/{init,Kit,Nature,Dressing}`, `Logic/WorldGen/{Kit,Flora}`,
+  `Logic/DuskwoodGen/{init,Nature,Thicket,Swamp,Witch}`, `Logic/AshenGen/{init,Props,Oasis,Crags}`,
+  `Logic/FrostpeakGen/init`, `MeadowsLifeController` (opis), `tests/perches.spec.luau`.
+
 ### Wieczne kamienie: odpoczynek i stałe miejsce (2026-11-01)
 
 - Podstawa: commit z laptopa „Teleport stones: a 30 minute rest per stone, the map stone set for good” (przeniesiony

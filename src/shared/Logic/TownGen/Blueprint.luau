@@ -44,6 +44,12 @@ export type KitSlot = { key: string, p: { number }, s: number, lod: Lod, x: numb
 
 export type Light = { p: { number }, color: string, range: number, brightness: number, tag: string? }
 
+-- 2026-11-01: a point the client brings to life (a bird on a branch) in building-local space like the pieces, so it
+-- follows the frame it is drawn in (a species draws in a forest tile's or a Build's frame and does not know where
+-- that frame stands); the generator turns the marks of its Builds into life points in the world. `k` its kit slot
+-- (dropKit leaves the mark out with the slot).
+export type Mark = { kind: string, p: { number }, r: number?, k: number? }
+
 export type Options = {
 	c: string,
 	m: string,
@@ -66,6 +72,7 @@ export type Blueprint = typeof(setmetatable(
 	{} :: {
 		pieces: { Piece },
 		lights: { Light },
+		marks: { Mark },
 		rng: Rng.Rng,
 		frames: { Frame },
 		kits: { KitSlot },
@@ -108,6 +115,7 @@ function Blueprint.new(seed: number): Blueprint
 	return setmetatable({
 		pieces = {},
 		lights = {},
+		marks = {},
 		rng = Rng.new(seed),
 		frames = { { o = { 0, 0, 0 }, r = IDENTITY } },
 		kits = {},
@@ -299,7 +307,46 @@ function Blueprint.dropKit(self: Blueprint, index: number)
 		end
 	end
 	self.pieces = kept
+	local marks: { Mark } = {}
+	for _, mark in self.marks do
+		local k = mark.k
+		if k ~= index then
+			if k and k > index then
+				mark.k = k - 1
+			end
+			table.insert(marks, mark)
+		end
+	end
+	self.marks = marks
 	table.remove(self.kits, index)
+end
+
+-- 2026-11-01: marks a point of the current frame for the client to bring to life (`kind`: "perch" and the like,
+-- `r` a radius), in the current kit slot when one is open.
+function Blueprint.mark(self: Blueprint, kind: string, x: number, y: number, z: number, r: number?)
+	local top = self.frames[#self.frames]
+	local dx, dy, dz = apply(top.r, x, y, z)
+	table.insert(self.marks, { kind = kind, p = { top.o[1] + dx, top.o[2] + dy, top.o[3] + dz }, r = r, k = self.slot })
+end
+
+-- 2026-11-01: the point on the top face of a beam (Blueprint.beam from a to b, `h` tall) `f` of the way from a to b:
+-- where something sits on it (a bird on a branch). A steep beam's top is capped at 4 x h / 2 over its axis.
+function Blueprint.beamTop(
+	ax: number,
+	ay: number,
+	az: number,
+	bx: number,
+	by: number,
+	bz: number,
+	h: number,
+	f: number
+): (number, number, number)
+	local dx, dy, dz = bx - ax, by - ay, bz - az
+	local len = math.sqrt(dx * dx + dy * dy + dz * dz)
+	local flat = math.sqrt(dx * dx + dz * dz)
+	-- the top face is h / 2 off the axis across it: straight up that is h / 2 over the cosine of the pitch
+	local up = h / 2 / math.max(if len > 0 then flat / len else 1, 0.25)
+	return ax + dx * f, ay + dy * f + up, az + dz * f
 end
 
 function Blueprint.light(

@@ -282,6 +282,7 @@ function DuskwoodGen.all(): { Build }
 	Dress.shafts(e, out, trees) -- W15 (bor.md A10.4): light through the gaps of the Heart's crowns
 	-- 2026-11-01: no rock on a cliff's lip, no tree with a wall in its crown (Logic/KitSeat)
 	KitSeat.prune(out, e.T.height, trees)
+	Kit.lifeOfMarks(e.ctx, out) -- 2026-11-01: the trees' perches in the world, after the prune
 	treeCache = trees
 	cache = out
 	return out

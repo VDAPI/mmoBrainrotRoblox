@@ -210,7 +210,8 @@ lawy przecinają tunele tylko pod mostami (kaniony mają łagodne zbocza żużlu
   strumienie z mostami i brodem, jar z wodospadem, wkopany kamieniołom, bagno, drogi i miejsca budynków spłaszczone.
   Serwer stawia teren, bryły budynków, duże drzewa i rzeczy z kolizją; detal budynków, podszyt, zwierzęta
   dekoracyjne (owce, kaczki, kruki), pyłki, motyle, mgła, świetliki i liście robi klient. Przy niskiej
-  szczegółowości bez zwierząt i z połową cząsteczek.
+  szczegółowości bez zwierząt i z połową cząsteczek. Na Kruczym Polu nie ma ozdobnych wron (2026-11-01): wrony tego
+  obszaru to potwory. Ozdobny ptak siedzi na swojej grzędzie (koniec gałęzi martwego drzewa, gniazdo, kalenica).
 - Krainy na wspólnym silniku (zmiana S45, pierwsza: Mroczny Bór): ten sam podział serwer / klient; las gęstnieje
   wokół kamery dzięki drzewom-wypełniaczom budowanym tylko przez klienta (serwer: ok. 930 dużych drzew po 2 części,
   budżet mapy 3000 części). Ukształtowane krainy budują się **w tle po starcie serwera** (pole mapy `buildLate`):

@@ -49,6 +49,10 @@
 
 ## Niedokończone (kod)
 
+- **Ozdobne ptaki na grzędach (2026-11-01):** Krucze Pole bez ozdobnych wron, ptaki martwych drzew (Łąki, Bór,
+  Pustkowia) na końcu gałęzi swojego drzewa (`Blueprint.mark`, `tests/perches.spec`); nieobejrzane w Studio (martwe
+  drzewa Boru i Pustkowi to modele zestawu `tree:blackDead`, więc wrona może nie trafić w ich gałąź; wrona na Starym
+  Drzewie Boru i sęp na żebrach Pustkowi stoją przy modelach z zestawu, test ich nie sprawdza).
 - **Wieczne kamienie (2026-11-01, DESIGN §13a):** odpoczynek 30 min każdego kamienia, stałe miejsce Wiecznego Kamienia
   Mapy i Lochu, wielokrotny zakup Mapy u Mistrza Portali (`Logic/TeleportStone`, `tests/teleportstone.spec`); w Studio
   sprawdzony tylko Kamień Mapy (ustawienie, podróż, odmowa); nieobejrzane: okno potwierdzenia, Kamień Lochu, linie

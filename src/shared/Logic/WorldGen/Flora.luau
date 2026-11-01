@@ -182,7 +182,11 @@ Flora.species.blackDead = function(bp, x, y, z, s, big, ctx)
 		)
 	end
 	if big then
-		Kit.life(ctx, ctx.perch or "perch", tipX, y + h * 0.98 + 0.6, tipZ)
+		-- a bird on the main branch near its tip, marked in the frame the tree is drawn in (Kit.lifeOfMarks puts it in
+		-- the world; 2026-11-01: a life point in that frame's own coordinates hung every one round the map's middle)
+		local kind = ctx.perch or "perch"
+		local px, py, pz = Blueprint.beamTop(x, y + h * 0.62, z, tipX, y + h * 0.98, tipZ, 0.6 * s, Kit.PERCH_AT)
+		bp:mark(kind, px, py + (Kit.SIT[kind] or 0), pz)
 	end
 end
 
