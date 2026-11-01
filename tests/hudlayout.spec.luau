@@ -671,6 +671,40 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		T.expect(string.find(minimap, '"AreaName"', 1, true)).toBeNil()
 	end)
 
+	T.it("Studio check of phase 4: the right column stands MARGIN inside the screen at small viewports", function()
+		-- 1108 x 576 (scale 0.6): the tracker's right edge stood 3 px past the screen's edge
+		for _, v in { { 1108, 576 }, { 1024, 576 }, { 1280, 593 }, { 1366, 657 } } do
+			for _, inset in { UiScale.TOP_BAR, 36 } do
+				local w, h = UiScale.hud(v[1], v[2], false, inset)
+				for _, name in SCENARIOS do
+					for _, waiting in { false, true } do
+						local boxes = scenario(name, false, w)
+						for id, r in HudStack.layout(false, false, w, h, 0, boxes, nil, false, waiting) do
+							if
+								boxes[id]
+								and boxes[id].custom == nil
+								and (r.right > w - HudStack.MARGIN or r.left < 0)
+							then
+								error(`{v[1]} x {v[2]} {name}: {id} {show(r)} past the margin of {w}`)
+							end
+						end
+					end
+				end
+			end
+		end
+		-- the HUD lays out in the part of its layer that is on the screen, and its frames take that size
+		local ui = fs.readFile("src/client/Controllers/UIController.luau")
+		T.expect(string.find(ui, "Scale.SetHudArea(hudArea(root))", 1, true) ~= nil).toBe(true)
+		for _, path in { "src/client/UI/Screens/Hud/init.luau", "src/client/UI/HudGate.luau" } do
+			T.expect({ path, string.find(fs.readFile(path), "use(Scale.HudSize)", 1, true) ~= nil })
+				.toEqual({ path, true })
+		end
+		-- the tutorial's tile left of a menu button keeps clear of the whole menu (the minimap under the row)
+		local tutorial = fs.readFile("src/client/Controllers/TutorialController.luau")
+		T.expect(string.find(tutorial, "Fusion.peek(HudSlots.Menu)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(tutorial, "edge = math.min(edge, menu.left)", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it("the PvP badge stays on the screen, right-aligned with the toggle", function()
 		local f = HudStack.fixed(false, 1920, 1080)
 		T.expect(f.pvpBadge.right).toBe(f.pvp.right)

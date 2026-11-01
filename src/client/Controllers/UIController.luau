@@ -2,8 +2,10 @@
 -- Owns the ScreenGui layers (ARCHITECTURE §9): Screens < Windows < Modals < Toasts < Tooltip.
 -- Each layer has a scaled Root frame (UI/Scale); mount UI into UIController.GetLayer(name).
 
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local Announcement = require(script.Parent.Parent.UI.Components.Announcement)
 local ArtIcon = require(script.Parent.Parent.UI.Components.ArtIcon)
@@ -132,6 +134,21 @@ function UIController.MountDragGhost(scope: Fusion.Scope<typeof(Fusion)>, parent
 	})
 end
 
+-- The size the HUD lays out in: its layer's Root (under the top bar), but never wider than what of it is on the screen.
+-- Studio check 2026-10-31 (UI plan phase 4, a 1108 x 576 view): the quest tracker's right edge stood 3 px past the
+-- screen's edge, where it should stand Logic/HudStack.MARGIN (scaled) inside it; the layer reached past the view. Only
+-- the width is bounded: the height already keeps clear of the top bar (CoreUISafeInsets).
+local function hudArea(root: GuiObject): Vector2
+	local size = root.AbsoluteSize
+	local camera = Workspace.CurrentCamera
+	if not camera then
+		return size
+	end
+	local inset = GuiService:GetGuiInset()
+	local visible = camera.ViewportSize.X - inset.X - root.AbsolutePosition.X
+	return if visible > 0 and visible < size.X then Vector2.new(visible, size.Y) else size
+end
+
 -- S102: for CutsceneController: hides the HUD and the windows (layers Screens and Windows; toasts stay).
 function UIController.SetHudHidden(hidden: boolean)
 	for _, name in { "Screens", "Windows" } do
@@ -171,13 +188,14 @@ function UIController.Init()
 			-- owner 2026-10-22: the HUD lays out in this layer's own size (under the top bar, Scale.HudSize), read
 			-- from its Root, the frame the HUD's elements really stand in (UI/HudSlots also measures the corner)
 			local root = roots[layer.name]
-			Scale.SetHudArea(root.AbsoluteSize)
-			table.insert(
-				scope,
-				root:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
-					Scale.SetHudArea(root.AbsoluteSize)
-				end)
-			)
+			local function report()
+				Scale.SetHudArea(hudArea(root))
+			end
+			report()
+			for _, property in { "AbsoluteSize", "AbsolutePosition" } do
+				table.insert(scope, root:GetPropertyChangedSignal(property):Connect(report))
+			end
+			scope:Observer(Scale.Viewport):onChange(report)
 		end
 	end
 
