@@ -894,8 +894,9 @@ T.describe("OctoMotion Studio review", function()
 
 	T.it("keeps the head of each leg's last bone still while it is down (Studio's planted slide, 60 fps)", function()
 		-- (Studio 2026-11-01, live at 60 fps: the head of each leg's last bone, its lowest height over the action; the
-		-- longest way it travelled across the ground while within 0.08 stud of it: 0.6 to 0.9 studs before)
-		local band, most = 0.08, 0.1
+		-- longest way it travelled across the ground while within 0.08 stud of it: 0.6 to 0.9 studs before, 0.12 on the
+		-- heavy blow's 3_Right5 with 01b, our L4)
+		local band, most = 0.08, 0.07
 		for _, case in
 			{
 				{ "alert", nil :: number? },
@@ -904,11 +905,13 @@ T.describe("OctoMotion Studio review", function()
 				{ "attack2", nil :: number? },
 				{ "attack2", W },
 				{ "pounce", nil :: number? },
+				{ "heavy", nil :: number? },
+				{ "crush", nil :: number? },
 			}
 		do
 			local heads: { { { number } } } = {}
 			local names: { string } = {}
-			lab(case[1], 156, case[2], function(sim)
+			lab(case[1], 200, case[2], function(sim)
 				for i, leg in sim.skel.legs do
 					names[i] = leg.name
 					heads[i] = heads[i] or {}
@@ -1038,6 +1041,43 @@ T.describe("OctoMotion Studio review", function()
 			end
 		end
 	end)
+
+	T.it(
+		"unfolds the legs for a pounce's landing with no last bone whipped over 24 degrees a frame (60 fps)",
+		function()
+			-- (Studio 2026-11-01 at 60 fps: bone_23, the end of our R4, turned 34 degrees in the world in one frame of the
+			-- flight, double the frames around it; its way here: the last bone's heading from its head to the foot)
+			local most = math.rad(24)
+			for _, reach in { 4.2, 6 } do
+				local sim = OctoSim.new()
+				local last: { { number } } = {}
+				for k = 1, 160 do
+					OctoSim.step(sim, DT, {
+						combat = true,
+						snap = k == 1,
+						look = { 0, -0.5, -reach },
+						action = { name = "pounce", start = 0, hit = 1.4, reach = { 0, 0, -reach } },
+					}, false)
+					for i, leg in sim.skel.legs do
+						local h = OctoSim.joints(sim, i)[leg.n]
+						local x, y, z = OctoSim.foot(sim, i)
+						local way = unit({ x - h[1], y - h[2], z - h[3] })
+						local prev = last[i]
+						if prev and k > 2 then
+							local dot = way[1] * prev[1] + way[2] * prev[2] + way[3] * prev[3]
+							local turn = math.acos(math.clamp(dot, -1, 1))
+							if turn > most then
+								error(
+									`pounce at {reach} studs: {leg.name}'s last bone turned {math.deg(turn)} deg in frame {k}`
+								)
+							end
+						end
+						last[i] = way
+					end
+				end
+			end
+		end
+	)
 
 	T.it("carries the chelicerae clear of the ground (they ride with the head, never stand on it)", function()
 		-- (Studio 2026-11-01 measured bone_57 and bone_63, the ends of the chelicerae under the head, as planted legs:

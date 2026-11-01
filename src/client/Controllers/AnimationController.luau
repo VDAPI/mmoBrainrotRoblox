@@ -48,6 +48,7 @@
 local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local STUDIO = RunService:IsStudio()
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
@@ -184,6 +185,7 @@ type MonsterState = {
 	lastYaw: number?,
 	yawRate: number,
 	renderSpeed: number?, -- (a quadruped with pinned feet) it is posed as each frame renders, at this speed
+	quadShown: string?, -- (Studio) the gait and action last put on a quadruped's look
 }
 
 local monsters: { [Model]: MonsterState } = {}
@@ -571,6 +573,7 @@ local function track(model: Instance)
 		lastYaw = nil,
 		yawRate = 0,
 		renderSpeed = nil,
+		quadShown = nil,
 	}
 	local bossDef = if s.bossId then BossMotions.get(s.bossId) else nil
 	s.deathStyle = if bossDef then bossDef.death.style elseif plan then MonsterMotions.deathFor(plan) else nil
@@ -932,6 +935,17 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 	})
 	if rig.kind == "quad" then
 		QuadRig.apply(rig, posed)
+		if STUDIO then
+			-- (a diagnostic for Studio's measures, 2026-11-01) the gait it draws and the action it plays, on its look
+			local gait = rig.mod.gaitOf(rig.motion)
+			local action = if bipedBusy(s, rig, now) then s.bipedAction.name else ""
+			local shown = gait .. "/" .. action
+			if shown ~= s.quadShown then
+				s.quadShown = shown
+				rig.look:SetAttribute("QuadGait", gait)
+				rig.look:SetAttribute("QuadAction", action)
+			end
+		end
 	elseif rig.kind == "rigid" then
 		RigidRig.apply(rig, posed)
 	elseif rig.kind == "flyer" then
