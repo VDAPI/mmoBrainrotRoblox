@@ -104,4 +104,22 @@ T.describe("PathQueue (S162e)", function()
 		T.expect(calls).toBe(1) -- the definition only: nobody calls it directly
 		T.expect(string.find(worker, "task.wait", 1, true)).toBeNil()
 	end)
+
+	-- Studio 2026-11-01: most asks around the meadows barn found no way, their ends on a fence line or against a wall
+	-- (off the navmesh for the agent's radius). Such an answer says nothing about the way, so it must not count towards
+	-- the evade (a target with its back to a wall would otherwise send a monster home that steering would bring to it).
+	T.it("a 'no way' with an end against a part does not count towards the evade", function()
+		local monster = fs.readFile("src/server/Entities/Monster.luau")
+		local worker = fs.readFile("src/server/Entities/PathWorker.luau")
+		T.expect(string.find(worker, "function PathWorker.tight(", 1, true) ~= nil).toBe(true)
+		-- the check runs in the answer's callback (the worker's thread), never in the AI tick
+		local done = string.find(monster, "done = function(answer: PathWorker.Answer)", 1, true)
+		local check = string.find(monster, "PathWorker.tight(", 1, true)
+		T.expect(done ~= nil and check ~= nil and check > done).toBe(true)
+		local _, checks = string.gsub(monster, "PathWorker%.tight%(", "")
+		T.expect(checks).toBe(2) -- the monster's feet and the goal, both in the callback
+		T.expect(string.find(monster, "if not tight then%s+self%.pathFailStreak %+= 1") ~= nil).toBe(true)
+		local _, streaks = string.gsub(monster, "pathFailStreak %+= 1", "")
+		T.expect(streaks).toBe(1)
+	end)
 end)

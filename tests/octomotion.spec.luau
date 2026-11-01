@@ -6,7 +6,8 @@
 -- pounce tucks and splays, the deaths curl the legs in without sinking, and AnimLab shows every state. Studio's review
 -- (2026-10-31): no joint turns over 12 degrees a frame nor chatters, the standing feet never drag under a lunge, the
 -- alert's raise reaches about the body's height in spider arcs, and attack1 and attack2 are two different blows; at a
--- phone's 15 fps (Studio's live capture) the palps never swing back and forth and no foot slides on the floor.
+-- phone's 15 fps (Studio's live capture) the palps never swing back and forth and no foot slides on the floor; at 60 fps
+-- (2026-11-01) the head of each leg's last bone keeps still while it is down, and no lifted joint jumps over a hitch.
 local AnimLab = require("../src/shared/Logic/AnimLab")
 local Combat = require("../src/shared/Data/Combat")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
@@ -601,8 +602,15 @@ end
 
 -- Plays AnimLab's `state` of the spider (the look standing, the ground running under it, the player 6 studs ahead as
 -- Config.AnimLab.layout puts it), blows struck `hit` after their start (nil: AnimLab's own windup), calling `each` after
--- every frame (`dt` long: 60 fps unless given).
-local function lab(state: string, frames: number, hit: number?, each: (sim: OctoSim.Sim, k: number) -> (), dt: number?)
+-- every frame (`dt` long: 60 fps unless given; the frame that reaches `stall[1]` seconds lasts `stall[2]`: a hitch).
+local function lab(
+	state: string,
+	frames: number,
+	hit: number?,
+	each: (sim: OctoSim.Sim, k: number) -> (),
+	dt: number?,
+	stall: { number }?
+)
 	local step = dt or DT
 	local style = RigidStyles.get("spider") :: RigidStyles.Style
 	local slots: { [string]: string? } = {
@@ -621,8 +629,10 @@ local function lab(state: string, frames: number, hit: number?, each: (sim: Octo
 	local name = slots[state] or state
 	local action = style.actions[name]
 	local sim = OctoSim.new()
+	local t = 0
 	for k = 1, frames do
-		local t = k * step
+		local frame = if stall and t < stall[1] and t + step >= stall[1] then stall[2] else step
+		t += frame
 		local i: { [string]: any } = { combat = true, snap = k == 1, look = { 0, -0.5, -6 } }
 		if action then
 			local at = if action.hold then action.strike else hit or labHit(style, name)
@@ -644,7 +654,7 @@ local function lab(state: string, frames: number, hit: number?, each: (sim: Octo
 		elseif state == "idle" then
 			i.combat = false
 		end
-		OctoSim.step(sim, step, i, false)
+		OctoSim.step(sim, frame, i, false)
 		each(sim, k)
 	end
 end
@@ -877,6 +887,88 @@ T.describe("OctoMotion Studio review", function()
 				if flips > 6 then
 					error(`{state} at 15 fps: {flips} joints back and forth`)
 				end
+			end
+		end
+	)
+
+	T.it("keeps the head of each leg's last bone still while it is down (Studio's planted slide, 60 fps)", function()
+		-- (Studio 2026-11-01, live at 60 fps: the head of each leg's last bone, its lowest height over the action; the
+		-- longest way it travelled across the ground while within 0.08 stud of it: 0.6 to 0.9 studs before)
+		local band, most = 0.08, 0.1
+		for _, case in
+			{
+				{ "alert", nil :: number? },
+				{ "attack1", nil :: number? },
+				{ "attack1", W },
+				{ "attack2", nil :: number? },
+				{ "attack2", W },
+				{ "pounce", nil :: number? },
+			}
+		do
+			local heads: { { { number } } } = {}
+			local names: { string } = {}
+			lab(case[1], 156, case[2], function(sim)
+				for i, leg in sim.skel.legs do
+					names[i] = leg.name
+					heads[i] = heads[i] or {}
+					table.insert(heads[i], OctoSim.joints(sim, i)[leg.n])
+				end
+			end)
+			for i, way in heads do
+				local low = math.huge
+				for _, p in way do
+					low = math.min(low, p[2])
+				end
+				local run: number, prev: { number }? = 0, nil
+				for k, p in way do
+					if p[2] <= low + band then
+						if prev then
+							run += math.sqrt((p[1] - prev[1]) ^ 2 + (p[3] - prev[3]) ^ 2)
+							if run > most then
+								error(
+									`{case[1]} (hit {case[2] or "lab"}): {names[i]} slid {run} studs down at frame {k}`
+								)
+							end
+						end
+						prev = p
+					else
+						run, prev = 0, nil
+					end
+				end
+			end
+		end
+	end)
+
+	T.it(
+		"swings no lifted joint over a hitch (Studio's 0.1 s stall at a strike: 37 to 56 degrees in a frame)",
+		function()
+			-- (a leg standing on its point follows the body over the stall: it never slides; the others turn no further than
+			-- one and a half usual frames would)
+			local most = math.rad(18)
+			for _, case in { { "alert", 0.1, 0.065 }, { "attack1", 0.5, 0.1 }, { "attack2", 0.72, 0.1 } } do
+				local last: { { number } } = {}
+				lab(case[1], 120, nil, function(sim, k)
+					for i, f in sim.octo.feet do
+						local now = table.clone(f.c)
+						table.insert(now, f.psi)
+						local prev = last[i]
+						if prev and k > 2 and not f.down then
+							for j, v in now do
+								local turn = v - prev[j]
+								if j == #now then
+									turn = (turn + math.pi) % (2 * math.pi) - math.pi
+								end
+								if math.abs(turn) > most then
+									local name = sim.skel.legs[i].name
+									error(
+										`{case[1]} stalled at {case[2]}: {name} joint {j} turned {math.deg(turn)} deg`
+									)
+								end
+							end
+						end
+						last[i] = now
+					end
+				end, nil, { case[2], case[3] })
 			end
 		end
 	)

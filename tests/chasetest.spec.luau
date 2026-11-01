@@ -25,6 +25,7 @@ local function result(over: { [string]: any }, drop: { string }?): ChaseTest.Res
 		asks = 2,
 		ok = 2,
 		fails = 0,
+		tight = 0,
 		denied = 0,
 		repaths = 0,
 		pressMax = 0,
@@ -135,13 +136,15 @@ T.describe("ChaseTest measures and verdicts (S162e)", function()
 		local probe = ChaseTest.newProbe(true)
 		probe.firstAskAt = 100.2
 		ChaseTest.noteAnswer(probe, 100.2, 0, 1.65, false)
-		ChaseTest.noteAnswer(probe, 101.9, 0.02, 0.04, false)
-		ChaseTest.noteAnswer(probe, 119.0, 0, 0.03, true)
+		ChaseTest.noteAnswer(probe, 101.9, 0.02, 0.04, false, true)
+		ChaseTest.noteAnswer(probe, 119.0, 0, 0.03, true, true)
 		T.expect(probe.pathFails).toBe(2)
+		T.expect(probe.pathTight).toBe(1) -- a path found is never "tight"
 		T.expect(probe.pathOk).toBe(1)
 		T.expect(probe.firstOkAt).toBeNear(119.03)
 		T.expect(probe.slowest).toBeNear(1.65)
-		T.expect(ChaseTest.answerLine(probe.answers, 100)).toBe("f@0.20+0.00/1650 f@1.90+0.02/40 o@19.00+0.00/30")
+		-- Studio 2026-11-01: t = no way with an end against a part (off the navmesh), f = no way in the open
+		T.expect(ChaseTest.answerLine(probe.answers, 100)).toBe("f@0.20+0.00/1650 t@1.90+0.02/40 o@19.00+0.00/30")
 		for i = 1, 20 do
 			ChaseTest.noteAnswer(probe, 120 + i, 0, 0.01, true)
 		end
@@ -151,6 +154,7 @@ T.describe("ChaseTest measures and verdicts (S162e)", function()
 			cfg
 		)
 		T.expect(string.find(line, "path ask 0.20s found 19.03s", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(line, "fail 0 tight 0 denied", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(line, "@0.21s after a path call", 1, true) ~= nil).toBe(true)
 	end)
 
