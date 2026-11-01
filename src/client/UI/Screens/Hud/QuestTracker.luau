@@ -1144,8 +1144,12 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		},
 	}) :: Frame
 	handle.bind(frame)
-	-- UI plan phase 2 (Studio audit 2026-10-31): out of sight while an open window covers it (UI/HudCover)
-	local covered = HudCover.covered(scope, frame)
+	-- UI plan phase 2 (Studio audit 2026-10-31): out of sight while an open window covers it (UI/HudCover); Studio
+	-- check 2026-10-31: under any open window (the backpack stood beside it), so a window is the one thing to read
+	local over = HudCover.covered(scope, frame)
+	local covered = scope:Computed(function(use): boolean
+		return use(over) or use(HudCover.Open)
+	end)
 	scope:Observer(covered):onBind(function()
 		frame.Visible = not Fusion.peek(covered)
 	end)

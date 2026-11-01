@@ -14358,3 +14358,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Elity II: `Hud/Elite2Timer` daje `state` i `row`; `QuestTracker` ma grupę „e2” na końcu (`TrackerFold.GROUPS`, domyślnie
   otwarta); `QuestController` nie stawia już panelu. Krótki tekst `e2timer.anyShort`.
 - Testy: `uihubs` (nowy), `hudmenu`, `uiart`, `trackerfold`. Nieobejrzane w Studio.
+
+### Plan UI: poprawki po przeglądzie Studio fazy 3 (2026-10-31)
+- Rząd „coś czeka” wchodził na tropiciel (1108×576, tropiciel od y 235, rząd do 253). Kolumna liczy już zmierzony dół
+  menu, więc najpewniej tropiciel na koncie miał zapisane miejsce (S156), a przesunięty element nie szedł za kolumną. `HudStack.belowMenu` trzyma przesunięty element
+  `GAP` pod zmierzonym prostokątem menu (`HudSlots.Menu`: przyciski, minimapa, belka prowadzenia, rząd), gdy stoi w
+  jego pasie; `HudDrag` stosuje to do każdego przesuwanego elementu poza telefonem. Pomiar menu rusza też przy zmianie
+  ramki kolumny (`SetHost`).
+- `HudCover.Open`: tropiciel chowa się pod każdym otwartym oknem (plecak stał obok niego i go nie zasłaniał).
+- Ekran podróży (`WorldController`, DisplayOrder 100): wyłącza się na `Completed` zanikania z żetonem ostatniego
+  wywołania; wcześniej sprawdzenie po `FADE` sekundach mogło zastać przezroczystość 0,98 i zostawić go włączonym nad
+  oknami. Bezpiecznik po 8 s też patrzy na żeton.
+- Test w `hudlayout.spec`. Nieobejrzane w Studio.

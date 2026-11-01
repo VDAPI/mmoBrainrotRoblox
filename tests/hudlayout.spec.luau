@@ -614,6 +614,26 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		T.expect(HudStack.chatWidthScale(8, 0, 0.8, 334)).toBe(0.8)
 	end)
 
+	T.it("Studio check 2026-10-31: moved elements stay under the menu, windows hide the tracker", function()
+		-- 1108 x 576 (scale 0.6): the menu with the row of "something waits" buttons ends at 423, a tracker the player
+		-- had moved near its built-in place started at 392 (under the row's icons)
+		local menu = { left = 1847 - 22 - 352, top = 22, right = 1847 - 22, bottom = 423 }
+		local tracker = { left = 1847 - 22 - 300, right = 1847 - 22 }
+		T.expect(HudStack.belowMenu(tracker.left, tracker.right, 392, menu)).toBe(423 + HudStack.GAP)
+		-- already under it, or beside it (the left half of the screen), or no menu measured: where the player put it
+		T.expect(HudStack.belowMenu(tracker.left, tracker.right, 500, menu)).toBe(500)
+		T.expect(HudStack.belowMenu(20, 320, 100, menu)).toBe(100)
+		T.expect(HudStack.belowMenu(tracker.left, tracker.right, 392, nil)).toBe(392)
+		local drag = fs.readFile("src/client/UI/HudDrag.luau")
+		T.expect(string.find(drag, "HudStack.belowMenu(", 1, true) ~= nil).toBe(true)
+		-- the tracker steps out of sight under any open window (the backpack stood beside it)
+		local source = fs.readFile("src/client/UI/Screens/Hud/QuestTracker.luau")
+		T.expect(string.find(source, "use(HudCover.Open)", 1, true) ~= nil).toBe(true)
+		-- the travel screen switches itself off when its fade ends (it stayed on, drawn over every window)
+		local world = fs.readFile("src/client/Controllers/WorldController.luau")
+		T.expect(string.find(world, "fade.Completed:Connect", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it("the PvP badge stays on the screen, right-aligned with the toggle", function()
 		local f = HudStack.fixed(false, 1920, 1080)
 		T.expect(f.pvpBadge.right).toBe(f.pvp.right)
