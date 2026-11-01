@@ -14,7 +14,11 @@ local MonsterAssets = require("../src/shared/Data/MonsterAssets")
 local MotionFx = require("../src/shared/Data/MotionFx")
 local T = require("./Test")
 
-local O = BipedRigs.jaw("vaelgrath") :: JawHinge.Options
+-- Vaelgrath's jaw as the finder sees it: without the seam and the closed turn set by hand in Studio (2026-11-02)
+local VAELGRATH = BipedRigs.jaw("vaelgrath") :: JawHinge.Options
+local O = table.clone(VAELGRATH)
+O.mouth = nil
+O.closed = nil
 
 local function planOf(m: Mesh.Mesh, o: JawHinge.Options?): JawHinge.Plan
 	local plan, why = JawHinge.plan(m.pos, m.head, m.tris, o or O)
@@ -278,6 +282,41 @@ T.describe("JawHinge plan", function()
 		if a and b then
 			T.expect(b.columns >= a.columns).toBe(true)
 		end
+	end)
+
+	T.it("takes a seam given by hand instead of the side view's (Vaelgrath's cheek fills it)", function()
+		local m = Mesh.build()
+		local given = table.clone(O)
+		-- a level seam through the opening's middle (y -0.075 at z -0.6), from 0.9 to 0.35 of the snout; `y` is over the
+		-- head's lowest point
+		local yLo = math.huge
+		for i, w in m.head do
+			if w >= O.headWeight then
+				yLo = math.min(yLo, m.pos[i * 3 - 1])
+			end
+		end
+		given.mouth = { front = 0.9, back = 0.35, y = -0.075 - yLo }
+		given.closed = 10
+		local plan = planOf(m, given)
+		T.expect(plan.closed).toBeNear(math.rad(10), 1e-9)
+		local share = sharesOf(m, plan)
+		for _, v in m.parts.lowerFront do
+			T.expect(share[v]).toBe(1)
+		end
+		eachIn(m, "lowerTooth", function(i)
+			T.expect(share[i]).toBe(1)
+		end)
+		for _, prefix in { "upperTooth", "skull", "neck" } do
+			eachIn(m, prefix, function(i)
+				T.expect(share[i]).toBe(0)
+			end)
+		end
+		-- even where the side view finds nothing it does not give up
+		local closed = Mesh.build({ closed = true })
+		T.expect((JawHinge.plan(closed.pos, closed.head, closed.tris, O))).toBeNil()
+		T.expect(JawHinge.plan(closed.pos, closed.head, closed.tris, given) ~= nil).toBe(true)
+		-- Vaelgrath's own data keeps its seam and turn
+		T.expect(VAELGRATH.mouth ~= nil and VAELGRATH.closed ~= nil).toBe(true)
 	end)
 
 	T.it("never errors without faces (the side view and the mesh by the vertices alone)", function()

@@ -727,12 +727,8 @@ local function blockFace(ctx: Ctx, face: CharacterLook.FaceSpec)
 	if head:IsA("MeshPart") then
 		head.TextureID = ""
 	end
-	local sheet = piece(
-		ctx,
-		head,
-		Vector3.new(head.Size.X * 0.92, head.Size.Y * 0.92, 0.05),
-		CFrame.new(0, 0, -head.Size.Z / 2)
-	)
+	local sheet =
+		piece(ctx, head, Vector3.new(head.Size.X * 0.92, head.Size.Y * 0.92, 0.05), CFrame.new(0, 0, -head.Size.Z / 2))
 	if sheet then
 		sheet.Name = "FaceSheet"
 		sheet.Transparency = 1

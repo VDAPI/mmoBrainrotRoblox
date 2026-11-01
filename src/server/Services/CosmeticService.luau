@@ -770,7 +770,9 @@ local function loadClothes()
 						local loaded, asset = pcall(function()
 							return InsertService:LoadAsset(item.id)
 						end)
-						local accessory = if loaded and asset then asset:FindFirstChildWhichIsA("Accessory", true) else nil
+						local accessory = if loaded and asset
+							then asset:FindFirstChildWhichIsA("Accessory", true)
+							else nil
 						if accessory then
 							LookBuild.stripScripts(accessory)
 							accessory.Name = `a{item.id}`
