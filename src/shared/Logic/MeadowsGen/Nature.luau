@@ -19,6 +19,18 @@ local TerrainLayers = require("../TerrainLayers")
 
 local o = Kit.o
 
+-- Owner 2026-11-01: no crows perched on the dead trees of Crow Field (a crowd hanging in the air that flew off on
+-- approach); its monster crows and the contracts on them stay.
+local function inCrowField(x: number, z: number): boolean
+	for _, area in Areas.areas do
+		if area.id == "meadows_crowfield" then
+			local r = area.rect
+			return x >= r[1] and x <= r[3] and z >= r[2] and z <= r[4]
+		end
+	end
+	return false
+end
+
 local Nature = {}
 
 export type TreeKind = "oak" | "giantOak" | "birch" | "pine" | "willow" | "dead"
@@ -90,7 +102,9 @@ function Nature.tree(bp: Kit.BP, kind: TreeKind, x: number, y: number, z: number
 				o(Kit.deadBark, "detail", { col = false, q = false })
 			)
 		end
-		Kit.life("perch", x + 4 * s, y + h * 0.95 + 0.6, z + 1 * s)
+		if not inCrowField(x, z) then
+			Kit.life("perch", x + 4 * s, y + h * 0.95 + 0.6, z + 1 * s)
+		end
 	elseif kind == "willow" then
 		local h = 4.5 * s
 		bp:add("cyl", h, 1.8 * s, 1.8 * s, x, y + h / 2 - 0.5, z, 0, 0, 90 + rng:float(-6, 6), trunkOpt(Kit.bark))

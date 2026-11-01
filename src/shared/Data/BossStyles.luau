@@ -1740,7 +1740,8 @@ GA.death = {
 			fLp = -0.9,
 			fRp = -0.9,
 		}),
-		-- face down: the arms thrown forward, the head turned aside
+		-- face down: the cleaver arm thrown forward, the free arm along his side (lower, it went under the ground
+		-- once the style was mirrored), the head turned aside
 		key("R", 0.75, "in", {
 			py = -0.84,
 			pz = -0.42,
@@ -1755,7 +1756,7 @@ GA.death = {
 			aRy = 0.1,
 			eR = 0.25,
 			wRp = 0.3,
-			aLp = 0.2,
+			aLp = -0.3,
 			aLo = 1.3,
 			aLy = 0,
 			eL = 0.35,
@@ -1781,7 +1782,7 @@ GA.death = {
 			aRo = 0.45,
 			aRy = 0.1,
 			eR = 0.2,
-			aLp = 0.25,
+			aLp = -0.3,
 			aLo = 1.3,
 			aLy = 0,
 			eL = 0.5,
@@ -1807,7 +1808,7 @@ GA.death = {
 			aRo = 0.45,
 			aRy = 0.1,
 			eR = 0.2,
-			aLp = 0.2,
+			aLp = -0.3,
 			aLo = 1.3,
 			aLy = 0,
 			eL = 0.4,
@@ -6224,10 +6225,71 @@ HA.roar = mocap(HA.roar, { name = "battlecry", upper = true }, 0.2, 1.0, 0.7)
 MA.bolt = mocap(MA.bolt, { name = "magic1h", upper = true }, 0.3, 0.4, 0.6)
 MA.boltLeft = mocap(MA.boltLeft, { name = "magic1h", mirror = true, upper = true }, 0.3, 0.4, 0.6)
 
+-- Owner 2026-11-01 (Studio: "Grimrok attacks with his right hand, the weapon is in the left"): the model's cleaver is in
+-- its left hand and his blows were written for the right, so his whole style plays mirrored (clips with `mirror`, keys
+-- with left and right swapped: the arms' controls keep their sense on either side, a sideways one changes sign).
+local MIRROR_SIGN: { [string]: boolean } = {
+	px = true,
+	pyaw = true,
+	proll = true,
+	syaw = true,
+	sroll = true,
+	hyaw = true,
+	hroll = true,
+}
+
+local function mirrorPose(pose: any): any
+	local out = {}
+	for key, value in pose do
+		local head, side, tail = string.match(key, "^([acefwt])([LR])(.*)$")
+		if head and tail then
+			local other = if side == "L" then "R" else "L"
+			local foot = head == "f" and (tail == "x" or tail == "yaw" or tail == "r")
+			out[head .. other .. tail] = if foot then -value else value
+		else
+			out[key] = if MIRROR_SIGN[key] then -value else value
+		end
+	end
+	return out
+end
+
+local function mirrorAction(action: any): any
+	local out = table.clone(action)
+	if action.lag then
+		out.lag = { head = action.lag.head } -- (BipedMotion's free arm is the left, now the cleaver's)
+	end
+	if action.clip then
+		out.clip = table.clone(action.clip)
+		out.clip.mirror = not action.clip.mirror
+	end
+	if action.keys then
+		out.keys = {}
+		for i, k in action.keys do
+			local key = table.clone(k)
+			key.pose = mirrorPose(k.pose)
+			out.keys[i] = key
+		end
+	end
+	return out
+end
+
+local function mirrorStyle(style: any): any
+	local out = table.clone(style)
+	out.guard = mirrorPose(style.guard)
+	out.boss = table.clone(style.boss)
+	out.boss.rage = mirrorPose(style.boss.rage)
+	out.boss.shield = mirrorPose(style.boss.shield)
+	out.actions = {}
+	for name, action in style.actions do
+		out.actions[name] = mirrorAction(action)
+	end
+	return out
+end
+
 ---------------------------------------------------------------- the registry
 
 BossStyles.STYLES = {
-	grimrok = GRIMROK,
+	grimrok = mirrorStyle(GRIMROK),
 	morvane = MORVANE,
 	azgor = AZGOR,
 	hrimvald = HRIMVALD,

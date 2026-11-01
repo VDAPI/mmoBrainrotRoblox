@@ -188,10 +188,11 @@ local function barn(x: number, z: number, rot: number, seed: number, ground: Gro
 		bp:box(0.7, 8, 0.7, c[1] * W / 2, 4, c[2] * D / 2, s(timber, "detail"))
 	end
 	bp:box(W + 0.2, 0.5, 0.5, 0, 8, -D / 2, s(timber, "detail"))
-	-- doors, one leaf a little open
+	-- doors, both leaves shut (owner 2026-11-01: the leaf left ajar showed a dark, empty barn)
 	bp:box(6.6, 7, 0.4, 0, 3.5, -D / 2 - 0.1, s({ c = "#1E1A16", m = "WoodPlanks" }))
-	bp:box(3.2, 6.6, 0.3, -1.65, 3.3, -D / 2 - 0.3, s(Palette.door[1], "detail"))
-	bp:rbox(3.2, 6.6, 0.3, 2.9, 3.3, -D / 2 - 1.1, 0, -35, 0, s(Palette.door[1], "detail"))
+	for _, side in { -1, 1 } do
+		bp:box(3.2, 6.6, 0.3, side * 1.65, 3.3, -D / 2 - 0.3, s(Palette.door[1], "detail"))
+	end
 	local look: Parts.Look = {
 		timber = timber,
 		plaster = planks,

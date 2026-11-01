@@ -112,8 +112,6 @@ local function mill(out: { Build })
 	bp:box(0.8, 0.4, 0.8, 0, 6.8, 2, o(Kit.charred, "detail", { tag = "smoke" }))
 	table.insert(out, b)
 	Kit.rect("building", s.x, s.z, 9, 11, s.rot)
-	local wx, wy, wz = Kit.worldOf(b, 0, 21, hz)
-	Kit.life("perch", wx, wy, wz)
 	-- W13: the plume from the smouldering body, seen over the saddle (laki.md 1.2)
 	local px, py, pz = Kit.worldOf(b, 0, 12, 1)
 	Kit.life("smokePlume", px, py, pz, 2)
@@ -159,7 +157,7 @@ local function fields(out: { Build })
 				end
 			end
 		end
-		-- a scarecrow in every field
+		-- a scarecrow in every field (owner 2026-11-01: no crows hanging over them, or on the mill)
 		local sx, sz = bp.rng:float(-f.w / 4, f.w / 4), bp.rng:float(-f.d / 4, f.d / 4)
 		local gy = Kit.gy(b, sx, sz)
 		bp:box(0.45, 7, 0.45, sx, gy + 3.2, sz, o(Kit.timber, "shell", { q = false }))
@@ -172,10 +170,6 @@ local function fields(out: { Build })
 		for _, side in { -1, 1 } do
 			bp:box(0.4, 1.2, 0.4, sx + side * 2.4, gy + 4.6, sz, o(Kit.straw, "fine"))
 		end
-		local wx, wy, wz = Kit.worldOf(b, sx, gy + 8.8, sz)
-		Kit.life("perch", wx, wy, wz)
-		local ax, ay, az = Kit.worldOf(b, sx + 2.4, gy + 5.4, sz)
-		Kit.life("perch", ax, ay, az)
 		table.insert(out, b)
 	end
 	-- an abandoned hand cart by the field road (bandits were here)
