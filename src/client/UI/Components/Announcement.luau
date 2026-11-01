@@ -25,6 +25,9 @@ local TopBand = SoftRequire(
 		underHeader = function(top: number): number
 			return top
 		end,
+		underBars = function(top: number): number
+			return top
+		end,
 	} :: any,
 	"Logic/TopBand"
 )
@@ -78,7 +81,12 @@ local target = moduleScope:Computed(function(use): number
 	local centre = if mythic then 150 else 130
 	local half = (if mythic then 84 else 64) / 2
 	local header = use(HudCover.HeaderBottom)
-	local top = TopBand.underHeader(centre - half, if header then header - use(layerTop) else nil, use(Scale.Value))
+	local top = TopBand.underBars(
+		centre - half,
+		use(Scale.TopBar),
+		if header then header - use(layerTop) else nil,
+		use(Scale.Value)
+	)
 	return top + half
 end)
 local animated = moduleScope:Spring(target, 22, 0.75)

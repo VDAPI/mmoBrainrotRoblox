@@ -74,6 +74,8 @@ local function TutorialHint(scope: Scope, props: Props): Api
 		BackgroundTransparency = Theme.HudAlpha,
 		Active = false,
 		ZIndex = 51,
+		-- Studio check of phase 4: hidden with its frame too, so the tile itself never reads as shown
+		Visible = props.Visible,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({

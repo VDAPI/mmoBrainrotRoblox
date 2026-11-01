@@ -63,6 +63,19 @@ Scale.HudSize = scope:Computed(function(use): Vector2
 	return use(Scale.VirtualSize)
 end)
 
+-- Studio check of phase 4 (1108 x 576: a toast's top stood 3 px into Roblox's top bar): how far (screen pixels) under
+-- the top of the whole-screen layers (Toasts) the HUD's layer starts, Roblox's top bar; UIController reports it, the
+-- messages of the top band stay under it (Logic/TopBand.underBars).
+local topBar = scope:Value(0)
+Scale.TopBar = topBar
+
+function Scale.SetTopBar(px: number)
+	local value = math.max(0, px)
+	if Fusion.peek(topBar) ~= value then
+		topBar:set(value)
+	end
+end
+
 function Scale.get(): number
 	return Fusion.peek(Scale.Value)
 end

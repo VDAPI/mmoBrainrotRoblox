@@ -60,7 +60,8 @@ function AchievementToast.new(scope: Scope, onView: ((id: string) -> ())?): Api
 		local header = use(HudCover.HeaderBottom)
 		local parent = if box then box.Parent else nil
 		local origin = if parent and parent:IsA("GuiObject") then parent.AbsolutePosition.Y else 0
-		return UDim2.new(0.5, 0, 0, TopBand.underHeader(TOP, if header then header - origin else nil, use(Scale.Value)))
+		local top = TopBand.underBars(TOP, use(Scale.TopBar), if header then header - origin else nil, use(Scale.Value))
+		return UDim2.new(0.5, 0, 0, top)
 	end)
 	scope:Observer(shown):onChange(function()
 		if inPlace and box then
