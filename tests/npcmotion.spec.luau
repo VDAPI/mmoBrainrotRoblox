@@ -529,7 +529,8 @@ T.describe("NpcMotion on the NPC rig dumps (2026-10-26)", function()
 
 	T.it("walks its beat smoothly at 60 fps, its feet on their spots (2026-11-01 Studio)", function()
 		-- Studio on guard2 and farmer_bartosz's R15 figure: knees up to 16.5 deg a frame and held frames between, a
-		-- foot planted at the start of the beat dragged 0.4 studs, one foot lifted 0.43 and the other 0.27
+		-- foot planted at the start of the beat dragged 0.4 studs, one foot lifted 0.43 and the other 0.27; then (on
+		-- e75960f5) feet near the floor going 0.26-0.46 studs
 		local function turn(a: { number }, b: { number }): number
 			local tr = 0
 			for i = 1, 9 do
@@ -571,6 +572,7 @@ T.describe("NpcMotion on the NPC rig dumps (2026-10-26)", function()
 			local last: { [string]: { number } }? = nil
 			local rates: { [string]: { number } } = {}
 			local lift = { R = { math.huge, -math.huge }, L = { math.huge, -math.huge } }
+			local track: { [string]: { { number } } } = { R = {}, L = {} }
 			local walked = 0
 			local t = 0
 			while t <= 16 do
@@ -595,6 +597,7 @@ T.describe("NpcMotion on the NPC rig dumps (2026-10-26)", function()
 					local ankle = pos[if s == "R" then "RightFoot" else "LeftFoot"]
 					lift[s][1] = math.min(lift[s][1], ankle[2])
 					lift[s][2] = math.max(lift[s][2], ankle[2])
+					table.insert(track[s], ankle)
 					if not foot.swing then
 						-- a planted ankle on its spot, walking too (the leg never stretched past its reach)
 						local d = math.sqrt((ankle[1] - foot.x) ^ 2 + (ankle[3] - foot.z) ^ 2)
@@ -615,6 +618,23 @@ T.describe("NpcMotion on the NPC rig dumps (2026-10-26)", function()
 					local a, b, c = list[i - 1], list[i], list[i + 1]
 					if a > 1.5 and c > 1.5 and b < 0.35 * math.min(a, c) then
 						error(`{name}: {joint} held at frame {i}: {a} {b} {c} deg`)
+					end
+				end
+			end
+			-- read as Studio reads it, a foot is down while its ankle is near its lowest: one so low goes nowhere (the
+			-- 2026-11-01 review took the last 0.3-0.5 studs of a swing, skimmed along the floor, for a planted foot sliding)
+			for s, list in track do
+				local from: { number }? = nil
+				for _, ankle in list do
+					if ankle[2] > lift[s][1] + 0.02 * L then
+						from = nil
+					elseif not from then
+						from = ankle
+					else
+						local d = math.sqrt((ankle[1] - from[1]) ^ 2 + (ankle[3] - from[3]) ^ 2)
+						if d > 0.02 * L then
+							error(`{name} {s}: a foot down went {d / L} leg lengths`)
+						end
 					end
 				end
 			end

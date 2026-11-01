@@ -9,7 +9,8 @@
 -- * Walking: a stride clock advanced by distance (not time) swings the feet in turn; a foot lands ahead of its home by
 --   half the stance's travel, so the hip passes over it in mid-stance (no sliding at any speed). A walk that sets off
 --   while a step on the spot is in the air takes it on as its first swing (or waits for it to land); the swing leaves
---   and meets the ground at no speed, and the walk's sway and heel roll ease in and out.
+--   and meets the ground at no speed and goes across only in the air (its spot holds once the foot is over it), and
+--   the walk's sway and heel roll ease in and out; the stride clock runs out after the walk.
 -- * The NPC's own root may move (a server-moved NPC): `shift` keeps the planted spots where they are in the world.
 -- Pure (Lune specs in tests/npcmotion.spec.luau).
 
@@ -47,6 +48,7 @@ export type Feet = {
 	walking: boolean,
 	heel: number, -- 0..1: how much the stance heels peel off (eases in and out with the walk)
 	ramp: number, -- 0..1: the walk's share, a straight ramp (`heel` is it eased)
+	rate: number, -- the stride clock's run (strides per second; after the walk it runs out)
 	-- rad the walking feet land turned toward the body's goal, from its facing; it follows the goal at AIM_RATE (a goal
 	-- that changed at once, the beat's last bit sidled facing the front, threw a swinging foot across in a frame)
 	aim: number,
@@ -67,6 +69,7 @@ NpcSteps.STEP_TIME = 0.34 -- seconds of a step on the spot
 NpcSteps.STEP_LIFT = 0.06 -- leg lengths
 NpcSteps.CLOSE_DELAY = 0.45 -- seconds the body must settle before a closing step
 NpcSteps.GAP = 0.04 -- seconds between a landing and the next lift
+NpcSteps.LONG_STEP = 0.25 -- leg lengths past which a step on the spot takes longer and lifts higher
 -- Walking: the stride (two steps) in leg lengths at a stroll and its growth with speed, the swing's share of a stride.
 NpcSteps.STRIDE = 1.05
 NpcSteps.STRIDE_GROW = 0.15 -- leg lengths per (leg length per second) of speed
@@ -76,7 +79,11 @@ NpcSteps.WALK_FROM = 0.35 -- studs per second above which the clock runs
 NpcSteps.SETTLE = 0.5 -- seconds a walking swing takes from lift to landing once the walk has stopped
 NpcSteps.MIN_CADENCE = 0.8 -- leg lengths per second the stride clock runs at least (a slow walk takes shorter steps)
 NpcSteps.WALK_EASE = 0.4 -- seconds the walk's pelvis, sway and heel roll ease in (and out)
+NpcSteps.RUN_OUT = 0.25 -- seconds the stride clock takes to run out after the walk (at a stroll's rate)
 NpcSteps.AIM_RATE = 2 -- rad per second the walking feet's turn toward the body's goal follows it
+-- A swing's shares: where the foot starts and ends its way across, where it is highest.
+NpcSteps.ACROSS = { 0.12, 0.8 }
+NpcSteps.PEAK = 0.4
 
 local function newFoot(x: number, z: number, yaw: number): Foot
 	return {
@@ -112,6 +119,13 @@ local function smooth(x: number): number
 	return t * t * (3 - 2 * t)
 end
 
+-- A swing's way across (0..1) at its share q: the foot goes across off the ground only, rising before it leaves its
+-- spot and over the new one before it comes down (2026-11-01 Studio review: the foot skimmed the last 0.3-0.5 studs
+-- to its spot within a tenth of a stud of the floor, read in Studio as a planted foot sliding).
+local function across(q: number): number
+	return smooth((q - NpcSteps.ACROSS[1]) / (NpcSteps.ACROSS[2] - NpcSteps.ACROSS[1]))
+end
+
 -- Where the foot `side` belongs under a body at (x, z) facing `yaw`: (x, z, yaw).
 function NpcSteps.home(feet: Feet, side: string, x: number, z: number, yaw: number): (number, number, number)
 	local o = feet.offset[side]
@@ -133,6 +147,7 @@ function NpcSteps.new(offset: { [string]: Offset }, legLength: number): Feet
 		walking = false,
 		heel = 0,
 		ramp = 0,
+		rate = 0,
 		aim = 0,
 	}
 	NpcSteps.reset(feet, 0, 0, 0)
@@ -150,6 +165,7 @@ function NpcSteps.reset(feet: Feet, x: number, z: number, yaw: number)
 	feet.walking = false
 	feet.heel = 0
 	feet.ramp = 0
+	feet.rate = 0
 	feet.aim = 0
 end
 
@@ -286,7 +302,7 @@ function NpcSteps.step(feet: Feet, dt: number, body: Body, still: number, pace: 
 				-- a step still rising goes on as the walk's first swing: the clock picks it up where it is, its spot
 				-- moves on ahead with the body and its lift grows to a stride's (2026-11-01 Studio review: a turn's step
 				-- at the start of a beat made the other foot wait out the first stride planted, dragged behind the body)
-				local e = smooth(q)
+				local e = across(q)
 				local x, z = f.fx + (f.tx - f.fx) * e, f.fz + (f.tz - f.fz) * e
 				local cadence = math.max(speed, NpcSteps.MIN_CADENCE * L)
 				local swingTime = NpcSteps.SWING * stride / cadence
@@ -320,9 +336,8 @@ function NpcSteps.step(feet: Feet, dt: number, body: Body, still: number, pace: 
 		local cadence = math.max(speed, NpcSteps.MIN_CADENCE * L)
 		-- (the clock waits for a step on the spot still in the air: the foot due to lift goes as soon as it lands)
 		local waiting = (feet.R.swing and not feet.R.walk) or (feet.L.swing and not feet.L.walk)
-		if not waiting then
-			feet.phase = (feet.phase + dt * cadence / stride) % 1
-		end
+		feet.rate = if waiting then 0 else cadence / stride
+		feet.phase = (feet.phase + dt * feet.rate) % 1
 		local swingTime = NpcSteps.SWING * stride / cadence
 		local stanceTime = (1 - NpcSteps.SWING) * stride / cadence
 		for _, side in { "R", "L" } do
@@ -340,7 +355,10 @@ function NpcSteps.step(feet: Feet, dt: number, body: Body, still: number, pace: 
 					land(feet, side, f)
 				else
 					f.t = math.max(f.t, q)
-					f.tx, f.tz, f.tyaw = walkTarget(feet, side, f, body, (1 - f.t) * swingTime + stanceTime * 0.5)
+					if f.t < NpcSteps.ACROSS[2] then
+						-- (its spot follows the body until the foot is over it: then it only comes down)
+						f.tx, f.tz, f.tyaw = walkTarget(feet, side, f, body, (1 - f.t) * swingTime + stanceTime * 0.5)
+					end
 				end
 			elseif not f.swing and not other.swing and f.armed then
 				-- the clock is at this foot's lift-off (or a little past it: the other foot was still finishing a step)
@@ -360,6 +378,13 @@ function NpcSteps.step(feet: Feet, dt: number, body: Body, still: number, pace: 
 			end
 		end
 		return
+	end
+	if feet.rate > 0 then
+		-- the walk over, the clock runs out over RUN_OUT, short of the next lift-off: a heel that was peeling off
+		-- goes on up and settles instead of stopping in a frame (2026-11-01: the knee bent, straightened, bent)
+		local liftOff = if feet.phase < 0.5 then 0.5 else 1
+		feet.phase = math.min(feet.phase + dt * feet.rate, liftOff - 1e-3)
+		feet.rate = math.max(0, feet.rate - dt * NpcSteps.MIN_CADENCE / (NpcSteps.STRIDE * NpcSteps.RUN_OUT))
 	end
 	local swinging = feet.R.swing or feet.L.swing
 	feet.walking = false
@@ -395,7 +420,14 @@ function NpcSteps.step(feet: Feet, dt: number, body: Body, still: number, pace: 
 		local f = (feet :: any)[best] :: Foot
 		local dur = NpcSteps.STEP_TIME / tempo
 		local tx, tz, tyaw = standTarget(feet, best, f, body, dur)
-		startSwing(feet, best, f, tx, tz, tyaw, dur, NpcSteps.STEP_LIFT, false)
+		-- a long step (the trailing foot closing up after a walk, a wide turn) takes longer and lifts higher: in the
+		-- time of a short one the knee whipped through a reversal (2026-11-01)
+		local long = math.clamp(math.sqrt((tx - f.x) ^ 2 + (tz - f.z) ^ 2) / (NpcSteps.LONG_STEP * L), 1, 1.6)
+		if long > 1 then
+			dur *= math.sqrt(long)
+			tx, tz, tyaw = standTarget(feet, best, f, body, dur)
+		end
+		startSwing(feet, best, f, tx, tz, tyaw, dur, NpcSteps.STEP_LIFT * long, false)
 	end
 end
 
@@ -409,18 +441,20 @@ function NpcSteps.pose(feet: Feet, side: string): (number, number, number, numbe
 		return f.x, 0.07 * feet.L_ * k, f.z, f.yaw, -0.35 * k, 0.3 * k
 	end
 	local q = math.clamp(f.t / math.max(1e-3, f.dur), 0, 1)
-	local e = smooth(q)
+	local e = across(q)
 	local x = f.fx + (f.tx - f.fx) * e
 	local z = f.fz + (f.tz - f.fz) * e
 	local yaw = f.fyaw + (f.tyaw - f.fyaw) * e
-	-- the peak early in the swing (the foot clears the ground, then reaches), off the ground and down onto it at no
-	-- speed, down at the landing (2026-11-01 Studio review: the foot left the ground at full speed, the knee from 0 to
-	-- 9 deg in a frame, and came down short of its spot and slid the rest)
+	-- the height: from the stance's heel lift (a step on the spot just after a walk too) up to the peak at PEAK, down
+	-- onto the spot at the landing, at no speed at either end (2026-11-01 Studio review: the foot left the ground at
+	-- full speed, the knee from 0 to 9 deg in a frame, and came down short of its spot and slid the rest)
 	local lift = f.lift + (f.lift0 - f.lift) * (1 - smooth((q - f.at0) / 0.3))
-	local h = math.sin(math.pi * q ^ 0.75) ^ 2 * lift
-	-- the toe-off goes on from the stance's heel lift (heel up, toes bent; a step on the spot too, the walk just over)
+	local peel = 0.07 * feet.L_ * f.peel
+	local top = math.max(lift, peel)
+	local p = NpcSteps.PEAK
+	local h = if q < p then peel + (top - peel) * smooth(q / p) else top * (1 - smooth((q - p) / (1 - p)))
+	-- the toe-off goes on from the stance's (heel up, toes bent)
 	local off = (1 - smooth(q / 0.3)) * f.peel
-	h += 0.07 * feet.L_ * off
 	local pitch, toe = -0.35 * off, 0.3 * off
 	if f.walk then
 		-- the toes rise before the landing
@@ -438,9 +472,9 @@ function NpcSteps.support(feet: Feet): number
 			return 0
 		end
 		local q = math.clamp(f.t / math.max(1e-3, f.dur), 0, 1)
-		-- the weight moves over early in the swing (from nothing at the lift: a jump jolted the standing knee) and
-		-- back by the landing
-		return math.sin(math.pi * math.min(1, q * 0.85 + 0.15)) * smooth(q / 0.2)
+		-- the weight moves over early in the swing and back by the landing, setting off and settling at no speed (a
+		-- jump at the lift and a stop at the landing jolted the standing knee)
+		return smooth(q / 0.2) * (1 - smooth((q - 0.6) / 0.4))
 	end
 	return lifted(feet.L) - lifted(feet.R)
 end

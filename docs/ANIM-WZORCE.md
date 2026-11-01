@@ -1781,6 +1781,39 @@ AnimLab's: AnimLab's `walk` forces it every 5-8 s on any NPC (`FORCED_PACE`); in
 the captains every 18-32, the wandering merchant every 20-40. farmer_bartosz (laborer) has no beat and never walks in
 game.
 
+### 12.6 Feet near the floor (Studio review of e75960f5, 2026-11-01)
+
+Studio on e75960f5 (60 fps, 10 s runs): the joints, held frames and the beat's starts and stops fixed, but the planted
+feet drifting with the body: guard2 R 0.33-0.45 and L 0.27-0.32 studs (one L stance 0.4-1.2 s 0.446 while the hips
+went 1.31), the captain 0.46/0.26, the farmer 0.17-0.24, a foot counted planted while it was near its lowest. The
+proxy said 0.000 for a foot NpcSteps had planted. Reconciled: the spots are in the root's space, which on the Mixamo
+NPCs is the asset's (the HRP and the pivot stay; the walk is the Hips bone's), and the IK hits them exactly, so neither
+the Hips bone's travel, the walk back nor the stop at 3.3 s moved a planted foot. Measured Studio's way (the ankle within
+0.05 studs of its lowest) the proxy on e75960f5 gives guard2 0.28 (0.52 within 0.1), the captain 0.15-0.46, the farmer
+0.09-0.33: Studio's numbers. It was the swing's end: the way across ran `smooth(q)` over the whole swing while the
+height was a bell, so the foot came down at a shallow angle, its last 0.3-0.5 studs within a tenth of a stud of the
+floor, and its spot went on following the body until the landing. Now (`Logic/NpcSteps`):
+
+1. **Across off the ground only.** The way across runs over `ACROSS` (0.12-0.8 of the swing): the foot rises before it
+   leaves its spot and is over the new one before it comes down. The height goes from the heel peel up to the top at
+   `PEAK` (0.4) and down (a bell under the peel dipped the foot at the lift).
+2. **The spot holds once the foot is over it** (from 0.8 of the swing): then it only comes down.
+3. **The stride clock runs out** over `RUN_OUT` (0.25 s) after the walk, short of the next lift-off: a heel peeling off
+   goes on up and settles (Teodor's knee bent, straightened and bent at the stop).
+4. **A long step on the spot** (past `LONG_STEP`, 0.25 leg lengths: the trailing foot closing up after the walk) takes
+   up to sqrt(1.6) times longer and lifts up to 1.6 times higher (vendor_hunter's 1.2-stud closing step whipped the
+   knee through a reversal).
+5. **The swing's weight shift** sets off and settles at no speed (on over the first 0.2 of the swing, off over 0.6-1).
+
+In the proxy (60 fps, the AnimLab beat, 16 s), a foot down Studio's way (within 0.05 studs of its lowest) goes at most
+0.003 studs on every NPC dump (guard2 0.000, the captain 0.02, the farmer 0.03: the heel's roll over the toes, the toes
+still); within 0.1 studs at most 0.085 (the same roll). Knees at most 8.1 deg a frame (guard2 6.6, the captain 6.7,
+the farmer 6.7), hips 4.7, no held frame (with uneven frame times one of 2.0/0.3/1.5 deg now and then at a hitch frame),
+the lifts R/L 0.29/0.30 (guard2), 0.26/0.27 (the captain), 0.26/0.28 (the farmer). The spec `walks its beat smoothly`
+now also takes a foot down Studio's way (the ankle within 0.02 leg lengths of its lowest): it may go at most 0.02 leg
+lengths (e75960f5 fails it). In Studio the foot bone is the ankle: near its lowest the heel's roll moves it up to
+0.08 studs while the toes stay, so a slide reads best within 0.05 studs of the lowest, or on the toe bone.
+
 ## Appendix A: formulas
 
 Gait clock (per frame):
