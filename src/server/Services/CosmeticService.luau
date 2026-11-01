@@ -764,6 +764,26 @@ local function loadClothes()
 			else
 				log:warn("no clothes of %s for the previews (%s)", classId, tostring(model))
 			end
+			for _, garment in outfit.garments do
+				for _, item in CharacterLook.garmentPieces(garment) do
+					if not folder:FindFirstChild(`a{item.id}`) then
+						local loaded, asset = pcall(function()
+							return InsertService:LoadAsset(item.id)
+						end)
+						local accessory = if loaded and asset then asset:FindFirstChildWhichIsA("Accessory", true) else nil
+						if accessory then
+							LookBuild.stripScripts(accessory)
+							accessory.Name = `a{item.id}`
+							accessory.Parent = folder
+						else
+							log:warn("catalog piece %d did not load for the previews", item.id)
+						end
+						if loaded and asset then
+							asset:Destroy()
+						end
+					end
+				end
+			end
 		end
 	end
 	folder.Parent = ReplicatedStorage

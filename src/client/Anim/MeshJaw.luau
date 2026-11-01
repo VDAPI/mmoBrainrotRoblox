@@ -171,6 +171,7 @@ local function addBone(em: EditableMesh, shared: Shared, headName: string): (num
 		Name = JAW,
 		ParentId = headId,
 		CFrame = CFrame.new(shared.hinge) * shared.headTurn,
+		Virtual = false, -- (Studio 2026-11-02: the engine demands it, "Missing bone Virtual value")
 	})
 	return jawId, headSetOf(em, headId)
 end

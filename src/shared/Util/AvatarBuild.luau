@@ -19,7 +19,8 @@ local AvatarBuild = {}
 
 -- ReplicatedStorage child the server builds (a standard R15 figure, anchored, no scripts) for the client previews.
 AvatarBuild.MANNEQUIN = "VaelthornMannequin"
-AvatarBuild.CLOTHES = "VaelthornClothes" -- the classes' Shirt / Pants (s<id>, p<id>) for the previews, from the server
+-- the classes' Shirt / Pants (s<id>, p<id>) and catalog pieces (a<id>) for the previews, from the server
+AvatarBuild.CLOTHES = "VaelthornClothes"
 -- Model attribute: the look key (Logic/CharacterLook.lookKey) of the description the character wears (the server sets
 -- it, the wardrobe compares it).
 AvatarBuild.LOOK_KEY = "VaelthornLookKey"
@@ -715,6 +716,34 @@ local BEARDS: { [string]: { { any } } } = {
 }
 AvatarBuild.BEARDS = BEARDS
 
+-- Owner 2026-11-01: the chosen classic face on the block head (Data/BodyLooks.blockFaces): a decal on the head's mesh
+-- stretches over its texture map, so the texture goes and the image sits on an unseen sheet before the head.
+local function blockFace(ctx: Ctx, face: CharacterLook.FaceSpec)
+	local head = ctx.head
+	local image = BodyLooks.blockFaces[face.id]
+	if not head or not image then
+		return
+	end
+	if head:IsA("MeshPart") then
+		head.TextureID = ""
+	end
+	local sheet = piece(
+		ctx,
+		head,
+		Vector3.new(head.Size.X * 0.92, head.Size.Y * 0.92, 0.05),
+		CFrame.new(0, 0, -head.Size.Z / 2)
+	)
+	if sheet then
+		sheet.Name = "FaceSheet"
+		sheet.Transparency = 1
+		local decal = Instance.new("Decal")
+		decal.Name = "face"
+		decal.Face = Enum.NormalId.Front
+		decal.Texture = `rbxassetid://{image}`
+		decal.Parent = sheet
+	end
+end
+
 -- The beard and the face paint of the look on a dynamic head (its eyes, nose and mouth are its own).
 local function drawFace(ctx: Ctx, face: CharacterLook.FaceSpec)
 	local head = ctx.head
@@ -1154,8 +1183,8 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 			end
 		end
 	end
-	-- owner 2026-11-01: a preview wears the classic clothes the server published (AvatarBuild.CLOTHES), and over them
-	-- no stand-ins from parts for its catalog pieces (the mantle in the wrong colour over the robe)
+	-- owner 2026-11-01: a preview wears the classic clothes the server published (AvatarBuild.CLOTHES), and no stand-ins
+	-- from parts for its catalog pieces (the mantle in the wrong colour over the robe)
 	local clothed = false
 	if preview == true then
 		local clothes = ReplicatedStorage:FindFirstChild(AvatarBuild.CLOTHES)
@@ -1178,6 +1207,18 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 		lower = part("LowerTorso") or part("Torso"),
 		part = part,
 	}
+	-- owner 2026-11-01: and the look's catalog pieces (cape, pauldrons, hood), so a preview is the character in the game
+	if clothed then
+		local clothes = ReplicatedStorage:FindFirstChild(AvatarBuild.CLOTHES)
+		for _, item in spec.accessories do
+			local template = clothes and clothes:FindFirstChild(`a{item.id}`)
+			if template and template:IsA("Accessory") then
+				local worn = template:Clone()
+				worn:SetAttribute(ASSET_ATTRIBUTE, true)
+				wear(ctx, worn)
+			end
+		end
+	end
 	-- (c, d) garments; the quiver from the equipment replaces the procedural one
 	local quiver = hasQuiver(model)
 	for _, item in spec.garments do
@@ -1238,6 +1279,9 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 			if child:IsA("Accessory") and FACE_ACCESSORY[child.Name] == "brows" then
 				tint(child, face.hair, false)
 			end
+		end
+		if blocky then
+			blockFace(ctx, face)
 		end
 		drawFace(ctx, face)
 	end

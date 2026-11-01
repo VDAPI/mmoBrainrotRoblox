@@ -306,7 +306,7 @@ function JawHinge.plan(
 			table.insert(view, table.concat(row))
 		end
 	end
-	if best == 0 then
+	if best == 0 and not o.mouth then
 		render()
 		return nil, `no opening between the jaws in the side view ({pieces} enclosed gaps, none at the front)`
 	end
@@ -331,7 +331,23 @@ function JawHinge.plan(
 			tallest = math.max(tallest, hi - lo + 1)
 		end
 	end
-	if cMax - cMin + 1 < o.minColumns or tallest * cs < o.gapMin * L then
+	-- Studio 2026-11-02: a mouth the side view cannot see (Vaelgrath's cheek fills its silhouette), read off the printed
+	-- map and given in the data: the seam at `y` over the head's lowest point, from `front` to `back` ahead of the joint
+	-- (shares of the snout)
+	local mouth = o.mouth
+	if mouth then
+		table.clear(bot)
+		table.clear(top)
+		local seamY = yLo + mouth.y * L
+		cMin = math.floor((-mouth.front * L - z0) / cs)
+		cMax = math.floor((-mouth.back * L - z0) / cs)
+		for c = cMin, cMax do
+			bot[c] = seamY - 0.02 * L
+			top[c] = seamY + 0.02 * L
+		end
+		tallest = math.ceil(0.04 * L / cs)
+	end
+	if not mouth and (cMax - cMin + 1 < o.minColumns or tallest * cs < o.gapMin * L) then
 		render()
 		return nil,
 			`the opening is too small ({cMax - cMin + 1} columns, {math.floor(tallest * cs / L * 1000 + 0.5) / 10}% of the snout high)`

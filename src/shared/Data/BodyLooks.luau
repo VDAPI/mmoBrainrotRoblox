@@ -176,6 +176,20 @@ export type Style = {
 -- Owner 2026-11-01, after trying the styles in Studio: every character and the creator's mannequin wear the classic
 -- block R15 (BodyLooks.parts, the dynamic heads and `scales` above are what a character wore before, kept for the
 -- previews of old saves until the creator is rebuilt on it).
+-- Owner 2026-11-01: the faces on the block head (Data/ClassLooks.FACES id -> the image of a classic Roblox face). The
+-- engine ignores a description's Face on the block head (a dynamic one, its own eyes and mouth), so Util/AvatarBuild
+-- clears the head's texture and shows the image on a sheet before it.
+BodyLooks.blockFaces = table.freeze({
+	face_calm = 144080495, -- Smile
+	face_stern = 7074749, -- Chill
+	face_young = 7317606, -- Good Intentions
+	face_weary = 7131482, -- Okay
+	face_scarred = 8329438, -- Stitchface
+	face_bearded = 83017053, -- Man Face
+	face_freckled = 7699086, -- Silly Fun
+	face_sharp = 31117192, -- Skeptic
+} :: { [string]: number })
+
 local BLOCKY: Style = table.freeze({
 	id = "blocky",
 	scales = table.freeze({ height = 1, width = 1, depth = 1, head = 1, bodyType = 0, proportion = 0 }),

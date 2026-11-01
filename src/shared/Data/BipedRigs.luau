@@ -219,6 +219,7 @@ export type Jaw = {
 	cells: number,
 	gapMin: number,
 	minColumns: number,
+	mouth: { front: number, back: number, y: number }?, -- a seam given by hand when the side view finds none
 	bridge: number?,
 	below: number,
 	hinge: { back: number, down: number },
@@ -248,12 +249,13 @@ local JAWS: { [string]: Jaw } = {
 		cells = 48,
 		gapMin = 0.03,
 		minColumns = 6,
+		mouth = { front = 0.85, back = 0.35, y = 0.396 }, -- off the map MeshJaw prints (JawHinge)
 		below = 0.6,
 		hinge = { back = 0.06, down = 0.02 },
 		blend = { back = 0.12, front = 0.15, seam = 0.08 },
 		contact = 0.3,
 		margin = 0.02,
-		closed = nil,
+		closed = 22, -- (Studio: the given seam is no gap to measure; the teeth meet here)
 		maxClosed = 60,
 		rate = 24,
 		actions = {
