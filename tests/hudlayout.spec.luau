@@ -127,7 +127,9 @@ local function scenario(name: string, touch: boolean, w: number): { [string]: Bo
 	elseif name == "movedTracker" then
 		-- the tracker dragged onto its own built-in place (or only scaled there): the boss panel goes round it
 		local left = if touch then HudStack.MARGIN else w - HudStack.MARGIN - HudStack.TRACKER
-		local tall = if touch then 120 else 300
+		-- PC: tall enough that the boss panel has no room under it at 1920 x 1080 (UI plan phase 4: the column starts
+		-- 24 px higher, so 324 instead of 300 keeps the bottom where it was)
+		local tall = if touch then 120 else 324
 		local moved = { left = left, top = top, right = left + HudStack.TRACKER, bottom = top + tall }
 		return { worldBoss = box(panel, boss), questTracker = box(HudStack.TRACKER, tall, moved) }
 	elseif name == "movedBoss" then
@@ -508,13 +510,13 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 	end)
 
 	T.it("UI plan phase 1: one row of menu buttons, the column starts under the minimap or the guide bar", function()
-		-- Hud menu: Theme.Padding.Large 22, one row of 52 px buttons, 8, the minimap frame (266) and its area line
-		-- under it (2 + 22); the guide bar (44) stands 8 under the minimap frame
-		T.expect(HudStack.RIGHT_TOP).toBe(22 + 52 + 8 + 266 + 24 + HudStack.GAP)
+		-- Hud menu: Theme.Padding.Large 22, one row of 52 px buttons, 8, the minimap frame (266; phase 4: its one caption
+		-- inside, the area line under it is gone); the guide bar (44) stands 8 under the minimap frame
+		T.expect(HudStack.RIGHT_TOP).toBe(22 + 52 + 8 + 266 + HudStack.GAP)
 		T.expect(HudStack.RIGHT_TOP_GUIDE).toBe(22 + 52 + 8 + 266 + 8 + 44 + HudStack.GAP)
 		T.expect(HudStack.RIGHT_TOP_GUIDE > HudStack.RIGHT_TOP).toBe(true)
-		-- 80 px higher than the two rows of 14 buttons (460) without a guide, 52 with one
-		T.expect(460 - HudStack.RIGHT_TOP).toBe(80)
+		-- 104 px higher than the two rows of 14 buttons (460) without a guide, 52 with one
+		T.expect(460 - HudStack.RIGHT_TOP).toBe(104)
 		for _, size in PC do
 			local w, h = size[1], size[2]
 			local free = HudStack.layout(false, false, w, h, 0, scenario("tracker", false, w))
@@ -632,6 +634,39 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		-- the travel screen switches itself off when its fade ends (it stayed on, drawn over every window)
 		local world = fs.readFile("src/client/Controllers/WorldController.luau")
 		T.expect(string.find(world, "fade.Completed:Connect", 1, true) ~= nil).toBe(true)
+	end)
+
+	T.it("UI plan phase 4: one spacing grid, a smaller portrait", function()
+		-- Theme's numbers are the grid's (the HUD's margin, the gap between its elements, a HUD button)
+		local theme = fs.readFile("src/client/UI/Theme.luau")
+		local function number(block: string, key: string): number
+			local start = assert(string.find(theme, block, 1, true))
+			return tonumber(string.match(theme, `{key} = (%d+)`, start)) :: number
+		end
+		T.expect(number("Theme.Padding = {", "Large")).toBe(HudStack.MARGIN)
+		T.expect(number("Theme.Padding = {", "Small")).toBe(HudStack.GAP)
+		T.expect(number("Theme.Size = {", "IconButton")).toBe(HudStack.ICON)
+		-- the column and the corner's buttons stand as far from the edge as the minimap above them
+		T.expect(HudStack.MAIL.right).toBe(HudStack.MARGIN)
+		T.expect(HudStack.PVP.right).toBe(HudStack.MARGIN)
+		T.expect(HudStack.column(false, false, 1920, 1080, 0).x).toBe(1920 - HudStack.MARGIN)
+		-- the portrait: about 340 x 110 (it was 400 x 136); the "Auto" button GAP right of it, on its bottom edge; a touch
+		-- screen's column under its effects row
+		T.expect(HudStack.PORTRAIT.w).toBe(340)
+		T.expect(HudStack.PORTRAIT.h).toBe(110)
+		T.expect(HudStack.EXTRAS.x).toBe(HudStack.MARGIN + HudStack.PORTRAIT.w + HudStack.GAP)
+		T.expect(HudStack.EXTRAS.y + HudStack.EXTRAS.h).toBe(HudStack.MARGIN + HudStack.PORTRAIT.h)
+		T.expect(HudStack.TOUCH_TOP).toBe(22 + 110 + 8 + 44 + 8)
+		T.expect(HudStack.PARTY_TOP >= HudStack.TOUCH_TOP).toBe(true)
+		-- the HUD draws them from here (no copy of the old numbers left)
+		local hud = fs.readFile("src/client/UI/Screens/Hud/init.luau")
+		T.expect(string.find(hud, "Size = UDim2.fromOffset(PORTRAIT.w, PORTRAIT.h)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(hud, "400 + 12", 1, true)).toBeNil()
+		local party = fs.readFile("src/client/UI/Screens/PartyFrames.luau")
+		T.expect(string.find(party, "HudStack.PARTY_TOP", 1, true) ~= nil).toBe(true)
+		-- one caption under the minimap
+		local minimap = fs.readFile("src/client/UI/Screens/Hud/Minimap.luau")
+		T.expect(string.find(minimap, '"AreaName"', 1, true)).toBeNil()
 	end)
 
 	T.it("the PvP badge stays on the screen, right-aligned with the toggle", function()

@@ -21,7 +21,8 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type UsedAs<T> = Fusion.UsedAs<T>
 
-export type HeaderTab = { id: string, label: UsedAs<string>, visible: UsedAs<boolean>? }
+-- UI plan phase 4: `badge` lights a small "!" by the tab's name (its window has news).
+export type HeaderTab = { id: string, label: UsedAs<string>, visible: UsedAs<boolean>?, badge: UsedAs<boolean>? }
 
 export type Props = {
 	Title: UsedAs<string>,
@@ -80,6 +81,23 @@ local function headerTabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props, off
 						PaddingLeft = UDim.new(0, Theme.Padding.Medium),
 						PaddingRight = UDim.new(0, Theme.Padding.Medium),
 					}),
+					if tab.badge
+						then scope:New("TextLabel")({
+								Name = "Badge",
+								AnchorPoint = Vector2.new(1, 0),
+								-- in the right padding, over the name's top corner
+								Position = UDim2.new(1, Theme.Padding.Medium - 2, 0, Theme.Padding.Small),
+								Size = UDim2.fromOffset(16, 16),
+								BackgroundColor3 = Theme.Iron.Danger,
+								Text = "!",
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Caption,
+								TextColor3 = Theme.Iron.DangerText,
+								ZIndex = 3,
+								Visible = tab.badge,
+								[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+							}) :: any
+						else {} :: any,
 					scope:New("Frame")({
 						Name = "Line",
 						Visible = current,

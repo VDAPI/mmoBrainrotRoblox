@@ -17,6 +17,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GameMenu = require(script.Parent.Parent.UI.Screens.GameMenu)
 local BackpackPanel = require(script.Parent.Parent.UI.Screens.BackpackPanel)
 local HudMenu = require(ReplicatedStorage.Shared.Logic.HudMenu)
+local HudReveal = require(ReplicatedStorage.Shared.Logic.HudReveal)
 local Mail = require(ReplicatedStorage.Shared.Logic.Mail)
 local MenuAttention = require(script.Parent.Parent.UI.MenuAttention) -- S155b
 local SkillsAttention = require(script.Parent.Parent.UI.SkillsAttention)
@@ -169,7 +170,30 @@ end
 
 type Lit = { id: string, badge: Fusion.UsedAs<boolean>, visible: ((use: Fusion.Use) -> boolean)? }
 
--- The ☰'s "!": a shown tile's own is lit (Logic/HudMenu.attention).
+local function hubOf(hubId: string): UiHubs.Hub
+	return assert(UiHubs.get(hubId), `no hub {hubId}`)
+end
+
+-- UI plan phase 4 (Logic/HudReveal): the hubs' buttons come with the tutorial and the level.
+local tutorialState = State.Value({ "character", "tutorial" })
+local levelState = State.Value({ "character", "level" })
+
+-- A hub's button shows once the tutorial and the level reveal it and while one of its tabs does (the world map and the
+-- journal need the world, S127).
+local function hubShown(use: Fusion.Use, hubId: string): boolean
+	local level = tonumber(use(levelState)) or 1
+	if not HudReveal.hub(hubId, HudReveal.stage(use(tutorialState)), level) then
+		return false
+	end
+	for _, tab in hubOf(hubId).tabs do
+		if WindowManager.TabShown(use, tab) then
+			return true
+		end
+	end
+	return false
+end
+
+-- The ☰'s "!": a shown tile's own is lit (Logic/HudMenu.attention; a tile of a hidden hub counts too).
 local function tilesBadge(s: Scope): Fusion.Computed<boolean>
 	local lit: { Lit } = {}
 	for _, entry in TILES do
@@ -184,11 +208,14 @@ local function tilesBadge(s: Scope): Fusion.Computed<boolean>
 			local visible = t.visible
 			now[t.id] = use(t.badge) == true and (visible == nil or visible(use))
 		end
-		return HudMenu.attention(now)
+		return HudMenu.attention(now, function(hubId: string): boolean
+			return hubShown(use, hubId)
+		end)
 	end)
 end
 
 -- UI plan phase 3 (Data/UiHubs): what lights a hub's "!": its windows' own (the old bar buttons' and the tiles').
+-- UI plan phase 4: the same "!" shows on the hub's tabs in the window's title bar (WindowManager.SetTabBadge).
 local TAB_BADGES: { [string]: (s: Scope) -> Fusion.UsedAs<boolean> } = {
 	inventory = MenuAttention.statPoints, -- S155b: stat points wait
 	skills = SkillsAttention.badge,
@@ -198,10 +225,6 @@ for id, def in TILE_DEFS do
 	if badge then
 		TAB_BADGES[id] = badge
 	end
-end
-
-local function hubOf(hubId: string): UiHubs.Hub
-	return assert(UiHubs.get(hubId), `no hub {hubId}`)
 end
 
 -- A hub's "!": one of its shown tabs has its own.
@@ -225,15 +248,9 @@ local function hubBadge(hubId: string): (s: Scope) -> Fusion.UsedAs<boolean>
 	end
 end
 
--- A hub's button shows while one of its tabs does (the world map and the journal need the world, S127).
 local function hubVisible(hubId: string): (use: Fusion.Use) -> boolean
 	return function(use: Fusion.Use): boolean
-		for _, tab in hubOf(hubId).tabs do
-			if WindowManager.TabShown(use, tab) then
-				return true
-			end
-		end
-		return false
+		return hubShown(use, hubId)
 	end
 end
 
@@ -365,6 +382,10 @@ local function registerWindows()
 		if visible then
 			WindowManager.SetTabRule(id, visible)
 		end
+	end
+	-- UI plan phase 4: the "!" of a hub's tab
+	for tab, badge in TAB_BADGES do
+		WindowManager.SetTabBadge(tab, badge)
 	end
 end
 

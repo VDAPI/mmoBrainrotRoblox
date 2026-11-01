@@ -45,21 +45,32 @@ export type Box = { shown: boolean, w: number, h: number, custom: Rect? }
 -- The order of the stack, top down; "elite" stacks only on a touch screen (PC: over the corner's buttons).
 HudStack.ORDER = table.freeze({ "arena", "worldBoss", "worldEvent", "bloodMoon", "tourney", "elite", "questTracker" })
 
+-- UI plan phase 4 (one spacing grid, plan §2 rule 7): the HUD stands MARGIN from the screen's edges everywhere
+-- (Theme.Padding.Large: the portrait, the menu over the minimap, the column under them and the corner's buttons; the
+-- column and the corner stood 16 from the edge, out of line with the minimap above them) and its elements stand GAP
+-- apart (Theme.Padding.Small); a HUD button is ICON (Theme.Size.IconButton). tests/hudlayout.spec reads Theme for
+-- these.
 HudStack.GAP = 8
-HudStack.MARGIN = 16 -- Theme.Padding.Large
--- PC: the column starts under the menu's one row of buttons, the minimap and the area line under it (UI plan phase 1,
--- owner 2026-10-31: six buttons in one row instead of 14 in two: 22 + 52 + 8 + 266 + 24, then GAP; it was 460), and
--- under the guide bar while one shows (Hud/NavBar, 44 tall 8 under the minimap: 22 + 52 + 8 + 266 + 8 + 44, then GAP).
-HudStack.RIGHT_TOP = 380
-HudStack.RIGHT_TOP_GUIDE = 408
+HudStack.MARGIN = 22
+HudStack.ICON = 52
+-- UI plan phase 4: the portrait (Hud/init) at MARGIN, MARGIN, 340 x 110 (it was 400 x 136), and the row of effects
+-- GAP under it, at most EFFECTS tall.
+HudStack.PORTRAIT = table.freeze({ w = 340, h = 110 })
+HudStack.EFFECTS = 44
+-- PC: the column starts under the menu's one row of buttons and the minimap (UI plan phase 1: one row of six buttons
+-- instead of 14 in two, it was 460; phase 4: the area's line under the minimap joined the map's name inside its frame:
+-- 22 + 52 + 8 + 266, then GAP), and under the guide bar while one shows (Hud/NavBar, 44 tall GAP under the minimap:
+-- 22 + 52 + 8 + 266 + 8 + 44, then GAP).
+HudStack.RIGHT_TOP = HudStack.MARGIN + HudStack.ICON + HudStack.GAP + 266 + HudStack.GAP
+HudStack.RIGHT_TOP_GUIDE = HudStack.MARGIN + HudStack.ICON + HudStack.GAP + 266 + HudStack.GAP + 44 + HudStack.GAP
 -- UI plan phase 2: the row of "something waits" buttons (Hud/WaitingRow: mail, login reward, season pass, Blood Moon
--- results), 44 tall, under the minimap's area line (or under the guide bar), pushes the column down by its height and
--- GAP while it shows.
+-- results), 44 tall, under the minimap (or under the guide bar), pushes the column down by its height and GAP while it
+-- shows.
 HudStack.WAITING = 44
--- A touch screen (not a phone): under the portrait and its effect icons (16 + 136 + 6 + 44), the party frames push
--- it down (16 + 136 + 70, then one row per member).
-HudStack.TOUCH_TOP = 202
-HudStack.PARTY_TOP = 222
+-- A touch screen (not a phone): under the portrait and its effects row (22 + 110 + 8 + 44, then GAP); the party
+-- frames (UI/Screens/PartyFrames) stand at PARTY_TOP and push it down by one row per member.
+HudStack.TOUCH_TOP = HudStack.MARGIN + HudStack.PORTRAIT.h + HudStack.GAP + HudStack.EFFECTS + HudStack.GAP
+HudStack.PARTY_TOP = HudStack.MARGIN + HudStack.PORTRAIT.h + 70
 HudStack.PARTY_ROW = 64
 -- A touch screen: the sprint and mount buttons stand this high over the bottom (Hud/SprintButton: 260 + 64).
 HudStack.TOUCH_ROW = 324
@@ -74,8 +85,8 @@ HudStack.ARENA_PILL = 280
 
 -- The corner's buttons, bottom up: the mail envelope (over the EXP bar), the PvP toggle's countdown / "forced" badge
 -- (right-aligned with the toggle, as wide as its text up to `w`) and the toggle.
-HudStack.MAIL = table.freeze({ right = 16, bottom = 32, w = 52, h = 52 })
-HudStack.PVP = table.freeze({ right = 16, bottom = 120, w = 64, h = 64 })
+HudStack.MAIL = table.freeze({ right = HudStack.MARGIN, bottom = 32, w = 52, h = 52 })
+HudStack.PVP = table.freeze({ right = HudStack.MARGIN, bottom = 120, w = 64, h = 64 })
 HudStack.PVP_BADGE = table.freeze({ w = 170, h = 24, gap = 4 })
 HudStack.ATTACK = table.freeze({ right = 110, bottom = 150, w = 104, h = 104 }) -- touch
 -- Touch: the skill arc round the attack button (centre as offsets from the bottom-right corner, degrees from the
@@ -85,11 +96,16 @@ HudStack.SMALL = table.freeze({ w = 84, h = 44 })
 HudStack.PAGE = table.freeze({ x = -162 - 120 - 76, y = -202 + 40 }) -- left of the arc's first button, clear of it
 HudStack.TARGET = table.freeze({ x = -162, y = -202 - 120 - 56 })
 
--- The "Auto" button right of the portrait (Hud/AutoGroup: x 22 + 400 + 12, 44 px, aligned to the portrait's bottom;
+-- The "Auto" button right of the portrait (Hud/AutoGroup: GAP right of it, 44 px, aligned to the portrait's bottom;
 -- UI plan phase 2: it holds the Cloak of Luring, Auto Hunt and Auto Potions, the login reward and the season pass
 -- moved under the minimap); a phone keeps the three at their own places. The spare column of a touch screen stands
 -- right of it.
-HudStack.EXTRAS = table.freeze({ x = 434, y = 114, w = 44, h = 44 })
+HudStack.EXTRAS = table.freeze({
+	x = HudStack.MARGIN + HudStack.PORTRAIT.w + HudStack.GAP,
+	y = HudStack.MARGIN + HudStack.PORTRAIT.h - 44,
+	w = 44,
+	h = 44,
+})
 
 -- The tracker's height before it moves to a spare column (its header and two lines) and the least it shrinks to
 -- when there is no room for that in any column (its header; the list scrolls in what is left).

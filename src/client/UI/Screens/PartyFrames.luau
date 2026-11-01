@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local PathBadge = require(script.Parent.Parent.Components.PathBadge)
@@ -158,7 +159,8 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 		Position = PhoneLayout.Pick(
 			scope,
 			UDim2.fromOffset(PhoneHud.PLACES.stack.x, PhoneHud.STACK_TOP),
-			UDim2.fromOffset(Theme.Padding.Large, Theme.Padding.Large + 136 + 70)
+			-- UI plan phase 4: where Logic/HudStack's touch column makes room for them, under the portrait's effects
+			UDim2.fromOffset(HudStack.MARGIN, HudStack.PARTY_TOP)
 		),
 		Size = UDim2.fromOffset(WIDTH, 4 * (HEIGHT + 6)),
 		BackgroundTransparency = 1,

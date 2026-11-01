@@ -1,7 +1,8 @@
 --!strict
 -- Round minimap (DESIGN §23, top right), north up: the current map's sketch (paths, water, buildings),
 -- the player arrow (camera heading), nearby monsters (bigger dots for elites), NPCs with their service
--- glyph, portals, dungeon gates and gathering nodes. Map name and zone colour below, zoom + / −.
+-- glyph, portals, dungeon gates and gathering nodes. One caption below (UI plan phase 4: the area or the map), the zone
+-- colour on the ring, zoom + / − (on PC under the pointer).
 -- S22: monster areas filled stronger in the band colour relative to the player (redrawn after a level-up),
 -- level ranges written on them at the closest zoom, the current area's name in its band colour.
 -- S25: a click / tap opens the world map centred on the player; quest marks (! / ?) over NPCs, own map marks,
@@ -34,6 +35,7 @@ local AreaState = require(script.Parent.Parent.Parent.AreaState)
 local AreaAdvice = require(ReplicatedStorage.Shared.Logic.AreaAdvice)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local ArtIcon = require(script.Parent.Parent.Parent.Components.ArtIcon)
+local Device = require(script.Parent.Parent.Parent.Device)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupColors = require(script.Parent.Parent.Parent.GroupColors)
@@ -58,6 +60,7 @@ local State = require(script.Parent.Parent.Parent.State)
 local ScoutRange = require(ReplicatedStorage.Shared.Logic.ScoutRange)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
@@ -844,9 +847,91 @@ local function Minimap(scope: Scope, props: Props): Instance
 		})
 	end
 
+	local mapName = scope:Computed(function(use): string
+		local z = use(zone)
+		local map = Maps.get(use(mapId) or "")
+		if type(z) == "table" and z.nameKey then
+			return Text.get(use, AreaState.zoneNameKey(z, if map then map.nameKey else nil))
+		end
+		return if map then Text.get(use, map.nameKey) else ""
+	end)
+	local areaName = scope:Computed(function(use): string?
+		local area = use(AreaState.Current)
+		if not area then
+			return nil
+		end
+		return Text.get(use, "area.label", { name = Text.get(use, area.nameKey), min = area.lv[1], max = area.lv[2] })
+	end)
+	local caption = scope:New("TextLabel")({
+		Name = "MapName",
+		Visible = scope:Computed(function(use): boolean
+			return not use(labelsCovered)
+		end),
+		AnchorPoint = Vector2.new(1, 1),
+		Position = UDim2.fromScale(1, 1),
+		Size = UDim2.fromOffset(SIZE + 30, 36),
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
+		RichText = true,
+		Text = scope:Computed(function(use): string
+			local area = use(areaName)
+			if area then
+				return AreaProfileText.escape(area)
+					.. AreaProfileText.iconRich((use(AreaState.Current) :: any).profile, " ", "iron")
+			end
+			return AreaProfileText.escape(use(mapName))
+		end),
+		TextScaled = true,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		FontFace = Theme.Fonts.Display,
+		TextColor3 = scope:Computed(function(use): Color3
+			local area = use(AreaState.Current)
+			if not area then
+				return Theme.Iron.Text
+			end
+			return Theme.readable(LevelBand.COLORS[AreaAdvice.bandOf(area, use(level) or 1)], "iron")
+		end),
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			scope:New("UIStroke")({
+				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
+				Thickness = Theme.Stroke.Thin,
+				Color = Theme.Brass.Line,
+			}),
+			scope:New("UIPadding")({
+				PaddingLeft = UDim.new(0, Theme.Padding.Small),
+				PaddingRight = UDim.new(0, Theme.Padding.Small),
+				PaddingTop = UDim.new(0, 6),
+				PaddingBottom = UDim.new(0, 6),
+			}),
+			-- a long area name shrinks a little before it is cut
+			scope:New("UITextSizeConstraint")({
+				MaxTextSize = Theme.TextSize.Body,
+				MinTextSize = Theme.TextSize.Caption,
+			}),
+		},
+	}) :: TextLabel
+	Tooltip.attach(
+		scope,
+		caption,
+		scope:Computed(function(use): string
+			local area = use(areaName)
+			local map = use(mapName)
+			return if area and map ~= "" then `{map} · {area}` else area or map
+		end)
+	)
+	-- UI plan phase 4: + and − show while the pointer is over the minimap (always on a touch screen)
+	local hovered = scope:Value(false)
+
 	local root = scope:New("Frame")({
 		Name = "Minimap",
 		LayoutOrder = 2,
+		[OnEvent("MouseEnter")] = function()
+			hovered:set(true)
+		end,
+		[OnEvent("MouseLeave")] = function()
+			hovered:set(false)
+		end,
 		Size = UDim2.fromOffset(SIZE + 44, SIZE + 46),
 		BackgroundTransparency = 1,
 		[Children] = {
@@ -940,8 +1025,14 @@ local function Minimap(scope: Scope, props: Props): Instance
 			}),
 			scope:New("Frame")({
 				Name = "Zoom",
-				-- W29: no zoom buttons on a phone in landscape (scaled they would be under MinTouch; the map window zooms)
-				Visible = PhoneLayout.Pick(scope, false, true),
+				-- W29: no zoom buttons on a phone in landscape (scaled they would be under MinTouch; the map window zooms);
+				-- UI plan phase 4: on PC only under the pointer
+				Visible = scope:Computed(function(use): boolean
+					if use(PhoneLayout.Compact) then
+						return false
+					end
+					return use(Device.Touch) == true or use(hovered)
+				end),
 				AnchorPoint = Vector2.new(0, 0),
 				Position = UDim2.fromOffset(0, SIZE - 2 * Theme.Size.MinTouch - 6),
 				Size = UDim2.fromOffset(Theme.Size.MinTouch, 2 * Theme.Size.MinTouch + 6),
@@ -952,77 +1043,14 @@ local function Minimap(scope: Scope, props: Props): Instance
 					zoomButton("−", -1, 2),
 				},
 			}),
-			-- Current monster area under the map name (S20), S33: with its profile's icon.
-			scope:New("TextLabel")({
-				Name = "AreaName",
-				RichText = true,
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, 0, 1, 2),
-				Size = UDim2.fromOffset(SIZE + 30, 22),
-				BackgroundTransparency = 1,
-				Visible = scope:Computed(function(use): boolean
-					return use(AreaState.Current) ~= nil and not use(labelsCovered)
-				end),
-				Text = scope:Computed(function(use): string
-					local area = use(AreaState.Current)
-					if not area then
-						return ""
-					end
-					return AreaProfileText.escape(
-						Text.get(
-							use,
-							"area.label",
-							{ name = Text.get(use, area.nameKey), min = area.lv[1], max = area.lv[2] }
-						)
-					) .. AreaProfileText.iconRich(area.profile, " ", "iron")
-				end),
-				TextTruncate = Enum.TextTruncate.AtEnd,
-				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = scope:Computed(function(use): Color3
-					local area = use(AreaState.Current)
-					if not area then
-						return Theme.Iron.Text
-					end
-					return Theme.readable(LevelBand.COLORS[AreaAdvice.bandOf(area, use(level) or 1)], "iron")
-				end),
-				TextStrokeTransparency = 0.2,
-			}),
-			scope:New("TextLabel")({
-				Name = "MapName",
-				Visible = scope:Computed(function(use): boolean
-					return not use(labelsCovered)
-				end),
-				AnchorPoint = Vector2.new(1, 1),
-				Position = UDim2.fromScale(1, 1),
-				Size = UDim2.fromOffset(SIZE + 30, 36),
-				BackgroundColor3 = Theme.Iron.Surface,
-				BackgroundTransparency = Theme.HudAlpha,
-				Text = scope:Computed(function(use): string
-					local z = use(zone)
-					local map = Maps.get(use(mapId) or "")
-					if type(z) == "table" and z.nameKey then
-						return Text.get(use, AreaState.zoneNameKey(z, if map then map.nameKey else nil))
-					end
-					return if map then Text.get(use, map.nameKey) else ""
-				end),
-				TextTruncate = Enum.TextTruncate.AtEnd,
-				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Iron.Text,
-				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-					scope:New("UIStroke")({
-						ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-						Thickness = Theme.Stroke.Thin,
-						Color = Theme.Brass.Line,
-					}),
-				},
-			}),
+			-- UI plan phase 4 (plan §3 row 12): one caption under the disc instead of two lines: the monster area the
+			-- player stands in (S20: its name and levels in its band colour, S33: its profile's icon) or, outside one,
+			-- the map's or the zone's name; the tooltip names both. It sits inside the frame, so nothing hangs under it.
+			caption,
 		},
 	}) :: Frame
-	-- UI plan phase 2 (Studio audit 2026-10-31): the map's and the area's names step out of sight while an open window
-	-- covers the minimap (UI/HudCover; the disc stays, the labels follow it)
+	-- UI plan phase 2 (Studio audit 2026-10-31): the caption steps out of sight while an open window covers the minimap
+	-- (UI/HudCover; the disc stays)
 	local covered = HudCover.covered(scope, root)
 	scope:Observer(covered):onBind(function()
 		labelsCovered:set(Fusion.peek(covered))
