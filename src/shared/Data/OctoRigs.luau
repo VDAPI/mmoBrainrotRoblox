@@ -88,9 +88,39 @@ local RIGS: { [string]: { Rig } } = {
 			abdomen = { "bone_54" },
 		},
 	},
-	-- desertScorpion: no skeleton yet (tools/anim/rigs/desertScorpion.json). A Tripo Octopod or Hexapod rig gets a map
-	-- here: its walking legs in `legs` (front 0, the pincers do the raising), the pincers in `arms` (side -1 / 1), the
-	-- tail from its base to the sting in `tail`; Data/RigidStyles `scorpion` already keys the legs.
+	-- desertScorpion, the Tripo model of 2026-11-01 (weights read in Studio; the old rigid model matches no map): three
+	-- legs a side, the left hind leg doubled by the export (bone_23.. and bone_27..: both skinned, both step), the right
+	-- pincer skinned on two chains (bone_2.. and bone_47..), the mouth parts on Spine_0 stay. Data/RigidStyles `scorpion`
+	-- keys the legs.
+	desertScorpion = {
+		{
+			body = "tripo::Root",
+			legs = {
+				{ name = "L1", bones = { "bone_15", "bone_16", "bone_17", "bone_18" }, group = 0, rank = 1, front = 0 },
+				{ name = "L2", bones = { "bone_19", "bone_20", "bone_21", "bone_22" }, group = 1, rank = 2, front = 0 },
+				{ name = "L3", bones = { "bone_23", "bone_24", "bone_25" }, group = 0, rank = 3, front = 0 },
+				{ name = "L3b", bones = { "bone_27", "bone_28", "bone_29" }, group = 0, rank = 3, front = 0 },
+				{ name = "R1", bones = { "bone_5", "bone_6" }, group = 1, rank = 1, front = 0 },
+				{ name = "R2", bones = { "bone_7", "bone_8", "bone_9" }, group = 0, rank = 2, front = 0 },
+				{ name = "R3", bones = { "bone_10", "bone_11" }, group = 1, rank = 3, front = 0 },
+			},
+			arms = {
+				{ bones = { "bone_12", "bone_13", "bone_14" }, side = -1 },
+				{ bones = { "bone_2", "bone_3", "bone_4" }, side = 1 },
+				{ bones = { "bone_47", "bone_48", "bone_49", "bone_50" }, side = 1 },
+			},
+			tail = {
+				"bone_30",
+				"tripo::Tail_0",
+				"tripo::Tail_1",
+				"bone_33",
+				"bone_34",
+				"bone_35",
+				"bone_36",
+				"bone_37",
+			},
+		},
+	},
 }
 
 -- The first map of `model` whose bones `has` all.

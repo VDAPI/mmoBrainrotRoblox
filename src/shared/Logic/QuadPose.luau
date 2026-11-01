@@ -254,6 +254,13 @@ function QuadPose.skeleton(bones: { [string]: Bone }, rig: QuadRigs.Rig): Skelet
 			foot[3] += seg[3]
 			reach += math.sqrt(seg[1] * seg[1] + seg[2] * seg[2] + seg[3] * seg[3])
 		end
+		-- a model exported mid-stride (the bear of 2026-11-01): where the planted foot stands off its bind place
+		local shift = rig.footShift and rig.footShift[side]
+		if shift then
+			foot[1] += shift[1] * L
+			foot[2] += shift[2] * L
+			foot[3] += shift[3] * L
+		end
 		chains[side] = { top = leg[1].bone, segs = segs, foot = foot, reach = math.max(reach, 1e-3) }
 		tops[leg[1].bone] = side
 	end

@@ -24,6 +24,8 @@ export type Rig = {
 	muzzle: Attachment?, -- the monster root's Muzzle, moved onto `muzzleBone` each frame
 	muzzleBone: Bone?,
 	muzzleAt: Vector3?, -- the shots' point in the bone's own frame
+	maxTurn: number?, -- the map's `maxTurn` (QuadRig.apply)
+	applied: number?,
 }
 
 -- the standing pose a new rig shows before its first frame
@@ -37,10 +39,6 @@ end
 -- The rig of `look` (the cloned model of Assets.Monsters `model`) in `styleId` (Data/QuadStyles), nil without a role map
 -- or its bones.
 function QuadRig.new(look: Model, styleId: string, seed: number, model: string): Rig?
-	local map = QuadRigs.get(model)
-	if not map then
-		return nil
-	end
 	local root = look:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if not root then
 		root = look.PrimaryPart
@@ -52,8 +50,16 @@ function QuadRig.new(look: Model, styleId: string, seed: number, model: string):
 	for _, item in look:GetDescendants() do
 		if item:IsA("Bone") and not byName[item.Name] then
 			byName[item.Name] = item
-			item.Transform = CFrame.identity
 		end
+	end
+	local map = QuadRigs.find(model, function(name: string): boolean
+		return byName[name] ~= nil
+	end)
+	if not map then
+		return nil
+	end
+	for _, bone in byName do
+		bone.Transform = CFrame.identity
 	end
 	local space = (root :: BasePart).CFrame
 	local data: { [string]: QuadPose.Bone } = {}
@@ -76,6 +82,7 @@ function QuadRig.new(look: Model, styleId: string, seed: number, model: string):
 	end
 	local rig: Rig =
 		{ kind = "quad", skel = skel, motion = motion, bones = byName, mod = QuadMotion, root = root, look = look }
+	rig.maxTurn = map.maxTurn
 	-- the mouth: the point is kept without the monster's root too (AnimLab's look, Vfx/MotionFx's breath read it)
 	local spec = map.muzzle
 	local muzzleBone = spec and byName[spec.bone]
@@ -114,6 +121,14 @@ end
 
 -- Writes the Transforms of one frame.
 function QuadRig.apply(rig: Rig, posed: QuadPose.Posed)
+	-- (a map's `maxTurn`: near-straight legs of a model answer a foot's last bit with a jump; each bone eases toward its
+	-- pose at most this many radians a 60th of a second)
+	local now = os.clock()
+	local limit = rig.maxTurn
+	if limit then
+		limit *= math.clamp((now - (rig.applied or now)) * 60, 1, 4)
+		rig.applied = now
+	end
 	for name, entry in posed do
 		local bone = rig.bones[name]
 		if bone then
@@ -122,6 +137,13 @@ function QuadRig.apply(rig: Rig, posed: QuadPose.Posed)
 			local o = entry.offset
 			if o then
 				cf = CFrame.new(o[1], o[2], o[3]) * cf
+			end
+			if limit then
+				local _, turn = (bone.Transform:Inverse() * cf):ToAxisAngle()
+				turn = math.abs(turn)
+				if turn > limit then
+					cf = bone.Transform:Lerp(cf, limit / turn)
+				end
 			end
 			bone.Transform = cf
 		end

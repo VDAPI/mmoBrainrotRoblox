@@ -43,9 +43,10 @@ export type MountDef = {
 export type MountAsset = {
 	model: string,
 	saddle: { number },
-	rig: "animator" | "gait" | "static",
+	rig: "animator" | "gait" | "static" | "quad",
 	walkSpeed: number?,
 	anims: { [string]: string }?,
+	style: string?, -- rig "quad": the Data/QuadStyles walk (bones driven by Logic/QuadMotion, map in Data/QuadRigs)
 }
 
 export type Rules = { noBiomes: { string }, noZones: { string } }
@@ -202,7 +203,11 @@ Mounts.RIDER = table.freeze({
 -- Real models (docs/ASSETS.md "Wierzchowce"), e.g.
 --   mount_horse = { model = "BayHorse", saddle = { 0, 4.4, 0.4 }, rig = "animator", walkSpeed = 26,
 --       anims = { idle = "rbxassetid://...", walk = "rbxassetid://...", run = "rbxassetid://..." } },
-Mounts.assets = table.freeze({}) :: { [string]: MountAsset }
+-- owner 2026-11-01: Tripo models without clips, walked by their bones
+Mounts.assets = table.freeze({
+	mount_horse = { model = "mount_horse", saddle = { 0, 3.7, -0.35 }, rig = "quad", style = "boar" },
+	mount_azgor = { model = "mount_azgor", saddle = { 0, 3.6, 0.55 }, rig = "quad", style = "canine" },
+}) :: { [string]: MountAsset }
 
 -- Upgrade to mount level n (DESIGN-15 §2, S97): character level needed, gold and monster parts. The same for every
 -- mount (a boss mount starts higher, so it skips the first steps). Gold priced against the level income of the S84

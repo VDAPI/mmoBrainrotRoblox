@@ -1265,6 +1265,11 @@ type MountState = {
 	cycle: number,
 	move: number,
 	seed: number,
+	quad: any?, -- rig "quad" (a Tripo mount, 2026-11-01): client/Anim/QuadRig, made once its bones have arrived
+	quadStyle: string?,
+	quadModel: string?,
+	quadRetry: number,
+	lastYaw: number?,
 }
 
 local mounts: { [Model]: MountState } = {}
@@ -1298,7 +1303,12 @@ local function trackMount(instance: Instance)
 	end
 	local rig = instance:GetAttribute("MountRig")
 	local scale = instance:GetAttribute("LookScale")
+	local id = instance:GetAttribute("MountId")
+	local asset = if rig == "quad" and type(id) == "string" then MountData.assets[id] else nil
 	mounts[instance] = {
+		quadStyle = if asset then asset.style else nil,
+		quadModel = if asset then asset.model else nil,
+		quadRetry = 0,
 		model = instance,
 		joints = if rig == "gait" then collectJoints(instance) else {},
 		clips = if rig == "animator" then mountClips(instance) else nil,
@@ -1356,6 +1366,33 @@ local function stepMounts(dt: number)
 		local target = math.clamp(speed / 3, 0, 1)
 		m.move += (target - m.move) * math.min(1, dt * 8)
 		m.cycle = Gait.advance(m.cycle, dt, speed, m.scale * MountData.RIDER.stride)
+		-- rig "quad": the bones walk by Logic/QuadMotion at the rider's speed
+		if m.quadStyle and m.quadModel then
+			if not m.quad and now >= m.quadRetry then
+				m.quadRetry = now + 0.5
+				m.quad = QuadRig.new(model, m.quadStyle, m.seed, m.quadModel)
+			end
+			local quad = m.quad
+			if quad then
+				local look = root.CFrame.LookVector
+				local yaw = math.atan2(-look.X, -look.Z)
+				local last = m.lastYaw or yaw
+				m.lastYaw = yaw
+				local turn = (yaw - last + math.pi) % (2 * math.pi) - math.pi
+				QuadRig.apply(
+					quad,
+					quad.mod.step(quad.motion, {
+						now = now,
+						dt = dt,
+						speed = speed,
+						yawRate = if dt > 0 then turn / dt else 0,
+						combat = false,
+						rootAt = QuadRig.rootAt(quad),
+					})
+				)
+			end
+			continue
+		end
 		local clips = m.clips
 		if clips then
 			stepMountClips(clips, speed)

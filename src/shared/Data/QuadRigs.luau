@@ -60,6 +60,10 @@ export type Rig = {
 	-- (`spread`) to keep the foot put when the body shifts sideways, and a foot partly planted aims between its keyed
 	-- and planted points
 	steady: boolean?,
+	-- per leg: where the planted foot stands off its bind place, leg lengths, model axes (a model exported mid-stride)
+	footShift: { [string]: { number } }?,
+	-- radians a 60th of a second any bone turns at most (client/Anim/QuadRig.apply)
+	maxTurn: number?,
 }
 
 local RIGS: { [string]: Rig } = {
@@ -355,6 +359,147 @@ local RIGS: { [string]: Rig } = {
 local QuadRigs = {}
 
 function QuadRigs.get(model: string): Rig?
+	return RIGS[model]
+end
+
+-- A kind's new model on the old model's id (owner 2026-11-01, the old one kept in ServerStorage until it is approved)
+-- and the mounts: the map of the model whose bones include `marker`. From the Tripo skeletons in Studio; L = the
+-- creature's left.
+local function hoofed(collarL: string, collarR: string): { [string]: { Joint } }
+	local function fore(collar: string, side: string): { Joint }
+		return {
+			{ bone = collar, swing = 0.2 },
+			{ bone = `tripo::0_{side}_Limb_0`, swing = 0.8, fold = -0.3, spread = 1 },
+			{ bone = `tripo::0_{side}_Limb_1`, fold = 1 },
+			{ bone = `tripo::0_{side}_Limb_2`, fold = -1 },
+			{ bone = `tripo::0_{side}_Limb_3`, paw = 1 },
+		}
+	end
+	local function hind(side: string): { Joint }
+		return {
+			{ bone = `tripo::1_{side}_Limb_0`, swing = 1, fold = 0.3, spread = 1 },
+			{ bone = `tripo::1_{side}_Limb_1`, fold = -1 },
+			{ bone = `tripo::1_{side}_Limb_2`, fold = 0.9 },
+			{ bone = `tripo::1_{side}_Limb_3`, fold = -0.2 },
+			{ bone = `tripo::1_{side}_Limb_4`, paw = 1 },
+		}
+	end
+	return { FL = fore(collarL, "Left"), FR = fore(collarR, "Right"), HL = hind("Left"), HR = hind("Right") }
+end
+
+local REMODELS: { [string]: { marker: { string }, rig: Rig } } = {
+	-- the walking bear of 2026-11-01: Head_0 and Spine_0..1 are the back, bone_4..6 the neck and head, the left fore leg
+	-- hangs on Spine_2..3 with the export's "right" names, the right one is the export's "left"; the hind legs on the root
+	brownBear = {
+		marker = { "tripo::Spine_3", "bone_27" },
+		rig = {
+			body = "tripo::Root",
+			footShift = { FL = { 0, -0.22, 0.12 } }, -- the left fore paw is lifted forward in the export
+			maxTurn = math.rad(11),
+			spine = {
+				{ bone = "tripo::Head_0", share = 0.4 },
+				{ bone = "tripo::Spine_0", share = 0.3 },
+				{ bone = "tripo::Spine_1", share = 0.3 },
+			},
+			neck = { { bone = "bone_4", share = 0.6 }, { bone = "bone_5", share = 0.4 } },
+			head = "bone_6",
+			tail = { "bone_27", "bone_28" },
+			legs = {
+				FL = {
+					{ bone = "tripo::Spine_2", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "tripo::Spine_3", fold = 1 },
+					{ bone = "tripo::1_Right_Limb_0", fold = -0.5 },
+					{ bone = "tripo::1_Right_Limb_1", paw = 1, level = true },
+				},
+				FR = {
+					{ bone = "tripo::1_Left_Limb_0", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "tripo::1_Left_Limb_1", fold = 1 },
+					{ bone = "tripo::1_Left_Limb_2", fold = -0.5 },
+					{ bone = "tripo::1_Left_Limb_3", paw = 1, level = true },
+				},
+				HL = {
+					{ bone = "tripo::0_Right_Limb_0", swing = 1, fold = 0.35, spread = 1 },
+					{ bone = "tripo::0_Right_Limb_1", fold = -1 },
+					{ bone = "tripo::0_Right_Limb_2", fold = 0.65, level = true },
+					{ bone = "tripo::0_Right_Limb_3", paw = 1 },
+				},
+				HR = {
+					{ bone = "bone_22", swing = 1, fold = 0.35, spread = 1 },
+					{ bone = "tripo::0_Left_Limb_0", fold = -1 },
+					{ bone = "tripo::0_Left_Limb_1", fold = 0.65, level = true },
+					{ bone = "tripo::0_Left_Limb_2", paw = 1 },
+				},
+			},
+		},
+	},
+	-- the mounts (Data/Mounts.assets rig "quad"): the bay horse, front along its root's -Z
+	mount_horse = {
+		marker = { "tripo::Spine_4" },
+		rig = {
+			body = "tripo::Root",
+			maxTurn = math.rad(11),
+			spine = {
+				{ bone = "tripo::Spine_0", share = 0.2 },
+				{ bone = "tripo::Spine_1", share = 0.3 },
+				{ bone = "tripo::Spine_2", share = 0.3 },
+				{ bone = "tripo::Spine_3", share = 0.2 },
+			},
+			neck = { { bone = "tripo::Head_0", share = 0.5 }, { bone = "tripo::Head_1", share = 0.5 } },
+			head = "tripo::Head_2",
+			tail = { "tripo::Tail_0", "tripo::Tail_1", "tripo::Tail_2", "tripo::Tail_3", "bone_32" },
+			legs = hoofed("tripo::Spine_4", "bone_13"),
+		},
+	},
+	-- the ember lion: Head_0..1 run on from the spine and carry the fore legs, Head_2 is the head; no tail bones; the
+	-- right hind leg stops at the hock (the mesh below follows it)
+	mount_azgor = {
+		marker = { "tripo::Head_2" },
+		rig = {
+			body = "tripo::Root",
+			maxTurn = math.rad(11),
+			spine = { { bone = "tripo::Spine_0", share = 0.5 }, { bone = "tripo::Head_0", share = 0.5 } },
+			neck = {},
+			head = "tripo::Head_2",
+			tail = {},
+			legs = {
+				FL = {
+					{ bone = "bone_5", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "tripo::0_Left_Limb_0", fold = 1 },
+					{ bone = "tripo::0_Left_Limb_1", paw = 1, level = true },
+				},
+				FR = {
+					{ bone = "bone_8", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "tripo::0_Right_Limb_0", fold = 1 },
+					{ bone = "tripo::0_Right_Limb_1", paw = 1, level = true },
+				},
+				HL = {
+					{ bone = "bone_11", swing = 1, fold = 0.35, spread = 1 },
+					{ bone = "tripo::1_Left_Limb_0", fold = -1 },
+					{ bone = "tripo::1_Left_Limb_1", fold = 0.65, level = true },
+					{ bone = "tripo::1_Left_Limb_2", paw = 1 },
+				},
+				HR = {
+					{ bone = "bone_15", swing = 1, fold = 0.35, spread = 1 },
+					{ bone = "tripo::1_Right_Limb_0", fold = -1 },
+					{ bone = "tripo::1_Right_Limb_1", fold = 0.65, level = true, tip = { 0, -0.31, -0.08 } },
+				},
+			},
+		},
+	},
+}
+
+-- The map of `model` for a look with these bones: its new model's when `has` finds the marker, else QuadRigs.get.
+function QuadRigs.find(model: string, has: (string) -> boolean): Rig?
+	local remodel = REMODELS[model]
+	if remodel then
+		local all = true
+		for _, name in remodel.marker do
+			all = all and has(name)
+		end
+		if all then
+			return remodel.rig
+		end
+	end
 	return RIGS[model]
 end
 
