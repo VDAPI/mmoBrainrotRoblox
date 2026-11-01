@@ -14405,3 +14405,13 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Z przeglądu Studio (po potwierdzeniu `3d6f1042`): ekran podróży (nazwa mapy, strefa, porada) stał nad kartami wyboru
   postaci po zmianie postaci. `WorldController` zdejmuje go od razu, gdy faza sesji przestaje być „playing”, a ekran,
   który przyjdzie bez grającej postaci, znika po sekundzie, chyba że wejście postaci zaraz go potwierdzi.
+
+### Plan UI, faza 4: poprawki po przeglądzie Studio (2026-10-31)
+- Tropiciel przy 1108×576 kończył się 3 px za prawą krawędzią zamiast 22 px (w skali) przed nią. Według wzoru stoi
+  `MARGIN` od prawej krawędzi warstwy HUD, więc warstwa sięgała ok. 16 px za widok. `UIController` podaje teraz
+  `Scale.SetHudArea` szerokość warstwy obciętą do widocznej części ekranu (kamera, `GuiInset`, pozycja korzenia), a
+  ramki `Hud` i `HudPanels` mają rozmiar `Scale.HudSize`, więc menu, minimapa i kolumna liczą się od tej samej krawędzi.
+  Test w `hudlayout.spec`: przy 1024–1366 px każdy element kolumny stoi `MARGIN` w środku ekranu.
+- Karta samouczka w kroku „plecak” zasłaniała lewą część minimapy: w rzędzie menu są wtedy tylko Postać i ☰, tuż nad
+  minimapą. Karta przy przycisku menu staje na lewo od całego menu (`HudSlots.Menu`), a `TutorialController` liczy
+  miejsce w `Scale.HudSize`.
