@@ -758,6 +758,28 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 		end
 	)
 
+	T.it("the brute's walk lifts its feet clear of the ground, not a shuffle (Studio rounds 3-4)", function()
+		local L = SKEL.legLength
+		local rest = BipedPose.positions(SKEL, {}, { 0, 0, 0 })
+		local high = { R = 0, L = 0 }
+		joints("brute", "", 0, 3, function(_, input)
+			-- (the wander's pace, 0.4 of a yeti's speed at this size)
+			input.combat, input.look, input.speed, input.gait = false, nil, 3.6, "walk"
+		end, function(t, at)
+			if t > 1 then
+				for side, key in TOE do
+					high[side] = math.max(high[side], at[key][2] - rest[key][2])
+				end
+			end
+		end)
+		if DEBUG then
+			print(string.format("brute walk toe lift R %.3f L %.3f L", high.R / L, high.L / L))
+		end
+		-- (the review measured a quarter of a stud on the yeti, then 0.5-0.7: it asked for 1.2-1.6)
+		T.expect({ high.R > 0.4 * L, high.L > 0.4 * L, high.R < 0.75 * L, high.L < 0.75 * L })
+			.toEqual({ true, true, true, true })
+	end)
+
 	T.it("a planted foot stays put in the world while the root turns under it", function()
 		local L = SKEL.legLength
 		local yaw = 0
