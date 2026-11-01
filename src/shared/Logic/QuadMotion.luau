@@ -107,6 +107,8 @@ export type Instance = {
 	takeOff: number?, -- the drawn heading's offset the feet go to the action's places at as it takes them over
 	keyedBefore: { [string]: { number } }, -- per leg the pose's place last frame (about the root bone: x, z, its x, z)
 	blowLast: number, -- the blow's weight last frame
+	gaitRatio: number, -- the pace (leg lengths a second) the server's gait intent is stepped down by, eased
+	gaitName: string?, -- the gait that intent last gave
 }
 
 local function hash01(n: number, seed: number): number
@@ -186,6 +188,8 @@ function QuadMotion.new(skel: QuadPose.Skeleton, styleId: string, seed: number):
 		takeOff = nil,
 		keyedBefore = {},
 		blowLast = 0,
+		gaitRatio = 0,
+		gaitName = nil,
 		rootX = 0,
 		rootZ = 0,
 		rootYaw = 0,
@@ -380,8 +384,8 @@ end
 -- which the client sees in network steps, so a stance drawn from the velocity slid the feet a stud or more) a foot the
 -- pose holds on the ground is pinned where it came down in the world, whatever the root does; lifted, it eases back
 -- onto its gait's path; held down but left more than STEP_FROM off its place (a hop the gait did not keep up with, a
--- stop), it steps there, a couple at a time. The gait's pace is the root's own travel over PACE_WINDOW s (or the given
--- speed, the larger).
+-- stop), it steps there, a couple at a time. The gait's pace is the root's own travel over PACE_WINDOW s (the given
+-- speed, if larger, until it has that long a track).
 local SPIN_STEP = 1.2 -- radians a cycle of a turn on the spot
 local SPIN_RATE = 1.5 -- cycles a second at most (a faster turn is held by the pins and settled by steps)
 local PACE_WINDOW = 0.2 -- s of the root's track its pace is read over
@@ -440,7 +444,12 @@ local function trackRoot(inst: Instance, input: Input): number
 		return input.speed
 	end
 	local travelled = math.sqrt((last[2] - first[2]) ^ 2 + (last[3] - first[3]) ^ 2) / span
-	return math.max(input.speed, travelled)
+	-- (the given speed, the server's velocity, only while the track is short: under the chase's bursts it reads the
+	-- run's full speed or none, a real spawn's chase 2026-11-01)
+	if span < PACE_WINDOW * 0.75 then
+		return math.max(input.speed, travelled)
+	end
+	return travelled
 end
 
 local function wrapAngle(a: number): number
@@ -567,7 +576,10 @@ local function pinFeet(inst: Instance, controls: Controls, now: number, blow: nu
 	local taking = blow > 0 and (holds or not inst.blowHeld)
 	-- (a blow that gives the legs back before it has them, to a gait that turns it on the spot: the feet are pinned
 	-- where it has brought them)
-	local handoff = taking and not holds and (blow > 0.999 or blow < inst.blowLast - 1e-4)
+	-- (nor does it keep them while it no longer gains on the gait: a blow under a roam it shares the legs with tops out
+	-- short of all of them, and its pins held there dragged behind the running body until it ended; a real spawn's
+	-- chase, 2026-11-01)
+	local handoff = taking and not holds and (blow > 0.999 or blow < inst.blowLast + 1e-4)
 	inst.blowLast = blow
 	-- (as a blow takes the feet over, its places are kept at the drawn heading the body will have by then: the turn
 	-- of a server's snap does not drag them round)
@@ -698,21 +710,30 @@ local function pinFeet(inst: Instance, controls: Controls, now: number, blow: nu
 	end
 end
 
--- The gait the server's intent asks for (weights), a step down when the speed is too slow for it (a slowed chase
--- trots); nil without an intent the style has.
-local function serverGait(style: QuadStyles.Style, gait: string?, ratio: number): { [string]: number }?
+-- The gait the server's intent asks for, a step down when the pace is too slow for it (a slowed chase trots); nil
+-- without an intent the style has. `held`: the gait it gave last, which holds on until the pace is GAIT_HOLD of its
+-- edge past it (a real spawn's chase, 2026-11-01: the server's bursts of the run's speed flipped a dragon between trot
+-- and gallop a few times a second, the two gaits' feet ever half up, one fore paw never down).
+local GAIT_HOLD = 0.15
+local GAIT_EASE = 3 -- the rate the pace the intent is stepped down by follows the pace at
+local function serverGait(style: QuadStyles.Style, gait: string?, ratio: number, held: string?): string?
 	local name = if gait then SERVER_GAIT[gait] else nil
 	if not name or not style.gaits[name] then
 		return nil
 	end
 	local t = style.thresholds
-	if name == "gallop" and ratio < 0.7 * t.gallop then
+	local gallopAt = 0.7 * t.gallop * (if held == "gallop" then 1 - GAIT_HOLD else 1 + GAIT_HOLD)
+	local trotAt = 0.6 * t.trot * (if held == "walk" then 1 + GAIT_HOLD else 1 - GAIT_HOLD)
+	if held == nil then
+		gallopAt, trotAt = 0.7 * t.gallop, 0.6 * t.trot
+	end
+	if name == "gallop" and ratio < gallopAt then
 		name = "trot"
 	end
-	if name == "trot" and ratio < 0.6 * t.trot then
+	if name == "trot" and ratio < trotAt then
 		name = "walk"
 	end
-	return FORCED[name]
+	return if style.gaits[name] then name else nil
 end
 
 -- `forced`: the gait an action runs (blended in fast); `extra`: ground speed of a flight the pose draws itself.
@@ -727,7 +748,14 @@ local function locomotion(inst: Instance, input: Input, forced: string?, extra: 
 	local moving = speed >= stepFrom
 	local ratio = speed / L
 	local force = if forced and style.gaits[forced] then FORCED[forced] else nil
-	local intent = if style.serverGait and moving and not force then serverGait(style, input.gait, ratio) else nil
+	inst.gaitRatio = if input.snap then ratio else approach(inst.gaitRatio, ratio, GAIT_EASE, dt)
+	local intentName = if style.serverGait
+			and moving
+			and not force
+		then serverGait(style, input.gait, inst.gaitRatio, inst.gaitName)
+		else nil
+	inst.gaitName = intentName
+	local intent = if intentName then FORCED[intentName] else nil
 	local targetW = force or intent or gaitWeights(style, if turning then 0.8 else ratio)
 	-- (planted feet step at least half a stride: the cadence below makes their stance keep the ground's pace)
 	local moveTarget = if moving
@@ -1107,7 +1135,9 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 				local leg = string.match(key, "^[FH][LR][ufpolkxyz]$")
 				if leg then
 					blended[key] = (controls[key] or 0) + (v - (controls[key] or 0)) * legW
-					legBlow, legHolds = legW, hold
+					-- (a weight left by rounding, w times a roam a hair under 1, is none: it held the pins off their
+					-- steps through a whole blow while the body ran on; a real spawn's chase, 2026-11-01)
+					legBlow, legHolds = if legW > 1e-3 then legW else 0, hold
 				end
 			end
 			if inst.planted then
