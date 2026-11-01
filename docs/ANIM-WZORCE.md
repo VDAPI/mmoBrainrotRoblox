@@ -344,10 +344,14 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   with it), the joints above it still one by one. What is left fast in a lead-in is the clip's own (the high spin's).
 - **Stance**: `clips.combat` (humanoid1h, humanoid2h: the sword-and-shield idle and walk) eases in with the combat
   weight over the locomotion; the brute walks and idles on the mutant clips all the time, its swinging feet lifted
-  five times as high as the clip lifts them, the ankle at most 0.85 L up (`clips.lift`, `WALK_LIFT_MAX`; 2026-10-31
-  Studio round 3: the yeti's toes rose 0.25 stud, a shuffle for its size; round 4: 0.5-0.7 at twice, the review asked
-  1.2-1.6; round 5: 1.04-1.08 at four times and 0.7 L, now about 1.3 expected on the yeti, 0.8 L at the wander's
-  pace on the test rig). A blow plays on until the
+  seven times as high as the clip lifts them, the lift bending over smoothly toward 1.2 L and eased in over the
+  clip's first 0.09 L off the ground (`clips.lift`, `WALK_LIFT_MAX`, `WALK_LIFT_EASE`; 2026-10-31 Studio round 3: the
+  yeti's toes rose 0.25 stud, a shuffle for its size; round 4: 0.5-0.7 at twice, the review asked 1.2-1.6; round 5:
+  1.04-1.08 at four times and 0.7 L; 2026-11-01 round 6: 1.39/1.43 at five times under a hard cap of 0.85 L, but the
+  cap held one foot flat at the top for a few frames and its thigh snapped 23 deg in a frame coming off it, the other
+  foot barely reaching it, hence the one-sided snap; amplified right down to the ground, the knee straightened six
+  times as fast as the clip's at the heel strike. Now on the test rig at the wander's pace: toes 0.7-0.75 L, both
+  thighs under 12.5 deg a frame at 60 fps, the shins under 14.5). A blow plays on until the
   clip's stance is back (its `follow` + `recover` cover the clip to where it settles).
 - **Planted feet** (`BipedMotion` `plantFeet`, 2026-10-31 Studio review: the toes slid 0.8 stud and the hips travelled
   1.7 studs through `mob bandit slash`): while a non-boss biped stands (under 0.6 studs/s, turning under 1.2 rad/s,
