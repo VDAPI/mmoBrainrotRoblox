@@ -14164,6 +14164,12 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   4 (droga szeroka na 8 st.) wilkowi lodowemu, dzikowi, salamandrze, wywernie i młodemu smokowi (1,5-2,9 st.
   szerokości). Teraz promień liczę z szerokości ciała, a rozmiary to 2/3/4/6. Testy: `pursuit.spec` (każdy potwór do
   3 st. szerokości ma promień 2), `pathqueue.spec`, `chasetest.spec`.
+- Studio na a3ae565e: wszystko PASS (corner z odstępem 2 i samymi `o`, load 11 ok i 6 fail, wszystkie `t`), dzik i wilk
+  lodowy dochodzą do gracza przy stodole. `/chasetest` uruchomiony w mieście szedł dalej i dawał „never caught”: teraz
+  odmawia w strefie bezpiecznej (`admin.chasetest.safe`, z podpowiedzią `/tp meadows`) i na mapie, która nie jest
+  zbudowana. Promień agenta 2 ma każdy potwór do 3 st. szerokości, także wywerna (2,4) i młody smok (2,9); 3 mają
+  niedźwiedzie, golemy, troll, yeti, olbrzym i strażnik kryształów, 4 mamut. Elity liczą promień z własnego, większego
+  ciała (wywerna Elita II 3,6 st. dostaje 3).
 
 ### Wiązanie przedmiotów (właściciel 2026-10-31)
 - Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od
