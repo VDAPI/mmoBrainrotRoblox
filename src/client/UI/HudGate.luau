@@ -8,6 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudSlots = require(script.Parent.HudSlots)
+local Scale = require(script.Parent.Scale)
 local State = require(script.Parent.State)
 
 local HudGate = {}
@@ -31,7 +32,11 @@ function HudGate.Layer(layer: Instance): Frame
 	end
 	local made = scope:New("Frame")({
 		Name = "HudPanels",
-		Size = UDim2.fromScale(1, 1),
+		-- the HUD's own area (UI/Scale.HudSize), the size UI/HudSlots lays the column out in
+		Size = scope:Computed(function(use): UDim2
+			local size: Vector2 = use(Scale.HudSize)
+			return UDim2.fromOffset(size.X, size.Y)
+		end),
 		BackgroundTransparency = 1,
 		Visible = HudGate.Playing,
 		Parent = layer,

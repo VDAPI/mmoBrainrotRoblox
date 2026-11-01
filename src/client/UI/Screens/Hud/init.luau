@@ -45,6 +45,7 @@ local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
+local Scale = require(script.Parent.Parent.Scale)
 local PotionBar = require(script.PotionBar)
 local PvpDot = require(script.Parent.Parent.Components.PvpDot)
 local PvpState = require(script.Parent.Parent.PvpState)
@@ -789,7 +790,12 @@ local function Hud(scope: Scope, props: Props): Instance
 	)
 	return scope:New("Frame")({
 		Name = "Hud",
-		Size = UDim2.fromScale(1, 1),
+		-- the HUD's own area (UI/Scale.HudSize: the layer's part on the screen), so what stands at its right edge stays
+		-- MARGIN inside the screen (Studio check 2026-10-31)
+		Size = scope:Computed(function(use): UDim2
+			local size: Vector2 = use(Scale.HudSize)
+			return UDim2.fromOffset(size.X, size.Y)
+		end),
 		BackgroundTransparency = 1,
 		[Children] = {
 			LowHpVignette(scope), -- S134f: under every other HUD element

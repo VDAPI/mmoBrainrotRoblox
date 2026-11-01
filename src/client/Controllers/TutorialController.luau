@@ -28,6 +28,8 @@ local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudAnchors = require(script.Parent.Parent.UI.HudAnchors)
+local HudSlots = require(script.Parent.Parent.UI.HudSlots)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local GuidePointer = require(script.Parent.GuidePointerController)
 local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -207,14 +209,16 @@ local function plaque(args: { [string]: string }): string?
 	return if #names > 0 then args[names[1]] else nil
 end
 
--- Top left corner of the tile and its arrow for an element at `rect` (nil: the default place).
+-- Top left corner of the tile and its arrow for an element at `rect` (nil: the default place). `menu`: the menu over the
+-- minimap as measured (UI/HudSlots.Menu), which a tile left of one of its buttons keeps clear of.
 local function place(
 	rect: HudAnchors.Rect?,
 	w: number,
 	h: number,
 	bw: number,
 	bh: number,
-	touch: boolean
+	touch: boolean,
+	menu: HudStack.Rect?
 ): (number, number, TutorialHint.Arrow?)
 	local function clampX(x: number): number
 		return math.clamp(x, MARGIN, math.max(MARGIN, w - bw - MARGIN))
@@ -228,7 +232,20 @@ local function place(
 	end
 	local cx, cy = rect.x + rect.w / 2, rect.y + rect.h / 2
 	local function left(extra: number): (number?, number?, TutorialHint.Arrow?)
-		local x = rect.x - GAP - ARROW - bw - extra
+		-- Studio check 2026-10-31 (UI plan phase 4: early in the tutorial the menu's row holds only the Character hub
+		-- and the ☰, right over the minimap): a button of the menu gets its tile left of the whole menu, so the tile
+		-- never covers the minimap
+		local edge = rect.x
+		if
+			menu
+			and rect.x >= menu.left - 1
+			and rect.x + rect.w <= menu.right + 1
+			and rect.y < menu.bottom
+			and rect.y + rect.h > menu.top
+		then
+			edge = math.min(edge, menu.left)
+		end
+		local x = edge - GAP - ARROW - bw - extra
 		if x < MARGIN then
 			return nil, nil, nil
 		end
@@ -419,11 +436,11 @@ local function tick()
 	end
 
 	local factor = Scale.get()
-	local size = root.AbsoluteSize / factor
+	local size = Fusion.peek(Scale.HudSize) -- the HUD's area (the layer's part on the screen)
 	local bw = Fusion.peek(width)
 	local bh = math.max(hint.box.AbsoluteSize.Y / factor, 120)
 	local rect = if finale then nil else HudAnchors.find(root, Tutorial.anchorOf(step, away), touch, factor)
-	local x, y, a = place(rect, size.X, size.Y, bw, bh, touch)
+	local x, y, a = place(rect, size.X, size.Y, bw, bh, touch, Fusion.peek(HudSlots.Menu))
 	local at = UDim2.fromOffset(math.floor(x), math.floor(y))
 	if Fusion.peek(position) ~= at then
 		position:set(at)
