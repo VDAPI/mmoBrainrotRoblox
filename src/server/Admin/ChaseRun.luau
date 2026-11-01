@@ -5,7 +5,8 @@
 -- takes no damage), and the test monster carries a Logic/ChaseTest probe (it cannot be hurt and ignores debuffs, so
 -- neither the target's auto attack nor anything else kills or slows it). Around the nearest building within SEARCH
 -- studs (a grey test block in front of the admin when none stands there):
---   corner: the monster starts across the building from the target, which stands HOLD s, then walks once around it;
+--   corner: the monster starts across the building from the target, which stands HOLD s, then walks once around it
+--           (as far out as leaves room for the monster's path agent: MARGINS);
 --   perch : the target stands on the roof, the monster (at half HP) below: it should evade, heal, go home and ignore
 --           the target standing next to its home for Combat.evadeCalm s;
 --   los   : the monster (a ranged one is the point) across a wall (a thin one, a palisade or a fence, when there is
@@ -28,7 +29,9 @@ local Log = require(Shared.Util.Log)
 local MonsterStats = require(Shared.Logic.MonsterStats)
 local Pursuit = require(Shared.Logic.Pursuit)
 
+local Monsters = require(Shared.Data.Monsters)
 local PathWorker = require(script.Parent.Parent.Entities.PathWorker)
+local RigBuilder = require(script.Parent.Parent.Entities.RigBuilder)
 
 local Context = require(script.Parent.Context)
 
@@ -41,7 +44,13 @@ local PlayerStateService = Context.services.PlayerStateService
 
 local SEARCH = 90 -- studs around the admin searched for a building
 local MAX_SIZE = 60 -- a building's longest side at most (anything longer is a cliff or the map itself)
-local MARGIN = 6 -- the route's distance from the building
+local MARGIN = 6 -- perch: the target's start distance from the building
+-- corner / load: the route's distance from the building's bounds, the widest with room for the monster's path agent
+-- all round (Studio 2026-11-01: 6 studs out from the meadows barn's eaves the route ran along the yard fence and outside
+-- it, and the monsters started on the fence line; "no way" to and from there is by design)
+local MARGINS = { 6, 5, 4, 3, 2 }
+local ROOM_STEP = 2 -- studs between the route's points checked for room
+local PASS_NAME = "ChaseTestPass" -- the PathfindingModifiers that keep the anchored target out of the navmesh
 local WALL_MARGIN = 3 -- los: the target's and the monster's distance from the wall
 local HOLD = 4 -- corner / load: seconds the target stands across the building before it walks
 local PERCH_WAIT = 15 -- perch: seconds to wait for the evade
@@ -480,6 +489,7 @@ local function collect(run: Run): ChaseTest.Result
 		asks = 0,
 		ok = 0,
 		fails = 0,
+		tight = 0,
 		denied = 0,
 		repaths = 0,
 		pressMax = 0,
@@ -520,6 +530,7 @@ local function collect(run: Run): ChaseTest.Result
 		r.asks += probe.pathAsks
 		r.ok += probe.pathOk
 		r.fails += probe.pathFails
+		r.tight += probe.pathTight
 		r.denied += probe.pathDenied
 		r.repaths += probe.repaths
 		r.pressMax = math.max(r.pressMax, subject.press.max)
@@ -566,6 +577,11 @@ local function finish(run: Run, line: string?)
 	if character and root then
 		character:PivotTo(run.home)
 		root.Anchored = false
+		for _, pass in character:GetDescendants() do
+			if pass:IsA("PathfindingModifier") and pass.Name == PASS_NAME then
+				pass:Destroy()
+			end
+		end
 	end
 	if run.player.Parent then
 		ResourceService.SetGod(run.player, run.wasGod)
@@ -587,19 +603,91 @@ local function chaseSpeed(subject: Subject): number
 	return math.clamp(subject.monster.humanoid.WalkSpeed * 0.8, 6, 14)
 end
 
-local function corner(run: Run, found: Found, origin: Vector3, count: number, laps: number)
-	local box = found.box
-	local loop = ChaseTest.loop(box, MARGIN, origin.X, origin.Z)
-	local start = loop[1]
-	local across = ChaseTest.across(box, MARGIN, origin.X, origin.Z)
-	placeTarget(run, start.x, start.z, box.cx, box.cz)
-	-- across the building; a group spreads along the edge
+-- Where `count` monsters start across the building from the target's start (a group spreads along the edge).
+local function starts(box: ChaseTest.Box, margin: number, origin: Vector3, count: number): { ChaseTest.Point }
+	local start = ChaseTest.onRing(box, margin, origin.X, origin.Z)
+	local across = ChaseTest.across(box, margin, origin.X, origin.Z)
 	local tx, tz = start.x - box.cx, start.z - box.cz
 	local side = Vector3.new(-tz, 0, tx)
 	side = if side.Magnitude > 0.1 then side.Unit else Vector3.new(1, 0, 0)
+	local points: { ChaseTest.Point } = {}
 	for i = 1, count do
 		local shift = (i - (count + 1) / 2) * 4
-		if not spawnSubject(run, across.x + side.X * shift, across.z + side.Z * shift) then
+		table.insert(points, { x = across.x + side.X * shift, z = across.z + side.Z * shift })
+	end
+	return points
+end
+
+-- The path agent radius of the monster under test (Logic/Pursuit.agent of its normal body).
+local function agentRadius(monsterId: string): number
+	local def = Monsters.get(monsterId)
+	if not def then
+		return Pursuit.RADII[1]
+	end
+	local body = RigBuilder.body(def.id, "normal", def.size, if def.region > 0 then def.region else nil)
+	local size = body.rootSize
+	return (Pursuit.agent(size.X, size.Y, size.Z, body.hipHeight))
+end
+
+-- Route points (each ROOM_STEP studs along the loop, and the monsters' starts) with a part within the agent's radius
+-- (Entities/PathWorker.tight: off the navmesh, no path to or from there).
+local function tightPoints(run: Run, loop: { ChaseTest.Point }, extra: { ChaseTest.Point }, radius: number): number
+	refreshFilter()
+	local ignore = rayParams.FilterDescendantsInstances
+	local points: { ChaseTest.Point } = table.clone(extra)
+	for i = 1, #loop - 1 do
+		local a, b = loop[i], loop[i + 1]
+		local length = math.sqrt((b.x - a.x) ^ 2 + (b.z - a.z) ^ 2)
+		local steps = math.max(1, math.ceil(length / ROOM_STEP))
+		for k = 0, steps - 1 do
+			local t = k / steps
+			table.insert(points, { x = a.x + (b.x - a.x) * t, z = a.z + (b.z - a.z) * t })
+		end
+	end
+	local tight = 0
+	for _, point in points do
+		local ground = groundNear(run, point.x, point.z)
+		if ground and PathWorker.tight(ground, radius, ignore) then
+			tight += 1
+		end
+	end
+	return tight
+end
+
+-- The widest of MARGINS whose route and starts all have room for the agent; with none, the one with the fewest
+-- tight points (and a note in the result).
+local function routeMargin(run: Run, box: ChaseTest.Box, origin: Vector3, count: number): number
+	local radius = agentRadius(run.monsterId)
+	local best, fewest = MARGINS[1], math.huge
+	for _, margin in MARGINS do
+		local tight = tightPoints(
+			run,
+			ChaseTest.loop(box, margin, origin.X, origin.Z),
+			starts(box, margin, origin, count),
+			radius
+		)
+		if tight == 0 then
+			if margin ~= MARGINS[1] then
+				table.insert(run.notes, `margin {margin}`)
+			end
+			return margin
+		end
+		if tight < fewest then
+			best, fewest = margin, tight
+		end
+	end
+	table.insert(run.notes, `route tight at {fewest} points (margin {best}, agent radius {radius})`)
+	return best
+end
+
+local function corner(run: Run, found: Found, origin: Vector3, count: number, laps: number)
+	local box = found.box
+	local margin = routeMargin(run, box, origin, count)
+	local loop = ChaseTest.loop(box, margin, origin.X, origin.Z)
+	local start = loop[1]
+	placeTarget(run, start.x, start.z, box.cx, box.cz)
+	for _, point in starts(box, margin, origin, count) do
+		if not spawnSubject(run, point.x, point.z) then
 			table.insert(run.notes, "spawn failed")
 			return
 		end
@@ -748,9 +836,19 @@ function ChaseRun.Start(player: Player, monsterId: string, scenario: string, lev
 		home = root.CFrame,
 	}
 	current = run
-	-- the target: immortal and held by the server (the clients' movement code cannot stop or move it)
+	-- the target: immortal and held by the server (the clients' movement code cannot stop or move it). Anchored, its
+	-- body would be still geometry to the navmesh, a hole round the paths' end (Studio 2026-11-01): PassThrough
+	-- modifiers keep it out, as a door is kept out
 	ResourceService.SetGod(player, true)
 	root.Anchored = true
+	for _, part in character:GetDescendants() do
+		if part:IsA("BasePart") then
+			local pass = Instance.new("PathfindingModifier")
+			pass.Name = PASS_NAME
+			pass.PassThrough = true
+			pass.Parent = part
+		end
+	end
 	run.heartbeat = RunService.Heartbeat:Connect(function(dt: number)
 		-- a path call started since the last frame (its engine work, if any, is in this frame's time)
 		local calls = PathWorker.stats.started

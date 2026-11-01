@@ -891,7 +891,8 @@ magicznego; leczenie i wzmocnienia działają tylko na Kapłana i jego drużynę
     Cios wręcz sięga tylko 2,5 st. w górę ponad stopy potwora (wysoki potwór: połowa wzrostu) i 4 st. w dół, więc gracz
     na dachu, skale czy półce 3+ st. wyżej jest poza zasięgiem wilka i ten robi odwrót; skok nie chroni przed ciosem
     (liczy się ziemia pod graczem). Strzały i rzuty liczą zasięg w 3D. Trzy odpowiedzi „brak drogi” z rzędu też dają
-    odwrót.
+    odwrót; nie liczy się odpowiedź, w której potwór albo cel stoi tuż przy ścianie czy płocie (poza siatką ścieżek), bo
+    gracz plecami do ściany nie może odsyłać potworów do domu (Studio 2026-11-01).
   - Tempo (S162m, właściciel 2026-10-25): spacer i patrol idą stępa (0,4 × szybkości), powrót do domu truchtem (0,7 ×,
     teleport do domu dopiero po 20 s), pościg i walka biegiem (1 ×). Potwór walczący wręcz podchodzi na 0,6 swojego
     zasięgu, zanim stanie (cios może zacząć już w zasięgu, zasada trafienia bez zmian). Skok wilka i szarża dzika Elity II

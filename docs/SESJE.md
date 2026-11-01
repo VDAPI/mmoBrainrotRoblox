@@ -14148,6 +14148,22 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   odpowiedź i listę odpowiedzi (`f@0.20+0.00/1650`), a przy `hb max` czas klatki i czy tuż przed nią ruszyła ścieżka.
   „Caught” liczy zasięg tak jak potwór (z wysokością). Koniec testu odstawia admina tam, gdzie stał; blok testowy stoi na
   terenie (start na dachu stodoły postawił go w powietrzu).
+- Studio 2026-11-01 (2f79f7fe): wszystkie scenariusze PASS, bez ostrzeżeń `[PathWorker]` i `[MonsterService]`, ale
+  większość zapytań o ścieżkę przy stodole Łąk kończyła się „brak drogi” (corner 2/2, load 20/22). Wilk ma agenta 2 × 5,
+  czyli domyślnego, więc to nie on. Trasa testu biegła 6 st. od obrysu stodoły (z okapem 1,6 st.), a stodoła stoi 6 st.
+  od płotu podwórza od północy i 7 st. od wschodu, więc trasa szła po linii płotu i za nim. Wilki startowały na płocie,
+  a pas za płotem (3 st. do płotu warzywnika) jest za wąski dla agenta o promieniu 2. Taki koniec ścieżki leży poza
+  navmeshem i drogi do niego nie ma z założenia; do tego kotwiczony cel mógł wycinać dziurę w navmeshu w miejscu
+  końca ścieżki.
+  Poprawki: trasa `corner`/`load` bierze najszerszy z odstępów 6/5/4/3/2 st., przy którym każdy punkt co 2 st. i starty
+  potworów mają miejsce dla agenta (inaczej notka „route tight”); cel testu dostaje `PathfindingModifier` z
+  `PassThrough` (jak drzwi); wynik liczy osobno „brak drogi” z końcem przy części (`t` w liście odpowiedzi,
+  `tight N`). W grze: taka odpowiedź (`PathWorker.tight`, sprawdzana w wątku odpowiedzi, nie w ticku AI) nie liczy się
+  do trzech „brak drogi” z rzędu, bo gracz plecami do ściany dawałby odwrót potworowi, którego sterowanie i tak do
+  niego doprowadzi; zostają reguły bezruchu. Prawdziwy błąd parametrów: promień agenta liczony z długości ciała dawał
+  4 (droga szeroka na 8 st.) wilkowi lodowemu, dzikowi, salamandrze, wywernie i młodemu smokowi (1,5-2,9 st.
+  szerokości). Teraz promień liczę z szerokości ciała, a rozmiary to 2/3/4/6. Testy: `pursuit.spec` (każdy potwór do
+  3 st. szerokości ma promień 2), `pathqueue.spec`, `chasetest.spec`.
 
 ### Wiązanie przedmiotów (właściciel 2026-10-31)
 - Audyt: wiązały się mikstury i kamienie z nagrody 5. poziomu, zapasy Łowczego, areny i wędrownego kupca, wszystko od

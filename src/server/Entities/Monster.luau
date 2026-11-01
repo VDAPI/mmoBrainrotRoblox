@@ -598,7 +598,9 @@ end
 -- S162e: asks for a path to the ground point `goal` (queued: Entities/PathWorker calls PathfindingService outside the AI
 -- tick), at most every Combat.pathGap seconds per monster and within the server's budget (Logic/Pursuit.take); a refused
 -- ask is simply tried again on a later tick. A success replaces the path, "no way" is remembered as pathFailedAt and
--- counted in pathFailStreak.
+-- counted in pathFailStreak, unless an end of the path lay within the agent's radius of a part (PathWorker.tight,
+-- Studio 2026-11-01: a target with its back to a wall or a monster pressed into a fence is off the navmesh; that "no
+-- way" says nothing about the way, so it does not count towards the evade, only the stall rules do).
 local function requestPath(self: Monster, goal: Vector3, now: number)
 	if self.pathPending or now - self.pathAskedAt < Combat.pathGap then
 		return
@@ -619,16 +621,27 @@ local function requestPath(self: Monster, goal: Vector3, now: number)
 	self.pathToken += 1
 	local token = self.pathToken
 	local askedAt = os.clock()
+	local agent = agentOf(self)
+	local from = self.root.Position
+	local feet = Vector3.new(from.X, feetY(self), from.Z)
 	-- S162e (Studio 2026-10-31: a 1.7 s frame at a first path): the AI tick only queues; Entities/PathWorker calls the
 	-- engine in a thread of its own, at most Combat.pathPerFrame calls per server frame
 	PathWorker.request(self, {
-		agent = agentOf(self),
-		from = self.root.Position,
+		agent = agent,
+		from = from,
 		goal = goal,
 		done = function(answer: PathWorker.Answer)
 			local points = answer.points
+			-- (in the worker's thread, not the AI tick) a "no way" with an end against a part counts for nothing
+			local tight = false
+			if not points then
+				refreshProbeFilter()
+				local ignore = probeParams.FilterDescendantsInstances
+				tight = PathWorker.tight(feet, agent.AgentRadius, ignore)
+					or PathWorker.tight(goal, agent.AgentRadius, ignore)
+			end
 			if probe then
-				ChaseTest.noteAnswer(probe, askedAt, answer.waited, answer.seconds, points ~= nil)
+				ChaseTest.noteAnswer(probe, askedAt, answer.waited, answer.seconds, points ~= nil, tight)
 			end
 			if self.pathToken ~= token or self.state == "dead" then
 				return
@@ -644,7 +657,9 @@ local function requestPath(self: Monster, goal: Vector3, now: number)
 				self.path = nil
 				self.pathGoal = nil
 				self.pathFailedAt = os.clock()
-				self.pathFailStreak += 1
+				if not tight then
+					self.pathFailStreak += 1
+				end
 			end
 		end,
 	})
