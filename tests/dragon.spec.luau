@@ -1343,6 +1343,74 @@ T.describe("Dragon: its feet on a real spawn's root", function()
 		end
 	end)
 
+	-- (Studio r7, 2026-11-01: an idle dragon with the fighter behind it; at the aggro the server turned the root in
+	-- single network steps of 50-120 degrees while the alert played, and the first bite cut the alert in one frame: the
+	-- Root bone turned 13.8 degrees in it) the drawn body follows the steps, the bite eases in over the fading alert
+	T.it(
+		"turns to a fighter behind it in the server's network steps, the alert cut by a bite, without a jerk",
+		function()
+			for _, case in { { 60, 10, 0.3, 0 }, { 120, 10, 0.6, 0 }, { 60, 20, 0.6, 0.5 }, { 120, 20, 0.3, 0.5 } } do
+				local step, hz, biteAt, late = math.rad(case[1]), case[2], case[3], case[4]
+				local inst = assert(QuadMotion.new(skel, "dragon", 5))
+				local frames: { { [string]: Vec } } = {}
+				local prev: QuadPose.Posed?, prevYaw = nil, 0
+				local turns: { number } = {}
+				local t, yaw, turned, nextStep = 0, 0, 0, 2
+				local run: any = nil
+				local bitten = false
+				while t < 5 do
+					t += DT
+					local aggro = t >= 2
+					if aggro and not run then
+						run = { name = "alert", start = t, hit = 0.45 }
+					end
+					if aggro and turned < math.pi and t >= nextStep then
+						nextStep += 1 / hz
+						local d = math.min(step, math.pi - turned)
+						turned += d
+						yaw += d
+					end
+					if aggro and not bitten and t >= 2 + biteAt then
+						-- the server faces the fighter once more as the bite starts (a strike-now start: late into it)
+						bitten = true
+						yaw += math.rad(20)
+						run = { name = "bite", start = t - late, hit = 0.55 * 1.35 }
+					end
+					local c, sn = math.cos(yaw), math.sin(yaw)
+					local posed = QuadMotion.step(
+						inst,
+						{
+							now = t,
+							dt = DT,
+							speed = 0,
+							gait = if aggro then "run" else nil,
+							yawRate = 0,
+							combat = aggro,
+							look = if aggro then { -6 * sn / SCALE, 0, 6 * c / SCALE } else nil,
+							action = run,
+							rootAt = { 0, 0, yaw },
+						} :: any
+					)
+					if prev then
+						table.insert(turns, rootTurn(prev, prevYaw, posed, yaw))
+					end
+					prev, prevYaw = posed, yaw
+					table.insert(frames, feetInWorld(posed, 0, 0, yaw))
+				end
+				local worst, back = 0, 0
+				for i, a in turns do
+					worst = math.max(worst, a)
+					if i > 1 and a > 20 and turns[i - 1] > 20 then
+						back += 1
+					end
+				end
+				T.expect(worst <= 7).toBe(true)
+				T.expect(back).toBe(0)
+				T.expect(studioSlide(frames) <= 0.35).toBe(true)
+			end
+		end
+	)
+
 	-- (Studio, 2026-11-01: a lone trot window now and then in a galloping chase) the server halts the root for a few
 	-- tenths of a second (a blow's stop, a goal reached) and runs on: the gallop goes on through the halts
 	T.it("gallops on through a chase's short halts", function()

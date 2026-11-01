@@ -186,6 +186,7 @@ type MonsterState = {
 	yawRate: number,
 	renderSpeed: number?, -- (a quadruped with pinned feet) it is posed as each frame renders, at this speed
 	quadShown: string?, -- (Studio) the gait and action last put on a quadruped's look
+	quadYaw: number?, -- (Studio) the root's heading its pose was last put on the look for
 }
 
 local monsters: { [Model]: MonsterState } = {}
@@ -574,6 +575,7 @@ local function track(model: Instance)
 		yawRate = 0,
 		renderSpeed = nil,
 		quadShown = nil,
+		quadYaw = nil,
 	}
 	local bossDef = if s.bossId then BossMotions.get(s.bossId) else nil
 	s.deathStyle = if bossDef then bossDef.death.style elseif plan then MonsterMotions.deathFor(plan) else nil
@@ -944,6 +946,13 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 				s.quadShown = shown
 				rig.look:SetAttribute("QuadGait", gait)
 				rig.look:SetAttribute("QuadAction", action)
+			end
+			-- (the look root's heading, degrees, this frame's pose was solved for: a read of the bones that finds the
+			-- look at another heading reads a pose drawn for another frame)
+			local yaw = math.deg(rig.motion.rootYaw)
+			if s.quadYaw == nil or math.abs(yaw - s.quadYaw) > 0.05 then
+				s.quadYaw = yaw
+				rig.look:SetAttribute("QuadRootYaw", yaw)
 			end
 		end
 	elseif rig.kind == "rigid" then

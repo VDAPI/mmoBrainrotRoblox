@@ -112,6 +112,13 @@ export type Instance = {
 	gaitSince: number, -- when it gave it
 	gaitStill: number, -- s the root has stood since it last moved (a short halt keeps that gait)
 	drawnYaw: number?, -- the body's heading in the world as last drawn (its root bone's yaw)
+	actionRun: ActionRun?, -- the action (or fidget) the pose had last frame
+	actionSeen: number, -- when the pose first had it
+	actionIsRun: boolean, -- it is the game's, not a fidget
+	actionWLast: number, -- its weight last frame
+	fadeRun: ActionRun?, -- one it had before, fading out since `fadeAt`
+	fadeAt: number,
+	fadeIsRun: boolean,
 }
 
 local function hash01(n: number, seed: number): number
@@ -196,6 +203,13 @@ function QuadMotion.new(skel: QuadPose.Skeleton, styleId: string, seed: number):
 		gaitSince = 0,
 		gaitStill = 0,
 		drawnYaw = nil,
+		actionRun = nil,
+		actionSeen = 0,
+		actionIsRun = false,
+		actionWLast = 0,
+		fadeRun = nil,
+		fadeAt = 0,
+		fadeIsRun = false,
 		rootX = 0,
 		rootZ = 0,
 		rootYaw = 0,
@@ -980,6 +994,127 @@ local function readEffects(inst: Instance, raw: string?)
 	end
 end
 
+local FADE_TIME = 0.2 -- s an action that ends or is replaced while it still keys the body takes to fade out
+
+-- One keyed action over `controls` (`isRun`: the game's, not a fidget), its weight eased in from `seen` (when the
+-- pose first had it) and scaled by `scale`: the blended controls, its weight, the weight it keys the legs with (pinned
+-- feet go to its places) and whether it holds them.
+local function keyAction(
+	inst: Instance,
+	controls: Controls,
+	playing: ActionRun,
+	isRun: boolean,
+	now: number,
+	seen: number,
+	scale: number
+): (Controls, number, number, boolean)
+	local style = inst.style
+	local L = inst.skel.L
+	local actionW, legBlow, legHolds = 0, 0, false
+	local action = style.actions[playing.name]
+	local t = now - playing.start
+	local length = MotionTimeline.length(action, playing.hit)
+	local hold = action.hold or (isRun and playing.hold == true)
+	if t >= 0 and (t <= length or hold) then
+		local keyed = actionControls(style, playing, math.min(t, length)) :: Controls
+		-- the gather trembles more and more toward the strike
+		if action.tremble and action.tremble > 0 then
+			local p = MotionTimeline.gather(action, playing.hit, t)
+			-- (only the gather: it settles over the first 0.08 s of the strike instead of shaking on through the
+			-- blow and the recovery, which shook a planted heavy body's legs; studio review 2026-10-31)
+			local gatherEnd = playing.hit - math.min(action.strike, playing.hit * 0.7)
+			local amp = action.tremble * p * p * math.clamp(1 - (t - gatherEnd) / 0.08, 0, 1)
+			keyed = table.clone(keyed)
+			keyed.bpitch = (keyed.bpitch or 0) + amp * math.sin(now * 2 * math.pi * 18)
+			keyed.broll = (keyed.broll or 0) + amp * 0.7 * math.sin(now * 2 * math.pi * 15 + 1.3)
+		end
+		local travel = keyed.travel
+		if travel and playing.reach and action.travel then
+			-- the flight ends where the server's teleport puts the root: in the ability's circle
+			-- (Entities/Monster.stepCast; studio review 2026-10-31: a landing a body length short of it popped the
+			-- body forward by that much at the teleport, the planted hind feet skidding 3.5 studs)
+			local rx, rz = playing.reach[1], playing.reach[3]
+			keyed = table.clone(keyed)
+			keyed.bx = (keyed.bx or 0) + rx * travel / L
+			keyed.bz = (keyed.bz or 0) + rz * travel / L
+			-- planted feet land with the body
+			for _, keys in LEG_KEYS do
+				if keyed[keys.k] then
+					keyed[keys.x] = (keyed[keys.x] or 0) + rx * travel / L
+					keyed[keys.z] = (keyed[keys.z] or 0) + rz * travel / L
+				end
+			end
+		end
+		local arc = keyed.arc
+		if arc and action.travel then
+			-- the flight's height on the server's Dash arc: a quarter of its length, within 1-3 leg lengths (a hop
+			-- in place without a flight)
+			local flight = 0
+			if playing.reach then
+				local rx, rz = playing.reach[1], playing.reach[3]
+				flight = math.sqrt(rx * rx + rz * rz) / L
+			end
+			local height = if flight > 0 then math.clamp(0.25 * flight, 1, 3) else 0.3
+			keyed = table.clone(keyed)
+			keyed.by = (keyed.by or 0) + arc * height
+			-- the feet the action holds on targets ride the height over a leg length with the body, so a long
+			-- flight's legs keep their keyed tuck and reach instead of hanging straight under it (studio review
+			-- 2026-10-31: the hind legs snapped out of and back into reach at the take-off and the landing)
+			local over = height - 1
+			if over > 0 then
+				for _, keys in LEG_KEYS do
+					if keyed[keys.k] then
+						keyed[keys.y] = (keyed[keys.y] or 0) + arc * over
+					end
+				end
+			end
+		end
+		-- a heavy body (planted feet) takes a little longer to leave its gait (eased in from when it was first seen: an
+		-- action started late, a strike-now blow, does not come in at once)
+		local w = math.min(1, math.min(t, now - seen) / (if inst.planted then 0.2 else 0.08))
+		if not hold then
+			w = math.min(w, math.max(0, (length - t) / 0.18))
+		end
+		w = MotionTimeline.ease("inout", w) * scale
+		actionW = w
+		-- an action keys the whole body; moving, the legs keep the gait (unless it keys them fully: then while the
+		-- root really runs, a style with pinned feet, but for a pose it holds, a death)
+		local legW = if action.full then w * (1 - (if hold then 0 else inst.roam)) else w * (1 - inst.move)
+		local blended = lerpControls(controls, keyed, w)
+		for key, v in keyed do
+			local leg = string.match(key, "^[FH][LR][ufpolkxyz]$")
+			if leg then
+				blended[key] = (controls[key] or 0) + (v - (controls[key] or 0)) * legW
+				-- (a weight left by rounding, w times a roam a hair under 1, is none: it held the pins off their
+				-- steps through a whole blow while the body ran on; a real spawn's chase, 2026-11-01)
+				legBlow, legHolds = if legW > 1e-3 then legW else 0, hold
+			end
+		end
+		if inst.planted then
+			-- the gait's legs and planted feet leave with the legs' weight, not the whole action's (a charge
+			-- gallops under its keyed head and body)
+			for key, v in controls do
+				if keyed[key] == nil and string.match(key, "^[FH][LR][ufpolkxyz]$") then
+					blended[key] = v * (1 - legW)
+				end
+			end
+		end
+		if action.gait then
+			-- the gait the action runs keeps its body motion (bob, pitch, flex) under the keyed pose
+			for _, key in GAIT_BODY do
+				local v = controls[key]
+				if v then
+					blended[key] = (blended[key] or 0) + v * w * inst.move
+				end
+			end
+		end
+		controls = blended
+		controls.travel = nil :: any
+		controls.arc = nil :: any
+	end
+	return controls, actionW, legBlow, legHolds
+end
+
 function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 	local style = inst.style
 	local skel = inst.skel
@@ -1094,106 +1229,37 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 	local legBlow = 0 -- how much it keys the legs (pinned feet go to its places)
 	local legHolds = false
 	local playing = if run and style.actions[run.name] then run else fidget
+	-- (Studio, 2026-11-01: the first bite cut the alert in one frame, the Root bone turned 13.8 degrees) an action that
+	-- ends or is replaced while it still keys the body fades out over FADE_TIME s on its own timeline
+	if playing ~= inst.actionRun then
+		local before = inst.actionRun
+		if before and inst.actionWLast > 0.01 and style.actions[before.name] then
+			inst.fadeRun, inst.fadeAt, inst.fadeIsRun = before, now, inst.actionIsRun
+		end
+		inst.actionRun, inst.actionSeen, inst.actionIsRun = playing, now, playing ~= nil and playing == run
+	end
+	if input.snap then
+		-- (a pose set at once: the action as it stands)
+		inst.actionSeen, inst.fadeRun = -math.huge, nil
+	end
+	local fadeRun = inst.fadeRun
+	if fadeRun then
+		local k = (now - inst.fadeAt) / FADE_TIME
+		if k >= 1 or k < 0 then
+			inst.fadeRun = nil
+		else
+			controls, actionW, legBlow, legHolds =
+				keyAction(inst, controls, fadeRun, inst.fadeIsRun, now, -math.huge, 1 - smooth(k))
+		end
+	end
+	inst.actionWLast = 0
 	if playing then
-		local action = style.actions[playing.name]
-		local t = now - playing.start
-		local length = MotionTimeline.length(action, playing.hit)
-		local hold = action.hold or (run ~= nil and playing == run and run.hold == true)
-		if t >= 0 and (t <= length or hold) then
-			local keyed = actionControls(style, playing, math.min(t, length)) :: Controls
-			-- the gather trembles more and more toward the strike
-			if action.tremble and action.tremble > 0 then
-				local p = MotionTimeline.gather(action, playing.hit, t)
-				-- (only the gather: it settles over the first 0.08 s of the strike instead of shaking on through the
-				-- blow and the recovery, which shook a planted heavy body's legs; studio review 2026-10-31)
-				local gatherEnd = playing.hit - math.min(action.strike, playing.hit * 0.7)
-				local amp = action.tremble * p * p * math.clamp(1 - (t - gatherEnd) / 0.08, 0, 1)
-				keyed = table.clone(keyed)
-				keyed.bpitch = (keyed.bpitch or 0) + amp * math.sin(now * 2 * math.pi * 18)
-				keyed.broll = (keyed.broll or 0) + amp * 0.7 * math.sin(now * 2 * math.pi * 15 + 1.3)
-			end
-			local travel = keyed.travel
-			if travel and playing.reach and action.travel then
-				-- the flight ends where the server's teleport puts the root: in the ability's circle
-				-- (Entities/Monster.stepCast; studio review 2026-10-31: a landing a body length short of it popped the
-				-- body forward by that much at the teleport, the planted hind feet skidding 3.5 studs)
-				local rx, rz = playing.reach[1], playing.reach[3]
-				keyed = table.clone(keyed)
-				keyed.bx = (keyed.bx or 0) + rx * travel / L
-				keyed.bz = (keyed.bz or 0) + rz * travel / L
-				-- planted feet land with the body
-				for _, keys in LEG_KEYS do
-					if keyed[keys.k] then
-						keyed[keys.x] = (keyed[keys.x] or 0) + rx * travel / L
-						keyed[keys.z] = (keyed[keys.z] or 0) + rz * travel / L
-					end
-				end
-			end
-			local arc = keyed.arc
-			if arc and action.travel then
-				-- the flight's height on the server's Dash arc: a quarter of its length, within 1-3 leg lengths (a hop
-				-- in place without a flight)
-				local flight = 0
-				if playing.reach then
-					local rx, rz = playing.reach[1], playing.reach[3]
-					flight = math.sqrt(rx * rx + rz * rz) / L
-				end
-				local height = if flight > 0 then math.clamp(0.25 * flight, 1, 3) else 0.3
-				keyed = table.clone(keyed)
-				keyed.by = (keyed.by or 0) + arc * height
-				-- the feet the action holds on targets ride the height over a leg length with the body, so a long
-				-- flight's legs keep their keyed tuck and reach instead of hanging straight under it (studio review
-				-- 2026-10-31: the hind legs snapped out of and back into reach at the take-off and the landing)
-				local over = height - 1
-				if over > 0 then
-					for _, keys in LEG_KEYS do
-						if keyed[keys.k] then
-							keyed[keys.y] = (keyed[keys.y] or 0) + arc * over
-						end
-					end
-				end
-			end
-			-- a heavy body (planted feet) takes a little longer to leave its gait
-			local w = math.min(1, t / (if inst.planted then 0.2 else 0.08))
-			if not hold then
-				w = math.min(w, math.max(0, (length - t) / 0.18))
-			end
-			w = MotionTimeline.ease("inout", w)
-			actionW = w
-			-- an action keys the whole body; moving, the legs keep the gait (unless it keys them fully: then while the
-			-- root really runs, a style with pinned feet, but for a pose it holds, a death)
-			local legW = if action.full then w * (1 - (if hold then 0 else inst.roam)) else w * (1 - inst.move)
-			local blended = lerpControls(controls, keyed, w)
-			for key, v in keyed do
-				local leg = string.match(key, "^[FH][LR][ufpolkxyz]$")
-				if leg then
-					blended[key] = (controls[key] or 0) + (v - (controls[key] or 0)) * legW
-					-- (a weight left by rounding, w times a roam a hair under 1, is none: it held the pins off their
-					-- steps through a whole blow while the body ran on; a real spawn's chase, 2026-11-01)
-					legBlow, legHolds = if legW > 1e-3 then legW else 0, hold
-				end
-			end
-			if inst.planted then
-				-- the gait's legs and planted feet leave with the legs' weight, not the whole action's (a charge
-				-- gallops under its keyed head and body)
-				for key, v in controls do
-					if keyed[key] == nil and string.match(key, "^[FH][LR][ufpolkxyz]$") then
-						blended[key] = v * (1 - legW)
-					end
-				end
-			end
-			if action.gait then
-				-- the gait the action runs keeps its body motion (bob, pitch, flex) under the keyed pose
-				for _, key in GAIT_BODY do
-					local v = controls[key]
-					if v then
-						blended[key] = (blended[key] or 0) + v * w * inst.move
-					end
-				end
-			end
-			controls = blended
-			controls.travel = nil :: any
-			controls.arc = nil :: any
+		local keyed, w, legs, holds = keyAction(inst, controls, playing, playing == run, now, inst.actionSeen, 1)
+		controls = keyed
+		inst.actionWLast = w
+		actionW = math.max(actionW, w)
+		if legs > 0 then
+			legBlow, legHolds = math.max(legBlow, legs), holds
 		end
 	end
 	-- 4. reactions: the flinch
