@@ -43,6 +43,7 @@
 -- panel (S68).
 
 local Binding = require("./Binding")
+local Maps = require("../Data/Maps")
 local Blessings = require("../Data/Blessings")
 local Bonuses = require("../Data/Bonuses")
 local Classes = require("../Data/Classes")
@@ -1124,6 +1125,17 @@ local function buildFull(item: ItemInstance, def: ItemDef?, c: Ctx, lang: string
 
 	-- Binding (owner 2026-10-31, Logic/Binding): one short line, "bound" or "binds when equipped"; nothing for what
 	-- trades freely (potions, materials, backpacks). Bound stacks too (S122: the Elixir of Wholeness).
+	-- (owner 2026-11-01) an everlasting stone: the place it is set to, the rest left
+	if item.at then
+		local map = Maps.get(item.at)
+		if map then
+			b.add("stoneAt", Locale.T("tooltip.stoneAt", { map = Locale.T(map.nameKey, nil, lang) }, lang), "muted")
+		end
+	end
+	if item.cd and item.cd > os.time() then
+		local minutes = math.ceil((item.cd - os.time()) / 60)
+		b.add("stoneRest", Locale.T("tooltip.stoneRest", { minutes = minutes }, lang), "bad")
+	end
 	local bindKey = Binding.tooltipKey(item, d)
 	if bindKey then
 		b.add("bind", Locale.T(bindKey, nil, lang), if bindKey == "tooltip.bound" then "bad" else "muted")

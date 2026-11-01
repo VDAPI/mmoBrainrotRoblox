@@ -170,8 +170,15 @@ function ItemController.Use(index: number)
 	end
 	local def = item and Items.get(item.id)
 	local use = def and def.use
-	if use and use.kind == "teleport" and (use.target == "map" or use.target == "dungeon") then
-		GatherController.OpenStonePicker(index, use.target)
+	-- (owner 2026-11-01: an Everlasting Map Stone already set goes straight to its place, through UseItem)
+	local keep = use ~= nil and use.keep == true
+	if
+		use
+		and use.kind == "teleport"
+		and (use.target == "map" or use.target == "dungeon")
+		and not (keep and item and item.at)
+	then
+		GatherController.OpenStonePicker(index, use.target, keep and use.target == "map")
 		return
 	end
 	local blessing = State.Get({ "character", "blessing" })

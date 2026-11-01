@@ -42,6 +42,7 @@ local bobber: BasePart? = nil
 
 local stoneIndex = scope:Value(nil :: number?)
 local stoneKind = scope:Value("map")
+local stoneSets = scope:Value(false)
 
 local function toastError(err: string?)
 	Sounds.play("error")
@@ -269,9 +270,10 @@ local function onCancel()
 	Net.Send("CancelFishing")
 end
 
-function GatherController.OpenStonePicker(index: number, kind: string)
+function GatherController.OpenStonePicker(index: number, kind: string, sets: boolean?)
 	stoneIndex:set(index)
 	stoneKind:set(kind)
+	stoneSets:set(sets == true)
 	WindowManager.Open("stonepicker")
 end
 
@@ -297,6 +299,10 @@ function GatherController.Init(registry)
 			return StonePicker(s, {
 				Index = stoneIndex,
 				Kind = stoneKind,
+				Sets = stoneSets,
+				ShowModal = function(spec: any)
+					WindowManager.ShowModal(spec)
+				end,
 				Close = function()
 					WindowManager.Close("stonepicker")
 				end,

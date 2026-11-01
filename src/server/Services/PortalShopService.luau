@@ -54,7 +54,8 @@ local function buy(player: Player, itemId: string, mode: string, n: number): (bo
 	Binding.apply(item, "premium") -- bought for Dragon Shards (Data/Binding)
 	-- Buying forever with a full backpack still counts: the copy waits at the Portal Master (a free claim later).
 	local fits = InventoryService.CanFit(player, { item })
-	if mode ~= "perm" and not fits then
+	-- (another copy of a stone sold many times waits nowhere: the claim gives only the first one back)
+	if not fits and (mode ~= "perm" or PortalShop.owned(data :: any, itemId)) then
 		return false, "inventory.full"
 	end
 	-- Pay, count and give — no yields in between.

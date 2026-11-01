@@ -49,7 +49,7 @@ function PortalShop.canBuy(
 			return false, "error.badRequest"
 		end
 	elseif mode == "perm" then
-		if PortalShop.owned(account, entry.itemId) then
+		if PortalShop.owned(account, entry.itemId) and not entry.many then
 			return false, "portalshop.error.owned"
 		end
 	elseif mode == "claim" then

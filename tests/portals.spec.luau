@@ -701,7 +701,7 @@ describe("Portals: the boss door and the labels (W31)", function()
 		expect(g.lintel.w / 2 <= g.hornX + g.horn / 2).toBe(true)
 		expect(g.lintel.w / 2 >= inner + 1).toBe(true)
 		local prefabs = read("src/server/World/Prefabs.luau")
-		for _, needle in { "Portals.GATE.lintel", "Portals.GATE.hornX", '"Rune"' } do
+		for _, needle in { "Portals.GATE.lintel", "Portals.GATE.hornX", '"HornRune"' } do
 			if not string.find(prefabs, needle, 1, true) then
 				error(`Prefabs.luau: missing {needle}`)
 			end

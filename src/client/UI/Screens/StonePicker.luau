@@ -22,6 +22,9 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	Index: Fusion.UsedAs<number?>,
 	Kind: Fusion.UsedAs<string>, -- "map" | "dungeon"
+	-- owner 2026-11-01: the Everlasting Map Stone: the choice sets it for good, asked first
+	Sets: Fusion.UsedAs<boolean>?,
+	ShowModal: ((any) -> ())?,
 	Close: () -> (),
 	-- S22: region maps hand over to the area picker; returns true when it took over.
 	PickArea: ((mapId: string, index: number) -> boolean)?,
@@ -71,6 +74,22 @@ local function StonePicker(scope: Scope, props: Props): Fusion.Child
 					OnClick = function()
 						local index = Fusion.peek(props.Index)
 						if not index then
+							return
+						end
+						if props.Sets and Fusion.peek(props.Sets) and props.ShowModal then
+							props.ShowModal({
+								Title = Text.now("teleport.setTitle"),
+								Message = Text.now("teleport.setConfirm", { map = choice.label }),
+								ConfirmText = Text.now("teleport.setYes"),
+								CancelText = Text.now("common.cancel"),
+								OnConfirm = function(): (boolean, string?)
+									local ok, err = Net.Invoke("UseMapStone", index, choice.id)
+									if ok then
+										props.Close()
+									end
+									return ok, if ok then nil else Text.now(err or "error.internal")
+								end,
+							})
 							return
 						end
 						if Fusion.peek(props.Kind) == "map" and props.PickArea and props.PickArea(choice.id, index) then
