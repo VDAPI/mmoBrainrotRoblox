@@ -3,7 +3,7 @@
 -- mount, granting a mount and where the rider sits on the procedural horse. MountService (server), StatService
 -- (walk speed), the HUD and tests/mounts.spec use it. S97: upgrades at the stablemaster (upgradeCost, canUpgrade),
 -- the personal boss roll (rollBossDrop), what the mounts window lists (isObtainable) and the look with a skin
--- (lookWith).
+-- (lookWith). 2026-11-01: the tint a skin lays over a textured real model (coatTint).
 
 local Config = require("../Config")
 local Cosmetics = require("../Data/Cosmetics")
@@ -181,9 +181,9 @@ function Mounts.seat(rig: SeatRig, rootHalf: number): Seat
 end
 
 -- The same for a model whose saddle `s` is given from a point `h0` studs above the ground (a real model: its pivot
--- on the ground, h0 = 0).
-function Mounts.seatAt(h0: number, s: { number }, rootHalf: number): Seat
-	local hr = h0 + s[2] + MountData.RIDER.seatLift
+-- on the ground, h0 = 0); `seatLift`: a mount's own (Logic/RiderPose.rider), default RIDER's.
+function Mounts.seatAt(h0: number, s: { number }, rootHalf: number, seatLift: number?): Seat
+	local hr = h0 + s[2] + (seatLift or MountData.RIDER.seatLift)
 	return { hipHeight = hr - rootHalf, offset = { -s[1], h0 - hr, -s[3] } }
 end
 
@@ -322,6 +322,46 @@ function Mounts.lookWith(look: any, skin: Cosmetics.Def?): any
 		out.glow = over.glow
 	end
 	return out
+end
+
+-- "#RRGGBB" -> { r, g, b } in 0..255 (nil for anything else).
+local function channels(hex: string?): { number }?
+	if type(hex) ~= "string" then
+		return nil
+	end
+	local r, g, b = string.match(hex, "^#?(%x%x)(%x%x)(%x%x)$")
+	if not r then
+		return nil
+	end
+	return { tonumber(r, 16) :: number, tonumber(g, 16) :: number, tonumber(b, 16) :: number }
+end
+
+-- Tints below this on every channel leave the coat as it is (a skin as light as the coat or lighter).
+Mounts.TINT_FLOOR = 0.97
+
+-- 2026-11-01 (real mount models): the colour a mount skin multiplies a textured real model by (Util/LookBuild.recolor,
+-- the tint of Data/MonsterAssetVariants). `coat` is the base colour of the mount's own look (Data/Mounts look.colors
+-- .base, what its texture shows); each channel is min(1, skin / coat), so the coat darkens toward the skin's base
+-- colour and never past it. A multiply cannot lighten: a skin lighter than the coat (or one without a base colour, a
+-- cosmetic of another kind, no skin) gives nil and the texture stays as it is.
+function Mounts.coatTint(coat: string?, skin: Cosmetics.Def?): string?
+	local over = if skin and skin.kind == "mountskin" then skin.skin else nil
+	local want = channels(over and over.colors and over.colors.base)
+	local have = channels(coat)
+	if not want or not have then
+		return nil
+	end
+	local tint = {}
+	local darker = false
+	for i = 1, 3 do
+		local k = if have[i] <= 0 then 1 else math.min(1, want[i] / have[i])
+		darker = darker or k < Mounts.TINT_FLOOR
+		tint[i] = math.floor(k * 255 + 0.5)
+	end
+	if not darker then
+		return nil
+	end
+	return string.format("#%02X%02X%02X", tint[1], tint[2], tint[3])
 end
 
 return Mounts

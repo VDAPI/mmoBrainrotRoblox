@@ -409,12 +409,41 @@ Prawdziwy model zastępuje wygląd z generatora (plan `horse`, `docs/MODELE.md` 
    `mount_horse = { model = "<model>", saddle = { x, y, z }, rig = "animator", walkSpeed = 26, anims = { idle = "rbxassetid://…", walk = "rbxassetid://…", run = "rbxassetid://…" } }`.
    `saddle` = miejsce siodła od pivota (st.; jeździec siada `Data/Mounts.RIDER.seatLift` wyżej), `rig`: `animator`
    (klipy z `anims`, wybór jak u potworów: `run` od 20 st./s, prędkość klipu = prędkość / `walkSpeed`), `gait` (stawy
-   `Motor6D` `Gait_*` z atrybutami jak w generatorze) albo `static` (stoi; części spawane do `PrimaryPart`).
+   `Motor6D` `Gait_*` z atrybutami jak w generatorze), `quad` (model z Tripo z rigiem Auto Rig Quadruped; kości prowadzi
+   szablon czworonoga, pkt 6) albo `static` (stoi; części spawane do `PrimaryPart`).
 4. Gra usuwa z kopii skrypty, wyłącza kolizje, dotyk, zapytania i masę. Bez pliku albo bez wpisu zostaje wygląd
    proceduralny (jedno ostrzeżenie w Output, gdy wpis jest, a pliku brak).
-5. Skin wierzchowca (S97, `Data/Cosmetics` rodzaj `mountskin`) na prawdziwym modelu zmienia tylko kolor części nazwanych
-   jak role kolorów: `Base` (sierść), `Accent` (grzywa i ogon), `Detail` (siodło), `Cloth` (czaprak), `Trim` (okucia).
+5. Skin wierzchowca (S97, `Data/Cosmetics` rodzaj `mountskin`) na prawdziwym modelu daje kolor części nazwanych jak role
+   kolorów: `Base` (sierść), `Accent` (grzywa i ogon), `Detail` (siodło), `Cloth` (czaprak), `Trim` (okucia).
    Ten sam hak działa dla wierzchowców bossów (`mount_grimrok`, `mount_morvane`, `mount_azgor`, `mount_vaelgrath`).
+   Od 2026-11-01 model z teksturą (Tripo) najpierw ciemnieje w stronę koloru `base` skina, tak jak warianty potworów
+   z `Data/MonsterAssetVariants` (`LookBuild.recolor`: `SurfaceAppearance.Color` mnoży teksturę). Mnożnik na kanał to
+   `min(1, skin / sierść)`, gdzie sierść to `look.colors.base` wierzchowca (`Logic/Mounts.coatTint`), więc wpis
+   `look.colors.base` ma odpowiadać średniemu kolorowi sierści na teksturze. Mnożenie tylko przyciemnia: skin jaśniejszy
+   od sierści albo bez `base` zostawia teksturę bez zmian. Na gniadym koniu `#6B4A2B` `mountskin_raven` przyciemnia
+   sierść do koloru skina, `shade` gasi rudość, `dragonslayer` i `meadow` barwią lekko, a `dapple`, `ivory`, `herald`,
+   `lantern`, `cinder`, `s1_frost` i `spring` nie zmieniają nic; na ciemnym lwie Azgora (`#2A2422`) tylko `raven`
+   lekko. Jasny skin na ciemnej teksturze potrzebowałby własnej tekstury.
+6. Wierzchowiec z Tripo (2026-11-01, szablon czworonoga z `docs/ANIM-WZORCE.md`, `Logic/QuadMotion`): wpis
+   `Mounts.assets` z `rig = "quad"` i `style = "horse"` albo `"lion"` (id stylu z `Data/QuadStyles`), mapa kości w
+   `Data/QuadRigs` (REMODELS, z dumpa rigu: nazwy kości, pozycje spoczynkowe i osie; `QuadRigs.find` ją wybiera,
+   opcjonalnie `footShift` i `maxTurn`) i `saddle` nad kością środka grzbietu (zwykle `Spine_1`), od pivota.
+   - `horse`: stęp czterotaktowy bocznie, kłus po przekątnej, galop czterotaktowy poprzeczny; łeb kiwa w stępie
+     i galopie, w kłusie stoi. `lion`: stęp boczny z nisko i spokojnie niesionym łbem, galop rotacyjny, łapy się
+     podwijają, ogon (do 6 kości) spóźnia się za grzbietem i faluje w galopie.
+   - Oba na 25-42 st./s: galop ok. 1,6-2,7 kroku/s przy wysokości biodra L 3-3,4 st. Grzbiet pod jeźdźcem jest
+     spokojny: siodło unosi się najwyżej o 0,06 L, pochyla do 4,5° i przechyla do 1,5° (`tests/quadmounts.spec` na
+     zastępczych szkieletach `tests/QuadMountRigs`; po dumpie rigu liczby trzeba sprawdzić na prawdziwym).
+   - W miejscu tylko odruchy co 8-16 s (koń: otrząśnięcie, tupnięcie, rzut łbem; lew: otrząśnięcie, węszenie,
+     ziewnięcie), bez ciosów i bez walki.
+7. Jeździec na wierzchowcu z szablonu (2026-11-01): `QuadMotion.saddle(inst, punkt)` daje uniesienie (st.), pochylenie
+   i przechył (rad) punktu siodła w bieżącej klatce, a `RiderPose.sample(cycle, move, fit, saddle)` przenosi je na
+   korzeń jeźdźca. Opcjonalne pole wpisu `rider` (kształt `RiderPose.Over`: `rHip`, `lHip`, `rKnee`, `lKnee`, `bob`,
+   `seatLift`; brakujące jak `Data/Mounts.RIDER`) dopasowuje jeźdźca do modelu, np. szeroki lew:
+   `rider = { rHip = { 70, 0, 30 }, lHip = { 70, 0, -30 }, bob = 0 }` (`bob = 0`, bo jeźdźca niesie ruch siodła).
+   `RiderPose.rider(asset.rider)` składa dopasowanie, a `Mounts.seatAt(0, saddle, rootHalf, fit.seatLift)` sadza
+   jeźdźca. Do podpięcia: typ pola w `Data/Mounts.MountAsset` (zadeklarowany tam, bo `Logic/RiderPose` wymaga
+   `Data/Mounts`), wywołanie w `AnimationController` (poza jeźdźca) i w `Util/MountLook` (siedzisko).
 
 ## Tekstury efektów (S112)
 

@@ -193,42 +193,6 @@ local function groundOffset(body: { rootHalf: number, hipHeight: number }): CFra
 	return CFrame.new(0, -(body.rootHalf + body.hipHeight), 0)
 end
 
--- W26: a variant's colour over its base's model (Data/MonsterAssetVariants). Tripo textures are multiplied by it
--- (SurfaceAppearance.Color, the way hair colours tint, AvatarBuild); a textured MeshPart without a SurfaceAppearance
--- gets one over its texture when the engine allows it (else it keeps its texture as it is); untextured parts take the
--- product as their Color.
-local function multiply(a: Color3, b: Color3): Color3
-	return Color3.new(a.R * b.R, a.G * b.G, a.B * b.B)
-end
-
-local function recolor(model: Model, color: Color3)
-	for _, item in model:GetDescendants() do
-		if item:IsA("SurfaceAppearance") then
-			pcall(function()
-				(item :: any).Color = color
-			end)
-		elseif item:IsA("MeshPart") then
-			if item.TextureID == "" then
-				item.Color = multiply(item.Color, color)
-			elseif not item:FindFirstChildOfClass("SurfaceAppearance") then
-				local surface = Instance.new("SurfaceAppearance")
-				local ok = pcall(function()
-					(surface :: any).ColorMap = item.TextureID;
-					(surface :: any).Color = color
-				end)
-				-- only when the texture really moved over (a SurfaceAppearance without it would blank the part)
-				if ok and (surface :: any).ColorMap == item.TextureID then
-					surface.Parent = item
-				else
-					surface:Destroy()
-				end
-			end
-		elseif item:IsA("BasePart") and item.Name ~= "HumanoidRootPart" then
-			item.Color = multiply(item.Color, color)
-		end
-	end
-end
-
 -- Real model from Assets.Monsters: scripts stripped, Humanoid replaced by an AnimationController + Animator,
 -- scaled once; its PrimaryPart stands on the ground under the root (docs/MODELE.md §5, docs/ASSETS.md).
 local function cloneAsset(lookId: string, look: MonsterLooks.Look?, scale: number, region: number?): Model?
@@ -303,7 +267,8 @@ local function cloneAsset(lookId: string, look: MonsterLooks.Look?, scale: numbe
 		end
 	end
 	if asset.color then
-		recolor(model, Color3.fromHex(asset.color))
+		-- W26: a variant's colour over its base's model (Data/MonsterAssetVariants)
+		LookBuild.recolor(model, Color3.fromHex(asset.color))
 	end
 	return model
 end

@@ -16,6 +16,8 @@
 -- wingbeat on the timeline, the gallop's pump), the tail's spring, the gait taken from the server's `Gait`, a flight's
 -- height on the server's `Dash*` arc (`arc`), the server's stun (a dazed pose) and freeze (the pose held), and feet
 -- pinned in the world (`pinFeet`, by the root's place the client passes: `rootAt`).
+-- The mounts (2026-11-01, Data/QuadStyles `horse`, `lion`) add gait fields: a head nod with the stride, the head kept
+-- steady against the spine's flex, and the tail's own lag and wave.
 -- Pure: client/Anim/QuadRig writes the bones, AnimLab evaluates it at a fixed time. The functions the game calls have
 -- the names and arguments of Logic/BipedMotion's (step, pick, death, side, length, controlsAt, times).
 
@@ -119,6 +121,7 @@ export type Instance = {
 	fadeRun: ActionRun?, -- one it had before, fading out since `fadeAt`
 	fadeAt: number,
 	fadeIsRun: boolean,
+	controls: Controls?, -- (a mount) the controls of the last frame: QuadMotion.saddle reads the body's from them
 }
 
 local function hash01(n: number, seed: number): number
@@ -260,6 +263,7 @@ local FORCED: { [string]: { [string]: number } } = {
 local GAIT_BODY = { "by", "bpitch", "broll", "sflex", "syaw" }
 -- The tail's per-bone yaw (no string building per frame).
 local TAIL_Y = { "tY1", "tY2", "tY3", "tY4", "tY5", "tY6", "tY7", "tY8" }
+local TAIL_P = { "tP1", "tP2", "tP3", "tP4", "tP5", "tP6", "tP7", "tP8" }
 -- The server's gait intents (Logic/MonsterMove: wander, going home, the chase).
 local SERVER_GAIT: { [string]: string } = { walk = "walk", trot = "trot", run = "gallop" }
 
@@ -389,11 +393,27 @@ local function gaitControls(
 			out.hyaw = g.headSway * math.sin(w - 0.8)
 		end
 	end
-	-- the head keeps level against the body's pitch; the tail
-	out.npitch = (out.bpitch or 0) * 0.8 + g.neck
+	-- the head keeps level against the body's pitch (a mount's gait with `headLevel`: that share of the pitch and of
+	-- the spine's flex, so a lion's head stays steady over its bounding gallop); a horse's head nods with the stride
+	-- (`nod`, lowest at phase `nodAt`: twice a cycle in a walk or trot, once in a gallop); the tail
+	if g.headLevel then
+		out.npitch = ((out.bpitch or 0) - (out.sflex or 0)) * g.headLevel + g.neck
+	else
+		out.npitch = (out.bpitch or 0) * 0.8 + g.neck
+	end
+	if g.nod then
+		local beats = if name == "gallop" then 1 else 2
+		out.npitch += g.nod * math.cos(2 * math.pi * beats * (phase - (g.nodAt or 0)))
+	end
 	out.tpitch = g.tail
+	-- (a mount's gait) `tailLag`: the wave's lag per bone down the tail; `tailWave`: the tail rising and falling once
+	-- a cycle with that lag (a lion's tail following its bounds)
+	local lag = g.tailLag or 0.95
 	for i = 1, math.min(style.tailBones or 4, #TAIL_Y) do
-		out[TAIL_Y[i]] = g.tailSway * math.sin(w - i * 0.95)
+		out[TAIL_Y[i]] = g.tailSway * math.sin(w - i * lag)
+		if g.tailWave then
+			out[TAIL_P[i]] = g.tailWave * math.sin(w - i * lag)
+		end
 	end
 	return out
 end
@@ -1197,7 +1217,19 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 		inst.lastAction = now
 	end
 	local fidget = inst.fidget
-	if fidget and (busy or input.combat or inst.move > 0.2) then
+	-- (2026-11-01, a mount standing under its rider played one fidget and then none: a played one was never let go)
+	-- a fidget that has ended makes way for the next one, every `fidgetEvery` s as long as it stands
+	local fidgetAction = if fidget then style.actions[fidget.name] else nil
+	if
+		fidget
+		and (
+			busy
+			or input.combat
+			or inst.move > 0.2
+			or not fidgetAction
+			or now - fidget.start > MotionTimeline.length(fidgetAction, fidget.hit)
+		)
+	then
 		inst.fidget = nil
 		fidget = nil
 	end
@@ -1365,9 +1397,30 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 			controls.byaw = byaw
 		end
 	end
+	inst.controls = controls
 	local posed = QuadPose.solve(skel, controls)
 	inst.posed = posed
 	return posed
+end
+
+-- (a mount, 2026-11-01) How the body drawn last frame carries a point on its back (`at`: model frame, the skeleton's
+-- units, e.g. the saddle): the point's rise and the body's pitch (+ nose up) and roll (+ right side up), so a rider can
+-- sit on the saddle as it moves (Logic/RiderPose `saddle`). The spine's flex is left out (a saddle sits mid-back, where
+-- it turns least); 0, 0, 0 before the first frame.
+function QuadMotion.saddle(inst: Instance, at: Vec): (number, number, number)
+	local c = inst.controls
+	if not c then
+		return 0, 0, 0
+	end
+	local L = inst.skel.L
+	local pitch, roll = c.bpitch or 0, c.broll or 0
+	local turn = NpcPose.mul(NpcPose.mul(QuadPose.ry(c.byaw or 0), QuadPose.rx(pitch)), QuadPose.rz(roll))
+	local body = inst.skel.bones[inst.skel.rig.body].pos
+	-- the body turns about its pivot (bpx, bpy, bpz from the body bone), then moves (QuadPose.world)
+	local v = { at[1] - body[1], at[2] - body[2], at[3] - body[3] }
+	local pivot = { (c.bpx or 0) * L, (c.bpy or 0) * L, (c.bpz or 0) * L }
+	local rv, rp = NpcPose.apply(turn, v), NpcPose.apply(turn, pivot)
+	return (c.by or 0) * L + pivot[2] - rp[2] + rv[2] - v[2], pitch, roll
 end
 
 ---------------------------------------------------------------- the game's choices

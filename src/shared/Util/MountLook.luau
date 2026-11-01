@@ -7,9 +7,11 @@
 -- CollectionService tag "VaelthornMount" (AnimationController animates by the tag). Returns the seat too: the
 -- rider's HipHeight and the LookRoot / pivot offset from the rider's root (Logic/Mounts.seat).
 -- S97: the account's mount skin (Data/Cosmetics kind "mountskin") goes over the procedural look through
--- Logic/Mounts.lookWith and the model gets the attribute MountSkin. A real model only takes the skin's colours on parts
--- named like a colour role (Base, Accent, Detail, Cloth, Trim). preview() builds a still copy for the wardrobe and the
--- mounts window (no tag: the AnimationController leaves it alone).
+-- Logic/Mounts.lookWith and the model gets the attribute MountSkin. A real model takes the skin's colours on parts
+-- named like a colour role (Base, Accent, Detail, Cloth, Trim). 2026-11-01: a textured real model (Tripo) is first
+-- tinted toward the skin's base colour (Logic/Mounts.coatTint over the mount's look base, through LookBuild.recolor,
+-- the tint of Data/MonsterAssetVariants); a skin lighter than the coat leaves the texture as it is. preview() builds a
+-- still copy for the wardrobe and the mounts window (no tag: the AnimationController leaves it alone).
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -46,8 +48,13 @@ local function skinOf(id: string?): Cosmetics.Def?
 	return if def and def.kind == "mountskin" then def else nil
 end
 
--- A real model keeps its look; only parts named like a colour role take the skin's colour.
-local function paintAsset(model: Model, skin: Cosmetics.Def)
+-- A real model keeps its look under the skin: its texture darkened toward the skin's base colour (`coat`: the base
+-- colour of the mount's own look, Logic/Mounts.coatTint), then parts named like a colour role take the skin's colour.
+local function paintAsset(model: Model, skin: Cosmetics.Def, coat: string?)
+	local tint = Mounts.coatTint(coat, skin)
+	if tint then
+		LookBuild.recolor(model, Color3.fromHex(tint))
+	end
 	local colors = skin.skin and skin.skin.colors
 	if not colors then
 		return
@@ -124,7 +131,7 @@ function MountLook.build(id: string, rootHalf: number, opts: Options?): (Model?,
 	local skin = skinOf(opts and opts.skin)
 	local model, seat = fromAsset(id, rootHalf)
 	if model and skin then
-		paintAsset(model, skin)
+		paintAsset(model, skin, def.look.colors.base)
 	end
 	if not model then
 		-- Data/Mounts.Look is the same shape as Anatomy.Look without the monster-only fields

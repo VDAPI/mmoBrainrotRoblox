@@ -9,6 +9,8 @@
 -- * `actions`: keyed motions on Logic/MotionTimeline (anticipation stretched to the server's windup, the strike ending on
 --   the hit), the pose of a key laid over the stance; `tremble`: the gather's shake at its end (rad);
 -- * `flinch`: additive controls by side; `fidgets`: idle actions now and then (every `fidgetEvery` s).
+-- The mounts (2026-11-01): `horse` and `lion`, named by Data/Mounts.assets `style`; gaits for 25-42 studs/s with a calm
+-- back under the saddle, idle fidgets only.
 
 local MotionTimeline = require("../Logic/MotionTimeline")
 
@@ -50,6 +52,15 @@ export type Gait = {
 	stoop: number?,
 	onPrint: boolean?,
 	levelIn: number?, -- the share of the swing the paw takes to level before the touchdown (0.4)
+	-- the mounts (2026-11-01, `horse`, `lion`): the head's nod with the stride (rad, lowest at phase `nodAt`: twice a
+	-- cycle in a walk or trot, once in a gallop), the share of the body's pitch and of the spine's flex the neck takes
+	-- back (`headLevel`: a head held steady; without it 0.8 of the pitch only), the lag per tail bone of its wave
+	-- (`tailLag`, rad, default 0.95) and the tail rising and falling once a cycle with it (`tailWave`, rad)
+	nod: number?,
+	nodAt: number?,
+	headLevel: number?,
+	tailLag: number?,
+	tailWave: number?,
 }
 -- A dragon's wings (Logic/DragonMotion, 2026-10-31): the procedural fold (`fold`: the elbow and wrist folds and the
 -- other joints' bends, rad; the humerus' direction and the membrane's top side wanted, the right wing's, model frame),
@@ -5480,12 +5491,436 @@ DRAGON.actions.alert = {
 	},
 }
 
+---------------------------------------------------------------- mounts (horse, lion)
+
+-- The mounts (owner 2026-11-01, docs/ASSETS.md "Wierzchowce"): Tripo models (Auto Rig Quadruped, no clips) ridden at
+-- 25-42 studs/s (Config.Mount), named by Data/Mounts.assets `style`. The feet are planted like the heavy quadrupeds',
+-- the gallop's stride is long and its stance short (a real gallop's: about 2-2.7 strides a second at those speeds on a
+-- leg of 3-3.5 studs), and the back under the saddle stays calm: the body's bob, pitch, roll and drop and the spine's
+-- flex are a third to a half of a monster's (tests/quadmounts.spec: the saddle rises and falls at most 0.06 leg
+-- lengths and tilts at most 4 degrees in any gait). A mount never fights, is never hit and never dies: no blows, no
+-- deaths, the stance is the planted stand its fidgets start from.
+
+-- A mount's flinch (never used: the rider takes the hits), kept small.
+local MOUNT_FLINCH = {
+	front = { bz = 0.03, npitch = deg(-6) },
+	back = { bz = -0.02, npitch = deg(4) },
+	left = { bx = 0.02, hyaw = deg(8) },
+	right = { bx = -0.02, hyaw = deg(-8) },
+}
+
+-- Horse (mount_horse, and a boss mount on the horse's bones): a 4-beat lateral walk with the head nodding twice a
+-- stride, a diagonal trot with the head held still, a transverse gallop with one nod a stride and the tail streaming;
+-- hooves (no paw curl), long folds of the fore knees in the swing.
+local HORSE: Style = {
+	gaits = {
+		walk = {
+			foot = { HL = 0, FL = 0.25, HR = 0.5, FR = 0.75 },
+			duty = 0.6,
+			k = 1.15,
+			foldStance = deg(4),
+			foldFront = deg(55),
+			foldHind = deg(40),
+			pawFront = 0,
+			pawHind = 0,
+			bob = 0.01,
+			pitch = 0,
+			flex = 0,
+			roll = deg(1),
+			spineYaw = deg(1.5),
+			neck = deg(4),
+			tail = deg(-4),
+			tailSway = deg(5),
+			plant = true,
+			lift = 0.08,
+			liftFront = 0.11,
+			drop = 0.02,
+			-- the head lowest just after each fore hoof lands
+			nod = deg(4),
+			nodAt = 0.3,
+		},
+		trot = {
+			foot = { HL = 0, FR = 0, HR = 0.5, FL = 0.5 },
+			duty = 0.38,
+			k = 2.0,
+			foldStance = deg(5),
+			foldFront = deg(75),
+			foldHind = deg(55),
+			pawFront = 0,
+			pawHind = 0,
+			bob = 0.016,
+			pitch = 0,
+			flex = 0,
+			roll = deg(0.8),
+			spineYaw = deg(0.8),
+			neck = deg(2),
+			tail = deg(4),
+			tailSway = deg(3),
+			plant = true,
+			lift = 0.12,
+			liftFront = 0.16,
+			drop = 0.02,
+		},
+		gallop = {
+			foot = { HL = 0, HR = 0.12, FL = 0.38, FR = 0.5 },
+			duty = 0.22,
+			dutyFront = 0.2,
+			k = 4.6,
+			foldStance = deg(6),
+			foldFront = deg(90),
+			foldHind = deg(60),
+			pawFront = 0,
+			pawHind = 0,
+			bob = 0.022,
+			pitch = deg(2),
+			flex = deg(2.5),
+			roll = 0,
+			spineYaw = 0,
+			neck = deg(6),
+			tail = deg(14),
+			tailSway = deg(3),
+			tailWave = deg(5),
+			tailLag = 1.1,
+			plant = true,
+			lift = 0.18,
+			liftFront = 0.24,
+			drop = 0.025,
+			-- the head lowest as the leading fore hoof lands
+			nod = deg(5),
+			nodAt = 0.55,
+		},
+	},
+	-- walk below 1.6 leg lengths a second, the gallop from 4.2 (the mount's 25-42 studs/s are 7-13: a gallop)
+	thresholds = { trot = 1.6, gallop = 4.2 },
+	stance = PLANTED,
+	calm = {},
+	idle = { tail = deg(-8) },
+	ground = PLANTED,
+	basic = {},
+	abilities = {},
+	death = {},
+	fidgets = { "shake", "stamp", "toss" },
+	fidgetEvery = { 8, 16 },
+	rate = 0.04,
+	flinch = MOUNT_FLINCH,
+	actions = {
+		-- idle: the head and the mane shaken off (the back stays under the rider)
+		shake = {
+			strike = 0.15,
+			follow = 0.5,
+			recover = 0.3,
+			keys = {
+				{
+					seg = "S",
+					u = 1,
+					ease = "out",
+					pose = from(PLANTED, { nyaw = deg(6), hyaw = deg(12), hroll = deg(-9), earL = deg(15) }),
+				},
+				{
+					seg = "F",
+					u = 0.25,
+					ease = "inout",
+					pose = from(PLANTED, { nyaw = deg(-6), hyaw = deg(-12), hroll = deg(9), earR = deg(15) }),
+				},
+				{
+					seg = "F",
+					u = 0.5,
+					ease = "inout",
+					pose = from(PLANTED, { nyaw = deg(5), hyaw = deg(10), hroll = deg(-7), earL = deg(12) }),
+				},
+				{
+					seg = "F",
+					u = 0.75,
+					ease = "inout",
+					pose = from(PLANTED, { nyaw = deg(-4), hyaw = deg(-8), hroll = deg(6), earR = deg(10) }),
+				},
+				{ seg = "F", u = 1, ease = "inout", pose = from(PLANTED, { hyaw = deg(2), hroll = deg(-2) }) },
+				{ seg = "R", u = 1, ease = "inout", pose = PLANTED },
+			},
+		},
+		-- idle: the right fore hoof paws the ground twice (lifted forward, struck down and back)
+		stamp = {
+			strike = 0.25,
+			follow = 1.1,
+			recover = 0.4,
+			keys = {
+				{
+					seg = "S",
+					u = 1,
+					ease = "out",
+					pose = from(PLANTED, { FRk = 0, FRu = deg(18), FRf = deg(65), npitch = deg(6), hpitch = deg(4) }),
+				},
+				{
+					seg = "F",
+					u = 0.25,
+					ease = "in",
+					pose = from(PLANTED, { FRk = 0, FRu = deg(-10), FRf = deg(14), npitch = deg(8), hpitch = deg(4) }),
+				},
+				{
+					seg = "F",
+					u = 0.5,
+					ease = "out",
+					pose = from(PLANTED, { FRk = 0, FRu = deg(16), FRf = deg(60), npitch = deg(6), hpitch = deg(4) }),
+				},
+				{
+					seg = "F",
+					u = 0.75,
+					ease = "in",
+					pose = from(PLANTED, { FRk = 0, FRu = deg(-10), FRf = deg(14), npitch = deg(8), hpitch = deg(4) }),
+				},
+				{ seg = "F", u = 1, ease = "inout", pose = from(PLANTED, { FRk = 0, FRu = deg(2), FRf = deg(16) }) },
+				{ seg = "R", u = 1, ease = "inout", pose = PLANTED },
+			},
+		},
+		-- idle: a toss of the head up and back with a snort, the ears back, then down
+		toss = {
+			strike = 0.2,
+			follow = 0.5,
+			recover = 0.5,
+			keys = {
+				{
+					seg = "S",
+					u = 1,
+					ease = "out",
+					pose = from(PLANTED, {
+						npitch = deg(-16),
+						hpitch = deg(-12),
+						jaw = deg(8),
+						earL = deg(20),
+						earR = deg(20),
+					}),
+				},
+				{
+					seg = "F",
+					u = 0.4,
+					ease = "inout",
+					pose = from(PLANTED, { npitch = deg(4), hpitch = deg(6), hroll = deg(5) }),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "inout",
+					pose = from(PLANTED, { npitch = deg(-3), hpitch = deg(-2), hroll = deg(-2) }),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = PLANTED },
+			},
+		},
+	},
+}
+
+-- Lion (Azgor's emberfire lion): a low, smooth walk (the body carried a little lower, short soft steps, the head low),
+-- a trot, a bounding rotary gallop whose spine flexes at the ends while the head stays steady, and a long tail whose
+-- wave lags down its six bones; paws that curl in the swing.
+local LION: Style = {
+	gaits = {
+		walk = {
+			foot = { HL = 0, FL = 0.25, HR = 0.5, FR = 0.75 },
+			duty = 0.66,
+			k = 1.25,
+			foldStance = deg(6),
+			foldFront = deg(50),
+			foldHind = deg(40),
+			pawFront = deg(25),
+			pawHind = deg(15),
+			bob = 0.006,
+			pitch = 0,
+			flex = 0,
+			roll = deg(0.8),
+			spineYaw = deg(2),
+			neck = deg(12),
+			tail = deg(-10),
+			tailSway = deg(6),
+			tailLag = 0.9,
+			plant = true,
+			lift = 0.07,
+			liftFront = 0.09,
+			drop = 0.035,
+			headLevel = 0.9,
+		},
+		trot = {
+			foot = { HL = 0, FR = 0.02, HR = 0.5, FL = 0.52 },
+			duty = 0.45,
+			k = 2.0,
+			foldStance = deg(6),
+			foldFront = deg(60),
+			foldHind = deg(45),
+			pawFront = deg(35),
+			pawHind = deg(18),
+			bob = 0.014,
+			pitch = 0,
+			flex = 0,
+			roll = deg(0.8),
+			spineYaw = deg(1.2),
+			neck = deg(9),
+			tail = 0,
+			tailSway = deg(5),
+			tailLag = 0.9,
+			plant = true,
+			lift = 0.11,
+			liftFront = 0.14,
+			drop = 0.03,
+			headLevel = 0.9,
+		},
+		gallop = {
+			foot = { HL = 0, HR = 0.08, FR = 0.42, FL = 0.5 },
+			duty = 0.2,
+			dutyFront = 0.18,
+			k = 5.2,
+			foldStance = deg(8),
+			foldFront = deg(95),
+			foldHind = deg(65),
+			pawFront = deg(55),
+			pawHind = deg(25),
+			bob = 0.022,
+			pitch = deg(1.8),
+			flex = deg(3.5),
+			roll = 0,
+			spineYaw = 0,
+			neck = deg(8),
+			tail = deg(8),
+			tailSway = deg(3),
+			tailWave = deg(9),
+			tailLag = 0.9,
+			plant = true,
+			lift = 0.2,
+			liftFront = 0.26,
+			drop = 0.03,
+			headLevel = 1,
+		},
+	},
+	thresholds = { trot = 1.5, gallop = 3.6 },
+	stance = PLANTED,
+	calm = {},
+	idle = { tail = deg(-12) },
+	ground = PLANTED,
+	basic = {},
+	abilities = {},
+	death = {},
+	fidgets = { "shake", "sniff", "yawn" },
+	fidgetEvery = { 8, 16 },
+	rate = 0.04,
+	tailBones = 6,
+	flinch = MOUNT_FLINCH,
+	actions = {
+		-- idle: the burning mane shaken out
+		shake = {
+			strike = 0.2,
+			follow = 0.6,
+			recover = 0.3,
+			keys = {
+				{
+					seg = "S",
+					u = 1,
+					ease = "out",
+					pose = from(PLANTED, { nyaw = deg(8), hyaw = deg(14), hroll = deg(-10), earL = deg(20) }),
+				},
+				{
+					seg = "F",
+					u = 0.25,
+					ease = "inout",
+					pose = from(PLANTED, { nyaw = deg(-8), hyaw = deg(-14), hroll = deg(10), earR = deg(20) }),
+				},
+				{
+					seg = "F",
+					u = 0.5,
+					ease = "inout",
+					pose = from(PLANTED, { nyaw = deg(6), hyaw = deg(12), hroll = deg(-8), earL = deg(16) }),
+				},
+				{
+					seg = "F",
+					u = 0.75,
+					ease = "inout",
+					pose = from(PLANTED, { nyaw = deg(-5), hyaw = deg(-9), hroll = deg(6), earR = deg(12) }),
+				},
+				{ seg = "F", u = 1, ease = "inout", pose = from(PLANTED, { hyaw = deg(3), hroll = deg(-2) }) },
+				{ seg = "R", u = 1, ease = "inout", pose = PLANTED },
+			},
+		},
+		-- idle: sniffing the ground ahead of the fore paws
+		sniff = {
+			strike = 0.5,
+			follow = 1.0,
+			recover = 0.6,
+			keys = {
+				{
+					seg = "S",
+					u = 1,
+					ease = "inout",
+					pose = from(PLANTED, { npitch = deg(26), hpitch = deg(12), earL = deg(-6), earR = deg(-6) }),
+				},
+				{
+					seg = "F",
+					u = 0.25,
+					ease = "inout",
+					pose = from(PLANTED, { npitch = deg(29), hpitch = deg(14), nyaw = deg(-5) }),
+				},
+				{
+					seg = "F",
+					u = 0.5,
+					ease = "inout",
+					pose = from(PLANTED, { npitch = deg(25), hpitch = deg(11), nyaw = deg(4) }),
+				},
+				{
+					seg = "F",
+					u = 0.75,
+					ease = "inout",
+					pose = from(PLANTED, { npitch = deg(29), hpitch = deg(14), nyaw = deg(7) }),
+				},
+				{ seg = "F", u = 1, ease = "inout", pose = from(PLANTED, { npitch = deg(24), hpitch = deg(10) }) },
+				{ seg = "R", u = 1, ease = "inout", pose = PLANTED },
+			},
+		},
+		-- idle: a slow yawn, the head raised and the jaws wide, the ears back
+		yawn = {
+			strike = 0.5,
+			follow = 0.9,
+			recover = 0.6,
+			keys = {
+				{
+					seg = "S",
+					u = 1,
+					ease = "inout",
+					pose = from(PLANTED, {
+						npitch = deg(-10),
+						hpitch = deg(-16),
+						jaw = deg(35),
+						earL = deg(25),
+						earR = deg(25),
+					}),
+				},
+				{
+					seg = "F",
+					u = 0.6,
+					ease = "inout",
+					pose = from(PLANTED, {
+						npitch = deg(-12),
+						hpitch = deg(-18),
+						jaw = deg(38),
+						earL = deg(28),
+						earR = deg(28),
+					}),
+				},
+				{
+					seg = "F",
+					u = 1,
+					ease = "inout",
+					pose = from(PLANTED, { npitch = deg(2), hpitch = deg(2), jaw = deg(4), hroll = deg(4) }),
+				},
+				{ seg = "R", u = 1, ease = "inout", pose = PLANTED },
+			},
+		},
+	},
+}
+
 local STYLES: { [string]: Style } = {
 	canine = CANINE,
 	bear = BEAR,
 	boar = BOAR,
 	mammoth = MAMMOTH,
 	dragon = DRAGON,
+	-- the mounts (Data/Mounts.assets `style`)
+	horse = HORSE,
+	lion = LION,
 }
 
 function QuadStyles.get(id: string): Style?
