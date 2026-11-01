@@ -425,8 +425,10 @@ local function useMapStone(player: Player, index: number, target: string, areaId
 		Net.Fire(player, "Toast", "teleport.attuned", { map = `@{TeleportStone.placeKey(def, target)}` }, "success")
 		if kind == "dungeon" then
 			return toDungeon(player, nil, target, keptUid)
-		elseif char.location.map == target and target ~= Config.StartingMap then
-			return true, nil -- set here, nothing to travel: the stone does not rest
+		elseif char.location.map == target then
+			-- set here, nothing to travel: the stone does not rest (the capital too; the laptop's check 2026-11-02:
+			-- set in the capital it travelled and rested)
+			return true, nil
 		end
 		return toMap(player, nil, target, nil, keptUid)
 	elseif kind == "map" then
