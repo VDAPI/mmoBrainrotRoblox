@@ -253,6 +253,12 @@ local LOOK = table.freeze({
 		core = table.freeze({ t = 0.35, color = "#8A66FF" }),
 		swirl = "#A48CFF",
 	}),
+	-- owner 2026-11-01: the doors of the boss chambers (World/Prefabs.dungeonGate), crimson
+	gate = table.freeze({
+		veil = table.freeze({ t = 0.35, color = "#7A1210" }),
+		core = table.freeze({ t = 0.55, color = "#E8502A" }),
+		swirl = "#FFB08A",
+	}),
 })
 local CLEARANCE: { [Kind]: { center: { number }, half: { number } } } = {
 	-- from 1 stud over the ground (rubble, tracks and furs on the threshold stay) to the arch's top
@@ -280,10 +286,10 @@ local function look(w: number, h: number)
 	}
 end
 
+export type Palette = { veil: { t: number, color: string }, core: { t: number, color: string }, swirl: string }
+
 -- W31: the colours of a portal's look on `mapId`: the deep violet on the snow and ice of the Frost Peaks.
-local function palette(
-	mapId: string
-): { veil: { t: number, color: string }, core: { t: number, color: string }, swirl: string }
+local function palette(mapId: string): Palette
 	if string.find(mapId, "frostpeak", 1, true) then
 		return LOOK.deep
 	end

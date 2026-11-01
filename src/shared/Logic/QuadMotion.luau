@@ -48,6 +48,7 @@ export type Input = {
 	snap: boolean?,
 	-- the server's gait intent (walk / trot / run) and Effects (Logic/EffectStack text at server time `serverNow`);
 	-- AnimLab's stun and freeze without the attribute (read by a style with `stun`)
+	flying: boolean?,
 	gait: string?,
 	effects: string?,
 	serverNow: number?,
@@ -1373,6 +1374,13 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 	end
 	-- 6. a dragon: the tail's spring, the wings' controls turned into their joints'
 	if dragon then
+		-- (owner 2026-11-01) in the air (AnimLab `fly`, the attribute Flying): the wings flat out and beating at 1.1 Hz
+		if input.flying then
+			controls.wo = math.max(controls.wo or 0, 1.7)
+			if (controls.flap or 0) < 0.5 then
+				controls.flap, controls.beat = 1, now * 1.1
+			end
+		end
 		DragonMotion.tail(dragon, controls, input.yawRate, dt, input.snap)
 		DragonMotion.resolve(dragon, controls, dt, input.snap)
 	end

@@ -436,7 +436,7 @@ local function antechamber(env: Env, out: { Build })
 	-- W28: the lintel of skulls over the gate itself (it hung 7 studs off it on the scaled crypt)
 	local l = Kit.atPortal(env, "SealLintel", "landmark", "dungeon_duskwood", true)
 	for t = -3, 3 do
-		Kit.skull(l.bp, t * 1.6, 19.6, 0, 1.2, 0)
+		Kit.skull(l.bp, t * 1.6, 17.4, 0, 1.2, 0)
 	end
 	table.insert(out, l)
 	local c = Kit.build(env, "CandlePath", "traces", Kit.at(env, 238), 0, 0)
