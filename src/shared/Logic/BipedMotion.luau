@@ -1773,7 +1773,8 @@ function BipedMotion.step(inst: Instance, input: Input): BipedPose.Posed
 	end
 	local guard = guardControls(inst, now)
 	local armedClips = style.clips and style.clips.combat
-	if inst.combat > 0.01 and not armedClips then
+	-- (owner 2026-11-01: in the air the guard froze the wings of a fighting dragon, it hung there without a beat)
+	if inst.combat > 0.01 and not armedClips and not input.flying then
 		local gw, gs = BipedPose.world(skel, guard, inst.grip)
 		local upper = inst.combat * (1 - 0.65 * inst.run)
 		local legs = inst.combat * (1 - inst.move)
