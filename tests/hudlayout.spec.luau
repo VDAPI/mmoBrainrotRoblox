@@ -705,6 +705,26 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 		T.expect(string.find(tutorial, "edge = math.min(edge, menu.left)", 1, true) ~= nil).toBe(true)
 	end)
 
+	T.it("Studio check of phase 4: a moved element ends MARGIN inside the screen like the built-in column", function()
+		-- the tracker the owner moved at 1462 x 793 (2026-10-22: 1675 of a 1991 wide HUD, a share of 0.8413), seen at
+		-- 1108 x 576 (scale 0.6): HudLayout.place put its 300 px 3 screen px past the right edge
+		local w, h = UiScale.hud(1108, 576, false, UiScale.TOP_BAR)
+		local x = HudLayout.place({ x = 1675 / 1991, y = 0.4 }, 300, w, h)
+		T.expect(x + 300 > w).toBe(true)
+		local inside = HudStack.insideX(x, 300, w)
+		T.expect(math.abs(inside + 300 - (w - HudStack.MARGIN)) < 1e-6).toBe(true)
+		-- the built-in column ends at the same place
+		local column = HudStack.column(false, false, w, h, 0)
+		T.expect(column.right).toBe(true)
+		T.expect(column.x).toBe(w - HudStack.MARGIN)
+		-- the left edge too; a place inside the margins stays; an element wider than the room keeps its own place
+		T.expect(HudStack.insideX(-40, 300, w)).toBe(HudStack.MARGIN)
+		T.expect(HudStack.insideX(700, 300, w)).toBe(700)
+		T.expect(HudStack.insideX(-40, w, w)).toBe(-40)
+		local drag = fs.readFile("src/client/UI/HudDrag.luau")
+		T.expect(string.find(drag, "x = HudStack.insideX(x, w, screen.X)", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it("the PvP badge stays on the screen, right-aligned with the toggle", function()
 		local f = HudStack.fixed(false, 1920, 1080)
 		T.expect(f.pvpBadge.right).toBe(f.pvp.right)

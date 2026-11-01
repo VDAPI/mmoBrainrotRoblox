@@ -10,10 +10,14 @@ local TopBand = {}
 
 export type Id = "achievement" | "area" | "zone"
 export type Shown = { [string]: boolean }
+export type Rect = { left: number, top: number, right: number, bottom: number }
 
 TopBand.GAP = 8
 TopBand.TOAST_TOP = 90 -- the toasts' own place under the target frame
 TopBand.MAX_TOASTS = 2 -- was 4
+TopBand.TOAST_WIDTH = 520 -- Components/Toast
+TopBand.TOAST_BAND = 2 * 64 + 8 -- about as tall as MAX_TOASTS toasts of two lines
+TopBand.EDGE = 16 -- the toasts never move closer than this to the layer's side
 
 -- Where each banner stands while it shows (its top and bottom edge; the area banner with its profile line, the
 -- achievement toast at its PC size, the larger of the two).
@@ -43,6 +47,27 @@ function TopBand.underHeader(top: number, header: number?, scale: number): numbe
 		return top
 	end
 	return math.max(top, header / scale + TopBand.GAP)
+end
+
+-- Studio check of UI plan phase 4 (1108 x 576: in the "backpack" step the tutorial's tile, left of the menu over the
+-- minimap, stood with its top left corner under the right end of the daily reward's toast): how far (virtual pixels,
+-- negative: left) the column of toasts, `width` wide in the middle of a layer `screenW` wide from `top` down
+-- (TOAST_BAND), moves so that it keeps GAP clear of `keep`, a tile that stays (in the same layer's pixels): away from
+-- the tile's side, never closer than EDGE to the layer's sides; 0 when they do not meet or with no tile. The tile
+-- keeps its place: it points at a button, and the toasts go in a few seconds.
+function TopBand.toastShift(screenW: number, width: number, top: number, keep: Rect?): number
+	if not keep or keep.bottom <= top or keep.top >= top + TopBand.TOAST_BAND then
+		return 0
+	end
+	local left = (screenW - width) / 2
+	local right = left + width
+	if keep.right + TopBand.GAP <= left or keep.left - TopBand.GAP >= right then
+		return 0
+	end
+	local shift = if keep.left + keep.right >= screenW
+		then keep.left - TopBand.GAP - right
+		else keep.right + TopBand.GAP - left
+	return math.clamp(shift, math.min(0, TopBand.EDGE - left), math.max(0, screenW - TopBand.EDGE - right))
 end
 
 -- Whether the achievement toast waits before it slides in: while the zone or the area banner shows.
