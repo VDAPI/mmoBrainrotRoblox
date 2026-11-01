@@ -46,6 +46,7 @@ local GuidePointer = require(ReplicatedStorage.Shared.Logic.GuidePointer)
 local HudCover = require(script.Parent.Parent.Parent.HudCover)
 local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
+local HudReveal = require(ReplicatedStorage.Shared.Logic.HudReveal)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local MapRoute = require(ReplicatedStorage.Shared.Logic.MapRoute)
@@ -215,6 +216,8 @@ local openRows: { [string]: boolean } = {}
 
 local function QuestTracker(scope: Scope, props: Props?): Instance
 	local quests = State.Value({ "character", "quests" })
+	-- UI plan phase 4 (Logic/HudReveal): during the tutorial only the story quests' group shows
+	local tutorial = State.Value({ "character", "tutorial" })
 	-- Owner 2026-10-21: the folded groups (Logic/TrackerFold, account.settings.trackerFold); a click shows its result at
 	-- once (`liveFold`) and keeps it until the save comes back.
 	local savedFold = State.Value({ "account", "settings", "trackerFold" })
@@ -366,6 +369,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local foldNow = use(fold)
 		use(openTick)
 		local touch = use(Device.Touch)
+		local stage: HudReveal.Stage = HudReveal.stage(use(tutorial))
 		local order = 0
 		local function line(text: string, color: Color3, size: number, font: Font, indent: number?): TextLabel
 			order += 1
@@ -398,6 +402,9 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			)
 		end
 		local function group(id: string, label: string, summary: string?): boolean
+			if not HudReveal.trackerGroup(id, stage) then
+				return false
+			end
 			if order > 0 then
 				gap()
 			end
@@ -848,7 +855,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	local e2Lines = scope:Computed(function(use, s: Scope): { Instance }
 		local out: { Instance } = {}
 		local list = use(e2.list)
-		if use(collapsed) or #list == 0 then
+		if use(collapsed) or #list == 0 or not HudReveal.trackerGroup("e2", HudReveal.stage(use(tutorial))) then
 			return out
 		end
 		local touch = use(Device.Touch)
@@ -880,7 +887,11 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	local achLines = scope:Computed(function(use, s: Scope): { Instance }
 		local out: { Instance } = {}
 		local list = use(tracked)
-		if use(collapsed) or type(list) ~= "table" then
+		if
+			use(collapsed)
+			or type(list) ~= "table"
+			or not HudReveal.trackerGroup("ach", HudReveal.stage(use(tutorial)))
+		then
 			return out
 		end
 		local defs: { any } = {}
