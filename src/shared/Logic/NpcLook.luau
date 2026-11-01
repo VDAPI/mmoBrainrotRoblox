@@ -110,10 +110,7 @@ function NpcLook.outfit(def: Def): ClassLooks.OutfitSpec?
 	local sets = NpcLooks.outfits[entry.role]
 	if sets and #sets > 0 then
 		local set = sets[math.clamp(math.floor(NpcLook.roll(def.id, "outfit") * #sets) + 1, 1, #sets)]
-		local over: { ClassLooks.Garment } = {}
-		for _, name in NpcLooks.over[entry.role] or ({} :: { string }) do
-			table.insert(over, { g = name, catalog = 0, role = "metal" })
-		end
+		local over: { ClassLooks.Garment } = NpcLooks.over[entry.role] or {}
 		local skin: { [string]: string } = {}
 		for part in ClassLooks.BODY_ROLES do
 			skin[part] = "skin"

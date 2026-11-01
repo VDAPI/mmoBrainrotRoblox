@@ -53,7 +53,7 @@ local ROBE: { [string]: string } = {
 
 -- Owner 2026-11-01 ("all NPCs blocky, pretty, in outfits from packs"): classic catalog Shirt / Pants pairs per role,
 -- picked off Studio screenshots on the block body; an NPC wears one by its id (Logic/NpcLook). A pair covers the body,
--- so only a role's `over` garments (a helmet) stay drawn, the skin shows where the shirt leaves it bare. The roles'
+-- so only a role's `over` garments (a catalog helmet) go over it, the skin shows where the shirt leaves it bare. The roles'
 -- `garments` stay for an NPC whose clothes fail to load. USE_MODELS false: Assets.Npcs stay in the place, unused.
 NpcLooks.USE_MODELS = false
 NpcLooks.outfits = table.freeze({
@@ -73,7 +73,7 @@ NpcLooks.outfits = table.freeze({
 	smith = { { 6994804090, 6994806825 }, { 6873403919, 10482967100 } },
 	hunter = { { 8979911916, 10013957828 }, { 13894732451, 3837797396 } },
 	scout = { { 8979911916, 595223818 }, { 6856612123, 6856612978 } },
-	worker = { { 12473806522, 12473807332 }, { 14034194772, 4972371861 }, { 8979911916, 10013957828 } },
+	worker = { { 12473806522, 12473807332 }, { 12499047262, 595223818 }, { 8979911916, 10013957828 } },
 	dress = { { 1792094435, 137133070104546 }, { 14034194772, 6573134987 }, { 6887480743, 137133070104546 } },
 	witch = { { 111457546389650, 84545186380755 } },
 	shaman = { { 7892563233, 7892575669 } },
@@ -81,8 +81,8 @@ NpcLooks.outfits = table.freeze({
 } :: { [string]: { { number } } })
 -- What a role keeps drawn over its pair.
 NpcLooks.over = table.freeze({
-	guard = { "helm_crest" },
-} :: { [string]: { string } })
+	guard = { { g = "helm_crest", catalog = 5858010220, role = "metal", type = "Hat" } }, -- Chainmail Hood
+} :: { [string]: { any } })
 
 NpcLooks.roles = table.freeze({
 	-- city watch: mail under the city's tabard, a crested helmet
