@@ -58,12 +58,14 @@ T.describe("NPC looks (W31)", function()
 		for _, def in figures() do
 			local spec = assert(NpcLook.resolve(def))
 			T.expect({ def.id, spec.mode, spec.pieces <= NpcLooks.MAX_PIECES }).toEqual({ def.id, "class", true })
-			T.expect({ def.id, #spec.garments > 0, #spec.accessories }).toEqual({ def.id, true, 0 })
+			T.expect({ def.id, #spec.garments > 0 or spec.shirt ~= 0, #spec.accessories }).toEqual({ def.id, true, 0 })
 			for _, item in spec.garments do
 				T.expect({ def.id, item.g, string.match(item.color, HEX) ~= nil }).toEqual({ def.id, item.g, true })
 			end
 			-- the main cloth is the NPC's own colour
-			T.expect({ def.id, spec.body.UpperTorso }).toEqual({ def.id, def.colors.body })
+			if spec.shirt == 0 then
+				T.expect({ def.id, spec.body.UpperTorso }).toEqual({ def.id, def.colors.body })
+			end
 		end
 	end)
 

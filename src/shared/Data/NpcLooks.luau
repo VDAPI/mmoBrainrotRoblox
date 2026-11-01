@@ -51,6 +51,35 @@ local ROBE: { [string]: string } = {
 	RightLowerLeg = "main",
 }
 
+-- Owner 2026-11-01 ("all NPCs blocky, pretty, in outfits from packs"): classic catalog Shirt / Pants pairs per role,
+-- picked off Studio screenshots on the block body; an NPC wears one by its id (Logic/NpcLook). A pair covers the body,
+-- so only a role's `over` garments (a helmet) stay drawn, the skin shows where the shirt leaves it bare. The roles'
+-- `garments` stay for an NPC whose clothes fail to load. USE_MODELS false: Assets.Npcs stay in the place, unused.
+NpcLooks.USE_MODELS = false
+NpcLooks.outfits = table.freeze({
+	guard = { { 1517057060, 1517089264 }, { 1566202636, 1566204007 } },
+	soldier = { { 2503362790, 4110257458 }, { 10982519012, 4110257458 }, { 1517057060, 1517089264 } },
+	knight = { { 6962895458, 6962898847 }, { 2503362790, 4110257458 } },
+	merchant = { { 6035048242, 3837797396 }, { 8979911916, 10013957828 } },
+	noble = { { 1586347940, 1586348360 }, { 4041800704, 1586348360 }, { 4862947927, 4863136941 } },
+	priest = { { 88459025813113, 16104137810 }, { 140628902548645, 93451212204356 } },
+	monk = { { 7608417939, 7608425385 }, { 4862947927, 4863136941 } },
+	mage = { { 92407930233991, 84545186380755 }, { 111457546389650, 84545186380755 }, { 90288143423440, 115998093387659 } },
+	scholar = { { 7608417939, 7608425385 }, { 4862947927, 4863136941 } },
+	smith = { { 6994804090, 6994806825 }, { 6873403919, 10482967100 } },
+	hunter = { { 8979911916, 10013957828 }, { 13894732451, 3837797396 } },
+	scout = { { 8979911916, 595223818 }, { 6856612123, 6856612978 } },
+	worker = { { 12473806522, 12473807332 }, { 14034194772, 4972371861 }, { 8979911916, 10013957828 } },
+	dress = { { 1792094435, 137133070104546 }, { 14034194772, 6573134987 }, { 6887480743, 137133070104546 } },
+	witch = { { 111457546389650, 84545186380755 } },
+	shaman = { { 7892563233, 7892575669 } },
+	north = { { 6856612123, 6856612978 }, { 7892563233, 7892575669 } },
+} :: { [string]: { { number } } })
+-- What a role keeps drawn over its pair.
+NpcLooks.over = table.freeze({
+	guard = { "helm_crest" },
+} :: { [string]: { string } })
+
 NpcLooks.roles = table.freeze({
 	-- city watch: mail under the city's tabard, a crested helmet
 	guard = {

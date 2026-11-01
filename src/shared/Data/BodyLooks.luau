@@ -128,15 +128,17 @@ BodyLooks.brows = table.freeze({
 -- modern / anime ones gave way to the plainer cuts of the same free pool, light textures wherever Roblox has one (they
 -- keep their strands in every colour). Tones read off Studio screenshots (review 2026-10-31); a colour cast = adjust
 -- the tone. Side Part - Black was the same mesh as hair_short and left (hair_swept -> hair_short).
+-- Owner 2026-11-01, the block body: a layered hair wraps round the square head into a box, every hair here is a rigid
+-- classic one (read off Studio screenshots on the block body).
 BodyLooks.hairs = table.freeze({
-	hair_short = { id = 7193386173, light = true }, -- Side Part - Blond (short, swept back)
-	hair_fringe = { id = 7193397693, light = true }, -- Short Fringe - Blonde
+	hair_short = { id = 62743701, light = false, tone = "#6B4426" }, -- Stylish Brown Hair (classic)
+	hair_fringe = { id = 62234425, light = false, tone = "#5C3A21" }, -- Brown Hair (classic)
 	hair_charmer = { id = 376548738, light = false, tone = "#7A3A22" }, -- Brown Charmer Hair (classic, red-brown)
-	hair_slicked = { id = 9244029916, light = true }, -- Surfer - Blond (chin-length shag)
-	hair_bob = { id = 7193424874, light = true }, -- Medium Middle Part - Blond (shoulder length)
-	hair_long = { id = 7193445686, light = true }, -- Wavy Middle Part - Blond
+	hair_slicked = { id = 376524487, light = false, tone = "#D8BE45" }, -- Blonde Spiked Hair (classic)
+	hair_bob = { id = 323476364, light = false, tone = "#4E3324" }, -- Brown Scene Hair (classic)
+	hair_long = { id = 13745548, light = false, tone = "#8A4A26" }, -- Cinnamon Hair (classic)
 	hair_straight = { id = 376526888, light = false, tone = "#D8BE45" }, -- Straight Blonde Hair (classic, golden)
-	hair_ponytail = { id = 9244095135, light = true }, -- Pony Tail - Blonde
+	hair_ponytail = { id = 26658141, light = false, tone = "#4A3224" }, -- Messy Hair (classic)
 	hair_sidetail = { id = 376527350, light = false, tone = "#1E1F2A" }, -- Black Side Ponytail (classic, blue-black)
 	hair_braid = { id = 2956239660, light = false, tone = "#C23A1C" }, -- Belle Of Belfast (red, braided crown)
 	hair_bun = { id = 451220849, light = false, tone = "#E2A6DC" }, -- Lavender Updo (classic messy bun, pink)

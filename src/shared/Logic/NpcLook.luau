@@ -107,6 +107,31 @@ function NpcLook.outfit(def: Def): ClassLooks.OutfitSpec?
 	if not entry or not role then
 		return nil
 	end
+	local sets = NpcLooks.outfits[entry.role]
+	if sets and #sets > 0 then
+		local set = sets[math.clamp(math.floor(NpcLook.roll(def.id, "outfit") * #sets) + 1, 1, #sets)]
+		local over: { ClassLooks.Garment } = {}
+		for _, name in NpcLooks.over[entry.role] or ({} :: { string }) do
+			table.insert(over, { g = name, catalog = 0, role = "metal" })
+		end
+		local skin: { [string]: string } = {}
+		for part in ClassLooks.BODY_ROLES do
+			skin[part] = "skin"
+		end
+		return {
+			colors = {
+				main = def.colors.body,
+				second = NpcLook.shade(def.colors.body, NpcLooks.SECOND),
+				trim = def.colors.accent,
+				leather = NpcLooks.LEATHER,
+				metal = NpcLooks.METAL,
+			},
+			body = skin,
+			garments = over,
+			shirt = set[1],
+			pants = set[2],
+		}
+	end
 	local garments = table.clone(role.garments)
 	for _, item in entry.add or ({} :: { ClassLooks.Garment }) do
 		table.insert(garments, item)

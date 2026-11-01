@@ -160,14 +160,23 @@ local classes: { [string]: ClassLook } = {
 		},
 		garments = {
 			garment("breastplate", "metal"),
-			garment("plate_pauldrons", "metal"),
+			garment("plate_pauldrons", "metal", {
+				catalog = 5830109763,
+				type = "Shoulder",
+				also = { { catalog = 5830106859, type = "Shoulder" } },
+			}),
 			garment("gauntlets", "metal"),
 			garment("greaves", "metal"),
 			garment("belt", "leather"),
-			garment("cape", "trim"),
+			garment("cape", "trim", {
+				catalog = 9764302228,
+				type = "Back",
+				hides = { "breastplate", "gauntlets", "greaves", "belt" },
+			}),
 		},
-		shirt = 0,
-		pants = 0,
+		-- owner 2026-11-01: fancy catalog sets on the block body, the procedural pieces stay for the previews
+		shirt = 6962895458,
+		pants = 6962898847,
 	}),
 	-- A long white robe with a hood, the holy symbol and a stole.
 	Cleric = look("Cleric", {
@@ -184,10 +193,15 @@ local classes: { [string]: ClassLook } = {
 			garment("hood", "main"),
 			garment("holy_symbol", "second"),
 			garment("sash", "trim"),
-			garment("stole", "second"),
+			garment("stole", "second", {
+				catalog = 5830109763,
+				type = "Shoulder",
+				also = { { catalog = 5830106859, type = "Shoulder" } },
+				hides = { "robe_skirt", "hood", "holy_symbol", "sash" },
+			}),
 		},
-		shirt = 0,
-		pants = 0,
+		shirt = 88459025813113,
+		pants = 16104137810,
 	}),
 	-- Leathers, a hood and the quiver on the back. Owner 2026-10-21: green trousers under the brown vest (all brown read
 	-- as bare skin).
@@ -201,20 +215,24 @@ local classes: { [string]: ClassLook } = {
 		},
 		garments = {
 			garment("leather_vest", "leather"),
-			garment("hood", "main"),
+			garment("hood", "main", {
+				catalog = 16292136577,
+				type = "Hat",
+				hides = { "leather_vest", "bracers", "belt", "boots" },
+			}),
 			garment("quiver_back", "leather"),
 			garment("bracers", "leather"),
 			garment("belt", "leather"),
 			garment("boots", "leather"),
 		},
-		shirt = 0,
-		pants = 0,
+		shirt = 6856612123,
+		pants = 6856612978,
 	}),
 	-- A robe to the ground, a high collar and a book at the belt.
 	-- owner 2026-10-21: violet sleeves and mantle (the pale second colour read as bare arms)
 	Mage = look("Mage", {
 		colors = {
-			main = "#2E3A6B",
+			main = "#5A1E1E", -- (owner 2026-11-01: with the red robes, it shows on the sleeve)
 			second = "#5B4E8C",
 			trim = "#4A8FE7",
 			leather = "#4A3A2A",
@@ -226,10 +244,14 @@ local classes: { [string]: ClassLook } = {
 			garment("high_collar", "main"),
 			garment("belt_book", "leather"),
 			garment("sash", "trim"),
-			garment("shoulder_mantle", "second"),
+			garment("shoulder_mantle", "second", {
+				catalog = 9764302228,
+				type = "Back",
+				hides = { "robe_skirt", "high_collar", "belt_book", "sash" },
+			}),
 		},
-		shirt = 0,
-		pants = 0,
+		shirt = 92407930233991,
+		pants = 84545186380755,
 	}),
 }
 

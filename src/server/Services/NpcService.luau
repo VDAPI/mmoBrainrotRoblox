@@ -33,6 +33,7 @@ local Footing = require(Shared.Logic.Footing)
 local LookBuild = require(Shared.Util.LookBuild)
 local NpcAssetFit = require(Shared.Logic.NpcAssetFit)
 local NpcLook = require(Shared.Logic.NpcLook)
+local NpcLooks = require(Shared.Data.NpcLooks)
 local RigJoints = require(Shared.Util.RigJoints)
 local MapTerrain = require(Shared.Logic.MapTerrain)
 
@@ -56,7 +57,8 @@ local positions: { [string]: Vector3 } = {}
 local npcFolder: Folder? = nil
 local placed: { [string]: Model } = {}
 -- W31: the placed figures in an outfit and its look, dressed again once the Roblox hairstyles have loaded
-local dressed: { [Model]: CharacterLook.LookSpec } = setmetatable({}, { __mode = "k" }) :: any
+-- (owner 2026-11-01: weak keys lost the figures to the collector, the city kept the block hair for good)
+local dressed: { [Model]: CharacterLook.LookSpec } = {}
 
 -- S103: the look of a ghost NPC (NpcDef.ghost; looks, not balance): every visible part half-transparent, smooth and
 -- without a shadow, and a cold light in the chest, the same "wraith" colour as the Tomb of Morvane (CaveDress/Tomb).
@@ -89,6 +91,9 @@ end
 -- W30: the owner's model of the NPC (ReplicatedStorage.Assets.Npcs.<id>, numbered NPCs like guard1 / guard2 also share
 -- Assets.Npcs.guard), or nil. No warning when it is missing: most NPCs have no model yet and keep the figure.
 local function assetTemplate(id: string): Model?
+	if not NpcLooks.USE_MODELS then
+		return nil
+	end
 	local assets = ReplicatedStorage:FindFirstChild("Assets")
 	local folder = assets and assets:FindFirstChild("Npcs")
 	if not folder then
@@ -394,6 +399,9 @@ local function build(def: Npcs.NpcDef, parent: Instance)
 	settle(npc, def, position.Y)
 	if spec then
 		dressed[npc] = spec
+		npc.Destroying:Once(function()
+			dressed[npc] = nil
+		end)
 	end
 end
 
