@@ -1,14 +1,18 @@
 --!strict
 -- Account vault (DESIGN §5.7): 60 slots shared by all characters of the account (+60 with the "Vault"
 -- gamepass). Bound items are allowed. Uses the banker NPC; contents replicate under account.deposit.items.
+-- Owner 2026-11-01 (Logic/TeleportStone): an everlasting teleport stone stays with its character (its own cooldown and
+-- place; every character takes its free copy from the Portal Master), so it never goes in. Older ones come out.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage.Shared
 
 local Inventory = require(Shared.Logic.Inventory)
+local Items = require(Shared.Data.Items)
 local Net = require(Shared.Net)
 local Products = require(Shared.Data.Products)
+local TeleportStone = require(Shared.Logic.TeleportStone)
 local Types = require(Shared.Types)
 
 local DepositService = {
@@ -61,6 +65,9 @@ local function deposit(player: Player, invIndex: number, depIndex: number?): (bo
 	local item = InventoryService.Get(player, invIndex)
 	if not item then
 		return false, "error.stale" -- W28: the click before already took it (silent on the client)
+	end
+	if TeleportStone.everlasting(Items.get(item.id)) then
+		return false, "deposit.error.stone"
 	end
 	local size = DepositService.Size(player)
 	local items = data.deposit.items

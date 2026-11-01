@@ -1,5 +1,8 @@
 --!strict
 -- Destination picker for the Map Stone (visited maps) and the generic Dungeon Stone (boss dungeons).
+-- Owner 2026-11-01 (Logic/TeleportStone): the Map Stone lists the places of TeleportStone.mapPlaces (region maps, caves,
+-- crypts, the capital; never boss dungeons or server-mode maps); an unset Everlasting Map or Dungeon Stone (`Sets`)
+-- asks before the choice sets it for good.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,6 +14,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local Recipes = require(ReplicatedStorage.Shared.Data.Recipes)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
+local TeleportStone = require(ReplicatedStorage.Shared.Logic.TeleportStone)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
@@ -22,7 +26,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = {
 	Index: Fusion.UsedAs<number?>,
 	Kind: Fusion.UsedAs<string>, -- "map" | "dungeon"
-	-- owner 2026-11-01: the Everlasting Map Stone: the choice sets it for good, asked first
+	-- owner 2026-11-01: the Everlasting Map or Dungeon Stone: the choice sets it for good, asked first
 	Sets: Fusion.UsedAs<boolean>?,
 	ShowModal: ((any) -> ())?,
 	Close: () -> (),
@@ -47,17 +51,16 @@ local function StonePicker(scope: Scope, props: Props): Fusion.Child
 				})
 			end
 		else
-			for mapId in (use(visited) or {}) :: { [string]: boolean } do
-				local map = Maps.get(mapId)
-				if map and map.serverModes == nil then -- S127: arena_pit saved by an older build stays off the list
-					table.insert(choices, {
-						id = mapId,
-						label = Text.get(use, map.nameKey),
-						sub = if mapId == use(currentMap)
-							then Text.get(use, "teleport.here")
-							else `{map.minLevel}–{map.maxLevel}`,
-					})
-				end
+			-- (S127: arena_pit saved by an older build stays off the list, as boss dungeons)
+			for _, mapId in TeleportStone.mapPlaces(use(visited)) do
+				local map = Maps.get(mapId) :: Maps.MapDef
+				table.insert(choices, {
+					id = mapId,
+					label = Text.get(use, map.nameKey),
+					sub = if mapId == use(currentMap)
+						then Text.get(use, "teleport.here")
+						else `{map.minLevel}–{map.maxLevel}`,
+				})
 			end
 			table.sort(choices, function(a, b)
 				return a.label < b.label

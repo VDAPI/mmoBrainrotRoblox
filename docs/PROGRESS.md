@@ -49,6 +49,10 @@
 
 ## Niedokończone (kod)
 
+- **Wieczne kamienie (2026-11-01, DESIGN §13a):** odpoczynek 30 min każdego kamienia, stałe miejsce Wiecznego Kamienia
+  Mapy i Lochu, wielokrotny zakup Mapy u Mistrza Portali (`Logic/TeleportStone`, `tests/teleportstone.spec`); w Studio
+  sprawdzony tylko Kamień Mapy (ustawienie, podróż, odmowa); nieobejrzane: okno potwierdzenia, Kamień Lochu, linie
+  podpowiedzi w plecaku, pytanie o kolejny zakup u Mistrza.
 - **Gesty na animacjach Roblox (2026-11-01):** Pozdrowienie, Wskazanie i Wiwat grają klipy R15 Roblox
   (`Data/Emotes` `clip`, `Logic/EmoteClip`, `CharacterClips.gesture`, `tests/emoteclip.spec`); nieobejrzane w Studio
   (czy klipy się wczytują, czy płynnie wchodzą i schodzą, czy ruch, atak i umiejętność je przerywają, czy inny gracz

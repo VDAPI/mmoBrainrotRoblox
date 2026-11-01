@@ -10,6 +10,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 
 local ActionMenu = require(script.Parent.Parent.UI.Components.ActionMenu)
 local Binding = require(ReplicatedStorage.Shared.Logic.Binding)
@@ -29,6 +30,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
+local TeleportStone = require(ReplicatedStorage.Shared.Logic.TeleportStone)
 local Text = require(script.Parent.Parent.UI.Text)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
 local Types = require(ReplicatedStorage.Shared.Types)
@@ -170,15 +172,24 @@ function ItemController.Use(index: number)
 	end
 	local def = item and Items.get(item.id)
 	local use = def and def.use
-	-- (owner 2026-11-01: an Everlasting Map Stone already set goes straight to its place, through UseItem)
+	-- Owner 2026-11-01 (Logic/TeleportStone): a resting everlasting stone says how long it still rests; an Everlasting
+	-- Map or Dungeon Stone already set goes straight to its place, through UseItem; an unset one asks in the picker.
 	local keep = use ~= nil and use.keep == true
+	if item and keep and use and use.kind == "teleport" then
+		local minutes = TeleportStone.minutesLeft(item, Workspace:GetServerTimeNow())
+		if minutes > 0 then
+			Sounds.play("error")
+			Toast.push(Text.now("teleport.cooldown", { minutes = minutes }), "warning")
+			return
+		end
+	end
 	if
 		use
 		and use.kind == "teleport"
 		and (use.target == "map" or use.target == "dungeon")
 		and not (keep and item and item.at)
 	then
-		GatherController.OpenStonePicker(index, use.target, keep and use.target == "map")
+		GatherController.OpenStonePicker(index, use.target, keep)
 		return
 	end
 	local blessing = State.Get({ "character", "blessing" })

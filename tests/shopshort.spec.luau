@@ -59,6 +59,7 @@ local LINES = {
 local MODALS = {
 	"smith.reroll.all.confirm",
 	"portalshop.permConfirm",
+	"portalshop.againConfirm", -- owner 2026-11-01: one more Everlasting Map Stone
 	"wanderer.confirm",
 	"wanderer.confirmMarks",
 	"wanderer.confirmGear",

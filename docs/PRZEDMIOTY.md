@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych 665eb601 (`wiki/src/data/meta.json`).
+> Odcisk danych 6092a980 (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1285,16 +1285,16 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 | Zwój Rozwiązania | Zwój | 1 | Odwiązuje jeden przedmiot. | — | 500 |
 | Kamień Lochu | Kamień teleportu | 1 | Teleportuje przed wejście do lochu. | — | 150 |
 | Kamień Lochu: Kuźnia Głębin | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Kuźnia Głębin. | — | 150 |
-| Wieczny Kamień Lochu: Kuźnia Głębin | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Kuźnia Głębin. Nigdy się nie zużywa. | — | 1 |
+| Wieczny Kamień Lochu: Kuźnia Głębin | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Kuźnia Głębin. Nigdy się nie zużywa, odpoczywa 30 minut po użyciu. | — | 1 |
 | Kamień Lochu: Krypta Zapomnianych | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Krypta Zapomnianych. | — | 150 |
-| Wieczny Kamień Lochu: Krypta Zapomnianych | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Krypta Zapomnianych. Nigdy się nie zużywa. | — | 1 |
+| Wieczny Kamień Lochu: Krypta Zapomnianych | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Krypta Zapomnianych. Nigdy się nie zużywa, odpoczywa 30 minut po użyciu. | — | 1 |
 | Kamień Lochu: Serce Lodowca | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Serce Lodowca. | — | 150 |
-| Wieczny Kamień Lochu: Serce Lodowca | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Serce Lodowca. Nigdy się nie zużywa. | — | 1 |
+| Wieczny Kamień Lochu: Serce Lodowca | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Serce Lodowca. Nigdy się nie zużywa, odpoczywa 30 minut po użyciu. | — | 1 |
 | Kamień Lochu: Jaskinia Mchów | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Jaskinia Mchów. | — | 150 |
-| Wieczny Kamień Lochu: Jaskinia Mchów | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Jaskinia Mchów. Nigdy się nie zużywa. | — | 1 |
-| Wieczny Kamień Lochu | Kamień teleportu | 1 | Teleportuje przed wejście do lochu. Nigdy się nie zużywa. | — | 1 |
+| Wieczny Kamień Lochu: Jaskinia Mchów | Kamień teleportu | 1 | Teleportuje przed wejście do lochu bossa w: Jaskinia Mchów. Nigdy się nie zużywa, odpoczywa 30 minut po użyciu. | — | 1 |
+| Wieczny Kamień Lochu | Kamień teleportu | 1 | Przy pierwszym użyciu wybierasz loch bossa. Kamień zostaje tam ustawiony na zawsze. Nigdy się nie zużywa, odpoczywa 30 minut po użyciu. | — | 1 |
 | Kamień Mapy | Kamień teleportu | 1 | Teleportuje na wybraną mapę. | — | 50 |
-| Wieczny Kamień Mapy | Kamień teleportu | 1 | Teleportuje na wybraną mapę. Nigdy się nie zużywa. | — | 1 |
+| Wieczny Kamień Mapy | Kamień teleportu | 1 | Przy pierwszym użyciu wybierasz mapę lub jaskinię. Kamień zostaje tam ustawiony na zawsze. Nigdy się nie zużywa, odpoczywa 30 minut po użyciu. | — | 1 |
 | Kamień Powrotu | Kamień teleportu | 1 | Teleportuje do stolicy po 5 s kanałowania. | 20 | 5 |
-| Wieczny Kamień Powrotu | Kamień teleportu | 1 | Teleportuje do stolicy po 5 s kanałowania. Nigdy się nie zużywa. | — | 1 |
+| Wieczny Kamień Powrotu | Kamień teleportu | 1 | Teleportuje do stolicy po 5 s kanałowania. Nigdy się nie zużywa, odpoczywa 30 minut po użyciu. | — | 1 |
 | Zwój Przemiany | Zwój | 1 | Kowal przelosuje nim naraz wszystkie premie jednego przedmiotu (płacisz trzykrotność złota jednej przemiany, bez esencji). Związany z kontem. | — | 1 |

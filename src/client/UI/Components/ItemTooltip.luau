@@ -24,6 +24,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
 
 local ArtIcon = require(script.Parent.ArtIcon)
 local Device = require(script.Parent.Parent.Device)
@@ -413,6 +414,7 @@ local function build(
 		input = if touch then "touch" else "mouse",
 		detailsKey = Keybinds.label("item_details"),
 		view = if full then "full" else "compact",
+		now = Workspace:GetServerTimeNow(), -- owner 2026-11-01: an everlasting stone's rest
 	}
 	if extra then
 		for k, v in extra :: any do
