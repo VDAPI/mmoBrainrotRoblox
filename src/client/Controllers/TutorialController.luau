@@ -76,6 +76,10 @@ local ARROW = 24 -- virtual px the arrow takes between the tile and the element
 local WIDTH_PC = 440
 local WIDTH_TOUCH = 360
 local TOUCH_CLUSTER = 150 -- virtual px kept free left of the phone's attack and skill buttons
+-- Studio check of phase 4 (the closing tile stood 114 screen px over the action bar): on PC the tile at the default
+-- place ends this far over the HUD's bottom, GAP over the cast bar (Hud/CastBar: 100 over the bottom, 26 tall), which
+-- stands right over the action bar
+local OVER_BAR = 100 + 26 + GAP
 -- Windows that are a conversation or a letter: the hint waits until they close.
 local BLOCKING = { "npc", "questnpc", "login", "whatsnew" }
 
@@ -212,7 +216,8 @@ local function plaque(args: { [string]: string }): string?
 end
 
 -- Top left corner of the tile and its arrow for an element at `rect` (nil: the default place). `menu`: the menu over
--- the minimap as measured (UI/HudSlots.Menu), which a tile left of one of its buttons keeps clear of.
+-- the minimap as measured (UI/HudSlots.Menu), which a tile left of one of its buttons keeps clear of. `bh`: the tile's
+-- height with a floor (room for the arrow), `tall`: its own height (the default place ends OVER_BAR over the bottom).
 local function place(
 	rect: HudAnchors.Rect?,
 	w: number,
@@ -220,7 +225,8 @@ local function place(
 	bw: number,
 	bh: number,
 	touch: boolean,
-	menu: HudStack.Rect?
+	menu: HudStack.Rect?,
+	tall: number
 ): (number, number, TutorialHint.Arrow?)
 	local function clampX(x: number): number
 		return math.clamp(x, MARGIN, math.max(MARGIN, w - bw - MARGIN))
@@ -230,7 +236,8 @@ local function place(
 	end
 	if not rect then
 		-- PC: over the action bar; phone: in the upper middle, clear of the thumbstick and the attack button
-		return clampX((w - bw) / 2), clampY(if touch then h * 0.16 else h - 230 - bh), nil
+		-- `tall`: the tile's own height (bh has a floor for the arrow's room)
+		return clampX((w - bw) / 2), clampY(if touch then h * 0.16 else h - OVER_BAR - tall), nil
 	end
 	local cx, cy = rect.x + rect.w / 2, rect.y + rect.h / 2
 	local function left(extra: number): (number?, number?, TutorialHint.Arrow?)
@@ -449,9 +456,10 @@ local function tick()
 	local factor = Scale.get()
 	local size = Fusion.peek(Scale.HudSize) -- the HUD's area (the layer's part on the screen)
 	local bw = Fusion.peek(width)
-	local bh = math.max(hint.box.AbsoluteSize.Y / factor, 120)
+	local tall = hint.box.AbsoluteSize.Y / factor
+	local bh = math.max(tall, 120)
 	local rect = if finale then nil else HudAnchors.find(root, Tutorial.anchorOf(step, away), touch, factor)
-	local x, y, a = place(rect, size.X, size.Y, bw, bh, touch, Fusion.peek(HudSlots.Menu))
+	local x, y, a = place(rect, size.X, size.Y, bw, bh, touch, Fusion.peek(HudSlots.Menu), math.max(tall, 1))
 	local at = UDim2.fromOffset(math.floor(x), math.floor(y))
 	if Fusion.peek(position) ~= at then
 		position:set(at)

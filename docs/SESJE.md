@@ -14444,3 +14444,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   stoją co najmniej GAP pod nim (`TopBand.underBars`). `TopBand.toastTop` dolicza pasek do banerów strefy i obszaru,
   które stoją w warstwie HUD, oraz przesunięcie toastu osiągnięcia. Przy skali 1 i pasku 58 toasty zostają na 90. Test
   w `topband.spec`.
+- Czwarty przegląd (`c623f5a1` potwierdzone: toast 4 px pod paskiem Robloxa, karta końcowa bez skoku i znika po
+  6 s, toast pod banerem strefy). Karta końcowa stała 114 px nad paskiem akcji, bo domyślne miejsce na PC kończyło
+  się 230 nad dołem HUD, a liczyło się wysokością z progiem 120. Teraz kończy się `OVER_BAR` (100 + 26 + 10) nad dołem,
+  czyli 10 nad paskiem rzucania, który stoi tuż nad paskiem akcji, i liczy się własną wysokością karty.
+- Toast pod banerem strefy podskakiwał na ostatnie 0,3 s: baner zdejmował flagę pasa na początku zanikania. Banery
+  strefy i obszaru trzymają flagę do końca zanikania (obserwują też `Tween`), a kolumna toastów nie idzie w górę,
+  dopóki jakiś toast stoi (`TopBand.holdTop`).
+- Toast osiągnięcia i ogłoszenie serwera stały na tej samej wysokości. Ogłoszenie dostało flagę pasa
+  (`announcement`, do końca wysuwania), toast osiągnięcia czeka na nie, a ono czeka na toast osiągnięcia
+  (`TopBand.announcementWaits`, ponowienie co 0,5 s). Toasty stają pod ogłoszeniem (`BANNERS.announcement`, 98–192).
+  Test w `topband.spec`.

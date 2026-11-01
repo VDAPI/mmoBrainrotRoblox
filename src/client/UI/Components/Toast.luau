@@ -34,6 +34,9 @@ local TopBand = SoftRequire(
 		underBars = function(top: number): number
 			return top
 		end,
+		holdTop = function(top: number): number
+			return top
+		end,
 	} :: any,
 	"Logic/TopBand"
 )
@@ -131,6 +134,7 @@ function Toast.push(text: string, kind: Kind?, duration: number?)
 end
 
 function Toast.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
+	local held: number? = nil -- the column's top while toasts show (Logic/TopBand.holdTop)
 	scope:New("Frame")({
 		Name = "Toasts",
 		Parent = parent,
@@ -147,6 +151,10 @@ function Toast.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 				if header then header - origin else nil,
 				k
 			)
+			-- Studio check of phase 4: a toast keeps its height until it leaves (it jumped up when a banner went)
+			local showing = #use(visible) > 0
+			top = TopBand.holdTop(top, held, showing)
+			held = if showing then top else nil
 			-- Studio check of phase 4: beside the tutorial's tile, not under it (Logic/TopBand.toastShift)
 			local keep = if TopBandState.Keep then use(TopBandState.Keep) else nil
 			local shift = 0

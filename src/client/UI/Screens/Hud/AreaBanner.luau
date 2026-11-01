@@ -23,10 +23,13 @@ local HOLD_SECONDS = 2.5
 local function AreaBanner(scope: Scope): Instance
 	local transparency = scope:Value(1)
 	local animated = scope:Tween(transparency, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out))
-	-- UI plan phase 2: the toasts start under this banner while it shows (UI/TopBandState, Logic/TopBand)
-	scope:Observer(transparency):onBind(function()
-		TopBandState.set("area", Fusion.peek(transparency) < 1)
-	end)
+	-- UI plan phase 2: the toasts start under this banner while it shows (UI/TopBandState, Logic/TopBand); Studio check
+	-- of phase 4: until its fade ends (a toast under it jumped up while it still faded)
+	local function flag()
+		TopBandState.set("area", Fusion.peek(transparency) < 1 or Fusion.peek(animated) < 1)
+	end
+	scope:Observer(transparency):onBind(flag)
+	scope:Observer(animated):onChange(flag)
 	table.insert(scope, function()
 		TopBandState.set("area", false)
 	end)

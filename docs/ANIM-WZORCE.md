@@ -1124,6 +1124,28 @@ stances a median 0.00, at most 0.26, none at 0.35. Two loose ends:
   the feet the tail keys free near the ground (up to 2-4 studs in the sim); a 14° turn at a blow's start slides a hind
   foot up to 0.3 (the blow's own moves of a pinned foot).
 
+#### Fourth capture: an action cut by another (2026-11-01)
+
+Studio r7, read the way the frame is drawn (`PreRender:Connect(function() task.defer(read) end)`: a plain
+`PreSimulation` or `PreRender` read can run before the pose is set and reads the last one): the chase is one gallop
+(670 frames, no blips), stances a median 0.00, at most 0.34. The one frame over 11.5°: 13.8° as the first bite started
+(`QuadAction` bite, dt 0.0161). Not the heading's cap: the bite **cut the alert** (the aggro's roar, keyed body pitch
+and legs) in one frame. An action replaced, or ended, while it still keyed the body dropped its pose at once, and an
+action the client starts late (a strike-now blow, its timeline near the hit already) came in at its full weight.
+
+- An action replaced or cleared while it still keys the body fades out over 0.2 s on its own timeline, under the new
+  one; an action eases in from the frame the pose first has it, not from its start (`keyAction`).
+- Sim of the aggro (idle 3 s, the fighter behind; the server turns the root 180° in network steps of 60-120° at
+  10-20 Hz while the alert plays; the bite cuts it 0.3-0.6 s in, started late or not, the root faced 20° more): the
+  Root bone at most 5.8-6.1° a frame (was 10.7-11.8 at the cut), no there-and-back, the feet at most 0.02 (a hind
+  foot 0.40 before). Spec: "turns to a fighter behind it in the server's network steps".
+- The there-and-back pairs of runs 1-2 (a frame turned 115-170° and the next back) do not come out of the pose: each
+  frame's pose is solved for the look root's heading of that frame (the network step's whole turn goes into the drawn
+  heading's offset). In Studio the look also carries `QuadRootYaw`, the heading (degrees) the frame's pose was solved
+  for: a read that finds the look at another heading reads a pose drawn for another frame.
+- The alert→bite blips at a chase's start (`stand` 9 frames, `trot` 11) are what the pose draws: the body stands
+  between the server's turn steps once it has caught up with them, and the server closes in a few studs at the bite.
+
 ## 6. F5 Rigid models: caveSpider
 
 ### 6.1 What a rigid model can do
