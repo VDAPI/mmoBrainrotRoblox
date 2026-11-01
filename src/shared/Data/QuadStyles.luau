@@ -98,7 +98,9 @@ export type Style = {
 	-- planted feet stand still while the root moves on, a glide; a creep as slow as this still walks, short and slow
 	stepFrom: number?,
 	-- (the dragon, 2026-10-31) the feet the pose holds on the ground stay where they came down in the world, whatever
-	-- the root does (Logic/QuadMotion: the root's place from the client, the pace from its own travel)
+	-- the root does (Logic/QuadMotion: the root's place from the client, the pace from its own travel), also under a
+	-- blow; the body is drawn at a heading that turns round the server's snaps; a blow's legs go to the gait while the
+	-- root really runs
 	pinFeet: boolean?,
 	stun: { [string]: number }?,
 	labExtra: { string }?,

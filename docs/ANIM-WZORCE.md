@@ -1001,6 +1001,31 @@ tests/dragon.spec.luau. Deviations from the tables above:
   0.8-3.3, 23 with no velocity); a turn on the spot (1.2-4 rad/s) at most 0.34; the game's pounce (12-45 studs) 0.06.
   Specs: tests/dragon.spec.luau "its feet on a real spawn's root".
 
+#### A real chase round a circle (2026-11-01)
+
+Studio's capture (a player moved by the server on a circle of 16 studs, then straight on; 909 frames at the run): the
+stances slid a median 0.2-0.9 stud, up to 11, and the Root bone turned 136° in one frame. The causes, all under the
+server's AI: in reach it closes in while it winds up a blow, so a blow that keys the legs held them in place under a
+running root; it faces the target in one snap (`face`, the root's CFrame), so the body turned at once and the blow's
+feet were dragged round with it; a blow taking the feet over slid them onto its places. Now (style `pinFeet`):
+
+- **The drawn heading** follows the root's at most 6 rad/s (30/s otherwise): a snap is turned over a few frames
+  (the body bone's `byaw` carries the difference; the pose's foot places, the look and the yaw rate the lean and the
+  tail read turn with it), and a step goes where the place will be as it lands.
+- **A blow's legs go to the gait while the root really runs** (its pace 0.2 → 0.8 L/s; not a pose it holds, a death).
+- **A blow takes the feet over with a step**: lifted from the pin onto its place (as far as 0.2 L, the step's full
+  0.1 L), its places kept at the heading the body will have; once it has them (or gives them back early), they are
+  pinned and go with its own moves of them, and they step as in the gait when the root moves or turns under it.
+- A step lifts off its print before it moves (from 0.1 of its time) and comes straight down on a spot it keeps from
+  four fifths of its time; a foot set down while still lifted settles, also into the next step.
+- Sim of that chase (the server's AI at 5 ticks/s, 20 Hz interpolated, blows every 1.6 s): every stance's slide a
+  median 0.00-0.01 stud, at most 0.07 (was a median 0.05-0.63, up to 7.6 in the same sim), the Root bone at most
+  11.9° a frame (the tail's own spin); a 135-170° snap at a blow's start: at most 6.6° a frame, the feet 0.11. Specs:
+  "chases a target round a circle, striking on the server's AI" and "turns round a snap of the root's heading".
+- `bone_45` (Studio's hind-right foot) is the toe's end bone under the paw (`bone_44`, which the rig drives like
+  `bone_40`); the toe tips 0.06-0.08 stud lower than its stance as the heel peels, so few frames are within 0.08 of its
+  lowest. Measure `bone_44` for the hind right.
+
 ## 6. F5 Rigid models: caveSpider
 
 ### 6.1 What a rigid model can do
