@@ -289,6 +289,43 @@ function LookBuild.tint(model: Model, rig: Rig, tint: string?, amount: number, g
 	end
 end
 
+local function multiply(a: Color3, b: Color3): Color3
+	return Color3.new(a.R * b.R, a.G * b.G, a.B * b.B)
+end
+
+-- A real (imported) model drawn in `color` (W26: a monster variant over its base's model, Data/MonsterAssetVariants;
+-- 2026-11-01: a mount skin over a real mount, Logic/Mounts.coatTint). Tripo textures are multiplied by it
+-- (SurfaceAppearance.Color, the way hair colours tint, AvatarBuild); a textured MeshPart without a SurfaceAppearance
+-- gets one over its texture when the engine allows it (else it keeps its texture as it is); untextured parts take the
+-- product as their Color. The HumanoidRootPart is left alone.
+function LookBuild.recolor(model: Model, color: Color3)
+	for _, item in model:GetDescendants() do
+		if item:IsA("SurfaceAppearance") then
+			pcall(function()
+				(item :: any).Color = color
+			end)
+		elseif item:IsA("MeshPart") then
+			if item.TextureID == "" then
+				item.Color = multiply(item.Color, color)
+			elseif not item:FindFirstChildOfClass("SurfaceAppearance") then
+				local surface = Instance.new("SurfaceAppearance")
+				local ok = pcall(function()
+					(surface :: any).ColorMap = item.TextureID;
+					(surface :: any).Color = color
+				end)
+				-- only when the texture really moved over (a SurfaceAppearance without it would blank the part)
+				if ok and (surface :: any).ColorMap == item.TextureID then
+					surface.Parent = item
+				else
+					surface:Destroy()
+				end
+			end
+		elseif item:IsA("BasePart") and item.Name ~= "HumanoidRootPart" then
+			item.Color = multiply(item.Color, color)
+		end
+	end
+end
+
 -- Strips scripts from a cloned asset (backdoor protection); returns how many were removed.
 function LookBuild.stripScripts(model: Instance): number
 	local removed = 0

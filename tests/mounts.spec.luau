@@ -1,7 +1,8 @@
 --!strict
 -- S96: mounts 1 (docs/DESIGN-15.md §2): data (Data/Mounts, Config.Mount), the horse look (Logic/Anatomy plan "horse"),
 -- riding speed, places, who may mount, granting, the seat, the rider pose and the save template. S97: the upgrade
--- curve, canUpgrade, boss and premium mounts, the boss roll, skins over the look and the quest skins.
+-- curve, canUpgrade, boss and premium mounts, the boss roll, skins over the look and the quest skins. 2026-11-01: the
+-- tint of a skin over a textured real model (coatTint).
 
 local AccountSchema = require("../src/shared/Logic/AccountSchema")
 local Anatomy = require("../src/shared/Logic/Anatomy")
@@ -646,6 +647,85 @@ describe("S97 lookWith", function()
 				)
 				expect(#rig.pieces <= Anatomy.BUDGET.mount).toBe(true)
 				expect(rig.sockets.Saddle ~= nil).toBe(true)
+			end
+		end
+	end)
+end)
+
+-- 2026-11-01: a mount skin over a textured real model (Logic/Mounts.coatTint, Util/MountLook via LookBuild.recolor).
+describe("coatTint: a skin over a real model", function()
+	local function rgb(hex: string): { number }
+		local r, g, b = string.match(hex, "^#(%x%x)(%x%x)(%x%x)$")
+		return { tonumber(r, 16) :: number, tonumber(g, 16) :: number, tonumber(b, 16) :: number }
+	end
+
+	local function skins(): { Cosmetics.Def }
+		local out: { Cosmetics.Def } = {}
+		for _, c in Cosmetics.list do
+			if c.kind == "mountskin" then
+				table.insert(out, c)
+			end
+		end
+		return out
+	end
+
+	it("darkens every coat toward the skin, never brighter than the coat and never past the skin", function()
+		local list = skins()
+		expect(#list >= 8).toBe(true)
+		for _, def in MountData.list do
+			local coat = rgb(def.look.colors.base)
+			for _, skin in list do
+				local tint = Mounts.coatTint(def.look.colors.base, skin)
+				local base = skin.skin and skin.skin.colors and skin.skin.colors.base
+				if tint then
+					expect(base ~= nil).toBe(true)
+					local k, want = rgb(tint), rgb(base :: string)
+					local darker = false
+					for i = 1, 3 do
+						-- a multiply: 0..1 per channel; the coat times it lands on the skin, or stays as it is on a
+						-- channel where the skin is lighter (never darker than the skin)
+						expect(k[i] <= 255).toBe(true)
+						expect(coat[i] * k[i] / 255 >= math.min(coat[i], want[i]) - 1).toBe(true)
+						expect(coat[i] * k[i] / 255 <= coat[i] + 0.5).toBe(true)
+						darker = darker or k[i] < 255 * Mounts.TINT_FLOOR
+					end
+					expect(darker).toBe(true)
+				elseif base then
+					-- no tint: the skin is no darker than the coat on any channel (beyond the floor)
+					local want = rgb(base :: string)
+					for i = 1, 3 do
+						expect(coat[i] <= 0 or want[i] / coat[i] >= Mounts.TINT_FLOOR).toBe(true)
+					end
+				end
+			end
+		end
+	end)
+
+	it("dyes the bay horse raven and leaves light skins and skins without a coat alone", function()
+		local horse = assert(MountData.get("mount_horse"))
+		local coat = horse.look.colors.base
+		local raven = assert(Cosmetics.get("mountskin_raven"))
+		local tint = rgb(assert(Mounts.coatTint(coat, raven)))
+		local have, want = rgb(coat), rgb(((raven.skin :: Cosmetics.Skin).colors :: any).base)
+		for i = 1, 3 do
+			expect(math.abs(have[i] * tint[i] / 255 - want[i]) <= 1).toBe(true)
+		end
+		expect(Mounts.coatTint(coat, Cosmetics.get("mountskin_ivory"))).toBe(nil)
+		expect(Mounts.coatTint(coat, Cosmetics.get("mountskin_spring"))).toBe(nil)
+		expect(Mounts.coatTint(coat, nil)).toBe(nil)
+		expect(Mounts.coatTint(coat, Cosmetics.get("outfit_ranger"))).toBe(nil)
+		expect(Mounts.coatTint(nil, raven)).toBe(nil)
+		expect(Mounts.coatTint("bay", raven)).toBe(nil)
+	end)
+
+	it("keeps Azgor's lion close to its own dark, ember-lit coat under any skin", function()
+		local azgor = assert(MountData.get("mount_azgor"))
+		for _, skin in skins() do
+			local tint = Mounts.coatTint(azgor.look.colors.base, skin)
+			if tint then
+				for _, k in rgb(tint) do
+					expect(k >= 0.8 * 255).toBe(true)
+				end
 			end
 		end
 	end)
