@@ -2,7 +2,10 @@
 -- S162e (owner's tester 2026-10-31: monsters stuck on obstacles were cheesed): progress, repath and evade of a chasing
 -- monster (Logic/Pursuit).
 
+local Anatomy = require("../src/shared/Logic/Anatomy")
 local Combat = require("../src/shared/Data/Combat")
+local MonsterLooks = require("../src/shared/Data/MonsterLooks")
+local Monsters = require("../src/shared/Data/Monsters")
 local Pursuit = require("../src/shared/Logic/Pursuit")
 local T = require("./Test")
 
@@ -194,11 +197,52 @@ T.describe("Pursuit (S162e)", function()
 		T.expect(radius).toBe(2)
 		T.expect(height).toBe(5)
 		radius, height = Pursuit.agent(4, 3, 6, 4.5)
-		T.expect(radius).toBe(4)
+		T.expect(radius).toBe(3)
 		T.expect(height).toBe(9)
 		radius, height = Pursuit.agent(30, 30, 30, 30)
 		T.expect(radius).toBe(Pursuit.RADII[#Pursuit.RADII])
 		T.expect(height).toBe(Pursuit.HEIGHTS[#Pursuit.HEIGHTS])
+	end)
+
+	-- Studio 2026-11-01 (most path asks around the meadows barn found no way): the radius came from the body's length,
+	-- so a 1.7 studs wide ice wolf got 4 and needed an 8 studs wide way (a barn 6-7 studs from a fence: no path)
+	T.it("sizes the agent by the body's width, not its length", function()
+		-- a long, narrow body walks lengthwise: Roblox's default agent
+		T.expect((Pursuit.agent(1.7, 1.5, 3.2, 1.2))).toBe(2) -- ice wolf
+		T.expect((Pursuit.agent(1.5, 1.1, 3.2, 0.4))).toBe(2) -- salamander
+		T.expect((Pursuit.agent(3.6, 3, 5.2, 1.6))).toBe(3) -- bear
+		-- every monster 3 studs wide or less (the wolves, boars, goblins, bandits) is a 2 studs agent
+		local checked = 0
+		for id, def in Monsters.byId do
+			local region = if (def.region or 0) > 0 then def.region else nil
+			local look = MonsterLooks.get(id, region)
+			local size: { number }? = nil
+			local hip = 0
+			if look and look.asset then
+				local k = def.size * (look.asset.scale or 1)
+				size = { look.asset.rootSize[1] * k, look.asset.rootSize[2] * k, look.asset.rootSize[3] * k }
+				hip = math.max(0.1, look.asset.hipHeight * k)
+			else
+				local ok, rig = pcall(Anatomy.build, (look or MonsterLooks.get("bandit")) :: any, {
+					id = id,
+					variant = "normal",
+					scale = def.size,
+				})
+				if ok then
+					size = { rig.root.size[1], rig.root.size[2], rig.root.size[3] }
+					hip = rig.hipHeight
+				end
+			end
+			if size then
+				local radius = Pursuit.agent(size[1], size[2], size[3], hip)
+				T.expect(radius >= size[1] / 2).toBe(true)
+				if size[1] <= 3 then
+					T.expect(radius).toBe(2)
+				end
+				checked += 1
+			end
+		end
+		T.expect(checked >= 40).toBe(true)
 	end)
 
 	T.it("walks over what lies below its root (step height from the hip height)", function()
