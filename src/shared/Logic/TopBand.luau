@@ -8,7 +8,7 @@
 
 local TopBand = {}
 
-export type Id = "achievement" | "area" | "zone"
+export type Id = "achievement" | "announcement" | "area" | "zone"
 export type Shown = { [string]: boolean }
 export type Rect = { left: number, top: number, right: number, bottom: number }
 
@@ -20,11 +20,13 @@ TopBand.TOAST_BAND = 2 * 64 + 8 -- about as tall as MAX_TOASTS toasts of two lin
 TopBand.EDGE = 16 -- the toasts never move closer than this to the layer's side
 
 -- Where each banner stands while it shows (its top and bottom edge; the area banner with its profile line, the
--- achievement toast at its PC size, the larger of the two). `hud`: the banner stands in the HUD's layer, which starts
--- under Roblox's top bar (UI/Scale.TopBar); the toasts and the achievement toast stand in the Toasts layer, which
--- covers the whole screen.
+-- achievement toast at its PC size, the larger of the two; the server's announcement, Components/Announcement, from
+-- the top of its ordinary banner to the bottom of its larger mythic one). `hud`: the banner stands in the HUD's layer,
+-- which starts under Roblox's top bar (UI/Scale.TopBar); the toasts, the achievement toast and the announcement stand
+-- in the Toasts layer, which covers the whole screen.
 TopBand.BANNERS = table.freeze({
 	achievement = table.freeze({ top = 64, bottom = 64 + 104 }),
+	announcement = table.freeze({ top = 130 - 64 / 2, bottom = 150 + 84 / 2 }),
 	area = table.freeze({ top = 96, bottom = 96 + 34 + 22, hud = true }),
 	zone = table.freeze({ top = 150, bottom = 150 + 110, hud = true }),
 })
@@ -86,9 +88,27 @@ function TopBand.toastShift(screenW: number, width: number, top: number, keep: R
 	return math.clamp(shift, math.min(0, TopBand.EDGE - left), math.max(0, screenW - TopBand.EDGE - right))
 end
 
--- Whether the achievement toast waits before it slides in: while the zone or the area banner shows.
+-- Whether the achievement toast waits before it slides in: while the zone or the area banner shows, or the server's
+-- announcement (Studio check of phase 4: the two stood at the same height, one over the other).
 function TopBand.achievementWaits(shown: Shown): boolean
-	return shown.zone == true or shown.area == true
+	return shown.zone == true or shown.area == true or shown.announcement == true
+end
+
+-- Studio check of phase 4: whether the server's announcement waits before it slides in: while the achievement toast
+-- shows (each waits for the other; the first to show keeps the band).
+function TopBand.announcementWaits(shown: Shown): boolean
+	return shown.achievement == true
+end
+
+-- Studio check of phase 4 (1108 x 576: a toast under the zone banner jumped 156 px up for its last moments when the
+-- banner went): the top of the toasts' column wanted at `top`, while toasts show (`showing`) in a column that stood at
+-- `held`: it never moves up while toasts show (down at once, for a banner that comes), and takes its own place again
+-- once none shows.
+function TopBand.holdTop(top: number, held: number?, showing: boolean): number
+	if showing and held and held > top then
+		return held
+	end
+	return top
 end
 
 return table.freeze(TopBand)

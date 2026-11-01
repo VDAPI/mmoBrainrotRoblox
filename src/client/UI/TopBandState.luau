@@ -22,7 +22,7 @@ local TopBand = SoftRequire(
 )
 
 -- Logic/TopBand's types (a soft require carries none)
-type Id = "achievement" | "area" | "zone"
+type Id = "achievement" | "announcement" | "area" | "zone"
 type Shown = { [string]: boolean }
 type Rect = { left: number, top: number, right: number, bottom: number }
 
