@@ -1071,6 +1071,29 @@ causes, none of which the sim had shown:
   root still stands where it rendered and the pose is the one `PreRender` set; a read in `Heartbeat` pairs that pose
   with the root the next frame renders. `bone_44` for the hind right.
 
+#### Third capture: fixed, and the last polish (2026-11-01)
+
+Studio on the second round's fixes (read in `PreSimulation`, 965 frames): every foot down 24-50% of the frames,
+stances a median 0.00, at most 0.26, none at 0.35. Two loose ends:
+
+- **A lone trot window in a galloping chase** (the RC read the gait from the diagonal pairs' sync, 0.4 s windows). The
+  server halts the root for a few tenths of a second (a blow's stop, a goal reached): the halt dropped the intent's
+  gait and its eased pace, so the run on started from a walk through a trot. Now a halt shorter than 0.6 s keeps the
+  gait and its pace; the pace eases up at rate 6 and down at 2; a gait is stepped down from only once it has held
+  0.6 s (stepped up at once). Spec: "gallops on through a chase's short halts" (0.2-0.5 s halts every 1.5 s: before,
+  a walk and a trot after each halt of 0.3 s or more).
+- **The Root bone at 13.8° in a frame.** The tail's own spin peaks at 11.9° a 60th of a second (714°/s): a frame a
+  quarter longer turns it 14.7°, and a server's turn of the root during the spin added the drawn heading's follow to
+  it (16.7-17.6° a frame in the sim with a 14-30° turn 0.6-0.7 s into the tail). Now the body's heading in the world
+  turns at most 11.5° a frame, whatever the frame, the rest carried into the next frames. Spec: "turns the body at
+  most 11.5 degrees a frame".
+- **Diagnostics in Studio**: the look carries `QuadGait` (`gallop`, `trot`, `walk`, `spin`, `stand`: the heaviest
+  gait it draws) and `QuadAction` (the action playing, empty between), set when they change; Studio only
+  (`RunService:IsStudio()`).
+- Left open (no change, rare in a chase): a server's turn of 60° or more in the middle of the tail's spin still drags
+  the feet the tail keys free near the ground (up to 2-4 studs in the sim); a 14° turn at a blow's start slides a hind
+  foot up to 0.3 (the blow's own moves of a pinned foot).
+
 ## 6. F5 Rigid models: caveSpider
 
 ### 6.1 What a rigid model can do

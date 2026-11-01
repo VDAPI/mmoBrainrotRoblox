@@ -1342,6 +1342,80 @@ T.describe("Dragon: its feet on a real spawn's root", function()
 			T.expect(studioSlide(frames) <= 0.35).toBe(true)
 		end
 	end)
+
+	-- (Studio, 2026-11-01: a lone trot window now and then in a galloping chase) the server halts the root for a few
+	-- tenths of a second (a blow's stop, a goal reached) and runs on: the gallop goes on through the halts
+	T.it("gallops on through a chase's short halts", function()
+		for _, halt in { 0.2, 0.35, 0.5 } do
+			local inst = assert(QuadMotion.new(skel, "dragon", 5))
+			local t, z, other = 0, 0, 0
+			while t < 8 do
+				t += DT
+				local v = if t % 1.5 < 1.5 - halt then 13 else 0
+				z -= v * DT
+				QuadMotion.step(
+					inst,
+					{
+						now = t,
+						dt = DT,
+						speed = v / SCALE,
+						gait = "run",
+						yawRate = 0,
+						combat = true,
+						rootAt = { 0, z / SCALE, 0 },
+					} :: any
+				)
+				local w = inst.weights
+				if t > 1 and (w.gallop or 0) < math.max(w.trot or 0, w.walk or 0) then
+					other += 1
+				end
+			end
+			T.expect(other).toBe(0)
+		end
+	end)
+
+	-- (Studio, 2026-11-01: the Root bone turned 13.8 degrees in a frame in the circle) the tail's own spin, at most
+	-- 11.9 degrees a 60th of a second, with the drawn heading's follow of a server's turn under it (16.7 degrees a frame
+	-- in the sim) or a longer frame (14.7 at frames up to a quarter longer): the body's heading turns at most 11.5
+	-- degrees a frame whatever the frame
+	T.it("turns the body at most 11.5 degrees a frame: the tail's spin with a server's turn, long frames", function()
+		for _, case in { { 30, 0.6, 0 }, { 14, 0.7, 0 }, { 0, 0, 0.25 }, { 30, 0.6, 0.25 } } do
+			local inst = assert(QuadMotion.new(skel, "dragon", 5))
+			local prev: QuadPose.Posed?, prevYaw = nil, 0
+			local worstTurn, yaw, t, i = 0, 0, 0, 0
+			local run: any = nil
+			while t < 3.5 do
+				i += 1
+				-- (a quarter of the frames a quarter longer, by turns)
+				local dt = DT * (if i % 4 == 0 then 1 + case[3] else 1)
+				t += dt
+				if t >= 1 and not run then
+					run = { name = "tail", start = t, hit = 0.55 * 1.35 }
+				end
+				if run and t >= 1 + case[2] and yaw == 0 then
+					yaw = math.rad(case[1])
+				end
+				local posed = QuadMotion.step(
+					inst,
+					{
+						now = t,
+						dt = dt,
+						speed = 0,
+						yawRate = 0,
+						combat = true,
+						look = { 0, 0, -5 * L },
+						action = run,
+						rootAt = { 0, 0, yaw },
+					} :: any
+				)
+				if prev then
+					worstTurn = math.max(worstTurn, rootTurn(prev, prevYaw, posed, yaw))
+				end
+				prev, prevYaw = posed, yaw
+			end
+			T.expect(worstTurn <= 12).toBe(true)
+		end
+	end)
 end)
 
 T.describe("Dragon: stun and freeze", function()

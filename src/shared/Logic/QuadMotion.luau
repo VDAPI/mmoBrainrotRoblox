@@ -109,6 +109,9 @@ export type Instance = {
 	blowLast: number, -- the blow's weight last frame
 	gaitRatio: number, -- the pace (leg lengths a second) the server's gait intent is stepped down by, eased
 	gaitName: string?, -- the gait that intent last gave
+	gaitSince: number, -- when it gave it
+	gaitStill: number, -- s the root has stood since it last moved (a short halt keeps that gait)
+	drawnYaw: number?, -- the body's heading in the world as last drawn (its root bone's yaw)
 }
 
 local function hash01(n: number, seed: number): number
@@ -190,6 +193,9 @@ function QuadMotion.new(skel: QuadPose.Skeleton, styleId: string, seed: number):
 		blowLast = 0,
 		gaitRatio = 0,
 		gaitName = nil,
+		gaitSince = 0,
+		gaitStill = 0,
+		drawnYaw = nil,
 		rootX = 0,
 		rootZ = 0,
 		rootYaw = 0,
@@ -401,6 +407,7 @@ local JUMP = 1.2 -- leg lengths the root moves in one frame that are a teleport,
 -- frame) the body is drawn at a heading that follows the root's within SHOW_FOLLOW per second, at most SHOW_TURN rad/s
 local SHOW_FOLLOW = 30
 local SHOW_TURN = 6
+local BODY_STEP = math.rad(11.5) -- the most the drawn body turns in the world in a frame
 -- (the same chase: a blow wound up while the server still closed in, the legs keyed in place under a running root)
 -- the root's pace (leg lengths a second) from which an action leaves its legs to the gait, and at which it has
 local ROAM_FROM, ROAM_FULL = 0.2, 0.8
@@ -715,7 +722,12 @@ end
 -- edge past it (a real spawn's chase, 2026-11-01: the server's bursts of the run's speed flipped a dragon between trot
 -- and gallop a few times a second, the two gaits' feet ever half up, one fore paw never down).
 local GAIT_HOLD = 0.15
-local GAIT_EASE = 3 -- the rate the pace the intent is stepped down by follows the pace at
+-- the rates the pace the intent is stepped down by follows the pace at, up and down
+local GAIT_UP, GAIT_DOWN = 6, 2
+-- (Studio, 2026-11-01: a lone trot in a gallop round the server's halts) a gait the intent gives is stepped down from
+-- only once it has held GAIT_DWELL s, and a halt shorter than that keeps it and its pace
+local GAIT_DWELL = 0.6
+local GAIT_RANK: { [string]: number } = { walk = 1, trot = 2, gallop = 3 }
 local function serverGait(style: QuadStyles.Style, gait: string?, ratio: number, held: string?): string?
 	local name = if gait then SERVER_GAIT[gait] else nil
 	if not name or not style.gaits[name] then
@@ -748,13 +760,34 @@ local function locomotion(inst: Instance, input: Input, forced: string?, extra: 
 	local moving = speed >= stepFrom
 	local ratio = speed / L
 	local force = if forced and style.gaits[forced] then FORCED[forced] else nil
-	inst.gaitRatio = if input.snap then ratio else approach(inst.gaitRatio, ratio, GAIT_EASE, dt)
-	local intentName = if style.serverGait
-			and moving
-			and not force
-		then serverGait(style, input.gait, inst.gaitRatio, inst.gaitName)
-		else nil
-	inst.gaitName = intentName
+	if not style.serverGait or force or input.snap then
+		inst.gaitName = nil
+	end
+	if input.snap then
+		inst.gaitRatio, inst.gaitStill = ratio, 0
+	end
+	if style.serverGait and not force then
+		if moving then
+			inst.gaitStill = 0
+			local held = inst.gaitName
+			inst.gaitRatio = approach(inst.gaitRatio, ratio, if ratio > inst.gaitRatio then GAIT_UP else GAIT_DOWN, dt)
+			local name = serverGait(style, input.gait, inst.gaitRatio, held)
+			local up = name ~= nil and held ~= nil and (GAIT_RANK[name] or 0) > (GAIT_RANK[held] or 0)
+			if name == nil or held == nil or up or input.now - inst.gaitSince >= GAIT_DWELL then
+				if name ~= held then
+					inst.gaitSince = input.now
+				end
+				inst.gaitName = name
+			end
+		else
+			inst.gaitStill += dt
+			if inst.gaitStill >= GAIT_DWELL then
+				inst.gaitName = nil
+				inst.gaitRatio = 0
+			end
+		end
+	end
+	local intentName = if moving or not turning then inst.gaitName else nil
 	local intent = if intentName then FORCED[intentName] else nil
 	local targetW = force or intent or gaitWeights(style, if turning then 0.8 else ratio)
 	-- (planted feet step at least half a stride: the cadence below makes their stance keep the ground's pace)
@@ -1247,8 +1280,23 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 	end
 	if style.pinFeet then
 		pinFeet(inst, controls, now, legBlow, legHolds)
-		if inst.yawOff ~= 0 then
-			controls.byaw = (controls.byaw or 0) + inst.yawOff
+		-- (Studio, 2026-11-01: the tail's own spin with the drawn heading's follow of a server's turn under it, or a
+		-- long frame, turned the Root bone 13.8 degrees in a frame) the body's heading in the world turns at most
+		-- BODY_STEP a frame; the rest is carried into the next
+		local byaw = (controls.byaw or 0) + inst.yawOff
+		local drawn = inst.rootYaw + byaw
+		local last = inst.drawnYaw
+		if last and not input.snap then
+			local d = wrapAngle(drawn - last)
+			if math.abs(d) > BODY_STEP then
+				local over = d - math.sign(d) * BODY_STEP
+				byaw -= over
+				drawn -= over
+			end
+		end
+		inst.drawnYaw = wrapAngle(drawn)
+		if byaw ~= 0 then
+			controls.byaw = byaw
 		end
 	end
 	local posed = QuadPose.solve(skel, controls)
@@ -1257,6 +1305,24 @@ function QuadMotion.step(inst: Instance, input: Input): QuadPose.Posed
 end
 
 ---------------------------------------------------------------- the game's choices
+
+-- The gait it draws ("gallop", "trot", "walk", the heaviest weight), "spin" on the spot, or "stand" (a diagnostic:
+-- AnimationController puts it on the look in Studio).
+function QuadMotion.gaitOf(inst: Instance): string
+	if inst.move < 0.1 then
+		return "stand"
+	end
+	if inst.spin > 0.5 then
+		return "spin"
+	end
+	local best, most = "walk", -1
+	for name, w in inst.weights do
+		if w > most then
+			best, most = name, w
+		end
+	end
+	return best
+end
 
 function QuadMotion.length(action: MotionTimeline.Action, hit: number): number
 	return MotionTimeline.length(action, hit)

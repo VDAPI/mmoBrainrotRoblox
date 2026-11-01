@@ -20,6 +20,7 @@ export type Rig = {
 	bones: { [string]: Bone },
 	mod: any,
 	root: BasePart, -- the look's root: the skeleton's space, whose place in the world pins the feet (`rootAt`)
+	look: Model,
 	muzzle: Attachment?, -- the monster root's Muzzle, moved onto `muzzleBone` each frame
 	muzzleBone: Bone?,
 	muzzleAt: Vector3?, -- the shots' point in the bone's own frame
@@ -73,7 +74,8 @@ function QuadRig.new(look: Model, styleId: string, seed: number, model: string):
 	if not motion then
 		return nil
 	end
-	local rig: Rig = { kind = "quad", skel = skel, motion = motion, bones = byName, mod = QuadMotion, root = root }
+	local rig: Rig =
+		{ kind = "quad", skel = skel, motion = motion, bones = byName, mod = QuadMotion, root = root, look = look }
 	-- the mouth: the point is kept without the monster's root too (AnimLab's look, Vfx/MotionFx's breath read it)
 	local spec = map.muzzle
 	local muzzleBone = spec and byName[spec.bone]
