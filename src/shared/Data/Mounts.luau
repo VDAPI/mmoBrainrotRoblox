@@ -207,6 +207,10 @@ Mounts.RIDER = table.freeze({
 Mounts.assets = table.freeze({
 	mount_horse = { model = "mount_horse", saddle = { 0, 3.7, -0.35 }, rig = "quad", style = "boar" },
 	mount_azgor = { model = "mount_azgor", saddle = { 0, 3.6, 0.55 }, rig = "quad", style = "canine" },
+	mount_grimrok = { model = "mount_grimrok", saddle = { 0, 3.15, 0.4 }, rig = "quad", style = "canine" },
+	mount_morvane = { model = "mount_morvane", saddle = { 0, 3.6, 0.2 }, rig = "quad", style = "boar" },
+	mount_vaelgrath = { model = "mount_vaelgrath", saddle = { 0, 3.35, 0.3 }, rig = "quad", style = "canine" },
+	mount_royal = { model = "mount_royal", saddle = { 0, 3.9, 0.45 }, rig = "quad", style = "canine" },
 }) :: { [string]: MountAsset }
 
 -- Upgrade to mount level n (DESIGN-15 §2, S97): character level needed, gold and monster parts. The same for every

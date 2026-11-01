@@ -486,6 +486,187 @@ local REMODELS: { [string]: { marker: { string }, rig: Rig } } = {
 			},
 		},
 	},
+	-- the armoured warg: a plain canine rig, front along -Z
+	mount_grimrok = {
+		marker = { "tripo::Spine_2", "bone_18" },
+		rig = {
+			body = "tripo::Root",
+			maxTurn = math.rad(11),
+			spine = { { bone = "tripo::Spine_0", share = 0.5 }, { bone = "tripo::Spine_1", share = 0.5 } },
+			neck = { { bone = "tripo::Head_0", share = 1 } },
+			head = "tripo::Head_1",
+			tail = { "bone_23", "tripo::Tail_0", "tripo::Tail_1", "tripo::Tail_2", "tripo::Tail_3" },
+			legs = {
+				FL = {
+					{ bone = "tripo::Spine_2", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "tripo::0_Left_Limb_0", fold = 1 },
+					{ bone = "tripo::0_Left_Limb_1", fold = -0.5 },
+					{ bone = "tripo::0_Left_Limb_2", paw = 1, level = true },
+				},
+				FR = {
+					{ bone = "bone_9", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "tripo::0_Right_Limb_0", fold = 1 },
+					{ bone = "tripo::0_Right_Limb_1", fold = -0.5 },
+					{ bone = "tripo::0_Right_Limb_2", paw = 1, level = true },
+				},
+				HL = {
+					{ bone = "bone_13", swing = 1, fold = 0.3, spread = 1 },
+					{ bone = "tripo::1_Left_Limb_0", fold = -1 },
+					{ bone = "tripo::1_Left_Limb_1", fold = 0.9 },
+					{ bone = "tripo::1_Left_Limb_2", fold = -0.2 },
+					{ bone = "tripo::1_Left_Limb_3", paw = 1 },
+				},
+				HR = {
+					{ bone = "bone_18", swing = 1, fold = 0.3, spread = 1 },
+					{ bone = "tripo::1_Right_Limb_0", fold = -1 },
+					{ bone = "tripo::1_Right_Limb_1", fold = 0.9 },
+					{ bone = "tripo::1_Right_Limb_2", fold = -0.2 },
+					{ bone = "tripo::1_Right_Limb_3", paw = 1 },
+				},
+			},
+		},
+	},
+	-- the spectral stag: a long back Spine_1..6 carrying the fore legs through Spine_7..8 and bone_21..22; the right hind
+	-- leg stops at the knee (the mesh below follows it)
+	mount_morvane = {
+		marker = { "tripo::Spine_8", "bone_33" },
+		rig = {
+			body = "tripo::Root",
+			maxTurn = math.rad(11),
+			spine = {
+				{ bone = "tripo::Spine_1", share = 0.15 },
+				{ bone = "tripo::Spine_2", share = 0.2 },
+				{ bone = "tripo::Spine_3", share = 0.2 },
+				{ bone = "tripo::Spine_4", share = 0.2 },
+				{ bone = "tripo::Spine_5", share = 0.15 },
+				{ bone = "tripo::Spine_6", share = 0.1 },
+			},
+			neck = { { bone = "tripo::Head_0", share = 1 } },
+			head = "tripo::Head_1",
+			tail = { "bone_2", "bone_3" },
+			legs = {
+				FL = {
+					{ bone = "tripo::Spine_7", swing = 0.2 },
+					{ bone = "tripo::Spine_8", swing = 0.8, fold = -0.3, spread = 1 },
+					{ bone = "tripo::0_Left_Limb_0", fold = 1 },
+					{ bone = "tripo::0_Left_Limb_1", fold = -1 },
+					{ bone = "tripo::0_Left_Limb_2", paw = 1 },
+				},
+				FR = {
+					{ bone = "bone_21", swing = 0.2 },
+					{ bone = "bone_22", swing = 0.8, fold = -0.3, spread = 1 },
+					{ bone = "tripo::0_Right_Limb_0", fold = 1 },
+					{ bone = "tripo::0_Right_Limb_1", fold = -1 },
+					{ bone = "tripo::0_Right_Limb_2", paw = 1 },
+				},
+				HL = {
+					{ bone = "bone_28", swing = 0.2 },
+					{ bone = "tripo::1_Left_Limb_0", swing = 0.8, fold = 0.3, spread = 1 },
+					{ bone = "tripo::1_Left_Limb_1", fold = -1 },
+					{ bone = "tripo::1_Left_Limb_2", fold = 0.9 },
+					{ bone = "tripo::1_Left_Limb_3", paw = 1 },
+				},
+				HR = {
+					{ bone = "bone_33", swing = 0.2 },
+					{ bone = "tripo::1_Right_Limb_0", swing = 0.8, fold = 0.3, spread = 1 },
+					{ bone = "tripo::1_Right_Limb_1", fold = -1, tip = { 0, -0.52, 0.25 } },
+				},
+			},
+		},
+	},
+	-- the wingless frost drake: Spine_0 carries the hind legs, Spine_3 the fore legs and the neck; the fore legs end at
+	-- the wrist (the paw follows it); the stray bones on the back stay
+	mount_vaelgrath = {
+		marker = { "tripo::Spine_3", "bone_29" },
+		rig = {
+			body = "tripo::Root",
+			maxTurn = math.rad(11),
+			spine = {
+				{ bone = "tripo::Spine_0", share = 0.25 },
+				{ bone = "tripo::Spine_1", share = 0.25 },
+				{ bone = "tripo::Spine_2", share = 0.25 },
+				{ bone = "tripo::Spine_3", share = 0.25 },
+			},
+			neck = { { bone = "tripo::Head_0", share = 0.5 }, { bone = "tripo::Head_1", share = 0.5 } },
+			head = "tripo::Head_2",
+			tail = { "bone_22", "bone_23", "tripo::Tail_0" },
+			legs = {
+				FL = {
+					{ bone = "tripo::0_Left_Limb_0", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "tripo::0_Left_Limb_1", fold = 1 },
+					{ bone = "tripo::0_Left_Limb_2", paw = 1, level = true, tip = { 0, -0.2, -0.03 } },
+				},
+				FR = {
+					{ bone = "tripo::0_Right_Limb_0", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "tripo::0_Right_Limb_1", fold = 1 },
+					{ bone = "tripo::0_Right_Limb_2", paw = 1, level = true, tip = { 0, -0.1, -0.03 } },
+				},
+				HL = {
+					{ bone = "tripo::1_Left_Limb_0", swing = 1, fold = 0.35, spread = 1 },
+					{ bone = "tripo::1_Left_Limb_1", fold = -1 },
+					{ bone = "tripo::1_Left_Limb_2", fold = 0.65, level = true },
+					{ bone = "tripo::1_Left_Limb_3", paw = 1 },
+				},
+				HR = {
+					{ bone = "tripo::1_Right_Limb_0", swing = 1, fold = 0.35, spread = 1 },
+					{ bone = "tripo::1_Right_Limb_1", fold = -1 },
+					{ bone = "tripo::1_Right_Limb_2", fold = 0.65, level = true },
+					{ bone = "tripo::1_Right_Limb_3", paw = 1 },
+				},
+			},
+		},
+	},
+	-- the royal griffin: the export's "1_Left" is the right hind leg and "0_Left" the left one; the fore legs and the
+	-- neck hang on Head_0; the folded wings (bone_29..32) stay
+	mount_royal = {
+		marker = { "tripo::Head_3", "bone_32" },
+		rig = {
+			body = "tripo::Root",
+			maxTurn = math.rad(11),
+			spine = {
+				{ bone = "tripo::Spine_0", share = 0.35 },
+				{ bone = "tripo::Spine_1", share = 0.35 },
+				{ bone = "tripo::0_Right_Limb_0", share = 0.3 },
+			},
+			neck = { { bone = "tripo::Head_1", share = 0.5 }, { bone = "tripo::Head_2", share = 0.5 } },
+			head = "tripo::Head_3",
+			tail = {
+				"bone_2",
+				"bone_3",
+				"bone_4",
+				"tripo::Tail_0",
+				"tripo::Tail_1",
+				"tripo::Tail_2",
+				"tripo::Tail_3",
+			},
+			legs = {
+				FL = {
+					{ bone = "bone_21", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "bone_22", fold = 1 },
+					{ bone = "bone_23", fold = -0.5 },
+					{ bone = "bone_24", paw = 1, level = true },
+				},
+				FR = {
+					{ bone = "bone_25", swing = 1, fold = -0.5, spread = 1 },
+					{ bone = "bone_26", fold = 1 },
+					{ bone = "bone_27", fold = -0.5 },
+					{ bone = "bone_28", paw = 1, level = true },
+				},
+				HL = {
+					{ bone = "tripo::0_Left_Limb_0", swing = 1, fold = 0.35, spread = 1 },
+					{ bone = "tripo::0_Left_Limb_1", fold = -1 },
+					{ bone = "tripo::0_Left_Limb_2", fold = 0.65, level = true },
+					{ bone = "tripo::0_Left_Limb_3", paw = 1 },
+				},
+				HR = {
+					{ bone = "tripo::1_Left_Limb_0", swing = 1, fold = 0.35, spread = 1 },
+					{ bone = "tripo::1_Left_Limb_1", fold = -1 },
+					{ bone = "tripo::1_Left_Limb_2", fold = 0.65, level = true },
+					{ bone = "tripo::1_Left_Limb_3", paw = 1 },
+				},
+			},
+		},
+	},
 }
 
 -- The map of `model` for a look with these bones: its new model's when `has` finds the marker, else QuadRigs.get.
