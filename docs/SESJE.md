@@ -14386,3 +14386,22 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   wywołania; wcześniej sprawdzenie po `FADE` sekundach mogło zastać przezroczystość 0,98 i zostawić go włączonym nad
   oknami. Bezpiecznik po 8 s też patrzy na żeton.
 - Test w `hudlayout.spec`. Nieobejrzane w Studio.
+
+### Plan UI, faza 4: nowy gracz i miary (2026-10-31)
+- `Logic/HudReveal` (czyste): `stage` (start / backpack / full z `character.tutorial`; brak zapisu, koniec i pominięcie
+  to full; plecak otwarty wcześniej liczy się), `hub` (Postać od kroku „plecak”, reszta od końca, Rywalizacja też od
+  `Unlocks.hubLevel`: nowe pole `hub` wpisu areny), `trackerGroup` (w samouczku tylko „quests”). `ScreenController`:
+  `hubShown` łączy odsłonę z zakładkami, `HudMenu.attention(lit, hubShown)` zapala ☰ od kafelka ukrytego huba.
+  `QuestTracker`: grupy kontraktów, dziennych, tygodniowych, osiągnięć i Elit II po samouczku. Test `hudreveal.spec`.
+- „!” na zakładkach: `WindowManager.SetTabBadge` (z `TAB_BADGES`), `Window.HeaderTab.badge` (kropka przy nazwie, bez
+  bieżącej zakładki).
+- Siatka: `HudStack.MARGIN` 22 (było 16, niezgodne z minimapą i portretem), `ICON`, `PORTRAIT` 340×110, `EFFECTS`;
+  `RIGHT_TOP` 356, `TOUCH_TOP` 192, `PARTY_TOP` 202 (ramki drużyny biorą go wprost), `EXTRAS` z portretu, róg (poczta,
+  PvP) 22 od krawędzi. Portret w `Hud/init` z tabeli `P` (godło 68, paski 20 co 4). Telefon: skala 0,7, czyli 238×77.
+- Minimapa: jedna plakietka w ramce (obszar z ikoną profilu i kolorem trudności albo nazwa mapy, tekst skalowany 15–20,
+  dymek „Mapa · Obszar”), bez linii pod ramką; + i − po najechaniu (dotyk: zawsze). `WaitingRow` stoi tuż pod minimapą.
+- Teksty `unlock.mounts` i `unlock.arena` mówią o przyciskach Postać i Rywalizacja. Pasek EXP już ma 10 px (faza 2).
+- Testy: `hudreveal` (nowy), `hudlayout` (siatka, portret, `RIGHT_TOP`). Nieobejrzane w Studio.
+- Z przeglądu Studio (po potwierdzeniu `3d6f1042`): ekran podróży (nazwa mapy, strefa, porada) stał nad kartami wyboru
+  postaci po zmianie postaci. `WorldController` zdejmuje go od razu, gdy faza sesji przestaje być „playing”, a ekran,
+  który przyjdzie bez grającej postaci, znika po sekundzie, chyba że wejście postaci zaraz go potwierdzi.
