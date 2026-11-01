@@ -28,8 +28,22 @@ local TopBand = SoftRequire(
 		underBars = function(top: number): number
 			return top
 		end,
+		announcementWaits = function(): boolean
+			return false
+		end,
 	} :: any,
 	"Logic/TopBand"
+)
+-- Studio check of phase 4: the band's flags (the announcement and the achievement toast wait for each other)
+local TopBandState = SoftRequire(
+	function()
+		return require(script.Parent.Parent.TopBandState)
+	end,
+	{
+		Shown = nil,
+		set = function() end,
+	} :: any,
+	"UI/TopBandState"
 )
 
 local Children = Fusion.Children
@@ -112,11 +126,28 @@ local function animate(on: boolean)
 	end
 end
 
+local BAND_RETRY = 0.5 -- seconds between two looks at the band while the achievement toast shows
+local waiting = false
+
 local function nextAnnouncement()
 	if showing or #queue == 0 then
 		return
 	end
+	-- Studio check of phase 4 (the achievement toast and the banner stood at the same height): it waits while the
+	-- achievement toast shows, which in turn waits while it shows (Logic/TopBand)
+	local band = if TopBandState.Shown then Fusion.peek(TopBandState.Shown) else nil
+	if band and TopBand.announcementWaits(band) then
+		if not waiting then
+			waiting = true
+			task.delay(BAND_RETRY, function()
+				waiting = false
+				nextAnnouncement()
+			end)
+		end
+		return
+	end
 	showing = true
+	TopBandState.set("announcement", true) -- the toasts start under it, the achievement toast waits
 	local entry = table.remove(queue, 1) :: Entry
 	current:set(entry.text)
 	style:set(entry.style)
@@ -128,6 +159,7 @@ local function nextAnnouncement()
 			showing = false
 			current:set(nil)
 			animate(false)
+			TopBandState.set("announcement", false) -- gone off the screen: the toasts move back up
 			nextAnnouncement()
 		end)
 	end)

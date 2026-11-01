@@ -136,6 +136,47 @@ T.describe("Top band of messages (UI plan phase 2)", function()
 		T.expect(count).toBe(2)
 	end)
 
+	T.it("Studio check of phase 4, third round: the band's messages wait for each other and hold still", function()
+		-- the achievement toast and the server's announcement stood at the same height: each waits for the other
+		T.expect(TopBand.achievementWaits({ announcement = true })).toBe(true)
+		T.expect(TopBand.announcementWaits({ achievement = true })).toBe(true)
+		T.expect(TopBand.announcementWaits({ zone = true, area = true })).toBe(false)
+		T.expect(TopBand.announcementWaits({})).toBe(false)
+		-- the toasts go under the announcement too
+		T.expect(TopBand.toastTop({ announcement = true })).toBe(TopBand.BANNERS.announcement.bottom + TopBand.GAP)
+		-- a toast keeps its height until it leaves: down at once, never up while toasts show
+		T.expect(TopBand.holdTop(90, 268, true)).toBe(268)
+		T.expect(TopBand.holdTop(268, 90, true)).toBe(268)
+		T.expect(TopBand.holdTop(90, 268, false)).toBe(90)
+		T.expect(TopBand.holdTop(90, nil, true)).toBe(90)
+		local toast = fs.readFile("src/client/UI/Components/Toast.luau")
+		T.expect(string.find(toast, "top = TopBand.holdTop(top, held, showing)", 1, true) ~= nil).toBe(true)
+		-- the zone and area banners keep their place in the band until their fade ends
+		for _, name in { "ZoneBanner", "AreaBanner" } do
+			local source = fs.readFile(`src/client/UI/Screens/Hud/{name}.luau`)
+			T.expect({ name, string.find(source, "Fusion.peek(animated) < 1", 1, true) ~= nil }).toEqual({ name, true })
+			T.expect({ name, string.find(source, "scope:Observer(animated):onChange(flag)", 1, true) ~= nil })
+				.toEqual({ name, true })
+		end
+		-- the announcement takes the band while it shows and gives it back once off the screen
+		local announcement = fs.readFile("src/client/UI/Components/Announcement.luau")
+		T.expect(string.find(announcement, "TopBand.announcementWaits(band)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(announcement, 'TopBandState.set("announcement", true)', 1, true) ~= nil).toBe(true)
+		T.expect(string.find(announcement, 'TopBandState.set("announcement", false)', 1, true) ~= nil).toBe(true)
+		-- its place in the band: the ordinary banner's top, the mythic one's bottom
+		T.expect(string.find(announcement, "local centre = if mythic then 150 else 130", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(announcement, "local half = (if mythic then 84 else 64) / 2", 1, true) ~= nil).toBe(true)
+		T.expect(TopBand.BANNERS.announcement.top).toBe(130 - 32)
+		T.expect(TopBand.BANNERS.announcement.bottom).toBe(150 + 42)
+		-- the tutorial's tile at its default place (the closing one) ends GAP over the cast bar, right over the bar
+		local cast = fs.readFile("src/client/UI/Screens/Hud/CastBar.luau")
+		T.expect(string.find(cast, "UDim2.new(0.5, 0, 1, -100)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(cast, "UDim2.fromOffset(360, 26)", 1, true) ~= nil).toBe(true)
+		local tutorial = fs.readFile("src/client/Controllers/TutorialController.luau")
+		T.expect(string.find(tutorial, "local OVER_BAR = 100 + 26 + GAP", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(tutorial, "h - OVER_BAR - tall", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it("the achievement toast waits for the zone and the area banner only", function()
 		T.expect(TopBand.achievementWaits({})).toBe(false)
 		T.expect(TopBand.achievementWaits({ zone = true })).toBe(true)
