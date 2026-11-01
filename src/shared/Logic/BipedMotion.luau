@@ -765,11 +765,15 @@ end
 local FEET: { [string]: string } = { R = "RightFoot", L = "LeftFoot" }
 local TOES: { [string]: string } = { R = "RightToeBase", L = "LeftToeBase" }
 
--- A walk's swinging feet lifted `gain` times as high as its clip lifts them, the ankle no higher than WALK_LIFT_MAX
--- leg lengths by it (`clips.lift`; 2026-10-31 Studio round 3: the yeti's lumbering walk lifted its toes a quarter of
--- a stud and read as a shuffle; round 4, 0.5-0.7 at twice; round 5, 1.04-1.08 at four times, 0.7 at most): in place
--- on the walk's pose, the run left as it is.
-local WALK_LIFT_MAX = 0.85
+-- A walk's swinging feet lifted `gain` times as high as its clip lifts them, the lift bending over smoothly toward
+-- WALK_LIFT_MAX leg lengths and easing in over the clip's first WALK_LIFT_EASE leg lengths off the ground
+-- (`clips.lift`; 2026-10-31 Studio round 3: the yeti's lumbering walk lifted its toes a quarter of a stud and read as
+-- a shuffle; round 4, 0.5-0.7 at twice; round 5, 1.04-1.08 at four times and 0.7 L at most; 2026-11-01 round 6: that
+-- hard cap held one foot flat at the top for a few frames and its thigh snapped 23 deg in a frame coming off it, the
+-- other foot barely reaching it; amplified right down to the ground the knee straightened six times as fast as the
+-- clip's at the heel strike): in place on the walk's pose, the run left as it is.
+local WALK_LIFT_MAX = 1.2
+local WALK_LIFT_EASE = 0.09
 local function liftSteps(inst: Instance, world: World, shift: Vec, gain: number)
 	local skel = inst.skel
 	local m = inst.move * (1 - inst.run)
@@ -784,7 +788,11 @@ local function liftSteps(inst: Instance, world: World, shift: Vec, gain: number)
 			local up = ankle[2] - bone.pos[2]
 			if up > 1e-3 then
 				local list: { [string]: Vec? } = targets or {}
-				local raised = math.max(up, math.min(up * gain, WALK_LIFT_MAX * skel.legLength))
+				local L = skel.legLength
+				local most = WALK_LIFT_MAX * L
+				local extra = math.max(0, most * (1 - math.exp(-up * gain / most)) - up)
+				local x = math.min(1, up / (WALK_LIFT_EASE * L))
+				local raised = up + extra * x * x * (3 - 2 * x)
 				list[side] = { ankle[1], ankle[2] + (raised - up) * m, ankle[3] }
 				targets = list
 			end

@@ -7,7 +7,8 @@
 -- (2026-10-31): no joint turns over 12 degrees a frame nor chatters, the standing feet never drag under a lunge, the
 -- alert's raise reaches about the body's height in spider arcs, and attack1 and attack2 are two different blows; at a
 -- phone's 15 fps (Studio's live capture) the palps never swing back and forth and no foot slides on the floor; at 60 fps
--- (2026-11-01) the head of each leg's last bone keeps still while it is down, and no lifted joint jumps over a hitch.
+-- (2026-11-01) the head of each leg's last bone keeps still while it is down, and no lifted joint jumps over a hitch; a
+-- palp turns at most 12 degrees a frame at 35 fps, a short pounce lands softly, the chelicerae never reach the ground.
 local AnimLab = require("../src/shared/Logic/AnimLab")
 local Combat = require("../src/shared/Data/Combat")
 local MonsterAbilities = require("../src/shared/Data/MonsterAbilities")
@@ -972,6 +973,106 @@ T.describe("OctoMotion Studio review", function()
 			end
 		end
 	)
+
+	T.it(
+		"turns a palp off the ground no more than 12 degrees a frame at 35 fps (its base's yaw and lift together)",
+		function()
+			-- (Studio 2026-11-01 at about 35 fps: 2_Right_Limb_0, our PL, 18 to 30 degrees a frame in the grab, the alert and
+			-- the heavy blow)
+			local most = math.rad(12)
+			for _, state in { "alert", "attack1", "attack2", "heavy", "pounce" } do
+				local last: { { number } } = {}
+				lab(state, 100, nil, function(sim, k)
+					for i, f in sim.octo.feet do
+						local leg = sim.skel.legs[i]
+						local prev = last[i]
+						if leg.palp and prev and k > 2 and not f.down then
+							local yaw = (f.psi - prev[1] + math.pi) % (2 * math.pi) - math.pi
+							local turn = math.sqrt(yaw * yaw + (f.c[1] - prev[2]) ^ 2)
+							for j = 2, leg.n do
+								turn = math.max(turn, math.abs(f.c[j] - prev[j + 1]))
+							end
+							if turn > most then
+								error(`{state} at 35 fps: {leg.name} turned {math.deg(turn)} deg in frame {k}`)
+							end
+						end
+						local now = { f.psi }
+						for j = 1, leg.n do
+							now[j + 1] = f.c[j]
+						end
+						last[i] = now
+					end
+				end, 1 / 35)
+			end
+		end
+	)
+
+	T.it("lands a short pounce with no joint over 12 degrees a frame (the hop's descent eases)", function()
+		-- (Studio 2026-11-01: 3_Right_Limb_1, our L4's second bone, 37 degrees in the landing frame at about 35 fps; the
+		-- target 4.2 studs ahead makes a hop about as high as it is long)
+		local sim = OctoSim.new()
+		local last: { { number } } = {}
+		for k = 1, 180 do
+			OctoSim.step(sim, DT, {
+				combat = true,
+				snap = k == 1,
+				look = { 0, -0.5, -4.2 },
+				action = { name = "pounce", start = 0, hit = 1.4, reach = { 0, 0, -4.2 } },
+			}, false)
+			for i, f in sim.octo.feet do
+				local now = table.clone(f.c)
+				table.insert(now, f.psi)
+				local prev = last[i]
+				if prev and k > 2 then
+					for j, v in now do
+						local turn = v - prev[j]
+						if j == #now then
+							turn = (turn + math.pi) % (2 * math.pi) - math.pi
+						end
+						if math.abs(turn) > JUMP then
+							error(`pounce at 4.2 studs: {sim.skel.legs[i].name} joint {j} turned {math.deg(turn)} deg`)
+						end
+					end
+				end
+				last[i] = now
+			end
+		end
+	end)
+
+	T.it("carries the chelicerae clear of the ground (they ride with the head, never stand on it)", function()
+		-- (Studio 2026-11-01 measured bone_57 and bone_63, the ends of the chelicerae under the head, as planted legs:
+		-- 0.25 to 1.5 studs of travel near their own lowest height, which is the head's own lunge 0.5 stud and more over
+		-- the ground; they are not legs and never touch it)
+		local dump = OctoSim.load("caveSpider_v2")
+		local function turned(p: { number }, at: { number }, axis: { number }, angle: number): { number }
+			local x, y, z = p[1] - at[1], p[2] - at[2], p[3] - at[3]
+			local c, s = math.cos(angle), math.sin(angle)
+			local ax, ay, az = axis[1], axis[2], axis[3]
+			local d = (ax * x + ay * y + az * z) * (1 - c)
+			return {
+				at[1] + x * c + (ay * z - az * y) * s + ax * d,
+				at[2] + y * c + (az * x - ax * z) * s + ay * d,
+				at[3] + z * c + (ax * y - ay * x) * s + az * d,
+			}
+		end
+		for _, state in { "alert", "attack1", "attack2", "heavy", "crush", "pounce" } do
+			local low = math.huge
+			lab(state, 180, nil, function(sim)
+				local m = (sim.posed :: RigidMotion.Posed).m
+				for _, case in { { 1, "bone_57" }, { 3, "bone_63" } } do
+					local chain = sim.skel.fangs[case[1]]
+					local p = dump.bones[case[2]].pos
+					for j = #chain.bones, 1, -1 do
+						p = turned(p, dump.bones[chain.bones[j]].pos, chain.axis[j], sim.octo.fang * chain.share[j])
+					end
+					low = math.min(low, m[4] * p[1] + m[5] * p[2] + m[6] * p[3] + m[11])
+				end
+			end)
+			if low < 0.4 then
+				error(`{state}: a chelicera came {low} studs over the ground`)
+			end
+		end
+	end)
 
 	T.it("plays attack1 and attack2 as two blows: the bite rears and lunges, the grab clasps close", function()
 		local style = RigidStyles.get("spider") :: RigidStyles.Style

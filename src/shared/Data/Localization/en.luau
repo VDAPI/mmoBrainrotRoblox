@@ -3342,6 +3342,7 @@ return {
 	["admin.chasetest.busy"] = "A chase test is already running (stop it: /chasetest stop).",
 	["admin.chasetest.stopped"] = "Stopping the chase test.",
 	["admin.chasetest.none"] = "No chase test is running.",
+	["admin.chasetest.safe"] = "The chase test will not start in a safe zone (map {map}): monsters attack nobody here. Go to a map with monsters, e.g. /tp meadows, and stand near a building.",
 	["town.sign.apteka"] = "Alchemist's Apothecary",
 	["town.sign.hala"] = "Merchant Hall · Auction",
 	["town.sign.ratusz"] = "Town Hall · Vault",

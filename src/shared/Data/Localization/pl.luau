@@ -3340,6 +3340,7 @@ return {
 	["admin.chasetest.busy"] = "Test pościgu już trwa (przerwiesz go: /chasetest stop).",
 	["admin.chasetest.stopped"] = "Przerywam test pościgu.",
 	["admin.chasetest.none"] = "Żaden test pościgu nie trwa.",
+	["admin.chasetest.safe"] = "Test pościgu nie ruszy w strefie bezpiecznej (mapa {map}), bo potwory nikogo tu nie atakują. Przenieś się na mapę z potworami, np. /tp meadows, i stań przy budynku.",
 	["town.sign.apteka"] = "Apteka Alchemika",
 	["town.sign.hala"] = "Hala Kupiecka · Aukcja",
 	["town.sign.ratusz"] = "Ratusz · Skarbiec",
