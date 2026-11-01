@@ -1319,6 +1319,30 @@ included; AnimationController and AnimLab need no change.
     second, 12 rad/s on a strike, so a 35-fps frame allowed 19.6° on each). A palp never bears the body, so it may
     trail a little at a low frame rate. The other legs keep their rates per second (steps and strikes 19.6° a frame at
     35 fps, 11.5° at 60): a cap per frame would make a 15-fps step lag its foot off its point.
+- **Studio on 01b** (2026-11-01, 60 fps): alert 0.07, bite 0.04, attack1 0.04, grab 0.08, crush 0.08, pounce 0.07
+  (3_Left5's 0.72 gone), the chelicerae ≥ 0.53 over the floor, the palps ≤ 11.8°, the pounce's landing 11.4° local /
+  12.8° world. Then (`OctoMotion.VERSION` "2026-11-01c unfold spread, feet steady under the blow"):
+  - **The pounce's unfold** (bone_23, our R4's last bone, 32–34° in the world in one frame of the flight, double its
+    neighbours: the tuck letting go turns every bend of the leg the same way at once, so the last bone turns by their
+    sum): a leg drawn in or out for a flight turns its last bone no more than `CHAIN` (1.8) times the joints' rate in a
+    frame, all its bends and the yaw together. OctoSim at 60 fps: R4's last bone 1.15–1.45 s
+    15 2 5 6 7 6 8 17 16 16 15 15 7 1 1 1° (was … 17 15 34 16 4 …), no bone over 21° in the world at 4.2 or 6 studs
+    (22.6° with ±30 % jitter). At 35 fps the cap grows with the frame's square (a 35-fps frame has too few frames to
+    spread it over: the feet would land late and slide); there it is as in 01b.
+  - **The heavy blow** (3_Right5 0.12, 3_Left5 0.08, 2_Left5 0.07: our L4, L3, R1): (1) the stun's tremble and the
+    blow's flinch bent the legs of the catch-up steps as they came down and of a step holding the head of its last
+    bone: their feet grazed the ground; the tremble and the flinch now only shake legs held off the ground (a raise, a
+    tuck, a hang), never a step. (2) A step the body's lunge left trailing its arc (the joints at their rate, the foot
+    0.1 stud short of its goal and already down) dragged itself onto the goal on the frame it landed: it sets down
+    where its foot is (within 0.3 hip heights of the goal, 0.1 over the ground). (3) The stab's clearance followed its
+    eased share, so a fast stab came the last 0.08 stud down over two frames with the body slamming: it follows the
+    key, so the foot is over the band till the frame it lands.
+  - **The crush** (3_Left5 0.08): a standing leg hangs straight over its point while the body rears off it; the head
+    of its last bone was put there to within 0.02 stud and crept by that a frame as it rose and came down: now within
+    0.01 (`HANG_AT`, four tries).
+  OctoSim, Studio's measure at 60 fps: every action ≤ 0.05 stud on every leg (heavy ≤ 0.03, crush ≤ 0.04, was 0.09 /
+  0.08), at 35 fps ≤ 0.07 (the pounce's R1), ±30 % jitter ≤ 0.06. tests/octomotion: the planted slide ≤ 0.07 in the
+  alert, both blows, pounce, heavy and crush; the pounce's last bones ≤ 24° a frame at 60 fps (01b: 29–34°).
 - **The asset** in `Assets.Monsters` (as the wolf and the peakHarpy): a Model with `HumanoidRootPart` (Anchored false,
   CanCollide false, CanQuery and CanTouch true, Massless false, Transparency 1, size 1) as its `PrimaryPart`, the
   MeshPart with the bones (Anchored false, CanCollide, CanQuery and CanTouch true, Massless false) welded to it by a

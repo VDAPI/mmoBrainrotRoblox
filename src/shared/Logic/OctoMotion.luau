@@ -41,7 +41,7 @@ local OctoMotion = {}
 
 -- Which leg code runs (client/Anim/RigidRig stamps it on the look as the attribute `OctoVersion`; the Studio session
 -- compares it with the commit it synced). Bumped with every change of the legs' behaviour.
-OctoMotion.VERSION = "2026-11-01b palps capped a frame, soft hop landing"
+OctoMotion.VERSION = "2026-11-01c unfold spread, feet steady under the blow"
 
 type Vec = { number }
 
@@ -113,6 +113,12 @@ export type Foot = {
 	aimX: number,
 	aimZ: number,
 	swWas: number, -- the stab's key last frame (its pace)
+	-- the foot drawn last frame by a step coming down, not yet on its point (ground frame, carried): a leg a lunge left
+	-- trailing its arc sets down where it is
+	drawn: boolean,
+	dwx: number,
+	dwy: number,
+	dwz: number,
 }
 export type Input = {
 	dx: number?, -- the root's move this frame in its own frame before the turn (studs); nil: forward at the speed
@@ -180,6 +186,9 @@ local LIFT_FIRST = 0.15
 -- .. and from which it comes down, most of the way while it slows over its goal (never dropped in a frame or two), but
 -- never under STEP_FLOOR (hip heights, or its lift) till it is over it: the rest straight down.
 local STEP_DOWN, STEP_FLOOR = 0.4, 0.05
+-- A step's foot drawn this low over the ground (hip heights) and this near its goal as the step ends sets down where it
+-- is (a body's lunge left the leg trailing its arc: the rest of the way would slide along the ground).
+local LAND_LOW, LAND_NEAR = 0.1, 0.3
 -- A step of its own this far through when its tetrad swings goes on to land (the swing would yank it off its way).
 local JOIN_BY = 0.3
 -- A raised leg (the front pair, the palps; Studio review 2026-10-31: the tips at about the body's height, never a pole):
@@ -195,6 +204,8 @@ local PALP_LET = 0.3
 -- A riding palp keeps this far over the ground (hip heights).
 local PALP_CLEAR = 0.08
 -- How high over the ground a stab keeps the foot on its way (hip heights at half way; nothing as it starts or lands).
+-- Reckoned on the stab's key, not its eased share: a fast stab is over the band of the ground till the frame it lands
+-- (Studio review 2026-11-01: the heavy blow's stab came the last 0.08 stud down over two frames, its head sliding).
 local STAB_CLEAR = 0.3
 -- A stab over its point aims where the body's own move will have taken it by the time it lands, at most STAB_AHEAD
 -- seconds of the move ahead.
@@ -241,6 +252,10 @@ local HITCH, FRAME_RATE = 1.5, 0.3
 -- yaw and lift counted together (Roblox turns the bone by both; Studio review 2026-11-01 at about 35 fps: the base of
 -- PL 18 to 30 degrees a frame). It never bears the body, so it may trail a little at a low frame rate.
 local FRAME_TURN = math.rad(11.5)
+-- A leg drawn in or out for a flight (a tuck) turns its last bone no more than CHAIN times its joints' rate in a frame,
+-- all its bends together (Studio review 2026-11-01 at 60 fps: the pounce's legs unfolding for the landing whipped the
+-- tip bones 34 degrees in one frame, double the frames around it).
+local CHAIN, CHAIN_FRAME = 1.8, 1 / 60
 -- The last joint of a leg standing on its point turns at most ANKLE_MAX from the solver's and rolls its bone at most
 -- ROLL_MAX out of the leg's plane (rad): beyond it the head lets go. On a step both let go at ANKLE_LET a second (off the
 -- ground, where nothing shows it).
@@ -248,8 +263,9 @@ local ANKLE_MAX, ROLL_MAX, ANKLE_LET = 0.7, 1.2, 12
 -- A head is pinned once the drawn foot is within PIN_AT of its point (studs); a pinned head the leg cannot hold with
 -- its foot within PIN_LET of its point is let go of (the foot keeps its point, the head goes, pinned anew on it).
 local PIN_AT, PIN_LET = 0.03, 0.06
--- A foot standing on its point it misses by more than HANG_AT (studs: out of reach) hangs straight over it.
-local HANG_AT, HANG_TRIES = 0.02, 3
+-- A foot standing on its point it misses by more than HANG_AT (studs: out of reach) hangs straight over it, the head
+-- of its last bone put there to within HANG_AT (a body rearing over a standing leg: its head crept 0.02 a frame).
+local HANG_AT, HANG_TRIES = 0.01, 4
 
 local function smooth(x: number): number
 	local t = math.clamp(x, 0, 1)
@@ -305,6 +321,10 @@ local function newFoot(n: number, seed: number, i: number): Foot
 		kz = 0,
 		ankle = 0,
 		roll = 0,
+		drawn = false,
+		dwx = 0,
+		dwy = 0,
+		dwz = 0,
 		aimed = false,
 		aimX = 0,
 		aimZ = 0,
@@ -715,6 +735,7 @@ function OctoMotion.step(
 			f.gx, f.gz = carry(f.gx, f.gz, dx, dz, cs, sn)
 			f.kx, f.kz = carry(f.kx, f.kz, 0, 0, cs, sn)
 			f.aimX, f.aimZ = carry(f.aimX, f.aimZ, dx, dz, cs, sn)
+			f.dwx, f.dwz = carry(f.dwx, f.dwz, dx, dz, cs, sn)
 		end
 	end
 	-- 2. the gait: the recipe's phase and stride
@@ -816,6 +837,9 @@ function OctoMotion.step(
 	-- (a hitch turns a joint no further than the usual frame)
 	local rateDt = math.min(dt, HITCH * inst.frame)
 	local maxTurn = JOINT_RATE * rateDt
+	-- (the unfold spread over a 60-fps frame's share; frames twice as long have too few of them to spread it over
+	-- without the feet landing late: as good as free)
+	local chain = CHAIN * math.max(1, (inst.frame / CHAIN_FRAME) ^ 2)
 	if dt > 0 then
 		inst.frame += (dt - inst.frame) * FRAME_RATE
 	end
@@ -843,6 +867,8 @@ function OctoMotion.step(
 		local want = f.want
 		local psiW = f.psi
 		local rate = maxTurn
+		-- (drawn in or out for a flight: its last bone turns no more than CHAIN times the rate in all)
+		local loose = false
 		-- (the head of its last bone held this frame: off its target by the pin; the target)
 		local holds, baseX, baseY, baseZ = false, 0, 0, 0
 		if dying then
@@ -1026,7 +1052,17 @@ function OctoMotion.step(
 				if snap then
 					land(f, gx2, f.gy, gz2)
 				elseif u >= 1 then
-					land(f, if f.set then f.gx else gx2, f.gy, if f.set then f.gz else gz2)
+					local x, z = if f.set then f.gx else gx2, if f.set then f.gz else gz2
+					-- (a leg the body's lunge left trailing its arc, its foot already down by its goal: it sets down
+					-- where the foot is, never dragged along the ground onto the goal)
+					if
+						f.drawn
+						and f.dwy - f.gy <= LAND_LOW * hipH
+						and (f.dwx - x) ^ 2 + (f.dwz - z) ^ 2 <= (LAND_NEAR * hipH) ^ 2
+					then
+						x, z = f.dwx, f.dwz
+					end
+					land(f, x, f.gy, z)
 				else
 					arc(f, math.max(u, 0), gx2, gz2, hipH, outX, outZ, true, not moving)
 				end
@@ -1256,7 +1292,7 @@ function OctoMotion.step(
 				tx, ty, tz = ux + (tx - ux) * hw, uy + (ty - uy) * stabW, uz + (tz - uz) * hw
 				if not leg.palp then
 					local wx, wy, wz = toGround(m, tx, ty, tz)
-					local clear = skel.ground + 4 * stabW * (1 - stabW) * STAB_CLEAR * hipH
+					local clear = skel.ground + 4 * f.sw * (1 - f.sw) * STAB_CLEAR * hipH
 					if wy < clear then
 						tx, ty, tz = toLook(m, wx, clear, wz)
 					end
@@ -1289,12 +1325,14 @@ function OctoMotion.step(
 				want[leg.n + 1] *= 1 - tw
 				psi *= 1 - 0.5 * tw
 			end
-			-- the tremble and the flinch of a leg off the ground
-			if not onPoint and shiver > 0.001 then
+			-- the tremble and the flinch of a leg held off the ground (not of a step: its foot would graze the ground it
+			-- comes down to)
+			local shakes = not onPoint and not pinned and f.mode ~= STEP
+			if shakes and shiver > 0.001 then
 				want[kn] += shiver * noise(now * 17, seed, 30 + i)
 				want[math.max(1, kn - 1)] += shiver * 0.7 * noise(now * 19, seed, 50 + i)
 			end
-			if not onPoint and hitE > 0 then
+			if shakes and hitE > 0 then
 				local k = hitE * (if near then 0.28 else 0.08)
 				want[math.max(1, kn - 1)] += k
 				want[kn] -= k * 0.6
@@ -1309,10 +1347,12 @@ function OctoMotion.step(
 				and f.miss <= MISS * hipH
 				and not hung
 				and f.lag < 0.05
+			loose = tuckW > 0.001
 			-- only standing, walking or striking down the straight way: the solver's pose as it is
 			if tuckW <= 0.001 and ((overlay <= 0.001 and f.lag < 0.03) or stabW > 0.001 or f.stabbed) then
 				local still = f.mode == PLANT and not follow and (overlay <= 0.001 or f.stabbed)
 				rate = if still then STAND_RATE * dt else SAFE_RATE * rateDt
+				loose = false
 			end
 		end
 		-- drawn: no joint turns faster than JOINT_RATE, a leg that only walks or strikes than SAFE_RATE, one standing than
@@ -1331,8 +1371,15 @@ function OctoMotion.step(
 			local dPsi = (psiW - f.psi + math.pi) % TAU - math.pi
 			local d1 = want[1] - fc[1]
 			local most = if leg.palp then math.sqrt(dPsi * dPsi + d1 * d1) else math.max(math.abs(dPsi), math.abs(d1))
+			local bend = d1
 			for j = 2, leg.n do
-				most = math.max(most, math.abs(want[j] - fc[j]))
+				local dj = want[j] - fc[j]
+				most = math.max(most, math.abs(dj))
+				bend += dj
+			end
+			if loose then
+				-- (the bends all turn about one axis: their sum is the last bone's turn in the body, with the yaw)
+				most = math.max(most, math.sqrt(dPsi * dPsi + bend * bend) / chain)
 			end
 			if leg.palp and not f.down then
 				rate = math.min(rate, FRAME_TURN)
@@ -1350,10 +1397,13 @@ function OctoMotion.step(
 		end
 		-- pinned from the pose drawn on the frame it comes to hold (it stands on its point, a step sets down), kept
 		-- while it holds
+		f.drawn = false
 		if holds and not f.pin then
 			-- (once the drawn foot is on its point: never pinned where a lagging leg hangs)
 			local fx, fy, fz = OctoPose.foot(leg, f.psi, fc)
 			local wx, wy, wz = toGround(m, fx, fy, fz)
+			f.drawn = f.mode == STEP
+			f.dwx, f.dwy, f.dwz = wx, wy, wz
 			if (wx - baseX) ^ 2 + (wy - baseY) ^ 2 + (wz - baseZ) ^ 2 <= PIN_AT * PIN_AT then
 				f.pin = true
 				local hx, hy, hz = OctoPose.joint(leg, f.psi, fc, leg.n)
