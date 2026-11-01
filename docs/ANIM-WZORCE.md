@@ -262,8 +262,12 @@ Grimrok, Morvane, Azgor and Hrimvald run on the biped template: one style per bo
 `Logic/BipedMotion` (Morvane by `Logic/SpiritMotion`). Deviations from §1-2 and what the boss layer adds:
 
 - **Locomotion is the bandit's mocap** (`Data/BipedClips`: walk, run, idle and its variants) under a boss weight layer
-  (`boss` in the style): the pelvis drops after each footfall and rolls over the standing leg, the feet step wider and
-  the legs are solved again onto the planted feet (`heavyStep`), the spine leans into the walk. Out of the fight the
+  (`boss` in the style): the pelvis drops after each footfall and rolls over the standing leg, the feet step wider,
+  over the floor as `plantFeet` keeps another biped's (the ball no lower than at rest, the ankle within PLANT_HEEL L of
+  its rest height, by the walk's weight), and the legs are solved again onto the planted feet (`heavyStep`), the spine
+  leans into the walk (2026-11-01 Studio sweep: the walk clip stood Grimrok's toes 0.37/0.56 and Azgor's 0.52 studs
+  under the floor, `plantFeet` leaving a boss's feet to its own stance; now none under their rest height, Grimrok's
+  knees 8.6 deg a frame at most, Azgor's 4.6; the idle and the blows as before). Out of the fight the
   guard stays at `calm` weight with a slow head scan and a deep breath. The Tripo clips of the bosses
   (`Data/MonsterClips/<boss>`) are no longer played: on the template the mocap reads heavier and cleaner. Morvane
   never walks: she floats (pelvis +0.06 L, slow bob, sway and lean) and her gown, skinned to the leg bones, trails the

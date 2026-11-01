@@ -917,6 +917,29 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 		end
 	)
 
+	T.it("a boss walks with its toes over the floor (2026-11-01 Studio sweep)", function()
+		-- (the walk clip stood Grimrok's and Azgor's toes 0.4-0.5 studs under the floor; plantFeet leaves a boss's feet
+		-- alone)
+		local L = SKEL.legLength
+		for _, id in { "grimrok", "azgor" } do
+			local low = math.huge
+			joints(id, "", 0, 3, function(_, input)
+				input.combat, input.look, input.speed, input.gait = false, nil, 1.3 * L, "walk"
+			end, function(t, at)
+				if t > 1 then
+					for _, key in { "RightToeBase", "LeftToeBase" } do
+						local rest = (SKEL.bones[key] :: BipedPose.Bone).pos[2]
+						low = math.min(low, (at[key][2] - rest) / L)
+					end
+				end
+			end)
+			if DEBUG then
+				print(string.format("%s walk toes at least %.3f legs over their rest height", id, low))
+			end
+			T.expect({ id, low > -0.01 }).toEqual({ id, true })
+		end
+	end)
+
 	T.it("a planted foot stays put in the world while the root turns under it", function()
 		local L = SKEL.legLength
 		local yaw = 0

@@ -1074,8 +1074,11 @@ local function liftSteps(
 end
 
 -- A boss's weight in its walk (its `boss`): the pelvis drops after each footfall of the walk's cycle and rolls over the
--- standing leg, the feet step a little wider than the clip's, and the legs are solved again onto those planted feet
--- (the knees take the drop). In place on the walk's pose.
+-- standing leg, the feet step a little wider than the clip's, over the floor as plantFeet keeps another biped's (the
+-- ball no lower than at rest, the ankle within PLANT_HEEL of its rest height), and the legs are solved again onto those
+-- planted feet (the knees take the drop). In place on the walk's pose. (2026-11-01 Studio sweep: the walk clip on
+-- Grimrok's and Azgor's rigs stood their toes 0.4-0.5 studs under the floor; plantFeet leaves a boss's feet alone, its
+-- blows keep its own stance.)
 local function heavyStep(inst: Instance, world: World, shift: Vec, walk: string)
 	local boss = inst.style.boss :: BipedStyles.BossLayer
 	local skel = inst.skel
@@ -1091,9 +1094,15 @@ local function heavyStep(inst: Instance, world: World, shift: Vec, walk: string)
 	local keep: { [string]: Mat } = {}
 	for side, key in FEET do
 		local p = at[key]
-		if p then
+		local bone, toeBone = skel.bones[key], skel.bones[TOES[side]]
+		if p and bone then
 			local out = if side == "R" then 1 else -1
-			targets[side] = { p[1] + out * boss.wide * L * m, p[2], p[3] }
+			local toe = at[TOES[side]]
+			local sink = bone.pos[2] - PLANT_HEEL * L - p[2]
+			if toe and toeBone then
+				sink = math.max(sink, toeBone.pos[2] - toe[2])
+			end
+			targets[side] = { p[1] + out * boss.wide * L * m, p[2] + math.max(0, sink) * m, p[3] }
 		end
 		local foot, toe = world[key], world[TOES[side]]
 		if foot then
