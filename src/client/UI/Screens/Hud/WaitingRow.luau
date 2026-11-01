@@ -3,7 +3,7 @@
 -- for "something waits"): a row of small buttons under the minimap, right-aligned, each only while its thing waits:
 -- the mail envelope with the number of parcels (Hud/MailButton), the login reward ✧ (Hud/LoginButton), the season
 -- pass ❖ with a reward to claim (Hud/SeasonButton) and the Blood Moon ☾ while its results are still published after
--- the event (its panel shows the event itself). PC and tablet: in the menu's column under the minimap's area line, or
+-- the event (its panel shows the event itself). PC and tablet: in the menu's column under the minimap, or
 -- under the guide bar while one shows; the quest tracker's column starts under it (UI/HudSlots.Waiting,
 -- Logic/HudStack.WAITING). A phone in landscape keeps the drawer (☰) and the envelope by the skill arc.
 
@@ -45,8 +45,8 @@ export type Props = {
 }
 
 local SIZE = HudStack.WAITING
--- Without the guide bar the row starts under the minimap's area line (2 + 22 under its frame; the menu's list keeps
--- 8 of it): Logic/HudStack.RIGHT_TOP is where the row starts then, RIGHT_TOP_GUIDE with the guide bar.
+-- Without the guide bar the row starts where Logic/HudStack.RIGHT_TOP says, RIGHT_TOP_GUIDE with the guide bar. UI plan
+-- phase 4: the minimap's area line moved into its caption, so the row stands right under the minimap (0 here).
 local UNDER_AREA_LINE = HudStack.RIGHT_TOP - (22 + 52 + 8 + 266) - 8
 
 local function WaitingRow(scope: Scope, props: Props): Instance

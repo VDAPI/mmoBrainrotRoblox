@@ -79,11 +79,15 @@ function HudMenu.isTile(id: string): boolean
 end
 
 -- Whether the ☰ shows "!": the "!" of a tile outside the hubs is lit (`lit`: id -> its badge now); the hubs' buttons
--- show their windows' own.
-function HudMenu.attention(lit: { [string]: boolean }): boolean
+-- show their windows' own. UI plan phase 4: a tile of a hub whose button does not show yet (`hubShown`, Logic/HudReveal)
+-- lights the ☰ too, so a "!" always has a place to go up to.
+function HudMenu.attention(lit: { [string]: boolean }, hubShown: ((hubId: string) -> boolean)?): boolean
 	for id, on in lit do
-		if on and IS_TILE[id] and UiHubs.hubOf(id) == nil then
-			return true
+		if on and IS_TILE[id] then
+			local hub = UiHubs.hubOf(id)
+			if hub == nil or (hubShown ~= nil and not hubShown(hub.id)) then
+				return true
+			end
 		end
 	end
 	return false

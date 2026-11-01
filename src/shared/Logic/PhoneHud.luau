@@ -67,7 +67,8 @@ PhoneHud.TRACKER_WIDTH = 260
 
 local PLACES: { [string]: Place } = {
 	-- left
-	portrait = { edge = "tl", x = 8, y = 8, w = 280, h = 96, scale = PhoneHud.PORTRAIT_SCALE },
+	-- UI plan phase 4: the portrait is 340 x 110 (Logic/HudStack.PORTRAIT; it was 400 x 136), so 238 x 77 here
+	portrait = { edge = "tl", x = 8, y = 8, w = 238, h = 77, scale = PhoneHud.PORTRAIT_SCALE },
 	lure = { edge = "tl", x = 8, y = 110, w = 48, h = 68, touch = true },
 	autoGrind = { edge = "tl", x = 62, y = 110, w = 48, h = 68, touch = true },
 	autoPotion = { edge = "tl", x = 116, y = 110, w = 48, h = 68, touch = true },

@@ -15,6 +15,7 @@
 -- opens its window where the last one stood (one window at a time stays). A tab shows while its window is registered
 -- and its rule (SetTabRule: unlocked, on this server) holds. ToggleHub is the HUD bar's hub button: it closes the
 -- hub's open window, else opens the hub's first shown tab. The companion backpack next to a service has no tabs.
+-- UI plan phase 4: a tab shows its window's "!" (SetTabBadge), so the player sees which tab has news.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -83,6 +84,7 @@ local hotkeysEnabled = false
 local zCounter = 1
 
 local tabRules: { [string]: (use: Fusion.Use) -> boolean } = {} -- UI plan phase 3: when a hub's tab shows
+local tabBadges: { [string]: (scope: Scope) -> Fusion.UsedAs<boolean> } = {} -- UI plan phase 4: a tab's "!"
 local nextOffset: Vector2? = nil -- a tab's window opens where the last one stood
 
 local modalQueue: { Modal.Spec } = {}
@@ -158,6 +160,11 @@ end
 -- UI plan phase 3: tab `tab` of a hub shows only while `rule` holds (an unlock, the world server).
 function WindowManager.SetTabRule(tab: string, rule: (use: Fusion.Use) -> boolean)
 	tabRules[tab] = rule
+end
+
+-- UI plan phase 4: tab `tab` of a hub shows "!" while `badge` (built in the window's scope) is true.
+function WindowManager.SetTabBadge(tab: string, badge: (scope: Scope) -> Fusion.UsedAs<boolean>)
+	tabBadges[tab] = badge
 end
 
 -- Whether a hub's tab shows now: its window is registered and its rule holds.
@@ -362,13 +369,17 @@ openWindow = function(id: string, offset: Vector2?)
 	local tabs: { Window.HeaderTab }? = nil
 	if hub then
 		local list: { Window.HeaderTab } = {}
+		local current = UiHubs.tabOf(id)
 		for _, tab in hub.tabs do
+			local badge = tabBadges[tab]
 			table.insert(list, {
 				id = tab,
 				label = Text.T(scope, UiHubs.tabLabel(tab)),
 				visible = scope:Computed(function(use): boolean
 					return WindowManager.TabShown(use, tab)
 				end),
+				-- the open tab needs no "!": the player is looking at it
+				badge = if badge and tab ~= current then badge(scope) else nil,
 			})
 		end
 		tabs = list
