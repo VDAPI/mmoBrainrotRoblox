@@ -78,6 +78,64 @@ T.describe("Top band of messages (UI plan phase 2)", function()
 		T.expect(string.find(tutorial, "TopBandState.keep(nil)", 1, true) ~= nil).toBe(true)
 	end)
 
+	T.it("Studio check of phase 4: the top band's messages stay under Roblox's top bar", function()
+		-- 1108 x 576 (scale 0.6): the Toasts layer covers the whole screen, the HUD's layer starts 58 px lower; a
+		-- toast at 90 virtual px (54 screen px) stood 3 px into the bar
+		local k = 0.6
+		T.expect(math.abs(TopBand.underBars(TopBand.TOAST_TOP, 58, nil, k) - (58 / k + TopBand.GAP)) < 1e-6).toBe(true)
+		-- at scale 1 the toasts keep their own place; no bar measured yet: their own place
+		T.expect(TopBand.underBars(TopBand.TOAST_TOP, 58, nil, 1)).toBe(TopBand.TOAST_TOP)
+		T.expect(TopBand.underBars(TopBand.TOAST_TOP, 0, nil, k)).toBe(TopBand.TOAST_TOP)
+		-- an open window's title bar lower than the top bar wins, and the other way round
+		T.expect(TopBand.underBars(90, 58, 300, 1)).toBe(300 + TopBand.GAP)
+		T.expect(TopBand.underBars(90, 120, 30, 1)).toBe(120 + TopBand.GAP)
+		-- the zone and area banners stand in the HUD's layer: the toasts go under them by the bar too
+		local bar = 58 / k
+		local zone = TopBand.BANNERS.zone
+		T.expect(math.abs(TopBand.toastTop({ zone = true }, bar) - (zone.bottom + bar + TopBand.GAP)) < 1e-6).toBe(true)
+		local area = TopBand.BANNERS.area
+		T.expect(math.abs(TopBand.toastTop({ area = true }, bar) - (area.bottom + bar + TopBand.GAP)) < 1e-6).toBe(true)
+		-- the achievement toast stands in the toasts' own layer, pushed GAP under the bar at this scale (underBars)
+		local achievement = TopBand.BANNERS.achievement
+		local pushed = TopBand.underBars(achievement.top, 58, nil, k)
+		T.expect(math.abs(TopBand.toastTop({ achievement = true }, bar) - (pushed + 104 + TopBand.GAP)) < 1e-6)
+			.toBe(true)
+		-- at scale 1 it moves 2 px down (64 under a 58 px bar is 2 px short of GAP)
+		T.expect(TopBand.toastTop({ achievement = true }, 58)).toBe(achievement.bottom + 2 + TopBand.GAP)
+		T.expect(TopBand.toastTop({}, bar)).toBe(TopBand.TOAST_TOP)
+		-- the client: UIController measures the bar, every message of the Toasts layer keeps under it
+		local ui = fs.readFile("src/client/Controllers/UIController.luau")
+		T.expect(
+			string.find(
+				ui,
+				"Scale.SetTopBar(roots.Screens.AbsolutePosition.Y - roots.Toasts.AbsolutePosition.Y)",
+				1,
+				true
+			) ~= nil
+		).toBe(true)
+		for _, path in
+			{
+				"src/client/UI/Components/Toast.luau",
+				"src/client/UI/Components/Announcement.luau",
+				"src/client/UI/Screens/Hud/AchievementToast.luau",
+			}
+		do
+			local source = fs.readFile(path)
+			T.expect({ path, string.find(source, "TopBand.underBars(", 1, true) ~= nil }).toEqual({ path, true })
+			T.expect({ path, string.find(source, "use(Scale.TopBar)", 1, true) ~= nil }).toEqual({ path, true })
+		end
+		local state = fs.readFile("src/client/UI/TopBandState.luau")
+		T.expect(
+			string.find(state, "TopBand.toastTop(use(TopBandState.Shown), if k > 0 then bar / k else 0)", 1, true)
+				~= nil
+		)
+			.toBe(true)
+		-- the tutorial's tile hides with its frame (Studio read the tile's own Visible after the closing tile went)
+		local hint = fs.readFile("src/client/UI/Screens/Hud/TutorialHint.luau")
+		local _, count = string.gsub(hint, "Visible = props%.Visible", "")
+		T.expect(count).toBe(2)
+	end)
+
 	T.it("the achievement toast waits for the zone and the area banner only", function()
 		T.expect(TopBand.achievementWaits({})).toBe(false)
 		T.expect(TopBand.achievementWaits({ zone = true })).toBe(true)

@@ -6,6 +6,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Scale = require(script.Parent.Scale)
 local SoftRequire = require(script.Parent.SoftRequire)
 -- Studio check 2026-10-31: without the module (not synced yet) the toasts keep their old place
 local TopBand = SoftRequire(
@@ -63,7 +64,10 @@ end
 
 -- The top of the toasts now (Logic/TopBand.toastTop).
 TopBandState.ToastTop = scope:Computed(function(use): number
-	return TopBand.toastTop(use(TopBandState.Shown))
+	-- the zone and area banners stand in the HUD's layer, under Roblox's top bar (Studio check of phase 4)
+	local k: number = use(Scale.Value)
+	local bar: number = use(Scale.TopBar)
+	return TopBand.toastTop(use(TopBandState.Shown), if k > 0 then bar / k else 0)
 end)
 
 return TopBandState
