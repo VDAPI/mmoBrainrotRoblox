@@ -10,11 +10,13 @@ export type Entry = {
 	permId: string, -- its everlasting copy
 	piece: number, -- Dragon Shards for one stone
 	perm: number, -- Dragon Shards for the everlasting stone (once per account)
+	-- owner 2026-11-01: bought as many times as wanted, each set to its own place (the Everlasting Map Stone)
+	many: boolean?,
 }
 
 local LIST: { Entry } = {
 	{ itemId = "stone_return", permId = "stone_return_perm", piece = 5, perm = 300 },
-	{ itemId = "stone_map", permId = "stone_map_perm", piece = 10, perm = 600 },
+	{ itemId = "stone_map", permId = "stone_map_perm", piece = 10, perm = 600, many = true },
 	{ itemId = "stone_dungeon", permId = "stone_dungeon_perm", piece = 15, perm = 600 },
 	{ itemId = "stone_dungeon_meadows", permId = "stone_dungeon_meadows_perm", piece = 10, perm = 250 },
 	{ itemId = "stone_dungeon_duskwood", permId = "stone_dungeon_duskwood_perm", piece = 10, perm = 250 },
@@ -35,4 +37,5 @@ return table.freeze({
 	end,
 	NPC = "portalmaster", -- the Portal Master (Data/Npcs, service "portalshop")
 	MAX_PIECES = 50, -- stones in one purchase by the piece
+	COOLDOWN = 30 * 60, -- owner 2026-11-01: seconds an everlasting stone rests after a use, each its own
 })

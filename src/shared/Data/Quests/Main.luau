@@ -1061,7 +1061,7 @@ q({
 		collect(1, "orderSeal", "peakHarpy", 0.3, "frostpeak_harpyrocks"),
 	},
 	weight = 2,
-	reward = { gold = gold(78), items = { { id = "stone_map", n = 2 } } },
+	reward = { gold = gold(78), items = { { id = "stone_map", n = 2 }, { id = "stone_map_perm", n = 1 } } }, -- owner 2026-11-01
 	barks = { accept = 1, half = 1, near = 1, done = 1 },
 	choices = Talk.onPage(2, {
 		Talk.answer("shiny"),

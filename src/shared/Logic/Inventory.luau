@@ -49,6 +49,11 @@ end
 -- Two stacks can merge when they are the same stackable item with the same binding (S134k: and the same `ns`). Owner
 -- 2026-10-31 (Logic/Binding): a bound and a free stack never merge, also when an old save lacks the field.
 function Inventory.canMerge(a: ItemInstance, b: ItemInstance): boolean
+	-- (owner 2026-11-01: an everlasting stone has its own destination and cooldown)
+	local def = Items.get(a.id)
+	if def and def.use and def.use.keep == true then
+		return false
+	end
 	return a.id == b.id
 		and (a.bound == true) == (b.bound == true)
 		and (a.ns == true) == (b.ns == true)

@@ -162,10 +162,10 @@ local function PortalShopWindow(scope: Scope, props: Props): Fusion.Child
 				})
 			end
 			local permAction: Instance
-			if not owned then
-				permAction = priceButton(3, "perm", 1, "portalshop.perm", "primary")
-			elseif held == 0 then
+			if owned and held == 0 then
 				permAction = priceButton(3, "claim", 1, "portalshop.claim", "primary")
+			elseif not owned or entry.many then
+				permAction = priceButton(3, "perm", 1, "portalshop.perm", "primary")
 			else
 				permAction = s:New("TextLabel")({
 					LayoutOrder = 3,
