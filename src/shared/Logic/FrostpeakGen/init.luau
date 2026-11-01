@@ -339,6 +339,7 @@ function FrostpeakGen.all(): { Build }
 	Scenery.all(e, out)
 	-- 2026-11-01: no rock on a cliff's lip, no tree with a wall in its crown (Logic/KitSeat)
 	KitSeat.prune(out, e.T.height, trees)
+	Kit.lifeOfMarks(e.ctx, out) -- 2026-11-01: the trees' perches in the world, after the prune
 	treeCache = trees
 	cache = out
 	return out

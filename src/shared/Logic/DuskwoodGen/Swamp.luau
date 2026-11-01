@@ -99,6 +99,10 @@ local function sunkenTower(env: Env.Env, out: { Build })
 		)
 	end
 	Kit.bones(bp, 1, H + 3.6, -1, 4)
+	-- a crow on the nest, in the leaning tower's frame (2026-11-01: it hung 1.5 studs over the nest's edge)
+	local cx, cz = -1.5, 1.5
+	local top = H + 2.4 + 1.7 * math.sqrt(1 - (cx * cx + cz * cz) / 5.5 ^ 2)
+	bp:mark("perch", cx, top + Kit.SIT.perch, cz)
 	bp:pop()
 	-- moss and rubble at the waterline
 	for k = 1, 5 do
@@ -106,7 +110,6 @@ local function sunkenTower(env: Env.Env, out: { Build })
 		Kit.rock(bp, math.cos(a) * 9, 0.6, math.sin(a) * 9, 2.4, Kit.mossyStone, "detail")
 	end
 	Kit.circle(ctx, "ruins", s.x, s.z, 7)
-	Kit.lifeAt(ctx, b, "perch", 2, H + 6, 4)
 	table.insert(out, b)
 end
 

@@ -181,9 +181,12 @@ local function frostedTower(out: { Build })
 				o({ c = "#4A3A28", m = "Wood" }, "detail", { col = false })
 			)
 		end
-		if k == 2 or k == 4 then
-			local wx, wy, wz = Kit.worldOf(b, x, gy + h + 1.2, z)
-			Kit.life("perch", wx, wy, wz)
+		if k == 2 then
+			-- a crow in the nest
+			bp:mark("perch", x, gy + h + 1.2, z)
+		elseif k == 4 then
+			-- a crow on the snow beside the broken tooth (2026-11-01: it hung 0.35 over the snow, in the tooth's side)
+			bp:mark("perch", x - tx, gy + h + 0.45 + Kit.SIT, z - tz)
 		end
 	end
 	-- frost on the ground in the ring and at its foot (the boot prints of the secret lead off to the south-east)

@@ -67,6 +67,8 @@ local function hut(env: Env.Env, out: { Build })
 	for k = 0, 4 do
 		bp:box(0.5, 1.4, 0.5, -3.6 + k * 1.6, 5.3, -3.4, o({ c = "#5A7A3A", m = "Grass" }, "fine"))
 	end
+	-- a crow on the ridge, between the thatch's top edges (2026-11-01: it hung 1.2 studs over the slope)
+	bp:mark("perch", 0, 10, 1.4)
 	bp:pop()
 	-- the ladder
 	for k = 0, 5 do
@@ -99,7 +101,6 @@ local function hut(env: Env.Env, out: { Build })
 	local cy = Kit.gy(ctx, b, 11, -4)
 	Props.cauldron(bp, 11, cy, -4, 3.6, "#5AE07A", Kit.GREEN)
 	Kit.rect(ctx, "building", b.at.x, b.at.z, 12, 10, b.at.rot)
-	Kit.lifeAt(ctx, b, "perch", 3, deck + 9.4, 1.4)
 	table.insert(out, b)
 end
 

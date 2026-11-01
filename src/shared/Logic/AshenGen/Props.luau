@@ -298,7 +298,7 @@ function Props.rag(bp: BP, x: number, y: number, z: number, yaw: number, sw: Swa
 end
 
 -- Palm: a leaning trunk of rings and a crown of drooping fronds (`dead`: dry grey-brown fronds, some broken).
-function Props.palm(bp: BP, x: number, y: number, z: number, s: number, dead: boolean, big: boolean?)
+function Props.palm(bp: BP, x: number, y: number, z: number, s: number, dead: boolean, big: boolean?, perch: string?)
 	local rng = bp.rng
 	local lean = rng:float(6, 16)
 	local yaw = rng:float(0, 360)
@@ -336,6 +336,11 @@ function Props.palm(bp: BP, x: number, y: number, z: number, s: number, dead: bo
 			o(frond, "detail", { col = false, q = false })
 		)
 		bp:pop()
+	end
+	if perch then
+		-- a bird on the trunk's top, among the fronds (2026-11-01: a fixed point missed the random lean by up to 12 studs)
+		local top = h / 2 * (1 + math.cos(math.rad(lean))) - 0.4
+		bp:mark(perch, 0, top + (Kit.SIT[perch] or 0), tz)
 	end
 	bp:pop()
 end

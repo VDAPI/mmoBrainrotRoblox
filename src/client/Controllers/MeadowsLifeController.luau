@@ -4,8 +4,9 @@
 --     mist near water in the morning and at night, fireflies at night in the marsh, the forest and the ravine,
 --     falling leaves in the forest,
 --   * butterflies over the glades (by the shrine and the farm, and around the player on the meadow),
---   * decorative animals from MeadowsGen.life(): crows on scarecrows, dead trees and the burnt mill (they fly off
---     when the player comes close and come back later), sheep grazing in the farm's pen, ducks on Toad Pond,
+--   * decorative animals from MeadowsGen.life(): crows on dead trees and the frosted tower (they fly off when the
+--     player comes close and come back later; owner 2026-11-01: none on Crow Field, whose crows are monsters), sheep
+--     grazing in the farm's pen, ducks on Toad Pond,
 --   * birds taking off from a tree when the player runs past it.
 -- Cheap: animals only within LIFE_RADIUS, a few parts each, updated at most 30 times a second; with the "World
 -- detail" option on low there are no animals and the emitters run at half rate. Smoke, fires and the waterfall
