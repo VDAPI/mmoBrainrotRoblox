@@ -291,6 +291,18 @@ function CharacterLook.outfitOf(account: any, classId: string?): string?
 	return def.id
 end
 
+-- Catalog clothing 2026-11-01: a catalog item as a description wears it (Enum.AccessoryType name; `order` = the
+-- layering order of a layered type, nil for a rigid one).
+export type CatalogPiece = { id: number, type: string, layered: boolean, order: number? }
+-- Dev try-on (/trylook, CosmeticService): catalog items over the look, procedural garments taken off, another body.
+export type Trial = {
+	pieces: { CatalogPiece }?, -- worn after the look's own items
+	hide: { string }?, -- garments (`g` names) of the outfit not worn
+	bare: boolean?, -- no garment of the outfit is worn (nor the plain shoes)
+	hideHair: boolean?, -- no hairstyle
+	body: { [string]: number }?, -- HumanoidDescription body part fields -> ids (a Head goes over the face's head)
+}
+
 export type LookInput = {
 	classId: string,
 	look: any,
@@ -300,6 +312,7 @@ export type LookInput = {
 	lure: boolean?,
 	-- an outfit given directly (tests, tools) instead of `outfitId` / the class's default; used as it is
 	spec: OutfitSpec?,
+	trial: Trial?,
 }
 -- W10: the face of the look: the dynamic head and lashes (Data/BodyLooks.heads), the brows, the facial hair and the
 -- face paint; `hair` = the hair colour (brows and beard take it)
@@ -315,7 +328,9 @@ export type FaceSpec = {
 	hair: string,
 }
 export type HairSpec = { id: string, catalog: number, asset: string?, style: string, color: string }
-export type GarmentSpec = { g: string, color: string, catalog: number, asset: string? }
+-- `hidden`: not worn (covered by a catalog item of the outfit, `Garment.hides`, or taken off by a trial); previews still
+-- draw it, as they draw the procedural garment of every catalog item.
+export type GarmentSpec = { g: string, color: string, catalog: number, asset: string?, hidden: boolean? }
 export type LookSpec = {
 	mode: "class" | "avatar",
 	skin: string?, -- hex; nil in avatar mode (the avatar keeps its own)
@@ -326,11 +341,166 @@ export type LookSpec = {
 	garments: { GarmentSpec }, -- procedural or catalog / asset pieces, hats hide hair
 	shirt: number,
 	pants: number, -- catalog clothing (0 = none)
-	accessories: { number }, -- non-zero catalog ids (garments, hair, in that order)
+	-- catalog items of the description: the garments' (with their `also`), the hair's, a trial's, in that order
+	accessories: { CatalogPiece },
 	catalogKey: string, -- stable text of every catalog id: the server re-applies the description only when it changes
 	pieces: number, -- procedural parts drawn (Config.CharacterLook.maxPieces)
 	build: { width: number, depth: number }, -- W10: width and depth of the body (Data/BodyLooks.builds)
+	shoes: boolean, -- plain shoes drawn (owner 2026-10-21: a class look without boots or catalog shoes)
+	bodyParts: { [string]: number }?, -- a trial's body (nil = the game's body, Data/BodyLooks.parts)
 }
+
+local function int(n: any): number
+	return if type(n) == "number" and n == n then math.max(0, math.floor(n)) else 0
+end
+
+-- Catalog clothing 2026-11-01 ----------------------------------------------------------------------------------
+
+local typeByLower: { [string]: string } = {}
+for name in ClassLooks.CATALOG_TYPES do
+	typeByLower[string.lower(name)] = name
+end
+-- names the catalog uses for some types
+local TYPE_ALIASES: { [string]: string } = {
+	shoulders = "Shoulder",
+	dress = "DressSkirt",
+	skirt = "DressSkirt",
+	["t-shirt"] = "TShirt",
+}
+
+-- The Enum.AccessoryType name of `name` (Data/ClassLooks.CATALOG_TYPES) in any case, also as the catalog writes it
+-- ("JacketAcc", "PantsAccessory", "Shoulders"); nil when unknown.
+function CharacterLook.catalogType(name: any): string?
+	if type(name) ~= "string" then
+		return nil
+	end
+	local key = string.lower(name)
+	key = (string.gsub(key, "accessory$", ""))
+	key = (string.gsub(key, "acc$", ""))
+	return typeByLower[key] or TYPE_ALIASES[key]
+end
+
+-- A catalog item as a description wears it, nil for id 0: its type (catalogType; nil or unknown = the rigid
+-- ClassLooks.DEFAULT_CATALOG_TYPE), for a layered type the layering order (`order`, else the type's default).
+function CharacterLook.catalogPiece(id: any, typeName: any?, order: any?): CatalogPiece?
+	local n = int(id)
+	if n == 0 then
+		return nil
+	end
+	local name = CharacterLook.catalogType(typeName) or ClassLooks.DEFAULT_CATALOG_TYPE
+	local def = ClassLooks.CATALOG_TYPES[name]
+	local o: number? = nil
+	if def.layered then
+		o = if type(order) == "number" and order == order then int(order) else def.order
+	end
+	return { id = n, type = name, layered = def.layered, order = o }
+end
+
+-- The catalog items a garment wears: its own and its `also` items, none while its `catalog` is 0.
+function CharacterLook.garmentPieces(item: ClassLooks.Garment): { CatalogPiece }
+	local out: { CatalogPiece } = {}
+	local own = CharacterLook.catalogPiece(item.catalog, item.type, item.order)
+	if own then
+		table.insert(out, own)
+		for _, ref in (item.also or {}) :: { ClassLooks.CatalogRef } do
+			local piece = CharacterLook.catalogPiece(ref.catalog, ref.type, ref.order)
+			if piece then
+				table.insert(out, piece)
+			end
+		end
+	end
+	return out
+end
+
+-- The stable text of everything a look takes from its description: the face (head, lashes, brows), the build, the
+-- classic clothing, every catalog item with its type and order, a trial's body. The server re-applies the description
+-- only when it changes.
+function CharacterLook.catalogKey(spec: LookSpec): string
+	local face = spec.face
+	local faceKey = if face then `{face.head}.{face.lashes}.{face.browsId}` else "0"
+	local items = {}
+	for _, piece in spec.accessories do
+		table.insert(
+			items,
+			if piece.layered then `{piece.id}:{piece.type}@{piece.order}` else `{piece.id}:{piece.type}`
+		)
+	end
+	local key =
+		`f{faceKey}|w{spec.build.width},{spec.build.depth}|s{spec.shirt}|p{spec.pants}|a{table.concat(items, ",")}`
+	local body = spec.bodyParts
+	if body then
+		local ids = {}
+		for _, field in BodyLooks.PART_FIELDS do
+			table.insert(ids, tostring(body[field] or 0))
+		end
+		key ..= `|b{table.concat(ids, ".")}`
+	end
+	return key
+end
+
+-- What a model marks with the description it wears (mode and catalog key; the server sets it, the wardrobe compares).
+function CharacterLook.lookKey(spec: LookSpec): string
+	return `{spec.mode}|{spec.catalogKey}`
+end
+
+-- An entry of HumanoidDescription:SetAccessories with the AccessoryType by name (Util/AvatarBuild turns it into the
+-- enum). A rigid entry has no Order: SetAccessories reads an entry without one as a rigid accessory.
+export type AccessoryEntry = {
+	AssetId: number,
+	AccessoryType: string,
+	IsLayered: boolean,
+	Order: number?,
+	Puffiness: number?,
+}
+
+-- Layered clothing categories: a new item of one takes the place of every item of it (Roblox's own try-on).
+local CATEGORY: { [string]: string } = {
+	Shirt = "top",
+	TShirt = "top",
+	Sweater = "top",
+	Pants = "bottom",
+	Shorts = "bottom",
+	DressSkirt = "bottom",
+}
+
+-- The accessory list of a description: `existing` (what it has, GetAccessories(true)) and then every catalog item of
+-- the look. `replace` (avatar mode): a layered item takes the place of the description's layered clothing of the same
+-- type or category, so an outfit's jacket is not layered over the avatar's own.
+function CharacterLook.accessoryList(
+	existing: { AccessoryEntry },
+	pieces: { CatalogPiece },
+	replace: boolean?
+): { AccessoryEntry }
+	local types: { [string]: boolean } = {}
+	local categories: { [string]: boolean } = {}
+	if replace == true then
+		for _, piece in pieces do
+			if piece.layered then
+				types[piece.type] = true
+				local category = CATEGORY[piece.type]
+				if category then
+					categories[category] = true
+				end
+			end
+		end
+	end
+	local out: { AccessoryEntry } = {}
+	for _, entry in existing do
+		local category = CATEGORY[entry.AccessoryType]
+		local taken = entry.IsLayered and (types[entry.AccessoryType] or (category ~= nil and categories[category]))
+		if not taken then
+			table.insert(out, entry)
+		end
+	end
+	for _, piece in pieces do
+		local entry: AccessoryEntry = { AssetId = piece.id, AccessoryType = piece.type, IsLayered = piece.layered }
+		if piece.layered then
+			entry.Order = piece.order
+		end
+		table.insert(out, entry)
+	end
+	return out
+end
 
 local function colorOf(colors: ClassLooks.Colors, role: string, skin: string?, hairColor: string?): string?
 	if role == "skin" then
@@ -344,10 +514,6 @@ local function colorOf(colors: ClassLooks.Colors, role: string, skin: string?, h
 	end
 	-- trim, leather and metal fall back to the second colour (outfits before S132 have only two)
 	return if role == "main" then colors.main else colors.second
-end
-
-local function int(n: any): number
-	return if type(n) == "number" then math.max(0, math.floor(n)) else 0
 end
 
 -- What a character looks like (the only source of the outfit's colours: the dye is already in it). The input is
@@ -409,11 +575,14 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 		end
 	end
 
+	local trial = input.trial
+	local bare = trial ~= nil and trial.bare == true
 	local body: { [string]: string } = {}
 	local garments: { GarmentSpec } = {}
-	local accessories: { number } = {}
+	local accessories: { CatalogPiece } = {}
 	local pieces = 0
 	local hidesHair = false
+	local shod = false
 	local shirt, pants = 0, 0
 	if spec then
 		local roles = spec.body
@@ -431,19 +600,46 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 				end
 			end
 		end
+		-- a garment is not worn when a worn catalog item covers it (`hides`) or a trial takes it off
+		local hidden: { [string]: boolean } = {}
+		for _, name in ((if trial then trial.hide else nil) or {}) :: { string } do
+			hidden[name] = true
+		end
+		for _, item in spec.garments do
+			if int(item.catalog) ~= 0 then
+				for _, name in (item.hides or {}) :: { string } do
+					hidden[name] = true
+				end
+			end
+		end
 		for _, item in spec.garments do
 			local def = CharacterLook.GARMENTS[item.g]
 			if def then
+				local off = bare or hidden[item.g] == true
 				local catalog = int(item.catalog)
 				local color = colorOf(colors, item.role or def.role, skinHex, nil) or colors.main
-				table.insert(garments, { g = item.g, color = color, catalog = catalog, asset = item.asset })
-				if catalog ~= 0 then
-					table.insert(accessories, catalog)
-				else
-					pieces += def.pieces
+				table.insert(garments, {
+					g = item.g,
+					color = color,
+					catalog = catalog,
+					asset = item.asset,
+					hidden = if off then true else nil,
+				})
+				if not off then
+					local worn = CharacterLook.garmentPieces(item)
+					for _, piece in worn do
+						table.insert(accessories, piece)
+					end
+					if #worn == 0 then
+						pieces += def.pieces
+					end
+					-- a hood or helmet worn (drawn or as its catalog item) covers the hair
+					if def.hidesHair then
+						hidesHair = true
+					end
 				end
-				if def.hidesHair then
-					hidesHair = true
+				if item.g == "boots" and not bare then
+					shod = true
 				end
 			end
 		end
@@ -451,7 +647,7 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 	end
 
 	local hair: HairSpec? = nil
-	if hairDef and not hidesHair then
+	if hairDef and not hidesHair and not (trial ~= nil and trial.hideHair == true) then
 		local h: HairSpec = {
 			id = hairDef.id,
 			catalog = int(hairDef.catalog),
@@ -460,8 +656,9 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 			color = hairHex,
 		}
 		hair = h
-		if h.catalog ~= 0 then
-			table.insert(accessories, h.catalog)
+		local piece = CharacterLook.catalogPiece(h.catalog, "Hair")
+		if piece then
+			table.insert(accessories, piece)
 		else
 			local def = CharacterLook.GARMENTS[`hair_{hairDef.style}`]
 			pieces += if def then def.pieces else 0
@@ -470,13 +667,19 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 	if input.lure == true then
 		pieces += CharacterLook.LURE_PIECES
 	end
-	-- the head, lashes and brows come from the description too: a change re-applies it
-	local faceKey = if face then `{face.head}.{face.lashes}.{face.browsId}` else "0"
-	local accText = {}
-	for _, id in accessories do
-		table.insert(accText, tostring(id))
+	local bodyParts: { [string]: number }? = nil
+	if trial then
+		for _, piece in (trial.pieces or {}) :: { CatalogPiece } do
+			table.insert(accessories, table.clone(piece))
+		end
+		bodyParts = if trial.body then table.clone(trial.body) else nil
 	end
-	return {
+	for _, piece in accessories do
+		if piece.type == "LeftShoe" or piece.type == "RightShoe" then
+			shod = true
+		end
+	end
+	local out: LookSpec = {
 		mode = if avatar then "avatar" else "class",
 		skin = skinHex,
 		face = face,
@@ -486,10 +689,15 @@ function CharacterLook.resolve(input: LookInput): LookSpec
 		shirt = shirt,
 		pants = pants,
 		accessories = accessories,
-		catalogKey = `f{faceKey}|w{build.width},{build.depth}|s{shirt}|p{pants}|a{table.concat(accText, ",")}`,
+		catalogKey = "",
 		pieces = pieces,
 		build = { width = build.width, depth = build.depth },
+		shoes = not avatar and not shod and not bare,
+		bodyParts = bodyParts,
 	}
+	-- the head, lashes and brows come from the description too: a change re-applies it
+	out.catalogKey = CharacterLook.catalogKey(out)
+	return out
 end
 
 local function sortedIds(match: (def: Def) -> boolean): { string }

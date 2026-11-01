@@ -19,6 +19,9 @@ local AvatarBuild = {}
 
 -- ReplicatedStorage child the server builds (a standard R15 figure, anchored, no scripts) for the client previews.
 AvatarBuild.MANNEQUIN = "VaelthornMannequin"
+-- Model attribute: the look key (Logic/CharacterLook.lookKey) of the description the character wears (the server sets
+-- it, the wardrobe compares it).
+AvatarBuild.LOOK_KEY = "VaelthornLookKey"
 
 local FOLDER = "VaelthornClassLook"
 local HIDDEN = "VaelthornHiddenClothes"
@@ -61,7 +64,6 @@ local ACCESSORY_FIELDS = {
 	"BackAccessory",
 	"WaistAccessory",
 }
-local BODY_FIELDS = { "Head", "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg" }
 local COLOR_FIELDS = { "HeadColor", "TorsoColor", "LeftArmColor", "RightArmColor", "LeftLegColor", "RightLegColor" }
 
 local warned: { [string]: boolean } = {}
@@ -77,8 +79,10 @@ end
 -- The description of a character (server; the client never applies descriptions). Class mode: a standard R15 body in
 -- the skin colour, the catalog face, clothing and accessories of the spec and nothing else. Avatar mode: a copy of
 -- `base` (the player's own description) with the outfit's catalog clothing over it. Both: the game's body (W09,
--- Data/BodyLooks: one base body with a dynamic head for everybody), scales of that body / clamped (Logic/CharacterLook),
--- no animations.
+-- Data/BodyLooks: one base body with a dynamic head for everybody; a dev trial's body over it), scales of that body /
+-- clamped (Logic/CharacterLook), no animations. Catalog clothing 2026-11-01: every catalog item goes in with its own
+-- accessory type, layered clothing with IsLayered and its layering order (fitted over the body), a rigid accessory on
+-- its attachment (Logic/CharacterLook.accessoryList).
 function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDescription?): HumanoidDescription
 	local desc: any = if base and spec.mode == "avatar" then base:Clone() else Instance.new("HumanoidDescription")
 	local scales: { [string]: number } = BodyLooks.scales :: any
@@ -100,11 +104,20 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 	desc.HeadScale = scales.head
 	desc.BodyTypeScale = scales.bodyType
 	desc.ProportionScale = scales.proportion
-	for _, field in BODY_FIELDS do
+	for _, field in BodyLooks.PART_FIELDS do
 		desc[field] = BodyLooks.parts[field] or 0
 	end
 	if spec.mode == "class" and spec.face then
 		desc.Head = spec.face.head -- W10: the face is a dynamic head
+	end
+	local trialBody = spec.bodyParts
+	if trialBody then
+		for _, field in BodyLooks.PART_FIELDS do
+			local id = trialBody[field]
+			if id then
+				desc[field] = id
+			end
+		end
 	end
 	for _, field in ANIMATIONS do
 		desc[field] = 0
@@ -148,21 +161,35 @@ function AvatarBuild.description(spec: CharacterLook.LookSpec, base: HumanoidDes
 		end
 	end
 	if #spec.accessories > 0 then
-		-- every catalog piece as a rigid hat entry; the accessory's own attachment decides where it sits
-		local ok = pcall(function()
-			local list = desc:GetAccessories(true)
-			for _, id in spec.accessories do
-				table.insert(list, { AssetId = id, AccessoryType = Enum.AccessoryType.Hat, IsLayered = false })
+		-- the description's own entries (the face's brows and lashes, an avatar's clothing) by type name, then every
+		-- catalog item of the look; in avatar mode an outfit's layered item takes the place of the avatar's of its kind
+		local ok, why = pcall(function()
+			local existing: { CharacterLook.AccessoryEntry } = {}
+			for _, entry in desc:GetAccessories(true) do
+				local copy = table.clone(entry)
+				local kind = entry.AccessoryType
+				copy.AccessoryType = if typeof(kind) == "EnumItem" then kind.Name else tostring(kind)
+				table.insert(existing, copy)
+			end
+			local list = {}
+			for _, entry in CharacterLook.accessoryList(existing, spec.accessories, spec.mode == "avatar") do
+				local copy: any = table.clone(entry)
+				copy.AccessoryType = (Enum.AccessoryType :: any)[entry.AccessoryType]
+				table.insert(list, copy)
 			end
 			desc:SetAccessories(list, true)
 		end)
 		if not ok then
-			local ids = {}
-			for _, id in spec.accessories do
-				table.insert(ids, tostring(id))
+			-- rigid items through their accessory fields; layered clothing has no field
+			warnOnce("accessories", `SetAccessories failed ({tostring(why)}): only the rigid catalog items`)
+			for _, piece in spec.accessories do
+				local def = ClassLooks.CATALOG_TYPES[piece.type]
+				local field = if def then def.field else nil
+				if field then
+					local now = desc[field]
+					desc[field] = if now ~= "" then `{now},{piece.id}` else tostring(piece.id)
+				end
 			end
-			local hats = desc.HatAccessory
-			desc.HatAccessory = if hats ~= "" then `{hats},{table.concat(ids, ",")}` else table.concat(ids, ",")
 		end
 	end
 	return desc :: HumanoidDescription
@@ -1083,7 +1110,7 @@ end
 
 -- Draws the look `spec` (Logic/CharacterLook.resolve) on `model`: body colours, the procedural garments (or the
 -- owner's models), the hairstyle and the face. Catalog pieces come from the description (server), so a preview shows
--- the procedural garment for them.
+-- the procedural garment for them and for the garments they cover (`hidden`).
 function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec, preview: boolean?)
 	AvatarBuild.clearProcedural(model)
 	if preview == true and spec.mode == "class" then
@@ -1136,26 +1163,20 @@ function AvatarBuild.applyProcedural(model: Model, spec: CharacterLook.LookSpec,
 	local quiver = hasQuiver(model)
 	for _, item in spec.garments do
 		local draw = DRAW[item.g]
-		if (item.catalog == 0 or preview == true) and draw and not (quiver and QUIVER_GARMENTS[item.g]) then
+		local worn = item.catalog == 0 and item.hidden ~= true
+		if (worn or preview == true) and draw and not (quiver and QUIVER_GARMENTS[item.g]) then
 			ctx.color = Color3.fromHex(item.color)
 			if not (item.asset and placeAsset(ctx, item.asset, ctx.color)) then
 				draw(ctx)
 			end
 		end
 	end
-	-- owner 2026-10-21: no bare feet; a look without boots wears plain shoes a shade darker than its feet
-	if spec.mode == "class" then
-		local shod = false
-		for _, item in spec.garments do
-			if item.g == "boots" then
-				shod = true
-			end
-		end
-		local foot = part("LeftFoot")
-		if not shod and foot then
-			ctx.color = foot.Color:Lerp(Color3.new(), 0.45)
-			shoes(ctx)
-		end
+	-- owner 2026-10-21: no bare feet; a look without boots (or catalog shoes) wears plain shoes a shade darker than
+	-- its feet
+	local foot = part("LeftFoot")
+	if spec.shoes and foot then
+		ctx.color = foot.Color:Lerp(Color3.new(), 0.45)
+		shoes(ctx)
 	end
 	-- (f) hairstyle
 	local hair = spec.hair

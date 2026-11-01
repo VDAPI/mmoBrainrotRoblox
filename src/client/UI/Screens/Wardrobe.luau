@@ -384,16 +384,24 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 			end
 			model = clone
 			if mine then
-				AvatarBuild.applyProcedural(
-					clone,
-					CharacterLook.resolve({
-						classId = mine,
-						look = Fusion.peek(charLook),
-						outfitId = outfitId,
-						dye = look.dye,
-						robloxAvatar = avatar,
-					})
-				)
+				local spec = CharacterLook.resolve({
+					classId = mine,
+					look = Fusion.peek(charLook),
+					outfitId = outfitId,
+					dye = look.dye,
+					robloxAvatar = avatar,
+				})
+				-- catalog clothing 2026-11-01: the clone wears the catalog items of the character's description; another
+				-- set (a tried outfit with other items) shows the procedural stand-ins, on the mannequin in the class look
+				local same = clone:GetAttribute(AvatarBuild.LOOK_KEY) == CharacterLook.lookKey(spec)
+				if not same and spec.mode == "class" then
+					clone:Destroy()
+					local figure = AvatarBuild.previewFigure()
+					model = figure
+					AvatarBuild.applyProcedural(figure, spec, true)
+				else
+					AvatarBuild.applyProcedural(clone, spec, not same)
+				end
 			end
 		end
 		local shown = model :: Model

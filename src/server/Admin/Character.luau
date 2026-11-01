@@ -2,6 +2,7 @@
 -- Admin commands: character (S23). Metadata (arguments, usage) in Shared.Data.AdminCommands; AdminService runs
 -- them for the chat and the dev panel. Required from AdminService.Init, after Context has the services.
 
+local AssetService = game:GetService("AssetService")
 local Shared = game:GetService("ReplicatedStorage").Shared
 
 local CharacterLook = require(Shared.Logic.CharacterLook)
@@ -17,6 +18,7 @@ local PartyBonus = require(Shared.Logic.PartyBonus)
 local Rarities = require(Shared.Data.Rarities)
 local Time = require(Shared.Logic.Time)
 local TitleData = require(Shared.Data.Titles)
+local TryLook = require(Shared.Logic.TryLook)
 local Tutorial = require(Shared.Logic.Tutorial)
 local UseBlocks = require(Shared.Logic.UseBlocks)
 
@@ -348,6 +350,48 @@ commands.avatarmode = function(player, args)
 	end
 	CosmeticService.SetRobloxAvatar(player, args[1] == "on")
 	reply(player, "admin.avatarmode.ok", { mode = args[1] })
+end
+
+-- Catalog clothing 2026-11-01 (docs/WYGLAD-KLAS.md §3): catalog items tried on the live character over its look
+-- (layered ones fitted), procedural garments taken off, another body; kept through respawns until "clear".
+local function bundleBody(bundleId: number): { [string]: number }?
+	local ok, details = pcall(function()
+		return AssetService:GetBundleDetailsAsync(bundleId)
+	end)
+	return if ok and type(details) == "table" then TryLook.bodyFromBundle(details.Items) else nil
+end
+
+commands.trylook = function(player, args)
+	local parsed, err, errArgs = TryLook.parse(args)
+	if not parsed then
+		reply(player, err or "admin.usage.trylook", errArgs)
+		reply(player, "admin.usage.trylook")
+		return
+	end
+	withCharacter(player, function()
+		local trial = CosmeticService.GetTrial(player)
+		if parsed.kind == "show" then
+			local text = TryLook.describe(trial)
+			reply(player, if text ~= "" then "admin.trylook.now" else "admin.trylook.none", { text = text })
+			return
+		elseif parsed.kind == "clear" then
+			CosmeticService.SetTrial(player, nil)
+			reply(player, "admin.trylook.cleared")
+			return
+		end
+		if parsed.kind == "body" and parsed.bundle then
+			local body = bundleBody(parsed.bundle)
+			if not body then
+				reply(player, "admin.trylook.bundle", { id = parsed.bundle })
+				return
+			end
+			parsed.body = body
+		end
+		local nextTrial = TryLook.merge(trial, parsed)
+		CosmeticService.SetTrial(player, nextTrial)
+		local text = TryLook.describe(nextTrial)
+		reply(player, if text ~= "" then "admin.trylook.now" else "admin.trylook.cleared", { text = text })
+	end)
 end
 
 -- Level + the full gear set of the character's class at that level (Logic/DevPreset), rolled at `rarity` with

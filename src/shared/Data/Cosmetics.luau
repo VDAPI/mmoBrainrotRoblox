@@ -632,14 +632,21 @@ add("title_firststeps", "title", 0, "✎", "#C9B48A", { obtain = { tutorial = tr
 
 -- S132 (DESIGN-17 §9a): class outfits. Each replaces the default outfit of its class (Data/ClassLooks): per class
 -- three for Dragon Shards, one for the end of the story's chapter II and one for defeating Azgor with that class. All
--- catalog ids 0 (procedural garments, docs/WYGLAD-KLAS.md). `color` / `color2` are the wardrobe and wiki swatch.
+-- catalog ids 0 (procedural garments, docs/WYGLAD-KLAS.md). `color` / `color2` are the wardrobe and wiki swatch. A
+-- garment's catalog item: `wear(g, role, { catalog = id, type = ..., order = ..., hides = { ... } })` (the fields of
+-- ClassLooks.Garment); the outfit's classic Shirt / Pants: `shirt = id` / `pants = id` in the last table of
+-- classOutfit.
 local QUEST_CHAPTER2_END = "queensLegacy" -- the last story quest of chapter II "Zapomniany Ród" (S103)
 local ASHEN_BOSS = "azgor"
 
 type Garment = ClassLooks.Garment
 
-local function wear(g: string, role: string?): Garment
-	return { g = g, catalog = 0, role = role }
+local function wear(g: string, role: string?, item: { [string]: any }?): Garment
+	local out: any = { g = g, catalog = 0, role = role }
+	for k, v in (item or {}) :: { [string]: any } do
+		out[k] = v
+	end
+	return out :: Garment
 end
 
 -- A long robe: the legs in the robe's colour (as the default looks of the Cleric and the Mage).
@@ -675,7 +682,11 @@ local function classOutfit(
 		e.weekly = true
 	end
 	for k, v in (extra or {}) :: { [string]: any } do
-		e[k] = v
+		if k == "shirt" or k == "pants" then
+			e.outfit[k] = v -- the outfit's classic clothing
+		else
+			e[k] = v
+		end
 	end
 	add(id, "outfit", price, icon, colors.main, e)
 end

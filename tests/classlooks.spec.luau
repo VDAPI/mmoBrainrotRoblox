@@ -321,7 +321,8 @@ T.describe("Class looks: resolve (S132)", function()
 		spec.shirt = 777
 		local withIds = CharacterLook.resolve(input("Warrior", { spec = spec }))
 		T.expect(withIds.catalogKey ~= class.catalogKey).toBe(true)
-		T.expect(withIds.accessories).toEqual({ 12345 })
+		-- a bare `catalog = id` stays a rigid hat entry (catalog clothing 2026-11-01)
+		T.expect(withIds.accessories).toEqual({ { id = 12345, type = "Hat", layered = false } })
 		T.expect(withIds.shirt).toBe(777)
 		T.expect(withIds.pieces < class.pieces).toBe(true)
 		local look = { face = "face_young", skin = "skin_2", hair = "hair_braid_dark" }
@@ -514,4 +515,260 @@ T.describe("Class looks: outfits of the classes (S132)", function()
 		T.expect(Premium.snapshotOutfit(cosmetics, { equipped = nil })).toEqual({ equipped = { aura = "aura_gold" } })
 		bothLanguages("wardrobe.set.class")
 	end)
+end)
+
+-- Catalog clothing 2026-11-01 (docs/WYGLAD-KLAS.md §3): a catalog item says its accessory type and layer order, may
+-- cover more garments than its own and bring a second item; classic clothing per class; the dev trial.
+local function warriorWith(fields: { [number]: { [string]: any } }): any
+	local spec: any = deepCopy((ClassLooks.get("Warrior") :: any).outfit)
+	for i, item in fields do
+		for k, v in item do
+			spec.garments[i][k] = v
+		end
+	end
+	return spec
+end
+
+local function garmentOf(spec: CharacterLook.LookSpec, g: string): CharacterLook.GarmentSpec
+	for _, item in spec.garments do
+		if item.g == g then
+			return item
+		end
+	end
+	error(`no garment {g}`)
+end
+
+local function pieceCount(g: string): number
+	return (CharacterLook.GARMENTS[g] :: CharacterLook.GarmentDef).pieces
+end
+
+T.describe("Class looks: catalog clothing (2026-11-01)", function()
+	T.it(
+		"10. the accessory types: Roblox's default layer orders, a field for every rigid type, catalog spellings",
+		function()
+			local layered: { [string]: number } = {
+				LeftShoe = 3,
+				RightShoe = 3,
+				Pants = 4,
+				Shorts = 5,
+				DressSkirt = 6,
+				TShirt = 7,
+				Shirt = 8,
+				Sweater = 9,
+				Jacket = 10,
+			}
+			local rigid: { [string]: string } = {
+				Hat = "HatAccessory",
+				Hair = "HairAccessory",
+				Face = "FaceAccessory",
+				Neck = "NeckAccessory",
+				Shoulder = "ShouldersAccessory",
+				Front = "FrontAccessory",
+				Back = "BackAccessory",
+				Waist = "WaistAccessory",
+			}
+			local count = 0
+			for name, def in ClassLooks.CATALOG_TYPES do
+				count += 1
+				if def.layered then
+					T.expect({ name, def.order, def.field }).toEqual({ name, layered[name], nil })
+				else
+					T.expect({ name, def.order, def.field }).toEqual({ name, nil, rigid[name] })
+				end
+			end
+			T.expect(count).toBe(17)
+			T.expect(ClassLooks.CATALOG_TYPES[ClassLooks.DEFAULT_CATALOG_TYPE].layered).toBe(false)
+			T.expect(CharacterLook.catalogType("JacketAcc")).toBe("Jacket")
+			T.expect(CharacterLook.catalogType("dressskirtacc")).toBe("DressSkirt")
+			T.expect(CharacterLook.catalogType("PantsAccessory")).toBe("Pants")
+			T.expect(CharacterLook.catalogType("Shoulders")).toBe("Shoulder")
+			T.expect(CharacterLook.catalogType("tshirt")).toBe("TShirt")
+			T.expect(CharacterLook.catalogType("Cape")).toBeNil()
+			T.expect(CharacterLook.catalogType(nil)).toBeNil()
+		end
+	)
+
+	T.it("11. a catalog piece: a bare id is a rigid hat, a layered type takes its default order or its own", function()
+		T.expect(CharacterLook.catalogPiece(55)).toEqual({ id = 55, type = "Hat", layered = false })
+		T.expect(CharacterLook.catalogPiece(55, "Back", 4)).toEqual({ id = 55, type = "Back", layered = false })
+		T.expect(CharacterLook.catalogPiece(55, "Jacket"))
+			.toEqual({ id = 55, type = "Jacket", layered = true, order = 10 })
+		T.expect(CharacterLook.catalogPiece(55, "Pants", 12))
+			.toEqual({ id = 55, type = "Pants", layered = true, order = 12 })
+		T.expect(CharacterLook.catalogPiece(55, "nonsense")).toEqual({ id = 55, type = "Hat", layered = false })
+		T.expect(CharacterLook.catalogPiece(0, "Jacket")).toBeNil()
+		T.expect(CharacterLook.catalogPiece(nil)).toBeNil()
+		local pair =
+			{ g = "plate_pauldrons", catalog = 7, type = "Shoulder", also = { { catalog = 8, type = "Shoulder" } } }
+		T.expect(CharacterLook.garmentPieces(pair :: any)).toEqual({
+			{ id = 7, type = "Shoulder", layered = false },
+			{ id = 8, type = "Shoulder", layered = false },
+		})
+		T.expect(CharacterLook.garmentPieces({ g = "boots", catalog = 0, also = { { catalog = 8 } } } :: any))
+			.toEqual({})
+	end)
+
+	T.it("12. a layered jacket worn for the breastplate covers the belt and the pauldrons", function()
+		local plain = CharacterLook.resolve(input("Warrior"))
+		local spec = warriorWith({
+			[1] = { catalog = 9001, type = "Jacket", hides = { "belt", "plate_pauldrons" } },
+		})
+		local dressed = CharacterLook.resolve(input("Warrior", { spec = spec }))
+		T.expect(dressed.accessories).toEqual({ { id = 9001, type = "Jacket", layered = true, order = 10 } })
+		T.expect(garmentOf(dressed, "breastplate").catalog).toBe(9001)
+		T.expect(garmentOf(dressed, "breastplate").hidden).toBeNil()
+		T.expect(garmentOf(dressed, "belt").hidden).toBe(true)
+		T.expect(garmentOf(dressed, "plate_pauldrons").hidden).toBe(true)
+		T.expect(garmentOf(dressed, "cape").hidden).toBeNil()
+		T.expect(plain.pieces - dressed.pieces)
+			.toBe(pieceCount("breastplate") + pieceCount("belt") + pieceCount("plate_pauldrons"))
+		-- the jacket's type and order are in the key: another order re-applies the description
+		local reordered = warriorWith({ [1] = { catalog = 9001, type = "Jacket", order = 11 } })
+		T.expect(CharacterLook.resolve(input("Warrior", { spec = reordered })).catalogKey ~= dressed.catalogKey)
+			.toBe(true)
+		-- `hides` only counts while the item is set
+		local unset = warriorWith({ [1] = { catalog = 0, type = "Jacket", hides = { "belt" } } })
+		local procedural = CharacterLook.resolve(input("Warrior", { spec = unset }))
+		T.expect(garmentOf(procedural, "belt").hidden).toBeNil()
+		T.expect(procedural.pieces).toBe(plain.pieces)
+		T.expect(procedural.catalogKey).toBe(plain.catalogKey)
+	end)
+
+	T.it(
+		"13. a hood's catalog item hides the hair, a covered hood does not; catalog shoes need no plain shoes",
+		function()
+			local look = { face = "face_calm", skin = "skin_3", hair = "hair_long" }
+			local hunter: any = deepCopy((ClassLooks.get("Hunter") :: any).outfit)
+			T.expect(CharacterLook.resolve(input("Hunter", { look = look, spec = hunter })).hair).toBeNil()
+			hunter.garments[2].catalog = 617605556 -- the hood as a catalog hat
+			T.expect(CharacterLook.resolve(input("Hunter", { look = look, spec = hunter })).hair).toBeNil()
+			hunter.garments[2].catalog = 0
+			hunter.garments[1].catalog = 9002 -- a vest that covers the hood
+			hunter.garments[1].hides = { "hood" }
+			T.expect(CharacterLook.resolve(input("Hunter", { look = look, spec = hunter })).hair ~= nil).toBe(true)
+			T.expect(CharacterLook.resolve(input("Warrior")).shoes).toBe(true)
+			T.expect(CharacterLook.resolve(input("Hunter")).shoes).toBe(false) -- boots
+			T.expect(CharacterLook.resolve(input("Warrior", { robloxAvatar = true })).shoes).toBe(false)
+			local shod = warriorWith({
+				[4] = { catalog = 31, type = "LeftShoe", also = { { catalog = 32, type = "RightShoe" } } },
+			})
+			local spec = CharacterLook.resolve(input("Warrior", { spec = shod }))
+			T.expect(spec.shoes).toBe(false)
+			T.expect(#spec.accessories).toBe(2)
+		end
+	)
+
+	T.it(
+		"14. the data: known types, orders only on layered items, `hides` names other garments of the outfit",
+		function()
+			local function check(where: string, spec: ClassLooks.OutfitSpec)
+				T.expect({ where, type(spec.shirt), type(spec.pants) }).toEqual({ where, "number", "number" })
+				local names: { [string]: boolean } = {}
+				for _, g in spec.garments do
+					names[g.g] = true
+				end
+				local function item(g: string, catalog: any, kind: any, order: any)
+					T.expect({ where, g, kind == nil or ClassLooks.CATALOG_TYPES[kind] ~= nil })
+						.toEqual({ where, g, true })
+					local layered = kind ~= nil and ClassLooks.CATALOG_TYPES[kind].layered
+					T.expect({ where, g, order == nil or (layered and order == math.floor(order) and order >= 0) })
+						.toEqual({ where, g, true })
+					T.expect({ where, g, type(catalog) == "number" and catalog == math.floor(catalog) and catalog >= 0 })
+						.toEqual({ where, g, true })
+				end
+				for _, g in spec.garments do
+					item(g.g, g.catalog or 0, g.type, g.order)
+					for _, ref in g.also or {} do
+						item(g.g, ref.catalog, ref.type, ref.order)
+						T.expect({ where, g.g, (g.catalog or 0) ~= 0 and ref.catalog ~= 0 })
+							.toEqual({ where, g.g, true })
+					end
+					for _, name in g.hides or {} do
+						T.expect({ where, g.g, name, names[name] == true, name ~= g.g })
+							.toEqual({ where, g.g, name, true, true })
+						for _, other in spec.garments do
+							if other.g == name then
+								-- a covered garment brings no item of its own
+								T.expect({ where, name, other.catalog or 0 }).toEqual({ where, name, 0 })
+							end
+						end
+					end
+				end
+			end
+			for classId, look in ClassLooks.classes do
+				check(classId, look.outfit)
+			end
+			for _, def in Cosmetics.list do
+				if def.kind == "outfit" and def.class then
+					check(def.id, CharacterLook.outfitSpec(def))
+				end
+			end
+		end
+	)
+
+	T.it(
+		"15. classic Shirt / Pants of a class reach the look, the description's accessory list keeps its own",
+		function()
+			local spec: any = deepCopy((ClassLooks.get("Mage") :: any).outfit)
+			spec.shirt, spec.pants = 90288143423440, 115998093387659
+			local mage = CharacterLook.resolve(input("Mage", { spec = spec }))
+			T.expect({ mage.shirt, mage.pants }).toEqual({ 90288143423440, 115998093387659 })
+			local avatar = CharacterLook.resolve(input("Mage", { spec = spec, robloxAvatar = true }))
+			T.expect({ avatar.shirt, avatar.pants }).toEqual({ 90288143423440, 115998093387659 })
+			local brows = { AssetId = 1, AccessoryType = "Eyebrow", IsLayered = true, Order = 1 }
+			local hat = { AssetId = 2, AccessoryType = "Hat", IsLayered = false }
+			local jacket = CharacterLook.catalogPiece(9001, "Jacket") :: CharacterLook.CatalogPiece
+			local cape = CharacterLook.catalogPiece(9003, "Back") :: CharacterLook.CatalogPiece
+			T.expect(CharacterLook.accessoryList({ brows, hat }, { jacket, cape }, false)).toEqual({
+				brows,
+				hat,
+				{ AssetId = 9001, AccessoryType = "Jacket", IsLayered = true, Order = 10 },
+				{ AssetId = 9003, AccessoryType = "Back", IsLayered = false },
+			})
+			-- avatar mode: an outfit's layered item takes the place of the avatar's of its type or category
+			local own = {
+				{ AssetId = 11, AccessoryType = "Jacket", IsLayered = true, Order = 10 },
+				{ AssetId = 12, AccessoryType = "Shirt", IsLayered = true, Order = 8 },
+				{ AssetId = 13, AccessoryType = "Pants", IsLayered = true, Order = 4 },
+				hat,
+			}
+			local sweater = CharacterLook.catalogPiece(9004, "Sweater") :: CharacterLook.CatalogPiece
+			local list = CharacterLook.accessoryList(own, { jacket, sweater, cape }, true)
+			local ids = {}
+			for _, entry in list do
+				table.insert(ids, entry.AssetId)
+			end
+			T.expect(ids).toEqual({ 13, 2, 9001, 9004, 9003 })
+		end
+	)
+
+	T.it(
+		"16. a trial: items over the look, garments off, bare, no hair, another body; the input never changes",
+		function()
+			local look = { face = "face_calm", skin = "skin_3", hair = "hair_long" }
+			local plain = CharacterLook.resolve(input("Warrior", { look = look }))
+			local jacket = CharacterLook.catalogPiece(9001, "Jacket") :: CharacterLook.CatalogPiece
+			local trial: CharacterLook.Trial =
+				{ pieces = { jacket }, hide = { "breastplate" }, body = { Torso = 11702287641 } }
+			local before = deepCopy(trial)
+			local tried = CharacterLook.resolve(input("Warrior", { look = look, trial = trial }))
+			T.expect(trial).toEqual(before)
+			T.expect(tried.accessories).toEqual({ jacket })
+			T.expect(garmentOf(tried, "breastplate").hidden).toBe(true)
+			T.expect(garmentOf(tried, "cape").hidden).toBeNil()
+			T.expect(tried.bodyParts).toEqual({ Torso = 11702287641 })
+			T.expect(tried.pieces).toBe(plain.pieces - pieceCount("breastplate"))
+			T.expect(tried.catalogKey ~= plain.catalogKey).toBe(true)
+			T.expect(tried.hair ~= nil).toBe(true)
+			local bare =
+				CharacterLook.resolve(input("Warrior", { look = look, trial = { bare = true, hideHair = true } }))
+			for _, g in bare.garments do
+				T.expect({ g.g, g.hidden }).toEqual({ g.g, true })
+			end
+			T.expect({ bare.hair, bare.shoes, #bare.accessories }).toEqual({ nil, false, 0 })
+			T.expect(bare.catalogKey).toBe(plain.catalogKey) -- nothing of the description changes
+			local key = CharacterLook.lookKey(plain)
+			T.expect(key).toBe(`class|{plain.catalogKey}`)
+		end
+	)
 end)

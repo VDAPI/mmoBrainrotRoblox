@@ -22,6 +22,8 @@
 -- when a catalog id or the mode changed (model attribute VaelthornLookKey). SetCharacterLook: the free change, then gold
 -- at the barber. Class outfits of a quest (GrantQuestOutfits) and of a boss win (GrantBossWin), given back on entering
 -- the world when the save proves them. The mannequin of the client previews (ReplicatedStorage.VaelthornMannequin).
+-- Catalog clothing 2026-11-01: the dev try-on (/trylook, Logic/TryLook) keeps a trial per player for the session,
+-- worn over the look through every respawn until it is cleared.
 
 local Players = game:GetService("Players")
 local InsertService = game:GetService("InsertService")
@@ -96,13 +98,15 @@ local pets: { [Player]: Model } = {}
 local modelWatch: { [Player]: { RBXScriptConnection } } = {}
 
 -- S132: the model attribute with the look key (mode + catalog ids) of the description the model wears.
-local LOOK_KEY = "VaelthornLookKey"
+local LOOK_KEY = AvatarBuild.LOOK_KEY
 -- the player's own description (false = Roblox refused it: the class look until the next attempt)
 local avatars: { [Player]: HumanoidDescription | false } = {}
 local fetching: { [Player]: boolean } = {}
 local spawnKey: { [Player]: string } = {}
 local busy: { [Player]: boolean } = {}
 local again: { [Player]: boolean } = {}
+-- dev try-on (/trylook): the trial worn over the look
+local trials: { [Player]: CharacterLook.Trial? } = {}
 
 local function account(player: Player): Types.AccountData?
 	return DataService.GetData(player)
@@ -212,11 +216,12 @@ local function specOf(player: Player, char: Types.CharacterData?): CharacterLook
 		dye = data.cosmetics.equipped.dye,
 		robloxAvatar = avatar,
 		lure = Lure.active(data.lure, os.time()),
+		trial = trials[player],
 	})
 end
 
 local function keyOf(spec: CharacterLook.LookSpec): string
-	return `{spec.mode}|{spec.catalogKey}`
+	return CharacterLook.lookKey(spec)
 end
 
 -- S132: the description of the active character (fetches the avatar's first when the switch is on; may yield).
@@ -641,6 +646,17 @@ local function setLook(player: Player, face: string, skin: string, hair: string,
 	return true, nil
 end
 
+-- Catalog clothing 2026-11-01 (admin /trylook): the dev trial of `player` (nil = none) and setting it (nil clears),
+-- then the appearance again. Kept for the session only, never saved.
+function CosmeticService.GetTrial(player: Player): CharacterLook.Trial?
+	return trials[player]
+end
+
+function CosmeticService.SetTrial(player: Player, trial: CharacterLook.Trial?)
+	trials[player] = trial
+	CosmeticService.RefreshAppearance(player)
+end
+
 -- S132 (admin /charlook): the look without a cost and without touching the free change. False for a bad look or no
 -- character.
 function CosmeticService.AdminSetLook(player: Player, look: ClassLooks.Look): boolean
@@ -716,9 +732,15 @@ local function loadLookParts()
 	end
 end
 
--- S132: the standard figure of the client previews (creator, wardrobe, look window).
+-- S132: the standard figure of the client previews (creator, wardrobe, look window). Catalog clothing 2026-11-01: the
+-- body and face only (an empty outfit), so no class's catalog item sits under every preview's procedural garments.
 local function buildMannequin()
-	local spec = CharacterLook.resolve({ classId = "Warrior", look = ClassLooks.DEFAULT_LOOK, robloxAvatar = false })
+	local spec = CharacterLook.resolve({
+		classId = "Warrior",
+		look = ClassLooks.DEFAULT_LOOK,
+		robloxAvatar = false,
+		spec = { colors = { main = "#808080", second = "#808080" }, garments = {}, shirt = 0, pants = 0 },
+	})
 	local ok, model = pcall(function()
 		return Players:CreateHumanoidModelFromDescription(AvatarBuild.description(spec, nil), Enum.HumanoidRigType.R15)
 	end)
@@ -816,6 +838,7 @@ function CosmeticService.Start()
 		spawnKey[player] = nil
 		busy[player] = nil
 		again[player] = nil
+		trials[player] = nil
 	end)
 end
 

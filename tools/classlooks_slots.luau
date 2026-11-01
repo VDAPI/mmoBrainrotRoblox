@@ -3,6 +3,9 @@
 -- the class looks (catalog / shirt / pants = 0): the default outfits of Data/ClassLooks, the class outfits of
 -- Data/Cosmetics, the faces and the hairstyles. docs/WYGLAD-KLAS.md pastes its output, so the owner's list always
 -- matches the data. Prints the number of empty slots last.
+-- Catalog clothing 2026-11-01: the "Typ" column suggests the accessory types that fit the garment's body slot (the
+-- `type` to write with the id), a garment a filled item covers (`hides`) is no empty slot, and a second table lists the
+-- filled items (id, type, layer order, what they cover).
 
 local CharacterLook = require("../src/shared/Logic/CharacterLook")
 local ClassLooks = require("../src/shared/Data/ClassLooks")
@@ -10,24 +13,59 @@ local Classes = require("../src/shared/Data/Classes")
 local Cosmetics = require("../src/shared/Data/Cosmetics")
 local pl = require("../src/shared/Data/Localization/pl")
 
+-- Accessory types (Data/ClassLooks.CATALOG_TYPES) that fit each body slot of Logic/CharacterLook.SLOTS.
+local SLOT_TYPES: { [string]: string } = {
+	head = "Hat",
+	face = "Face",
+	back = "Back",
+	chest = "Jacket, Sweater, Shirt, TShirt, Front",
+	shoulders = "Shoulder, Neck",
+	arms = "—",
+	hands = "—",
+	waist = "Waist",
+	legs = "Pants, Shorts, DressSkirt",
+	feet = "LeftShoe + RightShoe",
+}
+
 local rows: { string } = {}
-local function row(owner: string, element: string, role: string, file: string, field: string)
-	table.insert(rows, `| {owner} | {element} | {role} | \`{file}\` | \`{field}\` |`)
+local filled: { string } = {}
+local function row(owner: string, element: string, role: string, kind: string, file: string, field: string)
+	table.insert(rows, `| {owner} | {element} | {role} | {kind} | \`{file}\` | \`{field}\` |`)
 end
 
 local function outfit(owner: string, file: string, path: string, spec: ClassLooks.OutfitSpec)
+	local covered: { [string]: boolean } = {}
+	for _, g in spec.garments do
+		if (g.catalog or 0) ~= 0 then
+			for _, name in g.hides or {} do
+				covered[name] = true
+			end
+		end
+	end
 	for i, g in spec.garments do
-		if (g.catalog or 0) == 0 then
-			local def = CharacterLook.GARMENTS[g.g]
+		local def = CharacterLook.GARMENTS[g.g]
+		local element = pl[`garment.{g.g}`] or g.g
+		if (g.catalog or 0) ~= 0 then
+			local items = {}
+			for _, piece in CharacterLook.garmentPieces(g) do
+				table.insert(
+					items,
+					if piece.layered then `{piece.id} {piece.type} @{piece.order}` else `{piece.id} {piece.type}`
+				)
+			end
+			local hides = if g.hides and #g.hides > 0 then table.concat(g.hides, ", ") else "—"
+			table.insert(filled, `| {owner} | {element} | {table.concat(items, " + ")} | {hides} |`)
+		elseif not covered[g.g] then
 			local role = g.role or (if def then def.role else "?")
-			row(owner, pl[`garment.{g.g}`] or g.g, role, file, `{path}.garments[{i}].catalog`)
+			local kind = if def then SLOT_TYPES[def.slot] or "—" else "?"
+			row(owner, element, role, kind, file, `{path}.garments[{i}].catalog`)
 		end
 	end
 	if (spec.shirt or 0) == 0 then
-		row(owner, "koszula (Classic Shirt)", "—", file, `{path}.shirt`)
+		row(owner, "koszula (Classic Shirt)", "—", "—", file, `{path}.shirt`)
 	end
 	if (spec.pants or 0) == 0 then
-		row(owner, "spodnie (Classic Pants)", "—", file, `{path}.pants`)
+		row(owner, "spodnie (Classic Pants)", "—", "—", file, `{path}.pants`)
 	end
 end
 
@@ -46,10 +84,20 @@ for _, def in Cosmetics.list do
 end
 -- W10: faces and hairstyles are Roblox items of Data/BodyLooks (dynamic heads, catalog hair), no empty slots here
 
-print("| Klasa / strój | Element | Rola koloru | Plik | Pole |")
-print("|---|---|---|---|---|")
+print("| Klasa / strój | Element | Rola koloru | Typ | Plik | Pole |")
+print("|---|---|---|---|---|---|")
 for _, line in rows do
 	print(line)
 end
 print("")
 print(`Pustych miejsc: {#rows}.`)
+print("")
+if #filled > 0 then
+	print("| Klasa / strój | Element | Przedmioty (id, typ, @kolejność) | Zakrywa |")
+	print("|---|---|---|---|")
+	for _, line in filled do
+		print(line)
+	end
+	print("")
+end
+print(`Wypełnionych elementów: {#filled}.`)

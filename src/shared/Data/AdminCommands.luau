@@ -146,6 +146,18 @@ cmd(
 )
 cmd("character", "lookfree", {})
 cmd("character", "avatarmode", { enum("mode", { "on", "off" }) })
+-- Catalog clothing 2026-11-01 (docs/WYGLAD-KLAS.md §3): catalog items tried on over the look (Logic/TryLook parses
+-- every word: <id>[:<Type>[:<Order>]], -<garment>, -all, -hair; body <name | bundle | ids>; clear)
+cmd("character", "trylook", {
+	str("what", true),
+	str("a", true),
+	str("b", true),
+	str("c", true),
+	str("d", true),
+	str("e", true),
+	str("f", true),
+	str("g", true),
+})
 cmd("character", "preset", { int("level", 1, MAX_LEVEL), int("rarity", 1, 5), int("up", 0, 9, true, "0") })
 -- S28: skill tools (S56: ranks come from the level; /lvl sets them)
 cmd("character", "nocd", { enum("mode", { "on", "off" }, true, "on") })

@@ -6,12 +6,28 @@
 -- Procedural garment names live in Logic/CharacterLook.GARMENTS (tests/classlooks.spec checks every name used here).
 -- Owner's list of empty catalog ids: docs/WYGLAD-KLAS.md (tools/classlooks_slots.luau prints it).
 
+-- Catalog clothing 2026-11-01 (docs/WYGLAD-KLAS.md §3): a catalog item says its accessory type, a layered one its
+-- layering order, and may cover more procedural garments than its own.
+-- One more catalog item worn with a garment's own (the other half of a pair: the right pauldron, the right shoe).
+export type CatalogRef = { catalog: number, type: string?, order: number? }
 export type Garment = {
 	g: string, -- procedural garment name (Logic/CharacterLook.GARMENTS)
-	catalog: number?, -- Roblox catalog accessory id; 0 / nil = procedural
+	catalog: number?, -- Roblox catalog item worn instead of the procedural garment; 0 / nil = procedural
+	-- the item's Enum.AccessoryType name (CATALOG_TYPES); nil = "Hat", a rigid accessory on its own attachment
+	type: string?,
+	order: number?, -- layered types only: the layering order (higher = over); nil = Roblox's default of the type
+	-- procedural garments of the same outfit (`g` names) the item covers too: none of them is worn while it is
+	hides: { string }?,
+	also: { CatalogRef }?, -- more catalog items worn with this one, only while `catalog` is set
 	asset: string?, -- key of ClassLooks.assets (owner's model); replaces the procedural garment when the model exists
 	role: string?, -- colour role of the garment (default: the garment's own default role in GARMENTS)
 }
+-- The accessory types a catalog item may say (Enum.AccessoryType names). Layered clothing (a WrapLayer) is fitted over
+-- the body and over what is under it; `order` = Roblox's default layering order of the type (the LayeredClothingOrder
+-- of its avatar editor and in-experience try-on): shoes 3, pants 4, shorts 5, dress / skirt 6, T-shirt 7, shirt 8,
+-- sweater 9, jacket 10. A rigid accessory sits on the attachment of its handle; `field` = its HumanoidDescription
+-- property. Layered "Shirt" / "Pants" are 3D items, not the classic Shirt / Pants of an outfit (`shirt`, `pants`).
+export type CatalogType = { layered: boolean, order: number?, field: string? }
 export type Colors = { main: string, second: string, trim: string?, leather: string?, metal: string? }
 export type OutfitSpec = {
 	colors: Colors,
@@ -61,15 +77,45 @@ export type Look = {
 	paintColor: string?,
 }
 
-local function garment(g: string, role: string?): Garment
-	return { g = g, catalog = 0, role = role }
+local CATALOG_TYPES: { [string]: CatalogType } = {
+	LeftShoe = { layered = true, order = 3 },
+	RightShoe = { layered = true, order = 3 },
+	Pants = { layered = true, order = 4 },
+	Shorts = { layered = true, order = 5 },
+	DressSkirt = { layered = true, order = 6 },
+	TShirt = { layered = true, order = 7 },
+	Shirt = { layered = true, order = 8 },
+	Sweater = { layered = true, order = 9 },
+	Jacket = { layered = true, order = 10 },
+	Hat = { layered = false, field = "HatAccessory" },
+	Hair = { layered = false, field = "HairAccessory" },
+	Face = { layered = false, field = "FaceAccessory" },
+	Neck = { layered = false, field = "NeckAccessory" },
+	Shoulder = { layered = false, field = "ShouldersAccessory" },
+	Front = { layered = false, field = "FrontAccessory" },
+	Back = { layered = false, field = "BackAccessory" },
+	Waist = { layered = false, field = "WaistAccessory" },
+}
+for _, def in CATALOG_TYPES do
+	table.freeze(def)
 end
 
-local function look(class: string, colors: Colors, garments: { Garment }, body: { [string]: string }?): ClassLook
+-- `item`: the catalog fields of the garment (catalog, type, order, hides, also), e.g.
+--   garment("breastplate", "metal", { catalog = 123, type = "Jacket", hides = { "belt", "plate_pauldrons" } })
+local function garment(g: string, role: string?, item: { [string]: any }?): Garment
+	local out: any = { g = g, catalog = 0, role = role }
+	for k, v in (item or {}) :: { [string]: any } do
+		out[k] = v
+	end
+	return out :: Garment
+end
+
+-- `outfit.shirt` / `outfit.pants` = the class's classic Shirt / Pants ids (0 = none).
+local function look(class: string, outfit: OutfitSpec): ClassLook
 	return {
 		class = class,
 		nameKey = `classlook.{class}.name`,
-		outfit = { colors = colors, body = body, garments = garments, shirt = 0, pants = 0 },
+		outfit = outfit,
 		layers = {},
 	}
 end
@@ -105,64 +151,86 @@ local ROBE_BODY: { [string]: string } = {
 local classes: { [string]: ClassLook } = {
 	-- Plate and a cape: broad in the shoulders, the class red as the cape.
 	Warrior = look("Warrior", {
-		main = "#5B616B",
-		second = "#3A3F47",
-		trim = "#A33A2A",
-		leather = "#6B4A2B",
-		metal = "#9AA3AD",
-	}, {
-		garment("breastplate", "metal"),
-		garment("plate_pauldrons", "metal"),
-		garment("gauntlets", "metal"),
-		garment("greaves", "metal"),
-		garment("belt", "leather"),
-		garment("cape", "trim"),
+		colors = {
+			main = "#5B616B",
+			second = "#3A3F47",
+			trim = "#A33A2A",
+			leather = "#6B4A2B",
+			metal = "#9AA3AD",
+		},
+		garments = {
+			garment("breastplate", "metal"),
+			garment("plate_pauldrons", "metal"),
+			garment("gauntlets", "metal"),
+			garment("greaves", "metal"),
+			garment("belt", "leather"),
+			garment("cape", "trim"),
+		},
+		shirt = 0,
+		pants = 0,
 	}),
 	-- A long white robe with a hood, the holy symbol and a stole.
 	Cleric = look("Cleric", {
-		main = "#E8E2D0",
-		second = "#C9A45C",
-		trim = "#E8C25A",
-		leather = "#7A5A3A",
-		metal = "#C9A45C",
-	}, {
-		garment("robe_skirt", "main"),
-		garment("hood", "main"),
-		garment("holy_symbol", "second"),
-		garment("sash", "trim"),
-		garment("stole", "second"),
-	}, ROBE_BODY),
+		colors = {
+			main = "#E8E2D0",
+			second = "#C9A45C",
+			trim = "#E8C25A",
+			leather = "#7A5A3A",
+			metal = "#C9A45C",
+		},
+		body = ROBE_BODY,
+		garments = {
+			garment("robe_skirt", "main"),
+			garment("hood", "main"),
+			garment("holy_symbol", "second"),
+			garment("sash", "trim"),
+			garment("stole", "second"),
+		},
+		shirt = 0,
+		pants = 0,
+	}),
 	-- Leathers, a hood and the quiver on the back. Owner 2026-10-21: green trousers under the brown vest (all brown read
 	-- as bare skin).
 	Hunter = look("Hunter", {
-		main = "#4A5A34",
-		second = "#3E4A2C",
-		trim = "#4FA35A",
-		leather = "#7A5232",
-		metal = "#8A8070",
-	}, {
-		garment("leather_vest", "leather"),
-		garment("hood", "main"),
-		garment("quiver_back", "leather"),
-		garment("bracers", "leather"),
-		garment("belt", "leather"),
-		garment("boots", "leather"),
+		colors = {
+			main = "#4A5A34",
+			second = "#3E4A2C",
+			trim = "#4FA35A",
+			leather = "#7A5232",
+			metal = "#8A8070",
+		},
+		garments = {
+			garment("leather_vest", "leather"),
+			garment("hood", "main"),
+			garment("quiver_back", "leather"),
+			garment("bracers", "leather"),
+			garment("belt", "leather"),
+			garment("boots", "leather"),
+		},
+		shirt = 0,
+		pants = 0,
 	}),
 	-- A robe to the ground, a high collar and a book at the belt.
 	-- owner 2026-10-21: violet sleeves and mantle (the pale second colour read as bare arms)
 	Mage = look("Mage", {
-		main = "#2E3A6B",
-		second = "#5B4E8C",
-		trim = "#4A8FE7",
-		leather = "#4A3A2A",
-		metal = "#B8A060",
-	}, {
-		garment("robe_skirt", "main"),
-		garment("high_collar", "main"),
-		garment("belt_book", "leather"),
-		garment("sash", "trim"),
-		garment("shoulder_mantle", "second"),
-	}, ROBE_BODY),
+		colors = {
+			main = "#2E3A6B",
+			second = "#5B4E8C",
+			trim = "#4A8FE7",
+			leather = "#4A3A2A",
+			metal = "#B8A060",
+		},
+		body = ROBE_BODY,
+		garments = {
+			garment("robe_skirt", "main"),
+			garment("high_collar", "main"),
+			garment("belt_book", "leather"),
+			garment("sash", "trim"),
+			garment("shoulder_mantle", "second"),
+		},
+		shirt = 0,
+		pants = 0,
+	}),
 }
 
 local function face(id: string, legacyBeard: string?, legacyPaint: string?): Face
@@ -361,6 +429,8 @@ return table.freeze({
 	LEGACY_HAIRS = LEGACY_HAIRS,
 	DEFAULT_LOOK = DEFAULT_LOOK,
 	BODY_ROLES = BODY_ROLES,
+	CATALOG_TYPES = table.freeze(CATALOG_TYPES),
+	DEFAULT_CATALOG_TYPE = "Hat", -- a bare `catalog = id`: a rigid accessory (before 2026-11-01 every item was one)
 	assets = assets,
 	get = function(classId: string): ClassLook?
 		return classes[classId]

@@ -31,6 +31,60 @@ BodyLooks.parts = table.freeze({
 	RightLeg = 11709867346,
 } :: { [string]: number })
 
+-- The body part fields of a HumanoidDescription, in this order wherever they are listed.
+BodyLooks.PART_FIELDS = table.freeze({ "Head", "Torso", "LeftArm", "RightArm", "LeftLeg", "RightLeg" })
+
+-- Catalog clothing 2026-11-01: the other free base bodies to compare on the live character (dev /trylook body <name>,
+-- docs/WYGLAD-KLAS.md §3): the parts below the head (the head stays the character's face) or only the bundle, whose
+-- parts the server looks up (AssetService:GetBundleDetailsAsync). From the owner's catalog search (1.11), not tried on.
+BodyLooks.trialBodies = table.freeze({
+	dawson = { bundle = 991 }, -- the game's body (`parts` above)
+	addison = {
+		bundle = 988,
+		parts = {
+			Torso = 11702287641,
+			LeftArm = 11702279057,
+			RightArm = 11702284438,
+			LeftLeg = 11702282072,
+			RightLeg = 11702286099,
+		},
+	},
+	jordan = {
+		bundle = 994,
+		parts = {
+			Torso = 11740060397,
+			LeftArm = 11740050465,
+			RightArm = 11740055375,
+			LeftLeg = 11740052832,
+			RightLeg = 11740057815,
+		},
+	},
+	robin = {
+		bundle = 990,
+		parts = {
+			Torso = 11709146274,
+			LeftArm = 11709138329,
+			RightArm = 11709143116,
+			LeftLeg = 11709141448,
+			RightLeg = 11709144753,
+		},
+	},
+	rene = {
+		bundle = 992,
+		parts = {
+			Torso = 11714041015,
+			LeftArm = 11714033534,
+			RightArm = 11714037276,
+			LeftLeg = 11714035598,
+			RightLeg = 11714039415,
+		},
+	},
+	billie = { bundle = 995 },
+	harper = { bundle = 989 },
+	glenn = { bundle = 984 },
+	andi = { bundle = 993 },
+} :: { [string]: { bundle: number, parts: { [string]: number }? } })
+
 -- Heights of the whole figure at scale 1 (Studio, W09): the old standard R15 figure and this body. The class look
 -- scales the body to the standard height (hitboxes, camera and the nameplate stay where they were, within 10%).
 BodyLooks.STANDARD_HEIGHT = 5.46

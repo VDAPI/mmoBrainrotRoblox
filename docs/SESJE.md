@@ -14455,3 +14455,21 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   (`announcement`, do końca wysuwania), toast osiągnięcia czeka na nie, a ono czeka na toast osiągnięcia
   (`TopBand.announcementWaits`, ponowienie co 0,5 s). Toasty stają pod ogłoszeniem (`BANNERS.announcement`, 98–192).
   Test w `topband.spec`.
+
+### Ubranie z katalogu: typ, warstwa, przymiarka (2026-11-01)
+
+- Element stroju z id z katalogu ma `type` (Enum.AccessoryType), `order` (warstwowe; domyślna kolejność Robloxa),
+  `hides` (zakrywane elementy stroju) i `also` (druga połowa pary). `AvatarBuild.description` wstawia ubranie warstwowe
+  z `IsLayered` i kolejnością, sztywne z prawdziwym typem (`CharacterLook.accessoryList`; tryb awatara zastępuje
+  warstwowe ubranie awatara tego samego typu albo grupy). Zwykła definicja `catalog = id` zostaje sztywnym `Hat`.
+- `shirt` / `pants` na klasę w `ClassLooks` (strój klasy jako tabela) i przez ostatnią tabelę `classOutfit`
+  (`Cosmetics`); w trybie klasy trafiają do opisu.
+- `/trylook` (Admin/Character, `Logic/TryLook`, `CosmeticService.SetTrial`): przedmioty na postaci (warstwowe według
+  typu), `-<element>`, `-all`, `-hair`, `body <nazwa | pakiet | id części>`, `clear`.
+- Manekin podglądów bez przedmiotów z katalogu; garderoba pokazuje strój z innymi przedmiotami na manekinie. Podglądy
+  dalej z częściami z kodu (badanie i rekomendacja w raporcie sesji).
+- Testy: `classlooks.spec` 10–16, nowy `trylook.spec`; `tools/classlooks_slots.luau` z kolumną „Typ” i tabelą
+  wypełnionych, tabela w `docs/WYGLAD-KLAS.md` przegenerowana.
+- **Pliki:** `Data/ClassLooks`, `Data/Cosmetics`, `Data/BodyLooks`, `Data/AdminCommands`, `Logic/CharacterLook`,
+  `Logic/TryLook`, `Util/AvatarBuild`, `CosmeticService`, `Admin/Character`, `UI/Screens/Wardrobe`,
+  `Localization/pl|en`, `tools/classlooks_slots.luau`, `docs/WYGLAD-KLAS.md`.
