@@ -62,6 +62,7 @@ local AdminService = {
 		"GatherService",
 		"FishingService",
 		"WorldService",
+		"ZoneService", -- S162e: /chasetest refuses a safe zone
 		"TravelService",
 		"DungeonService",
 		"TradeService",
