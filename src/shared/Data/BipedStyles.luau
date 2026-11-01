@@ -2328,7 +2328,7 @@ end
 -- the right), the jumping two-fisted slam for the crush and, carried onto the target, the pounce; a fall of its own);
 -- the heavy blow the overhead chop's fist.
 local BRUTE: Style = variant(HUMANOID_1H, {
-	clips = { idle = { "mutantIdle" }, walk = "mutantWalk", run = "run", lift = 4 },
+	clips = { idle = { "mutantIdle" }, walk = "mutantWalk", run = "run", lift = 5 },
 	guard = BRUTE_GUARD,
 	basic = { "clawR", "clawL" },
 	actions = {
