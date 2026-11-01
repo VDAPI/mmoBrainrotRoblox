@@ -461,7 +461,8 @@ T.describe("Class looks: creation and migration 9 (S132)", function()
 		local look = { face = "face_stern", skin = "skin_7", hair = "hair_braid_grey" } -- an S132 creator's look
 		local c = CharacterFactory.create("Mage", "Imie", ids(), look)
 		T.expect(c.look).toEqual(CharacterLook.normalize(look) :: any)
-		T.expect((c.look :: any).hair).toBe("hair_ponytail") -- 2026-10-31: the braid lost its grey (Belle Of Belfast)
+		-- 2026-10-31: the braid lost its grey (Belle Of Belfast); block body 2026-11-01: the bun is the only grey hair
+		T.expect((c.look :: any).hair).toBe("hair_bun")
 		T.expect(c.look == look).toBe(false)
 		T.expect(c.lookFree).toBe(true)
 		T.expect(CharacterFactory.create("Mage", "Imie", ids()).look).toEqual(DEFAULT)
