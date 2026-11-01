@@ -627,11 +627,11 @@ local function ellipse(
 	return disc
 end
 
-local function portalLook(ctx: Context, model: Model, field: BasePart)
+local function portalLook(ctx: Context, model: Model, field: BasePart, palette: Portals.Palette?)
 	local LOOK = Portals.LOOK
 	local look = Portals.look(field.Size.X, field.Size.Y)
 	-- W31: the deep violet on the Frost Peaks' snow and ice (the light purple was lost on them)
-	local colors = Portals.palette(ctx.map.id)
+	local colors = palette or Portals.palette(ctx.map.id)
 	field.Transparency = 1
 	ellipse(ctx, model, field, "Veil", look.veil.w, look.veil.h, 0, colors.veil)
 	local core = ellipse(ctx, model, field, "Core", look.core.w, look.core.h, -LOOK.gap, colors.core)
@@ -1247,7 +1247,6 @@ end
 -- the horns with a dim light each, the door on a sill just over the voxel floor (Data/Portals.GATE.sill, .rim,
 -- .gateBase).
 local GATE_STONE = "#2A2428"
-local GATE_IRON = "#1E1A1C"
 local GATE_RUNE = "#FFB27A"
 
 -- W31 (Studio 2026-10-22: rays cast for the floor missed it or hit something else): the gate stands on the cave's floor
@@ -1340,39 +1339,18 @@ function Prefabs.dungeonGate(ctx: Context, region: string, x: number, z: number,
 	-- the door breathes on the client (W31)
 	slab:SetAttribute("Fx", "glow")
 	CollectionService:AddTag(slab, "TownFx")
-	-- iron bands, the seam of the double door and the ring of runes on its face
-	local face = -door.d / 2 - 0.08
-	for _, y in { 3.2, 11.8 } do
-		part(ctx, model, {
-			Name = "Band",
-			Size = Vector3.new(door.w, 0.5, 0.16),
-			CFrame = base * CFrame.new(0, y, face),
-			Color = hex(GATE_IRON),
-			Material = Enum.Material.Metal,
-			CanCollide = false,
-		})
-	end
+	-- owner 2026-11-01 ("the old broken look of the teleport" at the boss attempt: a flat red slab with bands and a ring of
+	-- runes): the door stays the invisible trigger and wall, in it the look of every portal in the boss's crimson, on a
+	-- dark back so the swirl reads
 	part(ctx, model, {
-		Name = "Seam",
-		Size = Vector3.new(0.25, door.h, 0.16),
-		CFrame = base * CFrame.new(0, door.y, face),
-		Color = hex(GATE_IRON),
-		Material = Enum.Material.Metal,
+		Name = "DoorBack",
+		Size = Vector3.new(door.w, door.h, 0.2),
+		CFrame = base * CFrame.new(0, door.y, door.d / 2 + 0.1),
+		Color = hex("#120A0A"),
+		Material = Enum.Material.Basalt,
 		CanCollide = false,
 	})
-	for k = 0, 7 do
-		local a = k * math.pi / 4
-		part(ctx, model, {
-			Name = "Rune",
-			Size = Vector3.new(0.45, 1.1, 0.12),
-			CFrame = base
-				* CFrame.new(math.cos(a) * 2.7, door.y + math.sin(a) * 2.7, face - 0.06)
-				* CFrame.Angles(0, 0, a + math.pi / 2),
-			Color = hex(GATE_RUNE),
-			Material = Enum.Material.Neon,
-			CanCollide = false,
-		})
-	end
+	portalLook(ctx, model, slab, Portals.LOOK.gate)
 	model.PrimaryPart = slab
 	model:SetAttribute("DungeonRegion", region)
 	CollectionService:AddTag(model, "DungeonEntrance")

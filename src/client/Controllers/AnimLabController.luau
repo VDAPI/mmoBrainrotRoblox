@@ -141,12 +141,15 @@ type BipedLab = {
 	-- motion seconds before this loop's start (a loop carries on the time of the one before: 2026-10-31 Studio round
 	-- 3, a fresh model's stance at 0 s against the last loop's stance two seconds on read as a pop of the arm)
 	epoch: number?,
+	-- owner 2026-11-01: a caster's bolt flies from its hand to the actor at this motion time, as a shot does in the game
+	shot: { at: number, to: Vector3 }?,
 }
 type Stressed = { model: Model, index: number, nextAt: number }
 
 local LAB = Config.AnimLab
 local LAYOUT = LAB.layout
 local WEAPON_NAME = "VaelthornWeapon"
+local SHOT_COLOR = Color3.fromHex("#C77BFF") -- CombatFxController's MONSTER_MAGIC
 local CAMERA_NAMES: { [string]: string } = {
 	front = "AnimLabCam_Front",
 	side = "AnimLabCam_Side",
@@ -1192,6 +1195,7 @@ local function bipedLab(
 	local input: (t: number) -> any
 	local hitSides: { [string]: string } = { hit = "front", hitBack = "back", hitLeft = "left", hitRight = "right" }
 	local pivot: ((t: number) -> CFrame)? = nil
+	local shot: { at: number, to: Vector3 }? = nil
 	if style.actions[name] and not hitSides[state] then
 		local action = style.actions[name]
 		local dying = string.sub(name, 1, 5) == "death"
@@ -1212,6 +1216,11 @@ local function bipedLab(
 		}
 		length = rig.mod.length(action, hit, run.hold) + 0.4
 		keys = MotionKeys.clip(length, hit)
+		if monster and monster.attack == "ranged" and monster.damageKind == "magic" and not struck then
+			if name ~= style.aggro and name ~= style.spawn then
+				shot = { at = hit, to = actorAt + Vector3.new(0, 2.5, 0) }
+			end
+		end
 		-- a leap lands its root on the target at the hit, as the server's teleport does in the game
 		-- (client/Controllers/AnimationController drops the flight's reach there): no glide back as it fades
 		local landed: any = nil
@@ -1325,7 +1334,7 @@ local function bipedLab(
 			return at * CFrame.Angles(0, TURN_RATE * math.max(0, t), 0)
 		end
 	end
-	return { rig = rig, length = length, input = input, lastT = nil, pivot = pivot }, keys
+	return { rig = rig, length = length, input = input, lastT = nil, pivot = pivot, shot = shot }, keys
 end
 
 -- Template animation: the biped of `model` at motion time t (a jump back in time snaps its weights), and the effects
@@ -1337,6 +1346,28 @@ local function poseBiped(model: Model, biped: BipedLab, t: number)
 	input.dt = if last and tt >= last then tt - last else 0
 	input.snap = last == nil or tt < last
 	biped.lastT = tt
+	local shot = biped.shot
+	if shot and tt >= shot.at and (last == nil or last < shot.at) then
+		local hand: any = nil
+		for _, item in model:GetDescendants() do
+			if (item:IsA("Bone") or item:IsA("BasePart")) and string.find(item.Name, "RightHand", 1, true) then
+				hand = item
+				break
+			end
+		end
+		local from = if hand == nil
+			then model:GetPivot().Position + Vector3.new(0, 2, 0)
+			elseif hand:IsA("Bone") then hand.WorldPosition
+			else hand.Position
+		Library.projectile(from, shot.to, "orb", SHOT_COLOR, {
+			size = 1.2,
+			flame = true,
+			onArrive = function(point: Vector3)
+				Library.impactFlash(point, 2.2, SHOT_COLOR, {})
+				Library.sparks(point, SHOT_COLOR, { count = 8 })
+			end,
+		})
+	end
 	local epoch = biped.epoch or 0
 	local fxAction, fxHit = input.action, input.hitAt
 	if epoch > 0 then

@@ -16,8 +16,6 @@ export type Hair = {
 	tone: string?,
 }
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local BodyLooks = {}
 
 -- The Roblox bundle the parts come from (docs/ASSETS.md "Ciało").
@@ -119,30 +117,18 @@ export type Style = {
 	face: number, -- the decal face of a blocky body (the one tried in Studio 2026-11-01)
 }
 
--- Studio test 2026-11-01 (owner: "the mannequin itself looks bad"): the body style every character and the creator's
--- mannequin wear, read from the ReplicatedStorage attribute STYLE_ATTRIBUTE when a look is built ("dynamic" when it is
--- unset or unknown). "slim": the same body at grown-up proportions (about 4.5 heads instead of 3.2, the height of
--- today's figure); "blocky": the classic block R15. Set it in Studio before Play to compare in the creator and in game.
-BodyLooks.STYLE_ATTRIBUTE = "VaelthornBodyStyle"
-BodyLooks.styles = table.freeze({
-	dynamic = table.freeze({ id = "dynamic", scales = BodyLooks.scales, blocky = false, face = 0 }),
-	slim = table.freeze({
-		id = "slim",
-		scales = table.freeze({ height = 0.95, width = 0.95, depth = 1, head = 0.75, bodyType = 0, proportion = 0 }),
-		blocky = false,
-		face = 0,
-	}),
-	blocky = table.freeze({
-		id = "blocky",
-		scales = table.freeze({ height = 1, width = 1, depth = 1, head = 1, bodyType = 0, proportion = 0 }),
-		blocky = true,
-		face = 86487700,
-	}),
-} :: { [string]: Style })
+-- Owner 2026-11-01, after trying the styles in Studio: every character and the creator's mannequin wear the classic
+-- block R15 (BodyLooks.parts, the dynamic heads and `scales` above are what a character wore before, kept for the
+-- previews of old saves until the creator is rebuilt on it).
+local BLOCKY: Style = table.freeze({
+	id = "blocky",
+	scales = table.freeze({ height = 1, width = 1, depth = 1, head = 1, bodyType = 0, proportion = 0 }),
+	blocky = true,
+	face = 86487700,
+})
 
 function BodyLooks.current(): Style
-	local id = ReplicatedStorage:GetAttribute(BodyLooks.STYLE_ATTRIBUTE)
-	return BodyLooks.styles[if type(id) == "string" then id else "dynamic"] or BodyLooks.styles.dynamic
+	return BLOCKY
 end
 
 return table.freeze(BodyLooks)

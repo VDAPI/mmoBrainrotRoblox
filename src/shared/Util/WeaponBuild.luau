@@ -36,7 +36,8 @@ local function anchorFor(model: Model, hand: string): (BasePart?, CFrame)
 	if not part or not part:IsA("BasePart") then
 		return nil, CFrame.identity
 	end
-	return part, CFrame.new(0, -part.Size.Y / 2, 0)
+	-- (owner 2026-11-01, the block body: its flat hand left the grip hanging under the fist; the grip runs through it)
+	return part, CFrame.new(0, part.Size.Y / 2, 0)
 end
 
 -- Farthest point of a look from the palm (studs, weapon frame): the blade tip / staff head (S22 trails and
