@@ -4,7 +4,8 @@
 -- it stands, works and talks; a turn to a partner behind it made on stepping feet, never both feet up; the paced walk
 -- with planted feet and back to its spot; the smith's hammer coming down onto the anvil; one greeting per approach;
 -- talk gestures and the work resumed after; no joint jumps; the seed's variety; every NPC of Data/Npcs with a style
--- whose moves exist; Data/NpcRigs; the AnimLab states; Teodor's channel (hands raised, palms forward, the glow on).
+-- whose moves exist; Data/NpcRigs; the AnimLab states; Teodor's channel (hands raised, palms forward, the glow on); the
+-- beat walked smoothly at 60 fps on every dump and an R15 figure (knees, held frames, planted ankles, lifts alike).
 
 local fs = require("@lune/fs")
 local serde = require("@lune/serde")
@@ -126,6 +127,51 @@ local function rig(model: string): Rig
 		rigs[model] = r
 	end
 	return r
+end
+
+-- An R15 figure as client/Anim/NpcRig.newR15 reads it (Motor6D joints, every part unturned): farmer_bartosz's legs as
+-- Studio printed them (2026-11-01), the hips from the LowerTorso; the arms and the spine a plain R15's.
+local function r15Figure(): Rig
+	local function add(a: Vec, b: Vec): Vec
+		return { a[1] + b[1], a[2] + b[2], a[3] + b[3] }
+	end
+	local function sub(a: Vec, b: Vec): Vec
+		return { a[1] - b[1], a[2] - b[2], a[3] - b[3] }
+	end
+	local pts: { [string]: Vec } = {}
+	for _, s in { { "Right", 1 }, { "Left", -1 } } do
+		local side, m = s[1] :: string, s[2] :: number
+		-- each joint: the parent's C0 out of the parent part, the child's C1 back to the child part
+		local hip = { m * 0.360, -0.172, -0.034 }
+		local knee = add(sub(hip, { m * 0.028, 0.545, -0.009 }), { m * -0.025, -0.546, -0.029 })
+		local ankle = add(sub(knee, { m * 0.002, 0.624, -0.115 }), { m * -0.055, -0.637, 0.078 })
+		pts[side .. "UpLeg"], pts[side .. "Leg"], pts[side .. "Foot"] = hip, knee, ankle
+		pts[side .. "Sole"] = sub(ankle, { m * -0.031, 0.117 + 0.305 / 2, 0.191 })
+		pts[side .. "Shoulder"] = { m * 0.35, 1.6, 0 }
+		pts[side .. "Arm"] = { m * 1.0, 1.6, 0 }
+		pts[side .. "ForeArm"] = { m * 1.05, 0.95, 0 }
+		pts[side .. "Hand"] = { m * 1.05, 0.25, 0 }
+	end
+	local ground = math.min(pts.RightSole[2], pts.LeftSole[2])
+	local I = { 1, 0, 0, 0, 1, 0, 0, 0, 1 }
+	local bones: { [string]: BipedPose.Bone } = {}
+	local function bone(key: string, p: Vec)
+		bones[key] = { rest = I, pos = { p[1], p[2] - ground, p[3] } }
+	end
+	bone("Hips", { 0, 0, 0 })
+	for _, key in { "Spine", "Spine1", "Spine2" } do
+		bone(key, { 0, 0.37, 0 })
+	end
+	bone("Neck", { 0, 1.85, 0 })
+	bone("Head", { 0, 2.3, 0 })
+	for _, side in { "Right", "Left" } do
+		for _, key in { "Shoulder", "Arm", "ForeArm", "Hand", "UpLeg", "Leg", "Foot" } do
+			bone(side .. key, pts[side .. key])
+		end
+	end
+	local skel = BipedPose.skeleton(bones, nil)
+	assert(skel, "R15")
+	return { skel = skel, keep = NpcRigs.keep(NpcRigs.of("farmer_bartosz")), palms = {} }
 end
 
 local function new(model: string, npcId: string, seed: number?, style: NpcStyles.Style?): NpcMotion.Instance
@@ -479,6 +525,105 @@ T.describe("NpcMotion on the NPC rig dumps (2026-10-26)", function()
 			end
 		end)
 		T.expect(led).toBe(true)
+	end)
+
+	T.it("walks its beat smoothly at 60 fps, its feet on their spots (2026-11-01 Studio)", function()
+		-- Studio on guard2 and farmer_bartosz's R15 figure: knees up to 16.5 deg a frame and held frames between, a
+		-- foot planted at the start of the beat dragged 0.4 studs, one foot lifted 0.43 and the other 0.27
+		local function turn(a: { number }, b: { number }): number
+			local tr = 0
+			for i = 1, 9 do
+				tr += a[i] * b[i]
+			end
+			return math.deg(math.acos(math.clamp((tr - 1) / 2, -1, 1)))
+		end
+		local function relative(world: BipedPose.World, parent: string, child: string): { number }
+			local a, b = world[parent], world[child]
+			local o = {}
+			for r = 0, 2 do
+				for c = 0, 2 do
+					local v = 0
+					for k = 0, 2 do
+						v += a[k * 3 + r + 1] * b[k * 3 + c + 1]
+					end
+					o[r * 3 + c + 1] = v
+				end
+			end
+			return o
+		end
+		local JOINTS = {
+			RightKnee = { "RightUpLeg", "RightLeg" },
+			LeftKnee = { "LeftUpLeg", "LeftLeg" },
+			RightHip = { "Hips", "RightUpLeg" },
+			LeftHip = { "Hips", "LeftUpLeg" },
+		}
+		local cases: { { any } } = {}
+		for _, m in MODELS do
+			table.insert(cases, { m[1], m[2], rig(m[1]) })
+		end
+		table.insert(cases, { "R15", "farmer_bartosz", r15Figure() })
+		for _, case in cases do
+			local name, npcId, r = case[1], case[2], case[3] :: Rig
+			local def = Npcs.get(npcId)
+			local inst =
+				NpcMotion.new(r.skel, NpcStyles.of(npcId, if def then def.services :: any else nil), 0.73, r.keep)
+			local L = inst.L
+			local last: { [string]: { number } }? = nil
+			local rates: { [string]: { number } } = {}
+			local lift = { R = { math.huge, -math.huge }, L = { math.huge, -math.huge } }
+			local walked = 0
+			local t = 0
+			while t <= 16 do
+				local posed =
+					NpcMotion.step(inst, { now = t, dt = if t == 0 then 0 else 1 / 60, work = false, force = "pace" })
+				local pos = BipedPose.positions(inst.skel, posed.world, posed.shift)
+				local rel = {}
+				for joint, pair in JOINTS do
+					rel[joint] = relative(posed.world, pair[1], pair[2])
+					if last then
+						local a = turn(last[joint], rel[joint])
+						if a > 12 then
+							error(`{name}: {joint} turned {a} deg in a frame at {t}`)
+						end
+						rates[joint] = rates[joint] or {}
+						table.insert(rates[joint], a)
+					end
+				end
+				last = rel
+				for _, s in { "R", "L" } do
+					local foot = (inst.feet :: any)[s] :: NpcSteps.Foot
+					local ankle = pos[if s == "R" then "RightFoot" else "LeftFoot"]
+					lift[s][1] = math.min(lift[s][1], ankle[2])
+					lift[s][2] = math.max(lift[s][2], ankle[2])
+					if not foot.swing then
+						-- a planted ankle on its spot, walking too (the leg never stretched past its reach)
+						local d = math.sqrt((ankle[1] - foot.x) ^ 2 + (ankle[3] - foot.z) ^ 2)
+						if d > 0.01 * L then
+							error(`{name} {s}: the planted ankle {d / L} leg lengths off its spot at {t}`)
+						end
+					end
+				end
+				if inst.feet.walking then
+					walked += 1 / 60
+				end
+				t += 1 / 60
+			end
+			T.expect(walked > 1).toBe(true)
+			-- no held frame: a joint does not stop for a frame between two that turn it
+			for joint, list in rates do
+				for i = 2, #list - 1 do
+					local a, b, c = list[i - 1], list[i], list[i + 1]
+					if a > 1.5 and c > 1.5 and b < 0.35 * math.min(a, c) then
+						error(`{name}: {joint} held at frame {i}: {a} {b} {c} deg`)
+					end
+				end
+			end
+			-- both feet lift alike
+			local liftR, liftL = lift.R[2] - lift.R[1], lift.L[2] - lift.L[1]
+			if math.abs(liftR - liftL) > 0.2 * math.max(liftR, liftL) then
+				error(`{name}: the feet lift {liftR / L} and {liftL / L} leg lengths`)
+			end
+		end
 	end)
 
 	T.it("is its own with every seed: two NPCs of one style do not move alike", function()

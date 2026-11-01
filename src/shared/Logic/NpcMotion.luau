@@ -12,7 +12,8 @@
 --    the feet step after it), speaks in phrases of gestures with beats on the accents (open palms, a hand to the
 --    chest, a shrug, pointing along the quest's way when there is one) and listens with nods between them;
 -- 5. the look: the head (then the chest) turns to a player passing near, holds a few seconds, looks away;
--- 6. the feet (Logic/NpcSteps): planted, stepping when the body turns or walks (a sentry's beat, a server-moved NPC).
+-- 6. the feet (Logic/NpcSteps): planted, stepping when the body turns or walks (a sentry's beat, a server-moved NPC);
+--    the pelvis sinks where a leg would stretch past its reach, so the knees never lock and the feet stay on their spots.
 -- Moves key the arms either by controls or by a hand target on the body (chest, head, hips) or the ground, reached by
 -- two-bone arm IK, so a hand on the chin or a rag on the counter fits every model's proportions.
 -- Pure: client/Anim/NpcRig reads the rest frames and writes the Transforms; AnimLab plays it at a fixed time.
@@ -188,6 +189,41 @@ local function turnXZ(x: number, z: number, yaw: number): (number, number)
 	return x * c + z * s, -x * s + z * c
 end
 
+-- Shares of a leg's length (hip to ankle) where the pelvis starts to sink for it and the share it never stretches past
+-- while it sinks: standing (a shifted stance's free leg stands almost straight) and walking.
+local SINK_STAND, SINK_WALK = { 0.98, 0.997 }, { 0.965, 0.99 }
+local SINK_W = 14 -- the spring the pelvis comes back up on (rad/s)
+
+-- Leg lengths the pelvis sinks so that no leg of `controls` stretches past its reach: past the first share of
+-- SINK_STAND / SINK_WALK (`walk` 0..1 between them) a leg's stretch eases toward the second (a long stride's double
+-- support, a wide step, the heel strike). The IK would otherwise lock the knee straight and leave the foot short of its
+-- spot (2026-11-01 Studio review: a planted foot slid 0.4 studs, the knee held at 0 deg/frame and then jumped 18).
+local function legSink(skel: BipedPose.Skeleton, controls: Controls, walk: number): number
+	local L = skel.legLength
+	local hips = BipedPose.body(controls.pyaw or 0, controls.ppitch or 0, controls.proll or 0)
+	local centre = skel.pivot or skel.bones.Hips.pos
+	local from = SINK_STAND[1] + (SINK_WALK[1] - SINK_STAND[1]) * walk
+	local span = SINK_STAND[2] + (SINK_WALK[2] - SINK_STAND[2]) * walk - from
+	local sink = 0
+	for _, s in SIDES do
+		local key = KEYS[s]
+		local leg = skel.leg[s]
+		local o = apply(hips, { leg.hip[1] - centre[1], leg.hip[2] - centre[2], leg.hip[3] - centre[3] })
+		local dx = leg.ankle[1] + (controls[key.fx] or 0) * L - (centre[1] + (controls.px or 0) * L + o[1])
+		local dy = (centre[2] + (controls.py or 0) * L + o[2]) - (leg.ankle[2] + (controls[key.fy] or 0) * L)
+		local dz = leg.ankle[3] + (controls[key.fz] or 0) * L - (centre[3] + (controls.pz or 0) * L + o[3])
+		local chain = leg.l1 + leg.l2
+		local r = math.sqrt(dx * dx + dy * dy + dz * dz) / chain
+		if r > from and dy > 0 then
+			local want = (from + span * (1 - math.exp(-(r - from) / span))) * chain
+			local level = math.sqrt(math.max(0, want * want - dx * dx - dz * dz))
+			-- (the 4-norm of the two legs' sinks: the larger one, without a kink where the other takes over)
+			sink += math.min(dy - level, 0.15 * L) ^ 4
+		end
+	end
+	return sink ^ 0.25 / L
+end
+
 ---------------------------------------------------------------- the instance
 
 type Running = { move: Move, start: number, rate: number, kind: string, name: string }
@@ -282,6 +318,8 @@ export type Instance = {
 	greetQueue: { id: number, at: number, me: boolean }?,
 	pace: Pace,
 	turnAway: number, -- 0..1: a worker facing its work behind it turns round to a player near
+	sink: number, -- leg lengths the pelvis sinks for a leg past its reach (legSink, let go of gently) and its rate
+	sinkV: number,
 	layered: Layered, -- the frame's controls and hand targets (reused)
 }
 
@@ -289,6 +327,7 @@ local function newState(inst: Instance, now: number)
 	local seed = inst.seed
 	inst.bx, inst.bz, inst.vx, inst.vz = inst.centre[1], inst.centre[3], 0, 0
 	inst.yaw, inst.yawV, inst.goalYaw, inst.still = 0, 0, 0, 10
+	inst.sink, inst.sinkV = 0, 0
 	inst.last = nil
 	inst.breath = hash01(11, seed)
 	inst.shiftW, inst.shiftFrom, inst.shiftTo, inst.shiftAt, inst.shiftDur = 0, 0, 0, now, 1
@@ -1391,6 +1430,16 @@ function NpcMotion.step(inst: Instance, input: Input): Posed
 	end
 
 	---------------------------------------------------------------- solve
+	-- (at once as deep as a leg needs, back up gently: a stretched leg lifting let the pelvis bob up and jolted the knee
+	-- of the other)
+	local sink = legSink(inst.skel, c, walkW)
+	if dt <= 0 or sink >= inst.sink then
+		inst.sinkV = if dt > 0 then (sink - inst.sink) / dt else 0
+		inst.sink = sink
+	else
+		inst.sink, inst.sinkV = spring(inst.sink, inst.sinkV, sink, SINK_W, dt)
+	end
+	add(c, "py", -inst.sink)
 	local world, shift = BipedPose.world(inst.skel, c, nil)
 	-- the frame back into root space: everything turns by `frame` about the centre
 	if math.abs(frame) > 1e-6 then

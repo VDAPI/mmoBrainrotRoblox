@@ -1740,6 +1740,47 @@ Model attributes (Studio, on the NPC's model or its `Asset`): `NpcRole` = anothe
    them up and apart. The moves' `channel` control (no joint) weighs the glow `client/Anim/NpcRig` puts on his palms
    (the mage's work prop `channel`: sparks and a blue light on the middle finger's first bone, else the hand's bone or
    an R15 hand part), written only when it changes by 0.05.
+
+### 12.5 The beat walk, smoothed (Studio review 2026-11-01)
+
+Studio on guard2 (the guard model's bones) and farmer_bartosz (an R15 figure without bones), `/animlab npc <id> walk`
+at 60 fps: knees up to 16.5 deg a frame with held frames between (16.5, 12.9, 8.1 from run to run), a planted foot
+sliding 0.4 studs, the lifts 0.43 and 0.27. Read in a Lune proxy of both rigs (the farmer's legs from the C0/C1 Studio
+printed), the causes and the fixes:
+
+1. **Legs stretched past their reach.** A stride's foot lands half the stance's travel ahead of the hip and leaves it as
+   far behind; with the pelvis at 0.993 of the chain (the stance) and a walking bob of 3-5 % that needs more than the
+   leg: the IK clamped it at 0.999, the knee locked (0 deg a frame) and the ankle was dragged off its spot, then the knee
+   snapped 14-18 deg when the leg came back in reach. Now `legSink` (`Logic/NpcMotion`) sinks the pelvis wherever a leg
+   would stretch past 0.965 of its chain walking (0.98 standing, where a shifted stance's free leg stands almost
+   straight), easing the stretch toward 0.99 (0.997): at once as deep as a leg needs, back up on a spring (14 rad/s),
+   so a stretched leg lifting does not bob the pelvis. The knee never locks; the planted ankle stays on its spot.
+2. **The beat's first step.** The turn's step on the spot was still in the air when the walk set off; the other foot
+   could not lift and stood the whole first stride, dragged behind the body. Now a step in its rising part (up to 0.4 of
+   it) goes on as the walk's first swing on the stride clock: its path starts over from where the foot is, its spot moves
+   on ahead with the body, its lift grows to a stride's. A later one makes the clock wait until it lands.
+3. **The swing's ends.** The foot left the ground at full speed (the knee from 0 to 9 deg in a frame) and came down
+   short of its spot at 0.87 of the swing. Now `sin^2(pi q^0.75)`: no speed at the lift and the landing, the peak at 0.4.
+   The toe-off goes on from the heel peel of the stance it left (a step on the spot just after the walk stopped too:
+   its heel was up, the knee jumped 11 deg).
+4. **Eased weights.** The walk's weight (`heel`: the pelvis' place, bob and sway, the heel roll) set off at full rate
+   and the swing's weight shift jumped to 45 % at the lift; now a smoothstep ramp over `WALK_EASE` (0.4 s) and a shift
+   from nothing over the first fifth of the swing.
+5. **The landing spot's turn.** The spot turns toward the body's goal; the goal jumped when the beat's last bit turned
+   to a sidle facing the front, and threw the captain's swinging foot 0.37 studs in a frame. The feet's `aim` follows
+   the goal at `AIM_RATE` (2 rad/s).
+
+In the proxy (60 fps, the AnimLab beat and the game's own): guard2 knees at most 7.6 deg a frame, hips 4.0; the farmer
+7.2 and 4.4; every NPC rig dump at most 8.8; no held frame; the planted ankles on their spots (0.000); the lifts R/L
+0.32/0.32 (guard2) and 0.26/0.29 (farmer). The same with uneven frame times. Spec: `walks its beat smoothly at 60 fps, its feet on their spots`
+(every dump and the farmer's R15 legs: knees and hips at most 12 deg a frame, no held frame, a planted ankle within
+0.01 leg lengths of its spot, the lifts within 20 % of each other).
+
+The burst then the pause is the beat itself (rest, out 1.8-2.6 studs, a look round of 1.8-3.8 s, back, rest), not
+AnimLab's: AnimLab's `walk` forces it every 5-8 s on any NPC (`FORCED_PACE`); in game the guards walk it every 14-26 s,
+the captains every 18-32, the wandering merchant every 20-40. farmer_bartosz (laborer) has no beat and never walks in
+game.
+
 ## Appendix A: formulas
 
 Gait clock (per frame):
