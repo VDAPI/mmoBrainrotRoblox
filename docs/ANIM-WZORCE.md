@@ -344,8 +344,10 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   with it), the joints above it still one by one. What is left fast in a lead-in is the clip's own (the high spin's).
 - **Stance**: `clips.combat` (humanoid1h, humanoid2h: the sword-and-shield idle and walk) eases in with the combat
   weight over the locomotion; the brute walks and idles on the mutant clips all the time, its swinging feet lifted
-  twice as high as the clip lifts them (`clips.lift`, 2026-10-31 Studio round 3: the yeti's toes rose 0.25 stud, a
-  shuffle for its size). A blow plays on until the
+  five times as high as the clip lifts them, the ankle at most 0.85 L up (`clips.lift`, `WALK_LIFT_MAX`; 2026-10-31
+  Studio round 3: the yeti's toes rose 0.25 stud, a shuffle for its size; round 4: 0.5-0.7 at twice, the review asked
+  1.2-1.6; round 5: 1.04-1.08 at four times and 0.7 L, now about 1.3 expected on the yeti, 0.8 L at the wander's
+  pace on the test rig). A blow plays on until the
   clip's stance is back (its `follow` + `recover` cover the clip to where it settles).
 - **Planted feet** (`BipedMotion` `plantFeet`, 2026-10-31 Studio review: the toes slid 0.8 stud and the hips travelled
   1.7 studs through `mob bandit slash`): while a non-boss biped stands (under 0.6 studs/s, turning under 1.2 rad/s,
@@ -373,7 +375,9 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   the ankles kept where they are), eased in over the strike and `LOW_LEAD` before the hit, held for half the follow
   and eased back over the recovery; a cut fades out of the bow and the crouch too. Grimrok and Azgor 3.5 studs (a
   player's chest), Hrimvald 1.5 (along the ground). The feet the review read as floating (+0.32, +0.63, +1.21) are the
-  rigs' ankle joints over the soles, not a gap.
+  joints of the balls of the feet (ToeBase) over the soles, not a gap: in the rig dumps (`tools/anim/rigs`, the lowest
+  visible point at y 0) they stand 0.07-0.09, 0.17 and 0.16 units up, 0.24-0.30, 0.62 and 1.25 studs at the clones'
+  scales (3.38, 3.64, 7.8), and the stance keeps them at that height.
 - **Onto a spot ahead** (`ClipRef.ahead`, 2026-10-31 Studio round 3: Hrimvald's fist came down 24 studs ahead of his
   hips, beyond the player; his arm, 27 studs, is longer than his waist is high, so no bow of a straight arm meets the
   ground where a player stands): the striking hand goes onto the spot `ahead` L ahead of the root on its centre line,
@@ -385,7 +389,9 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   bow; a cut fades it out with the bow. Hrimvald's `fist` and `backfist`: 0.3 L (where a player stands as he stops
   for the blow: his reach, 7 + half his root's depth, x 0.6, about 8 studs at his clone's scale): bow 31-32 deg,
   crouch 4 studs, the fist 0.04 stud from the spot. The striking hand of the backfist is the left (the swipe
-  unmirrored), the right is the one high behind.
+  unmirrored), the right is the one high behind; the fist's the right (mirrored), the left high behind. Both land on
+  the same spot, so the striking hand measures the same in both (round 4 read it as the same clip): the other hand
+  tells them apart.
 - **Hits by side**: `style.hits` (front / back / left / right): the reaction clip's turn of each upper bone from its
   first frame laid over the running pose (spine, neck, head whole, shoulders 0.5, arms 0.4-0.5), held 0.28 s and
   faded over 0.3 s, the body pushed by 0.35 of the clip's travel (at most 0.12 L), scaled by `hitScale` and the cast
@@ -424,7 +430,11 @@ root at 2.4 rad/s in `turn` (it had not yawed at all). 2026-10-31 Studio round 3
 the server's own reach (the range plus half the root's depth, `Monster`), for a boss's melee blows too (Hrimvald now
 stands about 8 studs from the dummy, as in the game); each loop of a motion carries on the time of the one before
 (`epoch`), so a rebuilt model starts where the last loop's left the idle and the guard (the backhand's forearm had
-jumped 107 deg in the first frame of a loop: the fresh model's idle 2+ s behind the last one's).
+jumped 107 deg in the first frame of a loop: the fresh model's idle 2+ s behind the last one's). Round 4: a subject
+is posed in the frame it is built (`poseBiped` from `labSubject`): a rebuilt model had shown its export's own pose for
+one frame (Grimrok's and Azgor's turned by their `facing` and off centre), and its feet and hips jumped 3-6 studs
+from it into the stance at every loop and every command (the bosses' "slides", the pounce's 106 deg, the yeti's and
+the cultist's 0.5 stud: the root never moved and the feet stayed planted after it).
 AnimLab: `mob bandit <slash|backhand|chop|thrust|cleave|heavy|crush|pounce|throw|aggro|spawn|hit|deathBack|deathFwd|deathBack2|fight>`,
 `mob ashOrc <hew|cleave|pounce>`, `mob yeti <clawR|clawL|crush|pounce|deathMutant|walk|idle>`, `mob darkCultist spell`,
 `mob grimrok <chop|hack|overhead|sweep|roar>`, `mob azgor <hew|cleave>`, `mob hrimvald <fist|backfist>`, `mob morvane bolt`.

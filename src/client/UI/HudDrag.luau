@@ -12,8 +12,10 @@ local UserInputService = game:GetService("UserInputService")
 local Device = require(script.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudLayout = require(ReplicatedStorage.Shared.Logic.HudLayout)
+local HudSlots = require(script.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PhoneLayout = require(script.Parent.PhoneLayout)
 local Scale = require(script.Parent.Scale)
 local State = require(script.Parent.State)
 local Theme = require(script.Parent.Theme)
@@ -25,7 +27,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local HudDrag = {}
 
 -- The top of the right column on PC (the quest tracker and the event panels): under the one row of menu buttons, the
--- minimap and its area line (UI plan phase 1; the guide bar pushes it to HudStack.RIGHT_TOP_GUIDE while it shows).
+-- minimap (UI plan phase 1 and 4; the guide bar pushes it to HudStack.RIGHT_TOP_GUIDE while it shows).
 -- Owner 2026-10-21: the column itself is Logic/HudStack (UI/HudSlots).
 HudDrag.RIGHT_TOP = HudStack.RIGHT_TOP
 
@@ -71,7 +73,12 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 			return nil
 		end
 		local screen = use(Scale.HudSize)
-		local x, y = HudLayout.place(e, width(use, e) * HudLayout.scaleOf(e), screen.X, screen.Y)
+		local w = width(use, e) * HudLayout.scaleOf(e)
+		local x, y = HudLayout.place(e, w, screen.X, screen.Y)
+		-- Studio check 2026-10-31: never under the menu over the minimap (a phone keeps its own stack)
+		if not use(PhoneLayout.Compact) then
+			y = HudStack.belowMenu(x, x + w, y, use(HudSlots.Menu))
+		end
 		return Vector2.new(x, y)
 	end)
 

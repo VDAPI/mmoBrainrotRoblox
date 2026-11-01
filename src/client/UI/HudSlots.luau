@@ -44,6 +44,10 @@ HudSlots.Waiting = scope:Value(false)
 -- real bottom edge (virtual pixels of the host), measured on screen; the PC column never starts above it
 -- (HudStack.column `menuBottom`). 0 while unknown.
 HudSlots.MenuBottom = scope:Value(0)
+-- Studio check 2026-10-31 (a tracker the player had moved stood under the row): the menu's whole rectangle (virtual
+-- pixels of the host), nil while unknown; an element the player moved never stands in it (UI/HudDrag,
+-- Logic/HudStack.belowMenu).
+HudSlots.Menu = scope:Value(nil :: HudStack.Rect?)
 local menuFrame: GuiObject? = nil
 -- Which rows say "something waits" (HudSlots.SetWaiting), so a rebuilt row's cleanup cannot switch off a new one.
 local waitingBy: { [any]: boolean } = {}
@@ -94,9 +98,14 @@ local function measureMenu()
 	if not frame or not root or k <= 0 or not frame:IsDescendantOf(game) then
 		return
 	end
-	local bottom = (frame.AbsolutePosition.Y + frame.AbsoluteSize.Y - root.AbsolutePosition.Y) / k
-	if math.abs(bottom - Fusion.peek(HudSlots.MenuBottom)) > 0.5 then
-		HudSlots.MenuBottom:set(bottom)
+	local at, size, origin = frame.AbsolutePosition, frame.AbsoluteSize, root.AbsolutePosition
+	local rect = HudStack.fromScreen(at.X, at.Y, size.X, size.Y, origin.X, origin.Y, k)
+	if math.abs(rect.bottom - Fusion.peek(HudSlots.MenuBottom)) > 0.5 then
+		HudSlots.MenuBottom:set(rect.bottom)
+	end
+	local last = Fusion.peek(HudSlots.Menu)
+	if not last or not same({ last }, { rect }) then
+		HudSlots.Menu:set(rect)
 	end
 end
 
@@ -115,6 +124,7 @@ function HudSlots.SetMenu(s: Scope, frame: GuiObject)
 		if menuFrame == frame then
 			menuFrame = nil
 			HudSlots.MenuBottom:set(0)
+			HudSlots.Menu:set(nil)
 		end
 	end)
 	task.defer(measureMenu)
@@ -138,8 +148,10 @@ function HudSlots.SetHost(frame: GuiObject)
 	host = frame
 	for _, property in { "AbsolutePosition", "AbsoluteSize" } do
 		table.insert(scope, frame:GetPropertyChangedSignal(property):Connect(measure))
+		table.insert(scope, frame:GetPropertyChangedSignal(property):Connect(measureMenu))
 	end
 	task.defer(measure)
+	task.defer(measureMenu)
 end
 
 -- A button of the bottom-right corner (the PvP toggle, its badge, the mail) for the life of `s`: the column stays

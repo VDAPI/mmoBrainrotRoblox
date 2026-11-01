@@ -765,9 +765,11 @@ end
 local FEET: { [string]: string } = { R = "RightFoot", L = "LeftFoot" }
 local TOES: { [string]: string } = { R = "RightToeBase", L = "LeftToeBase" }
 
--- A walk's swinging feet lifted `gain` times as high as its clip lifts them (`clips.lift`; 2026-10-31 Studio round 3:
--- the yeti's lumbering walk lifted its toes a quarter of a stud and read as a shuffle): in place on the walk's pose,
--- the run left as it is.
+-- A walk's swinging feet lifted `gain` times as high as its clip lifts them, the ankle no higher than WALK_LIFT_MAX
+-- leg lengths by it (`clips.lift`; 2026-10-31 Studio round 3: the yeti's lumbering walk lifted its toes a quarter of
+-- a stud and read as a shuffle; round 4, 0.5-0.7 at twice; round 5, 1.04-1.08 at four times, 0.7 at most): in place
+-- on the walk's pose, the run left as it is.
+local WALK_LIFT_MAX = 0.85
 local function liftSteps(inst: Instance, world: World, shift: Vec, gain: number)
 	local skel = inst.skel
 	local m = inst.move * (1 - inst.run)
@@ -782,7 +784,8 @@ local function liftSteps(inst: Instance, world: World, shift: Vec, gain: number)
 			local up = ankle[2] - bone.pos[2]
 			if up > 1e-3 then
 				local list: { [string]: Vec? } = targets or {}
-				list[side] = { ankle[1], ankle[2] + up * (gain - 1) * m, ankle[3] }
+				local raised = math.max(up, math.min(up * gain, WALK_LIFT_MAX * skel.legLength))
+				list[side] = { ankle[1], ankle[2] + (raised - up) * m, ankle[3] }
 				targets = list
 			end
 		end
