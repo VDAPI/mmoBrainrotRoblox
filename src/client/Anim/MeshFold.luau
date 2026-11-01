@@ -86,8 +86,8 @@ local busy = 0
 local supported: boolean? = nil
 local batchSet: boolean? = nil
 
--- The API is there at all (an older client has no EditableMesh).
-local function available(): boolean
+-- The API is there at all (an older client has no EditableMesh; also client/Anim/MeshJaw).
+function MeshFold.available(): boolean
 	if supported == nil then
 		supported = pcall(function()
 			assert(type(AssetService.CreateEditableMeshAsync) == "function", "no EditableMesh")
@@ -104,8 +104,8 @@ local function note(text: string)
 	end
 end
 
--- A yield for long work: lets the frame go every SLICE seconds.
-local function slicer(): () -> ()
+-- A yield for long work: lets the frame go every SLICE seconds (also client/Anim/MeshJaw).
+function MeshFold.slicer(): () -> ()
 	local from = os.clock()
 	return function()
 		if os.clock() - from > SLICE then
@@ -140,9 +140,10 @@ local function setValues(em: EditableMesh, ids: { number }, values: { Vector3 },
 	end
 end
 
--- Reads a mesh once and plans its legs (in the background); what was found.
-local function plan(shape: Shape, em: EditableMesh, rel: CFrame, size: Vector3, fold: RigidRigs.Fold): string
-	local yield = slicer()
+-- A mesh's vertices (their ids and rest positions) and its faces as triangles (flat, 1-based indices into the ids; a
+-- polygon as a fan; nil when none are readable), read in batches (one by one on a client without them), letting the
+-- frame go by `yield` (also client/Anim/MeshJaw).
+function MeshFold.read(em: EditableMesh, yield: () -> ()): ({ number }, { Vector3 }, { number }?)
 	local ids = em:GetVertices()
 	local n = #ids
 	local positions: { Vector3 } = {}
@@ -160,29 +161,10 @@ local function plan(shape: Shape, em: EditableMesh, rel: CFrame, size: Vector3, 
 		end
 	end
 	local index: { [number]: number } = {}
-	local lo, hi = Vector3.one * math.huge, -Vector3.one * math.huge
 	for i, id in ids do
 		index[id] = i
-		local p = positions[i]
-		lo, hi = lo:Min(p), hi:Max(p)
-	end
-	local extent = hi - lo
-	if extent.X <= 0 or extent.Y <= 0 or extent.Z <= 0 then
-		error("flat mesh")
-	end
-	local scale = size / extent
-	local mean = (scale.X + scale.Y + scale.Z) / 3
-	local ratio = scale / mean
-	local centre = (lo + hi) / 2
-	local rot = rel.Rotation
-	-- the plan's frame: the look's axes, the mesh's units
-	local pos = table.create(n * 3, 0)
-	for i = 1, n do
-		local p = rot * ((positions[i] - centre) * ratio)
-		pos[i * 3 - 2], pos[i * 3 - 1], pos[i * 3] = p.X, p.Y, p.Z
 	end
 	yield()
-	-- the faces as triangles (a polygon as a fan); none readable: LegFold goes by nearness
 	local tris: { number }? = nil
 	local okFaces = pcall(function()
 		local faces = em:GetFaces()
@@ -216,6 +198,36 @@ local function plan(shape: Shape, em: EditableMesh, rel: CFrame, size: Vector3, 
 	end)
 	if not okFaces then
 		tris = nil
+	end
+	yield()
+	return ids, positions, tris
+end
+
+-- Reads a mesh once and plans its legs (in the background); what was found.
+local function plan(shape: Shape, em: EditableMesh, rel: CFrame, size: Vector3, fold: RigidRigs.Fold): string
+	local yield = MeshFold.slicer()
+	-- (the faces: none readable, LegFold goes by nearness)
+	local _, positions, tris = MeshFold.read(em, yield)
+	local n = #positions
+	local lo, hi = Vector3.one * math.huge, -Vector3.one * math.huge
+	for i = 1, n do
+		local p = positions[i]
+		lo, hi = lo:Min(p), hi:Max(p)
+	end
+	local extent = hi - lo
+	if extent.X <= 0 or extent.Y <= 0 or extent.Z <= 0 then
+		error("flat mesh")
+	end
+	local scale = size / extent
+	local mean = (scale.X + scale.Y + scale.Z) / 3
+	local ratio = scale / mean
+	local centre = (lo + hi) / 2
+	local rot = rel.Rotation
+	-- the plan's frame: the look's axes, the mesh's units
+	local pos = table.create(n * 3, 0)
+	for i = 1, n do
+		local p = rot * ((positions[i] - centre) * ratio)
+		pos[i * 3 - 2], pos[i * 3 - 1], pos[i * 3] = p.X, p.Y, p.Z
 	end
 	yield()
 	local result, why = LegFold.plan(pos, tris, fold, yield)
@@ -270,7 +282,7 @@ end
 -- planning its mesh the first time; nothing else runs until it dies.
 function MeshFold.attach(model: string, mesh: MeshPart, rel: CFrame, size: Vector3, seed: number): Handle?
 	local fold = RigidRigs.fold(model)
-	if not fold or not available() then
+	if not fold or not MeshFold.available() then
 		return nil
 	end
 	local own = byMesh[mesh]

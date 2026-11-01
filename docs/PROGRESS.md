@@ -49,6 +49,9 @@
 
 ## Niedokończone (kod)
 
+- **Szczęka Vaelgratha (2026-11-01):** kość `MeshJaw` dodawana w EditableMesh (`client/Anim/MeshJaw`,
+  `Logic/JawHinge`, `Data/BipedRigs.jaw`); nieobejrzane w Studio (czy silnik doda kość do importowanej siatki ze
+  skórą, zawias i kąt zamknięcia na prawdziwym pysku, kolec pod brodą, tekstura, `/animlab mob vaelgrath roar`).
 - **Ubranie z katalogu (2026-11-01):** typ, warstwa i zakrywanie elementów (`docs/WYGLAD-KLAS.md` §3) oraz
   `/trylook`; nieobejrzane w Studio (żaden id nie jest jeszcze wpisany: ubranie warstwowe na ciele Dawsona i jego
   kolejność, tryb awatara z własnym ubraniem awatara, `/trylook body` z pakietem). Podglądy kreatora i garderoby rysują

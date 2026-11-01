@@ -189,4 +189,84 @@ function BipedRigs.get(model: string): Map?
 	return MAPS[model]
 end
 
+-- A jaw added in code (owner 2026-11-01: Vaelgrath's mouth, modelled open, has no jaw bone): client/Anim/MeshJaw adds
+-- a jaw bone under the head bone to the model's skinned mesh (an EditableMesh) and skins the lower jaw to it, found by
+-- Logic/JawHinge; the jaw is closed at rest and opens on the actions below. Tunable in Studio without code: what is
+-- found (the shares are of the snout: the head bone's joint to the snout's tip, ahead) and how far the jaw opens.
+-- * `head`: the pose key of the bone the jaw hangs from (by the map or the name rules);
+-- * `headWeight`: a vertex is the head's with at least this share of its skin on the head bone and the bones under it;
+--   `grow`: a vertex hanging off the lower jaw (a chin spike, a beard) joins it with at least this share;
+-- * `from`: the mouth is looked for in the side view (`cells` cells along the snout) ahead of this share; it is an
+--   opening between the upper and the lower jaw at least `gapMin` high over at least `minColumns` cells;
+-- * `below`: what hangs off the lower jaw reaches at most this far under its lowest point;
+-- * `hinge`: the hinge from the back corner of the mouth: `back` along the snout, `down`;
+-- * `blend`: the cheek between the jaws stretches instead of tearing: a vertex's share of the jaw grows from `back`
+--   behind the hinge to `front` ahead of it, and from the seam to `seam` under it;
+-- * closed: the lower jaw turns up until the teeth tips (from `contact` of the mouth's length forward) would touch,
+--   short of that by `margin` at the tip (the teeth never go into each other); `closed` (degrees) overrides the
+--   measured turn, at most `maxClosed`;
+-- * `actions`: per action of the model's style, the jaw's opening (degrees from closed) at marks of the action's
+--   timeline (Data/MotionFx marks: "W" the hit, "A0.35" 35 % into the anticipation, "F0.85", "R1" the end); eased
+--   between them, 0 before the first and the last held after it (a dead jaw hangs slack); `rate` (1/s): the drawn jaw
+--   follows its target.
+export type JawKey = { at: string, open: number }
+export type Jaw = {
+	head: string,
+	headWeight: number,
+	grow: number,
+	from: number,
+	cells: number,
+	gapMin: number,
+	minColumns: number,
+	below: number,
+	hinge: { back: number, down: number },
+	blend: { back: number, front: number, seam: number },
+	contact: number,
+	margin: number,
+	closed: number?,
+	maxClosed: number,
+	rate: number,
+	actions: { [string]: { JawKey } },
+}
+
+local function key(at: string, open: number): JawKey
+	return { at = at, open = open }
+end
+
+local JAWS: { [string]: Jaw } = {
+	-- Vaelgrath (Tripo biped rig, 55 bones, no map: its bones by the name rules; nothing under the head bone, the mouth
+	-- modelled open, the lower jaw one surface with the rest, a spike under the chin). Its style is `wyvern`
+	-- (Data/BipedStyles): the bite snaps shut on the hit, the breath opens with the charge and stays open while the
+	-- frost streams (Data/MotionFx: W to F0.85), the roar opens wide on its thrust, the death cries out and hangs slack
+	vaelgrath = {
+		head = "Head",
+		headWeight = 0.5,
+		grow = 0.2,
+		from = 0.1,
+		cells = 48,
+		gapMin = 0.03,
+		minColumns = 6,
+		below = 0.6,
+		hinge = { back = 0.06, down = 0.02 },
+		blend = { back = 0.12, front = 0.15, seam = 0.08 },
+		contact = 0.3,
+		margin = 0.02,
+		closed = nil,
+		maxClosed = 60,
+		rate = 24,
+		actions = {
+			bite = { key("A0.1", 0), key("A1", 30), key("S0.5", 32), key("W", 0) },
+			breath = { key("A0.35", 0), key("A1", 10), key("S0.8", 34), key("F0.85", 34), key("R0.6", 6), key("R1", 0) },
+			roar = { key("A0.5", 0), key("A1", 14), key("W", 40), key("F1", 36), key("R0.6", 0) },
+			heavy = { key("A0.5", 0), key("A1", 14), key("W", 40), key("F1", 36), key("R0.6", 0) },
+			deathDragon = { key("A0", 0), key("S1", 34), key("F0.4", 20), key("F1", 12), key("R1", 14) },
+		},
+	},
+}
+
+-- The jaw added to a model's mesh (nil: none; the mouth stays as modelled).
+function BipedRigs.jaw(model: string): Jaw?
+	return JAWS[model]
+end
+
 return BipedRigs

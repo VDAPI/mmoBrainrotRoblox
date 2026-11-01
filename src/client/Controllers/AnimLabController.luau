@@ -1364,7 +1364,7 @@ local function poseBiped(model: Model, biped: BipedLab, t: number)
 	elseif biped.rig.kind == "npc" then
 		NpcRig.apply(biped.rig, posed)
 	else
-		BipedRig.apply(biped.rig, posed)
+		BipedRig.apply(biped.rig, posed, input.now)
 	end
 	-- the effects the action releases (the breath, the nova, the dust), on the same motion time
 	attachFx(model, biped.rig)

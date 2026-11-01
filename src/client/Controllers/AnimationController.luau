@@ -960,7 +960,7 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 	elseif rig.kind == "flyer" then
 		FlyerRig.apply(rig, posed)
 	else
-		BipedRig.apply(rig, posed)
+		BipedRig.apply(rig, posed, now)
 	end
 	MotionFx.step(s.model, s.bipedAction, now, if s.deadAt then nil else s.hitAt)
 end
@@ -1008,7 +1008,7 @@ local function stepGhosts(now: number, frame: number)
 		end
 		local input = ghost.input
 		input.now, input.dt = now, frame
-		BipedRig.apply(ghost.rig, ghost.rig.mod.step(ghost.rig.motion, input))
+		BipedRig.apply(ghost.rig, ghost.rig.mod.step(ghost.rig.motion, input), now)
 	end
 end
 

@@ -8,7 +8,9 @@
 --   the root's `Muzzle` attachment then follows the map's jaw / casting hand (docs/ANIM-WZORCE §10);
 -- * a style the spirits' motion drives (Logic/SpiritMotion: the specter, the ice elemental) also fades the look's
 --   visible parts (the specter's flicker, the deaths);
--- * a boss's look clone (MonsterViewController's long death) takes the rig over with `rebind`: the death plays on.
+-- * a boss's look clone (MonsterViewController's long death) takes the rig over with `rebind`: the death plays on;
+-- * a model with a Data/BipedRigs `jaw` (2026-11-01: Vaelgrath) gets a jaw bone added to its mesh in code
+--   (client/Anim/MeshJaw), closed at rest and opened by the actions.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +18,8 @@ local BipedMotion = require(ReplicatedStorage.Shared.Logic.BipedMotion)
 local BipedPose = require(ReplicatedStorage.Shared.Logic.BipedPose)
 local BipedRigs = require(ReplicatedStorage.Shared.Data.BipedRigs)
 local SpiritMotion = require(ReplicatedStorage.Shared.Logic.SpiritMotion)
+
+local MeshJaw = require(script.Parent.MeshJaw)
 
 local BipedRig = {}
 
@@ -30,6 +34,7 @@ export type Rig = {
 	muzzleAt: Vector3?, -- the shots' point in the bone's own frame
 	parts: { { part: BasePart, base: number } }?, -- the visible parts a spirit fades
 	fade: number,
+	jaw: MeshJaw.Handle?, -- a jaw added to the mesh (Data/BipedRigs `jaw`)
 }
 
 local FADE_EPS = 0.01
@@ -115,6 +120,10 @@ function BipedRig.new(look: Model, styleId: string, seed: number, grip: { number
 			space:VectorToWorldSpace(Vector3.new(o[1] * unit, o[2] * unit, o[3] * unit))
 		)
 	end
+	local jaw = if model then BipedRigs.jaw(model) else nil
+	if jaw then
+		rig.jaw = MeshJaw.attach(look, byKey[jaw.head], model, root :: BasePart)
+	end
 	if mod == SpiritMotion then
 		local parts = {}
 		for _, item in look:GetDescendants() do
@@ -127,9 +136,9 @@ function BipedRig.new(look: Model, styleId: string, seed: number, grip: { number
 	return rig
 end
 
--- Writes the Transforms of one frame (Logic/BipedMotion.step), puts the muzzle where the shots leave and fades a
--- spirit.
-function BipedRig.apply(rig: Rig, posed: BipedPose.Posed)
+-- Writes the Transforms of one frame (Logic/BipedMotion.step), puts the muzzle where the shots leave, fades a spirit
+-- and moves an added jaw by the action at `now` (the motion's clock).
+function BipedRig.apply(rig: Rig, posed: BipedPose.Posed, now: number?)
 	for key, entry in posed do
 		local bone = rig.bones[key]
 		if bone then
@@ -159,11 +168,15 @@ function BipedRig.apply(rig: Rig, posed: BipedPose.Posed)
 			end
 		end
 	end
+	local jaw = rig.jaw
+	if jaw and now then
+		MeshJaw.drive(jaw, rig.motion, now)
+	end
 end
 
 -- The rig moved onto a clone of its look (a dead boss's, MonsterViewController's long death): the same skeleton and
--- motion on the clone's bones of the same names, no muzzle and no fade (the clone breaks up by itself). nil when the
--- clone lacks a bone.
+-- motion on the clone's bones of the same names (and its jaw), no muzzle and no fade (the clone breaks up by itself).
+-- nil when the clone lacks a bone.
 function BipedRig.rebind(rig: Rig, look: Instance): Rig?
 	local byName: { [string]: Bone } = {}
 	for _, item in look:GetDescendants() do
@@ -179,13 +192,17 @@ function BipedRig.rebind(rig: Rig, look: Instance): Rig?
 		end
 		bones[key] = twin
 	end
-	return { kind = "biped", skel = rig.skel, motion = rig.motion, bones = bones, mod = rig.mod, fade = 0 }
+	local jaw = if rig.jaw then MeshJaw.rebind(rig.jaw, look) else nil
+	return { kind = "biped", skel = rig.skel, motion = rig.motion, bones = bones, mod = rig.mod, fade = 0, jaw = jaw }
 end
 
 -- Back to the export's own pose (and look).
 function BipedRig.clear(rig: Rig)
 	for _, bone in rig.bones do
 		bone.Transform = CFrame.identity
+	end
+	if rig.jaw then
+		MeshJaw.clear(rig.jaw)
 	end
 	local parts = rig.parts
 	if parts then

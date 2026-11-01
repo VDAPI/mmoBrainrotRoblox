@@ -303,25 +303,22 @@ local function place(plan: Plan, map: { number }, out: { number }, angles: { num
 	end
 end
 
--- The plan of a mesh: `pos` its vertices (N, flat x y z), `tris` its triangles (flat, 1-based vertex indices; nil:
--- the pieces are found by nearness instead), `o` the model's options; `yield` (if given) is called now and then so a
--- client can spread the work over frames. Nil and why when the legs cannot be told apart.
-function LegFold.plan(pos: { number }, tris: { number }?, o: Options, yield: (() -> ())?): (Plan?, string)
+-- The welded graph of a mesh (also Logic/JawHinge): the nodes (vertices at one position welded: a texture seam splits
+-- them in the mesh; `nodeOf` maps each vertex to its node, `nx`, `ny`, `nz` the nodes' places) and their neighbours
+-- (CSR: node a's are adj[start[a] .. start[a + 1] - 1]): the faces' edges, else (no faces) the nodes within `radius`.
+-- `step(k)` is told of the work done (a yield).
+export type Graph = {
+	nodeOf: { number },
+	nx: { number },
+	ny: { number },
+	nz: { number },
+	nn: number,
+	start: { number },
+	adj: { number },
+}
+
+function LegFold.graph(pos: { number }, tris: { number }?, radius: number, step: (number) -> ()): Graph
 	local n = #pos // 3
-	if n < 8 then
-		return nil, "too few vertices"
-	end
-	local tick = 0
-	local function step(k: number)
-		if yield then
-			tick += k
-			if tick >= 4000 then
-				tick = 0
-				yield()
-			end
-		end
-	end
-	-- the box
 	local lx, ly, lz, hx, hy, hz = INF, INF, INF, -INF, -INF, -INF
 	for i = 0, n - 1 do
 		local x, y, z = pos[i * 3 + 1], pos[i * 3 + 2], pos[i * 3 + 3]
@@ -329,11 +326,6 @@ function LegFold.plan(pos: { number }, tris: { number }?, o: Options, yield: (()
 		hx, hy, hz = math.max(hx, x), math.max(hy, y), math.max(hz, z)
 	end
 	local width, height, depth = hx - lx, hy - ly, hz - lz
-	local span = math.max(width, depth)
-	if span <= 0 or height <= 0 then
-		return nil, "flat mesh"
-	end
-	-- 1. nodes: vertices at one position welded (a texture seam splits them in the mesh)
 	local q = math.max(width, height, depth) * 1e-5
 	local key: { [number]: number } = {}
 	local nodeOf = table.create(n, 0)
@@ -354,8 +346,7 @@ function LegFold.plan(pos: { number }, tris: { number }?, o: Options, yield: (()
 		end
 	end
 	step(n)
-	-- 2. the graph of the nodes (CSR): the faces' edges, else neighbours within a radius
-	local cs = span / GRID
+	-- the graph of the nodes (CSR): the faces' edges, else neighbours within `radius`
 	local start = table.create(nn + 1, 0)
 	local adj: { number } = {}
 	if tris and #tris >= 3 then
@@ -408,8 +399,8 @@ function LegFold.plan(pos: { number }, tris: { number }?, o: Options, yield: (()
 		end
 		step(m * 2)
 	else
-		-- no faces: neighbours within 1.6 cells (a spatial hash of cells that size)
-		local r = cs * 1.6
+		-- no faces: neighbours within the radius (a spatial hash of cells that size)
+		local r = radius
 		local cells: { [number]: { number } } = {}
 		local function cellKey(cx: number, cy: number, cz: number): number
 			return cx + 4096 * (cy + 4096 * cz)
@@ -463,6 +454,44 @@ function LegFold.plan(pos: { number }, tris: { number }?, o: Options, yield: (()
 		start[nn + 1] = at
 		step(nn * 4)
 	end
+	return { nodeOf = nodeOf, nx = nx, ny = ny, nz = nz, nn = nn, start = start, adj = adj }
+end
+
+-- The plan of a mesh: `pos` its vertices (N, flat x y z), `tris` its triangles (flat, 1-based vertex indices; nil:
+-- the pieces are found by nearness instead), `o` the model's options; `yield` (if given) is called now and then so a
+-- client can spread the work over frames. Nil and why when the legs cannot be told apart.
+function LegFold.plan(pos: { number }, tris: { number }?, o: Options, yield: (() -> ())?): (Plan?, string)
+	local n = #pos // 3
+	if n < 8 then
+		return nil, "too few vertices"
+	end
+	local tick = 0
+	local function step(k: number)
+		if yield then
+			tick += k
+			if tick >= 4000 then
+				tick = 0
+				yield()
+			end
+		end
+	end
+	-- the box
+	local lx, ly, lz, hx, hy, hz = INF, INF, INF, -INF, -INF, -INF
+	for i = 0, n - 1 do
+		local x, y, z = pos[i * 3 + 1], pos[i * 3 + 2], pos[i * 3 + 3]
+		lx, ly, lz = math.min(lx, x), math.min(ly, y), math.min(lz, z)
+		hx, hy, hz = math.max(hx, x), math.max(hy, y), math.max(hz, z)
+	end
+	local width, height, depth = hx - lx, hy - ly, hz - lz
+	local span = math.max(width, depth)
+	if span <= 0 or height <= 0 then
+		return nil, "flat mesh"
+	end
+	-- 1. nodes: vertices at one position welded (a texture seam splits them in the mesh); 2. their graph
+	local cs = span / GRID
+	local graph = LegFold.graph(pos, tris, cs * 1.6, step)
+	local nodeOf, nn, start, adj = graph.nodeOf, graph.nn, graph.start, graph.adj
+	local nx, ny, nz = graph.nx, graph.ny, graph.nz
 	-- 3. the top view: the faces' shadows (else the nodes, a cell around), the distance inside it, the opening
 	local gx = math.ceil(width / cs) + 2 * BORDER + 1
 	local gz = math.ceil(depth / cs) + 2 * BORDER + 1

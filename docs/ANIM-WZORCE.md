@@ -777,6 +777,14 @@ in `Data/BipedRigs` (Tripo Auto Rig, 71 bones). Vaelgrath's `wyvern` style is un
   the `Muzzle` follows the head bone); fireBreath → Vaelgrath's breath sweep, heavyBlow → wing claw, crush → stomp,
   pounce / leap → `pounce`, aggro → roar, spawn → Vaelgrath's appear.
 
+Vaelgrath's jaw (2026-11-01): its export has nothing under the head bone and the mouth modelled open, so
+`client/Anim/MeshJaw` adds a `MeshJaw` bone under the head bone to its skinned mesh (an `EditableMesh`, once per mesh,
+`ApplyMesh` on each look) and `Logic/JawHinge` skins the lower jaw to it (the opening between the jaws in the side view,
+and what hangs off the lower jaw along the mesh: the chin spike); closed at rest short of the teeth tips meeting, opened
+on bite, breath, roar and the death by `Data/BipedRigs.jaw` (degrees at timeline marks, tuned in Studio). No
+EditableMesh: the mouth stays as modelled. Studio prints `[MeshJaw] vaelgrath: …` once; the look carries `JawState`,
+`JawOpen`, `JawClosed`, `JawTipGap`. Specs: `tests/jawhinge.spec.luau`.
+
 Spirits: the dump found bones in `specter` (Mixamo, 48 bones) and `iceElemental` (Tripo biped, 55 bones), so they run
 on `Logic/SpiritMotion` over `Logic/BipedMotion` (body float plus arms; styles `specter` and `iceElemental` in
 `Data/BipedStyles`, maps in `Data/BipedRigs`), not on the F5 float recipe of §6.4 / §7.

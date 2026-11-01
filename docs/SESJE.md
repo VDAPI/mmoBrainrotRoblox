@@ -14473,3 +14473,21 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `Data/ClassLooks`, `Data/Cosmetics`, `Data/BodyLooks`, `Data/AdminCommands`, `Logic/CharacterLook`,
   `Logic/TryLook`, `Util/AvatarBuild`, `CosmeticService`, `Admin/Character`, `UI/Screens/Wardrobe`,
   `Localization/pl|en`, `tools/classlooks_slots.luau`, `docs/WYGLAD-KLAS.md`.
+
+### Szczęka Vaelgratha z kodu (2026-11-01)
+
+- `client/Anim/MeshJaw`: raz na siatkę (w tle, porcjami) EditableMesh wyglądu, skóra wierzchołków na kości głowy,
+  `Logic/JawHinge.plan`, kość `MeshJaw` (`AddBone` w pozie wiązania kości głowy; gdy siatka stałego rozmiaru jej nie
+  przyjmie, druga próba na siatce rosnącej), `SetVertexBones` / `SetVertexBoneWeights` żuchwy, `CreateMeshPartAsync`.
+  Każdy wygląd: Bone `MeshJaw` pod kością głowy i `ApplyMesh`; klon śmierci bossa trzyma siatkę (`rebind`); siatka
+  zwalniana 20 s po zniknięciu ostatniego wyglądu. Studio: linia `[MeshJaw] vaelgrath: …` i atrybuty `JawState`,
+  `JawOpen`, `JawClosed`, `JawTipGap` na wyglądzie.
+- `Logic/JawHinge`: plan (widok z boku, szpara, szew, kącik, zawias, żuchwa po siatce, udziały, kąt zamknięcia z
+  przecięć ścian z liniami przez czubki zębów), `reweigh`, `open` (klucze akcji na znacznikach), `turn`, `gap`.
+- `Data/BipedRigs.jaw` (Vaelgrath: wykrywanie, zawias, przejście, zapas, otwarcia bite / breath / roar / heavy /
+  deathDragon). `BipedRig.apply` dostaje czas ruchu (AnimationController, duchy bossów, AnimLab).
+- Wspólne z MeshFold / LegFold: `MeshFold.available`, `MeshFold.slicer`, `MeshFold.read`, `LegFold.graph`.
+- Testy: `jawhinge.spec` na syntetycznej głowie (`tests/JawHingeMesh`: otwarty pysk, zęby, kolec, broda, szyja,
+  szew tekstury). Nieobejrzane w Studio.
+- **Pliki:** `client/Anim/MeshJaw`, `client/Anim/BipedRig`, `client/Anim/MeshFold`, `Logic/JawHinge`, `Logic/LegFold`,
+  `Data/BipedRigs`, `AnimationController`, `AnimLabController`, `tests/jawhinge.spec.luau`, `tests/JawHingeMesh.luau`.
