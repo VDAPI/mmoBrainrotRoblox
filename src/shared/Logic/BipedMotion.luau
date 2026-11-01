@@ -203,6 +203,9 @@ type Plant = {
 -- and the crouch (studs) of its run and, onto a spot ahead (`ahead`), the striking hand's side and the spot (root
 -- space) it is drawn onto.
 type LowPlan = { name: string, start: number, bow: number, crouch: number, side: string?, spot: Vec? }
+-- A foot's swing in the walk clip (shares of its cycle: where it leaves the ground and how long it is off it) and the
+-- extra lift (studs) that brings it to the style's height at the top.
+type Swing = { off: number, len: number, extra: number }
 
 export type Instance = {
 	skel: BipedPose.Skeleton,
@@ -252,6 +255,11 @@ export type Instance = {
 	shield: number,
 	feet: { [string]: Plant }, -- the planted feet by side ("R", "L")
 	low: LowPlan?, -- a giant's blow reaching down (a clip action's `low`)
+	-- the walk's lift (liftSteps): each foot's swing in the walk clip (worked out once), its own turn of each thigh
+	-- and shin and of each foot on the last frame
+	swings: { [string]: Swing }?,
+	lift: { [string]: Mat }?,
+	level: { [string]: Mat }?,
 }
 
 local function hash01(n: number, seed: number): number
@@ -765,42 +773,178 @@ end
 local FEET: { [string]: string } = { R = "RightFoot", L = "LeftFoot" }
 local TOES: { [string]: string } = { R = "RightToeBase", L = "LeftToeBase" }
 
--- A walk's swinging feet lifted `gain` times as high as its clip lifts them, the lift bending over smoothly toward
--- WALK_LIFT_MAX leg lengths and easing in over the clip's first WALK_LIFT_EASE leg lengths off the ground
--- (`clips.lift`; 2026-10-31 Studio round 3: the yeti's lumbering walk lifted its toes a quarter of a stud and read as
--- a shuffle; round 4, 0.5-0.7 at twice; round 5, 1.04-1.08 at four times and 0.7 L at most; 2026-11-01 round 6: that
--- hard cap held one foot flat at the top for a few frames and its thigh snapped 23 deg in a frame coming off it, the
--- other foot barely reaching it; amplified right down to the ground the knee straightened six times as fast as the
--- clip's at the heel strike): in place on the walk's pose, the run left as it is.
-local WALK_LIFT_MAX = 1.2
-local WALK_LIFT_EASE = 0.09
-local function liftSteps(inst: Instance, world: World, shift: Vec, gain: number)
+-- A walk's swinging feet lifted to `height` leg lengths at the top of their swing (`clips.lift`): over each foot's
+-- swing in the walk clip (where its ankle is over WALK_SWING L, found once over WALK_SAMPLES of the cycle) the ankle
+-- is raised by what it lacks of the height at the clip's top, along the square of liftBell (up by WALK_LIFT_PEAK of
+-- the swing, down over the rest, the foot back on the clip's path at the strike), and the foot is carried in its
+-- standing attitude, its toes WALK_TOE_UP up, along the same; in place on the walk's pose, the run left as it is.
+-- The lift's own turn of each thigh, shin and foot (on top of the clip's) eases toward the frame's at WALK_LIFT_TURN
+-- rad/s at most, whatever the rig; a snap takes it at once. (2026-10-31 Studio round 3: the yeti's lumbering walk
+-- lifted its toes a quarter of a stud and read as a shuffle; rounds 4-6 multiplied the clip's own lift, capped: the
+-- cap held a foot flat at the top and the thigh snapped off it; 2026-11-01 round 7, the yeti's own rig: the lift, a
+-- function of the clip's height, fell with the clip's last drop onto the ground, and the knee and the thigh snapped
+-- 16-31 deg a frame at every heel strike; the walk's swinging foot curls its toes down and back under the ankle, on
+-- the yeti's long foot below the ground, so the toes were held on it and dragged.)
+local WALK_SWING = 0.02
+local WALK_SAMPLES = 60
+local WALK_LIFT_PEAK = 0.4
+local WALK_LIFT_TURN = math.rad(12) * 60
+local WALK_TOE_UP = math.rad(20)
+local LEG_BONES = { "RightUpLeg", "RightLeg", "LeftUpLeg", "LeftLeg" }
+
+-- How far (0..1) into its lift a foot is at share `x` of its swing: up along a quarter sine to the top at
+-- WALK_LIFT_PEAK, down along a quarter cosine over the rest (no speed at either end nor at the top).
+local function liftBell(x: number): number
+	if x <= 0 or x >= 1 then
+		return 0
+	elseif x < WALK_LIFT_PEAK then
+		return math.sin(0.5 * math.pi * x / WALK_LIFT_PEAK)
+	end
+	return math.cos(0.5 * math.pi * (x - WALK_LIFT_PEAK) / (1 - WALK_LIFT_PEAK))
+end
+
+-- The angle (rad) of a turn.
+local function turnAngle(m: Mat): number
+	return math.acos(math.clamp((m[1] + m[5] + m[9] - 1) / 2, -1, 1))
+end
+
+-- Each foot's swing in walk clip `walk` (Swing), worked out once per instance.
+local function swingsOf(inst: Instance, walk: string, height: number): { [string]: Swing }
+	local known = inst.swings
+	if known then
+		return known
+	end
+	local skel = inst.skel
+	local L = skel.legLength
+	local out: { [string]: Swing } = {}
+	local loaded = inst.clips[walk]
+	if loaded then
+		local ups: { [string]: { number } } = { R = {}, L = {} }
+		for i = 0, WALK_SAMPLES - 1 do
+			local w, sh = clipPose(inst, walk, i / WALK_SAMPLES * loaded.clip.length)
+			local at = if w and sh then BipedPose.positions(skel, w, sh) else nil
+			for side, key in FEET do
+				local bone = skel.bones[key]
+				local p = at and at[key]
+				ups[side][i + 1] = if bone and p then p[2] - bone.pos[2] else 0
+			end
+		end
+		local off = WALK_SWING * L
+		for side, list in ups do
+			-- (the longest run of samples off the ground, round the cycle)
+			local n = #list
+			local first, longest, top = 0, 0, 0
+			for i = 1, n do
+				if list[i] > off and list[(i - 2) % n + 1] <= off then
+					local k, high = 0, 0
+					while k < n and list[(i - 1 + k) % n + 1] > off do
+						high = math.max(high, list[(i - 1 + k) % n + 1])
+						k += 1
+					end
+					if k > longest then
+						first, longest, top = i, k, high
+					end
+				end
+			end
+			if longest > 0 then
+				out[side] = { off = (first - 1) / n, len = longest / n, extra = math.max(0, height * L - top) }
+			end
+		end
+	end
+	inst.swings = out
+	return out
+end
+
+local function liftSteps(
+	inst: Instance,
+	world: World,
+	shift: Vec,
+	walk: string,
+	height: number,
+	dt: number,
+	snap: boolean?
+)
 	local skel = inst.skel
 	local m = inst.move * (1 - inst.run)
-	if m < 0.01 then
+	local last = inst.lift
+	if m < 0.01 and not last and not inst.level then
 		return
 	end
 	local targets: { [string]: Vec? }? = nil
-	for side, key in FEET do
-		local bone = skel.bones[key]
-		local ankle = if bone then BipedPose.jointAt(skel, world, shift, key) else nil
-		if bone and ankle then
-			local up = ankle[2] - bone.pos[2]
-			if up > 1e-3 then
-				local list: { [string]: Vec? } = targets or {}
-				local L = skel.legLength
-				local most = WALK_LIFT_MAX * L
-				local extra = math.max(0, most * (1 - math.exp(-up * gain / most)) - up)
-				local x = math.min(1, up / (WALK_LIFT_EASE * L))
-				local raised = up + extra * x * x * (3 - 2 * x)
-				list[side] = { ankle[1], ankle[2] + (raised - up) * m, ankle[3] }
-				targets = list
+	if m >= 0.01 then
+		local swings = swingsOf(inst, walk, height)
+		for side, key in FEET do
+			local swing = swings[side]
+			local x = if swing then ((inst.phase - swing.off) % 1) / swing.len else 1
+			if swing and x < 1 then
+				local b = liftBell(x)
+				local raise = swing.extra * b * b * m
+				local ankle = BipedPose.jointAt(skel, world, shift, key)
+				if ankle and raise > 1e-4 then
+					local list: { [string]: Vec? } = targets or {}
+					list[side] = { ankle[1], ankle[2] + raise, ankle[3] }
+					targets = list
+				end
 			end
 		end
+	end
+	local clip: { [string]: Mat } = {}
+	for _, key in LEG_BONES do
+		clip[key] = world[key] or NpcPose.IDENTITY
 	end
 	if targets then
 		BipedPose.nudgeLegs(skel, world, shift, targets)
 	end
+	-- (the lift's own turn of each bone, eased toward this frame's)
+	local step = WALK_LIFT_TURN * dt
+	local turns: { [string]: Mat } = {}
+	local any = false
+	for _, key in LEG_BONES do
+		local under = clip[key]
+		local turn = NpcPose.mul(world[key] or NpcPose.IDENTITY, NpcPose.transpose(under))
+		local before = if last and not snap then last[key] else nil
+		if before then
+			local a = turnAngle(NpcPose.mul(turn, NpcPose.transpose(before)))
+			if a > step then
+				turn = BipedPose.slerp(before, turn, step / a)
+			end
+		end
+		turns[key] = turn
+		world[key] = NpcPose.mul(turn, under)
+		any = any or turnAngle(turn) > 1e-4
+	end
+	inst.lift = if any then turns else nil
+	-- (the swinging foot carried in its standing attitude, the toes up)
+	local level: { [string]: Mat } = {}
+	local had = inst.level
+	for side, key in FEET do
+		local foot = world[key]
+		local swing = if m >= 0.01 and foot then (inst.swings or {})[side] else nil
+		local x = if swing then ((inst.phase - swing.off) % 1) / swing.len else 1
+		local w = if swing then liftBell(x) ^ 2 * m else 0
+		local turn = if foot and w > 1e-4 then BipedPose.slerp(NpcPose.IDENTITY, NpcPose.transpose(foot), w) else nil
+		local bone, toeBone = skel.bones[key], skel.bones[TOES[side]]
+		if turn and bone and toeBone then
+			local rx, rz = toeBone.pos[1] - bone.pos[1], toeBone.pos[3] - bone.pos[3]
+			local across = math.sqrt(rx * rx + rz * rz)
+			if across > 1e-4 then
+				turn = NpcPose.mul(NpcPose.axisAngle({ -rz / across, 0, rx / across }, WALK_TOE_UP * w), turn)
+			end
+		end
+		local before = if had and not snap then had[side] else nil
+		if before then
+			local now = turn or NpcPose.IDENTITY
+			local a = turnAngle(NpcPose.mul(now, NpcPose.transpose(before)))
+			if a > step then
+				turn = BipedPose.slerp(before, now, step / a)
+			end
+		end
+		if turn and turnAngle(turn) > 1e-4 then
+			BipedPose.turnSubtree(world, key, turn)
+			level[side] = turn
+		end
+	end
+	inst.level = if next(level) then level else nil
 end
 
 -- A boss's weight in its walk (its `boss`): the pelvis drops after each footfall of the walk's cycle and rolls over the
@@ -897,6 +1041,7 @@ local function locomotion(inst: Instance, input: Input): (World, Vec)
 		return idleWorld, { idleShift[1], idleShift[2] + bob, idleShift[3] }
 	end
 	if inst.move < 0.01 then
+		inst.lift, inst.level = nil, nil
 		return idleWorld, idleShift
 	end
 	local walkW, walkS = clipPose(inst, clips.walk, inst.phase * walkLen)
@@ -928,7 +1073,7 @@ local function locomotion(inst: Instance, input: Input): (World, Vec)
 	if style.boss then
 		heavyStep(inst, blended, moved, clips.walk)
 	elseif clips.lift then
-		liftSteps(inst, blended, moved, clips.lift)
+		liftSteps(inst, blended, moved, clips.walk, clips.lift, dt, input.snap)
 	end
 	return blended, moved
 end

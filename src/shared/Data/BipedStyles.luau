@@ -69,8 +69,8 @@ export type Style = {
 		walk: string,
 		run: string,
 		combat: { idle: string, walk: string, blade: boolean? }?,
-		-- the walk's swinging feet lifted this many times as high as its clip lifts them, bending over toward
-		-- Logic/BipedMotion WALK_LIFT_MAX leg lengths
+		-- the walk's swinging ankles lifted to this many leg lengths at the top of their swing, the feet carried level
+		-- (Logic/BipedMotion liftSteps)
 		lift: number?,
 	}?,
 	guard: { [string]: number },
@@ -2328,7 +2328,7 @@ end
 -- the right), the jumping two-fisted slam for the crush and, carried onto the target, the pounce; a fall of its own);
 -- the heavy blow the overhead chop's fist.
 local BRUTE: Style = variant(HUMANOID_1H, {
-	clips = { idle = { "mutantIdle" }, walk = "mutantWalk", run = "run", lift = 7 },
+	clips = { idle = { "mutantIdle" }, walk = "mutantWalk", run = "run", lift = 0.55 },
 	guard = BRUTE_GUARD,
 	basic = { "clawR", "clawL" },
 	actions = {

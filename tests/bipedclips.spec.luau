@@ -758,7 +758,7 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 		end
 	)
 
-	T.it("the brute's walk lifts its feet clear of the ground, not a shuffle, smoothly (Studio rounds 3-6)", function()
+	T.it("the brute's walk lifts its feet clear of the ground, not a shuffle, smoothly (Studio rounds 3-7)", function()
 		local L = SKEL.legLength
 		local rest = BipedPose.positions(SKEL, {}, { 0, 0, 0 })
 		local high = { R = 0, L = 0 }
@@ -774,8 +774,9 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 				end
 				local prev = before
 				if prev then
-					-- (the thighs' turn in a frame, degrees: the review measured 23 against a hard cap on the lift)
-					for _, key in { "LeftUpLeg", "RightUpLeg" } do
+					-- (the thighs' and the shins' turn in a frame, degrees: the review measured 23 against a hard cap on the
+					-- lift, then 16-31 at the strikes on the yeti's own rig)
+					for _, key in { "LeftUpLeg", "RightUpLeg", "LeftLeg", "RightLeg" } do
 						local a, b = prev[key], world[key]
 						local inner = 0
 						for i = 1, 9 do
@@ -788,10 +789,11 @@ T.describe("BipedMotion: the mocap blows stand their ground (2026-10-31 Studio r
 			before = table.clone(world)
 		end)
 		if DEBUG then
-			print(string.format("brute walk toe lift R %.3f L %.3f L, thigh %.1f deg", high.R / L, high.L / L, snap))
+			print(string.format("brute walk toe lift R %.3f L %.3f L, leg %.1f deg", high.R / L, high.L / L, snap))
 		end
-		-- (the review measured a quarter of a stud on the yeti, then 0.5-0.7, then 1.04-1.08: it asked for 1.2-1.6)
-		T.expect({ high.R > 0.6 * L, high.L > 0.6 * L, high.R < 0.9 * L, high.L < 0.9 * L, snap < 14 })
+		-- (the review measured a quarter of a stud on the yeti, then 0.5-0.7, then 1.04-1.08: it asked for 1.2-1.6,
+		-- about half the yeti's leg; then no more than 12-14 deg a frame)
+		T.expect({ high.R > 0.45 * L, high.L > 0.45 * L, high.R < 0.75 * L, high.L < 0.75 * L, snap < 11 })
 			.toEqual({ true, true, true, true, true })
 	end)
 
