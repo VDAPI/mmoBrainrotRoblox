@@ -343,16 +343,22 @@ loop, hit, strike, range, root mode and rate, and `python3 -I tools/anim/bake_bi
   An `upper` clip takes the clip's chest turn in the root's axes (the blow keeps its way where the clip's hips turned
   with it), the joints above it still one by one. What is left fast in a lead-in is the clip's own (the high spin's).
 - **Stance**: `clips.combat` (humanoid1h, humanoid2h: the sword-and-shield idle and walk) eases in with the combat
-  weight over the locomotion; the brute walks and idles on the mutant clips all the time, its swinging feet lifted
-  seven times as high as the clip lifts them, the lift bending over smoothly toward 1.2 L and eased in over the
-  clip's first 0.09 L off the ground (`clips.lift`, `WALK_LIFT_MAX`, `WALK_LIFT_EASE`; 2026-10-31 Studio round 3: the
-  yeti's toes rose 0.25 stud, a shuffle for its size; round 4: 0.5-0.7 at twice, the review asked 1.2-1.6; round 5:
-  1.04-1.08 at four times and 0.7 L; 2026-11-01 round 6: 1.39/1.43 at five times under a hard cap of 0.85 L, but the
-  cap held one foot flat at the top for a few frames and its thigh snapped 23 deg in a frame coming off it, the other
-  foot barely reaching it, hence the one-sided snap; amplified right down to the ground, the knee straightened six
-  times as fast as the clip's at the heel strike. Now on the test rig at the wander's pace: toes 0.7-0.75 L, both
-  thighs under 12.5 deg a frame at 60 fps, the shins under 14.5). A blow plays on until the
-  clip's stance is back (its `follow` + `recover` cover the clip to where it settles).
+  weight over the locomotion; the brute walks and idles on the mutant clips all the time, each swinging ankle raised
+  to 0.55 L at the top of its swing (`clips.lift`: by what the clip's own top lacks of it), up by 40 % of the swing
+  (`WALK_LIFT_PEAK`), down over the rest along a quarter cosine, the foot back on the clip's path at the strike; the
+  swinging foot carried in its standing attitude, the toes 20 deg up (`WALK_TOE_UP`), along the same bell; the lift's
+  own turn of each thigh, shin and foot eases toward the frame's at 12 deg a frame at 60 fps at most, scaled by the
+  frame's time (`WALK_LIFT_TURN`), whatever the rig. History: 2026-10-31 Studio round 3: the yeti's toes rose 0.25
+  stud, a shuffle for its size; rounds 4-6 multiplied the clip's own lift (twice, four, five, seven times) under a cap,
+  1.04-1.43 studs, but the cap held one foot flat at the top and the thigh snapped 23 deg a frame coming off it;
+  2026-11-01 round 7 on the yeti's own rig (Studio's bone data): the knee and the thigh snapped 16-31 deg a frame at
+  every heel strike, the lift, a function of the clip's height, falling with the clip's last drop onto the ground; on
+  the yeti's long foot (0.96 stud ahead of the ankle) the mutant walk's swinging foot curls its toes down and back
+  under the ankle, below the ground, so the toes were held on it (`plantFeet`) and dragged. Now on a rig built from
+  the yeti's bones at its wander pace: toes 1.27/1.23 studs, the thighs under 9 deg a frame at 60 fps, the shins
+  under 11, the feet under 17 (the uncurl at the lift-off); on the R15 test rig 0.58 L, the legs under 8. The lift
+  keeps no state over the cycle's wrap: the swing is a share of the walk's phase, the eased turns carry on. A blow
+  plays on until the clip's stance is back (its `follow` + `recover` cover the clip to where it settles).
 - **Planted feet** (`BipedMotion` `plantFeet`, 2026-10-31 Studio review: the toes slid 0.8 stud and the hips travelled
   1.7 studs through `mob bandit slash`): while a non-boss biped stands (under 0.6 studs/s, turning under 1.2 rad/s,
   not floating, not in a fall or a keyed travel; a leap until its feet leave the ground and again once it has landed
@@ -1373,6 +1379,30 @@ included; AnimationController and AnimLab need no change.
     second, 12 rad/s on a strike, so a 35-fps frame allowed 19.6° on each). A palp never bears the body, so it may
     trail a little at a low frame rate. The other legs keep their rates per second (steps and strikes 19.6° a frame at
     35 fps, 11.5° at 60): a cap per frame would make a 15-fps step lag its foot off its point.
+- **Studio on 01b** (2026-11-01, 60 fps): alert 0.07, bite 0.04, attack1 0.04, grab 0.08, crush 0.08, pounce 0.07
+  (3_Left5's 0.72 gone), the chelicerae ≥ 0.53 over the floor, the palps ≤ 11.8°, the pounce's landing 11.4° local /
+  12.8° world. Then (`OctoMotion.VERSION` "2026-11-01c unfold spread, feet steady under the blow"):
+  - **The pounce's unfold** (bone_23, our R4's last bone, 32–34° in the world in one frame of the flight, double its
+    neighbours: the tuck letting go turns every bend of the leg the same way at once, so the last bone turns by their
+    sum): a leg drawn in or out for a flight turns its last bone no more than `CHAIN` (1.8) times the joints' rate in a
+    frame, all its bends and the yaw together. OctoSim at 60 fps: R4's last bone 1.15–1.45 s
+    15 2 5 6 7 6 8 17 16 16 15 15 7 1 1 1° (was … 17 15 34 16 4 …), no bone over 21° in the world at 4.2 or 6 studs
+    (22.6° with ±30 % jitter). At 35 fps the cap grows with the frame's square (a 35-fps frame has too few frames to
+    spread it over: the feet would land late and slide); there it is as in 01b.
+  - **The heavy blow** (3_Right5 0.12, 3_Left5 0.08, 2_Left5 0.07: our L4, L3, R1): (1) the stun's tremble and the
+    blow's flinch bent the legs of the catch-up steps as they came down and of a step holding the head of its last
+    bone: their feet grazed the ground; the tremble and the flinch now only shake legs held off the ground (a raise, a
+    tuck, a hang), never a step. (2) A step the body's lunge left trailing its arc (the joints at their rate, the foot
+    0.1 stud short of its goal and already down) dragged itself onto the goal on the frame it landed: it sets down
+    where its foot is (within 0.3 hip heights of the goal, 0.1 over the ground). (3) The stab's clearance followed its
+    eased share, so a fast stab came the last 0.08 stud down over two frames with the body slamming: it follows the
+    key, so the foot is over the band till the frame it lands.
+  - **The crush** (3_Left5 0.08): a standing leg hangs straight over its point while the body rears off it; the head
+    of its last bone was put there to within 0.02 stud and crept by that a frame as it rose and came down: now within
+    0.01 (`HANG_AT`, four tries).
+  OctoSim, Studio's measure at 60 fps: every action ≤ 0.05 stud on every leg (heavy ≤ 0.03, crush ≤ 0.04, was 0.09 /
+  0.08), at 35 fps ≤ 0.07 (the pounce's R1), ±30 % jitter ≤ 0.06. tests/octomotion: the planted slide ≤ 0.07 in the
+  alert, both blows, pounce, heavy and crush; the pounce's last bones ≤ 24° a frame at 60 fps (01b: 29–34°).
 - **The asset** in `Assets.Monsters` (as the wolf and the peakHarpy): a Model with `HumanoidRootPart` (Anchored false,
   CanCollide false, CanQuery and CanTouch true, Massless false, Transparency 1, size 1) as its `PrimaryPart`, the
   MeshPart with the bones (Anchored false, CanCollide, CanQuery and CanTouch true, Massless false) welded to it by a

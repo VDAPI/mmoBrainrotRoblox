@@ -28,12 +28,15 @@ local TopBand = SoftRequire(
 		underHeader = function(top: number): number
 			return top
 		end,
+		toastShift = function(): number
+			return 0
+		end,
 	} :: any,
 	"Logic/TopBand"
 )
 local TopBandState = SoftRequire(function()
 	return require(script.Parent.Parent.TopBandState)
-end, { ToastTop = 90 } :: any, "UI/TopBandState")
+end, { ToastTop = 90, Keep = nil } :: any, "UI/TopBandState")
 
 local Children = Fusion.Children
 
@@ -46,7 +49,7 @@ local Toast = {}
 
 local MAX_VISIBLE = TopBand.MAX_TOASTS
 local DEFAULT_DURATION = 3.5
-local WIDTH = 520
+local WIDTH = TopBand.TOAST_WIDTH or 520
 
 -- S135: an iron toast with a brass edge; the kind colours the edge (roles of the iron surface).
 local ACCENT: { [Kind]: Color3 } = {
@@ -133,12 +136,21 @@ function Toast.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 			-- and under the title bar of an open window (they stand over the windows)
 			local header = use(HudCover.HeaderBottom)
 			local origin = if parent:IsA("GuiObject") then parent.AbsolutePosition.Y else 0
-			local top = TopBand.underHeader(
-				use(TopBandState.ToastTop),
-				if header then header - origin else nil,
-				use(Scale.Value)
-			)
-			return UDim2.new(0.5, 0, 0, top)
+			local k = use(Scale.Value)
+			local top = TopBand.underHeader(use(TopBandState.ToastTop), if header then header - origin else nil, k)
+			-- Studio check of phase 4: beside the tutorial's tile, not under it (Logic/TopBand.toastShift)
+			local keep = if TopBandState.Keep then use(TopBandState.Keep) else nil
+			local shift = 0
+			if keep and k > 0 and parent:IsA("GuiObject") then
+				local at = parent.AbsolutePosition
+				shift = TopBand.toastShift(parent.AbsoluteSize.X / k, WIDTH, top, {
+					left = (keep.left - at.X) / k,
+					top = (keep.top - at.Y) / k,
+					right = (keep.right - at.X) / k,
+					bottom = (keep.bottom - at.Y) / k,
+				})
+			end
+			return UDim2.new(0.5, shift, 0, top)
 		end),
 		Size = UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,

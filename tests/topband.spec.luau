@@ -43,6 +43,41 @@ T.describe("Top band of messages (UI plan phase 2)", function()
 		T.expect(TopBand.underHeader(300, 100, 1)).toBe(300)
 	end)
 
+	T.it("Studio check of phase 4: the toasts stand beside the tutorial's tile, not under it", function()
+		-- 1108 x 576 (scale 0.6, the HUD's layer 58 px under the toasts' one): the tile left of the menu over the
+		-- minimap, 440 x 134 at 1086, 16 of the HUD, stood under the left part of the toasts' column
+		local w = 1108 / 0.6
+		local below = 58 / 0.6
+		local tile = { left = 1086, top = 16 + below, right = 1086 + 440, bottom = 16 + below + 134 }
+		local width = TopBand.TOAST_WIDTH
+		local right = (w + width) / 2
+		local shift = TopBand.toastShift(w, width, TopBand.TOAST_TOP, tile)
+		T.expect(shift < 0).toBe(true)
+		T.expect(math.abs(right + shift - (tile.left - TopBand.GAP)) < 1e-6).toBe(true)
+		-- no tile, a tile under the band, or one clear of the column: no move
+		T.expect(TopBand.toastShift(w, width, TopBand.TOAST_TOP, nil)).toBe(0)
+		local low = { left = 1086, top = 600, right = 1526, bottom = 734 }
+		T.expect(TopBand.toastShift(w, width, TopBand.TOAST_TOP, low)).toBe(0)
+		local clear = { left = right + TopBand.GAP, top = tile.top, right = right + 400, bottom = tile.bottom }
+		T.expect(TopBand.toastShift(w, width, TopBand.TOAST_TOP, clear)).toBe(0)
+		-- a tile on the left half: the column moves right
+		local leftTile = { left = 100, top = tile.top, right = 900, bottom = tile.bottom }
+		local moved = TopBand.toastShift(w, width, TopBand.TOAST_TOP, leftTile)
+		T.expect(math.abs((w - width) / 2 + moved - (900 + TopBand.GAP)) < 1e-6).toBe(true)
+		-- a narrow layer: never closer than EDGE to its side
+		T.expect(
+			TopBand.toastShift(600, width, TopBand.TOAST_TOP, { left = 300, top = 100, right = 590, bottom = 200 })
+		)
+			.toBe(TopBand.EDGE - 40)
+		-- the toasts use it, the tutorial tells them where its tile stands, and the toast keeps the band's width
+		local toast = fs.readFile("src/client/UI/Components/Toast.luau")
+		T.expect(string.find(toast, "TopBand.toastShift(", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(toast, "local WIDTH = TopBand.TOAST_WIDTH", 1, true) ~= nil).toBe(true)
+		local tutorial = fs.readFile("src/client/Controllers/TutorialController.luau")
+		T.expect(string.find(tutorial, "TopBandState.keep({", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(tutorial, "TopBandState.keep(nil)", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it("the achievement toast waits for the zone and the area banner only", function()
 		T.expect(TopBand.achievementWaits({})).toBe(false)
 		T.expect(TopBand.achievementWaits({ zone = true })).toBe(true)
