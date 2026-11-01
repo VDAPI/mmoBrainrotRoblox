@@ -14,7 +14,9 @@
 --   meleeReaches whether a melee blow reaches up or down to the target: the flat reach alone let a wolf under a roof
 --               count as "in reach" and never give up (and its blows hit through 34 studs of air)
 --   take        the server's path budget: a token bucket (`pathPerSecond`, at most `pathBurst` at once)
---   agent       the PathfindingService agent of a body, rounded up to a few sizes (one navmesh per size)
+--   agent       the PathfindingService agent of a body, rounded up to a few sizes (one navmesh per size); the
+--               radius from the body's width (S162e Studio 2026-11-01: from its length it was 4 for a 1.7 studs
+--               wide ice wolf, so it needed an 8 studs wide way)
 --   stepHeight  how high a step a body walks onto without turning (only its root collides and the humanoid keeps the
 --               root `hipHeight` over the floor: lower obstacles pass under it, a hovering flyer's too)
 
@@ -45,10 +47,12 @@ export type Situation = {
 
 export type Bucket = { tokens: number, at: number }
 
--- Agent sizes (studs): the radius is half the root's wider side + a gap, the height the hip height + the root's.
--- S162e Studio 2026-10-31: few sizes, the smallest Roblox's default agent (2 x 5): every new size is a navmesh of its
--- own to build, and the first build in an area is the slow path call.
-Pursuit.RADII = table.freeze({ 2, 4, 6 })
+-- Agent sizes (studs): the radius is half the root's width (X: it walks along Z, its length) + a gap, the height the
+-- hip height + the root's. S162e Studio 2026-10-31: few sizes, the smallest Roblox's default agent (2 x 5): every new
+-- size is a navmesh of its own to build, and the first build in an area is the slow path call. 2026-11-01: half the
+-- longer side rounded 2.1 up to 4 (ice wolf, boar, salamander, wyvern, young frost dragon: 1.5-2.9 studs wide, yet
+-- an 8 studs wide way and no path along a fence or between a barn and a fence); 3 added for bears, golems and trolls.
+Pursuit.RADII = table.freeze({ 2, 3, 4, 6 })
 Pursuit.HEIGHTS = table.freeze({ 5, 9, 13, 20 })
 -- A melee body reaches up at least cfg.meleeUp studs over its feet, a tall one this share of its height.
 Pursuit.MELEE_BODY_SHARE = 0.5
@@ -122,9 +126,10 @@ local function roundUp(value: number, sizes: { number }): number
 	return sizes[#sizes]
 end
 
--- (radius, height) of the PathfindingService agent for a root of size (x, y, z) standing hipHeight over the floor.
-function Pursuit.agent(x: number, y: number, z: number, hipHeight: number): (number, number)
-	local radius = roundUp(math.max(x, z) / 2 + Pursuit.RADIUS_GAP, Pursuit.RADII)
+-- (radius, height) of the PathfindingService agent for a root of size (x, y, z) (x its width, z its length: it
+-- walks along Z) standing hipHeight over the floor.
+function Pursuit.agent(x: number, y: number, _z: number, hipHeight: number): (number, number)
+	local radius = roundUp(x / 2 + Pursuit.RADIUS_GAP, Pursuit.RADII)
 	local height = roundUp(hipHeight + y, Pursuit.HEIGHTS)
 	return radius, height
 end

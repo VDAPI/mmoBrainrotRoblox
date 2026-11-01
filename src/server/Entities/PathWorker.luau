@@ -10,6 +10,7 @@
 local PathfindingService = game:GetService("PathfindingService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
 local Combat = require(ReplicatedStorage.Shared.Data.Combat)
 local Log = require(ReplicatedStorage.Shared.Util.Log)
@@ -98,6 +99,29 @@ function PathWorker.request(key: any, job: Job)
 	if not connection then
 		connection = RunService.Heartbeat:Connect(pump)
 	end
+end
+
+-- S162e Studio 2026-11-01 (most path asks around the meadows barn found no way): whether a solid part stands within
+-- `radius` studs of the ground point `point`, from just over the ground up to 2 x radius. PathfindingService keeps an
+-- agent that far from walls, so such a path end lies off its navmesh, and "no way" from or to it says nothing about the
+-- way between (a target with its back to a wall, a monster pressed into a fence). By parts' bounds (conservative: an
+-- end next to a slanted part counts as tight); terrain is left out (its slopes are walked on). `ignore` = the filter
+-- (characters and monsters).
+local clearParams = OverlapParams.new()
+clearParams.FilterType = Enum.RaycastFilterType.Exclude
+clearParams.RespectCanCollide = true
+clearParams.MaxParts = 8
+PathWorker.CLEAR_LIFT = 0.3
+
+function PathWorker.tight(point: Vector3, radius: number, ignore: { Instance }): boolean
+	clearParams.FilterDescendantsInstances = ignore
+	local center = point + Vector3.new(0, radius + PathWorker.CLEAR_LIFT, 0)
+	for _, part in Workspace:GetPartBoundsInRadius(center, radius, clearParams) do
+		if not part:IsA("Terrain") then
+			return true
+		end
+	end
+	return false
 end
 
 -- Forgets the waiting job of `key` (a removed monster).

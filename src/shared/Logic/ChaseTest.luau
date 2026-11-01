@@ -11,8 +11,9 @@ export type Scenario = "corner" | "perch" | "los" | "load"
 
 ChaseTest.SCENARIOS = { "corner", "perch", "los", "load" } :: { Scenario }
 
--- One path answer: when it was asked (os.clock), seconds queued, seconds computed, whether a path was found.
-export type PathAnswer = { at: number, waited: number, seconds: number, ok: boolean }
+-- One path answer: when it was asked (os.clock), seconds queued, seconds computed, whether a path was found and, for a
+-- "no way", whether an end of it lay within the agent's radius of a part (off the navmesh, Entities/PathWorker.tight).
+export type PathAnswer = { at: number, waited: number, seconds: number, ok: boolean, tight: boolean }
 
 ChaseTest.ANSWERS_KEPT = 8
 
@@ -22,6 +23,7 @@ export type Probe = {
 	pathAsks: number, -- paths asked (within the server's budget)
 	pathOk: number,
 	pathFails: number, -- answers with no way
+	pathTight: number, -- of them with an end against a part (Studio 2026-11-01: they do not count towards the evade)
 	pathDenied: number, -- asks the server's budget refused (tried again on a later tick)
 	repaths: number, -- new paths after a stall (Pursuit "repath")
 	-- Studio 2026-10-31 ("path 19.07s" next to "caught 5.92s" was the first path FOUND, after two answers with no way):
@@ -45,6 +47,7 @@ function ChaseTest.newProbe(immortal: boolean): Probe
 		pathAsks = 0,
 		pathOk = 0,
 		pathFails = 0,
+		pathTight = 0,
 		pathDenied = 0,
 		repaths = 0,
 		firstAskAt = nil,
@@ -62,21 +65,26 @@ function ChaseTest.newProbe(immortal: boolean): Probe
 end
 
 -- Books a path answer on the probe (Entities/Monster, from the path worker's callback).
-function ChaseTest.noteAnswer(probe: Probe, at: number, waited: number, seconds: number, ok: boolean)
+function ChaseTest.noteAnswer(probe: Probe, at: number, waited: number, seconds: number, ok: boolean, tight: boolean?)
+	local against = not ok and tight == true
 	if ok then
 		probe.pathOk += 1
 		local now = at + waited + seconds
 		probe.firstOkAt = if probe.firstOkAt then math.min(probe.firstOkAt, now) else now
 	else
 		probe.pathFails += 1
+		if against then
+			probe.pathTight += 1
+		end
 	end
 	probe.slowest = math.max(probe.slowest, seconds)
 	if #probe.answers < ChaseTest.ANSWERS_KEPT then
-		table.insert(probe.answers, { at = at, waited = waited, seconds = seconds, ok = ok })
+		table.insert(probe.answers, { at = at, waited = waited, seconds = seconds, ok = ok, tight = against })
 	end
 end
 
--- The answers as "o@1.20+0/35" (o found, f no way; @ asked at s from `start`; + s queued; / ms computed), in ask order.
+-- The answers as "o@1.20+0/35" (o found, f no way, t no way with an end against a part; @ asked at s from `start`;
+-- + s queued; / ms computed), in ask order.
 function ChaseTest.answerLine(answers: { PathAnswer }, start: number): string
 	local sorted = table.clone(answers)
 	table.sort(sorted, function(a, b)
@@ -88,7 +96,7 @@ function ChaseTest.answerLine(answers: { PathAnswer }, start: number): string
 			parts,
 			string.format(
 				"%s@%.2f+%.2f/%d",
-				if answer.ok then "o" else "f",
+				if answer.ok then "o" elseif answer.tight then "t" else "f",
 				answer.at - start,
 				answer.waited,
 				math.floor(answer.seconds * 1000 + 0.5)
@@ -216,6 +224,7 @@ export type Result = {
 	asks: number,
 	ok: number,
 	fails: number,
+	tight: number, -- of the fails, with an end against a part
 	denied: number,
 	repaths: number,
 	pressMax: number, -- AI ticks in a row
@@ -299,7 +308,8 @@ function ChaseTest.summary(r: Result, cfg: Config): string
 	local ok, fails = ChaseTest.verdict(r, cfg)
 	local parts = {
 		`{r.scenario} {r.monster} L{r.level}` .. (if r.count > 1 then ` x{r.count}` else ""),
-		`path ask {seconds(r.askAt)} found {seconds(r.okAt)} asks {r.asks} ok {r.ok} fail {r.fails} denied {r.denied} `
+		`path ask {seconds(r.askAt)} found {seconds(r.okAt)} asks {r.asks} ok {r.ok} fail {r.fails} tight {r.tight} `
+			.. `denied {r.denied} `
 			.. `repath {r.repaths} slowest {math.floor(r.slowest + 0.5)}ms`
 			.. (if r.answers ~= "" then ` [{r.answers}]` else ""),
 		`press max {r.pressMax}t total {r.pressTotal}t`,
