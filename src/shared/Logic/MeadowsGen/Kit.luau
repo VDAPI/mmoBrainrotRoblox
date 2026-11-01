@@ -161,6 +161,11 @@ function Kit.life(kind: string, x: number, y: number, z: number, r: number?)
 	table.insert(Kit.lifePoints, { kind = kind, x = x, y = y, z = z, r = r })
 end
 
+-- 2026-11-01: a perch is the middle of the client's crow (MeadowsLifeController: a 0.8 ball), SIT over what it sits
+-- on (a little into it, as if gripping); on a branch it sits PERCH_AT of the way to the tip (Blueprint.beamTop).
+Kit.SIT = 0.35
+Kit.PERCH_AT = 0.85
+
 -- W13-W14: spots the dressing (Dressing) asks the trees to keep off (read by Nature.forest).
 Kit.keepClear = {} :: { { x: number, z: number, r: number } }
 

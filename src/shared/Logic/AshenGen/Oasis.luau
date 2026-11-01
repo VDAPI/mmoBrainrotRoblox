@@ -18,7 +18,6 @@ local Oasis = {}
 type Build = Kit.Build
 
 local function boat(env: Env.Env, out: { Build })
-	local ctx = env.ctx
 	local b = Env.atSite(env, "strandedBoat", "landmark", 16)
 	local bp = b.bp
 	-- hull of planks on its keel, listing to one side
@@ -33,9 +32,10 @@ local function boat(env: Env.Env, out: { Build })
 	for k = 0, 3 do
 		bp:box(4.6, 0.2, 0.3, 0, 0.3, -6 + k * 4, o(Kit.timber, "fine"))
 	end
+	-- a vulture on the mast's top, in the listing hull's frame (2026-11-01: it hung 2.3 studs beside it)
+	bp:mark("vulturePerch", 0, 9.5 + Kit.SIT.vulturePerch, -2)
 	bp:pop()
 	Kit.claws(bp, 3.2, 2.4, 0, 1)
-	Kit.lifeAt(ctx, b, "vulturePerch", 0, 10.6, -2)
 	table.insert(out, b)
 end
 
@@ -159,7 +159,7 @@ local function palms(env: Env.Env, out: { Build })
 			n += 1
 			Env.clear(env, x, z, 4)
 			local b = Kit.build(ctx, `OasisPalm_{n}`, "trees", x, z, 0)
-			Props.palm(b.bp, 0, -0.3, 0, 0.9 + (k % 3) * 0.12, true)
+			Props.palm(b.bp, 0, -0.3, 0, 0.9 + (k % 3) * 0.12, true, nil, if k % 4 == 0 then "vulturePerch" else nil)
 			b.bp:add(
 				"ball",
 				3.6,
@@ -173,9 +173,6 @@ local function palms(env: Env.Env, out: { Build })
 				0,
 				o({ c = "#E8E4DA", m = "SmoothPlastic" }, "fine")
 			)
-			if k % 4 == 0 then
-				Kit.lifeAt(ctx, b, "vulturePerch", 0, 12.5, 2.4)
-			end
 			table.insert(out, b)
 		end
 	end

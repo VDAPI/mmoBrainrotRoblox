@@ -79,6 +79,22 @@ function MeadowsGen.all(): { Build }
 	end
 	-- 2026-11-01: no rock on a cliff's lip, no tree with a wall in its crown (Logic/KitSeat)
 	KitSeat.prune(out, MeadowsTerrain.height, trees)
+	-- 2026-11-01: the points the Builds marked in their own frames (a dead tree's crow, Blueprint.mark) in the world,
+	-- after the prune (a left-out tree takes its mark with it); no decorative crow on Crow Field (Nature.inCrowField,
+	-- in world space: the dead trees' own check ran in their tiles' frames)
+	for _, b in out do
+		local at = b.at
+		for _, m in b.bp.marks do
+			local x, z = Kit.toWorld(at.x, at.z, at.rot, m.p[1], m.p[3])
+			Kit.life(m.kind, x, at.y + m.p[2], z, m.r)
+		end
+	end
+	for i = #Kit.lifePoints, 1, -1 do
+		local p = Kit.lifePoints[i]
+		if p.kind == "perch" and Nature.inCrowField(p.x, p.z) then
+			table.remove(Kit.lifePoints, i)
+		end
+	end
 	treeCache = trees
 	cache = out
 	return out
@@ -90,7 +106,7 @@ function MeadowsGen.trees(): { Nature.TreeInfo }
 	return treeCache
 end
 
--- Points the client brings to life: "perch" (crows), "sheep", "ducks", "mist", "butterflies".
+-- Points the client brings to life: "perch" (crows; none on Crow Field), "sheep", "ducks", "mist", "butterflies".
 function MeadowsGen.life(): { Life }
 	MeadowsGen.all()
 	return Kit.lifePoints

@@ -49,6 +49,10 @@
 
 ## Niedokończone (kod)
 
+- **Ozdobne ptaki na grzędach (2026-11-01):** Krucze Pole bez ozdobnych wron, ptaki martwych drzew (Łąki, Bór,
+  Pustkowia) na końcu gałęzi swojego drzewa (`Blueprint.mark`, `tests/perches.spec`); nieobejrzane w Studio (martwe
+  drzewa Boru i Pustkowi to modele zestawu `tree:blackDead`, więc wrona może nie trafić w ich gałąź; wrona na Starym
+  Drzewie Boru i sęp na żebrach Pustkowi stoją przy modelach z zestawu, test ich nie sprawdza).
 - **Gesty na animacjach Roblox (2026-11-01):** Pozdrowienie, Wskazanie i Wiwat grają klipy R15 Roblox
   (`Data/Emotes` `clip`, `Logic/EmoteClip`, `CharacterClips.gesture`, `tests/emoteclip.spec`); nieobejrzane w Studio
   (czy klipy się wczytują, czy płynnie wchodzą i schodzą, czy ruch, atak i umiejętność je przerywają, czy inny gracz

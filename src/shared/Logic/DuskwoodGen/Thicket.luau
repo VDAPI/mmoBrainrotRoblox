@@ -9,6 +9,7 @@
 --   * the Wolf Den: the cave opens between the roots of a giant dead oak (a root arch over the mouth, bones,
 --     claw marks, fur). Pure.
 
+local Blueprint = require("../TownGen/Blueprint")
 local Env = require("./Env")
 local Flora = require("../WorldGen/Flora")
 local Kit = require("../WorldGen/Kit")
@@ -160,10 +161,15 @@ local function wolfDen(env: Env.Env, out: { Build })
 		bp:beam(side * 12.4, 19.4, 2, 0, 23, 4, 2.2, o(Kit.blackBark, "detail", { col = false }))
 		bp:beam(side * 15.5, -0.5, 5, side * 12.6, 11, 8, 1.6, o(Kit.blackBark, "detail", { col = false }))
 	end
-	-- dead branches up top
+	-- dead branches up top, a crow on the last one (2026-11-01: it hung in the air 4-6 studs off every branch tip)
 	for i = 1, 3 do
 		local a = i * 2
-		bp:beam(0, 22, 13, math.cos(a) * 9, 30, 13 + math.sin(a) * 9, 1.2, o(Kit.blackBark, "detail", { col = false }))
+		local ex, ez = math.cos(a) * 9, 13 + math.sin(a) * 9
+		bp:beam(0, 22, 13, ex, 30, ez, 1.2, o(Kit.blackBark, "detail", { col = false }))
+		if i == 3 then
+			local px, py, pz = Blueprint.beamTop(0, 22, 13, ex, 30, ez, 1.2, Kit.PERCH_AT)
+			bp:mark("perch", px, py + Kit.SIT.perch, pz)
+		end
 	end
 	Kit.claws(bp, -13, 8, 12, 1.6)
 	Kit.claws(bp, 13.2, 9, 12, 1.4)
@@ -173,7 +179,6 @@ local function wolfDen(env: Env.Env, out: { Build })
 	for i = 1, 4 do
 		Props.fur(bp, -10 + i * 4, Kit.gy(ctx, b, -10 + i * 4, -2) + 0.6, -2)
 	end
-	Kit.lifeAt(ctx, b, "perch", 6, 30, 16)
 	table.insert(out, b)
 end
 

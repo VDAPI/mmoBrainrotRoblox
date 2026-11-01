@@ -69,7 +69,8 @@ local function spireTops(env: Env.Env, out: { Build })
 		local bp = b.bp
 		if i % 2 == 0 then
 			nest(bp, 0, 0, 0, 0.9, (i % 3) + 1)
-			Kit.lifeAt(ctx, b, "vulturePerch", 1, 2.2, 0)
+			-- the vulture on the nest's floor (1.1 of its scale), among the eggs (2026-11-01: it hung 0.7 over it)
+			Kit.lifeAt(ctx, b, "vulturePerch", 1, 1.1 * 0.9 + Kit.SIT.vulturePerch, 0)
 		else
 			-- a pinnacle of rock finishing the spire's narrow top
 			bp:rbox(4.4, 9, 4, 0.6, 3.6, 0, 6, 0, -8, o(Props.basalt, "shell", { q = false }))

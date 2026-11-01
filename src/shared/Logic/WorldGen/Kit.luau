@@ -115,6 +115,25 @@ function Kit.lifeAt(ctx: Ctx, b: Build, kind: string, lx: number, ly: number, lz
 	Kit.life(ctx, kind, x, y, z, r)
 end
 
+-- 2026-11-01: a perched bird's point is the middle of the client's bird (Controllers/WorldLifeController: a crow's
+-- 0.8 ball, a vulture's body 1.2 tall), SIT[kind] over what it sits on (a little into it, as if gripping); on a branch
+-- it sits PERCH_AT of the way to the tip (Blueprint.beamTop).
+Kit.SIT = { perch = 0.35, vulturePerch = 0.5 } :: { [string]: number }
+Kit.PERCH_AT = 0.85
+
+-- 2026-11-01: the points the Builds marked in their own frames (Blueprint.mark: a species' perch, drawn in a forest
+-- tile's or a Build's frame) as life points in the world. A generator calls it once, after its last Build and
+-- KitSeat.prune (a left-out tree takes its mark with it).
+function Kit.lifeOfMarks(ctx: Ctx, builds: { Build })
+	for _, b in builds do
+		local at = b.at
+		for _, m in b.bp.marks do
+			local x, z = Kit.toWorld(at.x, at.z, at.rot, m.p[1], m.p[3])
+			Kit.life(ctx, m.kind, x, at.y + m.p[2], z, m.r)
+		end
+	end
+end
+
 -- Map sketch shapes (minimap, world map, wiki) in the format of World/Build: rect / circle / line.
 function Kit.rect(ctx: Ctx, kind: string, x: number, z: number, w: number, d: number, rot: number?)
 	table.insert(ctx.sketch, { t = "rect", x = x, z = z, w = w, h = d, r = rot, c = kind })
