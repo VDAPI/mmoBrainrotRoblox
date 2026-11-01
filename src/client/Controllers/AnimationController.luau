@@ -183,6 +183,7 @@ type MonsterState = {
 	combatUntil: number, -- the stance stays this long after the last blow given or taken
 	lastYaw: number?,
 	yawRate: number,
+	renderSpeed: number?, -- (a quadruped with pinned feet) it is posed as each frame renders, at this speed
 }
 
 local monsters: { [Model]: MonsterState } = {}
@@ -569,6 +570,7 @@ local function track(model: Instance)
 		combatUntil = -math.huge,
 		lastYaw = nil,
 		yawRate = 0,
+		renderSpeed = nil,
 	}
 	local bossDef = if s.bossId then BossMotions.get(s.bossId) else nil
 	s.deathStyle = if bossDef then bossDef.death.style elseif plan then MonsterMotions.deathFor(plan) else nil
@@ -940,6 +942,21 @@ local function bipedStep(s: MonsterState, rig: any, now: number, frame: number, 
 	MotionFx.step(s.model, s.bipedAction, now, if s.deadAt then nil else s.hitAt)
 end
 
+-- (a quadruped with pinned feet; a real spawn's chase, 2026-11-01) posed as the frame renders, by where its look then
+-- stands: posed before the simulation, its feet were pinned by the root as the last frame left it, which this frame's
+-- then moved on under them (a frame's travel of slide at a run, more as the server turns it).
+local function renderStep(dt: number)
+	local now = Clock.now()
+	local frame = Clock.dt(dt)
+	for model, s in monsters do
+		local speed = s.renderSpeed
+		local rig = s.biped
+		if speed and rig and rig.kind == "quad" and model.Parent and s.root.Parent then
+			bipedStep(s, rig, now, frame, speed)
+		end
+	end
+end
+
 -- Template animation: the look clones of dead bosses playing the rest of their deaths (by the clone).
 local ghosts: { [Model]: { rig: any, input: { [string]: any } } } = {}
 
@@ -1006,6 +1023,7 @@ local function step(dt: number)
 		s.lastRoot = rootAt
 		if not animated[model] or s.ghosted then
 			MotionFx.pause(model)
+			s.renderSpeed = nil
 			continue
 		end
 		local velocity = s.root.AssemblyLinearVelocity
@@ -1016,7 +1034,13 @@ local function step(dt: number)
 		s.cycle = Gait.advance(s.cycle, frame, speed, s.scale)
 		local rig = s.biped
 		if rig then
-			bipedStep(s, rig, now, frame, speed)
+			if rig.kind == "quad" and rig.motion.style.pinFeet then
+				-- (posed as the frame renders: renderStep)
+				s.renderSpeed = speed
+			else
+				s.renderSpeed = nil
+				bipedStep(s, rig, now, frame, speed)
+			end
 			continue
 		end
 		local clips = s.clips
@@ -2077,6 +2101,7 @@ function AnimationController.Start()
 		stepMounts(dt)
 		stepCharacters()
 	end)
+	RunService.PreRender:Connect(renderStep)
 	-- S96: mounts arrive with their rider (one frame lets the attributes settle)
 	for _, instance in CollectionService:GetTagged(MOUNT_TAG) do
 		trackMount(instance)

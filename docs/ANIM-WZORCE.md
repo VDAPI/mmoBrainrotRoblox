@@ -1036,6 +1036,37 @@ feet were dragged round with it; a blow taking the feet over slid them onto its 
   `bone_40`); the toe tips 0.06-0.08 stud lower than its stance as the heel peels, so few frames are within 0.08 of its
   lowest. Measure `bone_44` for the hind right.
 
+#### The same chase, second capture (2026-11-01)
+
+Studio on `bc8bb891` (1319 frames at 60 fps, 1003 at the run): the Root bone at most 12.2° a frame, but the left
+stances slid a median 0.40 / 0.59 stud (up to 1.02) and the front-right paw was down in one stance in 20 s. Three
+causes, none of which the sim had shown:
+
+- **The pose was a frame behind the root it is drawn on.** AnimationController posed in `PreSimulation`, pinning the
+  feet by the root as the last frame's simulation left it; that frame's simulation then moves the root (and the look
+  welded to it) on before it renders, so every planted foot is drawn off its pin by one frame's travel and turn of the
+  root (0.1-0.2 stud at the chase's speeds, more as the server turns it; the sim with a root one frame late: stances a
+  median 0.17-0.22, up to 0.43). A quadruped with pinned feet is now posed in `PreRender`, by where its look stands as
+  the frame renders (the rest still in `PreSimulation`).
+- **The gait flipped between trot and gallop a few times a second.** The server's chase runs in bursts (MoveTo short
+  of the target at 13 st/s, 5 ticks a second), the replicated velocity reads 13 or 0, and the pace took the larger of it
+  and the root's travel: the intent's step down to a trot came and went each burst, and the two gaits' weights sat at
+  about 0.4 / 0.6 the whole chase. Their footfalls differ, so a foot down in one is up in the other: the blend held the
+  front-right paw 0.07 stud up (never within 0.08 of its lowest) or kept it from being down at all. Now the pace is the
+  root's travel over 0.2 s (the velocity only while the track is shorter), the step down reads that pace eased (rate 3)
+  and holds the gait it gave until the pace is 15% past its edge.
+- **A blow's leg weight left by rounding** (its weight times `1 - roam`, the roam a hair under 1) counted as a blow
+  taking the feet over: no pin stepped or let go for the whole blow while the body ran on, the feet dragged out of reach
+  and hung in the air. A weight under 0.001 is none, and a blow that no longer gains on the gait (one a roam shares the
+  legs with tops out short of all of them) hands its feet over as one that has them all.
+- Sim of the same chase, Studio's measure (within 0.08 of the lowest, per stance its longest travel): every foot down
+  28-49% of the frames (before: 4-22%, the front right 4%), stances a median 0.00-0.03, at most 0.11 (with the pose a
+  frame late, as before the move to `PreRender`: medians 0.17-0.22). The spec "chases a target round a circle" also
+  asks every foot to be down a fifth of the time.
+- **Studio's measure** should read the bones where they are drawn: in `PreSimulation` (or `PreAnimation`), when the
+  root still stands where it rendered and the pose is the one `PreRender` set; a read in `Heartbeat` pairs that pose
+  with the root the next frame renders. `bone_44` for the hind right.
+
 ## 6. F5 Rigid models: caveSpider
 
 ### 6.1 What a rigid model can do
