@@ -28,3 +28,9 @@ Lista dla laptopa (Studio przez MCP, bez myszy). Zmiany z chmury na `main`. Po k
 1. `/animlab mob vaelgrath idle`. Gdy pyska nie znajdzie, Studio wypisze teraz `[MeshJaw] … the side view` i mapę głowy z boku (czubek pyska po lewej): `#` ściany, `o` otwór wzięty za pysk, `.` inne szczeliny, `|` linia `from`.
 2. Dostrój w `Data/BipedRigs.luau` `jaw("vaelgrath")`: `bridge` (ile komórek zęba nie dzieli pyska, domyślnie 3), `minColumns`, `gapMin`, `from`, `cells`. Obejrzyj `roar`, `bite`, `breath`, `deathDragon`: dolna szczęka rusza się cała, górna i czaszka stoją, nic się nie rwie.
 3. Jeśli się nie da, wyślij mapę do chmury.
+
+## Ozdobne wrony w modelu (2026-11-02)
+1. Łąki przy martwym drzewie poza Kruczym Polem i Mroczny Bór: wrona to model wrony z Tripo, nie kule. Siedzi na gałęzi łapami (nie wisi nad nią, nie wchodzi w nią), ma złożone skrzydła.
+2. Rozmiar: około 1,5 studa długości. Za duża lub za mała: `DecorCrow.SCALE` w `src/client/Anim/DecorCrow.luau`; wysokość nad gałęzią: `DecorCrow.SIT`.
+3. Podejdź: odlatuje machając skrzydłami; po odejściu wraca po 45 s.
+4. Wejście na mapę bez zacięcia (modele powstają po 3 na klatkę) i w konsoli brak błędów `[MeadowsLifeController]` / `WorldLifeController`.

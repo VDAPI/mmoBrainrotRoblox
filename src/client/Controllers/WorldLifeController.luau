@@ -2,7 +2,8 @@
 -- Life of the shaped regions on the client (S45; the Whispering Meadows keep their MeadowsLifeController). Works on
 -- every map of the Logic/WorldGen registry but the Meadows, from the generator's life points (`life()`) and a
 -- registry of kinds (S46/S47 add theirs to EMITTERS or the animal kinds). Nothing here is replicated, collides or can be clicked.
---   * perch: crows on black dead trees, the gallows and the witch's hut; they fly off when the player comes close
+--   * perch: crows on black dead trees, the gallows and the witch's hut (owner 2026-11-02: in the carrion crow's
+--     model, client/Anim/DecorCrow); they fly off when the player comes close
 --     and come back later,
 --   * batRoost: bats hanging under the overhangs of the Blood Cliffs; at dusk and at night they swarm out around
 --     the roost, a running player scatters them,
@@ -48,6 +49,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local MapTerrain = require(ReplicatedStorage.Shared.Logic.MapTerrain)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local RegionTerrain = require(ReplicatedStorage.Shared.Logic.RegionTerrain)
+local DecorCrow = require(script.Parent.Parent.Anim.DecorCrow)
 local State = require(script.Parent.Parent.UI.State)
 local WorldGen = require(ReplicatedStorage.Shared.Logic.WorldGen)
 
@@ -816,6 +818,9 @@ type Animal = {
 	state: string, -- "rest" | "fly" | "away" | "swarm" | "drift"
 	timer: number,
 	from: Vector3?,
+	crow: DecorCrow.Crow?, -- a crow in the carrion crow's model (owner 2026-11-02, client/Anim/DecorCrow)
+	balls: boolean?, -- no model to make: the balls stay
+	placed: boolean?, -- the perched model stands where it sits
 }
 
 local function model(kind: string): (Model, { BasePart })
@@ -1008,6 +1013,18 @@ local function pose(a: Animal, now: number)
 		local flap = if flying then math.max(0, math.sin(now * 1.3 + a.phase)) ^ 8 * 0.8 + 0.05 else 1.2
 		list[3].CFrame = frame * CFrame.new(-0.6, 0.2, 0) * CFrame.Angles(0, 0, flap) * CFrame.new(-1.4, 0, 0)
 		list[4].CFrame = frame * CFrame.new(0.6, 0.2, 0) * CFrame.Angles(0, 0, -flap) * CFrame.new(1.4, 0, 0)
+	elseif a.kind == "crow" and a.crow then
+		local crow = a.crow
+		if a.state == "rest" then
+			if not a.placed then
+				DecorCrow.place(crow, p, a.phase)
+				a.placed = true
+			end
+		else
+			local dir = a.target - (a.from or a.target)
+			DecorCrow.place(crow, p, if dir.Magnitude > 0.1 then math.atan2(-dir.X, -dir.Z) else a.phase)
+			a.placed = false
+		end
 	elseif a.kind == "crow" then
 		local dir = a.target - (a.from or a.target)
 		local yaw = if dir.Magnitude > 0.1 then math.atan2(-dir.X, -dir.Z) else a.phase
@@ -1082,6 +1099,9 @@ local function step(a: Animal, dt: number, now: number, player: Vector3, speed: 
 			a.timer += dt
 			local k = math.clamp(a.timer / 3, 0, 1)
 			a.pos = (a.from :: Vector3):Lerp(a.target, k * k * (3 - 2 * k))
+			if a.crow then
+				DecorCrow.fly(a.crow, dt)
+			end
 			if k >= 1 then
 				a.state, a.timer = "away", 0
 			end
@@ -1089,6 +1109,10 @@ local function step(a: Animal, dt: number, now: number, player: Vector3, speed: 
 			a.timer += dt
 			if a.timer > RETURN_AFTER and d > LIFE_RADIUS * 0.5 then
 				a.state, a.pos, a.timer = "rest", a.home, 0
+				if a.crow then
+					DecorCrow.perch(a.crow)
+					a.placed = false
+				end
 			end
 			return false
 		end
@@ -1454,6 +1478,17 @@ local function tick(dt: number)
 		-- low detail keeps every other wisp
 		if a.kind == "wisp" and lowDetail() and math.floor(a.phase * 10) % 2 == 1 then
 			visible = false
+		end
+		if visible and a.kind == "crow" and not a.crow and not a.balls then
+			-- a crow coming into view puts on its model (a few a frame; DecorCrow.make)
+			local crow, later = DecorCrow.make(math.floor(a.phase * 1000), folder)
+			if crow then
+				a.model:Destroy()
+				a.model, a.parts, a.crow, a.placed = crow.model, {}, crow, false
+				crow.perched = a.state == "rest"
+			elseif not later then
+				a.balls = true
+			end
 		end
 		if visible then
 			pose(a, now)

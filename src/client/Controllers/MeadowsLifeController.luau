@@ -5,7 +5,8 @@
 --     falling leaves in the forest,
 --   * butterflies over the glades (by the shrine and the farm, and around the player on the meadow),
 --   * decorative animals from MeadowsGen.life(): crows on dead trees and the frosted tower (they fly off when the
---     player comes close and come back later; owner 2026-11-01: none on Crow Field, whose crows are monsters), sheep
+--     player comes close and come back later; owner 2026-11-01: none on Crow Field, whose crows are monsters; owner
+--     2026-11-02: in the carrion crow's model, client/Anim/DecorCrow, the balls only without it), sheep
 --     grazing in the farm's pen, ducks on Toad Pond,
 --   * birds taking off from a tree when the player runs past it.
 -- Cheap: animals only within LIFE_RADIUS, a few parts each, updated at most 30 times a second; with the "World
@@ -23,6 +24,7 @@ local DayCycle = require(ReplicatedStorage.Shared.Logic.DayCycle)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local MeadowsGen = require(ReplicatedStorage.Shared.Logic.MeadowsGen)
 local MeadowsTerrain = require(ReplicatedStorage.Shared.Logic.MeadowsTerrain)
+local DecorCrow = require(script.Parent.Parent.Anim.DecorCrow)
 local State = require(script.Parent.Parent.UI.State)
 
 local MeadowsLifeController = {
@@ -217,6 +219,9 @@ type Animal = {
 	state: string, -- "rest" | "walk" | "fly" | "away"
 	timer: number,
 	from: Vector3?,
+	crow: DecorCrow.Crow?, -- a crow in the model (client/Anim/DecorCrow), else its balls
+	balls: boolean?, -- no model to make: the balls stay
+	placed: boolean?, -- the perched model stands where it sits
 }
 
 local animals: { Animal } = {}
@@ -318,10 +323,38 @@ local function groundY(world: Vector3): number
 	return map.offset.y + MeadowsTerrain.height(world.X - map.offset.x, world.Z - map.offset.z)
 end
 
+-- A crow coming into view puts on its model (a few a frame; DecorCrow.make).
+local function dressCrow(a: Animal)
+	if a.crow or a.balls then
+		return
+	end
+	local crow, later = DecorCrow.make(math.floor(a.phase * 1000), folder)
+	if crow then
+		a.model:Destroy()
+		a.model, a.parts, a.crow, a.placed = crow.model, {}, crow, false
+		crow.perched = a.state == "rest"
+	elseif not later then
+		a.balls = true
+	end
+end
+
 local function pose(a: Animal, now: number)
 	local p = a.pos
 	local list = a.parts
-	if a.kind == "crow" or a.kind == "bird" then
+	local crow = a.crow
+	if crow then
+		if a.state == "rest" then
+			if not a.placed then
+				DecorCrow.place(crow, p, a.phase)
+				a.placed = true
+			end
+		else
+			local dir = a.target - (a.from or a.target)
+			local yaw = if dir.Magnitude > 0.1 then math.atan2(-dir.X, -dir.Z) else a.phase
+			DecorCrow.place(crow, p, yaw)
+			a.placed = false
+		end
+	elseif a.kind == "crow" or a.kind == "bird" then
 		local dir = a.target - (a.from or a.target)
 		local yaw = if dir.Magnitude > 0.1 then math.atan2(-dir.X, -dir.Z) else a.phase
 		local frame = CFrame.new(p) * CFrame.Angles(0, yaw, 0)
@@ -355,6 +388,7 @@ local function stepAnimal(a: Animal, dt: number, now: number, player: Vector3, v
 		return
 	end
 	if a.kind == "crow" then
+		dressCrow(a)
 		local d = (player - a.home).Magnitude
 		if a.state == "rest" and d < FLEE_RADIUS then
 			-- take off: up and away from the player
@@ -366,6 +400,9 @@ local function stepAnimal(a: Animal, dt: number, now: number, player: Vector3, v
 			a.timer += dt
 			local t = math.clamp(a.timer / 3, 0, 1)
 			a.pos = (a.from :: Vector3):Lerp(a.target, t * t * (3 - 2 * t))
+			if a.crow then
+				DecorCrow.fly(a.crow, dt)
+			end
 			if t >= 1 then
 				a.state, a.timer = "away", 0
 				a.model.Parent = nil
@@ -375,6 +412,10 @@ local function stepAnimal(a: Animal, dt: number, now: number, player: Vector3, v
 			a.model.Parent = nil
 			if a.timer > RETURN_AFTER and d > LIFE_RADIUS * 0.5 then
 				a.state, a.pos, a.timer = "rest", a.home, 0
+				if a.crow then
+					DecorCrow.perch(a.crow)
+					a.placed = false
+				end
 			end
 			return
 		end
