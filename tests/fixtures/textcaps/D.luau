@@ -13,6 +13,7 @@ return {
 		["alchemy.group.travel"] = { surface = "tab", chars = 16, reason = "tab pl 16 > 12 chars" },
 		["auction.cancel.confirm"] = { surface = "modalBody", chars = 101, reason = "modalBody en 101 > 90 chars" },
 		["auction.sell.rules"] = { surface = "infoTip", chars = 157, reason = "infoTip pl 4 > 3 sentences" },
+		["autoGrind.desc"] = { surface = "infoTip", chars = 267, reason = "infoTip en 267 > 240 chars" },
 		["buildset.copy.message"] = { surface = "modalBody", chars = 93, reason = "modalBody pl 93 > 90 chars" },
 		["character.suggest"] = { surface = "button", chars = 26, reason = "button pl 25 > 18 chars" },
 		["huntshop.group.consumable"] = { surface = "tab", chars = 19, reason = "tab pl 19 > 12 chars" },

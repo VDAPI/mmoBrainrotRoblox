@@ -163,6 +163,8 @@ for _, field in
 		{ surface = "reply", field = "Text", call = "Button", arg = 2, key = "^quest%.[%w_]+%.say%.[%w_]+$" },
 		{ surface = "button", field = "Text", call = "Button", arg = 2 },
 		{ surface = "infoTip", field = "Info" },
+		-- the (i) of a card spec: PremiumShop/Cards, WorldMap/DetailCard and QuestBoard pass it to InfoTip
+		{ surface = "infoTip", field = "info", under = "src/client/UI/" },
 		{ surface = "windowTitle", field = "titleKey" },
 		-- the names in the keybind list (Settings > Keys)
 		{ surface = "keyName", field = "labelKey", under = "src/shared/Data/Keybinds.luau" },

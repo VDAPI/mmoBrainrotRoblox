@@ -295,6 +295,7 @@ describe("textcaps T4: coverage of the scan", function()
 			{ "boss.cast.lethal", "alert" }, -- the cast bar
 			{ "rework2.body", "modalBody" },
 			{ "rework2.body.info", "modalDetails" },
+			{ "autoGrind.desc", "infoTip" }, -- a card spec's `info` (PremiumShop/Cards)
 			{ "hud.auto", "hudTip" },
 			{ "pvp.dot.off", "hudTip" },
 			{ "window.inventory.title", "windowTitle" },
