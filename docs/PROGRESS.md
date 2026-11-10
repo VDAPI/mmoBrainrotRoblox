@@ -57,11 +57,17 @@
   karta samouczka obok elementu (`Logic/TutorialTile`), przesunięte panele poza zastrzeżonymi miejscami, czerwony błysk
   pod oknami, teksty A w limitach `Logic/TextCaps` (lista A w `tests/fixtures/textcaps` pusta: dymek PvP w jednej linii
   z zasadami w szczegółach, krótsze dymki „Auto”, Łowów i mikstur, przyciski ekranu śmierci, „Questy” w tropicielu i
-  samouczku); nieobejrzane w Studio (kolumna z „+N” na niskim oknie, nagłówki i zwijanie paneli, okienko „Auto”,
-  skrócony czat, panel areny i cel pod paskiem bossa, siatka telefonu na trzech telefonach, karta samouczka na
-  telefonie, upuszczenie panelu na pasie wiadomości, szczegóły dymków PvP, Łowów i mikstur pod klawiszem i przy
-  dłuższym przytrzymaniu, „[1]” i „[2]” na ekranie śmierci tylko z klawiaturą, dymki paska prowadzenia, pigułki
-  kolejki areny i linii Inwazji). Z planu zostaje własny układ tabletu (listy `KNOWN` i `THIN` w `hudzones.spec`).
+  samouczku), po przeglądzie kolumna bez pętli Fusion (`tests/FusionGraph`, `hudslots.spec`), stos telefonu o
+  szerokości 210 z listą „+N” na ekranie, panel areny na PC w swoich 68 px, okienko „Auto” w swoim miejscu, wartość
+  nagłówka tylko w zwiniętym panelu, cały licznik celu w tropicielu, przytrzymanie bez naciśnięcia na dotyku;
+  nieobejrzane w Studio (kolumna z „+N” na niskim oknie, nagłówki i zwijanie paneli, okienko „Auto”, skrócony czat,
+  panel areny i cel pod paskiem bossa, siatka telefonu na trzech telefonach, karta samouczka na telefonie, upuszczenie
+  panelu na pasie wiadomości, szczegóły dymków PvP, Łowów i mikstur pod klawiszem i przy dłuższym przytrzymaniu, „[1]”
+  i „[2]” na ekranie śmierci tylko z klawiaturą, dymki paska prowadzenia, pigułki kolejki areny i linii Inwazji,
+  wydarzenie świata, które startuje w trakcie gry, i boss, który rośnie po starcie, panel wyniku i powrotu areny na
+  PC, lista „+N” i zwinięty tropiciel na telefonie, licznik celu z nazwą skróconą w pikselach, przytrzymanie
+  przełącznika PvP, Płaszcza, Łowów i Mikstur na dotyku). Z planu zostaje własny układ tabletu (listy `KNOWN` i `THIN`
+  w `hudzones.spec`).
 - **Plan UI 2026-11-10, pakiet F (fundament):** zasady `docs/UI-ZASADY.md`, limity tekstu na powierzchnię
   (`Logic/TextCaps`, listy „do skrócenia” pakietów A–E), domyślne zwinięcie na urządzenie (`Data/Folds`,
   `Section.state`), czyste API układu (`Logic/HudZones`, `WindowFrame`, `Popover`), tokeny `Theme` i zaślepka

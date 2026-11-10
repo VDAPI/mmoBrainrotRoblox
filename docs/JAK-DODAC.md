@@ -310,4 +310,10 @@
   czwarty argument `Tooltip.attach` zwracany wprost przez `scope:Computed(function(use) return Text.get(...) end)`
   (tak `tests/TextScan` widzi szczegóły bez limitu; tekst trzymany w zmiennej lokalnej liczy jako linia HUD), a „i”
   nagłówka to `Info` wpisane wprost w propsy `PanelHeader`. Lista A w `tests/fixtures/textcaps/A.luau` jest pusta, więc
-  za długi nowy tekst A wywraca `textcaps.spec`.
+  za długi nowy tekst A wywraca `textcaps.spec`. Po przeglądzie pakietu A: pudełko w `HudSlots.join` liczy wysokość z
+  wyboru gracza (`open`) i nigdy nie czyta kolumny (`forced`, zwinięcia, miejsca ani slotu), bo kolumna wraca do niego
+  przez `joined` i Fusion przerywa pętlę; `hudslots.spec` sprawdza to w źródłach i na prawdziwym Fusion
+  (`tests/FusionGraph`). Element stosu telefonu ma najwyżej `PhoneHud.PANEL_WIDTH` (210), panel w strefie bierze
+  `HudSlots.sizeOf` i mieści w niej swoje wiersze (bez `AutomaticSize`), `Value` nagłówka stoi tylko w zwiniętym panelu
+  (`KeepValue`, gdy treść jej nie mówi), przytrzymanie dłuższe niż `PotionPress.TIP_HOLD` nie naciska przycisku HUD z
+  dymkiem na dotyku (`hudtips.spec`), a wywołanie tekstu podaje każdy znacznik klucza (`textargs.spec`).

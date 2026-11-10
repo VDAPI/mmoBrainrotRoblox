@@ -1701,20 +1701,25 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   portretem pokazuje najwyżej 9 ikon (telefon 3) i „+N”, którego dymek wymienia resztę. Miejsce na kwestię NPC stoi pod
   ostatnim rzędem drużyny (`HudZones.barkSlot`), a czat Robloxa na PC zostaje w lewym dolnym rogu i tylko skraca się
   (najwyżej do połowy), żeby na nie nie wchodzić. Panel meczu i powrotu areny stoi w paśmie celu pod ramką celu i jej
-  efektami (przy 1080p y 172..240), lista drużyn areny jest w kolumnie jako „arena”, a przy pasku bossa lochu dodatek
-  albo gracz jako cel stoi pod paskiem (y 142..234). **Kolumna** (`Logic/HudStack.place`) nigdy nie schodzi za swoją
-  podłogę (na PC h − 192): bez miejsca tropiciel kurczy się do nagłówka i dwóch linii, potem panele od najniższego
-  zwijają się do linii nagłówka (tropiciel ostatni, do samego nagłówka), a gdy i to się nie mieści, element staje w
-  zapasowej kolumnie obok (pod pasem wiadomości), a najniższe chowają się za plakietką „+N” przy podłodze
+  efektami (przy 1080p y 172..240) i mieści się w tych 68 px: po meczu wynik z żetonami stoi jedną linią w miejscu linii
+  rundy, panel powrotu to krótkie linie (wynik, żetony, odliczanie) obok przycisku „Wróć teraz”, a powód żetonów jest w
+  szczegółach dymka wyniku (przegląd pakietu A). Lista drużyn areny jest w kolumnie jako „arena”, a przy pasku bossa
+  lochu dodatek albo gracz jako cel stoi pod paskiem (y 142..234). **Kolumna** (`Logic/HudStack.place`) nigdy nie
+  schodzi za swoją podłogę (na PC h − 192): bez miejsca tropiciel kurczy się do nagłówka i dwóch linii, potem panele od
+  najniższego zwijają się do linii nagłówka (tropiciel ostatni, do samego nagłówka), a gdy i to się nie mieści, element
+  staje w zapasowej kolumnie obok (pod pasem wiadomości), a najniższe chowają się za plakietką „+N” przy podłodze
   (`Hud/StackChip`); jej lista przywraca wybrany element, a inne ustępują mu miejsca. Zwinięcie przez kolumnę nie jest
   wyborem gracza: panel otwiera się sam, gdy miejsce wraca. **Nagłówek panelu** (`Hud/PanelHeader`): jedna linia (PC 32,
   tablet 44, telefon 52) z ▾/▸, nazwą (najwyżej 20 znaków), jedną wartością (HP bossa, czas, wynik) i „i” ze
-  szczegółami; cała linia zwija i rozwija. Boss świata, wydarzenie świata, Krwawy Księżyc, turniej i arena pamiętają
-  zwinięcie na koncie (`Data/Folds/Hud`: `hudWorldBoss`, `hudWorldEvent`, `hudBloodMoon`, `hudTourney`, `hudArena`;
-  domyślnie otwarte na PC i tablecie, zwinięte na telefonie), Elity II dalej w `TrackerFold` „e2”. Tropiciel ma nagłówek
-  i nagłówki grup w tym samym stylu (grupy i ich domyślne zwinięcie bez zmian), a cel questu to jedna linia do 32
-  znaków, cały tekst w dymku. **Telefon** (warstwa pod paskiem Robloxa, `PhoneHud.area`): pod portretem jeden rząd z
-  jednym przyciskiem „Auto” (Płaszcz Przynęty, Samodzielne Łowy i Samoczynne Mikstury w jego okienku),
+  szczegółami; cała linia zwija i rozwija. Wartość stoi w nagłówku, gdy panel jest zwinięty; otwarty mówi ją w treści
+  („Zostało 12:34”, HP na pasku bossa), więc nagłówek jej nie powtarza, poza podsumowaniem grupy tropiciela i
+  przedziałem poziomów turnieju na żywo, których treść nie podaje (przegląd pakietu A). Boss świata, wydarzenie świata,
+  Krwawy Księżyc, turniej i arena pamiętają zwinięcie na koncie (`Data/Folds/Hud`: `hudWorldBoss`, `hudWorldEvent`,
+  `hudBloodMoon`, `hudTourney`, `hudArena`; domyślnie otwarte na PC i tablecie, zwinięte na telefonie), Elity II dalej w
+  `TrackerFold` „e2”. Tropiciel ma nagłówek i nagłówki grup w tym samym stylu (grupy i ich domyślne zwinięcie bez
+  zmian), a cel questu to jedna linia do 32 znaków: licznik („0/12”) stoi cały na końcu, skraca się tylko nazwa przed
+  nim, a obszar i cały tekst są w dymku. **Telefon** (warstwa pod paskiem Robloxa, `PhoneHud.area`): pod portretem jeden
+  rząd z jednym przyciskiem „Auto” (Płaszcz Przynęty, Samodzielne Łowy i Samoczynne Mikstury w jego okienku),
   błogosławieństwem, eliksirami i efektami; pod nim lewy stos linii po 52 px od y 153 do min(H − 28, 0,58·H − 8), nad
   strefą kciuka: kafelki drużyny (najwyżej 3, dotknięcie zaznacza członka, reszta w „+N”), arena, panele wydarzeń, Elity
   II, prowadzenie (gdy nie mieści się w środku) i tropiciel, a co się nie mieści, za „+N” na końcu ostatniej linii. W
@@ -1731,16 +1736,19 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   dymka (klawisz szczegółów, na dotyku dłuższe przytrzymanie) albo „i” nagłówka; w linii i dymku HUD nie ma słów
   sterowania ani „(K)” (klawisz stoi na plakietce slotu). Kropka PvP mówi jedną linią stan albo odliczanie
   („Przełączanie PvP: 7 s”), a zasady strefy (w żółtej także to, że kropka jest przełącznikiem) są w szczegółach; tak
-  samo przełącznik na dotyku („Twoje PvP: WŁĄCZONE”). „Auto”: „Automaty: przynęta, łowy i mikstury”; Samodzielne Łowy
-  mówią stan, a bank i dzisiejszy czas są w szczegółach; Płaszcz Przynęty „włączony · 2 h”. Slot mikstury podaje nazwę
-  (pusty: rodzaj mikstury), Eliksir Pełni w tej samej linii czas i dzisiejsze użycia („Eliksir Pełni · za 2:30 · dziś
-  3/10”), a wybór prawym przyciskiem stoi w szczegółach na PC. Ekran śmierci odpowiada na „Gdzie chcesz się odrodzić?”
-  miejscem („Miasto (za darmo)”, „Tutaj (◉ 120)”, „U wejścia do lochu”), pominięcie odliczania to „Teraz za 5 ◆”, a
-  „[1]” i „[2]” stoją przed wyborem tylko przy klawiaturze. Pasek prowadzenia: cel i odległość, mapa po drodze w dymku;
-  pigułka kolejki areny „⌛ 1v1 · 0:42”, czekający (albo zakres rankingu kolejki globalnej) w dymku; Inwazja „Faza 2/6”,
-  potwory i pokonani w dymku linii; podpis obszaru „Polana Królików · 1–4”; cała linia bossa świata na innej mapie w „i”
-  nagłówka. Słowa: grupa tropiciela i samouczek mówią „Questy”, „Cele” zostaje tylko nagłówkiem tropiciela (pytanie UI 3
-  w odpowiedzi domyślnej).
+  samo przełącznik na dotyku: mówi to, co kropka (w czerwonej strefie „Czerwona strefa: PvP zawsze włączone”), a nie
+  stan samego przełącznika. Przytrzymanie, które pokazało dymek, nie naciska przycisku (przełącznik i kropka PvP,
+  Płaszcz Przynęty, Samodzielne Łowy, Samoczynne Mikstury, jak pasek mikstur i wiersze tropiciela). „Auto”: „Automaty:
+  przynęta, łowy i mikstury”; Samodzielne Łowy mówią stan, a bank i dzisiejszy czas są w szczegółach; Płaszcz Przynęty
+  „włączony · 2 h”, a wstrzymany „wstrzymany · 2 h” z powodem w szczegółach (tak samo Samoczynne Mikstury). Slot
+  mikstury podaje nazwę (pusty: rodzaj mikstury), Eliksir Pełni w tej samej linii czas i dzisiejsze użycia („Eliksir
+  Pełni · za 2:30 · dziś 3/10”), a wybór prawym przyciskiem stoi w szczegółach na PC. Ekran śmierci odpowiada na „Gdzie
+  chcesz się odrodzić?” miejscem („Miasto (za darmo)”, „Tutaj (◉ 120)”, „U wejścia do lochu”), pominięcie odliczania to
+  „Teraz za 5 ◆”, a „[1]” i „[2]” stoją przed wyborem tylko przy klawiaturze. Pasek prowadzenia: cel i odległość, mapa
+  po drodze w dymku; pigułka kolejki areny „⌛ 1v1 · 0:42”, czekający (albo zakres rankingu kolejki globalnej) w dymku;
+  Inwazja „Faza 2/6”, potwory i pokonani w dymku linii; podpis obszaru „Polana Królików · 1–4”; cała linia bossa świata
+  na innej mapie w „i” nagłówka. Słowa: grupa tropiciela i samouczek mówią „Questy”, „Cele” zostaje tylko nagłówkiem
+  tropiciela (pytanie UI 3 w odpowiedzi domyślnej).
 - **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×720; właściciel 2026-11-10: bez zakładek, jak przed 2026-10-31: z lewej imię, ekwipunek i sekcja „Zestawy i tytuł”, w środku plecak, z prawej sekcja „Statystyki”; drugorzędne części zwijają się pod jednym nagłówkiem (▾ otwarta, ▸ zwinięta, cały nagłówek klikalny, `UI/Components/Section`, stan na koncie): Statystyki domyślnie otwarte, zwinięte pokazują plakietkę wolnych punktów; Zestawy i tytuł (od 20. poziomu albo z pierwszym tytułem, `Logic/CharacterSections`) domyślnie zwinięte do jednej linii z aktywnym zestawem i tytułem, opis zestawów za „i”; przyciski statystyk tylko z wolnymi punktami, „Rozdaj jak zaleca ścieżka” tylko z planem; B otwiera i zamyka okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na telefonie dwie kolumny: z lewej imię, ekwipunek i obie sekcje (przewijane), z prawej plecak; szeroki tablet jak PC; tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (S139, DESIGN-18 §12: zakładki pul broni i „Kierunki”, drzewko według wspólnej drabiny, szczegóły po kliknięciu, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Ikony przedmiotów (S118): obrazek właściciela (PNG), gdy jego atlas jest wgrany i wczytany, inaczej ikona rysowana kodem, a bez niej symbol; przedmioty questowe z obrazkiem w dzienniku questów (§5.3b).
 - Tooltip przedmiotu (S134g, owner 2026-10-15): nazwa w kolorze rzadkości; „Rodzaj · Kategoria z chwytem · Poziom N · Klasy”

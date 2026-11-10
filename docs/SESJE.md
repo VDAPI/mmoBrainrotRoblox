@@ -14970,6 +14970,44 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   - po zmianach kodu innym pakietom przypadły klucze bez czytelnika w plikach A: `arena.result3.toast` i
     `arena.result3.drawAnnounce` (B; `drawAnnounce` skrócony do limitu banera, żeby nie wszedł na listę B),
     `arena.inQueue` (E, bez powierzchni) i `stat.*` (D; `BlessingBadge` bierze `nameKey` z `Data/Stats`).
+- Przegląd pakietu A (2026-11-10): 15 uwag, wszystkie poprawione nowymi commitami; obie uwagi o kompletności mówiły o
+  kolumnie, która w grze nie działała tak, jak w czystym modelu.
+  - Kolumna: pudełko panelu w `HudSlots.join` czytało zwinięcie przez kolumnę (`HudSlots.forced`), a `join` ustawia
+    `joined` w trakcie swojego `Observer`, więc Fusion przerywał pętlę („infinite loop”), zanim kolumna zobaczyła nową
+    wysokość: wydarzenie świata nie dostawało miejsca, a boss po starcie stał nad tropicielem. Pudełko mówi teraz
+    wysokość z wyboru gracza (`open`), kolumna sama zwija je do linii, a panel dalej rysuje się zwinięty za `forced`;
+    `UI/HudDrag` sprawdza zapisane miejsce tą samą wysokością. `tests/FusionGraph` ładuje moduły klienta pod Lune z
+    prawdziwym rdzeniem Fusion 0.3 z `Packages`, a `hudslots.spec` sprawdza start, wzrost, zwinięcie i ponowne otwarcie
+    przy 1920×1000 i 1920×760 (bez błędu Fusion, bez nakładania) oraz źródła: żadne pudełko nie czyta kolumny.
+  - Telefon: każdy element stosu ma najwyżej `PhoneHud.PANEL_WIDTH` 210 (pasek drużyny `PARTY_WIDTH` 209, tropiciel
+    `TRACKER_WIDTH` 210), więc staje obok „+N” w ostatniej linii (szersze chowały się za nim i wybór z listy nic nie
+    przywracał); lista „+N” (`HudStack.chipList`, `StackChip` jako `ScrollingFrame`) nie wychodzi nad warstwę i
+    przewija nadmiar; nagłówek tropiciela ma wysokość `PanelHeader` (tablet 44, telefon 52), więc zwinięty tropiciel to
+    jedna linia stosu.
+  - Arena na PC: panel meczu i powrotu biorą rozmiar strefy (`HudSlots.sizeOf`, 420×68): wynik po meczu stoi w miejscu
+    linii rundy, powrót to krótkie linie (wynik 3v3, żetony, odliczanie) obok „Wróć teraz” wysokości `MinTouch`, a
+    powód żetonów jest w szczegółach dymka wyniku; telefon ma swój panel powrotu w stosie (`ArenaReturnStack`).
+  - Okienko „Auto” ma rozmiar swojego miejsca (PC 170×72 z mapy stref, telefon `PhoneHud.AUTO_POPOVER` 188×68) i
+    węższe o każdą część, której konto nie ma; było 200×80 i na PC zachodziło na pasek bossa lochu.
+  - Przyciski HUD: przełącznik PvP na dotyku mówi stan z `UI/PvpState` (`pvp.dot.<stan>`, odliczanie
+    `pvp.dot.switchingIn`; nieużywane `pvp.state.on|off` usunięte); przytrzymanie dłuższe niż `PotionPress.TIP_HOLD`
+    (tyle czeka dymek, `Tooltip` `LONG_PRESS`) nie naciska przełącznika ani kropki PvP, Płaszcza, Łowów i Mikstur;
+    wstrzymany Płaszcz i Mikstury mówią nowe `hud.lure.paused` i `hud.autoPotion.paused` („wstrzymany”,
+    „wstrzymane”), a zdanie o blokadzie jest w szczegółach (było do 107 znaków z nazwą przedmiotu dwa razy).
+  - Tropiciel: `QuestRows.oneLine` zostawia licznik („0/12”) cały na końcu i skraca tylko część przed nim
+    („0/12” czytało się „0/1…”), a tropiciel rysuje licznik w osobnej etykiecie za nazwą, która skraca się też w
+    pikselach; obszar i cała linia są w dymku.
+  - Nagłówki paneli: `PanelHeader.showsValue`, wartość tylko w zwiniętym panelu (otwarty mówi ją w treści), a
+    `KeepValue` trzyma ją w grupach tropiciela i w turnieju na żywo.
+  - Teksty: en `hud.stack.tourney` „Tournament”; `pvp.dot.on` (en), `pvp.dot.forced` i `pvp.dot.switching` (pl, en)
+    bez kropki na końcu. `area.label` zostaje z jednym `{range}`, a linia A w `Hud/AreaBanner` podaje `range`; plik B
+    na gałęzi `ui-b` podaje `min` i `max`, więc przy scalaniu linia B musi podać `range`. Pilnuje tego
+    `tests/textargs.spec`: każde wywołanie `Text.get`, `Text.now`, `Text.T` i `Locale.T` w `src` z kluczem i tabelą
+    wpisanymi wprost (około 750) podaje każdy znacznik tekstu klucza w pl i en.
+  - Testy: nowe `hudslots.spec`, `hudtips.spec`, `panelheader.spec`, `textargs.spec`; `hudzones.spec` (arena w 68 px,
+    okienko „Auto”), `hudlayout.spec` (szerokości telefonu z plików, każda para z tropicielem, wybór z „+N”, nazwy
+    listy w pl i en), `phonehud.spec` (lista „+N” na trzech telefonach), `questrows.spec` (`oneLine` dla każdego celu
+    zabicia i zbierania questów głównych, pobocznych i bossów w pl i en).
 - **Pliki:** `Logic/HudZones`, `HudStack`, `HudLayout`, `PhoneHud`, `QuestRows`, `Tutorial`, `TutorialTile` (nowy),
   `Data/Folds/Hud`, `Data/Localization/pl|en` (`hud.stack.*`, `tutorial.backpack.phone`, bez
   `hud.worldboss.collapsed`), `UI/HudSlots`, `HudAnchors`, `HudDrag`, `PhoneLayout`, `Screens/Hud/init`, `ArenaPanel`,
@@ -14980,4 +15018,9 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `tests/fixtures/textcaps/A.luau`; teksty: `Data/Localization/pl|en`, `Screens/Hud/init`, `ArenaPanel`, `AutoGroup`,
   `AutoGrindButton`, `BlessingBadge`, `BlessingIcon`, `DeathScreen`, `LoginButton`, `LureButton`, `Minimap`, `NavBar`,
   `PotionBar`, `PvpToggle`, `SeasonButton`, `WorldBossPanel`, `WorldEventPanel`, `AreaBanner` (jedna linia),
-  `tests/fixtures/textcaps/A.luau`, wiki (`docs/PRZEDMIOTY.md`, `wiki/src/data`).
+  `tests/fixtures/textcaps/A.luau`, wiki (`docs/PRZEDMIOTY.md`, `wiki/src/data`); przegląd: `UI/HudDrag`, `HudSlots`,
+  `Screens/Hud/ArenaPanel`, `ArenaTeams`, `AutoGroup`, `AutoGrindButton`, `AutoPotionButton`, `BloodMoonPanel`,
+  `LureButton`, `PanelHeader`, `PvpToggle`, `QuestTracker`, `StackChip`, `TourneyPanel`, `WorldBossPanel`,
+  `WorldEventPanel`, `init`, `Screens/PartyFrames`, `Logic/HudStack`, `HudZones`, `PhoneHud`, `QuestRows`,
+  `Data/Localization/pl|en`, `tests/FusionGraph.luau` (nowy),
+  `tests/hudslots|hudtips|panelheader|textargs|hudzones|hudlayout|phonehud|questrows.spec.luau`.
