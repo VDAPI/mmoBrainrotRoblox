@@ -6,15 +6,17 @@
 -- dialog's buttons stay pinned at the bottom, the tabs fit or scroll, "Graj" stays on the screen, the emote wheel and
 -- the fishing panel keep clear of the top bar (and the panel of a phone's HUD), the NPC's line never runs into the
 -- choices, and Party Finder's rows stay in their 290-px cells. The numbers WorldLayout copies from Components/Section
--- and Theme are read from those files.
+-- and Theme are read from those files. Every text field's placeholder in E's windows fits 20 characters.
 
 local fs = require("@lune/fs")
 
 local Classes = require("../src/shared/Data/Classes")
+local Config = require("../src/shared/Config")
 local Folds = require("../src/shared/Data/Folds")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
+local TextScan = require("./TextScan")
 local UiScale = require("../src/shared/Logic/UiScale")
 local WindowFrame = require("../src/shared/Logic/WindowFrame")
 local WorldLayout = require("../src/shared/Logic/WorldLayout")
@@ -470,5 +472,39 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 			end
 		end
 		T.expect(found >= 8).toBe(true)
+	end)
+
+	T.it("every text field's placeholder in E's windows fits the field's 20 characters", function()
+		-- UI-ZASADY §2 (placeholder pola: 20): the character name's limits are filled with their real numbers (3-16),
+		-- anything else with TextCaps' samples.
+		local args = { min = Config.CharacterName.MinLength, max = Config.CharacterName.MaxLength }
+		local cap = TextCaps.SURFACES.placeholder.chars
+		local found, problems = 0, {}
+		local function walk(dir: string)
+			for _, name in fs.readDir(dir) do
+				local path = `{dir}/{name}`
+				if fs.isDir(path) then
+					walk(path)
+				elseif string.sub(name, -5) == ".luau" and TextScan.ownerOfFile(path) == "E" then
+					local src = fs.readFile(path)
+					for key in string.gmatch(src, 'Placeholder%a*%s*=%s*Text%.T%(%s*scope%s*,%s*"([%w_%.]+)"') do
+						found += 1
+						for lang, strings in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+							local filled = string.gsub(strings[key] or "", "{(%w+)}", function(arg: string): string?
+								local value = (args :: { [string]: number })[arg]
+								return if value then tostring(value) else nil
+							end)
+							local chars = TextCaps.chars(TextCaps.expand(filled))
+							if chars > cap then
+								table.insert(problems, `{lang} {key} ({chars}): {filled}`)
+							end
+						end
+					end
+				end
+			end
+		end
+		walk("src/client/UI")
+		T.expect(problems).toEqual({})
+		T.expect(found >= 10).toBe(true)
 	end)
 end)
