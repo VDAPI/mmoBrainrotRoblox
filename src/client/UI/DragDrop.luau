@@ -11,6 +11,8 @@
 -- selects, activates, moves or opens the menu of the slot under it.
 -- FIX 2026-10-15 (owner): while a shop's Sell tab is open (`MarkHandler` set) a click / tap on a backpack slot marks
 -- it for selling (`Marked`, a check mark on the slot) instead of selecting or activating it; dragging still works.
+-- Owner 2026-11-10 (a potion drunk at full is used up): `PressDropped(slotId)` tells a slot whether its latest press
+-- dropped an item onto it, so the potion bar never drinks the potion that press assigned, however long it lasted.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -143,11 +145,22 @@ end
 -- os.clock() of the last drop, so a slot's own click handler can ignore the tap that completed a drop.
 DragDrop.LastDropAt = 0
 
+-- Owner 2026-11-10: slot ids whose latest press dropped an item onto them. A drop marks its target (a tap there with
+-- an item selected, or a drag released over it) and the target's next press clears the mark, so the mark belongs to
+-- one press however long it lasts. Read it on the release (Activated), never in InputBegan: the slot's own InputBegan
+-- handler may run before the one below.
+local pressDropped: { [string]: boolean } = {}
+
+function DragDrop.PressDropped(slotId: string): boolean
+	return pressDropped[slotId] == true
+end
+
 -- The handler owning the source slot decides what a drop means.
 local function drop(from: string, to: string)
 	local owner = ownerOf(from)
 	if owner and from ~= to then
 		DragDrop.LastDropAt = os.clock()
+		pressDropped[to] = true
 		owner.drop(from, to)
 	end
 end
@@ -178,10 +191,12 @@ function DragDrop.register(ownerScope: Fusion.Scope<any>, object: GuiObject, slo
 		ownerScope,
 		object.InputBegan:Connect(function(input: InputObject)
 			if input.UserInputType == Enum.UserInputType.MouseButton1 then
+				pressDropped[slotId] = nil -- a new press (PressDropped)
 				if not isView(slotId) then
 					pressed = { slotId = slotId, at = Vector2.new(input.Position.X, input.Position.Y) }
 				end
 			elseif input.UserInputType == Enum.UserInputType.Touch then
+				pressDropped[slotId] = nil -- a new press: only its own drop below marks the slot again
 				if blocked(Vector2.new(input.Position.X, input.Position.Y)) then
 					return
 				end
