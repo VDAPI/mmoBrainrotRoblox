@@ -25,6 +25,11 @@
 -- the bottom, always 8 inside the safe area (it was placed for a 200-px tooltip and ran off the bottom). Touch: on the
 -- half of the screen away from the tapped slot (Popover.away; it stood at a fixed place left of the middle, over the
 -- slots of a window there), off the rectangle a window registers with ItemTooltip.avoid (its Załóż / Użyj buttons).
+-- Review 2026-11-10: on touch it stands at the top of its half, under the full-screen window's title bar, and keeps
+-- off the window's action strip at the bottom (WindowFrame.rect's footer: the backpack's Załóż / Użyj / Podziel bar, a
+-- pinned Footer) as well as what windows register; it had followed the slot's height down over that bar. The S68
+-- details panel stands where Popover.place puts it in the same safe area (it was kept in the whole viewport, under the
+-- top bar and the home indicator), and its touch "×" is a 44-px target.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -43,6 +48,7 @@ local ItemScore = require(ReplicatedStorage.Shared.Logic.ItemScore)
 local ItemTraits = require(ReplicatedStorage.Shared.Data.ItemTraits)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Keybinds = require(script.Parent.Parent.Keybinds)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local Popover = require(ReplicatedStorage.Shared.Logic.Popover)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
 local RarityFrame = require(script.Parent.RarityFrame)
@@ -56,6 +62,7 @@ local Types = require(ReplicatedStorage.Shared.Types)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
 local UiPalette = require(ReplicatedStorage.Shared.Data.UiPalette)
+local WindowFrame = require(ReplicatedStorage.Shared.Logic.WindowFrame)
 
 local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
 
@@ -520,14 +527,15 @@ local function show(object: GuiObject, item: ItemInstance?, text: string?, at: P
 	onTouch:set(false)
 end
 
--- The first registered rectangle to keep off that is on the screen now (layer virtual pixels).
-local function avoidRect(): Popover.Rect?
+-- The registered rectangles to keep off that are on the screen now (layer virtual pixels).
+local function avoidRects(): { Popover.Rect }
+	local out: { Popover.Rect } = {}
 	for _, object in avoided do
 		if object.Visible and object:IsDescendantOf(game) and object.AbsoluteSize.X > 0 then
-			return Tooltip.rectOf(object)
+			table.insert(out, Tooltip.rectOf(object))
 		end
 	end
-	return nil
+	return out
 end
 
 -- UI package C: while `object` is on the screen, the touch tooltip keeps off it when there is room (a window's action
@@ -756,14 +764,25 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 			local own = use(rootSize) / use(Scale.Value)
 			local size = { w = math.max(own.X, WIDTH), h = own.Y }
 			local safe = use(Tooltip.SafeArea)
-			local rect = if use(onTouch)
-				then Popover.away(use(anchorRect), size, safe, { avoid = avoidRect() })
-				else Popover.place(
+			local rect: Popover.Rect
+			if use(onTouch) then
+				-- every touch window is full screen in this layer, under the top bar (Components/Window): its title bar
+				-- at the top, its actions in the footer strip at the bottom, others where the window registers them
+				local layer = { w = safe.right, h = safe.bottom }
+				local window = WindowFrame.rect(layer, layer, nil, true, safe.top, use(PhoneLayout.Compact))
+				rect = Popover.away(use(anchorRect), size, safe, {
+					top = window.header.bottom,
+					avoid = window.footer,
+					keepOff = avoidRects(),
+				})
+			else
+				rect = Popover.place(
 					use(anchorRect),
 					size,
 					safe,
 					{ prefer = "right" :: Popover.Side, gap = Popover.ITEM.gap }
 				)
+			end
 			return UDim2.fromOffset(rect.left, rect.top)
 		end),
 		[Out("AbsoluteSize")] = rootSize,
@@ -803,28 +822,25 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 		Visible = scope:Computed(function(use): boolean
 			return use(model) ~= nil and use(shown) ~= nil and use(DragDrop.Dragging) == nil
 		end),
+		-- Logic/Popover in the tooltip's safe area: PC right of the tooltip panels (left of them at the right edge), at
+		-- its row's height; touch under its row (over it at the bottom), on the panel holding the row
 		Position = scope:Computed(function(use): UDim2
 			local open = use(detail)
-			local screen: Vector2 = use(Scale.VirtualSize)
-			local height = use(detailSize).Y / use(Scale.Value)
 			if not open then
 				return UDim2.fromOffset(0, 0)
 			end
-			local x, y
-			if open.side == "right" then
-				x = open.edge + DETAIL_GAP
-				if x + WIDTH > screen.X - 8 then
-					x = open.left - DETAIL_GAP - WIDTH
-				end
-				y = open.at.Y
-			else
-				x = open.edge - WIDTH
-				y = open.at.Y + open.size.Y + 4
-				if y + height > screen.Y - 8 then
-					y = open.at.Y - 4 - height
-				end
-			end
-			return UDim2.fromOffset(math.max(8, x), math.clamp(y, 8, math.max(8, screen.Y - 8 - height)))
+			local size = { w = WIDTH, h = use(detailSize).Y / use(Scale.Value) }
+			local row = { top = open.at.Y, bottom = open.at.Y + open.size.Y }
+			local anchor: Popover.Rect = if open.side == "right"
+				then { left = open.left, top = row.top, right = open.edge, bottom = row.bottom }
+				else { left = open.edge - WIDTH, top = row.top, right = open.edge, bottom = row.bottom }
+			local rect = Popover.place(
+				anchor,
+				size,
+				use(Tooltip.SafeArea),
+				{ prefer = open.side :: Popover.Side, gap = DETAIL_GAP }
+			)
+			return UDim2.fromOffset(rect.left, rect.top)
 		end),
 		[Out("AbsoluteSize")] = detailSize,
 		[Children] = {
@@ -858,14 +874,16 @@ function ItemTooltip.mount(scope: Scope, parent: Instance)
 				end
 				local title = line(s, 1, m.title, DARK, Theme.TextSize.Body, Theme.Fonts.BodyBold)
 				if use(Device.Touch) then
-					-- Touch: "×" in the title row closes the panel.
-					s:New("UIPadding")({ PaddingRight = UDim.new(0, 26), Parent = title })
+					-- Touch: "×" in the title row closes the panel: a MinTouch target in the panel's top right corner
+					-- (over its 10 / 12 padding), the title's text kept 4 px clear of it.
+					local hit = Theme.Size.MinTouch
+					s:New("UIPadding")({ PaddingRight = UDim.new(0, hit - 12 + 4), Parent = title })
 					s:New("TextButton")({
 						Name = "Close",
 						Parent = title,
 						AnchorPoint = Vector2.new(1, 0),
-						Position = UDim2.new(1, 28, 0, -6),
-						Size = UDim2.fromOffset(28, 28),
+						Position = UDim2.new(1, hit + 4, 0, -10),
+						Size = UDim2.fromOffset(hit, hit),
 						BackgroundTransparency = 1,
 						Text = "×",
 						FontFace = Theme.Fonts.BodyBold,

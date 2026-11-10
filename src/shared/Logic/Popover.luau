@@ -9,6 +9,9 @@
 -- and 22 down (TOOLTIP), ItemTooltip 20 and 20 (ITEM, flipping left of the cursor as today). Components/Tooltip,
 -- ItemTooltip and InfoTip place themselves with it (UI package C; on a touch screen the item tooltip takes the half of
 -- the screen away from the tapped slot, `away`). All numbers are virtual pixels of one layer.
+-- Review 2026-11-10: `away` stands at the top of its half again, under a full-screen window's title bar, as the touch
+-- tooltip did before (at the slot's height it went down over the backpack's Załóż / Użyj bar), and keeps off a
+-- window's action strip by rising over that title bar when it is too tall for the room between them.
 
 local Popover = {}
 
@@ -16,8 +19,17 @@ export type Rect = { left: number, top: number, right: number, bottom: number }
 export type Size = { w: number, h: number }
 export type Side = "below" | "above" | "right" | "left"
 -- prefer: the side to try first (default "below"); avoid: a rectangle to keep off when a side with room is free of
--- it; gap: between the anchor and the popover (default GAP); margin: from the safe area's edges (default MARGIN).
-export type Options = { prefer: Side?, avoid: Rect?, gap: number?, margin: number? }
+-- it; gap: between the anchor and the popover (default GAP); margin: from the safe area's edges (default MARGIN);
+-- top (`away` only): the line its top edge stands under when there is room, the bottom of a window's title bar;
+-- keepOff (`away` only): more rectangles to keep off with `avoid` (the ones windows register).
+export type Options = {
+	prefer: Side?,
+	avoid: Rect?,
+	gap: number?,
+	margin: number?,
+	top: number?,
+	keepOff: { Rect }?,
+}
 
 Popover.MARGIN = 8 -- Components/InfoTip and ItemTooltip: from the screen's edges
 Popover.GAP = 6 -- Components/InfoTip: between the (i) and its box
@@ -37,6 +49,13 @@ local EPSILON = 1e-6
 
 local function overlaps(a: Rect, b: Rect): boolean
 	return a.left < b.right and b.left < a.right and a.top < b.bottom and b.top < a.bottom
+end
+
+-- How much of `b` the rectangle `a` covers (its area).
+local function covered(a: Rect, b: Rect): number
+	local w = math.min(a.right, b.right) - math.max(a.left, b.left)
+	local h = math.min(a.bottom, b.bottom) - math.max(a.top, b.top)
+	return if w > 0 and h > 0 then w * h else 0
 end
 
 local function within(r: Rect, area: Rect): boolean
@@ -138,13 +157,17 @@ end
 
 -- UI package C (Components/ItemTooltip on a touch screen): a popover of `size` on the half of `safe` away from
 -- `anchor`, the tapped slot, so the thumb and the slot stay clear: the right half for an anchor left of the middle,
--- else the left half. It stands next to the middle (clear of the anchor) at the anchor's height, inside the safe area
--- less the margin, and moves under or over `avoid` (a window's action buttons) when it would cover it and there is
--- room. Returns the rectangle and the side of the anchor it took ("right" or "left").
+-- else the left half, next to the middle (clear of the anchor). It stands at the top of that half, under `top` (a
+-- full-screen window's title bar) when given, inside the safe area less the margin; a popover too tall for the room
+-- under `top` rises over it rather than leave the screen. When it would cover `avoid` (a window's action buttons) it
+-- moves under or over them where there is room, else to the place that covers least of them (over them it may rise
+-- over the title bar). `keepOff` adds more such rectangles: it then keeps off all of them, else covers least of them.
+-- Returns the rectangle and the side of the anchor it took ("right" or "left").
 function Popover.away(anchor: Rect, size: Size, safe: Rect, options: Options?): (Rect, Side)
 	local o: Options = options or {}
 	local gap = o.gap or Popover.GAP
-	local area = inset(safe, o.margin or Popover.MARGIN)
+	local margin = o.margin or Popover.MARGIN
+	local area = inset(safe, margin)
 	local middle = (safe.left + safe.right) / 2
 	local side: Side = if (anchor.left + anchor.right) / 2 < middle then "right" else "left"
 	local x = if side == "right"
@@ -155,17 +178,39 @@ function Popover.away(anchor: Rect, size: Size, safe: Rect, options: Options?): 
 		local top = math.clamp(y, area.top, math.max(area.top, area.bottom - size.h))
 		return { left = x, top = top, right = x + size.w, bottom = top + size.h }
 	end
-	local rect = at(anchor.top)
-	local avoid = o.avoid
-	if avoid and overlaps(rect, avoid) then
-		for _, y in { avoid.bottom + gap, avoid.top - gap - size.h } do
+	local keep: { Rect } = table.clone(o.keepOff or {})
+	if o.avoid then
+		table.insert(keep, o.avoid)
+	end
+	-- how much of the rectangles to keep off `r` covers
+	local function cover(r: Rect): number
+		local sum = 0
+		for _, k in keep do
+			sum += covered(r, k)
+		end
+		return sum
+	end
+	local rect = at(if o.top then o.top + margin else area.top)
+	local least = cover(rect)
+	if least <= 0 then
+		return rect, side
+	end
+	local best = rect
+	for _, k in keep do
+		for _, y in { k.bottom + gap, k.top - gap - size.h } do
 			local moved = at(y)
-			if not overlaps(moved, avoid) and not overlaps(moved, anchor) then
-				return moved, side
+			if not overlaps(moved, anchor) then
+				local c = cover(moved)
+				if c <= 0 then
+					return moved, side
+				end
+				if c < least then
+					best, least = moved, c
+				end
 			end
 		end
 	end
-	return rect, side
+	return best, side
 end
 
 return Popover

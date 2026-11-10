@@ -150,6 +150,40 @@ function WindowFrame.tabFit(labels: { string }, room: number): TabFit
 	error("WindowFrame.TAB_LEVELS is empty")
 end
 
+-- UI package C (Components/Tabs, review 2026-11-10: its tabs had come out 42 px, under the 44 touch minimum): the
+-- strip's heights. A strip is TAB_HEIGHT tall, a scrolling one (`Scroll`: a thin bar under the row) TAB_BAR more, and
+-- its tab buttons are the strip less the bar's room. The selected card's frame stands TAB_EDGE outside its button, so
+-- the ScrollingFrame that holds the row reaches that far above the strip (its top padding): the frame shows and takes
+-- nothing off the buttons.
+WindowFrame.TAB_HEIGHT = 44 -- Theme.Size.TabHeight
+WindowFrame.TAB_BAR = 6 -- the 4-px scroll bar and 2 px over it
+WindowFrame.TAB_EDGE = 2 -- Theme.Stroke.Normal: the selected card's frame
+-- ◂ / ▸ at an edge that hides tabs: narrower on PC, a whole touch target on a touch screen
+WindowFrame.TAB_CHEVRON = 28
+WindowFrame.TAB_CHEVRON_TOUCH = 44 -- Theme.Size.MinTouch
+export type TabStrip = { height: number, bar: number, edge: number, button: number }
+
+-- A strip by default (`Scroll` when `scroll`): its height, the bar's room under the row, the band above it for the
+-- selected card's frame, and the height of its tab buttons.
+function WindowFrame.tabStrip(scroll: boolean?): TabStrip
+	local bar = if scroll then WindowFrame.TAB_BAR else 0
+	local height = WindowFrame.TAB_HEIGHT + bar
+	return { height = height, bar = bar, edge = WindowFrame.TAB_EDGE, button = height - bar }
+end
+
+-- The scroll (canvas x) of a strip `width` wide, now at `x`, that brings the tab from `left` to `right` (measured from
+-- the strip's left edge) clear of the ◂ / ▸ (`chevron` wide) and of the selected card's frame; `x` when it is clear.
+-- Never below 0; Roblox stops a scroll past the row's end at the end, where no ▸ shows.
+function WindowFrame.tabReveal(left: number, right: number, width: number, x: number, chevron: number): number
+	local edge = chevron + WindowFrame.TAB_EDGE
+	if left < edge then
+		return math.max(0, x + left - edge)
+	elseif right > width - edge then
+		return x + right - width + edge
+	end
+	return x
+end
+
 -- UI package C: a modal (Components/Modal) on a `screen` with Roblox's top bar `topBar` virtual pixels tall, its
 -- dialog `height` tall as laid out: MODAL_W wide (less on a narrow screen), at most the screen less the top bar less
 -- 2 x TOP_GAP tall (its body scrolls), centred in the room under the top bar.

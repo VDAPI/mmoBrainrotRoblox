@@ -9,6 +9,9 @@
 -- scrolls sideways with ◂ / ▸ at an edge that hides tabs; the selected tab is scrolled into view. The strip is
 -- Theme.Size.TabHeight (44) high; a caller's Size sets its width and, until the window adopts the token, its height.
 -- `Scroll` keeps the thin scroll bar under the row (and the room for it).
+-- Review 2026-11-10: the tabs are as tall as the strip again (less the bar's room; Logic/WindowFrame.tabStrip): the
+-- selected card's frame has its room in a band above the strip, where it took 2 px off every tab inside it, and the
+-- bar no longer shrinks them while it shows. The ◂ / ▸ are a whole touch target on a touch screen.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -35,19 +38,23 @@ export type Props = {
 	Surface: Theme.SurfaceName?, -- S135 (default "paper")
 }
 
--- S98: the thin scroll bar under a scrolling strip
+-- S98: the thin scroll bar under a scrolling strip (WindowFrame.TAB_BAR keeps the room for it)
 local BAR = 4
 -- The selected card's frame stands outside its button: the strip keeps this much room around the row for it.
-local EDGE = Theme.Stroke.Normal
+local EDGE = WindowFrame.TAB_EDGE
 -- A ruler of this many virtual pixels measures the strip's scale (the layer's and an opening window's together).
 local RULER = 100
-local CHEVRON = 28
-local CHEVRON_TOUCH = 36
+
+-- The width of ◂ / ▸ on this device.
+local function chevronWidth(touch: boolean): number
+	return if touch then WindowFrame.TAB_CHEVRON_TOUCH else WindowFrame.TAB_CHEVRON
+end
 
 local function Tabs(scope: Scope, props: Props): Instance
 	local roles = Theme.surface(props.Surface)
 	local frameColor = if props.Surface == "iron" then Theme.Brass.Line else Theme.Brass.Frame
-	local barSpace = if props.Scroll then BAR + 2 else 0
+	local heights = WindowFrame.tabStrip(props.Scroll)
+	local barSpace = heights.bar
 
 	-- Measured on screen (screen pixels): the strip, a ruler, the row's first and last tab.
 	local stripPos = scope:Value(Vector2.zero)
@@ -138,7 +145,9 @@ local function Tabs(scope: Scope, props: Props): Instance
 	local strip: ScrollingFrame
 	strip = scope:New("ScrollingFrame")({
 		Name = "Strip",
-		Size = UDim2.fromScale(1, 1),
+		-- the band above the strip for the selected card's frame (WindowFrame.tabStrip): the row keeps the strip's height
+		Position = UDim2.fromOffset(0, -EDGE),
+		Size = UDim2.new(1, 0, 1, EDGE),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		CanvasSize = UDim2.new(),
@@ -147,7 +156,8 @@ local function Tabs(scope: Scope, props: Props): Instance
 		ScrollBarThickness = if props.Scroll then BAR else 0,
 		ScrollBarImageColor3 = roles.TextMuted,
 		VerticalScrollBarInset = Enum.ScrollBarInset.None,
-		HorizontalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+		-- the bar draws in the room kept under the row, never taking it from the tabs
+		HorizontalScrollBarInset = Enum.ScrollBarInset.None,
 		[Out("AbsolutePosition")] = stripPos,
 		[Out("AbsoluteSize")] = stripSize,
 		[Children] = {
@@ -156,7 +166,7 @@ local function Tabs(scope: Scope, props: Props): Instance
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				Padding = UDim.new(0, WindowFrame.TAB_GAP),
 			}),
-			-- room for the selected card's frame, which a scrolling strip would cut off
+			-- room for the selected card's frame, which a scrolling strip would cut off (the band above the strip)
 			scope:New("UIPadding")({
 				PaddingTop = UDim.new(0, EDGE),
 				PaddingLeft = UDim.new(0, EDGE),
@@ -196,11 +206,11 @@ local function Tabs(scope: Scope, props: Props): Instance
 		local left = (button.AbsolutePosition.X - strip.AbsolutePosition.X) / u
 		local right = left + button.AbsoluteSize.X / u
 		local width = strip.AbsoluteWindowSize.X / u
-		local edge = CHEVRON + EDGE
-		if left < edge then
-			strip.CanvasPosition = Vector2.new(math.max(0, strip.CanvasPosition.X + left - edge), 0)
-		elseif right > width - edge then
-			strip.CanvasPosition = Vector2.new(strip.CanvasPosition.X + right - width + edge, 0)
+		-- clear of this device's ◂ / ▸ (a touch one is wider)
+		local now = strip.CanvasPosition.X
+		local x = WindowFrame.tabReveal(left, right, width, now, chevronWidth(Fusion.peek(Device.Touch)))
+		if x ~= now then
+			strip.CanvasPosition = Vector2.new(x, 0)
 		end
 	end
 	scope:Observer(props.Selected):onChange(function()
@@ -227,7 +237,7 @@ local function Tabs(scope: Scope, props: Props): Instance
 			AnchorPoint = Vector2.new(if right then 1 else 0, 0),
 			Position = UDim2.fromScale(if right then 1 else 0, 0),
 			Size = scope:Computed(function(use): UDim2
-				return UDim2.new(0, if use(Device.Touch) then CHEVRON_TOUCH else CHEVRON, 1, -barSpace)
+				return UDim2.new(0, chevronWidth(use(Device.Touch)), 1, -barSpace)
 			end),
 			Visible = shown,
 			AutoButtonColor = false,
@@ -250,7 +260,7 @@ local function Tabs(scope: Scope, props: Props): Instance
 
 	return scope:New("Frame")({
 		Name = "Tabs",
-		Size = props.Size or UDim2.new(1, 0, 0, Theme.Size.TabHeight + barSpace),
+		Size = props.Size or UDim2.new(1, 0, 0, heights.height),
 		Position = props.Position,
 		LayoutOrder = props.LayoutOrder,
 		BackgroundTransparency = 1,

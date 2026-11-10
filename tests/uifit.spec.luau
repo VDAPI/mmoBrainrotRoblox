@@ -13,6 +13,8 @@
 --   F5 a tab row takes one look for all its tabs, the first of WindowFrame.TAB_LEVELS that fits its strip, and past
 --      the last one the strip scrolls sideways (the quest journal's "Tygodniowe" stood past the strip's end)
 --   F6 a Button, a tab and a side tab keep their label on one line (no wrapping, no scaled text)
+--   F7 (review 2026-11-10: the tabs had come out 42 px) a tab is as tall as its strip less the scroll bar's room, 44 by
+--      default, a touch screen's ◂ / ▸ is a whole touch target, and the selected tab scrolls clear of them
 
 local fs = require("@lune/fs")
 
@@ -272,5 +274,50 @@ describe("uifit", function()
 		expect(string.find(read("src/client/UI/Components/SideTabs.luau"), "Theme.Size.TabHeight", 1, true) ~= nil).toBe(
 			true
 		)
+	end)
+
+	it("F7 a tab is a whole touch target, its ◂ / ▸ too, and the selected tab scrolls clear of them", function()
+		local size = tokens("Theme.Size")
+		expect(WindowFrame.TAB_HEIGHT).toBe(size.TabHeight)
+		expect(WindowFrame.TAB_EDGE).toBe(tokens("Theme.Stroke").Normal)
+		expect(WindowFrame.TAB_CHEVRON_TOUCH >= size.MinTouch).toBe(true)
+		-- Components/Tabs: the row's ScrollingFrame reaches `edge` above the strip and pads the row down by as much,
+		-- and the bar draws in its room without an inset; a tab is the strip's height less that room
+		local tabs = read("src/client/UI/Components/Tabs.luau")
+		for _, needle in
+			{
+				"WindowFrame.tabStrip(",
+				"WindowFrame.tabReveal(",
+				"Position = UDim2.fromOffset(0, -EDGE)",
+				"Size = UDim2.new(1, 0, 1, EDGE)",
+				"PaddingTop = UDim.new(0, EDGE)",
+				"HorizontalScrollBarInset = Enum.ScrollBarInset.None",
+				"Size = UDim2.new(0, 0, 1, -barSpace)",
+			}
+		do
+			if not string.find(tabs, needle, 1, true) then
+				expect(`Components/Tabs: {needle}`).toBe("found")
+			end
+		end
+		for _, scroll in { false, true } do
+			local strip = WindowFrame.tabStrip(scroll)
+			local tab = (strip.height + strip.edge) - strip.edge - strip.bar
+			expect(tab).toBe(strip.button)
+			expect(strip.button).toBe(size.TabHeight)
+		end
+		-- a tab past either end of a 400-wide strip scrolled at 300, revealed: clear of that end's ◂ / ▸ and the frame
+		for _, chevron in { WindowFrame.TAB_CHEVRON, WindowFrame.TAB_CHEVRON_TOUCH } do
+			local edge = chevron + WindowFrame.TAB_EDGE
+			for _, tab in { { 380, 470 }, { 330, 395 }, { -60, 30 }, { 10, 100 } } do
+				local moved = WindowFrame.tabReveal(tab[1], tab[2], 400, 300, chevron) - 300
+				if tab[1] - moved < edge or tab[2] - moved > 400 - edge then
+					expect(`{chevron}-px chevrons: the tab {tab[1]}-{tab[2]} ends at {tab[1] - moved}-{tab[2] - moved}`).toBe(
+						"clear"
+					)
+				end
+			end
+			expect(WindowFrame.tabReveal(edge, 400 - edge, 400, 120, chevron)).toBe(120)
+			expect(WindowFrame.tabReveal(5, 60, 400, 0, chevron)).toBe(0)
+		end
 	end)
 end)

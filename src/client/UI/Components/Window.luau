@@ -222,6 +222,8 @@ local function Window(scope: Scope, props: Props): Instance
 			[Children] = content :: any,
 		})
 	end
+	-- The rule stands beside the buttons' own frame, never next to their UIListLayout: a list lays out every sibling
+	-- GuiObject, so a rule there became a full-width item across the middle of the row (and could push the buttons out).
 	local footerRow: Fusion.Child = if footer
 		then scope:New("Frame")({
 			Name = "Footer",
@@ -230,22 +232,30 @@ local function Window(scope: Scope, props: Props): Instance
 			Position = UDim2.fromScale(0, 1),
 			Size = UDim2.new(1, 0, 0, WindowFrame.FOOTER),
 			[Children] = {
-				-- the line between the (scrolling) content and the actions that stay
+				-- the line between the (scrolling) content and the actions that stay, in the middle of the gap
 				scope:New("Frame")({
 					Name = "Rule",
+					AnchorPoint = Vector2.new(0, 0.5),
 					BackgroundColor3 = rule,
 					BorderSizePixel = 0,
 					Position = UDim2.fromOffset(0, -WindowFrame.FOOTER_GAP / 2),
 					Size = UDim2.new(1, 0, 0, Theme.Stroke.Thin),
 				}),
-				scope:New("UIListLayout")({
-					FillDirection = Enum.FillDirection.Horizontal,
-					HorizontalAlignment = Enum.HorizontalAlignment.Right,
-					VerticalAlignment = Enum.VerticalAlignment.Center,
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					Padding = UDim.new(0, Theme.Padding.Small),
+				scope:New("Frame")({
+					Name = "Buttons",
+					BackgroundTransparency = 1,
+					Size = UDim2.fromScale(1, 1),
+					[Children] = {
+						scope:New("UIListLayout")({
+							FillDirection = Enum.FillDirection.Horizontal,
+							HorizontalAlignment = Enum.HorizontalAlignment.Right,
+							VerticalAlignment = Enum.VerticalAlignment.Center,
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							Padding = UDim.new(0, Theme.Padding.Small),
+						}),
+						footer :: any,
+					},
 				}),
-				footer :: any,
 			},
 		})
 		else {}
