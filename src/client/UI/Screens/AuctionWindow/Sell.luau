@@ -3,6 +3,9 @@
 -- deposit, the fee and what reaches the mail are computed live, with the average market price of the item.
 -- 2026-10-21 (owner: too many detailed descriptions): the deposit and the fee share one line (what each means and the
 -- VIP fee behind its "i"), the rules are one short line with the full text behind its "i".
+-- Owner 2026-11-10 (UI plan L10): "Wystaw przedmiot" stays in sight. The form scrolls over the button pinned to the
+-- bottom (Logic/GearLayout.auctionSell, from the view's measured size), so on a phone the button no longer sits under
+-- the last line of a form taller than the window.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -10,10 +13,12 @@ local Auction = require(ReplicatedStorage.Shared.Logic.Auction)
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Market = require(ReplicatedStorage.Shared.Data.Market)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Scale = require(script.Parent.Parent.Parent.Scale)
 local SelectableSlot = require(script.Parent.Parent.Parent.Components.SelectableSlot)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
@@ -22,11 +27,13 @@ local TextInput = require(script.Parent.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 
-local Children = Fusion.Children
+local Children, Out = Fusion.Children, Fusion.Out
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SLOT = 56
+-- the view's size on PC (1080 x 700 under the window's tabs) until it is measured
+local AREA_PC = { w = 1036, h = 552 }
 
 local function Sell(scope: Scope): Instance
 	local inventory = State.Value({ "character", "inventory" })
@@ -201,12 +208,41 @@ local function Sell(scope: Scope): Instance
 		)
 	end
 
+	-- the items, the form and the button (GearLayout.auctionSell) from the view's own size
+	local absolute = scope:Value(Vector2.zero)
+	local layout = scope:Computed(function(use): GearLayout.AuctionSell
+		local size: Vector2 = use(absolute)
+		local k: number = use(Scale.Value)
+		return GearLayout.auctionSell(if size.Y > 0 and k > 0 then { w = size.X / k, h = size.Y / k } else AREA_PC)
+	end)
+	local function place(pick: (GearLayout.AuctionSell) -> GearLayout.Rect): (any, any)
+		return scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return UDim2.fromOffset(r.left, r.top)
+		end),
+			scope:Computed(function(use): UDim2
+				local r = pick(use(layout))
+				return UDim2.fromOffset(r.right - r.left, r.bottom - r.top)
+			end)
+	end
+	local itemsAt, itemsSize = place(function(l)
+		return l.items
+	end)
+	local formAt, formSize = place(function(l)
+		return l.form
+	end)
+	local buttonAt, buttonSize = place(function(l)
+		return l.button
+	end)
+
 	return scope:New("Frame")({
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
+		[Out("AbsoluteSize")] = absolute,
 		[Children] = {
 			scope:New("ScrollingFrame")({
-				Size = UDim2.new(0.5, -8, 1, 0),
+				Position = itemsAt,
+				Size = itemsSize,
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -222,13 +258,19 @@ local function Sell(scope: Scope): Instance
 					slots :: any,
 				},
 			}),
-			scope:New("Frame")({
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.fromScale(1, 0),
-				Size = UDim2.new(0.5, -8, 1, 0),
+			-- the form scrolls; "Wystaw przedmiot" is pinned under it
+			scope:New("ScrollingFrame")({
+				Name = "Form",
+				Position = formAt,
+				Size = formSize,
+				CanvasSize = UDim2.new(),
+				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				ScrollBarThickness = 6,
 				[Children] = {
 					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+					scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8), PaddingTop = UDim.new(0, 2) }),
 					infoLine(
 						1,
 						scope:Computed(function(use): string
@@ -338,16 +380,6 @@ local function Sell(scope: Scope): Instance
 						end),
 						Theme.Paper.Danger
 					),
-					Button(scope, {
-						LayoutOrder = 9,
-						Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-						Variant = "primary",
-						Text = Text.T(scope, "auction.sell.button"),
-						Disabled = scope:Computed(function(use): boolean
-							return use(busy) or use(item) == nil or use(price) == nil
-						end),
-						OnClick = submit,
-					}),
 					infoLine(
 						10,
 						scope:Computed(function(use): string
@@ -368,6 +400,16 @@ local function Sell(scope: Scope): Instance
 						Theme.TextSize.Small
 					),
 				},
+			}),
+			Button(scope, {
+				Position = buttonAt,
+				Size = buttonSize,
+				Variant = "primary",
+				Text = Text.T(scope, "auction.sell.button"),
+				Disabled = scope:Computed(function(use): boolean
+					return use(busy) or use(item) == nil or use(price) == nil
+				end),
+				OnClick = submit,
 			}),
 		},
 	})
