@@ -6,6 +6,15 @@
 -- grind progress (S30, ShowReward from the CombatFx "reward" event; S149b: also the world boss's `WorldBossReward`). S103 (FABULA §2.3): when Morvane enters her last
 -- phase and the player is on the story quest `morvane`, the same message speaks her true name a moment later (text
 -- only: the fight does not change).
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"): the boss bar stands
+-- in the target band (Logic/TopBand.bossBar: 600..1320 x 22..134 at 1920 wide; a phone: a strip 20 tall across the
+-- centre column under the target row); the fight's messages (BossAnnounce) are UI/Notify's alert line instead
+-- of the big frame in the Toasts layer; the reward card is one of UI/Notify's cards (the PC corner) with the full card
+-- behind 'Szczegóły'; the ready check is a prompt (Components/Prompt, Screens/ReadyCheck).
+-- Review 2026-11-10: a phone's bar was min(720, W - 16) wide over the portrait, the Auto toggles, the minimap and PvP
+-- and 64 tall, which left M 24 px: now the HP fills the strip with the name and the phase on it and the time at its
+-- end (the HP numbers are the target frame's), the channel to break covers it while it runs. A new fight message
+-- takes the place of the last one at once.
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -13,24 +22,29 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local BossReward = require(script.Parent.Parent.UI.Screens.BossReward)
+local Device = require(script.Parent.Parent.UI.Device)
 local BossScaling = require(ReplicatedStorage.Shared.Logic.BossScaling)
 local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
 local ChannelBar = require(script.Parent.Parent.UI.Components.ChannelBar)
 local Bosses = require(ReplicatedStorage.Shared.Data.Bosses)
 local DungeonWindow = require(script.Parent.Parent.UI.Screens.DungeonWindow)
 local Rarities = require(ReplicatedStorage.Shared.Data.Rarities)
-local ReadyCheckScreen = require(script.Parent.Parent.UI.Screens.ReadyCheck)
+local ReadyCheck = require(script.Parent.Parent.UI.Screens.ReadyCheck)
+local Scale = require(script.Parent.Parent.UI.Scale)
 local FightView = require(script.Parent.Parent.UI.FightView)
 local HudGate = require(script.Parent.Parent.UI.HudGate)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Notify = require(script.Parent.Parent.UI.Notify)
+local PhoneLayout = require(script.Parent.Parent.UI.PhoneLayout)
 local Portals = require(ReplicatedStorage.Shared.Data.Portals)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
 local WorldLabel = require(script.Parent.Parent.UI.WorldLabel)
 
 local Children = Fusion.Children
@@ -42,14 +56,16 @@ local DungeonController = {
 
 local scope = Fusion.scoped(Fusion)
 local WindowManager: any
-local UIControllerRef: any
 local RegistryRef: any -- S134f: FightLogController ("Details" on the reward card), looked up lazily
-local rewardScope: Fusion.Scope<typeof(Fusion)>? = nil
+local rewardCard: Notify.Handle? = nil
+local rewardOpen = false -- the reward's full card ('Szczegóły') is open
 
 local REWARD_SECONDS = 20
+local ANNOUNCE_SECONDS = 3
 local region = scope:Value(nil :: string?)
-local announceText = scope:Value("")
-local announceAlpha = scope:Value(1)
+local announcement: Notify.Handle? = nil -- the fight's last message on the alert line
+
+local PHONE_TIME = 64 -- a phone's "⌛ m:ss" at the strip's end
 
 local function bossBar(): Instance
 	local boss = State.Value({ "boss" })
@@ -70,19 +86,44 @@ local function bossBar(): Instance
 		local b = use(boss)
 		return if type(b) == "table" and type(b.channel) == "table" then b.channel else nil
 	end)
+	-- where it stands (the HUD's layer): the target band, or under a phone's target row with its rows folded
+	local phone = scope:Computed(function(use): boolean
+		return use(PhoneLayout.Compact)
+	end)
+	local rect = scope:Computed(function(use): TopBand.Rect
+		local size: Vector2 = use(Scale.HudSize)
+		local device: TopBand.Device = if use(phone) then "phone" elseif use(Device.Touch) then "tablet" else "pc"
+		return TopBand.bossBar(device, size.X, size.Y)
+	end)
+	local function pick<T>(pc: T, strip: T): Fusion.Computed<T>
+		return scope:Computed(function(use): T
+			return if use(phone) then strip else pc
+		end)
+	end
 	return scope:New("Frame")({
 		Name = "BossBar",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 16),
-		Size = UDim2.fromOffset(720, 112),
+		Position = scope:Computed(function(use): UDim2
+			local r = use(rect)
+			return UDim2.fromOffset(r.left, r.top)
+		end),
+		Size = scope:Computed(function(use): UDim2
+			local r = use(rect)
+			return UDim2.fromOffset(r.right - r.left, r.bottom - r.top)
+		end),
 		BackgroundTransparency = 1,
 		Visible = scope:Computed(function(use): boolean
 			return type(use(boss)) == "table"
 		end),
 		[Children] = {
+			-- a phone: on the strip's HP, left of the time
 			scope:New("TextLabel")({
-				Size = UDim2.new(1, 0, 0, 30),
+				Name = "Title",
+				Position = pick(UDim2.new(), UDim2.fromOffset(6, 0)),
+				Size = pick(UDim2.new(1, 0, 0, 30), UDim2.new(1, -(6 + PHONE_TIME), 1, 0)),
+				TextXAlignment = pick(Enum.TextXAlignment.Center, Enum.TextXAlignment.Left),
+				TextTruncate = Enum.TextTruncate.AtEnd,
 				BackgroundTransparency = 1,
+				ZIndex = 2,
 				Text = scope:Computed(function(use): string
 					local b = use(boss)
 					if type(b) ~= "table" then
@@ -102,13 +143,14 @@ local function bossBar(): Instance
 					return `{Text.get(use, b.nameKey)}  ·  {Text.get(use, "boss.phase", { phase = b.phase })}{suffix}`
 				end),
 				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Large,
+				TextSize = pick(Theme.TextSize.Large, Theme.TextSize.Small),
 				TextColor3 = Theme.Brass.Bright,
 				TextStrokeTransparency = 0.3,
 			}),
 			scope:New("Frame")({
-				Position = UDim2.fromOffset(0, 32),
-				Size = UDim2.new(1, 0, 0, 22),
+				Name = "Health",
+				Position = pick(UDim2.fromOffset(0, 32), UDim2.new()),
+				Size = pick(UDim2.new(1, 0, 0, 22), UDim2.fromScale(1, 1)),
 				BackgroundColor3 = Theme.Iron.Sunken,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
@@ -126,6 +168,7 @@ local function bossBar(): Instance
 					scope:New("TextLabel")({
 						Size = UDim2.fromScale(1, 1),
 						BackgroundTransparency = 1,
+						Visible = pick(true, false),
 						Text = scope:Computed(function(use): string
 							local b = use(boss)
 							return if type(b) == "table" then `{b.hp} / {b.maxHp}` else ""
@@ -139,28 +182,42 @@ local function bossBar(): Instance
 				},
 			}),
 			-- S134: the channel bar (purple fill = damage dealt of the damage that breaks it, the time left);
-			-- S149b: the shared component (also on the world boss panel)
-			ChannelBar(scope, {
-				Channel = channel,
-				Now = now,
-				Position = UDim2.fromOffset(110, 86),
-				Size = UDim2.new(1, -220, 0, 22),
+			-- S149b: the shared component (also on the world boss panel); a phone: over the whole strip while it runs
+			scope:New("Frame")({
+				Name = "Channel",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundTransparency = 1,
+				ZIndex = 3,
+				[Children] = ChannelBar(scope, {
+					Channel = channel,
+					Now = now,
+					Position = pick(UDim2.fromOffset(110, 86), UDim2.new()),
+					Size = pick(UDim2.new(1, -220, 0, 22), UDim2.fromScale(1, 1)),
+				}),
 			}),
 			-- The fight lasts at most Bosses.timeLimit; the time left turns yellow under 3 min and red under 1 min.
+			-- A phone: "⌛ m:ss" at the strip's right end.
 			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(0, 58),
-				Size = UDim2.new(1, 0, 0, 26),
+				Name = "TimeLeft",
+				AnchorPoint = pick(Vector2.zero, Vector2.new(1, 0)),
+				Position = pick(UDim2.fromOffset(0, 58), UDim2.new(1, -6, 0, 0)),
+				Size = pick(UDim2.new(1, 0, 0, 26), UDim2.new(0, PHONE_TIME, 1, 0)),
+				TextXAlignment = pick(Enum.TextXAlignment.Center, Enum.TextXAlignment.Right),
 				BackgroundTransparency = 1,
+				ZIndex = 2,
 				Text = scope:Computed(function(use): string
 					local b = use(boss)
 					if type(b) ~= "table" then
 						return ""
 					end
 					local left = Time.format(Time.remaining(b.endsAt or 0, use(now)))
+					if use(phone) then
+						return `⌛ {left}`
+					end
 					return `⌛ {Text.get(use, "boss.timeLeft", { time = left })}`
 				end),
 				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Large,
+				TextSize = pick(Theme.TextSize.Large, Theme.TextSize.Small),
 				TextColor3 = scope:Computed(function(use): Color3
 					local b = use(boss)
 					local left = if type(b) == "table" then Time.remaining(b.endsAt or 0, use(now)) else math.huge
@@ -175,45 +232,14 @@ local function bossBar(): Instance
 	})
 end
 
-local function announcer(): Instance
-	return scope:New("TextLabel")({
-		Name = "BossAnnounce",
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.fromScale(0.5, 0.3),
-		Size = UDim2.fromOffset(1000, 70),
-		BackgroundTransparency = 1,
-		Text = announceText,
-		TextWrapped = true,
-		FontFace = Theme.Fonts.Display,
-		TextSize = Theme.TextSize.Title + 10,
-		TextColor3 = Theme.Brass.Bright,
-		TextStrokeTransparency = scope:Computed(function(use): number
-			return 0.2 + use(announceAlpha) * 0.8
-		end),
-		TextTransparency = announceAlpha,
-	})
-end
-
+-- The fight's messages (countdown, phases, victory, wipe; S103 the story's line) on UI/Notify's alert line; a new one
+-- takes the last one's place at once (the countdown's "3" never comes back after "Walcz!").
 local function showAnnouncement(text: string)
-	announceText:set(text)
-	announceAlpha:set(0)
-	local token = os.clock()
-	DungeonController._announceToken = token
-	task.delay(3, function()
-		if DungeonController._announceToken ~= token then
-			return
-		end
-		local steps = 10
-		for i = 1, steps do
-			task.wait(0.05)
-			if DungeonController._announceToken ~= token then
-				return
-			end
-			announceAlpha:set(i / steps)
-		end
-	end)
+	if announcement then
+		announcement.close()
+	end
+	announcement = Notify.alert(text, ANNOUNCE_SECONDS)
 end
-DungeonController._announceToken = 0
 
 -- S103: the story's line in the last phase of a boss, for a player on the story quest of that boss (boss id -> quest
 -- id, text key); seconds after the phase message.
@@ -283,48 +309,51 @@ local function decorate(instance: Instance)
 	end)
 end
 
--- Post-fight reward card (S30): one at a time, closes on OK or after REWARD_SECONDS.
+-- Post-fight reward card (S30): one at a time, closes on OK or after REWARD_SECONDS. UI plan package B: the card's
+-- summary in UI/Notify's card place, the full card behind its 'Szczegóły'.
 function DungeonController.ShowReward(reward: BossReward.Reward)
-	if rewardScope then
-		Fusion.doCleanup(rewardScope)
-		rewardScope = nil
-	end
-	local inner = scope:innerScope()
-	rewardScope = inner
-	local function close()
-		if rewardScope == inner then
-			rewardScope = nil
-			Fusion.doCleanup(inner)
-		end
+	if rewardCard then
+		rewardCard.close()
+		rewardCard = nil
 	end
 	if reward.gotMyth or reward.gotLeg or reward.mount ~= nil or reward.mountSkin ~= nil then
 		Sounds.play("levelUp")
 	end
-	BossReward(inner, {
-		Reward = reward,
-		Close = close,
-		-- S134f: "Details" opens the fight log (its summary arrives right after the card)
-		OpenDetails = function()
-			local log = RegistryRef and RegistryRef.Get("FightLogController")
-			if log then
-				log.Open(1)
-			end
+	-- S134f: "Details" of the full card opens the fight log (its summary arrives right after the card)
+	local function openLog()
+		local log = RegistryRef and RegistryRef.Get("FightLogController")
+		if log then
+			log.Open(1)
+		end
+	end
+	local title, line, accent = BossReward.summary(reward)
+	rewardCard = Notify.card({
+		class = "bossReward",
+		title = title,
+		line = line,
+		accent = accent,
+		seconds = REWARD_SECONDS,
+		details = function()
+			rewardOpen = true
+			Notify.details(function(s: Fusion.Scope<typeof(Fusion)>, close: () -> (), sheet: boolean): Instance
+				table.insert(s, function()
+					rewardOpen = false
+				end)
+				return BossReward.view(s, { Reward = reward, Close = close, OpenDetails = openLog, Sheet = sheet })
+			end, REWARD_SECONDS * 3)
 		end,
-	}).Parent =
-		UIControllerRef.GetLayer("Toasts")
-	task.delay(REWARD_SECONDS, close)
+	})
 end
 
 -- S102: for CutsceneController: whether the post-fight reward card is on screen.
 function DungeonController.RewardVisible(): boolean
-	return rewardScope ~= nil
+	return rewardOpen or (rewardCard ~= nil and rewardCard.alive())
 end
 
 function DungeonController.Init(registry)
 	RegistryRef = registry
 	WindowManager = registry.Get("WindowManager")
 	local UIController = registry.Get("UIController")
-	UIControllerRef = UIController
 	WindowManager.Register({
 		id = "dungeon",
 		titleKey = "window.dungeon.title",
@@ -339,8 +368,7 @@ function DungeonController.Init(registry)
 		end,
 	})
 	bossBar().Parent = HudGate.Layer(UIController.GetLayer("Screens")) -- owner 2026-10-21: not over the loading screen
-	announcer().Parent = UIController.GetLayer("Toasts")
-	ReadyCheckScreen(scope).Parent = UIController.GetLayer("Toasts") -- S134f: the ready check at the gate
+	ReadyCheck.watch(scope) -- S134f: the ready check at the gate (a prompt)
 end
 
 function DungeonController.Start()

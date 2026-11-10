@@ -96,7 +96,7 @@ T.describe("Boss cast bar and banner (S160)", function()
 		end
 		for _, key in { "boss.cast.avoid", "boss.cast.lethal", "boss.cast.dodge" } do
 			T.expect({ key, pl[key] ~= nil and en[key] ~= nil }).toEqual({ key, true })
-			T.expect({ key, string.find(pl[key], "{name}", 1, true) ~= nil }).toEqual({ key, true })
+			T.expect({ key, string.find(pl[key], "{name}", 1, true) ~= nil }).toEqual({ key, false })
 		end
 	end)
 

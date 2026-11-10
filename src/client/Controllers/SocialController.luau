@@ -1,27 +1,32 @@
 --!strict
--- Player-to-player on the client (S10): duel, trade and guild (S12) invitations (popup with Accept / Decline and a
--- countdown), the trade window (opens with state `trade`, closing it cancels the trade) and the kill feed
--- (right side, map-local, 5 s per line).
--- S133: friend requests (the same popup), whispers by character name (the private channel of the pair, opened by the
+-- Player-to-player on the client (S10): duel, trade and guild (S12) invitations (with an answer and a countdown), the
+-- trade window (opens with state `trade`, closing it cancels the trade) and the kill feed (right side, map-local, 5 s
+-- per line).
+-- S133: friend requests (an invitation too), whispers by character name (the private channel of the pair, opened by the
 -- server, becomes the chat target), letters ("write to"), friends and ignored players (confirmations, the friends
 -- window).
 -- S150: the friends window sends FriendsWatch while it is open (the server publishes the runtime branch `friends`) and
 -- every Config.Friends.hintEvery the user ids of Roblox friends this client sees in this game
 -- (Player:GetFriendsOnlineAsync, client only); "Join" (FriendJoin), party invitations to another server
--- (FriendPartyInvite) and their popup ("Join and enter the party", FriendPartyRespond).
+-- (FriendPartyInvite) and their invitation (FriendPartyRespond).
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"): each invitation is
+-- a prompt (Components/Prompt in UI/Notify's queue, the band under the target; a phone's M zone): its line with ✓, ✕
+-- and the bar of the time left. Invitations of different kinds wait in the queue one after another (the old popup
+-- showed only the newest); a newer one of the same kind takes the older one's place.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
 
 local ActionMenu = require(script.Parent.Parent.UI.Components.ActionMenu)
-local Button = require(script.Parent.Parent.UI.Components.Button)
 local Config = require(ReplicatedStorage.Shared.Config)
 local FriendsWindow = require(script.Parent.Parent.UI.Screens.FriendsWindow)
 local HudGate = require(script.Parent.Parent.UI.HudGate)
 local MailDraft = require(script.Parent.Parent.UI.MailDraft)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Notify = require(script.Parent.Parent.UI.Notify)
+local Prompt = require(script.Parent.Parent.UI.Components.Prompt)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -45,8 +50,7 @@ local scope = Fusion.scoped(Fusion)
 local WindowManager: any
 
 type InviteKind = "duel" | "trade" | "guild" | "friend" | "friendParty"
-type Invite = { kind: InviteKind, from: string, left: number, guild: string? }
-local invite = scope:Value(nil :: Invite?)
+local invites: { [InviteKind]: Notify.Handle } = {} -- the prompt of each kind's invitation
 local feed = scope:Value({} :: { { text: string, at: number } })
 local sheetScope: Fusion.Scope<typeof(Fusion)>? = nil -- S150: the "..." action sheet of a friend row
 local UIController: any
@@ -317,110 +321,50 @@ local function robloxFriendsHere(): { number }
 	return out
 end
 
-local function respond(accept: boolean)
-	local current = Fusion.peek(invite)
-	invite:set(nil)
-	if current then
-		local remote = if current.kind == "duel"
-			then "DuelRespond"
-			elseif current.kind == "guild" then "GuildRespond"
-			elseif current.kind == "friend" then "FriendRespond"
-			elseif current.kind == "friendParty" then "FriendPartyRespond"
-			else "TradeRespond"
-		task.spawn(invoke, remote, accept)
-	end
+local REMOTE: { [InviteKind]: string } = {
+	duel = "DuelRespond",
+	trade = "TradeRespond",
+	guild = "GuildRespond",
+	friend = "FriendRespond",
+	friendParty = "FriendPartyRespond",
+}
+local ICON: { [InviteKind]: string } =
+	{ duel = "⚔", trade = "⚖", guild = "⚜", friend = "☺", friendParty = "⚑" }
+
+local function respond(kind: InviteKind, accept: boolean)
+	invites[kind] = nil
+	task.spawn(invoke, REMOTE[kind], accept)
 end
 
 local function showInvite(kind: InviteKind, from: string, seconds: number, guild: string?)
 	Sounds.play("levelUp")
-	local entry: Invite = { kind = kind, from = from, left = seconds, guild = guild }
-	invite:set(entry)
-	task.spawn(function()
-		while Fusion.peek(invite) == entry and entry.left > 0 do
-			task.wait(1)
-			if Fusion.peek(invite) ~= entry then
-				return
-			end
-			local updated = table.clone(entry)
-			updated.left -= 1
-			entry = updated
-			invite:set(updated)
-		end
-		if Fusion.peek(invite) == entry then
-			invite:set(nil)
-		end
-	end)
-end
-
-local function invitePopup(): Instance
-	return scope:New("Frame")({
-		Name = "SocialInvite",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 260),
-		Size = UDim2.fromOffset(460, 130),
-		BackgroundColor3 = Theme.Iron.Surface,
-		Visible = scope:Computed(function(use): boolean
-			return use(invite) ~= nil
-		end),
-		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = 1.5 }),
-			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(16, 10),
-				Size = UDim2.new(1, -32, 0, 50),
-				BackgroundTransparency = 1,
-				TextWrapped = true,
-				Text = scope:Computed(function(use): string
-					local i = use(invite)
-					if not i then
-						return ""
-					end
-					local key = if i.kind == "duel"
-						then "duel.invited"
-						elseif i.kind == "guild" then "guild.invited"
-						elseif i.kind == "friend" then "social.friendInvited"
-						elseif i.kind == "friendParty" then "friends.party.invited"
-						else "trade.invited"
-					return Text.get(use, key, { name = i.from, seconds = i.left, guild = i.guild or "" })
-				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Iron.Text,
-			}),
-			Button(scope, {
-				Surface = "iron", -- S135: on a dark HUD / overlay surface
-				Position = UDim2.new(0, 16, 1, -62),
-				Size = UDim2.new(0.5, -24, 0, 50),
-				Variant = "primary",
-				Text = scope:Computed(function(use): string
-					local i = use(invite)
-					return Text.get(
-						use,
-						if i and i.kind == "friendParty" then "friends.party.accept" else "party.accept"
-					)
-				end),
-				OnClick = function()
-					respond(true)
-				end,
-			}),
-			Button(scope, {
-				Surface = "iron", -- S135: on a dark HUD / overlay surface
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -16, 1, -62),
-				Size = UDim2.new(0.5, -24, 0, 50),
-				Text = scope:Computed(function(use): string
-					local i = use(invite)
-					return Text.get(
-						use,
-						if i and i.kind == "friendParty" then "friends.party.decline" else "party.decline"
-					)
-				end),
-				OnClick = function()
-					respond(false)
-				end,
-			}),
-		},
+	local old = invites[kind]
+	if old then
+		old.close() -- the server keeps one invitation of a kind: the newest
+	end
+	local handle = Prompt.push({
+		class = "invite",
+		icon = ICON[kind],
+		seconds = seconds,
+		line = function(use: Fusion.Use, left: number): string
+			local key = if kind == "duel"
+				then "duel.invited"
+				elseif kind == "guild" then "guild.invited"
+				elseif kind == "friend" then "social.friendInvited"
+				elseif kind == "friendParty" then "friends.party.invited"
+				else "trade.invited"
+			return Text.get(use, key, { name = from, seconds = left, guild = guild or "" })
+		end,
+		accept = function()
+			respond(kind, true)
+		end,
+		decline = function()
+			respond(kind, false)
+		end,
 	})
+	if handle then
+		invites[kind] = handle
+	end
 end
 
 local function killFeed(): Instance
@@ -507,7 +451,6 @@ function SocialController.Init(registry)
 			})
 		end,
 	})
-	invitePopup().Parent = UIController.GetLayer("Modals")
 	killFeed().Parent = HudGate.Layer(UIController.GetLayer("Screens")) -- owner 2026-10-21: not over the loading screen
 end
 

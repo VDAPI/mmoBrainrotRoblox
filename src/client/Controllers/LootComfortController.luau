@@ -3,6 +3,9 @@
 --   * "Better item!": when picked-up equipment beats what the character wears (Logic/ItemScore) a small card
 --     with both names and an "Equip" button shows for 8 s (option "betterItem");
 --   * the loot log window (last 50 items from character.lootLog), opened from the backpack.
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"; owner question 1):
+-- the card is one of UI/Notify's cards: the PC corner's card slot (a tablet: under the toasts, a phone: one line of
+-- its M zone with "Equip"), one card at a time; in combat it waits up to 30 s, then drops (the loot log keeps it).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -15,6 +18,7 @@ local ItemText = require(script.Parent.Parent.UI.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local LootLog = require(script.Parent.Parent.UI.Screens.LootLog)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Notify = require(script.Parent.Parent.UI.Notify)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -33,10 +37,8 @@ local LootComfortController = {
 local CARD_SECONDS = 8
 
 local WindowManager: any
-local UIController: any
 local ItemController: any
-local cardScope: Scope? = nil
-local cardToken = 0
+local card: Notify.Handle? = nil
 
 -- Item in the slot the candidate would replace (rings: the weaker one; S68: shared with the tooltip and /tooltip).
 local function replaced(def: Items.ItemDef, ctx: ItemScore.Context): Types.ItemInstance?
@@ -53,94 +55,109 @@ local function inventoryIndex(uid: string): number?
 end
 
 local function closeCard()
-	if cardScope then
-		Fusion.doCleanup(cardScope)
-		cardScope = nil
+	if card then
+		card.close()
+		card = nil
 	end
 end
 
 local function showCard(item: Types.ItemInstance, current: Types.ItemInstance?)
 	closeCard()
-	cardToken += 1
-	local token = cardToken
-	local scope = UIController.Scope:innerScope()
-	cardScope = scope
 	local instead = if current
 		then Text.now("better.instead", { item = ItemText.name(current.id, current.up, current.el) })
 		else Text.now("better.instead", { item = Text.now("better.empty") })
-	scope:New("Frame")({
-		Name = "BetterItem",
-		Parent = UIController.GetLayer("Toasts"),
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -24, 1, -230),
-		Size = UDim2.fromOffset(330, 96),
-		BackgroundColor3 = Theme.Iron.Surface,
-		BackgroundTransparency = 0.05,
-		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Brass.Bright, Thickness = 2 }),
-			ItemSlot(scope, {
-				Surface = "iron",
-				SlotId = `view:better:{item.uid}`,
-				Item = item,
-				Size = 64,
-				Position = UDim2.fromOffset(12, 16),
-			}),
-			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(86, 8),
-				Size = UDim2.new(1, -96, 0, 24),
-				BackgroundTransparency = 1,
-				Text = Text.T(scope, "better.title"),
-				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Brass.Bright,
-				TextXAlignment = Enum.TextXAlignment.Left,
-			}),
-			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(86, 32),
-				Size = UDim2.new(1, -96, 0, 20),
-				BackgroundTransparency = 1,
-				Text = ItemText.name(item.id, item.up, item.el),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = ItemText.rarityName(item.rarity, "iron"),
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
-			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(86, 52),
-				Size = UDim2.new(1, -196, 0, 34),
-				BackgroundTransparency = 1,
-				Text = instead,
-				TextWrapped = true,
-				FontFace = Theme.Fonts.Body,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Iron.TextMuted,
-				TextXAlignment = Enum.TextXAlignment.Left,
-			}),
-			Button(scope, {
-				Surface = "iron", -- S135: on a dark HUD / overlay surface
-				AnchorPoint = Vector2.new(1, 1),
-				Position = UDim2.new(1, -10, 1, -10),
-				Size = UDim2.fromOffset(96, 36),
-				Variant = "primary",
-				Text = Text.T(scope, "better.equip"),
-				TextSize = Theme.TextSize.Small,
-				OnClick = function()
-					local index = inventoryIndex(item.uid)
-					closeCard()
-					if index then
-						ItemController.Equip(index, nil)
-					end
-				end,
-			}),
-		},
-	})
-	task.delay(CARD_SECONDS, function()
-		if token == cardToken then
-			closeCard()
+	local name = ItemText.name(item.id, item.up, item.el)
+	local function equip()
+		local index = inventoryIndex(item.uid)
+		if index then
+			ItemController.Equip(index, nil)
 		end
-	end)
+	end
+	card = Notify.card({
+		class = "betterItem",
+		title = Text.now("better.title"),
+		line = name,
+		note = instead, -- a phone's sheet (its card is one line)
+		accent = ItemText.rarityName(item.rarity, "iron"),
+		seconds = CARD_SECONDS,
+		action = { text = Text.now("better.equip"), run = equip },
+		-- PC and a tablet: the item's slot, both names and "Equip" (the tooltip of the slot shows the details)
+		build = function(scope: Scope, live: Notify.Live): Instance
+			return scope:New("Frame")({
+				Name = "BetterItem",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Theme.Iron.Surface,
+				BackgroundTransparency = 0.05,
+				Active = true,
+				[Children] = {
+					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+					scope:New("UIStroke")({ Color = Theme.Brass.Bright, Thickness = 2 }),
+					ItemSlot(scope, {
+						Surface = "iron",
+						SlotId = `view:better:{item.uid}`,
+						Item = item,
+						Size = 64,
+						Position = UDim2.fromOffset(12, 16),
+					}),
+					scope:New("TextLabel")({
+						Position = UDim2.fromOffset(86, 8),
+						Size = UDim2.new(1, -(96 + Theme.Size.MinTouch), 0, 24),
+						BackgroundTransparency = 1,
+						Text = Text.T(scope, "better.title"),
+						FontFace = Theme.Fonts.Display,
+						TextSize = Theme.TextSize.Body,
+						TextColor3 = Theme.Brass.Bright,
+						TextXAlignment = Enum.TextXAlignment.Left,
+					}),
+					scope:New("TextLabel")({
+						Position = UDim2.fromOffset(86, 32),
+						Size = UDim2.new(1, -(96 + Theme.Size.MinTouch), 0, 20),
+						BackgroundTransparency = 1,
+						Text = name,
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = ItemText.rarityName(item.rarity, "iron"),
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+					}),
+					scope:New("TextLabel")({
+						Position = UDim2.fromOffset(86, 52),
+						Size = UDim2.new(1, -196, 0, 34),
+						BackgroundTransparency = 1,
+						Text = instead,
+						TextWrapped = true,
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Iron.TextMuted,
+						TextXAlignment = Enum.TextXAlignment.Left,
+					}),
+					Button(scope, {
+						Surface = "iron", -- S135: on a dark HUD / overlay surface
+						AnchorPoint = Vector2.new(1, 1),
+						Position = UDim2.new(1, -10, 1, -6),
+						Size = UDim2.fromOffset(96, Theme.Size.MinTouch),
+						Variant = "primary",
+						Text = Text.T(scope, "better.equip"),
+						TextSize = Theme.TextSize.Small,
+						OnClick = function()
+							live.close()
+							equip()
+						end,
+					}),
+					Button(scope, {
+						Name = "Close",
+						Surface = "iron",
+						AnchorPoint = Vector2.new(1, 0),
+						Position = UDim2.fromScale(1, 0),
+						Size = UDim2.fromOffset(Theme.Size.MinTouch, Theme.Size.MinTouch),
+						Variant = "ghost",
+						Text = "✕",
+						OnClick = live.close,
+					}),
+				},
+			})
+		end,
+	})
 end
 
 local function onPicked(items: any)
@@ -178,7 +195,6 @@ end
 
 function LootComfortController.Init(registry)
 	WindowManager = registry.Get("WindowManager")
-	UIController = registry.Get("UIController")
 	ItemController = registry.Get("ItemController")
 	WindowManager.Register({
 		id = "lootlog",

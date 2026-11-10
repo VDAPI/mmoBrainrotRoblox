@@ -505,6 +505,7 @@ local function showNextModal()
 	local dialog = Modal(scope, props) :: GuiObject
 	root = dialog
 	dialog.Parent = UIController.GetLayer("Modals")
+	HudCover.SetModal(dialog) -- package B: the band's messages keep off the dialog (UI/Notify)
 	Sounds.play("open")
 end
 

@@ -77,6 +77,21 @@
   D 237, E 203) i kolizje HUD na tabletach 1210–1280 szerokości i do 800 wysokości (pasmo celu i pasek bossa na strefach
   postaci i menu, przycisk celu dotyku w minimapie, pas wiadomości pod panelem areny i paskiem bossa niższy niż linia
   alarmu; listy `KNOWN` i `THIN` w `hudzones.spec` dla pakietu A).
+- **Plan UI 2026-11-10, pakiet B (komunikaty):** jedna kolejka wszystkich komunikatów (`UI/Notify`,
+  `Logic/NoticeQueue`), pas wiadomości 8 pod pasmem celu, karty z „Szczegóły” w prawym dolnym rogu PC, zaproszenia jako
+  jedna linia z ✓, ✕ i paskiem czasu (`Components/Prompt`), ostrzeżenia bossów na linii alarmu, pasek bossa lochu w
+  paśmie celu, na telefonie jeden komunikat naraz w strefie M; nieobejrzane w Studio (baner i dwa toasty pod ramką celu,
+  komunikat nad oknem i pod jego paskiem tytułu, toasty obok karty samouczka, karta w rogu i jej pełny widok, arkusz na
+  telefonie, „Więcej ▸” zaproszenia, gotowość przed bossem, linia alarmu w walce z bossem, pasek bossa lochu na
+  telefonie (pasek 20 pod ramką celu: nazwa, życie, ⌛), czy sygnał walki nie wstrzymuje toastów za często; po tekstach:
+  narysowane „i” na toaście i pełny widok po kliknięciu, 🌐 w czcionce banera, dwie linie przeciwnika w „Więcej ▸” oferty
+  areny, linia prób dnia na karcie nagrody bossa; po przeglądzie: strefa M na telefonach z wcięciami, arkusz zaproszenia
+  i karty pod paskiem Robloxa, obrysy komunikatów w powiększonej grupie, jedna zasłona odsłonięcia legendy, komunikat
+  przy okienku potwierdzenia, propozycja meczu przy otwartym zaproszeniu do drużyny). Teksty pakietu B w limitach (lista
+  `tests/fixtures/textcaps/B.luau` pusta): toast do 60, baner 56, alarm 28, bez rad i klawiszy, ogłoszenia z innych
+  serwerów z 🌐, alarmy bossów bez imion, zaproszenia bez sekund, reszta za „i” toastu (`.info`). Po przeglądzie: alarm
+  znika po swoim czasie, propozycja meczu areny idzie przed innymi zaproszeniami, okienka potwierdzenia są omijane,
+  napisy pasa co najmniej Small.
 - **Plan UI 2026-11-10, pakiet C (okna i komponenty):** ramka okna z `Logic/WindowFrame` (na dotyku pod paskiem
   Robloxa, na telefonie nagłówek 44 i ✕ 52×44, tytuł w jednej linii, przeciąganie pod paskiem), opcjonalne `Footer`,
   `Scroll` i `HeaderAction`, pary usługi i plecaka z `WindowFrame.pair`, przełącznik „Plecak” / „◂ <usługa>” na

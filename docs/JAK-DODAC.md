@@ -348,6 +348,19 @@
   „przeciągnij”; Smocza Waluta pełną nazwą raz na ekranie, dalej ◆. Liczy `Logic/TextCaps` po wstawieniu przykładów
   (`{n}` 6 znaków, `{item}` 28, inne 12), pilnuje `tests/textcaps.spec`, a lista D w `tests/fixtures/textcaps/D.luau`
   zostaje pusta.
+- **Komunikat, zaproszenie albo karta** (2026-11-10, plan UI, pakiet B; `docs/UI-ZASADY.md` §6): wszystko idzie przez
+  kolejkę `UI/Notify`, nigdy własny `ScreenGui` ani rodzic w warstwie Toasts (`topband.spec` to sprawdza). Toast:
+  `Toast.push(tekst, "info" | "success" | "warning" | "error", sekundy?)`, ogłoszenie: `Announcement.push(tekst,
+  styl?, sekundy?, { key, crossServer })` jak dotąd. Linia alarmu (do 28 znaków; cios bossa na czas rzucania, faza
+  walki): `Notify.alert(tekst, sekundy?, kolor?)`, a nowszy alarm zamyka starszy przez jego uchwyt (`close()`).
+  Zaproszenie: `Prompt.push({ class = "invite", icon, line = function(use, left) ... end, seconds, accept, decline,
+  more?, moreHeight? })` (`class` z drabiny `NoticeQueue.ORDER`: `partyInvite`, `arenaOffer`, `readyCheck` albo
+  `invite`; linia do 60 znaków, reszta w `more` pod „Więcej ▸”); uchwyt `close()` zamyka je, gdy zaproszenie zniknie
+  na serwerze. Karta: `Notify.card({ class, title, line?, accent?, seconds?, details?, action? })` (tytuł i linia do 40
+  znaków), a pełny widok w `details` przez `Notify.details(function(scope, close, sheet) ... end)` (`sheet` na
+  telefonie: widok wypełnia szerokość od góry i się przewija). Nowy rodzaj komunikatu: `Notify.push({ class, text,
+  build = function(scope, live) ... end })` z miejscem w `NoticeQueue.ORDER`, `CAPACITY` i `SECONDS`, a jego
+  zachowanie w walce przez `hold` (`false`: nie czeka) albo `crossServer`; test w `tests/noticequeue.spec`.
 - **Element HUD i panel kolumny** (2026-11-10, plan UI, pakiet A; właściciel: „niektóre rzeczy zasłaniają inne, nie
   da się zwinąć”): nowy element HUD na PC i tablecie ma miejsce w `Logic/HudZones.pc` (prostokąt strefy i nazwa w
   `ELEMENTS` z plikiem) i czyta je przez `HudSlots.at(scope, "<miejsce>")`, `HudSlots.point` albo `HudSlots.sizeOf`,

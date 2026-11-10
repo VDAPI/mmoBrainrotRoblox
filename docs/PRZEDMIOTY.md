@@ -1,7 +1,7 @@
 # Vaelthorn: przedmioty
 
 > Plik generowany: `lune run tools/wikidump.luau` (dane gry, te same co wiki). Nie edytuj ręcznie.
-> Odcisk danych c70d4ed8 (`wiki/src/data/meta.json`).
+> Odcisk danych 7679142b (`wiki/src/data/meta.json`).
 
 ## Rzadkości
 
@@ -1153,10 +1153,10 @@ Cecha: **Iskra żywiołu**: 35%: atak budzi żywioł broni
 
 | Przedmiot | Boss | Poziom | Statystyki | Bonusy stałe |
 |---|---|---|---|---|
-| Płomienne Serce | Azgor, Pan Płomieni | 70 | hp 544,3 | +{v} Życia +260, +{v}% Odporności na ogień +25%, Silny przeciw żywiołakom i demonom +{v}% +12% |
+| Płomienne Serce | Azgor, Pan Płomieni | 70 | hp 544,3 | +{v} Życia +260, +{v}% Odporności na ogień +25%, Przeciw żywiołakom i demonom +{v}% +12% |
 | Hełm Pana Płomieni | Azgor, Pan Płomieni | 70 | Obrona 129,8, hp 163,8 | +{v} Witalności +20, +{v} Obrony +90, Odporność na żywiołaki i demony {v}% +10% |
 | Kostur Pożogi | Azgor, Pan Płomieni | 70 | obr. 0, obr. mag. 296, szybkość 0,85 | +{v}% Ataku magicznego +9%, +{v} Intelektu +22, +{v}% obrażeń ran, trucizn i podpaleń +15% |
-| Rozłupywacz Grimroka | Grimrok, Wódz Goblinów | 20 | obr. 72, szybkość 1,05 | +{v}% Ataku fizycznego +6%, +{v} Siły +6, Silny przeciw ludziom i plemionom +{v}% +12% |
+| Rozłupywacz Grimroka | Grimrok, Wódz Goblinów | 20 | obr. 72, szybkość 1,05 | +{v}% Ataku fizycznego +6%, +{v} Siły +6, Przeciw ludziom i plemionom +{v}% +12% |
 | Kieł Wodza | Grimrok, Wódz Goblinów | 20 | Atak magiczny % 5,2, Atak fizyczny % 5,2 | +{v}% Szansy na krytyk +4%, +{v}% Wampiryzmu +2%, +{v} Zręczności +6 |
 | Totem Plemienia | Grimrok, Wódz Goblinów | 20 | Obrona 27,7, hp 83,2, Odporność magiczna 27,7 | +{v} Witalności +6, +{v}% Życia +5%, Odporność na ludzi i plemiona {v}% +8% |
 | Topór Praojca | — | 100 | obr. 535, szybkość 0,8 | +{v}% Ataku fizycznego +12%, +{v} Siły +38, +{v}% Obrażeń krytycznych +44% |

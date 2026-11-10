@@ -15164,6 +15164,170 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `wiki/src/data/*.json`, `docs/PRZEDMIOTY.md`, `docs/DESIGN.md` §23, `docs/DECYZJE.md`, `docs/PROGRESS.md`,
   `docs/JAK-DODAC.md`.
 
+### Plan UI 2026-11-10, pakiet B: komunikaty w jednej kolejce (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”. Pakiet B (część kodu): wszystko, co wyskakuje, idzie przez jedną kolejkę i ma jedno miejsce, pas wiadomości
+  stoi pod pasmem celu, karty w rogu PC, zaproszenia w jednym stylu. Domyślne odpowiedzi pytań UI 1, 2, 4, 5 i 8
+  (DECYZJE). Teksty pakietu (lista `tests/fixtures/textcaps/B.luau`) to osobna część.
+- Kolejka: `Logic/NoticeQueue` (czysta, czas podaje wołający): rodzaje alarm, zaproszenie, karta, baner, toast,
+  kwestia NPC; drabina `ORDER` z planu (gotowość przed zaproszeniem do drużyny, nagroda bossa przed legendą i wynikiem
+  walki, lepszy przedmiot przed banerem); miejsca `CAPACITY` (PC: alarm, baner, 2 toasty, karta, zaproszenie i
+  kwestia NPC; tablet bez miejsca na kwestię, bierze miejsce toastu; telefon: linia i okienko). Wyższy wpis bierze
+  pełne miejsce niższemu, a ten czeka i potem stoi resztę swojego czasu (`left`; boss świata 15 s razem). `MERGE` 10 s
+  daje „×N”, `ERROR_GAP` 10 s jeden błąd; w walce `HOLD` (toast 10 s; ogłoszenie z innego serwera, kwestia NPC i
+  lepszy przedmiot 30 s), potem wpis przepada; `WAIT` to najdłuższe czekanie na miejsce; `windowWaits` (toast
+  osiągnięcia); tego, co już stoi, walka ani okno nie zdejmują. Banery strefy i obszaru oraz czerwone (mityk, boss
+  świata) idą pierwsze wśród banerów (`urgent`), więc toast osiągnięcia dalej czeka na banery strefy i obszaru.
+- Miejsca: `Logic/TopBand` rozszerzony, funkcje fazy 2 z tymi samymi podpisami: `zone` (pas z
+  `HudZones.messageZone`, na telefonie strefa M, w pikselach całego ekranu, co najmniej 8 pod paskiem Robloxa),
+  `slots` (od góry alarm, baner, toasty, zaproszenie; nad oknem, gdy cały się mieści, inaczej pod paskiem tytułu, bez
+  czekania; obok karty samouczka przez `toastShift`, inaczej pod nią; `holdTop`; karta PC w `HudZones.cardSlot`,
+  kwestia NPC w `barkSlot`, każda tylko poza oknem i kartą samouczka), `bossBar`, `phoneZone`. `UI/HudCover.Rects`:
+  prostokąty otwartych okien.
+- Klient: `UI/Notify` (jedyne drzwi: `push`, `close`, `alert`, `card`, `details`, `flash`, `mount`; sygnał walki to
+  spadek HP albo atak z `TargetController.IsAttacking`, przekazany przez `NotificationController`, przez 6 s;
+  przełącznik `HOLD_ALL`), `Components/Prompt` (ikona, linia, ✓, ✕, pasek czasu, „Więcej ▸”), `Toast.push` i
+  `Announcement.push` z tymi samymi podpisami, oba miękko wczytują `UI/Notify` (decyzja 2026-10-31 o module, którego
+  Rojo jeszcze nie zsynchronizował). Przez kolejkę idą: toasty i ogłoszenia (`NotificationController`, ogłoszenie z
+  innego serwera rozpoznane po kluczu `*Global`), toast osiągnięcia (`AchievementController`), banery strefy i
+  obszaru, kwestie NPC, ostrzeżenie `BossCastBar` i komunikaty walki z bossem lochu (linia alarmu), karty `FightCard`,
+  lepszego przedmiotu, `BossReward` i `LegendReveal` (podsumowanie i „Szczegóły”), zaproszenia drużyny, pojedynku,
+  handlu, gildii i znajomych, oferta meczu areny, zaproszenie turnieju i gotowość. Pasek bossa lochu stoi w paśmie
+  celu (`TopBand.bossBar`, na telefonie wiersze złożone do 64). Błysk ekranu przy legendzie rysuje `Notify.flash`.
+  `TopBandState` trzyma tylko kartę samouczka (`Keep`); flagi banerów i `ToastTop` odeszły, bo decyduje kolejka.
+- Testy: nowy `noticequeue.spec` (najwyżej 2 toasty na PC i 1 komunikat na telefonie, 15 s bossa świata mimo
+  wywłaszczenia, „×N”, błąd raz na 10 s, walka wstrzymuje i upuszcza, błędy i alarmy nigdy, drabina z gotowością
+  przed lepszym przedmiotem; miejsca na ekranach PC, tabletach i telefonach przy pasku Robloxa 0, 36 i 58, w stanach
+  `HudZones` i z oknami 560×520, 900×620 i 1080×700 na środku i u góry oraz z pełnym oknem telefonu: nic na stałym
+  elemencie HUD, oknie ani pasku tytułu, wszystko co najmniej 8 pod paskiem, karta samouczka nigdy zasłonięta),
+  rozszerzony `topband.spec` (stare gwarancje: pod każdym banerem, najwyżej dwa toasty, toast osiągnięcia czeka na
+  banery strefy i obszaru, bez skoków; `messageZone.top = targetBand.bottom + 8`; pasek bossa lochu; sprawdzenie
+  kodu: nic poza plikami B nie wstawia do warstwy Toasts ani nie tworzy `ScreenGui` komunikatu).
+- Odstępstwa od planu:
+  - pytanie UI 8: wygrywa decyzja z 2026-10-31 (DESIGN §23, UI-ZASADY §6): komunikat nad oknem, gdy cały się tam
+    mieści, inaczej pod paskiem tytułu, bez czekania; napis w pasku tytułu (`WindowManager.Notice`) i baner
+    wstrzymany do 30 s przy otwartym oknie nie weszły. Na zamknięcie okna czeka tylko toast osiągnięcia (ta sama
+    decyzja);
+  - karta i kwestia NPC na PC czekają, gdy okno albo karta samouczka zasłania ich miejsce, zamiast stać na oknie;
+  - karta lepszego przedmiotu ma „Załóż” i ✕ zamiast „Szczegóły” (szczegóły daje tooltip slotu na karcie);
+  - okno odsłonięcia legendy otwiera się z karty, a nie samo po podniesieniu (DESIGN §5.5), zgodnie z pytaniem UI 1;
+  - strefę M telefonu liczy `TopBand.phoneZone` z miejsc `PhoneHud` (4 pod ramką celu, do 114, 8 od poczty i prawej
+    kolumny), bo `HudZones` jej nie ma; po scaleniu z pakietem A może czytać `PhoneHud.mZone`;
+  - pasek bossa lochu na telefonie ma szerokość z planu, min(720, szerokość − 16), więc na telefonach zachodzi na rząd
+    pod portretem i brzeg minimapy (dziś stoi u góry i zasłania jeszcze więcej); do przeglądu po A i B;
+  - zaproszenia różnych rodzajów czekają w kolejce jedno po drugim (stare okienko pokazywało tylko najnowsze), a
+    gotowość, zaproszenie do drużyny i oferta areny mają ✓ i ✕ zamiast napisów, więc klucze `dungeon.ready.yes/no`,
+    `party.accept/decline`, `friends.party.accept/decline` i `arena.offer.accept/decline` nie są już czytane (zostają w
+    lokalizacji; linia `friends.party.accept` zeszła z listy B, bo skan już jej nie widzi);
+  - ze `topband.spec` zeszły sprawdzenia miejsc banerów w ich plikach i flag `TopBandState` (miejsca daje kolejka);
+  - `Hud/init` (pakiet A) dalej montuje `ZoneBanner` i `AreaBanner`, które teraz tylko pilnują strefy i obszaru i
+    oddają pusty folder, więc pliku A nie trzeba było zmieniać.
+- **Pliki:** `Logic/NoticeQueue`, `Logic/TopBand`, `UI/Notify`, `UI/Components/Prompt`, `UI/Components/Toast`,
+  `UI/Components/Announcement`, `UI/HudCover`, `UI/TopBandState`, `Screens/ArenaOffer`, `Screens/ReadyCheck`,
+  `Screens/FightCard`, `Screens/BossReward`, `Screens/LegendReveal`, `Screens/Hud/AchievementToast|ZoneBanner|
+  AreaBanner|BarkToast`, `Vfx/BossCastBar`, `Controllers/Achievement|Arena|Bark|Dungeon|FightLog|LootComfort|Loot|
+  Notification|Party|SocialController`, `tests/noticequeue.spec.luau`, `tests/topband.spec.luau`,
+  `tests/fixtures/textcaps/B.luau`.
+
+### Plan UI 2026-11-10, pakiet B, teksty: krótkie komunikaty (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, zbyt szczegółowe opisy”. Pakiet B (część tekstów): każdy klucz, który
+  należy do B (`TextScan.owner`, 1103 klucze), mieści się w limicie swojej powierzchni po wstawieniu przykładowych
+  wartości, w pl i en: toast 60, baner 56, alarm 28, linia karty 40, zaproszenie 60, przycisk 18, przycisk modala 14,
+  treść modala 90. Lista `tests/fixtures/textcaps/B.luau` pusta (było 193), `textcaps.spec` bez wyjątków dla B.
+- Lokalizacja: 200 linii pl i 193 en zmienionych w miejscu, 4 nowe klucze przy swoich prefiksach
+  (`arena.offer.oppRating`, `dungeon.reward.runs`, `contract.ready.info`, `items.toast.legendRework.info`), te same
+  zmienne w pl i en. Bez sterowania, klawiszy i rad w toastach („w oknie Umiejętności (K)”, „Najedź na przedmiot”,
+  „Spróbuj ponownie / za chwilę”, „Wróć jutro”, „Możesz grać dalej”); półpauzy zamienione na dwukropki. Toast po
+  potwierdzeniu nie powtarza modala (`social.ignoredNow`). Wiki i `docs/PRZEDMIOTY.md` wygenerowane na nowo (premie,
+  fazy bossów).
+- Toast z „i”: `Toast.push(text, kind, duration, info)`; z `info` toast kończy się narysowanym „i” (koło z literą,
+  S68: nie znak ⓘ), stoi 6 s, a klik albo dotknięcie zamyka go i otwiera jego linię i całość w `Notify.details` (PC na
+  środku, telefon arkusz). `NotificationController` szuka `key .. ".info"` (`Locale.has`) i składa go z tymi samymi
+  argumentami; `Notify` mierzy wysokość takiego toastu bez szerokości „i” (`Spec.inset`). Klucze `.info` mają regułę
+  `infoTip` na liście B.
+- Banery: ogłoszenie z innego serwera (`*Global`) zaczyna się od 🌐 zamiast „(inny serwer)” i gubi drugorzędne
+  (punkty, poziom, przedmiot ulepszenia, boss wierzchowca); łup „⚜ gracz: przedmiot!”, ulepszenie bez przedmiotu,
+  Sala Sław, Krwawy Księżyc, boss świata (bez progu nagrody: ma go karta bossa i toast „za niski poziom”), wydarzenia,
+  turniej, arena, pojedynek, Radosław krócej. Wielki napis turnieju to „⚜ Nowy Czempion ⚜”, imię niesie baner obok.
+- Alarmy (28): ostrzeżenia ciosów i mechanik bossów bez imienia bossa i gracza (pasek rzucania i pasek bossa je
+  pokazują), fazy bossów lochów i Hrimvalda krótko, komunikaty lochu bez imienia bossa. `tests/bosscast.spec` (plik
+  bez właściciela) zmieniony w jednej linii: ostrzeżenie nie zawiera już `{name}`.
+- Zaproszenia: bez „({seconds} s)” (odlicza pasek czasu `Components/Prompt`); w propozycji meczu areny przeciwnik w
+  jednej linii, rating z progiem (Brąz … Mistrz) w drugiej (`Screens/ArenaOffer`, `arena.offer.oppRating`).
+- Karty (40): `Screens/BossReward` czyta własną linię prób dnia (`dungeon.reward.runs` zamiast
+  `worldmap.card.runsToday`, który zostaje oknu lochu) i `dungeon.reward.next` ze zmiennymi `legPct` / `mythPct`;
+  premie `bonus.*` (rodzina „Przeciw X”, po angielsku „Strong vs X”), Dar Fortuny, pula efektu w dymku, wkład w
+  nagrodzie bossa świata.
+- Odstępstwa od planu: przykład `contract.ready` z planu („Zlecenie wykonane: {n}× {monster}. Odbierz zapłatę.”) ma
+  69 znaków z przykładowymi wartościami, więc toast to „Zlecenie: {n}× {monster}. Odbierz zapłatę.”, a obszar i
+  miejsca odbioru są w „i”; `rework2.body.info` należy do pakietu C (zrobione tam).
+- **Pliki:** `Data/Localization/pl|en`, `UI/Components/Toast`, `UI/Notify`, `Controllers/NotificationController`,
+  `Screens/ArenaOffer`, `Screens/BossReward`, `tests/fixtures/textcaps/B.luau`, `tests/bosscast.spec.luau`,
+  `docs/PRZEDMIOTY.md`, `wiki/src/data/bonuses|bosses|meta.json`.
+
+### Plan UI 2026-11-10, pakiet B: poprawki po przeglądzie (2026-11-10)
+- Przegląd pakietu B: 23 zgłoszenia i uwaga o kompletności, wszystkie prawdziwe; dwie części propozycji poprawek
+  odrzucone (niżej). Poprawki w kodzie mają notatki „Review 2026-11-10”.
+- Układ (e9b5bef9): pas liczy się w rozmiarze warstwy komunikatów (`TopBand.context`: rozmiar jej korzenia przez skalę,
+  pasek Robloxa przez skalę), więc na telefonie z wcięciami strefa M zgadza się z `PhoneHud.area`, a nie z całym ekranem
+  (na 844×390 linia zasłaniała minimapę i PvP, a karta albo zaproszenie pocztę i łuk umiejętności). Kontekst niesie
+  liczbę innych członków drużyny (`PhoneLayout.Others`, kwestia NPC na PC staje pod ramkami drużyny), powrót z areny
+  (`TopBand.arenaState`: pas pod panelem powrotu, póki `returnAt` trwa) i otwarte okienko potwierdzenia
+  (`HudCover.SetModal` z jednej linii w `WindowManager`, plik pakietu C; `HudCover.Modals`, `TopBand.slots` czeka z
+  komunikatem, który by na nie trafił). Pasek bossa lochu na telefonie to pasek 20 w szerokości M
+  (`TopBand.PHONE_BOSS_H`; `DungeonController`: nazwa, życie bez liczb, ⌛ z czasem), a M zaczyna się 4 pod nim;
+  komunikat telefonu nie jest wyższy niż M, a M ma co najmniej linię HUD (`TopBand.PHONE_M.line`).
+- Kolejka (be81579b): `Notify.alert` daje alarmowi termin (`deadline` = jego sekundy), więc odsunięty alarm przepada po
+  czasie; alarm `danger` (cios do uniknięcia) idzie przed innymi alarmami, ten sam alarm połączony w „×N” przedłuża
+  termin, a `DungeonController.showAnnouncement` zamyka swój poprzedni komunikat. Zaproszenie z `penalty` (propozycja
+  meczu areny, `Screens/ArenaOffer`) idzie przed innymi zaproszeniami (`NoticeQueue.effectiveRank`).
+- Widoki (e0da7740): grupa komunikatu (`CanvasGroup`) jest o 8 większa z każdej strony, a `UIPadding` oddaje widokowi
+  jego miejsce, bo grupa ucinała obrys rysowany na zewnątrz (brzegi toastów w kolorze rodzaju, ramka banera, brzeg
+  alarmu, kart i zaproszeń). Pełny widok stoi nad komunikatami (ZIndex 3 nad 2) i pod paskiem Robloxa; arkusz telefonu
+  jest wysoki jak jego treść (dotknięcie pod nim zamyka), a na PC widok stoi na środku pod paskiem. Zasłona jest jedna:
+  `LegendReveal.backdrop` (mityczny łup czerwony) idzie do `Notify.details`, a odsłonięcie oddaje sam panel. Wysokość i
+  wygląd banera biorą rozmiar z `Notify.bannerTextSize` (telefon Small, mityczny i boss świata Title, reszta Large + 2),
+  a tekst mierzy się w szerokości, w jakiej stoi; toast i baner, które się nie mieszczą, kończą się „…”. Na telefonie
+  zaproszenie i karta to jedna linia ze znakiem ▸ i ✕: dotknięcie otwiera arkusz (`Prompt` `sheetOf`: cała linia,
+  „Więcej ▸”, ✓ i ✕; karta: jej pełny widok albo `cardSheet` z tytułem, linią, polem `note` i „Załóż” lepszego
+  przedmiotu), a arkusz zaproszenia znika razem z nim. Zaproszenie na PC ma 520 szerokości (jak toast), bo przy Small
+  linia z „Więcej ▸” miała trzy linie. Napisy pasa mają rozmiar Small zamiast Caption (zaproszenie, karta, oferta areny,
+  gotowość, kwestia NPC, baner strefy, toast osiągnięcia).
+- Teksty (8622981b): `bonus.leg_lastStand` i `bonus.myth_lastStand` „-{v}% otrzymanych obrażeń (HP <30%)”,
+  `skills.error.resetNeedsScroll` z Nauczycielem (pl i en), `dungeon.reward.next` „Następne: …” (en z przecinkiem jak
+  pl), `items.toast.legendRework.info` bez powtórki linii toastu, `loot.announceLuck` „⚜ {player}: {item}!” (pl i en,
+  bez `{cleric}`; `LootService` dalej go podaje), `dungeon.reward.legendary` i `.mythic` „… czeka w worku!”,
+  `quest.dailyBonus` i `quest.weeklyBonus` z „+ ◆ {shards}”, zaproszenia z „Cię” i „Twoje”. Po angielsku
+  `bonus.res_elemental` to „Resistance to elementals/demons {v}%”, a nie proponowane „Elemental and demon resistance”,
+  bo dymek przedmiotu ma też „Fire resistance” i inne odporności na żywioły, więc „elemental resistance” czytałoby się
+  jak one. Wiki i `docs/PRZEDMIOTY.md` wygenerowane na nowo.
+- Odrzucone: krótkie warianty `.phone` zaproszeń („{name}: pojedynek”), bo linia telefonu ucina się na końcu, a
+  dotknięcie pokazuje całą linię w arkuszu, więc nic nie ginie; sprawdzanie szerokości telefonu dla zaproszeń i kart w
+  `Logic/TextCaps`, bo to pliki pakietu F, a linia telefonu ma się ucinać i otwierać w całości.
+- Testy: `noticequeue.spec` (kontekst klienta równy ekranom spec, telefony 844×390 i 932×430 z wcięciami, powrót z
+  areny, kwestia NPC przy 0 do 4 rzędach drużyny, telefony z paskiem bossa przy pasku Robloxa 0, 36 i 58, okienko
+  potwierdzenia, terminy alarmów i odliczanie 3, 2, 1, „Walcz!”, propozycja meczu przy zaproszeniu do drużyny i
+  gotowości na PC i telefonie), `topband.spec` (sprawdzenia źródeł: kontekst, pasek bossa, napisy co najmniej Small,
+  miejsce na obrys, jedna zasłona, rozmiar banera). Nieobejrzane w Studio.
+- Po scaleniu z pakietem A: `TopBand.phoneZone` liczy M z miejsc `PhoneHud` tak samo jak `PhoneHud.mZone` pakietu A,
+  więc po scaleniu powinien go czytać (na 667×375 M ma wtedy 286 szerokości).
+- Scalenie z `main` po pakietach C, E i D (2026-11-10): w lokalizacji konflikt był tylko tam, gdzie pakiety zmieniały
+  sąsiednie klucze, a każdy klucz wziął stronę pakietu, który go zmienił (B: `mount.got`, `contract.mailed`,
+  `leaderboard.week.won`, `skills.toast.unlocked`, `shop.error.locked`, `autoGrind.on`, `premium.pack.duplicate`,
+  `worldboss.rewardCard.share.short`; C: `rework2.title`, `rework2.body`; E: `keys.mount`, `contract.available`; D:
+  `shop.sellMarked`, `shop.sellHint`, `autoGrind.desc`, `premium.pack.passOwned`, `wardrobe.hint.short`);
+  `leaderboard.week.bracket` zniknęło razem z rankingami pakietu E. Końce `DECYZJE`, `SESJE`, `JAK-DODAC` i
+  `PROGRESS` mają wpisy obu stron (najpierw pakiety, które weszły wcześniej). Pakiet C dał oknu na telefonie pasek
+  tytułu 44, więc `HudCover.HeaderBottom` liczy tam 44; komunikaty pasa mierzą okna same (`HudCover.Rects` w
+  `UI/Notify`) i już liczyły 44. Linia `HudCover.SetModal` w `WindowManager` przetrwała scalenie, a nowy
+  `Components/Modal` dalej ma ramkę `Dialog`, którą mierzy `HudCover.Modals`. Bramka zielona: 10308 testów,
+  `wikidump --check` aktualny.
+- **Pliki:** `Logic/TopBand`, `Logic/NoticeQueue`, `UI/Notify`, `UI/HudCover`,
+  `UI/Components/Prompt|Toast|Announcement`, `Screens/ArenaOffer|ReadyCheck|LegendReveal`,
+  `Screens/Hud/AchievementToast|BarkToast|ZoneBanner`, `Controllers/Dungeon|Loot|LootComfortController`,
+  `Controllers/WindowManager` (jedna linia, pakiet C), `Data/Localization/pl|en`, `tests/noticequeue.spec.luau`,
+  `tests/topband.spec.luau`, `docs/PRZEDMIOTY.md`, `wiki/src/data/bonuses|meta.json`.
+
 ### Plan UI 2026-11-10, pakiet A: HUD bez nakładania, zwijana kolumna, siatka telefonu (2026-11-10)
 - Właściciel 2026-11-10: „niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się zwinąć”. Pakiet A planu
   UI (HUD) na API pakietu F: część kodu (ta sekcja), a teksty pakietu A (limity, słownik, długie myślniki, lista A w

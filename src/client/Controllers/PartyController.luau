@@ -1,19 +1,22 @@
 --!strict
--- Parties on the client (DESIGN §17): the party window (P), member frames under the portrait, the invite
--- popup with Accept / Decline and a countdown, and the player menu on other players.
+-- Parties on the client (DESIGN §17): the party window (P), member frames under the portrait, the invitation
+-- and the player menu on other players.
 -- S133: the player menu (UI/Screens/PlayerMenu, entries from Logic/Social.menuEntries): Whisper, Write a letter,
 -- Trade and Duel (S10), Invite to party, Invite to guild (S12, leader / officer), Profile (S15), Add / remove friend,
 -- Ignore / stop ignoring, Follow player. It opens with a right click on a player, the "Actions" button next to the
 -- target frame (a click or tap selects the player first) and, on a touch screen, by holding a finger on a player for
 -- Config.Social.holdSeconds without moving it (a camera drag cancels). The first time a character selects another
 -- player a one-time hint explains this (character.playerMenuHint).
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"): the invitation is
+-- a prompt (Components/Prompt in UI/Notify's queue, the band under the target; a phone's M zone): "<name> invites you
+-- to a party (N s)" with ✓, ✕ and the bar of the time left, no longer a box over the middle of the screen. A newer
+-- invitation takes the older one's place.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
 
-local Button = require(script.Parent.Parent.UI.Components.Button)
 local Config = require(ReplicatedStorage.Shared.Config)
 local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -21,19 +24,18 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local HudGate = require(script.Parent.Parent.UI.HudGate)
 local NavTarget = require(script.Parent.Parent.UI.NavTarget)
 local Net = require(ReplicatedStorage.Shared.Net)
+local Notify = require(script.Parent.Parent.UI.Notify)
 local PartyFrames = require(script.Parent.Parent.UI.Screens.PartyFrames)
 local PartyWindow = require(script.Parent.Parent.UI.Screens.PartyWindow)
 local PlayerMenu = require(script.Parent.Parent.UI.Screens.PlayerMenu)
 local ProfileWindow = require(script.Parent.Parent.UI.Screens.ProfileWindow)
+local Prompt = require(script.Parent.Parent.UI.Components.Prompt)
 local ServerModeView = require(script.Parent.Parent.UI.ServerModeView)
 local Social = require(ReplicatedStorage.Shared.Logic.Social)
 local Sounds = require(script.Parent.Parent.UI.Sounds)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
-local Theme = require(script.Parent.Parent.UI.Theme)
 local Toast = require(script.Parent.Parent.UI.Components.Toast)
-
-local Children = Fusion.Children
 
 local PartyController = {
 	Name = "PartyController",
@@ -46,8 +48,7 @@ local WindowManager: any
 local TargetController: any
 local SocialController: any
 
-local inviteFrom = scope:Value(nil :: string?)
-local inviteLeft = scope:Value(0)
+local invite: Notify.Handle? = nil
 local menuFor = scope:Value(nil :: Player?)
 local menuAt = scope:Value(Vector2.zero)
 
@@ -61,56 +62,28 @@ local function invoke(name: string, ...: any): boolean
 end
 
 local function respond(accept: boolean)
-	inviteFrom:set(nil)
+	invite = nil
 	task.spawn(invoke, "PartyRespond", accept)
 end
 
-local function invitePopup(): Instance
-	return scope:New("Frame")({
-		Name = "PartyInvite",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 120),
-		Size = UDim2.fromOffset(460, 130),
-		BackgroundColor3 = Theme.Iron.Surface,
-		Visible = scope:Computed(function(use): boolean
-			return use(inviteFrom) ~= nil
-		end),
-		[Children] = {
-			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = 1.5 }),
-			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(16, 10),
-				Size = UDim2.new(1, -32, 0, 50),
-				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					return Text.get(use, "party.invited", { name = use(inviteFrom) or "", seconds = use(inviteLeft) })
-				end),
-				TextWrapped = true,
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Iron.Text,
-			}),
-			Button(scope, {
-				Surface = "iron", -- S135: on a dark HUD / overlay surface
-				Position = UDim2.new(0, 16, 1, -62),
-				Size = UDim2.new(0.5, -24, 0, 50),
-				Variant = "primary",
-				Text = Text.T(scope, "party.accept"),
-				OnClick = function()
-					respond(true)
-				end,
-			}),
-			Button(scope, {
-				Surface = "iron", -- S135: on a dark HUD / overlay surface
-				AnchorPoint = Vector2.new(1, 0),
-				Position = UDim2.new(1, -16, 1, -62),
-				Size = UDim2.new(0.5, -24, 0, 50),
-				Text = Text.T(scope, "party.decline"),
-				OnClick = function()
-					respond(false)
-				end,
-			}),
-		},
+-- The invitation: one line with ✓ and ✕ and the bar of the time left, until answered or its time runs out.
+local function showInvite(fromName: string, seconds: number)
+	if invite then
+		invite.close() -- the server answers the newest invitation only (PartyRespond names no inviter)
+	end
+	invite = Prompt.push({
+		class = "partyInvite",
+		icon = "⚑",
+		seconds = seconds,
+		line = function(use: Fusion.Use, left: number): string
+			return Text.get(use, "party.invited", { name = fromName, seconds = left })
+		end,
+		accept = function()
+			respond(true)
+		end,
+		decline = function()
+			respond(false)
+		end,
 	})
 end
 
@@ -331,7 +304,6 @@ function PartyController.Init(registry)
 		end
 	end).Parent =
 		layer
-	invitePopup().Parent = UIController.GetLayer("Modals")
 	-- The player menu lives in an unscaled ScreenGui so it opens exactly at the mouse.
 	local gui = Instance.new("ScreenGui")
 	gui.Name = "Vaelthorn_PlayerMenu"
@@ -396,20 +368,7 @@ end
 function PartyController.Start()
 	Net.On("PartyInvited", function(fromName: string, seconds: number)
 		Sounds.play("levelUp")
-		inviteFrom:set(fromName)
-		local token = os.clock()
-		inviteLeft:set(seconds)
-		task.spawn(function()
-			local left = seconds
-			while left > 0 and Fusion.peek(inviteFrom) == fromName do
-				task.wait(1)
-				left -= 1
-				inviteLeft:set(left)
-			end
-			if Fusion.peek(inviteFrom) == fromName and os.clock() - token >= seconds - 0.5 then
-				inviteFrom:set(nil)
-			end
-		end)
+		showInvite(fromName, seconds)
 	end)
 
 	watchHint()

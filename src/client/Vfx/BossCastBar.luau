@@ -6,6 +6,9 @@
 --           blow. One bar per caster: a new cast replaces it; it goes at the blow or when the caster is gone.
 --   banner  a warning across the upper middle of the screen for a big attack (name and what to do), with a short
 --           alarm; it scales in, pulses and fades.
+--           UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"): the
+--           warning is UI/Notify's alert line (at most 28 characters) in the band under the target, on a dark plate
+--           edged in the telegraph's colour, until the blow; no separate layer over the windows any more.
 -- Both are interface, so low quality keeps them (they are the warning itself). The time runs on Vfx/Clock (AnimLab
 -- freezes it).
 
@@ -18,6 +21,7 @@ local BossCast = require(ReplicatedStorage.Shared.Logic.BossCast)
 local Clock = require(script.Parent.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
 local MonsterBox = require(script.Parent.Parent.Util.MonsterBox)
+local Notify = require(script.Parent.Parent.UI.Notify)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
 local BossCastBar = {}
@@ -42,8 +46,7 @@ type Bar = {
 }
 
 local bars: { [Model]: Bar } = {}
-local banner: { gui: ScreenGui, frame: Frame, label: TextLabel, stroke: UIStroke, scale: UIScale, start: number, seconds: number }? =
-	nil
+local banner: Notify.Handle? = nil -- the warning on the alert line
 local connection: RBXScriptConnection? = nil
 local folder: Folder? = nil
 
@@ -165,24 +168,7 @@ local function step()
 		local beat = 0.5 + 0.5 * math.cos(now * (6 + 18 * k) * (if bar.big then 1.4 else 1))
 		bar.stroke.Transparency = 0.6 * beat * (1 - k * 0.5)
 	end
-	local b = banner
-	if b then
-		local t = now - b.start
-		if t >= b.seconds then
-			b.gui:Destroy()
-			banner = nil
-		else
-			local appear = math.clamp(t / 0.15, 0, 1)
-			local fade = math.clamp((b.seconds - t) / 0.4, 0, 1)
-			b.scale.Scale = 0.7 + 0.3 * (1 - (1 - appear) ^ 3) + 0.04 * math.sin(t * 14) * fade
-			local alpha = 1 - math.min(appear, fade)
-			b.label.TextTransparency = alpha
-			b.label.TextStrokeTransparency = alpha
-			b.frame.BackgroundTransparency = 0.35 + 0.65 * alpha
-			b.stroke.Transparency = alpha + (1 - alpha) * 0.5 * (0.5 + 0.5 * math.cos(t * 16))
-		end
-	end
-	if next(bars) == nil and banner == nil and connection then
+	if next(bars) == nil and connection then
 		connection:Disconnect()
 		connection = nil
 	end
@@ -226,66 +212,17 @@ function BossCastBar.cast(caster: Model, name: string, seconds: number, color: C
 	run()
 end
 
--- The warning banner of a big attack: `text` in `color` for `seconds` (at least Config.BossCast.bannerSeconds).
+-- The warning banner of a big attack: `text` in `color` for `seconds` (at least Config.BossCast.bannerSeconds), on
+-- UI/Notify's alert line; a newer warning takes the older one's place (its blow has landed).
 function BossCastBar.banner(text: string, color: Color3, seconds: number)
-	local root = guiRoot()
-	if not root or text == "" then
+	if text == "" then
 		return
 	end
 	if banner then
-		banner.gui:Destroy()
-		banner = nil
+		banner.close()
 	end
 	local vivid = Color3.fromHex(BossCast.vivid("#" .. color:ToHex()))
-	local gui = Instance.new("ScreenGui")
-	gui.Name = "BossWarning"
-	gui.DisplayOrder = 40
-	gui.IgnoreGuiInset = true
-	gui.ResetOnSpawn = false
-	local frame = Instance.new("Frame")
-	frame.AnchorPoint = Vector2.new(0.5, 0.5)
-	frame.Position = UDim2.fromScale(0.5, 0.24)
-	frame.Size = UDim2.new(0.7, 0, 0, 64)
-	frame.BackgroundColor3 = IRON
-	frame.BackgroundTransparency = 1
-	frame.BorderSizePixel = 0
-	frame.Parent = gui
-	local constraint = Instance.new("UISizeConstraint")
-	constraint.MaxSize = Vector2.new(760, 64)
-	constraint.Parent = frame
-	local corner = Instance.new("UICorner")
-	corner.CornerRadius = UDim.new(0, 8)
-	corner.Parent = frame
-	local stroke = Instance.new("UIStroke")
-	stroke.Thickness = 3
-	stroke.Color = vivid
-	stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	stroke.Parent = frame
-	local scale = Instance.new("UIScale")
-	scale.Scale = 0.7
-	scale.Parent = frame
-	local label = Instance.new("TextLabel")
-	label.BackgroundTransparency = 1
-	label.Size = UDim2.new(1, -24, 1, -10)
-	label.Position = UDim2.fromOffset(12, 5)
-	label.FontFace = FONT
-	label.TextScaled = true
-	label.Text = text
-	label.TextColor3 = vivid:Lerp(WHITE, 0.35)
-	label.TextStrokeColor3 = EDGE
-	label.TextStrokeTransparency = 0
-	label.Parent = frame
-	gui.Parent = root
-	banner = {
-		gui = gui,
-		frame = frame,
-		label = label,
-		stroke = stroke,
-		scale = scale,
-		start = Clock.now(),
-		seconds = math.max(CFG.bannerSeconds, seconds),
-	}
-	run()
+	banner = Notify.alert(text, math.max(CFG.bannerSeconds, seconds), vivid)
 end
 
 -- Drops the bar of a caster (it died, the cast was cancelled).

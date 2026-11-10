@@ -4,6 +4,10 @@
 -- three rows of the party's table plus the own row, "Details" (the fight log window) and a close button. Off with the
 -- setting `fightCard` (the window and the boss reward card stay). Mounted by FightLogController. S149b: after a world
 -- boss also the player's place in the contribution ("Place 3 of 14 · share 9.5 %", no stranger named).
+-- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"; owner question 1):
+-- the card is one of UI/Notify's cards (FightCard.push): the target and the outcome in the PC corner's card slot (a
+-- tablet: under the toasts, a phone: one line of its M zone) with 'Szczegóły'; the full table (every row, the header
+-- line, the place) opens from there over a dimmed screen (a phone's full-screen sheet), closed by a tap beside it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,8 +15,8 @@ local Button = require(script.Parent.Parent.Components.Button)
 local FightTable = require(script.Parent.Parent.Components.FightTable)
 local FightView = require(script.Parent.Parent.FightView)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Notify = require(script.Parent.Parent.Notify)
 local Scale = require(script.Parent.Parent.Scale)
-local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 
@@ -22,37 +26,21 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
 	Summary: FightView.Summary,
-	OpenDetails: () -> (),
+	OpenDetails: () -> (), -- the fight log window
 	Close: () -> (),
+	Sheet: boolean?, -- a phone's full-screen sheet: the view fills its width from the top
 }
 
-local SHOWN = 3 -- rows before the own row
+local WIDTH = 600
+local VISIBLE = 8 -- rows before the table scrolls
 
--- The first SHOWN rows, plus the own row when it is further down.
-local function shortRows(rows: { FightView.Row }): { FightView.Row }
-	local own = State.Get({ "character", "name" })
-	local out = {}
-	local hasOwn = false
-	for i, row in rows do
-		if i <= SHOWN then
-			table.insert(out, row)
-			hasOwn = hasOwn or row.n == own
-		end
-	end
-	if not hasOwn then
-		for _, row in rows do
-			if row.n == own then
-				table.insert(out, row)
-				break
-			end
-		end
-	end
-	return out
-end
+local FightCard = {}
 
-local function FightCard(scope: Scope, props: Props): Instance
+-- The full view ('Szczegóły' of the card).
+function FightCard.full(scope: Scope, props: Props): Instance
 	local summary = props.Summary
-	local compact = Fusion.peek(Scale.VirtualSize).X < 900
+	local sheet = props.Sheet == true
+	local compact = sheet or Fusion.peek(Scale.VirtualSize).X < 900
 	local outcomeColor = if summary.outcome == "win" then Theme.Iron.Success else Theme.Iron.Danger
 
 	local function label(order: number, text: Fusion.UsedAs<string>, color: Color3, font: Font, size: number): Instance
@@ -72,13 +60,12 @@ local function FightCard(scope: Scope, props: Props): Instance
 
 	return scope:New("Frame")({
 		Name = "FightCard",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -Theme.Padding.Large, 1, -190),
-		Size = UDim2.fromOffset(if compact then 340 else 440, 0),
+		AnchorPoint = if sheet then Vector2.zero else Vector2.new(0.5, 0.5),
+		Position = if sheet then UDim2.new() else UDim2.fromScale(0.5, 0.5),
+		Size = if sheet then UDim2.fromScale(1, 0) else UDim2.fromOffset(WIDTH, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Iron.Surface,
-		BackgroundTransparency = Theme.HudAlpha,
-		Active = true,
+		Active = true, -- a tap inside never reaches the dimmed backdrop
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({
@@ -100,7 +87,7 @@ local function FightCard(scope: Scope, props: Props): Instance
 				end),
 				Theme.Brass.Bright,
 				Theme.Fonts.Display,
-				Theme.TextSize.Body
+				Theme.TextSize.Large
 			),
 			label(
 				2,
@@ -131,15 +118,15 @@ local function FightCard(scope: Scope, props: Props): Instance
 				)
 				else nil) :: any,
 			FightTable(scope, {
-				Rows = shortRows(summary.rows),
-				Compact = true,
+				Rows = summary.rows,
+				Compact = compact,
+				MaxVisible = VISIBLE,
 				LayoutOrder = 5,
-				RowHeight = 22,
 				Surface = "iron",
 			}),
 			scope:New("Frame")({
 				LayoutOrder = 6,
-				Size = UDim2.new(1, 0, 0, 44),
+				Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("UIListLayout")({
@@ -149,26 +136,46 @@ local function FightCard(scope: Scope, props: Props): Instance
 						Padding = UDim.new(0, 8),
 					}),
 					Button(scope, {
-						Surface = "iron", -- S135: on a dark HUD / overlay surface
+						Surface = "iron",
 						LayoutOrder = 1,
-						Text = Text.T(scope, "fight.details"),
-						Variant = "primary",
-						Size = UDim2.fromOffset(140, 44),
+						Text = Text.T(scope, "window.fightlog.title"),
+						Variant = "secondary",
+						Size = UDim2.fromOffset(170, Theme.Size.MinTouch),
 						TextSize = Theme.TextSize.Small,
-						OnClick = props.OpenDetails,
+						OnClick = function()
+							props.Close()
+							props.OpenDetails()
+						end,
 					}),
 					Button(scope, {
-						Surface = "iron", -- S135: on a dark HUD / overlay surface
+						Surface = "iron",
 						LayoutOrder = 2,
 						Text = Text.T(scope, "fight.card.close"),
-						Variant = "secondary",
-						Size = UDim2.fromOffset(110, 44),
+						Variant = "primary",
+						Size = UDim2.fromOffset(120, Theme.Size.MinTouch),
 						TextSize = Theme.TextSize.Small,
 						OnClick = props.Close,
 					}),
 				},
 			}),
 		},
+	})
+end
+
+-- Puts the card into UI/Notify's queue for `seconds`: the target and the outcome, 'Szczegóły' (the full view) and ✕.
+-- `openLog`: the fight log window.
+function FightCard.push(summary: FightView.Summary, openLog: () -> (), seconds: number): Notify.Handle?
+	return Notify.card({
+		class = "fightResult",
+		title = Text.now("fight.card.title", { name = FightView.title(Fusion.peek, summary) }),
+		line = Text.now(`fight.outcome.{summary.outcome}`),
+		accent = if summary.outcome == "win" then Theme.Iron.Success else Theme.Iron.Danger,
+		seconds = seconds,
+		details = function()
+			Notify.details(function(s: Scope, close: () -> (), sheet: boolean): Instance
+				return FightCard.full(s, { Summary = summary, OpenDetails = openLog, Close = close, Sheet = sheet })
+			end)
+		end,
 	})
 end
 
