@@ -14866,3 +14866,78 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `UI/Components/Section`, `UI/Theme`, `Controllers/WindowManager`, `tests/TextScan.luau`,
   `tests/fixtures/textcaps/A|B|C|D|E.luau`, `tests/textcaps.spec.luau`, `tests/hudzones.spec.luau`,
   `tests/uiframe.spec.luau`, `tests/sectionfold.spec.luau`, `tests/uifit.spec.luau`, `tools/balance_reasons.luau`.
+
+### Plan UI 2026-11-10, pakiet A: HUD bez nakładania, zwijana kolumna, siatka telefonu (2026-11-10)
+- Właściciel 2026-11-10: „niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się zwinąć”. Pakiet A planu
+  UI (HUD) na API pakietu F: część kodu (ta sekcja), a teksty pakietu A (limity, słownik, długie myślniki, lista A w
+  `tests/fixtures/textcaps`) robi druga część na tej samej gałęzi.
+- Strefy na PC i tablecie: `Hud/init` i pliki elementów biorą miejsca z mapy stref (`UI/HudSlots.Zones` =
+  `Logic/HudZones.pc` dla stanu HUD, `HudSlots.at` / `point` / `sizeOf`): portret, rząd efektów, menu, linia rzucania,
+  pasek akcji, pasek EXP, ramka celu, panel areny, cel pod paskiem bossa lochu, okienko „Auto”; telefon dalej z
+  `PhoneLayout`. Kolizje z planu: pasek rzucania i nazwa puli broni na jednej linii (`castLine`; w trakcie rzucania
+  nazwa czeka, `PoolLabel`), okienko „Auto” na prawo od przycisku (422..592 × 88..160 przy 1080p), rząd efektów
+  najwyżej 9 ikon (`HudZones.EFFECTS_CAP`, telefon 3) i „+N” z resztą w dymku (`EffectIcons` `Max`), miejsce na kwestię
+  NPC pod ostatnim rzędem drużyny (`barkSlot`, czyta je pakiet B), `ArenaTeams` w kolumnie jako „arena” (zwija się do
+  linii kropek), panel meczu i powrotu areny w paśmie celu (172..240), dodatek albo gracz jako cel pod paskiem bossa
+  lochu (142..234, `addFrame`); menu gracza na PC liczone od ramki celu. Czat Robloxa na PC zostaje w swoim miejscu,
+  ale `ChatDock` skraca jego wysokość (`HudStack.chatHeightScale`, najwyżej do połowy), żeby góra okna stała pod
+  miejscem kwestii NPC; na dotyku miejsce Robloxa i pełna wysokość.
+- Kolumna: `HudStack.place(items, column, fixed)` zwraca prostokąty, zwinięte id, ukryte id i plakietkę „+N”; nic nie
+  schodzi za podłogę (PC h − 192 bez zmian): najpierw `least` (tropiciel: nagłówek i dwie linie), potem `line` (panele
+  od najniższego, tropiciel ostatni, element przywrócony z listy po innych), potem zapasowa kolumna pod pasem
+  wiadomości, a na końcu najniższe za „+N”. `HudStack.ORDER` dostał „party” (pasek drużyny telefonu) i „guide” (pasek
+  prowadzenia telefonu bez miejsca w strefie M), a pod „arena” stoi też lista drużyn areny. `UI/HudSlots`: kilka
+  elementów pod jednym id (`join`: pigułka kolejki areny, lista drużyn, na telefonie panele meczu i powrotu), `forced`
+  (kolumna zwinęła panel), `Hidden`, `Chip`, `bring` (lista „+N” przywraca element); `Hud/StackChip`: plakietka i lista
+  ukrytych (`hud.stack.*`).
+- Panele: `Hud/PanelHeader` (▾/▸, nazwa, jedna wartość, „i” ze szczegółami; PC 32, tablet `MinTouch`, telefon 52;
+  cała linia zwija). Boss świata (linia: „♛ boss”, HP albo czas, miejsce na innej mapie w „i”), wydarzenie świata,
+  Krwawy Księżyc, turniej i arena zwijają się przez `Section.state` z id w `Data/Folds/Hud` (`hudWorldBoss`,
+  `hudWorldEvent`, `hudBloodMoon`, `hudTourney`, `hudArena` = `{ pc = true, phone = false }`); klik na panelu zwiniętym
+  przez kolumnę przywraca go (`HudSlots.bring`). Elity II zostają w `TrackerFold` „e2”. Tropiciel: nagłówek przez
+  `PanelHeader` w swoim rzędzie 28 px (z „≡”, prowadzeniem i zwijaniem jak dotąd), nagłówki grup jako `PanelHeader`
+  (grupy i domyślne zwinięcie bez zmian), cel questu jedna linia do 32 znaków (`QuestRows.short`, `LINE_MAX`), cały w
+  dymku. Klucz `hud.worldboss.collapsed` usunięty (zwinięty panel to nagłówek).
+- Telefon (`Logic/PhoneHud`, siatka mapy stref): `area(device, topBar)`, stos od y 153 do `stackBottom` =
+  min(H − 28, round(0,58·H) − 8) w liniach 52 px z „+N” 44×52 na końcu ostatniej (`stackLines`), jeden „Auto” na
+  początku rzędu pod portretem (okienko `AUTO_POPOVER` nad rzędem efektów), strefa M (`mZone`: efekty celu, linia
+  rzucania, pasek prowadzenia `NavBar` `Phone`, póki M sięga 218, inaczej linia stosu), „⋯” 44×44 obok ramki celu
+  zamiast rzędu akcji, minimapa 0,5 poniżej 420 (`minimapScale`), przełącznik PvP 52 px z sekundami w środku i bez
+  plakietki, szuflada menu na lewo od swojego przycisku (nie zasłania PvP), `PartyFrames` jako najwyżej 3 kafelki
+  po 52 i „+N”, `DeathScreen` na środku warstwy (zmniejsza się na niskiej). Bez zmian: atak, łuk, mikstury, sprint,
+  wierzchowiec, poczta. `PhoneLayout.Places` idzie za rozmiarem warstwy, `PhoneLayout.Pick` daje wartość telefonu albo
+  PC. `PhoneHud.problems` zwraca też trzecią listę: element w strefie kciuka i cel dotyku poniżej 44 (52 dla ataku,
+  umiejętności, menu, sprintu i wierzchowca).
+- Samouczek: `Logic/Tutorial.ANCHOR_NAMES` (zamrożone nazwy: QuestTracker, inventory, MenuToggle, PotionBar,
+  AttackButton, Skill1, MobileSkill1; `HudAnchors.NAMES` to ta sama tabela) i `Tutorial.DRAWER`, gałka z
+  `HudZones.thumb`, `Logic/TutorialTile` (`place` z `TutorialController`, `avoid`: pas wiadomości na PC i tablecie,
+  łuk z atakiem na telefonie, `width`: telefon 300; bez miejsca obok elementu miejsce domyślne zsunięte z tego, co
+  zasłania), `Tutorial.text(step, touch, away, phone, has)` bierze `.phone`, gdy klucz jest (`tutorial.backpack.phone`
+  pl i en).
+- `Logic/HudLayout.reserved` / `usable`: pasmo celu w najwyższym stanie, pas wiadomości, miejsce karty (PC), strefa M i
+  kciuka (telefon); `UI/HudDrag` stawia zapisany tam element w miejscu domyślnym, a upuszczony tam wraca bez zapisu;
+  `valid` bez zmian. `CombatFxController`: czerwony błysk przy ciosie DisplayOrder 3 (nad HUD 1, pod wskaźnikiem
+  samouczka 4 i oknami 5).
+- Testy: `hudzones.spec` (lista `KNOWN` bez par PC; 2000 losowych stanów na każdy ekran PC × pasek 0/36/58: w warstwie,
+  bez nakładania, pas wiadomości od swojej góry, kolumna nad podłogą, „+N” tylko z ukrytymi; czat pod miejscem kwestii
+  NPC; każdy element `ELEMENTS` czyta swoją strefę), `phonehud.spec` (3 telefony × pasek 0/36/58: `problems` puste,
+  cele dotyku, liczba linii stosu, jeden „Auto”, „⋯”, M, PvP, kafelki drużyny, ekran śmierci), `hudlayout.spec` (L4:
+  500 losowych kolumn, kolejność zwijania, „+N”; zastrzeżone miejsca), `tutorial.spec` (kotwice, karta na wszystkich
+  warstwach, teksty urządzeń), `hudreveal.spec` (element kroku widoczny w jego kroku), `hudmenu.spec` (BAR 6, TILES 15,
+  szuflada), `questrows.spec` (`short`), `sectionfold.spec` (id plików A w `Folds/Hud`).
+- Odstępstwa od planu:
+  - tablety zostają przy liście `KNOWN` i `THIN` w `hudzones.spec` (pasmo celu 720 szerokości i łuk dotyku na tablecie
+    1210–1280 potrzebują własnego układu), a losowe stany sprawdzają tylko ekrany PC, jak w kryteriach planu;
+  - „ChatDock zostaje”, a miejsce kwestii NPC ma być wolne: czat nie przesuwa się, tylko skraca (propozycja w DECYZJE);
+  - pas wiadomości pod wysokim pasmem celu (tablet z paskiem bossa i dodatkiem) zaczyna się pod pasmem, więc
+    zapasowa kolumna liczy jego dół (`HudStack.column(..., band)`);
+  - jedna linia w `tests/topband.spec` (pakiet B) czytała miejsca z plików A (`CastBar`, `TutorialTile`): sprawdza teraz
+    nowe źródło.
+- **Pliki:** `Logic/HudZones`, `HudStack`, `HudLayout`, `PhoneHud`, `QuestRows`, `Tutorial`, `TutorialTile` (nowy),
+  `Data/Folds/Hud`, `Data/Localization/pl|en` (`hud.stack.*`, `tutorial.backpack.phone`, bez
+  `hud.worldboss.collapsed`), `UI/HudSlots`, `HudAnchors`, `HudDrag`, `PhoneLayout`, `Screens/Hud/init`, `ArenaPanel`,
+  `ArenaTeams`, `AutoGroup`, `BloodMoonPanel`, `CastBar`, `ChatDock`, `DeathScreen`, `EffectIcons`, `NavBar`,
+  `PanelHeader` (nowy), `PoolLabel`, `PvpToggle`, `QuestTracker`, `StackChip` (nowy), `TargetFrame`, `TourneyPanel`,
+  `WorldBossPanel`, `WorldEventPanel`, `Screens/PartyFrames`, `Controllers/TutorialController`, `CombatFxController`,
+  `tests/hudzones|phonehud|hudlayout|hudmenu|hudreveal|tutorial|questrows|sectionfold|topband.spec.luau`,
+  `tests/fixtures/textcaps/A.luau`.

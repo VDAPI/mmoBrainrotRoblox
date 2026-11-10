@@ -292,3 +292,17 @@
   `CameraController.Release("<właściciel>")` (gracz dostaje kamerę z powrotem, gdy nikt jej nie trzyma). Bez właściciela
   strażnik oddaje kamerę po 0,5 s; `cameralease.spec` pilnuje, że `Scriptable` pisze tylko `CameraController` (i pisarz
   przerywnika).
+- **Element HUD i panel kolumny** (2026-11-10, plan UI, pakiet A; właściciel: „niektóre rzeczy zasłaniają inne, nie
+  da się zwinąć”): nowy element HUD na PC i tablecie ma miejsce w `Logic/HudZones.pc` (prostokąt strefy i nazwa w
+  `ELEMENTS` z plikiem) i czyta je przez `HudSlots.at(scope, "<miejsce>")`, `HudSlots.point` albo `HudSlots.sizeOf`,
+  bez własnych pikseli w `Screens/Hud`; na telefonie miejsce w `Logic/PhoneHud.places` (`edge`, `touch` = cel dotyku
+  ≥ 44, `control` = sterowanie kciukiem ≥ 52, nic w strefie kciuka) czytane przez `PhoneLayout`. Nowy panel kolumny:
+  id w `HudStack.ORDER` (kolejność od góry), `HudSlots.join(scope, id, box)` z `line` = wysokość linii nagłówka
+  (`PanelHeader.Height`), nagłówek `Hud/PanelHeader.new(scope, { Title, Value?, Open, OnClick, Info? })` (▾/▸, nazwa do
+  20 znaków, jedna wartość, „i” ze szczegółami), zwinięcie na koncie przez `Section.state(scope, "<id>")` z domyślnym
+  `{ pc = true, phone = false }` w `Data/Folds/Hud`, a `HudSlots.forced(scope, id)` mówi, że zwinęła go kolumna (panel
+  pokazuje linię nagłówka, klik przywraca go przez `HudSlots.bring(id)`); nazwa na liście „+N”: `hud.stack.<id>` (PL,
+  EN). Element, na który wskazuje samouczek: nazwa w `Logic/Tutorial.ANCHOR_NAMES` (zamrożone, `tutorial.spec`
+  sprawdza, że `Screens/Hud` ją buduje), tekst kroku `tutorial.<krok>.pc` / `.touch` i, gdy telefon jest inny,
+  `.phone`. Testy: `hudzones.spec` (PC i tablet; losowe stany na PC), `phonehud.spec` (3 telefony), `hudlayout.spec`
+  (kolumna, zastrzeżone miejsca), `sectionfold.spec` (id w `Folds/Hud`).

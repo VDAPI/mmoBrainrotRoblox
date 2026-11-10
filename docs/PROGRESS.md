@@ -49,6 +49,16 @@
 
 ## Niedokończone (kod)
 
+- **Plan UI 2026-11-10, pakiet A (HUD):** elementy HUD na PC i tablecie w strefach `Logic/HudZones` (linia rzucania
+  wspólna z nazwą puli, „Auto” na prawo, 9 efektów i „+N”, panel areny w paśmie celu, cel pod paskiem bossa lochu, czat
+  skrócony pod miejscem kwestii NPC), kolumna bez wychodzenia za podłogę (zwijanie do nagłówka, „+N” z listą,
+  `Hud/StackChip`), nagłówki `Hud/PanelHeader` ze zwijaniem na koncie (`Data/Folds/Hud`), siatka telefonu
+  (`Logic/PhoneHud`: jeden „Auto”, stos nad strefą kciuka, strefa M, „⋯”, PvP z odliczaniem w środku, kafelki drużyny),
+  karta samouczka obok elementu (`Logic/TutorialTile`), przesunięte panele poza zastrzeżonymi miejscami, czerwony błysk
+  pod oknami; nieobejrzane w Studio (kolumna z „+N” na niskim oknie, nagłówki i zwijanie paneli, okienko „Auto”,
+  skrócony czat, panel areny i cel pod paskiem bossa, siatka telefonu na trzech telefonach, karta samouczka na
+  telefonie, upuszczenie panelu na pasie wiadomości). Z planu zostają: własny układ tabletu (listy `KNOWN` i `THIN` w
+  `hudzones.spec`) i teksty pakietu A (druga część pakietu).
 - **Plan UI 2026-11-10, pakiet F (fundament):** zasady `docs/UI-ZASADY.md`, limity tekstu na powierzchnię
   (`Logic/TextCaps`, listy „do skrócenia” pakietów A–E), domyślne zwinięcie na urządzenie (`Data/Folds`,
   `Section.state`), czyste API układu (`Logic/HudZones`, `WindowFrame`, `Popover`), tokeny `Theme` i zaślepka
