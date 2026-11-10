@@ -210,7 +210,6 @@ return {
 		["Data/UiArtSheets"] = "generowane", -- S119: asset ids of the interface pictures
 		["Data/UiPalette"] = "wygląd", -- S135: interface colours (parchment and iron) and their contrast pairs
 		["Data/UiWindows"] = "wygląd", -- S135: which windows already use the parchment look
-		["Data/UiHubs"] = "wygląd", -- UI plan phase 3: the hubs of windows (tabs in the title bar)
 		["Data/DamageNumbers"] = "wygląd",
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",

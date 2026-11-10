@@ -10,7 +10,6 @@ local Registry = require("../src/shared/Data/UiArt")
 local Sheets = require("../src/shared/Data/UiArtSheets")
 local T = require("./Test")
 local UiArt = require("../src/shared/Logic/UiArt")
-local UiHubs = require("../src/shared/Data/UiHubs")
 local UiArtKeys = require("../src/shared/Logic/UiArtKeys")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
@@ -186,30 +185,11 @@ T.describe("Logic/UiArt keys (S119)", function()
 		for id in string.gmatch(block, '%f[%w]id = "([%w_]+)"') do
 			table.insert(found, id)
 		end
-		-- UI plan phase 3: the hubs' buttons (hubEntry: the picture of their button id or the one they name)
-		for line in string.gmatch(block, "[^\n]+") do
-			local hub = string.match(line, 'hubEntry%("([%w_]+)"')
-			if hub then
-				local art = string.match(line, 'UiArt%.menu%("([%w_]+)"%)')
-				table.insert(found, art or (UiHubs.get(hub) :: UiHubs.Hub).button)
-			end
-		end
-		-- the windows that became hub tabs only (skills, quests) keep their pictures for the tabs to come
-		table.insert(found, "skills")
-		table.insert(found, "quests")
 		-- UI plan phase 1: the windows that left the bar keep their pictures on the game menu's tiles
 		local tiles = string.match(source, "local TILE_DEFS: [^\n]*\n(.-)\n}") or ""
 		for id in string.gmatch(tiles, 'UiArt%.menu%("([%w_]+)"%)') do
 			table.insert(found, id)
 		end
-		-- a picture used twice (a hub's button and a tile) counts once
-		local unique: { string } = {}
-		for _, id in found do
-			if not table.find(unique, id) then
-				table.insert(unique, id)
-			end
-		end
-		found = unique
 		table.sort(found)
 		local menus = table.clone(UiArt.MENUS)
 		table.sort(menus)

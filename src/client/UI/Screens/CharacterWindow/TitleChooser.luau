@@ -4,6 +4,7 @@
 -- buttons, and a cycle instead of a choice).
 --   TitleChooser.Picker(scope, { LayoutOrder, Open, State, Touch }): the current title (medallion, colour, time left of
 --     a timed title) and a clearly visible "Change title" button that opens the list.
+--   TitleChooser.currentName(use, State): the worn title's name for a one-line summary.
 --   TitleChooser.Panel(scope, { Open, State, Touch }): the list over the whole window (dimmed backdrop, tap outside or
 --     "Close" closes it): "No title" first, then every unlocked title (Logic/Titles.choices) with its colour, where it
 --     comes from (Titles.sourceOf) and the worn one marked. A row sends SetTitle; the server checks the title is
@@ -97,6 +98,13 @@ local function titleName(use: Fusion.Use, st: ChooserState, def: TitleData.Title
 	end
 	local args = Titles.argsOf(use(st.character), def.id)
 	return TitleText.get(use, def, if args then args.season else nil)
+end
+
+-- The worn title's name for a one-line summary (the folded sets and title section; no time left), nil without one.
+function TitleChooser.currentName(use: Fusion.Use, st: ChooserState): string?
+	local id = use(st.current)
+	local def = if id then TitleData.get(id) else nil
+	return if def then titleName(use, st, def, false) else nil
 end
 
 export type PickerProps = {

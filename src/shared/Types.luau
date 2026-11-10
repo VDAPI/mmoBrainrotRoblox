@@ -446,6 +446,7 @@ export type Settings = {
 	achToasts: boolean, -- S151: achievement toasts (false: one line in the system chat instead)
 	achHint: boolean, -- S151b: the one-time tracking hint of the achievements window was shown
 	trackerFold: { [string]: boolean }, -- owner 2026-10-21: folded quest tracker groups (Logic/TrackerFold)
+	sections: { [string]: boolean }, -- owner 2026-11-10: open and folded window sections (Logic/SectionFold)
 }
 
 -- S133: a friend or an ignored player (account.social, key tostring(userId)): the character name at the time, the class

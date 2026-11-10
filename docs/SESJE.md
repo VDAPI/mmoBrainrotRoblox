@@ -14561,3 +14561,27 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `Logic/SkillAim`, `SkillController`, `TargetController.IsEnemy`, `Config.Skills.holdToAim`, `Types`,
   `Localization/pl|en`, `tests/skillaim.spec`, `docs/DESIGN.md` §14.1 i sterowanie, wiki (`skills.json`, `meta.json`,
   `docs/PRZEDMIOTY.md`).
+
+### Huby okien cofnięte, zwijane sekcje (2026-11-10)
+- Właściciel: „podzieliłeś to, że w plecaku masz i umiejętności itp., rozdziel to jak było wcześniej”; za dużo napisów,
+  rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się zwinąć.
+- Huby (plan UI, faza 3, krok 2) cofnięte: pasek HUD ma sześć przycisków fazy 1 (Plecak B, Umiejętności K, Mapa M,
+  Questy L, Sklep, ☰), każdy otwiera swoje okno; wierzchowce, garderoba, osiągnięcia, grupa, gildia, znajomi, poczta,
+  arena, rankingi, Krwawy Księżyc, przepustka, VIP i nagroda dnia są kafelkami ☰ z klawiszami, „!” kafelka zapala ☰.
+  Bez zakładek w pasku tytułu okien (`Window`, `WindowManager` jak przed hubami, bez `FocusHint`). Zostają: osobne okno
+  Ustawień, liczniki Elite II w tropicielu, odsłanianie z samouczkiem, teraz według przycisków (`Logic/HudReveal.button`:
+  ☰ od początku, Plecak i Umiejętności w kroku „plecak”, reszta po samouczku). Toasty odblokowania wierzchowców i areny
+  znów wskazują menu ☰.
+- Okno plecaka bez zakładek (jak przed 2026-10-31): 1240×720, z lewej imię, ekwipunek i sekcja „Zestawy i tytuł”, w
+  środku plecak, z prawej sekcja „Statystyki”; na telefonie z lewej imię, ekwipunek i obie sekcje (przewijane), z
+  prawej plecak. Nowy komponent `UI/Components/Section` (nagłówek ▾/▸, cały klikalny, na dotyku 44, „i” obok tytułu,
+  jedna linia w zwiniętym) ze stanem na koncie (`account.settings.sections`, `Logic/SectionFold`, walidacja w
+  `SettingsService`). Statystyki domyślnie otwarte (zwinięte: plakietka wolnych punktów), Zestawy i tytuł domyślnie
+  zwinięte (aktywny zestaw i tytuł w jednej linii), opis zestawów za „i”.
+- Testy: `sectionfold.spec`, `charactersections.spec` (zamiast `charactertabs`), `hudreveal.spec` (przyciski zamiast
+  hubów), `hudmenu.spec` i `uiart.spec` jak w fazie 1 plus brak hubów; `uihubs.spec` usunięty.
+- **Pliki:** `ScreenController`, `WindowManager`, `Window`, `Hud/init`, `TutorialController` (komentarz),
+  `CharacterWindow` (`init`, `DerivedList`, `StatAllocator`, `TitleChooser`), `Components/Section`,
+  `Logic/SectionFold`, `Logic/CharacterSections`, `Logic/HudMenu`, `Logic/HudReveal`, `Logic/Unlocks`,
+  `AccountSchema`, `Types`, `SettingsService`, `Localization/pl|en`, `tools/balance_reasons.luau`, `docs/DESIGN.md`
+  §23, `docs/ARCHITECTURE.md`, `docs/JAK-DODAC.md`.

@@ -5,17 +5,14 @@
 -- on the tile, and every key stays. A "!" on a tile lights the ☰ (on a phone in landscape also the drawer button; the
 -- drawer holds the same six, the login reward and the season pass only while a reward waits). Pure (Lune):
 -- tests/hudmenu.spec.
--- UI plan phase 3 (Data/UiHubs): the bar holds the five hubs (Character, World, Community, Rivalry, Shop and rewards)
--- and the ☰; a hub's window shows its siblings as tabs. The tiles stay (another way in); the ☰'s "!" now comes only
--- from the tiles outside the hubs (a hub's button shows its windows' own).
-
-local UiHubs = require("../Data/UiHubs")
+-- Owner 2026-11-10 ("you merged things so the backpack also holds skills; separate them like before"): the window hubs
+-- of UI plan phase 3 are gone, so the bar holds these six again and every window stands on its own; the buttons still
+-- come with the tutorial (Logic/HudReveal).
 
 local HudMenu = {}
 
--- The HUD bar, left to right (Controllers/ScreenController, Hud `menu`); the tutorial points at "inventory" (the
--- Character hub's button).
-HudMenu.BAR = table.freeze({ "inventory", "world", "social", "rivalry", "premium", "menu" })
+-- The HUD bar, left to right (Controllers/ScreenController, Hud `menu`); the tutorial points at "inventory".
+HudMenu.BAR = table.freeze({ "inventory", "skills", "map", "quests", "premium", "menu" })
 
 -- The game menu's tiles in order, four to a row (UI/Screens/GameMenu): people, competition, the character, rewards and
 -- news (a hidden tile, the mounts below their level, leaves no hole).
@@ -52,10 +49,6 @@ HudMenu.KEYS = table.freeze({
 	achievements = "win_achievements",
 	season = "win_season",
 	emotes = "emote_wheel",
-	-- UI plan phase 3: a hub's button shows the key of its first tab
-	world = "win_map",
-	social = "win_party",
-	rivalry = "win_arena",
 } :: { [string]: string })
 
 -- A tile: `perRow` to a row, `h` tall, `gap` apart; its name gets at least `label` px a line, on two lines at most.
@@ -78,16 +71,11 @@ function HudMenu.isTile(id: string): boolean
 	return IS_TILE[id] == true
 end
 
--- Whether the ☰ shows "!": the "!" of a tile outside the hubs is lit (`lit`: id -> its badge now); the hubs' buttons
--- show their windows' own. UI plan phase 4: a tile of a hub whose button does not show yet (`hubShown`, Logic/HudReveal)
--- lights the ☰ too, so a "!" always has a place to go up to.
-function HudMenu.attention(lit: { [string]: boolean }, hubShown: ((hubId: string) -> boolean)?): boolean
+-- Whether the ☰ shows "!": a tile's own "!" is lit (`lit`: id -> its badge now); the bar's buttons show their own.
+function HudMenu.attention(lit: { [string]: boolean }): boolean
 	for id, on in lit do
 		if on and IS_TILE[id] then
-			local hub = UiHubs.hubOf(id)
-			if hub == nil or (hubShown ~= nil and not hubShown(hub.id)) then
-				return true
-			end
+			return true
 		end
 	end
 	return false

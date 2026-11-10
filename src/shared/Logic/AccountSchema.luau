@@ -78,6 +78,7 @@ function AccountSchema.accountTemplate(): AccountData
 			achHint = false, -- S151b: the one-time "star an achievement" hint of the achievements window was shown
 			hud = {}, -- S156: the player's HUD layout (Logic/HudLayout; reconcile)
 			trackerFold = {}, -- owner 2026-10-21: folded quest tracker groups (Logic/TrackerFold; reconcile)
+			sections = {}, -- owner 2026-11-10: open and folded window sections (Logic/SectionFold; reconcile)
 		},
 		purchases = {},
 		dailyLimits = { day = 0, protectScrolls = 0 },
