@@ -6,7 +6,9 @@
 -- Owner 2026-11-10 (UI plan L10): "Wystaw przedmiot" stays in sight. The form scrolls over the button pinned to the
 -- bottom (Logic/GearLayout.auctionSell, from the view's measured size), so on a phone the button no longer sits under
 -- the last line of a form taller than the window. Review 2026-11-10: the size comes without the window's opening
--- motion (UI/ViewSize), so the button no longer slides while the window opens.
+-- motion (UI/ViewSize), so the button no longer slides while the window opens. Adoption stage (UI package D after C,
+-- 2026-11-10): the button stands in the window's Footer under the form (the view gives it to AuctionWindow), and the
+-- form takes the body's whole height.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -34,9 +36,9 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SLOT = 56
 -- the view's size on PC (1080 x 700 under the window's tabs) until it is measured
-local AREA_PC = { w = 1036, h = 552 }
+local AREA_PC = { w = 1036, h = 494 } -- the body on PC (1080 x 700, under the tabs, above the footer)
 
-local function Sell(scope: Scope): Instance
+local function Sell(scope: Scope): { View: Instance, Footer: Fusion.Child }
 	local inventory = State.Value({ "character", "inventory" })
 	local gold = State.Value({ "character", "gold" })
 	-- S121: VIP lists more and pays a lower fee (the server fixes it on the listing)
@@ -209,7 +211,7 @@ local function Sell(scope: Scope): Instance
 		)
 	end
 
-	-- the items, the form and the button (GearLayout.auctionSell) from the view's own size
+	-- the items and the form (GearLayout.auctionSell) from the view's own size; the button in the footer
 	local view = ViewSize.new(scope)
 	local layout = scope:Computed(function(use): GearLayout.AuctionSell
 		return GearLayout.auctionSell(use(view.size) or AREA_PC)
@@ -230,7 +232,7 @@ local function Sell(scope: Scope): Instance
 	local formAt, formSize = place(function(l)
 		return l.form
 	end)
-	local buttonAt, buttonSize = place(function(l)
+	local _, buttonSize = place(function(l)
 		return l.button
 	end)
 
@@ -257,7 +259,7 @@ local function Sell(scope: Scope): Instance
 					slots :: any,
 				},
 			}),
-			-- the form scrolls; "Wystaw przedmiot" is pinned under it
+			-- the form scrolls; "Wystaw przedmiot" stands in the window's footer under it
 			scope:New("ScrollingFrame")({
 				Name = "Form",
 				Position = formAt,
@@ -400,20 +402,21 @@ local function Sell(scope: Scope): Instance
 					),
 				},
 			}),
-			Button(scope, {
-				Position = buttonAt,
-				Size = buttonSize,
-				Variant = "primary",
-				Text = Text.T(scope, "auction.sell.button"),
-				Disabled = scope:Computed(function(use): boolean
-					return use(busy) or use(item) == nil or use(price) == nil
-				end),
-				OnClick = submit,
-			}),
 		},
 	})
 	view.watch(root)
-	return root
+	return {
+		View = root,
+		Footer = Button(scope, {
+			Size = buttonSize,
+			Variant = "primary",
+			Text = Text.T(scope, "auction.sell.button"),
+			Disabled = scope:Computed(function(use): boolean
+				return use(busy) or use(item) == nil or use(price) == nil
+			end),
+			OnClick = submit,
+		}),
+	}
 end
 
 return Sell

@@ -11,11 +11,14 @@
 -- (smith.reroll.stoneHint) sits behind the "i" of the cost line; without a Scroll of Transformation one short line
 -- with the scroll's text behind its "i". Owner 2026-11-10 (too much text): with scrolls the same line says how many
 -- the player has, so the "every bonus" button needs no number.
+-- Adoption stage (UI package D after C, 2026-11-10; owner 2026-11-10: "things covering each other"): "Przemień" and
+-- "Przemień wszystkie" stand in the window's Footer (the view gives them to BlacksmithWindow), pinned under the content
+-- outside the anvil's scroll; the item list stays a column on the left on a phone too (a strip on top left the anvil
+-- about 50 px under the footer on a 667x375 phone).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
-local Device = require(script.Parent.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
@@ -48,6 +51,8 @@ type Result = { old: Types.Bonus, new: Types.Bonus, quality: number, item: Types
 
 local TENSION = 1.2
 local LIST_WIDTH = 262
+-- a footer button: two stand under the anvil on the narrowest phone (760 - LIST_WIDTH - 18 = 480 px)
+local FOOTER_BUTTON = 236
 local GOOD = Theme.hex(Theme.Paper.Success)
 local BAD = Theme.hex(Theme.Paper.Danger)
 -- Tooltip roles that are not lines (base stats, trait, skill effects): shown grey, "Cannot be transmuted".
@@ -168,7 +173,7 @@ local function infoLine(
 	})
 end
 
-local function Reroll_(scope: Scope, props: Props): Instance
+local function Reroll_(scope: Scope, props: Props): { View: Instance, Footer: Fusion.Child }
 	local inventory = State.Value({ "character", "inventory" })
 	local equipment = State.Value({ "character", "equipment" })
 	local gold = State.Value({ "character", "gold" })
@@ -544,22 +549,14 @@ local function Reroll_(scope: Scope, props: Props): Instance
 		})
 	end)
 
-	local touch = scope:Computed(function(use): boolean
-		return use(Device.Touch)
-	end)
-
 	local function section(order: number, key: string): Instance
 		return label(scope, order, Text.T(scope, key), Theme.Paper.TextMuted)
 	end
 
 	local details = scope:New("ScrollingFrame")({
 		Name = "Anvil",
-		Position = scope:Computed(function(use): UDim2
-			return if use(touch) then UDim2.fromOffset(0, 136) else UDim2.fromOffset(LIST_WIDTH + 18, 0)
-		end),
-		Size = scope:Computed(function(use): UDim2
-			return if use(touch) then UDim2.new(1, 0, 1, -136) else UDim2.new(1, -(LIST_WIDTH + 18), 1, 0)
-		end),
+		Position = UDim2.fromOffset(LIST_WIDTH + 18, 0),
+		Size = UDim2.new(1, -(LIST_WIDTH + 18), 1, 0),
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Paper.Surface,
@@ -703,18 +700,6 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				end)
 			),
 			label(scope, 8, countText, Theme.Paper.TextMuted),
-			Button(scope, {
-				LayoutOrder = 10,
-				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
-				Variant = "primary",
-				Text = scope:Computed(function(use): string
-					return Text.get(use, if use(phase) == "done" then "smith.reroll.again" else "smith.reroll.button")
-				end),
-				Disabled = scope:Computed(function(use): boolean
-					return use(item) == nil or use(blocker) ~= nil or use(phase) == "forging"
-				end),
-				OnClick = confirm,
-			}),
 			label(
 				scope,
 				11,
@@ -724,20 +709,9 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				end),
 				Theme.Paper.Danger
 			),
-			-- S156: every bonus at once with a Scroll of Transformation (the hint when the player has none).
+			-- S156: every bonus at once with a Scroll of Transformation; its button stands in the window's footer.
 			-- owner 2026-11-10 (too much text): the button only says what it does (a button is one line of at most 18
-			-- characters); how many scrolls the player has is the line under it
-			Button(scope, {
-				LayoutOrder = 13,
-				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
-				Variant = "secondary",
-				Text = Text.T(scope, "smith.reroll.all.button"),
-				Disabled = scope:Computed(function(use): boolean
-					local c = use(allCost)
-					return c == nil or use(scrolls) < 1 or (use(gold) or 0) < c.gold or use(phase) == "forging"
-				end),
-				OnClick = confirmAll,
-			}),
+			-- characters); its result and how many scrolls the player has (the hint when none) are these lines
 			label(
 				scope,
 				14,
@@ -796,7 +770,7 @@ local function Reroll_(scope: Scope, props: Props): Instance
 	})
 	anvil = details
 
-	return scope:New("Frame")({
+	local view = scope:New("Frame")({
 		Name = "Reroll",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
@@ -810,12 +784,10 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
-			-- Items (a strip on top on a phone, a column on the left on PC)
+			-- Items: a column on the left, on a phone too (the main buttons stand in the window's footer)
 			scope:New("ScrollingFrame")({
 				Position = UDim2.fromOffset(0, 28),
-				Size = scope:Computed(function(use): UDim2
-					return if use(touch) then UDim2.new(1, 0, 0, 100) else UDim2.new(0, LIST_WIDTH, 1, -28)
-				end),
+				Size = UDim2.new(0, LIST_WIDTH, 1, -28),
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -834,6 +806,35 @@ local function Reroll_(scope: Scope, props: Props): Instance
 			details,
 		},
 	})
+	return {
+		View = view,
+		Footer = {
+			-- the footer's row (right-aligned): every bonus at once, then the picked line
+			Button(scope, {
+				LayoutOrder = 1,
+				Size = UDim2.new(0, FOOTER_BUTTON, 1, 0),
+				Variant = "secondary",
+				Text = Text.T(scope, "smith.reroll.all.button"),
+				Disabled = scope:Computed(function(use): boolean
+					local c = use(allCost)
+					return c == nil or use(scrolls) < 1 or (use(gold) or 0) < c.gold or use(phase) == "forging"
+				end),
+				OnClick = confirmAll,
+			}),
+			Button(scope, {
+				LayoutOrder = 2,
+				Size = UDim2.new(0, FOOTER_BUTTON, 1, 0),
+				Variant = "primary",
+				Text = scope:Computed(function(use): string
+					return Text.get(use, if use(phase) == "done" then "smith.reroll.again" else "smith.reroll.button")
+				end),
+				Disabled = scope:Computed(function(use): boolean
+					return use(item) == nil or use(blocker) ~= nil or use(phase) == "forging"
+				end),
+				OnClick = confirm,
+			}),
+		},
+	}
 end
 
 return Reroll_

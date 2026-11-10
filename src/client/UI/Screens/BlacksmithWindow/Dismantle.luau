@@ -1,6 +1,8 @@
 --!strict
 -- Forge → Dismantling (DESIGN §7): select backpack equipment, see the materials you will get, "Dismantle";
 -- quick buttons for all Common / Common + Unique. Valuable rarities (Heroic and better) ask for confirmation.
+-- Adoption stage (UI package D after C, 2026-11-10; owner 2026-11-10: "things covering each other"): the three
+-- buttons stand in the window's Footer (the view gives them to BlacksmithWindow), "Rozbierz" at the row's right end.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -21,6 +23,9 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
+-- the line of materials the picked items give, under the grid
+local PREVIEW = 44
+
 local function describe(list: any): string
 	local parts = {}
 	for _, material in list or {} do
@@ -29,7 +34,7 @@ local function describe(list: any): string
 	return table.concat(parts, ", ")
 end
 
-local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): Instance
+local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): { View: Instance, Footer: Fusion.Child }
 	local inventory = State.Value({ "character", "inventory" })
 	local selected = scope:Value({} :: { [string]: boolean })
 
@@ -135,13 +140,13 @@ local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): Instance
 		return if #parts > 0 then `{Text.get(use, "smith.dismantle.preview")} {table.concat(parts, ", ")}` else ""
 	end)
 
-	return scope:New("Frame")({
+	local view = scope:New("Frame")({
 		Name = "Dismantle",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
 			scope:New("ScrollingFrame")({
-				Size = UDim2.new(1, 0, 1, -110),
+				Size = UDim2.new(1, 0, 1, -(PREVIEW + 6)),
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -159,8 +164,8 @@ local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): Instance
 			}),
 			scope:New("TextLabel")({
 				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.new(0, 0, 1, -60),
-				Size = UDim2.new(1, 0, 0, 44),
+				Position = UDim2.fromScale(0, 1),
+				Size = UDim2.new(1, 0, 0, PREVIEW),
 				BackgroundTransparency = 1,
 				Text = preview,
 				TextWrapped = true,
@@ -169,45 +174,42 @@ local function Dismantle_(scope: Scope, showModal: (spec: any) -> ()): Instance
 				TextColor3 = Theme.Paper.Text,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
-			scope:New("Frame")({
-				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.fromScale(0, 1),
-				Size = UDim2.new(1, 0, 0, 50),
-				BackgroundTransparency = 1,
-				[Children] = {
-					scope:New("UIListLayout")({
-						FillDirection = Enum.FillDirection.Horizontal,
-						Padding = UDim.new(0, 8),
-					}),
-					Button(scope, {
-						Size = UDim2.fromOffset(220, 50),
-						Variant = "danger",
-						Text = Text.T(scope, "smith.dismantle.button"),
-						Disabled = scope:Computed(function(use): boolean
-							return next(use(selected)) == nil
-						end),
-						OnClick = dismantleSelected,
-					}),
-					Button(scope, {
-						Size = UDim2.fromOffset(190, 50),
-						TextSize = Theme.TextSize.Small,
-						Text = Text.T(scope, "smith.dismantle.common"),
-						OnClick = function()
-							run("DismantleAll", Rarities.COMMON)
-						end,
-					}),
-					Button(scope, {
-						Size = UDim2.fromOffset(220, 50),
-						TextSize = Theme.TextSize.Small,
-						Text = Text.T(scope, "smith.dismantle.uncommon"),
-						OnClick = function()
-							run("DismantleAll", Rarities.UNIQUE)
-						end,
-					}),
-				},
-			}),
 		},
 	})
+	return {
+		View = view,
+		-- the footer's row (right-aligned): the two quick buttons, then "Rozbierz" for the picked items
+		Footer = {
+			Button(scope, {
+				LayoutOrder = 1,
+				Size = UDim2.new(0, 190, 1, 0),
+				TextSize = Theme.TextSize.Small,
+				Text = Text.T(scope, "smith.dismantle.common"),
+				OnClick = function()
+					run("DismantleAll", Rarities.COMMON)
+				end,
+			}),
+			Button(scope, {
+				LayoutOrder = 2,
+				Size = UDim2.new(0, 220, 1, 0),
+				TextSize = Theme.TextSize.Small,
+				Text = Text.T(scope, "smith.dismantle.uncommon"),
+				OnClick = function()
+					run("DismantleAll", Rarities.UNIQUE)
+				end,
+			}),
+			Button(scope, {
+				LayoutOrder = 3,
+				Size = UDim2.new(0, 220, 1, 0),
+				Variant = "danger",
+				Text = Text.T(scope, "smith.dismantle.button"),
+				Disabled = scope:Computed(function(use): boolean
+					return next(use(selected)) == nil
+				end),
+				OnClick = dismantleSelected,
+			}),
+		},
+	}
 end
 
 return Dismantle_

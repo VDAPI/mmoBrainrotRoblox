@@ -1,6 +1,8 @@
 --!strict
 -- Auction window, "My listings" tab: the character's listings with status (active, sold, expired,
 -- cancelled), price, time left and "Cancel" for active ones. Loaded from the server when the tab opens.
+-- Adoption stage (UI package D after C, 2026-11-10): "Odśwież" and its hint stand in the window's Footer (the view
+-- gives them to AuctionWindow), so the list takes the body's whole height.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -20,6 +22,9 @@ local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
+-- "Odśwież" in the footer
+local REFRESH = 200
+
 local STATUS_COLORS: { [string]: Color3 } = {
 	active = Theme.Paper.Success,
 	sold = Theme.Paper.Heading,
@@ -27,7 +32,7 @@ local STATUS_COLORS: { [string]: Color3 } = {
 	cancelled = Theme.Paper.TextMuted,
 }
 
-local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
+local function Mine(scope: Scope, showModal: (spec: any) -> ()): { View: Instance, Footer: Fusion.Child }
 	local listings = scope:Value(nil :: { any }?)
 	local loading = scope:Value(false)
 
@@ -168,12 +173,12 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 		return list
 	end)
 
-	return scope:New("Frame")({
+	local view = scope:New("Frame")({
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
 			scope:New("ScrollingFrame")({
-				Size = UDim2.new(1, 0, 1, -54),
+				Size = UDim2.fromScale(1, 1),
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -185,18 +190,15 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 					rows :: any,
 				},
 			}),
-			Button(scope, {
-				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.fromScale(0, 1),
-				Size = UDim2.fromOffset(200, 46),
-				Text = Text.T(scope, "auction.refresh"),
-				Disabled = loading,
-				OnClick = load,
-			}),
+		},
+	})
+	return {
+		View = view,
+		-- the footer's row (right-aligned): the hint, then "Odśwież"
+		Footer = {
 			scope:New("TextLabel")({
-				AnchorPoint = Vector2.new(1, 1),
-				Position = UDim2.fromScale(1, 1),
-				Size = UDim2.new(1, -220, 0, 46),
+				LayoutOrder = 1,
+				Size = UDim2.new(1, -(REFRESH + Theme.Padding.Small), 1, 0),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "auction.mine.hint"),
 				TextWrapped = true,
@@ -205,8 +207,15 @@ local function Mine(scope: Scope, showModal: (spec: any) -> ()): Instance
 				TextColor3 = Theme.Paper.TextMuted,
 				TextXAlignment = Enum.TextXAlignment.Right,
 			}),
+			Button(scope, {
+				LayoutOrder = 2,
+				Size = UDim2.new(0, REFRESH, 1, 0),
+				Text = Text.T(scope, "auction.refresh"),
+				Disabled = loading,
+				OnClick = load,
+			}),
 		},
-	})
+	}
 end
 
 return Mine

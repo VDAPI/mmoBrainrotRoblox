@@ -1,6 +1,9 @@
 --!strict
 -- Forge → Crafting (DESIGN §8): filter by class (mine / all), slot and level tier; each recipe shows the item
 -- (tooltip with its fixed stats), gold and materials owned / needed (red when missing) and "Forge".
+-- Adoption stage (UI package D after C, 2026-11-10; owner 2026-11-10: "things covering each other"): the class and
+-- level filters stand in the window's Footer (the view gives them to BlacksmithWindow), so the recipes take the rest
+-- of the body under the slot tabs (Logic/GearLayout.tabsTop) on a phone too.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -9,6 +12,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Crafting = require(ReplicatedStorage.Shared.Data.Crafting)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
@@ -41,7 +45,7 @@ local function count(inv: any, itemId: string): number
 	return n
 end
 
-local function Craft(scope: Scope): Instance
+local function Craft(scope: Scope): { View: Instance, Footer: Fusion.Child }
 	local classId = State.Value({ "character", "class" })
 	local level = State.Value({ "character", "level" })
 	local inventory = State.Value({ "character", "inventory" })
@@ -182,7 +186,7 @@ local function Craft(scope: Scope): Instance
 		return list
 	end)
 
-	return scope:New("Frame")({
+	local view = scope:New("Frame")({
 		Name = "Craft",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
@@ -196,63 +200,9 @@ local function Craft(scope: Scope): Instance
 					{ id = "jewelry", label = Text.T(scope, "slot.necklace") },
 				},
 			}),
-			scope:New("Frame")({
-				Name = "Filters",
-				Position = UDim2.fromOffset(0, 48),
-				Size = UDim2.new(1, 0, 0, 44),
-				BackgroundTransparency = 1,
-				[Children] = {
-					scope:New("UIListLayout")({
-						FillDirection = Enum.FillDirection.Horizontal,
-						VerticalAlignment = Enum.VerticalAlignment.Center,
-						Padding = UDim.new(0, 8),
-					}),
-					Button(scope, {
-						LayoutOrder = 1,
-						Size = UDim2.fromOffset(150, 40),
-						TextSize = Theme.TextSize.Small,
-						Variant = scope:Computed(function(use): any
-							return if use(mine) then "primary" else "secondary"
-						end),
-						Text = scope:Computed(function(use): string
-							return Text.get(use, if use(mine) then "smith.filter.mine" else "smith.filter.all")
-						end),
-						OnClick = function()
-							mine:set(not Fusion.peek(mine))
-						end,
-					}),
-					Button(scope, {
-						LayoutOrder = 2,
-						Size = UDim2.fromOffset(44, 40),
-						Text = "−",
-						OnClick = function()
-							tierIndex:set(math.max(1, Fusion.peek(tierIndex) - 1))
-						end,
-					}),
-					scope:New("TextLabel")({
-						LayoutOrder = 3,
-						Size = UDim2.fromOffset(110, 40),
-						BackgroundTransparency = 1,
-						Text = scope:Computed(function(use): string
-							return Text.get(use, "smith.tier", { level = use(tier) })
-						end),
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Body,
-						TextColor3 = Theme.Paper.Text,
-					}),
-					Button(scope, {
-						LayoutOrder = 4,
-						Size = UDim2.fromOffset(44, 40),
-						Text = "+",
-						OnClick = function()
-							tierIndex:set(math.min(#Bases.tiers, Fusion.peek(tierIndex) + 1))
-						end,
-					}),
-				},
-			}),
 			scope:New("ScrollingFrame")({
-				Position = UDim2.fromOffset(0, 100),
-				Size = UDim2.new(1, 0, 1, -100),
+				Position = UDim2.fromOffset(0, GearLayout.tabsTop()),
+				Size = UDim2.new(1, 0, 1, -GearLayout.tabsTop()),
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -267,6 +217,64 @@ local function Craft(scope: Scope): Instance
 			}),
 		},
 	})
+	return {
+		View = view,
+		-- the footer's row: the filters, from its left end
+		Footer = scope:New("Frame")({
+			Name = "Filters",
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			[Children] = {
+				scope:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					VerticalAlignment = Enum.VerticalAlignment.Center,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 8),
+				}),
+				Button(scope, {
+					LayoutOrder = 1,
+					Size = UDim2.new(0, 150, 1, 0),
+					TextSize = Theme.TextSize.Small,
+					Variant = scope:Computed(function(use): any
+						return if use(mine) then "primary" else "secondary"
+					end),
+					Text = scope:Computed(function(use): string
+						return Text.get(use, if use(mine) then "smith.filter.mine" else "smith.filter.all")
+					end),
+					OnClick = function()
+						mine:set(not Fusion.peek(mine))
+					end,
+				}),
+				Button(scope, {
+					LayoutOrder = 2,
+					Size = UDim2.new(0, GearLayout.TOUCH, 1, 0),
+					Text = "−",
+					OnClick = function()
+						tierIndex:set(math.max(1, Fusion.peek(tierIndex) - 1))
+					end,
+				}),
+				scope:New("TextLabel")({
+					LayoutOrder = 3,
+					Size = UDim2.new(0, 110, 1, 0),
+					BackgroundTransparency = 1,
+					Text = scope:Computed(function(use): string
+						return Text.get(use, "smith.tier", { level = use(tier) })
+					end),
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Paper.Text,
+				}),
+				Button(scope, {
+					LayoutOrder = 4,
+					Size = UDim2.new(0, GearLayout.TOUCH, 1, 0),
+					Text = "+",
+					OnClick = function()
+						tierIndex:set(math.min(#Bases.tiers, Fusion.peek(tierIndex) + 1))
+					end,
+				}),
+			},
+		}),
+	}
 end
 
 return Craft

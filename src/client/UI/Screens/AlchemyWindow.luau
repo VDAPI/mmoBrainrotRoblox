@@ -5,6 +5,9 @@
 -- Owner 2026-11-10 (UI plan L10): the queue scrolls between its title and "Odbierz wszystko" pinned to the bottom, so
 -- on a phone the button no longer covers the third slot; the parts stand where Logic/GearLayout.alchemy puts them,
 -- from the window content's measured size (UI/ViewSize: without the window's opening motion, review 2026-11-10).
+-- Adoption stage (UI package D after C, 2026-11-10): "Odbierz wszystko" stands in the window's Footer (pinned under
+-- the content, outside its scroll) under the queue, and the orders are list rows (Components/ListRow `Tall`: the name
+-- over the time left, a progress line along the bottom) instead of 84-px cards, so a phone shows two of them.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -17,6 +20,7 @@ local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.ItemText)
+local ListRow = require(script.Parent.Parent.Components.ListRow)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Recipes = require(ReplicatedStorage.Shared.Data.Recipes)
 local Sounds = require(script.Parent.Parent.Sounds)
@@ -27,6 +31,7 @@ local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local ViewSize = require(script.Parent.Parent.ViewSize)
+local Window = require(script.Parent.Parent.Components.Window)
 
 local Children = Fusion.Children
 
@@ -36,8 +41,10 @@ export type Props = {
 	NpcId: Fusion.UsedAs<string?>,
 }
 
--- the content's size on PC (1000 x 680) until it is measured
-local AREA_PC = { w = 956, h = 584 }
+-- the body's size on PC (1000 x 680, above the footer) until it is measured
+local AREA_PC = { w = 956, h = 524 }
+-- an order's icon in its list row (ListRow `Tall`, 64 high), with room on its left for the row's bar
+local ICON = 44
 
 type Layout = Fusion.Computed<GearLayout.Alchemy>
 
@@ -184,7 +191,8 @@ local function recipeRow(scope: Scope, props: Props, recipe: Recipes.Recipe, ord
 	})
 end
 
-local function queuePanel(scope: Scope, props: Props, layout: Layout): { Instance }
+-- The queue's title and rows, and "Odbierz wszystko" for the window's footer.
+local function queuePanel(scope: Scope, props: Props, layout: Layout): ({ Instance }, Instance)
 	local queue = State.Value({ "character", "alchemy" })
 	local now = scope:Value(Clock.now())
 	local accumulator = 0
@@ -227,65 +235,47 @@ local function queuePanel(scope: Scope, props: Props, layout: Layout): { Instanc
 				local ready = s:Computed(function(use2): boolean
 					return readyAt <= use2(now)
 				end)
+				local sub = s:Computed(function(use2): string
+					if use2(ready) then
+						return `<font color="{Theme.hex(Theme.Paper.Success)}">{Text.get(use2, "alchemy.ready.short")}</font>`
+					end
+					return Time.format(Time.remaining(readyAt, use2(now)))
+				end)
 				table.insert(
 					list,
-					s:New("Frame")({
+					ListRow(s, {
+						Name = `Order{index}`,
 						LayoutOrder = index,
-						Size = UDim2.new(1, 0, 0, GearLayout.ALCHEMY.slot),
-						BackgroundColor3 = Theme.Paper.Raised,
-						BackgroundTransparency = 0.3,
+						Index = index,
+						Tall = true,
+						Inset = ICON + 4,
+						RichText = true,
+						Text = ItemText.get(use, recipe.result.id),
+						Sub = sub,
 						[Children] = {
-							s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 							ItemSlot(s, {
 								SlotId = `view:queue:{index}`,
 								Item = ItemRoll.makeStack(recipe.result.id, recipe.result.n, `queue:{index}`),
-								Size = 52,
-								Position = UDim2.fromOffset(6, 6),
+								Size = ICON,
+								Position = UDim2.fromOffset(Theme.Padding.Small + 4, (GearLayout.ROW_TALL - ICON) / 2),
 							}),
-							s:New("TextLabel")({
-								Position = UDim2.fromOffset(66, 6),
-								Size = UDim2.new(1, -72, 0, 22),
-								BackgroundTransparency = 1,
-								Text = ItemText.get(use, recipe.result.id),
-								FontFace = Theme.Fonts.BodyBold,
-								TextSize = Theme.TextSize.Small,
-								TextColor3 = Theme.Paper.Text,
-								TextXAlignment = Enum.TextXAlignment.Left,
-								TextTruncate = Enum.TextTruncate.AtEnd,
-							}),
-							s:New("TextLabel")({
-								Position = UDim2.fromOffset(66, 30),
-								Size = UDim2.new(1, -72, 0, 20),
-								BackgroundTransparency = 1,
-								Text = s:Computed(function(use2): string
-									if use2(ready) then
-										return Text.get(use2, "alchemy.ready.short")
-									end
-									return Time.format(Time.remaining(readyAt, use2(now)))
-								end),
-								FontFace = Theme.Fonts.BodyMedium,
-								TextSize = Theme.TextSize.Small,
-								TextColor3 = s:Computed(function(use2): Color3
-									return if use2(ready) then Theme.Paper.Success else Theme.Paper.Text
-								end),
-								TextXAlignment = Enum.TextXAlignment.Left,
-							}),
+							-- the progress line along the row's bottom, under the time left
 							s:New("Frame")({
-								Position = UDim2.new(0, 6, 1, -20),
-								Size = UDim2.new(1, -12, 0, 12),
-								BackgroundColor3 = Theme.Paper.Sunken,
-								[Children] = {
-									s:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
-									s:New("Frame")({
-										Size = s:Computed(function(use2): UDim2
-											return UDim2.fromScale(use2(progress), 1)
-										end),
-										BackgroundColor3 = s:Computed(function(use2): Color3
-											return if use2(ready) then Theme.Paper.Success else Theme.Paper.Accent
-										end),
-										[Children] = s:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
-									}),
-								},
+								Name = "Progress",
+								AnchorPoint = Vector2.new(0, 1),
+								Position = UDim2.new(0, ICON + 16, 1, -4),
+								Size = UDim2.new(1, -(ICON + 24), 0, 4),
+								BackgroundColor3 = Theme.Paper.Rule,
+								BorderSizePixel = 0,
+								[Children] = s:New("Frame")({
+									Size = s:Computed(function(use2): UDim2
+										return UDim2.fromScale(use2(progress), 1)
+									end),
+									BackgroundColor3 = s:Computed(function(use2): Color3
+										return if use2(ready) then Theme.Paper.Success else Theme.Paper.Accent
+									end),
+									BorderSizePixel = 0,
+								}),
 							}),
 						},
 					})
@@ -293,16 +283,13 @@ local function queuePanel(scope: Scope, props: Props, layout: Layout): { Instanc
 			elseif index <= Recipes.QUEUE_SLOTS or orders[index] ~= nil then
 				table.insert(
 					list,
-					s:New("TextLabel")({
+					ListRow(s, {
+						Name = `Order{index}`,
 						LayoutOrder = index,
-						Size = UDim2.new(1, 0, 0, GearLayout.ALCHEMY.slot),
-						BackgroundColor3 = Theme.Paper.Sunken,
-						BackgroundTransparency = 0.5,
+						Index = index,
+						Tall = true,
+						Muted = true,
 						Text = Text.get(use, "alchemy.emptySlot"),
-						FontFace = Theme.Fonts.Body,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Paper.TextMuted,
-						[Children] = s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					})
 				)
 			end
@@ -320,9 +307,21 @@ local function queuePanel(scope: Scope, props: Props, layout: Layout): { Instanc
 	local queueAt, queueSize = placed(scope, layout, function(l)
 		return l.queue
 	end)
-	local collectAt, collectSize = placed(scope, layout, function(l)
-		return l.collect
+	-- in the window's footer, under the queue (GearLayout.alchemy: the queue's width, the row's height)
+	local collectSize = scope:Computed(function(use): UDim2
+		local r = use(layout).collect
+		return UDim2.fromOffset(r.right - r.left, r.bottom - r.top)
 	end)
+	local collectButton = Button(scope, {
+		LayoutOrder = 1,
+		Size = collectSize,
+		Variant = "primary",
+		Text = Text.T(scope, "alchemy.collectAll"),
+		Disabled = scope:Computed(function(use): boolean
+			return not use(anyReady)
+		end),
+		OnClick = collect,
+	})
 	return {
 		scope:New("TextLabel")({
 			Name = "QueueTitle",
@@ -335,7 +334,7 @@ local function queuePanel(scope: Scope, props: Props, layout: Layout): { Instanc
 			TextColor3 = Theme.Paper.Heading,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
-		-- the slots scroll; "Odbierz wszystko" is pinned under them
+		-- the orders scroll; "Odbierz wszystko" stands in the window's footer under them
 		scope:New("ScrollingFrame")({
 			Name = "Queue",
 			Position = queueAt,
@@ -355,20 +354,11 @@ local function queuePanel(scope: Scope, props: Props, layout: Layout): { Instanc
 				slots :: any,
 			},
 		}),
-		Button(scope, {
-			Position = collectAt,
-			Size = collectSize,
-			Variant = "primary",
-			Text = Text.T(scope, "alchemy.collectAll"),
-			Disabled = scope:Computed(function(use): boolean
-				return not use(anyReady)
-			end),
-			OnClick = collect,
-		}),
-	}
+	},
+		collectButton
 end
 
-local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
+local function AlchemyWindow(scope: Scope, props: Props): Window.Parts
 	local group = scope:Value("blessing")
 	local rows = scope:Computed(function(use, s: Scope): { Instance }
 		local list = {}
@@ -391,7 +381,7 @@ local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
 		return list
 	end)
 
-	-- the recipes, the queue and its button (GearLayout.alchemy) from the content's own size
+	-- the recipes and the queue (GearLayout.alchemy) from the body's own size, above the footer
 	local view = ViewSize.new(scope)
 	local layout = scope:Computed(function(use): GearLayout.Alchemy
 		return GearLayout.alchemy(use(view.size) or AREA_PC)
@@ -400,6 +390,7 @@ local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
 		return l.recipes
 	end)
 
+	local queueParts, collectButton = queuePanel(scope, props, layout)
 	local root = scope:New("Frame")({
 		Name = "Alchemy",
 		Size = UDim2.fromScale(1, 1),
@@ -421,9 +412,10 @@ local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
 							{ id = "elixir", label = Text.T(scope, "alchemy.group.elixir") },
 						},
 					}),
+					-- the group tabs fit or scroll sideways (Components/Tabs; tests/gearlayout.spec checks the strip)
 					scope:New("ScrollingFrame")({
-						Position = UDim2.fromOffset(0, 52),
-						Size = UDim2.new(1, 0, 1, -52),
+						Position = UDim2.fromOffset(0, GearLayout.tabsTop()),
+						Size = UDim2.new(1, 0, 1, -GearLayout.tabsTop()),
 						CanvasSize = UDim2.new(),
 						AutomaticCanvasSize = Enum.AutomaticSize.Y,
 						BackgroundTransparency = 1,
@@ -441,11 +433,11 @@ local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
 					}),
 				},
 			}),
-			queuePanel(scope, props, layout) :: any,
+			queueParts :: any,
 		},
 	})
 	view.watch(root)
-	return root
+	return { Content = root, Footer = collectButton }
 end
 
 return AlchemyWindow

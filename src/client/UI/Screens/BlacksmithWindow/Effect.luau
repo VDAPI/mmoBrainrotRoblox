@@ -7,11 +7,14 @@
 -- computed again by the server (RerollEffect); this only shows it.
 -- 2026-10-21 (owner: too many detailed descriptions): one short line while empty (smith.effect.intro.short), and what a
 -- change takes and where the stone comes from (smith.effect.stoneHint) behind the "i" of the cost line.
+-- Adoption stage (UI package D after C, 2026-11-10; owner 2026-11-10: "things covering each other"): "Zmień efekt"
+-- stands in the window's Footer (the view gives it to BlacksmithWindow), pinned under the content outside the anvil's
+-- scroll; the item list stays a column on the left on a phone too (a strip on top left the anvil about 50 px under the
+-- footer on a 667x375 phone).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
-local Device = require(script.Parent.Parent.Parent.Device)
 local EffectReroll = require(ReplicatedStorage.Shared.Logic.EffectReroll)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -40,6 +43,8 @@ export type Props = {
 
 local TENSION = 1.2
 local LIST_WIDTH = 262
+-- a footer button: two stand under the anvil on the narrowest phone (760 - LIST_WIDTH - 18 = 480 px)
+local FOOTER_BUTTON = 236
 local GOOD = Theme.hex(Theme.Paper.Success)
 local BAD = Theme.hex(Theme.Paper.Danger)
 
@@ -111,7 +116,7 @@ local function infoLine(
 	})
 end
 
-local function Effect(scope: Scope, props: Props): Instance
+local function Effect(scope: Scope, props: Props): { View: Instance, Footer: Fusion.Child }
 	local inventory = State.Value({ "character", "inventory" })
 	local equipment = State.Value({ "character", "equipment" })
 	local gold = State.Value({ "character", "gold" })
@@ -366,18 +371,10 @@ local function Effect(scope: Scope, props: Props): Instance
 		return `{Text.get(use, "smith.upgrade.cost")}: ` .. table.concat(parts, "  ")
 	end)
 
-	local touch = scope:Computed(function(use): boolean
-		return use(Device.Touch)
-	end)
-
 	local details = scope:New("ScrollingFrame")({
 		Name = "Anvil",
-		Position = scope:Computed(function(use): UDim2
-			return if use(touch) then UDim2.fromOffset(0, 136) else UDim2.fromOffset(LIST_WIDTH + 18, 0)
-		end),
-		Size = scope:Computed(function(use): UDim2
-			return if use(touch) then UDim2.new(1, 0, 1, -136) else UDim2.new(1, -(LIST_WIDTH + 18), 1, 0)
-		end),
+		Position = UDim2.fromOffset(LIST_WIDTH + 18, 0),
+		Size = UDim2.new(1, -(LIST_WIDTH + 18), 1, 0),
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		BackgroundColor3 = Theme.Paper.Surface,
@@ -498,18 +495,6 @@ local function Effect(scope: Scope, props: Props): Instance
 					return Text.get(use, "smith.effect.stoneHint", { count = use(stones) })
 				end)
 			),
-			Button(scope, {
-				LayoutOrder = 8,
-				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
-				Variant = "primary",
-				Text = scope:Computed(function(use): string
-					return Text.get(use, if use(phase) == "done" then "smith.effect.again" else "smith.effect.button")
-				end),
-				Disabled = scope:Computed(function(use): boolean
-					return use(item) == nil or use(blocker) ~= nil or use(phase) == "forging"
-				end),
-				OnClick = confirm,
-			}),
 			label(
 				scope,
 				9,
@@ -539,7 +524,7 @@ local function Effect(scope: Scope, props: Props): Instance
 	})
 	anvil = details
 
-	return scope:New("Frame")({
+	local view = scope:New("Frame")({
 		Name = "Effect",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
@@ -555,9 +540,7 @@ local function Effect(scope: Scope, props: Props): Instance
 			}),
 			scope:New("ScrollingFrame")({
 				Position = UDim2.fromOffset(0, 28),
-				Size = scope:Computed(function(use): UDim2
-					return if use(touch) then UDim2.new(1, 0, 0, 100) else UDim2.new(0, LIST_WIDTH, 1, -28)
-				end),
+				Size = UDim2.new(0, LIST_WIDTH, 1, -28),
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -576,6 +559,24 @@ local function Effect(scope: Scope, props: Props): Instance
 			details,
 		},
 	})
+	return {
+		View = view,
+		Footer = {
+			-- the footer's row (right-aligned): "Zmień efekt"
+			Button(scope, {
+				LayoutOrder = 1,
+				Size = UDim2.new(0, FOOTER_BUTTON, 1, 0),
+				Variant = "primary",
+				Text = scope:Computed(function(use): string
+					return Text.get(use, if use(phase) == "done" then "smith.effect.again" else "smith.effect.button")
+				end),
+				Disabled = scope:Computed(function(use): boolean
+					return use(item) == nil or use(blocker) ~= nil or use(phase) == "forging"
+				end),
+				OnClick = confirm,
+			}),
+		},
+	}
 end
 
 return Effect
