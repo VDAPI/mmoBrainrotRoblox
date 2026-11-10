@@ -12,6 +12,9 @@
 -- may pick a variant by an earlier answer (`recall`). A side quest taken before it was answered shows the page again
 -- at its giver while it runs.
 -- S102: story quests with `pages` offer them like the side quests (p1..pN, the answers on a page number).
+-- owner 2026-11-10 ("bardzo dużo napisów, niektóre rzeczy zasłaniają inne"): a page holds at most 140 characters; a
+-- longer one goes on under its continuation keys (Logic/Dialogue.parts: p1 -> p1b, done -> done2), each its own page
+-- behind "Dalej ▸", and the answers stand under the last part of their page.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -81,12 +84,13 @@ local function hasText(key: string): boolean
 	return Locale.has(key, "pl") and Locale.has(key, "en")
 end
 
-local function pageKeys(quest: any, ids: { string }, quests: any): { string }
+-- The shown pages of `ids` with their continuation parts, and for each id the index of its last part.
+local function pageKeys(quest: any, ids: { string }, quests: any): ({ string }, { number })
 	local keys: { string } = {}
 	for _, id in ids do
 		table.insert(keys, Dialogue.pageKey(quest, id, quests, hasText))
 	end
-	return keys
+	return Dialogue.paged(keys, hasText)
 end
 
 -- S101b: where the answers stand among the shown pages (nil = not on this conversation).
@@ -166,17 +170,18 @@ local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?, keep:
 			ids = { if mode == "turnIn" then "done" else "text" }
 		end
 		local say, sayAt = answersAt(quest, ids, mode)
+		local pages, ends = pageKeys(quest, ids, quests)
 		return {
 			row = row,
 			mode = mode,
 			title = `quest.{quest.id}.title`,
-			pages = pageKeys(quest, ids, quests),
+			pages = pages,
 			objectives = quest.objectives,
 			progress = progress,
 			reward = quest.reward,
 			turnIn = quest.turnIn,
 			say = say,
-			sayAt = sayAt,
+			sayAt = if sayAt then ends[sayAt] else nil,
 			said = Dialogue.saidOf(quests, quest.id),
 		}
 	end
@@ -212,13 +217,14 @@ local function buildView(row: NpcQuests.Row?, quests: any, npcId: string?, keep:
 		end
 	end
 	local say, sayAt = answersAt(quest, ids, mode)
+	local pages, ends = pageKeys(quest, ids, quests)
 	return {
 		row = row,
 		mode = mode,
 		title = `quest.{quest.id}.title`,
-		pages = pageKeys(quest, ids, quests),
+		pages = pages,
 		say = say,
-		sayAt = sayAt,
+		sayAt = if sayAt then ends[sayAt] else nil,
 		said = Dialogue.saidOf(quests, quest.id),
 		objectives = quest.objectives,
 		progress = if type(entry) == "table" then entry.progress or {} else QuestLogic.emptyProgress(quest.objectives),

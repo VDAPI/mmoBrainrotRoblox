@@ -447,14 +447,16 @@ function Cards.area(ctx: Context, mapId: string, areaId: string): Spec?
 	local lines: { DetailCard.Line } = {
 		{ text = T("worldmap.groups", { n = groups }), color = Theme.Paper.TextMuted },
 	}
-	-- S33: the hunting ground profile, its multipliers and what it feels like.
+	-- S33: the hunting ground profile and its multipliers. Owner 2026-11-10 ("zbyt szczegółowe opisy"): one line,
+	-- "⚡ Szybki exp · EXP ×1 · przedmioty ×0,6 · złoto ×0,7", and no sentence under it (the area picker keeps the
+	-- profile's description behind its (i)).
 	local profile = AreaProfiles.get(found.profile)
 	if profile then
 		local peek = Fusion.peek :: any
-		local color = AreaProfileText.color(profile)
-		table.insert(lines, 1, { text = T(profile.descKey), color = Theme.Paper.Text })
-		table.insert(lines, 1, { text = AreaProfileText.mults(peek, profile), color = color })
-		table.insert(lines, 1, { text = AreaProfileText.tag(peek, profile), color = color, bold = true })
+		table.insert(lines, 1, {
+			text = `<b>{AreaProfileText.tag(peek, profile)}</b> · {AreaProfileText.mults(peek, profile)}`,
+			color = AreaProfileText.color(profile),
+		})
 	end
 	if AreaAdvice.isRecommended(found, ctx.level) then
 		table.insert(lines, 1, { text = T("worldmap.card.forYou"), color = Theme.Paper.Heading, bold = true })

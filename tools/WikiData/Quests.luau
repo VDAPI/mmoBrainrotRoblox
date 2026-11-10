@@ -12,6 +12,7 @@
 local Bosses = require("../../src/shared/Data/Bosses")
 local Clean = require("./Clean")
 local Cosmetics = require("../../src/shared/Data/Cosmetics")
+local Dialogue = require("../../src/shared/Logic/Dialogue")
 local HuntShopData = require("../../src/shared/Data/HuntShop")
 local Config = require("../../src/shared/Config")
 local GatherNodes = require("../../src/shared/Data/GatherNodes")
@@ -31,6 +32,17 @@ local S = Schema
 local arr, map, rec = S.arr, S.map, S.rec
 
 local Quests = {}
+
+-- owner 2026-11-10 (UI pass): a dialogue page over 140 characters goes on under continuation keys (Logic/Dialogue
+-- .parts, "Dalej ▸" in the game); the wiki exports the page whole, as before the split. nil when the key is missing.
+local function page(key: string): Names.Name?
+	if not Names.has(key) then
+		return nil
+	end
+	return Names.combine(function(lang: string): string
+		return Dialogue.whole(key, nil, lang)
+	end)
+end
 
 Quests.REGION_MAPS = { "meadows", "duskwood", "ashen", "frostpeak" }
 Quests.DAILY_LEVELS = { 1, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100 }
@@ -385,7 +397,7 @@ function Quests.storyText(q: any): any?
 	return Names.combine(function(lang: string): string
 		local parts = {}
 		for i = 1, q.pages do
-			table.insert(parts, Names.T(`quest.{q.id}.p{i}`, nil, lang))
+			table.insert(parts, Dialogue.whole(`quest.{q.id}.p{i}`, nil, lang))
 		end
 		return table.concat(parts, "\n\n")
 	end)
@@ -467,7 +479,7 @@ function Quests.build(ctx: any): any
 				turnIn = q.turnIn,
 				title = Names.of(`quest.{q.id}.title`),
 				text = Quests.storyText(q),
-				done = Names.opt(`quest.{q.id}.done`),
+				done = page(`quest.{q.id}.done`),
 				objectives = objectives(q.objectives, q.turnIn, q.level),
 				reward = reward(q.reward, ctx.hidden),
 				chapter = chapter,
@@ -494,7 +506,7 @@ function Quests.build(ctx: any): any
 			noteItems(q.id, q.reward)
 			local pages = {}
 			for i = 1, q.pages do
-				table.insert(pages, Names.of(`quest.{q.id}.p{i}`))
+				table.insert(pages, page(`quest.{q.id}.p{i}`) or Names.of(`quest.{q.id}.p{i}`))
 			end
 			table.insert(side, {
 				id = q.id,
@@ -506,7 +518,7 @@ function Quests.build(ctx: any): any
 				title = Names.of(`quest.{q.id}.title`),
 				pages = pages,
 				progress = Names.opt(`quest.{q.id}.progress`),
-				done = Names.opt(`quest.{q.id}.done`),
+				done = page(`quest.{q.id}.done`),
 				requires = Clean.dropRefs(Clean.clean(q.requires or {}), ctx.hidden),
 				objectives = objectives(q.objectives, q.turnIn, q.level),
 				reward = reward(q.reward, ctx.hidden),

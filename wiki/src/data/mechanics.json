@@ -24,7 +24,7 @@
     {"group":"windows","id":"win_friends","key":"Y","name":{"en":"Friends","pl":"Znajomi"}},
     {"group":"windows","id":"win_achievements","key":"N","name":{"en":"Achievements","pl":"Osiągnięcia"}},
     {"group":"windows","id":"win_season","key":"C","name":{"en":"Season pass","pl":"Przepustka sezonu"}},
-    {"group":"windows","id":"item_details","key":"Alt","name":{"en":"Tooltip details","pl":"Szczegóły opisów"}},
+    {"group":"windows","id":"item_details","key":"Alt","name":{"en":"Details","pl":"Detale"}},
     {"group":"combat","id":"skill_1","key":"1","name":{"en":"Skill 1","pl":"Umiejętność 1"}},
     {"group":"combat","id":"skill_2","key":"2","name":{"en":"Skill 2","pl":"Umiejętność 2"}},
     {"group":"combat","id":"skill_3","key":"3","name":{"en":"Skill 3","pl":"Umiejętność 3"}},
@@ -41,7 +41,7 @@
     {"group":"combat","id":"target_next","key":"Tab","name":{"en":"Next target","pl":"Następny cel"}},
     {"group":"combat","id":"target_clear","key":"Q","name":{"en":"Clear target","pl":"Brak celu"}},
     {"group":"world","id":"sprint","key":"Ctrl","name":{"en":"Sprint","pl":"Sprint"}},
-    {"group":"world","id":"interact","key":"E","name":{"en":"Interact / talk","pl":"Interakcja / rozmowa"}},
+    {"group":"world","id":"interact","key":"E","name":{"en":"Interact","pl":"Interakcja"}},
     {"group":"world","id":"pickup","key":"F","name":{"en":"Pick up loot","pl":"Podnieś łup"}},
     {"group":"world","id":"mount","key":"H","name":{"en":"Mount","pl":"Wierzchowiec"}},
     {"group":"world","id":"emote_wheel","key":"T","name":{"en":"Emote wheel","pl":"Koło emotek"}}

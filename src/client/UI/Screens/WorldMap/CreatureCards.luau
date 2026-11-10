@@ -337,8 +337,8 @@ function CreatureCards.cave(ctx: Context, caveId: string): Spec?
 		if timer.map == cave.id and timer.job == game.JobId then
 			local state = if now < timer.from
 				then T("e2timer.window", {
-					from = math.ceil((timer.from - now) / 60) .. " min",
-					to = math.ceil((timer.to - now) / 60) .. " min",
+					min = math.ceil((timer.from - now) / 60),
+					max = math.ceil((timer.to - now) / 60),
 				})
 				else T("e2timer.any")
 			table.insert(info, { text = `⏱ {state}`, color = Theme.readable(UiPalette.map.elite2, "paper") })

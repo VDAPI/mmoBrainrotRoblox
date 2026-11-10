@@ -671,13 +671,13 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		local list = {}
 		for _, value in values do
 			local label: any
+			-- owner 2026-11-10 (tabs at most 12 characters): a level bracket is its bare range, "40–59"
 			if tab and tab.filter == "bracket" then
-				label =
-					Text.T(s, "leaderboard.week.bracket", { bracket = Leaderboard.bracketLabel(tonumber(value) or 1) })
+				label = Leaderboard.bracketLabel(tonumber(value) or 1)
 			elseif tab and tab.filter == "arenaBracket" then
 				-- S126
 				local b = Arena.bracket(value)
-				label = Text.T(s, "arena.bracket", { min = if b then b.min else 0, max = if b then b.max else 0 })
+				label = if b then `{b.min}–{b.max}` else "?"
 			elseif value == ALL then
 				label = Text.T(s, "leaderboard.filter.all")
 			else

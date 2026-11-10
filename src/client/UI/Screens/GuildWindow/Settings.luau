@@ -234,7 +234,7 @@ local function limitCell(
 				then GuildProgressData.Rules.goldLimitMax
 				else GuildProgressData.Rules.itemLimitMax
 			showModal({
-				Title = Text.now(`guild.rights.{kind}`),
+				Title = Text.now(if kind == "gold" then "guild.rights.gold" else "guild.rights.items"),
 				Message = Text.now("guild.rights.limitHint", {
 					rank = Text.now(`guild.rank.{rank}`),
 					max = Format.number(max),
@@ -323,7 +323,8 @@ local function rightsTable(
 		for j, rank in Guild.EDITABLE_RANKS do
 			table.insert(cells, limitCell(scope, guild, isLeader, rank, kind, j, showModal))
 		end
-		table.insert(rows, row(60 + i, Text.T(scope, `guild.rights.{kind}`), cells))
+		local key = if kind == "gold" then "guild.rights.gold" else "guild.rights.items"
+		table.insert(rows, row(60 + i, Text.T(scope, key), cells))
 	end
 	return {
 		Common.heading(scope, 40, Text.T(scope, "guild.rights.title")),

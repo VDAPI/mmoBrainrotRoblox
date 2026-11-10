@@ -391,7 +391,9 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 								local saved = State.Get({ "character", "quests" })
 								local texts: { string } = {}
 								for i = 1, pages do
-									table.insert(texts, Text.now(Dialogue.pageKey(storyQuest, `p{i}`, saved, hasText)))
+									-- owner 2026-11-10: a page split into parts (Logic/Dialogue.parts) reads whole here
+									local key = Dialogue.pageKey(storyQuest, `p{i}`, saved, hasText)
+									table.insert(texts, Dialogue.whole(key, nil, Fusion.peek(Text.Lang)))
 								end
 								props.ShowModal({
 									Title = Text.now(`quest.{storyQuest.id}.title`),

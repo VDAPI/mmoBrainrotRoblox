@@ -229,7 +229,7 @@ local function locked(scope: Scope, props: Props, passKey: string): { Instance }
 			LayoutOrder = 5,
 			Text = if soon
 				then Text.T(scope, "premium.soon")
-				else Text.T(scope, "charSelect.unlock", { robux = if pass then pass.robux else 0 }),
+				else Text.T(scope, "charSelect.unlock", { price = if pass then pass.robux else 0 }),
 			Variant = "primary",
 			Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 			Disabled = scope:Computed(function(use): boolean

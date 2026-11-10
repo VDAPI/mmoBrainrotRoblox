@@ -542,8 +542,12 @@ local function FriendsWindow(scope: Scope, props: Props): Fusion.Child
 						Size = UDim2.new(0.5, -4, 0, Theme.Size.MinTouch),
 						TextSize = Theme.TextSize.Small,
 						Text = scope:Computed(function(use): string
-							local value = if use(friendJoin) == "none" then "none" else "friends"
-							return Text.get(use, "friends.joinRule", { who = Text.get(use, `menu.friendJoin.{value}`) })
+							return Text.get(
+								use,
+								if use(friendJoin) == "none"
+									then "friends.joinRule.none"
+									else "friends.joinRule.friends"
+							)
 						end),
 						OnClick = function()
 							A.Setting("friendJoin", if Fusion.peek(friendJoin) == "none" then "friends" else "none")

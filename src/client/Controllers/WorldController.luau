@@ -561,9 +561,12 @@ local function onPortal(portalId: string, targetId: string)
 		travel(portalId)
 		return
 	end
+	-- owner 2026-11-10 (a modal's message at most 90 characters): the first warning is the message, a second one
+	-- (the level, after the red zone) waits under "Więcej ▸"
 	WindowManager.ShowModal({
 		Title = Text.now(target.nameKey),
-		Message = table.concat(warnings, "\n\n"),
+		Message = warnings[1],
+		Details = if #warnings > 1 then table.concat(warnings, "\n\n", 2) else nil,
 		ConfirmText = Text.now("portal.go"),
 		CancelText = Text.now("common.cancel"),
 		Variant = if target.zone == "red" then "danger" else nil,
