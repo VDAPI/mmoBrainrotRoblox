@@ -15,7 +15,7 @@
 -- tournament's line with ✓ and ✕ (hides it, as before); its "Decline" waits under 'Więcej ▸'.
 -- Review 2026-11-10: the offer goes before the other prompts (`penalty`, Logic/NoticeQueue): a party invitation
 -- answered in silence held the place for its 30 s while the offer's 15 s ran out, and a silent offer costs 5 min out
--- of the queue.
+-- of the queue. Its details are Small on a phone too (Caption is for capitals only).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -57,7 +57,7 @@ local function offerOf(use: Fusion.Use): any
 	return if type(o) == "table" then o else nil
 end
 
-local function line(s: Scope, order: number, text: Fusion.UsedAs<string>, color: Color3, phone: boolean): Instance
+local function line(s: Scope, order: number, text: Fusion.UsedAs<string>, color: Color3): Instance
 	return s:New("TextLabel")({
 		LayoutOrder = order,
 		Size = UDim2.fromScale(1, 0),
@@ -66,14 +66,14 @@ local function line(s: Scope, order: number, text: Fusion.UsedAs<string>, color:
 		Text = text,
 		TextWrapped = true,
 		FontFace = Theme.Fonts.Body,
-		TextSize = if phone then Theme.TextSize.Caption else Theme.TextSize.Small,
+		TextSize = Theme.TextSize.Small,
 		TextColor3 = color,
 		TextXAlignment = Enum.TextXAlignment.Left,
 	})
 end
 
 -- 'Więcej ▸' of the offer: where it is played, the opponent or both teams, the unrated warning, the cost of declining.
-local function offerDetails(s: Scope, phone: boolean): Instance
+local function offerDetails(s: Scope, _phone: boolean): Instance
 	return s:New("Frame")({
 		Name = "Offer",
 		Size = UDim2.fromScale(1, 1),
@@ -92,8 +92,7 @@ local function offerDetails(s: Scope, phone: boolean): Instance
 					local o = offerOf(use)
 					return Text.get(use, if o and o.scope == "global" then "arena.scope.global" else "arena.net.local")
 				end),
-				Theme.Iron.TextMuted,
-				phone
+				Theme.Iron.TextMuted
 			),
 			line(
 				s,
@@ -122,8 +121,7 @@ local function offerDetails(s: Scope, phone: boolean): Instance
 					})
 					return who .. "\n" .. rating
 				end),
-				Theme.Iron.Text,
-				phone
+				Theme.Iron.Text
 			),
 			line(
 				s,
@@ -135,8 +133,7 @@ local function offerDetails(s: Scope, phone: boolean): Instance
 					end
 					return Text.get(use, "arena.offer.unrated", { n = tonumber(o.vs) or 0 })
 				end),
-				Theme.Iron.Warning,
-				phone
+				Theme.Iron.Warning
 			),
 			-- S127: in a fight "finish it first"; a fallback offer costs nothing to decline
 			line(
@@ -151,8 +148,7 @@ local function offerDetails(s: Scope, phone: boolean): Instance
 					end
 					return Text.get(use, "arena.offer.penaltyHint", { time = Time.format(Arena.QUEUE.declinePenalty) })
 				end),
-				Theme.Iron.TextMuted,
-				phone
+				Theme.Iron.TextMuted
 			),
 		},
 	})

@@ -42,7 +42,7 @@ end
 
 -- The members and their answers (✓ / ✗ / …), live.
 local function members(check: Fusion.UsedAs<any>): (Scope, boolean) -> Instance
-	return function(s: Scope, phone: boolean): Instance
+	return function(s: Scope, _phone: boolean): Instance
 		local rows = s:Computed(function(use, inner: Scope): { Instance }
 			local c = use(check)
 			local out: { Instance } = {}
@@ -63,7 +63,7 @@ local function members(check: Fusion.UsedAs<any>): (Scope, boolean) -> Instance
 						BackgroundTransparency = 1,
 						Text = `{mark}  {member.name}`,
 						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = if phone then Theme.TextSize.Caption else Theme.TextSize.Small,
+						TextSize = Theme.TextSize.Small,
 						TextColor3 = color,
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextTruncate = Enum.TextTruncate.AtEnd,

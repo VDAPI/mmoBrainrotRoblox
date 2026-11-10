@@ -523,6 +523,24 @@ local SCREEN_GUIS: { [string]: number } = {
 	["src/client/Vfx/Textures.luau"] = 1,
 }
 
+-- The views of package B's messages (review 2026-11-10: their text sizes).
+local MESSAGE_VIEWS = {
+	"src/client/UI/Notify.luau",
+	"src/client/UI/Components/Prompt.luau",
+	"src/client/UI/Components/Toast.luau",
+	"src/client/UI/Components/Announcement.luau",
+	"src/client/UI/Screens/Hud/AchievementToast.luau",
+	"src/client/UI/Screens/Hud/AreaBanner.luau",
+	"src/client/UI/Screens/Hud/ZoneBanner.luau",
+	"src/client/UI/Screens/Hud/BarkToast.luau",
+	"src/client/UI/Screens/ArenaOffer.luau",
+	"src/client/UI/Screens/ReadyCheck.luau",
+	"src/client/UI/Screens/FightCard.luau",
+	"src/client/UI/Screens/BossReward.luau",
+	"src/client/UI/Screens/LegendReveal.luau",
+	"src/client/Controllers/DungeonController.luau",
+}
+
 T.describe("Messages only through UI/Notify (UI plan package B)", function()
 	T.it("nothing outside package B's files parents into the Toasts layer", function()
 		local owned: { [string]: boolean } = {}
@@ -589,6 +607,35 @@ T.describe("Messages only through UI/Notify (UI plan package B)", function()
 		T.expect(string.find(cast, "Notify.alert(", 1, true) ~= nil).toBe(true)
 		local dungeon = fs.readFile("src/client/Controllers/DungeonController.luau")
 		T.expect(string.find(dungeon, "Notify.alert(text, ANNOUNCE_SECONDS)", 1, true) ~= nil).toBe(true)
+	end)
+
+	T.it("review 2026-11-10: the views' text is Small or larger, strokes have room, one veil over the band", function()
+		-- Caption is for capitals only (docs/UI-ZASADY.md §8); the message views have no capital labels
+		for _, path in MESSAGE_VIEWS do
+			local source = fs.readFile(path)
+			T.expect({ path, string.find(source, "TextSize.Caption", 1, true) == nil }).toEqual({ path, true })
+		end
+		local notify = fs.readFile("src/client/UI/Notify.luau")
+		-- a message's CanvasGroup clips what it draws outside itself: it is ROOM larger, padded back to the place
+		T.expect(string.find(notify, "UDim2.fromOffset(r.left - ROOM, r.top - ROOM)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(notify, 'inner:New("UIPadding")', 1, true) ~= nil).toBe(true)
+		-- a full view stands over the band's messages
+		local details = string.find(notify, 'Name = "NoticeDetails"', 1, true)
+		local notices = string.find(notify, 'Name = "Notices"', 1, true)
+		T.expect(details ~= nil and notices ~= nil).toBe(true)
+		local detailsZ =
+			string.match(string.sub(notify, details :: number, (details :: number) + 200), "ZIndex = (%d+)")
+		local noticesZ =
+			string.match(string.sub(notify, notices :: number, (notices :: number) + 200), "ZIndex = (%d+)")
+		T.expect(tonumber(detailsZ) :: number > tonumber(noticesZ) :: number).toBe(true)
+		-- the legendary reveal is its panel only: its veil is UI/Notify.details' (one veil, not two)
+		local reveal = fs.readFile("src/client/UI/Screens/LegendReveal.luau")
+		T.expect(string.find(reveal, 'New("TextButton")', 1, true)).toBeNil()
+		local loot = fs.readFile("src/client/Controllers/LootController.luau")
+		T.expect(string.find(loot, "LegendReveal.backdrop(item)", 1, true) ~= nil).toBe(true)
+		-- a server's banner is drawn at the size its height is measured at
+		local banner = fs.readFile("src/client/UI/Components/Announcement.luau")
+		T.expect(string.find(banner, "TextSize = Notify.bannerTextSize(tone, live.phone)", 1, true) ~= nil).toBe(true)
 	end)
 end)
 

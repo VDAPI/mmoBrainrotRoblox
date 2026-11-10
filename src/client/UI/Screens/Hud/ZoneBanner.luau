@@ -69,7 +69,7 @@ local function look(name: string, line: string, color: Color3): (Scope, Notify.L
 					BackgroundTransparency = 1,
 					Text = line,
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = if live.phone then Theme.TextSize.Caption else Theme.TextSize.Small,
+					TextSize = Theme.TextSize.Small, -- review 2026-11-10: Caption is for capitals only
 					TextColor3 = color,
 					TextStrokeColor3 = Theme.Shade,
 					TextStrokeTransparency = 0.4,

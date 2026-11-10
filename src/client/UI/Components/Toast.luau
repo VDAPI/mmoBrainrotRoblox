@@ -168,6 +168,8 @@ local function view(text: string, kind: Kind, info: string?): (Scope, Live) -> I
 				TextSize = if live.phone then Theme.TextSize.Small else Theme.TextSize.Body,
 				TextColor3 = Theme.Iron.Text,
 				TextWrapped = true,
+				-- review 2026-11-10: a phone's toast is at most M tall (Logic/TopBand.slots): its end shows cut
+				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
 		}
 		if info then

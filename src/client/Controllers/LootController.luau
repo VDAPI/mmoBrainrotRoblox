@@ -330,7 +330,7 @@ local function openReveal(item: ItemInstance, titleKey: string?)
 					Close = close,
 					Sheet = sheet,
 				})
-			end)
+			end, nil, LegendReveal.backdrop(item))
 		end,
 	})
 end

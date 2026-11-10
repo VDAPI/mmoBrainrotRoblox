@@ -8,6 +8,8 @@
 -- picking the item up shows one of UI/Notify's cards first (LootController, LegendReveal.summary: the title and the
 -- item's name in the PC corner's card slot, a phone's M zone); the reveal opens from its 'Szczegóły' and closes with
 -- OK or a tap beside it (a phone: a full-screen sheet).
+-- Review 2026-11-10: the view is the panel only; its veil (red for a mythic) is UI/Notify.details' own (`backdrop`):
+-- with a veil of its own over Notify's, the screen behind it went twice as dark.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -28,7 +30,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
 
-local Children, OnEvent = Fusion.Children, Fusion.OnEvent
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -37,7 +39,7 @@ export type Props = {
 	TitleKey: string?, -- S155b: another title (the first valuable drop of a new character)
 	OnEquip: (() -> ())?,
 	Close: () -> (),
-	Sheet: boolean?, -- a phone's full-screen sheet: the panel fills its width from the top, no veil of its own
+	Sheet: boolean?, -- a phone's full-screen sheet: the panel fills its width from the top
 }
 
 local REVEAL_STEP = 0.7
@@ -273,20 +275,15 @@ local function LegendReveal(scope: Scope, props: Props): Instance
 			}),
 		},
 	})
-	if sheet then
-		return panel
+	return panel
+end
+
+-- The veil behind the reveal (UI/Notify.details' backdrop): a mythic's red, else the shade.
+local function backdrop(item: Types.ItemInstance): { color: Color3, transparency: number }
+	if Rarities.get(item.rarity).id >= Rarities.MYTHIC then
+		return { color = Theme.Announce.MythicVeil, transparency = 0.25 }
 	end
-	-- the veil closes it too (a tap beside the panel)
-	return scope:New("TextButton")({
-		Name = "LegendReveal",
-		Size = UDim2.fromScale(1, 1),
-		AutoButtonColor = false,
-		Text = "",
-		BackgroundColor3 = if mythic then Theme.Announce.MythicVeil else Theme.Shade,
-		BackgroundTransparency = if mythic then 0.25 else 0.35,
-		[OnEvent("Activated")] = props.Close,
-		[Children] = panel,
-	})
+	return { color = Theme.Shade, transparency = 0.35 }
 end
 
 -- The card's summary (UI/Notify.card): the title ("Legendary item!", a mythic's or the first drop's own), the item's
@@ -298,4 +295,4 @@ local function summary(item: Types.ItemInstance, titleKey: string?): (string, st
 	return title, ItemText.name(item.id, item.up, item.el), rarity.color
 end
 
-return { view = LegendReveal, summary = summary }
+return { view = LegendReveal, summary = summary, backdrop = backdrop }

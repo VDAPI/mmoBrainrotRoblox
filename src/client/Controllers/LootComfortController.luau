@@ -77,6 +77,7 @@ local function showCard(item: Types.ItemInstance, current: Types.ItemInstance?)
 		class = "betterItem",
 		title = Text.now("better.title"),
 		line = name,
+		note = instead, -- a phone's sheet (its card is one line)
 		accent = ItemText.rarityName(item.rarity, "iron"),
 		seconds = CARD_SECONDS,
 		action = { text = Text.now("better.equip"), run = equip },

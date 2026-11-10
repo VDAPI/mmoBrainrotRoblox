@@ -6,6 +6,10 @@
 -- ready check (Screens/ReadyCheck: the members under 'Więcej ▸'). Prompt.push puts one into UI/Notify's queue: on PC
 -- and a tablet under the toasts in the band under the target, on a phone the pane of its M zone; it stays until it is
 -- answered or its time runs out (a higher prompt takes its place for a while, Logic/NoticeQueue).
+-- Review 2026-11-10: the line is Small (Caption is for capitals only; UI-ZASADY §8) and the PC prompt as wide as a
+-- toast, so a line with 'Więcej ▸' keeps two lines; a phone's prompt stays one HUD line: a tap on its line opens the
+-- whole line, what 'Więcej' holds and ✓ ✕ in a sheet (UI/Notify.details). Opening under the line, it grew past M
+-- onto the mail button and the skill arc.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -18,7 +22,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local TopBand = require(ReplicatedStorage.Shared.Logic.TopBand)
 
-local Children = Fusion.Children
+local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -36,7 +40,7 @@ export type Spec = {
 	keep: boolean?, -- an answer leaves it on the screen (the caller's state closes it: the ready check, the offer)
 	canAccept: ((use: Fusion.Use) -> boolean)?, -- ✓ greyed while false (a match offer during a fight)
 	answered: ((use: Fusion.Use) -> boolean)?, -- ✓ and ✕ go (accepted, waiting for the others)
-	more: ((s: Scope, phone: boolean) -> Instance)?, -- 'Więcej ▸': what opens under the line
+	more: ((s: Scope, phone: boolean) -> Instance)?, -- 'Więcej ▸': what opens under the line (a phone: in the sheet)
 	moreHeight: number?,
 	penalty: boolean?, -- its silence costs something (the arena's offer): first among the prompts (Logic/NoticeQueue)
 	gone: (() -> ())?,
@@ -46,27 +50,165 @@ export type Spec = {
 Prompt.HEIGHT = TopBand.PROMPT.h
 Prompt.PHONE_HEIGHT = Theme.Size.HudLine
 local BAR = 4
-local MORE_W = 96
+local MORE_W = 112 -- 'Więcej ▸' at Small
+local OPEN_MARK = 16 -- the ▸ at the end of a phone's line
+
+-- The seconds left to answer, live (nil `ends`: 0).
+local function countdown(s: Scope, ends: number?): Fusion.Computed<number>
+	local now = s:Value(os.clock())
+	local clock = 0
+	table.insert(
+		s,
+		RunService.Heartbeat:Connect(function(dt: number)
+			clock += dt
+			if clock >= 0.1 then
+				clock = 0
+				now:set(os.clock())
+			end
+		end)
+	)
+	return s:Computed(function(use): number
+		return if ends then math.max(0, ends - use(now)) else 0
+	end)
+end
+
+-- ✓ and ✕ (✓ greyed while it cannot be accepted, both gone once answered).
+local function answerButtons(
+	s: Scope,
+	spec: Spec,
+	answered: Fusion.Computed<boolean>,
+	accept: () -> (),
+	decline: () -> ()
+): { Instance }
+	local touch = Theme.Size.MinTouch
+	return {
+		Button(s, {
+			Name = "Accept",
+			Surface = "iron",
+			LayoutOrder = 2,
+			Size = UDim2.fromOffset(touch, touch),
+			Variant = "primary",
+			Text = "✓",
+			Visible = s:Computed(function(use): boolean
+				return spec.accept ~= nil and not use(answered)
+			end),
+			Disabled = s:Computed(function(use): boolean
+				return spec.canAccept ~= nil and not spec.canAccept(use)
+			end),
+			OnClick = accept,
+		}),
+		Button(s, {
+			Name = "Decline",
+			Surface = "iron",
+			LayoutOrder = 3,
+			Size = UDim2.fromOffset(touch, touch),
+			Variant = "secondary",
+			Text = "✕",
+			Visible = s:Computed(function(use): boolean
+				return not use(answered)
+			end),
+			OnClick = decline,
+		}),
+	}
+end
+
+-- A phone's sheet of the prompt (UI/Notify.details): the whole line, what 'Więcej' holds and ✓ ✕.
+local function sheetOf(
+	spec: Spec,
+	ends: number?,
+	answer: (run: (() -> ())?) -> ()
+): (Scope, () -> (), boolean) -> Instance
+	return function(s: Scope, close: () -> (), full: boolean): Instance
+		local left = countdown(s, ends)
+		local answered = s:Computed(function(use): boolean
+			return spec.answered ~= nil and spec.answered(use)
+		end)
+		local parts: { Instance } = {
+			s:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			s:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Normal }),
+			s:New("UIPadding")({
+				PaddingTop = UDim.new(0, Theme.Padding.Medium),
+				PaddingBottom = UDim.new(0, Theme.Padding.Medium),
+				PaddingLeft = UDim.new(0, Theme.Padding.Medium),
+				PaddingRight = UDim.new(0, Theme.Padding.Medium),
+			}),
+			s:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, Theme.Padding.Small),
+			}),
+			s:New("TextLabel")({
+				Name = "Line",
+				LayoutOrder = 1,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				Text = s:Computed(function(use): string
+					return `{spec.icon}  {spec.line(use, math.ceil(use(left)))}`
+				end),
+				RichText = true,
+				TextWrapped = true,
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Body,
+				TextColor3 = Theme.Iron.Text,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			}),
+		}
+		local more = spec.more
+		if more then
+			table.insert(
+				parts,
+				s:New("Frame")({
+					Name = "Details",
+					LayoutOrder = 2,
+					Size = UDim2.new(1, 0, 0, spec.moreHeight or 0),
+					BackgroundTransparency = 1,
+					ClipsDescendants = true,
+					[Children] = more(s, true),
+				})
+			)
+		end
+		table.insert(
+			parts,
+			s:New("Frame")({
+				Name = "Answers",
+				LayoutOrder = 3,
+				Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+				BackgroundTransparency = 1,
+				[Children] = {
+					s:New("UIListLayout")({
+						FillDirection = Enum.FillDirection.Horizontal,
+						HorizontalAlignment = Enum.HorizontalAlignment.Right,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						Padding = UDim.new(0, Theme.Padding.Small),
+					}),
+					answerButtons(s, spec, answered, function()
+						close()
+						answer(spec.accept)
+					end, function()
+						close()
+						answer(spec.decline)
+					end) :: any,
+				},
+			})
+		)
+		return s:New("Frame")({
+			Name = "PromptSheet",
+			AnchorPoint = if full then Vector2.zero else Vector2.new(0.5, 0.5),
+			Position = if full then UDim2.new() else UDim2.fromScale(0.5, 0.5),
+			Size = if full then UDim2.fromScale(1, 0) else UDim2.fromOffset(TopBand.PROMPT.w, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundColor3 = Theme.Iron.Surface,
+			Active = true,
+			[Children] = parts,
+		})
+	end
+end
 
 local function view(spec: Spec, ends: number?, open: Fusion.Value<boolean>): (Scope, Notify.Live) -> Instance
 	return function(s: Scope, live: Notify.Live): Instance
 		local phone = live.phone
 		local touch = Theme.Size.MinTouch
-		local now = s:Value(os.clock())
-		local clock = 0
-		table.insert(
-			s,
-			RunService.Heartbeat:Connect(function(dt: number)
-				clock += dt
-				if clock >= 0.1 then
-					clock = 0
-					now:set(os.clock())
-				end
-			end)
-		)
-		local left = s:Computed(function(use): number
-			return if ends then math.max(0, ends - use(now)) else 0
-		end)
+		local left = countdown(s, ends)
 		local answered = s:Computed(function(use): boolean
 			return spec.answered ~= nil and spec.answered(use)
 		end)
@@ -78,10 +220,37 @@ local function view(spec: Spec, ends: number?, open: Fusion.Value<boolean>): (Sc
 				live.close()
 			end
 		end
-		local more = spec.more
+		-- a phone's sheet goes with the prompt
+		local closeSheet: (() -> ())? = nil
+		table.insert(s, function()
+			if closeSheet then
+				closeSheet()
+			end
+		end)
+		local more = if phone then nil else spec.more
 		local rowHeight = if phone then Prompt.PHONE_HEIGHT else Prompt.HEIGHT
-		local moreWidth = if more then (if phone then touch else MORE_W) else 0
+		local moreWidth = if more then MORE_W else 0
 		local buttons = 2 * touch + 8
+		local lineText = s:Computed(function(use): string
+			return spec.line(use, math.ceil(use(left)))
+		end)
+		local lineLeft = if phone then 34 else 46
+		local lineSize = UDim2.new(1, -(lineLeft + moreWidth + buttons + 8), 0, rowHeight - BAR)
+		local function lineLabel(size: UDim2): Instance
+			return s:New("TextLabel")({
+				Name = "Line",
+				Size = size,
+				BackgroundTransparency = 1,
+				Text = lineText,
+				RichText = true,
+				TextWrapped = true,
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Text,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+			})
+		end
 		local parts: { Instance } = {
 			s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			s:New("UIStroke")({
@@ -98,22 +267,39 @@ local function view(spec: Spec, ends: number?, open: Fusion.Value<boolean>): (Sc
 				TextSize = if phone then Theme.TextSize.Body else Theme.TextSize.Large,
 				TextColor3 = Theme.Brass.Bright,
 			}),
-			s:New("TextLabel")({
-				Name = "Line",
-				Position = UDim2.fromOffset(if phone then 34 else 46, 0),
-				Size = UDim2.new(1, -((if phone then 34 else 46) + moreWidth + buttons + 8), 0, rowHeight - BAR),
-				BackgroundTransparency = 1,
-				Text = s:Computed(function(use): string
-					return spec.line(use, math.ceil(use(left)))
-				end),
-				RichText = true,
-				TextWrapped = true,
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = if phone then Theme.TextSize.Caption else Theme.TextSize.Small,
-				TextColor3 = Theme.Iron.Text,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
+			if phone
+				then s:New("TextButton")({
+					Name = "Open",
+					Position = UDim2.fromOffset(lineLeft, 0),
+					Size = lineSize,
+					BackgroundTransparency = 1,
+					AutoButtonColor = false,
+					Text = "",
+					[OnEvent("Activated")] = function()
+						closeSheet = Notify.details(sheetOf(spec, ends, answer))
+					end,
+					[Children] = {
+						lineLabel(UDim2.new(1, -OPEN_MARK, 1, 0)),
+						s:New("TextLabel")({
+							Name = "Mark",
+							AnchorPoint = Vector2.new(1, 0.5),
+							Position = UDim2.fromScale(1, 0.5),
+							Size = UDim2.new(0, OPEN_MARK, 1, 0),
+							BackgroundTransparency = 1,
+							Text = "▸",
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Body,
+							TextColor3 = Theme.Brass.Bright,
+						}),
+					},
+				})
+				else s:New("Frame")({
+					Name = "Text",
+					Position = UDim2.fromOffset(lineLeft, 0),
+					Size = lineSize,
+					BackgroundTransparency = 1,
+					[Children] = lineLabel(UDim2.fromScale(1, 1)),
+				}),
 			s:New("Frame")({
 				Name = "Answers",
 				AnchorPoint = Vector2.new(1, 0),
@@ -134,11 +320,8 @@ local function view(spec: Spec, ends: number?, open: Fusion.Value<boolean>): (Sc
 							LayoutOrder = 1,
 							Size = UDim2.fromOffset(moreWidth, touch),
 							Variant = "ghost",
-							TextSize = Theme.TextSize.Caption,
+							TextSize = Theme.TextSize.Small,
 							Text = s:Computed(function(use): string
-								if phone then
-									return if use(open) then "▾" else "▸"
-								end
 								return Text.get(use, if use(open) then "ui.details.less" else "ui.details.more")
 							end),
 							OnClick = function()
@@ -147,37 +330,11 @@ local function view(spec: Spec, ends: number?, open: Fusion.Value<boolean>): (Sc
 							end,
 						})
 						else nil) :: any,
-					Button(s, {
-						Name = "Accept",
-						Surface = "iron",
-						LayoutOrder = 2,
-						Size = UDim2.fromOffset(touch, touch),
-						Variant = "primary",
-						Text = "✓",
-						Visible = s:Computed(function(use): boolean
-							return spec.accept ~= nil and not use(answered)
-						end),
-						Disabled = s:Computed(function(use): boolean
-							return spec.canAccept ~= nil and not spec.canAccept(use)
-						end),
-						OnClick = function()
-							answer(spec.accept)
-						end,
-					}),
-					Button(s, {
-						Name = "Decline",
-						Surface = "iron",
-						LayoutOrder = 3,
-						Size = UDim2.fromOffset(touch, touch),
-						Variant = "secondary",
-						Text = "✕",
-						Visible = s:Computed(function(use): boolean
-							return not use(answered)
-						end),
-						OnClick = function()
-							answer(spec.decline)
-						end,
-					}),
+					answerButtons(s, spec, answered, function()
+						answer(spec.accept)
+					end, function()
+						answer(spec.decline)
+					end) :: any,
 				},
 			}),
 		}
@@ -234,8 +391,10 @@ function Prompt.push(spec: Spec): Notify.Handle?
 		penalty = spec.penalty,
 		w = TopBand.PROMPT.w,
 		height = function(phone: boolean): number
-			local base = if phone then Prompt.PHONE_HEIGHT else Prompt.HEIGHT
-			return base + (if Fusion.peek(open) then spec.moreHeight or 0 else 0)
+			if phone then
+				return Prompt.PHONE_HEIGHT -- 'Więcej' opens in the sheet
+			end
+			return Prompt.HEIGHT + (if Fusion.peek(open) then spec.moreHeight or 0 else 0)
 		end,
 		build = view(spec, ends, open),
 		gone = function()

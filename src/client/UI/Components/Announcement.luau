@@ -7,6 +7,8 @@
 -- mythic one 8 s, a world boss's 15 s in red even when an alert takes its place for a moment; another server's news
 -- waits up to 30 s in combat, then drops (owner question 5); with a window open it stands over the window or under its
 -- title bar (question UI 8). Announcements stay banner-only (owner decision). This file keeps the banner's look.
+-- Review 2026-11-10: the text is drawn at UI/Notify.bannerTextSize, the size Notify measures its height at (a phone's
+-- banner was measured at Small and drawn at Body, and lost its second line), and a phone's cuts at its end.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -27,6 +29,9 @@ local Notify = SoftRequire(
 		end,
 		bannerTone = function(_key: string): string
 			return "legendary"
+		end,
+		bannerTextSize = function(_tone: string?, phone: boolean): number
+			return if phone then Theme.TextSize.Small else Theme.TextSize.Large + 2
 		end,
 	} :: any,
 	"UI/Notify"
@@ -67,7 +72,8 @@ local FRAME = {
 
 -- The banner's look in its place: gold, or red with a rotating, pulsing frame (a mythic drop, the Blood Moon, a world
 -- boss).
-local function view(text: string, mythic: boolean): (Scope, Live) -> Instance
+local function view(text: string, tone: string): (Scope, Live) -> Instance
+	local mythic = tone ~= "legendary"
 	return function(s: Scope, live: Live): Instance
 		local spin = s:Value(0)
 		local pulse = s:Value(0)
@@ -111,16 +117,14 @@ local function view(text: string, mythic: boolean): (Scope, Live) -> Instance
 					end),
 					RichText = true,
 					FontFace = Theme.Fonts.Display,
-					TextSize = if live.phone
-						then Theme.TextSize.Body
-						elseif mythic then Theme.TextSize.Title
-						else Theme.TextSize.Large + 2,
+					TextSize = Notify.bannerTextSize(tone, live.phone),
 					TextColor3 = if mythic then MYTHIC_TEXT else Theme.Brass.Bright,
 					TextStrokeColor3 = if mythic then MYTHIC.color else Theme.Shade,
 					TextStrokeTransparency = s:Computed(function(use): number
 						return if mythic then 0.5 - use(pulse) * 0.3 else 0.4
 					end),
 					TextWrapped = true,
+					TextTruncate = Enum.TextTruncate.AtEnd,
 				}),
 			},
 		})
@@ -144,7 +148,7 @@ function Announcement.push(text: string, kind: Style?, seconds: number?, options
 		tone = tone,
 		seconds = seconds,
 		crossServer = options and options.crossServer,
-		build = view(text, tone ~= "legendary"),
+		build = view(text, tone),
 	})
 end
 

@@ -8,6 +8,7 @@
 -- UI/Notify's queue (AchievementController pushes it): the banner's place in the band under the target, one banner at a
 -- time (so it waits for the zone, the area and the server's banners); it waits while a window is open, and a window
 -- that opens while it shows puts it under the window's title bar (docs/UI-ZASADY.md §6). This file keeps its look.
+-- Review 2026-11-10: the header and "View" are Small (Caption is for capitals only, UI-ZASADY §8).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -106,7 +107,7 @@ function AchievementToast.build(view: View, onView: ((id: string) -> ())?): (Sco
 						BackgroundColor3 = Theme.Iron.Raised,
 						Text = Text.T(scope, "ach.toast.view"),
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Caption,
+						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Brass.Bright,
 						ZIndex = 6,
 						Visible = viewable,
@@ -149,7 +150,7 @@ function AchievementToast.build(view: View, onView: ((id: string) -> ())?): (Sco
 					8,
 					18,
 					Theme.Fonts.BodyBold,
-					Theme.TextSize.Caption,
+					Theme.TextSize.Small,
 					Theme.Brass.Bright,
 					view.header,
 					VIEW_WIDTH + 8
@@ -188,7 +189,7 @@ function AchievementToast.build(view: View, onView: ((id: string) -> ())?): (Sco
 					BackgroundColor3 = Theme.Iron.Raised,
 					Text = Text.T(scope, "ach.toast.view"),
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = Theme.TextSize.Caption,
+					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Brass.Bright,
 					ZIndex = 6,
 					Visible = viewable,

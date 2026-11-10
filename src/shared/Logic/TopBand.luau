@@ -198,10 +198,11 @@ export type Placed = { zone: Rect, rects: { [string]: Rect }, card: Rect?, bark:
 
 -- The band's own sizes (virtual pixels): the alert line (as tall as HudZones.MESSAGE.alert), the banner (the
 -- legendary one; the mythic and world boss one is BANNER_BIG), the prompt (Components/Prompt), a phone's line.
+-- The prompt is as wide as a toast (review 2026-11-10: at Small, 460 left a line with 'Więcej ▸' three lines).
 TopBand.ALERT_W = 640
 TopBand.BANNER = table.freeze({ w = 900, h = 64 })
 TopBand.BANNER_BIG = table.freeze({ w = 980, h = 84 })
-TopBand.PROMPT = table.freeze({ w = 460, h = 64 })
+TopBand.PROMPT = table.freeze({ w = 520, h = 64 })
 -- A phone's M zone (UI plan zone map): 4 under the target frame, at most 114 tall (to the guide bar's bottom), never
 -- closer than GAP to the mail button or the right column (minimap, ☰, PvP). `line`: a message there is never taller
 -- than M (review 2026-11-10: the first one reached 30 px past M onto the mail button and the skill arc; its text is

@@ -42,7 +42,7 @@ function BarkToast.build(npcId: string, line: string): (Scope, Notify.Live) -> I
 				then { kind = "npc", id = def.id, glyph = def.icon }
 				else { kind = "glyph", id = "", glyph = "?", color = Theme.Iron.Text }
 		)
-		local nameHeight = if live.phone then 16 else 18
+		local nameHeight = 18 -- review 2026-11-10: Small on a phone too (Caption is for capitals only)
 		return scope:New("Frame")({
 			Name = "BarkToast",
 			Size = UDim2.fromScale(1, 1),
@@ -71,7 +71,7 @@ function BarkToast.build(npcId: string, line: string): (Scope, Notify.Live) -> I
 					BackgroundTransparency = 1,
 					Text = if def then Text.now(def.nameKey) else "",
 					FontFace = Theme.Fonts.BodyBold,
-					TextSize = if live.phone then Theme.TextSize.Caption else Theme.TextSize.Small,
+					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Iron.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextTruncate = Enum.TextTruncate.AtEnd,
@@ -85,7 +85,7 @@ function BarkToast.build(npcId: string, line: string): (Scope, Notify.Live) -> I
 					TextWrapped = true,
 					TextScaled = false,
 					FontFace = Theme.Fonts.Body,
-					TextSize = if live.phone then Theme.TextSize.Caption else Theme.TextSize.Small,
+					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Iron.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 					TextYAlignment = Enum.TextYAlignment.Top,

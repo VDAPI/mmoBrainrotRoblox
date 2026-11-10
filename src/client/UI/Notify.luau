@@ -10,6 +10,9 @@
 --   a window open: a message stands over it where it fits, else under its title bar (owner 2026-10-31, question UI 8);
 --   the achievement's banner waits for the window to close (docs/UI-ZASADY.md §6);
 --   "Szczegóły" of a card opens its full view in the same layer, closed by a tap beside it or after a while.
+-- Review 2026-11-10: the band is laid out in the Toasts layer's own size (a phone's safe area, Logic/TopBand.context)
+-- with the party, the arena's return panel and an open modal dialog; a full view stands over the band and under
+-- Roblox's top bar; a message's frame has room for its outer stroke; an alert goes at its deadline.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -81,6 +84,9 @@ local FADE = 0.18
 local MOVE = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 local TOAST_PAD = 10
 local LINE = 5 -- a text line is its size plus this
+-- Review 2026-11-10: a message's CanvasGroup is this much larger than its place on every side (a UIPadding gives the
+-- look its place back): the group clips what it draws outside itself, and the frames' strokes are drawn outside.
+local ROOM = 8
 
 local scope = Fusion.scoped(Fusion)
 local queue = NoticeQueue.new("pc", os.clock())
@@ -102,6 +108,7 @@ local held: { [string]: number } = {}
 local combatUntil = -math.huge
 local attackCheck: (() -> boolean)? = nil
 local wanted = false
+local layerSize = scope:Value(Vector2.zero) -- the Toasts layer's root, real pixels (Notify.mount)
 
 -- Combat signal: the character's HP drops (a hit taken).
 local hp = State.Value({ "character", "hp" })
@@ -147,19 +154,42 @@ function Notify.textHeight(text: string, width: number, phone: boolean): number
 	return 2 * TOAST_PAD + lines(text, size, inner) * (size + LINE)
 end
 
+-- Review 2026-11-10: a server announcement's text size, one for its height here and for its look
+-- (Components/Announcement): a phone's M line at Small, a mythic drop's and a world boss's banner at Title, the others
+-- at Large + 2. (Measured at Small and drawn at Body, a phone's banner lost its second line.)
+function Notify.bannerTextSize(tone: string?, phone: boolean): number
+	if phone then
+		return Theme.TextSize.Small
+	end
+	return if tone == "mythic" or tone == "worldboss" then Theme.TextSize.Title else Theme.TextSize.Large + 2
+end
+
+-- An announcement's height for `text` drawn `width` wide: its frame's own `base`, or more where the text wraps (1..3
+-- lines, Logic/TextCaps' model).
+local function bannerHeight(text: string, tone: string?, width: number, phone: boolean, base: number): number
+	local size = Notify.bannerTextSize(tone, phone)
+	return math.max(base, 2 * TOAST_PAD + lines(text, size, width - 2 * Theme.Padding.Small) * (size + LINE))
+end
+
+-- An entry's width and height. Review 2026-11-10: a text is measured as wide as it is drawn (its own width, at most
+-- the zone's: Logic/TopBand.slots narrows it there), so it never wraps into lines its height has no room for.
 local function sizeOf(e: NoticeQueue.Entry, phone: boolean, zoneWidth: number): (number, number)
 	local spec = specs[e.id]
 	local w = spec and spec.w
 	local h = spec and (if spec.height then spec.height(phone) else spec.h)
 	local inset = spec and spec.inset or 0
+	local text = e.text or ""
+	local said = if e.count > 1 then `{text}  ×{e.count}` else text
 	if phone then
 		w = zoneWidth
 		if h == nil then
-			h = if e.kind == "toast"
-					or e.kind == "bark"
-					or e.kind == "banner"
-				then Notify.textHeight(e.text or "", zoneWidth - inset, true)
-				else Theme.Size.HudLine
+			if e.kind == "banner" then
+				h = bannerHeight(said, e.tone, zoneWidth, true, 0)
+			elseif e.kind == "toast" or e.kind == "bark" then
+				h = Notify.textHeight(text, zoneWidth - inset, true)
+			else
+				h = Theme.Size.HudLine
+			end
 		end
 		return w :: number, h :: number
 	end
@@ -168,7 +198,8 @@ local function sizeOf(e: NoticeQueue.Entry, phone: boolean, zoneWidth: number): 
 	elseif e.kind == "banner" then
 		local big = e.tone == "mythic" or e.tone == "worldboss"
 		local b = if big then TopBand.BANNER_BIG else TopBand.BANNER
-		return w or b.w, h or b.h
+		local width = w or b.w
+		return width, h or bannerHeight(said, e.tone, math.min(width, zoneWidth), false, b.h)
 	elseif e.kind == "prompt" then
 		return w or TopBand.PROMPT.w, h or TopBand.PROMPT.h
 	elseif e.kind == "card" then
@@ -177,7 +208,7 @@ local function sizeOf(e: NoticeQueue.Entry, phone: boolean, zoneWidth: number): 
 		return w or HudZones.BARK.w, h or HudZones.BARK.h
 	end
 	local width = w or TopBand.TOAST_WIDTH
-	return width, h or Notify.textHeight(e.text or "", width - inset, false)
+	return width, h or Notify.textHeight(text, math.min(width, zoneWidth) - inset, false)
 end
 
 local function cardKind(e: NoticeQueue.Entry): HudZones.CardKind
@@ -345,8 +376,10 @@ local function hideView(id: number)
 	end)
 end
 
+-- A message's frame for its place `r`: ROOM larger on every side (showView pads it back).
 local function udims(r: Rect): (UDim2, UDim2)
-	return UDim2.fromOffset(r.left, r.top), UDim2.fromOffset(r.right - r.left, r.bottom - r.top)
+	return UDim2.fromOffset(r.left - ROOM, r.top - ROOM),
+		UDim2.fromOffset(r.right - r.left + 2 * ROOM, r.bottom - r.top + 2 * ROOM)
 end
 
 local function showView(e: NoticeQueue.Entry, r: Rect)
@@ -380,7 +413,15 @@ local function showView(e: NoticeQueue.Entry, r: Rect)
 		Size = sizeValue,
 		GroupTransparency = inner:Tween(alpha, TweenInfo.new(FADE)),
 		ZIndex = if e.kind == "alert" then 3 else 2,
-		[Children] = spec.build(inner, live),
+		[Children] = {
+			inner:New("UIPadding")({
+				PaddingLeft = UDim.new(0, ROOM),
+				PaddingRight = UDim.new(0, ROOM),
+				PaddingTop = UDim.new(0, ROOM),
+				PaddingBottom = UDim.new(0, ROOM),
+			}),
+			spec.build(inner, live),
+		},
 	})
 	views[e.id] = {
 		scope = inner,
@@ -591,7 +632,8 @@ end
 export type Card = {
 	class: NoticeQueue.Class, -- bossReward | legendary | fightResult | betterItem
 	title: string, -- one line (at most 40)
-	line: string?, -- one more (at most 40), PC only
+	line: string?, -- one more (at most 40)
+	note: string?, -- a phone's card without a full view: one more line in its sheet (the better item's "instead of")
 	accent: Color3?,
 	seconds: number?,
 	details: (() -> ())?, -- 'Szczegóły': the full view (Notify.details)
@@ -600,48 +642,118 @@ export type Card = {
 	gone: (() -> ())?,
 }
 
-local PHONE_BUTTON = 96 -- a card's button on a phone's line
-
-local function cardButton(
-	s: Scope,
-	order: number,
-	text: string,
-	primary: boolean,
-	phone: boolean,
-	run: () -> ()
-): Instance
+local function cardButton(s: Scope, order: number, text: string, primary: boolean, run: () -> ()): Instance
 	return Button(s, {
 		Surface = "iron",
 		LayoutOrder = order,
 		Text = text,
 		Variant = if primary then "primary" else "secondary",
-		Size = UDim2.fromOffset(if phone then PHONE_BUTTON elseif primary then 120 else 104, Theme.Size.MinTouch),
-		TextSize = if phone then Theme.TextSize.Caption else Theme.TextSize.Small,
+		Size = UDim2.fromOffset(if primary then 120 else 104, Theme.Size.MinTouch),
+		TextSize = Theme.TextSize.Small,
 		OnClick = run,
 	})
 end
 
+-- A phone's sheet of a card that has no full view of its own (the better item): its title, line and note, and its
+-- button.
+local function cardSheet(card: Card): (Scope, () -> (), boolean) -> Instance
+	return function(s: Scope, close: () -> (), sheet: boolean): Instance
+		local accent = card.accent or Theme.Brass.Bright
+		local function text(order: number, value: string, font: Font, size: number, color: Color3): Instance
+			return s:New("TextLabel")({
+				LayoutOrder = order,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				Text = value,
+				RichText = true,
+				TextWrapped = true,
+				FontFace = font,
+				TextSize = size,
+				TextColor3 = color,
+				TextXAlignment = Enum.TextXAlignment.Left,
+			})
+		end
+		local parts: { Instance } = {
+			s:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			s:New("UIStroke")({ Color = accent, Thickness = Theme.Stroke.Normal }),
+			s:New("UIPadding")({
+				PaddingTop = UDim.new(0, Theme.Padding.Medium),
+				PaddingBottom = UDim.new(0, Theme.Padding.Medium),
+				PaddingLeft = UDim.new(0, Theme.Padding.Medium),
+				PaddingRight = UDim.new(0, Theme.Padding.Medium),
+			}),
+			s:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, Theme.Padding.Small),
+			}),
+			text(1, card.title, Theme.Fonts.Display, Theme.TextSize.Body, accent),
+		}
+		if card.line then
+			table.insert(parts, text(2, card.line, Theme.Fonts.BodyBold, Theme.TextSize.Small, Theme.Iron.Text))
+		end
+		if card.note then
+			table.insert(parts, text(3, card.note, Theme.Fonts.Body, Theme.TextSize.Small, Theme.Iron.TextMuted))
+		end
+		if card.action then
+			local action = card.action :: { text: string, run: () -> () }
+			table.insert(
+				parts,
+				s:New("Frame")({
+					Name = "Buttons",
+					LayoutOrder = 4,
+					Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+					BackgroundTransparency = 1,
+					[Children] = {
+						s:New("UIListLayout")({
+							FillDirection = Enum.FillDirection.Horizontal,
+							HorizontalAlignment = Enum.HorizontalAlignment.Right,
+						}),
+						cardButton(s, 1, action.text, true, function()
+							close()
+							action.run()
+						end),
+					},
+				})
+			)
+		end
+		return s:New("Frame")({
+			Name = "CardSheet",
+			AnchorPoint = if sheet then Vector2.zero else Vector2.new(0.5, 0.5),
+			Position = if sheet then UDim2.new() else UDim2.fromScale(0.5, 0.5),
+			Size = if sheet then UDim2.fromScale(1, 0) else UDim2.fromOffset(HudZones.CARD_W, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundColor3 = Theme.Iron.Surface,
+			Active = true,
+			[Children] = parts,
+		})
+	end
+end
+
+local OPEN_MARK = 16 -- the ▸ at the end of a phone's line that opens on a tap
+
 -- The card summary: on PC the title, a line, 'Szczegóły' and ✕ in HudZones.cardSlot (a tablet: under the toasts); on a
--- phone one line in M. A card that waits too long drops (it stays in the fight log or the loot log).
+-- phone one line in M that opens with a tap. A card that waits too long drops (it stays in the fight log or the loot
+-- log).
 function Notify.card(card: Card): Handle?
 	local function look(s: Scope, live: Live): Instance
 		local accent = card.accent or Theme.Brass.Bright
 		local buttons: { Instance } = {}
-		if card.details then
+		if card.details and not live.phone then
 			local open = card.details :: () -> ()
 			table.insert(
 				buttons,
-				cardButton(s, 1, Text.now("fight.details"), card.action == nil, live.phone, function()
+				cardButton(s, 1, Text.now("fight.details"), card.action == nil, function()
 					live.close()
 					open()
 				end)
 			)
 		end
-		if card.action then
+		if card.action and not live.phone then
 			local action = card.action :: { text: string, run: () -> () }
 			table.insert(
 				buttons,
-				cardButton(s, 2, action.text, true, live.phone, function()
+				cardButton(s, 2, action.text, true, function()
 					live.close()
 					action.run()
 				end)
@@ -658,9 +770,18 @@ function Notify.card(card: Card): Handle?
 			OnClick = live.close,
 		})
 		if live.phone then
-			-- one line of M: the title over its line, the buttons and ✕ at the right
-			local buttonsWidth = #buttons * PHONE_BUTTON + math.max(0, #buttons - 1) * 4
-			local textWidth = -(Theme.Padding.Small * 2 + buttonsWidth + Theme.Size.MinTouch)
+			-- Review 2026-11-10: one line of M: the title over its line (Small: Caption is for capitals only) and ✕.
+			-- A tap on the text opens the full view, or the card's sheet with its button (the better item's "Załóż"):
+			-- with its buttons on the line the text had 92 px of M's 248 on a 667 x 375 phone, with two none.
+			local function open()
+				live.close()
+				if card.details then
+					card.details()
+				else
+					Notify.details(cardSheet(card))
+				end
+			end
+			local textWidth = -(Theme.Padding.Small * 2 + Theme.Size.MinTouch + OPEN_MARK)
 			return s:New("Frame")({
 				Name = "Card",
 				Size = UDim2.fromScale(1, 1),
@@ -670,48 +791,52 @@ function Notify.card(card: Card): Handle?
 				[Children] = {
 					s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 					s:New("UIStroke")({ Color = accent, Thickness = Theme.Stroke.Normal }),
-					s:New("TextLabel")({
-						Name = "Title",
-						Position = UDim2.fromOffset(Theme.Padding.Small, 2),
-						Size = UDim2.new(1, textWidth, if card.line then 0.5 else 1, -2),
+					s:New("TextButton")({
+						Name = "Open",
+						Size = UDim2.new(1, -Theme.Size.MinTouch, 1, 0),
 						BackgroundTransparency = 1,
-						Text = card.title,
-						RichText = true,
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = accent,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextTruncate = Enum.TextTruncate.AtEnd,
-					}),
-					s:New("TextLabel")({
-						Name = "Line",
-						Position = UDim2.new(0, Theme.Padding.Small, 0.5, 0),
-						Size = UDim2.new(1, textWidth, 0.5, -2),
-						BackgroundTransparency = 1,
-						Visible = card.line ~= nil,
-						Text = card.line or "",
-						RichText = true,
-						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = Theme.TextSize.Caption,
-						TextColor3 = Theme.Iron.Text,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextTruncate = Enum.TextTruncate.AtEnd,
-					}),
-					s:New("Frame")({
-						Name = "Buttons",
-						AnchorPoint = Vector2.new(1, 0.5),
-						Position = UDim2.new(1, -Theme.Size.MinTouch, 0.5, 0),
-						Size = UDim2.new(0, buttonsWidth, 1, 0),
-						BackgroundTransparency = 1,
+						AutoButtonColor = false,
+						Text = "",
+						[OnEvent("Activated")] = open,
 						[Children] = {
-							s:New("UIListLayout")({
-								FillDirection = Enum.FillDirection.Horizontal,
-								HorizontalAlignment = Enum.HorizontalAlignment.Right,
-								VerticalAlignment = Enum.VerticalAlignment.Center,
-								SortOrder = Enum.SortOrder.LayoutOrder,
-								Padding = UDim.new(0, 4),
+							s:New("TextLabel")({
+								Name = "Title",
+								Position = UDim2.fromOffset(Theme.Padding.Small, 2),
+								Size = UDim2.new(1, textWidth, if card.line then 0.5 else 1, -2),
+								BackgroundTransparency = 1,
+								Text = card.title,
+								RichText = true,
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Small,
+								TextColor3 = accent,
+								TextXAlignment = Enum.TextXAlignment.Left,
+								TextTruncate = Enum.TextTruncate.AtEnd,
 							}),
-							buttons :: any,
+							s:New("TextLabel")({
+								Name = "Line",
+								Position = UDim2.new(0, Theme.Padding.Small, 0.5, 0),
+								Size = UDim2.new(1, textWidth, 0.5, -2),
+								BackgroundTransparency = 1,
+								Visible = card.line ~= nil,
+								Text = card.line or "",
+								RichText = true,
+								FontFace = Theme.Fonts.BodyMedium,
+								TextSize = Theme.TextSize.Small,
+								TextColor3 = Theme.Iron.Text,
+								TextXAlignment = Enum.TextXAlignment.Left,
+								TextTruncate = Enum.TextTruncate.AtEnd,
+							}),
+							s:New("TextLabel")({
+								Name = "Mark",
+								AnchorPoint = Vector2.new(1, 0.5),
+								Position = UDim2.new(1, -2, 0.5, 0),
+								Size = UDim2.new(0, OPEN_MARK, 1, 0),
+								BackgroundTransparency = 1,
+								Text = "▸",
+								FontFace = Theme.Fonts.BodyBold,
+								TextSize = Theme.TextSize.Body,
+								TextColor3 = accent,
+							}),
 						},
 					}),
 					close,
@@ -815,14 +940,25 @@ function Notify.closeDetails()
 	end
 end
 
+-- The veil of a full view: its colour and transparency (the legendary reveal's own, LegendReveal.backdrop).
+export type Backdrop = { color: Color3, transparency: number }
+
 -- The full view of a card ('Szczegóły'): `build(scope, close, sheet)` over a dimmed screen in the Toasts layer, closed
--- by a tap beside it or after `seconds` (default 60). One at a time. On a phone (`sheet`) it is a full-screen sheet
--- that scrolls: the view fills its width (Size 1, 0 with an automatic height) from its top.
-function Notify.details(build: (s: Scope, close: () -> (), sheet: boolean) -> Instance, seconds: number?)
+-- by a tap beside it or after `seconds` (default 60). One at a time. On a phone (`sheet`) it is a sheet that scrolls:
+-- the view fills its width (Size 1, 0 with an automatic height) from its top. Returns the way to close it (a prompt
+-- closes its sheet when it leaves the screen).
+-- Review 2026-11-10: it stands over the band's messages (it opened under them) and under Roblox's top bar (its top
+-- was under the bar's buttons); a phone's sheet is as tall as its view, so a tap under a short one closes it; on PC
+-- the view is centred in the screen under the top bar.
+function Notify.details(
+	build: (s: Scope, close: () -> (), sheet: boolean) -> Instance,
+	seconds: number?,
+	backdrop: Backdrop?
+): () -> ()
 	Notify.closeDetails()
 	local parent = detailsHost
 	if not parent then
-		return
+		return function() end
 	end
 	local inner = scope:innerScope()
 	detailsScope = inner
@@ -833,32 +969,70 @@ function Notify.details(build: (s: Scope, close: () -> (), sheet: boolean) -> In
 	end
 	local sheet = queue.device == "phone"
 	local content = build(inner, close, sheet)
+	local pad = Theme.Padding.Small
+	-- the top bar's bottom and the layer's height in the layer's virtual pixels
+	local top = inner:Computed(function(use): number
+		local k = math.max(use(Scale.Value), 1e-3)
+		return use(Scale.TopBar) / k + pad
+	end)
+	local height = inner:Computed(function(use): number
+		return use(layerSize).Y / math.max(use(Scale.Value), 1e-3)
+	end)
+	local body: Instance
+	if sheet then
+		local tall = inner:Value(0)
+		if content:IsA("GuiObject") then
+			local view = content :: GuiObject
+			local function measure()
+				tall:set(view.AbsoluteSize.Y / math.max(Fusion.peek(Scale.Value), 1e-3))
+			end
+			table.insert(inner, view:GetPropertyChangedSignal("AbsoluteSize"):Connect(measure))
+			task.defer(measure)
+		end
+		body = inner:New("ScrollingFrame")({
+			Name = "Sheet",
+			AnchorPoint = Vector2.new(0.5, 0),
+			Position = inner:Computed(function(use): UDim2
+				return UDim2.new(0.5, 0, 0, use(top))
+			end),
+			Size = inner:Computed(function(use): UDim2
+				local room = math.max(0, use(height) - use(top) - pad)
+				return UDim2.new(1, -2 * pad, 0, math.min(use(tall), room))
+			end),
+			BackgroundTransparency = 1,
+			CanvasSize = UDim2.new(),
+			AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			ScrollingDirection = Enum.ScrollingDirection.Y,
+			ScrollBarThickness = 6,
+			Active = true,
+			[Children] = content,
+		})
+	else
+		body = inner:New("Frame")({
+			Name = "Area",
+			Position = inner:Computed(function(use): UDim2
+				return UDim2.fromOffset(0, use(top))
+			end),
+			Size = inner:Computed(function(use): UDim2
+				return UDim2.new(1, 0, 1, -(use(top) + pad))
+			end),
+			BackgroundTransparency = 1,
+			[Children] = content,
+		})
+	end
 	inner:New("TextButton")({
 		Name = "Details",
 		Parent = parent,
 		Size = UDim2.fromScale(1, 1),
 		AutoButtonColor = false,
 		Text = "",
-		BackgroundColor3 = Theme.Shade,
-		BackgroundTransparency = if sheet then 0.2 else 0.4,
+		BackgroundColor3 = if backdrop then backdrop.color else Theme.Shade,
+		BackgroundTransparency = if backdrop then backdrop.transparency elseif sheet then 0.2 else 0.4,
 		[OnEvent("Activated")] = close,
-		[Children] = if sheet
-			then inner:New("ScrollingFrame")({
-				Name = "Sheet",
-				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 0.5),
-				Size = UDim2.new(1, -2 * Theme.Padding.Small, 1, -2 * Theme.Padding.Small),
-				BackgroundTransparency = 1,
-				CanvasSize = UDim2.new(),
-				AutomaticCanvasSize = Enum.AutomaticSize.Y,
-				ScrollingDirection = Enum.ScrollingDirection.Y,
-				ScrollBarThickness = 6,
-				Active = true,
-				[Children] = content,
-			})
-			else content,
+		[Children] = body,
 	})
 	task.delay(seconds or 60, close)
+	return close
 end
 
 local layer: Instance? = nil
@@ -888,20 +1062,28 @@ end
 -- Builds the message host in the Toasts layer (Components/Toast.mount calls it once, from UIController).
 function Notify.mount(s: Scope, parent: Instance)
 	layer = parent
+	-- review 2026-11-10: a full view over the band's messages (they covered a card's full view)
 	detailsHost = s:New("Frame")({
 		Name = "NoticeDetails",
 		Parent = parent,
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
-		ZIndex = 1,
+		ZIndex = 3,
 	}) :: Frame
-	host = s:New("Frame")({
+	local notices = s:New("Frame")({
 		Name = "Notices",
 		Parent = parent,
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		ZIndex = 2,
 	}) :: Frame
+	host = notices
+	local function measure()
+		layerSize:set(notices.AbsoluteSize)
+		schedule()
+	end
+	table.insert(s, notices:GetPropertyChangedSignal("AbsoluteSize"):Connect(measure))
+	measure()
 	local clock = 0
 	table.insert(
 		s,
