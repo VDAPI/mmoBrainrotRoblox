@@ -421,6 +421,59 @@ describe("The juice gives way (owner 2026-11-10)", function()
 		expect(string.find(vfx, "cast.struck", 1, true)).toBeNil()
 	end)
 
+	-- review: Snarefield's five snares landed together, each with a full punch (17 emitters, 6 lights, 5 rings of one
+	-- cast); a chain's links, a heal's further targets and the springs of one trap the same way
+	it("the punches of one cast landing together: one in full, Config.Vfx.juice.beats beats, then none", function()
+		local cfg = Config.Vfx.juice
+		local function run(moments: SkillJuice.Moments, key: string, times: { number }, later: boolean): { string }
+			local out = {}
+			for _, t in times do
+				table.insert(out, SkillJuice.momentPunch(moments, key, t, later))
+			end
+			return out
+		end
+		-- what n punches of one moment play: the first in full (unless later), then cfg.beats beats, then none
+		local function moment(n: number, later: boolean): { string }
+			local out = {}
+			for i = 1, n do
+				local beat = if later then i else i - 1
+				table.insert(out, if beat == 0 then "full" elseif beat <= cfg.beats then "beat" else "none")
+			end
+			return out
+		end
+		local moments: SkillJuice.Moments = {}
+		local snares = SkillJuice.momentKey("hunter", "snarefield")
+		expect(run(moments, snares, { 10, 10, 10, 10, 10 }, false)).toEqual(moment(5, false)) -- one frame
+		local links = {}
+		for i = 1, 8 do
+			table.insert(links, 20 + (i - 1) * 0.06) -- a chain's links, 0.06 s apart
+		end
+		expect(run(moments, SkillJuice.momentKey("mage", "chainLightning"), links, false)).toEqual(moment(8, false))
+		-- once `together` passed a new moment opens: a snare springing later punches in full again
+		expect(run(moments, snares, { 10 + cfg.together + 0.01 }, false)).toEqual({ "full" })
+		-- later waves and strikes (Frozen Orb's 0.4 s apart) keep the beat, each in a moment of its own; later punches
+		-- of one moment (a trap's further snares, a chain's further links) stop at the beats
+		local orb = SkillJuice.momentKey("mage", "frozenOrb")
+		expect(run(moments, orb, { 30, 30.4, 30.8, 31.2 }, true)).toEqual({ "beat", "beat", "beat", "beat" })
+		expect(run(moments, orb, { 35, 35, 35, 35 }, true)).toEqual(moment(4, true))
+		-- a storm's opening keeps the beat, its first bolt a frame later still punches in full
+		local tempest = SkillJuice.momentKey("mage", "tempest")
+		expect(SkillJuice.momentPunch(moments, tempest, 40, true)).toBe("beat")
+		expect(SkillJuice.momentPunch(moments, tempest, 40.02, false)).toBe("full")
+		-- other casters and other skills have moments of their own; moments that passed are forgotten
+		expect(SkillJuice.momentPunch(moments, SkillJuice.momentKey("other", "tempest"), 40.03, false)).toBe("full")
+		expect(SkillJuice.momentPunch(moments, SkillJuice.momentKey("mage", "fireball"), 40.04, false)).toBe("full")
+		SkillJuice.momentPunch(moments, tempest, 50, true)
+		local live = 0
+		for _ in moments do
+			live += 1
+		end
+		expect(live).toBe(1)
+		-- Snarefield at its peak (our own, near, high): the flare, one full punch and two beats instead of five punches
+		local snarefield = SkillLooks.juiceCost(skill("snarefield"), SkillVfx.snarefield, false)
+		expect(snarefield).toEqual({ emitters = 5 + cfg.beats, beams = 0, lights = 2, decals = 1 + cfg.beats })
+	end)
+
 	it("one cast's juice at its peak stays within Config.Vfx.juice.perCast (every style, weight and view)", function()
 		local budget = Config.Vfx.juice.perCast
 		local worst = { emitters = 0, beams = 0, lights = 0, decals = 0 }
@@ -443,6 +496,15 @@ describe("The juice gives way (owner 2026-11-10)", function()
 										SkillJuice.flareLayers(weight, v),
 										SkillJuice.punchLayers(style, weight, v, support, false)
 									)
+									-- and the beats that may land with it (core and ring, a step lighter)
+									local beat = SkillLooks.juiceOf(
+										nil,
+										SkillJuice.punchLayers(style, SkillJuice.lighter(weight), v, support, true)
+									)
+									cost.emitters += beat.emitters * Config.Vfx.juice.beats
+									cost.beams += beat.beams * Config.Vfx.juice.beats
+									cost.lights += beat.lights * Config.Vfx.juice.beats
+									cost.decals += beat.decals * Config.Vfx.juice.beats
 									worst.emitters = math.max(worst.emitters, cost.emitters)
 									worst.beams = math.max(worst.beams, cost.beams)
 									worst.lights = math.max(worst.lights, cost.lights)
@@ -462,9 +524,10 @@ describe("The juice gives way (owner 2026-11-10)", function()
 			worst.lights <= budget.lights,
 			worst.decals <= budget.decals,
 		}).toEqual({ true, true, true, true })
-		-- another player's far cast: the flare's and the punch's cores and the ring, nothing else
+		-- another player's far cast: the cores of the flare, the punch and its beats, and their rings, nothing else
+		local beats = Config.Vfx.juice.beats
 		local far = SkillLooks.juiceCost(skill("mightyStrike"), SkillVfx.mightyStrike, false, OTHERS_FAR)
-		expect(far).toEqual({ emitters = 2, beams = 0, lights = 0, decals = 1 })
+		expect(far).toEqual({ emitters = 2 + beats, beams = 0, lights = 0, decals = 1 + beats })
 	end)
 
 	it("the juice keeps a reserve of every device limit for the skills' own pieces", function()
@@ -538,6 +601,12 @@ describe("The juice gives way (owner 2026-11-10)", function()
 		expect(string.find(vfx, "cancelled = cutOff", 1, true) ~= nil).toBe(true) -- the gathering's pop
 		local hunterMage = fs.readFile("src/client/Vfx/LmHunterMage.luau")
 		expect(string.find(hunterMage, "ctx.cancelled", 1, true) ~= nil).toBe(true)
+		-- every punch asks its moment (the beat plays as `later`); further targets and a storm's opening only keep the
+		-- beat
+		expect(occurrences(vfx, "SkillJuice.momentPunch(punchMoments,")).toBe(1)
+		expect(string.find(vfx, 'later = verdict == "beat"', 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "local later = lighter or entry.strike ~= nil", 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "simple, i > 1, i > 1)", 1, true) ~= nil).toBe(true) -- a chain's further links
 	end)
 end)
 

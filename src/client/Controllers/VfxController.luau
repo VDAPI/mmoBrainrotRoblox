@@ -60,7 +60,10 @@
 -- Owner 2026-11-10, the juice gives way (Vfx/Juice keeps clear of a reserve of every pool): the first wave of a cast
 -- punches fully, a later wave, storm strike or shot only flashes its core and ring; the flare plays after the cast's
 -- own pieces. A cast cut short (a fizzle, the caster's death: castTokens) shows no release flare, its gathering goes
--- out without the pop and its glowing hands go out; aimEnd cuts nothing (a shot that leaves sends it too).
+-- out without the pop and its glowing hands go out; aimEnd cuts nothing (a shot that leaves sends it too). The
+-- punches of one cast landing together (snares, chain links, further targets, a trap's springs) punch once in full,
+-- two more keep the beat, the rest only show the skill's own pieces (punchMoments); a storm's opening only keeps the
+-- beat, its first strike (per caster and skill: stormsAwaiting) punches in full.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -168,6 +171,9 @@ local stormsAwaiting: SkillJuice.Storms = {}
 -- flight). aimEnd bumps nothing: a shot that leaves sends it too.
 local castTokens: { [string]: number } = {}
 local castGlows: { [string]: () -> () } = {}
+-- Owner 2026-11-10 (skill juice, review): the punches each caster's skill is landing now (punch: one in full, a few
+-- beats, then none; Logic/SkillJuice.momentPunch forgets a moment once it passed)
+local punchMoments: SkillJuice.Moments = {}
 -- S115: the per-wave event's `d` of Offense.circleTarget (Cataclysm: the rock lands with the wave's damage)
 local WAVE_LAND = 0.2
 -- S115: Arrow Rain's arrows fall from this height; the flash plays on every n-th arrow (cost)
@@ -371,9 +377,16 @@ local function shakeNear(at: Vector3?, strength: number?, caster: Model?)
 	end
 end
 
+local function casterKey(data: { [string]: any }): string?
+	return if type(data.c) == "string" then data.c else nil
+end
+
 -- Owner 2026-11-10 (skill juice, Vfx/Juice): the shared punch of a skill's blow at `at` (one step lighter when
 -- `lighter`; only its core and ring when `later`, a later wave of the same cast): the style and weight of
--- Logic/SkillJuice.plan, steel sparks flying on away from the caster.
+-- Logic/SkillJuice.plan, steel sparks flying on away from the caster. Owner 2026-11-10 (review: Snarefield's five
+-- snares, a chain's links, a heal's further targets, the springs of one trap each punched in full at once): the
+-- punches of one caster's skill landing together are one moment (punchMoments, Logic/SkillJuice.momentPunch): one
+-- plays in full, the next Config.Vfx.juice.beats only their core and ring, the rest nothing.
 local function punch(
 	skill: SkillData.SkillDef,
 	entry: SkillVfx.Entry?,
@@ -386,6 +399,11 @@ local function punch(
 	later: boolean?
 )
 	if not at or not inWorld(caster) then
+		return
+	end
+	local key = SkillJuice.momentKey(casterKey(data), skill.id)
+	local verdict = SkillJuice.momentPunch(punchMoments, key, Clock.now(), later == true)
+	if verdict == "none" then
 		return
 	end
 	local plan = SkillJuice.plan(skill, entry, data.el)
@@ -402,15 +420,11 @@ local function punch(
 		support = plan.support,
 		radius = tonumber(data.r) or skill.radius,
 		dir = away,
-		later = later,
+		later = verdict == "beat",
 	})
 end
 
 -- Cast ---------------------------------------------------------------------------------------------------------
-
-local function casterKey(data: { [string]: any }): string?
-	return if type(data.c) == "string" then data.c else nil
-end
 
 -- The cast token of a caster id (castTokens; always 0 without an id: the skills-window preview).
 local function tokenOf(id: string?): number
@@ -1304,7 +1318,8 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 						for _, name in entry.impact do
 							piece(name, skill, entry, data, color, a, b, simple)
 						end
-						punch(skill, entry, data, centre(b), caster, color, simple, i > 1) -- owner 2026-11-10
+						-- owner 2026-11-10: the first link punches, the next keep the beat in its moment (punch)
+						punch(skill, entry, data, centre(b), caster, color, simple, i > 1, i > 1)
 					end)
 				end
 			end
@@ -1377,11 +1392,13 @@ local function onImpact(data: { [string]: any }, skill: SkillData.SkillDef, cast
 	end
 	-- Owner 2026-11-10 (skill juice): the shared punch where the blow lands, with the core (coreDelay) and the landing
 	-- (landsAfter); later waves and further targets one step lighter. The first wave punches fully, a later one only
-	-- flashes its core and ring (Frozen Orb and Elemental Vortex send ten waves 0.4 s apart)
+	-- flashes its core and ring (Frozen Orb and Elemental Vortex send ten waves 0.4 s apart); so do further targets
+	-- (a trap's snares, a heal's), at most a few in the moment of the first (punch). A storm's blows are its strikes
+	-- (SkillVfx.strike), so its opening only keeps the beat and the first strike punches in full.
 	if at then
 		local punchWait = linkDelay + landDelay + coreDelay
 		local lighter = wave > 1 or info.target > 1
-		local later = wave > 1
+		local later = lighter or entry.strike ~= nil
 		if punchWait > 0 then
 			Clock.after(punchWait, punch, skill, entry, data, at, caster, color, simple, lighter, later)
 		else

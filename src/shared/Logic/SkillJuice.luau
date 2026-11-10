@@ -9,7 +9,8 @@
 -- layers a flare and a punch play (flareLayers / punchLayers: the extras only for our own skills near the camera, a
 -- later wave of the same cast only its core and ring) and whether a layer may take one more of a pool (room: never the
 -- reserve of the device's limit, Config.Vfx.juice.reserve); which strike of a storm is its first (stormCast /
--- firstStrike, per caster and skill).
+-- firstStrike, per caster and skill); what each of the punches one cast lands at once plays (momentPunch: one in full,
+-- a few beats, then none).
 
 local Config = require("../Config")
 local GraphicsLevel = require("./GraphicsLevel")
@@ -264,6 +265,47 @@ function SkillJuice.firstStrike(storms: Storms, casterId: string?, skillId: stri
 		return true
 	end
 	return false
+end
+
+-- Owner 2026-11-10 (skill juice; review: Snarefield's five snares, a chain's links, a heal's further targets, the
+-- springs of one trap, a storm's opening with its first bolt and Shatter's shatter with its hit each punched in full
+-- at once, far over the budget of one cast): the punches of one caster's skill that land together, each within
+-- Config.Vfx.juice.together s of the one before, are one moment. Its first punch that is not `later` (a later wave,
+-- strike or shot, which only keeps the beat) plays in full, the next Config.Vfx.juice.beats only their core and ring
+-- (a beat), the rest nothing: the skill's own pieces still play on every target. `moments` is the caller's ledger
+-- (momentKey), `now` its clock; moments that passed are forgotten.
+export type Moment = { last: number, full: boolean, beats: number }
+export type Moments = { [string]: Moment }
+export type MomentPunch = "full" | "beat" | "none"
+
+-- The ledger key of `casterId`'s skill `skillId` (no caster: one shared moment per skill, the skills-window preview).
+function SkillJuice.momentKey(casterId: string?, skillId: string): string
+	return castKey(casterId or "", skillId)
+end
+
+-- What the punch landing `now` plays: "full", "beat" (its core and ring) or "none".
+function SkillJuice.momentPunch(moments: Moments, key: string, now: number, later: boolean): MomentPunch
+	local cfg = Config.Vfx.juice
+	for other, m in moments do
+		if now - m.last > cfg.together then
+			moments[other] = nil
+		end
+	end
+	local m = moments[key]
+	if not m then
+		m = { last = now, full = false, beats = 0 }
+		moments[key] = m
+	end
+	m.last = now
+	if not later and not m.full then
+		m.full = true
+		return "full"
+	end
+	if m.beats >= cfg.beats then
+		return "none"
+	end
+	m.beats += 1
+	return "beat"
 end
 
 -- How hard a blow of `strength` landing `distance` studs away shakes our camera: fading to nothing at shakeRange;

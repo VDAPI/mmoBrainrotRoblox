@@ -695,10 +695,20 @@ local Config = {
 			-- spark), 5 of 10 beams and ground images, 3 of 6 lights (one cast's and a telegraph's); a PC 20 of 48, 10
 			-- of 20, 6 of 12
 			reserve = { emitters = 0.4, beams = 0.5, lights = 0.5 } :: { [string]: number },
+			-- owner 2026-11-10 (review: Snarefield's five snares, a chain's links, a heal's further targets, the
+			-- springs of one trap and a storm's opening with its first bolt each punched in full at once): the punches
+			-- of one caster's skill landing within `together` s of each other are one moment: one plays in full, the
+			-- next `beats` only their core and ring, the rest none (Logic/SkillJuice.momentPunch); the skill's own
+			-- pieces still play on every target. Links and snares come 0.06 s apart (a frame or two late on a slow
+			-- phone), waves and strikes 0.2 s and more; Double Shot's 0.15 s shots may share a moment, all fit in it
+			together = 0.15,
+			beats = 2,
 			-- what the juice of one cast holds at its peak (our own skill near the camera on high: the flare's core and
-			-- motes, the punch's core, spray, puff and chips, its lightning arcs, its ground ring, two lights), the
-			-- same columns as perCast (tests/skillmotion.spec checks both for every skill)
-			perCast = { emitters = 6, beams = 2, lights = 2, decals = 1 },
+			-- motes, the punch's core, spray, puff and chips, its lightning arcs, its ground ring, two lights, and the
+			-- cores and rings of the `beats` punches landing with it), the same columns as perCast
+			-- (tests/skillmotion.spec checks both for every skill); its beams and ground images fill a phone's beam
+			-- share (5)
+			perCast = { emitters = 8, beams = 2, lights = 2, decals = 3 },
 		},
 		-- owner 2026-11-10: the camera kick of every shake (Logic/CameraShake, Vfx/CameraShake; bosses, heavy hits on
 		-- us, big skills): studs of a strength-1 kick, its time (base + per x strength s), the strongest strength

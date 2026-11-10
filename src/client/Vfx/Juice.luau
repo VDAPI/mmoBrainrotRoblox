@@ -21,7 +21,9 @@
 -- earlier casts. Another player's skill and a far / low one play no motes, puff or chips (another player's far one no
 -- spray either); a later wave of the same cast only its core and ring. At its peak a cast's juice holds
 -- Config.Vfx.juice.perCast: the flare 2 emitters and a light, the punch at most 4 emitters (core, spray, puff, chips;
--- holy: core, rays, spray), its ground ring, a light and 2 lightning beams.
+-- holy: core, rays, spray), its ground ring, a light and 2 lightning beams, and the core and ring of each of the
+-- Config.Vfx.juice.beats punches that land with it (VfxController asks Logic/SkillJuice.momentPunch which of one cast's
+-- punches landing together play in full, as a beat or not at all).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

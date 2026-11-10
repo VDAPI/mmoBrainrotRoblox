@@ -10,9 +10,11 @@
 --   PIECE_COST   what one piece may hold at once (Vfx/Library): emitters, beams, lights, decals / ground images; a
 --                cast's sum stays within Config.Vfx.perCast
 --   beamLoadOf   owner 2026-11-10: what a cast's pieces hold against the beam limit (beams and ground images)
---   juiceCost    owner 2026-11-10: what the skill juice of one cast (Vfx/Juice) holds at once at its peak, the same
---                columns; it stays within Config.Vfx.juice.perCast
+--   juiceCost    owner 2026-11-10: what the skill juice of one cast (Vfx/Juice) holds at once at its peak (the
+--                flare, a full punch and the beats landing with it), the same columns; it stays within
+--                Config.Vfx.juice.perCast
 
+local Config = require("../src/shared/Config")
 local LmVfxPieces = require("../src/shared/Data/LmVfxPieces")
 local SkillJuice = require("../src/shared/Logic/SkillJuice")
 local SkillMotions = require("../src/shared/Data/SkillMotions")
@@ -243,11 +245,9 @@ function SkillLooks.beamLoadOf(entry: SkillVfx.Entry): number
 end
 
 -- Owner 2026-11-10 (skill juice; in group fights on a phone the juice took the pools the skills' own pieces need): what
--- the shared juice of one cast holds at once at its peak, in the columns of PIECE_COST. The flare: its core, its motes
--- (emitters) and its light; the first punch: its core, rays, spray, puff and chips (emitters), its lightning arcs
--- (beams), its light and its ground ring (a ground image). Like costOf, the later waves, strikes and shots of the cast
--- are not added: they play only their core and ring (Logic/SkillJuice.punchLayers), and the juice never takes the
--- reserve of a device's limit (Config.Vfx.juice.reserve), so whatever it adds gives way to the pieces.
+-- a flare and a punch hold at once, in the columns of PIECE_COST. The flare: its core, its motes (emitters) and its
+-- light; the punch: its core, rays, spray, puff and chips (emitters), its lightning arcs (beams), its light and its
+-- ground ring (a ground image).
 function SkillLooks.juiceOf(flare: SkillJuice.Layers?, punch: SkillJuice.Layers): Cost
 	local total = c(1, punch.arcs, 0, if punch.ring then 1 else 0) -- the punch's core always plays
 	for _, on in { punch.rays, punch.spray > 0, punch.puff > 0, punch.chips > 0 } do
@@ -276,7 +276,12 @@ SkillLooks.JUICE_VIEW = { quality = "high", simple = false, own = true, touch = 
 SkillLooks.JUICE_ELEMENTS = { false, "fire", "ice", "lightning", "poison" } :: { any }
 
 -- The juice of one cast of `skill` (its look `entry`) taking `element` (false = the skill's own) as `view` sees it
--- (default JUICE_VIEW): the flare and the first punch.
+-- (default JUICE_VIEW) at its peak: the flare, the punch in full and the beats (core and ring, a step lighter) of the
+-- Config.Vfx.juice.beats punches that may land with it (review 2026-11-10: Snarefield's snares, a chain's links, a
+-- heal's further targets, a trap's springs; Logic/SkillJuice.momentPunch plays nothing past them). Every skill is
+-- counted with them: items and nodes can add targets to any skill. A later wave, strike or shot (0.15 s after the
+-- one before and more) is a beat too, in that moment or one of its own; the juice never takes the reserve of a
+-- device's limit (Config.Vfx.juice.reserve), so whatever overlaps gives way to the pieces.
 function SkillLooks.juiceCost(
 	skill: SkillJuice.SkillLike,
 	entry: SkillJuice.EntryLike?,
@@ -285,10 +290,21 @@ function SkillLooks.juiceCost(
 ): Cost
 	local plan = SkillJuice.plan(skill, entry, element)
 	local v = view or SkillLooks.JUICE_VIEW
-	return SkillLooks.juiceOf(
+	local total = SkillLooks.juiceOf(
 		SkillJuice.flareLayers(plan.weight, v),
 		SkillJuice.punchLayers(plan.style, plan.weight, v, plan.support, false)
 	)
+	local beat = SkillLooks.juiceOf(
+		nil,
+		SkillJuice.punchLayers(plan.style, SkillJuice.lighter(plan.weight), v, plan.support, true)
+	)
+	for _ = 1, Config.Vfx.juice.beats do
+		total.emitters += beat.emitters
+		total.beams += beat.beams
+		total.lights += beat.lights
+		total.decals += beat.decals
+	end
+	return total
 end
 
 local SILHOUETTE_JOINTS = { "rShoulder", "rElbow", "lShoulder", "lElbow", "waist", "root" }
