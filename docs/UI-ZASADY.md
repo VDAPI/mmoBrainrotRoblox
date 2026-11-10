@@ -218,10 +218,11 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
 - `textcaps.spec`: każdy klucz pl i en mieści się w limicie swojej powierzchni i nie ma długiego myślnika. Mapę kluczy
   buduje `tests/TextScan.luau` z kodu. Reguły i listę „do skrócenia” każdego pakietu trzyma `tests/fixtures/textcaps`.
   Lista „do skrócenia” może tylko maleć.
-- `hudzones.spec`, `phonehud.spec`, `hudlayout.spec`: prostokąty HUD z tych samych modułów, których używa gra.
-  Ekrany: PC 1920×1080, 1366×768 i 1280×720 (oraz 4:3, niskie okno, ultrawide), telefony 844×390, 667×375 i 932×430,
-  pasek Robloxa 0, 36 i 58 px. Dzisiejsze kolizje stoją na liście `KNOWN` w `hudzones.spec`, a okna poza zasadami na
-  liście `RATCHET` w `uiframe.spec`; obie listy mogą tylko maleć.
+- `hudzones.spec`, `phonehud.spec`, `hudlayout.spec`: prostokąty HUD z tych samych modułów, których używa gra. Ekrany:
+  PC 1920×1080, 1366×768 i 1280×720 (oraz 4:3, niskie okno, ultrawide), telefony 844×390, 667×375 i 932×430, pasek
+  Robloxa 0, 36 i 58 px. Pas wiadomości mieści linię alarmu (`HudZones.MESSAGE.alert`, 44). Dzisiejsze kolizje stoją
+  na liście `KNOWN` w `hudzones.spec`, stany z niższym pasem wiadomości na liście `THIN` tamże, a okna poza zasadami
+  na liście `RATCHET` w `uiframe.spec`; te listy mogą tylko maleć.
 - Pozostałe specy:
   - `topband.spec`, `noticequeue.spec`: pas wiadomości i kolejka;
   - `uiframe.spec`: okna, modale, dymki;

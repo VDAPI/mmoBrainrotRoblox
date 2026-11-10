@@ -14707,12 +14707,16 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   „Krótki opis + (i)” i „Zwijana sekcja” według zasad. Pytania do właściciela z domyślnymi odpowiedziami w DECYZJE.
 - Teksty: `Logic/TextCaps` (`SURFACES` z limitami §2, też przycisk modala 14 i nazwa panelu HUD 20; długości
   przykładowych wartości `SAMPLE`; `expand`, `chars`, `width` z modelem szerokości `uifit.spec` bez zmiany liczb,
-  `lines`, `sentences`, `check`), `tests/TextScan.luau` (gdzie kod klienta, serwera i `shared` pokazuje każdy klucz;
-  właściciel klucza to pierwszy pakiet, którego plik go czyta, według `OWNERS` ze ścieżkami nowych plików planu, a
-  pakiet B czyta też każdy klucz z miejsca toastu, baneru, alarmu, zaproszenia i karty, bo pokazuje je jego pas
-  wiadomości), `tests/fixtures/textcaps/A–E.luau` (reguły kluczy dynamicznych i dzisiejsze przekroczenia pakietu:
-  A 57, B 196, C 6, D 159, E 230; listy tylko maleją), `tests/textcaps.spec` (limity, długi myślnik i słowa
-  sterowania, zapadka list, pokrycie miejsc toastów i banerów, przypadek ujemny: toast 61 znaków).
+  `lines`, `sentences`, `check`), `tests/TextScan.luau` (gdzie kod klienta, serwera i `shared` pokazuje każdy klucz,
+  też w gałęzi `if` w nawiasie i w polu `info` karty, czyli w dymku (i); klucz błędu zwracany klientowi to toast, poza
+  `NOT_TOASTED`: szept do gracza na innym serwerze daje modal z listem; właściciel klucza to pierwszy pakiet, którego
+  plik go czyta, według `OWNERS` ze ścieżkami nowych plików planu, a pakiet B czyta też każdy klucz z miejsca toastu,
+  baneru, alarmu, zaproszenia i karty, bo pokazuje je jego pas wiadomości), `tests/fixtures/textcaps/A–E.luau` (reguły
+  kluczy dynamicznych, w D nazwy, opisy i krótkie opisy umiejętności i ścieżek, które okno umiejętności czyta przez
+  `Data/Skills`, `Data/Paths` i `NodeText.shortKey`, oraz obie opcje progu, `bp5` i `bp5b`; dzisiejsze przekroczenia
+  pakietu: A 57, B 194, C 6, D 237, E 203; listy tylko maleją), `tests/textcaps.spec` (limity, długi myślnik i słowa
+  sterowania, zapadka list, pokrycie miejsc toastów i banerów, klucze z dala od powierzchni, na których kod ich nie
+  pokazuje, przypadek ujemny: toast 61 znaków).
 - Zwijanie: `Data/Folds` (`Hud`, `Gear`, `World`, `Menu`; `init` je zbiera) z domyślnym stanem `true` / `false` albo
   `{ pc, phone }`. `Logic/SectionFold` łączy obszary (to samo id w dwóch plikach to błąd), a
   `isOpen(saved, id, compact?)` czyta domyślny stan urządzenia. `with(saved, id, open, compact?)` zapisuje minimum:
@@ -14722,24 +14726,27 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `PhoneLayout.Compact`, a `Section.state(scope, id)` daje stan i `set` przez ten sam zapis `SetSetting "sections"`
   (linia panelu HUD, grupa ustawień). Stare zapisy czytają się tak samo, sekcje plecaka otwierają się i zwijają jak
   dotąd. `Data/Folds/*` stoi w `NOT_BALANCE` księgi balansu (`tools/balance_reasons.luau`, „wygląd”).
-- Układ: `Logic/HudZones` (mapa stref HUD planu na PC i tablecie: `pc`, `targetBand`, `messageZone`, `cardSlot`,
-  `barkSlot`, `thumb`, `ELEMENTS`; liczby z `HudStack`, `HudMenu` i `UiScale` albo z plików klienta, które je dziś
-  trzymają, poza miejscami oznaczonymi jako propozycja), `Logic/WindowFrame` (`rect`, `pair`, `clampDrag`),
-  `Logic/Popover` (`place`, `cursor`), nowe tokeny `Theme.Size` (WindowHeaderCompact 44, TabHeight 44,
-  SectionHeader 32, PanelLine 32, HudLine 52, TooltipWidth 340, InfoTipWidth 320, ModalWidth 520; istniejące bez
-  zmian) i `WindowManager.Notice(text, kind?, seconds?)` jako zaślepka zwracająca `false`. Żaden plik UI jeszcze ich
-  nie czyta.
-- Testy: nowe `textcaps.spec`, `hudzones.spec` (strefy w warstwie HUD i bez nakładania na ekranach PC i tabletach
-  przy pasku Robloxa 0, 36 i 58 px; dzisiejsze kolizje na liście `KNOWN`, która tylko maleje), `uiframe.spec`
-  (rozmiary okien czytane z kontrolerów: dziś każdy się mieści, lista `RATCHET` jest pusta; dymki na siatce kotwic),
-  rozszerzony `sectionfold.spec` (stare zapisy, domyślne na urządzenie, minimum w `with`, powtórzone id, `valid`,
-  każde id sekcji w kliencie znane), `uifit.spec` z `TextCaps.width`.
+- Układ: `Logic/HudZones` (mapa stref HUD planu na PC i tablecie: `pc`, `targetBand`, `messageZone` z linią alarmu
+  `MESSAGE.alert` 44, która musi się w nim zmieścić, `cardSlot`, `barkSlot`, `thumb`, `ELEMENTS`: element HUD pakietu
+  A, jego miejsce i plik; liczby z `HudStack`, `HudMenu` i `UiScale` albo z plików klienta, które je dziś trzymają,
+  poza miejscami oznaczonymi jako propozycja), `Logic/WindowFrame` (`rect`, `pair`, `clampDrag`), `Logic/Popover`
+  (`place`, `cursor`), nowe tokeny `Theme.Size` (WindowHeaderCompact 44, TabHeight 44, SectionHeader 32, PanelLine 32,
+  HudLine 52, TooltipWidth 340, InfoTipWidth 320, ModalWidth 520; istniejące bez zmian) i
+  `WindowManager.Notice(text, kind?, seconds?)` jako zaślepka zwracająca `false`. Żaden plik UI jeszcze ich nie czyta.
+- Testy: nowe `textcaps.spec`, `hudzones.spec` (strefy w warstwie HUD i bez nakładania na ekranach PC i tabletach przy
+  pasku Robloxa 0, 36 i 58 px, pas wiadomości mieści linię alarmu, każdy element `ELEMENTS` stoi w pliku pakietu A pod
+  swoją nazwą; dzisiejsze kolizje na liście `KNOWN`, a za niskie pasy wiadomości na liście `THIN`, obie tylko maleją),
+  `uiframe.spec` (rozmiary okien czytane z kontrolerów: dziś każdy się mieści, lista `RATCHET` jest pusta; dymki na
+  siatce kotwic), rozszerzony `sectionfold.spec` (stare zapisy, domyślne na urządzenie, minimum w `with`, powtórzone
+  id, `valid`, każde id sekcji w kliencie znane), `uifit.spec` z `TextCaps.width`.
 - Odstępstwa od planu:
   - tablet nie mieści stref PC: na 1210–1280 szerokości pasmo celu i pasek bossa (720) wchodzą na strefy postaci,
     drużyny, menu, minimapy i kolumny, a do 800 wysokości atak, łuk umiejętności i przycisk celu dotyku sięgają
     minimapy, prowadzenia i rzędu „coś czeka” (przycisk celu już dziś stoi 28 px w minimapie przy 1280×720); na PC
     szacunek czatu (+20 %) sięga miejsca na kwestie NPC i rzędów 3–4 drużyny na niskich ekranach. To 34 + 3 pary w
-    `KNOWN` dla pakietu A;
+    `KNOWN` dla pakietu A. Na tabletach 1280×720 i 1024×600 pas wiadomości pod panelem areny ma 8–40 px, a pod
+    paskiem bossa z dodatkiem na tabletach do 800 wysokości od 0 do 43,6 px, mniej niż linia alarmu 44: dwa stany w
+    `THIN` dla pakietu A;
   - pasek bossa lochu w `HudZones` stoi na 22..134 jak w planie (dziś 16..128, przesuwa go pakiet B), pasek akcji ma
     918 szerokości policzone z `Hud/init` (plan zgadywał 894), a pas wiadomości jest węższy niż 980, gdy warstwa jest
     wąska, więc pakiet B mierzy komunikaty strefą;
@@ -14756,6 +14763,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
     `tutorial.<krok>.phone` czeka na teksty telefonu pakietu A;
   - jedna linia w `tools/balance_reasons.luau` (`Data/Folds/*` w `NOT_BALANCE`) poza plikami pakietu, bo
     `balance.spec` wymaga każdego modułu `Data` na liście.
+- **Po przeglądzie:** pas wiadomości musi mieścić linię alarmu (wcześniej sprawdzenie pustej strefy nie mogło zawieść,
+  bo `messageZone` nie schodzi poniżej góry), a za niskie stany stoją na liście `THIN`; `ELEMENTS` ma tylko elementy z
+  plików pakietu A, każdy z plikiem (`BarkToast` jest pakietu B); reguła bossa świata w B obejmuje tylko notkę strefy
+  `worldboss.safeZone`, bo teksty karty bossa i karty nagrody nie idą banerem; pole `info` karty to dymek (i), klucz w
+  gałęzi `if` w nawiasie trafia do swojej zmiennej, a szept do gracza na innym serwerze to modal, nie toast; nazwy,
+  opisy i krótkie opisy umiejętności i ścieżek oraz opcja B progu należą do D; przy otwartym oknie baner stoi nad
+  oknem albo pod jego paskiem tytułu jak dziś (decyzja 2026-10-31), a wstrzymanie banera z planu weszło do pytania
+  UI 8.
 - **Pliki:** `docs/UI-ZASADY.md`, `docs/DESIGN.md` §23, `docs/JAK-DODAC.md`, `Logic/TextCaps`, `Logic/SectionFold`,
   `Logic/HudZones`, `Logic/WindowFrame`, `Logic/Popover`, `Data/Folds/init|Hud|Gear|World|Menu`,
   `UI/Components/Section`, `UI/Theme`, `Controllers/WindowManager`, `tests/TextScan.luau`,
