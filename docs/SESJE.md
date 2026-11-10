@@ -14911,6 +14911,20 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
     `tests/fixtures/textcaps`;
   - `HudCover.HeaderBottom` (pakiet B) liczy dalej nagłówek 52, choć na telefonie ma on 44 (komunikaty stoją przez to
     8 px niżej).
+- Przebieg tekstów (ten sam dzień): każdy klucz pakietu mieści się w limicie swojej powierzchni, lista C w
+  `tests/fixtures/textcaps/C.luau` jest pusta (było 6).
+  - Okno zmiany umiejętności (`rework2.*`): tytuł „Zmiana rozwoju umiejętności”, treść „Rangi kupujesz teraz za punkty,
+    a broń wybiera pulę umiejętności. Masz darmowy reset.”, pod „Więcej ▸” trzy zdania (punkt co poziom i limit rangi;
+    własne punkty, rangi i pasek każdej puli; dawne rangi zostały, na ile starczyło punktów, najpierw z paska, i
+    darmowe zwroty do 20. poziomu), przycisk „Umiejętności”. Treść mówiła wcześniej, że rangi „wróciły jako punkty”,
+    a migracja (DESIGN-18 §10) zostawia dawne rangi w granicach punktów. Mag widzi pod nimi swój akapit (żywioł broni
+    wybiera pulę), więc jego szczegóły są dłuższe niż 240 znaków; każdy klucz mieści się w limicie.
+  - Reset umiejętności (`skills.reset.confirm`, zwój z plecaka i przycisk w oknie Umiejętności): „Zresetować
+    umiejętności i kierunki zestawu? Przełomy zostają.”; koszt zwoju stał w treści i w szczegółach, teraz tylko pod
+    „Więcej ▸” (przycisk resetu sam go podaje).
+  - Szczegóły związania po angielsku krótsze o 18 znaków; pytanie o zniszczenie: „<nazwa> przepadnie na zawsze.”
+    (wcześniej „zostanie zniszczony” przy każdej nazwie, także żeńskiej).
 - **Pliki:** `UI/Components/Window|Modal|Tooltip|ItemTooltip|InfoTip|Tabs|SideTabs|Button|ListRow|TextInput|Section|Details`,
   `UI/Theme`, `Controllers/WindowManager|ItemController|ReworkController`, `Logic/WindowFrame|Popover|WindowRules`,
-  lokalizacja (pl, en), `tests/uiframe.spec.luau`, `tests/windowrules.spec.luau`, `tests/uifit.spec.luau`.
+  lokalizacja (pl, en), `tests/uiframe.spec.luau`, `tests/windowrules.spec.luau`, `tests/uifit.spec.luau`,
+  `tests/fixtures/textcaps/C.luau`.
