@@ -758,11 +758,14 @@ describe("Skill looks of every class (S114 Warrior and Cleric, S115 Hunter and M
 		end
 		for _, key in Sfx.keys("skill.") do
 			local id, suffix = string.match(key, "^skill%.([%w]+)%.(%a+)$")
-			if id and suffix and id ~= "default" then
+			-- owner 2026-11-10 (skill juice): skill.impact.<style> is a style's blow, not a skill's
+			if id and suffix and id ~= "default" and id ~= "impact" then
 				local skill = SkillData.get(id)
 				expect({ key, skill ~= nil and skill.type ~= "passive" }).toEqual({ key, true })
-				-- S114 cast, S115 trigger (traps), wave (later waves, storm strikes), strike (the falcon)
+				-- S114 cast, S115 trigger (traps), wave (later waves, storm strikes), strike (the falcon); owner
+				-- 2026-11-10 voice (the cast voice of the skill juice)
 				local known = suffix == "cast"
+					or suffix == "voice"
 					or (suffix == "trigger" and skill ~= nil and skill.type == "trap")
 					or suffix == "wave"
 					or key == "skill.falcon.strike"

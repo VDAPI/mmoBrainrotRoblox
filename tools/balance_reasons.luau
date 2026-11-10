@@ -194,6 +194,7 @@ return {
 		["Data/SkillMotions"] = "wygląd",
 		["Data/SkillVfx"] = "wygląd",
 		["Data/LmVfxPieces"] = "wygląd", -- W30: the Hunter and Mage skill pieces (layer, phase, cost)
+		["Data/SkillJuice"] = "wygląd", -- owner 2026-11-10: the shared flare / punch / camera kick of every skill
 		["Data/AttackMotions"] = "wygląd",
 		["Data/Ambience"] = "wygląd",
 		["Data/MapLooks"] = "wygląd", -- W01
