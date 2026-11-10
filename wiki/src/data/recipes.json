@@ -1,7 +1,7 @@
 {
   "groups": [
-    {"id":"blessing","name":{"en":"Blessings","pl":"Błogosławieństwa"}},
-    {"id":"travel","name":{"en":"Scrolls & stones","pl":"Zwoje i kamienie"}},
+    {"id":"blessing","name":{"en":"Blessings","pl":"Wzmocnienia"}},
+    {"id":"travel","name":{"en":"Travel","pl":"Podróż"}},
     {"id":"material","name":{"en":"Materials","pl":"Materiały"}},
     {"id":"elixir","name":{"en":"Elixirs","pl":"Eliksiry"}}
   ],

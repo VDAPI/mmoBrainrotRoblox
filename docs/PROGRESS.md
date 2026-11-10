@@ -98,6 +98,23 @@
   wybór regionu bestiariusza na telefonie, koło emotek i panel łowienia na telefonie z wcięciem, przyciski kolejki
   areny, modal portalu z dwoma zagrożeniami). Okna dialogowe pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego,
   Wkrótce) jeszcze nie przeszły na stopkę i przewijanie okna z pakietu C.
+- **Plan UI 2026-11-10, pakiet D (plecak, umiejętności, usługi, sklepy, tooltip przedmiotu), część kodowa:** okna z
+  prostokąta treści (`Logic/GearLayout`) mierzonego bez animacji okna (`UI/ViewSize`), jedna linia na statystykę i
+  cztery zwijane sekcje pochodnych, zwijane „Koszt i odnowienie” i „Przełomy”, jeden pasek arkusza umiejętności na
+  telefonie, krótkie linie węzłów, przyciski usług przypięte pod treścią, na dotyku 44 px, skrócony tooltip
+  przedmiotu, jedno miejsce na tekst w sklepach (DECYZJE, SESJE); czeka na stopkę, przewijanie, przewijane `Tabs`,
+  `ListRow` i `Avoid` pakietu C; nieobejrzane w Studio (arkusz umiejętności na telefonie pod paskiem Robloxa, w dolnym
+  marginesie okna, otwieranie okna plecaka na telefonie, nagłówek kierunków z długimi nazwami, karty przełomów w
+  panelu 326 px, środek kowadła na niskim telefonie, formularz aukcji i kolejka alchemika w przewijaniu, wiersz
+  plecakarza w wąskim oknie, plecak 500 px na 667×375 i obok usługi, przyciski 44 px plecaka i statystyk).
+- **Plan UI 2026-11-10, pakiet D, część tekstowa:** teksty plecaka, umiejętności, usług i sklepów w limitach
+  (`docs/UI-ZASADY.md` §2), lista D w `tests/fixtures/textcaps` pusta (było 237): krótkie opisy umiejętności i węzłów
+  do 60 znaków, przełomy do 48 z liczbami, pytania potwierdzeń do 90 z resztą pod „Więcej ▸”, podpowiedzi bez nazw
+  ruchów myszy, Smocza Waluta raz pełną nazwą i dalej ◆ (DECYZJE, SESJE); nazwa zakładki błogosławieństw u alchemika
+  czeka na właściciela (DECYZJE); nieobejrzane w Studio (karty przełomów z nowymi tekstami w panelu 326 px i na
+  telefonie, okno zakupu skrzyni łowów i sprzętu wędrowca z „Więcej ▸”, linia „Zwoje Przemiany: N” pod „Przemień
+  wszystkie”, kafelek paczki startowej z samą liczbą przy ikonie waluty, zakładki alchemika i garderoby z krótszymi
+  nazwami, pytanie zakupu barwnika i tytułu z nazwą w cudzysłowie).
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa

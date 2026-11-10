@@ -1,7 +1,8 @@
 --!strict
 -- S152b: the one purchase dialog of the season pass's premium track (the season pass window and the shop's card use
--- this, never a copy). The shop's confirmation (UI/PremiumConfirm): the name, what it gives, the price, the balance
--- and the balance after the purchase; without enough Dragon Shards the dialog offers "Top up" instead. Confirming
+-- this, never a copy). The shop's confirmation (UI/PremiumConfirm): the question, the price and the balance after the
+-- purchase, what it gives under "Więcej ▸" (owner 2026-11-10); without enough Dragon Shards the dialog offers "Top up"
+-- instead. Confirming
 -- sends SeasonBuy (the server checks, pays and toasts season.toast.bought). The client funnel step "prompt" of the
 -- `season` funnel (Logic/ShopFunnel) goes with the dialog.
 --   SeasonPassBuy.ask(topUp)  topUp: opens the Dragon Shop on its currency tab
@@ -43,8 +44,10 @@ function SeasonPassBuy.ask(topUp: () -> ())
 	if shards < price then
 		PremiumConfirm.modal({
 			Title = Text.now("premium.confirm.title"),
-			-- the tooltip form: the price and premium.error.shards instead of a negative balance after the purchase
-			Message = PremiumConfirm.describe(spec, "tooltip"),
+			-- the question and the price with premium.error.shards instead of a negative balance after the purchase;
+			-- what the premium track gives under "Więcej ▸" (owner 2026-11-10: one home per thing)
+			Message = PremiumConfirm.describe(spec, "confirm"),
+			Details = PremiumConfirm.details(spec),
 			ConfirmText = Text.now("premium.topUp"),
 			CancelText = Text.now("common.cancel"),
 			OnConfirm = function(_text: string): (boolean, string?)
@@ -57,6 +60,7 @@ function SeasonPassBuy.ask(topUp: () -> ())
 	PremiumConfirm.modal({
 		Title = Text.now("premium.confirm.title"),
 		Message = PremiumConfirm.describe(spec, "confirm"),
+		Details = PremiumConfirm.details(spec),
 		ConfirmText = Text.now("premium.confirm.buy", { price = Format.number(price) }),
 		CancelText = Text.now("common.cancel"),
 		OnConfirm = function(_text: string): (boolean, string?)

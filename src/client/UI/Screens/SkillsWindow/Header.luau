@@ -6,6 +6,11 @@
 -- direction: <name>" or "none (12 points in one direction)", Logic/PathView.leading) and the set's capstone
 -- (Logic/Paths.capstoneOf; the phone shows these two under the directions switch, PathTab). PC 44 px with 32 px
 -- buttons, phone 52 px with 44 px.
+-- Owner 2026-11-10 (UI plan, "niektóre rzeczy zasłaniają inne"): the directions tab needed about 1046 px of 876, so
+-- the capstone ran past the window's edge and the points lost their number. Now the labels share what the set switch
+-- leaves (each shrinks, UIFlexItem, instead of a fixed maximum), the texts are short ("Punkty kierunków: 3",
+-- "Prowadzi: <name>" or "Prowadzi: brak" with the rule behind its "i"), the capstone shows only once there is one,
+-- and the set switch is narrower here (80-px buttons).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -14,6 +19,7 @@ local BuildSetSwitch = require(script.Parent.Parent.Parent.Components.BuildSetSw
 local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Context = require(script.Parent.Context)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local PathData = require(ReplicatedStorage.Shared.Data.Paths)
 local PathView = require(ReplicatedStorage.Shared.Logic.PathView)
 local Paths = require(ReplicatedStorage.Shared.Logic.Paths)
@@ -32,10 +38,12 @@ Header.HEIGHT_TOUCH = 52
 
 local CONFIRM_W = 150
 local CANCEL_W = 100
+local SET_W = 80 -- the set switch's buttons here ("Zestaw 1", "Kopiuj"), 96 elsewhere
 
 function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, touch: boolean): Instance
 	local buttonHeight = if touch then Theme.Size.MinTouch else 32
-	local function label(s: Scope, order: number, text: string, color: Color3, max: number): Instance
+	-- a label as wide as its text, shrinking (and cut at its end) only when the row runs out of room
+	local function label(s: Scope, order: number, text: string, color: Color3): Instance
 		return s:New("TextLabel")({
 			LayoutOrder = order,
 			BackgroundTransparency = 1,
@@ -47,7 +55,7 @@ function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, to
 			TextColor3 = color,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
-			[Children] = s:New("UISizeConstraint")({ MaxSize = Vector2.new(max, 22) }),
+			[Children] = s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
 		})
 	end
 	local items = scope:Computed(function(use, s: Scope): { Instance }
@@ -71,8 +79,7 @@ function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, to
 					s,
 					2,
 					Text.get(use, "skills.header.points", { pool = Text.get(use, def.nameKey), n = view.free }),
-					if canBuy or view.free > 0 then Theme.Paper.Success else Theme.Paper.TextMuted,
-					260
+					if canBuy or view.free > 0 then Theme.Paper.Success else Theme.Paper.TextMuted
 				)
 			)
 			-- the reservation and its buttons (PC; the phone pins them to the bottom)
@@ -111,8 +118,7 @@ function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, to
 				s,
 				2,
 				Text.get(use, "paths.points", { n = free }),
-				if attention and attention.points then Theme.Paper.Success else Theme.Paper.TextMuted,
-				220
+				if attention and attention.points then Theme.Paper.Success else Theme.Paper.TextMuted
 			)
 		)
 		if not touch then
@@ -125,25 +131,33 @@ function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, to
 					3,
 					if leadingDef
 						then Text.get(use, "skills.tree.leading", { name = Text.get(use, leadingDef.nameKey) })
-						else Text.get(use, "skills.tree.leadingNone", { n = leading.need }),
-					Theme.Paper.Heading,
-					280
+						else Text.get(use, "skills.tree.leadingNone"),
+					Theme.Paper.Heading
 				)
 			)
+			if not leadingDef then
+				-- what makes a direction lead, behind the "i" (it was "(12 pkt w jednym kierunku)" in the line)
+				table.insert(
+					out,
+					InfoTip.new(s, {
+						LayoutOrder = 4,
+						Text = Text.get(use, "skills.tree.leadingHint", { n = Paths.MAIN_MIN_POINTS }),
+					})
+				)
+			end
 			local capstone = Paths.capstoneOf(c)
 			local capstoneDef = if capstone then PathData.get(capstone) else nil
-			table.insert(
-				out,
-				label(
-					s,
-					4,
-					if capstoneDef
-						then Text.get(use, "skills.tree.capstone", { name = Text.get(use, capstoneDef.nameKey) })
-						else Text.get(use, "skills.tree.capstoneNone"),
-					Theme.Paper.Text,
-					200
+			if capstoneDef then
+				table.insert(
+					out,
+					label(
+						s,
+						5,
+						Text.get(use, "skills.tree.capstone", { name = Text.get(use, capstoneDef.nameKey) }),
+						Theme.Paper.Text
+					)
 				)
-			)
+			end
 		end
 		return out
 	end)
@@ -161,6 +175,7 @@ function Header.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, to
 			BuildSetSwitch(scope, {
 				ShowModal = ctx.props.ShowModal,
 				Height = if touch then Theme.Size.MinTouch else 32,
+				ButtonWidth = SET_W,
 				LayoutOrder = 1,
 			}),
 			items :: any,

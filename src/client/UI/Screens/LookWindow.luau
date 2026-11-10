@@ -4,6 +4,10 @@
 -- from anywhere, then gold at the barber, Logic/CharacterLook.changeCost) and "Change appearance" (SetCharacterLook).
 -- The button is greyed out with the reason while CharacterLook.canChange says no (the server checks it again). Opened
 -- from the wardrobe and by the barber's dialog. Reads narrow state branches only.
+-- Owner 2026-11-10 (UI plan L10): the preview (330 x 420) and the picker (440) with their gap needed 792 px in the
+-- window's 776, so the picker ran under the window's edge. Now Logic/GearLayout.look places them from the content's
+-- measured size: the preview scaled down to the room next to the picker, the picker scrolling on its own, side by side
+-- on PC and on the phones. Review 2026-11-10: the size comes without the window's opening motion (UI/ViewSize).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,9 +16,9 @@ local Workspace = game:GetService("Workspace")
 local Button = require(script.Parent.Parent.Components.Button)
 local CharacterLook = require(ReplicatedStorage.Shared.Logic.CharacterLook)
 local CurrencyIcon = require(script.Parent.Parent.Components.CurrencyIcon)
-local Device = require(script.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local LookPicker = require(script.Parent.Parent.Components.LookPicker)
 local LookPreview = require(script.Parent.Parent.Components.LookPreview)
@@ -25,6 +29,7 @@ local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local ViewSize = require(script.Parent.Parent.ViewSize)
 
 local Children = Fusion.Children
 
@@ -33,7 +38,8 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 -- The server allows Npcs.INTERACT_RANGE + 4 studs (NpcService.Near); the client asks for a little less.
 local NEAR_RANGE = Npcs.INTERACT_RANGE + 2
 local NEAR_EVERY = 0.5
-local RIGHT = 440
+-- the content's size on PC (820 x 600) until it is measured
+local AREA_PC = { w = 776, h = 504 }
 
 -- Next to an NPC offering the "look" service (the barber), like MountController.NearStable.
 local function nearBarber(): boolean
@@ -135,14 +141,33 @@ local function LookWindow(scope: Scope): Instance
 		end)
 	end
 
-	local previewSize = scope:Computed(function(use): UDim2
-		return if use(Device.Touch) then UDim2.fromOffset(240, 280) else UDim2.fromOffset(330, 420)
+	-- the preview and the picker (GearLayout.look) from the content's own size
+	local view = ViewSize.new(scope)
+	local layout = scope:Computed(function(use): GearLayout.Look
+		return GearLayout.look(use(view.size) or AREA_PC)
 	end)
+	local function at(pick: (GearLayout.Look) -> GearLayout.Rect): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return UDim2.fromOffset(r.left, r.top)
+		end)
+	end
+	local function sized(pick: (GearLayout.Look) -> GearLayout.Rect): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return UDim2.fromOffset(r.right - r.left, r.bottom - r.top)
+		end)
+	end
+	local function previewRect(l: GearLayout.Look): GearLayout.Rect
+		return l.preview
+	end
+	local function pickerRect(l: GearLayout.Look): GearLayout.Rect
+		return l.picker
+	end
 
 	local right = scope:New("Frame")({
 		Name = "Picker",
-		LayoutOrder = 2,
-		Size = UDim2.fromOffset(RIGHT, 0),
+		Size = UDim2.new(1, -8, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
 		[Children] = {
@@ -243,32 +268,15 @@ local function LookWindow(scope: Scope): Instance
 		},
 	})
 
-	return scope:New("ScrollingFrame")({
+	local root = scope:New("Frame")({
 		Name = "LookWindow",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		ScrollingDirection = Enum.ScrollingDirection.Y,
-		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Paper.Rule,
 		[Children] = {
-			scope:New("UIListLayout")({
-				FillDirection = scope:Computed(function(use): Enum.FillDirection
-					return if use(Device.Touch) then Enum.FillDirection.Vertical else Enum.FillDirection.Horizontal
-				end),
-				HorizontalAlignment = Enum.HorizontalAlignment.Center,
-				SortOrder = Enum.SortOrder.LayoutOrder,
-				Padding = UDim.new(0, Theme.Padding.Large),
-			}),
-			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, Theme.Padding.Small),
-				PaddingBottom = UDim.new(0, Theme.Padding.Medium),
-			}),
+			view.ruler,
 			LookPreview(scope, {
-				LayoutOrder = 1,
-				Size = previewSize,
+				Position = at(previewRect),
+				Size = sized(previewRect),
 				ClassId = classId,
 				Look = choice,
 				OutfitId = outfitId,
@@ -280,9 +288,30 @@ local function LookWindow(scope: Scope): Instance
 					return if t == "face" or t == "paint" then "face" else nil
 				end),
 			}),
-			right,
+			-- the picker, its cost and the button scroll next to the preview
+			scope:New("ScrollingFrame")({
+				Name = "PickerScroll",
+				Position = at(pickerRect),
+				Size = sized(pickerRect),
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				CanvasSize = UDim2.new(),
+				AutomaticCanvasSize = Enum.AutomaticSize.Y,
+				ScrollingDirection = Enum.ScrollingDirection.Y,
+				ScrollBarThickness = 6,
+				ScrollBarImageColor3 = Theme.Paper.Rule,
+				[Children] = {
+					scope:New("UIPadding")({
+						PaddingTop = UDim.new(0, Theme.Padding.Small),
+						PaddingBottom = UDim.new(0, Theme.Padding.Medium),
+					}),
+					right,
+				},
+			}),
 		},
 	})
+	view.watch(root)
+	return root
 end
 
 return LookWindow

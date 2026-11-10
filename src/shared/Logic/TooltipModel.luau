@@ -32,6 +32,11 @@
 -- one line (2026-10-31; what they do is in the full view), a price
 -- only in a shop or at a merchant, the "Alt: details" / "More ▸" line). Holding the details key (PC) or "More ▸"
 -- (touch) shows the full tooltip below; the compact one only leaves lines out, every one stays in the full view.
+-- Owner 2026-11-10 ("bardzo dużo napisów, zbyt szczegółowe opisy"; UI plan, tooltip content): every line of the
+-- compact view is at most COMPACT_LINE characters and the view at most COMPACT_MAX_LINES lines. A longer line carries
+-- `short`, the text the compact view shows (an effect's `<key>.short`, the head without the item's kind, a material's
+-- uses cut to the names that fit); the full view keeps the whole line. Effect rows over the budget (a mythic
+-- blessing's six) become "+N more" like the stat rows.
 --
 -- Line fields: `text` (may hold rich text), `role` (what the line is, for tests and the admin dump), `tone`
 -- (colour role), `hex` (explicit colour, overrides tone), `size`, `font`; bonus rows have `kind = "bonus"`,
@@ -111,6 +116,7 @@ export type Line = {
 	detail: DetailRef?, -- S68: rows that open a details panel
 	rerolled: boolean?, -- S134j: the item's locked reroll line (ItemTooltip adds TooltipModel.REROLL_MARK)
 	main: boolean?, -- 2026-10-21: the main value (damage, magic damage, armour), not a grouped statistic
+	short: string?, -- owner 2026-11-10: the compact view's text of a line over COMPACT_LINE (the full view keeps `text`)
 }
 
 export type Ctx = {
@@ -154,6 +160,15 @@ local function decimal(value: number, places: number, lang: string): string
 	return if lang == "pl" then (string.gsub(text, "%.", ",")) else text
 end
 TooltipModel.decimal = decimal
+
+-- Owner 2026-11-10: the most characters of a compact line (TextCaps tooltipCompact), as the player reads it.
+TooltipModel.COMPACT_LINE = 60
+
+-- The characters of a line as shown: rich text tags left out.
+function TooltipModel.visible(text: string): number
+	local plain = string.gsub(text, "<[^>]+>", "")
+	return utf8.len(plain) or #plain
+end
 
 local function statName(lang: string, key: string): string
 	local id = ItemRoll.baseKey(key)
@@ -453,8 +468,11 @@ end
 -- S134g (F1, owner 2026-10-15): the second line of every tooltip, "Kind · Category · Level N · Classes". The level
 -- (ItemRoll.requiredLevel) is left out at 1, the classes when the item has none; the part the character does not meet
 -- is red (`level` / `class` of the context; nil = met).
-function TooltipModel.headLine(item: ItemInstance, d: ItemDef, c: Ctx, lang: string): string
+function TooltipModel.headLine(item: ItemInstance, d: ItemDef, c: Ctx, lang: string, noKind: boolean?): string
 	local parts = TooltipModel.kindParts(d, lang)
+	if noKind and #parts > 1 then
+		table.remove(parts, 1)
+	end
 	local function red(text: string, met: boolean): string
 		return if met then text else `<font color="{TooltipModel.BAD_HEX}">{text}</font>`
 	end
@@ -602,6 +620,29 @@ local function nameList(lang: string, all: { string }): string
 	end
 	local shown = table.move(names, 1, MAX_NAMES, 1, {})
 	return Locale.T("tooltip.use.andMore", { names = table.concat(shown, ", "), n = #names - MAX_NAMES }, lang)
+end
+
+-- Owner 2026-11-10: the line of `key` with as many of `names` as fit COMPACT_LINE, the rest counted
+-- (tooltip.use.andMore); nil when the whole list already fits.
+local function fitNames(lang: string, key: string, all: { string }): string?
+	local names: { string } = {}
+	for _, name in all do
+		if not table.find(names, name) then
+			table.insert(names, name)
+		end
+	end
+	if TooltipModel.visible(Locale.T(key, { names = nameList(lang, all) }, lang)) <= TooltipModel.COMPACT_LINE then
+		return nil
+	end
+	for shown = math.min(#names - 1, MAX_NAMES), 1, -1 do
+		local list = table.concat(table.move(names, 1, shown, 1, {}), ", ")
+		local text =
+			Locale.T(key, { names = Locale.T("tooltip.use.andMore", { names = list, n = #names - shown }, lang) }, lang)
+		if TooltipModel.visible(text) <= TooltipModel.COMPACT_LINE or shown == 1 then
+			return text
+		end
+	end
+	return nil
 end
 
 -- Builder ---------------------------------------------------------------------------------------------------
@@ -936,15 +977,24 @@ local function useEffectLines(b: Builder, def: ItemDef, lang: string): boolean
 	if not use or not target then
 		return false
 	end
-	if use.kind == "teleport" and string.sub(target, 1, 8) == "dungeon:" and def.descKey then
-		b.add("effect", Locale.T(def.descKey, nil, lang))
-		return true
-	end
-	local key = if use.kind == "teleport" then `tooltip.effect.teleport.{target}` else `tooltip.effect.{target}`
+	local key = if use.kind == "teleport"
+			and string.sub(target, 1, 8) == "dungeon:"
+			and def.descKey
+		then def.descKey
+		elseif use.kind == "teleport" then `tooltip.effect.teleport.{target}`
+		else `tooltip.effect.{target}`
 	if not Locale.has(key, lang) then
 		return false
 	end
-	b.add("effect", Locale.T(key, nil, lang))
+	-- owner 2026-11-10: a long effect (an everlasting dungeon stone, the Scroll of Protection) has its compact line
+	-- `<key>.short` (item.<id>.desc -> item.<id>.short); the full view keeps the whole text
+	local shortKey = if string.sub(key, -5) == ".desc" then string.sub(key, 1, -6) .. ".short" else key .. ".short"
+	b.add(
+		"effect",
+		Locale.T(key, nil, lang),
+		nil,
+		{ short = if Locale.has(shortKey, lang) then Locale.T(shortKey, nil, lang) else nil }
+	)
 	return true
 end
 
@@ -989,7 +1039,12 @@ local function materialLines(b: Builder, def: ItemDef, lang: string)
 			for _, id in usage.alchemy do
 				table.insert(names, ItemName.get(lang, id))
 			end
-			b.add("use", Locale.T("tooltip.use.alchemy", { names = nameList(lang, names) }, lang))
+			b.add(
+				"use",
+				Locale.T("tooltip.use.alchemy", { names = nameList(lang, names) }, lang),
+				nil,
+				{ short = fitNames(lang, "tooltip.use.alchemy", names) }
+			)
 		end
 		if usage.crafting then
 			any = true
@@ -1001,7 +1056,12 @@ local function materialLines(b: Builder, def: ItemDef, lang: string)
 			for _, id in usage.quests do
 				table.insert(names, Locale.T(`quest.{id}.title`, nil, lang))
 			end
-			b.add("use", Locale.T("tooltip.use.quest", { names = nameList(lang, names) }, lang))
+			b.add(
+				"use",
+				Locale.T("tooltip.use.quest", { names = nameList(lang, names) }, lang),
+				nil,
+				{ short = fitNames(lang, "tooltip.use.quest", names) }
+			)
 		end
 	end
 	if not any then
@@ -1065,7 +1125,15 @@ local function buildFull(item: ItemInstance, def: ItemDef?, c: Ctx, lang: string
 		"rarity",
 		{ hex = rarity.textHex, size = "large", font = "heading" }
 	)
-	b.add("head", TooltipModel.headLine(item, d, c, lang), "dark", { size = "body", font = "bold" })
+	local head = TooltipModel.headLine(item, d, c, lang)
+	b.add("head", head, "dark", {
+		size = "body",
+		font = "bold",
+		-- owner 2026-11-10: over COMPACT_LINE the compact view leaves the kind out (the name above says it)
+		short = if TooltipModel.visible(head) > TooltipModel.COMPACT_LINE
+			then TooltipModel.headLine(item, d, c, lang, true)
+			else nil,
+	})
 	b.add("rarity", TooltipModel.rarityLine(item, d, lang), "muted", { size = "small" })
 
 	-- Statistics / effect
@@ -1262,12 +1330,23 @@ function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang
 	local itemDef = Items.get(item.id)
 	local worn = if itemDef then wornOf(item, itemDef, c) else nil
 	local i = 1
+	-- owner 2026-11-10: a line over COMPACT_LINE shows its `short` text here (the whole one stays in the full view)
+	local function shortened(line: Line): Line
+		if not line.short then
+			return line
+		end
+		local copy = table.clone(line)
+		copy.text = line.short :: string
+		copy.short = nil
+		hidden = true
+		return copy
+	end
 	while i <= #full do
 		local line = full[i]
 		local role = line.role
 		-- "cannot be sold" only matters at a merchant or in a shop (red)
 		if COMPACT_KEEP[role] or (role == "noSell" and (c.merchantOpen or c.shopEntry ~= nil)) then
-			table.insert(b.lines, line)
+			table.insert(b.lines, shortened(line))
 		elseif role == "bind" then
 			-- owner 2026-10-31: bound / binds when equipped joins the rarity line ("Heroiczny · +3 · Wiąże się po
 			-- założeniu"), so the short view keeps its line count
@@ -1382,7 +1461,7 @@ function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang
 			i -= 1
 			local shown = if #uses <= TooltipModel.COMPACT_USES + 1 then #uses else TooltipModel.COMPACT_USES
 			for n = 1, shown do
-				table.insert(b.lines, uses[n])
+				table.insert(b.lines, shortened(uses[n]))
 			end
 			if shown < #uses then
 				moreLine(b, #uses - shown, lang)
@@ -1412,6 +1491,32 @@ function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang
 		end
 		for n, line in block do
 			table.insert(b.lines, at + n - 1, line)
+		end
+	end
+	-- owner 2026-11-10: effect rows over the line budget (a mythic blessing's six statistics) end in "+N more"
+	local limit = TooltipModel.COMPACT_MAX_LINES - (if c.input then 1 else 0)
+	if #b.lines > limit then
+		local effects: { number } = {}
+		for n, line in b.lines do
+			if line.role == "effect" then
+				table.insert(effects, n)
+			end
+		end
+		local cut = #b.lines - limit + 1 -- the "+N more" line takes a place too
+		if #effects - cut >= TooltipModel.COMPACT_MIN_STATS then
+			local after = effects[#effects - cut]
+			for k = #effects, #effects - cut + 1, -1 do
+				table.remove(b.lines, effects[k])
+			end
+			local more: Line = {
+				kind = "text",
+				role = "more",
+				text = Locale.T("tooltip.compact.more", { n = cut }, lang),
+				tone = "muted",
+				size = "small",
+			}
+			table.insert(b.lines, after + 1, more)
+			hidden = true
 		end
 	end
 	if hidden and c.input then

@@ -3,12 +3,19 @@
 -- and equipped items), see +N → +N+1 with stat comparison, the success chance in a big coloured number, the
 -- cost (owned / needed) and an optional Scroll of Protection. "Upgrade" plays ~1.5 s of tension (sparks,
 -- rising sound) and then the result: golden burst and the new +N, or a red crack and the drop.
+-- Owner 2026-11-10 (UI plan L10, "niektóre rzeczy zasłaniają inne"): on a phone "Ulepsz" covered the Scroll of
+-- Protection's line. The parts now stand where Logic/GearLayout.smithUpgrade puts them, from the view's measured size:
+-- the anvil panel with the item, a scrolling middle (name, comparison, chance and cost, the scroll) and the result,
+-- and the button under the panel; a phone puts the item next to the middle. Review 2026-11-10: the size comes without
+-- the window's opening motion (UI/ViewSize), and the Scroll of Protection's toggle is 44 high on touch (UI-ZASADY).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
+local Device = require(script.Parent.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
@@ -22,6 +29,7 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Upgrade = require(ReplicatedStorage.Shared.Logic.Upgrade)
+local ViewSize = require(script.Parent.Parent.Parent.ViewSize)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -34,6 +42,8 @@ export type Props = {
 }
 
 local TENSION = 1.5
+-- the view's size on PC (860 x 660 under the window's tabs) until it is measured
+local AREA_PC = { w = 816, h = 512 }
 
 local count = Picker.count
 local resolve = Picker.resolve
@@ -168,13 +178,52 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 		return if i and Upgrade.canUpgrade(i) then Upgrade.chance(i.up + 1) else 0
 	end)
 
+	-- the parts' rects (GearLayout.smithUpgrade) from the view's own size
+	local view = ViewSize.new(scope)
+	local layout = scope:Computed(function(use): GearLayout.SmithUpgrade
+		return GearLayout.smithUpgrade(use(view.size) or AREA_PC)
+	end)
+	local function at(pick: (GearLayout.SmithUpgrade) -> GearLayout.Rect): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return UDim2.fromOffset(r.left, r.top)
+		end)
+	end
+	local function sized(pick: (GearLayout.SmithUpgrade) -> GearLayout.Rect): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return UDim2.fromOffset(r.right - r.left, r.bottom - r.top)
+		end)
+	end
+	local function listRect(l: GearLayout.SmithUpgrade): GearLayout.Rect
+		return l.list
+	end
+	local function anvilRect(l: GearLayout.SmithUpgrade): GearLayout.Rect
+		return l.anvil
+	end
+	local function slotRect(l: GearLayout.SmithUpgrade): GearLayout.Rect
+		return l.slot
+	end
+	local function middleRect(l: GearLayout.SmithUpgrade): GearLayout.Rect
+		return l.middle
+	end
+	local function resultRect(l: GearLayout.SmithUpgrade): GearLayout.Rect
+		return l.result
+	end
+	local function buttonRect(l: GearLayout.SmithUpgrade): GearLayout.Rect
+		return l.button
+	end
+	local listSize = sized(listRect)
+
 	local root = scope:New("Frame")({
 		Name = "Upgrade",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
+			view.ruler,
 			-- Left: items
 			scope:New("TextLabel")({
+				Position = at(listRect),
 				Size = UDim2.fromOffset(260, 24),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "smith.upgrade.items"),
@@ -185,7 +234,10 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 			}),
 			scope:New("ScrollingFrame")({
 				Position = UDim2.fromOffset(0, 28),
-				Size = UDim2.new(0, 262, 1, -28),
+				Size = scope:Computed(function(use): UDim2
+					local size: UDim2 = use(listSize)
+					return UDim2.fromOffset(size.X.Offset, size.Y.Offset - 28)
+				end),
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -201,43 +253,53 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 					candidates :: any,
 				},
 			}),
-			-- Right: anvil and details
+			-- Right: the anvil panel (it flashes with the result and holds the sparks)
 			scope:New("Frame")({
 				Name = "Anvil",
-				Position = UDim2.fromOffset(280, 0),
-				Size = UDim2.new(1, -280, 1, 0),
+				Position = at(anvilRect),
+				Size = sized(anvilRect),
 				BackgroundColor3 = flashColor,
 				BackgroundTransparency = scope:Computed(function(use): number
 					return 0.6 + use(animatedFlash) * 0.4
 				end),
 				ClipsDescendants = true,
+				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			}),
+			-- Drop target for dragged items
+			scope:New("Frame")({
+				Name = "Slot",
+				Position = at(slotRect),
+				Size = sized(slotRect),
+				BackgroundTransparency = 1,
+				ZIndex = 2,
+				[Children] = ItemSlot(scope, {
+					SlotId = "smith:upgrade",
+					Size = GearLayout.SMITH.slot,
+					Item = item,
+					Placeholder = "⚒",
+					EmptyTooltip = Text.T(scope, "smith.upgrade.pick"),
+				}),
+			}),
+			-- the name, the comparison, the chance and the cost, the Scroll of Protection: scrolling
+			scope:New("ScrollingFrame")({
+				Name = "Middle",
+				Position = at(middleRect),
+				Size = sized(middleRect),
+				CanvasSize = UDim2.new(),
+				AutomaticCanvasSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+				ScrollBarThickness = 6,
+				ScrollBarImageColor3 = Theme.Paper.Rule,
+				ZIndex = 2,
 				[Children] = {
-					scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
-					scope:New("UIPadding")({
-						PaddingTop = UDim.new(0, 10),
-						PaddingLeft = UDim.new(0, 12),
-						PaddingRight = UDim.new(0, 12),
-						PaddingBottom = UDim.new(0, 10),
-					}),
-					-- Drop target for dragged items
-					scope:New("Frame")({
-						Name = "Slot",
-						AnchorPoint = Vector2.new(0.5, 0),
-						Position = UDim2.fromScale(0.5, 0),
-						Size = UDim2.fromOffset(84, 84),
-						BackgroundTransparency = 1,
-						[Children] = ItemSlot(scope, {
-							SlotId = "smith:upgrade",
-							Size = 84,
-							Item = item,
-							Placeholder = "⚒",
-							EmptyTooltip = Text.T(scope, "smith.upgrade.pick"),
-						}),
-					}),
+					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+					scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
 					scope:New("TextLabel")({
 						Name = "Name",
-						Position = UDim2.fromOffset(0, 92),
-						Size = UDim2.new(1, 0, 0, 30),
+						LayoutOrder = 1,
+						Size = UDim2.fromScale(1, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
 						BackgroundTransparency = 1,
 						Text = scope:Computed(function(use): string
 							local i = use(item)
@@ -257,8 +319,9 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 					-- Stats now / after
 					scope:New("TextLabel")({
 						Name = "Compare",
-						Position = UDim2.fromOffset(0, 128),
-						Size = UDim2.new(1, 0, 0, 110),
+						LayoutOrder = 2,
+						Size = UDim2.fromScale(1, 0),
+						AutomaticSize = Enum.AutomaticSize.Y,
 						BackgroundTransparency = 1,
 						RichText = true,
 						TextWrapped = true,
@@ -292,68 +355,80 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 						TextXAlignment = Enum.TextXAlignment.Left,
 						TextYAlignment = Enum.TextYAlignment.Top,
 					}),
-					-- Chance
-					scope:New("TextLabel")({
-						Name = "Chance",
-						Position = UDim2.fromOffset(0, 240),
-						Size = UDim2.new(0.4, 0, 0, 64),
+					-- Chance and cost
+					scope:New("Frame")({
+						Name = "Odds",
+						LayoutOrder = 3,
+						Size = UDim2.new(1, 0, 0, 64),
 						BackgroundTransparency = 1,
-						Text = scope:Computed(function(use): string
-							return if use(item) then `{use(chance)}%` else ""
+						Visible = scope:Computed(function(use): boolean
+							return use(item) ~= nil
 						end),
-						FontFace = Theme.Fonts.Display,
-						TextSize = Theme.TextSize.Hero,
-						TextColor3 = scope:Computed(function(use): Color3
-							local c = use(chance)
-							if c >= 70 then
-								return Theme.Paper.Success
-							elseif c >= 40 then
-								return Theme.Paper.Warning
-							end
-							return Theme.Paper.Danger
-						end),
-					}),
-					scope:New("TextLabel")({
-						Name = "Cost",
-						Position = UDim2.new(0.4, 8, 0, 240),
-						Size = UDim2.new(0.6, -8, 0, 64),
-						BackgroundTransparency = 1,
-						RichText = true,
-						TextWrapped = true,
-						Text = scope:Computed(function(use): string
-							local c = use(cost)
-							if not c then
-								return ""
-							end
-							local enoughGold = (use(gold) or 0) >= c.gold
-							local parts = {
-								`<font color="{if enoughGold
-									then Theme.hex(Theme.Paper.Heading)
-									else Theme.hex(Theme.Paper.Danger)}">◉ {Format.number(c.gold)}</font>`,
-							}
-							local inv = use(inventory)
-							for _, material in c.materials do
-								local have = count(inv, material.id)
-								local color = if have >= material.n
-									then Theme.hex(Theme.Paper.Success)
-									else Theme.hex(Theme.Paper.Danger)
-								table.insert(
-									parts,
-									`<font color="{color}">{ItemText.get(use, material.id)} {have}/{material.n}</font>`
-								)
-							end
-							return `{Text.get(use, "smith.upgrade.cost")}: ` .. table.concat(parts, "  ")
-						end),
-						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Paper.Text,
-						TextXAlignment = Enum.TextXAlignment.Left,
+						[Children] = {
+							scope:New("TextLabel")({
+								Name = "Chance",
+								Size = UDim2.fromScale(0.4, 1),
+								BackgroundTransparency = 1,
+								Text = scope:Computed(function(use): string
+									return if use(item) then `{use(chance)}%` else ""
+								end),
+								FontFace = Theme.Fonts.Display,
+								TextSize = Theme.TextSize.Hero,
+								TextColor3 = scope:Computed(function(use): Color3
+									local c = use(chance)
+									if c >= 70 then
+										return Theme.Paper.Success
+									elseif c >= 40 then
+										return Theme.Paper.Warning
+									end
+									return Theme.Paper.Danger
+								end),
+							}),
+							scope:New("TextLabel")({
+								Name = "Cost",
+								Position = UDim2.new(0.4, 8, 0, 0),
+								Size = UDim2.new(0.6, -8, 1, 0),
+								BackgroundTransparency = 1,
+								RichText = true,
+								TextWrapped = true,
+								Text = scope:Computed(function(use): string
+									local c = use(cost)
+									if not c then
+										return ""
+									end
+									local enoughGold = (use(gold) or 0) >= c.gold
+									local parts = {
+										`<font color="{if enoughGold
+											then Theme.hex(Theme.Paper.Heading)
+											else Theme.hex(Theme.Paper.Danger)}">◉ {Format.number(c.gold)}</font>`,
+									}
+									local inv = use(inventory)
+									for _, material in c.materials do
+										local have = count(inv, material.id)
+										local color = if have >= material.n
+											then Theme.hex(Theme.Paper.Success)
+											else Theme.hex(Theme.Paper.Danger)
+										table.insert(
+											parts,
+											`<font color="{color}">{ItemText.get(use, material.id)} {have}/{material.n}</font>`
+										)
+									end
+									return `{Text.get(use, "smith.upgrade.cost")}: ` .. table.concat(parts, "  ")
+								end),
+								FontFace = Theme.Fonts.BodyMedium,
+								TextSize = Theme.TextSize.Small,
+								TextColor3 = Theme.Paper.Text,
+								TextXAlignment = Enum.TextXAlignment.Left,
+							}),
+						},
 					}),
 					-- Protection checkbox
 					scope:New("TextButton")({
 						Name = "Protect",
-						Position = UDim2.fromOffset(0, 312),
-						Size = UDim2.new(1, 0, 0, 36),
+						LayoutOrder = 4,
+						Size = scope:Computed(function(use): UDim2
+							return UDim2.new(1, 0, 0, if use(Device.Touch) then Theme.Size.MinTouch else 36)
+						end),
 						BackgroundTransparency = 1,
 						Text = scope:Computed(function(use): string
 							local mark = if use(protect) then "☑" else "☐"
@@ -363,6 +438,7 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 								{ count = count(use(inventory), "scroll_protection") }
 							)}`
 						end),
+						TextWrapped = true,
 						FontFace = Theme.Fonts.BodyMedium,
 						TextSize = Theme.TextSize.Body,
 						TextColor3 = Theme.Paper.Text,
@@ -372,44 +448,46 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 							protect:set(not Fusion.peek(protect))
 						end,
 					}),
-					Button(scope, {
-						AnchorPoint = Vector2.new(0.5, 1),
-						Position = UDim2.new(0.5, 0, 1, -34),
-						Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
-						Variant = "primary",
-						Text = scope:Computed(function(use): string
-							local p = use(phase)
-							return Text.get(use, if p == "idle" then "smith.upgrade.button" else "smith.upgrade.again")
-						end),
-						Disabled = scope:Computed(function(use): boolean
-							local i = use(item)
-							return i == nil or not Upgrade.canUpgrade(i) or use(phase) == "forging"
-						end),
-						OnClick = doUpgrade,
-					}),
-					scope:New("TextLabel")({
-						Name = "Result",
-						AnchorPoint = Vector2.new(0, 1),
-						Position = UDim2.fromScale(0, 1),
-						Size = UDim2.new(1, 0, 0, 28),
-						BackgroundTransparency = 1,
-						Text = resultText,
-						FontFace = Theme.Fonts.BodyBold,
-						TextSize = Theme.TextSize.Body,
-						TextColor3 = scope:Computed(function(use): Color3
-							local p = use(phase)
-							if p == "success" then
-								return Theme.Paper.Heading
-							elseif p == "fail" then
-								return Theme.Paper.Danger
-							end
-							return Theme.Paper.Link
-						end),
-					}),
 				},
+			}),
+			scope:New("TextLabel")({
+				Name = "Result",
+				Position = at(resultRect),
+				Size = sized(resultRect),
+				BackgroundTransparency = 1,
+				ZIndex = 2,
+				Text = resultText,
+				TextWrapped = true,
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Body,
+				TextColor3 = scope:Computed(function(use): Color3
+					local p = use(phase)
+					if p == "success" then
+						return Theme.Paper.Heading
+					elseif p == "fail" then
+						return Theme.Paper.Danger
+					end
+					return Theme.Paper.Link
+				end),
+			}),
+			-- "Ulepsz" under the anvil, in the footer
+			Button(scope, {
+				Position = at(buttonRect),
+				Size = sized(buttonRect),
+				Variant = "primary",
+				Text = scope:Computed(function(use): string
+					local p = use(phase)
+					return Text.get(use, if p == "idle" then "smith.upgrade.button" else "smith.upgrade.again")
+				end),
+				Disabled = scope:Computed(function(use): boolean
+					local i = use(item)
+					return i == nil or not Upgrade.canUpgrade(i) or use(phase) == "forging"
+				end),
+				OnClick = doUpgrade,
 			}),
 		},
 	})
+	view.watch(root)
 	anvil = root:FindFirstChild("Anvil") :: Frame?
 	return root
 end

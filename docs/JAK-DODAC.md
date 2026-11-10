@@ -108,7 +108,7 @@
   wpis `SkillVfx` w trzech warstwach i z innym podpisem niż reszta klasy (`tests/SkillLooks`: nowy składnik dostaje
   warstwę i koszt), klucz dźwięku `skill.<id>` w `Data/Sfx`; znaczenie `n` zdarzenia tylko przez `Logic/SkillFxWave`.
 - **Okno umiejętności** (S139): drzewko puli i szczegóły tylko z `PathView.poolView` / `skillDetails` (rezerwacja przez
-  `PathView.planned`), kafelek `SkillsWindow/Tile`; nowa umiejętność dostaje `skill.<id>.short` (PL, EN, ≤ 90 znaków,
+  `PathView.planned`), kafelek `SkillsWindow/Tile`; nowa umiejętność dostaje `skill.<id>.short` (PL, EN, ≤ 60 znaków,
   najwyżej jeden placeholder z `values`), nowe pole `values` etykietę `skills.field.<pole>` (`localization.spec`).
 - **Podpalenie Ognia / ocalenie** (S140): stosy przez pole `burnStacks` (`add.burnStacks` w przełomach) i
   `CombatService.ApplyBurn` (jeden wpis `Burn.KEY` na celu, `uncapped`), reguły tylko w `Logic/Burn` (`cap`, `add`,
@@ -322,6 +322,32 @@
   oddania), mówi to w tytule albo w `Summary`, a `WorldLayout` liczy tę wysokość. Nowy typ celu questu
   (`quest.obj.<typ>`, linia tropiciela na każdym urządzeniu) i tekst questu nie mają nazw klawiszy ani słów sterowania
   („(F)”, „kliknij”, „dwuklik”; `tests/dialogue.spec`).
+- **Układ okna z prostokąta treści** (plan UI 2026-11-10, pakiet D; właściciel: „niektóre rzeczy zasłaniają inne”):
+  kolumny, listy i przyciski okna przedmiotów i postaci liczy czysta funkcja w `Logic/GearLayout` z rozmiaru treści
+  okna (`WindowFrame.content` albo część pod zakładkami okna), nigdy z ekranu (`Scale.VirtualSize`). W widoku:
+  `local view = ViewSize.new(scope)`, `view.ruler` wśród dzieci ramki (nie pod `UIListLayout`), `view.watch(ramka)`
+  zaraz po jej utworzeniu, w `Computed` `use(view.size)` (nil przed pierwszym pomiarem: wtedy rozmiar treści na PC) i
+  `UDim2.fromOffset` z prostokątów. `UI/ViewSize` mierzy w px wirtualnych bez animacji otwierania okna (samo
+  `AbsoluteSize` przez `Scale.Value` ją zawiera); widok buduje się od nowa tylko przy zmianie rodzaju układu, a
+  przesunięcia idą przez `Computed` `UDim2`. Przycisk główny w pasie stopki (`GearLayout.BUTTON` od dołu), na dotyku
+  44 px (`GearLayout.TOUCH`), długa treść przewija się w swoim prostokącie, telefon jedną kolumną tylko tam, gdzie dwie
+  się nie mieszczą. Nowy widok: funkcja w `GearLayout`, przypadek w `tests/gearlayout.spec` (PC i trzy telefony
+  `PhoneHud.DEVICES` przy pasku Robloxa 0, 36 i 58 px prawdziwych, w oknie `bar / PhoneHud.SCALE`: w obszarze, bez
+  nakładania, przyciski w stopce, co najmniej 2 rzędy listy na telefonie i 5 na PC) i plik widoku na liście
+  czytelników w tym teście.
+- **Tekst okna plecaka, umiejętności i usług w limicie** (plan UI 2026-11-10, pakiet D, część tekstowa; właściciel:
+  „bardzo dużo napisów, zbyt szczegółowe opisy”): krótki opis umiejętności `skill.<id>.short` ma najwyżej 60 znaków i
+  jedną myśl, opcja przełomu `skill.<id>.bp5|bp10|bp5b|bp10b` najwyżej 48 i wszystkie swoje liczby, pisana wzorem
+  („Rozprysk: 13% obrażeń do 4 st. od celu”, „Fala ciosu: 50% obrażeń do 6 st. od celu”, „pkt proc.”, po angielsku
+  „points”); resztę mówi pełny opis `skill.<id>.desc` (najwyżej 300, pod „Więcej ▸”). Węzeł kierunku z opisem dłuższym
+  niż `NodeText.LONG` (60) dostaje `path.<ścieżka>.<węzeł>.short` z placeholderami z opisu; linia mówi zmianę („Kanał
+  Inwokacji: {archmage} s”), a po angielsku teksty węzłów piszą punkty procentowe jako „pt” i bez liczby mnogiej zaraz
+  po liczbie, bo ranga daje często 1. Okno potwierdzenia: pytanie z ceną w `Message` (najwyżej 90), reszta w
+  `Details` (240, „Więcej ▸”). Przycisk najwyżej 18 znaków i bez liczby,
+  którą mówi linia obok, zakładka 12, linia okna 60; podpowiedź mówi, co wybrać, bez „kliknij”, „najedź” i
+  „przeciągnij”; Smocza Waluta pełną nazwą raz na ekranie, dalej ◆. Liczy `Logic/TextCaps` po wstawieniu przykładów
+  (`{n}` 6 znaków, `{item}` 28, inne 12), pilnuje `tests/textcaps.spec`, a lista D w `tests/fixtures/textcaps/D.luau`
+  zostaje pusta.
 - **Komunikat, zaproszenie albo karta** (2026-11-10, plan UI, pakiet B; `docs/UI-ZASADY.md` §6): wszystko idzie przez
   kolejkę `UI/Notify`, nigdy własny `ScreenGui` ani rodzic w warstwie Toasts (`topband.spec` to sprawdza). Toast:
   `Toast.push(tekst, "info" | "success" | "warning" | "error", sekundy?)`, ogłoszenie: `Announcement.push(tekst,

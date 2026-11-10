@@ -77,13 +77,14 @@ local function packCard(
 	order: number,
 	passes: { [string]: boolean }
 ): Instance
+	-- owner 2026-11-10 (too much text): the currency's icon names it, so the chip shows only the amount
 	local chips: { Instance } = {
 		chip(
 			scope,
 			1,
 			"◆",
 			Theme.Paper.Link,
-			Text.now("premium.pack", { n = Format.number(pack.shards) }),
+			Format.number(pack.shards),
 			CurrencyIcon(scope, { Currency = "dragon", LayoutOrder = 1, Size = UDim2.fromOffset(24, 24) })
 		),
 	}

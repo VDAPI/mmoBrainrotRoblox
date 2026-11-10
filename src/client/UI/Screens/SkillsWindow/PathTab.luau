@@ -201,22 +201,22 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 		-- The phone's header has room only for the talent points: the set's leading direction (with its threshold) and
 		-- capstone stand under the switch.
 		if touch then
+			-- owner 2026-11-10 (UI plan): the short header texts; the capstone only once there is one (the rule of a
+			-- leading direction is in the direction's details)
 			local leading = PathView.leading(character)
 			local leadingDef = if leading.pathId then PathData.get(leading.pathId) else nil
 			label(
 				if leadingDef
 					then Text.get(use, "skills.tree.leading", { name = Text.get(use, leadingDef.nameKey) })
-					else Text.get(use, "skills.tree.leadingNone", { n = leading.need }),
+					else Text.get(use, "skills.tree.leadingNone"),
 				Theme.Paper.Heading,
 				Theme.Fonts.BodyBold
 			)
 			local capstone = Paths.capstoneOf(character)
 			local capstoneDef = if capstone then PathData.get(capstone) else nil
-			label(
-				if capstoneDef
-					then Text.get(use, "skills.tree.capstone", { name = Text.get(use, capstoneDef.nameKey) })
-					else Text.get(use, "skills.tree.capstoneNone")
-			)
+			if capstoneDef then
+				label(Text.get(use, "skills.tree.capstone", { name = Text.get(use, capstoneDef.nameKey) }))
+			end
 		end
 		-- Header: the name (a click shows the path's description), the ranks in the direction (S138).
 		local pathSelected = s:Computed(function(use2): boolean
@@ -229,7 +229,8 @@ function PathTab.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, t
 			AutomaticSize = Enum.AutomaticSize.Y,
 			AutoButtonColor = false,
 			BackgroundTransparency = 1,
-			Text = `{Text.get(use, def.nameKey)}  ⓘ`,
+			-- owner 2026-11-10 (UI plan): no "ⓘ" glyph after the name; the one "i" is the InfoTip next to it
+			Text = Text.get(use, def.nameKey),
 			TextWrapped = true,
 			FontFace = Theme.Fonts.Display,
 			TextSize = Theme.TextSize.Large,

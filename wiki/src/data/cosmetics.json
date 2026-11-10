@@ -113,15 +113,15 @@
     {"id":"outfit","name":{"en":"Outfits","pl":"Stroje"}},
     {"id":"aura","name":{"en":"Auras","pl":"Aury"}},
     {"id":"trail","name":{"en":"Trails","pl":"Ślady"}},
-    {"id":"weapon","name":{"en":"Weapon effects","pl":"Efekty broni"}},
+    {"id":"weapon","name":{"en":"Weapon FX","pl":"Efekty broni"}},
     {"id":"pet","name":{"en":"Pets","pl":"Pety"}},
     {"id":"mountskin","name":{"en":"Mounts","pl":"Wierzchowce"}},
     {"id":"dye","name":{"en":"Dyes","pl":"Barwniki"}},
-    {"id":"frame","name":{"en":"Portrait frames","pl":"Ramki portretu"}},
+    {"id":"frame","name":{"en":"Frames","pl":"Ramki"}},
     {"id":"chatframe","name":{"en":"Chat frames","pl":"Ramki czatu"}},
     {"id":"title","name":{"en":"Titles","pl":"Tytuły"}},
     {"id":"emote","name":{"en":"Emotes","pl":"Emotki"}},
-    {"id":"levelup","name":{"en":"Level-up effects","pl":"Efekty awansu"}}
+    {"id":"levelup","name":{"en":"Level-up FX","pl":"Efekt awansu"}}
   ],
   "texts": {
     "hint": {"en":"Click an item to try it on. Looks only, no stats.","pl":"Kliknij przedmiot, by go przymierzyć. Tylko wygląd, bez statystyk."},

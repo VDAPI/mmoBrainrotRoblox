@@ -2,6 +2,10 @@
 -- Auction window, "Browse" tab: filters on the left (category, class, rarity, level range, name, price
 -- order), results on the right (icon, name in rarity colour, level, price, time left, seller, "Buy" with a
 -- confirmation) and paging. Clicking a row loads the full item (bonuses) for its tooltip.
+-- Owner 2026-11-10 (UI plan L10): "Szukaj" stays in sight. The filters scroll over the button pinned to the bottom,
+-- the results over the pager (Logic/GearLayout.auctionBrowse, from the view's measured size); on a phone the button
+-- was the last of eight filters, under the window's edge. Review 2026-11-10: the size comes without the window's
+-- opening motion (UI/ViewSize), so the pinned parts no longer slide while the window opens.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -10,6 +14,7 @@ local Button = require(script.Parent.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Market = require(ReplicatedStorage.Shared.Data.Market)
@@ -21,12 +26,14 @@ local Text = require(script.Parent.Parent.Parent.Text)
 local TextInput = require(script.Parent.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
+local ViewSize = require(script.Parent.Parent.Parent.ViewSize)
 
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local LEFT = 250
+-- the view's size on PC (1080 x 700 under the window's tabs) until it is measured
+local AREA_PC = { w = 1036, h = 552 }
 
 -- Cycles through options on click: { value, labelKey }.
 local function cycleButton(
@@ -197,8 +204,37 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 		})
 	end
 
+	-- the filters, "Szukaj", the results and the pager (GearLayout.auctionBrowse) from the view's own size
+	local view = ViewSize.new(scope)
+	local layout = scope:Computed(function(use): GearLayout.AuctionBrowse
+		return GearLayout.auctionBrowse(use(view.size) or AREA_PC)
+	end)
+	local function place(pick: (GearLayout.AuctionBrowse) -> GearLayout.Rect): (any, any)
+		return scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return UDim2.fromOffset(r.left, r.top)
+		end),
+			scope:Computed(function(use): UDim2
+				local r = pick(use(layout))
+				return UDim2.fromOffset(r.right - r.left, r.bottom - r.top)
+			end)
+	end
+	local filtersAt, filtersSize = place(function(l)
+		return l.filters
+	end)
+	local searchAt, searchSize = place(function(l)
+		return l.search
+	end)
+	local resultsAt, resultsSize = place(function(l)
+		return l.results
+	end)
+	local pagerAt, pagerSize = place(function(l)
+		return l.pager
+	end)
+
 	local filters = scope:New("ScrollingFrame")({
-		Size = UDim2.new(0, LEFT, 1, 0),
+		Position = filtersAt,
+		Size = filtersSize,
 		CanvasSize = UDim2.new(),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
@@ -264,17 +300,18 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 					end,
 				},
 			}),
-			Button(scope, {
-				LayoutOrder = 7,
-				Size = UDim2.new(1, 0, 0, 46),
-				Variant = "primary",
-				Text = Text.T(scope, "auction.search"),
-				Disabled = loading,
-				OnClick = function()
-					run(1)
-				end,
-			}),
 		},
+	})
+	-- pinned under the filters
+	local search = Button(scope, {
+		Position = searchAt,
+		Size = searchSize,
+		Variant = "primary",
+		Text = Text.T(scope, "auction.search"),
+		Disabled = loading,
+		OnClick = function()
+			run(1)
+		end,
 	})
 
 	-- Results ------------------------------------------------------------------------------------
@@ -380,14 +417,16 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 		return list
 	end)
 
-	return scope:New("Frame")({
+	local root = scope:New("Frame")({
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
+			view.ruler,
 			filters,
+			search,
 			scope:New("ScrollingFrame")({
-				Position = UDim2.fromOffset(LEFT + 10, 0),
-				Size = UDim2.new(1, -(LEFT + 10), 1, -54),
+				Position = resultsAt,
+				Size = resultsSize,
 				CanvasSize = UDim2.new(),
 				AutomaticCanvasSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
@@ -400,9 +439,9 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 				},
 			}),
 			scope:New("Frame")({
-				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.new(0, LEFT + 10, 1, 0),
-				Size = UDim2.new(1, -(LEFT + 10), 0, 46),
+				Name = "Pager",
+				Position = pagerAt,
+				Size = pagerSize,
 				BackgroundTransparency = 1,
 				[Children] = {
 					Button(scope, {
@@ -450,6 +489,8 @@ local function Browse(scope: Scope, showModal: (spec: any) -> ()): Instance
 			}),
 		},
 	})
+	view.watch(root)
+	return root
 end
 
 return Browse

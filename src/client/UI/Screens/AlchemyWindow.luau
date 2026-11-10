@@ -2,6 +2,9 @@
 -- Alchemist window (DESIGN §10): recipes grouped by tab (Blessings, Scrolls & stones, Materials, Elixirs),
 -- locked ones show the required level, each row shows ingredients owned / needed, gold and brewing time with
 -- "Order". On the right the queue: 3 (VIP 4) slots with progress bars, countdowns, "Collect" / "Collect all".
+-- Owner 2026-11-10 (UI plan L10): the queue scrolls between its title and "Odbierz wszystko" pinned to the bottom, so
+-- on a phone the button no longer covers the third slot; the parts stand where Logic/GearLayout.alchemy puts them,
+-- from the window content's measured size (UI/ViewSize: without the window's opening motion, review 2026-11-10).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -10,6 +13,7 @@ local Button = require(script.Parent.Parent.Components.Button)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local ItemRoll = require(ReplicatedStorage.Shared.Logic.ItemRoll)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.ItemText)
@@ -22,6 +26,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local ViewSize = require(script.Parent.Parent.ViewSize)
 
 local Children = Fusion.Children
 
@@ -31,7 +36,26 @@ export type Props = {
 	NpcId: Fusion.UsedAs<string?>,
 }
 
-local QUEUE_WIDTH = 270
+-- the content's size on PC (1000 x 680) until it is measured
+local AREA_PC = { w = 956, h = 584 }
+
+type Layout = Fusion.Computed<GearLayout.Alchemy>
+
+-- The position and the size of one of the layout's rects, following it.
+local function placed(
+	scope: Scope,
+	layout: Layout,
+	pick: (GearLayout.Alchemy) -> GearLayout.Rect
+): (Fusion.Computed<UDim2>, Fusion.Computed<UDim2>)
+	return scope:Computed(function(use): UDim2
+		local r = pick(use(layout))
+		return UDim2.fromOffset(r.left, r.top)
+	end),
+		scope:Computed(function(use): UDim2
+			local r = pick(use(layout))
+			return UDim2.fromOffset(r.right - r.left, r.bottom - r.top)
+		end)
+end
 
 local function count(inv: any, itemId: string): number
 	local n = 0
@@ -160,7 +184,7 @@ local function recipeRow(scope: Scope, props: Props, recipe: Recipes.Recipe, ord
 	})
 end
 
-local function queuePanel(scope: Scope, props: Props): Instance
+local function queuePanel(scope: Scope, props: Props, layout: Layout): { Instance }
 	local queue = State.Value({ "character", "alchemy" })
 	local now = scope:Value(Clock.now())
 	local accumulator = 0
@@ -207,7 +231,7 @@ local function queuePanel(scope: Scope, props: Props): Instance
 					list,
 					s:New("Frame")({
 						LayoutOrder = index,
-						Size = UDim2.new(1, 0, 0, 84),
+						Size = UDim2.new(1, 0, 0, GearLayout.ALCHEMY.slot),
 						BackgroundColor3 = Theme.Paper.Raised,
 						BackgroundTransparency = 0.3,
 						[Children] = {
@@ -271,7 +295,7 @@ local function queuePanel(scope: Scope, props: Props): Instance
 					list,
 					s:New("TextLabel")({
 						LayoutOrder = index,
-						Size = UDim2.new(1, 0, 0, 84),
+						Size = UDim2.new(1, 0, 0, GearLayout.ALCHEMY.slot),
 						BackgroundColor3 = Theme.Paper.Sunken,
 						BackgroundTransparency = 0.5,
 						Text = Text.get(use, "alchemy.emptySlot"),
@@ -290,44 +314,58 @@ local function queuePanel(scope: Scope, props: Props): Instance
 		return #Time.readyItems(use(queue) or {}, use(now)) > 0
 	end)
 
-	return scope:New("Frame")({
-		Name = "Queue",
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.fromScale(1, 0),
-		Size = UDim2.new(0, QUEUE_WIDTH, 1, 0),
-		BackgroundTransparency = 1,
-		[Children] = {
-			scope:New("TextLabel")({
-				Size = UDim2.new(1, 0, 0, 36),
-				BackgroundTransparency = 1,
-				Text = Text.T(scope, "alchemy.queue"),
-				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Paper.Heading,
-				TextXAlignment = Enum.TextXAlignment.Left,
-			}),
-			scope:New("Frame")({
-				Position = UDim2.fromOffset(0, 40),
-				Size = UDim2.new(1, 0, 1, -100),
-				BackgroundTransparency = 1,
-				[Children] = {
-					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
-					slots :: any,
-				},
-			}),
-			Button(scope, {
-				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.fromScale(0, 1),
-				Size = UDim2.new(1, 0, 0, 52),
-				Variant = "primary",
-				Text = Text.T(scope, "alchemy.collectAll"),
-				Disabled = scope:Computed(function(use): boolean
-					return not use(anyReady)
-				end),
-				OnClick = collect,
-			}),
-		},
-	})
+	local titleAt, titleSize = placed(scope, layout, function(l)
+		return l.title
+	end)
+	local queueAt, queueSize = placed(scope, layout, function(l)
+		return l.queue
+	end)
+	local collectAt, collectSize = placed(scope, layout, function(l)
+		return l.collect
+	end)
+	return {
+		scope:New("TextLabel")({
+			Name = "QueueTitle",
+			Position = titleAt,
+			Size = titleSize,
+			BackgroundTransparency = 1,
+			Text = Text.T(scope, "alchemy.queue"),
+			FontFace = Theme.Fonts.Display,
+			TextSize = Theme.TextSize.Large,
+			TextColor3 = Theme.Paper.Heading,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		}),
+		-- the slots scroll; "Odbierz wszystko" is pinned under them
+		scope:New("ScrollingFrame")({
+			Name = "Queue",
+			Position = queueAt,
+			Size = queueSize,
+			CanvasSize = UDim2.new(),
+			AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			ScrollBarThickness = 6,
+			ScrollBarImageColor3 = Theme.Paper.Rule,
+			[Children] = {
+				scope:New("UIListLayout")({
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, GearLayout.ALCHEMY.gap),
+				}),
+				scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
+				slots :: any,
+			},
+		}),
+		Button(scope, {
+			Position = collectAt,
+			Size = collectSize,
+			Variant = "primary",
+			Text = Text.T(scope, "alchemy.collectAll"),
+			Disabled = scope:Computed(function(use): boolean
+				return not use(anyReady)
+			end),
+			OnClick = collect,
+		}),
+	}
 end
 
 local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
@@ -353,40 +391,61 @@ local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
 		return list
 	end)
 
-	return {
-		scope:New("Frame")({
-			Name = "Recipes",
-			Size = UDim2.new(1, -QUEUE_WIDTH - 16, 1, 0),
-			BackgroundTransparency = 1,
-			[Children] = {
-				Tabs(scope, {
-					Selected = group,
-					Tabs = {
-						{ id = "blessing", label = Text.T(scope, "alchemy.group.blessing") },
-						{ id = "travel", label = Text.T(scope, "alchemy.group.travel") },
-						{ id = "material", label = Text.T(scope, "alchemy.group.material") },
-						{ id = "elixir", label = Text.T(scope, "alchemy.group.elixir") },
-					},
-				}),
-				scope:New("ScrollingFrame")({
-					Position = UDim2.fromOffset(0, 52),
-					Size = UDim2.new(1, 0, 1, -52),
-					CanvasSize = UDim2.new(),
-					AutomaticCanvasSize = Enum.AutomaticSize.Y,
-					BackgroundTransparency = 1,
-					BorderSizePixel = 0,
-					ScrollBarThickness = 6,
-					ScrollBarImageColor3 = Theme.Paper.Rule,
-					[Children] = {
-						scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
-						rows :: any,
-					},
-				}),
-			},
-		}),
-		queuePanel(scope, props),
-	}
+	-- the recipes, the queue and its button (GearLayout.alchemy) from the content's own size
+	local view = ViewSize.new(scope)
+	local layout = scope:Computed(function(use): GearLayout.Alchemy
+		return GearLayout.alchemy(use(view.size) or AREA_PC)
+	end)
+	local recipesAt, recipesSize = placed(scope, layout, function(l)
+		return l.recipes
+	end)
+
+	local root = scope:New("Frame")({
+		Name = "Alchemy",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		[Children] = {
+			view.ruler,
+			scope:New("Frame")({
+				Name = "Recipes",
+				Position = recipesAt,
+				Size = recipesSize,
+				BackgroundTransparency = 1,
+				[Children] = {
+					Tabs(scope, {
+						Selected = group,
+						Tabs = {
+							{ id = "blessing", label = Text.T(scope, "alchemy.group.blessing") },
+							{ id = "travel", label = Text.T(scope, "alchemy.group.travel") },
+							{ id = "material", label = Text.T(scope, "alchemy.group.material") },
+							{ id = "elixir", label = Text.T(scope, "alchemy.group.elixir") },
+						},
+					}),
+					scope:New("ScrollingFrame")({
+						Position = UDim2.fromOffset(0, 52),
+						Size = UDim2.new(1, 0, 1, -52),
+						CanvasSize = UDim2.new(),
+						AutomaticCanvasSize = Enum.AutomaticSize.Y,
+						BackgroundTransparency = 1,
+						BorderSizePixel = 0,
+						ScrollBarThickness = 6,
+						ScrollBarImageColor3 = Theme.Paper.Rule,
+						[Children] = {
+							scope:New("UIListLayout")({
+								SortOrder = Enum.SortOrder.LayoutOrder,
+								Padding = UDim.new(0, 6),
+							}),
+							scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
+							rows :: any,
+						},
+					}),
+				},
+			}),
+			queuePanel(scope, props, layout) :: any,
+		},
+	})
+	view.watch(root)
+	return root
 end
 
 return AlchemyWindow

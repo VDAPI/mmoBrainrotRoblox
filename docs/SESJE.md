@@ -15060,6 +15060,110 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `tests/worldlayout.spec.luau`, `tests/dialogue.spec.luau`, `tests/shorttext3.spec.luau`,
   `tests/fixtures/textcaps/E.luau`, `tests/wikidump.spec.luau`, `tools/WikiData/Quests.luau`, dane wiki.
 
+### Plan UI 2026-11-10, pakiet D: plecak, umiejętności, usługi, sklepy i tooltip przedmiotu (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”; „wiem, że jesteś w stanie zrobić czytelne i przyjemne GUI, postaraj się”. Część kodowa pakietu D (teksty
+  do limitów i pusta lista D w `tests/fixtures/textcaps` to osobna część), na API pakietu F; stopki, przewijanie i
+  inne nowe właściwości okien pakietu C przyjdą po jego scaleniu (miejsca w raporcie pakietu).
+- Układ: nowy czysty `Logic/GearLayout` (prostokąty z rozmiaru treści okna, `WindowFrame.content`, nigdy z ekranu):
+  `character` (kolumny `CharacterSections.columns` z szerokości treści), `backpack` (nagłówek, linia ostrzeżenia,
+  filtry, siatka, akcje), `skillPanel` i `skillSheet` (szczegóły umiejętności na PC i arkusz telefonu), `smithUpgrade`,
+  `auctionSell`, `auctionBrowse`, `alchemy`, `look`, `backpackShop`. Okna mierzą swój obszar (`Out("AbsoluteSize")`
+  przez `Scale.Value`) i stawiają części tam, gdzie mówi `GearLayout`; przyciski główne stoją w pasie stopki.
+- Okno plecaka: jedna linia na statystykę z (i), przyciski i „Wolne punkty” tylko z wolnymi punktami, statystyki
+  pochodne w czterech sekcjach (`charOffense` otwarta, `charDefense`, `charResources`, `charOther` zwinięte), nazwy
+  zawijane zamiast ucinanych, kolumny z szerokości treści (plecak 500 px na trzech telefonach), ostrzeżenie Small 17.
+- Okno umiejętności: sekcje `skillCost` („Koszt i odnowienie”, linia kosztu i odnowienia, tabela rang pod spodem;
+  pasywka „Wartości rangi”) i `skillBreakpoints` („Przełomy”, linia działających wersji albo „Przełom do wyboru”),
+  obie zwinięte; pełny opis pod wspólnym `Details` („Więcej ▸”); karty przełomów w jednym wierszu z „Wybierz”
+  także na telefonie, zasada zmian raz; jedna podpowiedź drzewka (pusty panel szczegółów); nagłówek kierunków mieści
+  się (etykiety się kurczą, krótsze teksty, zasada prowadzenia za (i), zwieńczenie tylko gdy jest, węższy przełącznik
+  zestawów); arkusz telefonu z jednym paskiem (wstecz, akcje, podgląd, „Anuluj” / „Zatwierdź (+N)” przy rezerwacji),
+  szczegóły co najmniej 260 px; `NodeText.LONG` 60 i 71 nowych `path.<ścieżka>.<węzeł>.short` (pl i en).
+- Usługi: kowal (ulepszanie: lista, kowadło z przedmiotem, przewijany środek, wynik, „Ulepsz” w stopce; na niskim
+  obszarze przedmiot obok środka), aukcja (wystawianie: formularz przewijany nad przypiętym „Wystaw przedmiot”;
+  przeglądanie: filtry przewijane nad przypiętym „Szukaj”, wyniki nad stronami), alchemik (receptury i kolejka z
+  przewijaną listą i przypiętym „Odbierz wszystko”), wygląd (podgląd i lista obok siebie, kolumna tylko gdy brak
+  miejsca), plecakarz (tekst wiersza kończy się przed przyciskiem, węższy przycisk poniżej 560 px).
+- Tooltip przedmiotu i sklepy (pierwszy commit): skrócony widok najwyżej 10 linii po najwyżej 60 znaków, krótkie
+  linie efektów (`tooltip.effect.*.short`, `item.stone_dungeon_*.short`), pełny widok bez zmian; Smoczy Sklep,
+  `PremiumConfirm`, `SeasonPassBuy`, depozyt i zdjęcie oferty z aukcji: jedno miejsce na każdy tekst.
+- Testy: nowy `gearlayout.spec` (PC i trzy telefony przy pasku 0 i 58 px: w obszarze, bez nakładania, przyciski w
+  stopce, co najmniej 2 rzędy plecaka na telefonie i 5 na PC, 260 px szczegółów umiejętności; okna czytają
+  `GearLayout`), rozszerzone `tooltip.spec` (limity skróconego widoku dla każdego przedmiotu, krótkie linie, tooltip
+  paska najwyżej 5 linii, pełny widok pod Alt i „Więcej ▸”), `charactersections.spec` (kolumny z szerokości treści,
+  sekcje pochodne, jedna linia statystyki), zaostrzony `shopshort.spec` (najechanie karty bez jej (i)) i w
+  `sectionfold.spec` test `Data/Folds/Gear` (każde id czytane przez okna plecaka i umiejętności, żadne inne).
+- Odstępstwa od planu: karty przełomów zawijają tekst zamiast go ucinać, póki teksty przełomów nie zejdą do 48 znaków
+  (część tekstowa); przyciski główne usług stoją we własnym pasie, póki pakiet C nie da stopki okna; kolejka alchemika
+  zostaje kartami 84 px do `ListRow` pakietu C; filtry plecaka i alchemika czekają na przewijane `Tabs` pakietu C;
+  `Avoid` tooltipu z paska akcji plecaka czeka na właściwość pakietu C. Poprawki w `TooltipModel`: linia „+N
+  więcej” z jawnym typem `Line`, a komentarz nie cytuje zmyślonego klucza w cudzysłowie (czyta go `data.spec`).
+- **Po przeglądzie (2026-11-10):** specy liczyły pasek Robloxa (58 px) jako px wirtualne, a okno bierze go
+  podzielonego przez skalę UI (68,5 px na telefonie): arkusz umiejętności miał na 844×390 tylko 251,5 px szczegółów,
+  a plecak obok usługi (sloty 64) jeden pełny rząd. Specy liczą teraz paski 0, 36 i 58 px prawdziwych
+  (`bar / PhoneHud.SCALE`), arkusz sięga w dolny margines okna (`GearLayout.sheetOverhang`, 261,5 px), plecak ma na
+  dotyku zawsze sloty 56 (`BackpackPanel`), a sortowanie i akcje plecaka, „Anuluj”, „Zatwierdź” i „Rozdaj wg ścieżki”
+  oraz Zwój Ochrony 44 px (`GearLayout.backpack(..., touch)`). Okna mierzą treść nowym `UI/ViewSize` (linijka 100 px
+  pod tymi samymi skalami, odczyt po ułożeniu, całe px), bo `AbsoluteSize` przez `Scale.Value` zawierało animację
+  otwierania okna: okno plecaka na telefonie budowało się od nowa w prawie każdej jej klatce, a przyciski usług się
+  przesuwały. Okno plecaka buduje się teraz od nowa tylko przy zmianie rodzaju układu, kolumny telefonu przesuwają się
+  same. Nazwa statystyki bez wolnych punktów stała 116 px od krawędzi; teraz zajmuje to, co zostawiają przyciski
+  (`CharacterSections.statControls`). Zwinięta linia „Koszt i odnowienie” jest bez zasięgu i procentu skrócenia
+  (`SkillInfo.costSummary`, `skills.cooldown.short`), bo z nimi nie mieściła się w panelu 326 px dla żadnej
+  umiejętności z zasięgiem; spec mierzy ją dla każdej umiejętności i rangi (278 px, `sectionSummary`). Spec panelu PC
+  liczy jego wnętrze po marginesie (`GearLayout.skillPanelArea`, liczby okna sprawdzane w źródle): przy podglądzie i
+  dwóch rzędach przycisków 142 px linii, próg 140. Pliki: `UI/ViewSize`, `UI/SkillInfo`, `Logic/GearLayout`,
+  `Logic/CharacterSections`, okna z listy niżej, `tests/gearlayout.spec`, `tests/charactersections.spec`.
+- **Pliki:** `Logic/GearLayout`, `Logic/CharacterSections`, `Logic/NodeText`, `Logic/TooltipModel`,
+  `Data/Folds/Gear`, `Data/Localization/pl|en`, `Screens/CharacterWindow/init|DerivedList|StatAllocator`,
+  `Screens/BackpackPanel`, `Screens/SkillsWindow/init|Details|Breakpoints|Sheet|Header|PathTab|PoolTree`,
+  `Screens/BlacksmithWindow/Upgrade`, `Screens/AuctionWindow/Sell|Browse|Mine`, `Screens/AlchemyWindow`,
+  `Screens/LookWindow`, `Screens/BackpackShop`, `Screens/DepositWindow`, `Screens/PremiumShop/init|Items|Cosmetics`,
+  `UI/PremiumConfirm`, `UI/SeasonPassBuy`, `tests/gearlayout.spec`, `tests/tooltip.spec`,
+  `tests/charactersections.spec`, `tests/shopshort.spec`, `tests/sectionfold.spec`.
+
+### Plan UI 2026-11-10, pakiet D, część tekstowa: teksty plecaka, umiejętności, usług i sklepów (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”. Teksty, które `TextScan.owner` daje pakietowi D, w limitach `docs/UI-ZASADY.md` §2 (pl i en, te same
+  placeholdery, linie zmieniane w miejscu); lista D w `tests/fixtures/textcaps` z 237 kluczy do pustej. Zmienionych
+  albo nowych kluczy: 251.
+- Okno umiejętności (pierwszy commit): 61 krótkich opisów umiejętności i 26 krótkich linii węzłów do 60 znaków, 90
+  opcji przełomów do 48 z wszystkimi liczbami (wzory „Rozprysk: …% obrażeń do … st. od celu”, „Fala ciosu: …”,
+  „pkt proc.”, po angielsku „points”), cztery długie opisy do 300 (`skill.arcaneTorrent`, `skill.intercept`,
+  angielski `skill.wheelOfFortune`, `path.scout.royalFalcon`), linie okna (`paths.row`, `paths.node.dip`,
+  `skills.mod.idle|inactive`, `skills.shape.guard|ring`; reguła wyboru celu Przechwycenia jest w jego opisie),
+  podpowiedzi drzewek bez „kliknij”, przyciski „Rozdaj wg ścieżki”, „Rozdaj wg puli”, „Zatwierdź +N”, „Zwróć węzły”,
+  pytanie o kopię zestawu w 90 znakach (`buildset.copy.message`, „Darmowy reset” dalej w `.info`).
+- Przedmioty, sklepy i usługi (drugi commit): przyciski sklepu, kowala i garderoby w 18 znakach, zakładki alchemika,
+  sklepu łowów i garderoby w 12, pytania potwierdzeń w 90 (aukcja, kowal, sklep kamieni, ustawienie kamienia), (i) w 240
+  i trzech zdaniach (`auction.sell.rules`, `portalshop.intro`, `autoGrind.desc`, cechy broni), podpowiedzi bez nazw
+  ruchów myszy, Smocza Waluta raz pełną nazwą i dalej ◆, bez długich myślników. Kod: `HuntShopWindow` (zawartość
+  skrzyni w `Details` okna), `WanderingMerchantWindow` (pod pytaniem poziom i wiązanie z nowych
+  `wanderer.confirmGear.short` i `wanderer.confirmGearBound.short`, cała linia w `Details`),
+  `BlacksmithWindow/Reroll` („Przemień wszystkie” bez liczby, linia pod nim z nowym `smith.reroll.all.have`),
+  `PremiumShop/Currency` (kafelek paczki startowej: liczba przy ikonie waluty).
+- Wiki: `lune run tools/wikidump.luau` po tekstach (`skills`, `items`, `cosmetics`, `recipes`, `premium`, `meta`,
+  `docs/PRZEDMIOTY.md`), `--check` mówi „up to date”.
+- Wybory: karty przełomów dalej zawijają tekst (teksty mają już najwyżej 48 znaków, a zawijanie chroni przed ucięciem na
+  wąskim telefonie); podpowiedź „Podwójny klik lub przytrzymanie: załóż/użyj” zostaje w pełnym tooltipie (skrócony widok
+  jej nie ma, a nic innego nie uczy skrótu); w przełomach Wiru Ostrzy i Gniewu Tytana odpadło „na 10. randze”, liczby
+  zostały („4 × 48%”); notka o Smoczej Walucie zostaje na końcu zakładki waluty. Stare specy krótkich tekstów
+  (`shorttext3`, `shopshort`, `socialshort`) przechodzą bez zmian.
+- **Po przeglądzie (2026-11-10):** linie węzłów Inwokacji i Strumienia Arkanów mówią zmianę („Kanał Inwokacji:
+  {archmage} s”, nie ujemny czas), Egzekucja premię, nie dobijanie, Koło Fortuny „wrogowie częściej chybiają”;
+  angielskie teksty węzłów piszą punkty procentowe jako „pt” (było „+1 points”), liczbę fal i promień bez liczby
+  mnogiej po liczbie, Pękająca Tarcza po angielsku leczy częścią tarczy, nie procentem życia; „Breakthroughs” zamiast
+  „Breakpoints”; pytanie zakupu Kupić „{name}”? (barwniki i tytuły mają w nazwie dwukropek); przełomy Rozdarcia i
+  Wyroku wzorem „Fala ciosu”, Strzału w Serce „Rozprysk”; „30 min” w (i) sklepu kamieni i w opisach wiecznych
+  kamieni; zakładka alchemika „Podróż” jak w sklepie areny. Nazwa zakładki błogosławieństw czeka na właściciela
+  (DECYZJE); nazwy sekcji w `docs/UI-ZASADY.md` §4 poprawi scalenie (plik pakietu F). Wiki przegenerowana (`skills`,
+  `items`, `recipes`, `meta`, `docs/PRZEDMIOTY.md`).
+- **Pliki:** `Data/Localization/pl|en`, `Screens/HuntShopWindow`, `Screens/WanderingMerchantWindow`,
+  `Screens/BlacksmithWindow/Reroll`, `Screens/PremiumShop/Currency`, `tests/fixtures/textcaps/D.luau`,
+  `wiki/src/data/*.json`, `docs/PRZEDMIOTY.md`, `docs/DESIGN.md` §23, `docs/DECYZJE.md`, `docs/PROGRESS.md`,
+  `docs/JAK-DODAC.md`.
+
 ### Plan UI 2026-11-10, pakiet B: komunikaty w jednej kolejce (2026-11-10)
 - Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
   zwinąć”. Pakiet B (część kodu): wszystko, co wyskakuje, idzie przez jedną kolejkę i ma jedno miejsce, pas wiadomości

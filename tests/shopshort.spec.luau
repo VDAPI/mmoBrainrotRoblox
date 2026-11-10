@@ -7,6 +7,7 @@
 --   every Dragon Shop entry and pass whose description is longer than VISIBLE has its short line.
 
 local Products = require("../src/shared/Data/Products")
+local fs = require("@lune/fs")
 local T = require("./Test")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
@@ -170,5 +171,35 @@ describe("Short lines of shops, blacksmith, premium, mail and rewards (2026-10-2
 		end
 		table.sort(missing)
 		expect(missing).toEqual({})
+	end)
+
+	-- owner 2026-11-10 (UI plan, one home per thing): a card's hover never repeats its (i): the service cards (Cloak,
+	-- Auto Potions, Auto Hunt) have no hover, a buy card's hover is the price and the balance after the purchase
+	-- (PremiumConfirm.describe "tooltip" leaves the name and the description out), the dialog puts the description under
+	-- "Więcej ▸" (Details)
+	it("no card hover repeats its (i); the dialog keeps the description under Więcej", function()
+		local source = fs.readFile("src/client/UI/Screens/PremiumShop/Items.luau")
+		local repeats: { string } = {}
+		for block in string.gmatch(source, "Cards%.card%(scope, (%b{})%)") do
+			local infoKey = string.match(block, '\n\t\tinfo = Text%.T%(scope, "([%w_.]+)"')
+			local tooltip = string.match(block, "\n\t\ttooltip = (.-)\n\t\t[%a]+ =")
+				or string.match(block, "\n\t\ttooltip = (.*)$")
+			if infoKey and tooltip and string.find(tooltip, infoKey, 1, true) then
+				table.insert(repeats, infoKey)
+			end
+		end
+		expect(repeats).toEqual({})
+		for _, key in { "lure.desc", "autoPotion.desc", "autoGrind.desc" } do
+			local _, uses = string.gsub(source, `"{key}"`, "")
+			expect({ key, uses }).toEqual({ key, 1 })
+		end
+		local confirm = fs.readFile("src/client/UI/PremiumConfirm.luau")
+		local describeBody = string.match(confirm, "function PremiumConfirm%.describe(.-)\nend\n") or ""
+		expect(describeBody ~= "").toBe(true)
+		expect(string.find(describeBody, "spec.desc", 1, true)).toBeNil()
+		expect(string.find(confirm, "Details = PremiumConfirm.details(spec)", 1, true) ~= nil).toBe(true)
+		local season = fs.readFile("src/client/UI/SeasonPassBuy.luau")
+		local _, details = string.gsub(season, "Details = PremiumConfirm%.details%(spec%)", "")
+		expect(details).toBe(2)
 	end)
 end)

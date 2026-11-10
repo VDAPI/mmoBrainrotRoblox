@@ -9,7 +9,8 @@
 -- Everything is computed again by the server (RerollBonus); this only shows it.
 -- 2026-10-21 (owner: too many detailed descriptions): what a transmutation takes and where the stone comes from
 -- (smith.reroll.stoneHint) sits behind the "i" of the cost line; without a Scroll of Transformation one short line
--- with the scroll's text behind its "i".
+-- with the scroll's text behind its "i". Owner 2026-11-10 (too much text): with scrolls the same line says how many
+-- the player has, so the "every bonus" button needs no number.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -723,14 +724,14 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				end),
 				Theme.Paper.Danger
 			),
-			-- S156: every bonus at once with a Scroll of Transformation (the hint when the player has none)
+			-- S156: every bonus at once with a Scroll of Transformation (the hint when the player has none).
+			-- owner 2026-11-10 (too much text): the button only says what it does (a button is one line of at most 18
+			-- characters); how many scrolls the player has is the line under it
 			Button(scope, {
 				LayoutOrder = 13,
 				Size = UDim2.new(0.8, 0, 0, Theme.Size.ButtonHeight),
 				Variant = "secondary",
-				Text = scope:Computed(function(use): string
-					return Text.get(use, "smith.reroll.all.button", { count = use(scrolls) })
-				end),
+				Text = Text.T(scope, "smith.reroll.all.button"),
 				Disabled = scope:Computed(function(use): boolean
 					local c = use(allCost)
 					return c == nil or use(scrolls) < 1 or (use(gold) or 0) < c.gold or use(phase) == "forging"
@@ -749,8 +750,13 @@ local function Reroll_(scope: Scope, props: Props): Instance
 				scope,
 				15,
 				scope:Computed(function(use): string
-					local missing = use(allResult) == nil and use(scrolls) < 1 and use(item) ~= nil
-					return if missing then Text.get(use, "smith.reroll.all.hint.short") else ""
+					if use(allResult) ~= nil or use(item) == nil then
+						return ""
+					end
+					local count = use(scrolls)
+					return if count < 1
+						then Text.get(use, "smith.reroll.all.hint.short")
+						else Text.get(use, "smith.reroll.all.have", { count = count })
 				end),
 				Text.T(scope, "smith.reroll.all.hint"),
 				Theme.Paper.TextMuted

@@ -1830,6 +1830,31 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   Legenda mapy otwarta na PC, na telefonie jedna linia „Legenda”. Zwinięta sekcja, w której coś czeka, mówi to w tytule
   („Ukończone (n)”, wybrany region, liczniki łowów); reszta nie ma linii podsumowania, bo nic w niej nie czeka
   (UI-ZASADY §4).
+- **Okna plecaka i umiejętności, usługi** (plan UI 2026-11-10, pakiet D; właściciel 2026-11-10: „bardzo dużo napisów,
+  niektóre rzeczy zasłaniają inne”): okno plecaka zostaje jak w decyzji 2026-11-10 (Statystyki otwarte, Zestawy i
+  tytuł zwinięte); statystyka to jedna linia („Siła 24”) z (i), „−” / „+” i „Wolne punkty” tylko przy wolnych
+  punktach; statystyki pochodne w czterech sekcjach (Ofensywa otwarta, Defensywa, Zasoby i Inne zwinięte,
+  `Data/Folds/Gear`), nazwy do dwóch linii, nigdy ucięte; kolumny z szerokości treści okna (`Logic/GearLayout`), więc
+  plecak ma 500 px także na telefonie. Szczegóły umiejętności: ranga i krótki opis, „Koszt i odnowienie” zwinięte do
+  linii kosztu i odnowienia (tabela rang pod spodem; pasywka: „Wartości rangi”), „Przełomy” zwinięte do linii
+  działających wersji („Ranga 5: A · Ranga 10: B”) albo „Przełom do wyboru”, karta przełomu w jednym wierszu z
+  „Wybierz”, zasada zmian raz, pełny opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów;
+  nagłówek kierunków „Punkty kierunków: N”, „Prowadzi: …” albo „Prowadzi: brak” (zasada za (i)), zwieńczenie dopiero,
+  gdy jest; opis węzła dłuższy niż 60 znaków krótką linią (`NodeText.LONG`). Telefon: arkusz szczegółów z jednym
+  paskiem na dole (Wróć, akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź +N”), szczegóły co najmniej 260 px
+  także pod pełnym paskiem Robloxa, przełom wybierany na karcie; na dotyku plecak ma sloty 56 px (także obok usługi),
+  a sortowanie, akcje plecaka, przyciski statystyk i Zwój Ochrony 44 px. Usługi (kowal, aukcja, alchemik, wygląd,
+  plecakarz): przycisk główny przypięty pod treścią, długa treść przewija się w swoim miejscu, telefon jedną kolumną
+  tylko tam, gdzie dwie się nie mieszczą.
+  Teksty tych okien (część tekstowa pakietu D) mieszczą się w limitach `docs/UI-ZASADY.md` §2: krótki opis
+  umiejętności i krótka linia węzła najwyżej 60 znaków, przełom najwyżej 48 i zawsze z liczbami („Rozprysk: 13%
+  obrażeń do 4 st. od celu”), linia okna 60, przycisk 18, zakładka 12; reszta zostaje w pełnym opisie pod „Więcej ▸”.
+  Okno potwierdzenia pyta z ceną w najwyżej 90 znakach, a to, co nie zmienia wyboru (zawartość skrzyni łowów, klasa i
+  premie sprzętu wędrowca), leży pod „Więcej ▸”; pod pytaniem o sprzęt wędrowca zostają poziom i wiązanie. Przycisk
+  mówi, co robi, a liczba stoi w linii obok („Przemień wszystkie”, pod nim „Zwoje Przemiany: N”). Podpowiedzi mówią,
+  co wybrać („Wybierz węzeł, aby zobaczyć opis.”), bez „kliknij”, „najedź” i „przeciągnij”; wyjątek to podpowiedź
+  skrótu „Podwójny klik lub przytrzymanie” w pełnym tooltipie przedmiotu. Smocza Waluta ma pełną nazwę raz na ekranie
+  (notka waluty, saldo), dalej ◆ („500 ◆”, „Na stałe 120 ◆”, „Dzienne ◆: odebrane”).
 
 ### Ikony w UI (S35)
 
