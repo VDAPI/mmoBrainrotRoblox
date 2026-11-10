@@ -396,25 +396,29 @@ function TargetController.FindNearest(range: number, includePlayers: boolean, in
 	return best
 end
 
--- Review 2026-11-10: the nearest living enemy within `range` studs on the ground, a monster or a player we may attack,
--- by distance alone (a tapped Blink jumps away from it; a monster over the level cap still hits us).
-function TargetController.NearestEnemy(range: number): Model?
+-- Review 2026-11-10: the living enemy, a monster or a player we may attack, whose body's edge is nearest on the ground
+-- and within `range` studs, by distance alone (a tapped Blink jumps away from it; a monster over the level cap still
+-- hits us), and its body radius. The edge, not the centre: a big boss's body reaches far nearer than its centre.
+function TargetController.NearestEnemy(range: number): (Model?, number)
 	local root = myRoot()
 	if not root then
-		return nil
+		return nil, 0
 	end
 	local best: Model? = nil
-	local bestDistance = range
+	local bestRadius = 0
+	local bestEdge = range
 	for _, model in candidates(true) do
 		if isAlive(model) and isHostile(model) then
-			local distance = flatOffset(root.Position, model:GetPivot().Position).Magnitude
-			if distance <= bestDistance then
+			local radius = radiusOf(model)
+			local edge = flatOffset(root.Position, model:GetPivot().Position).Magnitude - radius
+			if edge <= bestEdge then
 				best = model
-				bestDistance = distance
+				bestRadius = radius
+				bestEdge = edge
 			end
 		end
 	end
-	return best
+	return best, bestRadius
 end
 
 -- Nearest monster that is currently fighting us (AggroUserId), for auto target after a kill.

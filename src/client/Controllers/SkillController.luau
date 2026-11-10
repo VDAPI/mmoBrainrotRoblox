@@ -197,17 +197,22 @@ local function autoAim(skill: SkillData.SkillDef): Vector3?
 		end
 		return nearest:GetPivot().Position
 	elseif source == "escape" then
-		-- owner 2026-10-31: an escape, never into the monster (standing in a fight we face it: faceStep, turnTo)
-		local near = Config.Skills.escapeNear
-		local close = if enemy then nil else TargetController.NearestEnemy(near)
+		-- owner 2026-10-31: an escape, never into the monster (standing in a fight we face it: faceStep, turnTo); the
+		-- jump's own length decides how near an enemy's body sends it away (5B jumps 20)
+		local length = def.length or 15
+		local close: Model?, radius = nil, 0
+		if not enemy then
+			close, radius = TargetController.NearestEnemy(SkillAim.escapeReach(length))
+		end
 		local direction = SkillAim.escape({
 			steer = steering(),
 			facing = { x = root.CFrame.LookVector.X, z = root.CFrame.LookVector.Z },
+			length = length,
 			enemy = if enemy and model then offsetTo(root, model) else nil,
 			nearest = if close then offsetTo(root, close) else nil,
-			near = near,
+			radius = radius,
 		})
-		return root.Position + Vector3.new(direction.x, 0, direction.z) * (def.length or 15)
+		return root.Position + Vector3.new(direction.x, 0, direction.z) * length
 	elseif source == "feet" then
 		return root.Position -- S74 (ROZWOJ 10.5): a banner without a target, a healing field without an ally
 	elseif source == "front" and skill.target == "point" then

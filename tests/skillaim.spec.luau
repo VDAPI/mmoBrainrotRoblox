@@ -168,7 +168,8 @@ T.describe("Skill aim: a tap aims at the enemy we fight", function()
 end)
 
 T.describe("Skill aim: a tapped Blink escapes (review 2026-11-10, owner 2026-10-31: never into the monster)", function()
-	local NEAR = Config.Skills.escapeNear
+	local MARGIN = Config.Skills.escapeMargin
+	local JUMP = 15 -- Blink's length; 20 with the 5B breakpoint
 	local NORTH = { x = 0, z = -1 } -- Roblox forward: -Z
 
 	local function same(d: SkillAim.Flat, x: number, z: number)
@@ -179,20 +180,28 @@ T.describe("Skill aim: a tapped Blink escapes (review 2026-11-10, owner 2026-10-
 	local function escape(e: {
 		steer: SkillAim.Flat?,
 		facing: SkillAim.Flat?,
+		length: number?,
 		enemy: SkillAim.Flat?,
 		nearest: SkillAim.Flat?,
+		radius: number?,
 	})
 		return SkillAim.escape({
 			steer = e.steer,
 			facing = e.facing or NORTH,
+			length = e.length or JUMP,
 			enemy = e.enemy,
 			nearest = e.nearest,
-			near = NEAR,
+			radius = e.radius,
 		})
 	end
 
-	T.it("about one jump: an enemy that is not selected counts this close", function()
-		T.expect(NEAR >= 12 and NEAR <= 20).toBe(true)
+	T.it("an enemy that is not selected counts within the whole jump and a margin, to its body's edge", function()
+		T.expect(MARGIN >= 2 and MARGIN <= 6).toBe(true)
+		T.expect(SkillAim.escapeReach(15)).toBe(15 + MARGIN)
+		-- the 5B breakpoint jumps 20: it reaches farther (review 2026-11-10: a fixed 15 landed it in a monster 18 ahead)
+		T.expect(SkillAim.escapeReach(20)).toBe(20 + MARGIN)
+		local blink = SkillData.get("blink") :: SkillData.SkillDef
+		T.expect(blink.length).toBe(JUMP)
 	end)
 	T.it("standing with the enemy in front (the character faces its target): straight away from it", function()
 		same(escape({ facing = NORTH, enemy = { x = 0, z = -10 } }), 0, 1)
@@ -219,13 +228,40 @@ T.describe("Skill aim: a tapped Blink escapes (review 2026-11-10, owner 2026-10-
 		end
 	)
 	T.it("no enemy selected: away from the nearest one close by, else straight ahead", function()
-		same(escape({ facing = NORTH, nearest = { x = -5, z = 0 } }), 1, 0)
-		same(escape({ facing = NORTH, nearest = { x = 0, z = -(NEAR + 5) } }), 0, -1)
+		same(escape({ facing = NORTH, nearest = { x = -5, z = 0 }, radius = 1 }), 1, 0)
+		same(escape({ facing = NORTH, nearest = { x = 0, z = -(JUMP + MARGIN + 5) }, radius = 1 }), 0, -1)
 		same(escape({ facing = { x = 1, z = 0 } }), 1, 0)
 		-- the selected enemy first, even with another one nearer
 		same(escape({ facing = NORTH, enemy = { x = 0, z = -20 }, nearest = { x = -2, z = 0 } }), 0, 1)
 		-- an enemy standing in us: back, away from where we face
 		same(escape({ facing = NORTH, enemy = { x = 0, z = 0 } }), 0, 1)
+	end)
+	T.it("5B (20 studs), nothing selected, an enemy 18 studs ahead: away, not onto it (review 2026-11-10)", function()
+		same(escape({ facing = NORTH, length = 20, nearest = { x = 0, z = -18 }, radius = 1.5 }), 0, 1)
+		-- the base jump and a monster 16 to 17 studs ahead: away too
+		same(escape({ facing = NORTH, nearest = { x = 0, z = -17 }, radius = 1 }), 0, 1)
+		-- a big boss: its centre 24 studs ahead, but its body reaches within 18
+		same(escape({ facing = NORTH, nearest = { x = 0, z = -24 }, radius = 6 }), 0, 1)
+	end)
+	T.it("straight ahead never lands in a body: whatever enemy is not fled from stays the margin clear", function()
+		for _, length in { 15, 20 } do
+			for _, radius in { 0.5, 1.5, 3, 6 } do
+				for x = -40, 40, 2 do
+					for z = -40, 40, 2 do
+						local d =
+							escape({ facing = NORTH, length = length, nearest = { x = x, z = z }, radius = radius })
+						-- where the jump lands, and how far that is from the enemy's body
+						local clear = math.sqrt((d.x * length - x) ^ 2 + (d.z * length - z) ^ 2) - radius
+						if d.z == -1 then
+							T.expect(clear >= MARGIN).toBe(true)
+						else
+							-- fled: straight away, so never closer than where we stood
+							T.expect(d.x * x + d.z * z <= 0).toBe(true)
+						end
+					end
+				end
+			end
+		end
 	end)
 	T.it("never toward the selected enemy without the player's own steering", function()
 		for angle = 0, 345, 15 do

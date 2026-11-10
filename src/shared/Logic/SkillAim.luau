@@ -5,6 +5,8 @@
 -- toward it; a selected ally stays selected (a tapped damage skill goes to the nearest enemy without taking its place).
 -- Pure: client/Controllers/SkillController measures the inputs and turns the answer into a point.
 
+local Config = require("../Config")
+
 local SkillAim = {}
 
 -- "manual"   where the player aimed by hand: the preview of a held key or a dragged button, quick cast's cursor
@@ -39,9 +41,10 @@ export type Flat = { x: number, z: number }
 export type Escape = {
 	steer: Flat?, -- the player's own steering in the world (SkillAim.steering); nil: none
 	facing: Flat, -- where the character faces
+	length: number, -- how far this Blink jumps (the skill's length with its breakpoints: 15, 20 with 5B)
 	enemy: Flat?, -- the selected living enemy
-	nearest: Flat?, -- the nearest living enemy (counts within `near`)
-	near: number, -- how close an enemy that is not selected sends us away (Config.Skills.escapeNear)
+	nearest: Flat?, -- the living enemy whose body's edge is nearest (counts within SkillAim.escapeReach)
+	radius: number?, -- the body radius of `nearest` (its edge is that much nearer than its centre)
 }
 
 -- The slack the server allows around an area (Skills/Context: enemiesInCircle / Cone / Line).
@@ -152,9 +155,18 @@ function SkillAim.steering(input: Flat, forward: Flat): Flat?
 	return unit({ x = -f.z * input.x - f.x * input.z, z = f.x * input.x - f.z * input.z })
 end
 
+-- How far from the caster an enemy's body (its edge, not its centre) sends a tapped Blink of `length` studs straight
+-- away from it (review 2026-11-10): the whole jump plus Config.Skills.escapeMargin. A fixed 15 let a Blink with the
+-- 5B breakpoint (20 studs) land in a monster 18 studs ahead, and a big boss's body reaches far nearer than its centre.
+-- Every enemy farther than this stays at least the margin clear of where a jump straight ahead lands.
+function SkillAim.escapeReach(length: number): number
+	return length + Config.Skills.escapeMargin
+end
+
 -- The way a tapped Blink jumps (a unit direction): the way the player steers by hand (their choice); with no own
--- steering straight away from the selected enemy, else from the nearest one within `near`; else straight ahead.
--- Never toward an enemy by itself: standing in a fight the character faces its target (TargetController.faceStep).
+-- steering straight away from the selected enemy, else from the nearest one whose body is within
+-- SkillAim.escapeReach; else straight ahead. Never toward an enemy by itself: standing in a fight the character faces
+-- its target (TargetController.faceStep), and straight ahead never lands in a body.
 function SkillAim.escape(e: Escape): Flat
 	local steer = if e.steer then unit(e.steer) else nil
 	if steer then
@@ -162,8 +174,8 @@ function SkillAim.escape(e: Escape): Flat
 	end
 	local facing = unit(e.facing) or { x = 0, z = -1 }
 	local nearest = e.nearest
-	local from = e.enemy
-		or (if nearest and math.sqrt(nearest.x * nearest.x + nearest.z * nearest.z) <= e.near then nearest else nil)
+	local edge = if nearest then math.sqrt(nearest.x * nearest.x + nearest.z * nearest.z) - (e.radius or 0) else nil
+	local from = e.enemy or (if edge and edge <= SkillAim.escapeReach(e.length) then nearest else nil)
 	if from then
 		-- an enemy standing in us has no "away": back, away from where we face
 		return unit({ x = -from.x, z = -from.z }) or { x = -facing.x, z = -facing.z }
