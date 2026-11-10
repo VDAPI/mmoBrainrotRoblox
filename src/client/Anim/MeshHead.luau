@@ -21,8 +21,7 @@
 --   steps, the flinch of a hit. A look that leaves the budget or dies eases back to rest and gets its own mesh back
 --   once still; where the legs fold in the death (client/Anim/MeshFold bends the look's own mesh) at once (`stop`).
 -- * A look whose mesh leaves the world (streamed out, destroyed) gets its own mesh back and lets go of its model's at
---   once (as client/Anim/MeshFold; a destroyed one whose watch did not run, at the next pick); streamed back in, its
---   rig built again starts it afresh.
+--   once (AncestryChanged, as client/Anim/MeshFold); streamed back in, its rig built again starts it afresh.
 -- * The bones follow the mesh's Size (the squash: the bind poses scale with it).
 -- * Feature-detected throughout: no EditableMesh (an older client, the game setting "Enable Mesh / Image APIs" off, a
 --   mesh the game may not read, the memory budget spent), a head that cannot be found, a bone or a skin the engine
@@ -417,6 +416,8 @@ local function keep(h: Handle)
 		shared.holders[h] = true
 		shared.idle += 1
 		local mesh = h.mesh
+		-- (a Destroy fires it too and still runs the handlers it disconnects, Roblox's deferred events; Destroying
+		-- would miss a stream-out)
 		h.watch = mesh.AncestryChanged:Connect(function()
 			if not mesh:IsDescendantOf(game) then
 				leave(h)
@@ -500,7 +501,7 @@ local function pick()
 	local list: { HeadBudget.Look } = {}
 	local of: { Handle } = {}
 	for h in handles do
-		-- (Destroy disconnects the mesh's connections, so its watch may never run: it lets go here too)
+		-- (a backstop to keep's watch)
 		if h.shared.holders[h] and not h.mesh:IsDescendantOf(game) then
 			leave(h)
 		end
