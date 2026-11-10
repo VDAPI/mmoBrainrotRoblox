@@ -5,8 +5,8 @@
 -- S122: the Elixir of Wholeness fits every slot (Logic/Potions.fitsSlot); its slot shows the saved elixir cooldown
 -- (character.fullElixir.readyAt, os.time = server time), "0/10" once today's limit is used up, no quality numeral.
 -- Owner 2026-11-10 (a potion drunk at full is used up): only a plain tap or click drinks. The release of a long press
--- (tooltip, picker) and of the press that dropped a potion here does not, and a tap on a slot whose picker is open
--- closes it (Logic/PotionPress).
+-- (tooltip, picker) and of the press that dropped a potion here does not, and a tap or click (however slow) on a slot
+-- whose picker is open closes it (Logic/PotionPress).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -125,7 +125,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 		local slotId = `pot:{entry.kind}`
 		-- Owner 2026-11-10: the press now on the slot (touch or left button), for what its release does. Kept until
 		-- Activated reads it: InputEnded may come first, and the next press replaces it.
-		local press: { at: number, pickerOpen: boolean }? = nil
+		local press: { at: number, pickerOpen: boolean, touch: boolean }? = nil
 
 		local slot = scope:New("TextButton")({
 			Name = `Potion_{entry.kind}`,
@@ -142,6 +142,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 					heldFor = if p then os.clock() - p.at else 0,
 					dropped = DragDrop.PressDropped(slotId),
 					pickerOpen = if p then p.pickerOpen else Fusion.peek(picker) == entry.kind,
+					touch = if p then p.touch else false,
 				})
 				if action == "drink" then
 					props.Use(entry.kind)
@@ -153,12 +154,15 @@ local function PotionBar(scope: Scope, props: Props): Instance
 				picker:set(if Fusion.peek(picker) == entry.kind then nil else entry.kind)
 			end,
 			[OnEvent("InputBegan")] = function(input: InputObject)
-				local touch = input.UserInputType == Enum.UserInputType.Touch
-				if not touch and input.UserInputType ~= Enum.UserInputType.MouseButton1 then
+				local inputType = input.UserInputType
+				if inputType ~= Enum.UserInputType.Touch and inputType ~= Enum.UserInputType.MouseButton1 then
 					return
 				end
-				-- the picker as the press found it: the hold below opens it during the press
-				press = { at = os.clock(), pickerOpen = Fusion.peek(picker) == entry.kind }
+				-- after the check above: a `touch` narrowed by it would not type as the press's boolean
+				local touch = inputType == Enum.UserInputType.Touch
+				-- the picker as the press found it (the touch hold below opens it during the press), and the device: a
+				-- slow click closes an open picker, a held finger keeps it
+				press = { at = os.clock(), pickerOpen = Fusion.peek(picker) == entry.kind, touch = touch }
 				if touch then
 					pressToken += 1
 					local token = pressToken
