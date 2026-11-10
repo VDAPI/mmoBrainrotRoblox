@@ -3,7 +3,9 @@
 -- old backpack into the new one. S121: with Merchant's Pockets each row adds "(n with Merchant's Pockets)".
 -- Owner 2026-11-10 (UI plan L10): a row's text ran under its button on a narrow window. The icon, the two lines and
 -- the button now stand where Logic/GearLayout.backpackShop puts them from the list's measured width (a narrower button
--- under 560 px), and both lines end before the button, cut at their end (the slot's tooltip has the rest).
+-- under 560 px), and both lines end before the button, cut at their end (the slot's tooltip has the rest). Review
+-- 2026-11-10: the width comes without the window's opening motion (UI/ViewSize), so the button keeps its width while
+-- the window opens.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,14 +19,14 @@ local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Net = require(ReplicatedStorage.Shared.Net)
-local Scale = require(script.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local ViewSize = require(script.Parent.Parent.ViewSize)
 
-local Children, Out = Fusion.Children, Fusion.Out
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -48,11 +50,9 @@ local function BackpackShop(scope: Scope, npcId: Fusion.UsedAs<string?>): Fusion
 	end)
 
 	-- a row's parts (GearLayout.backpackShop) from the list's own size
-	local absolute = scope:Value(Vector2.zero)
+	local view = ViewSize.new(scope)
 	local row = scope:Computed(function(use): GearLayout.ShopRow
-		local size: Vector2 = use(absolute)
-		local k: number = use(Scale.Value)
-		return GearLayout.backpackShop(if size.Y > 0 and k > 0 then { w = size.X / k, h = size.Y / k } else AREA_PC)
+		return GearLayout.backpackShop(use(view.size) or AREA_PC)
 	end)
 	local function at(pick: (GearLayout.ShopRow) -> GearLayout.Rect, top: number?): Fusion.Computed<UDim2>
 		return scope:Computed(function(use): UDim2
@@ -175,23 +175,23 @@ local function BackpackShop(scope: Scope, npcId: Fusion.UsedAs<string?>): Fusion
 		)
 	end
 
-	return {
-		scope:New("ScrollingFrame")({
-			Size = UDim2.fromScale(1, 1),
-			[Out("AbsoluteSize")] = absolute,
-			CanvasSize = UDim2.new(),
-			AutomaticCanvasSize = Enum.AutomaticSize.Y,
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			ScrollBarThickness = 6,
-			ScrollBarImageColor3 = Theme.Paper.Rule,
-			[Children] = {
-				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-				scope:New("UIPadding")({ PaddingRight = UDim.new(0, GearLayout.SHOP_ROW.scroll) }),
-				rows :: any,
-			},
-		}),
-	}
+	-- the ruler beside the list (the list's own children are laid out by its UIListLayout)
+	local list = scope:New("ScrollingFrame")({
+		Size = UDim2.fromScale(1, 1),
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 6,
+		ScrollBarImageColor3 = Theme.Paper.Rule,
+		[Children] = {
+			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+			scope:New("UIPadding")({ PaddingRight = UDim.new(0, GearLayout.SHOP_ROW.scroll) }),
+			rows :: any,
+		},
+	})
+	view.watch(list)
+	return { view.ruler, list }
 end
 
 return BackpackShop

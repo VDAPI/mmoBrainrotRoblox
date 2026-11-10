@@ -5,7 +5,8 @@
 -- VIP fee behind its "i"), the rules are one short line with the full text behind its "i".
 -- Owner 2026-11-10 (UI plan L10): "Wystaw przedmiot" stays in sight. The form scrolls over the button pinned to the
 -- bottom (Logic/GearLayout.auctionSell, from the view's measured size), so on a phone the button no longer sits under
--- the last line of a form taller than the window.
+-- the last line of a form taller than the window. Review 2026-11-10: the size comes without the window's opening
+-- motion (UI/ViewSize), so the button no longer slides while the window opens.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -18,7 +19,6 @@ local InfoTip = require(script.Parent.Parent.Parent.Components.InfoTip)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Market = require(ReplicatedStorage.Shared.Data.Market)
 local Net = require(ReplicatedStorage.Shared.Net)
-local Scale = require(script.Parent.Parent.Parent.Scale)
 local SelectableSlot = require(script.Parent.Parent.Parent.Components.SelectableSlot)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
@@ -26,8 +26,9 @@ local Text = require(script.Parent.Parent.Parent.Text)
 local TextInput = require(script.Parent.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
+local ViewSize = require(script.Parent.Parent.Parent.ViewSize)
 
-local Children, Out = Fusion.Children, Fusion.Out
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -209,11 +210,9 @@ local function Sell(scope: Scope): Instance
 	end
 
 	-- the items, the form and the button (GearLayout.auctionSell) from the view's own size
-	local absolute = scope:Value(Vector2.zero)
+	local view = ViewSize.new(scope)
 	local layout = scope:Computed(function(use): GearLayout.AuctionSell
-		local size: Vector2 = use(absolute)
-		local k: number = use(Scale.Value)
-		return GearLayout.auctionSell(if size.Y > 0 and k > 0 then { w = size.X / k, h = size.Y / k } else AREA_PC)
+		return GearLayout.auctionSell(use(view.size) or AREA_PC)
 	end)
 	local function place(pick: (GearLayout.AuctionSell) -> GearLayout.Rect): (any, any)
 		return scope:Computed(function(use): UDim2
@@ -235,11 +234,11 @@ local function Sell(scope: Scope): Instance
 		return l.button
 	end)
 
-	return scope:New("Frame")({
+	local root = scope:New("Frame")({
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
-		[Out("AbsoluteSize")] = absolute,
 		[Children] = {
+			view.ruler,
 			scope:New("ScrollingFrame")({
 				Position = itemsAt,
 				Size = itemsSize,
@@ -413,6 +412,8 @@ local function Sell(scope: Scope): Instance
 			}),
 		},
 	})
+	view.watch(root)
+	return root
 end
 
 return Sell

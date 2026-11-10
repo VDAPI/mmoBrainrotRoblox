@@ -4,7 +4,7 @@
 -- "Order". On the right the queue: 3 (VIP 4) slots with progress bars, countdowns, "Collect" / "Collect all".
 -- Owner 2026-11-10 (UI plan L10): the queue scrolls between its title and "Odbierz wszystko" pinned to the bottom, so
 -- on a phone the button no longer covers the third slot; the parts stand where Logic/GearLayout.alchemy puts them,
--- from the window content's measured size.
+-- from the window content's measured size (UI/ViewSize: without the window's opening motion, review 2026-11-10).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -19,7 +19,6 @@ local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Recipes = require(ReplicatedStorage.Shared.Data.Recipes)
-local Scale = require(script.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
@@ -27,8 +26,9 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local ViewSize = require(script.Parent.Parent.ViewSize)
 
-local Children, Out = Fusion.Children, Fusion.Out
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -392,22 +392,20 @@ local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
 	end)
 
 	-- the recipes, the queue and its button (GearLayout.alchemy) from the content's own size
-	local absolute = scope:Value(Vector2.zero)
+	local view = ViewSize.new(scope)
 	local layout = scope:Computed(function(use): GearLayout.Alchemy
-		local size: Vector2 = use(absolute)
-		local k: number = use(Scale.Value)
-		return GearLayout.alchemy(if size.Y > 0 and k > 0 then { w = size.X / k, h = size.Y / k } else AREA_PC)
+		return GearLayout.alchemy(use(view.size) or AREA_PC)
 	end)
 	local recipesAt, recipesSize = placed(scope, layout, function(l)
 		return l.recipes
 	end)
 
-	return scope:New("Frame")({
+	local root = scope:New("Frame")({
 		Name = "Alchemy",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
-		[Out("AbsoluteSize")] = absolute,
 		[Children] = {
+			view.ruler,
 			scope:New("Frame")({
 				Name = "Recipes",
 				Position = recipesAt,
@@ -446,6 +444,8 @@ local function AlchemyWindow(scope: Scope, props: Props): Fusion.Child
 			queuePanel(scope, props, layout) :: any,
 		},
 	})
+	view.watch(root)
+	return root
 end
 
 return AlchemyWindow

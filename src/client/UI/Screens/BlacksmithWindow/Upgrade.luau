@@ -6,11 +6,13 @@
 -- Owner 2026-11-10 (UI plan L10, "niektóre rzeczy zasłaniają inne"): on a phone "Ulepsz" covered the Scroll of
 -- Protection's line. The parts now stand where Logic/GearLayout.smithUpgrade puts them, from the view's measured size:
 -- the anvil panel with the item, a scrolling middle (name, comparison, chance and cost, the scroll) and the result,
--- and the button under the panel; a phone puts the item next to the middle.
+-- and the button under the panel; a phone puts the item next to the middle. Review 2026-11-10: the size comes without
+-- the window's opening motion (UI/ViewSize), and the Scroll of Protection's toggle is 44 high on touch (UI-ZASADY).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Parent.Components.Button)
+local Device = require(script.Parent.Parent.Parent.Device)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
@@ -19,7 +21,6 @@ local ItemSlot = require(script.Parent.Parent.Parent.Components.ItemSlot)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Picker = require(script.Parent.Picker)
-local Scale = require(script.Parent.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
 local Stats = require(ReplicatedStorage.Shared.Data.Stats)
@@ -28,8 +29,9 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local Types = require(ReplicatedStorage.Shared.Types)
 local Upgrade = require(ReplicatedStorage.Shared.Logic.Upgrade)
+local ViewSize = require(script.Parent.Parent.Parent.ViewSize)
 
-local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
+local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -177,11 +179,9 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 	end)
 
 	-- the parts' rects (GearLayout.smithUpgrade) from the view's own size
-	local absolute = scope:Value(Vector2.zero)
+	local view = ViewSize.new(scope)
 	local layout = scope:Computed(function(use): GearLayout.SmithUpgrade
-		local size: Vector2 = use(absolute)
-		local k: number = use(Scale.Value)
-		return GearLayout.smithUpgrade(if size.Y > 0 and k > 0 then { w = size.X / k, h = size.Y / k } else AREA_PC)
+		return GearLayout.smithUpgrade(use(view.size) or AREA_PC)
 	end)
 	local function at(pick: (GearLayout.SmithUpgrade) -> GearLayout.Rect): Fusion.Computed<UDim2>
 		return scope:Computed(function(use): UDim2
@@ -219,8 +219,8 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 		Name = "Upgrade",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
-		[Out("AbsoluteSize")] = absolute,
 		[Children] = {
+			view.ruler,
 			-- Left: items
 			scope:New("TextLabel")({
 				Position = at(listRect),
@@ -426,7 +426,9 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 					scope:New("TextButton")({
 						Name = "Protect",
 						LayoutOrder = 4,
-						Size = UDim2.new(1, 0, 0, 36),
+						Size = scope:Computed(function(use): UDim2
+							return UDim2.new(1, 0, 0, if use(Device.Touch) then Theme.Size.MinTouch else 36)
+						end),
 						BackgroundTransparency = 1,
 						Text = scope:Computed(function(use): string
 							local mark = if use(protect) then "☑" else "☐"
@@ -485,6 +487,7 @@ local function Upgrade_(scope: Scope, props: Props): Instance
 			}),
 		},
 	})
+	view.watch(root)
 	anvil = root:FindFirstChild("Anvil") :: Frame?
 	return root
 end

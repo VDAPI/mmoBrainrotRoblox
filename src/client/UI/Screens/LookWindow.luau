@@ -7,7 +7,7 @@
 -- Owner 2026-11-10 (UI plan L10): the preview (330 x 420) and the picker (440) with their gap needed 792 px in the
 -- window's 776, so the picker ran under the window's edge. Now Logic/GearLayout.look places them from the content's
 -- measured size: the preview scaled down to the room next to the picker, the picker scrolling on its own, side by side
--- on PC and on the phones.
+-- on PC and on the phones. Review 2026-11-10: the size comes without the window's opening motion (UI/ViewSize).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -24,14 +24,14 @@ local LookPicker = require(script.Parent.Parent.Components.LookPicker)
 local LookPreview = require(script.Parent.Parent.Components.LookPreview)
 local Net = require(ReplicatedStorage.Shared.Net)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
-local Scale = require(script.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local ViewSize = require(script.Parent.Parent.ViewSize)
 
-local Children, Out = Fusion.Children, Fusion.Out
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -142,11 +142,9 @@ local function LookWindow(scope: Scope): Instance
 	end
 
 	-- the preview and the picker (GearLayout.look) from the content's own size
-	local absolute = scope:Value(Vector2.zero)
+	local view = ViewSize.new(scope)
 	local layout = scope:Computed(function(use): GearLayout.Look
-		local size: Vector2 = use(absolute)
-		local k: number = use(Scale.Value)
-		return GearLayout.look(if size.Y > 0 and k > 0 then { w = size.X / k, h = size.Y / k } else AREA_PC)
+		return GearLayout.look(use(view.size) or AREA_PC)
 	end)
 	local function at(pick: (GearLayout.Look) -> GearLayout.Rect): Fusion.Computed<UDim2>
 		return scope:Computed(function(use): UDim2
@@ -270,12 +268,12 @@ local function LookWindow(scope: Scope): Instance
 		},
 	})
 
-	return scope:New("Frame")({
+	local root = scope:New("Frame")({
 		Name = "LookWindow",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
-		[Out("AbsoluteSize")] = absolute,
 		[Children] = {
+			view.ruler,
 			LookPreview(scope, {
 				Position = at(previewRect),
 				Size = sized(previewRect),
@@ -312,6 +310,8 @@ local function LookWindow(scope: Scope): Instance
 			}),
 		},
 	})
+	view.watch(root)
+	return root
 end
 
 return LookWindow
