@@ -471,7 +471,9 @@ T.describe("Top band of messages (UI plan phase 2, package B)", function()
 				if r.top ~= target.bottom + TopBand.PHONE_M.gap or r.bottom - r.top ~= TopBand.PHONE_BOSS_H then
 					table.insert(problems, `{s.name}: the boss bar is not a strip under the target row`)
 				end
-				for _, name in { "portrait", "lure", "autoGrind", "autoPotion", "minimap", "menuToggle", "pvp" } do
+				-- package A's phone grid: one Auto button (Lure, Auto Hunt, Auto Potion in its popover) and the
+				-- effects in the row under the portrait
+				for _, name in { "portrait", "auto", "effects", "minimap", "menuToggle", "pvp" } do
 					local other = PhoneHud.rect(assert(PhoneHud.place(name), name), s.hudW, s.hudH)
 					if TopBand.meets(r, other) then
 						table.insert(problems, `{s.name}: the boss bar meets {name}`)
