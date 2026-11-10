@@ -15469,6 +15469,22 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
     okienko „Auto”), `hudlayout.spec` (szerokości telefonu z plików, każda para z tropicielem, wybór z „+N”, nazwy
     listy w pl i en), `phonehud.spec` (lista „+N” na trzech telefonach), `questrows.spec` (`oneLine` dla każdego celu
     zabicia i zbierania questów głównych, pobocznych i bossów w pl i en).
+- Scalenie z `main` po pakietach C, E, D i B (2026-11-10), najpierw C, E i D, potem B: w lokalizacji konflikt był
+  tylko tam, gdzie pakiety zmieniały sąsiednie klucze, a każdy klucz wziął stronę pakietu, który go zmienił (A:
+  `death.vipRespawn`, `death.respawnEntrance`, `arena.result3.drawAnnounce`, `worldboss.noReward.*`,
+  `quest.side_fp_howl.title`; E: `e2timer.window`, `menu.vipRecall`, `quest.side_fp_howl.p1` i `p1b`; B:
+  `death.error.gold`, `arena.result3`, `worldboss.mailed`), a `e2timer.soon` zostaje usunięte. Końce `DECYZJE`,
+  `SESJE`, `JAK-DODAC` i `PROGRESS` mają wpisy obu stron (najpierw pakiety, które weszły wcześniej), DESIGN §23 ma linię
+  „Okna” z `main` i akapit HUD pakietu A, `sectionfold.spec` test A i test D, `topband.spec` sprawdzenia B z
+  komentarzem A, a `Hud/AreaBanner` wersję B (przez `UI/Notify`) z linią A, która podaje `range` do `area.label`.
+  Siatka telefonu A zmieniła nazwy miejsc, z których liczą pliki innych pakietów, więc dwa haki: `Logic/WorldLayout`
+  (pakiet E) zna `targetActions` i `castBar` (były `actions` i `pool`), a panel łowienia na telefonie kończy się nad
+  paskiem prowadzenia, który stoi teraz w strefie M i może się pokazać przy łowieniu (`FISHING_UNDER`: 166 z 170 px
+  przy pasku Robloxa 0, 36 i 58, podpowiedź dotyku kończy się na 160); `tests/topband.spec` (pakiet B) szuka przy
+  pasku bossa na telefonie miejsc `auto` i `effects` (był `lure`, który A złożył w jeden przycisk „Auto”).
+  `TopBand.phoneZone` daje po scaleniu ten sam prostokąt co `PhoneHud.mZone` (x 296..654, 296..556 i 296..730, y
+  104..218 na trzech telefonach), więc `TopBand` zostaje bez zmian. Dane wiki odświeżone po obu scaleniach. Bramka
+  zielona: 10343 testy, `wikidump --check` aktualny.
 - **Pliki:** `Logic/HudZones`, `HudStack`, `HudLayout`, `PhoneHud`, `QuestRows`, `Tutorial`, `TutorialTile` (nowy),
   `Data/Folds/Hud`, `Data/Localization/pl|en` (`hud.stack.*`, `tutorial.backpack.phone`, bez
   `hud.worldboss.collapsed`), `UI/HudSlots`, `HudAnchors`, `HudDrag`, `PhoneLayout`, `Screens/Hud/init`, `ArenaPanel`,

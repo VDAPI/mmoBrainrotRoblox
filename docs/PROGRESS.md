@@ -66,8 +66,8 @@
   i „[2]” na ekranie śmierci tylko z klawiaturą, dymki paska prowadzenia, pigułki kolejki areny i linii Inwazji,
   wydarzenie świata, które startuje w trakcie gry, i boss, który rośnie po starcie, panel wyniku i powrotu areny na
   PC, lista „+N” i zwinięty tropiciel na telefonie, licznik celu z nazwą skróconą w pikselach, przytrzymanie
-  przełącznika PvP, Płaszcza, Łowów i Mikstur na dotyku). Z planu zostaje własny układ tabletu (listy `KNOWN` i `THIN`
-  w `hudzones.spec`).
+  przełącznika PvP, Płaszcza, Łowów i Mikstur na dotyku, panel łowienia nad paskiem prowadzenia na telefonie). Z planu
+  zostaje własny układ tabletu (listy `KNOWN` i `THIN` w `hudzones.spec`).
 - **Plan UI 2026-11-10, pakiet F (fundament):** zasady `docs/UI-ZASADY.md`, limity tekstu na powierzchnię
   (`Logic/TextCaps`, listy „do skrócenia” pakietów A–E), domyślne zwinięcie na urządzenie (`Data/Folds`,
   `Section.state`), czyste API układu (`Logic/HudZones`, `WindowFrame`, `Popover`), tokeny `Theme` i zaślepka
