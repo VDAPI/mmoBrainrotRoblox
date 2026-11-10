@@ -16,6 +16,11 @@
 -- replicated account (UI/SeasonState); the server decides every claim and the purchase. Funnel `season` (S152b):
 -- "open" when the window opens, "view" on the first look at the premium track (hover, a click or a scroll of the
 -- strip), both only while the premium track can be bought.
+-- Owner 2026-11-10 ("bardzo dużo napisów, niektóre rzeczy zasłaniają inne"; UI plan E, Logic/WorldLayout.season): the
+-- header, the tabs and the tier rows come from WorldLayout. A phone's header is one line (the season with its (i), the
+-- tier) over a thin points bar: the week's limit with its badges go behind the (i), and its tier rows are 50 tall, so
+-- at least three show. Review 2026-11-10 (UI-ZASADY §1, time on top): the line keeps when the season ends ("Sezon
+-- Szronu · koniec za 5 d 3 h"), or in its grace days until when the rewards can be claimed.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -35,6 +40,7 @@ local ItemText = require(script.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local Season = require(ReplicatedStorage.Shared.Logic.Season)
 local SeasonState = require(script.Parent.Parent.SeasonState)
 local SeasonView = require(ReplicatedStorage.Shared.Logic.SeasonView)
@@ -48,6 +54,7 @@ local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children, OnEvent, OnChange = Fusion.Children, Fusion.OnEvent, Fusion.OnChange
 
@@ -63,9 +70,6 @@ export type Props = {
 	Buy: () -> (), -- UI/SeasonPassBuy.ask
 }
 
-local HEADER = 128
-local HEADER_TOUCH = 120
-local TOOLBAR = Theme.Size.MinTouch
 local GAP = Theme.Padding.Small
 -- PC strip
 local COL = 128
@@ -73,8 +77,6 @@ local TIER_ROW = 28
 local CELL = 134
 local SIDE = 112
 -- phone list
-local ROW = 96
-local TIER_COL = 64
 local ICON = 48
 local PULSE_SPEED = 3 -- rad/s of the glowing frame
 local LURE_GLYPH = "❂"
@@ -129,10 +131,11 @@ end
 
 -- The picture of a reward in an `ICON` square.
 local function rewardIcon(scope: Scope, reward: Reward, dim: Fusion.UsedAs<number>, props: { [string]: any }): Instance
+	local icon: number = props.Icon or ICON
 	if reward.kind == "item" and reward.id then
 		return ItemIcon(scope, {
 			Def = Items.get(reward.id),
-			Size = UDim2.fromOffset(ICON, ICON),
+			Size = UDim2.fromOffset(icon, icon),
 			Position = props.Position,
 			AnchorPoint = props.AnchorPoint,
 			Transparency = dim,
@@ -143,7 +146,7 @@ local function rewardIcon(scope: Scope, reward: Reward, dim: Fusion.UsedAs<numbe
 		return scope:New("TextLabel")({
 			Position = props.Position,
 			AnchorPoint = props.AnchorPoint,
-			Size = UDim2.fromOffset(ICON, ICON),
+			Size = UDim2.fromOffset(icon, icon),
 			BackgroundColor3 = if def then Theme.tint(def.color) else Theme.Paper.Sunken,
 			BackgroundTransparency = dim,
 			Text = scope:Computed(function(use): string
@@ -178,7 +181,7 @@ local function rewardIcon(scope: Scope, reward: Reward, dim: Fusion.UsedAs<numbe
 		Glyph = LURE_GLYPH,
 		GlyphColor = Theme.Paper.Heading,
 		Transparency = dim,
-		Size = UDim2.fromOffset(ICON, ICON),
+		Size = UDim2.fromOffset(icon, icon),
 		Position = props.Position,
 		AnchorPoint = props.AnchorPoint,
 		Label = { FontFace = Theme.Fonts.BodyBold, TextScaled = true },
@@ -192,8 +195,19 @@ type Ctx = {
 	markView: () -> (),
 }
 
--- One cell of the strip (PC: picture over the name and the state; phone `wide`: picture left, texts right).
-local function cell(scope: Scope, ctx: Ctx, def: SeasonDef, tier: number, track: Seasons.Track, wide: boolean): Instance
+-- One cell of the strip (PC: picture over the name and the state; phone `wide`: picture left, texts right). `icon`:
+-- WorldLayout.season's icon (a phone's 40: the name keeps one line).
+local function cell(
+	scope: Scope,
+	ctx: Ctx,
+	def: SeasonDef,
+	tier: number,
+	track: Seasons.Track,
+	wide: boolean,
+	icon: number?
+): Instance
+	local iconSize = icon or ICON
+	local oneLine = iconSize < ICON
 	local reward = Season.rewardOf(def, tier, track)
 	if not reward then
 		return scope:New("Frame")({
@@ -227,11 +241,13 @@ local function cell(scope: Scope, ctx: Ctx, def: SeasonDef, tier: number, track:
 	local name = scope:Computed(function(use): string
 		return rewardName(use, reward0)
 	end)
-	local textLeft = if wide then ICON + 16 else 6
+	local textLeft = if wide then iconSize + 16 else 6
 	local nameLabel = scope:New("TextLabel")({
 		Name = "Name",
-		Position = if wide then UDim2.fromOffset(textLeft, 6) else UDim2.fromOffset(6, ICON + 12),
-		Size = if wide then UDim2.new(1, -(textLeft + 6), 0, 44) else UDim2.new(1, -12, 0, 44),
+		Position = if wide
+			then UDim2.fromOffset(textLeft, if oneLine then 3 else 6)
+			else UDim2.fromOffset(6, ICON + 12),
+		Size = if wide then UDim2.new(1, -(textLeft + 6), 0, if oneLine then 22 else 44) else UDim2.new(1, -12, 0, 44),
 		BackgroundTransparency = 1,
 		Text = name,
 		TextWrapped = true,
@@ -247,7 +263,7 @@ local function cell(scope: Scope, ctx: Ctx, def: SeasonDef, tier: number, track:
 	local statusLabel = scope:New("TextLabel")({
 		Name = "Status",
 		AnchorPoint = Vector2.new(0, 1),
-		Position = if wide then UDim2.new(0, textLeft, 1, -4) else UDim2.new(0, 6, 1, -4),
+		Position = if wide then UDim2.new(0, textLeft, 1, if oneLine then -2 else -4) else UDim2.new(0, 6, 1, -4),
 		Size = if wide then UDim2.new(1, -(textLeft + 6), 0, 22) else UDim2.new(1, -12, 0, 22),
 		BackgroundTransparency = 1,
 		Text = statusText,
@@ -325,6 +341,7 @@ local function cell(scope: Scope, ctx: Ctx, def: SeasonDef, tier: number, track:
 			rewardIcon(scope, reward0, dim, {
 				Position = if wide then UDim2.new(0, 8, 0.5, 0) else UDim2.new(0.5, 0, 0, 8),
 				AnchorPoint = if wide then Vector2.new(0, 0.5) else Vector2.new(0.5, 0),
+				Icon = iconSize,
 			}),
 			nameLabel,
 			statusLabel,
@@ -381,9 +398,9 @@ local function trackLabel(scope: Scope, ctx: Ctx, track: Seasons.Track, y: numbe
 end
 
 -- Scrolls `frame` so that `offset` (px along the strip) is near its start, once its size is known.
-local function scrollTo(frame: ScrollingFrame, offset: number, horizontal: boolean, done: () -> ())
+local function scrollTo(frame: ScrollingFrame, offset: number, horizontal: boolean, done: () -> (), step: number?)
 	task.defer(function()
-		local target = math.max(0, offset - (if horizontal then COL else ROW))
+		local target = math.max(0, offset - (if horizontal then COL else step or COL))
 		frame.CanvasPosition = if horizontal then Vector2.new(target, 0) else Vector2.new(0, target)
 		task.defer(done)
 	end)
@@ -451,7 +468,8 @@ local function strip(scope: Scope, ctx: Ctx, def: SeasonDef, focus: number): Ins
 end
 
 -- Phone: a row per tier (the tier, the free cell, the premium cell) under a header row.
-local function list(scope: Scope, ctx: Ctx, def: SeasonDef, focus: number): Instance
+local function list(scope: Scope, ctx: Ctx, def: SeasonDef, focus: number, layout: WorldLayout.Season): Instance
+	local rowHeight, tierCol = layout.row, layout.tierCol
 	local rows: { Instance } = {}
 	for tier = 1, def.tiers do
 		table.insert(
@@ -459,14 +477,14 @@ local function list(scope: Scope, ctx: Ctx, def: SeasonDef, focus: number): Inst
 			scope:New("Frame")({
 				Name = `Tier{tier}`,
 				LayoutOrder = tier,
-				Size = UDim2.new(1, 0, 0, ROW),
+				Size = UDim2.new(1, 0, 0, rowHeight),
 				BackgroundTransparency = 1,
 				[Children] = {
-					tierLabel(scope, ctx, tier, UDim2.new(0, TIER_COL, 1, 0)),
+					tierLabel(scope, ctx, tier, UDim2.new(0, tierCol, 1, 0)),
 					scope:New("Frame")({
 						Name = "Cells",
-						Position = UDim2.fromOffset(TIER_COL, 0),
-						Size = UDim2.new(1, -TIER_COL, 1, 0),
+						Position = UDim2.fromOffset(tierCol, 0),
+						Size = UDim2.new(1, -tierCol, 1, 0),
 						BackgroundTransparency = 1,
 						[Children] = {
 							scope:New("UIListLayout")({
@@ -474,8 +492,8 @@ local function list(scope: Scope, ctx: Ctx, def: SeasonDef, focus: number): Inst
 								SortOrder = Enum.SortOrder.LayoutOrder,
 								Padding = UDim.new(0, GAP),
 							}),
-							cell(scope, ctx, def, tier, "free", true),
-							cell(scope, ctx, def, tier, "premium", true),
+							cell(scope, ctx, def, tier, "free", true, layout.icon),
+							cell(scope, ctx, def, tier, "premium", true, layout.icon),
 						},
 					}),
 				},
@@ -484,12 +502,12 @@ local function list(scope: Scope, ctx: Ctx, def: SeasonDef, focus: number): Inst
 	end
 	local heads = scope:New("Frame")({
 		Name = "Heads",
-		Size = UDim2.new(1, -12, 0, 28),
+		Size = UDim2.new(1, -12, 0, layout.heads),
 		BackgroundTransparency = 1,
 		[Children] = {
 			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(TIER_COL, 0),
-				Size = UDim2.new(0.5, -(TIER_COL // 2 + GAP), 1, 0),
+				Position = UDim2.fromOffset(tierCol, 0),
+				Size = UDim2.new(0.5, -(tierCol // 2 + GAP), 1, 0),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "season.track.free"),
 				FontFace = Theme.Fonts.BodyBold,
@@ -500,7 +518,7 @@ local function list(scope: Scope, ctx: Ctx, def: SeasonDef, focus: number): Inst
 			scope:New("TextLabel")({
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.fromScale(1, 0),
-				Size = UDim2.new(0.5, -(TIER_COL // 2 + GAP), 1, 0),
+				Size = UDim2.new(0.5, -(tierCol // 2 + GAP), 1, 0),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					local owned = use(ctx.view).state.premium
@@ -516,13 +534,13 @@ local function list(scope: Scope, ctx: Ctx, def: SeasonDef, focus: number): Inst
 	local ready = false
 	local frame = scope:New("ScrollingFrame")({
 		Name = "List",
-		Position = UDim2.fromOffset(0, 32),
-		Size = UDim2.new(1, 0, 1, -32),
+		Position = UDim2.fromOffset(0, layout.heads + 4),
+		Size = UDim2.new(1, 0, 1, -(layout.heads + 4)),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 6,
 		ScrollingDirection = Enum.ScrollingDirection.Y,
-		CanvasSize = UDim2.fromOffset(0, def.tiers * (ROW + GAP) + 4), -- explicit, as in strip()
+		CanvasSize = UDim2.fromOffset(0, def.tiers * (rowHeight + GAP) + 4), -- explicit, as in strip()
 		[OnChange("CanvasPosition")] = function()
 			if ready then
 				ctx.markView()
@@ -534,9 +552,9 @@ local function list(scope: Scope, ctx: Ctx, def: SeasonDef, focus: number): Inst
 			rows :: any,
 		},
 	}) :: ScrollingFrame
-	scrollTo(frame, (focus - 1) * (ROW + GAP), false, function()
+	scrollTo(frame, (focus - 1) * (rowHeight + GAP), false, function()
 		ready = true
-	end)
+	end, rowHeight)
 	return scope:New("Frame")({
 		Name = "Tracks",
 		Size = UDim2.fromScale(1, 1),
@@ -726,18 +744,74 @@ local function badge(scope: Scope, order: number, text: Fusion.UsedAs<string>, c
 	})
 end
 
-local function header(scope: Scope, ctx: Ctx): Instance
+-- When the season ends (or its grace days, or "soon").
+local function whenText(use: Fusion.Use, v: View): string
+	if v.mode == "running" then
+		local d, h = SeasonView.daysHours(v.endsIn)
+		return Text.get(use, "season.endsIn", { d = d, h = h })
+	elseif v.mode == "grace" and v.def then
+		return Text.get(use, "season.grace", {
+			season = Text.get(use, v.def.nameKey),
+			date = date((v.claimUntil :: number) - 1), -- claimUntil is the next day's 00:00 (Season.canClaim)
+		})
+	end
+	return Text.get(use, "season.soon")
+end
+
+-- A phone's header line: when the season ends, short ("koniec za 5 d 3 h"), or until when its rewards can be claimed;
+-- "" without a season.
+local function phoneWhen(use: Fusion.Use, v: View): string
+	if v.mode == "running" then
+		local d, h = SeasonView.daysHours(v.endsIn)
+		return Text.get(use, "season.endsShort", { d = d, h = h })
+	elseif v.mode == "grace" and v.def then
+		return Text.get(use, "season.graceShort", { date = date((v.claimUntil :: number) - 1) })
+	end
+	return ""
+end
+
+-- A phone's (i) after the season's name: the week's limit and its badges (catch-up, capped, maxed); in the grace days
+-- the whole sentence of when the rewards can be claimed (the header line keeps the short end).
+local function phoneInfo(use: Fusion.Use, v: View): string
+	local lines: { string } = if v.mode == "running" then {} else { whenText(use, v) }
+	if v.mode == "running" then
+		table.insert(
+			lines,
+			Text.get(use, "season.week", { points = Format.number(v.state.points), cap = Format.number(v.cap) })
+		)
+		if v.catchup then
+			table.insert(lines, Text.get(use, "season.catchup", { mul = mulText(use) }))
+		end
+		if v.capped then
+			table.insert(lines, Text.get(use, "season.capped"))
+		end
+		if v.maxed then
+			table.insert(lines, Text.get(use, "season.maxed"))
+		end
+	end
+	return table.concat(lines, "\n")
+end
+
+local function header(scope: Scope, ctx: Ctx, layout: Fusion.Computed<WorldLayout.Season>): Instance
 	local view = ctx.view
+	local phone = scope:Computed(function(use): boolean
+		return use(layout).header < 100
+	end)
 	local running = scope:Computed(function(use): boolean
-		return use(view).mode == "running"
+		return use(view).mode == "running" and not use(phone)
 	end)
 	local hasSeason = scope:Computed(function(use): boolean
 		return use(view).def ~= nil
 	end)
+	local seasonName = scope:Computed(function(use): string
+		local v = use(view)
+		local def = v.def or v.next
+		return if def then Text.get(use, def.nameKey) else Text.get(use, "season.window.title")
+	end)
 	return scope:New("Frame")({
 		Name = "Header",
 		Size = scope:Computed(function(use): UDim2
-			return UDim2.new(1, 0, 0, if use(Device.Touch) then HEADER_TOUCH else HEADER)
+			return UDim2.new(1, 0, 0, use(layout).header)
 		end),
 		BackgroundTransparency = 1,
 		[Children] = {
@@ -745,22 +819,40 @@ local function header(scope: Scope, ctx: Ctx): Instance
 				Name = "Season",
 				Size = UDim2.new(1, -220, 0, 36),
 				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					local v = use(view)
-					local def = v.def or v.next
-					return if def then Text.get(use, def.nameKey) else Text.get(use, "season.window.title")
+				Visible = scope:Computed(function(use): boolean
+					return not use(phone)
 				end),
+				Text = seasonName,
 				FontFace = Theme.Fonts.Display,
 				TextSize = Theme.TextSize.Title,
 				TextColor3 = Theme.Paper.Heading,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
+			-- a phone: the season and when it ends, with its (i) (the week's limit and its badges)
+			InfoLine.new(scope, {
+				Name = "SeasonPhone",
+				Size = UDim2.new(1, -170, 0, 30),
+				Visible = phone,
+				Text = scope:Computed(function(use): string
+					local name = use(seasonName)
+					local left = phoneWhen(use, use(view))
+					return if left ~= "" then `{name} · {left}` else name
+				end),
+				Info = scope:Computed(function(use): string
+					return phoneInfo(use, use(view))
+				end),
+				Font = Theme.Fonts.Display,
+				TextSize = Theme.TextSize.Large,
+				Color = Theme.Paper.Heading,
+			}),
 			scope:New("TextLabel")({
 				Name = "Tier",
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.fromScale(1, 0),
-				Size = UDim2.fromOffset(220, 36),
+				Size = scope:Computed(function(use): UDim2
+					return if use(phone) then UDim2.fromOffset(160, 30) else UDim2.fromOffset(220, 36)
+				end),
 				BackgroundTransparency = 1,
 				Visible = hasSeason,
 				Text = scope:Computed(function(use): string
@@ -777,18 +869,11 @@ local function header(scope: Scope, ctx: Ctx): Instance
 				Position = UDim2.fromOffset(0, 38),
 				Size = UDim2.new(1, 0, 0, 22),
 				BackgroundTransparency = 1,
+				Visible = scope:Computed(function(use): boolean
+					return not use(phone)
+				end),
 				Text = scope:Computed(function(use): string
-					local v = use(view)
-					if v.mode == "running" then
-						local d, h = SeasonView.daysHours(v.endsIn)
-						return Text.get(use, "season.endsIn", { d = d, h = h })
-					elseif v.mode == "grace" and v.def then
-						return Text.get(use, "season.grace", {
-							season = Text.get(use, v.def.nameKey),
-							date = date((v.claimUntil :: number) - 1), -- claimUntil is the next day's 00:00 (Season.canClaim)
-						})
-					end
-					return Text.get(use, "season.soon")
+					return whenText(use, use(view))
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
 				TextSize = Theme.TextSize.Small,
@@ -798,7 +883,12 @@ local function header(scope: Scope, ctx: Ctx): Instance
 			}),
 			Bar(scope, {
 				Name = "Points",
-				Position = UDim2.fromOffset(0, 64),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(0, if use(phone) then 32 else 64)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, 0, 0, if use(phone) then 6 else Theme.Size.BarHeight)
+				end),
 				Value = scope:Computed(function(use): number
 					return use(view).progress
 				end),
@@ -901,9 +991,15 @@ local function SeasonPass(scope: Scope, props: Props): Instance
 	}
 
 	local selected = scope:Value("rewards")
-	local headerHeight = scope:Computed(function(use): number
-		return if use(touch) then HEADER_TOUCH else HEADER
+	-- Logic/WorldLayout.season: the header, the toolbar and the tier rows of this device
+	local layout = scope:Computed(function(use): WorldLayout.Season
+		local device: WorldLayout.Device = WorldLayout.device(use(touch) == true, use(PhoneLayout.Compact))
+		return WorldLayout.season(WorldLayout.CHROME, device)
 	end)
+	local headerHeight = scope:Computed(function(use): number
+		return use(layout).header
+	end)
+	local TOOLBAR = Theme.Size.MinTouch
 	local claimCount = scope:Computed(function(use): number
 		return SeasonView.claimCount(use(view))
 	end)
@@ -925,12 +1021,16 @@ local function SeasonPass(scope: Scope, props: Props): Instance
 					{ id = "how", label = Text.T(scope, "season.tab.how") },
 				},
 				Selected = selected,
-				Size = UDim2.new(0, 360, 1, 0),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(0, use(layout).tabsWidth, 1, 0)
+				end),
 			}),
 			scope:New("Frame")({
 				AnchorPoint = Vector2.new(1, 0),
 				Position = UDim2.fromScale(1, 0),
-				Size = UDim2.new(1, -372, 1, 0),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, -(use(layout).tabsWidth + 12), 1, 0)
+				end),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("UIListLayout")({
@@ -994,7 +1094,7 @@ local function SeasonPass(scope: Scope, props: Props): Instance
 			return soon(s, ctx)
 		end
 		local focus = SeasonView.focusTier(Fusion.peek(view))
-		return if isTouch then list(s, ctx, def, focus) else strip(s, ctx, def, focus)
+		return if isTouch then list(s, ctx, def, focus, use(layout)) else strip(s, ctx, def, focus)
 	end)
 
 	return scope:New("Frame")({
@@ -1002,7 +1102,7 @@ local function SeasonPass(scope: Scope, props: Props): Instance
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
 		[Children] = {
-			header(scope, ctx),
+			header(scope, ctx, layout),
 			toolbar,
 			scope:New("Frame")({
 				Name = "Body",

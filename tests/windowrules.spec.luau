@@ -1,5 +1,7 @@
 --!strict
--- S29: which windows close together (Logic/WindowRules).
+-- S29: which windows close together (Logic/WindowRules). UI package C (owner 2026-11-10: "things covering each
+-- other"): on a touch screen a service and its backpack swap places from their title bars (partner); both stay open,
+-- and Esc and the one-main-window rule work as before.
 
 local Test = require("./Test")
 local WindowRules = require("../src/shared/Logic/WindowRules")
@@ -140,5 +142,51 @@ describe("WindowRules.onClose", function()
 		local state = WindowRules.new()
 		expect(WindowRules.onClose(state, "shop")).toEqual({})
 		expect(WindowRules.onEscape(state)).toEqual({})
+	end)
+end)
+
+describe("WindowRules.partner (the phone's switch, UI package C)", function()
+	it("swaps every service and its backpack, both stay open", function()
+		for id in WindowRules.SERVICES do
+			if not WindowRules.bringsBackpack(id) then
+				continue
+			end
+			local state = opened(id)
+			expect(WindowRules.partner(state, id)).toBe("inventory")
+			expect(WindowRules.partner(state, "inventory")).toBe(id)
+			-- the switch opens the partner, which only brings it to the front
+			local plan = WindowRules.onOpen(state, "inventory")
+			expect(#plan.open + #plan.close).toBe(0)
+			expect(state.open).toEqual({ id, "inventory" })
+			plan = WindowRules.onOpen(state, id)
+			expect(#plan.open + #plan.close).toBe(0)
+			expect(state.open).toEqual({ "inventory", id })
+			expect(state.inventoryByCompanion).toBe(true)
+			-- Esc still closes both in one press
+			expect(WindowRules.onEscape(state)).toEqual({ id, "inventory" })
+		end
+	end)
+
+	it("offers the backpack again after its ✕, and the backpack the service on top", function()
+		local state = opened("shop")
+		WindowRules.onClose(state, "inventory")
+		expect(WindowRules.partner(state, "shop")).toBe("inventory")
+		WindowRules.onOpen(state, WindowRules.partner(state, "shop") :: string)
+		expect(state.open).toEqual({ "shop", "inventory" })
+		-- a trade over the shop: the backpack goes back to the trade
+		WindowRules.onOpen(state, "trade")
+		expect(WindowRules.partner(state, "inventory")).toBe("trade")
+	end)
+
+	it("none for the vault, other windows, closed ones and a backpack left without a service", function()
+		expect(WindowRules.partner(opened("deposit"), "deposit")).toBe(nil)
+		expect(WindowRules.partner(opened("skills"), "skills")).toBe(nil)
+		expect(WindowRules.partner(WindowRules.new(), "shop")).toBe(nil)
+		expect(WindowRules.partner(opened("shop"), "trade")).toBe(nil)
+		-- the player's own backpack stays after the last service closes, with nothing to go back to
+		local state = opened("character", "shop")
+		WindowRules.onClose(state, "shop")
+		expect(state.open).toEqual({ "inventory" })
+		expect(WindowRules.partner(state, "inventory")).toBe(nil)
 	end)
 end)

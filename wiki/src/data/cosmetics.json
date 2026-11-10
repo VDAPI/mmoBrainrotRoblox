@@ -124,7 +124,7 @@
     {"id":"levelup","name":{"en":"Level-up effects","pl":"Efekty awansu"}}
   ],
   "texts": {
-    "hint": {"en":"Click an item to try it on. Looks only — no stats.","pl":"Kliknij przedmiot, by go przymierzyć. Tylko wygląd — bez statystyk."},
+    "hint": {"en":"Click an item to try it on. Looks only, no stats.","pl":"Kliknij przedmiot, by go przymierzyć. Tylko wygląd, bez statystyk."},
     "pack": {"en":"For cosmetics, pets, scrolls and services. Never for power.","pl":"Na kosmetyki, pety, zwoje i usługi. Nigdy na siłę postaci."},
     "wardrobe": {"en":"Outfits, auras, trails, weapon effects and pets.","pl":"Stroje, aury, ślady, efekty broni i pety."}
   }

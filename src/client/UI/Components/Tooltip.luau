@@ -5,6 +5,11 @@
 -- 2026-10-21 (owner: descriptions too long): an optional `details` text. The tooltip shows the short `text` and a small
 -- hint ("Alt: details"); holding the details key (Keybinds "item_details", default Alt) shows `details` under it, on
 -- touch holding the press longer (DETAILS_PRESS) does. With details both texts are rich text. Recipe: docs/JAK-DODAC.md.
+-- Owner 2026-11-10 ("things covering each other"), UI package C: the tooltip stands where Logic/Popover puts it, from
+-- its measured size: 18 right of and 22 under the cursor (Popover.TOOLTIP), flipped and kept inside the safe area 8
+-- from its edges (the skill and potion bar's tooltips ran off the screen's bottom); on touch above the pressed
+-- element, under it when there is no room. Tooltip.SafeArea is that area for the layer's other popovers
+-- (ItemTooltip, InfoTip).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
@@ -12,12 +17,13 @@ local UserInputService = game:GetService("UserInputService")
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.Keybinds)
+local Popover = require(ReplicatedStorage.Shared.Logic.Popover)
 local Scale = require(script.Parent.Parent.Scale)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local TipText = require(ReplicatedStorage.Shared.Logic.TipText)
 
-local Children = Fusion.Children
+local Children, Out = Fusion.Children, Fusion.Out
 
 type UsedAs<T> = Fusion.UsedAs<T>
 
@@ -25,23 +31,49 @@ local Tooltip = {}
 
 local LONG_PRESS = 0.45
 local DETAILS_PRESS = 1.2 -- touch: still held this long, the details show
-local OFFSET = Vector2.new(18, 22)
+local MAX_WIDTH = 360
 
 local moduleScope = Fusion.scoped(Fusion)
 local currentText = moduleScope:Value(nil :: string?)
 local currentDetails = moduleScope:Value(nil :: string?)
 -- The details key is held (PC) or the press held long (touch).
 local expanded = moduleScope:Value(false)
-local position = moduleScope:Value(Vector2.zero)
+-- What the tooltip stands next to (layer virtual pixels): the cursor (Popover.cursor) or, on touch, the element.
+local anchor = moduleScope:Value(Popover.cursor(0, 0, 0))
+local onTouch = moduleScope:Value(false)
 local owner: GuiObject? = nil
 -- Layer root (FIX 2026-10-14): AbsolutePosition is measured below the top bar, the layer from the screen top.
 local layerRoot: GuiObject? = nil
+local layerSize = moduleScope:Value(nil :: Vector2?) -- the layer root's AbsoluteSize (screen pixels)
 
-local function show(guiObject: GuiObject, text: string, details: string?, at: Vector2)
+-- The safe area of the Tooltip layer for Logic/Popover: the layer root (the device's safe area) less Roblox's top bar,
+-- in virtual pixels; the whole screen until the layer is mounted.
+Tooltip.SafeArea = moduleScope:Computed(function(use): Popover.Rect
+	local scale = use(Scale.Value)
+	local real = use(layerSize)
+	local size: Vector2 = if real and real.X > 0 and real.Y > 0 then real / scale else use(Scale.VirtualSize)
+	return { left = 0, top = use(Scale.TopBar) / scale, right = size.X, bottom = size.Y }
+end)
+
+-- An element's rectangle in the Tooltip layer (virtual pixels).
+function Tooltip.rectOf(object: GuiObject): Popover.Rect
+	local root = layerRoot
+	local at = if root then Scale.toLayer(object.AbsolutePosition, root) else Scale.toVirtual(object.AbsolutePosition)
+	local size = Scale.toVirtual(object.AbsoluteSize)
+	return { left = at.X, top = at.Y, right = at.X + size.X, bottom = at.Y + size.Y }
+end
+
+local function show(guiObject: GuiObject, text: string, details: string?, at: Popover.Rect, touch: boolean)
 	owner = guiObject
 	currentText:set(text)
 	currentDetails:set(if details ~= "" then details else nil)
-	position:set(at)
+	anchor:set(at)
+	onTouch:set(touch)
+end
+
+local function cursor(x: number, y: number): Popover.Rect
+	local at = Scale.toVirtual(Vector2.new(x, y))
+	return Popover.cursor(at.X, at.Y, Popover.TOOLTIP.drop)
 end
 
 local function hide(guiObject: GuiObject?)
@@ -76,7 +108,7 @@ function Tooltip.attach(
 		scope,
 		guiObject.MouseEnter:Connect(function(x, y)
 			if not UserInputService.TouchEnabled or UserInputService.MouseEnabled then
-				show(guiObject, resolve(), resolveDetails(), Scale.toVirtual(Vector2.new(x, y)))
+				show(guiObject, resolve(), resolveDetails(), cursor(x, y), false)
 			end
 		end)
 	)
@@ -84,7 +116,7 @@ function Tooltip.attach(
 		scope,
 		guiObject.MouseMoved:Connect(function(x, y)
 			if owner == guiObject then
-				position:set(Scale.toVirtual(Vector2.new(x, y)))
+				anchor:set(cursor(x, y))
 			end
 		end)
 	)
@@ -95,7 +127,7 @@ function Tooltip.attach(
 		end)
 	)
 
-	-- Touch: long press shows above the element; releasing hides.
+	-- Touch: long press shows above the element (under it without room above); releasing hides.
 	local pressToken = 0
 	table.insert(
 		scope,
@@ -108,10 +140,7 @@ function Tooltip.attach(
 			expanded:set(false)
 			task.delay(LONG_PRESS, function()
 				if token == pressToken and guiObject.Parent then
-					local p = guiObject.AbsolutePosition
-					local root = layerRoot
-					local at = if root then Scale.toLayer(p, root) else Scale.toVirtual(p)
-					show(guiObject, resolve(), resolveDetails(), at - Vector2.new(0, 60))
+					show(guiObject, resolve(), resolveDetails(), Tooltip.rectOf(guiObject), true)
 				end
 			end)
 			task.delay(DETAILS_PRESS, function()
@@ -138,6 +167,15 @@ end
 -- Builds the floating tooltip inside `parent` (a scaled layer Root, see UI/Scale).
 function Tooltip.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 	layerRoot = if parent:IsA("GuiObject") then parent else nil
+	local root = layerRoot
+	if root then
+		local function report()
+			layerSize:set(root.AbsoluteSize)
+		end
+		report()
+		table.insert(scope, root:GetPropertyChangedSignal("AbsoluteSize"):Connect(report))
+	end
+	local tipSize = scope:Value(Vector2.zero)
 	local detailsKey = Keybinds.Label(scope, "item_details")
 	-- PC: the details show while the details key is held.
 	table.insert(
@@ -166,10 +204,17 @@ function Tooltip.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 		Visible = scope:Computed(function(use): boolean
 			return use(currentText) ~= nil
 		end),
+		-- Logic/Popover from the measured size: right of the cursor (left of it at the right edge, rising at the bottom),
+		-- on touch above the element
 		Position = scope:Computed(function(use): UDim2
-			local p: Vector2 = use(position)
-			return UDim2.fromOffset(p.X + OFFSET.X, p.Y + OFFSET.Y)
+			local own = use(tipSize) / use(Scale.Value)
+			local options: Popover.Options = if use(onTouch)
+				then { prefer = "above" :: Popover.Side }
+				else { prefer = "right" :: Popover.Side, gap = Popover.TOOLTIP.gap }
+			local rect = Popover.place(use(anchor), { w = own.X, h = own.Y }, use(Tooltip.SafeArea), options)
+			return UDim2.fromOffset(rect.left, rect.top)
 		end),
+		[Out("AbsoluteSize")] = tipSize,
 		AutomaticSize = Enum.AutomaticSize.XY,
 		Size = UDim2.fromOffset(0, 0),
 		BackgroundColor3 = Theme.Iron.Surface, -- S135: tooltips on iron
@@ -203,7 +248,7 @@ function Tooltip.mount(scope: Fusion.Scope<typeof(Fusion)>, parent: Instance)
 				PaddingLeft = UDim.new(0, 10),
 				PaddingRight = UDim.new(0, 10),
 			}),
-			scope:New("UISizeConstraint")({ MaxSize = Vector2.new(360, math.huge) }),
+			scope:New("UISizeConstraint")({ MaxSize = Vector2.new(MAX_WIDTH, math.huge) }),
 		},
 	})
 end

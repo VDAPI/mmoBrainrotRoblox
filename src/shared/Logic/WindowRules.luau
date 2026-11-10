@@ -13,6 +13,8 @@
 --   * Esc on a service closes it, and the companion backpack with the last one, in one press.
 --   * ✕ on the companion backpack while a service is open closes only the backpack.
 --   * Any other window is exclusive: opening it closes every open window (overlays are not tracked here).
+--   * UI package C (owner 2026-11-10: "things covering each other"): on a touch screen every window covers the whole
+--     screen, so a service and its backpack swap places from their title bars (`partner`); both stay open.
 
 local WindowRules = {}
 
@@ -239,6 +241,20 @@ function WindowRules.onEscape(state: State): { string }
 		top = topService(state) or top
 	end
 	return WindowRules.onClose(state, top)
+end
+
+-- UI package C: the window that the phone's switch in `id`'s title bar brings to the front: from the backpack, the
+-- top service it stands next to; from a service that brings the backpack, the backpack (opened again when the player
+-- closed it with ✕). nil: no switch (the vault, every other window, a closed one). Switching only changes which of
+-- the two is in front (onOpen of an open window).
+function WindowRules.partner(state: State, id: string): string?
+	if not WindowRules.isOpen(state, id) then
+		return nil
+	end
+	if id == WindowRules.INVENTORY then
+		return topService(state)
+	end
+	return if WindowRules.bringsBackpack(id) then WindowRules.INVENTORY else nil
 end
 
 function WindowRules.closeAll(state: State): { string }

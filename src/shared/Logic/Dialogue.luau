@@ -174,6 +174,65 @@ function Dialogue.pageKey(quest: any, page: string, quests: any, has: (string) -
 	return if has(key) then key else plain
 end
 
+-- Paging (owner 2026-11-10: "bardzo dużo napisów, niektóre rzeczy zasłaniają inne"): a page of a conversation holds
+-- at most TextCaps dialogPage (140) characters, so a longer text goes on under continuation keys, shown one by one
+-- with "Dalej ▸" and never cut: a key that ends in a digit takes a letter (quest.<id>.p1 -> p1b, p1c), any other a
+-- number (quest.<id>.done -> done2, done3; the variant quest.<id>.p2.<answer> -> p2.<answer>2).
+Dialogue.MAX_PARTS = 4
+
+-- The key of part `n` (1 = the page key itself) of page key `key`.
+function Dialogue.partKey(key: string, n: number): string
+	if n <= 1 then
+		return key
+	end
+	if string.match(key, "%d$") then
+		return key .. string.char(string.byte("a") + n - 1)
+	end
+	return `{key}{n}`
+end
+
+-- The keys a page shows, in order: the page key and every continuation key `has` knows (it stops at the first gap).
+function Dialogue.parts(key: string, has: (string) -> boolean): { string }
+	local out = { key }
+	for n = 2, Dialogue.MAX_PARTS do
+		local part = Dialogue.partKey(key, n)
+		if not has(part) then
+			break
+		end
+		table.insert(out, part)
+	end
+	return out
+end
+
+-- The pages of a conversation with their parts (UI/Screens/QuestDialog): the shown keys, and for each page of `keys`
+-- the index of its last part (the answers of a page stand under its last part).
+function Dialogue.paged(keys: { string }, has: (string) -> boolean): ({ string }, { number })
+	local shown: { string } = {}
+	local last: { number } = {}
+	for i, key in keys do
+		for _, part in Dialogue.parts(key, has) do
+			table.insert(shown, part)
+		end
+		last[i] = #shown
+	end
+	return shown, last
+end
+
+-- A key in both languages (the paging reads only parts that exist in pl and en).
+local function hasBoth(key: string): boolean
+	return Locale.has(key, "pl") and Locale.has(key, "en")
+end
+
+-- The whole text of a page in `lang` with `args`: its parts joined by a space, as before the split (the journal's
+-- "Przypomnij rozmowę", the wiki export).
+function Dialogue.whole(key: string, args: { [string]: any }?, lang: string?): string
+	local texts: { string } = {}
+	for _, part in Dialogue.parts(key, hasBoth) do
+		table.insert(texts, Locale.T(part, args, lang))
+	end
+	return table.concat(texts, " ")
+end
+
 local function savedEffect(quest: any, quests: any): ChoiceEffect?
 	local option = Dialogue.option(quest, Dialogue.saidOf(quests, if type(quest) == "table" then quest.id else ""))
 	return if option then option.effect else nil

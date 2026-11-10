@@ -4,8 +4,9 @@
 -- "Recommended" when the player's level fits, a lock with "from level X" when the area is still closed.
 -- The lowest area is selected at first; a row click selects, "Set off" (or Enter) travels. Warnings of the
 -- portal (red zone, map above your level) sit on top. Works with touch: tall rows in a scrolling list.
--- S33: a third line with the hunting ground profile ("⚡ Fast EXP — EXP ×1 · items ×0.6 · gold ×0.7"), the selected
--- area's profile described under the list, "Recommended" on the best area of every profile.
+-- S33: a third line with the hunting ground profile ("⚡ Fast EXP · EXP ×1 · items ×0.6 · gold ×0.7"), "Recommended"
+-- on the best area of every profile. Owner 2026-11-10 ("zbyt szczegółowe opisy"): the selected area's profile
+-- description moved from under the list to the (i) of the header line, so the list keeps that room.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +17,7 @@ local AreaProfiles = require(ReplicatedStorage.Shared.Data.AreaProfiles)
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Button = require(script.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
@@ -159,7 +161,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 								Position = UDim2.fromOffset(20, 60),
 								Size = UDim2.new(1, -32, 0, 20),
 								BackgroundTransparency = 1,
-								Text = `{AreaProfileText.tag(use, profile)} — {AreaProfileText.mults(use, profile)}`,
+								Text = `{AreaProfileText.tag(use, profile)} · {AreaProfileText.mults(use, profile)}`,
 								TextXAlignment = Enum.TextXAlignment.Left,
 								TextTruncate = Enum.TextTruncate.AtEnd,
 								FontFace = Theme.Fonts.BodyBold,
@@ -229,22 +231,38 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 					SortOrder = Enum.SortOrder.LayoutOrder,
 					Padding = UDim.new(0, 8),
 				}),
-				scope:New("TextLabel")({
-					Name = "Header",
+				scope:New("Frame")({
+					Name = "HeaderRow",
 					LayoutOrder = 1,
 					Size = UDim2.new(1, 0, 0, 24),
 					BackgroundTransparency = 1,
-					Text = scope:Computed(function(use): string
-						local map = Maps.get(use(props.MapId) or "")
-						return Text.get(use, "portal.choose.header", {
-							map = if map then Text.get(use, map.nameKey) else "",
-							level = use(level) or 1,
-						})
-					end),
-					TextXAlignment = Enum.TextXAlignment.Left,
-					FontFace = Theme.Fonts.BodyBold,
-					TextSize = Theme.TextSize.Body,
-					TextColor3 = Theme.Paper.Text,
+					[Children] = {
+						scope:New("TextLabel")({
+							Name = "Header",
+							Size = UDim2.new(1, -36, 1, 0),
+							BackgroundTransparency = 1,
+							Text = scope:Computed(function(use): string
+								local map = Maps.get(use(props.MapId) or "")
+								return Text.get(use, "portal.choose.header", {
+									map = if map then Text.get(use, map.nameKey) else "",
+									level = use(level) or 1,
+								})
+							end),
+							TextXAlignment = Enum.TextXAlignment.Left,
+							TextTruncate = Enum.TextTruncate.AtEnd,
+							FontFace = Theme.Fonts.BodyBold,
+							TextSize = Theme.TextSize.Body,
+							TextColor3 = Theme.Paper.Text,
+						}),
+						-- the selected area's profile in full (touch: tap a row, then the (i))
+						InfoTip.new(scope, {
+							Name = "ProfileInfo",
+							Text = detail,
+							Visible = hasDetail,
+							AnchorPoint = Vector2.new(1, 0.5),
+							Position = UDim2.fromScale(1, 0.5),
+						}),
+					},
 				}),
 				scope:New("TextLabel")({
 					Name = "Warnings",
@@ -264,12 +282,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 					Name = "List",
 					LayoutOrder = 3,
 					Size = scope:Computed(function(use): UDim2
-						return UDim2.new(
-							1,
-							0,
-							1,
-							(if use(hasWarnings) then -160 else -110) - (if use(hasDetail) then 44 else 0)
-						)
+						return UDim2.new(1, 0, 1, if use(hasWarnings) then -160 else -110)
 					end),
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
@@ -281,20 +294,6 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 2) }),
 						rows :: any,
 					},
-				}),
-				scope:New("TextLabel")({
-					Name = "Detail",
-					LayoutOrder = 4,
-					Visible = hasDetail,
-					Size = UDim2.new(1, 0, 0, 36),
-					BackgroundTransparency = 1,
-					Text = detail,
-					TextWrapped = true,
-					TextXAlignment = Enum.TextXAlignment.Left,
-					TextYAlignment = Enum.TextYAlignment.Top,
-					FontFace = Theme.Fonts.Body,
-					TextSize = Theme.TextSize.Small,
-					TextColor3 = Theme.Paper.Text,
 				}),
 				Button(scope, {
 					Name = "Go",

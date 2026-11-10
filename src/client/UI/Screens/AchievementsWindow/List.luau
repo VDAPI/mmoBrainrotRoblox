@@ -42,7 +42,6 @@ end
 
 List.CATEGORY_WIDTH = 190
 local ICON = 26
-local ROW_HEIGHT = 66
 local STAR = Theme.Size.MinTouch
 local COUNT = 86 -- the "value / goal" column left of the star
 
@@ -199,8 +198,10 @@ local function shapeOf(rows: { Row }): string
 	return table.concat(parts, ",")
 end
 
--- The list of the current category, filter and range.
-function List.rows(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
+-- The list of the current category, filter and range. `rowHeight` from Logic/WorldLayout.achievements (owner
+-- 2026-11-10: a phone's rows 52 with a 3-px bar, so three rows show; PC and a tablet 66).
+function List.rows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeight: number): Instance
+	local thin = rowHeight < 60
 	local rows = scope:Computed(function(use): { Row }
 		return AchievementView.rows(use(ctx.st), use(ctx.cat), use(ctx.filter), use(ctx.range))
 	end)
@@ -261,7 +262,7 @@ function List.rows(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 					Name = id,
 					LayoutOrder = i,
 					Index = i,
-					Height = ROW_HEIGHT,
+					Height = rowHeight,
 					RightInset = STAR + 8 + COUNT,
 					Text = main,
 					Sub = table.concat(subParts, " · "),
@@ -291,8 +292,8 @@ function List.rows(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
 						Bar(s, {
 							Name = "Progress",
 							AnchorPoint = Vector2.new(0, 1),
-							Position = UDim2.new(0, Theme.Padding.Small + 4, 1, -5),
-							Size = UDim2.new(1, -(Theme.Padding.Small * 2 + 4 + STAR + 8), 0, 5),
+							Position = UDim2.new(0, Theme.Padding.Small + 4, 1, if thin then -3 else -5),
+							Size = UDim2.new(1, -(Theme.Padding.Small * 2 + 4 + STAR + 8), 0, if thin then 3 else 5),
 							Value = s:Computed(function(use2): number
 								return use2(live).pct
 							end),

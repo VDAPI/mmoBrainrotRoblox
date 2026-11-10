@@ -8,6 +8,7 @@ local fs = require("@lune/fs")
 local Clean = require("../tools/WikiData/Clean")
 local Codes = require("../src/shared/Data/Codes")
 local Config = require("../src/shared/Config")
+local Dialogue = require("../src/shared/Logic/Dialogue")
 local Items = require("../src/shared/Data/Items")
 local Json = require("../tools/WikiData/Json")
 local Leak = require("../tools/WikiData/Leak")
@@ -264,7 +265,8 @@ T.describe("Wiki export: consistency", function()
 			for _, lang in { "pl", "en" } do
 				for _, field in { "text", "done" } do
 					local key = `quest.{id}.{field}`
-					local want = if Locale.has(key, lang) then Locale.T(key, nil, lang) else nil
+					-- owner 2026-11-10 (UI pass): a page split into parts (Logic/Dialogue.parts) is exported whole
+					local want = if Locale.has(key, lang) then Dialogue.whole(key, nil, lang) else nil
 					local got = if q[field] then q[field][lang] else nil
 					T.expect(`{id}.{field}.{lang} {got == want}`).toBe(`{id}.{field}.{lang} true`)
 				end
@@ -283,7 +285,7 @@ T.describe("Wiki export: consistency", function()
 				for _, lang in { "pl", "en" } do
 					local parts = {}
 					for i = 1, quest.pages do
-						table.insert(parts, Locale.T(`quest.{quest.id}.p{i}`, nil, lang))
+						table.insert(parts, Dialogue.whole(`quest.{quest.id}.p{i}`, nil, lang))
 					end
 					local want = table.concat(parts, "\n\n")
 					local got = if q.text then q.text[lang] else nil
