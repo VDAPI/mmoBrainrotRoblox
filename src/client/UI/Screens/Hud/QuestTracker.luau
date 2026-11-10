@@ -26,6 +26,9 @@
 -- line folds), the groups keep their own fold (Logic/TrackerFold, defaults unchanged), an objective is one line of at
 -- most 32 characters (QuestRows.short, the whole one in its tooltip), and the column folds the tracker to its header
 -- line or puts it behind the '+N' chip while it has no room (UI/HudSlots.forced, Hud/StackChip).
+-- Package A review (owner 2026-11-10): an objective's count stays whole ("0/12" read "0/1…"): only the name before it
+-- is cut (QuestRows.oneLine), the count stands in a label of its own after it, so a narrow tracker cuts the name in
+-- pixels too, never the count, and the area after the count is in the tooltip with the whole line.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -93,6 +96,8 @@ local GLOW_TRANSPARENCY = 0.6
 -- Owner 2026-10-21: one line per entry, group headers (PC / touch heights), the indent of an unfolded entry's lines
 local ROW_PC, ROW_TOUCH = 22, 28
 local INDENT = 12
+-- an objective's line (Theme.TextSize.Small and a little room)
+local OBJECTIVE = 20
 local LONG_PRESS = 0.45 -- Components/Tooltip: a touch held this long shows the tooltip
 
 -- World position the arrow points to (nil = hide the arrow).
@@ -341,26 +346,15 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local touch = use(Device.Touch)
 		local stage: HudReveal.Stage = HudReveal.stage(use(tutorial))
 		local order = 0
-		-- `oneLine`: package A (owner 2026-11-10), an objective: one line of at most QuestRows.LINE_MAX characters (the
-		-- caller, `objectives`, puts the whole text in its tooltip: a tooltip here would count every line of the tracker
-		-- as one in tests/TextScan)
-		local function line(
-			text: string,
-			color: Color3,
-			size: number,
-			font: Font,
-			indent: number?,
-			oneLine: boolean?
-		): TextLabel
+		local function line(text: string, color: Color3, size: number, font: Font, indent: number?): TextLabel
 			order += 1
 			local label = s:New("TextLabel")({
 				LayoutOrder = order,
 				Size = UDim2.fromScale(1, 0),
 				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
-				TextWrapped = not oneLine,
-				TextTruncate = if oneLine then Enum.TextTruncate.AtEnd else Enum.TextTruncate.None,
-				Text = if oneLine then QuestRows.short(text) else text,
+				TextWrapped = true,
+				Text = text,
 				FontFace = font,
 				TextSize = size,
 				TextColor3 = color,
@@ -460,20 +454,62 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local function objectives(key: string, rowList: QuestRows.List, guide: QuestTrack.Target?)
 			for _, row in rowList.rows do
 				local full = QuestRows.line(row)
-				local label = line(
-					full,
-					if row.done then Theme.Iron.Success else Theme.Iron.Text,
-					Theme.TextSize.Small,
-					Theme.Fonts.BodyMedium,
-					INDENT,
-					true
+				local head, count = QuestRows.oneLine(full, row.have, row.need)
+				local color = if row.done then Theme.Iron.Success else Theme.Iron.Text
+				local function part(name: string, text: string, fill: boolean): TextLabel
+					return s:New("TextLabel")({
+						Name = name,
+						LayoutOrder = if fill then 1 else 2,
+						Size = UDim2.fromScale(0, 1),
+						AutomaticSize = if fill then Enum.AutomaticSize.None else Enum.AutomaticSize.X,
+						BackgroundTransparency = 1,
+						Text = text,
+						FontFace = Theme.Fonts.BodyMedium,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = color,
+						TextStrokeTransparency = 0.5,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = if fill then Enum.TextTruncate.AtEnd else Enum.TextTruncate.None,
+						[Children] = if fill
+							then s:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }) :: any
+							else nil,
+					}) :: TextLabel
+				end
+				local name = part("Name", head, true)
+				local labels = { name }
+				if count then
+					table.insert(labels, part("Count", count, false))
+				end
+				order += 1
+				table.insert(
+					list,
+					s:New("Frame")({
+						Name = "Objective",
+						LayoutOrder = order,
+						Size = UDim2.new(1, 0, 0, OBJECTIVE),
+						BackgroundTransparency = 1,
+						[Children] = {
+							s:New("UIPadding")({ PaddingLeft = UDim.new(0, INDENT) }),
+							s:New("UIListLayout")({
+								FillDirection = Enum.FillDirection.Horizontal,
+								SortOrder = Enum.SortOrder.LayoutOrder,
+								VerticalAlignment = Enum.VerticalAlignment.Center,
+								Padding = UDim.new(0, 4),
+							}),
+							labels :: any,
+						},
+					})
 				)
-				-- package A: a cut objective keeps its whole text in the tooltip
-				if label.Text ~= full then
-					Tooltip.attach(s, label, full)
+				-- package A: a cut objective, and one whose area the line leaves out, keeps its whole text in the
+				-- tooltip (a phone's narrow tracker cuts the name in pixels too)
+				local shown = if count then `{head} {count}` else head
+				if shown ~= full or touch then
+					Tooltip.attach(s, name, full)
 				end
 				if row.done then
-					glow(label, `{key}#{row.index}`)
+					for _, label in labels do
+						glow(label, `{key}#{row.index}`)
+					end
 				end
 			end
 			if rowList.complete then

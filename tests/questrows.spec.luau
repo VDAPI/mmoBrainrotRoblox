@@ -1,6 +1,11 @@
 --!strict
 -- S29: objective rows of a quest (finished objectives stay, the turn-in line, the one-shot pulse).
 
+local fs = require("@lune/fs")
+
+local Areas = require("../src/shared/Data/Areas")
+local Locale = require("../src/shared/Util/Locale")
+local Monsters = require("../src/shared/Data/Monsters")
 local QuestRows = require("../src/shared/Logic/QuestRows")
 local Quests = require("../src/shared/Data/Quests")
 local Test = require("./Test")
@@ -117,5 +122,88 @@ describe("QuestRows.short", function()
 		expect(string.find(QuestRows.short("abc defgh", 5), " …", 1, true)).toBeNil()
 		expect(QuestRows.short(string.rep("ą", 32))).toBe(string.rep("ą", 32))
 		expect(utf8.len(QuestRows.short(string.rep("ą", 40)))).toBe(32)
+	end)
+end)
+
+-- Package A review (owner 2026-11-10): cut by `short`, "• Pokonaj: Ognisty Chochlik 0/12 (Spalone Ruiny)" read
+-- "• Pokonaj: Ognisty Chochlik 0/1…": the tracker's line keeps the count whole and last, cuts only the name before it
+-- and leaves the area for the tooltip.
+describe("QuestRows.oneLine", function()
+	it("keeps the count whole and last, cuts the name, leaves the area out", function()
+		local head, count = QuestRows.oneLine("• Pokonaj: Ognisty Chochlik 0/12 (Spalone Ruiny)", 0, 12)
+		expect(head).toBe("• Pokonaj: Ognisty Chochlik")
+		expect(count).toBe("0/12")
+		head, count = QuestRows.oneLine("• Pokonaj: Rycerz Lodowej Straży 0/4", 0, 4)
+		expect(count).toBe("0/4")
+		expect(string.sub(head, -3)).toBe("…")
+		local width = utf8.len(`{head} {count}`)
+		expect(width).toBe(QuestRows.LINE_MAX)
+		-- a count past the need reads as the need; a line without its count is cut as `short` cuts it
+		head, count = QuestRows.oneLine("✔ Pokonaj: Szary wilk 8/8", 9, 8)
+		expect({ head = head, count = count }).toEqual({ head = "✔ Pokonaj: Szary wilk", count = "8/8" })
+		head, count = QuestRows.oneLine("• Porozmawiaj: Starszy Wioski Eldoran z Polany Królików", 0, 1)
+		expect(count).toBeNil()
+		expect(head).toBe(QuestRows.short("• Porozmawiaj: Starszy Wioski Eldoran z Polany Królików"))
+	end)
+
+	it("keeps the count of every kill and collect objective of the story, side and boss quests", function()
+		-- the tracker's line of an objective as UI/QuestText words it ("Defeat: <monster> 3/8" and " (<area>)")
+		local function label(o: Quests.Objective, have: number, lang: string): string?
+			local count = `{have}/{o.n}`
+			local area = if o.area then Areas.areaById(o.area) else nil
+			local where = if area
+				then Locale.T("quest.obj.inArea", { area = Locale.T(area.nameKey, nil, lang) }, lang)
+				else ""
+			local monster = if o.monster then Monsters.get(o.monster) else nil
+			local name = if monster
+				then Locale.T(
+					if o.variant == "elite" then monster.nameKeys.elite else monster.nameKeys.normal,
+					nil,
+					lang
+				)
+				else nil
+			if o.type == "kill" and name then
+				return Locale.T("quest.obj.kill", { monster = name, count = count }, lang) .. where
+			elseif o.type == "collect" and o.item then
+				local item = Locale.T(`quest.item.{o.item}`, nil, lang)
+				if o.variant == "elite" and name then
+					return Locale.T("quest.obj.collectFrom", { item = item, monster = name, count = count }, lang)
+						.. where
+				end
+				return Locale.T("quest.obj.collect", { item = item, count = count }, lang) .. where
+			end
+			return nil
+		end
+		local checked = 0
+		local sets: { { any } } = { Quests.Main.list :: any, Quests.Side.list :: any, Quests.Boss.list :: any }
+		for _, set in sets do
+			for _, quest in set do
+				for _, objective in quest.objectives :: { Quests.Objective } do
+					for _, lang in { "pl", "en" } do
+						for _, have in { 0, objective.n - 1, objective.n } do
+							local text = label(objective, have, lang)
+							if not text then
+								continue
+							end
+							checked += 1
+							local full = `{QuestRows.OPEN_MARK} {text}`
+							local head, count = QuestRows.oneLine(full, have, objective.n)
+							local where = `{quest.id} {lang} {full}`
+							expect({ at = where, count = count }).toEqual({ at = where, count = `{have}/{objective.n}` })
+							local fits = (utf8.len(`{head} {count}`) or math.huge) <= QuestRows.LINE_MAX
+							expect({ at = where, fits = fits }).toEqual({ at = where, fits = true })
+						end
+					end
+				end
+			end
+		end
+		expect(checked > 600).toBe(true)
+	end)
+
+	it("the tracker draws the count in a label of its own after the name", function()
+		local src = fs.readFile("src/client/UI/Screens/Hud/QuestTracker.luau")
+		expect(string.find(src, "QuestRows.oneLine(full, row.have, row.need)", 1, true) ~= nil).toBe(true)
+		expect(string.find(src, 'part("Count", count, false)', 1, true) ~= nil).toBe(true)
+		expect(string.find(src, "QuestRows.short(", 1, true) == nil).toBe(true)
 	end)
 end)
