@@ -14866,3 +14866,50 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `UI/Components/Section`, `UI/Theme`, `Controllers/WindowManager`, `tests/TextScan.luau`,
   `tests/fixtures/textcaps/A|B|C|D|E.luau`, `tests/textcaps.spec.luau`, `tests/hudzones.spec.luau`,
   `tests/uiframe.spec.luau`, `tests/sectionfold.spec.luau`, `tests/uifit.spec.luau`, `tools/balance_reasons.luau`.
+
+### Plan UI 2026-11-10, pakiet D: plecak, umiejętności, usługi, sklepy i tooltip przedmiotu (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”; „wiem, że jesteś w stanie zrobić czytelne i przyjemne GUI, postaraj się”. Część kodowa pakietu D (teksty
+  do limitów i pusta lista D w `tests/fixtures/textcaps` to osobna część), na API pakietu F; stopki, przewijanie i
+  inne nowe właściwości okien pakietu C przyjdą po jego scaleniu (miejsca w raporcie pakietu).
+- Układ: nowy czysty `Logic/GearLayout` (prostokąty z rozmiaru treści okna, `WindowFrame.content`, nigdy z ekranu):
+  `character` (kolumny `CharacterSections.columns` z szerokości treści), `backpack` (nagłówek, linia ostrzeżenia,
+  filtry, siatka, akcje), `skillPanel` i `skillSheet` (szczegóły umiejętności na PC i arkusz telefonu), `smithUpgrade`,
+  `auctionSell`, `auctionBrowse`, `alchemy`, `look`, `backpackShop`. Okna mierzą swój obszar (`Out("AbsoluteSize")`
+  przez `Scale.Value`) i stawiają części tam, gdzie mówi `GearLayout`; przyciski główne stoją w pasie stopki.
+- Okno plecaka: jedna linia na statystykę z (i), przyciski i „Wolne punkty” tylko z wolnymi punktami, statystyki
+  pochodne w czterech sekcjach (`charOffense` otwarta, `charDefense`, `charResources`, `charOther` zwinięte), nazwy
+  zawijane zamiast ucinanych, kolumny z szerokości treści (plecak 500 px na trzech telefonach), ostrzeżenie Small 17.
+- Okno umiejętności: sekcje `skillCost` („Koszt i odnowienie”, linia kosztu i odnowienia, tabela rang pod spodem;
+  pasywka „Wartości rangi”) i `skillBreakpoints` („Przełomy”, linia działających wersji albo „Przełom do wyboru”),
+  obie zwinięte; pełny opis pod `More` („Więcej ▸”); karty przełomów w jednym wierszu z „Wybierz” także na telefonie,
+  zasada zmian raz; jedna podpowiedź drzewka (pusty panel szczegółów); nagłówek kierunków mieści się (etykiety się
+  kurczą, krótsze teksty, zasada prowadzenia za (i), zwieńczenie tylko gdy jest, węższy przełącznik zestawów);
+  arkusz telefonu z jednym paskiem (wstecz, akcje, podgląd, „Anuluj” / „Zatwierdź (+N)” przy rezerwacji), szczegóły
+  co najmniej 260 px; `NodeText.LONG` 60 i 71 nowych `path.<ścieżka>.<węzeł>.short` (pl i en).
+- Usługi: kowal (ulepszanie: lista, kowadło z przedmiotem, przewijany środek, wynik, „Ulepsz” w stopce; na niskim
+  obszarze przedmiot obok środka), aukcja (wystawianie: formularz przewijany nad przypiętym „Wystaw przedmiot”;
+  przeglądanie: filtry przewijane nad przypiętym „Szukaj”, wyniki nad stronami), alchemik (receptury i kolejka z
+  przewijaną listą i przypiętym „Odbierz wszystko”), wygląd (podgląd i lista obok siebie, kolumna tylko gdy brak
+  miejsca), plecakarz (tekst wiersza kończy się przed przyciskiem, węższy przycisk poniżej 560 px).
+- Tooltip przedmiotu i sklepy (pierwszy commit): skrócony widok najwyżej 10 linii po najwyżej 60 znaków, krótkie
+  linie efektów (`tooltip.effect.*.short`, `item.stone_dungeon_*.short`), pełny widok bez zmian; Smoczy Sklep,
+  `PremiumConfirm`, `SeasonPassBuy`, depozyt i zdjęcie oferty z aukcji: jedno miejsce na każdy tekst.
+- Testy: nowy `gearlayout.spec` (PC i trzy telefony przy pasku 0 i 58 px: w obszarze, bez nakładania, przyciski w
+  stopce, co najmniej 2 rzędy plecaka na telefonie i 5 na PC, 260 px szczegółów umiejętności; okna czytają
+  `GearLayout`), rozszerzone `tooltip.spec` (limity skróconego widoku dla każdego przedmiotu, krótkie linie, tooltip
+  paska najwyżej 5 linii, pełny widok pod Alt i „Więcej ▸”), `charactersections.spec` (kolumny z szerokości treści,
+  sekcje pochodne, jedna linia statystyki), zaostrzony `shopshort.spec` (najechanie karty bez jej (i)) i w
+  `sectionfold.spec` test `Data/Folds/Gear` (każde id czytane przez okna plecaka i umiejętności, żadne inne).
+- Odstępstwa od planu: karty przełomów zawijają tekst zamiast go ucinać, póki teksty przełomów nie zejdą do 48 znaków
+  (część tekstowa); przyciski główne usług stoją we własnym pasie, póki pakiet C nie da stopki okna; kolejka alchemika
+  zostaje kartami 84 px do `ListRow` pakietu C; filtry plecaka i alchemika czekają na przewijane `Tabs` pakietu C;
+  `Avoid` tooltipu z paska akcji plecaka czeka na właściwość pakietu C. Poprawka typu w `TooltipModel` (linia „+N
+  więcej” z jawnym typem `Line`).
+- **Pliki:** `Logic/GearLayout`, `Logic/CharacterSections`, `Logic/NodeText`, `Logic/TooltipModel`,
+  `Data/Folds/Gear`, `Data/Localization/pl|en`, `Screens/CharacterWindow/init|DerivedList|StatAllocator`,
+  `Screens/BackpackPanel`, `Screens/SkillsWindow/init|Details|Breakpoints|Sheet|Header|PathTab|PoolTree`,
+  `Screens/BlacksmithWindow/Upgrade`, `Screens/AuctionWindow/Sell|Browse|Mine`, `Screens/AlchemyWindow`,
+  `Screens/LookWindow`, `Screens/BackpackShop`, `Screens/DepositWindow`, `Screens/PremiumShop/init|Items|Cosmetics`,
+  `UI/PremiumConfirm`, `UI/SeasonPassBuy`, `tests/gearlayout.spec`, `tests/tooltip.spec`,
+  `tests/charactersections.spec`, `tests/shopshort.spec`, `tests/sectionfold.spec`.

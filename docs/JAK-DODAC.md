@@ -292,3 +292,12 @@
   `CameraController.Release("<właściciel>")` (gracz dostaje kamerę z powrotem, gdy nikt jej nie trzyma). Bez właściciela
   strażnik oddaje kamerę po 0,5 s; `cameralease.spec` pilnuje, że `Scriptable` pisze tylko `CameraController` (i pisarz
   przerywnika).
+- **Układ okna z prostokąta treści** (plan UI 2026-11-10, pakiet D; właściciel: „niektóre rzeczy zasłaniają inne”):
+  kolumny, listy i przyciski okna przedmiotów i postaci liczy czysta funkcja w `Logic/GearLayout` z rozmiaru treści
+  okna (`WindowFrame.content` albo część pod zakładkami okna), nigdy z ekranu (`Scale.VirtualSize`). W widoku:
+  `local absolute = scope:Value(Vector2.zero)`, ramka z `[Out("AbsoluteSize")] = absolute`, w `Computed` rozmiar
+  podzielony przez `Scale.Value` (przed pierwszym pomiarem rozmiar treści na PC) i `UDim2.fromOffset` z prostokątów. Przycisk główny w pasie stopki (`GearLayout.BUTTON` od dołu), długa treść
+  przewija się w swoim prostokącie, telefon jedną kolumną tylko tam, gdzie dwie się nie mieszczą. Nowy widok: funkcja
+  w `GearLayout`, przypadek w `tests/gearlayout.spec` (PC i trzy telefony `PhoneHud.DEVICES` przy pasku 0 i 58 px: w
+  obszarze, bez nakładania, przyciski w stopce, co najmniej 2 rzędy listy na telefonie i 5 na PC) i plik widoku na
+  liście czytelników w tym teście.

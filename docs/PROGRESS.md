@@ -58,6 +58,14 @@
   D 237, E 203) i kolizje HUD na tabletach 1210–1280 szerokości i do 800 wysokości (pasmo celu i pasek bossa na strefach
   postaci i menu, przycisk celu dotyku w minimapie, pas wiadomości pod panelem areny i paskiem bossa niższy niż linia
   alarmu; listy `KNOWN` i `THIN` w `hudzones.spec` dla pakietu A).
+- **Plan UI 2026-11-10, pakiet D (plecak, umiejętności, usługi, sklepy, tooltip przedmiotu), część kodowa:** okna z
+  prostokąta treści (`Logic/GearLayout`), jedna linia na statystykę i cztery zwijane sekcje pochodnych, zwijane
+  „Koszt i odnowienie” i „Przełomy”, jeden pasek arkusza umiejętności na telefonie, krótkie linie węzłów, przyciski
+  usług przypięte pod treścią, skrócony tooltip przedmiotu, jedno miejsce na tekst w sklepach (DECYZJE, SESJE); czeka
+  na stopkę, przewijanie, przewijane `Tabs`, `ListRow` i `Avoid` pakietu C oraz na teksty D w limitach (lista D w
+  `tests/fixtures/textcaps`); nieobejrzane w Studio (arkusz umiejętności na telefonie pod paskiem Robloxa, nagłówek
+  kierunków z długimi nazwami, karty przełomów w panelu 326 px, środek kowadła na niskim telefonie, formularz aukcji
+  i kolejka alchemika w przewijaniu, wiersz plecakarza w wąskim oknie, plecak 500 px na 667×375).
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa
