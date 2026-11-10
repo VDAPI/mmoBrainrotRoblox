@@ -11,6 +11,7 @@ local ArtIcon = require(script.Parent.Parent.UI.Components.ArtIcon)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupColors = require(script.Parent.Parent.UI.GroupColors)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
+local MonsterBox = require(script.Parent.Parent.Util.MonsterBox)
 local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local Nameplate = require(ReplicatedStorage.Shared.Logic.Nameplate)
 local State = require(script.Parent.Parent.UI.State)
@@ -121,11 +122,12 @@ local function build(model: Model)
 		return `{math.max(0, math.ceil(use(hp) or 0))} / {use(maxHp) or 0}`
 	end)
 
-	-- Plate height from the top of the look (S24: MonsterView.top, from the rig the look is built from; the
-	-- bounding box only until the view knows the model), so big monsters never cover their bar.
+	-- Plate height from the top of the look (S24: MonsterView.top, from the rig the look is built from; the box of the
+	-- body only until the view knows the model, never the blocker column: Util/MonsterBox, owner 2026-11-10), so big
+	-- monsters never cover their bar.
 	local adornee = model:FindFirstChild("HumanoidRootPart") or model.PrimaryPart
 	local function plateOffset(): number
-		local box, size = model:GetBoundingBox()
+		local box, size = MonsterBox.of(model)
 		local base = if adornee and adornee:IsA("BasePart") then adornee.Position.Y else box.Position.Y
 		local top = MonsterView.top(model) or (box.Position.Y + size.Y / 2)
 		return top - base + 1.4

@@ -30,6 +30,7 @@ local RunService = game:GetService("RunService")
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local Clock = require(script.Parent.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local MonsterBox = require(script.Parent.Parent.Util.MonsterBox)
 local Pool = require(script.Parent.Pool)
 local State = require(script.Parent.Parent.UI.State)
 local Textures = require(script.Parent.Textures)
@@ -2758,9 +2759,10 @@ function Library.charge(model: Model, color: Color3, seconds: number, size: numb
 	if not attach(model, holder) then
 		return
 	end
-	-- an imported model has its root at the feet: the gathering sits on the middle of the body
+	-- an imported model has its root at the feet: the gathering sits on the middle of the body (a monster's look, not
+	-- its blocker column: Util/MonsterBox, owner 2026-11-10)
 	local ok, box = pcall(function()
-		return (model:GetBoundingBox())
+		return (MonsterBox.of(model))
 	end)
 	local weld = holder:FindFirstChildOfClass("WeldConstraint")
 	if ok and typeof(box) == "CFrame" and weld then
