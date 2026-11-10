@@ -10812,6 +10812,7 @@ return {
 	["tutorial.quest.touch"] = "Follow the golden arrow to the captain and tap him.",
 	["tutorial.backpack.pc"] = "Open your backpack ({key}).",
 	["tutorial.backpack.touch"] = "Tap the bag at the top (in landscape: Menu).",
+	["tutorial.backpack.phone"] = "Tap “Menu” in the corner, then the backpack.",
 	["tutorial.potion.pc"] = "Drink a potion ({key}) or click it in your backpack.",
 	["tutorial.potion.touch"] = "Tap a potion on the bar or in your backpack to drink it.",
 	["tutorial.attack.pc"] = "Pick a monster ({target}) or click it, and your character attacks.",

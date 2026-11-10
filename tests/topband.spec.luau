@@ -168,13 +168,14 @@ T.describe("Top band of messages (UI plan phase 2)", function()
 		T.expect(string.find(announcement, "local half = (if mythic then 84 else 64) / 2", 1, true) ~= nil).toBe(true)
 		T.expect(TopBand.BANNERS.announcement.top).toBe(130 - 32)
 		T.expect(TopBand.BANNERS.announcement.bottom).toBe(150 + 42)
-		-- the tutorial's tile at its default place (the closing one) ends GAP over the cast bar, right over the bar
+		-- the tutorial's tile at its default place (the closing one) ends GAP over the cast bar, right over the bar (UI
+		-- package A: the cast bar stands in Logic/HudZones' cast line, Logic/TutorialTile places the tile)
 		local cast = fs.readFile("src/client/UI/Screens/Hud/CastBar.luau")
-		T.expect(string.find(cast, "UDim2.new(0.5, 0, 1, -100)", 1, true) ~= nil).toBe(true)
-		T.expect(string.find(cast, "UDim2.fromOffset(360, 26)", 1, true) ~= nil).toBe(true)
-		local tutorial = fs.readFile("src/client/Controllers/TutorialController.luau")
-		T.expect(string.find(tutorial, "local OVER_BAR = 100 + 26 + GAP", 1, true) ~= nil).toBe(true)
-		T.expect(string.find(tutorial, "h - OVER_BAR - tall", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(cast, 'HudSlots.at(scope, "castLine")', 1, true) ~= nil).toBe(true)
+		local tile = fs.readFile("src/shared/Logic/TutorialTile.luau")
+		local over = "TutorialTile.OVER_BAR = HudZones.CAST_BAR.bottom + HudZones.CAST_BAR.h + TutorialTile.GAP"
+		T.expect(string.find(tile, over, 1, true) ~= nil).toBe(true)
+		T.expect(string.find(tile, "h - TutorialTile.OVER_BAR - tall", 1, true) ~= nil).toBe(true)
 	end)
 
 	T.it("the achievement toast waits for the zone and the area banner only", function()

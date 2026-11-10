@@ -10810,6 +10810,7 @@ return {
 	["tutorial.quest.touch"] = "Idź za złotą strzałką do kapitana i dotknij go.",
 	["tutorial.backpack.pc"] = "Otwórz plecak ({key}).",
 	["tutorial.backpack.touch"] = "Dotknij torby u góry ekranu (w poziomie: Menu).",
+	["tutorial.backpack.phone"] = "Dotknij „Menu” w rogu, potem plecaka.",
 	["tutorial.potion.pc"] = "Wypij miksturę ({key}) albo kliknij ją w plecaku.",
 	["tutorial.potion.touch"] = "Dotknij mikstury na pasku albo w plecaku, żeby ją wypić.",
 	["tutorial.attack.pc"] = "Wybierz potwora ({target}) albo kliknij go, a postać zaatakuje.",

@@ -7,8 +7,17 @@
 -- Owner 2026-10-21 ("the invasion covers the map, let me move it around the whole screen like the quests"): the event
 -- panels (world event, world boss, Blood Moon, tournament) move the same way; their corner grip scales the whole panel
 -- (`s`, a UIScale factor in the element's minS..maxS), since their height follows their content.
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): a moved element never stands in the places the
+-- HUD keeps for itself (`reserved`: the target band, the message zone, the PC card slot, a phone's M zone and thumb
+-- zone, Logic/HudZones). A saved position whose rectangle meets one falls back to the built-in place (`usable`, read
+-- by UI/HudDrag where it places a moved element and where a drag ends); `valid` does not change, so old saves load.
+
+local HudZones = require("./HudZones")
+local PhoneHud = require("./PhoneHud")
 
 local HudLayout = {}
+
+export type Rect = { left: number, top: number, right: number, bottom: number }
 
 export type Entry = { x: number, y: number, w: number?, h: number?, s: number? }
 export type ElementDef = {
@@ -130,6 +139,47 @@ function HudLayout.entryAt(
 		entry.s = math.floor(s * 100 + 0.5) / 100
 	end
 	return entry
+end
+
+-- The places of a w x h HUD layer no moved element may take, by name: PC and tablet the target band at its tallest (the
+-- dungeon boss bar with an add and its effects), the message zone under it and, on PC, the card slot; a phone the target
+-- frame with its M zone under it and the thumb zone.
+function HudLayout.reserved(w: number, h: number, touch: boolean, compact: boolean): { [string]: Rect }
+	if compact then
+		local left, top, right, bottom = PhoneHud.mZone(w, h)
+		local target = PhoneHud.rect(PhoneHud.places(w, h).target, w, h)
+		local thumb = HudZones.thumb(w, h)
+		return {
+			target = { left = target.left, top = target.top, right = target.right, bottom = target.bottom },
+			messages = { left = left, top = top, right = right, bottom = bottom },
+			thumb = { left = thumb.left, top = thumb.top, right = thumb.right, bottom = thumb.bottom },
+		}
+	end
+	local out: { [string]: Rect } = {
+		band = HudZones.targetBand(w, { touch = touch, bossBar = true, add = true }),
+		messages = HudZones.messageZone(w, h, { touch = touch }),
+	}
+	if not touch then
+		out.card = HudZones.cardSlot(w, h)
+	end
+	return out
+end
+
+-- Whether a moved element may stand at `rect` on a w x h HUD layer: it meets none of the reserved places.
+function HudLayout.usable(rect: Rect, w: number, h: number, touch: boolean, compact: boolean): boolean
+	for _, r in HudLayout.reserved(w, h, touch, compact) do
+		local empty = r.right <= r.left or r.bottom <= r.top -- a short screen's message zone may have no height
+		if
+			not empty
+			and rect.left < r.right
+			and r.left < rect.right
+			and rect.top < r.bottom
+			and r.top < rect.bottom
+		then
+			return false
+		end
+	end
+	return true
 end
 
 -- A copy of `layout` with element `id` set to `entry` (nil = back to the built-in place).
