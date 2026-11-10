@@ -112,6 +112,11 @@ local function isHostile(model: Model): boolean
 	return model:GetAttribute("PvpEnabled") == true or model:GetAttribute("PvpZone") == "red"
 end
 
+-- Owner 2026-11-10: a living model we may fight (SkillController aims a tapped skill at it).
+function TargetController.IsEnemy(model: Model): boolean
+	return isAlive(model) and isHostile(model)
+end
+
 local function myRoot(): BasePart?
 	local character = player.Character
 	return if character then character:FindFirstChild("HumanoidRootPart") :: BasePart? else nil

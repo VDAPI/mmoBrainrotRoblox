@@ -632,6 +632,9 @@ local Config = {
 		breakpoints = true,
 		-- Seconds a skill pressed during the global cooldown / the cast waits to fire (client queue).
 		queueWindow = 0.4,
+		-- Owner 2026-11-10 (Logic/SkillAim): seconds a skill key stays down before it aims by hand (the preview at the
+		-- cursor); a shorter tap aims at the enemy we fight by itself.
+		holdToAim = 0.2,
 		-- studs a channel / beam / aim may drift from where it started (SkillService, Logic/Channel)
 		channelMoveLimit = 2.5,
 	},

@@ -413,7 +413,7 @@ export type Settings = {
 	-- S29: "all" | "mine" (mine and received) | "off"; unset on old saves (DamageText.mode reads dmgNumbers then)
 	dmgMode: string?,
 	bindConfirm: boolean, -- ask before an item binds on equip
-	quickCast: boolean, -- area skills cast on key press instead of on release
+	quickCast: boolean, -- "Cast at cursor" (owner 2026-11-10): skills cast at the cursor on key press, not at the enemy
 	-- S14 options window
 	musicVolume: number,
 	ambientVolume: number, -- S26: area ambience loops (birds, wind, frogs, the waterfall)
