@@ -327,6 +327,11 @@ local function TourneyPanel(scope: Scope, props: Props): Instance
 				LayoutOrder = 1,
 				Title = headline,
 				Value = value,
+				-- package A review: the open body says the sign-up time, the bracket and the invite's seconds in words;
+				-- a live tourney's level band only the header says
+				KeepValue = scope:Computed(function(use): boolean
+					return use(kind) == "live"
+				end),
 				Color = GOLD,
 				Open = notFolded,
 				OnClick = function()

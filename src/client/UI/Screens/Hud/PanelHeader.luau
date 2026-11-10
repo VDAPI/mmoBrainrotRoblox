@@ -8,6 +8,10 @@
 -- the stack (Logic/PhoneHud.LINE), so a folded panel is exactly its header (Logic/HudStack folds a panel to that line
 -- when the column has no room). The panels keep their open state on the account through Section.state (ids in
 -- Data/Folds/Hud.luau); the tracker's groups keep theirs in Logic/TrackerFold.
+-- Package A review (owner 2026-11-10, one home for a thing): the value stands in the header while the panel is folded.
+-- An open panel's body says it in words ("Zostało 12:34" under the name, the boss's HP on its bar, "Zapisy do 20:45"),
+-- so the open header leaves it out (`showsValue`). `KeepValue` keeps it while open where the body does not say it:
+-- the tracker's group summaries ("2/5 · 5:12") and a live tourney's level band.
 --
 --   PanelHeader.new(scope, { Title = name, Value = hp, Open = open, OnClick = toggle, Info = Text.T(scope, "...") })
 
@@ -27,7 +31,8 @@ type UsedAs<T> = Fusion.UsedAs<T>
 
 export type Props = {
 	Title: UsedAs<string>, -- the panel's name (at most 20 characters)
-	Value: UsedAs<string>?, -- its one key value ("" or nil: none)
+	Value: UsedAs<string>?, -- its one key value while folded ("" or nil: none)
+	KeepValue: UsedAs<boolean>?, -- the value stays while open too (the open body does not say it)
 	Open: UsedAs<boolean>, -- the arrow: "▾" open, "▸" folded
 	OnClick: () -> (), -- folds or opens (or brings a panel the column folded)
 	Info: UsedAs<string>?, -- the details behind an "i" (InfoTip)
@@ -46,6 +51,11 @@ local ARROW = 16
 local VALUE = 76
 local INFO = 28
 local ROW_GAP = 4
+
+-- Whether the header shows its value: a value, and the panel folded or the value kept while open (`KeepValue`).
+function PanelHeader.showsValue(text: string?, open: boolean, keep: boolean?): boolean
+	return text ~= nil and text ~= "" and (not open or keep == true)
+end
 
 -- The header's height: a phone's stack line, a tablet's touch minimum, PC's line.
 function PanelHeader.height(touch: boolean, compact: boolean): number
@@ -70,10 +80,10 @@ function PanelHeader.new(scope: Scope, props: Props): Instance
 			return use(fixed)
 		end)
 		else PanelHeader.Height(scope)
-	local openProp, valueProp, infoProp = props.Open, props.Value, props.Info
+	local openProp, valueProp, infoProp, keepProp = props.Open, props.Value, props.Info, props.KeepValue
 	local hasValue = scope:Computed(function(use): boolean
 		local text = if valueProp then use(valueProp) else nil
-		return text ~= nil and text ~= ""
+		return PanelHeader.showsValue(text, use(openProp) == true, if keepProp then use(keepProp) else nil)
 	end)
 	-- the "i" next to the value (nothing without `Info`, hidden while its text is empty)
 	local hasInfo = scope:Computed(function(use): boolean

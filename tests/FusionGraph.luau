@@ -148,7 +148,8 @@ function FusionGraph.new(): Graph
 				Enum = enum,
 				require = function(target: any): any
 					if type(target) ~= "string" then
-						return load(assert(paths[target], "FusionGraph: require of a non-module"))
+						local found: string = assert(paths[target], "FusionGraph: require of a non-module")
+						return load(found)
 					end
 					-- a string path (src/shared): from the module's folder; "@self" is an init module's own folder
 					local base = if isInit then path else dirname(path)

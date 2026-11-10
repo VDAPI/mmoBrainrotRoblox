@@ -323,6 +323,8 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 				LayoutOrder = order,
 				Title = label,
 				Value = summary or "",
+				-- package A review: the group's summary is said nowhere else, so it stays while the group is open
+				KeepValue = true,
 				Open = not isFolded,
 				Color = Theme.Iron.Heading,
 				OnClick = function()
