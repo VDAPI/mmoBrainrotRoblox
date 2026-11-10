@@ -850,10 +850,29 @@ T.describe("TooltipModel compact caps (owner 2026-11-10)", function()
 						.toEqual({ id, lang, true })
 					-- the details are a tap away: "More ▸" ends the short view on touch
 					T.expect(short[#short].role).toBe("moreHint")
+					T.expect(short[#short].text).toBe(Locale.T("ui.details.more", nil, lang))
 				end
 			end
 		end
 	)
+
+	T.it('the full view: under the details key on PC (Left Alt by default), under "More ▸" on touch', function()
+		local KeybindData = require("../src/shared/Data/Keybinds")
+		local action = assert(KeybindData.get("item_details"))
+		T.expect(action.default).toBe("LeftAlt")
+		T.expect(KeybindData.allowed[action.default]).toBe("Alt")
+		local item = sample("sword1h_60", Rarities.LEGENDARY, 3)
+		for _, lang in { "pl", "en" } do
+			local mouse = TooltipModel.build(item, nil, { lang = lang, view = "compact", input = "mouse" }).lines
+			T.expect(mouse[#mouse].text).toBe(Locale.T("tooltip.more.mouse", { key = "Alt" }, lang))
+			local touch = TooltipModel.build(item, nil, { lang = lang, view = "compact", input = "touch" }).lines
+			T.expect(touch[#touch].text).toBe(Locale.T("ui.details.more", nil, lang))
+			-- the full view on touch ends with "Less ▾", the way back
+			local full = TooltipModel.build(item, nil, { lang = lang, view = "full", input = "touch" }).lines
+			T.expect(full[#full].role).toBe("lessHint")
+			T.expect(#full > #touch).toBe(true)
+		end
+	end)
 
 	T.it("the skill bar tooltip: one line per compact part, at most SKILL_MAX_LINES", function()
 		local compact = 0

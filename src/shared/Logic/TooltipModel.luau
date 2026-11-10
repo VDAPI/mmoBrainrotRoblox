@@ -987,7 +987,7 @@ local function useEffectLines(b: Builder, def: ItemDef, lang: string): boolean
 		return false
 	end
 	-- owner 2026-11-10: a long effect (an everlasting dungeon stone, the Scroll of Protection) has its compact line
-	-- `<key>.short` ("item.x.desc" -> "item.x.short"); the full view keeps the whole text
+	-- `<key>.short` (item.<id>.desc -> item.<id>.short); the full view keeps the whole text
 	local shortKey = if string.sub(key, -5) == ".desc" then string.sub(key, 1, -6) .. ".short" else key .. ".short"
 	b.add(
 		"effect",
@@ -1508,13 +1508,14 @@ function TooltipModel.compactOf(full: { Line }, item: ItemInstance, c: Ctx, lang
 			for k = #effects, #effects - cut + 1, -1 do
 				table.remove(b.lines, effects[k])
 			end
-			table.insert(b.lines, after + 1, {
+			local more: Line = {
 				kind = "text",
 				role = "more",
 				text = Locale.T("tooltip.compact.more", { n = cut }, lang),
 				tone = "muted",
 				size = "small",
-			})
+			}
+			table.insert(b.lines, after + 1, more)
 			hidden = true
 		end
 	end
