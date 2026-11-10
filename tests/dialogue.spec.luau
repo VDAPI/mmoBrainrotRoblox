@@ -1330,3 +1330,312 @@ describe("Dialogue audit (S109)", function()
 		expect(#rows >= 8).toBe(true)
 	end)
 end)
+
+-- Pages that fit the window (owner 2026-11-10, UI pass package E) --------------------------------------------------
+-- A conversation page holds at most TextCaps dialogPage (140) characters in pl and en; the rest goes on under the
+-- page's continuation keys (Logic/Dialogue.parts, "Dalej ▸"), never deleted. An NPC greeting is one sentence of at
+-- most npcGreeting (60) characters, the lore behind the (i) of `<greeting key>.info`.
+
+local Npcs = require("../src/shared/Data/Npcs")
+local TextCaps = require("../src/shared/Logic/TextCaps")
+
+-- The placeholders of a text, sorted and joined ("{npc} … {n}" -> "n,npc").
+local function placeholdersOf(text: string): string
+	local names: { string } = {}
+	for name in string.gmatch(text, "{([%w_]+)}") do
+		table.insert(names, name)
+	end
+	table.sort(names)
+	return table.concat(names, ",")
+end
+
+-- Every page key a conversation shows: offer pages (or the story text), a side quest's progress, the hand-in, and
+-- the variants of a page by an earlier answer.
+local function conversationPages(): { string }
+	local out: { string } = {}
+	for _, item in Dialogue.allQuests() do
+		local quest = item.quest
+		for _, name in Dialogue.pageKeys(quest, item.kind) do
+			table.insert(out, `quest.{quest.id}.{name}`)
+		end
+		if quest.recall then
+			for pageKey, sourceId in quest.recall do
+				local source = questOf(sourceId)
+				for _, option in (if source and source.choices then source.choices.options else {}) :: { any } do
+					local key = `quest.{quest.id}.{pageKey}.{option.id}`
+					if hasKey(key) then
+						table.insert(out, key)
+					end
+				end
+			end
+		end
+	end
+	return out
+end
+
+-- The problems of `key` on `surface` in both languages ("en quest.x.p1: 152 > 140 chars").
+local function capProblems(key: string, surface: string, problems: { string })
+	for lang, tbl in { pl = pl :: any, en = en :: any } do
+		local text = tbl[key]
+		if type(text) ~= "string" then
+			table.insert(problems, `{lang} {key}: missing`)
+			continue
+		end
+		local ok, why = TextCaps.check(surface, TextCaps.expand(text))
+		if not ok then
+			table.insert(problems, `{lang} {key}: {why}`)
+		end
+		if string.find(text, "—", 1, true) then
+			table.insert(problems, `{lang} {key}: em dash`)
+		end
+	end
+end
+
+describe("Dialogue pages fit the window (owner 2026-11-10)", function()
+	it("partKey: a key that ends in a digit takes a letter, any other a number", function()
+		expect(Dialogue.partKey("quest.x.p1", 1)).toBe("quest.x.p1")
+		expect(Dialogue.partKey("quest.x.p1", 2)).toBe("quest.x.p1b")
+		expect(Dialogue.partKey("quest.x.p1", 3)).toBe("quest.x.p1c")
+		expect(Dialogue.partKey("quest.x.done", 2)).toBe("quest.x.done2")
+		expect(Dialogue.partKey("quest.x.text", 3)).toBe("quest.x.text3")
+		expect(Dialogue.partKey("quest.x.p2.why", 2)).toBe("quest.x.p2.why2")
+	end)
+
+	it("parts stop at the first gap, and paged gives the last part of each page", function()
+		local known = { ["q.p1"] = true, ["q.p1b"] = true, ["q.p1d"] = true, ["q.done"] = true, ["q.done2"] = true }
+		local function has(key: string): boolean
+			return known[key] == true
+		end
+		expect(Dialogue.parts("q.p1", has)).toEqual({ "q.p1", "q.p1b" })
+		expect(Dialogue.parts("q.p2", has)).toEqual({ "q.p2" })
+		local shown, ends = Dialogue.paged({ "q.p1", "q.p2", "q.done" }, has)
+		expect(shown).toEqual({ "q.p1", "q.p1b", "q.p2", "q.done", "q.done2" })
+		expect(ends).toEqual({ 2, 3, 5 })
+	end)
+
+	it("whole reads a split page as one text (the journal's recall, the wiki)", function()
+		local key = "quest.ashRoad.done"
+		expect(hasKey(Dialogue.partKey(key, 2))).toBe(true)
+		for lang, tbl in { pl = pl :: any, en = en :: any } do
+			expect(Dialogue.whole(key, nil, lang)).toBe(`{tbl[key]} {tbl[Dialogue.partKey(key, 2)]}`)
+		end
+		expect(Dialogue.whole("quest.healer.p1", nil, "en")).toBe((en :: any)["quest.healer.p1"])
+	end)
+
+	it("every page and every part of it holds at most 140 characters in pl and en", function()
+		local problems: { string } = {}
+		for _, key in conversationPages() do
+			if not hasKey(key) then
+				continue -- a page a quest does not have (a story quest without `done`): Dialogue.validate's job
+			end
+			for _, part in Dialogue.parts(key, hasKey) do
+				capProblems(part, "dialogPage", problems)
+			end
+		end
+		expect(problems).toEqual({})
+	end)
+
+	it("continuation keys exist in both languages, with the page's placeholders and no gap", function()
+		local problems: { string } = {}
+		local reached: { [string]: boolean } = {}
+		for _, key in conversationPages() do
+			if not hasKey(key) then
+				continue
+			end
+			local pagePl, pageEn = {}, {}
+			local gap = false
+			for n = 1, Dialogue.MAX_PARTS + 1 do
+				local part = Dialogue.partKey(key, n)
+				local inPl, inEn = (pl :: any)[part] ~= nil, (en :: any)[part] ~= nil
+				if inPl ~= inEn then
+					table.insert(problems, `{part}: only in {if inPl then "pl" else "en"}`)
+				end
+				if not (inPl and inEn) then
+					gap = true
+					continue
+				end
+				if gap or n > Dialogue.MAX_PARTS then
+					table.insert(problems, `{part}: never shown (a gap before it, or past {Dialogue.MAX_PARTS} parts)`)
+					continue
+				end
+				if n > 1 then
+					reached[part] = true
+				end
+				table.insert(pagePl, (pl :: any)[part])
+				table.insert(pageEn, (en :: any)[part])
+			end
+			-- a placeholder may move to another part of the page, but the page as a whole keeps the same ones
+			local plNames = placeholdersOf(table.concat(pagePl, " "))
+			local enNames = placeholdersOf(table.concat(pageEn, " "))
+			if plNames ~= enNames then
+				table.insert(problems, `{key}: placeholders pl [{plNames}] en [{enNames}]`)
+			end
+		end
+		-- a continuation key no page reaches would never be shown
+		for key in pl :: any do
+			local base = string.match(key, "^(quest%.[%w_]+%.p%d)[b-z]$")
+				or string.match(key, "^(quest%.[%w_]+%.done)%d$")
+				or string.match(key, "^(quest%.[%w_]+%.text)%d$")
+				or string.match(key, "^(quest%.[%w_]+%.progress)%d$")
+				or string.match(key, "^(quest%.[%w_]+%.p%d%.%a+)%d$")
+				or string.match(key, "^(quest%.[%w_]+%.done%.%a+)%d$")
+			if base and hasKey(base) and not reached[key] then
+				table.insert(problems, `{key}: a continuation no page reaches`)
+			end
+		end
+		expect(problems).toEqual({})
+		expect(reached["quest.ashRoad.done2"]).toBe(true)
+	end)
+
+	it("NPC greetings are one sentence of at most 60, the lore in .info in both languages", function()
+		local problems: { string } = {}
+		local seen: { [string]: boolean } = {}
+		local function greeting(key: string)
+			if seen[key] or not hasKey(key) then
+				return
+			end
+			seen[key] = true
+			capProblems(key, "npcGreeting", problems)
+			local info = `{key}.info`
+			local inPl, inEn = (pl :: any)[info] ~= nil, (en :: any)[info] ~= nil
+			if inPl ~= inEn then
+				table.insert(problems, `{info}: only in {if inPl then "pl" else "en"}`)
+			elseif inPl then
+				capProblems(info, "infoTip", problems)
+			end
+		end
+		for id, def in Npcs.byId do
+			greeting(def.greetingKey)
+			greeting(`npc.{id}.greetingSpring`)
+		end
+		expect(problems).toEqual({})
+		expect(hasKey("npc.blacksmith.greeting.info")).toBe(true)
+	end)
+
+	it("NPC lines and the innkeeper's gossip fit the dialogue's line box (140)", function()
+		local problems: { string } = {}
+		for id, def in Npcs.byId do
+			for n = 1, (def :: any).lines or 0 do
+				capProblems(`npc.{id}.line{n}`, "dialogPage", problems)
+			end
+			if (def :: any).gossip then
+				for n = 1, 3 do
+					capProblems(`npc.{id}.gossip{n}`, "dialogPage", problems)
+				end
+			end
+		end
+		expect(problems).toEqual({})
+	end)
+
+	-- the same box shows a quest's line at the NPC of its talk / deliver objective (UI/Screens/NpcDialog.questLine);
+	-- a longer line keeps the rest behind the (i) of `<line key>.info`
+	it("a quest's line at an NPC fits the line box (140), the rest in .info in both languages", function()
+		local problems: { string } = {}
+		local seen: { [string]: boolean } = {}
+		for _, item in Dialogue.allQuests() do
+			for _, objective in item.quest.objectives or {} do
+				local line = (objective :: any).line
+				if type(line) ~= "string" or seen[line] then
+					continue
+				end
+				seen[line] = true
+				capProblems(line, "dialogPage", problems)
+				local info = `{line}.info`
+				local inPl, inEn = (pl :: any)[info] ~= nil, (en :: any)[info] ~= nil
+				if inPl ~= inEn then
+					table.insert(problems, `{info}: only in {if inPl then "pl" else "en"}`)
+				elseif inPl then
+					capProblems(info, "infoTip", problems)
+				end
+			end
+		end
+		expect(problems).toEqual({})
+		expect(seen["quest.burntTemple.kaspar"]).toBe(true)
+		expect(hasKey("quest.burntTemple.kaspar.info")).toBe(true)
+	end)
+
+	it("the hunting contract's pages fit the conversation (140) after the sample area and monster", function()
+		local problems: { string } = {}
+		for _, key in { "contract.text", "contract.progress", "contract.done" } do
+			capProblems(key, "dialogPage", problems)
+		end
+		expect(problems).toEqual({})
+	end)
+end)
+
+-- Quest lines teach no controls (review 2026-11-10, UI pass package E) --------------------------------------------
+-- An objective is a line of the HUD tracker on every device (UI-ZASADY §3: no control words, no "(K)" key hints), and
+-- the text scan never sees it, since QuestText.rows builds its key as `quest.obj.{type}`. A quest's text and its pages
+-- are read on a phone too. The tutorial tile (package A) teaches each control in the device's own words.
+
+local TextScan = require("./TextScan")
+
+-- The control word or key hint in a quest text (nil when none). A story may still say that wolves drag their prey.
+local function controlIn(text: string, story: boolean): string?
+	local found = TextScan.control(text)
+	if found and story and string.find(found, "^drag") then
+		found = nil
+	end
+	if not found and string.find(string.lower(text), "dwuklik", 1, true) then
+		found = "dwuklik"
+	end
+	return found
+end
+
+describe("Quest lines teach no controls (review 2026-11-10)", function()
+	it("objective lines (the HUD tracker) have no control word or key hint in pl and en", function()
+		local problems: { string } = {}
+		local count = 0
+		for key in pl :: any do
+			if string.sub(key, 1, 10) ~= "quest.obj." then
+				continue
+			end
+			count += 1
+			for lang, tbl in { pl = pl :: any, en = en :: any } do
+				local text = tbl[key]
+				local found = if type(text) == "string" then controlIn(text, false) else "missing"
+				if found then
+					table.insert(problems, `{lang} {key}: {found}`)
+				end
+			end
+		end
+		table.sort(problems)
+		expect(problems).toEqual({})
+		expect(count >= 20).toBe(true)
+		expect(controlIn("Podnieś łup (F)", false)).toBe("(F)")
+		expect(controlIn("Załóż nowy plecak (dwuklik)", false)).toBe("dwuklik")
+		expect(controlIn("Equip the new backpack (double-click)", false)).toBe("click")
+	end)
+
+	it("quest texts and conversation pages have no click or key hint in pl and en", function()
+		local problems: { string } = {}
+		local keys: { string } = {}
+		for _, item in Dialogue.allQuests() do
+			table.insert(keys, `quest.{item.quest.id}.text`)
+		end
+		for _, key in conversationPages() do
+			table.insert(keys, key)
+		end
+		local seen: { [string]: boolean } = {}
+		for _, key in keys do
+			if seen[key] or not hasKey(key) then
+				continue
+			end
+			seen[key] = true
+			for _, part in Dialogue.parts(key, hasKey) do
+				for lang, tbl in { pl = pl :: any, en = en :: any } do
+					local found = controlIn(tbl[part], true)
+					if found then
+						table.insert(problems, `{lang} {part}: {found}`)
+					end
+				end
+			end
+		end
+		table.sort(problems)
+		expect(problems).toEqual({})
+		expect(seen["quest.firstHunt.text"]).toBe(true)
+		expect(seen["quest.gearUp.p2"]).toBe(true)
+		expect(controlIn("The wolves dragged it to their den.", true)).toBe(nil)
+		expect(controlIn("Kliknij królika.", true)).toBe("kliknij")
+	end)
+end)

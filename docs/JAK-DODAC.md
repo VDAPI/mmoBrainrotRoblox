@@ -292,6 +292,36 @@
   `CameraController.Release("<właściciel>")` (gracz dostaje kamerę z powrotem, gdy nikt jej nie trzyma). Bez właściciela
   strażnik oddaje kamerę po 0,5 s; `cameralease.spec` pilnuje, że `Scriptable` pisze tylko `CameraController` (i pisarz
   przerywnika).
+- **Okno ze stopką, przewijaniem i przyciskiem w nagłówku** (2026-11-10, plan UI, pakiet C; `docs/UI-ZASADY.md` §7):
+  `build` w `WindowManager.Register` zwraca zamiast samej treści `Window.Parts`: `{ Content = ..., Footer = { przyciski
+  }, Scroll = true, HeaderAction = { Text, OnClick, Visible? } }`. Główny przycisk idzie do `Footer` (52, przypięta pod
+  treścią; miejsce nad nią daje `WindowFrame.body`), długa treść ma jedno przewijanie (`Scroll`), przycisk w nagłówku
+  stoi przed ✕ (na dotyku jego miejsce bierze przełącznik usługi i plecaka). Wiersz listy to `ListRow` (48) albo
+  `ListRow` z `Tall = true` (64, z linią `Sub`), bez własnej `Height`; zakładki to `Tabs` bez własnej wysokości (rząd sam
+  się zwęża i przewija). Modal: `WindowManager.ShowModal` z krótkim `Message` (do 90) i resztą w `Details`. Pas
+  przycisków na dole okna (stopkę) tooltip przedmiotu na dotyku omija sam, a okno z przyciskami akcji w innym miejscu
+  (przy slotach) zgłasza ich ramkę przez `ItemTooltip.avoid(scope, ramka)`, żeby ich nie zasłaniał; własny dymek
+  stawia `Popover.place` w obszarze `Tooltip.SafeArea`.
+- **Okno świata z listą i długa kwestia** (2026-11-10, plan UI, pakiet E): prostokąty okna (nagłówek, zakładki, lista,
+  stopka, przyciski) liczy funkcja w `Logic/WorldLayout` z treści okna (`WindowFrame.content`) i urządzenia
+  (`WorldLayout.device(touch, compact)`: `pc`, `tablet`, `phone`), wysokości nagłówka sekcji i tekstu z
+  `WorldLayout.SECTION` (spec sprawdza je z `Components/Section` i `Theme`); okno czyta wynik w `Computed`, bez
+  własnych liczb: z `WorldLayout.CHROME`, gdy lista wypełnia resztę ramki, albo ze zmierzonej treści
+  (`Out("AbsoluteSize")`, `Scale.toVirtual`), gdy od niej zależy podział (rozmowa z NPC, bestiariusz). Test w
+  `tests/worldlayout.spec.luau` na wszystkich ekranach i pasku Robloxa 0, 36, 58: bez ujemnych rozmiarów, na telefonie
+  co najmniej 2 wiersze listy, na PC 5, przyciski przypięte. Część, która może się zwinąć, to `Section` z id w
+  `Data/Folds/World` (ustawienia: `Menu`), a plik okna na liście testu sekcji. Kwestia dłuższa niż 140 znaków (strona
+  rozmowy `quest.<id>.p1`, `.done`): dalszy ciąg pod kluczem ciągu (`p1` → `p1b`, `p1c`; `done` → `done2`;
+  `Logic/Dialogue.partKey`, najwyżej 4 części), PL i EN z tymi samymi znacznikami; `QuestDialog` pokazuje go po
+  „Dalej ▸”, dziennik i wiki czytają całość (`Dialogue.whole`), test `tests/dialogue.spec`. Linia questu mówiona u NPC
+  (`line` celu `talk` / `deliver`, np. `quest.<id>.<npc>`) nie ma stron: najwyżej 140 znaków, reszta w
+  `<klucz linii>.info` (PL i EN), którą `NpcDialog` pokazuje za (i); podpowiedź pola tekstowego do 20 znaków
+  (`tests/worldlayout.spec` czyta je z plików pakietu). Ekran w warstwie okien poza ramką okna (koło emotek, łowienie)
+  liczy układ z rozmiaru tej warstwy, czyli bezpiecznego obszaru urządzenia: `Scale.HudSize` z paskiem Robloxa nad nim
+  (`Scale.TopBar / Scale.Value`), nie `Scale.VirtualSize`. Zwinięta sekcja, w której coś czeka (np. zlecenia do
+  oddania), mówi to w tytule albo w `Summary`, a `WorldLayout` liczy tę wysokość. Nowy typ celu questu
+  (`quest.obj.<typ>`, linia tropiciela na każdym urządzeniu) i tekst questu nie mają nazw klawiszy ani słów sterowania
+  („(F)”, „kliknij”, „dwuklik”; `tests/dialogue.spec`).
 - **Układ okna z prostokąta treści** (plan UI 2026-11-10, pakiet D; właściciel: „niektóre rzeczy zasłaniają inne”):
   kolumny, listy i przyciski okna przedmiotów i postaci liczy czysta funkcja w `Logic/GearLayout` z rozmiaru treści
   okna (`WindowFrame.content` albo część pod zakładkami okna), nigdy z ekranu (`Scale.VirtualSize`). W widoku:

@@ -4,6 +4,10 @@
 -- (UI/Screens/PartyFinder) and "Recent fights" (the fight log window).
 -- 2026-10-21 (owner: too many descriptions): the loot rules are no longer a block of text under the list; they sit
 -- behind the "i" of the bonus lines (Components/InfoTip), the bonus lines are short, "not in a party" is one line.
+-- Owner 2026-11-10 ("bardzo dużo napisów, niektóre rzeczy zasłaniają inne"; UI plan E, Logic/WorldLayout.party): the
+-- bonus is one line (the pool, the variety while it pays) with the variety rule, Fortune and the loot rules behind its
+-- (i); the tabs, the invite row and the rows come from WorldLayout. A phone puts the invite, the chat and "Leave" into
+-- one row on top and its rows are 52 tall, so at least three members show.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TextChatService = game:GetService("TextChatService")
@@ -11,6 +15,7 @@ local TextChatService = game:GetService("TextChatService")
 local ArtIcon = require(script.Parent.Parent.Components.ArtIcon)
 local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
+local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GroupLuck = require(script.Parent.Parent.GroupLuck)
 local InfoLine = require(script.Parent.Parent.Components.InfoLine)
@@ -20,6 +25,7 @@ local PartyBonus = require(ReplicatedStorage.Shared.Logic.PartyBonus)
 local PartyLoot = require(ReplicatedStorage.Shared.Logic.PartyLoot)
 local PartyFinder = require(script.Parent.PartyFinder)
 local PathBadge = require(script.Parent.Parent.Components.PathBadge)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local Progression = require(ReplicatedStorage.Shared.Data.Progression)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
@@ -30,6 +36,7 @@ local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
 local UiArtState = require(script.Parent.Parent.UiArtState)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children = Fusion.Children
 
@@ -67,10 +74,10 @@ local function setChat(party: boolean): boolean
 	return true
 end
 
-local function bar(scope: Scope, ratio: Fusion.UsedAs<number>, color: Color3, y: number): Instance
+local function bar(scope: Scope, ratio: Fusion.UsedAs<number>, color: Color3, y: number, left: number): Instance
 	return scope:New("Frame")({
-		Position = UDim2.fromOffset(70, y),
-		Size = UDim2.new(1, -250, 0, 10),
+		Position = UDim2.fromOffset(left, y),
+		Size = UDim2.new(1, -(left + 180), 0, if left < 70 then 8 else 10),
 		BackgroundColor3 = Theme.Resource.Track,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = UDim.new(0, 4) }),
@@ -91,13 +98,21 @@ export type Options = {
 	Guide: ((place: any, labelKey: string) -> ())?,
 }
 
-local TAB_BAR = 48 -- S134f: the tab strip above the content
-
 local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 	local party = State.Value({ "party" })
 	local myId = game:GetService("Players").LocalPlayer.UserId
 	local inviteName = scope:Value("")
 	local partyChat = scope:Value(false)
+	-- Logic/WorldLayout.party: the tabs (S134f), the invite row, the rows, the bonus line and the footer of this device
+	local layout = scope:Computed(function(use): WorldLayout.Party
+		local device: WorldLayout.Device = WorldLayout.device(use(Device.Touch) == true, use(PhoneLayout.Compact))
+		return WorldLayout.party(WorldLayout.CHROME, device)
+	end)
+	local function sized(build: (l: WorldLayout.Party) -> UDim2): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			return build(use(layout))
+		end)
+	end
 
 	local amLeader = scope:Computed(function(use): boolean
 		local p = use(party)
@@ -106,6 +121,11 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 
 	local rows = scope:Computed(function(use, s: Scope): { Instance }
 		local p = use(party)
+		local l = use(layout)
+		local avatar = l.avatar
+		local inset = (l.row - avatar) / 2
+		local left = avatar + inset + 14
+		local compact = l.row < 64
 		local list = {}
 		if type(p) ~= "table" then
 			table.insert(
@@ -129,14 +149,14 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 				list,
 				s:New("Frame")({
 					LayoutOrder = i,
-					Size = UDim2.new(1, 0, 0, 64),
+					Size = UDim2.new(1, 0, 0, l.row),
 					BackgroundColor3 = Theme.Paper.Raised,
 					BackgroundTransparency = 0.35,
 					[Children] = {
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						s:New("TextLabel")({
-							Position = UDim2.fromOffset(8, 8),
-							Size = UDim2.fromOffset(48, 48),
+							Position = UDim2.fromOffset(inset, inset),
+							Size = UDim2.fromOffset(avatar, avatar),
 							BackgroundColor3 = Theme.Paper.Surface,
 							-- S119: class emblem once loaded (glyph otherwise).
 							Text = s:Computed(function(use2): string
@@ -158,10 +178,10 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 								}),
 							},
 						}),
-						PathBadge.new(s, use, member.path, 18, UDim2.fromOffset(40, 40)) :: any,
+						PathBadge.new(s, use, member.path, 18, UDim2.fromOffset(avatar - 8, avatar - 8)) :: any,
 						s:New("TextLabel")({
-							Position = UDim2.fromOffset(70, 6),
-							Size = UDim2.new(1, -250, 0, 24),
+							Position = UDim2.fromOffset(left, if compact then 4 else 6),
+							Size = UDim2.new(1, -(left + 180), 0, if compact then 22 else 24),
 							BackgroundTransparency = 1,
 							Text = `{if isLeader then "♛ " else ""}{member.name}  ·  {Text.get(use, "hud.level", {
 								level = member.level,
@@ -174,8 +194,20 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 							TextXAlignment = Enum.TextXAlignment.Left,
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
-						bar(s, member.hp / math.max(1, member.maxHp), Theme.Resource.Hp, 34),
-						bar(s, member.mana / math.max(1, member.maxMana), Theme.Resource.Mana, 48),
+						bar(
+							s,
+							member.hp / math.max(1, member.maxHp),
+							Theme.Resource.Hp,
+							if compact then 28 else 34,
+							left
+						),
+						bar(
+							s,
+							member.mana / math.max(1, member.maxMana),
+							Theme.Resource.Mana,
+							if compact then 40 else 48,
+							left
+						),
 						Button(s, {
 							AnchorPoint = Vector2.new(1, 0.5),
 							Position = UDim2.new(1, -92, 0.5, 0),
@@ -209,10 +241,10 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 	-- S60: the class variety bonus of the party (potential: the kill counts members within range) and Fortune.
 	-- S134b: above it the monster EXP/gold pool of the whole party (potential: only members nearby, fighting and not
 	-- carried grow it, Logic/PartyLoot).
-	local bonusText = scope:Computed(function(use): string
+	local bonusLines = scope:Computed(function(use): { string }
 		local p = use(party)
 		if type(p) ~= "table" then
-			return ""
+			return {}
 		end
 		local classes: { string } = {}
 		for _, member in p.members do
@@ -235,24 +267,99 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 				{ per = Progression.varietyPerClass, max = Progression.varietyMax }
 			)
 		local luckLine = GroupLuck.line(use, GroupLuck.use(use))
-		local text = poolLine .. "\n" .. line
-		return if luckLine then text .. "\n" .. luckLine else text
+		-- the one line: the pool, and the variety while it pays; the full lines go behind the (i)
+		local short = if pct > 0 then `{poolLine}  ·  {line}` else poolLine
+		local out = { short, poolLine, line }
+		if luckLine then
+			table.insert(out, luckLine)
+		end
+		return out
+	end)
+	local bonusText = scope:Computed(function(use): string
+		return use(bonusLines)[1] or ""
+	end)
+	local bonusInfo = scope:Computed(function(use): string
+		local lines = table.clone(use(bonusLines))
+		table.remove(lines, 1)
+		table.insert(lines, "")
+		table.insert(lines, Text.get(use, "party.rules", { gap = Progression.partyCarryGap }))
+		return table.concat(lines, "\n")
+	end)
+	local inParty = scope:Computed(function(use): boolean
+		return type(use(party)) == "table"
+	end)
+	local function chatButton(s: Scope, size: Fusion.UsedAs<UDim2>, position: Fusion.UsedAs<UDim2>?): Instance
+		return Button(s, {
+			Size = size,
+			Position = position,
+			TextSize = Theme.TextSize.Small,
+			Text = s:Computed(function(use): string
+				return Text.get(use, if use(partyChat) then "party.chatParty" else "party.chatGeneral")
+			end),
+			OnClick = function()
+				local want = not Fusion.peek(partyChat)
+				if setChat(want) then
+					partyChat:set(want)
+				end
+			end,
+		})
+	end
+	local function leaveButton(s: Scope, size: Fusion.UsedAs<UDim2>): Instance
+		return Button(s, {
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.fromScale(1, 0),
+			Size = size,
+			Variant = "danger",
+			TextSize = Theme.TextSize.Small,
+			Text = Text.T(s, "party.leave"),
+			OnClick = function()
+				setChat(false)
+				partyChat:set(false)
+				task.spawn(invoke, "PartyLeave")
+			end,
+		})
+	end
+	-- a phone: the chat and "Leave" at the invite row's right (in a party)
+	local PHONE_CHAT, PHONE_LEAVE = 150, 130
+	local phoneButtons = scope:Computed(function(use, s: Scope): { Instance }
+		if use(layout).footer > 0 or not use(inParty) then
+			return {}
+		end
+		return {
+			chatButton(
+				s,
+				UDim2.fromOffset(PHONE_CHAT, Theme.Size.MinTouch),
+				UDim2.new(1, -(PHONE_LEAVE + PHONE_CHAT + 8), 0, 0)
+			),
+			leaveButton(s, UDim2.fromOffset(PHONE_LEAVE, Theme.Size.MinTouch)),
+		}
+	end)
+	-- the invite field and its button: narrower on a phone in a party (the chat and "Leave" beside them)
+	local inviteRight = scope:Computed(function(use): number
+		return if use(layout).footer == 0 and use(inParty) then PHONE_LEAVE + PHONE_CHAT + 16 else 0
 	end)
 
 	local content = {
 		scope:New("Frame")({
 			Name = "Invite",
-			Size = UDim2.new(1, 0, 0, 48),
+			Size = sized(function(l)
+				return UDim2.new(1, 0, 0, l.invite)
+			end),
 			BackgroundTransparency = 1,
 			[Children] = {
 				TextInput(scope, {
-					Size = UDim2.new(1, -170, 0, 44),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.new(1, -(170 + use(inviteRight)), 0, 44)
+					end),
 					Text = inviteName,
 					Placeholder = Text.T(scope, "party.invitePlaceholder"),
 				}),
+				phoneButtons :: any,
 				Button(scope, {
 					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.fromScale(1, 0),
+					Position = scope:Computed(function(use): UDim2
+						return UDim2.new(1, -use(inviteRight), 0, 0)
+					end),
 					Size = UDim2.fromOffset(160, 44),
 					Variant = "primary",
 					Text = Text.T(scope, "party.invite"),
@@ -272,34 +379,47 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 			},
 		}),
 		scope:New("ScrollingFrame")({
-			Position = UDim2.fromOffset(0, 58),
-			Size = UDim2.new(1, 0, 1, -188),
+			Position = sized(function(l)
+				return UDim2.fromOffset(0, l.invite)
+			end),
+			Size = sized(function(l)
+				return UDim2.new(1, 0, 1, -(l.invite + l.bonus + l.footer))
+			end),
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			ScrollBarThickness = 6,
 			[Children] = {
-				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+				scope:New("UIListLayout")({
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = scope:Computed(function(use): UDim
+						return UDim.new(0, use(layout).list.gap)
+					end),
+				}),
 				scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
 				rows :: any,
 			},
 		}),
-		-- the bonus lines (pool, classes, Fortune) with the loot rules behind the "i" at their right
+		-- the bonus line (the pool, the variety while it pays) with the rest and the loot rules behind the "i"
 		scope:New("Frame")({
 			Name = "Bonus",
-			Position = UDim2.new(0, 0, 1, -126),
-			Size = UDim2.new(1, 0, 0, 60),
-			BackgroundTransparency = 1,
-			Visible = scope:Computed(function(use): boolean
-				return type(use(party)) == "table"
+			AnchorPoint = Vector2.new(0, 1),
+			Position = sized(function(l)
+				return UDim2.new(0, 0, 1, -l.footer)
 			end),
+			Size = sized(function(l)
+				return UDim2.new(1, 0, 0, l.bonus)
+			end),
+			BackgroundTransparency = 1,
+			Visible = inParty,
 			[Children] = {
 				scope:New("TextLabel")({
-					Size = UDim2.new(1, -36, 1, 0),
+					Size = UDim2.new(1, -36, 0, 22),
+					Position = UDim2.fromOffset(0, 4),
 					BackgroundTransparency = 1,
 					Text = bonusText,
-					TextWrapped = true,
+					TextTruncate = Enum.TextTruncate.AtEnd,
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Paper.Heading,
@@ -309,44 +429,23 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 				InfoTip.new(scope, {
 					Name = "Rules",
 					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.new(1, -6, 0, 0),
-					Text = Text.T(scope, "party.rules", { gap = Progression.partyCarryGap }),
+					Position = UDim2.new(1, -6, 0, 2),
+					Text = bonusInfo,
 				}),
 			},
 		}),
+		-- PC and a tablet: the chat and "Leave" pinned at the bottom
 		scope:New("Frame")({
 			AnchorPoint = Vector2.new(0, 1),
 			Position = UDim2.fromScale(0, 1),
-			Size = UDim2.new(1, 0, 0, 48),
+			Size = UDim2.new(1, 0, 0, 46),
 			BackgroundTransparency = 1,
 			Visible = scope:Computed(function(use): boolean
-				return type(use(party)) == "table"
+				return use(inParty) and use(layout).footer > 0
 			end),
 			[Children] = {
-				Button(scope, {
-					Size = UDim2.fromOffset(220, 46),
-					Text = scope:Computed(function(use): string
-						return Text.get(use, if use(partyChat) then "party.chatParty" else "party.chatGeneral")
-					end),
-					OnClick = function()
-						local want = not Fusion.peek(partyChat)
-						if setChat(want) then
-							partyChat:set(want)
-						end
-					end,
-				}),
-				Button(scope, {
-					AnchorPoint = Vector2.new(1, 0),
-					Position = UDim2.fromScale(1, 0),
-					Size = UDim2.fromOffset(180, 46),
-					Variant = "danger",
-					Text = Text.T(scope, "party.leave"),
-					OnClick = function()
-						setChat(false)
-						partyChat:set(false)
-						task.spawn(invoke, "PartyLeave")
-					end,
-				}),
+				chatButton(scope, UDim2.fromOffset(220, 46)),
+				leaveButton(scope, UDim2.fromOffset(180, 46)),
 			},
 		}),
 	}
@@ -355,8 +454,12 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 	local tab = scope:Value("members")
 	local members = scope:New("Frame")({
 		Name = "Members",
-		Position = UDim2.fromOffset(0, TAB_BAR),
-		Size = UDim2.new(1, 0, 1, -TAB_BAR),
+		Position = sized(function(l)
+			return UDim2.fromOffset(0, l.tabs)
+		end),
+		Size = sized(function(l)
+			return UDim2.new(1, 0, 1, -l.tabs)
+		end),
 		BackgroundTransparency = 1,
 		Visible = scope:Computed(function(use): boolean
 			return use(tab) == "members"
@@ -370,8 +473,8 @@ local function PartyWindow(scope: Scope, options: Options): Fusion.Child
 		return {
 			s:New("Frame")({
 				Name = "Finder",
-				Position = UDim2.fromOffset(0, TAB_BAR),
-				Size = UDim2.new(1, 0, 1, -TAB_BAR),
+				Position = UDim2.fromOffset(0, use(layout).tabs),
+				Size = UDim2.new(1, 0, 1, -use(layout).tabs),
 				BackgroundTransparency = 1,
 				[Children] = { PartyFinder(s, { Guide = options.Guide }) },
 			}),

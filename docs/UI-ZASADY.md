@@ -109,11 +109,15 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
   - Ustawienia: Dźwięk, Grafika, Walka i Interfejs otwarte; Łupy, Społeczność i Klawisze zwinięte; na dotyku bez
     Klawiszy.
   - Dziennik: historia i ukończone wątki zwinięte.
-  - Mapa: legenda i sklepy NPC zwinięte.
+  - Mapa: legenda zwinięta na telefonie, sklepy NPC zwinięte.
   - Gildia: dziennik i ustawienia zwinięte.
-  - Tablica zadań: blok polowań zwinięty.
+  - Tablica zadań: blok polowań zwinięty na telefonie; zwinięty ma w nagłówku „Gotowe: n · Do przyjęcia: n”.
   - Rankingi: podium zwinięte na telefonie.
   - Bestiariusz: regiony zwinięte na telefonie.
+  - Linię podsumowania zastępuje tytuł, który sam mówi, co czeka: „Ukończone (n)” w dzienniku, wybrany region w
+    bestiariuszu, liczniki bloku polowań. Bez podsumowania są sekcje, w których nic nie czeka: podium rankingów (ci
+    sami gracze stoją w tabeli), historia dziennika, legenda i sklepy NPC na mapie, dziennik, herb i uprawnienia
+    gildii, grupy ustawień.
 
 ## 5. HUD
 

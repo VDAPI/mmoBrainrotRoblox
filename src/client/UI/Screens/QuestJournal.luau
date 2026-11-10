@@ -48,6 +48,7 @@ local QuestRewards = require(script.Parent.Parent.Components.QuestRewards)
 local QuestText = require(script.Parent.Parent.QuestText)
 local QuestTrack = require(script.Parent.Parent.QuestTrack)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
+local Section = require(script.Parent.Parent.Components.Section)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
@@ -391,7 +392,9 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 								local saved = State.Get({ "character", "quests" })
 								local texts: { string } = {}
 								for i = 1, pages do
-									table.insert(texts, Text.now(Dialogue.pageKey(storyQuest, `p{i}`, saved, hasText)))
+									-- owner 2026-11-10: a page split into parts (Logic/Dialogue.parts) reads whole here
+									local key = Dialogue.pageKey(storyQuest, `p{i}`, saved, hasText)
+									table.insert(texts, Dialogue.whole(key, nil, Fusion.peek(Text.Lang)))
 								end
 								props.ShowModal({
 									Title = Text.now(`quest.{storyQuest.id}.title`),
@@ -494,21 +497,10 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					)
 				end
 			end
-			-- Story so far (S102: by chapter, one row per quest, "▶" for its watched cutscenes)
+			-- Story so far (S102: by chapter, one row per quest, "▶" for its watched cutscenes). Owner 2026-11-10 (UI plan
+			-- E, up to 70 rows): a Section folded by default, the choice saved on the account (Data/Folds/World)
 			local doneCount = math.min(q.mainDone or 0, #Quests.Main.list)
-			if doneCount > 0 then
-				table.insert(
-					list,
-					label(
-						s,
-						10,
-						`<b>{Text.get(use, "quest.history")}</b>`,
-						Theme.Fonts.BodyBold,
-						Theme.TextSize.Small,
-						Theme.Paper.Heading
-					)
-				)
-			end
+			local history: { Instance } = {}
 			local scenes: { [string]: boolean } = if type(q.scenes) == "table" then q.scenes else {}
 			local chapter = 0
 			for i = 1, doneCount do
@@ -517,10 +509,10 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				if n ~= chapter then
 					chapter = n
 					table.insert(
-						list,
+						history,
 						label(
 							s,
-							10 + i * 2,
+							i * 2,
 							Text.get(use, `story.chapter.{n}`),
 							Theme.Fonts.BodyBold,
 							Theme.TextSize.Small,
@@ -556,9 +548,9 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					Tooltip.attach(s, button :: GuiObject, Text.T(s, "quest.journal.replay"))
 				end
 				table.insert(
-					list,
+					history,
 					s:New("Frame")({
-						LayoutOrder = 11 + i * 2,
+						LayoutOrder = 1 + i * 2,
 						Size = UDim2.new(1, 0, 0, 28),
 						BackgroundTransparency = 1,
 						[Children] = {
@@ -577,6 +569,18 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 					})
 				)
 			end
+			if doneCount > 0 then
+				table.insert(
+					list,
+					Section.new(s, {
+						Id = "journalHistory",
+						LayoutOrder = 10,
+						Title = Text.T(s, "quest.history"),
+						Padding = 2,
+						Children = history,
+					})
+				)
+			end
 		elseif use(tab) == "side" then
 			local order = 0
 			local function add(item: Instance)
@@ -587,6 +591,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			local lvl = use(level) or 1
 			local active = SideQuests.activeOf(q)
 			local anything = false
+			-- owner 2026-11-10 (UI plan E): an arc with every quest done and nothing to take folds with the others
+			local finishedArcs: { Instance } = {}
 			for _, arc in Quests.Side.ARCS do
 				local done, total = SideQuests.arcProgress(q, arc)
 				local arcQuests: { Quests.SideQuest } = Quests.Side.byArc[arc] or {}
@@ -684,20 +690,33 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 				if #shown > 0 or done > 0 then
 					anything = true
 					local arcName = Text.get(use, `quest.arc.{arc}`)
-					add(
-						label(
-							s,
-							0,
-							`{arcName}  <font color="{Theme.hex(Theme.Paper.TextMuted)}">{done}/{total}</font>`,
-							Theme.Fonts.Display,
-							Theme.TextSize.Large,
-							if done == total then Theme.Paper.Success else Theme.Paper.Heading
-						)
+					local header = label(
+						s,
+						0,
+						`{arcName}  <font color="{Theme.hex(Theme.Paper.TextMuted)}">{done}/{total}</font>`,
+						Theme.Fonts.Display,
+						Theme.TextSize.Large,
+						if done == total then Theme.Paper.Success else Theme.Paper.Heading
 					)
-					for _, item in shown do
-						add(item)
+					if done == total and #shown == 0 then
+						local inSection: any = header
+						inSection.LayoutOrder = #finishedArcs + 1
+						table.insert(finishedArcs, header)
+					else
+						add(header)
+						for _, item in shown do
+							add(item)
+						end
 					end
 				end
+			end
+			if #finishedArcs > 0 then
+				add(Section.new(s, {
+					Id = "journalArcsDone",
+					Title = Text.T(s, "quest.side.arcsDone", { n = #finishedArcs }),
+					Padding = 2,
+					Children = finishedArcs,
+				}))
 			end
 			if not anything then
 				add(

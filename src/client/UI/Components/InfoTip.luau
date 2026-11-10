@@ -5,6 +5,9 @@
 -- tap toggles it, a tap outside closes it. The touch target is at least Theme.Size.MinTouch, the drawn circle stays
 -- small. The popover is one panel for the whole game in the Tooltip layer (InfoTip.mount from UIController), so a
 -- ScrollingFrame never clips it. Text and title may be rich text and Fusion states (they update while it is open).
+-- Owner 2026-11-10 ("things covering each other"), UI package C: the popover stands where Logic/Popover puts it (under
+-- the "i", above it without room, beside it after that), inside the safe area 8 from its edges and clear of Roblox's
+-- top bar (Tooltip.SafeArea; it could reach under the bar); a text longer than MAX_LINES lines scrolls in it.
 --
 --   InfoTip.new(scope, { Text = Text.T(scope, "craft.info.long"), Title = ..., Surface = "paper", LayoutOrder = 2 })
 --
@@ -16,8 +19,10 @@ local UserInputService = game:GetService("UserInputService")
 
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Popover = require(ReplicatedStorage.Shared.Logic.Popover)
 local Scale = require(script.Parent.Parent.Scale)
 local Theme = require(script.Parent.Parent.Theme)
+local Tooltip = require(script.Parent.Tooltip)
 
 local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
 
@@ -40,9 +45,11 @@ export type Props = {
 local DEFAULT_SIZE = 20
 local TOUCH_EXTRA = 6 -- touch draws the circle a little larger
 local PC_HIT_EXTRA = 8 -- PC: the pointer area is this much larger than the circle
-local MAX_WIDTH = 320
-local MARGIN = 8 -- distance from the screen edges
-local GAP = 6 -- between the "i" and the popover
+local MAX_WIDTH = Theme.Size.InfoTipWidth
+-- Up to this many lines show at once, a longer text scrolls (a line of Small text with its spacing).
+local MAX_LINES = 8
+local LINE = Theme.TextSize.Small + 4
+local MAX_HEIGHT = MAX_LINES * LINE + 2 * Theme.Padding.Small
 local Z = 220 -- above the item tooltip (200) and its details panel (210)
 
 local InfoTip = {}
@@ -223,50 +230,45 @@ end
 -- Builds the popover inside `parent` (the Tooltip layer root, UIController) and closes it on a tap / click outside.
 function InfoTip.mount(scope: Scope, parent: Instance)
 	layerRoot = if parent:IsA("GuiObject") then parent else nil
-	local boxSize = scope:Value(Vector2.zero)
-	local box = scope:New("TextLabel")({
+	local textSize = scope:Value(Vector2.zero)
+	-- the text's own size, the box's (at most MAX_HEIGHT, the rest scrolls) in virtual pixels
+	local own = scope:Computed(function(use): Vector2
+		return use(textSize) / use(Scale.Value)
+	end)
+	local boxSize = scope:Computed(function(use): Vector2
+		local size = use(own)
+		return Vector2.new(size.X, math.min(size.Y, MAX_HEIGHT))
+	end)
+	local box = scope:New("ScrollingFrame")({
 		Name = "InfoTip",
 		Parent = parent,
 		ZIndex = Z,
 		Visible = scope:Computed(function(use): boolean
 			return use(shownText) ~= nil
 		end),
-		AutomaticSize = Enum.AutomaticSize.XY,
-		Size = UDim2.fromOffset(0, 0),
+		Size = scope:Computed(function(use): UDim2
+			local size = use(boxSize)
+			return UDim2.fromOffset(size.X, size.Y)
+		end),
 		Position = scope:Computed(function(use): UDim2
 			local at: Vector2 = use(anchorAt)
 			local size: Vector2 = use(anchorSize)
-			local screen: Vector2 = use(Scale.VirtualSize)
-			local own = use(boxSize) / use(Scale.Value)
-			local x = at.X
-			if x + own.X > screen.X - MARGIN then
-				x = at.X + size.X - own.X
-			end
-			local y = at.Y + size.Y + GAP
-			if y + own.Y > screen.Y - MARGIN then
-				y = at.Y - GAP - own.Y
-			end
-			return UDim2.fromOffset(
-				math.clamp(x, MARGIN, math.max(MARGIN, screen.X - MARGIN - own.X)),
-				math.clamp(y, MARGIN, math.max(MARGIN, screen.Y - MARGIN - own.Y))
+			local fit = use(boxSize)
+			local rect = Popover.place(
+				{ left = at.X, top = at.Y, right = at.X + size.X, bottom = at.Y + size.Y },
+				{ w = fit.X, h = fit.Y },
+				use(Tooltip.SafeArea)
 			)
+			return UDim2.fromOffset(rect.left, rect.top)
 		end),
+		CanvasSize = scope:Computed(function(use): UDim2
+			return UDim2.fromOffset(0, use(own).Y)
+		end),
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = Theme.Iron.TextMuted,
+		BorderSizePixel = 0,
 		BackgroundColor3 = Theme.Iron.Surface, -- S135: tooltips and popovers on iron
-		Text = scope:Computed(function(use): string
-			local body = use(shownText) or ""
-			local heading = use(shownTitle)
-			if heading then
-				return `<font color="{Theme.hex(Theme.Iron.Heading)}"><b>{heading}</b></font>\n{body}`
-			end
-			return body
-		end),
-		RichText = true,
-		TextWrapped = true,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		FontFace = Theme.Fonts.BodyMedium,
-		TextSize = Theme.TextSize.Small,
-		TextColor3 = Theme.Iron.Text,
-		[Out("AbsoluteSize")] = boxSize,
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIStroke")({
@@ -274,15 +276,43 @@ function InfoTip.mount(scope: Scope, parent: Instance)
 				Color = Theme.Brass.Line,
 				Thickness = Theme.Stroke.Thin,
 			}),
-			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, Theme.Padding.Small),
-				PaddingBottom = UDim.new(0, Theme.Padding.Small),
-				PaddingLeft = UDim.new(0, 12),
-				PaddingRight = UDim.new(0, 12),
+			scope:New("TextLabel")({
+				Name = "Text",
+				BackgroundTransparency = 1,
+				AutomaticSize = Enum.AutomaticSize.XY,
+				Size = UDim2.fromOffset(0, 0),
+				Text = scope:Computed(function(use): string
+					local body = use(shownText) or ""
+					local heading = use(shownTitle)
+					if heading then
+						return `<font color="{Theme.hex(Theme.Iron.Heading)}"><b>{heading}</b></font>\n{body}`
+					end
+					return body
+				end),
+				RichText = true,
+				TextWrapped = true,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				FontFace = Theme.Fonts.BodyMedium,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Iron.Text,
+				ZIndex = Z,
+				[Out("AbsoluteSize")] = textSize,
+				[Children] = {
+					scope:New("UIPadding")({
+						PaddingTop = UDim.new(0, Theme.Padding.Small),
+						PaddingBottom = UDim.new(0, Theme.Padding.Small),
+						PaddingLeft = UDim.new(0, 12),
+						PaddingRight = UDim.new(0, 12),
+					}),
+					scope:New("UISizeConstraint")({ MaxSize = Vector2.new(MAX_WIDTH, math.huge) }),
+				},
 			}),
-			scope:New("UISizeConstraint")({ MaxSize = Vector2.new(MAX_WIDTH, math.huge) }),
 		},
-	}) :: GuiObject
+	}) :: ScrollingFrame
+	-- every new text starts at its top
+	scope:Observer(shownText):onChange(function()
+		box.CanvasPosition = Vector2.zero
+	end)
 	panel = box
 
 	-- A tap / click anywhere but the popover and its "i" closes a pinned popover (deferred: a tap on another "i" opens

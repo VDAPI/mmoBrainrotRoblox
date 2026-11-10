@@ -8,6 +8,9 @@
 --   Details.new(scope, { Build = function(s) return { ...built only while open... } end })
 --
 -- Recipe "short line + (i)": docs/JAK-DODAC.md.
+-- UI plan 2026-11-10 (package C): the header always reads "Więcej ▸" / "Mniej ▾" (ui.details.more / less), the one
+-- word for "the rest of this text" in every window and modal; MoreText / LessText stay only for the windows that still
+-- pass their own words until they move to the standard header (packages D and E).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -27,8 +30,8 @@ export type Props = {
 	Open: Fusion.Value<boolean>?, -- the caller's own state (wins over Key)
 	Children: { Instance }?, -- the hidden content (built at once, shown while open)
 	Build: ((Scope) -> any)?, -- or the content built on opening and destroyed on closing (long texts, many rows)
-	MoreText: UsedAs<string>?, -- header while closed (default "More ▸", ui.details.more)
-	LessText: UsedAs<string>?, -- header while open (default "Less ▾", ui.details.less)
+	MoreText: UsedAs<string>?, -- legacy: header while closed (default "Więcej ▸", ui.details.more)
+	LessText: UsedAs<string>?, -- legacy: header while open (default "Mniej ▾", ui.details.less)
 	Surface: Theme.SurfaceName?, -- "paper" (default) or "iron"
 	Padding: number?, -- space between the content rows (default 4)
 	LayoutOrder: UsedAs<number>?,

@@ -35,6 +35,7 @@ local function check()
 	shown = true
 	-- S137: skill points, pools and the free reset (rework2.*); the Mage paragraph names the element pools
 	-- Owner 2026-10-21: two short sentences, the rest (with the bar size and the free refund level) under "More ▸"
+	-- UI plan 2026-11-10 (a modal's body is one short message): the Mage paragraph moves under "Więcej ▸" too
 	local args = {
 		slots = SkillData.HOTBAR_SLOTS,
 		level = Progression.freeRespecLevel,
@@ -42,8 +43,7 @@ local function check()
 	local message = Text.now("rework2.body", args)
 	local details = Text.now("rework2.body.info", args)
 	if State.Get({ "character", "class" }) == "Mage" then
-		message ..= "\n\n" .. Text.now("rework2.mage")
-		details ..= "\n\n" .. Text.now("rework2.mage.info")
+		details ..= "\n\n" .. Text.now("rework2.mage") .. " " .. Text.now("rework2.mage.info")
 	end
 	WindowManager.ShowModal({
 		Title = Text.now("rework2.title"),

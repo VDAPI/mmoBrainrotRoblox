@@ -58,6 +58,31 @@
   D 237, E 203) i kolizje HUD na tabletach 1210–1280 szerokości i do 800 wysokości (pasmo celu i pasek bossa na strefach
   postaci i menu, przycisk celu dotyku w minimapie, pas wiadomości pod panelem areny i paskiem bossa niższy niż linia
   alarmu; listy `KNOWN` i `THIN` w `hudzones.spec` dla pakietu A).
+- **Plan UI 2026-11-10, pakiet C (okna i komponenty):** ramka okna z `Logic/WindowFrame` (na dotyku pod paskiem
+  Robloxa, na telefonie nagłówek 44 i ✕ 52×44, tytuł w jednej linii, przeciąganie pod paskiem), opcjonalne `Footer`,
+  `Scroll` i `HeaderAction`, pary usługi i plecaka z `WindowFrame.pair`, przełącznik „Plecak” / „◂ <usługa>” na
+  dotyku, modal z tytułem i ✕ w nagłówku, „Więcej ▸” i stopką, dymki z `Logic/Popover`, zakładki 44 przewijane w bok,
+  przyciski w jednej linii, teksty pakietu w limitach (lista C w `tests/fixtures/textcaps` pusta; okno zmiany
+  umiejętności i reset umiejętności z jedną krótką linią, reszta pod „Więcej ▸”); nieobejrzane w Studio (nagłówek i ✕
+  telefonu pod paskiem Robloxa, przełącznik usługi i plecaka, odsuwanie usługi na PC, modal z długimi szczegółami na
+  niskim ekranie, okno zmiany umiejętności u maga z dwoma akapitami pod „Więcej ▸”, strzałki zakładek dziennika,
+  ramka wybranej zakładki nad rzędem, tooltip przedmiotu na dotyku pod nagłówkiem okna i jego panel szczegółów,
+  przewijane (i), „…” na przyciskach). Okna przechodzą na stopkę, przewijanie, `ListRow` `Tall` i zakładki bez własnej
+  wysokości z pakietami D i E; propozycja planu dla plecaka-towarzysza czeka na właściciela (DECYZJE).
+- **Plan UI 2026-11-10, pakiet E (okna świata i społeczności, rozmowy, ustawienia; ostatni pakiet planu):** układ okien
+  z `Logic/WorldLayout` (na telefonie 2–3 wiersze listy, na PC 5, przypięte „Graj” i przyciski rozmowy, koło emotek i
+  panel łowienia poniżej paska Robloxa), strony rozmowy i linie questów u NPC do 140 znaków (dalej „Dalej ▸” albo (i)),
+  powitania do 60 z (i), podpowiedzi pól do 20, lista „do skrócenia” E pusta, sekcje zapisane na koncie (dziennik, mapa,
+  gildia, ustawienia, podium rankingów, regiony bestiariusza, łowy tablicy zleceń); po przeglądzie koło emotek i panel
+  łowienia w bezpiecznym obszarze urządzenia, rankingi 900×720 (5 wierszy pod podium na PC, na telefonie odliczanie w
+  tytule i „⚠ Tylko ten serwer” w stopce), zwinięty blok łowów z licznikami w nagłówku, przepustka z końcem sezonu w
+  nagłówku telefonu, przyciski „Do kolejki”, cele questów bez klawiszy PC, oba zagrożenia portalu jedną linią;
+  nieobejrzane w Studio (rankingi, przepustka, osiągnięcia z bestiariuszem i tablica zleceń na telefonie, rozmowa z NPC
+  z najdłuższą linią i (i) linii questu u Brata Kaspara, karta wyboru postaci na telefonie, koło emotek na niskim
+  ekranie, panel łowienia na telefonie, sekcje ustawień, gildii, dziennika i mapy, rankingi na PC z otwartym podium,
+  wybór regionu bestiariusza na telefonie, koło emotek i panel łowienia na telefonie z wcięciem, przyciski kolejki
+  areny, modal portalu z dwoma zagrożeniami). Okna dialogowe pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego,
+  Wkrótce) jeszcze nie przeszły na stopkę i przewijanie okna z pakietu C.
 - **Plan UI 2026-11-10, pakiet D (plecak, umiejętności, usługi, sklepy, tooltip przedmiotu), część kodowa:** okna z
   prostokąta treści (`Logic/GearLayout`) mierzonego bez animacji okna (`UI/ViewSize`), jedna linia na statystykę i
   cztery zwijane sekcje pochodnych, zwijane „Koszt i odnowienie” i „Przełomy”, jeden pasek arkusza umiejętności na

@@ -11,6 +11,9 @@
 -- bonus card (EXP with the streak, blessings, Dragon Shards; why there are no shards: taken on this account, level).
 -- Owner 2026-10-21 (too many detailed descriptions): the board's rule and the streak rule behind an "i" (InfoTip), the
 -- hunting contract card without the empty hint line, the boss contract in one short line.
+-- Owner 2026-11-10 ("bardzo dużo napisów, nic się nie zwija"; UI plan E, Logic/WorldLayout.questBoard): the hunting block
+-- is a Section (boardHunt: open on PC, folded on a phone) with the board's rule and the "next contract from level N"
+-- line behind its (i); a phone puts the set's line beside the tabs and shows smaller cards, so two cards show.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -26,9 +29,11 @@ local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local QuestRewards = require(script.Parent.Parent.Components.QuestRewards)
 local QuestText = require(script.Parent.Parent.QuestText)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
+local Section = require(script.Parent.Parent.Components.Section)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
@@ -36,6 +41,8 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
+local Device = require(script.Parent.Parent.Device)
 
 local Children = Fusion.Children
 
@@ -48,8 +55,12 @@ export type Props = {
 	Track: ((focus: QuestTrack.Focus) -> ())?,
 }
 
-local CONTRACT_HEIGHT = 168 -- header 26 + card 134 + gap 8
-local CONTRACT_HINT = 40 -- the "next contract from level N" line (owner 2026-10-21: only while it says something)
+local HUNT_ID = "boardHunt"
+
+-- Whether the hunting block shows (every contract done or an empty list: nothing to show).
+local function hasContracts(quests: any): boolean
+	return not Contracts.allDone(Contracts.stateOf(quests)) and #Quests.Contracts.list > 0
+end
 
 -- S99: the hunting contract section (nil when every contract is done or the list is empty). S134k: the counts of the
 -- contracts to take, active and finished, the Hunter's Marks and "Accept all" / "Hand in all" at this NPC.
@@ -62,22 +73,35 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 	local npcId = use(NpcPresence.Current) or Contracts.BOARD
 	local canTake = #Contracts.acceptable(state, lvl, npcId)
 	local canHand = #Contracts.ready(state, npcId)
-	local header =
-		Text.get(use, "contract.board.title", { done = Contracts.doneCount(state), max = Quests.Contracts.MAX_LEVEL })
-	header ..= `   <font color="{Theme.hex(Theme.Paper.Success)}">{Text.get(use, "contract.marks", { n = state.marks })}</font>`
+	-- owner 2026-11-10: the Section's title is the name with the progress ("Zlecenia łowieckie 12/99", at most 24), the
+	-- Hunter's Marks join the counts line
+	local name = Text.get(use, "contract.board.title")
+	local header = `{name} {Contracts.doneCount(state)}/{Quests.Contracts.MAX_LEVEL}`
+	-- Review 2026-11-10 (UI-ZASADY §1, the state and the action on top): folded (a phone's default), the title says what
+	-- waits here instead of the progress, "Zlecenia łowieckie · Gotowe: 2 · Do przyjęcia: 3" (the buttons' counts above
+	-- zero; one line in PC's 640 window too), so the fold hides no action. In the header row, not a summary line: a
+	-- phone keeps its two cards (Logic/WorldLayout.questBoard).
+	local waiting: { string } = {}
+	if canHand > 0 then
+		table.insert(waiting, Text.get(use, "contract.board.ready", { n = canHand }))
+	end
+	if canTake > 0 then
+		table.insert(waiting, Text.get(use, "contract.board.take", { n = canTake }))
+	end
+	local folded = if #waiting > 0 then `{name} · {table.concat(waiting, " · ")}` else header
+	local open = Section.Open(HUNT_ID)
 	local counts = Text.get(use, "contract.boardCounts", {
 		available = #Contracts.eligible(state, lvl),
 		active = #state.active,
 		ready = #Contracts.complete(state),
-	})
+	}) .. `  ·  {Text.get(use, "contract.marks", { n = state.marks })}`
 	local nextOne = Contracts.upcoming(state, lvl, 1)[1]
-	-- owner 2026-10-21: the board's rule (contract.boardHint) moved behind the "i" at the title
-	local hint = if canTake == 0
-			and canHand == 0
-			and nextOne
-		then Text.get(use, "contract.waiting", { level = nextOne.level })
-		else nil
-	local cut = if hint then 0 else CONTRACT_HINT
+	-- owner 2026-10-21: the board's rule (contract.boardHint) moved behind the "i" at the title; owner 2026-11-10: the
+	-- "next contract from level N" line joins it there
+	local info = Text.get(use, "contract.boardHint")
+	if canTake == 0 and canHand == 0 and nextOne then
+		info ..= `\n\n{Text.get(use, "contract.waiting", { level = nextOne.level })}`
+	end
 	local function button(order: number, key: string, n: number, act: () -> ()): Instance
 		return Button(s, {
 			LayoutOrder = order,
@@ -88,28 +112,16 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 			OnClick = act,
 		})
 	end
-	return s:New("Frame")({
-		Size = UDim2.new(1, 0, 0, CONTRACT_HEIGHT - 8 - cut),
-		BackgroundTransparency = 1,
-		[Children] = {
-			s:New("TextLabel")({
-				Size = UDim2.new(1, -32, 0, 24),
-				BackgroundTransparency = 1,
-				RichText = true,
-				Text = header,
-				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Body,
-				TextColor3 = Theme.Paper.Text,
-				TextXAlignment = Enum.TextXAlignment.Left,
-			}),
-			InfoTip.new(s, {
-				Text = Text.get(use, "contract.boardHint"),
-				AnchorPoint = Vector2.new(1, 0.5),
-				Position = UDim2.new(1, -4, 0, 12),
-			}),
+	return Section.new(s, {
+		Id = "boardHunt",
+		Title = s:Computed(function(use2): string
+			return if use2(open) then header else folded
+		end),
+		Info = info,
+		Children = {
 			s:New("Frame")({
-				Position = UDim2.fromOffset(0, 26),
-				Size = UDim2.new(1, 0, 0, 134 - cut),
+				Name = "Hunt",
+				Size = UDim2.new(1, 0, 0, WorldLayout.HUNT_CARD),
 				BackgroundColor3 = Theme.Paper.Raised,
 				BackgroundTransparency = 0.35,
 				[Children] = {
@@ -132,21 +144,8 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 							MinTextSize = Theme.TextSize.Small,
 						}),
 					}),
-					s:New("TextLabel")({
-						Position = UDim2.fromOffset(0, 26),
-						Size = UDim2.new(1, 0, 0, CONTRACT_HINT),
-						Visible = hint ~= nil,
-						BackgroundTransparency = 1,
-						Text = hint or "",
-						TextWrapped = true,
-						FontFace = Theme.Fonts.BodyMedium,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Paper.TextMuted,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextYAlignment = Enum.TextYAlignment.Top,
-					}),
 					s:New("Frame")({
-						Position = UDim2.fromOffset(0, 70 - cut),
+						Position = UDim2.fromOffset(0, 30),
 						Size = UDim2.new(1, 0, 0, 48),
 						BackgroundTransparency = 1,
 						[Children] = {
@@ -180,6 +179,7 @@ type Card = {
 	claim: () -> (boolean, string?),
 	reroll: (() -> ())?, -- S159: "Swap" (nil = no button)
 	info: string?, -- owner 2026-10-21: the longer text behind an "i" after the title
+	compact: boolean?, -- owner 2026-11-10: a phone's card (WorldLayout.BOARD_CARD.compact, smaller reward slots)
 }
 
 -- S159: runs a board action and shows its error.
@@ -196,9 +196,11 @@ local function act(fn: () -> (boolean, string?), after: (() -> ())?)
 end
 
 local function card(s: Scope, use: Fusion.Use, c: Card): Instance
+	local size = WorldLayout.BOARD_CARD
+	local compact = c.compact == true
 	return s:New("Frame")({
 		LayoutOrder = c.order,
-		Size = UDim2.new(1, 0, 0, 110),
+		Size = UDim2.new(1, 0, 0, if compact then size.compact else size.height),
 		BackgroundColor3 = Theme.Paper.Raised,
 		BackgroundTransparency = 0.35,
 		[Children] = {
@@ -218,8 +220,8 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 				}),
 			}),
 			s:New("TextLabel")({
-				Position = UDim2.fromOffset(0, 28),
-				Size = UDim2.new(1, -170, 0, 28),
+				Position = UDim2.fromOffset(0, if compact then 26 else 28),
+				Size = UDim2.new(1, -170, 0, if compact then 22 else 28),
 				BackgroundTransparency = 1,
 				Text = c.line,
 				TextWrapped = true,
@@ -243,8 +245,8 @@ local function card(s: Scope, use: Fusion.Use, c: Card): Instance
 			QuestRewards(s, {
 				Id = c.id,
 				Reward = c.reward,
-				SlotSize = 38,
-				Position = UDim2.fromOffset(0, 58),
+				SlotSize = if compact then size.compactSlot else size.slot,
+				Position = UDim2.fromOffset(0, if compact then 50 else 58),
 				Width = UDim.new(1, -170),
 			}),
 			Button(s, {
@@ -385,6 +387,12 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 	local account = State.Value({ "account", "dailies" }) -- S159: the streak and the account's bonus shards
 	local tab = scope:Value("daily")
 	local now = scope:Value(Clock.now())
+	-- Logic/WorldLayout.questBoard: the chrome of this device (the cards fill the rest)
+	local open = Section.Open(HUNT_ID)
+	local layout = scope:Computed(function(use): WorldLayout.QuestBoard
+		local device: WorldLayout.Device = WorldLayout.device(use(Device.Touch) == true, use(PhoneLayout.Compact))
+		return WorldLayout.questBoard(WorldLayout.CHROME, device, hasContracts(use(quests)), use(open))
+	end)
 	local accumulator = 0
 	table.insert(
 		scope,
@@ -400,6 +408,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 	local rows = scope:Computed(function(use, s: Scope): { Instance }
 		local list = {}
 		local lvl = use(level) or 1
+		local compact = use(layout).card < WorldLayout.BOARD_CARD.height
 		if use(tab) == "daily" then
 			local d = use(daily)
 			if type(d) ~= "table" then
@@ -413,6 +422,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 					card(s, use, {
 						id = `daily{i}`,
 						order = i,
+						compact = compact,
 						title = Text.get(use, `daily.{entry.template}.title`),
 						line = QuestText.objective(use, entry.objective, entry.progress),
 						done = entry.progress >= entry.objective.n,
@@ -461,6 +471,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 				card(s, use, {
 					id = `weekly{i}`,
 					order = i,
+					compact = compact,
 					title = Text.get(use, `weekly.{entry.template}.title`),
 					line = QuestText.objective(use, entry.objective, entry.progress),
 					done = entry.progress >= entry.objective.n,
@@ -489,6 +500,7 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 				card(s, use, {
 					id = "bossContract",
 					order = 100,
+					compact = compact,
 					title = `{Text.get(use, "quest.bossContract.title")}: {bossName}`,
 					line = Text.get(use, "quest.bossContract.text.short", { boss = bossName, n = n })
 						.. "  "
@@ -511,9 +523,8 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 		return contractSection(s, use, use(quests), use(level) or 1, p)
 	end)
 	local top = scope:Computed(function(use): number
-		-- the section's own height (owner 2026-10-21: lower without the hint line) and the gap under it
-		local section = use(contract) :: any
-		return if section then section.Size.Y.Offset + 8 else 0
+		-- the hunting block's height (open or folded) and the gap under it
+		return use(layout).hunt
 	end)
 
 	return {
@@ -533,11 +544,24 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 						{ id = "daily", label = Text.T(scope, "quest.board.daily") },
 						{ id = "weekly", label = Text.T(scope, "quest.board.weekly") },
 					},
+					Size = scope:Computed(function(use): UDim2
+						local width = use(layout).tabsWidth
+						return if width > 0
+							then UDim2.fromOffset(width, Theme.Size.MinTouch)
+							else UDim2.new(1, 0, 0, Theme.Size.MinTouch)
+					end),
 				}),
-				-- S159: the set's progress, the time to the new set and (daily) the streak and the free swap
+				-- S159: the set's progress, the time to the new set and (daily) the streak and the free swap; a phone's
+				-- beside the tabs
 				scope:New("TextLabel")({
-					Position = UDim2.fromOffset(0, 46),
-					Size = UDim2.new(1, 0, 0, 44),
+					Position = scope:Computed(function(use): UDim2
+						local l = use(layout)
+						return UDim2.fromOffset(if l.tabsWidth > 0 then l.tabsWidth + 8 else 0, l.setTop)
+					end),
+					Size = scope:Computed(function(use): UDim2
+						local l = use(layout)
+						return UDim2.new(1, if l.tabsWidth > 0 then -(l.tabsWidth + 8) else 0, 0, l.setLine)
+					end),
 					BackgroundTransparency = 1,
 					RichText = true,
 					TextWrapped = true,
@@ -579,8 +603,14 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 					TextYAlignment = Enum.TextYAlignment.Top,
 				}),
 				scope:New("ScrollingFrame")({
-					Position = UDim2.fromOffset(0, 94),
-					Size = UDim2.new(1, 0, 1, -94),
+					Position = scope:Computed(function(use): UDim2
+						local l = use(layout)
+						return UDim2.fromOffset(0, l.list.top - l.hunt)
+					end),
+					Size = scope:Computed(function(use): UDim2
+						local l = use(layout)
+						return UDim2.new(1, 0, 1, -(l.list.top - l.hunt))
+					end),
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
 					CanvasSize = UDim2.new(),

@@ -20,7 +20,8 @@ function RankingsController.Init(registry)
 	WindowManager.Register({
 		id = "rankings",
 		titleKey = "window.rankings.title",
-		size = Vector2.new(900, 620),
+		-- review 2026-11-10: 720 tall, so the board shows 5 rows under the podium PC opens (WorldLayout.rankings)
+		size = Vector2.new(900, 720),
 		hotkey = Enum.KeyCode.R, -- a fallback: WindowManager follows the win_rankings action
 		build = function(scope: any)
 			return RankingsWindow(scope, nil)

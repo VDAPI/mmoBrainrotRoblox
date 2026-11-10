@@ -3,14 +3,23 @@
 -- bar with a green zone and an indicator sweeping back and forth; click / Space / tap while the indicator is
 -- inside the zone, 3 times in a row. Every hit narrows the zone and speeds up the indicator; a miss lets the
 -- fish escape. Big touch targets: the whole bar area is the button.
+-- Owner 2026-11-10 (UI plan E, Logic/WorldLayout.fishing): the panel never stands under Roblox's top bar (it is in the
+-- Windows layer, which reaches under it). On a phone it is 170 tall between the HUD's left and right columns, at the
+-- top of the free middle (nothing is targeted while fishing): the title, the bar, a two-line touch hint under it;
+-- "Anuluj" shows while waiting (a bite lasts seconds and ends by itself).
+-- Review 2026-11-10 (a notched phone: the panel covered the menu button and the PvP toggle): the layout takes the
+-- Windows layer's own size, the device's safe area, not the whole screen.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
+local Scale = require(script.Parent.Parent.Scale)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -37,8 +46,6 @@ export type Props = {
 	-- Set by the controller so Space / clicks outside the bar can press too.
 	PressSignal: { press: (() -> ())? },
 }
-
-local BAR_WIDTH = 640
 
 local function FishingGame(scope: Scope, props: Props): Instance
 	local position = scope:Value(0) -- 0..1
@@ -140,11 +147,29 @@ local function FishingGame(scope: Scope, props: Props): Instance
 		return use(props.Phase) == "bite"
 	end)
 
+	-- The Windows layer is the device's safe area (UIController: DeviceSafeInsets): the HUD's layer (Scale.HudSize, the
+	-- same safe area under Roblox's top bar) with the top bar (Scale.TopBar, screen px) over it. The whole screen is
+	-- wider on a notched phone, and the HUD's right column would move off the panel's edge.
+	local layout = scope:Computed(function(use): WorldLayout.Fishing
+		local hud: Vector2 = use(Scale.HudSize)
+		local bar = use(Scale.TopBar) / use(Scale.Value)
+		return WorldLayout.fishing({ w = hud.X, h = hud.Y + bar }, bar, use(PhoneLayout.Compact))
+	end)
+	-- the bar's top and height, and the glyph's top while waiting
+	local function barTop(use: Fusion.Use): number
+		return if use(layout).compact then 48 else 60
+	end
+
 	return scope:New("Frame")({
 		Name = "Fishing",
-		AnchorPoint = Vector2.new(0.5, 1),
-		Position = UDim2.new(0.5, 0, 1, -230),
-		Size = UDim2.fromOffset(BAR_WIDTH + 40, 190),
+		Position = scope:Computed(function(use): UDim2
+			local panel = use(layout).panel
+			return UDim2.fromOffset(panel.left, panel.top)
+		end),
+		Size = scope:Computed(function(use): UDim2
+			local panel = use(layout).panel
+			return UDim2.fromOffset(panel.right - panel.left, panel.bottom - panel.top)
+		end),
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
 		Visible = scope:Computed(function(use): boolean
@@ -154,8 +179,12 @@ local function FishingGame(scope: Scope, props: Props): Instance
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("TextLabel")({
-				Position = UDim2.fromOffset(0, 10),
-				Size = UDim2.new(1, 0, 0, 40),
+				Position = scope:Computed(function(use): UDim2
+					return if use(layout).compact then UDim2.fromOffset(12, 6) else UDim2.fromOffset(0, 10)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return if use(layout).compact then UDim2.new(1, -24, 0, 34) else UDim2.new(1, 0, 0, 40)
+				end),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					if use(isBite) then
@@ -164,7 +193,9 @@ local function FishingGame(scope: Scope, props: Props): Instance
 					return Text.get(use, "fish.waiting")
 				end),
 				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Large,
+				TextSize = scope:Computed(function(use): number
+					return if use(layout).compact then Theme.TextSize.Body else Theme.TextSize.Large
+				end),
 				TextColor3 = scope:Computed(function(use): Color3
 					return if use(isBite) then Theme.Brass.Bright else Theme.Iron.Text
 				end),
@@ -173,8 +204,13 @@ local function FishingGame(scope: Scope, props: Props): Instance
 			scope:New("TextButton")({
 				Name = "Bar",
 				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 60),
-				Size = UDim2.fromOffset(BAR_WIDTH, 64),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 0, barTop(use))
+				end),
+				Size = scope:Computed(function(use): UDim2
+					local l = use(layout)
+					return UDim2.fromOffset(l.bar, if l.compact then 52 else 64)
+				end),
 				BackgroundColor3 = Theme.Iron.Sunken,
 				AutoButtonColor = false,
 				Text = "",
@@ -211,8 +247,12 @@ local function FishingGame(scope: Scope, props: Props): Instance
 			}),
 			scope:New("TextLabel")({
 				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 72),
-				Size = UDim2.fromOffset(BAR_WIDTH, 40),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 0, barTop(use) + (if use(layout).compact then 2 else 12))
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(use(layout).bar, 40)
+				end),
 				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
 					return not use(isBite)
@@ -223,11 +263,19 @@ local function FishingGame(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Iron.Link,
 			}),
 			scope:New("TextLabel")({
-				Position = UDim2.new(0, 20, 1, -50),
-				Size = UDim2.new(1, -200, 0, 40),
+				-- a phone: two lines under the bar, the whole width (the touch hint)
+				Position = scope:Computed(function(use): UDim2
+					return if use(layout).compact then UDim2.fromOffset(12, 116) else UDim2.new(0, 20, 1, -50)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return if use(layout).compact then UDim2.new(1, -24, 0, 44) else UDim2.new(1, -200, 0, 40)
+				end),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
-					return if use(isBite) then Text.get(use, "fish.hint") else ""
+					if not use(isBite) then
+						return ""
+					end
+					return Text.get(use, if use(layout).compact then "fish.hintTouch" else "fish.hint")
 				end),
 				TextWrapped = true,
 				FontFace = Theme.Fonts.Body,
@@ -237,9 +285,19 @@ local function FishingGame(scope: Scope, props: Props): Instance
 			}),
 			Button(scope, {
 				Surface = "iron", -- S135: on a dark HUD / overlay surface
-				AnchorPoint = Vector2.new(1, 1),
-				Position = UDim2.new(1, -14, 1, -10),
-				Size = UDim2.fromOffset(150, 44),
+				-- owner 2026-11-10: a phone shows it while waiting, in the hint's place under the bar
+				Visible = scope:Computed(function(use): boolean
+					return not (use(layout).compact and use(isBite))
+				end),
+				AnchorPoint = scope:Computed(function(use): Vector2
+					return if use(layout).compact then Vector2.new(0.5, 1) else Vector2.new(1, 1)
+				end),
+				Position = scope:Computed(function(use): UDim2
+					return if use(layout).compact then UDim2.new(0.5, 0, 1, -10) else UDim2.new(1, -14, 1, -10)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(if use(layout).compact then 140 else 150, 44)
+				end),
 				Text = Text.T(scope, "common.cancel"),
 				OnClick = function()
 					running = false

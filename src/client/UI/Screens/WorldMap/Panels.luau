@@ -4,6 +4,8 @@
 -- "Show only recommended" (S22), the filter panel (owner 2026-10-20 "Mapa": one chip per symbol category with its
 -- symbol and count, All / None, collapsible; it replaced the S25 service chips and the layer toggles) and the bottom
 -- bar (zoom, "Centre on me"). S101: the world event's glyph after its map and its hunting ground.
+-- Owner 2026-11-10 (UI plan E): the band legend is a Section (mapLegend, saved on the account): open on PC, folded on a
+-- phone, where it covered about a third of the map; folded it is one "Legenda" line.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +18,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LevelBand = require(ReplicatedStorage.Shared.Logic.LevelBand)
 local MapMarkers = require(ReplicatedStorage.Shared.Logic.MapMarkers)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -285,39 +288,48 @@ function Panels.bands(scope: Scope, props: BandProps): Instance
 				PaddingLeft = UDim.new(0, 8),
 				PaddingRight = UDim.new(0, 8),
 			}),
-			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 3) }),
-			scope:New("TextLabel")({
-				LayoutOrder = 0,
-				Size = UDim2.new(1, 0, 0, 20),
-				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					return Text.get(use, "worldmap.yourLevel", { level = use(props.Level) or 1 })
-				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.Heading,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				ZIndex = 21,
-			}),
-			rows :: any,
-			scope:New("TextButton")({
-				LayoutOrder = 9,
-				Size = UDim2.new(1, 0, 0, 28),
-				AutoButtonColor = false,
-				BackgroundColor3 = scope:Computed(function(use): Color3
-					return if use(onlyRecommended) then Theme.Paper.Hover else Theme.Paper.Raised
-				end),
-				Text = scope:Computed(function(use): string
-					return `{if use(onlyRecommended) then "☑" else "☐"} {Text.get(use, "worldmap.onlyRecommended")}`
-				end),
-				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.Text,
-				ZIndex = 21,
-				[OnEvent("Activated")] = function()
-					onlyRecommended:set(not Fusion.peek(onlyRecommended))
-				end,
-				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			Section.new(scope, {
+				Id = "mapLegend",
+				Title = Text.T(scope, "worldmap.legend"),
+				Padding = 3,
+				Children = {
+					scope:New("TextLabel")({
+						LayoutOrder = 0,
+						Size = UDim2.new(1, 0, 0, 20),
+						BackgroundTransparency = 1,
+						Text = scope:Computed(function(use): string
+							return Text.get(use, "worldmap.yourLevel", { level = use(props.Level) or 1 })
+						end),
+						FontFace = Theme.Fonts.BodyBold,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Heading,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						ZIndex = 21,
+					}),
+					rows :: any,
+					scope:New("TextButton")({
+						LayoutOrder = 9,
+						Size = UDim2.new(1, 0, 0, 28),
+						AutoButtonColor = false,
+						BackgroundColor3 = scope:Computed(function(use): Color3
+							return if use(onlyRecommended) then Theme.Paper.Hover else Theme.Paper.Raised
+						end),
+						Text = scope:Computed(function(use): string
+							return `{if use(onlyRecommended) then "☑" else "☐"} {Text.get(
+								use,
+								"worldmap.onlyRecommended"
+							)}`
+						end),
+						FontFace = Theme.Fonts.BodyMedium,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.Text,
+						ZIndex = 21,
+						[OnEvent("Activated")] = function()
+							onlyRecommended:set(not Fusion.peek(onlyRecommended))
+						end,
+						[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+					}),
+				},
 			}),
 		},
 	})

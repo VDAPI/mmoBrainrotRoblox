@@ -10,6 +10,8 @@
 -- not a Section (a HUD panel's line, a settings group) shares the same state through Section.state.
 -- Full width, grows with its content (AutomaticSize Y). Details (More ▸ / Less ▾) stays for a longer text under a
 -- short one; a Section is a whole part of a window with its own title.
+-- UI plan 2026-11-10 (package C): the header line looks like the HUD panels' (Hud/PanelHeader): ▾ / ▸, the title on
+-- one line, the "i"; Theme.Size.SectionHeader (32) on PC, at least Theme.Size.MinTouch on touch.
 --
 --   Section.new(scope, { Id = "charStats", Title = Text.T(scope, "character.section.stats"), Children = { ... } })
 --   Section.new(scope, { Id = ..., Title = ..., Summary = points, Accent = true, Build = function(s) ... end })
@@ -51,7 +53,7 @@ export type Props = {
 	Name: string?,
 }
 
-local HEADER_PC = 32
+local HEADER_PC = Theme.Size.SectionHeader
 local ARROW_WIDTH = 18
 local ROW_GAP = 6
 local SUMMARY_PC = 26
@@ -245,6 +247,7 @@ function Section.new(scope: Scope, props: Props): Instance
 								TextSize = Theme.TextSize.Body,
 								TextColor3 = roles.Heading,
 								TextXAlignment = Enum.TextXAlignment.Left,
+								TextWrapped = false,
 								TextTruncate = Enum.TextTruncate.AtEnd,
 								[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Shrink }),
 							}),
