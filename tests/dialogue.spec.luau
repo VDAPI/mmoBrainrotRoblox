@@ -1526,4 +1526,39 @@ describe("Dialogue pages fit the window (owner 2026-11-10)", function()
 		end
 		expect(problems).toEqual({})
 	end)
+
+	-- the same box shows a quest's line at the NPC of its talk / deliver objective (UI/Screens/NpcDialog.questLine);
+	-- a longer line keeps the rest behind the (i) of `<line key>.info`
+	it("a quest's line at an NPC fits the line box (140), the rest in .info in both languages", function()
+		local problems: { string } = {}
+		local seen: { [string]: boolean } = {}
+		for _, item in Dialogue.allQuests() do
+			for _, objective in item.quest.objectives or {} do
+				local line = (objective :: any).line
+				if type(line) ~= "string" or seen[line] then
+					continue
+				end
+				seen[line] = true
+				capProblems(line, "dialogPage", problems)
+				local info = `{line}.info`
+				local inPl, inEn = (pl :: any)[info] ~= nil, (en :: any)[info] ~= nil
+				if inPl ~= inEn then
+					table.insert(problems, `{info}: only in {if inPl then "pl" else "en"}`)
+				elseif inPl then
+					capProblems(info, "infoTip", problems)
+				end
+			end
+		end
+		expect(problems).toEqual({})
+		expect(seen["quest.burntTemple.kaspar"]).toBe(true)
+		expect(hasKey("quest.burntTemple.kaspar.info")).toBe(true)
+	end)
+
+	it("the hunting contract's pages fit the conversation (140) after the sample area and monster", function()
+		local problems: { string } = {}
+		for _, key in { "contract.text", "contract.progress", "contract.done" } do
+			capProblems(key, "dialogPage", problems)
+		end
+		expect(problems).toEqual({})
+	end)
 end)
