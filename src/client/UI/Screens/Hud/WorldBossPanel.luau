@@ -15,6 +15,9 @@
 -- portrait like the world event panel (never over the skill buttons); owner 2026-10-21: the column's order and places
 -- come from UI/HudSlots (Logic/HudStack), round the elements the player moved. Sounds: ui.worldboss.spawn when the boss
 -- wakes, ui.worldboss.victory when it falls (silent until the owner picks ids). Iron surface (Data/UiWindows).
+-- Owner 2026-11-10 ("too much text"; UI plan package A): the reward's reason is a short line ("Reward from level 30");
+-- the whole "{boss} in 7:42 · {place}" sentence is the header's "i" (written in the header's props, so the text scan
+-- holds it to the "i" and not to a HUD line).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -248,20 +251,6 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 		end
 		return ""
 	end)
-	local lineInfo = scope:Computed(function(use): string
-		local b = use(current)
-		if not b or use(mode) ~= "line" then
-			return ""
-		end
-		local map = Maps.get(b.map)
-		local key, seconds = WorldBoss.lineOf(b, use(now))
-		return Text.get(use, key or "hud.worldboss.line", {
-			boss = use(bossName),
-			time = Time.format(seconds or 0),
-			place = Text.get(use, WorldBoss.spot().nameKey),
-			map = if map then Text.get(use, map.nameKey) else b.map,
-		})
-	end)
 	local stateText = scope:Computed(function(use): string
 		local b = use(current)
 		if not b then
@@ -352,7 +341,20 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 				Open = scope:Computed(function(use): boolean
 					return use(mode) == "full" and not use(collapsed)
 				end),
-				Info = lineInfo,
+				Info = scope:Computed(function(use): string
+					local b = use(current)
+					if not b or use(mode) ~= "line" then
+						return ""
+					end
+					local map = Maps.get(b.map)
+					local key, seconds = WorldBoss.lineOf(b, use(now))
+					return Text.get(use, key or "hud.worldboss.line", {
+						boss = use(bossName),
+						time = Time.format(seconds or 0),
+						place = Text.get(use, WorldBoss.spot().nameKey),
+						map = if map then Text.get(use, map.nameKey) else b.map,
+					})
+				end),
 				OnClick = function()
 					if Fusion.peek(mode) == "line" then
 						-- S149c: the compact line opens the map at the barrow

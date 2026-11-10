@@ -74,8 +74,7 @@ local function AreaBanner(scope: Scope): Instance
 			end
 			return AreaProfileText.escape(Text.get(use, "area.label", {
 				name = Text.get(use, banner.area.nameKey),
-				min = banner.area.lv[1],
-				max = banner.area.lv[2],
+				range = `{banner.area.lv[1]}–{banner.area.lv[2]}`, -- package A: the band as one "{range}"
 			})) .. AreaProfileText.iconRich(banner.area.profile, " ", "iron")
 		end),
 		FontFace = Theme.Fonts.Display,

@@ -170,7 +170,9 @@ local function lowHpPulse(
 end
 
 -- UI plan phase 2 (plan §3 #2): the PvP dot on the portrait is the switch (a click in a yellow zone; UI/PvpSwitch, the
--- same request as the touch screens' toggle); its tooltip tells the state, the countdown and that it can be clicked.
+-- same request as the touch screens' toggle). Owner 2026-11-10 ("too much text"; UI plan package A): its tooltip is one
+-- line, the state or the countdown ("Switching PvP: 7 s"); the zone's rules and, in a yellow zone, that the dot is the
+-- switch are its details (the details key or a longer press).
 local function pvpSwitch(scope: Scope): Instance
 	local state = PvpState.indicator(scope)
 	local zone = State.Value({ "zone" })
@@ -217,16 +219,19 @@ local function pvpSwitch(scope: Scope): Instance
 		scope,
 		button :: GuiObject,
 		scope:Computed(function(use): string
-			local lines = { Text.get(use, `pvp.dot.{use(state)}`) }
 			local p = use(pvp)
 			if type(p) == "table" and type(p.switchAt) == "number" and p.pendingTarget ~= nil then
 				local left = math.ceil(math.max(0, p.switchAt - use(now)))
-				table.insert(lines, Text.get(use, "pvp.countdown", { seconds = left }))
+				return Text.get(use, "pvp.dot.switchingIn", { seconds = left })
 			end
-			if use(zoneType) == "yellow" then
-				table.insert(lines, Text.get(use, "pvp.dot.click"))
+			return Text.get(use, `pvp.dot.{use(state)}`)
+		end),
+		scope:Computed(function(use): string
+			local z = use(zoneType)
+			if z == "yellow" then
+				return `{Text.get(use, "pvp.rules.yellow")}\n{Text.get(use, "pvp.dot.toggle")}`
 			end
-			return table.concat(lines, "\n")
+			return Text.get(use, `pvp.rules.{z}`)
 		end)
 	)
 	return button

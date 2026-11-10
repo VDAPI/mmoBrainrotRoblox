@@ -13,6 +13,8 @@
 -- Owner 2026-11-10 (UI plan package A): the header is Hud/PanelHeader (the kind's glyph and name, the time left or to
 -- the start); a click folds the panel to that line on the account (Section.state "hudWorldEvent", Data/Folds/Hud: open
 -- on PC, folded on a phone), and the column folds it there too while it has no room (UI/HudSlots.forced).
+-- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD line at most 32 characters): the Invasion's line says
+-- the phase ("Phase 2/6"), the bar under it the progress; the live monsters and the kills sit in the line's tooltip.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -30,6 +32,7 @@ local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 local WorldEvents = require(ReplicatedStorage.Shared.Logic.WorldEvents)
 
 local Children = Fusion.Children
@@ -198,15 +201,23 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 			return Text.get(use, "hud.event.boss", { name = Text.get(use, e.boss), pct = pct })
 		end
 		if e.kind == "invasion" then
-			return Text.get(use, "hud.event.phase", {
-				phase = e.stage or 0,
-				phases = e.stages or 0,
-				alive = e.alive or 0,
-				kills = e.kills or 0,
-			})
+			return Text.get(use, "hud.event.phase", { phase = e.stage or 0, total = e.stages or 0 })
 		end
 		return ""
 	end)
+	local progressLine =
+		line(4, LINE, progressText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.Body, activeOpen)
+	Tooltip.attach(
+		scope,
+		progressLine :: GuiObject,
+		scope:Computed(function(use): string
+			local e = use(current)
+			if e and e.kind == "invasion" and type(e.boss) ~= "string" then
+				return Text.get(use, "hud.event.count", { left = e.alive or 0, kills = e.kills or 0 })
+			end
+			return use(progressText)
+		end)
+	)
 	local mineOk = scope:Computed(function(use): boolean
 		local e = use(current)
 		return e ~= nil and type(e.mine) == "table" and e.mine.ok == true
@@ -271,7 +282,7 @@ local function WorldEventPanel(scope: Scope, props: Props): Instance
 					}),
 				},
 			}),
-			line(4, LINE, progressText, Theme.Iron.Text, Theme.TextSize.Small, Theme.Fonts.Body, activeOpen),
+			progressLine,
 			line(
 				5,
 				MINE,

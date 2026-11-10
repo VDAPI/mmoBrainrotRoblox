@@ -3,6 +3,8 @@
 -- or a hunt runs (never a dead button); under the icon the time possible now (the bank cut by today's cap,
 -- Logic/AutoGrind.left). States: hunting (gold frame), off (grey). Click / tap starts or stops it (AutoGrind remote;
 -- the server answers with a toast: started on <ground>, or why not).
+-- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD tooltip at most 48 characters): the tooltip says the
+-- state ("Auto Hunt: hunting"); the bank and today's time left are its details (the details key or a longer press).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -112,10 +114,14 @@ local function AutoGrindButton(scope: Scope, position: Fusion.UsedAs<UDim2>): In
 		scope,
 		button :: GuiObject,
 		scope:Computed(function(use): string
-			local s = use(state)
-			local t = use(now)
 			return Text.get(use, "hud.autoGrind", {
 				state = Text.get(use, if use(hunting) then "hud.autoGrind.on" else "hud.autoGrind.off"),
+			})
+		end),
+		scope:Computed(function(use): string
+			local s = use(state)
+			local t = use(now)
+			return Text.get(use, "hud.autoGrind.info", {
 				bank = timeText(use, AutoGrind.rollDay(s, t).bank),
 				today = timeText(use, AutoGrind.todayLeft(s, t)),
 			})

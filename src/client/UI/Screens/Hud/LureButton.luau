@@ -3,6 +3,8 @@
 -- only while the account has cloak time (never a dead button); the time left under the icon. States: on (gold
 -- frame), off (grey), paused (on, but the state branch `lure.blocked` names a block: amber frame, dimmed glyph and
 -- the reason in the tooltip). Click / tap switches it (LureToggle; the server answers with a toast).
+-- Owner 2026-11-10 ("too much text"; UI plan package A): the tooltip is "Cloak of Luring: on · 2 h" (the time left
+-- without its word, it is the countdown under the icon too).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")

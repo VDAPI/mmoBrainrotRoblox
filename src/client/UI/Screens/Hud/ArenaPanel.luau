@@ -17,6 +17,9 @@
 -- shows, the match panel steps aside and the return panel carries the match's result. On a phone they join the stack
 -- as "arena" (Logic/PhoneHud) with a header line (Hud/PanelHeader: the score and the round's time), folded by default
 -- (Section.state "hudArena", Data/Folds/Hud), and the column folds them to that line while it has no room.
+-- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD line at most 32 characters): the pill says "⌛ 1v1 · 0:42"
+-- and its tooltip the players waiting (or the global queue's rating window); the 3v3 result line reads its three keys
+-- by name (the toast and the banner of the result are the message band's).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -35,6 +38,7 @@ local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -49,6 +53,9 @@ local SCORE = 30
 local ROUND = 22
 local RESULT = 36
 local RETURN = 24
+-- the team result of a 3v3 match
+local RESULT3: { [string]: string } =
+	{ win = "arena.result3.win", loss = "arena.result3.loss", draw = "arena.result3.draw" }
 
 local function ArenaPanel(scope: Scope, props: Props): Instance
 	local live = State.Value({ "arenaLive" })
@@ -114,15 +121,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 					end
 					local t = use(now)
 					local time = Time.format(t - (tonumber(q.since) or t))
-					if q.waiting == nil and tonumber(q.window) then
-						-- S127: the global queue: the rating window it searches now
-						return `{Text.get(use, "arena.inQueue", { mode = q.mode, time = time })} · ±{q.window}`
-					end
-					return Text.get(use, "arena.panel.queue", {
-						mode = q.mode,
-						time = time,
-						n = tonumber(q.waiting) or 0,
-					})
+					return Text.get(use, "arena.panel.queue", { mode = q.mode, time = time })
 				end),
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
@@ -146,6 +145,22 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 			}),
 		},
 	})
+
+	Tooltip.attach(
+		scope,
+		pill :: GuiObject,
+		scope:Computed(function(use): string
+			local q = use(queue)
+			if not q then
+				return ""
+			end
+			if q.waiting == nil and tonumber(q.window) then
+				-- S127: the global queue: the rating window it searches now
+				return Text.get(use, "arena.panel.window", { mode = q.mode, n = tonumber(q.window) })
+			end
+			return Text.get(use, "arena.panel.waiting", { mode = q.mode, n = tonumber(q.waiting) or 0 })
+		end)
+	)
 
 	-- S127: the way back from an arena server (its panel takes the match panel's place, with the match's result)
 	local returnAt = scope:Computed(function(use): number?
@@ -194,7 +209,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				end
 				key = if mine > other then "win" elseif mine < other then "loss" else "draw"
 			end
-			table.insert(bits, Text.get(use, `arena.result3.{key}`))
+			table.insert(bits, Text.get(use, RESULT3[key]))
 		end
 		if type(m.tokens) == "number" then
 			table.insert(bits, Text.get(use, "arena.tokens.match", { n = m.tokens }))

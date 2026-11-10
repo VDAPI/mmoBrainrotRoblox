@@ -2,6 +2,8 @@
 -- Own active blessing next to the character name on the HUD portrait (S29, DESIGN §11): a rarity-coloured ✶ with
 -- an "mm:ss" countdown, pulsing during the last minute; hover (PC) or long press (touch) shows the effects and
 -- the time left. Built once: the clock only changes texts and the pulse, nothing is rebuilt.
+-- Owner 2026-11-10 (UI plan package A): a stat's name comes from its Data/Stats nameKey, like the character window's;
+-- a `stat.{id}` template here read every stat name as a HUD line (the text scan, tests/TextScan).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -31,7 +33,7 @@ local BlessingBadge = {}
 function BlessingBadge.statLine(use: Fusion.Use, stat: string, value: number): string
 	local def = Stats.get(stat)
 	local suffix = if def and def.format == "pct" or stat == "atkSpeed" then "%" else ""
-	return `+{value}{suffix} {Text.get(use, `stat.{stat}`)}`
+	return `+{value}{suffix} {if def then Text.get(use, def.nameKey) else stat}`
 end
 
 -- Tooltip lines of a blessing: name (rarity) and its stats, sorted by stat id.

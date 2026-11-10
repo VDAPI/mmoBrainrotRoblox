@@ -7,6 +7,9 @@
 -- reached the skill arc): a second bar (`Phone`) stands in the M zone under the cast line while the zone reaches down
 -- far enough (Logic/PhoneHud `navBar`), else it takes a line of the stack ("guide", UI/HudSlots); the bar in the menu
 -- under the minimap is PC's and a tablet's.
+-- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD line at most 32 characters): the bar says the target
+-- and the distance only; the map the way goes through sits in the bar's tooltip ("Dorgan, via Meadows"), which also
+-- shows a name the bar cut.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -18,6 +21,7 @@ local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local NavTarget = require(script.Parent.Parent.Parent.NavTarget)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local Tooltip = require(script.Parent.Parent.Parent.Components.Tooltip)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -59,28 +63,21 @@ local function NavBar(scope: Scope, props: Props): Instance
 		local place = use(PhoneLayout.Places).navBar
 		return if place then place.w else PhoneHud.PANEL_WIDTH
 	end)
+	local function targetName(use: Fusion.Use, t: NavTarget.Target): string
+		return if t.label then t.label elseif t.labelKey then Text.get(use, t.labelKey) else ""
+	end
 	local text = scope:Computed(function(use): string
 		local t = use(target)
 		if not t then
 			return ""
 		end
-		local name = if t.label then t.label elseif t.labelKey then Text.get(use, t.labelKey) else ""
 		local distance = math.floor(use(NavTarget.Distance) or 0)
-		local via = use(NavTarget.Via)
-		local map = if via then Maps.get(via) else nil
 		local arrow = if use(NavTarget.Walking) then "⇶" else "➤"
-		if map then
-			return `{arrow} {Text.get(use, "nav.barVia", {
-				name = name,
-				map = Text.get(use, map.nameKey),
-				n = distance,
-			})}`
-		end
-		return `{arrow} {Text.get(use, "nav.bar", { name = name, n = distance })}`
+		return `{arrow} {Text.get(use, "nav.bar", { name = targetName(use, t), n = distance })}`
 	end)
 
 	local stackAt = if slot then HudSlots.position(scope, slot) else nil
-	return scope:New("Frame")({
+	local frame = scope:New("Frame")({
 		Name = "NavBar",
 		LayoutOrder = 3,
 		Position = if phone
@@ -192,6 +189,27 @@ local function NavBar(scope: Scope, props: Props): Instance
 			}),
 		},
 	})
+	local bar = frame:FindFirstChild("Bar")
+	local open = bar and bar:FindFirstChild("Open")
+	if open and open:IsA("GuiObject") then
+		Tooltip.attach(
+			scope,
+			open,
+			scope:Computed(function(use): string
+				local t = use(target)
+				if not t then
+					return ""
+				end
+				local via = use(NavTarget.Via)
+				local map = if via then Maps.get(via) else nil
+				if map then
+					return Text.get(use, "nav.barVia", { name = targetName(use, t), map = Text.get(use, map.nameKey) })
+				end
+				return targetName(use, t)
+			end)
+		)
+	end
+	return frame
 end
 
 return NavBar

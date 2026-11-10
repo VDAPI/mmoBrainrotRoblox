@@ -5,6 +5,8 @@
 -- server only in the world, so the caption is whole minutes, not a clock).
 -- UI plan phase 2 (one row of effects): PC and tablet show them in the effects row under the portrait (Hud/init), at
 -- the effect icons' size; a phone keeps them at their own place.
+-- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD tooltip at most 48 characters): the returning bonus's
+-- tooltip says the bonus; its minutes are the caption under the icon.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -129,7 +131,7 @@ local function BlessingIcon(scope: Scope, position: Fusion.UsedAs<UDim2>, size: 
 		Theme.Brass.Bright,
 		bonusLeft,
 		scope:Computed(function(use): string
-			return Text.get(use, "returning.tooltip", { pct = Config.Returning.expBonus, min = use(bonusMinutes) })
+			return Text.get(use, "returning.tooltip", { pct = Config.Returning.expBonus })
 		end),
 		nil,
 		scope:Computed(function(use): string

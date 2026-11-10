@@ -7,6 +7,8 @@
 -- Owner 2026-11-10 ("things covering each other"; UI plan package A): on a phone the toggle is a 52 px round button
 -- (Logic/PhoneHud `pvp`) with the countdown's seconds inside it and no badge under it (the badge reached the M zone
 -- and the open drawer covered it; the drawer now opens left of its button, Hud/init).
+-- Owner 2026-11-10 ("too much text"; UI plan package A): the tooltip says the state ("Your PvP: ON"); the zone's rules
+-- are its details (a longer press).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -208,9 +210,10 @@ local function PvpToggle(scope: Scope): Instance
 		scope,
 		button :: GuiObject,
 		scope:Computed(function(use): string
-			local z = use(zoneType)
-			local stateKey = if use(enabled) then "pvp.state.on" else "pvp.state.off"
-			return `{Text.get(use, `pvp.rules.{z}`)}\n{Text.get(use, stateKey)}`
+			return Text.get(use, if use(enabled) then "pvp.state.on" else "pvp.state.off")
+		end),
+		scope:Computed(function(use): string
+			return Text.get(use, `pvp.rules.{use(zoneType)}`)
 		end)
 	)
 	return button

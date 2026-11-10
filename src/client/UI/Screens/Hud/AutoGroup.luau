@@ -8,6 +8,8 @@
 -- with it (the zone map's `autoPopover`, Logic/HudZones; under it they covered the effects row), and a phone has the
 -- same one button at the start of the row under its portrait (Logic/PhoneHud `auto`) instead of three of its own; its
 -- popover opens right of it over the effects row (an overlay the player opens).
+-- Owner 2026-11-10 ("too much text"; UI plan package A): its tooltip names the three in short words; each of the three
+-- keeps its own name in its own tooltip.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
