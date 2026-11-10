@@ -10,6 +10,8 @@
 --     comes from (Titles.sourceOf) and the worn one marked. A row sends SetTitle; the server checks the title is
 --     unlocked (TitleService, Titles.isUnlocked) and refuses a locked one.
 -- `State` is shared by the two (TitleChooser.state): the unlocked list, the shown title and the clock of timed titles.
+-- UI plan 2026-11-10, package D after C: a row is ListRow's Tall row (64, Theme.Size.RowHeightTall), since every row has
+-- a second line (where the title comes from); it was RowHeight (+4 on touch) with two lines squeezed into 48.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -211,7 +213,6 @@ function TitleChooser.Panel(scope: Scope, props: PanelProps): Instance
 			end
 		end)
 	end
-	local rowHeight = Theme.Size.RowHeight + (if props.Touch then 4 else 0)
 	local rows = scope:Computed(function(use, s: Scope): { Instance }
 		local out: { Instance } = {}
 		for index, choice in use(st.choices) do
@@ -235,7 +236,7 @@ function TitleChooser.Panel(scope: Scope, props: PanelProps): Instance
 					Name = id or "None",
 					LayoutOrder = index,
 					Index = index,
-					Height = rowHeight,
+					Tall = true,
 					RichText = true,
 					Text = main,
 					Sub = sub,
