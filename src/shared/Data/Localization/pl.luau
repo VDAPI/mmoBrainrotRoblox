@@ -2765,8 +2765,8 @@ return {
 	-- S18: PvP dot
 	["pvp.dot.off"] = "PvP wyłączone: gracze cię nie zaatakują",
 	["pvp.dot.on"] = "PvP włączone: walczysz z graczami z PvP",
-	["pvp.dot.forced"] = "Czerwona strefa: PvP zawsze włączone.",
-	["pvp.dot.switching"] = "Trwa przełączanie PvP.",
+	["pvp.dot.forced"] = "Czerwona strefa: PvP zawsze włączone",
+	["pvp.dot.switching"] = "Trwa przełączanie PvP",
 	["pvp.dot.switchingIn"] = "Przełączanie PvP: {seconds} s",
 	["pvp.dot.locked"] = "PvP zablokowane: bezpieczna strefa lub walka",
 	["pvp.dot.toggle"] = "Ta kropka włącza i wyłącza PvP.",

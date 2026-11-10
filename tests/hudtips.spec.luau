@@ -3,8 +3,9 @@
 -- A press held long enough for the tooltip (Components/Tooltip LONG_PRESS, Logic/PotionPress.TIP_HOLD) was reading it,
 -- so its release never acts: the touch PvP toggle, the portrait's PvP dot, the Cloak of Luring, Auto Hunt and Auto
 -- Potions (the potion bar and the tracker's rows keep the same rule). The touch toggle says the state the portrait's
--- dot says (UI/PvpState: the player's own switch alone said "OFF" in a red zone, where anyone may attack), and a paused
--- Cloak or Auto Potions says "paused" on its line, with the block's sentence in the details.
+-- dot says (UI/PvpState: the player's own switch alone said "OFF" in a red zone, where anyone may attack), each state
+-- in one line without a final period, and a paused Cloak or Auto Potions says "paused" on its line, with the block's
+-- sentence in the details.
 
 local fs = require("@lune/fs")
 
@@ -58,8 +59,13 @@ T.describe("HUD buttons' tooltips (package A review, owner 2026-11-10)", functio
 			for _, lang in LANGS do
 				local key = `pvp.dot.{state}`
 				T.expect({ key, lang, Locale.has(key, lang) }).toEqual({ key, lang, true })
-				local ok, why = TextCaps.check("hudTip", Locale.T(key, nil, lang))
+				local line = Locale.T(key, nil, lang)
+				local ok, why = TextCaps.check("hudTip", line)
 				T.expect({ key, lang, ok, why }).toEqual({ key, lang, true, nil })
+				-- one-line HUD tips end without a period, in every state alike
+				local period = string.sub(line, -1) == "."
+				T.expect({ key = key, lang = lang, period = period })
+					.toEqual({ key = key, lang = lang, period = false })
 			end
 		end
 	end)

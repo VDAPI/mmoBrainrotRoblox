@@ -230,7 +230,7 @@ return {
 	["hud.stack.worldBoss"] = "World boss",
 	["hud.stack.worldEvent"] = "World event",
 	["hud.stack.bloodMoon"] = "Blood Moon",
-	["hud.stack.tourney"] = "Tourney",
+	["hud.stack.tourney"] = "Tournament",
 	["hud.stack.elite"] = "Elite II",
 	["hud.stack.guide"] = "Guide",
 	["hud.stack.questTracker"] = "Objectives",
@@ -2766,9 +2766,9 @@ return {
 
 	-- S18: PvP dot
 	["pvp.dot.off"] = "PvP off: other players cannot attack you",
-	["pvp.dot.on"] = "PvP on: you can fight other players with PvP on.",
-	["pvp.dot.forced"] = "Red zone: PvP is always on.",
-	["pvp.dot.switching"] = "PvP is switching.",
+	["pvp.dot.on"] = "PvP on: you can fight other players with PvP on",
+	["pvp.dot.forced"] = "Red zone: PvP is always on",
+	["pvp.dot.switching"] = "PvP is switching",
 	["pvp.dot.switchingIn"] = "Switching PvP: {seconds} s",
 	["pvp.dot.locked"] = "PvP locked: safe zone or recent fight",
 	["pvp.dot.toggle"] = "This dot turns PvP on and off.",

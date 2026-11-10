@@ -12,6 +12,7 @@ local fs = require("@lune/fs")
 
 local HudLayout = require("../src/shared/Logic/HudLayout")
 local HudStack = require("../src/shared/Logic/HudStack")
+local Locale = require("../src/shared/Util/Locale")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
 local UiScale = require("../src/shared/Logic/UiScale")
@@ -1026,6 +1027,26 @@ T.describe("HUD column folds (UI plan package A, owner 2026-11-10)", function()
 			T.expect(placed.hidden).toEqual({ "worldEvent", "bloodMoon" })
 		end
 	)
+
+	T.it("the '+N' list names every element of the column in pl and en, with the game's own words", function()
+		for _, id in HudStack.ORDER do
+			for _, lang in { "pl", "en" } do
+				local key = `hud.stack.{id}`
+				T.expect({ key = key, lang = lang, has = Locale.has(key, lang) }).toEqual({
+					key = key,
+					lang = lang,
+					has = true,
+				})
+			end
+			-- package A review: the English list said "Tourney", a word the game uses nowhere else
+			local en = Locale.T(`hud.stack.{id}`, nil, "en")
+			T.expect({ id = id, tourney = string.find(en, "Tourney", 1, true) ~= nil }).toEqual({
+				id = id,
+				tourney = false,
+			})
+		end
+		T.expect(Locale.T("hud.stack.tourney", nil, "en")).toBe("Tournament")
+	end)
 
 	T.it("1280 x 720 with every panel, the guide and the waiting row: panels fold, then '+N'; Z6 stays free", function()
 		local w, h = UiScale.hud(1280, 720, false, UiScale.TOP_BAR)
