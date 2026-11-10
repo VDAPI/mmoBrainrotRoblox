@@ -102,10 +102,10 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
   - panele wydarzeń (boss świata, wydarzenie świata, Krwawy Księżyc, turniej, arena): na PC rozwinięte, póki trwają,
     na telefonie jedna linia;
   - gdy w kolumnie brakuje miejsca, panele same zwijają się do linii, a potem chowają za „+N”.
-- Okna (dziś zwija się okno plecaka, reszta dochodzi z pakietami okien):
+- Okna:
   - Plecak: Statystyki otwarte, Zestawy i tytuł zwinięte (decyzja 2026-11-10). Statystyki pochodne w czterech
-    sekcjach: Atak otwarta; Obrona, Zasoby i Inne zwinięte.
-  - Umiejętności: krótki opis otwarty; „Koszt i odnowienie” oraz „Progi” zwinięte.
+    sekcjach: Ofensywa otwarta; Defensywa, Zasoby i Inne zwinięte.
+  - Umiejętności: krótki opis otwarty; „Koszt i odnowienie” oraz „Przełomy” zwinięte.
   - Ustawienia: Dźwięk, Grafika, Walka i Interfejs otwarte; Łupy, Społeczność i Klawisze zwinięte; na dotyku bez
     Klawiszy.
   - Dziennik: historia i ukończone wątki zwinięte.
