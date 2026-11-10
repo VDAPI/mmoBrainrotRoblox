@@ -15,6 +15,8 @@
 -- is one row of 56 (the name and the state, the reason under it, the buttons at its right): Join and "⋯" on touch,
 -- Join, Whisper and "⋯" on PC (the party invite and the letter go to the "⋯" sheet). A phone shows the online count
 -- beside the tabs and only the two switches under them, so at least three friends show.
+-- UI package C (same owner note): the tab strip and the phone's online count are Theme.Size.TabHeight (44) high, as
+-- Components/Tabs draws the tabs (their frame was 40); a row stays 56 (WorldLayout.friends says why).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -617,8 +619,8 @@ local function FriendsWindow(scope: Scope, props: Props): Fusion.Child
 			Name = "TabStrip",
 			Size = scope:Computed(function(use): UDim2
 				return if use(phone)
-					then UDim2.fromOffset(PHONE_TABS, Theme.Size.ButtonHeightSmall)
-					else UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall)
+					then UDim2.fromOffset(PHONE_TABS, Theme.Size.TabHeight)
+					else UDim2.new(1, 0, 0, Theme.Size.TabHeight)
 			end),
 			BackgroundTransparency = 1,
 			[Children] = Tabs(scope, {
@@ -633,7 +635,7 @@ local function FriendsWindow(scope: Scope, props: Props): Fusion.Child
 		scope:New("TextLabel")({
 			Name = "Status",
 			Position = UDim2.fromOffset(PHONE_TABS + 8, 0),
-			Size = UDim2.new(1, -(PHONE_TABS + 8), 0, Theme.Size.ButtonHeightSmall),
+			Size = UDim2.new(1, -(PHONE_TABS + 8), 0, Theme.Size.TabHeight),
 			BackgroundTransparency = 1,
 			Visible = scope:Computed(function(use): boolean
 				return use(phone) and use(tab) == "friends"

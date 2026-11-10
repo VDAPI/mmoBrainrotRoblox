@@ -2,6 +2,9 @@
 -- Founding a guild at the Guild Master (DESIGN §19): name and tag with live validation (Logic/Guild), the
 -- cost and level requirement shown red when unmet. The server re-checks everything, filters the text and
 -- reserves the name and tag.
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: the form
+-- scrolls in the window (Window.Parts `Scroll`) and "Found the guild" is its pinned footer, so the button stays in
+-- reach on a short screen.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -18,12 +21,13 @@ local Text = require(script.Parent.Parent.Text)
 local TextInput = require(script.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local Window = require(script.Parent.Parent.Components.Window)
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local Rules = GuildSkills.Rules
 
-local function GuildFound(scope: Scope, onDone: () -> ()): Fusion.Child
+local function GuildFound(scope: Scope, onDone: () -> ()): Window.Parts
 	local name = scope:Value("")
 	local tag = scope:Value("")
 	local busy = scope:Value(false)
@@ -103,7 +107,7 @@ local function GuildFound(scope: Scope, onDone: () -> ()): Fusion.Child
 		end)
 	end
 
-	return {
+	local content = {
 		scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
 		-- 2026-10-21: one short line, where the tag shows behind the "i"
 		InfoLine.new(scope, {
@@ -145,9 +149,13 @@ local function GuildFound(scope: Scope, onDone: () -> ()): Fusion.Child
 		}),
 		requirement(5, "guild.found.level", { level = Rules.createLevel }, levelOk),
 		requirement(6, "guild.found.cost", { cost = Format.number(Rules.createCost) }, goldOk),
-		Button(scope, {
-			LayoutOrder = 7,
-			Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+	}
+	return {
+		Content = content,
+		Scroll = true,
+		Footer = Button(scope, {
+			Name = "Found",
+			Size = UDim2.fromOffset(240, Theme.Size.ButtonHeight),
 			Variant = "primary",
 			Text = Text.T(scope, "guild.found.button"),
 			Disabled = scope:Computed(function(use): boolean

@@ -59,18 +59,20 @@ local FIXED_KEYS = {
 
 -- S135: a settings row is a ListRow (alternating parchment) with the control on the right. Owner 2026-10-21: with
 -- `infoKey` an "i" left of the control holds what the setting does (the label stays short).
+-- UI package C (owner 2026-11-10, "too much text, things covering each other, nothing folds"): the row is ListRow's
+-- own height (Theme.Size.RowHeight, 48; it was 50) and the control stands centred in it.
 local INFO_W = 32
 local rowCount = 0
 local function row(scope: Scope, order: number, labelKey: string, control: Instance, infoKey: string?): Instance
 	rowCount += 1
 	local width = if control:IsA("GuiObject") then control.Size.X.Offset else 0
 	local controlAny: any = control
-	controlAny.Position = UDim2.new(1, -4, 0, 3)
+	controlAny.AnchorPoint = Vector2.new(1, 0.5)
+	controlAny.Position = UDim2.new(1, -4, 0.5, 0)
 	local right = (if width > 0 then width else 160) + 8
 	return ListRow(scope, {
 		LayoutOrder = order,
 		Index = rowCount,
-		Height = Theme.Size.MinTouch + 6,
 		Text = Text.T(scope, labelKey),
 		RightInset = right + (if infoKey then INFO_W else 0),
 		[Children] = {

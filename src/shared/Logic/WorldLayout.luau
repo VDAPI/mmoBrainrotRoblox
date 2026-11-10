@@ -7,9 +7,14 @@
 -- numbers, tests/worldlayout.spec checks the lists on every screen of tests/uiframe.spec (at least 2-3 rows on a
 -- phone, 5 on PC, never a negative size). The emote wheel, the fishing panel and the character select take the
 -- whole layer instead. Pure (Lune).
+-- UI package C's parts (owner 2026-11-10, "too much text, things covering each other, nothing folds"): a window with a
+-- pinned footer (Components/Window `Footer`) passes its content above the footer (Logic/WindowFrame.body); the tab
+-- strips are WindowFrame.tabStrip high and the list rows Theme.Size.RowHeight (48) or, with a second line,
+-- RowHeightTall (64), as Components/Tabs and ListRow draw them.
 
 local PhoneHud = require("./PhoneHud")
 local TextCaps = require("./TextCaps")
+local WindowFrame = require("./WindowFrame")
 
 local WorldLayout = {}
 
@@ -29,6 +34,12 @@ WorldLayout.SECTION = table.freeze({ header = 32, headerTouch = 44, summary = 26
 -- Theme.TextSize.Body and Small: the line heights the dialogue boxes count in.
 WorldLayout.BODY = 20
 WorldLayout.SMALL = 17
+-- Theme.Size.RowHeight and RowHeightTall: Components/ListRow's one-line and two-line rows.
+WorldLayout.ROW = 48
+WorldLayout.ROW_TALL = 64
+-- A scrolling tab strip (Components/Tabs `Scroll`, the bar's room under the row) and a plain one.
+local STRIP = WindowFrame.tabStrip(true).height
+local TABS = WindowFrame.tabStrip(false).height
 
 -- The device of a screen: a touch screen is a phone while compact (UI/PhoneLayout.Compact).
 function WorldLayout.device(touch: boolean, compact: boolean): Device
@@ -62,8 +73,9 @@ end
 
 -- Rankings ---------------------------------------------------------------------------------------------------------
 -- PC: the tab column on the left (`side`, the board 12 px right of it); touch: the tab strip on top (`strip`, the board
--- 8 px under it). The board: the title with its (i), the filter strip (on a phone a button at the title's right that
--- steps through the filter), the column heads, the rows (the podium of the first three is a Section in the list:
+-- 8 px under it; both WindowFrame.tabStrip with the bar's room). The board: the title with its (i), the filter strip
+-- (on a phone the window's title bar button, Components/Window HeaderAction, steps through the filter, so the strip
+-- keeps the screen's width), the column heads, the rows (the podium of the first three is a Section in the list:
 -- rankPodium, folded on a phone) and the footer (PC: the week's countdown, my place, the update time; a phone keeps
 -- only my place, the countdown goes into the title row, the update time behind the title's (i)).
 -- Review 2026-11-10: the weekly board's rewards line (`rewards`, its height at the top of the rows: Small 17 and its
@@ -73,7 +85,6 @@ export type Rankings = {
 	strip: number,
 	title: number,
 	filter: number,
-	filterButton: number,
 	headTop: number,
 	head: number,
 	footer: number,
@@ -94,10 +105,10 @@ function WorldLayout.rankings(
 ): Rankings
 	local touch = device ~= "pc"
 	local phone = device == "phone"
-	local strip = if touch then 50 else 0
+	local strip = if touch then STRIP else 0
 	local board = content.h - (if touch then strip + 8 else 0)
 	local title = if phone then 30 else 34
-	local filterH = if filter and not phone then 50 else 0
+	local filterH = if filter and not phone then STRIP else 0
 	local headTop = title + 4 + (if filterH > 0 then filterH + 4 else 0)
 	local head = if phone then 26 else 30
 	local footerLines = if phone then 1 elseif info then 3 else 2
@@ -108,7 +119,6 @@ function WorldLayout.rankings(
 		strip = strip,
 		title = title,
 		filter = filterH,
-		filterButton = if filter and phone then 150 else 0,
 		headTop = headTop,
 		head = head,
 		footer = footer,
@@ -122,9 +132,9 @@ end
 -- Season pass ------------------------------------------------------------------------------------------------------
 -- The header (PC and tablet: the season, its tier, when it ends, the points bar and the week's limits; a phone: the
 -- season, when it ends and its (i) and the tier on one line over a thin points bar, the limits behind the (i)), the
--- toolbar (tabs and the claim and unlock buttons), then PC the horizontal strip of tiers, touch a list of tier rows
--- under their heads (the list's own top padding 4; a phone's rows 50: the icon 40, the name and the state one line
--- each).
+-- toolbar (the tabs, a plain WindowFrame.tabStrip, and the claim and unlock buttons), then PC the horizontal strip of
+-- tiers, touch a list of tier rows under their heads (the list's own top padding 4; a phone's rows 50: the icon 40, the
+-- name and the state one line each).
 export type Season = {
 	header: number,
 	toolbar: number,
@@ -143,7 +153,7 @@ WorldLayout.SEASON_STRIP = table.freeze({ col = 128, tierRow = 28, cell = 134, s
 function WorldLayout.season(content: Size, device: Device): Season
 	local phone = device == "phone"
 	local header = if device == "pc" then 128 elseif phone then 40 else 120
-	local toolbar, gap = 44, 8 -- Theme.Padding.Small
+	local toolbar, gap = TABS, 8 -- Theme.Padding.Small
 	local heads = if phone then 24 else 28
 	local top = header + toolbar + gap + heads + 4 + 4
 	local strip = WorldLayout.SEASON_STRIP
@@ -172,8 +182,9 @@ end
 -- Achievements ------------------------------------------------------------------------------------------------------
 -- The summary (points, earned, the range and filter switches), PC the categories column with the list in the middle;
 -- touch the category tabs over the list. Touch (owner 2026-11-10, a phone kept one row of the list): the numbers on
--- one line with a thin bar under it, both switches in one row under them; a phone's rows 52 (name, the short line and
--- a 3-px bar), a tablet's 66.
+-- one line with a thin bar under it, both switches in one row under them. UI package C's rows: PC and a tablet ROW_TALL
+-- (the name, the short line and the bar), a phone ROW (the name and a 3-px bar; the description, where it counts and
+-- the points are in the sheet a tap opens), so three rows show.
 -- Review 2026-11-10: `switchButton` is one button of the range and filter switches (three buttons 6 apart): PC's switch
 -- is ACH_SWITCH wide, a touch screen's half the content; the labels fit it in one line with the button's padding.
 export type Achievements = {
@@ -199,7 +210,7 @@ function WorldLayout.achievements(content: Size, device: Device): Achievements
 			switchButton = WorldLayout.ACH_SWITCH / 3 - 6,
 			tabsTop = 0,
 			tabs = 0,
-			list = { top = top, height = content.h - top, row = 66, gap = 0 },
+			list = { top = top, height = content.h - top, row = WorldLayout.ROW_TALL, gap = 0 },
 		}
 	end
 	local phone = device == "phone"
@@ -207,22 +218,34 @@ function WorldLayout.achievements(content: Size, device: Device): Achievements
 	local summary = numbers + 4 + 44
 	local gap = if phone then 4 else 8
 	local tabsTop = summary + gap
-	local top = tabsTop + 50 + gap
+	local top = tabsTop + STRIP + gap
 	return {
 		summary = summary,
 		numbers = numbers,
 		switches = 44,
 		switchButton = content.w / 2 / 3 - 6,
 		tabsTop = tabsTop,
-		tabs = 50,
-		list = { top = top, height = content.h - top, row = if phone then 52 else 66, gap = 0 },
+		tabs = STRIP,
+		list = {
+			top = top,
+			height = content.h - top,
+			row = if phone then WorldLayout.ROW else WorldLayout.ROW_TALL,
+			gap = 0,
+		},
 	}
 end
 
 -- The bestiary tab in the achievements list's place: the regions as a Section (bestiaryRegions, folded on a phone; the
 -- folded header names the chosen region and its tiers), the entries of the chosen region under it. Open on a screen
 -- too short for both, the region rows scroll in what is left and the entries keep the rest, never less than nothing.
-WorldLayout.BESTIARY = table.freeze({ regionRow = 40, entryRow = 58, entryRowPhone = 52, gap = 6 })
+-- UI package C's rows: a region is one line (ROW), an entry two (ROW_TALL: the name, the tiers and points), a phone's
+-- entry one (ROW: the name and the bar; the tiers are in its sheet), so a phone keeps two entries under the header.
+WorldLayout.BESTIARY = table.freeze({
+	regionRow = WorldLayout.ROW,
+	entryRow = WorldLayout.ROW_TALL,
+	entryRowPhone = WorldLayout.ROW,
+	gap = 6,
+})
 
 export type Bestiary = { regions: number, list: List }
 
@@ -251,6 +274,7 @@ end
 -- The hunting contracts' block as a Section (boardHunt, folded on a phone; its rule and the "next contract from level
 -- N" line behind the (i)), the daily / weekly tabs with the set's line (beside the tabs on a phone), the cards (a
 -- phone's card 92: the title, the objective and smaller reward slots).
+-- The tabs are a plain WindowFrame.tabStrip (2 px under it: the selected tab's frame).
 export type QuestBoard = {
 	hunt: number,
 	card: number,
@@ -266,8 +290,9 @@ WorldLayout.BOARD_CARD = table.freeze({ height = 110, compact = 92, slot = 38, c
 function WorldLayout.questBoard(content: Size, device: Device, hunt: boolean, huntOpen: boolean): QuestBoard
 	local phone = device == "phone"
 	local block = if hunt then WorldLayout.section(device, huntOpen, WorldLayout.HUNT_CARD) + 8 else 0
-	local setTop = if phone then 0 else 46
-	local tabsRow = if phone then 46 else 46 + 44 + 4
+	local strip = TABS + 2
+	local setTop = if phone then 0 else strip
+	local tabsRow = if phone then strip else strip + 44 + 4
 	local top = block + tabsRow
 	local card = if phone then WorldLayout.BOARD_CARD.compact else WorldLayout.BOARD_CARD.height
 	return {
@@ -281,7 +306,9 @@ function WorldLayout.questBoard(content: Size, device: Device, hunt: boolean, hu
 end
 
 -- Quest dialog ------------------------------------------------------------------------------------------------------
--- The portrait with the quest's name, the page (scrolls), the reward choice and the buttons. A phone: a smaller
+-- The portrait with the quest's name, the page (scrolls) and the reward choice at the bottom of the content; the
+-- buttons ("Nie teraz" / "Wstecz", "Dalej" / "Przyjmij" / "Oddaj") are the window's pinned footer (UI package C,
+-- Components/Window `Footer`), so `content` is what is left above it (Logic/WindowFrame.body). A phone: a smaller
 -- portrait and the reward choice in one row (its label at the left, the slots beside it), so the page keeps 3 lines.
 export type QuestDialog = {
 	portrait: Size,
@@ -291,16 +318,15 @@ export type QuestDialog = {
 	choice: number,
 	choiceLabel: number,
 	slot: number,
-	buttons: number,
 }
 
 function WorldLayout.questDialog(content: Size, device: Device, hasChoice: boolean): QuestDialog
 	local phone = device == "phone"
 	local portrait = if phone then { w = 64, h = 72 } else { w = 84, h = 96 }
 	local bodyTop = portrait.h + (if phone then 8 else 10)
-	local buttons = 52 + (if phone then 8 else 12)
+	-- the choice's frame and the gap over it
 	local choice = if hasChoice then (if phone then 56 + 6 else 88 + 4) else 0
-	local body = content.h - bodyTop - buttons - choice
+	local body = content.h - bodyTop - choice
 	return {
 		portrait = portrait,
 		bodyTop = bodyTop,
@@ -309,7 +335,6 @@ function WorldLayout.questDialog(content: Size, device: Device, hasChoice: boole
 		choice = choice,
 		choiceLabel = if phone then 150 else 0,
 		slot = if phone then 52 else 72,
-		buttons = buttons,
 	}
 end
 
@@ -359,8 +384,9 @@ function WorldLayout.npcDialog(content: Size, device: Device): NpcDialog
 end
 
 -- Party ---------------------------------------------------------------------------------------------------------------
--- The tabs (members, the party finder), the invite row, the members, the bonus as one line with the rest behind its
--- (i) and the chat and leave buttons. A phone puts the invite, chat and leave into one row on top, rows 52.
+-- The tabs (members, the party finder; a plain WindowFrame.tabStrip), the invite row, the members, the bonus as one line
+-- with the rest behind its (i) and the chat and leave buttons. A phone puts the invite, chat and leave into one row on
+-- top; its member rows are ROW (the avatar 40, the name, the two bars), PC's ROW_TALL.
 export type Party = {
 	tabs: number,
 	invite: number,
@@ -373,12 +399,12 @@ export type Party = {
 
 function WorldLayout.party(content: Size, device: Device): Party
 	local phone = device == "phone"
-	local tabs = if phone then 44 else 48
+	local tabs = TABS + (if phone then 4 else 8)
 	local invite = if phone then 44 + 6 else 44 + 8
 	local bonus = 22 + 4
 	local footer = if phone then 0 else 46 + 4
 	local members = content.h - tabs
-	local row = if phone then 52 else 64
+	local row = if phone then WorldLayout.ROW else WorldLayout.ROW_TALL
 	return {
 		tabs = tabs,
 		invite = invite,
@@ -396,9 +422,10 @@ function WorldLayout.party(content: Size, device: Device): Party
 end
 
 -- Friends -------------------------------------------------------------------------------------------------------------
--- The tabs (friends, ignored) with, on a phone, the online count beside them; the header (the online count and the
--- two switches; a phone: only the switches); the rows: name and state on one line, the reason under it, the buttons
--- at the right (Join and "⋯" on touch; Join, Whisper and "⋯" on PC).
+-- The tabs (friends, ignored; a plain WindowFrame.tabStrip) with, on a phone, the online count beside them; the header
+-- (the online count and the two switches; a phone: only the switches); the rows: name and state on one line, the
+-- reason under it, the buttons at the right (Join and "⋯" on touch; Join, Whisper and "⋯" on PC). A row stays 56, not
+-- UI package C's ROW_TALL 64: three 64-px rows do not fit a phone's list under the tabs and the switches.
 export type Friends = {
 	tabs: number,
 	header: number,
@@ -409,7 +436,7 @@ export type Friends = {
 
 function WorldLayout.friends(content: Size, device: Device): Friends
 	local phone = device == "phone"
-	local tabs = 40 + 6
+	local tabs = TABS + 6
 	local status = if phone then 0 else 22 + 4
 	local header = status + 44 + 6
 	local top = tabs + header
@@ -437,8 +464,10 @@ function WorldLayout.finderStepperText(): number
 end
 
 -- Character select ------------------------------------------------------------------------------------------------
--- The whole layer: the title and subtitle under Roblox's top bar, the slot cards, the test-mode line. A card keeps
--- "Graj" and "Usuń" pinned to its bottom; what is above them (emblem, name, class, map) shrinks on a short screen.
+-- The whole layer: the title and subtitle under Roblox's top bar, the slot cards, the test-mode line. A card keeps its
+-- buttons in a footer pinned to its bottom, as a window's (UI package C: one WindowFrame.FOOTER row under a rule in the
+-- FOOTER_GAP): "Usuń" (CHAR_CARD.delete wide) and "Graj" (the rest) side by side, or "Utwórz postać" / "Odblokuj"
+-- alone; what is above them (emblem, name, class, map) shrinks on a short screen.
 export type CharacterSelect = {
 	header: number,
 	titleTop: number,
@@ -457,7 +486,7 @@ export type CharacterSelect = {
 	delete: Rect,
 }
 
-WorldLayout.CHAR_CARD = table.freeze({ width = 300, maxHeight = 440, play = 52, delete = 40, gap = 8 })
+WorldLayout.CHAR_CARD = table.freeze({ width = 300, maxHeight = 440, delete = 100, gap = 8 })
 
 function WorldLayout.characterSelect(layer: Size, compact: boolean, topBar: number): CharacterSelect
 	local C = WorldLayout.CHAR_CARD
@@ -470,8 +499,8 @@ function WorldLayout.characterSelect(layer: Size, compact: boolean, topBar: numb
 	local body = { left = 0, top = header, right = layer.w, bottom = layer.h - footer }
 	local cardHeight = math.min(C.maxHeight, body.bottom - body.top - 8)
 	local padding = if compact then 12 else 22
-	local actions = C.play + C.gap + C.delete
-	local info = cardHeight - 2 * padding - actions - C.gap
+	local actions = WindowFrame.FOOTER
+	local info = cardHeight - 2 * padding - actions - WindowFrame.FOOTER_GAP
 	local cardTop = body.top + ((body.bottom - body.top) - cardHeight) / 2
 	local cardBottom = cardTop + cardHeight - padding
 	local width = if compact then 260 else C.width
@@ -492,8 +521,9 @@ function WorldLayout.characterSelect(layer: Size, compact: boolean, topBar: numb
 		emblem = if compact then math.clamp(info - (32 + 24 + 20 + 3 * 4), 0, 56) else 84,
 		info = info,
 		actions = actions,
-		play = { left = left, top = cardBottom - actions, right = right, bottom = cardBottom - actions + C.play },
-		delete = { left = left, top = cardBottom - C.delete, right = right, bottom = cardBottom },
+		-- the footer row: "Usuń" at its left, "Graj" in the rest, C.gap apart
+		play = { left = left + C.delete + C.gap, top = cardBottom - actions, right = right, bottom = cardBottom },
+		delete = { left = left, top = cardBottom - actions, right = left + C.delete, bottom = cardBottom },
 	}
 end
 

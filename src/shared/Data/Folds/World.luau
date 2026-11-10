@@ -20,4 +20,8 @@ return table.freeze({
 	guildLog = false,
 	guildBanner = false,
 	guildRights = false,
+	-- UI package C's adoption: how guild EXP is earned (GuildWindow/Goals) and the Blood Moon's rules and rewards
+	-- (BloodMoonWindow), titled parts that were folded for the session only (Components/Details)
+	guildSources = false,
+	bloodMoonRules = false,
 } :: { [string]: boolean | { pc: boolean, phone: boolean } })

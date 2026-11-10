@@ -8,6 +8,10 @@
 -- 2026-10-21 (owner: too many descriptions): the description is one short line (the full one behind the "i" of the
 -- title), "this server only" is short with its reason behind an "i", the rules and rewards are folded under their
 -- title (Components/Details, closed).
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: the
+-- window's own scroll holds the column (Window.Parts `Scroll`), the player's own line stays in the pinned footer while
+-- the top 10 scroll, and the rules and rewards are a Section saved on the account (bloodMoonRules, folded), the look
+-- of a titled part of a window (docs/UI-ZASADY.md §4); the region tabs are Components/Tabs' own height.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -15,18 +19,19 @@ local BloodMoon = require(ReplicatedStorage.Shared.Logic.BloodMoon)
 local BloodMoonView = require(script.Parent.Parent.BloodMoonView)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
-local Details = require(script.Parent.Parent.Components.Details)
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoLine = require(script.Parent.Parent.Components.InfoLine)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local ScheduledEvents = require(ReplicatedStorage.Shared.Data.ScheduledEvents)
+local Section = require(script.Parent.Parent.Components.Section)
 local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
+local Window = require(script.Parent.Parent.Components.Window)
 
 local Children = Fusion.Children
 local peek = Fusion.peek
@@ -72,7 +77,7 @@ local function cell(s: Scope, text: string, width: number, color: Color3?, align
 	})
 end
 
-local function BloodMoonWindow(scope: Scope): Fusion.Child
+local function BloodMoonWindow(scope: Scope): Window.Parts
 	local board = BloodMoonView.Board
 	local phase = BloodMoonView.Phase
 	local mine = State.Value({ "character", "bloodMoon" })
@@ -271,19 +276,25 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 		table.insert(ruleLines, line(scope, i, Text.T(scope, rule.key, rule.args), Theme.Paper.Text))
 	end
 
-	return scope:New("ScrollingFrame")({
-		Name = "BloodMoon",
-		Size = UDim2.fromScale(1, 1),
+	-- the player's own place or points: the footer's one line, beside no button
+	local own = scope:New("TextLabel")({
+		Name = "You",
+		Size = UDim2.fromScale(0, 1),
 		BackgroundTransparency = 1,
-		BorderSizePixel = 0,
-		ScrollBarThickness = 6,
-		ScrollBarImageColor3 = Theme.Paper.Rule,
-		CanvasSize = UDim2.new(),
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		ScrollingDirection = Enum.ScrollingDirection.Y,
-		[Children] = {
+		Text = you,
+		TextColor3 = Theme.Paper.Text,
+		TextSize = Theme.TextSize.Body,
+		FontFace = Theme.Fonts.BodyBold,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
+	})
+
+	return {
+		Scroll = true,
+		Footer = own,
+		Content = {
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-			scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
 			InfoLine.new(scope, {
 				LayoutOrder = 1,
 				Text = scope:Computed(function(use): string
@@ -300,7 +311,6 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 				Tabs = tabs,
 				Selected = selected,
 				LayoutOrder = 4,
-				Size = UDim2.new(1, 0, 0, 44),
 				Scroll = true,
 			}),
 			scope:New("Frame")({
@@ -314,7 +324,6 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 					rows :: any,
 				},
 			}),
-			line(scope, 6, you, Theme.Paper.Text, Theme.TextSize.Small, Theme.Fonts.BodyBold),
 			InfoLine.new(scope, {
 				LayoutOrder = 7,
 				Text = source,
@@ -323,19 +332,14 @@ local function BloodMoonWindow(scope: Scope): Fusion.Child
 				Color = sourceColor,
 			}),
 			-- the scoring and the rewards, folded under their title
-			Details.new(scope, {
-				Key = "bloodmoon/rules",
+			Section.new(scope, {
+				Id = "bloodMoonRules",
+				Title = Text.T(scope, "bloodmoon.window.rules"),
 				LayoutOrder = 20,
-				MoreText = scope:Computed(function(use): string
-					return `{Text.get(use, "bloodmoon.window.rules")} ▸`
-				end),
-				LessText = scope:Computed(function(use): string
-					return `{Text.get(use, "bloodmoon.window.rules")} ▾`
-				end),
 				Children = ruleLines,
 			}),
 		},
-	})
+	}
 end
 
 return BloodMoonWindow

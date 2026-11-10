@@ -5,6 +5,8 @@
 -- the window opens (ReturningController).
 -- 2026-10-21 (owner: too many descriptions): each entry shows its date and title, its text is folded
 -- (Components/Details); only the newest entry opens unfolded.
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: the
+-- heading and the entries scroll in the window (Window.Parts `Scroll`) and "To the game" is its pinned footer.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +18,7 @@ local SectionLabel = require(script.Parent.Parent.Components.SectionLabel)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
+local Window = require(script.Parent.Parent.Components.Window)
 
 local Children = Fusion.Children
 
@@ -25,9 +28,6 @@ export type Props = {
 	Entries: { Changelog.Entry }, -- newest first
 	Close: () -> (),
 }
-
-local HEADER = 44
-local FOOTER = Theme.Size.ButtonHeight + Theme.Padding.Medium
 
 local function dateArgs(day: number): { [string]: any }
 	local y, m, d = Time.civil(day * 86400)
@@ -83,19 +83,24 @@ local function entryCard(scope: Scope, order: number, entry: Changelog.Entry, op
 	})
 end
 
-local function WhatsNew(scope: Scope, props: Props): Fusion.Child
+local function WhatsNew(scope: Scope, props: Props): Window.Parts
 	local cards: { Instance } = {}
 	for i, entry in props.Entries do
+		-- only the newest entry opens unfolded (decision 2026-10-21)
 		table.insert(cards, entryCard(scope, i, entry, i == 1))
 	end
-	return scope:New("Frame")({
-		Name = "WhatsNew",
-		Size = UDim2.fromScale(1, 1),
-		BackgroundTransparency = 1,
-		[Children] = {
+	return {
+		Scroll = true,
+		Content = {
+			scope:New("UIListLayout")({
+				SortOrder = Enum.SortOrder.LayoutOrder,
+				Padding = UDim.new(0, Theme.Padding.Large),
+			}),
 			scope:New("TextLabel")({
 				Name = "Header",
-				Size = UDim2.new(1, 0, 0, HEADER),
+				LayoutOrder = 0,
+				Size = UDim2.fromScale(1, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "changelog.window.header"),
 				FontFace = Theme.Fonts.Display,
@@ -104,36 +109,16 @@ local function WhatsNew(scope: Scope, props: Props): Fusion.Child
 				TextWrapped = true,
 				TextXAlignment = Enum.TextXAlignment.Left,
 			}),
-			scope:New("ScrollingFrame")({
-				Name = "Entries",
-				Position = UDim2.fromOffset(0, HEADER),
-				Size = UDim2.new(1, 0, 1, -HEADER - FOOTER),
-				BackgroundTransparency = 1,
-				BorderSizePixel = 0,
-				CanvasSize = UDim2.new(),
-				AutomaticCanvasSize = Enum.AutomaticSize.Y,
-				ScrollBarThickness = 6,
-				ScrollBarImageColor3 = Theme.Paper.Rule,
-				[Children] = {
-					scope:New("UIListLayout")({
-						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, Theme.Padding.Large),
-					}),
-					scope:New("UIPadding")({ PaddingRight = UDim.new(0, Theme.Padding.Medium) }),
-					cards :: any,
-				},
-			}),
-			Button(scope, {
-				Name = "ToTheGame",
-				AnchorPoint = Vector2.new(1, 1),
-				Position = UDim2.fromScale(1, 1),
-				Size = UDim2.fromOffset(220, Theme.Size.ButtonHeight),
-				Text = Text.T(scope, "changelog.window.close"),
-				Variant = "primary",
-				OnClick = props.Close,
-			}),
+			cards :: any,
 		},
-	})
+		Footer = Button(scope, {
+			Name = "ToTheGame",
+			Size = UDim2.fromOffset(220, Theme.Size.ButtonHeight),
+			Text = Text.T(scope, "changelog.window.close"),
+			Variant = "primary",
+			OnClick = props.Close,
+		}),
+	}
 end
 
 return WhatsNew

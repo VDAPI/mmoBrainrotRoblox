@@ -7,6 +7,9 @@
 -- Owner 2026-11-10 (UI plan E, Logic/WorldLayout.characterSelect): the buttons ("Graj" and "Usuń", "Utwórz",
 -- "Odblokuj") are pinned to the card's bottom and what stands over them is cut on a short card: a phone's card is
 -- narrower, its emblem shrinks with the room and its texts are smaller, so the buttons never leave the screen.
+-- UI package C (owner 2026-11-10, "too much text, things covering each other, nothing folds"): the buttons are the
+-- card's footer, as a window's: a rule in the gap and one row of 52 ("Usuń" at its left, "Graj" in the rest), so the
+-- card keeps 48 px more for its emblem and texts than with the two buttons stacked (52 + 8 + 40).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -22,6 +25,7 @@ local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Types = require(ReplicatedStorage.Shared.Types)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
+local WindowFrame = require(ReplicatedStorage.Shared.Logic.WindowFrame)
 local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children = Fusion.Children
@@ -45,20 +49,18 @@ export type Props = {
 }
 
 local CARD = WorldLayout.CHAR_CARD
+local FOOTER = WindowFrame.FOOTER
+local FOOTER_GAP = WindowFrame.FOOTER_GAP
 
--- What stands over the buttons (`info`, cut on a short card) and the buttons pinned under it (`actions` tall).
-local function pinned(
-	scope: Scope,
-	info: { Instance },
-	actions: { Instance },
-	height: number,
-	gap: number
-): { Instance }
+-- What stands over the buttons (`info`, cut on a short card) and the card's footer under it: the rule in the middle
+-- of the gap and one row of buttons (Logic/WorldLayout.characterSelect's `play` and `delete`).
+local function pinned(scope: Scope, info: { Instance }, actions: { Instance }, gap: number): { Instance }
 	return {
 		scope:New("Frame")({
 			Name = "Info",
 			LayoutOrder = 1,
-			Size = UDim2.new(1, 0, 1, -(height + CARD.gap)),
+			-- the card's list puts its CARD.gap (FOOTER_GAP) between this part and the footer
+			Size = UDim2.new(1, 0, 1, -(FOOTER + FOOTER_GAP)),
 			BackgroundTransparency = 1,
 			ClipsDescendants = true,
 			[Children] = {
@@ -71,17 +73,34 @@ local function pinned(
 			},
 		}),
 		scope:New("Frame")({
-			Name = "Actions",
+			Name = "Footer",
 			LayoutOrder = 2,
-			Size = UDim2.new(1, 0, 0, height),
+			Size = UDim2.new(1, 0, 0, FOOTER),
 			BackgroundTransparency = 1,
 			[Children] = {
-				scope:New("UIListLayout")({
-					SortOrder = Enum.SortOrder.LayoutOrder,
-					VerticalAlignment = Enum.VerticalAlignment.Bottom,
-					Padding = UDim.new(0, CARD.gap),
+				-- the rule stands beside the buttons' row, never in its list (a list lays out every sibling)
+				scope:New("Frame")({
+					Name = "Rule",
+					AnchorPoint = Vector2.new(0, 0.5),
+					Position = UDim2.fromOffset(0, -FOOTER_GAP / 2),
+					Size = UDim2.new(1, 0, 0, Theme.Stroke.Thin),
+					BackgroundColor3 = Theme.Paper.Rule,
+					BorderSizePixel = 0,
 				}),
-				actions :: any,
+				scope:New("Frame")({
+					Name = "Buttons",
+					Size = UDim2.fromScale(1, 1),
+					BackgroundTransparency = 1,
+					[Children] = {
+						scope:New("UIListLayout")({
+							FillDirection = Enum.FillDirection.Horizontal,
+							VerticalAlignment = Enum.VerticalAlignment.Center,
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							Padding = UDim.new(0, CARD.gap),
+						}),
+						actions :: any,
+					},
+				}),
 			},
 		}),
 	}
@@ -165,27 +184,26 @@ local function occupied(scope: Scope, props: Props, summary: Types.SlotSummary, 
 		}),
 	}, {
 		Button(scope, {
-			Name = "Play",
-			LayoutOrder = 1,
-			Text = Text.T(scope, "charSelect.play"),
-			Variant = "primary",
-			Size = UDim2.new(1, 0, 0, CARD.play),
-			Disabled = props.Busy,
-			OnClick = props.OnPlay,
-		}),
-		Button(scope, {
 			Name = "Delete",
-			LayoutOrder = 2,
+			LayoutOrder = 1,
 			Text = Text.T(scope, "charSelect.delete"),
 			Variant = "ghost",
-			Size = UDim2.new(1, 0, 0, CARD.delete),
-			TextSize = Theme.TextSize.Small,
+			Size = UDim2.fromOffset(CARD.delete, FOOTER),
 			Disabled = props.Busy,
 			OnClick = function()
 				props.OnDelete(summary)
 			end,
 		}),
-	}, l.actions, if small then 4 else Theme.Padding.Small)
+		Button(scope, {
+			Name = "Play",
+			LayoutOrder = 2,
+			Text = Text.T(scope, "charSelect.play"),
+			Variant = "primary",
+			Size = UDim2.new(1, -(CARD.delete + CARD.gap), 0, FOOTER),
+			Disabled = props.Busy,
+			OnClick = props.OnPlay,
+		}),
+	}, if small then 4 else Theme.Padding.Small)
 end
 
 local function empty(scope: Scope, props: Props, l: WorldLayout.CharacterSelect): { Instance }
@@ -206,11 +224,11 @@ local function empty(scope: Scope, props: Props, l: WorldLayout.CharacterSelect)
 			LayoutOrder = 1,
 			Text = Text.T(scope, "charSelect.createButton"),
 			Variant = "secondary",
-			Size = UDim2.new(1, 0, 0, CARD.play),
+			Size = UDim2.new(1, 0, 0, FOOTER),
 			Disabled = props.Busy,
 			OnClick = props.OnCreate,
 		}),
-	}, CARD.play, Theme.Padding.Small)
+	}, Theme.Padding.Small)
 end
 
 -- S121: a locked empty slot.
@@ -267,7 +285,7 @@ local function locked(scope: Scope, props: Props, passKey: string, l: WorldLayou
 				then Text.T(scope, "premium.soon")
 				else Text.T(scope, "charSelect.unlock", { price = if pass then pass.robux else 0 }),
 			Variant = "primary",
-			Size = UDim2.new(1, 0, 0, CARD.play),
+			Size = UDim2.new(1, 0, 0, FOOTER),
 			Disabled = scope:Computed(function(use): boolean
 				return soon or use(props.Busy)
 			end),
@@ -277,7 +295,7 @@ local function locked(scope: Scope, props: Props, passKey: string, l: WorldLayou
 				end
 			end,
 		}),
-	}, CARD.play, Theme.Padding.Small)
+	}, Theme.Padding.Small)
 end
 
 local function SlotCard(scope: Scope, props: Props): Instance

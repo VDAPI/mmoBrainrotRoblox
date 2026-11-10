@@ -2,6 +2,9 @@
 -- Guild window (G, DESIGN §19, §23): Overview / Members / Goals / Bank / Skills / Settings tabs (Goals and Bank S159g).
 -- Without a guild it says where to found one (the Guild Master in the capital) and how to join (an invitation);
 -- 2026-10-21: two short lines, the level and the price behind an "i" (Components/InfoLine).
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's tabs: the strip's frame
+-- is WindowFrame.tabStrip(true) high (the tabs 44 and the scroll bar's room; it was 40 around a taller strip) and the
+-- tab's page starts under it and the selected tab's frame, read from the same numbers.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -19,10 +22,14 @@ local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local WindowFrame = require(ReplicatedStorage.Shared.Logic.WindowFrame)
 
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
+
+-- the scrolling tab strip's height (Components/Tabs with Scroll)
+local STRIP = WindowFrame.tabStrip(true).height
 
 export type Props = {
 	ShowModal: (spec: any) -> (),
@@ -82,7 +89,7 @@ local function GuildWindow(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("Frame")({
 			Name = "TabStrip",
-			Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall),
+			Size = UDim2.new(1, 0, 0, STRIP),
 			BackgroundTransparency = 1,
 			Visible = hasGuild,
 			[Children] = Tabs(scope, {
@@ -100,8 +107,8 @@ local function GuildWindow(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("Frame")({
 			Name = "Content",
-			Position = UDim2.fromOffset(0, 52),
-			Size = UDim2.new(1, 0, 1, -52),
+			Position = UDim2.fromOffset(0, STRIP + WindowFrame.TAB_EDGE),
+			Size = UDim2.new(1, 0, 1, -(STRIP + WindowFrame.TAB_EDGE)),
 			BackgroundTransparency = 1,
 			[Children] = content :: any,
 		}),

@@ -14,6 +14,9 @@
 -- Review 2026-11-10 (a phone with the regions open had room for no entry): on a phone the regions are a picker, a tap on
 -- one folds them again (back to the phone's default, so nothing open stays saved), and its entries show under the
 -- header that names it.
+-- UI package C's rows (same owner note): a region row is ListRow's one-line height (48), an entry Tall (64: the name,
+-- the tiers and points) on PC and a tablet and one line on a phone (the name, kills and the bar; the tiers and points
+-- are in the sheet a tap opens).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -43,7 +46,6 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local BestiaryTab = {}
 
 local GAP = WorldLayout.BESTIARY.gap
-local REGION_ROW = WorldLayout.BESTIARY.regionRow
 local REGIONS_ID = "bestiaryRegions"
 local COUNT = 96
 local PREVIEW = 150
@@ -102,7 +104,6 @@ local function regionRows(scope: Scope, ctx: Context.Ctx, height: Fusion.Compute
 				Name = region,
 				LayoutOrder = i,
 				Index = i,
-				Height = REGION_ROW,
 				Dense = true,
 				RightInset = COUNT,
 				Text = scope:Computed(function(use): string
@@ -164,6 +165,7 @@ end
 
 -- The entries of the chosen region.
 local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeight: number): Instance
+	local tall = rowHeight >= Theme.Size.RowHeightTall
 	local rows = scope:Computed(function(use): { Bestiary.Row }
 		return Bestiary.rows(chr(use, ctx), use(ctx.region))
 	end)
@@ -202,10 +204,10 @@ local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeig
 					Name = id,
 					LayoutOrder = i,
 					Index = i,
-					Height = rowHeight,
+					Tall = tall,
 					RightInset = COUNT + 8,
 					Text = name,
-					Sub = sub,
+					Sub = if tall then sub else nil,
 					Muted = not row.known,
 					Selected = s:Computed(function(use2): boolean
 						return use2(ctx.entry) == id
@@ -219,8 +221,9 @@ local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeig
 					[Children] = {
 						s:New("TextLabel")({
 							Name = "Count",
-							AnchorPoint = Vector2.new(1, 0),
-							Position = UDim2.new(1, -8, 0, 4),
+							-- over the second line's place in a Tall row, beside the name in a one-line row
+							AnchorPoint = Vector2.new(1, if tall then 0 else 0.5),
+							Position = UDim2.new(1, -8, if tall then 0 else 0.5, if tall then 4 else 0),
 							Size = UDim2.fromOffset(COUNT, 20),
 							BackgroundTransparency = 1,
 							Text = s:Computed(function(use2): string
@@ -242,8 +245,8 @@ local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeig
 							{
 								Name = "Progress",
 								AnchorPoint = Vector2.new(0, 1),
-								Position = UDim2.new(0, Theme.Padding.Small + 4, 1, -5),
-								Size = UDim2.new(1, -(Theme.Padding.Small * 2 + 12), 0, 5),
+								Position = UDim2.new(0, Theme.Padding.Small + 4, 1, if tall then -5 else -3),
+								Size = UDim2.new(1, -(Theme.Padding.Small * 2 + 12), 0, if tall then 5 else 3),
 							}
 						),
 					},

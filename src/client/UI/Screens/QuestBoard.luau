@@ -544,11 +544,12 @@ local function QuestBoard(scope: Scope, props: Props?): Fusion.Child
 						{ id = "daily", label = Text.T(scope, "quest.board.daily") },
 						{ id = "weekly", label = Text.T(scope, "quest.board.weekly") },
 					},
+					-- UI package C's tab height (WorldLayout.questBoard counts the same strip)
 					Size = scope:Computed(function(use): UDim2
 						local width = use(layout).tabsWidth
 						return if width > 0
-							then UDim2.fromOffset(width, Theme.Size.MinTouch)
-							else UDim2.new(1, 0, 0, Theme.Size.MinTouch)
+							then UDim2.fromOffset(width, Theme.Size.TabHeight)
+							else UDim2.new(1, 0, 0, Theme.Size.TabHeight)
 					end),
 				}),
 				-- S159: the set's progress, the time to the new set and (daily) the streak and the free swap; a phone's

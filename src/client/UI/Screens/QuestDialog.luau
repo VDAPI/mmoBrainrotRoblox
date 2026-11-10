@@ -17,6 +17,9 @@
 -- behind "Dalej ▸", and the answers stand under the last part of their page. The portrait, the page, the reward choice
 -- and the buttons come from Logic/WorldLayout.questDialog: a phone's portrait is smaller and its reward choice one row
 -- (the label at the left, the slots beside it), so the page keeps at least three lines over the pinned buttons.
+-- UI package C's window parts (same owner note): the buttons are the window's pinned footer (Window.Parts `Footer`,
+-- right-aligned: "Nie teraz" / "Wstecz", then "Dalej" / "Przyjmij" / "Oddaj"), so the page and the reward choice share
+-- what is left above it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -44,6 +47,7 @@ local Text = require(script.Parent.Parent.Text)
 local TextCase = require(ReplicatedStorage.Shared.Logic.TextCase)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local Window = require(script.Parent.Parent.Components.Window)
 local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
@@ -264,7 +268,7 @@ local function resolve(args: { [string]: any }?): { [string]: any }?
 	return out
 end
 
-local function QuestDialog(scope: Scope, props: Props): Fusion.Child
+local function QuestDialog(scope: Scope, props: Props): Window.Parts
 	local quests = State.Value({ "character", "quests" })
 	local level = State.Value({ "character", "level" })
 	local page = scope:Value(1)
@@ -512,7 +516,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		local v = use(view)
 		return v ~= nil and v.mode == "turnIn" and v.choice ~= nil and #v.choice > 0
 	end)
-	-- Logic/WorldLayout: the portrait, the page, the reward choice and the buttons of this device
+	-- Logic/WorldLayout: the portrait, the page and the reward choice of this device (above the footer's buttons)
 	local layout = scope:Computed(function(use): WorldLayout.QuestDialog
 		local device: WorldLayout.Device = WorldLayout.device(use(Device.Touch) == true, use(PhoneLayout.Compact))
 		return WorldLayout.questDialog(WorldLayout.CHROME, device, use(hasChoice))
@@ -557,7 +561,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		return if def then Text.get(use, def.nameKey) else ""
 	end
 
-	return {
+	local content = {
 		scope:New("Frame")({
 			Name = "Portrait",
 			Size = scope:Computed(function(use): UDim2
@@ -636,7 +640,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			end),
 			Size = scope:Computed(function(use): UDim2
 				local l = use(layout)
-				return UDim2.new(1, 0, 1, -(l.bodyTop + l.buttons + l.choice))
+				return UDim2.new(1, 0, 1, -(l.bodyTop + l.choice))
 			end),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
@@ -699,10 +703,9 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("Frame")({
 			Name = "Choice",
+			-- at the bottom of the content, right over the footer
 			AnchorPoint = Vector2.new(0, 1),
-			Position = scope:Computed(function(use): UDim2
-				return UDim2.new(0, 0, 1, -use(layout).buttons)
-			end),
+			Position = UDim2.fromScale(0, 1),
 			-- PC: the label over the slots; a phone: the label at the left, the slots beside it
 			Size = scope:Computed(function(use): UDim2
 				local l = use(layout)
@@ -747,11 +750,13 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 				}),
 			},
 		}),
-		-- Buttons: [Not now / Back]  [Next | Accept | Hand in]
+	}
+	-- The footer, right-aligned: [Not now / Back]  [Next | Accept | Hand in]
+	local footer = {
 		Button(scope, {
-			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.fromScale(0, 1),
-			Size = UDim2.fromOffset(170, 52),
+			Name = "Back",
+			LayoutOrder = 1,
+			Size = UDim2.fromOffset(170, Theme.Size.ButtonHeight),
 			Variant = "ghost",
 			Text = scope:Computed(function(use): string
 				local v = use(view)
@@ -760,9 +765,9 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			OnClick = props.Back,
 		}),
 		Button(scope, {
-			AnchorPoint = Vector2.new(1, 1),
-			Position = UDim2.fromScale(1, 1),
-			Size = UDim2.fromOffset(230, 52),
+			Name = "Primary",
+			LayoutOrder = 2,
+			Size = UDim2.fromOffset(230, Theme.Size.ButtonHeight),
 			Variant = "primary",
 			Visible = scope:Computed(function(use): boolean
 				local v = use(view)
@@ -795,6 +800,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 			end,
 		}),
 	}
+	return { Content = content, Footer = footer }
 end
 
 return QuestDialog

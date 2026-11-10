@@ -18,6 +18,9 @@
 -- Owner 2026-10-21 (too many detailed descriptions): a quest card shows its title, objectives and rewards; the story
 -- text (and "Recall the conversation") or the progress paragraph of a side / boss quest sit under "More" (Details),
 -- rules behind an "i" (InfoTip).
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's tabs: the six tabs
+-- are one scrolling Tabs row (WindowFrame.tabFit: less padding, then smaller text, then ◂ / ▸), and the window is 680
+-- wide (QuestController) so the Polish row fits whole at 1280x720; the list starts under the strip's own height.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -56,6 +59,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
+local WindowFrame = require(ReplicatedStorage.Shared.Logic.WindowFrame)
 
 local Children = Fusion.Children
 
@@ -1287,6 +1291,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 		table.insert(tabList, { id = id, label = Text.T(scope, `quest.tab.{id}`) })
 	end
 
+	-- the list under the strip (its scroll bar's room) and the selected tab's frame
+	local stripBottom = WindowFrame.tabStrip(true).height + WindowFrame.TAB_EDGE
 	return {
 		Tabs(scope, {
 			Selected = tab,
@@ -1294,8 +1300,8 @@ local function QuestJournal(scope: Scope, props: Props): Fusion.Child
 			Scroll = true,
 		}),
 		scope:New("ScrollingFrame")({
-			Position = UDim2.fromOffset(0, 52),
-			Size = UDim2.new(1, 0, 1, -52),
+			Position = UDim2.fromOffset(0, stripBottom),
+			Size = UDim2.new(1, 0, 1, -stripBottom),
 			CanvasSize = UDim2.new(),
 			AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,

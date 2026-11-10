@@ -1213,7 +1213,8 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					{ id = "tourney", label = Text.T(scope, "tourney.tab") }, -- S130
 				},
 				Selected = props.Tab,
-				Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+				-- UI package C: no Size, so the strip keeps its default height (44-px tabs and the scroll bar's room;
+				-- a 44 strip left the tabs 38)
 				LayoutOrder = 2,
 				Scroll = true,
 			}),

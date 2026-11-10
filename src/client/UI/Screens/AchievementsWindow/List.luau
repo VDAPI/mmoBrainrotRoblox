@@ -6,6 +6,9 @@
 -- star. The rows are rebuilt only when the list's shape changes (order, done steps, tracking); a row's bar and numbers
 -- follow its own entry.
 -- S151c: the bestiary (Context.BESTIARY) is the last category: "entries met / all".
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's rows and tabs: a row is
+-- ListRow's Tall (64) on PC and a tablet, one line (48) on a phone, and the phone's category strip has the scrolling
+-- Tabs' own height.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -155,7 +158,6 @@ function List.categoryTabs(scope: Scope, ctx: Context.Ctx): Instance
 		Tabs = tabs,
 		Selected = ctx.cat,
 		Scroll = true,
-		Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch + 6),
 	})
 end
 
@@ -199,9 +201,10 @@ local function shapeOf(rows: { Row }): string
 end
 
 -- The list of the current category, filter and range. `rowHeight` from Logic/WorldLayout.achievements (owner
--- 2026-11-10: a phone's rows 52 with a 3-px bar, so three rows show; PC and a tablet 66).
+-- 2026-11-10): PC and a tablet Tall rows (the name, the description with where it counts and the points, a 5-px bar);
+-- a phone's rows one line (the name and a 3-px bar; the rest is in the sheet a tap opens), so three rows show.
 function List.rows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeight: number): Instance
-	local thin = rowHeight < 60
+	local tall = rowHeight >= Theme.Size.RowHeightTall
 	local rows = scope:Computed(function(use): { Row }
 		return AchievementView.rows(use(ctx.st), use(ctx.cat), use(ctx.filter), use(ctx.range))
 	end)
@@ -262,10 +265,10 @@ function List.rows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeight: nu
 					Name = id,
 					LayoutOrder = i,
 					Index = i,
-					Height = rowHeight,
+					Tall = tall,
 					RightInset = STAR + 8 + COUNT,
 					Text = main,
-					Sub = table.concat(subParts, " · "),
+					Sub = if tall then table.concat(subParts, " · ") else nil,
 					Muted = row.hidden,
 					Selected = s:Computed(function(use2): boolean
 						local sel = use2(ctx.selected)
@@ -292,8 +295,8 @@ function List.rows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeight: nu
 						Bar(s, {
 							Name = "Progress",
 							AnchorPoint = Vector2.new(0, 1),
-							Position = UDim2.new(0, Theme.Padding.Small + 4, 1, if thin then -3 else -5),
-							Size = UDim2.new(1, -(Theme.Padding.Small * 2 + 4 + STAR + 8), 0, if thin then 3 else 5),
+							Position = UDim2.new(0, Theme.Padding.Small + 4, 1, if tall then -5 else -3),
+							Size = UDim2.new(1, -(Theme.Padding.Small * 2 + 4 + STAR + 8), 0, if tall then 5 else 3),
 							Value = s:Computed(function(use2): number
 								return use2(live).pct
 							end),
@@ -303,8 +306,9 @@ function List.rows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeight: nu
 						}),
 						s:New("TextLabel")({
 							Name = "Count",
-							AnchorPoint = Vector2.new(1, 0),
-							Position = UDim2.new(1, -(STAR + 8), 0, 4),
+							-- over the second line's place in a Tall row, beside the name in a one-line row
+							AnchorPoint = Vector2.new(1, if tall then 0 else 0.5),
+							Position = UDim2.new(1, -(STAR + 8), if tall then 0 else 0.5, if tall then 4 else 0),
 							Size = UDim2.fromOffset(COUNT, 20),
 							BackgroundTransparency = 1,
 							Text = s:Computed(function(use2): string

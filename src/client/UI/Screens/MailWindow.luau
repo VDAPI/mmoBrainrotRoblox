@@ -2,6 +2,8 @@
 -- Mail window (DESIGN §18): parcels on the left (sender, subject, time left), the selected parcel on the
 -- right (message, gold, S125 Dragon Shards and a timed title, items with tooltips) with "Collect"; "Collect all" below. Collecting only works
 -- at the mailbox (the Auctioneer in the capital); the list itself can be read anywhere.
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's rows: a parcel row is
+-- Theme.Size.RowHeightTall (64, ListRow's two-line height; it was 58), its two lines centred in it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -129,7 +131,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 				list,
 				s:New("TextButton")({
 					LayoutOrder = i,
-					Size = UDim2.new(1, 0, 0, 58),
+					Size = UDim2.new(1, 0, 0, Theme.Size.RowHeightTall),
 					AutoButtonColor = false,
 					Text = "",
 					BackgroundColor3 = if isSelected then Theme.Paper.Hover else Theme.Paper.Raised,
@@ -142,7 +144,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 						s:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 						s:New("UIStroke")({ Color = Theme.Paper.Border, Transparency = if isSelected then 0 else 1 }),
 						s:New("TextLabel")({
-							Position = UDim2.fromOffset(10, 4),
+							Position = UDim2.fromOffset(10, 8),
 							Size = UDim2.new(1, -20, 0, 26),
 							BackgroundTransparency = 1,
 							Text = `{if (parcel.shards or 0) > 0
@@ -160,7 +162,7 @@ local function MailWindow(scope: Scope, props: Props): Fusion.Child
 							TextTruncate = Enum.TextTruncate.AtEnd,
 						}),
 						s:New("TextLabel")({
-							Position = UDim2.fromOffset(10, 30),
+							Position = UDim2.fromOffset(10, 34),
 							Size = UDim2.new(1, -20, 0, 22),
 							BackgroundTransparency = 1,
 							Text = Text.get(use, "mail.row", {

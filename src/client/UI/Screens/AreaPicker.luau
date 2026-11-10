@@ -7,6 +7,9 @@
 -- S33: a third line with the hunting ground profile ("⚡ Fast EXP · EXP ×1 · items ×0.6 · gold ×0.7"), "Recommended"
 -- on the best area of every profile. Owner 2026-11-10 ("zbyt szczegółowe opisy"): the selected area's profile
 -- description moved from under the list to the (i) of the header line, so the list keeps that room.
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: "Set off"
+-- is the window's pinned footer (Window.Parts `Footer`) and the list fills what the header line and the warnings leave
+-- (UIFlexItem), so no fixed reserve under it can cut a row or leave a gap.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -24,6 +27,7 @@ local Monsters = require(ReplicatedStorage.Shared.Data.Monsters)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local Window = require(script.Parent.Parent.Components.Window)
 
 local Children = Fusion.Children
 
@@ -68,7 +72,7 @@ local function kindsText(use: Fusion.Use, kinds: { string }): string
 	return table.concat(names, " · ")
 end
 
-local function AreaPicker(scope: Scope, props: Props): Fusion.Child
+local function AreaPicker(scope: Scope, props: Props): Window.Parts
 	local level = State.Value({ "character", "level" })
 	-- S99: the hunting ground of the active hunting contract gets "◈ Contract" (the default choice stays, S22); S134k: of
 	-- every active one
@@ -221,7 +225,7 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 		return use(detail) ~= ""
 	end)
 
-	return {
+	local content = {
 		scope:New("Frame")({
 			Name = "AreaPicker",
 			Size = UDim2.fromScale(1, 1),
@@ -281,32 +285,34 @@ local function AreaPicker(scope: Scope, props: Props): Fusion.Child
 				scope:New("ScrollingFrame")({
 					Name = "List",
 					LayoutOrder = 3,
-					Size = scope:Computed(function(use): UDim2
-						return UDim2.new(1, 0, 1, if use(hasWarnings) then -160 else -110)
-					end),
+					-- the rest of the body above the footer, whatever the warnings take
+					Size = UDim2.fromScale(1, 0),
 					CanvasSize = UDim2.new(),
 					AutomaticCanvasSize = Enum.AutomaticSize.Y,
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
 					ScrollBarThickness = 6,
 					[Children] = {
+						scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
 						scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
 						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10), PaddingTop = UDim.new(0, 2) }),
 						rows :: any,
 					},
 				}),
-				Button(scope, {
-					Name = "Go",
-					LayoutOrder = 5,
-					Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
-					Variant = "primary",
-					Disabled = scope:Computed(function(use): boolean
-						return use(props.Busy) or use(props.Selected) == nil
-					end),
-					Text = Text.T(scope, "portal.choose.go"),
-					OnClick = props.OnGo,
-				}),
 			},
+		}),
+	}
+	return {
+		Content = content,
+		Footer = Button(scope, {
+			Name = "Go",
+			Size = UDim2.fromOffset(220, Theme.Size.ButtonHeight),
+			Variant = "primary",
+			Disabled = scope:Computed(function(use): boolean
+				return use(props.Busy) or use(props.Selected) == nil
+			end),
+			Text = Text.T(scope, "portal.choose.go"),
+			OnClick = props.OnGo,
 		}),
 	}
 end

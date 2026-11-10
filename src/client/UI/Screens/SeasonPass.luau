@@ -999,7 +999,10 @@ local function SeasonPass(scope: Scope, props: Props): Instance
 	local headerHeight = scope:Computed(function(use): number
 		return use(layout).header
 	end)
-	local TOOLBAR = Theme.Size.MinTouch
+	-- UI package C: the toolbar is as high as a plain tab strip (WorldLayout.season.toolbar, WindowFrame.tabStrip)
+	local toolbarHeight = scope:Computed(function(use): number
+		return use(layout).toolbar
+	end)
 	local claimCount = scope:Computed(function(use): number
 		return SeasonView.claimCount(use(view))
 	end)
@@ -1012,7 +1015,9 @@ local function SeasonPass(scope: Scope, props: Props): Instance
 		Position = scope:Computed(function(use): UDim2
 			return UDim2.fromOffset(0, use(headerHeight))
 		end),
-		Size = UDim2.new(1, 0, 0, TOOLBAR),
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.new(1, 0, 0, use(toolbarHeight))
+		end),
 		BackgroundTransparency = 1,
 		[Children] = {
 			Tabs(scope, {
@@ -1107,10 +1112,10 @@ local function SeasonPass(scope: Scope, props: Props): Instance
 			scope:New("Frame")({
 				Name = "Body",
 				Position = scope:Computed(function(use): UDim2
-					return UDim2.fromOffset(0, use(headerHeight) + TOOLBAR + GAP)
+					return UDim2.fromOffset(0, use(headerHeight) + use(toolbarHeight) + GAP)
 				end),
 				Size = scope:Computed(function(use): UDim2
-					return UDim2.new(1, 0, 1, -(use(headerHeight) + TOOLBAR + GAP))
+					return UDim2.new(1, 0, 1, -(use(headerHeight) + use(toolbarHeight) + GAP))
 				end),
 				BackgroundTransparency = 1,
 				[Children] = body :: any,

@@ -5,6 +5,9 @@
 -- Auctioneer), a plain letter goes from anywhere. The server checks, filters and sends everything (MailService).
 -- 2026-10-21 (owner: too many detailed descriptions): a one-line intro (the mailbox line under the form says the rest
 -- when it matters), the rule for items behind the "i" of the items label.
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"), UI package C's window parts: the form
+-- scrolls in the window (Window.Parts `Scroll`) and the postage line with "Send" is its pinned footer, so the button
+-- never sits over the last field on a short screen.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -25,6 +28,7 @@ local Text = require(script.Parent.Parent.Text)
 local TextInput = require(script.Parent.Parent.Components.TextInput)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local Window = require(script.Parent.Parent.Components.Window)
 
 local Children, OnChange = Fusion.Children, Fusion.OnChange
 
@@ -91,7 +95,7 @@ local function clampText(text: string, max: number): string
 	return if cut then string.sub(text, 1, cut - 1) else text
 end
 
-local function MailCompose(scope: Scope, props: Props): Fusion.Child
+local function MailCompose(scope: Scope, props: Props): Window.Parts
 	local subject = scope:Value("")
 	local body = scope:Value("")
 	local gold = scope:Value(0)
@@ -248,155 +252,147 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 		return Social.needsMailbox(use(gold), use(pickedCount))
 	end)
 
-	return {
-		scope:New("ScrollingFrame")({
-			Size = UDim2.new(1, 0, 1, -60),
-			CanvasSize = UDim2.new(),
-			AutomaticCanvasSize = Enum.AutomaticSize.Y,
+	local content = {
+		scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+		scope:New("TextLabel")({
+			LayoutOrder = 0,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-			ScrollBarThickness = 6,
+			Text = Text.T(scope, "mail.compose.intro"),
+			TextWrapped = true,
+			FontFace = Theme.Fonts.Body,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = Theme.Paper.TextMuted,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		}),
+		label(scope, "mail.compose.to", 1),
+		TextInput(scope, {
+			LayoutOrder = 2,
+			Text = MailDraft.To,
+			Placeholder = Text.T(scope, "mail.compose.toHint"),
+			MaxLength = Config.CharacterName.MaxLength,
+			Size = UDim2.new(1, 0, 0, 44),
+		}),
+		scope:New("Frame")({
+			LayoutOrder = 3,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
 			[Children] = {
-				scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
-				scope:New("UIPadding")({ PaddingRight = UDim.new(0, 10) }),
-				scope:New("TextLabel")({
-					LayoutOrder = 0,
-					Size = UDim2.fromScale(1, 0),
-					AutomaticSize = Enum.AutomaticSize.Y,
+				scope:New("UIListLayout")({
+					FillDirection = Enum.FillDirection.Horizontal,
+					Wraps = true,
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, 6),
+				}),
+				suggestions :: any,
+			},
+		}),
+		label(scope, "mail.compose.subject", 4),
+		TextInput(scope, {
+			LayoutOrder = 5,
+			Text = subject,
+			Placeholder = Text.T(scope, "mail.compose.subjectHint"),
+			MaxLength = RULES.subjectMax,
+			Size = UDim2.new(1, 0, 0, 44),
+		}),
+		label(scope, "mail.compose.body", 6),
+		scope:New("Frame")({
+			LayoutOrder = 7,
+			Size = UDim2.new(1, 0, 0, 130),
+			BackgroundColor3 = Theme.Paper.Raised,
+			[Children] = {
+				scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+				scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
+				scope:New("TextBox")({
+					Position = UDim2.fromOffset(10, 8),
+					Size = UDim2.new(1, -20, 1, -34),
 					BackgroundTransparency = 1,
-					Text = Text.T(scope, "mail.compose.intro"),
+					ClearTextOnFocus = false,
+					MultiLine = true,
 					TextWrapped = true,
+					TextXAlignment = Enum.TextXAlignment.Left,
+					TextYAlignment = Enum.TextYAlignment.Top,
+					PlaceholderText = Text.T(scope, "mail.compose.bodyHint"),
+					PlaceholderColor3 = Theme.Paper.TextMuted,
+					FontFace = Theme.Fonts.Body,
+					TextSize = Theme.TextSize.Body,
+					TextColor3 = Theme.Paper.Text,
+					Text = body,
+					[OnChange("Text")] = function(text: string)
+						local clamped = clampText(text, RULES.bodyMax)
+						if clamped ~= Fusion.peek(body) then
+							body:set(clamped)
+						end
+					end,
+				}),
+				scope:New("TextLabel")({
+					AnchorPoint = Vector2.new(1, 1),
+					Position = UDim2.new(1, -8, 1, -4),
+					Size = UDim2.fromOffset(120, 20),
+					BackgroundTransparency = 1,
+					Text = scope:Computed(function(use): string
+						return `{utf8.len(use(body)) or 0} / {RULES.bodyMax}`
+					end),
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Paper.TextMuted,
+					TextXAlignment = Enum.TextXAlignment.Right,
+				}),
+			},
+		}),
+		scope:New("Frame")({
+			LayoutOrder = 8,
+			Size = UDim2.new(1, 0, 0, 44),
+			BackgroundTransparency = 1,
+			[Children] = {
+				scope:New("TextLabel")({
+					Size = UDim2.new(0, LABEL_W, 1, 0),
+					BackgroundTransparency = 1,
+					Text = Text.T(scope, "mail.compose.gold"),
+					FontFace = Theme.Fonts.BodyBold,
+					TextSize = Theme.TextSize.Small,
+					TextColor3 = Theme.Paper.Text,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
-				label(scope, "mail.compose.to", 1),
-				TextInput(scope, {
-					LayoutOrder = 2,
-					Text = MailDraft.To,
-					Placeholder = Text.T(scope, "mail.compose.toHint"),
-					MaxLength = Config.CharacterName.MaxLength,
-					Size = UDim2.new(1, 0, 0, 44),
-				}),
 				scope:New("Frame")({
-					LayoutOrder = 3,
-					Size = UDim2.fromScale(1, 0),
-					AutomaticSize = Enum.AutomaticSize.Y,
+					Position = UDim2.fromOffset(LABEL_W, 0),
+					Size = UDim2.fromOffset(220, 44),
 					BackgroundTransparency = 1,
 					[Children] = {
-						scope:New("UIListLayout")({
-							FillDirection = Enum.FillDirection.Horizontal,
-							Wraps = true,
-							SortOrder = Enum.SortOrder.LayoutOrder,
-							Padding = UDim.new(0, 6),
-						}),
-						suggestions :: any,
-					},
-				}),
-				label(scope, "mail.compose.subject", 4),
-				TextInput(scope, {
-					LayoutOrder = 5,
-					Text = subject,
-					Placeholder = Text.T(scope, "mail.compose.subjectHint"),
-					MaxLength = RULES.subjectMax,
-					Size = UDim2.new(1, 0, 0, 44),
-				}),
-				label(scope, "mail.compose.body", 6),
-				scope:New("Frame")({
-					LayoutOrder = 7,
-					Size = UDim2.new(1, 0, 0, 130),
-					BackgroundColor3 = Theme.Paper.Raised,
-					[Children] = {
-						scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
-						scope:New("UIStroke")({ Color = Theme.Paper.Rule }),
-						scope:New("TextBox")({
-							Position = UDim2.fromOffset(10, 8),
-							Size = UDim2.new(1, -20, 1, -34),
-							BackgroundTransparency = 1,
-							ClearTextOnFocus = false,
-							MultiLine = true,
-							TextWrapped = true,
-							TextXAlignment = Enum.TextXAlignment.Left,
-							TextYAlignment = Enum.TextYAlignment.Top,
-							PlaceholderText = Text.T(scope, "mail.compose.bodyHint"),
-							PlaceholderColor3 = Theme.Paper.TextMuted,
-							FontFace = Theme.Fonts.Body,
-							TextSize = Theme.TextSize.Body,
-							TextColor3 = Theme.Paper.Text,
-							Text = body,
-							[OnChange("Text")] = function(text: string)
-								local clamped = clampText(text, RULES.bodyMax)
-								if clamped ~= Fusion.peek(body) then
-									body:set(clamped)
-								end
-							end,
-						}),
-						scope:New("TextLabel")({
-							AnchorPoint = Vector2.new(1, 1),
-							Position = UDim2.new(1, -8, 1, -4),
-							Size = UDim2.fromOffset(120, 20),
-							BackgroundTransparency = 1,
-							Text = scope:Computed(function(use): string
-								return `{utf8.len(use(body)) or 0} / {RULES.bodyMax}`
-							end),
-							FontFace = Theme.Fonts.Body,
-							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Paper.TextMuted,
-							TextXAlignment = Enum.TextXAlignment.Right,
-						}),
-					},
-				}),
-				scope:New("Frame")({
-					LayoutOrder = 8,
-					Size = UDim2.new(1, 0, 0, 44),
-					BackgroundTransparency = 1,
-					[Children] = {
-						scope:New("TextLabel")({
-							Size = UDim2.new(0, LABEL_W, 1, 0),
-							BackgroundTransparency = 1,
-							Text = Text.T(scope, "mail.compose.gold"),
-							FontFace = Theme.Fonts.BodyBold,
-							TextSize = Theme.TextSize.Small,
-							TextColor3 = Theme.Paper.Text,
-							TextXAlignment = Enum.TextXAlignment.Left,
-						}),
-						scope:New("Frame")({
-							Position = UDim2.fromOffset(LABEL_W, 0),
+						NumberInput(scope, {
+							Value = gold,
+							Min = 0,
+							Max = 1e9,
 							Size = UDim2.fromOffset(220, 44),
-							BackgroundTransparency = 1,
-							[Children] = {
-								NumberInput(scope, {
-									Value = gold,
-									Min = 0,
-									Max = 1e9,
-									Size = UDim2.fromOffset(220, 44),
-								}),
-							},
 						}),
-					},
-				}),
-				labelWithInfo(scope, "mail.compose.items", "mail.compose.items.info", 9),
-				scope:New("Frame")({
-					LayoutOrder = 10,
-					Size = UDim2.fromScale(1, 0),
-					AutomaticSize = Enum.AutomaticSize.Y,
-					BackgroundTransparency = 1,
-					[Children] = {
-						scope:New("UIGridLayout")({
-							CellSize = UDim2.fromOffset(56, 56),
-							CellPadding = UDim2.fromOffset(6, 6),
-							SortOrder = Enum.SortOrder.LayoutOrder,
-						}),
-						itemRows :: any,
 					},
 				}),
 			},
 		}),
+		labelWithInfo(scope, "mail.compose.items", "mail.compose.items.info", 9),
+		scope:New("Frame")({
+			LayoutOrder = 10,
+			Size = UDim2.fromScale(1, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			BackgroundTransparency = 1,
+			[Children] = {
+				scope:New("UIGridLayout")({
+					CellSize = UDim2.fromOffset(56, 56),
+					CellPadding = UDim2.fromOffset(6, 6),
+					SortOrder = Enum.SortOrder.LayoutOrder,
+				}),
+				itemRows :: any,
+			},
+		}),
+	}
+	-- The footer: the postage and today's count (the mailbox warning in red) beside "Send".
+	local footer = {
 		scope:New("TextLabel")({
-			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.fromScale(0, 1),
-			Size = UDim2.new(1, -230, 0, 52),
+			Name = "Fee",
+			LayoutOrder = 1,
+			Size = UDim2.fromScale(0, 1),
 			BackgroundTransparency = 1,
 			TextWrapped = true,
 			Text = scope:Computed(function(use): string
@@ -420,11 +416,13 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 					else Theme.Paper.TextMuted
 			end),
 			TextXAlignment = Enum.TextXAlignment.Left,
+			-- the footer's width less the button
+			[Children] = scope:New("UIFlexItem")({ FlexMode = Enum.UIFlexMode.Fill }),
 		}),
 		Button(scope, {
-			AnchorPoint = Vector2.new(1, 1),
-			Position = UDim2.fromScale(1, 1),
-			Size = UDim2.fromOffset(220, 48),
+			Name = "Send",
+			LayoutOrder = 2,
+			Size = UDim2.fromOffset(220, Theme.Size.ButtonHeight),
 			Variant = "primary",
 			Text = Text.T(scope, "mail.compose.send"),
 			Disabled = scope:Computed(function(use): boolean
@@ -437,6 +435,7 @@ local function MailCompose(scope: Scope, props: Props): Fusion.Child
 			OnClick = send,
 		}),
 	}
+	return { Content = content, Footer = footer, Scroll = true }
 end
 
 return MailCompose
