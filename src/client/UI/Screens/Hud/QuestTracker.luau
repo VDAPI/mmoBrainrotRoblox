@@ -939,7 +939,13 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	local function widthOf(use: Fusion.Use, e: HudLayout.Entry?): number
 		return if e and e.w then e.w elseif use(PhoneLayout.Compact) then PhoneHud.TRACKER_WIDTH else WIDTH
 	end
-	local handle = HudDrag.new(scope, ELEMENT, widthOf)
+	-- the height of a tracker moved to `at` (set below, once its body's helpers exist)
+	local movedHeight: (use: Fusion.Use, at: Vector2) -> number
+	-- package A review (owner 2026-11-10): a saved place is checked with the height the tracker has there as the player
+	-- folded it, not with the height drawn while the column folds it (UI/HudDrag)
+	local handle = HudDrag.new(scope, ELEMENT, widthOf, function(use: Fusion.Use, _, x: number, y: number): number
+		return movedHeight(use, Vector2.new(x, y))
+	end)
 	local entry = handle.entry
 	local width = scope:Computed(function(use): number
 		return widthOf(use, use(entry))
@@ -961,6 +967,11 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		local bottom = math.max(at.Y + 80 + chrome, screen)
 		return HudStack.floorUnder(at.X, at.X + use(width), at.Y, bottom, use(HudSlots.Corner))
 	end
+	movedHeight = function(use: Fusion.Use, at: Vector2): number
+		local folded = use(collapsed)
+		local body = if folded then 0 else bodyTo(use, at.Y, movedFloor(use, at))
+		return PAD_TOP + HEADER + PAD_BOTTOM + (if folded then 0 else GAP + body)
+	end
 	-- owner 2026-10-21: the built-in place in the HUD column (UI/HudSlots): under the event panels, over the corner's
 	-- buttons (PC) or the sprint row (touch); a moved tracker is in the panels' way instead (they go round it)
 	local slot = HudSlots.join(
@@ -971,8 +982,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			local folded = use(collapsed)
 			local at = use(corner)
 			if at then
-				local body = if folded then 0 else bodyTo(use, at.Y, movedFloor(use, at))
-				local h = PAD_TOP + HEADER + PAD_BOTTOM + (if folded then 0 else GAP + body)
+				local h = movedHeight(use, at)
 				return { shown = true, w = w, h = h, custom = HudSlots.moved(at, w, h, 1) }
 			end
 			local line = PAD_TOP + HEADER + PAD_BOTTOM

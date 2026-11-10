@@ -121,9 +121,13 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 	local active = scope:Computed(function(use): boolean
 		return use(full) and use(phase) == "active"
 	end)
-	local channel = scope:Computed(function(use): any
+	-- the channel to break while the boss fights; the panel shows it while open
+	local channelOf = scope:Computed(function(use): any
 		local b = use(current)
-		return if use(active) and b and type(b.channel) == "table" then b.channel else nil
+		return if b and b.phase == "active" and type(b.channel) == "table" then b.channel else nil
+	end)
+	local channel = scope:Computed(function(use): any
+		return if use(active) then use(channelOf) else nil
 	end)
 	local standing = scope:Computed(function(use): boolean
 		local p = use(phase)
@@ -165,26 +169,31 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 		end
 	end)
 
-	local height = scope:Computed(function(use): number
+	-- The panel's height with its rows open, or `folded` to the header line. Package A review (owner 2026-11-10,
+	-- "things covering each other"): the column hears the player's own fold only (`open`); it folds a box to its line
+	-- itself (Logic/HudStack), and a box built from its fold (`forced`) fed the column back: a Fusion loop that left the
+	-- column with an old height, the panel over the tracker. What is drawn folds with the column too (`collapsed`).
+	local function heightOf(use: Fusion.Use, folded: boolean): number
 		local rows = { use(header) }
 		local body = false
-		if use(full) then
+		local p = use(phase)
+		if use(mode) == "full" and not folded then
 			body = true
 			table.insert(rows, LINE)
-			if use(active) then
+			if p == "active" then
 				table.insert(rows, BAR)
-				if use(channel) ~= nil then
+				if use(channelOf) ~= nil then
 					table.insert(rows, CHANNEL)
 				end
 			end
-			if use(standing) then
+			if p == "active" or p == "slain" then
 				table.insert(rows, LINE)
 				table.insert(rows, REWARD)
 			end
-		end
-		if use(guideShown) then
-			body = true
-			table.insert(rows, use(button))
+			-- "Guide" while outside the fighters' circle
+			if (p == "warn" or p == "active") and not use(inside) then
+				table.insert(rows, use(button))
+			end
 		end
 		-- folded: the header line alone; open: the rows under it and PAD at the bottom
 		local h = if body then PAD else 0
@@ -192,6 +201,9 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 			h += row + (if i > 1 then GAP else 0)
 		end
 		return h
+	end
+	local height = scope:Computed(function(use): number
+		return heightOf(use, use(collapsed))
 	end)
 	local shown = scope:Computed(function(use): boolean
 		return use(current) ~= nil
@@ -199,13 +211,15 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 	-- owner 2026-10-21: moved by its tab, scaled by its corner (UI/HudDrag); a moved panel leaves the column
 	local handle = HudDrag.new(scope, "worldBoss", function(use)
 		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
+	end, function(use)
+		return heightOf(use, not use(open))
 	end)
 	-- owner 2026-10-21: the built-in place in the HUD column, round the moved elements (UI/HudSlots)
 	local slot = HudSlots.join(
 		scope,
 		"worldBoss",
 		scope:Computed(function(use): HudSlots.Box
-			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height)
+			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, heightOf(use, not use(open))
 			return {
 				shown = use(shown),
 				w = w,

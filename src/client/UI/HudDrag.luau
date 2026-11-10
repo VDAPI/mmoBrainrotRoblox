@@ -51,8 +51,17 @@ export type Handle = {
 	bind: (frame: GuiObject) -> (),
 }
 
--- `width(use, entry)`: the element's own width (before its scale) for an entry.
-function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: HudLayout.Entry?) -> number): Handle
+-- `width(use, entry)`: the element's own width (before its scale) for an entry. `height(use, entry, x, y)`: its own
+-- height (before its scale) with its top-left corner at x, y and folded only as the player folded it. Package A
+-- review (owner 2026-11-10, "things covering each other"): the height as drawn shrinks while the column folds the
+-- element, so a saved place could look free only while it stood folded in the column, and the element would flip
+-- between that place and the column; without `height` the drawn height is measured.
+function HudDrag.new(
+	scope: Scope,
+	id: string,
+	width: (use: Fusion.Use, entry: HudLayout.Entry?) -> number,
+	height: ((use: Fusion.Use, entry: HudLayout.Entry, x: number, y: number) -> number)?
+): Handle
 	local def = HudLayout.ELEMENTS[id]
 	local scaled = def.minS ~= nil
 	local saved = State.Value({ "account", "settings", "hud" })
@@ -88,7 +97,7 @@ function HudDrag.new(scope: Scope, id: string, width: (use: Fusion.Use, entry: H
 		if not compact then
 			y = HudStack.belowMenu(x, x + w, y, use(HudSlots.Menu))
 		end
-		local h = if e.w and e.h then e.h * s else use(measured)
+		local h = if e.w and e.h then e.h * s elseif height then height(use, e, x, y) * s else use(measured)
 		local rect = { left = x, top = y, right = x + w, bottom = y + h }
 		return Vector2.new(x, y), HudLayout.usable(rect, screen.X, screen.Y, use(Device.Touch) == true, compact)
 	end

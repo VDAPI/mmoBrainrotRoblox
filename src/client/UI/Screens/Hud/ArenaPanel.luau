@@ -244,13 +244,15 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 	end)
 	-- the place: the zone map's arena place on PC and a tablet; a phone's stack ("arena")
 	local zone = HudSlots.at(scope, "arenaPanel")
+	-- package A review (owner 2026-11-10): a box hears the player's own fold only (`open`, not `rows`): the column
+	-- folds a box to its line itself, and a box built from its fold fed the column back (a Fusion loop)
 	local function phoneSlot(shown: Fusion.Computed<boolean>, extra: Fusion.Computed<number>)
 		return HudSlots.join(
 			scope,
 			"arena",
 			scope:Computed(function(use): HudSlots.Box
 				local line = use(header)
-				local h = if use(rows) then line + use(extra) else line
+				local h = if use(open) then line + use(extra) else line
 				return { shown = use(compact) and use(shown), w = PhoneHud.PANEL_WIDTH, h = h, line = line }
 			end)
 		)

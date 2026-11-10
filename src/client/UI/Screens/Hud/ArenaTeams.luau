@@ -207,8 +207,11 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 	local width = scope:Computed(function(use): number
 		return if use(PhoneLayout.Compact) then PhoneHud.PANEL_WIDTH else WIDTH
 	end)
-	local height = scope:Computed(function(use): number
-		if use(folded) then
+	-- Package A review (owner 2026-11-10): the column hears the player's own fold only (`open`; it folds a box to its
+	-- line itself, and a box built from its fold fed the column back: a Fusion loop that left it with an old height);
+	-- what is drawn folds with the column too (`folded`).
+	local function heightOf(use: Fusion.Use, shut: boolean): number
+		if shut then
 			return use(header)
 		end
 		local m = use(teams)
@@ -219,6 +222,9 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 			end
 		end
 		return PAD * 2 + TITLE + n * (ROW + 4)
+	end
+	local height = scope:Computed(function(use): number
+		return heightOf(use, use(folded))
 	end)
 	local shown = scope:Computed(function(use): boolean
 		return use(teams) ~= nil
@@ -227,7 +233,7 @@ local function ArenaTeams(scope: Scope, _props: Props): Instance
 		scope,
 		"arena",
 		scope:Computed(function(use): HudSlots.Box
-			return { shown = use(shown), w = use(width), h = use(height), line = use(header) }
+			return { shown = use(shown), w = use(width), h = heightOf(use, not use(open)), line = use(header) }
 		end)
 	)
 

@@ -304,6 +304,10 @@ end
 -- Joins element `id` (HudSlots.ORDER) to the column for the life of `s`; its built-in place (nil while hidden or
 -- moved by the player, or while it waits behind the '+N' chip; a later joiner of the same id under the earlier shown
 -- ones, nil while the column folds the id to its line).
+-- Package A review (owner 2026-11-10): `box` never reads the column (`forced`, `Arranged`, a slot): it tells the
+-- element's height as the player folded it, and the column folds it to its `line` itself. `put` sets `joined` while
+-- the Observer runs, so a box that read the column fed the column back: Fusion stopped that loop ("infinite loop")
+-- before the column saw the new height (tests/hudslots.spec).
 function HudSlots.join(s: Scope, id: string, box: Fusion.UsedAs<Box>): Fusion.Computed<HudStack.Rect?>
 	local token = {}
 	joins += 1
@@ -346,8 +350,9 @@ function HudSlots.join(s: Scope, id: string, box: Fusion.UsedAs<Box>): Fusion.Co
 		local top = rect.top
 		for i, joiner in list do
 			if joiner.order == order then
-				if folded and i > 1 then
-					return nil
+				if folded then
+					-- the first one shows the id's line (a box keeps its open height while the column folds it)
+					return if i == 1 then rect else nil
 				end
 				return { left = rect.left, top = top, right = rect.left + joiner.box.w, bottom = top + joiner.box.h }
 			end

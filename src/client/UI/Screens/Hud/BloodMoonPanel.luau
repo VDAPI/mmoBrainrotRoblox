@@ -69,8 +69,11 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 		return not use(folded)
 	end)
 	local header = PanelHeader.Height(scope)
-	local height = scope:Computed(function(use): number
-		if use(folded) then
+	-- The panel's height open, or `shut` to the header line. Package A review (owner 2026-11-10): the column hears the
+	-- player's own fold only (`open`; it folds a box to its line itself, and a box built from its fold fed the column
+	-- back: a Fusion loop that left the column with an old height); what is drawn folds with the column too (`folded`).
+	local function heightOf(use: Fusion.Use, shut: boolean): number
+		if shut then
 			return use(header)
 		end
 		local button = if use(touch) then BUTTON_TOUCH else BUTTON_PC
@@ -79,6 +82,9 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 			h += INFO + GAP
 		end
 		return h
+	end
+	local height = scope:Computed(function(use): number
+		return heightOf(use, use(folded))
 	end)
 	local activeOpen = scope:Computed(function(use): boolean
 		return use(active) and not use(folded)
@@ -86,13 +92,15 @@ local function BloodMoonPanel(scope: Scope, props: Props): Instance
 	-- owner 2026-10-21: moved by its tab, scaled by its corner (UI/HudDrag); a moved panel leaves the column
 	local handle = HudDrag.new(scope, "bloodMoon", function(use)
 		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
+	end, function(use)
+		return heightOf(use, not use(open))
 	end)
 	-- owner 2026-10-21: the built-in place in the HUD column, round the moved elements (UI/HudSlots)
 	local slot = HudSlots.join(
 		scope,
 		"bloodMoon",
 		scope:Computed(function(use): HudSlots.Box
-			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height)
+			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, heightOf(use, not use(open))
 			return {
 				shown = use(shown),
 				w = w,
