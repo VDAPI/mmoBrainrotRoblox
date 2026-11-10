@@ -35,6 +35,7 @@ local Device = require(script.Parent.Parent.UI.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
+local MonsterBox = require(script.Parent.Parent.Util.MonsterBox)
 local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
@@ -288,7 +289,8 @@ local function candidates(includePlayers: boolean): { Model }
 end
 
 -- Box of a model for the forgiving pick. S96: a rider's box would hold the mount too, so a rider is measured
--- from the root up to the top of the head (the same idea as CombatFxController.headPosition).
+-- from the root up to the top of the head (the same idea as CombatFxController.headPosition). A monster is measured by
+-- its look, never its blocker column (Util/MonsterBox, owner 2026-11-10): a click in the empty air over it misses.
 local function pickBox(model: Model): (CFrame, Vector3)
 	local root = model:FindFirstChild("HumanoidRootPart")
 	local head = model:FindFirstChild("Head")
@@ -296,7 +298,7 @@ local function pickBox(model: Model): (CFrame, Vector3)
 		local half = math.max(head.Position.Y + head.Size.Y / 2 - root.Position.Y, 1)
 		return root.CFrame, Vector3.new(root.Size.X, half * 2, root.Size.Z)
 	end
-	return model:GetBoundingBox()
+	return MonsterBox.of(model)
 end
 
 -- Nearest living monster (players only when `includePlayers`) within `range`, preferring what the camera faces.

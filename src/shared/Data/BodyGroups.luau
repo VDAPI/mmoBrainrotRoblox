@@ -63,6 +63,12 @@ function BodyGroups.blocker(rootSize: { number }, hipHeight: number, drawn: numb
 	return { rootSize[1], top - bottom, rootSize[3] }, (top + bottom) / 2
 end
 
+-- A monster's body without its blocker, before the client builds its look (client/Util/MonsterBox): its root extended
+-- down to the feet. In the root's frame like `blocker`: its size and its centre's height over the root's centre.
+function BodyGroups.bodyBox(rootSize: { number }, hipHeight: number): ({ number }, number)
+	return { rootSize[1], rootSize[2] + hipHeight, rootSize[3] }, -hipHeight / 2
+end
+
 -- Whether parts of group `a` and of group `b` collide.
 function BodyGroups.collide(a: string, b: string): boolean
 	for _, pair in BodyGroups.APART do

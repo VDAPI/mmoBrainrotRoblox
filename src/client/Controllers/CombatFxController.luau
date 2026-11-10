@@ -75,6 +75,7 @@ local Hazards = require(ReplicatedStorage.Shared.Logic.Hazards)
 local MonsterMotions = require(ReplicatedStorage.Shared.Data.MonsterMotions)
 local Library = require(script.Parent.Parent.Vfx.Library)
 local LmShots = require(script.Parent.Parent.Vfx.LmShots)
+local MonsterBox = require(script.Parent.Parent.Util.MonsterBox)
 local MotionFx = require(script.Parent.Parent.Vfx.MotionFx)
 local Pool = require(script.Parent.Parent.Vfx.Pool)
 local Textures = require(script.Parent.Parent.Vfx.Textures)
@@ -177,14 +178,15 @@ local function findModel(entityId: string?): Model?
 	return nil
 end
 
--- Top of a monster's look (S24: MonsterView.top), the bounding box for characters and as a fallback.
+-- Top of a monster's look (S24: MonsterView.top), the bounding box for characters and as a fallback (a monster's from
+-- its look, never its blocker column: Util/MonsterBox, owner 2026-11-10).
 local function headPosition(model: Model): Vector3
 	-- S96: a rider's box holds the mount too; the head of the rider is the top that counts
 	local head = model:FindFirstChild("Head")
 	if head and head:IsA("BasePart") and model:FindFirstChild("VaelthornMount") then
 		return head.Position + Vector3.new(0, head.Size.Y / 2 + 0.5, 0)
 	end
-	local cframe, size = model:GetBoundingBox()
+	local cframe, size = MonsterBox.of(model)
 	local top = if MonsterView then MonsterView.top(model) else nil
 	if top then
 		return Vector3.new(cframe.Position.X, top + 0.5, cframe.Position.Z)
@@ -1346,10 +1348,11 @@ local function scheduleBossImpact(
 	end
 end
 
--- Owner 2026-10-21: the size of a caster for its charge-up (1 a man, up to 3 a big boss).
+-- Owner 2026-10-21: the size of a caster for its charge-up (1 a man, up to 3 a big boss); a monster by its look, not
+-- its blocker column (Util/MonsterBox, owner 2026-11-10).
 local function casterSize(caster: Model): number
 	local ok, size = pcall(function()
-		local _, s = caster:GetBoundingBox()
+		local _, s = MonsterBox.of(caster)
 		return s
 	end)
 	if not ok or typeof(size) ~= "Vector3" then
@@ -1530,7 +1533,9 @@ local function announceCast(
 )
 	local bannerKey = BossCast.banner(info)
 	if caster and name then
-		BossCastBar.cast(caster, name, seconds, color, bannerKey ~= nil)
+		-- the bar stands over the name plate, so it measures the top the plate does (MonsterView.top)
+		local top = if MonsterView then MonsterView.top(caster) else nil
+		BossCastBar.cast(caster, name, seconds, color, bannerKey ~= nil, top)
 	end
 	if not bannerKey or not name then
 		return

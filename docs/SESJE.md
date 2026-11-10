@@ -14689,3 +14689,31 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `client/Anim/MeshHead`, `client/Anim/RigidRig`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs`,
   `Config.Graphics`, `tests/neckbend.spec.luau`, `tests/headgaze.spec.luau`, `tests/NeckBendMesh.luau`,
   `docs/ANIM-WZORCE.md` §6.5.
+
+### Kolumny potworów: bez jazdy na potworze, pomiar po wyglądzie (2026-11-10)
+
+- Przegląd decyzji właściciela „nie da się wspinać” (commit 5abf39ba). Kolumna `Blocker` sięgała 9,5 studa nad stopy
+  potwora, a spód korzenia postaci wznosi się w skoku o 7,2 studa (domyślny JumpHeight; kod ani projekt go nie
+  zmieniają) z wysokości HipHeight: pieszy do 9,2, jeździec (siodło 2,9–4,4) do 10,1–11,6. Jeździec wskakiwał więc na
+  kolumnę i jechał na potworze, pieszy z wyższego zbocza też. Teraz `BodyGroups.BLOCK_TOP` = 16 (`JUMP_RISE` 7,2,
+  `SLOPE` 2); `bodygroups.spec` liczy najwyższe siodło wszystkich wierzchowców (model z `Mounts.assets` i wygląd
+  proceduralny z każdą skórką, najmniejszy korzeń gracza: wysokość 0,95) i wymaga kolumny wyżej niż siodło + skok +
+  zbocze (dziś 13,64).
+- Kolumna jest skończona, więc z półki albo urwiska da się na nią spaść. `Logic/BlockerGuard` (czyste) pcha postać,
+  która jest nad podstawą kolumny powiększoną o pół szerokości ciała, a jej stopy (spód korzenia minus HipHeight) są
+  najwyżej 0,6 studa od wierzchu albo spadają na niego z wysokości do 4 studów. Pchnięcie idzie w poziomie od środka
+  kolumny (z samego środka w stronę, w którą postać patrzy): do prędkości kolumny dodaje tyle, by w 0,25 s minąć
+  krawędź o 0,5 studa (12–40 studów/s, więc z szerokiej kolumny bossa trwa dłużej), a kolejne pchnięcia z rzędu
+  skręcają o 90°, -90° i 180° (ściana). `MovementController` 10 razy na sekundę sprawdza `Blocker` potworów w promieniu
+  20 studów (pomija te, które już nie kolidują), a pchnięcie trzyma `LinearVelocity` w płaszczyźnie poziomej (wysokość
+  zostaje grawitacji). Rachunek jest geometryczny, bo zwykły promień przechodzi przez kolumnę (jej grupa nie styka się
+  ze światem), a promień ze środka korzenia ominąłby kolumnę, na której postać stoi samym brzegiem.
+- Pomiar potwora bez kolumny: `client/Util/MonsterBox.of` (wygląd `Look`, potem `LookFar`, a przed nimi korzeń
+  przedłużony do stóp, `BodyGroups.bodyBox`; model bez kolumny mierzony jak dotąd) w `BossCastBar` (pasek nad tabliczką
+  z `MonsterView.top`, jak tabliczka), `Library.charge`, `CombatFxController.casterSize` i `headPosition`,
+  `TargetController.pickBox` i `MonsterPlateController` (zanim widok zna model). `BoneGait` mierzy sam wygląd, a serwer
+  nie mierzy modeli potworów. Kolumna zostaje w modelu (streaming i czas życia z nim).
+- Testy: `bodygroups.spec` (siodła wierzchowców, `bodyBox`), `blockerguard.spec` (kto jest pchany, kierunek, prędkość).
+- **Pliki:** `Data/BodyGroups`, `Logic/BlockerGuard`, `client/Util/MonsterBox`, `MovementController`, `Vfx/BossCastBar`,
+  `Vfx/Library`, `CombatFxController`, `TargetController`, `MonsterPlateController`, `Entities/RigBuilder`,
+  `tests/bodygroups.spec.luau`, `tests/blockerguard.spec.luau`, `docs/ARCHITECTURE.md` §7.

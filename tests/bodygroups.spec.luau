@@ -128,3 +128,17 @@ describe("BodyGroups.blocker", function()
 		expect(top > seat + BodyGroups.JUMP_RISE + BodyGroups.SLOPE).toBe(true)
 	end)
 end)
+
+describe("BodyGroups.bodyBox", function()
+	it("runs from a monster's feet to its root's top, as wide and deep as the root", function()
+		local root, hip = { 1.6, 1.9, 3.2 }, 1.94
+		local size, y = BodyGroups.bodyBox(root, hip)
+		local centre = hip + root[2] / 2 + y -- over the feet
+		expect(math.abs(centre - size[2] / 2) < 1e-9).toBe(true)
+		expect(math.abs(centre + size[2] / 2 - (hip + root[2])) < 1e-9).toBe(true)
+		expect(size[1]).toBe(1.6)
+		expect(size[3]).toBe(3.2)
+		local blocker = BodyGroups.blocker(root, hip, 3.5)
+		expect(size[2] < blocker[2]).toBe(true)
+	end)
+end)
