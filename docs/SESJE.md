@@ -14924,6 +14924,27 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
     „Więcej ▸” (przycisk resetu sam go podaje).
   - Szczegóły związania po angielsku krótsze o 18 znaków; pytanie o zniszczenie: „<nazwa> przepadnie na zawsze.”
     (wcześniej „zostanie zniszczony” przy każdej nazwie, także żeńskiej).
+- Poprawki po przeglądzie (ten sam dzień):
+  - stopka okna (`Footer`): linia nad przyciskami stoi obok ramki „Buttons” z ich `UIListLayout`, nie przy nim; lista
+    układała ją jako element na całą szerokość w połowie stopki i mogła wypchnąć przyciski w lewo (żadne okno nie ma
+    jeszcze stopki);
+  - zakładki znów mają całe 44 (było 42, z widocznym paskiem przewijania 38): ramka wybranej karty ma miejsce w pasku
+    2 px nad rzędem, a pasek przewijania rysuje się w swoim miejscu pod rzędem (`WindowFrame.tabStrip`); strzałki ◂ / ▸
+    na dotyku mają 44 (było 36), a wybrana zakładka przewija się poza strzałkę tego urządzenia
+    (`WindowFrame.tabReveal`; trzymała tylko 30 px);
+  - tooltip przedmiotu na dotyku stoi znów u góry swojej połowy, pod nagłówkiem okna, i omija pas przycisków na dole
+    okna (stopka z `WindowFrame.rect`: Załóż / Użyj / Podziel plecaka, przypięta `Footer`) razem z ramkami z
+    `ItemTooltip.avoid` (`Popover.away`: `top`, `keepOff`); gdy pod nagłówkiem brak miejsca, wchodzi na nagłówek, a gdy
+    nigdzie, zasłania jak najmniej. Na wysokości slotu zasłaniał ten pas przy każdym slocie plecaka telefonu;
+  - panel szczegółów S68 stoi według `Popover.place` w `Tooltip.SafeArea` (liczony w całym widoku wchodził pod pasek
+    Robloxa i pod pasek gestów), a jego „×” na dotyku ma 44×44 (było 28×28);
+  - pytanie o zniszczenie: „Przedmiot przepadnie na zawsze: <nazwa>.”, bo „przepadnie” nie pasowało do nazw w liczbie
+    mnogiej (rękawice i buty: „Buty Płytowe”); w angielskich szczegółach związania „through your vault” zamiast
+    „through the deposit” (ten schowek po angielsku to „Vault”);
+  - DESIGN §23 „Okna”: przełącznik „Plecak” / „◂ <usługa>” jest na dotyku (telefon i tablet), jak w kodzie;
+  - testy: `uiframe.spec` (linia stopki poza listą przycisków, tooltip na dotyku pod nagłówkiem i poza pasem
+    przycisków na każdym ekranie dotykowym, także dolny rząd plecaka telefonu 844×390 pod paskiem 58 px), `uifit.spec`
+    F7 (zakładka 44, strzałki dotyku 44, wybrana zakładka poza strzałką).
 - **Pliki:** `UI/Components/Window|Modal|Tooltip|ItemTooltip|InfoTip|Tabs|SideTabs|Button|ListRow|TextInput|Section|Details`,
   `UI/Theme`, `Controllers/WindowManager|ItemController|ReworkController`, `Logic/WindowFrame|Popover|WindowRules`,
   lokalizacja (pl, en), `tests/uiframe.spec.luau`, `tests/windowrules.spec.luau`, `tests/uifit.spec.luau`,

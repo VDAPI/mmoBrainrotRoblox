@@ -298,6 +298,7 @@
   treścią; miejsce nad nią daje `WindowFrame.body`), długa treść ma jedno przewijanie (`Scroll`), przycisk w nagłówku
   stoi przed ✕ (na dotyku jego miejsce bierze przełącznik usługi i plecaka). Wiersz listy to `ListRow` (48) albo
   `ListRow` z `Tall = true` (64, z linią `Sub`), bez własnej `Height`; zakładki to `Tabs` bez własnej wysokości (rząd sam
-  się zwęża i przewija). Modal: `WindowManager.ShowModal` z krótkim `Message` (do 90) i resztą w `Details`. Okno z
-  przyciskami akcji przy slotach zgłasza ich ramkę przez `ItemTooltip.avoid(scope, ramka)`, żeby tooltip przedmiotu na
-  dotyku ich nie zasłaniał; własny dymek stawia `Popover.place` w obszarze `Tooltip.SafeArea`.
+  się zwęża i przewija). Modal: `WindowManager.ShowModal` z krótkim `Message` (do 90) i resztą w `Details`. Pas
+  przycisków na dole okna (stopkę) tooltip przedmiotu na dotyku omija sam, a okno z przyciskami akcji w innym miejscu
+  (przy slotach) zgłasza ich ramkę przez `ItemTooltip.avoid(scope, ramka)`, żeby ich nie zasłaniał; własny dymek
+  stawia `Popover.place` w obszarze `Tooltip.SafeArea`.

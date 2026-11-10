@@ -66,9 +66,9 @@
   umiejętności i reset umiejętności z jedną krótką linią, reszta pod „Więcej ▸”); nieobejrzane w Studio (nagłówek i ✕
   telefonu pod paskiem Robloxa, przełącznik usługi i plecaka, odsuwanie usługi na PC, modal z długimi szczegółami na
   niskim ekranie, okno zmiany umiejętności u maga z dwoma akapitami pod „Więcej ▸”, strzałki zakładek dziennika,
-  tooltip przedmiotu na dotyku, przewijane (i), „…” na przyciskach). Okna przechodzą na stopkę, przewijanie,
-  `ListRow` `Tall` i zakładki bez własnej wysokości z pakietami D i E; propozycja planu dla plecaka-towarzysza czeka na
-  właściciela (DECYZJE).
+  ramka wybranej zakładki nad rzędem, tooltip przedmiotu na dotyku pod nagłówkiem okna i jego panel szczegółów,
+  przewijane (i), „…” na przyciskach). Okna przechodzą na stopkę, przewijanie, `ListRow` `Tall` i zakładki bez własnej
+  wysokości z pakietami D i E; propozycja planu dla plecaka-towarzysza czeka na właściciela (DECYZJE).
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa
