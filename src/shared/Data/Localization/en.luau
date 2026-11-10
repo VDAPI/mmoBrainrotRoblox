@@ -2370,7 +2370,7 @@ return {
 	["tourney.rewards.champion.short"] = "Champion: {title}, {aura} and {shards} shards",
 	["bloodmoon.desc.short"] = "Twice a week the regions become a PvP zone.",
 	["bloodmoon.window.localOnly.short"] = "This server's ranking only",
-	["leaderboard.week.rewards.short"] = "Top 3 per bracket: title “{title}” and Dragon Shards",
+	["leaderboard.week.rewards.short"] = "Bracket top 3: title “{title}” and Dragon Shards",
 	["season.how.limits.short"] = "A tier is {tier} points. Monsters: up to {kill} a day.",
 	["season.soon.desc.short"] = "The next season has no date yet.",
 	["death.protectionNote.info"] = "Nobody can attack you, and your first attack ends the protection.",

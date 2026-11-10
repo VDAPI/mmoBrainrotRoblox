@@ -65,6 +65,8 @@ end
 -- steps through the filter), the column heads, the rows (the podium of the first three is a Section in the list:
 -- rankPodium, folded on a phone) and the footer (PC: the week's countdown, my place, the update time; a phone keeps
 -- only my place, the countdown goes behind the title's (i)).
+-- Review 2026-11-10: the weekly board's rewards line (`rewards`, its height at the top of the rows: Small 17 and its
+-- padding 6, one line) shows on PC and a tablet only; a phone keeps its rows, the rewards are behind the title's (i).
 export type Rankings = {
 	side: number,
 	strip: number,
@@ -76,10 +78,19 @@ export type Rankings = {
 	footer: number,
 	footerLines: number,
 	podium: number,
+	rewards: number,
 	list: List,
 }
 
-function WorldLayout.rankings(content: Size, device: Device, filter: boolean, info: boolean): Rankings
+WorldLayout.REWARDS_LINE = 23
+
+function WorldLayout.rankings(
+	content: Size,
+	device: Device,
+	filter: boolean,
+	info: boolean,
+	rewards: boolean?
+): Rankings
 	local touch = device ~= "pc"
 	local phone = device == "phone"
 	local strip = if touch then 50 else 0
@@ -102,6 +113,7 @@ function WorldLayout.rankings(content: Size, device: Device, filter: boolean, in
 		footer = footer,
 		footerLines = footerLines,
 		podium = (if touch then 104 else 118) + 8,
+		rewards = if rewards and not phone then WorldLayout.REWARDS_LINE else 0,
 		list = { top = top, height = board - top - footer - 2, row = if touch then 44 else 40, gap = 2 },
 	}
 end

@@ -360,6 +360,8 @@ end
 -- Logic/WorldLayout.rankings. The podium is a Section in the rows (rankPodium: open on PC, folded on a phone). A phone
 -- steps through the filter with one button beside the tabs, and its footer keeps only the player's line: the countdown
 -- and the update time go behind the title's (i). So a phone shows at least two rows under the folded podium.
+-- Review 2026-11-10: the window is 720 tall (RankingsController), so PC shows five rows under the open podium; the
+-- weekly rewards line is one line of WorldLayout's height, and a phone leaves it out.
 local PODIUM = { 2, 1, 3 }
 local PODIUM_HEIGHT = { 0.82, 1, 0.7 }
 local function podium(
@@ -721,10 +723,13 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		local tab = tabById(use(selected))
 		return tab ~= nil and #filterValues(tab) > 1
 	end)
-	-- Logic/WorldLayout: the chrome of this device (the rows fill the rest)
+	-- Logic/WorldLayout: the chrome of this device (the rows fill the rest), and the weekly board's rewards line
 	local layout = scope:Computed(function(use): WorldLayout.Rankings
 		local device: WorldLayout.Device = WorldLayout.device(use(touch) == true, use(compact))
-		return WorldLayout.rankings(WorldLayout.CHROME, device, use(hasFilter), use(infoText) ~= "")
+		local id = use(current)
+		local def = if id then Leaderboard.resolve(id) else nil
+		local week = def ~= nil and def.id == "exp_week"
+		return WorldLayout.rankings(WorldLayout.CHROME, device, use(hasFilter), use(infoText) ~= "", week)
 	end)
 	-- When the board was read, and the warning of a board of this server only (rich text).
 	local updated = scope:Computed(function(use): string
@@ -821,20 +826,21 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		}
 		local l = use(layout)
 		local rowHeight = l.list.row
-		if def and def.id == "exp_week" then
-			-- S125: what the top three of each bracket get (numbers from Data/Leaderboards)
+		if l.rewards > 0 then
+			-- S125: what the top three of each bracket get (numbers from Data/Leaderboards). Review 2026-11-10: one line
+			-- of WorldLayout's height, on PC and a tablet only; a phone keeps its rows (the title's (i) has the rewards).
 			local rewards = Leaderboards.WEEK_REWARDS
 			table.insert(
 				items,
 				s:New("TextLabel")({
 					LayoutOrder = -1,
-					Size = UDim2.fromScale(1, 0),
-					AutomaticSize = Enum.AutomaticSize.Y,
+					Size = UDim2.new(1, 0, 0, l.rewards),
 					BackgroundTransparency = 1,
 					Text = Text.get(use, "leaderboard.week.rewards.short", {
 						title = Text.get(use, "title." .. rewards.title),
 					}),
-					TextWrapped = true,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					TextYAlignment = Enum.TextYAlignment.Top,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Paper.Text,

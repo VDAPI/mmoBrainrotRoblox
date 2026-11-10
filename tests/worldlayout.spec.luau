@@ -13,7 +13,9 @@ local fs = require("@lune/fs")
 local Classes = require("../src/shared/Data/Classes")
 local Config = require("../src/shared/Config")
 local Folds = require("../src/shared/Data/Folds")
+local Leaderboards = require("../src/shared/Data/Leaderboards")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
+local SectionFold = require("../src/shared/Logic/SectionFold")
 local T = require("./Test")
 local TextCaps = require("../src/shared/Logic/TextCaps")
 local TextScan = require("./TextScan")
@@ -174,27 +176,49 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 		T.expect(constant("src/client/UI/Theme.luau", "\n%s*Body = (%d+)")).toBe(WorldLayout.BODY)
 	end)
 
-	T.it("rankings: the rows show 2 on a phone under the folded podium, 5 on PC", function()
+	-- Review 2026-11-10: the rows counted under the podium as Data/Folds/World opens it on the device (open on PC and a
+	-- tablet, folded on a phone) and under the weekly board's rewards line (PC and a tablet; a phone leaves it out).
+	T.it("rankings: the rows show 2 on a phone, 5 on PC, under the podium as it opens by default", function()
 		local problems: { string } = {}
 		for _, screen in screens() do
 			local content = contentOf("rankings", screen)
 			for _, filter in { false, true } do
 				for _, info in { false, true } do
-					local r = WorldLayout.rankings(content, screen.device, filter, info)
-					negatives(`{screen.name} rankings`, r, problems)
-					-- the podium is open on PC, folded on a phone (rankPodium)
-					local skip = if screen.device == "phone"
-						then WorldLayout.section(screen.device, false, 0) + r.list.gap
-						else 0
-					local rows = WorldLayout.rows(r.list, skip)
-					local want = wanted(screen.device, 2, 5)
-					if rows < want then
-						table.insert(problems, `{screen.name} filter {filter} info {info}: {rows} rows < {want}`)
-					end
-					-- the footer pinned under the list
-					local board = content.h - (if r.strip > 0 then r.strip + 8 else 0)
-					if math.abs(r.list.top + r.list.height + 2 + r.footer - board) > 1e-6 then
-						table.insert(problems, `{screen.name}: footer not at the bottom`)
+					for _, week in { false, true } do
+						local r = WorldLayout.rankings(content, screen.device, filter, info, week)
+						negatives(`{screen.name} rankings`, r, problems)
+						local open = SectionFold.default("rankPodium", screen.compact)
+						local skip = WorldLayout.section(screen.device, open, r.podium) + r.list.gap
+						if r.rewards > 0 then
+							skip += r.rewards + r.list.gap
+						end
+						local rows = WorldLayout.rows(r.list, skip)
+						local want = wanted(screen.device, 2, 5)
+						if rows < want then
+							table.insert(
+								problems,
+								`{screen.name} filter {filter} info {info} week {week}: {rows} rows < {want}`
+							)
+						end
+						if week and (r.rewards > 0) == (screen.device == "phone") then
+							table.insert(problems, `{screen.name}: the rewards line {r.rewards} on {screen.device}`)
+						end
+						-- the footer pinned under the list
+						local board = content.h - (if r.strip > 0 then r.strip + 8 else 0)
+						if math.abs(r.list.top + r.list.height + 2 + r.footer - board) > 1e-6 then
+							table.insert(problems, `{screen.name}: footer not at the bottom`)
+						end
+						-- the rewards line is one line on the board (its padding 8 each side, the rows' scroll bar 6)
+						if r.rewards > 0 then
+							local width = content.w - (if r.side > 0 then r.side + 12 else 0) - 16 - 6
+							for lang, t in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+								local title = t["title." .. Leaderboards.WEEK_REWARDS.title]
+								local text = string.gsub(t["leaderboard.week.rewards.short"], "{title}", title)
+								if TextCaps.width(text, WorldLayout.SMALL) > width then
+									table.insert(problems, `{screen.name} {lang}: the rewards line is cut`)
+								end
+							end
+						end
 					end
 				end
 			end
