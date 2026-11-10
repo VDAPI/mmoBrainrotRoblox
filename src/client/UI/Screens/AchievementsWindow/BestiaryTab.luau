@@ -11,6 +11,9 @@
 -- (bestiaryRegions: open on PC and tablets, folded on a phone). Its header shows the bestiary points while open and the
 -- chosen region with its tiers while folded. Open on a screen too short for both, the region rows scroll in what is
 -- left and the entries keep the rest, never a negative height.
+-- Review 2026-11-10 (a phone with the regions open had room for no entry): on a phone the regions are a picker, a tap on
+-- one folds them again (back to the phone's default, so nothing open stays saved), and its entries show under the
+-- header that names it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -24,6 +27,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local ItemName = require(ReplicatedStorage.Shared.Logic.ItemName)
 local ListRow = require(script.Parent.Parent.Parent.Components.ListRow)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Preview = require(script.Parent.Parent.WorldMap.Preview)
 local Scale = require(script.Parent.Parent.Parent.Scale)
 local Section = require(script.Parent.Parent.Parent.Components.Section)
@@ -115,6 +119,9 @@ local function regionRows(scope: Scope, ctx: Context.Ctx, height: Fusion.Compute
 				end),
 				OnClick = function()
 					ctx.region:set(region)
+					if Fusion.peek(PhoneLayout.Compact) then
+						Section.set(REGIONS_ID, false)
+					end
 				end,
 				[Children] = scope:Computed(function(use, s: Scope): Instance
 					local r = use(live)

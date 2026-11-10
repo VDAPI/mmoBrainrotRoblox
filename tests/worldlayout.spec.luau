@@ -298,6 +298,12 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 	}
 
 	T.it("achievements: 3 rows on a phone, 5 on PC; the bestiary's entries never go negative", function()
+		-- Review 2026-11-10: open on a phone, the regions leave the entries less than a row, so the regions work as a
+		-- picker there: a tap on one folds them again (the header names the chosen region)
+		local bestiary = fs.readFile("src/client/UI/Screens/AchievementsWindow/BestiaryTab.luau")
+		local foldsOnPick = "ctx%.region:set%(region%)%s+if Fusion%.peek%(PhoneLayout%.Compact%) then%s+"
+			.. "Section%.set%(REGIONS_ID, false%)"
+		T.expect(string.find(bestiary, foldsOnPick) ~= nil).toBe(true)
 		local problems: { string } = {}
 		local regions = 4
 		for _, screen in screens() do
