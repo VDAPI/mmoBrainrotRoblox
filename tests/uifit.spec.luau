@@ -3,7 +3,7 @@
 -- sizes, a glyph cut in its button, a word broken letter by letter): one-line text widths estimated without
 -- TextService against the boxes the text sits in. The estimate (Builder Sans) is generous on purpose, so a pass here
 -- leaves room in Studio: a letter, digit or mark LETTER of the text size, a space SPACE, a symbol beyond Latin
--- (◆ ▶ ▣) a full em.
+-- (◆ ▶ ▣) a full em. The model lives in Logic/TextCaps.width (2026-11-10), shared with the text caps of textcaps.spec.
 --   F1 every Button with a literal offset size and a literal text holds it on one line, its side padding included
 --      (Components/Button: Theme.Padding.Tiny under NARROW, else Medium)
 --   F2 the Portal Master's price buttons hold every label on one line, at every price, in both languages
@@ -15,23 +15,14 @@ local fs = require("@lune/fs")
 local Locale = require("../src/shared/Util/Locale")
 local PortalData = require("../src/shared/Data/PortalShop")
 local T = require("./Test")
+local TextCaps = require("../src/shared/Logic/TextCaps")
 local en = require("../src/shared/Data/Localization/en")
 local pl = require("../src/shared/Data/Localization/pl")
 
 local describe, it, expect = T.describe, T.it, T.expect
 
-local LETTER = 0.56
-local SPACE = 0.3
-local SYMBOL = 1.0
 local LANGS = { "pl", "en" }
-
-local function width(text: string, size: number): number
-	local em = 0
-	for _, code in utf8.codes(text) do
-		em += if code == 32 then SPACE elseif code >= 0x2000 then SYMBOL else LETTER
-	end
-	return em * size
-end
+local width = TextCaps.width
 
 local function read(path: string): string
 	return fs.readFile(path)
