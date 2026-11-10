@@ -64,7 +64,7 @@ end
 -- 8 px under it). The board: the title with its (i), the filter strip (on a phone a button at the title's right that
 -- steps through the filter), the column heads, the rows (the podium of the first three is a Section in the list:
 -- rankPodium, folded on a phone) and the footer (PC: the week's countdown, my place, the update time; a phone keeps
--- only my place, the countdown goes behind the title's (i)).
+-- only my place, the countdown goes into the title row, the update time behind the title's (i)).
 -- Review 2026-11-10: the weekly board's rewards line (`rewards`, its height at the top of the rows: Small 17 and its
 -- padding 6, one line) shows on PC and a tablet only; a phone keeps its rows, the rewards are behind the title's (i).
 export type Rankings = {

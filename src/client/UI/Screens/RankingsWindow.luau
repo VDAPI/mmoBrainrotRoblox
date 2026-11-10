@@ -358,10 +358,11 @@ end
 -- middle and highest, each card on iron with its medal colour.
 -- Owner 2026-11-10 ("bardzo dużo napisów, niektóre rzeczy zasłaniają inne"; UI plan E, L10): the chrome heights come from
 -- Logic/WorldLayout.rankings. The podium is a Section in the rows (rankPodium: open on PC, folded on a phone). A phone
--- steps through the filter with one button beside the tabs, and its footer keeps only the player's line: the countdown
--- and the update time go behind the title's (i). So a phone shows at least two rows under the folded podium.
+-- steps through the filter with one button beside the tabs, and its footer keeps only the player's line: the update
+-- time goes behind the title's (i). So a phone shows at least two rows under the folded podium.
 -- Review 2026-11-10: the window is 720 tall (RankingsController), so PC shows five rows under the open podium; the
--- weekly rewards line is one line of WorldLayout's height, and a phone leaves it out.
+-- weekly rewards line is one line of WorldLayout's height, and a phone leaves it out. A phone keeps the state on top:
+-- when the week or the season ends in the title row, "⚠ Tylko ten serwer" first in its footer line.
 local PODIUM = { 2, 1, 3 }
 local PODIUM_HEIGHT = { 0.82, 1, 0.7 }
 local function podium(
@@ -701,6 +702,23 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		end
 		return ""
 	end)
+	-- Review 2026-11-10: when the week or the arena season ends, short ("koniec za 2 d 5 h"); a phone's title row shows it
+	-- (its footer keeps one line), "" for a board without an end
+	local endsIn = scope:Computed(function(use): string
+		local id = use(current)
+		local def = if id then Leaderboard.resolve(id) else nil
+		local left: number? = nil
+		if def and def.id == "exp_week" then
+			left = Leaderboard.weekEndsIn(use(clock))
+		elseif def and def.format == "rating" then
+			left = ArenaRules.seasonEndsAt(ArenaRules.seasonOf(use(clock))) - use(clock)
+		end
+		if not left then
+			return ""
+		end
+		local d, h = Time.split(left)
+		return Text.get(use, "leaderboard.endsIn", { time = Text.get(use, "arena.time.dh", { d = d, h = h }) })
+	end)
 	-- 2026-10-21: what the board's "i" explains: the week's rewards, or the rule of the Hall of Fame; "" = no "i"
 	local titleInfo = scope:Computed(function(use): string
 		local id = use(current)
@@ -747,8 +765,9 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		end
 		return escape(text)
 	end)
-	-- What the title's (i) explains: the board's rule; a phone adds the countdown and the update time (its footer keeps
-	-- only the player's line).
+	-- What the title's (i) explains: the board's rule; a phone adds the guild's rule and the update time with the whole
+	-- warning of a board of this server (its footer keeps only the player's line; review 2026-11-10: the countdown is
+	-- in its title row, the short warning in its footer line).
 	local info = scope:Computed(function(use): string
 		local parts: { string } = {}
 		local rule = use(titleInfo)
@@ -756,7 +775,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			table.insert(parts, escape(rule))
 		end
 		if use(layout).footerLines < 2 then
-			if use(infoText) ~= "" then
+			if use(infoText) ~= "" and use(endsIn) == "" then
 				table.insert(parts, escape(use(infoText)))
 			end
 			if use(updated) ~= "" then
@@ -970,7 +989,10 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 					Text = scope:Computed(function(use): string
 						local id = use(current)
 						local def = if id then Leaderboard.resolve(id) else nil
-						return if def then Text.get(use, def.nameKey) else ""
+						local name = if def then Text.get(use, def.nameKey) else ""
+						-- a phone: the countdown of its footer line in the title row
+						local left = if use(layout).footerLines < 2 then use(endsIn) else ""
+						return if name ~= "" and left ~= "" then `{name} · {left}` else name
 					end),
 					Info = info,
 					InfoVisible = scope:Computed(function(use): boolean
@@ -1057,12 +1079,22 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 							LayoutOrder = 1,
 							Size = UDim2.new(1, 0, 0, INFO),
 							BackgroundTransparency = 1,
+							RichText = true,
 							Text = scope:Computed(function(use): string
 								local snap = use(snapshot)
 								if not snap then
 									return ""
 								end
-								return meText(use, snap)
+								local text = escape(meText(use, snap))
+								-- review 2026-11-10: a phone's only footer line says first that this board is of this
+								-- server only (the whole warning is in the title's (i))
+								if snap.mode == "local" and use(layout).footerLines < 2 then
+									local warning = Theme.Paper.Warning:ToHex()
+									local short = escape(Text.get(use, "leaderboard.local.short"))
+									local mark = `<font color="#{warning}">{short}</font>`
+									return if text ~= "" then `{mark}  ·  {text}` else mark
+								end
+								return text
 							end),
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,

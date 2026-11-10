@@ -226,6 +226,33 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 		T.expect(problems).toEqual({})
 	end)
 
+	-- Review 2026-11-10 (UI-ZASADY §1, state and time on top): a phone's footer keeps one line, so when the week or the
+	-- arena season ends goes into the title row (it fits the board with the (i)), and a board of this server only says
+	-- so first in that footer line; the (i) keeps the rule and the update time.
+	T.it("rankings on a phone: the countdown in the title row, the server warning in the footer line", function()
+		local src = fs.readFile("src/client/UI/Screens/RankingsWindow.luau")
+		T.expect(string.find(src, "local left = if use(layout).footerLines < 2 then use(endsIn)", 1, true) ~= nil)
+			.toBe(true)
+		T.expect(string.find(src, '"leaderboard.local.short"', 1, true) ~= nil).toBe(true)
+		local problems: { string } = {}
+		for _, screen in screens() do
+			if screen.device == "phone" then
+				local width = contentOf("rankings", screen).w - 30
+				for lang, t in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+					for _, board in { "exp_week", "arena", "arena3" } do
+						local time = string.gsub(string.gsub(t["arena.time.dh"], "{d}", "88"), "{h}", "88")
+						local left = string.gsub(t["leaderboard.endsIn"], "{time}", time)
+						local title = `{t["leaderboard.board." .. board]} · {left}`
+						if TextCaps.width(title, 24) > width then
+							table.insert(problems, `{screen.name} {lang}: "{title}" wider than the board`)
+						end
+					end
+				end
+			end
+		end
+		T.expect(problems).toEqual({})
+	end)
+
 	T.it("season pass: at least 3 tier rows on a phone; PC shows its strip and 5 tiers", function()
 		local problems: { string } = {}
 		for _, screen in screens() do

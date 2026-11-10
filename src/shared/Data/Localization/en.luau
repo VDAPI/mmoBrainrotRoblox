@@ -8494,6 +8494,8 @@ return {
 	["leaderboard.updated"] = "Updated {time} ago",
 	["leaderboard.updatedNow"] = "Updated just now",
 	["leaderboard.local"] = "This server only: shared rankings are unavailable right now.",
+	["leaderboard.local.short"] = "⚠ This server only",
+	["leaderboard.endsIn"] = "ends in {time}",
 	["leaderboard.loading"] = "Loading the ranking…",
 	["leaderboard.empty"] = "No one has made this ranking yet.",
 	["leaderboard.unknown"] = "Unknown hero",

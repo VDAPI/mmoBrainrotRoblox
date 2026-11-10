@@ -8492,6 +8492,8 @@ return {
 	["leaderboard.updated"] = "Odświeżono {time} temu",
 	["leaderboard.updatedNow"] = "Odświeżono przed chwilą",
 	["leaderboard.local"] = "Tylko ten serwer: wspólne rankingi są chwilowo niedostępne.",
+	["leaderboard.local.short"] = "⚠ Tylko ten serwer",
+	["leaderboard.endsIn"] = "koniec za {time}",
 	["leaderboard.loading"] = "Wczytywanie rankingu…",
 	["leaderboard.empty"] = "Nikt jeszcze nie trafił do tego rankingu.",
 	["leaderboard.unknown"] = "Nieznany bohater",
