@@ -1662,6 +1662,7 @@ return {
 	["portal.areaLocked"] = "To expowisko otworzy się na wyższym poziomie.",
 	["portal.warnRed"] = "Wchodzisz do strefy PvP bez ograniczeń. Inni gracze mogą Cię zaatakować w każdej chwili.",
 	["portal.warnLevel"] = "Potwory są tam dla Ciebie groźne. Zalecany poziom: {level}+.",
+	["portal.warnBoth"] = "Strefa PvP bez ograniczeń, a potwory są tam dla Ciebie groźne (poziom {level}+).",
 	["worldmap.here"] = "Jesteś tutaj",
 	["worldmap.soon"] = "Wkrótce",
 	["loading.tip"] = "Porada",

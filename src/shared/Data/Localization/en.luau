@@ -1662,6 +1662,7 @@ return {
 	["portal.areaLocked"] = "This hunting ground opens at a higher level.",
 	["portal.warnRed"] = "You are entering a zone of unrestricted PvP. Other players can attack you at any time.",
 	["portal.warnLevel"] = "Monsters there are dangerous for you. Recommended level: {level}+.",
+	["portal.warnBoth"] = "Unrestricted PvP zone, and its monsters are dangerous for you (level {level}+).",
 	["worldmap.here"] = "You are here",
 	["worldmap.soon"] = "Coming soon",
 	["loading.tip"] = "Tip",

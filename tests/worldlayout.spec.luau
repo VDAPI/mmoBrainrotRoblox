@@ -632,4 +632,19 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 		T.expect(problems).toEqual({})
 		T.expect(found >= 10).toBe(true)
 	end)
+
+	T.it("a portal to a red zone above the player's level names both dangers in the modal's one line", function()
+		-- Review 2026-11-10: the level warning waited unseen under "Więcej ▸" behind the red zone's line. Both dangers
+		-- make one line of at most 90 characters (portal.warnBoth), and "Więcej ▸" keeps the red zone's full sentence.
+		local src = fs.readFile("src/client/Controllers/WorldController.luau")
+		local message = 'Message = if both then Text.now("portal.warnBoth", { level = target.minLevel })'
+		local details = 'Details = if both then Text.now("portal.warnRed") else nil'
+		T.expect(string.find(src, message, 1, true) ~= nil).toBe(true)
+		T.expect(string.find(src, details, 1, true) ~= nil).toBe(true)
+		for lang, strings in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+			local text = strings["portal.warnBoth"] or ""
+			local ok, why = TextCaps.check("modalBody", TextCaps.expand(text))
+			T.expect(`{lang} {ok} {why} {string.find(text, "{level}", 1, true) ~= nil}`).toBe(`{lang} true nil true`)
+		end
+	end)
 end)
