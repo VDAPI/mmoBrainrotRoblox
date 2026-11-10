@@ -12,8 +12,10 @@ local fs = require("@lune/fs")
 
 local HudStack = require("../src/shared/Logic/HudStack")
 local HudZones = require("../src/shared/Logic/HudZones")
+local Locale = require("../src/shared/Util/Locale")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
+local TextCaps = require("../src/shared/Logic/TextCaps")
 local TextScan = require("./TextScan")
 
 type Rect = HudZones.Rect
@@ -478,7 +480,7 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 		T.expect(HudZones.MINIMAP_W).toBe(220 + 44)
 		T.expect(HudStack.RIGHT_TOP - HudStack.MARGIN - HudStack.ICON - 2 * HudStack.GAP).toBe(220 + 46)
 		has(hud .. "NavBar.luau", `local WIDTH = {HudZones.GUIDE_W}`)
-		has(hud .. "ArenaPanel.luau", `local PANEL_WIDTH = {HudZones.ARENA_PANEL.w}`)
+		has(hud .. "ArenaPanel.luau", 'local zoneSize = HudSlots.sizeOf(scope, "arenaPanel")')
 		has("src/client/UI/Screens/PartyFrames.luau", `local WIDTH = {HudZones.PARTY_FRAME.w}`)
 		has("src/client/UI/Screens/PartyFrames.luau", `local HEIGHT = {HudZones.PARTY_FRAME.h}`)
 		T.expect(HudStack.PARTY_ROW - HudZones.PARTY_FRAME.h).toBe(6)
@@ -491,6 +493,63 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 		local thumb = HudZones.thumb(pw, ph)
 		T.expect(thumb.top).toBeNear(252.9, 0.05)
 		T.expect(thumb.bottom).toBeNear(401.2, 0.05)
+	end)
+
+	T.it("the arena's match and return panels hold their rows in the arena place on PC and a tablet", function()
+		-- package A review (owner 2026-11-10, "things covering each other"): the return panel grew to 140 px under its
+		-- AutomaticSize and stood in the message zone with its button, where the result's toast shows
+		local path = "src/client/UI/Screens/Hud/ArenaPanel.luau"
+		local src = fs.readFile(path)
+		local function has(literal: string)
+			if not string.find(src, literal, 1, true) then
+				error(`{path} no longer has '{literal}'`)
+			end
+		end
+		local function number(name: string): number
+			return tonumber(string.match(src, `\nlocal {name} = (%d+)\n`)) or error(`{path}: no local {name}`)
+		end
+		local place = HudZones.ARENA_PANEL
+		-- both take the place's size; nothing grows past it
+		has('local zoneSize = HudSlots.sizeOf(scope, "arenaPanel")')
+		has("return use(zoneSize)")
+		has("Size = zoneSize,")
+		T.expect(string.find(src, "AutomaticSize", 1, true)).toBe(nil)
+		-- the match panel: paddings 6 and 8, the score row, 2 apart, the round line (after the match the result line
+		-- stands in its place)
+		has("PaddingTop = PhoneLayout.Pick(scope, UDim.new(0, 0), UDim.new(0, 6)),")
+		has("PaddingBottom = UDim.new(0, 8),")
+		has("Padding = UDim.new(0, 2),")
+		has("return use(rows) and (use(compact) or not use(hasResult))")
+		T.expect(6 + number("SCORE") + 2 + number("ROUND") + 8).toBe(place.h)
+		-- the return panel: paddings 6, at most three lines (the 3v3 result, the tokens, the countdown) beside its
+		-- button, MinTouch (44) tall for a tablet
+		local line, button = number("LINE"), number("BACK_BUTTON")
+		has("PaddingTop = UDim.new(0, 6),")
+		has("PaddingBottom = UDim.new(0, 6),")
+		has("Size = UDim2.new(1, -(BACK_BUTTON + 8), 1, 0),")
+		has("Size = UDim2.fromOffset(BACK_BUTTON, Theme.Size.MinTouch),")
+		T.expect(6 + 3 * line + 6 <= place.h).toBe(true)
+		T.expect(6 + 44 + 6 <= place.h).toBe(true)
+		-- each text on one line at Theme.TextSize.Small (17): PC's result line across the panel (paddings 12), the
+		-- return panel's lines beside the button, the button's label within its side paddings (Theme.Padding.Medium)
+		has("TextSize = Theme.TextSize.Small,")
+		local room = place.w - 2 * 12
+		local beside = room - button - 8
+		local function fits(where: string, text: string, width: number)
+			local w = TextCaps.width(text, 17)
+			T.expect({ where, text, w <= width }).toEqual({ where, text, true })
+		end
+		for _, lang in { "pl", "en" } do
+			local tokens = Locale.T("arena.tokens.match", { n = 999 }, lang)
+			for _, key in { "arena.result3.win", "arena.result3.loss", "arena.result3.draw" } do
+				local result = Locale.T(key, nil, lang)
+				fits(`{lang} match panel`, `{result}  ·  {tokens}`, room)
+				fits(`{lang} return panel`, result, beside)
+			end
+			fits(`{lang} return panel`, tokens, beside)
+			fits(`{lang} return panel`, Locale.T("arena.net.returnIn", { s = 99 }, lang), beside)
+			fits(`{lang} return button`, Locale.T("arena.net.returnNow", nil, lang), button - 2 * 14)
+		end
 	end)
 
 	T.it("names elements of package A's files in Screens/Hud, each reading its place (L11)", function()

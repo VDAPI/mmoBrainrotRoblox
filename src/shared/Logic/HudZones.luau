@@ -118,8 +118,9 @@ HudZones.TARGET = table.freeze({
 -- (the plan's 22..134, package B moves the bar there; today it stands at 16). [proposed] An add or player target goes
 -- GAP under the bar (today the target frame lies under it).
 HudZones.BOSS_BAR = table.freeze({ w = 720, h = 112 })
--- Hud/ArenaPanel's PANEL_WIDTH. [proposed] 68 tall, GAP under the target's effects: today the match panel stands at
--- 70 and the return panel at 160, over the target frame.
+-- Hud/ArenaPanel's match and return panels on PC and a tablet take this size (UI/HudSlots.sizeOf) and hold their rows
+-- in it (tests/hudzones.spec). [proposed] 68 tall, GAP under the target's effects (they stood at 70 and 160, over the
+-- target frame).
 HudZones.ARENA_PANEL = table.freeze({ w = 420, h = 68 })
 
 -- Z4. Hud/Minimap's frame (SIZE 220 + 44; its height is counted in HudStack.RIGHT_TOP) and Hud/NavBar's WIDTH (the

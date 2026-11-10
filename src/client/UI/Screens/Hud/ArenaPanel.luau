@@ -20,6 +20,11 @@
 -- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD line at most 32 characters): the pill says "⌛ 1v1 · 0:42"
 -- and its tooltip the players waiting (or the global queue's rating window); the 3v3 result line reads its three keys
 -- by name (the toast and the banner of the result are the message band's).
+-- Package A review (owner 2026-11-10, "things covering each other"): on PC and a tablet both panels take the arena
+-- place's size (68 tall; the return panel grew to 140 and its button stood in the message zone under the band, where
+-- the result's toast shows): after the match the result line stands in the round line's place, and the return panel is
+-- one row of short lines beside its button. The tokens' reason (which the server toasts too) is the details of the
+-- result's tooltip.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -47,12 +52,17 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 export type Props = { Leave: () -> (), ReturnNow: () -> () }
 
 local PILL_WIDTH = HudStack.ARENA_PILL
-local PANEL_WIDTH = 420
--- the phone's match and return panels in the stack: their rows under the header (Hud/PanelHeader)
+-- the match panel's rows (on a phone under the header, Hud/PanelHeader); on PC and a tablet with its paddings (6 and
+-- 8) and the gap (2) as tall as the zone's arena place (tests/hudzones.spec)
 local SCORE = 30
 local ROUND = 22
+-- a phone's return panel in the stack: the result on two lines and "Returning in N s"
 local RESULT = 36
 local RETURN = 24
+-- PC and a tablet: the return panel's lines (three at most: the 3v3 result, the tokens, the countdown) beside its
+-- button, MinTouch tall
+local LINE = 18
+local BACK_BUTTON = 140
 -- the team result of a 3v3 match
 local RESULT3: { [string]: string } =
 	{ win = "arena.result3.win", loss = "arena.result3.loss", draw = "arena.result3.draw" }
@@ -191,11 +201,12 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		end
 		Section.set("hudArena", not Fusion.peek(open))
 	end
-	-- S128: the result and the tokens of the match
-	local resultText = scope:Computed(function(use): string
+	-- S128: the result and the tokens of the match, the parts of the result line (package A review: the tokens' reason
+	-- is no part of it, see `reasonText`)
+	local resultParts = scope:Computed(function(use): { string }
 		local m = use(match)
 		if not m or m.phase ~= "done" then
-			return ""
+			return {}
 		end
 		local bits = {}
 		if m.mode == "3v3" and type(m.score) == "table" then
@@ -219,14 +230,26 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		if type(m.tokens) == "number" then
 			table.insert(bits, Text.get(use, "arena.tokens.match", { n = m.tokens }))
 		end
-		if type(m.tokensReason) == "string" then
-			table.insert(bits, Text.get(use, m.tokensReason))
-		end
-		return table.concat(bits, "  ·  ")
+		return bits
+	end)
+	local resultText = scope:Computed(function(use): string
+		return table.concat(use(resultParts), "  ·  ")
 	end)
 	local hasResult = scope:Computed(function(use): boolean
 		return use(resultText) ~= ""
 	end)
+	-- the reason of the tokens (a sentence up to 67 characters, which the server toasts with them): the details of the
+	-- result's tooltip, whose text is the whole result line (a phone's panel wraps it, and a cut part reads there)
+	local reasonText = scope:Computed(function(use): string?
+		local m = use(match)
+		if not m or m.phase ~= "done" or type(m.tokensReason) ~= "string" then
+			return nil
+		end
+		return Text.get(use, m.tokensReason)
+	end)
+	local function resultTip(label: Instance)
+		Tooltip.attach(scope, label :: GuiObject, resultText, reasonText)
+	end
 	-- the phone header: the score and the round's time
 	local scoreLine = scope:Computed(function(use): string
 		local m = use(match)
@@ -249,6 +272,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 	end)
 	-- the place: the zone map's arena place on PC and a tablet; a phone's stack ("arena")
 	local zone = HudSlots.at(scope, "arenaPanel")
+	local zoneSize = HudSlots.sizeOf(scope, "arenaPanel")
 	-- package A review (owner 2026-11-10): a box hears the player's own fold only (`open`, not `rows`): the column
 	-- folds a box to its line itself, and a box built from its fold fed the column back (a Fusion loop)
 	local function phoneSlot(shown: Fusion.Computed<boolean>, extra: Fusion.Computed<number>)
@@ -283,7 +307,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 	local function sizeOf(phone: Fusion.Computed<HudStack.Rect?>): Fusion.Computed<UDim2>
 		return scope:Computed(function(use): UDim2
 			if not use(compact) then
-				return UDim2.fromOffset(PANEL_WIDTH, 0)
+				return use(zoneSize)
 			end
 			local at = use(phone)
 			return UDim2.fromOffset(PhoneHud.PANEL_WIDTH, if at then at.bottom - at.top else use(header))
@@ -307,15 +331,30 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 			Visible = compact,
 		})
 	end
-	local automatic = scope:Computed(function(use): Enum.AutomaticSize
-		return if use(compact) then Enum.AutomaticSize.None else Enum.AutomaticSize.Y
-	end)
 
+	-- S128: the result and the tokens of the match. Package A review: on PC and a tablet one line in the round line's
+	-- place (the panel keeps the place's 68 px), on a phone two lines under it
+	local matchResult = scope:New("TextLabel")({
+		LayoutOrder = 3,
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.new(1, 0, 0, if use(compact) then RESULT else ROUND)
+		end),
+		BackgroundTransparency = 1,
+		TextWrapped = compact,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Visible = scope:Computed(function(use): boolean
+			return use(hasResult) and use(rows)
+		end),
+		Text = resultText,
+		FontFace = Theme.Fonts.BodyBold,
+		TextSize = Theme.TextSize.Small,
+		TextColor3 = Theme.Brass.Bright,
+	})
+	resultTip(matchResult)
 	local panel = scope:New("Frame")({
 		Name = "ArenaMatch",
 		Position = placeOf(matchSlot),
 		Size = sizeOf(matchSlot),
-		AutomaticSize = automatic,
 		ClipsDescendants = compact,
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
@@ -365,7 +404,10 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 			}),
 			scope:New("TextLabel")({
 				LayoutOrder = 2,
-				Visible = rows,
+				-- PC and a tablet: the result line takes its place after the match
+				Visible = scope:Computed(function(use): boolean
+					return use(rows) and (use(compact) or not use(hasResult))
+				end),
 				Size = UDim2.new(1, 0, 0, ROUND),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
@@ -394,38 +436,45 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				TextColor3 = Theme.Iron.Text,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 			}),
-			-- S128: the result and the tokens of the match
-			scope:New("TextLabel")({
-				LayoutOrder = 3,
-				Size = UDim2.fromScale(1, 0),
-				AutomaticSize = Enum.AutomaticSize.Y,
-				BackgroundTransparency = 1,
-				TextWrapped = true,
-				Visible = scope:Computed(function(use): boolean
-					return use(hasResult) and use(rows)
-				end),
-				Text = resultText,
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Brass.Bright,
-			}),
+			matchResult,
 		},
 	})
 
-	local back = scope:New("Frame")({
-		Name = "ArenaReturn",
+	local returnText = scope:Computed(function(use): string
+		local at = use(returnAt)
+		local left = if at then math.max(0, math.ceil(at - use(now))) else 0
+		return Text.get(use, "arena.net.returnIn", { s = left })
+	end)
+	-- a phone's return panel: a list under its header line in the stack
+	local stackResult = scope:New("TextLabel")({
+		LayoutOrder = 0,
+		Size = UDim2.new(1, 0, 0, RESULT),
+		BackgroundTransparency = 1,
+		TextWrapped = true,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		Visible = scope:Computed(function(use): boolean
+			return use(hasResult) and use(rows)
+		end),
+		Text = resultText,
+		FontFace = Theme.Fonts.BodyBold,
+		TextSize = Theme.TextSize.Small,
+		TextColor3 = Theme.Brass.Bright,
+	})
+	resultTip(stackResult)
+	local backStack = scope:New("Frame")({
+		Name = "ArenaReturnStack",
 		Position = placeOf(returnSlot),
 		Size = sizeOf(returnSlot),
-		AutomaticSize = automatic,
-		ClipsDescendants = compact,
+		ClipsDescendants = true,
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
-		Visible = shownOn(returnSlot, returning),
+		Visible = scope:Computed(function(use): boolean
+			return use(compact) and use(returning) and use(returnSlot) ~= nil
+		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
-				PaddingTop = PhoneLayout.Pick(scope, UDim.new(0, 0), UDim.new(0, 8)),
 				PaddingBottom = UDim.new(0, 8),
 				PaddingLeft = UDim.new(0, 12),
 				PaddingRight = UDim.new(0, 12),
@@ -437,29 +486,13 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 			}),
 			phoneHeader(-1),
 			-- the match's result (the match panel steps aside for this one)
-			scope:New("TextLabel")({
-				LayoutOrder = 0,
-				Size = UDim2.new(1, 0, 0, RESULT),
-				BackgroundTransparency = 1,
-				TextWrapped = true,
-				Visible = scope:Computed(function(use): boolean
-					return use(hasResult) and use(rows)
-				end),
-				Text = resultText,
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Brass.Bright,
-			}),
+			stackResult,
 			scope:New("TextLabel")({
 				LayoutOrder = 1,
 				Visible = rows,
 				Size = UDim2.new(1, 0, 0, RETURN),
 				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					local at = use(returnAt)
-					local left = if at then math.max(0, math.ceil(at - use(now))) else 0
-					return Text.get(use, "arena.net.returnIn", { s = left })
-				end),
+				Text = returnText,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Body,
 				TextColor3 = Theme.Iron.Text,
@@ -469,6 +502,80 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				LayoutOrder = 2,
 				Visible = rows,
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
+				Variant = "primary",
+				Text = Text.T(scope, "arena.net.returnNow"),
+				OnClick = props.ReturnNow,
+			}),
+		},
+	})
+
+	-- PC and a tablet: the return panel in the zone's arena place, one row: the result's parts and the countdown, each a
+	-- short line of its own (at most three, 18 px), beside "Return now", MinTouch tall for a tablet's finger
+	local function backLine(order: number, text: Fusion.Computed<string>, color: Color3): Instance
+		return scope:New("TextLabel")({
+			LayoutOrder = order,
+			Size = UDim2.new(1, 0, 0, LINE),
+			BackgroundTransparency = 1,
+			Visible = scope:Computed(function(use): boolean
+				return use(text) ~= ""
+			end),
+			Text = text,
+			FontFace = Theme.Fonts.BodyBold,
+			TextSize = Theme.TextSize.Small,
+			TextColor3 = color,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+		})
+	end
+	local lines: { Instance } = {}
+	for i = 1, 2 do
+		local line = backLine(
+			i,
+			scope:Computed(function(use): string
+				return use(resultParts)[i] or ""
+			end),
+			Theme.Brass.Bright
+		)
+		resultTip(line)
+		table.insert(lines, line)
+	end
+	table.insert(lines, backLine(3, returnText, Theme.Iron.Text))
+	local back = scope:New("Frame")({
+		Name = "ArenaReturn",
+		Position = zone,
+		Size = zoneSize,
+		BackgroundColor3 = Theme.Iron.Surface,
+		BackgroundTransparency = Theme.HudAlpha,
+		Visible = scope:Computed(function(use): boolean
+			return use(returning) and not use(compact)
+		end),
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
+			scope:New("UIPadding")({
+				PaddingTop = UDim.new(0, 6),
+				PaddingBottom = UDim.new(0, 6),
+				PaddingLeft = UDim.new(0, 12),
+				PaddingRight = UDim.new(0, 12),
+			}),
+			scope:New("Frame")({
+				Name = "Lines",
+				Size = UDim2.new(1, -(BACK_BUTTON + 8), 1, 0),
+				BackgroundTransparency = 1,
+				[Children] = {
+					scope:New("UIListLayout")({
+						SortOrder = Enum.SortOrder.LayoutOrder,
+						VerticalAlignment = Enum.VerticalAlignment.Center,
+					}),
+					lines :: any,
+				},
+			}),
+			Button(scope, {
+				Surface = "iron",
+				AnchorPoint = Vector2.new(1, 0.5),
+				Position = UDim2.fromScale(1, 0.5),
+				Size = UDim2.fromOffset(BACK_BUTTON, Theme.Size.MinTouch),
+				TextSize = Theme.TextSize.Small,
 				Variant = "primary",
 				Text = Text.T(scope, "arena.net.returnNow"),
 				OnClick = props.ReturnNow,
@@ -517,7 +624,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		Name = "ArenaHud",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
-		[Children] = { pill, panel, back, veil },
+		[Children] = { pill, panel, back, backStack, veil },
 	})
 end
 
