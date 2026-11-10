@@ -112,7 +112,8 @@ end
 local function options(data: { [string]: any }, code: string?, instance: string?): TeleportOptions
 	local o = Instance.new("TeleportOptions")
 	if code then
-		o.ReservedServerAccessCode = code
+		-- the luau-lsp type definitions of 2026-11 no longer list this property; the engine still has it
+		(o :: any).ReservedServerAccessCode = code
 	end
 	if instance then
 		o.ServerInstanceId = instance
