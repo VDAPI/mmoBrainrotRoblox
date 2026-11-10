@@ -443,6 +443,14 @@ function WindowManager.DismissModals()
 	ItemTooltip.setBlocked(false)
 end
 
+-- Owner 2026-11-10 (UI plan, "things covering each other"): a short message (text) shown in the title bar of the top
+-- open window for a few seconds, coloured by its kind ("info", "success", "error"), so a toast never lands on a window.
+-- Returns whether a window showed it; false makes the caller show it its usual way. A stub until UI package C builds
+-- the strip (Components/Window); package B's messages call it.
+function WindowManager.Notice(_text: string, _kind: string?, _seconds: number?): boolean
+	return false
+end
+
 function WindowManager.SetHotkeysEnabled(enabled: boolean)
 	hotkeysEnabled = enabled
 end

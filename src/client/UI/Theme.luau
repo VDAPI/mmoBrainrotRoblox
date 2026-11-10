@@ -210,6 +210,16 @@ Theme.Size = {
 	FrameOuter = 3, -- iron window frame
 	FrameInner = 1, -- brass line inside it
 	HeaderRule = 2, -- brass line under the title bar
+	-- Owner 2026-11-10 (UI plan, readable UI): the phone's title bar, tab strips, fold headers, a folded HUD panel's
+	-- line, a phone HUD line, the item tooltip, the (i) box and the modal (Logic/WindowFrame, Logic/Popover)
+	WindowHeaderCompact = 44,
+	TabHeight = 44,
+	SectionHeader = 32,
+	PanelLine = 32,
+	HudLine = 52,
+	TooltipWidth = 340,
+	InfoTipWidth = 320,
+	ModalWidth = 520,
 }
 
 Theme.Corner = {
