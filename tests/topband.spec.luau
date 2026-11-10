@@ -6,8 +6,9 @@
 -- under the target band (Logic/HudZones.messageZone, owner question 2) and one queue (Logic/NoticeQueue) decides what
 -- shows, so the old guarantees hold through the queue and TopBand.slots: every toast under the banner that shows, at
 -- most two toasts, the achievement waiting for the zone and area banners, nothing moving up while it shows. The
--- dungeon boss bar stands in the target band (a phone: under the target row). A source check keeps every message in
--- UI/Notify's host: nothing outside package B's files parents into the Toasts layer or makes a ScreenGui for one.
+-- dungeon boss bar stands in the target band (a phone: a strip across M's width under the target row). A source check
+-- keeps every message in UI/Notify's host: nothing outside package B's files parents into the Toasts layer or makes a
+-- ScreenGui for one.
 local fs = require("@lune/fs")
 
 local HudZones = require("../src/shared/Logic/HudZones")
@@ -287,7 +288,7 @@ T.describe("Top band of messages (UI plan phase 2, package B)", function()
 			end
 		end
 		fail(problems)
-		-- the client: UIController measures the bar, UI/Notify hands it (virtual pixels) to TopBand.slots
+		-- the client: UIController measures the bar, UI/Notify hands it to TopBand.context (virtual pixels there)
 		local ui = fs.readFile("src/client/Controllers/UIController.luau")
 		T.expect(
 			string.find(
@@ -298,8 +299,8 @@ T.describe("Top band of messages (UI plan phase 2, package B)", function()
 			) ~= nil
 		).toBe(true)
 		local notify = fs.readFile("src/client/UI/Notify.luau")
-		T.expect(string.find(notify, "local bar = if k > 0 then Fusion.peek(Scale.TopBar) / k else 0", 1, true) ~= nil)
-			.toBe(true)
+		T.expect(string.find(notify, "topBar = Fusion.peek(Scale.TopBar),", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(notify, "local ctx = TopBand.context({", 1, true) ~= nil).toBe(true)
 		-- the tutorial's tile hides with its frame (Studio read the tile's own Visible after the closing tile went)
 		local hint = fs.readFile("src/client/UI/Screens/Hud/TutorialHint.luau")
 		local _, count = string.gsub(hint, "Visible = props%.Visible", "")
@@ -353,7 +354,7 @@ T.describe("Top band of messages (UI plan phase 2, package B)", function()
 		T.expect(still[info.id] == true and still[ach.id] == true).toBe(true)
 		-- the client hands the shown tops back to TopBand.slots
 		local notify = fs.readFile("src/client/UI/Notify.luau")
-		T.expect(string.find(notify, "held = held,", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(notify, "ctx.held = held", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(notify, "held[tostring(e.id)] = r.top", 1, true) ~= nil).toBe(true)
 		-- the tutorial's tile at its default place (the closing one) ends GAP over the cast bar, right over the bar
 		local cast = fs.readFile("src/client/UI/Screens/Hud/CastBar.luau")
@@ -436,7 +437,7 @@ T.describe("Top band of messages (UI plan phase 2, package B)", function()
 		fail(problems)
 	end)
 
-	T.it("package B: the dungeon boss bar stands in the target band, on a phone under the target row", function()
+	T.it("package B: the dungeon boss bar stands in the target band, on a phone a strip under it", function()
 		local problems: { string } = {}
 		for _, s in screens() do
 			if s.device ~= "phone" then
@@ -457,15 +458,23 @@ T.describe("Top band of messages (UI plan phase 2, package B)", function()
 					table.insert(problems, `{s.name}: the boss bar is not centred at its width`)
 				end
 			else
+				-- review 2026-11-10: a strip PHONE_BOSS_H tall across M's width (the centre column), never over the
+				-- portrait, the toggles, the minimap, ☰ or PvP
 				local r = TopBand.bossBar("phone", s.hudW, s.hudH)
 				local place = PhoneHud.place("target")
 				local target = PhoneHud.rect(assert(place, "PhoneHud has no target place"), s.hudW, s.hudH)
-				local width = math.min(HudZones.BOSS_BAR.w, s.hudW - 2 * TopBand.GAP)
-				if math.abs(r.right - r.left - width) > EPS or math.abs((r.left + r.right) / 2 - s.hudW / 2) > EPS then
-					table.insert(problems, `{s.name}: the boss bar is not min(720, W - 16) wide in the middle`)
+				local m = TopBand.phoneZone(s.hudW, s.hudH)
+				if math.abs(r.left - m.left) > EPS or math.abs(r.right - m.right) > EPS then
+					table.insert(problems, `{s.name}: the boss bar is not as wide as M`)
 				end
-				if r.top ~= target.bottom + TopBand.PHONE_M.gap then
-					table.insert(problems, `{s.name}: the boss bar is not under the target row`)
+				if r.top ~= target.bottom + TopBand.PHONE_M.gap or r.bottom - r.top ~= TopBand.PHONE_BOSS_H then
+					table.insert(problems, `{s.name}: the boss bar is not a strip under the target row`)
+				end
+				for _, name in { "portrait", "lure", "autoGrind", "autoPotion", "minimap", "menuToggle", "pvp" } do
+					local other = PhoneHud.rect(assert(PhoneHud.place(name), name), s.hudW, s.hudH)
+					if TopBand.meets(r, other) then
+						table.insert(problems, `{s.name}: the boss bar meets {name}`)
+					end
 				end
 				-- M starts under it while it shows
 				local zone = TopBand.zone({

@@ -324,10 +324,16 @@ local STATES: { HudZones.State } = {
 	{ target = "monster" },
 	{ target = "player" },
 	{ target = "player", arena = "match" },
+	{ target = "player", arena = "return" },
 	{ bossBar = true },
 	{ bossBar = true, add = true, target = "monster" },
+	{ party = 1 },
+	{ target = "monster", party = 2 },
+	{ bossBar = true, party = 3 },
 	{ target = "monster", party = 4, guide = true, waiting = 4, effects = 15 },
 }
+-- a phone's band: with and without the dungeon boss bar (review 2026-11-10: it took M's place)
+local PHONE_STATES: { HudZones.State } = { {}, { bossBar = true } }
 
 type Screen = {
 	name: string,
@@ -337,6 +343,12 @@ type Screen = {
 	bar: number, -- virtual pixels
 	hudW: number,
 	hudH: number,
+	-- what the client measures (TopBand.Facts): the Toasts layer's root in real pixels (a phone's safe area), the
+	-- UI scale and the top bar in real pixels
+	layerW: number,
+	layerH: number,
+	scale: number,
+	topBar: number,
 }
 
 local function screens(): { Screen }
@@ -354,6 +366,10 @@ local function screens(): { Screen }
 					bar = size[2] / k - lh,
 					hudW = lw,
 					hudH = lh,
+					layerW = size[1],
+					layerH = size[2],
+					scale = k,
+					topBar = bar,
 				})
 			end
 		end
@@ -362,6 +378,7 @@ local function screens(): { Screen }
 		for _, bar in BARS do
 			local w, h = PhoneHud.area(device)
 			local b = bar / PhoneHud.SCALE
+			local i = device.insets
 			table.insert(out, {
 				name = `phone {device.name} bar {bar}`,
 				device = "phone",
@@ -370,10 +387,28 @@ local function screens(): { Screen }
 				bar = b,
 				hudW = w,
 				hudH = h - b,
+				layerW = device.w - i[1] - i[3],
+				layerH = device.h - i[2] - i[4],
+				scale = PhoneHud.SCALE,
+				topBar = bar,
 			})
 		end
 	end
 	return out
+end
+
+-- The context the client builds (UI/Notify: TopBand.context) for a screen and the HUD's state.
+local function contextOf(s: Screen, state: HudZones.State): TopBand.Context
+	return TopBand.context({
+		layerW = s.layerW,
+		layerH = s.layerH,
+		scale = s.scale,
+		topBar = s.topBar,
+		device = s.device,
+		boss = state.bossBar,
+		arena = state.arena,
+		party = state.party,
+	})
 end
 
 local function show(r: Rect): string
@@ -448,6 +483,10 @@ local function persistent(s: Screen, state: HudZones.State): { { name: string, r
 				})
 			end
 		end
+		-- the dungeon boss bar's strip under the target row (it stands over the target's effects, as M does)
+		if state.bossBar then
+			table.insert(out, { name = "bossBar", rect = down(TopBand.bossBar("phone", s.hudW, s.hudH), s.bar) })
+		end
 		return out
 	end
 	local st = table.clone(state)
@@ -480,22 +519,18 @@ T.describe("TopBand.slots: where the messages stand (L3, L6)", function()
 		end
 		local placedAny = 0
 		for _, s in screens() do
-			local states: { HudZones.State } = if s.device == "phone" then { {} } else STATES
+			local states: { HudZones.State } = if s.device == "phone" then PHONE_STATES else STATES
 			for _, state in states do
 				for _, set in windowSets(s) do
-					local ctx: TopBand.Context = {
-						w = s.w,
-						h = s.h,
-						bar = s.bar,
-						device = s.device,
-						hud = state,
-						windows = set.list,
-						items = items(s.device),
-						card = if s.device == "pc" then "fight" else nil,
-						bark = s.device == "pc",
-					}
+					-- the client's own context (review 2026-11-10: it measured the viewport, not the layer, and
+					-- left out the party and the arena's return panel)
+					local ctx = contextOf(s, state)
+					ctx.windows = set.list
+					ctx.items = items(s.device)
+					ctx.card = if s.device == "pc" then "fight" else nil
+					ctx.bark = s.device == "pc"
 					local placed = TopBand.slots(ctx)
-					local where = `{s.name}, {set.name}`
+					local where = `{s.name}, {set.name}{if state.bossBar then ", boss bar" else ""}`
 					local zone = placed.zone
 					if s.device ~= "phone" then
 						local st = table.clone(state)
@@ -507,6 +542,18 @@ T.describe("TopBand.slots: where the messages stand (L3, L6)", function()
 							> 1e-6
 						then
 							bad(`{where}: zone {show(zone)} not GAP under the band {show(band)}`)
+						end
+					else
+						-- M: under the target row (and the boss bar's strip), at least one HUD line tall
+						local target = PhoneHud.rect(PhoneHud.PLACES.target, s.hudW, s.hudH)
+						local over = if state.bossBar
+							then TopBand.bossBar("phone", s.hudW, s.hudH).bottom
+							else target.bottom
+						if zone.top < over + s.bar + TopBand.PHONE_M.gap - 1e-6 then
+							bad(`{where}: M {show(zone)} meets what stands over it (ending {over + s.bar})`)
+						end
+						if zone.bottom - zone.top < TopBand.PHONE_M.line - 1e-6 then
+							bad(`{where}: M {show(zone)} is shorter than a HUD line`)
 						end
 					end
 					local all: { { name: string, rect: Rect } } = {}
@@ -555,13 +602,14 @@ T.describe("TopBand.slots: where the messages stand (L3, L6)", function()
 								bad(`{where}: {m.name} {show(r)} on {p.name} {show(p.rect)}`)
 							end
 						end
-						-- with no window, the band's messages stand in the zone (the first one may reach below a zone
-						-- shorter than itself)
+						-- with no window, the band's messages stand in the zone (on PC and a tablet the first one may
+						-- reach below a zone shorter than itself; a phone's is cut to M)
 						if #set.list == 0 and placed.rects[m.name] then
 							local outside = r.left < zone.left - 1e-6
 								or r.right > zone.right + 1e-6
 								or r.top < zone.top - 1e-6
-							local low = r.bottom > zone.bottom + 1e-6 and not (m.name == first and r.top == zone.top)
+							local low = r.bottom > zone.bottom + 1e-6
+								and not (s.device ~= "phone" and m.name == first and r.top == zone.top)
 							if outside or low then
 								bad(`{where}: {m.name} {show(r)} leaves the zone {show(zone)}`)
 							end
@@ -575,6 +623,86 @@ T.describe("TopBand.slots: where the messages stand (L3, L6)", function()
 			error(table.concat(problems, "\n"))
 		end
 	end)
+
+	T.it("review 2026-11-10: the client's context is the Toasts layer's own, with the party and the arena", function()
+		for _, s in screens() do
+			local ctx = contextOf(s, {})
+			local same = math.abs(ctx.w - s.w) < 1e-6
+				and math.abs(ctx.h - s.h) < 1e-6
+				and math.abs(ctx.bar - s.bar) < 1e-6
+			T.expect({ s.name, same }).toEqual({ s.name, true })
+		end
+		-- a phone's safe area, not its viewport: 844 x 390 with its notch is 886 x 436 virtual pixels, not 997 x 461
+		local phone = PhoneHud.DEVICES[1]
+		local w, h = PhoneHud.area(phone)
+		local ctx =
+			TopBand.context({ layerW = 750, layerH = 369, scale = PhoneHud.SCALE, topBar = 0, device = "phone" })
+		T.expect(math.abs(ctx.w - w) < 1e-6 and math.abs(ctx.h - h) < 1e-6).toBe(true)
+		-- the state branch `arenaLive`: the match panel, the way back, nothing
+		T.expect(TopBand.arenaState({ match = {} })).toBe("match")
+		T.expect(TopBand.arenaState({ returnAt = 1234.5 })).toBe("return")
+		T.expect(TopBand.arenaState({ offer = {} })).toBeNil()
+		T.expect(TopBand.arenaState(nil)).toBeNil()
+		-- the return panel moves the band down as the match panel does
+		local facts: TopBand.Facts =
+			{ layerW = 1920, layerH = 1080, scale = 1, topBar = 0, device = "pc", arena = "return" }
+		local back = TopBand.zone(TopBand.context(facts))
+		local band = HudZones.targetBand(1920, { arena = "return" })
+		T.expect(back.top).toBe(band.bottom + HudStack.GAP)
+		T.expect(
+			back.top
+				> TopBand.zone(TopBand.context({ layerW = 1920, layerH = 1080, scale = 1, topBar = 0, device = "pc" })).top
+		).toBe(true)
+		-- the PC bark stands under the party's rows
+		for n = 0, 4 do
+			local c = TopBand.context({ layerW = 1920, layerH = 1080, scale = 1, topBar = 0, device = "pc", party = n })
+			c.bark = true
+			local bark = TopBand.slots(c).bark
+			T.expect(bark ~= nil).toBe(true)
+			local zones = HudZones.pc(1920, 1080, { party = n })
+			for i, row in zones.party do
+				T.expect({ n, i, TopBand.meets(bark :: Rect, row) }).toEqual({ n, i, false })
+			end
+		end
+	end)
+
+	T.it(
+		"review 2026-11-10: a message waits while it would meet a modal dialog; a phone's is never taller than M",
+		function()
+			local w, h = 1920, 1080
+			local zone = TopBand.zone({ w = w, h = h, bar = 0, device = "pc", items = {} })
+			local list = items("pc")
+			local free = TopBand.slots({ w = w, h = h, bar = 0, device = "pc", items = list })
+			-- a dialog over the band's middle: what would meet it waits, the rest keep their places
+			local dialog = { left = 660, top = free.rects.toast1.top + 4, right = 1260, bottom = 700 }
+			local placed = TopBand.slots({ w = w, h = h, bar = 0, device = "pc", items = list, modals = { dialog } })
+			for id, r in placed.rects do
+				T.expect({ id, TopBand.meets(r, dialog) }).toEqual({ id, false })
+			end
+			T.expect(placed.rects.alert ~= nil and placed.rects.toast1 == nil).toBe(true)
+			-- the card waits while a dialog covers its slot
+			local slot = HudZones.cardSlot(w, h, "fight")
+			local card =
+				TopBand.slots({ w = w, h = h, bar = 0, device = "pc", items = {}, card = "fight", modals = { slot } })
+			T.expect(card.card).toBeNil()
+			T.expect(zone.top < dialog.top).toBe(true)
+			-- a phone: a line taller than M is cut to M's height
+			local pw, ph = PhoneHud.area(PhoneHud.DEVICES[1])
+			local bar = 58 / PhoneHud.SCALE
+			local ctx: TopBand.Context = {
+				w = pw,
+				h = ph,
+				bar = bar,
+				device = "phone",
+				hud = { bossBar = true },
+				items = { { id = "line", w = 900, h = 90 } },
+			}
+			local m = TopBand.zone(ctx)
+			local r = TopBand.slots(ctx).rects.line
+			T.expect(r ~= nil).toBe(true)
+			T.expect(math.abs(r.bottom - m.bottom) < 1e-6 and math.abs(r.top - m.top) < 1e-6).toBe(true)
+		end
+	)
 
 	T.it("puts a message over a window where it fits there, else under its title bar", function()
 		local w, h, bar = 1920, 1080, 58

@@ -7,10 +7,13 @@
 -- phase and the player is on the story quest `morvane`, the same message speaks her true name a moment later (text
 -- only: the fight does not change).
 -- UI plan package B (owner 2026-11-10: "too much text, things covering each other, nothing folds"): the boss bar stands
--- in the target band (Logic/TopBand.bossBar: 600..1320 x 22..134 at 1920 wide; a phone: min(720, W - 16) wide under
--- the target row, its rows folded to 64 tall); the fight's messages (BossAnnounce) are UI/Notify's alert line instead
+-- in the target band (Logic/TopBand.bossBar: 600..1320 x 22..134 at 1920 wide; a phone: a strip 20 tall across the
+-- centre column under the target row); the fight's messages (BossAnnounce) are UI/Notify's alert line instead
 -- of the big frame in the Toasts layer; the reward card is one of UI/Notify's cards (the PC corner) with the full card
 -- behind 'Szczegóły'; the ready check is a prompt (Components/Prompt, Screens/ReadyCheck).
+-- Review 2026-11-10: a phone's bar was min(720, W - 16) wide over the portrait, the Auto toggles, the minimap and PvP
+-- and 64 tall, which left M 24 px: now the HP fills the strip with the name and the phase on it and the time at its
+-- end (the HP numbers are the target frame's), the channel to break covers it while it runs.
 
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -60,6 +63,8 @@ local REWARD_SECONDS = 20
 local ANNOUNCE_SECONDS = 3
 local region = scope:Value(nil :: string?)
 
+local PHONE_TIME = 64 -- a phone's "⌛ m:ss" at the strip's end
+
 local function bossBar(): Instance
 	local boss = State.Value({ "boss" })
 	local now = scope:Value(Workspace:GetServerTimeNow())
@@ -88,9 +93,9 @@ local function bossBar(): Instance
 		local device: TopBand.Device = if use(phone) then "phone" elseif use(Device.Touch) then "tablet" else "pc"
 		return TopBand.bossBar(device, size.X, size.Y)
 	end)
-	local function pick<T>(pc: T, folded: T): Fusion.Computed<T>
+	local function pick<T>(pc: T, strip: T): Fusion.Computed<T>
 		return scope:Computed(function(use): T
-			return if use(phone) then folded else pc
+			return if use(phone) then strip else pc
 		end)
 	end
 	return scope:New("Frame")({
@@ -108,12 +113,15 @@ local function bossBar(): Instance
 			return type(use(boss)) == "table"
 		end),
 		[Children] = {
+			-- a phone: on the strip's HP, left of the time
 			scope:New("TextLabel")({
 				Name = "Title",
-				Size = pick(UDim2.new(1, 0, 0, 30), UDim2.new(1, -96, 0, 22)),
+				Position = pick(UDim2.new(), UDim2.fromOffset(6, 0)),
+				Size = pick(UDim2.new(1, 0, 0, 30), UDim2.new(1, -(6 + PHONE_TIME), 1, 0)),
 				TextXAlignment = pick(Enum.TextXAlignment.Center, Enum.TextXAlignment.Left),
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				BackgroundTransparency = 1,
+				ZIndex = 2,
 				Text = scope:Computed(function(use): string
 					local b = use(boss)
 					if type(b) ~= "table" then
@@ -139,8 +147,8 @@ local function bossBar(): Instance
 			}),
 			scope:New("Frame")({
 				Name = "Health",
-				Position = pick(UDim2.fromOffset(0, 32), UDim2.fromOffset(0, 24)),
-				Size = pick(UDim2.new(1, 0, 0, 22), UDim2.new(1, 0, 0, 20)),
+				Position = pick(UDim2.fromOffset(0, 32), UDim2.new()),
+				Size = pick(UDim2.new(1, 0, 0, 22), UDim2.fromScale(1, 1)),
 				BackgroundColor3 = Theme.Iron.Sunken,
 				[Children] = {
 					scope:New("UICorner")({ CornerRadius = UDim.new(0, 6) }),
@@ -158,12 +166,13 @@ local function bossBar(): Instance
 					scope:New("TextLabel")({
 						Size = UDim2.fromScale(1, 1),
 						BackgroundTransparency = 1,
+						Visible = pick(true, false),
 						Text = scope:Computed(function(use): string
 							local b = use(boss)
 							return if type(b) == "table" then `{b.hp} / {b.maxHp}` else ""
 						end),
 						FontFace = Theme.Fonts.BodyBold,
-						TextSize = pick(Theme.TextSize.Small, Theme.TextSize.Caption),
+						TextSize = Theme.TextSize.Small,
 						TextColor3 = Theme.Iron.Text,
 						TextStrokeTransparency = 0.3,
 						ZIndex = 2,
@@ -171,28 +180,38 @@ local function bossBar(): Instance
 				},
 			}),
 			-- S134: the channel bar (purple fill = damage dealt of the damage that breaks it, the time left);
-			-- S149b: the shared component (also on the world boss panel)
-			ChannelBar(scope, {
-				Channel = channel,
-				Now = now,
-				Position = pick(UDim2.fromOffset(110, 86), UDim2.fromOffset(0, 46)),
-				Size = pick(UDim2.new(1, -220, 0, 22), UDim2.new(1, 0, 0, 18)),
+			-- S149b: the shared component (also on the world boss panel); a phone: over the whole strip while it runs
+			scope:New("Frame")({
+				Name = "Channel",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundTransparency = 1,
+				ZIndex = 3,
+				[Children] = ChannelBar(scope, {
+					Channel = channel,
+					Now = now,
+					Position = pick(UDim2.fromOffset(110, 86), UDim2.new()),
+					Size = pick(UDim2.new(1, -220, 0, 22), UDim2.fromScale(1, 1)),
+				}),
 			}),
 			-- The fight lasts at most Bosses.timeLimit; the time left turns yellow under 3 min and red under 1 min.
-			-- A phone: at the right end of the title's row.
+			-- A phone: "⌛ m:ss" at the strip's right end.
 			scope:New("TextLabel")({
 				Name = "TimeLeft",
 				AnchorPoint = pick(Vector2.zero, Vector2.new(1, 0)),
-				Position = pick(UDim2.fromOffset(0, 58), UDim2.fromScale(1, 0)),
-				Size = pick(UDim2.new(1, 0, 0, 26), UDim2.fromOffset(96, 22)),
+				Position = pick(UDim2.fromOffset(0, 58), UDim2.new(1, -6, 0, 0)),
+				Size = pick(UDim2.new(1, 0, 0, 26), UDim2.new(0, PHONE_TIME, 1, 0)),
 				TextXAlignment = pick(Enum.TextXAlignment.Center, Enum.TextXAlignment.Right),
 				BackgroundTransparency = 1,
+				ZIndex = 2,
 				Text = scope:Computed(function(use): string
 					local b = use(boss)
 					if type(b) ~= "table" then
 						return ""
 					end
 					local left = Time.format(Time.remaining(b.endsAt or 0, use(now)))
+					if use(phone) then
+						return `⌛ {left}`
+					end
 					return `⌛ {Text.get(use, "boss.timeLeft", { time = left })}`
 				end),
 				FontFace = Theme.Fonts.Display,

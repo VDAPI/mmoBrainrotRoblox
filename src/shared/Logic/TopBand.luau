@@ -132,7 +132,7 @@ export type Device = "pc" | "tablet" | "phone"
 -- pixels (UI/Scale.TopBar / scale), where the HUD's layer starts; hud: what the HUD shows (PC and tablet);
 -- items: the band's messages top down (the alert, the banner, the toasts, the prompt; a tablet's card last);
 -- held: the tops the shown items had (an item never moves up while it shows, holdTop); card: a PC card's kind;
--- bark: the PC bark; keep: the tutorial's tile.
+-- bark: the PC bark; keep: the tutorial's tile; modals: the open modal dialogs (a message never stands on one).
 export type Context = {
 	w: number,
 	h: number,
@@ -141,11 +141,58 @@ export type Context = {
 	hud: HudZones.State?,
 	windows: { Window }?,
 	keep: Rect?,
+	modals: { Rect }?,
 	items: { Item },
 	held: { [string]: number }?,
 	card: HudZones.CardKind?,
 	bark: boolean?,
 }
+
+-- What the client knows when it lays the band out (UI/Notify): the Toasts layer's root in real pixels, the UI scale,
+-- Roblox's top bar in real pixels (UI/Scale.TopBar) and what the HUD shows: the dungeon boss bar, the arena's panel in
+-- the band (arenaState) and the party members besides the player.
+export type Facts = {
+	layerW: number,
+	layerH: number,
+	scale: number,
+	topBar: number,
+	device: Device,
+	boss: boolean?,
+	arena: HudZones.ArenaState?,
+	party: number?,
+}
+
+-- Review 2026-11-10 of package B: the context `slots` lays out, from the client's facts. The size is the Toasts
+-- layer's own (DeviceSafeInsets: a phone's notch and home bar are not in it), not the whole viewport's (UI/Scale.
+-- VirtualSize): measured from the viewport, M stood 47 px right of the target on an 844 x 390 phone and its bottom
+-- below the mail button. The party moves the PC bark's slot down under its rows, the arena's return panel moves the
+-- zone down under it, as the match panel does.
+function TopBand.context(f: Facts): Context
+	local k = if f.scale > 0 then f.scale else 1
+	return {
+		w = f.layerW / k,
+		h = f.layerH / k,
+		bar = math.max(0, f.topBar) / k,
+		device = f.device,
+		hud = { bossBar = f.boss == true, arena = f.arena, party = f.party },
+		items = {},
+	}
+end
+
+-- The arena's state in the band from the state branch `arenaLive`: "match" while a match runs (Hud/ArenaPanel's
+-- panel), "return" while the way back from an arena server shows (`returnAt`), else nil.
+function TopBand.arenaState(live: any): HudZones.ArenaState?
+	if type(live) ~= "table" then
+		return nil
+	end
+	if type(live.match) == "table" then
+		return "match"
+	end
+	if tonumber(live.returnAt) ~= nil then
+		return "return"
+	end
+	return nil
+end
 -- Where things stand: the zone, each placed item by id (one that has no room is missing: it waits), the card, the bark.
 export type Placed = { zone: Rect, rects: { [string]: Rect }, card: Rect?, bark: Rect? }
 
@@ -156,8 +203,10 @@ TopBand.BANNER = table.freeze({ w = 900, h = 64 })
 TopBand.BANNER_BIG = table.freeze({ w = 980, h = 84 })
 TopBand.PROMPT = table.freeze({ w = 460, h = 64 })
 -- A phone's M zone (UI plan zone map): 4 under the target frame, at most 114 tall (to the guide bar's bottom), never
--- closer than GAP to the mail button or the right column (minimap, ☰, PvP).
-TopBand.PHONE_M = table.freeze({ gap = 4, h = 114 })
+-- closer than GAP to the mail button or the right column (minimap, ☰, PvP). `line`: a message there is never taller
+-- than M (review 2026-11-10: the first one reached 30 px past M onto the mail button and the skill arc; its text is
+-- cut at the end and opens whole with a tap), and M is never shorter than one HUD line (Theme.Size.HudLine).
+TopBand.PHONE_M = table.freeze({ gap = 4, h = 114, line = 52 })
 local RIGHT_COLUMN = { "minimap", "menuToggle", "pvp", "pvpBadge" }
 
 local function meets(a: Rect, b: Rect): boolean
@@ -205,10 +254,12 @@ local function hudState(ctx: Context): HudZones.State
 end
 
 -- The dungeon boss bar (Controllers/DungeonController) on a HUD layer w x h: on PC and a tablet its place in the
--- target band (Logic/HudZones, the plan's 600..1320 x 22..134 at 1920 wide); on a phone min(720, w - 16) wide,
--- centred, PHONE_M.gap under the target row and PHONE_BOSS_H tall (its rows fold into one line; the M zone starts
--- under it while it shows).
-TopBand.PHONE_BOSS_H = 64
+-- target band (Logic/HudZones, the plan's 600..1320 x 22..134 at 1920 wide); on a phone a strip PHONE_BOSS_H tall
+-- across the centre column, M's width (between the left column and the minimap's), PHONE_M.gap under the target row:
+-- the HP fills it, the name, the phase and the time stand in it, the channel to break covers it while it runs; M starts
+-- under it. Review 2026-11-10: min(720, w - 16) wide and 64 tall it stood over the portrait, the Auto toggles, the
+-- minimap, ☰ and PvP, and left M 24 px on an 844 x 390 phone.
+TopBand.PHONE_BOSS_H = 20
 function TopBand.bossBar(device: Device, w: number, h: number): Rect
 	if device ~= "phone" then
 		local r = HudZones.pc(w, h, { bossBar = true, touch = device == "tablet" }).bossBar
@@ -216,10 +267,8 @@ function TopBand.bossBar(device: Device, w: number, h: number): Rect
 			return { left = r.left, top = r.top, right = r.right, bottom = r.bottom }
 		end
 	end
-	local place = PhoneHud.place("target")
-	local top = (if place then PhoneHud.rect(place, w, h).bottom else TopBand.GAP) + TopBand.PHONE_M.gap
-	local width = math.min(HudZones.BOSS_BAR.w, w - 2 * TopBand.GAP)
-	return { left = (w - width) / 2, top = top, right = (w + width) / 2, bottom = top + TopBand.PHONE_BOSS_H }
+	local m = TopBand.phoneZone(w, h)
+	return { left = m.left, top = m.top, right = m.right, bottom = m.top + TopBand.PHONE_BOSS_H }
 end
 
 -- The message zone (PC, tablet) or M (phone) in the whole screen's pixels, never closer than GAP to Roblox's top bar.
@@ -250,9 +299,12 @@ end
 -- - the tutorial's tile: an item that would meet it moves beside it where it fits in the zone (toastShift: the tile
 --   points at a button and keeps its place), else under it;
 -- - an item never moves up while it shows (`held`, holdTop);
--- - an item with no room left is missing from the result (it waits in Logic/NoticeQueue); the first always has room.
--- A PC card stands in HudZones.cardSlot and the bark in HudZones.barkSlot, each unless a window or the tile covers
--- its place (then it waits).
+-- - an item with no room left is missing from the result (it waits in Logic/NoticeQueue); the first always has room
+--   (on PC and a tablet it may reach below a zone shorter than itself; a phone's item is cut to M's height instead);
+-- - an open modal dialog: an item that would meet it waits (review 2026-11-10: the Modals layer stands under the
+--   Toasts layer, so a toast covered a question's buttons).
+-- A PC card stands in HudZones.cardSlot and the bark in HudZones.barkSlot, each unless a window, the tile or a modal
+-- covers its place (then it waits).
 function TopBand.slots(ctx: Context): Placed
 	local zone = TopBand.zone(ctx)
 	local windows: { Window } = ctx.windows or {}
@@ -267,10 +319,28 @@ function TopBand.slots(ctx: Context): Placed
 	local width = zone.right - zone.left
 	local height = math.max(0, zone.bottom - zone.top)
 	local screenFloor = ctx.h - TopBand.GAP
+	local phone = ctx.device == "phone"
+	-- a phone's items are at most M tall (M is at least a HUD line on the phones of Logic/PhoneHud.DEVICES)
+	local tallest = if phone then math.max(height, TopBand.PHONE_M.line) else math.huge
 	local limit = zone.bottom
 	local first = ctx.items[1]
 	if first then
-		limit = math.max(limit, zone.top + first.h)
+		limit = math.max(limit, zone.top + math.min(first.h, tallest))
+	end
+	local modals: { Rect } = ctx.modals or {}
+	local function onModal(r: Rect): boolean
+		for _, m in modals do
+			local around = {
+				left = m.left - TopBand.GAP,
+				top = m.top - TopBand.GAP,
+				right = m.right + TopBand.GAP,
+				bottom = m.bottom + TopBand.GAP,
+			}
+			if meets(r, around) then
+				return true
+			end
+		end
+		return false
 	end
 	-- where `rect` has to go down to (nil: it is free), and whether a window is in the way (else only the tile)
 	local function hit(rect: Rect): (number?, boolean)
@@ -318,11 +388,12 @@ function TopBand.slots(ctx: Context): Placed
 	local held = ctx.held or {}
 	for _, item in ctx.items do
 		local w = math.min(item.w, width)
+		local h = math.min(item.h, tallest)
 		local left = (zone.left + zone.right) / 2 - w / 2
 		local top = TopBand.holdTop(cursor, held[item.id], held[item.id] ~= nil)
 		local placed: Rect? = nil
 		for _ = 1, 2 * (#blocks + #windows) + 1 do
-			local rect = { left = left, top = top, right = left + w, bottom = top + item.h }
+			local rect = { left = left, top = top, right = left + w, bottom = top + h }
 			local under, window = hit(rect)
 			if under == nil then
 				placed = rect
@@ -334,10 +405,10 @@ function TopBand.slots(ctx: Context): Placed
 				break
 			end
 			-- under a title bar or the tile the stack has the zone's height again
-			limit = math.max(limit, (under :: number) + math.max(height, item.h))
+			limit = math.max(limit, (under :: number) + math.max(height, h))
 			top = under :: number
 		end
-		if placed and placed.bottom <= math.min(limit, screenFloor) then
+		if placed and placed.bottom <= math.min(limit, screenFloor) and not onModal(placed) then
 			rects[item.id] = placed
 			cursor = placed.bottom + TopBand.GAP
 		end
@@ -349,7 +420,7 @@ function TopBand.slots(ctx: Context): Placed
 				return false
 			end
 		end
-		return not (ctx.keep and meets(r, ctx.keep :: Rect))
+		return not (ctx.keep and meets(r, ctx.keep :: Rect)) and not onModal(r)
 	end
 	if ctx.device == "pc" then
 		local hh = ctx.h - ctx.bar

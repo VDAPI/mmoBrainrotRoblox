@@ -208,8 +208,6 @@ local function layout(shown: { NoticeQueue.Entry }): ({ [number]: Rect }, { [str
 		return out, room
 	end
 	local k = Fusion.peek(Scale.Value)
-	local size: Vector2 = Fusion.peek(Scale.VirtualSize)
-	local bar = if k > 0 then Fusion.peek(Scale.TopBar) / k else 0
 	local dev: NoticeQueue.Device = queue.device
 	local phone = queue.device == "phone"
 	local at = root.AbsolutePosition
@@ -225,23 +223,26 @@ local function layout(shown: { NoticeQueue.Entry }): ({ [number]: Rect }, { [str
 		})
 	end
 	local keep = Fusion.peek(TopBandState.Keep)
-	local boss = State.Get({ "boss" })
-	local arena = State.Get({ "arenaLive" })
-	local hud: HudZones.State = {
-		bossBar = type(boss) == "table",
-		arena = if type(arena) == "table" and type(arena.match) == "table" then "match" else nil,
-	}
-	local ctx: TopBand.Context = {
-		w = size.X,
-		h = size.Y,
-		bar = bar,
+	local modals: { Rect } = {}
+	for _, r in Fusion.peek(HudCover.Modals) do
+		table.insert(modals, toLayer(r, at, k))
+	end
+	-- the Toasts layer's own size (a phone's safe area), its top bar and what the HUD shows (Logic/TopBand.context)
+	local size = root.AbsoluteSize
+	local ctx = TopBand.context({
+		layerW = size.X,
+		layerH = size.Y,
+		scale = k,
+		topBar = Fusion.peek(Scale.TopBar),
 		device = dev,
-		hud = hud,
-		windows = windows,
-		keep = if keep then toLayer(keep, at, k) else nil,
-		items = {},
-		held = held,
-	}
+		boss = type(State.Get({ "boss" })) == "table",
+		arena = TopBand.arenaState(State.Get({ "arenaLive" })),
+		party = Fusion.peek(PhoneLayout.Others),
+	})
+	ctx.windows = windows
+	ctx.keep = if keep then toLayer(keep, at, k) else nil
+	ctx.modals = modals
+	ctx.held = held
 	local zone = TopBand.zone(ctx)
 	local zoneWidth = zone.right - zone.left
 	-- the band top down: the alert, the banner, the toasts (a tablet's barks too, older first), the prompt and a
@@ -906,7 +907,7 @@ function Notify.mount(s: Scope, parent: Instance)
 			end
 		end)
 	)
-	for _, state in { Scale.VirtualSize, Scale.TopBar, HudCover.Rects, TopBandState.Keep } :: { any } do
+	for _, state in { Scale.VirtualSize, Scale.TopBar, HudCover.Rects, HudCover.Modals, TopBandState.Keep } :: { any } do
 		s:Observer(state):onChange(schedule)
 	end
 end
