@@ -3,11 +3,13 @@
 -- group). Owner 2026-11-10 ("monsters run into me and I climb on them"; then "they may block, but no climbing"): a
 -- monster's root box (Entities/RigBuilder, standing at its hip height) lifted a player who walked into it or whom it
 -- ran into. Now the root never touches a player; a player bumps into the monster's "Blocker" instead: an invisible
--- column from the root's bottom to at least BLOCK_TOP studs over the feet, higher than a jump reaches, that collides
--- with player characters only (never with the world, so the monster walks as before). A monster blocks the way like a
--- wall and nobody stands on one. Monsters still bump into monsters (a pack does not melt into one spot), players into
--- players, and both stand on the world. Quest companions (S101b, CompanionService) touch no body at all. Pure (Lune):
--- tests/bodygroups.spec.
+-- column from the root's bottom to at least BLOCK_TOP studs over the feet, over the highest a player's body gets
+-- beside a monster (a rider's seat, a jump and a slope), that collides with player characters only (never with the
+-- world, so the monster walks as before). A monster blocks the way like a wall: nobody steps, jumps or rides onto one.
+-- The column is finite, so a player can still come down on it from above (a ledge, a cliff, a jump off a rock); the
+-- client slides its character off then (Logic/BlockerGuard, MovementController). Monsters still bump into monsters (a
+-- pack does not melt into one spot), players into players, and both stand on the world. Quest companions (S101b,
+-- CompanionService) touch no body at all. Pure (Lune): tests/bodygroups.spec.
 
 local BodyGroups = {}
 
@@ -18,9 +20,17 @@ BodyGroups.BLOCKERS = "MonsterBlockers" -- the monsters' blockers: they touch pl
 
 -- The name of a monster's blocker part (under its model, welded to the root).
 BodyGroups.BLOCKER = "Blocker"
--- Studs over the feet a blocker reaches at least: over a jump (Roblox's default jump lifts the feet 7.2 studs), so a
--- player can neither step nor jump onto a monster.
-BodyGroups.BLOCK_TOP = 9.5
+-- How high a player's body gets beside a monster: a Humanoid stands on its root's bottom, HipHeight over the ground (2
+-- on foot; a rider's seat, Logic/Mounts.seatAt, raises it to ~4.4 on the procedural boss horses), a jump lifts it
+-- JUMP_RISE more (Roblox's default JumpHeight: nothing in the code or the project sets JumpHeight or JumpPower, and the
+-- legacy JumpPower 50 lifts less, 6.4) and the ground it jumps from may stand SLOPE over the monster's feet (a slope, a
+-- rock, a step).
+BodyGroups.JUMP_RISE = 7.2
+BodyGroups.SLOPE = 2
+-- Studs over the feet a blocker reaches at least: over all of that (review 2026-11-10: at 9.5 a rider hopped onto a
+-- wolf's column and rode the wolf). tests/bodygroups.spec keeps it over every mount's seat + JUMP_RISE + SLOPE, so a
+-- taller mount breaks a test, not the game; the column ignores the world, so its height costs nothing there.
+BodyGroups.BLOCK_TOP = 16
 
 -- Every group this game registers (Roblox allows 32 in all, "Default" included).
 BodyGroups.ALL = table.freeze({ BodyGroups.PLAYERS, BodyGroups.MONSTERS, BodyGroups.COMPANIONS, BodyGroups.BLOCKERS })
