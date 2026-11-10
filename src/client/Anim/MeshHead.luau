@@ -326,13 +326,14 @@ local function off(h: Handle, why: string)
 	release(h)
 end
 
--- The model's mesh will not do (not read, no head found, refused on a look): its looks not wearing it never ask again,
--- so they leave their places in the budget to the others (one wearing it turns on until it takes it off).
+-- The model's mesh will not do (not read, no head found, refused on a look): its looks not wearing it never ask again
+-- (Logic/HeadBudget.quits), so they leave their places in the budget to the others (one wearing it turns on until it
+-- takes it off).
 local function fail(shared: Shared, why: string)
 	shared.state = "failed"
 	shared.why = why
 	for h in handles do
-		if h.shared == shared and (h.state == "rest" or h.state == "waiting") then
+		if h.shared == shared and HeadBudget.quits(h.state) then
 			off(h, why)
 		end
 	end
@@ -490,8 +491,8 @@ local function mount(h: Handle)
 	show(h, "HeadState", "live")
 end
 
--- The nearest looks within the level's radius wear the head (Logic/HeadBudget: AnimLab's subject always, the dying
--- and the looks out of the world left out), and keep their model's mesh or let it go by that.
+-- The nearest looks within the level's radius wear the head (Logic/HeadBudget: AnimLab's subject always; the dying,
+-- the looks out of the world and those that never can left out), and keep their model's mesh or let it go by that.
 local function pick()
 	local camera = Workspace.CurrentCamera
 	local level = GraphicsLevel.get(State.Get({ "account", "settings", "quality" }))
@@ -499,10 +500,6 @@ local function pick()
 	local list: { HeadBudget.Look } = {}
 	local of: { Handle } = {}
 	for h in handles do
-		if h.state == "off" then
-			h.wanted = false
-			continue
-		end
 		-- (Destroy disconnects the mesh's connections, so its watch may never run: it lets go here too)
 		if h.shared.holders[h] and not h.mesh:IsDescendantOf(game) then
 			leave(h)
@@ -510,7 +507,7 @@ local function pick()
 		local present = h.mesh:IsDescendantOf(Workspace)
 		local d = if present and eye then (h.mesh.Position - eye).Magnitude else math.huge
 		h.distance = d
-		table.insert(list, { d = d, wanted = h.wanted, lab = h.lab, dying = h.dying, present = present, off = false })
+		table.insert(list, HeadBudget.look(h.state, h.wanted, h.lab, h.dying, present, d))
 		table.insert(of, h)
 	end
 	local wanted = HeadBudget.pick(list, level.heads, level.headRadius, HYSTERESIS)

@@ -106,6 +106,78 @@ T.describe("HeadBudget: the looks that wear a head", function()
 	end)
 end)
 
+T.describe("HeadBudget: a look's entry, a failed model", function()
+	T.it("a look's entry carries what its handle knows: state, last pass, lab, dying, presence, distance", function()
+		T.expect(HeadBudget.look("rest", true, false, true, true, 12))
+			.toEqual({ d = 12, wanted = true, lab = false, dying = true, present = true, off = false })
+		T.expect(HeadBudget.look("live", false, true, false, false, math.huge))
+			.toEqual({ d = math.huge, wanted = false, lab = true, dying = false, present = false, off = false })
+		for _, state in { "rest", "waiting", "live" } do
+			T.expect(HeadBudget.look(state, true, false, false, true, 1).off).toBe(false)
+		end
+		T.expect(HeadBudget.look("off", true, true, false, true, 1).off).toBe(true)
+	end)
+
+	T.it("through the entries a corpse, a look streamed out and one that never can leave their places", function()
+		-- (MeshHead's handles: a look out of Workspace is measured at math.huge)
+		local medium = GraphicsLevel.get("medium")
+		local handles = {
+			{ state = "live", wanted = true, dying = true, present = true, d = 5 }, -- a corpse
+			{ state = "rest", wanted = true, dying = false, present = false, d = math.huge }, -- streamed out
+			{ state = "off", wanted = false, dying = false, present = true, d = 8 }, -- its model failed
+		}
+		for k = 1, medium.heads + 1 do
+			table.insert(handles, { state = "rest", wanted = false, dying = false, present = true, d = 10 + 5 * k })
+		end
+		local entries = {}
+		for _, h in handles do
+			table.insert(entries, HeadBudget.look(h.state, h.wanted, false, h.dying, h.present, h.d))
+		end
+		local got = HeadBudget.pick(entries, medium.heads, medium.headRadius, HYSTERESIS)
+		local want = {}
+		for k = 1, medium.heads do
+			want[3 + k] = true
+		end
+		T.expect(got).toEqual(want)
+	end)
+
+	T.it("a failed model's looks at rest or waiting go off and their places go to another model's looks", function()
+		T.expect(HeadBudget.quits("rest")).toBe(true)
+		T.expect(HeadBudget.quits("waiting")).toBe(true)
+		-- (one wearing it turns on until it takes it off; one off is off)
+		T.expect(HeadBudget.quits("live")).toBe(false)
+		T.expect(HeadBudget.quits("off")).toBe(false)
+		-- model a fails with three looks nearest the camera (one wearing the head) and one beyond the radius
+		local medium = GraphicsLevel.get("medium")
+		local handles = {
+			{ model = "a", state = "waiting", wanted = true, d = 5 },
+			{ model = "a", state = "rest", wanted = true, d = 6 },
+			{ model = "a", state = "live", wanted = true, d = 7 },
+			{ model = "a", state = "rest", wanted = false, d = medium.headRadius + 30 },
+		}
+		for k = 1, medium.heads do
+			table.insert(handles, { model = "b", state = "rest", wanted = false, d = 10 * k })
+		end
+		for _, h in handles do
+			if h.model == "a" and HeadBudget.quits(h.state) then
+				h.state, h.wanted = "off", false
+			end
+		end
+		local entries = {}
+		for _, h in handles do
+			table.insert(entries, HeadBudget.look(h.state, h.wanted, false, false, true, h.d))
+		end
+		local got = HeadBudget.pick(entries, medium.heads, medium.headRadius, HYSTERESIS)
+		-- a's head still on keeps its place, b's nearest take the others
+		local want = { [3] = true }
+		for k = 1, medium.heads - 1 do
+			want[4 + k] = true
+		end
+		T.expect(got).toEqual(want)
+		T.expect(handles[4].state).toBe("off")
+	end)
+end)
+
 T.describe("HeadBudget: the model's mesh", function()
 	T.it("a look keeps it while it wears it or is wanted, never when it cannot wear it", function()
 		T.expect(HeadBudget.keeps("rest", true)).toBe(true)
@@ -183,6 +255,18 @@ T.describe("HeadBudget: client/Anim/MeshHead", function()
 		T.expect(has("HeadBudget.keeps(h.state, h.wanted)")).toBe(true)
 		T.expect(has("HeadBudget.reads(shared.state, shared.retryAt, os.clock())")).toBe(true)
 		T.expect(has("h.dying = dying")).toBe(true)
+	end)
+
+	T.it("gives each handle its entry with what it knows and turns a failed model's waiting looks off", function()
+		-- (the entry's every field from the handle: a corpse, a look out of the world and one off hold no place)
+		T.expect(has("local present = h.mesh:IsDescendantOf(Workspace)")).toBe(true)
+		T.expect(has("table.insert(list, HeadBudget.look(h.state, h.wanted, h.lab, h.dying, present, d))")).toBe(true)
+		T.expect(has("h.wanted = wanted[i] == true")).toBe(true)
+		src = src or fs.readFile("src/client/Anim/MeshHead.luau")
+		local failing = string.match(src :: string, "local function fail%(.-\nend\n")
+		T.expect(failing ~= nil).toBe(true)
+		local turnsOff = "h%.shared == shared and HeadBudget%.quits%(h%.state%) then%s+off%(h, why%)"
+		T.expect(string.find(failing or "", turnsOff) ~= nil).toBe(true)
 	end)
 
 	T.it("builds the head's part with the look's own collision: a live head takes the clicks its look took", function()

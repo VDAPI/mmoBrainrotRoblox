@@ -5,7 +5,9 @@
 -- * The budget: the `heads` nearest looks within `radius` studs of the camera (Config.Graphics.levels; a look already
 --   wearing one counts `hysteresis` studs nearer, so two at the edge do not swap every pass), AnimLab's subject always.
 --   A dying look, a look whose mesh is out of the world (streamed out, destroyed) and a look that never can are left
---   out, so their places go to the next looks.
+--   out, so their places go to the next looks. Each look's entry is made here from what its handle knows (`look`;
+--   code review 2026-11-10: the spec only saw the flag stored, so an entry that dropped it stayed green).
+-- * When a model's mesh fails, its looks at rest or waiting never ask again (`quits`), so they hold no place either.
 -- * A look keeps its model's mesh while it wears it or is wanted, so nothing is read, skinned or kept for a level that
 --   turns no heads (low) or for looks beyond the radius; the first look to keep a mesh not read yet (or freed since)
 --   starts reading it, as does one keeping a mesh that ran out of memory once its retry is due.
@@ -23,6 +25,26 @@ export type Look = {
 	present: boolean, -- its mesh is in the world
 	off: boolean, -- it can never wear one (its model's mesh failed, its part cannot be copied)
 }
+
+-- A look's entry for `pick` from its handle in client/Anim/MeshHead: its `state` (rest, waiting, live, off), whether
+-- it was `wanted` in the last pass, AnimLab's subject (`lab`), its last frame's `dying` flag, whether its mesh is in
+-- Workspace (`present`) and its distance `d` to the camera.
+function HeadBudget.look(
+	state: string,
+	wanted: boolean,
+	lab: boolean,
+	dying: boolean,
+	present: boolean,
+	d: number
+): Look
+	return { d = d, wanted = wanted, lab = lab, dying = dying, present = present, off = state == "off" }
+end
+
+-- Whether a look in `state` goes off for good when its model's mesh fails (not read, no head found, refused on a
+-- look): one at rest or waiting never asks again; one wearing the head turns on until it takes it off.
+function HeadBudget.quits(state: string): boolean
+	return state == "rest" or state == "waiting"
+end
 
 -- The looks of `looks` wanted now (a set of indices into it).
 function HeadBudget.pick(looks: { Look }, heads: number, radius: number, hysteresis: number): { [number]: boolean }
