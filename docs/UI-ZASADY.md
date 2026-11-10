@@ -158,9 +158,11 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
   przedmiot” (do 30 s; ogłoszenia: propozycja, pytanie do właściciela). Potem przepadają. Błędy i alarmy nigdy nie
   czekają.
 - Ogłoszenia serwera idą tylko banerem, bez kopii w czacie (decyzja).
-- Nic nie staje na pasku tytułu okna (decyzja 2026-10-31). Przy otwartym oknie toast stoi nad oknem, a gdy tam brak
-  miejsca, pod jego paskiem tytułu jak dziś; baner czeka. Napis w pasku tytułu zamiast tytułu (`WindowManager.Notice`)
-  to propozycja planu, pytanie do właściciela.
+- Nic nie staje na pasku tytułu okna (decyzje 2026-10-31, DESIGN §23). Przy otwartym oknie toast i baner ogłoszenia
+  (także bossa świata) stoją nad oknem, a gdy tam brak miejsca, pod jego paskiem tytułu, jak dziś; nie czekają na
+  zamknięcie okna. Toast osiągnięcia czeka, aż okno się zamknie, a gdy okno otworzy się w trakcie, zjeżdża pod pasek
+  tytułu. Napis w pasku tytułu zamiast tytułu (`WindowManager.Notice`) i baner wstrzymany do zamknięcia okna to
+  propozycje planu, pytanie UI 8 do właściciela.
 
 ## 7. Okna
 

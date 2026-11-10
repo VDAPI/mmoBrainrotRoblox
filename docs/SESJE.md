@@ -14746,9 +14746,10 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   - okna łamią L7 zachowaniem, nie rozmiarem (przeciąganie w `Components/Window` wpuszcza nagłówek pod pasek
     Robloxa, okno na dotyku zaczyna się na y 0); pakiet C naprawia to, przechodząc na `WindowFrame.clampDrag` i
     `WindowFrame.rect` z paskiem;
-  - napis w pasku tytułu okna zamiast tytułu (`WindowManager.Notice`) stoi w planie, ale decyzja z 2026-10-31 trzyma
-    toasty i banery poza paskiem tytułu otwartego okna, a decyzje wygrywają z planem: zasady mówią „nad oknem albo
-    pod paskiem tytułu jak dziś”, napis jest pytaniem UI 8 do właściciela, a zaślepka zwraca `false`;
+  - napis w pasku tytułu okna zamiast tytułu (`WindowManager.Notice`) i baner wstrzymany do 30 s przy otwartym oknie
+    stoją w planie, ale decyzja z 2026-10-31 (DESIGN §23) trzyma toasty i banery poza paskiem tytułu otwartego okna,
+    pod nim, a decyzje wygrywają z planem: zasady mówią „toast i baner nad oknem albo pod paskiem tytułu jak dziś, bez
+    czekania”, napis i wstrzymanie banera są pytaniem UI 8 do właściciela, a zaślepka zwraca `false`;
   - trzy kwestie bossów z długim myślnikiem (`boss.morvane.phase3`, `boss.morvane.shieldDown`,
     `boss.vaelgrath.landed`) są na liście B, nie A (żaden plik A ich nie czyta, idą przez `BossAnnounce` do
     `DungeonController`), a `rework2.*` na liście C (modal w `ReworkController`), nie B; reguła
