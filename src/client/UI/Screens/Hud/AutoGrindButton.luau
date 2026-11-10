@@ -5,6 +5,7 @@
 -- the server answers with a toast: started on <ground>, or why not).
 -- Owner 2026-11-10 ("too much text"; UI plan package A, a HUD tooltip at most 48 characters): the tooltip says the
 -- state ("Auto Hunt: hunting"); the bank and today's time left are its details (the details key or a longer press).
+-- Package A review (owner 2026-11-10): a press held to read them does not start or stop the hunt on its release.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
@@ -14,6 +15,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Motion = require(script.Parent.Parent.Parent.Motion)
 local Lure = require(ReplicatedStorage.Shared.Logic.Lure)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PotionPress = require(ReplicatedStorage.Shared.Logic.PotionPress)
 local RequestGuard = require(ReplicatedStorage.Shared.Logic.RequestGuard)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.Parent.State)
@@ -68,6 +70,9 @@ local function AutoGrindButton(scope: Scope, position: Fusion.UsedAs<UDim2>): In
 		return Text.get(use, key, args)
 	end
 
+	-- package A review (owner 2026-11-10, Logic/PotionPress): a touch held for the tooltip was reading it, so its release
+	-- does not start or stop the hunt
+	local pressedAt: number? = nil
 	local button = scope:New("TextButton")({
 		Name = "AutoGrindButton",
 		Size = UDim2.fromOffset(SIZE, SIZE),
@@ -80,7 +85,15 @@ local function AutoGrindButton(scope: Scope, position: Fusion.UsedAs<UDim2>): In
 		TextColor3 = scope:Computed(function(use): Color3
 			return if use(hunting) then HUNT else Theme.Iron.TextMuted
 		end),
+		[OnEvent("InputBegan")] = function(input: InputObject)
+			pressedAt = if input.UserInputType == Enum.UserInputType.Touch then os.clock() else nil
+		end,
 		[OnEvent("Activated")] = function()
+			local heldFor = if pressedAt then os.clock() - pressedAt else 0
+			pressedAt = nil
+			if heldFor >= PotionPress.TIP_HOLD then
+				return
+			end
 			local wanted = not Fusion.peek(hunting)
 			task.spawn(function()
 				local ok, err = Net.Invoke("AutoGrind", wanted)

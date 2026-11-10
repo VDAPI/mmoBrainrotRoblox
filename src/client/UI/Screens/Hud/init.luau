@@ -50,6 +50,7 @@ local HudZones = require(ReplicatedStorage.Shared.Logic.HudZones)
 local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local Scale = require(script.Parent.Parent.Scale)
 local PotionBar = require(script.PotionBar)
+local PotionPress = require(ReplicatedStorage.Shared.Logic.PotionPress)
 local PvpDot = require(script.Parent.Parent.Components.PvpDot)
 local PvpState = require(script.Parent.Parent.PvpState)
 local PvpSwitch = require(script.Parent.Parent.PvpSwitch)
@@ -172,7 +173,8 @@ end
 -- UI plan phase 2 (plan §3 #2): the PvP dot on the portrait is the switch (a click in a yellow zone; UI/PvpSwitch, the
 -- same request as the touch screens' toggle). Owner 2026-11-10 ("too much text"; UI plan package A): its tooltip is one
 -- line, the state or the countdown ("Switching PvP: 7 s"); the zone's rules and, in a yellow zone, that the dot is the
--- switch are its details (the details key or a longer press).
+-- switch are its details (the details key or a longer press). Package A review: a touch held for that tooltip
+-- (Logic/PotionPress.TIP_HOLD) was reading it, so its release does not start a switch.
 local function pvpSwitch(scope: Scope): Instance
 	local state = PvpState.indicator(scope)
 	local zone = State.Value({ "zone" })
@@ -193,6 +195,7 @@ local function pvpSwitch(scope: Scope): Instance
 		local z = use(zone)
 		return if type(z) == "table" and type(z.pvp) == "string" then z.pvp else "green"
 	end)
+	local pressedAt: number? = nil
 	local button = scope:New("TextButton")({
 		Name = "PvpSwitch",
 		AnchorPoint = Vector2.new(0.5, 0.5),
@@ -202,8 +205,13 @@ local function pvpSwitch(scope: Scope): Instance
 		Text = "",
 		AutoButtonColor = false,
 		ZIndex = 2,
+		[OnEvent("InputBegan")] = function(input: InputObject)
+			pressedAt = if input.UserInputType == Enum.UserInputType.Touch then os.clock() else nil
+		end,
 		[OnEvent("Activated")] = function()
-			if Fusion.peek(zoneType) == "yellow" then
+			local heldFor = if pressedAt then os.clock() - pressedAt else 0
+			pressedAt = nil
+			if Fusion.peek(zoneType) == "yellow" and heldFor < PotionPress.TIP_HOLD then
 				PvpSwitch.request()
 			end
 		end,
