@@ -88,12 +88,17 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 	local queued = scope:Computed(function(use): boolean
 		return use(queue) ~= nil
 	end)
+	-- package A review (owner 2026-11-10): on a phone a line of the stack, PhoneHud.PANEL_WIDTH wide, beside the
+	-- stack's '+N' chip (at 280 it met the chip and the stack's edge, and its ✕ went out of reach behind '+N')
+	local pillWidth = scope:Computed(function(use): number
+		return if use(PhoneLayout.Compact) then PhoneHud.PANEL_WIDTH else PILL_WIDTH
+	end)
 	local slot = HudSlots.join(
 		scope,
 		"arena",
 		scope:Computed(function(use): HudSlots.Box
 			local h = use(pillHeight)
-			return { shown = use(queued), w = PILL_WIDTH, h = h, line = h }
+			return { shown = use(queued), w = use(pillWidth), h = h, line = h }
 		end)
 	)
 	local pill = scope:New("Frame")({
@@ -101,7 +106,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		AnchorPoint = Vector2.zero,
 		Position = HudSlots.position(scope, slot),
 		Size = scope:Computed(function(use): UDim2
-			return UDim2.fromOffset(PILL_WIDTH, use(pillHeight))
+			return UDim2.fromOffset(use(pillWidth), use(pillHeight))
 		end),
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,

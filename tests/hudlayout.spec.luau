@@ -409,51 +409,112 @@ T.describe("HUD column and corner (owner 2026-10-21)", function()
 
 	T.it("a phone stacks the column in its left stack, clear of every other place", function()
 		-- UI plan package A: 52-px lines from PhoneHud.STACK_TOP down to the thumb zone, the party strip one of them, the
-		-- rest behind the '+N' chip at the stack's right end
+		-- rest behind the '+N' chip at the stack's right end. Package A review (owner 2026-11-10): with the widths a phone
+		-- draws (Logic/PhoneHud: the party's strip, the panels, the arena's pill, the guide line and the tracker) every
+		-- element stands beside the chip, so the stack never shows '+N' alone, and one picked from the '+N' list (`keep`,
+		-- UI/HudSlots.bring) shows.
 		local line = PhoneHud.LINE
+		local panel = PhoneHud.PANEL_WIDTH
 		local tracker = box(PhoneHud.TRACKER_WIDTH, HudStack.TRACKER_MIN, nil, line)
-		local party = box(3 * 52 + 2 * 6, line)
+		local party = box(PhoneHud.PARTY_WIDTH, line, nil, line)
+		local every: { [string]: Box } = {
+			party = party,
+			arena = box(panel, line, nil, line), -- the queue's pill
+			worldBoss = box(panel, 120, nil, line),
+			worldEvent = box(panel, 120, nil, line),
+			bloodMoon = box(panel, 140, nil, line),
+			tourney = box(panel, 120, nil, line),
+			guide = box(panel, line, nil, line),
+			questTracker = tracker,
+		}
+		local scenarios: { { [string]: Box } } = {
+			{ questTracker = tracker },
+			{ worldBoss = box(panel, 120, nil, line), questTracker = tracker },
+			{ party = party, worldBoss = box(panel, 120, nil, line), questTracker = tracker },
+			every,
+		}
+		for id, b in every do
+			if id ~= "questTracker" then
+				table.insert(scenarios, { [id] = b, questTracker = tracker })
+			end
+		end
+		local function check(d: any, bar: number, boxes: { [string]: Box }, w: number, h: number): HudStack.Placed
+			local places = PhoneHud.places(w, h)
+			local placed = HudStack.arrange(true, true, w, h, 0, boxes)
+			local all = table.clone(placed.rects)
+			if placed.chip then
+				all["+N"] = placed.chip
+			end
+			for id, r in all do
+				T.expect(r.left >= places.stack.x).toBe(true)
+				T.expect(r.right <= places.stack.x + PhoneHud.STACK_WIDTH).toBe(true)
+				T.expect(r.top >= PhoneHud.STACK_TOP).toBe(true)
+				T.expect(r.bottom <= PhoneHud.stackBottom(h) + 1e-6).toBe(true)
+				for name, place in places do
+					if name ~= "stack" and HudStack.overlaps(r, PhoneHud.rect(place, w, h)) then
+						error(`{d.name} bar {bar}: {id} {show(r)} / {name}`)
+					end
+				end
+				for other, o in all do
+					if other ~= id and HudStack.overlaps(r, o) then
+						error(`{d.name} bar {bar}: {id} {show(r)} / {other} {show(o)}`)
+					end
+				end
+			end
+			-- one line or more always shows something: the first element, beside the chip while one hides
+			local shown = 0
+			for _ in placed.rects do
+				shown += 1
+			end
+			if shown < 1 then
+				error(`{d.name} bar {bar}: only '+N' ({table.concat(placed.hidden, ", ")})`)
+			end
+			T.expect(#placed.hidden > 0).toBe(placed.chip ~= nil)
+			return placed
+		end
 		for _, d in PhoneHud.DEVICES do
 			for _, bar in { 0, 36, 58 } do
 				local w, h = PhoneHud.area(d, bar)
-				local places = PhoneHud.places(w, h)
-				for _, boxes in
-					{
-						{ questTracker = tracker },
-						{ worldBoss = box(PhoneHud.PANEL_WIDTH, 120, nil, line), questTracker = tracker },
-						{
-							party = party,
-							worldBoss = box(PhoneHud.PANEL_WIDTH, 120, nil, line),
-							questTracker = tracker,
-						},
-					} :: { { [string]: Box } }
-				do
-					local placed = HudStack.arrange(true, true, w, h, 0, boxes)
-					local all = table.clone(placed.rects)
-					if placed.chip then
-						all["+N"] = placed.chip
-					end
-					for id, r in all do
-						T.expect(r.left >= places.stack.x).toBe(true)
-						T.expect(r.right <= places.stack.x + PhoneHud.STACK_WIDTH).toBe(true)
-						T.expect(r.top >= PhoneHud.STACK_TOP).toBe(true)
-						T.expect(r.bottom <= PhoneHud.stackBottom(h) + 1e-6).toBe(true)
-						for name, place in places do
-							if name ~= "stack" and HudStack.overlaps(r, PhoneHud.rect(place, w, h)) then
-								error(`{d.name} bar {bar}: {id} {show(r)} / {name}`)
-							end
+				for _, boxes in scenarios do
+					local placed = check(d, bar, boxes, w, h)
+					-- the player picks a hidden one from the '+N' list: it stands in the stack, the others give way
+					for _, id in placed.hidden do
+						local brought = table.clone(boxes)
+						brought[id] = table.clone(boxes[id])
+						brought[id].keep = true
+						local again = check(d, bar, brought, w, h)
+						if not again.rects[id] then
+							error(`{d.name} bar {bar}: {id} picked from '+N' stays hidden`)
 						end
 					end
-					-- one line or more always shows something: the first element, or the chip beside it
-					local shown = 0
-					for _ in placed.rects do
-						shown += 1
-					end
-					T.expect(shown >= 1).toBe(true)
-					T.expect(#placed.hidden > 0).toBe(placed.chip ~= nil)
 				end
 			end
 		end
+	end)
+
+	T.it("a phone's stack elements draw the widths of Logic/PhoneHud", function()
+		-- package A review (owner 2026-11-10): the model above holds only while the files draw these widths
+		local hud = "src/client/UI/Screens/Hud/"
+		for file, width in
+			{
+				["src/client/UI/Screens/PartyFrames.luau"] = "PhoneHud.PARTY_WIDTH",
+				[hud .. "QuestTracker.luau"] = "PhoneHud.TRACKER_WIDTH",
+				[hud .. "WorldBossPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "WorldEventPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "BloodMoonPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "TourneyPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "ArenaPanel.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "ArenaTeams.luau"] = "PhoneHud.PANEL_WIDTH",
+				[hud .. "NavBar.luau"] = "PhoneHud.PANEL_WIDTH",
+			}
+		do
+			if not string.find(fs.readFile(file), width, 1, true) then
+				error(`{file} does not draw {width} on a phone`)
+			end
+		end
+		T.expect(PhoneHud.PARTY_WIDTH <= PhoneHud.PANEL_WIDTH).toBe(true)
+		T.expect(PhoneHud.TRACKER_WIDTH <= PhoneHud.PANEL_WIDTH).toBe(true)
+		T.expect(PhoneHud.PANEL_WIDTH + 6 + PhoneHud.CHIP.w <= PhoneHud.STACK_WIDTH).toBe(true)
 	end)
 
 	T.it("Studio and browser viewports: the column stops above the PvP toggle, its badge and the mail", function()

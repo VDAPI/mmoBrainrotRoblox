@@ -5,16 +5,18 @@
 -- floor's end of the column on PC and a tablet, the last line's right end of a phone's stack). A click or a tap opens
 -- the list of what waits, one line each; picking one brings it back (HudSlots.bring: it stays in the column and the
 -- others fold or wait before it) and closes the list. PC and a tablet open the list left of the chip, a phone over the
--- stack from its left edge (half the layer wide at most), so it never reaches the thumb's controls.
+-- stack's lane above the chip, so it never reaches the thumb's controls (Logic/HudStack.chipList). Package A review
+-- (owner 2026-11-10): the list never runs above the layer (on a phone four rows started under Roblox's top bar); a
+-- longer one scrolls.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
+local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
 local PanelHeader = require(script.Parent.PanelHeader)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
-local Scale = require(script.Parent.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -24,10 +26,7 @@ local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
-local LIST_PC = 220 -- the list's width on PC and a tablet
-local LIST_PHONE = 440 -- a phone's list at most this wide (and half the layer)
-local MARGIN = 8
-local PAD = 4
+local PAD = HudStack.LIST_PAD
 
 local function StackChip(scope: Scope): Instance
 	local open = scope:Value(false)
@@ -44,12 +43,10 @@ local function StackChip(scope: Scope): Instance
 			open:set(false)
 		end
 	end)
-	local listWidth = scope:Computed(function(use): number
-		if use(compact) then
-			local size: Vector2 = use(Scale.HudSize)
-			return math.min(size.X / 2, LIST_PHONE) - MARGIN
-		end
-		return LIST_PC
+	-- the list's rectangle for the rows it holds (Logic/HudStack.chipList; rows past its room scroll)
+	local listRect = scope:Computed(function(use): HudStack.Rect?
+		local at = use(chip)
+		return if at then (HudStack.chipList(at, #use(hidden), use(row), use(compact))) else nil
 	end)
 
 	local button = scope:New("TextButton")({
@@ -90,27 +87,25 @@ local function StackChip(scope: Scope): Instance
 		end)
 	)
 
-	local list = scope:New("Frame")({
+	local list = scope:New("ScrollingFrame")({
 		Name = "StackList",
-		-- PC and a tablet: left of the chip, bottom-aligned with it; a phone: from the stack's left edge, its bottom on
-		-- the chip's top
-		AnchorPoint = scope:Computed(function(use): Vector2
-			return if use(compact) then Vector2.new(0, 1) else Vector2.new(1, 1)
-		end),
+		-- PC and a tablet: left of the chip, bottom-aligned with it; a phone: over the stack's lane, its bottom over the
+		-- chip; never above the layer (Logic/HudStack.chipList), the rest scrolls
 		Position = scope:Computed(function(use): UDim2
-			local at = use(chip)
-			if not at then
-				return UDim2.new()
-			end
-			if use(compact) then
-				return UDim2.fromOffset(MARGIN, at.top - PAD)
-			end
-			return UDim2.fromOffset(at.left - PAD, at.bottom)
+			local rect = use(listRect)
+			return if rect then UDim2.fromOffset(rect.left, rect.top) else UDim2.new()
 		end),
 		Size = scope:Computed(function(use): UDim2
-			return UDim2.fromOffset(use(listWidth), 0)
+			local rect = use(listRect)
+			return if rect then UDim2.fromOffset(rect.right - rect.left, rect.bottom - rect.top) else UDim2.new()
 		end),
-		AutomaticSize = Enum.AutomaticSize.Y,
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = Theme.Iron.Rule,
+		VerticalScrollBarInset = Enum.ScrollBarInset.ScrollBar,
+		BorderSizePixel = 0,
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
 		Visible = scope:Computed(function(use): boolean

@@ -32,7 +32,7 @@ export type Props = {
 	OnClick: () -> (), -- folds or opens (or brings a panel the column folded)
 	Info: UsedAs<string>?, -- the details behind an "i" (InfoTip)
 	Color: UsedAs<Color3>?, -- the name's colour (default Theme.Brass.Bright)
-	Height: number?, -- a header of its own height (the quest tracker's top line); default PanelHeader.height
+	Height: UsedAs<number>?, -- a header of its own height (the quest tracker's top line); default PanelHeader.height
 	Name: string?,
 	LayoutOrder: UsedAs<number>?,
 	Visible: UsedAs<boolean>?,
@@ -66,8 +66,8 @@ function PanelHeader.new(scope: Scope, props: Props): Instance
 	local hovered = scope:Value(false)
 	local fixed = props.Height
 	local height = if fixed
-		then scope:Computed(function(): number
-			return fixed
+		then scope:Computed(function(use): number
+			return use(fixed)
 		end)
 		else PanelHeader.Height(scope)
 	local openProp, valueProp, infoProp = props.Open, props.Value, props.Info

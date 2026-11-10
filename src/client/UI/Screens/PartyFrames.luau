@@ -3,7 +3,9 @@
 -- leader crown, "far" when on another map or beyond 80 studs. Clicking a frame targets the member (heals).
 -- Owner 2026-11-10 ("things covering each other"; UI plan package A): on a phone the party is one line of the stack
 -- ("party", UI/HudSlots, Logic/PhoneHud): at most TILES tiles of 52 px (the class sign over an HP strip; a tap targets
--- the member, as on PC), then "+N" for the rest; the four rows of 58 px ran into the stack's panels.
+-- the member, as on PC), then "+N" for the rest; the four rows of 58 px ran into the stack's panels. Package A review
+-- (owner 2026-11-10): the strip is PhoneHud.PARTY_WIDTH wide (tiles 3 px apart), so it stands beside the stack's
+-- '+N' chip; at 218 it met the chip and went behind it.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -29,11 +31,10 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local FAR = 80
 local WIDTH = 260
 local HEIGHT = 58
--- a phone's strip: tiles of one stack line, 6 apart, and the "+N" tile
-local TILES = 3
+-- a phone's strip: tiles of one stack line, PARTY_GAP apart, and the "+N" tile (Logic/PhoneHud)
+local TILES = PhoneHud.PARTY_TILES
 local TILE = PhoneHud.LINE
-local TILE_GAP = 6
-local STRIP = TILES * TILE + TILES * TILE_GAP + 44
+local STRIP = PhoneHud.PARTY_WIDTH
 
 local LEADER_ART = UiArt.hud("party_leader") -- S119
 local DEAD_ART = UiArt.hud("dead")
@@ -106,7 +107,7 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 					s:New("TextLabel")({
 						Name = "More",
 						LayoutOrder = TILES + 1,
-						Size = UDim2.fromOffset(44, TILE),
+						Size = UDim2.fromOffset(PhoneHud.PARTY_MORE, TILE),
 						BackgroundColor3 = Theme.Iron.Raised,
 						BackgroundTransparency = Theme.HudAlpha,
 						Text = `+{more}`,
@@ -258,7 +259,7 @@ local function PartyFrames(scope: Scope, onSelect: (userId: number) -> ()): Inst
 			scope:New("UIListLayout")({
 				SortOrder = Enum.SortOrder.LayoutOrder,
 				FillDirection = PhoneLayout.Pick(scope, Enum.FillDirection.Horizontal, Enum.FillDirection.Vertical),
-				Padding = UDim.new(0, 6),
+				Padding = PhoneLayout.Pick(scope, UDim.new(0, PhoneHud.PARTY_GAP), UDim.new(0, 6)),
 			}),
 			frames :: any,
 		},

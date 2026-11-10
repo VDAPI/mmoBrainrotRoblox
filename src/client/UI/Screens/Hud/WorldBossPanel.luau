@@ -33,6 +33,8 @@ local HudDrag = require(script.Parent.Parent.Parent.HudDrag)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local Maps = require(ReplicatedStorage.Shared.Data.Maps)
 local PanelHeader = require(script.Parent.PanelHeader)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Section = require(script.Parent.Parent.Parent.Components.Section)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -208,9 +210,14 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 	local shown = scope:Computed(function(use): boolean
 		return use(current) ~= nil
 	end)
+	-- package A review (owner 2026-11-10): on a phone a line of the stack, PhoneHud.PANEL_WIDTH wide, so it stands
+	-- beside the stack's '+N' chip (wider, it went behind the chip)
+	local function widthOf(use: Fusion.Use): number
+		return if use(PhoneLayout.Compact) then PhoneHud.PANEL_WIDTH elseif use(touch) then WIDTH_TOUCH else WIDTH_PC
+	end
 	-- owner 2026-10-21: moved by its tab, scaled by its corner (UI/HudDrag); a moved panel leaves the column
 	local handle = HudDrag.new(scope, "worldBoss", function(use)
-		return if use(touch) then WIDTH_TOUCH else WIDTH_PC
+		return widthOf(use)
 	end, function(use)
 		return heightOf(use, not use(open))
 	end)
@@ -219,7 +226,7 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 		scope,
 		"worldBoss",
 		scope:Computed(function(use): HudSlots.Box
-			local w, h = if use(touch) then WIDTH_TOUCH else WIDTH_PC, heightOf(use, not use(open))
+			local w, h = widthOf(use), heightOf(use, not use(open))
 			return {
 				shown = use(shown),
 				w = w,
@@ -450,7 +457,7 @@ local function WorldBossPanel(scope: Scope, props: Props): Instance
 		AnchorPoint = Vector2.zero,
 		Position = HudSlots.position(scope, slot),
 		Size = scope:Computed(function(use): UDim2
-			return UDim2.fromOffset(if use(touch) then WIDTH_TOUCH else WIDTH_PC, use(height))
+			return UDim2.fromOffset(widthOf(use), use(height))
 		end),
 		-- package A: not while it waits behind the column's '+N' chip
 		Visible = HudSlots.visible(scope, slot, shown, handle.corner),

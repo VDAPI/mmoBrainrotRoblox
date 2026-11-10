@@ -3,9 +3,12 @@
 -- nothing leaves the safe area and every touch target keeps the minimum size. UI plan package A (owner 2026-11-10,
 -- "things covering each other"; the plan's L5): the same under Roblox's top bar of 0, 36 and 58 px, nothing in the
 -- thumb zone, the right thumb's controls at least 52, the stack's lines as the zone map counts them, and the grid's
--- parts (one Auto button, the '⋯' by the target, the minimap at 0.5 under 420, the drawer clear of PvP).
+-- parts (one Auto button, the '⋯' by the target, the minimap at 0.5 under 420, the drawer clear of PvP). Package A
+-- review (owner 2026-11-10): the '+N' list (Logic/HudStack.chipList) at its longest stays in the layer and in the left
+-- column over the stack, clear of every control of the centre and the thumbs.
 local fs = require("@lune/fs")
 
+local HudStack = require("../src/shared/Logic/HudStack")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
 local T = require("./Test")
 
@@ -174,11 +177,54 @@ T.describe("Phone HUD grid (UI plan package A)", function()
 			local pvp = fs.readFile("src/client/UI/Screens/Hud/PvpToggle.luau")
 			T.expect(string.find(pvp, 'Name = "Countdown"', 1, true) ~= nil).toBe(true)
 			local party = fs.readFile("src/client/UI/Screens/PartyFrames.luau")
-			T.expect(string.find(party, "local TILES = 3", 1, true) ~= nil).toBe(true)
+			T.expect(string.find(party, "local TILES = PhoneHud.PARTY_TILES", 1, true) ~= nil).toBe(true)
+			T.expect(PhoneHud.PARTY_TILES).toBe(3)
 			T.expect(string.find(party, "local TILE = PhoneHud.LINE", 1, true) ~= nil).toBe(true)
 			-- the death screen centred in the HUD's layer
 			local death = fs.readFile("src/client/UI/Screens/Hud/DeathScreen.luau")
 			T.expect(string.find(death, "Position = UDim2.fromScale(0.5, 0.5)", 1, true) ~= nil).toBe(true)
 		end
 	)
+	T.it("the '+N' list at its longest stays in the layer, over the left column, clear of the controls", function()
+		local line = PhoneHud.LINE
+		local panel = PhoneHud.PANEL_WIDTH
+		local function box(w: number, h: number): HudStack.Box
+			return { shown = true, w = w, h = h, line = line }
+		end
+		-- every element of the stack at once: most of them wait behind the chip
+		local boxes: { [string]: HudStack.Box } = {
+			party = box(PhoneHud.PARTY_WIDTH, line),
+			arena = box(panel, line),
+			worldBoss = box(panel, 120),
+			worldEvent = box(panel, 120),
+			bloodMoon = box(panel, 140),
+			tourney = box(panel, 120),
+			guide = box(panel, line),
+			questTracker = box(PhoneHud.TRACKER_WIDTH, HudStack.TRACKER_MIN),
+		}
+		-- what the list may cover while open: the left column over the stack (the portrait, its row) and the stack
+		local mayCover = { portrait = true, auto = true, effects = true, stack = true }
+		for _, d in PhoneHud.DEVICES do
+			for _, bar in { 0, 36, 58 } do
+				local w, h = PhoneHud.area(d, bar)
+				local placed = HudStack.arrange(true, true, w, h, 0, boxes)
+				local chip = assert(placed.chip, `{d.name} bar {bar}: no '+N' chip`)
+				local count = #HudStack.ORDER
+				local list, scrolls = HudStack.chipList(chip, count, line, true)
+				local at = `{d.name} bar {bar}`
+				T.expect({ at, list.top >= HudStack.LIST_MARGIN }).toEqual({ at, true })
+				T.expect({ at, list.left >= 0 and list.right <= w }).toEqual({ at, true })
+				T.expect({ at, list.bottom <= chip.top }).toEqual({ at, true })
+				-- at least one whole row shows; the rest scrolls
+				T.expect({ at, list.bottom - list.top >= line + 2 * HudStack.LIST_PAD }).toEqual({ at, true })
+				local content = count * line + (count - 1) * HudStack.LIST_PAD + 2 * HudStack.LIST_PAD
+				T.expect({ at, scrolls }).toEqual({ at, list.bottom - list.top < content })
+				for name, place in PhoneHud.places(w, h) do
+					if not mayCover[name] and PhoneHud.overlaps(list, PhoneHud.rect(place, w, h)) then
+						error(`{at}: the '+N' list covers {name}`)
+					end
+				end
+			end
+		end
+	end)
 end)

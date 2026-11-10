@@ -651,6 +651,32 @@ function HudStack.place(items: { Item }, column: Column, fixed: { Rect }): Place
 	return result({}, true)
 end
 
+-- The '+N' list (Hud/StackChip) of `count` rows `row` high, LIST_PAD apart and inside its edge, for the chip `chip`:
+-- on PC and a tablet left of the chip, bottom-aligned with it, LIST_PC wide; on a phone over the stack's lane
+-- (PhoneHud.STACK_WIDTH from the stack's left edge), its bottom LIST_PAD over the chip: the left column above the
+-- stack, where the portrait and its row stand, never the centre's or the thumbs' controls. Package A review (owner
+-- 2026-11-10): it never reaches above LIST_MARGIN from the layer's top (four rows over a phone's chip started 79 px
+-- above the layer, under Roblox's top bar); a list taller than its room scrolls (the second result).
+HudStack.LIST_PC = 220
+HudStack.LIST_PAD = 4
+HudStack.LIST_MARGIN = 8
+function HudStack.chipList(chip: Rect, count: number, row: number, compact: boolean): (Rect, boolean)
+	local pad = HudStack.LIST_PAD
+	local content = count * row + math.max(0, count - 1) * pad + 2 * pad
+	local left, right, bottom
+	if compact then
+		right = chip.right
+		left = right - PhoneHud.STACK_WIDTH
+		bottom = chip.top - pad
+	else
+		right = chip.left - pad
+		left = right - HudStack.LIST_PC
+		bottom = chip.bottom
+	end
+	local top = math.max(HudStack.LIST_MARGIN, bottom - content)
+	return { left = left, top = top, right = right, bottom = bottom }, bottom - top < content
+end
+
 -- The built-in place of every shown element of `boxes` (by id, HudStack.ORDER) that the player has not moved, on a
 -- w x h screen: PC (`touch` false), a touch screen that is not a phone, a phone (`compact`); `others` = party members
 -- besides the player. Moved elements, the corner's buttons and the buttons right of the portrait (not on a phone:

@@ -92,9 +92,18 @@ PhoneHud.M_RIGHT = 74 -- past the minimap's width: the drawer button (52), its g
 PhoneHud.TARGET_WIDTH = 220
 PhoneHud.CASTBAR_WIDTH = 220
 PhoneHud.NAVBAR_WIDTH = 236
--- the stack's panels end GAP left of the '+N' chip; the tracker takes the stack's width (it hides first)
+-- Every item of the stack ends 6 px left of the '+N' chip, so it can stand beside the chip in the stack's last line:
+-- the panels, the arena's pill and the guide line (PANEL_WIDTH), the tracker, which grows down to the floor where the
+-- chip stands (TRACKER_WIDTH), and the party's strip (PARTY_WIDTH: PARTY_TILES tiles of one line, PARTY_GAP apart, and
+-- a PARTY_MORE wide "+N" tile). Package A review (owner 2026-11-10, "things covering each other"): wider ones (the
+-- party 218, the event panels 220 and 240, the pill 280, the tracker 260) met the chip and went behind it, so a phone
+-- could show nothing but '+N', and picking one from the list brought nothing back.
 PhoneHud.PANEL_WIDTH = PhoneHud.STACK_WIDTH - PhoneHud.CHIP.w - 6
-PhoneHud.TRACKER_WIDTH = PhoneHud.STACK_WIDTH
+PhoneHud.TRACKER_WIDTH = PhoneHud.PANEL_WIDTH
+PhoneHud.PARTY_TILES = 3
+PhoneHud.PARTY_GAP = 3
+PhoneHud.PARTY_MORE = 44
+PhoneHud.PARTY_WIDTH = PhoneHud.PARTY_TILES * (PhoneHud.LINE + PhoneHud.PARTY_GAP) + PhoneHud.PARTY_MORE
 -- The Auto popover (Lure, Auto Hunt, Auto Potion): right of the Auto button over the row, an overlay the player opens.
 PhoneHud.AUTO_POPOVER = table.freeze({ w = 3 * 52 + 4 * 8, h = 52 + 2 * 8 })
 

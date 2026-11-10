@@ -79,11 +79,13 @@ local Children, OnChange, OnEvent = Fusion.Children, Fusion.OnChange, Fusion.OnE
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local WIDTH = 300
--- S156: the frame of the tracker around its scrolling body
+-- S156: the frame of the tracker around its scrolling body (PC; touch: `header` in the function)
 local HEADER = 28
 local GAP = 3
 local PAD_TOP, PAD_BOTTOM = 6, 8
-local GRIP = 22
+local GRIP, GRIP_TOUCH = 22, 30
+local GUIDE_W, GUIDE_H = 30, 28
+local ARROW = 28
 local ELEMENT = "questTracker"
 -- S29: a finished objective pulses for this long (seconds), then keeps a soft green glow.
 local PULSE_TIME = 1
@@ -952,25 +954,44 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 	end)
 	local corner = handle.corner
 	local contentHeight = scope:Value(0)
-	local chrome = PAD_TOP + HEADER + GAP + PAD_BOTTOM
+	-- Package A review (owner 2026-11-10): on touch the header line is Hud/PanelHeader's height (44 on a tablet, a
+	-- phone's stack line of 52) with its buttons Theme.Size.MinTouch tall; a phone drops the paddings round it, so the
+	-- folded tracker is exactly one line of the stack (PhoneHud.LINE). It stood 28 high: a 42-px line, 28-px taps.
+	local touch = Device.Touch
+	local header = scope:Computed(function(use): number
+		return if use(touch) then PanelHeader.height(true, use(PhoneLayout.Compact)) else HEADER
+	end)
+	local padTop = scope:Computed(function(use): number
+		return if use(PhoneLayout.Compact) then 0 else PAD_TOP
+	end)
+	local padBottom = scope:Computed(function(use): number
+		return if use(PhoneLayout.Compact) then 0 else PAD_BOTTOM
+	end)
+	-- the folded tracker (its header line and the paddings), and the frame round an open one's body
+	local function lineOf(use: Fusion.Use): number
+		return use(padTop) + use(header) + use(padBottom)
+	end
+	local function chromeOf(use: Fusion.Use): number
+		return lineOf(use) + GAP
+	end
 	-- the body of a tracker at `top` whose list may reach down to `floor` (a sized one keeps its height, the list
 	-- scrolls inside; owner 2026-10-22: never past the floor, HudStack.trackerBody)
 	local function bodyTo(use: Fusion.Use, top: number, floor: number): number
 		local e = use(entry)
-		return HudStack.trackerBody(top, floor, chrome, use(contentHeight), if e then e.h else nil)
+		return HudStack.trackerBody(top, floor, chromeOf(use), use(contentHeight), if e then e.h else nil)
 	end
 	-- the floor of a tracker moved to `at`: the bottom of the screen (a phone: of its stack), at least a few lines
 	-- under its top, but above the corner's buttons in its lane (owner 2026-10-22: a tracker moved near its built-in
 	-- place ran into the PvP toggle; HudStack.floorUnder)
 	local function movedFloor(use: Fusion.Use, at: Vector2): number
 		local screen = use(Scale.HudSize).Y - (if use(PhoneLayout.Compact) then PhoneHud.STACK_BOTTOM else 24)
-		local bottom = math.max(at.Y + 80 + chrome, screen)
+		local bottom = math.max(at.Y + 80 + chromeOf(use), screen)
 		return HudStack.floorUnder(at.X, at.X + use(width), at.Y, bottom, use(HudSlots.Corner))
 	end
 	movedHeight = function(use: Fusion.Use, at: Vector2): number
 		local folded = use(collapsed)
 		local body = if folded then 0 else bodyTo(use, at.Y, movedFloor(use, at))
-		return PAD_TOP + HEADER + PAD_BOTTOM + (if folded then 0 else GAP + body)
+		return lineOf(use) + (if folded then 0 else GAP + body)
 	end
 	-- owner 2026-10-21: the built-in place in the HUD column (UI/HudSlots): under the event panels, over the corner's
 	-- buttons (PC) or the sprint row (touch); a moved tracker is in the panels' way instead (they go round it)
@@ -985,7 +1006,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 				local h = movedHeight(use, at)
 				return { shown = true, w = w, h = h, custom = HudSlots.moved(at, w, h, 1) }
 			end
-			local line = PAD_TOP + HEADER + PAD_BOTTOM
+			local line = lineOf(use)
 			return { shown = true, w = w, h = if folded then line else HudStack.TRACKER_MIN, line = line }
 		end)
 	)
@@ -1017,7 +1038,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		end),
 		Size = scope:Computed(function(use): UDim2
 			local body = use(bodyHeight)
-			local height = PAD_TOP + HEADER + PAD_BOTTOM + (if use(shut) then 0 else GAP + body)
+			local height = lineOf(use) + (if use(shut) then 0 else GAP + body)
 			return UDim2.fromOffset(use(width), height)
 		end),
 		BackgroundColor3 = Theme.Iron.Surface,
@@ -1025,19 +1046,27 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, PAD_TOP),
-				PaddingBottom = UDim.new(0, PAD_BOTTOM),
+				PaddingTop = scope:Computed(function(use): UDim
+					return UDim.new(0, use(padTop))
+				end),
+				PaddingBottom = scope:Computed(function(use): UDim
+					return UDim.new(0, use(padBottom))
+				end),
 				PaddingLeft = UDim.new(0, 10),
 				PaddingRight = UDim.new(0, 10),
 			}),
 			scope:New("Frame")({
 				Name = "Header",
-				Size = UDim2.new(1, 0, 0, HEADER),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, 0, 0, use(header))
+				end),
 				BackgroundTransparency = 1,
 				[Children] = {
 					scope:New("TextButton")({
 						Name = "MoveGrip",
-						Size = UDim2.fromOffset(GRIP, HEADER),
+						Size = scope:Computed(function(use): UDim2
+							return UDim2.fromOffset(if use(touch) then GRIP_TOUCH else GRIP, use(header))
+						end),
 						BackgroundTransparency = 1,
 						Text = "≡",
 						FontFace = Theme.Fonts.BodyBold,
@@ -1051,8 +1080,15 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					-- package A: the tracker's header line (Hud/PanelHeader at the header's own height)
 					scope:New("Frame")({
 						Name = "Title",
-						Position = UDim2.fromOffset(GRIP, 0),
-						Size = UDim2.new(1, -(74 + GRIP), 1, 0),
+						Position = scope:Computed(function(use): UDim2
+							return UDim2.fromOffset(if use(touch) then GRIP_TOUCH else GRIP, 0)
+						end),
+						-- what the grip, the guide button and the arrow leave
+						Size = scope:Computed(function(use): UDim2
+							local grip = if use(touch) then GRIP_TOUCH else GRIP
+							local guide = if use(touch) then Theme.Size.MinTouch else GUIDE_W
+							return UDim2.new(1, -(grip + guide + ARROW + 16), 1, 0)
+						end),
 						BackgroundTransparency = 1,
 						[Children] = PanelHeader.new(scope, {
 							Title = Text.T(scope, "tracker.title"),
@@ -1060,7 +1096,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 								return not use(shut)
 							end),
 							Color = Theme.Iron.Heading,
-							Height = HEADER,
+							Height = header,
 							OnClick = function()
 								if Fusion.peek(forced) and not Fusion.peek(collapsed) then
 									-- the column folded it: it stays open in the column before the others
@@ -1074,8 +1110,13 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 					scope:New("TextButton")({
 						Name = "Guide",
 						AnchorPoint = Vector2.new(1, 0.5),
-						Position = UDim2.new(1, -34, 0.5, 0),
-						Size = UDim2.fromOffset(30, 28),
+						Position = UDim2.new(1, -(ARROW + 6), 0.5, 0),
+						Size = scope:Computed(function(use): UDim2
+							local side = Theme.Size.MinTouch
+							return if use(touch)
+								then UDim2.fromOffset(side, side)
+								else UDim2.fromOffset(GUIDE_W, GUIDE_H)
+						end),
 						BackgroundColor3 = Theme.Iron.Raised,
 						BackgroundTransparency = 0.2,
 						Text = "➤",
@@ -1098,7 +1139,7 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 						Name = "Arrow",
 						AnchorPoint = Vector2.new(1, 0.5),
 						Position = UDim2.fromScale(1, 0.5),
-						Size = UDim2.fromOffset(28, 28),
+						Size = UDim2.fromOffset(ARROW, ARROW),
 						BackgroundTransparency = 1,
 						Text = "▲", -- W28: the glyph the tutorial hint draws too ("⬆" is not in Builder Sans)
 						TextScaled = true,
@@ -1116,7 +1157,9 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			}),
 			scope:New("ScrollingFrame")({
 				Name = "Body",
-				Position = UDim2.fromOffset(0, HEADER + GAP),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(0, use(header) + GAP)
+				end),
 				Size = scope:Computed(function(use): UDim2
 					return UDim2.new(1, 0, 0, use(bodyHeight))
 				end),
@@ -1147,7 +1190,9 @@ local function QuestTracker(scope: Scope, props: Props?): Instance
 			scope:New("TextButton")({
 				Name = "SizeGrip",
 				AnchorPoint = Vector2.new(1, 1),
-				Position = UDim2.new(1, 8, 1, PAD_BOTTOM),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(1, 8, 1, use(padBottom))
+				end),
 				Size = UDim2.fromOffset(18, 18),
 				BackgroundTransparency = 1,
 				Text = "◢",
