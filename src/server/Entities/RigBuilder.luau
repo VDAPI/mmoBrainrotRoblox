@@ -8,8 +8,11 @@
 -- the attributes Look (look id), LookScale and LookRegion, set before the model is parented.
 -- S162m: the root carries an Attachment "Muzzle" where the kind's shots leave the drawn body (Data/MonsterRelease).
 -- Owner 2026-11-10 ("they may block, but no climbing"): a player bumps into the monster's invisible "Blocker" column
--- (Data/BodyGroups.blocker, welded to the root, colliding with player characters only), never into its root, so no
--- player stands on a monster; RigBuilder.dropBlocker lets the way free when it dies.
+-- (Data/BodyGroups.blocker, welded to the root, colliding with player characters only, over the highest a player's body
+-- gets beside it), never into its root, so nobody steps, jumps or rides onto a monster; one who comes down on the column
+-- from above (a ledge, a cliff) slides off it (Logic/BlockerGuard). RigBuilder.dropBlocker lets the way free when it
+-- dies. The column is part of the model, so clients measure a monster by its look (client/Util/MonsterBox), not by the
+-- model's bounding box.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 

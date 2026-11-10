@@ -813,6 +813,24 @@ describe("Skill looks of every class (S114 Warrior and Cleric, S115 Hunter and M
 		end
 	end)
 
+	-- owner 2026-11-10 (skill juice): the shared flare and punch on top of the pieces have a budget of their own
+	it("the skill juice of one cast stays within Config.Vfx.juice.perCast (any element of the look)", function()
+		local budget = Config.Vfx.juice.perCast
+		for _, skill in classSkills() do
+			for _, element in SkillLooks.JUICE_ELEMENTS do
+				local cost = SkillLooks.juiceCost(skill, SkillVfx[skill.id], element)
+				expect({
+					skill.id,
+					element,
+					cost.emitters <= budget.emitters,
+					cost.beams <= budget.beams,
+					cost.lights <= budget.lights,
+					cost.decals <= budget.decals,
+				}).toEqual({ skill.id, element, true, true, true, true })
+			end
+		end
+	end)
+
 	it("textures: every key exists, every textured piece is in the entry", function()
 		for id, entry in SkillVfx do
 			for _, key in { entry.sparks or "spark", entry.decal or "cracks", entry.circle or "magicCircle" } do

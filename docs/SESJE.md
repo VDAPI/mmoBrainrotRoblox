@@ -14696,6 +14696,96 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Data/RigidRigs`, `Config.Graphics`, `tests/neckbend.spec.luau`, `tests/headgaze.spec.luau`,
   `tests/headbudget.spec.luau`, `tests/NeckBendMesh.luau`, `docs/ANIM-WZORCE.md` §6.5.
 
+### Kolumny potworów: bez jazdy na potworze, pomiar po wyglądzie (2026-11-10)
+
+- Przegląd decyzji właściciela „nie da się wspinać” (commit 5abf39ba). Kolumna `Blocker` sięgała 9,5 studa nad stopy
+  potwora, a spód korzenia postaci wznosi się w skoku o 7,2 studa (domyślny JumpHeight; kod ani projekt go nie
+  zmieniają) z wysokości HipHeight: pieszy do 9,2, jeździec (siodło 2,9–4,4) do 10,1–11,6. Jeździec wskakiwał więc na
+  kolumnę i jechał na potworze, pieszy z wyższego zbocza też. Teraz `BodyGroups.BLOCK_TOP` = 16 (`JUMP_RISE` 7,2,
+  `SLOPE` 2); `bodygroups.spec` liczy najwyższe siodło wszystkich wierzchowców (model z `Mounts.assets` i wygląd
+  proceduralny z każdą skórką, najmniejszy korzeń gracza: wysokość 0,95) i wymaga kolumny wyżej niż siodło + skok +
+  zbocze (dziś 13,64).
+- Kolumna jest skończona, więc z półki albo urwiska da się na nią spaść. `Logic/BlockerGuard` (czyste) pcha postać,
+  która jest nad podstawą kolumny powiększoną o pół szerokości ciała, a jej stopy (spód korzenia minus HipHeight) są
+  najwyżej 0,6 studa od wierzchu albo spadają na niego z wysokości do 4 studów. Pchnięcie idzie w poziomie od środka
+  kolumny (z samego środka w stronę, w którą postać patrzy): do prędkości kolumny dodaje tyle, by w 0,25 s minąć
+  krawędź o 0,5 studa (12–40 studów/s, więc z szerokiej kolumny bossa trwa dłużej), a kolejne pchnięcia z rzędu
+  skręcają o 90°, -90° i 180° (ściana). `MovementController` 10 razy na sekundę sprawdza `Blocker` potworów w promieniu
+  20 studów (pomija te, które już nie kolidują), a pchnięcie trzyma `LinearVelocity` w płaszczyźnie poziomej (wysokość
+  zostaje grawitacji). Rachunek jest geometryczny, bo zwykły promień przechodzi przez kolumnę (jej grupa nie styka się
+  ze światem), a promień ze środka korzenia ominąłby kolumnę, na której postać stoi samym brzegiem.
+- Pomiar potwora bez kolumny: `client/Util/MonsterBox.of` (wygląd `Look`, potem `LookFar`, a przed nimi korzeń
+  przedłużony do stóp, `BodyGroups.bodyBox`; model bez kolumny mierzony jak dotąd) w `BossCastBar` (pasek nad tabliczką
+  z `MonsterView.top`, jak tabliczka), `Library.charge`, `CombatFxController.casterSize` i `headPosition`,
+  `TargetController.pickBox` i `MonsterPlateController` (zanim widok zna model). `BoneGait` mierzy sam wygląd, a serwer
+  nie mierzy modeli potworów. Kolumna zostaje w modelu (streaming i czas życia z nim).
+- Testy: `bodygroups.spec` (siodła wierzchowców, `bodyBox`), `blockerguard.spec` (kto jest pchany, kierunek, prędkość).
+- **Pliki:** `Data/BodyGroups`, `Logic/BlockerGuard`, `client/Util/MonsterBox`, `MovementController`, `Vfx/BossCastBar`,
+  `Vfx/Library`, `CombatFxController`, `TargetController`, `MonsterPlateController`, `Entities/RigBuilder`,
+  `tests/bodygroups.spec.luau`, `tests/blockerguard.spec.luau`, `docs/ARCHITECTURE.md` §7.
+
+### Dynamika umiejętności ustępuje pulom, rzut przerwany bez błysku (2026-11-10)
+
+- Przegląd (znaleziska 8 i 9 pakietu dynamiki): w walce grupowej na telefonie (24 emitery, 10 promieni i obrazów na
+  ziemi, 6 świateł) błyski i uderzenia pięciu graczy trzymały około 15–22 emiterów, więc `Pool.holder` odmawiał
+  składnikom umiejętności, iskrom trafień, oddechom bossów i światłom zapowiedzi. `SkillJuice.count` dawał co najmniej 1
+  drobinę, więc dalekie i cudze rzuty brały każdą warstwę; Lodowa Kula i Wir Żywiołów uderzały pełną dynamiką co 0,4 s.
+  Po przerwanym celowaniu (Pożoga, Lodowa Włócznia, Strzał w Serce) błysk wypuszczenia i tak wybuchał przy dłoniach.
+- Rezerwa: `Config.Vfx.juice.reserve` (emitery 0,4, promienie 0,5, światła 0,5 limitu urządzenia, zaokrąglone w górę),
+  `Logic/SkillJuice.reserve` / `room`, `Vfx/Pool.used` (żywe uchwyty limitu albo światła). W `Vfx/Juice` każdy rdzeń,
+  warstwa drobin, pierścień, łuk i światło pyta `room` przed wzięciem uchwytu.
+- Warstwy: `Logic/SkillJuice.layerOn` i `count(..., layer)` (drobiny rzucenia, obłok i odłamki tylko nasze z bliska,
+  rozprysk nie dla cudzych dalekich), `flareLayers` / `punchLayers` (to rysuje `Vfx/Juice`); `later` w
+  `VfxController.punch`: kolejne fale (`circleSelf`, `waves`), kolejne uderzenia burzy i meteorów (`firstStrike`) oraz
+  kolejne strzały (`n` > 1) mają tylko rdzeń i pierścień. Błysk rzucenia gra po składnikach rzutu.
+- Rzut przerwany: `castTokens` / `cutShort` w `VfxController`, podbijane przez `fizzle` i śmierć rzucającego
+  (`Humanoid.HealthChanged`, `watchDeath`); `aimEnd` nic nie przerywa. Błysk wypuszczenia sprawdza żeton, `lmCharge`
+  dostaje `ctx.cancelled` i gaśnie bez wybuchu, `Library.glow` zwraca stop i dłonie gasną od razu.
+- Testy: `skilljuice.spec` (warstwy opcjonalne, błysk i uderzenie według widoku, kolejna fala tylko rdzeń i pierścień,
+  najgorszy przypadek wszystkich stylów, wag i widoków w `Config.Vfx.juice.perCast`, rezerwa na obu urządzeniach mieści
+  składniki jednego rzutu i dynamikę jednego rzutu, połączenia w kodzie klienta), `skillmotion.spec` (dynamika każdej
+  umiejętności i każdego żywiołu broni w `Config.Vfx.juice.perCast`), `tests/SkillLooks` (`juiceOf`, `juiceCost`).
+  Nieobejrzane w Studio.
+- **Pliki:** `Config`, `Logic/SkillJuice`, `Vfx/Juice`, `Vfx/Pool`, `Vfx/Library` (`glow`), `Vfx/LmHunterMage`
+  (`lmCharge`), `Vfx/LmTypes`, `VfxController`, `tests/skilljuice.spec.luau`, `tests/skillmotion.spec.luau`,
+  `tests/SkillLooks.luau`, `docs/ANIMACJE.md` §16.
+
+### Dynamika umiejętności: poprawki po przeglądzie (2026-11-10)
+
+- Przegląd trzech znalezisk w paczce dynamiki, wszystkie prawdziwe. (1) Test rezerwy porównywał promienie telefonu tylko
+  z `Config.Vfx.perCast.beams`, a obrazy na ziemi składników (pierścienie, kręgi, runy, spirala wiru) też liczą się do
+  limitu promieni, więc umiejętność w budżecie (3 promienie i 3 obrazy) nie zmieściłaby się w 5 rezerwy. (2) Pierwsze
+  uderzenie burzy szukało ostatniego rzutu rzucającego, który nadpisuje każdy następny czar (GCD 0,5 s, pierwszy meteor
+  Deszczu Meteorów spada po około 1,35 s), więc grało jako kolejne, bez pełnego uderzenia, głównego dźwięku i
+  wstrząsu. (3) Pole Sideł wysyła pięć pułapek naraz i każda uderzała w pełni (17 emiterów, 6 świateł, 5 pierścieni
+  jednego rzutu), tak samo ogniwa Łańcucha Błyskawic, kolejni leczeni, kilka pułapek zatrzaśniętych naraz, otwarcie
+  burzy z pierwszym piorunem oraz Roztrzaskanie i Zapłon z trafieniem; budżet liczył tylko błysk i jedno uderzenie.
+- Poprawki: `tests/SkillLooks.beamLoadOf` (promienie i obrazy na ziemi składników, bez prawdziwych naklejek
+  `DECAL_PIECES`) sprawdzany dla każdej umiejętności z rezerwą promieni obu urządzeń (dziś najwyżej 4 z 5).
+  `Logic/SkillJuice.stormCast` / `firstStrike`: burze czekające na pierwsze uderzenie osobno dla rzucającego i
+  umiejętności (`stormsAwaiting` w `VfxController`, bez pola `struck`). `Logic/SkillJuice.momentPunch`: uderzenia
+  jednej umiejętności rzucającego w odstępach do `Config.Vfx.juice.together` (0,15 s) to jedna chwila, w pełni jedno,
+  `beats` (2) tylko rdzeń i pierścień, reszta nic (`punchMoments`); dalsze cele i ogniwa oraz otwarcie burzy grają jak
+  kolejna fala. `Config.Vfx.juice.perCast` liczy te dwa uderzenia (8 emiterów, 2 promienie, 2 światła, 3 obrazy na
+  ziemi; promienie z obrazami to całe 5 telefonu poza rezerwą), `SkillLooks.juiceCost` też.
+- Testy: `skilljuice.spec` (rezerwa promieni na każdą umiejętność, księga burz, chwile uderzeń, Pole Sideł 7 emiterów,
+  2 światła, 3 pierścienie, połączenia w kodzie klienta), `skillmotion.spec` bez zmian (liczy już z uderzeniami chwili).
+  Nieobejrzane w Studio.
+- **Pliki:** `Config`, `Logic/SkillJuice`, `Vfx/Juice` (opis), `VfxController`, `tests/SkillLooks.luau`,
+  `tests/skilljuice.spec.luau`, `docs/ANIMACJE.md` §16, `docs/DECYZJE.md`, `docs/PROGRESS.md`.
+
+### Poprawki po przeglądzie dzisiejszych zmian (2026-11-10)
+
+- Pasek mikstur: miksturę wypija tylko zwykłe dotknięcie albo kliknięcie slotu. Przytrzymanie (dymek, wybór jakości) i
+  dotknięcie, które przypisało ją z plecaka, nic nie wypijają, a dotknięcie slotu z otwartym wyborem tylko go zamyka.
+- Potwory: na potworze nie da się stanąć ani na nim jechać, a kto spadnie na niego z półki, zsuwa się obok. Pasek
+  rzucania Elity znów stoi tuż nad tabliczką, a kliknięcie w powietrze nad potworem go nie zaznacza.
+- Celowanie: dotknięty Błysk leci tam, dokąd prowadzimy postać, a bez tego prosto od wroga. Z zaznaczonym sojusznikiem
+  dotknięty obszar trafia w najbliższego wroga, a sojusznik zostaje celem. Członek drużyny albo gildii (z ochroną) nie
+  jest wrogiem poza naszym pojedynkiem i meczem areny, a kliknięcie prosto w niego zaznacza go, nie bossa obok.
+- Dynamika umiejętności: w walce grupowej na telefonie składniki umiejętności, iskry trafień i oddechy bossów zawsze się
+  pokazują, cudze i dalekie rzuty są skromniejsze, a przerwane celowanie gaśnie bez wybuchu przy dłoniach.
+
 ### Plan UI 2026-11-10, pakiet F: fundament bez zmiany na ekranie (2026-11-10)
 - Właściciel 2026-11-10: „trudność UI polegała na tym, że jest bardzo dużo napisów, niektóre rzeczy zasłaniają inne,
   zbyt szczegółowe opisy, nie da się zwinąć”; „wiem, że jesteś w stanie zrobić czytelne i przyjemne GUI, postaraj

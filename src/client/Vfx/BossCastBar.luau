@@ -17,6 +17,7 @@ local Workspace = game:GetService("Workspace")
 local BossCast = require(ReplicatedStorage.Shared.Logic.BossCast)
 local Clock = require(script.Parent.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local MonsterBox = require(script.Parent.Parent.Util.MonsterBox)
 local Theme = require(script.Parent.Parent.UI.Theme)
 
 local BossCastBar = {}
@@ -66,13 +67,18 @@ local function barFolder(): Folder?
 	return f
 end
 
--- Studs above the root: over the model's top and its name plate (MonsterPlateController sits at top + 1.4).
-local function offsetOf(caster: Model, root: BasePart): number
-	local box, size = caster:GetBoundingBox()
+-- Studs above the root: over the caster's top and its name plate (MonsterPlateController sits at top + 1.4). `top`:
+-- the world height of the look's top the plate stands on (MonsterViewController.top); without it the top of the body's
+-- box (Util/MonsterBox: a monster's look, never its blocker column, owner 2026-11-10).
+local function offsetOf(caster: Model, root: BasePart, top: number?): number
+	if top then
+		return top - root.Position.Y + 1.4
+	end
+	local box, size = MonsterBox.of(caster)
 	return box.Position.Y + size.Y / 2 - root.Position.Y + 1.4
 end
 
-local function newBar(caster: Model, root: BasePart, big: boolean): Bar?
+local function newBar(caster: Model, root: BasePart, big: boolean, top: number?): Bar?
 	local parent = barFolder()
 	if not parent then
 		return nil
@@ -86,7 +92,7 @@ local function newBar(caster: Model, root: BasePart, big: boolean): Bar?
 	gui.MaxDistance = CFG.barRange
 	gui.ResetOnSpawn = false
 	gui.Size = UDim2.fromOffset(px.X, px.Y)
-	gui.StudsOffsetWorldSpace = Vector3.new(0, offsetOf(caster, root), 0)
+	gui.StudsOffsetWorldSpace = Vector3.new(0, offsetOf(caster, root, top), 0)
 	-- above the 62 px name plate centred on the same point
 	gui.SizeOffset = Vector2.new(0, 31 / px.Y + 0.6)
 	local label = Instance.new("TextLabel")
@@ -188,8 +194,9 @@ local function run()
 	end
 end
 
--- A cast bar over `caster`: `name` filling over `seconds` (at least Logic/BossCast.MIN_BAR) in `color`.
-function BossCastBar.cast(caster: Model, name: string, seconds: number, color: Color3, big: boolean)
+-- A cast bar over `caster`: `name` filling over `seconds` (at least Logic/BossCast.MIN_BAR) in `color`; `top`: the
+-- world height of the caster's top its name plate uses (MonsterViewController.top), nil for its body's box.
+function BossCastBar.cast(caster: Model, name: string, seconds: number, color: Color3, big: boolean, top: number?)
 	local root = caster:FindFirstChild("HumanoidRootPart") or caster.PrimaryPart
 	if not root or not root:IsA("BasePart") or name == "" then
 		return
@@ -203,7 +210,7 @@ function BossCastBar.cast(caster: Model, name: string, seconds: number, color: C
 		dropBar(caster)
 	end
 	local kept = bars[caster]
-	local bar = if kept then kept else newBar(caster, root, big)
+	local bar = if kept then kept else newBar(caster, root, big, top)
 	if not bar then
 		return
 	end

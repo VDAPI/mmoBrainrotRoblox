@@ -1,7 +1,9 @@
 --!strict
 -- What a skill cast from the bar aims at (Logic/SkillAim). Owner 2026-10-31: Blink never lands in the target. Owner
 -- 2026-11-10: a tap aims at the enemy we fight by itself (the target, else the nearest enemy within reach, else in
--- front); holding the key (dragging the button) aims by hand; "Cast at cursor" is the old way.
+-- front); holding the key (dragging the button) aims by hand; "Cast at cursor" is the old way. Review 2026-11-10: a
+-- tapped Blink goes the way the player steers, else away from the enemy (never toward it), and a selected ally stays
+-- selected.
 
 local Config = require("../src/shared/Config")
 local SkillAim = require("../src/shared/Logic/SkillAim")
@@ -81,10 +83,44 @@ T.describe("Skill aim: a tap aims at the enemy we fight", function()
 			T.expect(SkillAim.seeks(pair[1], pair[2])).toBe(false)
 		end
 	end)
-	T.it("Blink goes the way you move, never into the target; Disengage keeps jumping back", function()
-		T.expect(tap("blink", "point", { target = true })).toBe("move")
-		T.expect(tap("blink", "point", { nearest = true })).toBe("move")
-		T.expect(tap("blink", "point", {})).toBe("move")
+	T.it(
+		"a selected ally stays selected: a tapped damage area goes to the nearest enemy without taking its place",
+		function()
+			for _, pair in { { "circleTarget", "point" }, { "trap", "point" }, { "cone", "none" }, { "line", "none" } } do
+				T.expect(tap(pair[1], pair[2], { ally = true, nearest = true })).toBe("nearby")
+				-- nobody in reach: in front, as with nothing selected
+				T.expect(tap(pair[1], pair[2], { ally = true })).toBe("front")
+			end
+			-- a healing field still goes under the ally, a banner still at our feet
+			T.expect(tap("healZone", "point", { ally = true, nearest = true })).toBe("ally")
+			T.expect(tap("banner", "point", { ally = true, nearest = true })).toBe("feet")
+		end
+	)
+	T.it(
+		"a skill on an enemy: the target, else the nearest enemy (the target only when nothing living is selected)",
+		function()
+			local function onEnemy(case: Case): SkillAim.Source
+				return SkillAim.onEnemy({
+					kind = "projectile",
+					mode = "enemy",
+					manual = false,
+					target = case.target == true,
+					nearest = case.nearest == true,
+					ally = case.ally,
+				})
+			end
+			T.expect(onEnemy({ target = true, nearest = true })).toBe("target")
+			T.expect(onEnemy({ nearest = true })).toBe("nearest")
+			T.expect(onEnemy({})).toBe("none")
+			-- a selected ally: the nearest enemy for this cast only, else the ally as before (the server refuses it)
+			T.expect(onEnemy({ ally = true, nearest = true })).toBe("nearby")
+			T.expect(onEnemy({ ally = true })).toBe("ally")
+		end
+	)
+	T.it("Blink goes the way SkillAim.escape picks, never into the target; Disengage keeps jumping back", function()
+		T.expect(tap("blink", "point", { target = true })).toBe("escape")
+		T.expect(tap("blink", "point", { nearest = true })).toBe("escape")
+		T.expect(tap("blink", "point", {})).toBe("escape")
 		T.expect(SkillAim.seeks("blink", "point")).toBe(false)
 		T.expect(tap("blink", "none", { target = true })).toBe("none")
 		T.expect(SkillAim.previews("blink", "none")).toBe(false)
@@ -131,6 +167,127 @@ T.describe("Skill aim: a tap aims at the enemy we fight", function()
 	end)
 end)
 
+T.describe("Skill aim: a tapped Blink escapes (review 2026-11-10, owner 2026-10-31: never into the monster)", function()
+	local MARGIN = Config.Skills.escapeMargin
+	local JUMP = 15 -- Blink's length; 20 with the 5B breakpoint
+	local NORTH = { x = 0, z = -1 } -- Roblox forward: -Z
+
+	local function same(d: SkillAim.Flat, x: number, z: number)
+		T.expect(d.x).toBeNear(x, 1e-6)
+		T.expect(d.z).toBeNear(z, 1e-6)
+	end
+
+	local function escape(e: {
+		steer: SkillAim.Flat?,
+		facing: SkillAim.Flat?,
+		length: number?,
+		enemy: SkillAim.Flat?,
+		nearest: SkillAim.Flat?,
+		radius: number?,
+	})
+		return SkillAim.escape({
+			steer = e.steer,
+			facing = e.facing or NORTH,
+			length = e.length or JUMP,
+			enemy = e.enemy,
+			nearest = e.nearest,
+			radius = e.radius,
+		})
+	end
+
+	T.it("an enemy that is not selected counts within the whole jump and a margin, to its body's edge", function()
+		T.expect(MARGIN >= 2 and MARGIN <= 6).toBe(true)
+		T.expect(SkillAim.escapeReach(15)).toBe(15 + MARGIN)
+		-- the 5B breakpoint jumps 20: it reaches farther (review 2026-11-10: a fixed 15 landed it in a monster 18 ahead)
+		T.expect(SkillAim.escapeReach(20)).toBe(20 + MARGIN)
+		local blink = SkillData.get("blink") :: SkillData.SkillDef
+		T.expect(blink.length).toBe(JUMP)
+	end)
+	T.it("standing with the enemy in front (the character faces its target): straight away from it", function()
+		same(escape({ facing = NORTH, enemy = { x = 0, z = -10 } }), 0, 1)
+		-- a melee monster right next to us, a ranged one far off: the same
+		same(escape({ facing = NORTH, enemy = { x = 0, z = -2 } }), 0, 1)
+		same(escape({ facing = NORTH, enemy = { x = 0, z = -33 } }), 0, 1)
+		-- facing elsewhere does not matter: away from the enemy
+		same(escape({ facing = { x = 1, z = 0 }, enemy = { x = 3, z = -4 } }), -0.6, 0.8)
+	end)
+	T.it("the player's own steering wins: that way", function()
+		same(escape({ steer = { x = 1, z = 0 }, facing = NORTH, enemy = { x = 0, z = -10 } }), 1, 0)
+		same(escape({ steer = { x = 0, z = 2 }, facing = NORTH }), 0, 1)
+	end)
+	T.it(
+		"walking to the target by itself (MoveTo: the approach, Auto Hunt) is no steering: away, not toward",
+		function()
+			-- the approach and Auto Hunt walk the character with MoveTo: Humanoid.MoveDirection points at the target, but
+			-- the player's move input is zero, so there is no steering and the character faces the target it walks to
+			local steer = SkillAim.steering({ x = 0, z = 0 }, NORTH)
+			T.expect(steer).toBeNil()
+			local d = escape({ steer = steer, facing = NORTH, enemy = { x = 0, z = -12 } })
+			same(d, 0, 1)
+			T.expect(d.x * 0 + d.z * -12 < 0).toBe(true)
+		end
+	)
+	T.it("no enemy selected: away from the nearest one close by, else straight ahead", function()
+		same(escape({ facing = NORTH, nearest = { x = -5, z = 0 }, radius = 1 }), 1, 0)
+		same(escape({ facing = NORTH, nearest = { x = 0, z = -(JUMP + MARGIN + 5) }, radius = 1 }), 0, -1)
+		same(escape({ facing = { x = 1, z = 0 } }), 1, 0)
+		-- the selected enemy first, even with another one nearer
+		same(escape({ facing = NORTH, enemy = { x = 0, z = -20 }, nearest = { x = -2, z = 0 } }), 0, 1)
+		-- an enemy standing in us: back, away from where we face
+		same(escape({ facing = NORTH, enemy = { x = 0, z = 0 } }), 0, 1)
+	end)
+	T.it("5B (20 studs), nothing selected, an enemy 18 studs ahead: away, not onto it (review 2026-11-10)", function()
+		same(escape({ facing = NORTH, length = 20, nearest = { x = 0, z = -18 }, radius = 1.5 }), 0, 1)
+		-- the base jump and a monster 16 to 17 studs ahead: away too
+		same(escape({ facing = NORTH, nearest = { x = 0, z = -17 }, radius = 1 }), 0, 1)
+		-- a big boss: its centre 24 studs ahead, but its body reaches within 18
+		same(escape({ facing = NORTH, nearest = { x = 0, z = -24 }, radius = 6 }), 0, 1)
+	end)
+	T.it("straight ahead never lands in a body: whatever enemy is not fled from stays the margin clear", function()
+		for _, length in { 15, 20 } do
+			for _, radius in { 0.5, 1.5, 3, 6 } do
+				for x = -40, 40, 2 do
+					for z = -40, 40, 2 do
+						local d =
+							escape({ facing = NORTH, length = length, nearest = { x = x, z = z }, radius = radius })
+						-- where the jump lands, and how far that is from the enemy's body
+						local clear = math.sqrt((d.x * length - x) ^ 2 + (d.z * length - z) ^ 2) - radius
+						if d.z == -1 then
+							T.expect(clear >= MARGIN).toBe(true)
+						else
+							-- fled: straight away, so never closer than where we stood
+							T.expect(d.x * x + d.z * z <= 0).toBe(true)
+						end
+					end
+				end
+			end
+		end
+	end)
+	T.it("never toward the selected enemy without the player's own steering", function()
+		for angle = 0, 345, 15 do
+			local a = math.rad(angle)
+			local enemy = { x = math.sin(a) * 9, z = -math.cos(a) * 9 }
+			for _, facing in { NORTH, { x = 1, z = 0 }, { x = enemy.x, z = enemy.z } } do
+				local d = escape({ facing = facing, enemy = enemy })
+				T.expect(d.x * enemy.x + d.z * enemy.z < 0).toBe(true)
+			end
+		end
+	end)
+	T.it("the own steering is the move input turned by the camera; a stick at rest steers nowhere", function()
+		-- move input: x right, z back (W is z = -1), relative to the camera
+		same(SkillAim.steering({ x = 0, z = -1 }, NORTH) :: SkillAim.Flat, 0, -1)
+		same(SkillAim.steering({ x = 1, z = 0 }, NORTH) :: SkillAim.Flat, 1, 0)
+		-- the camera looking along +X: W goes +X, D goes +Z
+		same(SkillAim.steering({ x = 0, z = -1 }, { x = 1, z = 0 }) :: SkillAim.Flat, 1, 0)
+		same(SkillAim.steering({ x = 1, z = 0 }, { x = 1, z = 0 }) :: SkillAim.Flat, 0, 1)
+		-- W + D on keys (not normalised): diagonal, unit length
+		local d = SkillAim.steering({ x = 1, z = -1 }, NORTH) :: SkillAim.Flat
+		same(d, math.sqrt(0.5), -math.sqrt(0.5))
+		T.expect(SkillAim.steering({ x = 0.05, z = 0 }, NORTH)).toBeNil()
+		T.expect(SkillAim.steering({ x = 0, z = -1 }, { x = 0, z = 0 })).toBeNil()
+	end)
+end)
+
 T.describe("Skill aim: texts", function()
 	T.it("Blink says where it goes on a tap and that holding aims", function()
 		for _, key in { "skill.blink.desc", "skill.blink.short" } do
@@ -140,6 +297,11 @@ T.describe("Skill aim: texts", function()
 		end
 		T.expect(string.find(pl["skill.blink.desc"], "rzytrzymaj", 1, true) ~= nil).toBe(true)
 		T.expect(string.find(en["skill.blink.desc"], "Hold", 1, true) ~= nil).toBe(true)
+		-- review 2026-11-10: standing, away from the enemy (no longer straight ahead, which in a fight is the monster)
+		T.expect(string.find(pl["skill.blink.desc"], "od wroga", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(en["skill.blink.desc"], "away from the enemy", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(pl["skill.blink.desc"], "przed siebie", 1, true)).toBe(nil)
+		T.expect(string.find(en["skill.blink.desc"], "straight ahead", 1, true)).toBe(nil)
 	end)
 	T.it('"Cast at cursor" and the tutorial say how aiming works, shortly', function()
 		for _, texts in { pl, en } :: { { [string]: string } } do

@@ -184,6 +184,21 @@ function Pool.limit(name: LimitName): number
 	return if Pool.isTouch() then pair.touch else pair.desktop
 end
 
+-- Owner 2026-11-10 (skill juice: the juice keeps clear of a reserve of every limit, Vfx/Juice): what is live against
+-- the limit `name` now: the holders of its kinds ("beams" counts beams and ground images together) or the lights.
+function Pool.used(name: LimitName): number
+	if name == "lights" then
+		return lightsUsed
+	end
+	local live = 0
+	for _, kind in KINDS do
+		if limitOf(kind) == name then
+			live += holdersUsed[kind]
+		end
+	end
+	return live
+end
+
 local function kindOf(tag: string): HolderKind?
 	local kind = string.match(tag, "^(%a+):")
 	for _, known in KINDS do
@@ -258,13 +273,7 @@ end
 -- no texture = the plain child). Nil when the device limit of the kind is reached: the caller skips that layer.
 function Pool.holder(kind: HolderKind, key: string): BasePart?
 	local limitName = limitOf(kind)
-	local live = 0
-	for _, other in KINDS do
-		if limitOf(other) == limitName then
-			live += holdersUsed[other]
-		end
-	end
-	if live >= Pool.limit(limitName) then
+	if Pool.used(limitName) >= Pool.limit(limitName) then
 		return nil
 	end
 	local tag = kind .. ":" .. key

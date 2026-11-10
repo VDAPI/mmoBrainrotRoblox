@@ -4,6 +4,9 @@
 -- from the backpack to assign it; right-click (or long-press on touch) opens a picker with the qualities you carry.
 -- S122: the Elixir of Wholeness fits every slot (Logic/Potions.fitsSlot); its slot shows the saved elixir cooldown
 -- (character.fullElixir.readyAt, os.time = server time), "0/10" once today's limit is used up, no quality numeral.
+-- Owner 2026-11-10 (a potion drunk at full is used up): only a plain tap or click drinks. The release of a long press
+-- (tooltip, picker) and of the press that dropped a potion here does not, and a tap or click (however slow) on a slot
+-- whose picker is open closes it (Logic/PotionPress).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -20,6 +23,7 @@ local IconState = require(script.Parent.Parent.Parent.IconState)
 local ItemIcon = require(script.Parent.Parent.Parent.Components.ItemIcon)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
 local Items = require(ReplicatedStorage.Shared.Data.Items)
+local PotionPress = require(ReplicatedStorage.Shared.Logic.PotionPress)
 local Potions = require(ReplicatedStorage.Shared.Logic.Potions)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -40,7 +44,6 @@ export type Props = {
 
 local SIZE = 56
 local ROMAN = { "I", "II", "III", "IV", "V" }
-local LONG_PRESS = 0.5
 
 local KINDS: { { kind: string, color: Color3 } } = {
 	{ kind = "hp", color = Theme.Resource.Hp },
@@ -119,6 +122,10 @@ local function PotionBar(scope: Scope, props: Props): Instance
 			return math.clamp((ready - use(now)) / Potions.interval(use(level) or 1), 0, 1)
 		end)
 		local pressToken = 0
+		local slotId = `pot:{entry.kind}`
+		-- Owner 2026-11-10: the press now on the slot (touch or left button), for what its release does. Kept until
+		-- Activated reads it: InputEnded may come first, and the next press replaces it.
+		local press: { at: number, pickerOpen: boolean, touch: boolean }? = nil
 
 		local slot = scope:New("TextButton")({
 			Name = `Potion_{entry.kind}`,
@@ -129,19 +136,37 @@ local function PotionBar(scope: Scope, props: Props): Instance
 			BackgroundTransparency = Theme.HudAlpha,
 			Text = "",
 			[OnEvent("Activated")] = function()
-				if os.clock() - DragDrop.LastDropAt < 0.3 then
-					return
+				local p = press
+				press = nil
+				local action = PotionPress.release({
+					heldFor = if p then os.clock() - p.at else 0,
+					dropped = DragDrop.PressDropped(slotId),
+					pickerOpen = if p then p.pickerOpen else Fusion.peek(picker) == entry.kind,
+					touch = if p then p.touch else false,
+				})
+				if action == "drink" then
+					props.Use(entry.kind)
+				elseif action == "close" then
+					picker:set(nil)
 				end
-				props.Use(entry.kind)
 			end,
 			[OnEvent("MouseButton2Click")] = function()
 				picker:set(if Fusion.peek(picker) == entry.kind then nil else entry.kind)
 			end,
 			[OnEvent("InputBegan")] = function(input: InputObject)
-				if input.UserInputType == Enum.UserInputType.Touch then
+				local inputType = input.UserInputType
+				if inputType ~= Enum.UserInputType.Touch and inputType ~= Enum.UserInputType.MouseButton1 then
+					return
+				end
+				-- after the check above: a `touch` narrowed by it would not type as the press's boolean
+				local touch = inputType == Enum.UserInputType.Touch
+				-- the picker as the press found it (the touch hold below opens it during the press), and the device: a
+				-- slow click closes an open picker, a held finger keeps it
+				press = { at = os.clock(), pickerOpen = Fusion.peek(picker) == entry.kind, touch = touch }
+				if touch then
 					pressToken += 1
 					local token = pressToken
-					task.delay(LONG_PRESS, function()
+					task.delay(PotionPress.PICKER_HOLD, function()
 						if token == pressToken then
 							picker:set(entry.kind)
 						end
@@ -250,7 +275,7 @@ local function PotionBar(scope: Scope, props: Props): Instance
 			},
 		})
 		Motion.feedback(scope, slot :: GuiButton, Theme.Corner.Small) -- W28: hover sheen and a sink while held
-		DragDrop.register(scope, slot :: GuiObject, `pot:{entry.kind}`)
+		DragDrop.register(scope, slot :: GuiObject, slotId)
 		Tooltip.attach(
 			scope,
 			slot :: GuiObject,

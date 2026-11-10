@@ -30,6 +30,7 @@ local RunService = game:GetService("RunService")
 local AttackMotions = require(ReplicatedStorage.Shared.Data.AttackMotions)
 local Clock = require(script.Parent.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
+local MonsterBox = require(script.Parent.Parent.Util.MonsterBox)
 local Pool = require(script.Parent.Pool)
 local State = require(script.Parent.Parent.UI.State)
 local Textures = require(script.Parent.Textures)
@@ -2123,7 +2124,9 @@ function Library.sparks(at: Vector3, color: Color3, opts: FxOpts?)
 	})
 end
 
--- Glowing hand(s) or weapon for `seconds` (charging a spell, holy weapons).
+-- Glowing hand(s) or weapon for `seconds` (charging a spell, holy weapons). Owner 2026-11-10 (an aim cut short kept its
+-- hands glowing to the end): returns a stop that puts the glow out at once (VfxController, a cast cut short); the
+-- glow's own end then does nothing, so an orb the pool already gave to another effect is never touched.
 function Library.glow(
 	model: Model,
 	hand: "r" | "l" | "both" | "weapon",
@@ -2131,12 +2134,13 @@ function Library.glow(
 	seconds: number,
 	simple: boolean?,
 	flame: boolean? -- W03: fire spells lick flames over the hand
-)
+): () -> ()
 	local names: { string } = if hand == "weapon"
 		then { "VaelthornWeapon" }
 		elseif hand == "both" then { "RightHand", "LeftHand" }
 		elseif hand == "l" then { "LeftHand" }
 		else { "RightHand" }
+	local orbs: { { orb: BasePart, grow: Tween } } = {}
 	for _, name in names do
 		local part = model:FindFirstChild(name, true)
 		if part and part:IsA("BasePart") then
@@ -2211,9 +2215,36 @@ function Library.glow(
 					end
 				end
 			end
-			tween(orb, seconds, { Size = Vector3.one * (if flame then 0.55 else 0.8) })
-			detachLater(orb, seconds)
+			local grow = Clock.tween(
+				orb,
+				TweenInfo.new(seconds, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+				{ Size = Vector3.one * (if flame then 0.55 else 0.8) }
+			)
+			table.insert(orbs, { orb = orb, grow = grow })
 		end
+	end
+	-- the end (detachLater's fade, shorter when stopped): once only, the growing stops before the orb goes back
+	local ended = false
+	local function finish(fade: number)
+		if ended then
+			return
+		end
+		ended = true
+		for _, o in orbs do
+			o.grow:Cancel()
+			local orb = o.orb
+			if orb.Parent then
+				tween(orb, fade, { Transparency = 1 })
+				Clock.after(fade + 0.02, function()
+					orb.Anchored = true
+					Pool.release(orb)
+				end)
+			end
+		end
+	end
+	Clock.after(seconds, finish, 0.3)
+	return function()
+		finish(0.12)
 	end
 end
 
@@ -2758,9 +2789,10 @@ function Library.charge(model: Model, color: Color3, seconds: number, size: numb
 	if not attach(model, holder) then
 		return
 	end
-	-- an imported model has its root at the feet: the gathering sits on the middle of the body
+	-- an imported model has its root at the feet: the gathering sits on the middle of the body (a monster's look, not
+	-- its blocker column: Util/MonsterBox, owner 2026-11-10)
 	local ok, box = pcall(function()
-		return (model:GetBoundingBox())
+		return (MonsterBox.of(model))
 	end)
 	local weld = holder:FindFirstChildOfClass("WeldConstraint")
 	if ok and typeof(box) == "CFrame" and weld then
