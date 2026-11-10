@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
+local PhoneLayout = require(script.Parent.PhoneLayout)
 local Scale = require(script.Parent.Scale)
 local Theme = require(script.Parent.Theme)
 
@@ -47,14 +48,16 @@ function HudCover.SetWindows(list: { GuiObject })
 	windows:set(table.clone(list))
 end
 
--- The lowest bottom edge of the open windows' title bars (screen pixels), nil with no window open: the messages of the
--- Toasts layer stand under it (Components/Toast, Components/Announcement; Logic/TopBand.underHeader).
+-- The lowest bottom edge of the open windows' title bars (screen pixels), nil with no window open (Logic/TopBand
+-- .underHeader). UI package C (2026-11-10) gave a phone's window (UI/PhoneLayout.Compact) a 44-px title bar, so the
+-- edge follows it there; the band's messages measure each window themselves (HudCover.Rects, UI/Notify).
 HudCover.HeaderBottom = scope:Computed(function(use): number?
 	use(moved)
+	local header = if use(PhoneLayout.Compact) then Theme.Size.WindowHeaderCompact else Theme.Size.WindowHeader
 	local bottom: number? = nil
 	for _, root in use(windows) do
 		if root.Parent ~= nil then
-			local edge = root.AbsolutePosition.Y + Theme.Size.WindowHeader * Scale.get()
+			local edge = root.AbsolutePosition.Y + header * Scale.get()
 			bottom = if bottom then math.max(bottom, edge) else edge
 		end
 	end
