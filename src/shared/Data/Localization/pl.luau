@@ -5048,7 +5048,7 @@ return {
 	["npc.portalmaster.greeting.info"] = "Kamień kupisz na sztuki albo na zawsze.",
 	["npc.wanderer.greeting.info"] = "Obejrzyj towar, póki nie odjadę.",
 	["buildset.copy.message.info"] = "Zestaw {to} dostanie węzły kierunków, przełomy, rangi umiejętności, paski i statystyki zestawu {from}. Darmowy reset zestawu {to} zostaje taki, jaki był.",
-	["rework2.body.info"] = "Każdy poziom daje punkt, a ranga nie przekroczy limitu poziomu. Każda pula ma własne punkty, rangi i pasek {slots} miejsc. Twoje rangi przeliczyliśmy na punkty (najpierw z paska), a do {level}. poziomu zwroty rang są darmowe.",
+	["rework2.body.info"] = "Każdy poziom daje punkt, a ranga nie przekroczy limitu poziomu. Każda pula ma własne punkty, rangi i pasek {slots} miejsc. Dawne rangi zostały, na ile starczyło punktów (najpierw z paska), a do {level}. poziomu zwroty rang są darmowe.",
 	["rework2.mage.info"] = "Na pasku są tylko czary tego żywiołu i umiejętności wspólne, a zmiana broni przełącza pasek.",
 	["skills.reset.confirm.info"] = "Rangi wszystkich pul broni i węzły kierunków tego zestawu wrócą jako punkty, a umiejętności zejdą z pasków. Od 20. poziomu bez darmowego resetu zużyjesz Zwój Odnowy Umiejętności.",
 	["paths.confirm.reset.paid.info"] = "Razem z węzłami wrócą rangi umiejętności kierunków. Wybrane przełomy zostają.",

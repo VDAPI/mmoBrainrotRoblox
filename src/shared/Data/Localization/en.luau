@@ -5050,7 +5050,7 @@ return {
 	["npc.portalmaster.greeting.info"] = "Buy a stone by the piece or for good.",
 	["npc.wanderer.greeting.info"] = "Have a look before I move on.",
 	["buildset.copy.message.info"] = "Set {to} gets the direction nodes, breakthroughs, skill ranks, bars and stats of set {from}. The free reset of set {to} stays as it was.",
-	["rework2.body.info"] = "Every level gives a point, and a rank never goes above your level's limit. Each pool has its own points, ranks and a bar of {slots} slots. Your ranks became points (bar skills first), and refunding ranks is free up to level {level}.",
+	["rework2.body.info"] = "Every level gives a point; no rank exceeds your level's limit. Each pool has its own points, ranks and a bar of {slots} slots. Old ranks were kept up to your points (bar skills first); rank refunds are free up to level {level}.",
 	["rework2.mage.info"] = "The bar only holds spells of that element and the common skills, and changing the weapon switches the bar.",
 	["skills.reset.confirm.info"] = "The ranks of every weapon pool and the direction nodes of this set come back as points and the skills leave the bars. From level 20 without a free reset it uses a Scroll of Skill Renewal.",
 	["paths.confirm.reset.paid.info"] = "The ranks of the direction skills come back with the nodes. Chosen breakthroughs stay.",
