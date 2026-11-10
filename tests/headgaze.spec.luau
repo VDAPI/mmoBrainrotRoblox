@@ -4,7 +4,10 @@
 -- same at every replay), at the local player now and then, sniffs standing still, nods with the steps, flinches away
 -- from a blow, keeps level against the body's own pitch, hangs stunned, eases back to rest in its death and holds
 -- while the clock stands; the data's heads stay within their limits through a busy minute; the lowest graphics level
--- turns none.
+-- turns none. Code review 2026-11-10: a head put on starts at rest and eases in (it was where it looks in its first
+-- frame, up to 40 degrees from the look's own mesh a frame before).
+local fs = require("@lune/fs")
+
 local GraphicsLevel = require("../src/shared/Logic/GraphicsLevel")
 local HeadGaze = require("../src/shared/Logic/HeadGaze")
 local RigidRigs = require("../src/shared/Data/RigidRigs")
@@ -343,6 +346,105 @@ T.describe("HeadGaze: over the look", function()
 				T.expect(math.abs(math.deg(roll)) <= o.tilt + 1e-6).toBe(true)
 			end)
 		end
+	end)
+end)
+
+T.describe("HeadGaze: a head put on (code review 2026-11-10)", function()
+	-- What a head can be put on in: calm (glances, the sniff), walking with the body pitching, at a target high on its
+	-- left in a fight, in a blow (an action plays, a hit just landed).
+	local function cases(t: number): { { [string]: any } }
+		return {
+			{},
+			{ move = 1, phase = (t * 1.3) % 1, bumps = 2, bodyPitch = 0.3 * math.sin(t * 5) },
+			{ combat = true, look = dir(28, 12) },
+			{
+				combat = true,
+				look = dir(-40, -20),
+				acting = true,
+				hitAt = t - 0.06,
+				hitSide = "left",
+				bodyPitch = 0.25,
+			},
+		}
+	end
+
+	T.it("starts at rest and moves at most one frame of its rate in its first frame, wherever it looks", function()
+		for _, model in RigidRigs.gazes() do
+			local o = RigidRigs.gaze(model) :: HeadGaze.Options
+			-- (an action follows 1.5 times faster)
+			local k = 1 - math.exp(-1.5 * o.rate * FRAME)
+			for m = 0, 59 do
+				local at = 4 + m * 0.77
+				for _, case in cases(at) do
+					local st = HeadGaze.new(o, m)
+					-- (worn before: turned, then taken off a while ago; its clock stale)
+					run(st, at - 4, 1.5, function()
+						return table.clone(case)
+					end)
+					HeadGaze.start(st, at)
+					local input = table.clone(case) :: any
+					input.now, input.dt = at, FRAME
+					local yaw, pitch, roll = HeadGaze.step(st, input :: HeadGaze.Input)
+					yaw, pitch, roll = math.abs(math.deg(yaw)), math.abs(math.deg(pitch)), math.abs(math.deg(roll))
+					T.expect(yaw <= k * math.max(o.yaw, o.glance) + 0.2).toBe(true)
+					T.expect(pitch <= k * math.max(o.up, o.down) + 0.2).toBe(true)
+					T.expect(roll <= k * o.tilt + 0.2).toBe(true)
+				end
+			end
+		end
+	end)
+
+	T.it("then turns to where it looks at its rate", function()
+		local st = HeadGaze.new(LYNX, 3)
+		run(st, 0, 1, function()
+			return { look = dir(-20, 0), combat = true }
+		end)
+		HeadGaze.start(st, 5)
+		local first = run(st, 5, 0, function()
+			return { look = dir(25, 8), combat = true }
+		end)
+		T.expect(first).toBeBetween(0, 4)
+		local yaw, pitch = run(st, 5 + FRAME, 1.2, function()
+			return { look = dir(25, 8), combat = true }
+		end)
+		T.expect(yaw).toBeNear(25, 0.05)
+		T.expect(pitch).toBeNear(8, 0.05)
+	end)
+
+	T.it("fades its nod, sniff, flinch and steadying in", function()
+		local st = HeadGaze.new(LYNX, 7)
+		HeadGaze.start(st, 2)
+		local _, first = run(st, 2, 0, function()
+			return { combat = true, bodyPitch = 0.2, hitAt = 1.97, hitSide = "front" }
+		end)
+		T.expect(math.abs(first) < 0.1).toBe(true)
+		local _, later = run(st, 2 + FRAME, 1, function()
+			return { combat = true, bodyPitch = 0.2 }
+		end)
+		T.expect(later).toBeNear(-math.deg(LYNX.steady * 0.2), 1e-6)
+	end)
+
+	T.it("is where it looks at once on a jump of the clock, and at rest put on frozen", function()
+		local st = HeadGaze.new(LYNX, 3)
+		HeadGaze.start(st, 10)
+		local yaw, pitch = HeadGaze.step(st, { now = 10, dt = FRAME, snap = true, look = dir(-15, -5) })
+		T.expect(math.deg(yaw)).toBeNear(-15, 1e-6)
+		T.expect(math.deg(pitch)).toBeNear(-5, 1e-6)
+		local still = HeadGaze.new(RABBIT, 3)
+		run(still, 0, 1, function()
+			return { look = dir(30, 10) }
+		end)
+		HeadGaze.start(still, 12)
+		local y, p, r = HeadGaze.step(still, { now = 12, dt = 0, look = dir(30, 10), move = 1, phase = 0.25 })
+		T.expect(y).toBe(0)
+		T.expect(p).toBe(0)
+		T.expect(r).toBe(0)
+	end)
+
+	T.it("client/Anim/MeshHead puts every head on through it, never by clearing the clock", function()
+		local src = fs.readFile("src/client/Anim/MeshHead.luau")
+		T.expect(string.find(src, "HeadGaze.start(h.gaze, input.now)", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(src, "lastNow = nil", 1, true)).toBeNil()
 	end)
 end)
 

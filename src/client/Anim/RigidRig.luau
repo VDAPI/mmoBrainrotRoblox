@@ -418,7 +418,7 @@ function RigidRig.new(look: Model, styleId: string, seed: number, model: string,
 		axes = { axisOf(rel.XVector), axisOf(rel.YVector), axisOf(rel.ZVector) }
 		body.squash = true
 		legs = MeshFold.attach(model, part, rel, size, seed)
-		head = MeshHead.attach(model, look, part, rel, seed, monster == nil)
+		head = MeshHead.attach(model, look, part, rel, size, seed, monster == nil)
 	end
 	local opaque = {}
 	for i, part in parts do

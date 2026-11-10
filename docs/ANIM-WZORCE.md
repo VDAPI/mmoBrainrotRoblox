@@ -1303,23 +1303,27 @@ rigid kind except `frostWyrm`; every look is one visible MeshPart, so all may sq
 - **Heads that turn** (owner 2026-11-10: "modele poruszają się nie poruszając głową tak 2d"): every rigid kind without
   bones (`Data/RigidRigs` `gaze`: rabbit, lynx and snowLeopard, swampToad, basilisk, salamander, bogSerpent, rotEnt,
   caveSpider, desertScorpion, and the old carrionCrow and bloodBat; frostWyrm and the rigged models are left alone) gets
-  a head bone added at runtime, as Vaelgrath's jaw (`client/Anim/MeshJaw`): `client/Anim/MeshHead` reads the mesh once
-  into a growable `EditableMesh`, `Logic/NeckBend` finds the head (the front end along the facing axis raised by
-  `rise`, within the middle band `mid`, the feet and flanks left out by `floor` and `side`; the neck where the section
-  first narrows inside `seek`, else at `neck` of the length; `blend` long, the joint `pivot` of it back; loose shells in
-  the head's box, eyes and ears, go with it), adds `MeshRoot` (the box centre) and `MeshHead` (the joint), skins every
-  vertex to them and `ApplyMesh`es the result on the nearest looks (`Config.Graphics` `heads` within `headRadius`: 8 in
-  90 studs high, 4 in 60 medium, none low; AnimLab's subject always). `Logic/HeadGaze` turns it: at the aggro player's
-  head (AnimLab: the actor) within `yaw` / `up` / `down` at `rate`; calm, glances aside (`glance`, less while walking,
-  birds cock it by `tilt`), now and then at the local player within 25 studs, sniffs standing (`sniff`); the nod with
-  the steps (`nod` at the gait's bumps), the flinch away from a blow (`flinch`), hung and swaying when stunned, part of
-  the body's pitch taken back (`steady`), held frozen, back to rest in a death. The spider and the scorpion only turn
-  the front a little (±10–12°). Out of the budget or dying the head eases to rest and the look gets its own mesh back
-  (at once where the legs fold; in AnimLab the head waits until the fold gives the mesh back). Feature-detected
-  throughout: no `EditableMesh`, no head found, a bone or skin refused, a part not skinned after `ApplyMesh`: the look
-  moves as one piece as before (Studio prints why once per mesh, else the side and top views of what was found; the
-  look carries `HeadState`, `HeadYaw`, `HeadPitch`). Lune specs on synthetic meshes (tests/NeckBendMesh: a cat, a
-  neckless toad, a bird, a spider). Not yet seen in Studio (checklist: `docs/SESJE.md` "Głowy potworów bez kości").
+  a head bone added at runtime, as Vaelgrath's jaw (`client/Anim/MeshJaw`): when a look of the model is first wanted
+  (below: nothing is read on low or beyond the radius) `client/Anim/MeshHead` reads the mesh into a growable
+  `EditableMesh` (kept while a look wants or wears it, freed 60 s after), `Logic/NeckBend` finds the head (the front end
+  along the facing axis raised by `rise`, within the middle band `mid`, the feet and flanks left out by `floor` and
+  `side`; the neck where the section first narrows inside `seek`, else at `neck` of the length; `blend` long, the joint
+  `pivot` of it back; loose shells in the head's box, eyes and ears, go with it), adds `MeshRoot` (the box centre) and
+  `MeshHead` (the joint), skins every vertex to them and `ApplyMesh`es the result on the nearest looks
+  (`Logic/HeadBudget`, `Config.Graphics` `heads` within `headRadius`: 8 in 90 studs high, 4 in 60 medium, none low;
+  AnimLab's subject always; a dying look and one out of the world give their places up at once). `Logic/HeadGaze` turns
+  it, put on from rest and eased in (`start`; review 2026-11-10: it jumped to its angle in the first frame): at the
+  aggro player's head (AnimLab: the actor) within `yaw` / `up` / `down` at `rate`; calm, glances aside (`glance`, less
+  while walking, birds cock it by `tilt`), now and then at the local player within 25 studs, sniffs standing (`sniff`);
+  the nod with the steps (`nod` at the gait's bumps), the flinch away from a blow (`flinch`), hung and swaying when
+  stunned, part of the body's pitch taken back (`steady`), held frozen, back to rest in a death. The spider and the
+  scorpion only turn the front a little (±10–12°). Out of the budget or dying the head eases to rest and the look gets
+  its own mesh back (at once where the legs fold; in AnimLab the head waits until the fold gives the mesh back).
+  Feature-detected throughout: no `EditableMesh`, no head found, a bone or skin refused, a part not skinned after
+  `ApplyMesh`: the look moves as one piece as before (Studio prints why once per mesh, else the side and top views of
+  what was found; the look carries `HeadState`, `HeadYaw`, `HeadPitch`). Lune specs on synthetic meshes
+  (tests/NeckBendMesh: a cat, a neckless toad, a bird, a spider). Not yet seen in Studio (checklist: `docs/SESJE.md`
+  "Głowy potworów bez kości").
 - AnimLab: `/animlab mob <id> <state>`, states `Data/RigidStyles.labStates`: idle, alert, walk, trot, run, turn, home,
   attack1, attack2, cast, heavy, crush, pounce, throw, hit, hitBack, hitLeft, hitRight, stun, freeze, death, spawn,
   summon, fight, then every action of the style by name (e.g. `deathCurl`, `sting`, `sitUp`).

@@ -11,6 +11,9 @@
 -- * Over that (not dying): the nod with the steps (`nod`, at the gait's bob bumps), the flinch of a hit away from the
 --   blow (`flinch`, Logic/RigidMotion's envelope), and `steady` of the body's own pitch taken back (a hop, a rear: the
 --   head stays more level; not while an action plays, its pitch is the blow's). Frozen (no time passing), it holds.
+-- * Put on (`start`, code review 2026-11-10: the head was where it looks in the first frame, up to 40° from the look's
+--   own mesh a frame before): from rest, its turn eases in at `rate` and the nod, the sniff, the flinch and the
+--   steadying fade in over EASE_IN; only a jump of the clock puts it where it looks at once.
 -- Angles in radians in the look's axes: yaw + turns left, pitch + raises the nose, roll + lifts the right side.
 
 local NpcPose = require("./NpcPose")
@@ -46,6 +49,7 @@ export type State = {
 	pitch: number,
 	roll: number,
 	lastNow: number?,
+	on: number, -- how far the nod, the sniff, the flinch and the steadying are in (0..1; 0: just put on)
 	shown: { number }, -- the angles given last (held while the clock stands)
 }
 
@@ -67,6 +71,8 @@ local DAZED_DIP, DAZED_SWAY, DAZED_HZ = 0.5, 0.3, 0.7
 local FLINCH_IN, FLINCH_HOLD, FLINCH_OUT = 0.05, 0.03, 0.25
 -- The steadying never takes back more than this share of the turn limits.
 local STEADY_MAX = 1
+-- A head put on fades the nod, the sniff, the flinch and the steadying in over this much of its time moving (s).
+local EASE_IN = 0.3
 
 local function smooth(x: number): number
 	local t = math.clamp(x, 0, 1)
@@ -74,7 +80,18 @@ local function smooth(x: number): number
 end
 
 function HeadGaze.new(o: Options, seed: number): State
-	return { o = o, seed = seed, yaw = 0, pitch = 0, roll = 0, lastNow = nil, shown = { 0, 0, 0 } }
+	return { o = o, seed = seed, yaw = 0, pitch = 0, roll = 0, lastNow = nil, on = 1, shown = { 0, 0, 0 } }
+end
+
+-- The head put on at `now` (the motion's clock; client/Anim/MeshHead: on its look, or under a rig built again): at
+-- rest, the clock taken, so the next steps ease it toward where it looks and fade its nod, sniff, flinch and
+-- steadying in (`input.snap`, a real jump of the clock, still puts it there at once).
+function HeadGaze.start(st: State, now: number)
+	st.yaw, st.pitch, st.roll = 0, 0, 0
+	local shown = st.shown
+	shown[1], shown[2], shown[3] = 0, 0, 0
+	st.lastNow = now
+	st.on = 0
 end
 
 -- The yaw and the pitch toward a direction (the look's axes), within the head's limits.
@@ -155,6 +172,10 @@ function HeadGaze.step(st: State, input: Input): (number, number, number)
 		-- (frozen: the pose holds, as the body's)
 		return shown[1], shown[2], shown[3]
 	end
+	-- a head just put on fades the nod, the sniff, the flinch and the steadying in (a jump: all at once)
+	local on = if snap then 1 else math.min(1, st.on + dt / EASE_IN)
+	st.on = on
+	local fade = smooth(on)
 	local move = math.clamp(input.move or 0, 0, 1)
 	-- where it looks
 	local ty, tp, tr, sniff = 0, 0, 0, 0
@@ -187,16 +208,16 @@ function HeadGaze.step(st: State, input: Input): (number, number, number)
 	-- the nod with the steps
 	local phase = input.phase
 	if o.nod ~= 0 and phase and move > 0.01 then
-		pitch += math.rad(o.nod) * move * math.sin(TAU * (input.bumps or 2) * phase)
+		pitch += fade * math.rad(o.nod) * move * math.sin(TAU * (input.bumps or 2) * phase)
 	end
 	-- the sniff's quick nods
 	if sniff > 0 then
-		pitch += math.rad(o.sniff) * sniff * math.sin(TAU * SNIFF_HZ * now)
+		pitch += fade * math.rad(o.sniff) * sniff * math.sin(TAU * SNIFF_HZ * now)
 	end
 	-- the flinch, away from the blow
 	local hitAt = input.hitAt
 	if hitAt and o.flinch ~= 0 then
-		local e = HeadGaze.flinch(now - hitAt)
+		local e = fade * HeadGaze.flinch(now - hitAt)
 		if e > 0 then
 			local side = input.hitSide
 			local fy, fp = 0, 1
@@ -215,7 +236,7 @@ function HeadGaze.step(st: State, input: Input): (number, number, number)
 	local body = input.bodyPitch
 	if body and o.steady ~= 0 and not input.acting then
 		local most = STEADY_MAX * math.rad(math.max(o.up, o.down))
-		pitch -= math.clamp(o.steady * body, -most, most)
+		pitch -= fade * math.clamp(o.steady * body, -most, most)
 	end
 	shown[1], shown[2], shown[3] = yaw, pitch, roll
 	return yaw, pitch, roll

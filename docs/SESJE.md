@@ -14641,13 +14641,16 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   czy przez roblox tez by sie tak zachowywały?”. Przyczyna: te modele to jedna siatka bez kości, więc szablon
   `Logic/RigidMotion` rusza nimi w całości. Model z Roblox bez kości zachowywałby się tak samo; modele z kośćmi szyi
   (wilk, niedźwiedź, smok) ruszają głową. Teraz głowę dostają w kodzie, bez nowych modeli.
-- `client/Anim/MeshHead`: raz na siatkę (w tle, porcjami) rosnąca EditableMesh wyglądu, `Logic/NeckBend.plan` znajduje
-  głowę, `AddBone` dodaje kości `MeshRoot` (środek pudła siatki) i `MeshHead` (staw szyi), każdy wierzchołek dostaje
-  skórę (ciało na korzeniu, głowa na kości głowy, szyja z przejściem wag), potem `CreateMeshPartAsync`. Najbliższe
-  wyglądy (`Config.Graphics` `heads` / `headRadius`: wysoka 8 w 90 studach, średnia 4 w 60, niska żaden; obiekt AnimLab
-  zawsze) dostają Bones o tych nazwach i `ApplyMesh` (tekstura zostaje, własna siatka czeka na oddanie). Poza budżetem i
-  w śmierci głowa wraca do spoczynku, a wygląd dostaje swoją siatkę z powrotem; przy składaniu nóg (pająk, skorpion) od
-  razu, a w AnimLab głowa czeka, aż nogi oddadzą siatkę. Siatka zwalniana 20 s po zniknięciu ostatniego wyglądu.
+- `client/Anim/MeshHead`: dopiero gdy pierwszy wygląd modelu trafi do budżetu (na niskiej jakości nigdy), w tle i
+  porcjami: rosnąca EditableMesh wyglądu, `Logic/NeckBend.plan` znajduje głowę, `AddBone` dodaje kości `MeshRoot`
+  (środek pudła siatki) i `MeshHead` (staw szyi), każdy wierzchołek dostaje skórę (ciało na korzeniu, głowa na kości
+  głowy, szyja z przejściem wag), potem `CreateMeshPartAsync`. Najbliższe wyglądy (`Logic/HeadBudget`, `Config.Graphics`
+  `heads` / `headRadius`: wysoka 8 w 90 studach, średnia 4 w 60, niska żaden; obiekt AnimLab zawsze; umierające i te
+  spoza świata od razu oddają miejsce) dostają Bones o tych nazwach i `ApplyMesh` (tekstura zostaje, własna siatka czeka
+  na oddanie), a głowa rusza ze spoczynku i płynnie dochodzi do celu. Poza budżetem i w śmierci głowa wraca do
+  spoczynku, a wygląd dostaje swoją siatkę z powrotem; przy składaniu nóg (pająk, skorpion) od razu, a w AnimLab głowa
+  czeka, aż nogi oddadzą siatkę. Siatka trzymana, póki któryś wygląd modelu jest w budżecie albo ją nosi, i zwalniana
+  60 s później; wygląd, który wypadł ze świata (streaming, usunięcie), od razu ją oddaje i dostaje z powrotem swoją.
 - `Logic/NeckBend` (czyste): czubek pyska z przodu (oś patrzenia uniesiona o `rise`, pas środka `mid`, bez stóp przy
   ziemi `floor` i boków `side`), szyja tam, gdzie przekrój pierwszy raz się zwęża w oknie `seek` (inaczej na długości
   `neck`), przejście `blend`, staw cofnięty o `pivot`; luźne kawałki w pudle głowy (oczy, uszy) idą z głową; widoki z
@@ -14666,7 +14669,8 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   pamięci), bez znalezionej głowy, gdy silnik nie przyjmie kości albo skóry albo część po `ApplyMesh` nie ma skóry:
   wygląd rusza się w całości jak dotąd, bez błędu; Studio drukuje powód raz na siatkę.
 - Testy: `neckbend.spec` (kot z szyją, uszami i oczami, ropucha bez szyi, ptak, pająk, odmowy, dane równe modelom bez
-  kości z `tools/anim/rigs`) i `headgaze.spec` na syntetycznych siatkach `tests/NeckBendMesh`. Nieobejrzane w Studio.
+  kości z `tools/anim/rigs`) i `headgaze.spec` na syntetycznych siatkach `tests/NeckBendMesh`; `headbudget.spec` (które
+  wyglądy noszą głowę, kiedy siatka modelu jest czytana i trzymana). Nieobejrzane w Studio.
 - **Lista do Studio (laptop, Studio przez MCP, bez myszy):**
   1. Play przez „Graj”, `/animlab on`, `/animlab mob <id> idle`. W Output linia `[MeshHead] <model>: N of M vertices
      turn with the head …` z widokiem z boku i z góry (H głowa, + przejście, # ciało, * staw); `no head (…)` albo `the
@@ -14686,6 +14690,6 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
      wyglądy dostają swoje siatki), zwłoki znikają jak dotąd.
   7. Strojenie bez kodu: `Data/RigidRigs` pole `gaze` (szukanie: `rise`, `mid`, `floor`, `side`, `seek`, `neck`,
      `blend`, `pivot`; ruch: `yaw`, `up`, `down`, `glance`, `tilt`, `sniff`, `nod`, `flinch`, `steady`, `rate`).
-- **Pliki:** `client/Anim/MeshHead`, `client/Anim/RigidRig`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs`,
-  `Config.Graphics`, `tests/neckbend.spec.luau`, `tests/headgaze.spec.luau`, `tests/NeckBendMesh.luau`,
-  `docs/ANIM-WZORCE.md` §6.5.
+- **Pliki:** `client/Anim/MeshHead`, `client/Anim/RigidRig`, `Logic/NeckBend`, `Logic/HeadGaze`, `Logic/HeadBudget`,
+  `Data/RigidRigs`, `Config.Graphics`, `tests/neckbend.spec.luau`, `tests/headgaze.spec.luau`,
+  `tests/headbudget.spec.luau`, `tests/NeckBendMesh.luau`, `docs/ANIM-WZORCE.md` §6.5.
