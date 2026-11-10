@@ -58,6 +58,14 @@
   D 237, E 203) i kolizje HUD na tabletach 1210–1280 szerokości i do 800 wysokości (pasmo celu i pasek bossa na strefach
   postaci i menu, przycisk celu dotyku w minimapie, pas wiadomości pod panelem areny i paskiem bossa niższy niż linia
   alarmu; listy `KNOWN` i `THIN` w `hudzones.spec` dla pakietu A).
+- **Plan UI 2026-11-10, pakiet B (komunikaty):** jedna kolejka wszystkich komunikatów (`UI/Notify`,
+  `Logic/NoticeQueue`), pas wiadomości 8 pod pasmem celu, karty z „Szczegóły” w prawym dolnym rogu PC, zaproszenia
+  jako jedna linia z ✓, ✕ i paskiem czasu (`Components/Prompt`), ostrzeżenia bossów na linii alarmu, pasek bossa
+  lochu w paśmie celu, na telefonie jeden komunikat naraz w strefie M; nieobejrzane w Studio (baner i dwa toasty pod
+  ramką celu, komunikat nad oknem i pod jego paskiem tytułu, toasty obok karty samouczka, karta w rogu i jej pełny
+  widok, arkusz na telefonie, „Więcej ▸” zaproszenia, gotowość przed bossem, linia alarmu w walce z bossem, pasek
+  bossa lochu na telefonie przy lewym stosie i minimapie, czy sygnał walki nie wstrzymuje toastów za często). Teksty
+  pakietu B ponad limitem zostają na jego liście (`tests/fixtures/textcaps/B.luau`, 193).
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa

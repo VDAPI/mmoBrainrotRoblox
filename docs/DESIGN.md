@@ -1676,6 +1676,35 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   i jego plakietką odliczania (przegląd Studio: koperta dotykała tropiciela i przycisku ataku; `HudStack.MAIL`). Na
   telefonie w poziomie nad przyciskiem „Cel”, na lewo od łuku umiejętności (`PhoneHud` `mail`). Zastępuje kopertę
   przy minimapie (S156).
+- **Pas wiadomości** (właściciel 2026-11-10: „niektóre rzeczy zasłaniają inne”; plan UI 2026-11-10, pakiet B;
+  `docs/UI-ZASADY.md` §6): każdy komunikat (toast, ogłoszenie, toast osiągnięcia, banery strefy i obszaru, alarm,
+  zaproszenie, karta, kwestia NPC) idzie przez `UI/Notify` do jednej kolejki (`Logic/NoticeQueue`) i dostaje jedno
+  miejsce (`Logic/TopBand.slots`), więc dwa komunikaty nigdy nie stoją na sobie. Pas stoi 8 pod pasmem celu (ramka
+  celu, jej efekty, pasek bossa lochu; `HudZones.messageZone`) i co najmniej 8 pod paskiem Robloxa, a w nim od góry:
+  linia alarmu (cios bossa do uniknięcia w kolorze jego znaku, odliczanie, fazy i zwycięstwo w lochu; do 28 znaków),
+  jeden baner, najwyżej 2 toasty i jedno zaproszenie. Wyższy w kolejności (`NoticeQueue.ORDER`) bierze miejsce
+  niższemu, który czeka i potem stoi resztę swojego czasu (boss świata 15 s razem); banery strefy i obszaru idą
+  pierwsze wśród banerów, więc toast osiągnięcia i ogłoszenie dalej na nie czekają, a nowszy baner strefy albo obszaru
+  od razu zastępuje starszy. Baner obszaru to nazwa i poziomy, 3 s (pytanie UI 4). Ten sam tekst w 10 s to jeden wpis
+  „×N”, ten sam błąd najwyżej raz na 10 s. W walce (6 s od utraty HP albo własnego ataku) toasty informacyjne czekają
+  do 10 s, ogłoszenia z innych serwerów, kwestie NPC i karta lepszego przedmiotu do 30 s, potem przepadają; błędy i
+  alarmy nigdy nie czekają, a tego, co już stoi, walka ani okno nie zdejmują. Pokazany komunikat nie podskakuje w górę.
+  Przy otwartym oknie (`HudCover.Rects`; decyzja 2026-10-31, pytanie UI 8) komunikat stoi nad oknem, gdy cały się tam
+  mieści, inaczej pod jego paskiem tytułu, nigdy na nim, i nie czeka na zamknięcie okna; czeka tylko toast
+  osiągnięcia. Karta samouczka zostaje na miejscu, a komunikat staje obok niej, gdy mieści się w pasie, inaczej pod nią.
+  **Zaproszenia** (drużyna, pojedynek, handel, gildia, znajomi, mecz areny, turniej, gotowość przed bossem;
+  `Components/Prompt`): ikona, jedna linia (do 60 znaków), ✓ i ✕, pasek pozostałego czasu, reszta pod „Więcej ▸”
+  (przeciwnik i koszt odmowy meczu, odmowa turnieju, odpowiedzi drużyny przy gotowości); zaproszenia różnych rodzajów
+  czekają jedno po drugim, a nowsze tego samego rodzaju zastępuje starsze. **Karty** (lepszy przedmiot z „Załóż”,
+  wynik walki, nagroda bossa, legendarny łup; pytanie UI 1): tytuł i jedna linia z „Szczegóły” i ✕, jedna naraz, na PC
+  w prawym dolnym rogu nad paskiem EXP (`HudZones.cardSlot`), na tablecie pod toastami; „Szczegóły” otwiera pełny
+  widok (tabela walki, karta nagrody, odsłonięcie legendy) nad przyciemnionym ekranem, zamykany dotknięciem obok.
+  Kwestia NPC na PC stoi przy lewej krawędzi pod ramkami drużyny (`HudZones.barkSlot`), na tablecie w pasie jak toast;
+  karta i kwestia NPC czekają, gdy okno albo karta samouczka zasłania ich miejsce. **Telefon**: strefa M pod ramką
+  celu pokazuje jeden komunikat naraz (alarm, baner, toast albo kwestia NPC) oraz jedną kartę albo zaproszenie w
+  linii HUD; „Szczegóły” otwiera arkusz na cały ekran. **Pasek bossa lochu** stoi w paśmie celu (`TopBand.bossBar`),
+  na telefonie min(720, szerokość − 16) pod rzędem celu, a strefa M zaczyna się pod nim. Opis pasa u góry w akapicie
+  HUD to stan sprzed pakietu B.
 - **Tabliczki potworów i NPC (S136)**: ten sam styl co tabliczki graczy (płytka żelaza, nazwa z obrysem, poziom `Small` na
   ciemnej plakietce w kolorze pasma); kolory rodzajów (`UiPalette.plate`: zwykły, Elita, Elita II, boss), liczebności
   grup (`group`) i znaków questów (`mark`) mają parę kontrastu; co pokazać decyduje `Logic/Nameplate` (`monster`, `npc`).
