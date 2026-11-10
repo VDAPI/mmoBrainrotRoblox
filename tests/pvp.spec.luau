@@ -52,7 +52,8 @@ T.describe("PvpRules.hostile: the client's enemy test (review 2026-11-10)", func
 		party: boolean?,
 		guild: boolean?,
 		protection: boolean?,
-		arena: boolean?,
+		myDuel: string?,
+		duel: string?,
 		mySide: number?,
 		side: number?,
 	}
@@ -64,7 +65,8 @@ T.describe("PvpRules.hostile: the client's enemy test (review 2026-11-10)", func
 			sameParty = c.party,
 			sameGuild = c.guild,
 			guildProtection = c.protection,
-			inArena = c.arena,
+			myDuel = c.myDuel,
+			duel = c.duel,
 			mySide = c.mySide,
 			side = c.side,
 		})
@@ -91,11 +93,26 @@ T.describe("PvpRules.hostile: the client's enemy test (review 2026-11-10)", func
 		-- a zone not known yet is green, as on the server
 		T.expect(hostile({ zone = nil, pvp = true, mine = true })).toBe(false)
 	end)
-	T.it("a duel on the arena sand is fought whatever party or guild (the server's duel rule comes first)", function()
-		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, party = true, arena = true })).toBe(true)
-		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, guild = true, arena = true })).toBe(true)
+	-- the arena sand is a yellow zone where everyone counts as PvP on (PvpService.InArena): zone "yellow", both flags on
+	T.it("our duel is fought whatever party or guild (the server's duel rule comes first)", function()
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, party = true, myDuel = "d3", duel = "d3" }))
+			.toBe(true)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, guild = true, myDuel = "d3", duel = "d3" }))
+			.toBe(true)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, myDuel = "d3", duel = "d3" })).toBe(true)
+	end)
+	T.it("nobody else touches a duelist, and a duelist touches nobody else", function()
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, duel = "d3" })).toBe(false)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, myDuel = "d3" })).toBe(false)
+		T.expect(hostile({ zone = "red", duel = "d3" })).toBe(false)
+	end)
+	T.it("on an idle sand party and guild still protect, a stranger may be hit (review 2026-11-10)", function()
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, party = true })).toBe(false)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, guild = true })).toBe(false)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, guild = true, protection = false })).toBe(true)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true })).toBe(true)
 		-- someone off the sand, in the green city around it
-		T.expect(hostile({ zone = "green", pvp = false, mine = true, arena = true })).toBe(false)
+		T.expect(hostile({ zone = "green", pvp = false, mine = true })).toBe(false)
 	end)
 	T.it("in an arena match only the other side, whatever party, guild or flags", function()
 		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, party = true, mySide = 1, side = 2 })).toBe(true)

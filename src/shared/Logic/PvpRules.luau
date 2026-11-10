@@ -45,7 +45,7 @@ end
 
 -- What the client sees of another player (review 2026-11-10: the client's enemy test, TargetController.IsEnemy, said
 -- "PvP on or a red zone" and so counted party and guild members as enemies). Read from the model's attributes
--- (PvpZone, PvpEnabled, GuildTag) and our own state (party, guild, zone, arenaLive).
+-- (PvpZone, PvpEnabled, GuildTag, DuelId) and our own state (party, guild, arenaLive) and model (PvpEnabled, DuelId).
 export type Seen = {
 	zone: string?, -- their PvpZone attribute (nil: not known yet, green as on the server)
 	pvpEnabled: boolean, -- their PvpEnabled attribute (the toggle, or standing on an arena sand)
@@ -53,25 +53,30 @@ export type Seen = {
 	sameParty: boolean?,
 	sameGuild: boolean?,
 	guildProtection: boolean?, -- our guild's setting (defaults to true)
-	inArena: boolean?, -- we stand on an arena sand (PvpService.InArena)
+	myDuel: string?, -- our DuelId attribute (DuelService: both duelists carry the same one while their duel runs)
+	duel: string?, -- their DuelId attribute
 	mySide: number?, -- our side in an arena match we fight in (nil: none)
 	side: number?, -- their side in that match (nil or 0: not a fighter of it)
 }
 
 -- Whether we may attack the player we see, as PvpService.CanAttack decides it: its fight rules first, as far as the
--- client sees them (an arena match we fight in: only the other side; a duel: on the arena sand neither party nor guild
--- protects), then canAttack with the same context (the target's zone, both PvP flags, party, guild and our guild's
--- protection).
+-- client sees them (an arena match we fight in: only the other side; a duel: the two duelists, whatever party or
+-- guild, and nobody else may touch them), then canAttack with the same context (the target's zone, both PvP flags,
+-- party, guild and our guild's protection). Review 2026-11-10: standing on an arena sand lifts no protection, only our
+-- own duel does (the duel rule says nothing about anyone else, so the server protects a party member on an idle sand).
 function PvpRules.hostile(seen: Seen): boolean
 	if seen.mySide ~= nil then
 		return seen.side ~= nil and seen.side ~= 0 and seen.side ~= seen.mySide
 	end
+	if seen.myDuel ~= nil or seen.duel ~= nil then
+		-- the duel rule: the pair fights (blows land once the countdown ends), "deny" when only one of us duels
+		return seen.myDuel == seen.duel
+	end
 	local zone: Zone = if seen.zone == "yellow" then "yellow" elseif seen.zone == "red" then "red" else "green"
-	local guarded = seen.inArena ~= true
 	local allowed = PvpRules.canAttack({ pvpEnabled = seen.myPvp }, { pvpEnabled = seen.pvpEnabled }, {
 		zone = zone,
-		sameParty = guarded and seen.sameParty == true,
-		sameGuild = guarded and seen.sameGuild == true,
+		sameParty = seen.sameParty == true,
+		sameGuild = seen.sameGuild == true,
 		guildProtection = seen.guildProtection,
 	})
 	return allowed

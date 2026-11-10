@@ -23,7 +23,7 @@
 -- or the mobile attack button is the player taking over (the `manual` callback stops the hunt first).
 -- Review 2026-11-10: another player is an enemy (hover, engage on click, IsEnemy for tapped skills) only when
 -- PvpService.CanAttack would let us hit them (Logic/PvpRules.hostile): party members and guild members under the
--- guild's protection never are, whatever PvP flag or zone they show.
+-- guild's protection never are outside our own duel (DuelId) or arena match, whatever PvP flag or zone they show.
 
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
@@ -64,7 +64,6 @@ local HOLD_PICK_RANGE = 30 -- studs from the character for "hold LMB" picks
 local APPROACH_INTERVAL = 0.1
 local FACE_SPEED = 14 -- turn rate toward the target while standing (higher = snappier)
 local MANUAL_GRACE = 1.5 -- seconds after manual movement without auto retarget / facing
-local ARENA_ZONE = "zone.arena" -- the sand of an arena (PvpService.InArena): duels and matches
 
 local player = Players.LocalPlayer
 local highlight: Highlight
@@ -138,26 +137,32 @@ local function matchSides(name: any): (number?, number)
 	return match.side, 0
 end
 
+-- A string attribute of a model (nil when missing or of another type).
+local function stringAttribute(model: Model?, name: string): string?
+	local value = if model then model:GetAttribute(name) else nil
+	return if type(value) == "string" then value else nil
+end
+
 -- Review 2026-11-10: another player as PvpRules.hostile reads them, from the same facts PvpService.CanAttack uses on
--- the server: the attributes it puts on every character (PvpZone, PvpEnabled, GuildTag: guild tags are unique) and our
--- own state (party roster, guild tag and its protection setting, zone, arena match).
+-- the server: the attributes the server puts on every character (PvpZone, PvpEnabled, GuildTag: guild tags are unique;
+-- DuelId on both duelists while a duel runs) and our own state (party roster, guild tag and its protection setting,
+-- arena match).
 local function seen(model: Model): PvpRules.Seen
 	local other = Players:GetPlayerFromCharacter(model)
 	local mine = player.Character
 	local guild = State.Get({ "guild" })
 	local myTag = if type(guild) == "table" then guild.tag else nil
 	local settings = if type(guild) == "table" then guild.settings else nil
-	local zone = State.Get({ "zone" })
-	local theirZone = model:GetAttribute("PvpZone")
 	local mySide, side = matchSides(model:GetAttribute("CharName"))
 	return {
-		zone = if type(theirZone) == "string" then theirZone else nil,
+		zone = stringAttribute(model, "PvpZone"),
 		pvpEnabled = model:GetAttribute("PvpEnabled") == true,
 		myPvp = mine ~= nil and mine:GetAttribute("PvpEnabled") == true,
 		sameParty = other ~= nil and inParty(other.UserId),
 		sameGuild = type(myTag) == "string" and model:GetAttribute("GuildTag") == myTag,
 		guildProtection = not (type(settings) == "table" and settings.guildPvpProtection == false),
-		inArena = type(zone) == "table" and zone.nameKey == ARENA_ZONE,
+		myDuel = stringAttribute(mine, "DuelId"),
+		duel = stringAttribute(model, "DuelId"),
 		mySide = mySide,
 		side = side,
 	}

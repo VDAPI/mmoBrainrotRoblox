@@ -795,8 +795,8 @@ nim `docs/DECYZJE.md`. Liczby stroją sesje balansu (S146, S147).
   wstrząs kamery przy dużych (opcja „Wstrząsy kamery”), złoty błysk krytyka.
 - **Rzucanie i celowanie (właściciel 2026-11-10, `Logic/SkillAim`).** Umiejętność na wroga leci w cel, a bez celu w
   najbliższego wroga w zasięgu (zostaje celem; gdy zaznaczony jest sojusznik, umiejętność leci w najbliższego wroga, a
-  sojusznik zostaje zaznaczony). Członek drużyny ani gildii (z włączoną ochroną) nie jest wrogiem (§3.3; na arenie
-  decyduje pojedynek albo mecz). Tak samo celuje sama krótko wciśnięta (krócej niż 0,2 s,
+  sojusznik zostaje zaznaczony). Członek drużyny ani gildii (z włączoną ochroną) nie jest wrogiem (§3.3; ochronę zdejmuje
+  tylko własny pojedynek albo mecz areny, nie sam piasek). Tak samo celuje sama krótko wciśnięta (krócej niż 0,2 s,
   `Config.Skills.holdToAim`) albo dotknięta umiejętność obszarowa: okrąg w punkcie i pułapka na punkt lądują na celu (w
   zasięgu), stożek i linia obracają się w jego stronę; bez wroga w zasięgu lecą przed postać. Okrąg wokół siebie,
   pułapka pod nogami i wzmocnienia bez zmian. Sanktuarium staje pod zaznaczonym sojusznikiem albo pod nami, sztandar na
