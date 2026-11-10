@@ -186,9 +186,13 @@
   `UiWindows.SCREENS`; kolory tylko z ról `Theme.Paper` / `Theme.Iron` / `Theme.Brass` (wartości `Data/UiPalette`, para w
   `PAIRS`; `Theme.Colors` nie istnieje), kolor z danych jako tekst przez `Theme.readable`, jako grafika przez
   `Theme.tint`; HUD na żelazie (`Theme.HudAlpha`); test `uitheme.spec` (ścisły: bez literałów koloru i `TextSize`).
-- **Krótki opis + (i)** (2026-10-21, właściciel: „za dużo szczegółowych opisów, gra nieczytelna”): w oknie widać jedną
-  krótką linię (do ~80 znaków, bez pauz), a długi tekst (zasady, wzory, źródła, fabuła, porównania) idzie pod nowy klucz
-  `<x>.info` (PL i EN; nic nie znika, tylko się chowa) i jest dostępny na jeden z trzech sposobów:
+- **Krótki opis + (i)** (2026-10-21, właściciel: „za dużo szczegółowych opisów, gra nieczytelna”; od 2026-11-10 według
+  `docs/UI-ZASADY.md`): nowy tekst ma swoją powierzchnię i mieści się w jej limicie (§2, np. linia w oknie i `.short`
+  60, toast 60, przycisk 18, (i) 240; po wstawieniu przykładowych wartości, pl i en; liczy `Logic/TextCaps`, pilnuje
+  `tests/textcaps.spec`), nowa zwijana część okna ma id w `Data/Folds` (przepis „Zwijana sekcja”), a nowy element HUD
+  ma miejsce w `Logic/HudZones` (PC, tablet) albo `Logic/PhoneHud` (telefon), bez nowych pikseli w `Screens/Hud`.
+  W oknie widać jedną krótką linię (bez pauz), a długi tekst (zasady, wzory, źródła, fabuła, porównania) idzie pod nowy
+  klucz `<x>.info` (PL i EN; nic nie znika, tylko się chowa) i jest dostępny na jeden z trzech sposobów:
   `InfoTip.new(scope, { Text, Title?, Surface = "paper" | "iron", Size?, LayoutOrder?, Position?, AnchorPoint?,
   Visible? })` (`UI/Components/InfoTip`: okrągłe „i” obok linii; PC: wskazanie pokazuje dymek, klik go przypina;
   telefon: dotknięcie przełącza, cel dotyku ≥ `Theme.Size.MinTouch`; klik / dotyk obok zamyka; dymek w warstwie Tooltip,
@@ -208,15 +212,20 @@
   wąskiej karcie i na telefonie). „i” nie budować w `Computed` przebudowywanym co sekundę (zegar areny, karta mapy):
   sprzątnięcie zakresu zamyka dymek; „i” w stałym miejscu (tytuł karty), a tekst dymku jako stan.
   Okno potwierdzenia (`Modal.Spec`): krótkie `Message` (1–2 zdania) i `Details` = dłuższy tekst pod „Więcej ▸”
-  (zwinięte, wspólne `Details`); powitanie NPC skrócone do pierwszego zdania: reszta w `npc.<id>.greeting.info`
-  („i” w oknie rozmowy, `NpcDialog`).
+  (zwinięte, wspólne `Details`); powitanie NPC skrócone do pierwszego zdania (najwyżej 60 znaków): reszta w
+  `npc.<id>.greeting.info` („i” w oknie rozmowy, `NpcDialog`).
 - **Zwijana sekcja** (2026-11-10, właściciel: „nie da się zwinąć”): część okna z własnym tytułem to
   `Section.new(scope, { Id, Title, Summary?, Accent?, Info?, Children? | Build?, Surface?, Padding?, LayoutOrder?,
   Visible? })` (`UI/Components/Section`): nagłówek „▾ Tytuł” (otwarta) / „▸ Tytuł” i jedna krótka linia `Summary`
   (zwinięta; `Accent` = plakietka, gdy coś czeka), cały nagłówek jest przyciskiem (na dotyku ≥ `Theme.Size.MinTouch`),
   „i” obok tytułu (`Info`) nie zwija. Stan na koncie (`account.settings.sections`, `SetSetting "sections"`): nowe `Id`
-  najpierw w `Logic/SectionFold.DEFAULTS` z domyślnym stanem (serwer przyjmuje tylko znane), test `tests/sectionfold.spec`.
-  `Details` („Więcej ▸”) zostaje dla dłuższego tekstu pod krótką linią.
+  najpierw w pliku swojego obszaru `Data/Folds/<obszar>.luau` (`Hud`, `Gear`, `World`, `Menu`) z domyślnym stanem
+  `true` / `false` albo `{ pc = …, phone = … }` (2026-11-10; `phone` = układ telefonu, `PhoneLayout.Compact`, tablet
+  jak PC). Id jest jedno w całym `Data/Folds` (powtórzone: błąd przy wczytaniu, `Logic/SectionFold.merge`), serwer
+  przyjmuje tylko znane, test `tests/sectionfold.spec` (sprawdza też każde id z `Section.new` / `Section.state` w
+  kliencie). Nagłówek, który nie jest `Section` (linia panelu HUD, grupa ustawień), bierze ten sam stan, domyślny
+  stan urządzenia i zapis z `Section.state(scope, id)` (zwraca stan i funkcję `set(open)`). Co zwijać domyślnie:
+  `docs/UI-ZASADY.md` §4. `Details` („Więcej ▸”) zostaje dla dłuższego tekstu pod krótką linią.
 - **Walka z podsumowaniem** (S134f): `FightLogService.Begin/End` + `Logic/FightStats`; nowe źródło liczb przez sygnał, nie kopię.
 - **Wiązka / kanał z tykami** (S80): typ `beam` (`Offense.beam` → `services.Beam`), koniec tylko przez `closeChannel` i
   `Logic/Channel.stops`; stosy z licznikiem przez `StatusEffectService.Stacks` / `UseStack` i `ApplyOptions.stacks` (S76).
