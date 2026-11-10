@@ -15311,6 +15311,17 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   miejsce na obrys, jedna zasłona, rozmiar banera). Nieobejrzane w Studio.
 - Po scaleniu z pakietem A: `TopBand.phoneZone` liczy M z miejsc `PhoneHud` tak samo jak `PhoneHud.mZone` pakietu A,
   więc po scaleniu powinien go czytać (na 667×375 M ma wtedy 286 szerokości).
+- Scalenie z `main` po pakietach C, E i D (2026-11-10): w lokalizacji konflikt był tylko tam, gdzie pakiety zmieniały
+  sąsiednie klucze, a każdy klucz wziął stronę pakietu, który go zmienił (B: `mount.got`, `contract.mailed`,
+  `leaderboard.week.won`, `skills.toast.unlocked`, `shop.error.locked`, `autoGrind.on`, `premium.pack.duplicate`,
+  `worldboss.rewardCard.share.short`; C: `rework2.title`, `rework2.body`; E: `keys.mount`, `contract.available`; D:
+  `shop.sellMarked`, `shop.sellHint`, `autoGrind.desc`, `premium.pack.passOwned`, `wardrobe.hint.short`);
+  `leaderboard.week.bracket` zniknęło razem z rankingami pakietu E. Końce `DECYZJE`, `SESJE`, `JAK-DODAC` i
+  `PROGRESS` mają wpisy obu stron (najpierw pakiety, które weszły wcześniej). Pakiet C dał oknu na telefonie pasek
+  tytułu 44, więc `HudCover.HeaderBottom` liczy tam 44; komunikaty pasa mierzą okna same (`HudCover.Rects` w
+  `UI/Notify`) i już liczyły 44. Linia `HudCover.SetModal` w `WindowManager` przetrwała scalenie, a nowy
+  `Components/Modal` dalej ma ramkę `Dialog`, którą mierzy `HudCover.Modals`. Bramka zielona: 10308 testów,
+  `wikidump --check` aktualny.
 - **Pliki:** `Logic/TopBand`, `Logic/NoticeQueue`, `UI/Notify`, `UI/HudCover`,
   `UI/Components/Prompt|Toast|Announcement`, `Screens/ArenaOffer|ReadyCheck|LegendReveal`,
   `Screens/Hud/AchievementToast|BarkToast|ZoneBanner`, `Controllers/Dungeon|Loot|LootComfortController`,
