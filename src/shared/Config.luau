@@ -635,6 +635,11 @@ local Config = {
 		-- Owner 2026-11-10 (Logic/SkillAim): seconds a skill key stays down before it aims by hand (the preview at the
 		-- cursor); a shorter tap aims at the enemy we fight by itself.
 		holdToAim = 0.2,
+		-- Review 2026-11-10 (Logic/SkillAim.escapeReach): studs past the jump's own length (15, 20 with 5B) within
+		-- which the body of an enemy that is not selected sends a tapped Blink straight away from it, so the jump
+		-- straight ahead lands at least this clear of every body (the owner's rule of 2026-10-31: never into the
+		-- monster).
+		escapeMargin = 4,
 		-- studs a channel / beam / aim may drift from where it started (SkillService, Logic/Channel)
 		channelMoveLimit = 2.5,
 	},

@@ -794,15 +794,18 @@ nim `docs/DECYZJE.md`. Liczby stroją sesje balansu (S146, S147).
   Obrażenia lądują w chwili trafienia w animacji (najwyżej 0,6 s po rzuceniu); hitstop, odrzut przy części umiejętności,
   wstrząs kamery przy dużych (opcja „Wstrząsy kamery”), złoty błysk krytyka.
 - **Rzucanie i celowanie (właściciel 2026-11-10, `Logic/SkillAim`).** Umiejętność na wroga leci w cel, a bez celu w
-  najbliższego wroga w zasięgu (zostaje celem). Tak samo celuje sama krótko wciśnięta (krócej niż 0,2 s,
-  `Config.Skills.holdToAim`) albo dotknięta umiejętność obszarowa: okrąg w punkcie i pułapka na punkt lądują na celu (w
-  zasięgu), stożek i linia obracają się w jego stronę; bez wroga w zasięgu lecą przed postać. Okrąg wokół siebie,
-  pułapka pod nogami i wzmocnienia bez zmian. Sanktuarium staje pod zaznaczonym sojusznikiem albo pod nami, sztandar na
-  celu albo pod nami, Błysk (ucieczka) tam, dokąd idziemy (stojąc: przed siebie), nigdy w potwora. Przytrzymanie
-  klawisza dłużej pokazuje obszar (Błysk: skok) pod kursorem, a puszczenie rzuca tam; na telefonie to samo daje
-  przeciągnięcie przycisku. Postać obraca się w stronę, w którą leci umiejętność. Opcja „Rzucanie na kursor” (PC) rzuca
-  od razu po wciśnięciu w stronę kursora, jak dawniej. Jedna umiejętność może czekać w kolejce 0,4 s przed końcem
-  odnowienia.
+  najbliższego wroga w zasięgu (zostaje celem; gdy zaznaczony jest sojusznik, umiejętność leci w najbliższego wroga, a
+  sojusznik zostaje zaznaczony). Członek drużyny ani gildii (z włączoną ochroną) nie jest wrogiem (§3.3; ochronę
+  zdejmuje tylko własny pojedynek albo mecz areny, nie sam piasek). Tak samo celuje sama krótko wciśnięta (krócej niż
+  0,2 s, `Config.Skills.holdToAim`) albo dotknięta umiejętność obszarowa: okrąg w punkcie i pułapka na punkt lądują na
+  celu (w zasięgu), stożek i linia obracają się w jego stronę; bez wroga w zasięgu lecą przed postać. Okrąg wokół
+  siebie, pułapka pod nogami i wzmocnienia bez zmian. Sanktuarium staje pod zaznaczonym sojusznikiem albo pod nami,
+  sztandar na celu albo pod nami, Błysk (ucieczka) tam, dokąd prowadzimy postać klawiszami albo joystickiem, a bez tego
+  prosto od zaznaczonego wroga albo najbliższego, którego ciało jest bliżej niż skok i 4 st. (bez wroga przed siebie),
+  nigdy w potwora. Przytrzymanie klawisza dłużej pokazuje obszar (Błysk: skok) pod kursorem, a puszczenie rzuca tam; na
+  telefonie to samo daje przeciągnięcie przycisku. Postać obraca się w stronę, w którą leci umiejętność. Opcja „Rzucanie
+  na kursor” (PC) rzuca od razu po wciśnięciu w stronę kursora, jak dawniej. Jedna umiejętność może czekać w kolejce
+  0,4 s przed końcem odnowienia.
 - **Drużyna i szczęście.** Wzmocnienia i osłabienia mają kategorie: w kategorii liczy się najsilniejsze, kategorie się
   sumują, redukcja obrażeń łączy się mnożnikowo z limitem 75% (ROZWOJ §7). Szczęście drużyny daje Kapłan Fortuny
   (ROZWOJ §6). Premia za różne klasy w drużynie: +5% doświadczenia za każdą inną klasę, najwyżej +15%.
@@ -1776,7 +1779,7 @@ Napisy złożone (nazwa obszaru z profilem, linia profilu gracza, czat) zostają
 - Kamera (swobodna i „z góry”) nigdy nie stoi w ścianie ani za dachem: wsuwa się przed kolidującą geometrię mapy, także
   przed niewidzialną kolizję modeli zestawu (przegląd Studio 2026-10-31). Po wejściu do świata postać patrzy w stronę z
   czystym widokiem (na spawnie stolicy przez fontannę), kamera stoi za jej plecami.
-- **LPM / tap na wroga = cel i atak** już przy wciśnięciu (nie przy puszczeniu); wróg ma pierwszeństwo przed graczem pod kursorem. Każde kliknięcie wroga wznawia auto-atak, także gdy był już celem. Gdy atak jest niemożliwy (strefa bezpieczna, za daleko, ogłuszenie), krótki komunikat. Przytrzymanie LPM = po śmierci celu następny wróg przy kursorze. Opcja „automatyczny cel”: po zabiciu cel przechodzi na potwora, który nas atakuje (nie w ciągu 1.5 s po ręcznym ruchu); S134d: stojąca postać bez ataku sama bierze najbliższego bijącego ją potwora i oddaje mu **w miejscu, bez gonienia** (odwet; tylko potwory, nigdy PvP; ruch, kliknięcie, Tab albo umiejętność oddają sterowanie). Tab = następny najbliższy cel. **Q (zmienialne) lub klik w pustą ziemię = brak celu.**
+- **LPM / tap na wroga = cel i atak** już przy wciśnięciu (nie przy puszczeniu); wróg ma pierwszeństwo przed graczem pod kursorem, ale klik prosto w członka drużyny, gildii albo naszej strony meczu zaznacza go bez ataku (przegląd 2026-11-10). Każde kliknięcie wroga wznawia auto-atak, także gdy był już celem. Gdy atak jest niemożliwy (strefa bezpieczna, za daleko, ogłuszenie), krótki komunikat. Przytrzymanie LPM = po śmierci celu następny wróg przy kursorze. Opcja „automatyczny cel”: po zabiciu cel przechodzi na potwora, który nas atakuje (nie w ciągu 1.5 s po ręcznym ruchu); S134d: stojąca postać bez ataku sama bierze najbliższego bijącego ją potwora i oddaje mu **w miejscu, bez gonienia** (odwet; tylko potwory, nigdy PvP; ruch, kliknięcie, Tab albo umiejętność oddają sterowanie). Tab = następny najbliższy cel. **Q (zmienialne) lub klik w pustą ziemię = brak celu.**
 - Atak podstawowy: automatyczny, gdy cel wybrany i w zasięgu (wręcz 7 st., dystans 35 st.); jeśli poza zasięgiem, postać idzie do celu i go śledzi (MoveTo), stojąc przy celu obraca się do niego. **Ruch WASD/joystickiem przerywa podchodzenie i auto-atak** (cel zostaje zaznaczony, ale nie jest atakowany, dopóki gracz znów go nie kliknie albo nie użyje umiejętności), więc da się uciec.
 - **Sprint: przytrzymanie Ctrl** (zmienialne; na telefonie przycisk przełączający) = szybkość ruchu ×1.35. Bez kosztu; wyłącza się przy śmierci i przy rzucaniu kanałowanych umiejętności.
 - Nad potworami zawsze imię, poziom (kolor wg różnicy poziomów: szary/zielony/biały/żółty/czerwony) i pasek HP, **zawsze na wierzchu** (nie chowają się za modelem ani drzewami), widoczne do 130 st.; nad graczami kropka PvP, tytuł, imię, poziom i klasa oraz pasek HP po obrażeniach.

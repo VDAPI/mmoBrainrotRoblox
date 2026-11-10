@@ -1117,7 +1117,7 @@ return {
 	["skill.iceShard.name"] = "Lodowy Odłamek",
 	["skill.iceShard.desc"] = "Zadaje {dmg}% i spowalnia o {slow}% na {slowDuration} s.",
 	["skill.blink.name"] = "Błysk",
-	["skill.blink.desc"] = "Teleport o {length} st. tam, dokąd idziesz (stojąc: przed siebie). Przytrzymaj, by wybrać kierunek.",
+	["skill.blink.desc"] = "Teleport o {length} st. tam, dokąd idziesz (stojąc: z dala od wroga). Przytrzymaj, by wybrać kierunek.",
 	["skill.fireball.name"] = "Kula Ognia",
 	["skill.fireball.desc"] = "Wybucha za {dmg}% w promieniu {radius} st. od punktu.",
 	["skill.focus.name"] = "Skupienie",

@@ -1117,7 +1117,7 @@ return {
 	["skill.iceShard.name"] = "Ice Shard",
 	["skill.iceShard.desc"] = "Deals {dmg}% and slows by {slow}% for {slowDuration} s.",
 	["skill.blink.name"] = "Blink",
-	["skill.blink.desc"] = "Teleport {length} studs the way you are moving (standing: straight ahead). Hold to pick the direction.",
+	["skill.blink.desc"] = "Teleport {length} studs the way you are moving (standing: away from the enemy). Hold to pick the direction.",
 	["skill.fireball.name"] = "Fireball",
 	["skill.fireball.desc"] = "Explodes for {dmg}% within {radius} studs of the point.",
 	["skill.focus.name"] = "Focus",

@@ -7,6 +7,9 @@
 -- on the server and counted in the characters' PvP statistics.
 -- S126: the sand is shared with ranked matches (Arena/Sand: one FIFO line in the order of the requests); a player in a
 -- ranked match or with a match offer cannot duel (ArenaService, taken lazily: it depends on this service).
+-- Review 2026-11-10: while a duel runs (the countdown too) both duelists' character models carry the same DuelId
+-- attribute, so every client knows the pair the duel rule lets fight whatever party or guild (Logic/PvpRules.hostile:
+-- duelists are enemies to each other and to nobody else; party and guild protect everyone else, on the sand too).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -120,6 +123,14 @@ local function onArena(player: Player): boolean
 	return zone ~= nil and zone.nameKey == "zone.arena"
 end
 
+-- Review 2026-11-10: the duel's id on the duelist's character model (nil clears it), read by the clients.
+local function mark(player: Player, id: string?)
+	local model = player.Character
+	if model then
+		model:SetAttribute("DuelId", id)
+	end
+end
+
 local function both(duel: Duel, key: string, args: { [string]: any }?)
 	for _, player in { duel.a, duel.b } do
 		if player.Parent then
@@ -144,6 +155,9 @@ local function finish(duel: Duel, winner: Player?, reason: string)
 		return
 	end
 	duel.phase = "done"
+	-- the duel rule stops deciding at once (phase "done"), so the clients drop the pair now, not after the restore
+	mark(duel.a, nil)
+	mark(duel.b, nil)
 	local loser = if winner == duel.a then duel.b elseif winner == duel.b then duel.a else nil
 	for _, fighter in { duel.a, duel.b } do
 		if fighter.Parent then
@@ -172,6 +186,9 @@ end
 local function start(a: Player, b: Player, sand: string)
 	local duel: Duel = { a = a, b = b, phase = "countdown", startedAt = os.clock(), sand = sand }
 	current = duel
+	-- from the countdown on, as the duel rule: nobody else may hit them (the sand id is unique per duel)
+	mark(a, sand)
+	mark(b, sand)
 	restore(a)
 	restore(b)
 	local map = Maps.get(ARENA.map)
@@ -401,6 +418,13 @@ function DuelService.Start()
 	Net.Handle("DuelRespond", respond)
 	CharacterService.CharacterLeaving:Connect(function(player: Player)
 		invites[player] = nil
+	end)
+	-- review 2026-11-10: a model built anew during the duel (a new look) carries its id again
+	CharacterService.ModelSpawned:Connect(function(player: Player)
+		local duel = current
+		if duel and inDuel(player) then
+			mark(player, duel.sand)
+		end
 	end)
 	Players.PlayerRemoving:Connect(function(player)
 		invites[player] = nil

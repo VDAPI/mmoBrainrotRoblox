@@ -21,6 +21,11 @@
 -- S134d Auto Hunt: while the server picks the targets (SetServerDriven) the client shows its target
 -- (ShowServerTarget) and sends nothing by itself (no retarget, no fight back, no clear on death); a click, Tab, a skill
 -- or the mobile attack button is the player taking over (the `manual` callback stops the hunt first).
+-- Review 2026-11-10: another player is an enemy (hover, engage on click, IsEnemy for tapped skills) only when
+-- PvpService.CanAttack would let us hit them (Logic/PvpRules.hostile): party members and guild members under the
+-- guild's protection never are outside our own duel (DuelId) or arena match, whatever PvP flag or zone they show. A
+-- click or tap straight on such a teammate (or a fighter of our side in a match) selects them without attacking, even
+-- with an enemy drawn right next to them (the tank in front of the boss), and the hover outline shows that pick.
 
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
@@ -37,6 +42,7 @@ local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
 local MonsterBox = require(script.Parent.Parent.Util.MonsterBox)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PvpRules = require(ReplicatedStorage.Shared.Logic.PvpRules)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -104,13 +110,74 @@ local function overCap(model: Model): number?
 	return if LevelLock.over(level, cap) then cap else nil
 end
 
--- Monsters always (S22: also those going home, they can be hit and turn back); other players only while they
--- are open to attacks (PvP on or a red zone).
+-- Whether `userId` is in our party (state branch `party`, PartyService).
+local function inParty(userId: number): boolean
+	local party = State.Get({ "party" })
+	if type(party) ~= "table" or type(party.members) ~= "table" then
+		return false
+	end
+	for _, member in party.members do
+		if type(member) == "table" and member.id == userId then
+			return true
+		end
+	end
+	return false
+end
+
+-- Our side in an arena match we fight in and the side of the fighter named `name` (state arenaLive.match: the names
+-- of each side; character names are unique). nil: we fight in no match; 0: `name` is not a fighter of it.
+local function matchSides(name: any): (number?, number)
+	local live = State.Get({ "arenaLive" })
+	local match = if type(live) == "table" then live.match else nil
+	if type(match) ~= "table" or type(match.side) ~= "number" or match.side <= 0 or type(match.names) ~= "table" then
+		return nil, 0
+	end
+	for side, names in match.names do
+		if type(side) == "number" and type(names) == "table" and table.find(names, name) ~= nil then
+			return match.side, side
+		end
+	end
+	return match.side, 0
+end
+
+-- A string attribute of a model (nil when missing or of another type).
+local function stringAttribute(model: Model?, name: string): string?
+	local value = if model then model:GetAttribute(name) else nil
+	return if type(value) == "string" then value else nil
+end
+
+-- Review 2026-11-10: another player as PvpRules.hostile reads them, from the same facts PvpService.CanAttack uses on
+-- the server: the attributes the server puts on every character (PvpZone, PvpEnabled, GuildTag: guild tags are unique;
+-- DuelId on both duelists while a duel runs) and our own state (party roster, guild tag and its protection setting,
+-- arena match).
+local function seen(model: Model): PvpRules.Seen
+	local other = Players:GetPlayerFromCharacter(model)
+	local mine = player.Character
+	local guild = State.Get({ "guild" })
+	local myTag = if type(guild) == "table" then guild.tag else nil
+	local settings = if type(guild) == "table" then guild.settings else nil
+	local mySide, side = matchSides(model:GetAttribute("CharName"))
+	return {
+		zone = stringAttribute(model, "PvpZone"),
+		pvpEnabled = model:GetAttribute("PvpEnabled") == true,
+		myPvp = mine ~= nil and mine:GetAttribute("PvpEnabled") == true,
+		sameParty = other ~= nil and inParty(other.UserId),
+		sameGuild = type(myTag) == "string" and model:GetAttribute("GuildTag") == myTag,
+		guildProtection = not (type(settings) == "table" and settings.guildPvpProtection == false),
+		myDuel = stringAttribute(mine, "DuelId"),
+		duel = stringAttribute(model, "DuelId"),
+		mySide = mySide,
+		side = side,
+	}
+end
+
+-- Monsters always (S22: also those going home, they can be hit and turn back); other players only when the server
+-- would let us hit them (review 2026-11-10: never a party member or a protected guild member).
 local function isHostile(model: Model): boolean
 	if isMonster(model) then
 		return true
 	end
-	return model:GetAttribute("PvpEnabled") == true or model:GetAttribute("PvpZone") == "red"
+	return PvpRules.hostile(seen(model))
 end
 
 -- Owner 2026-11-10: a living model we may fight (SkillController aims a tapped skill at it).
@@ -331,6 +398,31 @@ function TargetController.FindNearest(range: number, includePlayers: boolean, in
 	return best
 end
 
+-- Review 2026-11-10: the living enemy, a monster or a player we may attack, whose body's edge is nearest on the ground
+-- and within `range` studs, by distance alone (a tapped Blink jumps away from it; a monster over the level cap still
+-- hits us), and its body radius. The edge, not the centre: a big boss's body reaches far nearer than its centre.
+function TargetController.NearestEnemy(range: number): (Model?, number)
+	local root = myRoot()
+	if not root then
+		return nil, 0
+	end
+	local best: Model? = nil
+	local bestRadius = 0
+	local bestEdge = range
+	for _, model in candidates(true) do
+		if isAlive(model) and isHostile(model) then
+			local radius = radiusOf(model)
+			local edge = flatOffset(root.Position, model:GetPivot().Position).Magnitude - radius
+			if edge <= bestEdge then
+				best = model
+				bestRadius = radius
+				bestEdge = edge
+			end
+		end
+	end
+	return best, bestRadius
+end
+
 -- Nearest monster that is currently fighting us (AggroUserId), for auto target after a kill.
 local function nearestAttacker(range: number): Model?
 	local root = myRoot()
@@ -351,9 +443,8 @@ local function nearestAttacker(range: number): Model?
 	return best
 end
 
--- Enemy at a viewport position (GetMouseLocation coordinates, top bar included): the ray hit first, then
--- the model drawn closest to the point.
-local function enemyAt(screenPosition: Vector2, hostileOnly: boolean): Model?
+-- The living model the ray through a viewport position (GetMouseLocation coordinates, top bar included) hits first.
+local function rayModel(screenPosition: Vector2): Model?
 	local camera = Workspace.CurrentCamera
 	if not camera then
 		return nil
@@ -374,12 +465,17 @@ local function enemyAt(screenPosition: Vector2, hostileOnly: boolean): Model?
 	params.FilterDescendantsInstances = exclude
 	local hit = Workspace:Raycast(ray.Origin, ray.Direction * 500, params)
 	local model = entityModel(hit and hit.Instance)
-	if model and isAlive(model) and (not hostileOnly or isHostile(model)) then
-		return model
-	end
+	return if model and isAlive(model) then model else nil
+end
 
-	-- Forgiving pick: placeholder models are thin, so accept a click near the drawn model. Bigger (and
-	-- closer) models get a bigger click area: half their on-screen height on top of PICK_RADIUS.
+-- Forgiving pick: placeholder models are thin, so accept a click near the drawn model. Bigger (and closer) models get a
+-- bigger click area: half their on-screen height on top of PICK_RADIUS. The model (an enemy with `hostileOnly`) drawn
+-- closest to the viewport position.
+local function drawnNear(screenPosition: Vector2, hostileOnly: boolean): Model?
+	local camera = Workspace.CurrentCamera
+	if not camera then
+		return nil
+	end
 	local best: Model? = nil
 	local bestDistance = math.huge
 	for _, candidate in candidates(true) do
@@ -398,6 +494,38 @@ local function enemyAt(screenPosition: Vector2, hostileOnly: boolean): Model?
 		end
 	end
 	return best
+end
+
+-- Enemy at a viewport position (GetMouseLocation coordinates, top bar included; holding LMB picks the next one): the
+-- ray hit first, then the enemy drawn closest to the point.
+local function enemyAt(screenPosition: Vector2): Model?
+	local model = rayModel(screenPosition)
+	if model and isHostile(model) then
+		return model
+	end
+	return drawnNear(screenPosition, true)
+end
+
+-- Review 2026-11-10: a player we fight beside (Logic/PvpRules.teammate: party, protected guild, our side of an arena
+-- match). They are no enemies, so S16's enemies-first pick passed them over and took the boss they stand in front of.
+local function teammate(model: Model): boolean
+	return not isMonster(model) and Players:GetPlayerFromCharacter(model) ~= nil and PvpRules.teammate(seen(model))
+end
+
+-- What a click or a tap at a viewport position selects: what the ray hits when it is an enemy or a teammate (a healer
+-- clicks the tank on purpose, right in front of the boss), else the enemy drawn nearest the point (S16: enemies win over
+-- other players under the cursor and near misses), else, with `anyone`, whatever living model the ray hits or is drawn
+-- nearest. The hover outline shows the same without that last step.
+local function pickAt(screenPosition: Vector2, anyone: boolean): Model?
+	local hit = rayModel(screenPosition)
+	if hit and (isHostile(hit) or teammate(hit)) then
+		return hit
+	end
+	local enemy = drawnNear(screenPosition, true)
+	if enemy or not anyone then
+		return enemy
+	end
+	return hit or drawnNear(screenPosition, false)
 end
 
 -- Mobile attack button: a second tap while attacking stops; otherwise attack the current target or pick
@@ -421,9 +549,10 @@ function TargetController.AttackNearest()
 	end
 end
 
--- Enemies win over friendly players under the cursor; a click on empty ground clears the target.
+-- Enemies win over other players under the cursor, except a teammate hit straight on (pickAt); a click on empty ground
+-- clears the target.
 local function click(screenPosition: Vector2)
-	local model = enemyAt(screenPosition, true) or enemyAt(screenPosition, false)
+	local model = pickAt(screenPosition, true)
 	if model then
 		manualTakeover()
 		TargetController.SetTarget(model)
@@ -486,7 +615,7 @@ local function retarget()
 	end
 	if holding and not Fusion.peek(Device.Touch) then
 		local mouse = UserInputService:GetMouseLocation()
-		local found = enemyAt(mouse, true)
+		local found = enemyAt(mouse)
 		local root = myRoot()
 		if found and root and (found:GetPivot().Position - root.Position).Magnitude <= HOLD_PICK_RANGE + 20 then
 			TargetController.SetTarget(found, true)
@@ -597,7 +726,8 @@ local function hoverStep()
 		end
 		return
 	end
-	local model = enemyAt(UserInputService:GetMouseLocation(), true)
+	-- what a click here selects (a teammate hit straight on too), short of its fallback to any living model
+	local model = pickAt(UserInputService:GetMouseLocation(), false)
 	if model == Fusion.peek(TargetController.Target) then
 		model = nil
 	end

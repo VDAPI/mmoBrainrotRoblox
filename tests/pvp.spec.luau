@@ -44,6 +44,104 @@ T.describe("PvpRules.canAttack", function()
 	end)
 end)
 
+T.describe("PvpRules.hostile and teammate: the client's view (review 2026-11-10)", function()
+	type Case = {
+		zone: string?,
+		pvp: boolean?,
+		mine: boolean?,
+		party: boolean?,
+		guild: boolean?,
+		protection: boolean?,
+		myDuel: string?,
+		duel: string?,
+		mySide: number?,
+		side: number?,
+	}
+	local function seen(c: Case): PvpRules.Seen
+		return {
+			zone = c.zone,
+			pvpEnabled = c.pvp == true,
+			myPvp = c.mine == true,
+			sameParty = c.party,
+			sameGuild = c.guild,
+			guildProtection = c.protection,
+			myDuel = c.myDuel,
+			duel = c.duel,
+			mySide = c.mySide,
+			side = c.side,
+		}
+	end
+	local function hostile(c: Case): boolean
+		return PvpRules.hostile(seen(c))
+	end
+	local function teammate(c: Case): boolean
+		return PvpRules.teammate(seen(c))
+	end
+
+	T.it("a party member is never an enemy: red zone, Blood Moon, PvP on", function()
+		T.expect(hostile({ zone = "red", party = true })).toBe(false)
+		T.expect(hostile({ zone = "red", pvp = true, mine = true, party = true })).toBe(false)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, party = true })).toBe(false)
+		-- a stranger there is
+		T.expect(hostile({ zone = "red" })).toBe(true)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true })).toBe(true)
+	end)
+	T.it("a guild member only while the guild protects its members", function()
+		T.expect(hostile({ zone = "red", guild = true })).toBe(false)
+		T.expect(hostile({ zone = "red", guild = true, protection = true })).toBe(false)
+		T.expect(hostile({ zone = "red", guild = true, protection = false })).toBe(true)
+	end)
+	T.it("the zone of the target and both flags, as the server counts them", function()
+		-- a yellow zone needs our PvP on too; a green zone never, whatever their flag says
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = false })).toBe(false)
+		T.expect(hostile({ zone = "yellow", pvp = false, mine = true })).toBe(false)
+		T.expect(hostile({ zone = "green", pvp = true, mine = true })).toBe(false)
+		-- a zone not known yet is green, as on the server
+		T.expect(hostile({ zone = nil, pvp = true, mine = true })).toBe(false)
+	end)
+	-- the arena sand is a yellow zone where everyone counts as PvP on (PvpService.InArena): zone "yellow", both flags on
+	T.it("our duel is fought whatever party or guild (the server's duel rule comes first)", function()
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, party = true, myDuel = "d3", duel = "d3" }))
+			.toBe(true)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, guild = true, myDuel = "d3", duel = "d3" }))
+			.toBe(true)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, myDuel = "d3", duel = "d3" })).toBe(true)
+	end)
+	T.it("nobody else touches a duelist, and a duelist touches nobody else", function()
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, duel = "d3" })).toBe(false)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, myDuel = "d3" })).toBe(false)
+		T.expect(hostile({ zone = "red", duel = "d3" })).toBe(false)
+	end)
+	T.it("on an idle sand party and guild still protect, a stranger may be hit (review 2026-11-10)", function()
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, party = true })).toBe(false)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, guild = true })).toBe(false)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, guild = true, protection = false })).toBe(true)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true })).toBe(true)
+		-- someone off the sand, in the green city around it
+		T.expect(hostile({ zone = "green", pvp = false, mine = true })).toBe(false)
+	end)
+	T.it("in an arena match only the other side, whatever party, guild or flags", function()
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, party = true, mySide = 1, side = 2 })).toBe(true)
+		T.expect(hostile({ zone = "yellow", pvp = true, mine = true, mySide = 1, side = 1 })).toBe(false)
+		-- not a fighter of our match (a spectator): nobody we may hit
+		T.expect(hostile({ zone = "red", mySide = 1, side = 0 })).toBe(false)
+		T.expect(hostile({ zone = "red", mySide = 2 })).toBe(false)
+	end)
+	T.it("a click on a teammate's body selects them: party, protected guild, our side of a match", function()
+		-- in a cave next to the boss: not an enemy, but the healer clicked them on purpose
+		T.expect(hostile({ zone = "red", party = true })).toBe(false)
+		T.expect(teammate({ zone = "red", party = true })).toBe(true)
+		T.expect(teammate({ zone = "red", guild = true })).toBe(true)
+		T.expect(teammate({ zone = "red", guild = true, protection = false })).toBe(false)
+		-- a stranger is no teammate (S16: the enemy drawn near the click wins)
+		T.expect(teammate({ zone = "yellow" })).toBe(false)
+		-- an arena match: our side, party or not (teams share no party); not the other side, not a spectator
+		T.expect(teammate({ zone = "yellow", pvp = true, mine = true, mySide = 1, side = 1 })).toBe(true)
+		T.expect(teammate({ zone = "yellow", pvp = true, mine = true, party = true, mySide = 1, side = 2 })).toBe(false)
+		T.expect(teammate({ zone = "red", party = true, mySide = 1, side = 0 })).toBe(false)
+	end)
+end)
+
 T.describe("PvpRules.canToggle", function()
 	T.it("only in yellow zones", function()
 		T.expect((PvpRules.canToggle("green", true, 100, nil, 15))).toBe(false)
