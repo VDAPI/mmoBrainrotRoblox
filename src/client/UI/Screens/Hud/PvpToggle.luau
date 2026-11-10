@@ -4,6 +4,9 @@
 -- shown only in yellow and red zones and while a switch counts down (Logic/PvpRules.toggleShown); the dot on the
 -- portrait tells the state everywhere. UI plan phase 2: a touch screen's only; on PC the dot on the portrait is the
 -- switch (the same request, UI/PvpSwitch).
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): on a phone the toggle is a 52 px round button
+-- (Logic/PhoneHud `pvp`) with the countdown's seconds inside it and no badge under it (the badge reached the M zone
+-- and the open drawer covered it; the drawer now opens left of its button, Hud/init).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -87,7 +90,7 @@ local function PvpToggle(scope: Scope): Instance
 		-- W29: under the menu drawer button left of the minimap on a phone in landscape (Logic/PhoneHud)
 		AnchorPoint = PhoneLayout.Anchor(scope, "pvp", Vector2.new(1, 1)),
 		Position = PhoneLayout.Position(scope, "pvp", UDim2.new(1, -SPOT.right, 1, -SPOT.bottom)),
-		Size = UDim2.fromOffset(SIZE, SIZE),
+		Size = PhoneLayout.Size(scope, "pvp", UDim2.fromOffset(SIZE, SIZE)),
 		-- UI plan phase 2: a touch screen's only (PC clicks the dot on the portrait, Hud/init)
 		Visible = scope:Computed(function(use): boolean
 			local state = use(pvp)
@@ -134,7 +137,26 @@ local function PvpToggle(scope: Scope): Instance
 					return if use(isOn) then Theme.Zone.Red else Theme.Iron.Rule
 				end),
 			}),
-			-- Countdown / "forced" badge under the button.
+			-- package A: a phone's countdown inside the button, over its picture
+			scope:New("TextLabel")({
+				Name = "Countdown",
+				Size = UDim2.fromScale(1, 1),
+				BackgroundColor3 = Theme.Iron.Surface,
+				BackgroundTransparency = 0.15,
+				ZIndex = 3,
+				Visible = scope:Computed(function(use): boolean
+					return use(PhoneLayout.Compact) and use(remaining) ~= nil
+				end),
+				Text = scope:Computed(function(use): string
+					local left = use(remaining)
+					return if left then tostring(math.ceil(left)) else ""
+				end),
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Title,
+				TextColor3 = Theme.Iron.Text,
+				[Children] = scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
+			}),
+			-- Countdown / "forced" badge under the button (PC and a tablet; package A: not on a phone).
 			scope:New("TextLabel")({
 				Name = "Badge",
 				-- W29: under the button, as wide as it, on a phone in landscape (above it the drawer button)
@@ -149,7 +171,7 @@ local function PvpToggle(scope: Scope): Instance
 				BackgroundColor3 = Theme.Iron.Surface,
 				BackgroundTransparency = Theme.HudAlpha,
 				Visible = scope:Computed(function(use): boolean
-					return use(remaining) ~= nil or use(zoneType) == "red"
+					return not use(PhoneLayout.Compact) and (use(remaining) ~= nil or use(zoneType) == "red")
 				end),
 				Text = scope:Computed(function(use): string
 					local left = use(remaining)

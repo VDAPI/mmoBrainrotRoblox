@@ -7,6 +7,8 @@
 -- S121: "VIP respawn (free)" above the paid buttons while counting, only with VIP and a free respawn left today.
 -- 2026-10-21 (owner: too many descriptions): every note is one short line; what the respawn protection does sits behind
 -- an "i" (Components/InfoLine on iron).
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): the content stands in the middle of the HUD's
+-- layer and shrinks to fit a short one (a phone's layer is ~436 high; at 45 % its 440 px ran over the top bar).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -23,6 +25,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Sounds = require(script.Parent.Parent.Parent.Sounds)
+local Scale = require(script.Parent.Parent.Parent.Scale)
 local Theme = require(script.Parent.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Parent.Components.Toast)
 local Vip = require(ReplicatedStorage.Shared.Logic.Vip)
@@ -191,6 +194,7 @@ local function DeathScreen(scope: Scope, props: Props?): Instance
 	})
 
 	local width = 460
+	local CONTENT = 440
 
 	return scope:New("Frame")({
 		Name = "DeathScreen",
@@ -209,12 +213,19 @@ local function DeathScreen(scope: Scope, props: Props?): Instance
 			scope:New("Frame")({
 				Name = "Content",
 				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 0.45),
-				Size = UDim2.new(0.92, 0, 0, 440), -- phones: 92% of the width, at most `width`
+				Position = UDim2.fromScale(0.5, 0.5),
+				Size = UDim2.new(0.92, 0, 0, CONTENT), -- phones: 92% of the width, at most `width`
 				BackgroundTransparency = 1,
 				ZIndex = 51,
 				[Children] = {
 					scope:New("UISizeConstraint")({ MaxSize = Vector2.new(width, math.huge) }),
+					-- package A: inside the layer, 8 px from its edges
+					scope:New("UIScale")({
+						Scale = scope:Computed(function(use): number
+							local size: Vector2 = use(Scale.HudSize)
+							return math.clamp((size.Y - 16) / CONTENT, 0.5, 1)
+						end),
+					}),
 					scope:New("UIListLayout")({
 						SortOrder = Enum.SortOrder.LayoutOrder,
 						HorizontalAlignment = Enum.HorizontalAlignment.Center,
