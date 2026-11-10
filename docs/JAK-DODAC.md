@@ -108,7 +108,7 @@
   wpis `SkillVfx` w trzech warstwach i z innym podpisem niż reszta klasy (`tests/SkillLooks`: nowy składnik dostaje
   warstwę i koszt), klucz dźwięku `skill.<id>` w `Data/Sfx`; znaczenie `n` zdarzenia tylko przez `Logic/SkillFxWave`.
 - **Okno umiejętności** (S139): drzewko puli i szczegóły tylko z `PathView.poolView` / `skillDetails` (rezerwacja przez
-  `PathView.planned`), kafelek `SkillsWindow/Tile`; nowa umiejętność dostaje `skill.<id>.short` (PL, EN, ≤ 90 znaków,
+  `PathView.planned`), kafelek `SkillsWindow/Tile`; nowa umiejętność dostaje `skill.<id>.short` (PL, EN, ≤ 60 znaków,
   najwyżej jeden placeholder z `values`), nowe pole `values` etykietę `skills.field.<pole>` (`localization.spec`).
 - **Podpalenie Ognia / ocalenie** (S140): stosy przez pole `burnStacks` (`add.burnStacks` w przełomach) i
   `CombatService.ApplyBurn` (jeden wpis `Burn.KEY` na celu, `uncapped`), reguły tylko w `Logic/Burn` (`cap`, `add`,
@@ -301,3 +301,14 @@
   w `GearLayout`, przypadek w `tests/gearlayout.spec` (PC i trzy telefony `PhoneHud.DEVICES` przy pasku 0 i 58 px: w
   obszarze, bez nakładania, przyciski w stopce, co najmniej 2 rzędy listy na telefonie i 5 na PC) i plik widoku na
   liście czytelników w tym teście.
+- **Tekst okna plecaka, umiejętności i usług w limicie** (plan UI 2026-11-10, pakiet D, część tekstowa; właściciel:
+  „bardzo dużo napisów, zbyt szczegółowe opisy”): krótki opis umiejętności `skill.<id>.short` ma najwyżej 60 znaków i
+  jedną myśl, opcja przełomu `skill.<id>.bp5|bp10|bp5b|bp10b` najwyżej 48 i wszystkie swoje liczby, pisana wzorem
+  („Rozprysk: 13% obrażeń do 4 st. od celu”, „Fala ciosu: 50% obrażeń do 6 st. od celu”, „pkt proc.”, po angielsku
+  „points”); resztę mówi pełny opis `skill.<id>.desc` (najwyżej 300, pod „Więcej ▸”). Węzeł kierunku z opisem dłuższym
+  niż `NodeText.LONG` (60) dostaje `path.<ścieżka>.<węzeł>.short` z placeholderami z opisu. Okno potwierdzenia: pytanie
+  z ceną w `Message` (najwyżej 90), reszta w `Details` (240, „Więcej ▸”). Przycisk najwyżej 18 znaków i bez liczby,
+  którą mówi linia obok, zakładka 12, linia okna 60; podpowiedź mówi, co wybrać, bez „kliknij”, „najedź” i
+  „przeciągnij”; Smocza Waluta pełną nazwą raz na ekranie, dalej ◆. Liczy `Logic/TextCaps` po wstawieniu przykładów
+  (`{n}` 6 znaków, `{item}` 28, inne 12), pilnuje `tests/textcaps.spec`, a lista D w `tests/fixtures/textcaps/D.luau`
+  zostaje pusta.

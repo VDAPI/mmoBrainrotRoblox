@@ -1764,9 +1764,18 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   „Wybierz”, zasada zmian raz, pełny opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów;
   nagłówek kierunków „Punkty kierunków: N”, „Prowadzi: …” albo „Prowadzi: brak” (zasada za (i)), zwieńczenie dopiero,
   gdy jest; opis węzła dłuższy niż 60 znaków krótką linią (`NodeText.LONG`). Telefon: arkusz szczegółów z jednym
-  paskiem na dole (Wróć, akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź (+N)”), szczegóły co najmniej 260 px,
+  paskiem na dole (Wróć, akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź +N”), szczegóły co najmniej 260 px,
   przełom wybierany na karcie. Usługi (kowal, aukcja, alchemik, wygląd, plecakarz): przycisk główny przypięty pod
   treścią, długa treść przewija się w swoim miejscu, telefon jedną kolumną tylko tam, gdzie dwie się nie mieszczą.
+  Teksty tych okien (część tekstowa pakietu D) mieszczą się w limitach `docs/UI-ZASADY.md` §2: krótki opis
+  umiejętności i krótka linia węzła najwyżej 60 znaków, przełom najwyżej 48 i zawsze z liczbami („Rozprysk: 13%
+  obrażeń do 4 st. od celu”), linia okna 60, przycisk 18, zakładka 12; reszta zostaje w pełnym opisie pod „Więcej ▸”.
+  Okno potwierdzenia pyta z ceną w najwyżej 90 znakach, a to, co nie zmienia wyboru (zawartość skrzyni łowów, klasa i
+  premie sprzętu wędrowca), leży pod „Więcej ▸”; pod pytaniem o sprzęt wędrowca zostają poziom i wiązanie. Przycisk
+  mówi, co robi, a liczba stoi w linii obok („Przemień wszystkie”, pod nim „Zwoje Przemiany: N”). Podpowiedzi mówią,
+  co wybrać („Wybierz węzeł, aby zobaczyć opis.”), bez „kliknij”, „najedź” i „przeciągnij”; wyjątek to podpowiedź
+  skrótu „Podwójny klik lub przytrzymanie” w pełnym tooltipie przedmiotu. Smocza Waluta ma pełną nazwę raz na ekranie
+  (notka waluty, saldo), dalej ◆ („500 ◆”, „Na stałe 120 ◆”, „Dzienne ◆: odebrane”).
 
 ### Ikony w UI (S35)
 

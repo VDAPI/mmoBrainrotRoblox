@@ -14913,3 +14913,35 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `Screens/LookWindow`, `Screens/BackpackShop`, `Screens/DepositWindow`, `Screens/PremiumShop/init|Items|Cosmetics`,
   `UI/PremiumConfirm`, `UI/SeasonPassBuy`, `tests/gearlayout.spec`, `tests/tooltip.spec`,
   `tests/charactersections.spec`, `tests/shopshort.spec`, `tests/sectionfold.spec`.
+
+### Plan UI 2026-11-10, pakiet D, część tekstowa: teksty plecaka, umiejętności, usług i sklepów (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”. Teksty, które `TextScan.owner` daje pakietowi D, w limitach `docs/UI-ZASADY.md` §2 (pl i en, te same
+  placeholdery, linie zmieniane w miejscu); lista D w `tests/fixtures/textcaps` z 237 kluczy do pustej. Zmienionych
+  albo nowych kluczy: 251.
+- Okno umiejętności (pierwszy commit): 61 krótkich opisów umiejętności i 26 krótkich linii węzłów do 60 znaków, 90
+  opcji przełomów do 48 z wszystkimi liczbami (wzory „Rozprysk: …% obrażeń do … st. od celu”, „Fala ciosu: …”,
+  „pkt proc.”, po angielsku „points”), cztery długie opisy do 300 (`skill.arcaneTorrent`, `skill.intercept`,
+  angielski `skill.wheelOfFortune`, `path.scout.royalFalcon`), linie okna (`paths.row`, `paths.node.dip`,
+  `skills.mod.idle|inactive`, `skills.shape.guard|ring`; reguła wyboru celu Przechwycenia jest w jego opisie),
+  podpowiedzi drzewek bez „kliknij”, przyciski „Rozdaj wg ścieżki”, „Rozdaj wg puli”, „Zatwierdź +N”, „Zwróć węzły”,
+  pytanie o kopię zestawu w 90 znakach (`buildset.copy.message`, „Darmowy reset” dalej w `.info`).
+- Przedmioty, sklepy i usługi (drugi commit): przyciski sklepu, kowala i garderoby w 18 znakach, zakładki alchemika,
+  sklepu łowów i garderoby w 12, pytania potwierdzeń w 90 (aukcja, kowal, sklep kamieni, ustawienie kamienia), (i) w 240
+  i trzech zdaniach (`auction.sell.rules`, `portalshop.intro`, `autoGrind.desc`, cechy broni), podpowiedzi bez nazw
+  ruchów myszy, Smocza Waluta raz pełną nazwą i dalej ◆, bez długich myślników. Kod: `HuntShopWindow` (zawartość
+  skrzyni w `Details` okna), `WanderingMerchantWindow` (pod pytaniem poziom i wiązanie z nowych
+  `wanderer.confirmGear.short` i `wanderer.confirmGearBound.short`, cała linia w `Details`),
+  `BlacksmithWindow/Reroll` („Przemień wszystkie” bez liczby, linia pod nim z nowym `smith.reroll.all.have`),
+  `PremiumShop/Currency` (kafelek paczki startowej: liczba przy ikonie waluty).
+- Wiki: `lune run tools/wikidump.luau` po tekstach (`skills`, `items`, `cosmetics`, `recipes`, `premium`, `meta`,
+  `docs/PRZEDMIOTY.md`), `--check` mówi „up to date”.
+- Wybory: karty przełomów dalej zawijają tekst (teksty mają już najwyżej 48 znaków, a zawijanie chroni przed ucięciem na
+  wąskim telefonie); podpowiedź „Podwójny klik lub przytrzymanie: załóż/użyj” zostaje w pełnym tooltipie (skrócony widok
+  jej nie ma, a nic innego nie uczy skrótu); w przełomach Wiru Ostrzy i Gniewu Tytana odpadło „na 10. randze”, liczby
+  zostały („4 × 48%”); notka o Smoczej Walucie zostaje na końcu zakładki waluty. Stare specy krótkich tekstów
+  (`shorttext3`, `shopshort`, `socialshort`) przechodzą bez zmian.
+- **Pliki:** `Data/Localization/pl|en`, `Screens/HuntShopWindow`, `Screens/WanderingMerchantWindow`,
+  `Screens/BlacksmithWindow/Reroll`, `Screens/PremiumShop/Currency`, `tests/fixtures/textcaps/D.luau`,
+  `wiki/src/data/*.json`, `docs/PRZEDMIOTY.md`, `docs/DESIGN.md` §23, `docs/DECYZJE.md`, `docs/PROGRESS.md`,
+  `docs/JAK-DODAC.md`.
