@@ -14931,3 +14931,39 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   AreaBanner|BarkToast`, `Vfx/BossCastBar`, `Controllers/Achievement|Arena|Bark|Dungeon|FightLog|LootComfort|Loot|
   Notification|Party|SocialController`, `tests/noticequeue.spec.luau`, `tests/topband.spec.luau`,
   `tests/fixtures/textcaps/B.luau`.
+
+### Plan UI 2026-11-10, pakiet B, teksty: krótkie komunikaty (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, zbyt szczegółowe opisy”. Pakiet B (część tekstów): każdy klucz, który
+  należy do B (`TextScan.owner`, 1103 klucze), mieści się w limicie swojej powierzchni po wstawieniu przykładowych
+  wartości, w pl i en: toast 60, baner 56, alarm 28, linia karty 40, zaproszenie 60, przycisk 18, przycisk modala 14,
+  treść modala 90. Lista `tests/fixtures/textcaps/B.luau` pusta (było 193), `textcaps.spec` bez wyjątków dla B.
+- Lokalizacja: 200 linii pl i 193 en zmienionych w miejscu, 4 nowe klucze przy swoich prefiksach
+  (`arena.offer.oppRating`, `dungeon.reward.runs`, `contract.ready.info`, `items.toast.legendRework.info`), te same
+  zmienne w pl i en. Bez sterowania, klawiszy i rad w toastach („w oknie Umiejętności (K)”, „Najedź na przedmiot”,
+  „Spróbuj ponownie / za chwilę”, „Wróć jutro”, „Możesz grać dalej”); półpauzy zamienione na dwukropki. Toast po
+  potwierdzeniu nie powtarza modala (`social.ignoredNow`). Wiki i `docs/PRZEDMIOTY.md` wygenerowane na nowo (premie,
+  fazy bossów).
+- Toast z „i”: `Toast.push(text, kind, duration, info)`; z `info` toast kończy się narysowanym „i” (koło z literą,
+  S68: nie znak ⓘ), stoi 6 s, a klik albo dotknięcie zamyka go i otwiera jego linię i całość w `Notify.details` (PC na
+  środku, telefon arkusz). `NotificationController` szuka `key .. ".info"` (`Locale.has`) i składa go z tymi samymi
+  argumentami; `Notify` mierzy wysokość takiego toastu bez szerokości „i” (`Spec.inset`). Klucze `.info` mają regułę
+  `infoTip` na liście B.
+- Banery: ogłoszenie z innego serwera (`*Global`) zaczyna się od 🌐 zamiast „(inny serwer)” i gubi drugorzędne
+  (punkty, poziom, przedmiot ulepszenia, boss wierzchowca); łup „⚜ gracz: przedmiot!”, ulepszenie bez przedmiotu,
+  Sala Sław, Krwawy Księżyc, boss świata (bez progu nagrody: ma go karta bossa i toast „za niski poziom”), wydarzenia,
+  turniej, arena, pojedynek, Radosław krócej. Wielki napis turnieju to „⚜ Nowy Czempion ⚜”, imię niesie baner obok.
+- Alarmy (28): ostrzeżenia ciosów i mechanik bossów bez imienia bossa i gracza (pasek rzucania i pasek bossa je
+  pokazują), fazy bossów lochów i Hrimvalda krótko, komunikaty lochu bez imienia bossa. `tests/bosscast.spec` (plik
+  bez właściciela) zmieniony w jednej linii: ostrzeżenie nie zawiera już `{name}`.
+- Zaproszenia: bez „({seconds} s)” (odlicza pasek czasu `Components/Prompt`); w propozycji meczu areny przeciwnik w
+  jednej linii, rating z progiem (Brąz … Mistrz) w drugiej (`Screens/ArenaOffer`, `arena.offer.oppRating`).
+- Karty (40): `Screens/BossReward` czyta własną linię prób dnia (`dungeon.reward.runs` zamiast
+  `worldmap.card.runsToday`, który zostaje oknu lochu) i `dungeon.reward.next` ze zmiennymi `legPct` / `mythPct`;
+  premie `bonus.*` (rodzina „Przeciw X”, po angielsku „Strong vs X”), Dar Fortuny, pula efektu w dymku, wkład w
+  nagrodzie bossa świata.
+- Odstępstwa od planu: przykład `contract.ready` z planu („Zlecenie wykonane: {n}× {monster}. Odbierz zapłatę.”) ma
+  69 znaków z przykładowymi wartościami, więc toast to „Zlecenie: {n}× {monster}. Odbierz zapłatę.”, a obszar i
+  miejsca odbioru są w „i”; `rework2.body.info` należy do pakietu C (zrobione tam).
+- **Pliki:** `Data/Localization/pl|en`, `UI/Components/Toast`, `UI/Notify`, `Controllers/NotificationController`,
+  `Screens/ArenaOffer`, `Screens/BossReward`, `tests/fixtures/textcaps/B.luau`, `tests/bosscast.spec.luau`,
+  `docs/PRZEDMIOTY.md`, `wiki/src/data/bonuses|bosses|meta.json`.

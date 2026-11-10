@@ -1703,8 +1703,19 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   karta i kwestia NPC czekają, gdy okno albo karta samouczka zasłania ich miejsce. **Telefon**: strefa M pod ramką
   celu pokazuje jeden komunikat naraz (alarm, baner, toast albo kwestia NPC) oraz jedną kartę albo zaproszenie w
   linii HUD; „Szczegóły” otwiera arkusz na cały ekran. **Pasek bossa lochu** stoi w paśmie celu (`TopBand.bossBar`),
-  na telefonie min(720, szerokość − 16) pod rzędem celu, a strefa M zaczyna się pod nim. Opis pasa u góry w akapicie
-  HUD to stan sprzed pakietu B.
+  na telefonie min(720, szerokość − 16) pod rzędem celu, a strefa M zaczyna się pod nim. **Teksty pasa** (pakiet B,
+  teksty; limity `Logic/TextCaps` po wstawieniu przykładowych wartości, w pl i en): toast do 60 znaków (na PC najwyżej
+  2 linie, na telefonie 3), baner do 56 (jedna linia), alarm do 28, linia karty do 40, zaproszenie do 60. Toast mówi,
+  co się stało, bez sterowania, klawiszy i rad („kliknij”, „(K)”, „spróbuj ponownie”, „możesz grać dalej”), i nie
+  powtarza okna, które gracz właśnie zamknął. Gdy jest więcej do powiedzenia, klucz toastu z serwera ma tekst `.info`
+  (te same argumenty): toast kończy się narysowanym „i” (koło z literą, S68) i stoi 6 s, a klik albo dotknięcie
+  otwiera całość w pełnym widoku (`Notify.details`, na telefonie arkusz) i zamyka toast (`contract.ready`: miejsca
+  odbioru zapłaty w „i”; `items.toast.legendRework`). Ogłoszenie z innego serwera zaczyna się od 🌐 zamiast dopisku
+  „(inny serwer)” i niesie tylko najważniejsze; baner łupu to „⚜ gracz: przedmiot!” (rzadkość mówią znak i kolor
+  banera), ulepszenie bez nazwy przedmiotu. Alarmy bossa nie powtarzają jego imienia (stoi na pasku rzucania i pasku
+  bossa), zaproszenia nie podają sekund (odlicza pasek czasu), rating przeciwnika w propozycji meczu areny stoi w
+  drugiej linii, a karta nagrody bossa ma własną linię prób dnia. Opis pasa u góry w akapicie HUD to stan sprzed
+  pakietu B.
 - **Tabliczki potworów i NPC (S136)**: ten sam styl co tabliczki graczy (płytka żelaza, nazwa z obrysem, poziom `Small` na
   ciemnej plakietce w kolorze pasma); kolory rodzajów (`UiPalette.plate`: zwykły, Elita, Elita II, boss), liczebności
   grup (`group`) i znaków questów (`mark`) mają parę kontrastu; co pokazać decyduje `Logic/Nameplate` (`monster`, `npc`).

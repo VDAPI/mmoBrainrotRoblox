@@ -64,8 +64,11 @@
   lochu w paśmie celu, na telefonie jeden komunikat naraz w strefie M; nieobejrzane w Studio (baner i dwa toasty pod
   ramką celu, komunikat nad oknem i pod jego paskiem tytułu, toasty obok karty samouczka, karta w rogu i jej pełny
   widok, arkusz na telefonie, „Więcej ▸” zaproszenia, gotowość przed bossem, linia alarmu w walce z bossem, pasek
-  bossa lochu na telefonie przy lewym stosie i minimapie, czy sygnał walki nie wstrzymuje toastów za często). Teksty
-  pakietu B ponad limitem zostają na jego liście (`tests/fixtures/textcaps/B.luau`, 193).
+  bossa lochu na telefonie przy lewym stosie i minimapie, czy sygnał walki nie wstrzymuje toastów za często; po
+  tekstach: narysowane „i” na toaście i pełny widok po kliknięciu, 🌐 w czcionce banera, dwie linie przeciwnika w
+  „Więcej ▸” oferty areny, linia prób dnia na karcie nagrody bossa). Teksty pakietu B w limitach (lista
+  `tests/fixtures/textcaps/B.luau` pusta): toast do 60, baner 56, alarm 28, bez rad i klawiszy, ogłoszenia z innych
+  serwerów z 🌐, alarmy bossów bez imion, zaproszenia bez sekund, reszta za „i” toastu (`.info`).
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa
