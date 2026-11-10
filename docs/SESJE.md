@@ -14925,6 +14925,36 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   500 losowych kolumn, kolejność zwijania, „+N”; zastrzeżone miejsca), `tutorial.spec` (kotwice, karta na wszystkich
   warstwach, teksty urządzeń), `hudreveal.spec` (element kroku widoczny w jego kroku), `hudmenu.spec` (BAR 6, TILES 15,
   szuflada), `questrows.spec` (`short`), `sectionfold.spec` (id plików A w `Folds/Hud`).
+- Teksty (druga część pakietu A, ta sama gałąź): 56 przekroczeń z listy A w `tests/fixtures/textcaps` poprawione w pl
+  i en (te same znaczniki), lista `known` pusta. Krótka linia zostaje, dłuższa treść idzie do szczegółów dymka (czwarty
+  argument `Tooltip.attach` zwracany wprost z `scope:Computed`, więc `tests/TextScan` liczy go bez limitu) albo do „i”
+  nagłówka:
+  - PvP: kropka (`Hud/init`) pokazuje `pvp.dot.<stan>` albo nowy `pvp.dot.switchingIn` z sekundami, w szczegółach
+    `pvp.rules.<strefa>` (w żółtej z nowym `pvp.dot.toggle`); przełącznik na dotyku (`PvpToggle`) `pvp.state.on|off` i
+    zasady w szczegółach; `pvp.dot.click` usunięty (słowo sterowania).
+  - „Auto”: krótszy `hud.auto`; `hud.autoGrind` to sam stan, bank i dzisiejszy czas w nowym `hud.autoGrind.info`
+    (`AutoGrindButton`); `hud.lure` bez „pozostało”.
+  - Mikstury (`PotionBar`): dymek slotu to nazwa mikstury, pusty slot `potion.slot.<rodzaj>` bez klawisza i „prawy
+    klik”, Eliksir Pełni jedną linią: nazwa i `fullElixir.slot` (bez `{key}`, czas z nowego `fullElixir.wait` albo
+    `fullElixir.ready`); nowy `potion.pick.hint` w szczegółach tylko bez dotyku (`Device.Touch`).
+  - Ekran śmierci (`DeathScreen`): `death.respawn*` mówią miejsce, „[1] ” i „[2] ” dokleja `keyHint` tylko przy
+    `UserInputService.KeyboardEnabled`; krótsze `death.respawnNow`, `topUp`, `autoCity`, `vipRespawn`, `bloodMoonHint`.
+  - Pasek prowadzenia (`NavBar`): linia zawsze `nav.bar` (cel, odległość), mapa po drodze w dymku `nav.barVia`
+    (`{name}`, `{map}`, bez `{n}`), bez mapy po drodze dymek z nazwą celu.
+  - Arena (`ArenaPanel`): pigułka `arena.panel.queue` („⌛ 1v1 · 0:42”), w dymku nowe `arena.panel.waiting` albo
+    `arena.panel.window` (kolejka globalna); wynik meczu ze stałej mapy `RESULT3` zamiast szablonu
+    `arena.result3.{key}`.
+  - Wydarzenie świata (`WorldEventPanel`): Inwazja `hud.event.phase` (`{phase}/{total}`), w dymku linii nowy
+    `hud.event.count` (`{left}`, `{kills}`); krótszy `hud.event.mineNo`. Boss świata (`WorldBossPanel`): cała
+    `hud.worldboss.line` w `Info` nagłówka wpisanym wprost (powierzchnia „i”), bez zmiennej `lineInfo`.
+  - Reszta: `login.button*` z `{n}` zamiast `{day}`, `season.button` z `{total}` zamiast `{tiers}`,
+    `returning.tooltip` bez minut (`BlessingIcon`), `BlessingBadge` z nazwą statystyki z `Data/Stats` (`nameKey`),
+    `area.label` z `{range}` (`Minimap`), `hud.mail`, `hud.skillSlot`, `hud.bloodmoon.cityHint`, `tourney.*`,
+    `worldboss.noReward.*`, `companion.*`, `contract.toTake`, `contract.whereTurnIn.short`, `tutorial.skill.*`,
+    `tutorial.rewardMailed`, `tutorial.skipVeteran`, en `quest.side_fp_howl.title`; `e2timer.soon` usunięty (nikt go
+    nie czytał).
+  - Słownik (pytanie UI 3 w odpowiedzi domyślnej): `tracker.group.quests` „Questy”, `tutorial.done.*` „Questy
+    poprowadzą cię dalej.”, en `hud.stack.questTracker` „Objectives”. Wiki odświeżone (`wikidump`, tytuł questu).
 - Odstępstwa od planu:
   - tablety zostają przy liście `KNOWN` i `THIN` w `hudzones.spec` (pasmo celu 720 szerokości i łuk dotyku na tablecie
     1210–1280 potrzebują własnego układu), a losowe stany sprawdzają tylko ekrany PC, jak w kryteriach planu;
@@ -14932,7 +14962,14 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   - pas wiadomości pod wysokim pasmem celu (tablet z paskiem bossa i dodatkiem) zaczyna się pod pasmem, więc
     zapasowa kolumna liczy jego dół (`HudStack.column(..., band)`);
   - jedna linia w `tests/topband.spec` (pakiet B) czytała miejsca z plików A (`CastBar`, `TutorialTile`): sprawdza teraz
-    nowe źródło.
+    nowe źródło;
+  - długie myślniki w trzech liniach bossów (plan: pakiet A) to komunikaty pakietu B i stoją na liście B, więc A ich
+    nie zmienia;
+  - jedna linia w `Hud/AreaBanner` (plik pakietu B): baner obszaru podaje `range` zamiast `min` i `max`, bo
+    `area.label` ma teraz jeden zakres poziomów;
+  - po zmianach kodu innym pakietom przypadły klucze bez czytelnika w plikach A: `arena.result3.toast` i
+    `arena.result3.drawAnnounce` (B; `drawAnnounce` skrócony do limitu banera, żeby nie wszedł na listę B),
+    `arena.inQueue` (E, bez powierzchni) i `stat.*` (D; `BlessingBadge` bierze `nameKey` z `Data/Stats`).
 - **Pliki:** `Logic/HudZones`, `HudStack`, `HudLayout`, `PhoneHud`, `QuestRows`, `Tutorial`, `TutorialTile` (nowy),
   `Data/Folds/Hud`, `Data/Localization/pl|en` (`hud.stack.*`, `tutorial.backpack.phone`, bez
   `hud.worldboss.collapsed`), `UI/HudSlots`, `HudAnchors`, `HudDrag`, `PhoneLayout`, `Screens/Hud/init`, `ArenaPanel`,
@@ -14940,4 +14977,7 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `PanelHeader` (nowy), `PoolLabel`, `PvpToggle`, `QuestTracker`, `StackChip` (nowy), `TargetFrame`, `TourneyPanel`,
   `WorldBossPanel`, `WorldEventPanel`, `Screens/PartyFrames`, `Controllers/TutorialController`, `CombatFxController`,
   `tests/hudzones|phonehud|hudlayout|hudmenu|hudreveal|tutorial|questrows|sectionfold|topband.spec.luau`,
-  `tests/fixtures/textcaps/A.luau`.
+  `tests/fixtures/textcaps/A.luau`; teksty: `Data/Localization/pl|en`, `Screens/Hud/init`, `ArenaPanel`, `AutoGroup`,
+  `AutoGrindButton`, `BlessingBadge`, `BlessingIcon`, `DeathScreen`, `LoginButton`, `LureButton`, `Minimap`, `NavBar`,
+  `PotionBar`, `PvpToggle`, `SeasonButton`, `WorldBossPanel`, `WorldEventPanel`, `AreaBanner` (jedna linia),
+  `tests/fixtures/textcaps/A.luau`, wiki (`docs/PRZEDMIOTY.md`, `wiki/src/data`).

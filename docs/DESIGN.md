@@ -1726,7 +1726,21 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   elementu, nigdy na nim, na pasie wiadomości (PC, tablet) ani na łuku umiejętności (telefon), a telefon czyta tekst
   kroku `.phone`, gdy krok go ma. Panel przesunięty przez gracza nie staje w paśmie celu, w pasie wiadomości, w miejscu
   karty (PC) ani w strefie M i kciuka (telefon): upuszczony tam wraca na swoje miejsce, a zapisany tam wcześniej stoi w
-  miejscu domyślnym (`HudLayout.usable`, zapis bez zmian).
+  miejscu domyślnym (`HudLayout.usable`, zapis bez zmian). **Teksty HUD** (właściciel 2026-11-10: „bardzo dużo napisów,
+  zbyt szczegółowe opisy”): linia HUD ma najwyżej 32 znaki, dymek najwyżej 48 w jednej linii, reszta jest szczegółami
+  dymka (klawisz szczegółów, na dotyku dłuższe przytrzymanie) albo „i” nagłówka; w linii i dymku HUD nie ma słów
+  sterowania ani „(K)” (klawisz stoi na plakietce slotu). Kropka PvP mówi jedną linią stan albo odliczanie
+  („Przełączanie PvP: 7 s”), a zasady strefy (w żółtej także to, że kropka jest przełącznikiem) są w szczegółach; tak
+  samo przełącznik na dotyku („Twoje PvP: WŁĄCZONE”). „Auto”: „Automaty: przynęta, łowy i mikstury”; Samodzielne Łowy
+  mówią stan, a bank i dzisiejszy czas są w szczegółach; Płaszcz Przynęty „włączony · 2 h”. Slot mikstury podaje nazwę
+  (pusty: rodzaj mikstury), Eliksir Pełni w tej samej linii czas i dzisiejsze użycia („Eliksir Pełni · za 2:30 · dziś
+  3/10”), a wybór prawym przyciskiem stoi w szczegółach na PC. Ekran śmierci odpowiada na „Gdzie chcesz się odrodzić?”
+  miejscem („Miasto (za darmo)”, „Tutaj (◉ 120)”, „U wejścia do lochu”), pominięcie odliczania to „Teraz za 5 ◆”, a
+  „[1]” i „[2]” stoją przed wyborem tylko przy klawiaturze. Pasek prowadzenia: cel i odległość, mapa po drodze w dymku;
+  pigułka kolejki areny „⌛ 1v1 · 0:42”, czekający (albo zakres rankingu kolejki globalnej) w dymku; Inwazja „Faza 2/6”,
+  potwory i pokonani w dymku linii; podpis obszaru „Polana Królików · 1–4”; cała linia bossa świata na innej mapie w „i”
+  nagłówka. Słowa: grupa tropiciela i samouczek mówią „Questy”, „Cele” zostaje tylko nagłówkiem tropiciela (pytanie UI 3
+  w odpowiedzi domyślnej).
 - **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×720; właściciel 2026-11-10: bez zakładek, jak przed 2026-10-31: z lewej imię, ekwipunek i sekcja „Zestawy i tytuł”, w środku plecak, z prawej sekcja „Statystyki”; drugorzędne części zwijają się pod jednym nagłówkiem (▾ otwarta, ▸ zwinięta, cały nagłówek klikalny, `UI/Components/Section`, stan na koncie): Statystyki domyślnie otwarte, zwinięte pokazują plakietkę wolnych punktów; Zestawy i tytuł (od 20. poziomu albo z pierwszym tytułem, `Logic/CharacterSections`) domyślnie zwinięte do jednej linii z aktywnym zestawem i tytułem, opis zestawów za „i”; przyciski statystyk tylko z wolnymi punktami, „Rozdaj jak zaleca ścieżka” tylko z planem; B otwiera i zamyka okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na telefonie dwie kolumny: z lewej imię, ekwipunek i obie sekcje (przewijane), z prawej plecak; szeroki tablet jak PC; tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (S139, DESIGN-18 §12: zakładki pul broni i „Kierunki”, drzewko według wspólnej drabiny, szczegóły po kliknięciu, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
 - Ikony przedmiotów (S118): obrazek właściciela (PNG), gdy jego atlas jest wgrany i wczytany, inaczej ikona rysowana kodem, a bez niej symbol; przedmioty questowe z obrazkiem w dzienniku questów (§5.3b).
 - Tooltip przedmiotu (S134g, owner 2026-10-15): nazwa w kolorze rzadkości; „Rodzaj · Kategoria z chwytem · Poziom N · Klasy”

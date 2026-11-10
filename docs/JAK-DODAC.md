@@ -305,4 +305,9 @@
   EN). Element, na który wskazuje samouczek: nazwa w `Logic/Tutorial.ANCHOR_NAMES` (zamrożone, `tutorial.spec`
   sprawdza, że `Screens/Hud` ją buduje), tekst kroku `tutorial.<krok>.pc` / `.touch` i, gdy telefon jest inny,
   `.phone`. Testy: `hudzones.spec` (PC i tablet; losowe stany na PC), `phonehud.spec` (3 telefony), `hudlayout.spec`
-  (kolumna, zastrzeżone miejsca), `sectionfold.spec` (id w `Folds/Hud`).
+  (kolumna, zastrzeżone miejsca), `sectionfold.spec` (id w `Folds/Hud`). Tekst elementu (część tekstowa pakietu A):
+  linia HUD najwyżej 32 znaki, dymek najwyżej 48 w jednej linii, bez słów sterowania i „(K)”; reszta idzie w szczegóły:
+  czwarty argument `Tooltip.attach` zwracany wprost przez `scope:Computed(function(use) return Text.get(...) end)`
+  (tak `tests/TextScan` widzi szczegóły bez limitu; tekst trzymany w zmiennej lokalnej liczy jako linia HUD), a „i”
+  nagłówka to `Info` wpisane wprost w propsy `PanelHeader`. Lista A w `tests/fixtures/textcaps/A.luau` jest pusta, więc
+  za długi nowy tekst A wywraca `textcaps.spec`.
