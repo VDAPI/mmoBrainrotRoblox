@@ -14689,3 +14689,29 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `client/Anim/MeshHead`, `client/Anim/RigidRig`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs`,
   `Config.Graphics`, `tests/neckbend.spec.luau`, `tests/headgaze.spec.luau`, `tests/NeckBendMesh.luau`,
   `docs/ANIM-WZORCE.md` §6.5.
+
+### Dynamika umiejętności ustępuje pulom, rzut przerwany bez błysku (2026-11-10)
+
+- Przegląd (znaleziska 8 i 9 pakietu dynamiki): w walce grupowej na telefonie (24 emitery, 10 promieni i obrazów na
+  ziemi, 6 świateł) błyski i uderzenia pięciu graczy trzymały około 15–22 emiterów, więc `Pool.holder` odmawiał
+  składnikom umiejętności, iskrom trafień, oddechom bossów i światłom zapowiedzi. `SkillJuice.count` dawał co najmniej 1
+  drobinę, więc dalekie i cudze rzuty brały każdą warstwę; Lodowa Kula i Wir Żywiołów uderzały pełną dynamiką co 0,4 s.
+  Po przerwanym celowaniu (Pożoga, Lodowa Włócznia, Strzał w Serce) błysk wypuszczenia i tak wybuchał przy dłoniach.
+- Rezerwa: `Config.Vfx.juice.reserve` (emitery 0,4, promienie 0,5, światła 0,5 limitu urządzenia, zaokrąglone w górę),
+  `Logic/SkillJuice.reserve` / `room`, `Vfx/Pool.used` (żywe uchwyty limitu albo światła). W `Vfx/Juice` każdy rdzeń,
+  warstwa drobin, pierścień, łuk i światło pyta `room` przed wzięciem uchwytu.
+- Warstwy: `Logic/SkillJuice.layerOn` i `count(..., layer)` (drobiny rzucenia, obłok i odłamki tylko nasze z bliska,
+  rozprysk nie dla cudzych dalekich), `flareLayers` / `punchLayers` (to rysuje `Vfx/Juice`); `later` w
+  `VfxController.punch`: kolejne fale (`circleSelf`, `waves`), kolejne uderzenia burzy i meteorów (`firstStrike`) oraz
+  kolejne strzały (`n` > 1) mają tylko rdzeń i pierścień. Błysk rzucenia gra po składnikach rzutu.
+- Rzut przerwany: `castTokens` / `cutShort` w `VfxController`, podbijane przez `fizzle` i śmierć rzucającego
+  (`Humanoid.HealthChanged`, `watchDeath`); `aimEnd` nic nie przerywa. Błysk wypuszczenia sprawdza żeton, `lmCharge`
+  dostaje `ctx.cancelled` i gaśnie bez wybuchu, `Library.glow` zwraca stop i dłonie gasną od razu.
+- Testy: `skilljuice.spec` (warstwy opcjonalne, błysk i uderzenie według widoku, kolejna fala tylko rdzeń i pierścień,
+  najgorszy przypadek wszystkich stylów, wag i widoków w `Config.Vfx.juice.perCast`, rezerwa na obu urządzeniach mieści
+  składniki jednego rzutu i dynamikę jednego rzutu, połączenia w kodzie klienta), `skillmotion.spec` (dynamika każdej
+  umiejętności i każdego żywiołu broni w `Config.Vfx.juice.perCast`), `tests/SkillLooks` (`juiceOf`, `juiceCost`).
+  Nieobejrzane w Studio.
+- **Pliki:** `Config`, `Logic/SkillJuice`, `Vfx/Juice`, `Vfx/Pool`, `Vfx/Library` (`glow`), `Vfx/LmHunterMage`
+  (`lmCharge`), `Vfx/LmTypes`, `VfxController`, `tests/skilljuice.spec.luau`, `tests/skillmotion.spec.luau`,
+  `tests/SkillLooks.luau`, `docs/ANIMACJE.md` §16.

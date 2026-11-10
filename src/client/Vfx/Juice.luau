@@ -10,11 +10,18 @@
 --                  a light that fades
 -- Everything from Vfx/Library.kit (pooled emitter and ground-image holders within the device limits, the effect clock,
 -- the textures with their fallbacks): a layer whose texture is missing, off or over the limit is skipped, the skills
--- window preview (a ViewportFrame) shows none of it. Particle counts come from Logic/SkillJuice.count (graphics level,
--- far away / low, another player's skill, a phone); lights only near, not on low, for our own skills or heavy ones.
--- At its peak a flare holds 2 emitters and a light, a punch at most 5 emitters (core, rays, spray, puff, chips), one
--- ground image, a light and 2 lightning beams; the skill's own pieces play first, so under the device limits
--- (Config.Vfx.max*) the juice is what gives way.
+-- window preview (a ViewportFrame) shows none of it. Which layers play and their particles come from
+-- Logic/SkillJuice.flareLayers / punchLayers (graphics level, far away / low, another player's skill, a phone); lights
+-- only near, not on low, for our own skills or heavy ones.
+-- Owner 2026-11-10 (DECYZJE: fewer particles on lower graphics, on a phone and for other players; in group fights on a
+-- phone the juice took the shared pools, so skill pieces, hit sparks and boss breaths were dropped): the juice gives
+-- way. Every layer (the cores, the particles, the ring, the arcs, the lights) takes an emitter, a beam or ground image,
+-- or a light only while Config.Vfx.juice.reserve of the device's limit stays free (Logic/SkillJuice.room), so the
+-- skills' own pieces, hit sparks, boss breath layers and telegraph lights always find room, also against the juice of
+-- earlier casts. Another player's skill and a far / low one play no motes, puff or chips (another player's far one no
+-- spray either); a later wave of the same cast only its core and ring. At its peak a cast's juice holds
+-- Config.Vfx.juice.perCast: the flare 2 emitters and a light, the punch at most 4 emitters (core, spray, puff, chips;
+-- holy: core, rays, spray), its ground ring, a light and 2 lightning beams.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -40,6 +47,7 @@ export type Opts = {
 	support: boolean?, -- the blow helps: motes rise, no puff, chips or arcs
 	radius: number?, -- the skill's own radius: the ground ring is never wider
 	dir: Vector3?, -- punch: from the caster to the blow (steel sparks fly on away from the caster)
+	later: boolean?, -- punch: a later wave of the same cast (only the core and the ring)
 }
 
 local WHITE = Color3.new(1, 1, 1)
@@ -63,15 +71,29 @@ local function weightOf(o: Opts): SkillJuiceData.Weight
 	return SkillJuiceData.WEIGHTS[o.weight] or SkillJuiceData.WEIGHTS.medium
 end
 
--- Particles of a layer of `base` on high for this device, level and caster.
-local function count(base: number, o: Opts): number
+-- How this client sees a block (Logic/SkillJuice.View): the graphics level, the caster, the device.
+local function viewOf(o: Opts): SkillJuice.View
 	local touch = Pool.isTouch()
-	local cap = if touch then Config.Vfx.maxBurst.touch else Config.Vfx.maxBurst.desktop
-	return SkillJuice.count(base, quality(), o.simple, o.own, touch, cap)
+	return {
+		quality = quality(),
+		simple = o.simple,
+		own = o.own,
+		touch = touch,
+		cap = if touch then Config.Vfx.maxBurst.touch else Config.Vfx.maxBurst.desktop,
+	}
+end
+
+-- Whether a juice layer may take one more of the device limit `name` ("emitters", "beams" with the ground images,
+-- "lights"): never its reserve, which stays for everything else (Logic/SkillJuice.room).
+local function room(name: string): boolean
+	return SkillJuice.room(Pool.used(name), Pool.limit(name), Config.Vfx.juice.reserve[name] or 0)
 end
 
 -- One bright particle of `key` at `at`: grows from a third to `size` and fades in `seconds` (the core of a flash).
 local function flash(at: Vector3, key: string, color: Color3, size: number, seconds: number, spin: number?)
+	if not room("emitters") then
+		return
+	end
 	local holder = kit.textured(key, CFrame.new(at))
 	if not holder then
 		return
@@ -101,7 +123,7 @@ local function layer(
 	scale: number,
 	dir: Vector3?
 )
-	if n <= 0 then
+	if n <= 0 or not room("emitters") then
 		return
 	end
 	local m = SkillJuiceData.MOTIONS[motionName] or SkillJuiceData.MOTIONS.drift
@@ -132,9 +154,10 @@ local function layer(
 	})
 end
 
--- A PointLight at `at` flaring to `brightness` and fading out over `seconds` (within the device's light budget).
+-- A PointLight at `at` flaring to `brightness` and fading out over `seconds` (within the device's light budget, never
+-- its reserve).
 local function fadingLight(at: Vector3, color: Color3, range: number, brightness: number, seconds: number)
-	if range <= 0 or not Pool.takeLight() then
+	if range <= 0 or not room("lights") or not Pool.takeLight() then
 		return
 	end
 	local holder = Pool.part("Ball", color, Vector3.one * 0.2, Enum.Material.SmoothPlastic, 1)
@@ -167,9 +190,10 @@ function Juice.flare(at: Vector3, o: Opts)
 	local w = weightOf(o)
 	local tint = tintOf(style, o.color)
 	local core = tint:Lerp(WHITE, style.white)
+	local layers = SkillJuice.flareLayers(o.weight, viewOf(o))
 	flash(at, style.core, core, FLARE_CORE * w.flare, 0.16)
-	layer(at, style.motes, style.moteMotion, core, tint, count(w.motes, o), 0.6 * w.flare, nil)
-	if SkillJuice.lightOn(quality(), o.simple, o.own, o.weight) then
+	layer(at, style.motes, style.moteMotion, core, tint, layers.motes, 0.6 * w.flare, nil)
+	if layers.light then
 		local cfg = Config.Vfx.juice
 		fadingLight(at, tint, w.light * 0.6, cfg.lightBrightness * 0.6, cfg.lightTime * 0.6)
 	end
@@ -186,40 +210,45 @@ function Juice.punch(at: Vector3, o: Opts)
 	local tint = tintOf(style, o.color)
 	local core = tint:Lerp(WHITE, style.white)
 	local support = o.support == true
+	local layers = SkillJuice.punchLayers(o.style, o.weight, viewOf(o), support, o.later == true)
 	flash(at, style.core, core, PUNCH_CORE * scale, 0.18)
-	if style.rays and not o.simple then
+	if layers.rays then
 		flash(at, "rays", core, PUNCH_CORE * 2 * scale, 0.4, 40)
 	end
 	-- the spray: the style's own motion, or rising motes for a helping blow
 	local motion = if support then "rise" else style.burstMotion
-	layer(at, style.burst, motion, core, tint, count(w.burst, o), scale, if support then nil else o.dir)
+	layer(at, style.burst, motion, core, tint, layers.spray, scale, if support then nil else o.dir)
 	local floor = kit.ground(at)
-	if style.puff and not support then
+	local puff = style.puff
+	if puff and layers.puff > 0 then
 		local smoke = if style.puffColor then Color3.fromHex(style.puffColor) else tint:Lerp(Color3.new(0, 0, 0), 0.5)
-		layer(floor + Vector3.new(0, 0.5, 0), style.puff, "cloud", smoke, smoke, count(w.puff, o), scale, nil)
+		layer(floor + Vector3.new(0, 0.5, 0), puff, "cloud", smoke, smoke, layers.puff, scale, nil)
 	end
-	if style.ring then
+	-- the ring is a ground image: the beam limit
+	local ring = style.ring
+	if ring and layers.ring and room("beams") then
 		local radius = math.min(w.ring, o.radius or w.ring)
 		-- a dust ring keeps the colour of dust (a touch of the skill's), a ring of light the skill's colour
-		local ringTint = if style.ring == "dustRing" and style.puffColor
+		local ringTint = if ring == "dustRing" and style.puffColor
 			then Color3.fromHex(style.puffColor):Lerp(o.color, 0.15)
 			else tint
-		kit.ringSurface(floor, radius / (RING_GROW / 2), ringTint, 0.3 + 0.08 * scale, style.ring)
+		kit.ringSurface(floor, radius / (RING_GROW / 2), ringTint, 0.3 + 0.08 * scale, ring)
 	end
-	if style.chips and not support and w.chips > 0 then
+	if layers.chips > 0 then
 		local chip = if o.style == "hunt" then WOOD else ROCK
-		layer(floor + Vector3.new(0, 0.4, 0), "debris", "chips", chip, chip, count(w.chips, o), 1, nil)
+		layer(floor + Vector3.new(0, 0.4, 0), "debris", "chips", chip, chip, layers.chips, 1, nil)
 	end
-	if style.arcs and not support and not o.simple and o.weight ~= "light" then
-		local arcs = if o.weight == "heavy" then 2 else 1
-		for i = 1, arcs do
-			local angle = (i / arcs) * math.pi * 2 + rng:NextNumber(0, 1.2)
-			local reach = 2.5 + rng:NextNumber(0, 2) * scale
-			local to = floor + Vector3.new(math.cos(angle) * reach, 0.1, math.sin(angle) * reach)
-			Library.lightning(at, to, core, 0.12 * scale, o.simple)
+	-- each arc one beam; checked before drawing (Library.lightning falls back to plain parts without a beam holder)
+	for i = 1, layers.arcs do
+		if not room("beams") then
+			break
 		end
+		local angle = (i / layers.arcs) * math.pi * 2 + rng:NextNumber(0, 1.2)
+		local reach = 2.5 + rng:NextNumber(0, 2) * scale
+		local to = floor + Vector3.new(math.cos(angle) * reach, 0.1, math.sin(angle) * reach)
+		Library.lightning(at, to, core, 0.12 * scale, o.simple)
 	end
-	if SkillJuice.lightOn(quality(), o.simple, o.own, o.weight) then
+	if layers.light then
 		local cfg = Config.Vfx.juice
 		fadingLight(at + Vector3.new(0, 1, 0), tint, w.light, cfg.lightBrightness, cfg.lightTime)
 	end

@@ -745,9 +745,27 @@ losowe przesunięcie).
 
 **Wydajność.** Wszystko z `Vfx/Pool` (limity `Config.Vfx.max*`) i na zegarze `Vfx/Clock`. Liczby drobin
 `Logic/SkillJuice.count`: poziom grafiki (W29), połowa daleko i na `low`, cudze × 0,6, telefon × 0,75, najwyżej 30 i
-`maxBurst` urządzenia. Światło tylko blisko, nie na `low`, przy naszych albo ciężkich umiejętnościach. Szczyt: rzucenie
-2 emitery i światło, uderzenie do 5 emiterów, obraz na ziemi, światło i 2 promienie. Podgląd w oknie umiejętności
-(ViewportFrame) zostaje bez tego.
+`maxBurst` urządzenia. Światło tylko blisko, nie na `low`, przy naszych albo ciężkich umiejętnościach. Szczyt jednego
+rzutu to `Config.Vfx.juice.perCast`: rzucenie 2 emitery i światło, uderzenie do 4 emiterów (rdzeń, rozprysk, obłok,
+odłamki; Kapłan rdzeń, promienie, rozprysk), obraz na ziemi, światło i 2 promienie łuków. `tests/skillmotion.spec`
+sprawdza go dla każdej umiejętności i każdego żywiołu broni, obok `Config.Vfx.perCast` jej składników. Podgląd w oknie
+umiejętności (ViewportFrame) zostaje bez tego.
+
+**Dynamika ustępuje (właściciel 2026-11-10, DECYZJE: drobin mniej na niższej grafice, na telefonie i u innych
+graczy).** W walce grupowej na telefonie błyski i uderzenia zajmowały wspólne pule, więc gubiły się składniki
+umiejętności, iskry trafień i oddechy bossów. Teraz każda warstwa dynamiki (rdzenie, drobiny, pierścień, łuki, światła)
+bierze emiter, promień albo obraz na ziemi, albo światło tylko wtedy, gdy zostaje wolna rezerwa limitu urządzenia
+(`Config.Vfx.juice.reserve`, `Logic/SkillJuice.room`, `Vfx/Pool.used`): telefon trzyma 10 z 24 emiterów, 5 z 10
+promieni i obrazów na ziemi, 3 z 6 świateł, PC 20 z 48, 10 z 20 i 6 z 12. Cudze umiejętności oraz nasze dalekie albo na
+`low` grają bez drobin rzucenia, obłoku i odłamków, a cudze dalekie także bez rozprysku: zostaje rdzeń i pierścień
+(`Logic/SkillJuice.flareLayers` / `punchLayers`). Pierwsza fala rzutu uderza w pełni; kolejne fale (Lodowa Kula i Wir
+Żywiołów mają ich co najmniej dziesięć), kolejne uderzenia burzy i meteorów oraz kolejne strzały jednego rzutu tylko
+błyskają rdzeniem i pierścieniem.
+
+**Rzut przerwany.** Zatrzymane celowanie (ruch, ogłuszenie, przerwanie), przerwany zamach i śmierć rzucającego podbijają
+żeton rzutu (`castTokens` w `VfxController`; śmierć widać po `Humanoid.HealthChanged`, także u innych graczy). Błysk
+wypuszczenia już się wtedy nie pojawia, zbierany czar (`lmCharge`) gaśnie bez wybuchu, a świecące dłonie gasną od razu
+(`Library.glow` zwraca stop). `aimEnd` niczego nie przerywa, bo wysyła go też strzał, który poleciał.
 
 **Jak obejrzeć i stroić.** `/skillpreview <id>` (na sobie), `/animlab skill <id>`, `/dummy <poziom>` jako cel; liczby w
 `Config.Vfx.juice` i `Config.Vfx.shake`, style, ruchy drobin i wagi w `Data/SkillJuice`.

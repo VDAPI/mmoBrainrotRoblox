@@ -9,8 +9,11 @@
 --                and the set of pieces; a duplicate = two skills of one class equal in all three
 --   PIECE_COST   what one piece may hold at once (Vfx/Library): emitters, beams, lights, decals / ground images; a
 --                cast's sum stays within Config.Vfx.perCast
+--   juiceCost    owner 2026-11-10: what the skill juice of one cast (Vfx/Juice) holds at once at its peak, the same
+--                columns; it stays within Config.Vfx.juice.perCast
 
 local LmVfxPieces = require("../src/shared/Data/LmVfxPieces")
+local SkillJuice = require("../src/shared/Logic/SkillJuice")
 local SkillMotions = require("../src/shared/Data/SkillMotions")
 local SkillPose = require("../src/shared/Logic/SkillPose")
 local SkillVfx = require("../src/shared/Data/SkillVfx")
@@ -217,6 +220,55 @@ function SkillLooks.costOf(entry: SkillVfx.Entry): Cost
 		end
 	end
 	return total
+end
+
+-- Owner 2026-11-10 (skill juice; in group fights on a phone the juice took the pools the skills' own pieces need): what
+-- the shared juice of one cast holds at once at its peak, in the columns of PIECE_COST. The flare: its core, its motes
+-- (emitters) and its light; the first punch: its core, rays, spray, puff and chips (emitters), its lightning arcs
+-- (beams), its light and its ground ring (a ground image). Like costOf, the later waves, strikes and shots of the cast
+-- are not added: they play only their core and ring (Logic/SkillJuice.punchLayers), and the juice never takes the
+-- reserve of a device's limit (Config.Vfx.juice.reserve), so whatever it adds gives way to the pieces.
+function SkillLooks.juiceOf(flare: SkillJuice.Layers?, punch: SkillJuice.Layers): Cost
+	local total = c(1, punch.arcs, 0, if punch.ring then 1 else 0) -- the punch's core always plays
+	for _, on in { punch.rays, punch.spray > 0, punch.puff > 0, punch.chips > 0 } do
+		if on then
+			total.emitters += 1
+		end
+	end
+	if punch.light then
+		total.lights += 1
+	end
+	if flare then
+		total.emitters += if flare.motes > 0 then 2 else 1 -- the flare's core always plays
+		if flare.light then
+			total.lights += 1
+		end
+	end
+	return total
+end
+
+-- The view that plays the most juice: our own skill near the camera on high on a PC (a phone and lower levels play
+-- fewer particles, never more layers).
+SkillLooks.JUICE_VIEW = { quality = "high", simple = false, own = true, touch = false } :: SkillJuice.View
+
+-- Elements the look of a skill can take: its own (false) and every weapon element of an adaptive look (the event's
+-- `el`, Logic/SkillJuice.plan).
+SkillLooks.JUICE_ELEMENTS = { false, "fire", "ice", "lightning", "poison" } :: { any }
+
+-- The juice of one cast of `skill` (its look `entry`) taking `element` (false = the skill's own) as `view` sees it
+-- (default JUICE_VIEW): the flare and the first punch.
+function SkillLooks.juiceCost(
+	skill: SkillJuice.SkillLike,
+	entry: SkillJuice.EntryLike?,
+	element: any,
+	view: SkillJuice.View?
+): Cost
+	local plan = SkillJuice.plan(skill, entry, element)
+	local v = view or SkillLooks.JUICE_VIEW
+	return SkillLooks.juiceOf(
+		SkillJuice.flareLayers(plan.weight, v),
+		SkillJuice.punchLayers(plan.style, plan.weight, v, plan.support, false)
+	)
 end
 
 local SILHOUETTE_JOINTS = { "rShoulder", "rElbow", "lShoulder", "lElbow", "waist", "root" }
