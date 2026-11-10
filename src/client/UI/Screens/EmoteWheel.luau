@@ -4,18 +4,25 @@
 -- are more, "Close" in the middle and a click outside closing it. An emote that cannot start now (dead, riding, a
 -- skill being cast; the server checks combat and the cooldown too) is dimmed and its tooltip says why; picking it
 -- shows the reason instead of asking the server.
+-- Owner 2026-11-10 (UI plan E, Logic/WorldLayout.emoteWheel): the circle's size comes from the screen's height under
+-- Roblox's top bar (the wheel is in the Windows layer, which reaches under it): a short screen gets a smaller circle,
+-- no title and the arrows at its sides, so no button stands under the top bar or past the bottom edge; the circle is
+-- wider than tall, so neighbouring buttons never overlap. Review 2026-11-10 (a notched phone: the top button stood
+-- under the top bar, the bottom one past the safe area): the circle takes the Windows layer's own size.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CosmeticRules = require(ReplicatedStorage.Shared.Logic.CosmeticRules)
 local Cosmetics = require(ReplicatedStorage.Shared.Data.Cosmetics)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local Scale = require(script.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
@@ -29,13 +36,18 @@ export type Props = {
 }
 
 local PAGE = 8
-local RADIUS = 150
-local BUTTON = Vector2.new(112, 72)
-local CENTER = 84
+local CENTER = WorldLayout.EMOTE.close
 
 local function EmoteWheel(scope: Scope, props: Props): Instance
 	local account = State.Value({ "account" })
 	local page = scope:Value(1)
+	-- The Windows layer is the device's safe area (UIController: DeviceSafeInsets): the HUD's layer (Scale.HudSize, the
+	-- same safe area under Roblox's top bar) with the top bar (Scale.TopBar, screen px) over it, not the whole screen.
+	local wheel = scope:Computed(function(use): WorldLayout.EmoteWheel
+		local hud: Vector2 = use(Scale.HudSize)
+		local bar = use(Scale.TopBar) / use(Scale.Value)
+		return WorldLayout.emoteWheel({ w = hud.X, h = hud.Y + bar }, bar)
+	end)
 	local owned = scope:Computed(function(use): { string }
 		return CosmeticRules.ownedEmotes(use(account))
 	end)
@@ -45,6 +57,7 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 
 	local buttons = scope:Computed(function(use, s: Scope): { Instance }
 		local list = use(owned)
+		local w = use(wheel)
 		local p = math.clamp(use(page), 1, use(pages))
 		local first = (p - 1) * PAGE + 1
 		local count = math.min(PAGE, #list - first + 1)
@@ -54,7 +67,7 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 				out,
 				s:New("TextLabel")({
 					AnchorPoint = Vector2.new(0.5, 0.5),
-					Position = UDim2.new(0.5, 0, 0.5, -CENTER),
+					Position = UDim2.new(0.5, 0, 0.5, w.centerY - CENTER),
 					Size = UDim2.fromOffset(280, 30),
 					BackgroundTransparency = 1,
 					Text = Text.get(use, "emote.wheel.empty"),
@@ -74,8 +87,8 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 			local button = s:New("TextButton")({
 				Name = id,
 				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.new(0.5, math.cos(angle) * RADIUS, 0.5, math.sin(angle) * RADIUS),
-				Size = UDim2.fromOffset(BUTTON.X, BUTTON.Y),
+				Position = UDim2.new(0.5, math.cos(angle) * w.radiusX, 0.5, w.centerY + math.sin(angle) * w.radius),
+				Size = UDim2.fromOffset(w.button.w, w.button.h),
 				AutoButtonColor = true,
 				BackgroundColor3 = Theme.Iron.Raised,
 				BackgroundTransparency = s:Computed(function(use2): number
@@ -137,11 +150,15 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 		return out
 	end)
 
-	local function arrow(text: string, x: number, delta: number): Instance
+	-- side: -1 = "◀", 1 = "▶"
+	local function arrow(text: string, side: number, delta: number): Instance
 		return scope:New("TextButton")({
 			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, x, 0.5, RADIUS + BUTTON.Y),
-			Size = UDim2.fromOffset(Theme.Size.MinTouch + 12, Theme.Size.MinTouch + 12),
+			Position = scope:Computed(function(use): UDim2
+				local w = use(wheel)
+				return UDim2.new(0.5, side * w.arrowX, 0.5, w.centerY + w.arrowY)
+			end),
+			Size = UDim2.fromOffset(WorldLayout.EMOTE.arrow, WorldLayout.EMOTE.arrow),
 			Visible = scope:Computed(function(use): boolean
 				return use(pages) > 1
 			end),
@@ -174,8 +191,14 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 		[Children] = {
 			scope:New("TextLabel")({
 				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.new(0.5, 0, 0.5, -(RADIUS + BUTTON.Y + 10)),
+				Position = scope:Computed(function(use): UDim2
+					local w = use(wheel)
+					return UDim2.new(0.5, 0, 0.5, w.centerY + w.titleY)
+				end),
 				Size = UDim2.fromOffset(300, 36),
+				Visible = scope:Computed(function(use): boolean
+					return use(wheel).title
+				end),
 				BackgroundTransparency = 1,
 				Text = Text.T(scope, "emote.wheel"),
 				FontFace = Theme.Fonts.Display,
@@ -185,7 +208,9 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 			scope:New("TextButton")({
 				Name = "Close",
 				AnchorPoint = Vector2.new(0.5, 0.5),
-				Position = UDim2.fromScale(0.5, 0.5),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 0.5, use(wheel).centerY)
+				end),
 				Size = UDim2.fromOffset(CENTER, CENTER),
 				BackgroundColor3 = Theme.Iron.Surface,
 				BackgroundTransparency = Theme.HudAlpha,
@@ -207,8 +232,8 @@ local function EmoteWheel(scope: Scope, props: Props): Instance
 				},
 			}),
 			buttons :: any,
-			arrow("◀", -70, -1),
-			arrow("▶", 70, 1),
+			arrow("◀", -1, -1),
+			arrow("▶", 1, 1),
 		},
 	})
 end

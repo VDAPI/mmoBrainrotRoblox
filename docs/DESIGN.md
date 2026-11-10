@@ -1749,7 +1749,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   Inwazja „Faza 2/6”, potwory i pokonani w dymku linii; podpis obszaru „Polana Królików · 1–4”; cała linia bossa świata
   na innej mapie w „i” nagłówka. Słowa: grupa tropiciela i samouczek mówią „Questy”, „Cele” zostaje tylko nagłówkiem
   tropiciela (pytanie UI 3 w odpowiedzi domyślnej).
-- **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×720; właściciel 2026-11-10: bez zakładek, jak przed 2026-10-31: z lewej imię, ekwipunek i sekcja „Zestawy i tytuł”, w środku plecak, z prawej sekcja „Statystyki”; drugorzędne części zwijają się pod jednym nagłówkiem (▾ otwarta, ▸ zwinięta, cały nagłówek klikalny, `UI/Components/Section`, stan na koncie): Statystyki domyślnie otwarte, zwinięte pokazują plakietkę wolnych punktów; Zestawy i tytuł (od 20. poziomu albo z pierwszym tytułem, `Logic/CharacterSections`) domyślnie zwinięte do jednej linii z aktywnym zestawem i tytułem, opis zestawów za „i”; przyciski statystyk tylko z wolnymi punktami, „Rozdaj jak zaleca ścieżka” tylko z planem; B otwiera i zamyka okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na telefonie dwie kolumny: z lewej imię, ekwipunek i obie sekcje (przewijane), z prawej plecak; szeroki tablet jak PC; tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (S139, DESIGN-18 §12: zakładki pul broni i „Kierunki”, drzewko według wspólnej drabiny, szczegóły po kliknięciu, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń).
+- **Okna**: Postać (S29: jedno okno z ekwipunkiem, plecakiem i statystykami, ok. 1240×720; właściciel 2026-11-10: bez zakładek, jak przed 2026-10-31: z lewej imię, ekwipunek i sekcja „Zestawy i tytuł”, w środku plecak, z prawej sekcja „Statystyki”; drugorzędne części zwijają się pod jednym nagłówkiem (▾ otwarta, ▸ zwinięta, cały nagłówek klikalny, `UI/Components/Section`, stan na koncie): Statystyki domyślnie otwarte, zwinięte pokazują plakietkę wolnych punktów; Zestawy i tytuł (od 20. poziomu albo z pierwszym tytułem, `Logic/CharacterSections`) domyślnie zwinięte do jednej linii z aktywnym zestawem i tytułem, opis zestawów za „i”; przyciski statystyk tylko z wolnymi punktami, „Rozdaj jak zaleca ścieżka” tylko z planem; B otwiera i zamyka okno; przeciąganie plecak ↔ ekwipunek z podświetleniem pasujących slotów, zamiana pierścieni; na telefonie dwie kolumny: z lewej imię, ekwipunek i obie sekcje (przewijane), z prawej plecak; szeroki tablet jak PC; tap → tap zakłada, przytrzymanie = menu akcji; przełącznik zestawów buildu, S58), Plecak (sam plecak jako towarzysz okien usług), Umiejętności (S139, DESIGN-18 §12: zakładki pul broni i „Kierunki”, drzewko według wspólnej drabiny, szczegóły po kliknięciu, na telefonie arkusz szczegółów; „!” na przycisku K), Mapa świata, Kowal (zakładki: Wytwarzanie / Ulepszanie / Rozbijanie), Alchemik, Lekarz, Sklep, Depozyt, Handel, Aukcja, Poczta, Gildia, Grupa, Questy, Sklep premium, Garderoba, Opcje (język, głośność, jakość, czułość kamery, pokazywanie liczb obrażeń). Ramka każdego okna (plan UI 2026-11-10, pakiet C, `Logic/WindowFrame`): nagłówek 52 na PC i 44 na telefonie z tytułem w jednej linii i ✕ (44×44, na telefonie 52×44), na dotyku okno zaczyna się pod paskiem Robloxa, a przeciągnięte na PC trzyma nagłówek 8 pod paskiem i 80 px na ekranie; główne przyciski stoją w przypiętej stopce, długa treść ma jedno przewijanie. Usługa i plecak stoją na PC obok siebie, a na dotyku (telefon i tablet, gdzie każde okno zajmuje cały ekran) przełączają się przyciskiem „Plecak” / „◂ <usługa>” w nagłówku. Modal to małe okno: tytuł (do 28 znaków) i ✕ w nagłówku, krótka treść (do 90), reszta pod „Więcej ▸” (do 240), przyciski w stopce. Napisy ramek trzymają limity `docs/UI-ZASADY.md` §2: tytuł okna do 22 znaków, przycisk do 18, oba w jednej linii, zakładka do 12.
 - Ikony przedmiotów (S118): obrazek właściciela (PNG), gdy jego atlas jest wgrany i wczytany, inaczej ikona rysowana kodem, a bez niej symbol; przedmioty questowe z obrazkiem w dzienniku questów (§5.3b).
 - Tooltip przedmiotu (S134g, owner 2026-10-15): nazwa w kolorze rzadkości; „Rodzaj · Kategoria z chwytem · Poziom N · Klasy”
   pogrubione (niespełniona część na czerwono); rzadkość i ulepszenie małym; główna wartość (obrażenia, szybkość i DPS albo
@@ -1808,6 +1808,57 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   stan na sesję). Etykiety krótkie, dłuższe wyjaśnienia za „i” obok przełącznika. Okna postaci, umiejętności, dziennika
   i tablicy zleceń pokazują krótką linię (`stat.<id>.short`, `class.<id>.short`, `*.short`), pełny opis za „i” albo
   pod „Więcej ▸”.
+- **Okna świata i społeczności (plan UI 2026-11-10, pakiet E)**: układ liczy `Logic/WorldLayout` z treści okna
+  (`WindowFrame.content`): na telefonie lista pokazuje co najmniej 2–3 wiersze, na PC 5, nic nie dostaje ujemnej
+  wysokości. Rankingi: okno 900×720, podium jako sekcja (na telefonie zwinięta), filtr klas przyciskiem obok zakładek,
+  stopka jedną linią, linia nagród tygodnia tylko na PC; na telefonie odliczanie w tytule („koniec za 2 d 5 h”), a
+  stopka zaczyna się od „⚠ Tylko ten serwer”, gdy tablica liczy tylko ten serwer. Osiągnięcia: zwarte podsumowanie na
+  dotyku, etykiety przełączników jedną linią; bestiariusz: regiony jako sekcja (na telefonie zwinięta, nagłówek nazywa
+  wybrany region, a wybór regionu zwija ją z powrotem). Tablica zleceń: blok łowów jako sekcja (na telefonie zwinięta,
+  wtedy nagłówek mówi „Gotowe: n · Do przyjęcia: n”), zasady za (i). Rozmowa z questem: strona do 140 znaków, dalej
+  „Dalej ▸”, 3 linie nad jednym rzędem wyboru nagrody; rozmowa z NPC: powitanie do 60 znaków z (i), linia (także linia
+  questu u tego NPC) do 140 znaków, reszta za (i), linia nie wchodzi na wybory. Cele, teksty i strony questów nie uczą
+  sterowania: bez nazw klawiszy i słów „kliknij”, „dwuklik” (sterowanie uczy kafelek samouczka). Przepustka: zwarty
+  nagłówek na telefonie z końcem sezonu („koniec za 5 d 3 h”, w dniach odbioru „odbiór do …”). Arena: przyciski „Do
+  kolejki 1 na 1” i „Do kolejki 3 na 3”. Grupa: bonus jedną linią z (i); znajomi jednym rzędem z przyciskami po prawej.
+  Wybór postaci: „Graj” i „Usuń” przypięte do dołu karty, na telefonie mniejszy nagłówek i herb. Koło emotek i panel
+  łowienia układają się w warstwie okien (bezpieczny obszar urządzenia). Koło emotek: promień z wysokości ekranu poniżej
+  paska Robloxa, koło szersze niż wysokie. Łowienie: panel nie wchodzi pod pasek Robloxa; na telefonie stoi między
+  kolumnami HUD, z podpowiedzią dotyku, „Anuluj” w czasie czekania. Portal do czerwonej strefy przy za niskim poziomie:
+  oba zagrożenia jedną linią, pełne zdanie o PvP pod „Więcej ▸”. Pole tekstowe w tych oknach ma podpowiedź do 20 znaków;
+  dozwolone znaki i powód odmowy mówi linia błędu pod polem albo komunikat.
+- **Zwijanie w oknach świata (plan UI 2026-11-10, pakiet E)**: sekcje zapisane na koncie (`Data/Folds/World`, `Menu`; w
+  ustawieniach i gildii zamiast `Details` ze stanem na sesję z Opisy-3). Zwinięte: historia i ukończone wątki w
+  dzienniku, sklep NPC na karcie mapy, kronika, sztandar i uprawnienia rang w gildii, a w ustawieniach Łup i handel,
+  Społeczność i Skróty klawiszowe (skrótów nie ma na dotyku). Otwarte: Dźwięk, Grafika i kamera, Walka, Interfejs.
+  Legenda mapy otwarta na PC, na telefonie jedna linia „Legenda”. Zwinięta sekcja, w której coś czeka, mówi to w tytule
+  („Ukończone (n)”, wybrany region, liczniki łowów); reszta nie ma linii podsumowania, bo nic w niej nie czeka
+  (UI-ZASADY §4).
+- **Okna plecaka i umiejętności, usługi** (plan UI 2026-11-10, pakiet D; właściciel 2026-11-10: „bardzo dużo napisów,
+  niektóre rzeczy zasłaniają inne”): okno plecaka zostaje jak w decyzji 2026-11-10 (Statystyki otwarte, Zestawy i
+  tytuł zwinięte); statystyka to jedna linia („Siła 24”) z (i), „−” / „+” i „Wolne punkty” tylko przy wolnych
+  punktach; statystyki pochodne w czterech sekcjach (Ofensywa otwarta, Defensywa, Zasoby i Inne zwinięte,
+  `Data/Folds/Gear`), nazwy do dwóch linii, nigdy ucięte; kolumny z szerokości treści okna (`Logic/GearLayout`), więc
+  plecak ma 500 px także na telefonie. Szczegóły umiejętności: ranga i krótki opis, „Koszt i odnowienie” zwinięte do
+  linii kosztu i odnowienia (tabela rang pod spodem; pasywka: „Wartości rangi”), „Przełomy” zwinięte do linii
+  działających wersji („Ranga 5: A · Ranga 10: B”) albo „Przełom do wyboru”, karta przełomu w jednym wierszu z
+  „Wybierz”, zasada zmian raz, pełny opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów;
+  nagłówek kierunków „Punkty kierunków: N”, „Prowadzi: …” albo „Prowadzi: brak” (zasada za (i)), zwieńczenie dopiero,
+  gdy jest; opis węzła dłuższy niż 60 znaków krótką linią (`NodeText.LONG`). Telefon: arkusz szczegółów z jednym
+  paskiem na dole (Wróć, akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź +N”), szczegóły co najmniej 260 px
+  także pod pełnym paskiem Robloxa, przełom wybierany na karcie; na dotyku plecak ma sloty 56 px (także obok usługi),
+  a sortowanie, akcje plecaka, przyciski statystyk i Zwój Ochrony 44 px. Usługi (kowal, aukcja, alchemik, wygląd,
+  plecakarz): przycisk główny przypięty pod treścią, długa treść przewija się w swoim miejscu, telefon jedną kolumną
+  tylko tam, gdzie dwie się nie mieszczą.
+  Teksty tych okien (część tekstowa pakietu D) mieszczą się w limitach `docs/UI-ZASADY.md` §2: krótki opis
+  umiejętności i krótka linia węzła najwyżej 60 znaków, przełom najwyżej 48 i zawsze z liczbami („Rozprysk: 13%
+  obrażeń do 4 st. od celu”), linia okna 60, przycisk 18, zakładka 12; reszta zostaje w pełnym opisie pod „Więcej ▸”.
+  Okno potwierdzenia pyta z ceną w najwyżej 90 znakach, a to, co nie zmienia wyboru (zawartość skrzyni łowów, klasa i
+  premie sprzętu wędrowca), leży pod „Więcej ▸”; pod pytaniem o sprzęt wędrowca zostają poziom i wiązanie. Przycisk
+  mówi, co robi, a liczba stoi w linii obok („Przemień wszystkie”, pod nim „Zwoje Przemiany: N”). Podpowiedzi mówią,
+  co wybrać („Wybierz węzeł, aby zobaczyć opis.”), bez „kliknij”, „najedź” i „przeciągnij”; wyjątek to podpowiedź
+  skrótu „Podwójny klik lub przytrzymanie” w pełnym tooltipie przedmiotu. Smocza Waluta ma pełną nazwę raz na ekranie
+  (notka waluty, saldo), dalej ◆ („500 ◆”, „Na stałe 120 ◆”, „Dzienne ◆: odebrane”).
 
 ### Ikony w UI (S35)
 

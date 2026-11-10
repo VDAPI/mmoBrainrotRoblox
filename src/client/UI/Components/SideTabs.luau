@@ -1,6 +1,8 @@
 --!strict
 -- Vertical tab list (S23, dev panel): one button per tab in a scrolling column; the selected tab is
 -- highlighted with a brass bar. Rows are 44 px high (touch). S135: roles of its `Surface`.
+-- UI plan 2026-11-10 (package C): a row is Theme.Size.TabHeight, its label one line ('…' at its end); the column
+-- scrolls when the rows do not fit.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -32,7 +34,7 @@ local function SideTabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 			scope:New("TextButton")({
 				Name = tab.id,
 				LayoutOrder = i,
-				Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
+				Size = UDim2.new(1, 0, 0, Theme.Size.TabHeight),
 				AutoButtonColor = false,
 				BackgroundColor3 = scope:Computed(function(use): Color3
 					return if use(selected) then roles.Selected else roles.Raised
@@ -44,6 +46,7 @@ local function SideTabs(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Inst
 					return if use(selected) then roles.Heading else roles.Text
 				end),
 				TextXAlignment = Enum.TextXAlignment.Left,
+				TextWrapped = false,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				[OnEvent("Activated")] = function()
 					if Fusion.peek(props.Selected) ~= tab.id then

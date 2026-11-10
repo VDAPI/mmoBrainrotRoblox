@@ -108,7 +108,7 @@
   wpis `SkillVfx` w trzech warstwach i z innym podpisem niż reszta klasy (`tests/SkillLooks`: nowy składnik dostaje
   warstwę i koszt), klucz dźwięku `skill.<id>` w `Data/Sfx`; znaczenie `n` zdarzenia tylko przez `Logic/SkillFxWave`.
 - **Okno umiejętności** (S139): drzewko puli i szczegóły tylko z `PathView.poolView` / `skillDetails` (rezerwacja przez
-  `PathView.planned`), kafelek `SkillsWindow/Tile`; nowa umiejętność dostaje `skill.<id>.short` (PL, EN, ≤ 90 znaków,
+  `PathView.planned`), kafelek `SkillsWindow/Tile`; nowa umiejętność dostaje `skill.<id>.short` (PL, EN, ≤ 60 znaków,
   najwyżej jeden placeholder z `values`), nowe pole `values` etykietę `skills.field.<pole>` (`localization.spec`).
 - **Podpalenie Ognia / ocalenie** (S140): stosy przez pole `burnStacks` (`add.burnStacks` w przełomach) i
   `CombatService.ApplyBurn` (jeden wpis `Burn.KEY` na celu, `uncapped`), reguły tylko w `Logic/Burn` (`cap`, `add`,
@@ -292,6 +292,62 @@
   `CameraController.Release("<właściciel>")` (gracz dostaje kamerę z powrotem, gdy nikt jej nie trzyma). Bez właściciela
   strażnik oddaje kamerę po 0,5 s; `cameralease.spec` pilnuje, że `Scriptable` pisze tylko `CameraController` (i pisarz
   przerywnika).
+- **Okno ze stopką, przewijaniem i przyciskiem w nagłówku** (2026-11-10, plan UI, pakiet C; `docs/UI-ZASADY.md` §7):
+  `build` w `WindowManager.Register` zwraca zamiast samej treści `Window.Parts`: `{ Content = ..., Footer = { przyciski
+  }, Scroll = true, HeaderAction = { Text, OnClick, Visible? } }`. Główny przycisk idzie do `Footer` (52, przypięta pod
+  treścią; miejsce nad nią daje `WindowFrame.body`), długa treść ma jedno przewijanie (`Scroll`), przycisk w nagłówku
+  stoi przed ✕ (na dotyku jego miejsce bierze przełącznik usługi i plecaka). Wiersz listy to `ListRow` (48) albo
+  `ListRow` z `Tall = true` (64, z linią `Sub`), bez własnej `Height`; zakładki to `Tabs` bez własnej wysokości (rząd sam
+  się zwęża i przewija). Modal: `WindowManager.ShowModal` z krótkim `Message` (do 90) i resztą w `Details`. Pas
+  przycisków na dole okna (stopkę) tooltip przedmiotu na dotyku omija sam, a okno z przyciskami akcji w innym miejscu
+  (przy slotach) zgłasza ich ramkę przez `ItemTooltip.avoid(scope, ramka)`, żeby ich nie zasłaniał; własny dymek
+  stawia `Popover.place` w obszarze `Tooltip.SafeArea`.
+- **Okno świata z listą i długa kwestia** (2026-11-10, plan UI, pakiet E): prostokąty okna (nagłówek, zakładki, lista,
+  stopka, przyciski) liczy funkcja w `Logic/WorldLayout` z treści okna (`WindowFrame.content`) i urządzenia
+  (`WorldLayout.device(touch, compact)`: `pc`, `tablet`, `phone`), wysokości nagłówka sekcji i tekstu z
+  `WorldLayout.SECTION` (spec sprawdza je z `Components/Section` i `Theme`); okno czyta wynik w `Computed`, bez
+  własnych liczb: z `WorldLayout.CHROME`, gdy lista wypełnia resztę ramki, albo ze zmierzonej treści
+  (`Out("AbsoluteSize")`, `Scale.toVirtual`), gdy od niej zależy podział (rozmowa z NPC, bestiariusz). Test w
+  `tests/worldlayout.spec.luau` na wszystkich ekranach i pasku Robloxa 0, 36, 58: bez ujemnych rozmiarów, na telefonie
+  co najmniej 2 wiersze listy, na PC 5, przyciski przypięte. Część, która może się zwinąć, to `Section` z id w
+  `Data/Folds/World` (ustawienia: `Menu`), a plik okna na liście testu sekcji. Kwestia dłuższa niż 140 znaków (strona
+  rozmowy `quest.<id>.p1`, `.done`): dalszy ciąg pod kluczem ciągu (`p1` → `p1b`, `p1c`; `done` → `done2`;
+  `Logic/Dialogue.partKey`, najwyżej 4 części), PL i EN z tymi samymi znacznikami; `QuestDialog` pokazuje go po
+  „Dalej ▸”, dziennik i wiki czytają całość (`Dialogue.whole`), test `tests/dialogue.spec`. Linia questu mówiona u NPC
+  (`line` celu `talk` / `deliver`, np. `quest.<id>.<npc>`) nie ma stron: najwyżej 140 znaków, reszta w
+  `<klucz linii>.info` (PL i EN), którą `NpcDialog` pokazuje za (i); podpowiedź pola tekstowego do 20 znaków
+  (`tests/worldlayout.spec` czyta je z plików pakietu). Ekran w warstwie okien poza ramką okna (koło emotek, łowienie)
+  liczy układ z rozmiaru tej warstwy, czyli bezpiecznego obszaru urządzenia: `Scale.HudSize` z paskiem Robloxa nad nim
+  (`Scale.TopBar / Scale.Value`), nie `Scale.VirtualSize`. Zwinięta sekcja, w której coś czeka (np. zlecenia do
+  oddania), mówi to w tytule albo w `Summary`, a `WorldLayout` liczy tę wysokość. Nowy typ celu questu
+  (`quest.obj.<typ>`, linia tropiciela na każdym urządzeniu) i tekst questu nie mają nazw klawiszy ani słów sterowania
+  („(F)”, „kliknij”, „dwuklik”; `tests/dialogue.spec`).
+- **Układ okna z prostokąta treści** (plan UI 2026-11-10, pakiet D; właściciel: „niektóre rzeczy zasłaniają inne”):
+  kolumny, listy i przyciski okna przedmiotów i postaci liczy czysta funkcja w `Logic/GearLayout` z rozmiaru treści
+  okna (`WindowFrame.content` albo część pod zakładkami okna), nigdy z ekranu (`Scale.VirtualSize`). W widoku:
+  `local view = ViewSize.new(scope)`, `view.ruler` wśród dzieci ramki (nie pod `UIListLayout`), `view.watch(ramka)`
+  zaraz po jej utworzeniu, w `Computed` `use(view.size)` (nil przed pierwszym pomiarem: wtedy rozmiar treści na PC) i
+  `UDim2.fromOffset` z prostokątów. `UI/ViewSize` mierzy w px wirtualnych bez animacji otwierania okna (samo
+  `AbsoluteSize` przez `Scale.Value` ją zawiera); widok buduje się od nowa tylko przy zmianie rodzaju układu, a
+  przesunięcia idą przez `Computed` `UDim2`. Przycisk główny w pasie stopki (`GearLayout.BUTTON` od dołu), na dotyku
+  44 px (`GearLayout.TOUCH`), długa treść przewija się w swoim prostokącie, telefon jedną kolumną tylko tam, gdzie dwie
+  się nie mieszczą. Nowy widok: funkcja w `GearLayout`, przypadek w `tests/gearlayout.spec` (PC i trzy telefony
+  `PhoneHud.DEVICES` przy pasku Robloxa 0, 36 i 58 px prawdziwych, w oknie `bar / PhoneHud.SCALE`: w obszarze, bez
+  nakładania, przyciski w stopce, co najmniej 2 rzędy listy na telefonie i 5 na PC) i plik widoku na liście
+  czytelników w tym teście.
+- **Tekst okna plecaka, umiejętności i usług w limicie** (plan UI 2026-11-10, pakiet D, część tekstowa; właściciel:
+  „bardzo dużo napisów, zbyt szczegółowe opisy”): krótki opis umiejętności `skill.<id>.short` ma najwyżej 60 znaków i
+  jedną myśl, opcja przełomu `skill.<id>.bp5|bp10|bp5b|bp10b` najwyżej 48 i wszystkie swoje liczby, pisana wzorem
+  („Rozprysk: 13% obrażeń do 4 st. od celu”, „Fala ciosu: 50% obrażeń do 6 st. od celu”, „pkt proc.”, po angielsku
+  „points”); resztę mówi pełny opis `skill.<id>.desc` (najwyżej 300, pod „Więcej ▸”). Węzeł kierunku z opisem dłuższym
+  niż `NodeText.LONG` (60) dostaje `path.<ścieżka>.<węzeł>.short` z placeholderami z opisu; linia mówi zmianę („Kanał
+  Inwokacji: {archmage} s”), a po angielsku teksty węzłów piszą punkty procentowe jako „pt” i bez liczby mnogiej zaraz
+  po liczbie, bo ranga daje często 1. Okno potwierdzenia: pytanie z ceną w `Message` (najwyżej 90), reszta w
+  `Details` (240, „Więcej ▸”). Przycisk najwyżej 18 znaków i bez liczby,
+  którą mówi linia obok, zakładka 12, linia okna 60; podpowiedź mówi, co wybrać, bez „kliknij”, „najedź” i
+  „przeciągnij”; Smocza Waluta pełną nazwą raz na ekranie, dalej ◆. Liczy `Logic/TextCaps` po wstawieniu przykładów
+  (`{n}` 6 znaków, `{item}` 28, inne 12), pilnuje `tests/textcaps.spec`, a lista D w `tests/fixtures/textcaps/D.luau`
+  zostaje pusta.
 - **Element HUD i panel kolumny** (2026-11-10, plan UI, pakiet A; właściciel: „niektóre rzeczy zasłaniają inne, nie
   da się zwinąć”): nowy element HUD na PC i tablecie ma miejsce w `Logic/HudZones.pc` (prostokąt strefy i nazwa w
   `ELEMENTS` z plikiem) i czyta je przez `HudSlots.at(scope, "<miejsce>")`, `HudSlots.point` albo `HudSlots.sizeOf`,

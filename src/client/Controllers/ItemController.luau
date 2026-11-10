@@ -197,7 +197,9 @@ function ItemController.Use(index: number)
 		-- One blessing at a time (DESIGN §11): ask before replacing the active one.
 		WindowManager.ShowModal({
 			Title = Text.now("blessing.replace.title"),
+			-- UI plan 2026-11-10: the loss on top, the rule under "Więcej ▸"
 			Message = Text.now("blessing.replace.message"),
+			Details = Text.now("blessing.replace.details"),
 			ConfirmText = Text.now("blessing.replace.confirm"),
 			CancelText = Text.now("common.cancel"),
 			OnConfirm = function(): (boolean, string?)

@@ -5,13 +5,21 @@
 -- next to services ("inventory").
 -- S121: the capacity is Logic/Inventory.capacityOf (backpack + Merchant's Pockets from the `passes` branch); items
 -- above it (overflow) get extra slots with a red frame and can only be taken out.
+-- Owner 2026-11-10 (UI plan: "niektóre rzeczy zasłaniają inne"): the rows come from Logic/GearLayout.backpack: the
+-- header, the overflow / pockets line under it in Small 17 (it was scaled text over the gold), the filters, the slot
+-- grid and the action bar in the footer.
+-- Review 2026-11-10: on touch the slots are 56 px wherever the panel stands (the companion window next to a service
+-- kept 64 and showed one full row on a phone), and the sort and action buttons are 44 high (UI-ZASADY: touch targets
+-- of 44, ButtonHeightSmall only on PC); GearLayout.backpack gives the header and the action bar their touch heights.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Device = require(script.Parent.Parent.Device)
 local DragDrop = require(script.Parent.Parent.DragDrop)
 local CurrencyIcon = require(script.Parent.Parent.Components.CurrencyIcon)
 local Format = require(ReplicatedStorage.Shared.Util.Format)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Inventory = require(ReplicatedStorage.Shared.Logic.Inventory)
 local ItemSlot = require(script.Parent.Parent.Components.ItemSlot)
@@ -40,12 +48,15 @@ export type Actions = {
 
 export type Props = {
 	Actions: Actions,
-	SlotSize: number?, -- default 64
+	SlotSize: number?, -- default 64, 56 on touch (GearLayout.BACKPACK)
 	ButtonWidth: number?, -- action bar button width, default 120
 }
 
-local SLOT = 64
-local GAP = 6
+local SLOT = GearLayout.BACKPACK.slot
+local TOUCH_SLOT = GearLayout.BACKPACK.touchSlot
+local GAP = GearLayout.BACKPACK.gap
+-- The panel's rows are anchored to its top and bottom, so GearLayout's rects at any height give their offsets.
+local NOMINAL = { w = 500, h = 640 }
 local BUTTON_WIDTH = 120
 
 local FILTERS: { [string]: { [string]: boolean }? } = {
@@ -57,8 +68,17 @@ local FILTERS: { [string]: { [string]: boolean }? } = {
 
 local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 	local actions = props.Actions
-	local slotSize = props.SlotSize or SLOT
+	local touch = scope:Computed(function(use): boolean
+		return use(Device.Touch) == true
+	end)
+	local slotSize = scope:Computed(function(use): number
+		return props.SlotSize or (if use(touch) then TOUCH_SLOT else SLOT)
+	end)
 	local buttonWidth = props.ButtonWidth or BUTTON_WIDTH
+	-- the sort and action buttons: a touch target on touch
+	local buttonHeight = scope:Computed(function(use): number
+		return if use(touch) then Theme.Size.MinTouch else Theme.Size.ButtonHeightSmall
+	end)
 	local inventory = State.Value({ "character", "inventory" })
 	local backpack = State.Value({ "character", "equipment", "backpack" })
 	local gold = State.Value({ "character", "gold" })
@@ -76,6 +96,13 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 	end)
 	local overflow = scope:Computed(function(use): boolean
 		return use(shown) > use(capacity)
+	end)
+	-- the overflow / pockets line takes its own row under the header (GearLayout.backpack)
+	local hinted = scope:Computed(function(use): boolean
+		return use(overflow) or use(pockets) == true
+	end)
+	local rects = scope:Computed(function(use): GearLayout.Backpack
+		return GearLayout.backpack(NOMINAL, use(slotSize), use(hinted), use(touch))
 	end)
 	local used = scope:Computed(function(use): number
 		local n = 0
@@ -101,17 +128,19 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 		return State.Value({ "character", "inventory", tostring(index) })
 	end
 
-	-- Slots are rebuilt only when the capacity (or the overflow) changes; contents update reactively.
+	-- Slots are rebuilt only when the capacity (or the overflow) changes, or the slot size with the input device;
+	-- contents update reactively.
 	local grid = scope:Computed(function(use, s: Scope): { Instance }
 		local count = use(shown)
 		local cap = use(capacity)
+		local size = use(slotSize)
 		local list = {}
 		for index = 1, count do
 			local item = slotItem(s, index)
 			local slot = ItemSlot(s, {
 				SlotId = `inv:{index}`,
 				Item = item,
-				Size = slotSize,
+				Size = size,
 				LayoutOrder = index,
 				Visible = s:Computed(function(use2): boolean
 					local categories = FILTERS[use2(filter)]
@@ -158,7 +187,9 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 			LayoutOrder = order,
 			Text = Text.T(scope, key),
 			Variant = (variant or "secondary") :: any,
-			Size = UDim2.fromOffset(buttonWidth, Theme.Size.ButtonHeightSmall),
+			Size = scope:Computed(function(use): UDim2
+				return UDim2.fromOffset(buttonWidth, use(buttonHeight))
+			end),
 			TextSize = Theme.TextSize.Small,
 			Visible = visible,
 			OnClick = function()
@@ -179,7 +210,10 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 		-- Header: gold, slots, sort
 		scope:New("Frame")({
 			Name = "Header",
-			Size = UDim2.new(1, 0, 0, 40),
+			Size = scope:Computed(function(use): UDim2
+				local header = use(rects).header
+				return UDim2.new(1, 0, 0, header.bottom - header.top)
+			end),
 			BackgroundTransparency = 1,
 			[Children] = {
 				-- S35: gold coin from the item atlases (the ◉ glyph before the upload).
@@ -205,35 +239,10 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 				}),
 				-- S121: under the count, the Merchant's Pockets line or the overflow warning
 				scope:New("TextLabel")({
-					Name = "SlotsHint",
-					AnchorPoint = Vector2.new(1, 1),
-					Position = UDim2.new(1, -140, 1, 2),
-					Size = UDim2.fromOffset(220, 16),
-					BackgroundTransparency = 1,
-					Visible = scope:Computed(function(use): boolean
-						return use(overflow) or use(pockets) == true
-					end),
-					Text = scope:Computed(function(use): string
-						if use(overflow) then
-							return Text.get(use, "backpack.overflow")
-						end
-						return Text.get(use, "backpack.pockets", { n = Products.POCKETS_SLOTS })
-					end),
-					TextScaled = true,
-					FontFace = Theme.Fonts.Body,
-					TextColor3 = scope:Computed(function(use): Color3
-						return if use(overflow) then Theme.Paper.Danger else Theme.Paper.TextMuted
-					end),
-					TextXAlignment = Enum.TextXAlignment.Right,
-				}),
-				scope:New("TextLabel")({
 					Name = "Slots",
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.new(1, -140, 0, 0),
-					Size = scope:Computed(function(use): UDim2
-						local hinted = use(overflow) or use(pockets) == true
-						return UDim2.new(0, 120, if hinted then 0 else 1, if hinted then 24 else 0)
-					end),
+					Size = UDim2.new(0, 120, 1, 0),
 					BackgroundTransparency = 1,
 					Text = scope:Computed(function(use): string
 						return Text.get(use, "inventory.slots", { used = use(used), capacity = use(capacity) })
@@ -248,7 +257,7 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 				Button(scope, {
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.fromScale(1, 0),
-					Size = UDim2.fromOffset(128, 40),
+					Size = UDim2.new(0, 128, 1, 0), -- the header's height: 40, or 44 on touch
 					Text = Text.T(scope, "inventory.sort"),
 					TextSize = Theme.TextSize.Small,
 					OnClick = function()
@@ -268,8 +277,35 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 				}),
 			},
 		}),
+		-- owner 2026-11-10 (UI plan): the overflow / pockets line under the header in Small 17, never scaled text over the
+		-- gold (GearLayout.backpack's hint)
+		scope:New("TextLabel")({
+			Name = "SlotsHint",
+			Position = scope:Computed(function(use): UDim2
+				local hint = use(rects).hint
+				return UDim2.fromOffset(0, if hint then hint.top else 0)
+			end),
+			Size = UDim2.new(1, 0, 0, GearLayout.BACKPACK.hint),
+			BackgroundTransparency = 1,
+			Visible = hinted,
+			Text = scope:Computed(function(use): string
+				if use(overflow) then
+					return Text.get(use, "backpack.overflow")
+				end
+				return Text.get(use, "backpack.pockets", { n = Products.POCKETS_SLOTS })
+			end),
+			FontFace = Theme.Fonts.Body,
+			TextSize = Theme.TextSize.Small,
+			TextTruncate = Enum.TextTruncate.AtEnd,
+			TextColor3 = scope:Computed(function(use): Color3
+				return if use(overflow) then Theme.Paper.Danger else Theme.Paper.TextMuted
+			end),
+			TextXAlignment = Enum.TextXAlignment.Right,
+		}),
 		Tabs(scope, {
-			Position = UDim2.fromOffset(0, 48),
+			Position = scope:Computed(function(use): UDim2
+				return UDim2.fromOffset(0, use(rects).tabs.top)
+			end),
 			Selected = filter,
 			Tabs = {
 				{ id = "all", label = Text.T(scope, "inventory.filter.all") },
@@ -280,8 +316,13 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("ScrollingFrame")({
 			Name = "Grid",
-			Position = UDim2.fromOffset(0, 98),
-			Size = UDim2.new(1, 0, 1, -98 - 52),
+			Position = scope:Computed(function(use): UDim2
+				return UDim2.fromOffset(0, use(rects).grid.top)
+			end),
+			Size = scope:Computed(function(use): UDim2
+				local r = use(rects)
+				return UDim2.new(1, 0, 1, -(r.grid.top + NOMINAL.h - r.grid.bottom))
+			end),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			CanvasSize = UDim2.new(),
@@ -291,7 +332,10 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 			ScrollBarImageColor3 = Theme.Paper.Label,
 			[Children] = {
 				scope:New("UIGridLayout")({
-					CellSize = UDim2.fromOffset(slotSize, slotSize),
+					CellSize = scope:Computed(function(use): UDim2
+						local size = use(slotSize)
+						return UDim2.fromOffset(size, size)
+					end),
 					CellPadding = UDim2.fromOffset(GAP, GAP),
 					SortOrder = Enum.SortOrder.LayoutOrder,
 				}),
@@ -304,12 +348,15 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 			},
 		}),
 		-- Actions for the selected slot
-		-- Scrolls sideways when the panel is narrower than the visible buttons (touch, character window).
+		-- Scrolls sideways when the panel is narrower than the visible buttons (touch, character window); on touch the
+		-- bar is one button high and its thin scroll bar lies over the buttons' lower edge (GearLayout.backpack).
 		scope:New("ScrollingFrame")({
 			Name = "Actions",
 			AnchorPoint = Vector2.new(0, 1),
 			Position = UDim2.fromScale(0, 1),
-			Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeightSmall + 6),
+			Size = scope:Computed(function(use): UDim2
+				return UDim2.new(1, 0, 0, NOMINAL.h - use(rects).actions.top)
+			end),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			CanvasSize = UDim2.new(),
@@ -359,7 +406,9 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 						local item = use(selectedItem)
 						return Text.get(use, if item and item.locked then "item.unlock" else "item.lock")
 					end),
-					Size = UDim2.fromOffset(math.min(110, buttonWidth), Theme.Size.ButtonHeightSmall),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.fromOffset(math.min(110, buttonWidth), use(buttonHeight))
+					end),
 					TextSize = Theme.TextSize.Small,
 					Visible = scope:Computed(function(use): boolean
 						local def = use(selectedDef)
@@ -375,7 +424,9 @@ local function BackpackPanel(scope: Scope, props: Props): Fusion.Child
 				Button(scope, {
 					LayoutOrder = 6,
 					Text = Text.T(scope, "lootlog.button"),
-					Size = UDim2.fromOffset(math.min(90, buttonWidth), Theme.Size.ButtonHeightSmall),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.fromOffset(math.min(90, buttonWidth), use(buttonHeight))
+					end),
 					TextSize = Theme.TextSize.Small,
 					OnClick = function()
 						actions.LootLog()

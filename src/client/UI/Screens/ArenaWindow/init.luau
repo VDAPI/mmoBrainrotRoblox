@@ -554,11 +554,11 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 					label(
 						s,
 						nextOrder(),
-						Text.get(
-							use,
-							"arena.inQueue",
-							{ mode = mode.id, time = Time.format(use(now) - (tonumber(q.since) or use(now))) }
-						),
+						-- review 2026-11-10: the mode by its name, as the switch above shows it ("W kolejce 1 na 1")
+						Text.get(use, "arena.inQueue", {
+							mode = Text.get(use, `arena.mode.{mode.id}`),
+							time = Time.format(use(now) - (tonumber(q.since) or use(now))),
+						}),
 						Theme.TextSize.Body,
 						Theme.Paper.Success,
 						Theme.Fonts.BodyBold
@@ -602,11 +602,15 @@ local function ArenaWindow(scope: Scope, props: Props): Fusion.Child
 				end
 			else
 				local reason = reasonFor(use, mode.id)
-				local joinText = Text.get(use, "arena.join", { mode = mode.id })
+				-- review 2026-11-10: the button only puts the player in a queue, so it says so with the mode's name, as
+				-- the 3v3 one does: "Do kolejki 1 na 1" (arena.join.<mode>; "Graj" is entering the world)
+				local joinText: string
 				if mode.id == "3v3" then
 					local key, err = team3(use)
 					joinText = Text.get(use, key)
 					reason = reason or err
+				else
+					joinText = Text.get(use, `arena.join.{mode.id}`)
 				end
 				table.insert(
 					items,

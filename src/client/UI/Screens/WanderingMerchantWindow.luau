@@ -180,22 +180,30 @@ local function WanderingMerchantWindow(scope: Scope, props: Props): Fusion.Child
 		end
 		if offer.kind == "gear" or offer.currency == "marks" then
 			local lvl = Fusion.peek(level) or 1
-			-- 2026-10-21 (owner: too many detailed descriptions): the question, plus one line on gear only
+			-- 2026-10-21 (owner: too many detailed descriptions): the question, plus one line on gear only.
+			-- owner 2026-11-10 (too much text): a modal body is at most 90 characters, so under the question the gear
+			-- line keeps only the level and the binding (what changes the choice); the whole line (for the class,
+			-- random bonuses) goes under the modal's "Więcej ▸"
 			local message =
 				Text.now(if offer.currency == "marks" then "wanderer.confirmMarks" else "wanderer.confirm", {
 					name = name,
 					price = price,
 				})
+			local details: string? = nil
 			if offer.kind == "gear" then
 				-- owner 2026-10-31 (Data/Binding): gear for gold binds on equip, for marks on pickup
+				local bound = offer.currency == "marks"
+				local args = { level = WanderingMerchant.ilvlOf(visit.band, lvl) }
 				message ..= "\n" .. Text.now(
-					if offer.currency == "marks" then "wanderer.confirmGearBound" else "wanderer.confirmGear",
-					{ level = WanderingMerchant.ilvlOf(visit.band, lvl) }
+					if bound then "wanderer.confirmGearBound.short" else "wanderer.confirmGear.short",
+					args
 				)
+				details = Text.now(if bound then "wanderer.confirmGearBound" else "wanderer.confirmGear", args)
 			end
 			props.ShowModal({
 				Title = Text.now(Npcs.WANDERER.nameKey),
 				Message = message,
+				Details = details,
 				ConfirmText = Text.now("wanderer.buy"),
 				CancelText = Text.now("quest.back"),
 				OnConfirm = function(): (boolean, string?)

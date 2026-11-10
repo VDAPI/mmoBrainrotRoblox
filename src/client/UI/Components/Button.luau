@@ -1,6 +1,10 @@
 --!strict
 -- Text button with variants (primary / secondary / danger / ghost), hover/press/disabled states and a
 -- click sound. Works with mouse and touch (Activated). S135: colours from the roles of its `Surface`.
+-- Owner 2026-11-10 ("too much text"), UI package C: the label stays on one line (a label of at most 18 characters,
+-- Logic/TextCaps "button"; tests/uifit.spec checks the literal ones). A label that does not fit with the usual side
+-- padding takes the tiny one; '…' at its end is the last resort. The text size never shrinks (docs/UI-ZASADY.md §8:
+-- no scaled text; owner 2026-10-22: the heads of one row stood in three sizes).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -8,7 +12,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Sounds = require(script.Parent.Parent.Sounds)
 local Theme = require(script.Parent.Parent.Theme)
 
-local Children, OnEvent = Fusion.Children, Fusion.OnEvent
+local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
 
 type UsedAs<T> = Fusion.UsedAs<T>
 
@@ -114,10 +118,25 @@ local function Button(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 		return p.base
 	end)
 
+	-- A label that did not fit with the usual padding keeps the tiny one until the label changes (switching back
+	-- would make it fit again and swing between the two).
+	local fits = scope:Value(true)
+	local tight = scope:Value(false)
+	local label = scope:Computed(function(use): string
+		return use(props.Text)
+	end)
+	scope:Observer(label):onChange(function()
+		tight:set(false)
+	end)
+	scope:Observer(fits):onChange(function()
+		if not Fusion.peek(fits) then
+			tight:set(true)
+		end
+	end)
 	local side = scope:Computed(function(use): UDim
 		local size: UDim2? = use(props.Size)
 		local narrow = size ~= nil and size.X.Scale == 0 and size.X.Offset < NARROW
-		return UDim.new(0, if narrow then Theme.Padding.Tiny else Theme.Padding.Medium)
+		return UDim.new(0, if narrow or use(tight) then Theme.Padding.Tiny else Theme.Padding.Medium)
 	end)
 
 	return scope:New("TextButton")({
@@ -139,7 +158,9 @@ local function Button(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instan
 			local color = use(palette).text
 			return if use(disabled) then Theme.mix(color, roles.TextMuted, 0.6) else color
 		end),
-		TextWrapped = true,
+		TextWrapped = false,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		[Out("TextFits")] = fits,
 
 		[OnEvent("MouseEnter")] = function()
 			hovered:set(true)

@@ -3,6 +3,9 @@
 -- `Index`, a decorative rule at the bottom, Hover under the mouse, Selected with a brass bar on the left. Main text in
 -- Body / Text, an optional second line in Small / TextMuted, an optional value aligned right. Extra children (icons,
 -- buttons) go in [Children]; `Inset` leaves room on the left (an icon) and `RightInset` on the right (a button).
+-- UI plan 2026-11-10 (package C): a row is Theme.Size.RowHeight (48) or, with `Tall` (a second line under the main
+-- one), Theme.Size.RowHeightTall (64). `Height` is legacy: the windows that pass their own heights move to these two
+-- as they adopt the plan (packages D and E).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -22,7 +25,8 @@ export type Props = {
 	Selected: UsedAs<boolean>?,
 	Muted: UsedAs<boolean>?, -- locked / unavailable: muted main text
 	OnClick: (() -> ())?,
-	Height: number?,
+	Tall: boolean?, -- 64 instead of 48: room for the `Sub` line
+	Height: number?, -- legacy (see the header)
 	Inset: number?,
 	RightInset: number?,
 	LayoutOrder: UsedAs<number>?,
@@ -38,7 +42,7 @@ local BAR = 4
 local function ListRow(scope: Fusion.Scope<typeof(Fusion)>, props: Props): Instance
 	local roles = Theme.surface(props.Surface)
 	local hovered = scope:Value(false)
-	local height = props.Height or Theme.Size.RowHeight
+	local height = props.Height or (if props.Tall then Theme.Size.RowHeightTall else Theme.Size.RowHeight)
 	local inset = (props.Inset or 0) + Theme.Padding.Small + BAR
 	local rightInset = (props.RightInset or 0) + Theme.Padding.Small
 	local base = if (props.Index or 1) % 2 == 0 then roles.Sunken else roles.Surface

@@ -80,22 +80,35 @@ CharacterSections.LAYOUT = table.freeze({
 
 export type Columns = { wide: boolean, left: number, compact: boolean }
 
--- PC: always the three columns (the window is 1240 wide). Touch: the window fills the screen (`screenWidth` virtual
--- px), so three columns while the statistics keep `statsMin`, else two: the left one (name, equipment, both sections;
--- scrolling) as wide as the backpack leaves. `compact`: the statistics' column is too narrow for a stat row on one
--- line (StatAllocator `Compact`: the controls under the name).
-function CharacterSections.columns(touch: boolean, screenWidth: number): Columns
+-- PC: always the three columns (the window is 1240 wide). Touch: three columns while the statistics keep `statsMin`,
+-- else two: the left one (name, equipment, both sections; scrolling) as wide as the backpack leaves. `contentWidth`:
+-- the window's content (Logic/WindowFrame.content, virtual px; owner 2026-11-10 via the UI plan: not the screen, whose
+-- safe-area insets left a 428-px backpack on an 844x390 phone). `compact`: the statistics' column is too narrow for a
+-- stat row on one line (StatAllocator `Compact`: the controls under the name).
+function CharacterSections.columns(touch: boolean, contentWidth: number): Columns
 	local L = CharacterSections.LAYOUT
 	if not touch then
 		return { wide = true, left = L.left, compact = false }
 	end
-	local content = screenWidth - 2 * L.pad
+	local content = contentWidth
 	local right = content - (L.left + L.gutter + L.middle + L.gutter)
 	if right >= L.statsMin then
 		return { wide = true, left = L.left, compact = right - L.scrollPad < L.statsOneLine }
 	end
 	local left = math.clamp(content - L.middle - L.narrowGutter, L.narrowLeftMin, L.narrowLeftMax)
 	return { wide = false, left = left, compact = left - L.scrollPad < L.statsOneLine }
+end
+
+-- A stat's row in a wide column (StatAllocator): its name, then the − / + buttons (square, `button` px) round the value
+-- while there are free points, or the value alone without them, `gap` apart. The name takes what the controls leave, so
+-- the parts fill the row and the name starts at its left edge in both states (review 2026-11-10: without points the
+-- names stood 116 px in, pushed right with the value).
+CharacterSections.STAT_ROW = table.freeze({ button = 50, value = 90, gap = 8 })
+
+-- The width a stat's controls take beside its name, the gap before them included (`points`: the − / + buttons show).
+function CharacterSections.statControls(points: boolean): number
+	local R = CharacterSections.STAT_ROW
+	return if points then 2 * R.button + R.value + 3 * R.gap else R.value + R.gap
 end
 
 -- "Spend as the path suggests" and its plan line: only with free points to spend and a plan to follow.

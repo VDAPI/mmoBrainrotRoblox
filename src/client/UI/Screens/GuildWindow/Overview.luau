@@ -3,6 +3,8 @@
 -- limit, treasury, founding date, active bonuses (skills and the weekly rally), the message of the day (editable with
 -- the right) and the guild log (S159g: joins, ranks, bank, upgrades, goals, levels; newest first). Gold moved to the
 -- "Bank" tab in S159g.
+-- Owner 2026-11-10 (UI plan E): the guild log (every entry) is a Section folded by default (guildLog, saved on the
+-- account), so the overview ends with its title.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,6 +18,7 @@ local GuildBanners = require(ReplicatedStorage.Shared.Data.GuildBanners)
 local GuildProgressData = require(ReplicatedStorage.Shared.Data.GuildProgress)
 local GuildSkills = require(ReplicatedStorage.Shared.Data.GuildSkills)
 local ItemText = require(script.Parent.Parent.Parent.ItemText)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -327,15 +330,21 @@ local function Overview(scope: Scope, showModal: (spec: any) -> ()): Instance
 				}),
 			},
 		}),
-		Common.heading(scope, 8, Text.T(scope, "guild.log")),
-		scope:New("Frame")({
-			LayoutOrder = 9,
-			Size = UDim2.fromScale(1, 0),
-			AutomaticSize = Enum.AutomaticSize.Y,
-			BackgroundTransparency = 1,
-			[Children] = {
-				Common.list(scope, 4),
-				logRows :: any,
+		Section.new(scope, {
+			Id = "guildLog",
+			LayoutOrder = 8,
+			Title = Text.T(scope, "guild.log"),
+			Children = {
+				scope:New("Frame")({
+					LayoutOrder = 1,
+					Size = UDim2.fromScale(1, 0),
+					AutomaticSize = Enum.AutomaticSize.Y,
+					BackgroundTransparency = 1,
+					[Children] = {
+						Common.list(scope, 4),
+						logRows :: any,
+					},
+				}),
 			},
 		}),
 	})

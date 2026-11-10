@@ -7,6 +7,13 @@
 -- seen and the defence (II), the weaknesses (III), and the character's bonus against the family. Everything from
 -- Logic/Bestiary over Context.st (the replicated character.ach); the window computes no rule of its own.
 -- 2026-10-21 (owner: too many descriptions): the family bonus is one short line, how it grows behind an "i".
+-- Owner 2026-11-10 ("nic się nie zwija"; UI plan E, Logic/WorldLayout.bestiary): the regions are a Section
+-- (bestiaryRegions: open on PC and tablets, folded on a phone). Its header shows the bestiary points while open and the
+-- chosen region with its tiers while folded. Open on a screen too short for both, the region rows scroll in what is
+-- left and the entries keep the rest, never a negative height.
+-- Review 2026-11-10 (a phone with the regions open had room for no entry): on a phone the regions are a picker, a tap on
+-- one folds them again (back to the phone's default, so nothing open stays saved), and its entries show under the
+-- header that names it.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -20,20 +27,24 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoLine = require(script.Parent.Parent.Parent.Components.InfoLine)
 local ItemName = require(ReplicatedStorage.Shared.Logic.ItemName)
 local ListRow = require(script.Parent.Parent.Parent.Components.ListRow)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Preview = require(script.Parent.Parent.WorldMap.Preview)
+local Scale = require(script.Parent.Parent.Parent.Scale)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local SectionLabel = require(script.Parent.Parent.Parent.Components.SectionLabel)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
-local Children, OnEvent = Fusion.Children, Fusion.OnEvent
+local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 local BestiaryTab = {}
 
-local GAP = 6
-local REGION_ROW = 40
-local ENTRY_ROW = 58
+local GAP = WorldLayout.BESTIARY.gap
+local REGION_ROW = WorldLayout.BESTIARY.regionRow
+local REGIONS_ID = "bestiaryRegions"
 local COUNT = 96
 local PREVIEW = 150
 local TOP = 44
@@ -75,8 +86,8 @@ local function bar(s: Scope, value: Fusion.UsedAs<number>, done: boolean, layout
 	return Bar(s, spec :: any)
 end
 
--- The region rows (progress bars; a click shows the region's entries).
-local function regionRows(scope: Scope, ctx: Context.Ctx): Instance
+-- The region rows (progress bars; a click shows the region's entries), `height` tall (they scroll past it).
+local function regionRows(scope: Scope, ctx: Context.Ctx, height: Fusion.Computed<number>): Instance
 	local regions = scope:Computed(function(use): { Bestiary.RegionRow }
 		return Bestiary.regions(chr(use, ctx))
 	end)
@@ -108,6 +119,9 @@ local function regionRows(scope: Scope, ctx: Context.Ctx): Instance
 				end),
 				OnClick = function()
 					ctx.region:set(region)
+					if Fusion.peek(PhoneLayout.Compact) then
+						Section.set(REGIONS_ID, false)
+					end
 				end,
 				[Children] = scope:Computed(function(use, s: Scope): Instance
 					local r = use(live)
@@ -121,27 +135,19 @@ local function regionRows(scope: Scope, ctx: Context.Ctx): Instance
 			})
 		)
 	end
-	return scope:New("Frame")({
+	return scope:New("ScrollingFrame")({
 		Name = "Regions",
-		Size = UDim2.new(1, 0, 0, (REGION_ROW + 2) * #BestiaryData.REGIONS + 26),
+		Size = scope:Computed(function(use): UDim2
+			return UDim2.new(1, 0, 0, use(height))
+		end),
+		CanvasSize = UDim2.new(),
+		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		ScrollBarThickness = 4,
+		ScrollBarImageColor3 = Theme.Paper.Label,
 		[Children] = {
 			scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
-			scope:New("TextLabel")({
-				Name = "Head",
-				LayoutOrder = 0,
-				Size = UDim2.new(1, 0, 0, 22),
-				BackgroundTransparency = 1,
-				Text = scope:Computed(function(use): string
-					local c = chr(use, ctx)
-					return Text.get(use, "best.head", { points = Bestiary.points(c), max = Bestiary.pointsMax() })
-				end),
-				FontFace = Theme.Fonts.BodyBold,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.Label,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
 			rows :: any,
 		},
 	})
@@ -157,7 +163,7 @@ local function shapeOf(region: string, rows: { Bestiary.Row }): string
 end
 
 -- The entries of the chosen region.
-local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
+local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean, rowHeight: number): Instance
 	local rows = scope:Computed(function(use): { Bestiary.Row }
 		return Bestiary.rows(chr(use, ctx), use(ctx.region))
 	end)
@@ -196,7 +202,7 @@ local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean): Instan
 					Name = id,
 					LayoutOrder = i,
 					Index = i,
-					Height = ENTRY_ROW,
+					Height = rowHeight,
 					RightInset = COUNT + 8,
 					Text = name,
 					Sub = sub,
@@ -263,21 +269,60 @@ local function entryRows(scope: Scope, ctx: Context.Ctx, touch: boolean): Instan
 	})
 end
 
--- The middle of the tab: the regions on top, the entries of the chosen one under them.
-function BestiaryTab.list(scope: Scope, ctx: Context.Ctx, touch: boolean): Instance
-	local top = (REGION_ROW + 2) * #BestiaryData.REGIONS + 26 + GAP
+-- The middle of the tab: the regions on top (a Section), the entries of the chosen one under them. The heights come
+-- from Logic/WorldLayout.bestiary over the middle's measured size.
+function BestiaryTab.list(scope: Scope, ctx: Context.Ctx, device: WorldLayout.Device): Instance
+	local touch = device ~= "pc"
+	local open = Section.Open(REGIONS_ID)
+	local measured = scope:Value(Vector2.zero)
+	local layout = scope:Computed(function(use): WorldLayout.Bestiary
+		local middle = Scale.toVirtual(use(measured))
+		return WorldLayout.bestiary({ w = middle.X, h = middle.Y }, device, use(open), #BestiaryData.REGIONS)
+	end)
+	local regionsHeight = scope:Computed(function(use): number
+		return use(layout).regions
+	end)
+	-- the header: the points while open, the chosen region and its tiers while folded
+	local title = scope:Computed(function(use): string
+		local c = chr(use, ctx)
+		if use(open) then
+			return Text.get(use, "best.head", { points = Bestiary.points(c), max = Bestiary.pointsMax() })
+		end
+		local region = use(ctx.region)
+		for _, row in Bestiary.regions(c) do
+			if row.region == region then
+				local tiers = Text.get(use, "best.region.tiers", { done = row.done, max = row.max })
+				return `{regionName(use, region)} · {tiers}`
+			end
+		end
+		return regionName(use, region)
+	end)
 	return scope:New("Frame")({
 		Name = "Bestiary",
 		Size = UDim2.fromScale(1, 1),
 		BackgroundTransparency = 1,
+		[Out("AbsoluteSize")] = measured,
 		[Children] = {
-			regionRows(scope, ctx),
+			Section.new(scope, {
+				Id = "bestiaryRegions",
+				Title = title,
+				Children = { regionRows(scope, ctx, regionsHeight) },
+			}),
 			scope:New("Frame")({
 				Name = "List",
-				Position = UDim2.fromOffset(0, top),
-				Size = UDim2.new(1, 0, 1, -top),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.fromOffset(0, use(layout).list.top)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, 0, 0, use(layout).list.height)
+				end),
 				BackgroundTransparency = 1,
-				[Children] = entryRows(scope, ctx, touch),
+				[Children] = entryRows(
+					scope,
+					ctx,
+					touch,
+					WorldLayout.bestiary(WorldLayout.CHROME, device, false, 0).list.row
+				),
 			}),
 		},
 	})

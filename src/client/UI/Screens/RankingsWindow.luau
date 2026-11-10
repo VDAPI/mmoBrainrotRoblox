@@ -18,6 +18,7 @@ local Workspace = game:GetService("Workspace")
 
 local Arena = require(ReplicatedStorage.Shared.Data.Arena)
 local ArenaRules = require(ReplicatedStorage.Shared.Logic.ArenaRules)
+local Button = require(script.Parent.Parent.Components.Button)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Clock = require(ReplicatedStorage.Shared.Util.Clock)
 local Config = require(ReplicatedStorage.Shared.Config)
@@ -28,6 +29,8 @@ local InfoLine = require(script.Parent.Parent.Components.InfoLine)
 local Leaderboard = require(ReplicatedStorage.Shared.Logic.Leaderboard)
 local Leaderboards = require(ReplicatedStorage.Shared.Data.Leaderboards)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
+local Section = require(script.Parent.Parent.Components.Section)
 local SideTabs = require(script.Parent.Parent.Components.SideTabs)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
@@ -36,6 +39,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children = Fusion.Children
 local peek = Fusion.peek
@@ -43,12 +47,10 @@ local peek = Fusion.peek
 type Scope = Fusion.Scope<typeof(Fusion)>
 type Use = Fusion.Use
 
-local SIDE = 200
-local STRIP = Theme.Size.MinTouch + 6 -- Tabs with Scroll: buttons are STRIP - 6 (scroll bar 4 + 2) = MinTouch tall
-local TITLE = 34
-local HEAD = 30
-local FOOTER = 58
-local INFO = 22 -- S125: the countdown / hint line of the week and guild boards
+-- The touch tab strip and the filter strip are Tabs with Scroll: their buttons are the strip - 6 (scroll bar 4 + 2) =
+-- MinTouch tall (WorldLayout.rankings: strip and filter 50). INFO: a footer line (the week's countdown, the player's
+-- line, the update time).
+local INFO = 22
 local ALL = "all" -- the filter value of the board without a class
 
 -- S136: `medal` draws the cell as an iron plaque with a bright digit (places 1-3: gold is not readable as text on
@@ -354,10 +356,23 @@ end
 
 -- S156 (owner 2026-10-20: "make the rankings nicer"): the first three as a podium above the table, the winner in the
 -- middle and highest, each card on iron with its medal colour.
+-- Owner 2026-11-10 ("bardzo dużo napisów, niektóre rzeczy zasłaniają inne"; UI plan E, L10): the chrome heights come from
+-- Logic/WorldLayout.rankings. The podium is a Section in the rows (rankPodium: open on PC, folded on a phone). A phone
+-- steps through the filter with one button beside the tabs, and its footer keeps only the player's line: the update
+-- time goes behind the title's (i). So a phone shows at least two rows under the folded podium.
+-- Review 2026-11-10: the window is 720 tall (RankingsController), so PC shows five rows under the open podium; the
+-- weekly rewards line is one line of WorldLayout's height, and a phone leaves it out. A phone keeps the state on top:
+-- when the week or the season ends in the title row, "⚠ Tylko ten serwer" first in its footer line.
 local PODIUM = { 2, 1, 3 }
 local PODIUM_HEIGHT = { 0.82, 1, 0.7 }
-local function podium(scope: Scope, use: Use, rows: { Leaderboard.Row }, format: string, touch: boolean): Instance
-	local height = if touch then 104 else 118
+local function podium(
+	scope: Scope,
+	use: Use,
+	rows: { Leaderboard.Row },
+	format: string,
+	touch: boolean,
+	room: number
+): Instance
 	local cards: { any } = {
 		scope:New("UIListLayout")({
 			FillDirection = Enum.FillDirection.Horizontal,
@@ -441,7 +456,7 @@ local function podium(scope: Scope, use: Use, rows: { Leaderboard.Row }, format:
 	return scope:New("Frame")({
 		Name = "Podium",
 		LayoutOrder = 0,
-		Size = UDim2.new(1, 0, 0, height + 8),
+		Size = UDim2.new(1, 0, 0, room),
 		BackgroundTransparency = 1,
 		[Children] = {
 			scope:New("UIPadding")({ PaddingBottom = UDim.new(0, 8) }),
@@ -462,6 +477,20 @@ local function freeCells(use: Use, rank: number, touch: boolean): { Cell }
 		{ text = "", width = if touch then 110 else 150 },
 		{ text = "", width = 150 },
 	}
+end
+
+-- The label of a filter value. Owner 2026-11-10 (tabs at most 12 characters): a level bracket is its bare range,
+-- "40–59"; S126: an arena bracket its levels.
+local function filterLabel(use: Use, tab: Leaderboards.TabDef, value: string): string
+	if tab.filter == "bracket" then
+		return Leaderboard.bracketLabel(tonumber(value) or 1)
+	elseif tab.filter == "arenaBracket" then
+		local b = Arena.bracket(value)
+		return if b then `{b.min}–{b.max}` else "?"
+	elseif value == ALL then
+		return Text.get(use, "leaderboard.filter.all")
+	end
+	return Text.get(use, `class.{value}.name`)
 end
 
 -- The player's line under the table.
@@ -540,6 +569,7 @@ end
 
 local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 	local touch = Device.Touch
+	local compact = PhoneLayout.Compact
 	local tabs = sortedTabs()
 	local myClass = State.Value({ "character", "class" })
 	local myLevel = State.Value({ "character", "level" })
@@ -655,11 +685,113 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		table.insert(tabList, { id = tab.id, label = Text.T(scope, tab.nameKey) })
 	end
 
+	-- S125: the countdown to the new week, or how the guild score is counted; empty for the other boards
+	local infoText = scope:Computed(function(use): string
+		local id = use(current)
+		local def = if id then Leaderboard.resolve(id) else nil
+		if def and def.id == "exp_week" then
+			local d, h, m = Time.split(Leaderboard.weekEndsIn(use(clock)))
+			return Text.get(use, "leaderboard.week.resetIn", { d = d, h = h, m = m })
+		elseif def and def.format == "guild" then
+			return Text.get(use, "leaderboard.guild.hint", { n = Config.Leaderboard.guildTop })
+		elseif def and def.format == "rating" then
+			-- S126: the end of the arena season
+			local season = ArenaRules.seasonOf(use(clock))
+			local d, h = Time.split(ArenaRules.seasonEndsAt(season) - use(clock))
+			return Text.get(use, "arena.season.ends", { time = Text.get(use, "arena.time.dh", { d = d, h = h }) })
+		end
+		return ""
+	end)
+	-- Review 2026-11-10: when the week or the arena season ends, short ("koniec za 2 d 5 h"); a phone's title row shows it
+	-- (its footer keeps one line), "" for a board without an end
+	local endsIn = scope:Computed(function(use): string
+		local id = use(current)
+		local def = if id then Leaderboard.resolve(id) else nil
+		local left: number? = nil
+		if def and def.id == "exp_week" then
+			left = Leaderboard.weekEndsIn(use(clock))
+		elseif def and def.format == "rating" then
+			left = ArenaRules.seasonEndsAt(ArenaRules.seasonOf(use(clock))) - use(clock)
+		end
+		if not left then
+			return ""
+		end
+		local d, h = Time.split(left)
+		return Text.get(use, "leaderboard.endsIn", { time = Text.get(use, "arena.time.dh", { d = d, h = h }) })
+	end)
+	-- 2026-10-21: what the board's "i" explains: the week's rewards, or the rule of the Hall of Fame; "" = no "i"
+	local titleInfo = scope:Computed(function(use): string
+		local id = use(current)
+		local def = if id then Leaderboard.resolve(id) else nil
+		if def and def.id == "exp_week" then
+			local rewards = Leaderboards.WEEK_REWARDS
+			return Text.get(use, "leaderboard.week.rewards", {
+				title = Text.get(use, "title." .. rewards.title),
+				days = rewards.titleDays,
+				first = rewards.shards[1],
+				second = rewards.shards[2],
+				third = rewards.shards[3],
+			})
+		elseif def and def.format == "date" then
+			return Text.get(use, "leaderboard.hof.hint", { n = Leaderboards.HOF_SIZE, level = Config.MaxLevel })
+		end
+		return ""
+	end)
+	local hasFilter = scope:Computed(function(use): boolean
+		local tab = tabById(use(selected))
+		return tab ~= nil and #filterValues(tab) > 1
+	end)
+	-- Logic/WorldLayout: the chrome of this device (the rows fill the rest), and the weekly board's rewards line
+	local layout = scope:Computed(function(use): WorldLayout.Rankings
+		local device: WorldLayout.Device = WorldLayout.device(use(touch) == true, use(compact))
+		local id = use(current)
+		local def = if id then Leaderboard.resolve(id) else nil
+		local week = def ~= nil and def.id == "exp_week"
+		return WorldLayout.rankings(WorldLayout.CHROME, device, use(hasFilter), use(infoText) ~= "", week)
+	end)
+	-- When the board was read, and the warning of a board of this server only (rich text).
+	local updated = scope:Computed(function(use): string
+		local snap = use(snapshot)
+		if not snap or snap.loading then
+			return ""
+		end
+		local age = use(now) - snap.at
+		local text = if age < 60
+			then Text.get(use, "leaderboard.updatedNow")
+			else Text.get(use, "leaderboard.updated", { time = Format.time(age) })
+		if snap.mode == "local" then
+			local warning = Theme.Paper.Warning:ToHex()
+			return `{escape(text)}   <font color="#{warning}">⚠ {escape(Text.get(use, "leaderboard.local"))}</font>`
+		end
+		return escape(text)
+	end)
+	-- What the title's (i) explains: the board's rule; a phone adds the guild's rule and the update time with the whole
+	-- warning of a board of this server (its footer keeps only the player's line; review 2026-11-10: the countdown is
+	-- in its title row, the short warning in its footer line).
+	local info = scope:Computed(function(use): string
+		local parts: { string } = {}
+		local rule = use(titleInfo)
+		if rule ~= "" then
+			table.insert(parts, escape(rule))
+		end
+		if use(layout).footerLines < 2 then
+			if use(infoText) ~= "" and use(endsIn) == "" then
+				table.insert(parts, escape(use(infoText)))
+			end
+			if use(updated) ~= "" then
+				table.insert(parts, use(updated))
+			end
+		end
+		return table.concat(parts, "\n\n")
+	end)
+
 	local contentPos = scope:Computed(function(use): UDim2
-		return if use(touch) then UDim2.fromOffset(0, STRIP + 8) else UDim2.fromOffset(SIDE + 12, 0)
+		local l = use(layout)
+		return if use(touch) then UDim2.fromOffset(0, l.strip + 8) else UDim2.fromOffset(l.side + 12, 0)
 	end)
 	local contentSize = scope:Computed(function(use): UDim2
-		return if use(touch) then UDim2.new(1, 0, 1, -(STRIP + 8)) else UDim2.new(1, -(SIDE + 12), 1, 0)
+		local l = use(layout)
+		return if use(touch) then UDim2.new(1, 0, 1, -(l.strip + 8)) else UDim2.new(1, -(l.side + 12), 1, 0)
 	end)
 
 	local filterStrip = scope:Computed(function(use, s: Scope): any
@@ -670,22 +802,36 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		end
 		local list = {}
 		for _, value in values do
-			local label: any
-			if tab and tab.filter == "bracket" then
-				label =
-					Text.T(s, "leaderboard.week.bracket", { bracket = Leaderboard.bracketLabel(tonumber(value) or 1) })
-			elseif tab and tab.filter == "arenaBracket" then
-				-- S126
-				local b = Arena.bracket(value)
-				label = Text.T(s, "arena.bracket", { min = if b then b.min else 0, max = if b then b.max else 0 })
-			elseif value == ALL then
-				label = Text.T(s, "leaderboard.filter.all")
-			else
-				label = Text.T(s, `class.{value}.name`)
-			end
+			local label = s:Computed(function(use2): string
+				return if tab then filterLabel(use2, tab, value) else value
+			end)
 			list[#list + 1] = { id = value, label = label }
 		end
 		return Tabs(s, { Tabs = list, Selected = filter, Scroll = true, Size = UDim2.fromScale(1, 1) })
+	end)
+	-- A phone: one button beside the tabs steps through the filter (the shown value and "▸").
+	local filterButton = scope:Computed(function(use, s: Scope): any
+		local tab = tabById(use(selected))
+		local width = use(layout).filterButton
+		if not tab or width <= 0 then
+			return nil
+		end
+		local values = filterValues(tab)
+		return Button(s, {
+			Name = "FilterButton",
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.fromScale(1, 0),
+			Size = UDim2.fromOffset(width, Theme.Size.MinTouch),
+			Variant = "secondary",
+			TextSize = Theme.TextSize.Small,
+			Text = s:Computed(function(use2): string
+				return `{filterLabel(use2, tab, use2(filter))} ▸`
+			end),
+			OnClick = function()
+				local i = table.find(values, peek(filter)) or 0
+				filter:set(values[i % #values + 1])
+			end,
+		})
 	end)
 
 	local table_ = scope:Computed(function(use, s: Scope): { any }
@@ -697,21 +843,23 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		local items: { any } = {
 			s:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
 		}
-		local rowHeight = if isTouch then 44 else 40
-		if def and def.id == "exp_week" then
-			-- S125: what the top three of each bracket get (numbers from Data/Leaderboards)
+		local l = use(layout)
+		local rowHeight = l.list.row
+		if l.rewards > 0 then
+			-- S125: what the top three of each bracket get (numbers from Data/Leaderboards). Review 2026-11-10: one line
+			-- of WorldLayout's height, on PC and a tablet only; a phone keeps its rows (the title's (i) has the rewards).
 			local rewards = Leaderboards.WEEK_REWARDS
 			table.insert(
 				items,
 				s:New("TextLabel")({
 					LayoutOrder = -1,
-					Size = UDim2.fromScale(1, 0),
-					AutomaticSize = Enum.AutomaticSize.Y,
+					Size = UDim2.new(1, 0, 0, l.rewards),
 					BackgroundTransparency = 1,
 					Text = Text.get(use, "leaderboard.week.rewards.short", {
 						title = Text.get(use, "title." .. rewards.title),
 					}),
-					TextWrapped = true,
+					TextTruncate = Enum.TextTruncate.AtEnd,
+					TextYAlignment = Enum.TextYAlignment.Top,
 					FontFace = Theme.Fonts.Body,
 					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Paper.Text,
@@ -739,7 +887,15 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			return items
 		end
 		if format ~= "date" and #snap.rows > 0 then
-			table.insert(items, podium(s, use, snap.rows, format, isTouch))
+			table.insert(
+				items,
+				Section.new(s, {
+					Id = "rankPodium",
+					Title = Text.T(s, "leaderboard.podium"),
+					LayoutOrder = 0,
+					Children = { podium(s, use, snap.rows, format, isTouch, l.podium) },
+				})
+			)
 		end
 		for i, row in snap.rows do
 			local background = if row.mine then Theme.Paper.Hover elseif i % 2 == 0 then Theme.Paper.Raised else nil
@@ -780,50 +936,17 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 		return items
 	end)
 
-	-- S125: the countdown to the new week, or how the guild score is counted; empty for the other boards
-	local infoText = scope:Computed(function(use): string
-		local id = use(current)
-		local def = if id then Leaderboard.resolve(id) else nil
-		if def and def.id == "exp_week" then
-			local d, h, m = Time.split(Leaderboard.weekEndsIn(use(clock)))
-			return Text.get(use, "leaderboard.week.resetIn", { d = d, h = h, m = m })
-		elseif def and def.format == "guild" then
-			return Text.get(use, "leaderboard.guild.hint", { n = Config.Leaderboard.guildTop })
-		elseif def and def.format == "rating" then
-			-- S126: the end of the arena season
-			local season = ArenaRules.seasonOf(use(clock))
-			local d, h = Time.split(ArenaRules.seasonEndsAt(season) - use(clock))
-			return Text.get(use, "arena.season.ends", { time = Text.get(use, "arena.time.dh", { d = d, h = h }) })
-		end
-		return ""
-	end)
-	-- 2026-10-21: what the board's "i" explains: the week's rewards, or the rule of the Hall of Fame; "" = no "i"
-	local titleInfo = scope:Computed(function(use): string
-		local id = use(current)
-		local def = if id then Leaderboard.resolve(id) else nil
-		if def and def.id == "exp_week" then
-			local rewards = Leaderboards.WEEK_REWARDS
-			return Text.get(use, "leaderboard.week.rewards", {
-				title = Text.get(use, "title." .. rewards.title),
-				days = rewards.titleDays,
-				first = rewards.shards[1],
-				second = rewards.shards[2],
-				third = rewards.shards[3],
-			})
-		elseif def and def.format == "date" then
-			return Text.get(use, "leaderboard.hof.hint", { n = Leaderboards.HOF_SIZE, level = Config.MaxLevel })
-		end
-		return ""
-	end)
 	local footerHeight = scope:Computed(function(use): number
-		return if use(infoText) ~= "" then FOOTER + INFO else FOOTER
+		return use(layout).footer
 	end)
 
 	return {
 		-- PC: the tab column on the left.
 		scope:New("Frame")({
 			Name = "SideTabsHolder",
-			Size = UDim2.new(0, SIDE, 1, 0),
+			Size = scope:Computed(function(use): UDim2
+				return UDim2.new(0, use(layout).side, 1, 0)
+			end),
 			BackgroundTransparency = 1,
 			Visible = scope:Computed(function(use): boolean
 				return not use(touch)
@@ -832,15 +955,25 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 				SideTabs(scope, { Tabs = tabList, Selected = selected, Size = UDim2.fromScale(1, 1) }),
 			},
 		}),
-		-- Phone: the tabs as a strip at the top.
+		-- Phone: the tabs as a strip at the top (a phone's filter button at its right).
 		scope:New("Frame")({
 			Name = "TabStripHolder",
-			Size = UDim2.new(1, 0, 0, STRIP),
+			Size = scope:Computed(function(use): UDim2
+				local l = use(layout)
+				return UDim2.new(1, if l.filterButton > 0 then -(l.filterButton + 8) else 0, 0, l.strip)
+			end),
 			BackgroundTransparency = 1,
 			Visible = touch,
 			[Children] = {
 				Tabs(scope, { Tabs = tabList, Selected = selected, Scroll = true, Size = UDim2.fromScale(1, 1) }),
 			},
+		}),
+		scope:New("Frame")({
+			Name = "FilterButtonHolder",
+			Size = UDim2.fromScale(1, 0),
+			BackgroundTransparency = 1,
+			Visible = touch,
+			[Children] = filterButton :: any,
 		}),
 		scope:New("Frame")({
 			Name = "Board",
@@ -850,15 +983,20 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 			[Children] = {
 				InfoLine.new(scope, {
 					Name = "Title",
-					Size = UDim2.new(1, 0, 0, TITLE),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.new(1, 0, 0, use(layout).title)
+					end),
 					Text = scope:Computed(function(use): string
 						local id = use(current)
 						local def = if id then Leaderboard.resolve(id) else nil
-						return if def then Text.get(use, def.nameKey) else ""
+						local name = if def then Text.get(use, def.nameKey) else ""
+						-- a phone: the countdown of its footer line in the title row
+						local left = if use(layout).footerLines < 2 then use(endsIn) else ""
+						return if name ~= "" and left ~= "" then `{name} · {left}` else name
 					end),
-					Info = titleInfo,
+					Info = info,
 					InfoVisible = scope:Computed(function(use): boolean
-						return use(titleInfo) ~= ""
+						return use(info) ~= ""
 					end),
 					Font = Theme.Fonts.Display,
 					TextSize = Theme.TextSize.Large,
@@ -866,29 +1004,43 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 				}),
 				scope:New("Frame")({
 					Name = "Filter",
-					Position = UDim2.fromOffset(0, TITLE + 4),
-					Size = UDim2.new(1, 0, 0, STRIP),
+					Position = scope:Computed(function(use): UDim2
+						return UDim2.fromOffset(0, use(layout).title + 4)
+					end),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.new(1, 0, 0, use(layout).filter)
+					end),
+					Visible = scope:Computed(function(use): boolean
+						return use(layout).filter > 0
+					end),
 					BackgroundTransparency = 1,
 					[Children] = filterStrip :: any,
 				}),
 				scope:New("Frame")({
 					Name = "Head",
-					Position = UDim2.fromOffset(0, TITLE + STRIP + 8),
-					Size = UDim2.new(1, -8, 0, HEAD),
+					Position = scope:Computed(function(use): UDim2
+						return UDim2.fromOffset(0, use(layout).headTop)
+					end),
+					Size = scope:Computed(function(use): UDim2
+						return UDim2.new(1, -8, 0, use(layout).head)
+					end),
 					BackgroundTransparency = 1,
 					[Children] = scope:Computed(function(use, s: Scope): any
 						local snap = use(snapshot)
 						local id = use(current)
 						local def = if id then Leaderboard.resolve(id) else nil
 						local format = if snap then snap.format elseif def then def.format else "level"
-						return line(s, headerCells(use, format, use(touch)), HEAD, 1)
+						return line(s, headerCells(use, format, use(touch)), use(layout).head, 1)
 					end) :: any,
 				}),
 				scope:New("ScrollingFrame")({
 					Name = "Rows",
-					Position = UDim2.fromOffset(0, TITLE + STRIP + HEAD + 10),
+					Position = scope:Computed(function(use): UDim2
+						return UDim2.fromOffset(0, use(layout).list.top)
+					end),
 					Size = scope:Computed(function(use): UDim2
-						return UDim2.new(1, 0, 1, -(TITLE + STRIP + HEAD + 10 + use(footerHeight)))
+						local l = use(layout)
+						return UDim2.new(1, 0, 1, -(l.list.top + l.footer + 2))
 					end),
 					BackgroundTransparency = 1,
 					BorderSizePixel = 0,
@@ -914,7 +1066,7 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 							Size = UDim2.new(1, 0, 0, INFO),
 							BackgroundTransparency = 1,
 							Visible = scope:Computed(function(use): boolean
-								return use(infoText) ~= ""
+								return use(infoText) ~= "" and use(layout).footerLines >= 3
 							end),
 							Text = infoText,
 							FontFace = Theme.Fonts.Body,
@@ -925,14 +1077,24 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 						}),
 						scope:New("TextLabel")({
 							LayoutOrder = 1,
-							Size = UDim2.new(1, 0, 0, 22),
+							Size = UDim2.new(1, 0, 0, INFO),
 							BackgroundTransparency = 1,
+							RichText = true,
 							Text = scope:Computed(function(use): string
 								local snap = use(snapshot)
 								if not snap then
 									return ""
 								end
-								return meText(use, snap)
+								local text = escape(meText(use, snap))
+								-- review 2026-11-10: a phone's only footer line says first that this board is of this
+								-- server only (the whole warning is in the title's (i))
+								if snap.mode == "local" and use(layout).footerLines < 2 then
+									local warning = Theme.Paper.Warning:ToHex()
+									local short = escape(Text.get(use, "leaderboard.local.short"))
+									local mark = `<font color="#{warning}">{short}</font>`
+									return if text ~= "" then `{mark}  ·  {text}` else mark
+								end
+								return text
 							end),
 							FontFace = Theme.Fonts.BodyBold,
 							TextSize = Theme.TextSize.Small,
@@ -942,26 +1104,13 @@ local function RankingsWindow(scope: Scope, _props: {}?): Fusion.Child
 						}),
 						scope:New("TextLabel")({
 							LayoutOrder = 2,
-							Size = UDim2.new(1, 0, 0, 22),
+							Size = UDim2.new(1, 0, 0, INFO),
 							BackgroundTransparency = 1,
-							RichText = true,
-							Text = scope:Computed(function(use): string
-								local snap = use(snapshot)
-								if not snap or snap.loading then
-									return ""
-								end
-								local age = use(now) - snap.at
-								local updated = if age < 60
-									then Text.get(use, "leaderboard.updatedNow")
-									else Text.get(use, "leaderboard.updated", { time = Format.time(age) })
-								if snap.mode == "local" then
-									local warning = Theme.Paper.Warning:ToHex()
-									return `{escape(updated)}   <font color="#{warning}">⚠ {escape(
-										Text.get(use, "leaderboard.local")
-									)}</font>`
-								end
-								return escape(updated)
+							Visible = scope:Computed(function(use): boolean
+								return use(layout).footerLines >= 2
 							end),
+							RichText = true,
+							Text = updated,
 							FontFace = Theme.Fonts.Body,
 							TextSize = Theme.TextSize.Small,
 							TextColor3 = Theme.Paper.TextMuted,

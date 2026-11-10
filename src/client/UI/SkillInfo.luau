@@ -21,6 +21,9 @@
 -- range, the element it needs); the area, aiming, kind of blow, weapon speed factor, heal on you, the reached
 -- breakpoints and the full description are its details (Tooltip details: the details key held, or a long press).
 -- The split is Logic/TipText.SKILL_COMPACT.
+-- Owner 2026-11-10 via the UI plan ("koszt · odnowienie"; review 2026-11-10: the folded line with the range ran past
+-- the 326-px details panel for every skill with a range): costSummary is the folded "Koszt i odnowienie" section's
+-- line, the cost and the cooldown after the reductions only, "25 many · 6.4 s"; the open section keeps costLine.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -197,15 +200,11 @@ function SkillInfo.shapeLine(use: any, skill: SkillData.SkillDef, shownRank: num
 	return `{SHAPE_GLYPH[shape]} {size}`
 end
 
--- "15 energy · Cooldown 4 s · Range 8 studs". 2026-10-21: `part` "main" = cost, cooldown and range (the bar tooltip's
--- short part), "extra" = aiming, kind of blow and the weapon speed factor (its details); nil = all (the skills window).
-function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: number, part: ("main" | "extra")?): string
-	local rank = math.max(1, shownRank)
+-- What a cast takes at `rank`, as a text ("15 energii", a beam's mana per tick; nil without a cost), and the cooldown
+-- after the item reduction and Quick Reload (Skills.cooldown, as the server counts it) with the one before them.
+local function costAndCooldown(use: any, skill: SkillData.SkillDef, rank: number): (string?, number, number)
 	local def, behaviour = effective(use, skill, rank)
-	local parts: { { text: string, extra: boolean } } = {}
-	local function insert(text: string, isExtra: boolean?)
-		table.insert(parts, { text = text, extra = isExtra == true })
-	end
+	local text: string? = nil
 	local saving = use(costReduce)
 	local mods: Skills.CostMods = {
 		costReduce = if type(saving) == "number" then saving else 0,
@@ -219,17 +218,48 @@ function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: numb
 		local drain = if type(maxMana) == "number" and maxMana > 0
 			then Skills.drain(def, rank, maxMana, mods) / maxMana * 100
 			else Skills.valueAt(def, "drain", rank)
-		insert(Text.get(use, "skills.cost.drain", { drain = math.floor(drain * 10 + 0.5) / 10 }))
+		text = Text.get(use, "skills.cost.drain", { drain = math.floor(drain * 10 + 0.5) / 10 })
 	elseif cost > 0 and skill.resource then
 		-- The bar needs the full amount, so a fractional cost (Mage above level 20) shows rounded up.
 		local shownCost = math.ceil(cost - 1e-6)
-		insert(Text.get(use, `skills.cost.{skill.resource}`, { cost = shownCost }))
+		text = Text.get(use, `skills.cost.{skill.resource}`, { cost = shownCost })
 	end
 	-- S64: the cooldown after the item reduction (Skills.cooldown, as the server counts it).
 	local base = Skills.cooldown(def, rank, 0, behaviour)
 	-- S144: Quick Reload on the Crossbow's skills (Logic/Crossbow.cdrFor, as SkillService)
 	local cdr = Crossbow.cdrFor(skill.pool, SkillInfo.cdr(use), SkillInfo.hooks(use).quickReload)
-	local reduced = Skills.cooldown(def, rank, cdr, behaviour)
+	return text, Skills.cooldown(def, rank, cdr, behaviour), base
+end
+
+-- The folded "Koszt i odnowienie" line: "25 many · 6.4 s" (the cooldown after the reductions; none for a skill without
+-- one). The section's title names both, so the line needs no words for them; the range, the reduction's percent and
+-- the rest stay in the open section (costLine). nil: nothing to show.
+function SkillInfo.costSummary(use: any, skill: SkillData.SkillDef, shownRank: number): string?
+	local cost, reduced = costAndCooldown(use, skill, math.max(1, shownRank))
+	local parts: { string } = {}
+	if cost then
+		table.insert(parts, cost)
+	end
+	local cooldown = math.floor(reduced * 10 + 0.5) / 10
+	if cooldown > 0 then
+		table.insert(parts, Text.get(use, "skills.cooldown.short", { cooldown = cooldown }))
+	end
+	return if #parts > 0 then table.concat(parts, " · ") else nil
+end
+
+-- "15 energy · Cooldown 4 s · Range 8 studs". 2026-10-21: `part` "main" = cost, cooldown and range (the bar tooltip's
+-- short part), "extra" = aiming, kind of blow and the weapon speed factor (its details); nil = all (the skills window).
+function SkillInfo.costLine(use: any, skill: SkillData.SkillDef, shownRank: number, part: ("main" | "extra")?): string
+	local rank = math.max(1, shownRank)
+	local def = effective(use, skill, rank)
+	local parts: { { text: string, extra: boolean } } = {}
+	local function insert(text: string, isExtra: boolean?)
+		table.insert(parts, { text = text, extra = isExtra == true })
+	end
+	local cost, reduced, base = costAndCooldown(use, skill, rank)
+	if cost then
+		insert(cost)
+	end
 	local cooldown = math.floor(reduced * 10 + 0.5) / 10
 	if base > 0 and reduced < base - 1e-6 then
 		local pct = math.floor((1 - reduced / base) * 100 + 1e-6)

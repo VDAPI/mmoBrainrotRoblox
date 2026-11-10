@@ -1,5 +1,6 @@
 --!strict
--- Dragon Shop (DESIGN §21, DESIGN-17 §1, S120): a header with the tab title, the Dragon Currency balance and "Top up",
+-- Dragon Shop (DESIGN §21, DESIGN-17 §1, S120): a header with the Dragon Currency balance and "Top up" (owner
+-- 2026-11-10: one title, the window's; the selected tab names the tab, so the header no longer repeats it),
 -- five tabs (Logic/Premium.visibleTabs: Currency, Passes, Items, Cosmetics, Mounts only while a mount is on sale) as a
 -- column on the left on PC and a scrolling strip under the header on a phone, and the content of the selected tab.
 -- Each tab is its own module (Currency, Passes, Items, Cosmetics, Mounts: `build(scope, ctx)`); later sessions add to
@@ -101,23 +102,8 @@ local function header(scope: Scope, selected: Fusion.Value<string>): Instance
 		Size = UDim2.new(1, 0, 0, HEADER),
 		BackgroundTransparency = 1,
 		[Children] = {
-			-- On a phone the tab strip right under the header names the tab.
-			scope:New("TextLabel")({
-				Name = "Title",
-				Size = UDim2.new(1, -HEADER_RIGHT, 1, 0),
-				BackgroundTransparency = 1,
-				Visible = scope:Computed(function(use): boolean
-					return not use(Device.Touch)
-				end),
-				Text = scope:Computed(function(use): string
-					return Text.get(use, `premium.tab.{use(selected)}`)
-				end),
-				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Large,
-				TextColor3 = Theme.Paper.Heading,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
+			-- Owner 2026-11-10 (one home per thing): no title of the tab here; the window's title bar names the shop and
+			-- the selected tab (the column on PC, the strip on a phone) names the tab.
 			-- W28: balance, the Studio button and "Top up" in one right-aligned row (no fixed offsets to collide).
 			scope:New("Frame")({
 				Name = "Right",

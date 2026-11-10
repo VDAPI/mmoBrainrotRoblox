@@ -220,6 +220,8 @@ Theme.Size = {
 	TooltipWidth = 340,
 	InfoTipWidth = 320,
 	ModalWidth = 520,
+	-- UI plan, package C: a list row with a second line (Components/ListRow `Tall`)
+	RowHeightTall = 64,
 }
 
 Theme.Corner = {

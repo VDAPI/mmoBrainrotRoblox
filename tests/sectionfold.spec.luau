@@ -347,6 +347,36 @@ T.describe("SectionFold", function()
 		end
 	end)
 
+	T.it("Folds/Gear: the backpack and skills windows read every id there, and name no other", function()
+		-- UI plan package D (owner 2026-11-10, "nothing folds"): the derived statistics in four sections (their ids
+		-- in DerivedList's table, so the patterns above miss them) and the skill details' cost and breakpoints
+		local Gear = require("../src/shared/Data/Folds/Gear") :: any
+		local sources: { string } = {}
+		for _, dir in { "src/client/UI/Screens/CharacterWindow", "src/client/UI/Screens/SkillsWindow" } do
+			for _, path in luauFiles(dir) do
+				table.insert(sources, fs.readFile(path))
+			end
+		end
+		local all = table.concat(sources, "\n")
+		for id in Gear do
+			T.expect(`{id} {string.find(all, `"{id}"`, 1, true) ~= nil}`).toBe(`{id} true`)
+		end
+		-- a literal id there, or one of the derived groups', is Gear's, never another area's
+		local named = 0
+		for _, pattern in { 'Id%s*=%s*"([%w_]+)"', '%a+%s*=%s*"(char%u%a+)"' } do
+			for id in string.gmatch(all, pattern) do
+				named += 1
+				T.expect(`{id} {Gear[id] ~= nil}`).toBe(`{id} true`)
+			end
+		end
+		T.expect(named >= 8).toBe(true)
+		-- what the plan folds: the statistics and the attack open, the rest to one line
+		T.expect({ Gear.charStats, Gear.charOffense }).toEqual({ true, true })
+		for _, id in { "charSets", "charDefense", "charResources", "charOther", "skillCost", "skillBreakpoints" } do
+			T.expect(`{id} {Gear[id]}`).toBe(`{id} false`)
+		end
+	end)
+
 	T.it("a new account starts with the defaults, and the setting is wired end to end", function()
 		local account = AccountSchema.accountTemplate() :: any
 		T.expect(account.settings.sections).toEqual({})

@@ -543,11 +543,13 @@ local function onPortal(portalId: string, targetId: string)
 		return
 	end
 	local warnings = {}
-	if target.zone == "red" then
+	local red = target.zone == "red"
+	if red then
 		table.insert(warnings, Text.now("portal.warnRed"))
 	end
 	local level = State.Get({ "character", "level" }) or 1
-	if level < target.minLevel then
+	local low = level < target.minLevel
+	if low then
 		table.insert(warnings, Text.now("portal.warnLevel", { level = target.minLevel }))
 	end
 	-- S22: region maps open the area picker; the warnings become a line in it.
@@ -561,9 +563,14 @@ local function onPortal(portalId: string, targetId: string)
 		travel(portalId)
 		return
 	end
+	-- owner 2026-11-10 (a modal's message at most 90 characters): one warning is the message. Review 2026-11-10 (the
+	-- level warning waited unseen under "Więcej ▸" behind the red zone's): both dangers make one line of their own,
+	-- and "Więcej ▸" keeps the red zone's full sentence, a longer version of that line, not a second warning.
+	local both = red and low
 	WindowManager.ShowModal({
 		Title = Text.now(target.nameKey),
-		Message = table.concat(warnings, "\n\n"),
+		Message = if both then Text.now("portal.warnBoth", { level = target.minLevel }) else warnings[1],
+		Details = if both then Text.now("portal.warnRed") else nil,
 		ConfirmText = Text.now("portal.go"),
 		CancelText = Text.now("common.cancel"),
 		Variant = if target.zone == "red" then "danger" else nil,

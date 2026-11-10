@@ -7,6 +7,11 @@
 -- One window at a time (S18, DESIGN §23): opening a window closes the others. Service windows open together
 -- with the companion backpack, side by side on desktop. S29: the pairing rules (what closes with what, the
 -- B alias of the backpack window "character") live in Shared/Logic/WindowRules; every way of closing goes through them.
+-- Owner 2026-11-10 ("things covering each other"), UI package C: a pair stands where Logic/WindowFrame.pair puts it
+-- (a service steps aside when the backpack opens next to it); on a touch screen, where every window covers the
+-- screen, a service and its backpack swap places from their title bars ("Plecak" / "◂ <service>",
+-- WindowRules.partner). A build function may return Components/Window's Parts (content, Footer, Scroll,
+-- HeaderAction) instead of its bare content.
 -- Hotkeys only work while enabled (ScreenController enables them in the "playing" phase).
 -- S23: `overlay` windows (the dev panel) neither close other windows nor get closed by them; on desktop they
 -- open at the right edge. Esc closes the normal windows first and overlays last. Overlay hotkeys win over
@@ -29,6 +34,7 @@ local UiWindows = require(ReplicatedStorage.Shared.Data.UiWindows)
 local Device = require(script.Parent.Parent.UI.Device)
 local Scale = require(script.Parent.Parent.UI.Scale)
 local Window = require(script.Parent.Parent.UI.Components.Window)
+local WindowFrame = require(ReplicatedStorage.Shared.Logic.WindowFrame)
 local WindowRules = require(ReplicatedStorage.Shared.Logic.WindowRules)
 local State = require(script.Parent.Parent.UI.State)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -42,8 +48,9 @@ export type WindowDef = {
 	titleKey: string,
 	size: Vector2,
 	hotkey: Enum.KeyCode?,
-	-- Builds the window content. `close` closes this window.
-	build: (scope: Scope, close: () -> ()) -> Fusion.Child,
+	-- Builds the window content (or Window.Parts: the content with a pinned Footer, a Scroll body, a HeaderAction).
+	-- `close` closes this window.
+	build: (scope: Scope, close: () -> ()) -> Fusion.Child | Window.Parts,
 	overlay: boolean?, -- S23: stays open next to other windows
 	enabled: (() -> boolean)?, -- S23: hotkey only while this returns true
 }
@@ -52,6 +59,7 @@ type OpenWindow = {
 	scope: Scope,
 	z: Fusion.Value<number>,
 	closing: Fusion.Value<boolean>, -- W28: drives the closing motion of Window
+	place: Fusion.Value<Vector2>, -- the desktop offset from the screen centre (a pair moves it)
 	root: GuiObject?,
 }
 
@@ -63,10 +71,11 @@ local WindowManager = {
 }
 
 local INVENTORY = WindowRules.INVENTORY
-local GAP = 12
 
 local UIController: any
 local rootScope: Scope
+-- Bumped on every change of the open windows and their order: the phone switch in the title bars follows it.
+local changed: Fusion.Value<number>? = nil
 local defs: { [string]: WindowDef } = {}
 local open: { [string]: OpenWindow } = {}
 local stack: { string } = {} -- open window ids (overlays included), top last
@@ -93,8 +102,15 @@ local function isOverlay(id: string): boolean
 	return def ~= nil and def.overlay == true
 end
 
+local function bump()
+	if changed then
+		changed:set(Fusion.peek(changed) + 1)
+	end
+end
+
 -- UI plan phase 2: the HUD parts under the open normal windows step out of sight (UI/HudCover).
 local function reportCover()
+	bump()
 	local roots: { GuiObject } = {}
 	for _, id in stack do
 		local window = open[id]
@@ -120,6 +136,7 @@ local function bringToFront(id: string)
 	end
 	zCounter += 1
 	window.z:set(zCounter)
+	bump()
 end
 
 function WindowManager.Register(def: WindowDef)
@@ -211,14 +228,14 @@ end
 
 local openWindow: (id: string, offset: Vector2?) -> ()
 
--- Desktop offsets of a backpack + service pair (backpack on the left, service on the right).
+-- Desktop offsets of a backpack + service pair (Logic/WindowFrame.pair: backpack on the left, service on the right).
 local function pairOffsets(serviceId: string): (Vector2, Vector2)
 	local inventory = defs[INVENTORY]
 	local service = defs[serviceId]
-	local invWidth = if inventory then inventory.size.X else 0
-	local serviceWidth = if service then service.size.X else 0
-	local half = (invWidth + serviceWidth + GAP) / 2
-	return Vector2.new(-half + invWidth / 2, 0), Vector2.new(half - serviceWidth / 2, 0)
+	local bag = if inventory then inventory.size else Vector2.zero
+	local other = if service then service.size else Vector2.zero
+	local left, right = WindowFrame.pair({ w = other.X, h = other.Y }, { w = bag.X, h = bag.Y })
+	return Vector2.new(left.x, left.y), Vector2.new(right.x, right.y)
 end
 
 local function topService(): string?
@@ -263,23 +280,30 @@ function WindowManager.Open(id: string)
 			continue
 		end
 		local offset: Vector2? = nil
-		if desktop and WindowRules.isService(openId) and WindowRules.bringsBackpack(openId) then
+		local backpack = open[INVENTORY]
+		if desktop and WindowRules.bringsBackpack(openId) then
 			local invOffset, serviceOffset = pairOffsets(openId)
-			if open[INVENTORY] and not table.find(plan.open, INVENTORY) then
-				-- The backpack was already open: move it next to the new service.
-				destroyWindow(INVENTORY, true)
-				openWindow(INVENTORY, invOffset)
+			if backpack and not table.find(plan.open, INVENTORY) then
+				-- The backpack was already open: it moves next to the new service.
+				backpack.place:set(invOffset)
 			end
 			offset = serviceOffset
 		elseif desktop and openId == INVENTORY then
-			-- Next to the service opening with it, else next to the open one.
+			-- Next to the service opening with it, else next to the open one, which steps aside to make room.
 			local service: string? = nil
 			for _, other in plan.open do
 				if WindowRules.bringsBackpack(other) then
 					service = other
 				end
 			end
-			service = service or topService()
+			if not service then
+				service = topService()
+				local window = if service then open[service] else nil
+				if service and window then
+					local _, serviceOffset = pairOffsets(service)
+					window.place:set(serviceOffset)
+				end
+			end
 			if service then
 				offset = (pairOffsets(service))
 			end
@@ -288,21 +312,76 @@ function WindowManager.Open(id: string)
 	end
 end
 
+-- A build function's result: its bare content, or Window.Parts.
+local function partsOf(built: any): Window.Parts
+	if type(built) == "table" and built.Content ~= nil then
+		return built :: Window.Parts
+	end
+	return { Content = built }
+end
+
+-- UI package C: on a touch screen every window covers the whole screen, so a service and the backpack next to it
+-- swap places from their title bars: "Plecak" on the service, "◂ <service>" on the backpack (WindowRules.partner;
+-- both stay open). While it shows, the switch takes the place of the window's own header action.
+local function headerAction(scope: Scope, id: string, own: Window.HeaderAction?): Window.HeaderAction?
+	if id ~= INVENTORY and not WindowRules.bringsBackpack(id) then
+		return own
+	end
+	local partner = scope:Computed(function(use): string?
+		if changed then
+			use(changed)
+		end
+		if not use(Device.Touch) then
+			return nil
+		end
+		local other = WindowRules.partner(rules, id)
+		return if other and defs[other] then other else nil
+	end)
+	return {
+		Name = "Switch",
+		Text = scope:Computed(function(use): string
+			local other = use(partner)
+			if other == INVENTORY then
+				return Text.get(use, "ui.window.backpack")
+			elseif other then
+				return Text.get(use, "ui.window.back", { window = Text.get(use, defs[other].titleKey) })
+			end
+			return if own then use(own.Text) else ""
+		end),
+		Visible = scope:Computed(function(use): boolean
+			if use(partner) then
+				return true
+			end
+			return own ~= nil and (own.Visible == nil or use(own.Visible) == true)
+		end),
+		OnClick = function()
+			local other = Fusion.peek(partner)
+			if other then
+				WindowManager.Open(other)
+			elseif own then
+				own.OnClick()
+			end
+		end,
+	}
+end
+
 openWindow = function(id: string, offset: Vector2?)
 	local def = defs[id]
 	local scope = rootScope:innerScope()
 	local z = scope:Value(zCounter)
 	local closing = scope:Value(false)
-	local entry: OpenWindow = { scope = scope, z = z, closing = closing }
+	local place = scope:Value(offset or Vector2.zero)
+	local entry: OpenWindow = { scope = scope, z = z, closing = closing, place = place }
 	open[id] = entry
 	local function close()
 		WindowManager.Close(id)
 	end
+	local parts = partsOf(def.build(scope, close))
 	local root = Window(scope, {
 		Name = `Window_{id}`,
 		Title = Text.T(scope, def.titleKey),
 		Size = def.size,
-		Offset = offset,
+		Place = place,
 		Surface = UiWindows.surface(id), -- S135/S136: parchment and iron (Data/UiWindows)
 		ZIndex = z,
 		Closing = closing,
@@ -310,7 +389,10 @@ openWindow = function(id: string, offset: Vector2?)
 		OnFocus = function()
 			bringToFront(id)
 		end,
-		[Fusion.Children] = def.build(scope, close),
+		Footer = parts.Footer,
+		Scroll = parts.Scroll,
+		HeaderAction = headerAction(scope, id, parts.HeaderAction),
+		[Fusion.Children] = parts.Content,
 	}) :: GuiObject
 	entry.root = root
 	root.Parent = UIController.GetLayer("Windows")
@@ -503,6 +585,7 @@ end
 function WindowManager.Init(registry)
 	UIController = registry.Get("UIController")
 	rootScope = UIController.Scope
+	changed = rootScope:Value(0)
 end
 
 function WindowManager.Start()
