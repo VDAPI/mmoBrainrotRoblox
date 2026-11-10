@@ -7,6 +7,8 @@
 -- keeps 280 px of content. Popovers: next to anchors on a 12 x 8 grid of every screen they stay inside the safe area
 -- less 8, never cover their anchor, flip above when there is no room below and keep off a rectangle they are told to
 -- avoid. UI package C owns this spec after package F: it empties RATCHET.
+-- UI package C (2026-11-10): the window chrome reads WindowFrame (source checks), a phone's title bar is 44 px with a
+-- 52 x 44 ✕, and a modal stays under the top bar and inside the screen (its body scrolls past that).
 
 local fs = require("@lune/fs")
 
@@ -338,6 +340,74 @@ T.describe("Windows (L7, owner 2026-11-10)", function()
 		T.expect(service).toEqual({ x = (560 + 720 + 12) / 2 - 360, y = 0 })
 	end)
 
+	T.it("gives a phone a 44-px title bar with a 52 x 44 ✕ and keeps a pinned footer under the body", function()
+		local phones = 0
+		for _, screen in screens() do
+			if screen.compact then
+				phones += 1
+				local frame = WindowFrame.rect(
+					{ w = screen.w, h = screen.h },
+					{ w = 900, h = 620 },
+					nil,
+					true,
+					screen.bar,
+					true
+				)
+				T.expect(frame.header.bottom - frame.header.top).toBe(WindowFrame.HEADER_COMPACT)
+				T.expect(frame.close.right - frame.close.left).toBe(WindowFrame.CLOSE_WIDE)
+				T.expect(frame.close.bottom - frame.close.top).toBe(WindowFrame.HEADER_COMPACT)
+				T.expect(inside(frame.close, frame.header)).toBe(true)
+			end
+		end
+		T.expect(phones > 0).toBe(true)
+		-- Components/Window's Footer: the buttons at the content's bottom, the rest FOOTER_GAP above them
+		local frame = WindowFrame.rect({ w = 1920, h = 1080 }, { w = 900, h = 620 }, nil, false)
+		T.expect(WindowFrame.body(frame, true)).toEqual({
+			left = frame.content.left,
+			top = frame.content.top,
+			right = frame.content.right,
+			bottom = frame.footer.top - WindowFrame.FOOTER_GAP,
+		})
+		T.expect(WindowFrame.body(frame)).toEqual(frame.content)
+	end)
+
+	T.it(
+		"keeps a modal under the top bar and inside the screen, at most 520 wide, its body scrolling past that",
+		function()
+			for _, screen in screens() do
+				local area = {
+					left = 0,
+					top = screen.bar + WindowFrame.TOP_GAP,
+					right = screen.w,
+					bottom = screen.h - WindowFrame.TOP_GAP,
+				}
+				local header = if screen.compact then WindowFrame.HEADER_COMPACT else WindowFrame.HEADER
+				local pad = if screen.compact then WindowFrame.PADDING_COMPACT else WindowFrame.PADDING
+				for _, height in { 160, 400, math.huge } do
+					local r = WindowFrame.modal({ w = screen.w, h = screen.h }, height, screen.bar)
+					local where = `{screen.name}, a modal {height} px tall`
+					if not inside(r, area) then
+						error(`{where}: {show(r)} reaches the top bar or leaves the screen`)
+					end
+					if
+						r.right - r.left > WindowFrame.MODAL_W + 1e-6
+						or math.abs(r.left + r.right - screen.w) > 1e-6
+					then
+						error(`{where}: {show(r)} is not centred and at most {WindowFrame.MODAL_W} wide`)
+					end
+					if height <= area.bottom - area.top and math.abs(r.bottom - r.top - height) > 1e-6 then
+						error(`{where}: cut to {r.bottom - r.top} px though it fits`)
+					end
+					-- Components/Modal: what is left for the body between the title bar and the buttons
+					local body = r.bottom - r.top - header - WindowFrame.FOOTER - pad
+					if height == math.huge and body < 120 then
+						error(`{where}: {body} px for the body`)
+					end
+				end
+			end
+		end
+	)
+
 	T.it("uses Theme's numbers", function()
 		local size = theme("Theme.Size")
 		local padding = theme("Theme.Padding")
@@ -351,11 +421,45 @@ T.describe("Windows (L7, owner 2026-11-10)", function()
 		T.expect(size.InfoTipWidth).toBe(POPOVERS[1].w)
 		T.expect(size.TooltipWidth).toBe(ITEM_TOOLTIP.w)
 		T.expect(padding.Small).toBe(Popover.MARGIN)
-		local window = fs.readFile("src/client/UI/Components/Window.luau")
-		T.expect(string.find(window, "UDim2.new(1, -6, 0.5, 0)", 1, true) ~= nil).toBe(true)
-		T.expect(string.find(window, "props.Size.X / 2 - 80)", 1, true) ~= nil).toBe(true)
-		local manager = fs.readFile("src/client/Controllers/WindowManager.luau")
-		T.expect(string.find(manager, `local GAP = {WindowFrame.PAIR_GAP}\n`, 1, true) ~= nil).toBe(true)
+		-- UI package C: the footer's gap and the tab strip (Components/Tabs)
+		T.expect(padding.Small).toBe(WindowFrame.FOOTER_GAP)
+		T.expect(padding.Small).toBe(WindowFrame.TAB_GAP)
+		T.expect(size.TabHeight).toBe(size.MinTouch)
+		local text = theme("Theme.TextSize")
+		local levels = WindowFrame.TAB_LEVELS
+		T.expect({ levels[1].pad, levels[2].pad, levels[3].pad })
+			.toEqual({ padding.Large, padding.Medium, padding.Small })
+		T.expect({ levels[1].size, levels[2].size, levels[3].size }).toEqual({ text.Body, text.Body, text.Small })
+	end)
+
+	T.it("is what the window chrome reads (UI package C)", function()
+		local function calls(path: string, needles: { string }): string
+			local source = fs.readFile(path)
+			for _, needle in needles do
+				if not string.find(source, needle, 1, true) then
+					error(`{path} does not read {needle}`)
+				end
+			end
+			return source
+		end
+		local function lacks(path: string, source: string, needles: { string })
+			for _, needle in needles do
+				if string.find(source, needle, 1, true) then
+					error(`{path} still has its own "{needle}"`)
+				end
+			end
+		end
+		local path = "src/client/UI/Components/Window.luau"
+		local source = calls(path, {
+			"WindowFrame.clampDrag(",
+			"WindowFrame.HEADER_COMPACT",
+			"WindowFrame.CLOSE_WIDE",
+			"WindowFrame.FOOTER_GAP",
+		})
+		lacks(path, source, { "UDim2.new(1, -6, 0.5, 0)", "props.Size.X / 2 - 80)" })
+		path = "src/client/Controllers/WindowManager.luau"
+		lacks(path, calls(path, { "WindowFrame.pair(", "WindowRules.partner(" }), { "local GAP = " })
+		calls("src/client/UI/Components/Modal.luau", { "WindowFrame.modal(", "WindowFrame.CLOSE_WIDE" })
 	end)
 end)
 

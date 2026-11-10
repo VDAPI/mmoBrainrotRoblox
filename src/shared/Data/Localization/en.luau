@@ -1518,7 +1518,8 @@ return {
 	["blessing.confirmReplace"] = "You already have an active blessing.",
 	["blessing.expired"] = "Your blessing has faded.",
 	["blessing.replace.title"] = "Replace blessing?",
-	["blessing.replace.message"] = "Only one blessing can be active. The current one will be lost.",
+	["blessing.replace.message"] = "The current blessing will be lost.",
+	["blessing.replace.details"] = "Only one blessing can be active at a time.",
 	["blessing.replace.confirm"] = "Replace",
 	["elixir.used"] = "{stat} increased for 1 hour.",
 
@@ -4241,6 +4242,9 @@ return {
 	-- 2026-10-21: short descriptions, details behind "i", "More" and the details key (InfoTip, Details, Tooltip)
 	["ui.details.more"] = "More ▸",
 	["ui.details.less"] = "Less ▾",
+	-- UI plan 2026-11-10: the phone's switch between a service and its backpack (WindowManager)
+	["ui.window.backpack"] = "Backpack",
+	["ui.window.back"] = "◂ {window}",
 	["tooltip.more.mouse"] = "{key}: details",
 	["tooltip.more.touch"] = "Hold longer: details",
 	["tooltip.compact.dps"] = "DPS {dps}",
