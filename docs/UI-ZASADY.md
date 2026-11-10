@@ -1,12 +1,15 @@
 # Vaelthorn: zasady UI
 
 > Plan UI 2026-11-10 (właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe
-> opisy, nie da się zwinąć”). Zasady dotyczą każdego nowego i zmienianego ekranu, na PC i na telefonie. Decyzje właściciela
-> (`docs/DECYZJE.md`, `docs/DESIGN.md` §23) mają pierwszeństwo. Zmiana zasady to najpierw zmiana w `Logic/TextCaps`
-> albo `Logic/HudZones`, potem tutaj. Pilnują ich specy Lune (§9).
-> Części planu jeszcze nie ma w kodzie: `UI/Notify`, `Logic/NoticeQueue`, `Components/Prompt` i specy `noticequeue`,
-> `gearlayout`, `worldlayout` dochodzą z kolejnymi pakietami planu, sekcje okien też (lista w §4). Do tego czasu nowy
-> kod trzyma się reszty zasad.
+> opisy, nie da się zwinąć”). Zasady dotyczą każdego nowego i zmienianego ekranu, na PC i na telefonie. Decyzje
+> właściciela (`docs/DECYZJE.md`, `docs/DESIGN.md` §23) mają pierwszeństwo. Zmiana zasady to najpierw zmiana w kodzie,
+> który jej pilnuje (`Logic/TextCaps`, `Logic/HudZones`, `Logic/WindowFrame`, `Logic/Popover`, `Data/Folds`), potem
+> tutaj. Pilnują ich specy Lune (§9).
+> Części planu jeszcze nie ma w kodzie; dochodzą z pakietami A–E: `Logic/TutorialTile`, `Screens/Hud/PanelHeader`
+> i `Screens/Hud/StackChip` (A, HUD), `UI/Notify`, `Logic/NoticeQueue` i `Components/Prompt` (B, komunikaty),
+> `Logic/GearLayout` (D) i `Logic/WorldLayout` (E), wszystkie już z właścicielem w `TextScan.OWNERS`, do tego specy
+> `noticequeue`, `gearlayout` i `worldlayout` oraz sekcje okien (lista w §4). Do tego czasu nowy kod trzyma się
+> reszty zasad.
 
 ## 1. Zasada główna
 
@@ -160,6 +163,8 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
 
 ## 7. Okna
 
+- Ramka okna pochodzi z `Logic/WindowFrame`: `rect` (nagłówek, ✕, treść, stopka), `clampDrag` (przeciąganie na PC),
+  `pair` (usługa obok plecaka). Dymki z `Logic/Popover` (`place`).
 - Nagłówek ma 52 na PC i 44 na telefonie. Tytuł mieści się w jednej linii (Large 24 na PC, Body 20 na telefonie). ✕ ma
   co najmniej 44 i stoi w prawym rogu. Esc zamyka. Naraz otwarte jest jedno okno główne (`WindowRules`).
 - Na dotyku okno zaczyna się pod paskiem Robloxa (`Scale.TopBar`). Na PC przeciągnięte okno trzyma nagłówek co
@@ -212,7 +217,8 @@ Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu
   Lista „do skrócenia” może tylko maleć.
 - `hudzones.spec`, `phonehud.spec`, `hudlayout.spec`: prostokąty HUD z tych samych modułów, których używa gra.
   Ekrany: PC 1920×1080, 1366×768 i 1280×720 (oraz 4:3, niskie okno, ultrawide), telefony 844×390, 667×375 i 932×430,
-  pasek Robloxa 0, 36 i 58 px.
+  pasek Robloxa 0, 36 i 58 px. Dzisiejsze kolizje stoją na liście `KNOWN` w `hudzones.spec`, a okna poza zasadami na
+  liście `RATCHET` w `uiframe.spec`; obie listy mogą tylko maleć.
 - Pozostałe specy:
   - `topband.spec`, `noticequeue.spec`: pas wiadomości i kolejka;
   - `uiframe.spec`: okna, modale, dymki;
