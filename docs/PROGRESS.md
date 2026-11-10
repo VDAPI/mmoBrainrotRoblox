@@ -60,13 +60,18 @@
   alarmu; listy `KNOWN` i `THIN` w `hudzones.spec` dla pakietu A).
 - **Plan UI 2026-11-10, pakiet E (okna świata i społeczności, rozmowy, ustawienia; ostatni pakiet planu):** układ okien
   z `Logic/WorldLayout` (na telefonie 2–3 wiersze listy, na PC 5, przypięte „Graj” i przyciski rozmowy, koło emotek i
-  panel łowienia poniżej paska Robloxa), strony rozmowy i linie questów u NPC do 140 znaków (dalej „Dalej ▸” albo
-  (i)), powitania do 60 z (i), podpowiedzi pól do 20, lista „do skrócenia” E pusta, sekcje zapisane na koncie
-  (dziennik, mapa, gildia, ustawienia, podium rankingów, regiony bestiariusza, łowy tablicy zleceń); nieobejrzane w
-  Studio (rankingi, przepustka, osiągnięcia z bestiariuszem i tablica zleceń na telefonie, rozmowa z NPC z najdłuższą
-  linią i (i) linii questu u Brata Kaspara, karta wyboru postaci na telefonie, koło emotek na niskim ekranie, panel
-  łowienia na telefonie, sekcje ustawień, gildii, dziennika i mapy). Okna dialogowe pakietu (loch, Krwawy
-  Księżyc, nagroda dnia, Co nowego, Wkrótce) czekają na stopkę i przewijanie okna z pakietu C.
+  panel łowienia poniżej paska Robloxa), strony rozmowy i linie questów u NPC do 140 znaków (dalej „Dalej ▸” albo (i)),
+  powitania do 60 z (i), podpowiedzi pól do 20, lista „do skrócenia” E pusta, sekcje zapisane na koncie (dziennik, mapa,
+  gildia, ustawienia, podium rankingów, regiony bestiariusza, łowy tablicy zleceń); po przeglądzie koło emotek i panel
+  łowienia w bezpiecznym obszarze urządzenia, rankingi 900×720 (5 wierszy pod podium na PC, na telefonie odliczanie w
+  tytule i „⚠ Tylko ten serwer” w stopce), zwinięty blok łowów z licznikami w nagłówku, przepustka z końcem sezonu w
+  nagłówku telefonu, przyciski „Do kolejki”, cele questów bez klawiszy PC, oba zagrożenia portalu jedną linią;
+  nieobejrzane w Studio (rankingi, przepustka, osiągnięcia z bestiariuszem i tablica zleceń na telefonie, rozmowa z NPC
+  z najdłuższą linią i (i) linii questu u Brata Kaspara, karta wyboru postaci na telefonie, koło emotek na niskim
+  ekranie, panel łowienia na telefonie, sekcje ustawień, gildii, dziennika i mapy, rankingi na PC z otwartym podium,
+  wybór regionu bestiariusza na telefonie, koło emotek i panel łowienia na telefonie z wcięciem, przyciski kolejki
+  areny, modal portalu z dwoma zagrożeniami). Okna dialogowe pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego,
+  Wkrótce) czekają na stopkę i przewijanie okna z pakietu C.
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa

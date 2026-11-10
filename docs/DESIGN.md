@@ -1755,21 +1755,30 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   pod „Więcej ▸”.
 - **Okna świata i społeczności (plan UI 2026-11-10, pakiet E)**: układ liczy `Logic/WorldLayout` z treści okna
   (`WindowFrame.content`): na telefonie lista pokazuje co najmniej 2–3 wiersze, na PC 5, nic nie dostaje ujemnej
-  wysokości. Rankingi: podium jako sekcja (na telefonie zwinięta), filtr klas przyciskiem obok zakładek, stopka jedną
-  linią. Osiągnięcia: zwarte podsumowanie na dotyku; bestiariusz: regiony jako sekcja (na telefonie zwinięta, nagłówek
-  nazywa wybrany region). Tablica zleceń: blok łowów jako sekcja (na telefonie zwinięta), zasady za (i). Rozmowa z
-  questem: strona do 140 znaków, dalej „Dalej ▸”, 3 linie nad jednym rzędem wyboru nagrody; rozmowa z NPC: powitanie
-  do 60 znaków z (i), linia (także linia questu u tego NPC) do 140 znaków, reszta za (i), linia nie wchodzi na wybory.
-  Przepustka: zwarty nagłówek na telefonie. Grupa: bonus jedną linią z (i); znajomi jednym rzędem z przyciskami po
-  prawej. Wybór postaci: „Graj” i „Usuń” przypięte do dołu karty, na telefonie mniejszy nagłówek i herb. Koło emotek:
-  promień z wysokości ekranu poniżej paska Robloxa, koło szersze niż wysokie. Łowienie: panel nie wchodzi pod pasek
-  Robloxa; na telefonie stoi między kolumnami HUD, z podpowiedzią dotyku, „Anuluj” w czasie czekania. Pole tekstowe w
-  tych oknach ma podpowiedź do 20 znaków; dozwolone znaki i powód odmowy mówi linia błędu pod polem albo komunikat.
+  wysokości. Rankingi: okno 900×720, podium jako sekcja (na telefonie zwinięta), filtr klas przyciskiem obok zakładek,
+  stopka jedną linią, linia nagród tygodnia tylko na PC; na telefonie odliczanie w tytule („koniec za 2 d 5 h”), a
+  stopka zaczyna się od „⚠ Tylko ten serwer”, gdy tablica liczy tylko ten serwer. Osiągnięcia: zwarte podsumowanie na
+  dotyku, etykiety przełączników jedną linią; bestiariusz: regiony jako sekcja (na telefonie zwinięta, nagłówek nazywa
+  wybrany region, a wybór regionu zwija ją z powrotem). Tablica zleceń: blok łowów jako sekcja (na telefonie zwinięta,
+  wtedy nagłówek mówi „Gotowe: n · Do przyjęcia: n”), zasady za (i). Rozmowa z questem: strona do 140 znaków, dalej
+  „Dalej ▸”, 3 linie nad jednym rzędem wyboru nagrody; rozmowa z NPC: powitanie do 60 znaków z (i), linia (także linia
+  questu u tego NPC) do 140 znaków, reszta za (i), linia nie wchodzi na wybory. Cele, teksty i strony questów nie uczą
+  sterowania: bez nazw klawiszy i słów „kliknij”, „dwuklik” (sterowanie uczy kafelek samouczka). Przepustka: zwarty
+  nagłówek na telefonie z końcem sezonu („koniec za 5 d 3 h”, w dniach odbioru „odbiór do …”). Arena: przyciski „Do
+  kolejki 1 na 1” i „Do kolejki 3 na 3”. Grupa: bonus jedną linią z (i); znajomi jednym rzędem z przyciskami po prawej.
+  Wybór postaci: „Graj” i „Usuń” przypięte do dołu karty, na telefonie mniejszy nagłówek i herb. Koło emotek i panel
+  łowienia układają się w warstwie okien (bezpieczny obszar urządzenia). Koło emotek: promień z wysokości ekranu poniżej
+  paska Robloxa, koło szersze niż wysokie. Łowienie: panel nie wchodzi pod pasek Robloxa; na telefonie stoi między
+  kolumnami HUD, z podpowiedzią dotyku, „Anuluj” w czasie czekania. Portal do czerwonej strefy przy za niskim poziomie:
+  oba zagrożenia jedną linią, pełne zdanie o PvP pod „Więcej ▸”. Pole tekstowe w tych oknach ma podpowiedź do 20 znaków;
+  dozwolone znaki i powód odmowy mówi linia błędu pod polem albo komunikat.
 - **Zwijanie w oknach świata (plan UI 2026-11-10, pakiet E)**: sekcje zapisane na koncie (`Data/Folds/World`, `Menu`; w
   ustawieniach i gildii zamiast `Details` ze stanem na sesję z Opisy-3). Zwinięte: historia i ukończone wątki w
   dzienniku, sklep NPC na karcie mapy, kronika, sztandar i uprawnienia rang w gildii, a w ustawieniach Łup i handel,
   Społeczność i Skróty klawiszowe (skrótów nie ma na dotyku). Otwarte: Dźwięk, Grafika i kamera, Walka, Interfejs.
-  Legenda mapy otwarta na PC, na telefonie jedna linia „Legenda”.
+  Legenda mapy otwarta na PC, na telefonie jedna linia „Legenda”. Zwinięta sekcja, w której coś czeka, mówi to w tytule
+  („Ukończone (n)”, wybrany region, liczniki łowów); reszta nie ma linii podsumowania, bo nic w niej nie czeka
+  (UI-ZASADY §4).
 
 ### Ikony w UI (S35)
 

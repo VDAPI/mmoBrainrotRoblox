@@ -306,4 +306,9 @@
   „Dalej ▸”, dziennik i wiki czytają całość (`Dialogue.whole`), test `tests/dialogue.spec`. Linia questu mówiona u NPC
   (`line` celu `talk` / `deliver`, np. `quest.<id>.<npc>`) nie ma stron: najwyżej 140 znaków, reszta w
   `<klucz linii>.info` (PL i EN), którą `NpcDialog` pokazuje za (i); podpowiedź pola tekstowego do 20 znaków
-  (`tests/worldlayout.spec` czyta je z plików pakietu).
+  (`tests/worldlayout.spec` czyta je z plików pakietu). Ekran w warstwie okien poza ramką okna (koło emotek, łowienie)
+  liczy układ z rozmiaru tej warstwy, czyli bezpiecznego obszaru urządzenia: `Scale.HudSize` z paskiem Robloxa nad nim
+  (`Scale.TopBar / Scale.Value`), nie `Scale.VirtualSize`. Zwinięta sekcja, w której coś czeka (np. zlecenia do
+  oddania), mówi to w tytule albo w `Summary`, a `WorldLayout` liczy tę wysokość. Nowy typ celu questu
+  (`quest.obj.<typ>`, linia tropiciela na każdym urządzeniu) i tekst questu nie mają nazw klawiszy ani słów sterowania
+  („(F)”, „kliknij”, „dwuklik”; `tests/dialogue.spec`).

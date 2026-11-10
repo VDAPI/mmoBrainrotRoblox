@@ -14935,10 +14935,37 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   Nie zrobione: napis w pasku tytułu okna (pytanie UI 8, decyzja 2026-10-31 zostaje) i
   przejście okien dialogowych pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego, Wkrótce) na stopkę i przewijanie
   okna pakietu C, które jeszcze nie weszły.
+- Poprawki po przeglądzie (2026-11-10; 13 uwag, wszystkie słuszne, dwie o zwiniętym bloku łowów poprawione razem): koło
+  emotek i panel łowienia (`d09c74a2`) liczyły się w rozmiarze całego ekranu, a stoją w warstwie okien (bezpieczny
+  obszar urządzenia), więc na telefonie z wcięciem panel wchodził na ☰ i przełącznik PvP, a koło wychodziło poza
+  bezpieczny obszar; teraz biorą `Scale.HudSize` z paskiem Robloxa nad nim. Rankingi (`2f3d64e0`, `ea8b23f9`): okno
+  900×720 zamiast 900×620, bo podium otwarte domyślnie na PC zostawiało tablicom 3–4 wiersze (teraz 5, poziom 6); linia
+  nagród tygodnia jest liczona w układzie, a na telefonie jej nie ma (nagrody za (i) tytułu); na telefonie tytuł
+  „Tydzień: zdobyty EXP · koniec za 2 d 5 h” (`leaderboard.endsIn`) i stopka od „⚠ Tylko ten serwer”
+  (`leaderboard.local.short`). Tablica zleceń (`072769c8`): zwinięty blok łowów mówi „Zlecenia łowieckie · Gotowe: 2 ·
+  Do przyjęcia: 3” (`contract.board.ready`, `.take`), w rzędzie nagłówka, bo linia podsumowania (44 na dotyku)
+  zostawiłaby telefonowi jedną kartę. Osiągnięcia (`65a191df`): angielskie „Character” i „Unearned” mieszczą się w
+  przełączniku 120,7 px na telefonie 667×375, na PC przełączniki mają 372 zamiast 330. Bestiariusz (`ace53ab7`): na
+  telefonie wybór regionu zwija regiony z powrotem (otwarte zostawiały wpisom mniej niż wiersz i zapisywały się na
+  koncie). Przepustka (`56709d20`): nagłówek telefonu „Sezon Szronu · koniec za 5 d 3 h” albo „· odbiór do 28.12.2026”
+  (`season.endsShort`, `season.graceShort`). Arena (`a294cc02`): „Do kolejki 1 na 1” (`arena.join.1v1` w miejscu
+  `arena.join`) i „Do kolejki 3 na 3” zamiast „Graj 1v1” i 30 znaków przy limicie 18, linia kolejki z nazwą trybu,
+  tablica „Arena: rating 1 na 1”. Questy (`d12fd84a`): cele w tropicielu miały klawisze PC („Podnieś łup (F)”,
+  „(dwuklik)”), których skan nie widział, bo klucz `quest.obj.<typ>` składa się w kodzie; teraz są bez nich, tak samo
+  teksty `gearUp`, `firstHunt`, `wolves` i strona `gearUp.p2`. Portal (`04307800`): przy czerwonej strefie i za niskim
+  poziomie jedna linia `portal.warnBoth`, a pod „Więcej ▸” pełne zdanie o PvP (ostrzeżenie o poziomie czekało
+  niewidoczne pod „Więcej ▸”). UI-ZASADY §4 (`6b00794d`, plik pakietu F, trzy linie): legenda mapy i blok łowów zwinięte
+  na telefonie, jak w kodzie i w decyzji pakietu (na PC otwarte), oraz lista sekcji bez linii podsumowania (tytuł mówi,
+  co czeka, albo nic w nich nie czeka).
+- Po przeglądzie poza plikami pakietu zostają dwa miejsca z surowym id trybu areny: `Hud/ArenaPanel` (pakiet A, klucz
+  `arena.inQueue`) i toast `arena.joined` w `ArenaService` (pakiet B). Testy: `worldlayout.spec` ma 16 testów (warstwa
+  okien, podium otwarte jak domyślnie, linia nagród, telefon w rankingach i przepustce, etykiety przełączników, zwijanie
+  regionów po wyborze, tytuł zwiniętego bloku łowów, modal portalu), `dialogue.spec` dwa nowe (słowa sterowania i
+  klawisze w celach, tekstach i stronach questów). Bramka zielona: 10256 testów, `wikidump --check` aktualny.
 - **Pliki:** `Logic/WorldLayout`, `Logic/Dialogue`, `Data/Folds/World|Menu`, `Data/Localization/pl|en`, okna
   `RankingsWindow`, `SeasonPass`, `AchievementsWindow/*`, `QuestBoard`, `QuestDialog`, `QuestJournal`, `NpcDialog`,
   `PartyWindow`, `FriendsWindow`, `PartyFinder`, `CharacterSelect/*`, `EmoteWheel`, `FishingGame`, `GameMenu`,
-  `WorldMap/Panels|Cards|DetailCard|CreatureCards`, `GuildWindow/Overview|Settings`, `AreaPicker`,
-  `Controllers/WorldController`, `tests/worldlayout.spec.luau`, `tests/dialogue.spec.luau`,
-  `tests/shorttext3.spec.luau`, `tests/fixtures/textcaps/E.luau`, `tests/wikidump.spec.luau`,
-  `tools/WikiData/Quests.luau`, dane wiki.
+  `ArenaWindow`, `WorldMap/Panels|Cards|DetailCard|CreatureCards`, `GuildWindow/Overview|Settings`, `AreaPicker`,
+  `Controllers/WorldController`, `Controllers/RankingsController`, `docs/UI-ZASADY.md` (§4),
+  `tests/worldlayout.spec.luau`, `tests/dialogue.spec.luau`, `tests/shorttext3.spec.luau`,
+  `tests/fixtures/textcaps/E.luau`, `tests/wikidump.spec.luau`, `tools/WikiData/Quests.luau`, dane wiki.
