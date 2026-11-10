@@ -58,6 +58,14 @@
   D 237, E 203) i kolizje HUD na tabletach 1210–1280 szerokości i do 800 wysokości (pasmo celu i pasek bossa na strefach
   postaci i menu, przycisk celu dotyku w minimapie, pas wiadomości pod panelem areny i paskiem bossa niższy niż linia
   alarmu; listy `KNOWN` i `THIN` w `hudzones.spec` dla pakietu A).
+- **Plan UI 2026-11-10, pakiet E (okna świata i społeczności, rozmowy, ustawienia; ostatni pakiet planu):** układ okien
+  z `Logic/WorldLayout` (na telefonie 2–3 wiersze listy, na PC 5, przypięte „Graj” i przyciski rozmowy, koło emotek i
+  panel łowienia poniżej paska Robloxa), strony rozmowy do 140 znaków z „Dalej ▸”, powitania do 60 z (i), lista „do
+  skrócenia” E pusta, sekcje zapisane na koncie (dziennik, mapa, gildia, ustawienia, podium rankingów, regiony
+  bestiariusza, łowy tablicy zleceń); nieobejrzane w Studio (rankingi, przepustka, osiągnięcia z bestiariuszem i tablica
+  zleceń na telefonie, rozmowa z NPC z najdłuższą linią, karta wyboru postaci na telefonie, koło emotek na niskim
+  ekranie, panel łowienia na telefonie, sekcje ustawień, gildii, dziennika i mapy). Okna dialogowe pakietu (loch, Krwawy
+  Księżyc, nagroda dnia, Co nowego, Wkrótce) czekają na stopkę i przewijanie okna z pakietu C.
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa

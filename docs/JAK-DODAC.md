@@ -292,3 +292,15 @@
   `CameraController.Release("<właściciel>")` (gracz dostaje kamerę z powrotem, gdy nikt jej nie trzyma). Bez właściciela
   strażnik oddaje kamerę po 0,5 s; `cameralease.spec` pilnuje, że `Scriptable` pisze tylko `CameraController` (i pisarz
   przerywnika).
+- **Okno świata z listą i długa kwestia** (2026-11-10, plan UI, pakiet E): prostokąty okna (nagłówek, zakładki, lista,
+  stopka, przyciski) liczy funkcja w `Logic/WorldLayout` z treści okna (`WindowFrame.content`) i urządzenia
+  (`WorldLayout.device(touch, compact)`: `pc`, `tablet`, `phone`), wysokości nagłówka sekcji i tekstu z
+  `WorldLayout.SECTION` (spec sprawdza je z `Components/Section` i `Theme`); okno czyta wynik w `Computed`, bez
+  własnych liczb: z `WorldLayout.CHROME`, gdy lista wypełnia resztę ramki, albo ze zmierzonej treści
+  (`Out("AbsoluteSize")`, `Scale.toVirtual`), gdy od niej zależy podział (rozmowa z NPC, bestiariusz). Test w
+  `tests/worldlayout.spec.luau` na wszystkich ekranach i pasku Robloxa 0, 36, 58: bez ujemnych rozmiarów, na telefonie
+  co najmniej 2 wiersze listy, na PC 5, przyciski przypięte. Część, która może się zwinąć, to `Section` z id w
+  `Data/Folds/World` (ustawienia: `Menu`), a plik okna na liście testu sekcji. Kwestia dłuższa niż 140 znaków (strona
+  rozmowy `quest.<id>.p1`, `.done`): dalszy ciąg pod kluczem ciągu (`p1` → `p1b`, `p1c`; `done` → `done2`;
+  `Logic/Dialogue.partKey`, najwyżej 4 części), PL i EN z tymi samymi znacznikami; `QuestDialog` pokazuje go po
+  „Dalej ▸”, dziennik i wiki czytają całość (`Dialogue.whole`), test `tests/dialogue.spec`.

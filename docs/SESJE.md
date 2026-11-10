@@ -14866,3 +14866,59 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `UI/Components/Section`, `UI/Theme`, `Controllers/WindowManager`, `tests/TextScan.luau`,
   `tests/fixtures/textcaps/A|B|C|D|E.luau`, `tests/textcaps.spec.luau`, `tests/hudzones.spec.luau`,
   `tests/uiframe.spec.luau`, `tests/sectionfold.spec.luau`, `tests/uifit.spec.luau`, `tools/balance_reasons.luau`.
+
+### Plan UI 2026-11-10, pakiet E: okna świata i społeczności, rozmowy, ustawienia (2026-11-10)
+- Właściciel 2026-11-10: „bardzo dużo napisów, niektóre rzeczy zasłaniają inne, zbyt szczegółowe opisy, nie da się
+  zwinąć”. Pakiet E (okna świata i społeczności, questy i rozmowy z NPC, ustawienia, osierocone teksty) idzie ostatni
+  i buduje na API pakietu F; komponenty pakietu C (stopka i przewijanie okna, przewijane zakładki, wiersze listy) jeszcze
+  nie weszły, więc okna E ich nie czytają (miejsca do podpięcia w raporcie pakietu).
+- Rozmowy i teksty (`eb966a52`): strona rozmowy ma najwyżej 140 znaków, 129 dłuższych stron idzie dalej pod kluczami
+  ciągu (`Logic/Dialogue.partKey`, `parts`, `paged`, `whole`: `p1` → `p1b`, `done` → `done2`), każda po „Dalej ▸” w
+  `QuestDialog`, a przypomnienie rozmowy w dzienniku i eksport wiki czytają całość (haki poza plikami pakietu:
+  `tests/wikidump.spec.luau`, `tools/WikiData/Quests.luau`); powitania NPC jednym zdaniem do 60 znaków, reszta w
+  `<powitanie>.info` za (i); każdy klucz pakietu mieści się w swojej powierzchni `TextCaps` bez długiego myślnika, więc
+  lista E w `tests/fixtures/textcaps/E.luau` jest pusta; „Questy” zamiast „zadanie” w tekstach gracza (pytanie UI 3);
+  karta obszaru na mapie z jedną linią profilu, opis profilu w oknie „Dokąd?” za (i), ostrzeżenie portalu jednym
+  zdaniem, drugie pod „Więcej ▸”.
+- Układ (`c5c43540`): `Logic/WorldLayout` liczy z `WindowFrame.content` i rozmiarów `Theme` / `Section` prostokąty okien
+  pakietu (`rankings`, `season`, `seasonStrip`, `achievements`, `bestiary`, `questBoard`, `questDialog`, `npcDialog`,
+  `party`, `friends`, `finderClassLabel`, `finderStepperText`, `characterSelect`, `emoteWheel`, `emoteRects`,
+  `fishing`), a okna czytają wynik ze zmierzonego rozmiaru treści. Rankingi: podium jako sekcja `rankPodium`, filtr
+  klas przyciskiem obok zakładek na telefonie, stopka jedną linią (odliczanie i „zaktualizowano” za (i) przy
+  tytule). Osiągnięcia: zwarte podsumowanie na dotyku, cieńszy pasek; bestiariusz: regiony jako sekcja
+  `bestiaryRegions` (nagłówek zwiniętej nazywa wybrany region), wpisy nigdy nie dostają ujemnej wysokości. Tablica
+  zleceń: blok łowów jako sekcja `boardHunt` z (i), tytuł „Zlecenia łowieckie” z licznikiem, zwarte karty na
+  telefonie. Rozmowa z questem: 3 linie strony nad jednym rzędem wyboru nagrody; rozmowa z NPC: ramka linii mierzona,
+  linia nie wchodzi na wybory. Przepustka: zwarty nagłówek telefonu z (i) obok nazwy sezonu. Grupa: bonus jedną linią
+  i (i) z wszystkimi liniami i zasadami, rząd zaproszenia z czatem i wyjściem na telefonie; znajomi jednym rzędem 56
+  z przyciskami po prawej (dotyk: Dołącz i ⋯, PC: Dołącz, Szept i ⋯); Szukam drużyny w komórkach 290. Wybór
+  postaci: nagłówek i karty z rozmiaru warstwy, „Graj” i „Usuń” (też „Utwórz”, „Odblokuj”) przypięte do dołu karty,
+  herb maleje z miejscem. Koło emotek: promień z wysokości ekranu poniżej paska Robloxa, na niskim ekranie bez tytułu i ze
+  strzałkami po bokach, koło szersze niż wysokie (przyciski 112 px nie nachodzą na siebie, dziś na promieniu 150
+  nachodziły o 6 px). Łowienie: panel nie wchodzi pod pasek Robloxa; na telefonie 170 wysokości między kolumnami HUD,
+  podpowiedź dotyku `fish.hintTouch` w dwóch liniach, „Anuluj” w czasie czekania.
+- Zwijanie (`d8d53a59`): sekcje zapisane na koncie zamiast `Details` na sesję: dziennik (`journalHistory`,
+  `journalArcsDone` „Ukończone (n)”), mapa (`mapLegend` z tytułem „Legenda”, na PC otwarta, na telefonie zwinięta;
+  `mapShop` na karcie NPC), gildia (`guildLog`, `guildBanner`, `guildRights`), ustawienia (`setSound`, `setGraphics`,
+  `setCombat`, `setUi` otwarte; `setLoot`, `setSocial`, `setKeys` zwinięte, skróty klawiszowe niewidoczne na dotyku).
+  Tabele zwinięte decyzjami z 2026-10-21 (opisy pod „Więcej ▸”) zostają zwinięte.
+- Testy: nowy `tests/worldlayout.spec.luau` (13 testów: liczby z `Section` i `Theme`, każde okno pakietu na ekranach
+  `uiframe.spec` przy pasku 0, 36 i 58: bez ujemnych rozmiarów, na telefonie 2–3 wiersze, na PC 5, przypięte przyciski,
+  „Graj” na ekranie, koło emotek bez nakładania, panel łowienia z dala od kolumn telefonu, każde id sekcji okien E w
+  `Data/Folds/World` albo `Menu`), rozszerzony `dialogue.spec`, własne wpisy w `shorttext3.spec`. Bramka zielona:
+  10249 testów, `wikidump --check` aktualny.
+- Wybory w miejscach, które plan zostawił otwarte: na PC bestiariusz z otwartymi regionami pokazuje co najmniej 2
+  wiersze wpisów, nie 5 (regiony zajmują górę okna, gracz może je zwinąć); panel łowienia na telefonie może stać w paśmie celu (w czasie
+  łowienia nic nie jest celem, `WorldLayout.FISHING_FREE`); „Anuluj” na telefonie znika na czas brania (branie kończy się
+  samo), a podpowiedź dotyku jest nowym kluczem; sztandar gildii zwinięty także dla lidera; legenda mapy ma nowy tytuł
+  „Legenda” (`worldmap.legend`), a „Twój poziom” jest jej pierwszym wierszem; ukończone wątki poboczne w jednej sekcji
+  zamiast osobnego id na wątek. Nie zrobione: napis w pasku tytułu okna (pytanie UI 8, decyzja 2026-10-31 zostaje) i
+  przejście okien dialogowych pakietu (loch, Krwawy Księżyc, nagroda dnia, Co nowego, Wkrótce) na stopkę i przewijanie
+  okna pakietu C, które jeszcze nie weszły.
+- **Pliki:** `Logic/WorldLayout`, `Logic/Dialogue`, `Data/Folds/World|Menu`, `Data/Localization/pl|en`, okna
+  `RankingsWindow`, `SeasonPass`, `AchievementsWindow/*`, `QuestBoard`, `QuestDialog`, `QuestJournal`, `NpcDialog`,
+  `PartyWindow`, `FriendsWindow`, `PartyFinder`, `CharacterSelect/*`, `EmoteWheel`, `FishingGame`, `GameMenu`,
+  `WorldMap/Panels|Cards|DetailCard|CreatureCards`, `GuildWindow/Overview|Settings`, `AreaPicker`,
+  `Controllers/WorldController`, `tests/worldlayout.spec.luau`, `tests/dialogue.spec.luau`,
+  `tests/shorttext3.spec.luau`, `tests/fixtures/textcaps/E.luau`, `tests/wikidump.spec.luau`,
+  `tools/WikiData/Quests.luau`, dane wiki.

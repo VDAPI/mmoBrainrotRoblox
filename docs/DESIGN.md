@@ -1753,6 +1753,22 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
   stan na sesję). Etykiety krótkie, dłuższe wyjaśnienia za „i” obok przełącznika. Okna postaci, umiejętności, dziennika
   i tablicy zleceń pokazują krótką linię (`stat.<id>.short`, `class.<id>.short`, `*.short`), pełny opis za „i” albo
   pod „Więcej ▸”.
+- **Okna świata i społeczności (plan UI 2026-11-10, pakiet E)**: układ liczy `Logic/WorldLayout` z treści okna
+  (`WindowFrame.content`): na telefonie lista pokazuje co najmniej 2–3 wiersze, na PC 5, nic nie dostaje ujemnej
+  wysokości. Rankingi: podium jako sekcja (na telefonie zwinięta), filtr klas przyciskiem obok zakładek, stopka jedną
+  linią. Osiągnięcia: zwarte podsumowanie na dotyku; bestiariusz: regiony jako sekcja (na telefonie zwinięta, nagłówek
+  nazywa wybrany region). Tablica zleceń: blok łowów jako sekcja (na telefonie zwinięta), zasady za (i). Rozmowa z
+  questem: strona do 140 znaków, dalej „Dalej ▸”, 3 linie nad jednym rzędem wyboru nagrody; rozmowa z NPC: powitanie
+  do 60 znaków z (i), linia nie wchodzi na wybory. Przepustka: zwarty nagłówek na telefonie. Grupa: bonus jedną linią
+  z (i); znajomi jednym rzędem z przyciskami po prawej. Wybór postaci: „Graj” i „Usuń” przypięte do dołu karty, na
+  telefonie mniejszy nagłówek i herb. Koło emotek: promień z wysokości ekranu poniżej paska Robloxa, koło szersze niż
+  wysokie. Łowienie: panel nie wchodzi pod pasek Robloxa; na telefonie stoi między kolumnami HUD, z podpowiedzią dotyku,
+  „Anuluj” w czasie czekania.
+- **Zwijanie w oknach świata (plan UI 2026-11-10, pakiet E)**: sekcje zapisane na koncie (`Data/Folds/World`, `Menu`; w
+  ustawieniach i gildii zamiast `Details` ze stanem na sesję z Opisy-3). Zwinięte: historia i ukończone wątki w
+  dzienniku, sklep NPC na karcie mapy, kronika, sztandar i uprawnienia rang w gildii, a w ustawieniach Łup i handel,
+  Społeczność i Skróty klawiszowe (skrótów nie ma na dotyku). Otwarte: Dźwięk, Grafika i kamera, Walka, Interfejs.
+  Legenda mapy otwarta na PC, na telefonie jedna linia „Legenda”.
 
 ### Ikony w UI (S35)
 
