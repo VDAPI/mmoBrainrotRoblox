@@ -289,6 +289,7 @@ describe("textcaps T4: coverage of the scan", function()
 			{ "shop.error.locked", "toast" }, -- Toast.push(Text.now(...))
 			{ "death.error.gold", "toast" }, -- return false, "key"
 			{ "tourney.notPicked", "toast" }, -- through the service's own helper
+			{ "paths.toast.pointSoon", "toast" }, -- local key = if ... then (if soon then "a" else "b") else ...
 			{ "arena.net.cancelled.noShow", "toast" }, -- back home from the arena server
 			{ "boss.morvane.phase3", "alert" }, -- the boss's announce
 			{ "dungeon.timeout", "alert" }, -- DungeonService fail(run, key) -> announce

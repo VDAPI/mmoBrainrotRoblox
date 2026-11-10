@@ -871,6 +871,17 @@ local function scanFile(path: string, src: string, out: Scan, keySet: { [string]
 		return find(lineBefore(at), "%f[%w_]return%f[^%w_]") ~= nil
 	end
 
+	-- Frames lo..hi of the stack are grouping parentheses, `(if b then "y" else "z")`: no callee, nothing kept.
+	local function grouping(lo: number, hi: number): boolean
+		for k = lo, hi do
+			local frame = stack[k]
+			if frame.kind ~= "(" or frame.callee ~= nil or frame.assign ~= nil then
+				return false
+			end
+		end
+		return true
+	end
+
 	-- Walks out from depth `from`: the surface the value there reaches, or the local (or function) it is kept in,
 	-- or the call (last name) and argument it is passed to.
 	local function walk(at: number, from: number, key: string?): (string?, string?, string?, number?)
@@ -910,8 +921,10 @@ local function scanFile(path: string, src: string, out: Scan, keySet: { [string]
 						return nil, frame.name, nil, nil -- what a named function returns goes where its calls go
 					end
 					-- an anonymous callback's value goes where the callback goes: scope:Computed(function ... end)
-				elseif first == nil then
-					return nil, frame.last, nil, nil -- local key = if ... then "a" else "b"
+				elseif first == nil or grouping(d + 1, from) then
+					-- local key = if ... then "a" else "b", also with a branch in parentheses:
+					-- if n == 1 then (if soon then "a" else "b") else ...
+					return nil, frame.last, nil, nil
 				else
 					return nil, nil, nil, nil
 				end
