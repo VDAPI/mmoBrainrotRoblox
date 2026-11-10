@@ -1625,6 +1625,7 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 
 ## 23. Interfejs
 
+- **Zasady UI** (2026-11-10): każdy nowy i zmieniany ekran według `docs/UI-ZASADY.md`; decyzje tej sekcji wygrywają.
 - **Język wizualny: pergamin i żelazo (S135, wybór właściciela 2026-10-15).** Poważne fantasy. Dwie powierzchnie o tych
   samych rolach (`surface`, `raised`, `sunken`, `hover`, `selected`, `text`, `textMuted`, `label`, `heading`, `border`,
   `accent` …): **pergamin** dla treści okien (`#EFE3C6`, atrament `#2A2016`, sloty `#E2D2AC` z brzegiem `#7A6136`) i

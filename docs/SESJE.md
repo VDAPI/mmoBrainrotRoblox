@@ -14695,3 +14695,41 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `client/Anim/MeshHead`, `client/Anim/RigidRig`, `Logic/NeckBend`, `Logic/HeadGaze`, `Logic/HeadBudget`,
   `Data/RigidRigs`, `Config.Graphics`, `tests/neckbend.spec.luau`, `tests/headgaze.spec.luau`,
   `tests/headbudget.spec.luau`, `tests/NeckBendMesh.luau`, `docs/ANIM-WZORCE.md` §6.5.
+
+### Plan UI 2026-11-10, pakiet F: fundament bez zmiany na ekranie (2026-11-10)
+- Właściciel 2026-11-10: „trudność UI polegała na tym, że jest bardzo dużo napisów, niektóre rzeczy zasłaniają inne,
+  zbyt szczegółowe opisy, nie da się zwinąć”; „wiem, że jesteś w stanie zrobić czytelne i przyjemne GUI, postaraj
+  się”. Plan z pięciu audytów i trzech projektów: pakiet F idzie pierwszy i sam, bez widocznej zmiany, a pakiety A–E
+  (HUD, komunikaty, okna i komponenty, okna przedmiotów i postaci, okna świata) budują na jego API. Trzy części
+  pakietu powstały równolegle, każda na swojej gałęzi.
+- Zasady: `docs/UI-ZASADY.md` (zasada główna, limity tekstu na powierzchnię, jak piszemy, zwijanie, strefy HUD,
+  komunikaty, okna, rozmiary Theme, jak to sprawdzamy), jedna linia z linkiem w DESIGN §23, przepisy JAK-DODAC
+  „Krótki opis + (i)” i „Zwijana sekcja” według zasad. Pytania do właściciela z domyślnymi odpowiedziami w DECYZJE.
+- Teksty: `Logic/TextCaps` (`SURFACES` z limitami §2, przykładowe długości wartości, `expand`, `width` z modelem
+  szerokości `uifit.spec` bez zmiany liczb, `lines`, `check`), `tests/TextScan.luau` (miejsca wywołań kluczy w
+  kodzie klienta i serwera, właściciel klucza według plików pakietów), `tests/fixtures/textcaps/A–E.luau` (reguły
+  kluczy dynamicznych i dzisiejsze przekroczenia pakietu; lista tylko maleje), `tests/textcaps.spec` (limity, długi
+  myślnik i słowa sterowania, zapadka list, pokrycie miejsc toastów i banerów, przypadek ujemny: toast 61 znaków).
+- Zwijanie: `Data/Folds` (`Hud`, `Gear`, `World`, `Menu`; `init` je zbiera) z domyślnym stanem `true` / `false` albo
+  `{ pc, phone }`. `Logic/SectionFold` łączy obszary (to samo id w dwóch plikach to błąd), a
+  `isOpen(saved, id, compact?)` czyta domyślny stan urządzenia. `with(saved, id, open, compact?)` zapisuje minimum:
+  bez wyboru równego domyślnemu na obu urządzeniach i bez wyboru, który na tym urządzeniu nic nie zmienia. `same`
+  porównuje oba urządzenia, `valid` bez zmian. `charStats` i `charSets` przeszły bez zmian do `Gear`; `Hud`
+  (pakiet A), `World` i `Menu` (pakiet E) są puste. `Components/Section` bierze domyślny stan z
+  `PhoneLayout.Compact`, a `Section.state(scope, id)` daje stan i `set` przez ten sam zapis `SetSetting "sections"`
+  (linia panelu HUD, grupa ustawień). Stare zapisy czytają się tak samo, sekcje plecaka otwierają się i zwijają jak
+  dotąd. `Data/Folds/*` stoi w `NOT_BALANCE` księgi balansu (`tools/balance_reasons.luau`, „wygląd”).
+- Układ: `Logic/HudZones` (strefy mapy HUD planu na stałych `HudStack` i `PhoneHud`; liczby jak dziś poza strefami
+  oznaczonymi jako propozycja), `Logic/WindowFrame` (`rect`, `pair`, `clampDrag`), `Logic/Popover` (`place`), nowe
+  tokeny `Theme.Size` (WindowHeaderCompact 44, TabHeight 44, SectionHeader 32, PanelLine 32, HudLine 52,
+  TooltipWidth 340, InfoTipWidth 320, ModalWidth 520; istniejące bez zmian) i `WindowManager.Notice(text, kind?,
+  seconds?)` jako zaślepka zwracająca `false`. Żaden plik UI jeszcze ich nie czyta.
+- Testy: nowe `textcaps.spec`, `hudzones.spec`, `uiframe.spec` (rozmiary okien z kontrolerów; dzisiejsze odstępstwa
+  na liście do opróżnienia przez pakiet okien), rozszerzony `sectionfold.spec` (stare zapisy, domyślne na
+  urządzenie, minimum w `with`, powtórzone id, `valid`, każde id sekcji w kliencie znane), `uifit.spec` z
+  `TextCaps.width`.
+- **Pliki:** `docs/UI-ZASADY.md`, `docs/DESIGN.md` §23, `docs/JAK-DODAC.md`, `Logic/TextCaps`, `Logic/SectionFold`,
+  `Logic/HudZones`, `Logic/WindowFrame`, `Logic/Popover`, `Data/Folds/init|Hud|Gear|World|Menu`,
+  `UI/Components/Section`, `UI/Theme`, `Controllers/WindowManager`, `tests/TextScan.luau`,
+  `tests/fixtures/textcaps/A|B|C|D|E.luau`, `tests/textcaps.spec.luau`, `tests/hudzones.spec.luau`,
+  `tests/uiframe.spec.luau`, `tests/sectionfold.spec.luau`, `tests/uifit.spec.luau`, `tools/balance_reasons.luau`.

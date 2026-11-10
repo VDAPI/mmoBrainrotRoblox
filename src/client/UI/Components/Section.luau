@@ -5,12 +5,15 @@
 -- Theme.Size.MinTouch on touch), the folded line too; the "i" next to the title (`Info`, InfoTip) opens its own
 -- popover, it does not fold. The line stands under the title, so a narrow column (the backpack window's 260) keeps it.
 -- The open state is the account's (Logic/SectionFold: account.settings.sections, SetSetting "sections"), so it stays
--- after reopening the window, a relog and on another device; every id needs its default in SectionFold.DEFAULTS.
+-- after reopening the window, a relog and on another device; every id needs its default in Data/Folds. UI plan
+-- 2026-11-10: a default may differ on a phone ({ pc, phone }: UI/PhoneLayout.Compact picks it), and a header that is
+-- not a Section (a HUD panel's line, a settings group) shares the same state through Section.state.
 -- Full width, grows with its content (AutomaticSize Y). Details (More ▸ / Less ▾) stays for a longer text under a
 -- short one; a Section is a whole part of a window with its own title.
 --
 --   Section.new(scope, { Id = "charStats", Title = Text.T(scope, "character.section.stats"), Children = { ... } })
 --   Section.new(scope, { Id = ..., Title = ..., Summary = points, Accent = true, Build = function(s) ... end })
+--   local open, setOpen = Section.state(scope, "charStats")
 --
 -- Recipe: docs/JAK-DODAC.md ("Zwijana sekcja").
 
@@ -20,6 +23,7 @@ local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.InfoTip)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local SectionFold = require(ReplicatedStorage.Shared.Logic.SectionFold)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
@@ -31,7 +35,7 @@ type UsedAs<T> = Fusion.UsedAs<T>
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = {
-	Id: string, -- Logic/SectionFold id: where the open state is kept and its default
+	Id: string, -- Data/Folds id (Logic/SectionFold): where the open state is kept and its default per device
 	Title: UsedAs<string>,
 	Summary: UsedAs<string?>?, -- the one short line under the folded header (nil or "": the bare title)
 	Accent: UsedAs<boolean>?, -- the summary as a badge: something waits there (free stat points)
@@ -86,31 +90,47 @@ local function queueSend()
 	end)
 end
 
--- Whether section `id` stands open (a state, for a layout that follows it).
+-- Whether section `id` stands open (a state, for a layout that follows it): the player's choice, else the default of
+-- this device (the phone layout may fold what a PC opens).
 function Section.Open(id: string): Fusion.Computed<boolean>
-	assert(SectionFold.known(id), `no section {id} in Logic/SectionFold.DEFAULTS`)
+	assert(SectionFold.known(id), `no section {id} in Data/Folds`)
 	local state = openStates[id]
 	if not state then
 		state = moduleScope:Computed(function(use): boolean
-			return SectionFold.isOpen(use(current), id)
+			return SectionFold.isOpen(use(current), id, use(PhoneLayout.Compact))
 		end)
 		openStates[id] = state
 	end
 	return state :: Fusion.Computed<boolean>
 end
 
--- Opens or folds section `id` at once and saves it on the account.
+-- Opens or folds section `id` at once and saves it on the account (the choice then holds on every device).
 function Section.set(id: string, open: boolean)
 	local now = Fusion.peek(current)
-	if SectionFold.isOpen(now, id) == open then
+	local compact = Fusion.peek(PhoneLayout.Compact)
+	if SectionFold.isOpen(now, id, compact) == open then
 		return
 	end
-	live:set(SectionFold.with(now, id, open))
+	live:set(SectionFold.with(now, id, open, compact))
 	queueSend()
 end
 
 function Section.toggle(id: string)
-	Section.set(id, not SectionFold.isOpen(Fusion.peek(current), id))
+	Section.set(id, not SectionFold.isOpen(Fusion.peek(current), id, Fusion.peek(PhoneLayout.Compact)))
+end
+
+-- The open state of section `id` and its setter, for a header that is not a Section.new (a HUD panel's line, a settings
+-- group): the same account setting, device default and SetSetting "sections" save as Section.new, so a Section and
+-- such a header with one id always agree. The state belongs to `scope`.
+function Section.state(scope: Scope, id: string): (Fusion.Computed<boolean>, (open: boolean) -> ())
+	local shared = Section.Open(id)
+	local open = scope:Computed(function(use): boolean
+		return use(shared)
+	end)
+	local function setOpen(value: boolean)
+		Section.set(id, value)
+	end
+	return open, setOpen
 end
 
 function Section.new(scope: Scope, props: Props): Instance

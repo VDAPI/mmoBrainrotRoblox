@@ -49,6 +49,11 @@
 
 ## Niedokończone (kod)
 
+- **Plan UI 2026-11-10, pakiet F (fundament):** zasady `docs/UI-ZASADY.md`, limity tekstu na powierzchnię
+  (`Logic/TextCaps`, listy „do skrócenia” pakietów A–E), domyślne zwinięcie na urządzenie (`Data/Folds`,
+  `Section.state`), czyste API układu (`Logic/HudZones`, `WindowFrame`, `Popover`), tokeny `Theme` i zaślepka
+  `WindowManager.Notice`; na ekranie bez zmian, gra czyta je dopiero z pakietami A–E (HUD, komunikaty, okna), więc
+  nie ma tu nic do obejrzenia w Studio.
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa
