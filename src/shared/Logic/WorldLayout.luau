@@ -173,14 +173,19 @@ end
 -- touch the category tabs over the list. Touch (owner 2026-11-10, a phone kept one row of the list): the numbers on
 -- one line with a thin bar under it, both switches in one row under them; a phone's rows 52 (name, the short line and
 -- a 3-px bar), a tablet's 66.
+-- Review 2026-11-10: `switchButton` is one button of the range and filter switches (three buttons 6 apart): PC's switch
+-- is ACH_SWITCH wide, a touch screen's half the content; the labels fit it in one line with the button's padding.
 export type Achievements = {
 	summary: number,
 	numbers: number,
 	switches: number,
+	switchButton: number,
 	tabsTop: number,
 	tabs: number,
 	list: List,
 }
+
+WorldLayout.ACH_SWITCH = 372
 
 function WorldLayout.achievements(content: Size, device: Device): Achievements
 	if device == "pc" then
@@ -190,6 +195,7 @@ function WorldLayout.achievements(content: Size, device: Device): Achievements
 			summary = summary,
 			numbers = 0,
 			switches = 40,
+			switchButton = WorldLayout.ACH_SWITCH / 3 - 6,
 			tabsTop = 0,
 			tabs = 0,
 			list = { top = top, height = content.h - top, row = 66, gap = 0 },
@@ -205,6 +211,7 @@ function WorldLayout.achievements(content: Size, device: Device): Achievements
 		summary = summary,
 		numbers = numbers,
 		switches = 44,
+		switchButton = content.w / 2 / 3 - 6,
 		tabsTop = tabsTop,
 		tabs = 50,
 		list = { top = top, height = content.h - top, row = if phone then 52 else 66, gap = 0 },

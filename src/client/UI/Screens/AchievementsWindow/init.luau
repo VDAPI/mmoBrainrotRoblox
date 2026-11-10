@@ -1,6 +1,6 @@
 --!strict
 -- Achievements window (N, the game menu and the HUD menu; S151b, docs/DESIGN.md §20b). On top the summary (points,
--- earned, the range switch All / Account / This character and the filter All / In progress / Earned); under it the
+-- earned, the range switch All / Account / Character and the filter All / Unearned / Earned); under it the
 -- categories (PC a column with icons, phone a scrolling tab strip), the list of the category (a series folded to its
 -- current step, the tracking star) and the details of the selection (PC a panel on the right, phone a sheet over the
 -- window). Everything comes from Logic/AchievementView over the replicated save (Context: read at most every

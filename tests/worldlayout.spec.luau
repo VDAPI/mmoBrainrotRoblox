@@ -287,6 +287,16 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 		T.expect(problems).toEqual({})
 	end)
 
+	-- The labels of the achievements' range and filter switches (AchievementsWindow/Summary).
+	local SWITCH_KEYS = {
+		"ach.scope.all",
+		"ach.scope.account",
+		"ach.scope.character",
+		"ach.filter.all",
+		"ach.filter.open",
+		"ach.filter.done",
+	}
+
 	T.it("achievements: 3 rows on a phone, 5 on PC; the bestiary's entries never go negative", function()
 		local problems: { string } = {}
 		local regions = 4
@@ -298,6 +308,18 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 			local want = wanted(screen.device, 3, 5)
 			if rows < want then
 				table.insert(problems, `{screen.name}: {rows} rows < {want}`)
+			end
+			-- review 2026-11-10: the range and filter labels fit their buttons in one line (Small 17, the padding 14
+			-- each side)
+			for lang, t in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+				for _, key in SWITCH_KEYS do
+					if TextCaps.width(t[key], WorldLayout.SMALL) + 28 > a.switchButton then
+						table.insert(
+							problems,
+							`{screen.name} {lang}: "{t[key]}" wider than its {a.switchButton} button`
+						)
+					end
+				end
 			end
 			-- the bestiary in the list's place, the regions open on PC and folded on a phone (bestiaryRegions)
 			local middle = { w = content.w, h = a.list.height }

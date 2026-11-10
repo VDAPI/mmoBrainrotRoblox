@@ -1,9 +1,11 @@
 --!strict
 -- Summary bar of the achievements window (S151b): points "{points} / {max}" and done "{done} / {total}" of the shown
--- range with a bar, the range switch (All / Account / This character) and the filter (All / In progress / Earned).
+-- range with a bar, the range switch (All / Account / Character) and the filter (All / Unearned / Earned).
 -- PC: the numbers on the left, the two switches stacked on the right. Touch (owner 2026-11-10: a phone kept one row of
 -- the list; UI plan E, Logic/WorldLayout.achievements): the points and the earned count on one line over a thin bar,
 -- the two switches side by side in one row under it (buttons >= 44).
+-- Review 2026-11-10 (en "This character" wrapped in a phone's button): PC's switches are WorldLayout.ACH_SWITCH wide and
+-- every label fits its button in one line (tests/worldlayout.spec).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -23,7 +25,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 local Summary = {}
 
 local GAP = 6
-local SWITCH_WIDTH = 330
+local SWITCH_WIDTH = WorldLayout.ACH_SWITCH
 
 -- The switch labels (id -> text key).
 local RANGE_KEYS: { [string]: string } = {
