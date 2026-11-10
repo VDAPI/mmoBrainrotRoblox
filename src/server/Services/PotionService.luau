@@ -8,7 +8,7 @@
 -- S126: guards of the ordinary potions (AddGuard: ArenaService counts the potions of a ranked match) and the Drank
 -- signal after every ordinary potion.
 -- Owner 2026-11-10: an ordinary potion is drunk at full too (it is used up, starts its cooldown and restores nothing);
--- before, "potion.notNeeded" refused it (S155 let only the tutorial's potion step through).
+-- before, "You don't need that right now" refused it (S155 let only the tutorial's potion step through).
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
