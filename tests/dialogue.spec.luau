@@ -1567,6 +1567,8 @@ end)
 -- An objective is a line of the HUD tracker on every device (UI-ZASADY §3: no control words, no "(K)" key hints), and
 -- the text scan never sees it, since QuestText.rows builds its key as `quest.obj.{type}`. A quest's text and its pages
 -- are read on a phone too. The tutorial tile (package A) teaches each control in the device's own words.
+-- UI pass package E, adoption (owner 2026-11-10): E's toasts that sent the player to a window by its PC key ("(K)",
+-- "(U)", "(J)", "(G)") name the window or the ☰ menu only, the same words on a phone.
 
 local TextScan = require("./TextScan")
 
@@ -1637,5 +1639,21 @@ describe("Quest lines teach no controls (review 2026-11-10)", function()
 		expect(seen["quest.gearUp.p2"]).toBe(true)
 		expect(controlIn("The wolves dragged it to their den.", true)).toBe(nil)
 		expect(controlIn("Kliknij królika.", true)).toBe("kliknij")
+	end)
+
+	it("E's toasts that point at a window have no key hint in pl and en", function()
+		local problems: { string } = {}
+		for _, key in { "skills.toast.many", "bp.toast.many", "unlock.arena", "unlock.mounts", "guild.sys.goalDone" } do
+			for lang, tbl in { pl = pl :: any, en = en :: any } do
+				local text = tbl[key]
+				local found = if type(text) == "string" then controlIn(text, false) else "missing"
+				if found then
+					table.insert(problems, `{lang} {key}: {found}`)
+				end
+			end
+		end
+		table.sort(problems)
+		expect(problems).toEqual({})
+		expect(controlIn("Zajrzyj do okna Umiejętności (K).", false)).toBe("(K)")
 	end)
 end)
