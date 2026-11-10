@@ -14773,3 +14773,15 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   Nieobejrzane w Studio.
 - **Pliki:** `Config`, `Logic/SkillJuice`, `Vfx/Juice` (opis), `VfxController`, `tests/SkillLooks.luau`,
   `tests/skilljuice.spec.luau`, `docs/ANIMACJE.md` §16, `docs/DECYZJE.md`, `docs/PROGRESS.md`.
+
+### Poprawki po przeglądzie dzisiejszych zmian (2026-11-10)
+
+- Pasek mikstur: miksturę wypija tylko zwykłe dotknięcie albo kliknięcie slotu. Przytrzymanie (dymek, wybór jakości) i
+  dotknięcie, które przypisało ją z plecaka, nic nie wypijają, a dotknięcie slotu z otwartym wyborem tylko go zamyka.
+- Potwory: na potworze nie da się stanąć ani na nim jechać, a kto spadnie na niego z półki, zsuwa się obok. Pasek
+  rzucania Elity znów stoi tuż nad tabliczką, a kliknięcie w powietrze nad potworem go nie zaznacza.
+- Celowanie: dotknięty Błysk leci tam, dokąd prowadzimy postać, a bez tego prosto od wroga. Z zaznaczonym sojusznikiem
+  dotknięty obszar trafia w najbliższego wroga, a sojusznik zostaje celem. Członek drużyny albo gildii (z ochroną) nie
+  jest wrogiem poza naszym pojedynkiem i meczem areny, a kliknięcie prosto w niego zaznacza go, nie bossa obok.
+- Dynamika umiejętności: w walce grupowej na telefonie składniki umiejętności, iskry trafień i oddechy bossów zawsze się
+  pokazują, cudze i dalekie rzuty są skromniejsze, a przerwane celowanie gaśnie bez wybuchu przy dłoniach.
