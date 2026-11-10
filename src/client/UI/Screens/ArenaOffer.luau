@@ -106,14 +106,18 @@ local function offerDetails(s: Scope, phone: boolean): Instance
 						local them = Text.get(use, "arena.offer.them", { names = table.concat(o.them, ", ") })
 						return team .. "\n" .. them
 					end
+					-- UI plan package B: the opponent, then the rating on a line of its own (a prompt line is at most 60)
 					local opp = o.opp
-					return Text.get(use, "arena.offer.opp", {
+					local who = Text.get(use, "arena.offer.opp", {
 						name = opp.name,
 						class = Text.get(use, `class.{opp.class}.name`),
 						level = opp.level,
+					})
+					local rating = Text.get(use, "arena.offer.oppRating", {
 						rating = opp.rating,
 						tier = Text.get(use, `arena.tier.{ArenaRules.tierOf(tonumber(opp.rating) or 0)}`),
 					})
+					return who .. "\n" .. rating
 				end),
 				Theme.Iron.Text,
 				phone

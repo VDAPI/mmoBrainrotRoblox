@@ -322,9 +322,10 @@ local function BossReward(scope: Scope, props: Props): Instance
 			label(3, Text.T(scope, resultKey), resultColor, Theme.TextSize.Body, Theme.Fonts.BodyBold),
 			label(
 				4,
-				Text.T(scope, "worldmap.card.runsToday", {
+				-- UI plan package B: the card's own line (at most 40 characters); the dungeon window keeps worldmap.card.*
+				Text.T(scope, "dungeon.reward.runs", {
 					n = reward.runs or 0,
-					limit = reward.dailyRuns or 0,
+					max = reward.dailyRuns or 0,
 					time = Time.format(BossScaling.untilReset(Clock.now())),
 				}),
 				if (reward.runs or 0) >= (reward.dailyRuns or 1) then Theme.Paper.Warning else Theme.Paper.Success,
@@ -333,7 +334,7 @@ local function BossReward(scope: Scope, props: Props): Instance
 			),
 			label(
 				5,
-				Text.T(scope, "dungeon.reward.next", { leg = percent(reward.leg), myth = percent(reward.myth) }),
+				Text.T(scope, "dungeon.reward.next", { legPct = percent(reward.leg), mythPct = percent(reward.myth) }),
 				legendary.color,
 				Theme.TextSize.Small,
 				Theme.Fonts.BodyBold
