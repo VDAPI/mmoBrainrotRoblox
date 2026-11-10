@@ -1344,6 +1344,7 @@ return {
 	["skills.cost.energy"] = "{cost} energy",
 	["skills.cost.drain"] = "{drain}% max mana per tick",
 	["skills.cooldown"] = "Cooldown {cooldown} s",
+	["skills.cooldown.short"] = "{cooldown} s",
 	["skills.castTime"] = "Aim time {castTime} s",
 	["skills.cooldownReduced"] = "Cooldown {cooldown} s (-{pct}%)",
 	["skills.delivery.melee"] = "Melee",

@@ -1344,6 +1344,7 @@ return {
 	["skills.cost.energy"] = "{cost} energii",
 	["skills.cost.drain"] = "{drain}% maks. many na tyk",
 	["skills.cooldown"] = "Odnowienie {cooldown} s",
+	["skills.cooldown.short"] = "{cooldown} s",
 	["skills.castTime"] = "Celowanie {castTime} s",
 	["skills.cooldownReduced"] = "Odnowienie {cooldown} s (-{pct}%)",
 	["skills.delivery.melee"] = "Wręcz",

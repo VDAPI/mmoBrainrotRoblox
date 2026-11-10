@@ -211,6 +211,93 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 		end
 	)
 
+	T.it("the folded 'Koszt i odnowienie' line fits the PC panel: cost and cooldown, no range", function()
+		-- review 2026-11-10: with the range (and the cooldown's reduction) the line ran past the panel for every skill
+		-- with a range. The summary row of a Section in the panel's lines: the panel, less the lines' scroll pad (8)
+		-- and the row's paddings (4, the arrow 18 and 6 on the left; 4 on the right, 8 after the text), Small 17.
+		local panel = GearLayout.skillPanelArea(GearLayout.area({ w = 1920, h = 1080 }, WINDOWS.skills, false))
+		local room = panel.w - 8 - (4 + 18 + 6) - 4 - 8
+		T.expect(room).toBe(278)
+		local checked = 0
+		for _, lang in { "pl", "en" } do
+			for id, def in SkillData.byId do
+				for rank = 1, math.max(1, def.maxLevel) do
+					-- what SkillInfo.costSummary builds: the cost (a beam's drain per tick, else the resource rounded
+					-- up, at the first and the last level) and the cooldown after 0, half and all of the reduction cap
+					local costs: { string } = {}
+					if def.type == "beam" then
+						local drain = Skills.valueAt(def, "drain", rank)
+						table.insert(
+							costs,
+							Locale.T("skills.cost.drain", { drain = math.floor(drain * 10 + 0.5) / 10 }, lang)
+						)
+					elseif def.resource then
+						for _, level in { 1, Config.MaxLevel } do
+							local cost = Skills.cost(def, rank, level, def.class)
+							if cost > 0 then
+								local text = { cost = math.ceil(cost - 1e-6) }
+								table.insert(costs, Locale.T(`skills.cost.{def.resource}`, text, lang))
+							end
+						end
+					end
+					local cooldowns: { string } = {}
+					for _, cdr in { 0, Combat.cdrCap / 2, Combat.cdrCap } do
+						local shown = math.floor(Skills.cooldown(def, rank, cdr) * 10 + 0.5) / 10
+						if shown > 0 then
+							table.insert(cooldowns, Locale.T("skills.cooldown.short", { cooldown = shown }, lang))
+						end
+					end
+					for _, cost in if #costs > 0 then costs else { "" } do
+						for _, cooldown in if #cooldowns > 0 then cooldowns else { "" } do
+							local text = if cost ~= "" and cooldown ~= ""
+								then `{cost} · {cooldown}`
+								else cost .. cooldown
+							local ok, why = TextCaps.check("sectionSummary", text)
+							T.expect({ lang, id, text, ok, why }).toEqual({ lang, id, text, true, nil })
+							T.expect({ lang, id, text, TextCaps.width(text, 17) <= room })
+								.toEqual({ lang, id, text, true })
+							checked += 1
+						end
+					end
+				end
+			end
+		end
+		T.expect(checked > 1000).toBe(true)
+		-- the window folds to that line; the range stays in the open section's cost line
+		local info = fs.readFile("src/client/UI/SkillInfo.luau")
+		local summary = assert(string.match(info, "function SkillInfo%.costSummary(.-)\nend\n"))
+		T.expect(string.find(summary, "skills.range", 1, true)).toBeNil()
+		T.expect(string.find(summary, "skills.cooldownReduced", 1, true)).toBeNil()
+		T.expect(string.find(summary, '"skills.cooldown.short"', 1, true) ~= nil).toBe(true)
+		local details = fs.readFile("src/client/UI/Screens/SkillsWindow/Details.luau")
+		T.expect(
+			string.find(details, "Summary = if hasCost then SkillInfo.costSummary(use, skill, shown)", 1, true) ~= nil
+		)
+			.toBe(true)
+	end)
+
+	T.it("the PC details panel's geometry is the skills window's own (tree, header, tabs, padding)", function()
+		local function number(path: string, pattern: string): number?
+			return tonumber(string.match(fs.readFile(path), pattern))
+		end
+		local dir = "src/client/UI/Screens/SkillsWindow/"
+		local S = GearLayout.SKILL
+		T.expect(number(`{dir}PathTab.luau`, "PathTab%.LIST_WIDTH = (%d+)")).toBe(S.tree)
+		local header = number(`{dir}Header.luau`, "Header%.HEIGHT = (%d+)")
+		local tabs = number(`{dir}TabBar.luau`, "TabBar%.HEIGHT = (%d+)")
+		T.expect((header or 0) + 6 + (tabs or 0) + 6).toBe(S.top)
+		local window = fs.readFile(`{dir}init.luau`)
+		for _, needle in
+			{ "GearLayout.skillPanelArea(", "GearLayout.SKILL.tree + GearLayout.SKILL.gutter", "GearLayout.SKILL.pad" }
+		do
+			T.expect({ needle, string.find(window, needle, 1, true) ~= nil }).toEqual({ needle, true })
+		end
+		T.expect(string.find(window, "Header.HEIGHT + 6 + TabBar.HEIGHT + 6", 1, true) ~= nil).toBe(true)
+		-- and the phone sheet reaches over the window's padding by sheetOverhang
+		local sheet = fs.readFile(`{dir}Sheet.luau`)
+		T.expect(string.find(sheet, "GearLayout.sheetOverhang(", 1, true) ~= nil).toBe(true)
+	end)
+
 	T.it(
 		"the blacksmith's upgrade: 'Ulepsz' in the footer, the middle scrolls between the item and the result",
 		function()

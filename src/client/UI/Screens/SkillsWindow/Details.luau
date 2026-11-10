@@ -483,10 +483,11 @@ function Details.lines(
 				line(Text.get(use, err), Theme.Paper.Danger)
 			end
 		end
-		-- Owner 2026-11-10 (UI plan, "nothing folds"): "Koszt i odnowienie" folds to its one line (the cost, the
-		-- cooldown and the range); open, it holds the shape, the aiming behind the "i", the adaptive element and the
-		-- table of the values now / after buying / the change. A passive has no cost: the same section (one fold
-		-- state) holds its table as "Wartości rangi"; the rank itself is the bold line above, so no summary.
+		-- Owner 2026-11-10 (UI plan, "nothing folds"): "Koszt i odnowienie" folds to its one line, the cost and the
+		-- cooldown (SkillInfo.costSummary: "25 many · 6.4 s"; with the range it ran past the panel, review
+		-- 2026-11-10); open, it holds the shape, the cost line with the range, the aiming behind the "i", the adaptive
+		-- element and the table of the values now / after buying / the change. A passive has no cost: the same section
+		-- (one fold state) holds its table as "Wartości rangi"; the rank itself is the bold line above, so no summary.
 		local hasCost = table.find(d.sections, "cost") ~= nil
 		local costRows: { Instance } = {}
 		local function keepRow(item: Instance)
@@ -542,7 +543,7 @@ function Details.lines(
 				Id = "skillCost",
 				Name = "CostSection",
 				Title = Text.get(use, if hasCost then "skills.section.cost" else "skills.section.values"),
-				Summary = if hasCost then SkillInfo.costLine(use, skill, shown, "main") else nil,
+				Summary = if hasCost then SkillInfo.costSummary(use, skill, shown) else nil,
 				Children = costRows,
 			}))
 		end
