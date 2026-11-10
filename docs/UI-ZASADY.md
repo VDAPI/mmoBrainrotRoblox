@@ -26,16 +26,17 @@
 ## 2. Limity tekstu
 
 Liczymy znaki widoczne, bez tagów, po wstawieniu przykładowych wartości: nick 20, przedmiot 28, potwór i boss 24,
-NPC 16, obszar 20, gildia 24, liczba 6, klawisz 6, inne 12. Liczy `Logic/TextCaps`. Model szerokości: litera 0,56 em,
-spacja 0,3 em, symbol 1 em. Limit obowiązuje pl i en.
+NPC 16, obszar 20, gildia 24, liczba 6, klawisz 6, inne 12. Liczy `Logic/TextCaps` (powierzchnie i limity w
+`TextCaps.SURFACES`). Model szerokości: litera 0,56 em, spacja 0,3 em, symbol 1 em. Limit obowiązuje pl i en.
+Liczbę zdań sprawdza tylko w (i); „jedno zdanie” przy toaście i powitaniu NPC to zasada pisania.
 
 - Przycisk: 18, jedna linia, bez zawijania. Zakładka: 12.
-- Tytuł okna: 22. Tytuł modala: 28. Nagłówek sekcji: 24 (nazwa panelu HUD: 20). Linia zwiniętej sekcji: 36.
-  Etykieta: 20 plus wartość.
+- Tytuł okna: 22, jedna linia. Tytuł modala: 28. Nagłówek sekcji: 24 (nazwa panelu HUD: 20). Linia zwiniętej
+  sekcji: 36. Etykieta: 20 plus wartość.
 - Linia w oknie (stan, `.short`): 60, jedna linia.
 - HUD:
   - linia (wpis tropiciela, panel, drużyna, prowadzenie): 32;
-  - dymek elementu: 48 (nazwa i stan);
+  - dymek elementu: 48, jedna linia (nazwa i stan);
   - kafelek ☰ i przycisk paska: 18 razem z klawiszem.
 - Komunikaty:
   - toast: 60, jedno zdanie (na PC najwyżej 2 linie, na telefonie 3);
@@ -47,7 +48,7 @@ spacja 0,3 em, symbol 1 em. Limit obowiązuje pl i en.
 - (i): 240, najwyżej 3 zdania, bez list. „Więcej ▸” w oknie: 300.
 - Dymki:
   - skrócony dymek przedmiotu: najwyżej 10 linii po 60;
-  - dymek paska umiejętności: najwyżej 5 linii;
+  - dymek paska umiejętności: najwyżej 5 linii po 60;
   - skrót umiejętności i węzła: 60; próg: 48.
 - Rozmowy:
   - powitanie NPC: 60, jedno zdanie (reszta w `.info` za (i));
