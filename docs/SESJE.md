@@ -14969,7 +14969,7 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `docs/PRZEDMIOTY.md`, `wiki/src/data/bonuses|bosses|meta.json`.
 
 ### Plan UI 2026-11-10, pakiet B: poprawki po przeglądzie (2026-11-10)
-- Przegląd pakietu B: 24 zgłoszenia i uwaga o kompletności, wszystkie prawdziwe; dwie części propozycji poprawek
+- Przegląd pakietu B: 23 zgłoszenia i uwaga o kompletności, wszystkie prawdziwe; dwie części propozycji poprawek
   odrzucone (niżej). Poprawki w kodzie mają notatki „Review 2026-11-10”.
 - Układ (e9b5bef9): pas liczy się w rozmiarze warstwy komunikatów (`TopBand.context`: rozmiar jej korzenia przez skalę,
   pasek Robloxa przez skalę), więc na telefonie z wcięciami strefa M zgadza się z `PhoneHud.area`, a nie z całym ekranem
