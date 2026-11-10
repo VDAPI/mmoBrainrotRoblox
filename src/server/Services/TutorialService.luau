@@ -11,8 +11,8 @@
 -- LoginRewardService), on that character even after a switch during the mail; the check runs on every level up and on
 -- entering the world.
 -- Characters made before S155 have reward = true.
--- The potion step: while it is the current step an ordinary potion can be drunk at full (PotionService.AddFullDrink),
--- since a new character stands in the city at full HP.
+-- The potion step: a new character stands in the city at full HP, and an ordinary potion is drunk at full anyway
+-- (PotionService, owner 2026-11-10).
 -- S155b: the first valuable drop (Data/Tutorial.FIRST_DROP, Tutorial.firstDrop): the first monster a new character
 -- gets loot credit for drops, in its own bag next to the usual one, a Heroic bound copy of the wielded weapon; the
 -- client shows the bag with a pillar and opens the reveal on pickup (LootService.SpawnBag `first`). Audit 2026-10-21:
@@ -282,10 +282,6 @@ function TutorialService.Init(registry)
 	CosmeticService = registry.Get("CosmeticService")
 	MailService = registry.Get("MailService")
 	LootService = registry.Get("LootService")
-	PotionService.AddFullDrink(function(player: Player): boolean
-		local state = stateOf(player)
-		return state ~= nil and Tutorial.wantsPotion(state)
-	end)
 end
 
 function TutorialService.Start()

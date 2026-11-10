@@ -1020,7 +1020,6 @@ return {
 	["reveal.ok"] = "OK",
 	["potion.cooldown"] = "The potion is still on cooldown.",
 	["potion.none"] = "You have no potion of this kind.",
-	["potion.notNeeded"] = "You don't need that right now.",
 	["potion.error.level"] = "Your level is too low for this potion.",
 	["potion.pick.title"] = "Choose a potion",
 	["potion.pick.empty"] = "No potions of this kind in your backpack.",
