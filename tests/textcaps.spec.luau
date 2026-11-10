@@ -305,6 +305,9 @@ describe("textcaps T4: coverage of the scan", function()
 			{ "keys.sprint", "keyName" },
 			{ "skill.blink.bp10", "breakpoint" }, -- D's rule: a breakpoint's option A ...
 			{ "skill.blink.bp10b", "breakpoint" }, -- ... and its option B
+			{ "skill.blink.desc", "details" }, -- the skills window's texts through Data/Skills and Data/Paths
+			{ "path.scout.desc", "infoTip" },
+			{ "path.scout.eye.short", "skillShort" }, -- NodeText.shortKey
 			{ "quest.side_granary.p1", "dialogPage" },
 			{ "npc.healer.greeting", "npcGreeting" },
 		}
@@ -339,6 +342,8 @@ describe("textcaps T4: coverage of the scan", function()
 		expect(TextScan.owner("shop.error.locked")).toBe("B") -- read in D's ShopWindow too, B comes first
 		expect(TextScan.owner("rework2.body")).toBe("C") -- ReworkController
 		expect(TextScan.owner("alchemy.group.blessing")).toBe("D") -- AlchemyWindow
+		expect(TextScan.owner("skill.blink.name")).toBe("D") -- D's rule, not an orphan of E
+		expect(TextScan.owner("path.berserker.rhythm.short")).toBe("D") -- D's rule comes before E's `.short` rule
 		expect(TextScan.owner("quest.side_granary.p1")).toBe("E") -- E's rule
 		expect(TextScan.owner("worldboss.safeZone")).toBe("B") -- B's rule: the zone banner's note
 		expect(TextScan.owner("no.such.key.anywhere")).toBe("E")
