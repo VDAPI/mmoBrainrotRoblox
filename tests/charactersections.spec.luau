@@ -114,6 +114,26 @@ T.describe("Backpack window sections", function()
 		T.expect(string.find(alloc, "local controlsOn = hasPoints", 1, true) ~= nil).toBe(true)
 		local _, steps = string.gsub(alloc, "\n%s*controlsOn\n%s*%)", "")
 		T.expect(steps).toBe(2) -- the - and the + button
+		-- review 2026-11-10: in a wide column the name, the controls and the value fill the row in both states, so the
+		-- name starts at the row's edge (without points it stood 116 px in): the controls' width is the parts' own
+		local R = CharacterSections.STAT_ROW
+		for _, points in { true, false } do
+			local parts = if points then { R.button, R.value, R.button } else { R.value }
+			local taken = 0
+			for _, width in parts do
+				taken += R.gap + width
+			end
+			T.expect({ points, CharacterSections.statControls(points) }).toEqual({ points, taken })
+		end
+		T.expect(CharacterSections.statControls(true)).toBe(214)
+		local theme = read("src/client/UI/Theme.luau")
+		local at = assert(string.find(theme, "Theme.Padding = {", 1, true))
+		T.expect(tonumber(string.match(theme, "Small = (%d+)", at))).toBe(R.gap)
+		T.expect(string.find(alloc, "CharacterSections.statControls(use(controlsOn))", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(alloc, "if compact then Enum.HorizontalAlignment.Right else", 1, true) ~= nil).toBe(true)
+		-- on touch the buttons under the stats are touch targets (the window passes Touch)
+		T.expect(string.find(alloc, "if props.Touch then Theme.Size.MinTouch", 1, true) ~= nil).toBe(true)
+		T.expect(string.find(read(WINDOW), "Touch = touch })", 1, true) ~= nil).toBe(true)
 		-- the backpack's overflow line is Small 17, never scaled
 		local panel = read("src/client/UI/Screens/BackpackPanel.luau")
 		T.expect(string.find(panel, "TextScaled", 1, true)).toBeNil()
@@ -167,15 +187,24 @@ T.describe("Backpack window sections", function()
 			-- a 1280 wide tablet (1236 of content): three columns, one-line rows; a 1210 one: two-line rows
 			T.expect(CharacterSections.columns(true, 1236)).toEqual({ wide = true, left = L.left, compact = false })
 			T.expect(CharacterSections.columns(true, 1166)).toEqual({ wide = true, left = L.left, compact = true })
-			-- the three phones (safe-area insets left out, a 58-px top bar, the compact title bar): two columns and the
-			-- backpack keeps its 500 (the audit's 428 on 844x390 came from the screen's width)
+			-- the three phones (safe-area insets left out, Roblox's top bar of 0, 36 or 58 real px, which the window
+			-- takes in virtual px, the compact title bar): two columns and the backpack keeps its 500 (the audit's 428
+			-- on 844x390 came from the screen's width)
 			for _, device in PhoneHud.DEVICES do
 				local w, h = PhoneHud.area(device)
-				local area = GearLayout.area({ w = w, h = h }, { w = 1240, h = 720 }, true, 58, true)
-				local columns = CharacterSections.columns(true, area.w)
-				T.expect({ device.name, columns.wide }).toEqual({ device.name, false })
-				T.expect({ device.name, area.w - columns.left - L.narrowGutter >= L.middle })
-					.toEqual({ device.name, true })
+				for _, bar in { 0, 36, 58 } do
+					local area = GearLayout.area(
+						{ w = w, h = h },
+						{ w = 1240, h = 720 },
+						true,
+						bar / PhoneHud.SCALE,
+						true
+					)
+					local columns = CharacterSections.columns(true, area.w)
+					T.expect({ device.name, bar, columns.wide }).toEqual({ device.name, bar, false })
+					T.expect({ device.name, bar, area.w - columns.left - L.narrowGutter >= L.middle })
+						.toEqual({ device.name, bar, true })
+				end
 			end
 			-- a 16:9 phone (667 x 375, 760 of content): the stat rows go on two lines
 			local small = CharacterSections.columns(true, 760)
@@ -183,12 +212,26 @@ T.describe("Backpack window sections", function()
 			T.expect(small.compact).toBe(true)
 			-- never narrower than the equipment with touch slots (3 x 56 + 2 x 8)
 			T.expect(CharacterSections.columns(true, 556).left >= 3 * 56 + 2 * 8).toBe(true)
-			-- the window takes its numbers from GearLayout, measured from its content, never from the screen
+			-- the window takes its numbers from GearLayout, measured from its content (UI/ViewSize: without the
+			-- window's opening motion), never from the screen
 			local src = read(WINDOW)
 			T.expect(string.find(src, "GearLayout.character(", 1, true) ~= nil).toBe(true)
-			T.expect(string.find(src, '[Out("AbsoluteSize")]', 1, true) ~= nil).toBe(true)
+			T.expect(string.find(src, "ViewSize.new(scope)", 1, true) ~= nil).toBe(true)
+			T.expect(string.find(src, "view.watch(root)", 1, true) ~= nil).toBe(true)
 			T.expect(string.find(src, "Scale.VirtualSize", 1, true)).toBeNil()
+			T.expect(string.find(src, "Scale.Value", 1, true)).toBeNil()
 			T.expect(string.find(src, "Compact = compact", 1, true) ~= nil).toBe(true)
+			-- review 2026-11-10: only the kind of layout rebuilds the window (it was rebuilt on every frame of the
+			-- opening motion on a phone); the narrow columns' widths follow the size without a rebuild
+			T.expect(string.find(src, 'return if c then `{c.wide}|{c.compact}` else ""', 1, true) ~= nil).toBe(true)
+			T.expect(string.find(src, "c.left.right}|", 1, true)).toBeNil()
+			local narrow = assert(string.match(src, "local function narrowLayout(.-)\nend\n"))
+			T.expect(string.find(narrow, "use(columns)", 1, true) ~= nil).toBe(true)
+			-- and the measure itself: a ruler under the same scales, read with the frame in one go, whole px
+			local measure = read("src/client/UI/ViewSize.luau")
+			for _, needle in { "ruler.AbsoluteSize.X / ViewSize.RULER", "task.defer(read)", "math.round(" } do
+				T.expect({ needle, string.find(measure, needle, 1, true) ~= nil }).toEqual({ needle, true })
+			end
 			-- the paddings are Theme's (Padding.Large and Medium)
 			local theme = read("src/client/UI/Theme.luau")
 			local at = assert(string.find(theme, "Theme.Padding = {", 1, true))

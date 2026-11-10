@@ -73,6 +73,10 @@ end
 
 -- The backpack panel (UI/Screens/BackpackPanel): the gold and slots header, the overflow / pockets line under it (Small
 -- 17, only while `hinted`), the filter tabs, the slot grid (scrolling) and the action bar in the footer.
+-- On `touch` the sort button and the action buttons are touch targets (44, UI-ZASADY: ButtonHeightSmall only on PC):
+-- the header grows to 44 and the action bar is exactly one button high (its sideways scroll bar, shown only when the
+-- buttons overflow, lies over their lower edge), so a phone under Roblox's 58-px top bar keeps 2 rows of 56-px slots
+-- with the hint line too.
 export type Backpack = {
 	header: Rect,
 	hint: Rect?,
@@ -85,6 +89,7 @@ export type Backpack = {
 
 GearLayout.BACKPACK = table.freeze({
 	header = 40,
+	touchHeader = 44, -- the sort button as a touch target
 	hint = 20, -- one Small (17) line
 	tabs = 44, -- Theme.Size.TabHeight
 	slot = 64,
@@ -94,10 +99,10 @@ GearLayout.BACKPACK = table.freeze({
 	padRight = 10, -- the grid's scroll bar
 })
 
-function GearLayout.backpack(area: Size, slot: number?, hinted: boolean?): Backpack
+function GearLayout.backpack(area: Size, slot: number?, hinted: boolean?, touch: boolean?): Backpack
 	local B = GearLayout.BACKPACK
 	local size = slot or B.slot
-	local header = rect(0, 0, area.w, B.header)
+	local header = rect(0, 0, area.w, if touch then B.touchHeader else B.header)
 	local y = header.bottom
 	local hint: Rect? = nil
 	if hinted then
@@ -105,7 +110,8 @@ function GearLayout.backpack(area: Size, slot: number?, hinted: boolean?): Backp
 		y += B.hint
 	end
 	local tabs = rect(0, y + GearLayout.GAP, area.w, y + GearLayout.GAP + B.tabs)
-	local actions = rect(0, area.h - (GearLayout.BUTTON_SMALL + GearLayout.GAP), area.w, area.h)
+	local actionsH = if touch then GearLayout.TOUCH else GearLayout.BUTTON_SMALL + GearLayout.GAP
+	local actions = rect(0, area.h - actionsH, area.w, area.h)
 	local grid = rect(0, tabs.bottom + GearLayout.GAP, area.w, actions.top - GearLayout.GAP)
 	local step = size + B.gap
 	return {

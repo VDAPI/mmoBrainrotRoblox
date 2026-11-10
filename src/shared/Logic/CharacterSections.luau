@@ -99,6 +99,18 @@ function CharacterSections.columns(touch: boolean, contentWidth: number): Column
 	return { wide = false, left = left, compact = left - L.scrollPad < L.statsOneLine }
 end
 
+-- A stat's row in a wide column (StatAllocator): its name, then the − / + buttons (square, `button` px) round the value
+-- while there are free points, or the value alone without them, `gap` apart. The name takes what the controls leave, so
+-- the parts fill the row and the name starts at its left edge in both states (review 2026-11-10: without points the
+-- names stood 116 px in, pushed right with the value).
+CharacterSections.STAT_ROW = table.freeze({ button = 50, value = 90, gap = 8 })
+
+-- The width a stat's controls take beside its name, the gap before them included (`points`: the − / + buttons show).
+function CharacterSections.statControls(points: boolean): number
+	local R = CharacterSections.STAT_ROW
+	return if points then 2 * R.button + R.value + 3 * R.gap else R.value + R.gap
+end
+
 -- "Spend as the path suggests" and its plan line: only with free points to spend and a plan to follow.
 function CharacterSections.suggestShown(statPoints: number?, hasPlan: boolean): boolean
 	return hasPlan and (statPoints or 0) > 0

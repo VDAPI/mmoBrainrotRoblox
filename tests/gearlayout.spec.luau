@@ -116,9 +116,10 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 	end)
 
 	T.it("the backpack: the grid between the filters and the actions, 2 slot rows on a phone, 5 on PC", function()
+		-- both homes of BackpackPanel: the companion window ("inventory", next to a service) and the character
+		-- window's backpack column; on touch both take 56-px slots (the panel's own default there)
 		local function backpackCases(): { Case }
 			local out = cases("inventory")
-			-- and the backpack column of the character window
 			for _, case in cases("character") do
 				local column = GearLayout.character(case.area, case.touch).backpack
 				table.insert(out, {
@@ -130,8 +131,9 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			return out
 		end
 		for _, case in backpackCases() do
+			local slot = if case.touch then GearLayout.BACKPACK.touchSlot else GearLayout.BACKPACK.slot
 			for _, hinted in { false, true } do
-				local b = GearLayout.backpack(case.area, nil, hinted)
+				local b = GearLayout.backpack(case.area, slot, hinted, case.touch)
 				local rects: { [string]: Rect } =
 					{ header = b.header, tabs = b.tabs, grid = b.grid, actions = b.actions }
 				if b.hint then
@@ -142,6 +144,15 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 				T.expect({ case.name, hinted, b.rows >= (if case.touch then 2 else 5) })
 					.toEqual({ case.name, hinted, true })
 				T.expect({ case.name, b.columns >= 6 }).toEqual({ case.name, true })
+				-- the grid really holds those rows (its padding and the gaps between them)
+				local B = GearLayout.BACKPACK
+				T.expect({ case.name, hinted, b.grid.bottom - b.grid.top >= 4 + b.rows * slot + (b.rows - 1) * B.gap })
+					.toEqual({ case.name, hinted, true })
+				if case.touch then
+					-- the sort button (the header's height) and the action buttons are touch targets
+					T.expect({ case.name, b.header.bottom - b.header.top, b.actions.bottom - b.actions.top })
+						.toEqual({ case.name, GearLayout.TOUCH, GearLayout.TOUCH })
+				end
 			end
 		end
 	end)
