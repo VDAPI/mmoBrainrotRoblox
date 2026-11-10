@@ -1,6 +1,9 @@
 --!strict
 -- The weapon pool's name over the skill bar (S139, DESIGN-18 §12 F1): when the bar switches to another pool (a weapon
 -- change, PathService swaps `barPool`) a small iron plaque "Pool: <name>" shows for SHOW seconds. Nothing on login.
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): it stands in the cast line (Logic/HudZones
+-- `castLine`, a phone's `castBar` place) with the cast bar, centred on the line's bottom edge; while a cast runs
+-- (`busy`: the cast bar shows) it waits, the bar wins.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -16,7 +19,7 @@ type Scope = Fusion.Scope<typeof(Fusion)>
 
 local SHOW = 2 -- seconds
 
-local function PoolLabel(scope: Scope, position: Fusion.UsedAs<UDim2>): Instance
+local function PoolLabel(scope: Scope, position: Fusion.UsedAs<UDim2>, busy: Fusion.UsedAs<boolean>?): Instance
 	local barPool = State.Value({ "character", "barPool" })
 	local classId = State.Value({ "character", "class" })
 	local shown = scope:Value(false)
@@ -62,7 +65,9 @@ local function PoolLabel(scope: Scope, position: Fusion.UsedAs<UDim2>): Instance
 		FontFace = Theme.Fonts.BodyBold,
 		TextSize = Theme.TextSize.Small,
 		TextColor3 = Theme.Iron.Heading,
-		Visible = shown,
+		Visible = scope:Computed(function(use): boolean
+			return use(shown) and not (busy ~= nil and use(busy) == true)
+		end),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
 			scope:New("UIPadding")({

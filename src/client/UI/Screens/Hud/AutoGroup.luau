@@ -3,17 +3,21 @@
 -- (S122), Auto Hunt and Auto Potions (S134d) behind one "Auto" button right of the portrait (Logic/HudStack.EXTRAS)
 -- instead of three buttons in a row. It shows while the account has any of them (each of the three still shows only
 -- while it has time or is owned, never a dead button); a click opens the three under it as they were (state, time
--- left, tooltip, Auto Potions' own panel), a second click closes them. Its frame is gold while any of them runs. PC and
--- tablet; a phone in landscape keeps the three at their own places (Logic/PhoneHud).
+-- left, tooltip, Auto Potions' own panel), a second click closes them. Its frame is gold while any of them runs.
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): the three open right of the button, top-aligned
+-- with it (the zone map's `autoPopover`, Logic/HudZones; under it they covered the effects row), and a phone has the
+-- same one button at the start of the row under its portrait (Logic/PhoneHud `auto`) instead of three of its own; its
+-- popover opens right of it over the effects row (an overlay the player opens).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local AutoGrindButton = require(script.Parent.AutoGrindButton)
 local AutoPotionButton = require(script.Parent.AutoPotionButton)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
-local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
+local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local IconButton = require(script.Parent.Parent.Parent.Components.IconButton)
 local LureButton = require(script.Parent.LureButton)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
@@ -22,8 +26,6 @@ local Theme = require(script.Parent.Parent.Parent.Theme)
 local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
-
-local SPOT = HudStack.EXTRAS
 
 local function AutoGroup(scope: Scope): { Instance }
 	local open = scope:Value(false)
@@ -63,15 +65,20 @@ local function AutoGroup(scope: Scope): { Instance }
 			or (type(p) == "table" and p.on == true)
 	end)
 	local shown = scope:Computed(function(use): boolean
-		return use(count) > 0 and not use(PhoneLayout.Compact)
+		return use(count) > 0
+	end)
+	-- a phone's popover: right of its Auto button, top-aligned with it
+	local phonePopover = scope:Computed(function(use): UDim2
+		local auto = use(PhoneLayout.Places).auto
+		return UDim2.fromOffset(auto.x + auto.w + Theme.Padding.Small, auto.y)
 	end)
 
 	return {
 		IconButton(scope, {
 			Name = "AutoButton",
 			Icon = "⚙",
-			Position = UDim2.fromOffset(SPOT.x, SPOT.y),
-			Size = UDim2.fromOffset(SPOT.w, SPOT.h),
+			Position = PhoneLayout.Position(scope, "auto", HudSlots.at(scope, "auto")),
+			Size = PhoneLayout.Size(scope, "auto", HudSlots.sizeOf(scope, "auto")),
 			Tooltip = Text.T(scope, "hud.auto"),
 			Active = scope:Computed(function(use): boolean
 				return use(open) or use(running)
@@ -83,9 +90,13 @@ local function AutoGroup(scope: Scope): { Instance }
 		}),
 		scope:New("Frame")({
 			Name = "AutoPanel",
-			Position = UDim2.fromOffset(SPOT.x, SPOT.y + SPOT.h + Theme.Padding.Small),
-			Size = UDim2.fromOffset(0, 0),
-			AutomaticSize = Enum.AutomaticSize.XY,
+			Position = PhoneLayout.Pick(scope, phonePopover, HudSlots.at(scope, "autoPopover")),
+			Size = scope:Computed(function(use): UDim2
+				return if use(PhoneLayout.Compact)
+					then UDim2.fromOffset(PhoneHud.AUTO_POPOVER.w, PhoneHud.AUTO_POPOVER.h)
+					else UDim2.fromOffset(0, 0)
+			end),
+			AutomaticSize = PhoneLayout.Pick(scope, Enum.AutomaticSize.None, Enum.AutomaticSize.XY),
 			BackgroundColor3 = Theme.Iron.Surface,
 			BackgroundTransparency = Theme.HudAlpha,
 			ZIndex = 4,

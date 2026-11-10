@@ -11,6 +11,12 @@
 -- S128: after the match a result line: the team result of a 3v3 match ("Team victory" / "Team defeat" / "Draw") and
 -- the Arena Tokens of the match with their reason (`arenaLive.match.tokens` / `tokensReason`). The 3v3 team panel is
 -- UI/Screens/Hud/ArenaTeams.
+-- Owner 2026-11-10 (UI plan package A, "things covering each other"): on PC and a tablet the match panel and the return
+-- panel stand at the zone map's arena place (Logic/HudZones `arenaPanel`, 172..240 at 1080p: under the target frame
+-- and its effects, over the message zone; they stood at 70 and 160, over the target frame); while the return panel
+-- shows, the match panel steps aside and the return panel carries the match's result. On a phone they join the stack
+-- as "arena" (Logic/PhoneHud) with a header line (Hud/PanelHeader: the score and the round's time), folded by default
+-- (Section.state "hudArena", Data/Folds/Hud), and the column folds them to that line while it has no room.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -21,6 +27,10 @@ local Device = require(script.Parent.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local HudSlots = require(script.Parent.Parent.Parent.HudSlots)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
+local PanelHeader = require(script.Parent.PanelHeader)
+local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
+local Section = require(script.Parent.Parent.Parent.Components.Section)
 local State = require(script.Parent.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Parent.Theme)
@@ -34,6 +44,11 @@ export type Props = { Leave: () -> (), ReturnNow: () -> () }
 
 local PILL_WIDTH = HudStack.ARENA_PILL
 local PANEL_WIDTH = 420
+-- the phone's match and return panels in the stack: their rows under the header (Hud/PanelHeader)
+local SCORE = 30
+local ROUND = 22
+local RESULT = 36
+local RETURN = 24
 
 local function ArenaPanel(scope: Scope, props: Props): Instance
 	local live = State.Value({ "arenaLive" })
@@ -63,11 +78,15 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 	local pillHeight = scope:Computed(function(use): number
 		return if use(Device.Touch) then Theme.Size.MinTouch else 36
 	end)
+	local queued = scope:Computed(function(use): boolean
+		return use(queue) ~= nil
+	end)
 	local slot = HudSlots.join(
 		scope,
 		"arena",
 		scope:Computed(function(use): HudSlots.Box
-			return { shown = use(queue) ~= nil, w = PILL_WIDTH, h = use(pillHeight) }
+			local h = use(pillHeight)
+			return { shown = use(queued), w = PILL_WIDTH, h = h, line = h }
 		end)
 	)
 	local pill = scope:New("Frame")({
@@ -79,9 +98,8 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		end),
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
-		Visible = scope:Computed(function(use): boolean
-			return use(queue) ~= nil
-		end),
+		-- package A: not while it waits behind the column's '+N' chip
+		Visible = HudSlots.visible(scope, slot, queued),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Round }),
 			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
@@ -129,22 +147,162 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		},
 	})
 
+	-- S127: the way back from an arena server (its panel takes the match panel's place, with the match's result)
+	local returnAt = scope:Computed(function(use): number?
+		local value = use(live)
+		return if type(value) == "table" then tonumber(value.returnAt) else nil
+	end)
+	local returning = scope:Computed(function(use): boolean
+		return use(returnAt) ~= nil
+	end)
+	local compact = PhoneLayout.Compact
+	local open = Section.state(scope, "hudArena")
+	local forced = HudSlots.forced(scope, "arena")
+	local header = PanelHeader.Height(scope)
+	-- a phone's panels show their rows while open (the player's choice, and room in the stack)
+	local rows = scope:Computed(function(use): boolean
+		return not use(compact) or (use(open) and not use(forced))
+	end)
+	local function toggle()
+		if Fusion.peek(forced) then
+			HudSlots.bring("arena")
+			Section.set("hudArena", true)
+			return
+		end
+		Section.set("hudArena", not Fusion.peek(open))
+	end
+	-- S128: the result and the tokens of the match
+	local resultText = scope:Computed(function(use): string
+		local m = use(match)
+		if not m or m.phase ~= "done" then
+			return ""
+		end
+		local bits = {}
+		if m.mode == "3v3" and type(m.score) == "table" then
+			local key: string
+			local winner = tonumber(m.winner)
+			if winner then
+				-- the decided match (a forfeit win keeps the score 0:0)
+				key = if winner == 0 then "draw" elseif winner == m.side then "win" else "loss"
+			else
+				local mine = tonumber(m.score[m.side]) or 0
+				local other = 0
+				for side, n in m.score do
+					if side ~= m.side then
+						other = math.max(other, tonumber(n) or 0)
+					end
+				end
+				key = if mine > other then "win" elseif mine < other then "loss" else "draw"
+			end
+			table.insert(bits, Text.get(use, `arena.result3.{key}`))
+		end
+		if type(m.tokens) == "number" then
+			table.insert(bits, Text.get(use, "arena.tokens.match", { n = m.tokens }))
+		end
+		if type(m.tokensReason) == "string" then
+			table.insert(bits, Text.get(use, m.tokensReason))
+		end
+		return table.concat(bits, "  ·  ")
+	end)
+	local hasResult = scope:Computed(function(use): boolean
+		return use(resultText) ~= ""
+	end)
+	-- the phone header: the score and the round's time
+	local scoreLine = scope:Computed(function(use): string
+		local m = use(match)
+		if not m or type(m.score) ~= "table" then
+			return "⚔"
+		end
+		return `⚔ {m.score[1] or 0} : {m.score[2] or 0}`
+	end)
+	local timeValue = scope:Computed(function(use): string
+		local m = use(match)
+		local endsAt = if m then tonumber(m.endsAt) else nil
+		if m and m.phase == "fight" and endsAt then
+			return Time.format(math.max(0, endsAt - use(now)))
+		end
+		local at = use(returnAt)
+		return if at then `{math.max(0, math.ceil(at - use(now)))} s` else ""
+	end)
+	local matchShown = scope:Computed(function(use): boolean
+		return use(match) ~= nil and not use(returning)
+	end)
+	-- the place: the zone map's arena place on PC and a tablet; a phone's stack ("arena")
+	local zone = HudSlots.at(scope, "arenaPanel")
+	local function phoneSlot(shown: Fusion.Computed<boolean>, extra: Fusion.Computed<number>)
+		return HudSlots.join(
+			scope,
+			"arena",
+			scope:Computed(function(use): HudSlots.Box
+				local line = use(header)
+				local h = if use(rows) then line + use(extra) else line
+				return { shown = use(compact) and use(shown), w = PhoneHud.PANEL_WIDTH, h = h, line = line }
+			end)
+		)
+	end
+	local matchSlot = phoneSlot(
+		matchShown,
+		scope:Computed(function(use): number
+			return 6 + SCORE + 2 + ROUND + (if use(hasResult) then 2 + RESULT else 0) + 8
+		end)
+	)
+	local returnSlot = phoneSlot(
+		returning,
+		scope:Computed(function(use): number
+			return 8 + (if use(hasResult) then RESULT + 6 else 0) + RETURN + 6 + Theme.Size.ButtonHeight + 8
+		end)
+	)
+	local function placeOf(phone: Fusion.Computed<HudStack.Rect?>): Fusion.Computed<UDim2>
+		local last = HudSlots.position(scope, phone)
+		return scope:Computed(function(use): UDim2
+			return if use(compact) then use(last) else use(zone)
+		end)
+	end
+	local function sizeOf(phone: Fusion.Computed<HudStack.Rect?>): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			if not use(compact) then
+				return UDim2.fromOffset(PANEL_WIDTH, 0)
+			end
+			local at = use(phone)
+			return UDim2.fromOffset(PhoneHud.PANEL_WIDTH, if at then at.bottom - at.top else use(header))
+		end)
+	end
+	local function shownOn(phone: Fusion.Computed<HudStack.Rect?>, shown: Fusion.Computed<boolean>)
+		return scope:Computed(function(use): boolean
+			if not use(shown) then
+				return false
+			end
+			return not use(compact) or use(phone) ~= nil
+		end)
+	end
+	local function phoneHeader(order: number): Instance
+		return PanelHeader.new(scope, {
+			LayoutOrder = order,
+			Title = scoreLine,
+			Value = timeValue,
+			Open = rows,
+			OnClick = toggle,
+			Visible = compact,
+		})
+	end
+	local automatic = scope:Computed(function(use): Enum.AutomaticSize
+		return if use(compact) then Enum.AutomaticSize.None else Enum.AutomaticSize.Y
+	end)
+
 	local panel = scope:New("Frame")({
 		Name = "ArenaMatch",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 70),
-		Size = UDim2.fromOffset(PANEL_WIDTH, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
+		Position = placeOf(matchSlot),
+		Size = sizeOf(matchSlot),
+		AutomaticSize = automatic,
+		ClipsDescendants = compact,
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
-		Visible = scope:Computed(function(use): boolean
-			return use(match) ~= nil
-		end),
+		Visible = shownOn(matchSlot, matchShown),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, 6),
+				PaddingTop = PhoneLayout.Pick(scope, UDim.new(0, 0), UDim.new(0, 6)),
 				PaddingBottom = UDim.new(0, 8),
 				PaddingLeft = UDim.new(0, 12),
 				PaddingRight = UDim.new(0, 12),
@@ -154,10 +312,12 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
 				Padding = UDim.new(0, 2),
 			}),
+			phoneHeader(0),
 			-- "Aria  1 : 0  Borg" (own side first in gold)
 			scope:New("TextLabel")({
 				LayoutOrder = 1,
-				Size = UDim2.new(1, 0, 0, 30),
+				Visible = rows,
+				Size = UDim2.new(1, 0, 0, SCORE),
 				BackgroundTransparency = 1,
 				RichText = true,
 				Text = scope:Computed(function(use): string
@@ -183,7 +343,8 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 			}),
 			scope:New("TextLabel")({
 				LayoutOrder = 2,
-				Size = UDim2.new(1, 0, 0, 22),
+				Visible = rows,
+				Size = UDim2.new(1, 0, 0, ROUND),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					local m = use(match)
@@ -219,41 +380,9 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				BackgroundTransparency = 1,
 				TextWrapped = true,
 				Visible = scope:Computed(function(use): boolean
-					local m = use(match)
-					return m ~= nil and m.phase == "done"
+					return use(hasResult) and use(rows)
 				end),
-				Text = scope:Computed(function(use): string
-					local m = use(match)
-					if not m or m.phase ~= "done" then
-						return ""
-					end
-					local bits = {}
-					if m.mode == "3v3" and type(m.score) == "table" then
-						local key: string
-						local winner = tonumber(m.winner)
-						if winner then
-							-- the decided match (a forfeit win keeps the score 0:0)
-							key = if winner == 0 then "draw" elseif winner == m.side then "win" else "loss"
-						else
-							local mine = tonumber(m.score[m.side]) or 0
-							local other = 0
-							for side, n in m.score do
-								if side ~= m.side then
-									other = math.max(other, tonumber(n) or 0)
-								end
-							end
-							key = if mine > other then "win" elseif mine < other then "loss" else "draw"
-						end
-						table.insert(bits, Text.get(use, `arena.result3.{key}`))
-					end
-					if type(m.tokens) == "number" then
-						table.insert(bits, Text.get(use, "arena.tokens.match", { n = m.tokens }))
-					end
-					if type(m.tokensReason) == "string" then
-						table.insert(bits, Text.get(use, m.tokensReason))
-					end
-					return table.concat(bits, "  ·  ")
-				end),
+				Text = resultText,
 				FontFace = Theme.Fonts.BodyBold,
 				TextSize = Theme.TextSize.Small,
 				TextColor3 = Theme.Brass.Bright,
@@ -261,27 +390,20 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 		},
 	})
 
-	-- S127: the way back from an arena server
-	local returnAt = scope:Computed(function(use): number?
-		local value = use(live)
-		return if type(value) == "table" then tonumber(value.returnAt) else nil
-	end)
 	local back = scope:New("Frame")({
 		Name = "ArenaReturn",
-		AnchorPoint = Vector2.new(0.5, 0),
-		Position = UDim2.new(0.5, 0, 0, 160),
-		Size = UDim2.fromOffset(PANEL_WIDTH, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
+		Position = placeOf(returnSlot),
+		Size = sizeOf(returnSlot),
+		AutomaticSize = automatic,
+		ClipsDescendants = compact,
 		BackgroundColor3 = Theme.Iron.Surface,
 		BackgroundTransparency = Theme.HudAlpha,
-		Visible = scope:Computed(function(use): boolean
-			return use(returnAt) ~= nil
-		end),
+		Visible = shownOn(returnSlot, returning),
 		[Children] = {
 			scope:New("UICorner")({ CornerRadius = Theme.Corner.Medium }),
 			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
 			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, 8),
+				PaddingTop = PhoneLayout.Pick(scope, UDim.new(0, 0), UDim.new(0, 8)),
 				PaddingBottom = UDim.new(0, 8),
 				PaddingLeft = UDim.new(0, 12),
 				PaddingRight = UDim.new(0, 12),
@@ -291,9 +413,25 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 				HorizontalAlignment = Enum.HorizontalAlignment.Center,
 				Padding = UDim.new(0, 6),
 			}),
+			phoneHeader(-1),
+			-- the match's result (the match panel steps aside for this one)
+			scope:New("TextLabel")({
+				LayoutOrder = 0,
+				Size = UDim2.new(1, 0, 0, RESULT),
+				BackgroundTransparency = 1,
+				TextWrapped = true,
+				Visible = scope:Computed(function(use): boolean
+					return use(hasResult) and use(rows)
+				end),
+				Text = resultText,
+				FontFace = Theme.Fonts.BodyBold,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Brass.Bright,
+			}),
 			scope:New("TextLabel")({
 				LayoutOrder = 1,
-				Size = UDim2.new(1, 0, 0, 24),
+				Visible = rows,
+				Size = UDim2.new(1, 0, 0, RETURN),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					local at = use(returnAt)
@@ -307,6 +445,7 @@ local function ArenaPanel(scope: Scope, props: Props): Instance
 			Button(scope, {
 				Surface = "iron", -- S135: on a dark HUD / overlay surface
 				LayoutOrder = 2,
+				Visible = rows,
 				Size = UDim2.new(1, 0, 0, Theme.Size.ButtonHeight),
 				Variant = "primary",
 				Text = Text.T(scope, "arena.net.returnNow"),

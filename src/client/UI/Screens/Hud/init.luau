@@ -10,6 +10,12 @@
 -- portrait (the blessing, the elixirs and the effects), the cloak and the auto services behind one "Auto" button
 -- (Hud/AutoGroup), the dot on the portrait is the PvP switch on PC, the menu bar, the tracker and the minimap's labels
 -- step out of sight under an open window (UI/HudCover) and the EXP bar shows its percentage on hover only.
+-- Owner 2026-11-10 ("too much text, things covering each other, nothing folds"; UI plan package A): on PC and a
+-- tablet the portrait, the effects row, the menu, the cast line, the action bar and the EXP bar stand at the places of
+-- the zone map (Logic/HudZones through UI/HudSlots.Zones; no offsets of their own here), the column's '+N' chip
+-- (Hud/StackChip) lists what the column has no room for; a phone has one grid (Logic/PhoneHud): the Auto button and
+-- the blessing, elixirs and effects in one row under the portrait, the drawer opening left of its button (never over
+-- the PvP toggle).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -22,7 +28,6 @@ local AttackButton = require(script.AttackButton)
 local Bar = require(script.Parent.Parent.Components.Bar)
 local Classes = require(ReplicatedStorage.Shared.Data.Classes)
 local Config = require(ReplicatedStorage.Shared.Config)
-local CostBadge = require(script.Parent.Parent.Components.CostBadge) -- owner 2026-10-21: the cost plates over the bar
 local DeathScreen = require(script.DeathScreen)
 local PremiumShop = require(script.Parent.PremiumShop)
 local Device = require(script.Parent.Parent.Device)
@@ -37,13 +42,11 @@ local LoginButton = require(script.LoginButton)
 local LowHp = require(ReplicatedStorage.Shared.Logic.LowHp)
 local LowHpVignette = require(script.LowHpVignette) -- S134f
 local MailButton = require(script.MailButton) -- owner 2026-10-21
-local LureButton = require(script.LureButton)
-local AutoGrindButton = require(script.AutoGrindButton) -- S134d
-local AutoPotionButton = require(script.AutoPotionButton) -- S134d
 local LoginReward = require(ReplicatedStorage.Shared.Logic.LoginReward)
 local PortraitFrame = require(script.Parent.Parent.Components.PortraitFrame)
 local PhoneHud = require(ReplicatedStorage.Shared.Logic.PhoneHud)
 local HudStack = require(ReplicatedStorage.Shared.Logic.HudStack)
+local HudZones = require(ReplicatedStorage.Shared.Logic.HudZones)
 local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local Scale = require(script.Parent.Parent.Scale)
 local PotionBar = require(script.PotionBar)
@@ -64,6 +67,7 @@ local MobileSkills = require(script.MobileSkills)
 local PoolLabel = require(script.PoolLabel)
 local PvpToggle = require(script.PvpToggle)
 local SeasonButton = require(script.SeasonButton) -- S152b
+local StackChip = require(script.StackChip) -- UI plan package A
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
@@ -122,10 +126,9 @@ export type Props = {
 local SKILL_SLOTS = 10
 local SLOT_SIZE = 56
 local EFFECT_ICON = 30 -- UI plan phase 2: the effects row's icons (Hud/EffectIcons' default), the elixirs too
--- UI plan phase 4 (one spacing grid): the HUD's margin from the screen's edges and the room between its elements
--- (Logic/HudStack.MARGIN, GAP: Theme.Padding.Large, Small)
-local MARGIN = HudStack.MARGIN
-local GAP = HudStack.GAP
+-- package A: a phone's effects row (220 wide after the Auto button) holds the blessing, the elixirs and this many
+-- effect icons before '+N'
+local EFFECTS_PHONE = 3
 -- UI plan phase 4: the portrait is 340 x 110 (Logic/HudStack.PORTRAIT; it was 400 x 136): the emblem (68) with the
 -- level on its lower edge, the PvP dot and the name in the top row, the three bars (20 tall, 4 apart) under the name.
 local PORTRAIT = HudStack.PORTRAIT
@@ -242,7 +245,7 @@ local function portrait(scope: Scope): Instance
 	return scope:New("Frame")({
 		Name = "Portrait",
 		-- W29: scaled down in the corner on a phone in landscape (Logic/PhoneHud)
-		Position = PhoneLayout.Position(scope, "portrait", UDim2.fromOffset(MARGIN, MARGIN)),
+		Position = PhoneLayout.Position(scope, "portrait", HudSlots.at(scope, "portrait")),
 		Size = UDim2.fromOffset(PORTRAIT.w, PORTRAIT.h),
 		-- S136: an iron HUD tile with a 1 px brass edge
 		BackgroundColor3 = Theme.Iron.Surface,
@@ -333,16 +336,7 @@ local function portrait(scope: Scope): Instance
 						TextTruncate = Enum.TextTruncate.AtEnd,
 						[Children] = scope:New("UISizeConstraint")({ MaxSize = Vector2.new(170, 28) }),
 					}),
-					-- UI plan phase 2: a phone keeps the blessing by the name; PC and tablet show it first in the effects row
-					scope:New("Frame")({
-						Name = "BlessingSlot",
-						LayoutOrder = 2,
-						Size = UDim2.fromOffset(0, 26),
-						AutomaticSize = Enum.AutomaticSize.X,
-						BackgroundTransparency = 1,
-						Visible = PhoneLayout.Compact,
-						[Children] = BlessingBadge.new(scope, 1),
-					}),
+					-- UI plan package A: a phone too shows the blessing first in the effects row (no slot by the name)
 				},
 			}),
 			scope:New("Frame")({
@@ -454,7 +448,7 @@ local function menu(scope: Scope, props: Props): Instance
 		Name = "Menu",
 		AnchorPoint = Vector2.new(1, 0),
 		-- W29: on a phone in landscape only the scaled minimap and the guide bar (the buttons are in the drawer)
-		Position = PhoneLayout.Position(scope, "minimap", UDim2.new(1, -MARGIN, 0, MARGIN)),
+		Position = PhoneLayout.Position(scope, "minimap", HudSlots.point(scope, "menuBar", 1, 0)),
 		Size = UDim2.fromOffset(0, 0),
 		AutomaticSize = Enum.AutomaticSize.XY,
 		BackgroundTransparency = 1,
@@ -575,7 +569,7 @@ local function actionBar(scope: Scope, props: Props): Instance
 	local bar = scope:New("Frame")({
 		Name = "ActionBar",
 		AnchorPoint = PhoneLayout.Anchor(scope, "potions", Vector2.new(0.5, 1)),
-		Position = PhoneLayout.Position(scope, "potions", UDim2.new(0.5, 0, 1, -(14 + Theme.Padding.Medium))),
+		Position = PhoneLayout.Position(scope, "potions", HudSlots.point(scope, "actionBar", 0.5, 1)),
 		Size = UDim2.fromOffset(0, SLOT_SIZE),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
@@ -604,11 +598,10 @@ local function expBar(scope: Scope): Instance
 	local hovered = scope:Value(false)
 	local bar = Bar(scope, {
 		Name = "Exp",
-		AnchorPoint = Vector2.new(0.5, 1),
 		-- UI plan phase 2: thinner and 2 lower (was 16 tall, 4 up): the chat in the lower left corner ends a few pixels
-		-- above it (Studio 2026-10-31: they touched)
-		Position = UDim2.new(0.5, 0, 1, -2),
-		Size = UDim2.new(1, -8, 0, 10),
+		-- above it (Studio 2026-10-31: they touched); package A: the zone map's EXP line (Logic/HudZones.EXP_BAR)
+		Position = HudSlots.at(scope, "expBar"),
+		Size = HudSlots.sizeOf(scope, "expBar"),
 		Value = exp,
 		Max = need,
 		Color = Theme.Resource.Exp,
@@ -656,7 +649,6 @@ end
 -- reward waits; the drawer's button shows "!" while any of its buttons does.
 local DRAWER_PER_ROW = 3
 local DRAWER_EXTRA = 100 -- LayoutOrder of the reward buttons: after the bar's
-local POOL = PhoneHud.PLACES.pool -- W29: the weapon pool label on a phone in landscape
 
 local function drawer(scope: Scope, props: Props): { Instance }
 	local open = scope:Value(false)
@@ -699,14 +691,19 @@ local function drawer(scope: Scope, props: Props): { Instance }
 	end
 	local cell = Theme.Size.IconButton
 	local toggle = PhoneHud.PLACES.menuToggle
-	local xs, xo, ys, yo, ax, ay = PhoneHud.udim(toggle)
+	-- package A: the drawer opens left of its button, top-aligned with it (under it, it covered the PvP toggle)
+	local drawerAt = scope:Computed(function(use): UDim2
+		local place = use(PhoneLayout.Places).menuToggle
+		local xs, xo, ys, yo = PhoneHud.udim(place)
+		return UDim2.new(xs, xo - place.w - Theme.Padding.Small, ys, yo)
+	end)
 	return {
 		IconButton(scope, {
 			Name = "MenuToggle",
 			Icon = "☰",
 			Tooltip = Text.T(scope, "hud.menuDrawer"),
-			Position = UDim2.new(xs, xo, ys, yo),
-			AnchorPoint = Vector2.new(ax, ay),
+			Position = PhoneLayout.Position(scope, "menuToggle", UDim2.new()),
+			AnchorPoint = PhoneLayout.Anchor(scope, "menuToggle", Vector2.zero),
 			Size = UDim2.fromOffset(toggle.w, toggle.h),
 			Active = open,
 			Badge = scope:Computed(function(use): boolean
@@ -728,7 +725,7 @@ local function drawer(scope: Scope, props: Props): { Instance }
 		scope:New("Frame")({
 			Name = "MenuDrawer",
 			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(xs, xo, ys, yo + toggle.h + Theme.Padding.Small),
+			Position = drawerAt,
 			Size = UDim2.fromOffset(DRAWER_PER_ROW * (cell + Theme.Padding.Small) + Theme.Padding.Small, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundColor3 = Theme.Iron.Surface,
@@ -763,6 +760,19 @@ end
 local function Hud(scope: Scope, props: Props): Instance
 	local localPlayer = game:GetService("Players").LocalPlayer
 	local myModel = scope:Value(localPlayer.Character)
+	-- package A: the cast line holds the cast bar or the weapon pool's name (the bar wins)
+	local cast = CastBar(scope) :: GuiObject
+	local casting = scope:Value(cast.Visible)
+	table.insert(
+		scope,
+		cast:GetPropertyChangedSignal("Visible"):Connect(function()
+			casting:set(cast.Visible)
+		end)
+	)
+	local phoneCastLine = scope:Computed(function(use): UDim2
+		local place = use(PhoneLayout.Places).castBar
+		return UDim2.fromOffset(place.x + place.w / 2, place.y + place.h)
+	end)
 	table.insert(
 		scope,
 		localPlayer.CharacterAdded:Connect(function(model)
@@ -784,15 +794,9 @@ local function Hud(scope: Scope, props: Props): Instance
 			-- UI plan phase 2 (one row of effects): PC and tablet show the blessing (✶ and its time), the elixirs and the
 			-- returning bonus first in the effects row under the portrait; a phone keeps the elixirs at their own place and
 			-- the blessing by the name
-			scope:Hydrate(
-				BlessingIcon(
-					scope,
-					PhoneLayout.Position(scope, "blessing", UDim2.fromOffset(HudStack.EXTRAS.x, MARGIN + 4))
-				)
-			)({ Visible = PhoneLayout.Compact }),
 			scope:New("Frame")({
 				Name = "EffectsRow",
-				Position = PhoneLayout.Position(scope, "effects", UDim2.fromOffset(MARGIN, MARGIN + PORTRAIT.h + GAP)),
+				Position = PhoneLayout.Position(scope, "effects", HudSlots.at(scope, "effects")),
 				Size = UDim2.fromOffset(0, 0),
 				AutomaticSize = Enum.AutomaticSize.XY,
 				BackgroundTransparency = 1,
@@ -808,53 +812,22 @@ local function Hud(scope: Scope, props: Props): Instance
 						Size = UDim2.fromOffset(0, 26),
 						AutomaticSize = Enum.AutomaticSize.X,
 						BackgroundTransparency = 1,
-						Visible = PhoneLayout.Pick(scope, false, true),
 						[Children] = BlessingBadge.new(scope, 1),
 					}),
-					scope:Hydrate(BlessingIcon(scope, UDim2.new(), EFFECT_ICON))({
-						LayoutOrder = 2,
-						Visible = PhoneLayout.Pick(scope, false, true),
-					}),
-					scope:Hydrate(EffectIcons(scope, { Model = myModel, Size = EFFECT_ICON }))({ LayoutOrder = 3 }),
+					scope:Hydrate(BlessingIcon(scope, UDim2.new(), EFFECT_ICON))({ LayoutOrder = 2 }),
+					-- package A: at most HudZones.EFFECTS_CAP icons (a phone's row fewer), then '+N' with the rest
+					scope:Hydrate(EffectIcons(scope, {
+						Model = myModel,
+						Size = EFFECT_ICON,
+						Max = PhoneLayout.Pick(scope, EFFECTS_PHONE, HudZones.EFFECTS_CAP),
+					}))({ LayoutOrder = 3 }),
 				},
 			}),
 			-- UI plan phase 2: the Cloak of Luring, Auto Hunt and Auto Potions behind one "Auto" button right of the
-			-- portrait (PC and tablet, Hud/AutoGroup); a phone keeps the three at their places (Logic/PhoneHud). The login
-			-- reward and the season pass moved to the row under the minimap (Hud/WaitingRow).
+			-- portrait (Hud/AutoGroup); package A: a phone has the same button at the start of the row under its
+			-- portrait. The login reward and the season pass moved to the row under the minimap (Hud/WaitingRow).
 			AutoGroup(scope) :: any,
-			scope:New("Frame")({
-				Name = "PhoneAuto",
-				Size = UDim2.fromScale(1, 1),
-				BackgroundTransparency = 1,
-				Visible = PhoneLayout.Compact,
-				[Children] = {
-					LureButton(
-						scope,
-						PhoneLayout.Position(
-							scope,
-							"lure",
-							UDim2.fromOffset(HudStack.EXTRAS.x + 44 + GAP, MARGIN + PORTRAIT.h - 64)
-						)
-					),
-					AutoGrindButton(
-						scope,
-						PhoneLayout.Position(
-							scope,
-							"autoGrind",
-							UDim2.fromOffset(HudStack.EXTRAS.x + 44 + GAP + 56, MARGIN + PORTRAIT.h - 64)
-						)
-					),
-					AutoPotionButton(
-						scope,
-						PhoneLayout.Position(
-							scope,
-							"autoPotion",
-							UDim2.fromOffset(HudStack.EXTRAS.x + 44 + GAP + 112, MARGIN + PORTRAIT.h - 64)
-						)
-					),
-				},
-			}),
-			CastBar(scope),
+			cast,
 			MobileSkills(scope, {
 				Cast = props.CastSlot,
 				Color = props.SkillColor,
@@ -869,21 +842,18 @@ local function Hud(scope: Scope, props: Props): Instance
 			actionBar(scope, props),
 			-- S139: the weapon pool's name over the bar for a moment after a weapon change (owner 2026-10-21: over
 			-- the slots' cost plates too)
+			-- package A: in the cast line with the cast bar, which wins while a cast runs
 			PoolLabel(
 				scope,
-				PhoneLayout.Pick(
-					scope,
-					UDim2.fromOffset(POOL.x + POOL.w / 2, POOL.y + POOL.h),
-					UDim2.new(
-						0.5,
-						0,
-						1,
-						-(14 + Theme.Padding.Medium + SLOT_SIZE + CostBadge.OVERHANG + Theme.Padding.Small)
-					)
-				)
+				PhoneLayout.Pick(scope, phoneCastLine, HudSlots.point(scope, "castLine", 0.5, 1)),
+				casting
 			),
 			expBar(scope),
 			TargetFrame(scope, { Target = props.Target, OnPlayerMenu = props.OnPlayerMenu }),
+			-- package A: what the HUD column has no room for, behind '+N'
+			StackChip(scope),
+			-- package A: a phone's guide bar (the M zone or a line of the stack; the menu's bar is PC's)
+			NavBar(scope, { ShowWindow = props.ShowWindow, StopGuide = props.StopGuide, Phone = true }),
 			ZoneBanner(scope),
 			AreaBanner(scope),
 			AttackButton(scope, { OnAttack = props.OnAttack }),

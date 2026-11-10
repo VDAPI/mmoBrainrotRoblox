@@ -6,6 +6,9 @@
 -- S76: stacks above 1 (poison, bleed, armour break) show as a small number in the icon's bottom-right corner.
 -- S72: the "Fury" / "FuryMax" attributes (Fury of the Berserker) add a counter "7/10" first in the row, gold when full.
 -- S119: the owner's picture of the effect (Logic/UiArt.effect) once its atlas is loaded, the glyph otherwise.
+-- Owner 2026-11-10 ("things covering each other"; UI plan package A): with `Max` (the effects row under the portrait:
+-- Logic/HudZones.EFFECTS_CAP, fewer on a phone) the row shows that many icons, then a '+N' chip whose tooltip lists the
+-- rest one per line (the row ran past its frame into the party rows).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -28,6 +31,7 @@ export type Props = {
 	Position: Fusion.UsedAs<UDim2>?,
 	AnchorPoint: Vector2?,
 	Size: number?,
+	Max: Fusion.UsedAs<number>?, -- at most this many icons, then '+N' (nil: all, in the frame of 8)
 }
 
 -- lasting (S65): no seconds counter (markers that live until something breaks them).
@@ -113,7 +117,56 @@ end
 
 local function EffectIcons(scope: Scope, props: Props): Instance
 	local size = props.Size or 30
-	local entries = scope:Value({} :: { Entry })
+	local all = scope:Value({} :: { Entry })
+	local maxProp = props.Max
+	-- the icons shown and the ones behind '+N'
+	local entries = scope:Computed(function(use): { Entry }
+		local list = use(all)
+		local cap = if maxProp then use(maxProp) else nil
+		if not cap or #list <= cap then
+			return list
+		end
+		return table.move(list, 1, cap, 1, {})
+	end)
+	local rest = scope:Computed(function(use): { Entry }
+		local list = use(all)
+		local cap = if maxProp then use(maxProp) else nil
+		if not cap or #list <= cap then
+			return {}
+		end
+		return table.move(list, cap + 1, #list, 1, {})
+	end)
+	local more = scope:New("TextLabel")({
+		Name = "More",
+		LayoutOrder = 1000,
+		Size = UDim2.fromOffset(size, size),
+		BackgroundColor3 = Theme.Iron.Raised,
+		BackgroundTransparency = Theme.HudAlpha,
+		Text = scope:Computed(function(use): string
+			return `+{#use(rest)}`
+		end),
+		FontFace = Theme.Fonts.BodyBold,
+		TextSize = Theme.TextSize.Small,
+		TextColor3 = Theme.Iron.Text,
+		Visible = scope:Computed(function(use): boolean
+			return #use(rest) > 0
+		end),
+		[Children] = {
+			scope:New("UICorner")({ CornerRadius = Theme.Corner.Small }),
+			scope:New("UIStroke")({ Color = Theme.Brass.Line, Thickness = Theme.Stroke.Thin }),
+		},
+	})
+	Tooltip.attach(
+		scope,
+		more :: GuiObject,
+		scope:Computed(function(use): string
+			local lines = {}
+			for _, entry in use(rest) do
+				table.insert(lines, Text.get(use, `effect.{entry.kind}`))
+			end
+			return table.concat(lines, "\n")
+		end)
+	)
 	local accumulator = 0
 	table.insert(
 		scope,
@@ -123,7 +176,7 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 				return
 			end
 			accumulator = 0
-			entries:set(read(Fusion.peek(props.Model)))
+			all:set(read(Fusion.peek(props.Model)))
 		end)
 	)
 
@@ -131,7 +184,14 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 		Name = "EffectIcons",
 		Position = props.Position,
 		AnchorPoint = props.AnchorPoint,
-		Size = UDim2.fromOffset(size * 8 + 28, size + 14),
+		Size = scope:Computed(function(use): UDim2
+			if maxProp then
+				-- the capped row: its icons and the chip, 4 apart
+				local cap: number = use(maxProp)
+				return UDim2.fromOffset((cap + 1) * (size + 4), size + 14)
+			end
+			return UDim2.fromOffset(size * 8 + 28, size + 14)
+		end),
 		BackgroundTransparency = 1,
 		[Children] = {
 			scope:New("UIListLayout")({
@@ -219,6 +279,7 @@ local function EffectIcons(scope: Scope, props: Props): Instance
 				Tooltip.attach(s, icon :: GuiObject, tip)
 				return icon
 			end) :: any,
+			more,
 		},
 	})
 end
