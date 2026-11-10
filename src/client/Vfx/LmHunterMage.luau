@@ -79,6 +79,8 @@ local flights: { [string]: Flight } = {}
 
 -- Motes spiralling into the gathering hand / tip over the gathering (`seconds`), a core swelling with a light, a pop
 -- at the release. opts: count (motes), size, crackle (lightning: small arcs round the core), reach (start radius).
+-- Owner 2026-11-10 (an aim cut short still flashed at the hands): a cast cut short (ctx.cancelled) puts the gathering
+-- out at once, the core shrinking away without the pop.
 pieces.lmCharge = function(ctx: Ctx)
 	local launch = ctx.launch
 	if not launch then
@@ -107,7 +109,24 @@ pieces.lmCharge = function(ctx: Ctx)
 		table.insert(motes, { p = mote, axis = axis, phase = (i - 1) / count * math.pi * 2 })
 	end
 	local nextArc = 0
+	local out = false -- put out early: the parts went back to the pool, nothing touches them again
+	local function putOut(): boolean
+		local cancelled = ctx.cancelled
+		if out or not cancelled or not cancelled() then
+			return out
+		end
+		out = true
+		for _, m in motes do
+			Pool.release(m.p)
+		end
+		-- the shrinking fade takes over the core's swelling tween (the same properties), so it stops before the release
+		fadeOut(core, 0.12, { Size = core.Size * 0.4 })
+		return true
+	end
 	over(seconds, function(u: number, t: number)
+		if putOut() then
+			return
+		end
 		local at = launch()
 		core.CFrame = CFrame.new(at)
 		-- the orbit tightens and quickens as the spell gathers
@@ -123,6 +142,9 @@ pieces.lmCharge = function(ctx: Ctx)
 			segments(jagged(a, at, 3, 0.3), color, 0.06, 0.08, false)
 		end
 	end, function()
+		if putOut() then
+			return
+		end
 		for _, m in motes do
 			Pool.release(m.p)
 		end

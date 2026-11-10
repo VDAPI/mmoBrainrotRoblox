@@ -21,6 +21,7 @@ export type Ctx = {
 	wave: number, -- 1 = the first wave / target
 	opts: { [string]: any }, -- SkillVfx.lmOpts[name]
 	launch: (() -> Vector3)?, -- cast: the live point of the gathering hand / tip
+	cancelled: (() -> boolean)?, -- cast: true once the cast was cut short (VfxController: a fizzle, the caster's death)
 }
 
 export type Piece = (ctx: Ctx) -> ()

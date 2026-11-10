@@ -662,7 +662,8 @@ local Config = {
 		decalFade = 0.35,
 		spinStep = 0.6,
 		-- S114 (DESIGN-16 §2.8): what one cast's impact may hold at once at its peak (holders and lights of
-		-- Vfx/Library, tests/SkillLooks.PIECE_COST); a skill over it loses trail pieces first, never its core
+		-- Vfx/Library, tests/SkillLooks.PIECE_COST); a skill over it loses trail pieces first, never its core. The
+		-- skill juice on top has a budget of its own (juice.perCast below)
 		perCast = { emitters = 6, beams = 3, lights = 2, decals = 3 },
 		-- S115 (Hunter and Mage, looks only): Thunderstorm's cloud height over the ground (its bolts start there), the
 		-- lob of a thrown snare, how long an arrow of Arrow Rain stays stuck in the ground and its fall speed (studs/s),
@@ -691,6 +692,28 @@ local Config = {
 			ownFloor = 0.6,
 			lightTime = 0.24,
 			lightBrightness = 4,
+			-- owner 2026-11-10 (DECYZJE: fewer particles on lower graphics, on a phone and for other players; in group
+			-- fights on a phone the juice took the shared pools, so skill pieces, hit sparks and boss breaths were
+			-- dropped): a juice layer takes an emitter, a beam or ground image, or a light only while `reserve` x the
+			-- device's limit (maxEmitters / maxBeams / maxLights) stays free for everything else, rounded up
+			-- (Logic/SkillJuice.room): a phone keeps 10 of 24 emitters (one cast's own pieces, a boss breath and a hit
+			-- spark), 5 of 10 beams and ground images, 3 of 6 lights (one cast's and a telegraph's); a PC 20 of 48, 10
+			-- of 20, 6 of 12
+			reserve = { emitters = 0.4, beams = 0.5, lights = 0.5 } :: { [string]: number },
+			-- owner 2026-11-10 (review: Snarefield's five snares, a chain's links, a heal's further targets, the
+			-- springs of one trap and a storm's opening with its first bolt each punched in full at once): the punches
+			-- of one caster's skill landing within `together` s of each other are one moment: one plays in full, the
+			-- next `beats` only their core and ring, the rest none (Logic/SkillJuice.momentPunch); the skill's own
+			-- pieces still play on every target. Links and snares come 0.06 s apart (a frame or two late on a slow
+			-- phone), waves and strikes 0.2 s and more; Double Shot's 0.15 s shots may share a moment, all fit in it
+			together = 0.15,
+			beats = 2,
+			-- what the juice of one cast holds at its peak (our own skill near the camera on high: the flare's core and
+			-- motes, the punch's core, spray, puff and chips, its lightning arcs, its ground ring, two lights, and the
+			-- cores and rings of the `beats` punches landing with it), the same columns as perCast
+			-- (tests/skillmotion.spec checks both for every skill); its beams and ground images fill a phone's beam
+			-- share (5)
+			perCast = { emitters = 8, beams = 2, lights = 2, decals = 3 },
 		},
 		-- owner 2026-11-10: the camera kick of every shake (Logic/CameraShake, Vfx/CameraShake; bosses, heavy hits on
 		-- us, big skills): studs of a strength-1 kick, its time (base + per x strength s), the strongest strength

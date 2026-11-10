@@ -9,8 +9,14 @@
 --                and the set of pieces; a duplicate = two skills of one class equal in all three
 --   PIECE_COST   what one piece may hold at once (Vfx/Library): emitters, beams, lights, decals / ground images; a
 --                cast's sum stays within Config.Vfx.perCast
+--   beamLoadOf   owner 2026-11-10: what a cast's pieces hold against the beam limit (beams and ground images)
+--   juiceCost    owner 2026-11-10: what the skill juice of one cast (Vfx/Juice) holds at once at its peak (the
+--                flare, a full punch and the beats landing with it), the same columns; it stays within
+--                Config.Vfx.juice.perCast
 
+local Config = require("../src/shared/Config")
 local LmVfxPieces = require("../src/shared/Data/LmVfxPieces")
+local SkillJuice = require("../src/shared/Logic/SkillJuice")
 local SkillMotions = require("../src/shared/Data/SkillMotions")
 local SkillPose = require("../src/shared/Logic/SkillPose")
 local SkillVfx = require("../src/shared/Data/SkillVfx")
@@ -215,6 +221,88 @@ function SkillLooks.costOf(entry: SkillVfx.Entry): Cost
 			total.lights += cost.lights
 			total.decals += cost.decals
 		end
+	end
+	return total
+end
+
+-- Owner 2026-11-10 (skill juice, review: the reserve check left the pieces' ground images off the beam limit): the
+-- pieces whose decals column holds Decal holders (Vfx/Library.groundDecal, on the decals limit). Every other piece's
+-- decals column holds ground images (rings, magic circles, runes, a whirl's spiral: "surface" holders), which Vfx/Pool
+-- counts against the beam limit.
+SkillLooks.DECAL_PIECES = { cracks = true, groundDecal = true } :: { [string]: boolean }
+
+-- What one cast's impact holds against the device's beam limit: its beams and its ground images (the columns of
+-- costOf, without the decals of DECAL_PIECES).
+function SkillLooks.beamLoadOf(entry: SkillVfx.Entry): number
+	local load = 0
+	for _, name in entry.impact do
+		local cost = SkillLooks.PIECE_COST[name]
+		if cost then
+			load += cost.beams + (if SkillLooks.DECAL_PIECES[name] then 0 else cost.decals)
+		end
+	end
+	return load
+end
+
+-- Owner 2026-11-10 (skill juice; in group fights on a phone the juice took the pools the skills' own pieces need): what
+-- a flare and a punch hold at once, in the columns of PIECE_COST. The flare: its core, its motes (emitters) and its
+-- light; the punch: its core, rays, spray, puff and chips (emitters), its lightning arcs (beams), its light and its
+-- ground ring (a ground image).
+function SkillLooks.juiceOf(flare: SkillJuice.Layers?, punch: SkillJuice.Layers): Cost
+	local total = c(1, punch.arcs, 0, if punch.ring then 1 else 0) -- the punch's core always plays
+	for _, on in { punch.rays, punch.spray > 0, punch.puff > 0, punch.chips > 0 } do
+		if on then
+			total.emitters += 1
+		end
+	end
+	if punch.light then
+		total.lights += 1
+	end
+	if flare then
+		total.emitters += if flare.motes > 0 then 2 else 1 -- the flare's core always plays
+		if flare.light then
+			total.lights += 1
+		end
+	end
+	return total
+end
+
+-- The view that plays the most juice: our own skill near the camera on high on a PC (a phone and lower levels play
+-- fewer particles, never more layers).
+SkillLooks.JUICE_VIEW = { quality = "high", simple = false, own = true, touch = false } :: SkillJuice.View
+
+-- Elements the look of a skill can take: its own (false) and every weapon element of an adaptive look (the event's
+-- `el`, Logic/SkillJuice.plan).
+SkillLooks.JUICE_ELEMENTS = { false, "fire", "ice", "lightning", "poison" } :: { any }
+
+-- The juice of one cast of `skill` (its look `entry`) taking `element` (false = the skill's own) as `view` sees it
+-- (default JUICE_VIEW) at its peak: the flare, the punch in full and the beats (core and ring, a step lighter) of the
+-- Config.Vfx.juice.beats punches that may land with it (review 2026-11-10: Snarefield's snares, a chain's links, a
+-- heal's further targets, a trap's springs; Logic/SkillJuice.momentPunch plays nothing past them). Every skill is
+-- counted with them: items and nodes can add targets to any skill. A later wave, strike or shot (0.15 s after the
+-- one before and more) is a beat too, in that moment or one of its own; the juice never takes the reserve of a
+-- device's limit (Config.Vfx.juice.reserve), so whatever overlaps gives way to the pieces.
+function SkillLooks.juiceCost(
+	skill: SkillJuice.SkillLike,
+	entry: SkillJuice.EntryLike?,
+	element: any,
+	view: SkillJuice.View?
+): Cost
+	local plan = SkillJuice.plan(skill, entry, element)
+	local v = view or SkillLooks.JUICE_VIEW
+	local total = SkillLooks.juiceOf(
+		SkillJuice.flareLayers(plan.weight, v),
+		SkillJuice.punchLayers(plan.style, plan.weight, v, plan.support, false)
+	)
+	local beat = SkillLooks.juiceOf(
+		nil,
+		SkillJuice.punchLayers(plan.style, SkillJuice.lighter(plan.weight), v, plan.support, true)
+	)
+	for _ = 1, Config.Vfx.juice.beats do
+		total.emitters += beat.emitters
+		total.beams += beat.beams
+		total.lights += beat.lights
+		total.decals += beat.decals
 	end
 	return total
 end

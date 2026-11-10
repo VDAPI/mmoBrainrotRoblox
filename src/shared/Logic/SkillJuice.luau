@@ -4,6 +4,13 @@
 -- flare shows (a hand or the weapon's tip) and when (the cast's start, or the release of a gathered spell), our own
 -- camera kick; how many particles a layer gets on this device and graphics level, whether a light may show, how much a
 -- blow shakes a camera at a distance, and whether the cast voice (Data/Sfx skill.<id>.voice) plays.
+-- Owner 2026-11-10 (DECYZJE: fewer particles on lower graphics, on a phone and for other players; in group fights on a
+-- phone the juice took the shared effect pools, so skill pieces, hit sparks and boss breaths were dropped): which
+-- layers a flare and a punch play (flareLayers / punchLayers: the extras only for our own skills near the camera, a
+-- later wave of the same cast only its core and ring) and whether a layer may take one more of a pool (room: never the
+-- reserve of the device's limit, Config.Vfx.juice.reserve); which strike of a storm is its first (stormCast /
+-- firstStrike, per caster and skill); what each of the punches one cast lands at once plays (momentPunch: one in full,
+-- a few beats, then none).
 
 local Config = require("../Config")
 local GraphicsLevel = require("./GraphicsLevel")
@@ -104,18 +111,37 @@ function SkillJuice.plan(skill: SkillLike, entry: EntryLike?, element: any): Pla
 	}
 end
 
+-- Particle layers a cast may go without (owner 2026-11-10, the juice gives way): the "extra" ones (the flare's motes,
+-- the punch's puff and chips) play only for our own skills near the camera, the "spray" (the punch's burst) also for
+-- others' skills near the camera and our own far / low ones; a far skill of another player shows its core and ring.
+local OPTIONAL: { [string]: string } = { motes = "extra", puff = "extra", chips = "extra", burst = "spray" }
+
+-- Whether the particle `layer` (a Data/SkillJuice weight field: motes, burst, puff, chips) plays for a cast that is
+-- `simple` (far away or low graphics) and `own` (ours); nil and unknown layers always do.
+function SkillJuice.layerOn(layer: string?, simple: boolean, own: boolean): boolean
+	local kind = if layer then OPTIONAL[layer] else nil
+	if kind == "extra" then
+		return own and not simple
+	elseif kind == "spray" then
+		return own or not simple
+	end
+	return true
+end
+
 -- Particles of a layer: `base` (the count on high) x the graphics level's particle share (W29), half when `simple` (far
 -- away or low graphics), x othersShare for another player's skill, x touchShare on a phone; at least 1 when base > 0,
--- at most maxParticles and `cap` (the device's Config.Vfx.maxBurst).
+-- at most maxParticles and `cap` (the device's Config.Vfx.maxBurst). A `layer` the cast goes without (layerOn) gets 0,
+-- so it takes no holder at all.
 function SkillJuice.count(
 	base: number,
 	quality: any,
 	simple: boolean,
 	own: boolean,
 	touch: boolean,
-	cap: number?
+	cap: number?,
+	layer: string?
 ): number
-	if base <= 0 then
+	if base <= 0 or not SkillJuice.layerOn(layer, simple, own) then
 		return 0
 	end
 	local cfg = Config.Vfx.juice
@@ -139,6 +165,147 @@ function SkillJuice.lightOn(quality: any, simple: boolean, own: boolean, weight:
 		return false
 	end
 	return own or weight == "heavy"
+end
+
+-- What a flare or a punch plays besides its core, which always plays (Vfx/Juice draws exactly this; tests/SkillLooks
+-- counts the holders). A particle count of 0 is no layer.
+export type Layers = {
+	motes: number, -- the flare's particles
+	rays: boolean, -- the punch's rays of light round the core (holy)
+	spray: number, -- the punch's spray of the style's particles
+	puff: number, -- the punch's puff of dust, smoke or mist
+	ring: boolean, -- the punch's ring on the ground (a ground image)
+	chips: number, -- the punch's chips of rock or wood (heavy blows)
+	arcs: number, -- the punch's short lightning arcs (beams)
+	light: boolean, -- the fading PointLight
+}
+
+-- How this client sees a block: settings.quality, far away or low graphics, our own skill, a phone and the device's
+-- particles per Emit (Config.Vfx.maxBurst).
+export type View = { quality: any, simple: boolean, own: boolean, touch: boolean, cap: number? }
+
+local function noLayers(): Layers
+	return { motes = 0, rays = false, spray = 0, puff = 0, ring = false, chips = 0, arcs = 0, light = false }
+end
+
+local function layerCount(base: number, view: View, layer: string): number
+	return SkillJuice.count(base, view.quality, view.simple, view.own, view.touch, view.cap, layer)
+end
+
+-- The flare of a cast of `weight`: its core, the motes of our own skill near the camera, a light (lightOn).
+function SkillJuice.flareLayers(weight: string, view: View): Layers
+	local w = SkillJuiceData.WEIGHTS[weight] or SkillJuiceData.WEIGHTS.medium
+	local out = noLayers()
+	out.motes = layerCount(w.motes, view, "motes")
+	out.light = SkillJuice.lightOn(view.quality, view.simple, view.own, weight)
+	return out
+end
+
+-- The punch of a blow of `style` and `weight` (`support`: a helping blow, no puff, chips or arcs). Owner 2026-11-10
+-- (the juice gives way): a `later` wave of the same cast (circleSelf and per-wave circleTarget waves, a storm's later
+-- strikes, a second shot) keeps the beat with its core and ring only; the first one punches fully.
+function SkillJuice.punchLayers(style: string, weight: string, view: View, support: boolean, later: boolean): Layers
+	local s = SkillJuiceData.STYLES[style] or SkillJuiceData.STYLES.arcane
+	local w = SkillJuiceData.WEIGHTS[weight] or SkillJuiceData.WEIGHTS.medium
+	local out = noLayers()
+	out.ring = s.ring ~= nil
+	if later then
+		return out
+	end
+	out.rays = s.rays == true and not view.simple
+	out.spray = layerCount(w.burst, view, "burst")
+	if not support then
+		out.puff = if s.puff then layerCount(w.puff, view, "puff") else 0
+		out.chips = if s.chips then layerCount(w.chips, view, "chips") else 0
+		if s.arcs and not view.simple and weight ~= "light" then
+			out.arcs = if weight == "heavy" then 2 else 1
+		end
+	end
+	out.light = SkillJuice.lightOn(view.quality, view.simple, view.own, weight)
+	return out
+end
+
+-- Holders or lights of a device `limit` the juice never takes: `share` of it, rounded up (Config.Vfx.juice.reserve).
+function SkillJuice.reserve(limit: number, share: number): number
+	return math.clamp(math.ceil(limit * share - 1e-9), 0, math.max(0, limit))
+end
+
+-- Whether a juice layer may take one more of a pool with `used` of `limit` live: only while the reserve stays free for
+-- the skills' own pieces, hit sparks, boss breath layers and telegraph lights (the juice is what gives way).
+function SkillJuice.room(used: number, limit: number, share: number): boolean
+	return used < limit - SkillJuice.reserve(limit, share)
+end
+
+-- The key of one caster's skill in the ledgers below.
+local function castKey(casterId: string, skillId: string): string
+	return casterId .. "|" .. skillId
+end
+
+-- Owner 2026-11-10 (skill juice; review: a skill cast before a storm's first strike landed made that strike a later
+-- one, so it lost its full punch and the lead sound and shake): the storms (SkillVfx.strike: Thunderstorm's and
+-- Tempest's bolts, Meteor Storm's rocks) still waiting for their first strike, kept per caster and skill in the
+-- caller's ledger. A cast of another skill in between neither hides nor resets it (the GCD is 0.5 s, Meteor Storm's
+-- first rock lands about 1.35 s after its cast); the first strike takes the entry out.
+export type Storms = { [string]: boolean }
+
+-- `casterId` cast the storm `skillId`: its next strike is its first.
+function SkillJuice.stormCast(storms: Storms, casterId: string, skillId: string)
+	storms[castKey(casterId, skillId)] = true
+end
+
+-- Whether a strike of the storm `skillId` by `casterId` is the first of its cast (and marks the cast struck). A strike
+-- of a cast whose start this client did not see, or without a caster, counts as a later one.
+function SkillJuice.firstStrike(storms: Storms, casterId: string?, skillId: string): boolean
+	if not casterId then
+		return false
+	end
+	local key = castKey(casterId, skillId)
+	if storms[key] then
+		storms[key] = nil
+		return true
+	end
+	return false
+end
+
+-- Owner 2026-11-10 (skill juice; review: Snarefield's five snares, a chain's links, a heal's further targets, the
+-- springs of one trap, a storm's opening with its first bolt and Shatter's shatter with its hit each punched in full
+-- at once, far over the budget of one cast): the punches of one caster's skill that land together, each within
+-- Config.Vfx.juice.together s of the one before, are one moment. Its first punch that is not `later` (a later wave,
+-- strike or shot, which only keeps the beat) plays in full, the next Config.Vfx.juice.beats only their core and ring
+-- (a beat), the rest nothing: the skill's own pieces still play on every target. `moments` is the caller's ledger
+-- (momentKey), `now` its clock; moments that passed are forgotten.
+export type Moment = { last: number, full: boolean, beats: number }
+export type Moments = { [string]: Moment }
+export type MomentPunch = "full" | "beat" | "none"
+
+-- The ledger key of `casterId`'s skill `skillId` (no caster: one shared moment per skill, the skills-window preview).
+function SkillJuice.momentKey(casterId: string?, skillId: string): string
+	return castKey(casterId or "", skillId)
+end
+
+-- What the punch landing `now` plays: "full", "beat" (its core and ring) or "none".
+function SkillJuice.momentPunch(moments: Moments, key: string, now: number, later: boolean): MomentPunch
+	local cfg = Config.Vfx.juice
+	for other, m in moments do
+		if now - m.last > cfg.together then
+			moments[other] = nil
+		end
+	end
+	local m = moments[key]
+	if not m then
+		m = { last = now, full = false, beats = 0 }
+		moments[key] = m
+	end
+	m.last = now
+	if not later and not m.full then
+		m.full = true
+		return "full"
+	end
+	if m.beats >= cfg.beats then
+		return "none"
+	end
+	m.beats += 1
+	return "beat"
 end
 
 -- How hard a blow of `strength` landing `distance` studs away shakes our camera: fading to nothing at shakeRange;

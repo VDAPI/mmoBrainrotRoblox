@@ -298,6 +298,318 @@ describe("Skill juice budgets (owner 2026-11-10)", function()
 	end)
 end)
 
+-- Owner 2026-11-10 (DECYZJE: fewer particles on lower graphics, on a phone and for other players; in group fights on a
+-- phone the juice took the shared effect pools, so skill pieces, hit sparks and boss breaths were dropped).
+describe("The juice gives way (owner 2026-11-10)", function()
+	local SkillLooks = require("./SkillLooks")
+
+	local function view(own: boolean, simple: boolean): SkillJuice.View
+		return { quality = "high", simple = simple, own = own, touch = false }
+	end
+	local OWN, OWN_FAR = view(true, false), view(true, true)
+	local OTHERS, OTHERS_FAR = view(false, false), view(false, true)
+
+	local function occurrences(text: string, needle: string): number
+		local n, from = 0, 1
+		while true do
+			local at = string.find(text, needle, from, true)
+			if not at then
+				return n
+			end
+			n += 1
+			from = at + #needle
+		end
+	end
+
+	it("motes, puff and chips only for our own skills near the camera, no spray for others' far ones", function()
+		-- a layer the cast goes without counts 0, so it takes no holder at all
+		expect(SkillJuice.count(10, "high", false, true, false, nil, "motes")).toBe(10)
+		expect(SkillJuice.count(10, "high", true, true, false, nil, "motes")).toBe(0) -- our own far / low
+		expect(SkillJuice.count(10, "high", false, false, false, nil, "motes")).toBe(0) -- someone else's
+		for _, layer in { "puff", "chips" } do
+			expect({ layer, SkillJuice.count(9, "low", false, true, true, nil, layer) > 0 }).toEqual({ layer, true })
+			expect({ layer, SkillJuice.count(9, "high", true, true, false, nil, layer) }).toEqual({ layer, 0 })
+			expect({ layer, SkillJuice.count(9, "high", false, false, false, nil, layer) }).toEqual({ layer, 0 })
+		end
+		expect(SkillJuice.count(16, "low", true, true, true, nil, "burst") > 0).toBe(true) -- our own far: the spray
+		expect(SkillJuice.count(16, "high", false, false, false, nil, "burst") > 0).toBe(true) -- others' near
+		expect(SkillJuice.count(16, "high", true, false, false, nil, "burst")).toBe(0) -- others' far: none
+		-- a count without a layer and the cores (no optional layer) always play
+		expect(SkillJuice.count(16, "high", true, false, false) > 0).toBe(true)
+		expect(SkillJuice.layerOn(nil, true, false)).toBe(true)
+		expect(SkillJuice.layerOn("rays", true, false)).toBe(true)
+	end)
+
+	it("a flare: its core always, motes and a light for our own cast near the camera", function()
+		local own = SkillJuice.flareLayers("medium", OWN)
+		expect(own.motes > 0 and own.light).toBe(true)
+		local others = SkillJuice.flareLayers("medium", OTHERS)
+		expect({ others.motes, others.light }).toEqual({ 0, false })
+		expect(SkillJuice.flareLayers("heavy", OTHERS).light).toBe(true) -- others' heavy casts still light up
+		local far = SkillJuice.flareLayers("heavy", OWN_FAR)
+		expect({ far.motes, far.light }).toEqual({ 0, false })
+	end)
+
+	it("a punch: everything for our own blow near the camera, the core, spray and ring for others'", function()
+		local own = SkillJuice.punchLayers("steel", "heavy", OWN, false, false)
+		expect({ own.spray > 0, own.puff > 0, own.chips > 0, own.ring, own.light, own.arcs, own.rays }).toEqual({
+			true,
+			true,
+			true,
+			true,
+			true,
+			0,
+			false,
+		})
+		local others = SkillJuice.punchLayers("steel", "heavy", OTHERS, false, false)
+		expect({ others.spray > 0, others.puff, others.chips, others.ring, others.light }).toEqual({
+			true,
+			0,
+			0,
+			true,
+			true,
+		})
+		local far = SkillJuice.punchLayers("lightning", "heavy", OTHERS_FAR, false, false)
+		expect({ far.spray, far.arcs, far.rays, far.light, far.ring }).toEqual({ 0, 0, false, false, true })
+		expect(SkillJuice.punchLayers("lightning", "heavy", OWN, false, false).arcs).toBe(2)
+		expect(SkillJuice.punchLayers("lightning", "medium", OTHERS, false, false).arcs).toBe(1)
+		expect(SkillJuice.punchLayers("lightning", "light", OWN, false, false).arcs).toBe(0)
+		expect(SkillJuice.punchLayers("lightning", "heavy", OWN, true, false).arcs).toBe(0) -- a helping blow
+		local holy = SkillJuice.punchLayers("holy", "medium", OWN, false, false)
+		expect({ holy.rays, holy.puff, holy.chips }).toEqual({ true, 0, 0 })
+		expect(SkillJuice.punchLayers("holy", "medium", OWN_FAR, false, false).rays).toBe(false)
+	end)
+
+	it("a later wave, strike or shot of the same cast flashes only its core and ring", function()
+		for style, s in SkillJuiceData.STYLES do
+			for weight in SkillJuiceData.WEIGHTS do
+				for _, v in { OWN, OWN_FAR, OTHERS, OTHERS_FAR } do
+					for _, support in { false, true } do
+						local cost = SkillLooks.juiceOf(nil, SkillJuice.punchLayers(style, weight, v, support, true))
+						expect({ style, weight, cost }).toEqual({
+							style,
+							weight,
+							{ emitters = 1, beams = 0, lights = 0, decals = if s.ring then 1 else 0 },
+						})
+					end
+				end
+			end
+		end
+	end)
+
+	-- review: Meteor Storm's first rock lands about 1.35 s after its cast, the GCD is 0.5 s
+	it("a storm's first strike is kept per caster and skill: a skill cast meanwhile does not take it", function()
+		local storms: SkillJuice.Storms = {}
+		SkillJuice.stormCast(storms, "mage", "meteorStorm")
+		-- the Mage casts Fireball while the first rock still falls; another Mage's storm is not ours
+		expect(SkillJuice.firstStrike(storms, "mage", "fireball")).toBe(false)
+		expect(SkillJuice.firstStrike(storms, "other", "meteorStorm")).toBe(false)
+		expect(SkillJuice.firstStrike(storms, "mage", "meteorStorm")).toBe(true)
+		-- the later rocks, a strike without a caster, nothing kept once struck
+		expect(SkillJuice.firstStrike(storms, "mage", "meteorStorm")).toBe(false)
+		expect(SkillJuice.firstStrike(storms, nil, "meteorStorm")).toBe(false)
+		expect(next(storms)).toBeNil()
+		-- two storms of one caster wait apart; a new cast opens again
+		SkillJuice.stormCast(storms, "mage", "meteorStorm")
+		SkillJuice.stormCast(storms, "mage", "tempest")
+		expect(SkillJuice.firstStrike(storms, "mage", "tempest")).toBe(true)
+		expect(SkillJuice.firstStrike(storms, "mage", "meteorStorm")).toBe(true)
+		-- the client keeps the storms apart from the caster's last cast
+		local vfx = fs.readFile("src/client/Controllers/VfxController.luau")
+		expect(string.find(vfx, "SkillJuice.stormCast(stormsAwaiting, id, skill.id)", 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "SkillJuice.firstStrike(stormsAwaiting,", 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "cast.struck", 1, true)).toBeNil()
+	end)
+
+	-- review: Snarefield's five snares landed together, each with a full punch (17 emitters, 6 lights, 5 rings of one
+	-- cast); a chain's links, a heal's further targets and the springs of one trap the same way
+	it("the punches of one cast landing together: one in full, Config.Vfx.juice.beats beats, then none", function()
+		local cfg = Config.Vfx.juice
+		local function run(moments: SkillJuice.Moments, key: string, times: { number }, later: boolean): { string }
+			local out = {}
+			for _, t in times do
+				table.insert(out, SkillJuice.momentPunch(moments, key, t, later))
+			end
+			return out
+		end
+		-- what n punches of one moment play: the first in full (unless later), then cfg.beats beats, then none
+		local function moment(n: number, later: boolean): { string }
+			local out = {}
+			for i = 1, n do
+				local beat = if later then i else i - 1
+				table.insert(out, if beat == 0 then "full" elseif beat <= cfg.beats then "beat" else "none")
+			end
+			return out
+		end
+		local moments: SkillJuice.Moments = {}
+		local snares = SkillJuice.momentKey("hunter", "snarefield")
+		expect(run(moments, snares, { 10, 10, 10, 10, 10 }, false)).toEqual(moment(5, false)) -- one frame
+		local links = {}
+		for i = 1, 8 do
+			table.insert(links, 20 + (i - 1) * 0.06) -- a chain's links, 0.06 s apart
+		end
+		expect(run(moments, SkillJuice.momentKey("mage", "chainLightning"), links, false)).toEqual(moment(8, false))
+		-- once `together` passed a new moment opens: a snare springing later punches in full again
+		expect(run(moments, snares, { 10 + cfg.together + 0.01 }, false)).toEqual({ "full" })
+		-- later waves and strikes (Frozen Orb's 0.4 s apart) keep the beat, each in a moment of its own; later punches
+		-- of one moment (a trap's further snares, a chain's further links) stop at the beats
+		local orb = SkillJuice.momentKey("mage", "frozenOrb")
+		expect(run(moments, orb, { 30, 30.4, 30.8, 31.2 }, true)).toEqual({ "beat", "beat", "beat", "beat" })
+		expect(run(moments, orb, { 35, 35, 35, 35 }, true)).toEqual(moment(4, true))
+		-- a storm's opening keeps the beat, its first bolt a frame later still punches in full
+		local tempest = SkillJuice.momentKey("mage", "tempest")
+		expect(SkillJuice.momentPunch(moments, tempest, 40, true)).toBe("beat")
+		expect(SkillJuice.momentPunch(moments, tempest, 40.02, false)).toBe("full")
+		-- other casters and other skills have moments of their own; moments that passed are forgotten
+		expect(SkillJuice.momentPunch(moments, SkillJuice.momentKey("other", "tempest"), 40.03, false)).toBe("full")
+		expect(SkillJuice.momentPunch(moments, SkillJuice.momentKey("mage", "fireball"), 40.04, false)).toBe("full")
+		SkillJuice.momentPunch(moments, tempest, 50, true)
+		local live = 0
+		for _ in moments do
+			live += 1
+		end
+		expect(live).toBe(1)
+		-- Snarefield at its peak (our own, near, high): the flare, one full punch and two beats instead of five punches
+		local snarefield = SkillLooks.juiceCost(skill("snarefield"), SkillVfx.snarefield, false)
+		expect(snarefield).toEqual({ emitters = 5 + cfg.beats, beams = 0, lights = 2, decals = 1 + cfg.beats })
+	end)
+
+	it("one cast's juice at its peak stays within Config.Vfx.juice.perCast (every style, weight and view)", function()
+		local budget = Config.Vfx.juice.perCast
+		local worst = { emitters = 0, beams = 0, lights = 0, decals = 0 }
+		local cases = 0
+		for style in SkillJuiceData.STYLES do
+			for weight in SkillJuiceData.WEIGHTS do
+				for _, quality in { "low", "medium", "high" } do
+					for _, touch in { false, true } do
+						for _, own in { true, false } do
+							for _, simple in { false, true } do
+								for _, support in { false, true } do
+									local v: SkillJuice.View = {
+										quality = quality,
+										simple = simple,
+										own = own,
+										touch = touch,
+										cap = if touch then Config.Vfx.maxBurst.touch else Config.Vfx.maxBurst.desktop,
+									}
+									local cost = SkillLooks.juiceOf(
+										SkillJuice.flareLayers(weight, v),
+										SkillJuice.punchLayers(style, weight, v, support, false)
+									)
+									-- and the beats that may land with it (core and ring, a step lighter)
+									local beat = SkillLooks.juiceOf(
+										nil,
+										SkillJuice.punchLayers(style, SkillJuice.lighter(weight), v, support, true)
+									)
+									cost.emitters += beat.emitters * Config.Vfx.juice.beats
+									cost.beams += beat.beams * Config.Vfx.juice.beats
+									cost.lights += beat.lights * Config.Vfx.juice.beats
+									cost.decals += beat.decals * Config.Vfx.juice.beats
+									worst.emitters = math.max(worst.emitters, cost.emitters)
+									worst.beams = math.max(worst.beams, cost.beams)
+									worst.lights = math.max(worst.lights, cost.lights)
+									worst.decals = math.max(worst.decals, cost.decals)
+									cases += 1
+								end
+							end
+						end
+					end
+				end
+			end
+		end
+		expect(cases > 100).toBe(true)
+		expect({
+			worst.emitters <= budget.emitters,
+			worst.beams <= budget.beams,
+			worst.lights <= budget.lights,
+			worst.decals <= budget.decals,
+		}).toEqual({ true, true, true, true })
+		-- another player's far cast: the cores of the flare, the punch and its beats, and their rings, nothing else
+		local beats = Config.Vfx.juice.beats
+		local far = SkillLooks.juiceCost(skill("mightyStrike"), SkillVfx.mightyStrike, false, OTHERS_FAR)
+		expect(far).toEqual({ emitters = 2 + beats, beams = 0, lights = 0, decals = 1 + beats })
+	end)
+
+	it("the juice keeps a reserve of every device limit for the skills' own pieces", function()
+		-- the reserve rounds up; room stops short of it
+		expect(SkillJuice.reserve(24, 0.4)).toBe(10)
+		expect(SkillJuice.reserve(48, 0.4)).toBe(20)
+		expect(SkillJuice.reserve(10, 0.5)).toBe(5)
+		expect(SkillJuice.reserve(6, 0.5)).toBe(3)
+		expect(SkillJuice.reserve(7, 0)).toBe(0)
+		expect(SkillJuice.reserve(7, 1.5)).toBe(7)
+		expect(SkillJuice.reserve(0, 0.5)).toBe(0)
+		expect(SkillJuice.room(13, 24, 0.4)).toBe(true)
+		expect(SkillJuice.room(14, 24, 0.4)).toBe(false)
+		expect(SkillJuice.room(30, 24, 0.4)).toBe(false)
+		expect(SkillJuice.room(0, 0, 0.5)).toBe(false)
+		expect(SkillJuice.room(5, 6, 0)).toBe(true)
+		-- on every device the reserve holds one cast's own pieces and the rest one cast's juice (Config.Vfx.juice.perCast;
+		-- its ground ring is a ground image, on the beam limit). Emitters and lights: Config.Vfx.perCast. The beam limit
+		-- also carries the pieces' ground images (Vfx/Pool: a "surface" holder counts as a beam), which perCast keeps in
+		-- its decals column with the real decals, so 3 beams and 3 ground images within perCast would not fit a phone's
+		-- 5: there every skill's own beams and ground images must fit (SkillLooks.beamLoadOf)
+		local reserve = Config.Vfx.juice.reserve
+		local pieces, juice = Config.Vfx.perCast, Config.Vfx.juice.perCast
+		local looks = 0
+		for _, device in { "desktop", "touch" } do
+			local rows = {
+				{ "emitters", Config.Vfx.maxEmitters[device], juice.emitters },
+				{ "beams", Config.Vfx.maxBeams[device], juice.beams + juice.decals },
+				{ "lights", Config.Vfx.maxLights[device], juice.lights },
+			}
+			for _, row in rows do
+				local name, limit, juiceNeed = row[1], row[2], row[3]
+				local kept = SkillJuice.reserve(limit, reserve[name])
+				expect({ device, name, limit - kept >= juiceNeed }).toEqual({ device, name, true })
+				if name == "beams" then
+					for id, entry in SkillVfx do
+						looks += 1
+						expect({ device, id, SkillLooks.beamLoadOf(entry) <= kept }).toEqual({ device, id, true })
+					end
+				else
+					local piecesNeed = if name == "emitters" then pieces.emitters else pieces.lights
+					expect({ device, name, kept >= piecesNeed }).toEqual({ device, name, true })
+				end
+			end
+		end
+		-- every look was checked on both devices; a ring is a ground image, cracks and a ground decal real decals (the
+		-- decals limit)
+		expect(looks > 100).toBe(true)
+		expect(SkillLooks.beamLoadOf({ impact = { "shockwave", "cracks", "groundDecal", "beam" } } :: any)).toBe(2)
+		for name in SkillLooks.DECAL_PIECES do
+			local cost = SkillLooks.PIECE_COST[name]
+			expect({ name, cost ~= nil and cost.decals > 0 }).toEqual({ name, true })
+		end
+	end)
+
+	it("the client asks before every layer and cuts a cast short on a fizzle or the caster's death", function()
+		local juice = fs.readFile("src/client/Vfx/Juice.luau")
+		expect(occurrences(juice, 'room("emitters")')).toBe(2) -- every core (flash) and particle layer (layer)
+		expect(occurrences(juice, 'room("lights")')).toBe(1) -- fadingLight
+		expect(occurrences(juice, 'room("beams")')).toBe(2) -- the ring and every arc
+		expect(occurrences(juice, "SkillJuice.flareLayers(")).toBe(1)
+		expect(occurrences(juice, "SkillJuice.punchLayers(")).toBe(1)
+		local pool = fs.readFile("src/client/Vfx/Pool.luau")
+		expect(string.find(pool, "function Pool.used(", 1, true) ~= nil).toBe(true)
+		local vfx = fs.readFile("src/client/Controllers/VfxController.luau")
+		-- the definition, a fizzle, a death: aimEnd cuts nothing (a shot that leaves sends it too)
+		expect(occurrences(vfx, "cutShort(")).toBe(3)
+		expect(string.find(vfx, "cutShort(casterKey(data))", 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "HealthChanged", 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "if cutOff() or", 1, true) ~= nil).toBe(true) -- the release flare
+		expect(string.find(vfx, "cancelled = cutOff", 1, true) ~= nil).toBe(true) -- the gathering's pop
+		local hunterMage = fs.readFile("src/client/Vfx/LmHunterMage.luau")
+		expect(string.find(hunterMage, "ctx.cancelled", 1, true) ~= nil).toBe(true)
+		-- every punch asks its moment (the beat plays as `later`); further targets and a storm's opening only keep the
+		-- beat
+		expect(occurrences(vfx, "SkillJuice.momentPunch(punchMoments,")).toBe(1)
+		expect(string.find(vfx, 'later = verdict == "beat"', 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "local later = lighter or entry.strike ~= nil", 1, true) ~= nil).toBe(true)
+		expect(string.find(vfx, "simple, i > 1, i > 1)", 1, true) ~= nil).toBe(true) -- a chain's further links
+	end)
+end)
+
 describe("Camera kick (owner 2026-11-10)", function()
 	local function kick(amp: number, start: number, seconds: number, seed: number): CameraShake.Kick
 		return { amp = amp, start = start, seconds = seconds, seed = seed }

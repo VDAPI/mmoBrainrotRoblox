@@ -14723,3 +14723,53 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - **Pliki:** `Data/BodyGroups`, `Logic/BlockerGuard`, `client/Util/MonsterBox`, `MovementController`, `Vfx/BossCastBar`,
   `Vfx/Library`, `CombatFxController`, `TargetController`, `MonsterPlateController`, `Entities/RigBuilder`,
   `tests/bodygroups.spec.luau`, `tests/blockerguard.spec.luau`, `docs/ARCHITECTURE.md` §7.
+
+### Dynamika umiejętności ustępuje pulom, rzut przerwany bez błysku (2026-11-10)
+
+- Przegląd (znaleziska 8 i 9 pakietu dynamiki): w walce grupowej na telefonie (24 emitery, 10 promieni i obrazów na
+  ziemi, 6 świateł) błyski i uderzenia pięciu graczy trzymały około 15–22 emiterów, więc `Pool.holder` odmawiał
+  składnikom umiejętności, iskrom trafień, oddechom bossów i światłom zapowiedzi. `SkillJuice.count` dawał co najmniej 1
+  drobinę, więc dalekie i cudze rzuty brały każdą warstwę; Lodowa Kula i Wir Żywiołów uderzały pełną dynamiką co 0,4 s.
+  Po przerwanym celowaniu (Pożoga, Lodowa Włócznia, Strzał w Serce) błysk wypuszczenia i tak wybuchał przy dłoniach.
+- Rezerwa: `Config.Vfx.juice.reserve` (emitery 0,4, promienie 0,5, światła 0,5 limitu urządzenia, zaokrąglone w górę),
+  `Logic/SkillJuice.reserve` / `room`, `Vfx/Pool.used` (żywe uchwyty limitu albo światła). W `Vfx/Juice` każdy rdzeń,
+  warstwa drobin, pierścień, łuk i światło pyta `room` przed wzięciem uchwytu.
+- Warstwy: `Logic/SkillJuice.layerOn` i `count(..., layer)` (drobiny rzucenia, obłok i odłamki tylko nasze z bliska,
+  rozprysk nie dla cudzych dalekich), `flareLayers` / `punchLayers` (to rysuje `Vfx/Juice`); `later` w
+  `VfxController.punch`: kolejne fale (`circleSelf`, `waves`), kolejne uderzenia burzy i meteorów (`firstStrike`) oraz
+  kolejne strzały (`n` > 1) mają tylko rdzeń i pierścień. Błysk rzucenia gra po składnikach rzutu.
+- Rzut przerwany: `castTokens` / `cutShort` w `VfxController`, podbijane przez `fizzle` i śmierć rzucającego
+  (`Humanoid.HealthChanged`, `watchDeath`); `aimEnd` nic nie przerywa. Błysk wypuszczenia sprawdza żeton, `lmCharge`
+  dostaje `ctx.cancelled` i gaśnie bez wybuchu, `Library.glow` zwraca stop i dłonie gasną od razu.
+- Testy: `skilljuice.spec` (warstwy opcjonalne, błysk i uderzenie według widoku, kolejna fala tylko rdzeń i pierścień,
+  najgorszy przypadek wszystkich stylów, wag i widoków w `Config.Vfx.juice.perCast`, rezerwa na obu urządzeniach mieści
+  składniki jednego rzutu i dynamikę jednego rzutu, połączenia w kodzie klienta), `skillmotion.spec` (dynamika każdej
+  umiejętności i każdego żywiołu broni w `Config.Vfx.juice.perCast`), `tests/SkillLooks` (`juiceOf`, `juiceCost`).
+  Nieobejrzane w Studio.
+- **Pliki:** `Config`, `Logic/SkillJuice`, `Vfx/Juice`, `Vfx/Pool`, `Vfx/Library` (`glow`), `Vfx/LmHunterMage`
+  (`lmCharge`), `Vfx/LmTypes`, `VfxController`, `tests/skilljuice.spec.luau`, `tests/skillmotion.spec.luau`,
+  `tests/SkillLooks.luau`, `docs/ANIMACJE.md` §16.
+
+### Dynamika umiejętności: poprawki po przeglądzie (2026-11-10)
+
+- Przegląd trzech znalezisk w paczce dynamiki, wszystkie prawdziwe. (1) Test rezerwy porównywał promienie telefonu tylko
+  z `Config.Vfx.perCast.beams`, a obrazy na ziemi składników (pierścienie, kręgi, runy, spirala wiru) też liczą się do
+  limitu promieni, więc umiejętność w budżecie (3 promienie i 3 obrazy) nie zmieściłaby się w 5 rezerwy. (2) Pierwsze
+  uderzenie burzy szukało ostatniego rzutu rzucającego, który nadpisuje każdy następny czar (GCD 0,5 s, pierwszy meteor
+  Deszczu Meteorów spada po około 1,35 s), więc grało jako kolejne, bez pełnego uderzenia, głównego dźwięku i
+  wstrząsu. (3) Pole Sideł wysyła pięć pułapek naraz i każda uderzała w pełni (17 emiterów, 6 świateł, 5 pierścieni
+  jednego rzutu), tak samo ogniwa Łańcucha Błyskawic, kolejni leczeni, kilka pułapek zatrzaśniętych naraz, otwarcie
+  burzy z pierwszym piorunem oraz Roztrzaskanie i Zapłon z trafieniem; budżet liczył tylko błysk i jedno uderzenie.
+- Poprawki: `tests/SkillLooks.beamLoadOf` (promienie i obrazy na ziemi składników, bez prawdziwych naklejek
+  `DECAL_PIECES`) sprawdzany dla każdej umiejętności z rezerwą promieni obu urządzeń (dziś najwyżej 4 z 5).
+  `Logic/SkillJuice.stormCast` / `firstStrike`: burze czekające na pierwsze uderzenie osobno dla rzucającego i
+  umiejętności (`stormsAwaiting` w `VfxController`, bez pola `struck`). `Logic/SkillJuice.momentPunch`: uderzenia
+  jednej umiejętności rzucającego w odstępach do `Config.Vfx.juice.together` (0,15 s) to jedna chwila, w pełni jedno,
+  `beats` (2) tylko rdzeń i pierścień, reszta nic (`punchMoments`); dalsze cele i ogniwa oraz otwarcie burzy grają jak
+  kolejna fala. `Config.Vfx.juice.perCast` liczy te dwa uderzenia (8 emiterów, 2 promienie, 2 światła, 3 obrazy na
+  ziemi; promienie z obrazami to całe 5 telefonu poza rezerwą), `SkillLooks.juiceCost` też.
+- Testy: `skilljuice.spec` (rezerwa promieni na każdą umiejętność, księga burz, chwile uderzeń, Pole Sideł 7 emiterów,
+  2 światła, 3 pierścienie, połączenia w kodzie klienta), `skillmotion.spec` bez zmian (liczy już z uderzeniami chwili).
+  Nieobejrzane w Studio.
+- **Pliki:** `Config`, `Logic/SkillJuice`, `Vfx/Juice` (opis), `VfxController`, `tests/SkillLooks.luau`,
+  `tests/skilljuice.spec.luau`, `docs/ANIMACJE.md` §16, `docs/DECYZJE.md`, `docs/PROGRESS.md`.
