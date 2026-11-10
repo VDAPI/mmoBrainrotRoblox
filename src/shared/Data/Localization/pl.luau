@@ -5099,6 +5099,8 @@ return {
 	["contract.title"] = "Zlecenie łowieckie {n}: {monster} ({area})",
 	["contract.titleShort"] = "Zlecenie łowieckie {n}",
 	["contract.board.title"] = "Zlecenia łowieckie",
+	["contract.board.ready"] = "Gotowe: {n}",
+	["contract.board.take"] = "Do przyjęcia: {n}",
 	["contract.text"] = "{area}: myśliwi nie nadążają. Ubij {n}× {monster}. Zapłata czeka tu, u Łowczego albo u zwiadowcy regionu.",
 	["contract.progress"] = "{area}: wciąż przychodzą złe wieści. Wracaj, gdy skończysz.",
 	["contract.done"] = "Robota wykonana. Oto zapłata, łowco.",

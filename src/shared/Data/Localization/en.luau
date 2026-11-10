@@ -5101,6 +5101,8 @@ return {
 	["contract.title"] = "Hunting contract {n}: {monster} ({area})",
 	["contract.titleShort"] = "Hunting contract {n}",
 	["contract.board.title"] = "Hunting contracts",
+	["contract.board.ready"] = "Ready: {n}",
+	["contract.board.take"] = "To take: {n}",
 	["contract.text"] = "{area}: hunters cannot keep up. Slay {n}× {monster}. Your pay waits here, at the Huntmaster or the scout.",
 	["contract.progress"] = "Bad news still comes from {area}. Come back when you are done.",
 	["contract.done"] = "The work is done. Here is your pay, hunter.",

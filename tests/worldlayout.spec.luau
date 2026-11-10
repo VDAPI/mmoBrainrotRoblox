@@ -321,9 +321,24 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 	end)
 
 	T.it("quest board: 2 cards under the hunting block (folded on a phone); the tabs and the set's line fit", function()
+		-- Review 2026-11-10: folded, the block's title says what waits (the counts in the header row, not a summary
+		-- line that would cost a phone its second card)
+		local src = fs.readFile("src/client/UI/Screens/QuestBoard.luau")
+		T.expect(string.find(src, "return if use2(open) then header else folded", 1, true) ~= nil).toBe(true)
 		local problems: { string } = {}
 		for _, screen in screens() do
 			local content = contentOf("questboard", screen)
+			-- the folded title in its header row (Components/Section: the padding 4 each side, the arrow 18, two gaps
+			-- 6, the (i) 44 on touch and 28 on PC)
+			local room = content.w - 8 - 18 - 12 - (if screen.touch then 44 else 28)
+			for lang, t in { pl = pl, en = en } :: { [string]: { [string]: string } } do
+				local ready = string.gsub(t["contract.board.ready"], "{n}", "99")
+				local take = string.gsub(t["contract.board.take"], "{n}", "99")
+				local folded = `{t["contract.board.title"]} · {ready} · {take}`
+				if TextCaps.width(folded, WorldLayout.BODY) > room then
+					table.insert(problems, `{screen.name} {lang}: "{folded}" wider than its header`)
+				end
+			end
 			for _, hunt in { false, true } do
 				local b = WorldLayout.questBoard(content, screen.device, hunt, screen.device ~= "phone")
 				negatives(`{screen.name} questboard`, b, problems)

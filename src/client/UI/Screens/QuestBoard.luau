@@ -75,7 +75,21 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 	local canHand = #Contracts.ready(state, npcId)
 	-- owner 2026-11-10: the Section's title is the name with the progress ("Zlecenia łowieckie 12/99", at most 24), the
 	-- Hunter's Marks join the counts line
-	local header = `{Text.get(use, "contract.board.title")} {Contracts.doneCount(state)}/{Quests.Contracts.MAX_LEVEL}`
+	local name = Text.get(use, "contract.board.title")
+	local header = `{name} {Contracts.doneCount(state)}/{Quests.Contracts.MAX_LEVEL}`
+	-- Review 2026-11-10 (UI-ZASADY §1, the state and the action on top): folded (a phone's default), the title says what
+	-- waits here instead of the progress, "Zlecenia łowieckie · Gotowe: 2 · Do przyjęcia: 3" (the buttons' counts above
+	-- zero; one line in PC's 640 window too), so the fold hides no action. In the header row, not a summary line: a
+	-- phone keeps its two cards (Logic/WorldLayout.questBoard).
+	local waiting: { string } = {}
+	if canHand > 0 then
+		table.insert(waiting, Text.get(use, "contract.board.ready", { n = canHand }))
+	end
+	if canTake > 0 then
+		table.insert(waiting, Text.get(use, "contract.board.take", { n = canTake }))
+	end
+	local folded = if #waiting > 0 then `{name} · {table.concat(waiting, " · ")}` else header
+	local open = Section.Open(HUNT_ID)
 	local counts = Text.get(use, "contract.boardCounts", {
 		available = #Contracts.eligible(state, lvl),
 		active = #state.active,
@@ -100,7 +114,9 @@ local function contractSection(s: Scope, use: Fusion.Use, quests: any, lvl: numb
 	end
 	return Section.new(s, {
 		Id = "boardHunt",
-		Title = header,
+		Title = s:Computed(function(use2): string
+			return if use2(open) then header else folded
+		end),
 		Info = info,
 		Children = {
 			s:New("Frame")({
