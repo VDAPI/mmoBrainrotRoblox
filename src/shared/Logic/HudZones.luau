@@ -143,8 +143,10 @@ HudZones.EXP_BAR = table.freeze({ inset = 4, h = 10, bottom = 2 })
 HudZones.CHAT = table.freeze({ height = 250, spread = 0.2 })
 
 -- Z8. The message zone: at most this wide, centred where the screen has room (`messageZone` cuts it short of Z1 and
--- the right column on a narrow one), from GAP under the target band down to this share of the layer's height.
-HudZones.MESSAGE = table.freeze({ width = 980, bottom = 0.4 })
+-- the right column on a narrow one), from GAP under the target band down to this share of the layer's height. The
+-- alert line (`alert` tall) is the one message that always shows, so the zone must hold it: hudzones.spec checks that,
+-- and its THIN list names today's tablet states where the zone is shorter.
+HudZones.MESSAGE = table.freeze({ width = 980, bottom = 0.4, alert = 44 })
 
 -- The thumbstick zone of a touch screen as shares of the layer (left, top, width, height): UI/HudAnchors' JOYSTICK
 -- model of Roblox's dynamic thumbstick [inferred]. Kept here as data; package A makes HudAnchors read it.
@@ -284,7 +286,8 @@ function HudZones.targetBand(w: number, state: State): Rect
 end
 
 -- Z8: the message zone, GAP under the target band, MESSAGE.width wide where the screen has room and never closer than
--- GAP to Z1 / Z2 on the left or the minimap and the column on the right.
+-- GAP to Z1 / Z2 on the left or the minimap and the column on the right. Its bottom never rises above its top, so
+-- where the band ends at 0.4 h or lower, less GAP (a short tablet with the boss bar), the zone is empty.
 function HudZones.messageZone(w: number, h: number, state: State): Rect
 	local top = band(w, state).rect.bottom + GAP
 	local right = minimapRect(w).left

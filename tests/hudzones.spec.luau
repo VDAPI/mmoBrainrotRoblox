@@ -2,8 +2,8 @@
 -- Owner 2026-11-10 ("too much text, things covering each other, too detailed descriptions, nothing folds"): the UI
 -- plan's HUD zone map (Logic/HudZones) on the plan's PC screens and tablets, with Roblox's top bar 0, 36 and 58 px
 -- tall: every place lies inside the HUD layer, no two persistent places meet, and the message zone starts GAP under
--- the target band in every named state. UI package A owns this spec after package F: it adds the plan's full state
--- matrix to `states` (the checks take any HudZones.State) and empties KNOWN.
+-- the target band in every named state and holds the alert line. UI package A owns this spec after package F: it adds
+-- the plan's full state matrix to `states` (the checks take any HudZones.State) and empties KNOWN and THIN.
 
 local fs = require("@lune/fs")
 
@@ -66,17 +66,18 @@ local NAMED: { { name: string, state: State } } = {
 	{ name = "dungeon boss bar with an add", state = { bossBar = true, add = true, target = "monster" } },
 }
 
-local function states(): { { name: string, state: State } }
+-- Every named state, quiet and busy; `base` is the name in NAMED.
+local function states(): { { name: string, base: string, state: State } }
 	local out = {}
 	for _, named in NAMED do
-		table.insert(out, named)
+		table.insert(out, { name = named.name, base = named.name, state = named.state })
 		local busy = table.clone(named.state)
 		busy.party = 4
 		busy.guide = true
 		busy.waiting = 4
 		busy.effects = 15
 		busy.autoPopover = true
-		table.insert(out, { name = `{named.name}, busy`, state = busy })
+		table.insert(out, { name = `{named.name}, busy`, base = named.name, state = busy })
 	end
 	return out
 end
@@ -188,6 +189,16 @@ local KNOWN: { [string]: boolean } = {
 	["tablet corner.target/waiting"] = true,
 }
 
+-- Message zones shorter than the alert line (HudZones.MESSAGE.alert, the one message that always shows), by device and
+-- named state, for package A to clear (package B places its messages in the zone). On tablets the PC band ends less
+-- than 44 above 0.4 h, or below it: with the arena panel on 1280 x 720 and 1024 x 600 (8 to 40 px left), with the boss
+-- bar on 1280 x 720 and 1024 x 600 (nothing left), 1280 x 800 (5 to 28 px) and 1024 x 768 under the 58 px bar (43.6
+-- px). A listed state that has room everywhere fails, so the list only shrinks.
+local THIN: { [string]: boolean } = {
+	["tablet arena panel"] = true,
+	["tablet dungeon boss bar with an add"] = true,
+}
+
 -- The pairs that meet on `screen` in `state` ("pc bark/chatEstimate"), with where.
 local function collisions(screen: Screen, label: string, state: State, out: { [string]: string })
 	local all = places(screen, state)
@@ -255,14 +266,46 @@ T.describe("HUD zones (owner 2026-11-10)", function()
 				local zone = HudZones.messageZone(screen.w, screen.h, s)
 				local where = `{screen.name}, {named.name}`
 				T.expect(zone.top).toBe(band.bottom + HudStack.GAP)
-				if zone.bottom < zone.top or zone.right <= zone.left then
-					error(`{where}: an empty message zone {show(zone)}`)
+				T.expect(zone.bottom >= zone.top).toBe(true)
+				if zone.right <= zone.left then
+					error(`{where}: a message zone with no width {show(zone)}`)
 				end
 				for _, p in HudZones.list(HudZones.pc(screen.w, screen.h, s)) do
 					if p.zone == "Z3" and not inside(p.rect, band) then
 						error(`{where}: {p.name} {show(p.rect)} leaves the target band {show(band)}`)
 					end
 				end
+			end
+		end
+	end)
+
+	T.it("the message zone holds the alert line but in the listed states", function()
+		local found: { [string]: string } = {}
+		for _, screen in screens() do
+			for _, named in states() do
+				local s = table.clone(named.state)
+				s.touch = screen.touch
+				local zone = HudZones.messageZone(screen.w, screen.h, s)
+				local tall = zone.bottom - zone.top
+				local key = `{screen.device} {named.base}`
+				if tall < HudZones.MESSAGE.alert and not found[key] then
+					found[key] = string.format("%s, %s: %.1f px", screen.name, named.name, tall)
+				end
+			end
+		end
+		local bad = {}
+		for key, where in found do
+			if not THIN[key] then
+				table.insert(bad, `{key} ({where})`)
+			end
+		end
+		table.sort(bad)
+		if #bad > 0 then
+			error(`message zones under the {HudZones.MESSAGE.alert} px alert line:\n{table.concat(bad, "\n")}`)
+		end
+		for key in THIN do
+			if not found[key] then
+				error(`{key} holds the alert line everywhere: take it off THIN`)
 			end
 		end
 	end)
