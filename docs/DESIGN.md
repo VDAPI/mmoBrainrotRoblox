@@ -1756,17 +1756,17 @@ Stan po serii DESIGN-15 (S95–S109); szczegóły i liczby: `docs/DESIGN-15.md` 
 - **Okna plecaka i umiejętności, usługi** (plan UI 2026-11-10, pakiet D; właściciel 2026-11-10: „bardzo dużo napisów,
   niektóre rzeczy zasłaniają inne”): okno plecaka zostaje jak w decyzji 2026-11-10 (Statystyki otwarte, Zestawy i
   tytuł zwinięte); statystyka to jedna linia („Siła 24”) z (i), „−” / „+” i „Wolne punkty” tylko przy wolnych
-  punktach; statystyki pochodne w czterech sekcjach (Atak otwarta, Obrona, Zasoby i Inne zwinięte, `Data/Folds/Gear`),
-  nazwy do dwóch linii, nigdy ucięte; kolumny z szerokości treści okna (`Logic/GearLayout`), więc plecak ma 500 px
-  także na telefonie. Szczegóły umiejętności: ranga i krótki opis, „Koszt i odnowienie” zwinięte do linii kosztu i
-  odnowienia (tabela rang pod spodem; pasywka: „Wartości rangi”), „Przełomy” zwinięte do linii działających wersji
-  („Ranga 5: A · Ranga 10: B”) albo „Przełom do wyboru”, karta przełomu w jednym wierszu z „Wybierz”, zasada zmian raz,
-  pełny opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów; nagłówek kierunków „Punkty
-  kierunków: N”, „Prowadzi: …” albo „Prowadzi: brak” (zasada za (i)), zwieńczenie dopiero, gdy jest; opis węzła
-  dłuższy niż 60 znaków krótką linią (`NodeText.LONG`). Telefon: arkusz szczegółów z jednym paskiem na dole (Wróć,
-  akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź (+N)”), szczegóły co najmniej 260 px, przełom wybierany na
-  karcie. Usługi (kowal, aukcja, alchemik, wygląd, plecakarz): przycisk główny przypięty pod treścią, długa treść
-  przewija się w swoim miejscu, telefon jedną kolumną tylko tam, gdzie dwie się nie mieszczą.
+  punktach; statystyki pochodne w czterech sekcjach (Ofensywa otwarta, Defensywa, Zasoby i Inne zwinięte,
+  `Data/Folds/Gear`), nazwy do dwóch linii, nigdy ucięte; kolumny z szerokości treści okna (`Logic/GearLayout`), więc
+  plecak ma 500 px także na telefonie. Szczegóły umiejętności: ranga i krótki opis, „Koszt i odnowienie” zwinięte do
+  linii kosztu i odnowienia (tabela rang pod spodem; pasywka: „Wartości rangi”), „Przełomy” zwinięte do linii
+  działających wersji („Ranga 5: A · Ranga 10: B”) albo „Przełom do wyboru”, karta przełomu w jednym wierszu z
+  „Wybierz”, zasada zmian raz, pełny opis pod „Więcej ▸”; podpowiedź drzewka tylko w pustym panelu szczegółów;
+  nagłówek kierunków „Punkty kierunków: N”, „Prowadzi: …” albo „Prowadzi: brak” (zasada za (i)), zwieńczenie dopiero,
+  gdy jest; opis węzła dłuższy niż 60 znaków krótką linią (`NodeText.LONG`). Telefon: arkusz szczegółów z jednym
+  paskiem na dole (Wróć, akcje, Podgląd, przy rezerwacji „Anuluj” i „Zatwierdź (+N)”), szczegóły co najmniej 260 px,
+  przełom wybierany na karcie. Usługi (kowal, aukcja, alchemik, wygląd, plecakarz): przycisk główny przypięty pod
+  treścią, długa treść przewija się w swoim miejscu, telefon jedną kolumną tylko tam, gdzie dwie się nie mieszczą.
 
 ### Ikony w UI (S35)
 

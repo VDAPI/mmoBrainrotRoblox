@@ -203,7 +203,7 @@ local function statsSection(
 end
 
 -- Owner 2026-11-10 (UI plan): the derived statistics as four sections after the statistics' one (one fold level):
--- "Atak" open, the defence, resources and other ones folded (DerivedList, Data/Folds/Gear).
+-- "Ofensywa" open; "Defensywa", "Zasoby" and "Inne" folded (DerivedList, Data/Folds/Gear).
 local function derivedSections(scope: Scope, pending: Fusion.Value<{ [string]: number }>, order: number): { Instance }
 	return DerivedList(scope, { Pending = pending, LayoutOrder = order })
 end

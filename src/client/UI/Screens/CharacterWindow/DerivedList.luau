@@ -4,7 +4,7 @@
 -- difference is shown in green. Owner 2026-11-10: as tall as its rows (the statistics section of the backpack window
 -- scrolls with its column, UI/Components/Section).
 -- Owner 2026-11-10 (UI plan: 37 rows, 11 names cut): one Section per group next to the statistics' section (one fold
--- level), "Atak" open and the rest folded (charOffense / charDefense / charResources / charOther in Data/Folds/Gear);
+-- level), "Ofensywa" open, the rest folded (charOffense / charDefense / charResources / charOther in Data/Folds/Gear);
 -- a name never cut: it wraps to a second line beside its value.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")

@@ -14882,11 +14882,11 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   zawijane zamiast ucinanych, kolumny z szerokości treści (plecak 500 px na trzech telefonach), ostrzeżenie Small 17.
 - Okno umiejętności: sekcje `skillCost` („Koszt i odnowienie”, linia kosztu i odnowienia, tabela rang pod spodem;
   pasywka „Wartości rangi”) i `skillBreakpoints` („Przełomy”, linia działających wersji albo „Przełom do wyboru”),
-  obie zwinięte; pełny opis pod `More` („Więcej ▸”); karty przełomów w jednym wierszu z „Wybierz” także na telefonie,
-  zasada zmian raz; jedna podpowiedź drzewka (pusty panel szczegółów); nagłówek kierunków mieści się (etykiety się
-  kurczą, krótsze teksty, zasada prowadzenia za (i), zwieńczenie tylko gdy jest, węższy przełącznik zestawów);
-  arkusz telefonu z jednym paskiem (wstecz, akcje, podgląd, „Anuluj” / „Zatwierdź (+N)” przy rezerwacji), szczegóły
-  co najmniej 260 px; `NodeText.LONG` 60 i 71 nowych `path.<ścieżka>.<węzeł>.short` (pl i en).
+  obie zwinięte; pełny opis pod wspólnym `Details` („Więcej ▸”); karty przełomów w jednym wierszu z „Wybierz”
+  także na telefonie, zasada zmian raz; jedna podpowiedź drzewka (pusty panel szczegółów); nagłówek kierunków mieści
+  się (etykiety się kurczą, krótsze teksty, zasada prowadzenia za (i), zwieńczenie tylko gdy jest, węższy przełącznik
+  zestawów); arkusz telefonu z jednym paskiem (wstecz, akcje, podgląd, „Anuluj” / „Zatwierdź (+N)” przy rezerwacji),
+  szczegóły co najmniej 260 px; `NodeText.LONG` 60 i 71 nowych `path.<ścieżka>.<węzeł>.short` (pl i en).
 - Usługi: kowal (ulepszanie: lista, kowadło z przedmiotem, przewijany środek, wynik, „Ulepsz” w stopce; na niskim
   obszarze przedmiot obok środka), aukcja (wystawianie: formularz przewijany nad przypiętym „Wystaw przedmiot”;
   przeglądanie: filtry przewijane nad przypiętym „Szukaj”, wyniki nad stronami), alchemik (receptury i kolejka z
@@ -14904,8 +14904,8 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
 - Odstępstwa od planu: karty przełomów zawijają tekst zamiast go ucinać, póki teksty przełomów nie zejdą do 48 znaków
   (część tekstowa); przyciski główne usług stoją we własnym pasie, póki pakiet C nie da stopki okna; kolejka alchemika
   zostaje kartami 84 px do `ListRow` pakietu C; filtry plecaka i alchemika czekają na przewijane `Tabs` pakietu C;
-  `Avoid` tooltipu z paska akcji plecaka czeka na właściwość pakietu C. Poprawka typu w `TooltipModel` (linia „+N
-  więcej” z jawnym typem `Line`).
+  `Avoid` tooltipu z paska akcji plecaka czeka na właściwość pakietu C. Poprawki w `TooltipModel`: linia „+N
+  więcej” z jawnym typem `Line`, a komentarz nie cytuje zmyślonego klucza w cudzysłowie (czyta go `data.spec`).
 - **Pliki:** `Logic/GearLayout`, `Logic/CharacterSections`, `Logic/NodeText`, `Logic/TooltipModel`,
   `Data/Folds/Gear`, `Data/Localization/pl|en`, `Screens/CharacterWindow/init|DerivedList|StatAllocator`,
   `Screens/BackpackPanel`, `Screens/SkillsWindow/init|Details|Breakpoints|Sheet|Header|PathTab|PoolTree`,
