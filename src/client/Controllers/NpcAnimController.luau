@@ -11,7 +11,9 @@
 -- * Model attributes (on the NPC or its "Asset"): "Work" = "none" (no work loop), a role's id or "hammer" (that
 --   role's work); "NpcRole" = a role of Data/NpcStyles for the whole NPC.
 -- Only NPCs within the graphics level's `npcRadius` of the camera move, `npcRate` times a second (Config.Graphics,
--- W29), at most the `npcMax` nearest (W31); farther ones keep their last pose. The one in the dialogue always moves.
+-- W29), at most the `npcMax` nearest (W31); farther ones keep their last pose. Owner 2026-11-10 ("the NPCs we walk up
+-- to look laggy": a pose held for two or four frames reads as a stutter close up): the `npcSmooth` nearest within
+-- `npcSmoothRadius` move every frame, and so does the one in the dialogue.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -54,6 +56,7 @@ type Entry = {
 	npcId: string,
 	work: boolean, -- false: the model's "Work" is "none"
 	near: boolean,
+	smooth: boolean, -- close to the camera: posed every frame
 	wait: number, -- seconds until the next pose update
 	people: { NpcMotion.Person }, -- reused every update
 	input: NpcMotion.Input,
@@ -131,6 +134,7 @@ local function track(model: Model)
 		npcId = npcId,
 		work = work,
 		near = false,
+		smooth = false,
 		wait = 0,
 		people = {},
 		input = { now = 0, dt = 0 },
@@ -149,24 +153,28 @@ local function track(model: Model)
 	end)
 end
 
--- Marks the NPCs that move: within `radius` studs of the camera, the `most` nearest of them.
-local function cull(radius: number, most: number)
+-- Which NPCs move (`near`: the `most` nearest within `radius` of the camera's focus) and which of them every frame
+-- (`smooth`: the `smoothMost` nearest within `smoothRadius`).
+local function cull(radius: number, most: number, smoothRadius: number, smoothMost: number)
 	local camera = Workspace.CurrentCamera
 	local at = if camera then camera.Focus.Position else Vector3.zero
 	local inside: { { entry: Entry, distance: number } } = {}
 	for _, entry in entries do
 		local distance = (entry.root.Position - at).Magnitude
 		entry.near = distance <= radius
+		entry.smooth = false
 		if entry.near then
 			table.insert(inside, { entry = entry, distance = distance })
 		end
 	end
-	if #inside > most then
-		table.sort(inside, function(a, b)
-			return a.distance < b.distance
-		end)
-		for i = most + 1, #inside do
-			inside[i].entry.near = false
+	table.sort(inside, function(a, b)
+		return a.distance < b.distance
+	end)
+	for i, row in inside do
+		if i > most then
+			row.entry.near = false
+		elseif i <= smoothMost and row.distance <= smoothRadius then
+			row.entry.smooth = true
 		end
 	end
 end
@@ -320,7 +328,7 @@ function NpcAnimController.Start()
 		cullTimer += dt
 		if cullTimer >= CULL_EVERY then
 			cullTimer = 0
-			cull(level.npcRadius, level.npcMax)
+			cull(level.npcRadius, level.npcMax, level.npcSmoothRadius, level.npcSmooth)
 		end
 		local period = 1 / math.max(1, level.npcRate)
 		local talkingTo = NpcController.TalkingTo()
@@ -331,12 +339,19 @@ function NpcAnimController.Start()
 			if not entry.near and talkingTo ~= entry.npcId then
 				continue
 			end
-			entry.wait -= dt
-			if entry.wait > 0 then
-				continue
+			local spent: number
+			if entry.smooth or talkingTo == entry.npcId then
+				-- every frame (with the time since the last pose of a slower beat it just left)
+				spent = dt + math.max(0, period - entry.wait)
+				entry.wait = period
+			else
+				entry.wait -= dt
+				if entry.wait > 0 then
+					continue
+				end
+				spent = period - entry.wait
+				entry.wait = period
 			end
-			local spent = period - entry.wait
-			entry.wait = period
 			if not gathered then
 				gathered = true
 				gatherPlayers()

@@ -2,13 +2,16 @@
 -- Casting from the hotbar (DESIGN §14.1, S05):
 --   enemy skills use the current target (or pick the nearest enemy in range),
 --   ally skills target the selected ally or yourself,
---   area skills on a point: PC aims at the cursor — hold the key to see the area, release to cast
---   (or cast on key press with "quick cast"); touch aims at the target or in front of the character, except Blink,
---   which goes the way the joystick points (owner 2026-10-31: an escape never lands in the monster).
+--   skills that aim (circles on a point, snares, cones, lines, Blink; Logic/SkillAim, owner 2026-11-10): a tap aims by
+--   itself at the enemy we fight (the target, else the nearest enemy within reach, which becomes the target, else in
+--   front); a healing field goes under the selected ally or our feet; Blink (an escape, owner 2026-10-31) the way we
+--   walk, never into the monster. Holding the key past Config.Skills.holdToAim shows the preview at the cursor and
+--   the release casts there; the "Cast at cursor" setting (quickCast) casts at the cursor on key press, the old way.
+--   The character turns to where a directional skill flies.
 -- S28: the held-key preview shows the real shape (circle at the cursor, circle around you, cone, line) and cones /
---   lines turn towards the cursor; on touch, dragging a skill button aims like a MOBA (release casts, back on the
---   button cancels); a skill pressed during the global cooldown or the end of a cooldown waits in a one-skill queue
---   (Config.Skills.queueWindow) and fires as soon as it can.
+--   lines turn towards the cursor; on touch a tap aims like a tapped key and dragging a skill button aims like a MOBA
+--   (release casts, back on the button cancels); a skill pressed during the global cooldown or the end of a cooldown
+--   waits in a one-skill queue (Config.Skills.queueWindow) and fires as soon as it can.
 -- Also owns the hotbar slots for drag & drop ("skill:<id>" from the tree, "bar:<n>" on the bar).
 
 local Players = game:GetService("Players")
@@ -105,30 +108,92 @@ function SkillController.TargetDistance(): number
 	return (model:GetPivot().Position - root.Position).Magnitude
 end
 
--- Logic/SkillAim picks the source (cursor, target, walking direction, feet, front).
-local function aimPoint(skill: SkillData.SkillDef): Vector3?
+-- S57: the character as Logic/Paths reads it (class, level, path, hotbar, equipment).
+local function me(): Paths.Char
+	return {
+		class = State.Get({ "character", "class" }) or "",
+		level = State.Get({ "character", "level" }) or 1,
+		path = State.Get({ "character", "path" }),
+		hotbar = State.Get({ "character", "hotbar" }),
+		equipment = State.Get({ "character", "equipment" }),
+		ranks = State.Get({ "character", "ranks" }), -- S137: bought ranks per pool
+		barPool = State.Get({ "character", "barPool" }),
+	}
+end
+
+-- Rank of an own-class skill (0: not available; S137: bought in the active pool, path skills with their node).
+local function rankOf(skill: SkillData.SkillDef): number
+	return Paths.skillRank(me(), skill.id)
+end
+
+-- The skill as it works for the character (rank at least 1, chosen breakpoints, modify nodes).
+local function effective(skill: SkillData.SkillDef, rank: number?): SkillData.SkillDef
+	local c = me()
+	return (Paths.effectiveFor(c, skill.id, Paths.weaponTypesOf(c.equipment), rank))
+end
+
+-- Where a skill cast without a hand-picked point aims (Logic/SkillAim, owner 2026-11-10): the enemy we fight, else the
+-- nearest one within reach (it becomes the target, as for enemy skills), Blink the way we walk (or face), a healing
+-- field under the selected ally or at our feet, else in front. nil: the skill aims nowhere, or a cone / line has
+-- nobody to aim at (the server turns it where we face).
+local function autoAim(skill: SkillData.SkillDef): Vector3?
 	local root = myRoot()
 	if not root then
 		return nil
 	end
-	local touch = Fusion.peek(Device.Touch) == true
-	local point = if touch then nil else mouseGround()
+	local def = effective(skill)
 	local model = targetModel()
-	local monster = model ~= nil and model:GetAttribute("MonsterId") ~= nil
-	local source = SkillAim.source(skill.type, touch, point ~= nil, monster)
-	if source == "cursor" then
-		return point
-	elseif source == "target" and model then
+	local enemy = model ~= nil and TargetController.IsEnemy(model)
+	local ally = model ~= nil
+		and not enemy
+		and model:GetAttribute("CharName") ~= nil
+		and model:GetAttribute("Dead") ~= true
+	local nearest: Model? = nil
+	if not enemy and SkillAim.seeks(skill.type, skill.target) then
+		nearest =
+			TargetController.FindNearest(SkillAim.reach(def.type, def.range, def.radius, def.length), false, false)
+	end
+	local source = SkillAim.source({
+		kind = skill.type,
+		mode = skill.target,
+		manual = false,
+		target = enemy,
+		nearest = nearest ~= nil,
+		ally = ally,
+	})
+	if (source == "target" or source == "ally") and model then
 		return model:GetPivot().Position
+	elseif source == "nearest" and nearest then
+		TargetController.SetTarget(nearest)
+		return nearest:GetPivot().Position
 	elseif source == "move" then
 		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
 		local move = if humanoid then humanoid.MoveDirection else Vector3.zero
 		local direction = if move.Magnitude > 0.1 then move.Unit else root.CFrame.LookVector
-		return root.Position + direction * (skill.length or 15)
+		return root.Position + direction * (def.length or 15)
 	elseif source == "feet" then
-		return root.Position -- S74 (ROZWOJ 10.5): no target, the banner stands at the feet
+		return root.Position -- S74 (ROZWOJ 10.5): a banner without a target, a healing field without an ally
+	elseif source == "front" and skill.target == "point" then
+		return root.Position + root.CFrame.LookVector * math.min(def.range or 10, 12)
 	end
-	return root.Position + root.CFrame.LookVector * math.min(skill.range or 10, 12)
+	return nil
+end
+
+-- Owner 2026-11-10: the character turns to where a directional skill flies (the server aims the area at the point or
+-- the target but never turns our character; the client moves its own). Not in shift lock: the camera decides there.
+local function turnTo(point: Vector3)
+	local root = myRoot()
+	local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+	if not root or not humanoid or humanoid.Health <= 0 or humanoid.Sit then
+		return
+	end
+	if UserInputService.MouseBehavior == Enum.MouseBehavior.LockCenter then
+		return
+	end
+	local offset = Vector3.new(point.X - root.Position.X, 0, point.Z - root.Position.Z)
+	if offset.Magnitude > 0.5 then
+		root.CFrame = CFrame.lookAt(root.Position, root.Position + offset)
+	end
 end
 
 local function report(err: string?)
@@ -174,6 +239,7 @@ function SkillController.Cast(skillId: string, aimOverride: Vector3?)
 	end
 	local targetId: string? = nil
 	local aim: Vector3? = aimOverride
+	local facing: Vector3? = nil
 	if skill.target == "enemy" then
 		local model = targetModel()
 		local isEnemy = model ~= nil and model:GetAttribute("Dead") ~= true
@@ -188,13 +254,20 @@ function SkillController.Cast(skillId: string, aimOverride: Vector3?)
 			end
 		end
 		targetId = if model then model:GetAttribute("EntityId") :: string? else nil
+		facing = if model then model:GetPivot().Position else nil
 	elseif skill.target == "ally" or skill.target == "deadAlly" then
 		local model = targetModel()
 		if model and model:GetAttribute("CharName") ~= nil then
 			targetId = model:GetAttribute("EntityId") :: string?
 		end
-	elseif skill.target == "point" and aim == nil then
-		aim = aimPoint(skill)
+	elseif aim == nil and SkillAim.aims(skill.type, skill.target) then
+		aim = autoAim(skill) -- a tap (owner 2026-11-10)
+	end
+	if SkillAim.turns(skill.type, skill.target) then
+		local at = facing or aim
+		if at then
+			turnTo(at)
+		end
 	end
 	pending = true
 	task.spawn(function()
@@ -220,11 +293,9 @@ end
 local previewFolder: Folder? = nil
 local previewParts: { BasePart } = {}
 
--- Skills that can be aimed (and show a preview).
-local AIMABLE: { [string]: boolean } = { cone = true, line = true, circleSelf = true, trap = true }
+-- Skills that can be aimed by hand and show a preview (Logic/SkillAim.previews; owner 2026-11-10: Blink too).
 local function aimable(skill: SkillData.SkillDef): boolean
-	local kind: string = skill.type
-	return (skill.target == "point" and kind ~= "blink") or AIMABLE[kind] == true
+	return SkillAim.previews(skill.type, skill.target)
 end
 
 local function previewPart(i: number, shape: Enum.PartType): BasePart
@@ -266,30 +337,6 @@ local function hidePreview()
 		previewFolder = nil
 	end
 	table.clear(previewParts)
-end
-
--- S57: the character as Logic/Paths reads it (class, level, path, hotbar, equipment).
-local function me(): Paths.Char
-	return {
-		class = State.Get({ "character", "class" }) or "",
-		level = State.Get({ "character", "level" }) or 1,
-		path = State.Get({ "character", "path" }),
-		hotbar = State.Get({ "character", "hotbar" }),
-		equipment = State.Get({ "character", "equipment" }),
-		ranks = State.Get({ "character", "ranks" }), -- S137: bought ranks per pool
-		barPool = State.Get({ "character", "barPool" }),
-	}
-end
-
--- Rank of an own-class skill (0: not available; S137: bought in the active pool, path skills with their node).
-local function rankOf(skill: SkillData.SkillDef): number
-	return Paths.skillRank(me(), skill.id)
-end
-
--- The skill as it works for the character (rank at least 1, chosen breakpoints, modify nodes).
-local function effective(skill: SkillData.SkillDef, rank: number?): SkillData.SkillDef
-	local c = me()
-	return (Paths.effectiveFor(c, skill.id, Paths.weaponTypesOf(c.equipment), rank))
 end
 
 -- Draws the preview of `skill` aimed at `point` (world) from the character.
@@ -356,6 +403,12 @@ local function drawPreview(skill: SkillData.SkillDef, point: Vector3?)
 	elseif skill.type == "circleSelf" then
 		disc(feet, def.radius or 8)
 		previewPoint = nil
+	elseif skill.type == "blink" then
+		-- owner 2026-11-10: a held Blink shows the jump; the server always jumps the full length that way
+		local landing = feet + dir * (def.length or 15)
+		bar(feet, landing, 0.6)
+		disc(landing, 2)
+		previewPoint = landing + Vector3.new(0, 2.8, 0)
 	else
 		-- point skills: the circle at the aimed point, kept within range
 		local range = def.range or 30
@@ -384,30 +437,58 @@ local function quickCast(): boolean
 	return State.Get({ "account", "settings", "quickCast" }) == true
 end
 
+-- The skill key that is down (owner 2026-11-10): released before Config.Skills.holdToAim it is a tap (Cast aims it by
+-- itself), held longer it shows the preview at the cursor and the release casts there.
+local holding: { slot: number, skillId: string, since: number, token: number }? = nil
+local holdToken = 0
+
+local function onKeyUp(slot: number)
+	local h = holding
+	if not h or h.slot ~= slot then
+		return
+	end
+	holding = nil
+	local skill = SkillData.get(h.skillId)
+	if skill and SkillAim.held(os.clock() - h.since, Config.Skills.holdToAim) then
+		-- aimed by hand: where the preview stands (drawn once more, the timer may not have run yet)
+		drawPreview(skill, mouseGround())
+		local point = previewPoint
+		hidePreview()
+		SkillController.Cast(h.skillId, point)
+	else
+		hidePreview()
+		SkillController.Cast(h.skillId, nil)
+	end
+end
+
 local function onKeyDown(slot: number)
 	local skillId = SkillController.SkillInSlot(slot)
 	local skill = skillId and SkillData.get(skillId)
 	if not skill then
 		return
 	end
-	if aimable(skill) and not quickCast() and not Fusion.peek(Device.Touch) then
-		showPreview(skill)
+	-- a key still down is finished first, so a quick 1, 2 casts both
+	local earlier = holding
+	if earlier then
+		onKeyUp(earlier.slot)
+	end
+	local press = SkillAim.press(skill.type, skill.target, Fusion.peek(Device.Touch) == true, quickCast())
+	if press == "cast" then
+		SkillController.Cast(skill.id, nil)
+		return
+	elseif press == "cursor" then
+		SkillController.Cast(skill.id, mouseGround()) -- "Cast at cursor": the old way, on key press
 		return
 	end
-	-- Quick cast: cones and lines still turn towards the cursor.
-	local aim = if (skill.type == "cone" or skill.type == "line") and not Fusion.peek(Device.Touch)
-		then mouseGround()
-		else nil
-	SkillController.Cast(skill.id, aim)
-end
-
-local function onKeyUp(slot: number)
-	local skillId = SkillController.SkillInSlot(slot)
-	if skillId and skillId == previewSkill then
-		local point = previewPoint
-		hidePreview()
-		SkillController.Cast(skillId, point)
-	end
+	holdToken += 1
+	local token = holdToken
+	holding = { slot = slot, skillId = skill.id, since = os.clock(), token = token }
+	task.delay(Config.Skills.holdToAim, function()
+		local h = holding
+		if h and h.token == token then
+			showPreview(skill)
+		end
+	end)
 end
 
 -- Touch aiming (S28): the dragged skill button aims; `drag` is the finger offset from the button in pixels.
@@ -556,6 +637,13 @@ function SkillController.Start()
 		local slot = slotFor(input.KeyCode)
 		if slot then
 			onKeyUp(slot)
+		end
+	end)
+	-- A key let go while the window is not focused never reports it: the held skill is dropped, not cast.
+	UserInputService.WindowFocusReleased:Connect(function()
+		if holding then
+			holding = nil
+			hidePreview()
 		end
 	end)
 	-- Keep the PC preview under the cursor (touch previews follow the finger, AimMove).

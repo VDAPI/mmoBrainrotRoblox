@@ -5,19 +5,19 @@
 -- the `escort` objective and fires QuestEvents "escort" when both arrive. At most one per player (the story first).
 -- The figure is server-driven (Humanoid:MoveTo, PathfindingService on the legs of the route and towards the player,
 -- NavPath.simplify, Logic/Steer around obstacles), never an entity (no combat, no targeting, cannot die) and never
--- collides with players or monsters (collision group "Companions" against "Bodies"). State only in the runtime branch
+-- collides with players or monsters (collision group "Companions", Data/BodyGroups). State only in the runtime branch
 -- { "companion" } = { npc, quest, mode, phase } (never saved). QuestService and SideQuestService call Refresh after
 -- every change of the active quests; the loop also reconciles once a second. Without a figure (Roblox could not build
 -- one) the quest goes on: the escort counts when the player reaches the goal alone.
 
 local PathfindingService = game:GetService("PathfindingService")
-local PhysicsService = game:GetService("PhysicsService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local Shared = ReplicatedStorage.Shared
 
+local BodyGroups = require(Shared.Data.BodyGroups)
 local Combat = require(Shared.Data.Combat)
 local Companion = require(Shared.Logic.Companion)
 local Config = require(Shared.Config)
@@ -35,7 +35,15 @@ local log = Log.new("CompanionService")
 
 local CompanionService = {
 	Name = "CompanionService",
-	Deps = { "PlayerStateService", "CharacterService", "NpcService", "ResourceService", "ZoneService", "WorldService" },
+	Deps = {
+		"PlayerStateService",
+		"CharacterService",
+		"NpcService",
+		"ResourceService",
+		"ZoneService",
+		"WorldService",
+		"BodyGroupService",
+	},
 }
 
 local PlayerStateService: any
@@ -46,8 +54,7 @@ local ZoneService: any
 local WorldService: any
 
 local C = Config.Companion
-local GROUP = "Companions"
-local BODIES = "Bodies" -- player characters and monsters: they never touch a companion
+local GROUP = BodyGroups.COMPANIONS -- never touches a player or a monster (Services/BodyGroupService)
 local RECONCILE = 1 -- seconds between the loop's checks of Companion.want
 local WAYPOINT_REACH = 3.5
 local FALL_DEPTH = 60 -- studs under the player at which a fallen figure is put back
@@ -147,19 +154,6 @@ local function publish(player: Player, entry: Entry?)
 end
 
 -- Figure ----------------------------------------------------------------------------------------------------------------
-
-local function setBodies(model: Instance)
-	for _, part in model:GetDescendants() do
-		if part:IsA("BasePart") then
-			part.CollisionGroup = BODIES
-		end
-	end
-	model.DescendantAdded:Connect(function(part)
-		if part:IsA("BasePart") then
-			part.CollisionGroup = BODIES
-		end
-	end)
-end
 
 local function removeFigure(entry: Entry)
 	entry.token += 1
@@ -622,45 +616,13 @@ function CompanionService.Init(registry)
 	WorldService = registry.Get("WorldService")
 end
 
-local function registerGroups()
-	for _, name in { GROUP, BODIES } do
-		if not PhysicsService:IsCollisionGroupRegistered(name) then
-			PhysicsService:RegisterCollisionGroup(name)
-		end
-	end
-	PhysicsService:CollisionGroupSetCollidable(GROUP, BODIES, false)
-	PhysicsService:CollisionGroupSetCollidable(GROUP, GROUP, false)
-end
-
 function CompanionService.Start()
-	local ok, err = pcall(registerGroups :: any)
-	if not ok then
-		log:warn("collision groups: %s", tostring(err))
-	end
 	local world = Workspace:WaitForChild("World")
 	local created = Instance.new("Folder")
 	created.Name = "Companions"
 	created.Parent = world
 	folder = created
 	started = true
-
-	-- players and monsters never collide with a companion
-	local function watchPlayer(player: Player)
-		if player.Character then
-			setBodies(player.Character)
-		end
-		player.CharacterAdded:Connect(setBodies)
-	end
-	for _, player in Players:GetPlayers() do
-		watchPlayer(player)
-	end
-	Players.PlayerAdded:Connect(watchPlayer)
-	task.spawn(function()
-		local monsters = Workspace:WaitForChild("Monsters", 600)
-		if monsters then
-			setBodies(monsters)
-		end
-	end)
 
 	CharacterService.CharacterEntered:Connect(function(player: Player)
 		CompanionService.Refresh(player)

@@ -632,6 +632,9 @@ local Config = {
 		breakpoints = true,
 		-- Seconds a skill pressed during the global cooldown / the cast waits to fire (client queue).
 		queueWindow = 0.4,
+		-- Owner 2026-11-10 (Logic/SkillAim): seconds a skill key stays down before it aims by hand (the preview at the
+		-- cursor); a shorter tap aims at the enemy we fight by itself.
+		holdToAim = 0.2,
 		-- studs a channel / beam / aim may drift from where it started (SkillService, Logic/Channel)
 		channelMoveLimit = 2.5,
 	},
@@ -850,7 +853,8 @@ local Config = {
 		-- camera within which TownFxController animates flags, flickering lights and water shimmer; `npcRadius` = studs
 		-- from the camera within which the owner's NPC models breathe and gesture (NpcAnimController; farther ones keep
 		-- their relaxed stance), `npcRate` = their pose updates per second; W31: every NPC figure moves (the R15 ones in
-		-- their outfits too), `npcMax` = at most this many of the nearest at once.
+		-- their outfits too), `npcMax` = at most this many of the nearest at once; owner 2026-11-10 ("the NPCs we walk
+		-- up to look laggy"): the `npcSmooth` nearest within `npcSmoothRadius` studs move every frame.
 		levels = {
 			low = {
 				bloom = 0,
@@ -871,6 +875,8 @@ local Config = {
 				npcRadius = 60,
 				npcRate = 15,
 				npcMax = 6,
+				npcSmooth = 2,
+				npcSmoothRadius = 30,
 			},
 			medium = {
 				bloom = 0.6,
@@ -891,6 +897,8 @@ local Config = {
 				npcRadius = 100,
 				npcRate = 30,
 				npcMax = 12,
+				npcSmooth = 4,
+				npcSmoothRadius = 45,
 			},
 			high = {
 				bloom = 1,
@@ -911,6 +919,8 @@ local Config = {
 				npcRadius = 140,
 				npcRate = 60,
 				npcMax = 20,
+				npcSmooth = 8,
+				npcSmoothRadius = 60,
 			},
 		},
 		-- Seconds the post effects tween when the map or the level changes.

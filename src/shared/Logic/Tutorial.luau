@@ -342,13 +342,6 @@ function Tutorial.veteran(slots: any): boolean
 	return false
 end
 
--- Whether the potion step is the current one: then an ordinary potion is drunk even at full (a new character stands in
--- the city at full HP; PotionService.AddFullDrink).
-function Tutorial.wantsPotion(state: State): boolean
-	local s = Tutorial.current(state)
-	return s ~= nil and s.id == "potion"
-end
-
 -- Studs walked after one more sample: `walked` plus the ground distance (dx, dz; y ignored) while the player steers
 -- (`steering`: Humanoid.MoveDirection non-zero); a jump longer than Data/Tutorial.MAX_STEP (a spawn pivot, a
 -- teleport) never counts.

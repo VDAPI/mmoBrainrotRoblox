@@ -14548,6 +14548,20 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `StonePicker`, `ItemTooltip`, `TooltipModel`, `PortalShopWindow`, `Localization/pl|en`, `tests/teleportstone.spec`,
   `tests/arenaqueue.spec`, `tests/shopshort.spec`, `docs/DESIGN.md` §13 i §13a.
 
+### Umiejętności same celują we wroga (2026-11-10)
+- Właściciel: umiejętność po użyciu ma sama trafiać we wroga, z którym walczymy; przytrzymanie pozwala wybrać kierunek.
+- Krótko wciśnięty klawisz (krócej niż `Config.Skills.holdToAim` = 0,2 s) albo dotknięty przycisk: okrąg w punkcie,
+  sidła na punkt, stożek i linia celują w cel, bez celu w najbliższego wroga w zasięgu umiejętności (zostaje celem), bez
+  wroga przed postać; Sanktuarium pod zaznaczonym sojusznikiem albo pod nami, sztandar na celu albo pod nami, Błysk tam,
+  dokąd idziemy, nigdy w potwora. Przytrzymany klawisz po 0,2 s pokazuje obszar pod kursorem (Błysk: linia skoku),
+  puszczenie rzuca tam; na telefonie przeciąganie bez zmian (teraz także Błysku). Postać obraca się w stronę stożka,
+  linii, okręgu i celu umiejętności na wroga (serwer liczy obszar z punktu, ale postaci nie obracał). „Szybkie rzucanie”
+  to „Rzucanie na kursor”: dawne zachowanie, od razu po wciśnięciu w stronę kursora.
+- Teksty: Błysk, Sanktuarium, opcja w menu, krok samouczka z umiejętnością (PC i telefon); wiki przeliczona.
+- **Pliki:** `Logic/SkillAim`, `SkillController`, `TargetController.IsEnemy`, `Config.Skills.holdToAim`, `Types`,
+  `Localization/pl|en`, `tests/skillaim.spec`, `docs/DESIGN.md` §14.1 i sterowanie, wiki (`skills.json`, `meta.json`,
+  `docs/PRZEDMIOTY.md`).
+
 ### Dynamika umiejętności (2026-11-10)
 
 - Prośba właściciela: umiejętności każdej klasy mają mieć „większą dynamikę: dźwięk, wybuch, partikle”.

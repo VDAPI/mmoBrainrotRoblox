@@ -228,6 +228,7 @@ return {
 		["Data/Binding"] = "reguły", -- owner 2026-10-31: which items bind and when (no numbers but a rarity threshold)
 		["Data/Cutscenes"] = "wygląd", -- S102: story cutscenes: camera shots and text keys
 		["Data/ArenaPit"] = "geometria", -- S127: the arena server map (sand, stands, start points)
+		["Data/BodyGroups"] = "reguły", -- owner 2026-11-10: which bodies collide (players, monsters, their blockers)
 		["Data/Portals"] = "świat",
 		["Data/Npcs"] = "świat",
 		["Data/Keybinds"] = "świat",

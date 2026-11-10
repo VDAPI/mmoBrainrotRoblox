@@ -792,8 +792,17 @@ nim `docs/DECYZJE.md`. Liczby stroją sesje balansu (S146, S147).
   przełomy i węzły składa `Logic/Skills.effective`, więc serwer, opis i wiki pokazują to samo.
 - **Animacje i efekty (S28) zostają.** Każda aktywna umiejętność ma własną animację całego ciała i własny efekt.
   Obrażenia lądują w chwili trafienia w animacji (najwyżej 0,6 s po rzuceniu); hitstop, odrzut przy części umiejętności,
-  wstrząs kamery przy dużych (opcja „Wstrząsy kamery”), złoty błysk krytyka. Przytrzymanie klawisza pokazuje obszar,
-  na telefonie przeciągnięcie przycisku; jedna umiejętność może czekać w kolejce 0,4 s przed końcem odnowienia.
+  wstrząs kamery przy dużych (opcja „Wstrząsy kamery”), złoty błysk krytyka.
+- **Rzucanie i celowanie (właściciel 2026-11-10, `Logic/SkillAim`).** Umiejętność na wroga leci w cel, a bez celu w
+  najbliższego wroga w zasięgu (zostaje celem). Tak samo celuje sama krótko wciśnięta (krócej niż 0,2 s,
+  `Config.Skills.holdToAim`) albo dotknięta umiejętność obszarowa: okrąg w punkcie i pułapka na punkt lądują na celu (w
+  zasięgu), stożek i linia obracają się w jego stronę; bez wroga w zasięgu lecą przed postać. Okrąg wokół siebie,
+  pułapka pod nogami i wzmocnienia bez zmian. Sanktuarium staje pod zaznaczonym sojusznikiem albo pod nami, sztandar na
+  celu albo pod nami, Błysk (ucieczka) tam, dokąd idziemy (stojąc: przed siebie), nigdy w potwora. Przytrzymanie
+  klawisza dłużej pokazuje obszar (Błysk: skok) pod kursorem, a puszczenie rzuca tam; na telefonie to samo daje
+  przeciągnięcie przycisku. Postać obraca się w stronę, w którą leci umiejętność. Opcja „Rzucanie na kursor” (PC) rzuca
+  od razu po wciśnięciu w stronę kursora, jak dawniej. Jedna umiejętność może czekać w kolejce 0,4 s przed końcem
+  odnowienia.
 - **Drużyna i szczęście.** Wzmocnienia i osłabienia mają kategorie: w kategorii liczy się najsilniejsze, kategorie się
   sumują, redukcja obrażeń łączy się mnożnikowo z limitem 75% (ROZWOJ §7). Szczęście drużyny daje Kapłan Fortuny
   (ROZWOJ §6). Premia za różne klasy w drużynie: +5% doświadczenia za każdą inną klasę, najwyżej +15%.
@@ -1785,7 +1794,7 @@ Napisy złożone (nazwa obszaru z profilem, linia profilu gracza, czat) zostają
   (zbroja, kamień, drewno, kość, ciało, śluz), trafiona postać odchyla się od strony ciosu, a potwór z generatora
   odwraca tułów. Właściciel może podmienić ruch prawdziwym klipem animacji ze znacznikiem `Hit` (`docs/ANIMACJE.md`);
   gdy klip się nie wczyta, gra wraca do ruchu z kodu.
-- Skille: na cel, a umiejętności obszarowe bez celu w kierunku patrzenia/kursora.
+- Skille: na cel; obszarowe krótkim wciśnięciem we wroga, z którym walczymy, przytrzymane pod kursor (§14.1).
 - E = interakcja (NPC, łup, węzły), F = podnieś łup.
 - **H = wierzchowiec** (dosiądź / zsiądź, zmienialne; S96): na PC slot za miksturami, na telefonie przycisk na prawo od
   sprintu, oba dopiero gdy postać ma wierzchowca. W siodle sprint nie działa (przycisk sprintu na telefonie znika).

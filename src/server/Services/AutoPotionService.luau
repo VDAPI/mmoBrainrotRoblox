@@ -2,8 +2,8 @@
 -- Auto Potions (S134d, comfort for Dragon Shards): while the account owns the service (forever or with time,
 -- Logic/AutoPotion) and it is switched on, every Config.AutoPotion.tick s the character drinks the potion of its bar
 -- slot when HP or the class resource (mana / energy) is at or under the player's threshold. The drinking is
--- PotionService.DrinkKind: the same bar, level, arena guards (S126), cooldown and "not needed" as the key; never the
--- Elixir of Wholeness. Where it does not work is the one list Logic/UseBlocks.LISTS.autoPotion asked through
+-- PotionService.DrinkKind: the same bar, level, arena guards (S126) and cooldown as the key (the thresholds stay
+-- under Config.AutoPotion.maxPct, so it never drinks at full); never the Elixir of Wholeness. Where it does not work is the one list Logic/UseBlocks.LISTS.autoPotion asked through
 -- src/server/UseGuards (everywhere players fight players); the state branch `autoPotion` = { blocked = Locale key? }
 -- tells the HUD. Without the potion in the backpack: one toast per kind every Config.AutoPotion.noneEvery s.
 
