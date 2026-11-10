@@ -211,6 +211,7 @@ return {
 		["Data/UiArtSheets"] = "generowane", -- S119: asset ids of the interface pictures
 		["Data/UiPalette"] = "wygląd", -- S135: interface colours (parchment and iron) and their contrast pairs
 		["Data/UiWindows"] = "wygląd", -- S135: which windows already use the parchment look
+		["Data/Folds/*"] = "wygląd", -- UI plan 2026-11-10: which interface sections stand open by default (per device)
 		["Data/DamageNumbers"] = "wygląd",
 		["Data/Elements"] = "wygląd",
 		["Data/Cosmetics"] = "wygląd",
