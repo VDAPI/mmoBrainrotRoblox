@@ -4,10 +4,13 @@
 --   ally skills target the selected ally or yourself,
 --   skills that aim (circles on a point, snares, cones, lines, Blink; Logic/SkillAim, owner 2026-11-10): a tap aims by
 --   itself at the enemy we fight (the target, else the nearest enemy within reach, which becomes the target, else in
---   front); a healing field goes under the selected ally or our feet; Blink (an escape, owner 2026-10-31) the way we
---   walk, never into the monster. Holding the key past Config.Skills.holdToAim shows the preview at the cursor and
---   the release casts there; the "Cast at cursor" setting (quickCast) casts at the cursor on key press, the old way.
---   The character turns to where a directional skill flies.
+--   front); a healing field goes under the selected ally or our feet; Blink (an escape, owner 2026-10-31) the way the
+--   player steers, else straight away from the enemy, never into the monster. Holding the key past
+--   Config.Skills.holdToAim shows the preview at the cursor and the release casts there; the "Cast at cursor" setting
+--   (quickCast) casts at the cursor on key press, the old way. The character turns to where a directional skill flies.
+--   Review 2026-11-10: a selected ally (a living player who is not an enemy) stays selected: a tapped damage skill or a
+--   skill on an enemy goes to the nearest enemy in reach without taking its place, so nothing engages and the next
+--   heal still finds the ally.
 -- S28: the held-key preview shows the real shape (circle at the cursor, circle around you, cone, line) and cones /
 --   lines turn towards the cursor; on touch a tap aims like a tapped key and dragging a skill button aims like a MOBA
 --   (release casts, back on the button cancels); a skill pressed during the global cooldown or the end of a cooldown
@@ -132,22 +135,47 @@ local function effective(skill: SkillData.SkillDef, rank: number?): SkillData.Sk
 	return (Paths.effectiveFor(c, skill.id, Paths.weaponTypesOf(c.equipment), rank))
 end
 
+-- What is selected, for a tap (review 2026-11-10): a living enemy (TargetController.IsEnemy, as the server's PvP rules
+-- decide: never a party or guild member), or a living ally (any other living model: an allied player), or nothing.
+local function selection(): (Model?, boolean, boolean)
+	local model = targetModel()
+	local living = model ~= nil and model:GetAttribute("Dead") ~= true
+	local enemy = living and TargetController.IsEnemy(model) == true
+	return model, enemy, living and not enemy
+end
+
+-- An offset on the ground from our root to `model`.
+local function offsetTo(root: BasePart, model: Model): SkillAim.Flat
+	local at = model:GetPivot().Position
+	return { x = at.X - root.Position.X, z = at.Z - root.Position.Z }
+end
+
+-- The player's own steering in the world (Logic/SkillAim.steering): the raw move input (keys, stick, touch joystick)
+-- turned by the camera. Not Humanoid.MoveDirection: it also follows the walk to the target and Auto Hunt (MoveTo).
+local function steering(): SkillAim.Flat?
+	local camera = Workspace.CurrentCamera
+	if not camera then
+		return nil
+	end
+	local input = TargetController.MoveInput()
+	local look = camera.CFrame.LookVector
+	-- a camera looking straight down: the top of the screen is forward
+	local forward = if Vector3.new(look.X, 0, look.Z).Magnitude < 0.01 then camera.CFrame.UpVector else look
+	return SkillAim.steering({ x = input.X, z = input.Z }, { x = forward.X, z = forward.Z })
+end
+
 -- Where a skill cast without a hand-picked point aims (Logic/SkillAim, owner 2026-11-10): the enemy we fight, else the
--- nearest one within reach (it becomes the target, as for enemy skills), Blink the way we walk (or face), a healing
--- field under the selected ally or at our feet, else in front. nil: the skill aims nowhere, or a cone / line has
--- nobody to aim at (the server turns it where we face).
+-- nearest one within reach (it becomes the target when nothing living is selected; a selected ally stays selected),
+-- Blink the way the player steers, else away from the enemy, else ahead, a healing field under the selected ally or at
+-- our feet, else in front. nil: the skill aims nowhere, or a cone / line has nobody to aim at (the server turns it
+-- where we face).
 local function autoAim(skill: SkillData.SkillDef): Vector3?
 	local root = myRoot()
 	if not root then
 		return nil
 	end
 	local def = effective(skill)
-	local model = targetModel()
-	local enemy = model ~= nil and TargetController.IsEnemy(model)
-	local ally = model ~= nil
-		and not enemy
-		and model:GetAttribute("CharName") ~= nil
-		and model:GetAttribute("Dead") ~= true
+	local model, enemy, ally = selection()
 	local nearest: Model? = nil
 	if not enemy and SkillAim.seeks(skill.type, skill.target) then
 		nearest =
@@ -163,14 +191,23 @@ local function autoAim(skill: SkillData.SkillDef): Vector3?
 	})
 	if (source == "target" or source == "ally") and model then
 		return model:GetPivot().Position
-	elseif source == "nearest" and nearest then
-		TargetController.SetTarget(nearest)
+	elseif (source == "nearest" or source == "nearby") and nearest then
+		if source == "nearest" then
+			TargetController.SetTarget(nearest) -- nothing living was selected: it becomes the target
+		end
 		return nearest:GetPivot().Position
-	elseif source == "move" then
-		local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
-		local move = if humanoid then humanoid.MoveDirection else Vector3.zero
-		local direction = if move.Magnitude > 0.1 then move.Unit else root.CFrame.LookVector
-		return root.Position + direction * (def.length or 15)
+	elseif source == "escape" then
+		-- owner 2026-10-31: an escape, never into the monster (standing in a fight we face it: faceStep, turnTo)
+		local near = Config.Skills.escapeNear
+		local close = if enemy then nil else TargetController.NearestEnemy(near)
+		local direction = SkillAim.escape({
+			steer = steering(),
+			facing = { x = root.CFrame.LookVector.X, z = root.CFrame.LookVector.Z },
+			enemy = if enemy and model then offsetTo(root, model) else nil,
+			nearest = if close then offsetTo(root, close) else nil,
+			near = near,
+		})
+		return root.Position + Vector3.new(direction.x, 0, direction.z) * (def.length or 15)
 	elseif source == "feet" then
 		return root.Position -- S74 (ROZWOJ 10.5): a banner without a target, a healing field without an ally
 	elseif source == "front" and skill.target == "point" then
@@ -241,17 +278,26 @@ function SkillController.Cast(skillId: string, aimOverride: Vector3?)
 	local aim: Vector3? = aimOverride
 	local facing: Vector3? = nil
 	if skill.target == "enemy" then
-		local model = targetModel()
-		local isEnemy = model ~= nil and model:GetAttribute("Dead") ~= true
-		if not isEnemy then
-			local found = TargetController.FindNearest((skill.range or 10) + 4, false, false)
-			if found then
-				TargetController.SetTarget(found)
-				model = found
-			else
-				report("cast.error.noTarget")
-				return
-			end
+		local model, enemy, ally = selection()
+		local nearest = if enemy then nil else TargetController.FindNearest((skill.range or 10) + 4, false, false)
+		local pick = SkillAim.onEnemy({
+			kind = skill.type,
+			mode = skill.target,
+			manual = false,
+			target = enemy,
+			nearest = nearest ~= nil,
+			ally = ally,
+		})
+		if pick == "nearest" then
+			TargetController.SetTarget(nearest)
+			model = nearest
+		elseif pick == "nearby" then
+			-- review 2026-11-10: this cast only (SkillService.resolveTarget takes any entity id and checks it is an
+			-- enemy); the selected ally stays selected and nothing engages
+			model = nearest
+		elseif pick == "none" then
+			report("cast.error.noTarget")
+			return
 		end
 		targetId = if model then model:GetAttribute("EntityId") :: string? else nil
 		facing = if model then model:GetPivot().Position else nil

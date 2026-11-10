@@ -794,11 +794,14 @@ nim `docs/DECYZJE.md`. Liczby stroją sesje balansu (S146, S147).
   Obrażenia lądują w chwili trafienia w animacji (najwyżej 0,6 s po rzuceniu); hitstop, odrzut przy części umiejętności,
   wstrząs kamery przy dużych (opcja „Wstrząsy kamery”), złoty błysk krytyka.
 - **Rzucanie i celowanie (właściciel 2026-11-10, `Logic/SkillAim`).** Umiejętność na wroga leci w cel, a bez celu w
-  najbliższego wroga w zasięgu (zostaje celem). Tak samo celuje sama krótko wciśnięta (krócej niż 0,2 s,
+  najbliższego wroga w zasięgu (zostaje celem; gdy zaznaczony jest sojusznik, umiejętność leci w najbliższego wroga, a
+  sojusznik zostaje zaznaczony). Członek drużyny ani gildii (z włączoną ochroną) nie jest wrogiem (§3.3; na arenie
+  decyduje pojedynek albo mecz). Tak samo celuje sama krótko wciśnięta (krócej niż 0,2 s,
   `Config.Skills.holdToAim`) albo dotknięta umiejętność obszarowa: okrąg w punkcie i pułapka na punkt lądują na celu (w
   zasięgu), stożek i linia obracają się w jego stronę; bez wroga w zasięgu lecą przed postać. Okrąg wokół siebie,
   pułapka pod nogami i wzmocnienia bez zmian. Sanktuarium staje pod zaznaczonym sojusznikiem albo pod nami, sztandar na
-  celu albo pod nami, Błysk (ucieczka) tam, dokąd idziemy (stojąc: przed siebie), nigdy w potwora. Przytrzymanie
+  celu albo pod nami, Błysk (ucieczka) tam, dokąd prowadzimy postać klawiszami albo joystickiem, a bez tego prosto od
+  zaznaczonego wroga albo najbliższego w 15 st. (bez wroga przed siebie), nigdy w potwora. Przytrzymanie
   klawisza dłużej pokazuje obszar (Błysk: skok) pod kursorem, a puszczenie rzuca tam; na telefonie to samo daje
   przeciągnięcie przycisku. Postać obraca się w stronę, w którą leci umiejętność. Opcja „Rzucanie na kursor” (PC) rzuca
   od razu po wciśnięciu w stronę kursora, jak dawniej. Jedna umiejętność może czekać w kolejce 0,4 s przed końcem

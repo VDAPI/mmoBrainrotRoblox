@@ -21,6 +21,9 @@
 -- S134d Auto Hunt: while the server picks the targets (SetServerDriven) the client shows its target
 -- (ShowServerTarget) and sends nothing by itself (no retarget, no fight back, no clear on death); a click, Tab, a skill
 -- or the mobile attack button is the player taking over (the `manual` callback stops the hunt first).
+-- Review 2026-11-10: another player is an enemy (hover, engage on click, IsEnemy for tapped skills) only when
+-- PvpService.CanAttack would let us hit them (Logic/PvpRules.hostile): party members and guild members under the
+-- guild's protection never are, whatever PvP flag or zone they show.
 
 local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
@@ -36,6 +39,7 @@ local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local Keybinds = require(script.Parent.Parent.UI.Keybinds)
 local LevelLock = require(ReplicatedStorage.Shared.Logic.LevelLock)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PvpRules = require(ReplicatedStorage.Shared.Logic.PvpRules)
 local State = require(script.Parent.Parent.UI.State)
 local Text = require(script.Parent.Parent.UI.Text)
 local Theme = require(script.Parent.Parent.UI.Theme)
@@ -60,6 +64,7 @@ local HOLD_PICK_RANGE = 30 -- studs from the character for "hold LMB" picks
 local APPROACH_INTERVAL = 0.1
 local FACE_SPEED = 14 -- turn rate toward the target while standing (higher = snappier)
 local MANUAL_GRACE = 1.5 -- seconds after manual movement without auto retarget / facing
+local ARENA_ZONE = "zone.arena" -- the sand of an arena (PvpService.InArena): duels and matches
 
 local player = Players.LocalPlayer
 local highlight: Highlight
@@ -103,13 +108,68 @@ local function overCap(model: Model): number?
 	return if LevelLock.over(level, cap) then cap else nil
 end
 
--- Monsters always (S22: also those going home, they can be hit and turn back); other players only while they
--- are open to attacks (PvP on or a red zone).
+-- Whether `userId` is in our party (state branch `party`, PartyService).
+local function inParty(userId: number): boolean
+	local party = State.Get({ "party" })
+	if type(party) ~= "table" or type(party.members) ~= "table" then
+		return false
+	end
+	for _, member in party.members do
+		if type(member) == "table" and member.id == userId then
+			return true
+		end
+	end
+	return false
+end
+
+-- Our side in an arena match we fight in and the side of the fighter named `name` (state arenaLive.match: the names
+-- of each side; character names are unique). nil: we fight in no match; 0: `name` is not a fighter of it.
+local function matchSides(name: any): (number?, number)
+	local live = State.Get({ "arenaLive" })
+	local match = if type(live) == "table" then live.match else nil
+	if type(match) ~= "table" or type(match.side) ~= "number" or match.side <= 0 or type(match.names) ~= "table" then
+		return nil, 0
+	end
+	for side, names in match.names do
+		if type(side) == "number" and type(names) == "table" and table.find(names, name) ~= nil then
+			return match.side, side
+		end
+	end
+	return match.side, 0
+end
+
+-- Review 2026-11-10: another player as PvpRules.hostile reads them, from the same facts PvpService.CanAttack uses on
+-- the server: the attributes it puts on every character (PvpZone, PvpEnabled, GuildTag: guild tags are unique) and our
+-- own state (party roster, guild tag and its protection setting, zone, arena match).
+local function seen(model: Model): PvpRules.Seen
+	local other = Players:GetPlayerFromCharacter(model)
+	local mine = player.Character
+	local guild = State.Get({ "guild" })
+	local myTag = if type(guild) == "table" then guild.tag else nil
+	local settings = if type(guild) == "table" then guild.settings else nil
+	local zone = State.Get({ "zone" })
+	local theirZone = model:GetAttribute("PvpZone")
+	local mySide, side = matchSides(model:GetAttribute("CharName"))
+	return {
+		zone = if type(theirZone) == "string" then theirZone else nil,
+		pvpEnabled = model:GetAttribute("PvpEnabled") == true,
+		myPvp = mine ~= nil and mine:GetAttribute("PvpEnabled") == true,
+		sameParty = other ~= nil and inParty(other.UserId),
+		sameGuild = type(myTag) == "string" and model:GetAttribute("GuildTag") == myTag,
+		guildProtection = not (type(settings) == "table" and settings.guildPvpProtection == false),
+		inArena = type(zone) == "table" and zone.nameKey == ARENA_ZONE,
+		mySide = mySide,
+		side = side,
+	}
+end
+
+-- Monsters always (S22: also those going home, they can be hit and turn back); other players only when the server
+-- would let us hit them (review 2026-11-10: never a party member or a protected guild member).
 local function isHostile(model: Model): boolean
 	if isMonster(model) then
 		return true
 	end
-	return model:GetAttribute("PvpEnabled") == true or model:GetAttribute("PvpZone") == "red"
+	return PvpRules.hostile(seen(model))
 end
 
 -- Owner 2026-11-10: a living model we may fight (SkillController aims a tapped skill at it).
@@ -323,6 +383,27 @@ function TargetController.FindNearest(range: number, includePlayers: boolean, in
 						bestScore = score
 					end
 				end
+			end
+		end
+	end
+	return best
+end
+
+-- Review 2026-11-10: the nearest living enemy within `range` studs on the ground, a monster or a player we may attack,
+-- by distance alone (a tapped Blink jumps away from it; a monster over the level cap still hits us).
+function TargetController.NearestEnemy(range: number): Model?
+	local root = myRoot()
+	if not root then
+		return nil
+	end
+	local best: Model? = nil
+	local bestDistance = range
+	for _, model in candidates(true) do
+		if isAlive(model) and isHostile(model) then
+			local distance = flatOffset(root.Position, model:GetPivot().Position).Magnitude
+			if distance <= bestDistance then
+				best = model
+				bestDistance = distance
 			end
 		end
 	end

@@ -1,19 +1,23 @@
 --!strict
 -- What a skill cast from the bar aims at (S28; owner 2026-10-31: Blink is an escape and never lands in the monster;
 -- owner 2026-11-10: a tapped skill aims at the enemy we fight by itself, holding the key picks a direction by hand).
+-- Review 2026-11-10: a tapped Blink jumps the way the player steers by hand, else straight away from the enemy, never
+-- toward it; a selected ally stays selected (a tapped damage skill goes to the nearest enemy without taking its place).
 -- Pure: client/Controllers/SkillController measures the inputs and turns the answer into a point.
 
 local SkillAim = {}
 
 -- "manual"   where the player aimed by hand: the preview of a held key or a dragged button, quick cast's cursor
 -- "target"   the enemy we fight (the selected one)
--- "nearest"  no enemy selected: the nearest one within SkillAim.reach, which becomes the target
--- "ally"     the selected ally (a healing field goes under them)
--- "move"     the way the character walks, or faces when standing (Blink)
+-- "nearest"  nothing living selected: the nearest enemy within SkillAim.reach, which becomes the target
+-- "nearby"   a living ally selected: the nearest enemy within reach for this cast only (the ally stays selected)
+-- "ally"     the selected ally (a healing field goes under them; a skill on an enemy with nobody else in reach, which
+--            the server refuses, as before)
+-- "escape"   Blink: the way SkillAim.escape picks (own steering, else away from the enemy, else ahead)
 -- "feet"     at the caster's feet (a banner without a target, a healing field without an ally)
 -- "front"    in front of the character (nobody to aim at)
--- "none"     the skill aims nowhere (a buff, a circle around you, a trap at your feet, a skill on an enemy)
-export type Source = "manual" | "target" | "nearest" | "ally" | "move" | "feet" | "front" | "none"
+-- "none"     the skill aims nowhere (a buff, a circle around you, a trap at your feet); a skill on an enemy: nobody
+export type Source = "manual" | "target" | "nearest" | "nearby" | "ally" | "escape" | "feet" | "front" | "none"
 
 -- What a key press does at once on PC: "cast" now, "cursor" now at the cursor, "wait" for the release (a tap aims
 -- by itself, a hold past Config.Skills.holdToAim shows the preview at the cursor and casts there).
@@ -25,11 +29,33 @@ export type Input = {
 	manual: boolean, -- aimed by hand (a held key, a dragged button, quick cast)
 	target: boolean, -- a living enemy is selected
 	nearest: boolean, -- no enemy selected, but one stands within SkillAim.reach
-	ally: boolean?, -- a living allied player is selected
+	ally: boolean?, -- a living model that is not an enemy is selected (an allied player)
+}
+
+-- A direction or an offset on the ground (studs).
+export type Flat = { x: number, z: number }
+
+-- What a tapped Blink knows (offsets from the caster, on the ground).
+export type Escape = {
+	steer: Flat?, -- the player's own steering in the world (SkillAim.steering); nil: none
+	facing: Flat, -- where the character faces
+	enemy: Flat?, -- the selected living enemy
+	nearest: Flat?, -- the nearest living enemy (counts within `near`)
+	near: number, -- how close an enemy that is not selected sends us away (Config.Skills.escapeNear)
 }
 
 -- The slack the server allows around an area (Skills/Context: enemiesInCircle / Cone / Line).
 local SLACK = 1.5
+-- Move input below this is a stick at rest (TargetController uses the same for "the player moves").
+local STEER_MIN = 0.1
+
+local function unit(v: Flat): Flat?
+	local length = math.sqrt(v.x * v.x + v.z * v.z)
+	if length < 1e-3 then
+		return nil
+	end
+	return { x = v.x / length, z = v.z / length }
+end
 
 -- Skills that aim at a point or in a direction: everything cast on a point (circles, snares, a healing field, a
 -- banner, Blink) and cones and lines. Disengage is a blink without a point: it always jumps back.
@@ -72,7 +98,8 @@ function SkillAim.held(seconds: number, threshold: number): boolean
 	return seconds >= threshold
 end
 
--- What a cast aims at: a hand-picked point first, then the rules of the tap.
+-- What a cast aims at: a hand-picked point first, then the rules of the tap. The nearest enemy becomes the target only
+-- when nothing living is selected: a selected ally stays selected and nothing engages ("nearby").
 function SkillAim.source(input: Input): Source
 	if input.manual then
 		return "manual"
@@ -82,7 +109,7 @@ function SkillAim.source(input: Input): Source
 		return "none"
 	end
 	if kind == "blink" then
-		return "move" -- an escape: never into the target
+		return "escape" -- never into the target
 	end
 	if kind == "healZone" then
 		return if input.ally then "ally" else "feet"
@@ -94,9 +121,54 @@ function SkillAim.source(input: Input): Source
 		return "feet" -- S74 (ROZWOJ 10.5)
 	end
 	if input.nearest then
-		return "nearest"
+		return if input.ally then "nearby" else "nearest"
 	end
 	return "front"
+end
+
+-- Who a skill on an enemy goes to (it casts at once, never aimed by hand): the selected living enemy; with nothing
+-- living selected the nearest enemy within its range, which becomes the target, or nobody (cast.error.noTarget); with a
+-- living ally selected the nearest enemy for this cast only, else the ally as before (the server refuses it).
+function SkillAim.onEnemy(input: Input): Source
+	if input.target then
+		return "target"
+	end
+	if input.nearest then
+		return if input.ally then "nearby" else "nearest"
+	end
+	return if input.ally then "ally" else "none"
+end
+
+-- The world direction of the player's own steering: TargetController.MoveInput (x right, z back, relative to the
+-- camera, as the default controls walk the character) turned by the camera's forward on the ground. nil while the
+-- player steers nowhere. Never Humanoid.MoveDirection: it follows a MoveTo walk too (the approach to the target,
+-- Auto Hunt), which is not the player's choice.
+function SkillAim.steering(input: Flat, forward: Flat): Flat?
+	local f = unit(forward)
+	if not f or math.sqrt(input.x * input.x + input.z * input.z) <= STEER_MIN then
+		return nil
+	end
+	-- the camera's right on the ground is (-f.z, f.x); input.z is negative forward
+	return unit({ x = -f.z * input.x - f.x * input.z, z = f.x * input.x - f.z * input.z })
+end
+
+-- The way a tapped Blink jumps (a unit direction): the way the player steers by hand (their choice); with no own
+-- steering straight away from the selected enemy, else from the nearest one within `near`; else straight ahead.
+-- Never toward an enemy by itself: standing in a fight the character faces its target (TargetController.faceStep).
+function SkillAim.escape(e: Escape): Flat
+	local steer = if e.steer then unit(e.steer) else nil
+	if steer then
+		return steer
+	end
+	local facing = unit(e.facing) or { x = 0, z = -1 }
+	local nearest = e.nearest
+	local from = e.enemy
+		or (if nearest and math.sqrt(nearest.x * nearest.x + nearest.z * nearest.z) <= e.near then nearest else nil)
+	if from then
+		-- an enemy standing in us has no "away": back, away from where we face
+		return unit({ x = -from.x, z = -from.z }) or { x = -facing.x, z = -facing.z }
+	end
+	return facing
 end
 
 -- How far a tap looks for the nearest enemy: the farthest an enemy may stand and still be hit (a circle at full range,
