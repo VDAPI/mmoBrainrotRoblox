@@ -7,6 +7,8 @@
 -- Windows layer, which reaches under it). On a phone it is 170 tall between the HUD's left and right columns, at the
 -- top of the free middle (nothing is targeted while fishing): the title, the bar, a two-line touch hint under it;
 -- "Anuluj" shows while waiting (a bite lasts seconds and ends by itself).
+-- Review 2026-11-10 (a notched phone: the panel covered the menu button and the PvP toggle): the layout takes the
+-- Windows layer's own size, the device's safe area, not the whole screen.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -145,11 +147,13 @@ local function FishingGame(scope: Scope, props: Props): Instance
 		return use(props.Phase) == "bite"
 	end)
 
-	-- owner 2026-11-10: the layer is the whole screen; Roblox's top bar (Scale.TopBar, screen px) is cut off its top
+	-- The Windows layer is the device's safe area (UIController: DeviceSafeInsets): the HUD's layer (Scale.HudSize, the
+	-- same safe area under Roblox's top bar) with the top bar (Scale.TopBar, screen px) over it. The whole screen is
+	-- wider on a notched phone, and the HUD's right column would move off the panel's edge.
 	local layout = scope:Computed(function(use): WorldLayout.Fishing
-		local size: Vector2 = use(Scale.VirtualSize)
+		local hud: Vector2 = use(Scale.HudSize)
 		local bar = use(Scale.TopBar) / use(Scale.Value)
-		return WorldLayout.fishing({ w = size.X, h = size.Y }, bar, use(PhoneLayout.Compact))
+		return WorldLayout.fishing({ w = hud.X, h = hud.Y + bar }, bar, use(PhoneLayout.Compact))
 	end)
 	-- the bar's top and height, and the glyph's top while waiting
 	local function barTop(use: Fusion.Use): number

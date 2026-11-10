@@ -153,6 +153,16 @@ local function constant(path: string, pattern: string): number
 	return assert(tonumber(found), `{path}: {pattern}`)
 end
 
+-- Review 2026-11-10 (a notched phone: the fishing panel covered the menu button): a screen in the Windows layer lays
+-- out in that layer's size, the safe area this spec's phones use (PhoneHud.area): the HUD's layer (Scale.HudSize) with
+-- Roblox's top bar over it, never the whole screen (Scale.VirtualSize, wider on a notched phone).
+local function readsWindowsLayer(path: string): boolean
+	local src = fs.readFile(path)
+	return string.find(src, "Scale.VirtualSize", 1, true) == nil
+		and string.find(src, "use(Scale.HudSize)", 1, true) ~= nil
+		and string.find(src, "use(Scale.TopBar)", 1, true) ~= nil
+end
+
 T.describe("WorldLayout (UI plan L10, package E)", function()
 	T.it("copies Components/Section's and Theme's numbers", function()
 		local S = WorldLayout.SECTION
@@ -388,6 +398,7 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 	end)
 
 	T.it("emote wheel: inside the screen under the top bar, no part over another", function()
+		T.expect(readsWindowsLayer("src/client/UI/Screens/EmoteWheel.luau")).toBe(true)
 		local problems: { string } = {}
 		for _, screen in screens() do
 			local layer = { w = screen.w, h = screen.h }
@@ -417,6 +428,7 @@ T.describe("WorldLayout (UI plan L10, package E)", function()
 	end)
 
 	T.it("fishing: the panel under the top bar, clear of a phone's HUD columns and bottom buttons", function()
+		T.expect(readsWindowsLayer("src/client/UI/Screens/FishingGame.luau")).toBe(true)
 		local problems: { string } = {}
 		for _, screen in screens() do
 			local layer = { w = screen.w, h = screen.h }

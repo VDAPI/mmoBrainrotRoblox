@@ -7,7 +7,8 @@
 -- Owner 2026-11-10 (UI plan E, Logic/WorldLayout.emoteWheel): the circle's size comes from the screen's height under
 -- Roblox's top bar (the wheel is in the Windows layer, which reaches under it): a short screen gets a smaller circle,
 -- no title and the arrows at its sides, so no button stands under the top bar or past the bottom edge; the circle is
--- wider than tall, so neighbouring buttons never overlap.
+-- wider than tall, so neighbouring buttons never overlap. Review 2026-11-10 (a notched phone: the top button stood
+-- under the top bar, the bottom one past the safe area): the circle takes the Windows layer's own size.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -40,11 +41,12 @@ local CENTER = WorldLayout.EMOTE.close
 local function EmoteWheel(scope: Scope, props: Props): Instance
 	local account = State.Value({ "account" })
 	local page = scope:Value(1)
-	-- owner 2026-11-10: the layer is the whole screen; Roblox's top bar (Scale.TopBar, screen px) is cut off its top
+	-- The Windows layer is the device's safe area (UIController: DeviceSafeInsets): the HUD's layer (Scale.HudSize, the
+	-- same safe area under Roblox's top bar) with the top bar (Scale.TopBar, screen px) over it, not the whole screen.
 	local wheel = scope:Computed(function(use): WorldLayout.EmoteWheel
-		local size: Vector2 = use(Scale.VirtualSize)
+		local hud: Vector2 = use(Scale.HudSize)
 		local bar = use(Scale.TopBar) / use(Scale.Value)
-		return WorldLayout.emoteWheel({ w = size.X, h = size.Y }, bar)
+		return WorldLayout.emoteWheel({ w = hud.X, h = hud.Y + bar }, bar)
 	end)
 	local owned = scope:Computed(function(use): { string }
 		return CosmeticRules.ownedEmotes(use(account))
