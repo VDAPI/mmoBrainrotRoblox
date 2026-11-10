@@ -63,6 +63,7 @@ local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local WindowFrame = require(ReplicatedStorage.Shared.Logic.WindowFrame)
 local WanderingMerchantData = require(ReplicatedStorage.Shared.Data.WanderingMerchant)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local TitleData = require(ReplicatedStorage.Shared.Data.Titles)
@@ -98,11 +99,13 @@ local OUTFIT_TILE = 44
 local TOP_UP_WIDTH = 100
 local MOUNT_ORBIT = 15 -- S97: the camera further out for a mount
 local CHARACTER_ORBIT = 11
--- S123: the kind tabs under the group tabs (a scrolling strip is ButtonHeightSmall + 6 high), then the balance
-local KIND_TABS_Y = 50
-local BALANCE_Y = 100
--- S132: the class filter of the outfit list (under the balance) and the pseudo-id of the class's default outfit
-local FILTER_HEIGHT = 50
+-- S123: the kind tabs under the group tabs, then the balance; both are Components/Tabs' scrolling strip (adoption
+-- stage 2026-11-10: WindowFrame.tabStrip(true), 44-px tabs over the bar's room, 50 high as these offsets were)
+local KIND_TABS_Y = WindowFrame.tabStrip(true).height
+local BALANCE_Y = 2 * WindowFrame.tabStrip(true).height
+-- S132: the class filter of the outfit list (under the balance) and the pseudo-id of the class's default outfit;
+-- adoption stage 2026-11-10: the filter is Components/Tabs' own scrolling strip (44-px tabs over the bar) and 6 px
+local FILTER_HEIGHT = WindowFrame.tabStrip(true).height + 6
 local CLASS_DEFAULT = "$class"
 -- S154: the pseudo-group of the weapon looks tab (not a Data/Cosmetics group)
 local TRANSMOG = "transmog"
@@ -1288,7 +1291,6 @@ local function Wardrobe(scope: Scope, props: Props?): Fusion.Child
 						Selected = filter,
 						Tabs = filterTabs,
 						Scroll = true,
-						Size = UDim2.fromScale(1, 1),
 					}),
 				}),
 				scope:New("ScrollingFrame")({

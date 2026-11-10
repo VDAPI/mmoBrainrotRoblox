@@ -32,6 +32,7 @@ local State = require(script.Parent.Parent.State)
 local Tabs = require(script.Parent.Parent.Components.Tabs)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local WindowFrame = require(ReplicatedStorage.Shared.Logic.WindowFrame)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local UiArt = require(ReplicatedStorage.Shared.Logic.UiArt)
@@ -417,12 +418,11 @@ local function WanderingMerchantWindow(scope: Scope, props: Props): Fusion.Child
 			Tabs = tabList,
 			Selected = tab,
 			Position = UDim2.fromOffset(0, top),
-			Size = UDim2.new(1, 0, 0, Theme.Size.MinTouch),
-			Scroll = true,
+			Scroll = true, -- Components/Tabs' own height (adoption stage 2026-11-10: 44-px tabs over the bar's room)
 		}),
 		scope:New("ScrollingFrame")({
-			Position = UDim2.fromOffset(0, top + 6 + Theme.Size.MinTouch),
-			Size = UDim2.new(1, 0, 1, -(top + 6 + Theme.Size.MinTouch)),
+			Position = UDim2.fromOffset(0, top + 6 + WindowFrame.tabStrip(true).height),
+			Size = UDim2.new(1, 0, 1, -(top + 6 + WindowFrame.tabStrip(true).height)),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			ScrollBarThickness = 6,
