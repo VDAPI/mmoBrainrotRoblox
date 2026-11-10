@@ -10,8 +10,12 @@
 -- the sheet's measured size): the details from the top (the name is their first line), the breakpoint cards choose on
 -- their own (Breakpoints, 44-px buttons) and one bar at the bottom: back, the selection's buttons, Preview and, while
 -- ranks are reserved, "Cancel" / "Confirm (+N)" (the window's reservation bar steps aside while the sheet is open, see
--- Sheet.reserveHeight). The details keep at least 260 px on every phone (tests/gearlayout.spec). Each button takes the
--- bar's width in proportion to its text (Logic/TextCaps.width), so a long label does not squeeze a short one.
+-- Sheet.reserveHeight). Each button takes the bar's width in proportion to its text (Logic/TextCaps.width), so a long
+-- label does not squeeze a short one.
+-- Review 2026-11-10: under Roblox's 58-px top bar (68.5 virtual px, not 58) an 844x390 phone left the details 251.5
+-- px. The sheet now also covers the window's bottom padding down to GearLayout.SHEET_EDGE (sheetOverhang), so the
+-- details keep at least 260 px on every phone (tests/gearlayout.spec), and its size comes without the window's motion
+-- (UI/ViewSize).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -21,13 +25,14 @@ local Context = require(script.Parent.Context)
 local Details = require(script.Parent.Details)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
+local PhoneLayout = require(script.Parent.Parent.Parent.PhoneLayout)
 local Preview = require(script.Parent.Preview)
-local Scale = require(script.Parent.Parent.Parent.Scale)
 local Text = require(script.Parent.Parent.Parent.Text)
 local TextCaps = require(ReplicatedStorage.Shared.Logic.TextCaps)
 local Theme = require(script.Parent.Parent.Parent.Theme)
+local ViewSize = require(script.Parent.Parent.Parent.ViewSize)
 
-local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
+local Children, OnEvent = Fusion.Children, Fusion.OnEvent
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -58,14 +63,10 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 	local previewFrame, play = Preview.new(scope, ctx.props.Preview, skillId, nil, false)
 
 	-- the rects of the details and of the bar, from the sheet's own size (nil until it is measured)
-	local absolute = scope:Value(Vector2.zero)
+	local view = ViewSize.new(scope)
 	local rects = scope:Computed(function(use): GearLayout.SkillSheet?
-		local size: Vector2 = use(absolute)
-		local k: number = use(Scale.Value)
-		if size.Y <= 0 or k <= 0 then
-			return nil
-		end
-		return GearLayout.skillSheet({ w = size.X / k, h = size.Y / k })
+		local size = use(view.size)
+		return if size then GearLayout.skillSheet(size) else nil
 	end)
 	local bodySize = scope:Computed(function(use): UDim2
 		local r = use(rects)
@@ -156,18 +157,21 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 		return out
 	end)
 
-	return scope:New("TextButton")({
+	local sheet = scope:New("TextButton")({
 		Name = "Sheet",
+		-- the window's content and its bottom padding (GearLayout.sheetOverhang), less the reservation bar while it
+		-- shows (never while the sheet is open)
 		Size = scope:Computed(function(use): UDim2
-			return UDim2.new(1, 0, 1, -Sheet.reserveHeight(use, ctx))
+			local over = GearLayout.sheetOverhang(use(PhoneLayout.Compact) == true)
+			return UDim2.new(1, 0, 1, over - Sheet.reserveHeight(use, ctx))
 		end),
 		AutoButtonColor = false,
 		BackgroundColor3 = Theme.Paper.Surface,
 		Text = "",
 		ZIndex = 10,
 		Visible = ctx.sheet,
-		[Out("AbsoluteSize")] = absolute,
 		[Children] = {
+			view.ruler,
 			-- the details or the preview
 			scope:New("ScrollingFrame")({
 				Name = "Body",
@@ -221,6 +225,8 @@ function Sheet.new(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): In
 		},
 		[OnEvent("Activated")] = function() end,
 	})
+	view.watch(sheet)
+	return sheet
 end
 
 return Sheet

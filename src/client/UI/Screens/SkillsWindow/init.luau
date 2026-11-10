@@ -11,7 +11,8 @@
 -- it is open). A full bar opens the 2 x 4 slot picker. Data only from Logic/SkillPoints, Logic/SkillPools,
 -- Logic/Paths, Logic/PathView and UI/SkillInfo; the window computes nothing itself.
 -- Owner 2026-11-10 (UI plan L10): the details panel's parts (the preview, the lines, the reasons, the buttons) and the
--- phone sheet stand where Logic/GearLayout puts them, from their measured size, not the screen.
+-- phone sheet stand where Logic/GearLayout puts them, from their measured size (UI/ViewSize: without the window's
+-- opening motion), not the screen.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -27,23 +28,25 @@ local Header = require(script.Header)
 local PathTab = require(script.PathTab)
 local PoolTree = require(script.PoolTree)
 local Preview = require(script.Preview)
-local Scale = require(script.Parent.Parent.Scale)
 local Sheet = require(script.Sheet)
 local TabBar = require(script.TabBar)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
+local ViewSize = require(script.Parent.Parent.ViewSize)
 
-local Children, Out = Fusion.Children, Fusion.Out
+local Children = Fusion.Children
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = Context.Props
 
-local DETAILS_X = PathTab.LIST_WIDTH + 12
+-- the details panel right of the tree (PathTab.LIST_WIDTH), its padding and, until the panel is measured, its inner
+-- size at the registered 920 x 640 on PC (326 x 414): GearLayout's numbers, which tests/gearlayout.spec checks
+local DETAILS_X = GearLayout.SKILL.tree + GearLayout.SKILL.gutter
 local GAP = 6
--- the panel's inner size at the registered 920 x 640 on PC, until the panel is measured
-local PANEL_PC = { w = 326, h = 414 }
+local PANEL_PAD = GearLayout.SKILL.pad
+local PANEL_PC = GearLayout.skillPanelArea(GearLayout.area({ w = 1920, h = 1080 }, { w = 920, h = 640 }, false))
 
 local function list(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, touch: boolean): { any }
 	return {
@@ -110,12 +113,9 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 		return math.max(1, math.ceil(#use(specs) / 2))
 	end)
 	-- the parts' rects (GearLayout.skillPanel) inside the panel's padding, as measured
-	local absolute = scope:Value(Vector2.zero)
+	local view = ViewSize.new(scope)
 	local panel = scope:Computed(function(use): GearLayout.SkillPanel
-		local size: Vector2 = use(absolute)
-		local k: number = use(Scale.Value)
-		local area = if size.Y > 0 and k > 0 then { w = size.X / k, h = size.Y / k } else PANEL_PC
-		return GearLayout.skillPanel(area, use(rows), use(showPreview))
+		return GearLayout.skillPanel(use(view.size) or PANEL_PC, use(rows), use(showPreview))
 	end)
 	local function at(
 		pick: (GearLayout.SkillPanel) -> GearLayout.Rect?
@@ -171,6 +171,59 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 		end
 		return table.concat(parts, " · ")
 	end)
+	-- the panel's inside (the parts placed by GearLayout.skillPanel), measured without the window's motion
+	local inner = scope:New("Frame")({
+		Name = "Inner",
+		Size = UDim2.fromScale(1, 1),
+		BackgroundTransparency = 1,
+		[Children] = {
+			view.ruler,
+			scope:New("Frame")({
+				Name = "PreviewArea",
+				Position = previewAt,
+				Size = previewSize,
+				BackgroundTransparency = 1,
+				Visible = showPreview,
+				[Children] = previewFrame,
+			}),
+			scroller(scope, "Lines", linesAt :: any, linesSize, {
+				scope:New("UIListLayout")({
+					SortOrder = Enum.SortOrder.LayoutOrder,
+					Padding = UDim.new(0, GAP),
+				}),
+				scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
+				lines :: any,
+			}),
+			scope:New("TextLabel")({
+				Name = "Reason",
+				Position = reasonAt,
+				Size = reasonSize,
+				BackgroundTransparency = 1,
+				Text = reason,
+				FontFace = Theme.Fonts.Body,
+				TextSize = Theme.TextSize.Small,
+				TextColor3 = Theme.Paper.TextMuted,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+			}),
+			scope:New("Frame")({
+				Name = "Buttons",
+				Position = buttonsAt,
+				Size = buttonsSize,
+				BackgroundTransparency = 1,
+				[Children] = {
+					scope:New("UIGridLayout")({
+						CellSize = UDim2.new(0.5, -GAP / 2, 0, Theme.Size.ButtonHeightSmall),
+						CellPadding = UDim2.fromOffset(GAP, GAP),
+						FillDirectionMaxCells = 2,
+						SortOrder = Enum.SortOrder.LayoutOrder,
+					}),
+					buttons :: any,
+				},
+			}),
+		},
+	})
+	view.watch(inner)
 	return scope:New("Frame")({
 		Name = "Details",
 		Position = UDim2.fromOffset(DETAILS_X, 0),
@@ -184,62 +237,12 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 				Color = Theme.Paper.Border,
 			}),
 			scope:New("UIPadding")({
-				PaddingTop = UDim.new(0, Theme.Padding.Medium),
-				PaddingBottom = UDim.new(0, Theme.Padding.Medium),
-				PaddingLeft = UDim.new(0, Theme.Padding.Medium),
-				PaddingRight = UDim.new(0, Theme.Padding.Medium),
+				PaddingTop = UDim.new(0, PANEL_PAD),
+				PaddingBottom = UDim.new(0, PANEL_PAD),
+				PaddingLeft = UDim.new(0, PANEL_PAD),
+				PaddingRight = UDim.new(0, PANEL_PAD),
 			}),
-			scope:New("Frame")({
-				Name = "Inner",
-				Size = UDim2.fromScale(1, 1),
-				BackgroundTransparency = 1,
-				[Out("AbsoluteSize")] = absolute,
-				[Children] = {
-					scope:New("Frame")({
-						Name = "PreviewArea",
-						Position = previewAt,
-						Size = previewSize,
-						BackgroundTransparency = 1,
-						Visible = showPreview,
-						[Children] = previewFrame,
-					}),
-					scroller(scope, "Lines", linesAt :: any, linesSize, {
-						scope:New("UIListLayout")({
-							SortOrder = Enum.SortOrder.LayoutOrder,
-							Padding = UDim.new(0, GAP),
-						}),
-						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
-						lines :: any,
-					}),
-					scope:New("TextLabel")({
-						Name = "Reason",
-						Position = reasonAt,
-						Size = reasonSize,
-						BackgroundTransparency = 1,
-						Text = reason,
-						FontFace = Theme.Fonts.Body,
-						TextSize = Theme.TextSize.Small,
-						TextColor3 = Theme.Paper.TextMuted,
-						TextXAlignment = Enum.TextXAlignment.Left,
-						TextTruncate = Enum.TextTruncate.AtEnd,
-					}),
-					scope:New("Frame")({
-						Name = "Buttons",
-						Position = buttonsAt,
-						Size = buttonsSize,
-						BackgroundTransparency = 1,
-						[Children] = {
-							scope:New("UIGridLayout")({
-								CellSize = UDim2.new(0.5, -GAP / 2, 0, Theme.Size.ButtonHeightSmall),
-								CellPadding = UDim2.fromOffset(GAP, GAP),
-								FillDirectionMaxCells = 2,
-								SortOrder = Enum.SortOrder.LayoutOrder,
-							}),
-							buttons :: any,
-						},
-					}),
-				},
-			}),
+			inner,
 		},
 	})
 end

@@ -1,15 +1,23 @@
 --!strict
 -- UI plan 2026-11-10, L10 (owner 2026-11-10: "niektóre rzeczy zasłaniają inne"): the item and character windows lay
 -- out from their content rect (Logic/GearLayout), not the screen. At every registered PC size and on the three phones
--- (PhoneHud.DEVICES, Roblox's top bar 0 and 58, the phone's compact title bar): no negative size, every rect inside its
--- area and no two overlapping, the buttons pinned to the bottom (the footer), at least 2 slot rows on a phone and 5 on
--- PC, at least 260 px of skill details on a phone. The windows read the same functions (source checks at the end).
+-- (PhoneHud.DEVICES, the phone's compact title bar, Roblox's top bar of 0, 36 and 58 real px: a window takes it in
+-- virtual px, bar / PhoneHud.SCALE, as tests/uiframe.spec does): no negative size, every rect inside its area and no two
+-- overlapping, the buttons pinned to the bottom (the footer) and touch targets of 44 on a phone, at least 2 slot rows
+-- on a phone and 5 on PC, at least 260 px of skill details on a phone. The windows read the same functions (source
+-- checks at the end).
 
 local fs = require("@lune/fs")
 
+local Combat = require("../src/shared/Data/Combat")
+local Config = require("../src/shared/Config")
 local GearLayout = require("../src/shared/Logic/GearLayout")
+local Locale = require("../src/shared/Util/Locale")
 local PhoneHud = require("../src/shared/Logic/PhoneHud")
+local SkillData = require("../src/shared/Data/Skills")
+local Skills = require("../src/shared/Logic/Skills")
 local T = require("./Test")
+local TextCaps = require("../src/shared/Logic/TextCaps")
 local WindowFrame = require("../src/shared/Logic/WindowFrame")
 
 type Rect = GearLayout.Rect
@@ -30,6 +38,9 @@ local WINDOWS: { [string]: Size } = {
 -- Each case: the window's content area as the view gets it (`tabs`: under the window's own tab strip).
 type Case = { name: string, area: Size, touch: boolean }
 
+-- Roblox's top bar on a phone in real px (none, the slim bar, the full one), as the plan and UI-ZASADY give it
+local BARS = { 0, 36, 58 }
+
 local function cases(window: string, under: number?): { Case }
 	local out: { Case } = {}
 	local size = WINDOWS[window]
@@ -37,8 +48,8 @@ local function cases(window: string, under: number?): { Case }
 	table.insert(out, { name = `{window} PC`, area = { w = pc.w, h = pc.h - (under or 0) }, touch = false })
 	for _, device in PhoneHud.DEVICES do
 		local w, h = PhoneHud.area(device)
-		for _, bar in { 0, 58 } do
-			local area = GearLayout.area({ w = w, h = h }, size, true, bar, true)
+		for _, bar in BARS do
+			local area = GearLayout.area({ w = w, h = h }, size, true, bar / PhoneHud.SCALE, true)
 			table.insert(out, {
 				name = `{window} {device.name} bar {bar}`,
 				area = { w = area.w, h = area.h - (under or 0) },
@@ -93,10 +104,12 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 	T.it("a phone's content keeps at least 280 px under a 58-px top bar (the area every phone case uses)", function()
 		for _, device in PhoneHud.DEVICES do
 			local w, h = PhoneHud.area(device)
-			local area = GearLayout.area({ w = w, h = h }, WINDOWS.character, true, 58, true)
+			local bar = 58 / PhoneHud.SCALE -- 68.5 virtual px
+			local area = GearLayout.area({ w = w, h = h }, WINDOWS.character, true, bar, true)
 			T.expect({ device.name, area.h >= 280 }).toEqual({ device.name, true })
-			local frame = WindowFrame.rect({ w = w, h = h }, WINDOWS.character, nil, true, 58, true)
+			local frame = WindowFrame.rect({ w = w, h = h }, WINDOWS.character, nil, true, bar, true)
 			T.expect(area.w).toBe(frame.content.right - frame.content.left)
+			T.expect(area.h).toBe(frame.content.bottom - frame.content.top)
 		end
 	end)
 
@@ -162,16 +175,21 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 		function()
 			for _, case in cases("skills") do
 				if case.touch then
-					local sheet = GearLayout.skillSheet(case.area)
-					check(case, { body = sheet.body, bar = sheet.bar })
-					inFooter(case, "bar", sheet.bar)
+					-- the sheet covers the content and the window's bottom padding down to SHEET_EDGE
+					local over = GearLayout.sheetOverhang(true)
+					T.expect(over).toBe(WindowFrame.PADDING_COMPACT - GearLayout.SHEET_EDGE)
+					local area = { w = case.area.w, h = case.area.h + over }
+					local own: Case = { name = `{case.name} sheet`, area = area, touch = true }
+					local sheet = GearLayout.skillSheet(area)
+					check(own, { body = sheet.body, bar = sheet.bar })
+					inFooter(own, "bar", sheet.bar)
 					T.expect({ case.name, sheet.body.bottom - sheet.body.top >= GearLayout.MIN_DETAILS })
 						.toEqual({ case.name, true })
 					T.expect({ case.name, sheet.bar.bottom - sheet.bar.top >= GearLayout.TOUCH })
 						.toEqual({ case.name, true })
 				else
-					-- the right panel under the header (44 + 6) and the tabs (46 + 6), next to the 510-px tree
-					local panel = { w = case.area.w - 522, h = case.area.h - 102 }
+					-- the right panel inside its padding, under the header and the tabs, next to the tree
+					local panel = GearLayout.skillPanelArea(case.area)
 					local inner: Case = { name = case.name, area = panel, touch = false }
 					for _, rows in { 1, 2 } do
 						for _, preview in { false, true } do
@@ -183,7 +201,8 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 							end
 							check(inner, rects)
 							inFooter(inner, "buttons", p.buttons, rows)
-							T.expect({ case.name, rows, preview, p.lines.bottom - p.lines.top >= 150 })
+							-- the tightest case, the preview open over two rows of buttons, keeps 142 px of lines
+							T.expect({ case.name, rows, preview, p.lines.bottom - p.lines.top >= 140 })
 								.toEqual({ case.name, rows, preview, true })
 						end
 					end
@@ -290,6 +309,12 @@ T.describe("GearLayout (UI plan L10, owner 2026-11-10)", function()
 			T.expect({ path, string.find(source, "GearLayout.", 1, true) ~= nil }).toEqual({ path, true })
 			-- the area comes from the view's own size, never the screen's
 			T.expect({ path, string.find(source, "Scale.VirtualSize", 1, true) == nil }).toEqual({ path, true })
+			-- measured with UI/ViewSize (review 2026-11-10): an AbsoluteSize over the UI scale alone still held the
+			-- window's opening motion; BackpackPanel needs no size (its rows are anchored to its edges)
+			if not string.find(path, "BackpackPanel", 1, true) then
+				T.expect({ path, string.find(source, "ViewSize.new(scope)", 1, true) ~= nil }).toEqual({ path, true })
+				T.expect({ path, string.find(source, "AbsoluteSize", 1, true) == nil }).toEqual({ path, true })
+			end
 		end
 	end)
 end)

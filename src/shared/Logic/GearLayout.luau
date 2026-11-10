@@ -6,11 +6,14 @@
 -- button slid under the next line on a phone. The rects are relative to the area's top-left corner, in virtual px.
 -- A view keeps its list scrolling between its header and its pinned buttons, and its buttons in the bottom strip
 -- (the footer: WindowFrame.FOOTER, as the window's footer will be). tests/gearlayout.spec checks every window at its
--- PC content size and on the three phones (PhoneHud.DEVICES, top bar 0 and 58).
+-- PC content size and on the three phones (PhoneHud.DEVICES) under Roblox's top bar of 0, 36 and 58 real px, which
+-- a window takes in virtual px (bar / PhoneHud.SCALE, as Components/Window does with Scale.TopBar / Scale.Value).
 --   GearLayout.area(screen, window, touch, topBar?, compact?)  the content size of a window (WindowFrame.rect)
 --   GearLayout.character(area, touch)     the character window's columns (Logic/CharacterSections.columns)
---   GearLayout.backpack(area, slot?, hinted?)  the backpack panel: header, hint line, filters, slot grid, actions
+--   GearLayout.backpack(area, slot?, hinted?, touch?)  the backpack panel: header, hint line, filters, slots, actions
+--   GearLayout.skillPanelArea(area)       the PC skill details panel's inner size in the skills window's content
 --   GearLayout.skillPanel(area, rows)     PC skill details: the lines over the buttons' rows
+--   GearLayout.sheetOverhang(compact)     how far the phone details sheet reaches over the window's bottom padding
 --   GearLayout.skillSheet(area)           the phone details sheet: the details over one bar of buttons
 --   GearLayout.smithUpgrade(area)         the blacksmith's upgrade view
 --   GearLayout.auctionSell(area) / GearLayout.auctionBrowse(area)
@@ -39,6 +42,7 @@ local function rect(left: number, top: number, right: number, bottom: number): R
 end
 
 -- The content size of a window of `window` size (WindowFrame.rect): on touch the whole layer under the top bar.
+-- `topBar` is in virtual px (Roblox's bar in real px divided by the UI scale).
 function GearLayout.area(screen: Size, window: Size, touch: boolean, topBar: number?, compact: boolean?): Size
 	local content = WindowFrame.rect(screen, window, nil, touch, topBar, compact).content
 	return { w = content.right - content.left, h = content.bottom - content.top }
@@ -129,7 +133,17 @@ end
 -- the disabled buttons and `rows` rows of buttons pinned to the bottom.
 export type SkillPanel = { preview: Rect?, lines: Rect, reason: Rect, buttons: Rect }
 
-GearLayout.SKILL = table.freeze({ preview = 150, reason = 20 })
+-- `tree` and `gutter`: the tree's column left of the panel (SkillsWindow/PathTab.LIST_WIDTH) and the gap after it;
+-- `top`: the header and the tabs over both (SkillsWindow/Header.HEIGHT, TabBar.HEIGHT and a 6-px gap after each);
+-- `pad`: the panel's padding (Theme.Padding.Medium). tests/gearlayout.spec checks them against the window's source.
+GearLayout.SKILL = table.freeze({ preview = 150, reason = 20, tree = 510, gutter = 12, top = 102, pad = 14 })
+
+-- The PC details panel's inner size (inside its padding) in a skills window whose content is `area`: the window lays
+-- the panel out from this until the panel is measured, and the spec checks the panel at this size.
+function GearLayout.skillPanelArea(area: Size): Size
+	local S = GearLayout.SKILL
+	return { w = area.w - S.tree - S.gutter - 2 * S.pad, h = area.h - S.top - 2 * S.pad }
+end
 
 function GearLayout.skillPanel(area: Size, rows: number, preview: boolean?): SkillPanel
 	local n = math.max(1, rows)
@@ -148,9 +162,18 @@ end
 -- The phone details sheet of the skills window: the details (scrolling; the name is their first line, the breakpoint
 -- cards choose in their own section) over one bar: back, the selection's buttons and, while ranks are reserved,
 -- "Cancel" and "Confirm (+N)" (the window's own reservation bar steps aside while the sheet is open). One bar instead of
--- a top bar, a pinned A / B row and an action bar: the details keep at least MIN_DETAILS on an 844x390 phone under a
--- 58-px top bar (306 px of content).
+-- a top bar, a pinned A / B row and an action bar. The sheet covers the window's content and reaches over its bottom
+-- padding (sheetOverhang), so on an 844x390 phone under Roblox's 58-px top bar (68.5 virtual px: 295.5 px of content)
+-- the details keep 261.5 px, at least MIN_DETAILS.
 export type SkillSheet = { body: Rect, bar: Rect }
+
+GearLayout.SHEET_EDGE = 4 -- the sheet stops this far above the window's bottom edge, clear of its frame lines
+
+-- How far below the window's content the phone sheet reaches: the window's bottom padding (WindowFrame.PADDING, or
+-- PADDING_COMPACT on a phone's compact window) down to SHEET_EDGE. `area` of skillSheet is the content's size plus this.
+function GearLayout.sheetOverhang(compact: boolean): number
+	return (if compact then WindowFrame.PADDING_COMPACT else WindowFrame.PADDING) - GearLayout.SHEET_EDGE
+end
 
 function GearLayout.skillSheet(area: Size): SkillSheet
 	local bar = rect(0, area.h - GearLayout.TOUCH, area.w, area.h)
