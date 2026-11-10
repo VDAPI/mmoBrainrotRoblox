@@ -303,6 +303,8 @@ describe("textcaps T4: coverage of the scan", function()
 			{ "window.inventory.title", "windowTitle" },
 			{ "alchemy.group.blessing", "tab" },
 			{ "keys.sprint", "keyName" },
+			{ "skill.blink.bp10", "breakpoint" }, -- D's rule: a breakpoint's option A ...
+			{ "skill.blink.bp10b", "breakpoint" }, -- ... and its option B
 			{ "quest.side_granary.p1", "dialogPage" },
 			{ "npc.healer.greeting", "npcGreeting" },
 		}
