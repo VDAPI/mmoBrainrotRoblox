@@ -288,6 +288,7 @@ describe("textcaps T4: coverage of the scan", function()
 			{ "contract.ready", "toast" }, -- Net.Fire(player, "Toast", ...)
 			{ "shop.error.locked", "toast" }, -- Toast.push(Text.now(...))
 			{ "death.error.gold", "toast" }, -- return false, "key"
+			{ "social.whisper.otherServer", "modalBody" }, -- an error the client shows in a modal (NOT_TOASTED)
 			{ "tourney.notPicked", "toast" }, -- through the service's own helper
 			{ "paths.toast.pointSoon", "toast" }, -- local key = if ... then (if soon then "a" else "b") else ...
 			{ "arena.net.cancelled.noShow", "toast" }, -- back home from the arena server
@@ -319,6 +320,7 @@ describe("textcaps T4: coverage of the scan", function()
 		local cases = {
 			{ "worldboss.card.every", "banner" }, -- the (i) of the world boss's map card, not an announcement
 			{ "worldboss.rewardCard.share", "banner" }, -- the (i) of BossReward's share line
+			{ "social.whisper.otherServer", "toast" }, -- SocialController.failed offers a letter in a modal
 		}
 		local problems = {}
 		for _, case in cases do

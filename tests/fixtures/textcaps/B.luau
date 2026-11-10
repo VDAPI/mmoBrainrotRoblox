@@ -193,7 +193,7 @@ return {
 		["social.hint.touch"] = { surface = "toast", chars = 75, reason = "toast pl 75 > 60 chars" },
 		["social.ignoredNow"] = { surface = "toast", chars = 99, reason = "toast pl 91 > 60 chars" },
 		["social.menu.unfriend"] = { surface = "modalButton", chars = 17, reason = "modalButton pl 17 > 14 chars" },
-		["social.whisper.otherServer"] = { surface = "toast", chars = 119, reason = "toast pl 114 > 60 chars" },
+		["social.whisper.otherServer"] = { surface = "modalBody", chars = 119, reason = "modalBody pl 114 > 90 chars" },
 		["social.whisper.ready"] = { surface = "toast", chars = 76, reason = "toast pl 65 > 60 chars" },
 		["tooltip.fx.pool"] = { surface = "card", chars = 51, reason = "card pl 46 > 40 chars" },
 		["tourney.announce.open"] = { surface = "banner", chars = 81, reason = "banner pl 66 > 56 chars" },

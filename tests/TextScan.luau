@@ -194,6 +194,10 @@ TextScan.FILES = table.freeze({
 -- Message surfaces: B's band shows them, wherever the call is (T4 holds every literal key there to a surface).
 TextScan.MESSAGES = table.freeze({ toast = true, banner = true, alert = true, prompt = true, card = true })
 
+-- Error keys (`return false, "key"`) the client does not toast: it shows them on a surface of its own, mapped at that
+-- call site. SocialController.failed offers a letter in a modal when a whisper's target is on another server.
+TextScan.NOT_TOASTED = table.freeze({ ["social.whisper.otherServer"] = true } :: { [string]: boolean })
+
 local function expandOwners(dir: string, names: { string }): { string }
 	local out = {}
 	for _, name in names do
@@ -973,7 +977,7 @@ local function scanFile(path: string, src: string, out: Scan, keySet: { [string]
 			return
 		end
 		local surface, bind, call, arg = walk(at, #stack, keys[1])
-		if surface == nil and isErrorReturn(at) then
+		if surface == nil and isErrorReturn(at) and not (#keys == 1 and TextScan.NOT_TOASTED[keys[1]]) then
 			surface, bind, call = "toast", nil, nil
 		end
 		local body = innermostBody()
