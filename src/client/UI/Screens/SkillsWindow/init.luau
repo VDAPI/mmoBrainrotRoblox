@@ -7,9 +7,11 @@
 -- shown one (PathTab). Details of the selection (a click): fixed sections (Details), the 3D preview on demand
 -- (S28), "+ rank" / "- rank" / "To bar" (Buy / Refund for a node).
 -- Two layouts: PC 920 x 640 (the tree 510 px on the left, details on the right); touch full screen (one column, a tap
--- opens the details sheet, the reservation's "Cancel" / "Confirm" pinned to the bottom). A full bar opens the 2 x 4
--- slot picker. Data only from Logic/SkillPoints, Logic/SkillPools, Logic/Paths, Logic/PathView and UI/SkillInfo; the
--- window computes nothing itself.
+-- opens the details sheet, the reservation's "Cancel" / "Confirm" pinned to the bottom, in the sheet's own bar while
+-- it is open). A full bar opens the 2 x 4 slot picker. Data only from Logic/SkillPoints, Logic/SkillPools,
+-- Logic/Paths, Logic/PathView and UI/SkillInfo; the window computes nothing itself.
+-- Owner 2026-11-10 (UI plan L10): the details panel's parts (the preview, the lines, the reasons, the buttons) and the
+-- phone sheet stand where Logic/GearLayout puts them, from their measured size, not the screen.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -20,26 +22,28 @@ local Context = require(script.Context)
 local Details = require(script.Details)
 local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
+local GearLayout = require(ReplicatedStorage.Shared.Logic.GearLayout)
 local Header = require(script.Header)
 local PathTab = require(script.PathTab)
 local PoolTree = require(script.PoolTree)
 local Preview = require(script.Preview)
+local Scale = require(script.Parent.Parent.Scale)
 local Sheet = require(script.Sheet)
 local TabBar = require(script.TabBar)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Tooltip = require(script.Parent.Parent.Components.Tooltip)
 
-local Children = Fusion.Children
+local Children, Out = Fusion.Children, Fusion.Out
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
 export type Props = Context.Props
 
-local PREVIEW_HEIGHT = 150
 local DETAILS_X = PathTab.LIST_WIDTH + 12
 local GAP = 6
-local REASON = 20 -- the reason line over the buttons
+-- the panel's inner size at the registered 920 x 640 on PC, until the panel is measured
+local PANEL_PC = { w = 326, h = 414 }
 
 local function list(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions, touch: boolean): { any }
 	return {
@@ -75,7 +79,7 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 	local skillId = scope:Computed(function(use): string?
 		return Details.previewSkill(use, ctx)
 	end)
-	local previewFrame, play = Preview.new(scope, ctx.props.Preview, skillId, PREVIEW_HEIGHT, false)
+	local previewFrame, play = Preview.new(scope, ctx.props.Preview, skillId, GearLayout.SKILL.preview, false)
 	local showPreview = scope:Computed(function(use): boolean
 		return use(ctx.previewOpen) and use(skillId) ~= nil
 	end)
@@ -105,9 +109,38 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 	local rows = scope:Computed(function(use): number
 		return math.max(1, math.ceil(#use(specs) / 2))
 	end)
-	local bottom = scope:Computed(function(use): number
-		local n = use(rows)
-		return n * Theme.Size.ButtonHeightSmall + (n - 1) * GAP + REASON + 4
+	-- the parts' rects (GearLayout.skillPanel) inside the panel's padding, as measured
+	local absolute = scope:Value(Vector2.zero)
+	local panel = scope:Computed(function(use): GearLayout.SkillPanel
+		local size: Vector2 = use(absolute)
+		local k: number = use(Scale.Value)
+		local area = if size.Y > 0 and k > 0 then { w = size.X / k, h = size.Y / k } else PANEL_PC
+		return GearLayout.skillPanel(area, use(rows), use(showPreview))
+	end)
+	local function at(
+		pick: (GearLayout.SkillPanel) -> GearLayout.Rect?
+	): (Fusion.Computed<UDim2>, Fusion.Computed<UDim2>)
+		local position = scope:Computed(function(use): UDim2
+			local r = pick(use(panel))
+			return UDim2.fromOffset(0, if r then r.top else 0)
+		end)
+		local size = scope:Computed(function(use): UDim2
+			local r = pick(use(panel))
+			return UDim2.new(1, 0, 0, if r then r.bottom - r.top else 0)
+		end)
+		return position, size
+	end
+	local previewAt, previewSize = at(function(p)
+		return p.preview
+	end)
+	local linesAt, linesSize = at(function(p)
+		return p.lines
+	end)
+	local reasonAt, reasonSize = at(function(p)
+		return p.reason
+	end)
+	local buttonsAt, buttonsSize = at(function(p)
+		return p.buttons
 	end)
 	local buttons = scope:Computed(function(use, s: Scope): { Instance }
 		local out: { Instance } = {}
@@ -138,9 +171,6 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 		end
 		return table.concat(parts, " · ")
 	end)
-	local top = scope:Computed(function(use): number
-		return if use(showPreview) then PREVIEW_HEIGHT + 8 else 0
-	end)
 	return scope:New("Frame")({
 		Name = "Details",
 		Position = UDim2.fromOffset(DETAILS_X, 0),
@@ -160,58 +190,54 @@ local function detailsPanel(scope: Scope, ctx: Context.Ctx, actions: Actions.Act
 				PaddingRight = UDim.new(0, Theme.Padding.Medium),
 			}),
 			scope:New("Frame")({
-				Name = "PreviewArea",
-				Size = UDim2.new(1, 0, 0, PREVIEW_HEIGHT),
+				Name = "Inner",
+				Size = UDim2.fromScale(1, 1),
 				BackgroundTransparency = 1,
-				Visible = showPreview,
-				[Children] = previewFrame,
-			}),
-			scroller(
-				scope,
-				"Lines",
-				scope:Computed(function(use): UDim2
-					return UDim2.fromOffset(0, use(top))
-				end) :: any,
-				scope:Computed(function(use): UDim2
-					return UDim2.new(1, 0, 1, -(use(top) + use(bottom) + 4))
-				end),
-				{
-					scope:New("UIListLayout")({ SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, GAP) }),
-					scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
-					lines :: any,
-				}
-			),
-			scope:New("TextLabel")({
-				Name = "Reason",
-				AnchorPoint = Vector2.new(0, 1),
-				Position = scope:Computed(function(use): UDim2
-					return UDim2.new(0, 0, 1, -(use(bottom) - REASON))
-				end),
-				Size = UDim2.new(1, 0, 0, REASON),
-				BackgroundTransparency = 1,
-				Text = reason,
-				FontFace = Theme.Fonts.Body,
-				TextSize = Theme.TextSize.Small,
-				TextColor3 = Theme.Paper.TextMuted,
-				TextXAlignment = Enum.TextXAlignment.Left,
-				TextTruncate = Enum.TextTruncate.AtEnd,
-			}),
-			scope:New("Frame")({
-				Name = "Buttons",
-				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.fromScale(0, 1),
-				Size = scope:Computed(function(use): UDim2
-					return UDim2.new(1, 0, 0, use(bottom) - REASON - 4)
-				end),
-				BackgroundTransparency = 1,
+				[Out("AbsoluteSize")] = absolute,
 				[Children] = {
-					scope:New("UIGridLayout")({
-						CellSize = UDim2.new(0.5, -GAP / 2, 0, Theme.Size.ButtonHeightSmall),
-						CellPadding = UDim2.fromOffset(GAP, GAP),
-						FillDirectionMaxCells = 2,
-						SortOrder = Enum.SortOrder.LayoutOrder,
+					scope:New("Frame")({
+						Name = "PreviewArea",
+						Position = previewAt,
+						Size = previewSize,
+						BackgroundTransparency = 1,
+						Visible = showPreview,
+						[Children] = previewFrame,
 					}),
-					buttons :: any,
+					scroller(scope, "Lines", linesAt :: any, linesSize, {
+						scope:New("UIListLayout")({
+							SortOrder = Enum.SortOrder.LayoutOrder,
+							Padding = UDim.new(0, GAP),
+						}),
+						scope:New("UIPadding")({ PaddingRight = UDim.new(0, 8) }),
+						lines :: any,
+					}),
+					scope:New("TextLabel")({
+						Name = "Reason",
+						Position = reasonAt,
+						Size = reasonSize,
+						BackgroundTransparency = 1,
+						Text = reason,
+						FontFace = Theme.Fonts.Body,
+						TextSize = Theme.TextSize.Small,
+						TextColor3 = Theme.Paper.TextMuted,
+						TextXAlignment = Enum.TextXAlignment.Left,
+						TextTruncate = Enum.TextTruncate.AtEnd,
+					}),
+					scope:New("Frame")({
+						Name = "Buttons",
+						Position = buttonsAt,
+						Size = buttonsSize,
+						BackgroundTransparency = 1,
+						[Children] = {
+							scope:New("UIGridLayout")({
+								CellSize = UDim2.new(0.5, -GAP / 2, 0, Theme.Size.ButtonHeightSmall),
+								CellPadding = UDim2.fromOffset(GAP, GAP),
+								FillDirectionMaxCells = 2,
+								SortOrder = Enum.SortOrder.LayoutOrder,
+							}),
+							buttons :: any,
+						},
+					}),
 				},
 			}),
 		},
@@ -253,7 +279,8 @@ local function desktop(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions)
 	})
 end
 
--- Phone: the reservation's "Cancel" / "Confirm (+N)" pinned to the bottom of the screen (also over the sheet).
+-- Phone: the reservation's "Cancel" / "Confirm (+N)" pinned to the bottom of the screen; while the sheet is open its
+-- own bar carries them (Sheet.reserveHeight is 0 then, so this bar hides).
 local function reserveBar(scope: Scope, ctx: Context.Ctx, actions: Actions.Actions): Instance
 	local count = scope:Computed(function(use): number
 		local view = use(ctx.poolView)
