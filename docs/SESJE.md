@@ -14701,15 +14701,18 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   zbyt szczegółowe opisy, nie da się zwinąć”; „wiem, że jesteś w stanie zrobić czytelne i przyjemne GUI, postaraj
   się”. Plan z pięciu audytów i trzech projektów: pakiet F idzie pierwszy i sam, bez widocznej zmiany, a pakiety A–E
   (HUD, komunikaty, okna i komponenty, okna przedmiotów i postaci, okna świata) budują na jego API. Trzy części
-  pakietu powstały równolegle, każda na swojej gałęzi.
+  pakietu (teksty, zwijanie, układ) powstały równolegle, każda na swojej gałęzi, i weszły razem jednym scaleniem.
 - Zasady: `docs/UI-ZASADY.md` (zasada główna, limity tekstu na powierzchnię, jak piszemy, zwijanie, strefy HUD,
   komunikaty, okna, rozmiary Theme, jak to sprawdzamy), jedna linia z linkiem w DESIGN §23, przepisy JAK-DODAC
   „Krótki opis + (i)” i „Zwijana sekcja” według zasad. Pytania do właściciela z domyślnymi odpowiedziami w DECYZJE.
-- Teksty: `Logic/TextCaps` (`SURFACES` z limitami §2, przykładowe długości wartości, `expand`, `width` z modelem
-  szerokości `uifit.spec` bez zmiany liczb, `lines`, `check`), `tests/TextScan.luau` (miejsca wywołań kluczy w
-  kodzie klienta i serwera, właściciel klucza według plików pakietów), `tests/fixtures/textcaps/A–E.luau` (reguły
-  kluczy dynamicznych i dzisiejsze przekroczenia pakietu; lista tylko maleje), `tests/textcaps.spec` (limity, długi
-  myślnik i słowa sterowania, zapadka list, pokrycie miejsc toastów i banerów, przypadek ujemny: toast 61 znaków).
+- Teksty: `Logic/TextCaps` (`SURFACES` z limitami §2, też przycisk modala 14 i nazwa panelu HUD 20; długości
+  przykładowych wartości `SAMPLE`; `expand`, `chars`, `width` z modelem szerokości `uifit.spec` bez zmiany liczb,
+  `lines`, `sentences`, `check`), `tests/TextScan.luau` (gdzie kod klienta, serwera i `shared` pokazuje każdy klucz;
+  właściciel klucza to pierwszy pakiet, którego plik go czyta, według `OWNERS` ze ścieżkami nowych plików planu, a
+  pakiet B czyta też każdy klucz z miejsca toastu, baneru, alarmu, zaproszenia i karty, bo pokazuje je jego pas
+  wiadomości), `tests/fixtures/textcaps/A–E.luau` (reguły kluczy dynamicznych i dzisiejsze przekroczenia pakietu:
+  A 57, B 196, C 6, D 159, E 230; listy tylko maleją), `tests/textcaps.spec` (limity, długi myślnik i słowa
+  sterowania, zapadka list, pokrycie miejsc toastów i banerów, przypadek ujemny: toast 61 znaków).
 - Zwijanie: `Data/Folds` (`Hud`, `Gear`, `World`, `Menu`; `init` je zbiera) z domyślnym stanem `true` / `false` albo
   `{ pc, phone }`. `Logic/SectionFold` łączy obszary (to samo id w dwóch plikach to błąd), a
   `isOpen(saved, id, compact?)` czyta domyślny stan urządzenia. `with(saved, id, open, compact?)` zapisuje minimum:
@@ -14719,15 +14722,36 @@ bossów lochów. Kurhan jako niecka z przedsionkiem bez PvP, czerwone ogłoszeni
   `PhoneLayout.Compact`, a `Section.state(scope, id)` daje stan i `set` przez ten sam zapis `SetSetting "sections"`
   (linia panelu HUD, grupa ustawień). Stare zapisy czytają się tak samo, sekcje plecaka otwierają się i zwijają jak
   dotąd. `Data/Folds/*` stoi w `NOT_BALANCE` księgi balansu (`tools/balance_reasons.luau`, „wygląd”).
-- Układ: `Logic/HudZones` (strefy mapy HUD planu na stałych `HudStack` i `PhoneHud`; liczby jak dziś poza strefami
-  oznaczonymi jako propozycja), `Logic/WindowFrame` (`rect`, `pair`, `clampDrag`), `Logic/Popover` (`place`), nowe
-  tokeny `Theme.Size` (WindowHeaderCompact 44, TabHeight 44, SectionHeader 32, PanelLine 32, HudLine 52,
-  TooltipWidth 340, InfoTipWidth 320, ModalWidth 520; istniejące bez zmian) i `WindowManager.Notice(text, kind?,
-  seconds?)` jako zaślepka zwracająca `false`. Żaden plik UI jeszcze ich nie czyta.
-- Testy: nowe `textcaps.spec`, `hudzones.spec`, `uiframe.spec` (rozmiary okien z kontrolerów; dzisiejsze odstępstwa
-  na liście do opróżnienia przez pakiet okien), rozszerzony `sectionfold.spec` (stare zapisy, domyślne na
-  urządzenie, minimum w `with`, powtórzone id, `valid`, każde id sekcji w kliencie znane), `uifit.spec` z
-  `TextCaps.width`.
+- Układ: `Logic/HudZones` (mapa stref HUD planu na PC i tablecie: `pc`, `targetBand`, `messageZone`, `cardSlot`,
+  `barkSlot`, `thumb`, `ELEMENTS`; liczby z `HudStack`, `HudMenu` i `UiScale` albo z plików klienta, które je dziś
+  trzymają, poza miejscami oznaczonymi jako propozycja), `Logic/WindowFrame` (`rect`, `pair`, `clampDrag`),
+  `Logic/Popover` (`place`, `cursor`), nowe tokeny `Theme.Size` (WindowHeaderCompact 44, TabHeight 44,
+  SectionHeader 32, PanelLine 32, HudLine 52, TooltipWidth 340, InfoTipWidth 320, ModalWidth 520; istniejące bez
+  zmian) i `WindowManager.Notice(text, kind?, seconds?)` jako zaślepka zwracająca `false`. Żaden plik UI jeszcze ich
+  nie czyta.
+- Testy: nowe `textcaps.spec`, `hudzones.spec` (strefy w warstwie HUD i bez nakładania na ekranach PC i tabletach
+  przy pasku Robloxa 0, 36 i 58 px; dzisiejsze kolizje na liście `KNOWN`, która tylko maleje), `uiframe.spec`
+  (rozmiary okien czytane z kontrolerów: dziś każdy się mieści, lista `RATCHET` jest pusta; dymki na siatce kotwic),
+  rozszerzony `sectionfold.spec` (stare zapisy, domyślne na urządzenie, minimum w `with`, powtórzone id, `valid`,
+  każde id sekcji w kliencie znane), `uifit.spec` z `TextCaps.width`.
+- Odstępstwa od planu:
+  - tablet nie mieści stref PC: na 1210–1280 szerokości pasmo celu i pasek bossa (720) wchodzą na strefy postaci,
+    drużyny, menu, minimapy i kolumny, a do 800 wysokości atak, łuk umiejętności i przycisk celu dotyku sięgają
+    minimapy, prowadzenia i rzędu „coś czeka” (przycisk celu już dziś stoi 28 px w minimapie przy 1280×720); na PC
+    szacunek czatu (+20 %) sięga miejsca na kwestie NPC i rzędów 3–4 drużyny na niskich ekranach. To 34 + 3 pary w
+    `KNOWN` dla pakietu A;
+  - pasek bossa lochu w `HudZones` stoi na 22..134 jak w planie (dziś 16..128, przesuwa go pakiet B), pasek akcji ma
+    918 szerokości policzone z `Hud/init` (plan zgadywał 894), a pas wiadomości jest węższy niż 980, gdy warstwa jest
+    wąska, więc pakiet B mierzy komunikaty strefą;
+  - okna łamią L7 zachowaniem, nie rozmiarem (przeciąganie w `Components/Window` wpuszcza nagłówek pod pasek
+    Robloxa, okno na dotyku zaczyna się na y 0); pakiet C naprawia to, przechodząc na `WindowFrame.clampDrag` i
+    `WindowFrame.rect` z paskiem;
+  - trzy kwestie bossów z długim myślnikiem (`boss.morvane.phase3`, `boss.morvane.shieldDown`,
+    `boss.vaelgrath.landed`) są na liście B, nie A (żaden plik A ich nie czyta, idą przez `BossAnnounce` do
+    `DungeonController`), a `rework2.*` na liście C (modal w `ReworkController`), nie B; reguła
+    `tutorial.<krok>.phone` czeka na teksty telefonu pakietu A;
+  - jedna linia w `tools/balance_reasons.luau` (`Data/Folds/*` w `NOT_BALANCE`) poza plikami pakietu, bo
+    `balance.spec` wymaga każdego modułu `Data` na liście.
 - **Pliki:** `docs/UI-ZASADY.md`, `docs/DESIGN.md` §23, `docs/JAK-DODAC.md`, `Logic/TextCaps`, `Logic/SectionFold`,
   `Logic/HudZones`, `Logic/WindowFrame`, `Logic/Popover`, `Data/Folds/init|Hud|Gear|World|Menu`,
   `UI/Components/Section`, `UI/Theme`, `Controllers/WindowManager`, `tests/TextScan.luau`,

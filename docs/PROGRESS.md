@@ -53,7 +53,10 @@
   (`Logic/TextCaps`, listy „do skrócenia” pakietów A–E), domyślne zwinięcie na urządzenie (`Data/Folds`,
   `Section.state`), czyste API układu (`Logic/HudZones`, `WindowFrame`, `Popover`), tokeny `Theme` i zaślepka
   `WindowManager.Notice`; na ekranie bez zmian, gra czyta je dopiero z pakietami A–E (HUD, komunikaty, okna), więc
-  nie ma tu nic do obejrzenia w Studio.
+  nie ma tu nic do obejrzenia w Studio. Braki dzisiejszego kodu, które pokazały specy: 648 tekstów ponad limit
+  swojej powierzchni albo z długim myślnikiem lub słowem sterowania (listy `tests/fixtures/textcaps`: A 57, B 196,
+  C 6, D 159, E 230) i kolizje HUD na tabletach 1210–1280 szerokości i do 800 wysokości (pasmo celu i pasek bossa na
+  strefach postaci i menu, przycisk celu dotyku w minimapie; lista `KNOWN` w `hudzones.spec` dla pakietu A).
 - **Głowy potworów bez kości (2026-11-10, ANIM-WZORCE §6.5):** kość głowy dodawana w EditableMesh 11 modelom bez kości
   (`client/Anim/MeshHead`, `Logic/NeckBend`, `Logic/HeadGaze`, `Data/RigidRigs.gaze`, `tests/neckbend.spec`,
   `tests/headgaze.spec`); nieobejrzane w Studio (czy silnik przyjmie kości na siatce bez skóry, czy wygląd nie przesuwa
