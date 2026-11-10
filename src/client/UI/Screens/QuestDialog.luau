@@ -14,11 +14,14 @@
 -- S102: story quests with `pages` offer them like the side quests (p1..pN, the answers on a page number).
 -- owner 2026-11-10 ("bardzo dużo napisów, niektóre rzeczy zasłaniają inne"): a page holds at most 140 characters; a
 -- longer one goes on under its continuation keys (Logic/Dialogue.parts: p1 -> p1b, done -> done2), each its own page
--- behind "Dalej ▸", and the answers stand under the last part of their page.
+-- behind "Dalej ▸", and the answers stand under the last part of their page. The portrait, the page, the reward choice
+-- and the buttons come from Logic/WorldLayout.questDialog: a phone's portrait is smaller and its reward choice one row
+-- (the label at the left, the slots beside it), so the page keeps at least three lines over the pinned buttons.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
+local Device = require(script.Parent.Parent.Device)
 local Dialogue = require(ReplicatedStorage.Shared.Logic.Dialogue)
 local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
@@ -27,6 +30,7 @@ local Net = require(ReplicatedStorage.Shared.Net)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
 local NpcMarks = require(ReplicatedStorage.Shared.Logic.NpcMarks)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local Preview = require(script.Parent.WorldMap.Preview)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestRewards = require(script.Parent.Parent.Components.QuestRewards)
@@ -40,6 +44,7 @@ local Text = require(script.Parent.Parent.Text)
 local TextCase = require(ReplicatedStorage.Shared.Logic.TextCase)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Areas = require(ReplicatedStorage.Shared.Data.Areas)
 local Contracts = require(ReplicatedStorage.Shared.Logic.Contracts)
@@ -56,8 +61,6 @@ export type Props = {
 	-- S27: "Track" after accepting a side quest.
 	OnAccepted: ((row: NpcQuests.Row) -> ())?,
 }
-
-local PORTRAIT = Vector2.new(84, 96)
 
 -- What the conversation shows for the selected quest.
 type View = {
@@ -505,6 +508,24 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		})
 	end)
 
+	local hasChoice = scope:Computed(function(use): boolean
+		local v = use(view)
+		return v ~= nil and v.mode == "turnIn" and v.choice ~= nil and #v.choice > 0
+	end)
+	-- Logic/WorldLayout: the portrait, the page, the reward choice and the buttons of this device
+	local layout = scope:Computed(function(use): WorldLayout.QuestDialog
+		local device: WorldLayout.Device = WorldLayout.device(use(Device.Touch) == true, use(PhoneLayout.Compact))
+		return WorldLayout.questDialog(WorldLayout.CHROME, device, use(hasChoice))
+	end)
+	local function beside(top: number): Fusion.Computed<UDim2>
+		return scope:Computed(function(use): UDim2
+			return UDim2.fromOffset(use(layout).portrait.w + 14, top)
+		end)
+	end
+	local besideSize = scope:Computed(function(use): UDim2
+		return UDim2.new(1, -use(layout).portrait.w - 14, 0, 0)
+	end)
+
 	local choices = scope:Computed(function(use, s: Scope): { Instance }
 		local v = use(view)
 		local list: { Instance } = {}
@@ -517,7 +538,7 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 				SelectableSlot(s, {
 					Id = `sidechoice:{v.row.id}:{i}`,
 					Item = item,
-					Size = 72,
+					Size = use(layout).slot,
 					LayoutOrder = i,
 					Selected = s:Computed(function(use2): boolean
 						return use2(picked) == i
@@ -530,11 +551,6 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		end
 		return list
 	end)
-	local hasChoice = scope:Computed(function(use): boolean
-		local v = use(view)
-		return v ~= nil and v.mode == "turnIn" and v.choice ~= nil and #v.choice > 0
-	end)
-
 	local function npcName(use: Fusion.Use): string
 		local npcId = use(props.NpcId)
 		local def = npcId and Npcs.get(npcId)
@@ -544,7 +560,10 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 	return {
 		scope:New("Frame")({
 			Name = "Portrait",
-			Size = UDim2.fromOffset(PORTRAIT.X, PORTRAIT.Y),
+			Size = scope:Computed(function(use): UDim2
+				local portrait = use(layout).portrait
+				return UDim2.fromOffset(portrait.w, portrait.h)
+			end),
 			BackgroundColor3 = Theme.Paper.Sunken,
 			ClipsDescendants = true,
 			[Children] = {
@@ -555,8 +574,10 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("TextLabel")({
 			Name = "Category",
-			Position = UDim2.fromOffset(PORTRAIT.X + 14, 0),
-			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 18),
+			Position = beside(0),
+			Size = scope:Computed(function(use): UDim2
+				return use(besideSize) + UDim2.fromOffset(0, 18)
+			end),
 			BackgroundTransparency = 1,
 			-- S135: a section label (upper case with the Polish letters, Caption, Label role)
 			Text = scope:Computed(function(use): string
@@ -570,8 +591,10 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("TextLabel")({
 			Name = "Title",
-			Position = UDim2.fromOffset(PORTRAIT.X + 14, 18),
-			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 30),
+			Position = beside(18),
+			Size = scope:Computed(function(use): UDim2
+				return use(besideSize) + UDim2.fromOffset(0, 30)
+			end),
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				local v = use(view)
@@ -589,8 +612,10 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("TextLabel")({
 			Name = "Speaker",
-			Position = UDim2.fromOffset(PORTRAIT.X + 14, 48),
-			Size = UDim2.new(1, -PORTRAIT.X - 14, 0, 22),
+			Position = beside(48),
+			Size = scope:Computed(function(use): UDim2
+				return use(besideSize) + UDim2.fromOffset(0, 22)
+			end),
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				local v = use(view)
@@ -606,9 +631,12 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("ScrollingFrame")({
 			Name = "Body",
-			Position = UDim2.fromOffset(0, PORTRAIT.Y + 10),
+			Position = scope:Computed(function(use): UDim2
+				return UDim2.fromOffset(0, use(layout).bodyTop)
+			end),
 			Size = scope:Computed(function(use): UDim2
-				return UDim2.new(1, 0, 1, -(PORTRAIT.Y + 10) - 64 - (if use(hasChoice) then 92 else 0))
+				local l = use(layout)
+				return UDim2.new(1, 0, 1, -(l.bodyTop + l.buttons + l.choice))
 			end),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
@@ -672,23 +700,41 @@ local function QuestDialog(scope: Scope, props: Props): Fusion.Child
 		scope:New("Frame")({
 			Name = "Choice",
 			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.new(0, 0, 1, -64),
-			Size = UDim2.new(1, 0, 0, 88),
+			Position = scope:Computed(function(use): UDim2
+				return UDim2.new(0, 0, 1, -use(layout).buttons)
+			end),
+			-- PC: the label over the slots; a phone: the label at the left, the slots beside it
+			Size = scope:Computed(function(use): UDim2
+				local l = use(layout)
+				return UDim2.new(1, 0, 0, if l.choiceLabel > 0 then l.slot + 4 else l.slot + 16)
+			end),
 			BackgroundTransparency = 1,
 			Visible = hasChoice,
 			[Children] = {
 				scope:New("TextLabel")({
-					Size = UDim2.new(1, 0, 0, 18),
+					Size = scope:Computed(function(use): UDim2
+						local l = use(layout)
+						return if l.choiceLabel > 0 then UDim2.new(0, l.choiceLabel, 1, 0) else UDim2.new(1, 0, 0, 18)
+					end),
 					BackgroundTransparency = 1,
 					Text = Text.T(scope, "quest.choose"),
+					TextWrapped = true,
 					FontFace = Theme.Fonts.BodyMedium,
 					TextSize = Theme.TextSize.Small,
 					TextColor3 = Theme.Paper.Heading,
 					TextXAlignment = Enum.TextXAlignment.Left,
 				}),
 				scope:New("Frame")({
-					Position = UDim2.fromOffset(0, 16),
-					Size = UDim2.new(1, 0, 0, 72),
+					Position = scope:Computed(function(use): UDim2
+						local l = use(layout)
+						return if l.choiceLabel > 0
+							then UDim2.fromOffset(l.choiceLabel + 8, 2)
+							else UDim2.fromOffset(0, 16)
+					end),
+					Size = scope:Computed(function(use): UDim2
+						local l = use(layout)
+						return UDim2.new(1, -(if l.choiceLabel > 0 then l.choiceLabel + 8 else 0), 0, l.slot)
+					end),
 					BackgroundTransparency = 1,
 					[Children] = {
 						scope:New("UIListLayout")({

@@ -5,27 +5,34 @@
 -- buttons. A quest opens the quest conversation (QuestController). S99: the hunting contract (at the board it opens
 -- the board window instead, NpcController).
 -- S102: an NPC of an active quest's `talk` / `deliver` objective with a `line` says that line (the story first).
+-- Owner 2026-11-10 ("niektóre rzeczy zasłaniają inne"; UI plan E): the portrait, the line's box and where the choices
+-- start come from Logic/WorldLayout.npcDialog over the measured content, so the longest line (TextCaps dialogPage)
+-- never runs into the choices; a phone's portrait is smaller.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Button = require(script.Parent.Parent.Components.Button)
 local CitySeasonState = require(script.Parent.Parent.CitySeasonState)
+local Device = require(script.Parent.Parent.Device)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local InfoTip = require(script.Parent.Parent.Components.InfoTip)
 local Locale = require(ReplicatedStorage.Shared.Util.Locale)
 local NpcQuests = require(script.Parent.Parent.NpcQuests)
 local Npcs = require(ReplicatedStorage.Shared.Data.Npcs)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local Preview = require(script.Parent.WorldMap.Preview)
 local QuestLogic = require(ReplicatedStorage.Shared.Logic.QuestLogic)
 local QuestText = require(script.Parent.Parent.QuestText)
 local Quests = require(ReplicatedStorage.Shared.Data.Quests)
 local SideQuests = require(ReplicatedStorage.Shared.Logic.SideQuests)
+local Scale = require(script.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Sounds)
 local State = require(script.Parent.Parent.State)
 local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
-local Children, OnEvent = Fusion.Children, Fusion.OnEvent
+local Children, OnEvent, Out = Fusion.Children, Fusion.OnEvent, Fusion.Out
 
 type Scope = Fusion.Scope<typeof(Fusion)>
 
@@ -35,7 +42,6 @@ export type Props = {
 	OnQuest: (row: NpcQuests.Row) -> (),
 }
 
-local PORTRAIT = Vector2.new(120, 140)
 local GOSSIP_LINES = 3
 local HIDDEN_SERVICES: { [string]: boolean } = { story = true, talk = true }
 
@@ -280,10 +286,37 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 		return list
 	end)
 
+	-- Logic/WorldLayout over the measured content: the portrait, the line's box, the choices' top
+	local measured = scope:Value(Vector2.zero)
+	local layout = scope:Computed(function(use): WorldLayout.NpcDialog
+		local size = Scale.toVirtual(use(measured))
+		local device: WorldLayout.Device = WorldLayout.device(use(Device.Touch) == true, use(PhoneLayout.Compact))
+		return WorldLayout.npcDialog({ w = size.X, h = size.Y }, device)
+	end)
+	local function beside(top: number, height: number): (Fusion.Computed<UDim2>, Fusion.Computed<UDim2>)
+		return scope:Computed(function(use): UDim2
+			return UDim2.fromOffset(use(layout).portrait.w + 16, top)
+		end),
+			scope:Computed(function(use): UDim2
+				return UDim2.new(1, -use(layout).portrait.w - 16, 0, height)
+			end)
+	end
+	local namePosition, nameSize = beside(0, 32)
+	local rolePosition, roleSize = beside(32, 20)
+
 	return {
 		scope:New("Frame")({
+			Name = "Measure",
+			Size = UDim2.fromScale(1, 1),
+			BackgroundTransparency = 1,
+			[Out("AbsoluteSize")] = measured,
+		}),
+		scope:New("Frame")({
 			Name = "Portrait",
-			Size = UDim2.fromOffset(PORTRAIT.X, PORTRAIT.Y),
+			Size = scope:Computed(function(use): UDim2
+				local portrait = use(layout).portrait
+				return UDim2.fromOffset(portrait.w, portrait.h)
+			end),
 			BackgroundColor3 = Theme.Paper.Sunken,
 			ClipsDescendants = true,
 			[Children] = {
@@ -294,8 +327,8 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("TextLabel")({
 			Name = "Name",
-			Position = UDim2.fromOffset(PORTRAIT.X + 16, 0),
-			Size = UDim2.new(1, -PORTRAIT.X - 16, 0, 32),
+			Position = namePosition,
+			Size = nameSize,
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				local d = use(def)
@@ -309,8 +342,8 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("TextLabel")({
 			Name = "Role",
-			Position = UDim2.fromOffset(PORTRAIT.X + 16, 32),
-			Size = UDim2.new(1, -PORTRAIT.X - 16, 0, 20),
+			Position = rolePosition,
+			Size = roleSize,
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				local d = use(def)
@@ -337,8 +370,14 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("TextLabel")({
 			Name = "Line",
-			Position = UDim2.fromOffset(PORTRAIT.X + 16, 56),
-			Size = UDim2.new(1, -PORTRAIT.X - 16 - 32, 0, PORTRAIT.Y - 56),
+			Position = scope:Computed(function(use): UDim2
+				local box = use(layout).line
+				return UDim2.fromOffset(box.left, box.top)
+			end),
+			Size = scope:Computed(function(use): UDim2
+				local box = use(layout).line
+				return UDim2.fromOffset(box.right - box.left, box.bottom - box.top)
+			end),
 			BackgroundTransparency = 1,
 			Text = scope:Computed(function(use): string
 				local l = use(line)
@@ -353,8 +392,12 @@ local function NpcDialog(scope: Scope, props: Props): Fusion.Child
 		}),
 		scope:New("ScrollingFrame")({
 			Name = "Choices",
-			Position = UDim2.fromOffset(0, PORTRAIT.Y + 14),
-			Size = UDim2.new(1, 0, 1, -(PORTRAIT.Y + 14)),
+			Position = scope:Computed(function(use): UDim2
+				return UDim2.fromOffset(0, use(layout).choicesTop)
+			end),
+			Size = scope:Computed(function(use): UDim2
+				return UDim2.new(1, 0, 1, -use(layout).choicesTop)
+			end),
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
 			CanvasSize = UDim2.new(),

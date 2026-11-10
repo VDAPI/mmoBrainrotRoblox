@@ -3,6 +3,9 @@
 -- S121: Config.MaxCharacters slots (5): slots above Config.FreeCharacters are locked until their passes are owned
 -- (Logic/Premium.slotOpen on the replicated `passes` branch); a locked slot buys its pass (BuyPass) or says "Soon".
 -- Shown by ScreenController while the session phase is "loading" or "select".
+-- Owner 2026-11-10 (UI plan E, Logic/WorldLayout.characterSelect): the screen is laid out from the size of its layer
+-- (Screens, already under Roblox's top bar): on a phone the title and subtitle are smaller and the slot cards keep
+-- "Graj" and "Usuń" on the screen (before, a fixed 150 px header pushed them under its bottom edge).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,7 +14,9 @@ local Creator = require(script.Creator)
 local Fusion = require(ReplicatedStorage.Packages.Fusion)
 local LanguageToggle = require(script.Parent.Parent.Components.LanguageToggle)
 local Net = require(ReplicatedStorage.Shared.Net)
+local PhoneLayout = require(script.Parent.Parent.PhoneLayout)
 local Premium = require(ReplicatedStorage.Shared.Logic.Premium)
+local Scale = require(script.Parent.Parent.Scale)
 local Sounds = require(script.Parent.Parent.Sounds)
 local ServerModeView = require(script.Parent.Parent.ServerModeView)
 local SlotCard = require(script.SlotCard)
@@ -20,6 +25,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Toast = require(script.Parent.Parent.Components.Toast)
 local Types = require(ReplicatedStorage.Shared.Types)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children = Fusion.Children
 
@@ -29,13 +35,17 @@ export type Props = {
 	ShowModal: (spec: any) -> (),
 }
 
-local HEADER_HEIGHT = 150
-
 local function CharacterSelect(scope: Scope, props: Props): Instance
 	local phase = State.Value({ "session", "phase" })
 	local slots = State.Value({ "slots" })
 	local passes = State.Value({ "passes" })
 	local dataMock = State.Value({ "session", "dataMock" })
+
+	-- owner 2026-11-10: the layer is the Screens one, under Roblox's top bar already (topBar 0)
+	local layout = scope:Computed(function(use): WorldLayout.CharacterSelect
+		local size: Vector2 = use(Scale.HudSize)
+		return WorldLayout.characterSelect({ w = size.X, h = size.Y }, use(PhoneLayout.Compact), 0)
+	end)
 
 	-- nil = slot list, number = creator for that slot
 	local creating = scope:Value(nil :: number?)
@@ -155,6 +165,7 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 					return Premium.slotPass(slot, ownedPasses(use))
 				end),
 				OnUnlock = unlock,
+				Layout = layout,
 			})
 		)
 	end
@@ -205,12 +216,18 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 			scope:New("TextLabel")({
 				Name = "Title",
 				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 24),
-				Size = UDim2.new(1, -320, 0, 72),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 0, use(layout).titleTop)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, -320, 0, use(layout).title)
+				end),
 				BackgroundTransparency = 1,
 				Text = Config.GameName,
 				FontFace = Theme.Fonts.Display,
-				TextSize = Theme.TextSize.Hero,
+				TextSize = scope:Computed(function(use): number
+					return if use(PhoneLayout.Compact) then Theme.TextSize.Title else Theme.TextSize.Hero
+				end),
 				TextColor3 = Theme.Brass.Bright,
 				TextStrokeColor3 = Theme.Shade,
 				TextStrokeTransparency = 0.4,
@@ -218,8 +235,12 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 			scope:New("TextLabel")({
 				Name = "Subtitle",
 				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, 100),
-				Size = UDim2.new(1, -320, 0, 30),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 0, use(layout).subtitleTop)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, -320, 0, use(layout).subtitle)
+				end),
 				BackgroundTransparency = 1,
 				Text = scope:Computed(function(use): string
 					if use(autoPick) then
@@ -234,7 +255,10 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 					return Text.get(use, "charSelect.subtitle")
 				end),
 				FontFace = Theme.Fonts.BodyMedium,
-				TextSize = Theme.TextSize.Large,
+				TextSize = scope:Computed(function(use): number
+					return if use(PhoneLayout.Compact) then Theme.TextSize.Body else Theme.TextSize.Large
+				end),
+				TextTruncate = Enum.TextTruncate.AtEnd,
 				TextColor3 = Theme.Iron.Text,
 				TextStrokeColor3 = Theme.Shade,
 				TextStrokeTransparency = 0.4,
@@ -249,8 +273,13 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 			scope:New("Frame")({
 				Name = "Body",
 				AnchorPoint = Vector2.new(0.5, 0),
-				Position = UDim2.new(0.5, 0, 0, HEADER_HEIGHT),
-				Size = UDim2.new(1, 0, 1, -HEADER_HEIGHT - 56),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 0, use(layout).header)
+				end),
+				Size = scope:Computed(function(use): UDim2
+					local l = use(layout)
+					return UDim2.new(1, 0, 1, -(l.header + l.footer))
+				end),
 				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
 					return not use(loading)
@@ -276,8 +305,13 @@ local function CharacterSelect(scope: Scope, props: Props): Instance
 			scope:New("TextLabel")({
 				Name = "MockWarning",
 				AnchorPoint = Vector2.new(0.5, 1),
-				Position = UDim2.new(0.5, 0, 1, -Theme.Padding.Medium),
-				Size = UDim2.new(1, -40, 0, 30),
+				Position = scope:Computed(function(use): UDim2
+					return UDim2.new(0.5, 0, 1, if use(PhoneLayout.Compact) then -2 else -Theme.Padding.Medium)
+				end),
+				-- inside the footer of the layout (30 on a phone, 56 otherwise)
+				Size = scope:Computed(function(use): UDim2
+					return UDim2.new(1, -40, 0, math.min(30, use(layout).footer - 4))
+				end),
 				BackgroundTransparency = 1,
 				Visible = scope:Computed(function(use): boolean
 					return use(dataMock) == true

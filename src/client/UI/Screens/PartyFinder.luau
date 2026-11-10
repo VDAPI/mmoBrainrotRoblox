@@ -5,6 +5,8 @@
 -- server (state branch `finder`, sent only while this tab is open: FinderWatch): target, band coloured by
 -- Logic/LevelBand against the player, leader with class and level, party size, wanted classes, time left, Join (greyed
 -- out with canJoin's reason, the same rule as the server) and Guide. No free text (moderation).
+-- Owner 2026-11-10 (UI plan E, Logic/WorldLayout.FINDER): the form's cells are 290 px; the "wanted classes" label
+-- takes what the class buttons leave (WorldLayout.finderClassLabel), so a fifth class never pushes a button out.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -23,6 +25,7 @@ local Text = require(script.Parent.Parent.Text)
 local Theme = require(script.Parent.Parent.Theme)
 local Time = require(ReplicatedStorage.Shared.Logic.Time)
 local Toast = require(script.Parent.Parent.Components.Toast)
+local WorldLayout = require(ReplicatedStorage.Shared.Logic.WorldLayout)
 
 local Children = Fusion.Children
 
@@ -37,6 +40,7 @@ export type Props = {
 
 local ROW = 64
 local MAX = Config.PartyFinder.maxMembers
+local CELL = WorldLayout.FINDER
 
 local function invoke(name: string, ...: any): boolean
 	local ok, err = Net.Invoke(name, ...)
@@ -191,17 +195,17 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 
 	local function stepper(s: Scope, text: Fusion.UsedAs<string>, onLeft: () -> (), onRight: () -> (), width: number)
 		return s:New("Frame")({
-			Size = UDim2.fromOffset(width, 44),
+			Size = UDim2.fromOffset(width, CELL.button),
 			BackgroundTransparency = 1,
 			[Children] = {
 				Button(s, {
-					Size = UDim2.fromOffset(44, 44),
+					Size = UDim2.fromOffset(CELL.button, CELL.button),
 					Text = "−",
 					OnClick = onLeft,
 				}),
 				small(s, {
-					Position = UDim2.fromOffset(48, 0),
-					Size = UDim2.new(1, -96, 1, 0),
+					Position = UDim2.fromOffset(CELL.button + 4, 0),
+					Size = UDim2.fromOffset(WorldLayout.finderStepperText(), CELL.button),
 					Text = text,
 					TextXAlignment = Enum.TextXAlignment.Center,
 					TextColor3 = Theme.Paper.Text,
@@ -209,7 +213,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				Button(s, {
 					AnchorPoint = Vector2.new(1, 0),
 					Position = UDim2.fromScale(1, 0),
-					Size = UDim2.fromOffset(44, 44),
+					Size = UDim2.fromOffset(CELL.button, CELL.button),
 					Text = "+",
 					OnClick = onRight,
 				}),
@@ -224,7 +228,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 			classButtons,
 			Button(scope, {
 				LayoutOrder = i,
-				Size = UDim2.fromOffset(44, 44),
+				Size = UDim2.fromOffset(CELL.button, CELL.button),
 				Text = if class then class.icon else "?",
 				Variant = scope:Computed(function(use): any
 					return if table.find(use(want), id) then "primary" else "secondary"
@@ -252,7 +256,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				PaddingRight = UDim.new(0, 8),
 			}),
 			scope:New("UIGridLayout")({
-				CellSize = UDim2.fromOffset(290, 44),
+				CellSize = UDim2.fromOffset(CELL.cell, CELL.button),
 				CellPadding = UDim2.fromOffset(8, 6),
 				SortOrder = Enum.SortOrder.LayoutOrder,
 			}),
@@ -281,7 +285,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				function()
 					cycleKind(1)
 				end,
-				290
+				CELL.cell
 			),
 			stepper(
 				scope,
@@ -298,7 +302,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				function()
 					cycleTarget(1)
 				end,
-				290
+				CELL.cell
 			),
 			stepper(
 				scope,
@@ -311,7 +315,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				function()
 					nudge("min", 1)
 				end,
-				290
+				CELL.cell
 			),
 			stepper(
 				scope,
@@ -324,7 +328,7 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 				function()
 					nudge("max", 1)
 				end,
-				290
+				CELL.cell
 			),
 			scope:New("Frame")({
 				LayoutOrder = 10,
@@ -333,11 +337,11 @@ local function PartyFinderTab(scope: Scope, props: Props): Instance
 					scope:New("UIListLayout")({
 						FillDirection = Enum.FillDirection.Horizontal,
 						SortOrder = Enum.SortOrder.LayoutOrder,
-						Padding = UDim.new(0, 6),
+						Padding = UDim.new(0, CELL.gap),
 					}),
 					small(scope, {
 						LayoutOrder = 0,
-						Size = UDim2.fromOffset(90, 44),
+						Size = UDim2.fromOffset(WorldLayout.finderClassLabel(#Classes.order), CELL.button),
 						Text = Text.T(scope, "finder.want"),
 						TextColor3 = Theme.Paper.TextMuted,
 					}),

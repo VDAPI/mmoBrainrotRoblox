@@ -60,6 +60,7 @@ local LINES: { [string]: string | false } = {
 	["paths.soon.body.short"] = "paths.soon.body",
 	["quest.reroll.hint"] = false,
 	["fish.hint"] = false,
+	["fish.hintTouch"] = false,
 	["quest.lowLevel"] = false,
 	["quest.say.later"] = false,
 	-- SkillsWindow/Details (the path card, the hints)
