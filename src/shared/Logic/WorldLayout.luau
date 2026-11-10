@@ -23,7 +23,8 @@ export type List = { top: number, height: number, row: number, gap: number }
 WorldLayout.CHROME = table.freeze({ w = 0, h = 0 }) :: Size
 
 -- Components/Section's numbers (tests/worldlayout.spec reads Section.luau and Theme.luau to keep them equal): the
--- header 32 on PC and Theme.Size.MinTouch on touch, the folded summary line 26 / 44, the gap Theme.Padding.Small.
+-- header Theme.Size.SectionHeader (32) on PC and Theme.Size.MinTouch on touch, the folded summary line 26 / 44, the
+-- gap Theme.Padding.Small.
 WorldLayout.SECTION = table.freeze({ header = 32, headerTouch = 44, summary = 26, summaryTouch = 44, gap = 8 })
 -- Theme.TextSize.Body and Small: the line heights the dialogue boxes count in.
 WorldLayout.BODY = 20

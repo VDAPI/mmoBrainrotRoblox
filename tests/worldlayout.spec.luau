@@ -169,7 +169,10 @@ end
 T.describe("WorldLayout (UI plan L10, package E)", function()
 	T.it("copies Components/Section's and Theme's numbers", function()
 		local S = WorldLayout.SECTION
-		T.expect(constant("src/client/UI/Components/Section.luau", "local HEADER_PC = (%d+)")).toBe(S.header)
+		-- UI package C: Section's PC header is the Theme.Size.SectionHeader token
+		local section = fs.readFile("src/client/UI/Components/Section.luau")
+		T.expect(string.find(section, "local HEADER_PC = Theme.Size.SectionHeader\n", 1, true) ~= nil).toBe(true)
+		T.expect(constant("src/client/UI/Theme.luau", "\n%s*SectionHeader = (%d+)")).toBe(S.header)
 		T.expect(constant("src/client/UI/Components/Section.luau", "local SUMMARY_PC = (%d+)")).toBe(S.summary)
 		T.expect(constant("src/client/UI/Theme.luau", "MinTouch = (%d+)")).toBe(S.headerTouch)
 		T.expect(constant("src/client/UI/Theme.luau", "MinTouch = (%d+)")).toBe(S.summaryTouch)
